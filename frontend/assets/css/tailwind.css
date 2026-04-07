@@ -1,0 +1,37 @@
+/* assets/css/tailwind.css */
+@import "tailwindcss";
+
+.scrollbar-zinc {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent; /* thumb, track */
+}
+
+/* WebKit (Chromium, Safari, Edge) */
+.scrollbar-zinc::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scrollbar-zinc::-webkit-scrollbar-track {
+  background: transparent; /* track 숨김 효과 */
+}
+.scrollbar-zinc::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 9999px;
+  border: 3px solid transparent; /* thumb 테두리로 여백 느낌 */
+  background-clip: padding-box;
+}
+.scrollbar-zinc::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Scrollbar arrows (표시되는 브라우저에서만 적용됨) */
+.scrollbar-zinc::-webkit-scrollbar-button {
+  background: transparent; /* 기본은 숨김 */
+}
+.scrollbar-zinc::-webkit-scrollbar-button:single-button {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: #e0e0e0;
+}
