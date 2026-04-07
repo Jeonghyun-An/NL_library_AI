@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # ── 앱 ──────────────────────────────────────────
     APP_NAME: str = "NL-Lib Semantic Search"
     DEBUG: bool = False
     IS_DOCKER: bool = False
@@ -51,8 +50,8 @@ class Settings(BaseSettings):
     EMBEDDING_MAX_LENGTH: int = 512
 
     # ── RAG ──────────────────────────────────────────
-    RETRIEVAL_TOP_K: int = 20       # 1차 벡터 검색 수
-    RERANK_TOP_K: int = 5           # 최종 반환 수
+    RETRIEVAL_TOP_K: int = 20
+    RERANK_TOP_K: int = 5
     SIMILARITY_THRESHOLD: float = 0.5
 
     class Config:
