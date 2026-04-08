@@ -4,27 +4,51 @@ from uuid import UUID as PyUUID
 from datetime import datetime
 
 
-# ── 도서 CRUD ────────────────────────────────────────────────
+# ── 도서 ─────────────────────────────────────────────────────
 class BookBase(BaseModel):
-    nl_id: str
-    title: str
-    author: Optional[str] = None
-    publisher: Optional[str] = None
-    pub_year: Optional[int] = None
-    isbn: Optional[str] = None
-    call_no: Optional[str] = None
-    subject: Optional[str] = None
+    cnts_id:              str
+    title:                str
+    title_remainder:      Optional[str] = None
+    title_responsibility: Optional[str] = None
+    personal_author:      Optional[str] = None
+    corporate_author:     Optional[str] = None
+    publisher:            Optional[str] = None
+    pub_place:            Optional[str] = None
+    pub_date:             Optional[str] = None
+    extent:               Optional[str] = None
+    kdc:                  Optional[str] = None
+    ddc:                  Optional[str] = None
+    isbn:                 Optional[str] = None
+    series_title:         Optional[str] = None
+    subject:              Optional[str] = None
+    keyword:              Optional[str] = None
+    note:                 Optional[str] = None
+    bibliography_note:    Optional[str] = None
+    holdings:             Optional[str] = None
+    price:                Optional[str] = None
+    language:             Optional[str] = None
+    abstract:             Optional[str] = None
+    url:                  Optional[str] = None
+    uci:                  Optional[str] = None
+    media_type:           Optional[str] = None
+    material_type:        Optional[str] = None
+    genre:                Optional[str] = None
+    access_condition:     Optional[str] = None
+    target_audience:      Optional[str] = None
+    digital_origin:       Optional[str] = None
+    source_format:        Optional[str] = None
 
 
 class BookCreate(BookBase):
-    raw_text: Optional[str] = None
+    pass
 
 
 class BookOut(BookBase):
-    id: PyUUID
-    summary: Optional[str] = None
+    id:          PyUUID
+    record_id:   Optional[str] = None
+    summary:     Optional[str] = None
     is_embedded: bool
-    created_at: datetime
+    created_at:  datetime
 
     class Config:
         from_attributes = True
@@ -52,6 +76,11 @@ class SearchResponse(BaseModel):
 
 
 # ── 수집 ─────────────────────────────────────────────────────
+class CatalogLoadRequest(BaseModel):
+    csv_path:        str
+    mods_excel_path: Optional[str] = None
+
+
 class IngestionRequest(BaseModel):
     nl_ids: list[str] = Field(..., description="국립도서관 도서 ID 목록")
     force_re_summarize: bool = False

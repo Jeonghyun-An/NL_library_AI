@@ -15,6 +15,7 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="Asia/Seoul",
     task_routes={
+        "tasks.load_catalog_csv":    {"queue": "ingestion"},
         "tasks.process_single_book": {"queue": "ingestion"},
         "tasks.ingest_books_batch":  {"queue": "ingestion"},
     },

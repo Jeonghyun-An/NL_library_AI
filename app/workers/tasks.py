@@ -1,6 +1,7 @@
 import uuid
 import asyncio
 import logging
+from services.ingestion.csv_loader import load_csv, load_mods_excel, merge_mods
 from celery import group
 from workers.celery_app import celery_app
 from services.ingestion.summarizer import summarize_book
@@ -16,35 +17,71 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-@celery_app.task(bind=True, queue="ingestion", max_retries=3, name="tasks.process_single_book")
-def process_single_book(self, nl_id: str, force: bool = False):
+# ── 1단계: CSV → DB 저장 ─────────────────────────────────────
+@celery_app.task(name="tasks.load_catalog_csv")
+def load_catalog_csv(csv_path: str, mods_excel_path: str | None = None):
+    """
+    CSV 파싱 → (MODS 병합) → DB 저장
+    이후 임베딩 대상 cnts_id 목록 반환
+    """
+    records = load_csv(csv_path)
+
+    if mods_excel_path:
+        mods_map = load_mods_excel(mods_excel_path)
+        records  = merge_mods(records, mods_map)
+
+    saved_ids = []
     with SyncSessionLocal() as db:
-        book: Book = db.query(Book).filter(Book.nl_id == nl_id).first()
+        for rec in records:
+            cnts_id = rec.get("cnts_id")
+            if not cnts_id:
+                continue
+
+            existing = db.query(Book).filter(Book.cnts_id == cnts_id).first()
+            if existing:
+                log.info(f"[{cnts_id}] 이미 존재, skip")
+                saved_ids.append(cnts_id)
+                continue
+
+            book = Book(**{k: v for k, v in rec.items() if hasattr(Book, k)})
+            db.add(book)
+            saved_ids.append(cnts_id)
+
+        db.commit()
+
+    log.info(f"DB 저장 완료: {len(saved_ids)}건")
+    return saved_ids
+
+
+# ── 2단계: 단일 도서 요약 → 임베딩 → Milvus ──────────────────
+@celery_app.task(bind=True, max_retries=3, name="tasks.process_single_book")
+def process_single_book(self, cnts_id: str, force: bool = False):
+    with SyncSessionLocal() as db:
+        book: Book = db.query(Book).filter(Book.cnts_id == cnts_id).first()
 
         if not book:
-            log.warning(f"[{nl_id}] not found in DB")
-            return {"nl_id": nl_id, "status": "not_found"}
+            log.warning(f"[{cnts_id}] DB에 없음")
+            return {"cnts_id": cnts_id, "status": "not_found"}
 
         if book.is_embedded and not force:
-            log.info(f"[{nl_id}] already embedded, skip")
-            return {"nl_id": nl_id, "status": "skipped"}
+            log.info(f"[{cnts_id}] 이미 임베딩됨, skip")
+            return {"cnts_id": cnts_id, "status": "skipped"}
 
-        if not book.raw_text:
-            log.warning(f"[{nl_id}] no raw_text")
-            return {"nl_id": nl_id, "status": "no_text"}
+        # raw_text 없어도 메타데이터로 요약 생성 가능
+        source_text = book.raw_text or _build_meta_text(book)
 
         try:
             # 1. 요약
-            log.info(f"[{nl_id}] summarizing...")
+            log.info(f"[{cnts_id}] 요약 중...")
             book.summary = _run(summarize_book(
                 title=book.title,
-                author=book.author or "",
-                raw_text=book.raw_text,
+                author=book.personal_author or book.corporate_author or "",
+                raw_text=source_text,
             ))
 
-            # 2. 임베딩 (제목 + 주제어 + 요약 결합)
-            embed_text = f"{book.title}. {book.subject or ''}. {book.summary}"
-            log.info(f"[{nl_id}] embedding...")
+            # 2. 임베딩 텍스트 구성 (제목 + 주제어 + KDC + 요약)
+            embed_text = _build_embed_text(book)
+            log.info(f"[{cnts_id}] 임베딩 중...")
             vecs = embed_texts([embed_text], is_query=False)
 
             # 3. Milvus 저장
@@ -52,27 +89,53 @@ def process_single_book(self, nl_id: str, force: bool = False):
             upsert_embeddings([{
                 "milvus_id": m_id,
                 "book_id":   str(book.id),
-                "nl_id":     book.nl_id,
+                "cnts_id":   book.cnts_id,
                 "title":     book.title,
                 "subject":   book.subject or "",
                 "embedding": vecs[0],
             }])
 
-            # 4. PostgreSQL 상태 업데이트
+            # 4. PostgreSQL 업데이트
             book.milvus_id   = m_id
             book.is_embedded = True
             db.commit()
 
-            log.info(f"[{nl_id}] done")
-            return {"nl_id": nl_id, "status": "success"}
+            log.info(f"[{cnts_id}] 완료")
+            return {"cnts_id": cnts_id, "status": "success"}
 
         except Exception as exc:
             db.rollback()
-            log.error(f"[{nl_id}] failed: {exc}")
+            log.error(f"[{cnts_id}] 실패: {exc}")
             raise self.retry(exc=exc, countdown=30)
 
 
+# ── 3단계: 배치 처리 ──────────────────────────────────────────
 @celery_app.task(name="tasks.ingest_books_batch")
-def ingest_books_batch(nl_ids: list[str], force: bool = False):
-    job = group(process_single_book.s(nl_id, force) for nl_id in nl_ids)
-    return job.apply_async()
+def ingest_books_batch(cnts_ids: list[str], force: bool = False):
+    return group(process_single_book.s(cid, force) for cid in cnts_ids).apply_async()
+
+
+# ── 헬퍼 ──────────────────────────────────────────────────────
+def _build_meta_text(book: Book) -> str:
+    """raw_text 없을 때 메타데이터로 텍스트 구성"""
+    parts = [
+        f"제목: {book.title}",
+        f"저자: {book.personal_author or book.corporate_author or ''}",
+        f"출판사: {book.publisher or ''}",
+        f"주제어: {book.subject or ''}",
+        f"KDC: {book.kdc or ''}",
+        f"초록: {book.abstract or ''}",
+        f"노트: {book.note or ''}",
+    ]
+    return "\n".join(p for p in parts if not p.endswith(": "))
+
+
+def _build_embed_text(book: Book) -> str:
+    """임베딩용 텍스트 구성 (제목 + 주제어 + KDC + 요약)"""
+    parts = [
+        book.title,
+        book.subject or "",
+        f"KDC {book.kdc}" if book.kdc else "",
+        book.summary or "",
+    ]
+    return ". ".join(p for p in parts if p)

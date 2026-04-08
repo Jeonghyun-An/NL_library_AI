@@ -6,6 +6,7 @@ from repositories.book import BookRepository
 from schemas.book import (
     BookCreate, BookOut,
     SearchRequest, SearchResponse,
+    CatalogLoadRequest,
     IngestionRequest, IngestionStatus,
 )
 from services.search.pipeline import run_search
@@ -21,9 +22,9 @@ async def create_book(payload: BookCreate, db: AsyncSession = Depends(get_db)):
     return await BookRepository(db).create(payload)
 
 
-@router.get("/{nl_id}", response_model=BookOut)
-async def get_book(nl_id: str, db: AsyncSession = Depends(get_db)):
-    book = await BookRepository(db).get_by_nl_id(nl_id)
+@router.get("/{cnts_id}", response_model=BookOut)
+async def get_book(cnts_id: str, db: AsyncSession = Depends(get_db)):
+    book = await BookRepository(db).get_by_cnts_id(cnts_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
@@ -36,12 +37,26 @@ async def search_books(req: SearchRequest, db: AsyncSession = Depends(get_db)):
     return await run_search(req, BookRepository(db))
 
 
-# ── 수집 파이프라인 ───────────────────────────────────────────
+# ── CSV 카탈로그 로드 → DB 저장 ───────────────────────────────
+@router.post("/catalog/load", status_code=status.HTTP_202_ACCEPTED)
+async def load_catalog(payload: CatalogLoadRequest):
+    """CSV 파싱 → DB 저장 (MODS 엑셀 병합 선택)"""
+    result = load_catalog_csv.delay(payload.csv_path, payload.mods_excel_path)
+    return {"task_id": result.id, "status": "PENDING"}
+
+
+# ── 임베딩 파이프라인 트리거 ──────────────────────────────────
 @router.post("/ingest", response_model=IngestionStatus, status_code=status.HTTP_202_ACCEPTED)
 async def ingest_books(payload: IngestionRequest):
-    """nl_id 목록 → 요약 · 임베딩 · 인덱싱 비동기 처리"""
-    result = ingest_books_batch.delay(payload.nl_ids, payload.force_re_summarize)
-    return IngestionStatus(task_id=result.id, status="PENDING", total=len(payload.nl_ids), done=0, failed=0)
+    """cnts_id 목록 → 요약 · 임베딩 · 인덱싱 비동기 처리"""
+    result = ingest_books_batch.delay(payload.cnts_ids, payload.force_re_summarize)
+    return IngestionStatus(
+        task_id=result.id,
+        status="PENDING",
+        total=len(payload.cnts_ids),
+        done=0,
+        failed=0,
+    )
 
 
 @router.get("/ingest/{task_id}", response_model=IngestionStatus)

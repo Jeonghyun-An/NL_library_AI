@@ -9,25 +9,55 @@ class Base(DeclarativeBase):
 
 
 class Book(Base):
-    __tablename__ = "books"
+    __tablename__ = "library_catalog"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    nl_id       = Column(String(64), unique=True, nullable=False, index=True)
+    # ── PK ──────────────────────────────────────────
+    id               = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cnts_id          = Column(String(64), unique=True, nullable=False, index=True)  # CSV PK
 
-    title       = Column(String(512), nullable=False)
-    author      = Column(String(256))
-    publisher   = Column(String(256))
-    pub_year    = Column(Integer)
-    isbn        = Column(String(32))
-    call_no     = Column(String(128))
-    subject     = Column(String(512))
+    # ── MARC 기준 필드 ────────────────────────────────
+    record_id        = Column(String(30))           # 001
+    last_modified    = Column(String(20))           # 005
+    title            = Column(Text, nullable=False) # 245 $a
+    title_remainder  = Column(Text)                 # 245 $b
+    title_responsibility = Column(Text)             # 245 $d
+    personal_author  = Column(Text)                 # 100 $a
+    corporate_author = Column(Text)                 # 710 $a
+    publisher        = Column(Text)                 # 260 $b
+    pub_place        = Column(Text)                 # 260 $a
+    pub_date         = Column(String(20))           # 260 $c
+    extent           = Column(String(100))          # 300 $a
+    kdc              = Column(String(20))           # 056 $a
+    ddc              = Column(String(20))           # 082 $a
+    isbn             = Column(String(20))           # 020 $a
+    series_title     = Column(Text)                 # 440 $a
+    subject          = Column(Text)                 # 650 $a
+    keyword          = Column(Text)                 # 653 $a
+    note             = Column(Text)                 # 500 $a
+    bibliography_note= Column(Text)                 # 504 $a
+    holdings         = Column(String(50))           # 049 $a
+    price            = Column(String(50))           # 950 $a
+    language         = Column(String(20))           # 008 [35-37]
 
-    raw_text    = Column(Text)
-    summary     = Column(Text)
-    summary_ver = Column(String(32))
+    # ── MODS 보완 필드 ────────────────────────────────
+    abstract         = Column(Text)                 # MODS abstract
+    url              = Column(Text)                 # MODS location/url
+    uci              = Column(String(50))           # MODS identifier(uci)
+    media_type       = Column(String(50))           # MODS internetMediaType
+    material_type    = Column(String(50))           # MODS typeOfResource
+    genre            = Column(String(50))           # MODS genre
+    access_condition = Column(String(20))           # MODS accessCondition
+    target_audience  = Column(String(50))           # MODS targetAudience
+    digital_origin   = Column(String(50))           # MODS digitalOrigin
 
-    is_embedded = Column(Boolean, default=False, nullable=False)
-    milvus_id   = Column(String(64))
+    # ── 메타 ─────────────────────────────────────────
+    source_format    = Column(String(10))           # 'MARC' | 'MODS'
 
-    created_at  = Column(DateTime, server_default=func.now())
-    updated_at  = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    # ── RAG 관련 ──────────────────────────────────────
+    raw_text         = Column(Text)                 # OCR 원본 (추후)
+    summary          = Column(Text)                 # EXAONE 요약
+    is_embedded      = Column(Boolean, default=False, nullable=False)
+    milvus_id        = Column(String(64))
+
+    created_at       = Column(DateTime, server_default=func.now())
+    updated_at       = Column(DateTime, server_default=func.now(), onupdate=func.now())
