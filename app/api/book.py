@@ -10,7 +10,7 @@ from schemas.book import (
     IngestionRequest, IngestionStatus,
 )
 from services.search.pipeline import run_search
-from workers.tasks import ingest_books_batch
+from workers.tasks import load_catalog_csv, ingest_books_batch
 from workers.celery_app import celery_app
 
 router = APIRouter(prefix="/api/books", tags=["books"])

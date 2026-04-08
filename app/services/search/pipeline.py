@@ -24,7 +24,7 @@ async def run_search(req: SearchRequest, repo: BookRepository) -> SearchResponse
         ranked = candidates[:req.top_k]
 
     # 4. PostgreSQL 메타데이터 조회
-    books_map = await repo.get_by_nl_ids([r["cnts_id"] for r in ranked])
+    books_map = await repo.get_by_cnts_ids([r["cnts_id"] for r in ranked])
 
     results = [
         SearchResult(
