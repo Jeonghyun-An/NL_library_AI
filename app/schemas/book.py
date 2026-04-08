@@ -75,9 +75,8 @@ class SearchResponse(BaseModel):
 
 
 # ── 수집 ─────────────────────────────────────────────────────
-class CatalogLoadRequest(BaseModel):
-    csv_path:        str
-    mods_excel_path: Optional[str] = None
+class XlsxLoadRequest(BaseModel):
+    xlsx_path: str
 
 
 class IngestionRequest(BaseModel):

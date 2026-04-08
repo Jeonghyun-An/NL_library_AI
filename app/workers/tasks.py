@@ -1,9 +1,9 @@
 import uuid
 import asyncio
 import logging
-from services.ingestion.csv_loader import load_csv, load_mods_excel, merge_mods
 from celery import group
 from workers.celery_app import celery_app
+from services.ingestion.xlsx_loader import load_xlsx
 from services.ingestion.summarizer import summarize_book
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import upsert_embeddings
@@ -18,17 +18,12 @@ def _run(coro):
 
 
 # ── 1단계: CSV → DB 저장 ─────────────────────────────────────
-@celery_app.task(name="tasks.load_catalog_csv")
-def load_catalog_csv(csv_path: str, mods_excel_path: str | None = None):
+@celery_app.task(name="tasks.load_catalog_xlsx")
+def load_catalog_xlsx(xlsx_path: str):
     """
-    CSV 파싱 → (MODS 병합) → DB 저장
-    이후 임베딩 대상 cnts_id 목록 반환
+    엑셀 파싱 → DB 저장
     """
-    records = load_csv(csv_path)
-
-    if mods_excel_path:
-        mods_map = load_mods_excel(mods_excel_path)
-        records  = merge_mods(records, mods_map)
+    records = load_xlsx(xlsx_path)
 
     saved_ids = []
     with SyncSessionLocal() as db:

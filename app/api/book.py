@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.deps import get_db
+from db.deps import get_db
 from repositories.book import BookRepository
 from schemas.book import (
     BookCreate, BookOut,
     SearchRequest, SearchResponse,
-    CatalogLoadRequest,
+    XlsxLoadRequest,
     IngestionRequest, IngestionStatus,
 )
 from services.search.pipeline import run_search
-from workers.tasks import load_catalog_csv, ingest_books_batch
+from workers.tasks import load_catalog_xlsx, ingest_books_batch
 from workers.celery_app import celery_app
 
 router = APIRouter(prefix="/api/books", tags=["books"])
@@ -39,9 +39,9 @@ async def search_books(req: SearchRequest, db: AsyncSession = Depends(get_db)):
 
 # ── CSV 카탈로그 로드 → DB 저장 ───────────────────────────────
 @router.post("/catalog/load", status_code=status.HTTP_202_ACCEPTED)
-async def load_catalog(payload: CatalogLoadRequest):
-    """CSV 파싱 → DB 저장 (MODS 엑셀 병합 선택)"""
-    result = load_catalog_csv.delay(payload.csv_path, payload.mods_excel_path)
+async def load_catalog(payload: XlsxLoadRequest):
+    """엑셀 파싱 → DB 저장 (MARC/MODS 자동 분기)"""
+    result = load_catalog_xlsx.delay(payload.xlsx_path)
     return {"task_id": result.id, "status": "PENDING"}
 
 
