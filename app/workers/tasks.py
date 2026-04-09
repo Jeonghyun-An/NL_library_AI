@@ -1,136 +1,153 @@
-import uuid
-import asyncio
 import logging
-from celery import group
+import asyncio
+
 from workers.celery_app import celery_app
-from services.ingestion.xlsx_loader import load_xlsx
-from services.ingestion.summarizer import summarize_book
-from services.ingestion.embedder import embed_texts
-from services.ingestion.indexer import upsert_embeddings
+from core.config import get_settings
 from db.postgres import SyncSessionLocal
 from models.book import Book
 
 log = logging.getLogger(__name__)
+cfg = get_settings()
 
 
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+def _run_async(coro):
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
 
 
-# ── 1단계: CSV → DB 저장 ─────────────────────────────────────
-@celery_app.task(name="tasks.load_catalog_xlsx")
+# ── 1. 엑셀 메타데이터 로드 (기존 유지) ─────────────────
+@celery_app.task(name="tasks.load_catalog_xlsx", queue="ingestion")
 def load_catalog_xlsx(xlsx_path: str):
-    """
-    엑셀 파싱 → DB 저장
-    """
+    from services.ingestion.xlsx_loader import load_xlsx
+
     records = load_xlsx(xlsx_path)
-
-    saved_ids = []
-    with SyncSessionLocal() as db:
+    db = SyncSessionLocal()
+    try:
+        created = 0
         for rec in records:
-            cnts_id = rec.get("cnts_id")
-            if not cnts_id:
+            exists = db.query(Book).filter_by(cnts_id=rec["cnts_id"]).first()
+            if exists:
                 continue
-
-            existing = db.query(Book).filter(Book.cnts_id == cnts_id).first()
-            if existing:
-                log.info(f"[{cnts_id}] 이미 존재, skip")
-                saved_ids.append(cnts_id)
-                continue
-
-            book = Book(**{k: v for k, v in rec.items() if hasattr(Book, k)})
+            book = Book(**rec)
             db.add(book)
-            saved_ids.append(cnts_id)
-
+            created += 1
         db.commit()
+        log.info(f"메타데이터 {created}건 저장 완료")
+        return {"created": created, "total": len(records)}
+    except Exception as e:
+        db.rollback()
+        log.error(f"메타데이터 저장 실패: {e}")
+        raise
+    finally:
+        db.close()
 
-    log.info(f"DB 저장 완료: {len(saved_ids)}건")
-    return saved_ids
 
+# ── 2. 단일 도서 원본 파일 처리 ──────────────────────────
+@celery_app.task(
+    name="tasks.process_book_file",
+    queue="ingestion",
+    bind=True,
+    max_retries=2,
+    default_retry_delay=30,
+)
+def process_book_file(self, book_id: str, file_path: str):
+    from services.ingestion.extractor import extract_text
+    from services.ingestion.chunker import semantic_chunk
+    from services.ingestion.embedder import embed_texts
+    from services.ingestion.indexer import index_chunks
+    from services.ingestion.summarizer import summarize
 
-# ── 2단계: 단일 도서 요약 → 임베딩 → Milvus ──────────────────
-@celery_app.task(bind=True, max_retries=3, name="tasks.process_single_book")
-def process_single_book(self, cnts_id: str, force: bool = False):
-    with SyncSessionLocal() as db:
-        book: Book = db.query(Book).filter(Book.cnts_id == cnts_id).first()
+    log.info(f"[{book_id}] 처리 시작: {file_path}")
 
-        if not book:
-            log.warning(f"[{cnts_id}] DB에 없음")
-            return {"cnts_id": cnts_id, "status": "not_found"}
+    # ① 텍스트 추출
+    extraction = _run_async(extract_text(file_path, book_id))
+    if not extraction.pages:
+        log.error(f"[{book_id}] 텍스트 추출 실패: {extraction.errors}")
+        return {"book_id": book_id, "status": "failed", "errors": extraction.errors}
 
-        if book.is_embedded and not force:
-            log.info(f"[{cnts_id}] 이미 임베딩됨, skip")
-            return {"cnts_id": cnts_id, "status": "skipped"}
+    full_text = extraction.full_text
+    log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
 
-        # raw_text 없어도 메타데이터로 요약 생성 가능
-        source_text = book.raw_text or _build_meta_text(book)
+    # ② 시맨틱 청킹
+    def _embed_fn(texts: list[str]):
+        return embed_texts(texts)
 
-        try:
-            # 1. 요약
-            log.info(f"[{cnts_id}] 요약 중...")
-            book.summary = _run(summarize_book(
-                title=book.title,
-                author=book.personal_author or book.corporate_author or "",
-                raw_text=source_text,
-            ))
+    chunks = semantic_chunk(full_text, _embed_fn)
+    log.info(f"[{book_id}] 청킹 완료: {len(chunks)}개")
 
-            # 2. 임베딩 텍스트 구성 (제목 + 주제어 + KDC + 요약)
-            embed_text = _build_embed_text(book)
-            log.info(f"[{cnts_id}] 임베딩 중...")
-            vecs = embed_texts([embed_text], is_query=False)
+    # 페이지 정보 매핑
+    page_acc = 0
+    for chunk in chunks:
+        ratio = page_acc / max(len(full_text), 1)
+        chunk.page_start = int(ratio * extraction.total_pages)
+        chunk.page_end = min(chunk.page_start + 1, extraction.total_pages - 1)
+        page_acc += len(chunk.text)
 
-            # 3. Milvus 저장
-            m_id = uuid.uuid4().hex[:20]
-            upsert_embeddings([{
-                "milvus_id": m_id,
-                "book_id":   str(book.id),
-                "cnts_id":   book.cnts_id,
-                "title":     book.title,
-                "subject":   book.subject or "",
-                "embedding": vecs[0],
-            }])
+    # ③ 청크별 임베딩
+    chunk_texts = [c.text for c in chunks]
+    embeddings = embed_texts(chunk_texts)
+    log.info(f"[{book_id}] 임베딩 완료: {len(embeddings)}개")
 
-            # 4. PostgreSQL 업데이트
-            book.milvus_id   = m_id
+    # ④ Milvus 저장
+    idx_result = index_chunks(book_id, chunks, embeddings)
+    log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
+
+    # ⑤ 요약 생성 → PostgreSQL 업데이트
+    db = SyncSessionLocal()
+    try:
+        summary_input = full_text[:6000]
+        summary = _run_async(summarize(summary_input))
+
+        book = db.query(Book).filter_by(cnts_id=book_id).first()
+        if book:
+            book.summary = summary
+            book.full_text_length = len(full_text)
+            book.chunk_count = len(chunks)
+            book.extraction_stats = str(extraction.stats)
             book.is_embedded = True
             db.commit()
+            log.info(f"[{book_id}] DB 업데이트 완료")
+    except Exception as e:
+        db.rollback()
+        log.warning(f"[{book_id}] 요약 저장 실패: {e}")
+    finally:
+        db.close()
 
-            log.info(f"[{cnts_id}] 완료")
-            return {"cnts_id": cnts_id, "status": "success"}
-
-        except Exception as exc:
-            db.rollback()
-            log.error(f"[{cnts_id}] 실패: {exc}")
-            raise self.retry(exc=exc, countdown=30)
-
-
-# ── 3단계: 배치 처리 ──────────────────────────────────────────
-@celery_app.task(name="tasks.ingest_books_batch")
-def ingest_books_batch(cnts_ids: list[str], force: bool = False):
-    return group(process_single_book.s(cid, force) for cid in cnts_ids).apply_async()
-
-
-# ── 헬퍼 ──────────────────────────────────────────────────────
-def _build_meta_text(book: Book) -> str:
-    """raw_text 없을 때 메타데이터로 텍스트 구성"""
-    parts = [
-        f"제목: {book.title}",
-        f"저자: {book.personal_author or book.corporate_author or ''}",
-        f"출판사: {book.publisher or ''}",
-        f"주제어: {book.subject or ''}",
-        f"KDC: {book.kdc or ''}",
-        f"초록: {book.abstract or ''}",
-        f"노트: {book.note or ''}",
-    ]
-    return "\n".join(p for p in parts if not p.endswith(": "))
+    return {
+        "book_id": book_id,
+        "status": "completed",
+        "extraction": extraction.stats,
+        "chunks": len(chunks),
+        "indexed": idx_result.chunks_indexed,
+    }
 
 
-def _build_embed_text(book: Book) -> str:
-    """임베딩용 텍스트 구성 (제목 + 주제어 + KDC + 요약)"""
-    parts = [
-        book.title,
-        book.subject or "",
-        f"KDC {book.kdc}" if book.kdc else "",
-        book.summary or "",
-    ]
-    return ". ".join(p for p in parts if p)
+# ── 3. 배치 처리 ────────────────────────────────────────
+@celery_app.task(name="tasks.ingest_batch", queue="ingestion")
+def ingest_batch(file_mappings: list[dict]):
+    results = []
+    for item in file_mappings:
+        task = process_book_file.delay(item["book_id"], item["file_path"])
+        results.append({"book_id": item["book_id"], "task_id": task.id})
+    return {"dispatched": len(results), "tasks": results}
+
+
+# ── 4. MinIO에서 파일 다운로드 후 처리 ───────────────────
+@celery_app.task(name="tasks.process_from_minio", queue="ingestion")
+def process_from_minio(book_id: str, minio_key: str):
+    from minio import Minio
+    import tempfile
+
+    client = Minio(
+        cfg.MINIO_ENDPOINT,
+        access_key=cfg.MINIO_ACCESS_KEY,
+        secret_key=cfg.MINIO_SECRET_KEY,
+        secure=cfg.MINIO_SECURE,
+    )
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        client.fget_object(cfg.MINIO_BUCKET, minio_key, tmp.name)
+        return process_book_file(book_id, tmp.name)
