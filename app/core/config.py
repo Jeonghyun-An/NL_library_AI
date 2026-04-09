@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     RETRIEVAL_TOP_K: int = 20
     RERANK_TOP_K: int = 5
     SIMILARITY_THRESHOLD: float = 0.5
+    
+    # ── Reranker ─────────────────────────────────────
+    RERANKER_MODEL_NAME: str = "jinaai/jina-reranker-v2-base-multilingual"
+    RERANKER_BATCH_SIZE: int = 16
+    RERANKER_MAX_LENGTH: int = 1024
 
     class Config:
         env_file = ".env"
