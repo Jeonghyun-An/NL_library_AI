@@ -1,41 +1,127 @@
-import json
-import httpx
+"""
+reranker.py — Cross-Encoder 리랭킹 (Jina Reranker v2)
+
+- 모델: jinaai/jina-reranker-v2-base-multilingual
+- 다국어(한국어 포함) 최적화, 8192 토큰 컨텍스트
+- ~278M 파라미터, GPU에서 20개 청크 ~0.3초
+- FastAPI 기동 시 임베딩 모델과 함께 메모리에 로드
+"""
+import logging
+from dataclasses import dataclass
+from functools import lru_cache
+
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
 from core.config import get_settings
 
-_SYSTEM = """당신은 도서 추천 전문가입니다.
-사용자의 검색 의도와 후보 도서 목록을 분석하여 가장 관련성 높은 도서 순으로 재정렬하세요.
-반드시 아래 JSON 형식으로만 출력하세요:
-[{"cnts_id": "...", "score": 0.0~1.0, "reason": "한국어로 유사 이유 1문장"}, ...]"""
+log = logging.getLogger(__name__)
+cfg = get_settings()
+
+RERANKER_MAX_LENGTH = 1024   # 청크가 길 수 있으므로 넉넉하게
+RERANKER_BATCH_SIZE = 16
+
+_tokenizer = None
+_model = None
+_device = None
 
 
-async def rerank(query: str, candidates: list[dict], top_k: int) -> list[dict]:
-    cfg = get_settings()
-    candidate_text = "\n".join(
-        f"{i+1}. [{c['cnts_id']}] {c['title']} (주제: {c.get('subject', '')})"
-        for i, c in enumerate(candidates)
+def _load_model():
+    global _tokenizer, _model, _device
+
+    if _model is not None:
+        return
+
+    model_name = cfg.RERANKER_MODEL_NAME
+    log.info(f"리랭커 모델 로딩: {model_name}")
+
+    _tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    _model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        torch_dtype=torch.float16,
     )
-    payload = {
-        "model": cfg.VLLM_MODEL,
-        "messages": [
-            {"role": "system", "content": _SYSTEM},
-            {"role": "user", "content": (
-                f"검색 의도: {query}\n\n후보 도서:\n{candidate_text}\n\n"
-                f"상위 {top_k}권을 선택해 JSON으로 응답하세요."
-            )},
-        ],
-        "max_tokens": 1024,
-        "temperature": 0.0,
-    }
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(f"{cfg.VLLM_BASE_URL}/chat/completions", json=payload)
-        resp.raise_for_status()
-        raw = resp.json()["choices"][0]["message"]["content"].strip()
+    _model.eval()
 
-    ranked: list[dict] = json.loads(raw.replace("```json", "").replace("```", "").strip())
-    cand_map = {c["cnts_id"]: c for c in candidates}
-    return [
-        {**cand_map[item["cnts_id"]], "llm_score": item["score"], "reason": item["reason"]}
-        for item in ranked[:top_k]
-        if item["cnts_id"] in cand_map
+    _device = "cuda" if torch.cuda.is_available() else "cpu"
+    _model = _model.to(_device)
+    log.info(f"리랭커 로드 완료 ({_device}, {model_name})")
+
+
+def warmup():
+    """FastAPI startup 시 호출"""
+    _load_model()
+    scores = compute_scores("테스트 쿼리", ["테스트 문서"])
+    log.info(f"리랭커 워밍업 완료 (더미 점수: {scores})")
+
+
+@dataclass
+class RerankResult:
+    index: int
+    score: float
+    text: str
+
+
+def compute_scores(query: str, documents: list[str]) -> list[float]:
+    """
+    쿼리-문서 쌍의 관련성 점수 계산
+
+    Returns:
+        각 문서의 관련성 점수 리스트 (높을수록 관련)
+    """
+    _load_model()
+
+    if not documents:
+        return []
+
+    pairs = [[query, doc] for doc in documents]
+    all_scores = []
+
+    for i in range(0, len(pairs), RERANKER_BATCH_SIZE):
+        batch = pairs[i : i + RERANKER_BATCH_SIZE]
+
+        inputs = _tokenizer(
+            batch,
+            padding=True,
+            truncation=True,
+            max_length=RERANKER_MAX_LENGTH,
+            return_tensors="pt",
+        ).to(_device)
+
+        with torch.no_grad():
+            outputs = _model(**inputs)
+            scores = torch.sigmoid(outputs.logits.view(-1))
+
+        all_scores.extend(scores.cpu().tolist())
+
+    return all_scores
+
+
+def rerank(
+    query: str,
+    documents: list[str],
+    top_k: int | None = None,
+) -> list[RerankResult]:
+    """
+    리랭킹: 관련성 점수 계산 → 상위 top_k개 반환
+
+    Args:
+        query: 검색 쿼리
+        documents: 후보 문서 리스트
+        top_k: 상위 N개만 반환 (None이면 전체)
+
+    Returns:
+        점수 내림차순 정렬된 RerankResult 리스트
+    """
+    scores = compute_scores(query, documents)
+
+    results = [
+        RerankResult(index=i, score=s, text=doc)
+        for i, (s, doc) in enumerate(zip(scores, documents))
     ]
+    results.sort(key=lambda x: x.score, reverse=True)
 
+    if top_k:
+        results = results[:top_k]
+
+    return results
