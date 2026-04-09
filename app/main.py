@@ -1,35 +1,54 @@
+import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import get_settings
-from db.postgres import engine
-from models.book import Base
-from services.ingestion.indexer import ensure_collection
 from api.book import router as book_router
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
+cfg = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # ── startup ──────────────────────────────────────
+    log.info(f"{cfg.APP_NAME} 시작")
+
+    # DB 테이블 생성
+    from db.postgres import engine
+    from models.book import Base
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    log.info("DB 테이블 확인 완료")
+
+    # 임베딩 모델 로드 (FlagEmbedding)
+    from services.ingestion.embedder import embed_texts
+    _ = embed_texts(["워밍업"])
+    log.info("임베딩 모델 로드 완료")
+
+    # 리랭커 모델 로드
+    from services.search.reranker import warmup as reranker_warmup
+    reranker_warmup()
+
+    # Milvus 컬렉션 확인
+    from services.ingestion.indexer import ensure_collection
     ensure_collection()
+
+    log.info("모든 모델 로드 완료")
+
     yield
 
+    # ── shutdown ─────────────────────────────────────
+    from db.postgres import engine as _engine
+    await _engine.dispose()
+    log.info("STOP: DB 연결 종료")
 
-cfg = get_settings()
-app = FastAPI(title=cfg.APP_NAME, version="0.1.0", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title=cfg.APP_NAME,
+    lifespan=lifespan,
 )
 
 app.include_router(book_router)
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
