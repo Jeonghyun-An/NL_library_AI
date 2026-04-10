@@ -37,11 +37,15 @@ class Settings(BaseSettings):
     MILVUS_PORT: int = 19530
     MILVUS_COLLECTION: str = "nl_lib_embeddings"
 
-    # ── vLLM / EXAONE ────────────────────────────────
-    VLLM_BASE_URL: str = "http://host.docker.internal:18080/v1"
-    VLLM_MODEL: str = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct"
+    # ── vLLM ─────────────────────────────────────────
+    VLLM_BASE_URL: str = "http://vllm:8000/v1"
+    VLLM_MODEL: str = "gemma-4-e4b"
     VLLM_MAX_TOKENS: int = 1024
     VLLM_TEMPERATURE: float = 0.1
+    VLLM_TIMEOUT: int = 30
+
+    # ── PaddleOCR ────────────────────────────────────
+    PADDLEOCR_URL: str = "http://paddleocr:8001"
 
     # ── Embedding ────────────────────────────────────
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-m3"
@@ -49,15 +53,15 @@ class Settings(BaseSettings):
     EMBEDDING_DIM: int = 1024
     EMBEDDING_MAX_LENGTH: int = 512
 
-    # ── RAG ──────────────────────────────────────────
-    RETRIEVAL_TOP_K: int = 20
-    RERANK_TOP_K: int = 5
-    SIMILARITY_THRESHOLD: float = 0.5
-    
     # ── Reranker ─────────────────────────────────────
     RERANKER_MODEL_NAME: str = "jinaai/jina-reranker-v2-base-multilingual"
     RERANKER_BATCH_SIZE: int = 16
     RERANKER_MAX_LENGTH: int = 1024
+
+    # ── RAG ──────────────────────────────────────────
+    RETRIEVAL_TOP_K: int = 20
+    RERANK_TOP_K: int = 5
+    SIMILARITY_THRESHOLD: float = 0.5
 
     class Config:
         env_file = ".env"

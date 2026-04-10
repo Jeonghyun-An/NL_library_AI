@@ -20,11 +20,12 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-# pip 캐시 활용 + torch 레이어 분리
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu124
 
 RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install setuptools wheel && \
+    pip install --prefer-binary --no-build-isolation hanja==0.13.3 && \
     pip install --prefer-binary -r requirements.txt
 
 COPY . .
