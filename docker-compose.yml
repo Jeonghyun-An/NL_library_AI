@@ -200,7 +200,10 @@ services:
 
   # ── vLLM (Gemma 4 E4B) ──────────────────────
   vllm:
-    image: vllm/vllm-openai:latest
+    build:
+      context: ./infra/vllm
+      dockerfile: Dockerfile
+    image: landsoftdocker/nl-lib-vllm:latest
     container_name: nl-lib-vllm
     <<: *nl-lib-net
     deploy:
