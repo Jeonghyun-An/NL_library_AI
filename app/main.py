@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from core.config import get_settings
 from api.book import router as book_router
+from api.health import router as health_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -52,3 +53,4 @@ app = FastAPI(
 )
 
 app.include_router(book_router)
+app.include_router(health_router)

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
-from db.deps import get_db
+from core.deps import get_db
 from schemas.book import (
     BookOut,
     SearchRequest,

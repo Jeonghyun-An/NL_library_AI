@@ -19,14 +19,18 @@ celery==5.4.0
 
 # ── Vector DB ───────────────────────────────────────────────
 pymilvus==2.4.6
+environs>=9.5,<12.0
+marshmallow>=3.18,<4.0
 
 # ── Embedding ───────────────────────────────────────────────
 FlagEmbedding==1.2.11
+peft
 
 # ── Reranker (Jina Reranker v2) ─────────────────────────────
 # torch는 Dockerfile에서 CUDA 버전으로 별도 설치
 transformers==4.44.2
 sentencepiece==0.2.0
+einops
 
 # ── Object Storage ──────────────────────────────────────────
 minio==7.2.8
@@ -38,8 +42,8 @@ httpx==0.27.2
 PyMuPDF==1.24.10
 Pillow==10.4.0
 
-# ── 한국어 처리 ─────────────────────────────────────────────
-kss==6.0.0
+# ── 한국어 처리 (kss는 assets 버그로 런타임에 lazy import) ───
+# kss[all]==6.0.0
 
 # ── Data Parsing ────────────────────────────────────────────
 pymarc==5.1.2

@@ -1,16 +1,16 @@
 """
 chunker.py — 시맨틱 청킹
 
-1) kss로 문장 분리
+1) 문장 단위 분할
 2) 인접 문장 그룹의 임베딩 유사도 계산
 3) 유사도 급감 지점을 의미 경계로 판정
 4) 경계 기준 청크 생성 (min/max 토큰 제약)
 """
+import re
 import logging
 from dataclasses import dataclass, field
 
 import numpy as np
-import kss
 
 from core.config import get_settings
 
@@ -44,13 +44,14 @@ def _estimate_tokens(text: str) -> int:
 
 
 def _split_sentences(text: str) -> list[str]:
-    """kss 한국어 문장 분리"""
+    """한국어 문장 분리 (kss 사용 시도, 실패 시 정규식 fallback)"""
     try:
+        import kss
         sentences = kss.split_sentences(text)
     except Exception:
-        # fallback: 줄바꿈 + 마침표 기준
-        sentences = [s.strip() for s in text.replace("\n", ". ").split(". ") if s.strip()]
-    return [s for s in sentences if len(s.strip()) > 5]
+        # fallback: 마침표/물음표/느낌표 + 공백 기준
+        sentences = re.split(r'(?<=[.?!。])\s+', text)
+    return [s.strip() for s in sentences if len(s.strip()) > 5]
 
 
 def _compute_embeddings(sentences: list[str], embed_fn) -> np.ndarray:
