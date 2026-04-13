@@ -76,6 +76,16 @@ async def _search_chunk_mode(
 
     candidates = search_chunks(query_emb, top_k=top_k * 4)
 
+    if not candidates:
+        elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
+        return ChunkSearchResponse(
+            query=original,
+            rewritten_query=rewritten,
+            answer="검색 결과가 없습니다. 도서 데이터를 먼저 수집해주세요.",
+            chunks=[],
+            elapsed_ms=round(elapsed, 1),
+        )
+
     chunks = [
         ChunkHit(
             chunk_id=h.chunk_id,
@@ -140,6 +150,15 @@ async def _search_book_mode(
     t0 = time.perf_counter()
 
     book_hits = search_by_book(query_emb, top_k_chunks=top_k * 8, top_k_books=top_k)
+
+    if not book_hits:
+        elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
+        return BookSearchResponse(
+            query=original,
+            rewritten_query=rewritten,
+            books=[],
+            elapsed_ms=round(elapsed, 1),
+        )
 
     books = []
     for book_id, hits in book_hits.items():

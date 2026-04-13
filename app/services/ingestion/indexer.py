@@ -142,6 +142,10 @@ def search_chunks(
     """청크 단위 벡터 검색"""
     col = ensure_collection()
 
+    # 데이터가 없으면 빈 결과
+    if col.num_entities == 0:
+        return []
+
     search_params = {"metric_type": "COSINE", "params": {"nprobe": 32}}
 
     expr = f'book_id == "{book_filter}"' if book_filter else None
