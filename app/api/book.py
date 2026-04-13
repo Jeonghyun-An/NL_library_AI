@@ -54,9 +54,11 @@ async def search_books(
 # ── 파일 업로드 + 수집 ──────────────────────────────────
 @router.post("/ingest/upload")
 async def upload_and_ingest(
-    book_id: str,
     file: UploadFile = File(...),
 ):
+    import os
+    filename = file.filename or "unknown.pdf"
+    book_id = os.path.splitext(filename)[0]
     from minio import Minio
 
     client = Minio(
@@ -80,6 +82,44 @@ async def upload_and_ingest(
     task = process_from_minio.delay(book_id, minio_key)
 
     return {"task_id": task.id, "book_id": book_id, "minio_key": minio_key}
+
+
+@router.post("/ingest/upload/batch")
+async def upload_batch(
+    files: list[UploadFile] = File(...),
+):
+    """여러 PDF 일괄 업로드 → 파일명에서 cnts_id 추출 → 수집"""
+    from minio import Minio
+    import os
+
+    client = Minio(
+        cfg.MINIO_ENDPOINT,
+        access_key=cfg.MINIO_ACCESS_KEY,
+        secret_key=cfg.MINIO_SECRET_KEY,
+        secure=cfg.MINIO_SECURE,
+    )
+
+    from workers.tasks import process_from_minio
+    tasks = []
+
+    for file in files:
+        filename = file.filename or "unknown.pdf"
+        book_id = os.path.splitext(filename)[0]
+
+        content = await file.read()
+        minio_key = f"originals/{book_id}/{filename}"
+        client.put_object(
+            cfg.MINIO_BUCKET,
+            minio_key,
+            io.BytesIO(content),
+            length=len(content),
+            content_type=file.content_type or "application/pdf",
+        )
+
+        task = process_from_minio.delay(book_id, minio_key)
+        tasks.append({"book_id": book_id, "task_id": task.id})
+
+    return {"dispatched": len(tasks), "tasks": tasks}
 
 
 @router.post("/ingest/batch")
