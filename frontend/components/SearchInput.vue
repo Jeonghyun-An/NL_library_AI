@@ -51,7 +51,7 @@ const query = ref(props.modelValue || "");
 const focused = ref(false);
 const textareaRef = ref<HTMLTextAreaElement>();
 
-const MAX_HEIGHT = 200;
+const MAX_HEIGHT = 240;
 
 watch(
   () => props.modelValue,
