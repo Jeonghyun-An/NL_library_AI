@@ -18,7 +18,7 @@
 .scrollbar-zinc::-webkit-scrollbar-thumb {
   background-color: #e0e0e0;
   border-radius: 9999px;
-  border: 3px solid transparent; /* thumb 테두리로 여백 느낌 */
+  border: 2px solid transparent; /* thumb 테두리로 여백 느낌 */
   background-clip: padding-box;
 }
 .scrollbar-zinc::-webkit-scrollbar-corner {

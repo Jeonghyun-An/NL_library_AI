@@ -1,49 +1,89 @@
 <template>
-  <div
-    class="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow"
-  >
-    <div class="flex justify-between items-start gap-4">
-      <div class="flex-1 min-w-0">
-        <h3 class="text-base font-semibold text-gray-900 truncate">
-          {{ book.title }}
-        </h3>
-        <p class="mt-0.5 text-sm text-gray-500">
-          {{
-            [book.author, book.publisher, book.pub_year]
-              .filter(Boolean)
-              .join(" · ")
-          }}
-        </p>
-        <p v-if="book.subject" class="mt-1 text-xs text-gray-400">
-          {{ book.subject }}
-        </p>
-      </div>
-      <span
-        class="shrink-0 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded"
-      >
-        {{ (score * 100).toFixed(0) }}%
-      </span>
+  <div class="book-card">
+    <div class="card-cover">
+      <BookCover :book-id="book.book_id" size="small" />
     </div>
-
-    <p
-      v-if="reason"
-      class="mt-3 text-sm text-gray-600 leading-relaxed border-l-2 border-blue-200 pl-3"
-    >
-      {{ reason }}
-    </p>
-
-    <p v-if="book.summary" class="mt-2 text-xs text-gray-400 line-clamp-2">
-      {{ book.summary }}
-    </p>
+    <div class="card-info">
+      <h3 class="card-title">{{ book.book_info?.title || book.book_id }}</h3>
+      <p class="card-author" v-if="book.book_info?.personal_author">
+        {{ book.book_info.personal_author }}
+      </p>
+      <p class="card-publisher" v-if="book.book_info?.publisher">
+        {{ book.book_info.publisher }}
+        <span v-if="book.book_info?.pub_date"
+          >({{ book.book_info.pub_date }})</span
+        >
+      </p>
+      <div class="card-score">{{ (book.best_score * 100).toFixed(0) }}%</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { BookOut } from "../types/book";
+import type { BookChunkGroup } from "~/types/search";
 
 defineProps<{
-  book: BookOut;
-  score: number;
-  reason: string;
+  book: BookChunkGroup;
 }>();
 </script>
+
+<style scoped>
+.book-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+  cursor: pointer;
+}
+
+.book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.card-cover {
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.card-info {
+  padding: 12px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-author {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 2px 0;
+}
+
+.card-publisher {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+}
+
+.card-score {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0f9ff;
+  color: #0369a1;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+</style>
