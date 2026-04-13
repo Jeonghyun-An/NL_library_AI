@@ -43,6 +43,7 @@ def ensure_collection() -> Collection:
             FieldSchema("chunk_id", DataType.VARCHAR, is_primary=True, max_length=128),
             FieldSchema("book_id", DataType.VARCHAR, max_length=64),
             FieldSchema("chunk_idx", DataType.INT16),
+            FieldSchema("section_idx", DataType.INT16),
             FieldSchema("text", DataType.VARCHAR, max_length=8192),
             FieldSchema("page_start", DataType.INT16),
             FieldSchema("page_end", DataType.INT16),
@@ -97,6 +98,7 @@ def index_chunks(
         [f"{book_id}__{c.chunk_idx:04d}" for c in chunks],   # chunk_id
         [book_id] * len(chunks),                              # book_id
         [c.chunk_idx for c in chunks],                        # chunk_idx
+        [c.section_idx or 0 for c in chunks],                 # section_idx
         [c.text[:8000] for c in chunks],                      # text (max 8192)
         [c.page_start or 0 for c in chunks],                  # page_start
         [c.page_end or 0 for c in chunks],                    # page_end
@@ -121,13 +123,14 @@ def index_chunks(
 @dataclass
 class SearchHit:
     """Milvus 검색 결과 — schemas.ChunkHit과 필드명 1:1 대응"""
-    chunk_id: str       # "{book_id}__{chunk_idx:04d}"
-    book_id: str        # = cnts_id
+    chunk_id: str
+    book_id: str
     chunk_idx: int
+    section_idx: int        # 원문 섹션 포인터
     text: str
     page_start: int
     page_end: int
-    score: float        # 코사인 유사도
+    score: float
 
 
 def search_chunks(
@@ -149,7 +152,7 @@ def search_chunks(
         param=search_params,
         limit=top_k,
         expr=expr,
-        output_fields=["book_id", "chunk_idx", "text", "page_start", "page_end"],
+        output_fields=["book_id", "chunk_idx", "section_idx", "text", "page_start", "page_end"],
     )
 
     hits = []
@@ -158,6 +161,7 @@ def search_chunks(
             chunk_id=hit.id,
             book_id=hit.entity.get("book_id"),
             chunk_idx=hit.entity.get("chunk_idx"),
+            section_idx=hit.entity.get("section_idx", 0),
             text=hit.entity.get("text"),
             page_start=hit.entity.get("page_start"),
             page_end=hit.entity.get("page_end"),

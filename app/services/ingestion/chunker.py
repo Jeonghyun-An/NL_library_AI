@@ -28,6 +28,7 @@ BREAKPOINT_PERCENTILE = 25     # 유사도 하위 N% 지점을 경계로
 class Chunk:
     chunk_idx: int
     text: str
+    section_idx: int | None = None    # 소속 섹션 (원문 로드용 포인터)
     page_start: int | None = None
     page_end: int | None = None
     token_count: int = 0

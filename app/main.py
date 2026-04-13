@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     # DB 테이블 생성
     from db.postgres import engine
     from models.book import Base
+    import models.section
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     log.info("DB 테이블 확인 완료")
@@ -52,5 +53,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(book_router)
 app.include_router(health_router)
+app.include_router(book_router)

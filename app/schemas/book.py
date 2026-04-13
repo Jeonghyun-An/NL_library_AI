@@ -86,6 +86,7 @@ class ChunkHit(BaseModel):
     chunk_id:      str
     book_id:       str
     chunk_idx:     int
+    section_idx:   int = 0
     text:          str
     page_start:    int
     page_end:      int

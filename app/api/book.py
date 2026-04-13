@@ -38,6 +38,7 @@ async def search_books(
         top_k=req.top_k,
         use_rewrite=req.use_rewrite,
         use_rerank=req.use_rerank,
+        db=db,
     )
 
     if isinstance(result, BookSearchResponse):

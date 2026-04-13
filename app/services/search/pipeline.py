@@ -16,6 +16,7 @@ import httpx
 from core.config import get_settings
 from services.search.query_rewriter import rewrite_query
 from services.search.reranker import rerank as rerank_docs
+from services.search.context_expander import expand_context, ExpandedContext
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import search_chunks, search_by_book
 from schemas.book import (
@@ -36,6 +37,7 @@ async def search(
     top_k: int = 5,
     use_rewrite: bool = True,
     use_rerank: bool = True,
+    db=None,
 ) -> ChunkSearchResponse | BookSearchResponse:
     t0 = time.perf_counter()
 
@@ -56,9 +58,9 @@ async def search(
     elapsed = (time.perf_counter() - t0) * 1000
 
     if mode == "chunk":
-        return await _search_chunk_mode(query, rewritten, query_emb, top_k, use_rerank, elapsed)
+        return await _search_chunk_mode(query, rewritten, query_emb, top_k, use_rerank, elapsed, db)
     else:
-        return await _search_book_mode(query, rewritten, query_emb, top_k, use_rerank, elapsed)
+        return await _search_book_mode(query, rewritten, query_emb, top_k, use_rerank, elapsed, db)
 
 
 async def _search_chunk_mode(
@@ -68,6 +70,7 @@ async def _search_chunk_mode(
     top_k: int,
     use_rerank: bool,
     elapsed_base: float,
+    db=None,
 ) -> ChunkSearchResponse:
     t0 = time.perf_counter()
 
@@ -102,7 +105,17 @@ async def _search_chunk_mode(
 
     chunks = chunks[:top_k]
 
-    answer = await _generate_answer(original, chunks)
+    # 컨텍스트 확장: 청크 주변 원문 로드 (126K 활용)
+    answer = None
+    if db:
+        try:
+            expanded = await expand_context(chunks, db)
+            answer = await _generate_answer_with_context(original, expanded)
+        except Exception as e:
+            log.warning(f"컨텍스트 확장 실패, 청크 텍스트로 fallback: {e}")
+            answer = await _generate_answer(original, chunks)
+    else:
+        answer = await _generate_answer(original, chunks)
 
     elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
 
@@ -122,6 +135,7 @@ async def _search_book_mode(
     top_k: int,
     use_rerank: bool,
     elapsed_base: float,
+    db=None,
 ) -> BookSearchResponse:
     t0 = time.perf_counter()
 
@@ -173,6 +187,51 @@ async def _search_book_mode(
         books=books,
         elapsed_ms=round(elapsed, 1),
     )
+
+
+async def _generate_answer_with_context(
+    query: str,
+    contexts: list,
+) -> str | None:
+    """확장된 원문 컨텍스트 기반 LLM 답변 생성 (126K 활용)"""
+    if not contexts:
+        return None
+
+    context_text = "\n\n" + "=" * 40 + "\n\n".join(
+        f"[출처: {c.book_id}, p.{c.page_range[0]}-{c.page_range[1]}, "
+        f"섹션 {c.section_range[0]}-{c.section_range[1]}]\n\n{c.expanded_text}"
+        for c in contexts
+    )
+
+    total_tokens = sum(c.token_count for c in contexts)
+    log.info(f"LLM 컨텍스트: {len(contexts)}개 소스, {total_tokens} 토큰")
+
+    prompt = (
+        "아래 도서 원문을 참고하여 질문에 상세히 답변해주세요.\n"
+        "답변에 사용한 자료의 출처(도서, 페이지)를 함께 표기하세요.\n"
+        "자료에 없는 내용은 추측하지 마세요.\n\n"
+        f"[도서 원문]\n{context_text}\n\n"
+        f"[질문]\n{query}\n\n"
+        "[답변]"
+    )
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{cfg.VLLM_BASE_URL}/chat/completions",
+                json={
+                    "model": cfg.VLLM_MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 4096,
+                    "temperature": 0.3,
+                },
+                timeout=120.0,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        log.error(f"확장 컨텍스트 답변 생성 실패: {e}")
+        return None
 
 
 async def _generate_answer(query: str, chunks: list[ChunkHit]) -> str | None:
