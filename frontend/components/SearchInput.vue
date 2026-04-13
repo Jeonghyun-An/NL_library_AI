@@ -62,6 +62,7 @@ watch(
 watch(query, (v) => emit("update:modelValue", v));
 
 function handleKeydown(e: KeyboardEvent) {
+  if (e.isComposing) return;
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     submit();
@@ -72,6 +73,9 @@ function submit() {
   const q = query.value.trim();
   if (!q) return;
   emit("submit", q);
+  query.value = "";
+  emit("update:modelValue", "");
+  nextTick(() => autoResize());
 }
 
 function autoResize() {

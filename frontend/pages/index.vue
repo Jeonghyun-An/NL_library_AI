@@ -142,6 +142,9 @@ const topBook = computed(() => {
 function handleSearch(query: string) {
   currentQuery.value = query;
   search(query, "book", 5);
+  nextTick(() => {
+    currentQuery.value = "";
+  });
 }
 
 function reset() {
@@ -186,7 +189,7 @@ function reset() {
 
 .subtitle {
   font-size: 15px;
-  color: #64748b;
+  color: #71717a;
   margin: 0;
 }
 
