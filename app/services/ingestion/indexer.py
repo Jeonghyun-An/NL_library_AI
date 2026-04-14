@@ -44,7 +44,7 @@ def ensure_collection() -> Collection:
             FieldSchema("book_id", DataType.VARCHAR, max_length=64),
             FieldSchema("chunk_idx", DataType.INT16),
             FieldSchema("section_idx", DataType.INT16),
-            FieldSchema("text", DataType.VARCHAR, max_length=8192),
+            FieldSchema("text", DataType.VARCHAR, max_length=16384),
             FieldSchema("page_start", DataType.INT16),
             FieldSchema("page_end", DataType.INT16),
             FieldSchema("embedding", DataType.FLOAT_VECTOR, dim=DIM),
@@ -99,7 +99,7 @@ def index_chunks(
         [book_id] * len(chunks),                              # book_id
         [c.chunk_idx for c in chunks],                        # chunk_idx
         [c.section_idx or 0 for c in chunks],                 # section_idx
-        [c.text[:8000] for c in chunks],                      # text (max 8192)
+        [c.text[:16000] for c in chunks],                      # text (max 16384)
         [c.page_start or 0 for c in chunks],                  # page_start
         [c.page_end or 0 for c in chunks],                    # page_end
         embeddings,                                           # embedding
