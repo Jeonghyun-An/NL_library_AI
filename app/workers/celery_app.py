@@ -7,7 +7,7 @@ celery_app = Celery(
     "nl-lib",
     broker=cfg.REDIS_URL,
     backend=cfg.REDIS_URL,
-    include=["app.workers.tasks"],
+    include=["workers.tasks"],
 )
 celery_app.conf.update(
     task_serializer="json",
