@@ -10,7 +10,6 @@ from schemas.book import (
     SearchRequest,
     ChunkSearchResponse,
     BookSearchResponse,
-    XlsxLoadRequest,
     BatchIngestRequest,
     IngestionRequest,
     TaskStatusOut,
@@ -141,11 +140,23 @@ async def ingest_batch(req: BatchIngestRequest):
 
 # ── 메타데이터 수집 (기존) ───────────────────────────────
 @router.post("/catalog/load")
-async def load_catalog(req: XlsxLoadRequest):
-    from workers.tasks import load_catalog_xlsx
-    task = load_catalog_xlsx.delay(req.xlsx_path)
-    return {"task_id": task.id}
+async def load_catalog(
+    file: UploadFile = File(...),
+):
+    """엑셀 업로드 → 메타데이터 적재"""
+    import os
 
+    # 공유 볼륨에 저장 (FastAPI ↔ Celery 모두 접근 가능)
+    os.makedirs("/app/data/uploads", exist_ok=True)
+    save_path = f"/app/data/uploads/{file.filename}"
+
+    content = await file.read()
+    with open(save_path, "wb") as f:
+        f.write(content)
+
+    from workers.tasks import load_catalog_xlsx
+    task = load_catalog_xlsx.delay(save_path)
+    return {"task_id": task.id, "filename": file.filename}
 
 @router.post("/ingest")
 async def ingest_books(req: IngestionRequest):
