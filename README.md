@@ -426,3 +426,59 @@ RUN apt-get update && apt-get install -y --no-install-recommends git && \
 - vLLM: https://github.com/vllm-project/vllm
 - 국립중앙도서관: https://www.nl.go.kr
 - 벤치마크 LikeSNU: https://likesnu.snu.ac.kr/usr/userMain.do
+
+# 부록: PDF 파일 일괄 업로드 스크립트 (PowerShell)
+
+$outputDir = "C:\Users\LANDSOFT\Downloads\output"
+$apiUrl = "http://211.219.26.15:18002/api/books/ingest/upload"
+
+$pdfs = Get-ChildItem -Path $outputDir -Recurse -Filter "\*.pdf"
+
+Write-Host "총 $($pdfs.Count)개 PDF 발견"
+
+foreach ($pdf in $pdfs) {
+    Write-Host "업로드 중: $($pdf.Name)"
+
+    curl.exe -X POST $apiUrl `
+        -F "file=@$($pdf.FullName)" `
+        --silent --show-error
+
+    Write-Host " → 완료"
+
+}
+
+Write-Host "전체 업로드 완료: $($pdfs.Count)건"
+
+# 부록: 재처리 스크립트 (PowerShell)
+
+## Milvus 컬렉션 드롭 (스키마 변경했으니 필수)
+
+docker exec nl-lib-fastapi python -c "
+from pymilvus import connections, utility
+connections.connect(host='milvus', port='19530')
+utility.drop_collection('nl_lib_embeddings')
+print('dropped')
+"
+
+## is_embedded 플래그 초기화 (전체 재처리 위해)
+
+docker exec nl-lib-postgres psql -U admin -d nl_lib -c "UPDATE library_catalog SET is_embedded = false;"
+
+## 재처리 스크립트 (PowerShell)
+
+docker exec nl-lib-fastapi python -c "
+from workers.tasks import process_from_minio
+from db.postgres import SyncSessionLocal
+from models.book import Book
+
+db = SyncSessionLocal()
+not_embedded = db.query(Book.cnts_id).filter(Book.is_embedded == False).all()
+db.close()
+
+print(f'재처리 대상: {len(not_embedded)}건')
+for (cnts_id,) in not_embedded:
+minio_key = f'originals/{cnts_id}/{cnts_id}.pdf'
+task = process_from_minio.delay(cnts_id, minio_key)
+print(f' {cnts_id} → {task.id}')
+print('전부 디스패치 완료')
+"
