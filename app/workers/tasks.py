@@ -2,7 +2,7 @@
 workers/tasks.py — Celery 비동기 작업
 
 수집 파이프라인:
-  ① 텍스트 추출 (fitz → PaddleOCR → VLM fallback)
+  ① 텍스트 추출 (fitz → VLM fallback)
   ② 섹션 분할 (페이지 그룹 단위) → PostgreSQL 저장
   ③ 섹션 내 시맨틱 청킹 → 각 청크에 section_idx 매핑
   ④ 청크별 임베딩 → Milvus 저장
@@ -20,7 +20,6 @@ from models.section import BookSection
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-# ── 섹션 분할 설정 ──────────────────────────────────────
 SECTION_TARGET_TOKENS = 3000
 SECTION_MAX_TOKENS = 5000
 
@@ -74,32 +73,36 @@ def _split_into_sections(pages: list, target_tokens: int = SECTION_TARGET_TOKENS
 
 
 def _assign_section_idx(chunks, sections) -> None:
+    """
+    각 청크에 소속 섹션 인덱스를 매핑
+    청크의 누적 문자 위치로 어느 섹션에 속하는지 판정
+    """
     if not sections:
         return
 
-    section_ranges = []
-    char_offset = 0
+    section_boundaries = []
+    cumulative = 0
     for sec in sections:
-        sec_len = len(sec["text"])
-        section_ranges.append((char_offset, char_offset + sec_len, sec["section_idx"]))
-        char_offset += sec_len + 2
+        start = cumulative
+        end = cumulative + len(sec["text"])
+        section_boundaries.append((start, end, sec["section_idx"]))
+        cumulative = end + 2  # "\n\n" 구분자
 
-    full_text = "\n\n".join(sec["text"] for sec in sections)
-
-    chunk_offset = 0
+    chunk_pos = 0
     for chunk in chunks:
-        pos = full_text.find(chunk.text[:100], chunk_offset)
-        if pos == -1:
-            pos = chunk_offset
+        mid_pos = chunk_pos + len(chunk.text) // 2
 
-        for start, end, sec_idx in section_ranges:
-            if start <= pos < end:
+        matched = False
+        for start, end, sec_idx in section_boundaries:
+            if start <= mid_pos < end:
                 chunk.section_idx = sec_idx
+                matched = True
                 break
-        else:
+
+        if not matched:
             chunk.section_idx = sections[-1]["section_idx"]
 
-        chunk_offset = pos + len(chunk.text[:100])
+        chunk_pos += len(chunk.text) + 1
 
 
 # ── 1. 엑셀 메타데이터 로드 ─────────────────────────────
@@ -209,7 +212,6 @@ def process_book_file(self, book_id: str, file_path: str):
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
 
-        # 요약 생성 (title/author 있으면 활용)
         title = book.title if book else book_id
         author = book.personal_author or "" if book else ""
         summary_input = full_text[:4000]
@@ -221,7 +223,6 @@ def process_book_file(self, book_id: str, file_path: str):
         ))
 
         if book:
-            # 기존 도서 레코드 업데이트
             book.summary = summary
             book.full_text_length = len(full_text)
             book.chunk_count = len(chunks)
@@ -230,7 +231,6 @@ def process_book_file(self, book_id: str, file_path: str):
             db.commit()
             log.info(f"[{book_id}] DB 업데이트 완료")
         else:
-            # 메타데이터 없이 PDF만 올린 경우 — 신규 레코드 생성
             new_book = Book(
                 cnts_id=book_id,
                 title=book_id,
@@ -282,7 +282,6 @@ def process_from_minio(book_id: str, minio_key: str):
         secure=cfg.MINIO_SECURE,
     )
 
-    # 공유 볼륨에 저장 (임시 파일 대신)
     download_dir = "/app/data/downloads"
     os.makedirs(download_dir, exist_ok=True)
     local_path = os.path.join(download_dir, f"{book_id}.pdf")
@@ -290,6 +289,5 @@ def process_from_minio(book_id: str, minio_key: str):
     client.fget_object(cfg.MINIO_BUCKET, minio_key, local_path)
     log.info(f"[{book_id}] MinIO → {local_path} 다운로드 완료")
 
-    # 별도 태스크로 실행
     task = process_book_file.delay(book_id, local_path)
     return {"book_id": book_id, "task_id": task.id}
