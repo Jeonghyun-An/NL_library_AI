@@ -1,8 +1,13 @@
 <template>
   <div class="book-cover" :class="size">
-    <!-- TODO: PDF 1페이지 썸네일 API 연동 -->
-    <!-- 현재는 플레이스홀더 -->
-    <div class="placeholder">
+    <img
+      v-if="!imgError"
+      :src="`/api/books/${bookId}/thumbnail`"
+      :alt="bookId"
+      class="cover-img"
+      @error="imgError = true"
+    />
+    <div v-else class="placeholder">
       <svg
         width="32"
         height="32"
@@ -24,6 +29,8 @@ defineProps<{
   bookId: string;
   size?: "small" | "large";
 }>();
+
+const imgError = ref(false);
 </script>
 
 <style scoped>
@@ -42,6 +49,13 @@ defineProps<{
 .book-cover.small {
   width: 100%;
   aspect-ratio: 3 / 4;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .placeholder {

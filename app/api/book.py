@@ -1,6 +1,7 @@
 import io
 import logging
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
@@ -174,6 +175,74 @@ async def get_task_status(task_id: str):
         task_id=task_id,
         status=result.status,
         result=result.result if result.ready() else None,
+    )
+
+
+# ── PDF 첫 페이지 썸네일 ─────────────────────────────────
+@router.get("/{cnts_id}/thumbnail")
+async def get_book_thumbnail(cnts_id: str):
+    """PDF 1페이지를 JPEG로 렌더링해 반환. MinIO에 캐싱."""
+    from minio import Minio
+    from minio.error import S3Error
+    import fitz  # PyMuPDF
+
+    client = Minio(
+        cfg.MINIO_ENDPOINT,
+        access_key=cfg.MINIO_ACCESS_KEY,
+        secret_key=cfg.MINIO_SECRET_KEY,
+        secure=cfg.MINIO_SECURE,
+    )
+    thumbnail_key = f"thumbnails/{cnts_id}.jpg"
+
+    # ① 캐시 확인 (이미 생성된 썸네일)
+    try:
+        obj = client.get_object(cfg.MINIO_BUCKET, thumbnail_key)
+        data = obj.read()
+        obj.close()
+        return Response(
+            content=data,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+    except S3Error:
+        pass
+
+    # ② PDF 파일 탐색 (originals/{cnts_id}/ 하위 첫 번째 파일)
+    try:
+        objects = list(client.list_objects(
+            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
+        ))
+        if not objects:
+            raise HTTPException(404, f"PDF 없음: {cnts_id}")
+        pdf_obj = client.get_object(cfg.MINIO_BUCKET, objects[0].object_name)
+        pdf_bytes = pdf_obj.read()
+        pdf_obj.close()
+    except S3Error:
+        raise HTTPException(404, f"PDF 없음: {cnts_id}")
+
+    # ③ 첫 페이지 렌더링 (0.6× → A4 기준 약 357×505px)
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    page = doc[0]
+    pix = page.get_pixmap(matrix=fitz.Matrix(0.6, 0.6))
+    img_bytes = pix.tobytes("jpeg")
+    doc.close()
+
+    # ④ MinIO에 썸네일 캐싱
+    try:
+        client.put_object(
+            cfg.MINIO_BUCKET,
+            thumbnail_key,
+            io.BytesIO(img_bytes),
+            length=len(img_bytes),
+            content_type="image/jpeg",
+        )
+    except Exception as e:
+        log.warning(f"[{cnts_id}] 썸네일 캐싱 실패: {e}")
+
+    return Response(
+        content=img_bytes,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
     )
 
 
