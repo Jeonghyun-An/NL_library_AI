@@ -29,19 +29,21 @@ defineProps<{
 
 <style scoped>
 .book-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  overflow: hidden;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
-  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 14px;
+
+  transition: all 0.2s ease;
 }
 
 .book-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.08),
+    0 4px 10px rgba(0, 0, 0, 0.04);
+
+  border-color: #d4d4d8;
 }
 
 .card-cover {
@@ -61,6 +63,7 @@ defineProps<{
   margin: 0 0 4px 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -78,11 +81,12 @@ defineProps<{
 }
 
 .card-score {
-  display: inline-block;
   padding: 2px 8px;
-  background: #f0f9ff;
-  color: #0369a1;
-  border-radius: 12px;
+
+  background: #f4f4f5;
+  color: #27272a;
+
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
 }

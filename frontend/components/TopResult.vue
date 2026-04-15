@@ -71,23 +71,31 @@ const topChunkText = computed(() => {
 
 <style scoped>
 .top-result {
-  background: #f8fafc;
-  border-radius: 16px;
-  padding: 24px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+
+  border: 1px solid #e4e4e7; /* zinc-200 */
+  border-radius: 20px;
+
+  padding: 28px;
   margin-bottom: 32px;
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.04),
+    0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .answer-section {
-  margin-bottom: 24px;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 16px;
 }
-
 .answer-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #2563eb;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+
+  color: #71717a; /* zinc-500 */
+  letter-spacing: 0.08em;
 }
 
 .answer-text {
@@ -114,40 +122,38 @@ const topChunkText = computed(() => {
 .book-title {
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 12px 0;
+  color: #1e293b; /* slate-800 */
 }
 
 .meta-row {
   font-size: 14px;
-  color: #475569;
-  margin-bottom: 4px;
+  color: #52525b; /* zinc-600 */
 }
 
 .meta-label {
-  display: inline-block;
-  width: 56px;
-  font-weight: 600;
-  color: #64748b;
+  color: #a1a1aa; /* zinc-400 */
 }
 
 .relevance {
-  display: inline-block;
   margin-top: 12px;
   padding: 4px 12px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-radius: 20px;
+
+  background: #f4f4f5; /* zinc-100 */
+  color: #18181b; /* zinc-900 */
+
+  border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
 }
 
 .snippet {
   margin-top: 16px;
-  padding: 12px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  padding: 14px;
+
+  background: #fafafa;
+  border-radius: 12px;
+
+  border: 1px solid #e4e4e7;
 }
 
 .snippet-label {
@@ -161,7 +167,7 @@ const topChunkText = computed(() => {
 .snippet p {
   font-size: 14px;
   line-height: 1.6;
-  color: #334155;
+  color: #3f3f46;
   margin: 0;
 }
 

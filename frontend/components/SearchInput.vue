@@ -97,16 +97,27 @@ onMounted(() => autoResize());
   padding: 12px 16px;
   border: 1px solid #d4d4d8; /* zinc-300 */
   border-radius: 14px;
-  background: #f4f4f5; /* zinc-100 */
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
   width: 100%;
   max-width: 720px;
+  margin: 0 auto;
+  border: 1px solid #e4e4e7;
+
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .search-input-wrap.focused {
-  box-shadow: 0 0 0 2px rgba(161, 161, 170, 0.15);
+  border-color: #a1a1aa;
+
+  box-shadow:
+    0 0 0 2px rgba(161, 161, 170, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 textarea {
@@ -144,22 +155,38 @@ textarea:disabled {
   border: none;
   background: #1e293b; /* slate-800 */
   color: #f4f4f5; /* zinc-100 */
+
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
+
+  transition: all 0.15s ease;
   margin: 4px 0;
 }
 
 .send-btn:hover:not(:disabled) {
   background: #334155; /* slate-700 */
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.12),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.send-btn:active:not(:disabled) {
+  transform: translateY(0);
+
+  background: #0f172a; /* slate-900 */
+
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12) inset;
 }
 
 .send-btn:disabled {
-  background: #d4d4d8; /* zinc-300 */
+  background: #e4e4e7; /* zinc-200 */
   color: #a1a1aa; /* zinc-400 */
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 스크롤바 */
