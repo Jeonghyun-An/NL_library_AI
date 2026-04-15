@@ -33,6 +33,10 @@
           <span class="meta-label">주제</span>
           <span>{{ book.book_info.subject }}</span>
         </div>
+        <div class="book-summary" v-if="book.book_info?.summary">
+          <span class="summary-label">도서 소개</span>
+          <p>{{ book.book_info.summary }}</p>
+        </div>
         <div class="relevance">
           관련도 {{ (book.best_score * 100).toFixed(1) }}%
         </div>
@@ -132,6 +136,30 @@ const topChunkText = computed(() => {
 
 .meta-label {
   color: #a1a1aa; /* zinc-400 */
+}
+
+.book-summary {
+  margin-top: 16px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid #e4e4e7;
+}
+
+.summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.book-summary p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #3f3f46;
+  margin: 0;
+  white-space: pre-line;
 }
 
 .relevance {
