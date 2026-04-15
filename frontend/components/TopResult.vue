@@ -9,7 +9,7 @@
     <!-- 도서 커버 + 메타 -->
     <div class="book-detail" v-if="book">
       <div class="cover-area">
-        <BookCover :book-id="book.book_id" />
+        <BookCover :book-id="book.book_id" size="large" />
       </div>
       <div class="meta-area">
         <h2 class="book-title">{{ book.book_info?.title || book.book_id }}</h2>
@@ -32,6 +32,10 @@
         <div class="meta-row" v-if="book.book_info?.subject">
           <span class="meta-label">주제</span>
           <span>{{ book.book_info.subject }}</span>
+        </div>
+        <div class="meta-row" v-if="book.book_info?.keyword">
+          <span class="meta-label">키워드</span>
+          <span>{{ book.book_info.keyword }}</span>
         </div>
         <div class="relevance">
           관련도 {{ (book.best_score * 100).toFixed(1) }}%
