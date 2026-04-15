@@ -144,7 +144,7 @@ def process_book_file(self, book_id: str, file_path: str):
     from services.ingestion.extractor import extract_text
     from services.ingestion.chunker import semantic_chunk
     from services.ingestion.embedder import embed_texts
-    from services.ingestion.indexer import index_chunks
+    from services.ingestion.indexer import index_chunks, BookMeta
     from services.ingestion.summarizer import (
         summarize_section,
         summarize_book_from_sections,
@@ -253,17 +253,46 @@ def process_book_file(self, book_id: str, file_path: str):
         page_acc += len(chunk.text)
 
     # ④ Contextual 임베딩 → Milvus 저장
-    # "[섹션 요약] {summary}\n\n[본문] {chunk_text}" 형태로 임베딩 (BGE-M3 512토큰 활용)
+    # 본문 청크: 섹션 요약 + 본문만 임베딩 (메타 prefix 없음 → 노이즈 방지)
     contextual_texts = [
-        f"[섹션 요약] {section_summary_map[c.section_idx]}\n\n[본문] {c.text}"
+        f"[섹션 요약] {section_summary_map[c.section_idx]}\n[본문] {c.text}"
         if c.section_idx in section_summary_map
         else c.text
         for c in chunks
     ]
-    embeddings = embed_texts(contextual_texts)
-    log.info(f"[{book_id}] contextual 임베딩 완료: {len(embeddings)}개")
 
-    idx_result = index_chunks(book_id, chunks, embeddings)
+    # 메타데이터 전용 청크 1개 추가 (chunk_idx=-1)
+    # → "조달청 최신 자료" 같은 메타 기반 쿼리가 여기에 매칭됨
+    # → 본문 청크 임베딩은 내용 기반으로 순수하게 유지됨
+    _meta_parts = [
+        f"제목: {title}",
+        f"기관: {book.corporate_author}" if book and book.corporate_author else None,
+        f"저자: {book.personal_author}"  if book and book.personal_author  else None,
+        f"출판사: {book.publisher}"      if book and book.publisher        else None,
+        f"발행년도: {book.pub_date}"     if book and book.pub_date         else None,
+        f"KDC분류: {book.kdc}"          if book and book.kdc              else None,
+        f"주제: {book.subject}"          if book and book.subject          else None,
+        f"키워드: {book.keyword}"        if book and book.keyword          else None,
+        f"초록: {book.abstract}"         if book and book.abstract         else None,
+    ]
+    meta_text = " | ".join(p for p in _meta_parts if p)
+    all_texts = contextual_texts + [meta_text]
+
+    embeddings = embed_texts(all_texts)
+    log.info(f"[{book_id}] contextual 임베딩 완료: {len(embeddings) - 1}개 본문 + 1개 메타")
+
+    # 메타데이터 전용 청크 객체 (chunk_idx=-1, section_idx=None)
+    from services.ingestion.chunker import Chunk as ChunkType
+    meta_chunk = ChunkType(chunk_idx=-1, text=meta_text, section_idx=None)
+    all_chunks = chunks + [meta_chunk]
+
+    book_meta = BookMeta(
+        publisher=book.publisher or "" if book else "",
+        corporate_author=book.corporate_author or "" if book else "",
+        pub_date=book.pub_date or "" if book else "",
+        kdc=book.kdc or "" if book else "",
+    )
+    idx_result = index_chunks(book_id, all_chunks, embeddings, book_meta=book_meta)
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
     # ⑤ 도서 요약 생성 (섹션 요약 합산 → LLM 1회) → PostgreSQL 업데이트

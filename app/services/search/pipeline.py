@@ -8,6 +8,7 @@ pipeline.py — RAG 검색 파이프라인 (청크 모드 / 도서 모드)
   ④ 리랭킹 (Jina Reranker v2)
   ⑤ 답변 생성 (vLLM)
 """
+import asyncio
 import time
 import logging
 
@@ -15,6 +16,7 @@ import httpx
 
 from core.config import get_settings
 from services.search.query_rewriter import rewrite_query
+from services.search.metadata_filter import extract_metadata_filter, MetadataFilter
 from services.search.reranker import rerank as rerank_docs
 from services.search.context_expander import expand_context, ExpandedContext
 from services.ingestion.embedder import embed_texts
@@ -30,6 +32,25 @@ log = logging.getLogger(__name__)
 cfg = get_settings()
 
 
+def _build_milvus_expr(f: MetadataFilter) -> str | None:
+    """
+    MetadataFilter → Milvus boolean expression.
+    날짜 범위만 처리. 기관/저자 기반 필터는 메타 청크 임베딩이 담당.
+    """
+    if not f or not f.has_filter:
+        return None
+
+    parts: list[str] = []
+
+    # 발행 연도 범위 (pub_date 스칼라 필드, "YYYY" 또는 "YYYY-MM" 형식)
+    if f.pub_year_from:
+        parts.append(f'pub_date >= "{f.pub_year_from}"')
+    if f.pub_year_to:
+        parts.append(f'pub_date < "{f.pub_year_to + 1}"')
+
+    return " && ".join(parts) if parts else None
+
+
 async def search(
     query: str,
     *,
@@ -41,16 +62,40 @@ async def search(
 ) -> ChunkSearchResponse | BookSearchResponse:
     t0 = time.perf_counter()
 
-    # ① 쿼리 재작성
-    rewritten = None
+    # ① 쿼리 재작성 + 메타데이터 필터 추출 (병렬)
+    rewritten: str | None = None
     search_query = query
+    metadata_filter: MetadataFilter | None = None
+
+    coros: list = []
+    tags: list[str] = []
     if use_rewrite:
-        try:
-            rewritten = await rewrite_query(query)
-            search_query = rewritten
-            log.info(f"쿼리 재작성: '{query}' → '{rewritten}'")
-        except Exception as e:
-            log.warning(f"쿼리 재작성 실패, 원본 사용: {e}")
+        coros.append(rewrite_query(query))
+        tags.append("rewrite")
+    if db:
+        coros.append(extract_metadata_filter(query))
+        tags.append("filter")
+
+    if coros:
+        results = await asyncio.gather(*coros, return_exceptions=True)
+        for tag, result in zip(tags, results):
+            if tag == "rewrite" and isinstance(result, str):
+                rewritten = result
+                search_query = rewritten
+                log.info(f"쿼리 재작성: '{query}' → '{rewritten}'")
+            elif tag == "rewrite" and isinstance(result, Exception):
+                log.warning(f"쿼리 재작성 실패, 원본 사용: {result}")
+            elif tag == "filter" and isinstance(result, MetadataFilter):
+                metadata_filter = result
+                if metadata_filter.has_filter:
+                    log.info(f"메타데이터 필터 감지: {metadata_filter}")
+            elif tag == "filter" and isinstance(result, Exception):
+                log.warning(f"메타데이터 필터 추출 실패: {result}")
+
+    # 메타데이터 필터 → Milvus expression (MARC/MODS 스칼라 필드 직접 사용)
+    milvus_expr = _build_milvus_expr(metadata_filter) if metadata_filter else None
+    if milvus_expr:
+        log.info(f"Milvus expression: {milvus_expr}")
 
     # ② 쿼리 임베딩
     query_emb = embed_texts([search_query], is_query=True)[0]
@@ -58,9 +103,16 @@ async def search(
     elapsed = (time.perf_counter() - t0) * 1000
 
     if mode == "chunk":
-        return await _search_chunk_mode(query, rewritten, query_emb, top_k, use_rerank, elapsed, db)
+        return await _search_chunk_mode(
+            query, rewritten, query_emb, top_k, use_rerank, elapsed, db,
+            meta_expr=milvus_expr,
+        )
     else:
-        return await _search_book_mode(query, rewritten, query_emb, top_k, use_rerank, elapsed, db)
+        return await _search_book_mode(
+            query, rewritten, query_emb, top_k, use_rerank, elapsed, db,
+            meta_expr=milvus_expr,
+            metadata_filter=metadata_filter,
+        )
 
 
 async def _search_chunk_mode(
@@ -71,10 +123,12 @@ async def _search_chunk_mode(
     use_rerank: bool,
     elapsed_base: float,
     db=None,
+    *,
+    meta_expr: str | None = None,
 ) -> ChunkSearchResponse:
     t0 = time.perf_counter()
 
-    candidates = search_chunks(query_emb, top_k=top_k * 4)
+    candidates = search_chunks(query_emb, top_k=top_k * 4, meta_expr=meta_expr)
 
     if not candidates:
         elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
@@ -146,10 +200,18 @@ async def _search_book_mode(
     use_rerank: bool,
     elapsed_base: float,
     db=None,
+    *,
+    meta_expr: str | None = None,
+    metadata_filter: MetadataFilter | None = None,
 ) -> BookSearchResponse:
     t0 = time.perf_counter()
 
-    book_hits = search_by_book(query_emb, top_k_chunks=top_k * 8, top_k_books=top_k)
+    book_hits = search_by_book(
+        query_emb,
+        top_k_chunks=top_k * 8,
+        top_k_books=top_k,
+        meta_expr=meta_expr,
+    )
 
     if not book_hits:
         elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
@@ -162,6 +224,10 @@ async def _search_book_mode(
 
     books = []
     for book_id, hits in book_hits.items():
+        # 점수 집계: 메타 청크(chunk_idx=-1) 포함 → 메타 기반 쿼리도 책 발견 가능
+        best_raw = max(h.score for h in hits)
+
+        # 응답용 청크: 메타 청크 제외 (raw 메타 텍스트 노출 방지)
         chunks = [
             ChunkHit(
                 chunk_id=h.chunk_id,
@@ -173,6 +239,7 @@ async def _search_book_mode(
                 score=h.score,
             )
             for h in hits
+            if h.chunk_idx != -1
         ]
 
         # ④ 도서 내 청크 리랭킹
@@ -189,7 +256,8 @@ async def _search_book_mode(
             except Exception as e:
                 log.warning(f"[{book_id}] 도서 내 리랭킹 실패: {e}")
 
-        best = max(c.rerank_score or c.score for c in chunks)
+        # 리랭킹된 본문 청크 점수, 없으면 메타 청크 점수(best_raw)로 fallback
+        best = max((c.rerank_score or c.score for c in chunks), default=best_raw)
         books.append(BookChunkGroup(
             book_id=book_id,
             best_score=best,
@@ -197,6 +265,16 @@ async def _search_book_mode(
         ))
 
     books.sort(key=lambda b: b.best_score, reverse=True)
+
+    # 날짜 정렬 요청이면 Milvus pub_date 스칼라 필드 기준 재정렬
+    if metadata_filter and metadata_filter.sort_by in ("recent", "oldest"):
+        reverse = metadata_filter.sort_by == "recent"
+
+        def _pub_date(b: BookChunkGroup) -> str:
+            hits = book_hits.get(b.book_id) or []
+            return hits[0].pub_date if hits else ""
+
+        books.sort(key=_pub_date, reverse=reverse)
 
     # ⑤ 상위 도서에 대해 LLM 추천 이유 + 요약 병렬 생성
     if books:
