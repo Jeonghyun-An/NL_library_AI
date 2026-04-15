@@ -145,7 +145,11 @@ def process_book_file(self, book_id: str, file_path: str):
     from services.ingestion.chunker import semantic_chunk
     from services.ingestion.embedder import embed_texts
     from services.ingestion.indexer import index_chunks
-    from services.ingestion.summarizer import summarize_book
+    from services.ingestion.summarizer import (
+        summarize_section,
+        summarize_book_from_sections,
+        detect_doc_type,
+    )
 
     log.info(f"[{book_id}] 처리 시작: {file_path}")
 
@@ -161,6 +165,20 @@ def process_book_file(self, book_id: str, file_path: str):
     # ② 섹션 분할 → PostgreSQL 저장
     sections = _split_into_sections(extraction.pages)
     log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
+
+    # 도서 메타 미리 조회 (요약에 필요)
+    db = SyncSessionLocal()
+    try:
+        book = db.query(Book).filter_by(cnts_id=book_id).first()
+        title = book.title if book else book_id
+        author = (book.personal_author or book.corporate_author or "") if book else ""
+        doc_type = detect_doc_type(
+            kdc=book.kdc if book else None,
+            title=title,
+        )
+        log.info(f"[{book_id}] 문서 유형: {doc_type}")
+    finally:
+        db.close()
 
     db = SyncSessionLocal()
     try:
@@ -179,6 +197,41 @@ def process_book_file(self, book_id: str, file_path: str):
     except Exception as e:
         db.rollback()
         log.error(f"[{book_id}] 섹션 저장 실패: {e}")
+        raise
+    finally:
+        db.close()
+
+    # ②-b 섹션별 요약 병렬 생성 (vLLM max-num-seqs 16 기준 동시 8개)
+    async def _summarize_all_sections() -> list[str | None]:
+        sem = asyncio.Semaphore(8)
+        async def _one(text: str) -> str | None:
+            async with sem:
+                try:
+                    return await summarize_section(title, text, doc_type)
+                except Exception as e:
+                    log.warning(f"[{book_id}] 섹션 요약 실패: {e}")
+                    return None
+        return await asyncio.gather(*[_one(s["text"]) for s in sections])
+
+    section_summaries_list = _run_async(_summarize_all_sections())
+    log.info(f"[{book_id}] 섹션 요약 {sum(1 for s in section_summaries_list if s)}개 생성 완료")
+
+    # 섹션 요약 DB 저장 + section_idx → summary 맵 구성
+    section_summary_map: dict[int, str] = {}
+    db = SyncSessionLocal()
+    try:
+        for sec, summary in zip(sections, section_summaries_list):
+            if not summary:
+                continue
+            section_summary_map[sec["section_idx"]] = summary
+            db.query(BookSection).filter_by(
+                book_id=book_id, section_idx=sec["section_idx"]
+            ).update({"summary": summary})
+        db.commit()
+        log.info(f"[{book_id}] 섹션 요약 DB 저장 완료")
+    except Exception as e:
+        db.rollback()
+        log.warning(f"[{book_id}] 섹션 요약 저장 실패: {e}")
     finally:
         db.close()
 
@@ -199,34 +252,39 @@ def process_book_file(self, book_id: str, file_path: str):
         chunk.page_end = min(chunk.page_start + 1, extraction.total_pages - 1)
         page_acc += len(chunk.text)
 
-    # ④ 청크별 임베딩 → Milvus 저장
-    chunk_texts = [c.text for c in chunks]
-    embeddings = embed_texts(chunk_texts)
-    log.info(f"[{book_id}] 임베딩 완료: {len(embeddings)}개")
+    # ④ Contextual 임베딩 → Milvus 저장
+    # "[섹션 요약] {summary}\n\n[본문] {chunk_text}" 형태로 임베딩 (BGE-M3 512토큰 활용)
+    contextual_texts = [
+        f"[섹션 요약] {section_summary_map[c.section_idx]}\n\n[본문] {c.text}"
+        if c.section_idx in section_summary_map
+        else c.text
+        for c in chunks
+    ]
+    embeddings = embed_texts(contextual_texts)
+    log.info(f"[{book_id}] contextual 임베딩 완료: {len(embeddings)}개")
 
     idx_result = index_chunks(book_id, chunks, embeddings)
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
-    # ⑤ 요약 생성 → PostgreSQL 업데이트
+    # ⑤ 도서 요약 생성 (섹션 요약 합산 → LLM 1회) → PostgreSQL 업데이트
+    valid_summaries = [s for s in section_summaries_list if s]
+    book_summary = None
+    if valid_summaries:
+        try:
+            book_summary = _run_async(summarize_book_from_sections(
+                title=title,
+                author=author,
+                section_summaries=valid_summaries,
+                doc_type=doc_type,
+            ))
+        except Exception as e:
+            log.warning(f"[{book_id}] 도서 요약 생성 실패: {e}")
+
     db = SyncSessionLocal()
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
-
-        title = book.title if book else book_id
-        author = book.personal_author or "" if book else ""
-        summary_input = full_text[:4000]
-
-        summary = _run_async(summarize_book(
-            title=title,
-            author=author,
-            raw_text=summary_input,
-        ))
-
         if book:
-            book.summary = summary
-            book.full_text_length = len(full_text)
-            book.chunk_count = len(chunks)
-            book.extraction_stats = str(extraction.stats)
+            book.summary = book_summary
             book.is_embedded = True
             db.commit()
             log.info(f"[{book_id}] DB 업데이트 완료")
@@ -234,10 +292,7 @@ def process_book_file(self, book_id: str, file_path: str):
             new_book = Book(
                 cnts_id=book_id,
                 title=book_id,
-                summary=summary,
-                full_text_length=len(full_text),
-                chunk_count=len(chunks),
-                extraction_stats=str(extraction.stats),
+                summary=book_summary,
                 is_embedded=True,
             )
             db.add(new_book)
