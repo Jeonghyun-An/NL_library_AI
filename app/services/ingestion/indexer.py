@@ -161,14 +161,15 @@ def search_chunks(
 
     hits = []
     for hit in results[0]:
+        entity = hit.entity
         hits.append(SearchHit(
             chunk_id=hit.id,
-            book_id=hit.entity.get("book_id"),
-            chunk_idx=hit.entity.get("chunk_idx"),
-            section_idx=hit.entity.get("section_idx", 0),
-            text=hit.entity.get("text"),
-            page_start=hit.entity.get("page_start"),
-            page_end=hit.entity.get("page_end"),
+            book_id=entity.get("book_id") or "",
+            chunk_idx=entity.get("chunk_idx") or 0,
+            section_idx=entity.get("section_idx") or 0,
+            text=entity.get("text") or "",
+            page_start=entity.get("page_start") or 0,
+            page_end=entity.get("page_end") or 0,
             score=hit.score,
         ))
 
