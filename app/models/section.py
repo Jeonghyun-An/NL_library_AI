@@ -23,6 +23,7 @@ class BookSection(Base):
     page_start  = Column(Integer)
     page_end    = Column(Integer)
     token_count = Column(Integer)                                   # 토큰 수 (예산 계산용)
+    summary     = Column(Text, nullable=True)                       # LLM 생성 섹션 요약
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
 
     # 복합 인덱스: book_id + section_idx로 빠르게 조회

@@ -21,9 +21,14 @@ async def lifespan(app: FastAPI):
     # DB 테이블 생성
     from db.postgres import engine
     from models.book import Base
+    from sqlalchemy import text
     import models.section
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # 컬럼 추가 마이그레이션 (이미 존재하면 skip)
+        await conn.execute(text(
+            "ALTER TABLE book_sections ADD COLUMN IF NOT EXISTS summary TEXT"
+        ))
     log.info("DB 테이블 확인 완료")
 
     # 임베딩 모델 로드 (FlagEmbedding)

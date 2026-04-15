@@ -70,7 +70,14 @@ services:
       - nl_lib_etcd_data:/etcd
     <<: *nl-lib-net
     healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://127.0.0.1:2379"]
+      test:
+        [
+          "CMD",
+          "etcdctl",
+          "endpoint",
+          "health",
+          "--endpoints=http://127.0.0.1:2379",
+        ]
       interval: 5s
       timeout: 3s
       retries: 15
@@ -163,7 +170,11 @@ services:
       - nl_lib_postgres_data:/var/lib/postgresql/data
     <<: *nl-lib-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-nl_lib}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-nl_lib}",
+        ]
       interval: 5s
       timeout: 3s
       retries: 15
@@ -189,9 +200,6 @@ services:
 
   # ── vLLM (Gemma 4 E4B) ──────────────────────
   vllm:
-    build:
-      context: ./infra/vllm
-      dockerfile: Dockerfile
     image: landsoftdocker/nl-lib-vllm:latest
     container_name: nl-lib-vllm
     <<: *nl-lib-net
@@ -220,11 +228,11 @@ services:
       - --download-dir
       - /models
       - --max-model-len
-      - "8192"
+      - "126976"
       - --dtype
       - bfloat16
       - --gpu-memory-utilization
-      - "0.15"
+      - "0.3"
       - --max-num-seqs
       - "16"
       - --enforce-eager
@@ -243,35 +251,32 @@ services:
     restart: unless-stopped
 
   # ── PaddleOCR (GPU) ──────────────────────────
-  paddleocr:
-    image: landsoftdocker/clms-paddleocr:latest
-    container_name: nl-lib-paddleocr
-    <<: *nl-lib-net
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    environment:
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
-    ports:
-      - "18003:8001"
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-    restart: unless-stopped
+  # paddleocr:
+  #   image: landsoftdocker/clms-paddleocr:latest
+  #   container_name: nl-lib-paddleocr
+  #   <<: *nl-lib-net
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   environment:
+  #     NVIDIA_VISIBLE_DEVICES: all
+  #     NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  #   ports:
+  #     - "18003:8001"
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/health"]
+  #     interval: 15s
+  #     timeout: 5s
+  #     retries: 10
+  #     start_period: 60s
+  #   restart: unless-stopped
 
   # ── FastAPI ───────────────────────────────────
   fastapi:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
     image: landsoftdocker/nl-lib-fastapi:latest
     container_name: nl-lib-fastapi
     <<: *nl-lib-net
@@ -303,8 +308,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      paddleocr:
-        condition: service_healthy
+      # paddleocr:
+      #   condition: service_healthy
       vllm:
         condition: service_started
     healthcheck:
@@ -317,13 +322,11 @@ services:
 
   # ── Celery Worker ─────────────────────────────
   celery-worker:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
     image: landsoftdocker/nl-lib-fastapi:latest
     container_name: nl-lib-celery
     <<: *nl-lib-net
     shm_size: "4g"
+    working_dir: /app
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: celery -A workers.celery_app worker --loglevel=info --concurrency=2 -Q ingestion,default
@@ -331,6 +334,7 @@ services:
       <<: *common-env
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /app
     deploy:
       resources:
         reservations:
@@ -352,9 +356,6 @@ services:
 
   # ── Nuxt ──────────────────────────────────────
   nuxt:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
     image: landsoftdocker/nl-lib-nuxt:latest
     container_name: nl-lib-nuxt
     <<: *nl-lib-net

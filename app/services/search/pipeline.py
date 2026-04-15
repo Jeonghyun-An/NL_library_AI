@@ -198,6 +198,18 @@ async def _search_book_mode(
 
     books.sort(key=lambda b: b.best_score, reverse=True)
 
+    # ⑤ 상위 도서에 대해 LLM 추천 이유 + 요약 병렬 생성
+    if books:
+        import asyncio
+        top_books = books[:min(3, len(books))]
+        reasons = await asyncio.gather(
+            *[_generate_book_reason(original, b.book_id, b.chunks, db) for b in top_books],
+            return_exceptions=True,
+        )
+        for book, reason in zip(top_books, reasons):
+            if isinstance(reason, str):
+                book.reason = reason
+
     elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
 
     return BookSearchResponse(
@@ -206,6 +218,71 @@ async def _search_book_mode(
         books=books,
         elapsed_ms=round(elapsed, 1),
     )
+
+
+async def _generate_book_reason(
+    query: str,
+    book_id: str,
+    chunks: list[ChunkHit],
+    db=None,
+) -> str | None:
+    """
+    도서 모드: 이 책이 질의에 왜 적합한지 추천 이유 생성 (2~3문장)
+
+    - 수집 시 생성된 book.summary를 DB에서 조회해 컨텍스트로 사용
+    - 상위 매칭 청크 3개를 근거로 함께 제공
+    - 전체 섹션 재로드 없이 빠르게 처리
+    """
+    if not chunks:
+        return None
+
+    # 저장된 도서 요약 조회
+    book_summary: str | None = None
+    if db:
+        try:
+            from repositories.book import BookRepository
+            book = await BookRepository(db).get_by_cnts_id(book_id)
+            book_summary = book.summary if book else None
+        except Exception as e:
+            log.warning(f"[{book_id}] 도서 요약 조회 실패: {e}")
+
+    # 상위 매칭 청크 3개
+    top_chunks = sorted(chunks, key=lambda c: c.rerank_score or c.score, reverse=True)[:3]
+    chunk_context = "\n\n".join(
+        f"[p.{c.page_start}-{c.page_end}]\n{c.text}" for c in top_chunks
+    )
+
+    context_parts = []
+    if book_summary:
+        context_parts.append(f"[도서 요약]\n{book_summary}")
+    context_parts.append(f"[관련 구절]\n{chunk_context}")
+    context_text = "\n\n".join(context_parts)
+
+    prompt = (
+        "아래 도서 정보를 참고하여, 사용자 질의에 왜 이 도서가 적합한지 "
+        "2~3문장으로 간결하게 설명해주세요. 도서의 구체적인 내용을 근거로 하세요.\n\n"
+        f"[사용자 질의]\n{query}\n\n"
+        f"{context_text}\n\n"
+        "추천 이유:"
+    )
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{cfg.VLLM_BASE_URL}/chat/completions",
+                json={
+                    "model": cfg.VLLM_MODEL,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 512,
+                    "temperature": 0.3,
+                },
+                timeout=60.0,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        log.error(f"[{book_id}] 추천 이유/요약 생성 실패: {e}")
+        return None
 
 
 async def _generate_answer_with_context(
