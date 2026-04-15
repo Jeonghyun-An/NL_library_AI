@@ -1,12 +1,12 @@
 <template>
   <div class="top-result">
-    <!-- LLM 답변 -->
+    <!-- LLM 추천 이유 -->
     <div class="answer-section" v-if="answer">
       <div class="answer-label">AI 추천 답변</div>
       <div class="answer-text" v-html="formattedAnswer" />
     </div>
 
-    <!-- Top 1 도서 정보 -->
+    <!-- 도서 커버 + 메타 -->
     <div class="book-detail" v-if="book">
       <div class="cover-area">
         <BookCover :book-id="book.book_id" />
@@ -33,18 +33,19 @@
           <span class="meta-label">주제</span>
           <span>{{ book.book_info.subject }}</span>
         </div>
-        <div class="book-summary" v-if="book.book_info?.summary">
-          <span class="summary-label">도서 소개</span>
-          <p>{{ book.book_info.summary }}</p>
-        </div>
         <div class="relevance">
           관련도 {{ (book.best_score * 100).toFixed(1) }}%
         </div>
-        <div class="snippet" v-if="topChunkText">
-          <span class="snippet-label">관련 구절</span>
-          <p>{{ topChunkText }}</p>
-        </div>
       </div>
+    </div>
+
+    <!-- 도서 소개 — 카드 전체 너비 / 기본 3줄 -->
+    <div class="book-summary" v-if="book?.book_info?.summary">
+      <span class="summary-label">도서 소개</span>
+      <p :class="{ clamped: !summaryExpanded }">{{ book.book_info.summary }}</p>
+      <button class="expand-btn" @click="summaryExpanded = !summaryExpanded">
+        {{ summaryExpanded ? "접기" : "더보기" }}
+      </button>
     </div>
   </div>
 </template>
@@ -57,19 +58,11 @@ const props = defineProps<{
   answer?: string;
 }>();
 
+const summaryExpanded = ref(false);
+
 const formattedAnswer = computed(() => {
   if (!props.answer) return "";
   return props.answer.replace(/\n/g, "<br>");
-});
-
-const topChunkText = computed(() => {
-  const chunks = props.book.chunks;
-  if (!chunks?.length) return "";
-  const best = [...chunks].sort(
-    (a, b) => (b.rerank_score || b.score) - (a.rerank_score || a.score),
-  )?.[0];
-  if (!best) return "";
-  return best.text.length > 300 ? best.text.slice(0, 300) + "..." : best.text;
 });
 </script>
 
@@ -77,13 +70,10 @@ const topChunkText = computed(() => {
 .top-result {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
-
-  border: 1px solid #e4e4e7; /* zinc-200 */
+  border: 1px solid #e4e4e7;
   border-radius: 20px;
-
   padding: 28px;
   margin-bottom: 32px;
-
   box-shadow:
     0 10px 25px rgba(0, 0, 0, 0.04),
     0 2px 6px rgba(0, 0, 0, 0.03);
@@ -93,13 +83,15 @@ const topChunkText = computed(() => {
   background: #fafafa;
   border-radius: 12px;
   padding: 16px;
+  margin-bottom: 20px;
 }
+
 .answer-label {
   font-size: 12px;
   font-weight: 600;
-
-  color: #71717a; /* zinc-500 */
+  color: #71717a;
   letter-spacing: 0.08em;
+  margin-bottom: 6px;
 }
 
 .answer-text {
@@ -126,20 +118,35 @@ const topChunkText = computed(() => {
 .book-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b; /* slate-800 */
+  color: #1e293b;
+  margin: 0 0 8px 0;
 }
 
 .meta-row {
   font-size: 14px;
-  color: #52525b; /* zinc-600 */
+  color: #52525b;
+  margin-bottom: 2px;
 }
 
 .meta-label {
-  color: #a1a1aa; /* zinc-400 */
+  color: #a1a1aa;
+  margin-right: 6px;
 }
 
+.relevance {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 12px;
+  background: #f4f4f5;
+  color: #18181b;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 도서 소개 — 카드 하단 전체 너비 */
 .book-summary {
-  margin-top: 16px;
+  margin-top: 20px;
   padding: 14px;
   background: #fafafa;
   border-radius: 12px;
@@ -158,45 +165,30 @@ const topChunkText = computed(() => {
   font-size: 14px;
   line-height: 1.7;
   color: #3f3f46;
-  margin: 0;
-  white-space: pre-line;
+  margin: 0 0 8px 0;
 }
 
-.relevance {
-  margin-top: 12px;
-  padding: 4px 12px;
+.book-summary p.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
-  background: #f4f4f5; /* zinc-100 */
-  color: #18181b; /* zinc-900 */
-
-  border-radius: 999px;
+.expand-btn {
   font-size: 13px;
-  font-weight: 600;
+  color: #71717a;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.snippet {
-  margin-top: 16px;
-  padding: 14px;
-
-  background: #fafafa;
-  border-radius: 12px;
-
-  border: 1px solid #e4e4e7;
-}
-
-.snippet-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #94a3b8;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.snippet p {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #3f3f46;
-  margin: 0;
+.expand-btn:hover {
+  color: #27272a;
 }
 
 @media (max-width: 640px) {
