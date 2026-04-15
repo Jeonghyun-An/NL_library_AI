@@ -176,7 +176,7 @@ def process_book_file(self, book_id: str, file_path: str):
             kdc=book.kdc if book else None,
             title=title,
         )
-        log.info(f"[{book_id}] 문서 유형: {doc_type}")
+        log.info(f"[{book_id}] 문서 유형: {doc_type} (기본: book)")
     finally:
         db.close()
 
