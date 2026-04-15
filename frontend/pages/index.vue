@@ -113,17 +113,11 @@ import type { BookSearchResponse, ChunkSearchResponse } from "~/types/search";
 const { loading, error, result, search, reset: resetSearch } = useSearch();
 const currentQuery = ref("");
 
-// book 모드에서 Top 1의 best chunk를 답변으로 사용 (LLM 답변이 없는 경우)
+// book 모드에서 LLM이 생성한 추천 이유/요약만 답변으로 사용
 const bookAnswer = computed(() => {
   if (!result.value || result.value.mode !== "book") return undefined;
   const r = result.value as BookSearchResponse;
-  const top = r.books?.[0];
-  if (!top) return undefined;
-  if (top.reason) return top.reason;
-  const best = [...top.chunks].sort(
-    (a, b) => (b.rerank_score || b.score) - (a.rerank_score || a.score),
-  )?.[0];
-  return best?.text;
+  return r.books?.[0]?.reason;
 });
 // 타입 가드된 book 모드 결과
 const bookResult = computed(() => {
@@ -156,7 +150,10 @@ function reset() {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #fff;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(0, 0, 0, 0.03), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(0, 0, 0, 0.02), transparent 40%),
+    linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
 }
 
 /* ── 랜딩 (검색 전) ─────────────── */
@@ -181,16 +178,14 @@ function reset() {
 }
 
 .title {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 8px 0;
+  color: #18181b; /* zinc-900 */
 }
 
 .subtitle {
   font-size: 15px;
-  color: #71717a;
-  margin: 0;
+  color: #71717a; /* zinc-500 */
 }
 
 /* ── 결과 페이지 ─────────────────── */
@@ -205,11 +200,15 @@ function reset() {
   align-items: center;
   gap: 16px;
   padding: 16px 0;
+
   position: sticky;
   top: 0;
-  background: #fff;
+
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.7);
+
+  border-bottom: 1px solid #e4e4e7;
   z-index: 10;
-  border-bottom: 1px solid #f1f5f9;
 }
 
 .header-logo {
@@ -224,20 +223,21 @@ function reset() {
   display: flex;
   align-items: center;
   gap: 12px;
+
   padding: 16px 0;
   font-size: 14px;
-  color: #64748b;
+  color: #71717a; /* zinc-500 */
 }
 
 .query-display {
   font-weight: 600;
-  color: #0f172a;
+  color: #18181b;
 }
 
 .elapsed {
   padding: 2px 8px;
-  background: #f1f5f9;
-  border-radius: 8px;
+  background: #f4f4f5;
+  border-radius: 999px;
   font-size: 12px;
 }
 
@@ -254,8 +254,7 @@ function reset() {
 .more-title {
   font-size: 16px;
   font-weight: 600;
-  color: #334155;
-  margin: 0 0 16px 0;
+  color: #27272a;
 }
 
 .book-grid {
@@ -266,17 +265,20 @@ function reset() {
 
 /* ── Chunk 모드 ──────────────────── */
 .chunk-answer {
-  background: #f8fafc;
-  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #e4e4e7;
+
+  border-radius: 16px;
   padding: 20px;
   margin-bottom: 24px;
 }
 
 .answer-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #2563eb;
-  margin-bottom: 8px;
+
+  color: #a1a1aa;
+  letter-spacing: 0.08em;
 }
 
 .chunk-list {
@@ -287,8 +289,19 @@ function reset() {
 
 .chunk-item {
   padding: 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px;
+
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+
+  transition: all 0.2s;
+}
+
+.chunk-item:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .chunk-source {
@@ -298,10 +311,12 @@ function reset() {
 }
 
 .chunk-score {
-  padding: 1px 6px;
-  background: #f0f9ff;
-  color: #0369a1;
-  border-radius: 8px;
+  padding: 2px 8px;
+
+  background: #f4f4f5;
+  color: #27272a;
+
+  border-radius: 999px;
   font-weight: 600;
   margin-left: 8px;
 }
@@ -309,8 +324,7 @@ function reset() {
 .chunk-text {
   font-size: 14px;
   line-height: 1.6;
-  color: #334155;
-  margin: 0;
+  color: #3f3f46;
 }
 
 /* ── 로딩 / 에러 / 빈 결과 ──────── */
@@ -325,11 +339,12 @@ function reset() {
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+
+  border: 3px solid #e4e4e7;
+  border-top-color: #52525b;
+
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
 }
 
 @keyframes spin {
@@ -347,10 +362,16 @@ function reset() {
 .error-area button {
   margin-top: 12px;
   padding: 8px 20px;
-  border: 1px solid #e2e8f0;
+
+  border: 1px solid #d4d4d8;
   border-radius: 8px;
-  background: #fff;
+
+  background: #fafafa;
   cursor: pointer;
+}
+
+.error-area button:hover {
+  background: #f4f4f5;
 }
 
 .empty {
