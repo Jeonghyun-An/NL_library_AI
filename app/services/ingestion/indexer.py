@@ -9,6 +9,8 @@ from pymilvus import (
     FieldSchema,
     DataType,
     utility,
+    AnnSearchRequest,
+    RRFRanker,
 )
 
 from core.config import get_settings
@@ -20,8 +22,8 @@ cfg = get_settings()
 COLLECTION = cfg.MILVUS_COLLECTION
 DIM = cfg.EMBEDDING_DIM
 
-# 메타데이터 필드: MARC/MODS 파싱 결과를 스칼라로 저장 → expression filter에 사용
-_META_FIELDS = {"publisher", "corporate_author", "pub_date", "kdc"}
+# 스키마 재생성 트리거: 이 필드 중 하나라도 없으면 컬렉션 재생성
+_REQUIRED_FIELDS = {"publisher", "corporate_author", "pub_date", "kdc", "sparse_embedding"}
 
 
 def _connect():
@@ -50,32 +52,34 @@ def _build_schema() -> CollectionSchema:
             FieldSchema("kdc",                DataType.VARCHAR, max_length=32),
             # ─────────────────────────────────────────────────
             FieldSchema("embedding",          DataType.FLOAT_VECTOR, dim=DIM),
+            FieldSchema("sparse_embedding",   DataType.SPARSE_FLOAT_VECTOR),
         ],
-        description="NL-Lib 도서 청크 임베딩 (MARC/MODS 메타 포함)",
+        description="NL-Lib 도서 청크 임베딩 (BGE-M3 dense+sparse, MARC/MODS 메타 포함)",
     )
 
 
 def ensure_collection() -> Collection:
     """
     컬렉션 없으면 생성, 있으면 반환.
-    메타데이터 필드(_META_FIELDS)가 없는 구 스키마면 자동으로 재생성(→ 재인덱싱 필요).
+    _REQUIRED_FIELDS 중 하나라도 없으면 구 스키마 → 재생성(재인덱싱 필요).
     """
     _connect()
 
     if utility.has_collection(COLLECTION):
         col = Collection(COLLECTION)
         existing_fields = {f.name for f in col.schema.fields}
-        if _META_FIELDS.issubset(existing_fields):
+        if _REQUIRED_FIELDS.issubset(existing_fields):
             col.load()
             return col
-        # 구 스키마 → 메타 필드 없음 → 재생성
         utility.drop_collection(COLLECTION)
         log.warning(
-            f"컬렉션 '{COLLECTION}' 스키마에 메타데이터 필드 없음 → 재생성. "
+            f"컬렉션 '{COLLECTION}' 스키마 변경 감지 → 재생성. "
             "도서를 다시 인덱싱하세요."
         )
 
     col = Collection(name=COLLECTION, schema=_build_schema())
+
+    # dense 벡터 인덱스 (코사인 유사도)
     col.create_index(
         field_name="embedding",
         index_params={
@@ -84,8 +88,18 @@ def ensure_collection() -> Collection:
             "params": {"nlist": 256},
         },
     )
+    # sparse 벡터 인덱스 (내적, lexical weights)
+    col.create_index(
+        field_name="sparse_embedding",
+        index_params={
+            "metric_type": "IP",
+            "index_type": "SPARSE_INVERTED_INDEX",
+            "params": {"drop_ratio_build": 0.2},
+        },
+    )
+
     col.load()
-    log.info(f"컬렉션 '{COLLECTION}' 생성 완료 (메타데이터 필드 포함)")
+    log.info(f"컬렉션 '{COLLECTION}' 생성 완료 (dense + sparse + MARC/MODS 메타)")
     return col
 
 
@@ -109,19 +123,19 @@ class IndexResult:
 def index_chunks(
     book_id: str,
     chunks: list[Chunk],
-    embeddings: list[list[float]],
+    dense_embeddings: list[list[float]],
+    sparse_embeddings: list[dict[int, float]],
     *,
     book_meta: BookMeta | None = None,
 ) -> IndexResult:
     """
-    청크 + 임베딩을 Milvus에 저장.
+    청크 + dense/sparse 임베딩을 Milvus에 저장.
     book_meta 를 전달하면 MARC/MODS 메타데이터를 스칼라 필드로 함께 저장.
     """
     col = ensure_collection()
     errors: list[str] = []
     meta = book_meta or BookMeta()
 
-    # 기존 데이터 삭제 (재수집 시)
     col.delete(expr=f'book_id == "{book_id}"')
 
     data = [
@@ -136,13 +150,14 @@ def index_chunks(
         [meta.corporate_author[:511]] * len(chunks),         # corporate_author
         [meta.pub_date[:31]]          * len(chunks),         # pub_date
         [meta.kdc[:31]]               * len(chunks),         # kdc
-        embeddings,                                          # embedding
+        dense_embeddings,                                    # embedding (dense)
+        sparse_embeddings,                                   # sparse_embedding
     ]
 
     try:
         col.insert(data)
         col.flush()
-        log.info(f"[{book_id}] {len(chunks)}개 청크 인덱싱 완료 (meta: {meta})")
+        log.info(f"[{book_id}] {len(chunks)}개 청크 인덱싱 완료 (dense+sparse, meta: {meta})")
     except Exception as e:
         log.error(f"[{book_id}] 인덱싱 실패: {e}")
         errors.append(str(e))
@@ -170,23 +185,22 @@ class SearchHit:
 
 
 def search_chunks(
-    query_embedding: list[float],
+    query_dense: list[float],
+    query_sparse: dict[int, float],
     top_k: int = 20,
     *,
     book_filter: str | None = None,
     meta_expr: str | None = None,
 ) -> list[SearchHit]:
     """
-    청크 단위 벡터 검색.
+    BGE-M3 dense+sparse 하이브리드 검색 (RRF 리랭킹).
 
-    meta_expr: Milvus boolean expression (MARC/MODS 메타 필드 기반 필터)
-               예) 'corporate_author like "%조달청%" || publisher like "%조달청%"'
+    meta_expr: Milvus boolean expression (MARC/MODS 스칼라 필드 기반 pre-filter)
+               예) 'pub_date >= "2023" && pub_date < "2025"'
     """
     col = ensure_collection()
     if col.num_entities == 0:
         return []
-
-    search_params = {"metric_type": "COSINE", "params": {"nprobe": 32}}
 
     if meta_expr:
         expr = meta_expr
@@ -195,16 +209,31 @@ def search_chunks(
     else:
         expr = None
 
-    results = col.search(
-        data=[query_embedding],
+    output_fields = [
+        "book_id", "chunk_idx", "section_idx",
+        "text", "page_start", "page_end", "pub_date",
+    ]
+
+    dense_req = AnnSearchRequest(
+        data=[query_dense],
         anns_field="embedding",
-        param=search_params,
+        param={"metric_type": "COSINE", "params": {"nprobe": 32}},
         limit=top_k,
         expr=expr,
-        output_fields=[
-            "book_id", "chunk_idx", "section_idx",
-            "text", "page_start", "page_end", "pub_date",
-        ],
+    )
+    sparse_req = AnnSearchRequest(
+        data=[query_sparse],
+        anns_field="sparse_embedding",
+        param={"metric_type": "IP", "params": {"drop_ratio_search": 0.2}},
+        limit=top_k,
+        expr=expr,
+    )
+
+    results = col.hybrid_search(
+        reqs=[dense_req, sparse_req],
+        rerank=RRFRanker(k=60),
+        limit=top_k,
+        output_fields=output_fields,
     )
 
     hits: list[SearchHit] = []
@@ -226,19 +255,24 @@ def search_chunks(
 
 
 def search_by_book(
-    query_embedding: list[float],
+    query_dense: list[float],
+    query_sparse: dict[int, float],
     top_k_chunks: int = 20,
     top_k_books: int = 5,
     *,
     meta_expr: str | None = None,
 ) -> dict[str, list[SearchHit]]:
     """
-    청크 검색 후 도서 단위로 집계.
+    청크 하이브리드 검색 후 도서 단위로 집계.
 
     Returns:
-        {book_id: [관련 청크들]} — 상위 top_k_books 도서 (벡터 점수 기준)
+        {book_id: [관련 청크들]} — 상위 top_k_books 도서 (RRF 점수 기준)
     """
-    hits = search_chunks(query_embedding, top_k=top_k_chunks, meta_expr=meta_expr)
+    hits = search_chunks(
+        query_dense, query_sparse,
+        top_k=top_k_chunks,
+        meta_expr=meta_expr,
+    )
 
     book_hits: dict[str, list[SearchHit]] = defaultdict(list)
     book_max_score: dict[str, float] = {}

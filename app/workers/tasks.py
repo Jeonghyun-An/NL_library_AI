@@ -236,8 +236,9 @@ def process_book_file(self, book_id: str, file_path: str):
         db.close()
 
     # ③ 시맨틱 청킹
-    def _embed_fn(texts: list[str]):
-        return embed_texts(texts)
+    def _embed_fn(texts: list[str]) -> list[list[float]]:
+        dense, _ = embed_texts(texts)
+        return dense
 
     chunks = semantic_chunk(full_text, _embed_fn)
     log.info(f"[{book_id}] 청킹 완료: {len(chunks)}개")
@@ -278,8 +279,8 @@ def process_book_file(self, book_id: str, file_path: str):
     meta_text = " | ".join(p for p in _meta_parts if p)
     all_texts = contextual_texts + [meta_text]
 
-    embeddings = embed_texts(all_texts)
-    log.info(f"[{book_id}] contextual 임베딩 완료: {len(embeddings) - 1}개 본문 + 1개 메타")
+    dense_embeddings, sparse_embeddings = embed_texts(all_texts)
+    log.info(f"[{book_id}] contextual 임베딩 완료: {len(dense_embeddings) - 1}개 본문 + 1개 메타")
 
     # 메타데이터 전용 청크 객체 (chunk_idx=-1, section_idx=None)
     from services.ingestion.chunker import Chunk as ChunkType
@@ -292,7 +293,7 @@ def process_book_file(self, book_id: str, file_path: str):
         pub_date=book.pub_date or "" if book else "",
         kdc=book.kdc or "" if book else "",
     )
-    idx_result = index_chunks(book_id, all_chunks, embeddings, book_meta=book_meta)
+    idx_result = index_chunks(book_id, all_chunks, dense_embeddings, sparse_embeddings, book_meta=book_meta)
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
     # ⑤ 도서 요약 생성 (섹션 요약 합산 → LLM 1회) → PostgreSQL 업데이트

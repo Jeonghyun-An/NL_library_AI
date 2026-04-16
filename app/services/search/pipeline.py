@@ -97,19 +97,21 @@ async def search(
     if milvus_expr:
         log.info(f"Milvus expression: {milvus_expr}")
 
-    # ② 쿼리 임베딩
-    query_emb = embed_texts([search_query], is_query=True)[0]
+    # ② 쿼리 임베딩 (dense + sparse)
+    dense_vecs, sparse_vecs = embed_texts([search_query], is_query=True)
+    query_dense = dense_vecs[0]
+    query_sparse = sparse_vecs[0]
 
     elapsed = (time.perf_counter() - t0) * 1000
 
     if mode == "chunk":
         return await _search_chunk_mode(
-            query, rewritten, query_emb, top_k, use_rerank, elapsed, db,
+            query, rewritten, query_dense, query_sparse, top_k, use_rerank, elapsed, db,
             meta_expr=milvus_expr,
         )
     else:
         return await _search_book_mode(
-            query, rewritten, query_emb, top_k, use_rerank, elapsed, db,
+            query, rewritten, query_dense, query_sparse, top_k, use_rerank, elapsed, db,
             meta_expr=milvus_expr,
             metadata_filter=metadata_filter,
         )
@@ -118,7 +120,8 @@ async def search(
 async def _search_chunk_mode(
     original: str,
     rewritten: str | None,
-    query_emb: list[float],
+    query_dense: list[float],
+    query_sparse: dict,
     top_k: int,
     use_rerank: bool,
     elapsed_base: float,
@@ -128,7 +131,7 @@ async def _search_chunk_mode(
 ) -> ChunkSearchResponse:
     t0 = time.perf_counter()
 
-    candidates = search_chunks(query_emb, top_k=top_k * 4, meta_expr=meta_expr)
+    candidates = search_chunks(query_dense, query_sparse, top_k=top_k * 4, meta_expr=meta_expr)
 
     if not candidates:
         elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
@@ -195,7 +198,8 @@ async def _search_chunk_mode(
 async def _search_book_mode(
     original: str,
     rewritten: str | None,
-    query_emb: list[float],
+    query_dense: list[float],
+    query_sparse: dict,
     top_k: int,
     use_rerank: bool,
     elapsed_base: float,
@@ -207,7 +211,8 @@ async def _search_book_mode(
     t0 = time.perf_counter()
 
     book_hits = search_by_book(
-        query_emb,
+        query_dense,
+        query_sparse,
         top_k_chunks=top_k * 8,
         top_k_books=top_k,
         meta_expr=meta_expr,
