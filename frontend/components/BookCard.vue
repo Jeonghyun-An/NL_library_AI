@@ -1,5 +1,5 @@
 <template>
-  <div class="book-card">
+  <div class="book-card" @click="openNLPage" style="cursor: pointer">
     <div class="card-cover">
       <BookCover :book-id="book.book_id" size="small" />
     </div>
@@ -22,9 +22,15 @@
 <script setup lang="ts">
 import type { BookChunkGroup } from "~/types/search";
 
-defineProps<{
+const props = defineProps<{
   book: BookChunkGroup;
 }>();
+
+function openNLPage() {
+  const title = props.book.book_info?.title || props.book.book_id;
+  const url = `https://www.nl.go.kr/NL/contents/search.do?pageNum=1&pageSize=30&srchTarget=total&kwd=${encodeURIComponent(title)}#`;
+  window.open(url, "_blank");
+}
 </script>
 
 <style scoped>
@@ -50,6 +56,7 @@ defineProps<{
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: #f1f5f9;
+  border-radius: 14px 14px 0 0;
 }
 
 .card-info {

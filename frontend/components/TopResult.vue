@@ -12,7 +12,7 @@
         <BookCover :book-id="book.book_id" size="large" />
       </div>
       <div class="meta-area">
-        <h2 class="book-title">{{ book.book_info?.title || book.book_id }}</h2>
+        <h2 class="book-title" @click="openNLPage" style="cursor: pointer">{{ book.book_info?.title || book.book_id }}</h2>
         <div class="meta-row" v-if="book.book_info?.personal_author">
           <span class="meta-label">저자</span>
           <span>{{ book.book_info.personal_author }}</span>
@@ -63,6 +63,13 @@ const props = defineProps<{
 }>();
 
 const summaryExpanded = ref(false);
+
+function openNLPage() {
+  const title = props.book?.book_info?.title || props.book?.book_id;
+  if (!title) return;
+  const url = `https://www.nl.go.kr/NL/contents/search.do?pageNum=1&pageSize=30&srchTarget=total&kwd=${encodeURIComponent(title)}#`;
+  window.open(url, "_blank");
+}
 
 const formattedAnswer = computed(() => {
   if (!props.answer) return "";
