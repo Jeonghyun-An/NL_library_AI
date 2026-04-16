@@ -210,11 +210,16 @@ async def _search_book_mode(
 ) -> BookSearchResponse:
     t0 = time.perf_counter()
 
+    # sort_by 요청 시 더 많은 후보를 가져와야 날짜 정렬이 의미 있음
+    # (벡터 점수 상위 N개 안에 최신 문서가 없으면 정렬이 무의미하므로)
+    needs_date_sort = metadata_filter and metadata_filter.sort_by in ("recent", "oldest")
+    fetch_books = top_k * 4 if needs_date_sort else top_k
+
     book_hits = search_by_book(
         query_dense,
         query_sparse,
-        top_k_chunks=top_k * 8,
-        top_k_books=top_k,
+        top_k_chunks=fetch_books * 8,
+        top_k_books=fetch_books,
         meta_expr=meta_expr,
     )
 
@@ -280,6 +285,7 @@ async def _search_book_mode(
             return hits[0].pub_date if hits else ""
 
         books.sort(key=_pub_date, reverse=reverse)
+        books = books[:top_k]  # 날짜 정렬 후 top_k로 축소
 
     # ⑤ 상위 도서에 대해 LLM 추천 이유 + 요약 병렬 생성
     if books:
