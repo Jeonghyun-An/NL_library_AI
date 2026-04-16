@@ -8,11 +8,13 @@
 
     <!-- 도서 커버 + 메타 -->
     <div class="book-detail" v-if="book">
-      <div class="cover-area">
+      <div class="cover-area" @click="openNLPage" style="cursor: pointer">
         <BookCover :book-id="book.book_id" size="large" />
       </div>
       <div class="meta-area">
-        <h2 class="book-title" @click="openNLPage" style="cursor: pointer">{{ book.book_info?.title || book.book_id }}</h2>
+        <h2 class="book-title" @click="openNLPage" style="cursor: pointer">
+          {{ book.book_info?.title || book.book_id }}
+        </h2>
         <div class="meta-row" v-if="book.book_info?.personal_author">
           <span class="meta-label">저자</span>
           <span>{{ book.book_info.personal_author }}</span>
@@ -46,7 +48,7 @@
     <!-- 도서 소개 — 카드 전체 너비 / 기본 3줄 -->
     <div class="book-summary" v-if="book?.book_info?.summary">
       <span class="summary-label">도서 소개</span>
-      <p :class="{ clamped: !summaryExpanded }">{{ book.book_info.summary }}</p>
+      <div class="summary-body" :class="{ clamped: !summaryExpanded }" v-html="formattedSummary" />
       <button class="expand-btn" @click="summaryExpanded = !summaryExpanded">
         {{ summaryExpanded ? "접기" : "더보기" }}
       </button>
@@ -56,6 +58,7 @@
 
 <script setup lang="ts">
 import type { BookChunkGroup } from "~/types/search";
+import { marked } from "marked";
 
 const props = defineProps<{
   book: BookChunkGroup;
@@ -75,6 +78,10 @@ const formattedAnswer = computed(() => {
   if (!props.answer) return "";
   return props.answer.replace(/\n/g, "<br>");
 });
+
+const formattedSummary = computed(() =>
+  marked(props.book?.book_info?.summary ?? "")
+);
 </script>
 
 <style scoped>
@@ -172,19 +179,28 @@ const formattedAnswer = computed(() => {
   margin-bottom: 6px;
 }
 
-.book-summary p {
+.summary-body {
   font-size: 14px;
   line-height: 1.7;
   color: #3f3f46;
   margin: 0 0 8px 0;
 }
 
-.book-summary p.clamped {
+.summary-body.clamped {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.summary-body :deep(p) {
+  margin: 0 0 6px 0;
+}
+
+.summary-body :deep(strong) {
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .expand-btn {

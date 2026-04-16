@@ -312,9 +312,8 @@ async def _generate_book_reason(
     """
     도서 모드: 이 책이 질의에 왜 적합한지 추천 이유 생성 (2~3문장)
 
-    - 수집 시 생성된 book.summary를 DB에서 조회해 컨텍스트로 사용
-    - 상위 매칭 청크 3개를 근거로 함께 제공
-    - 전체 섹션 재로드 없이 빠르게 처리
+    book_summary + 매칭 청크 모두 컨텍스트로 사용하되,
+    프롬프트에서 "책 일반 소개 반복 금지"를 명시해 도서 소개 섹션과 중복 방지.
     """
     if not chunks:
         return None
@@ -338,12 +337,13 @@ async def _generate_book_reason(
     context_parts = []
     if book_summary:
         context_parts.append(f"[도서 요약]\n{book_summary}")
-    context_parts.append(f"[관련 구절]\n{chunk_context}")
+    context_parts.append(f"[매칭 구절]\n{chunk_context}")
     context_text = "\n\n".join(context_parts)
 
     prompt = (
-        "아래 도서 정보를 참고하여, 사용자 질의에 왜 이 도서가 적합한지 "
-        "2~3문장으로 간결하게 설명해주세요. 도서의 구체적인 내용을 근거로 하세요.\n\n"
+        "아래 도서 정보를 참고하여, 사용자 질의에 왜 이 도서가 적합한지 2~3문장으로 설명하세요.\n"
+        "단, 도서의 일반적인 소개(책이 무엇에 관한 책인지)는 별도 표시되므로 반복하지 마세요.\n"
+        "이 질의에 이 책의 어떤 내용이 구체적으로 답이 되는지에 집중하세요.\n\n"
         f"[사용자 질의]\n{query}\n\n"
         f"{context_text}\n\n"
         "추천 이유:"
