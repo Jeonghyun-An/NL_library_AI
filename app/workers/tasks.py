@@ -170,6 +170,20 @@ def process_book_file(self, book_id: str, file_path: str):
     db = SyncSessionLocal()
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
+        if not book:
+            log.error(f"[{book_id}] 메타데이터 없음 → 인덱싱 중단")
+            raise self.retry(
+                exc=Exception("metadata_not_found"),
+                countdown=60
+            )
+
+        if not (book.publisher or book.corporate_author or book.pub_date):
+            log.warning(f"[{book_id}] 메타데이터 불완전 → 인덱싱 중단")
+            raise self.retry(
+                exc=Exception("metadata_not_ready"),
+                countdown=60
+            )
+
         title = book.title if book else book_id
         author = (book.personal_author or book.corporate_author or "") if book else ""
         doc_type = detect_doc_type(
@@ -240,18 +254,18 @@ def process_book_file(self, book_id: str, file_path: str):
         dense, _ = embed_texts(texts)
         return dense
 
-    chunks = semantic_chunk(full_text, _embed_fn)
+    chunks = semantic_chunk(full_text, _embed_fn, page_map=extraction.page_map)
     log.info(f"[{book_id}] 청킹 완료: {len(chunks)}개")
 
     _assign_section_idx(chunks, sections)
 
     # 페이지 정보 매핑
-    page_acc = 0
-    for chunk in chunks:
-        ratio = page_acc / max(len(full_text), 1)
-        chunk.page_start = int(ratio * extraction.total_pages)
-        chunk.page_end = min(chunk.page_start + 1, extraction.total_pages - 1)
-        page_acc += len(chunk.text)
+    # page_acc = 0
+    # for chunk in chunks:
+    #     ratio = page_acc / max(len(full_text), 1)
+    #     chunk.page_start = int(ratio * extraction.total_pages)
+    #     chunk.page_end = min(chunk.page_start + 1, extraction.total_pages - 1)
+    #     page_acc += len(chunk.text)
 
     # ④ Contextual 임베딩 → Milvus 저장
     # 본문 청크: 섹션 요약 + 본문만 임베딩 (메타 prefix 없음 → 노이즈 방지)

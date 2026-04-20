@@ -32,7 +32,6 @@ class Chunk:
     page_start: int | None = None
     page_end: int | None = None
     token_count: int = 0
-    chapter_hint: str | None = None
 
     def __post_init__(self):
         if not self.token_count:
@@ -106,7 +105,13 @@ def _merge_small_chunks(chunks: list[Chunk]) -> list[Chunk]:
         if merged[-1].token_count < MIN_CHUNK_TOKENS:
             merged[-1].text += "\n" + chunk.text
             merged[-1].token_count = _estimate_tokens(merged[-1].text)
-            merged[-1].page_end = chunk.page_end
+            merged[-1].page_start = min(
+                p for p in [merged[-1].page_start, chunk.page_start] if p is not None
+            ) if (merged[-1].page_start is not None or chunk.page_start is not None) else None
+
+            merged[-1].page_end = max(
+                p for p in [merged[-1].page_end, chunk.page_end] if p is not None
+            ) if (merged[-1].page_end is not None or chunk.page_end is not None) else None
         else:
             merged.append(chunk)
 
@@ -114,7 +119,15 @@ def _merge_small_chunks(chunks: list[Chunk]) -> list[Chunk]:
     if len(merged) > 1 and merged[-1].token_count < MIN_CHUNK_TOKENS:
         merged[-2].text += "\n" + merged[-1].text
         merged[-2].token_count = _estimate_tokens(merged[-2].text)
-        merged[-2].page_end = merged[-1].page_end
+    
+        merged[-2].page_start = min(
+            p for p in [merged[-2].page_start, merged[-1].page_start] if p is not None
+        ) if (merged[-2].page_start is not None or merged[-1].page_start is not None) else None
+    
+        merged[-2].page_end = max(
+            p for p in [merged[-2].page_end, merged[-1].page_end] if p is not None
+        ) if (merged[-2].page_end is not None or merged[-1].page_end is not None) else None
+    
         merged.pop()
 
     return merged
@@ -155,6 +168,43 @@ def _split_oversized(chunk: Chunk) -> list[Chunk]:
 
     return sub_chunks
 
+def _split_sentences_with_offsets(text: str):
+    raw_sentences = _split_sentences(text)
+
+    result = []
+    cursor = 0
+
+    for sent in raw_sentences:
+        start = text.find(sent, cursor)
+        if start == -1:
+            continue
+        end = start + len(sent)
+
+        result.append({
+            "text": sent,
+            "start": start,
+            "end": end,
+        })
+
+        cursor = end
+
+    return result
+
+def _resolve_pages(sentences, page_map):
+    if not page_map:
+        return None, None
+
+    pages = []
+    for s in sentences:
+        for pos in (s["start"], s["end"] - 1):
+            page = page_map.get(pos)
+            if page is not None:
+                pages.append(page)
+
+    if not pages:
+        return None, None
+
+    return min(pages), max(pages)
 
 # ── 메인 청킹 함수 ──────────────────────────────────────
 def semantic_chunk(
@@ -175,7 +225,7 @@ def semantic_chunk(
         Chunk 리스트
     """
     # 1. 문장 분리
-    sentences = _split_sentences(text)
+    sentences = _split_sentences_with_offsets(text)
     if not sentences:
         return []
 
@@ -186,7 +236,7 @@ def semantic_chunk(
         return [Chunk(chunk_idx=0, text=text)]
 
     # 2. 임베딩 계산
-    embeddings = _compute_embeddings(sentences, embed_fn)
+    embeddings = _compute_embeddings([s["text"] for s in sentences], embed_fn)
     log.info(f"임베딩 계산 완료: shape={embeddings.shape}")
 
     # 3. 의미 경계 탐지
@@ -201,10 +251,13 @@ def semantic_chunk(
     for i, sent in enumerate(sentences):
         current_sentences.append(sent)
         if i in bp_set or i == len(sentences) - 1:
-            chunk_text = " ".join(current_sentences)
+            chunk_text = " ".join(s["text"] for s in current_sentences)
+            page_start, page_end = _resolve_pages(current_sentences, page_map)
             chunks.append(Chunk(
                 chunk_idx=len(chunks),
                 text=chunk_text,
+                page_start=page_start,
+                page_end=page_end,
             ))
             current_sentences = []
 

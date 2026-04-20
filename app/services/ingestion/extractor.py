@@ -57,6 +57,7 @@ class ExtractionResult:
     total_pages: int
     pages: list[PageResult] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    page_map: dict[int, int] = field(default_factory=dict)
 
     @property
     def full_text(self) -> str:
@@ -177,5 +178,19 @@ async def extract_text(
                 result.errors.append(f"p.{page.number}: {e}")
 
     doc.close()
+    # 페이지 번호 매핑 생성 (full_text와 동일하게 빈 페이지 제외)
+    cursor = 0
+    page_map = {}
+
+    for p in result.pages:
+        if not p.text:
+            continue
+        for i in range(len(p.text)):
+            page_map[cursor + i] = p.page_num
+        cursor += len(p.text) + 2  # "\n\n"
+
+    result.page_map = page_map
+
+    log.info(f"[{book_id}] page_map 생성 완료 (len={len(page_map)})")
     log.info(f"[{book_id}] 추출 완료 — {result.stats}")
     return result

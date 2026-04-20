@@ -55,7 +55,7 @@ async def search(
     query: str,
     *,
     mode: str = "book",
-    top_k: int = 5,
+    top_k: int = 10,
     use_rewrite: bool = True,
     use_rerank: bool = True,
     db=None,
