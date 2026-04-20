@@ -48,7 +48,11 @@
     <!-- 도서 소개 — 카드 전체 너비 / 기본 3줄 -->
     <div class="book-summary" v-if="book?.book_info?.summary">
       <span class="summary-label">도서 소개</span>
-      <div class="summary-body" :class="{ clamped: !summaryExpanded }" v-html="formattedSummary" />
+      <div
+        class="summary-body"
+        :class="{ clamped: !summaryExpanded }"
+        v-html="formattedSummary"
+      />
       <button class="expand-btn" @click="summaryExpanded = !summaryExpanded">
         {{ summaryExpanded ? "접기" : "더보기" }}
       </button>
@@ -76,11 +80,11 @@ function openNLPage() {
 
 const formattedAnswer = computed(() => {
   if (!props.answer) return "";
-  return props.answer.replace(/\n/g, "<br>");
+  return marked(props.answer);
 });
 
 const formattedSummary = computed(() =>
-  marked(props.book?.book_info?.summary ?? "")
+  marked(props.book?.book_info?.summary ?? ""),
 );
 </script>
 
@@ -216,6 +220,28 @@ const formattedSummary = computed(() =>
 
 .expand-btn:hover {
   color: #27272a;
+}
+
+.answer-text :deep(p) {
+  margin: 0 0 8px 0;
+}
+
+.answer-text :deep(strong) {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.answer-text :deep(ul),
+.answer-text :deep(ol) {
+  padding-left: 1.2em;
+  margin: 4px 0 8px;
+}
+
+.answer-text :deep(code) {
+  background: #f0f0f3;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 13px;
 }
 
 @media (max-width: 640px) {

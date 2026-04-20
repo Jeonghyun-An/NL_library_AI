@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <!-- 검색 전: 로고 + 입력창 중앙 배치 -->
-    <div v-if="!result" class="landing">
+    <div v-if="!result && !loading && !error" class="landing">
       <div class="logo-area">
         <img src="/logo.svg" alt="NL-Lib" class="logo" />
         <h1 class="title">국립중앙도서관 의미 기반 검색</h1>
@@ -19,11 +19,13 @@
       <!-- 상단 고정 입력창 -->
       <header class="results-header">
         <img src="/logo.svg" alt="NL-Lib" class="header-logo" @click="reset" />
-        <SearchInput
-          v-model="currentQuery"
-          :disabled="loading"
-          @submit="handleSearch"
-        />
+        <div class="header-input-wrap">
+          <SearchInput
+            v-model="currentQuery"
+            :disabled="loading"
+            @submit="handleSearch"
+          />
+        </div>
       </header>
 
       <!-- 로딩 -->
@@ -42,10 +44,10 @@
       <div v-else class="results-content">
         <!-- 검색 정보 -->
         <div class="search-meta">
-          <span class="query-display">"{{ result.query }}"</span>
-          <span class="elapsed">{{ result.elapsed_ms.toFixed(0) }}ms</span>
-          <span v-if="result.rewritten_query" class="rewritten">
-            → {{ result.rewritten_query }}
+          <span class="query-display">"{{ result?.query }}"</span>
+          <span class="elapsed">{{ result?.elapsed_ms.toFixed(0) }}ms</span>
+          <span v-if="result?.rewritten_query" class="rewritten">
+            → {{ result?.rewritten_query }}
           </span>
         </div>
 
@@ -205,9 +207,6 @@ function reset() {
   top: 0;
 
   backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.7);
-
-  border-bottom: 1px solid #e4e4e7;
   z-index: 10;
 }
 
@@ -216,6 +215,16 @@ function reset() {
   height: 32px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.header-input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-input-wrap :deep(.search-input-wrap) {
+  max-width: none;
+  margin: 0;
 }
 
 /* ── 검색 메타 ───────────────────── */
