@@ -1,127 +1,147 @@
 <template>
   <div class="page">
-    <!-- 검색 전: 로고 + 입력창 중앙 배치 -->
-    <div v-if="!result && !loading && !error" class="landing">
-      <div class="logo-area">
-        <img src="/logo.svg" alt="NL-Lib" class="logo" />
-        <h1 class="title">국립중앙도서관 의미 기반 검색</h1>
-        <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
-      </div>
-      <SearchInput
-        placeholder="예: 한강의 채식주의자와 비슷한 책 찾아줘"
-        :disabled="loading"
-        @submit="handleSearch"
-      />
-    </div>
+    <div class="app-layout">
 
-    <!-- 검색 후: 상단 입력창 + 결과 -->
-    <div v-else class="results-page">
-      <!-- 상단 고정 입력창 -->
-      <header class="results-header">
-        <img src="/logo.svg" alt="NL-Lib" class="header-logo" @click="reset" />
-        <div class="header-input-wrap">
+      <!-- ── 왼쪽: 채팅 기록 ───────────────────────────────── -->
+      <aside class="sidebar sidebar-left">
+        <ChatHistory
+          :history="history"
+          :current-id="currentHistoryId"
+          @select="restoreHistory"
+          @clear="clearHistory"
+        />
+      </aside>
+
+      <!-- ── 가운데: 메인 콘텐츠 ──────────────────────────── -->
+      <main class="main-content">
+
+        <!-- 검색 전: 로고 + 입력창 중앙 배치 -->
+        <div v-if="!result && !loading && !error" class="landing">
+          <div class="logo-area">
+            <img src="/logo.svg" alt="NL-Lib" class="logo" />
+            <h1 class="title">국립중앙도서관 의미 기반 검색</h1>
+            <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
+          </div>
           <SearchInput
-            v-model="currentQuery"
+            placeholder="예: 한강의 채식주의자와 비슷한 책 찾아줘"
             :disabled="loading"
             @submit="handleSearch"
           />
         </div>
-      </header>
 
-      <!-- 로딩 -->
-      <div v-if="loading" class="loading-area">
-        <div class="spinner" />
-        <p>도서를 찾고 있습니다...</p>
-      </div>
-
-      <!-- 에러 -->
-      <div v-else-if="error" class="error-area">
-        <p>{{ error }}</p>
-        <button @click="handleSearch(currentQuery)">다시 검색</button>
-      </div>
-
-      <!-- 결과 -->
-      <div v-else class="results-content">
-        <!-- 검색 정보 -->
-        <div class="search-meta">
-          <span class="query-display">"{{ result?.query }}"</span>
-          <span class="elapsed">{{ result?.elapsed_ms.toFixed(0) }}ms</span>
-          <span v-if="result?.rewritten_query" class="rewritten">
-            → {{ result?.rewritten_query }}
-          </span>
-        </div>
-
-        <!-- Book 모드 결과 -->
-        <template v-if="bookResult">
-          <div v-if="!bookResult.books.length" class="empty">
-            검색 결과가 없습니다. 다른 검색어를 시도해보세요.
-          </div>
-
-          <template v-else>
-            <TopResult v-if="topBook" :book="topBook" :answer="bookAnswer" />
-
-            <div v-if="bookResult.books.length > 1" class="more-section">
-              <h3 class="more-title">함께 추천하는 도서</h3>
-              <div class="book-grid">
-                <BookCard
-                  v-for="book in bookResult.books.slice(1)"
-                  :key="book.book_id"
-                  :book="book"
-                />
-              </div>
+        <!-- 검색 후: 상단 입력창 + 결과 -->
+        <div v-else class="results-page">
+          <!-- 상단 고정 입력창 -->
+          <header class="results-header">
+            <img src="/logo.svg" alt="NL-Lib" class="header-logo" @click="reset" />
+            <div class="header-input-wrap">
+              <SearchInput
+                v-model="currentQuery"
+                :disabled="loading"
+                @submit="handleSearch"
+              />
             </div>
-          </template>
-        </template>
+          </header>
 
-        <!-- Chunk 모드 결과 -->
-        <!-- Chunk 모드 결과 -->
-        <template v-if="chunkResult">
-          <div v-if="chunkResult.answer" class="chunk-answer">
-            <div class="answer-label">AI 답변</div>
-            <div v-html="chunkResult.answer.replace(/\n/g, '<br>')" />
+          <!-- 로딩 -->
+          <div v-if="loading" class="loading-area">
+            <div class="spinner" />
+            <p>도서를 찾고 있습니다...</p>
           </div>
 
-          <div v-if="!chunkResult.chunks.length" class="empty">
-            검색 결과가 없습니다.
+          <!-- 에러 -->
+          <div v-else-if="error" class="error-area">
+            <p>{{ error }}</p>
+            <button @click="handleSearch(currentQuery)">다시 검색</button>
           </div>
 
-          <div v-else class="chunk-list">
-            <div
-              v-for="chunk in chunkResult.chunks"
-              :key="chunk.chunk_id"
-              class="chunk-item"
-            >
-              <div class="chunk-source">
-                {{ chunk.book_id }} · p.{{ chunk.page_start }}-{{
-                  chunk.page_end
-                }}
-                <span class="chunk-score"
-                  >{{ (chunk.score * 100).toFixed(0) }}%</span
+          <!-- 결과 -->
+          <div v-else class="results-content">
+            <!-- 검색 정보 -->
+            <div class="search-meta">
+              <span class="query-display">"{{ result?.query }}"</span>
+              <span class="elapsed">{{ result?.elapsed_ms.toFixed(0) }}ms</span>
+              <span v-if="result?.rewritten_query" class="rewritten">
+                → {{ result?.rewritten_query }}
+              </span>
+            </div>
+
+            <!-- Book 모드 결과 -->
+            <template v-if="bookResult">
+              <div v-if="!bookResult.books.length" class="empty">
+                검색 결과가 없습니다. 다른 검색어를 시도해보세요.
+              </div>
+
+              <template v-else>
+                <TopResult v-if="topBook" :book="topBook" :answer="bookAnswer" />
+
+                <div v-if="bookResult.books.length > 1" class="more-section">
+                  <h3 class="more-title">함께 추천하는 도서</h3>
+                  <div class="book-grid">
+                    <BookCard
+                      v-for="book in bookResult.books.slice(1)"
+                      :key="book.book_id"
+                      :book="book"
+                    />
+                  </div>
+                </div>
+              </template>
+            </template>
+
+            <!-- Chunk 모드 결과 -->
+            <template v-if="chunkResult">
+              <div v-if="chunkResult.answer" class="chunk-answer">
+                <div class="answer-label">AI 답변</div>
+                <div v-html="chunkResult.answer.replace(/\n/g, '<br>')" />
+              </div>
+
+              <div v-if="!chunkResult.chunks.length" class="empty">
+                검색 결과가 없습니다.
+              </div>
+
+              <div v-else class="chunk-list">
+                <div
+                  v-for="chunk in chunkResult.chunks"
+                  :key="chunk.chunk_id"
+                  class="chunk-item"
                 >
+                  <div class="chunk-source">
+                    {{ chunk.book_id }} · p.{{ chunk.page_start }}-{{ chunk.page_end }}
+                    <span class="chunk-score">{{ (chunk.score * 100).toFixed(0) }}%</span>
+                  </div>
+                  <p class="chunk-text">{{ chunk.text }}</p>
+                </div>
               </div>
-              <p class="chunk-text">{{ chunk.text }}</p>
-            </div>
+            </template>
           </div>
-        </template>
-      </div>
+        </div>
+      </main>
+
+      <!-- ── 오른쪽: 카테고리 아코디언 ────────────────────── -->
+      <aside class="sidebar sidebar-right">
+        <CategoryAccordion :books="bookResult?.books ?? []" />
+      </aside>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useSearch } from "~/composables/useSearch";
+import { useSearchHistory } from "~/composables/useSearchHistory";
 import type { BookSearchResponse, ChunkSearchResponse } from "~/types/search";
 
 const { loading, error, result, search, reset: resetSearch } = useSearch();
-const currentQuery = ref("");
+const { history, addEntry, clearHistory } = useSearchHistory();
 
-// book 모드에서 LLM이 생성한 추천 이유/요약만 답변으로 사용
+const currentQuery = ref("");
+const currentHistoryId = ref<string | null>(null);
+
 const bookAnswer = computed(() => {
   if (!result.value || result.value.mode !== "book") return undefined;
-  const r = result.value as BookSearchResponse;
-  return r.books?.[0]?.reason;
+  return (result.value as BookSearchResponse).books?.[0]?.reason;
 });
-// 타입 가드된 book 모드 결과
+
 const bookResult = computed(() => {
   if (!result.value || result.value.mode !== "book") return null;
   return result.value as BookSearchResponse;
@@ -132,24 +152,33 @@ const chunkResult = computed(() => {
   return result.value as ChunkSearchResponse;
 });
 
-const topBook = computed(() => {
-  return bookResult.value?.books?.[0] ?? null;
-});
-function handleSearch(query: string) {
+const topBook = computed(() => bookResult.value?.books?.[0] ?? null);
+
+async function handleSearch(query: string) {
   currentQuery.value = query;
-  search(query, "book", 5);
+  await search(query, "book", 5);
+  if (result.value) {
+    currentHistoryId.value = addEntry(query, result.value);
+  }
   nextTick(() => {
     currentQuery.value = "";
   });
 }
 
+function restoreHistory(entry: (typeof history.value)[number]) {
+  currentHistoryId.value = entry.id;
+  result.value = entry.result;
+}
+
 function reset() {
   currentQuery.value = "";
+  currentHistoryId.value = null;
   resetSearch();
 }
 </script>
 
 <style scoped>
+/* ── 전체 레이아웃 ──────────────────────────────── */
 .page {
   min-height: 100vh;
   background:
@@ -158,7 +187,36 @@ function reset() {
     linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
 }
 
-/* ── 랜딩 (검색 전) ─────────────── */
+.app-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  min-height: 100vh;
+}
+
+/* ── 사이드바 공통 ──────────────────────────────── */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #f0f0f1;
+}
+
+.sidebar-left {
+  border-right: 1px solid #f0f0f1;
+}
+
+.sidebar-right {
+  border-left: 1px solid #f0f0f1;
+  border-right: none;
+}
+
+/* ── 메인 콘텐츠 ────────────────────────────────── */
+.main-content {
+  min-width: 0;
+}
+
+/* ── 랜딩 (검색 전) ────────────────────────────── */
 .landing {
   display: flex;
   flex-direction: column;
@@ -182,18 +240,16 @@ function reset() {
 .title {
   font-size: 26px;
   font-weight: 700;
-  color: #18181b; /* zinc-900 */
+  color: #18181b;
 }
 
 .subtitle {
   font-size: 15px;
-  color: #71717a; /* zinc-500 */
+  color: #71717a;
 }
 
-/* ── 결과 페이지 ─────────────────── */
+/* ── 결과 페이지 ────────────────────────────────── */
 .results-page {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 0 24px 48px;
 }
 
@@ -202,10 +258,8 @@ function reset() {
   align-items: center;
   gap: 16px;
   padding: 16px 0;
-
   position: sticky;
   top: 0;
-
   backdrop-filter: blur(10px);
   z-index: 10;
 }
@@ -227,15 +281,14 @@ function reset() {
   margin: 0;
 }
 
-/* ── 검색 메타 ───────────────────── */
+/* ── 검색 메타 ──────────────────────────────────── */
 .search-meta {
   display: flex;
   align-items: center;
   gap: 12px;
-
   padding: 16px 0;
   font-size: 14px;
-  color: #71717a; /* zinc-500 */
+  color: #71717a;
 }
 
 .query-display {
@@ -255,7 +308,7 @@ function reset() {
   color: #94a3b8;
 }
 
-/* ── 추천 도서 그리드 ────────────── */
+/* ── 추천 도서 그리드 ───────────────────────────── */
 .more-section {
   margin-top: 32px;
 }
@@ -272,11 +325,10 @@ function reset() {
   gap: 16px;
 }
 
-/* ── Chunk 모드 ──────────────────── */
+/* ── Chunk 모드 ─────────────────────────────────── */
 .chunk-answer {
   background: #fafafa;
   border: 1px solid #e4e4e7;
-
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 24px;
@@ -285,7 +337,6 @@ function reset() {
 .answer-label {
   font-size: 12px;
   font-weight: 600;
-
   color: #a1a1aa;
   letter-spacing: 0.08em;
 }
@@ -299,10 +350,8 @@ function reset() {
 .chunk-item {
   padding: 16px;
   border-radius: 14px;
-
   background: #ffffff;
   border: 1px solid #e4e4e7;
-
   transition: all 0.2s;
 }
 
@@ -321,10 +370,8 @@ function reset() {
 
 .chunk-score {
   padding: 2px 8px;
-
   background: #f4f4f5;
   color: #27272a;
-
   border-radius: 999px;
   font-weight: 600;
   margin-left: 8px;
@@ -336,7 +383,7 @@ function reset() {
   color: #3f3f46;
 }
 
-/* ── 로딩 / 에러 / 빈 결과 ──────── */
+/* ── 로딩 / 에러 / 빈 결과 ─────────────────────── */
 .loading-area {
   display: flex;
   flex-direction: column;
@@ -348,18 +395,14 @@ function reset() {
 .spinner {
   width: 32px;
   height: 32px;
-
   border: 3px solid #e4e4e7;
   border-top-color: #52525b;
-
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .error-area {
@@ -371,10 +414,8 @@ function reset() {
 .error-area button {
   margin-top: 12px;
   padding: 8px 20px;
-
   border: 1px solid #d4d4d8;
   border-radius: 8px;
-
   background: #fafafa;
   cursor: pointer;
 }
@@ -390,7 +431,26 @@ function reset() {
   font-size: 15px;
 }
 
-@media (max-width: 640px) {
+/* ── 반응형 ─────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .app-layout {
+    grid-template-columns: 200px 1fr 220px;
+  }
+}
+
+@media (max-width: 860px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    border: none;
+    border-bottom: 1px solid #f0f0f1;
+  }
+  .sidebar-right {
+    border-top: 1px solid #f0f0f1;
+  }
   .book-grid {
     grid-template-columns: repeat(2, 1fr);
   }

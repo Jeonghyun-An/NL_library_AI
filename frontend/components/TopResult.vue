@@ -178,7 +178,7 @@ const formattedSummary = computed(() =>
 .summary-label {
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #a1a1aa;
   display: block;
   margin-bottom: 6px;
 }
