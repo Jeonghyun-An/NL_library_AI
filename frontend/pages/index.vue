@@ -1,24 +1,61 @@
 <template>
   <div class="page">
-    <div class="app-layout">
-
-      <!-- ── 왼쪽: 채팅 기록 ───────────────────────────────── -->
+    <div class="app-layout" :style="{ gridTemplateColumns: gridCols }">
+      <!-- ══ 왼쪽 사이드바: 로고 + 검색기록 ══════════════════ -->
       <aside class="sidebar sidebar-left">
-        <ChatHistory
-          :history="history"
-          :current-id="currentHistoryId"
-          @select="restoreHistory"
-          @clear="clearHistory"
-        />
+        <!-- 로고 (항상 표시) -->
+        <div class="sidebar-brand" @click="reset">
+          <img src="/logo.svg" alt="NL-Lib" class="brand-icon" />
+          <Transition name="fade-text">
+            <span v-if="leftOpen" class="brand-name">NL-Lib</span>
+          </Transition>
+        </div>
+
+        <!-- 토글 버튼 -->
+        <button
+          class="sidebar-toggle"
+          :class="{ collapsed: !leftOpen }"
+          :title="leftOpen ? '기록 패널 닫기' : '기록 패널 열기'"
+          @click="leftOpen = !leftOpen"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <polyline
+              :points="leftOpen ? '15 18 9 12 15 6' : '9 18 15 12 9 6'"
+            />
+          </svg>
+          <Transition name="fade-text">
+            <span v-if="leftOpen">검색 기록</span>
+          </Transition>
+        </button>
+
+        <!-- 기록 목록: ClientOnly로 SSR 하이드레이션 불일치 방지 -->
+        <div v-show="leftOpen" class="sidebar-body">
+          <ClientOnly>
+            <ChatHistory
+              :history="history"
+              :current-id="currentHistoryId"
+              @select="restoreHistory"
+              @clear="clearHistory"
+            />
+            <template #fallback>
+              <div class="ch-placeholder" />
+            </template>
+          </ClientOnly>
+        </div>
       </aside>
 
-      <!-- ── 가운데: 메인 콘텐츠 ──────────────────────────── -->
+      <!-- ══ 메인 콘텐츠 ═══════════════════════════════════════ -->
       <main class="main-content">
-
-        <!-- 검색 전: 로고 + 입력창 중앙 배치 -->
+        <!-- 검색 전: 랜딩 -->
         <div v-if="!result && !loading && !error" class="landing">
           <div class="logo-area">
-            <img src="/logo.svg" alt="NL-Lib" class="logo" />
             <h1 class="title">국립중앙도서관 의미 기반 검색</h1>
             <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
           </div>
@@ -29,13 +66,12 @@
           />
         </div>
 
-        <!-- 검색 후: 상단 입력창 + 결과 -->
+        <!-- 검색 후: 결과 -->
         <div v-else class="results-page">
-          <!-- 상단 고정 입력창 -->
           <header class="results-header">
-            <img src="/logo.svg" alt="NL-Lib" class="header-logo" @click="reset" />
             <div class="header-input-wrap">
               <SearchInput
+                ref="searchInputRef"
                 v-model="currentQuery"
                 :disabled="loading"
                 @submit="handleSearch"
@@ -43,21 +79,17 @@
             </div>
           </header>
 
-          <!-- 로딩 -->
           <div v-if="loading" class="loading-area">
             <div class="spinner" />
             <p>도서를 찾고 있습니다...</p>
           </div>
 
-          <!-- 에러 -->
           <div v-else-if="error" class="error-area">
             <p>{{ error }}</p>
             <button @click="handleSearch(currentQuery)">다시 검색</button>
           </div>
 
-          <!-- 결과 -->
           <div v-else class="results-content">
-            <!-- 검색 정보 -->
             <div class="search-meta">
               <span class="query-display">"{{ result?.query }}"</span>
               <span class="elapsed">{{ result?.elapsed_ms.toFixed(0) }}ms</span>
@@ -66,15 +98,16 @@
               </span>
             </div>
 
-            <!-- Book 모드 결과 -->
             <template v-if="bookResult">
               <div v-if="!bookResult.books.length" class="empty">
                 검색 결과가 없습니다. 다른 검색어를 시도해보세요.
               </div>
-
               <template v-else>
-                <TopResult v-if="topBook" :book="topBook" :answer="bookAnswer" />
-
+                <TopResult
+                  v-if="topBook"
+                  :book="topBook"
+                  :answer="bookAnswer"
+                />
                 <div v-if="bookResult.books.length > 1" class="more-section">
                   <h3 class="more-title">함께 추천하는 도서</h3>
                   <div class="book-grid">
@@ -88,17 +121,14 @@
               </template>
             </template>
 
-            <!-- Chunk 모드 결과 -->
             <template v-if="chunkResult">
               <div v-if="chunkResult.answer" class="chunk-answer">
                 <div class="answer-label">AI 답변</div>
                 <div v-html="chunkResult.answer.replace(/\n/g, '<br>')" />
               </div>
-
               <div v-if="!chunkResult.chunks.length" class="empty">
                 검색 결과가 없습니다.
               </div>
-
               <div v-else class="chunk-list">
                 <div
                   v-for="chunk in chunkResult.chunks"
@@ -106,8 +136,12 @@
                   class="chunk-item"
                 >
                   <div class="chunk-source">
-                    {{ chunk.book_id }} · p.{{ chunk.page_start }}-{{ chunk.page_end }}
-                    <span class="chunk-score">{{ (chunk.score * 100).toFixed(0) }}%</span>
+                    {{ chunk.book_id }} · p.{{ chunk.page_start }}-{{
+                      chunk.page_end
+                    }}
+                    <span class="chunk-score"
+                      >{{ (chunk.score * 100).toFixed(0) }}%</span
+                    >
                   </div>
                   <p class="chunk-text">{{ chunk.text }}</p>
                 </div>
@@ -117,11 +151,37 @@
         </div>
       </main>
 
-      <!-- ── 오른쪽: 카테고리 아코디언 ────────────────────── -->
+      <!-- ══ 오른쪽 사이드바: 카테고리 아코디언 ══════════════ -->
       <aside class="sidebar sidebar-right">
-        <CategoryAccordion :books="bookResult?.books ?? []" />
-      </aside>
+        <!-- 토글 버튼 -->
+        <button
+          class="sidebar-toggle right"
+          :class="{ collapsed: !rightOpen }"
+          :title="rightOpen ? '카테고리 패널 닫기' : '카테고리 패널 열기'"
+          @click="rightOpen = !rightOpen"
+        >
+          <Transition name="fade-text">
+            <span v-if="rightOpen">카테고리별 추천</span>
+          </Transition>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <polyline
+              :points="rightOpen ? '9 18 15 12 9 6' : '15 18 9 12 15 6'"
+            />
+          </svg>
+        </button>
 
+        <!-- 카테고리 목록 -->
+        <div v-show="rightOpen" class="sidebar-body">
+          <CategoryAccordion :books="bookResult?.books ?? []" />
+        </div>
+      </aside>
     </div>
   </div>
 </template>
@@ -129,13 +189,28 @@
 <script setup lang="ts">
 import { useSearch } from "~/composables/useSearch";
 import { useSearchHistory } from "~/composables/useSearchHistory";
-import type { BookSearchResponse, ChunkSearchResponse } from "~/types/search";
+import type {
+  BookSearchResponse,
+  ChunkSearchResponse,
+  SearchResponse,
+} from "~/types/search";
+import type { HistoryEntry } from "~/types/history";
 
-const { loading, error, result, search, reset: resetSearch } = useSearch();
-const { history, addEntry, clearHistory } = useSearchHistory();
+const { history, setHistory, clearHistory } = useSearchHistory();
+const { loading, error, result, search, reset } = useSearch();
 
 const currentQuery = ref("");
 const currentHistoryId = ref<string | null>(null);
+const leftOpen = ref(true);
+const rightOpen = ref(true);
+const searchInputRef = ref<{ focus: () => void } | null>(null);
+
+// 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
+const gridCols = computed(() => {
+  const l = leftOpen.value ? "240px" : "44px";
+  const r = rightOpen.value ? "300px" : "44px";
+  return `${l} 1fr ${r}`;
+});
 
 const bookAnswer = computed(() => {
   if (!result.value || result.value.mode !== "book") return undefined;
@@ -154,26 +229,44 @@ const chunkResult = computed(() => {
 
 const topBook = computed(() => bookResult.value?.books?.[0] ?? null);
 
-async function handleSearch(query: string) {
-  currentQuery.value = query;
-  await search(query, "book", 5);
-  if (result.value) {
-    currentHistoryId.value = addEntry(query, result.value);
+const sessionId = useState("sessionId", () => {
+  if (process.client) {
+    let sid = localStorage.getItem("sid");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem("sid", sid);
+    }
+    return sid;
   }
+  return null;
+});
+
+async function loadHistory() {
+  if (!sessionId.value) return;
+
+  const data = await $fetch<HistoryEntry[]>(
+    `/api/books/history/${sessionId.value}`,
+  );
+  setHistory(data);
+}
+
+onMounted(() => {
+  loadHistory();
+});
+
+async function handleSearch(query: string) {
+  await search(query, "book", 9);
+
+  await loadHistory();
+
   nextTick(() => {
-    currentQuery.value = "";
+    searchInputRef.value?.focus();
   });
 }
 
 function restoreHistory(entry: (typeof history.value)[number]) {
   currentHistoryId.value = entry.id;
-  result.value = entry.result;
-}
-
-function reset() {
-  currentQuery.value = "";
-  currentHistoryId.value = null;
-  resetSearch();
+  result.value = entry.result as SearchResponse;
 }
 </script>
 
@@ -189,8 +282,8 @@ function reset() {
 
 .app-layout {
   display: grid;
-  grid-template-columns: 240px 1fr 260px;
   min-height: 100vh;
+  transition: grid-template-columns 0.25s ease;
 }
 
 /* ── 사이드바 공통 ──────────────────────────────── */
@@ -198,17 +291,90 @@ function reset() {
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow-y: auto;
-  border-right: 1px solid #f0f0f1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
 }
 
 .sidebar-left {
-  border-right: 1px solid #f0f0f1;
+  border-right: 1px solid #ebebed;
 }
 
 .sidebar-right {
-  border-left: 1px solid #f0f0f1;
-  border-right: none;
+  border-left: 1px solid #ebebed;
+}
+
+/* ── 로고 (왼쪽 상단 고정) ─────────────────────── */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 14px 14px;
+  cursor: pointer;
+  min-height: 68px;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  width: 72px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: #18181b;
+  white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: -0.02em;
+}
+
+/* ── 사이드바 토글 버튼 ─────────────────────────── */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: calc(100% - 16px);
+  margin: 0 8px 4px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  background: #f0f0f1;
+  color: #52525b;
+}
+
+.sidebar-toggle.right {
+  justify-content: flex-end;
+}
+
+.sidebar-toggle svg {
+  flex-shrink: 0;
+}
+
+/* ── 사이드바 본문 ──────────────────────────────── */
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 /* ── 메인 콘텐츠 ────────────────────────────────── */
@@ -216,7 +382,7 @@ function reset() {
   min-width: 0;
 }
 
-/* ── 랜딩 (검색 전) ────────────────────────────── */
+/* ── 랜딩 ──────────────────────────────────────── */
 .landing {
   display: flex;
   flex-direction: column;
@@ -231,12 +397,6 @@ function reset() {
   text-align: center;
 }
 
-.logo {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 16px;
-}
-
 .title {
   font-size: 26px;
   font-weight: 700;
@@ -246,6 +406,7 @@ function reset() {
 .subtitle {
   font-size: 15px;
   color: #71717a;
+  margin-top: 6px;
 }
 
 /* ── 결과 페이지 ────────────────────────────────── */
@@ -262,13 +423,6 @@ function reset() {
   top: 0;
   backdrop-filter: blur(10px);
   z-index: 10;
-}
-
-.header-logo {
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 .header-input-wrap {
@@ -289,6 +443,7 @@ function reset() {
   padding: 16px 0;
   font-size: 14px;
   color: #71717a;
+  flex-wrap: wrap;
 }
 
 .query-display {
@@ -308,7 +463,7 @@ function reset() {
   color: #94a3b8;
 }
 
-/* ── 추천 도서 그리드 ───────────────────────────── */
+/* ── 도서 그리드 ────────────────────────────────── */
 .more-section {
   margin-top: 32px;
 }
@@ -317,6 +472,7 @@ function reset() {
   font-size: 16px;
   font-weight: 600;
   color: #27272a;
+  margin-bottom: 16px;
 }
 
 .book-grid {
@@ -339,6 +495,7 @@ function reset() {
   font-weight: 600;
   color: #a1a1aa;
   letter-spacing: 0.08em;
+  margin-bottom: 8px;
 }
 
 .chunk-list {
@@ -390,6 +547,7 @@ function reset() {
   align-items: center;
   padding: 48px 0;
   color: #64748b;
+  gap: 12px;
 }
 
 .spinner {
@@ -402,7 +560,9 @@ function reset() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-area {
@@ -431,26 +591,33 @@ function reset() {
   font-size: 15px;
 }
 
+/* ClientOnly fallback */
+.ch-placeholder {
+  height: 100%;
+}
+
+/* ── 트랜지션 ───────────────────────────────────── */
+.fade-text-enter-active,
+.fade-text-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-text-enter-from,
+.fade-text-leave-to {
+  opacity: 0;
+}
+
 /* ── 반응형 ─────────────────────────────────────── */
 @media (max-width: 1100px) {
-  .app-layout {
-    grid-template-columns: 200px 1fr 220px;
+  .landing .title {
+    font-size: 22px;
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .app-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 44px 1fr 44px !important;
   }
-  .sidebar {
-    position: static;
-    height: auto;
-    border: none;
-    border-bottom: 1px solid #f0f0f1;
-  }
-  .sidebar-right {
-    border-top: 1px solid #f0f0f1;
-  }
+
   .book-grid {
     grid-template-columns: repeat(2, 1fr);
   }

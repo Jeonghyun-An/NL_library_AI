@@ -87,6 +87,8 @@ function autoResize() {
 }
 
 onMounted(() => autoResize());
+
+defineExpose({ focus: () => textareaRef.value?.focus() });
 </script>
 
 <style scoped>

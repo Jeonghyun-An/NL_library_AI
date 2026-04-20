@@ -21,6 +21,8 @@ async def lifespan(app: FastAPI):
     # DB 테이블 생성
     from db.postgres import engine
     from models.book import Base
+    import models.section
+    import models.search_history
     from sqlalchemy import text
     import models.section
     async with engine.begin() as conn:

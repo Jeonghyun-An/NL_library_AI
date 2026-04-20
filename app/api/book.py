@@ -1,8 +1,10 @@
 import io
 import logging
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Header
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import uuid4
+from sqlalchemy import text
 
 from core.config import get_settings
 from core.deps import get_db
@@ -30,8 +32,13 @@ router = APIRouter(prefix="/api/books", tags=["books"])
 )
 async def search_books(
     req: SearchRequest,
+    session_id: str | None = Header(None, alias="x-session-id"),
     db: AsyncSession = Depends(get_db),
 ):
+    # session_id 없으면 생성
+    if not session_id:
+        session_id = str(uuid4())
+
     result = await search(
         req.query,
         mode=req.mode,
@@ -47,6 +54,25 @@ async def search_books(
             book = await repo.get_by_cnts_id(bg.book_id)
             if book:
                 bg.book_info = BookOut.model_validate(book)
+
+    # 히스토리 저장
+    try:
+        await db.execute(
+            text("""
+                INSERT INTO search_history (id, session_id, query, mode, result)
+                VALUES (:id, :sid, :query, :mode, :result)
+            """),
+            {
+                "id": str(uuid4()),
+                "sid": session_id,
+                "query": req.query,
+                "mode": req.mode,
+                "result": result.model_dump(),
+            },
+        )
+        await db.commit()
+    except Exception as e:
+        log.warning(f"히스토리 저장 실패: {e}")
 
     return result
 
@@ -254,3 +280,28 @@ async def get_book(cnts_id: str, db: AsyncSession = Depends(get_db)):
     if not book:
         raise HTTPException(404, f"도서 없음: {cnts_id}")
     return BookOut.model_validate(book)
+
+@router.get("/history/{session_id}")
+async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
+    rows = await db.execute(
+        text("""
+            SELECT id, query, result, created_at
+            FROM search_history
+            WHERE session_id = :sid
+            ORDER BY created_at DESC
+            LIMIT 50
+        """),
+        {"sid": session_id},
+    )
+
+    items = rows.fetchall()
+
+    return [
+        {
+            "id": r.id,
+            "query": r.query,
+            "result": r.result,
+            "timestamp": r.created_at,
+        }
+        for r in items
+    ]

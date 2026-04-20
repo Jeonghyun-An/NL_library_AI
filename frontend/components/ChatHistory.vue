@@ -1,7 +1,6 @@
 <template>
   <div class="chat-history">
     <div class="ch-header">
-      <span class="ch-title">검색 기록</span>
       <button
         v-if="history.length"
         class="ch-clear"
@@ -55,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import type { HistoryEntry } from "~/composables/useSearchHistory";
+import type { HistoryEntry } from "~/types/history";
 
 defineProps<{
   history: HistoryEntry[];
@@ -67,10 +66,10 @@ defineEmits<{
   clear: [];
 }>();
 
-function formatTime(ts: number): string {
+function formatTime(ts: number | string): string {
   const d = new Date(ts);
   const now = new Date();
-  const diffMin = Math.floor((now.getTime() - ts) / 60000);
+  const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000);
   if (diffMin < 1) return "방금";
   if (diffMin < 60) return `${diffMin}분 전`;
   if (d.toDateString() === now.toDateString()) {
@@ -88,23 +87,13 @@ function formatTime(ts: number): string {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 20px 0;
+  padding: 8px 0;
 }
 
 .ch-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px 12px;
-  border-bottom: 1px solid #f0f0f1;
-}
-
-.ch-title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: #a1a1aa;
-  text-transform: uppercase;
+  justify-content: flex-end;
+  padding: 4px 8px;
 }
 
 .ch-clear {

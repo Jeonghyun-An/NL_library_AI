@@ -80,11 +80,11 @@ function openNLPage() {
 
 const formattedAnswer = computed(() => {
   if (!props.answer) return "";
-  return marked(props.answer);
+  return marked.parse(props.answer) as string;
 });
 
-const formattedSummary = computed(() =>
-  marked(props.book?.book_info?.summary ?? ""),
+const formattedSummary = computed(
+  () => marked.parse(props.book?.book_info?.summary ?? "") as string,
 );
 </script>
 

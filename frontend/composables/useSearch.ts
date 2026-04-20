@@ -2,9 +2,22 @@ import type { SearchRequest, SearchResponse } from "~/types/search";
 
 export function useSearch() {
   const config = useRuntimeConfig();
+
   const loading = ref(false);
   const error = ref<string | null>(null);
   const result = ref<SearchResponse | null>(null);
+
+  const sessionId = useState<string | null>("sessionId", () => {
+    if (process.client) {
+      let sid = localStorage.getItem("sid");
+      if (!sid) {
+        sid = crypto.randomUUID();
+        localStorage.setItem("sid", sid);
+      }
+      return sid;
+    }
+    return null;
+  });
 
   async function search(
     query: string,
@@ -28,6 +41,7 @@ export function useSearch() {
         `${config.public.apiBase}/books/search`,
         {
           method: "POST",
+          headers: sessionId.value ? { "x-session-id": sessionId.value } : {},
           body,
         },
       );
