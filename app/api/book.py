@@ -9,6 +9,7 @@ import json
 
 from core.config import get_settings
 from core.deps import get_db
+from fastapi.responses import StreamingResponse
 from schemas.book import (
     BookOut,
     SearchRequest,
@@ -17,6 +18,7 @@ from schemas.book import (
     BatchIngestRequest,
     IngestionRequest,
     TaskStatusOut,
+    ReasonStreamRequest,
 )
 from repositories.book import BookRepository
 from services.search.pipeline import search
@@ -270,6 +272,25 @@ async def get_book_thumbnail(cnts_id: str):
         content=img_bytes,
         media_type="image/jpeg",
         headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+# ── 추천 이유 스트리밍 ───────────────────────────────────
+@router.post("/reason/stream")
+async def stream_reason(
+    req: ReasonStreamRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """도서 추천 이유를 SSE로 스트리밍"""
+    from services.search.pipeline import stream_book_reason
+
+    return StreamingResponse(
+        stream_book_reason(req.query, req.book_id, req.chunk_texts, db),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # Nginx 버퍼링 비활성화
+        },
     )
 
 

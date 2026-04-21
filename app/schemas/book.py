@@ -157,3 +157,10 @@ class TaskStatusOut(BaseModel):
     task_id: str
     status:  str
     result:  Optional[dict] = None
+
+
+class ReasonStreamRequest(BaseModel):
+    """추천 이유 스트리밍 요청"""
+    query:       str
+    book_id:     str
+    chunk_texts: list[str] = []

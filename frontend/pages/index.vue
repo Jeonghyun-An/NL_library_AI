@@ -106,7 +106,8 @@
                 <TopResult
                   v-if="topBook"
                   :book="topBook"
-                  :answer="bookAnswer"
+                  :answer="streamingReason"
+                  :is-streaming="isStreamingReason"
                 />
                 <div v-if="bookResult.books.length > 1" class="more-section">
                   <h3 class="more-title">함께 추천하는 도서</h3>
@@ -190,6 +191,7 @@
 import { useSearch } from "~/composables/useSearch";
 import { useSearchHistory } from "~/composables/useSearchHistory";
 import type {
+  BookChunkGroup,
   BookSearchResponse,
   ChunkSearchResponse,
   SearchResponse,
@@ -198,23 +200,21 @@ import type { HistoryEntry } from "~/types/history";
 
 const { history, setHistory, clearHistory } = useSearchHistory();
 const { loading, error, result, search, reset, generateUUID } = useSearch();
+const config = useRuntimeConfig();
 
 const currentQuery = ref("");
 const currentHistoryId = ref<string | null>(null);
 const leftOpen = ref(true);
 const rightOpen = ref(true);
 const searchInputRef = ref<{ focus: () => void } | null>(null);
+const streamingReason = ref("");
+const isStreamingReason = ref(false);
 
 // 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
 const gridCols = computed(() => {
   const l = leftOpen.value ? "240px" : "44px";
   const r = rightOpen.value ? "clamp(300px, 25vw, 420px)" : "44px";
   return `${l} 1fr ${r}`;
-});
-
-const bookAnswer = computed(() => {
-  if (!result.value || result.value.mode !== "book") return undefined;
-  return (result.value as BookSearchResponse).books?.[0]?.reason;
 });
 
 const bookResult = computed(() => {
@@ -264,23 +264,73 @@ onMounted(() => {
 
 async function handleSearch(query: string) {
   currentHistoryId.value = null;
-  await search(query, "book", 10);
+  streamingReason.value = "";
+  isStreamingReason.value = false;
 
+  await search(query, "book", 10);
   await loadHistory();
 
-  nextTick(() => {
-    searchInputRef.value?.focus();
-  });
+  // 검색 완료 후 상위 도서 추천 이유 스트리밍 시작 (non-blocking)
+  if (bookResult.value?.books?.[0]) {
+    streamReason(query, bookResult.value.books[0]);
+  }
+
+  nextTick(() => searchInputRef.value?.focus());
+}
+
+async function streamReason(query: string, book: BookChunkGroup) {
+  isStreamingReason.value = true;
+  streamingReason.value = "";
+
+  const topChunkTexts = [...book.chunks]
+    .sort((a, b) => (b.rerank_score ?? b.score) - (a.rerank_score ?? a.score))
+    .slice(0, 3)
+    .map((c) => c.text);
+
+  try {
+    const response = await fetch(`${config.public.apiBase}/books/reason/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query,
+        book_id: book.book_id,
+        chunk_texts: topChunkTexts,
+      }),
+    });
+
+    if (!response.body) return;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value, { stream: true });
+      for (const line of text.split("\n")) {
+        if (!line.startsWith("data: ")) continue;
+        const data = line.slice(6).trim();
+        if (data === "[DONE]") return;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.text) streamingReason.value += parsed.text;
+        } catch {}
+      }
+    }
+  } catch (e) {
+    console.error("추천 이유 스트리밍 실패:", e);
+  } finally {
+    isStreamingReason.value = false;
+  }
 }
 
 function restoreHistory(entry: HistoryEntry) {
   currentHistoryId.value = entry.id;
   currentQuery.value = entry.query;
   result.value = entry.result as SearchResponse;
+  streamingReason.value = "";
+  isStreamingReason.value = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
-  nextTick(() => {
-    searchInputRef.value?.focus();
-  });
+  nextTick(() => searchInputRef.value?.focus());
 }
 </script>
 

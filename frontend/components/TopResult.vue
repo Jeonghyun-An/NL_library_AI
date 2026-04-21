@@ -1,8 +1,13 @@
 <template>
   <div class="top-result">
     <!-- LLM 추천 이유 -->
-    <div class="answer-section" v-if="answer">
-      <div class="answer-label">AI 추천 답변</div>
+    <div class="answer-section" v-if="answer || isStreaming">
+      <div class="answer-label">
+        AI 추천 답변
+        <span v-if="isStreaming" class="streaming-badge">
+          <span class="dot" /><span class="dot" /><span class="dot" />
+        </span>
+      </div>
       <div class="answer-text" v-html="formattedAnswer" />
     </div>
 
@@ -116,6 +121,7 @@ import { marked } from "marked";
 const props = defineProps<{
   book: BookChunkGroup;
   answer?: string;
+  isStreaming?: boolean;
 }>();
 
 const summaryExpanded = ref(false);
@@ -158,11 +164,36 @@ const formattedSummary = computed(
 }
 
 .answer-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   font-weight: 600;
   color: #71717a;
   letter-spacing: 0.08em;
   margin-bottom: 6px;
+}
+
+.streaming-badge {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #a1a1aa;
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%            { transform: translateY(-4px); opacity: 1; }
 }
 
 .answer-text {

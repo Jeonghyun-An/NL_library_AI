@@ -9,8 +9,10 @@ pipeline.py — RAG 검색 파이프라인 (청크 모드 / 도서 모드)
   ⑤ 답변 생성 (vLLM)
 """
 import asyncio
+import json
 import time
 import logging
+from typing import AsyncGenerator
 
 import httpx
 
@@ -287,17 +289,8 @@ async def _search_book_mode(
         books.sort(key=_pub_date, reverse=reverse)
         books = books[:top_k]  # 날짜 정렬 후 top_k로 축소
 
-    # ⑤ 상위 도서에 대해 LLM 추천 이유 + 요약 병렬 생성
-    if books:
-        import asyncio
-        top_books = books[:min(3, len(books))]
-        reasons = []
-        for b in top_books:
-            r = await _generate_book_reason(original, b.book_id, b.chunks, db)
-            reasons.append(r)
-        for book, reason in zip(top_books, reasons):
-            if isinstance(reason, str):
-                book.reason = reason
+    # ⑤ 추천 이유는 별도 스트리밍 엔드포인트(/reason/stream)로 분리
+    #    메인 검색 응답 속도를 위해 여기서는 생성하지 않음
 
     elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
 
@@ -309,21 +302,16 @@ async def _search_book_mode(
     )
 
 
-async def _generate_book_reason(
+async def stream_book_reason(
     query: str,
     book_id: str,
-    chunks: list[ChunkHit],
+    chunk_texts: list[str],
     db=None,
-) -> str | None:
+) -> AsyncGenerator[str, None]:
     """
-    도서 모드: 이 책이 질의에 왜 적합한지 추천 이유 생성 (2~3문장)
-
-    book_summary + 매칭 청크 모두 컨텍스트로 사용하되,
-    프롬프트에서 "책 일반 소개 반복 금지"를 명시해 도서 소개 섹션과 중복 방지.
+    도서 추천 이유 SSE 스트리밍 생성기.
+    FastAPI StreamingResponse에 직접 전달한다.
     """
-    if not chunks:
-        return None
-
     # 저장된 도서 요약 조회
     book_summary: str | None = None
     if db:
@@ -334,16 +322,15 @@ async def _generate_book_reason(
         except Exception as e:
             log.warning(f"[{book_id}] 도서 요약 조회 실패: {e}")
 
-    # 상위 매칭 청크 3개
-    top_chunks = sorted(chunks, key=lambda c: c.rerank_score or c.score, reverse=True)[:3]
     chunk_context = "\n\n".join(
-        f"[p.{c.page_start}-{c.page_end}]\n{c.text}" for c in top_chunks
+        f"[구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:3])
     )
 
     context_parts = []
     if book_summary:
         context_parts.append(f"[도서 요약]\n{book_summary}")
-    context_parts.append(f"[매칭 구절]\n{chunk_context}")
+    if chunk_context:
+        context_parts.append(f"[매칭 구절]\n{chunk_context}")
     context_text = "\n\n".join(context_parts)
 
     prompt = (
@@ -357,21 +344,35 @@ async def _generate_book_reason(
 
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.post(
+            async with client.stream(
+                "POST",
                 f"{cfg.VLLM_BASE_URL}/chat/completions",
                 json={
                     "model": cfg.VLLM_MODEL,
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 512,
                     "temperature": 0.3,
+                    "stream": True,
                 },
                 timeout=60.0,
-            )
-            resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+            ) as resp:
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    data = line[6:]
+                    if data.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                        delta = chunk["choices"][0]["delta"].get("content", "")
+                        if delta:
+                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+                    except Exception:
+                        pass
     except Exception as e:
-        log.error(f"[{book_id}] 추천 이유/요약 생성 실패: {e}")
-        return None
+        log.error(f"[{book_id}] 추천 이유 스트리밍 실패: {e}")
+
+    yield "data: [DONE]\n\n"
 
 
 async def _generate_answer_with_context(
