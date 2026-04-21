@@ -113,17 +113,34 @@ def load_catalog_xlsx(xlsx_path: str):
     records = load_xlsx(xlsx_path)
     db = SyncSessionLocal()
     try:
-        created = 0
+        created = updated = 0
         for rec in records:
-            exists = db.query(Book).filter_by(cnts_id=rec["cnts_id"]).first()
-            if exists:
+            cnts_id = rec.get("cnts_id")
+            if not cnts_id:
                 continue
-            book = Book(**rec)
-            db.add(book)
-            created += 1
+
+            exists = db.query(Book).filter_by(cnts_id=cnts_id).first()
+            if exists:
+                # 기존 레코드 업데이트: 파싱된 non-None 값만 덮어쓰기
+                # (is_embedded, summary 등 수집 관련 필드는 건드리지 않음)
+                SKIP_ON_UPDATE = {"cnts_id", "is_embedded", "summary", "milvus_id", "chunk_count"}
+                changed = False
+                for key, val in rec.items():
+                    if key in SKIP_ON_UPDATE:
+                        continue
+                    if val is not None and getattr(exists, key, None) != val:
+                        setattr(exists, key, val)
+                        changed = True
+                if changed:
+                    updated += 1
+            else:
+                book = Book(**rec)
+                db.add(book)
+                created += 1
+
         db.commit()
-        log.info(f"메타데이터 {created}건 저장 완료")
-        return {"created": created, "total": len(records)}
+        log.info(f"메타데이터 신규 {created}건 저장, {updated}건 업데이트 완료")
+        return {"created": created, "updated": updated, "total": len(records)}
     except Exception as e:
         db.rollback()
         log.error(f"메타데이터 저장 실패: {e}")

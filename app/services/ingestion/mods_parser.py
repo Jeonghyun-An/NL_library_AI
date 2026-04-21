@@ -93,11 +93,36 @@ def parse(mods_xml: str) -> dict:
     pub_date_raw = _find(root, "mods:originInfo/mods:dateIssued")
     pub_date = pub_date_raw[:4] if pub_date_raw else None
 
+    # partNumber: <titleInfo><partNumber>
+    part_number = _find(root, "mods:titleInfo/mods:partNumber")
+
+    # 시리즈명: <relatedItem type="series"><titleInfo><title>
+    series_title = None
+    for rel in root.findall("mods:relatedItem", NS):
+        if rel.get("type") == "series":
+            t = rel.find("mods:titleInfo/mods:title", NS)
+            if t is not None and t.text:
+                series_title = t.text.strip()
+                break
+
+    # accessCondition: 텍스트 직접 또는 비-MODS 자식 <licenseType>
+    access_condition = None
+    ac_el = root.find("mods:accessCondition", NS)
+    if ac_el is not None:
+        if ac_el.text and ac_el.text.strip():
+            access_condition = ac_el.text.strip()
+        else:
+            lt = ac_el.find("licenseType")  # 비표준 확장 요소, 네임스페이스 없음
+            if lt is not None and lt.text:
+                access_condition = lt.text.strip()
+
     return {
         "record_id":            record_id,
         "last_modified":        _find(root, "mods:recordInfo/mods:recordChangeDate"),
         "title":                _find(root, "mods:titleInfo/mods:title"),
         "title_remainder":      _find(root, "mods:titleInfo/mods:subTitle"),
+        "part_number":          part_number,
+        "series_title":         series_title,
         "title_responsibility": None,
         "personal_author":      " | ".join(personal_authors) if personal_authors else None,
         "corporate_author":     " | ".join(corporate_authors) if corporate_authors else None,
@@ -114,7 +139,7 @@ def parse(mods_xml: str) -> dict:
         "url":                  _find(root, "mods:location/mods:url"),
         "uci":                  uci,
         "media_type":           _find(root, "mods:physicalDescription/mods:internetMediaType"),
-        "access_condition":     _find(root, "mods:accessCondition/mods:licenseType"),
+        "access_condition":     access_condition,
         "target_audience":      _find(root, "mods:targetAudience"),
         "digital_origin":       _find(root, "mods:physicalDescription/mods:digitalOrigin"),
         "source_format":        "MODS",
