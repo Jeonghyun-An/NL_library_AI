@@ -323,7 +323,7 @@ async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
             "id": str(r.id),
             "query": r.query,
             "result": json.loads(r.result) if r.result else None,
-            "timestamp": r.created_at.isoformat(),
+            "timestamp": r.created_at.isoformat() + "Z",
         }
         for r in items
     ]
