@@ -1,5 +1,5 @@
 <template>
-  <div class="book-card" @click="openNLPage" style="cursor: pointer">
+  <div class="book-card" @click="$emit('select', book)" style="cursor: pointer">
     <div class="card-cover">
       <BookCover :book-id="book.book_id" size="small" />
     </div>
@@ -23,7 +23,27 @@
           >({{ book.book_info.pub_date }})</span
         >
       </p>
-      <div class="card-score">{{ (book.best_score * 100).toFixed(0) }}%</div>
+      <div class="card-footer">
+        <div class="card-score">{{ (book.best_score * 100).toFixed(0) }}%</div>
+        <button
+          class="nl-link-btn"
+          @click.stop="openNLPage"
+          title="국립중앙도서관에서 검색"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -33,6 +53,10 @@ import type { BookChunkGroup } from "~/types/search";
 
 const props = defineProps<{
   book: BookChunkGroup;
+}>();
+
+const emit = defineEmits<{
+  select: [book: BookChunkGroup];
 }>();
 
 function openNLPage() {
@@ -47,17 +71,14 @@ function openNLPage() {
   background: #ffffff;
   border: 1px solid #e4e4e7;
   border-radius: 14px;
-
   transition: all 0.2s ease;
 }
 
 .book-card:hover {
   transform: translateY(-4px);
-
   box-shadow:
     0 12px 30px rgba(0, 0, 0, 0.08),
     0 4px 10px rgba(0, 0, 0, 0.04);
-
   border-color: #d4d4d8;
 }
 
@@ -96,14 +117,38 @@ function openNLPage() {
   margin: 0 0 8px 0;
 }
 
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .card-score {
   padding: 2px 8px;
-
   background: #f4f4f5;
   color: #27272a;
-
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.nl-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.nl-link-btn:hover {
+  background: #f4f4f5;
+  color: #52525b;
 }
 </style>

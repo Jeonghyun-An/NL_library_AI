@@ -3,10 +3,16 @@
     <!-- LLM 추천 이유 -->
     <div class="answer-section" v-if="answer || isStreaming">
       <div class="answer-label">
+        <span class="ai-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1.5l2.09 6.43H21l-5.47 3.97 2.09 6.43L12 14.37l-5.62 3.96 2.09-6.43L3 7.93h6.91z"/>
+          </svg>
+        </span>
         AI 추천 답변
         <span v-if="isStreaming" class="streaming-badge">
           <span class="dot" /><span class="dot" /><span class="dot" />
         </span>
+        <span v-else-if="answer" class="done-badge">완료</span>
       </div>
       <div class="answer-text" v-html="formattedAnswer" />
     </div>
@@ -157,21 +163,65 @@ const formattedSummary = computed(
 }
 
 .answer-section {
-  background: #fafafa;
-  border-radius: 12px;
-  padding: 16px;
+  position: relative;
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.04) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border: 1px solid rgba(109, 40, 217, 0.18);
+  border-radius: 14px;
+  padding: 16px 16px 16px 18px;
   margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.answer-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #a78bfa 0%, #6366f1 50%, #818cf8 100%);
+  border-radius: 14px 14px 0 0;
+}
+
+.answer-section::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  right: -30px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .answer-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #71717a;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c3aed;
   letter-spacing: 0.08em;
-  margin-bottom: 6px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ai-icon {
+  display: flex;
+  align-items: center;
+  color: #8b5cf6;
+}
+
+.done-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 .streaming-badge {

@@ -111,13 +111,42 @@
                 />
                 <div v-if="bookResult.books.length > 1" class="more-section">
                   <h3 class="more-title">함께 추천하는 도서</h3>
-                  <div class="book-grid">
-                    <BookCard
-                      v-for="book in bookResult.books.slice(1)"
-                      :key="book.book_id"
-                      :book="book"
-                    />
+                  <div class="slider-wrap">
+                    <button class="slider-arrow" @click="slideLeft">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+                    <div class="book-slider" ref="sliderRef">
+                      <BookCard
+                        v-for="book in bookResult.books.slice(1)"
+                        :key="book.book_id"
+                        :book="book"
+                        @select="selectSecondaryBook"
+                      />
+                    </div>
+                    <button class="slider-arrow" @click="slideRight">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
                   </div>
+                </div>
+
+                <div v-if="selectedBook" class="selected-section">
+                  <div class="selected-header">
+                    <h3 class="more-title">선택한 도서</h3>
+                    <button class="close-btn" @click="selectedBook = null">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                  <TopResult
+                    :book="selectedBook"
+                    :answer="selectedStreamingReason"
+                    :is-streaming="isSelectedStreaming"
+                  />
                 </div>
               </template>
             </template>
@@ -188,6 +217,7 @@
 </template>
 
 <script setup lang="ts">
+import { type Ref } from "vue";
 import { useSearch } from "~/composables/useSearch";
 import { useSearchHistory } from "~/composables/useSearchHistory";
 import type {
@@ -209,6 +239,10 @@ const rightOpen = ref(true);
 const searchInputRef = ref<{ focus: () => void } | null>(null);
 const streamingReason = ref("");
 const isStreamingReason = ref(false);
+const selectedBook = ref<BookChunkGroup | null>(null);
+const selectedStreamingReason = ref("");
+const isSelectedStreaming = ref(false);
+const sliderRef = ref<HTMLElement | null>(null);
 
 // 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
 const gridCols = computed(() => {
@@ -263,24 +297,31 @@ onMounted(() => {
 });
 
 async function handleSearch(query: string) {
+  currentQuery.value = query;   // landing 페이지에서 검색할 때도 항상 동기화
   currentHistoryId.value = null;
   streamingReason.value = "";
   isStreamingReason.value = false;
+  selectedBook.value = null;
 
   await search(query, "book", 10);
   await loadHistory();
 
   // 검색 완료 후 상위 도서 추천 이유 스트리밍 시작 (non-blocking)
   if (bookResult.value?.books?.[0]) {
-    streamReason(query, bookResult.value.books[0]);
+    doStreamReason(query, bookResult.value.books[0], streamingReason, isStreamingReason);
   }
 
   nextTick(() => searchInputRef.value?.focus());
 }
 
-async function streamReason(query: string, book: BookChunkGroup) {
-  isStreamingReason.value = true;
-  streamingReason.value = "";
+async function doStreamReason(
+  query: string,
+  book: BookChunkGroup,
+  reasonRef: Ref<string>,
+  streamingRef: Ref<boolean>,
+) {
+  streamingRef.value = true;
+  reasonRef.value = "";
 
   const topChunkTexts = [...book.chunks]
     .sort((a, b) => (b.rerank_score ?? b.score) - (a.rerank_score ?? a.score))
@@ -312,15 +353,28 @@ async function streamReason(query: string, book: BookChunkGroup) {
         if (data === "[DONE]") return;
         try {
           const parsed = JSON.parse(data);
-          if (parsed.text) streamingReason.value += parsed.text;
+          if (parsed.text) reasonRef.value += parsed.text;
         } catch {}
       }
     }
   } catch (e) {
     console.error("추천 이유 스트리밍 실패:", e);
   } finally {
-    isStreamingReason.value = false;
+    streamingRef.value = false;
   }
+}
+
+function selectSecondaryBook(book: BookChunkGroup) {
+  selectedBook.value = book;
+  doStreamReason(currentQuery.value, book, selectedStreamingReason, isSelectedStreaming);
+}
+
+function slideLeft() {
+  sliderRef.value?.scrollBy({ left: -180, behavior: "smooth" });
+}
+
+function slideRight() {
+  sliderRef.value?.scrollBy({ left: 180, behavior: "smooth" });
 }
 
 function restoreHistory(entry: HistoryEntry) {
@@ -329,14 +383,14 @@ function restoreHistory(entry: HistoryEntry) {
   result.value = entry.result as SearchResponse;
   streamingReason.value = "";
   isStreamingReason.value = false;
+  selectedBook.value = null;
   window.scrollTo({ top: 0, behavior: "smooth" });
   nextTick(() => searchInputRef.value?.focus());
 
   // 도서 검색 결과인 경우 추천 이유 재스트리밍
-  // (저장된 결과에 청크 데이터가 포함되어 있어 그대로 활용 가능)
   const restored = entry.result as BookSearchResponse;
   if (restored?.mode === "book" && restored.books?.[0]) {
-    streamReason(entry.query, restored.books[0]);
+    doStreamReason(entry.query, restored.books[0], streamingReason, isStreamingReason);
   }
 }
 </script>
@@ -547,10 +601,85 @@ function restoreHistory(entry: HistoryEntry) {
   margin-bottom: 16px;
 }
 
-.book-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-slider {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 2px 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.book-slider::-webkit-scrollbar {
+  display: none;
+}
+
+.book-slider > * {
+  flex: 0 0 160px;
+}
+
+.slider-arrow {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  color: #52525b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  padding: 0;
+}
+
+.slider-arrow:hover {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ── 선택된 도서 ────────────────────────────────── */
+.selected-section {
+  margin-top: 32px;
+}
+
+.selected-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #71717a;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.close-btn:hover {
+  background: #f4f4f5;
+  color: #27272a;
 }
 
 /* ── Chunk 모드 ─────────────────────────────────── */
@@ -690,8 +819,8 @@ function restoreHistory(entry: HistoryEntry) {
     grid-template-columns: 44px 1fr 44px !important;
   }
 
-  .book-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .book-slider > * {
+    flex: 0 0 140px;
   }
 }
 </style>
