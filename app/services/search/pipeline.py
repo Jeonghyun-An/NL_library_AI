@@ -312,35 +312,68 @@ async def stream_book_reason(
     도서 추천 이유 SSE 스트리밍 생성기.
     FastAPI StreamingResponse에 직접 전달한다.
     """
-    # 저장된 도서 요약 조회
-    book_summary: str | None = None
+    # 도서 메타데이터 + 요약 조회
+    book = None
     if db:
         try:
             from repositories.book import BookRepository
             book = await BookRepository(db).get_by_cnts_id(book_id)
-            book_summary = book.summary if book else None
         except Exception as e:
-            log.warning(f"[{book_id}] 도서 요약 조회 실패: {e}")
+            log.warning(f"[{book_id}] 도서 정보 조회 실패: {e}")
 
-    chunk_context = "\n\n".join(
-        f"[구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:3])
-    )
+    # ── 도서 서지 정보 블록 ──────────────────────────────
+    meta_lines = []
+    if book:
+        if book.title:
+            meta_lines.append(f"제목: {book.title}")
+        author = book.personal_author or book.corporate_author
+        if author:
+            meta_lines.append(f"저자/기관: {author}")
+        if book.pub_date:
+            meta_lines.append(f"발행년도: {book.pub_date}")
+        if book.publisher:
+            meta_lines.append(f"출판사: {book.publisher}")
+        if book.kdc:
+            meta_lines.append(f"KDC 분류: {book.kdc}")
+        if book.subject:
+            meta_lines.append(f"주제: {book.subject}")
+        if book.keyword:
+            meta_lines.append(f"키워드: {book.keyword}")
+    book_meta = "\n".join(meta_lines)
 
+    # ── 컨텍스트 블록 (요약 + 매칭 구절) ─────────────────
     context_parts = []
-    if book_summary:
-        context_parts.append(f"[도서 요약]\n{book_summary}")
-    if chunk_context:
-        context_parts.append(f"[매칭 구절]\n{chunk_context}")
+    if book and book.summary:
+        context_parts.append(f"[도서 요약]\n{book.summary}")
+    if chunk_texts:
+        chunks_block = "\n\n".join(
+            f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:3])
+        )
+        context_parts.append(f"[검색 매칭 구절]\n{chunks_block}")
     context_text = "\n\n".join(context_parts)
 
-    prompt = (
-        "아래 도서 정보를 참고하여, 사용자 질의에 왜 이 도서가 적합한지 2~3문장으로 설명하세요.\n"
-        "단, 도서의 일반적인 소개(책이 무엇에 관한 책인지)는 별도 표시되므로 반복하지 마세요.\n"
-        "이 질의에 이 책의 어떤 내용이 구체적으로 답이 되는지에 집중하세요.\n\n"
-        f"[사용자 질의]\n{query}\n\n"
-        f"{context_text}\n\n"
-        "추천 이유:"
+    # ── 메시지 구성 ──────────────────────────────────────
+    system_message = (
+        "당신은 국립중앙도서관의 AI 사서입니다. "
+        "사용자의 검색 의도를 정확히 파악하고, 추천 도서가 그 의도에 왜 적합한지 "
+        "자연스럽고 설득력 있게 3~4문장으로 설명합니다.\n\n"
+        "반드시 지켜야 할 규칙:\n"
+        "- 사용자의 실제 필요(학습·조사·유사 작품·실무 해결 등)를 먼저 파악하세요.\n"
+        "- 도서의 어떤 측면이 그 필요를 충족하는지 구체적으로 연결하세요.\n"
+        "- 도서 소개에서 이미 보이는 내용(제목·저자·기본 설명)은 반복하지 마세요.\n"
+        "- 매칭 구절의 세부 기술 용어를 맥락 없이 그대로 인용하지 마세요. "
+        "  구절은 도서의 성격을 파악하는 참고 자료로만 활용하세요.\n"
+        "- 도서관 사서가 직접 추천하듯 자연스럽고 간결한 어조로 작성하세요."
     )
+
+    user_message = f"""사용자 질의: {query}
+
+도서 정보:
+{book_meta}
+
+{context_text}
+
+위 도서가 사용자의 질의 의도에 왜 적합한지 추천 이유를 작성해주세요."""
 
     try:
         async with httpx.AsyncClient() as client:
@@ -349,9 +382,12 @@ async def stream_book_reason(
                 f"{cfg.VLLM_BASE_URL}/chat/completions",
                 json={
                     "model": cfg.VLLM_MODEL,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 512,
-                    "temperature": 0.3,
+                    "messages": [
+                        {"role": "system", "content": system_message},
+                        {"role": "user",   "content": user_message},
+                    ],
+                    "max_tokens": 600,
+                    "temperature": 0.4,
                     "stream": True,
                 },
                 timeout=60.0,
