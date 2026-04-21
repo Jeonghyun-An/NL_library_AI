@@ -331,6 +331,13 @@ function restoreHistory(entry: HistoryEntry) {
   isStreamingReason.value = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
   nextTick(() => searchInputRef.value?.focus());
+
+  // 도서 검색 결과인 경우 추천 이유 재스트리밍
+  // (저장된 결과에 청크 데이터가 포함되어 있어 그대로 활용 가능)
+  const restored = entry.result as BookSearchResponse;
+  if (restored?.mode === "book" && restored.books?.[0]) {
+    streamReason(entry.query, restored.books[0]);
+  }
 }
 </script>
 
