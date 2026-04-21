@@ -5,8 +5,17 @@
     </div>
     <div class="card-info">
       <h3 class="card-title">{{ book.book_info?.title || book.book_id }}</h3>
-      <p class="card-author" v-if="book.book_info?.personal_author">
-        {{ book.book_info.personal_author }}
+      <p
+        class="card-author"
+        v-if="
+          book.book_info?.personal_author || book.book_info?.corporate_author
+        "
+      >
+        {{
+          book.book_info?.personal_author ||
+          book.book_info?.corporate_author ||
+          ""
+        }}
       </p>
       <p class="card-publisher" v-if="book.book_info?.publisher">
         {{ book.book_info.publisher }}

@@ -197,7 +197,7 @@ import type {
 import type { HistoryEntry } from "~/types/history";
 
 const { history, setHistory, clearHistory } = useSearchHistory();
-const { loading, error, result, search, reset } = useSearch();
+const { loading, error, result, search, reset, generateUUID } = useSearch();
 
 const currentQuery = ref("");
 const currentHistoryId = ref<string | null>(null);
@@ -233,7 +233,7 @@ const sessionId = useState("sessionId", () => {
   if (process.client) {
     let sid = localStorage.getItem("sid");
     if (!sid) {
-      sid = crypto.randomUUID();
+      sid = generateUUID();
       localStorage.setItem("sid", sid);
     }
     return sid;
@@ -251,10 +251,16 @@ async function loadHistory() {
 }
 
 onMounted(() => {
+  if (!sessionId.value) {
+    const sid = generateUUID();
+    sessionId.value = sid;
+    localStorage.setItem("sid", sid);
+  }
   loadHistory();
 });
 
 async function handleSearch(query: string) {
+  currentHistoryId.value = null;
   await search(query, "book", 9);
 
   await loadHistory();
@@ -264,9 +270,14 @@ async function handleSearch(query: string) {
   });
 }
 
-function restoreHistory(entry: (typeof history.value)[number]) {
+function restoreHistory(entry: HistoryEntry) {
   currentHistoryId.value = entry.id;
+  currentQuery.value = entry.query;
   result.value = entry.result as SearchResponse;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  nextTick(() => {
+    searchInputRef.value?.focus();
+  });
 }
 </script>
 

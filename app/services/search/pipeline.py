@@ -291,10 +291,10 @@ async def _search_book_mode(
     if books:
         import asyncio
         top_books = books[:min(3, len(books))]
-        reasons = await asyncio.gather(
-            *[_generate_book_reason(original, b.book_id, b.chunks, db) for b in top_books],
-            return_exceptions=True,
-        )
+        reasons = []
+        for b in top_books:
+            r = await _generate_book_reason(original, b.book_id, b.chunks, db)
+            reasons.append(r)
         for book, reason in zip(top_books, reasons):
             if isinstance(reason, str):
                 book.reason = reason

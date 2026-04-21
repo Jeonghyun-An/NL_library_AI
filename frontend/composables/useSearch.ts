@@ -7,11 +7,24 @@ export function useSearch() {
   const error = ref<string | null>(null);
   const result = ref<SearchResponse | null>(null);
 
+  function generateUUID() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    // fallback
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
   const sessionId = useState<string | null>("sessionId", () => {
     if (process.client) {
       let sid = localStorage.getItem("sid");
       if (!sid) {
-        sid = crypto.randomUUID();
+        sid = generateUUID();
         localStorage.setItem("sid", sid);
       }
       return sid;
@@ -60,5 +73,5 @@ export function useSearch() {
     error.value = null;
   }
 
-  return { loading, error, result, search, reset };
+  return { loading, error, result, search, reset, generateUUID };
 }

@@ -5,6 +5,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 from sqlalchemy import text
+import json
 
 from core.config import get_settings
 from core.deps import get_db
@@ -36,7 +37,7 @@ async def search_books(
     db: AsyncSession = Depends(get_db),
 ):
     # session_id 없으면 생성
-    if not session_id:
+    if not session_id or session_id == "null":
         session_id = str(uuid4())
 
     result = await search(
@@ -67,7 +68,7 @@ async def search_books(
                 "sid": session_id,
                 "query": req.query,
                 "mode": req.mode,
-                "result": result.model_dump(),
+                "result": json.loads(json.dumps(result.model_dump(), default=str)),
             },
         )
         await db.commit()
@@ -301,7 +302,7 @@ async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
             "id": r.id,
             "query": r.query,
             "result": r.result,
-            "timestamp": r.created_at,
+            "timestamp": r.created_at.isoformat(),
         }
         for r in items
     ]
