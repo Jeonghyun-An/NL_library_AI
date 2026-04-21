@@ -188,12 +188,17 @@ function openBook(book: BookChunkGroup) {
   text-align: center;
 }
 
+.ca-item {
+  min-width: 0;
+}
+
 .ca-list {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   flex: 1;
   padding: 8px 0;
+  min-width: 0;
 }
 
 /* 아코디언 토글 버튼 */
@@ -201,14 +206,15 @@ function openBook(book: BookChunkGroup) {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
+  width: calc(100% - 8px);
+  min-width: 0;
   padding: 10px 16px;
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
   border-radius: 8px;
-  margin: 1px 4px;
+  margin: 1px 0;
   transition: background 0.15s;
 }
 
@@ -221,6 +227,7 @@ function openBook(book: BookChunkGroup) {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: 13px;
   font-weight: 600;
   color: #27272a;
@@ -275,6 +282,7 @@ function openBook(book: BookChunkGroup) {
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s;
+  overflow-x: hidden;
 }
 
 .ca-book:hover {
@@ -287,8 +295,11 @@ function openBook(book: BookChunkGroup) {
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .ca-book-author {

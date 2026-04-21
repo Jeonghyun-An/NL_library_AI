@@ -208,7 +208,7 @@ const searchInputRef = ref<{ focus: () => void } | null>(null);
 // 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
 const gridCols = computed(() => {
   const l = leftOpen.value ? "240px" : "44px";
-  const r = rightOpen.value ? "300px" : "44px";
+  const r = rightOpen.value ? "clamp(300px, 25vw, 420px)" : "44px";
   return `${l} 1fr ${r}`;
 });
 
@@ -264,7 +264,7 @@ onMounted(() => {
 
 async function handleSearch(query: string) {
   currentHistoryId.value = null;
-  await search(query, "book", 9);
+  await search(query, "book", 10);
 
   await loadHistory();
 
@@ -317,6 +317,8 @@ function restoreHistory(entry: HistoryEntry) {
 
 .sidebar-right {
   border-left: 1px solid #ebebed;
+  min-width: 0;
+  max-width: 420px;
 }
 
 /* ── 로고 (왼쪽 상단 고정) ─────────────────────── */
@@ -431,7 +433,6 @@ function restoreHistory(entry: HistoryEntry) {
 .results-header {
   display: flex;
   align-items: center;
-  gap: 16px;
   padding: 16px 0;
   position: sticky;
   top: 0;
