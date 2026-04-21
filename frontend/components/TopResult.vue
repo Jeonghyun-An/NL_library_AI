@@ -17,7 +17,9 @@
         </h2>
         <p class="book-subtitle" v-if="book.book_info?.title_remainder">
           {{ book.book_info.title_remainder }}
-          <span v-if="book.book_info?.part_number"> · {{ book.book_info.part_number }}</span>
+          <span v-if="book.book_info?.part_number">
+            · {{ book.book_info.part_number }}</span
+          >
         </p>
         <p class="book-subtitle" v-else-if="book.book_info?.part_number">
           {{ book.book_info.part_number }}
@@ -29,19 +31,35 @@
             <span class="meta-value">{{ book.book_info.personal_author }}</span>
           </template>
           <template v-if="book.book_info?.corporate_author">
-            <span class="meta-label">{{ book.book_info?.personal_author ? '기관' : '저자' }}</span>
-            <span class="meta-value">{{ book.book_info.corporate_author }}</span>
+            <span class="meta-label">{{
+              book.book_info?.personal_author ? "기관" : "저자"
+            }}</span>
+            <span class="meta-value">{{
+              book.book_info.corporate_author
+            }}</span>
           </template>
           <template v-if="book.book_info?.series_title">
             <span class="meta-label">시리즈</span>
             <span class="meta-value">{{ book.book_info.series_title }}</span>
           </template>
-          <template v-if="book.book_info?.publisher || book.book_info?.pub_place || book.book_info?.pub_date">
+          <template
+            v-if="
+              book.book_info?.publisher ||
+              book.book_info?.pub_place ||
+              book.book_info?.pub_date
+            "
+          >
             <span class="meta-label">출판</span>
             <span class="meta-value">
-              <span v-if="book.book_info?.publisher">{{ book.book_info.publisher }}</span>
-              <span v-if="book.book_info?.pub_place"> · {{ book.book_info.pub_place }}</span>
-              <span v-if="book.book_info?.pub_date"> ({{ book.book_info.pub_date }})</span>
+              <span v-if="book.book_info?.publisher">{{
+                book.book_info.publisher
+              }}</span>
+              <span v-if="book.book_info?.pub_place">
+                · {{ book.book_info.pub_place }}</span
+              >
+              <span v-if="book.book_info?.pub_date">
+                ({{ book.book_info.pub_date }})</span
+              >
             </span>
           </template>
           <template v-if="book.book_info?.extent">
@@ -234,6 +252,7 @@ const formattedSummary = computed(
   font-weight: 600;
   color: #a1a1aa;
   display: block;
+  letter-spacing: 0.08em;
   margin-bottom: 6px;
 }
 
