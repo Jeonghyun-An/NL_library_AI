@@ -68,7 +68,7 @@ async def search_books(
                 "sid": session_id,
                 "query": req.query,
                 "mode": req.mode,
-                "result": json.loads(json.dumps(result.model_dump(), default=str)),
+                "result": json.dumps(result.model_dump(), default=str),
             },
         )
         await db.commit()
@@ -299,9 +299,9 @@ async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
 
     return [
         {
-            "id": r.id,
+            "id": str(r.id),
             "query": r.query,
-            "result": r.result,
+            "result": json.loads(r.result) if r.result else None,
             "timestamp": r.created_at.isoformat(),
         }
         for r in items

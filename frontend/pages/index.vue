@@ -243,11 +243,14 @@ const sessionId = useState("sessionId", () => {
 
 async function loadHistory() {
   if (!sessionId.value) return;
-
-  const data = await $fetch<HistoryEntry[]>(
-    `/api/books/history/${sessionId.value}`,
-  );
-  setHistory(data);
+  try {
+    const data = await $fetch<HistoryEntry[]>(
+      `/api/books/history/${sessionId.value}`,
+    );
+    setHistory(data);
+  } catch (e) {
+    console.warn("히스토리 로드 실패:", e);
+  }
 }
 
 onMounted(() => {
