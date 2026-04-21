@@ -9,6 +9,7 @@ class BookBase(BaseModel):
     cnts_id:              str
     title:                str
     title_remainder:      Optional[str] = None
+    part_number:          Optional[str] = None
     title_responsibility: Optional[str] = None
     personal_author:      Optional[str] = None
     corporate_author:     Optional[str] = None

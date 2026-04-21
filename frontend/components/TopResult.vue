@@ -15,30 +15,61 @@
         <h2 class="book-title" @click="openNLPage" style="cursor: pointer">
           {{ book.book_info?.title || book.book_id }}
         </h2>
-        <div class="meta-row" v-if="book.book_info?.personal_author">
-          <span class="meta-label">저자</span>
-          <span>{{ book.book_info.personal_author }}</span>
+        <p class="book-subtitle" v-if="book.book_info?.title_remainder">
+          {{ book.book_info.title_remainder }}
+          <span v-if="book.book_info?.part_number"> · {{ book.book_info.part_number }}</span>
+        </p>
+        <p class="book-subtitle" v-else-if="book.book_info?.part_number">
+          {{ book.book_info.part_number }}
+        </p>
+
+        <div class="meta-grid">
+          <template v-if="book.book_info?.personal_author">
+            <span class="meta-label">저자</span>
+            <span class="meta-value">{{ book.book_info.personal_author }}</span>
+          </template>
+          <template v-if="book.book_info?.corporate_author">
+            <span class="meta-label">{{ book.book_info?.personal_author ? '기관' : '저자' }}</span>
+            <span class="meta-value">{{ book.book_info.corporate_author }}</span>
+          </template>
+          <template v-if="book.book_info?.series_title">
+            <span class="meta-label">시리즈</span>
+            <span class="meta-value">{{ book.book_info.series_title }}</span>
+          </template>
+          <template v-if="book.book_info?.publisher || book.book_info?.pub_place || book.book_info?.pub_date">
+            <span class="meta-label">출판</span>
+            <span class="meta-value">
+              <span v-if="book.book_info?.publisher">{{ book.book_info.publisher }}</span>
+              <span v-if="book.book_info?.pub_place"> · {{ book.book_info.pub_place }}</span>
+              <span v-if="book.book_info?.pub_date"> ({{ book.book_info.pub_date }})</span>
+            </span>
+          </template>
+          <template v-if="book.book_info?.extent">
+            <span class="meta-label">분량</span>
+            <span class="meta-value">{{ book.book_info.extent }}</span>
+          </template>
+          <template v-if="book.book_info?.isbn">
+            <span class="meta-label">ISBN</span>
+            <span class="meta-value">{{ book.book_info.isbn }}</span>
+          </template>
+          <template v-if="book.book_info?.kdc">
+            <span class="meta-label">KDC</span>
+            <span class="meta-value">{{ book.book_info.kdc }}</span>
+          </template>
+          <template v-if="book.book_info?.language">
+            <span class="meta-label">언어</span>
+            <span class="meta-value">{{ book.book_info.language }}</span>
+          </template>
+          <template v-if="book.book_info?.subject">
+            <span class="meta-label">주제</span>
+            <span class="meta-value">{{ book.book_info.subject }}</span>
+          </template>
+          <template v-if="book.book_info?.keyword">
+            <span class="meta-label">키워드</span>
+            <span class="meta-value">{{ book.book_info.keyword }}</span>
+          </template>
         </div>
-        <div class="meta-row" v-if="book.book_info?.publisher">
-          <span class="meta-label">출판사</span>
-          <span>{{ book.book_info.publisher }}</span>
-        </div>
-        <div class="meta-row" v-if="book.book_info?.pub_date">
-          <span class="meta-label">발행년</span>
-          <span>{{ book.book_info.pub_date }}</span>
-        </div>
-        <div class="meta-row" v-if="book.book_info?.kdc">
-          <span class="meta-label">KDC</span>
-          <span>{{ book.book_info.kdc }}</span>
-        </div>
-        <div class="meta-row" v-if="book.book_info?.subject">
-          <span class="meta-label">주제</span>
-          <span>{{ book.book_info.subject }}</span>
-        </div>
-        <div class="meta-row" v-if="book.book_info?.keyword">
-          <span class="meta-label">키워드</span>
-          <span>{{ book.book_info.keyword }}</span>
-        </div>
+
         <div class="relevance">
           관련도 {{ (book.best_score * 100).toFixed(1) }}%
         </div>
@@ -141,18 +172,41 @@ const formattedSummary = computed(
   font-size: 20px;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
+  cursor: pointer;
 }
 
-.meta-row {
+.book-title:hover {
+  color: #3b82f6;
+}
+
+.book-subtitle {
   font-size: 14px;
-  color: #52525b;
-  margin-bottom: 2px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  margin-bottom: 12px;
 }
 
 .meta-label {
+  font-size: 12px;
   color: #a1a1aa;
-  margin-right: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.meta-value {
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .relevance {

@@ -13,13 +13,21 @@ export interface ChunkHit {
 export interface BookInfo {
   cnts_id: string;
   title: string;
+  title_remainder?: string;
+  part_number?: string;
   personal_author?: string;
   corporate_author?: string;
   publisher?: string;
+  pub_place?: string;
   pub_date?: string;
+  extent?: string;
   kdc?: string;
+  ddc?: string;
+  isbn?: string;
+  series_title?: string;
   subject?: string;
   keyword?: string;
+  language?: string;
   summary?: string;
   is_embedded: boolean;
   chunk_count?: number;

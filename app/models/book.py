@@ -20,6 +20,7 @@ class Book(Base):
     last_modified    = Column(String(20))           # 005
     title            = Column(Text, nullable=False) # 245 $a
     title_remainder  = Column(Text)                 # 245 $b
+    part_number      = Column(Text)                 # MODS titleInfo/partNumber
     title_responsibility = Column(Text)             # 245 $d
     personal_author  = Column(Text)                 # 100 $a
     corporate_author = Column(Text)                 # 710 $a

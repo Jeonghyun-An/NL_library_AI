@@ -31,6 +31,9 @@ async def lifespan(app: FastAPI):
         await conn.execute(text(
             "ALTER TABLE book_sections ADD COLUMN IF NOT EXISTS summary TEXT"
         ))
+        await conn.execute(text(
+            "ALTER TABLE library_catalog ADD COLUMN IF NOT EXISTS part_number TEXT"
+        ))
     log.info("DB 테이블 확인 완료")
 
     # 임베딩 모델 로드 (FlagEmbedding)
