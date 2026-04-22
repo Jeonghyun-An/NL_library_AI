@@ -3,16 +3,20 @@
     <!-- LLM 추천 이유 -->
     <div class="answer-section" v-if="answer || isStreaming">
       <div class="answer-label">
-        <span class="ai-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1.5l2.09 6.43H21l-5.47 3.97 2.09 6.43L12 14.37l-5.62 3.96 2.09-6.43L3 7.93h6.91z"/>
-          </svg>
-        </span>
+        <span class="ai-icon"> </span>
+        <img
+          v-if="isStreaming"
+          src="/ic_ing.gif"
+          class="status-icon"
+          alt="생성 중"
+        />
+        <img
+          v-else-if="answer"
+          src="/ic_done.svg"
+          class="status-icon"
+          alt="완료"
+        />
         AI 추천 답변
-        <span v-if="isStreaming" class="streaming-badge">
-          <span class="dot" /><span class="dot" /><span class="dot" />
-        </span>
-        <span v-else-if="answer" class="done-badge">완료</span>
       </div>
       <div class="answer-text" v-html="formattedAnswer" />
     </div>
@@ -164,7 +168,11 @@ const formattedSummary = computed(
 
 .answer-section {
   position: relative;
-  background: linear-gradient(135deg, rgba(109, 40, 217, 0.04) 0%, rgba(99, 102, 241, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(109, 40, 217, 0.04) 0%,
+    rgba(99, 102, 241, 0.05) 100%
+  );
   border: 1px solid rgba(109, 40, 217, 0.18);
   border-radius: 14px;
   padding: 16px 16px 16px 18px;
@@ -173,7 +181,7 @@ const formattedSummary = computed(
 }
 
 .answer-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -184,13 +192,17 @@ const formattedSummary = computed(
 }
 
 .answer-section::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -30px;
   right: -30px;
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.08) 0%,
+    transparent 70%
+  );
   pointer-events: none;
 }
 
@@ -198,7 +210,7 @@ const formattedSummary = computed(
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #7c3aed;
   letter-spacing: 0.08em;
@@ -224,26 +236,11 @@ const formattedSummary = computed(
   letter-spacing: 0.05em;
 }
 
-.streaming-badge {
-  display: inline-flex;
-  gap: 3px;
-  align-items: center;
-}
-
-.dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #a1a1aa;
-  animation: bounce 1.2s infinite ease-in-out;
-}
-
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40%            { transform: translateY(-4px); opacity: 1; }
+.status-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .answer-text {

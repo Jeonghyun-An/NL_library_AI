@@ -113,7 +113,14 @@
                   <h3 class="more-title">함께 추천하는 도서</h3>
                   <div class="slider-wrap">
                     <button class="slider-arrow" @click="slideLeft">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
                         <polyline points="15 18 9 12 15 6" />
                       </svg>
                     </button>
@@ -126,19 +133,38 @@
                       />
                     </div>
                     <button class="slider-arrow" @click="slideRight">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
                     </button>
                   </div>
                 </div>
 
-                <div v-if="selectedBook" class="selected-section">
+                <div
+                  v-if="selectedBook"
+                  class="selected-section"
+                  ref="selectedSectionRef"
+                >
                   <div class="selected-header">
                     <h3 class="more-title">선택한 도서</h3>
                     <button class="close-btn" @click="selectedBook = null">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
                     </button>
                   </div>
@@ -243,11 +269,12 @@ const selectedBook = ref<BookChunkGroup | null>(null);
 const selectedStreamingReason = ref("");
 const isSelectedStreaming = ref(false);
 const sliderRef = ref<HTMLElement | null>(null);
+const selectedSectionRef = ref<HTMLElement | null>(null);
 
 // 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
 const gridCols = computed(() => {
   const l = leftOpen.value ? "240px" : "44px";
-  const r = rightOpen.value ? "clamp(300px, 25vw, 420px)" : "44px";
+  const r = rightOpen.value ? "clamp(300px, 25vw, 400px)" : "44px";
   return `${l} 1fr ${r}`;
 });
 
@@ -297,7 +324,7 @@ onMounted(() => {
 });
 
 async function handleSearch(query: string) {
-  currentQuery.value = query;   // landing 페이지에서 검색할 때도 항상 동기화
+  currentQuery.value = query; // landing 페이지에서 검색할 때도 항상 동기화
   currentHistoryId.value = null;
   streamingReason.value = "";
   isStreamingReason.value = false;
@@ -308,7 +335,12 @@ async function handleSearch(query: string) {
 
   // 검색 완료 후 상위 도서 추천 이유 스트리밍 시작 (non-blocking)
   if (bookResult.value?.books?.[0]) {
-    doStreamReason(query, bookResult.value.books[0], streamingReason, isStreamingReason);
+    doStreamReason(
+      query,
+      bookResult.value.books[0],
+      streamingReason,
+      isStreamingReason,
+    );
   }
 
   nextTick(() => searchInputRef.value?.focus());
@@ -329,15 +361,18 @@ async function doStreamReason(
     .map((c) => c.text);
 
   try {
-    const response = await fetch(`${config.public.apiBase}/books/reason/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query,
-        book_id: book.book_id,
-        chunk_texts: topChunkTexts,
-      }),
-    });
+    const response = await fetch(
+      `${config.public.apiBase}/books/reason/stream`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          book_id: book.book_id,
+          chunk_texts: topChunkTexts,
+        }),
+      },
+    );
 
     if (!response.body) return;
     const reader = response.body.getReader();
@@ -366,7 +401,18 @@ async function doStreamReason(
 
 function selectSecondaryBook(book: BookChunkGroup) {
   selectedBook.value = book;
-  doStreamReason(currentQuery.value, book, selectedStreamingReason, isSelectedStreaming);
+  doStreamReason(
+    currentQuery.value,
+    book,
+    selectedStreamingReason,
+    isSelectedStreaming,
+  );
+  nextTick(() => {
+    selectedSectionRef.value?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  });
 }
 
 function slideLeft() {
@@ -390,7 +436,12 @@ function restoreHistory(entry: HistoryEntry) {
   // 도서 검색 결과인 경우 추천 이유 재스트리밍
   const restored = entry.result as BookSearchResponse;
   if (restored?.mode === "book" && restored.books?.[0]) {
-    doStreamReason(entry.query, restored.books[0], streamingReason, isStreamingReason);
+    doStreamReason(
+      entry.query,
+      restored.books[0],
+      streamingReason,
+      isStreamingReason,
+    );
   }
 }
 </script>
@@ -408,6 +459,8 @@ function restoreHistory(entry: HistoryEntry) {
 .app-layout {
   display: grid;
   min-height: 100vh;
+  max-width: 1290px;
+  margin: 0 auto;
   transition: grid-template-columns 0.25s ease;
 }
 
@@ -567,12 +620,13 @@ function restoreHistory(entry: HistoryEntry) {
   align-items: center;
   gap: 12px;
   padding: 16px 0;
-  font-size: 14px;
+  font-size: 11px;
   color: #71717a;
   flex-wrap: wrap;
 }
 
 .query-display {
+  font-size: 18px;
   font-weight: 600;
   color: #18181b;
 }
