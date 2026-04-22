@@ -261,7 +261,7 @@ const config = useRuntimeConfig();
 const currentQuery = ref("");
 const currentHistoryId = ref<string | null>(null);
 const leftOpen = ref(true);
-const rightOpen = ref(true);
+const rightOpen = ref(false);
 const searchInputRef = ref<{ focus: () => void } | null>(null);
 const streamingReason = ref("");
 const isStreamingReason = ref(false);
@@ -273,8 +273,8 @@ const selectedSectionRef = ref<HTMLElement | null>(null);
 
 // 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
 const gridCols = computed(() => {
-  const l = leftOpen.value ? "240px" : "44px";
-  const r = rightOpen.value ? "clamp(300px, 25vw, 400px)" : "44px";
+  const l = leftOpen.value ? "220px" : "44px";
+  const r = rightOpen.value ? "clamp(180px, 18vw, 230px)" : "44px";
   return `${l} 1fr ${r}`;
 });
 
@@ -290,17 +290,8 @@ const chunkResult = computed(() => {
 
 const topBook = computed(() => bookResult.value?.books?.[0] ?? null);
 
-const sessionId = useState("sessionId", () => {
-  if (process.client) {
-    let sid = localStorage.getItem("sid");
-    if (!sid) {
-      sid = generateUUID();
-      localStorage.setItem("sid", sid);
-    }
-    return sid;
-  }
-  return null;
-});
+// SSR에서는 null, onMounted에서 localStorage로 복원
+const sessionId = useState<string | null>("sessionId", () => null);
 
 async function loadHistory() {
   if (!sessionId.value) return;
@@ -315,7 +306,11 @@ async function loadHistory() {
 }
 
 onMounted(() => {
-  if (!sessionId.value) {
+  // 항상 localStorage를 먼저 확인 → 새로고침해도 세션 유지
+  const stored = localStorage.getItem("sid");
+  if (stored) {
+    sessionId.value = stored;
+  } else {
     const sid = generateUUID();
     sessionId.value = sid;
     localStorage.setItem("sid", sid);
@@ -482,7 +477,12 @@ function restoreHistory(entry: HistoryEntry) {
 .sidebar-right {
   border-left: 1px solid #ebebed;
   min-width: 0;
-  max-width: 420px;
+  max-width: 230px;
+}
+
+.sidebar-spacer {
+  flex-shrink: 0;
+  height: 68px; /* .sidebar-brand min-height와 동일 */
 }
 
 /* ── 로고 (왼쪽 상단 고정) ─────────────────────── */
@@ -543,6 +543,10 @@ function restoreHistory(entry: HistoryEntry) {
 
 .sidebar-toggle.right {
   justify-content: flex-end;
+}
+
+.sidebar-toggle.collapsed {
+  justify-content: center;
 }
 
 .sidebar-toggle svg {

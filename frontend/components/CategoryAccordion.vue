@@ -1,8 +1,8 @@
 <template>
   <div class="category-accordion">
-    <div class="ca-header">
+    <!-- <div class="ca-header">
       <span class="ca-title">카테고리별 추천</span>
-    </div>
+    </div> -->
 
     <div v-if="!grouped.length" class="ca-empty">
       <svg

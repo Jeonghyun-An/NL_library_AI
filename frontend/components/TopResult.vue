@@ -12,7 +12,7 @@
         />
         <img
           v-else-if="answer"
-          src="/ic_done.svg"
+          src="/ic_done.png"
           class="status-icon"
           alt="완료"
         />
@@ -167,52 +167,19 @@ const formattedSummary = computed(
 }
 
 .answer-section {
-  position: relative;
-  background: linear-gradient(
-    135deg,
-    rgba(109, 40, 217, 0.04) 0%,
-    rgba(99, 102, 241, 0.05) 100%
-  );
-  border: 1px solid rgba(109, 40, 217, 0.18);
+  background: #f4f4f5;
   border-radius: 14px;
-  padding: 16px 16px 16px 18px;
+  padding: 16px 20px 18px 18px;
   margin-bottom: 20px;
-  overflow: hidden;
-}
-
-.answer-section::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #a78bfa 0%, #6366f1 50%, #818cf8 100%);
-  border-radius: 14px 14px 0 0;
-}
-
-.answer-section::after {
-  content: "";
-  position: absolute;
-  bottom: -30px;
-  right: -30px;
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(
-    circle,
-    rgba(139, 92, 246, 0.08) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
 }
 
 .answer-label {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: #7c3aed;
+  color: #52525b;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -221,19 +188,7 @@ const formattedSummary = computed(
 .ai-icon {
   display: flex;
   align-items: center;
-  color: #8b5cf6;
-}
-
-.done-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  background: rgba(139, 92, 246, 0.1);
-  color: #7c3aed;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  color: #71717a;
 }
 
 .status-icon {
@@ -244,7 +199,7 @@ const formattedSummary = computed(
 }
 
 .answer-text {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.7;
   color: #1e293b;
 }
