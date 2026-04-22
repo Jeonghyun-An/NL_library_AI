@@ -150,11 +150,12 @@ function formatTime(ts: number | string): string {
 }
 
 .ch-item:hover {
-  background: #f4f4f5;
+  background: #fafafa;
 }
 
 .ch-item.active {
-  background: #f0f0f1;
+  background: #fafafa;
+  border: #e7e7e2 0.6px solid;
 }
 
 .ch-item.active .ch-query {

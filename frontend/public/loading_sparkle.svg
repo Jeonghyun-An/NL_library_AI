@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    
+    <linearGradient id="ringGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#e9d5ff"></stop>
+      <stop offset="28%" stop-color="#c4b5fd"></stop>
+      <stop offset="55%" stop-color="#8b5cf6"></stop>
+      <stop offset="80%" stop-color="#6d28d9"></stop>
+      <stop offset="100%" stop-color="#4c1d95"></stop>
+    </linearGradient>
+
+    
+    <linearGradient id="ringShine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"></stop>
+      <stop offset="25%" stop-color="#ffffff" stop-opacity="0"></stop>
+      <stop offset="75%" stop-color="#ffffff" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+    </linearGradient>
+
+    
+    <linearGradient id="sparkleBody" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"></stop>
+      <stop offset="35%" stop-color="#f5f3ff"></stop>
+      <stop offset="65%" stop-color="#c4b5fd"></stop>
+      <stop offset="100%" stop-color="#7c3aed"></stop>
+    </linearGradient>
+
+    
+    <linearGradient id="sparkleShade" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#4c1d95" stop-opacity="0.35"></stop>
+      <stop offset="45%" stop-color="#7c3aed" stop-opacity="0"></stop>
+      <stop offset="55%" stop-color="#7c3aed" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#4c1d95" stop-opacity="0.25"></stop>
+    </linearGradient>
+
+    
+    <radialGradient id="sparkleHi" cx="42%" cy="38%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.15"></stop>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"></stop>
+    </radialGradient>
+
+    
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"></feGaussianBlur>
+      <feMerge>
+        <feMergeNode in="b"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+  </defs>
+
+  
+  <g transform="translate(200 200)">
+    <g>
+      
+      <circle r="142" fill="none" stroke="#8b5cf6" stroke-opacity="0.25" stroke-width="18" filter="url(#softGlow)"></circle>
+      
+      <circle r="142" fill="none" stroke="url(#ringGrad)" stroke-width="14" stroke-linecap="round"></circle>
+      
+      <circle r="142" fill="none" stroke="url(#ringShine)" stroke-width="14"></circle>
+      
+      
+    </g>
+
+    
+    <g>
+      
+      <circle r="70" fill="#a78bfa" opacity="0.18" filter="url(#softGlow)"></circle>
+      
+      <path d="M 0,-95&#xA;               C 12,-28 12,-28 95,0&#xA;               C 12,28 12,28 0,95&#xA;               C -12,28 -12,28 -95,0&#xA;               C -12,-28 -12,-28 0,-95 Z" fill="url(#sparkleBody)"></path>
+      
+      <path d="M 0,-95&#xA;               C 12,-28 12,-28 95,0&#xA;               C 12,28 12,28 0,95&#xA;               C -12,28 -12,28 -95,0&#xA;               C -12,-28 -12,-28 0,-95 Z" fill="url(#sparkleShade)"></path>
+      
+      <ellipse cx="-18" cy="-32" rx="22" ry="34" fill="url(#sparkleHi)" transform="rotate(-20 -18 -32)"></ellipse>
+      
+      <ellipse cx="-12" cy="-55" rx="6" ry="10" fill="#ffffff" opacity="0.9" transform="rotate(-20 -12 -55)"></ellipse>
+
+      
+      
+    </g>
+  </g>
+</svg>

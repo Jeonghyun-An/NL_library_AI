@@ -60,7 +60,7 @@
             <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
           </div>
           <SearchInput
-            placeholder="예: 한강의 채식주의자와 비슷한 책 찾아줘"
+            placeholder="예: 국가 안보를 강화하는 데 도움 되는 지침서엔 뭐가 있을까?"
             :disabled="loading"
             @submit="handleSearch"
           />
@@ -153,19 +153,12 @@
                   ref="selectedSectionRef"
                 >
                   <div class="selected-header">
-                    <h3 class="more-title">선택한 도서</h3>
+                    <span class="selected-pill">추천 도서 살펴보기</span>
+                    <span class="selected-title">{{
+                      selectedBook.book_info?.title || selectedBook.book_id
+                    }}</span>
                     <button class="close-btn" @click="selectedBook = null">
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
+                      닫기
                     </button>
                   </div>
                   <TopResult
@@ -209,6 +202,8 @@
 
       <!-- ══ 오른쪽 사이드바: 카테고리 아코디언 ══════════════ -->
       <aside class="sidebar sidebar-right">
+        <!-- 왼쪽 로고 영역 높이(68px)만큼 상단 여백 -->
+        <div class="sidebar-spacer" />
         <!-- 토글 버튼 -->
         <button
           class="sidebar-toggle right"
@@ -445,10 +440,7 @@ function restoreHistory(entry: HistoryEntry) {
 /* ── 전체 레이아웃 ──────────────────────────────── */
 .page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(0, 0, 0, 0.03), transparent 40%),
-    radial-gradient(circle at 80% 0%, rgba(0, 0, 0, 0.02), transparent 40%),
-    linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  background: var(--bg);
 }
 
 .app-layout {
@@ -467,15 +459,15 @@ function restoreHistory(entry: HistoryEntry) {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #fafafa;
+  background: var(--bg);
 }
 
 .sidebar-left {
-  border-right: 1px solid #ebebed;
+  border-right: 1px solid var(--line);
 }
 
 .sidebar-right {
-  border-left: 1px solid #ebebed;
+  border-left: 1px solid var(--line);
   min-width: 0;
   max-width: 230px;
 }
@@ -625,7 +617,7 @@ function restoreHistory(entry: HistoryEntry) {
   gap: 12px;
   padding: 16px 0;
   font-size: 11px;
-  color: #71717a;
+  color: #8a8a91;
   flex-wrap: wrap;
 }
 
@@ -644,7 +636,7 @@ function restoreHistory(entry: HistoryEntry) {
 
 .rewritten {
   font-size: 13px;
-  color: #94a3b8;
+  color: #a1a1aa;
 }
 
 /* ── 도서 그리드 ────────────────────────────────── */
@@ -682,7 +674,7 @@ function restoreHistory(entry: HistoryEntry) {
 }
 
 .book-slider > * {
-  flex: 0 0 160px;
+  flex: 0 0 180px;
 }
 
 .slider-arrow {
@@ -710,14 +702,57 @@ function restoreHistory(entry: HistoryEntry) {
 
 /* ── 선택된 도서 ────────────────────────────────── */
 .selected-section {
-  margin-top: 32px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 2px solid oklch(0.55 0.22 277);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: selRecIn 0.25s ease;
+}
+
+@keyframes selRecIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .selected-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  gap: 10px;
+}
+
+.selected-pill {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #fff;
+  background: oklch(0.55 0.22 277);
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.selected-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  flex: 1;
+  min-width: 0;
 }
 
 .close-btn {
@@ -730,6 +765,7 @@ function restoreHistory(entry: HistoryEntry) {
   border-radius: 8px;
   background: #fafafa;
   color: #71717a;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.15s;
   padding: 0;

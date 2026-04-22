@@ -38,7 +38,9 @@
             stroke="currentColor"
             stroke-width="2.5"
           >
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <path
+              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+            />
             <polyline points="15 3 21 3 21 9" />
             <line x1="10" y1="14" x2="21" y2="3" />
           </svg>
@@ -106,14 +108,14 @@ function openNLPage() {
 }
 
 .card-author {
-  font-size: 13px;
-  color: #64748b;
+  font-size: 12px;
+  color: #8a8a91;
   margin: 0 0 2px 0;
 }
 
 .card-publisher {
-  font-size: 12px;
-  color: #94a3b8;
+  font-size: 11px;
+  color: #a1a1aa;
   margin: 0 0 8px 0;
 }
 
@@ -128,7 +130,7 @@ function openNLPage() {
   background: #f4f4f5;
   color: #27272a;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 

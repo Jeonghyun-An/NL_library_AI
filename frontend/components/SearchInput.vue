@@ -155,7 +155,7 @@ textarea:disabled {
   height: 34px;
   border-radius: 10px;
   border: none;
-  background: #1e293b; /* slate-800 */
+  background: var(--ink);
   color: #f4f4f5; /* zinc-100 */
 
   cursor: pointer;
@@ -168,7 +168,7 @@ textarea:disabled {
 }
 
 .send-btn:hover:not(:disabled) {
-  background: #334155; /* slate-700 */
+  background: var(--ink-2); /* slate-700 */
   transform: translateY(-1px);
 
   box-shadow:

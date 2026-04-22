@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"></stop>
+      <stop offset="14%" stop-color="#f5f3ff" stop-opacity="0.98"></stop>
+      <stop offset="30%" stop-color="#e4c7fb" stop-opacity="0.95"></stop>
+      <stop offset="46%" stop-color="#c99bee" stop-opacity="0.9"></stop>
+      <stop offset="60%" stop-color="#a855f7" stop-opacity="0.78"></stop>
+      <stop offset="74%" stop-color="#6d4bd8" stop-opacity="0.55"></stop>
+      <stop offset="86%" stop-color="#3b5bdb" stop-opacity="0.28"></stop>
+      <stop offset="95%" stop-color="#1e3a8a" stop-opacity="0.08"></stop>
+      <stop offset="100%" stop-color="#0f1a4a" stop-opacity="0"></stop>
+    </radialGradient>
+
+    
+    <linearGradient id="orbTint" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.22"></stop>
+      <stop offset="50%" stop-color="#a855f7" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.22"></stop>
+    </linearGradient>
+
+    
+    <radialGradient id="orbCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>
+      <stop offset="45%" stop-color="#f5d0fe" stop-opacity="0.30"></stop>
+      <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0"></stop>
+    </radialGradient>
+
+    
+    <radialGradient id="sparkleFill" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"></stop>
+      <stop offset="55%" stop-color="#faf5ff" stop-opacity="0.95"></stop>
+      <stop offset="100%" stop-color="#ddd6fe" stop-opacity="0.9"></stop>
+    </radialGradient>
+
+    
+    <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8"></feGaussianBlur>
+    </filter>
+    <filter id="sparkleBloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="2" result="b"></feGaussianBlur>
+      <feMerge>
+        <feMergeNode in="b"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+
+    
+    <symbol id="sparkle" viewBox="-50 -50 100 100" overflow="visible">
+      <g filter="url(#sparkleBloom)">
+        <circle cx="0" cy="0" r="28" fill="#ffffff" opacity="0.18"></circle>
+        <circle cx="0" cy="0" r="14" fill="#ffffff" opacity="0.35"></circle>
+        <path d="M0,-46 C6,-14 6,-14 46,0 C6,14 6,14 0,46 C-6,14 -6,14 -46,0 C-6,-14 -6,-14 0,-46 Z" fill="url(#sparkleFill)"></path>
+        <path d="M0,-22 C3,-7 3,-7 22,0 C3,7 3,7 0,22 C-3,7 -3,7 -22,0 C-3,-7 -3,-7 0,-22 Z" fill="#ffffff" opacity="0.95"></path>
+      </g>
+    </symbol>
+  </defs>
+
+  
+  <circle cx="200" cy="200" r="180" fill="url(#orbGlow)" filter="url(#softBlur)" opacity="0.6"></circle>
+
+  
+  <circle cx="200" cy="200" r="150" fill="url(#orbGlow)"></circle>
+
+  
+  <circle cx="200" cy="200" r="150" fill="url(#orbTint)"></circle>
+
+  
+  <circle cx="200" cy="200" r="95" fill="url(#orbCore)"></circle>
+
+  
+  <use href="#sparkle" x="165" y="160" width="96" height="96"></use>
+  <use href="#sparkle" x="232" y="205" width="52" height="52"></use>
+  <circle cx="180" cy="235" r="2.2" fill="#ffffff" opacity="0.85"></circle>
+</svg>
