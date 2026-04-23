@@ -30,6 +30,13 @@
         </header>
 
         <div class="answer-text" v-html="formattedAnswer" />
+
+        <!-- 키워드 칩 -->
+        <div v-if="keywords?.length" class="keyword-row">
+          <span v-for="kw in keywords" :key="kw" class="keyword-chip"
+            >#{{ kw }}</span
+          >
+        </div>
       </div>
     </div>
 
@@ -158,6 +165,7 @@ import { marked } from "marked";
 const props = defineProps<{
   book: BookChunkGroup;
   answer?: string;
+  keywords?: string[];
   isStreaming?: boolean;
 }>();
 
@@ -255,7 +263,7 @@ const formattedSummary = computed(
 }
 
 .answer-text {
-  font-size: 14px;
+  font-size: 14.5px;
   line-height: 1.75;
   color: var(--ink-2);
   letter-spacing: -0.005em;
@@ -264,6 +272,25 @@ const formattedSummary = computed(
 .answer-text :deep(p) {
   margin: 0 0 8px 0;
 }
+/* 키워드 칩 */
+.keyword-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.keyword-chip {
+  font-size: 12px;
+  padding: 5px 11px;
+  background: #fff;
+  border: 1px solid oklch(0.88 0.05 277);
+  color: oklch(0.32 0.15 277);
+  border-radius: 99px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 .answer-text :deep(p:last-child) {
   margin-bottom: 0;
 }
@@ -463,7 +490,7 @@ const formattedSummary = computed(
   font-size: 13px;
   padding: 8px 16px;
   border-radius: 8px;
-  background: var(--ink-2);
+  background: var(--ink);
   color: #fff;
   border: 1px solid var(--ink);
   font-weight: 500;

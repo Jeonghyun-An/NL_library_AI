@@ -1,17 +1,40 @@
 <template>
   <div class="page">
-    <div class="app-layout" :style="{ gridTemplateColumns: gridCols }">
-      <!-- ══ 왼쪽 사이드바: 로고 + 검색기록 ══════════════════ -->
-      <aside class="sidebar sidebar-left">
-        <!-- 로고 (항상 표시) -->
-        <div class="sidebar-brand" @click="reset">
-          <img src="/logo.svg" alt="NL-Lib" class="brand-icon" />
-          <Transition name="fade-text">
-            <span v-if="leftOpen" class="brand-name">NL-Lib</span>
-          </Transition>
+    <!-- ══ 전체 폭 상단 바 ════════════════════════════════════════ -->
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <button class="top-brand" @click="reset">
+          <img
+            src="/landsoft-ai-gradient.svg"
+            alt="NL-Lib"
+            class="top-brand-icon"
+          />
+          <span class="top-brand-name"
+            >NL<span class="top-brand-sub">-Lib</span></span
+          >
+        </button>
+
+        <div class="top-search-area">
+          <SearchInput
+            v-if="result || loading || error"
+            ref="searchInputRef"
+            v-model="currentQuery"
+            :disabled="loading"
+            @submit="handleSearch"
+          />
         </div>
 
-        <!-- 토글 버튼 -->
+        <div
+          class="top-end"
+          :style="{ flexBasis: rightOpen ? 'clamp(180px,18vw,230px)' : '44px' }"
+        />
+      </div>
+    </header>
+
+    <!-- ══ 3단 그리드 레이아웃 ═══════════════════════════════════ -->
+    <div class="app-layout" :style="{ gridTemplateColumns: gridCols }">
+      <!-- ══ 왼쪽 사이드바: 검색 기록 ══════════════════════════ -->
+      <aside class="sidebar sidebar-left">
         <button
           class="sidebar-toggle"
           :class="{ collapsed: !leftOpen }"
@@ -35,7 +58,6 @@
           </Transition>
         </button>
 
-        <!-- 기록 목록: ClientOnly로 SSR 하이드레이션 불일치 방지 -->
         <div v-show="leftOpen" class="sidebar-body">
           <ClientOnly>
             <ChatHistory
@@ -44,16 +66,14 @@
               @select="restoreHistory"
               @clear="clearHistory"
             />
-            <template #fallback>
-              <div class="ch-placeholder" />
-            </template>
+            <template #fallback><div class="ch-placeholder" /></template>
           </ClientOnly>
         </div>
       </aside>
 
       <!-- ══ 메인 콘텐츠 ═══════════════════════════════════════ -->
       <main class="main-content">
-        <!-- 검색 전: 랜딩 -->
+        <!-- 랜딩 -->
         <div v-if="!result && !loading && !error" class="landing">
           <div class="logo-area">
             <h1 class="title">국립중앙도서관 의미 기반 검색</h1>
@@ -66,19 +86,8 @@
           />
         </div>
 
-        <!-- 검색 후: 결과 -->
+        <!-- 결과 (상단 바에 검색창이 있으므로 별도 헤더 없음) -->
         <div v-else class="results-page">
-          <header class="results-header">
-            <div class="header-input-wrap">
-              <SearchInput
-                ref="searchInputRef"
-                v-model="currentQuery"
-                :disabled="loading"
-                @submit="handleSearch"
-              />
-            </div>
-          </header>
-
           <div v-if="loading" class="loading-area">
             <div class="spinner" />
             <p>도서를 찾고 있습니다...</p>
@@ -107,6 +116,7 @@
                   v-if="topBook"
                   :book="topBook"
                   :answer="streamingReason"
+                  :keywords="streamingKeywords"
                   :is-streaming="isStreamingReason"
                 />
                 <div v-if="bookResult.books.length > 1" class="more-section">
@@ -164,6 +174,7 @@
                   <TopResult
                     :book="selectedBook"
                     :answer="selectedStreamingReason"
+                    :keywords="selectedKeywords"
                     :is-streaming="isSelectedStreaming"
                   />
                 </div>
@@ -202,9 +213,6 @@
 
       <!-- ══ 오른쪽 사이드바: 카테고리 아코디언 ══════════════ -->
       <aside class="sidebar sidebar-right">
-        <!-- 왼쪽 로고 영역 높이(68px)만큼 상단 여백 -->
-        <div class="sidebar-spacer" />
-        <!-- 토글 버튼 -->
         <button
           class="sidebar-toggle right"
           :class="{ collapsed: !rightOpen }"
@@ -228,7 +236,6 @@
           </svg>
         </button>
 
-        <!-- 카테고리 목록 -->
         <div v-show="rightOpen" class="sidebar-body">
           <CategoryAccordion :books="bookResult?.books ?? []" />
         </div>
@@ -259,14 +266,15 @@ const leftOpen = ref(true);
 const rightOpen = ref(false);
 const searchInputRef = ref<{ focus: () => void } | null>(null);
 const streamingReason = ref("");
+const streamingKeywords = ref<string[]>([]);
 const isStreamingReason = ref(false);
 const selectedBook = ref<BookChunkGroup | null>(null);
 const selectedStreamingReason = ref("");
+const selectedKeywords = ref<string[]>([]);
 const isSelectedStreaming = ref(false);
 const sliderRef = ref<HTMLElement | null>(null);
 const selectedSectionRef = ref<HTMLElement | null>(null);
 
-// 그리드 컬럼: 사이드바 열림 상태에 따라 자동 조정
 const gridCols = computed(() => {
   const l = leftOpen.value ? "220px" : "44px";
   const r = rightOpen.value ? "clamp(180px, 18vw, 230px)" : "44px";
@@ -285,7 +293,6 @@ const chunkResult = computed(() => {
 
 const topBook = computed(() => bookResult.value?.books?.[0] ?? null);
 
-// SSR에서는 null, onMounted에서 localStorage로 복원
 const sessionId = useState<string | null>("sessionId", () => null);
 
 async function loadHistory() {
@@ -301,7 +308,6 @@ async function loadHistory() {
 }
 
 onMounted(() => {
-  // 항상 localStorage를 먼저 확인 → 새로고침해도 세션 유지
   const stored = localStorage.getItem("sid");
   if (stored) {
     sessionId.value = stored;
@@ -314,21 +320,22 @@ onMounted(() => {
 });
 
 async function handleSearch(query: string) {
-  currentQuery.value = query; // landing 페이지에서 검색할 때도 항상 동기화
+  currentQuery.value = query;
   currentHistoryId.value = null;
   streamingReason.value = "";
+  streamingKeywords.value = [];
   isStreamingReason.value = false;
   selectedBook.value = null;
 
   await search(query, "book", 10);
   await loadHistory();
 
-  // 검색 완료 후 상위 도서 추천 이유 스트리밍 시작 (non-blocking)
   if (bookResult.value?.books?.[0]) {
     doStreamReason(
       query,
       bookResult.value.books[0],
       streamingReason,
+      streamingKeywords,
       isStreamingReason,
     );
   }
@@ -340,10 +347,12 @@ async function doStreamReason(
   query: string,
   book: BookChunkGroup,
   reasonRef: Ref<string>,
+  keywordsRef: Ref<string[]>,
   streamingRef: Ref<boolean>,
 ) {
   streamingRef.value = true;
   reasonRef.value = "";
+  keywordsRef.value = [];
 
   const topChunkTexts = [...book.chunks]
     .sort((a, b) => (b.rerank_score ?? b.score) - (a.rerank_score ?? a.score))
@@ -378,7 +387,11 @@ async function doStreamReason(
         if (data === "[DONE]") return;
         try {
           const parsed = JSON.parse(data);
-          if (parsed.text) reasonRef.value += parsed.text;
+          if (parsed.keywords) {
+            keywordsRef.value = parsed.keywords;
+          } else if (parsed.text) {
+            reasonRef.value += parsed.text;
+          }
         } catch {}
       }
     }
@@ -391,10 +404,13 @@ async function doStreamReason(
 
 function selectSecondaryBook(book: BookChunkGroup) {
   selectedBook.value = book;
+  selectedStreamingReason.value = "";
+  selectedKeywords.value = [];
   doStreamReason(
     currentQuery.value,
     book,
     selectedStreamingReason,
+    selectedKeywords,
     isSelectedStreaming,
   );
   nextTick(() => {
@@ -406,11 +422,11 @@ function selectSecondaryBook(book: BookChunkGroup) {
 }
 
 function slideLeft() {
-  sliderRef.value?.scrollBy({ left: -180, behavior: "smooth" });
+  sliderRef.value?.scrollBy({ left: -200, behavior: "smooth" });
 }
 
 function slideRight() {
-  sliderRef.value?.scrollBy({ left: 180, behavior: "smooth" });
+  sliderRef.value?.scrollBy({ left: 200, behavior: "smooth" });
 }
 
 function restoreHistory(entry: HistoryEntry) {
@@ -418,18 +434,19 @@ function restoreHistory(entry: HistoryEntry) {
   currentQuery.value = entry.query;
   result.value = entry.result as SearchResponse;
   streamingReason.value = "";
+  streamingKeywords.value = [];
   isStreamingReason.value = false;
   selectedBook.value = null;
   window.scrollTo({ top: 0, behavior: "smooth" });
   nextTick(() => searchInputRef.value?.focus());
 
-  // 도서 검색 결과인 경우 추천 이유 재스트리밍
   const restored = entry.result as BookSearchResponse;
   if (restored?.mode === "book" && restored.books?.[0]) {
     doStreamReason(
       entry.query,
       restored.books[0],
       streamingReason,
+      streamingKeywords,
       isStreamingReason,
     );
   }
@@ -437,15 +454,84 @@ function restoreHistory(entry: HistoryEntry) {
 </script>
 
 <style scoped>
-/* ── 전체 레이아웃 ──────────────────────────────── */
+/* ── 전체 페이지 ─────────────────────────────────── */
 .page {
   min-height: 100vh;
   background: var(--bg);
 }
 
+/* ── 전체 폭 상단 바 ─────────────────────────────── */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+  background: rgba(246, 246, 244, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.top-bar-inner {
+  max-width: 1290px;
+  margin: 0 auto;
+  height: 84px;
+  display: flex;
+  align-items: center;
+}
+
+.top-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 14px;
+  height: 80%;
+  flex: 0 0 220px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: flex-basis 0.25s ease;
+}
+
+.top-brand-icon {
+  height: 24px;
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.top-brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.top-brand-sub {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.top-search-area {
+  flex: 1;
+  min-width: 0;
+  padding: 20px;
+}
+
+.top-search-area :deep(.search-input-wrap) {
+  max-width: none;
+  margin: 0;
+}
+
+.top-end {
+  flex-shrink: 0;
+  transition: flex-basis 0.25s ease;
+}
+
+/* ── 3단 그리드 ──────────────────────────────────── */
 .app-layout {
   display: grid;
-  min-height: 100vh;
+  min-height: calc(100vh - 84px);
   max-width: 1290px;
   margin: 0 auto;
   transition: grid-template-columns 0.25s ease;
@@ -454,8 +540,8 @@ function restoreHistory(entry: HistoryEntry) {
 /* ── 사이드바 공통 ──────────────────────────────── */
 .sidebar {
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: 84px;
+  height: calc(100vh - 84px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -472,44 +558,13 @@ function restoreHistory(entry: HistoryEntry) {
   max-width: 230px;
 }
 
-.sidebar-spacer {
-  flex-shrink: 0;
-  height: 68px; /* .sidebar-brand min-height와 동일 */
-}
-
-/* ── 로고 (왼쪽 상단 고정) ─────────────────────── */
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 18px 14px 14px;
-  cursor: pointer;
-  min-height: 68px;
-  flex-shrink: 0;
-}
-
-.brand-icon {
-  width: 72px;
-  height: 36px;
-  flex-shrink: 0;
-}
-
-.brand-name {
-  font-size: 17px;
-  font-weight: 800;
-  color: #18181b;
-  white-space: nowrap;
-  overflow: hidden;
-  letter-spacing: -0.02em;
-}
-
 /* ── 사이드바 토글 버튼 ─────────────────────────── */
 .sidebar-toggle {
   display: flex;
   align-items: center;
   gap: 6px;
   width: calc(100% - 16px);
-  margin: 0 8px 4px;
+  margin: 8px 8px 4px;
   padding: 8px 10px;
   border: none;
   border-radius: 8px;
@@ -564,7 +619,7 @@ function restoreHistory(entry: HistoryEntry) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: calc(100vh - 84px);
   padding: 24px;
   gap: 32px;
 }
@@ -590,32 +645,12 @@ function restoreHistory(entry: HistoryEntry) {
   padding: 0 24px 48px;
 }
 
-.results-header {
-  display: flex;
-  align-items: center;
-  padding: 16px 0;
-  position: sticky;
-  top: 0;
-  backdrop-filter: blur(10px);
-  z-index: 10;
-}
-
-.header-input-wrap {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-input-wrap :deep(.search-input-wrap) {
-  max-width: none;
-  margin: 0;
-}
-
 /* ── 검색 메타 ──────────────────────────────────── */
 .search-meta {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 0;
+  padding: 20px 0 16px;
   font-size: 11px;
   color: #8a8a91;
   flex-wrap: wrap;
@@ -639,7 +674,7 @@ function restoreHistory(entry: HistoryEntry) {
   color: #a1a1aa;
 }
 
-/* ── 도서 그리드 ────────────────────────────────── */
+/* ── 슬라이더 ───────────────────────────────────── */
 .more-section {
   margin-top: 32px;
 }
@@ -697,7 +732,6 @@ function restoreHistory(entry: HistoryEntry) {
 .slider-arrow:hover {
   background: #f4f4f5;
   border-color: #d4d4d8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* ── 선택된 도서 ────────────────────────────────── */
@@ -756,19 +790,16 @@ function restoreHistory(entry: HistoryEntry) {
 }
 
 .close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid #e4e4e7;
-  border-radius: 8px;
-  background: #fafafa;
-  color: #71717a;
-  font-size: 11px;
+  font-size: 12px;
+  color: var(--ink-3);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 5px 12px;
   cursor: pointer;
   transition: all 0.15s;
-  padding: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
@@ -804,14 +835,6 @@ function restoreHistory(entry: HistoryEntry) {
   border-radius: 14px;
   background: #ffffff;
   border: 1px solid #e4e4e7;
-  transition: all 0.2s;
-}
-
-.chunk-item:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.05),
-    0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .chunk-source {
@@ -875,10 +898,6 @@ function restoreHistory(entry: HistoryEntry) {
   cursor: pointer;
 }
 
-.error-area button:hover {
-  background: #f4f4f5;
-}
-
 .empty {
   text-align: center;
   padding: 48px 0;
@@ -886,7 +905,6 @@ function restoreHistory(entry: HistoryEntry) {
   font-size: 15px;
 }
 
-/* ClientOnly fallback */
 .ch-placeholder {
   height: 100%;
 }
@@ -902,17 +920,17 @@ function restoreHistory(entry: HistoryEntry) {
 }
 
 /* ── 반응형 ─────────────────────────────────────── */
-@media (max-width: 1100px) {
-  .landing .title {
-    font-size: 22px;
-  }
-}
-
 @media (max-width: 768px) {
   .app-layout {
     grid-template-columns: 44px 1fr 44px !important;
   }
-
+  .top-brand {
+    flex: 0 0 44px;
+    gap: 0;
+  }
+  .top-brand-name {
+    display: none;
+  }
   .book-slider > * {
     flex: 0 0 140px;
   }

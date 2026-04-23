@@ -10,6 +10,7 @@ pipeline.py — RAG 검색 파이프라인 (청크 모드 / 도서 모드)
 """
 import asyncio
 import json
+import re
 import time
 import logging
 from typing import AsyncGenerator
@@ -352,11 +353,33 @@ async def stream_book_reason(
         context_parts.append(f"[검색 매칭 구절]\n{chunks_block}")
     context_text = "\n\n".join(context_parts)
 
+    # ── MARC 키워드 추출 (653 keyword / 650 subject) ──────
+    marc_keywords: list[str] = []
+    if book:
+        raw = book.keyword or book.subject or ""
+        if raw:
+            marc_keywords = [k.strip() for k in re.split(r"[,;|/·]", raw) if k.strip()][:5]
+
+    # MARC 키워드가 있으면 즉시 emit
+    if marc_keywords:
+        yield f"data: {json.dumps({'keywords': marc_keywords}, ensure_ascii=False)}\n\n"
+
     # ── 메시지 구성 ──────────────────────────────────────
+    kw_instruction = (
+        ""
+        if marc_keywords
+        else (
+            "반드시 답변 첫 줄에 다음 형식으로 핵심 키워드 5개를 출력하세요:\n"
+            "#KW: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5\n"
+            "두 번째 줄부터 추천 이유 본문을 작성하세요.\n\n"
+        )
+    )
+
     system_message = (
         "당신은 국립중앙도서관의 AI 사서입니다. "
         "사용자의 검색 의도를 정확히 파악하고, 추천 도서가 그 의도에 왜 적합한지 "
         "자연스럽고 설득력 있게 3~4문장으로 설명합니다.\n\n"
+        f"{kw_instruction}"
         "반드시 지켜야 할 규칙:\n"
         "- 사용자의 실제 필요(학습·조사·유사 작품·실무 해결 등)를 먼저 파악하세요.\n"
         "- 도서의 어떤 측면이 그 필요를 충족하는지 구체적으로 연결하세요.\n"
@@ -386,12 +409,16 @@ async def stream_book_reason(
                         {"role": "system", "content": system_message},
                         {"role": "user",   "content": user_message},
                     ],
-                    "max_tokens": 600,
+                    "max_tokens": 650,
                     "temperature": 0.4,
                     "stream": True,
                 },
                 timeout=60.0,
             ) as resp:
+                # MARC 키워드가 없으면 첫 줄에서 #KW: 파싱
+                line_buf = ""
+                kw_parsed = bool(marc_keywords)
+
                 async for line in resp.aiter_lines():
                     if not line.startswith("data: "):
                         continue
@@ -401,10 +428,35 @@ async def stream_book_reason(
                     try:
                         chunk = json.loads(data)
                         delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
+                        if not delta:
+                            continue
+
+                        if kw_parsed:
                             yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+                        else:
+                            # 첫 줄 버퍼링 — \n 나오면 #KW: 파싱 시도
+                            line_buf += delta
+                            if "\n" in line_buf:
+                                first, rest = line_buf.split("\n", 1)
+                                first = first.strip()
+                                if first.startswith("#KW:"):
+                                    kws = [k.strip() for k in first[4:].split(",") if k.strip()]
+                                    if kws:
+                                        yield f"data: {json.dumps({'keywords': kws[:5]}, ensure_ascii=False)}\n\n"
+                                elif first:
+                                    first_with_newline = first + "\n"
+                                    yield f"data: {json.dumps({'text': first_with_newline}, ensure_ascii=False)}\n\n"
+                                kw_parsed = True
+                                line_buf = ""
+                                if rest:
+                                    yield f"data: {json.dumps({'text': rest}, ensure_ascii=False)}\n\n"
                     except Exception:
                         pass
+
+                # 버퍼에 남은 내용 flush
+                if not kw_parsed and line_buf:
+                    yield f"data: {json.dumps({'text': line_buf}, ensure_ascii=False)}\n\n"
+
     except Exception as e:
         log.error(f"[{book_id}] 추천 이유 스트리밍 실패: {e}")
 
