@@ -136,7 +136,7 @@
                     </button>
                     <div class="book-slider" ref="sliderRef">
                       <BookCard
-                        v-for="book in bookResult.books.slice(1)"
+                        v-for="book in bookResult.books.slice(1).filter(b => b.best_score >= 0.1)"
                         :key="book.book_id"
                         :book="book"
                         @select="selectSecondaryBook"
@@ -422,11 +422,15 @@ function selectSecondaryBook(book: BookChunkGroup) {
 }
 
 function slideLeft() {
-  sliderRef.value?.scrollBy({ left: -200, behavior: "smooth" });
+  const el = sliderRef.value;
+  if (!el) return;
+  el.scrollBy({ left: -(el.clientWidth * 0.75), behavior: "smooth" });
 }
 
 function slideRight() {
-  sliderRef.value?.scrollBy({ left: 200, behavior: "smooth" });
+  const el = sliderRef.value;
+  if (!el) return;
+  el.scrollBy({ left: el.clientWidth * 0.75, behavior: "smooth" });
 }
 
 function restoreHistory(entry: HistoryEntry) {

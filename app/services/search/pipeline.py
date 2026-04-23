@@ -10,6 +10,7 @@ pipeline.py — RAG 검색 파이프라인 (청크 모드 / 도서 모드)
 """
 import asyncio
 import json
+import math
 import re
 import time
 import logging
@@ -213,15 +214,15 @@ async def _search_book_mode(
 ) -> BookSearchResponse:
     t0 = time.perf_counter()
 
-    # sort_by 요청 시 더 많은 후보를 가져와야 날짜 정렬이 의미 있음
-    # (벡터 점수 상위 N개 안에 최신 문서가 없으면 정렬이 무의미하므로)
+    # 리랭킹 품질은 후보 풀 크기에 비례한다.
+    # 날짜 정렬 시 4x, 일반 검색 시 3x 후보를 확보한 뒤 리랭킹으로 추려낸다.
     needs_date_sort = metadata_filter and metadata_filter.sort_by in ("recent", "oldest")
-    fetch_books = top_k * 4 if needs_date_sort else top_k
+    fetch_books = top_k * 4 if needs_date_sort else top_k * 3
 
     book_hits = search_by_book(
         query_dense,
         query_sparse,
-        top_k_chunks=fetch_books * 8,
+        top_k_chunks=fetch_books * 10,
         top_k_books=fetch_books,
         meta_expr=meta_expr,
     )
@@ -271,6 +272,13 @@ async def _search_book_mode(
 
         # 리랭킹된 본문 청크 점수, 없으면 메타 청크 점수(best_raw)로 fallback
         best = max((c.rerank_score or c.score for c in chunks), default=best_raw)
+
+        # 다수 청크가 매칭될수록 도서 적합도가 높음 → 로그 스케일 부스팅
+        # 청크 1개=×1.0, 2개=×1.07, 3개=×1.11, 5개=×1.16
+        n_chunks = len(chunks)
+        if n_chunks > 1:
+            best = min(best * (1 + 0.1 * math.log2(n_chunks)), 1.0)
+
         books.append(BookChunkGroup(
             book_id=book_id,
             best_score=best,

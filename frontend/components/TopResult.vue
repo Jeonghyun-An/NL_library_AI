@@ -414,11 +414,14 @@ const formattedSummary = computed(
   column-gap: 14px;
   margin-bottom: 16px;
   font-size: 13px;
+  align-items: start;
 }
 
 .meta-k {
   color: var(--ink-3);
   font-size: 12px;
+  padding-top: 1px;
+  align-self: start;
 }
 
 .meta-v {
