@@ -356,7 +356,7 @@ async function doStreamReason(
 
   const topChunkTexts = [...book.chunks]
     .sort((a, b) => (b.rerank_score ?? b.score) - (a.rerank_score ?? a.score))
-    .slice(0, 3)
+    .slice(0, 15)
     .map((c) => c.text);
 
   try {

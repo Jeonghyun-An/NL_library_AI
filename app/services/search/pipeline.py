@@ -356,7 +356,7 @@ async def stream_book_reason(
         context_parts.append(f"[도서 요약]\n{book.summary}")
     if chunk_texts:
         chunks_block = "\n\n".join(
-            f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:3])
+            f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:15])
         )
         context_parts.append(f"[검색 매칭 구절]\n{chunks_block}")
     context_text = "\n\n".join(context_parts)
