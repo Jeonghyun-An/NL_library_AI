@@ -333,6 +333,7 @@ async function handleSearch(query: string) {
   if (bookResult.value?.books?.[0]) {
     doStreamReason(
       query,
+      bookResult.value.rewritten_query ?? query,
       bookResult.value.books[0],
       streamingReason,
       streamingKeywords,
@@ -345,6 +346,7 @@ async function handleSearch(query: string) {
 
 async function doStreamReason(
   query: string,
+  rewrittenQuery: string,
   book: BookChunkGroup,
   reasonRef: Ref<string>,
   keywordsRef: Ref<string[]>,
@@ -367,6 +369,7 @@ async function doStreamReason(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query,
+          rewritten_query: rewrittenQuery,
           book_id: book.book_id,
           chunk_texts: topChunkTexts,
         }),
@@ -408,6 +411,7 @@ function selectSecondaryBook(book: BookChunkGroup) {
   selectedKeywords.value = [];
   doStreamReason(
     currentQuery.value,
+    bookResult.value?.rewritten_query ?? currentQuery.value,
     book,
     selectedStreamingReason,
     selectedKeywords,
@@ -448,6 +452,7 @@ function restoreHistory(entry: HistoryEntry) {
   if (restored?.mode === "book" && restored.books?.[0]) {
     doStreamReason(
       entry.query,
+      restored.rewritten_query ?? entry.query,
       restored.books[0],
       streamingReason,
       streamingKeywords,

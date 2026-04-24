@@ -48,6 +48,7 @@ class BookOut(BookBase):
     id:               PyUUID
     record_id:        Optional[str] = None
     summary:          Optional[str] = None
+    themes:           Optional[str] = None
     is_embedded:      bool = False
     chunk_count:      Optional[int] = None
     full_text_length: Optional[int] = None
@@ -161,6 +162,7 @@ class TaskStatusOut(BaseModel):
 
 class ReasonStreamRequest(BaseModel):
     """추천 이유 스트리밍 요청"""
-    query:       str
-    book_id:     str
-    chunk_texts: list[str] = []
+    query:           str
+    book_id:         str
+    chunk_texts:     list[str] = []
+    rewritten_query: str = ""

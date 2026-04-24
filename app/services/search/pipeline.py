@@ -74,7 +74,7 @@ async def search(
     coros: list = []
     tags: list[str] = []
     if use_rewrite:
-        coros.append(rewrite_query(query))
+        coros.append(rewrite_query(query, db=db))
         tags.append("rewrite")
     if db:
         coros.append(extract_metadata_filter(query))
@@ -316,6 +316,7 @@ async def stream_book_reason(
     book_id: str,
     chunk_texts: list[str],
     db=None,
+    rewritten_query: str = "",
 ) -> AsyncGenerator[str, None]:
     """
     도서 추천 이유 SSE 스트리밍 생성기.
@@ -373,38 +374,37 @@ async def stream_book_reason(
         yield f"data: {json.dumps({'keywords': marc_keywords}, ensure_ascii=False)}\n\n"
 
     # ── 메시지 구성 ──────────────────────────────────────
+    intent = rewritten_query or query
+
     kw_instruction = (
         ""
         if marc_keywords
         else (
-            "반드시 답변 첫 줄에 다음 형식으로 핵심 키워드 5개를 출력하세요:\n"
+            "반드시 답변 첫 줄에 다음 형식으로 이 도서의 핵심 테마 키워드 5개를 출력하세요.\n"
+            "키워드는 아래 독서 의도와 도서 내용을 연결하는 개념으로 선택하세요:\n"
             "#KW: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5\n"
             "두 번째 줄부터 추천 이유 본문을 작성하세요.\n\n"
         )
     )
 
     system_message = (
-        "당신은 국립중앙도서관의 AI 사서입니다. "
-        "사용자의 검색 의도를 정확히 파악하고, 추천 도서가 그 의도에 왜 적합한지 "
-        "자연스럽고 설득력 있게 3~4문장으로 설명합니다.\n\n"
+        "당신은 국립중앙도서관의 AI 사서입니다.\n\n"
         f"{kw_instruction}"
-        "반드시 지켜야 할 규칙:\n"
-        "- 사용자의 실제 필요(학습·조사·유사 작품·실무 해결 등)를 먼저 파악하세요.\n"
-        "- 도서의 어떤 측면이 그 필요를 충족하는지 구체적으로 연결하세요.\n"
-        "- 도서 소개에서 이미 보이는 내용(제목·저자·기본 설명)은 반복하지 마세요.\n"
-        "- 매칭 구절의 세부 기술 용어를 맥락 없이 그대로 인용하지 마세요. "
-        "  구절은 도서의 성격을 파악하는 참고 자료로만 활용하세요.\n"
-        "- 도서관 사서가 직접 추천하듯 자연스럽고 간결한 어조로 작성하세요."
+        "규칙:\n"
+        "- 도서 요약·매칭 구절에서 구체적 근거를 찾아 독서 의도와 연결하세요.\n"
+        "- 제목·저자·출판 정보는 반복하지 마세요.\n"
+        "- 반드시 연결점을 찾으세요. '관련 없습니다' 또는 사과 표현은 절대 쓰지 마세요.\n"
+        "  내용이 간접적이더라도 더 넓은 맥락에서 독서 의도와 연결하세요.\n"
+        "- 도서관 사서가 직접 추천하듯 자연스럽고 간결한 어조로 3~4문장으로 작성하세요."
     )
 
-    user_message = f"""사용자 질의: {query}
-
-도서 정보:
-{book_meta}
-
-{context_text}
-
-위 도서가 사용자의 질의 의도에 왜 적합한지 추천 이유를 작성해주세요."""
+    user_message = (
+        f"독서 의도 (사용자가 찾는 것): {intent}\n"
+        f"원본 질의: {query}\n\n"
+        f"도서 정보:\n{book_meta}\n\n"
+        f"{context_text}\n\n"
+        "위 독서 의도를 기준으로, 이 도서가 어떤 측면에서 그 요구를 충족하는지 추천 이유를 작성해주세요."
+    )
 
     try:
         async with httpx.AsyncClient() as client:

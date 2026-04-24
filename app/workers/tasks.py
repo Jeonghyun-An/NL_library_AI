@@ -232,10 +232,10 @@ def process_book_file(self, book_id: str, file_path: str):
     finally:
         db.close()
 
-    # ②-b 섹션별 요약 병렬 생성 (vLLM max-num-seqs 16 기준 동시 8개)
-    async def _summarize_all_sections() -> list[str | None]:
+    # ②-b 섹션별 요약+테마 병렬 생성 (vLLM max-num-seqs 16 기준 동시 8개)
+    async def _summarize_all_sections() -> list[tuple[str, list[str]] | None]:
         sem = asyncio.Semaphore(8)
-        async def _one(text: str) -> str | None:
+        async def _one(text: str) -> tuple[str, list[str]] | None:
             async with sem:
                 try:
                     return await summarize_section(title, text, doc_type)
@@ -244,25 +244,33 @@ def process_book_file(self, book_id: str, file_path: str):
                     return None
         return await asyncio.gather(*[_one(s["text"]) for s in sections])
 
-    section_summaries_list = _run_async(_summarize_all_sections())
-    log.info(f"[{book_id}] 섹션 요약 {sum(1 for s in section_summaries_list if s)}개 생성 완료")
+    section_results_list = _run_async(_summarize_all_sections())
+    log.info(f"[{book_id}] 섹션 요약 {sum(1 for s in section_results_list if s)}개 생성 완료")
 
-    # 섹션 요약 DB 저장 + section_idx → summary 맵 구성
+    # 섹션 요약/테마 DB 저장 + 맵 구성
     section_summary_map: dict[int, str] = {}
+    section_themes_map: dict[int, list[str]] = {}
     db = SyncSessionLocal()
     try:
-        for sec, summary in zip(sections, section_summaries_list):
-            if not summary:
+        for sec, result in zip(sections, section_results_list):
+            if not result:
                 continue
-            section_summary_map[sec["section_idx"]] = summary
+            summary, themes = result
+            if summary:
+                section_summary_map[sec["section_idx"]] = summary
+            if themes:
+                section_themes_map[sec["section_idx"]] = themes
             db.query(BookSection).filter_by(
                 book_id=book_id, section_idx=sec["section_idx"]
-            ).update({"summary": summary})
+            ).update({
+                "summary": summary or None,
+                "themes": ", ".join(themes) if themes else None,
+            })
         db.commit()
-        log.info(f"[{book_id}] 섹션 요약 DB 저장 완료")
+        log.info(f"[{book_id}] 섹션 요약/테마 DB 저장 완료")
     except Exception as e:
         db.rollback()
-        log.warning(f"[{book_id}] 섹션 요약 저장 실패: {e}")
+        log.warning(f"[{book_id}] 섹션 요약/테마 저장 실패: {e}")
     finally:
         db.close()
 
@@ -285,17 +293,18 @@ def process_book_file(self, book_id: str, file_path: str):
     #     page_acc += len(chunk.text)
 
     # ④ Contextual 임베딩 → Milvus 저장
-    # 본문 청크: 섹션 요약 + 본문만 임베딩 (메타 prefix 없음 → 노이즈 방지)
-    contextual_texts = [
-        f"[섹션 요약] {section_summary_map[c.section_idx]}\n[본문] {c.text}"
-        if c.section_idx in section_summary_map
-        else c.text
-        for c in chunks
-    ]
+    # 본문 청크: [핵심 테마] + [섹션 요약] + [본문] — 테마가 벡터 방향을 결정
+    contextual_texts = []
+    for c in chunks:
+        parts = []
+        if c.section_idx in section_themes_map:
+            parts.append(f"[핵심 테마] {', '.join(section_themes_map[c.section_idx])}")
+        if c.section_idx in section_summary_map:
+            parts.append(f"[섹션 요약] {section_summary_map[c.section_idx]}")
+        parts.append(f"[본문] {c.text}")
+        contextual_texts.append("\n".join(parts))
 
     # 메타데이터 전용 청크 1개 추가 (chunk_idx=-1)
-    # → "조달청 최신 자료" 같은 메타 기반 쿼리가 여기에 매칭됨
-    # → 본문 청크 임베딩은 내용 기반으로 순수하게 유지됨
     _meta_parts = [
         f"제목: {title}",
         f"기관: {book.corporate_author}" if book and book.corporate_author else None,
@@ -327,17 +336,20 @@ def process_book_file(self, book_id: str, file_path: str):
     idx_result = index_chunks(book_id, all_chunks, dense_embeddings, sparse_embeddings, book_meta=book_meta)
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
-    # ⑤ 도서 요약 생성 (섹션 요약 합산 → LLM 1회) → PostgreSQL 업데이트
-    valid_summaries = [s for s in section_summaries_list if s]
-    book_summary = None
+    # ⑤ 도서 요약+테마 생성 (섹션 요약 합산 → LLM 1회) → PostgreSQL 업데이트
+    valid_summaries = list(section_summary_map.values())
+    book_summary: str | None = None
+    book_themes: str | None = None
     if valid_summaries:
         try:
-            book_summary = _run_async(summarize_book_from_sections(
+            summary_result = _run_async(summarize_book_from_sections(
                 title=title,
                 author=author,
                 section_summaries=valid_summaries,
                 doc_type=doc_type,
             ))
+            book_summary, themes_list = summary_result
+            book_themes = ", ".join(themes_list) if themes_list else None
         except Exception as e:
             log.warning(f"[{book_id}] 도서 요약 생성 실패: {e}")
 
@@ -346,6 +358,7 @@ def process_book_file(self, book_id: str, file_path: str):
         book = db.query(Book).filter_by(cnts_id=book_id).first()
         if book:
             book.summary = book_summary
+            book.themes = book_themes
             book.is_embedded = True
             db.commit()
             log.info(f"[{book_id}] DB 업데이트 완료")
@@ -354,14 +367,15 @@ def process_book_file(self, book_id: str, file_path: str):
                 cnts_id=book_id,
                 title=book_id,
                 summary=book_summary,
+                themes=book_themes,
                 is_embedded=True,
             )
             db.add(new_book)
             db.commit()
-            log.info(f"[{book_id}] 신규 도서 + 요약 저장 완료")
+            log.info(f"[{book_id}] 신규 도서 + 요약/테마 저장 완료")
     except Exception as e:
         db.rollback()
-        log.warning(f"[{book_id}] 요약 저장 실패: {e}")
+        log.warning(f"[{book_id}] 요약/테마 저장 실패: {e}")
     finally:
         db.close()
 

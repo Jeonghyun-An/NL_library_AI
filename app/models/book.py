@@ -57,6 +57,7 @@ class Book(Base):
     # ── RAG 관련 ──────────────────────────────────────
     raw_text         = Column(Text)                 # OCR 원본 (추후)
     summary          = Column(Text)                 # EXAONE 요약
+    themes           = Column(Text)                 # LLM 추출 심층 테마 키워드 (쉼표 구분)
     is_embedded      = Column(Boolean, default=False, nullable=False)
     milvus_id        = Column(String(64))
 

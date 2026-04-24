@@ -285,7 +285,7 @@ async def stream_reason(
     from services.search.pipeline import stream_book_reason
 
     return StreamingResponse(
-        stream_book_reason(req.query, req.book_id, req.chunk_texts, db),
+        stream_book_reason(req.query, req.book_id, req.chunk_texts, db, req.rewritten_query),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
