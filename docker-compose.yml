@@ -30,10 +30,14 @@ x-common-env: &common-env
   MILVUS_PORT: "19530"
   MILVUS_COLLECTION: "nl_lib_embeddings"
 
-  # vLLM (별도 컨테이너 or 외부 서버)
-  VLLM_BASE_URL: ${VLLM_BASE_URL:-http://vllm:8000/v1}
-  VLLM_MODEL: ${VLLM_MODEL:-gemma-4-e4b}
-  VLLM_TIMEOUT: "30"
+  # VLM (멀티모달 OCR — 같은 스택 vllm 컨테이너 / Qwen2.5-VL)
+  VLM_BASE_URL: ${VLM_BASE_URL:-http://vllm:8000/v1}
+  VLM_MODEL: ${VLM_MODEL:-qwen3-vl-8b}
+
+  # LLM (텍스트 생성 — 외부 스택 / Gemma 3 12B, host.docker.internal 경유)
+  LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:18080/v1}
+  LLM_MODEL: ${LLM_MODEL:-gemma-3-12b}
+  LLM_TIMEOUT: "30"
 
   # PaddleOCR
   PADDLEOCR_URL: "http://paddleocr:8001"
@@ -200,7 +204,8 @@ services:
 
   # ── vLLM (Gemma 4 E4B) ──────────────────────
   vllm:
-    image: landsoftdocker/nl-lib-vllm:latest
+    # image: landsoftdocker/nl-lib-vllm:latest
+    image: vllm/vllm-openai:latest-cu130
     container_name: nl-lib-vllm
     <<: *nl-lib-net
     deploy:
@@ -222,20 +227,20 @@ services:
     volumes:
       - /data/models/.hf-cache:/models:rw
     command:
-      - google/gemma-4-E4B-it
+      - Qwen/Qwen3-VL-8B-Instruct
       - --served-model-name
-      - gemma-4-e4b
+      - qwen3-vl-8b
       - --download-dir
       - /models
       - --max-model-len
-      - "126976"
+      - "32768"
       - --dtype
       - bfloat16
       - --gpu-memory-utilization
       - "0.3"
       - --max-num-seqs
-      - "16"
-      - --enforce-eager
+      - "8"
+      # - --enforce-eager
       - --host
       - "0.0.0.0"
       - --port
