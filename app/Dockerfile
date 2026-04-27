@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl build-essential git \
     libgl1-mesa-glx libglib2.0-0 \
     fonts-noto-cjk \
+    openjdk-17-jre-headless \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && python -m pip install --upgrade pip setuptools wheel \

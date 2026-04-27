@@ -41,6 +41,7 @@ httpx==0.27.2
 # ── OCR / PDF ───────────────────────────────────────────────
 PyMuPDF==1.24.10
 Pillow==10.4.0
+langchain-opendataloader-pdf  # 한컴·듀얼랩 PDF 하이브리드 추출 엔진 (Java 11+ 필요)
 
 # ── 한국어 처리 (kss는 assets 버그로 런타임에 lazy import) ───
 # kss[all]==6.0.0

@@ -275,6 +275,80 @@ async def get_book_thumbnail(cnts_id: str):
     )
 
 
+# ── PDF 추출 비교 (fitz vs VLM vs OpenDataLoader) ────────
+@router.post("/compare/extract")
+async def compare_pdf_extraction(
+    file: UploadFile = File(...),
+    max_pages: int = 10,
+):
+    """PDF 업로드 → fitz / VLM(Gemma) / OpenDataLoader 세 가지로 추출 후 비교 반환.
+
+    max_pages: 비교할 최대 페이지 수 (기본 10)
+    """
+    import asyncio
+    import time
+    import os
+    from services.ingestion.extractor import (
+        extract_text_fitz_all,
+        extract_text_vlm_all,
+        extract_text_opendataloader,
+    )
+
+    content = await file.read()
+    book_id = f"cmp_{os.path.splitext(file.filename or 'temp')[0]}"
+
+    # fitz는 동기 함수 — executor로 실행해 이벤트 루프 차단 방지
+    loop = asyncio.get_event_loop()
+    t_fitz = time.perf_counter()
+    fitz_result = await loop.run_in_executor(
+        None, lambda: extract_text_fitz_all(None, book_id, file_bytes=content, max_pages=max_pages)
+    )
+    fitz_elapsed = round(time.perf_counter() - t_fitz, 2)
+
+    t_vlm = time.perf_counter()
+    vlm_result = await extract_text_vlm_all(None, book_id, file_bytes=content, max_pages=max_pages)
+    vlm_elapsed = round(time.perf_counter() - t_vlm, 2)
+
+    t_odl = time.perf_counter()
+    odl_result = await extract_text_opendataloader(None, book_id, file_bytes=content, max_pages=max_pages)
+    odl_elapsed = round(time.perf_counter() - t_odl, 2)
+
+    fitz_pages = {p.page_num: p for p in fitz_result.pages}
+    vlm_pages  = {p.page_num: p for p in vlm_result.pages}
+    odl_pages  = {p.page_num: p for p in odl_result.pages}
+    all_page_nums = sorted(set(fitz_pages) | set(vlm_pages) | set(odl_pages))
+
+    pages = []
+    for pg in all_page_nums:
+        fp = fitz_pages.get(pg)
+        vp = vlm_pages.get(pg)
+        op = odl_pages.get(pg)
+        pages.append({
+            "page": pg,
+            "fitz":          {"chars": len(fp.text) if fp else 0, "confidence": fp.confidence if fp else None, "text": fp.text if fp else ""},
+            "vlm":           {"chars": len(vp.text) if vp else 0, "confidence": vp.confidence if vp else None, "text": vp.text if vp else ""},
+            "opendataloader":{"chars": len(op.text) if op else 0, "confidence": op.confidence if op else None, "text": op.text if op else ""},
+        })
+
+    def _summary(result, elapsed):
+        return {
+            "total_pages": result.total_pages,
+            "processed_pages": len(result.pages),
+            "total_chars": sum(len(p.text) for p in result.pages),
+            "elapsed_sec": elapsed,
+            "errors": result.errors,
+        }
+
+    return {
+        "filename": file.filename,
+        "max_pages": max_pages,
+        "fitz":           _summary(fitz_result, fitz_elapsed),
+        "vlm":            _summary(vlm_result,  vlm_elapsed),
+        "opendataloader": _summary(odl_result,  odl_elapsed),
+        "pages": pages,
+    }
+
+
 # ── 추천 이유 스트리밍 ───────────────────────────────────
 @router.post("/reason/stream")
 async def stream_reason(
