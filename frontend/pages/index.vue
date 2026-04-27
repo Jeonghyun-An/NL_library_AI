@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <!-- ══ 전체 폭 상단 바 ════════════════════════════════════════ -->
-    <header class="top-bar">
+    <header class="top-bar" ref="topBarRef">
       <div class="top-bar-inner">
         <button class="top-brand" @click="reset">
           <img
@@ -274,6 +274,8 @@ const selectedKeywords = ref<string[]>([]);
 const isSelectedStreaming = ref(false);
 const sliderRef = ref<HTMLElement | null>(null);
 const selectedSectionRef = ref<HTMLElement | null>(null);
+const topBarRef = ref<HTMLElement | null>(null);
+const topBarHeight = ref(84);
 
 const gridCols = computed(() => {
   const l = leftOpen.value ? "220px" : "44px";
@@ -317,6 +319,18 @@ onMounted(() => {
     localStorage.setItem("sid", sid);
   }
   loadHistory();
+
+  if (topBarRef.value) {
+    const ro = new ResizeObserver((entries) => {
+      const e = entries[0];
+      if (!e) return;
+      topBarHeight.value = Math.round(
+        e.borderBoxSize?.[0]?.blockSize ?? e.contentRect.height,
+      );
+    });
+    ro.observe(topBarRef.value);
+    onUnmounted(() => ro.disconnect());
+  }
 });
 
 async function handleSearch(query: string) {
@@ -482,7 +496,7 @@ function restoreHistory(entry: HistoryEntry) {
 .top-bar-inner {
   max-width: 1290px;
   margin: 0 auto;
-  height: 84px;
+  min-height: 84px;
   display: flex;
   align-items: center;
 }
@@ -540,7 +554,7 @@ function restoreHistory(entry: HistoryEntry) {
 /* ── 3단 그리드 ──────────────────────────────────── */
 .app-layout {
   display: grid;
-  min-height: calc(100vh - 84px);
+  min-height: v-bind("'calc(100vh - ' + topBarHeight + 'px)'");
   max-width: 1290px;
   margin: 0 auto;
   transition: grid-template-columns 0.25s ease;
@@ -549,8 +563,8 @@ function restoreHistory(entry: HistoryEntry) {
 /* ── 사이드바 공통 ──────────────────────────────── */
 .sidebar {
   position: sticky;
-  top: 84px;
-  height: calc(100vh - 84px);
+  top: v-bind("topBarHeight + 'px'");
+  height: v-bind("'calc(100vh - ' + topBarHeight + 'px)'");
   overflow: hidden;
   display: flex;
   flex-direction: column;
