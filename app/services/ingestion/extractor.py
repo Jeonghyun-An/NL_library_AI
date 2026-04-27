@@ -80,9 +80,36 @@ class ExtractionResult:
         }
 
 
+# ── VLM 프롬프트 ────────────────────────────────────────────
+_VLM_PROMPT_DIAGRAM = """\
+이 페이지에는 다이어그램, 인포그래픽, 또는 그림이 포함되어 있습니다.
+내부 텍스트와 구조를 최대한 추출하세요. "[그림: 설명]" 한 줄로 대체하지 마세요.
+
+추출 규칙:
+1. 모든 텍스트 라벨·수치·제목·범례를 빠짐없이 추출하세요.
+2. 다이어그램 유형에 맞는 구조로 표현하세요:
+   - 순서도·프로세스 흐름 → 단계별 번호 리스트 또는 [A → B → C]
+   - 인과관계도·루프 → [원인 → 결과] 관계 목록
+   - 조직도·계층도 → 들여쓰기 계층 구조
+   - 표·매트릭스 → 마크다운 표(|---|)
+3. 화살표·연결선은 → 기호로 관계를 명시하세요.
+4. 텍스트가 전혀 없는 순수 사진·삽화만 [그림: 한 줄 설명]으로 표기하세요.
+5. 이미지에 없는 내용은 절대 추가하지 마세요.
+마크다운 코드 블록(```)이나 부연 설명 없이 바로 내용만 출력하세요."""
+
+_VLM_PROMPT_OCR = """\
+이 페이지의 모든 텍스트를 정확히 추출하세요.
+표가 있으면 마크다운 표(|---|)로 변환하고, 그림은 [그림: 한 줄 설명]으로 표기하세요.
+원문의 순서와 구조를 최대한 유지하세요.
+마크다운 코드 블록(```)이나 부연 설명 없이 바로 내용만 출력하세요.
+이미지에 없는 내용은 추가하지 마세요."""
+
+
 async def _extract_with_vlm(
     page: fitz.Page,
     client: httpx.AsyncClient,
+    *,
+    prompt_type: str = "ocr",  # "ocr" | "diagram"
 ) -> PageResult:
     import base64
 
@@ -90,8 +117,10 @@ async def _extract_with_vlm(
     img_bytes = pix.tobytes("png")
     img_b64 = base64.b64encode(img_bytes).decode()
 
+    prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
+
     payload = {
-        "model": cfg.VLLM_MODEL,
+        "model": cfg.VLM_MODEL,
         "messages": [
             {
                 "role": "user",
@@ -100,15 +129,7 @@ async def _extract_with_vlm(
                         "type": "image_url",
                         "image_url": {"url": f"data:image/png;base64,{img_b64}"},
                     },
-                    {
-                        "type": "text",
-                        "text": (
-                            "이 페이지의 모든 텍스트를 정확히 추출해주세요. "
-                            "표가 있으면 마크다운 표로 변환하고, "
-                            "그림이 있으면 [그림: 설명] 형태로 표기하세요. "
-                            "원문의 순서와 구조를 최대한 유지하세요."
-                        ),
-                    },
+                    {"type": "text", "text": prompt},
                 ],
             }
         ],
@@ -117,7 +138,7 @@ async def _extract_with_vlm(
     }
 
     resp = await client.post(
-        f"{cfg.VLLM_BASE_URL}/chat/completions",
+        f"{cfg.VLM_BASE_URL}/chat/completions",
         json=payload,
         timeout=120.0,
     )
@@ -190,10 +211,11 @@ async def extract_text(
                 result.pages.append(odl_page)
                 continue
 
-            # 2티어: VLM 보완
+            # 2티어: VLM 보완 — [그림] 페이지는 다이어그램 전용 프롬프트 사용
             try:
-                log.info(f"[{book_id}] p.{page_num} → VLM 보완 ({trigger})")
-                vlm_page = await _extract_with_vlm(page, client)
+                prompt_type = "diagram" if trigger == "[그림] 검출" else "ocr"
+                log.info(f"[{book_id}] p.{page_num} → VLM 보완 ({trigger}, prompt={prompt_type})")
+                vlm_page = await _extract_with_vlm(page, client, prompt_type=prompt_type)
                 result.pages.append(vlm_page)
             except Exception as e:
                 log.error(f"[{book_id}] p.{page_num} VLM 실패: {e}")
@@ -264,6 +286,7 @@ async def extract_text_vlm_all(
     *,
     file_bytes: bytes | None = None,
     max_pages: int | None = None,
+    prompt_type: str = "ocr",  # "ocr" | "diagram"
 ) -> ExtractionResult:
     """모든 페이지를 VLM으로 추출 (비교 테스트용)"""
     result = ExtractionResult(book_id=book_id, total_pages=0)
@@ -283,7 +306,7 @@ async def extract_text_vlm_all(
     async with httpx.AsyncClient() as client:
         for page in pages_to_process:
             try:
-                page_result = await _extract_with_vlm(page, client)
+                page_result = await _extract_with_vlm(page, client, prompt_type=prompt_type)
                 result.pages.append(page_result)
             except Exception as e:
                 log.error(f"[{book_id}] VLM p.{page.number} 실패: {e}")

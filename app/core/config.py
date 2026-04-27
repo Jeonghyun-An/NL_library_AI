@@ -37,12 +37,14 @@ class Settings(BaseSettings):
     MILVUS_PORT: int = 19530
     MILVUS_COLLECTION: str = "nl_lib_embeddings"
 
-    # ── vLLM ─────────────────────────────────────────
-    VLLM_BASE_URL: str = "http://vllm:8000/v1"
-    VLLM_MODEL: str = "gemma-4-e4b"
-    VLLM_MAX_TOKENS: int = 1024
-    VLLM_TEMPERATURE: float = 0.1
-    VLLM_TIMEOUT: int = 30
+    # ── VLM (멀티모달 OCR — 페이지 이미지 → 텍스트) ──
+    VLM_BASE_URL: str = "http://vllm:8000/v1"
+    VLM_MODEL: str = "qwen2.5-vl-7b"
+
+    # ── LLM (텍스트 생성 — 요약/리라이트/추론) ───────
+    LLM_BASE_URL: str = "http://host.docker.internal:18080/v1"
+    LLM_MODEL: str = "gemma-3-12b"
+    LLM_TIMEOUT: int = 30
 
     # ── PaddleOCR ────────────────────────────────────
     PADDLEOCR_URL: str = "http://paddleocr:8001"

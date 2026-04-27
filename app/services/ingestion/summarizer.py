@@ -103,7 +103,7 @@ async def summarize_section(
     cfg = get_settings()
     system = _SECTION_SYSTEMS.get(doc_type, _SECTION_SYSTEMS["book"])
     payload = {
-        "model": cfg.VLLM_MODEL,
+        "model": cfg.LLM_MODEL,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": _SECTION_PROMPT.format(
@@ -115,7 +115,7 @@ async def summarize_section(
         "temperature": 0.1,
     }
     async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(f"{cfg.VLLM_BASE_URL}/chat/completions", json=payload)
+        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
         resp.raise_for_status()
         raw = resp.json()["choices"][0]["message"]["content"].strip()
     if doc_type == "policy":
@@ -178,7 +178,7 @@ async def summarize_book_from_sections(
         f"[섹션 {i + 1}] {s}" for i, s in enumerate(section_summaries) if s
     )
     payload = {
-        "model": cfg.VLLM_MODEL,
+        "model": cfg.LLM_MODEL,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": _BOOK_FROM_SECTIONS_PROMPT.format(
@@ -191,7 +191,7 @@ async def summarize_book_from_sections(
         "temperature": 0.1,
     }
     async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(f"{cfg.VLLM_BASE_URL}/chat/completions", json=payload)
+        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
         resp.raise_for_status()
         raw = resp.json()["choices"][0]["message"]["content"].strip()
     if doc_type == "policy":

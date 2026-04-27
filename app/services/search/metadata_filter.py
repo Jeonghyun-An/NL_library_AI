@@ -55,9 +55,9 @@ async def extract_metadata_filter(query: str) -> MetadataFilter:
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.post(
-                f"{cfg.VLLM_BASE_URL}/chat/completions",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
                 json={
-                    "model": cfg.VLLM_MODEL,
+                    "model": cfg.LLM_MODEL,
                     "messages": [
                         {"role": "system", "content": _SYSTEM},
                         {"role": "user", "content": (

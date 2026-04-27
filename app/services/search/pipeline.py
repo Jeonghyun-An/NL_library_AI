@@ -410,9 +410,9 @@ async def stream_book_reason(
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
-                f"{cfg.VLLM_BASE_URL}/chat/completions",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
                 json={
-                    "model": cfg.VLLM_MODEL,
+                    "model": cfg.LLM_MODEL,
                     "messages": [
                         {"role": "system", "content": system_message},
                         {"role": "user",   "content": user_message},
@@ -500,9 +500,9 @@ async def _generate_answer_with_context(
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{cfg.VLLM_BASE_URL}/chat/completions",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
                 json={
-                    "model": cfg.VLLM_MODEL,
+                    "model": cfg.LLM_MODEL,
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 4096,
                     "temperature": 0.3,
@@ -537,9 +537,9 @@ async def _generate_answer(query: str, chunks: list[ChunkHit]) -> str | None:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{cfg.VLLM_BASE_URL}/chat/completions",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
                 json={
-                    "model": cfg.VLLM_MODEL,
+                    "model": cfg.LLM_MODEL,
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 2048,
                     "temperature": 0.3,

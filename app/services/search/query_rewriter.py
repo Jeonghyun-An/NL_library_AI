@@ -35,7 +35,7 @@ async def rewrite_query(query: str, db=None) -> str:
 
     cfg = get_settings()
     payload = {
-        "model": cfg.VLLM_MODEL,
+        "model": cfg.LLM_MODEL,
         "messages": [
             {"role": "system", "content": _REWRITE_SYSTEM},
             {"role": "user", "content": f"원본 쿼리: {query}"},
@@ -44,7 +44,7 @@ async def rewrite_query(query: str, db=None) -> str:
         "temperature": 0.0,
     }
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(f"{cfg.VLLM_BASE_URL}/chat/completions", json=payload)
+        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"].strip()
 
