@@ -76,7 +76,7 @@
         <!-- 랜딩 -->
         <div v-if="!result && !loading && !error" class="landing">
           <div class="logo-area">
-            <h1 class="title">국립중앙도서관 의미 기반 검색</h1>
+            <h1 class="title">도서관 의미 기반 검색</h1>
             <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
           </div>
           <SearchInput
@@ -136,7 +136,9 @@
                     </button>
                     <div class="book-slider" ref="sliderRef">
                       <BookCard
-                        v-for="book in bookResult.books.slice(1).filter(b => b.best_score >= 0.1)"
+                        v-for="book in bookResult.books
+                          .slice(1)
+                          .filter((b) => b.best_score >= 0.1)"
                         :key="book.book_id"
                         :book="book"
                         @select="selectSecondaryBook"

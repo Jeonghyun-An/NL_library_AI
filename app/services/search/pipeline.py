@@ -388,7 +388,7 @@ async def stream_book_reason(
     )
 
     system_message = (
-        "당신은 국립중앙도서관의 AI 사서입니다.\n\n"
+        "당신은 도서관의 AI 사서입니다.\n\n"
         f"{kw_instruction}"
         "규칙:\n"
         "- 도서 요약·매칭 구절에서 구체적 근거를 찾아 독서 의도와 연결하세요.\n"

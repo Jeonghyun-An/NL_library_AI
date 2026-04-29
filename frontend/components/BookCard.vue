@@ -28,7 +28,7 @@
         <button
           class="nl-link-btn"
           @click.stop="openNLPage"
-          title="국립중앙도서관에서 검색"
+          title="도서관에서 검색"
         >
           <svg
             width="12"
