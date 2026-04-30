@@ -10,20 +10,19 @@
               <div class="answer-title">
                 AI 추천 답변
                 <img
-                  v-if="isStreaming"
-                  src="/ic_ing.gif"
-                  class="status-icon"
-                  alt="생성 중"
-                />
-                <img
-                  v-else-if="answer"
                   src="/ic_done.png"
                   class="status-icon"
-                  alt="완료"
+                  :class="{ spinning: isStreaming }"
+                  alt=""
                 />
               </div>
-              <div class="answer-subtitle" v-if="book?.book_info?.title">
-                &ldquo;{{ book.book_info.title }}&rdquo; 을(를) 분석했어요
+              <div class="answer-subtitle">
+                <template v-if="isStreaming && !answer">
+                  답변 생성 중...
+                </template>
+                <template v-else-if="book?.book_info?.title">
+                  &ldquo;{{ book.book_info.title }}&rdquo; 을(를) 분석했어요
+                </template>
               </div>
             </div>
           </div>
@@ -152,9 +151,22 @@
         <div class="action-row">
           <button class="btn-primary" @click="openNLPage">원문 보기</button>
           <button class="btn-ghost">대출 신청</button>
+          <button class="btn-chat" @click="chatOpen = !chatOpen">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+              <path d="M14 1H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2v3l3-3h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+            {{ chatOpen ? '대화 닫기' : '이 책과 대화하기' }}
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- 도서 심층 대화 (v-show로 마운트 유지 → 기록 보존) -->
+    <BookChat
+      v-show="chatOpen"
+      :cnts-id="book.book_id"
+      @close="chatOpen = false"
+    />
   </div>
 </template>
 
@@ -170,6 +182,7 @@ const props = defineProps<{
 }>();
 
 const summaryExpanded = ref(false);
+const chatOpen = ref(false);
 
 function openNLPage() {
   const title = props.book?.book_info?.title || props.book?.book_id;
@@ -260,6 +273,14 @@ const formattedSummary = computed(
   height: 20px;
   object-fit: contain;
   flex-shrink: 0;
+}
+
+.status-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .answer-text {
@@ -518,6 +539,24 @@ const formattedSummary = computed(
 
 .btn-ghost:hover {
   background: var(--line-2);
+}
+
+.btn-chat {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #eff3ff;
+  color: oklch(0.32 0.15 277);
+  border: 1px solid oklch(0.88 0.05 277);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-chat:hover {
+  background: #e0e8ff;
 }
 
 @media (max-width: 640px) {
