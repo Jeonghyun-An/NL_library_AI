@@ -3,14 +3,36 @@
     <div class="chat-header">
       <img src="/ai_orb.svg" class="chat-orb" alt="" />
       <span class="chat-title">이 책과 대화하기</span>
-      <button class="icon-btn" :title="expanded ? '축소' : '확장'" @click="expanded = !expanded">
+      <button
+        class="icon-btn"
+        :title="expanded ? '축소' : '확장'"
+        @click="expanded = !expanded"
+      >
         <!-- 확장 아이콘 -->
-        <svg v-if="!expanded" width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M10 2h4v4M6 14H2v-4M14 2l-5 5M2 14l5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          v-if="!expanded"
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path
+            d="M10 2h4v4M6 14H2v-4M14 2l-5 5M2 14l5-5"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
         <!-- 축소 아이콘 -->
         <svg v-else width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M14 6h-4V2M2 10h4v4M10 6l4-4M6 10l-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M14 6h-4V2M2 10h4v4M10 6l4-4M6 10l-4 4"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
       <button class="icon-btn" title="닫기" @click="$emit('close')">✕</button>
@@ -187,7 +209,7 @@ async function send() {
 .book-chat {
   display: flex;
   flex-direction: column;
-  border: 1px solid oklch(0.88 0.05 277);
+  border: 1px solid #e0e0de;
   border-radius: var(--radius);
   background: #fff;
   overflow: hidden;
@@ -212,7 +234,7 @@ async function send() {
 .chat-orb {
   width: 24px;
   height: 24px;
-  filter: drop-shadow(0 0 5px oklch(0.7 0.18 277 / 0.4));
+  filter: grayscale(0.4) opacity(0.8);
 }
 
 .chat-title {
@@ -235,7 +257,9 @@ async function send() {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .icon-btn:hover {
   background: var(--line-2);
@@ -285,20 +309,15 @@ async function send() {
 }
 
 .bubble.user {
-  background: var(--ink);
+  background: #2c2c2a;
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .bubble.assistant {
-  background: radial-gradient(
-    120% 120% at 0% 0%,
-    oklch(0.96 0.04 277) 0%,
-    oklch(0.98 0.02 317) 60%,
-    #fff 100%
-  );
-  border: 1px solid oklch(0.9 0.04 277);
-  color: var(--ink-2);
+  background: #f5f5f3;
+  border: 1px solid #e0e0de;
+  color: #3a3a38;
   border-bottom-left-radius: 4px;
 }
 
@@ -322,7 +341,7 @@ async function send() {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background: oklch(0.55 0.18 277);
+  background: #888884;
   margin-left: 2px;
   vertical-align: text-bottom;
   animation: blink 0.9s step-end infinite;
@@ -346,8 +365,8 @@ async function send() {
   padding: 2px 8px;
   border-radius: 99px;
   background: #fff;
-  border: 1px solid oklch(0.88 0.05 277);
-  color: oklch(0.4 0.12 277);
+  border: 1px solid #d0d0ce;
+  color: #666662;
   font-weight: 500;
 }
 
@@ -376,7 +395,7 @@ async function send() {
   transition: border-color 0.15s;
 }
 .chat-input:focus {
-  border-color: oklch(0.72 0.14 277);
+  border-color: #888884;
 }
 .chat-input:disabled {
   opacity: 0.6;
@@ -388,7 +407,7 @@ async function send() {
   height: 36px;
   flex-shrink: 0;
   border-radius: 8px;
-  background: var(--ink);
+  background: #2c2c2a;
   color: #fff;
   border: none;
   cursor: pointer;

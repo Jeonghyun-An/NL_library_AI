@@ -152,10 +152,21 @@
           <button class="btn-primary" @click="openNLPage">원문 보기</button>
           <button class="btn-ghost">대출 신청</button>
           <button class="btn-chat" @click="chatOpen = !chatOpen">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
-              <path d="M14 1H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2v3l3-3h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              style="flex-shrink: 0"
+            >
+              <path
+                d="M14 1H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2v3l3-3h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+              />
             </svg>
-            {{ chatOpen ? '대화 닫기' : '이 책과 대화하기' }}
+            {{ chatOpen ? "대화 닫기" : "이 책과 대화하기" }}
           </button>
         </div>
       </div>
@@ -280,7 +291,9 @@ const formattedSummary = computed(
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .answer-text {
@@ -545,18 +558,22 @@ const formattedSummary = computed(
   font-size: 13px;
   padding: 8px 14px;
   border-radius: 8px;
-  background: #eff3ff;
-  color: oklch(0.32 0.15 277);
-  border: 1px solid oklch(0.88 0.05 277);
+  background: linear-gradient(
+    110deg,
+    oklch(0.93 0.06 277) 0%,
+    oklch(0.95 0.04 317) 100%
+  );
+  color: oklch(0.28 0.18 277);
+  border: 1px solid oklch(0.86 0.06 277);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
   font-weight: 500;
-  transition: background 0.15s;
+  transition: filter 0.15s;
 }
 .btn-chat:hover {
-  background: #e0e8ff;
+  filter: brightness(0.95);
 }
 
 @media (max-width: 640px) {
