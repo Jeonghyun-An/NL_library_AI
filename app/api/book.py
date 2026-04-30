@@ -19,6 +19,7 @@ from schemas.book import (
     IngestionRequest,
     TaskStatusOut,
     ReasonStreamRequest,
+    BookChatRequest,
 )
 from repositories.book import BookRepository
 from services.search.pipeline import search
@@ -365,6 +366,23 @@ async def stream_reason(
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",  # Nginx 버퍼링 비활성화
         },
+    )
+
+
+# ── 도서 심층 대화 ───────────────────────────────────────
+@router.post("/chat/{cnts_id}")
+async def chat_with_book(
+    cnts_id: str,
+    req: BookChatRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """특정 도서와의 RAG 기반 대화 (SSE 스트리밍)"""
+    from services.chat.book_chat import stream_book_chat
+
+    return StreamingResponse(
+        stream_book_chat(cnts_id, req.message, [m.model_dump() for m in req.history], db),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

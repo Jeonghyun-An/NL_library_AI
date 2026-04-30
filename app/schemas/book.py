@@ -166,3 +166,14 @@ class ReasonStreamRequest(BaseModel):
     book_id:         str
     chunk_texts:     list[str] = []
     rewritten_query: str = ""
+
+
+# ── 책 심층 대화 ─────────────────────────────────────────────
+class ChatMessage(BaseModel):
+    role:    str  # "user" | "assistant"
+    content: str
+
+
+class BookChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[ChatMessage] = []
