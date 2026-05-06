@@ -70,8 +70,8 @@ async def stream_book_chat(
 
     messages = [{"role": "system", "content": system}]
 
-    # 최근 10턴 히스토리
-    for msg in history[-10:]:
+    # 최근 10턴 히스토리 (user+assistant 쌍 = 메시지 20개)
+    for msg in history[-20:]:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
     # 검색된 청크를 컨텍스트로 첨부
