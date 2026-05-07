@@ -359,12 +359,18 @@ async def stream_reason(
     """도서 추천 이유를 SSE로 스트리밍"""
     from services.search.pipeline import stream_book_reason
 
+    # DB 조회를 핸들러에서 미리 끝내고 book 객체만 넘긴다.
+    # StreamingResponse 제너레이터에 db 세션을 직접 넘기면
+    # 핸들러 리턴 후 세션이 닫혀 GC 경고가 발생한다.
+    repo = BookRepository(db)
+    book = await repo.get_by_cnts_id(req.book_id)
+
     return StreamingResponse(
-        stream_book_reason(req.query, req.book_id, req.chunk_texts, db, req.rewritten_query),
+        stream_book_reason(req.query, req.book_id, req.chunk_texts, req.rewritten_query, book=book),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",  # Nginx 버퍼링 비활성화
+            "X-Accel-Buffering": "no",
         },
     )
 
@@ -379,8 +385,11 @@ async def chat_with_book(
     """특정 도서와의 RAG 기반 대화 (SSE 스트리밍)"""
     from services.chat.book_chat import stream_book_chat
 
+    repo = BookRepository(db)
+    book = await repo.get_by_cnts_id(cnts_id)
+
     return StreamingResponse(
-        stream_book_chat(cnts_id, req.message, [m.model_dump() for m in req.history], db),
+        stream_book_chat(cnts_id, req.message, [m.model_dump() for m in req.history], book=book),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

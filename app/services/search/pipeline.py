@@ -315,21 +315,15 @@ async def stream_book_reason(
     query: str,
     book_id: str,
     chunk_texts: list[str],
-    db=None,
     rewritten_query: str = "",
+    *,
+    book=None,
 ) -> AsyncGenerator[str, None]:
     """
     도서 추천 이유 SSE 스트리밍 생성기.
     FastAPI StreamingResponse에 직접 전달한다.
+    book 객체는 호출자(엔드포인트)에서 미리 조회해 넘긴다.
     """
-    # 도서 메타데이터 + 요약 조회
-    book = None
-    if db:
-        try:
-            from repositories.book import BookRepository
-            book = await BookRepository(db).get_by_cnts_id(book_id)
-        except Exception as e:
-            log.warning(f"[{book_id}] 도서 정보 조회 실패: {e}")
 
     # ── 도서 서지 정보 블록 ──────────────────────────────
     meta_lines = []

@@ -7,10 +7,8 @@ import re
 from typing import AsyncGenerator
 
 import httpx
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
-from repositories.book import BookRepository
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import SearchHit, search_chunks
 
@@ -65,11 +63,10 @@ async def stream_book_chat(
     cnts_id: str,
     message: str,
     history: list[dict],
-    db: AsyncSession,
+    *,
+    book=None,
 ) -> AsyncGenerator[str, None]:
-    # ── 1. 도서 메타데이터 로드 ──────────────────────────────
-    repo = BookRepository(db)
-    book = await repo.get_by_cnts_id(cnts_id)
+    # book 객체는 엔드포인트에서 미리 조회해 넘긴다 (db 세션 누수 방지).
     if not book:
         yield f"data: {json.dumps({'text': '도서를 찾을 수 없습니다.'}, ensure_ascii=False)}\n\n"
         yield "data: [DONE]\n\n"
