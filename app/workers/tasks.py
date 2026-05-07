@@ -165,6 +165,7 @@ def process_book_file(self, book_id: str, file_path: str):
     from services.ingestion.summarizer import (
         summarize_section,
         summarize_book_from_sections,
+        generate_book_introduction,
         detect_doc_type,
     )
 
@@ -336,10 +337,11 @@ def process_book_file(self, book_id: str, file_path: str):
     idx_result = index_chunks(book_id, all_chunks, dense_embeddings, sparse_embeddings, book_meta=book_meta)
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
-    # ⑤ 도서 요약+테마 생성 (섹션 요약 합산 → LLM 1회) → PostgreSQL 업데이트
+    # ⑤ 도서 요약+테마+소개글 생성 (섹션 요약 합산 → LLM 2회) → PostgreSQL 업데이트
     valid_summaries = list(section_summary_map.values())
     book_summary: str | None = None
     book_themes: str | None = None
+    book_introduction: str | None = None
     if valid_summaries:
         try:
             summary_result = _run_async(summarize_book_from_sections(
@@ -353,12 +355,25 @@ def process_book_file(self, book_id: str, file_path: str):
         except Exception as e:
             log.warning(f"[{book_id}] 도서 요약 생성 실패: {e}")
 
+        try:
+            book_introduction = _run_async(generate_book_introduction(
+                title=title,
+                author=author,
+                publisher=book.publisher or "" if book else "",
+                pub_date=book.pub_date or "" if book else "",
+                section_summaries=valid_summaries,
+            ))
+            log.info(f"[{book_id}] 도서 소개글 생성 완료")
+        except Exception as e:
+            log.warning(f"[{book_id}] 도서 소개글 생성 실패: {e}")
+
     db = SyncSessionLocal()
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
         if book:
             book.summary = book_summary
             book.themes = book_themes
+            book.introduction = book_introduction
             book.is_embedded = True
             db.commit()
             log.info(f"[{book_id}] DB 업데이트 완료")
@@ -368,11 +383,12 @@ def process_book_file(self, book_id: str, file_path: str):
                 title=book_id,
                 summary=book_summary,
                 themes=book_themes,
+                introduction=book_introduction,
                 is_embedded=True,
             )
             db.add(new_book)
             db.commit()
-            log.info(f"[{book_id}] 신규 도서 + 요약/테마 저장 완료")
+            log.info(f"[{book_id}] 신규 도서 + 요약/테마/소개글 저장 완료")
     except Exception as e:
         db.rollback()
         log.warning(f"[{book_id}] 요약/테마 저장 실패: {e}")

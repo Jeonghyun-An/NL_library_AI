@@ -49,6 +49,7 @@ class BookOut(BookBase):
     record_id:        Optional[str] = None
     summary:          Optional[str] = None
     themes:           Optional[str] = None
+    introduction:     Optional[str] = None
     is_embedded:      bool = False
     chunk_count:      Optional[int] = None
     full_text_length: Optional[int] = None

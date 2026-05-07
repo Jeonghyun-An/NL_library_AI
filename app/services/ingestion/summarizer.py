@@ -165,6 +165,67 @@ _BOOK_FROM_SECTIONS_PROMPT = """제목: {title}
 위 내용을 바탕으로 전체 요약을 작성하세요."""
 
 
+_INTRODUCTION_SYSTEM = """\
+당신은 공공도서관의 베테랑 사서입니다.
+독자가 이 책을 직접 손에 들기 전에, 어떤 책인지 자연스럽게 소개해 주세요.
+책 전문가의 따뜻하고 진솔한 목소리로 작성하세요.
+
+요구사항:
+- "이 책은..." 또는 자연스러운 도입부로 시작
+- 어떤 독자에게 이 책이 맞는지 구체적으로 언급
+- 책이 다루는 핵심 주제나 이야기를 독자의 관심사와 연결
+- 기대할 수 있는 경험·깨달음·감동을 담아 표현
+- 딱딱한 목차식 나열은 피하고, 읽고 싶어지는 흐름으로 작성
+- 한국어, 250~400자 내외
+- SUMMARY: / THEMES: 형식 없이 소개글 본문만 출력\
+"""
+
+_INTRODUCTION_PROMPT = """제목: {title}
+저자/기관: {author}
+출판사: {publisher}
+발행연도: {pub_date}
+
+[섹션별 요약]
+{section_summaries}
+
+위 내용을 바탕으로 이 책의 독자 소개글을 작성하세요."""
+
+
+async def generate_book_introduction(
+    title: str,
+    author: str,
+    publisher: str,
+    pub_date: str,
+    section_summaries: list[str],
+) -> str | None:
+    """독자·사서 톤의 도서 소개글 생성. 실패 시 None 반환."""
+    if not section_summaries:
+        return None
+    cfg = get_settings()
+    combined = "\n\n".join(
+        f"[섹션 {i + 1}] {s}" for i, s in enumerate(section_summaries) if s
+    )
+    payload = {
+        "model": cfg.LLM_MODEL,
+        "messages": [
+            {"role": "system", "content": _INTRODUCTION_SYSTEM},
+            {"role": "user", "content": _INTRODUCTION_PROMPT.format(
+                title=title,
+                author=author or "미상",
+                publisher=publisher or "미상",
+                pub_date=pub_date or "미상",
+                section_summaries=combined,
+            )},
+        ],
+        "max_tokens": 700,
+        "temperature": 0.5,
+    }
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"].strip() or None
+
+
 async def summarize_book_from_sections(
     title: str,
     author: str,
