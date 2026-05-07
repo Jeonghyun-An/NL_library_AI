@@ -3,6 +3,7 @@ book_chat.py — 특정 도서와의 심층 대화 (RAG + SSE 스트리밍)
 """
 import json
 import logging
+import re
 from typing import AsyncGenerator
 
 import httpx
@@ -11,10 +12,35 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import get_settings
 from repositories.book import BookRepository
 from services.ingestion.embedder import embed_texts
-from services.ingestion.indexer import search_chunks
+from services.ingestion.indexer import SearchHit, search_chunks
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
+
+
+def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHit]:
+    """LLM 응답에서 실제 인용된 청크만 필터링.
+
+    컨텍스트 블록 형식 [p.X–Y] 을 기준으로 인용 여부를 판단.
+    page_start 가 0 이하인 청크(페이지 정보 없음)는 제외.
+    """
+    cited: list[SearchHit] = []
+    for hit in hits:
+        ps, pe = hit.page_start, hit.page_end
+        if ps <= 0:
+            continue
+        patterns = [
+            rf'p\.{ps}[–\-~]{pe}\b',   # p.23–45 / p.23-45
+            rf'p\.{ps}\b',              # p.23
+            rf'\b{ps}[–\-~]{pe}페이지',  # 23–45페이지
+            rf'\b{ps}페이지',            # 23페이지
+        ]
+        for pat in patterns:
+            if re.search(pat, response_text):
+                cited.append(hit)
+                break
+    return cited
+
 
 _SYSTEM_TEMPLATE = """\
 당신은 "{title}" ({author}{pub_date}) 의 전담 독서 도우미입니다.
@@ -95,6 +121,7 @@ async def stream_book_chat(
         "stream": True,
     }
 
+    full_response = ""
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -114,6 +141,7 @@ async def stream_book_chat(
                         chunk = json.loads(data)
                         delta = chunk["choices"][0]["delta"].get("content", "")
                         if delta:
+                            full_response += delta
                             yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
                     except Exception:
                         pass
@@ -121,12 +149,20 @@ async def stream_book_chat(
         log.error(f"[{cnts_id}] 채팅 스트리밍 실패: {e}")
         yield f"data: {json.dumps({'text': '응답 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
 
-    # ── 5. 참고 출처 전달 (텍스트 스트리밍 완료 후) ──────────
+    # ── 5. 실제 인용된 출처만 전달 ───────────────────────────
+    # LLM 응답에서 p.X 또는 p.X–Y 형태로 언급된 청크만 타일로 표시.
+    # 인용이 없으면 sources 이벤트를 보내지 않는다 (빈 타일 방지).
     if hits:
-        sources = [
-            {"page_start": h.page_start, "page_end": h.page_end, "text": h.text[:80]}
-            for h in hits[:4]
-        ]
-        yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
+        cited = _find_cited_hits(full_response, hits)
+        if cited:
+            sources = [
+                {
+                    "page_start": h.page_start,
+                    "page_end": h.page_end,
+                    "text": h.text,
+                }
+                for h in cited
+            ]
+            yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"

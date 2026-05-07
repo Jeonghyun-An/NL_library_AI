@@ -43,6 +43,23 @@ def _estimate_tokens(text: str) -> int:
     return max(1, int(len(text) / 1.5))
 
 
+def _normalize_linebreaks(text: str) -> str:
+    """PDF 추출 텍스트의 줄바꿈 아티팩트 정규화.
+
+    단락 내 단순 줄 넘김(PDF 컬럼 래핑)은 공백으로 합치고,
+    실제 단락 구분(빈 줄 / 두 번 이상 연속 줄바꿈)은 유지.
+    """
+    # 연속 줄바꿈(단락 구분)을 플레이스홀더로 임시 치환
+    text = re.sub(r'\n{2,}', '\x00', text)
+    # 단락 내 단일 줄바꿈 → 공백
+    text = re.sub(r'\n', ' ', text)
+    # 연속 공백 정리
+    text = re.sub(r'  +', ' ', text)
+    # 플레이스홀더 복원
+    text = text.replace('\x00', '\n\n')
+    return text.strip()
+
+
 def _split_sentences(text: str) -> list[str]:
     """한국어 문장 분리 (kss 사용 시도, 실패 시 정규식 fallback)"""
     try:
@@ -224,7 +241,8 @@ def semantic_chunk(
     Returns:
         Chunk 리스트
     """
-    # 1. 문장 분리
+    # 1. 줄바꿈 정규화 후 문장 분리
+    text = _normalize_linebreaks(text)
     sentences = _split_sentences_with_offsets(text)
     if not sentences:
         return []

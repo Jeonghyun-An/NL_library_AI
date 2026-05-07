@@ -52,14 +52,24 @@
         <div class="bubble" :class="msg.role">
           <div v-html="formatText(msg.content)" />
           <!-- 출처 칩 -->
-          <div v-if="msg.sources?.length" class="source-chips">
-            <span
-              v-for="(src, si) in msg.sources"
-              :key="si"
-              class="source-chip"
-            >
-              p.{{ src.page_start }}–{{ src.page_end }}
-            </span>
+          <div v-if="msg.sources?.length" class="source-area">
+            <div class="source-chips">
+              <span
+                v-for="(src, si) in msg.sources"
+                :key="si"
+                class="source-chip"
+                :class="{ pinned: msg.pinnedChip === si }"
+                @click="msg.pinnedChip = msg.pinnedChip === si ? undefined : si"
+              >
+                p.{{ src.page_start
+                }}{{
+                  src.page_end !== src.page_start ? `–${src.page_end}` : ""
+                }}
+              </span>
+            </div>
+            <div v-if="msg.pinnedChip !== undefined" class="chunk-preview">
+              {{ msg.sources?.[msg.pinnedChip]?.text }}
+            </div>
           </div>
         </div>
       </div>
@@ -112,6 +122,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  pinnedChip?: number;
 }
 
 const messages = ref<Message[]>([]);
@@ -269,6 +280,7 @@ async function send() {
 /* 메시지 영역 */
 .messages-wrap {
   overflow-y: auto;
+  scrollbar-gutter: stable;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -352,12 +364,15 @@ async function send() {
   }
 }
 
-/* 출처 칩 */
+/* 출처 영역 */
+.source-area {
+  margin-top: 8px;
+}
+
 .source-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 8px;
 }
 
 .source-chip {
@@ -368,6 +383,35 @@ async function send() {
   border: 1px solid #d0d0ce;
   color: #666662;
   font-weight: 500;
+  cursor: default;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.source-chip.pinned {
+  background: #2c2c2a;
+  border-color: #2c2c2a;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* 청크 미리보기 */
+.chunk-preview {
+  margin-top: 6px;
+  padding: 7px 10px;
+  background: #f0f0ee;
+  border-left: 2px solid #c0c0be;
+  border-radius: 4px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #555552;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 /* 입력 영역 */
