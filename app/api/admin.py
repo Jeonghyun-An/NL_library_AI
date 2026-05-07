@@ -202,3 +202,117 @@ async def list_minio_files(prefix: str = "originals/"):
     except Exception as e:
         log.error(f"MinIO 조회 실패: {e}")
         return {"error": str(e)}
+
+
+# ── Milvus 인덱싱된 도서 목록 ────────────────────────────
+@router.get("/milvus/books")
+async def list_milvus_books(
+    page: int = 1,
+    size: int = 50,
+    db: AsyncSession = Depends(get_db),
+):
+    """Milvus에 인덱싱된 도서 목록 및 청크 수 조회."""
+    from services.ingestion.indexer import ensure_collection
+    from repositories.book import BookRepository
+
+    try:
+        col = ensure_collection()
+        if col.num_entities == 0:
+            return {"total": 0, "total_chunks": 0, "page": page, "size": size, "books": []}
+
+        # book_id별 청크 수 집계 (메타 청크 chunk_idx=-1 제외)
+        book_chunk_count: dict[str, int] = {}
+        batch = 16384
+        offset = 0
+        while True:
+            rows = col.query(
+                expr="chunk_idx >= 0",
+                output_fields=["book_id"],
+                limit=batch,
+                offset=offset,
+            )
+            if not rows:
+                break
+            for r in rows:
+                bid = r["book_id"]
+                book_chunk_count[bid] = book_chunk_count.get(bid, 0) + 1
+            if len(rows) < batch:
+                break
+            offset += batch
+    except Exception as e:
+        log.error(f"Milvus 조회 실패: {e}")
+        return {"error": str(e)}
+
+    book_ids = sorted(book_chunk_count)
+    total = len(book_ids)
+
+    # 페이지네이션
+    start = (page - 1) * size
+    page_ids = book_ids[start : start + size]
+
+    # PostgreSQL에서 제목 조회
+    repo = BookRepository(db)
+    books = []
+    for bid in page_ids:
+        title = None
+        try:
+            book = await repo.get_by_cnts_id(bid)
+            if book:
+                title = book.title
+        except Exception:
+            pass
+        books.append({"book_id": bid, "title": title, "chunk_count": book_chunk_count[bid]})
+
+    return {
+        "total": total,
+        "total_chunks": col.num_entities,
+        "page": page,
+        "size": size,
+        "books": books,
+    }
+
+
+# ── 전체 재인덱싱 ────────────────────────────────────────
+@router.post("/reindex-all")
+async def reindex_all():
+    """MinIO originals/ 하위 PDF를 모두 스캔해 재인덱싱 태스크 일괄 디스패치."""
+    from minio import Minio
+    from minio.error import S3Error
+    from workers.tasks import process_from_minio
+
+    try:
+        client = Minio(
+            cfg.MINIO_ENDPOINT,
+            access_key=cfg.MINIO_ACCESS_KEY,
+            secret_key=cfg.MINIO_SECRET_KEY,
+            secure=cfg.MINIO_SECURE,
+        )
+        objects = client.list_objects(cfg.MINIO_BUCKET, prefix="originals/", recursive=True)
+    except S3Error as e:
+        log.error(f"MinIO 조회 실패: {e}")
+        return {"error": str(e)}
+
+    dispatched = []
+    skipped = []
+    for obj in objects:
+        key = obj.object_name  # originals/{book_id}/{filename}.pdf
+        if not key.lower().endswith(".pdf"):
+            skipped.append(key)
+            continue
+
+        parts = key.split("/")
+        # 구조: originals / book_id / filename.pdf  (최소 3토큰)
+        if len(parts) < 3:
+            skipped.append(key)
+            continue
+
+        book_id = parts[1]
+        task = process_from_minio.delay(book_id, key)
+        dispatched.append({"book_id": book_id, "minio_key": key, "task_id": task.id})
+        log.info(f"재인덱싱 디스패치: {book_id} ({key})")
+
+    return {
+        "dispatched": len(dispatched),
+        "skipped": len(skipped),
+        "tasks": dispatched,
+    }
