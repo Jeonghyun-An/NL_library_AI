@@ -113,7 +113,7 @@ async def stream_book_chat(
     payload = {
         "model": cfg.LLM_MODEL,
         "messages": messages,
-        "max_tokens": 1500,
+        "max_tokens": 10000,
         "temperature": 0.3,
         "stream": True,
     }

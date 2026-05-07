@@ -60,7 +60,7 @@ _SECTION_SYSTEMS = {
         "- 장면이 전달하는 분위기와 정서적 톤\n"
         "- 사건이나 이미지의 상징적 의미\n"
         "다음 형식으로 출력하세요:\n"
-        "SUMMARY: (서술적 줄거리보다 '이 대목이 다루는 것'과 '독자가 느끼는 것' 중심으로 300자 내외)\n"
+        "SUMMARY: (서술적 줄거리보다 '이 대목이 다루는 것'과 '독자가 느끼는 것' 중심으로 300~500자)\n"
         "THEMES: (이 섹션의 핵심 심리·철학적 테마 5~8개, 쉼표 구분. 예: 욕망, 억압, 자아 상실, 폭력성, 사회 규범 저항)"
     ),
     "book": (
@@ -71,7 +71,7 @@ _SECTION_SYSTEMS = {
         "- 실제 적용 맥락이나 사례\n"
         "- 이 내용에 관심 있는 독자가 자연스럽게 떠올릴 연관 주제\n"
         "다음 형식으로 출력하세요:\n"
-        "SUMMARY: (이 섹션을 검색할 독자의 표현과 키워드가 포함된 300자 내외 요약)\n"
+        "SUMMARY: (이 섹션을 검색할 독자의 표현과 키워드가 포함된 300~500자 요약)\n"
         "THEMES: (이 섹션의 핵심 개념·주제 키워드 5~8개, 쉼표 구분)"
     ),
     "policy": (
@@ -81,7 +81,7 @@ _SECTION_SYSTEMS = {
         "- 핵심 의무·금지·허용 사항\n"
         "- 적용 범위와 예외 조건\n"
         "- 핵심 정의 및 용어\n"
-        "300자 내외로 작성하세요.\n"
+        "300~500자로 작성하세요.\n"
         "요약 외 다른 말은 하지 마세요."
     ),
 }
@@ -111,7 +111,7 @@ async def summarize_section(
                 text=section_text,
             )},
         ],
-        "max_tokens": 600,
+        "max_tokens": 4000,
         "temperature": 0.1,
     }
     async with httpx.AsyncClient(timeout=60) as client:
@@ -131,7 +131,7 @@ _BOOK_FROM_SECTIONS_SYSTEMS = {
         "다음 형식으로 출력하세요:\n"
         "SUMMARY: (줄거리 요약이 아닌 '이 작품이 무엇을 다루는가' 중심. "
         "주인공의 내적 여정, 심리 변화, 사회·문화적 맥락, 작가의 문제의식, "
-        "비슷한 감성으로 찾을 독자의 검색어 포함. 600자 내외)\n"
+        "비슷한 감성으로 찾을 독자의 검색어 포함. 800~1000자)\n"
         "THEMES: (작품 전체를 관통하는 핵심 심리·철학적 테마 8~10개, 쉼표 구분. "
         "예: 욕망, 억압, 자아 상실, 폭력성, 사회 규범 저항, 여성 정체성, 실존적 공포)"
     ),
@@ -140,7 +140,7 @@ _BOOK_FROM_SECTIONS_SYSTEMS = {
         "섹션별 요약들을 종합하여 이 도서의 전체 분석을 작성하세요.\n"
         "다음 형식으로 출력하세요:\n"
         "SUMMARY: (저자의 핵심 주장, 주요 개념·이론, 독자가 얻는 인사이트, "
-        "어떤 독자에게 유용한지, 연관 주제 키워드 포함. 600자 내외)\n"
+        "어떤 독자에게 유용한지, 연관 주제 키워드 포함. 800~1000자)\n"
         "THEMES: (이 도서를 관통하는 핵심 개념·주제 키워드 8~10개, 쉼표 구분)"
     ),
     "policy": (
@@ -151,7 +151,7 @@ _BOOK_FROM_SECTIONS_SYSTEMS = {
         "- 적용 대상·범위·예외\n"
         "- 의무·금지·제재 내용\n"
         "- 시행 관련 정보\n"
-        "600자 내외로 작성하세요.\n"
+        "800~1000자로 작성하세요.\n"
         "요약 외 다른 말은 하지 마세요."
     ),
 }
@@ -176,7 +176,7 @@ _INTRODUCTION_SYSTEM = """\
 - 책이 다루는 핵심 주제나 이야기를 독자의 관심사와 연결
 - 기대할 수 있는 경험·깨달음·감동을 담아 표현
 - 딱딱한 목차식 나열은 피하고, 읽고 싶어지는 흐름으로 작성
-- 한국어, 250~400자 내외
+- 한국어, 400~600자 내외
 - SUMMARY: / THEMES: 형식 없이 소개글 본문만 출력\
 """
 
@@ -217,7 +217,7 @@ async def generate_book_introduction(
                 section_summaries=combined,
             )},
         ],
-        "max_tokens": 700,
+        "max_tokens": 5000,
         "temperature": 0.5,
     }
     async with httpx.AsyncClient(timeout=120) as client:
@@ -248,7 +248,7 @@ async def summarize_book_from_sections(
                 section_summaries=combined,
             )},
         ],
-        "max_tokens": 1200,
+        "max_tokens": 5000,
         "temperature": 0.1,
     }
     async with httpx.AsyncClient(timeout=120) as client:
