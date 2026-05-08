@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemma-3-12b"
     LLM_TIMEOUT: int = 30
 
+    # ── FLUX (자동 표지 이미지 생성 — black-forest-labs/FLUX.1-dev) ──
+    FLUX_BASE_URL: str = "http://flux:8000"
+    FLUX_TIMEOUT: int = 300
+
     # ── PaddleOCR ────────────────────────────────────
     PADDLEOCR_URL: str = "http://paddleocr:8001"
 

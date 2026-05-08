@@ -208,10 +208,15 @@ async def get_task_status(task_id: str):
     )
 
 
-# ── PDF 첫 페이지 썸네일 ─────────────────────────────────
+# ── 표지 (FLUX 자동생성 → 없으면 PDF 1p 폴백) ──────────────
 @router.get("/{cnts_id}/thumbnail")
-async def get_book_thumbnail(cnts_id: str):
-    """PDF 1페이지를 JPEG로 렌더링해 반환. MinIO에 캐싱."""
+async def get_book_thumbnail(cnts_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    책 표지 반환 우선순위:
+      ① FLUX 자동 생성 표지 (book.cover_image_key)
+      ② 캐시된 PDF 1페이지 썸네일
+      ③ 원본 PDF 1페이지 즉석 렌더 (+ MinIO 캐싱)
+    """
     from minio import Minio
     from minio.error import S3Error
     import fitz  # PyMuPDF
@@ -222,9 +227,31 @@ async def get_book_thumbnail(cnts_id: str):
         secret_key=cfg.MINIO_SECRET_KEY,
         secure=cfg.MINIO_SECURE,
     )
+
+    # ① FLUX 자동 생성 표지 우선
+    try:
+        row = (await db.execute(
+            text("SELECT cover_image_key FROM library_catalog WHERE cnts_id = :id"),
+            {"id": cnts_id},
+        )).first()
+        if row and row[0]:
+            try:
+                obj = client.get_object(cfg.MINIO_BUCKET, row[0])
+                data = obj.read()
+                obj.close()
+                return Response(
+                    content=data,
+                    media_type="image/jpeg",
+                    headers={"Cache-Control": "public, max-age=86400"},
+                )
+            except S3Error:
+                log.warning(f"[{cnts_id}] cover_image_key 있으나 MinIO 객체 없음: {row[0]}")
+    except Exception as e:
+        log.warning(f"[{cnts_id}] cover_image_key 조회 실패: {e}")
+
     thumbnail_key = f"thumbnails/{cnts_id}.jpg"
 
-    # ① 캐시 확인 (이미 생성된 썸네일)
+    # ② 캐시 확인 (이미 생성된 PDF 썸네일)
     try:
         obj = client.get_object(cfg.MINIO_BUCKET, thumbnail_key)
         data = obj.read()

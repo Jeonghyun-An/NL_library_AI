@@ -208,6 +208,7 @@ def process_book_file(self, book_id: str, file_path: str):
         generate_book_introduction,
         detect_doc_type,
     )
+    from services.ingestion.cover_generator import generate_and_store_cover
 
     log.info(f"[{book_id}] 처리 시작: {file_path}")
 
@@ -419,6 +420,30 @@ def process_book_file(self, book_id: str, file_path: str):
         except Exception as e:
             log.warning(f"[{book_id}] 도서 소개글 생성 실패: {e}")
 
+    # ⑤-b 표지 이미지 자동 생성 (LLM이 프롬프트 생성 → FLUX 렌더 → MinIO 업로드)
+    cover_key: str | None = None
+    cover_prompt: str | None = None
+    try:
+        from minio import Minio
+        _minio_cover = Minio(
+            cfg.MINIO_ENDPOINT,
+            access_key=cfg.MINIO_ACCESS_KEY,
+            secret_key=cfg.MINIO_SECRET_KEY,
+            secure=cfg.MINIO_SECURE,
+        )
+        cover_key, cover_prompt = _run_async(generate_and_store_cover(
+            book_id=book_id,
+            title=title,
+            author=author,
+            kdc=(book.kdc or "") if book else "",
+            themes=book_themes or "",
+            introduction=book_introduction or "",
+            summary=book_summary or "",
+            minio_client=_minio_cover,
+        ))
+    except Exception as e:
+        log.warning(f"[{book_id}] 표지 생성 단계 실패: {e}")
+
     db = SyncSessionLocal()
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
@@ -426,6 +451,10 @@ def process_book_file(self, book_id: str, file_path: str):
             book.summary = book_summary
             book.themes = book_themes
             book.introduction = book_introduction
+            if cover_key:
+                book.cover_image_key = cover_key
+            if cover_prompt:
+                book.cover_prompt = cover_prompt
             book.is_embedded = True
             db.commit()
             log.info(f"[{book_id}] DB 업데이트 완료")
@@ -436,6 +465,8 @@ def process_book_file(self, book_id: str, file_path: str):
                 summary=book_summary,
                 themes=book_themes,
                 introduction=book_introduction,
+                cover_image_key=cover_key,
+                cover_prompt=cover_prompt,
                 is_embedded=True,
             )
             db.add(new_book)

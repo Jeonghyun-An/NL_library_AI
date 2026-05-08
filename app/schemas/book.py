@@ -50,6 +50,8 @@ class BookOut(BookBase):
     summary:          Optional[str] = None
     themes:           Optional[str] = None
     introduction:     Optional[str] = None
+    cover_image_key:  Optional[str] = None
+    cover_prompt:     Optional[str] = None
     is_embedded:      bool = False
     chunk_count:      Optional[int] = None
     full_text_length: Optional[int] = None
