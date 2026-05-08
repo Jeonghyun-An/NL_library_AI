@@ -39,6 +39,10 @@ x-common-env: &common-env
   LLM_MODEL: ${LLM_MODEL:-gemma-3-12b}
   LLM_TIMEOUT: "30"
 
+  # FLUX (자동 표지 이미지 생성 — black-forest-labs/FLUX.1-dev)
+  FLUX_BASE_URL: ${FLUX_BASE_URL:-http://flux:8000}
+  FLUX_TIMEOUT: "300"
+
   # PaddleOCR
   PADDLEOCR_URL: "http://paddleocr:8001"
 
@@ -255,6 +259,41 @@ services:
       start_period: 600s
     restart: unless-stopped
 
+  # ── FLUX.1-dev (표지 자동 생성) ──────────────
+  flux:
+    image: landsoftdocker/nl-lib-flux:latest
+    container_name: nl-lib-flux
+    <<: *nl-lib-net
+    shm_size: "8g"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_TOKEN}
+      HF_TOKEN: ${HUGGINGFACE_TOKEN}
+      HF_HOME: "/models"
+      CUDA_VISIBLE_DEVICES: "0"
+      NVIDIA_VISIBLE_DEVICES: "0"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      FLUX_MODEL_ID: ${FLUX_MODEL_ID:-black-forest-labs/FLUX.1-dev}
+      FLUX_DTYPE: "bfloat16"
+      FLUX_CPU_OFFLOAD: "false"
+    volumes:
+      - /data/models/.hf-cache:/models:rw
+    ports:
+      - "18090:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 40
+      start_period: 600s
+    restart: unless-stopped
+
   # ── PaddleOCR (GPU) ──────────────────────────
   # paddleocr:
   #   image: landsoftdocker/clms-paddleocr:latest
@@ -317,6 +356,8 @@ services:
       #   condition: service_healthy
       vllm:
         condition: service_started
+      flux:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
       interval: 15s
@@ -357,6 +398,8 @@ services:
         condition: service_healthy
       milvus:
         condition: service_healthy
+      flux:
+        condition: service_started
     restart: unless-stopped
 
   # ── Nuxt ──────────────────────────────────────
