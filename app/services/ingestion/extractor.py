@@ -58,12 +58,22 @@ class PageResult:
 
 
 @dataclass
+class FigureData:
+    page_num: int
+    img_idx: int        # 페이지 내 순서 (0-based)
+    img_bytes: bytes    # JPEG 바이너리
+    before_context: str # 이미지 앞 300자 (제목·레이블 등)
+    after_context: str  # 이미지 뒤 300자 (각주·출처 등)
+
+
+@dataclass
 class ExtractionResult:
     book_id: str
     total_pages: int
     pages: list[PageResult] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     page_map: dict[int, int] = field(default_factory=dict)
+    figures: list[FigureData] = field(default_factory=list)
 
     @property
     def full_text(self) -> str:
@@ -370,16 +380,44 @@ async def extract_text_opendataloader(
         if max_pages:
             documents = documents[:max_pages]
 
-        import re
-        # markdown 이미지 (base64 embedded 또는 외부 경로) → [그림] 마커로 치환
-        img_pattern = re.compile(r'!\[[^\]]*\]\([^)]+\)')
+        import re, base64 as _b64
+        # base64 이미지 패턴 (embedded)
+        img_b64_pattern = re.compile(
+            r'!\[([^\]]*)\]\(data:image/[^;]+;base64,([^)]+)\)'
+        )
+        # 외부 경로 이미지 패턴 (비 base64)
+        img_any_pattern = re.compile(r'!\[[^\]]*\]\([^)]+\)')
 
         result.total_pages = len(documents)
         for i, doc in enumerate(documents):
             page_num = doc.metadata.get("page", i + 1) - 1  # OpenDataLoader는 1-based → 0-based
             raw = doc.page_content
-            img_count = len(img_pattern.findall(raw))
-            stripped = img_pattern.sub('[그림]', raw)
+
+            # ── 그림 추출: base64 이미지마다 앞뒤 컨텍스트 보존 ──
+            for img_idx, m in enumerate(img_b64_pattern.finditer(raw)):
+                try:
+                    img_bytes = _b64.b64decode(m.group(2))
+                except Exception:
+                    continue
+
+                # 앞 300자: 다른 base64 이미지는 [그림]으로 치환 후 추출
+                before_raw = raw[max(0, m.start() - 300):m.start()]
+                before = img_b64_pattern.sub('[그림]', before_raw).strip()
+
+                # 뒤 300자: 동일 처리
+                after_raw = raw[m.end():m.end() + 300]
+                after = img_b64_pattern.sub('[그림]', after_raw).strip()
+
+                result.figures.append(FigureData(
+                    page_num=page_num,
+                    img_idx=img_idx,
+                    img_bytes=img_bytes,
+                    before_context=before,
+                    after_context=after,
+                ))
+
+            img_count = len(img_b64_pattern.findall(raw))
+            stripped = img_any_pattern.sub('[그림]', raw)
             text = _clean_text(stripped)
             if img_count:
                 log.info(f"[{book_id}] p.{page_num} 그림 {img_count}개 검출")

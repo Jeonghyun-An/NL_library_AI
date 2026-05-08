@@ -24,6 +24,46 @@ SECTION_TARGET_TOKENS = 3000
 SECTION_MAX_TOKENS = 5000
 
 
+def _save_figures(book_id: str, figures: list, minio_client) -> int:
+    """그림 바이너리 → MinIO 업로드 + PostgreSQL 메타데이터 저장."""
+    import io
+    from models.figure import BookFigure
+
+    saved = 0
+    db = SyncSessionLocal()
+    try:
+        db.query(BookFigure).filter_by(book_id=book_id).delete()
+        for fig in figures:
+            minio_key = f"figures/{book_id}/p{fig.page_num}_i{fig.img_idx}.jpg"
+            try:
+                minio_client.put_object(
+                    cfg.MINIO_BUCKET,
+                    minio_key,
+                    io.BytesIO(fig.img_bytes),
+                    length=len(fig.img_bytes),
+                    content_type="image/jpeg",
+                )
+            except Exception as e:
+                log.warning(f"[{book_id}] 그림 MinIO 업로드 실패 {minio_key}: {e}")
+                continue
+            db.add(BookFigure(
+                book_id=book_id,
+                page_num=fig.page_num,
+                img_idx=fig.img_idx,
+                minio_key=minio_key,
+                before_context=fig.before_context or None,
+                after_context=fig.after_context or None,
+            ))
+            saved += 1
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        log.warning(f"[{book_id}] 그림 DB 저장 실패: {e}")
+    finally:
+        db.close()
+    return saved
+
+
 def _run_async(coro):
     loop = asyncio.new_event_loop()
     try:
@@ -179,6 +219,18 @@ def process_book_file(self, book_id: str, file_path: str):
 
     full_text = extraction.full_text
     log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
+
+    # 그림 추출 결과 MinIO + PostgreSQL 저장
+    if extraction.figures:
+        from minio import Minio
+        _minio = Minio(
+            cfg.MINIO_ENDPOINT,
+            access_key=cfg.MINIO_ACCESS_KEY,
+            secret_key=cfg.MINIO_SECRET_KEY,
+            secure=cfg.MINIO_SECURE,
+        )
+        n_figs = _save_figures(book_id, extraction.figures, _minio)
+        log.info(f"[{book_id}] 그림 {n_figs}개 저장 완료")
 
     # ② 섹션 분할 → PostgreSQL 저장
     sections = _split_into_sections(extraction.pages)
