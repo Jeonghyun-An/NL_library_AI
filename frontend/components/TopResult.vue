@@ -131,13 +131,33 @@
           </template>
         </div>
 
-        <!-- 도서 소개 -->
-        <div class="summary-block" v-if="book?.book_info?.summary">
-          <div class="summary-label">도서 소개</div>
+        <!-- 도서 요약 / 도서 소개 탭 -->
+        <div
+          class="summary-block"
+          v-if="book?.book_info?.summary || book?.book_info?.introduction"
+        >
+          <div class="tab-bar">
+            <button
+              v-if="book?.book_info?.summary"
+              class="tab-btn"
+              :class="{ active: activeTab === 'summary' }"
+              @click="activeTab = 'summary'"
+            >
+              도서 요약
+            </button>
+            <button
+              v-if="book?.book_info?.introduction"
+              class="tab-btn"
+              :class="{ active: activeTab === 'introduction' }"
+              @click="activeTab = 'introduction'"
+            >
+              도서 소개
+            </button>
+          </div>
           <div
             class="summary-body"
             :class="{ clamped: !summaryExpanded }"
-            v-html="formattedSummary"
+            v-html="activeTab === 'summary' ? formattedSummary : formattedIntroduction"
           />
           <button
             class="expand-btn"
@@ -194,6 +214,9 @@ const props = defineProps<{
 
 const summaryExpanded = ref(false);
 const chatOpen = ref(false);
+const activeTab = ref<"summary" | "introduction">(
+  props.book?.book_info?.summary ? "summary" : "introduction",
+);
 
 function openNLPage() {
   const title = props.book?.book_info?.title || props.book?.book_id;
@@ -209,6 +232,10 @@ const formattedAnswer = computed(() => {
 
 const formattedSummary = computed(
   () => marked.parse(props.book?.book_info?.summary ?? "") as string,
+);
+
+const formattedIntroduction = computed(
+  () => marked.parse(props.book?.book_info?.introduction ?? "") as string,
 );
 </script>
 
@@ -464,28 +491,48 @@ const formattedSummary = computed(
   line-height: 1.5;
 }
 
-/* 도서 소개 */
+/* 도서 요약/소개 탭 */
 .summary-block {
-  padding: 14px 16px;
   background: var(--line-2);
   border-radius: var(--radius-sm);
   margin-bottom: 16px;
+  overflow: hidden;
 }
 
-.summary-label {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab-btn {
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  padding: 9px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn.active {
+  color: oklch(0.4 0.18 277);
+  border-bottom-color: oklch(0.55 0.22 277);
+}
+
+.tab-btn:not(.active):hover {
+  color: var(--ink-2);
 }
 
 .summary-body {
   font-size: 13.5px;
   line-height: 1.7;
   color: var(--ink-2);
-  margin: 0 0 8px;
+  margin: 0;
+  padding: 12px 16px 8px;
 }
 
 .summary-body.clamped {
@@ -509,7 +556,8 @@ const formattedSummary = computed(
   color: var(--ink);
   background: none;
   border: none;
-  padding: 0;
+  padding: 0 16px 10px;
+  display: block;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;

@@ -29,6 +29,7 @@ export interface BookInfo {
   keyword?: string;
   language?: string;
   summary?: string;
+  introduction?: string;
   is_embedded: boolean;
   chunk_count?: number;
 }
