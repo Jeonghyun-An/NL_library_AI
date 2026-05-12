@@ -4,14 +4,19 @@
     <header class="top-bar" ref="topBarRef">
       <div class="top-bar-inner">
         <button class="top-brand" @click="reset">
-          <img
+          <!-- <img
             src="/landsoft-ai-gradient.svg"
-            alt="NL-Lib"
+            alt="landsoft"
             class="top-brand-icon"
-          />
-          <span class="top-brand-name"
+          /> -->
+          <!-- <span class="top-brand-name"
             >NL<span class="top-brand-sub">-Lib</span></span
-          >
+          > -->
+          <img
+            src="/skovix-character.png"
+            alt="SKOVIX"
+            class="top-brand-skovix"
+          />
         </button>
 
         <div class="top-search-area">
@@ -80,7 +85,7 @@
             <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
           </div>
           <SearchInput
-            placeholder="예: 국가 안보를 강화하는 데 도움 되는 지침서엔 뭐가 있을까?"
+            placeholder="요즘 번아웃이 심한 직장인인데, 쉬면서 읽을 수 있는 책 추천해줘"
             :disabled="loading"
             @submit="handleSearch"
           />
@@ -522,6 +527,12 @@ function restoreHistory(entry: HistoryEntry) {
 .top-brand-icon {
   height: 24px;
   width: 120px;
+  flex-shrink: 0;
+}
+
+.top-brand-skovix {
+  height: 36px;
+  width: auto;
   flex-shrink: 0;
 }
 
