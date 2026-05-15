@@ -26,15 +26,27 @@ _POLICY_TITLE_KEYWORDS = [
 ]
 
 
-def detect_doc_type(kdc: str | None, title: str | None) -> str:
+def detect_doc_type(
+    kdc: str | None,
+    title: str | None,
+    source_format: str | None = None,
+    genre: str | None = None,
+) -> str:
     """
     문서 유형 판별.
 
     Returns:
+        "paper"      : 학술논문·학위논문·보고서 (PDF 자동추출 또는 genre 기반)
         "literature" : 문학 작품 (KDC 800~899)
         "policy"     : 법령·행정·조달 문서 (KDC 320~359 또는 제목 키워드)
         "book"       : 그 외 모든 도서 (기본값)
     """
+    # PDF 자동추출 문서는 genre 값으로 판별
+    if source_format == "PDF":
+        if genre in ("paper", "thesis", "report"):
+            return "paper"
+        return "paper"  # PDF 자동추출은 기본 paper 처리
+
     if kdc:
         digits = re.sub(r"[^0-9]", "", kdc)[:3]
         if digits:
@@ -52,6 +64,17 @@ def detect_doc_type(kdc: str | None, title: str | None) -> str:
 
 # ── 섹션 요약 프롬프트 ───────────────────────────────────────
 _SECTION_SYSTEMS = {
+    "paper": (
+        "당신은 학술 문헌 검색 전문가입니다.\n"
+        "주어진 논문·보고서 섹션에서 다음을 추출하세요:\n"
+        "- 저자가 이 섹션에서 제시하는 핵심 주장·가설·발견\n"
+        "- 사용된 연구 방법론·데이터·실험 조건\n"
+        "- 주요 결과·수치·통계 (있는 경우)\n"
+        "- 이 내용을 검색할 연구자가 쓸 법한 학술 용어·개념\n"
+        "다음 형식으로 출력하세요:\n"
+        "SUMMARY: (검색 가능성이 높은 학술 키워드를 포함한 300자 내외 요약)\n"
+        "THEMES: (이 섹션의 핵심 연구 개념·방법론·키워드 5~8개, 쉼표 구분)"
+    ),
     "literature": (
         "당신은 의미 기반 문학 검색 전문가입니다.\n"
         "주어진 문학 작품 섹션에서 다음을 추출하세요:\n"
@@ -125,6 +148,14 @@ async def summarize_section(
 
 # ── 도서 요약 프롬프트 ───────────────────────────────────────
 _BOOK_FROM_SECTIONS_SYSTEMS = {
+    "paper": (
+        "당신은 학술 문헌 검색 전문가입니다.\n"
+        "섹션별 요약들을 종합하여 이 논문·보고서의 전체 분석을 작성하세요.\n"
+        "다음 형식으로 출력하세요:\n"
+        "SUMMARY: (연구 목적·방법론·주요 발견·시사점, 관련 연구자가 검색할 "
+        "학술 키워드 포함. 800자 내외)\n"
+        "THEMES: (이 연구를 관통하는 핵심 개념·방법론·기여 키워드 8~10개, 쉼표 구분)"
+    ),
     "literature": (
         "당신은 의미 기반 문학 검색 전문가입니다.\n"
         "섹션별 요약들을 종합하여 이 작품의 전체 분석을 작성하세요.\n"

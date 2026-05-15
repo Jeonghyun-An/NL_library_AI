@@ -193,11 +193,8 @@ def load_catalog_xlsx(xlsx_path: str):
 @celery_app.task(
     name="tasks.process_book_file",
     queue="ingestion",
-    bind=True,
-    max_retries=2,
-    default_retry_delay=30,
 )
-def process_book_file(self, book_id: str, file_path: str):
+def process_book_file(book_id: str, file_path: str):
     from services.ingestion.extractor import extract_text
     from services.ingestion.chunker import semantic_chunk
     from services.ingestion.embedder import embed_texts
@@ -238,30 +235,43 @@ def process_book_file(self, book_id: str, file_path: str):
     log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
 
     # 도서 메타 미리 조회 (요약에 필요)
+    # xlsx 메타데이터가 없으면 PDF 1-2페이지에서 자동 추출 후 DB에 저장
     db = SyncSessionLocal()
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
         if not book:
-            log.error(f"[{book_id}] 메타데이터 없음 → 인덱싱 중단")
-            raise self.retry(
-                exc=Exception("metadata_not_found"),
-                countdown=60
+            log.info(f"[{book_id}] 메타데이터 없음 → PDF 자동 추출 시도")
+            from services.ingestion.pdf_meta_extractor import extract_pdf_metadata
+            meta = _run_async(extract_pdf_metadata(file_path))
+            title_val = meta.get("title") or book_id
+            book = Book(
+                cnts_id=book_id,
+                title=title_val,
+                personal_author=meta.get("personal_author", ""),
+                corporate_author=meta.get("corporate_author", ""),
+                publisher=meta.get("publisher", ""),
+                pub_date=meta.get("pub_date", ""),
+                abstract=meta.get("abstract", ""),
+                keyword=meta.get("keyword", ""),
+                language=meta.get("language", ""),
+                url=meta.get("url", ""),
+                genre=meta.get("genre", "other"),
+                source_format="PDF",
             )
+            db.add(book)
+            db.commit()
+            db.refresh(book)
+            log.info(f"[{book_id}] 메타데이터 자동 생성 완료: '{title_val}' (genre={book.genre})")
 
-        if not (book.publisher or book.corporate_author or book.pub_date):
-            log.warning(f"[{book_id}] 메타데이터 불완전 → 인덱싱 중단")
-            raise self.retry(
-                exc=Exception("metadata_not_ready"),
-                countdown=60
-            )
-
-        title = book.title if book else book_id
-        author = (book.personal_author or book.corporate_author or "") if book else ""
+        title = book.title or book_id
+        author = book.personal_author or book.corporate_author or ""
         doc_type = detect_doc_type(
-            kdc=book.kdc if book else None,
+            kdc=book.kdc,
             title=title,
+            source_format=book.source_format,
+            genre=book.genre,
         )
-        log.info(f"[{book_id}] 문서 유형: {doc_type} (기본: book)")
+        log.info(f"[{book_id}] 문서 유형: {doc_type}")
     finally:
         db.close()
 
