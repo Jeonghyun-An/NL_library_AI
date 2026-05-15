@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir \
-    "torch==2.4.1" "torchvision==0.19.1" --index-url https://download.pytorch.org/whl/cu124
+    "torch==2.5.1" "torchvision==0.20.1" --index-url https://download.pytorch.org/whl/cu124
 
 RUN pip install --no-cache-dir \
     "diffusers>=0.30.0" \

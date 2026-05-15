@@ -7,6 +7,7 @@ from core.config import get_settings
 from api.book import router as book_router
 from api.health import router as health_router
 from api.admin import router as admin_router
+from api.paper import router as paper_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -67,3 +68,4 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(book_router)
 app.include_router(admin_router)
+app.include_router(paper_router)

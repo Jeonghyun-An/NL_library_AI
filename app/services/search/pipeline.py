@@ -36,21 +36,27 @@ log = logging.getLogger(__name__)
 cfg = get_settings()
 
 
-def _build_milvus_expr(f: MetadataFilter) -> str | None:
-    """
-    MetadataFilter → Milvus boolean expression.
-    날짜 범위만 처리. 기관/저자 기반 필터는 메타 청크 임베딩이 담당.
-    """
-    if not f or not f.has_filter:
-        return None
+_PAPER_EXPR = 'book_id like "KCI_FI%"'
+_BOOK_EXPR  = 'book_id not like "KCI_FI%"'
 
+
+def _build_milvus_expr(f: MetadataFilter, doc_scope: str = "all") -> str | None:
+    """
+    MetadataFilter + doc_scope → Milvus boolean expression.
+    doc_scope: "paper" | "book" | "all"
+    """
     parts: list[str] = []
 
-    # 발행 연도 범위 (pub_date 스칼라 필드, "YYYY" 또는 "YYYY-MM" 형식)
-    if f.pub_year_from:
-        parts.append(f'pub_date >= "{f.pub_year_from}"')
-    if f.pub_year_to:
-        parts.append(f'pub_date < "{f.pub_year_to + 1}"')
+    if doc_scope == "paper":
+        parts.append(_PAPER_EXPR)
+    elif doc_scope == "book":
+        parts.append(_BOOK_EXPR)
+
+    if f and f.has_filter:
+        if f.pub_year_from:
+            parts.append(f'pub_date >= "{f.pub_year_from}"')
+        if f.pub_year_to:
+            parts.append(f'pub_date < "{f.pub_year_to + 1}"')
 
     return " && ".join(parts) if parts else None
 
@@ -62,6 +68,7 @@ async def search(
     top_k: int = 10,
     use_rewrite: bool = True,
     use_rerank: bool = True,
+    doc_scope: str = "all",   # "paper" | "book" | "all"
     db=None,
 ) -> ChunkSearchResponse | BookSearchResponse:
     t0 = time.perf_counter()
@@ -96,8 +103,8 @@ async def search(
             elif tag == "filter" and isinstance(result, Exception):
                 log.warning(f"메타데이터 필터 추출 실패: {result}")
 
-    # 메타데이터 필터 → Milvus expression (MARC/MODS 스칼라 필드 직접 사용)
-    milvus_expr = _build_milvus_expr(metadata_filter) if metadata_filter else None
+    # 메타데이터 필터 + doc_scope → Milvus expression
+    milvus_expr = _build_milvus_expr(metadata_filter, doc_scope)
     if milvus_expr:
         log.info(f"Milvus expression: {milvus_expr}")
 
