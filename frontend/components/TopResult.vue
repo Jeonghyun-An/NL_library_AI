@@ -169,7 +169,7 @@
 
         <!-- 액션 버튼 -->
         <div class="action-row">
-          <button class="btn-primary" @click="openNLPage">원문 보기</button>
+          <button class="btn-primary" @click="pdfOpen = true">원문 보기</button>
           <button class="btn-ghost">대출 신청</button>
           <button class="btn-chat" @click="chatOpen = !chatOpen">
             <svg
@@ -198,6 +198,14 @@
       :cnts-id="book.book_id"
       @close="chatOpen = false"
     />
+
+    <!-- PDF 뷰어 모달 -->
+    <PdfViewer
+      v-if="pdfOpen"
+      :cnts-id="book.book_id"
+      :title="book.book_info?.title"
+      @close="pdfOpen = false"
+    />
   </div>
 </template>
 
@@ -214,6 +222,7 @@ const props = defineProps<{
 
 const summaryExpanded = ref(false);
 const chatOpen = ref(false);
+const pdfOpen  = ref(false);
 const activeTab = ref<"summary" | "introduction">(
   props.book?.book_info?.summary ? "summary" : "introduction",
 );
