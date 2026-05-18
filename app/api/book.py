@@ -302,6 +302,51 @@ async def get_book_thumbnail(cnts_id: str, db: AsyncSession = Depends(get_db)):
         headers={"Cache-Control": "public, max-age=86400"},
     )
 
+# ── PDF 원문 스트리밍 ──────────────────────────────────────
+@router.get("/{cnts_id}/pdf")
+async def get_book_pdf(cnts_id: str):
+    """MinIO originals/{cnts_id}/ 하위 PDF를 스트리밍 반환"""
+    from minio import Minio
+    from minio.error import S3Error
+
+    client = Minio(
+        cfg.MINIO_ENDPOINT,
+        access_key=cfg.MINIO_ACCESS_KEY,
+        secret_key=cfg.MINIO_SECRET_KEY,
+        secure=cfg.MINIO_SECURE,
+    )
+    try:
+        objects = list(client.list_objects(
+            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
+        ))
+        if not objects:
+            raise HTTPException(404, detail="PDF 없음")
+        obj_name = objects[0].object_name
+        obj_stat = client.stat_object(cfg.MINIO_BUCKET, obj_name)
+        obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
+    except S3Error as e:
+        raise HTTPException(404, detail=f"PDF 없음: {e}")
+
+    def _stream():
+        try:
+            while True:
+                chunk = obj.read(65536)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            obj.close()
+
+    return StreamingResponse(
+        _stream(),
+        media_type="application/pdf",
+        headers={
+            "Content-Length": str(obj_stat.size),
+            "Content-Disposition": f'inline; filename="{cnts_id}.pdf"',
+            "Cache-Control": "private, max-age=3600",
+        },
+    )
+
 
 # ── PDF 추출 비교 (fitz vs VLM vs OpenDataLoader) ────────
 @router.post("/compare/extract")
