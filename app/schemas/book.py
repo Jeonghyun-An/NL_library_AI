@@ -56,6 +56,11 @@ class BookOut(BookBase):
     chunk_count:      Optional[int] = None
     full_text_length: Optional[int] = None
     created_at:       datetime
+    # KCI 논문 전용
+    grade:            Optional[str] = None
+    vol_issue:        Optional[str] = None
+    kci_citations:    Optional[int] = None
+    wos_citations:    Optional[int] = None
 
     class Config:
         from_attributes = True

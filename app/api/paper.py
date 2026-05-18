@@ -1,8 +1,11 @@
 import logging
-from fastapi import APIRouter, Depends, Header
+import os
+import tempfile
+from fastapi import APIRouter, Depends, File, Header, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 
+from core.config import get_settings
 from core.deps import get_db
 from schemas.book import (
     SearchRequest,
@@ -47,3 +50,17 @@ async def search_papers(
                 bg.book_info = BookOut.model_validate(book)
 
     return result
+
+
+@router.post("/catalog/load")
+async def load_kci_catalog(file: UploadFile = File(...)):
+    """KCI 논문 메타데이터 xlsx 업로드 → Celery 비동기 처리"""
+    content = await file.read()
+    suffix = os.path.splitext(file.filename or "kci.xlsx")[1] or ".xlsx"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
+        f.write(content)
+        save_path = f.name
+
+    from workers.tasks import load_kci_catalog_xlsx
+    task = load_kci_catalog_xlsx.delay(save_path)
+    return {"task_id": task.id, "filename": file.filename}

@@ -51,8 +51,14 @@ class Book(Base):
     target_audience  = Column(String(50))           # MODS targetAudience
     digital_origin   = Column(String(50))           # MODS digitalOrigin
 
+    # ── KCI 논문 전용 필드 ───────────────────────────
+    grade            = Column(String(50))           # KCI 등재 등급
+    vol_issue        = Column(String(30))           # 권호 (예: 20(2))
+    kci_citations    = Column(Integer, default=0)   # KCI 피인용수
+    wos_citations    = Column(Integer, default=0)   # WOS 피인용수
+
     # ── 메타 ─────────────────────────────────────────
-    source_format    = Column(String(10))           # 'MARC' | 'MODS'
+    source_format    = Column(String(10))           # 'MARC' | 'MODS' | 'KCI'
 
     # ── RAG 관련 ──────────────────────────────────────
     raw_text         = Column(Text)                 # OCR 원본 (추후)

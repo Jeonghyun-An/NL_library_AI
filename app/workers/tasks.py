@@ -145,7 +145,44 @@ def _assign_section_idx(chunks, sections) -> None:
         chunk_pos += len(chunk.text) + 1
 
 
-# ── 1. 엑셀 메타데이터 로드 ─────────────────────────────
+# ── 1-a. KCI 논문 메타데이터 로드 ────────────────────────
+@celery_app.task(name="tasks.load_kci_catalog_xlsx", queue="ingestion")
+def load_kci_catalog_xlsx(xlsx_path: str):
+    from services.ingestion.kci_loader import load_kci_xlsx
+
+    records = load_kci_xlsx(xlsx_path)
+    db = SyncSessionLocal()
+    try:
+        created = updated = 0
+        SKIP_ON_UPDATE = {"cnts_id", "is_embedded", "summary", "milvus_id"}
+        for rec in records:
+            cnts_id = rec.get("cnts_id")
+            if not cnts_id:
+                continue
+            exists = db.query(Book).filter_by(cnts_id=cnts_id).first()
+            if exists:
+                changed = False
+                for key, val in rec.items():
+                    if key in SKIP_ON_UPDATE:
+                        continue
+                    if val is not None and getattr(exists, key, None) != val:
+                        setattr(exists, key, val)
+                        changed = True
+                if changed:
+                    updated += 1
+            else:
+                db.add(Book(**rec))
+                created += 1
+        db.commit()
+        log.info(f"KCI 메타데이터 신규 {created}건, 업데이트 {updated}건")
+        return {"created": created, "updated": updated, "total": len(records)}
+    except Exception as e:
+        db.rollback()
+        log.error(f"KCI 메타데이터 저장 실패: {e}")
+        raise
+
+
+# ── 1-b. 도서 엑셀 메타데이터 로드 ──────────────────────
 @celery_app.task(name="tasks.load_catalog_xlsx", queue="ingestion")
 def load_catalog_xlsx(xlsx_path: str):
     from services.ingestion.xlsx_loader import load_xlsx
