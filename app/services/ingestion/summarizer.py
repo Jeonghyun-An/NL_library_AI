@@ -45,7 +45,6 @@ def detect_doc_type(
     if source_format == "PDF":
         if genre in ("paper", "thesis", "report"):
             return "paper"
-        return "paper"  # PDF 자동추출은 기본 paper 처리
 
     if kdc:
         digits = re.sub(r"[^0-9]", "", kdc)[:3]

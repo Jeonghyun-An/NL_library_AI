@@ -221,9 +221,15 @@ async def extract_text(
                 result.pages.append(odl_page)
                 continue
 
-            # 2티어: VLM 보완 — [그림] 페이지는 다이어그램 전용 프롬프트 사용
+            # 2티어: VLM 보완
+            # diagram 프롬프트는 [그림]이 텍스트 중간에 삽입된 경우(실제 다이어그램)에만 사용.
+            # 페이지 전체가 이미지인 경우(TIF 합성 PDF 등)는 OCR 프롬프트가 적합.
             try:
-                prompt_type = "diagram" if trigger == "[그림] 검출" else "ocr"
+                if trigger == "[그림] 검출" and odl_page:
+                    text_without_fig = odl_page.text.replace("[그림]", "").strip()
+                    prompt_type = "diagram" if len(text_without_fig) >= 80 else "ocr"
+                else:
+                    prompt_type = "ocr"
                 log.info(f"[{book_id}] p.{page_num} → VLM 보완 ({trigger}, prompt={prompt_type})")
                 vlm_page = await _extract_with_vlm(page, client, prompt_type=prompt_type)
                 result.pages.append(vlm_page)
