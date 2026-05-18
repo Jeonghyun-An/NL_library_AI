@@ -172,22 +172,24 @@ async def ingest_batch(req: BatchIngestRequest):
 # ── 메타데이터 수집 (기존) ───────────────────────────────
 @router.post("/catalog/load")
 async def load_catalog(
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
 ):
-    """엑셀 업로드 → 메타데이터 적재"""
+    """엑셀 업로드 (다중 파일) → 메타데이터 적재"""
     import os
 
-    # 공유 볼륨에 저장 (FastAPI ↔ Celery 모두 접근 가능)
     os.makedirs("/app/data/uploads", exist_ok=True)
-    save_path = f"/app/data/uploads/{file.filename}"
-
-    content = await file.read()
-    with open(save_path, "wb") as f:
-        f.write(content)
-
     from workers.tasks import load_catalog_xlsx
-    task = load_catalog_xlsx.delay(save_path)
-    return {"task_id": task.id, "filename": file.filename}
+
+    dispatched = []
+    for file in files:
+        content = await file.read()
+        save_path = f"/app/data/uploads/{file.filename}"
+        with open(save_path, "wb") as f:
+            f.write(content)
+        task = load_catalog_xlsx.delay(save_path)
+        dispatched.append({"task_id": task.id, "filename": file.filename})
+
+    return {"dispatched": len(dispatched), "tasks": dispatched}
 
 @router.post("/ingest")
 async def ingest_books(req: IngestionRequest):
@@ -205,6 +207,52 @@ async def get_task_status(task_id: str):
         task_id=task_id,
         status=result.status,
         result=result.result if result.ready() else None,
+    )
+
+
+# ── PDF 원문 스트리밍 ──────────────────────────────────────
+@router.get("/{cnts_id}/pdf")
+async def get_book_pdf(cnts_id: str):
+    """MinIO originals/{cnts_id}/ 하위 PDF를 스트리밍 반환"""
+    from minio import Minio
+    from minio.error import S3Error
+
+    client = Minio(
+        cfg.MINIO_ENDPOINT,
+        access_key=cfg.MINIO_ACCESS_KEY,
+        secret_key=cfg.MINIO_SECRET_KEY,
+        secure=cfg.MINIO_SECURE,
+    )
+    try:
+        objects = list(client.list_objects(
+            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
+        ))
+        if not objects:
+            raise HTTPException(404, detail="PDF 없음")
+        obj_name = objects[0].object_name
+        obj_stat = client.stat_object(cfg.MINIO_BUCKET, obj_name)
+        obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
+    except S3Error as e:
+        raise HTTPException(404, detail=f"PDF 없음: {e}")
+
+    def _stream():
+        try:
+            while True:
+                chunk = obj.read(65536)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            obj.close()
+
+    return StreamingResponse(
+        _stream(),
+        media_type="application/pdf",
+        headers={
+            "Content-Length": str(obj_stat.size),
+            "Content-Disposition": f'inline; filename="{cnts_id}.pdf"',
+            "Cache-Control": "private, max-age=3600",
+        },
     )
 
 
