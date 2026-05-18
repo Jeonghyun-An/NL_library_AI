@@ -53,18 +53,14 @@ async def search_papers(
 
 
 @router.post("/catalog/load")
-async def load_kci_catalog(files: list[UploadFile] = File(...)):
-    """KCI 논문 메타데이터 xlsx 업로드 (다중 파일) → Celery 비동기 처리"""
+async def load_kci_catalog(file: UploadFile = File(...)):
+    """KCI 논문 메타데이터 xlsx 업로드 → Celery 비동기 처리"""
+    content = await file.read()
+    suffix = os.path.splitext(file.filename or "kci.xlsx")[1] or ".xlsx"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
+        f.write(content)
+        save_path = f.name
+
     from workers.tasks import load_kci_catalog_xlsx
-
-    dispatched = []
-    for file in files:
-        content = await file.read()
-        suffix = os.path.splitext(file.filename or "kci.xlsx")[1] or ".xlsx"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
-            f.write(content)
-            save_path = f.name
-        task = load_kci_catalog_xlsx.delay(save_path)
-        dispatched.append({"task_id": task.id, "filename": file.filename})
-
-    return {"dispatched": len(dispatched), "tasks": dispatched}
+    task = load_kci_catalog_xlsx.delay(save_path)
+    return {"task_id": task.id, "filename": file.filename}
