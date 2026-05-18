@@ -80,6 +80,60 @@
       <main class="main-content">
         <!-- 랜딩 -->
         <div v-if="!result && !loading && !error" class="landing">
+          <!-- 세그먼티드 토글 -->
+          <div class="seg" ref="segRef">
+            <div class="seg-thumb" :style="thumbStyle" />
+            <button data-key="book" class="seg-btn is-active">
+              <svg class="ico" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M4 4.5C4 3.67 4.67 3 5.5 3H15a1 1 0 0 1 1 1v11.5a.5.5 0 0 1-.5.5H6a2 2 0 0 0-2 2V4.5Z"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M6 18h9.5"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M7 7h6M7 10h4"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                />
+              </svg>
+              도서 검색
+            </button>
+            <button
+              data-key="paper"
+              class="seg-btn"
+              @click="navigateTo('/papers')"
+            >
+              <svg class="ico" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M5 2.5h7.5L16 6v11.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 2.5V6h4"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7 10h6M7 13h6M7 16h4"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                />
+              </svg>
+              논문 검색
+            </button>
+          </div>
           <div class="logo-area">
             <h1 class="title">도서관 의미 기반 검색</h1>
             <p class="subtitle">읽고 싶은 책을 자연어로 검색해보세요</p>
@@ -283,6 +337,8 @@ const sliderRef = ref<HTMLElement | null>(null);
 const selectedSectionRef = ref<HTMLElement | null>(null);
 const topBarRef = ref<HTMLElement | null>(null);
 const topBarHeight = ref(84);
+const segRef = ref<HTMLElement | null>(null);
+const thumbStyle = ref({ left: "5px", width: "120px" });
 
 const gridCols = computed(() => {
   const l = leftOpen.value ? "220px" : "44px";
@@ -326,6 +382,20 @@ onMounted(() => {
     localStorage.setItem("sid", sid);
   }
   loadHistory();
+
+  nextTick(() => {
+    if (!segRef.value) return;
+    const activeBtn = segRef.value.querySelector(
+      '[data-key="book"]',
+    ) as HTMLElement;
+    if (!activeBtn) return;
+    const wrap = segRef.value.getBoundingClientRect();
+    const rect = activeBtn.getBoundingClientRect();
+    thumbStyle.value = {
+      left: rect.left - wrap.left + "px",
+      width: rect.width + "px",
+    };
+  });
 
   if (topBarRef.value) {
     const ro = new ResizeObserver((entries) => {
@@ -658,6 +728,52 @@ function restoreHistory(entry: HistoryEntry) {
   min-height: calc(100vh - 84px);
   padding: 24px;
   gap: 32px;
+}
+
+/* ── 세그먼티드 토글 ─────────────────────────────── */
+.seg {
+  display: inline-flex;
+  padding: 5px;
+  background: #eeeaf6;
+  border-radius: 999px;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(124, 77, 255, 0.06);
+}
+.seg-thumb {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 280ms cubic-bezier(0.4, 0.2, 0.2, 1),
+    width 280ms;
+  z-index: 0;
+}
+.seg-btn {
+  position: relative;
+  z-index: 1;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 200ms;
+  font-family: inherit;
+}
+.seg-btn.is-active {
+  color: var(--violet-deep, #4a2ed6);
+}
+.seg-btn .ico {
+  width: 16px;
+  height: 16px;
 }
 
 .logo-area {
