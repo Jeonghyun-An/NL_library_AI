@@ -290,7 +290,7 @@ async function send() {
 }
 
 .messages-wrap.expanded {
-  height: 620px;
+  height: 800px;
 }
 
 .empty-hint {

@@ -30,6 +30,9 @@ export interface BookInfo {
   language?: string;
   summary?: string;
   introduction?: string;
+  abstract?: string;
+  genre?: string;
+  url?: string;
   is_embedded: boolean;
   chunk_count?: number;
 }

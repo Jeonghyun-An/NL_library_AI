@@ -17,6 +17,18 @@
   --radius: 14px;
   --radius-sm: 10px;
   --ai-hue: 277;
+  /* ── 논문 검색 / 바이올렛 시스템 ── */
+  --violet: #7c4dff;
+  --violet-deep: #4a2ed6;
+  --violet-soft: #b9a7ff;
+  --lilac: #f1edff;
+  --lilac-2: #f7f4ff;
+  --rose: #ff5cad;
+  --teal: #2dd4bf;
+  --bg-soft: #fafafa;
+  --bg-card: #ffffff;
+  --muted: #6a6a72;
+  --muted-2: #9a9aa3;
 }
 
 *,
