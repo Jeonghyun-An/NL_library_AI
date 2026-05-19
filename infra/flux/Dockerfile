@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir \
     "diffusers>=0.30.0" \
     "transformers>=4.43.0" \
     "accelerate>=0.33.0" \
+    "peft>=0.12.0" \
     "sentencepiece" \
     "protobuf" \
     "safetensors" \

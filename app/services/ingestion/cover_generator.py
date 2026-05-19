@@ -168,6 +168,14 @@ async def generate_and_store_cover(
         log.warning(f"[{book_id}] 표지 프롬프트 비어있음")
         return None, None
 
+    # LoRA 트리거 워드 주입 (EBook-Creative-Cover-Flux-LoRA: "BOOK")
+    # FLUX_LORA_ID 가 설정된 경우에만 적용
+    import os
+    if os.environ.get("FLUX_LORA_ID", ""):
+        trigger = os.environ.get("FLUX_LORA_TRIGGER", "BOOK")
+        if trigger and not prompt.upper().startswith(trigger.upper()):
+            prompt = f"{trigger}, {prompt}"
+
     log.info(f"[{book_id}] 표지 프롬프트: {prompt[:120]}...")
 
     try:

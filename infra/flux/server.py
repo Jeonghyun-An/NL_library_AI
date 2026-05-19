@@ -21,6 +21,8 @@ log = logging.getLogger("flux-server")
 MODEL_ID = os.environ.get("FLUX_MODEL_ID", "black-forest-labs/FLUX.1-dev")
 DTYPE_NAME = os.environ.get("FLUX_DTYPE", "bfloat16")
 ENABLE_CPU_OFFLOAD = os.environ.get("FLUX_CPU_OFFLOAD", "true").lower() == "true"
+LORA_ID = os.environ.get("FLUX_LORA_ID", "")          # e.g. prithivMLmods/EBook-Creative-Cover-Flux-LoRA
+LORA_SCALE = float(os.environ.get("FLUX_LORA_SCALE", "0.85"))
 
 app = FastAPI(title="FLUX.1-dev Cover Server")
 _pipe: FluxPipeline | None = None
@@ -54,6 +56,12 @@ async def _load_pipeline():
         pipe.enable_model_cpu_offload()
     else:
         pipe = pipe.to("cuda")
+
+    if LORA_ID:
+        log.info(f"LoRA 어댑터 로드: {LORA_ID} (scale={LORA_SCALE})")
+        pipe.load_lora_weights(LORA_ID)
+        pipe.fuse_lora(lora_scale=LORA_SCALE)
+        log.info("LoRA 어댑터 로드 완료")
 
     _pipe = pipe
     log.info("FLUX 모델 로드 완료")
