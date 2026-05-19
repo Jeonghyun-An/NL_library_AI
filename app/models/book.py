@@ -28,9 +28,9 @@ class Book(Base):
     pub_place        = Column(Text)                 # 260 $a
     pub_date         = Column(String(20))           # 260 $c
     extent           = Column(String(100))          # 300 $a
-    kdc              = Column(String(20))           # 056 $a
-    ddc              = Column(String(20))           # 082 $a
-    isbn             = Column(String(20))           # 020 $a
+    kdc              = Column(String(32))           # 056 $a
+    ddc              = Column(String(32))           # 082 $a
+    isbn             = Column(String(64))           # 020 $a
     series_title     = Column(Text)                 # 440 $a
     subject          = Column(Text)                 # 650 $a
     keyword          = Column(Text)                 # 653 $a
@@ -47,7 +47,7 @@ class Book(Base):
     media_type       = Column(String(50))           # MODS internetMediaType
     material_type    = Column(String(50))           # MODS typeOfResource
     genre            = Column(String(50))           # MODS genre
-    access_condition = Column(String(20))           # MODS accessCondition
+    access_condition = Column(String(64))           # MODS accessCondition
     target_audience  = Column(String(50))           # MODS targetAudience
     digital_origin   = Column(String(50))           # MODS digitalOrigin
 
@@ -69,6 +69,19 @@ class Book(Base):
     cover_prompt     = Column(Text)                 # 표지 생성에 사용된 영문 프롬프트
     is_embedded      = Column(Boolean, default=False, nullable=False)
     milvus_id        = Column(String(64))
+
+    # ── 인덱싱 상태 추적 ─────────────────────────────────────
+    # pending  : 큐에 디스패치되었지만 워커가 아직 잡지 않음
+    # processing: 워커가 실제 처리 중 (Redis 락 보유)
+    # embedded : 정상 완료 (is_embedded=True 와 동기)
+    # failed   : 예외로 종료 (ingest_error 에 사유)
+    # canceled : 사용자가 취소 요청
+    ingest_state      = Column(String(16))
+    ingest_task_id    = Column(String(64))           # 마지막 Celery task id
+    ingest_source_key = Column(Text)                 # MinIO key — 재시도 시 참조
+    ingest_started_at = Column(DateTime(timezone=True))
+    ingest_finished_at= Column(DateTime(timezone=True))
+    ingest_error      = Column(Text)
 
     created_at       = Column(DateTime, server_default=func.now())
     updated_at       = Column(DateTime, server_default=func.now(), onupdate=func.now())

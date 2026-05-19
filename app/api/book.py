@@ -208,6 +208,128 @@ async def get_task_status(task_id: str):
     )
 
 
+# ── 인덱싱 취소 ──────────────────────────────────────────
+@router.post("/ingest/{task_id}/cancel")
+async def cancel_ingest(task_id: str, db: AsyncSession = Depends(get_db)):
+    """진행 중인 인덱싱 태스크 취소.
+
+    Celery revoke(terminate=True) 로 SIGTERM 전송 + Redis 락 강제 해제 +
+    library_catalog.ingest_state 를 canceled 로 표시.
+    """
+    from workers.celery_app import celery_app
+    from core.lock import force_release
+
+    row = (await db.execute(
+        text(
+            "SELECT cnts_id FROM library_catalog "
+            "WHERE ingest_task_id = :tid LIMIT 1"
+        ),
+        {"tid": task_id},
+    )).first()
+    cnts_id = row[0] if row else None
+
+    celery_app.control.revoke(task_id, terminate=True, signal="SIGTERM")
+
+    released = False
+    if cnts_id:
+        released = force_release(cnts_id)
+        await db.execute(
+            text(
+                "UPDATE library_catalog SET "
+                "  ingest_state = 'canceled', "
+                "  ingest_finished_at = NOW(), "
+                "  ingest_error = '사용자 취소' "
+                "WHERE cnts_id = :cid"
+            ),
+            {"cid": cnts_id},
+        )
+        await db.commit()
+
+    return {
+        "task_id": task_id,
+        "canceled": True,
+        "book_id": cnts_id,
+        "lock_released": released,
+    }
+
+
+# ── 인덱싱 재시도 ────────────────────────────────────────
+@router.post("/{cnts_id}/retry")
+async def retry_ingest(cnts_id: str, db: AsyncSession = Depends(get_db)):
+    """실패/취소된 인덱싱을 재시도.
+
+    library_catalog.ingest_source_key 가 저장돼 있으면 그 MinIO key 로 재디스패치.
+    없으면 `originals/{cnts_id}/` 하위 첫 파일을 사용한다.
+    이미 처리 중(processing) 상태면 거부한다.
+    """
+    row = (await db.execute(
+        text(
+            "SELECT ingest_state, ingest_source_key FROM library_catalog "
+            "WHERE cnts_id = :cid"
+        ),
+        {"cid": cnts_id},
+    )).first()
+    if not row:
+        raise HTTPException(404, f"도서 없음: {cnts_id}")
+
+    state, source_key = row[0], row[1]
+    if state == "processing":
+        raise HTTPException(409, "이미 처리 중입니다. 먼저 취소(cancel)하세요.")
+
+    # source_key 가 없으면 MinIO 에서 탐색
+    if not source_key:
+        from minio import Minio
+        client = Minio(
+            cfg.MINIO_ENDPOINT,
+            access_key=cfg.MINIO_ACCESS_KEY,
+            secret_key=cfg.MINIO_SECRET_KEY,
+            secure=cfg.MINIO_SECURE,
+        )
+        objects = list(client.list_objects(
+            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
+        ))
+        if not objects:
+            raise HTTPException(404, f"원본 PDF 없음: {cnts_id}")
+        source_key = objects[0].object_name
+
+    from workers.tasks import process_from_minio
+    task = process_from_minio.delay(cnts_id, source_key)
+
+    return {
+        "book_id": cnts_id,
+        "task_id": task.id,
+        "source_key": source_key,
+        "previous_state": state,
+    }
+
+
+# ── 인덱싱 상태 조회 ─────────────────────────────────────
+@router.get("/{cnts_id}/ingest-status")
+async def get_ingest_status(cnts_id: str, db: AsyncSession = Depends(get_db)):
+    """UI 폴링용 — 현재 인덱싱 상태와 메타를 한 번에 반환."""
+    row = (await db.execute(
+        text(
+            "SELECT ingest_state, ingest_task_id, ingest_source_key, "
+            "       ingest_started_at, ingest_finished_at, ingest_error, "
+            "       is_embedded "
+            "FROM library_catalog WHERE cnts_id = :cid"
+        ),
+        {"cid": cnts_id},
+    )).first()
+    if not row:
+        raise HTTPException(404, f"도서 없음: {cnts_id}")
+    return {
+        "book_id": cnts_id,
+        "state": row[0],
+        "task_id": row[1],
+        "source_key": row[2],
+        "started_at": row[3].isoformat() if row[3] else None,
+        "finished_at": row[4].isoformat() if row[4] else None,
+        "error": row[5],
+        "is_embedded": row[6],
+    }
+
+
 # ── 표지 (FLUX 자동생성 → 없으면 PDF 1p 폴백) ──────────────
 @router.get("/{cnts_id}/thumbnail")
 async def get_book_thumbnail(cnts_id: str, db: AsyncSession = Depends(get_db)):

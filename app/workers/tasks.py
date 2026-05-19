@@ -10,15 +10,52 @@ workers/tasks.py — Celery 비동기 작업
 """
 import logging
 import asyncio
+import datetime as _dt
 
 from workers.celery_app import celery_app
 from core.config import get_settings
+from core.lock import BookLock
 from db.postgres import SyncSessionLocal
 from models.book import Book
 from models.section import BookSection
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
+
+
+def _set_ingest_state(
+    book_id: str,
+    state: str,
+    *,
+    task_id: str | None = None,
+    error: str | None = None,
+    source_key: str | None = None,
+) -> None:
+    """library_catalog 의 인덱싱 상태 컬럼을 갱신. 도서 row 가 없으면 무시."""
+    db = SyncSessionLocal()
+    try:
+        book = db.query(Book).filter_by(cnts_id=book_id).first()
+        if not book:
+            return
+        book.ingest_state = state
+        if task_id is not None:
+            book.ingest_task_id = task_id
+        if source_key is not None:
+            book.ingest_source_key = source_key
+        if error is not None:
+            book.ingest_error = error[:2000]
+        now = _dt.datetime.now(_dt.timezone.utc)
+        if state == "processing":
+            book.ingest_started_at = now
+            book.ingest_error = None
+        elif state in ("embedded", "failed", "canceled"):
+            book.ingest_finished_at = now
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        log.warning(f"[{book_id}] ingest_state 갱신 실패 ({state}): {e}")
+    finally:
+        db.close()
 
 SECTION_TARGET_TOKENS = 3000
 SECTION_MAX_TOKENS = 5000
@@ -230,8 +267,42 @@ def load_catalog_xlsx(xlsx_path: str):
 @celery_app.task(
     name="tasks.process_book_file",
     queue="ingestion",
+    bind=True,
 )
-def process_book_file(book_id: str, file_path: str):
+def process_book_file(self, book_id: str, file_path: str, force: bool = False):
+    """인덱싱 진입점. Redis 락 + ingest_state 전이를 담당하고 실제 처리는 inner 에 위임."""
+    task_id = self.request.id
+
+    # 이미 완료된 경우 락 경합 없이 빠른 경로로 스킵
+    if not force:
+        db = SyncSessionLocal()
+        try:
+            book = db.query(Book).filter_by(cnts_id=book_id).first()
+            if book and book.ingest_state == "embedded":
+                log.info(f"[{book_id}] 이미 임베딩 완료 — 스킵 (force=False)")
+                return {"book_id": book_id, "status": "skipped", "reason": "already_embedded"}
+        finally:
+            db.close()
+
+    lock = BookLock(book_id)
+    if not lock.acquire():
+        log.warning(f"[{book_id}] 이미 처리 중인 태스크 존재 — 새 태스크 {task_id} 스킵")
+        return {"book_id": book_id, "status": "skipped", "reason": "locked"}
+
+    _set_ingest_state(book_id, "processing", task_id=task_id)
+    try:
+        result = _process_book_file_inner(book_id, file_path)
+        _set_ingest_state(book_id, "embedded", task_id=task_id)
+        return result
+    except Exception as e:
+        log.exception(f"[{book_id}] 인덱싱 실패: {e}")
+        _set_ingest_state(book_id, "failed", task_id=task_id, error=str(e))
+        raise
+    finally:
+        lock.release()
+
+
+def _process_book_file_inner(book_id: str, file_path: str):
     from services.ingestion.extractor import extract_text
     from services.ingestion.chunker import semantic_chunk
     from services.ingestion.embedder import embed_texts
@@ -541,15 +612,77 @@ def ingest_batch(file_mappings: list[dict]):
     results = []
     for item in file_mappings:
         task = process_book_file.delay(item["book_id"], item["file_path"])
+        _set_ingest_state(item["book_id"], "pending", task_id=task.id)
         results.append({"book_id": item["book_id"], "task_id": task.id})
     return {"dispatched": len(results), "tasks": results}
 
 
+# ── 3-b. cnts_id 목록 배치 인덱싱 ───────────────────────
+@celery_app.task(name="tasks.ingest_books_batch", queue="ingestion")
+def ingest_books_batch(cnts_ids: list[str], force: bool = False):
+    """cnts_id 목록 → MinIO 원본 파일로 인덱싱 태스크 일괄 디스패치.
+
+    force=False(기본): embedded·processing 상태 스킵
+    force=True       : 모든 상태 강제 재인덱싱
+    """
+    db = SyncSessionLocal()
+    dispatched: list[dict] = []
+    skipped: list[dict] = []
+
+    try:
+        for cnts_id in cnts_ids:
+            book = db.query(Book).filter_by(cnts_id=cnts_id).first()
+            if not book:
+                log.warning(f"[{cnts_id}] 도서 없음 — 스킵")
+                skipped.append({"cnts_id": cnts_id, "reason": "not_found"})
+                continue
+
+            if not force:
+                if book.ingest_state == "embedded":
+                    log.info(f"[{cnts_id}] 이미 임베딩 완료 — 스킵")
+                    skipped.append({"cnts_id": cnts_id, "reason": "already_embedded"})
+                    continue
+                if book.ingest_state == "processing":
+                    log.info(f"[{cnts_id}] 처리 중 — 스킵")
+                    skipped.append({"cnts_id": cnts_id, "reason": "processing"})
+                    continue
+
+            source_key = book.ingest_source_key
+            if not source_key:
+                from minio import Minio
+                client = Minio(
+                    cfg.MINIO_ENDPOINT,
+                    access_key=cfg.MINIO_ACCESS_KEY,
+                    secret_key=cfg.MINIO_SECRET_KEY,
+                    secure=cfg.MINIO_SECURE,
+                )
+                objects = list(client.list_objects(
+                    cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
+                ))
+                if not objects:
+                    log.warning(f"[{cnts_id}] MinIO 파일 없음 — 스킵")
+                    skipped.append({"cnts_id": cnts_id, "reason": "no_file"})
+                    continue
+                source_key = objects[0].object_name
+
+            task = process_from_minio.delay(cnts_id, source_key)
+            dispatched.append({"cnts_id": cnts_id, "task_id": task.id})
+            log.info(f"[{cnts_id}] 인덱싱 디스패치: {task.id}")
+    finally:
+        db.close()
+
+    log.info(f"ingest_books_batch 완료: 디스패치 {len(dispatched)}, 스킵 {len(skipped)}")
+    return {"dispatched": len(dispatched), "skipped": len(skipped), "tasks": dispatched}
+
+
 # ── 4. MinIO에서 파일 다운로드 후 처리 ───────────────────
-@celery_app.task(name="tasks.process_from_minio", queue="ingestion")
-def process_from_minio(book_id: str, minio_key: str):
+@celery_app.task(name="tasks.process_from_minio", queue="ingestion", bind=True)
+def process_from_minio(self, book_id: str, minio_key: str):
     from minio import Minio
     import os
+
+    # 디스패치 시점에 source_key 기록 → 재시도 시 참조
+    _set_ingest_state(book_id, "pending", task_id=self.request.id, source_key=minio_key)
 
     client = Minio(
         cfg.MINIO_ENDPOINT,
@@ -566,4 +699,6 @@ def process_from_minio(book_id: str, minio_key: str):
     log.info(f"[{book_id}] MinIO → {local_path} 다운로드 완료")
 
     task = process_book_file.delay(book_id, local_path)
+    # 실제 처리 태스크 id로 갱신 (다운로드 태스크의 id 가 아닌)
+    _set_ingest_state(book_id, "pending", task_id=task.id, source_key=minio_key)
     return {"book_id": book_id, "task_id": task.id}
