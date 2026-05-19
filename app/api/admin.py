@@ -2,7 +2,7 @@
 api/admin.py — 관리자 API (데이터 현황 조회)
 """
 import logging
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -315,4 +315,77 @@ async def reindex_all():
         "dispatched": len(dispatched),
         "skipped": len(skipped),
         "tasks": dispatched,
+    }
+
+
+# ── VLM 추출 결과 미리보기 ───────────────────────────────
+@router.get("/books/{cnts_id}/extraction-preview")
+async def extraction_preview(
+    cnts_id: str,
+    max_pages: int = 30,
+    db: AsyncSession = Depends(get_db),
+):
+    """MinIO에서 PDF를 받아 추출 파이프라인을 실행하고 페이지별 결과를 반환.
+
+    method 필드로 어느 페이지가 VLM으로 처리됐는지 확인 가능.
+    max_pages: 처음 N 페이지만 추출 (기본 30).
+    """
+    from minio import Minio
+    from minio.error import S3Error
+    from services.ingestion.extractor import extract_text
+
+    # source_key 조회
+    result = await db.execute(
+        select(Book.ingest_source_key).where(Book.cnts_id == cnts_id)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(404, f"도서 없음: {cnts_id}")
+    source_key = row[0]
+
+    if not source_key:
+        raise HTTPException(404, f"MinIO 키 없음 (인덱싱 전 도서): {cnts_id}")
+
+    # MinIO 다운로드
+    try:
+        client = Minio(
+            cfg.MINIO_ENDPOINT,
+            access_key=cfg.MINIO_ACCESS_KEY,
+            secret_key=cfg.MINIO_SECRET_KEY,
+            secure=cfg.MINIO_SECURE,
+        )
+        response = client.get_object(cfg.MINIO_BUCKET, source_key)
+        pdf_bytes = response.read()
+        response.close()
+    except S3Error as e:
+        raise HTTPException(500, f"MinIO 다운로드 실패: {e}")
+
+    # 추출 실행
+    try:
+        extraction = await extract_text(
+            file_path=None,
+            book_id=cnts_id,
+            file_bytes=pdf_bytes,
+        )
+    except Exception as e:
+        raise HTTPException(500, f"추출 실패: {e}")
+
+    pages = extraction.pages[:max_pages]
+    vlm_pages = [p for p in pages if p.method == "vlm"]
+
+    return {
+        "book_id": cnts_id,
+        "total_pages": extraction.total_pages,
+        "returned_pages": len(pages),
+        "vlm_count": len(vlm_pages),
+        "odl_count": len([p for p in pages if p.method == "opendataloader"]),
+        "pages": [
+            {
+                "page_num": p.page_num,
+                "method": p.method,
+                "char_count": len(p.text),
+                "text": p.text,
+            }
+            for p in pages
+        ],
     }
