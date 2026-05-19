@@ -20,6 +20,9 @@ cfg = get_settings()
 # ── 설정 ────────────────────────────────────────────────
 MIN_CHUNK_TOKENS = 128
 MAX_CHUNK_TOKENS = 1024
+# Milvus VARCHAR(16384 bytes) 한도. 의미 분할이 실패하는 케이스에서도 데이터 손실 없이
+# 청크가 분할되도록 강제하는 최종 가드. 안전 마진 800바이트 확보.
+MAX_CHUNK_BYTES = 15500
 SIMILARITY_WINDOW = 3          # 문장 그룹 크기
 BREAKPOINT_PERCENTILE = 25     # 유사도 하위 N% 지점을 경계로
 
@@ -150,6 +153,46 @@ def _merge_small_chunks(chunks: list[Chunk]) -> list[Chunk]:
     return merged
 
 
+def _split_by_bytes(chunk: Chunk, max_bytes: int = MAX_CHUNK_BYTES) -> list[Chunk]:
+    """문장 분할로 안 잘리는 초대형 청크를 바이트 한도 안에서 강제 분할.
+
+    VLM이 마침표 없는 한 덩어리로 뽑은 페이지처럼 `_split_oversized`로 분할이
+    안 되는 경우의 최후 가드. 의미 경계는 깨질 수 있지만 데이터는 손실 없이 유지.
+    """
+    text = chunk.text
+    if len(text.encode("utf-8")) <= max_bytes:
+        return [chunk]
+
+    parts: list[Chunk] = []
+    cursor = 0
+    n = len(text)
+    while cursor < n:
+        # 한글 평균 3 bytes/char 가정해서 보수적으로 시작 위치를 잡고,
+        # 정확한 바이트 길이가 max_bytes 안에 들어올 때까지 줄임
+        end = min(n, cursor + max_bytes // 3)
+        while end > cursor + 1 and len(text[cursor:end].encode("utf-8")) > max_bytes:
+            end -= 1
+        # 가능하면 공백/마침표에서 자르기 (자연스러운 경계)
+        for break_char in (". ", "。 ", "? ", "! ", "\n", " "):
+            idx = text.rfind(break_char, cursor + max_bytes // 6, end)
+            if idx > cursor:
+                end = idx + len(break_char)
+                break
+        parts.append(Chunk(
+            chunk_idx=0,
+            text=text[cursor:end].strip(),
+            page_start=chunk.page_start,
+            page_end=chunk.page_end,
+        ))
+        cursor = end
+
+    log.warning(
+        f"청크 바이트 가드 발동 — 원본 {len(text.encode('utf-8'))}바이트 → "
+        f"{len(parts)}개로 강제 분할 (page={chunk.page_start}~{chunk.page_end})"
+    )
+    return parts
+
+
 def _split_oversized(chunk: Chunk) -> list[Chunk]:
     """MAX_CHUNK_TOKENS 초과 청크를 문장 경계에서 분할"""
     if chunk.token_count <= MAX_CHUNK_TOKENS:
@@ -249,9 +292,13 @@ def semantic_chunk(
 
     log.info(f"문장 {len(sentences)}개 분리 완료")
 
-    # 문장 수가 적으면 그냥 하나로
+    # 문장 수가 적으면 그냥 하나로 (바이트 가드는 마지막에 일괄 적용)
     if len(sentences) <= 5:
-        return [Chunk(chunk_idx=0, text=text)]
+        single = Chunk(chunk_idx=0, text=text)
+        parts = _split_by_bytes(single)
+        for i, c in enumerate(parts):
+            c.chunk_idx = i
+        return parts
 
     # 2. 임베딩 계산
     embeddings = _compute_embeddings([s["text"] for s in sentences], embed_fn)
@@ -283,10 +330,17 @@ def semantic_chunk(
     # 작은 청크 병합
     chunks = _merge_small_chunks(chunks)
 
-    # 큰 청크 분할
+    # 큰 청크 분할 (토큰 기준 의미 분할)
     final_chunks = []
     for chunk in chunks:
         final_chunks.extend(_split_oversized(chunk))
+
+    # 최종 바이트 가드 — 의미 분할로 안 잡힌 초대형 청크를 강제 분할
+    # (VLM 출력처럼 마침표 없는 한 덩어리, 단일 초대형 문장 등)
+    guarded: list[Chunk] = []
+    for chunk in final_chunks:
+        guarded.extend(_split_by_bytes(chunk))
+    final_chunks = guarded
 
     # 재번호
     for i, chunk in enumerate(final_chunks):

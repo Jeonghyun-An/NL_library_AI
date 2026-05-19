@@ -120,6 +120,29 @@ class IndexResult:
     errors: list[str] = field(default_factory=list)
 
 
+def _truncate_bytes(s: str, max_bytes: int, *, field: str = "") -> str:
+    """Milvus VARCHAR는 max_length가 바이트 단위. UTF-8 멀티바이트 경계에서 안전하게 자른다.
+
+    청킹 단계에서 바이트 가드가 작동하면 정상적으로는 발동하지 않아야 한다.
+    호출되면 데이터 손실이 발생했다는 뜻이므로 경고 로그를 남긴다.
+    """
+    if not s:
+        return s
+    encoded = s.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return s
+    cut = encoded[:max_bytes]
+    while cut and (cut[-1] & 0xC0) == 0x80:
+        cut = cut[:-1]
+    truncated = cut.decode("utf-8", errors="ignore")
+    log.warning(
+        f"Milvus VARCHAR 바이트 초과 — field={field or 'unknown'}, "
+        f"원본 {len(encoded)}바이트 → {len(cut)}바이트로 잘림. "
+        "청킹 단계 바이트 가드가 누락된 경우입니다."
+    )
+    return truncated
+
+
 def index_chunks(
     book_id: str,
     chunks: list[Chunk],
@@ -139,19 +162,19 @@ def index_chunks(
     col.delete(expr=f'book_id == "{book_id}"')
 
     data = [
-        [f"{book_id}__{c.chunk_idx:04d}" for c in chunks],  # chunk_id
-        [book_id] * len(chunks),                             # book_id
-        [c.chunk_idx for c in chunks],                       # chunk_idx
-        [c.section_idx or 0 for c in chunks],                # section_idx
-        [c.text[:16000] for c in chunks],                    # text
-        [c.page_start or 0 for c in chunks],                 # page_start
-        [c.page_end or 0 for c in chunks],                   # page_end
-        [meta.publisher[:511]]        * len(chunks),         # publisher
-        [meta.corporate_author[:511]] * len(chunks),         # corporate_author
-        [meta.pub_date[:31]]          * len(chunks),         # pub_date
-        [meta.kdc[:31]]               * len(chunks),         # kdc
-        dense_embeddings,                                    # embedding (dense)
-        sparse_embeddings,                                   # sparse_embedding
+        [f"{book_id}__{c.chunk_idx:04d}" for c in chunks],            # chunk_id
+        [book_id] * len(chunks),                                       # book_id
+        [c.chunk_idx for c in chunks],                                 # chunk_idx
+        [c.section_idx or 0 for c in chunks],                          # section_idx
+        [_truncate_bytes(c.text, 16000, field="text") for c in chunks],            # text
+        [c.page_start or 0 for c in chunks],                                        # page_start
+        [c.page_end or 0 for c in chunks],                                          # page_end
+        [_truncate_bytes(meta.publisher, 500, field="publisher")]        * len(chunks),
+        [_truncate_bytes(meta.corporate_author, 500, field="corp_auth")] * len(chunks),
+        [_truncate_bytes(meta.pub_date, 31, field="pub_date")]           * len(chunks),
+        [_truncate_bytes(meta.kdc, 31, field="kdc")]                     * len(chunks),
+        dense_embeddings,                                              # embedding (dense)
+        sparse_embeddings,                                             # sparse_embedding
     ]
 
     try:

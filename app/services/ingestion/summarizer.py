@@ -4,14 +4,33 @@ from core.config import get_settings
 
 
 def _parse_summary_themes(text: str) -> tuple[str, list[str]]:
-    """SUMMARY:/THEMES: 구조화 출력 파싱. 구조 없으면 전체를 summary로."""
+    """SUMMARY:/THEMES: 구조화 출력 파싱.
+
+    LLM이 아래 두 포맷 중 하나로 출력하는 경우를 모두 처리:
+      A) SUMMARY: 내용  (같은 줄)
+      B) SUMMARY:\\n내용  (다음 줄)
+    THEMES도 동일하게 처리.
+    구조 없으면 전체를 summary로.
+    """
     themes: list[str] = []
-    themes_match = re.search(r"^THEMES:\s*(.+)$", text, re.MULTILINE)
-    if themes_match:
-        themes = [t.strip() for t in themes_match.group(1).split(",") if t.strip()][:8]
-        text = re.sub(r"^THEMES:.*$\n?", "", text, flags=re.MULTILINE)
-    summary_match = re.search(r"^SUMMARY:\s*(.*)", text, re.DOTALL)
-    summary = summary_match.group(1).strip() if summary_match else text.strip()
+    text = text.strip()
+
+    # ① THEMES 섹션 분리 — "THEMES:" 기준으로 앞(summary부)/뒤(themes부) 분할
+    themes_split = re.split(r"\n*THEMES:\s*\n?", text, maxsplit=1)
+    if len(themes_split) == 2:
+        text, themes_raw = themes_split
+        themes = [t.strip() for t in re.split(r"[,，\n]", themes_raw) if t.strip()][:20]
+    else:
+        # 같은 줄에 있는 구형 포맷 폴백
+        m = re.search(r"^THEMES:\s*(.+)$", text, re.MULTILINE)
+        if m:
+            themes = [t.strip() for t in m.group(1).split(",") if t.strip()][:20]
+            text = re.sub(r"^THEMES:.*$\n?", "", text, flags=re.MULTILINE)
+
+    # ② SUMMARY: 접두어 제거 — 같은 줄 또는 다음 줄 모두 처리
+    m = re.search(r"^SUMMARY:\s*\n?([\s\S]*)", text.strip(), re.MULTILINE)
+    summary = m.group(1).strip() if m else text.strip()
+
     return summary, themes
 
 
@@ -250,8 +269,14 @@ async def generate_book_introduction(
         "max_tokens": 5000,
         "temperature": 0.5,
     }
+    user_chars = len(payload["messages"][1]["content"])
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
+        if resp.status_code >= 400:
+            import logging
+            logging.getLogger(__name__).error(
+                f"[introduction] LLM {resp.status_code} — user={user_chars}자, body={resp.text[:500]}"
+            )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"].strip() or None
 
@@ -281,8 +306,14 @@ async def summarize_book_from_sections(
         "max_tokens": 5000,
         "temperature": 0.1,
     }
+    user_chars = len(payload["messages"][1]["content"])
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
+        if resp.status_code >= 400:
+            import logging
+            logging.getLogger(__name__).error(
+                f"[book_summary] LLM {resp.status_code} — user={user_chars}자, body={resp.text[:500]}"
+            )
         resp.raise_for_status()
         raw = resp.json()["choices"][0]["message"]["content"].strip()
     if doc_type == "policy":
