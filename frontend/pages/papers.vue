@@ -348,10 +348,14 @@
             <template v-else>
               <!-- 탐구 카드 목록 -->
               <div class="explore-stack">
-                <article
+                <div
                   v-for="paper in pagedPapers"
                   :key="paper.book_id"
+                  class="paper-item"
+                >
+                <article
                   class="ec"
+                  :class="{ 'is-chat-open': chatPaper?.book_id === paper.book_id }"
                   @click="openChat(paper)"
                 >
                   <div class="ec-main">
@@ -474,6 +478,15 @@
                     </div>
                   </div>
                 </article>
+
+                <!-- 인라인 대화 패널 (v-show로 마운트 유지 → 기록 보존) -->
+                <BookChat
+                  v-if="mountedChats.has(paper.book_id)"
+                  v-show="chatPaper?.book_id === paper.book_id"
+                  :cnts-id="paper.book_id"
+                  @close="chatPaper = null"
+                />
+                </div>
               </div>
 
               <!-- 페이지네이션 -->
@@ -537,23 +550,6 @@
       <aside class="sidebar sidebar-right" />
     </div>
 
-    <!-- ══ 논문 대화 모달 ═══════════════════════════════════════ -->
-    <Teleport to="body">
-      <div v-if="chatPaper" class="chat-overlay" @click.self="chatPaper = null">
-        <div class="chat-panel">
-          <div class="chat-panel-header">
-            <span class="chat-panel-title">논문과 대화하기</span>
-            <span class="chat-panel-paper-title">{{
-              chatPaper.book_info?.title || chatPaper.book_id
-            }}</span>
-            <button class="chat-close-btn" @click="chatPaper = null">✕</button>
-          </div>
-          <ClientOnly>
-            <BookChat :cnts-id="chatPaper.book_id" @close="chatPaper = null" />
-          </ClientOnly>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -576,6 +572,7 @@ const leftOpen = ref(true);
 const sortMenuOpen = ref(false);
 const showAllJournals = ref(false);
 const chatPaper = ref<BookChunkGroup | null>(null);
+const mountedChats = ref(new Set<string>());
 const currentPage = ref(1);
 
 const sessionId = useState<string | null>("sessionId", () => null);
@@ -838,7 +835,12 @@ function toggleLanguage(v: string) {
   currentPage.value = 1;
 }
 function openChat(paper: BookChunkGroup) {
-  chatPaper.value = paper;
+  if (chatPaper.value?.book_id === paper.book_id) {
+    chatPaper.value = null;
+  } else {
+    mountedChats.value.add(paper.book_id);
+    chatPaper.value = paper;
+  }
 }
 
 onMounted(() => {
@@ -1634,60 +1636,21 @@ watch(currentPage, () => window.scrollTo({ top: 0, behavior: "smooth" }));
   font-size: 15px;
 }
 
-/* ── 대화 모달 ──────────────────────────────────── */
-.chat-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: rgba(14, 14, 20, 0.45);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-}
-.chat-panel {
-  width: 460px;
-  height: 100vh;
-  background: #fff;
+/* ── 카드 + 인라인 채팅 래퍼 ────────────────────── */
+.paper-item {
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(14, 14, 20, 0.12);
 }
-.chat-panel-header {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+.ec.is-chat-open {
+  border-color: var(--violet-soft, #b9a7ff);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
 }
-.chat-panel-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--violet-deep, #4a2ed6);
-  flex-shrink: 0;
-}
-.chat-panel-paper-title {
-  flex: 1;
-  font-size: 13px;
-  color: var(--ink-3);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  min-width: 0;
-}
-.chat-close-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--ink-3);
-  flex-shrink: 0;
-}
-.chat-close-btn:hover {
-  background: var(--bg, #f6f6f4);
+.paper-item :deep(.book-chat) {
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-color: var(--violet-soft, #b9a7ff);
 }
 </style>
