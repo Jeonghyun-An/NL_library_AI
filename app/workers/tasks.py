@@ -23,6 +23,13 @@ log = logging.getLogger(__name__)
 cfg = get_settings()
 
 
+def _normalize_book_id(raw_id: str) -> str:
+    """MinIO 폴더명 등에서 추출한 book_id 정규화.
+    끝에 붙은 _ 나 공백 제거 (예: CNTS-00052470502_ → CNTS-00052470502).
+    """
+    return raw_id.strip().rstrip("_").strip()
+
+
 def _set_ingest_state(
     book_id: str,
     state: str,
@@ -656,9 +663,18 @@ def ingest_books_batch(cnts_ids: list[str], force: bool = False):
                     secret_key=cfg.MINIO_SECRET_KEY,
                     secure=cfg.MINIO_SECURE,
                 )
+                # 구조 A: originals/{cnts_id}/ 폴더
                 objects = list(client.list_objects(
                     cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
                 ))
+                # 구조 B: originals/{cnts_id}.pdf 플랫 파일
+                if not objects:
+                    flat_key = f"originals/{cnts_id}.pdf"
+                    try:
+                        client.stat_object(cfg.MINIO_BUCKET, flat_key)
+                        objects = [type("obj", (), {"object_name": flat_key})()]
+                    except Exception:
+                        pass
                 if not objects:
                     log.warning(f"[{cnts_id}] MinIO 파일 없음 — 스킵")
                     skipped.append({"cnts_id": cnts_id, "reason": "no_file"})
@@ -680,6 +696,8 @@ def ingest_books_batch(cnts_ids: list[str], force: bool = False):
 def process_from_minio(self, book_id: str, minio_key: str):
     from minio import Minio
     import os
+
+    book_id = _normalize_book_id(book_id)
 
     # 디스패치 시점에 source_key 기록 → 재시도 시 참조
     _set_ingest_state(book_id, "pending", task_id=self.request.id, source_key=minio_key)

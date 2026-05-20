@@ -104,14 +104,19 @@ def load_xlsx(file_path: str) -> list[dict]:
         mods_raw = row[idx_mods].strip() if idx_mods is not None and len(row) > idx_mods else ""
 
         try:
-            if marc_raw:
-                parsed = parse_marc(marc_raw)
+            marc_parsed = parse_marc(marc_raw) if marc_raw else {}
+            mods_parsed = parse_mods(mods_raw) if mods_raw else {}
+
+            if marc_parsed or mods_parsed:
+                # MARC 우선, 빈 필드는 MODS로 보완
+                parsed = {**mods_parsed, **{k: v for k, v in marc_parsed.items() if v is not None}}
                 parsed["title"] = parsed.get("title") or title_raw
-                parsed["source_format"] = "MARC"
-            elif mods_raw:
-                parsed = parse_mods(mods_raw)
-                parsed["title"] = parsed.get("title") or title_raw
-                parsed["source_format"] = "MODS"
+                if marc_parsed and mods_parsed:
+                    parsed["source_format"] = "MARC+MODS"
+                elif marc_parsed:
+                    parsed["source_format"] = "MARC"
+                else:
+                    parsed["source_format"] = "MODS"
             else:
                 parsed = {
                     "title": title_raw or cnts_id,
@@ -130,8 +135,10 @@ def load_xlsx(file_path: str) -> list[dict]:
                 "source_format": "ERROR",
             })
 
-    marc_count = sum(1 for r in records if r.get("source_format") == "MARC")
-    mods_count = sum(1 for r in records if r.get("source_format") == "MODS")
-    log.info(f"총 {len(records)}건 로드 (MARC: {marc_count}, MODS: {mods_count}, 기타: {len(records) - marc_count - mods_count})")
+    marc_count     = sum(1 for r in records if r.get("source_format") == "MARC")
+    mods_count     = sum(1 for r in records if r.get("source_format") == "MODS")
+    both_count     = sum(1 for r in records if r.get("source_format") == "MARC+MODS")
+    other_count    = len(records) - marc_count - mods_count - both_count
+    log.info(f"총 {len(records)}건 로드 (MARC: {marc_count}, MODS: {mods_count}, MARC+MODS: {both_count}, 기타: {other_count})")
 
     return records

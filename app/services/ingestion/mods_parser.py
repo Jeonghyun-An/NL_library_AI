@@ -8,29 +8,34 @@ import re
 from xml.etree import ElementTree as ET
 
 NS = {"mods": "http://www.loc.gov/mods/v3"}
+NS_URI = "http://www.loc.gov/mods/v3"
 
 
 def _clean_xml(xml_str: str) -> str:
     """엑셀 이스케이프 복원 + XML 정제"""
-    # 엑셀 이스케이프 제어문자 복원/제거
     text = re.sub(r'_x([0-9A-Fa-f]{4})_', lambda m: chr(int(m.group(1), 16)), xml_str)
-
-    # XML에서 허용되지 않는 제어문자 제거 (0x00-0x08, 0x0B, 0x0C, 0x0E-0x1F)
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', text)
-
-    # 잘못된 XML 엔티티 제거
     text = re.sub(r'&(?!(?:amp|lt|gt|apos|quot|#\d+|#x[0-9a-fA-F]+);)', '&amp;', text)
-
     return text.strip()
 
 
+def _detect_ns(root: ET.Element) -> dict:
+    """루트 태그에 네임스페이스가 있으면 NS, 없으면 빈 dict 반환."""
+    return NS if root.tag.startswith(f"{{{NS_URI}}}") else {}
+
+
 def _find(root: ET.Element, path: str) -> str | None:
-    el = root.find(path, NS)
+    ns = _detect_ns(root)
+    # 네임스페이스 없는 XML이면 'mods:' 접두사 제거
+    p = path if ns else re.sub(r'mods:', '', path)
+    el = root.find(p, ns)
     return el.text.strip() if el is not None and el.text else None
 
 
 def _findall(root: ET.Element, path: str) -> list[str]:
-    return [el.text.strip() for el in root.findall(path, NS) if el.text]
+    ns = _detect_ns(root)
+    p = path if ns else re.sub(r'mods:', '', path)
+    return [el.text.strip() for el in root.findall(p, ns) if el.text]
 
 
 def parse(mods_xml: str) -> dict:
@@ -43,10 +48,13 @@ def parse(mods_xml: str) -> dict:
         raise ValueError(f"MODS XML 파싱 실패: {e}")
 
     # 저자 — personal/corporate 구분
+    ns = _detect_ns(root)
+    tag = lambda t: f"{{{NS_URI}}}{t}" if ns else t  # noqa: E731
+
     personal_authors, corporate_authors = [], []
-    for name in root.findall("mods:name", NS):
+    for name in root.findall(tag("name"), ns):
         name_type = name.get("type", "")
-        part = name.find("mods:namePart", NS)
+        part = name.find(tag("namePart"), ns)
         if part is None or not part.text:
             continue
         if name_type == "personal":
@@ -58,21 +66,21 @@ def parse(mods_xml: str) -> dict:
 
     # 발행지
     pub_place = None
-    for place in root.findall("mods:originInfo/mods:place/mods:placeTerm", NS):
+    for place in root.findall(f"{tag('originInfo')}/{tag('place')}/{tag('placeTerm')}", ns):
         if place.get("type") == "text" and place.text:
             pub_place = place.text.strip()
             break
 
     # KDC 분류
     kdc = None
-    for cl in root.findall("mods:classification", NS):
+    for cl in root.findall(tag("classification"), ns):
         if cl.get("authority", "").upper().startswith("KDC") and cl.text:
             kdc = cl.text.strip()
             break
 
     # record_id
     record_id = None
-    for ident in root.findall("mods:recordInfo/mods:recordIdentifier", NS):
+    for ident in root.findall(f"{tag('recordInfo')}/{tag('recordIdentifier')}", ns):
         if ident.text and ident.text.startswith("CNTS"):
             record_id = ident.text.strip()
             break
@@ -84,7 +92,7 @@ def parse(mods_xml: str) -> dict:
 
     # UCI
     uci = None
-    for ident in root.findall("mods:identifier", NS):
+    for ident in root.findall(tag("identifier"), ns):
         if ident.get("type") == "uci" and ident.text:
             uci = ident.text.strip()
             break
@@ -93,26 +101,26 @@ def parse(mods_xml: str) -> dict:
     pub_date_raw = _find(root, "mods:originInfo/mods:dateIssued")
     pub_date = pub_date_raw[:4] if pub_date_raw else None
 
-    # partNumber: <titleInfo><partNumber>
+    # partNumber
     part_number = _find(root, "mods:titleInfo/mods:partNumber")
 
-    # 시리즈명: <relatedItem type="series"><titleInfo><title>
+    # 시리즈명
     series_title = None
-    for rel in root.findall("mods:relatedItem", NS):
+    for rel in root.findall(tag("relatedItem"), ns):
         if rel.get("type") == "series":
-            t = rel.find("mods:titleInfo/mods:title", NS)
+            t = rel.find(f"{tag('titleInfo')}/{tag('title')}", ns)
             if t is not None and t.text:
                 series_title = t.text.strip()
                 break
 
-    # accessCondition: 텍스트 직접 또는 비-MODS 자식 <licenseType>
+    # accessCondition
     access_condition = None
-    ac_el = root.find("mods:accessCondition", NS)
+    ac_el = root.find(tag("accessCondition"), ns)
     if ac_el is not None:
         if ac_el.text and ac_el.text.strip():
             access_condition = ac_el.text.strip()
         else:
-            lt = ac_el.find("licenseType")  # 비표준 확장 요소, 네임스페이스 없음
+            lt = ac_el.find("licenseType")
             if lt is not None and lt.text:
                 access_condition = lt.text.strip()
 
