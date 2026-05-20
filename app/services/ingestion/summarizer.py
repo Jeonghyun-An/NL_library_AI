@@ -4,34 +4,39 @@ from core.config import get_settings
 
 
 def _parse_summary_themes(text: str) -> tuple[str, list[str]]:
-    """SUMMARY:/THEMES: 구조화 출력 파싱.
-
-    LLM이 아래 두 포맷 중 하나로 출력하는 경우를 모두 처리:
-      A) SUMMARY: 내용  (같은 줄)
-      B) SUMMARY:\\n내용  (다음 줄)
-    THEMES도 동일하게 처리.
-    구조 없으면 전체를 summary로.
-    """
+    """SUMMARY:/THEMES: 구조화 출력 파싱."""
     themes: list[str] = []
     text = text.strip()
 
-    # ① THEMES 섹션 분리 — "THEMES:" 기준으로 앞(summary부)/뒤(themes부) 분할
+    # ① THEMES 섹션 분리
     themes_split = re.split(r"\n*THEMES:\s*\n?", text, maxsplit=1)
     if len(themes_split) == 2:
         text, themes_raw = themes_split
         themes = [t.strip() for t in re.split(r"[,，\n]", themes_raw) if t.strip()][:20]
     else:
-        # 같은 줄에 있는 구형 포맷 폴백
         m = re.search(r"^THEMES:\s*(.+)$", text, re.MULTILINE)
         if m:
             themes = [t.strip() for t in m.group(1).split(",") if t.strip()][:20]
             text = re.sub(r"^THEMES:.*$\n?", "", text, flags=re.MULTILINE)
 
-    # ② SUMMARY: 접두어 제거 — 같은 줄 또는 다음 줄 모두 처리
-    m = re.search(r"^SUMMARY:\s*\n?([\s\S]*)", text.strip(), re.MULTILINE)
-    summary = m.group(1).strip() if m else text.strip()
+    # ② SUMMARY: 접두어 제거 (같은 줄 / 다음 줄 모두)
+    text = text.strip()
+    m = re.match(r"SUMMARY:\s*\n?", text)
+    if m:
+        text = text[m.end():]
 
-    return summary, themes
+    # ③ LLM이 SUMMARY 안에 내장한 "검색어:" 레이블 섹션 제거
+    #    (예: "비슷한 감성으로 찾을 독자의 검색어: ..." → themes로 흡수 후 본문에서 제거)
+    kw_pattern = re.compile(
+        r"\n+(?:비슷한 감성으로 찾을 독자의 검색어|관련 검색어|검색어)\s*:\s*([\s\S]+)$"
+    )
+    km = kw_pattern.search(text)
+    if km:
+        if not themes:
+            themes = [t.strip() for t in re.split(r"[,，\n]", km.group(1)) if t.strip()][:20]
+        text = text[:km.start()]
+
+    return text.strip(), themes
 
 
 # ── 문서 유형 판별 ───────────────────────────────────────────
@@ -101,7 +106,7 @@ _SECTION_SYSTEMS = {
         "- 장면이 전달하는 분위기와 정서적 톤\n"
         "- 사건이나 이미지의 상징적 의미\n"
         "다음 형식으로 출력하세요:\n"
-        "SUMMARY: (서술적 줄거리보다 '이 대목이 다루는 것'과 '독자가 느끼는 것' 중심으로 300자 내외)\n"
+        "SUMMARY: ('이 대목이 다루는 것'과 '독자가 느끼는 것' 중심으로 300자 내외. 레이블 없이 본문만 출력)\n"
         "THEMES: (이 섹션의 핵심 심리·철학적 테마 5~8개, 쉼표 구분. 예: 욕망, 억압, 자아 상실, 폭력성, 사회 규범 저항)"
     ),
     "book": (
@@ -179,9 +184,9 @@ _BOOK_FROM_SECTIONS_SYSTEMS = {
         "섹션별 요약들을 종합하여 이 작품의 전체 분석을 작성하세요.\n"
         "다음 형식으로 출력하세요:\n"
         "SUMMARY: (줄거리 요약이 아닌 '이 작품이 무엇을 다루는가' 중심. "
-        "주인공의 내적 여정, 심리 변화, 사회·문화적 맥락, 작가의 문제의식, "
-        "비슷한 감성으로 찾을 독자의 검색어 포함. 800자 내외)\n"
-        "THEMES: (작품 전체를 관통하는 핵심 심리·철학적 테마 8~10개, 쉼표 구분. "
+        "주인공의 내적 여정, 심리 변화, 사회·문화적 맥락, 작가의 문제의식을 담아 800자 내외로 서술. "
+        "레이블 없이 본문만 출력)\n"
+        "THEMES: (작품 전체를 관통하는 핵심 심리·철학적 테마 및 독자 검색 키워드 8~10개, 쉼표 구분. "
         "예: 욕망, 억압, 자아 상실, 폭력성, 사회 규범 저항, 여성 정체성, 실존적 공포)"
     ),
     "book": (
