@@ -285,12 +285,20 @@ async def retry_ingest(cnts_id: str, db: AsyncSession = Depends(get_db)):
             secret_key=cfg.MINIO_SECRET_KEY,
             secure=cfg.MINIO_SECURE,
         )
+        # 구조 A: 폴더형
         objects = list(client.list_objects(
             cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
         ))
+        # 구조 B: 플랫형 originals/{cnts_id}.pdf
         if not objects:
-            raise HTTPException(404, f"원본 PDF 없음: {cnts_id}")
-        source_key = objects[0].object_name
+            flat_key = f"originals/{cnts_id}.pdf"
+            try:
+                client.stat_object(cfg.MINIO_BUCKET, flat_key)
+                source_key = flat_key
+            except Exception:
+                raise HTTPException(404, f"원본 PDF 없음: {cnts_id}")
+        else:
+            source_key = objects[0].object_name
 
     from workers.tasks import process_from_minio
     task = process_from_minio.delay(cnts_id, source_key)
