@@ -35,11 +35,12 @@ def embed_texts(
     → Milvus SPARSE_FLOAT_VECTOR 에 직접 삽입 가능
     """
     _ = is_query  # BGE-M3은 query/passage 인코딩이 동일 — 호환성을 위해 파라미터 유지
+    cfg = get_settings()
     model = _load_model()
     output = model.encode(
         texts,
-        batch_size=12,
-        max_length=512,
+        batch_size=cfg.EMBEDDING_BATCH_SIZE,
+        max_length=cfg.EMBEDDING_MAX_LENGTH,
         return_dense=True,
         return_sparse=True,
         return_colbert_vecs=False,

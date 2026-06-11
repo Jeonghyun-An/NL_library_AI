@@ -307,6 +307,21 @@ def process_book_file(self, book_id: str, file_path: str, force: bool = False):
         raise
     finally:
         lock.release()
+        _cleanup_download(file_path)
+
+
+def _cleanup_download(file_path: str) -> None:
+    """MinIO에서 받은 임시 다운로드 파일 삭제 (원본은 MinIO에 있으므로 안전)."""
+    import os
+
+    download_dir = os.path.realpath("/app/data/downloads")
+    try:
+        real = os.path.realpath(file_path)
+        if real.startswith(download_dir + os.sep) and os.path.isfile(real):
+            os.remove(real)
+            log.info(f"임시 파일 삭제: {real}")
+    except Exception as e:
+        log.warning(f"임시 파일 삭제 실패 ({file_path}): {e}")
 
 
 def _process_book_file_inner(book_id: str, file_path: str):
@@ -411,9 +426,9 @@ def _process_book_file_inner(book_id: str, file_path: str):
     finally:
         db.close()
 
-    # ②-b 섹션별 요약+테마 병렬 생성 (vLLM max-num-seqs 16 기준 동시 8개)
+    # ②-b 섹션별 요약+테마 병렬 생성 (글로벌 동시 LLM ≤ vLLM max-num-seqs 제어)
     async def _summarize_all_sections() -> list[tuple[str, list[str]] | None]:
-        sem = asyncio.Semaphore(8)
+        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
         async def _one(text: str) -> tuple[str, list[str]] | None:
             async with sem:
                 try:

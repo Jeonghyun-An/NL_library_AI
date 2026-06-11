@@ -58,11 +58,19 @@ def _build_schema() -> CollectionSchema:
     )
 
 
+_collection_cache: Collection | None = None
+
+
 def ensure_collection() -> Collection:
     """
-    컬렉션 없으면 생성, 있으면 반환.
-    _REQUIRED_FIELDS 중 하나라도 없으면 구 스키마 → 재생성(재인덱싱 필요).
+    컬렉션 없으면 생성, 있으면 반환 (모듈 레벨 캐시).
+    스키마 불일치 시: MILVUS_RECREATE_ON_MISMATCH=true 일 때만 재생성,
+    기본은 RuntimeError로 중단 (대량 인덱스 무단 삭제 방지).
     """
+    global _collection_cache
+    if _collection_cache is not None:
+        return _collection_cache
+
     _connect()
 
     if utility.has_collection(COLLECTION):
@@ -70,10 +78,18 @@ def ensure_collection() -> Collection:
         existing_fields = {f.name for f in col.schema.fields}
         if _REQUIRED_FIELDS.issubset(existing_fields):
             col.load()
+            _collection_cache = col
             return col
+        missing = _REQUIRED_FIELDS - existing_fields
+        if not cfg.MILVUS_RECREATE_ON_MISMATCH:
+            raise RuntimeError(
+                f"컬렉션 '{COLLECTION}' 스키마 불일치 (누락 필드: {missing}). "
+                "기존 인덱스를 보호하기 위해 중단합니다. 재생성하려면 "
+                "MILVUS_RECREATE_ON_MISMATCH=true 로 설정하세요 (전체 재인덱싱 필요)."
+            )
         utility.drop_collection(COLLECTION)
         log.warning(
-            f"컬렉션 '{COLLECTION}' 스키마 변경 감지 → 재생성. "
+            f"컬렉션 '{COLLECTION}' 스키마 변경 감지 → 재생성 (누락 필드: {missing}). "
             "도서를 다시 인덱싱하세요."
         )
 
@@ -84,8 +100,8 @@ def ensure_collection() -> Collection:
         field_name="embedding",
         index_params={
             "metric_type": "COSINE",
-            "index_type": "IVF_FLAT",
-            "params": {"nlist": 256},
+            "index_type": cfg.MILVUS_INDEX_TYPE,
+            "params": {"nlist": cfg.MILVUS_NLIST},
         },
     )
     # sparse 벡터 인덱스 (내적, lexical weights)
@@ -100,6 +116,7 @@ def ensure_collection() -> Collection:
 
     col.load()
     log.info(f"컬렉션 '{COLLECTION}' 생성 완료 (dense + sparse + MARC/MODS 메타)")
+    _collection_cache = col
     return col
 
 
@@ -179,7 +196,7 @@ def index_chunks(
 
     try:
         col.insert(data)
-        col.flush()
+        # flush()는 세그먼트 강제 봉인으로 비용이 큼 — Milvus auto-flush에 위임
         log.info(f"[{book_id}] {len(chunks)}개 청크 인덱싱 완료 (dense+sparse, meta: {meta})")
     except Exception as e:
         log.error(f"[{book_id}] 인덱싱 실패: {e}")
@@ -240,7 +257,7 @@ def search_chunks(
     dense_req = AnnSearchRequest(
         data=[query_dense],
         anns_field="embedding",
-        param={"metric_type": "COSINE", "params": {"nprobe": 32}},
+        param={"metric_type": "COSINE", "params": {"nprobe": cfg.MILVUS_NPROBE}},
         limit=top_k,
         expr=expr,
     )
