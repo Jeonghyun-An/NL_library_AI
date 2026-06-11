@@ -13,30 +13,9 @@ from datetime import date
 
 import httpx
 from core.config import get_settings
+from services.prompts import get_prompt
 
 log = logging.getLogger(__name__)
-
-_SYSTEM = """\
-사용자의 도서관 검색어에서 날짜·정렬 조건만 JSON으로 추출하세요.
-
-출력 형식 (JSON 한 줄):
-{
-  "pub_year_from": 발행 시작 연도 4자리 정수 또는 null,
-  "pub_year_to":   발행 종료 연도 4자리 정수 또는 null,
-  "sort_by":       "recent" | "oldest" | null,
-  "has_filter":    true | false
-}
-
-규칙:
-- "최신", "최근", "가장 최근", "최신판" → sort_by: "recent"
-- "오래된", "초기", "처음 나온"         → sort_by: "oldest"
-- "올해"                                → pub_year_from = pub_year_to = 현재연도
-- "YYYY년" (단독 언급)                  → pub_year_from = pub_year_to = YYYY
-- "YYYY년 이후"                         → pub_year_from = YYYY
-- "YYYY년 이전"                         → pub_year_to = YYYY
-- "최근 N년"                            → pub_year_from = 현재연도 - N
-- has_filter: 위 항목 중 하나라도 있으면 true
-- JSON만 출력하고 다른 설명 없음"""
 
 
 @dataclass
@@ -53,20 +32,19 @@ async def extract_metadata_filter(query: str) -> MetadataFilter:
     current_year = date.today().year
 
     try:
+        system, user, params = get_prompt("metadata_filter").render(
+            today=today, current_year=current_year, query=query,
+        )
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.post(
                 f"{cfg.LLM_BASE_URL}/chat/completions",
                 json={
                     "model": cfg.LLM_MODEL,
                     "messages": [
-                        {"role": "system", "content": _SYSTEM},
-                        {"role": "user", "content": (
-                            f"오늘 날짜: {today} (현재 연도: {current_year})\n"
-                            f"검색어: {query}"
-                        )},
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
                     ],
-                    "max_tokens": 128,
-                    "temperature": 0.0,
+                    **params,
                 },
             )
             resp.raise_for_status()
