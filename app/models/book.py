@@ -1,5 +1,5 @@
-from sqlalchemy import Column, String, Text, Integer, DateTime, Boolean, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Text, Integer, DateTime, Boolean, func, text
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import DeclarativeBase
 import uuid
 
@@ -59,6 +59,9 @@ class Book(Base):
 
     # ── 메타 ─────────────────────────────────────────
     source_format    = Column(String(10))           # 'MARC' | 'MODS' | 'KCI'
+    doc_type         = Column(String(16), index=True)  # 프로파일 doc_types (book/paper/literature/policy)
+    # 도메인 확장 필드 (코어 컬럼에 없는 파싱 결과 — 전환기에는 dual-write)
+    extra            = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
 
     # ── RAG 관련 ──────────────────────────────────────
     raw_text         = Column(Text)                 # OCR 원본 (추후)
