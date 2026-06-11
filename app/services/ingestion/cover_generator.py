@@ -22,44 +22,6 @@ log = logging.getLogger(__name__)
 
 
 # ── 표지 프롬프트 생성 ──────────────────────────────────────
-_COVER_PROMPT_SYSTEM = """\
-You are a senior art director who designs book covers.
-Given a book's title, themes, and short introduction (in any language),
-output ONE concise English image-generation prompt for FLUX.1-dev.
-
-The prompt MUST describe:
-- Genre-appropriate scene or symbolic visual metaphor
-- Mood and atmosphere (lighting, color palette, emotional tone)
-- Composition (foreground / background, framing)
-- Art style (e.g. minimalist illustration, oil painting, watercolor,
-  cinematic photo, surreal collage, vintage poster) — pick one that
-  fits the book's themes
-
-Hard rules:
-- Output ONLY the final image prompt as a single paragraph (50~90 words).
-- English only. No explanation, no quotes, no preamble.
-- Do NOT include any text, letters, words, logos, or typography in
-  the image. The cover artwork itself is text-free; the title will
-  be added later by the design team.
-- Avoid celebrity faces, real public figures, copyrighted characters.
-- Do NOT mention the words "book cover" or "title" in the prompt.\
-"""
-
-_COVER_PROMPT_USER = """\
-Book title: {title}
-Author: {author}
-Genre / KDC: {kdc}
-Key themes: {themes}
-
-[Short introduction]
-{introduction}
-
-[Summary]
-{summary}
-
-Write the image-generation prompt now."""
-
-
 async def generate_cover_prompt(
     title: str,
     author: str,
@@ -69,22 +31,24 @@ async def generate_cover_prompt(
     summary: str,
 ) -> str | None:
     """책 메타·소개를 받아 FLUX용 영문 프롬프트를 LLM으로 생성."""
+    from services.prompts import get_prompt
+
     cfg = get_settings()
+    system, user, params = get_prompt("cover_prompt").render(
+        title=title or "Untitled",
+        author=author or "Unknown",
+        kdc=kdc or "N/A",
+        themes=themes or "N/A",
+        introduction=(introduction or "")[:1500],
+        summary=(summary or "")[:1500],
+    )
     payload = {
         "model": cfg.LLM_MODEL,
         "messages": [
-            {"role": "system", "content": _COVER_PROMPT_SYSTEM},
-            {"role": "user", "content": _COVER_PROMPT_USER.format(
-                title=title or "Untitled",
-                author=author or "Unknown",
-                kdc=kdc or "N/A",
-                themes=themes or "N/A",
-                introduction=(introduction or "")[:1500],
-                summary=(summary or "")[:1500],
-            )},
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
         ],
-        "max_tokens": 400,
-        "temperature": 0.7,
+        **params,
     }
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
