@@ -11,6 +11,7 @@ import httpx
 from core.config import get_settings
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import SearchHit, search_chunks
+from services.prompts import get_prompt
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -40,25 +41,6 @@ def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHi
     return cited
 
 
-_SYSTEM_TEMPLATE = """\
-당신은 "{title}" ({author}{pub_date}) 의 전담 독서 도우미입니다.
-이 책의 내용을 바탕으로 사용자와 심층적인 대화를 나눕니다.
-
-[책 요약]
-{summary}
-
-[핵심 주제]
-{themes}
-
-답변 규칙:
-- 반드시 제공된 [참고 내용]을 근거로 답변하세요.
-- 책에 없는 내용은 "이 책에서는 다루지 않습니다"라고 솔직하게 말하세요.
-- 관련 내용의 출처(페이지)를 자연스럽게 언급하세요.
-- 추측이나 창작은 하지 마세요.
-- 한국어로 답변하세요.\
-"""
-
-
 async def stream_book_chat(
     cnts_id: str,
     message: str,
@@ -83,7 +65,8 @@ async def stream_book_chat(
     # ── 3. 시스템 프롬프트 + 메시지 빌드 ────────────────────
     author = book.personal_author or book.corporate_author or "저자 미상"
     pub_date = f", {book.pub_date}" if book.pub_date else ""
-    system = _SYSTEM_TEMPLATE.format(
+    tpl = get_prompt("book_chat")
+    system, _, gen_params = tpl.render(
         title=book.title or cnts_id,
         author=author,
         pub_date=pub_date,
@@ -113,8 +96,7 @@ async def stream_book_chat(
     payload = {
         "model": cfg.LLM_MODEL,
         "messages": messages,
-        "max_tokens": 10000,
-        "temperature": 0.3,
+        **gen_params,
         "stream": True,
     }
 
