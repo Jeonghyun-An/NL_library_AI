@@ -367,7 +367,7 @@ services:
       start_period: 120s
     restart: unless-stopped
 
-  # ── Celery Worker ─────────────────────────────
+  # ── Celery Worker (단건 흐름 — ingestion 큐, GPU: BGE-M3 인라인 임베딩) ──
   celery-worker:
     image: landsoftdocker/nl-lib-fastapi:latest
     container_name: nl-lib-celery
@@ -398,6 +398,103 @@ services:
       postgres:
         condition: service_healthy
       milvus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery CPU Worker (배치 잡: 추출/파싱 — GPU 불필요, VLM은 HTTP) ──
+  celery-cpu:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-cpu
+    <<: *nl-lib-net
+    shm_size: "4g"
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=4 -Q q_cpu,q_control --max-tasks-per-child=50
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    volumes:
+      - /data/models/.hf-cache:/models:rw
+      - /data/nl-lib/data:/app/data:rw
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery LLM Worker (배치 잡: 섹션 요약·문서 요약/소개 — 외부 vLLM HTTP) ──
+  # 글로벌 동시 LLM = concurrency(4) × LLM_SECTION_CONCURRENCY(4) ≤ vLLM max-num-seqs(16)
+  celery-llm:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-llm
+    <<: *nl-lib-net
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=4 -Q q_llm --max-tasks-per-child=200
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    volumes:
+      - /data/nl-lib/data:/app/data:rw
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Embed Worker (배치 잡: 청킹+BGE-M3 임베딩+Milvus — GPU) ──
+  # 모델은 프로세스당 1회 로드 — concurrency=1 유지, 배치 크기로 처리량 확보
+  celery-embed:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-embed
+    <<: *nl-lib-net
+    shm_size: "4g"
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=1 -Q q_embed
+    environment:
+      <<: *common-env
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - /data/models/.hf-cache:/models:rw
+      - /data/nl-lib/data:/app/data:rw
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Beat (디스패처 30s + 정리 1h 스케줄러) ──
+  celery-beat:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-beat
+    <<: *nl-lib-net
+    working_dir: /app
+    command: celery -A workers.celery_app beat --loglevel=info
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    depends_on:
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
