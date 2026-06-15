@@ -38,7 +38,11 @@ class Settings(BaseSettings):
     MILVUS_COLLECTION: str = "nl_lib_embeddings"
     # 스키마 불일치 시 컬렉션 자동 재생성 허용 여부 (기본: 중단)
     MILVUS_RECREATE_ON_MISMATCH: bool = False
-    # dense 벡터 인덱스 파라미터 (대량 인덱싱 시 IVF_SQ8 권장)
+    # dense 벡터 인덱스 파라미터.
+    # 소량/현행: IVF_FLAT, nlist 256, nprobe 32 (기본값)
+    # 30만건(≈1,500만 벡터) 대량 인덱싱: env 로 아래 값 권장 후 컬렉션 재생성
+    #   MILVUS_INDEX_TYPE=IVF_SQ8  MILVUS_NLIST=16384  MILVUS_NPROBE=64
+    #   (raw float32 ~60GB → SQ8 ~15GB, recall 손실은 리랭커가 흡수)
     MILVUS_INDEX_TYPE: str = "IVF_FLAT"
     MILVUS_NLIST: int = 256
     MILVUS_NPROBE: int = 32

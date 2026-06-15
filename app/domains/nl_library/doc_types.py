@@ -18,7 +18,8 @@ _POLICY_TITLE_KEYWORDS = [
 
 def detect_doc_type(meta: dict[str, Any]) -> str:
     """
-    문서 유형 판별.
+    문서 유형 판별.'
+    
 
     meta 키: kdc, title, source_format, genre (모두 선택)
 

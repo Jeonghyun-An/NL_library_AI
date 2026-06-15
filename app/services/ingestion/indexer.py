@@ -22,8 +22,30 @@ cfg = get_settings()
 COLLECTION = cfg.MILVUS_COLLECTION
 DIM = cfg.EMBEDDING_DIM
 
-# 스키마 재생성 트리거: 이 필드 중 하나라도 없으면 컬렉션 재생성
-_REQUIRED_FIELDS = {"publisher", "corporate_author", "pub_date", "kdc", "sparse_embedding"}
+# 코어 스칼라 필드 (모든 도메인 공통) — doc_type/pub_date 코어 승격
+_CORE_SCALAR = {
+    "doc_type": 16,
+    "pub_date": 32,
+}
+
+
+def _profile_scalar_fields() -> list:
+    """활성 도메인 프로파일의 Milvus 스칼라 필드 (pub_date는 코어로 승격, 중복 제거)."""
+    from domains import get_active_profile
+
+    return [f for f in get_active_profile().milvus_scalar_fields if f.name not in _CORE_SCALAR]
+
+
+def _scalar_field_specs() -> list[tuple[str, int]]:
+    """(필드명, max_length) — 코어 + 프로파일 스칼라. 스키마/인덱싱/검증 공통 소스."""
+    specs = list(_CORE_SCALAR.items())
+    specs += [(f.name, f.max_length) for f in _profile_scalar_fields()]
+    return specs
+
+
+def _required_fields() -> set[str]:
+    """스키마 재생성 트리거 — 이 필드 중 하나라도 없으면 구 스키마."""
+    return {"sparse_embedding", *(name for name, _ in _scalar_field_specs())}
 
 
 def _connect():
@@ -36,6 +58,10 @@ def _connect():
 
 
 def _build_schema() -> CollectionSchema:
+    scalar_fields = [
+        FieldSchema(name, DataType.VARCHAR, max_length=max_len)
+        for name, max_len in _scalar_field_specs()
+    ]
     return CollectionSchema(
         fields=[
             FieldSchema("chunk_id",          DataType.VARCHAR, is_primary=True, max_length=128),
@@ -45,16 +71,13 @@ def _build_schema() -> CollectionSchema:
             FieldSchema("text",               DataType.VARCHAR, max_length=16384),
             FieldSchema("page_start",         DataType.INT16),
             FieldSchema("page_end",           DataType.INT16),
-            # ── MARC/MODS 메타데이터 스칼라 필드 ──────────────
-            FieldSchema("publisher",          DataType.VARCHAR, max_length=512),
-            FieldSchema("corporate_author",   DataType.VARCHAR, max_length=512),
-            FieldSchema("pub_date",           DataType.VARCHAR, max_length=32),
-            FieldSchema("kdc",                DataType.VARCHAR, max_length=32),
+            # ── 코어(doc_type, pub_date) + 도메인 스칼라 필터 필드 ──
+            *scalar_fields,
             # ─────────────────────────────────────────────────
             FieldSchema("embedding",          DataType.FLOAT_VECTOR, dim=DIM),
             FieldSchema("sparse_embedding",   DataType.SPARSE_FLOAT_VECTOR),
         ],
-        description="NL-Lib 도서 청크 임베딩 (BGE-M3 dense+sparse, MARC/MODS 메타 포함)",
+        description="NL-Lib 청크 임베딩 (BGE-M3 dense+sparse + 코어/도메인 스칼라)",
     )
 
 
@@ -76,11 +99,12 @@ def ensure_collection() -> Collection:
     if utility.has_collection(COLLECTION):
         col = Collection(COLLECTION)
         existing_fields = {f.name for f in col.schema.fields}
-        if _REQUIRED_FIELDS.issubset(existing_fields):
+        required = _required_fields()
+        if required.issubset(existing_fields):
             col.load()
             _collection_cache = col
             return col
-        missing = _REQUIRED_FIELDS - existing_fields
+        missing = required - existing_fields
         if not cfg.MILVUS_RECREATE_ON_MISMATCH:
             raise RuntimeError(
                 f"컬렉션 '{COLLECTION}' 스키마 불일치 (누락 필드: {missing}). "
@@ -123,11 +147,22 @@ def ensure_collection() -> Collection:
 # ── 도서 메타데이터 DTO ────────────────────────────────────────
 @dataclass
 class BookMeta:
-    """인덱싱 시 Milvus에 함께 저장할 MARC/MODS 메타데이터"""
+    """[deprecated] 단건 흐름 호환용. 신규 코드는 scalar_meta dict 를 직접 전달.
+
+    build_scalar_meta(book, profile.milvus_scalar_fields) 사용 권장.
+    """
     publisher:        str = ""
     corporate_author: str = ""
     pub_date:         str = ""
     kdc:              str = ""
+
+    def as_scalar_meta(self) -> dict[str, str]:
+        return {
+            "publisher": self.publisher or "",
+            "corporate_author": self.corporate_author or "",
+            "pub_date": self.pub_date or "",
+            "kdc": self.kdc or "",
+        }
 
 
 @dataclass
@@ -166,38 +201,44 @@ def index_chunks(
     dense_embeddings: list[list[float]],
     sparse_embeddings: list[dict[int, float]],
     *,
+    scalar_meta: dict[str, str] | None = None,
     book_meta: BookMeta | None = None,
 ) -> IndexResult:
     """
     청크 + dense/sparse 임베딩을 Milvus에 저장.
-    book_meta 를 전달하면 MARC/MODS 메타데이터를 스칼라 필드로 함께 저장.
+    scalar_meta: {필드명: 값} — 코어(doc_type/pub_date) + 도메인 스칼라 필터 필드.
+    book_meta: [deprecated] 단건 흐름 호환 (내부에서 scalar_meta 로 변환).
     """
     col = ensure_collection()
     errors: list[str] = []
-    meta = book_meta or BookMeta()
+    meta = dict(scalar_meta or {})
+    if book_meta is not None:
+        for k, v in book_meta.as_scalar_meta().items():
+            meta.setdefault(k, v)
 
     col.delete(expr=f'book_id == "{book_id}"')
 
+    n = len(chunks)
     data = [
         [f"{book_id}__{c.chunk_idx:04d}" for c in chunks],            # chunk_id
-        [book_id] * len(chunks),                                       # book_id
+        [book_id] * n,                                                 # book_id
         [c.chunk_idx for c in chunks],                                 # chunk_idx
         [c.section_idx or 0 for c in chunks],                          # section_idx
-        [_truncate_bytes(c.text, 16000, field="text") for c in chunks],            # text
-        [c.page_start or 0 for c in chunks],                                        # page_start
-        [c.page_end or 0 for c in chunks],                                          # page_end
-        [_truncate_bytes(meta.publisher, 500, field="publisher")]        * len(chunks),
-        [_truncate_bytes(meta.corporate_author, 500, field="corp_auth")] * len(chunks),
-        [_truncate_bytes(meta.pub_date, 31, field="pub_date")]           * len(chunks),
-        [_truncate_bytes(meta.kdc, 31, field="kdc")]                     * len(chunks),
-        dense_embeddings,                                              # embedding (dense)
-        sparse_embeddings,                                             # sparse_embedding
+        [_truncate_bytes(c.text, 16000, field="text") for c in chunks],  # text
+        [c.page_start or 0 for c in chunks],                           # page_start
+        [c.page_end or 0 for c in chunks],                             # page_end
     ]
+    # 코어 + 도메인 스칼라 필드 (스키마와 동일 순서)
+    for name, max_len in _scalar_field_specs():
+        val = _truncate_bytes(meta.get(name, "") or "", max(1, max_len - 1), field=name)
+        data.append([val] * n)
+    data.append(dense_embeddings)        # embedding (dense)
+    data.append(sparse_embeddings)       # sparse_embedding
 
     try:
         col.insert(data)
         # flush()는 세그먼트 강제 봉인으로 비용이 큼 — Milvus auto-flush에 위임
-        log.info(f"[{book_id}] {len(chunks)}개 청크 인덱싱 완료 (dense+sparse, meta: {meta})")
+        log.info(f"[{book_id}] {n}개 청크 인덱싱 완료 (dense+sparse, scalar: {meta})")
     except Exception as e:
         log.error(f"[{book_id}] 인덱싱 실패: {e}")
         errors.append(str(e))

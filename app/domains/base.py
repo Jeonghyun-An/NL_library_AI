@@ -64,6 +64,26 @@ class MilvusScalarField:
         return self.source or self.name
 
 
+def build_scalar_meta(book, scalar_fields: list["MilvusScalarField"]) -> dict[str, str]:
+    """Book + 프로파일 스칼라 필드 정의 → Milvus 스칼라 값 dict.
+
+    source 가 'ext.<key>' 면 book.extra 에서, 아니면 getattr(book, source). None → "".
+    doc_type 은 모든 도메인 공통 코어 스칼라 — 항상 포함한다.
+    """
+    meta: dict[str, str] = {}
+    for f in scalar_fields:
+        src = f.source_attr
+        if src.startswith("ext."):
+            extra = getattr(book, "extra", None) or {}
+            val = extra.get(src[4:])
+        else:
+            val = getattr(book, src, None)
+        meta[f.name] = str(val) if val is not None else ""
+    doc_type = getattr(book, "doc_type", None)
+    meta["doc_type"] = str(doc_type) if doc_type is not None else ""
+    return meta
+
+
 @dataclass
 class DomainProfile:
     name: str

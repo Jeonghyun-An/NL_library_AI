@@ -450,9 +450,11 @@ def run_summarize(ctx: StageContext) -> dict:
 
 def run_embed_index(ctx: StageContext) -> dict:
     """아티팩트 + 섹션 요약 로드 → 시맨틱 청킹 → contextual 임베딩 → Milvus delete+insert."""
+    from domains import get_active_profile
+    from domains.base import build_scalar_meta
     from services.ingestion.chunker import semantic_chunk, Chunk as ChunkType
     from services.ingestion.embedder import embed_texts
-    from services.ingestion.indexer import index_chunks, BookMeta
+    from services.ingestion.indexer import index_chunks
 
     book_id = ctx.book_id
     client = minio_client()
@@ -487,12 +489,7 @@ def run_embed_index(ctx: StageContext) -> dict:
             f"키워드: {book.keyword}" if book.keyword else None,
             f"초록: {book.abstract}" if book.abstract else None,
         ]
-        book_meta = BookMeta(
-            publisher=book.publisher or "",
-            corporate_author=book.corporate_author or "",
-            pub_date=book.pub_date or "",
-            kdc=book.kdc or "",
-        )
+        scalar_meta = build_scalar_meta(book, get_active_profile().milvus_scalar_fields)
     finally:
         db.close()
 
@@ -527,7 +524,7 @@ def run_embed_index(ctx: StageContext) -> dict:
     all_chunks = chunks + [meta_chunk]
 
     idx_result = index_chunks(
-        book_id, all_chunks, dense_embeddings, sparse_embeddings, book_meta=book_meta,
+        book_id, all_chunks, dense_embeddings, sparse_embeddings, scalar_meta=scalar_meta,
     )
     if idx_result.errors:
         raise StageError("milvus_error", f"Milvus 인덱싱 실패: {idx_result.errors}")
