@@ -8,6 +8,7 @@ from api.book import router as book_router
 from api.health import router as health_router
 from api.admin import router as admin_router
 from api.paper import router as paper_router
+from api.ingest_jobs import router as ingest_jobs_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -24,8 +25,8 @@ async def lifespan(app: FastAPI):
     from models.book import Base
     import models.section
     import models.search_history
+    import models.ingest_job
     from sqlalchemy import text
-    import models.section
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # 컬럼 추가 마이그레이션 (이미 존재하면 skip)
@@ -69,3 +70,4 @@ app.include_router(health_router)
 app.include_router(book_router)
 app.include_router(admin_router)
 app.include_router(paper_router)
+app.include_router(ingest_jobs_router)
