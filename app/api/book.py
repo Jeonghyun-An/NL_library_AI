@@ -29,6 +29,24 @@ cfg = get_settings()
 router = APIRouter(prefix="/api/books", tags=["books"])
 
 
+def _resolve_original_key(client, cnts_id: str) -> str | None:
+    """원본 PDF의 MinIO 키 해석 — 폴더형(originals/{id}/) 우선, 없으면 평탄형(originals/{id}.pdf).
+
+    대량 적재는 `mc mirror`로 평탄 키로 올리므로 두 레이아웃을 모두 지원한다.
+    """
+    objects = list(client.list_objects(
+        cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
+    ))
+    if objects:
+        return objects[0].object_name
+    flat_key = f"originals/{cnts_id}.pdf"
+    try:
+        client.stat_object(cfg.MINIO_BUCKET, flat_key)
+        return flat_key
+    except Exception:
+        return None
+
+
 # ── 검색 ─────────────────────────────────────────────────
 @router.post(
     "/search",
@@ -285,20 +303,9 @@ async def retry_ingest(cnts_id: str, db: AsyncSession = Depends(get_db)):
             secret_key=cfg.MINIO_SECRET_KEY,
             secure=cfg.MINIO_SECURE,
         )
-        # 구조 A: 폴더형
-        objects = list(client.list_objects(
-            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
-        ))
-        # 구조 B: 플랫형 originals/{cnts_id}.pdf
-        if not objects:
-            flat_key = f"originals/{cnts_id}.pdf"
-            try:
-                client.stat_object(cfg.MINIO_BUCKET, flat_key)
-                source_key = flat_key
-            except Exception:
-                raise HTTPException(404, f"원본 PDF 없음: {cnts_id}")
-        else:
-            source_key = objects[0].object_name
+        source_key = _resolve_original_key(client, cnts_id)
+        if not source_key:
+            raise HTTPException(404, f"원본 PDF 없음: {cnts_id}")
 
     from workers.tasks import process_from_minio
     task = process_from_minio.delay(cnts_id, source_key)
@@ -394,14 +401,12 @@ async def get_book_thumbnail(cnts_id: str, db: AsyncSession = Depends(get_db)):
     except S3Error:
         pass
 
-    # ② PDF 파일 탐색 (originals/{cnts_id}/ 하위 첫 번째 파일)
+    # ② PDF 파일 탐색 (폴더형 originals/{id}/ 우선, 평탄형 originals/{id}.pdf 폴백)
+    obj_name = _resolve_original_key(client, cnts_id)
+    if not obj_name:
+        raise HTTPException(404, f"PDF 없음: {cnts_id}")
     try:
-        objects = list(client.list_objects(
-            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
-        ))
-        if not objects:
-            raise HTTPException(404, f"PDF 없음: {cnts_id}")
-        pdf_obj = client.get_object(cfg.MINIO_BUCKET, objects[0].object_name)
+        pdf_obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
         pdf_bytes = pdf_obj.read()
         pdf_obj.close()
     except S3Error:
@@ -445,13 +450,10 @@ async def get_book_pdf(cnts_id: str):
         secret_key=cfg.MINIO_SECRET_KEY,
         secure=cfg.MINIO_SECURE,
     )
+    obj_name = _resolve_original_key(client, cnts_id)
+    if not obj_name:
+        raise HTTPException(404, detail="PDF 없음")
     try:
-        objects = list(client.list_objects(
-            cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
-        ))
-        if not objects:
-            raise HTTPException(404, detail="PDF 없음")
-        obj_name = objects[0].object_name
         obj_stat = client.stat_object(cfg.MINIO_BUCKET, obj_name)
         obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
     except S3Error as e:
