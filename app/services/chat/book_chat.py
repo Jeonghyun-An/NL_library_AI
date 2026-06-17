@@ -58,7 +58,7 @@ async def stream_book_chat(
     hits = []
     try:
         dense, sparse = embed_texts([message], is_query=True)
-        hits = search_chunks(dense[0], sparse[0], top_k=6, book_filter=cnts_id)
+        hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
     except Exception as e:
         log.warning(f"[{cnts_id}] 채팅 청크 검색 실패: {e}")
 
@@ -76,8 +76,8 @@ async def stream_book_chat(
 
     messages = [{"role": "system", "content": system}]
 
-    # 최근 10턴 히스토리 (user+assistant 쌍 = 메시지 20개)
-    for msg in history[-20:]:
+    # 최근 히스토리 (BOOK_CHAT_HISTORY_MESSAGES 개 메시지 = 절반 턴 수)
+    for msg in history[-cfg.BOOK_CHAT_HISTORY_MESSAGES:]:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
     # 검색된 청크를 컨텍스트로 첨부
@@ -107,7 +107,7 @@ async def stream_book_chat(
                 "POST",
                 f"{cfg.LLM_BASE_URL}/chat/completions",
                 json=payload,
-                timeout=90.0,
+                timeout=float(cfg.BOOK_CHAT_TIMEOUT),
             ) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():

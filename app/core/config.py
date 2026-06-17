@@ -93,6 +93,89 @@ class Settings(BaseSettings):
     INGEST_STAGE_TIMEOUT_SUMMARIZE: int = 1200
     INGEST_STAGE_TIMEOUT_EMBED: int = 1200
     INGEST_STAGE_TIMEOUT_FINALIZE: int = 900
+    DISPATCH_STALE_SECONDS: int = 14400  # 디스패치 후 워커 무응답 stale 판정(초)
+
+    # ── 시맨틱 청킹 ──────────────────────────────────
+    MIN_CHUNK_TOKENS: int = 128
+    MAX_CHUNK_TOKENS: int = 1024
+    MAX_CHUNK_BYTES: int = 15500          # Milvus VARCHAR 바이트 가드
+    SIMILARITY_WINDOW: int = 3            # 문장 그룹 슬라이딩 윈도우
+    BREAKPOINT_PERCENTILE: int = 25       # 의미 경계 판정 하위 백분위
+
+    # ── 섹션 분할 ─────────────────────────────────────
+    SECTION_TARGET_TOKENS: int = 3000
+    SECTION_MAX_TOKENS: int = 5000
+    DOWNLOAD_DIR: str = "/app/data/downloads"
+
+    # ── 텍스트 추출 / VLM OCR ─────────────────────────
+    EXTRACT_MIN_CHARS_PER_PAGE: int = 50  # 이 미만이면 VLM 보완 트리거
+    FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
+    VLM_MAX_TOKENS: int = 4096
+    VLM_TEMPERATURE: float = 0.1
+    VLM_TIMEOUT: int = 120
+
+    # ── PDF 메타 자동추출 ─────────────────────────────
+    PDF_META_MAX_CHARS: int = 3000
+    PDF_META_MAX_TOKENS: int = 1024
+    PDF_META_TEMPERATURE: float = 0.1
+    PDF_META_TIMEOUT: int = 60
+
+    # ── 요약 LLM 타임아웃(초) ─────────────────────────
+    SUMMARIZER_SECTION_TIMEOUT: int = 60
+    SUMMARIZER_BOOK_TIMEOUT: int = 120
+    SUMMARIZER_INTRO_TIMEOUT: int = 120
+
+    # ── FLUX 표지 생성 ────────────────────────────────
+    FLUX_WIDTH: int = 768
+    FLUX_HEIGHT: int = 1152
+    FLUX_STEPS: int = 28
+    FLUX_GUIDANCE: float = 3.5
+    COVER_PROMPT_TIMEOUT: int = 60
+
+    # ── Milvus sparse / RRF ───────────────────────────
+    MILVUS_SPARSE_DROP_RATIO_BUILD: float = 0.2
+    MILVUS_SPARSE_DROP_RATIO_SEARCH: float = 0.2
+    RRF_RANKER_K: int = 60
+
+    # ── 컨텍스트 확장 ─────────────────────────────────
+    CONTEXT_BUDGET_TOKENS: int = 100000
+    EXPAND_SECTIONS: int = 2
+
+    # ── 검색 후보 풀 배수 / 표시 한도 ─────────────────
+    CHUNK_MODE_FETCH_MULTIPLIER: int = 4
+    BOOK_MODE_FETCH_MULTIPLIER_SORT: int = 4   # 날짜 정렬 시
+    BOOK_MODE_FETCH_MULTIPLIER: int = 3        # 일반
+    HYBRID_SEARCH_CHUNK_LIMIT_MULT: int = 10
+    MARC_KEYWORDS_LIMIT: int = 5
+    KEYWORDS_MAX_COUNT: int = 5
+
+    # ── 추천 이유 / 답변 생성 LLM ─────────────────────
+    REASON_CHUNKS_DISPLAY_LIMIT: int = 15
+    REASON_MAX_TOKENS: int = 650
+    REASON_TEMPERATURE: float = 0.4
+    REASON_TIMEOUT: int = 60
+    ANSWER_EXTENDED_MAX_TOKENS: int = 4096
+    ANSWER_EXTENDED_TEMPERATURE: float = 0.3
+    ANSWER_EXTENDED_TIMEOUT: int = 120
+    ANSWER_BASE_CHUNKS_LIMIT: int = 5
+    ANSWER_BASE_MAX_TOKENS: int = 2048
+    ANSWER_BASE_TEMPERATURE: float = 0.3
+    ANSWER_BASE_TIMEOUT: int = 60
+
+    # ── 도서 대화 (book_chat) ─────────────────────────
+    BOOK_CHAT_SEARCH_TOP_K: int = 6
+    BOOK_CHAT_HISTORY_MESSAGES: int = 20   # 최근 메시지 수 (20=10턴)
+    BOOK_CHAT_TIMEOUT: int = 90
+
+    # ── 쿼리 전처리 LLM 타임아웃(초) ──────────────────
+    QUERY_REWRITE_TIMEOUT: int = 30
+    METADATA_FILTER_TIMEOUT: int = 15
+
+    # ── 배치/락 ───────────────────────────────────────
+    JOB_MANAGER_CHUNK_SIZE: int = 5000     # ID 조회 IN 청크
+    JOB_MANAGER_BATCH_SIZE: int = 1000     # 잡 아이템 bulk insert 배치
+    CATALOG_BULK_BATCH_SIZE: int = 1000    # 카탈로그 upsert 배치
+    BOOK_LOCK_TTL: int = 3600              # Redis 인덱싱 락 TTL(초)
 
     class Config:
         env_file = ".env"

@@ -17,14 +17,14 @@ from core.config import get_settings
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-# ── 설정 ────────────────────────────────────────────────
-MIN_CHUNK_TOKENS = 128
-MAX_CHUNK_TOKENS = 1024
+# ── 설정 (환경변수에서 로드 — core.config.Settings) ──────
+MIN_CHUNK_TOKENS = cfg.MIN_CHUNK_TOKENS
+MAX_CHUNK_TOKENS = cfg.MAX_CHUNK_TOKENS
 # Milvus VARCHAR(16384 bytes) 한도. 의미 분할이 실패하는 케이스에서도 데이터 손실 없이
 # 청크가 분할되도록 강제하는 최종 가드. 안전 마진 800바이트 확보.
-MAX_CHUNK_BYTES = 15500
-SIMILARITY_WINDOW = 3          # 문장 그룹 크기
-BREAKPOINT_PERCENTILE = 25     # 유사도 하위 N% 지점을 경계로
+MAX_CHUNK_BYTES = cfg.MAX_CHUNK_BYTES
+SIMILARITY_WINDOW = cfg.SIMILARITY_WINDOW          # 문장 그룹 크기
+BREAKPOINT_PERCENTILE = cfg.BREAKPOINT_PERCENTILE  # 유사도 하위 N% 지점을 경계로
 
 
 @dataclass

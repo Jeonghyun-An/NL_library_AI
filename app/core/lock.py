@@ -47,10 +47,10 @@ end
 class BookLock:
     """book_id 단위 인덱싱 락. TTL이 지나면 자동 해제 (워커가 죽어도 영구 락 방지)."""
 
-    def __init__(self, book_id: str, ttl: int = 3600):
+    def __init__(self, book_id: str, ttl: int | None = None):
         self.key = f"book_lock:{book_id}"
         self.token = uuid.uuid4().hex
-        self.ttl = ttl
+        self.ttl = ttl if ttl is not None else cfg.BOOK_LOCK_TTL
         self.book_id = book_id
 
     def acquire(self) -> bool:
@@ -83,7 +83,7 @@ class BookLock:
 
 
 @contextmanager
-def book_lock(book_id: str, ttl: int = 3600):
+def book_lock(book_id: str, ttl: int | None = None):
     """컨텍스트 매니저 형태. 락 획득 실패 시 RuntimeError."""
     lock = BookLock(book_id, ttl=ttl)
     if not lock.acquire():

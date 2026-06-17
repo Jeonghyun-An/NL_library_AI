@@ -50,7 +50,7 @@ async def generate_cover_prompt(
         ],
         **params,
     }
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=cfg.COVER_PROMPT_TIMEOUT) as client:
         resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
         resp.raise_for_status()
         text = resp.json()["choices"][0]["message"]["content"].strip()
@@ -64,20 +64,20 @@ async def generate_cover_prompt(
 # ── FLUX 이미지 생성 ────────────────────────────────────────
 async def render_cover_image(
     prompt: str,
-    width: int = 768,
-    height: int = 1152,
-    steps: int = 28,
-    guidance: float = 3.5,
+    width: int | None = None,
+    height: int | None = None,
+    steps: int | None = None,
+    guidance: float | None = None,
     seed: int | None = None,
 ) -> bytes | None:
-    """FLUX 서버에 프롬프트 전송 → 표지 JPEG 바이트 반환."""
+    """FLUX 서버에 프롬프트 전송 → 표지 JPEG 바이트 반환. 미지정 시 env 기본값."""
     cfg = get_settings()
     body = {
         "prompt": prompt,
-        "width":  width,
-        "height": height,
-        "num_inference_steps": steps,
-        "guidance_scale": guidance,
+        "width":  width if width is not None else cfg.FLUX_WIDTH,
+        "height": height if height is not None else cfg.FLUX_HEIGHT,
+        "num_inference_steps": steps if steps is not None else cfg.FLUX_STEPS,
+        "guidance_scale": guidance if guidance is not None else cfg.FLUX_GUIDANCE,
         "seed": seed,
     }
     async with httpx.AsyncClient(timeout=cfg.FLUX_TIMEOUT) as client:

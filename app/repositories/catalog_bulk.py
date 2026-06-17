@@ -28,7 +28,9 @@ PROTECTED_ON_UPDATE = {
     "created_at", "updated_at",
 }
 
-DEFAULT_BATCH_SIZE = 1000
+from core.config import get_settings
+
+DEFAULT_BATCH_SIZE = get_settings().CATALOG_BULK_BATCH_SIZE
 
 
 def _record_to_row(rec: ParsedRecord) -> dict:

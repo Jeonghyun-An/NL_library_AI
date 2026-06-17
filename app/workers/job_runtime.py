@@ -53,7 +53,7 @@ def _stage_timeout(stage_name: str) -> int:
 
 
 # 디스패치 후 워커가 잡기까지의 허용 대기 (큐 적체 고려 — visibility_timeout 의 2배)
-DISPATCH_STALE_SECONDS = 4 * 3600
+DISPATCH_STALE_SECONDS = cfg.DISPATCH_STALE_SECONDS
 
 
 def classify_error(exc: BaseException) -> str:

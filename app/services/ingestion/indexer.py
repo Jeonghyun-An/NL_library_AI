@@ -134,7 +134,7 @@ def ensure_collection() -> Collection:
         index_params={
             "metric_type": "IP",
             "index_type": "SPARSE_INVERTED_INDEX",
-            "params": {"drop_ratio_build": 0.2},
+            "params": {"drop_ratio_build": cfg.MILVUS_SPARSE_DROP_RATIO_BUILD},
         },
     )
 
@@ -305,14 +305,14 @@ def search_chunks(
     sparse_req = AnnSearchRequest(
         data=[query_sparse],
         anns_field="sparse_embedding",
-        param={"metric_type": "IP", "params": {"drop_ratio_search": 0.2}},
+        param={"metric_type": "IP", "params": {"drop_ratio_search": cfg.MILVUS_SPARSE_DROP_RATIO_SEARCH}},
         limit=top_k,
         expr=expr,
     )
 
     results = col.hybrid_search(
         reqs=[dense_req, sparse_req],
-        rerank=RRFRanker(k=60),
+        rerank=RRFRanker(k=cfg.RRF_RANKER_K),
         limit=top_k,
         output_fields=output_fields,
     )

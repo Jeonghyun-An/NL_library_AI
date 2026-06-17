@@ -35,7 +35,7 @@ async def extract_metadata_filter(query: str) -> MetadataFilter:
         system, user, params = get_prompt("metadata_filter").render(
             today=today, current_year=current_year, query=query,
         )
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=cfg.METADATA_FILTER_TIMEOUT) as client:
             resp = await client.post(
                 f"{cfg.LLM_BASE_URL}/chat/completions",
                 json={

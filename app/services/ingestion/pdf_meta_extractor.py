@@ -18,7 +18,7 @@ from core.config import get_settings
 
 log = logging.getLogger(__name__)
 
-_MAX_CHARS = 3000  # LLM에 보낼 최대 텍스트 길이
+_MAX_CHARS = get_settings().PDF_META_MAX_CHARS  # LLM에 보낼 최대 텍스트 길이
 
 _SYSTEM = """\
 You are a bibliographic metadata extraction expert.
@@ -66,12 +66,12 @@ async def extract_pdf_metadata(file_path: str) -> dict:
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": f"Document text (first 1-2 pages):\n\n{text_for_llm}"},
         ],
-        "max_tokens": 1024,
-        "temperature": 0.1,
+        "max_tokens": cfg.PDF_META_MAX_TOKENS,
+        "temperature": cfg.PDF_META_TEMPERATURE,
     }
 
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=cfg.PDF_META_TIMEOUT) as client:
             resp = await client.post(
                 f"{cfg.LLM_BASE_URL}/chat/completions", json=payload
             )

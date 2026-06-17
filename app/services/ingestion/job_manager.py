@@ -124,7 +124,7 @@ def _fetch_id_sets(db, book_ids: list[str]) -> tuple[set[str], set[str]]:
 
     meta_ids: set[str] = set()
     embedded_ids: set[str] = set()
-    CHUNK = 5000
+    CHUNK = _cfg().JOB_MANAGER_CHUNK_SIZE
     for i in range(0, len(book_ids), CHUNK):
         batch = book_ids[i:i + CHUNK]
         rows = (
@@ -174,8 +174,8 @@ def create_job(name: str, manifest_key: str, params: dict, created_by: str | Non
         ))
         db.flush()
 
-        # items bulk insert (1,000행 배치)
-        BATCH = 1000
+        # items bulk insert (배치)
+        BATCH = _cfg().JOB_MANAGER_BATCH_SIZE
         for i in range(0, len(items), BATCH):
             batch = [{**it, "job_id": job_id} for it in items[i:i + BATCH]]
             if batch:

@@ -142,7 +142,7 @@ async def _search_chunk_mode(
 ) -> ChunkSearchResponse:
     t0 = time.perf_counter()
 
-    candidates = search_chunks(query_dense, query_sparse, top_k=top_k * 4, meta_expr=meta_expr)
+    candidates = search_chunks(query_dense, query_sparse, top_k=top_k * cfg.CHUNK_MODE_FETCH_MULTIPLIER, meta_expr=meta_expr)
 
     if not candidates:
         elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
@@ -224,12 +224,12 @@ async def _search_book_mode(
     # 리랭킹 품질은 후보 풀 크기에 비례한다.
     # 날짜 정렬 시 4x, 일반 검색 시 3x 후보를 확보한 뒤 리랭킹으로 추려낸다.
     needs_date_sort = metadata_filter and metadata_filter.sort_by in ("recent", "oldest")
-    fetch_books = top_k * 4 if needs_date_sort else top_k * 3
+    fetch_books = top_k * cfg.BOOK_MODE_FETCH_MULTIPLIER_SORT if needs_date_sort else top_k * cfg.BOOK_MODE_FETCH_MULTIPLIER
 
     book_hits = search_by_book(
         query_dense,
         query_sparse,
-        top_k_chunks=fetch_books * 10,
+        top_k_chunks=fetch_books * cfg.HYBRID_SEARCH_CHUNK_LIMIT_MULT,
         top_k_books=fetch_books,
         meta_expr=meta_expr,
     )
@@ -358,7 +358,7 @@ async def stream_book_reason(
         context_parts.append(f"[도서 요약]\n{book.summary}")
     if chunk_texts:
         chunks_block = "\n\n".join(
-            f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:15])
+            f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:cfg.REASON_CHUNKS_DISPLAY_LIMIT])
         )
         context_parts.append(f"[검색 매칭 구절]\n{chunks_block}")
     context_text = "\n\n".join(context_parts)
@@ -368,7 +368,7 @@ async def stream_book_reason(
     if book:
         raw = book.keyword or book.subject or ""
         if raw:
-            marc_keywords = [k.strip() for k in re.split(r"[,;|/·]", raw) if k.strip()][:5]
+            marc_keywords = [k.strip() for k in re.split(r"[,;|/·]", raw) if k.strip()][:cfg.MARC_KEYWORDS_LIMIT]
 
     # MARC 키워드가 있으면 즉시 emit
     if marc_keywords:
@@ -418,11 +418,11 @@ async def stream_book_reason(
                         {"role": "system", "content": system_message},
                         {"role": "user",   "content": user_message},
                     ],
-                    "max_tokens": 650,
-                    "temperature": 0.4,
+                    "max_tokens": cfg.REASON_MAX_TOKENS,
+                    "temperature": cfg.REASON_TEMPERATURE,
                     "stream": True,
                 },
-                timeout=60.0,
+                timeout=float(cfg.REASON_TIMEOUT),
             ) as resp:
                 # MARC 키워드가 없으면 첫 줄에서 #KW: 파싱
                 line_buf = ""
@@ -451,7 +451,7 @@ async def stream_book_reason(
                                 if first.startswith("#KW:"):
                                     kws = [k.strip() for k in first[4:].split(",") if k.strip()]
                                     if kws:
-                                        yield f"data: {json.dumps({'keywords': kws[:5]}, ensure_ascii=False)}\n\n"
+                                        yield f"data: {json.dumps({'keywords': kws[:cfg.KEYWORDS_MAX_COUNT]}, ensure_ascii=False)}\n\n"
                                 elif first:
                                     first_with_newline = first + "\n"
                                     yield f"data: {json.dumps({'text': first_with_newline}, ensure_ascii=False)}\n\n"
@@ -505,10 +505,10 @@ async def _generate_answer_with_context(
                 json={
                     "model": cfg.LLM_MODEL,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 4096,
-                    "temperature": 0.3,
+                    "max_tokens": cfg.ANSWER_EXTENDED_MAX_TOKENS,
+                    "temperature": cfg.ANSWER_EXTENDED_TEMPERATURE,
                 },
-                timeout=120.0,
+                timeout=float(cfg.ANSWER_EXTENDED_TIMEOUT),
             )
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()
@@ -523,7 +523,7 @@ async def _generate_answer(query: str, chunks: list[ChunkHit]) -> str | None:
 
     context = "\n\n---\n\n".join(
         f"[출처: {c.book_id}, p.{c.page_start}-{c.page_end}]\n{c.text}"
-        for c in chunks[:5]
+        for c in chunks[:cfg.ANSWER_BASE_CHUNKS_LIMIT]
     )
 
     prompt = (
@@ -542,10 +542,10 @@ async def _generate_answer(query: str, chunks: list[ChunkHit]) -> str | None:
                 json={
                     "model": cfg.LLM_MODEL,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 2048,
-                    "temperature": 0.3,
+                    "max_tokens": cfg.ANSWER_BASE_MAX_TOKENS,
+                    "temperature": cfg.ANSWER_BASE_TEMPERATURE,
                 },
-                timeout=60.0,
+                timeout=float(cfg.ANSWER_BASE_TIMEOUT),
             )
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()

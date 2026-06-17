@@ -18,8 +18,8 @@ from core.config import get_settings
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-RERANKER_MAX_LENGTH = 1024   # 청크가 길 수 있으므로 넉넉하게
-RERANKER_BATCH_SIZE = 16
+RERANKER_MAX_LENGTH = cfg.RERANKER_MAX_LENGTH   # 청크가 길 수 있으므로 넉넉하게
+RERANKER_BATCH_SIZE = cfg.RERANKER_BATCH_SIZE
 
 _tokenizer = None
 _model = None

@@ -26,7 +26,7 @@ async def rewrite_query(query: str, db=None) -> str:
         ],
         **params,
     }
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=cfg.QUERY_REWRITE_TIMEOUT) as client:
         resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"].strip()

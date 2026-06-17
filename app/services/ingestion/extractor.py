@@ -23,7 +23,7 @@ from core.config import get_settings
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-MIN_CHARS_PER_PAGE = 50
+MIN_CHARS_PER_PAGE = cfg.EXTRACT_MIN_CHARS_PER_PAGE
 
 
 def _clean_text(text: str) -> str:
@@ -123,7 +123,7 @@ async def _extract_with_vlm(
 ) -> PageResult:
     import base64
 
-    pix = page.get_pixmap(dpi=300)
+    pix = page.get_pixmap(dpi=cfg.FITZ_DPI)
     img_bytes = pix.tobytes("png")
     img_b64 = base64.b64encode(img_bytes).decode()
 
@@ -143,14 +143,14 @@ async def _extract_with_vlm(
                 ],
             }
         ],
-        "max_tokens": 4096,
-        "temperature": 0.1,
+        "max_tokens": cfg.VLM_MAX_TOKENS,
+        "temperature": cfg.VLM_TEMPERATURE,
     }
 
     resp = await client.post(
         f"{cfg.VLM_BASE_URL}/chat/completions",
         json=payload,
-        timeout=120.0,
+        timeout=float(cfg.VLM_TIMEOUT),
     )
     resp.raise_for_status()
     data = resp.json()

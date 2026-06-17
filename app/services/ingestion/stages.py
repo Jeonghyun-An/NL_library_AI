@@ -27,10 +27,10 @@ from models.section import BookSection
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-SECTION_TARGET_TOKENS = 3000
-SECTION_MAX_TOKENS = 5000
+SECTION_TARGET_TOKENS = cfg.SECTION_TARGET_TOKENS
+SECTION_MAX_TOKENS = cfg.SECTION_MAX_TOKENS
 
-DOWNLOAD_DIR = "/app/data/downloads"
+DOWNLOAD_DIR = cfg.DOWNLOAD_DIR
 
 
 class StageError(Exception):

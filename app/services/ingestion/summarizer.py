@@ -108,7 +108,7 @@ async def summarize_section(
     """섹션 요약 + 테마 키워드 동시 추출. returns (summary, themes)."""
     tpl = get_prompt("section_summary", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(title=book_title, text=section_text)
-    raw = await _chat_completion(system, user, params, timeout=60)
+    raw = await _chat_completion(system, user, params, timeout=get_settings().SUMMARIZER_SECTION_TIMEOUT)
     return _parse_llm_output(tpl, raw)
 
 
@@ -133,7 +133,7 @@ async def generate_book_introduction(
         pub_date=pub_date or "미상",
         section_summaries=combined,
     )
-    raw = await _chat_completion(system, user, params, timeout=120)
+    raw = await _chat_completion(system, user, params, timeout=get_settings().SUMMARIZER_INTRO_TIMEOUT)
     return raw or None
 
 
@@ -151,5 +151,5 @@ async def summarize_book_from_sections(
     system, user, params = tpl.render(
         title=title, author=author, section_summaries=combined,
     )
-    raw = await _chat_completion(system, user, params, timeout=120)
+    raw = await _chat_completion(system, user, params, timeout=get_settings().SUMMARIZER_BOOK_TIMEOUT)
     return _parse_llm_output(tpl, raw)

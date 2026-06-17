@@ -10,10 +10,10 @@ from core.config import get_settings
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-# 126K 중 답변 생성용 여유분을 빼고 컨텍스트에 사용할 토큰 예산
-CONTEXT_BUDGET_TOKENS = 100_000
-# 한 청크당 앞뒤로 확장할 섹션 수
-EXPAND_SECTIONS = 2
+# 답변 생성용 여유분을 빼고 컨텍스트에 사용할 토큰 예산 (env: CONTEXT_BUDGET_TOKENS)
+CONTEXT_BUDGET_TOKENS = cfg.CONTEXT_BUDGET_TOKENS
+# 한 청크당 앞뒤로 확장할 섹션 수 (env: EXPAND_SECTIONS)
+EXPAND_SECTIONS = cfg.EXPAND_SECTIONS
 
 
 def _estimate_tokens(text: str) -> int:
