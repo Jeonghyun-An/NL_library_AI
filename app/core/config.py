@@ -124,6 +124,9 @@ class Settings(BaseSettings):
     SUMMARIZER_SECTION_TIMEOUT: int = 60
     SUMMARIZER_BOOK_TIMEOUT: int = 120
     SUMMARIZER_INTRO_TIMEOUT: int = 120
+    # 도서 요약/소개 입력(섹션요약 묶음) 최대 글자 수 — 컨텍스트 오버플로 방지.
+    # 14000자 ≈ 27k 토큰, + 출력 4096 + 시스템 ≈ 31k < 32768(gemma max-model-len).
+    SUMMARIZER_MAX_INPUT_CHARS: int = 14000
 
     # ── FLUX 표지 생성 ────────────────────────────────
     FLUX_WIDTH: int = 768

@@ -112,6 +112,32 @@ async def summarize_section(
     return _parse_llm_output(tpl, raw)
 
 
+def _combine_sections(section_summaries: list[str]) -> str:
+    """섹션 요약들을 합친다. 상한 초과 시 앞부분만 자르지 않고 책 전체에 걸쳐
+    균등 샘플링하여(앞·중간·뒤 고루) 전체 맥락을 보존한다.
+    """
+    items = [s for s in section_summaries if s]
+    if not items:
+        return ""
+
+    def _join(seq: list[str]) -> str:
+        return "\n\n".join(f"[섹션 {i + 1}] {s}" for i, s in enumerate(seq))
+
+    full = _join(items)
+    cap = get_settings().SUMMARIZER_MAX_INPUT_CHARS
+    if not cap or len(full) <= cap:
+        return full
+
+    # 초과 → 균등 간격으로 섹션 샘플링 (순서 유지). 앞에서 자르면 후반부가 통째로 누락됨.
+    avg = max(1, len(full) // len(items))
+    keep = max(1, cap // avg)
+    if keep >= len(items):
+        return full[:cap]
+    step = len(items) / keep
+    picked = [items[min(len(items) - 1, int(i * step))] for i in range(keep)]
+    return _join(picked)[:cap]  # 최종 안전 가드
+
+
 async def generate_book_introduction(
     title: str,
     author: str,
@@ -122,9 +148,7 @@ async def generate_book_introduction(
     """독자·사서 톤의 도서 소개글 생성. 실패 시 None 반환."""
     if not section_summaries:
         return None
-    combined = "\n\n".join(
-        f"[섹션 {i + 1}] {s}" for i, s in enumerate(section_summaries) if s
-    )
+    combined = _combine_sections(section_summaries)
     tpl = get_prompt("introduction")
     system, user, params = tpl.render(
         title=title,
@@ -144,9 +168,7 @@ async def summarize_book_from_sections(
     doc_type: str = "book",
 ) -> tuple[str, list[str]]:
     """전체 도서 요약 + 테마 키워드 생성. returns (summary, themes)."""
-    combined = "\n\n".join(
-        f"[섹션 {i + 1}] {s}" for i, s in enumerate(section_summaries) if s
-    )
+    combined = _combine_sections(section_summaries)
     tpl = get_prompt("book_summary", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(
         title=title, author=author, section_summaries=combined,
