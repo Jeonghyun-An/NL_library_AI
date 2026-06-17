@@ -295,8 +295,9 @@ services:
       - gemma-3-12b
       - --download-dir
       - /models
+      # 도서 요약은 전체 섹션요약을 입력으로 받아 11k+ 토큰까지 커짐 → 32768 로 여유 확보
       - --max-model-len
-      - "16384"
+      - "32768"
       - --dtype
       - bfloat16
       - --gpu-memory-utilization

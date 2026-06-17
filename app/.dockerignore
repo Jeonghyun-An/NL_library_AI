@@ -9,7 +9,9 @@ venv
 .git
 .gitignore
 pytest_cache
+.pytest_cache
 .mypy_cache
+tests
 uploads
 data
 logs

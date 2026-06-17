@@ -1,6 +1,6 @@
 parser: plain
 params:
-  max_tokens: 5000
+  max_tokens: 4096
   temperature: 0.5
 system: |-
   당신은 공공도서관의 베테랑 사서입니다.

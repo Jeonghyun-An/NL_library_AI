@@ -1,6 +1,6 @@
 parser: plain
 params:
-  max_tokens: 5000
+  max_tokens: 4096
   temperature: 0.1
 system: |-
   당신은 행정·법령 문서 검색 전문가입니다.

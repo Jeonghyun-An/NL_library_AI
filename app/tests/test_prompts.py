@@ -106,7 +106,7 @@ def test_nl_library_prompts_exist_and_render():
     # 단일 프롬프트들
     intro_s, intro_u, intro_p = lib.get("introduction").render(
         title="t", author="a", publisher="p", pub_date="2024", section_summaries="s")
-    assert "베테랑 사서" in intro_s and intro_p.get("max_tokens") == 2048
+    assert "베테랑 사서" in intro_s and intro_p.get("max_tokens") == 4096
 
     cover_s, cover_u, _ = lib.get("cover_prompt").render(
         title="t", author="a", kdc="800", themes="th", introduction="i", summary="s")
