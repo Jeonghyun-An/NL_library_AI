@@ -36,6 +36,16 @@ async def lifespan(app: FastAPI):
         await conn.execute(text(
             "ALTER TABLE library_catalog ADD COLUMN IF NOT EXISTS part_number TEXT"
         ))
+        # doc_type / extra (도메인 분리·doc_type 스칼라) — 기존 DB 자가치유
+        await conn.execute(text(
+            "ALTER TABLE library_catalog ADD COLUMN IF NOT EXISTS doc_type VARCHAR(16)"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE library_catalog ADD COLUMN IF NOT EXISTS extra JSONB NOT NULL DEFAULT '{}'::jsonb"
+        ))
+        await conn.execute(text(
+            "CREATE INDEX IF NOT EXISTS ix_library_catalog_doc_type ON library_catalog (doc_type)"
+        ))
     log.info("DB 테이블 확인 완료")
 
     # 임베딩 모델 로드 (FlagEmbedding)

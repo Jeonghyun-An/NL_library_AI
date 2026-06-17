@@ -1,6 +1,5 @@
 import logging
 import os
-import tempfile
 from fastapi import APIRouter, Depends, File, Header, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
@@ -54,12 +53,18 @@ async def search_papers(
 
 @router.post("/catalog/load")
 async def load_kci_catalog(file: UploadFile = File(...)):
-    """KCI 논문 메타데이터 xlsx 업로드 → Celery 비동기 처리"""
+    """KCI 논문 메타데이터 xlsx 업로드 → Celery 비동기 처리.
+
+    업로드 파일은 fastapi/워커가 공유하는 /app/data 볼륨에 저장해야
+    별도 컨테이너인 워커가 읽을 수 있다 (tempfile은 컨테이너 간 비공유).
+    """
     content = await file.read()
     suffix = os.path.splitext(file.filename or "kci.xlsx")[1] or ".xlsx"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
+    upload_dir = "/app/data/uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    save_path = os.path.join(upload_dir, f"{uuid4().hex}{suffix}")
+    with open(save_path, "wb") as f:
         f.write(content)
-        save_path = f.name
 
     from workers.tasks import load_kci_catalog_xlsx
     task = load_kci_catalog_xlsx.delay(save_path)
