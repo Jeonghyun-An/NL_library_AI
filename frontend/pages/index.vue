@@ -73,6 +73,29 @@
             />
             <template #fallback><div class="ch-placeholder" /></template>
           </ClientOnly>
+
+          <!-- ── 장바구니 (대출 신청한 도서) ── -->
+          <ClientOnly>
+            <div class="cart-block">
+              <div class="cart-head">
+                <span>🛒 장바구니</span>
+                <span class="cart-count">{{ cart.length }}</span>
+              </div>
+              <ul class="cart-list">
+                <li v-for="item in cart" :key="item.book_id" class="cart-item">
+                  <span class="cart-item-title" :title="item.title">{{ item.title }}</span>
+                  <button
+                    class="cart-remove"
+                    title="장바구니에서 빼기"
+                    @click="removeFromCart(item.book_id)"
+                  >✕</button>
+                </li>
+                <li v-if="!cart.length" class="cart-empty">
+                  대출 신청한 도서가 없습니다
+                </li>
+              </ul>
+            </div>
+          </ClientOnly>
         </div>
       </aside>
 
@@ -309,6 +332,7 @@
 import { type Ref } from "vue";
 import { useSearch } from "~/composables/useSearch";
 import { useSearchHistory } from "~/composables/useSearchHistory";
+import { useCart } from "~/composables/useCart";
 import type {
   BookChunkGroup,
   BookSearchResponse,
@@ -318,6 +342,7 @@ import type {
 import type { HistoryEntry } from "~/types/history";
 
 const { history, setHistory, clearHistory } = useSearchHistory();
+const { cart, removeFromCart } = useCart();
 const { loading, error, result, search, reset, generateUUID } = useSearch();
 const config = useRuntimeConfig();
 
@@ -1059,6 +1084,76 @@ function restoreHistory(entry: HistoryEntry) {
 
 .ch-placeholder {
   height: 100%;
+}
+
+/* ── 장바구니 ───────────────────────────────────── */
+.cart-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.cart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 8px;
+}
+.cart-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 11px;
+  border-radius: 10px;
+}
+.cart-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.cart-item-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1f2937;
+}
+.cart-remove {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+}
+.cart-remove:hover {
+  color: #ef4444;
+}
+.cart-empty {
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 6px 2px;
 }
 
 /* ── 트랜지션 ───────────────────────────────────── */

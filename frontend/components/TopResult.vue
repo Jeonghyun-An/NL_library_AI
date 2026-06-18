@@ -170,7 +170,7 @@
         <!-- 액션 버튼 -->
         <div class="action-row">
           <button class="btn-primary" @click="pdfOpen = true">원문 보기</button>
-          <button class="btn-ghost">대출 신청</button>
+          <button class="btn-ghost" @click="requestBorrow">대출 신청</button>
           <button class="btn-chat" @click="chatOpen = !chatOpen">
             <svg
               width="14"
@@ -206,12 +206,23 @@
       :title="book.book_info?.title"
       @close="pdfOpen = false"
     />
+
+    <!-- 대출 신청 완료 팝업 -->
+    <Teleport to="body">
+      <Transition name="borrow-toast">
+        <div v-if="borrowToast" class="borrow-toast">
+          <span class="borrow-toast-icon">✓</span>
+          대출이 신청되었습니다
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { BookChunkGroup } from "~/types/search";
 import { marked } from "marked";
+import { useCart } from "~/composables/useCart";
 
 const props = defineProps<{
   book: BookChunkGroup;
@@ -223,6 +234,17 @@ const props = defineProps<{
 const summaryExpanded = ref(false);
 const chatOpen = ref(false);
 const pdfOpen  = ref(false);
+
+// 대출 신청 → 장바구니 담기 + "대출이 신청되었습니다" 팝업
+const { addToCart } = useCart();
+const borrowToast = ref(false);
+let borrowTimer: ReturnType<typeof setTimeout> | null = null;
+function requestBorrow() {
+  addToCart(props.book);
+  borrowToast.value = true;
+  if (borrowTimer) clearTimeout(borrowTimer);
+  borrowTimer = setTimeout(() => (borrowToast.value = false), 1900);
+}
 const activeTab = ref<"summary" | "introduction">(
   props.book?.book_info?.summary ? "summary" : "introduction",
 );
@@ -645,5 +667,44 @@ const formattedIntroduction = computed(
     width: 120px;
     flex-shrink: 0;
   }
+}
+
+/* 대출 신청 완료 팝업 (toast) */
+.borrow-toast {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.borrow-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #34d399;
+  color: #064e3b;
+  font-size: 12px;
+}
+.borrow-toast-enter-active,
+.borrow-toast-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.borrow-toast-enter-from,
+.borrow-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px);
 }
 </style>
