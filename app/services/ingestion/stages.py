@@ -538,10 +538,16 @@ def run_embed_index(ctx: StageContext) -> dict:
 
 def run_finalize(ctx: StageContext) -> dict:
     """문서 요약·테마·소개글 (+선택적 FLUX 표지) → library_catalog UPDATE + 아티팩트 정리."""
+    from sqlalchemy.orm.attributes import flag_modified
     from services.ingestion.summarizer import (
         summarize_book_from_sections,
         generate_book_introduction,
+        generate_book_plot,
+        generate_read_effect,
     )
+
+    # book/literature/policy만 줄거리·독후 효과 생성. paper는 abstract가 대체.
+    _GENERATE_EXTRA_DOC_TYPES = frozenset({"book", "literature", "policy"})
 
     book_id = ctx.book_id
 
@@ -566,7 +572,7 @@ def run_finalize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
-    book_summary = book_themes = book_introduction = None
+    book_summary = book_themes = book_introduction = book_plot = book_read_effect = None
     if valid_summaries:
         try:
             book_summary, themes_list = run_async(summarize_book_from_sections(
@@ -584,6 +590,23 @@ def run_finalize(ctx: StageContext) -> dict:
             ))
         except Exception as e:
             log.warning(f"[{book_id}] 도서 소개글 생성 실패: {e}")
+
+        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
+            try:
+                book_plot = run_async(generate_book_plot(
+                    title=title, author=author,
+                    section_summaries=valid_summaries, doc_type=doc_type,
+                ))
+            except Exception as e:
+                log.warning(f"[{book_id}] 도서 줄거리 생성 실패: {e}")
+
+            try:
+                book_read_effect = run_async(generate_read_effect(
+                    title=title, author=author,
+                    section_summaries=valid_summaries, doc_type=doc_type,
+                ))
+            except Exception as e:
+                log.warning(f"[{book_id}] 독후 효과 생성 실패: {e}")
 
     # 표지 생성 — 대량 논문 인덱싱에서는 skip_cover=true 로 생략 (썸네일 폴백 사용)
     cover_key = cover_prompt = None
@@ -606,6 +629,13 @@ def run_finalize(ctx: StageContext) -> dict:
             book.summary = book_summary
             book.themes = book_themes
             book.introduction = book_introduction
+            extra = dict(book.extra or {})
+            if book_plot is not None:
+                extra["plot"] = book_plot
+            if book_read_effect is not None:
+                extra["read_effect"] = book_read_effect
+            book.extra = extra
+            flag_modified(book, "extra")
             if cover_key:
                 book.cover_image_key = cover_key
             if cover_prompt:
@@ -613,10 +643,15 @@ def run_finalize(ctx: StageContext) -> dict:
             book.is_embedded = True
             db.commit()
         else:
+            extra: dict = {}
+            if book_plot is not None:
+                extra["plot"] = book_plot
+            if book_read_effect is not None:
+                extra["read_effect"] = book_read_effect
             db.add(Book(
                 cnts_id=book_id, title=book_id,
                 summary=book_summary, themes=book_themes,
-                introduction=book_introduction,
+                introduction=book_introduction, extra=extra,
                 cover_image_key=cover_key, cover_prompt=cover_prompt,
                 is_embedded=True,
             ))
@@ -633,6 +668,8 @@ def run_finalize(ctx: StageContext) -> dict:
 
     return {
         "summary": bool(book_summary),
+        "plot": bool(book_plot),
+        "read_effect": bool(book_read_effect),
         "introduction": bool(book_introduction),
         "cover": bool(cover_key),
     }
