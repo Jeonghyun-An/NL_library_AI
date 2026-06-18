@@ -67,6 +67,51 @@ async def get_status(db: AsyncSession = Depends(get_db)):
     }
 
 
+# ── 줄거리(plot) 백필 ────────────────────────────────────
+@router.post("/backfill/plot")
+async def backfill_plot(
+    limit: int = 500,
+    force: bool = False,
+    db: AsyncSession = Depends(get_db),
+):
+    """plot 미생성(또는 force 시 전체) 임베딩 완료 도서의 줄거리를 백필.
+
+    섹션 요약을 재사용하므로 재추출 없이 LLM 호출만 발생한다.
+    Celery(ingestion 큐)로 비동기 디스패치하고 task_id 를 반환한다.
+    """
+    target = (await db.execute(
+        select(func.count()).select_from(Book)
+        .where(Book.is_embedded == True)  # noqa: E712
+        .where(sa_text("extra->>'plot' IS NULL") if not force else sa_text("TRUE"))
+    )).scalar() or 0
+
+    from workers.tasks import backfill_plot as backfill_plot_task
+    task = backfill_plot_task.delay(limit=limit, force=force)
+    return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
+
+
+# ── 독후 효과(read_effect) 백필 ──────────────────────────
+@router.post("/backfill/read-effect")
+async def backfill_read_effect_api(
+    limit: int = 500,
+    force: bool = False,
+    db: AsyncSession = Depends(get_db),
+):
+    """read_effect 미생성 도서의 독후 효과를 백필.
+
+    섹션 요약을 재사용하므로 재추출 없이 LLM 호출만 발생한다.
+    """
+    target = (await db.execute(
+        select(func.count()).select_from(Book)
+        .where(Book.is_embedded == True)  # noqa: E712
+        .where(sa_text("extra->>'read_effect' IS NULL") if not force else sa_text("TRUE"))
+    )).scalar() or 0
+
+    from workers.tasks import backfill_read_effect as backfill_read_effect_task
+    task = backfill_read_effect_task.delay(limit=limit, force=force)
+    return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
+
+
 # ── 도서 목록 ────────────────────────────────────────────
 @router.get("/books")
 async def list_books(
