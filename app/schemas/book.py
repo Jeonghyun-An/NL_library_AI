@@ -48,6 +48,8 @@ class BookOut(BookBase):
     id:               PyUUID
     record_id:        Optional[str] = None
     summary:          Optional[str] = None
+    plot:             Optional[str] = None
+    read_effect:      Optional[str] = None
     themes:           Optional[str] = None
     introduction:     Optional[str] = None
     cover_image_key:  Optional[str] = None

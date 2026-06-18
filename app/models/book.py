@@ -88,3 +88,11 @@ class Book(Base):
 
     created_at       = Column(DateTime, server_default=func.now())
     updated_at       = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    @property
+    def plot(self) -> str | None:
+        return (self.extra or {}).get("plot")
+
+    @property
+    def read_effect(self) -> str | None:
+        return (self.extra or {}).get("read_effect")
