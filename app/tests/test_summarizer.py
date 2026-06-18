@@ -1,10 +1,14 @@
 """_combine_sections — 입력 상한 + 전체 균등 샘플링 (재귀/앞부분편향 회귀 방지)."""
+import asyncio
+
 from services.ingestion import summarizer
 
 
 class _FakeCfg:
     def __init__(self, cap):
         self.SUMMARIZER_MAX_INPUT_CHARS = cap
+        self.SUMMARIZER_PLOT_TIMEOUT = 120
+        self.SUMMARIZER_READ_EFFECT_TIMEOUT = 120
 
 
 def test_no_truncation_when_under_cap(monkeypatch):
@@ -33,3 +37,83 @@ def test_empty_input(monkeypatch):
     monkeypatch.setattr(summarizer, "get_settings", lambda: _FakeCfg(100))
     assert summarizer._combine_sections([]) == ""
     assert summarizer._combine_sections([None, ""]) == ""
+
+
+# ── generate_book_plot (줄거리 사전 생성) ────────────────────
+class _FakeTpl:
+    parser = "plain"
+    params = {"max_tokens": 1500, "temperature": 0.4}
+
+    def render(self, **kw):
+        return ("sys", f"user::{kw.get('section_summaries', '')}", dict(self.params))
+
+
+def test_generate_book_plot_empty_returns_none(monkeypatch):
+    """섹션 요약이 없으면 LLM 호출 없이 None."""
+    monkeypatch.setattr(summarizer, "get_settings", lambda: _FakeCfg(10000))
+    assert asyncio.run(summarizer.generate_book_plot("제목", "저자", [])) is None
+
+
+def test_generate_book_plot_uses_doc_type_prompt(monkeypatch):
+    """doc_type 별 plot 프롬프트를 조회하고 섹션 요약을 프롬프트에 주입한다."""
+    captured = {}
+
+    def fake_get_prompt(name, doc_type=None):
+        captured["name"] = name
+        captured["doc_type"] = doc_type
+        return _FakeTpl()
+
+    async def fake_chat(system, user, params, timeout):
+        captured["user"] = user
+        captured["timeout"] = timeout
+        return "줄거리 본문"
+
+    monkeypatch.setattr(summarizer, "get_settings", lambda: _FakeCfg(10000))
+    monkeypatch.setattr(summarizer, "_normalize_doc_type", lambda d: d or "book")
+    monkeypatch.setattr(summarizer, "get_prompt", fake_get_prompt)
+    monkeypatch.setattr(summarizer, "_chat_completion", fake_chat)
+
+    out = asyncio.run(summarizer.generate_book_plot(
+        "제목", "저자", ["가나다", "라마바"], doc_type="literature",
+    ))
+    assert out == "줄거리 본문"
+    assert captured["name"] == "plot"
+    assert captured["doc_type"] == "literature"
+    assert captured["timeout"] == 120
+    assert "가나다" in captured["user"]  # 섹션 요약이 프롬프트에 주입됨
+
+
+# ── generate_read_effect (독후 효과 사전 생성) ────────────────
+def test_generate_read_effect_empty_returns_none(monkeypatch):
+    """섹션 요약이 없으면 LLM 호출 없이 None."""
+    monkeypatch.setattr(summarizer, "get_settings", lambda: _FakeCfg(10000))
+    assert asyncio.run(summarizer.generate_read_effect("제목", "저자", [])) is None
+
+
+def test_generate_read_effect_uses_doc_type_prompt(monkeypatch):
+    """doc_type 별 read_effect 프롬프트를 조회하고 섹션 요약을 프롬프트에 주입한다."""
+    captured = {}
+
+    def fake_get_prompt(name, doc_type=None):
+        captured["name"] = name
+        captured["doc_type"] = doc_type
+        return _FakeTpl()
+
+    async def fake_chat(system, user, params, timeout):
+        captured["timeout"] = timeout
+        captured["user"] = user
+        return "독후 효과 본문"
+
+    monkeypatch.setattr(summarizer, "get_settings", lambda: _FakeCfg(10000))
+    monkeypatch.setattr(summarizer, "_normalize_doc_type", lambda d: d or "book")
+    monkeypatch.setattr(summarizer, "get_prompt", fake_get_prompt)
+    monkeypatch.setattr(summarizer, "_chat_completion", fake_chat)
+
+    out = asyncio.run(summarizer.generate_read_effect(
+        "제목", "저자", ["가나다", "라마바"], doc_type="literature",
+    ))
+    assert out == "독후 효과 본문"
+    assert captured["name"] == "read_effect"
+    assert captured["doc_type"] == "literature"
+    assert captured["timeout"] == 120
+    assert "가나다" in captured["user"]

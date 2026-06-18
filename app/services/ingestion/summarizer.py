@@ -161,6 +161,53 @@ async def generate_book_introduction(
     return raw or None
 
 
+async def generate_read_effect(
+    title: str,
+    author: str,
+    section_summaries: list[str],
+    doc_type: str = "book",
+) -> str | None:
+    """독후 효과(read_effect) 생성 — 인덱싱 시 사전 저장용. 실패 시 None 반환.
+
+    doc_type 별 프롬프트(read_effect.{doc_type}.yaml)로 분기한다.
+    """
+    if not section_summaries:
+        return None
+    combined = _combine_sections(section_summaries)
+    tpl = get_prompt("read_effect", _normalize_doc_type(doc_type))
+    system, user, params = tpl.render(
+        title=title,
+        author=author or "미상",
+        section_summaries=combined,
+    )
+    raw = await _chat_completion(system, user, params, timeout=get_settings().SUMMARIZER_READ_EFFECT_TIMEOUT)
+    return raw or None
+
+
+async def generate_book_plot(
+    title: str,
+    author: str,
+    section_summaries: list[str],
+    doc_type: str = "book",
+) -> str | None:
+    """도서 줄거리(plot) 생성 — 인덱싱 시 사전 저장용. 실패 시 None 반환.
+
+    doc_type 별 프롬프트(plot.{doc_type}.yaml)로 분기한다.
+    introduction 과 동일하게 균등 샘플링된 섹션 요약을 입력으로 받는다.
+    """
+    if not section_summaries:
+        return None
+    combined = _combine_sections(section_summaries)
+    tpl = get_prompt("plot", _normalize_doc_type(doc_type))
+    system, user, params = tpl.render(
+        title=title,
+        author=author or "미상",
+        section_summaries=combined,
+    )
+    raw = await _chat_completion(system, user, params, timeout=get_settings().SUMMARIZER_PLOT_TIMEOUT)
+    return raw or None
+
+
 async def summarize_book_from_sections(
     title: str,
     author: str,
