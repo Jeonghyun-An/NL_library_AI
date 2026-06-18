@@ -277,6 +277,138 @@ def process_from_minio(self, book_id: str, minio_key: str):
     return {"book_id": book_id, "task_id": task.id}
 
 
+# ── 4-b. 줄거리(plot) 백필 ───────────────────────────────
+@celery_app.task(name="tasks.backfill_plot", queue="ingestion")
+def backfill_plot(limit: int = 500, force: bool = False):
+    """plot 미생성 도서의 줄거리를 섹션 요약 재사용으로 백필 (재추출 없음).
+
+    force=False(기본): extra->>'plot' IS NULL 인 임베딩 완료 도서만 대상
+    force=True       : 임베딩 완료 도서 전체 재생성
+    paper는 abstract 대체로 생략. 섹션 요약 없는 도서 스킵.
+    """
+    from sqlalchemy import text as sa_text
+    from sqlalchemy.orm.attributes import flag_modified
+    from models.section import BookSection
+    from services.ingestion.stages import run_async
+    from services.ingestion.summarizer import generate_book_plot
+
+    _GENERATE_DOC_TYPES = {"book", "literature", "policy"}
+    db = SyncSessionLocal()
+    done = skipped = failed = 0
+    try:
+        q = db.query(Book).filter(
+            Book.is_embedded == True,  # noqa: E712
+            Book.doc_type.in_(list(_GENERATE_DOC_TYPES)),
+        )
+        if not force:
+            q = q.filter(sa_text("extra->>'plot' IS NULL"))
+        books = q.limit(limit).all()
+        log.info(f"backfill_plot 시작: 대상 {len(books)}권 (force={force})")
+
+        for book in books:
+            rows = (
+                db.query(BookSection.summary)
+                .filter_by(book_id=book.cnts_id)
+                .order_by(BookSection.section_idx)
+                .all()
+            )
+            valid = [r[0] for r in rows if r[0]]
+            if not valid:
+                skipped += 1
+                continue
+            try:
+                plot = run_async(generate_book_plot(
+                    title=book.title or book.cnts_id,
+                    author=book.personal_author or book.corporate_author or "",
+                    section_summaries=valid,
+                    doc_type=book.doc_type or "book",
+                ))
+                if plot:
+                    extra = dict(book.extra or {})
+                    extra["plot"] = plot
+                    book.extra = extra
+                    flag_modified(book, "extra")
+                    db.commit()
+                    done += 1
+                else:
+                    skipped += 1
+            except Exception as e:
+                db.rollback()
+                log.warning(f"[{book.cnts_id}] plot 백필 실패: {e}")
+                failed += 1
+    finally:
+        db.close()
+
+    log.info(f"backfill_plot 완료: done={done}, skipped={skipped}, failed={failed}")
+    return {"done": done, "skipped": skipped, "failed": failed}
+
+
+# ── 4-c. 독후 효과(read_effect) 백필 ────────────────────
+@celery_app.task(name="tasks.backfill_read_effect", queue="ingestion")
+def backfill_read_effect(limit: int = 500, force: bool = False):
+    """read_effect 미생성 도서의 독후 효과를 섹션 요약 재사용으로 백필.
+
+    force=False(기본): extra->>'read_effect' IS NULL 인 임베딩 완료 도서만 대상
+    force=True       : 임베딩 완료 도서 전체 재생성
+    paper는 생략. 섹션 요약 없는 도서 스킵.
+    """
+    from sqlalchemy import text as sa_text
+    from sqlalchemy.orm.attributes import flag_modified
+    from models.section import BookSection
+    from services.ingestion.stages import run_async
+    from services.ingestion.summarizer import generate_read_effect
+
+    _GENERATE_DOC_TYPES = {"book", "literature", "policy"}
+    db = SyncSessionLocal()
+    done = skipped = failed = 0
+    try:
+        q = db.query(Book).filter(
+            Book.is_embedded == True,  # noqa: E712
+            Book.doc_type.in_(list(_GENERATE_DOC_TYPES)),
+        )
+        if not force:
+            q = q.filter(sa_text("extra->>'read_effect' IS NULL"))
+        books = q.limit(limit).all()
+        log.info(f"backfill_read_effect 시작: 대상 {len(books)}권 (force={force})")
+
+        for book in books:
+            rows = (
+                db.query(BookSection.summary)
+                .filter_by(book_id=book.cnts_id)
+                .order_by(BookSection.section_idx)
+                .all()
+            )
+            valid = [r[0] for r in rows if r[0]]
+            if not valid:
+                skipped += 1
+                continue
+            try:
+                read_effect = run_async(generate_read_effect(
+                    title=book.title or book.cnts_id,
+                    author=book.personal_author or book.corporate_author or "",
+                    section_summaries=valid,
+                    doc_type=book.doc_type or "book",
+                ))
+                if read_effect:
+                    extra = dict(book.extra or {})
+                    extra["read_effect"] = read_effect
+                    book.extra = extra
+                    flag_modified(book, "extra")
+                    db.commit()
+                    done += 1
+                else:
+                    skipped += 1
+            except Exception as e:
+                db.rollback()
+                log.warning(f"[{book.cnts_id}] read_effect 백필 실패: {e}")
+                failed += 1
+    finally:
+        db.close()
+
+    log.info(f"backfill_read_effect 완료: done={done}, skipped={skipped}, failed={failed}")
+    return {"done": done, "skipped": skipped, "failed": failed}
+
+
 # ── 5. 배치 잡 레이어 태스크 (workers/job_runtime.py) ─────
 # 단계 태스크·디스패처는 job_runtime 모듈에 정의하고 여기서 로드한다
 import workers.job_runtime  # noqa: E402, F401
