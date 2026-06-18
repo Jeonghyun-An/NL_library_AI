@@ -1,6 +1,6 @@
 # NL-Lib — 국립중앙도서관 의미 기반 검색 시스템
 
-**최종 갱신:** 2026-05-19
+**최종 갱신:** 2026-06-18
 **작성자:** 안정현
 **프로젝트명:** NL-Lib (National Library — Semantic Search)
 
@@ -16,7 +16,7 @@
 | **메타데이터 무시** | 본문 텍스트만 임베딩 → "조달청의 2024년 최신 자료"처럼 구조적 조건은 처리 불가 | MARC/MODS 메타데이터를 **두 레이어**로 분리 활용 (전용 메타 청크 + Milvus 스칼라 필터) |
 | **맥락 없는 청크** | 잘린 문단만 임베딩 → "이 문단이 책의 어떤 맥락인지"가 벡터에 없음 | **Contextual Chunking** — 섹션 테마/요약을 청크 임베딩에 주입 |
 
-이 세 문제를 해결하기 위해 설계한 것이 NL-Lib이다. 본 문서는 2026-05-19 시점의 구현 현황과 앞으로의 개선 과제를 정리한다.
+이 세 문제를 해결하기 위해 설계한 것이 NL-Lib이다. 본 문서는 2026-06-18 시점의 구현 현황과 앞으로의 개선 과제를 정리한다.
 
 ---
 
@@ -72,9 +72,9 @@ _BOOK_EXPR  = 'book_id not like "KCI_FI%"'
 
 이를 위해 **계층적 요약 파이프라인**을 먼저 수행:
 
-1. 섹션(3000~5000토큰) → LLM 섹션 요약 + 테마 키워드 동시 추출 (`asyncio.Semaphore(8)` 병렬)
+1. 섹션(3000~5000토큰) → LLM 섹션 요약 + 테마 키워드 동시 추출 (`LLM_SECTION_CONCURRENCY` 병렬)
 2. 섹션의 테마·요약을 청크 임베딩 prefix로 활용
-3. 전체 섹션 요약 합산 → LLM 도서 요약 + 도서 테마 (126K 컨텍스트 1회 호출)
+3. 전체 섹션 요약 합산 → LLM 도서 요약 + 도서 테마 (1회 호출). 합산 길이가 상한(`SUMMARIZER_MAX_INPUT_CHARS`, 기본 14000자)을 넘으면 앞부분만 자르지 않고 **책 전체에 걸쳐 균등 샘플링**하여 컨텍스트 오버플로를 방지한다.
 
 ### 1.4 다중 매칭 부스팅
 
@@ -155,7 +155,7 @@ Celery Task: process_book_file
   │
   ├── ③ 섹션 분할 (3000~5000 토큰) → book_sections 저장
   │
-  ├── ③-b 섹션별 요약 + 테마 키워드 병렬 생성 (asyncio.Semaphore(8))
+  ├── ③-b 섹션별 요약 + 테마 키워드 병렬 생성 (LLM_SECTION_CONCURRENCY)
   │       문서 유형별 특화 프롬프트, SUMMARY: / THEMES: 구조화 출력
   │       → section.summary, section.themes 저장
   │
@@ -182,8 +182,8 @@ Celery Task: process_book_file
 ```
 사용자: "기획예산처 2024년 이후 보고서 찾아줘"
   ↓
-① [병렬] 쿼리 재작성  (Gemma 4) — 의미 확장
-   [병렬] 메타 필터 추출 (Gemma 4) — pub_year_from=2024, sort_by=None
+① [병렬] 쿼리 재작성  (Gemma 3) — 의미 확장
+   [병렬] 메타 필터 추출 (Gemma 3) — pub_year_from=2024, sort_by=None
    → Milvus expression 조립 (doc_scope + 메타 필터)
   ↓
 ② BGE-M3 → Dense + Sparse 동시 생성 (is_query=True)
@@ -207,7 +207,7 @@ Celery Task: process_book_file
 
 | 구분 | 기술 | 역할 |
 | --- | --- | --- |
-| **LLM** | Gemma 4 E4B (vLLM, 126K ctx) | 섹션·도서 요약, 쿼리 재작성, 메타 필터 추출, 추천 이유, 도서 대화, 메타 자동추출, 표지 프롬프트 |
+| **LLM** | Gemma 3 12B (vLLM, 32K ctx) | 섹션·도서 요약, 쿼리 재작성, 메타 필터 추출, 추천 이유, 도서 대화, 메타 자동추출, 표지 프롬프트 |
 | **VLM** | Qwen3-VL-8B (vLLM, max-model-len 32768) | 스캔본/다이어그램 페이지 보완 추출 |
 | **Embedding** | BAAI/bge-m3 (BGEM3FlagModel) | Dense(1024차원) + Sparse 동시 |
 | **Reranker** | jinaai/jina-reranker-v2 | Cross-Encoder 리랭킹 (8K) |
@@ -294,7 +294,7 @@ figures/{book_id}/p{page}_i{idx}.jpg     — 그림 추출본
 nl-lib/
 ├── docker-compose.yml
 ├── migrate_add_KCI.sql                  # KCI 논문 컬럼 마이그레이션
-├── infra/vllm/Dockerfile                # 커스텀 vLLM (Gemma 4 지원)
+├── infra/vllm/Dockerfile                # 커스텀 vLLM 이미지 (gemma 서비스용)
 │
 ├── app/                                  # FastAPI 백엔드
 │   ├── main.py
@@ -336,11 +336,13 @@ nl-lib/
 │
 └── frontend/                             # Nuxt 3
     ├── pages/
-    │   ├── index.vue                     # 도서 검색 (세그먼티드 토글로 논문 이동)
+    │   ├── index.vue                     # 도서 검색 (세그먼티드 토글로 논문 이동) + 장바구니 패널
     │   └── papers.vue                    # 논문 검색 (자료유형/연도/학술지/언어 필터)
+    ├── composables/
+    │   └── useCart.ts                    # 장바구니 상태 (임시) — 담기/제거/목록
     └── components/
         ├── SearchInput.vue
-        ├── TopResult.vue                 # Top 1 도서 + 추천이유 + 대화 + PDF 뷰어
+        ├── TopResult.vue                 # Top 1 도서 + 추천이유 + 대화 + PDF 뷰어 + 장바구니 담기
         ├── BookCard.vue                  # 추천 도서 카드
         ├── BookCover.vue                 # 표지 (FLUX → 썸네일 폴백)
         ├── BookChat.vue                  # 도서 단위 RAG 대화창
@@ -409,6 +411,7 @@ nl-lib/
 | milvus | milvusdb/milvus:v2.4.6 | - | 벡터 DB |
 | postgres | postgres:16-alpine | 15432 | RDB |
 | redis | redis:7-alpine | 16379 | Celery broker/backend |
+| gemma | vllm/vllm-openai (커스텀) | 18080 | Gemma 3 12B (텍스트 LLM) — `--max-model-len 32768` |
 | vllm | vllm/vllm-openai:latest-cu130 | 18081 | Qwen3-VL-8B (VLM) — `--max-model-len 32768` |
 | flux | landsoftdocker/nl-lib-flux:latest | 18090 | FLUX.1-dev 표지 생성 |
 | fastapi | landsoftdocker/nl-lib-fastapi:latest | 18002 | API |
@@ -416,7 +419,7 @@ nl-lib/
 | nuxt | landsoftdocker/nl-lib-nuxt:latest | - | 프론트 |
 | gateway | nginx:alpine | 92 | 라우팅 |
 
-> 외부 스택의 Gemma 4 LLM 서버를 `host.docker.internal:18080`으로 사용 (텍스트 LLM은 본 스택에서 분리).
+> 텍스트 LLM(Gemma 3 12B)을 본 스택의 `gemma` 서비스로 이관 (`LLM_BASE_URL=http://gemma:8000/v1`). 개발 환경에서는 `host.docker.internal:18080` 외부 서버로 분리 가능 (`core/config.py` 기본값).
 > PaddleOCR은 비활성화 — OpenDataLoader + VLM 조합으로 대체.
 
 ### 7.2 GPU 메모리 현황 (H200 140GB, 대략치)
@@ -427,8 +430,8 @@ nl-lib/
 | FLUX.1-dev | ~20GB |
 | nl-lib FastAPI (BGE-M3 + Jina) | ~2.4GB |
 | nl-lib Celery (BGE-M3 + Jina) | ~2.4GB |
-| 외부 Gemma 4 스택 | ~22GB |
-| **합계** | **~70GB / 143GB** |
+| Gemma 3 12B (vLLM) | ~24GB |
+| **합계** | **~72GB / 143GB** |
 
 ---
 
@@ -557,6 +560,9 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 - ✅ **재인덱싱 시 멱등성** (2026-05-19) — `library_catalog.ingest_state` 컬럼 추가 (`pending`/`processing`/`embedded`/`failed`/`canceled`). 진입·완료·실패·취소 시점에 상태 전이 + 시작/종료 시각·에러 사유·source MinIO key 기록.
 - ✅ **태스크 취소·재시도 API** (2026-05-19) — `POST /api/books/ingest/{task_id}/cancel` (Celery revoke SIGTERM + 락 강제 해제 + 상태=canceled), `POST /api/books/{cnts_id}/retry` (저장된 `ingest_source_key` 로 재디스패치, processing 중이면 409), `GET /api/books/{cnts_id}/ingest-status` (폴링용).
 - ✅ **DB 마이그레이션 관리** (2026-05-19) — Alembic 도입 (`app/alembic.ini`, `app/alembic/`). `0001_baseline` (no-op 기준점) + `0002_add_ingest_state` (신규 컬럼). 운영 절차는 §8.5 참조.
+- ✅ **요약 컨텍스트 오버플로 방지** (2026-06-18) — 도서 요약/소개 입력이 `SUMMARIZER_MAX_INPUT_CHARS`(기본 14000자)를 넘으면 앞부분 절단 대신 **균등 샘플링**(앞·중간·뒤 고루)으로 전체 맥락 보존. `_combine_sections` + `test_summarizer.py` 회귀 테스트.
+- ✅ **상수 환경변수화** (2026-06-18) — 하드코딩 상수를 `core/config.py` Settings + `.env.example` 로 외부화 (검색 배수·요약 타임아웃·Milvus·FLUX·배치/락 등). 배포는 docker-compose env / Portainer 스택 env 우선.
+- ✅ **텍스트 LLM 스택 내 이관** (2026-06-18) — Gemma 3 12B 를 외부 서버에서 본 compose 스택의 `gemma` 서비스로 이관. `LLM_BASE_URL`로 외부 분리도 유지.
 - **VLM 400 재발 방지** — 이미지 크기 가드(1568px / JPEG q85) 가 린터 변경으로 되돌아간 적 있음. 회귀 방지 테스트 + 환경변수로 DPI/해상도 외부화.
 - **`process_book_file` 멱등성 깊이 확장** — Milvus `delete(book_id == X)` 는 들어가 있지만, `book_sections` / `book_figures` 도 동일하게 인덱싱 시작부에서 정리해야 부분 잔류 방지. 현재는 sections 만 정리됨.
 
@@ -570,6 +576,10 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 
 ### 10.3 사용자 경험
 
+- **요약 활용 콘텐츠 확장 (계획)** — 저장된 요약·섹션 데이터를 활용해 검색 질의에 대한 **① 추천 이유 ② 읽은 후 효과 ③ 줄거리**를 함께 표출. 줄거리(`plot`)는 인덱싱 시 사전 생성·저장, 효과·추천이유는 질의 시 실시간 생성(하이브리드). 설계 상세는 별도 계획 문서 참조.
+- **다중 도서 큐레이션 (계획)** — 한 권이 아닌 **최대 3권**의 요약·테마·줄거리를 한 번의 LLM 호출로 묶어 컬렉션 소개문 + 책별 추천 한 줄(혜택 문구형) 생성. `POST /api/books/curate`.
+- **"내 상황에 맞는 책 추천" 시나리오 (계획)** — 미리 지정한 시나리오(위로가 필요할 때 / 심리적 단단함이 필요할 때 / 늦은 밤 잠이 오지 않을 때 / 흥미진진한 역사 등) 버튼 클릭 → 고정 후보군 또는 동적 검색으로 확보한 후보에서 AI가 3권 큐레이션. 시나리오 정의는 우선 설정 파일(YAML), 추후 DB화. `GET /api/scenarios`, `POST /api/scenarios/{key}/recommend`.
+- **장바구니 (임시 도입, 2026-06-18)** — 관심 도서 담기/목록 (`composables/useCart.ts`). 현재 클라이언트 상태만 유지하는 임시 구현 — 영속화·세션 동기화는 후속 과제.
 - **도서 상세 페이지** — 현재 검색 결과에서 도서별 상세 뷰가 없음. 섹션 목차, 그림 갤러리, 인용 청크 미리보기 페이지 추가.
 - **논문 상세 페이지** — papers.vue도 동일하게 인용 정보(`kci_citations`, `wos_citations`) 강조 페이지 필요.
 - **대용량 결과 가상화** — 300건 이상 결과 시 페이지 끊김. Virtual scrolling (`vue-virtual-scroller`) 도입.
@@ -592,7 +602,6 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 
 ### 10.6 모델·인프라
 
-- **LLM 자체 호스팅 통합** — 현재 Gemma 4 LLM이 외부 스택(host.docker.internal). 본 스택으로 통합해 운영 단순화.
 - **Reranker GPU 분리** — FastAPI + Celery 양쪽에서 Reranker 로드되어 VRAM 중복. 별도 reranker 서비스 컨테이너 분리.
 - **MinIO → S3 호환 마이그레이션** — 클라우드 이전 대비 endpoint·credential 외부화.
 - **PostgreSQL 백업 자동화** — 현재 미설정. `pg_dump` cron + MinIO 업로드.
@@ -601,7 +610,7 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 
 ## 11. 참고 자료
 
-- Gemma 4 E4B: <https://huggingface.co/google/gemma-4-E4B-it>
+- Gemma 3 12B: <https://huggingface.co/google/gemma-3-12b-it>
 - Qwen3-VL: <https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct>
 - BGE-M3: <https://huggingface.co/BAAI/bge-m3>
 - Jina Reranker v2: <https://huggingface.co/jinaai/jina-reranker-v2-base-multilingual>
