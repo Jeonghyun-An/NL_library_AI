@@ -38,7 +38,11 @@
       <button class="icon-btn" title="닫기" @click="$emit('close')">✕</button>
     </div>
 
-    <div class="messages-wrap" :class="{ expanded }" ref="messagesEl">
+    <div
+      class="messages-wrap scrollbar-zinc"
+      :class="{ expanded }"
+      ref="messagesEl"
+    >
       <div v-if="messages.length === 0" class="empty-hint">
         책의 내용에 대해 무엇이든 질문해보세요.
       </div>
@@ -67,7 +71,10 @@
                 }}
               </span>
             </div>
-            <div v-if="msg.pinnedChip !== undefined" class="chunk-preview">
+            <div
+              v-if="msg.pinnedChip !== undefined"
+              class="chunk-preview scrollbar-zinc"
+            >
               {{ msg.sources?.[msg.pinnedChip]?.text }}
             </div>
           </div>

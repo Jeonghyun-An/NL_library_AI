@@ -51,7 +51,7 @@
           </Transition>
         </button>
 
-        <div v-show="leftOpen" class="sidebar-body">
+        <div v-show="leftOpen" class="sidebar-body scrollbar-zinc">
           <template v-if="hasResults">
             <div v-if="activeFilterCount > 0" class="facet-clear-row">
               <button class="facets-clear" @click="clearFilters">

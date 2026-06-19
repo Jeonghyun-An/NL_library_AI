@@ -38,7 +38,7 @@
       <p>검색 기록이 없습니다</p>
     </div>
 
-    <ul v-else class="ch-list">
+    <ul v-else class="ch-list scrollbar-zinc">
       <li
         v-for="entry in history"
         :key="entry.id"

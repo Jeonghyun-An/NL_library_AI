@@ -21,7 +21,7 @@
       <p>검색 결과가 표시됩니다</p>
     </div>
 
-    <div v-else class="ca-list">
+    <div v-else class="ca-list scrollbar-zinc">
       <div v-for="group in grouped" :key="group.category" class="ca-item">
         <!-- 아코디언 헤더 -->
         <button

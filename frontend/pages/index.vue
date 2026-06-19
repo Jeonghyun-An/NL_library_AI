@@ -63,7 +63,7 @@
           </Transition>
         </button>
 
-        <div v-show="leftOpen" class="sidebar-body">
+        <div v-show="leftOpen" class="sidebar-body scrollbar-zinc">
           <ClientOnly>
             <ChatHistory
               :history="history"
@@ -83,12 +83,16 @@
               </div>
               <ul class="cart-list">
                 <li v-for="item in cart" :key="item.book_id" class="cart-item">
-                  <span class="cart-item-title" :title="item.title">{{ item.title }}</span>
+                  <span class="cart-item-title" :title="item.title">{{
+                    item.title
+                  }}</span>
                   <button
                     class="cart-remove"
                     title="장바구니에서 빼기"
                     @click="removeFromCart(item.book_id)"
-                  >✕</button>
+                  >
+                    ✕
+                  </button>
                 </li>
                 <li v-if="!cart.length" class="cart-empty">
                   대출 신청한 도서가 없습니다
@@ -320,7 +324,7 @@
           </svg>
         </button>
 
-        <div v-show="rightOpen" class="sidebar-body">
+        <div v-show="rightOpen" class="sidebar-body scrollbar-zinc">
           <CategoryAccordion :books="bookResult?.books ?? []" />
         </div>
       </aside>
@@ -581,7 +585,8 @@ function restoreHistory(entry: HistoryEntry) {
 <style scoped>
 /* ── 전체 페이지 ─────────────────────────────────── */
 .page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--bg);
 }
 

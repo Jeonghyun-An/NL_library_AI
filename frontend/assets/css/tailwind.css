@@ -30,5 +30,24 @@
 /* 특정 요소에서 scrollbar-zinc 클래스로 덮어쓰기 가능 */
 .scrollbar-zinc {
   scrollbar-width: thin;
-  scrollbar-color: #e0e0e0 transparent;
+  scrollbar-color: #e0e0e0 transparent; /* zinc-200 */
+}
+.scrollbar-zinc::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.scrollbar-zinc::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-zinc::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0; /* zinc-200 */
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+.scrollbar-zinc::-webkit-scrollbar-thumb:hover {
+  background-color: #d4d4d8; /* zinc-300 */
+}
+.scrollbar-zinc::-webkit-scrollbar-corner {
+  background: transparent;
 }
