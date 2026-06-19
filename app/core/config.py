@@ -159,6 +159,7 @@ class Settings(BaseSettings):
     REASON_MAX_TOKENS: int = 650
     REASON_TEMPERATURE: float = 0.4
     REASON_TIMEOUT: int = 60
+    RECOMMENDATION_MAX_TOKENS: int = 1200  # 추천이유(~650) + 독후효과(~400) + 여유
     ANSWER_EXTENDED_MAX_TOKENS: int = 4096
     ANSWER_EXTENDED_TEMPERATURE: float = 0.3
     ANSWER_EXTENDED_TIMEOUT: int = 120

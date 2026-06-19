@@ -19,6 +19,8 @@ from typing import AsyncGenerator
 import httpx
 
 from core.config import get_settings
+from services.prompts import get_prompt
+from services.search.sse_helpers import process_reason_deltas
 from services.search.query_rewriter import rewrite_query
 from services.search.metadata_filter import extract_metadata_filter, MetadataFilter
 from services.search.reranker import rerank as rerank_docs
@@ -352,10 +354,12 @@ async def stream_book_reason(
             meta_lines.append(f"키워드: {book.keyword}")
     book_meta = "\n".join(meta_lines)
 
-    # ── 컨텍스트 블록 (요약 + 매칭 구절) ─────────────────
+    # ── 컨텍스트 블록 (요약 + 줄거리 + 매칭 구절) ────────
     context_parts = []
     if book and book.summary:
         context_parts.append(f"[도서 요약]\n{book.summary}")
+    if book and book.plot:
+        context_parts.append(f"[도서 줄거리]\n{book.plot}")
     if chunk_texts:
         chunks_block = "\n\n".join(
             f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:cfg.REASON_CHUNKS_DISPLAY_LIMIT])
@@ -388,23 +392,13 @@ async def stream_book_reason(
         )
     )
 
-    system_message = (
-        "당신은 도서관의 AI 사서입니다.\n\n"
-        f"{kw_instruction}"
-        "규칙:\n"
-        "- 도서 요약·매칭 구절에서 구체적 근거를 찾아 독서 의도와 연결하세요.\n"
-        "- 제목·저자·출판 정보는 반복하지 마세요.\n"
-        "- 반드시 연결점을 찾으세요. '관련 없습니다' 또는 사과 표현은 절대 쓰지 마세요.\n"
-        "  내용이 간접적이더라도 더 넓은 맥락에서 독서 의도와 연결하세요.\n"
-        "- 도서관 사서가 직접 추천하듯 자연스럽고 간결한 어조로 3~4문장으로 작성하세요."
-    )
-
-    user_message = (
-        f"독서 의도 (사용자가 찾는 것): {intent}\n"
-        f"원본 질의: {query}\n\n"
-        f"도서 정보:\n{book_meta}\n\n"
-        f"{context_text}\n\n"
-        "위 독서 의도를 기준으로, 이 도서가 어떤 측면에서 그 요구를 충족하는지 추천 이유를 작성해주세요."
+    tpl = get_prompt("recommendation")
+    system_message, user_message, params = tpl.render(
+        kw_instruction=kw_instruction,
+        intent=intent,
+        query=query,
+        book_meta=book_meta,
+        context_text=context_text,
     )
 
     try:
@@ -418,53 +412,29 @@ async def stream_book_reason(
                         {"role": "system", "content": system_message},
                         {"role": "user",   "content": user_message},
                     ],
-                    "max_tokens": cfg.REASON_MAX_TOKENS,
-                    "temperature": cfg.REASON_TEMPERATURE,
+                    "max_tokens": cfg.RECOMMENDATION_MAX_TOKENS,
+                    "temperature": params.get("temperature", cfg.REASON_TEMPERATURE),
                     "stream": True,
                 },
                 timeout=float(cfg.REASON_TIMEOUT),
             ) as resp:
-                # MARC 키워드가 없으면 첫 줄에서 #KW: 파싱
-                line_buf = ""
-                kw_parsed = bool(marc_keywords)
-
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if not delta:
+                async def _delta_gen():
+                    async for line in resp.aiter_lines():
+                        if not line.startswith("data: "):
                             continue
+                        data = line[6:]
+                        if data.strip() == "[DONE]":
+                            return
+                        try:
+                            chunk = json.loads(data)
+                            delta = chunk["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                yield delta
+                        except Exception:
+                            pass
 
-                        if kw_parsed:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                        else:
-                            # 첫 줄 버퍼링 — \n 나오면 #KW: 파싱 시도
-                            line_buf += delta
-                            if "\n" in line_buf:
-                                first, rest = line_buf.split("\n", 1)
-                                first = first.strip()
-                                if first.startswith("#KW:"):
-                                    kws = [k.strip() for k in first[4:].split(",") if k.strip()]
-                                    if kws:
-                                        yield f"data: {json.dumps({'keywords': kws[:cfg.KEYWORDS_MAX_COUNT]}, ensure_ascii=False)}\n\n"
-                                elif first:
-                                    first_with_newline = first + "\n"
-                                    yield f"data: {json.dumps({'text': first_with_newline}, ensure_ascii=False)}\n\n"
-                                kw_parsed = True
-                                line_buf = ""
-                                if rest:
-                                    yield f"data: {json.dumps({'text': rest}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
-
-                # 버퍼에 남은 내용 flush
-                if not kw_parsed and line_buf:
-                    yield f"data: {json.dumps({'text': line_buf}, ensure_ascii=False)}\n\n"
+                async for event in process_reason_deltas(_delta_gen(), marc_keywords):
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
     except Exception as e:
         log.error(f"[{book_id}] 추천 이유 스트리밍 실패: {e}")
