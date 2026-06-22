@@ -160,6 +160,12 @@ class Settings(BaseSettings):
     REASON_TEMPERATURE: float = 0.4
     REASON_TIMEOUT: int = 60
     RECOMMENDATION_MAX_TOKENS: int = 1200  # 추천이유(~650) + 독후효과(~400) + 여유
+
+    # ── 큐레이션 리포트 LLM ────────────────────────────
+    CURATION_TOP_K: int = 3
+    CURATION_MAX_TOKENS: int = 1200
+    CURATION_TEMPERATURE: float = 0.3
+    CURATION_TIMEOUT: int = 60
     ANSWER_EXTENDED_MAX_TOKENS: int = 4096
     ANSWER_EXTENDED_TEMPERATURE: float = 0.3
     ANSWER_EXTENDED_TIMEOUT: int = 120

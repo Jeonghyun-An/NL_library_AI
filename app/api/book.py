@@ -20,6 +20,9 @@ from schemas.book import (
     TaskStatusOut,
     ReasonStreamRequest,
     BookChatRequest,
+    CurationRequest,
+    CurationItem,
+    CurationResponse,
 )
 from repositories.book import BookRepository
 from services.search.pipeline import search
@@ -555,6 +558,42 @@ async def compare_pdf_extraction(
 
 
 # ── 추천 이유 스트리밍 ───────────────────────────────────
+@router.post("/curate", response_model=CurationResponse)
+async def curate_books_api(
+    req: CurationRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """1~3권 도서 큐레이션 리포트 생성"""
+    from services.search.curator import curate_books as _curate_books
+
+    if len(req.book_ids) > cfg.CURATION_TOP_K:
+        raise HTTPException(400, f"최대 {cfg.CURATION_TOP_K}권까지 가능합니다")
+
+    repo = BookRepository(db)
+    book_map = await repo.get_by_cnts_ids(req.book_ids)
+
+    if not book_map:
+        raise HTTPException(404, "도서를 찾을 수 없습니다")
+
+    ordered_books = [book_map[bid] for bid in req.book_ids if bid in book_map]
+    score_map = dict(zip(req.book_ids, req.scores)) if req.scores else {}
+    intent = req.rewritten_query or req.query
+
+    result = await _curate_books(intent, req.query, ordered_books)
+
+    items = [
+        CurationItem(
+            book_id=item["book_id"],
+            book_info=book_map.get(item["book_id"]),
+            reason=item.get("reason", ""),
+            score=score_map.get(item["book_id"]),
+        )
+        for item in result.get("items", [])
+    ]
+
+    return CurationResponse(intro=result.get("intro", ""), items=items)
+
+
 @router.post("/reason/stream")
 async def stream_reason(
     req: ReasonStreamRequest,

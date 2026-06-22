@@ -178,6 +178,26 @@ class ReasonStreamRequest(BaseModel):
     rewritten_query: str = ""
 
 
+# ── 큐레이션 ─────────────────────────────────────────────
+class CurationRequest(BaseModel):
+    query:           str
+    book_ids:        list[str] = Field(..., min_length=1, max_length=3)
+    scores:          list[float] = []   # book_ids 순서 대응 검색 점수 (선택)
+    rewritten_query: str = ""
+
+
+class CurationItem(BaseModel):
+    book_id:   str
+    book_info: Optional[BookOut] = None
+    reason:    str
+    score:     Optional[float] = None
+
+
+class CurationResponse(BaseModel):
+    intro: str
+    items: list[CurationItem]
+
+
 # ── 책 심층 대화 ─────────────────────────────────────────────
 class ChatMessage(BaseModel):
     role:    str  # "user" | "assistant"

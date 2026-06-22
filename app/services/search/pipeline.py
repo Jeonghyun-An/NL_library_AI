@@ -21,6 +21,7 @@ import httpx
 from core.config import get_settings
 from services.prompts import get_prompt
 from services.search.sse_helpers import process_reason_deltas
+from services.search.curator import curate_books, _parse_curation_result
 from services.search.query_rewriter import rewrite_query
 from services.search.metadata_filter import extract_metadata_filter, MetadataFilter
 from services.search.reranker import rerank as rerank_docs
