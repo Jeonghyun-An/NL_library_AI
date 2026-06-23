@@ -198,6 +198,25 @@ class CurationResponse(BaseModel):
     items: list[CurationItem]
 
 
+# ── 시나리오 추천 ─────────────────────────────────────────
+class ScenarioRequest(BaseModel):
+    concern: str = Field(..., min_length=1, max_length=500,
+                         description="독자의 고민·상황·기분을 자유롭게 입력")
+    top_k: int = Field(default=3, ge=1, le=5)
+
+
+class ScenarioBook(BaseModel):
+    book_id:   str
+    book_info: Optional[BookOut] = None
+    reason:    str    # 짧은 태그라인
+    quote:     str    # 고민에 응답하는 감성 인용구
+
+
+class ScenarioResponse(BaseModel):
+    concern: str
+    books:   list[ScenarioBook]
+
+
 # ── 책 심층 대화 ─────────────────────────────────────────────
 class ChatMessage(BaseModel):
     role:    str  # "user" | "assistant"

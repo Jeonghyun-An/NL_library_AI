@@ -9,6 +9,7 @@ from api.health import router as health_router
 from api.admin import router as admin_router
 from api.paper import router as paper_router
 from api.ingest_jobs import router as ingest_jobs_router
+from api.scenario import router as scenario_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -81,3 +82,4 @@ app.include_router(book_router)
 app.include_router(admin_router)
 app.include_router(paper_router)
 app.include_router(ingest_jobs_router)
+app.include_router(scenario_router)
