@@ -177,8 +177,7 @@ def build_manifest(
         matched_rows.append({
             "book_id": book_id,
             "file": str(path),
-            # 평탄 키 — 서버에서 `mc mirror pdf/ → originals/` 로 올린 키와 일치
-            "object_key": f"originals/{book_id}.pdf",
+            "object_key": f"originals/{book_id}/{book_id}.pdf",
             "size": size,
             "title": meta[book_id]["title"],
         })
