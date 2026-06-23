@@ -122,6 +122,72 @@ def test_empty_stream():
     assert events == []
 
 
+# ── 섹션 라벨 제거 (LLM이 [추천 이유]/[읽고 난 후]를 본문에 찍는 경우) ──
+
+def test_strips_bracket_label_in_text():
+    """본문 맨 앞 '[추천 이유]' 라벨이 화면에 노출되지 않는다."""
+    chunks = ["#KW: A\n", "[추천 이유]\n", "이 책은 좋은 책입니다."]
+    events = asyncio.run(_collect(process_reason_deltas(_make_deltas(chunks), [])))
+    all_text = "".join(e.get("text", "") for e in events)
+    assert "[추천 이유]" not in all_text
+    assert "추천 이유]" not in all_text
+    assert "이 책은 좋은 책입니다." in all_text
+
+
+def test_strips_bracket_label_in_effect():
+    """독후효과 섹션 맨 앞 '[읽고 난 후]' 라벨도 제거된다."""
+    chunks = [
+        "#KW: A\n",
+        "추천 본문입니다.",
+        "\n" + EFFECT_DELIM + "\n",
+        "[읽고 난 후]\n",
+        "이 책을 읽으면 성장합니다.",
+    ]
+    events = asyncio.run(_collect(process_reason_deltas(_make_deltas(chunks), [])))
+    all_effect = "".join(e.get("effect", "") for e in events)
+    assert "[읽고 난 후]" not in all_effect
+    assert "이 책을 읽으면 성장합니다." in all_effect
+
+
+def test_strips_colon_label_inline():
+    """'추천 이유: 본문...' 처럼 콜론 라벨 + 같은 줄 본문도 제거 (사용자 실제 케이스)."""
+    chunks = ["#KW: A\n", "추천 이유: ", "이 책은 운명적인 만남을 그립니다."]
+    events = asyncio.run(_collect(process_reason_deltas(_make_deltas(chunks), [])))
+    all_text = "".join(e.get("text", "") for e in events)
+    assert "추천 이유:" not in all_text
+    assert "이 책은 운명적인 만남을 그립니다." in all_text
+
+
+def test_colon_label_no_internal_newline_streams():
+    """콜론 라벨 뒤 본문이 개행 없이 길게 와도, 라벨만 떼고 본문은 스트리밍된다."""
+    chunks = ["추천 이유: ", "첫 문장입니다. ", "둘째 문장입니다."]
+    events = asyncio.run(
+        _collect(process_reason_deltas(_make_deltas(chunks), ["키워드"]))  # MARC kw → 바로 text
+    )
+    all_text = "".join(e.get("text", "") for e in events)
+    assert "추천 이유:" not in all_text
+    assert "첫 문장입니다." in all_text
+    # 라벨 제거 후 본문이 한 번에 몰리지 않고 2회 이상 나눠 emit (스트리밍 유지)
+    assert sum(1 for e in events if "text" in e) >= 2
+
+
+def test_label_split_across_deltas_stripped():
+    """라벨이 여러 델타에 쪼개져 와도 제거된다."""
+    chunks = ["#KW: A\n", "[추", "천 이유]", "\n실제 본문 시작."]
+    events = asyncio.run(_collect(process_reason_deltas(_make_deltas(chunks), [])))
+    all_text = "".join(e.get("text", "") for e in events)
+    assert "추천 이유]" not in all_text
+    assert "실제 본문 시작." in all_text
+
+
+def test_body_starting_with_label_words_not_stripped():
+    """'추천 이유' 로 시작하지만 라벨이 아닌 정상 본문은 보존된다 (콜론·대괄호 없음)."""
+    chunks = ["#KW: A\n", "추천 이유는 분명합니다.\n이 책은 깊이가 있습니다."]
+    events = asyncio.run(_collect(process_reason_deltas(_make_deltas(chunks), [])))
+    all_text = "".join(e.get("text", "") for e in events)
+    assert "추천 이유는 분명합니다." in all_text
+
+
 # ── 텍스트 완결성 ─────────────────────────────────────────────────
 
 def test_text_before_and_after_delimiter_complete():

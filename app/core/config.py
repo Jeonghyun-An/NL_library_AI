@@ -159,7 +159,7 @@ class Settings(BaseSettings):
     REASON_MAX_TOKENS: int = 650
     REASON_TEMPERATURE: float = 0.4
     REASON_TIMEOUT: int = 60
-    RECOMMENDATION_MAX_TOKENS: int = 1200  # 추천이유(~650) + 독후효과(~400) + 여유
+    RECOMMENDATION_MAX_TOKENS: int = 1500  # 추천이유(5~7문장) + 독후효과(3~4문장) + 여유
 
     # ── 큐레이션 리포트 LLM ────────────────────────────
     CURATION_TOP_K: int = 3
