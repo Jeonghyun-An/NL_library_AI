@@ -6,6 +6,7 @@ __pycache__
 .venv
 venv
 .env
+.env.example
 .git
 .gitignore
 pytest_cache
@@ -20,3 +21,4 @@ node_modules
 .nuxt
 .output
 dist
+/docs

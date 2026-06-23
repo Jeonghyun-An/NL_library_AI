@@ -17,6 +17,44 @@ log = logging.getLogger(__name__)
 cfg = get_settings()
 
 
+def _format_history_for_rewrite(history: list[dict], max_msgs: int) -> str:
+    """질의 재구성용 최근 대화 텍스트 구성. 빈 내용·max_msgs 컷 처리."""
+    recent = history[-max_msgs:] if max_msgs and max_msgs > 0 else history
+    lines: list[str] = []
+    for msg in recent:
+        content = (msg.get("content") or "").strip()
+        if not content:
+            continue
+        label = "사용자" if msg.get("role") == "user" else "도우미"
+        lines.append(f"{label}: {content}")
+    return "\n".join(lines)
+
+
+async def rewrite_chat_query(message: str, history: list[dict]) -> str:
+    """이전 대화 맥락으로 현재 질문을 독립적 검색 질의로 재구성.
+    히스토리가 없으면 원문을 그대로 반환한다.
+    """
+    hist_text = _format_history_for_rewrite(history, cfg.BOOK_CHAT_QUERY_REWRITE_HISTORY)
+    if not hist_text:
+        return message
+    system, user, params = get_prompt("chat_query_rewrite").render(
+        history=hist_text, message=message,
+    )
+    payload = {
+        "model": cfg.LLM_MODEL,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        **params,
+    }
+    async with httpx.AsyncClient(timeout=cfg.BOOK_CHAT_QUERY_REWRITE_TIMEOUT) as client:
+        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
+        resp.raise_for_status()
+        out = resp.json()["choices"][0]["message"]["content"].strip()
+    return out or message
+
+
 def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHit]:
     """LLM 응답에서 실제 인용된 청크만 필터링.
 
@@ -54,10 +92,22 @@ async def stream_book_chat(
         yield "data: [DONE]\n\n"
         return
 
+    # ── 1. 히스토리 기반 질의 재구성 (검색용) ───────────────
+    #    대명사·생략 질의의 청크 검색 recall 향상. LLM 답변에는 원문 질문을 그대로 사용.
+    search_query = message
+    if cfg.BOOK_CHAT_QUERY_REWRITE and history:
+        try:
+            rewritten = await rewrite_chat_query(message, history)
+            if rewritten and rewritten != message:
+                search_query = rewritten
+                log.info(f"[{cnts_id}] 대화 질의 재구성: {message!r} → {rewritten!r}")
+        except Exception as e:
+            log.warning(f"[{cnts_id}] 대화 질의 재구성 실패, 원문 사용: {e}")
+
     # ── 2. 질문과 관련된 청크 검색 (해당 책만) ──────────────
     hits = []
     try:
-        dense, sparse = embed_texts([message], is_query=True)
+        dense, sparse = embed_texts([search_query], is_query=True)
         hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
     except Exception as e:
         log.warning(f"[{cnts_id}] 채팅 청크 검색 실패: {e}")

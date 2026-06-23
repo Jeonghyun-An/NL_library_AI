@@ -178,6 +178,10 @@ class Settings(BaseSettings):
     BOOK_CHAT_SEARCH_TOP_K: int = 6
     BOOK_CHAT_HISTORY_MESSAGES: int = 20   # 최근 메시지 수 (20=10턴)
     BOOK_CHAT_TIMEOUT: int = 90
+    # 히스토리 기반 질의 재구성 (대명사·생략 질의의 청크 검색 recall 향상)
+    BOOK_CHAT_QUERY_REWRITE: bool = True
+    BOOK_CHAT_QUERY_REWRITE_HISTORY: int = 6   # 재구성에 참고할 최근 메시지 수
+    BOOK_CHAT_QUERY_REWRITE_TIMEOUT: int = 20
 
     # ── 쿼리 전처리 LLM 타임아웃(초) ──────────────────
     QUERY_REWRITE_TIMEOUT: int = 30
