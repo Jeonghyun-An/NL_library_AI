@@ -38,7 +38,7 @@
       <p>검색 기록이 없습니다</p>
     </div>
 
-    <ul v-else class="ch-list scrollbar-zinc">
+    <ul v-else class="ch-list">
       <li
         v-for="entry in history"
         :key="entry.id"
@@ -134,7 +134,6 @@ function formatTime(ts: number | string): string {
   list-style: none;
   margin: 0;
   padding: 8px 0;
-  overflow-y: auto;
   flex: 1;
 }
 
