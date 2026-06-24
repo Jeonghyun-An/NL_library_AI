@@ -1147,7 +1147,7 @@ function restoreHistory(entry: HistoryEntry) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 26vh;      /* 장바구니가 길면 이 영역만 자체 스크롤 (검색기록과 독립) */
+  max-height: 26vh; /* 장바구니가 길면 이 영역만 자체 스크롤 (검색기록과 독립) */
   overflow-y: auto;
 }
 .cart-item {
