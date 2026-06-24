@@ -156,7 +156,7 @@
       </aside>
 
       <!-- ══ 메인 콘텐츠 ═══════════════════════════════════════ -->
-      <main class="main-content">
+      <main class="main-content scrollbar-zinc">
         <!-- 랜딩 -->
         <div v-if="!hasResults" class="landing">
           <div class="seg" ref="segRef">
@@ -1014,6 +1014,10 @@ watch(currentPage, () => window.scrollTo({ top: 0, behavior: "smooth" }));
 /* ── 메인 콘텐츠 ────────────────────────────────── */
 .main-content {
   min-width: 0;
+  /* 본문 독립 스크롤 컨테이너 (.page 가 overflow:hidden 이라 없으면 본문이 잘려 스크롤바 사라짐) */
+  height: v-bind("'calc(100vh - ' + topBarHeight + 'px)'");
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ── 페이드 텍스트 전환 ──────────────────────────── */
@@ -1035,7 +1039,8 @@ watch(currentPage, () => window.scrollTo({ top: 0, behavior: "smooth" }));
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 84px);
+  /* main-content 높이를 정확히 채움 (하드코딩 84px ↔ 실제 상단바 불일치 스크롤바 제거) */
+  min-height: 100%;
   padding: 24px;
   gap: 32px;
 }

@@ -63,16 +63,18 @@
           </Transition>
         </button>
 
-        <div v-show="leftOpen" class="sidebar-body scrollbar-zinc">
-          <ClientOnly>
-            <ChatHistory
-              :history="history"
-              :current-id="currentHistoryId"
-              @select="restoreHistory"
-              @clear="clearHistory"
-            />
-            <template #fallback><div class="ch-placeholder" /></template>
-          </ClientOnly>
+        <div v-show="leftOpen" class="sidebar-body sidebar-body--left">
+          <div class="sidebar-history scrollbar-zinc">
+            <ClientOnly>
+              <ChatHistory
+                :history="history"
+                :current-id="currentHistoryId"
+                @select="restoreHistory"
+                @clear="clearHistory"
+              />
+              <template #fallback><div class="ch-placeholder" /></template>
+            </ClientOnly>
+          </div>
 
           <!-- ── 장바구니 (대출 신청한 도서) ── -->
           <ClientOnly>
@@ -81,7 +83,7 @@
                 <span>🛒 장바구니</span>
                 <span class="cart-count">{{ cart.length }}</span>
               </div>
-              <ul class="cart-list">
+              <ul class="cart-list scrollbar-zinc">
                 <li v-for="item in cart" :key="item.book_id" class="cart-item">
                   <span class="cart-item-title" :title="item.title">{{
                     item.title
@@ -104,7 +106,7 @@
       </aside>
 
       <!-- ══ 메인 콘텐츠 ═══════════════════════════════════════ -->
-      <main class="main-content">
+      <main class="main-content scrollbar-zinc">
         <!-- 랜딩 -->
         <div v-if="!result && !loading && !error" class="landing">
           <!-- 세그먼티드 토글 -->
@@ -744,9 +746,26 @@ function restoreHistory(entry: HistoryEntry) {
   min-width: 0;
 }
 
+/* 왼쪽 패널: 검색기록(내부 스크롤) + 장바구니(하단 고정) → 자체 스크롤 제거(이중 방지) */
+.sidebar-body--left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-history {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden; /* ChatHistory 내부(.ch-list)가 스크롤을 담당 */
+}
+
 /* ── 메인 콘텐츠 ────────────────────────────────── */
 .main-content {
   min-width: 0;
+  /* 사이드바와 동일하게 본문도 독립 스크롤 컨테이너 (.page 가 overflow:hidden 이라
+     이 height/overflow 가 없으면 본문이 잘려 스크롤바가 사라진다) */
+  height: v-bind("'calc(100vh - ' + topBarHeight + 'px)'");
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ── 랜딩 ──────────────────────────────────────── */
@@ -755,7 +774,9 @@ function restoreHistory(entry: HistoryEntry) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 84px);
+  /* main-content(동적 높이 calc(100vh - topBarHeight))를 정확히 채움.
+     하드코딩 84px 와 실제 상단바 높이가 달라 생기던 상시 스크롤바 제거 */
+  min-height: 100%;
   padding: 24px;
   gap: 32px;
 }
@@ -1093,8 +1114,9 @@ function restoreHistory(entry: HistoryEntry) {
 
 /* ── 장바구니 ───────────────────────────────────── */
 .cart-block {
+  flex-shrink: 0; /* 하단 고정 — 검색기록 스크롤 영역과 분리 */
   margin-top: 14px;
-  padding-top: 12px;
+  padding: 12px 8px 10px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 .cart-head {
@@ -1125,6 +1147,8 @@ function restoreHistory(entry: HistoryEntry) {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: 26vh;      /* 장바구니가 길면 이 영역만 자체 스크롤 (검색기록과 독립) */
+  overflow-y: auto;
 }
 .cart-item {
   display: flex;
