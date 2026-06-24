@@ -16,6 +16,11 @@ from services.prompts import get_prompt
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
+_REF_INTENT_KEYWORDS = frozenset({
+    "참고문헌", "참고 문헌", "인용", "reference", "cited", "출처", "bibliography",
+    "참고자료", "인용문헌", "인용 문헌",
+})
+
 
 def _format_history_for_rewrite(history: list[dict], max_msgs: int) -> str:
     """질의 재구성용 최근 대화 텍스트 구성. 빈 내용·max_msgs 컷 처리."""
@@ -104,13 +109,25 @@ async def stream_book_chat(
         except Exception as e:
             log.warning(f"[{cnts_id}] 대화 질의 재구성 실패, 원문 사용: {e}")
 
-    # ── 2. 질문과 관련된 청크 검색 (해당 책만) ──────────────
+    # ── 2a. 참고문헌 의도 감지 — Milvus 우회 ───────────────────
+    msg_lower = message.lower()
+    is_ref_query = any(kw in msg_lower for kw in _REF_INTENT_KEYWORDS)
+
+    ref_context_block = ""
+    if is_ref_query:
+        refs: list[str] = (book.extra or {}).get("references", [])
+        if refs:
+            ref_context_block = "\n".join(f"{i + 1}. {r}" for i, r in enumerate(refs[:50]))
+            log.info(f"[{cnts_id}] 참고문헌 의도 감지 → {len(refs)}건 컨텍스트 주입")
+
+    # ── 2b. 청크 검색 (참고문헌 의도 시 건너뜀) ─────────────
     hits = []
-    try:
-        dense, sparse = embed_texts([search_query], is_query=True)
-        hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
-    except Exception as e:
-        log.warning(f"[{cnts_id}] 채팅 청크 검색 실패: {e}")
+    if not is_ref_query:
+        try:
+            dense, sparse = embed_texts([search_query], is_query=True)
+            hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
+        except Exception as e:
+            log.warning(f"[{cnts_id}] 채팅 청크 검색 실패: {e}")
 
     # ── 3. 시스템 프롬프트 + 메시지 빌드 ────────────────────
     author = book.personal_author or book.corporate_author or "저자 미상"
@@ -130,9 +147,10 @@ async def stream_book_chat(
     for msg in history[-cfg.BOOK_CHAT_HISTORY_MESSAGES:]:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
-    # 검색된 청크를 컨텍스트로 첨부
-    context_block = ""
-    if hits:
+    # 컨텍스트 블록 빌드 — 참고문헌 의도 시 refs 우선, 아니면 청크 검색 결과
+    if ref_context_block:
+        user_content = f"[이 논문의 참고문헌 목록]\n{ref_context_block}\n\n[질문]\n{message}"
+    elif hits:
         context_block = "\n\n".join(
             f"[p.{h.page_start}–{h.page_end}]\n{h.text}" for h in hits
         )
