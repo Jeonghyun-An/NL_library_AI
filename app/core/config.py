@@ -187,6 +187,17 @@ class Settings(BaseSettings):
     QUERY_REWRITE_TIMEOUT: int = 30
     METADATA_FILTER_TIMEOUT: int = 15
 
+    # ── 논문 핵심 요약 (paper_summary) ──────────────────────────
+    PAPER_SUMMARY_TIMEOUT: int = 120          # 핵심 요약 LLM 스트리밍 타임아웃(초)
+    PAPER_SUMMARY_TOP_K: int = 5              # 요약에 사용할 최대 논문 수
+
+    # ── 논문 보강 (paper_enricher) ───────────────────────────
+    PAPER_ENRICH_ENABLED: bool = True
+    PAPER_MAX_TABLES_PER_DOC: int = 10      # 표 청크 최대 개수
+    PAPER_MAX_FIGURES_PER_DOC: int = 8      # 그림 설명 최대 개수
+    PAPER_TABLE_INTERP_TIMEOUT: int = 60    # 표 LLM 서술 타임아웃(초)
+    PAPER_FIGURE_VLM_TIMEOUT: int = 90      # 그림 설명 VLM 타임아웃(초)
+
     # ── 배치/락 ───────────────────────────────────────
     JOB_MANAGER_CHUNK_SIZE: int = 5000     # ID 조회 IN 청크
     JOB_MANAGER_BATCH_SIZE: int = 1000     # 잡 아이템 bulk insert 배치
