@@ -45,6 +45,12 @@ class RelatedPapersResponse(BaseModel):
     results: list[RelatedPaperResult]
 
 
+class CitationResponse(BaseModel):
+    book_id: str
+    korean: str
+    english: str
+
+
 @router.post(
     "/search",
     response_model=ChunkSearchResponse | BookSearchResponse,
@@ -120,6 +126,30 @@ async def get_related_papers(
         source_id=cnts_id,
         results=[RelatedPaperResult(**h) for h in hits],
     )
+
+
+@router.get(
+    "/{cnts_id}/citation",
+    response_model=CitationResponse,
+)
+async def get_paper_citation(
+    cnts_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """논문 출처 인용 국문/영문 반환.
+
+    메타데이터(저자, 연도, 제목, 학술지, 권호, UCI)로 KCI 스타일 인용문을 구성한다.
+    LLM 호출 없이 즉시 응답한다.
+    """
+    from services.search.paper_citation import build_citation
+
+    repo = BookRepository(db)
+    book = await repo.get_by_cnts_id(cnts_id)
+    if not book:
+        raise HTTPException(404, f"논문 없음: {cnts_id}")
+
+    citation = build_citation(book)
+    return CitationResponse(book_id=cnts_id, **citation)
 
 
 @router.post("/catalog/load")
