@@ -477,6 +477,7 @@ def run_embed_index(ctx: StageContext) -> dict:
             s.section_idx: [t.strip() for t in s.themes.split(",") if t.strip()]
             for s in sections_rows if s.themes
         }
+        doc_type = book.doc_type or "book"
         title = book.title or book_id
         meta_parts = [
             f"제목: {title}",
@@ -513,15 +514,82 @@ def run_embed_index(ctx: StageContext) -> dict:
         parts.append(f"[본문] {c.text}")
         contextual_texts.append("\n".join(parts))
 
+    # ── [paper] 보강 청크 ────────────────────────────────────
+    enriched_chunks: list[ChunkType] = []
+    if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
+        try:
+            from services.ingestion.paper_enricher import enrich_paper, save_enrichment_artifact
+            from sqlalchemy.orm.attributes import flag_modified as _flag_modified
+
+            enrichment = run_async(enrich_paper(book_id, title, full_text, client))
+            save_enrichment_artifact(book_id, enrichment, client)
+
+            if enrichment.abstract or enrichment.references or enrichment.keywords or enrichment.toc:
+                db2 = SyncSessionLocal()
+                try:
+                    book_row = db2.query(Book).filter_by(cnts_id=book_id).first()
+                    if book_row:
+                        if enrichment.abstract and not book_row.abstract:
+                            book_row.abstract = enrichment.abstract
+                        if enrichment.keywords and not book_row.keyword:
+                            book_row.keyword = ", ".join(enrichment.keywords)
+                        extra = dict(book_row.extra or {})
+                        extra["references"] = enrichment.references
+                        if enrichment.toc:
+                            extra["toc"] = enrichment.toc
+                        if enrichment.keywords:
+                            extra["keywords"] = enrichment.keywords
+                        book_row.extra = extra
+                        _flag_modified(book_row, "extra")
+                        db2.commit()
+                except Exception as _e:
+                    log.warning(f"[{book_id}] enrichment DB 저장 실패: {_e}")
+                    db2.rollback()
+                finally:
+                    db2.close()
+
+            base_idx = len(chunks)
+            if enrichment.abstract:
+                enriched_chunks.append(ChunkType(
+                    chunk_idx=base_idx, text=f"[초록] {enrichment.abstract}", section_idx=None,
+                ))
+                base_idx += 1
+            if enrichment.keywords:
+                kw_text = f"[키워드] {', '.join(enrichment.keywords)}"
+                enriched_chunks.append(ChunkType(chunk_idx=base_idx, text=kw_text, section_idx=None))
+                base_idx += 1
+            for tc in enrichment.table_chunks:
+                # ① 원본 마크다운 청크 — 수치 질문용
+                table_text = f"[표]\n{tc.context}\n\n{tc.table_md}" if tc.context else f"[표]\n{tc.table_md}"
+                table_text = table_text.encode("utf-8")[: cfg.MAX_CHUNK_BYTES].decode("utf-8", errors="ignore")
+                enriched_chunks.append(ChunkType(chunk_idx=base_idx, text=table_text, section_idx=None))
+                base_idx += 1
+                # ② LLM 서술 청크 — 해석·의미 검색용 (실패 시 생략)
+                if tc.description:
+                    enriched_chunks.append(ChunkType(
+                        chunk_idx=base_idx, text=f"[표 설명] {tc.description}", section_idx=None,
+                    ))
+                    base_idx += 1
+            for i, fc in enumerate(enrichment.figure_chunks):
+                enriched_chunks.append(ChunkType(
+                    chunk_idx=base_idx + i, text=f"[그림 설명] {fc.description}", section_idx=None,
+                ))
+        except Exception as _e:
+            log.warning(f"[{book_id}] paper enrichment 실패, 계속 진행: {_e}")
+
     # 메타데이터 전용 청크 (chunk_idx=-1)
     meta_text = " | ".join(p for p in meta_parts if p)
-    all_texts = contextual_texts + [meta_text]
+    enriched_texts = [c.text for c in enriched_chunks]
+    all_texts = contextual_texts + enriched_texts + [meta_text]
 
     dense_embeddings, sparse_embeddings = embed_texts(all_texts)
-    log.info(f"[{book_id}] contextual 임베딩 완료: {len(dense_embeddings) - 1}개 본문 + 1개 메타")
+    log.info(
+        f"[{book_id}] contextual 임베딩 완료: {len(chunks)}개 본문"
+        f" + {len(enriched_chunks)}개 보강 + 1개 메타"
+    )
 
     meta_chunk = ChunkType(chunk_idx=-1, text=meta_text, section_idx=None)
-    all_chunks = chunks + [meta_chunk]
+    all_chunks = chunks + enriched_chunks + [meta_chunk]
 
     idx_result = index_chunks(
         book_id, all_chunks, dense_embeddings, sparse_embeddings, scalar_meta=scalar_meta,
