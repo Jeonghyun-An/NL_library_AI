@@ -334,7 +334,13 @@
 
         <!-- 결과 카드 목록 -->
         <div class="sk-card-list">
-          <div v-for="item in books" :key="item.book_id" class="sk-result-card">
+          <div
+            v-for="item in books"
+            :key="item.book_id"
+            class="sk-result-card"
+            style="cursor: pointer"
+            @click="openDetail(item)"
+          >
             <div class="sk-result-card-inner">
               <div class="sk-result-card-cover">
                 <BookCover :book-id="item.book_id" />
@@ -1037,22 +1043,24 @@ async function fetchPaperSummary(query: string) {
 
 // ── 상세 열기 ──────────────────────────────────────────────
 function openDetail(item: BookChunkGroup) {
+  if (mode.value === "book") {
+    // 도서 → 별도 상세 페이지로 이동
+    navigateTo(
+      `/books/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&score=${item.best_score || 0}`,
+    );
+    return;
+  }
+  // 논문 → 기존 인라인 detail 유지 (논문 전용 기능 포함)
   selectedItem.value = item;
   view.value = "detail";
-  detailTab.value = mode.value === "paper" ? "abstract" : "reason";
-  reasonText.value = "";
+  detailTab.value = "abstract";
   showChat.value = false;
   relatedItems.value = [];
   selectedRelated.value = null;
-
-  if (mode.value === "book") {
-    fetchReason(item);
-  }
   fetchRelated(item.book_id);
 }
 
 function openRelatedDetail(rel: any) {
-  // 연관 항목을 BookChunkGroup 형태로 변환해서 detail 열기
   const fakeGroup: BookChunkGroup = {
     book_id: rel.book_id,
     book_info: rel.book_info,
