@@ -352,8 +352,8 @@ def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
             db.refresh(book)
             log.info(f"[{book_id}] 메타데이터 자동 생성 완료: '{book.title}' (genre={book.genre})")
 
-        # 잡 파라미터 doc_type 강제 > 프로파일 판별
-        doc_type = ctx.params.get("doc_type") or get_active_profile().detect_doc_type({
+        # 우선순위: 잡 파라미터 > 기존 doc_type(KCI 로더 등이 영속화) > 프로파일 판별
+        doc_type = ctx.params.get("doc_type") or book.doc_type or get_active_profile().detect_doc_type({
             "kdc": book.kdc,
             "title": book.title or book_id,
             "source_format": book.source_format,

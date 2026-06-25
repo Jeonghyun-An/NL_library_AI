@@ -31,13 +31,12 @@ def detect_doc_type(meta: dict[str, Any]) -> str:
     """
     kdc = meta.get("kdc")
     title = meta.get("title")
-    source_format = meta.get("source_format")
     genre = meta.get("genre")
 
-    # PDF 자동추출 문서는 genre 값으로 판별
-    if source_format == "PDF":
-        if genre in ("paper", "thesis", "report"):
-            return "paper"
+    # genre가 학술 유형이면 source_format 무관하게 paper.
+    # (KCI 로더는 source_format="KCI" + genre="paper", PDF 자동추출은 source_format="PDF" + genre 판별)
+    if genre in ("paper", "thesis", "report"):
+        return "paper"
 
     if kdc:
         digits = re.sub(r"[^0-9]", "", kdc)[:3]
