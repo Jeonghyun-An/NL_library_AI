@@ -667,7 +667,7 @@ def run_finalize(ctx: StageContext) -> dict:
         try:
             book_introduction = run_async(generate_book_introduction(
                 title=title, author=author, publisher=publisher,
-                pub_date=pub_date, section_summaries=valid_summaries,
+                pub_date=pub_date, section_summaries=valid_summaries, doc_type=doc_type,
             ))
         except Exception as e:
             log.warning(f"[{book_id}] 도서 소개글 생성 실패: {e}")

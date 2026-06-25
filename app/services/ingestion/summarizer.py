@@ -10,25 +10,37 @@ from core.config import get_settings
 from services.prompts import get_prompt, PromptTemplate
 
 
+# SUMMARY:/THEMES: 라벨 — gemma가 마크다운 볼드(**)·헤더(#)로 감싸도 허용
+_THEMES_SPLIT_RE = re.compile(r"\n*[*#]*\s*THEMES\s*:\s*[*#]*\s*\n?")
+_THEMES_LINE_RE  = re.compile(r"^[*#]*\s*THEMES\s*:\s*(.+)$", re.MULTILINE)
+_THEMES_LINE_DEL = re.compile(r"^[*#]*\s*THEMES\s*:.*$\n?", re.MULTILINE)
+_SUMMARY_PREFIX_RE = re.compile(r"^[*#]*\s*SUMMARY\s*:\s*[*#]*\s*\n?")
+
+
+def _clean_token(s: str) -> str:
+    """테마 토큰/요약 잔여에서 마크다운 별표·헤더 기호 제거."""
+    return s.strip().strip("*#").strip()
+
+
 def _parse_summary_themes(text: str) -> tuple[str, list[str]]:
-    """SUMMARY:/THEMES: 구조화 출력 파싱."""
+    """SUMMARY:/THEMES: 구조화 출력 파싱 (마크다운 볼드/헤더 라벨도 허용)."""
     themes: list[str] = []
     text = text.strip()
 
     # ① THEMES 섹션 분리
-    themes_split = re.split(r"\n*THEMES:\s*\n?", text, maxsplit=1)
+    themes_split = _THEMES_SPLIT_RE.split(text, maxsplit=1)
     if len(themes_split) == 2:
         text, themes_raw = themes_split
-        themes = [t.strip() for t in re.split(r"[,，\n]", themes_raw) if t.strip()][:20]
+        themes = [t for t in (_clean_token(x) for x in re.split(r"[,，\n]", themes_raw)) if t][:20]
     else:
-        m = re.search(r"^THEMES:\s*(.+)$", text, re.MULTILINE)
+        m = _THEMES_LINE_RE.search(text)
         if m:
-            themes = [t.strip() for t in m.group(1).split(",") if t.strip()][:20]
-            text = re.sub(r"^THEMES:.*$\n?", "", text, flags=re.MULTILINE)
+            themes = [t for t in (_clean_token(x) for x in m.group(1).split(",")) if t][:20]
+            text = _THEMES_LINE_DEL.sub("", text)
 
-    # ② SUMMARY: 접두어 제거 (같은 줄 / 다음 줄 모두)
+    # ② SUMMARY: 접두어 제거 (볼드/헤더 포함, 같은 줄 / 다음 줄 모두)
     text = text.strip()
-    m = re.match(r"SUMMARY:\s*\n?", text)
+    m = _SUMMARY_PREFIX_RE.match(text)
     if m:
         text = text[m.end():]
 
@@ -43,7 +55,8 @@ def _parse_summary_themes(text: str) -> tuple[str, list[str]]:
             themes = [t.strip() for t in re.split(r"[,，\n]", km.group(1)) if t.strip()][:20]
         text = text[:km.start()]
 
-    return text.strip(), themes
+    # ④ 라벨 누수 방어 — 앞뒤 잔여 마크다운 별표 제거
+    return text.strip().strip("*").strip(), themes
 
 
 def detect_doc_type(
@@ -144,12 +157,13 @@ async def generate_book_introduction(
     publisher: str,
     pub_date: str,
     section_summaries: list[str],
+    doc_type: str = "book",
 ) -> str | None:
-    """독자·사서 톤의 도서 소개글 생성. 실패 시 None 반환."""
+    """도서/논문 소개글 생성 (doc_type별 프롬프트 — paper는 학술 톤). 실패 시 None 반환."""
     if not section_summaries:
         return None
     combined = _combine_sections(section_summaries)
-    tpl = get_prompt("introduction")
+    tpl = get_prompt("introduction", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(
         title=title,
         author=author or "미상",

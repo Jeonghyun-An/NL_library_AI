@@ -2,6 +2,31 @@
 import asyncio
 
 from services.ingestion import summarizer
+from services.ingestion.summarizer import _parse_summary_themes
+
+
+# ── _parse_summary_themes — 마크다운 볼드 라벨 누수 방지 ──────────
+
+def test_parse_plain_labels():
+    s, t = _parse_summary_themes("SUMMARY: 본문 요약.\nTHEMES: 가, 나, 다")
+    assert s == "본문 요약."
+    assert t == ["가", "나", "다"]
+
+
+def test_parse_bold_labels_stripped():
+    """gemma가 **SUMMARY:** / **THEMES:** 로 감싸도 라벨·별표가 새지 않는다."""
+    raw = "**SUMMARY:** 본 연구는 변동성을 분석한다.\n\n**THEMES:** 코스닥, 변동성, VAR"
+    s, t = _parse_summary_themes(raw)
+    assert "SUMMARY" not in s and "*" not in s
+    assert s == "본 연구는 변동성을 분석한다."
+    assert t == ["코스닥", "변동성", "VAR"]
+    assert all("*" not in x for x in t)
+
+
+def test_parse_no_labels_passthrough():
+    s, t = _parse_summary_themes("그냥 요약 문장입니다.")
+    assert s == "그냥 요약 문장입니다."
+    assert t == []
 
 
 class _FakeCfg:
