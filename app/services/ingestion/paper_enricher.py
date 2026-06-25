@@ -31,8 +31,16 @@ log = logging.getLogger(__name__)
 cfg = get_settings()
 
 # ── 초록 헤더 ────────────────────────────────────────────────
+# VLM이 마크다운(## / **) 포함해서 추출하는 경우도 처리
 _ABSTRACT_HEADER = re.compile(
-    r'(?m)^\s*(?:초\s*록|Abstract|ABSTRACT|요\s*약|국문\s*초록|영문\s*초록|Summary|SUMMARY)\s*$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?'
+    r'(?:초\s*록|Abstract|ABSTRACT'
+    r'|요\s*약|국문\s*(?:초록|요약|abstract)'
+    r'|영문\s*(?:초록|요약|abstract)'
+    r'|한국어\s*(?:초록|요약)'
+    r'|Korean\s*Abstract|English\s*Abstract'
+    r'|Summary|SUMMARY)'
+    r'\s*[:#*_\s]*$',
     re.IGNORECASE,
 )
 
@@ -68,12 +76,13 @@ _REF_ENTRY = re.compile(
 
 # ── 키워드 헤더 ──────────────────────────────────────────────
 # 인라인: "Keywords: A, B, C" 또는 블록(헤더만 있고 다음 줄에 키워드)
+# VLM 마크다운 prefix (**Keywords:**, ## Keywords) 도 처리
 _KW_INLINE = re.compile(
-    r'(?m)^\s*(?:Keywords?|KEYWORDS?|핵심어|주요어|핵심\s*어|주요\s*어|색인어|Key\s*Words?)\s*[:：]\s*(.+)$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:Keywords?|KEYWORDS?|핵심어|주요어|핵심\s*어|주요\s*어|색인어|Key\s*Words?)\s*[*_]*\s*[:：]\s*[*_]*\s*(.+)$',
     re.IGNORECASE,
 )
 _KW_BLOCK_HEADER = re.compile(
-    r'(?m)^\s*(?:Keywords?|KEYWORDS?|핵심어|주요어|핵심\s*어|주요\s*어|색인어|Key\s*Words?)\s*[:：]?\s*$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:Keywords?|KEYWORDS?|핵심어|주요어|핵심\s*어|주요\s*어|색인어|Key\s*Words?)\s*[*_]*\s*[:：]?\s*[*_]*\s*$',
     re.IGNORECASE,
 )
 
@@ -317,6 +326,7 @@ async def generate_keywords(title: str, text: str) -> list[str]:
     tpl = get_prompt("paper_keywords")
     system, user, params = tpl.render(title=title, text=snippet)
     raw = await _llm_chat(system, user, params, timeout=cfg.PAPER_TABLE_INTERP_TIMEOUT)
+    raw = re.sub(r'[#*`_\[\]>]+', '', raw)  # LLM 마크다운 제거
     return _split_keywords(raw)
 
 

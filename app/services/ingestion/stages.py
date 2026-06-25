@@ -516,6 +516,7 @@ def run_embed_index(ctx: StageContext) -> dict:
 
     # ── [paper] 보강 청크 ────────────────────────────────────
     enriched_chunks: list[ChunkType] = []
+    enrich_meta: dict = {}   # enrichment 커버리지 — 검증/모니터링용 (item.meta 로 노출)
     if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
         try:
             from services.ingestion.paper_enricher import enrich_paper, save_enrichment_artifact
@@ -523,6 +524,17 @@ def run_embed_index(ctx: StageContext) -> dict:
 
             enrichment = run_async(enrich_paper(book_id, title, full_text, client))
             save_enrichment_artifact(book_id, enrichment, client)
+
+            # 추출이 조용히 실패해도 보이도록 커버리지 기록 (전부 0이면 PDF 추출 품질 의심)
+            enrich_meta = {
+                "enriched": True,
+                "has_abstract": bool(enrichment.abstract),
+                "n_keywords": len(enrichment.keywords),
+                "n_references": len(enrichment.references),
+                "n_tables": len(enrichment.table_chunks),
+                "n_figures": len(enrichment.figure_chunks),
+                "n_toc": len(enrichment.toc),
+            }
 
             if enrichment.abstract or enrichment.references or enrichment.keywords or enrichment.toc:
                 db2 = SyncSessionLocal()
@@ -576,6 +588,7 @@ def run_embed_index(ctx: StageContext) -> dict:
                 ))
         except Exception as _e:
             log.warning(f"[{book_id}] paper enrichment 실패, 계속 진행: {_e}")
+            enrich_meta = {"enriched": False, "enrich_error": str(_e)[:200]}
 
     # 메타데이터 전용 청크 (chunk_idx=-1)
     meta_text = " | ".join(p for p in meta_parts if p)
@@ -598,7 +611,7 @@ def run_embed_index(ctx: StageContext) -> dict:
         raise StageError("milvus_error", f"Milvus 인덱싱 실패: {idx_result.errors}")
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
-    return {"chunks": len(chunks), "indexed": idx_result.chunks_indexed}
+    return {"chunks": len(chunks), "indexed": idx_result.chunks_indexed, **enrich_meta}
 
 
 # ── 단계 ④ 문서 요약/소개글 + (선택) 표지 ─────────────────────
