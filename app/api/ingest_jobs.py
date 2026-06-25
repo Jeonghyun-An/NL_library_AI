@@ -15,7 +15,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
-from sqlalchemy import func, select, update
+from sqlalchemy import func, literal_column, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_db
@@ -118,10 +118,12 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     eta_hours = round(remaining / rate_per_hour, 1) if rate_per_hour > 0 else None
 
     # 추출 방법 분포 (meta.extract_method)
+    _extract_method = literal_column("ingest_job_items.meta ->> 'extract_method'")
     method_rows = (await db.execute(
-        select(IngestJobItem.meta["extract_method"].astext, func.count())
+        select(_extract_method, func.count())
+        .select_from(IngestJobItem)
         .where(IngestJobItem.job_id == job_id)
-        .group_by(IngestJobItem.meta["extract_method"].astext)
+        .group_by(_extract_method)
     )).all()
     extract_methods = {(m or "unknown"): c for m, c in method_rows}
 

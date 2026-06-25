@@ -10,7 +10,7 @@ catalog_bulk.py — ParsedRecord 스트림의 카탈로그 bulk upsert
 import logging
 from typing import Iterable
 
-from sqlalchemy import func, text
+from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from domains.base import ParsedRecord
@@ -32,15 +32,18 @@ from core.config import get_settings
 
 DEFAULT_BATCH_SIZE = get_settings().CATALOG_BULK_BATCH_SIZE
 
+_TBL = Book.__table__
+_BOOK_COLUMNS: frozenset[str] = frozenset(c.key for c in _TBL.columns)
+
 
 def _record_to_row(rec: ParsedRecord) -> dict:
     row = dict(rec.core)
     row["cnts_id"] = rec.source_id
     if rec.source_format and "source_format" not in row:
         row["source_format"] = rec.source_format
-    # 전환기 dual-write: Book 컬럼이 있으면 컬럼에도 기록
+    # 전환기 dual-write: Book 실제 컬럼에 있으면 컬럼에도 기록
     for k, v in rec.extra.items():
-        if hasattr(Book, k) and k not in row:
+        if k in _BOOK_COLUMNS and k not in row:
             row[k] = v
     row.setdefault("title", rec.source_id)  # title NOT NULL 보호
     row["extra"] = rec.extra
@@ -59,25 +62,43 @@ def upsert_catalog_records(
     def _flush(rows: list[dict]) -> tuple[int, int]:
         if not rows:
             return 0, 0
-        # executemany 는 균일한 키가 필요 — 배치 내 키 합집합으로 None 채움
-        keys = set()
-        for r in rows:
-            keys.update(r.keys())
-        uniform = [{k: r.get(k) for k in keys} for r in rows]
 
-        stmt = pg_insert(Book).values(uniform)
-        update_set = {}
-        for k in keys:
+        # 배치 내 cnts_id 중복 제거 (나중 행 우선)
+        seen: dict[str, dict] = {}
+        for r in rows:
+            key = r.get("cnts_id")
+            if key:
+                seen[key] = r
+        rows = list(seen.values())
+
+        # 배치 내 키 합집합 → 균일한 dict + 실제 컬럼만 추림
+        all_keys: set[str] = set()
+        for r in rows:
+            all_keys.update(r.keys())
+        col_keys = all_keys & _BOOK_COLUMNS      # 실제 DB 컬럼만
+        uniform = [{k: r.get(k) for k in col_keys} for r in rows]
+
+        # Core INSERT (ORM 매퍼 대신 Table 객체로 — returning/on_conflict 호환)
+        stmt = pg_insert(_TBL).values(uniform)
+
+        # ON CONFLICT DO UPDATE
+        update_set: dict = {}
+        for k in col_keys:
             if k in PROTECTED_ON_UPDATE or k == "extra":
                 continue
-            # 파싱된 non-None 값만 덮어쓰기 (기존 행단위 적재와 동일한 의미)
-            update_set[k] = func.coalesce(stmt.excluded[k], getattr(Book, k))
-        update_set["extra"] = text("library_catalog.extra || excluded.extra")
+            # 파싱된 non-None 값만 덮어쓰기
+            update_set[k] = func.coalesce(stmt.excluded[k], _TBL.c[k])
+
+        # JSONB 병합: 기존 extra에 새 extra 덮어씌우기 (NULL-safe)
+        update_set["extra"] = func.coalesce(
+            _TBL.c["extra"], literal_column("'{}'::jsonb")
+        ).op("||")(stmt.excluded["extra"])
         update_set["updated_at"] = func.now()
 
         stmt = stmt.on_conflict_do_update(
-            index_elements=["cnts_id"], set_=update_set,
-        ).returning(text("(xmax = 0) AS inserted"))
+            index_elements=["cnts_id"],
+            set_=update_set,
+        ).returning(literal_column("(xmax = 0) AS inserted"))
 
         result = db.execute(stmt)
         flags = [r[0] for r in result]
