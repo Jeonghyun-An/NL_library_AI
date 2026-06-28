@@ -90,6 +90,10 @@ class Book(Base):
     updated_at       = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     @property
+    def references(self) -> list[str]:
+        return (self.extra or {}).get("references", [])
+
+    @property
     def plot(self) -> str | None:
         return (self.extra or {}).get("plot")
 

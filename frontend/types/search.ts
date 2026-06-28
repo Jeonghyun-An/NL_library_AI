@@ -50,6 +50,8 @@ export interface BookInfo {
   vol_issue?: string;
   kci_citations?: number;
   wos_citations?: number;
+  // 참고문헌 (백엔드 extra["references"] 노출)
+  references?: string[];
 }
 
 export interface BookChunkGroup {

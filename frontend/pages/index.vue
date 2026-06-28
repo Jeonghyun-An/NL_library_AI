@@ -329,7 +329,33 @@
             AI 핵심 요약
             <span v-if="paperSummaryLoading" class="sk-streaming-dot">●</span>
           </div>
-          <div class="sk-paper-summary-body" v-html="renderedPaperSummary" />
+          <div class="sk-paper-summary-main">
+            <div class="sk-paper-summary-body" v-html="renderedPaperSummary" />
+            <!-- 답변이 인용한 문서 리스트 (우측) -->
+            <ol
+              v-if="paperSummarySources.length"
+              class="sk-paper-summary-sources"
+            >
+              <li
+                v-for="(src, i) in paperSummarySources"
+                :key="src.book_id"
+                class="sk-summary-source-item"
+                @click="openDetail(src)"
+              >
+                <span class="sk-summary-source-num">{{ i + 1 }}</span>
+                <div class="sk-summary-source-info">
+                  <span class="sk-summary-source-title">{{
+                    src.book_info?.title || src.book_id
+                  }}</span>
+                  <span class="sk-summary-source-authors">{{
+                    src.book_info?.personal_author ||
+                    src.book_info?.corporate_author ||
+                    ""
+                  }}</span>
+                </div>
+              </li>
+            </ol>
+          </div>
         </div>
 
         <!-- 결과 카드 목록 -->
@@ -347,6 +373,11 @@
               </div>
               <div class="sk-result-card-info">
                 <div class="sk-result-card-meta">
+                  <span
+                    v-if="item.book_info?.grade"
+                    class="sk-grade-badge"
+                    >{{ item.book_info.grade }}</span
+                  >
                   <span class="sk-match-badge"
                     >정합성
                     {{ Math.round((item.best_score || 0) * 100) }}%</span
@@ -390,6 +421,9 @@
                   <span v-if="item.book_info?.vol_issue">
                     · {{ item.book_info.vol_issue }}</span
                   >
+                  <span v-if="item.book_info?.kci_citations != null">
+                    · 인용수 {{ item.book_info.kci_citations }}</span
+                  >
                 </p>
                 <div class="sk-result-actions">
                   <button
@@ -400,6 +434,13 @@
                   </button>
                   <button class="sk-btn-outline" @click.stop="viewPdf(item)">
                     원문 보기
+                  </button>
+                  <button
+                    v-if="mode === 'paper'"
+                    class="sk-btn-outline"
+                    @click.stop="openCitation(item)"
+                  >
+                    출처 인용
                   </button>
                   <button class="sk-btn-primary" @click.stop="openDetail(item)">
                     + 이 {{ mode === "paper" ? "논문과" : "책과" }} 대화하기
@@ -434,6 +475,11 @@
           </div>
           <div class="sk-detail-meta">
             <div class="sk-result-card-meta">
+              <span
+                v-if="selectedItem.book_info?.grade"
+                class="sk-grade-badge"
+                >{{ selectedItem.book_info.grade }}</span
+              >
               <span class="sk-match-badge"
                 >정합성
                 {{ Math.round((selectedItem.best_score || 0) * 100) }}%</span
@@ -468,6 +514,12 @@
               <span v-if="selectedItem.book_info?.publisher"
                 >· {{ selectedItem.book_info.publisher }}</span
               >
+              <span v-if="selectedItem.book_info?.vol_issue"
+                >· {{ selectedItem.book_info.vol_issue }}</span
+              >
+              <span v-if="selectedItem.book_info?.kci_citations != null"
+                >· 인용수 {{ selectedItem.book_info.kci_citations }}</span
+              >
             </p>
             <div class="sk-detail-actions">
               <button class="sk-btn-outline" @click="requestLoan(selectedItem)">
@@ -482,7 +534,7 @@
               <button
                 v-if="mode === 'paper'"
                 class="sk-btn-outline"
-                @click="loadCitation"
+                @click="openCitation(selectedItem)"
               >
                 출처 인용
               </button>
@@ -622,6 +674,34 @@
           </table>
         </section>
 
+        <!-- 참고문헌 (논문) -->
+        <section v-if="mode === 'paper'" class="sk-section">
+          <h3
+            class="sk-section-title sk-refs-toggle"
+            @click="refsOpen = !refsOpen"
+          >
+            참고문헌
+            <span class="sk-refs-caret">{{ refsOpen ? "▲" : "▼" }}</span>
+          </h3>
+          <Transition name="sk-expand">
+            <div v-show="refsOpen" class="sk-refs-wrap">
+              <ol
+                v-if="selectedItem.book_info?.references?.length"
+                class="sk-refs-list"
+              >
+                <li
+                  v-for="(ref, i) in selectedItem.book_info.references"
+                  :key="i"
+                  class="sk-ref-item"
+                >
+                  {{ ref }}
+                </li>
+              </ol>
+              <p v-else class="sk-empty-text">참고문헌 정보가 없습니다.</p>
+            </div>
+          </Transition>
+        </section>
+
         <!-- AI 연관 추천 -->
         <section class="sk-section">
           <h3 class="sk-section-title">
@@ -689,46 +769,13 @@
       </div>
     </main>
 
-    <!-- ══ 출처 인용 모달 ════════════════════════════════════ -->
-    <Teleport to="body">
-      <Transition name="sk-modal">
-        <div
-          v-if="citationModal"
-          class="sk-modal-overlay"
-          @click.self="citationModal = false"
-        >
-          <div class="sk-modal">
-            <div class="sk-modal-header">
-              <span>출처 인용</span>
-              <button class="sk-modal-close" @click="citationModal = false">
-                ×
-              </button>
-            </div>
-            <div class="sk-modal-body">
-              <div v-if="citationLoading" class="sk-citation-loading">
-                불러오는 중...
-              </div>
-              <template v-else-if="citation">
-                <div class="sk-citation-block">
-                  <label class="sk-citation-label">국문 인용</label>
-                  <p class="sk-citation-text">{{ citation.korean }}</p>
-                  <button class="sk-copy-btn" @click="copyCitation('korean')">
-                    {{ copyState === "korean" ? "✓ 복사됨" : "복사" }}
-                  </button>
-                </div>
-                <div class="sk-citation-block">
-                  <label class="sk-citation-label">영문 인용 (APA)</label>
-                  <p class="sk-citation-text">{{ citation.english }}</p>
-                  <button class="sk-copy-btn" @click="copyCitation('english')">
-                    {{ copyState === "english" ? "✓ 복사됨" : "복사" }}
-                  </button>
-                </div>
-              </template>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <!-- ══ 출처 인용 모달 (결과 카드·상세 공용) ══════════════════ -->
+    <CitationModal
+      :open="citationModal"
+      :book-id="citationBook?.book_id ?? null"
+      :references="citationBook?.book_info?.references ?? []"
+      @close="citationModal = false"
+    />
 
     <!-- ══ PDF 뷰어 ══════════════════════════════════════════ -->
     <PdfViewer
@@ -812,6 +859,8 @@ const curationLoading = ref(false);
 // ── 논문 핵심 요약 SSE ─────────────────────────────────────
 const paperSummaryText = ref("");
 const paperSummaryLoading = ref(false);
+// AI 요약이 참조한 문서(상위 N개) — 본문 (1)(2)… 번호와 인덱스 대응
+const paperSummarySources = ref<BookChunkGroup[]>([]);
 
 const renderedPaperSummary = computed(() =>
   paperSummaryText.value
@@ -826,6 +875,7 @@ const reasonText = ref("");
 const reasonLoading = ref(false);
 const showChat = ref(false);
 const pdfOpen = ref(false);
+const refsOpen = ref(true);
 
 const detailTabs = computed(() =>
   mode.value === "paper"
@@ -852,9 +902,7 @@ const selectedRelated = ref<any>(null);
 
 // ── 출처 인용 ──────────────────────────────────────────────
 const citationModal = ref(false);
-const citationLoading = ref(false);
-const citation = ref<{ korean: string; english: string } | null>(null);
-const copyState = ref("");
+const citationBook = ref<BookChunkGroup | null>(null);
 
 // ── 토스트 ────────────────────────────────────────────────
 const toast = ref("");
@@ -1018,6 +1066,8 @@ async function fetchCuration() {
 async function fetchPaperSummary(query: string) {
   paperSummaryLoading.value = true;
   paperSummaryText.value = "";
+  // 요약에 투입하는 상위 N개를 인용 문서 리스트로 노출 (본문 번호와 인덱스 일치)
+  paperSummarySources.value = books.value.slice(0, 5);
   const papers = books.value.slice(0, 5).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
@@ -1122,34 +1172,10 @@ async function fetchRelated(cntsId: string) {
 }
 
 // ── 출처 인용 ──────────────────────────────────────────────
-async function loadCitation() {
-  if (!selectedItem.value) return;
+// 출처 인용 모달 열기 — 결과 카드·상세 공용 (CitationModal 컴포넌트가 데이터 처리)
+function openCitation(item: BookChunkGroup) {
+  citationBook.value = item;
   citationModal.value = true;
-  citationLoading.value = true;
-  citation.value = null;
-  copyState.value = "";
-  try {
-    const data = await $fetch<any>(
-      `${apiBase}/papers/${selectedItem.value.book_id}/citation`,
-    );
-    citation.value = data;
-  } catch {
-    citation.value = {
-      korean: "인용 정보를 불러오지 못했습니다.",
-      english: "",
-    };
-  } finally {
-    citationLoading.value = false;
-  }
-}
-
-async function copyCitation(type: "korean" | "english") {
-  if (!citation.value) return;
-  await navigator.clipboard.writeText(citation.value[type]);
-  copyState.value = type;
-  setTimeout(() => {
-    copyState.value = "";
-  }, 2000);
 }
 
 // ── 대출 신청 / PDF ────────────────────────────────────────
@@ -1756,6 +1782,68 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
   color: var(--ink);
   line-height: 1.8;
 }
+/* 본문(좌) + 인용 문서 리스트(우) 2단 — 퍼블리싱 시 정밀 스타일 교체 */
+.sk-paper-summary-main {
+  display: flex;
+  align-items: flex-start;
+}
+.sk-paper-summary-main .sk-paper-summary-body {
+  flex: 1;
+  min-width: 0;
+}
+.sk-paper-summary-sources {
+  flex: 0 0 280px;
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.sk-summary-source-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sk-summary-source-item:hover {
+  background: var(--lilac-2);
+}
+.sk-summary-source-num {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--lilac);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sk-summary-source-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sk-summary-source-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.sk-summary-source-authors {
+  font-size: 11px;
+  color: var(--ink-3);
+}
 .sk-paper-summary-body :deep(h2) {
   font-size: 14px;
   font-weight: 700;
@@ -1810,6 +1898,14 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
   font-weight: 700;
   color: var(--accent);
   background: var(--lilac);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.sk-grade-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #e0ecff;
   padding: 2px 8px;
   border-radius: 20px;
 }
@@ -1949,6 +2045,32 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
   margin: 0;
+}
+/* 참고문헌 아코디언 — 퍼블리싱 시 정밀 스타일 교체 */
+.sk-refs-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.sk-refs-caret {
+  font-size: 11px;
+  color: var(--ink-3, #6a6b76);
+}
+.sk-refs-list {
+  margin: 0;
+  padding: 16px 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sk-ref-item {
+  font-size: 12.5px;
+  color: var(--ink-2, #3a3b46);
+  line-height: 1.6;
+}
+.sk-refs-wrap .sk-empty-text {
+  padding: 16px 20px;
 }
 .sk-tabs-row {
   display: flex;

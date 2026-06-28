@@ -63,6 +63,8 @@ class BookOut(BookBase):
     vol_issue:        Optional[str] = None
     kci_citations:    Optional[int] = None
     wos_citations:    Optional[int] = None
+    # 참고문헌 (extra["references"] 노출)
+    references:       list[str] = []
 
     class Config:
         from_attributes = True
