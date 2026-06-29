@@ -32,22 +32,26 @@ cfg = get_settings()
 
 # ── 초록 헤더 ────────────────────────────────────────────────
 # VLM이 마크다운(## / **) 포함해서 추출하는 경우도 처리
+# 헤더가 한 줄 단독(초록\n본문)이든 인라인(Abstract: 본문…)이든 모두 매칭.
+# 끝의 [: 공백]만 소비하고 줄바꿈은 rest 로 넘겨 .strip() 으로 처리 → $ 앵커 제거.
 _ABSTRACT_HEADER = re.compile(
-    r'(?m)^\s*(?:[#*\-]+\s*)?'
+    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?'
     r'(?:초\s*록|Abstract|ABSTRACT'
     r'|요\s*약|국문\s*(?:초록|요약|abstract)'
     r'|영문\s*(?:초록|요약|abstract)'
     r'|한국어\s*(?:초록|요약)'
     r'|Korean\s*Abstract|English\s*Abstract'
     r'|Summary|SUMMARY)'
-    r'\s*[:#*_\s]*$',
+    r'[ \t]*[:：]?[ \t]*',
     re.IGNORECASE,
 )
 
-# 초록 끝 감지 — 다음 섹션 헤더
+# 초록 끝 감지 — 다음 섹션 헤더 또는 키워드 블록
 _ABSTRACT_END = re.compile(
-    r'\n\s*(?:\d+[\.\)]\s+|[IVXivx]+\.\s+)?(?:서\s*론|Introduction|INTRODUCTION|'
-    r'연구\s*(?:방법|배경|문제|목적)|Methods?|Background|결\s*론|Conclusion)',
+    r'\n\s*(?:[#*\-]+\s*)?(?:\d+[\.\)]\s+|[IVXivx]+\.\s+)?'
+    r'(?:서\s*론|Introduction|INTRODUCTION|'
+    r'연구\s*(?:방법|배경|문제|목적)|Methods?|Background|결\s*론|Conclusion|'
+    r'Key\s*[Ww]ords?|Keywords?|주제어|핵심어|색인어|중심어)',
     re.IGNORECASE,
 )
 
@@ -146,7 +150,7 @@ def extract_abstract(full_text: str) -> str | None:
     rest = full_text[m.end():]
     end_m = _ABSTRACT_END.search(rest)
     end = end_m.start() if end_m else min(len(rest), 2000)
-    text = rest[:end].strip()
+    text = rest[:end].strip().lstrip(":：").strip()
 
     if len(text) < 50:
         return None
