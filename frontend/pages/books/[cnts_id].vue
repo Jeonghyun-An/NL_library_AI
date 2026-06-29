@@ -331,7 +331,7 @@
           </button>
           <h2 class="skx-chat-title">이 책과 대화하기</h2>
         </div>
-        <BookChat :cnts-id="cnts_id" @close="chatPanelOpen = false" />
+        <BookChat :cnts-id="cnts_id" :book-title="book?.title" @close="chatPanelOpen = false" />
       </div>
     </aside>
 
