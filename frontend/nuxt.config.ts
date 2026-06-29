@@ -10,7 +10,10 @@ export default defineNuxtConfig({
     plugins: [tailwindcss(), tsconfigPaths()],
   },
 
-  css: [resolve(__dirname, "assets/css/tailwind.css")],
+  css: [
+    resolve(__dirname, "assets/css/tailwind.css"),
+    resolve(__dirname, "assets/css/style_skovix.css"),
+  ],
 
   runtimeConfig: {
     public: {
