@@ -11,11 +11,22 @@
     <!-- ===== LANDING VIEW ===== -->
     <main v-if="view === 'landing'" class="skx-contents">
       <div class="skx-contents__inner">
-        <h1 class="skx-hero">원하는 자료를 찾고 활용하는<br>가장 쉽고 편안한 검색을 경험해보세요!</h1>
+        <h1 class="skx-hero">
+          원하는 자료를 찾고 활용하는<br />가장 쉽고 편안한 검색을 경험해보세요!
+        </h1>
 
         <!-- 검색 탭 슬라이더 -->
-        <div class="skx-tabs" role="tablist" aria-label="검색 유형" ref="tabsRef">
-          <span class="skx-tabs__slider" :style="tabSliderStyle" aria-hidden="true"></span>
+        <div
+          class="skx-tabs"
+          role="tablist"
+          aria-label="검색 유형"
+          ref="tabsRef"
+        >
+          <span
+            class="skx-tabs__slider"
+            :style="tabSliderStyle"
+            aria-hidden="true"
+          ></span>
           <button
             type="button"
             :class="['skx-tab skx-tab--book', mode === 'book' && 'is-active']"
@@ -23,8 +34,15 @@
             :aria-selected="mode === 'book'"
             @click="setMode('book')"
           >
-            <img class="skx-tab__icon"
-              :src="mode === 'book' ? '/img/ico-tab-book-on.svg' : '/img/ico-tab-book-off.svg'" alt="">
+            <img
+              class="skx-tab__icon"
+              :src="
+                mode === 'book'
+                  ? '/img/ico-tab-book-on.svg'
+                  : '/img/ico-tab-book-off.svg'
+              "
+              alt=""
+            />
             <span class="skx-tab__label">도서검색</span>
           </button>
           <button
@@ -34,8 +52,15 @@
             :aria-selected="mode === 'paper'"
             @click="setMode('paper')"
           >
-            <img class="skx-tab__icon"
-              :src="mode === 'paper' ? '/img/ico-tab-paper-on.svg' : '/img/ico-tab-paper-off.svg'" alt="">
+            <img
+              class="skx-tab__icon"
+              :src="
+                mode === 'paper'
+                  ? '/img/ico-tab-paper-on.svg'
+                  : '/img/ico-tab-paper-off.svg'
+              "
+              alt=""
+            />
             <span class="skx-tab__label">논문검색</span>
           </button>
         </div>
@@ -55,23 +80,42 @@
                 ></textarea>
               </label>
               <div class="skx-search__actions">
-                <button type="button" class="skx-send" aria-label="검색" @click="handleSearch(currentQuery)">
-                  <img src="/img/ico-send.svg" alt="">
+                <button
+                  type="button"
+                  class="skx-send"
+                  aria-label="검색"
+                  @click="handleSearch(currentQuery)"
+                >
+                  <img src="/img/ico-send.svg" alt="" />
                 </button>
               </div>
             </div>
             <ul class="skx-chips">
               <li v-for="chip in suggestions.book" :key="chip">
-                <button type="button" class="skx-chip" @click="handleSearch(chip)">{{ chip }}</button>
+                <button
+                  type="button"
+                  class="skx-chip"
+                  @click="handleSearch(chip)"
+                >
+                  {{ chip }}
+                </button>
               </li>
             </ul>
           </div>
-          <button type="button" class="skx-recommend" @click="navigateTo('/recommend')">
+          <button
+            type="button"
+            class="skx-recommend"
+            @click="navigateTo('/recommend')"
+          >
             <span class="skx-recommend__glow" aria-hidden="true"></span>
             <span class="skx-recommend__panel" aria-hidden="true"></span>
-            <span class="skx-recommend__icon"><img src="/img/ico-search-lg.svg" alt=""></span>
-            <span class="skx-recommend__label">내 상황에 맞는 도서 추천받기</span>
-            <img class="skx-recommend__arrow" src="/img/ico-arrow.svg" alt="">
+            <span class="skx-recommend__icon"
+              ><img src="/img/ico-search-lg.svg" alt=""
+            /></span>
+            <span class="skx-recommend__label"
+              >내 상황에 맞는 도서 추천받기</span
+            >
+            <img class="skx-recommend__arrow" src="/img/ico-arrow.svg" alt="" />
           </button>
         </div>
 
@@ -90,39 +134,74 @@
                 ></textarea>
               </label>
               <div class="skx-search__actions">
-                <button type="button" class="skx-send" aria-label="검색" @click="handleSearch(currentQuery)">
-                  <img src="/img/ico-send.svg" alt="">
+                <button
+                  type="button"
+                  class="skx-send"
+                  aria-label="검색"
+                  @click="handleSearch(currentQuery)"
+                >
+                  <img src="/img/ico-send.svg" alt="" />
                 </button>
               </div>
             </div>
             <ul class="skx-chips">
               <li v-for="chip in suggestions.paper" :key="chip">
-                <button type="button" class="skx-chip" @click="handleSearch(chip)">{{ chip }}</button>
+                <button
+                  type="button"
+                  class="skx-chip"
+                  @click="handleSearch(chip)"
+                >
+                  {{ chip }}
+                </button>
               </li>
             </ul>
             <!-- 논문 필터 드롭다운 -->
             <div class="skx-filters">
               <div :class="['skx-select', filterOpen && 'is-open']">
-                <button type="button" class="skx-select__btn"
-                  aria-haspopup="listbox" :aria-expanded="filterOpen"
-                  @click.stop="filterOpen = !filterOpen">
-                  <span class="skx-select__label">{{ selectedFilter || '자료유형' }}</span>
-                  <img class="skx-select__arrow" src="/img/ico-arrow-down.svg" alt="">
+                <button
+                  type="button"
+                  class="skx-select__btn"
+                  aria-haspopup="listbox"
+                  :aria-expanded="filterOpen"
+                  @click.stop="filterOpen = !filterOpen"
+                >
+                  <span class="skx-select__label">{{
+                    selectedFilter || "자료유형"
+                  }}</span>
+                  <img
+                    class="skx-select__arrow"
+                    src="/img/ico-arrow-down.svg"
+                    alt=""
+                  />
                 </button>
                 <ul class="skx-select__menu" role="listbox">
                   <li v-for="opt in filterOptions" :key="opt">
-                    <button type="button" class="skx-select__option"
+                    <button
+                      type="button"
+                      class="skx-select__option"
                       :class="selectedFilter === opt && 'is-selected'"
-                      role="option" @click="selectFilter(opt)">{{ opt }}</button>
+                      role="option"
+                      @click="selectFilter(opt)"
+                    >
+                      {{ opt }}
+                    </button>
                   </li>
                 </ul>
               </div>
               <div class="skx-filter-chip__wrap">
-                <span v-for="f in activeFilters" :key="f" class="skx-filter-chip">
+                <span
+                  v-for="f in activeFilters"
+                  :key="f"
+                  class="skx-filter-chip"
+                >
                   {{ f }}
-                  <button type="button" class="skx-filter-chip__x" aria-label="필터 삭제"
-                    @click="removeFilter(f)">
-                    <img src="/img/ico-delete.svg" alt="">
+                  <button
+                    type="button"
+                    class="skx-filter-chip__x"
+                    aria-label="필터 삭제"
+                    @click="removeFilter(f)"
+                  >
+                    <img src="/img/ico-delete.svg" alt="" />
                   </button>
                 </span>
               </div>
@@ -132,18 +211,31 @@
 
         <!-- 신작도서 카운트업 -->
         <section class="skx-newbooks">
-          <h2 class="skx-newbooks__title">지금도 새로운 책이 업데이트 되고 있어요!</h2>
+          <h2 class="skx-newbooks__title">
+            지금도 새로운 책이 업데이트 되고 있어요!
+          </h2>
           <div class="skx-newbooks__row">
             <div class="skx-newbooks__count">
               <span class="skx-newbooks__label">신작도서</span>
               <span class="skx-newbooks__num">
-                <span class="skx-newbooks__value">{{ newbooksCount.toLocaleString('ko-KR') }}</span>
+                <span class="skx-newbooks__value">{{
+                  newbooksCount.toLocaleString("ko-KR")
+                }}</span>
                 <span class="skx-newbooks__unit">권</span>
               </span>
             </div>
             <ul class="skx-newbooks__stack" aria-hidden="true">
-              <li v-for="i in 6" :key="i" :class="['skx-book', i === 1 && 'is-loading']">
-                <span class="skx-book__spine"><img class="skx-book__spinner" src="/img/ico-spinner.svg" alt=""></span>
+              <li
+                v-for="i in 6"
+                :key="i"
+                :class="['skx-book', i === 1 && 'is-loading']"
+              >
+                <span class="skx-book__spine"
+                  ><img
+                    class="skx-book__spinner"
+                    src="/img/ico-spinner.svg"
+                    alt=""
+                /></span>
                 <span class="skx-book__bar"></span>
               </li>
             </ul>
@@ -155,52 +247,104 @@
     <!-- ===== RESULTS VIEW ===== -->
     <main v-else-if="view === 'results'" class="skx-result">
       <div class="skx-rsearch">
-        <input type="text" class="skx-rsearch__input"
-          v-model="currentQuery" aria-label="검색어 입력"
-          @keydown.enter.prevent="handleSearch(currentQuery)">
-        <button type="button" class="skx-send" aria-label="검색" @click="handleSearch(currentQuery)">
-          <img src="/img/ico-send.svg" alt="">
+        <input
+          type="text"
+          class="skx-rsearch__input"
+          v-model="currentQuery"
+          aria-label="검색어 입력"
+          @keydown.enter.prevent="handleSearch(currentQuery)"
+        />
+        <button
+          type="button"
+          class="skx-send"
+          aria-label="검색"
+          @click="handleSearch(currentQuery)"
+        >
+          <img src="/img/ico-send.svg" alt="" />
         </button>
       </div>
 
-      <div v-if="loading" class="skx-result-card" style="padding:40px;text-align:center">
-        <img src="/img/ico-spinner.svg" alt="" style="width:32px">
-        <p style="margin-top:12px">AI가 {{ mode === 'book' ? '도서' : '논문' }}를 검색 중입니다...</p>
+      <div
+        v-if="loading"
+        class="skx-result-card"
+        style="padding: 40px; text-align: center"
+      >
+        <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
+        <p style="margin-top: 12px">
+          AI가 {{ mode === "book" ? "도서" : "논문" }}를 검색 중입니다...
+        </p>
       </div>
 
-      <div v-else-if="searchError" class="skx-result-card" style="padding:20px;color:#c00">{{ searchError }}</div>
+      <div
+        v-else-if="searchError"
+        class="skx-result-card"
+        style="padding: 20px; color: #c00"
+      >
+        {{ searchError }}
+      </div>
 
       <template v-else>
         <!-- AI 큐레이션 (도서) -->
         <div v-if="mode === 'book' && books.length" class="skx-result-card">
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer" @click="curationOpen = !curationOpen">
-            <img src="/img/logo-mark.svg" alt="" style="width:24px">
-            <span style="font-weight:600">AI가 원하시는 도서를 찾았어요!</span>
-            <span v-if="curationLoading" style="font-size:12px;color:var(--skx-violet)">분석 중...</span>
-            <button type="button" style="margin-left:auto;font-size:12px">{{ curationOpen ? '접기' : '펼치기' }}</button>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              cursor: pointer;
+            "
+            @click="curationOpen = !curationOpen"
+          >
+            <img src="/img/logo-mark.svg" alt="" style="width: 24px" />
+            <span style="font-weight: 600">AI가 원하시는 도서를 찾았어요!</span>
+            <span
+              v-if="curationLoading"
+              style="font-size: 12px; color: var(--skx-violet)"
+              >분석 중...</span
+            >
+            <button type="button" style="margin-left: auto; font-size: 12px">
+              {{ curationOpen ? "접기" : "펼치기" }}
+            </button>
           </div>
           <Transition name="skx-expand">
-            <div v-if="curationOpen && curation" style="margin-top:12px">
+            <div v-if="curationOpen && curation" style="margin-top: 12px">
               <p>{{ curation.intro }}</p>
-              <ul style="margin-top:8px">
-                <li v-for="item in curation.items" :key="item.book_id" style="margin-top:4px">• {{ item.reason }}</li>
+              <ul style="margin-top: 8px">
+                <li
+                  v-for="item in curation.items"
+                  :key="item.book_id"
+                  style="margin-top: 4px"
+                >
+                  • {{ item.reason }}
+                </li>
               </ul>
             </div>
           </Transition>
         </div>
 
         <!-- AI 논문 요약 -->
-        <div v-if="mode === 'paper' && (paperSummaryText || paperSummaryLoading)" class="skx-result-card">
-          <div style="display:flex;align-items:center;gap:8px">
-            <img src="/img/logo-mark.svg" alt="" style="width:24px">
-            <span style="font-weight:600">AI 핵심 요약</span>
-            <span v-if="paperSummaryLoading" style="color:var(--skx-violet)">●</span>
+        <div
+          v-if="mode === 'paper' && (paperSummaryText || paperSummaryLoading)"
+          class="skx-result-card"
+        >
+          <div style="display: flex; align-items: center; gap: 8px">
+            <img src="/img/logo-mark.svg" alt="" style="width: 24px" />
+            <span style="font-weight: 600">AI 핵심 요약</span>
+            <span v-if="paperSummaryLoading" style="color: var(--skx-violet)"
+              >●</span
+            >
           </div>
-          <div v-html="renderedPaperSummary" style="margin-top:12px" />
+          <div v-html="renderedPaperSummary" style="margin-top: 12px" />
         </div>
 
         <!-- 결과 카드 -->
-        <div v-for="item in books" :key="item.book_id" class="skx-result-card" style="cursor:pointer" @click="openDetail(item)">
+        <div
+          v-for="item in books"
+          :key="item.book_id"
+          class="skx-result-card"
+          style="cursor: pointer"
+          @click="openDetail(item)"
+        >
           <article class="skx-book-card">
             <div class="skx-book-card__thumb">
               <BookCover :book-id="item.book_id" />
@@ -208,37 +352,101 @@
             <div class="skx-book-card__body">
               <div class="skx-book-card__top">
                 <div class="skx-book-card__tags">
-                  <span class="skx-tag skx-tag--score">정합성 {{ Math.round((item.best_score || 0) * 100) }}%</span>
-                  <span v-for="tag in parseThemes(item.book_info?.themes)" :key="tag" class="skx-tag skx-tag--keyword">#{{ tag }}</span>
+                  <span class="skx-tag skx-tag--score"
+                    >정합성
+                    {{ Math.round((item.best_score || 0) * 100) }}%</span
+                  >
+                  <span
+                    v-for="tag in parseThemes(item.book_info?.themes)"
+                    :key="tag"
+                    class="skx-tag skx-tag--keyword"
+                    >#{{ tag }}</span
+                  >
                 </div>
-                <button type="button" class="skx-book-card__bookmark"
-                  :aria-label="isBookmarked(item.book_id) ? '북마크 해제' : '북마크'"
-                  @click.stop="toggleBookmark(item.book_id)">
-                  <img :src="bookmarkIcon(item.book_id)" alt="">
+                <button
+                  type="button"
+                  class="skx-book-card__bookmark"
+                  :aria-label="
+                    isBookmarked(item.book_id) ? '북마크 해제' : '북마크'
+                  "
+                  @click.stop="toggleBookmark(item.book_id)"
+                >
+                  <img :src="bookmarkIcon(item.book_id)" alt="" />
                 </button>
               </div>
               <div class="skx-book-card__meta">
-                <h3 class="skx-book-card__title">{{ item.book_info?.title || item.book_id }}</h3>
+                <h3 class="skx-book-card__title">
+                  {{ item.book_info?.title || item.book_id }}
+                </h3>
                 <div class="skx-book-card__info-row">
-                  <span v-if="item.book_info?.material_type" class="skx-meta-text">{{ item.book_info.material_type }}</span>
-                  <span v-if="item.book_info?.personal_author || item.book_info?.corporate_author" class="skx-dot"></span>
-                  <span class="skx-meta-text">{{ item.book_info?.personal_author || item.book_info?.corporate_author }}</span>
+                  <span
+                    v-if="item.book_info?.material_type"
+                    class="skx-meta-text"
+                    >{{ item.book_info.material_type }}</span
+                  >
+                  <span
+                    v-if="
+                      item.book_info?.personal_author ||
+                      item.book_info?.corporate_author
+                    "
+                    class="skx-dot"
+                  ></span>
+                  <span class="skx-meta-text">{{
+                    item.book_info?.personal_author ||
+                    item.book_info?.corporate_author
+                  }}</span>
                   <span v-if="item.book_info?.pub_date" class="skx-dot"></span>
-                  <span v-if="item.book_info?.pub_date" class="skx-meta-text">{{ item.book_info.pub_date.slice(0, 4) }}년</span>
+                  <span v-if="item.book_info?.pub_date" class="skx-meta-text"
+                    >{{ item.book_info.pub_date.slice(0, 4) }}년</span
+                  >
                   <span v-if="item.book_info?.publisher" class="skx-dot"></span>
-                  <span v-if="item.book_info?.publisher" class="skx-meta-text">{{ item.book_info.publisher }}</span>
+                  <span
+                    v-if="item.book_info?.publisher"
+                    class="skx-meta-text"
+                    >{{ item.book_info.publisher }}</span
+                  >
                 </div>
               </div>
               <div class="skx-book-card__actions" @click.stop>
-                <button type="button" class="skx-btn-talk skx-btn-talk--book" @click="openDetail(item)">
+                <button
+                  type="button"
+                  class="skx-btn-talk skx-btn-talk--book"
+                  @click="openDetail(item)"
+                >
                   <span class="skx-btn-talk__glow" aria-hidden="true"></span>
                   <span class="skx-btn-talk__panel" aria-hidden="true"></span>
-                  <img class="skx-btn-talk__ico" src="/img/ico-chat.svg" alt="">
-                  <span class="skx-btn-talk__label">이 {{ mode === 'paper' ? '논문과' : '책과' }} 대화하기</span>
+                  <img
+                    class="skx-btn-talk__ico"
+                    src="/img/ico-chat.svg"
+                    alt=""
+                  />
+                  <span class="skx-btn-talk__label"
+                    >이
+                    {{ mode === "paper" ? "논문과" : "책과" }} 대화하기</span
+                  >
                 </button>
-                <button type="button" class="skx-btn-loan" @click="requestLoan(item)">대출신청</button>
-                <button type="button" class="skx-btn-read" @click="viewPdf(item)">원문 보기</button>
-                <button v-if="mode === 'paper'" type="button" class="skx-btn-loan" @click.stop="openCitation(item)">출처 인용</button>
+                <button
+                  type="button"
+                  class="skx-btn-loan"
+                  @click="requestLoan(item)"
+                >
+                  대출신청
+                </button>
+                <button
+                  type="button"
+                  class="skx-btn-read"
+                  @click="viewPdf(item)"
+                >
+                  원문 보기
+                </button>
+                <button
+                  v-if="mode === 'paper'"
+                  type="button"
+                  class="skx-btn-loan"
+                  @click.stop="openCitation(item)"
+                >
+                  출처 인용
+                </button>
               </div>
             </div>
           </article>
@@ -271,6 +479,7 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
+import { useBookmark } from "~/composables/useBookmark";
 import type { BookChunkGroup } from "~/types/search";
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -385,49 +594,56 @@ const history = ref<any[]>([]);
 
 // ── Publishing additions ──────────────────────────────────────
 // Tab slider
-const tabsRef = ref<HTMLElement | null>(null)
-const tabSliderStyle = ref<{ width: string; transform: string }>({ width: '0px', transform: 'translateX(0px)' })
+const tabsRef = ref<HTMLElement | null>(null);
+const tabSliderStyle = ref<{ width: string; transform: string }>({
+  width: "0px",
+  transform: "translateX(0px)",
+});
 
 // Filter dropdown (paper mode)
-const filterOpen = ref(false)
-const selectedFilter = ref('')
-const activeFilters = ref<string[]>([])
-const filterOptions = ['KCI 등재', 'KCI 미등재', 'KCI 후보']
+const filterOpen = ref(false);
+const selectedFilter = ref("");
+const activeFilters = ref<string[]>([]);
+const filterOptions = ["KCI 등재", "KCI 미등재", "KCI 후보"];
 
 // Newbooks countup
-const newbooksCount = ref(0)
-const NEW_BOOKS_TARGET = 1245
+const newbooksCount = ref(0);
+const NEW_BOOKS_TARGET = 1245;
 
 // Bookmark
-const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark()
+const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
-function setMode(m: 'book' | 'paper') {
-  mode.value = m
-  nextTick(() => updateTabSlider())
+function setMode(m: "book" | "paper") {
+  mode.value = m;
+  nextTick(() => updateTabSlider());
 }
 
 function updateTabSlider() {
-  if (!tabsRef.value) return
-  const active = tabsRef.value.querySelector('.skx-tab.is-active') as HTMLElement | null
-  if (!active) return
+  if (!tabsRef.value) return;
+  const active = tabsRef.value.querySelector(
+    ".skx-tab.is-active",
+  ) as HTMLElement | null;
+  if (!active) return;
   tabSliderStyle.value = {
-    width: active.offsetWidth + 'px',
+    width: active.offsetWidth + "px",
     transform: `translateX(${active.offsetLeft}px)`,
-  }
+  };
 }
 
 function selectFilter(opt: string) {
-  selectedFilter.value = opt
-  filterOpen.value = false
-  if (!activeFilters.value.includes(opt)) activeFilters.value.push(opt)
+  selectedFilter.value = opt;
+  filterOpen.value = false;
+  if (!activeFilters.value.includes(opt)) activeFilters.value.push(opt);
 }
 
 function removeFilter(f: string) {
-  activeFilters.value = activeFilters.value.filter(x => x !== f)
-  if (selectedFilter.value === f) selectedFilter.value = ''
+  activeFilters.value = activeFilters.value.filter((x) => x !== f);
+  if (selectedFilter.value === f) selectedFilter.value = "";
 }
 
-function onDocClick() { filterOpen.value = false }
+function onDocClick() {
+  filterOpen.value = false;
+}
 // ── End publishing additions ──────────────────────────────────
 
 onMounted(async () => {
@@ -441,28 +657,28 @@ onMounted(async () => {
   }
 
   // Tab slider
-  nextTick(() => updateTabSlider())
-  window.addEventListener('resize', updateTabSlider)
+  nextTick(() => updateTabSlider());
+  window.addEventListener("resize", updateTabSlider);
 
   // Newbooks countup
-  const duration = 1600
-  const startTime = performance.now()
+  const duration = 1600;
+  const startTime = performance.now();
   const tick = (now: number) => {
-    const p = Math.min((now - startTime) / duration, 1)
-    const eased = 1 - Math.pow(1 - p, 3)
-    newbooksCount.value = Math.round(NEW_BOOKS_TARGET * eased)
-    if (p < 1) requestAnimationFrame(tick)
-    else newbooksCount.value = NEW_BOOKS_TARGET
-  }
-  requestAnimationFrame(tick)
+    const p = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    newbooksCount.value = Math.round(NEW_BOOKS_TARGET * eased);
+    if (p < 1) requestAnimationFrame(tick);
+    else newbooksCount.value = NEW_BOOKS_TARGET;
+  };
+  requestAnimationFrame(tick);
 
-  document.addEventListener('click', onDocClick)
+  document.addEventListener("click", onDocClick);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateTabSlider)
-  document.removeEventListener('click', onDocClick)
-})
+  window.removeEventListener("resize", updateTabSlider);
+  document.removeEventListener("click", onDocClick);
+});
 
 // ── 유틸 ──────────────────────────────────────────────────
 const suggestions = SUGGESTIONS;
