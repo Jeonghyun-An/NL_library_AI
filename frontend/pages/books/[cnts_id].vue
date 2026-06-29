@@ -177,12 +177,6 @@
                   >
                     {{ book.introduction || "소개 정보가 없습니다." }}
                   </p>
-                  <p
-                    v-else-if="detailTab === 'effect'"
-                    class="skx-curation-text"
-                  >
-                    {{ book.read_effect || "정보가 없습니다." }}
-                  </p>
                 </div>
               </div>
             </div>
@@ -432,7 +426,9 @@ const matchScore = computed(() => {
   return s ? Math.round(Number(s) * 100) : null;
 });
 
-const themes = computed(() => parseThemes(book.value?.themes));
+const themes = computed(() =>
+  parseThemes(book.value?.themes || book.value?.keyword || book.value?.subject)
+);
 
 // ── AI 큐레이션 ────────────────────────────────────────────
 const reasonText = ref("");
@@ -461,7 +457,6 @@ const detailTabs = [
   { key: "reason", label: "추천 이유" },
   { key: "plot", label: "줄거리" },
   { key: "intro", label: "소개" },
-  { key: "effect", label: "독서 효과" },
 ];
 
 function updateVtabSlider() {
@@ -518,6 +513,10 @@ function viewPdf() {
 
 // ── 초기화 ─────────────────────────────────────────────────
 onMounted(async () => {
+  // ?chat=1 → 채팅 패널 자동 오픈
+  if (route.query.chat === '1') {
+    chatPanelOpen.value = true;
+  }
   await fetchBook();
   if (book.value) {
     streamReason();
@@ -598,10 +597,10 @@ async function fetchRelatedBooks() {
 function parseThemes(themes?: string | null): string[] {
   if (!themes) return [];
   return themes
-    .split(",")
+    .split(/[,;]/)
     .map((t) => t.trim())
     .filter(Boolean)
-    .slice(0, 3);
+    .slice(0, 4);
 }
 
 async function readSSE(resp: Response, onEvent: (json: any) => void) {

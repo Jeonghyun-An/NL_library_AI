@@ -287,35 +287,22 @@
         <!-- AI 큐레이션 (도서) -->
         <div v-if="mode === 'book' && books.length" class="skx-result-card">
           <div
-            style="
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              cursor: pointer;
-            "
+            style="display:flex;align-items:center;gap:8px;cursor:pointer"
             @click="curationOpen = !curationOpen"
           >
-            <img src="/img/logo-mark.svg" alt="" style="width: 24px" />
-            <span style="font-weight: 600">AI가 원하시는 도서를 찾았어요!</span>
-            <span
-              v-if="curationLoading"
-              style="font-size: 12px; color: var(--skx-violet)"
-              >분석 중...</span
-            >
-            <button type="button" style="margin-left: auto; font-size: 12px">
+            <img src="/img/logo-mark.svg" alt="" style="width:24px" />
+            <span style="font-weight:600">AI가 원하시는 도서를 찾았어요!</span>
+            <span v-if="curationLoading" style="font-size:12px;color:var(--skx-violet)">●</span>
+            <button type="button" style="margin-left:auto;font-size:12px">
               {{ curationOpen ? "접기" : "펼치기" }}
             </button>
           </div>
           <Transition name="skx-expand">
-            <div v-if="curationOpen && curation" style="margin-top: 12px">
-              <p>{{ curation.intro }}</p>
-              <ul style="margin-top: 8px">
-                <li
-                  v-for="item in curation.items"
-                  :key="item.book_id"
-                  style="margin-top: 4px"
-                >
-                  • {{ item.reason }}
+            <div v-if="curationOpen && (curationIntro || curationItems.length)" style="margin-top:12px">
+              <p>{{ curationIntro }}</p>
+              <ul style="margin-top:8px">
+                <li v-for="ci in curationItems" :key="ci.book_id" style="margin-top:4px">
+                  • {{ ci.reason }}
                 </li>
               </ul>
             </div>
@@ -357,7 +344,7 @@
                     {{ Math.round((item.best_score || 0) * 100) }}%</span
                   >
                   <span
-                    v-for="tag in parseThemes(item.book_info?.themes)"
+                    v-for="tag in parseThemes(item.book_info?.themes || item.book_info?.keyword || item.book_info?.subject)"
                     :key="tag"
                     class="skx-tag skx-tag--keyword"
                     >#{{ tag }}</span
@@ -411,7 +398,7 @@
                 <button
                   type="button"
                   class="skx-btn-talk skx-btn-talk--book"
-                  @click="openDetail(item)"
+                  @click="openDetailWithChat(item)"
                 >
                   <span class="skx-btn-talk__glow" aria-hidden="true"></span>
                   <span class="skx-btn-talk__panel" aria-hidden="true"></span>
@@ -538,6 +525,9 @@ const currentHistoryId = ref("");
 const curation = ref<any>(null);
 const curationOpen = ref(true);
 const curationLoading = ref(false);
+// SSE 스트리밍용 분리 ref
+const curationIntro = ref("");
+const curationItems = ref<Array<{ book_id: string; reason: string }>>([]);
 
 // ── 논문 핵심 요약 SSE ─────────────────────────────────────
 const paperSummaryText = ref("");
@@ -686,10 +676,10 @@ const suggestions = SUGGESTIONS;
 function parseThemes(themes?: string | null): string[] {
   if (!themes) return [];
   return themes
-    .split(",")
+    .split(/[,;]/)
     .map((t) => t.trim())
     .filter(Boolean)
-    .slice(0, 3);
+    .slice(0, 4);
 }
 
 function isAvailable(_item: BookChunkGroup): boolean {
@@ -721,6 +711,8 @@ async function handleSearch(query: string) {
   searchError.value = "";
   books.value = [];
   curation.value = null;
+  curationIntro.value = "";
+  curationItems.value = [];
   curationOpen.value = true;
   paperSummaryText.value = "";
   keywordChips.value = [];
@@ -746,8 +738,7 @@ async function handleSearch(query: string) {
     if (data?.books) {
       books.value = data.books;
       rewrittenQuery.value = data.rewritten_query || query;
-      const firstThemes = parseThemes(data.books[0]?.book_info?.themes);
-      if (firstThemes.length) keywordChips.value = firstThemes;
+      // keywordChips는 SSE reason 스트림에서만 수신 (query rewrite 키워드)
     }
 
     history.value.unshift({
@@ -788,11 +779,13 @@ function restoreHistory(h: any) {
   handleSearch(h.query);
 }
 
-// ── 큐레이션 (도서) ────────────────────────────────────────
+// ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
 async function fetchCuration() {
   const topBooks = books.value.slice(0, 3);
   if (!topBooks.length) return;
   curationLoading.value = true;
+  curationIntro.value = "";
+  curationItems.value = [];
   try {
     const data = await $fetch<any>(`${apiBase}/books/curate`, {
       method: "POST",
@@ -804,6 +797,28 @@ async function fetchCuration() {
       },
     });
     curation.value = data;
+    // intro 타이프라이터 효과
+    const intro: string = data?.intro || "";
+    const items: Array<{ book_id: string; reason: string }> = data?.items || [];
+    let i = 0;
+    const typeIntro = () => {
+      if (i < intro.length) {
+        curationIntro.value += intro[i++];
+        setTimeout(typeIntro, 18);
+      } else {
+        // intro 완료 후 items를 순서대로 추가
+        for (const ci of items) {
+          curationItems.value.push({ book_id: ci.book_id, reason: ci.reason });
+        }
+      }
+    };
+    if (intro) {
+      curationOpen.value = true;
+      typeIntro();
+    } else {
+      curationIntro.value = intro;
+      curationItems.value = items;
+    }
   } catch {
     /* 큐레이션 실패 시 조용히 무시 */
   } finally {
@@ -842,12 +857,22 @@ async function fetchPaperSummary(query: string) {
 // ── 상세 열기 ──────────────────────────────────────────────
 function openDetail(item: BookChunkGroup) {
   if (mode.value === "paper") {
-    navigateTo(`/papers/${item.book_id}`);
+    navigateTo(`/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}`);
     return;
   }
-  // 도서 → 별도 상세 페이지로 이동
   navigateTo(
     `/books/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&score=${item.best_score || 0}`,
+  );
+}
+
+// 이 책과 대화하기 → detail + chat 자동 오픈
+function openDetailWithChat(item: BookChunkGroup) {
+  if (mode.value === "paper") {
+    navigateTo(`/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&chat=1`);
+    return;
+  }
+  navigateTo(
+    `/books/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&score=${item.best_score || 0}&chat=1`,
   );
 }
 
