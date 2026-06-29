@@ -728,7 +728,7 @@ async function handleSearch(query: string) {
       headers: { "x-session-id": getSessionId() },
       body: {
         query,
-        mode: "book",
+        mode: mode.value,
         top_k: 5,
         use_rewrite: true,
         use_rerank: true,
