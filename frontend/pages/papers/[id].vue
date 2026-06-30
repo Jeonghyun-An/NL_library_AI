@@ -190,7 +190,7 @@
 
           <!-- 아코디언: 키워드 -->
           <div class="skx-paccordion">
-            <div class="skx-paccord">
+            <div :class="['skx-paccord', keywordOpen && 'is-open']">
               <button
                 type="button"
                 class="skx-paccord__head"
@@ -203,10 +203,9 @@
                   src="/img/ico-arrow-down.svg"
                   alt=""
                   aria-hidden="true"
-                  :style="keywordOpen ? 'transform:rotate(180deg)' : ''"
                 />
               </button>
-              <div v-if="keywordOpen" class="skx-paccord__body-outer">
+              <div class="skx-paccord__body-outer">
                 <div class="skx-paccord__body">
                   <div class="skx-keyword-list">
                     <span
@@ -226,7 +225,7 @@
             </div>
 
             <!-- 아코디언: 참고문헌 -->
-            <div class="skx-paccord">
+            <div :class="['skx-paccord', refsOpen && 'is-open']">
               <button
                 type="button"
                 class="skx-paccord__head"
@@ -239,10 +238,9 @@
                   src="/img/ico-arrow-down.svg"
                   alt=""
                   aria-hidden="true"
-                  :style="refsOpen ? 'transform:rotate(180deg)' : ''"
                 />
               </button>
-              <div v-if="refsOpen" class="skx-paccord__body-outer">
+              <div class="skx-paccord__body-outer">
                 <div class="skx-paccord__body">
                   <ol v-if="paper.references?.length" class="skx-refs-list">
                     <li
