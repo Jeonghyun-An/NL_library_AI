@@ -747,6 +747,13 @@ function showToast(msg: string) {
 // ── 검색 ──────────────────────────────────────────────────
 async function handleSearch(query: string) {
   if (!query.trim()) return;
+
+  // 논문 모드는 papers 전용 페이지로 이동
+  if (mode.value === "paper") {
+    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}`);
+    return;
+  }
+
   currentQuery.value = query;
   loading.value = true;
   searchError.value = "";
@@ -763,24 +770,7 @@ async function handleSearch(query: string) {
   view.value = "results";
 
   try {
-    if (mode.value === "paper") {
-      const data = await $fetch<any>(`${apiBase}/papers/search`, {
-        method: "POST",
-        headers: { "x-session-id": getSessionId() },
-        body: {
-          query,
-          mode: "book",
-          top_k: 5,
-          use_rewrite: true,
-          use_rerank: true,
-        },
-      });
-      if (data?.books) {
-        papers.value = data.books;
-        rewrittenQuery.value = data.rewritten_query || query;
-      }
-      if (papers.value.length) fetchPaperSummary(query);
-    } else {
+    {
       const data = await $fetch<any>(`${apiBase}/books/search`, {
         method: "POST",
         headers: { "x-session-id": getSessionId() },

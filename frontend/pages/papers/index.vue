@@ -129,6 +129,21 @@
                 <span class="skx-paper-count__label">건</span>
               </div>
               <div class="skx-paper-head__right">
+                <!-- 등재 등급 필터 -->
+                <div v-if="gradeOptions.length" class="skx-paper-grade-filter" role="group" aria-label="등재 등급 필터">
+                  <button
+                    type="button"
+                    :class="['skx-ptag skx-ptag--filter', selectedGrade === 'all' && 'is-active']"
+                    @click="selectedGrade = 'all'; currentPage = 1"
+                  >전체</button>
+                  <button
+                    v-for="g in gradeOptions"
+                    :key="g"
+                    type="button"
+                    :class="['skx-ptag skx-ptag--filter skx-ptag--kci', selectedGrade === g && 'is-active']"
+                    @click="selectedGrade = g; currentPage = 1"
+                  >{{ g }}</button>
+                </div>
                 <div class="skx-paper-sorts" role="group" aria-label="정렬 기준">
                   <button
                     type="button"
@@ -199,8 +214,8 @@
               >
                 <div class="skx-paper-item__left">
                   <div class="skx-paper-tags">
-                    <span v-if="paper.book_info?.genre" class="skx-ptag skx-ptag--kci">
-                      {{ GENRE_LABELS[paper.book_info.genre] || paper.book_info.genre }}
+                    <span v-if="paper.book_info?.grade" class="skx-ptag skx-ptag--kci">
+                      {{ paper.book_info.grade }}
                     </span>
                     <span class="skx-ptag skx-ptag--score">
                       정합성 {{ Math.round((paper.best_score || 0) * 100) }}%
@@ -377,7 +392,8 @@ const renderedAiText = computed(() =>
   aiText.value ? (marked.parse(aiText.value) as string) : ""
 );
 
-// ── 정렬 / 페이지 ─────────────────────────────────────────────
+// ── 정렬 / 페이지 / 필터 ─────────────────────────────────────
+const selectedGrade = ref("all");
 const sortBy = ref("relevance");
 const pageSize = ref(20);
 const currentPage = ref(1);
@@ -397,15 +413,6 @@ function showToast(msg: string) {
   setTimeout(() => { toast.value = ""; }, 2500);
 }
 
-const GENRE_LABELS: Record<string, string> = {
-  paper: "학술논문",
-  thesis: "학위논문",
-  report: "연구보고서",
-  manual: "매뉴얼",
-  book: "단행본",
-  other: "기타",
-};
-
 // ── 계산 ─────────────────────────────────────────────────────
 const hasResults = computed(() => paperResult.value !== null || loading.value);
 
@@ -418,7 +425,19 @@ const sortedPapers = computed(() => {
   return books;
 });
 
-const filteredPapers = computed(() => sortedPapers.value);
+const gradeOptions = computed(() => {
+  const grades = new Set<string>();
+  (paperResult.value?.books ?? []).forEach((b) => {
+    const g = b.book_info?.grade;
+    if (g) grades.add(g);
+  });
+  return Array.from(grades).sort();
+});
+
+const filteredPapers = computed(() => {
+  if (selectedGrade.value === "all") return sortedPapers.value;
+  return sortedPapers.value.filter((b) => b.book_info?.grade === selectedGrade.value);
+});
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredPapers.value.length / pageSize.value)));
 
@@ -560,9 +579,12 @@ async function openCiteModal(paper: any) {
   }
 }
 
-// ── 페이지당 개수 드롭다운 닫기 ──────────────────────────────
+// ── 페이지당 개수 드롭다운 닫기 + URL 초기 검색 ───────────────
 onMounted(() => {
   document.addEventListener("click", () => { perpageOpen.value = false; });
+  const route = useRoute();
+  const q = route.query.q as string | undefined;
+  if (q?.trim()) handleSearch(q.trim());
 });
 
 watch(currentPage, () => window.scrollTo({ top: 0, behavior: "smooth" }));

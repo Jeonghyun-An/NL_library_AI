@@ -26,8 +26,8 @@
             <div class="skx-pdetail__meta">
               <div class="skx-pdetail__top-row">
                 <div class="skx-pdetail__badges">
-                  <span v-if="paper.genre" class="skx-ptag skx-ptag--kci">
-                    {{ GENRE_LABELS[paper.genre] || paper.genre }}
+                  <span v-if="paper.grade" class="skx-ptag skx-ptag--kci">
+                    {{ paper.grade }}
                   </span>
                   <span v-if="matchScore" class="skx-ptag skx-ptag--score"
                     >정합성 {{ matchScore }}%</span
@@ -58,15 +58,38 @@
                     paper.personal_author || paper.corporate_author
                   }}</span>
                 </div>
-                <div v-if="paper.publisher" class="skx-pdetail__row">
+                <div
+                  v-if="paper.publisher || paper.series_title"
+                  class="skx-pdetail__row"
+                >
                   <span class="skx-pdetail__row-lbl">저널정보</span>
-                  <span class="skx-pdetail__row-val">{{
-                    paper.publisher
-                  }}</span>
+                  <span class="skx-pdetail__row-val">
+                    <template v-if="paper.publisher">{{ paper.publisher }}</template>
+                    <template v-if="paper.publisher && paper.series_title">
+                      <img class="skx-pdetail__row-arr" src="/img/ico-arrow.svg" alt="" />
+                    </template>
+                    <template v-if="paper.series_title">{{ paper.series_title }}</template>
+                    <template v-if="paper.vol_issue">
+                      <img class="skx-pdetail__row-arr" src="/img/ico-arrow.svg" alt="" />
+                      {{ paper.vol_issue }}
+                    </template>
+                  </span>
                 </div>
                 <div v-if="paper.pub_date" class="skx-pdetail__row">
                   <span class="skx-pdetail__row-lbl">발행년도</span>
                   <span class="skx-pdetail__row-val">{{ paper.pub_date }}</span>
+                </div>
+                <div v-if="paper.extent" class="skx-pdetail__row">
+                  <span class="skx-pdetail__row-lbl">수록면</span>
+                  <span class="skx-pdetail__row-val">{{ paper.extent }}</span>
+                </div>
+                <div v-if="paper.kci_citations" class="skx-pdetail__row">
+                  <span class="skx-pdetail__row-lbl">인용수</span>
+                  <span class="skx-pdetail__row-val">{{ paper.kci_citations }}</span>
+                </div>
+                <div v-if="paper.wos_citations" class="skx-pdetail__row">
+                  <span class="skx-pdetail__row-lbl">이용수</span>
+                  <span class="skx-pdetail__row-val">{{ paper.wos_citations }}</span>
                 </div>
               </div>
               <div class="skx-pdetail__btns">
@@ -87,6 +110,19 @@
                   />
                   <span class="skx-btn-talk__label">논문과 대화하기</span>
                 </button>
+                <a
+                  v-if="paper.url"
+                  :href="paper.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="skx-btn-pview-sm"
+                >원문 보기</a>
+                <button
+                  v-else
+                  type="button"
+                  class="skx-btn-pview-sm"
+                  @click="showToast('원문 링크가 없습니다.')"
+                >원문 보기</button>
                 <button
                   type="button"
                   class="skx-btn-pbmark-sm"
@@ -229,82 +265,68 @@
           </div>
 
           <!-- AI 연관 논문 추천 -->
-          <section class="skx-reco">
-            <h2 class="skx-section-title">AI 연관 논문 추천</h2>
-            <div class="skx-reco-panel">
-              <div class="skx-reco-list">
-                <div
-                  v-if="relatedLoading"
-                  style="padding: 16px; color: #bbb; font-size: 12px"
-                >
-                  불러오는 중...
-                </div>
-                <button
-                  v-for="rel in relatedItems"
-                  :key="rel.book_id"
-                  type="button"
-                  :class="[
-                    'skx-reco-item',
-                    selectedRelated?.book_id === rel.book_id && 'is-active',
-                  ]"
-                  @click="
-                    selectedRelated = rel;
-                    streamRelatedReason(rel.book_id);
-                  "
-                >
-                  <img
-                    class="skx-reco-item__thumb"
-                    src="/img/ico-book-thumb.svg"
-                    alt=""
-                  />
-                  <div class="skx-reco-item__inner">
-                    <span class="skx-reco-item__name">{{
-                      rel.book_info?.title || rel.book_id
-                    }}</span>
-                    <span class="skx-reco-item__score"
-                      >정합성 {{ Math.round((rel.score || 0) * 100) }}%</span
-                    >
+          <section class="skx-prelate" aria-label="AI 연관 논문 추천">
+            <h2 class="skx-prelate__heading">AI 연관 논문 추천</h2>
+            <div class="skx-prelate__list">
+              <div
+                v-if="relatedLoading"
+                style="padding: 16px; color: #bbb; font-size: 12px"
+              >
+                불러오는 중...
+              </div>
+              <article
+                v-for="rel in relatedItems"
+                :key="rel.book_id"
+                class="skx-prelate-card"
+                style="cursor: pointer"
+                @click="navigateTo(`/papers/${rel.book_id}`)"
+              >
+                <div class="skx-prelate-card__info">
+                  <span class="skx-prelate-card__score"
+                    >정합성 {{ Math.round((rel.score || 0) * 100) }}%</span
+                  >
+                  <div class="skx-prelate-card__title-row">
+                    <h3 class="skx-prelate-card__title">
+                      {{ rel.book_info?.title || rel.book_id }}
+                    </h3>
+                    <p class="skx-prelate-card__author">
+                      {{
+                        rel.book_info?.personal_author ||
+                        rel.book_info?.corporate_author ||
+                        ""
+                      }}
+                    </p>
                   </div>
-                </button>
-              </div>
-              <div v-if="!selectedRelated" class="skx-reco-empty">
-                <img
-                  class="skx-reco-empty__logo"
-                  src="/img/logo-mark.svg"
-                  alt="SKOVIX"
-                />
-                <p class="skx-reco-empty__text">추천 논문을 클릭해주세요</p>
-              </div>
-              <div v-else class="skx-reco-detail">
-                <div class="skx-reco-info">
-                  <h3 class="skx-reco-title">
-                    {{ selectedRelated.book_info?.title }}
-                  </h3>
-                  <p
-                    v-if="relatedReasonLoading"
-                    class="skx-curation-text"
-                    style="margin-top: 10px; font-size: 13px; color: #888"
-                  >
-                    AI가 유사성을 분석 중입니다<span
-                      class="skx-stream-cursor"
-                    />
-                  </p>
-                  <p
-                    v-else-if="relatedReason"
-                    class="skx-curation-text"
-                    style="margin-top: 10px; font-size: 13px; color: #555"
-                  >
-                    {{ relatedReason }}
-                  </p>
-                  <button
-                    class="skx-btn-loan"
-                    style="margin-top: 12px"
-                    @click="navigateTo(`/papers/${selectedRelated.book_id}`)"
-                  >
-                    상세 보기
-                  </button>
                 </div>
-              </div>
+                <div class="skx-prelate-card__ai">
+                  <div class="skx-prelate-card__ai-inner">
+                    <img
+                      class="skx-prelate-card__ai-icon"
+                      src="/img/ico-ai-related.svg"
+                      alt=""
+                    />
+                    <p class="skx-prelate-card__ai-text">
+                      <template
+                        v-if="
+                          relatedReasonLoading.has(rel.book_id) &&
+                          !relatedReasons[rel.book_id]
+                        "
+                      >
+                        AI가 유사성을 분석 중입니다<span
+                          class="skx-stream-cursor"
+                        />
+                      </template>
+                      <template v-else>
+                        {{ relatedReasons[rel.book_id] || "" }}
+                        <span
+                          v-if="relatedReasonLoading.has(rel.book_id)"
+                          class="skx-stream-cursor"
+                        />
+                      </template>
+                    </p>
+                  </div>
+                </div>
+              </article>
             </div>
           </section>
         </template>
@@ -355,15 +377,6 @@ const matchScore = computed(() => {
   const s = route.query.score;
   return s ? Math.round(Number(s) * 100) : null;
 });
-
-const GENRE_LABELS: Record<string, string> = {
-  paper: "학술논문",
-  thesis: "학위논문",
-  report: "연구보고서",
-  manual: "매뉴얼",
-  book: "단행본",
-  other: "기타",
-};
 
 // Data
 const paper = ref<any>(null);
@@ -445,8 +458,8 @@ const keywords = computed<string[]>(() => {
       .map((k: string) => k.trim())
       .filter(Boolean);
   }
-  // 2. extra.keywords 배열 (paper enrichment stage)
-  const extraKw = (paper.value?.extra as any)?.keywords;
+  // 2. extracted_keywords (BookOut.extra["keywords"] 노출 필드)
+  const extraKw = paper.value?.extracted_keywords;
   if (Array.isArray(extraKw) && extraKw.length) {
     return (extraKw as string[]).slice(0, 12);
   }
@@ -477,9 +490,8 @@ const renderedSummary = computed(() =>
 // Related
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
-const selectedRelated = ref<any>(null);
-const relatedReason = ref("");
-const relatedReasonLoading = ref(false);
+const relatedReasons = ref<Record<string, string>>({});
+const relatedReasonLoading = ref<Set<string>>(new Set());
 
 // UI
 const chatOpen = ref(false);
@@ -517,6 +529,8 @@ async function fetchRelated() {
   } finally {
     relatedLoading.value = false;
   }
+  // 로드 완료 후 모든 연관 논문 유사성 이유 동시 스트리밍
+  relatedItems.value.forEach((rel) => streamRelatedReason(rel.book_id));
 }
 
 async function streamPaperReason() {
@@ -544,8 +558,10 @@ async function streamPaperReason() {
 }
 
 async function streamRelatedReason(relatedId: string) {
-  relatedReason.value = "";
-  relatedReasonLoading.value = true;
+  relatedReasonLoading.value = new Set([
+    ...relatedReasonLoading.value,
+    relatedId,
+  ]);
   try {
     const resp = await fetch(
       `${config.public.apiBase}/papers/related-reason/stream`,
@@ -556,12 +572,19 @@ async function streamRelatedReason(relatedId: string) {
       },
     );
     await readSSE(resp, (json) => {
-      if (json.text) relatedReason.value += json.text;
+      if (json.text) {
+        relatedReasons.value = {
+          ...relatedReasons.value,
+          [relatedId]: (relatedReasons.value[relatedId] || "") + json.text,
+        };
+      }
     });
   } catch {
     /* silent */
   } finally {
-    relatedReasonLoading.value = false;
+    const next = new Set(relatedReasonLoading.value);
+    next.delete(relatedId);
+    relatedReasonLoading.value = next;
   }
 }
 
