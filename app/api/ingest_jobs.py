@@ -36,6 +36,7 @@ class RetryBody(BaseModel):
     error_group: str | None = None
     item_ids: list[int] | None = None
     all_failed: bool = False
+    force_all: bool = False
     reset_stage: str | None = None
 
 
@@ -275,6 +276,7 @@ async def retry_job(job_id: str, body: RetryBody):
         error_group=body.error_group,
         item_ids=body.item_ids,
         all_failed=body.all_failed,
+        force_all=body.force_all,
         reset_stage=body.reset_stage,
     )
     return {"id": job_id, "retried": count}

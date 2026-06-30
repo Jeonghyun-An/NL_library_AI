@@ -200,12 +200,14 @@ def retry_items(
     error_group: str | None = None,
     item_ids: list[int] | None = None,
     all_failed: bool = False,
+    force_all: bool = False,
     reset_stage: str | None = None,
 ) -> int:
-    """실패 아이템을 status='pending'으로 리셋 → 디스패처가 재픽업.
+    """아이템을 status='pending'으로 리셋 → 디스패처가 재픽업.
 
     attempt=0 으로 리셋 (max_attempts 초과분도 재시도 가능), stage는 유지.
     reset_stage 지정 시 처음부터(특정 체크포인트부터) 재실행.
+    force_all=True 이면 done 포함 전체 아이템 강제 재실행.
     """
     from db.postgres import SyncSessionLocal
     from models.ingest_job import IngestJob, IngestJobItem
@@ -222,6 +224,8 @@ def retry_items(
             )
         elif all_failed:
             q = q.filter(IngestJobItem.status == "failed")
+        elif force_all:
+            pass  # 전체 아이템 대상 — 필터 없음
         else:
             return 0
 
