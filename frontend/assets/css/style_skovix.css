@@ -3319,6 +3319,52 @@ a:hover {
 .skx-pai-main.is-expanded .skx-pai-main__scroll {
   max-height: 80rem;
 }
+
+/* marked() 렌더링 결과물 스타일 */
+.skx-pai-main__scroll h2 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--violet);
+  margin: 1rem 0 0.35rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--lilac);
+}
+.skx-pai-main__scroll h2:first-child {
+  margin-top: 0;
+}
+.skx-pai-main__scroll h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin: 0.7rem 0 0.25rem;
+}
+.skx-pai-main__scroll p {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+  margin: 0 0 0.4rem;
+}
+.skx-pai-main__scroll p:last-child {
+  margin-bottom: 0;
+}
+.skx-pai-main__scroll strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.skx-pai-main__scroll ul,
+.skx-pai-main__scroll ol {
+  margin: 0.25rem 0 0.5rem 1.1rem;
+  padding: 0;
+}
+.skx-pai-main__scroll li {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+  margin-bottom: 0.2rem;
+}
+
 .skx-pai-section {
   display: flex;
   flex-direction: column;
