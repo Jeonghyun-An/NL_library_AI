@@ -652,6 +652,7 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
 
 onMounted(async () => {
   await fetchPaper();
+  if (route.query.chat === "1") chatOpen.value = true;
   streamPaperReason();
   fetchRelated();
   nextTick(() => updateVtabSlider());

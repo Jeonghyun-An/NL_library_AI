@@ -413,7 +413,7 @@
                   <button
                     type="button"
                     class="skx-btn-ptalk"
-                    @click.stop="goToDetail(paper)"
+                    @click.stop="navigateTo(`/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
                     논문과 대화하기
