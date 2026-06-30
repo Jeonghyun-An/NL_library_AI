@@ -52,7 +52,8 @@ def build_citation(book: BookOut) -> dict[str, str]:
     """
     raw_authors = (book.personal_author or book.corporate_author or "").strip()
     year        = _extract_year(book.pub_date or "")
-    title       = (book.title or "").rstrip(".")
+    title_ko    = (book.title or "").rstrip(".")
+    title_en    = (book.title_remainder or book.title or "").rstrip(".")
     journal     = (book.publisher or "").strip()
     vol_issue   = (book.vol_issue or "").strip()
     uci         = (book.uci or "").strip()
@@ -64,7 +65,7 @@ def build_citation(book: BookOut) -> dict[str, str]:
     # ── 국문 인용 ──────────────────────────────────────
     authors_ko = _format_authors(raw_authors) if raw_authors else "저자 미상"
     ko_parts = [f"{authors_ko} ({year})."]
-    ko_parts.append(f"{title}.")
+    ko_parts.append(f"{title_ko}.")
     if journal:
         ko_parts.append(f"{journal}{', ' + vol_issue if vol_issue else ''}.")
     if identifier:
@@ -73,7 +74,7 @@ def build_citation(book: BookOut) -> dict[str, str]:
     # ── 영문 인용 (APA) ─────────────────────────────────
     authors_en = _format_authors_en(raw_authors) if raw_authors else "Unknown Author"
     en_parts = [f"{authors_en} ({year})."]
-    en_parts.append(f"{title}.")
+    en_parts.append(f"{title_en}.")
     if journal:
         en_parts.append(f"{journal}{', ' + vol_issue if vol_issue else ''}.")
     if identifier:

@@ -263,7 +263,7 @@
                       type="button"
                       class="skx-btn-pbmark"
                       aria-label="인용 모달 팝업 열림"
-                      @click.stop="openCiteModal(paper)"
+                      @click.stop="citeBookId = paper.book_id; citeRefs = paper.book_info?.references ?? []; citeModalOpen = true"
                     >
                       <img src="/img/ico-paper-bookmark.svg" alt="" />
                     </button>
@@ -318,49 +318,13 @@
       </div>
     </main>
 
-    <!-- 인용 모달 -->
-    <div
-      v-if="citeModalOpen"
-      class="skx-modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      @click.self="citeModalOpen = false"
-    >
-      <div class="skx-cite-modal">
-        <div class="skx-cite-modal__head">
-          <h2 class="skx-cite-modal__title">출처 인용하기</h2>
-          <button type="button" class="skx-cite-modal__close" aria-label="닫기" @click="citeModalOpen = false">
-            <img src="/img/ico-close.svg" alt="" />
-          </button>
-        </div>
-        <div v-if="citeLoading" class="skx-cite-modal__section" style="text-align:center;padding:20px">
-          <img src="/img/ico-spinner.svg" alt="" style="width:24px" />
-        </div>
-        <template v-else-if="citeData">
-          <div class="skx-cite-modal__section">
-            <div class="skx-cite-lang-row">
-              <p class="skx-cite-modal__lbl">인용 언어 설정</p>
-              <div class="skx-cite-lang" :class="!citeIsKo && 'is-en'">
-                <span :class="['skx-cite-lang__opt', citeIsKo && 'is-active']" @click="citeIsKo = true">국문</span>
-                <button type="button" class="skx-cite-lang__toggle" aria-label="언어 전환" @click="citeIsKo = !citeIsKo">
-                  <span class="skx-cite-lang__knob"></span>
-                </button>
-                <span :class="['skx-cite-lang__opt', !citeIsKo && 'is-active']" @click="citeIsKo = false">영문</span>
-              </div>
-            </div>
-            <div class="skx-cite-box">
-              <div class="skx-cite-box__top">
-                <span class="skx-cite-box__badge">참고문헌</span>
-                <button type="button" class="skx-cite-box__copy" aria-label="복사" @click="copyText(citeIsKo ? citeData.korean : citeData.english)">
-                  <img src="/img/ico-copy.svg" alt="" />
-                </button>
-              </div>
-              <p class="skx-cite-box__text">{{ citeIsKo ? citeData.korean : citeData.english }}</p>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
+    <!-- 출처 인용 모달 (CitationModal 컴포넌트 재사용) -->
+    <CitationModal
+      :open="citeModalOpen"
+      :book-id="citeBookId"
+      :references="citeRefs"
+      @close="citeModalOpen = false"
+    />
 
     <Teleport to="body">
       <Transition name="skx-toast">
@@ -402,9 +366,8 @@ const perpageRef = ref<HTMLElement | null>(null);
 
 // ── 인용 모달 ─────────────────────────────────────────────────
 const citeModalOpen = ref(false);
-const citeLoading = ref(false);
-const citeIsKo = ref(true);
-const citeData = ref<{ book_id: string; korean: string; english: string } | null>(null);
+const citeBookId = ref<string | null>(null);
+const citeRefs = ref<string[]>([]);
 
 // ── Toast ─────────────────────────────────────────────────────
 const toast = ref("");
@@ -478,12 +441,6 @@ function goToDetail(paper: any) {
   navigateTo(`/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery.value)}`);
 }
 
-async function copyText(text: string) {
-  if (navigator.clipboard) {
-    await navigator.clipboard.writeText(text);
-    showToast("복사되었습니다.");
-  }
-}
 
 // ── 검색 ─────────────────────────────────────────────────────
 async function handleSearch(q?: string) {
@@ -557,25 +514,6 @@ async function streamAiSummary(query: string, books: any[]) {
     /* ignore */
   } finally {
     aiLoading.value = false;
-  }
-}
-
-// ── 인용 모달 ─────────────────────────────────────────────────
-async function openCiteModal(paper: any) {
-  citeModalOpen.value = true;
-  citeLoading.value = true;
-  citeData.value = null;
-  citeIsKo.value = true;
-  try {
-    const data = await $fetch<{ book_id: string; korean: string; english: string }>(
-      `${apiBase}/papers/${paper.book_id}/citation`
-    );
-    citeData.value = data;
-  } catch {
-    showToast("인용 정보를 불러올 수 없습니다.");
-    citeModalOpen.value = false;
-  } finally {
-    citeLoading.value = false;
   }
 }
 
