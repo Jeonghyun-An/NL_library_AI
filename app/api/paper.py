@@ -56,6 +56,12 @@ class RelatedReasonRequest(BaseModel):
     related_id: str
 
 
+class PaperReasonRequest(BaseModel):
+    paper_id: str
+    query: str
+    rewritten_query: str = ""
+
+
 @router.post(
     "/search",
     response_model=ChunkSearchResponse | BookSearchResponse,
@@ -192,6 +198,33 @@ async def stream_related_reason(
 
     return StreamingResponse(
         _stream(src_title, src_abstract, rel_title, rel_abstract),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/reason/stream")
+async def stream_paper_reason(
+    req: PaperReasonRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """논문 단건 AI 분석 이유 SSE 스트리밍.
+
+    검색 의도 + 논문의 인덱싱 데이터(abstract / summary / introduction)를
+    바탕으로 이 논문이 검색 의도와 어떻게 연관되는지 사실 기반으로 분석한다.
+    """
+    from services.search.paper_summary import stream_paper_reason as _stream
+
+    repo = BookRepository(db)
+    paper = await repo.get_by_cnts_id(req.paper_id)
+    if not paper:
+        raise HTTPException(404, f"논문 없음: {req.paper_id}")
+
+    return StreamingResponse(
+        _stream(req.query, paper, req.rewritten_query),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

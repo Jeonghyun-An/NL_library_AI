@@ -26,10 +26,7 @@
             <div class="skx-pdetail__meta">
               <div class="skx-pdetail__top-row">
                 <div class="skx-pdetail__badges">
-                  <span
-                    v-if="paper.genre"
-                    class="skx-ptag skx-ptag--kci"
-                  >
+                  <span v-if="paper.genre" class="skx-ptag skx-ptag--kci">
                     {{ GENRE_LABELS[paper.genre] || paper.genre }}
                   </span>
                   <span v-if="matchScore" class="skx-ptag skx-ptag--score"
@@ -63,7 +60,9 @@
                 </div>
                 <div v-if="paper.publisher" class="skx-pdetail__row">
                   <span class="skx-pdetail__row-lbl">저널정보</span>
-                  <span class="skx-pdetail__row-val">{{ paper.publisher }}</span>
+                  <span class="skx-pdetail__row-val">{{
+                    paper.publisher
+                  }}</span>
                 </div>
                 <div v-if="paper.pub_date" class="skx-pdetail__row">
                   <span class="skx-pdetail__row-lbl">발행년도</span>
@@ -146,7 +145,11 @@
                     role="tabpanel"
                     class="skx-curation-text"
                   >
-                    {{ paper.abstract || "초록 정보가 없습니다." }}
+                    {{
+                      paper.abstract ||
+                      paper.summary ||
+                      "초록/요약 정보가 없습니다."
+                    }}
                   </p>
                 </div>
               </div>
@@ -209,10 +212,7 @@
               </button>
               <div v-if="refsOpen" class="skx-paccord__body-outer">
                 <div class="skx-paccord__body">
-                  <ol
-                    v-if="paper.references?.length"
-                    class="skx-refs-list"
-                  >
+                  <ol v-if="paper.references?.length" class="skx-refs-list">
                     <li
                       v-for="(ref, i) in paper.references"
                       :key="i"
@@ -251,7 +251,10 @@
                     'skx-reco-item',
                     selectedRelated?.book_id === rel.book_id && 'is-active',
                   ]"
-                  @click="selectedRelated = rel; streamRelatedReason(rel.book_id)"
+                  @click="
+                    selectedRelated = rel;
+                    streamRelatedReason(rel.book_id);
+                  "
                 >
                   <img
                     class="skx-reco-item__thumb"
@@ -281,10 +284,20 @@
                   <h3 class="skx-reco-title">
                     {{ selectedRelated.book_info?.title }}
                   </h3>
-                  <p v-if="relatedReasonLoading" class="skx-curation-text" style="margin-top:10px; font-size:13px; color:#888;">
-                    AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
+                  <p
+                    v-if="relatedReasonLoading"
+                    class="skx-curation-text"
+                    style="margin-top: 10px; font-size: 13px; color: #888"
+                  >
+                    AI가 유사성을 분석 중입니다<span
+                      class="skx-stream-cursor"
+                    />
                   </p>
-                  <p v-else-if="relatedReason" class="skx-curation-text" style="margin-top:10px; font-size:13px; color:#555;">
+                  <p
+                    v-else-if="relatedReason"
+                    class="skx-curation-text"
+                    style="margin-top: 10px; font-size: 13px; color: #555"
+                  >
                     {{ relatedReason }}
                   </p>
                   <button
@@ -455,15 +468,42 @@ async function fetchRelated() {
   }
 }
 
+async function streamPaperReason() {
+  const query = (route.query.q as string) || "";
+  if (!query) {
+    summaryText.value = paper.value?.introduction || "";
+    return;
+  }
+  summaryText.value = "";
+  summaryLoading.value = true;
+  try {
+    const resp = await fetch(`${config.public.apiBase}/papers/reason/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paper_id: paperId, query }),
+    });
+    await readSSE(resp, (json) => {
+      if (json.text) summaryText.value += json.text;
+    });
+  } catch {
+    /* silent */
+  } finally {
+    summaryLoading.value = false;
+  }
+}
+
 async function streamRelatedReason(relatedId: string) {
   relatedReason.value = "";
   relatedReasonLoading.value = true;
   try {
-    const resp = await fetch(`${config.public.apiBase}/papers/related-reason/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
-    });
+    const resp = await fetch(
+      `${config.public.apiBase}/papers/related-reason/stream`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
+      },
+    );
     await readSSE(resp, (json) => {
       if (json.text) relatedReason.value += json.text;
     });
@@ -488,13 +528,18 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
       if (!line.startsWith("data: ")) continue;
       const raw = line.slice(6).trim();
       if (raw === "[DONE]") return;
-      try { onEvent(JSON.parse(raw)); } catch { /* skip */ }
+      try {
+        onEvent(JSON.parse(raw));
+      } catch {
+        /* skip */
+      }
     }
   }
 }
 
 onMounted(async () => {
   await fetchPaper();
+  streamPaperReason();
   fetchRelated();
   nextTick(() => updateVtabSlider());
 });

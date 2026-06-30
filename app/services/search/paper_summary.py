@@ -12,6 +12,7 @@ summary 엔드포인트:
 """
 import json
 import logging
+import re
 from typing import AsyncGenerator
 
 import httpx
@@ -179,5 +180,112 @@ async def stream_related_reason(
     except Exception as e:
         log.error(f"[paper_related_reason] LLM 스트리밍 실패: {e}")
         yield f"data: {json.dumps({'text': '유사성 분석 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+
+    yield "data: [DONE]\n\n"
+
+
+async def stream_paper_reason(
+    query: str,
+    paper,                  # Book ORM 인스턴스
+    rewritten_query: str = "",
+) -> AsyncGenerator[str, None]:
+    """
+    논문 단건 분석 이유 SSE 스트리밍.
+
+    검색 의도 + 논문의 인덱싱 데이터(abstract / summary / introduction)를
+    바탕으로 이 논문이 검색 의도와 어떻게 연관되는지 사실 기반으로 분석한다.
+
+    SSE 이벤트:
+      data: {"keywords": [...]}   — 키워드 즉시 emit (있을 때)
+      data: {"text": "..."}       — 토큰 스트리밍
+      data: [DONE]
+    """
+    # ── 키워드 즉시 emit ─────────────────────────────────────
+    raw_kw = (paper.keyword or paper.themes or paper.subject or "") if paper else ""
+    keywords: list[str] = []
+    if raw_kw:
+        keywords = [k.strip() for k in re.split(r"[,;|/·]", raw_kw) if k.strip()][:8]
+    if keywords:
+        yield f"data: {json.dumps({'keywords': keywords}, ensure_ascii=False)}\n\n"
+
+    # ── 논문 서지 정보 블록 ──────────────────────────────────
+    meta_lines = []
+    if paper:
+        if paper.title:
+            meta_lines.append(f"제목: {paper.title}")
+        author = paper.personal_author or paper.corporate_author
+        if author:
+            meta_lines.append(f"저자: {author}")
+        if paper.pub_date:
+            meta_lines.append(f"발행연도: {paper.pub_date[:4]}")
+        if paper.publisher:
+            meta_lines.append(f"저널/출판기관: {paper.publisher}")
+        if paper.series_title:
+            meta_lines.append(f"학술지: {paper.series_title}")
+        if paper.grade:
+            meta_lines.append(f"KCI 등급: {paper.grade}")
+    paper_meta = "\n".join(meta_lines)
+
+    # ── 컨텍스트 블록 (초록 우선, 없으면 summary / introduction) ──
+    context_parts = []
+    if paper:
+        abstract_text = paper.abstract or paper.summary or ""
+        if abstract_text:
+            label = "초록" if paper.abstract else "논문 요약"
+            context_parts.append(f"[{label}]\n{_truncate(abstract_text, 800)}")
+        if paper.introduction:
+            context_parts.append(f"[논문 해제]\n{_truncate(paper.introduction, 600)}")
+    context_text = "\n\n".join(context_parts)
+
+    if not context_text:
+        yield f"data: {json.dumps({'text': '논문 내용 정보가 부족하여 분석을 생성할 수 없습니다.'}, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    # ── 프롬프트 렌더링 ──────────────────────────────────────
+    intent = rewritten_query or query
+    tpl = get_prompt("recommendation.paper")
+    system_message, user_message, params = tpl.render(
+        intent=intent,
+        query=query,
+        paper_meta=paper_meta,
+        context_text=context_text,
+    )
+
+    # ── LLM 스트리밍 ─────────────────────────────────────────
+    try:
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
+                json={
+                    "model": cfg.LLM_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_message},
+                        {"role": "user",   "content": user_message},
+                    ],
+                    "max_tokens": 600,
+                    "temperature": params.get("temperature", 0.2),
+                    "stream": True,
+                },
+                timeout=float(cfg.REASON_TIMEOUT),
+            ) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    data = line[6:]
+                    if data.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                        delta = chunk["choices"][0]["delta"].get("content", "")
+                        if delta:
+                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+                    except Exception:
+                        pass
+    except Exception as e:
+        log.error(f"[paper_reason] LLM 스트리밍 실패: {e}")
+        yield f"data: {json.dumps({'text': '분석 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"
