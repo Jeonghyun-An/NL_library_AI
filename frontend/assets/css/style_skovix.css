@@ -2969,6 +2969,7 @@ a:hover {
   border: none;
   width: 100%;
   text-align: center;
+  justify-content: space-between;
 }
 .skx-rcd-book-card--1 {
   background: rgba(191, 195, 168, 0.2);
@@ -3001,6 +3002,10 @@ a:hover {
   color: var(--skx-ink);
   text-align: center;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .skx-rcd-book-card__cover {
   width: 8rem;

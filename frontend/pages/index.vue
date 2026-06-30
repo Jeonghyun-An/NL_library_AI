@@ -356,7 +356,7 @@
           <!-- 도서/논문 목록 -->
           <div class="skx-book-list">
             <article
-              v-for="(item, i) in books"
+              v-for="(item, i) in (mode === 'paper' ? papers : books)"
               :key="item.book_id"
               :class="['skx-book-card', i >= 3 && !bookListExpanded ? 'skx-book-card--hidden' : '']"
               style="cursor: pointer"
@@ -463,7 +463,7 @@
 
           <!-- 펼치기 버튼 (4개 이상일 때만) -->
           <button
-            v-if="books.length > 3"
+            v-if="(mode === 'paper' ? papers.length : books.length) > 3"
             type="button"
             class="skx-book-expand"
             :aria-expanded="bookListExpanded"
@@ -554,6 +554,7 @@ const rewrittenQuery = ref("");
 const loading = ref(false);
 const searchError = ref("");
 const books = ref<BookChunkGroup[]>([]);
+const papers = ref<BookChunkGroup[]>([]);
 const keywordChips = ref<string[]>([]);
 const currentHistoryId = ref("");
 
@@ -750,6 +751,7 @@ async function handleSearch(query: string) {
   loading.value = true;
   searchError.value = "";
   books.value = [];
+  papers.value = [];
   curation.value = null;
   curationIntro.value = "";
   curationItems.value = [];
@@ -761,26 +763,40 @@ async function handleSearch(query: string) {
   view.value = "results";
 
   try {
-    const endpoint =
-      mode.value === "paper"
-        ? `${apiBase}/papers/search`
-        : `${apiBase}/books/search`;
-    const data = await $fetch<any>(endpoint, {
-      method: "POST",
-      headers: { "x-session-id": getSessionId() },
-      body: {
-        query,
-        mode: mode.value,
-        top_k: 5,
-        use_rewrite: true,
-        use_rerank: true,
-      },
-    });
-
-    if (data?.books) {
-      books.value = data.books;
-      rewrittenQuery.value = data.rewritten_query || query;
-      // keywordChips는 SSE reason 스트림에서만 수신 (query rewrite 키워드)
+    if (mode.value === "paper") {
+      const data = await $fetch<any>(`${apiBase}/papers/search`, {
+        method: "POST",
+        headers: { "x-session-id": getSessionId() },
+        body: {
+          query,
+          mode: "book",
+          top_k: 5,
+          use_rewrite: true,
+          use_rerank: true,
+        },
+      });
+      if (data?.books) {
+        papers.value = data.books;
+        rewrittenQuery.value = data.rewritten_query || query;
+      }
+      if (papers.value.length) fetchPaperSummary(query);
+    } else {
+      const data = await $fetch<any>(`${apiBase}/books/search`, {
+        method: "POST",
+        headers: { "x-session-id": getSessionId() },
+        body: {
+          query,
+          mode: "book",
+          top_k: 5,
+          use_rewrite: true,
+          use_rerank: true,
+        },
+      });
+      if (data?.books) {
+        books.value = data.books;
+        rewrittenQuery.value = data.rewritten_query || query;
+      }
+      if (books.value.length) fetchCuration();
     }
 
     history.value.unshift({
@@ -788,12 +804,6 @@ async function handleSearch(query: string) {
       query,
       timestamp: new Date().toISOString(),
     });
-
-    if (mode.value === "book" && books.value.length) {
-      fetchCuration();
-    } else if (mode.value === "paper" && books.value.length) {
-      fetchPaperSummary(query);
-    }
   } catch (e: any) {
     searchError.value =
       e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
@@ -872,8 +882,8 @@ async function fetchCuration() {
 async function fetchPaperSummary(query: string) {
   paperSummaryLoading.value = true;
   paperSummaryText.value = "";
-  paperSummarySources.value = books.value.slice(0, 5);
-  const papers = books.value.slice(0, 5).map((b) => ({
+  paperSummarySources.value = papers.value.slice(0, 5);
+  const paperList = papers.value.slice(0, 5).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
     authors:
@@ -884,7 +894,7 @@ async function fetchPaperSummary(query: string) {
     const resp = await fetch(`${apiBase}/papers/summary/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, papers }),
+      body: JSON.stringify({ query, papers: paperList }),
     });
     await readSSE(resp, (json) => {
       if (json.text) paperSummaryText.value += json.text;
