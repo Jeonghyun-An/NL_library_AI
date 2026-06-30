@@ -145,11 +145,7 @@
                     role="tabpanel"
                     class="skx-curation-text"
                   >
-                    {{
-                      paper.abstract ||
-                      paper.summary ||
-                      "초록/요약 정보가 없습니다."
-                    }}
+                    {{ abstractText || "초록/요약 정보가 없습니다." }}
                   </p>
                 </div>
               </div>
@@ -406,14 +402,69 @@ function switchCurationTab(key: string) {
 const keywordOpen = ref(false);
 const refsOpen = ref(false);
 
+function parseLegacySummary(raw: unknown): {
+  body: string;
+  keywords: string[];
+} {
+  if (typeof raw !== "string" || !raw.trim()) return { body: "", keywords: [] };
+  let text = raw.replace(/^##\s*SUMMARY:\s*/i, "").trim();
+  const kwMatch = text.match(
+    /\*\*관련\s*연구자가\s*검색할\s*학술\s*키워드\s*:\*\*\s*([\s\S]*?)$/i,
+  );
+  let keywords: string[] = [];
+  if (kwMatch && kwMatch[1]) {
+    keywords = kwMatch[1]
+      .split(/[,;]/)
+      .map((k) => k.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    text = text.slice(0, kwMatch.index).trim();
+  }
+  return { body: text, keywords };
+}
+
+const abstractText = computed<string>(() => {
+  if (paper.value?.abstract) return paper.value.abstract;
+  if (typeof paper.value?.summary === "string" && paper.value.summary)
+    return parseLegacySummary(paper.value.summary).body;
+  return "";
+});
+
 const keywords = computed<string[]>(() => {
-  const kw = paper.value?.keyword || paper.value?.subject || "";
-  return kw
-    ? kw
-        .split(/[,;]/)
-        .map((k: string) => k.trim())
-        .filter(Boolean)
-    : [];
+  // 1. keyword / subject 컬럼
+  const kwSource = paper.value?.keyword ?? paper.value?.subject ?? "";
+  const kw =
+    typeof kwSource === "string"
+      ? kwSource
+      : Array.isArray(kwSource)
+        ? (kwSource as string[]).join(",")
+        : "";
+  if (kw) {
+    return kw
+      .split(/[,;]/)
+      .map((k: string) => k.trim())
+      .filter(Boolean);
+  }
+  // 2. extra.keywords 배열 (paper enrichment stage)
+  const extraKw = (paper.value?.extra as any)?.keywords;
+  if (Array.isArray(extraKw) && extraKw.length) {
+    return (extraKw as string[]).slice(0, 12);
+  }
+  // 3. themes 컬럼 (Stage ④ 핵심 개념어)
+  const themes =
+    typeof paper.value?.themes === "string" ? paper.value.themes : "";
+  if (themes) {
+    return themes
+      .split(/[,;]/)
+      .map((k: string) => k.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+  }
+  // 4. 레거시 summary 내장 키워드 섹션
+  if (typeof paper.value?.summary === "string" && paper.value.summary) {
+    return parseLegacySummary(paper.value.summary).keywords;
+  }
+  return [];
 });
 
 // AI summary

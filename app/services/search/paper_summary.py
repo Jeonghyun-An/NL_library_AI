@@ -33,6 +33,31 @@ def _truncate(text: str, max_chars: int) -> str:
     return text[:max_chars].rsplit(" ", 1)[0] + "…"
 
 
+_SUMMARY_PREFIX_RE = re.compile(r"^##\s*SUMMARY:\s*", re.IGNORECASE)
+_KEYWORD_SECTION_RE = re.compile(
+    r"\*\*관련\s*연구자가\s*검색할\s*학술\s*키워드\s*:\*\*\s*([\s\S]*?)$",
+    re.IGNORECASE,
+)
+
+
+def _parse_summary(raw: str) -> tuple[str, list[str]]:
+    """레거시 summary 포맷 파싱.
+
+    ## SUMMARY: [본문] **관련 연구자가 검색할 학술 키워드:** k1, k2, ...
+    Returns: (clean_body, [keywords])
+    """
+    if not raw:
+        return "", []
+    text = _SUMMARY_PREFIX_RE.sub("", raw.strip())
+    kw_match = _KEYWORD_SECTION_RE.search(text)
+    embedded_kw: list[str] = []
+    if kw_match:
+        kw_raw = kw_match.group(1)
+        embedded_kw = [k.strip() for k in re.split(r"[,;·]", kw_raw) if k.strip()][:12]
+        text = text[: kw_match.start()].strip()
+    return text, embedded_kw
+
+
 async def stream_paper_summary(
     query: str,
     papers: list[dict],  # [{"book_id", "title", "authors", "best_chunk_text"}]
@@ -202,11 +227,15 @@ async def stream_paper_reason(
     """
     # ── 키워드 즉시 emit ─────────────────────────────────────
     raw_kw = (paper.keyword or paper.themes or paper.subject or "") if paper else ""
-    keywords: list[str] = []
+    emit_kw: list[str] = []
     if raw_kw:
-        keywords = [k.strip() for k in re.split(r"[,;|/·]", raw_kw) if k.strip()][:8]
-    if keywords:
-        yield f"data: {json.dumps({'keywords': keywords}, ensure_ascii=False)}\n\n"
+        emit_kw = [k.strip() for k in re.split(r"[,;|/·]", raw_kw) if k.strip()][:8]
+    # fallback: 내장 키워드 섹션에서 추출
+    if not emit_kw and paper:
+        _, embedded_kw = _parse_summary(paper.summary or "")
+        emit_kw = embedded_kw[:8]
+    if emit_kw:
+        yield f"data: {json.dumps({'keywords': emit_kw}, ensure_ascii=False)}\n\n"
 
     # ── 논문 서지 정보 블록 ──────────────────────────────────
     meta_lines = []
@@ -226,13 +255,15 @@ async def stream_paper_reason(
             meta_lines.append(f"KCI 등급: {paper.grade}")
     paper_meta = "\n".join(meta_lines)
 
-    # ── 컨텍스트 블록 (초록 우선, 없으면 summary / introduction) ──
+    # ── 컨텍스트 블록 (초록 우선, 없으면 cleaned summary / introduction) ──
     context_parts = []
     if paper:
-        abstract_text = paper.abstract or paper.summary or ""
-        if abstract_text:
-            label = "초록" if paper.abstract else "논문 요약"
-            context_parts.append(f"[{label}]\n{_truncate(abstract_text, 800)}")
+        if paper.abstract:
+            context_parts.append(f"[초록]\n{_truncate(paper.abstract, 800)}")
+        elif paper.summary:
+            clean_summary, _ = _parse_summary(paper.summary)
+            if clean_summary:
+                context_parts.append(f"[논문 요약]\n{_truncate(clean_summary, 800)}")
         if paper.introduction:
             context_parts.append(f"[논문 해제]\n{_truncate(paper.introduction, 600)}")
     context_text = "\n\n".join(context_parts)
