@@ -156,9 +156,10 @@
               <div class="skx-curation-content">
                 <div class="skx-curation-card">
                   <div v-if="detailTab === 'reason'">
-                    <p v-if="reasonLoading" class="skx-curation-text">
-                      추천 이유 생성 중...
-                    </p>
+                    <!-- 스트리밍 중: raw 텍스트 + 깜빡이는 커서 -->
+                    <p v-if="reasonLoading && reasonText" class="skx-curation-text skx-curation-text--stream">{{ reasonText }}<span class="skx-stream-cursor" /></p>
+                    <p v-else-if="reasonLoading" class="skx-curation-text skx-curation-loading">추천 이유를 생성하고 있습니다<span class="skx-stream-cursor" /></p>
+                    <!-- 완료 후: 마크다운 렌더링 -->
                     <div
                       v-else-if="reasonText"
                       class="skx-curation-text"
