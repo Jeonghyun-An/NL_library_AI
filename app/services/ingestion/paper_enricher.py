@@ -275,6 +275,10 @@ def extract_references(full_text: str) -> list[str]:
         if lines:
             refs.append(" ".join(lines))
 
+    # 페이지 헤더/푸터 제거: "제목 / 171" 또는 "172 / 학술지명"
+    _page_marker = re.compile(r'(?:/\s*\d+\s*$|^\s*\d+\s*/)', re.IGNORECASE)
+    refs = [r for r in refs if not _page_marker.search(r)]
+
     return refs[:200]
 
 
