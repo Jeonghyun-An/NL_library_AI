@@ -104,7 +104,7 @@ async def stream_paper_summary(
         yield f"data: {json.dumps({'text': '요약 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
 
     # ── 출처 목록 이벤트 ─────────────────────────────────────
-    sources = [
+    sources: list[dict] = [
         {
             "num": p["num"],
             "book_id": papers[i]["book_id"],
@@ -114,4 +114,70 @@ async def stream_paper_summary(
         for i, p in enumerate(paper_ctx)
     ]
     yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
+    yield "data: [DONE]\n\n"
+
+
+async def stream_related_reason(
+    source_title: str,
+    source_abstract: str,
+    related_title: str,
+    related_abstract: str,
+) -> AsyncGenerator[str, None]:
+    """두 논문의 유사성 이유를 SSE 스트리밍.
+
+    SSE 이벤트:
+      data: {"text": "..."}   — 토큰 스트리밍
+      data: [DONE]
+    """
+    src_excerpt = _truncate(source_abstract, 400) if source_abstract else "초록 없음"
+    rel_excerpt = _truncate(related_abstract, 400) if related_abstract else "초록 없음"
+
+    system_msg = (
+        "당신은 학술 논문 전문가입니다. "
+        "두 논문의 연구적 유사성을 1~2문장으로 간결하게 설명하세요. "
+        "반드시 '해당 논문은 ~ 한 내용이 유사합니다.' 형식으로 작성하세요."
+    )
+    user_msg = (
+        f"원본 논문: {source_title}\n초록: {src_excerpt}\n\n"
+        f"연관 논문: {related_title}\n초록: {rel_excerpt}\n\n"
+        "두 논문이 유사한 이유를 설명하세요."
+    )
+
+    payload = {
+        "model": cfg.LLM_MODEL,
+        "messages": [
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg},
+        ],
+        "max_tokens": 200,
+        "temperature": 0.2,
+        "stream": True,
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
+                json=payload,
+                timeout=30.0,
+            ) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    data = line[6:]
+                    if data.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                        delta = chunk["choices"][0]["delta"].get("content", "")
+                        if delta:
+                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+                    except Exception:
+                        pass
+    except Exception as e:
+        log.error(f"[paper_related_reason] LLM 스트리밍 실패: {e}")
+        yield f"data: {json.dumps({'text': '유사성 분석 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+
     yield "data: [DONE]\n\n"

@@ -51,6 +51,11 @@ class CitationResponse(BaseModel):
     english: str
 
 
+class RelatedReasonRequest(BaseModel):
+    source_id: str
+    related_id: str
+
+
 @router.post(
     "/search",
     response_model=ChunkSearchResponse | BookSearchResponse,
@@ -150,6 +155,49 @@ async def get_paper_citation(
 
     citation = build_citation(book)
     return CitationResponse(book_id=cnts_id, **citation)
+
+
+@router.post("/related-reason/stream")
+async def stream_related_reason(
+    req: RelatedReasonRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """두 논문의 유사성 이유 SSE 스트리밍.
+
+    source_id: 현재 보고 있는 논문 ID
+    related_id: 사용자가 선택한 연관 논문 ID
+    """
+    from services.search.paper_summary import stream_related_reason as _stream
+
+    repo = BookRepository(db)
+    src = await repo.get_by_cnts_id(req.source_id)
+    rel = await repo.get_by_cnts_id(req.related_id)
+
+    def _get_abstract(book) -> str:
+        if not book:
+            return ""
+        extra = book.extra or {}
+        return (
+            extra.get("abstract")
+            or getattr(book, "abstract", None)
+            or book.summary
+            or book.introduction
+            or ""
+        )
+
+    src_title = src.title if src else req.source_id
+    src_abstract = _get_abstract(src)
+    rel_title = rel.title if rel else req.related_id
+    rel_abstract = _get_abstract(rel)
+
+    return StreamingResponse(
+        _stream(src_title, src_abstract, rel_title, rel_abstract),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/catalog/load")
