@@ -157,7 +157,9 @@
           <div
             class="summary-body"
             :class="{ clamped: !summaryExpanded }"
-            v-html="activeTab === 'summary' ? formattedSummary : formattedIntroduction"
+            v-html="
+              activeTab === 'summary' ? formattedSummary : formattedIntroduction
+            "
           />
           <button
             class="expand-btn"
@@ -233,7 +235,7 @@ const props = defineProps<{
 
 const summaryExpanded = ref(false);
 const chatOpen = ref(false);
-const pdfOpen  = ref(false);
+const pdfOpen = ref(false);
 
 // 대출 신청 → 장바구니 담기 + "대출이 신청되었습니다" 팝업
 const { addToCart } = useCart();
@@ -546,7 +548,9 @@ const formattedIntroduction = computed(
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .tab-btn.active {
@@ -700,7 +704,9 @@ const formattedIntroduction = computed(
 }
 .borrow-toast-enter-active,
 .borrow-toast-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 .borrow-toast-enter-from,
 .borrow-toast-leave-to {
