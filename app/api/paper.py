@@ -133,10 +133,19 @@ async def get_related_papers(
         raise HTTPException(400, "top_k는 1~10 사이여야 합니다.")
 
     hits = await find_related_papers(cnts_id, db, top_k=top_k)
-    return RelatedPapersResponse(
-        source_id=cnts_id,
-        results=[RelatedPaperResult(**h) for h in hits],
-    )
+
+    # book_info 일괄 조회
+    repo = BookRepository(db)
+    book_ids = [h["book_id"] for h in hits if h.get("book_id")]
+    book_map = await repo.get_by_cnts_ids(book_ids)
+
+    results = []
+    for h in hits:
+        r = RelatedPaperResult(**h)
+        r.book_info = book_map.get(h.get("book_id"))
+        results.append(r)
+
+    return RelatedPapersResponse(source_id=cnts_id, results=results)
 
 
 @router.get(

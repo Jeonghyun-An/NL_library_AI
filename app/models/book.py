@@ -100,3 +100,10 @@ class Book(Base):
     @property
     def read_effect(self) -> str | None:
         return (self.extra or {}).get("read_effect")
+
+    @property
+    def extracted_keywords(self) -> list[str]:
+        kws = (self.extra or {}).get("keywords")
+        if isinstance(kws, list):
+            return kws
+        return []

@@ -64,7 +64,9 @@ class BookOut(BookBase):
     kci_citations:    Optional[int] = None
     wos_citations:    Optional[int] = None
     # 참고문헌 (extra["references"] 노출)
-    references:       list[str] = []
+    references:          list[str] = []
+    # 논문 enrichment 에서 추출된 키워드 배열 (extra["keywords"] 노출)
+    extracted_keywords:  list[str] = []
 
     class Config:
         from_attributes = True
