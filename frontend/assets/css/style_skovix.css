@@ -4559,3 +4559,28 @@ a:hover {
   50% { opacity: 0; }
 }
 /* [E] 스트리밍 커서 */
+
+/* ── 토스트 ── */
+.skx-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 19, 26, 0.85);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1100;
+}
+.skx-toast-enter-active,
+.skx-toast-leave-active {
+  transition: opacity 0.25s, transform 0.25s;
+}
+.skx-toast-enter-from,
+.skx-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}

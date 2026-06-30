@@ -21,7 +21,11 @@
           <!-- 논문 헤더 -->
           <section class="skx-pdetail__hero">
             <div class="skx-pdetail__cover">
-              <img src="/img/img-paper-thumb.png" alt="논문 표지" />
+              <img
+                :src="thumbnailUrl"
+                alt="논문 표지"
+                @error="thumbnailUrl = '/img/img-paper-thumb.png'"
+              />
             </div>
             <div class="skx-pdetail__meta">
               <div class="skx-pdetail__top-row">
@@ -64,19 +68,31 @@
                 >
                   <span class="skx-pdetail__row-lbl">저널정보</span>
                   <span class="skx-pdetail__row-val">
-                    <template v-if="paper.publisher">{{ paper.publisher }}</template>
+                    <template v-if="paper.publisher">{{
+                      paper.publisher
+                    }}</template>
                     <template v-if="paper.publisher && paper.series_title">
-                      <img class="skx-pdetail__row-arr" src="/img/ico-arrow.svg" alt="" />
+                      <img
+                        class="skx-pdetail__row-arr"
+                        src="/img/ico-arrow.svg"
+                        alt=""
+                      />
                     </template>
-                    <template v-if="paper.series_title">{{ paper.series_title }}</template>
+                    <template v-if="paper.series_title">{{
+                      paper.series_title
+                    }}</template>
                     <template v-if="paper.vol_issue">
-                      <img class="skx-pdetail__row-arr" src="/img/ico-arrow.svg" alt="" />
+                      <img
+                        class="skx-pdetail__row-arr"
+                        src="/img/ico-arrow.svg"
+                        alt=""
+                      />
                       {{ paper.vol_issue }}
                     </template>
                   </span>
                 </div>
                 <div v-if="paper.pub_date" class="skx-pdetail__row">
-                  <span class="skx-pdetail__row-lbl">발행년도</span>
+                  <span class="skx-pdetail__row-lbl">발행년월</span>
                   <span class="skx-pdetail__row-val">{{ paper.pub_date }}</span>
                 </div>
                 <div v-if="paper.extent" class="skx-pdetail__row">
@@ -84,12 +100,16 @@
                   <span class="skx-pdetail__row-val">{{ paper.extent }}</span>
                 </div>
                 <div v-if="paper.kci_citations" class="skx-pdetail__row">
-                  <span class="skx-pdetail__row-lbl">인용수</span>
-                  <span class="skx-pdetail__row-val">{{ paper.kci_citations }}</span>
+                  <span class="skx-pdetail__row-lbl">KCI 인용수</span>
+                  <span class="skx-pdetail__row-val">{{
+                    paper.kci_citations
+                  }}</span>
                 </div>
                 <div v-if="paper.wos_citations" class="skx-pdetail__row">
-                  <span class="skx-pdetail__row-lbl">이용수</span>
-                  <span class="skx-pdetail__row-val">{{ paper.wos_citations }}</span>
+                  <span class="skx-pdetail__row-lbl">WOS 인용수</span>
+                  <span class="skx-pdetail__row-val">{{
+                    paper.wos_citations
+                  }}</span>
                 </div>
               </div>
               <div class="skx-pdetail__btns">
@@ -116,13 +136,16 @@
                   target="_blank"
                   rel="noopener"
                   class="skx-btn-pview-sm"
-                >원문 보기</a>
+                  >원문 보기</a
+                >
                 <button
                   v-else
                   type="button"
                   class="skx-btn-pview-sm"
-                  @click="showToast('원문 링크가 없습니다.')"
-                >원문 보기</button>
+                  @click="pdfModal = true"
+                >
+                  원문 보기
+                </button>
                 <button
                   type="button"
                   class="skx-btn-pbmark-sm"
@@ -356,6 +379,14 @@
       @close="citationModal = false"
     />
 
+    <!-- PDF 뷰어 모달 -->
+    <PdfViewer
+      v-if="pdfModal"
+      :cnts-id="paperId"
+      :title="paper?.title"
+      @close="pdfModal = false"
+    />
+
     <Teleport to="body">
       <Transition name="skx-toast">
         <div v-if="toast" class="skx-toast">{{ toast }}</div>
@@ -492,14 +523,19 @@ const relatedReasons = ref<Record<string, string>>({});
 const relatedReasonLoading = ref<Set<string>>(new Set());
 
 function relatedScore(score: number): number {
-  const maxScore = Math.max(...relatedItems.value.map((r) => r.score || 0), 1e-9);
+  const maxScore = Math.max(
+    ...relatedItems.value.map((r) => r.score || 0),
+    1e-9,
+  );
   return Math.round((score / maxScore) * 100);
 }
 
 // UI
 const chatOpen = ref(false);
 const citationModal = ref(false);
+const pdfModal = ref(false);
 const toast = ref("");
+const thumbnailUrl = ref(`${config.public.apiBase}/books/${paperId}/thumbnail`);
 
 function showToast(msg: string) {
   toast.value = msg;
