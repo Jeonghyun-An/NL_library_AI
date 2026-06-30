@@ -27,13 +27,10 @@
               <div class="skx-pdetail__top-row">
                 <div class="skx-pdetail__badges">
                   <span
-                    v-if="paper.book_info?.genre"
+                    v-if="paper.genre"
                     class="skx-ptag skx-ptag--kci"
                   >
-                    {{
-                      GENRE_LABELS[paper.book_info.genre] ||
-                      paper.book_info.genre
-                    }}
+                    {{ GENRE_LABELS[paper.genre] || paper.genre }}
                   </span>
                   <span v-if="matchScore" class="skx-ptag skx-ptag--score"
                     >정합성 {{ matchScore }}%</span
@@ -50,38 +47,27 @@
                   </button>
                 </div>
               </div>
-              <h1 class="skx-pdetail__title">{{ paper.book_info?.title }}</h1>
-              <p
-                v-if="paper.book_info?.title_remainder"
-                class="skx-pdetail__title-en"
-              >
-                {{ paper.book_info.title_remainder }}
+              <h1 class="skx-pdetail__title">{{ paper.title }}</h1>
+              <p v-if="paper.title_remainder" class="skx-pdetail__title-en">
+                {{ paper.title_remainder }}
               </p>
               <div class="skx-pdetail__rows">
                 <div
-                  v-if="
-                    paper.book_info?.personal_author ||
-                    paper.book_info?.corporate_author
-                  "
+                  v-if="paper.personal_author || paper.corporate_author"
                   class="skx-pdetail__row"
                 >
                   <span class="skx-pdetail__row-lbl">저자정보</span>
                   <span class="skx-pdetail__row-val">{{
-                    paper.book_info?.personal_author ||
-                    paper.book_info?.corporate_author
+                    paper.personal_author || paper.corporate_author
                   }}</span>
                 </div>
-                <div v-if="paper.book_info?.publisher" class="skx-pdetail__row">
+                <div v-if="paper.publisher" class="skx-pdetail__row">
                   <span class="skx-pdetail__row-lbl">저널정보</span>
-                  <span class="skx-pdetail__row-val">{{
-                    paper.book_info.publisher
-                  }}</span>
+                  <span class="skx-pdetail__row-val">{{ paper.publisher }}</span>
                 </div>
-                <div v-if="paper.book_info?.pub_date" class="skx-pdetail__row">
+                <div v-if="paper.pub_date" class="skx-pdetail__row">
                   <span class="skx-pdetail__row-lbl">발행년도</span>
-                  <span class="skx-pdetail__row-val">{{
-                    paper.book_info.pub_date
-                  }}</span>
+                  <span class="skx-pdetail__row-val">{{ paper.pub_date }}</span>
                 </div>
               </div>
               <div class="skx-pdetail__btns">
@@ -160,7 +146,7 @@
                     role="tabpanel"
                     class="skx-curation-text"
                   >
-                    {{ paper.book_info?.abstract || "초록 정보가 없습니다." }}
+                    {{ paper.abstract || "초록 정보가 없습니다." }}
                   </p>
                 </div>
               </div>
@@ -224,11 +210,11 @@
               <div v-if="refsOpen" class="skx-paccord__body-outer">
                 <div class="skx-paccord__body">
                   <ol
-                    v-if="paper.book_info?.references?.length"
+                    v-if="paper.references?.length"
                     class="skx-refs-list"
                   >
                     <li
-                      v-for="(ref, i) in paper.book_info.references"
+                      v-for="(ref, i) in paper.references"
                       :key="i"
                       class="skx-ref-item"
                     >
@@ -265,7 +251,7 @@
                     'skx-reco-item',
                     selectedRelated?.book_id === rel.book_id && 'is-active',
                   ]"
-                  @click="selectedRelated = rel"
+                  @click="selectedRelated = rel; streamRelatedReason(rel.book_id)"
                 >
                   <img
                     class="skx-reco-item__thumb"
@@ -295,6 +281,12 @@
                   <h3 class="skx-reco-title">
                     {{ selectedRelated.book_info?.title }}
                   </h3>
+                  <p v-if="relatedReasonLoading" class="skx-curation-text" style="margin-top:10px; font-size:13px; color:#888;">
+                    AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
+                  </p>
+                  <p v-else-if="relatedReason" class="skx-curation-text" style="margin-top:10px; font-size:13px; color:#555;">
+                    {{ relatedReason }}
+                  </p>
                   <button
                     class="skx-btn-loan"
                     style="margin-top: 12px"
@@ -331,7 +323,7 @@
     <CitationModal
       :open="citationModal"
       :book-id="paperId"
-      :references="paper?.book_info?.references ?? []"
+      :references="paper?.references ?? []"
       @close="citationModal = false"
     />
 
@@ -402,10 +394,10 @@ const keywordOpen = ref(false);
 const refsOpen = ref(false);
 
 const keywords = computed<string[]>(() => {
-  const kw = paper.value?.book_info?.keyword || "";
+  const kw = paper.value?.keyword || paper.value?.subject || "";
   return kw
     ? kw
-        .split(",")
+        .split(/[,;]/)
         .map((k: string) => k.trim())
         .filter(Boolean)
     : [];
@@ -422,6 +414,8 @@ const renderedSummary = computed(() =>
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
 const selectedRelated = ref<any>(null);
+const relatedReason = ref("");
+const relatedReasonLoading = ref(false);
 
 // UI
 const chatOpen = ref(false);
@@ -451,13 +445,51 @@ async function fetchRelated() {
   relatedLoading.value = true;
   try {
     const data = await $fetch<any>(
-      `${config.public.apiBase}/books/${paperId}/related`,
+      `${config.public.apiBase}/papers/${paperId}/related`,
     );
     relatedItems.value = data?.results || [];
   } catch {
     /* silent */
   } finally {
     relatedLoading.value = false;
+  }
+}
+
+async function streamRelatedReason(relatedId: string) {
+  relatedReason.value = "";
+  relatedReasonLoading.value = true;
+  try {
+    const resp = await fetch(`${config.public.apiBase}/papers/related-reason/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
+    });
+    await readSSE(resp, (json) => {
+      if (json.text) relatedReason.value += json.text;
+    });
+  } catch {
+    /* silent */
+  } finally {
+    relatedReasonLoading.value = false;
+  }
+}
+
+async function readSSE(resp: Response, onEvent: (json: any) => void) {
+  const reader = resp.body!.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop()!;
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const raw = line.slice(6).trim();
+      if (raw === "[DONE]") return;
+      try { onEvent(JSON.parse(raw)); } catch { /* skip */ }
+    }
   }
 }
 
