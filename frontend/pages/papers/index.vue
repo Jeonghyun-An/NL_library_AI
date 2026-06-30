@@ -351,13 +351,13 @@
                   <div class="skx-paper-meta">
                     <template v-if="paper.book_info?.pub_date">
                       <span class="skx-paper-meta-text">{{
-                        paper.book_info.pub_date
+                        formatPubDate(paper.book_info.pub_date)
                       }}</span>
                     </template>
-                    <template v-if="paper.book_info?.publisher">
+                    <template v-if="paper.book_info?.corporate_author">
                       <span class="skx-dot"></span>
                       <span class="skx-paper-meta-text">{{
-                        paper.book_info.publisher
+                        paper.book_info.corporate_author
                       }}</span>
                     </template>
                     <template v-if="paper.book_info?.series_title">
@@ -369,6 +369,12 @@
                       <span class="skx-paper-meta-text">{{
                         paper.book_info.series_title
                       }}</span>
+                    </template>
+                    <template v-if="paper.book_info?.kci_citations">
+                      <span class="skx-dot"></span>
+                      <span class="skx-paper-meta-text"
+                        >KCI 인용수 {{ paper.book_info.kci_citations }}</span
+                      >
                     </template>
                   </div>
                 </div>
@@ -619,6 +625,12 @@ function setPageSize(n: number) {
   pageSize.value = n;
   currentPage.value = 1;
   perpageOpen.value = false;
+}
+
+function formatPubDate(pubDate: string): string {
+  const m = pubDate.match(/(\d{4})[.\-]?(\d{1,2})/);
+  if (!m || !m[1] || !m[2]) return pubDate;
+  return `${m[1]}년 ${parseInt(m[2])}월`;
 }
 
 function goToDetail(paper: any) {
