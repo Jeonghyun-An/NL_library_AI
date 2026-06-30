@@ -120,7 +120,7 @@
               :key="book.book_id"
               type="button"
               :class="['skx-rcd-book-card', `skx-rcd-book-card--${i + 1}`]"
-              @click="openModal(book)"
+              @click="navigateTo(`/books/${book.book_id}`)"
             >
               <div class="skx-rcd-book-card__head">
                 <img
@@ -141,73 +141,6 @@
         </div>
       </div>
     </main>
-
-    <!-- 맞춤도서 추천 팝업 -->
-    <div
-      v-if="modalOpen"
-      class="skx-rcd-modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      @click.self="modalOpen = false"
-    >
-      <div class="skx-rcd-modal">
-        <button
-          type="button"
-          class="skx-rcd-modal__close"
-          aria-label="닫기"
-          @click="modalOpen = false"
-        >
-          <img src="/img/ico-close.svg" alt="" />
-        </button>
-        <h2 class="skx-rcd-modal__title">맞춤도서 추천</h2>
-        <div class="skx-rcd-modal__card">
-          <div class="skx-rcd-modal__card-top">
-            <span class="skx-rcd-modal__badge">Book solution</span>
-            <p class="skx-rcd-modal__desc">{{ selectedBook?.reason }}</p>
-          </div>
-          <div class="skx-rcd-modal__cover" v-if="selectedBook">
-            <BookCover :book-id="selectedBook.book_id" />
-          </div>
-          <div class="skx-rcd-modal__book-info">
-            <p class="skx-rcd-modal__book-title">
-              {{ selectedBook?.book_info?.title }}
-            </p>
-            <p v-if="selectedBook?.quote" class="skx-rcd-modal__quote">
-              "{{ selectedBook.quote }}"
-            </p>
-            <div class="skx-rcd-modal__meta" v-if="selectedBook?.book_info">
-              <span
-                v-if="
-                  selectedBook.book_info.personal_author ||
-                  selectedBook.book_info.corporate_author
-                "
-              >
-                {{
-                  selectedBook.book_info.personal_author ||
-                  selectedBook.book_info.corporate_author
-                }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="skx-rcd-modal__btns">
-          <button
-            type="button"
-            class="skx-rcd-modal__btn skx-rcd-modal__btn--outline"
-            @click="navigateTo(`/books/${selectedBook?.book_id}`)"
-          >
-            <img src="/img/ico-arrow.svg" alt="" />상세 보기
-          </button>
-          <button
-            type="button"
-            class="skx-rcd-modal__btn skx-rcd-modal__btn--dark"
-            @click="showToast('준비 중입니다.')"
-          >
-            <img src="/img/ico-download.svg" alt="" />솔루션 저장하기
-          </button>
-        </div>
-      </div>
-    </div>
 
     <Teleport to="body">
       <Transition name="skx-toast">
@@ -317,17 +250,8 @@ function typeText(text: string) {
   tick();
 }
 
-// ── 모달 ───────────────────────────────────────────────────
-const modalOpen = ref(false);
-const selectedBook = ref<RecommendedBook | null>(null);
-
-function openModal(book: RecommendedBook) {
-  selectedBook.value = book;
-  modalOpen.value = true;
-}
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === "Escape") modalOpen.value = false;
+function onKeydown(_e: KeyboardEvent) {
+  // reserved for future use
 }
 
 // ── API 호출 ───────────────────────────────────────────────
