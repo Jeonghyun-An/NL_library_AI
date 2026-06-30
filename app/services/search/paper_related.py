@@ -34,10 +34,9 @@ async def find_related_papers(
     if not source:
         return []
 
-    # 대표 쿼리: 제목 + 초록(MARC 필드 또는 enricher 저장값 우선)
+    # 대표 쿼리: 제목 + 초록
     abstract = (
-        ((source.extra or {}).get("abstract") or "")
-        or (source.abstract or "")
+        (source.abstract or "")
         or (source.summary or "")
         or (source.introduction or "")
     )

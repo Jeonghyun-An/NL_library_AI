@@ -191,10 +191,8 @@ async def stream_related_reason(
     def _get_abstract(book) -> str:
         if not book:
             return ""
-        extra = book.extra or {}
         return (
-            extra.get("abstract")
-            or getattr(book, "abstract", None)
+            getattr(book, "abstract", None)
             or book.summary
             or book.introduction
             or ""

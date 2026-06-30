@@ -281,7 +281,7 @@
               >
                 <div class="skx-prelate-card__info">
                   <span class="skx-prelate-card__score"
-                    >정합성 {{ Math.round((rel.score || 0) * 100) }}%</span
+                    >연관도 {{ relatedScore(rel.score) }}%</span
                   >
                   <div class="skx-prelate-card__title-row">
                     <h3 class="skx-prelate-card__title">
@@ -490,6 +490,11 @@ const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
 const relatedReasons = ref<Record<string, string>>({});
 const relatedReasonLoading = ref<Set<string>>(new Set());
+
+function relatedScore(score: number): number {
+  const maxScore = Math.max(...relatedItems.value.map((r) => r.score || 0), 1e-9);
+  return Math.round((score / maxScore) * 100);
+}
 
 // UI
 const chatOpen = ref(false);
