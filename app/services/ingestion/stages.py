@@ -458,13 +458,39 @@ def run_embed_index(ctx: StageContext) -> dict:
 
     book_id = ctx.book_id
     client = minio_client()
-    full_text, page_map = load_extraction_artifact(book_id, client)
+
+    try:
+        full_text, page_map = load_extraction_artifact(book_id, client)
+    except StageError as _se:
+        if _se.error_group != "artifact_missing":
+            raise
+        # PDF 없는 메타데이터 전용 논문 — abstract를 임베딩 텍스트로 사용
+        full_text = ""
+        page_map = {}
 
     db = SyncSessionLocal()
     try:
         book = db.query(Book).filter_by(cnts_id=book_id).first()
         if not book:
             raise StageError("not_found", "카탈로그 row 없음")
+
+        # KCI 메타데이터 전용 논문 — abstract → title+journal 순으로 fallback
+        if not full_text and (book.doc_type or "") == "paper":
+            if book.abstract:
+                full_text = book.abstract
+                log.info(f"[{book_id}] PDF 없음 — abstract를 임베딩 텍스트로 사용 ({len(full_text)}자)")
+            else:
+                # abstract도 없으면 제목+저자+학술지로 최소 텍스트 구성
+                fallback_parts = [p for p in [
+                    book.title,
+                    book.personal_author or book.corporate_author,
+                    book.series_title,
+                    book.subject,
+                    book.keyword,
+                ] if p]
+                if fallback_parts:
+                    full_text = " ".join(fallback_parts)
+                    log.info(f"[{book_id}] PDF·abstract 없음 — 메타 필드로 최소 임베딩 ({len(full_text)}자)")
         sections_rows = (
             db.query(BookSection)
             .filter_by(book_id=book_id)
@@ -587,8 +613,9 @@ def run_embed_index(ctx: StageContext) -> dict:
                     chunk_idx=base_idx + i, text=f"[그림 설명] {fc.description}", section_idx=None,
                 ))
         except Exception as _e:
-            log.warning(f"[{book_id}] paper enrichment 실패, 계속 진행: {_e}")
-            enrich_meta = {"enriched": False, "enrich_error": str(_e)[:200]}
+            import traceback
+            log.warning(f"[{book_id}] paper enrichment 실패, 계속 진행: {_e}\n{traceback.format_exc()}")
+            enrich_meta = {"enriched": False, "enrich_error": str(_e)[:500]}
 
     # 메타데이터 전용 청크 (chunk_idx=-1)
     meta_text = " | ".join(p for p in meta_parts if p)

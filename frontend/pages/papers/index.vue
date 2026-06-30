@@ -22,7 +22,11 @@
               ></textarea>
             </label>
             <div class="skx-search__actions">
-              <button type="button" class="skx-send" @click="handleSearch(currentQuery)">
+              <button
+                type="button"
+                class="skx-send"
+                @click="handleSearch(currentQuery)"
+              >
                 <img src="/img/ico-send.svg" alt="" />
               </button>
             </div>
@@ -43,7 +47,11 @@
           v-model="currentQuery"
           @keydown.enter.prevent="handleSearch(currentQuery)"
         />
-        <button type="button" class="skx-send" @click="handleSearch(currentQuery)">
+        <button
+          type="button"
+          class="skx-send"
+          @click="handleSearch(currentQuery)"
+        >
           <img src="/img/ico-send.svg" alt="" />
         </button>
       </div>
@@ -64,7 +72,11 @@
           <!-- AI 검색 결과 -->
           <section class="skx-pai" aria-label="AI 검색 결과">
             <div class="skx-pai__header">
-              <img class="skx-pai__logo" src="/img/logo-mark.svg" alt="SKOVIX AI" />
+              <img
+                class="skx-pai__logo"
+                src="/img/logo-mark.svg"
+                alt="SKOVIX AI"
+              />
               <span class="skx-pai__hd-text">AI 검색 결과</span>
             </div>
             <div class="skx-pai__grid">
@@ -73,14 +85,18 @@
                 <div class="skx-pai-main__scroll">
                   <template v-if="aiLoading && !aiText">
                     <div class="skx-pai-section">
-                      <p class="skx-pai-section__text" style="color:#999">
-                        AI가 논문을 분석하고 있습니다<span class="skx-stream-cursor" />
+                      <p class="skx-pai-section__text" style="color: #999">
+                        AI가 논문을 분석하고 있습니다<span
+                          class="skx-stream-cursor"
+                        />
                       </p>
                     </div>
                   </template>
                   <div v-else-if="aiText" v-html="renderedAiText" />
                   <div v-else class="skx-pai-section">
-                    <p class="skx-pai-section__text">AI 요약 정보가 없습니다.</p>
+                    <p class="skx-pai-section__text">
+                      AI 요약 정보가 없습니다.
+                    </p>
                   </div>
                 </div>
                 <div class="skx-pai-main__foot">
@@ -90,8 +106,12 @@
                     :aria-expanded="aiExpanded"
                     @click="aiExpanded = !aiExpanded"
                   >
-                    <span>{{ aiExpanded ? '접기' : '전체보기' }}</span>
-                    <img src="/img/ico-arrow-down.svg" alt="" aria-hidden="true" />
+                    <span>{{ aiExpanded ? "접기" : "전체보기" }}</span>
+                    <img
+                      src="/img/ico-arrow-down.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
                   </button>
                 </div>
               </div>
@@ -106,11 +126,21 @@
                     </div>
                   </div>
                   <template v-if="aiLoading && !aiRefs.length">
-                    <div v-for="n in Math.min(pagedPapers.length, 5)" :key="n" class="skx-pai-ref">
+                    <div
+                      v-for="n in Math.min(pagedPapers.length, 5)"
+                      :key="n"
+                      class="skx-pai-ref"
+                    >
                       <div class="skx-pai-ref__num">{{ n }}</div>
                       <div class="skx-pai-ref__body">
-                        <p class="skx-pai-ref__title">{{ pagedPapers[n-1]?.book_info?.title || '' }}</p>
-                        <p class="skx-pai-ref__author">{{ pagedPapers[n-1]?.book_info?.personal_author || '' }}</p>
+                        <p class="skx-pai-ref__title">
+                          {{ pagedPapers[n - 1]?.book_info?.title || "" }}
+                        </p>
+                        <p class="skx-pai-ref__author">
+                          {{
+                            pagedPapers[n - 1]?.book_info?.personal_author || ""
+                          }}
+                        </p>
                       </div>
                     </div>
                   </template>
@@ -125,55 +155,116 @@
             <div class="skx-paper-head">
               <div class="skx-paper-count">
                 <span class="skx-paper-count__label">총</span>
-                <strong class="skx-paper-count__num">{{ filteredPapers.length }}</strong>
+                <strong class="skx-paper-count__num">{{
+                  filteredPapers.length
+                }}</strong>
                 <span class="skx-paper-count__label">건</span>
               </div>
               <div class="skx-paper-head__right">
                 <!-- 등재 등급 필터 -->
-                <div v-if="gradeOptions.length" class="skx-paper-grade-filter" role="group" aria-label="등재 등급 필터">
+                <div
+                  v-if="gradeOptions.length"
+                  class="skx-paper-grade-filter"
+                  role="group"
+                  aria-label="등재 등급 필터"
+                >
                   <button
                     type="button"
-                    :class="['skx-ptag skx-ptag--filter', selectedGrade === 'all' && 'is-active']"
-                    @click="selectedGrade = 'all'; currentPage = 1"
-                  >전체</button>
+                    :class="[
+                      'skx-ptag skx-ptag--filter',
+                      selectedGrade === 'all' && 'is-active',
+                    ]"
+                    @click="
+                      selectedGrade = 'all';
+                      currentPage = 1;
+                    "
+                  >
+                    전체
+                  </button>
                   <button
                     v-for="g in gradeOptions"
                     :key="g"
                     type="button"
-                    :class="['skx-ptag skx-ptag--filter skx-ptag--kci', selectedGrade === g && 'is-active']"
-                    @click="selectedGrade = g; currentPage = 1"
-                  >{{ g }}</button>
+                    :class="[
+                      'skx-ptag skx-ptag--filter skx-ptag--kci',
+                      selectedGrade === g && 'is-active',
+                    ]"
+                    @click="
+                      selectedGrade = g;
+                      currentPage = 1;
+                    "
+                  >
+                    {{ g }}
+                  </button>
                 </div>
-                <div class="skx-paper-sorts" role="group" aria-label="정렬 기준">
+                <div
+                  class="skx-paper-sorts"
+                  role="group"
+                  aria-label="정렬 기준"
+                >
                   <button
                     type="button"
-                    :class="['skx-paper-sort', sortBy === 'relevance' && 'is-active']"
+                    :class="[
+                      'skx-paper-sort',
+                      sortBy === 'relevance' && 'is-active',
+                    ]"
                     :aria-pressed="sortBy === 'relevance'"
                     @click="setSortBy('relevance')"
                   >
-                    <img :src="sortBy === 'relevance' ? '/img/ico-sort-on.svg' : '/img/ico-sort-off.svg'" alt="" />
+                    <img
+                      :src="
+                        sortBy === 'relevance'
+                          ? '/img/ico-sort-on.svg'
+                          : '/img/ico-sort-off.svg'
+                      "
+                      alt=""
+                    />
                     정합성순
                   </button>
                   <button
                     type="button"
-                    :class="['skx-paper-sort', sortBy === 'name' && 'is-active']"
+                    :class="[
+                      'skx-paper-sort',
+                      sortBy === 'name' && 'is-active',
+                    ]"
                     :aria-pressed="sortBy === 'name'"
                     @click="setSortBy('name')"
                   >
-                    <img :src="sortBy === 'name' ? '/img/ico-sort-on.svg' : '/img/ico-sort-off.svg'" alt="" />
+                    <img
+                      :src="
+                        sortBy === 'name'
+                          ? '/img/ico-sort-on.svg'
+                          : '/img/ico-sort-off.svg'
+                      "
+                      alt=""
+                    />
                     이름순
                   </button>
                   <button
                     type="button"
-                    :class="['skx-paper-sort', sortBy === 'date_desc' && 'is-active']"
+                    :class="[
+                      'skx-paper-sort',
+                      sortBy === 'date_desc' && 'is-active',
+                    ]"
                     :aria-pressed="sortBy === 'date_desc'"
                     @click="setSortBy('date_desc')"
                   >
-                    <img :src="sortBy === 'date_desc' ? '/img/ico-sort-on.svg' : '/img/ico-sort-off.svg'" alt="" />
+                    <img
+                      :src="
+                        sortBy === 'date_desc'
+                          ? '/img/ico-sort-on.svg'
+                          : '/img/ico-sort-off.svg'
+                      "
+                      alt=""
+                    />
                     최신순
                   </button>
                 </div>
-                <div class="skx-paper-perpage" :class="perpageOpen && 'is-open'" ref="perpageRef">
+                <div
+                  class="skx-paper-perpage"
+                  :class="perpageOpen && 'is-open'"
+                  ref="perpageRef"
+                >
                   <button
                     type="button"
                     class="skx-paper-perpage__btn"
@@ -181,18 +272,29 @@
                     :aria-expanded="perpageOpen"
                     @click.stop="perpageOpen = !perpageOpen"
                   >
-                    <span class="skx-paper-perpage__label">{{ pageSize }}개씩</span>
-                    <img src="/img/ico-arrow-down.svg" alt="" aria-hidden="true" />
+                    <span class="skx-paper-perpage__label"
+                      >{{ pageSize }}개씩</span
+                    >
+                    <img
+                      src="/img/ico-arrow-down.svg"
+                      alt=""
+                      aria-hidden="true"
+                    />
                   </button>
                   <ul class="skx-paper-perpage__menu" role="listbox">
                     <li v-for="n in [10, 20, 30, 50]" :key="n">
                       <button
                         type="button"
-                        :class="['skx-paper-perpage__opt', pageSize === n && 'is-selected']"
+                        :class="[
+                          'skx-paper-perpage__opt',
+                          pageSize === n && 'is-selected',
+                        ]"
                         role="option"
                         :aria-selected="pageSize === n"
                         @click="setPageSize(n)"
-                      >{{ n }}개씩</button>
+                      >
+                        {{ n }}개씩
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -200,7 +302,10 @@
             </div>
 
             <!-- 목록 없음 -->
-            <div v-if="!filteredPapers.length" style="padding: 60px; text-align: center; color: #bbb">
+            <div
+              v-if="!filteredPapers.length"
+              style="padding: 60px; text-align: center; color: #bbb"
+            >
               검색 결과가 없습니다.
             </div>
 
@@ -214,7 +319,10 @@
               >
                 <div class="skx-paper-item__left">
                   <div class="skx-paper-tags">
-                    <span v-if="paper.book_info?.grade" class="skx-ptag skx-ptag--kci">
+                    <span
+                      v-if="paper.book_info?.grade"
+                      class="skx-ptag skx-ptag--kci"
+                    >
                       {{ paper.book_info.grade }}
                     </span>
                     <span class="skx-ptag skx-ptag--score">
@@ -225,21 +333,42 @@
                     class="skx-paper-title"
                     style="cursor: pointer"
                     @click="goToDetail(paper)"
-                  >{{ paper.book_info?.title || paper.book_id }}</h3>
-                  <div v-if="paper.book_info?.personal_author || paper.book_info?.corporate_author" class="skx-paper-author">
-                    {{ paper.book_info?.personal_author || paper.book_info?.corporate_author }}
+                  >
+                    {{ paper.book_info?.title || paper.book_id }}
+                  </h3>
+                  <div
+                    v-if="
+                      paper.book_info?.personal_author ||
+                      paper.book_info?.corporate_author
+                    "
+                    class="skx-paper-author"
+                  >
+                    {{
+                      paper.book_info?.personal_author ||
+                      paper.book_info?.corporate_author
+                    }}
                   </div>
                   <div class="skx-paper-meta">
                     <template v-if="paper.book_info?.pub_date">
-                      <span class="skx-paper-meta-text">{{ paper.book_info.pub_date.slice(0, 4) }}년 {{ monthStr(paper.book_info.pub_date) }}</span>
+                      <span class="skx-paper-meta-text">{{
+                        paper.book_info.pub_date
+                      }}</span>
                     </template>
                     <template v-if="paper.book_info?.publisher">
                       <span class="skx-dot"></span>
-                      <span class="skx-paper-meta-text">{{ paper.book_info.publisher }}</span>
+                      <span class="skx-paper-meta-text">{{
+                        paper.book_info.publisher
+                      }}</span>
                     </template>
                     <template v-if="paper.book_info?.series_title">
-                      <img class="skx-paper-meta-arr" src="/img/ico-arrow.svg" alt="" />
-                      <span class="skx-paper-meta-text">{{ paper.book_info.series_title }}</span>
+                      <img
+                        class="skx-paper-meta-arr"
+                        src="/img/ico-arrow.svg"
+                        alt=""
+                      />
+                      <span class="skx-paper-meta-text">{{
+                        paper.book_info.series_title
+                      }}</span>
                     </template>
                   </div>
                 </div>
@@ -252,18 +381,25 @@
                       rel="noopener"
                       class="skx-btn-pview"
                       @click.stop
-                    >원문 보기</a>
+                      >원문 보기</a
+                    >
                     <button
                       v-else
                       type="button"
                       class="skx-btn-pview"
                       @click.stop="showToast('원문 링크가 없습니다.')"
-                    >원문 보기</button>
+                    >
+                      원문 보기
+                    </button>
                     <button
                       type="button"
                       class="skx-btn-pbmark"
                       aria-label="인용 모달 팝업 열림"
-                      @click.stop="citeBookId = paper.book_id; citeRefs = paper.book_info?.references ?? []; citeModalOpen = true"
+                      @click.stop="
+                        citeBookId = paper.book_id;
+                        citeRefs = paper.book_info?.references ?? [];
+                        citeModalOpen = true;
+                      "
                     >
                       <img src="/img/ico-paper-bookmark.svg" alt="" />
                     </button>
@@ -284,10 +420,22 @@
             <div v-if="totalPages > 1" class="skx-pagination">
               <nav class="skx-page" aria-label="페이지 탐색">
                 <div class="skx-page-nav">
-                  <button type="button" class="skx-page-nav-btn" aria-label="처음 페이지" :disabled="currentPage === 1" @click="currentPage = 1">
+                  <button
+                    type="button"
+                    class="skx-page-nav-btn"
+                    aria-label="처음 페이지"
+                    :disabled="currentPage === 1"
+                    @click="currentPage = 1"
+                  >
                     <img src="/img/ico-page-first.svg" alt="" />
                   </button>
-                  <button type="button" class="skx-page-nav-btn" aria-label="이전 페이지" :disabled="currentPage === 1" @click="currentPage--">
+                  <button
+                    type="button"
+                    class="skx-page-nav-btn"
+                    aria-label="이전 페이지"
+                    :disabled="currentPage === 1"
+                    @click="currentPage--"
+                  >
                     <img src="/img/ico-page-prev.svg" alt="" />
                   </button>
                 </div>
@@ -297,17 +445,34 @@
                     <button
                       v-else
                       type="button"
-                      :class="['skx-page-num', p === currentPage && 'is-active']"
+                      :class="[
+                        'skx-page-num',
+                        p === currentPage && 'is-active',
+                      ]"
                       :aria-current="p === currentPage ? 'page' : undefined"
                       @click="currentPage = Number(p)"
-                    >{{ p }}</button>
+                    >
+                      {{ p }}
+                    </button>
                   </template>
                 </div>
                 <div class="skx-page-nav">
-                  <button type="button" class="skx-page-nav-btn" aria-label="다음 페이지" :disabled="currentPage === totalPages" @click="currentPage++">
+                  <button
+                    type="button"
+                    class="skx-page-nav-btn"
+                    aria-label="다음 페이지"
+                    :disabled="currentPage === totalPages"
+                    @click="currentPage++"
+                  >
                     <img src="/img/ico-page-next.svg" alt="" />
                   </button>
-                  <button type="button" class="skx-page-nav-btn" aria-label="마지막 페이지" :disabled="currentPage === totalPages" @click="currentPage = totalPages">
+                  <button
+                    type="button"
+                    class="skx-page-nav-btn"
+                    aria-label="마지막 페이지"
+                    :disabled="currentPage === totalPages"
+                    @click="currentPage = totalPages"
+                  >
                     <img src="/img/ico-page-last.svg" alt="" />
                   </button>
                 </div>
@@ -351,9 +516,11 @@ const paperResult = ref<BookSearchResponse | null>(null);
 const aiText = ref("");
 const aiLoading = ref(false);
 const aiExpanded = ref(false);
-const aiRefs = ref<{ num: number; book_id: string; title: string; authors: string }[]>([]);
+const aiRefs = ref<
+  { num: number; book_id: string; title: string; authors: string }[]
+>([]);
 const renderedAiText = computed(() =>
-  aiText.value ? (marked.parse(aiText.value) as string) : ""
+  aiText.value ? (marked.parse(aiText.value) as string) : "",
 );
 
 // ── 정렬 / 페이지 / 필터 ─────────────────────────────────────
@@ -373,7 +540,9 @@ const citeRefs = ref<string[]>([]);
 const toast = ref("");
 function showToast(msg: string) {
   toast.value = msg;
-  setTimeout(() => { toast.value = ""; }, 2500);
+  setTimeout(() => {
+    toast.value = "";
+  }, 2500);
 }
 
 // ── 계산 ─────────────────────────────────────────────────────
@@ -382,9 +551,16 @@ const hasResults = computed(() => paperResult.value !== null || loading.value);
 const sortedPapers = computed(() => {
   if (!paperResult.value) return [];
   const books = [...paperResult.value.books];
-  if (sortBy.value === "relevance") return books.sort((a, b) => b.best_score - a.best_score);
-  if (sortBy.value === "name") return books.sort((a, b) => (a.book_info?.title ?? "").localeCompare(b.book_info?.title ?? ""));
-  if (sortBy.value === "date_desc") return books.sort((a, b) => (b.book_info?.pub_date ?? "").localeCompare(a.book_info?.pub_date ?? ""));
+  if (sortBy.value === "relevance")
+    return books.sort((a, b) => b.best_score - a.best_score);
+  if (sortBy.value === "name")
+    return books.sort((a, b) =>
+      (a.book_info?.title ?? "").localeCompare(b.book_info?.title ?? ""),
+    );
+  if (sortBy.value === "date_desc")
+    return books.sort((a, b) =>
+      (b.book_info?.pub_date ?? "").localeCompare(a.book_info?.pub_date ?? ""),
+    );
   return books;
 });
 
@@ -399,13 +575,20 @@ const gradeOptions = computed(() => {
 
 const filteredPapers = computed(() => {
   if (selectedGrade.value === "all") return sortedPapers.value;
-  return sortedPapers.value.filter((b) => b.book_info?.grade === selectedGrade.value);
+  return sortedPapers.value.filter(
+    (b) => b.book_info?.grade === selectedGrade.value,
+  );
 });
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredPapers.value.length / pageSize.value)));
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredPapers.value.length / pageSize.value)),
+);
 
 const pagedPapers = computed(() =>
-  filteredPapers.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value)
+  filteredPapers.value.slice(
+    (currentPage.value - 1) * pageSize.value,
+    currentPage.value * pageSize.value,
+  ),
 );
 
 const pageButtons = computed(() => {
@@ -414,7 +597,8 @@ const pageButtons = computed(() => {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const pages: (number | string)[] = [1];
   if (cur > 3) pages.push("...");
-  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i);
+  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++)
+    pages.push(i);
   if (cur < total - 2) pages.push("...");
   pages.push(total);
   return pages;
@@ -438,9 +622,10 @@ function setPageSize(n: number) {
 }
 
 function goToDetail(paper: any) {
-  navigateTo(`/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery.value)}`);
+  navigateTo(
+    `/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery.value)}`,
+  );
 }
-
 
 // ── 검색 ─────────────────────────────────────────────────────
 async function handleSearch(q?: string) {
@@ -459,7 +644,13 @@ async function handleSearch(q?: string) {
   try {
     const data = await $fetch<BookSearchResponse>(`${apiBase}/papers/search`, {
       method: "POST",
-      body: { query, mode: "book", top_k: 20, use_rewrite: true, use_rerank: true },
+      body: {
+        query,
+        mode: "book",
+        top_k: 20,
+        use_rewrite: true,
+        use_rerank: true,
+      },
     });
     paperResult.value = data;
     // AI 요약 SSE 병렬 시작
@@ -467,7 +658,8 @@ async function handleSearch(q?: string) {
       streamAiSummary(query, data.books);
     }
   } catch (e: any) {
-    error.value = e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
+    error.value =
+      e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
     paperResult.value = { mode: "book", query, books: [], elapsed_ms: 0 };
   } finally {
     loading.value = false;
@@ -480,7 +672,8 @@ async function streamAiSummary(query: string, books: any[]) {
   const papers = books.slice(0, 5).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
-    authors: b.book_info?.personal_author || b.book_info?.corporate_author || "",
+    authors:
+      b.book_info?.personal_author || b.book_info?.corporate_author || "",
     best_chunk_text: "",
   }));
   try {
@@ -519,7 +712,9 @@ async function streamAiSummary(query: string, books: any[]) {
 
 // ── 페이지당 개수 드롭다운 닫기 + URL 초기 검색 ───────────────
 onMounted(() => {
-  document.addEventListener("click", () => { perpageOpen.value = false; });
+  document.addEventListener("click", () => {
+    perpageOpen.value = false;
+  });
   const route = useRoute();
   const q = route.query.q as string | undefined;
   if (q?.trim()) handleSearch(q.trim());

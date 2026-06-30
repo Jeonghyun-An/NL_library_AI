@@ -51,20 +51,26 @@ _ABSTRACT_END = re.compile(
     r'\n\s*(?:[#*\-]+\s*)?(?:\d+[\.\)]\s+|[IVXivx]+\.\s+)?'
     r'(?:서\s*론|Introduction|INTRODUCTION|'
     r'연구\s*(?:방법|배경|문제|목적)|Methods?|Background|결\s*론|Conclusion|'
-    r'Key\s*[Ww]ords?|Keywords?|주제어|핵심어|색인어|중심어)',
+    r'Key\s*[Ww]ords?|Keywords?|주제어|핵심어|색인어|중심어|주요어|키워드)',
     re.IGNORECASE,
 )
 
 # ── 참고문헌 헤더 ─────────────────────────────────────────────
 _REF_HEADER = re.compile(
-    r'(?m)^\s*(?:참\s*고\s*문\s*헌|References?|REFERENCES?|Bibliography|참\s*고\s*자\s*료)\s*$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:참\s*고\s*문\s*헌|References?|REFERENCES?|Bibliography|참\s*고\s*자\s*료)\s*$',
     re.IGNORECASE,
 )
 
-# 참고문헌 이후 종료 패턴 (저자정보·부록·감사·연락처)
+# 참고문헌 이후 종료 패턴 (저자정보·부록·감사·연락처·초록)
 _REF_STOP = re.compile(
-    r'(?m)^\s*(?:저\s*자\s*(?:정보|소개)?|Author\s*(?:Information|s)?|AUTHOR|'
-    r'부\s*록|Appendix|APPENDIX|감\s*사|Acknowledgment|연\s*락\s*처|Contact)',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:'
+    r'저\s*자\s*(?:정보|소개)?|Author\s*(?:Information|s)?|AUTHOR'
+    r'|부\s*록|Appendix|APPENDIX'
+    r'|감\s*사|Acknowledgment'
+    r'|연\s*락\s*처|Contact'
+    r'|Abstract|ABSTRACT|국\s*문\s*(?:초록|요약|abstract)|영\s*문\s*(?:초록|요약)'
+    r'|초\s*록|요\s*약'
+    r')',
     re.IGNORECASE,
 )
 
@@ -75,18 +81,26 @@ _REF_ENTRY = re.compile(
     r'|\d{1,3}\.'                       # 1.
     r'|[가-힣A-Z][가-힣A-Za-z\s,\-]{2,}\.\s+\(?(?:19|20)\d{2}\)?'  # 저자(연도)
     r'|[가-힣A-Z][가-힣A-Za-z\s,\-]{2,},\s+(?:19|20)\d{2}[,.]'     # 저자, 연도.
+    r'|[가-힣]{2,}(?:,\s*[가-힣]{2,})*(?:\s*외|\s*등)?\s*[,.]'      # 한국어 저자명. (KCI: 공은배 외., 백성준, 박인심.)
+    r'|[A-Z][a-zA-Z\-]+,\s+[A-Z]'                                    # English Last, First (Bogue, E.)
     r')'
 )
 
 # ── 키워드 헤더 ──────────────────────────────────────────────
 # 인라인: "Keywords: A, B, C" 또는 블록(헤더만 있고 다음 줄에 키워드)
 # VLM 마크다운 prefix (**Keywords:**, ## Keywords) 도 처리
+_KW_LABEL = (
+    r'Keywords?|KEYWORDS?'
+    r'|핵심\s*어|주요\s*어|색인어|주제\s*어|중심\s*어'
+    r'|키\s*워\s*드'          # 한국어 외래어 표기
+    r'|Key\s*Words?'
+)
 _KW_INLINE = re.compile(
-    r'(?m)^\s*(?:[#*\-]+\s*)?(?:Keywords?|KEYWORDS?|핵심어|주요어|핵심\s*어|주요\s*어|색인어|Key\s*Words?)\s*[*_]*\s*[:：]\s*[*_]*\s*(.+)$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:' + _KW_LABEL + r')\s*[*_]*\s*[:：]\s*[*_]*\s*(.+)$',
     re.IGNORECASE,
 )
 _KW_BLOCK_HEADER = re.compile(
-    r'(?m)^\s*(?:[#*\-]+\s*)?(?:Keywords?|KEYWORDS?|핵심어|주요어|핵심\s*어|주요\s*어|색인어|Key\s*Words?)\s*[*_]*\s*[:：]?\s*[*_]*\s*$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:' + _KW_LABEL + r')\s*[*_]*\s*[:：]?\s*[*_]*\s*$',
     re.IGNORECASE,
 )
 
@@ -241,48 +255,25 @@ def extract_toc(full_text: str) -> list[str] | None:
 # ── 4. 참고문헌 추출 ─────────────────────────────────────────
 
 def extract_references(full_text: str) -> list[str]:
-    """패턴 기반 항목 추출. 연속 비매칭 4줄 또는 종료 패턴 → stop."""
-    m = _REF_HEADER.search(full_text)
-    if not m:
+    """참고문헌 섹션을 헤더로 찾은 뒤 빈 줄 단위로 항목 분리.
+    참고문헌은 항상 문서 끝에 위치하므로 마지막 매칭을 사용한다.
+    """
+    matches = list(_REF_HEADER.finditer(full_text))
+    if not matches:
         return []
+    m = matches[-1]  # 마지막 occurrence — 본문 내 오매칭 방지
 
     rest = full_text[m.end():]
     stop_m = _REF_STOP.search(rest)
     if stop_m:
         rest = rest[:stop_m.start()]
 
-    lines = rest.splitlines()
+    # 빈 줄 단위로 분리 → 항목별로 한 줄로 합침
     refs: list[str] = []
-    current: list[str] = []
-    consecutive_nonmatch = 0
-
-    for line in lines:
-        stripped = line.strip()
-
-        if not stripped:
-            if current:
-                consecutive_nonmatch += 1
-                if consecutive_nonmatch >= _REF_MAX_CONSECUTIVE_NONMATCH:
-                    refs.append(" ".join(current))
-                    current = []
-                    break
-            continue
-
-        if _REF_ENTRY.match(stripped):
-            if current:
-                refs.append(" ".join(current))
-            current = [stripped]
-            consecutive_nonmatch = 0
-        elif current:
-            current.append(stripped)
-            consecutive_nonmatch = 0
-        else:
-            consecutive_nonmatch += 1
-            if consecutive_nonmatch >= _REF_MAX_CONSECUTIVE_NONMATCH:
-                break
-
-    if current:
-        refs.append(" ".join(current))
+    for para in re.split(r'\n\s*\n', rest.strip()):
+        lines = [ln.strip() for ln in para.splitlines() if ln.strip()]
+        if lines:
+            refs.append(" ".join(lines))
 
     return refs[:200]
 
@@ -332,6 +323,17 @@ async def generate_keywords(title: str, text: str) -> list[str]:
     raw = await _llm_chat(system, user, params, timeout=cfg.PAPER_TABLE_INTERP_TIMEOUT)
     raw = re.sub(r'[#*`_\[\]>]+', '', raw)  # LLM 마크다운 제거
     return _split_keywords(raw)
+
+
+async def generate_references(text: str) -> list[str]:
+    """패턴 추출 실패·과추출 시 LLM 폴백. 문서 끝 3000자만 사용."""
+    from services.prompts import get_prompt
+    snippet = text[-3000:]
+    tpl = get_prompt("paper_references")
+    system, user, params = tpl.render(text=snippet)
+    raw = await _llm_chat(system, user, params, timeout=cfg.PAPER_TABLE_INTERP_TIMEOUT)
+    refs = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+    return refs[:200]
 
 
 async def interpret_table(title: str, context: str, table_md: str) -> str:
@@ -438,15 +440,18 @@ async def enrich_paper(
     minio_client,
 ) -> PaperEnrichment:
     """논문 보강 파이프라인 — 초록·참고문헌·표·그림 처리."""
-    if not full_text or len(full_text) < 200:
+    if not full_text:
         return PaperEnrichment()
 
-    abstract = extract_abstract(full_text)
-    references = extract_references(full_text)
-    toc = extract_toc(full_text)
+    # 짧은 텍스트(abstract 대용) 여부 — 패턴 추출은 스킵하고 LLM만 실행
+    short_text = len(full_text) < 200
 
-    # 키워드: 추출 우선, 없으면 LLM 생성 (abstract 또는 본문 앞부분 사용)
-    keywords = extract_keywords(full_text)
+    abstract = None if short_text else extract_abstract(full_text)
+    references = [] if short_text else extract_references(full_text)
+    toc = [] if short_text else (extract_toc(full_text) or [])
+
+    # 키워드: 본문이 충분하면 패턴 추출 우선, 짧거나 실패 시 LLM
+    keywords = None if short_text else extract_keywords(full_text)
     kw_source = "추출"
     if not keywords:
         kw_source = "LLM"
@@ -457,10 +462,20 @@ async def enrich_paper(
             log.warning(f"[{book_id}] 키워드 LLM 생성 실패: {e}")
             keywords = []
 
+    # 참고문헌: 0건 또는 50건 초과면 LLM 폴백 (과추출·누락 보정)
+    ref_source = "추출"
+    if not short_text and (len(references) == 0 or len(references) > 50):
+        ref_source = "LLM"
+        try:
+            references = await generate_references(full_text)
+            log.info(f"[{book_id}] 참고문헌 LLM 추출: {len(references)}건")
+        except Exception as e:
+            log.warning(f"[{book_id}] 참고문헌 LLM 추출 실패: {e}")
+
     log.info(
         f"[{book_id}] paper enrichment — 초록: {'있음' if abstract else '없음'}, "
         f"키워드: {len(keywords)}개 ({kw_source}), "
-        f"목차: {'있음' if toc else '없음'}, 참고문헌: {len(references)}건"
+        f"목차: {'있음' if toc else '없음'}, 참고문헌: {len(references)}건 ({ref_source})"
     )
 
     # 표 — 원본 마크다운 + LLM 전체 서술 병렬 생성
