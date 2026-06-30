@@ -291,25 +291,59 @@
                 />
                 <p class="skx-reco-empty__text">추천도서를 클릭해주세요</p>
               </div>
-              <div v-else class="skx-reco-detail">
-                <div class="skx-reco-cover">
-                  <BookCover :book-id="selectedRelated.book_id" />
+              <div
+                v-else
+                :key="selectedRelated.book_id"
+                class="skx-reco-detail"
+                style="cursor: pointer"
+                @click="navigateTo(`/books/${selectedRelated.book_id}?q=${encodeURIComponent(searchQuery)}`)"
+              >
+                <!-- 표지 -->
+                <div class="skx-reco-cover skx-anim skx-anim--1">
+                  <img
+                    :src="`/api/books/${selectedRelated.book_id}/thumbnail`"
+                    :alt="selectedRelated.book_info?.title || ''"
+                    @error="(e: Event) => ((e.target as HTMLImageElement).src = '/img/ico-book-thumb.svg')"
+                  />
                 </div>
+                <!-- 정보 -->
                 <div class="skx-reco-info">
-                  <h3 class="skx-reco-title">
-                    {{ selectedRelated.book_info?.title }}
-                  </h3>
-                  <button
-                    class="skx-btn-loan"
-                    style="margin-top: 12px"
-                    @click="
-                      navigateTo(
-                        `/books/${selectedRelated.book_id}?q=${encodeURIComponent(searchQuery)}`,
-                      )
-                    "
-                  >
-                    상세 보기
-                  </button>
+                  <!-- 키워드 태그 -->
+                  <div class="skx-reco-info__top skx-anim skx-anim--2">
+                    <div class="skx-reco-info__tags">
+                      <span
+                        v-for="tag in recoTags(selectedRelated)"
+                        :key="tag"
+                        class="skx-tag skx-tag--keyword"
+                      >#{{ tag }}</span>
+                    </div>
+                  </div>
+                  <!-- 메타 -->
+                  <div class="skx-reco-meta skx-anim skx-anim--3">
+                    <div class="skx-reco-type-row">
+                      <span v-if="selectedRelated.book_info?.material_type" class="skx-reco-type">
+                        {{ selectedRelated.book_info.material_type }}
+                      </span>
+                    </div>
+                    <h3 class="skx-reco-title">{{ selectedRelated.book_info?.title }}</h3>
+                    <div class="skx-reco-author">
+                      <template v-if="selectedRelated.book_info?.personal_author || selectedRelated.book_info?.corporate_author">
+                        <span class="skx-meta-text">{{ selectedRelated.book_info.personal_author || selectedRelated.book_info.corporate_author }}</span>
+                      </template>
+                      <template v-if="selectedRelated.book_info?.pub_date">
+                        <span class="skx-dot"></span>
+                        <span class="skx-meta-text">{{ selectedRelated.book_info.pub_date.slice(0, 4) }}년</span>
+                      </template>
+                      <template v-if="selectedRelated.book_info?.publisher">
+                        <span class="skx-dot"></span>
+                        <span class="skx-meta-text">{{ selectedRelated.book_info.publisher }}</span>
+                      </template>
+                    </div>
+                  </div>
+                  <!-- 설명 -->
+                  <div v-if="recoDesc(selectedRelated)" class="skx-reco-desc skx-anim skx-anim--4">
+                    <p class="skx-reco-desc__text">{{ recoDesc(selectedRelated) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -602,6 +636,15 @@ function parseThemes(themes?: string | null): string[] {
     .map((t) => t.trim())
     .filter(Boolean)
     .slice(0, 4);
+}
+
+function recoTags(rel: any): string[] {
+  const raw = rel.book_info?.themes || rel.book_info?.keyword || rel.book_info?.subject || "";
+  return parseThemes(raw).slice(0, 3);
+}
+
+function recoDesc(rel: any): string {
+  return rel.book_info?.summary || rel.book_info?.introduction || "";
 }
 
 async function readSSE(resp: Response, onEvent: (json: any) => void) {
