@@ -53,17 +53,27 @@
     <!-- 검색기록 -->
     <div class="skx-history">
       <p class="skx-history__title">검색기록</p>
+      <div class="skx-history__tabs">
+        <button
+          :class="['skx-history__tab', historyTab === 'book' && 'is-active']"
+          type="button"
+          @click="historyTab = 'book'"
+        >도서</button>
+        <button
+          :class="['skx-history__tab', historyTab === 'paper' && 'is-active']"
+          type="button"
+          @click="historyTab = 'paper'"
+        >논문</button>
+      </div>
       <ul class="skx-history__list">
-        <li v-for="h in history" :key="h.id">
+        <li v-for="h in activeHistory" :key="h.id">
           <button
             type="button"
             :class="['skx-history-item', h.id === activeId && 'is-active']"
             @click="emit('restore', h)"
           >
             <span class="skx-history-item__query">{{ h.query }}</span>
-            <span class="skx-history-item__time">{{
-              formatTime(h.timestamp)
-            }}</span>
+            <span class="skx-history-item__time">{{ formatTime(h.timestamp) }}</span>
           </button>
         </li>
       </ul>
@@ -81,18 +91,28 @@
 </template>
 
 <script setup lang="ts">
+import type { HistoryEntry } from "~/types/history";
+
 const open = ref(true);
+const historyTab = ref<"book" | "paper">("book");
 
 const props = defineProps<{
-  history?: Array<{ id: string; query: string; timestamp: string | number }>;
+  bookHistory?: HistoryEntry[];
+  paperHistory?: HistoryEntry[];
   activeId?: string;
 }>();
 
 const emit = defineEmits<{
   cart: [];
   save: [];
-  restore: [h: { id: string; query: string; timestamp: string | number }];
+  restore: [h: HistoryEntry];
 }>();
+
+const activeHistory = computed(() =>
+  historyTab.value === "book"
+    ? (props.bookHistory ?? [])
+    : (props.paperHistory ?? []),
+);
 
 function formatTime(ts: string | number): string {
   if (!ts) return "";
