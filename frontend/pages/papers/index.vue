@@ -703,8 +703,14 @@ function restoreSession(entry: HistoryEntry) {
   currentQuery.value = entry.query;
   currentHistoryId.value = entry.id;
   paperResult.value = entry.result ?? null;
-  aiText.value = entry.aiSummary ?? "";
-  aiRefs.value = [];
+  try {
+    const parsed = JSON.parse(entry.aiSummary ?? "");
+    aiText.value = parsed.text ?? "";
+    aiRefs.value = parsed.refs ?? [];
+  } catch {
+    aiText.value = entry.aiSummary ?? "";
+    aiRefs.value = [];
+  }
   currentPage.value = 1;
   sortBy.value = "relevance";
   aiExpanded.value = true;
@@ -752,7 +758,10 @@ async function streamAiSummary(query: string, books: any[]) {
   } finally {
     aiLoading.value = false;
     if (currentHistoryId.value && aiText.value) {
-      updateAiSummary(currentHistoryId.value, aiText.value);
+      updateAiSummary(
+        currentHistoryId.value,
+        JSON.stringify({ text: aiText.value, refs: aiRefs.value }),
+      );
     }
   }
 }
