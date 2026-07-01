@@ -1,11 +1,12 @@
 <template>
   <div class="skx-app">
     <AppSidebar
-      :history="history"
-      :active-id="currentHistoryId"
+      :book-history="bookHistory"
+      :paper-history="paperHistory"
+      :active-id="currentHistoryId ?? undefined"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
-      @restore="restoreHistory"
+      @restore="restoreSession"
     />
 
     <!-- ===== LANDING VIEW ===== -->
@@ -567,6 +568,7 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import type { BookChunkGroup } from "~/types/search";
+import type { HistoryEntry } from "~/types/history";
 
 // ── 상수 ──────────────────────────────────────────────────
 const SUGGESTIONS: Record<string, string[]> = {
@@ -619,7 +621,6 @@ const searchError = ref("");
 const books = ref<BookChunkGroup[]>([]);
 const papers = ref<BookChunkGroup[]>([]);
 const keywordChips = ref<string[]>([]);
-const currentHistoryId = ref("");
 
 // ── 큐레이션 (도서) ────────────────────────────────────────
 const curation = ref<any>(null);
@@ -684,7 +685,9 @@ const citationBook = ref<BookChunkGroup | null>(null);
 const toast = ref("");
 
 // ── 검색 기록 ─────────────────────────────────────────────
-const history = ref<any[]>([]);
+const { bookHistory, paperHistory, addEntry, updateAiSummary, getById } =
+  useSearchHistory();
+const currentHistoryId = ref<string | null>(null);
 
 // ── Publishing additions ──────────────────────────────────────
 // Tab slider
@@ -742,12 +745,10 @@ function onDocClick() {
 
 onMounted(async () => {
   if (!process.client) return;
-  try {
-    const sid = getSessionId();
-    const data = await $fetch<any[]>(`${apiBase}/books/history/${sid}`);
-    if (Array.isArray(data)) history.value = data;
-  } catch {
-    /* 기록 없음 */
+  const restoreId = (useRoute().query.restore as string) ?? null;
+  if (restoreId) {
+    const entry = getById(restoreId);
+    if (entry) restoreSession(entry);
   }
 
   // Tab slider
@@ -850,13 +851,12 @@ async function handleSearch(query: string) {
         rewrittenQuery.value = data.rewritten_query || query;
       }
       if (books.value.length) fetchCuration();
+      currentHistoryId.value = addEntry({
+        type: "book",
+        query,
+        result: data,
+      });
     }
-
-    history.value.unshift({
-      id: Date.now().toString(),
-      query,
-      timestamp: new Date().toISOString(),
-    });
   } catch (e: any) {
     searchError.value =
       e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
@@ -878,10 +878,20 @@ function goLanding() {
   selectedItem.value = null;
 }
 
-function restoreHistory(h: any) {
-  currentQuery.value = h.query;
-  currentHistoryId.value = h.id;
-  handleSearch(h.query);
+function restoreSession(entry: HistoryEntry) {
+  if (entry.type === "paper") {
+    navigateTo(`/papers?restore=${entry.id}`);
+    return;
+  }
+  currentQuery.value = entry.query;
+  currentHistoryId.value = entry.id;
+  view.value = "results";
+  books.value = entry.result?.books ?? [];
+  curationIntro.value = entry.aiSummary ?? "";
+  curationItems.value = [];
+  curationOpen.value = true;
+  bookListExpanded.value = false;
+  aiExpanded.value = false;
 }
 
 // ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
@@ -911,9 +921,11 @@ async function fetchCuration() {
         curationIntro.value += intro[i++];
         setTimeout(typeIntro, 18);
       } else {
-        // intro 완료 후 items를 순서대로 추가
         for (const ci of items) {
           curationItems.value.push({ book_id: ci.book_id, reason: ci.reason });
+        }
+        if (currentHistoryId.value && curationIntro.value) {
+          updateAiSummary(currentHistoryId.value, curationIntro.value);
         }
       }
     };
