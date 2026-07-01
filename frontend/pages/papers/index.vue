@@ -1,6 +1,7 @@
 <template>
   <div class="skx-app">
     <AppSidebar
+      default-tab="paper"
       :book-history="bookHistory"
       :paper-history="paperHistory"
       :active-id="currentHistoryId ?? undefined"

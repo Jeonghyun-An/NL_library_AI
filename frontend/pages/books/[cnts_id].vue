@@ -1,8 +1,11 @@
 <template>
   <div class="skx-app">
     <AppSidebar
+      :book-history="bookHistory"
+      :paper-history="paperHistory"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @restore="restoreSession"
     />
 
     <main class="skx-result">
@@ -490,7 +493,9 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
+import { useSearchHistory } from "~/composables/useSearchHistory";
 import type { BookInfo } from "~/types/search";
+import type { HistoryEntry } from "~/types/history";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
@@ -499,6 +504,16 @@ const searchQuery = (route.query.q as string) || "";
 
 const config = useRuntimeConfig();
 const apiBase = config.public.apiBase as string;
+
+const { bookHistory, paperHistory } = useSearchHistory();
+
+function restoreSession(entry: HistoryEntry) {
+  if (entry.type === "book") {
+    navigateTo(`/?restore=${entry.id}`);
+  } else {
+    navigateTo(`/papers?restore=${entry.id}`);
+  }
+}
 
 // ── 도서 데이터 ────────────────────────────────────────────
 const book = ref<BookInfo | null>(null);

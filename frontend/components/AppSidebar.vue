@@ -94,13 +94,15 @@
 import type { HistoryEntry } from "~/types/history";
 
 const open = ref(true);
-const historyTab = ref<"book" | "paper">("book");
 
 const props = defineProps<{
+  defaultTab?: "book" | "paper";
   bookHistory?: HistoryEntry[];
   paperHistory?: HistoryEntry[];
   activeId?: string;
 }>();
+
+const historyTab = ref<"book" | "paper">(props.defaultTab ?? "book");
 
 const emit = defineEmits<{
   cart: [];

@@ -1,8 +1,12 @@
 <template>
   <div class="skx-app">
     <AppSidebar
+      default-tab="paper"
+      :book-history="bookHistory"
+      :paper-history="paperHistory"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @restore="restoreSession"
     />
 
     <div class="skx-result-card">
@@ -397,9 +401,21 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
+import { useSearchHistory } from "~/composables/useSearchHistory";
+import type { HistoryEntry } from "~/types/history";
 
 const route = useRoute();
 const config = useRuntimeConfig();
+
+const { bookHistory, paperHistory } = useSearchHistory();
+
+function restoreSession(entry: HistoryEntry) {
+  if (entry.type === "book") {
+    navigateTo(`/?restore=${entry.id}`);
+  } else {
+    navigateTo(`/papers?restore=${entry.id}`);
+  }
+}
 const paperId = route.params.id as string;
 
 const matchScore = computed(() => {
