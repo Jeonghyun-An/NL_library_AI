@@ -12,7 +12,14 @@
     <main v-if="view === 'landing'" class="skx-contents">
       <div class="skx-contents__inner">
         <h1 class="skx-hero">
-          원하는 자료를 찾고 활용하는<br />가장 쉽고 편안한 검색을 경험해보세요!
+          <span v-if="mode === 'book'"
+            >몰랐던 책까지 찾고 알려주는<br />든든한 사서 큐레이션 AI
+            SKOVIX</span
+          >
+          <span v-else
+            >몰랐던 자료까지 찾고 분석해주는<br />똑똑한 검색 분석가 AI
+            SKOVIX</span
+          >
         </h1>
 
         <!-- 검색 탭 슬라이더 -->
@@ -285,29 +292,45 @@
 
       <template v-else>
         <div class="skx-result-card">
-
           <!-- AI 섹션 (도서) -->
-          <section v-if="mode === 'book' && books.length" class="skx-ai-section">
+          <section
+            v-if="mode === 'book' && books.length"
+            class="skx-ai-section"
+          >
             <header class="skx-ai-header">
               <h2 class="skx-ai-header__title">AI 검색 결과</h2>
-              <p v-if="keywordChips.length" class="skx-ai-header__keywords">키워드: {{ keywordChips.join(', ') }}</p>
+              <p v-if="keywordChips.length" class="skx-ai-header__keywords">
+                키워드: {{ keywordChips.join(", ") }}
+              </p>
             </header>
             <div class="skx-ai-panel">
               <div class="skx-ai-panel__top">
                 <div class="skx-ai-panel__logo-row">
-                  <img class="skx-ai-panel__logo" src="/img/logo-mark.svg" alt="SKOVIX AI" />
-                  <span class="skx-ai-panel__title-text">AI가 원하시는 도서를 찾았어요!</span>
-                  <span v-if="curationLoading" class="skx-ai-panel__loading">●</span>
+                  <img
+                    class="skx-ai-panel__logo"
+                    src="/img/logo-mark.svg"
+                    alt="SKOVIX AI"
+                  />
+                  <span class="skx-ai-panel__title-text"
+                    >AI가 원하시는 도서를 찾았어요!</span
+                  >
+                  <span v-if="curationLoading" class="skx-ai-panel__loading"
+                    >●</span
+                  >
                 </div>
                 <div class="skx-ai-panel__fb">
-                  <span class="skx-ai-panel__fb-label">찾으시는 도서가 맞나요?</span>
+                  <span class="skx-ai-panel__fb-label"
+                    >찾으시는 도서가 맞나요?</span
+                  >
                 </div>
               </div>
               <div :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']">
                 <div class="skx-ai-answer">
                   <p class="skx-ai-answer__text">{{ curationIntro }}</p>
                   <ul v-if="curationItems.length" class="skx-ai-answer__list">
-                    <li v-for="ci in curationItems" :key="ci.book_id">{{ ci.reason }}</li>
+                    <li v-for="ci in curationItems" :key="ci.book_id">
+                      {{ ci.reason }}
+                    </li>
                   </ul>
                 </div>
                 <button
@@ -316,24 +339,39 @@
                   :aria-expanded="aiExpanded"
                   @click="aiExpanded = !aiExpanded"
                 >
-                  <span class="skx-ai-expand-bar__label">{{ aiExpanded ? '접기' : '펼치기' }}</span>
-                  <img class="skx-ai-expand-bar__arrow" src="/img/ico-arrow-down.svg" alt="" />
+                  <span class="skx-ai-expand-bar__label">{{
+                    aiExpanded ? "접기" : "펼치기"
+                  }}</span>
+                  <img
+                    class="skx-ai-expand-bar__arrow"
+                    src="/img/ico-arrow-down.svg"
+                    alt=""
+                  />
                 </button>
               </div>
             </div>
           </section>
 
           <!-- AI 섹션 (논문) -->
-          <section v-if="mode === 'paper' && (paperSummaryText || paperSummaryLoading)" class="skx-ai-section">
+          <section
+            v-if="mode === 'paper' && (paperSummaryText || paperSummaryLoading)"
+            class="skx-ai-section"
+          >
             <header class="skx-ai-header">
               <h2 class="skx-ai-header__title">AI 검색 결과</h2>
             </header>
             <div class="skx-ai-panel">
               <div class="skx-ai-panel__top">
                 <div class="skx-ai-panel__logo-row">
-                  <img class="skx-ai-panel__logo" src="/img/logo-mark.svg" alt="SKOVIX AI" />
+                  <img
+                    class="skx-ai-panel__logo"
+                    src="/img/logo-mark.svg"
+                    alt="SKOVIX AI"
+                  />
                   <span class="skx-ai-panel__title-text">AI 핵심 요약</span>
-                  <span v-if="paperSummaryLoading" class="skx-ai-panel__loading">●</span>
+                  <span v-if="paperSummaryLoading" class="skx-ai-panel__loading"
+                    >●</span
+                  >
                 </div>
               </div>
               <div :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']">
@@ -346,8 +384,14 @@
                   :aria-expanded="aiExpanded"
                   @click="aiExpanded = !aiExpanded"
                 >
-                  <span class="skx-ai-expand-bar__label">{{ aiExpanded ? '접기' : '펼치기' }}</span>
-                  <img class="skx-ai-expand-bar__arrow" src="/img/ico-arrow-down.svg" alt="" />
+                  <span class="skx-ai-expand-bar__label">{{
+                    aiExpanded ? "접기" : "펼치기"
+                  }}</span>
+                  <img
+                    class="skx-ai-expand-bar__arrow"
+                    src="/img/ico-arrow-down.svg"
+                    alt=""
+                  />
                 </button>
               </div>
             </div>
@@ -356,9 +400,12 @@
           <!-- 도서/논문 목록 -->
           <div class="skx-book-list">
             <article
-              v-for="(item, i) in (mode === 'paper' ? papers : books)"
+              v-for="(item, i) in mode === 'paper' ? papers : books"
               :key="item.book_id"
-              :class="['skx-book-card', i >= 3 && !bookListExpanded ? 'skx-book-card--hidden' : '']"
+              :class="[
+                'skx-book-card',
+                i >= 3 && !bookListExpanded ? 'skx-book-card--hidden' : '',
+              ]"
               style="cursor: pointer"
               @click="openDetail(item)"
             >
@@ -373,7 +420,11 @@
                       {{ Math.round((item.best_score || 0) * 100) }}%</span
                     >
                     <span
-                      v-for="tag in parseThemes(item.book_info?.themes || item.book_info?.keyword || item.book_info?.subject)"
+                      v-for="tag in parseThemes(
+                        item.book_info?.themes ||
+                          item.book_info?.keyword ||
+                          item.book_info?.subject,
+                      )"
                       :key="tag"
                       class="skx-tag skx-tag--keyword"
                       >#{{ tag }}</span
@@ -411,11 +462,17 @@
                       item.book_info?.personal_author ||
                       item.book_info?.corporate_author
                     }}</span>
-                    <span v-if="item.book_info?.pub_date" class="skx-dot"></span>
+                    <span
+                      v-if="item.book_info?.pub_date"
+                      class="skx-dot"
+                    ></span>
                     <span v-if="item.book_info?.pub_date" class="skx-meta-text"
                       >{{ item.book_info.pub_date.slice(0, 4) }}년</span
                     >
-                    <span v-if="item.book_info?.publisher" class="skx-dot"></span>
+                    <span
+                      v-if="item.book_info?.publisher"
+                      class="skx-dot"
+                    ></span>
                     <span
                       v-if="item.book_info?.publisher"
                       class="skx-meta-text"
@@ -431,16 +488,17 @@
                   >
                     <img src="/img/ico-chat.svg" alt="" />
                     <span class="skx-btn-chat__label"
-                      >이 {{ mode === "paper" ? "논문과" : "책과" }} 대화하기</span
+                      >이
+                      {{ mode === "paper" ? "논문과" : "책과" }} 대화하기</span
                     >
                   </button>
-                  <button
+                  <!-- <button
                     type="button"
                     class="skx-btn-loan"
                     @click="requestLoan(item)"
                   >
                     대출신청
-                  </button>
+                  </button> -->
                   <button
                     type="button"
                     class="skx-btn-read"
@@ -469,10 +527,15 @@
             :aria-expanded="bookListExpanded"
             @click="bookListExpanded = !bookListExpanded"
           >
-            <span class="skx-book-expand__label">{{ bookListExpanded ? '접기' : '펼치기' }}</span>
-            <img class="skx-book-expand__arrow" src="/img/ico-arrow-down.svg" alt="" />
+            <span class="skx-book-expand__label">{{
+              bookListExpanded ? "접기" : "펼치기"
+            }}</span>
+            <img
+              class="skx-book-expand__arrow"
+              src="/img/ico-arrow-down.svg"
+              alt=""
+            />
           </button>
-
         </div>
       </template>
     </main>
@@ -899,7 +962,9 @@ async function fetchPaperSummary(query: string) {
 // ── 상세 열기 ──────────────────────────────────────────────
 function openDetail(item: BookChunkGroup) {
   if (mode.value === "paper") {
-    navigateTo(`/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}`);
+    navigateTo(
+      `/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}`,
+    );
     return;
   }
   navigateTo(
@@ -910,7 +975,9 @@ function openDetail(item: BookChunkGroup) {
 // 이 책과 대화하기 → detail + chat 자동 오픈
 function openDetailWithChat(item: BookChunkGroup) {
   if (mode.value === "paper") {
-    navigateTo(`/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&chat=1`);
+    navigateTo(
+      `/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&chat=1`,
+    );
     return;
   }
   navigateTo(

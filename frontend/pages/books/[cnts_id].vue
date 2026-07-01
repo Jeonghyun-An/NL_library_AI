@@ -111,7 +111,7 @@
                   />
                   <span class="skx-btn-talk__label">이 책과 대화하기</span>
                 </button>
-                <button
+                <!-- <button
                   type="button"
                   :class="['skx-btn-loan', isLoaning && 'is-loaning']"
                   @click="
@@ -121,7 +121,7 @@
                   "
                 >
                   {{ isLoaning ? "대출신청중" : "대출신청" }}
-                </button>
+                </button> -->
                 <button type="button" class="skx-btn-read" @click="viewPdf">
                   원문 보기
                 </button>
@@ -157,8 +157,20 @@
                 <div class="skx-curation-card">
                   <div v-if="detailTab === 'reason'">
                     <!-- 스트리밍 중: raw 텍스트 + 깜빡이는 커서 -->
-                    <p v-if="reasonLoading && reasonText" class="skx-curation-text skx-curation-text--stream">{{ reasonText }}<span class="skx-stream-cursor" /></p>
-                    <p v-else-if="reasonLoading" class="skx-curation-text skx-curation-loading">추천 이유를 생성하고 있습니다<span class="skx-stream-cursor" /></p>
+                    <p
+                      v-if="reasonLoading && reasonText"
+                      class="skx-curation-text skx-curation-text--stream"
+                    >
+                      {{ reasonText }}<span class="skx-stream-cursor" />
+                    </p>
+                    <p
+                      v-else-if="reasonLoading"
+                      class="skx-curation-text skx-curation-loading"
+                    >
+                      추천 이유를 생성하고 있습니다<span
+                        class="skx-stream-cursor"
+                      />
+                    </p>
                     <!-- 완료 후: 마크다운 렌더링 -->
                     <div
                       v-else-if="reasonText"
@@ -296,14 +308,22 @@
                 :key="selectedRelated.book_id"
                 class="skx-reco-detail"
                 style="cursor: pointer"
-                @click="navigateTo(`/books/${selectedRelated.book_id}?q=${encodeURIComponent(searchQuery)}`)"
+                @click="
+                  navigateTo(
+                    `/books/${selectedRelated.book_id}?q=${encodeURIComponent(searchQuery)}`,
+                  )
+                "
               >
                 <!-- 표지 -->
                 <div class="skx-reco-cover skx-anim skx-anim--1">
                   <img
                     :src="`/api/books/${selectedRelated.book_id}/thumbnail`"
                     :alt="selectedRelated.book_info?.title || ''"
-                    @error="(e: Event) => ((e.target as HTMLImageElement).src = '/img/ico-book-thumb.svg')"
+                    @error="
+                      (e: Event) =>
+                        ((e.target as HTMLImageElement).src =
+                          '/img/ico-book-thumb.svg')
+                    "
                   />
                 </div>
                 <!-- 정보 -->
@@ -315,34 +335,59 @@
                         v-for="tag in recoTags(selectedRelated)"
                         :key="tag"
                         class="skx-tag skx-tag--keyword"
-                      >#{{ tag }}</span>
+                        >#{{ tag }}</span
+                      >
                     </div>
                   </div>
                   <!-- 메타 -->
                   <div class="skx-reco-meta skx-anim skx-anim--3">
                     <div class="skx-reco-type-row">
-                      <span v-if="selectedRelated.book_info?.material_type" class="skx-reco-type">
+                      <span
+                        v-if="selectedRelated.book_info?.material_type"
+                        class="skx-reco-type"
+                      >
                         {{ selectedRelated.book_info.material_type }}
                       </span>
                     </div>
-                    <h3 class="skx-reco-title">{{ selectedRelated.book_info?.title }}</h3>
+                    <h3 class="skx-reco-title">
+                      {{ selectedRelated.book_info?.title }}
+                    </h3>
                     <div class="skx-reco-author">
-                      <template v-if="selectedRelated.book_info?.personal_author || selectedRelated.book_info?.corporate_author">
-                        <span class="skx-meta-text">{{ selectedRelated.book_info.personal_author || selectedRelated.book_info.corporate_author }}</span>
+                      <template
+                        v-if="
+                          selectedRelated.book_info?.personal_author ||
+                          selectedRelated.book_info?.corporate_author
+                        "
+                      >
+                        <span class="skx-meta-text">{{
+                          selectedRelated.book_info.personal_author ||
+                          selectedRelated.book_info.corporate_author
+                        }}</span>
                       </template>
                       <template v-if="selectedRelated.book_info?.pub_date">
                         <span class="skx-dot"></span>
-                        <span class="skx-meta-text">{{ selectedRelated.book_info.pub_date.slice(0, 4) }}년</span>
+                        <span class="skx-meta-text"
+                          >{{
+                            selectedRelated.book_info.pub_date.slice(0, 4)
+                          }}년</span
+                        >
                       </template>
                       <template v-if="selectedRelated.book_info?.publisher">
                         <span class="skx-dot"></span>
-                        <span class="skx-meta-text">{{ selectedRelated.book_info.publisher }}</span>
+                        <span class="skx-meta-text">{{
+                          selectedRelated.book_info.publisher
+                        }}</span>
                       </template>
                     </div>
                   </div>
                   <!-- 설명 -->
-                  <div v-if="recoDesc(selectedRelated)" class="skx-reco-desc skx-anim skx-anim--4">
-                    <p class="skx-reco-desc__text">{{ recoDesc(selectedRelated) }}</p>
+                  <div
+                    v-if="recoDesc(selectedRelated)"
+                    class="skx-reco-desc skx-anim skx-anim--4"
+                  >
+                    <p class="skx-reco-desc__text">
+                      {{ recoDesc(selectedRelated) }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -366,7 +411,11 @@
           </button>
           <h2 class="skx-chat-title">이 책과 대화하기</h2>
         </div>
-        <BookChat :cnts-id="cnts_id" :book-title="book?.title" @close="chatPanelOpen = false" />
+        <BookChat
+          :cnts-id="cnts_id"
+          :book-title="book?.title"
+          @close="chatPanelOpen = false"
+        />
       </div>
     </aside>
 
@@ -462,7 +511,7 @@ const matchScore = computed(() => {
 });
 
 const themes = computed(() =>
-  parseThemes(book.value?.themes || book.value?.keyword || book.value?.subject)
+  parseThemes(book.value?.themes || book.value?.keyword || book.value?.subject),
 );
 
 // ── AI 큐레이션 ────────────────────────────────────────────
@@ -549,7 +598,7 @@ function viewPdf() {
 // ── 초기화 ─────────────────────────────────────────────────
 onMounted(async () => {
   // ?chat=1 → 채팅 패널 자동 오픈
-  if (route.query.chat === '1') {
+  if (route.query.chat === "1") {
     chatPanelOpen.value = true;
   }
   await fetchBook();
@@ -639,7 +688,11 @@ function parseThemes(themes?: string | null): string[] {
 }
 
 function recoTags(rel: any): string[] {
-  const raw = rel.book_info?.themes || rel.book_info?.keyword || rel.book_info?.subject || "";
+  const raw =
+    rel.book_info?.themes ||
+    rel.book_info?.keyword ||
+    rel.book_info?.subject ||
+    "";
   return parseThemes(raw).slice(0, 3);
 }
 
