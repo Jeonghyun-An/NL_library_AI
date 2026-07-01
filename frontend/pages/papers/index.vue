@@ -1,8 +1,12 @@
 <template>
   <div class="skx-app">
     <AppSidebar
+      :book-history="bookHistory"
+      :paper-history="paperHistory"
+      :active-id="currentHistoryId ?? undefined"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @restore="restoreSession"
     />
 
     <!-- 랜딩 (검색 전) -->
@@ -508,9 +512,14 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import type { BookSearchResponse } from "~/types/search";
+import type { HistoryEntry } from "~/types/history";
 
 const config = useRuntimeConfig();
 const apiBase = config.public.apiBase as string;
+
+const { bookHistory, paperHistory, addEntry, updateAiSummary, getById } =
+  useSearchHistory();
+const currentHistoryId = ref<string | null>(null);
 
 // ── 검색 상태 ────────────────────────────────────────────────
 const currentQuery = ref("");
@@ -665,6 +674,12 @@ async function handleSearch(q?: string) {
       },
     });
     paperResult.value = data;
+    // 세션 저장
+    currentHistoryId.value = addEntry({
+      type: "paper",
+      query,
+      result: data,
+    });
     // AI 요약 SSE 병렬 시작
     if (data.books?.length) {
       streamAiSummary(query, data.books);
@@ -676,6 +691,22 @@ async function handleSearch(q?: string) {
   } finally {
     loading.value = false;
   }
+}
+
+// ── 세션 복원 ─────────────────────────────────────────────────
+function restoreSession(entry: HistoryEntry) {
+  if (entry.type === "book") {
+    navigateTo(`/?restore=${entry.id}`);
+    return;
+  }
+  currentQuery.value = entry.query;
+  currentHistoryId.value = entry.id;
+  paperResult.value = entry.result ?? null;
+  aiText.value = entry.aiSummary ?? "";
+  aiRefs.value = [];
+  currentPage.value = 1;
+  sortBy.value = "relevance";
+  aiExpanded.value = true;
 }
 
 // ── AI 요약 SSE ───────────────────────────────────────────────
@@ -719,6 +750,9 @@ async function streamAiSummary(query: string, books: any[]) {
     /* ignore */
   } finally {
     aiLoading.value = false;
+    if (currentHistoryId.value && aiText.value) {
+      updateAiSummary(currentHistoryId.value, aiText.value);
+    }
   }
 }
 
@@ -728,6 +762,14 @@ onMounted(() => {
     perpageOpen.value = false;
   });
   const route = useRoute();
+  const restoreId = route.query.restore as string | undefined;
+  if (restoreId) {
+    const entry = getById(restoreId);
+    if (entry) {
+      restoreSession(entry);
+      return;
+    }
+  }
   const q = route.query.q as string | undefined;
   if (q?.trim()) handleSearch(q.trim());
 });
