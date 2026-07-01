@@ -887,8 +887,19 @@ function restoreSession(entry: HistoryEntry) {
   currentHistoryId.value = entry.id;
   view.value = "results";
   books.value = entry.result?.books ?? [];
-  curationIntro.value = entry.aiSummary ?? "";
-  curationItems.value = [];
+  if (entry.aiSummary) {
+    try {
+      const ai = JSON.parse(entry.aiSummary);
+      curationIntro.value = ai.intro ?? "";
+      curationItems.value = ai.items ?? [];
+    } catch {
+      curationIntro.value = entry.aiSummary;
+      curationItems.value = [];
+    }
+  } else {
+    curationIntro.value = "";
+    curationItems.value = [];
+  }
   curationOpen.value = true;
   bookListExpanded.value = false;
   aiExpanded.value = false;
@@ -924,8 +935,11 @@ async function fetchCuration() {
         for (const ci of items) {
           curationItems.value.push({ book_id: ci.book_id, reason: ci.reason });
         }
-        if (currentHistoryId.value && curationIntro.value) {
-          updateAiSummary(currentHistoryId.value, curationIntro.value);
+        if (currentHistoryId.value) {
+          updateAiSummary(
+            currentHistoryId.value,
+            JSON.stringify({ intro: curationIntro.value, items: curationItems.value }),
+          );
         }
       }
     };
