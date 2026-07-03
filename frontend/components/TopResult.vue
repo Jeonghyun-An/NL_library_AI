@@ -188,7 +188,7 @@
                 stroke-linejoin="round"
               />
             </svg>
-            {{ chatOpen ? "대화 닫기" : "이 책과 대화하기" }}
+            {{ chatOpen ? "대화 닫기" : "DeepRead" }}
           </button>
         </div>
       </div>

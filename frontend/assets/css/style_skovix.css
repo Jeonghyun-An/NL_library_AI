@@ -2541,6 +2541,11 @@ a:hover {
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--skx-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 .skx-chat-body {
   flex: 1;

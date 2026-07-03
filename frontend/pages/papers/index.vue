@@ -148,7 +148,7 @@
                         <button
                           type="button"
                           class="skx-pai-ref__btn skx-pai-ref__btn--ai"
-                          aria-label="논문과 대화하기"
+                          aria-label="DeepSearch"
                           @click="chatPaperId = ref.book_id"
                         >
                           <img src="/img/ico-chat.svg" alt="" />
@@ -457,7 +457,7 @@
                     @click.stop="navigateTo(`/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
-                    논문과 대화하기
+                    DeepSearch
                   </button>
                 </div>
               </article>
@@ -549,7 +549,7 @@
           >
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-chat-title">논문과 대화하기</h2>
+          <h2 class="skx-chat-title">DeepSearch<template v-if="chatPaperTitle">: {{ chatPaperTitle }}</template></h2>
         </div>
         <BookChat v-if="chatPaperId" :cnts-id="chatPaperId" @close="chatPaperId = null" />
       </div>
@@ -583,6 +583,11 @@ const paperResult = ref<BookSearchResponse | null>(null);
 
 // ── 인라인 채팅 ──────────────────────────────────────────────
 const chatPaperId = ref<string | null>(null);
+const chatPaperTitle = computed(() =>
+  chatPaperId.value
+    ? (aiRefPaperMap.value.get(chatPaperId.value)?.book_info?.title ?? "")
+    : "",
+);
 
 // ── AI 요약 ──────────────────────────────────────────────────
 const aiText = ref("");

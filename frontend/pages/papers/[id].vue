@@ -132,7 +132,7 @@
                     src="/img/ico-chat.svg"
                     alt=""
                   />
-                  <span class="skx-btn-talk__label">논문과 대화하기</span>
+                  <span class="skx-btn-talk__label">DeepSearch</span>
                 </button>
                 <a
                   v-if="paper.url"
@@ -369,7 +369,7 @@
           >
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-chat-title">논문과 대화하기</h2>
+          <h2 class="skx-chat-title">DeepSearch<template v-if="paper?.title">: {{ paper.title }}</template></h2>
         </div>
         <BookChat :cnts-id="paperId" @close="chatOpen = false" />
       </div>

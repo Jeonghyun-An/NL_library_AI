@@ -116,7 +116,7 @@
                     src="/img/ico-chat.svg"
                     alt=""
                   />
-                  <span class="skx-btn-talk__label">이 책과 대화하기</span>
+                  <span class="skx-btn-talk__label">DeepRead</span>
                 </button>
                 <!-- <button
                   type="button"
@@ -416,7 +416,7 @@
           >
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-chat-title">이 책과 대화하기</h2>
+          <h2 class="skx-chat-title">DeepRead<template v-if="book?.title">: {{ book.title }}</template></h2>
         </div>
         <BookChat
           :cnts-id="cnts_id"

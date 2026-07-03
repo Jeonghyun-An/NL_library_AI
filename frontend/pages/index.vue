@@ -518,10 +518,7 @@
                     @click="openDetailWithChat(item)"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
-                    <span class="skx-btn-chat__label"
-                      >이
-                      {{ mode === "paper" ? "논문과" : "책과" }} 대화하기</span
-                    >
+                    <span class="skx-btn-chat__label">{{ mode === "paper" ? "DeepSearch" : "DeepRead" }}</span>
                   </button>
                   <!-- <button
                     type="button"
