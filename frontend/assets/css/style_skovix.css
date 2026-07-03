@@ -4885,3 +4885,46 @@ a:hover {
   background: #4f46e5;
   border-color: #4f46e5;
 }
+
+/* ── 논문 검색 인라인 채팅 패널 ───────── */
+.skx-inline-chat {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 420px;
+  max-height: calc(100vh - 2.4rem);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-lnb);
+  overflow: hidden;
+}
+.skx-inline-chat__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  flex-shrink: 0;
+}
+.skx-inline-chat__close {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-3, #9ca3af);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.skx-inline-chat__close img {
+  width: 14px;
+  transform: rotate(90deg);
+  opacity: 0.5;
+}
+.skx-inline-chat__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-1, #111827);
+  margin: 0;
+}

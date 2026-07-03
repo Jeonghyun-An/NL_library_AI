@@ -1,7 +1,8 @@
 <template>
-  <div class="skx-app">
+  <div :class="['skx-app', chatPaperId && 'is-lnb-collapsed']">
     <AppSidebar
       default-tab="paper"
+      :collapsed="!!chatPaperId"
       :book-history="bookHistory"
       :paper-history="paperHistory"
       :active-id="currentHistoryId ?? undefined"
@@ -148,7 +149,7 @@
                           type="button"
                           class="skx-pai-ref__btn skx-pai-ref__btn--ai"
                           aria-label="논문과 대화하기"
-                          @click="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
+                          @click="chatPaperId = ref.book_id"
                         >
                           <img src="/img/ico-chat.svg" alt="" />
                         </button>
@@ -537,6 +538,24 @@
       @close="citeModalOpen = false"
     />
 
+    <!-- 인라인 논문 채팅 패널 -->
+    <Transition name="skx-chat-slide">
+      <aside v-if="chatPaperId" class="skx-inline-chat">
+        <div class="skx-inline-chat__header">
+          <button
+            type="button"
+            class="skx-inline-chat__close"
+            @click="chatPaperId = null"
+          >
+            <img src="/img/ico-arrow.svg" alt="" />
+            닫기
+          </button>
+          <h2 class="skx-inline-chat__title">논문과 대화하기</h2>
+        </div>
+        <BookChat :cnts-id="chatPaperId" @close="chatPaperId = null" />
+      </aside>
+    </Transition>
+
     <Teleport to="body">
       <Transition name="skx-toast">
         <div v-if="toast" class="skx-toast">{{ toast }}</div>
@@ -562,6 +581,9 @@ const currentQuery = ref("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 const paperResult = ref<BookSearchResponse | null>(null);
+
+// ── 인라인 채팅 ──────────────────────────────────────────────
+const chatPaperId = ref<string | null>(null);
 
 // ── AI 요약 ──────────────────────────────────────────────────
 const aiText = ref("");

@@ -100,9 +100,14 @@ const props = defineProps<{
   bookHistory?: HistoryEntry[];
   paperHistory?: HistoryEntry[];
   activeId?: string;
+  collapsed?: boolean;
 }>();
 
 const historyTab = ref<"book" | "paper">(props.defaultTab ?? "book");
+
+watch(() => props.collapsed, (val) => {
+  if (val) open.value = false;
+});
 
 const emit = defineEmits<{
   cart: [];
