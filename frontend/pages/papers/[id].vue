@@ -9,7 +9,7 @@
       @restore="restoreSession"
     />
 
-    <div class="skx-result-card">
+    <div :class="['skx-result-card', chatOpen && 'skx-result-card--chat-open']">
       <main class="skx-pdetail">
         <!-- 뒤로가기 -->
         <button type="button" class="skx-pdetail__back" @click="$router.back()">
@@ -356,24 +356,23 @@
           </section>
         </template>
       </main>
-    </div>
 
-    <!-- 채팅 패널 -->
-    <aside :class="['skx-chat-panel', chatOpen && 'is-open']" v-if="paper">
-      <div class="skx-chat-panel__inner">
-        <div class="skx-chat-header">
+      <!-- 채팅 사이드패널 -->
+      <Transition name="skx-chat-slide">
+        <aside v-if="chatOpen && paper" class="skx-chat-side">
           <button
             type="button"
-            class="skx-chat-close"
+            class="skx-chat-side__close"
+            aria-label="채팅 닫기"
             @click="chatOpen = false"
           >
-            <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
+            <img src="/img/ico-arrow.svg" alt="" />
+            닫기
           </button>
-          <h2 class="skx-chat-title">논문과 대화하기</h2>
-        </div>
-        <BookChat :cnts-id="paperId" @close="chatOpen = false" />
-      </div>
-    </aside>
+          <BookChat :cnts-id="paperId" @close="chatOpen = false" />
+        </aside>
+      </Transition>
+    </div>
 
     <!-- 출처 인용 모달 -->
     <CitationModal

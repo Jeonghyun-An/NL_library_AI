@@ -123,12 +123,22 @@
               <!-- 우측: 참고 논문 목록 -->
               <div class="skx-pai-refs">
                 <div class="skx-pai-refs__scroll">
-                  <div v-for="ref in aiRefs" :key="ref.num" class="skx-pai-ref">
+                  <div
+                    v-for="ref in aiRefs"
+                    :key="ref.num"
+                    class="skx-pai-ref skx-pai-ref--clickable"
+                    role="button"
+                    tabindex="0"
+                    :aria-label="`${ref.title} 상세보기`"
+                    @click="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`)"
+                    @keydown.enter="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`)"
+                  >
                     <div class="skx-pai-ref__num">{{ ref.num }}</div>
                     <div class="skx-pai-ref__body">
                       <p class="skx-pai-ref__title">{{ ref.title }}</p>
                       <p class="skx-pai-ref__author">{{ ref.authors }}</p>
                     </div>
+                    <img class="skx-pai-ref__chevron" src="/img/ico-arrow.svg" alt="" />
                   </div>
                   <template v-if="aiLoading && !aiRefs.length">
                     <div

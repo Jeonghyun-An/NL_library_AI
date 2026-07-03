@@ -58,6 +58,8 @@ export interface BookChunkGroup {
   book_id: string;
   book_info?: BookInfo;
   best_score: number;
+  title_score?: number;
+  content_score?: number;
   chunks: ChunkHit[];
   reason?: string;
 }

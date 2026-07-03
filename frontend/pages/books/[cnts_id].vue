@@ -49,7 +49,11 @@
             <div class="skx-book-card__body">
               <div class="skx-book-card__top">
                 <div class="skx-book-card__tags">
-                  <span v-if="matchScore" class="skx-tag skx-tag--score"
+                  <template v-if="titleScore !== undefined && contentScore !== undefined">
+                    <span class="skx-tag skx-tag--score">제목 {{ titleScore }}%</span>
+                    <span class="skx-tag skx-tag--score skx-tag--score-content">내용 {{ contentScore }}%</span>
+                  </template>
+                  <span v-else-if="matchScore" class="skx-tag skx-tag--score"
                     >정합성 {{ matchScore }}%</span
                   >
                   <span
@@ -523,6 +527,16 @@ const pageError = ref("");
 const matchScore = computed(() => {
   const s = route.query.score;
   return s ? Math.round(Number(s) * 100) : null;
+});
+
+const titleScore = computed(() => {
+  const s = route.query.title_score;
+  return s !== undefined && s !== "" ? Math.round(Number(s) * 100) : undefined;
+});
+
+const contentScore = computed(() => {
+  const s = route.query.content_score;
+  return s !== undefined && s !== "" ? Math.round(Number(s) * 100) : undefined;
 });
 
 const themes = computed(() =>

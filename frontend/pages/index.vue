@@ -303,6 +303,19 @@
               <p v-if="keywordChips.length" class="skx-ai-header__keywords">
                 키워드: {{ keywordChips.join(", ") }}
               </p>
+              <div class="skx-collection-size">
+                <span class="skx-collection-size__label">컬렉션</span>
+                <div class="skx-collection-size__btns">
+                  <button
+                    v-for="n in [3, 5, 10]"
+                    :key="n"
+                    type="button"
+                    :class="['skx-collection-size__btn', collectionSize === n && 'is-active']"
+                    :disabled="curationLoading"
+                    @click="setCollectionSize(n)"
+                  >{{ n }}권</button>
+                </div>
+              </div>
             </header>
             <div class="skx-ai-panel">
               <div class="skx-ai-panel__top">
@@ -333,6 +346,20 @@
                       {{ ci.reason }}
                     </li>
                   </ul>
+                  <div
+                    v-if="curationItems.length && !curationLoading"
+                    class="skx-deepread-cta"
+                  >
+                    <span class="skx-deepread-cta__text">컬렉션에서 책과 직접 대화해보세요</span>
+                    <button
+                      type="button"
+                      class="skx-deepread-cta__btn"
+                      @click="navigateTo(`/books/${curationItems[0].book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
+                    >
+                      DeepRead 시작하기
+                      <img src="/img/ico-arrow.svg" alt="" />
+                    </button>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -416,10 +443,13 @@
               <div class="skx-book-card__body">
                 <div class="skx-book-card__top">
                   <div class="skx-book-card__tags">
-                    <span class="skx-tag skx-tag--score"
-                      >정합성
-                      {{ Math.round((item.best_score || 0) * 100) }}%</span
-                    >
+                    <template v-if="item.title_score !== undefined && item.content_score !== undefined">
+                      <span class="skx-tag skx-tag--score">제목 {{ Math.round(item.title_score * 100) }}%</span>
+                      <span class="skx-tag skx-tag--score skx-tag--score-content">내용 {{ Math.round(item.content_score * 100) }}%</span>
+                    </template>
+                    <template v-else>
+                      <span class="skx-tag skx-tag--score">정합성 {{ Math.round((item.best_score || 0) * 100) }}%</span>
+                    </template>
                     <span
                       v-for="tag in parseThemes(
                         item.book_info?.themes ||
@@ -905,9 +935,18 @@ function restoreSession(entry: HistoryEntry) {
   aiExpanded.value = false;
 }
 
+// ── 컬렉션 개수 조정 ──────────────────────────────────────
+const collectionSize = ref(3);
+
+async function setCollectionSize(n: number) {
+  if (collectionSize.value === n) return;
+  collectionSize.value = n;
+  if (books.value.length) await fetchCuration();
+}
+
 // ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
 async function fetchCuration() {
-  const topBooks = books.value.slice(0, 3);
+  const topBooks = books.value.slice(0, collectionSize.value);
   if (!topBooks.length) return;
   curationLoading.value = true;
   curationIntro.value = "";
@@ -993,9 +1032,15 @@ function openDetail(item: BookChunkGroup) {
     );
     return;
   }
-  navigateTo(
-    `/books/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&score=${item.best_score || 0}`,
-  );
+  const params = new URLSearchParams({
+    q: currentQuery.value,
+    score: String(item.best_score || 0),
+  });
+  if (item.title_score !== undefined)
+    params.set("title_score", String(item.title_score));
+  if (item.content_score !== undefined)
+    params.set("content_score", String(item.content_score));
+  navigateTo(`/books/${item.book_id}?${params}`);
 }
 
 // 이 책과 대화하기 → detail + chat 자동 오픈
@@ -1006,9 +1051,16 @@ function openDetailWithChat(item: BookChunkGroup) {
     );
     return;
   }
-  navigateTo(
-    `/books/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&score=${item.best_score || 0}&chat=1`,
-  );
+  const params = new URLSearchParams({
+    q: currentQuery.value,
+    score: String(item.best_score || 0),
+    chat: "1",
+  });
+  if (item.title_score !== undefined)
+    params.set("title_score", String(item.title_score));
+  if (item.content_score !== undefined)
+    params.set("content_score", String(item.content_score));
+  navigateTo(`/books/${item.book_id}?${params}`);
 }
 
 function openRelatedDetail(rel: any) {
