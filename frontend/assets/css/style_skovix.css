@@ -4838,3 +4838,50 @@ a:hover {
   color: var(--green, #047857);
   border-color: var(--green-border, #a7f3d0);
 }
+
+/* ── 논문 AI 참고 카드 아이콘 버튼 ───── */
+.skx-pai-ref__title--link {
+  cursor: pointer;
+}
+.skx-pai-ref__title--link:hover {
+  text-decoration: underline;
+  color: var(--violet, #6366f1);
+}
+.skx-pai-ref__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.skx-pai-ref__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  text-decoration: none;
+}
+.skx-pai-ref__btn img {
+  width: 14px;
+  height: 14px;
+}
+.skx-pai-ref__btn:hover {
+  background: var(--bg-hover, #f5f3ff);
+  border-color: var(--violet, #6366f1);
+}
+.skx-pai-ref__btn--ai {
+  background: var(--violet, #6366f1);
+  border-color: var(--violet, #6366f1);
+}
+.skx-pai-ref__btn--ai img {
+  filter: brightness(0) invert(1);
+}
+.skx-pai-ref__btn--ai:hover {
+  background: #4f46e5;
+  border-color: #4f46e5;
+}

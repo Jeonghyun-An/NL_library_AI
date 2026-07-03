@@ -126,19 +126,44 @@
                   <div
                     v-for="ref in aiRefs"
                     :key="ref.num"
-                    class="skx-pai-ref skx-pai-ref--clickable"
-                    role="button"
-                    tabindex="0"
-                    :aria-label="`${ref.title} 상세보기`"
-                    @click="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`)"
-                    @keydown.enter="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`)"
+                    class="skx-pai-ref"
                   >
                     <div class="skx-pai-ref__num">{{ ref.num }}</div>
                     <div class="skx-pai-ref__body">
-                      <p class="skx-pai-ref__title">{{ ref.title }}</p>
+                      <p
+                        class="skx-pai-ref__title skx-pai-ref__title--link"
+                        @click="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`)"
+                      >{{ ref.title }}</p>
                       <p class="skx-pai-ref__author">{{ ref.authors }}</p>
+                      <div class="skx-pai-ref__actions">
+                        <button
+                          type="button"
+                          class="skx-pai-ref__btn"
+                          aria-label="출처 인용"
+                          @click="openRefCitation(ref)"
+                        >
+                          <img src="/img/ico-paper-bookmark.svg" alt="" />
+                        </button>
+                        <button
+                          type="button"
+                          class="skx-pai-ref__btn skx-pai-ref__btn--ai"
+                          aria-label="논문과 대화하기"
+                          @click="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
+                        >
+                          <img src="/img/ico-chat.svg" alt="" />
+                        </button>
+                        <a
+                          v-if="aiRefPaperMap.get(ref.book_id)?.book_info?.url"
+                          :href="aiRefPaperMap.get(ref.book_id)?.book_info?.url"
+                          target="_blank"
+                          rel="noopener"
+                          class="skx-pai-ref__btn"
+                          aria-label="원문 보기"
+                        >
+                          <img src="/img/ico-share.svg" alt="" />
+                        </a>
+                      </div>
                     </div>
-                    <img class="skx-pai-ref__chevron" src="/img/ico-arrow.svg" alt="" />
                   </div>
                   <template v-if="aiLoading && !aiRefs.length">
                     <div
@@ -522,7 +547,7 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
-import type { BookSearchResponse } from "~/types/search";
+import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { HistoryEntry } from "~/types/history";
 
 const config = useRuntimeConfig();
@@ -574,6 +599,16 @@ function showToast(msg: string) {
 // ── 계산 ─────────────────────────────────────────────────────
 const hasResults = computed(() => paperResult.value !== null || loading.value);
 
+const aiRefIds = computed(() => new Set(aiRefs.value.map((r) => r.book_id)));
+
+const aiRefPaperMap = computed(() => {
+  const map = new Map<string, BookChunkGroup>();
+  for (const p of paperResult.value?.books ?? []) {
+    map.set(p.book_id, p);
+  }
+  return map;
+});
+
 const sortedPapers = computed(() => {
   if (!paperResult.value) return [];
   const books = [...paperResult.value.books];
@@ -600,10 +635,15 @@ const gradeOptions = computed(() => {
 });
 
 const filteredPapers = computed(() => {
-  if (selectedGrade.value === "all") return sortedPapers.value;
-  return sortedPapers.value.filter(
-    (b) => b.book_info?.grade === selectedGrade.value,
-  );
+  const base =
+    selectedGrade.value === "all"
+      ? sortedPapers.value
+      : sortedPapers.value.filter(
+          (b) => b.book_info?.grade === selectedGrade.value,
+        );
+  return aiRefIds.value.size > 0
+    ? base.filter((p) => !aiRefIds.value.has(p.book_id))
+    : base;
 });
 
 const totalPages = computed(() =>
@@ -651,6 +691,13 @@ function formatPubDate(pubDate: string): string {
   const m = pubDate.match(/(\d{4})[.\-]?(\d{1,2})/);
   if (!m || !m[1] || !m[2]) return pubDate;
   return `${m[1]}년 ${parseInt(m[2])}월`;
+}
+
+function openRefCitation(ref: { book_id: string }) {
+  const paper = aiRefPaperMap.value.get(ref.book_id);
+  citeBookId.value = ref.book_id;
+  citeRefs.value = paper?.book_info?.references ?? [];
+  citeModalOpen.value = true;
 }
 
 function goToDetail(paper: any) {
