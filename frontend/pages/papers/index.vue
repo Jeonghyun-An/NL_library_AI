@@ -538,23 +538,22 @@
       @close="citeModalOpen = false"
     />
 
-    <!-- 인라인 논문 채팅 패널 -->
-    <Transition name="skx-chat-slide">
-      <aside v-if="chatPaperId" class="skx-inline-chat">
-        <div class="skx-inline-chat__header">
+    <!-- 논문 채팅 패널 -->
+    <aside :class="['skx-chat-panel', !!chatPaperId && 'is-open']">
+      <div class="skx-chat-panel__inner">
+        <div class="skx-chat-header">
           <button
             type="button"
-            class="skx-inline-chat__close"
+            class="skx-chat-close"
             @click="chatPaperId = null"
           >
-            <img src="/img/ico-arrow.svg" alt="" />
-            닫기
+            <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-inline-chat__title">논문과 대화하기</h2>
+          <h2 class="skx-chat-title">논문과 대화하기</h2>
         </div>
-        <BookChat :cnts-id="chatPaperId" @close="chatPaperId = null" />
-      </aside>
-    </Transition>
+        <BookChat v-if="chatPaperId" :cnts-id="chatPaperId" @close="chatPaperId = null" />
+      </div>
+    </aside>
 
     <Teleport to="body">
       <Transition name="skx-toast">
