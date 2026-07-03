@@ -153,16 +153,14 @@
                         >
                           <img src="/img/ico-chat.svg" alt="" />
                         </button>
-                        <a
-                          v-if="aiRefPaperMap.get(ref.book_id)?.book_info?.url"
-                          :href="aiRefPaperMap.get(ref.book_id)?.book_info?.url"
-                          target="_blank"
-                          rel="noopener"
+                        <button
+                          type="button"
                           class="skx-pai-ref__btn"
                           aria-label="원문 보기"
+                          @click="pdfItem = aiRefPaperMap.get(ref.book_id) ?? null"
                         >
                           <img src="/img/ico-share.svg" alt="" />
-                        </a>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -421,20 +419,10 @@
                 </div>
                 <div class="skx-paper-item__right">
                   <div class="skx-paper-item__btn-row">
-                    <a
-                      v-if="paper.book_info?.url"
-                      :href="paper.book_info.url"
-                      target="_blank"
-                      rel="noopener"
-                      class="skx-btn-pview"
-                      @click.stop
-                      >원문 보기</a
-                    >
                     <button
-                      v-else
                       type="button"
                       class="skx-btn-pview"
-                      @click.stop="showToast('원문 링크가 없습니다.')"
+                      @click.stop="pdfItem = paper"
                     >
                       원문 보기
                     </button>
@@ -538,6 +526,14 @@
       @close="citeModalOpen = false"
     />
 
+    <!-- PDF 뷰어 -->
+    <PdfViewer
+      v-if="pdfItem"
+      :cnts-id="pdfItem.book_id"
+      :title="pdfItem.book_info?.title"
+      @close="pdfItem = null"
+    />
+
     <!-- 논문 채팅 패널 -->
     <aside :class="['skx-chat-panel', !!chatPaperId && 'is-open']">
       <div class="skx-chat-panel__inner">
@@ -607,6 +603,9 @@ const pageSize = ref(20);
 const currentPage = ref(1);
 const perpageOpen = ref(false);
 const perpageRef = ref<HTMLElement | null>(null);
+
+// ── PDF 뷰어 ─────────────────────────────────────────────────
+const pdfItem = ref<BookChunkGroup | null>(null);
 
 // ── 인용 모달 ─────────────────────────────────────────────────
 const citeModalOpen = ref(false);
