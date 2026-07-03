@@ -340,6 +340,9 @@ a:hover {
   position: sticky;
   top: 1.2rem;
   margin-right: 1.2rem;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.25s ease,
+    min-height 0.3s ease;
 }
 .skx-lnb__logo {
   display: flex;
@@ -591,17 +594,20 @@ a:hover {
   object-fit: contain;
   display: block;
 }
-.skx-app.is-lnb-collapsed .skx-lnb {
+.skx-app.is-lnb-collapsed .skx-lnb,
+.skx-lnb.is-lnb-collapsed {
   width: 3.2rem;
   min-width: 3.2rem;
   min-height: 0;
   background: var(--skx-white);
   padding: 1.2rem 0.6rem;
 }
-.skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__expand) {
+.skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__expand),
+.skx-lnb.is-lnb-collapsed > :not(.skx-lnb__expand) {
   display: none;
 }
-.skx-app.is-lnb-collapsed .skx-lnb__expand {
+.skx-app.is-lnb-collapsed .skx-lnb__expand,
+.skx-lnb.is-lnb-collapsed .skx-lnb__expand {
   display: flex;
   align-items: center;
   justify-content: center;
