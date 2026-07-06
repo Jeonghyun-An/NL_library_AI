@@ -4896,3 +4896,57 @@ a:hover {
   background: #4f46e5;
   border-color: #4f46e5;
 }
+
+/* ── 제목/내용 일치율 프로그레스 바 ───── */
+.skx-score-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.3rem;
+  padding: 0 0.6rem;
+  border-radius: 1.8rem;
+  background: rgba(111, 63, 245, 0.08);
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+.skx-score-bar__label {
+  font-weight: 600;
+  color: var(--skx-primary);
+}
+.skx-score-bar__track {
+  position: relative;
+  width: 3.2rem;
+  height: 0.3rem;
+  border-radius: 0.3rem;
+  background: rgba(111, 63, 245, 0.15);
+  overflow: hidden;
+}
+.skx-score-bar__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 0.3rem;
+  background: var(--skx-primary);
+  transition: width 0.4s ease;
+}
+.skx-score-bar__pct {
+  font-weight: 700;
+  color: var(--skx-primary);
+  min-width: 1.4rem;
+  text-align: right;
+}
+/* 내용 일치율 변형 (그린 톤) */
+.skx-score-bar--content {
+  background: rgba(4, 120, 87, 0.08);
+}
+.skx-score-bar--content .skx-score-bar__label,
+.skx-score-bar--content .skx-score-bar__pct {
+  color: #047857;
+}
+.skx-score-bar--content .skx-score-bar__track {
+  background: rgba(4, 120, 87, 0.15);
+}
+.skx-score-bar--content .skx-score-bar__fill {
+  background: #059669;
+}

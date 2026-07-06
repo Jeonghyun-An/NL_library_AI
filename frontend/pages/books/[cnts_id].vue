@@ -49,21 +49,35 @@
             <div class="skx-book-card__body">
               <div class="skx-book-card__top">
                 <div class="skx-book-card__tags">
+                  <span v-if="matchScore" class="skx-tag skx-tag--score"
+                    >관련도 {{ matchScore }}%</span
+                  >
                   <template
                     v-if="
                       titleScore !== undefined && contentScore !== undefined
                     "
                   >
-                    <span class="skx-tag skx-tag--score"
-                      >제목 {{ titleScore }}%</span
-                    >
-                    <span class="skx-tag skx-tag--score skx-tag--score-content"
-                      >내용 {{ contentScore }}%</span
-                    >
+                    <span class="skx-score-bar">
+                      <span class="skx-score-bar__label">제목 일치율</span>
+                      <span class="skx-score-bar__track">
+                        <span
+                          class="skx-score-bar__fill"
+                          :style="{ width: titleScore + '%' }"
+                        ></span>
+                      </span>
+                      <span class="skx-score-bar__pct">{{ titleScore }}%</span>
+                    </span>
+                    <span class="skx-score-bar skx-score-bar--content">
+                      <span class="skx-score-bar__label">내용 일치율</span>
+                      <span class="skx-score-bar__track">
+                        <span
+                          class="skx-score-bar__fill"
+                          :style="{ width: contentScore + '%' }"
+                        ></span>
+                      </span>
+                      <span class="skx-score-bar__pct">{{ contentScore }}%</span>
+                    </span>
                   </template>
-                  <span v-else-if="matchScore" class="skx-tag skx-tag--score"
-                    >관련도 {{ matchScore }}%</span
-                  >
                   <span
                     v-for="tag in themes"
                     :key="tag"
