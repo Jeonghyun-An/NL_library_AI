@@ -4919,29 +4919,30 @@ a:hover {
   fill: none;
   stroke-width: 4;
 }
+/* 제목 일치율 (그린 톤) */
 .skx-score-ring__bg {
-  stroke: rgba(111, 63, 245, 0.15);
+  stroke: rgba(4, 120, 87, 0.15);
 }
 .skx-score-ring__fg {
-  stroke: var(--skx-primary);
+  stroke: #059669;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.5s ease;
 }
 .skx-score-ring__pct {
   font-size: 0.5rem;
   font-weight: 700;
-  color: var(--skx-primary);
+  color: #047857;
   line-height: 1;
 }
-/* 내용 일치율 변형 (그린 톤) */
+/* 내용 일치율 변형 (보라 톤) */
 .skx-score-ring--content .skx-score-ring__bg {
-  stroke: rgba(4, 120, 87, 0.15);
+  stroke: rgba(111, 63, 245, 0.15);
 }
 .skx-score-ring--content .skx-score-ring__fg {
-  stroke: #059669;
+  stroke: var(--skx-primary);
 }
 .skx-score-ring--content .skx-score-ring__pct {
-  color: #047857;
+  color: var(--skx-primary);
 }
 /* 호버 말풍선 툴팁 */
 .skx-score-ring__tip {
