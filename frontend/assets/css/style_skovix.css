@@ -4897,56 +4897,83 @@ a:hover {
   border-color: #4f46e5;
 }
 
-/* ── 제목/내용 일치율 프로그레스 바 ───── */
-.skx-score-bar {
+/* ── 제목/내용 일치율 도넛 링 ─────────── */
+.skx-score-ring {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  height: 1.3rem;
-  padding: 0 0.6rem;
-  border-radius: 1.8rem;
-  background: rgba(111, 63, 245, 0.08);
-  font-size: 0.6rem;
-  white-space: nowrap;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex-shrink: 0;
 }
-.skx-score-bar__label {
-  font-weight: 600;
-  color: var(--skx-primary);
-}
-.skx-score-bar__track {
-  position: relative;
-  width: 3.2rem;
-  height: 0.3rem;
-  border-radius: 0.3rem;
-  background: rgba(111, 63, 245, 0.15);
-  overflow: hidden;
-}
-.skx-score-bar__fill {
+.skx-score-ring__svg {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-radius: 0.3rem;
-  background: var(--skx-primary);
-  transition: width 0.4s ease;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
 }
-.skx-score-bar__pct {
+.skx-score-ring__bg,
+.skx-score-ring__fg {
+  fill: none;
+  stroke-width: 4;
+}
+.skx-score-ring__bg {
+  stroke: rgba(111, 63, 245, 0.15);
+}
+.skx-score-ring__fg {
+  stroke: var(--skx-primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+.skx-score-ring__pct {
+  font-size: 0.5rem;
   font-weight: 700;
   color: var(--skx-primary);
-  min-width: 1.4rem;
-  text-align: right;
+  line-height: 1;
 }
 /* 내용 일치율 변형 (그린 톤) */
-.skx-score-bar--content {
-  background: rgba(4, 120, 87, 0.08);
+.skx-score-ring--content .skx-score-ring__bg {
+  stroke: rgba(4, 120, 87, 0.15);
 }
-.skx-score-bar--content .skx-score-bar__label,
-.skx-score-bar--content .skx-score-bar__pct {
+.skx-score-ring--content .skx-score-ring__fg {
+  stroke: #059669;
+}
+.skx-score-ring--content .skx-score-ring__pct {
   color: #047857;
 }
-.skx-score-bar--content .skx-score-bar__track {
-  background: rgba(4, 120, 87, 0.15);
+/* 호버 말풍선 툴팁 */
+.skx-score-ring__tip {
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.4rem;
+  background: rgba(17, 24, 39, 0.92);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  z-index: 30;
 }
-.skx-score-bar--content .skx-score-bar__fill {
-  background: #059669;
+.skx-score-ring__tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0.25rem solid transparent;
+  border-top-color: rgba(17, 24, 39, 0.92);
+}
+.skx-score-ring:hover .skx-score-ring__tip,
+.skx-score-ring:focus .skx-score-ring__tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

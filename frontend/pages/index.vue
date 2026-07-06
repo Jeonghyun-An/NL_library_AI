@@ -448,41 +448,26 @@
               <div class="skx-book-card__body">
                 <div class="skx-book-card__top">
                   <div class="skx-book-card__tags">
-                    <span class="skx-tag skx-tag--score"
-                      >관련도
-                      {{ Math.round((item.best_score || 0) * 100) }}%</span
-                    >
                     <template
                       v-if="
                         item.title_score !== undefined &&
                         item.content_score !== undefined
                       "
                     >
-                      <span class="skx-score-bar">
-                        <span class="skx-score-bar__label">제목 일치율</span>
-                        <span class="skx-score-bar__track">
-                          <span
-                            class="skx-score-bar__fill"
-                            :style="{ width: Math.round(item.title_score * 100) + '%' }"
-                          ></span>
-                        </span>
-                        <span class="skx-score-bar__pct"
-                          >{{ Math.round(item.title_score * 100) }}%</span
-                        >
-                      </span>
-                      <span class="skx-score-bar skx-score-bar--content">
-                        <span class="skx-score-bar__label">내용 일치율</span>
-                        <span class="skx-score-bar__track">
-                          <span
-                            class="skx-score-bar__fill"
-                            :style="{ width: Math.round(item.content_score * 100) + '%' }"
-                          ></span>
-                        </span>
-                        <span class="skx-score-bar__pct"
-                          >{{ Math.round(item.content_score * 100) }}%</span
-                        >
-                      </span>
+                      <ScoreRing
+                        :pct="item.title_score * 100"
+                        label="제목 일치율"
+                      />
+                      <ScoreRing
+                        :pct="item.content_score * 100"
+                        label="내용 일치율"
+                        variant="content"
+                      />
                     </template>
+                    <span class="skx-tag skx-tag--score"
+                      >관련도
+                      {{ Math.round((item.best_score || 0) * 100) }}%</span
+                    >
                     <span
                       v-for="tag in parseThemes(
                         item.book_info?.themes ||
