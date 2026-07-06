@@ -60,10 +60,31 @@ def title_match_score(queries: list[str], title: str) -> float:
     return round(min(best, 1.0), 4)
 
 
+# 종합 시 보조 점수(낮은 쪽)가 관련도에 기여하는 비중
+_SECONDARY_WEIGHT = 0.4
+
+
+def combine_scores(title: float | None, content: float) -> float:
+    """
+    제목·내용 일치율 종합 → 연관도.
+
+      연관도 = primary + (1 - primary) × secondary × 0.4
+      (primary = 큰 쪽, secondary = 작은 쪽)
+
+    - 한쪽이 100%면 그대로 100% (제목 완전 일치 시 연관도 100% 보장)
+    - 두 점수가 모두 높으면 큰 쪽 단독보다 연관도가 올라감
+      예) 제목 60% + 내용 60% → 연관도 70%
+    - 한쪽이 0이면 다른 쪽 값 그대로
+    """
+    t = title or 0.0
+    primary, secondary = max(t, content), min(t, content)
+    return round(min(primary + (1.0 - primary) * secondary * _SECONDARY_WEIGHT, 1.0), 4)
+
+
 def apply_title_scores(books, query: str, rewritten: str | None = None) -> None:
     """
     BookChunkGroup 리스트에 title_score / content_score를 채우고
-    best_score(연관도)를 max(제목, 내용)으로 갱신한 뒤 재정렬한다.
+    best_score(연관도)를 두 점수의 종합값으로 갱신한 뒤 재정렬한다.
     book_info가 붙은 후에 호출해야 한다.
     """
     queries = [query]
@@ -79,6 +100,6 @@ def apply_title_scores(books, query: str, rewritten: str | None = None) -> None:
         if info.title_remainder:
             titles.append(f"{info.title} {info.title_remainder}")
         bg.title_score = max(title_match_score(queries, t) for t in titles)
-        bg.best_score = max(bg.best_score, bg.title_score)
+        bg.best_score = combine_scores(bg.title_score, bg.content_score)
 
     books.sort(key=lambda b: b.best_score, reverse=True)
