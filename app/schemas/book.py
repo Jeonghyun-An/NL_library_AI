@@ -112,11 +112,13 @@ class ChunkHit(BaseModel):
 
 class BookChunkGroup(BaseModel):
     """도서 모드에서 도서별 관련 청크 묶음"""
-    book_id:    str
-    book_info:  Optional[BookOut] = None
-    best_score: float
-    chunks:     list[ChunkHit] = []
-    reason:     Optional[str] = None
+    book_id:       str
+    book_info:     Optional[BookOut] = None
+    best_score:    float                    # 연관도 = max(title_score, content_score)
+    title_score:   Optional[float] = None   # 제목 일치율 (0~1)
+    content_score: Optional[float] = None   # 내용 일치율 = 청크 기반 원점수
+    chunks:        list[ChunkHit] = []
+    reason:        Optional[str] = None
 
 
 class ChunkSearchResponse(BaseModel):

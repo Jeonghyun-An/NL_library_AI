@@ -26,6 +26,7 @@ from schemas.book import (
 )
 from repositories.book import BookRepository
 from services.search.pipeline import search
+from services.search.title_scorer import apply_title_scores
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -79,6 +80,8 @@ async def search_books(
             book = await repo.get_by_cnts_id(bg.book_id)
             if book:
                 bg.book_info = BookOut.model_validate(book)
+        # 제목 일치율 반영: 연관도 = max(제목, 내용), 재정렬 포함
+        apply_title_scores(result.books, req.query, result.rewritten_query)
 
     # 히스토리 저장
     try:
