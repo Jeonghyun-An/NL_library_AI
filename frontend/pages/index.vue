@@ -310,10 +310,15 @@
                     v-for="n in [3, 5, 10]"
                     :key="n"
                     type="button"
-                    :class="['skx-collection-size__btn', collectionSize === n && 'is-active']"
+                    :class="[
+                      'skx-collection-size__btn',
+                      collectionSize === n && 'is-active',
+                    ]"
                     :disabled="curationLoading"
                     @click="setCollectionSize(n)"
-                  >{{ n }}권</button>
+                  >
+                    {{ n }}권
+                  </button>
                 </div>
               </div>
             </header>
@@ -346,7 +351,7 @@
                       {{ ci.reason }}
                     </li>
                   </ul>
-                  <div
+                  <!-- <div
                     v-if="curationItems.length && !curationLoading"
                     class="skx-deepread-cta"
                   >
@@ -359,7 +364,7 @@
                       DeepRead 시작하기
                       <img src="/img/ico-arrow.svg" alt="" />
                     </button>
-                  </div>
+                  </div> -->
                 </div>
                 <button
                   type="button"
@@ -443,12 +448,25 @@
               <div class="skx-book-card__body">
                 <div class="skx-book-card__top">
                   <div class="skx-book-card__tags">
-                    <template v-if="item.title_score !== undefined && item.content_score !== undefined">
-                      <span class="skx-tag skx-tag--score">제목 {{ Math.round(item.title_score * 100) }}%</span>
-                      <span class="skx-tag skx-tag--score skx-tag--score-content">내용 {{ Math.round(item.content_score * 100) }}%</span>
+                    <template
+                      v-if="
+                        item.title_score !== undefined &&
+                        item.content_score !== undefined
+                      "
+                    >
+                      <span class="skx-tag skx-tag--score"
+                        >제목 {{ Math.round(item.title_score * 100) }}%</span
+                      >
+                      <span
+                        class="skx-tag skx-tag--score skx-tag--score-content"
+                        >내용 {{ Math.round(item.content_score * 100) }}%</span
+                      >
                     </template>
                     <template v-else>
-                      <span class="skx-tag skx-tag--score">정합성 {{ Math.round((item.best_score || 0) * 100) }}%</span>
+                      <span class="skx-tag skx-tag--score"
+                        >관련도
+                        {{ Math.round((item.best_score || 0) * 100) }}%</span
+                      >
                     </template>
                     <span
                       v-for="tag in parseThemes(
@@ -518,7 +536,9 @@
                     @click="openDetailWithChat(item)"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
-                    <span class="skx-btn-chat__label">{{ mode === "paper" ? "DeepSearch" : "DeepRead" }}</span>
+                    <span class="skx-btn-chat__label">{{
+                      mode === "paper" ? "DeepSearch" : "DeepRead"
+                    }}</span>
                   </button>
                   <!-- <button
                     type="button"
@@ -974,7 +994,10 @@ async function fetchCuration() {
         if (currentHistoryId.value) {
           updateAiSummary(
             currentHistoryId.value,
-            JSON.stringify({ intro: curationIntro.value, items: curationItems.value }),
+            JSON.stringify({
+              intro: curationIntro.value,
+              items: curationItems.value,
+            }),
           );
         }
       }

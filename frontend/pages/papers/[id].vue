@@ -38,7 +38,7 @@
                     {{ paper.grade }}
                   </span>
                   <span v-if="matchScore" class="skx-ptag skx-ptag--score"
-                    >정합성 {{ matchScore }}%</span
+                    >관련도 {{ matchScore }}%</span
                   >
                 </div>
                 <div class="skx-pdetail__share-group">
@@ -369,7 +369,11 @@
           >
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-chat-title">DeepSearch<template v-if="paper?.title">: {{ paper.title }}</template></h2>
+          <h2 class="skx-chat-title">
+            DeepSearch<template v-if="paper?.title"
+              >: {{ paper.title }}</template
+            >
+          </h2>
         </div>
         <BookChat :cnts-id="paperId" @close="chatOpen = false" />
       </div>

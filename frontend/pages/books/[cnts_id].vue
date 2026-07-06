@@ -49,12 +49,20 @@
             <div class="skx-book-card__body">
               <div class="skx-book-card__top">
                 <div class="skx-book-card__tags">
-                  <template v-if="titleScore !== undefined && contentScore !== undefined">
-                    <span class="skx-tag skx-tag--score">제목 {{ titleScore }}%</span>
-                    <span class="skx-tag skx-tag--score skx-tag--score-content">내용 {{ contentScore }}%</span>
+                  <template
+                    v-if="
+                      titleScore !== undefined && contentScore !== undefined
+                    "
+                  >
+                    <span class="skx-tag skx-tag--score"
+                      >제목 {{ titleScore }}%</span
+                    >
+                    <span class="skx-tag skx-tag--score skx-tag--score-content"
+                      >내용 {{ contentScore }}%</span
+                    >
                   </template>
                   <span v-else-if="matchScore" class="skx-tag skx-tag--score"
-                    >정합성 {{ matchScore }}%</span
+                    >관련도 {{ matchScore }}%</span
                   >
                   <span
                     v-for="tag in themes"
@@ -294,7 +302,7 @@
                       rel.book_info?.title || rel.book_id
                     }}</span>
                     <span class="skx-reco-item__score"
-                      >정합성
+                      >관련도
                       {{
                         Math.round((rel.score || rel.best_score || 0) * 100)
                       }}%</span
@@ -416,7 +424,9 @@
           >
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-chat-title">DeepRead<template v-if="book?.title">: {{ book.title }}</template></h2>
+          <h2 class="skx-chat-title">
+            DeepRead<template v-if="book?.title">: {{ book.title }}</template>
+          </h2>
         </div>
         <BookChat
           :cnts-id="cnts_id"

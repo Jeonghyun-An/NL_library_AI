@@ -124,17 +124,19 @@
               <!-- 우측: 참고 논문 목록 -->
               <div class="skx-pai-refs">
                 <div class="skx-pai-refs__scroll">
-                  <div
-                    v-for="ref in aiRefs"
-                    :key="ref.num"
-                    class="skx-pai-ref"
-                  >
+                  <div v-for="ref in aiRefs" :key="ref.num" class="skx-pai-ref">
                     <div class="skx-pai-ref__num">{{ ref.num }}</div>
                     <div class="skx-pai-ref__body">
                       <p
                         class="skx-pai-ref__title skx-pai-ref__title--link"
-                        @click="navigateTo(`/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`)"
-                      >{{ ref.title }}</p>
+                        @click="
+                          navigateTo(
+                            `/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`,
+                          )
+                        "
+                      >
+                        {{ ref.title }}
+                      </p>
                       <p class="skx-pai-ref__author">{{ ref.authors }}</p>
                       <div class="skx-pai-ref__actions">
                         <button
@@ -157,7 +159,9 @@
                           type="button"
                           class="skx-pai-ref__btn"
                           aria-label="원문 보기"
-                          @click="pdfItem = aiRefPaperMap.get(ref.book_id) ?? null"
+                          @click="
+                            pdfItem = aiRefPaperMap.get(ref.book_id) ?? null
+                          "
                         >
                           <img src="/img/ico-share.svg" alt="" />
                         </button>
@@ -258,7 +262,7 @@
                       "
                       alt=""
                     />
-                    정합성순
+                    관련도순
                   </button>
                   <button
                     type="button"
@@ -365,7 +369,7 @@
                       {{ paper.book_info.grade }}
                     </span>
                     <span class="skx-ptag skx-ptag--score">
-                      정합성 {{ Math.round((paper.best_score || 0) * 100) }}%
+                      관련도 {{ Math.round((paper.best_score || 0) * 100) }}%
                     </span>
                   </div>
                   <h3
@@ -442,7 +446,11 @@
                   <button
                     type="button"
                     class="skx-btn-ptalk"
-                    @click.stop="navigateTo(`/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
+                    @click.stop="
+                      navigateTo(
+                        `/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`,
+                      )
+                    "
                   >
                     <img src="/img/ico-chat.svg" alt="" />
                     DeepSearch
@@ -545,9 +553,17 @@
           >
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
-          <h2 class="skx-chat-title">DeepSearch<template v-if="chatPaperTitle">: {{ chatPaperTitle }}</template></h2>
+          <h2 class="skx-chat-title">
+            DeepSearch<template v-if="chatPaperTitle"
+              >: {{ chatPaperTitle }}</template
+            >
+          </h2>
         </div>
-        <BookChat v-if="chatPaperId" :cnts-id="chatPaperId" @close="chatPaperId = null" />
+        <BookChat
+          v-if="chatPaperId"
+          :cnts-id="chatPaperId"
+          @close="chatPaperId = null"
+        />
       </div>
     </aside>
 
