@@ -534,19 +534,20 @@ const book = ref<BookInfo | null>(null);
 const pageLoading = ref(true);
 const pageError = ref("");
 
+// 점수 표시는 내림 처리: 99.6%가 100%로 올림 표기되는 것 방지
 const matchScore = computed(() => {
   const s = route.query.score;
-  return s ? Math.round(Number(s) * 100) : null;
+  return s ? Math.floor(Number(s) * 100) : null;
 });
 
 const titleScore = computed(() => {
   const s = route.query.title_score;
-  return s !== undefined && s !== "" ? Math.round(Number(s) * 100) : undefined;
+  return s !== undefined && s !== "" ? Math.floor(Number(s) * 100) : undefined;
 });
 
 const contentScore = computed(() => {
   const s = route.query.content_score;
-  return s !== undefined && s !== "" ? Math.round(Number(s) * 100) : undefined;
+  return s !== undefined && s !== "" ? Math.floor(Number(s) * 100) : undefined;
 });
 
 const themes = computed(() =>

@@ -466,7 +466,7 @@
                     </template>
                     <span class="skx-tag skx-tag--score"
                       >관련도
-                      {{ Math.round((item.best_score || 0) * 100) }}%</span
+                      {{ Math.floor((item.best_score || 0) * 100) }}%</span
                     >
                     <span
                       v-for="tag in parseThemes(

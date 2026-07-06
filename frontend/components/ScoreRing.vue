@@ -34,8 +34,9 @@ const props = defineProps<{
 }>();
 
 const CIRC = 2 * Math.PI * 15.5;
+// 내림 처리: 99.6% 같은 값이 100%로 올림 표기되는 것 방지 (정확히 100일 때만 100)
 const clamped = computed(() =>
-  Math.max(0, Math.min(100, Math.round(props.pct))),
+  Math.max(0, Math.min(100, Math.floor(props.pct))),
 );
 const offset = computed(() => CIRC * (1 - clamped.value / 100));
 </script>

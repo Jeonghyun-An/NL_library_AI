@@ -286,10 +286,12 @@ async def _search_book_mode(
         best = max((c.rerank_score or c.score for c in chunks), default=best_raw)
 
         # 다수 청크가 매칭될수록 도서 적합도가 높음 → 로그 스케일 부스팅
-        # 청크 1개=×1.0, 2개=×1.07, 3개=×1.11, 5개=×1.16
+        # 1.0과의 간격을 줄이는 점근 방식: 원점수가 1.0이 아닌 한 100%로 포화되지 않음
+        # (기존 곱셈+cap 방식은 고득점 도서가 전부 정확히 1.0으로 잘려 내용 일치율 100%로 표기되는 문제)
         n_chunks = len(chunks)
         if n_chunks > 1:
-            best = min(best * (1 + 0.1 * math.log2(n_chunks)), 1.0)
+            boost = 1 + 0.1 * math.log2(n_chunks)
+            best = 1.0 - (1.0 - best) / boost
 
         books.append(BookChunkGroup(
             book_id=book_id,
