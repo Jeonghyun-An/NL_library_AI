@@ -43,8 +43,10 @@
 
           <!-- 도서 헤더 카드 -->
           <article class="skx-book-card skx-book-card--hd">
-            <div class="skx-book-card__thumb">
-              <BookCover :book-id="cnts_id" />
+            <div class="skx-book-card__thumb-col">
+              <div class="skx-book-card__thumb">
+                <BookCover :book-id="cnts_id" />
+              </div>
               <p class="skx-cover-ai-note">
                 <img src="/img/logo-mark.svg" alt="" />
                 AI가 도서 내용을 분석해 그려낸 표지입니다

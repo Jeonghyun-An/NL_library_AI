@@ -5102,3 +5102,18 @@ a:hover {
   height: 0.7rem;
   filter: brightness(0) invert(1);
 }
+
+/* ── 도서 상세 표지 컬럼 (표지 + AI 코멘트) ── */
+.skx-book-card__thumb-col {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 8rem;
+}
+.skx-book-card__thumb-col .skx-book-card__thumb {
+  width: 100%;
+  align-self: auto;
+}
+.skx-book-card__thumb-col .skx-cover-ai-note {
+  width: 100%;
+}

@@ -370,15 +370,6 @@
                       {{ ci.reason }}
                     </li>
                   </ul>
-                  <p
-                    v-if="curationItems.length && !curationLoading"
-                    class="skx-ai-hint"
-                  >
-                    <img src="/img/ico-chat.svg" alt="" />
-                    마음에 드는 책을 찾으셨다면
-                    <strong>DeepRead</strong>로 책과 직접 대화하며 더 깊이
-                    읽어보세요
-                  </p>
                   <!-- <div
                     v-if="curationItems.length && !curationLoading"
                     class="skx-deepread-cta"
@@ -410,6 +401,15 @@
                   />
                 </button>
               </div>
+              <p
+                v-if="curationItems.length && !curationLoading"
+                class="skx-ai-hint"
+              >
+                <img src="/img/ico-chat.svg" alt="" />
+                마음에 드는 책을 찾으셨다면
+                <strong>DeepRead</strong>로 책과 직접 대화하며 더 깊이
+                읽어보세요
+              </p>
             </div>
           </section>
 
