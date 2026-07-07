@@ -41,8 +41,9 @@ cfg = get_settings()
 
 # doc_type 스칼라 우선. 과도기: doc_type 승격 이전 인덱싱분은 비어있을 수 있어
 # book_id 접두어(KCI_FI%)로 보강한다. genre 감지 논문(비-KCI book_id)도 doc_type로 포착.
+# 주의: Milvus 표현식은 `not like`를 지원하지 않음 — `not (... like ...)` 형태만 파싱됨
 _PAPER_EXPR = '(doc_type == "paper" || book_id like "KCI_FI%")'
-_BOOK_EXPR  = '(doc_type != "paper" && book_id not like "KCI_FI%")'
+_BOOK_EXPR  = '(doc_type != "paper" && not (book_id like "KCI_FI%"))'
 
 
 def _build_milvus_expr(f: MetadataFilter, doc_scope: str = "all") -> str | None:
