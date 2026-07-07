@@ -344,7 +344,11 @@
                 <div class="skx-ai-panel__logo-row">
                   <img
                     class="skx-ai-panel__logo"
-                    :src="curationLoading ? '/ic_ing.gif' : '/ic_done.png'"
+                    :src="
+                      curationLoading || curationTyping
+                        ? '/ic_ing.gif'
+                        : '/ic_done.png'
+                    "
                     alt="SKOVIX AI"
                   />
                   <Transition name="skx-stage-fade" mode="out-in">
@@ -1078,6 +1082,9 @@ function startAiStages() {
   }, 900);
 }
 
+// 타이프라이터 출력 중 여부 (아이콘은 타이핑 종료까지 ing 유지)
+const curationTyping = ref(false);
+
 // ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
 async function fetchCuration() {
   // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
@@ -1087,6 +1094,7 @@ async function fetchCuration() {
   if (!topBooks.length) return;
   startAiStages();
   curationLoading.value = true;
+  curationTyping.value = true;
   curationIntro.value = "";
   curationItems.value = [];
   try {
@@ -1121,6 +1129,7 @@ async function fetchCuration() {
             }),
           );
         }
+        curationTyping.value = false;
       }
     };
     if (intro) {
@@ -1135,9 +1144,11 @@ async function fetchCuration() {
           JSON.stringify({ intro: "", items }),
         );
       }
+      curationTyping.value = false;
     }
   } catch {
     /* 큐레이션 실패 시 조용히 무시 */
+    curationTyping.value = false;
   } finally {
     curationLoading.value = false;
   }
