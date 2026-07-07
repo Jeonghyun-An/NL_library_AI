@@ -4989,3 +4989,16 @@ a:hover {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ── 푸터 ─────────────────────────────── */
+.skx-footer {
+  padding: 0 1.2rem 1.2rem;
+  text-align: center;
+  background: #f4f5fe; /* --skx-page-bg 그라데이션 끝색과 동일 */
+}
+.skx-footer__copy {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--skx-gray-2);
+}

@@ -1,5 +1,13 @@
 <template>
-  <NuxtPage />
+  <div>
+    <NuxtPage />
+    <footer class="skx-footer">
+      <p class="skx-footer__copy">
+        Copyright &copy; {{ new Date().getFullYear() }} LANDSOFT Co., Ltd. All
+        rights reserved.
+      </p>
+    </footer>
+  </div>
 </template>
 
 <style>
