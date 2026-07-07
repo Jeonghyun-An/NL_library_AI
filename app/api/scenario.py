@@ -35,7 +35,11 @@ async def scenario_recommend(
     cnts_ids = [bg.book_id for bg in result.books]
     book_map = await repo.get_by_cnts_ids(cnts_ids)
 
-    ordered_books = [book_map[bid] for bid in cnts_ids if bid in book_map]
+    # 검색 파이프라인은 리랭킹용으로 top_k보다 많은 후보를 반환하므로
+    # 요청한 top_k만큼만 LLM 추천에 사용한다
+    ordered_books = [book_map[bid] for bid in cnts_ids if bid in book_map][
+        : req.top_k
+    ]
     rec = await recommend_books(req.concern, ordered_books)
 
     books = [
@@ -46,6 +50,6 @@ async def scenario_recommend(
             quote=item.get("quote", ""),
         )
         for item in rec.get("items", [])
-    ]
+    ][: req.top_k]
 
     return ScenarioResponse(concern=req.concern, books=books)

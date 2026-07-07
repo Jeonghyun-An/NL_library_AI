@@ -42,12 +42,14 @@ def _parse_scenario_result(content: str) -> dict | None:
 
 async def recommend_books(concern: str, books: list) -> dict:
     """
-    독자 고민 + 1~3권 도서 → reason + quote 생성.
+    독자 고민 + 도서 목록 → reason + quote 생성.
+    도서 수 제한은 호출자(api/scenario.py)가 req.top_k로 결정한다.
     반환: {"items": [{"book_id": str, "reason": str, "quote": str}]}
     book_id는 cnts_id.
     """
+    target_books = books[: cfg.CURATION_TOP_K]
     books_lines = []
-    for i, book in enumerate(books[: cfg.CURATION_TOP_K], 1):
+    for i, book in enumerate(target_books, 1):
         lines = [f"[도서 {i}]", f"book_id: {book.cnts_id}"]
         if book.title:
             lines.append(f"제목: {book.title}")
@@ -96,5 +98,5 @@ async def recommend_books(concern: str, books: list) -> dict:
     except Exception as e:
         log.error(f"시나리오 추천 생성 실패: {e}")
         return {
-            "items": [{"book_id": b.cnts_id, "reason": "", "quote": ""} for b in books],
+            "items": [{"book_id": b.cnts_id, "reason": "", "quote": ""} for b in target_books],
         }
