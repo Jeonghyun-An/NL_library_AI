@@ -344,7 +344,7 @@
                 <div class="skx-ai-panel__logo-row">
                   <img
                     class="skx-ai-panel__logo"
-                    src="/img/logo-mark.svg"
+                    :src="curationLoading ? '/ic_ing.gif' : '/ic_done.png'"
                     alt="SKOVIX AI"
                   />
                   <Transition name="skx-stage-fade" mode="out-in">
@@ -426,7 +426,7 @@
                 <div class="skx-ai-panel__logo-row">
                   <img
                     class="skx-ai-panel__logo"
-                    src="/img/logo-mark.svg"
+                    :src="paperSummaryLoading ? '/ic_ing.gif' : '/ic_done.png'"
                     alt="SKOVIX AI"
                   />
                   <span class="skx-ai-panel__title-text">AI 핵심 요약</span>

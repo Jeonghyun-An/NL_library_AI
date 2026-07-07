@@ -1352,6 +1352,7 @@ a:hover {
   height: 1.6rem;
   display: block;
   flex-shrink: 0;
+  object-fit: contain;
   animation: skx-pop-up 0.6s ease-out both;
   animation-delay: 0.1s;
 }
