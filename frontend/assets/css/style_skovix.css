@@ -5006,9 +5006,26 @@ a:hover {
   color: var(--skx-gray-2);
   transition: color 0.2s;
 }
-.skx-footer__credit strong {
-  font-weight: 600;
-}
 .skx-footer__copy:hover .skx-footer__credit {
   color: var(--skx-primary);
+}
+/* 크레딧 이스터에그: 평소 AJH → 호버 시 풀네임 크로스페이드 */
+.skx-footer__name {
+  display: inline-grid;
+  justify-items: center;
+  font-weight: 600;
+}
+.skx-footer__name > span {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  transition: opacity 0.25s ease;
+}
+.skx-footer__name-full {
+  opacity: 0;
+}
+.skx-footer__copy:hover .skx-footer__name-short {
+  opacity: 0;
+}
+.skx-footer__copy:hover .skx-footer__name-full {
+  opacity: 1;
 }

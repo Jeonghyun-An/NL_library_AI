@@ -6,8 +6,12 @@
         Copyright &copy; {{ new Date().getFullYear() }} LANDSOFT Co., Ltd. All
         rights reserved.
         <span class="skx-footer__credit"
-          >&middot; Crafted by <strong>AJH</strong></span
-        >
+          >&middot; Crafted by
+          <strong class="skx-footer__name">
+            <span class="skx-footer__name-short">AJH</span>
+            <span class="skx-footer__name-full">AN Jeonghyun</span>
+          </strong>
+        </span>
       </p>
     </footer>
   </div>
