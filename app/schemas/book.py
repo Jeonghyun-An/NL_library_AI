@@ -220,6 +220,7 @@ class ScenarioBook(BaseModel):
 
 class ScenarioResponse(BaseModel):
     concern: str
+    intro:   str = ""   # 고민 공감 + 추천 전체 소개 (AI 요약 영역에 표시)
     books:   list[ScenarioBook]
 
 

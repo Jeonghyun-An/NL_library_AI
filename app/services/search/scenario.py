@@ -26,6 +26,7 @@ def _parse_scenario_result(content: str) -> dict | None:
     try:
         data = json.loads(content.strip())
         return {
+            "intro": str(data.get("intro", "")),
             "items": [
                 {
                     "book_id": str(item["book_id"]),
@@ -98,5 +99,6 @@ async def recommend_books(concern: str, books: list) -> dict:
     except Exception as e:
         log.error(f"시나리오 추천 생성 실패: {e}")
         return {
+            "intro": "",
             "items": [{"book_id": b.cnts_id, "reason": "", "quote": ""} for b in target_books],
         }

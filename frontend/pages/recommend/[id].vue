@@ -172,6 +172,9 @@
               <div class="skx-rcd-book-card__cover">
                 <BookCover :book-id="book.book_id" />
               </div>
+              <p v-if="book.quote" class="skx-rcd-book-card__quote">
+                {{ book.quote }}
+              </p>
               <p class="skx-rcd-book-card__name">
                 {{ book.book_info?.title || book.book_id }}
               </p>
@@ -195,6 +198,9 @@
           <div class="skx-rcd-modal__card-top">
             <span class="skx-rcd-modal__badge">Book solution</span>
             <p class="skx-rcd-modal__desc">{{ selectedBook?.reason }}</p>
+            <p v-if="selectedBook?.quote" class="skx-rcd-modal__quote">
+              {{ selectedBook.quote }}
+            </p>
           </div>
           <div class="skx-rcd-modal__cover" v-if="selectedBook">
             <BookCover :book-id="selectedBook.book_id" />
@@ -384,8 +390,8 @@ async function fetchRecommend() {
       body: { concern: meta.value.concern, top_k: 4 },
     });
     recommendedBooks.value = data?.books || [];
-    const firstQuote = data?.books?.[0]?.quote;
-    typeText(firstQuote ? `"${firstQuote}"` : meta.value.aiLabel);
+    // AI 요약 영역: LLM이 생성한 고민 공감 + 추천 소개(intro)
+    typeText(data?.intro || meta.value.aiLabel);
   } catch {
     showToast("추천 도서를 불러오는 중 오류가 발생했습니다.");
     typeText(meta.value.aiLabel);

@@ -3114,6 +3114,8 @@ a:hover {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* 태그라인 줄 수 차이에도 표지 높이 정렬 유지 (2줄 기준) */
+  min-height: 2.7rem;
 }
 .skx-rcd-book-card__cover {
   width: 8rem;
@@ -3121,6 +3123,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .skx-rcd-book-card__cover img {
   max-width: 100%;
@@ -3129,12 +3132,28 @@ a:hover {
   display: block;
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
+/* 책 속 인물이 건네는 한줄 코멘트 */
+.skx-rcd-book-card__quote {
+  margin: 0;
+  font-size: 0.75rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--skx-ink-2);
+  text-align: center;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3.6rem;
+}
 .skx-rcd-book-card__name {
   margin: 0;
   font-size: 0.8rem;
   font-weight: 400;
   color: var(--skx-gray-1);
   text-align: center;
+  margin-top: auto;
 }
 /* [E] 도서추천 상세 */
 
@@ -3207,6 +3226,14 @@ a:hover {
   color: var(--skx-ink);
   text-align: center;
   line-height: 1.5;
+}
+.skx-rcd-modal__quote {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--skx-ink-2);
+  text-align: center;
+  line-height: 1.6;
 }
 .skx-rcd-modal__cover {
   width: 6.1rem;

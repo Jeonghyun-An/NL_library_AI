@@ -25,6 +25,7 @@ async def scenario_recommend(
         top_k=req.top_k,
         use_rewrite=True,
         use_rerank=True,
+        doc_scope="book",   # 논문 제외, 도서만 검색
         db=db,
     )
 
@@ -52,4 +53,8 @@ async def scenario_recommend(
         for item in rec.get("items", [])
     ][: req.top_k]
 
-    return ScenarioResponse(concern=req.concern, books=books)
+    return ScenarioResponse(
+        concern=req.concern,
+        intro=rec.get("intro", ""),
+        books=books,
+    )
