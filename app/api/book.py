@@ -71,8 +71,21 @@ async def search_books(
         top_k=req.top_k,
         use_rewrite=req.use_rewrite,
         use_rerank=req.use_rerank,
+        doc_scope="book",   # 논문 제외, 도서만 검색
         db=db,
     )
+
+    # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+    if isinstance(result, BookSearchResponse) and not result.books:
+        log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+        result = await search(
+            req.query,
+            mode=req.mode,
+            top_k=req.top_k,
+            use_rewrite=req.use_rewrite,
+            use_rerank=req.use_rerank,
+            db=db,
+        )
 
     if isinstance(result, BookSearchResponse):
         repo = BookRepository(db)
