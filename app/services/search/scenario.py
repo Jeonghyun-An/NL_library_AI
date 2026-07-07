@@ -75,6 +75,9 @@ async def recommend_books(concern: str, books: list) -> dict:
         books_context=books_context,
     )
 
+    # 출력 예산: intro(~300) + 책별 reason/quote(~250) — 잘리면 JSON 파싱이 깨지므로 넉넉하게
+    max_tokens = max(cfg.CURATION_MAX_TOKENS, 600 + 250 * len(target_books))
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
@@ -85,7 +88,7 @@ async def recommend_books(concern: str, books: list) -> dict:
                         {"role": "system", "content": system_message},
                         {"role": "user",   "content": user_message},
                     ],
-                    "max_tokens": cfg.CURATION_MAX_TOKENS,
+                    "max_tokens": max_tokens,
                     "temperature": params.get("temperature", cfg.CURATION_TEMPERATURE),
                 },
                 timeout=float(cfg.CURATION_TIMEOUT),

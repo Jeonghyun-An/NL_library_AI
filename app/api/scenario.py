@@ -29,6 +29,18 @@ async def scenario_recommend(
         db=db,
     )
 
+    # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+    if not result.books:
+        log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+        result = await search(
+            req.concern,
+            mode="book",
+            top_k=req.top_k,
+            use_rewrite=True,
+            use_rerank=True,
+            db=db,
+        )
+
     if not result.books:
         raise HTTPException(404, "추천 도서를 찾을 수 없습니다")
 
