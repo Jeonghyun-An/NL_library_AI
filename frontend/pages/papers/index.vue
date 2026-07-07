@@ -80,7 +80,7 @@
             <div class="skx-pai__header">
               <img
                 class="skx-pai__logo"
-                src="/img/logo-mark.svg"
+                :src="aiLoading ? '/ic_ing.gif' : '/ic_done.png'"
                 alt="SKOVIX AI"
               />
               <span class="skx-pai__hd-text">AI 분석 결과</span>
