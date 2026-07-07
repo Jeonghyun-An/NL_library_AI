@@ -5,6 +5,9 @@
       <p class="skx-footer__copy">
         Copyright &copy; {{ new Date().getFullYear() }} LANDSOFT Co., Ltd. All
         rights reserved.
+        <span class="skx-footer__credit"
+          >&middot; Crafted by <strong>AJH</strong></span
+        >
       </p>
     </footer>
   </div>

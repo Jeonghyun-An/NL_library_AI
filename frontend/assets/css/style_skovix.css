@@ -5002,3 +5002,13 @@ a:hover {
   font-weight: 400;
   color: var(--skx-gray-2);
 }
+.skx-footer__credit {
+  color: var(--skx-gray-2);
+  transition: color 0.2s;
+}
+.skx-footer__credit strong {
+  font-weight: 600;
+}
+.skx-footer__copy:hover .skx-footer__credit {
+  color: var(--skx-primary);
+}
