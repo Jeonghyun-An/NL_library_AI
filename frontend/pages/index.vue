@@ -913,8 +913,8 @@ async function handleSearch(query: string) {
         body: {
           query,
           mode: "book",
-          // 컬렉션 크기만큼 도서를 확보해야 함 (최소 5권)
-          top_k: Math.max(collectionSize.value, 5),
+          // 컬렉션 크기 + 더보기 목록용 여유분 확보 (백엔드 상한 20)
+          top_k: Math.min(20, Math.max(collectionSize.value + 5, 10)),
           use_rewrite: true,
           use_rerank: true,
         },
@@ -1005,7 +1005,7 @@ function restoreSession(entry: HistoryEntry) {
 // ── 컬렉션 개수 조정 (AI 답변에 사용될 도서 수, 랜딩 드롭다운) ──
 const COLLECTION_SIZES = [3, 5, 10, 20];
 // 컬렉션 포함 최소 연관도 (임계값 미달 도서는 LLM 답변에서 제외)
-const COLLECTION_SCORE_THRESHOLD = 0.5;
+const COLLECTION_SCORE_THRESHOLD = 0.4;
 const collectionSize = ref(3);
 const collectionOpen = ref(false);
 
