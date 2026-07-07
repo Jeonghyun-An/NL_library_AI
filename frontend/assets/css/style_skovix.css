@@ -203,11 +203,11 @@ a:hover {
     ),
     radial-gradient(
       80% 60% at 8% -12%,
-      rgba(160, 120, 248, 0.08) 0%,
-      rgba(160, 120, 248, 0) 48%
+      rgba(129, 140, 248, 0.08) 0%,
+      rgba(129, 140, 248, 0) 48%
     ),
-    linear-gradient(135deg, #f5f3fc 0%, #f1ecfb 52%, #f6f2fc 100%);
-  --skx-shadow-lnb: 2px 2px 36px 0 rgba(151, 71, 255, 0.05);
+    linear-gradient(135deg, #f3f4fe 0%, #edeffc 52%, #f4f5fe 100%);
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(79, 70, 229, 0.05);
   --skx-shadow-banner:
     0 4px 12px 0 rgba(0, 0, 0, 0.05), 0 4px 24px 0 rgba(79, 70, 229, 0.08);
   --skx-border-c1: #e0e7ff;
@@ -3376,7 +3376,7 @@ a:hover {
   color: var(--skx-primary);
   margin: 1rem 0 0.35rem;
   padding-bottom: 0.3rem;
-  border-bottom: 1px solid var(--lilac);
+  border-bottom: 1px solid var(--skx-border-c1);
 }
 .skx-pai-main__scroll h2:first-child {
   margin-top: 0;
