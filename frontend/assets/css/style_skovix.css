@@ -5029,3 +5029,19 @@ a:hover {
 .skx-footer__copy:hover .skx-footer__name-full {
   opacity: 1;
 }
+
+/* ── AI 패널 단계 메시지 전환 ─────────── */
+.skx-stage-fade-enter-active,
+.skx-stage-fade-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+.skx-stage-fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.skx-stage-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

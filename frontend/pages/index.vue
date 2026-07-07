@@ -347,9 +347,11 @@
                     src="/img/logo-mark.svg"
                     alt="SKOVIX AI"
                   />
-                  <span class="skx-ai-panel__title-text"
-                    >AI가 원하시는 도서를 찾았어요!</span
-                  >
+                  <Transition name="skx-stage-fade" mode="out-in">
+                    <span :key="aiPanelTitle" class="skx-ai-panel__title-text">{{
+                      aiPanelTitle
+                    }}</span>
+                  </Transition>
                   <span v-if="curationLoading" class="skx-ai-panel__loading"
                     >●</span
                   >
@@ -845,6 +847,7 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener("resize", updateTabSlider);
   document.removeEventListener("click", onDocClick);
+  if (aiStageTimer) clearTimeout(aiStageTimer);
 });
 
 // ── 유틸 ──────────────────────────────────────────────────
@@ -1044,6 +1047,28 @@ const visibleCount = computed(() => {
   return n > 0 ? n : 3;
 });
 
+// ── AI 패널 단계별 로딩 메시지 ─────────────────────────────
+const AI_STAGES = [
+  "AI가 질문을 이해했어요",
+  "AI 사서가 모든 도서 본문을 탐색하고 있어요",
+];
+const aiStage = ref(0);
+let aiStageTimer: ReturnType<typeof setTimeout> | null = null;
+
+const aiPanelTitle = computed(() =>
+  curationLoading.value
+    ? AI_STAGES[Math.min(aiStage.value, AI_STAGES.length - 1)]
+    : "AI가 가장 적합한 도서를 찾았어요!",
+);
+
+function startAiStages() {
+  aiStage.value = 0;
+  if (aiStageTimer) clearTimeout(aiStageTimer);
+  aiStageTimer = setTimeout(() => {
+    aiStage.value = 1;
+  }, 900);
+}
+
 // ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
 async function fetchCuration() {
   // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
@@ -1051,6 +1076,7 @@ async function fetchCuration() {
     .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
     .slice(0, collectionSize.value);
   if (!topBooks.length) return;
+  startAiStages();
   curationLoading.value = true;
   curationIntro.value = "";
   curationItems.value = [];
