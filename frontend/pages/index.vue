@@ -450,11 +450,13 @@
           <!-- 도서/논문 목록 -->
           <div class="skx-book-list">
             <article
-              v-for="(item, i) in mode === 'paper' ? papers : books"
+              v-for="(item, i) in displayBooks"
               :key="item.book_id"
               :class="[
                 'skx-book-card',
-                i >= 3 && !bookListExpanded ? 'skx-book-card--hidden' : '',
+                i >= visibleCount && !bookListExpanded
+                  ? 'skx-book-card--hidden'
+                  : '',
               ]"
               style="cursor: pointer"
               @click="openDetail(item)"
@@ -465,6 +467,11 @@
               <div class="skx-book-card__body">
                 <div class="skx-book-card__top">
                   <div class="skx-book-card__tags">
+                    <span
+                      v-if="collectionIds.has(item.book_id)"
+                      class="skx-tag skx-tag--collection"
+                      >AI 컬렉션</span
+                    >
                     <template
                       v-if="
                         item.title_score !== undefined &&
@@ -584,16 +591,16 @@
             </article>
           </div>
 
-          <!-- 펼치기 버튼 (4개 이상일 때만) -->
+          <!-- 더보기 버튼 (컬렉션 외 도서가 있을 때만) -->
           <button
-            v-if="(mode === 'paper' ? papers.length : books.length) > 3"
+            v-if="displayBooks.length > visibleCount"
             type="button"
             class="skx-book-expand"
             :aria-expanded="bookListExpanded"
             @click="bookListExpanded = !bookListExpanded"
           >
             <span class="skx-book-expand__label">{{
-              bookListExpanded ? "접기" : "펼치기"
+              bookListExpanded ? "접기" : "더보기"
             }}</span>
             <img
               class="skx-book-expand__arrow"
@@ -982,6 +989,36 @@ function selectCollectionSize(n: number) {
   collectionSize.value = n;
   collectionOpen.value = false;
 }
+
+// 컬렉션 소속 도서 id — 큐레이션 완료 후엔 실제 답변에 사용된 도서,
+// 생성 전엔 동일한 선정 규칙(임계값+크기)으로 미리 계산
+const collectionIds = computed(() => {
+  if (curationItems.value.length) {
+    return new Set(curationItems.value.map((ci) => ci.book_id));
+  }
+  return new Set(
+    books.value
+      .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
+      .slice(0, collectionSize.value)
+      .map((b) => b.book_id),
+  );
+});
+
+// 컬렉션 도서를 상위로 정렬한 표시용 목록
+const displayBooks = computed(() => {
+  if (mode.value === "paper") return papers.value;
+  const ids = collectionIds.value;
+  const inCollection = books.value.filter((b) => ids.has(b.book_id));
+  const rest = books.value.filter((b) => !ids.has(b.book_id));
+  return [...inCollection, ...rest];
+});
+
+// 항상 보이는 개수: 컬렉션 전체 (없으면 기본 3권)
+const visibleCount = computed(() => {
+  if (mode.value === "paper") return 3;
+  const n = collectionIds.value.size;
+  return n > 0 ? n : 3;
+});
 
 // ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
 async function fetchCuration() {

@@ -1601,6 +1601,11 @@ a:hover {
   font-weight: 600;
   border-radius: 2.2rem;
 }
+.skx-tag--collection {
+  background: var(--skx-primary);
+  color: #fff;
+  font-weight: 700;
+}
 /* 공통: 북마크 아이콘 버튼 (.skx-reco-info__bkmark 와 동일 디자인·크기 공유) */
 .skx-book-card__bookmark,
 .skx-reco-info__bkmark {
