@@ -3064,20 +3064,20 @@ a:hover {
 .skx-rcd-book-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.2rem;
+  gap: 1.6rem;
 }
 .skx-rcd-book-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1.2rem;
+  gap: 1.4rem;
+  padding: 1.6rem 1.4rem;
   border-radius: 0.8rem;
   cursor: pointer;
   border: none;
   width: 100%;
   text-align: center;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 .skx-rcd-book-card--1 {
   background: rgba(191, 195, 168, 0.2);
@@ -3111,19 +3111,27 @@ a:hover {
   text-align: center;
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  /* 태그라인 줄 수 차이에도 표지 높이 정렬 유지 (2줄 기준) */
-  min-height: 2.7rem;
+  /* 태그라인 줄 수 차이에도 표지 위치 정렬 유지 (3줄 기준) */
+  min-height: 4.05rem;
 }
 .skx-rcd-book-card__cover {
-  width: 8rem;
-  height: 8rem;
+  width: 9rem;
+  height: 12rem; /* 표지 3:4 비율 고정 */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 0.4rem;
+}
+/* BookCover 내부가 박스를 벗어나지 않도록 강제 (스코프드 스타일보다 우선) */
+.skx-rcd-book-card .skx-rcd-book-card__cover .book-cover {
+  width: 100%;
+  height: 100%;
 }
 .skx-rcd-book-card__cover img {
   max-width: 100%;
@@ -3142,7 +3150,8 @@ a:hover {
   text-align: center;
   line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 3.6rem;
