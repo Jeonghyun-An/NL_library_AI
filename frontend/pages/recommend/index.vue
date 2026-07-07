@@ -30,71 +30,52 @@
             현재 나의 상황이 어떠한가요?
           </div>
           <ul class="skx-recommend-list">
-            <li class="skx-recommend-item item-01">
+            <li class="skx-recommend-item">
               <NuxtLink
                 to="/recommend/01"
-                class="skx-recommend-item__inn skx-recommend__hover"
+                class="skx-recommend-item__inn skx-recommend-item__inn--img skx-recommend__hover"
               >
-                <span class="skx-recommend-item__txt"
-                  >위로가 <br />필요할 때</span
-                >
+                <img
+                  class="skx-recommend-item__img"
+                  src="/img/skx-reco-card-01.png"
+                  alt="위로가 필요할 때"
+                />
               </NuxtLink>
             </li>
-            <li class="skx-recommend-item item-02">
+            <li class="skx-recommend-item">
               <NuxtLink
                 to="/recommend/02"
-                class="skx-recommend-item__inn skx-recommend__hover"
+                class="skx-recommend-item__inn skx-recommend-item__inn--img skx-recommend__hover"
               >
-                <span class="skx-mt-deco skx-mt-deco--1" aria-hidden="true"
-                  ><i></i
-                ></span>
-                <span class="skx-mt-deco skx-mt-deco--2" aria-hidden="true"
-                  ><i></i
-                ></span>
-                <span class="skx-mt-deco skx-mt-deco--3" aria-hidden="true"
-                  ><i></i
-                ></span>
-                <span class="skx-recommend-item__txt"
-                  >심리적 단단함이 <br />필요할 때</span
-                >
+                <img
+                  class="skx-recommend-item__img"
+                  src="/img/skx-reco-card-02.png"
+                  alt="심리적 단단함이 필요할 때"
+                />
               </NuxtLink>
             </li>
-            <li class="skx-recommend-item item-03">
+            <li class="skx-recommend-item">
               <NuxtLink
                 to="/recommend/03"
-                class="skx-recommend-item__inn skx-recommend__hover"
+                class="skx-recommend-item__inn skx-recommend-item__inn--img skx-recommend__hover"
               >
                 <img
-                  class="skx-reco-c03 skx-reco-c03--star-s"
-                  src="/img/skx-reco-c03-star.svg"
-                  alt=""
-                  aria-hidden="true"
+                  class="skx-recommend-item__img"
+                  src="/img/skx-reco-card-03.png"
+                  alt="늦은 밤, 잠이 오지 않을 때"
                 />
-                <img
-                  class="skx-reco-c03 skx-reco-c03--star-l"
-                  src="/img/skx-reco-c03-star.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <img
-                  class="skx-reco-c03 skx-reco-c03--curve"
-                  src="/img/skx-reco-c03-curve.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <span class="skx-recommend-item__txt"
-                  >늦은 밤, <br />잠이 오지 않을 때</span
-                >
               </NuxtLink>
             </li>
-            <li class="skx-recommend-item item-04">
+            <li class="skx-recommend-item">
               <NuxtLink
                 to="/recommend/04"
-                class="skx-recommend-item__inn skx-recommend__hover"
+                class="skx-recommend-item__inn skx-recommend-item__inn--img skx-recommend__hover"
               >
-                <span class="skx-recommend-item__txt"
-                  >흥미진진한 역사 이야기가 <br />궁금할 때</span
-                >
+                <img
+                  class="skx-recommend-item__img"
+                  src="/img/skx-reco-card-04.png"
+                  alt="흥미진진한 역사 이야기가 궁금할 때"
+                />
               </NuxtLink>
             </li>
           </ul>

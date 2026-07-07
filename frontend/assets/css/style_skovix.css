@@ -2780,6 +2780,16 @@ a:hover {
   line-height: 1.5;
   white-space: nowrap;
 }
+/* 피그마 프레임 이미지 카드 (텍스트·아이콘 포함 통이미지) */
+.skx-recommend-item__inn--img {
+  padding: 0;
+  min-height: 0;
+}
+.skx-recommend-item__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 
 /* 카드01 위로가 필요할 때 */
 .skx-recommend-item.item-01 .skx-recommend-item__inn {
