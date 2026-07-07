@@ -5087,3 +5087,18 @@ a:hover {
   color: var(--skx-primary);
   font-weight: 700;
 }
+
+/* ── AI 답변 인용 논문 배지 ───────────── */
+.skx-ptag--ai-cited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--skx-primary);
+  color: #fff;
+  font-weight: 700;
+}
+.skx-ptag--ai-cited img {
+  width: 0.7rem;
+  height: 0.7rem;
+  filter: brightness(0) invert(1);
+}

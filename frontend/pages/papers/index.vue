@@ -368,6 +368,13 @@
                 <div class="skx-paper-item__left">
                   <div class="skx-paper-tags">
                     <span
+                      v-if="aiRefNumMap.has(paper.book_id)"
+                      class="skx-ptag skx-ptag--ai-cited"
+                    >
+                      <img src="/img/logo-mark.svg" alt="" />
+                      AI 답변 인용 {{ aiRefNumMap.get(paper.book_id) }}
+                    </span>
+                    <span
                       v-if="paper.book_info?.grade"
                       class="skx-ptag skx-ptag--kci"
                     >
@@ -646,7 +653,12 @@ function showToast(msg: string) {
 // ── 계산 ─────────────────────────────────────────────────────
 const hasResults = computed(() => paperResult.value !== null || loading.value);
 
-const aiRefIds = computed(() => new Set(aiRefs.value.map((r) => r.book_id)));
+// AI 답변 인용 논문: book_id → 인용 번호 (우측 참고 카드 번호와 동일)
+const aiRefNumMap = computed(() => {
+  const m = new Map<string, number>();
+  for (const r of aiRefs.value) m.set(r.book_id, r.num);
+  return m;
+});
 
 const aiRefPaperMap = computed(() => {
   const map = new Map<string, BookChunkGroup>();
@@ -688,9 +700,17 @@ const filteredPapers = computed(() => {
       : sortedPapers.value.filter(
           (b) => b.book_info?.grade === selectedGrade.value,
         );
-  return aiRefIds.value.size > 0
-    ? base.filter((p) => !aiRefIds.value.has(p.book_id))
-    : base;
+  if (!aiRefNumMap.value.size) return base;
+  // AI 답변에 인용된 논문을 인용 번호 순으로 상단 고정, 나머지는 선택 정렬 유지
+  const cited = base
+    .filter((p) => aiRefNumMap.value.has(p.book_id))
+    .sort(
+      (a, b) =>
+        (aiRefNumMap.value.get(a.book_id) ?? 0) -
+        (aiRefNumMap.value.get(b.book_id) ?? 0),
+    );
+  const rest = base.filter((p) => !aiRefNumMap.value.has(p.book_id));
+  return [...cited, ...rest];
 });
 
 const totalPages = computed(() =>
