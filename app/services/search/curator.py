@@ -1,7 +1,8 @@
 """
 curator.py — 큐레이션 리포트 생성
 
-1~3권 도서를 단일 LLM 호출로 묶어 큐레이션 리포트(intro + 책별 reason)를 생성한다.
+컬렉션 도서(최대 CURATION_TOP_K권)를 단일 LLM 호출로 묶어
+큐레이션 리포트(intro + 책별 reason)를 생성한다.
 pipeline.py에서 가져다 쓰고, 단위 테스트가 직접 임포트한다.
 """
 import json
@@ -43,12 +44,13 @@ async def curate_books(
     books: list,
 ) -> dict:
     """
-    1~3권 도서 큐레이션 리포트 생성.
+    컬렉션 도서(최대 CURATION_TOP_K권) 큐레이션 리포트 생성.
     반환: {"intro": str, "items": [{"book_id": str, "reason": str}]}
     book_id는 cnts_id.
     """
+    target_books = books[: cfg.CURATION_TOP_K]
     books_lines = []
-    for i, book in enumerate(books[: cfg.CURATION_TOP_K], 1):
+    for i, book in enumerate(target_books, 1):
         lines = [f"[도서 {i}]", f"book_id: {book.cnts_id}"]
         if book.title:
             lines.append(f"제목: {book.title}")
@@ -72,6 +74,9 @@ async def curate_books(
         books_context=books_context,
     )
 
+    # 도서 수에 비례해 출력 토큰 확보 (책별 reason ~120토큰 + intro 여유분)
+    max_tokens = max(cfg.CURATION_MAX_TOKENS, 400 + 120 * len(target_books))
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
@@ -82,7 +87,7 @@ async def curate_books(
                         {"role": "system", "content": system_message},
                         {"role": "user",   "content": user_message},
                     ],
-                    "max_tokens": cfg.CURATION_MAX_TOKENS,
+                    "max_tokens": max_tokens,
                     "temperature": params.get("temperature", cfg.CURATION_TEMPERATURE),
                 },
                 timeout=float(cfg.CURATION_TIMEOUT),
@@ -97,5 +102,5 @@ async def curate_books(
         log.error(f"큐레이션 생성 실패: {e}")
         return {
             "intro": "",
-            "items": [{"book_id": b.cnts_id, "reason": ""} for b in books],
+            "items": [{"book_id": b.cnts_id, "reason": ""} for b in target_books],
         }

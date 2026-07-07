@@ -4680,46 +4680,6 @@ a:hover {
   transform: translateX(-50%) translateY(8px);
 }
 
-/* ── 컬렉션 크기 선택 ──────────────────── */
-.skx-collection-size {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-.skx-collection-size__label {
-  font-size: 12px;
-  color: var(--ink-3, #9ca3af);
-}
-.skx-collection-size__btns {
-  display: flex;
-  gap: 4px;
-}
-.skx-collection-size__btn {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid var(--border, #e5e7eb);
-  background: #fff;
-  color: var(--ink-2, #374151);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.skx-collection-size__btn:hover:not(:disabled) {
-  border-color: var(--violet, #6366f1);
-  color: var(--violet, #6366f1);
-}
-.skx-collection-size__btn.is-active {
-  background: var(--violet, #6366f1);
-  border-color: var(--violet, #6366f1);
-  color: #fff;
-}
-.skx-collection-size__btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 /* ── 컬렉션 DeepRead CTA ───────────────── */
 .skx-deepread-cta {
   display: flex;

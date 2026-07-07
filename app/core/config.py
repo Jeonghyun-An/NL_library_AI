@@ -162,8 +162,8 @@ class Settings(BaseSettings):
     RECOMMENDATION_MAX_TOKENS: int = 1500  # 추천이유(5~7문장) + 독후효과(3~4문장) + 여유
 
     # ── 큐레이션 리포트 LLM ────────────────────────────
-    CURATION_TOP_K: int = 3
-    CURATION_MAX_TOKENS: int = 1200
+    CURATION_TOP_K: int = 20          # 컬렉션 최대 도서 수 (프론트 선택: 3/5/10/20)
+    CURATION_MAX_TOKENS: int = 1200   # 기본값. 도서 수에 따라 curator에서 동적 확장
     CURATION_TEMPERATURE: float = 0.3
     CURATION_TIMEOUT: int = 60
     ANSWER_EXTENDED_MAX_TOKENS: int = 4096

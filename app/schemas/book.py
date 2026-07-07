@@ -187,7 +187,7 @@ class ReasonStreamRequest(BaseModel):
 # ── 큐레이션 ─────────────────────────────────────────────
 class CurationRequest(BaseModel):
     query:           str
-    book_ids:        list[str] = Field(..., min_length=1, max_length=3)
+    book_ids:        list[str] = Field(..., min_length=1, max_length=20)
     scores:          list[float] = []   # book_ids 순서 대응 검색 점수 (선택)
     rewritten_query: str = ""
 

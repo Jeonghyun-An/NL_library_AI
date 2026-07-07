@@ -109,6 +109,41 @@
                 </button>
               </li>
             </ul>
+            <!-- 컬렉션 크기 드롭다운 (AI 답변에 사용될 도서 개수) -->
+            <div class="skx-filters">
+              <div :class="['skx-select', collectionOpen && 'is-open']">
+                <button
+                  type="button"
+                  class="skx-select__btn"
+                  aria-haspopup="listbox"
+                  :aria-expanded="collectionOpen"
+                  @click.stop="collectionOpen = !collectionOpen"
+                >
+                  <span class="skx-select__label"
+                    >컬렉션 {{ collectionSize }}권</span
+                  >
+                  <img
+                    class="skx-select__arrow"
+                    src="/img/ico-arrow-down.svg"
+                    alt=""
+                  />
+                </button>
+                <ul class="skx-select__menu" role="listbox">
+                  <li v-for="n in COLLECTION_SIZES" :key="n">
+                    <button
+                      type="button"
+                      class="skx-select__option"
+                      :class="collectionSize === n && 'is-selected'"
+                      role="option"
+                      :aria-selected="collectionSize === n"
+                      @click="selectCollectionSize(n)"
+                    >
+                      {{ n }}권
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
           <button
             type="button"
@@ -303,24 +338,6 @@
               <p v-if="keywordChips.length" class="skx-ai-header__keywords">
                 키워드: {{ keywordChips.join(", ") }}
               </p>
-              <div class="skx-collection-size">
-                <span class="skx-collection-size__label">컬렉션</span>
-                <div class="skx-collection-size__btns">
-                  <button
-                    v-for="n in [3, 5, 10]"
-                    :key="n"
-                    type="button"
-                    :class="[
-                      'skx-collection-size__btn',
-                      collectionSize === n && 'is-active',
-                    ]"
-                    :disabled="curationLoading"
-                    @click="setCollectionSize(n)"
-                  >
-                    {{ n }}권
-                  </button>
-                </div>
-              </div>
             </header>
             <div class="skx-ai-panel">
               <div class="skx-ai-panel__top">
@@ -787,6 +804,7 @@ function removeFilter(f: string) {
 
 function onDocClick() {
   filterOpen.value = false;
+  collectionOpen.value = false;
 }
 // ── End publishing additions ──────────────────────────────────
 
@@ -888,7 +906,8 @@ async function handleSearch(query: string) {
         body: {
           query,
           mode: "book",
-          top_k: 5,
+          // 컬렉션 크기만큼 도서를 확보해야 함 (최소 5권)
+          top_k: Math.max(collectionSize.value, 5),
           use_rewrite: true,
           use_rerank: true,
         },
@@ -952,18 +971,24 @@ function restoreSession(entry: HistoryEntry) {
   aiExpanded.value = false;
 }
 
-// ── 컬렉션 개수 조정 ──────────────────────────────────────
+// ── 컬렉션 개수 조정 (AI 답변에 사용될 도서 수, 랜딩 드롭다운) ──
+const COLLECTION_SIZES = [3, 5, 10, 20];
+// 컬렉션 포함 최소 연관도 (임계값 미달 도서는 LLM 답변에서 제외)
+const COLLECTION_SCORE_THRESHOLD = 0.5;
 const collectionSize = ref(3);
+const collectionOpen = ref(false);
 
-async function setCollectionSize(n: number) {
-  if (collectionSize.value === n) return;
+function selectCollectionSize(n: number) {
   collectionSize.value = n;
-  if (books.value.length) await fetchCuration();
+  collectionOpen.value = false;
 }
 
 // ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
 async function fetchCuration() {
-  const topBooks = books.value.slice(0, collectionSize.value);
+  // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
+  const topBooks = books.value
+    .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
+    .slice(0, collectionSize.value);
   if (!topBooks.length) return;
   curationLoading.value = true;
   curationIntro.value = "";
