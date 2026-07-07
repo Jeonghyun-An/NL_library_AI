@@ -773,11 +773,15 @@ async function handleSearch(q?: string) {
       },
     });
     paperResult.value = data;
-    // 세션 저장
+    // 세션 저장 — 청크 원문은 제외해 localStorage 용량 절약
+    // (references는 인용 모달에서 사용하므로 book_info는 유지)
     currentHistoryId.value = addEntry({
       type: "paper",
       query,
-      result: data,
+      result: {
+        ...data,
+        books: (data.books ?? []).map((b) => ({ ...b, chunks: [] })),
+      },
     });
     // AI 요약 SSE 병렬 시작
     if (data.books?.length) {

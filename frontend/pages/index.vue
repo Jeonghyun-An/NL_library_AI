@@ -923,12 +923,13 @@ async function handleSearch(query: string) {
         books.value = data.books;
         rewrittenQuery.value = data.rewritten_query || query;
       }
-      if (books.value.length) fetchCuration();
+      // 세션 저장을 먼저 확정한 뒤 큐레이션 시작 (완료 시 updateAiSummary가 이 id에 기록)
       currentHistoryId.value = addEntry({
         type: "book",
         query,
-        result: data,
+        result: slimResultForHistory(data),
       });
+      if (books.value.length) fetchCuration();
     }
   } catch (e: any) {
     searchError.value =
@@ -936,6 +937,29 @@ async function handleSearch(query: string) {
   } finally {
     loading.value = false;
   }
+}
+
+// 세션 저장용 결과 슬림화 — 청크 원문과 book_info의 대용량 생성 텍스트 제거
+// (복원 시 목록 카드 렌더링에 필요 없는 필드. 상세 페이지는 자체 fetch)
+function slimResultForHistory(data: any) {
+  if (!data?.books) return data;
+  return {
+    ...data,
+    books: data.books.map((b: any) => ({
+      ...b,
+      chunks: [],
+      book_info: b.book_info
+        ? {
+            ...b.book_info,
+            summary: undefined,
+            plot: undefined,
+            introduction: undefined,
+            read_effect: undefined,
+            abstract: undefined,
+          }
+        : b.book_info,
+    })),
+  };
 }
 
 function handleChip(chip: string) {
@@ -1070,6 +1094,12 @@ async function fetchCuration() {
     } else {
       curationIntro.value = intro;
       curationItems.value = items;
+      if (currentHistoryId.value) {
+        updateAiSummary(
+          currentHistoryId.value,
+          JSON.stringify({ intro: "", items }),
+        );
+      }
     }
   } catch {
     /* 큐레이션 실패 시 조용히 무시 */

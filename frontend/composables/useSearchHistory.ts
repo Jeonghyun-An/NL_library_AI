@@ -21,10 +21,17 @@ export function useSearchHistory() {
 
   function _persist() {
     if (!process.client) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(_history.value));
-    } catch {
-      /* quota exceeded — ignore */
+    // 쿼터 초과 시 오래된 항목(뒤쪽)을 5개씩 줄여가며 재시도
+    let items = _history.value;
+    while (true) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        _history.value = items;
+        return;
+      } catch {
+        if (items.length <= 1) return; // 단일 항목도 저장 불가 — 포기
+        items = items.slice(0, Math.max(1, items.length - 5));
+      }
     }
   }
 
