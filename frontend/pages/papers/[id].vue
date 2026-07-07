@@ -375,7 +375,11 @@
             >
           </h2>
         </div>
-        <BookChat :cnts-id="paperId" @close="chatOpen = false" />
+        <BookChat
+          :cnts-id="paperId"
+          :book-title="paper?.title"
+          @close="chatOpen = false"
+        />
       </div>
     </aside>
 

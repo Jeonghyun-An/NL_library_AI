@@ -3,7 +3,7 @@
     <div class="skx-chat-messages" ref="messagesEl">
       <!-- 빈 상태 -->
       <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai">
-        안녕하세요! <template v-if="bookTitle">《{{ bookTitle }}》에</template> 대해 궁금한 것을 자유롭게 물어보세요!
+        안녕하세요! <template v-if="bookTitle">《{{ bookTitle }}》에 대해</template><template v-else>이 자료에 대해</template> 궁금한 것을 자유롭게 물어보세요!
       </div>
 
       <!-- 메시지 목록 -->

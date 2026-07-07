@@ -5045,3 +5045,45 @@ a:hover {
   opacity: 0;
   transform: translateY(-4px);
 }
+
+/* ── AI 생성 표지 코멘트 ──────────────── */
+.skx-cover-ai-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.58rem;
+  color: var(--skx-gray-2);
+  line-height: 1.5;
+  text-align: center;
+}
+.skx-cover-ai-note img {
+  width: 0.7rem;
+  height: 0.7rem;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+/* ── AI 답변 하단 DeepRead/DeepSearch 유도 문구 ── */
+.skx-ai-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.9rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--skx-border-c1);
+  font-size: 0.7rem;
+  color: var(--skx-gray-1);
+  line-height: 1.5;
+}
+.skx-ai-hint img {
+  width: 0.8rem;
+  height: 0.8rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.skx-ai-hint strong {
+  color: var(--skx-primary);
+  font-weight: 700;
+}

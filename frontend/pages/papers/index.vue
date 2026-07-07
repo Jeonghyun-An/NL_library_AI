@@ -76,14 +76,14 @@
 
         <template v-else>
           <!-- AI 검색 결과 -->
-          <section class="skx-pai" aria-label="AI 검색 결과">
+          <section class="skx-pai" aria-label="AI 분석 결과">
             <div class="skx-pai__header">
               <img
                 class="skx-pai__logo"
                 src="/img/logo-mark.svg"
                 alt="SKOVIX AI"
               />
-              <span class="skx-pai__hd-text">AI 검색 결과</span>
+              <span class="skx-pai__hd-text">AI 분석 결과</span>
             </div>
             <div class="skx-pai__grid">
               <!-- 좌측: 요약 텍스트 -->
@@ -190,6 +190,11 @@
                 </div>
               </div>
             </div>
+            <p v-if="aiText && !aiLoading" class="skx-ai-hint">
+              <img src="/img/ico-chat.svg" alt="" />
+              더 깊이 알고 싶은 논문은 <strong>DeepSearch</strong>로 자유롭게
+              질문하며 분석해보세요
+            </p>
           </section>
 
           <!-- 논문 목록 -->
@@ -197,7 +202,7 @@
             <!-- 헤더 -->
             <div class="skx-paper-head">
               <div class="skx-paper-count">
-                <span class="skx-paper-count__label">총</span>
+                <span class="skx-paper-count__label">그 외 총</span>
                 <strong class="skx-paper-count__num">{{
                   filteredPapers.length
                 }}</strong>
@@ -562,6 +567,7 @@
         <BookChat
           v-if="chatPaperId"
           :cnts-id="chatPaperId"
+          :book-title="chatPaperTitle"
           @close="chatPaperId = null"
         />
       </div>
