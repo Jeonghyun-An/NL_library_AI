@@ -50,7 +50,7 @@ x-common-env: &common-env
   FLUX_TIMEOUT: "300"
 
   # PaddleOCR
-  PADDLEOCR_URL: "http://paddleocr:8001"
+  PADDLEOCR_URL: ${PADDLEOCR_URL:-http://paddleocr:8001}
 
   # 임베딩 / Reranker
   EMBEDDING_MODEL_NAME: "BAAI/bge-m3"
