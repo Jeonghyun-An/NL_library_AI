@@ -1,46 +1,12 @@
-# ══════════════════════════════════════════════════════════════════
-# 개발용 스택 (docker-compose.dev.yml)
-#
-# 운영 스택(docker-compose.yml)과 완전히 분리된 데이터 계층(postgres/redis/
-# milvus/minio)을 쓴다. GPU를 크게 먹는 vllm/gemma/flux는 별도로 띄우지
-# 않고, 운영 스택에서 이미 떠 있는 컨테이너(nl-lib-vllm/nl-lib-gemma/
-# nl-lib-flux)를 외부 네트워크(nl-lib-net) 경유로 그대로 공유한다.
-#
-# ── 배포 흐름 (기존 GitLab → Jenkins → Portainer 파이프라인 그대로) ──
-#   1. 이 저장소를 회사 GitLab으로 push (dev 브랜치 등 기존에 구성된 트리거)
-#   2. Jenkins가 이미지 빌드 후 레지스트리로 push
-#      (fastapi/celery 계열은 동일 이미지 재사용, nuxt는 별도 이미지)
-#   3. Portainer 스택(Git repository 연동, compose path:
-#      docker-compose.dev.yml)에서 Pull & Redeploy
-#      → 서버에 이 저장소가 실제로 clone되어 있으므로 아래 상대경로
-#        볼륨(./infra/...)은 그대로 정상 동작한다.
-#
-#   Jenkins가 만드는 실제 이미지 태그가 :dev와 다르면, Portainer 스택의
-#   환경변수(NL_LIB_FASTAPI_IMAGE / NL_LIB_NUXT_IMAGE)에 그 태그로
-#   덮어써서 맞추면 된다 (compose 파일 자체는 수정 불필요).
-#
-# ── 포트 매핑 (운영 포트 + 10000, 외우기 쉬운 규칙) ──────────────
-#   postgres-dev   25432  (운영 15432)
-#   redis-dev      26379  (운영 16379)
-#   minio-dev      31000/31001 (운영 21000/21001)
-#   fastapi-dev    28002  (운영 18002)
-#   gateway-dev    10092  (운영 92) ← 개발 스택은 이 포트로 접속
-#
-# ── 전제 조건 ─────────────────────────────────────────────────
-#   - 운영 스택이 이미 떠 있고 nl-lib-net 네트워크와 nl-lib-vllm/
-#     nl-lib-gemma/nl-lib-flux 컨테이너가 healthy 상태여야 한다.
-#   - GPU는 운영과 공유되므로(같은 물리 GPU), fastapi-dev/celery-worker-dev/
-#     celery-embed-dev가 로드하는 BGE-M3·Jina Reranker VRAM 사용량만큼
-#     여유가 있는지 확인할 것. LLM 자체(gemma/vllm/flux)는 운영 것을
-#     그대로 쓰므로 중복 로드되지 않는다.
-# ══════════════════════════════════════════════════════════════════
-
+# 개발용 스택. 운영(docker-compose.yml)과 데이터 계층(postgres/redis/milvus/
+# minio)은 완전히 분리하고, GPU를 크게 먹는 vllm/gemma/flux는 운영 스택
+# 컨테이너를 nl-lib-net 경유로 그대로 공유한다 (여기서는 띄우지 않음).
 x-nl-lib-dev-net: &nl-lib-dev-net
   networks:
     - nl-lib-dev-net
 
-# 프로덕션 LLM/VLM/FLUX(nl-lib-net)와 개발 데이터 계층(nl-lib-dev-net)
-# 양쪽에 붙어야 하는 백엔드 서비스용 (fastapi, celery-worker/cpu/llm/embed)
+# 운영 LLM/VLM/FLUX(nl-lib-net)와 개발 데이터 계층(nl-lib-dev-net) 양쪽에
+# 붙어야 하는 백엔드 서비스용
 x-nl-lib-dev-net-and-prod: &nl-lib-dev-net-and-prod
   networks:
     - nl-lib-dev-net
@@ -50,24 +16,24 @@ x-common-env-dev: &common-env-dev
   IS_DOCKER: "true"
   PYTHONUNBUFFERED: "1"
 
-  # DB (개발 전용 postgres-dev 컨테이너)
+  # DB
   DB_HOST: "postgres-dev"
   DB_PORT: "5432"
   DB_NAME: ${POSTGRES_DB_DEV:-nl_lib_dev}
   DB_USER: ${POSTGRES_USER_DEV:-admin}
   DB_PASSWORD: ${POSTGRES_PASSWORD_DEV:-password}
 
-  # Redis (개발 전용)
+  # Redis
   REDIS_URL: "redis://redis-dev:6379/0"
 
-  # MinIO (개발 전용)
+  # MinIO
   MINIO_ENDPOINT: "minio-dev:9000"
   MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY_DEV:-minioadmin}
   MINIO_SECRET_KEY: ${MINIO_SECRET_KEY_DEV:-minioadmin}
   MINIO_SECURE: "false"
   MINIO_BUCKET: "nl-lib-dev-bucket"
 
-  # Milvus (개발 전용)
+  # Milvus
   MILVUS_HOST: "milvus-dev"
   MILVUS_PORT: "19530"
   MILVUS_COLLECTION: "nl_lib_dev_embeddings"
@@ -86,12 +52,10 @@ x-common-env-dev: &common-env-dev
   FLUX_BASE_URL: "http://nl-lib-flux:8000"
   FLUX_TIMEOUT: "300"
 
-  # PaddleOCR (운영과 동일하게 미사용 — 컨테이너 없음, 코드에서 미호출 시 무해)
+  # PaddleOCR
   PADDLEOCR_URL: "http://paddleocr:8001"
 
-  # 임베딩 / Reranker — fastapi-dev/celery-worker-dev/celery-embed-dev가
-  # 각자 프로세스 내에서 로드. 모델 캐시는 운영과 동일 호스트 경로를 공유해
-  # 중복 다운로드를 피한다.
+  # 임베딩 / Reranker
   EMBEDDING_MODEL_NAME: "BAAI/bge-m3"
   EMBEDDING_BATCH_SIZE: "32"
   EMBEDDING_MAX_LENGTH: "512"
@@ -101,7 +65,7 @@ x-common-env-dev: &common-env-dev
   RERANKER_MAX_LENGTH: "1024"
 
 services:
-  # ── etcd (Milvus 메타 저장소) ──────────────────
+  # ── etcd ──────────────────────────────────────
   etcd-dev:
     image: quay.io/coreos/etcd:v3.5.0
     container_name: nl-lib-dev-etcd
@@ -251,9 +215,9 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # ── FastAPI (로컬 빌드 → :dev 태그 푸시 → 서버 pull, 운영과 동일 구조) ──
+  # ── FastAPI ───────────────────────────────────
   fastapi-dev:
-    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
+    image: landsoftdocker/nl-lib-fastapi:dev
     container_name: nl-lib-dev-fastapi
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -269,7 +233,7 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - /data/models/.hf-cache:/models:rw # 운영과 캐시 공유(중복 다운로드 방지)
+      - /data/models/.hf-cache:/models:rw
       - /data/nl-lib/dev-data:/app/data:rw
     ports:
       - "28002:8000"
@@ -287,12 +251,12 @@ services:
       interval: 15s
       timeout: 5s
       retries: 20
-      start_period: 60s
+      start_period: 120s
     restart: unless-stopped
 
   # ── Celery Worker (단건 흐름 — ingestion 큐, GPU: BGE-M3 인라인 임베딩) ──
   celery-worker-dev:
-    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
+    image: landsoftdocker/nl-lib-fastapi:dev
     container_name: nl-lib-dev-celery
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -324,7 +288,7 @@ services:
 
   # ── Celery CPU Worker (배치 잡: 추출/파싱 — GPU 불필요, VLM은 HTTP) ──
   celery-cpu-dev:
-    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
+    image: landsoftdocker/nl-lib-fastapi:dev
     container_name: nl-lib-dev-celery-cpu
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -347,7 +311,7 @@ services:
 
   # ── Celery LLM Worker (배치 잡: 섹션 요약·문서 요약/소개 — 공유 gemma HTTP) ──
   celery-llm-dev:
-    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
+    image: landsoftdocker/nl-lib-fastapi:dev
     container_name: nl-lib-dev-celery-llm
     <<: *nl-lib-dev-net-and-prod
     working_dir: /app
@@ -366,7 +330,7 @@ services:
 
   # ── Celery Embed Worker (배치 잡: 청킹+BGE-M3 임베딩+Milvus — GPU) ──
   celery-embed-dev:
-    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
+    image: landsoftdocker/nl-lib-fastapi:dev
     container_name: nl-lib-dev-celery-embed
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -396,9 +360,9 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Celery Beat (디스패처/정리 스케줄러 — 외부 LLM 호출 없음) ──
+  # ── Celery Beat (디스패처 30s + 정리 1h 스케줄러) ──
   celery-beat-dev:
-    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
+    image: landsoftdocker/nl-lib-fastapi:dev
     container_name: nl-lib-dev-celery-beat
     <<: *nl-lib-dev-net
     working_dir: /app
@@ -411,9 +375,9 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Nuxt (로컬 빌드 → :dev 태그 푸시 → 서버 pull, 운영과 동일 구조) ──
+  # ── Nuxt ──────────────────────────────────────
   nuxt-dev:
-    image: ${NL_LIB_NUXT_IMAGE:-landsoftdocker/nl-lib-nuxt:dev}
+    image: landsoftdocker/nl-lib-nuxt:dev
     container_name: nl-lib-dev-nuxt
     <<: *nl-lib-dev-net
     environment:
@@ -432,17 +396,14 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # ── Nginx Gateway (개발용 — /api는 fastapi-dev, 나머지는 nuxt-dev) ──
-  # Portainer가 이 저장소를 서버에 clone해두므로 상대경로 그대로 사용.
-  # conf.d.dev는 upstream만 -dev 컨테이너로 바꾼 dev 전용 설정
-  # (infra/conf.d.dev/default.conf 참고).
+  # ── Nginx Gateway ─────────────────────────────
   gateway-dev:
     image: nginx:alpine
     container_name: nl-lib-dev-gateway
     <<: *nl-lib-dev-net
     volumes:
-      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infra/conf.d.dev:/etc/nginx/conf.d:ro
+      - /data/nl-lib/nginx-dev/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /data/nl-lib/nginx-dev/conf.d:/etc/nginx/conf.d:ro
     ports:
       - "10092:80"
     depends_on:
@@ -460,10 +421,20 @@ services:
 
 volumes:
   nl_lib_dev_etcd_data:
+    external: true
+    name: nl_lib_dev_etcd_data
   nl_lib_dev_milvus_data:
+    external: true
+    name: nl_lib_dev_milvus_data
   nl_lib_dev_minio_data:
+    external: true
+    name: nl_lib_dev_minio_data
   nl_lib_dev_postgres_data:
+    external: true
+    name: nl_lib_dev_postgres_data
   nl_lib_dev_redis_data:
+    external: true
+    name: nl_lib_dev_redis_data
 
 networks:
   nl-lib-dev-net:
