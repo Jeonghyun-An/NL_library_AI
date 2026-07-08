@@ -2,27 +2,41 @@
 # 개발용 스택 (docker-compose.dev.yml)
 #
 # 운영 스택(docker-compose.yml)과 완전히 분리된 데이터 계층(postgres/redis/
-# milvus/minio) + 로컬 소스 빌드 기반 fastapi/nuxt로 구성된다.
+# milvus/minio)을 쓰고, fastapi/nuxt는 운영과 동일하게 "로컬 빌드 → 이미지
+# 푸시 → 서버 pull" 방식으로 배포한다 (bind mount 라이브 리로드 아님 —
+# 운영 GPU 서버와 이 저장소가 물리적으로 다른 머신이라 bind mount는
+# 애초에 서버 쪽 로컬 파일을 봐서 로컬 편집이 반영되지 않는다).
 # GPU를 크게 먹는 vllm/gemma/flux는 별도로 띄우지 않고, 운영 스택에서
 # 이미 떠 있는 컨테이너(nl-lib-vllm/nl-lib-gemma/nl-lib-flux)를
 # 외부 네트워크(nl-lib-net) 경유로 그대로 공유한다.
+#
+# ── 배포 흐름 (운영과 동일한 구조, 태그만 dev) ────────────────
+#   [로컬] 코드 수정 후:
+#     docker build -t landsoftdocker/nl-lib-fastapi:dev ./app
+#     docker push landsoftdocker/nl-lib-fastapi:dev
+#     docker build -t landsoftdocker/nl-lib-nuxt:dev ./frontend
+#     docker push landsoftdocker/nl-lib-nuxt:dev
+#
+#   [서버] 이미지 갱신 반영:
+#     docker compose -f docker-compose.dev.yml pull fastapi-dev nuxt-dev \
+#       celery-worker-dev celery-cpu-dev celery-llm-dev celery-embed-dev celery-beat-dev
+#     docker compose -f docker-compose.dev.yml up -d
+#
+#   이미지 태그는 .env의 NL_LIB_FASTAPI_IMAGE / NL_LIB_NUXT_IMAGE 로 덮어쓸 수
+#   있다 (예: 커밋 해시 태그 사용 시 매번 .env만 바꿔서 pull).
+#
+# ── 서버 최초 1회 설정 (게이트웨이 conf.d) ────────────────────
+#   이 저장소는 서버에 체크아웃되어 있지 않으므로(이미지만 pull), nginx
+#   conf.d는 별도로 서버 디스크에 배치해야 한다. nginx.conf는 운영 것을
+#   그대로 재사용한다 (내용 동일).
+#     scp infra/conf.d.dev/default.conf <server>:/data/nl-lib/nginx-dev/conf.d/default.conf
 #
 # ── 포트 매핑 (운영 포트 + 10000, 외우기 쉬운 규칙) ──────────────
 #   postgres-dev   25432  (운영 15432)
 #   redis-dev      26379  (운영 16379)
 #   minio-dev      31000/31001 (운영 21000/21001)
 #   fastapi-dev    28002  (운영 18002)
-#   nuxt-dev        23000  (직접 접근용, 평소엔 게이트웨이 경유 권장)
-#   gateway-dev    10092  (운영 92) ← 시연/개발 시 이 포트로 접속
-#
-# ── 실행 ──────────────────────────────────────────────────────
-#   최초 1회 (또는 requirements.txt/Dockerfile 변경 시):
-#     docker compose -f docker-compose.dev.yml build fastapi-dev
-#   기동:
-#     docker compose -f docker-compose.dev.yml up -d
-#   FastAPI/Nuxt는 소스 볼륨 마운트 + --reload/dev 서버라 코드 저장 시
-#   즉시 반영된다. Celery 워커는 자동 리로드가 안 되므로 코드 변경 후
-#   재시작 필요: docker compose -f docker-compose.dev.yml restart celery-worker-dev
+#   gateway-dev    10092  (운영 92) ← 개발 스택은 이 포트로 접속
 #
 # ── 전제 조건 ─────────────────────────────────────────────────
 #   - 운영 스택이 이미 떠 있고 nl-lib-net 네트워크와 nl-lib-vllm/
@@ -249,11 +263,9 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # ── FastAPI (로컬 소스 빌드, --reload 라이브 리로드) ──────
+  # ── FastAPI (로컬 빌드 → :dev 태그 푸시 → 서버 pull, 운영과 동일 구조) ──
   fastapi-dev:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
     container_name: nl-lib-dev-fastapi
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -269,19 +281,8 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - ./app:/app:rw # 소스 라이브 마운트 — 저장 시 즉시 반영
       - /data/models/.hf-cache:/models:rw # 운영과 캐시 공유(중복 다운로드 방지)
       - /data/nl-lib/dev-data:/app/data:rw
-    command:
-      [
-        "uvicorn",
-        "main:app",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000",
-        "--reload",
-      ]
     ports:
       - "28002:8000"
     depends_on:
@@ -303,9 +304,7 @@ services:
 
   # ── Celery Worker (단건 흐름 — ingestion 큐, GPU: BGE-M3 인라인 임베딩) ──
   celery-worker-dev:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
     container_name: nl-lib-dev-celery
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -324,7 +323,6 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - ./app:/app:rw
       - /data/models/.hf-cache:/models:rw
       - /data/nl-lib/dev-data:/app/data:rw
     depends_on:
@@ -338,9 +336,7 @@ services:
 
   # ── Celery CPU Worker (배치 잡: 추출/파싱 — GPU 불필요, VLM은 HTTP) ──
   celery-cpu-dev:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
     container_name: nl-lib-dev-celery-cpu
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -350,7 +346,6 @@ services:
       <<: *common-env-dev
       PYTHONPATH: /app
     volumes:
-      - ./app:/app:rw
       - /data/models/.hf-cache:/models:rw
       - /data/nl-lib/dev-data:/app/data:rw
     depends_on:
@@ -364,9 +359,7 @@ services:
 
   # ── Celery LLM Worker (배치 잡: 섹션 요약·문서 요약/소개 — 공유 gemma HTTP) ──
   celery-llm-dev:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
     container_name: nl-lib-dev-celery-llm
     <<: *nl-lib-dev-net-and-prod
     working_dir: /app
@@ -375,7 +368,6 @@ services:
       <<: *common-env-dev
       PYTHONPATH: /app
     volumes:
-      - ./app:/app:rw
       - /data/nl-lib/dev-data:/app/data:rw
     depends_on:
       redis-dev:
@@ -386,9 +378,7 @@ services:
 
   # ── Celery Embed Worker (배치 잡: 청킹+BGE-M3 임베딩+Milvus — GPU) ──
   celery-embed-dev:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
     container_name: nl-lib-dev-celery-embed
     <<: *nl-lib-dev-net-and-prod
     shm_size: "4g"
@@ -407,7 +397,6 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - ./app:/app:rw
       - /data/models/.hf-cache:/models:rw
       - /data/nl-lib/dev-data:/app/data:rw
     depends_on:
@@ -421,9 +410,7 @@ services:
 
   # ── Celery Beat (디스패처/정리 스케줄러 — 외부 LLM 호출 없음) ──
   celery-beat-dev:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
+    image: ${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}
     container_name: nl-lib-dev-celery-beat
     <<: *nl-lib-dev-net
     working_dir: /app
@@ -431,46 +418,51 @@ services:
     environment:
       <<: *common-env-dev
       PYTHONPATH: /app
-    volumes:
-      - ./app:/app:rw
     depends_on:
       redis-dev:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Nuxt (npm run dev, HMR 지원 — 이미지 빌드 없이 바로 기동) ──
+  # ── Nuxt (로컬 빌드 → :dev 태그 푸시 → 서버 pull, 운영과 동일 구조) ──
   nuxt-dev:
-    image: node:20-alpine
+    image: ${NL_LIB_NUXT_IMAGE:-landsoftdocker/nl-lib-nuxt:dev}
     container_name: nl-lib-dev-nuxt
     <<: *nl-lib-dev-net
-    working_dir: /app
     environment:
       NUXT_PUBLIC_API_BASE: "/api"
       NITRO_HOST: "0.0.0.0"
       NITRO_PORT: "3000"
       PORT: "3000"
-      HOST: "0.0.0.0"
-    volumes:
-      - ./frontend:/app
-      - nl_lib_dev_nuxt_node_modules:/app/node_modules # 호스트 마운트에 덮어써지지 않도록 분리
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
-    ports:
-      - "23000:3000" # 직접 접근용. /api 호출은 게이트웨이(10092) 경유 권장
+    depends_on:
+      fastapi-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
     restart: unless-stopped
 
   # ── Nginx Gateway (개발용 — /api는 fastapi-dev, 나머지는 nuxt-dev) ──
+  # nginx.conf는 운영과 내용이 동일해 운영 서버의 파일을 그대로 재사용하고,
+  # conf.d만 dev 전용 upstream(default.conf)을 별도 경로에 둔다.
+  # 최초 1회: infra/conf.d.dev/default.conf 를 서버의
+  #           /data/nl-lib/nginx-dev/conf.d/default.conf 로 배치할 것.
   gateway-dev:
     image: nginx:alpine
     container_name: nl-lib-dev-gateway
     <<: *nl-lib-dev-net
     volumes:
-      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infra/conf.d.dev:/etc/nginx/conf.d:ro
+      - /data/nl-lib/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /data/nl-lib/nginx-dev/conf.d:/etc/nginx/conf.d:ro
     ports:
       - "10092:80"
     depends_on:
-      - nuxt-dev
-      - fastapi-dev
+      nuxt-dev:
+        condition: service_healthy
+      fastapi-dev:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/health"]
       interval: 10s
@@ -485,7 +477,6 @@ volumes:
   nl_lib_dev_minio_data:
   nl_lib_dev_postgres_data:
   nl_lib_dev_redis_data:
-  nl_lib_dev_nuxt_node_modules:
 
 networks:
   nl-lib-dev-net:
