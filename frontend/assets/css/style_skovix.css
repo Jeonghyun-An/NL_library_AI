@@ -340,7 +340,8 @@ a:hover {
   position: sticky;
   top: 1.2rem;
   margin-right: 1.2rem;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+  transition:
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     padding 0.25s ease,
     min-height 0.3s ease;
 }
@@ -1348,8 +1349,8 @@ a:hover {
   gap: 0.4rem;
 }
 .skx-ai-panel__logo {
-  width: 1.65rem;
-  height: 1.6rem;
+  width: 1.8rem;
+  height: 1.8rem;
   display: block;
   flex-shrink: 0;
   object-fit: contain;
@@ -4833,7 +4834,9 @@ a:hover {
 }
 .skx-chat-side-enter-active,
 .skx-chat-side-leave-active {
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
 }
 .skx-chat-side-enter-from,
 .skx-chat-side-leave-to {
@@ -4887,7 +4890,9 @@ a:hover {
   border: 1px solid var(--border, #e5e7eb);
   background: #fff;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   text-decoration: none;
 }
 .skx-pai-ref__btn img {
