@@ -27,7 +27,7 @@ from models.section import BookSection
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-SECTION_TARGET_TOKENS = cfg.SECTION_TARGET_TOKENS
+SECTION_MIN_TOKENS = cfg.SECTION_MIN_TOKENS
 SECTION_MAX_TOKENS = cfg.SECTION_MAX_TOKENS
 
 DOWNLOAD_DIR = cfg.DOWNLOAD_DIR
@@ -73,44 +73,56 @@ def minio_client():
     )
 
 
-def _estimate_tokens(text: str) -> int:
-    return max(1, int(len(text) / 1.5))
+def split_into_sections(pages: list) -> list[dict]:
+    """
+    페이지 텍스트를 의미 경계 기반으로 섹션 분할.
 
+    chunker.semantic_chunk()를 SECTION_MIN_TOKENS/SECTION_MAX_TOKENS 타겟으로
+    재사용한다 — 3단계(embed_index)의 검색용 청킹과 완전히 같은 의미 경계
+    탐지 로직을 쓰되, 병합·분할 크기 기준만 섹션용으로 다르게 준다.
+    (예전에는 페이지를 누적하다 토큰 수 넘으면 그 자리서 그냥 잘랐음 — 문장·
+    논지가 한창이어도 상관없이 끊겨서, 다음 단계 요약이 반쪽 맥락만 보는 문제가 있었음.)
+    """
+    from services.ingestion.chunker import semantic_chunk
+    from services.ingestion.embedder import embed_texts
 
-def split_into_sections(pages: list, target_tokens: int = SECTION_TARGET_TOKENS) -> list[dict]:
-    sections = []
-    current_texts = []
-    current_tokens = 0
-    current_page_start = 0
+    texts = [p.text for p in pages if p.text]
+    if not texts:
+        return []
 
-    for page in pages:
-        page_tokens = _estimate_tokens(page.text)
+    full_text = "\n\n".join(texts)
 
-        if current_tokens + page_tokens > SECTION_MAX_TOKENS and current_texts:
-            sections.append({
-                "section_idx": len(sections),
-                "text": "\n\n".join(current_texts),
-                "page_start": current_page_start,
-                "page_end": page.page_num - 1,
-                "token_count": current_tokens,
-            })
-            current_texts = []
-            current_tokens = 0
-            current_page_start = page.page_num
+    # 문자 위치 → 페이지 번호 매핑 (load_extraction_artifact와 동일 방식)
+    page_map: dict[int, int] = {}
+    cursor = 0
+    for p in pages:
+        if not p.text:
+            continue
+        for i in range(len(p.text)):
+            page_map[cursor + i] = p.page_num
+        cursor += len(p.text) + 2  # "\n\n" 구분자
 
-        current_texts.append(page.text)
-        current_tokens += page_tokens
+    def _embed_fn(sentences: list[str]) -> list[list[float]]:
+        dense, _ = embed_texts(sentences)
+        return dense
 
-    if current_texts:
-        sections.append({
-            "section_idx": len(sections),
-            "text": "\n\n".join(current_texts),
-            "page_start": current_page_start,
-            "page_end": pages[-1].page_num if pages else 0,
-            "token_count": current_tokens,
-        })
+    chunks = semantic_chunk(
+        full_text, _embed_fn, page_map=page_map,
+        min_tokens=SECTION_MIN_TOKENS,
+        max_tokens=SECTION_MAX_TOKENS,
+        apply_byte_guard=False,  # PostgreSQL TEXT 컬럼 — Milvus VARCHAR 바이트 한도 무관
+    )
 
-    return sections
+    return [
+        {
+            "section_idx": c.chunk_idx,
+            "text": c.text,
+            "page_start": c.page_start if c.page_start is not None else 0,
+            "page_end": c.page_end if c.page_end is not None else 0,
+            "token_count": c.token_count,
+        }
+        for c in chunks
+    ]
 
 
 def assign_section_idx(chunks, sections) -> None:

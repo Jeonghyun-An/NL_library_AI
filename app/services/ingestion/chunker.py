@@ -115,14 +115,14 @@ def _find_breakpoints(
     return breakpoints
 
 
-def _merge_small_chunks(chunks: list[Chunk]) -> list[Chunk]:
-    """MIN_CHUNK_TOKENS 미만 청크를 인접 청크에 병합"""
+def _merge_small_chunks(chunks: list[Chunk], min_tokens: int = MIN_CHUNK_TOKENS) -> list[Chunk]:
+    """min_tokens 미만 청크를 인접 청크에 병합"""
     if not chunks:
         return chunks
 
     merged = [chunks[0]]
     for chunk in chunks[1:]:
-        if merged[-1].token_count < MIN_CHUNK_TOKENS:
+        if merged[-1].token_count < min_tokens:
             merged[-1].text += "\n" + chunk.text
             merged[-1].token_count = _estimate_tokens(merged[-1].text)
             merged[-1].page_start = min(
@@ -136,7 +136,7 @@ def _merge_small_chunks(chunks: list[Chunk]) -> list[Chunk]:
             merged.append(chunk)
 
     # 마지막 청크도 체크
-    if len(merged) > 1 and merged[-1].token_count < MIN_CHUNK_TOKENS:
+    if len(merged) > 1 and merged[-1].token_count < min_tokens:
         merged[-2].text += "\n" + merged[-1].text
         merged[-2].token_count = _estimate_tokens(merged[-2].text)
     
@@ -193,9 +193,9 @@ def _split_by_bytes(chunk: Chunk, max_bytes: int = MAX_CHUNK_BYTES) -> list[Chun
     return parts
 
 
-def _split_oversized(chunk: Chunk) -> list[Chunk]:
-    """MAX_CHUNK_TOKENS 초과 청크를 문장 경계에서 분할"""
-    if chunk.token_count <= MAX_CHUNK_TOKENS:
+def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[Chunk]:
+    """max_tokens 초과 청크를 문장 경계에서 분할"""
+    if chunk.token_count <= max_tokens:
         return [chunk]
 
     sentences = _split_sentences(chunk.text)
@@ -205,7 +205,7 @@ def _split_oversized(chunk: Chunk) -> list[Chunk]:
 
     for sent in sentences:
         sent_tokens = _estimate_tokens(sent)
-        if current_tokens + sent_tokens > MAX_CHUNK_TOKENS and current_text:
+        if current_tokens + sent_tokens > max_tokens and current_text:
             sub_chunks.append(Chunk(
                 chunk_idx=0,  # 나중에 재번호
                 text=current_text.strip(),
@@ -272,14 +272,25 @@ def semantic_chunk(
     embed_fn,
     *,
     page_map: dict[int, int] | None = None,
+    min_tokens: int = MIN_CHUNK_TOKENS,
+    max_tokens: int = MAX_CHUNK_TOKENS,
+    apply_byte_guard: bool = True,
 ) -> list[Chunk]:
     """
-    시맨틱 청킹 메인
+    시맨틱 청킹 메인 — 문장 단위로 잘라 의미 경계에서 청크를 만들고,
+    min_tokens/max_tokens 범위 안에 들어오도록 병합·분할한다.
+
+    검색용 청크(Milvus)와 도서/논문 요약용 섹션(PostgreSQL) 양쪽에서 재사용된다.
+    둘의 차이는 min_tokens/max_tokens 타겟뿐 — 의미 경계 탐지 자체는 동일 로직.
 
     Args:
         text: 전체 텍스트
         embed_fn: 문장 리스트 → 임베딩 ndarray 반환 함수
         page_map: {문자 위치 → 페이지 번호} 매핑 (선택)
+        min_tokens: 이 토큰 수 미만 청크는 인접 청크에 병합 (기본: 검색 청크 기준)
+        max_tokens: 이 토큰 수 초과 청크는 문장 경계에서 강제 분할 (기본: 검색 청크 기준)
+        apply_byte_guard: Milvus VARCHAR 바이트 한도 강제 분할 적용 여부.
+            섹션(PostgreSQL TEXT 컬럼)은 이 제약이 없으므로 False로 호출.
 
     Returns:
         Chunk 리스트
@@ -295,7 +306,7 @@ def semantic_chunk(
     # 문장 수가 적으면 그냥 하나로 (바이트 가드는 마지막에 일괄 적용)
     if len(sentences) <= 5:
         single = Chunk(chunk_idx=0, text=text)
-        parts = _split_by_bytes(single)
+        parts = _split_by_bytes(single) if apply_byte_guard else [single]
         for i, c in enumerate(parts):
             c.chunk_idx = i
         return parts
@@ -328,19 +339,20 @@ def semantic_chunk(
 
     # 5. 크기 제약 적용
     # 작은 청크 병합
-    chunks = _merge_small_chunks(chunks)
+    chunks = _merge_small_chunks(chunks, min_tokens=min_tokens)
 
     # 큰 청크 분할 (토큰 기준 의미 분할)
     final_chunks = []
     for chunk in chunks:
-        final_chunks.extend(_split_oversized(chunk))
+        final_chunks.extend(_split_oversized(chunk, max_tokens=max_tokens))
 
     # 최종 바이트 가드 — 의미 분할로 안 잡힌 초대형 청크를 강제 분할
     # (VLM 출력처럼 마침표 없는 한 덩어리, 단일 초대형 문장 등)
-    guarded: list[Chunk] = []
-    for chunk in final_chunks:
-        guarded.extend(_split_by_bytes(chunk))
-    final_chunks = guarded
+    if apply_byte_guard:
+        guarded: list[Chunk] = []
+        for chunk in final_chunks:
+            guarded.extend(_split_by_bytes(chunk))
+        final_chunks = guarded
 
     # 재번호
     for i, chunk in enumerate(final_chunks):
