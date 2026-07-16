@@ -31,18 +31,34 @@ log = logging.getLogger(__name__)
 cfg = get_settings()
 
 # ── 초록 헤더 ────────────────────────────────────────────────
-# VLM이 마크다운(## / **) 포함해서 추출하는 경우도 처리
-# 헤더가 한 줄 단독(초록\n본문)이든 인라인(Abstract: 본문…)이든 모두 매칭.
-# 끝의 [: 공백]만 소비하고 줄바꿈은 rest 로 넘겨 .strip() 으로 처리 → $ 앵커 제거.
-_ABSTRACT_HEADER = re.compile(
-    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?'
-    r'(?:초\s*록|Abstract|ABSTRACT'
+# VLM이 마크다운(## / **) 포함해서 추출하는 경우도 처리.
+# "요약" 같은 일반 단어의 본문 오매칭("요약하면, …")을 막기 위해 3형태로 분리:
+#   ① 단독 줄 헤더  — "초록" / "## Abstract" (줄에 헤더만)
+#   ② 인라인+콜론   — "Abstract: 본문…" (모든 라벨 허용, 콜론 필수)
+#   ③ 인라인 강라벨 — "초록 본 연구는…" (오매칭 위험 낮은 라벨만, 콜론 없이)
+_ABSTRACT_LABEL = (
+    r'초\s*록|Abstract|ABSTRACT'
     r'|요\s*약|국문\s*(?:초록|요약|abstract)'
     r'|영문\s*(?:초록|요약|abstract)'
     r'|한국어\s*(?:초록|요약)'
     r'|Korean\s*Abstract|English\s*Abstract'
-    r'|Summary|SUMMARY)'
-    r'[ \t]*[:：]?[ \t]*',
+    r'|Summary|SUMMARY'
+)
+_ABSTRACT_LABEL_STRONG = (
+    r'초\s*록|Abstract|ABSTRACT'
+    r'|국문\s*(?:초록|abstract)|영문\s*(?:초록|abstract)'
+    r'|Korean\s*Abstract|English\s*Abstract'
+)
+_ABSTRACT_BLOCK = re.compile(
+    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?(?:' + _ABSTRACT_LABEL + r')[ \t]*[*_#]*[ \t]*$',
+    re.IGNORECASE,
+)
+_ABSTRACT_INLINE = re.compile(
+    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?(?:' + _ABSTRACT_LABEL + r')[ \t]*[*_]*[ \t]*[:：][ \t]*',
+    re.IGNORECASE,
+)
+_ABSTRACT_INLINE_STRONG = re.compile(
+    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?(?:' + _ABSTRACT_LABEL_STRONG + r')[ \t]+(?=\S)',
     re.IGNORECASE,
 )
 
@@ -56,8 +72,9 @@ _ABSTRACT_END = re.compile(
 )
 
 # ── 참고문헌 헤더 ─────────────────────────────────────────────
+# 뒤에 붙는 마크다운(**참고문헌**)도 허용
 _REF_HEADER = re.compile(
-    r'(?m)^\s*(?:[#*\-]+\s*)?(?:참\s*고\s*문\s*헌|References?|REFERENCES?|Bibliography|참\s*고\s*자\s*료)\s*$',
+    r'(?m)^\s*(?:[#*\-]+\s*)?(?:참\s*고\s*문\s*헌|References?|REFERENCES?|Bibliography|참\s*고\s*자\s*료)\s*[*_#]*\s*$',
     re.IGNORECASE,
 )
 
@@ -155,20 +172,44 @@ class PaperEnrichment:
 
 # ── 1. 초록 추출 ─────────────────────────────────────────────
 
+def _looks_like_toc(text: str) -> bool:
+    """점선 리더·끝 페이지 번호가 많으면 목차로 판정 (초록 오추출 가드)."""
+    lines = [ln for ln in text.splitlines() if ln.strip()][:8]
+    if not lines:
+        return False
+    tocish = sum(
+        1 for ln in lines
+        if re.search(r'(?:[.·]{3,}|\s{2,})\d+\s*$', ln.strip())
+    )
+    return tocish >= max(2, len(lines) // 2)
+
+
 def extract_abstract(full_text: str) -> str | None:
-    """헤더 매칭 후 다음 섹션 전까지 추출. 최대 2000자."""
-    m = _ABSTRACT_HEADER.search(full_text)
-    if not m:
-        return None
+    """헤더 후보를 문서 순서대로 순회하며 첫 유효 초록을 반환. 최대 2000자.
 
-    rest = full_text[m.end():]
-    end_m = _ABSTRACT_END.search(rest)
-    end = end_m.start() if end_m else min(len(rest), 2000)
-    text = rest[:end].strip().lstrip(":：").strip()
+    목차 항목("Abstract …… 3")이나 본문 문장("요약하면, …") 오매칭은
+    헤더 형태 제한 + 후보 검증(길이·목차 판정)으로 걸러진다.
+    """
+    matches = sorted(
+        [
+            *_ABSTRACT_BLOCK.finditer(full_text),
+            *_ABSTRACT_INLINE.finditer(full_text),
+            *_ABSTRACT_INLINE_STRONG.finditer(full_text),
+        ],
+        key=lambda m: m.start(),
+    )
+    for m in matches:
+        rest = full_text[m.end():]
+        end_m = _ABSTRACT_END.search(rest)
+        end = end_m.start() if end_m else min(len(rest), 2000)
+        text = rest[:end].strip().lstrip(":：").strip()
 
-    if len(text) < 50:
-        return None
-    return text[:2000]
+        if len(text) < 50:
+            continue
+        if _looks_like_toc(text):
+            continue
+        return text[:2000]
+    return None
 
 
 # ── 2. 키워드 추출 ───────────────────────────────────────────
@@ -254,9 +295,20 @@ def extract_toc(full_text: str) -> list[str] | None:
 
 # ── 4. 참고문헌 추출 ─────────────────────────────────────────
 
+# 페이지 헤더/푸터: "제목 / 171" 또는 "172 / 학술지명"
+_PAGE_MARKER = re.compile(r'(?:/\s*\d+\s*$|^\s*\d+\s*/)', re.IGNORECASE)
+
+# 단일 항목이 이 길이를 넘으면 본문을 먹고 있는 것 → 파싱 중단
+_REF_MAX_ENTRY_CHARS = 600
+
+
 def extract_references(full_text: str) -> list[str]:
-    """참고문헌 섹션을 헤더로 찾은 뒤 빈 줄 단위로 항목 분리.
-    참고문헌은 항상 문서 끝에 위치하므로 마지막 매칭을 사용한다.
+    """참고문헌 섹션을 헤더로 찾은 뒤 항목 시작 패턴(_REF_ENTRY) 기준으로 분리.
+
+    PDF 추출 텍스트는 항목 사이 빈 줄이 없는 경우가 많아, 빈 줄 분리만으로는
+    전체가 1개 덩어리로 뭉친다. 줄 단위로 항목 시작을 감지하고 이어지는 줄은
+    직전 항목의 연속으로 병합한다. 참고문헌은 항상 문서 끝에 위치하므로
+    헤더는 마지막 매칭을 사용한다.
     """
     matches = list(_REF_HEADER.finditer(full_text))
     if not matches:
@@ -268,16 +320,50 @@ def extract_references(full_text: str) -> list[str]:
     if stop_m:
         rest = rest[:stop_m.start()]
 
-    # 빈 줄 단위로 분리 → 항목별로 한 줄로 합침
+    # 1차: 항목 시작 패턴 기반 줄 단위 파싱
     refs: list[str] = []
-    for para in re.split(r'\n\s*\n', rest.strip()):
-        lines = [ln.strip() for ln in para.splitlines() if ln.strip()]
-        if lines:
-            refs.append(" ".join(lines))
+    current: list[str] = []
+    current_len = 0
+    nonmatch_streak = 0
+    for line in rest.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if _PAGE_MARKER.search(stripped):
+            continue  # 페이지 헤더/푸터 줄 제거
+        if _REF_ENTRY.match(stripped):
+            if current:
+                refs.append(" ".join(current))
+            current = [stripped]
+            current_len = len(stripped)
+            nonmatch_streak = 0
+        elif current:
+            # 직전 항목의 줄바꿈 연속 — 단, 비정상적으로 길어지면 본문 침범으로 판단
+            current_len += len(stripped)
+            if current_len > _REF_MAX_ENTRY_CHARS:
+                refs.append(" ".join(current))
+                current = []
+                break
+            current.append(stripped)
+        else:
+            nonmatch_streak += 1
+            if nonmatch_streak >= _REF_MAX_CONSECUTIVE_NONMATCH:
+                break
+    if current:
+        refs.append(" ".join(current))
 
-    # 페이지 헤더/푸터 제거: "제목 / 171" 또는 "172 / 학술지명"
-    _page_marker = re.compile(r'(?:/\s*\d+\s*$|^\s*\d+\s*/)', re.IGNORECASE)
-    refs = [r for r in refs if not _page_marker.search(r)]
+    # 2차 폴백: 항목 패턴이 거의 안 잡히는 서식이면 기존 빈 줄 분리 방식
+    if len(refs) < 3:
+        blank_refs: list[str] = []
+        for para in re.split(r'\n\s*\n', rest.strip()):
+            lines = [
+                ln.strip() for ln in para.splitlines()
+                if ln.strip() and not _PAGE_MARKER.search(ln.strip())
+            ]
+            if lines:
+                blank_refs.append(" ".join(lines))
+        if len(blank_refs) > len(refs):
+            refs = blank_refs
 
     return refs[:200]
 
@@ -466,9 +552,9 @@ async def enrich_paper(
             log.warning(f"[{book_id}] 키워드 LLM 생성 실패: {e}")
             keywords = []
 
-    # 참고문헌: 0건 또는 50건 초과면 LLM 폴백 (과추출·누락 보정)
+    # 참고문헌: 3건 미만(누락·덩어리 뭉침) 또는 50건 초과(과추출)면 LLM 폴백
     ref_source = "추출"
-    if not short_text and (len(references) == 0 or len(references) > 50):
+    if not short_text and (len(references) < 3 or len(references) > 50):
         ref_source = "LLM"
         try:
             references = await generate_references(full_text)
