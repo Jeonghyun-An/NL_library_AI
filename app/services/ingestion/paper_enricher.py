@@ -71,6 +71,26 @@ _ABSTRACT_END = re.compile(
     re.IGNORECASE,
 )
 
+# 키워드 라인 — 헤더 없는 초록의 '끝' 앵커. KCI 논문은 초록이 헤더 없이
+# 시작해도 거의 항상 "주제어:/Keywords:" 로 끝나므로, 이 줄을 찾아 위로
+# 거슬러 올라가 초록 본문을 복원한다.
+_KEYWORD_ANCHOR = re.compile(
+    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?'
+    r'(?:주\s*제\s*어|핵\s*심\s*어|색\s*인\s*어|중\s*심\s*어|주\s*요\s*어'
+    r'|키\s*워\s*드|Key\s*[Ww]ords?|KEYWORDS?)'
+    r'[ \t]*[*_]*[ \t]*[:：]',
+    re.IGNORECASE,
+)
+
+# 초록 본문 시작을 막는 상단 노이즈 라인 (권/호/페이지·이메일·전화·수식어)
+_ABSTRACT_NOISE_LINE = re.compile(
+    r'(?:^\s*\d+\s*$'                       # 페이지 번호만
+    r'|Vol\.|No\.|pp?\.|20\d{2}|19\d{2}'    # 권/호/연도
+    r'|@|Tel[:.]|Fax[:.]|E-?mail'           # 연락처
+    r'|대학교|대학원|학회|저널|Journal|University)',
+    re.IGNORECASE,
+)
+
 # ── 참고문헌 헤더 ─────────────────────────────────────────────
 # 뒤에 붙는 마크다운(**참고문헌**)도 허용
 _REF_HEADER = re.compile(
@@ -184,8 +204,49 @@ def _looks_like_toc(text: str) -> bool:
     return tocish >= max(2, len(lines) // 2)
 
 
+def _abstract_from_keyword_anchor(full_text: str) -> str | None:
+    """헤더 없는 초록 복원 — '주제어:/Keywords:' 앞 문단을 초록으로 간주.
+
+    KCI 논문은 초록이 별도 헤더 없이 저자정보 뒤에 바로 시작하고
+    "주제어:"로 끝나는 레이아웃이 흔하다. 키워드 앵커에서 위로 거슬러
+    올라가며 문단을 모으되, 권/호·연락처 등 상단 서지 노이즈에서 멈춘다.
+    """
+    # 문서 전반부(초록은 앞쪽)에서 첫 키워드 앵커만 대상
+    anchor = _KEYWORD_ANCHOR.search(full_text)
+    if not anchor or anchor.start() > 6000:
+        return None
+
+    before = full_text[:anchor.start()]
+    lines = before.splitlines()
+
+    collected: list[str] = []
+    for line in reversed(lines):
+        stripped = line.strip()
+        if not stripped:
+            if collected:  # 문단 하나를 다 모았으면 종료
+                break
+            continue
+        if _ABSTRACT_NOISE_LINE.search(stripped):
+            break
+        collected.append(stripped)
+        # 초록 앞의 다른 섹션 헤더를 만나면 종료
+        if _ABSTRACT_END.search("\n" + stripped):
+            collected.pop()
+            break
+
+    if not collected:
+        return None
+    text = " ".join(reversed(collected)).strip()
+    if len(text) < 100 or _looks_like_toc(text):
+        return None
+    return text[:2000]
+
+
 def extract_abstract(full_text: str) -> str | None:
     """헤더 후보를 문서 순서대로 순회하며 첫 유효 초록을 반환. 최대 2000자.
+
+    1) 명시 헤더(초록/Abstract/…) 기반 추출
+    2) 헤더가 없으면 '주제어:/Keywords:' 앵커에서 역방향 복원 (KCI 레이아웃)
 
     목차 항목("Abstract …… 3")이나 본문 문장("요약하면, …") 오매칭은
     헤더 형태 제한 + 후보 검증(길이·목차 판정)으로 걸러진다.
@@ -209,7 +270,9 @@ def extract_abstract(full_text: str) -> str | None:
         if _looks_like_toc(text):
             continue
         return text[:2000]
-    return None
+
+    # 헤더 기반 실패 → 키워드 앵커 역방향 복원
+    return _abstract_from_keyword_anchor(full_text)
 
 
 # ── 2. 키워드 추출 ───────────────────────────────────────────

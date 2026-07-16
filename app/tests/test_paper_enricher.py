@@ -80,6 +80,26 @@ class TestExtractAbstract:
         text = "초록\n짧음.\n\n1. 서론\n..."
         assert extract_abstract(text) is None
 
+    def test_headerless_abstract_via_keyword_anchor(self):
+        """헤더 없이 시작하고 '주제어:'로 끝나는 KCI 레이아웃 초록 복원."""
+        text = (
+            "청소년상담연구\n"
+            "2003, Vol. 11, No. 1, 56-67\n"
+            "성과 성폭력 사건 개념의 인지적 표상\n"
+            "김정인 도경수 이재호\n"
+            "성균관대학교\n"
+            "본 연구에서는 연상 어휘 및 태도 분석을 통하여 성과 성폭력에 대해서 "
+            "사람들이 가지고 있는 인지적 표상의 구조를 확인하고자 하였다. 분석 결과 "
+            "다양한 표상 구조가 관찰되었으며 남녀 간 지각 차이가 유의미하게 나타났다.\n"
+            "주제어: 인지적 표상, 성, 강간, 성희롱\n"
+            "오늘날 성에 대한 태도와 행동은 급격한 변화 양상을 보이고 있다.\n"
+        )
+        result = extract_abstract(text)
+        assert result is not None
+        assert result.startswith("본 연구에서는")
+        assert "주제어" not in result
+        assert "청소년상담연구" not in result  # 상단 서지 노이즈 제외
+
     def test_ends_at_keywords(self):
         text = (
             "초록\n"
