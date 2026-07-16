@@ -76,6 +76,35 @@ class TestExtractAbstract:
         assert result is not None
         assert result.startswith("This study proposes")
 
+    def test_angle_bracket_header(self):
+        """'<한글 요약>' 꺾쇠로 감싼 헤더 (KCI 인문학 논문에 흔함)."""
+        text = (
+            "# 고대 그리스의 죽음과 영혼의 제의의 철학적 의미\n"
+            "장 영 란(한국외대)\n"
+            "<한글 요약>\n"
+            "본 논문은 초기 그리스 사회에서 죽음과 영혼의 제의 및 죽음 이후의 "
+            "영혼관과 처벌과 보상의 문제를 검토하여 철학적 의미를 밝혀내는 데 "
+            "주목적이 있다. 이러한 논의는 그리스 철학의 영혼관을 이해하는 단초가 된다.\n\n"
+            "## 서론\n본문 시작…"
+        )
+        result = extract_abstract(text)
+        assert result is not None
+        assert result.startswith("본 논문은")
+        assert "서론" not in result
+
+    def test_bracket_header(self):
+        """'[초록]' 대괄호 헤더."""
+        text = (
+            "제목\n"
+            "[초록]\n"
+            "본 연구는 대괄호로 감싼 초록 헤더를 처리하는지 검증한다. 실험 결과 "
+            "제안 방식이 유효함을 확인하였고 향후 확장 가능성도 논의하였다.\n\n"
+            "1. 서론\n..."
+        )
+        result = extract_abstract(text)
+        assert result is not None
+        assert result.startswith("본 연구는")
+
     def test_too_short_returns_none(self):
         text = "초록\n짧음.\n\n1. 서론\n..."
         assert extract_abstract(text) is None

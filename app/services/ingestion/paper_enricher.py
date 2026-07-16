@@ -33,28 +33,30 @@ cfg = get_settings()
 # ── 초록 헤더 ────────────────────────────────────────────────
 # VLM이 마크다운(## / **) 포함해서 추출하는 경우도 처리.
 # "요약" 같은 일반 단어의 본문 오매칭("요약하면, …")을 막기 위해 3형태로 분리:
-#   ① 단독 줄 헤더  — "초록" / "## Abstract" (줄에 헤더만)
+#   ① 단독 줄 헤더  — "초록" / "## Abstract" / "<한글 요약>" (줄에 헤더만)
 #   ② 인라인+콜론   — "Abstract: 본문…" (모든 라벨 허용, 콜론 필수)
 #   ③ 인라인 강라벨 — "초록 본 연구는…" (오매칭 위험 낮은 라벨만, 콜론 없이)
+# 라벨 안쪽 공백("한글 요약")과 꺾쇠/괄호 감싸기("<한글 요약>", "[초록]")를 허용.
 _ABSTRACT_LABEL = (
     r'초\s*록|Abstract|ABSTRACT'
-    r'|요\s*약|국문\s*(?:초록|요약|abstract)'
-    r'|영문\s*(?:초록|요약|abstract)'
-    r'|한국어\s*(?:초록|요약)'
+    r'|(?:국문|영문|한국어|한글|영어)?\s*(?:초\s*록|요\s*약|Abstract)'
     r'|Korean\s*Abstract|English\s*Abstract'
     r'|Summary|SUMMARY'
 )
 _ABSTRACT_LABEL_STRONG = (
     r'초\s*록|Abstract|ABSTRACT'
-    r'|국문\s*(?:초록|abstract)|영문\s*(?:초록|abstract)'
+    r'|(?:국문|영문|한글|한국어)\s*(?:초\s*록|abstract)'
     r'|Korean\s*Abstract|English\s*Abstract'
 )
+# 헤더를 감싸는 여는/닫는 장식 (꺾쇠·대괄호·중괄호·소괄호·마크다운)
+_OPEN = r'(?:[#*\-]+[ \t]*)?[<\[【(（]?[ \t]*[*_]*[ \t]*'
+_CLOSE = r'[ \t]*[*_]*[ \t]*[>\]】)）]?'
 _ABSTRACT_BLOCK = re.compile(
-    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?(?:' + _ABSTRACT_LABEL + r')[ \t]*[*_#]*[ \t]*$',
+    r'(?m)^[ \t]*' + _OPEN + r'(?:' + _ABSTRACT_LABEL + r')' + _CLOSE + r'[ \t]*[#]*[ \t]*$',
     re.IGNORECASE,
 )
 _ABSTRACT_INLINE = re.compile(
-    r'(?m)^[ \t]*(?:[#*\-]+[ \t]*)?(?:' + _ABSTRACT_LABEL + r')[ \t]*[*_]*[ \t]*[:：][ \t]*',
+    r'(?m)^[ \t]*' + _OPEN + r'(?:' + _ABSTRACT_LABEL + r')[ \t]*[*_]*[ \t]*[:：][ \t]*',
     re.IGNORECASE,
 )
 _ABSTRACT_INLINE_STRONG = re.compile(
