@@ -49,6 +49,19 @@ def _clean_text(text: str) -> str:
     return text.strip()
 
 
+def _strip_figure_markers(text: str) -> str:
+    """본문 채택 페이지에 남은 단독 [그림] 마커(워터마크·삽화 흔적) 정리.
+
+    그림 자체는 result.figures(base64)로 별도 저장되므로 인라인 마커는 노이즈일 뿐.
+    다운스트림(요약·청킹·검색)에서 [그림] 인라인 마커를 신호로 쓰지 않는다.
+    """
+    import re
+    text = text.replace("[그림]", "")
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r'[ \t]{2,}', ' ', text)
+    return text.strip()
+
+
 @dataclass
 class PageResult:
     page_num: int
@@ -216,27 +229,26 @@ async def extract_text(
             page_num = page.number
             odl_page = odl_pages_by_num.get(page_num)
 
-            # 라우팅 판단
+            # 라우팅 판단 — "그림 유무"가 아니라 "본문 텍스트 충분 여부"로 판정.
+            # [그림] 마커(워터마크·로고·삽화 흔적)를 뺀 실질 본문이 기준 미만이면
+            # 텍스트 레이어가 없는(스캔·이미지) 페이지로 보고 VLM OCR로 보완한다.
+            # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
+            #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵)
             if odl_page is None:
                 trigger = "ODL 누락"
-            elif "[그림]" in odl_page.text:
-                trigger = "[그림] 검출"
-            elif len(odl_page.text) < MIN_CHARS_PER_PAGE:
-                trigger = f"글자수 부족({len(odl_page.text)}자)"
             else:
-                # 1티어 결과 채택 — VLM 호출 안 함
-                result.pages.append(odl_page)
-                continue
-
-            # 2티어: VLM 보완
-            # diagram 프롬프트는 [그림]이 텍스트 중간에 삽입된 경우(실제 다이어그램)에만 사용.
-            # 페이지 전체가 이미지인 경우(TIF 합성 PDF 등)는 OCR 프롬프트가 적합.
-            try:
-                if trigger == "[그림] 검출" and odl_page:
-                    text_without_fig = odl_page.text.replace("[그림]", "").strip()
-                    prompt_type = "diagram" if len(text_without_fig) >= 80 else "ocr"
+                body_len = len(odl_page.text.replace("[그림]", "").strip())
+                if body_len < MIN_CHARS_PER_PAGE:
+                    trigger = f"본문 텍스트 부족({body_len}자)"
                 else:
-                    prompt_type = "ocr"
+                    # 1티어 결과 채택 — VLM 호출 안 함. 잔여 [그림] 마커는 정리.
+                    odl_page.text = _strip_figure_markers(odl_page.text)
+                    result.pages.append(odl_page)
+                    continue
+
+            # 2티어: VLM 보완 — 본문 없는 스캔·이미지 페이지이므로 OCR 프롬프트 사용.
+            try:
+                prompt_type = "ocr"
                 log.info(f"[{book_id}] p.{page_num} → VLM 보완 ({trigger}, prompt={prompt_type})")
                 vlm_page = await _extract_with_vlm(page, client, prompt_type=prompt_type)
                 result.pages.append(vlm_page)
