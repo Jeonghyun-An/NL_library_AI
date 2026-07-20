@@ -103,8 +103,10 @@ class Settings(BaseSettings):
     BREAKPOINT_PERCENTILE: int = 25       # 의미 경계 판정 하위 백분위
 
     # ── 섹션 분할 ─────────────────────────────────────
-    SECTION_TARGET_TOKENS: int = 3000
-    SECTION_MAX_TOKENS: int = 5000
+    # 1단계(extract)에서 chunker.semantic_chunk()로 의미 경계 기반 분할.
+    # 의미 경계 근처에서 이 MIN/MAX 범위 안에 들어오도록 병합·분할된다.
+    SECTION_MIN_TOKENS: int = 800   # 미만이면 인접 섹션에 병합
+    SECTION_MAX_TOKENS: int = 5000  # 초과하면 문장 경계에서 강제 분할
     DOWNLOAD_DIR: str = "/app/data/downloads"
 
     # ── 텍스트 추출 / VLM OCR ─────────────────────────
