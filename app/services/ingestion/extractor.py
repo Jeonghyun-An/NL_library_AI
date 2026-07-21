@@ -184,6 +184,36 @@ async def _extract_with_vlm(
     )
 
 
+async def _extract_with_surya(
+    page: fitz.Page,
+    client: httpx.AsyncClient,
+) -> PageResult:
+    """Surya 전용 OCR 서비스(별도 컨테이너)로 페이지 이미지 → 텍스트.
+
+    Surya는 transformers 5.x 의존이라 본 이미지(transformers 4.44)와 충돌 →
+    별도 컨테이너로 격리하고 HTTP(/ocr, base64 PNG)로 호출한다.
+    """
+    import base64
+
+    pix = page.get_pixmap(dpi=cfg.FITZ_DPI)
+    img_b64 = base64.b64encode(pix.tobytes("png")).decode()
+
+    resp = await client.post(
+        f"{cfg.SURYA_BASE_URL}/ocr",
+        json={"image_b64": img_b64},
+        timeout=float(cfg.VLM_TIMEOUT),
+    )
+    resp.raise_for_status()
+    text = resp.json().get("text", "").strip()
+
+    return PageResult(
+        page_num=page.number,
+        text=text,
+        method="surya",
+        confidence=0.9,
+    )
+
+
 async def extract_text(
     file_path: str | Path,
     book_id: str,
@@ -246,16 +276,19 @@ async def extract_text(
                     result.pages.append(odl_page)
                     continue
 
-            # 2티어: VLM 보완 — 본문 없는 스캔·이미지 페이지이므로 OCR 프롬프트 사용.
+            # 2티어: 본문 없는 스캔·이미지 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
+            ocr_engine = cfg.OCR_ENGINE.lower()
             try:
-                prompt_type = "ocr"
-                log.info(f"[{book_id}] p.{page_num} → VLM 보완 ({trigger}, prompt={prompt_type})")
-                vlm_page = await _extract_with_vlm(page, client, prompt_type=prompt_type)
-                result.pages.append(vlm_page)
+                log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={ocr_engine})")
+                if ocr_engine == "surya":
+                    ocr_page = await _extract_with_surya(page, client)
+                else:
+                    ocr_page = await _extract_with_vlm(page, client, prompt_type="ocr")
+                result.pages.append(ocr_page)
             except Exception as e:
-                log.error(f"[{book_id}] p.{page_num} VLM 실패: {e}")
-                result.errors.append(f"p.{page_num} VLM: {e}")
-                if odl_page:  # VLM 실패 시 ODL 결과라도 살리기
+                log.error(f"[{book_id}] p.{page_num} OCR({ocr_engine}) 실패: {e}")
+                result.errors.append(f"p.{page_num} OCR({ocr_engine}): {e}")
+                if odl_page:  # OCR 실패 시 ODL 결과라도 살리기
                     result.pages.append(odl_page)
 
     doc.close()

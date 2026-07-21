@@ -42,6 +42,11 @@ x-common-env-dev: &common-env-dev
   MILVUS_NLIST: ${MILVUS_NLIST:-256}
   MILVUS_NPROBE: ${MILVUS_NPROBE:-32}
 
+  # OCR 엔진 선택 (vlm|surya) — surya는 dev 전용 별도 컨테이너 HTTP 호출
+  # A/B 테스트: Portainer env 에서 OCR_ENGINE_DEV=surya 로 토글
+  OCR_ENGINE: ${OCR_ENGINE_DEV:-vlm}
+  SURYA_BASE_URL: "http://nl-lib-dev-surya:8000"
+
   # VLM / LLM / FLUX — 운영 스택 컨테이너를 nl-lib-net 경유로 그대로 공유
   VLM_BASE_URL: "http://nl-lib-vllm:8000/v1"
   VLM_MODEL: "qwen3-vl-8b"
@@ -492,6 +497,33 @@ services:
     depends_on:
       redis-dev:
         condition: service_healthy
+    restart: unless-stopped
+
+  # ── Surya OCR (전용 문서 OCR — VLM 대비 경량·CJK 강함, A/B 테스트용) ──
+  # transformers 5.x 의존이라 인덱싱 본체와 격리. OCR_ENGINE_DEV=surya 일 때 사용.
+  surya-dev:
+    image: landsoftdocker/nl-lib-surya:dev
+    container_name: nl-lib-dev-surya
+    <<: *nl-lib-dev-net-and-prod
+    environment:
+      HF_HOME: /models
+      TORCH_DEVICE: cuda
+      RECOGNITION_BATCH_SIZE: ${SURYA_REC_BATCH_DEV:-16}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - /data/models/.hf-cache:/models:rw
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health',timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     restart: unless-stopped
 
   # ── Nuxt ──────────────────────────────────────

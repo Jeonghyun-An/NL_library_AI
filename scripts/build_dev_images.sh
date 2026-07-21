@@ -20,6 +20,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 FASTAPI_IMAGE="${NL_LIB_FASTAPI_IMAGE:-landsoftdocker/nl-lib-fastapi:dev}"
 NUXT_IMAGE="${NL_LIB_NUXT_IMAGE:-landsoftdocker/nl-lib-nuxt:dev}"
+SURYA_IMAGE="${NL_LIB_SURYA_IMAGE:-landsoftdocker/nl-lib-surya:dev}"
 
 TARGET="${1:-all}"
 
@@ -35,12 +36,19 @@ build_push_nuxt() {
   docker push "${NUXT_IMAGE}"
 }
 
+build_push_surya() {
+  echo "── Surya OCR: ${SURYA_IMAGE} ─────────────────────"
+  docker build -t "${SURYA_IMAGE}" "${REPO_ROOT}/surya_service"
+  docker push "${SURYA_IMAGE}"
+}
+
 case "${TARGET}" in
   fastapi) build_push_fastapi ;;
   nuxt)    build_push_nuxt ;;
-  all)     build_push_fastapi; build_push_nuxt ;;
+  surya)   build_push_surya ;;
+  all)     build_push_fastapi; build_push_nuxt; build_push_surya ;;
   *)
-    echo "알 수 없는 타겟: ${TARGET} (fastapi|nuxt|all 중 하나)" >&2
+    echo "알 수 없는 타겟: ${TARGET} (fastapi|nuxt|surya|all 중 하나)" >&2
     exit 1
     ;;
 esac

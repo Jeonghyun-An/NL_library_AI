@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     MILVUS_NLIST: int = 256
     MILVUS_NPROBE: int = 32
 
+    # ── OCR 엔진 선택 (2티어 보완) ────────────────────
+    # "vlm"   : 범용 VLM(Qwen3-VL) — /chat/completions HTTP
+    # "surya" : 전용 OCR(Surya) 별도 컨테이너 — /ocr HTTP (경량·CJK 강함)
+    OCR_ENGINE: str = "vlm"
+    SURYA_BASE_URL: str = "http://surya:8000"
+
     # ── VLM (멀티모달 OCR — 페이지 이미지 → 텍스트) ──
     VLM_BASE_URL: str = "http://vllm:8000/v1"
     VLM_MODEL: str = "qwen2.5-vl-7b"
