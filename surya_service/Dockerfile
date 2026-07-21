@@ -19,8 +19,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # CUDA torch 먼저 (surya-ocr가 CPU torch를 끌어오지 않도록 선설치)
+# surya-ocr 0.22.1 요구사항: torch>=2.7.0, torchvision>=0.20.0
+# torch 2.7.x는 cu126/cu128 휠만 제공 (cu124 없음) — 휠이 CUDA 런타임 자체 번들
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu124
+    pip install torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu126
 
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
