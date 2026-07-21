@@ -499,32 +499,37 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Surya OCR (전용 문서 OCR — VLM 대비 경량·CJK 강함, A/B 테스트용) ──
-  # transformers 5.x 의존이라 인덱싱 본체와 격리. OCR_ENGINE_DEV=surya 일 때 사용.
-  surya-dev:
-    image: landsoftdocker/nl-lib-surya:dev
-    container_name: nl-lib-dev-surya
-    <<: *nl-lib-dev-net-and-prod
-    environment:
-      HF_HOME: /models
-      TORCH_DEVICE: cuda
-      RECOGNITION_BATCH_SIZE: ${SURYA_REC_BATCH_DEV:-16}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    volumes:
-      - /data/models/.hf-cache:/models:rw
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health',timeout=5).status==200 else 1)"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    restart: unless-stopped
+  # ── Surya OCR (전용 문서 OCR — 비활성화) ──────────────────────────
+  # A/B 결과: surya-ocr-2 ≈ Qwen3-VL 품질(동급)이라 H200에선 Qwen 유지.
+  # surya-ocr-2(qwen3_5, 1.37GB)는 국회 A100 40GB 납품 시 경량 대안으로 재활성화 대상.
+  # ⚠️ 주의: surya 0.22는 인프로세스가 아니라 vLLM/llama-server 백엔드를 스폰함.
+  #   컨테이너 배포 시 datalab-to/surya-ocr-2 를 vLLM으로 서빙하고
+  #   surya 클라이언트가 SURYA_INFERENCE_URL 로 attach 하는 구성이 필요.
+  # 재활성화하려면 아래 블록 주석 해제 + OCR_ENGINE_DEV=surya + surya_service 재설계.
+  # surya-dev:
+  #   image: landsoftdocker/nl-lib-surya:dev
+  #   container_name: nl-lib-dev-surya
+  #   <<: *nl-lib-dev-net-and-prod
+  #   environment:
+  #     HF_HOME: /models
+  #     TORCH_DEVICE: cuda
+  #     RECOGNITION_BATCH_SIZE: ${SURYA_REC_BATCH_DEV:-16}
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   volumes:
+  #     - /data/models/.hf-cache:/models:rw
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health',timeout=5).status==200 else 1)"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 120s
+  #   restart: unless-stopped
 
   # ── Nuxt ──────────────────────────────────────
   nuxt-dev:
