@@ -93,24 +93,14 @@ def _parse_llm_output(tpl: PromptTemplate, raw: str) -> tuple[str, list[str]]:
 
 
 async def _chat_completion(system: str, user: str, params: dict, timeout: float) -> str:
-    cfg = get_settings()
-    payload = {
-        "model": cfg.LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        **params,
-    }
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
-        if resp.status_code >= 400:
-            import logging
-            logging.getLogger(__name__).error(
-                f"[summarizer] LLM {resp.status_code} — user={len(user)}자, body={resp.text[:500]}"
-            )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+    # LLM 호출은 llm_client 어댑터로 통일 (OpenAI vLLM / Ollama 네이티브 겸용).
+    # 스타일 분기·think 제어·base URL 처리는 어댑터가 담당한다.
+    from services.llm_client import chat
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    return await chat(messages, params=params, timeout=timeout)
 
 
 async def summarize_section(

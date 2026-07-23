@@ -42,18 +42,15 @@ async def generate_cover_prompt(
         introduction=(introduction or "")[:1500],
         summary=(summary or "")[:1500],
     )
-    payload = {
-        "model": cfg.LLM_MODEL,
-        "messages": [
+    from services.llm_client import chat
+    text = (await chat(
+        [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        **params,
-    }
-    async with httpx.AsyncClient(timeout=cfg.COVER_PROMPT_TIMEOUT) as client:
-        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
-        resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"].strip()
+        params=params,
+        timeout=cfg.COVER_PROMPT_TIMEOUT,
+    )).strip()
     if not text:
         return None
     if text.startswith('"') and text.endswith('"'):

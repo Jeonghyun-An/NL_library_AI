@@ -60,23 +60,16 @@ async def extract_pdf_metadata(file_path: str) -> dict:
     text_for_llm = raw_text[:_MAX_CHARS]
 
     # ── 2. LLM 호출 ─────────────────────────────────────────────
-    payload = {
-        "model": cfg.LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": _SYSTEM},
-            {"role": "user", "content": f"Document text (first 1-2 pages):\n\n{text_for_llm}"},
-        ],
-        "max_tokens": cfg.PDF_META_MAX_TOKENS,
-        "temperature": cfg.PDF_META_TEMPERATURE,
-    }
-
+    from services.llm_client import chat
     try:
-        async with httpx.AsyncClient(timeout=cfg.PDF_META_TIMEOUT) as client:
-            resp = await client.post(
-                f"{cfg.LLM_BASE_URL}/chat/completions", json=payload
-            )
-            resp.raise_for_status()
-            raw_output = resp.json()["choices"][0]["message"]["content"].strip()
+        raw_output = await chat(
+            [
+                {"role": "system", "content": _SYSTEM},
+                {"role": "user", "content": f"Document text (first 1-2 pages):\n\n{text_for_llm}"},
+            ],
+            params={"max_tokens": cfg.PDF_META_MAX_TOKENS, "temperature": cfg.PDF_META_TEMPERATURE},
+            timeout=cfg.PDF_META_TIMEOUT,
+        )
     except Exception as e:
         log.warning(f"[pdf_meta] LLM 호출 실패: {e}")
         return {}

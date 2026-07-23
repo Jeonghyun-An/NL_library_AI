@@ -65,6 +65,16 @@ class Settings(BaseSettings):
     # (글로벌 동시 LLM = celery-llm concurrency × 이 값 ≤ vLLM max-num-seqs)
     LLM_SECTION_CONCURRENCY: int = 4
 
+    # ── LLM API 스타일 (OpenAI 호환 vLLM / Ollama 네이티브) ──
+    # "openai" → {LLM_BASE_URL}/chat/completions (기본, 운영 vLLM — 무영향)
+    # "ollama" → {LLM_BASE_URL의 /v1 제거}/api/chat (Ollama, think 제어용)
+    LLM_API_STYLE: str = "openai"
+    # think 토글: None=필드 미전송(비-thinking 모델 안전), True/False=그 값 전송.
+    # Ollama gemma4 요약은 false (추론 비용 제거). gemma3 등은 None 유지.
+    LLM_THINK: bool | None = None
+    # Ollama 컨텍스트 길이 — 기본 4096 이면 긴 섹션 요약 입력이 잘림
+    OLLAMA_NUM_CTX: int = 8192
+
     # ── FLUX (자동 표지 이미지 생성 — black-forest-labs/FLUX.1-dev) ──
     FLUX_BASE_URL: str = "http://flux:8000"
     FLUX_TIMEOUT: int = 300
