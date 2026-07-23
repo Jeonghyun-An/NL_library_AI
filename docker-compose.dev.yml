@@ -50,10 +50,19 @@ x-common-env-dev: &common-env-dev
   # VLM / LLM / FLUX — 운영 스택 컨테이너를 nl-lib-net 경유로 그대로 공유
   VLM_BASE_URL: "http://nl-lib-vllm:8000/v1"
   VLM_MODEL: "qwen3-vl-8b"
-  LLM_BASE_URL: "http://nl-lib-gemma:8000/v1"
-  LLM_MODEL: "gemma-3-12b"
+  # LLM 서빙 토글 (Portainer env 로 전환, compose 수정 불필요).
+  # 기본 = 운영 vLLM(gemma3, openai). dev 서비스는 nl-lib-net 공유라 컨테이너명 직접 호출.
+  # Ollama gemma4 테스트:
+  #   LLM_API_STYLE_DEV=ollama
+  #   LLM_BASE_URL_DEV=http://nl-lib-ollama:11434
+  #   LLM_MODEL_DEV=gemma4:26b-a4b-it-qat
+  LLM_API_STYLE: ${LLM_API_STYLE_DEV:-openai}
+  LLM_BASE_URL: ${LLM_BASE_URL_DEV:-http://nl-lib-gemma:8000/v1}
+  LLM_MODEL: ${LLM_MODEL_DEV:-gemma-3-12b}
   LLM_TIMEOUT: "120"
   LLM_SECTION_CONCURRENCY: "4"
+  LLM_THINK: ${LLM_THINK_DEV:-false}    # ollama 모드에서만 유효(openai는 무시). gemma4=false
+  OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX_DEV:-8192}
   FLUX_BASE_URL: "http://nl-lib-flux:8000"
   FLUX_TIMEOUT: "300"
 
