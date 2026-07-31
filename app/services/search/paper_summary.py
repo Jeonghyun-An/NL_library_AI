@@ -33,7 +33,20 @@ def _truncate(text: str, max_chars: int) -> str:
     return text[:max_chars].rsplit(" ", 1)[0] + "…"
 
 
+def _clean_excerpt(text: str) -> str:
+    """청크 텍스트에서 '초록\n**SUMMARY:**' 같은 메타 프리픽스 제거."""
+    if not text:
+        return text
+    text = _CHUNK_META_RE.sub("", text.strip())
+    text = _SUMMARY_PREFIX_RE.sub("", text.strip())
+    return text.strip()
+
+
 _SUMMARY_PREFIX_RE = re.compile(r"^##\s*SUMMARY:\s*", re.IGNORECASE)
+_CHUNK_META_RE = re.compile(
+    r"^(초록|abstract|summary|요약|introduction|서론)\s*[\n\r]+\s*\*{0,2}SUMMARY:\s*",
+    re.IGNORECASE,
+)
 _KEYWORD_SECTION_RE = re.compile(
     r"\*\*관련\s*연구자가\s*검색할\s*학술\s*키워드\s*:\*\*\s*([\s\S]*?)$",
     re.IGNORECASE,
@@ -84,7 +97,7 @@ async def stream_paper_summary(
             "num": i + 1,
             "title": p.get("title") or "제목 없음",
             "authors": p.get("authors") or "저자 미상",
-            "excerpt": _truncate(p.get("best_chunk_text") or "", _MAX_EXCERPT_CHARS),
+            "excerpt": _truncate(_clean_excerpt(p.get("best_chunk_text") or ""), _MAX_EXCERPT_CHARS),
         }
         for i, p in enumerate(papers)
     ]
@@ -155,8 +168,8 @@ async def stream_related_reason(
       data: {"text": "..."}   — 토큰 스트리밍
       data: [DONE]
     """
-    src_excerpt = _truncate(source_abstract, 400) if source_abstract else "초록 없음"
-    rel_excerpt = _truncate(related_abstract, 400) if related_abstract else "초록 없음"
+    src_excerpt = _truncate(_clean_excerpt(source_abstract), 400) if source_abstract else "초록 없음"
+    rel_excerpt = _truncate(_clean_excerpt(related_abstract), 400) if related_abstract else "초록 없음"
 
     system_msg = (
         "당신은 학술 논문 전문가입니다. "
