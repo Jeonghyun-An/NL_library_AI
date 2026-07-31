@@ -135,6 +135,22 @@ _VLM_PROMPT_OCR = """\
 - 이미지에 없는 내용은 추가하지 마세요."""
 
 
+def _strip_reasoning(text: str, thinking: bool) -> tuple[str, bool]:
+    """추론 블록을 제거하고 실제 답변만 돌려준다. returns (본문, 정상종료)
+
+    Qwen3 계열 chat template 은 프롬프트 끝에 `<think>` 를 미리 붙이므로, 모델 출력은
+    여는 태그 없이 "추론… </think> 실제답변" 형태로 온다.
+    thinking 을 켠 채 max_tokens 가 부족하면 `</think>` 를 내기도 전에 잘리는데,
+    그 잘린 사고과정을 OCR 결과로 쓰면 본문이 오염된다(영문 혼잣말이 그대로 색인됨).
+    → 닫는 태그가 없으면 실패로 처리해 호출부가 폴백/재시도하게 한다.
+    """
+    if "</think>" in text:
+        return text.split("</think>")[-1].strip(), True
+    if thinking:
+        return "", False          # 추론 도중 잘림 — 답변 없음
+    return text.strip(), True     # 비추론 모델 (태그 없음이 정상)
+
+
 async def _extract_with_vlm(
     page: fitz.Page,
     client: httpx.AsyncClient,
@@ -149,32 +165,59 @@ async def _extract_with_vlm(
 
     prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
 
-    payload = {
-        "model": cfg.VLM_MODEL,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{img_b64}"},
-                    },
-                    {"type": "text", "text": prompt},
-                ],
-            }
-        ],
-        "max_tokens": cfg.VLM_MAX_TOKENS,
-        "temperature": cfg.VLM_TEMPERATURE,
-    }
+    async def _ask(thinking: bool | None) -> tuple[str, bool, str | None]:
+        """1회 호출 → (본문, 추론정상종료, finish_reason)"""
+        payload = {
+            "model": cfg.VLM_MODEL,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                        },
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+            "max_tokens": cfg.VLM_MAX_TOKENS,
+            "temperature": cfg.VLM_TEMPERATURE,
+        }
+        # 추론형 VLM(Qwen3.5 등)은 사고과정을 본문에 쏟아내 OCR 결과를 오염시킨다.
+        # vLLM 은 chat_template_kwargs 를 템플릿에 그대로 전달. None 이면 미전송(기존 동작).
+        if thinking is not None:
+            payload["chat_template_kwargs"] = {"enable_thinking": thinking}
 
-    resp = await client.post(
-        f"{cfg.VLM_BASE_URL}/chat/completions",
-        json=payload,
-        timeout=float(cfg.VLM_TIMEOUT),
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    text = data["choices"][0]["message"]["content"].strip()
+        resp = await client.post(
+            f"{cfg.VLM_BASE_URL}/chat/completions",
+            json=payload,
+            timeout=float(cfg.VLM_TIMEOUT),
+        )
+        resp.raise_for_status()
+        choice = resp.json()["choices"][0]
+        msg = choice.get("message", {})
+        raw = (msg.get("content") or "").strip()
+        if msg.get("reasoning_content"):
+            # vLLM --reasoning-parser 사용 시 추론이 별 필드로 분리돼 content 는 이미 깨끗함
+            return raw, True, choice.get("finish_reason")
+        text, complete = _strip_reasoning(raw, thinking=bool(thinking))
+        return text, complete, choice.get("finish_reason")
+
+    # getattr: 구버전 config 가 섞여도 OCR 전체가 죽지 않도록 (미정의 시 미전송)
+    vlm_think = getattr(cfg, "VLM_THINK", None)
+    text, complete, finish = await _ask(vlm_think)
+
+    # 추론이 수렴하지 않는 페이지가 있다(복잡한 도판에서 사고 루프 → max_tokens 소진).
+    # 토큰을 더 줘도 해결되지 않으므로, thinking 을 끄고 한 번만 재시도한다.
+    if not complete:
+        log.warning(
+            f"[p.{page.number}] 추론 미종료(finish={finish}, max_tokens={cfg.VLM_MAX_TOKENS}) "
+            f"→ thinking 끄고 재시도"
+        )
+        text, complete, finish = await _ask(False)
+        if not complete:
+            raise RuntimeError(f"thinking off 재시도도 실패(finish={finish})")
 
     return PageResult(
         page_num=page.number,

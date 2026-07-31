@@ -1,8 +1,19 @@
 from functools import lru_cache
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # compose 가 `${VLM_THINK:-}` 처럼 미설정 변수를 빈 문자열로 넘기면 bool 파싱이
+    # 실패한다 → 빈 값은 '미전송(None)' 으로 해석한다.
+    @field_validator("LLM_THINK", "VLM_THINK", mode="before")
+    @classmethod
+    def _blank_think_is_none(cls, v):
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
     APP_NAME: str = "NL-Lib Semantic Search"
     DEBUG: bool = False
     IS_DOCKER: bool = False
@@ -129,6 +140,10 @@ class Settings(BaseSettings):
     EXTRACT_MIN_CHARS_PER_PAGE: int = 50  # 이 미만이면 VLM 보완 트리거
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
+    # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.
+    # None=미전송(현재 Qwen3-VL 등 비추론 모델 — 기존 동작 유지) / False=thinking off
+    # True 로 켤 경우 페이지당 처리 시간이 크게 늘어난다(추론 토큰 생성).
+    VLM_THINK: bool | None = None
     VLM_TEMPERATURE: float = 0.1
     VLM_TIMEOUT: int = 120
 
