@@ -12,8 +12,9 @@
   4) 원본 논문이 결과 몇 위에 오는지로 Recall@1/5/10, MRR 집계.
 
 실행 (서버, nl-lib 네트워크 위 컨테이너 안):
-  docker cp scripts/eval_search.py nl-lib-fastapi:/app/eval_search.py
-  docker exec -w /app nl-lib-fastapi python /app/eval_search.py --n 150
+  이미지에 포함되어 있으므로 복사 없이 실행:
+    docker exec -w /app nl-lib-fastapi python -m scripts.eval_search --help
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_search --n 150
 
 두 가지 실행 모드:
   (기본) in-process  : pipeline.search() 직접 호출. 제목점수 후보정 없는 순수

@@ -18,14 +18,15 @@ eval_answer_quality.py — RAG 답변 품질 평가 (시스템 특허 "답변 �
     --stage all       위 둘을 한 번에 (기본, 단일 심판 용)
 
 컨테이너 안에서 실행:
-  docker cp scripts/eval_answer_quality.py nl-lib-fastapi:/app/eval_answer_quality.py
+  이미지에 포함되어 있으므로 복사 없이 실행:
+    docker exec -w /app nl-lib-fastapi python -m scripts.eval_answer_quality --help
   # 1) 답변 1회 생성 (재사용)
-  docker exec -w /app nl-lib-fastapi python /app/eval_answer_quality.py \
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_answer_quality \
       --stage generate --n 30
   # 2) 판정자별 채점 — 동일 답변 집합
-  docker exec -w /app nl-lib-fastapi python /app/eval_answer_quality.py \
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_answer_quality \
       --stage judge --judge llm --out /app/data/eval_answer_quality_gemma.json
-  docker exec -w /app nl-lib-fastapi python /app/eval_answer_quality.py \
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_answer_quality \
       --stage judge --judge vlm --out /app/data/eval_answer_quality_qwen.json
 
 주의: 운영 gemma 공유 — 동시성 낮게(기본 3), 표본 작게(기본 30). 트래픽 적은 시간대 권장.

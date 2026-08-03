@@ -14,10 +14,11 @@ eval_chunking_ablation.py — 고정 분할(종래) vs 의미 경계(본 발명)
   5) Recall@1/5/10, MRR 비교 (옵션: Jina 리랭커)
 
 컨테이너 안에서 실행:
-  docker cp scripts/eval_chunking_ablation.py nl-lib-fastapi:/app/eval_chunking_ablation.py
-  docker exec -w /app nl-lib-fastapi python /app/eval_chunking_ablation.py --n 150
+  이미지에 포함되어 있으므로 복사 없이 실행:
+    docker exec -w /app nl-lib-fastapi python -m scripts.eval_chunking_ablation --help
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_chunking_ablation --n 150
   # 리랭커까지:
-  docker exec -w /app nl-lib-fastapi python /app/eval_chunking_ablation.py --n 150 --rerank
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_chunking_ablation --n 150 --rerank
 
 주의: 후보 풀 = 표본 N개 문서. N이 작으면 절대 수치는 높아지지만,
       두 방식 비교(delta)는 동일 조건이라 유효하다.

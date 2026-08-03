@@ -15,8 +15,9 @@ eval_summ_ablation.py — 요약 품질 대조 실험: 고정 섹션 vs 의미 �
      위치 편향 제거 위해 A/B 순서를 바꿔 2회 판정, 두 번 다 이겨야 승리 인정
 
 컨테이너 안에서 실행:
-  docker cp scripts/eval_summ_ablation.py nl-lib-fastapi:/app/eval_summ_ablation.py
-  docker exec -w /app nl-lib-fastapi python /app/eval_summ_ablation.py --n 30
+  이미지에 포함되어 있으므로 복사 없이 실행:
+    docker exec -w /app nl-lib-fastapi python -m scripts.eval_summ_ablation --help
+  docker exec -w /app nl-lib-fastapi python -m scripts.eval_summ_ablation --n 30
 
 주의: LLM 호출이 많다(문서당 섹션요약+문서요약+심판 2회). 운영 gemma를 공유하므로
       동시성(--concurrency)을 낮게 두고, 트래픽 적은 시간대 권장. 표본도 작게(기본 30).
