@@ -25,6 +25,7 @@ eval_chunking_ablation.py — 고정 분할(종래) vs 의미 경계(본 발명)
 import argparse
 import asyncio
 import json
+import math
 import re
 import statistics
 
@@ -53,9 +54,12 @@ _SAMPLE_SQL = f"""
       AND {_PAPER_PRED}
       AND c.title IS NOT NULL AND length(btrim(c.title)) > 3
       AND EXISTS (SELECT 1 FROM book_sections s WHERE s.book_id = c.cnts_id)
-    ORDER BY random()
+    ORDER BY md5(c.cnts_id || CAST(:seed AS text))
     LIMIT :n
 """
+# setseed()+random() 은 random() 값을 힙 스캔 순서대로 배정하므로, 후보 집합이 같아도
+# 행 UPDATE 로 힙 순서가 바뀌면 표본이 달라진다(실측: 30건 중 7건만 유지).
+# id 해시 정렬은 힙 순서와 무관해 같은 후보 집합이면 항상 같은 표본을 준다.
 
 _SECTIONS_SQL = """
     SELECT book_id, section_idx, full_text
@@ -185,6 +189,30 @@ def summarize(ranks: list) -> dict:
     }
 
 
+def binom_two_sided(k: int, n: int) -> float:
+    """양측 정확 이항검정 p (p0=0.5). scipy 없이 계산 — 컨테이너 의존성 추가 없음."""
+    if n == 0:
+        return 1.0
+    k = min(k, n - k)
+    tail = sum(math.comb(n, i) for i in range(k + 1)) / (2 ** n)
+    return min(1.0, 2 * tail)
+
+
+def mcnemar(fixed_ranks: list, sem_ranks: list, k: int = 1) -> dict:
+    """R@k 에 대한 McNemar 정확검정 — 동일 질의 쌍대비교라 대응표본이 맞다.
+
+    집계값(R@1 97.0% vs 97.3%)만으로는 "차이 없음"을 주장할 수 없다.
+    불일치 쌍(b, c)만이 정보를 가지므로 질의별 순위를 보존해야 계산할 수 있다.
+    """
+    def ok(r):
+        return r is not None and r <= k
+
+    b = sum(1 for f, s in zip(fixed_ranks, sem_ranks) if ok(f) and not ok(s))
+    c = sum(1 for f, s in zip(fixed_ranks, sem_ranks) if ok(s) and not ok(f))
+    return {"k": k, "fixed_only": b, "semantic_only": c, "discordant": b + c,
+            "p_value": round(binom_two_sided(c, b + c), 4)}
+
+
 def fmt(s: dict) -> str:
     return (f"n={s['n']:<4} R@1={s['R@1']*100:5.1f}%  R@5={s['R@5']*100:5.1f}%  "
             f"R@10={s['R@10']*100:5.1f}%  MRR={s['MRR']:.3f}  miss={s['miss']*100:4.1f}%  "
@@ -203,8 +231,8 @@ async def main():
     # ── 표본 + 원문 로드 ──────────────────────────────────
     engine = create_async_engine(cfg.DATABASE_URL)
     async with engine.connect() as conn:
-        await conn.execute(text("SELECT setseed(:s)"), {"s": args.seed})
-        rows = (await conn.execute(text(_SAMPLE_SQL), {"n": args.n})).fetchall()
+        rows = (await conn.execute(text(_SAMPLE_SQL),
+                                   {"n": args.n, "seed": str(args.seed)})).fetchall()
         ids = [r.cnts_id for r in rows]
         sec_rows = (await conn.execute(text(_SECTIONS_SQL), {"ids": ids})).fetchall()
     await engine.dispose()
@@ -280,18 +308,24 @@ async def main():
     qtypes = ("title", "abs", "body")
     buckets = {(s, q): [] for s in ("fixed", "semantic") for q in qtypes}
     buckets_rr = {k: [] for k in buckets} if args.rerank else None
+    per_query = []  # 질의별 순위 원자료 — 유의성 검정·재분석의 전제
 
     for qi, (target, qtype, qtext) in enumerate(queries):
         qv = q_mat[qi]
+        rec = {"id": target, "qtype": qtype, "query": qtext}
         for strat, mat, doc_idx, ctexts, cdocs in (
             ("fixed", fix_mat, fix_doc_idx, fix_texts, fix_docids),
             ("semantic", sem_mat, sem_doc_idx, sem_texts, sem_docids),
         ):
             sims = mat @ qv
-            buckets[(strat, qtype)].append(rank_of(sims, doc_idx, target))
+            r = rank_of(sims, doc_idx, target)
+            buckets[(strat, qtype)].append(r)
+            rec[f"{strat}_rank"] = r
             if args.rerank:
-                buckets_rr[(strat, qtype)].append(
-                    rank_of_rerank(sims, ctexts, cdocs, target, qtext, rerank_fn))
+                rr = rank_of_rerank(sims, ctexts, cdocs, target, qtext, rerank_fn)
+                buckets_rr[(strat, qtype)].append(rr)
+                rec[f"{strat}_rank_rerank"] = rr
+        per_query.append(rec)
         if (qi + 1) % 50 == 0 or qi + 1 == len(queries):
             print(f"  질의 {qi+1}/{len(queries)} …")
 
@@ -301,22 +335,35 @@ async def main():
     def report(bk, tag):
         print("-" * 74)
         print(f"[{tag}]  (후보 풀 = {len(usable)}개 문서)")
+        stats = {}
         for qt in qtypes:
             fx = summarize(bk[("fixed", qt)])
             sm = summarize(bk[("semantic", qt)])
+            mc1 = mcnemar(bk[("fixed", qt)], bk[("semantic", qt)], k=1)
+            mc5 = mcnemar(bk[("fixed", qt)], bk[("semantic", qt)], k=5)
             print(f"  · {labels[qt]}")
             print(f"      고정 분할 : {fmt(fx)}")
             print(f"      의미 경계 : {fmt(sm)}")
             print(f"      Δ(의미-고정): R@1 {(sm['R@1']-fx['R@1'])*100:+.1f}%p  "
                   f"R@5 {(sm['R@5']-fx['R@5'])*100:+.1f}%p  MRR {sm['MRR']-fx['MRR']:+.3f}")
-        return {f"{s}_{q}": summarize(bk[(s, q)]) for s in ("fixed", "semantic") for q in qtypes}
+            print(f"      McNemar R@1: 의미만 맞음 {mc1['semantic_only']} / "
+                  f"고정만 맞음 {mc1['fixed_only']} → p={mc1['p_value']}"
+                  f"{'  (유의차 없음)' if mc1['p_value'] > 0.05 else '  (유의)'}")
+            stats[f"fixed_{qt}"] = fx
+            stats[f"semantic_{qt}"] = sm
+            stats[f"mcnemar_{qt}"] = {"R@1": mc1, "R@5": mc5}
+        return stats
 
     out = {"corpus": {"docs": len(usable), "sem_chunks": len(sem_texts),
                       "fixed_chunks": len(fix_texts), "fixed_size_chars": fixed_size,
-                      "overlap_chars": overlap, "seed": args.seed}}
+                      "overlap_chars": overlap, "seed": args.seed,
+                      "chunk_reduction_pct": round(
+                          (len(fix_texts) - len(sem_texts)) / len(fix_texts) * 100, 2)
+                      if fix_texts else None}}
     out["dense"] = report(buckets, "Dense 검색")
     if args.rerank:
         out["rerank"] = report(buckets_rr, "Dense + Jina 리랭커")
+    out["per_query"] = per_query
     print("=" * 74)
 
     try:

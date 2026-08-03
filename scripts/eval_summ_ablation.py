@@ -24,6 +24,7 @@ eval_summ_ablation.py — 요약 품질 대조 실험: 고정 섹션 vs 의미 �
 import argparse
 import asyncio
 import json
+import math
 import re
 import statistics
 
@@ -59,9 +60,12 @@ _SAMPLE_SQL = """
       AND c.cnts_id LIKE 'KCI_FI%'
       AND c.title IS NOT NULL AND length(btrim(c.title)) > 3
       AND EXISTS (SELECT 1 FROM book_sections s WHERE s.book_id = c.cnts_id)
-    ORDER BY random()
+    ORDER BY md5(c.cnts_id || CAST(:seed AS text))
     LIMIT :n
 """
+# setseed()+random() 은 random() 값을 힙 스캔 순서대로 배정하므로, 후보 집합이 같아도
+# 행 UPDATE 로 힙 순서가 바뀌면 표본이 달라진다(실측: 30건 중 7건만 유지).
+# id 해시 정렬은 힙 순서와 무관해 같은 후보 집합이면 항상 같은 표본을 준다.
 
 _SECTIONS_SQL = """
     SELECT book_id, section_idx, full_text
@@ -152,6 +156,15 @@ async def judge(title: str, source: str, a: str, b: str) -> str | None:
     return m.group(1) if m else None
 
 
+def binom_two_sided(k: int, n: int) -> float:
+    """양측 정확 이항검정 p (p0=0.5). scipy 없이 계산 — 컨테이너 의존성 추가 없음."""
+    if n == 0:
+        return 1.0
+    k = min(k, n - k)
+    tail = sum(math.comb(n, i) for i in range(k + 1)) / (2 ** n)
+    return min(1.0, 2 * tail)
+
+
 async def process_doc(row, full_text: str, sem: asyncio.Semaphore) -> dict | None:
     async with sem:
         # 1) 섹션 분할 (semantic vs fixed)
@@ -176,18 +189,23 @@ async def process_doc(row, full_text: str, sem: asyncio.Semaphore) -> dict | Non
         # 3) 블라인드 페어와이즈 심판 (위치 스왑 2회)
         c1 = await judge(title, full_text, sum_sem, sum_fix)   # A=semantic, B=fixed
         c2 = await judge(title, full_text, sum_fix, sum_sem)   # A=fixed,    B=semantic
+        # 두 판정을 위치만 바꿔 물었으므로, 일관된 판정이라면 서로 뒤집힌 답이 나와야 한다.
+        # 그렇지 않은 경우(inconsistent)는 무승부가 아니라 '심판이 흔들린 것'이므로
+        # 같은 tie 로 묶으면 심판 신뢰도가 결과에 숨는다 → 따로 센다.
         if c1 == "A" and c2 == "B":
-            winner = "semantic"
+            winner, verdict = "semantic", "consistent"
         elif c1 == "B" and c2 == "A":
-            winner = "fixed"
+            winner, verdict = "fixed", "consistent"
+        elif c1 == "무승부" and c2 == "무승부":
+            winner, verdict = "tie", "consistent"
         else:
-            winner = "tie"
+            winner, verdict = "tie", "inconsistent"
 
         return {
             "id": row.cnts_id, "title": title,
             "sem_sections": len(sem_texts), "fixed_sections": len(fix_texts),
             "avg_section_chars": avg,
-            "winner": winner, "vote1": c1, "vote2": c2,
+            "winner": winner, "verdict": verdict, "vote1": c1, "vote2": c2,
             "summary_semantic": sum_sem, "summary_fixed": sum_fix,
         }
 
@@ -202,8 +220,8 @@ async def main():
 
     engine = create_async_engine(cfg.DATABASE_URL)
     async with engine.connect() as conn:
-        await conn.execute(text("SELECT setseed(:s)"), {"s": args.seed})
-        rows = (await conn.execute(text(_SAMPLE_SQL), {"n": args.n})).fetchall()
+        rows = (await conn.execute(text(_SAMPLE_SQL),
+                                   {"n": args.n, "seed": str(args.seed)})).fetchall()
         ids = [r.cnts_id for r in rows]
         sec_rows = (await conn.execute(text(_SECTIONS_SQL), {"ids": ids})).fetchall()
     await engine.dispose()
@@ -233,22 +251,40 @@ async def main():
     n = len(results)
     win_sem = sum(1 for r in results if r["winner"] == "semantic")
     win_fix = sum(1 for r in results if r["winner"] == "fixed")
-    tie = sum(1 for r in results if r["winner"] == "tie")
+    true_tie = sum(1 for r in results if r["winner"] == "tie" and r["verdict"] == "consistent")
+    incons = sum(1 for r in results if r["verdict"] == "inconsistent")
     decided = win_sem + win_fix
+    agree = round((n - incons) / n, 4) if n else None
+    p_val = round(binom_two_sided(win_sem, decided), 4)
+
+    sec_sem = statistics.mean(r["sem_sections"] for r in results)
+    sec_fix = statistics.mean(r["fixed_sections"] for r in results)
+    fewer = sum(1 for r in results if r["sem_sections"] < r["fixed_sections"])
 
     print(f"평가 완료 문서 : {n}")
     print(f"  의미 경계 승 : {win_sem}  ({win_sem/n*100:.1f}%)")
     print(f"  고정 분할 승 : {win_fix}  ({win_fix/n*100:.1f}%)")
-    print(f"  무승부/불일치 : {tie}  ({tie/n*100:.1f}%)")
+    print(f"  무승부       : {true_tie}  ({true_tie/n*100:.1f}%)")
+    print(f"  판정 불일치  : {incons}  ({incons/n*100:.1f}%)  ← 위치 스왑 시 판정이 뒤집히지 않음")
+    print(f"  심판 일치율  : {agree*100:.1f}%   (낮으면 심판 신뢰도 한계로 별도 보고 필요)")
     if decided:
         print(f"  → 승부난 것 중 의미 경계 승률 : {win_sem/decided*100:.1f}%  (n_decided={decided})")
+    print(f"  부호검정(양측) p = {p_val}"
+          f"{'  → 품질 차이 유의하지 않음(동등)' if p_val > 0.05 else '  → 유의한 차이'}")
+    print(f"  섹션 수      : 의미 {sec_sem:.1f} vs 고정 {sec_fix:.1f}  "
+          f"(의미가 더 적은 문서 {fewer}/{n})")
     print("=" * 74)
 
     out = {
         "corpus": {"docs": n, "seed": args.seed, "judge": cfg.LLM_MODEL},
-        "result": {"semantic_win": win_sem, "fixed_win": win_fix, "tie": tie,
+        "result": {"semantic_win": win_sem, "fixed_win": win_fix, "tie": true_tie,
+                   "inconsistent": incons, "judge_agreement": agree,
+                   "n_decided": decided, "sign_test_p": p_val,
                    "semantic_winrate_overall": round(win_sem / n, 4),
-                   "semantic_winrate_decided": round(win_sem / decided, 4) if decided else None},
+                   "semantic_winrate_decided": round(win_sem / decided, 4) if decided else None,
+                   "sections_semantic_mean": round(sec_sem, 2),
+                   "sections_fixed_mean": round(sec_fix, 2),
+                   "docs_with_fewer_semantic_sections": fewer},
         "details": results,
     }
     try:
