@@ -214,6 +214,33 @@ def mcnemar(fixed_ranks: list, sem_ranks: list, k: int = 1) -> dict:
             "p_value": round(binom_two_sided(c, b + c), 4)}
 
 
+def equivalence(fixed_ranks: list, sem_ranks: list, k: int = 1,
+                margin: float = 0.05) -> dict:
+    """대응표본 동등성 검정(TOST) — R@k 차이가 ±margin 안에 있는지.
+
+    McNemar 가 "차이를 찾지 못했다"만 말하는 데 비해, TOST 는 "차이가 margin 보다
+    작다"를 적극적으로 주장한다. 널 결과 논문에서는 이쪽이 필요하다.
+    대응표본이므로 차이의 표준오차는 불일치 쌍으로 계산한다(Fleiss):
+        SE = sqrt(b + c - (c-b)^2/n) / n
+    90% CI(양측)가 [-margin, +margin] 안에 완전히 들어가면 α=0.05 에서 동등.
+    """
+    def ok(r):
+        return r is not None and r <= k
+
+    n = len(fixed_ranks)
+    if n == 0:
+        return {"k": k, "margin": margin, "equivalent": None}
+    b = sum(1 for f, s in zip(fixed_ranks, sem_ranks) if ok(f) and not ok(s))
+    c = sum(1 for f, s in zip(fixed_ranks, sem_ranks) if ok(s) and not ok(f))
+    diff = (c - b) / n                      # 의미 - 고정
+    var = (b + c) - (c - b) ** 2 / n
+    se = math.sqrt(var) / n if var > 0 else 0.0
+    lo, hi = diff - 1.645 * se, diff + 1.645 * se   # 90% CI = TOST(α=.05)
+    return {"k": k, "margin": margin,
+            "diff": round(diff, 4), "ci90_low": round(lo, 4), "ci90_high": round(hi, 4),
+            "equivalent": bool(lo > -margin and hi < margin)}
+
+
 def fmt(s: dict) -> str:
     return (f"n={s['n']:<4} R@1={s['R@1']*100:5.1f}%  R@5={s['R@5']*100:5.1f}%  "
             f"R@10={s['R@10']*100:5.1f}%  MRR={s['MRR']:.3f}  miss={s['miss']*100:4.1f}%  "
@@ -226,6 +253,8 @@ async def main():
     ap.add_argument("--seed", type=float, default=0.42)
     ap.add_argument("--overlap-pct", type=float, default=0.0, help="고정 분할 오버랩 비율(0~0.5)")
     ap.add_argument("--rerank", action="store_true", help="Jina 리랭커 조건 추가")
+    ap.add_argument("--equiv-margin", type=float, default=0.05,
+                    help="동등성 검정(TOST) 허용 마진. 0.05=±5%p (기본)")
     ap.add_argument("--out", type=str, default="/app/data/eval_chunking_ablation.json")
     args = ap.parse_args()
 
@@ -350,9 +379,16 @@ async def main():
             print(f"      McNemar R@1: 의미만 맞음 {mc1['semantic_only']} / "
                   f"고정만 맞음 {mc1['fixed_only']} → p={mc1['p_value']}"
                   f"{'  (유의차 없음)' if mc1['p_value'] > 0.05 else '  (유의)'}")
+            eq1 = equivalence(bk[("fixed", qt)], bk[("semantic", qt)],
+                              k=1, margin=args.equiv_margin)
+            print(f"      동등성(TOST) R@1: Δ={eq1['diff']*100:+.1f}%p "
+                  f"90%CI[{eq1['ci90_low']*100:+.1f}, {eq1['ci90_high']*100:+.1f}]%p "
+                  f"vs ±{args.equiv_margin*100:.0f}%p → "
+                  f"{'동등 입증' if eq1['equivalent'] else '동등 미입증(표본 부족 또는 차이 존재)'}")
             stats[f"fixed_{qt}"] = fx
             stats[f"semantic_{qt}"] = sm
             stats[f"mcnemar_{qt}"] = {"R@1": mc1, "R@5": mc5}
+            stats[f"equivalence_{qt}"] = {"R@1": eq1}
         return stats
 
     out = {"corpus": {"docs": len(usable), "sem_chunks": len(sem_texts),
