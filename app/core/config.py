@@ -162,6 +162,10 @@ class Settings(BaseSettings):
     # 도서 요약/소개 입력(섹션요약 묶음) 최대 글자 수 — 컨텍스트 오버플로 방지.
     # 14000자 ≈ 27k 토큰, + 출력 4096 + 시스템 ≈ 31k < 32768(gemma max-model-len).
     SUMMARIZER_MAX_INPUT_CHARS: int = 14000
+    # 섹션 요약 1회 입력 상한(글자). 섹션 분할이 토큰을 글자수/1.5 로 '추정'하므로
+    # 표·OCR 텍스트에서는 실제 토큰이 추정보다 커져 모델 컨텍스트를 넘길 수 있다.
+    # (관측: 32768 컨텍스트 모델에서 input 28769 토큰으로 400 발생)
+    SUMMARIZER_MAX_SECTION_CHARS: int = 12000
 
     # ── FLUX 표지 생성 ────────────────────────────────
     FLUX_WIDTH: int = 768

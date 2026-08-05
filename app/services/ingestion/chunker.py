@@ -198,7 +198,17 @@ def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[C
     if chunk.token_count <= max_tokens:
         return [chunk]
 
-    sentences = _split_sentences(chunk.text)
+    # 표·OCR 덩어리처럼 문장 종결부호가 없는 텍스트는 '한 문장'이 max_tokens 를 넘길 수
+    # 있고, 그러면 아래 루프가 쪼개지 못해 거대한 청크가 그대로 남는다(LLM 컨텍스트 초과).
+    # → 문장 자체가 상한을 넘으면 글자 단위로 강제 분할한다.
+    max_chars = int(max_tokens * 1.5)
+    sentences: list[str] = []
+    for s in _split_sentences(chunk.text):
+        if _estimate_tokens(s) > max_tokens:
+            sentences.extend(s[i:i + max_chars] for i in range(0, len(s), max_chars))
+        else:
+            sentences.append(s)
+
     sub_chunks = []
     current_text = ""
     current_tokens = 0
