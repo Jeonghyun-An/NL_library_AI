@@ -170,7 +170,9 @@ x-common-env: &common-env
   # 대량 인덱싱 잡 / 배치 / 락
   INGEST_HIGH_WATER: ${INGEST_HIGH_WATER:-32}
   INGEST_MAX_ATTEMPTS: ${INGEST_MAX_ATTEMPTS:-3}
-  INGEST_STAGE_TIMEOUT_EXTRACT: ${INGEST_STAGE_TIMEOUT_EXTRACT:-1800}
+  # 30분 기본값은 대형 스캔 문서(632p 실측 210분)보다 짧아 정상 작업을 stale 로 오판,
+  # 같은 문서를 3회까지 중복 실행시켰다(파일럿 2026-08-06). 실측 최악값 위로 올림.
+  INGEST_STAGE_TIMEOUT_EXTRACT: ${INGEST_STAGE_TIMEOUT_EXTRACT:-14400}
   INGEST_STAGE_TIMEOUT_SUMMARIZE: ${INGEST_STAGE_TIMEOUT_SUMMARIZE:-1200}
   INGEST_STAGE_TIMEOUT_EMBED: ${INGEST_STAGE_TIMEOUT_EMBED:-1200}
   INGEST_STAGE_TIMEOUT_FINALIZE: ${INGEST_STAGE_TIMEOUT_FINALIZE:-900}
@@ -361,14 +363,17 @@ services:
       - qwen3-vl-8b
       - --download-dir
       - /models
+      # OCR 전용이라 긴 컨텍스트가 필요 없다.
+      # 페이지 이미지 토큰(수천) + VLM_MAX_TOKENS(4096) 출력 → 16K 로 충분.
+      # max-model-len 을 줄이면 KV 캐시가 그만큼 줄어 util 0.2 로도 여유가 생긴다.
       - --max-model-len
-      - "32768"
+      - "${VLM_MAX_MODEL_LEN:-16384}"
       - --dtype
       - bfloat16
       - --gpu-memory-utilization
-      - "0.3"
+      - "${VLM_GPU_UTIL:-0.2}"
       - --max-num-seqs
-      - "8"
+      - "${VLM_MAX_NUM_SEQS:-8}"
       # - --enforce-eager
       - --host
       - "0.0.0.0"
