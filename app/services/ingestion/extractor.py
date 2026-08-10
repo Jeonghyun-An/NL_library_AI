@@ -102,6 +102,7 @@ class ExtractionResult:
     errors: list[str] = field(default_factory=list)
     page_map: dict[int, int] = field(default_factory=dict)
     figures: list[FigureData] = field(default_factory=list)
+    vlm_capped: bool = False  # VLM_MAX_PAGES_PER_DOC 상한에 걸려 일부 페이지가 누락됐는지
 
     @property
     def full_text(self) -> str:
@@ -356,6 +357,7 @@ async def extract_text(
             if vlm_pages_used >= vlm_cap:
                 if not vlm_cap_hit:
                     vlm_cap_hit = True
+                    result.vlm_capped = True
                     log.warning(f"[{book_id}] VLM 페이지 상한({vlm_cap}) 도달 — 이후 저텍스트 페이지는 ODL로 대체")
                 if odl_page:
                     result.pages.append(odl_page)

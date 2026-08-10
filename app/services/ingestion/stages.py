@@ -324,6 +324,7 @@ def run_extract(ctx: StageContext) -> dict:
             "figures": len(extraction.figures),
             "extract_method": max(method_counts, key=method_counts.get) if method_counts else "",
             "doc_type": doc_type,
+            "vlm_capped": extraction.vlm_capped,
         }
     finally:
         if downloaded:
