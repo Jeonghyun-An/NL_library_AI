@@ -1,0 +1,32 @@
+[그림]
+
+[그림]
+
+- (a) 80% step load and variation of 150% in  
+
+[그림]
+
+- (b) 80% step load and variation of 150% in 
+- (c) 80% step load and variation of 150% in 
+
+[그림]
+
+- (d) 80% step load and variation of 150% in 
+
+- (a) 60% step load
+
+[그림]
+
+- (b) 80% step load
+
+[그림]
+
+- (c) 100% step load
+
+[그림]
+
+Fig. 7. Magnified speed response near 2,500 rpm in DOB system.
+
+나, 부하 조건에서는 정상오차를 발생시킴을 확인하였 다. 본 논문에서 제안한 DOB를 갖는 SMC는 이러한 정상오차 문제를 해결할 뿐만 아니라 모터의 파라미터 변동에도 강인한 속도 제어 성능을 보임을 확인할 수 있었다.
+
+###### Fig. 8. Magnified speed response near 2,500 rpm in DOB system.

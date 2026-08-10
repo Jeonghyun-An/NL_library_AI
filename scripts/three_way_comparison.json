@@ -1,0 +1,398 @@
+{
+  "rows": [
+    {
+      "doc": "KCI_FI001269838.pdf",
+      "pages": 15,
+      "odl": 19092,
+      "fitz": 15477,
+      "vlm_raw": 18273,
+      "vlm_adj": 18273,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI000936234.pdf",
+      "pages": 15,
+      "odl": 11183,
+      "fitz": 1558,
+      "vlm_raw": 16534,
+      "vlm_adj": 16534,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI002164241.pdf",
+      "pages": 15,
+      "odl": 28700,
+      "fitz": 28033,
+      "vlm_raw": 33136,
+      "vlm_adj": 25190,
+      "flagged": [
+        [
+          2,
+          7946,
+          28.11
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001954024.pdf",
+      "pages": 15,
+      "odl": 20212,
+      "fitz": 19707,
+      "vlm_raw": 21778,
+      "vlm_adj": 21778,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001837095.pdf",
+      "pages": 15,
+      "odl": 21637,
+      "fitz": 18844,
+      "vlm_raw": 21457,
+      "vlm_adj": 21457,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001390783.pdf",
+      "pages": 15,
+      "odl": 23258,
+      "fitz": 23514,
+      "vlm_raw": 36419,
+      "vlm_adj": 22283,
+      "flagged": [
+        [
+          15,
+          14136,
+          28.09
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001215202.pdf",
+      "pages": 9,
+      "odl": 21109,
+      "fitz": 20061,
+      "vlm_raw": 26132,
+      "vlm_adj": 18743,
+      "flagged": [
+        [
+          2,
+          7389,
+          28.19
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001159328.pdf",
+      "pages": 15,
+      "odl": 25764,
+      "fitz": 21101,
+      "vlm_raw": 35361,
+      "vlm_adj": 21663,
+      "flagged": [
+        [
+          8,
+          7967,
+          28.18
+        ],
+        [
+          13,
+          5731,
+          28.2
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI002996514.pdf",
+      "pages": 15,
+      "odl": 13355,
+      "fitz": 12587,
+      "vlm_raw": 16775,
+      "vlm_adj": 12350,
+      "flagged": [
+        [
+          12,
+          4425,
+          31.69
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI000958626.pdf",
+      "pages": 15,
+      "odl": 16156,
+      "fitz": 15184,
+      "vlm_raw": 14515,
+      "vlm_adj": 14515,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI000950943.pdf",
+      "pages": 15,
+      "odl": 29208,
+      "fitz": 33,
+      "vlm_raw": 24002,
+      "vlm_adj": 18199,
+      "flagged": [
+        [
+          12,
+          5803,
+          28.16
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001177396.pdf",
+      "pages": 15,
+      "odl": 24048,
+      "fitz": 486,
+      "vlm_raw": 14770,
+      "vlm_adj": 14770,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001826171.pdf",
+      "pages": 5,
+      "odl": 15458,
+      "fitz": 15561,
+      "vlm_raw": 16768,
+      "vlm_adj": 16768,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001929541.pdf",
+      "pages": 15,
+      "odl": 20768,
+      "fitz": 20505,
+      "vlm_raw": 18742,
+      "vlm_adj": 18742,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI000940790.pdf",
+      "pages": 15,
+      "odl": 15469,
+      "fitz": 13035,
+      "vlm_raw": 15034,
+      "vlm_adj": 15034,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001715647.pdf",
+      "pages": 15,
+      "odl": 17694,
+      "fitz": 14976,
+      "vlm_raw": 20291,
+      "vlm_adj": 15368,
+      "flagged": [
+        [
+          13,
+          4923,
+          26.16
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI002989221.pdf",
+      "pages": 15,
+      "odl": 25719,
+      "fitz": 21960,
+      "vlm_raw": 37373,
+      "vlm_adj": 22066,
+      "flagged": [
+        [
+          8,
+          8254,
+          28.24
+        ],
+        [
+          15,
+          7053,
+          28.21
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001830814.pdf",
+      "pages": 15,
+      "odl": 19110,
+      "fitz": 15845,
+      "vlm_raw": 20298,
+      "vlm_adj": 20298,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI003148640.pdf",
+      "pages": 13,
+      "odl": 21668,
+      "fitz": 18721,
+      "vlm_raw": 21227,
+      "vlm_adj": 21227,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI002171174.pdf",
+      "pages": 8,
+      "odl": 27753,
+      "fitz": 27555,
+      "vlm_raw": 46492,
+      "vlm_adj": 26223,
+      "flagged": [
+        [
+          7,
+          20269,
+          28.02
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI000865757.pdf",
+      "pages": 4,
+      "odl": 12436,
+      "fitz": 12630,
+      "vlm_raw": 12499,
+      "vlm_adj": 12499,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001498048.pdf",
+      "pages": 9,
+      "odl": 7856,
+      "fitz": 40742,
+      "vlm_raw": 28695,
+      "vlm_adj": 10608,
+      "flagged": [
+        [
+          3,
+          5688,
+          27.46
+        ],
+        [
+          4,
+          6252,
+          28.43
+        ],
+        [
+          7,
+          6147,
+          27.48
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI003000034.pdf",
+      "pages": 15,
+      "odl": 18714,
+      "fitz": 16401,
+      "vlm_raw": 22799,
+      "vlm_adj": 17144,
+      "flagged": [
+        [
+          5,
+          5655,
+          26.8
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI002537654.pdf",
+      "pages": 15,
+      "odl": 18656,
+      "fitz": 18760,
+      "vlm_raw": 24058,
+      "vlm_adj": 18252,
+      "flagged": [
+        [
+          7,
+          5806,
+          28.22
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI002170660.pdf",
+      "pages": 15,
+      "odl": 16570,
+      "fitz": 17206,
+      "vlm_raw": 18838,
+      "vlm_adj": 14455,
+      "flagged": [
+        [
+          5,
+          4383,
+          27.3
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001485990.pdf",
+      "pages": 15,
+      "odl": 30063,
+      "fitz": 28408,
+      "vlm_raw": 42544,
+      "vlm_adj": 31728,
+      "flagged": [
+        [
+          7,
+          10816,
+          27.66
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001817881.pdf",
+      "pages": 15,
+      "odl": 15956,
+      "fitz": 15625,
+      "vlm_raw": 15628,
+      "vlm_adj": 15628,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI002529577.pdf",
+      "pages": 9,
+      "odl": 16817,
+      "fitz": 14479,
+      "vlm_raw": 16133,
+      "vlm_adj": 16133,
+      "flagged": []
+    },
+    {
+      "doc": "KCI_FI001213772.pdf",
+      "pages": 15,
+      "odl": 16808,
+      "fitz": 16992,
+      "vlm_raw": 23215,
+      "vlm_adj": 14845,
+      "flagged": [
+        [
+          4,
+          8370,
+          27.1
+        ]
+      ]
+    },
+    {
+      "doc": "KCI_FI001175853.pdf",
+      "pages": 5,
+      "odl": 14648,
+      "fitz": 0,
+      "vlm_raw": 14472,
+      "vlm_adj": 8739,
+      "flagged": [
+        [
+          1,
+          5733,
+          28.27
+        ]
+      ]
+    }
+  ],
+  "totals": {
+    "odl": 585885,
+    "fitz": 505986,
+    "vlm_raw": 694258,
+    "vlm_adj": 541512,
+    "pages": 392,
+    "flagged_pages": 20
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "groups": [
+    {
+      "error_group": "extract_empty",
+      "count": 1,
+      "sample_error": "텍스트 추출 실패: []"
+    }
+  ]
+}
