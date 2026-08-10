@@ -324,6 +324,10 @@ async def extract_text(
         f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
     )
 
+    vlm_pages_used = 0
+    vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
+    vlm_cap_hit = False
+
     async with httpx.AsyncClient() as client:
         for page in doc:
             page_num = page.number
@@ -346,8 +350,20 @@ async def extract_text(
                     result.pages.append(odl_page)
                     continue
 
+            # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
+            # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
+            # (비어있거나 부실해도) 그대로 채택하고 남은 페이지는 VLM을 스킵한다.
+            if vlm_pages_used >= vlm_cap:
+                if not vlm_cap_hit:
+                    vlm_cap_hit = True
+                    log.warning(f"[{book_id}] VLM 페이지 상한({vlm_cap}) 도달 — 이후 저텍스트 페이지는 ODL로 대체")
+                if odl_page:
+                    result.pages.append(odl_page)
+                continue
+
             # 2티어: 본문 없는 스캔·이미지 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
             ocr_engine = cfg.OCR_ENGINE.lower()
+            vlm_pages_used += 1  # 실패해도 호출 시도 자체가 시간을 소모하므로 상한에 포함
             try:
                 log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={ocr_engine})")
                 if ocr_engine == "surya":

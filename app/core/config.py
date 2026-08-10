@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     # ── VLM (멀티모달 OCR — 페이지 이미지 → 텍스트) ──
     VLM_BASE_URL: str = "http://vllm:8000/v1"
-    VLM_MODEL: str = "qwen2.5-vl-7b"
+    VLM_MODEL: str = "qwen3-vl-8b"
 
     # ── LLM (텍스트 생성 — 요약/리라이트/추론) ───────
     LLM_BASE_URL: str = "http://host.docker.internal:18080/v1"
@@ -138,6 +138,10 @@ class Settings(BaseSettings):
 
     # ── 텍스트 추출 / VLM OCR ─────────────────────────
     EXTRACT_MIN_CHARS_PER_PAGE: int = 50  # 이 미만이면 VLM 보완 트리거
+    # 문서 하나당 VLM 보완 페이지 수 상한. 완전 스캔본 대형 문서가 페이지마다
+    # 순차 VLM 호출을 유발해 잡 전체 처리량을 끌어내리는 것을 방지.
+    # 초과분은 ODL 결과(비어있거나 부실해도)를 그대로 채택하고 VLM은 스킵한다.
+    VLM_MAX_PAGES_PER_DOC: int = 60
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
     # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.
