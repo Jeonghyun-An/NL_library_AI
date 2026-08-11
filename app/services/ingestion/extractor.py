@@ -350,16 +350,26 @@ async def extract_text(
             # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
             #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵)
             if odl_page is None:
+                body_len = 0
                 trigger = "ODL 누락"
             else:
                 body_len = _body_len(odl_page.text)
-                if body_len < MIN_CHARS_PER_PAGE:
-                    trigger = f"본문 텍스트 부족({body_len}자)"
+                if body_len >= MIN_CHARS_PER_PAGE:
+                    # ODL 결과가 충분해 보여도, 폰트 CMap 손상 등으로 ODL(veraPDF 기반)이
+                    # 실제로는 글자 대부분을 유실했을 수 있다("Incorrect bfrange in
+                    # toUnicode CMap" 경고가 뜨는 PDF에서 확인됨 — 워터마크가 아니라
+                    # 폰트 문제였음). fitz는 이런 손상에 관대해서 원문 길이를 정확히
+                    # 반영하므로, 길이 비교만으로 이상 여부를 감지한다(fitz 텍스트 자체는
+                    # 띄어쓰기 소실·컬럼 순서 문제가 있어 채택하지 않고 감지 용도로만 사용).
+                    fitz_check_len = _body_len(_clean_text(page.get_text()))
+                    if fitz_check_len <= body_len * 2:
+                        # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
+                        odl_page.text = _strip_figure_markers(odl_page.text)
+                        result.pages.append(odl_page)
+                        continue
+                    trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
                 else:
-                    # 1티어 결과 채택 — VLM 호출 안 함. 잔여 [그림] 마커는 정리.
-                    odl_page.text = _strip_figure_markers(odl_page.text)
-                    result.pages.append(odl_page)
-                    continue
+                    trigger = f"본문 텍스트 부족({body_len}자)"
 
             # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
             # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
