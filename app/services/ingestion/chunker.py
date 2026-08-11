@@ -356,6 +356,12 @@ def semantic_chunk(
     for chunk in chunks:
         final_chunks.extend(_split_oversized(chunk, max_tokens=max_tokens))
 
+    # _split_oversized는 max_tokens만 신경 쓰고 min_tokens를 모른다 — 소제목처럼
+    # 작은 청크 뒤에 그 청크 혼자 감당 못할 만큼 큰 본문이 이어지면, 그리디 누적이
+    # 소제목만 먼저 flush해버려 자투리 청크로 고아가 된다(예: "서론 1.1." 7자가
+    # 뒤 본문과 분리됨). 분할 후 다시 한 번 병합해 정리한다.
+    final_chunks = _merge_small_chunks(final_chunks, min_tokens=min_tokens)
+
     # 최종 바이트 가드 — 의미 분할로 안 잡힌 초대형 청크를 강제 분할
     # (VLM 출력처럼 마침표 없는 한 덩어리, 단일 초대형 문장 등)
     if apply_byte_guard:
