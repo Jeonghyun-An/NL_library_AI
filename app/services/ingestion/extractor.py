@@ -1,14 +1,20 @@
 """
 extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
 
-[1티어] OpenDataLoader v2  — 한컴·듀얼랩 하이브리드 엔진 (마크다운 + 표 + 문서 구조 보존)
-[2티어] VLM(Qwen2.5-VL)   — [그림] 플레이스홀더 또는 글자 수 부족 페이지만 선별 보완
-                            (fitz는 페이지 이미지 렌더링 용도로만 사용)
+[1티어] OpenDataLoader v2  — 한컴·듀얼랩 하이브리드 엔진 (마크다운+json 동시 산출,
+                            표·문서 구조 보존). extract_text_opendataloader()가
+                            실제 운영 파이프라인의 1티어 진입점이다(아래 목록의
+                            비교용 standalone 함수와는 별개).
+[2티어] VLM(Qwen3-VL)      — 다음 중 하나라도 해당하면 페이지 단위로 보완:
+                            (a) 본문 글자 수가 기준(EXTRACT_MIN_CHARS_PER_PAGE) 미만
+                            (b) 글자 수는 충분해도 fitz 추정치의 절반 이하 — 폰트
+                                CMap 손상으로 ODL이 글자를 유실했을 가능성
+                            (c) 표 셀 충전율이 낮음(<0.30) — 빈 표 격자가 글자 수만 채움
+                            (fitz는 페이지 이미지 렌더링뿐 아니라 (b)의 교차검증에도 쓰인다)
 
-비교 테스트용 standalone 함수:
+비교 테스트용 standalone 함수(운영 경로 아님):
 - extract_text_fitz_all()         : 모든 페이지 fitz로만
 - extract_text_vlm_all()          : 모든 페이지 VLM으로만
-- extract_text_opendataloader()   : 모든 페이지 OpenDataLoader로만
 """
 import io
 import logging
@@ -306,8 +312,9 @@ async def extract_text(
 ) -> ExtractionResult:
     """2티어 라우팅 파이프라인.
 
-    1티어: OpenDataLoader로 전체 PDF 마크다운 추출
-    2티어: 페이지 텍스트에 `[그림]`이 있거나 글자수 < MIN_CHARS_PER_PAGE인 경우만 VLM 보완
+    1티어: OpenDataLoader로 전체 PDF 마크다운+json 추출
+    2티어: 본문 부족 / CMap 손상 의심 / 표 셀 충전율 낮음 중 하나라도 해당하는
+           페이지만 VLM 보완 (판단 기준은 파일 상단 docstring 참고)
     """
     result = ExtractionResult(book_id=book_id, total_pages=0)
 
@@ -319,7 +326,7 @@ async def extract_text(
     if odl_result.errors:
         result.errors.extend(odl_result.errors)
 
-    # ── 2티어 라우팅을 위해 fitz로 페이지 이미지 렌더링 준비 ─
+    # ── fitz로 페이지 열기 — VLM용 이미지 렌더링 + CMap 손상 교차검증(page.get_text())에 사용 ─
     try:
         if file_bytes:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -347,9 +354,11 @@ async def extract_text(
             page_num = page.number
             odl_page = odl_pages_by_num.get(page_num)
 
-            # 라우팅 판단 — "그림 유무"가 아니라 "본문 텍스트 충분 여부"로 판정.
-            # [그림] 마커(워터마크·로고·삽화 흔적)를 뺀 실질 본문이 기준 미만이면
-            # 텍스트 레이어가 없는(스캔·이미지) 페이지로 보고 VLM OCR로 보완한다.
+            # 라우팅 판단 — "그림 유무"가 아니라 "1티어 결과를 믿을 수 있는지"로 판정.
+            # 세 가지를 순서대로 본다: ① 본문 길이 부족(스캔·이미지 페이지),
+            # ② 길이는 충분해도 fitz 대비 크게 짧음(CMap 손상 의심),
+            # ③ 표 셀 충전율 낮음(빈 표 격자가 글자 수만 채우는 경우).
+            # 셋 다 아니면 1티어 결과를 그대로 채택하고 VLM은 호출하지 않는다.
             # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
             #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵)
             if odl_page is None:
@@ -392,7 +401,7 @@ async def extract_text(
                     result.pages.append(odl_page)
                 continue
 
-            # 2티어: 본문 없는 스캔·이미지 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
+            # 2티어: 1티어 결과를 못 믿는 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
             ocr_engine = cfg.OCR_ENGINE.lower()
             vlm_pages_used += 1  # 실패해도 호출 시도 자체가 시간을 소모하므로 상한에 포함
             try:
@@ -509,9 +518,9 @@ async def extract_text_opendataloader(
     file_bytes: bytes | None = None,
     max_pages: int | None = None,
 ) -> ExtractionResult:
-    """OpenDataLoader PDF를 이용한 추출 (3단계, 비교 테스트용)
+    """OpenDataLoader PDF를 이용한 추출 — extract_text()가 호출하는 실제 1티어 진입점.
 
-    설치: pip install open-data-loader
+    설치: pip install opendataloader-pdf
 
     markdown·json을 한 번의 실행으로 함께 산출한다(추가 비용 없음). markdown은
     기존과 동일하게 본문으로 쓰고, json은 표 셀이 실제로 비어있는지를 구조
