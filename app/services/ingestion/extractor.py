@@ -103,6 +103,9 @@ class ExtractionResult:
     page_map: dict[int, int] = field(default_factory=dict)
     figures: list[FigureData] = field(default_factory=list)
     vlm_capped: bool = False  # VLM_MAX_PAGES_PER_DOC 상한에 걸려 일부 페이지가 누락됐는지
+    # 페이지별 표 셀 충전율(있는 페이지만) — 마크다운 평탄화로 사라지는 "셀 비었음"
+    # 정보를 JSON 산출물에서 복원해 라우팅 판정에 쓴다. 0에 가까울수록 빈 격자.
+    table_fill_ratios: dict[int, float] = field(default_factory=dict)
 
     @property
     def full_text(self) -> str:
@@ -354,7 +357,8 @@ async def extract_text(
                 trigger = "ODL 누락"
             else:
                 body_len = _body_len(odl_page.text)
-                if body_len >= MIN_CHARS_PER_PAGE:
+                fill_ratio = odl_result.table_fill_ratios.get(page_num)
+                if body_len >= MIN_CHARS_PER_PAGE and (fill_ratio is None or fill_ratio >= 0.30):
                     # ODL 결과가 충분해 보여도, 폰트 CMap 손상 등으로 ODL(veraPDF 기반)이
                     # 실제로는 글자 대부분을 유실했을 수 있다("Incorrect bfrange in
                     # toUnicode CMap" 경고가 뜨는 PDF에서 확인됨 — 워터마크가 아니라
@@ -368,6 +372,11 @@ async def extract_text(
                         result.pages.append(odl_page)
                         continue
                     trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+                elif fill_ratio is not None and fill_ratio < 0.30:
+                    # 마크다운 글자수는 충분해도 표 셀 대부분이 비어있음 — 셀이 빈
+                    # 격자 문자로 렌더링돼 글자수만 채우는 실패(사내 연구로 검증:
+                    # 재현율 48.1%→90.4%, 오탐 비용 < 미탐의 영구 손실).
+                    trigger = f"표 셀 충전율 낮음({fill_ratio:.2f})"
                 else:
                     trigger = f"본문 텍스트 부족({body_len}자)"
 
@@ -503,22 +512,34 @@ async def extract_text_opendataloader(
     """OpenDataLoader PDF를 이용한 추출 (3단계, 비교 테스트용)
 
     설치: pip install open-data-loader
+
+    markdown·json을 한 번의 실행으로 함께 산출한다(추가 비용 없음). markdown은
+    기존과 동일하게 본문으로 쓰고, json은 표 셀이 실제로 비어있는지를 구조
+    그대로 담고 있어 라우팅 판정용 신호(table_fill_ratios)로만 사용한다.
+    (마크다운 평탄화 과정에서 "빈 셀"과 "내용 있는 셀"이 똑같이 `| |` 격자
+    문자로 변해 라우팅 신호가 사라지는 문제 — 사내 연구 결과 반영)
     """
     import asyncio
+    import json as _json
     import os
     import tempfile
+    from collections import defaultdict
+    from pathlib import Path as _Path
 
     result = ExtractionResult(book_id=book_id, total_pages=0)
 
     try:
-        from langchain_opendataloader_pdf import OpenDataLoaderPDFLoader  # pip install langchain-opendataloader-pdf (Java 11+ 필요)
+        import opendataloader_pdf  # pip install opendataloader-pdf (Java 11+ 필요)
     except ImportError:
         result.errors.append(
-            "langchain-opendataloader-pdf 패키지 미설치 — pip install langchain-opendataloader-pdf"
+            "opendataloader-pdf 패키지 미설치 — pip install opendataloader-pdf"
         )
         return result
 
+    _PAGE_SEP = "\n<<<ODL_PAGE_BREAK_%page-number%>>>\n"
+
     tmp_path = None
+    out_dir = None
     try:
         if file_bytes:
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
@@ -528,25 +549,75 @@ async def extract_text_opendataloader(
         else:
             load_path = str(file_path)
 
-        def _load_sync() -> list:
-            loader = OpenDataLoaderPDFLoader(
-                file_path=load_path,
-                format="markdown",        # 표 → markdown table, 그림 → ![]() 참조
+        out_dir = tempfile.mkdtemp()
+
+        def _convert_sync() -> None:
+            opendataloader_pdf.convert(
+                input_path=load_path,
+                output_dir=out_dir,
+                format=["markdown", "json"],
                 image_output="embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
                 image_format="jpeg",      # base64 크기 절감
                 table_method="cluster",   # 무경계/복잡 표까지 검출
-                split_pages=True,         # 페이지별 Document
+                markdown_page_separator=_PAGE_SEP,
                 keep_line_breaks=False,
+                quiet=True,
             )
-            return loader.load()
 
         loop = asyncio.get_event_loop()
-        documents = await loop.run_in_executor(None, _load_sync)
+        await loop.run_in_executor(None, _convert_sync)
+
+        out_path = _Path(out_dir)
+        md_files = list(out_path.glob("*.md"))
+        json_files = list(out_path.glob("*.json"))
+        if not md_files:
+            raise RuntimeError("markdown 출력 파일 없음")
+
+        # ── JSON → 페이지별 표 셀 충전율 (라우팅 신호 전용) ──────────
+        if json_files:
+            try:
+                with open(json_files[0], encoding="utf-8") as f:
+                    jdata = _json.load(f)
+                by_page: dict[int, list] = defaultdict(list)
+                for el in jdata.get("kids", []):
+                    by_page[el.get("page number", 1)].append(el)
+                for pnum, elements in by_page.items():
+                    ratios = []
+                    for el in elements:
+                        if el.get("type") != "table":
+                            continue
+                        total = empty = 0
+                        for row in el.get("rows", []):
+                            for cell in row.get("cells", []):
+                                total += 1
+                                if not cell.get("kids"):
+                                    empty += 1
+                        if total:
+                            ratios.append(1 - empty / total)
+                    if ratios:
+                        result.table_fill_ratios[pnum - 1] = min(ratios)  # 1-based → 0-based
+            except Exception as e:
+                log.warning(f"[{book_id}] 표 충전율 파싱 실패(무시하고 진행): {e}")
+
+        # ── markdown → 페이지별 텍스트 ────────────────────────────
+        with open(md_files[0], encoding="utf-8") as f:
+            content = f.read()
+
+        import re
+        sep_pattern = re.escape(_PAGE_SEP).replace(re.escape("%page-number%"), r"(\d+)")
+        parts = re.split(sep_pattern, content)
+
+        documents: list[tuple[int, str]] = []  # (page_num 1-based, text)
+        if parts[0].strip():
+            documents.append((1, parts[0].strip()))
+        for i in range(1, len(parts), 2):
+            if i + 1 < len(parts) and parts[i + 1].strip():
+                documents.append((int(parts[i]), parts[i + 1].strip()))
 
         if max_pages:
             documents = documents[:max_pages]
 
-        import re, base64 as _b64
+        import base64 as _b64
         # base64 이미지 패턴 (embedded)
         img_b64_pattern = re.compile(
             r'!\[([^\]]*)\]\(data:image/[^;]+;base64,([^)]+)\)'
@@ -555,9 +626,8 @@ async def extract_text_opendataloader(
         img_any_pattern = re.compile(r'!\[[^\]]*\]\([^)]+\)')
 
         result.total_pages = len(documents)
-        for i, doc in enumerate(documents):
-            page_num = doc.metadata.get("page", i + 1) - 1  # OpenDataLoader는 1-based → 0-based
-            raw = doc.page_content
+        for i, (doc_page_num, raw) in enumerate(documents):
+            page_num = doc_page_num - 1  # OpenDataLoader는 1-based → 0-based
 
             # ── 그림 추출: base64 이미지마다 앞뒤 컨텍스트 보존 ──
             for img_idx, m in enumerate(img_b64_pattern.finditer(raw)):
@@ -603,6 +673,12 @@ async def extract_text_opendataloader(
                 os.unlink(tmp_path)
             except OSError:
                 pass
+        if out_dir:
+            import shutil
+            try:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            except OSError:
+                pass
 
-    log.info(f"[{book_id}] OpenDataLoader 추출 완료 — {result.stats}")
+    log.info(f"[{book_id}] OpenDataLoader 추출 완료 — {result.stats}, 표충전율={result.table_fill_ratios}")
     return result
