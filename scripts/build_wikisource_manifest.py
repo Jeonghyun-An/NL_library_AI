@@ -48,6 +48,15 @@ WORKS = [
     ("WS_015", "벙어리 삼룡이", "나도향", "벙어리 삼룡이"),
     ("WS_016", "탈출기", "최서해", "탈출기"),
     ("WS_017", "광야", "이육사", "광야 (이육사)"),
+    ("WS_018", "감자", "김동인", "감자"),
+    ("WS_019", "배따라기", "김동인", "배따라기"),
+    ("WS_020", "붉은 산", "김동인", "붉은 산"),
+    ("WS_021", "정지용 시집", "정지용", "향수"),
+    ("WS_022", "금수회의록", "안국선", "금수회의록"),
+    ("WS_023", "혈의 누", "이인직", "혈의 누"),
+    ("WS_024", "빈처", "현진건", "빈처"),
+    ("WS_025", "고향", "현진건", "고향 (현진건)"),
+    ("WS_026", "물레방아", "나도향", "물레방아"),
 ]
 
 WIKISOURCE_EXPORT = "https://ko.wikisource.org/wiki/Special:Export/{}"
@@ -154,6 +163,9 @@ def fetch_full_text(page_title: str) -> str:
     알아채기 어렵다).
     """
     subpages = list_subpages(page_title)
+    # '현대어 해석'/'번역' 류는 장 이어짐이 아니라 별개 버전 문서(예: 혈의 누/현대어
+    # 해석) — 원전 본문과 이어붙이면 뒤섞이므로 하위 문서 취급에서 제외한다.
+    subpages = [sp for sp in subpages if not re.search(r"현대어|번역", sp.rsplit("/", 1)[-1])]
     if subpages:
         subpages.sort(key=_numeric_sort_key)
         parts = []
@@ -226,6 +238,10 @@ def main() -> None:
         help="soffice(LibreOffice) 실행 파일 경로",
     )
     ap.add_argument("--bucket", default="nl-lib-bucket")
+    ap.add_argument(
+        "--only", default=None,
+        help="쉼표로 구분한 book_id만 처리(예: WS_018,WS_019). 기존 manifest의 나머지 항목은 유지.",
+    )
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -235,9 +251,23 @@ def main() -> None:
     docx_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = out_dir / "manifest.jsonl"
-    rows = []
+    only_ids = set(args.only.split(",")) if args.only else None
+    works = [w for w in WORKS if only_ids is None or w[0] in only_ids]
 
-    for book_id, title, author, page_title in WORKS:
+    # 기존 manifest에서 이번에 다시 안 만드는 항목은 그대로 보존(머지).
+    existing_rows = {}
+    if manifest_path.exists():
+        with open(manifest_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    r = json.loads(line)
+                    existing_rows[r["book_id"]] = r
+    processed_ids = {w[0] for w in works}
+    rows = [r for bid, r in existing_rows.items() if bid not in processed_ids]
+    new_ok = 0
+
+    for book_id, title, author, page_title in works:
         print(f"[{book_id}] {title} ({author}) 처리 중...", flush=True)
         try:
             wikitext = fetch_full_text(page_title)
@@ -262,6 +292,7 @@ def main() -> None:
                 "size": size,
                 "title": title,
             })
+            new_ok += 1
             print(f"  완료 — {size:,} bytes")
         except Exception as e:
             print(f"  실패: {e}")
@@ -270,7 +301,7 @@ def main() -> None:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    print(f"\n총 {len(rows)}/{len(WORKS)}건 완료. manifest: {manifest_path}")
+    print(f"\n이번 처리 {new_ok}/{len(works)}건, 전체 manifest {len(rows)}건. manifest: {manifest_path}")
 
 
 if __name__ == "__main__":
