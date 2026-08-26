@@ -582,20 +582,21 @@ async def extract_text_opendataloader(
                 for el in jdata.get("kids", []):
                     by_page[el.get("page number", 1)].append(el)
                 for pnum, elements in by_page.items():
-                    ratios = []
+                    # 표가 여럿이면 셀 수로 가중 합산(페이지 전체 셀 대비 빈 셀 비율).
+                    # 표별 min()을 쓰면 레이아웃용 소형 빈 표(예: 1x2) 하나만으로
+                    # 본표가 멀쩡해도 폴백이 발동한다 — 큰 표가 자연히 더 반영되도록
+                    # 셀 단위로 합산(연구팀 측정 방식과 동일하게 맞춤).
+                    total = empty = 0
                     for el in elements:
                         if el.get("type") != "table":
                             continue
-                        total = empty = 0
                         for row in el.get("rows", []):
                             for cell in row.get("cells", []):
                                 total += 1
                                 if not cell.get("kids"):
                                     empty += 1
-                        if total:
-                            ratios.append(1 - empty / total)
-                    if ratios:
-                        result.table_fill_ratios[pnum - 1] = min(ratios)  # 1-based → 0-based
+                    if total:
+                        result.table_fill_ratios[pnum - 1] = 1 - empty / total  # 1-based → 0-based
             except Exception as e:
                 log.warning(f"[{book_id}] 표 충전율 파싱 실패(무시하고 진행): {e}")
 
