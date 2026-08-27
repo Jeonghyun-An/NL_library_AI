@@ -32,9 +32,18 @@ cfg = get_settings()
 MIN_CHARS_PER_PAGE = cfg.EXTRACT_MIN_CHARS_PER_PAGE
 
 
-def _clean_text(text: str) -> str:
-    """추출된 텍스트 정제"""
+def _clean_text(text: str, strip_lines: set[str] | None = None) -> str:
+    """추출된 텍스트 정제.
+
+    strip_lines: ODL json에서 type이 header/footer인 요소의 실제 문자열(있으면) —
+    정규식 추측 대신 구조적으로 확정된 머리말/쪽번호를 정확히 제거한다. 정규식은
+    JSON 신호가 없는 경우(VLM 출력 등)를 위한 최후 수단으로 계속 둔다.
+    """
     import re
+    if strip_lines:
+        text = "\n".join(
+            line for line in text.split("\n") if line.strip() not in strip_lines
+        )
     # 연속 줄바꿈을 하나로
     text = re.sub(r'\n{3,}', '\n\n', text)
     # 줄바꿈 + 공백 정리 (단락 구분은 유지)
@@ -48,7 +57,7 @@ def _clean_text(text: str) -> str:
     text = '\n'.join(lines)
     # 연속 공백 제거
     text = re.sub(r' {2,}', ' ', text)
-    # 페이지 번호 패턴 제거 (- 1 -, 1/23, Page 1 등)
+    # 페이지 번호 패턴 제거 (- 1 -, 1/23, Page 1 등) — JSON 신호가 없을 때의 최후 수단
     text = re.sub(r'\n-\s*\d+\s*-\s*\n', '\n', text)
     text = re.sub(r'\n\d+\s*/\s*\d+\s*\n', '\n', text)
     text = re.sub(r'\nPage\s+\d+\s*\n', '\n', text, flags=re.IGNORECASE)
@@ -68,6 +77,21 @@ def _body_len(text: str) -> int:
     구조 문자를 뺀 뒤 재므로, 셀에 실제 내용이 있는 표는 그대로 본문으로 카운트된다.
     """
     return len(text.replace("[그림]", "").translate(_STRUCT_CHARS))
+
+
+def _collect_content_strings(element: dict) -> list[str]:
+    """ODL json 요소(및 표의 rows/cells, header/footer의 중첩 kids 등)에서
+    실제 텍스트(content)를 재귀적으로 모두 모은다."""
+    out = []
+    content = element.get("content")
+    if isinstance(content, str) and content.strip():
+        out.append(content.strip())
+    for kid in element.get("kids", []):
+        out.extend(_collect_content_strings(kid))
+    for row in element.get("rows", []):
+        for cell in row.get("cells", []):
+            out.extend(_collect_content_strings(cell))
+    return out
 
 
 def _strip_figure_markers(text: str) -> str:
@@ -582,7 +606,8 @@ async def extract_text_opendataloader(
         if not md_files:
             raise RuntimeError("markdown 출력 파일 없음")
 
-        # ── JSON → 페이지별 표 셀 충전율 (라우팅 신호 전용) ──────────
+        # ── JSON → 페이지별 표 셀 충전율(라우팅 신호) + 머리말/쪽번호 텍스트 ──
+        page_headers_footers: dict[int, set[str]] = {}
         if json_files:
             try:
                 with open(json_files[0], encoding="utf-8") as f:
@@ -591,6 +616,12 @@ async def extract_text_opendataloader(
                 for el in jdata.get("kids", []):
                     by_page[el.get("page number", 1)].append(el)
                 for pnum, elements in by_page.items():
+                    hf_lines: set[str] = set()
+                    for el in elements:
+                        if el.get("type") in ("header", "footer"):
+                            hf_lines.update(_collect_content_strings(el))
+                    if hf_lines:
+                        page_headers_footers[pnum - 1] = hf_lines  # 1-based → 0-based
                     # 표가 여럿이면 셀 수로 가중 합산(페이지 전체 셀 대비 빈 셀 비율).
                     # 표별 min()을 쓰면 레이아웃용 소형 빈 표(예: 1x2) 하나만으로
                     # 본표가 멀쩡해도 폴백이 발동한다 — 큰 표가 자연히 더 반영되도록
@@ -664,7 +695,7 @@ async def extract_text_opendataloader(
 
             img_count = len(img_b64_pattern.findall(raw))
             stripped = img_any_pattern.sub('[그림]', raw)
-            text = _clean_text(stripped)
+            text = _clean_text(stripped, strip_lines=page_headers_footers.get(page_num))
             if img_count:
                 log.info(f"[{book_id}] p.{page_num} 그림 {img_count}개 검출")
             result.pages.append(PageResult(
