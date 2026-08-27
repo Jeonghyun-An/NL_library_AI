@@ -9,17 +9,17 @@ x-common-env: &common-env
   # DB
   DB_HOST: "postgres"
   DB_PORT: "5432"
-  DB_NAME: ${POSTGRES_DB:-nl_lib}
-  DB_USER: ${POSTGRES_USER:-admin}
-  DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
+  DB_NAME: ${POSTGRES_DB}
+  DB_USER: ${POSTGRES_USER}
+  DB_PASSWORD: ${POSTGRES_PASSWORD}
 
   # Redis
   REDIS_URL: "redis://redis:6379/0"
 
   # MinIO
   MINIO_ENDPOINT: "minio:9000"
-  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
   MINIO_SECURE: "false"
   MINIO_BUCKET: "nl-lib-bucket"
 
@@ -226,8 +226,8 @@ services:
     container_name: nl-lib-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
       - nl_lib_minio_data:/data
     ports:
@@ -250,8 +250,8 @@ services:
       minio:
         condition: service_healthy
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: "nl-lib-bucket"
     entrypoint: ["/bin/sh", "-c"]
     command: >
@@ -270,8 +270,8 @@ services:
     environment:
       ETCD_ENDPOINTS: "etcd:2379"
       MINIO_ADDRESS: "minio:9000"
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_USE_SSL: "false"
       MINIO_BUCKET_NAME: "nl-lib-bucket"
     volumes:
@@ -297,9 +297,9 @@ services:
     image: postgres:16-alpine
     container_name: nl-lib-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nl_lib}
-      POSTGRES_USER: ${POSTGRES_USER:-admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "15432:5432"
     volumes:
@@ -309,7 +309,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-nl_lib}",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
         ]
       interval: 5s
       timeout: 3s
