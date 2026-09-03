@@ -6,11 +6,14 @@ extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
                             실제 운영 파이프라인의 1티어 진입점이다(아래 목록의
                             비교용 standalone 함수와는 별개).
 [2티어] VLM(Qwen3-VL)      — 다음 중 하나라도 해당하면 페이지 단위로 보완:
-                            (a) 본문 글자 수가 기준(EXTRACT_MIN_CHARS_PER_PAGE) 미만
-                            (b) 글자 수는 충분해도 fitz 추정치의 절반 이하 — 폰트
-                                CMap 손상으로 ODL이 글자를 유실했을 가능성
-                            (c) 표 셀 충전율이 낮음(<0.30) — 빈 표 격자가 글자 수만 채움
-                            (fitz는 페이지 이미지 렌더링뿐 아니라 (b)의 교차검증에도 쓰인다)
+                            (a) 표 셀 충전율이 낮음(<0.30) — 빈 표 격자가 글자 수만 채움
+                            (b) 글자 수는 기준(EXTRACT_MIN_CHARS_PER_PAGE) 이상이어도
+                                fitz 추정치의 절반 이하 — 폰트 CMap 손상으로 ODL이
+                                글자를 유실했을 가능성
+                            (c) 글자 수가 기준 미만 **이면서 fitz 추정치도 함께 미만**
+                                — fitz까지 짧으면 표지·구분 페이지 등 원래 짧은
+                                페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다
+                            (fitz는 페이지 이미지 렌더링뿐 아니라 (b)(c)의 교차검증에도 쓰인다)
 
 비교 테스트용 standalone 함수(운영 경로 아님):
 - extract_text_fitz_all()         : 모든 페이지 fitz로만
@@ -379,39 +382,52 @@ async def extract_text(
             odl_page = odl_pages_by_num.get(page_num)
 
             # 라우팅 판단 — "그림 유무"가 아니라 "1티어 결과를 믿을 수 있는지"로 판정.
-            # 세 가지를 순서대로 본다: ① 본문 길이 부족(스캔·이미지 페이지),
-            # ② 길이는 충분해도 fitz 대비 크게 짧음(CMap 손상 의심),
-            # ③ 표 셀 충전율 낮음(빈 표 격자가 글자 수만 채우는 경우).
+            # ① 표 셀 충전율 낮음(빈 표 격자가 글자 수만 채우는 경우) 최우선 체크,
+            # ② 그 외에는 fitz 추정 길이와 교차검증 — 길이 기준 충족 페이지는 fitz가
+            #    크게 더 길면(CMap 손상 의심) VLM, 길이 기준 미달 페이지는 fitz도
+            #    같이 짧으면(원래 짧은 페이지) ODL 그대로 채택, fitz엔 더 있으면 VLM.
             # 셋 다 아니면 1티어 결과를 그대로 채택하고 VLM은 호출하지 않는다.
             # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
-            #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵)
+            #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵.
+            #  다만 길이 기준 미달 분기는 fitz 교차검증이 없어 표지·구분 페이지처럼
+            #  "원래 짧은 페이지"까지 전부 VLM으로 넘기고 있었다 — 아래에서 통일)
             if odl_page is None:
                 body_len = 0
                 trigger = "ODL 누락"
             else:
                 body_len = _body_len(odl_page.text)
                 fill_ratio = odl_result.table_fill_ratios.get(page_num)
-                if body_len >= MIN_CHARS_PER_PAGE and (fill_ratio is None or fill_ratio >= 0.30):
+
+                if fill_ratio is not None and fill_ratio < 0.30:
+                    # 마크다운 글자수는 충분해도 표 셀 대부분이 비어있음 — 셀이 빈
+                    # 격자 문자로 렌더링돼 글자수만 채우는 실패(사내 연구로 검증:
+                    # 재현율 48.1%→90.4%, 오탐 비용 < 미탐의 영구 손실).
+                    trigger = f"표 셀 충전율 낮음({fill_ratio:.2f})"
+                else:
                     # ODL 결과가 충분해 보여도, 폰트 CMap 손상 등으로 ODL(veraPDF 기반)이
                     # 실제로는 글자 대부분을 유실했을 수 있다("Incorrect bfrange in
                     # toUnicode CMap" 경고가 뜨는 PDF에서 확인됨 — 워터마크가 아니라
                     # 폰트 문제였음). fitz는 이런 손상에 관대해서 원문 길이를 정확히
                     # 반영하므로, 길이 비교만으로 이상 여부를 감지한다(fitz 텍스트 자체는
                     # 띄어쓰기 소실·컬럼 순서 문제가 있어 채택하지 않고 감지 용도로만 사용).
+                    # 길이 기준 미달 페이지도 동일하게 fitz로 "원래 짧은 페이지"인지
+                    # "ODL이 놓친 페이지"인지 구분한다 — <50자 트리거가 전체 VLM
+                    # 호출의 90% 이상을 차지해 표지·구분 페이지까지 휩쓸고 있었음.
                     fitz_check_len = _body_len(_clean_text(page.get_text()))
-                    if fitz_check_len <= body_len * 2:
-                        # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
+                    if body_len >= MIN_CHARS_PER_PAGE:
+                        if fitz_check_len <= body_len * 2:
+                            # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
+                            odl_page.text = _strip_figure_markers(odl_page.text)
+                            result.pages.append(odl_page)
+                            continue
+                        trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+                    elif fitz_check_len < MIN_CHARS_PER_PAGE:
+                        # 페이지 자체가 원래 짧음(표지·구분 페이지 등) — ODL 결과 그대로 채택
                         odl_page.text = _strip_figure_markers(odl_page.text)
                         result.pages.append(odl_page)
                         continue
-                    trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
-                elif fill_ratio is not None and fill_ratio < 0.30:
-                    # 마크다운 글자수는 충분해도 표 셀 대부분이 비어있음 — 셀이 빈
-                    # 격자 문자로 렌더링돼 글자수만 채우는 실패(사내 연구로 검증:
-                    # 재현율 48.1%→90.4%, 오탐 비용 < 미탐의 영구 손실).
-                    trigger = f"표 셀 충전율 낮음({fill_ratio:.2f})"
-                else:
-                    trigger = f"본문 텍스트 부족({body_len}자)"
+                    else:
+                        trigger = f"본문 텍스트 부족(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
 
             # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
             # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
