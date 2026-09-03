@@ -421,8 +421,12 @@ async def extract_text(
                             result.pages.append(odl_page)
                             continue
                         trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
-                    elif fitz_check_len < MIN_CHARS_PER_PAGE:
-                        # 페이지 자체가 원래 짧음(표지·구분 페이지 등) — ODL 결과 그대로 채택
+                    elif 0 < fitz_check_len < MIN_CHARS_PER_PAGE:
+                        # 페이지 자체가 원래 짧음(표지·구분 페이지 등) — ODL 결과 그대로 채택.
+                        # fitz_check_len == 0(텍스트 레이어 자체가 없음)은 이 분기에서 제외한다 —
+                        # 스캔본 페이지는 fitz도 ODL도 똑같이 0자를 보고하므로 "짧아서 0"과
+                        # "텍스트 레이어가 없어서 0"을 이 신호만으로는 구분할 수 없다. 후자를
+                        # 오분류하면 스캔 문서 전체가 빈 텍스트로 채택돼 섹션이 0개가 된다.
                         odl_page.text = _strip_figure_markers(odl_page.text)
                         result.pages.append(odl_page)
                         continue
