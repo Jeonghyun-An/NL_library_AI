@@ -201,12 +201,12 @@ git commit -m "[Docs] round01 — GIT_WORKFLOW.md 추가"
 - Create: `docs/roadmap/00_status.md`
 - Create: `docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md`
 
-- [ ] **Step 1: 디렉토리·파일 없음 확인**
+- [x] **Step 1: 디렉토리·파일 없음 확인**
 
 Run: `test -d docs/roadmap && echo EXISTS || echo MISSING`
 Expected: `MISSING`
 
-- [ ] **Step 2: `docs/roadmap/00_status.md` 작성**
+- [x] **Step 2: `docs/roadmap/00_status.md` 작성**
 
 ```markdown
 # 현재 상태 · 다음 할 일
@@ -228,7 +228,7 @@ Expected: `MISSING`
 | round01 | 개발 체계 도입(museum 스타일 이식) | 진행 중 |
 ```
 
-- [ ] **Step 3: `docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md` 작성**
+- [x] **Step 3: `docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md` 작성**
 
 ```markdown
 # round<NN> 완료노트
@@ -263,12 +263,12 @@ Expected: `MISSING`
 - [ ] `dev→main` 머지 + push 완료
 ```
 
-- [ ] **Step 4: 검증**
+- [x] **Step 4: 검증**
 
 Run: `test -f docs/roadmap/00_status.md && test -f docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md && echo BOTH_EXIST`
 Expected: `BOTH_EXIST`
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add docs/roadmap/00_status.md docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md
@@ -398,13 +398,15 @@ git commit -m "[Docs] round01 — 코딩 표준 문서화(app/ 기존 관행 성
 
 ---
 
-### Task 6: docs/ops/recurring-gotchas.md + docs/design/README.md
+### Task 6: docs/ops/recurring-gotchas.md + docs/design/README.md — ✅ 완료 (`77b190a` → 리뷰 수정 예정)
+
+> **리뷰 발견(Important)**: 표 스키마(6열 마크다운 테이블)가 museum 원본(39개 항목, 산문 섹션 `## N. 제목` 형식, 26줄이 하위 불릿·코드블록 포함, 11줄이 `|` 문자 포함)과 비교하면 실제 항목을 못 담는다 — 지금(비어있을 때) 고치는 게 공짜, 첫 항목이 생긴 뒤엔 마이그레이션 비용 발생. 산문 섹션 형식으로 전환하고, round01 자체에서 발견한 실제 함정 2건(dev 이미지 pull-only·external volume 의존)을 시드 데이터로 넣는다. 쓰기·읽기 트리거도 없었음(CLAUDE.md에 사전 확인 게이트 없음, 완료노트에 구체 지시 없음) — 함께 보강.
 
 **Files:**
 - Create: `docs/ops/recurring-gotchas.md`
 - Create: `docs/design/README.md`
 
-- [ ] **Step 1: `docs/ops/recurring-gotchas.md` 작성 (빈 템플릿)**
+- [x] **Step 1: `docs/ops/recurring-gotchas.md` 작성 (빈 템플릿)**
 
 ```markdown
 # 반복 함정 (Recurring Gotchas)
@@ -417,7 +419,7 @@ git commit -m "[Docs] round01 — 코딩 표준 문서화(app/ 기존 관행 성
 (아직 항목 없음 — round01 시점 기준 빈 템플릿으로 시작)
 ```
 
-- [ ] **Step 2: `docs/design/README.md` 작성 (스텁)**
+- [x] **Step 2: `docs/design/README.md` 작성 (스텁)**
 
 ```markdown
 # 디자인 트랙 (미도입)
@@ -434,12 +436,12 @@ git commit -m "[Docs] round01 — 코딩 표준 문서화(app/ 기존 관행 성
 - 스텁 — 실제 자산 없음. 도입 전까지 모든 라운드의 「디자인 참조」는 "해당 없음 — 디자인 트랙 미도입"으로 기입한다.
 ```
 
-- [ ] **Step 3: 검증**
+- [x] **Step 3: 검증**
 
 Run: `test -f docs/ops/recurring-gotchas.md && test -f docs/design/README.md && echo BOTH_EXIST`
 Expected: `BOTH_EXIST`
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add docs/ops/recurring-gotchas.md docs/design/README.md
