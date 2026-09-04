@@ -1,0 +1,27 @@
+2024년 12월 한국소프트웨어감정평가학회 논문지 제20권 제4호
+논문 2024-4-22 http://dx.doi.org/10.29056/jsav.2024.12.22
+
+방송인 중심의 DAO 기반 탈중앙화 게임 대회 운영 모델
+조용준*† , 홍두표*, 장성일*, 신동명*
+Streamer-Centric DAO-Based Decentralized Game Tournament Operation Model
+YongJoon Joe*† , Du-Pyo Hong*, Sung-Il Jang*, Dong-Myung Shin*
+
+요약
+기존 게임 대회 운영은 대형 게임사나 소수의 조직위원회가 규칙 및 수익 분배를 독점적으로 결정하여 공정성과 창의성이 저해되는 문제가 있었다. 본 논문은 이러한 한계를 극복하기 위해 DAO(탈중앙화 자율 조직) 기반의 방송인 중심 운영 모델을 제안한다. 이 모델은 게임 대회의 모든 이해관계자가 스마트 컨트랙트를 통해 투명한 의사 결정과 수익 분배에 참여함으로써 공정성과 신뢰성을 강화한다. 또한 게임사와의 저작권 협상을 DAO 내에서 관리하여 생태계의 다양성과 지속성을 제고한다. 이를 통해 기존 중앙 집중형 구조 대비 의사 결정 과정의 민주화, 공정한 보상 체계, 저작권 문제의 사전적 해결 가능성을 확인하였다.
+
+Abstract
+Existing game tournaments have faced problems where large game companies or a small organizing committee monopolize decision-making on rules and revenue distribution, thereby hindering fairness and creativity. To overcome these limitations, this paper proposes a DAO (Decentralized Autonomous Organization)-based, broadcaster-centric operational model. In this model, all stakeholders in the tournament participate in transparent decision-making and revenue distribution through smart contracts, thereby enhancing fairness and trust. Furthermore, it manages copyright negotiations with game companies and oversees revenue models within the DAO, ultimately promoting ecosystem diversity and sustainability.
+Through conceptual simulations and case analyses, this study verifies the feasibility of the proposed model. Compared to traditional centralized structures, the findings confirm the model’s potential for democratizing the decision-making process, establishing fair compensation frameworks, and proactively resolving copyright issues.
+
+한글키워드 : 게임 방송, 게임 대회, 탈중앙화 자율 조직
+keywords : Game streaming, Game Tournament, Decentralization, Copyright, Decentralized Autonomous Organization
+
+* 엘에스웨어(주)
+† 교신저자: 조용준(email: eugene@lsware.com)
+접수일자: 2024.11.28. 심사완료: 2024.12.15.
+게재확정: 2024.12.20.
+
+1. 서론
+게임 방송은 현대 디지털 문화에서 중요한 콘텐츠이며, 게임 대회 운영 모델은 게임 방송의 발전과 확산에 핵심적인 역할을 한다. 특히, 게임 대회는 단순한 경쟁의 장이 아니라, 게임 문화의 확산, 커뮤니티의 형성, 그리고 게임 산업의 경제적 가치 창출에 기여하는 중요한 플랫폼이다. 그러나 기존의 게임 대회 운영 모델은 대형 게임사나 소수의 조직위원회에 의해 독점적으로 규칙과 수익 분배가 결정되며, 이는 공정성과 창의성을 저해하는 문제를 야기한다. 이러한 한계를 극복하기 위해 본 논문은 DAO(탈중앙화 자율 조직) 기반의 방송인 중심 운영 모델을 제안한다. 이 모델은 모든 이해관계자가 스마트 컨트랙트를 통해 투명한 의사 결정과 수익 분배에 참여함으로써 공정성과 신뢰성을 강화하며, 게임사와의 저작권 협상을 DAO 내에서 관리하여 생태계의 다양성과 지속성을 제고한다. 이를 통해 기존 중앙 집중형 구조 대비 의사 결정 과정의 민주화, 공정한 보상 체계, 저작권 문제의 사전적 해결 가능성을 확인하였다.
+
+- 211 -

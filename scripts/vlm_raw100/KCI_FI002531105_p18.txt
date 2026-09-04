@@ -1,0 +1,33 @@
+개인정보보호(Schutz personenbezogener Daten)와 경쟁법 적용 323
+
+2) GWB 제19조 제1항
+
+(가) Facebook 이용약관의 ‘거래조건’ 해당 여부
+
+연방카르텔청은 기본적으로 Facebook 이용약관, 데이터 정책(Datenrichtlinie), 쿠키정책과 그 시행에 따른 콘체른 소속 서비스와 ‘Facebook Business Tools’를 통한 정보처리에 관한 규정들, 즉 위에서 열거한 Facebook 이용약관 등이 GWB 제19조의 기타의 거래조건(sonstige Geschäftsbedingungen)에 해당한다고 판단하였다.⁹⁰)
+
+이는 GWB 제19조 제1항, 제2항 제2호 및 제3호에서 사용되는 거래조건의 경쟁법상 개념은 가격구성 외에, 힘의 차이로 특징되는 모든 공급자와 수요자간 관계도 남용금지에 저촉되는 것으로 그 개념을 포괄적으로 해석될 수 있다는 시각에 따른 것이다.⁹¹)
+
+아울러 ‘거래조건’의 개념 범위를 제시하면서, 명시적으로 규정된 조건들이 우선적으로 해당될 수 있으며, 그에 더해 수요자의 동의 없이 적용되는 사실상의 (faktisch) 거래조건들 역시 포함될 수 있다고 하였다. 그러면서 계약상 약정의 대상이 될 수 있는 실제 모든 선례들(Vorgänge)이 그에 해당될 수 있음을 확인하였다.⁹²)
+
+(나) Facebook 이용약관의 ‘거래조건남용’ 해당 여부
+
+연방카르텔청은 Facebook의 이용약관이 DSGVO에 반하는 시장력의 발현(Ausfluss)으로서 GWB 제19조 제1항을 위반하는 것으로 보았다.⁹³) 그리고 문제의 이용약관이 거래조건남용에 해당하여 금지된다는 연방카르텔청의 주장은 VBL-Gegenwert와 Pechstein 사건에서의 BGH의 판단에 기초한 것이었다.⁹⁴)
+
+VBL-Gegenwert 사건에서 BGH는 계약조건이 BGB 제307조 이하, 즉 계약상
+
+---
+
+90) BKartA v. 6.2.2019, B6-22/16, Rn. 559 ff.
+
+91) BKartA v. 6.2.2019, B6-22/16, Rn. 562: „[...] die gesamte von einem Machtgefälle geprägten Anbieter-Nachfrager-Beziehung [...]“; 거래조건의 개념은, Nothdurft, § 19 GWB, Rn. 142: „[...] Die Ausbeutung über die Preisgestaltung und über die Konditionengestaltung wird von den Beispieltatbeständen also gleichermassen erfasst; ebenso erfassen sie gleichermassen das Verhalten von Anbietern und Nachfragern [...]“ 참조.
+
+92) BKartA v. 6.2.2019, B6-22/16, Rn. 563; Nothdurft, § 19 GWB, Rn. 142.
+
+93) § 19 Abs. 1 Die missbräuchliche Ausnutzung einer marktbeherrschenden Stellung durch ein oder mehrere Unternehmen ist verboten.
+
+94) BKartA v. 6.2.2019, B6-22/16, Rn. 524; Monopolkommission, Sondergutachten 68, 2015, Rn. 518; Körber, Facebook-Entscheidung des BKartA, S. 189.
+
+95) § 307 BGB Inhaltskontrolle(내용통제)
+
+(1) 약관조항이 신의성실의 요청에 반하여 약관사용자의 계약상대방을 부당하게 불리하게 하는 경우

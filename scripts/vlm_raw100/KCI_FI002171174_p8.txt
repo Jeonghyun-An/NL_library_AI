@@ -1,0 +1,33 @@
+Figure 3: Upper/Lower (95%) Limits of Fully Hedged Global Portfolio Risk
+
+Standardized Portfolio Risk
+180
+160
+140
+120
+100
+80
+60
+40
+20
+0
+0   10   20   30   40   50   60   70   80   90   100
+Number of Stocks in the Portfolio
+
+[그림: Figure 3: Upper/Lower (95%) Limits of Fully Hedged Global Portfolio Risk]
+
+Table 2
+Recommendations for Minimum Portfolio Sizes
+(Number of Stocks Needed in a Portfolio to be Within the Chosen Percentage of Average Risk)
+
+To be Within this Percentage of Average Portfolio Risk
+| To be Within this Percentage of Average Portfolio Risk | Fully Hedged Global Portfolio | Japan-Based Investor | UK-Based Investor | USA-Based Investor |
+|---|---|---|---|---|
+| | Domestic Portfolio | Unhedged Global Port. | Domestic Portfolio | Unhedged Global Port. | Domestic Portfolio | Unhedged Global Port. |
+| 5% | > 100 | > 100 | > 100 | > 100 | 73 | > 100 |
+| 10% | 91 | > 100 | 56 | 55 | 44 | 60 |
+| 15% | 40 | 99 | 26 | 26 | 26 | 26 |
+| 20% | 23 | 33 | 17 | 16 | 16 | 16 |
+
+20
+GLOBAL BUSINESS AND FINANCE REVIEW SPRING 1997

@@ -1,0 +1,33 @@
+머신러닝을 이용한 이동통신 데이터 기반 교통량 추정 모형 개발
+
+다음으로 일자 및 시간 변수, 평일과 휴일을 구분하는 날짜 유형, 교통량, 속도, 밀도 및 과거 교통량 등이 중요한 것으로 도출되었다. 이에 반하여 도로환경 변수의 경우 대부분의 변수가 교통량 추정에 있어 중요하지 않은 것으로 나타났다.
+
+결과적으로 LightGBM의 교통량 추정을 위해서는 차로수, 구간 길이 등 도로환경 변수보다는 교통량 추정을 위해 연속적으로 정보를 생성하는 구간 대푯값(교통량 생성 구간 ID), 시간 및 날짜 유형 그리고 교통량, 속도 등 교통변수들이 LightGBM의 교통량 추정에 있어 중요한 변수로 분석되었다.
+
+<Table 4> Performance comparison of models for selecting the optimal mode
+
+| Model              | MAPE | 100-MAPE(%) | RMSE |
+|--------------------|------|-------------|------|
+| Random Forest      | 6.63 | 93.37       | 14.89|
+| XGBoost            | 7.38 | 92.61       | 15.97|
+| LightGBM           | 6.35 | 93.65       | 14.42|
+| CatBoost           | 7.20 | 92.80       | 16.59|
+| Liner Regression   | 12.32| 87.68       | 36.74|
+
+[그림 2] Validation results of traffic volume estimation using LightGBM model
+
+[그림 3] Feature Importance
+
+IV. 교통량 추정모형의 평가
+
+1. 모형의 평가 개요
+
+1) 평가 지표
+
+LightGBM 기반 교통량 추정 모형 평가는 VDS 운영구간과 VDS 미운영구간을 대상으로 교통량 추정 정확도를 확인하였다. 평가 지표로 MAPE, RMSE를 사용하였으며, MAPE의 경우 정확도 분석을 위한 기본 지표로, 「자동차·도로교통분야 ITS 성능평가기준」중 VDS 성능평가 부문의 교통량 정확도와 비교하였다.
+
+2) 평가 범위
+
+VDS 운영구간 및 미운영구간을 대상으로, LightGBM 기반 교통량 추정 결과와 VDS 실측 교통량을 비교하여 평가하였다. 평가는 일반국도 1, 3, 6호선에서 운영 중인 제어기 73개소, 103개 검지영역을 대상으로 하였다.
+
+Vol.22 No.4 (2023. 8) The Journal of The Korea Institute of Intelligent Transport Systems 9

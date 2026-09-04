@@ -1,0 +1,38 @@
+장혜숙, 백형선,
+
+대치교정지 32권 5호, 2002년
+
+try from paired coplanar images. A progress report. Am J Orthod 1983 : 84 : 292-312.
+12. Budi Kusnoto, Carla A Evans, Ellen A BeGole : Assessment of 3-dimensional computer-generated cephalometric measurements. Am J Orthod Dentofacial Orthop 1999 : 116 : 390-9.
+13. Carls FR, Schuknecht B, Salier HF : Value of three-dimensional computed tomography in craniofacial surgery. J Craniofac Surg 1994 : 5 : 282-8.
+14. Darling CF, Byrd SE, Allen ED : Three dimensional computed tomography imaging in the evaluation of craniofacial abnormality. J National Med Assoc 1994 : 86 : 676-80.
+15. Tyndall DA, Matteson SR, Soltmann R, Hamilton T, Proffit W. Exposure reduction in cephalometric radiology : a comprehensive approach. Am J Orthod Dentofacial Orthop 1988 : 93 : 400-12.
+16. Darwood R. Digital radiography-A realistic prospect? Clin Radiol 1990 : 42 : 6-11.
+17. Quintero J.C., Trosien A., Hatcher D. Craniofacial imaging in orthodontics : Historical perspective, current status, and future developments. Angle Orthod 1999 : 69 : 491-506.
+18. Baumrind S, Moffitt FH, Curry S. The geometry of three-dimensional measurement from paired coplanar x-ray images. Am J Orthod 1983 : 84 : 313-22.
+19. Jacques Treil, Philippe Borianne, Jean Casteigt : The human face as a 3-dimensional model : the future in orthodontics World J Orthod 2001 : 2 : 253-7.
+20. Kragskov J. : Comparison of the reliability of craniofacial anatomic landmarks based on cephalometric radiographs and three-dimensional CT scans. Cleft Palate Craniofac J 1997 : 34 : 111-6.
+21. Vannier MW, Marsh JL, Warren JO : Three dimensional CT reconstruction images for craniofacial surgical planning and evaluation. Radiology 1984 : 150 : 179-84.
+22. Vannier MW, Hildevolt CF, Conover G, Knapp RH, Crothers NY, Wang G : Three-dimensional dental imaging by spiral CT. A progress report. Oral Surg Oral Med Pathol Oral Radiol Endod 1997 : 84 : 561-70.
+23. Marsh JL, Vannier MW, Stevens WG, Warren JO, Gayou D, Dye DM : Computerized imaging for soft tissue and osseous reconstruction in the head and neck. Plast Surg Clin North Am 1985 : 12 : 279-91.
+24. Preda L, Di Maggio EM, Dore R, et al. : Use of spiral computed tomography for multiplanar dental reconstruction. Dentomaxillofac Radiol 1997 : 26 : 327-31.
+25. Kalender WA, Polacin A, Suss C : A comparison of conventional and spiral CT : An experimental study on the detection of spherical lesions. J Comput Assist Tomogr 1994 : 18 : 167-76.
+26. Cavalcanti MGP, Vannier MW : Quantitative analysis of spiral computed tomography for craniofacial clinical applications. Dentomaxillofac Radiol 1998 : 27 : 344-50.
+27. Altobelli DE, Kikins R, Mulliken JB, Cline H, Lorensen W, Jolesz F : Computer-assisted three dimensional planning in craniofacial surgery. Plast Reconstr Surg 1993 : 92 : 576-85.
+28. Fuhrmann RA, Frohberg U, Diedrich PR. Treatment prediction with three-dimensional computer tomographic skull models. Am J Orthod Dentofacial Orthop 1994 : 106 : 156-60.
+29. Lill W. Reproducibility of 3-dimensional CT-associated model production in the maxillofacial area. Br J Oral & Maxillofac Surg 1992 : 30 : 233-6.
+30. 배기선, 박수병, 손우성 3차원 두부방사선검사진의 정확성에 관한 연구 대치교정지 1997 : 27 : 129-40.
+31. 김기덕, 박창서 : 하악골 매식 부위 계측을 위한 나선형 단층촬영의 신뢰도. 대구악안방사선지 1997 : 27(2) : 27-46.
+32. 김기덕 : 매복치 위치 확인을 위한 3차원 전산화 단층촬영의 이용. 대치협회지 1998 : 36 : 526-8.
+
+- ABSTRACT -
+
+A proposal of landmarks for craniofacial analysis using three-dimensional CT imaging
+
+Hye-Sook Chang, Hyoung-Seon Baik
+
+Department of Orthodontics, College of Dentistry, Yonsei University
+
+Three-dimensional CT imaging is efficient in examining specific structures in the craniofacial area by reproducing actual measurements through minimization of errors from patient movement and image magnification. Due to the rapid development of digital image technology and the expansion of treatment range a need for developing three-dimensional analysis has become urgent. Therefore the purpose of this study was to evaluate the percentage of error and magnification of three-dimensional CT using a dried skull and Vworks program™ (Cybermed Inc., Seoul,
+
+324

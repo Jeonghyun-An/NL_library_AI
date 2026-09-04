@@ -1,0 +1,47 @@
+[
+  {
+    "path": "KCI_FI002051316.pdf",
+    "pages": 34,
+    "odl_total_chars": 41258,
+    "fitz_total_chars": 40982,
+    "odl_more_by_pct": 0.7,
+    "fitz_pages_under_50": 0,
+    "odl_pages_under_50": 0
+  },
+  {
+    "path": "2018년 서울대학교 연구노트 작성 관리 매뉴얼-(최종).pdf",
+    "pages": 23,
+    "odl_total_chars": 14397,
+    "fitz_total_chars": 13708,
+    "odl_more_by_pct": 5.0,
+    "fitz_pages_under_50": 1,
+    "odl_pages_under_50": 0
+  },
+  {
+    "path": "77. 세계박물관 프로그램.pdf",
+    "pages": 1,
+    "odl_total_chars": 6670,
+    "fitz_total_chars": 6375,
+    "odl_more_by_pct": 4.6,
+    "fitz_pages_under_50": 0,
+    "odl_pages_under_50": 0
+  },
+  {
+    "path": "CNTS-00047956839_-페이지.pdf",
+    "pages": 3,
+    "odl_total_chars": 12,
+    "fitz_total_chars": 0,
+    "odl_more_by_pct": null,
+    "fitz_pages_under_50": 3,
+    "odl_pages_under_50": 3
+  },
+  {
+    "path": "260415_[제1권] AI 데이터 품질관리 가이드 v4.0_배포용.pdf",
+    "pages": 289,
+    "odl_total_chars": 324219,
+    "fitz_total_chars": 259313,
+    "odl_more_by_pct": 25.0,
+    "fitz_pages_under_50": 7,
+    "odl_pages_under_50": 4
+  }
+]

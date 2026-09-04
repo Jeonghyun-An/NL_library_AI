@@ -1,0 +1,19 @@
+한국심리학회지 : 실험
+
+the dimension set. The effect of inter-trial level transition on performance depended upon stimulus sets. This finding can be interpreted as suggesting that compound stimulus sets determine modes of attention shift between processing levels. It is thus difficult to explain this result by the notion of level readiness as proposed by Ward (1982).
+
+Experiment 2
+
+Attention shift to the global or local level in a compound stimulus was examined in Experiment 1 when participants were not asked beforehand to attend selectively to any level. The next question is concerning attention shift between those levels. After you saw the global level of a compound stimulus, you could shift your attention to the local level, or vice versa. Then, which direction of attention shift, from global to local or from local to global, is more quickly carried out?
+
+Ward (1982) was interested in shift of levels between two compound stimuli presented in sequence. A shift between inter-stimulus levels would be different from a shift between intra-stimulus levels. A shift between the levels in the same stimulus should show an effect of stimulus structure as well. Prior designation of the order of to-be-judged levels does not guarantee the order of to-be-attended levels. To control for the attention order between the
+
+levels, compound stimuli were presented in two stages, either only the global or the local level at the first stage, and a complete stimulus in the next (see Figure 5). Participants should decide the identity of the level presented either at first or later. Since they did not know which level would be at first or later presented, they should attend to both levels presented in sequence. The task of judging the second level should thus require attention shift from the first level.
+
+Method
+
+Participants Twenty-four undergraduate students participated in Experiment 2, who enrolled in Introduction to Psychology at Seoul National University. Their visual acuity was normal or corrected to normal.
+
+Apparatus and stimuli The apparatus was the same as that used in Experiment 1. The feature and the dimension set were also used. If either global or local level information was first presented, then the other hidden level was presented later, as shown in Figures 5 and 6. For example, after either a1 stimulus (global first) or a3 stimulus (local first) set was initially presented, it changed later into either b1 or b2 compound stimulus (global first - local later), or b1 or b3 compound stimulus (local first - global later), respectively. This transformation was
+
+- 178 -

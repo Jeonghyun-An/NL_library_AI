@@ -1,0 +1,34 @@
+Vol. 32, No. 5, 2002. Korea. J. Orthod
+
+3차원 CT 영상을 이용한 두개악안면 분석을 위한 계측법의 제안
+
+Table 1. Comparison the direct measurement and the 3-dimensional measurement in Vworks program (unit : mm)
+
+| measurement | 3-D CT | Direct | Difference | Exp. rate(%) |
+|-------------|--------|--------|------------|--------------|
+| N-Ba        | 100.74 | 98.73  | 2.01       | 2.03         |
+| N-Me        | 116.10 | 115.62 | 0.48       | 0.42         |
+| N-ANS       | 49.53  | 50.57  | -1.04      | -2.06        |
+| ANS-Me      | 68.05  | 66.51  | 1.54       | 2.32         |
+| ANS-PNS     | 51.94  | 49.78  | 2.16       | 4.34         |
+| Co-Pog(Rt)  | 113.81 | 112.59 | 1.22       | 1.08         |
+| Co-Pog(Lt)  | 116.68 | 114.81 | 1.87       | 1.63         |
+| N-Go(Rt)    | 121.97 | 122.66 | -0.68      | -0.56        |
+| N-Go(Lt)    | 121.48 | 120.51 | 0.97       | 0.80         |
+| Go-Me(Rt)   | 85.82  | 83.47  | 2.35       | 2.81         |
+| Go-Me(Lt)   | 86.83  | 85.78  | 1.05       | 1.23         |
+| Co-Go(Rt)   | 50.62  | 50.65  | -0.03      | -0.06        |
+| Co-Go(Lt)   | 51.07  | 50.95  | 0.13       | 0.25         |
+| Co-Me(Rt)   | 116.25 | 113.91 | 2.34       | 2.05         |
+| Co-Me(Lt)   | 117.98 | 116.59 | 1.38       | 1.19         |
+| ZmL-ZmR     | 92.98  | 92.11  | 0.87       | 0.94         |
+| GoL-GoR     | 96.46  | 94.94  | 1.52       | 1.60         |
+| Or-Or       | 59.51  | 60.63  | -1.12      | -1.85        |
+| Co-Co       | 120.24 | 118.35 | 1.89       | 1.60         |
+| Average     |        |        | 0.99       | 1.04         |
+
+Fig. 8. Differences between the direct and the 3-dimensional measurement in Vworks program
+
+간의 전체 오차 평균은 0.99mm인데 2.0mm 이상의 오차를 나타낸 값들은 N-Ba, ANS-PNS, Go-Me(Rt), Co-Me(Rt)였고 1.0mm 이하의 오차를 나타낸 값은 N-Me, N-Go(Rt, Lt), Co-Go(Rt, Lt), ZmRt-ZmLt였다. 오차의 크기는 측정 거리와는 무관하고 골에 부착한 gutta purcha의 두께와 3차원 CT 영상에 서 해부학적 구조물의 관찰이 얼마나 용이한가에 영향 받는 것으로 나타났다. 특히 ANS와 Condylion이 포함된 계측치의 오차가 컸다. 실측치에 대한 3차원 CT영상의 확대율은 1.04%로 계산되었다.
+
+319

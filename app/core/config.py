@@ -1,8 +1,19 @@
 from functools import lru_cache
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # compose 가 `${VLM_THINK:-}` 처럼 미설정 변수를 빈 문자열로 넘기면 bool 파싱이
+    # 실패한다 → 빈 값은 '미전송(None)' 으로 해석한다.
+    @field_validator("LLM_THINK", "VLM_THINK", mode="before")
+    @classmethod
+    def _blank_think_is_none(cls, v):
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
     APP_NAME: str = "NL-Lib Semantic Search"
     DEBUG: bool = False
     IS_DOCKER: bool = False
@@ -47,9 +58,15 @@ class Settings(BaseSettings):
     MILVUS_NLIST: int = 256
     MILVUS_NPROBE: int = 32
 
+    # ── OCR 엔진 선택 (2티어 보완) ────────────────────
+    # "vlm"   : 범용 VLM(Qwen3-VL) — /chat/completions HTTP
+    # "surya" : 전용 OCR(Surya) 별도 컨테이너 — /ocr HTTP (경량·CJK 강함)
+    OCR_ENGINE: str = "vlm"
+    SURYA_BASE_URL: str = "http://surya:8000"
+
     # ── VLM (멀티모달 OCR — 페이지 이미지 → 텍스트) ──
     VLM_BASE_URL: str = "http://vllm:8000/v1"
-    VLM_MODEL: str = "qwen2.5-vl-7b"
+    VLM_MODEL: str = "qwen3-vl-8b"
 
     # ── LLM (텍스트 생성 — 요약/리라이트/추론) ───────
     LLM_BASE_URL: str = "http://host.docker.internal:18080/v1"
@@ -58,6 +75,16 @@ class Settings(BaseSettings):
     # 섹션 요약 등 태스크 내부 동시 LLM 호출 수
     # (글로벌 동시 LLM = celery-llm concurrency × 이 값 ≤ vLLM max-num-seqs)
     LLM_SECTION_CONCURRENCY: int = 4
+
+    # ── LLM API 스타일 (OpenAI 호환 vLLM / Ollama 네이티브) ──
+    # "openai" → {LLM_BASE_URL}/chat/completions (기본, 운영 vLLM — 무영향)
+    # "ollama" → {LLM_BASE_URL의 /v1 제거}/api/chat (Ollama, think 제어용)
+    LLM_API_STYLE: str = "openai"
+    # think 토글: None=필드 미전송(비-thinking 모델 안전), True/False=그 값 전송.
+    # Ollama gemma4 요약은 false (추론 비용 제거). gemma3 등은 None 유지.
+    LLM_THINK: bool | None = None
+    # Ollama 컨텍스트 길이 — 기본 4096 이면 긴 섹션 요약 입력이 잘림
+    OLLAMA_NUM_CTX: int = 8192
 
     # ── FLUX (자동 표지 이미지 생성 — black-forest-labs/FLUX.1-dev) ──
     FLUX_BASE_URL: str = "http://flux:8000"
@@ -111,8 +138,16 @@ class Settings(BaseSettings):
 
     # ── 텍스트 추출 / VLM OCR ─────────────────────────
     EXTRACT_MIN_CHARS_PER_PAGE: int = 50  # 이 미만이면 VLM 보완 트리거
+    # 문서 하나당 VLM 보완 페이지 수 상한. 완전 스캔본 대형 문서가 페이지마다
+    # 순차 VLM 호출을 유발해 잡 전체 처리량을 끌어내리는 것을 방지.
+    # 초과분은 ODL 결과(비어있거나 부실해도)를 그대로 채택하고 VLM은 스킵한다.
+    VLM_MAX_PAGES_PER_DOC: int = 60
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
+    # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.
+    # None=미전송(현재 Qwen3-VL 등 비추론 모델 — 기존 동작 유지) / False=thinking off
+    # True 로 켤 경우 페이지당 처리 시간이 크게 늘어난다(추론 토큰 생성).
+    VLM_THINK: bool | None = None
     VLM_TEMPERATURE: float = 0.1
     VLM_TIMEOUT: int = 120
 
@@ -131,6 +166,10 @@ class Settings(BaseSettings):
     # 도서 요약/소개 입력(섹션요약 묶음) 최대 글자 수 — 컨텍스트 오버플로 방지.
     # 14000자 ≈ 27k 토큰, + 출력 4096 + 시스템 ≈ 31k < 32768(gemma max-model-len).
     SUMMARIZER_MAX_INPUT_CHARS: int = 14000
+    # 섹션 요약 1회 입력 상한(글자). 섹션 분할이 토큰을 글자수/1.5 로 '추정'하므로
+    # 표·OCR 텍스트에서는 실제 토큰이 추정보다 커져 모델 컨텍스트를 넘길 수 있다.
+    # (관측: 32768 컨텍스트 모델에서 input 28769 토큰으로 400 발생)
+    SUMMARIZER_MAX_SECTION_CHARS: int = 12000
 
     # ── FLUX 표지 생성 ────────────────────────────────
     FLUX_WIDTH: int = 768

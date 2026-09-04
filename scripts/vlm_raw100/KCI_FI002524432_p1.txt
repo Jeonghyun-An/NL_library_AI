@@ -1,0 +1,28 @@
+Journal of the Korea Convergence Society
+Vol. 10. No. 11, pp. 47-53, 2019
+ISSN 2233-4890
+https://doi.org/10.15207/JKCS.2019.10.11.047
+
+블루투스 통신을 이용한 스마트공장 안전관리 시스템
+정필성¹, 조양현²*
+¹명지전문대학 정보통신공학과 교수, ²삼육대학교 컴퓨터·메카트로닉스공학부 교수
+Smart Factory Safety Management System using Bluetooth
+Pil-Seong Jeong¹, Yang-Hyun Cho²*
+¹Professor, Dept. of Information Technology Communication, Myongji College
+²Professor, Division of Computer & Mechatronics Engineering, Sahmyook University
+
+요약 산업현장에서의 안전사고는 언제 어디서나 발생할 수 있다. 최근 사물인터넷을 기반으로 하는 산업현장 안전관리 시스템에 대한 연구가 활발히 진행되고 있다. doi지만 대부분의 연구가 안전사고가 발생한 이후 조치에 대한 연구이거나 단순 모니터링을 하는데 그치는 경우가 많다. 본 논문에서는 안전사고가 발생하기 전에 안전장비를 착용하도록 안내하고 대상자를 근로자뿐만 아니라 방문자까지 관리할 수 있도록 하였다. 또한 안전사고가 발생하기 전에 사용자의 모션 및 상황을 주기적으로 감지하고 예측하여 사고에 대처할 수 있도록 하는 시스템을 구현하였다. 구현된 시스템은 안전관리를 위한 기기를 안전모에 부착하고 사용자의 스마트폰 및 산업현장에 부착된 블루투스 비콘 기기를 이용하여 주기적으로 안전 상황을 모니터링할 수 있는 시스템을 구현하였다.
+주제어 : 스마트공장, 사용자 안전관리, 안전관리 시스템, 블루투스, 사물인터넷
+
+Abstract Safety accidents at industrial sites can occur anytime, anywhere. Recently, research on the industrial safety management system based on the IoT has been actively conducted. However, most of the studies are studies of actions after safety accidents occurred, and the subjects could be managed not only by workers but also by visitors. Also, it implements a system to prevent the accident by detecting the user's motion and situation periodically before a safety accident occurs. The implemented system is a system that attaches the device for safety management to the user's smartphone and can identify the safety situation by using the Bluetooth beacon device attached to the user's hard hat and the industrial site.
+Key Words : Smart Factory, User Safety Management, Safety Management System, Bluetooth, Internet of Things
+
+*This study is supported by Basic Science Research Program through the Research Foundation of Korea (NRF) funded by the Ministry of Education (No. 2017R1D1A1B03030759)
+*Corresponding Author : Yang-Hyun Cho (yhcho@syu.ac.kr)
+Received September 09, 2019
+Accepted November 20, 2019
+Revised October 21, 2019
+Published November 28, 2019
+
+1. 서론
+고용노동부의 2018년 산업재해 발생현황에 따르면 2018년에는 전체 재해자는 전년 동기 대비 13.9%(12,457명) 증가한 102,305명이고 사망자수는 전년 동기 대비 9.5%(185명) 증가한 2,142명으로 나타났다. 안전보건공단 안전보건연구원의 2018년 사망사고자 현황 보고서에 따르면 발생형태별로 떨어짐 38.7%, 끼임 11.6%, 부딪힘 38.7% 등이다.

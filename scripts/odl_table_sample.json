@@ -1,0 +1,736 @@
+{
+  "type": "table",
+  "id": 818,
+  "level": "4",
+  "page number": 8,
+  "bounding box": [
+    50.04,
+    347.4,
+    292.2,
+    457.32
+  ],
+  "number of rows": 5,
+  "number of columns": 2,
+  "rows": [
+    {
+      "type": "table row",
+      "row number": 1,
+      "cells": [
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            50.94,
+            440.64,
+            145.2,
+            456.42
+          ],
+          "row number": 1,
+          "column number": 1,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 1,
+              "page number": 8,
+              "bounding box": [
+                85.44,
+                443.04,
+                95.52,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile611.png"
+            },
+            {
+              "type": "image",
+              "id": 2,
+              "page number": 8,
+              "bounding box": [
+                90.0,
+                443.04,
+                99.6,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile612.png"
+            },
+            {
+              "type": "image",
+              "id": 3,
+              "page number": 8,
+              "bounding box": [
+                93.6,
+                443.04,
+                116.4,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile613.png"
+            }
+          ]
+        },
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            145.2,
+            440.64,
+            291.3,
+            456.42
+          ],
+          "row number": 1,
+          "column number": 2,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 5,
+              "page number": 8,
+              "bounding box": [
+                155.04,
+                443.04,
+                201.12,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile614.png"
+            },
+            {
+              "type": "image",
+              "id": 7,
+              "page number": 8,
+              "bounding box": [
+                212.88,
+                443.04,
+                223.92,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile615.png"
+            },
+            {
+              "type": "image",
+              "id": 8,
+              "page number": 8,
+              "bounding box": [
+                221.52,
+                443.04,
+                234.96,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile616.png"
+            },
+            {
+              "type": "image",
+              "id": 9,
+              "page number": 8,
+              "bounding box": [
+                230.88,
+                443.04,
+                245.28,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile617.png"
+            },
+            {
+              "type": "image",
+              "id": 11,
+              "page number": 8,
+              "bounding box": [
+                254.88,
+                443.04,
+                280.56,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile618.png"
+            },
+            {
+              "type": "image",
+              "id": 12,
+              "page number": 8,
+              "bounding box": [
+                275.28,
+                443.04,
+                285.36,
+                454.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile619.png"
+            },
+            {
+              "type": "paragraph",
+              "id": 13,
+              "page number": 8,
+              "bounding box": [
+                279.12,
+                444.115,
+                283.535,
+                453.475
+              ],
+              "font": "Batang",
+              "font size": 9.36,
+              "text color": "[0.0, 0.0, 0.0]",
+              "content": "μ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "table row",
+      "row number": 2,
+      "cells": [
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            50.94,
+            417.54,
+            145.2,
+            440.64
+          ],
+          "row number": 2,
+          "column number": 1,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 14,
+              "page number": 8,
+              "bounding box": [
+                73.92,
+                429.12,
+                85.68,
+                440.64
+              ],
+              "source": "KCI_FI000873798_images/imageFile620.png"
+            },
+            {
+              "type": "image",
+              "id": 15,
+              "page number": 8,
+              "bounding box": [
+                85.68,
+                429.12,
+                95.76,
+                440.64
+              ],
+              "source": "KCI_FI000873798_images/imageFile621.png"
+            },
+            {
+              "type": "image",
+              "id": 16,
+              "page number": 8,
+              "bounding box": [
+                90.24,
+                429.12,
+                99.84,
+                440.64
+              ],
+              "source": "KCI_FI000873798_images/imageFile622.png"
+            },
+            {
+              "type": "image",
+              "id": 17,
+              "page number": 8,
+              "bounding box": [
+                94.32,
+                429.12,
+                113.28,
+                440.64
+              ],
+              "source": "KCI_FI000873798_images/imageFile623.png"
+            },
+            {
+              "type": "image",
+              "id": 18,
+              "page number": 8,
+              "bounding box": [
+                107.52,
+                429.12,
+                115.2,
+                440.64
+              ],
+              "source": "KCI_FI000873798_images/imageFile624.png"
+            },
+            {
+              "type": "image",
+              "id": 19,
+              "page number": 8,
+              "bounding box": [
+                112.56,
+                429.12,
+                127.92,
+                440.64
+              ],
+              "source": "KCI_FI000873798_images/imageFile625.png"
+            },
+            {
+              "type": "image",
+              "id": 20,
+              "page number": 8,
+              "bounding box": [
+                84.0,
+                417.84,
+                112.32,
+                429.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile626.png"
+            },
+            {
+              "type": "paragraph",
+              "id": 21,
+              "page number": 8,
+              "bounding box": [
+                86.4,
+                418.915,
+                118.655,
+                428.275
+              ],
+              "font": "Batang",
+              "font size": 9.36,
+              "text color": "[0.0, 0.0, 0.0]",
+              "content": "μ μ μμ"
+            }
+          ]
+        },
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            145.2,
+            417.54,
+            291.3,
+            440.64
+          ],
+          "row number": 2,
+          "column number": 2,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 23,
+              "page number": 8,
+              "bounding box": [
+                223.2,
+                417.84,
+                235.92,
+                429.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile627.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "table row",
+      "row number": 3,
+      "cells": [
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            50.94,
+            394.26,
+            145.2,
+            417.54
+          ],
+          "row number": 3,
+          "column number": 1,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 24,
+              "page number": 8,
+              "bounding box": [
+                73.2,
+                405.84,
+                85.44,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile628.png"
+            },
+            {
+              "type": "image",
+              "id": 25,
+              "page number": 8,
+              "bounding box": [
+                79.68,
+                405.84,
+                93.36,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile629.png"
+            },
+            {
+              "type": "image",
+              "id": 26,
+              "page number": 8,
+              "bounding box": [
+                89.52,
+                405.84,
+                99.84,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile630.png"
+            },
+            {
+              "type": "image",
+              "id": 27,
+              "page number": 8,
+              "bounding box": [
+                94.32,
+                405.84,
+                103.92,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile631.png"
+            },
+            {
+              "type": "image",
+              "id": 28,
+              "page number": 8,
+              "bounding box": [
+                97.92,
+                405.84,
+                108.48,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile632.png"
+            },
+            {
+              "type": "image",
+              "id": 29,
+              "page number": 8,
+              "bounding box": [
+                108.72,
+                405.84,
+                120.72,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile633.png"
+            },
+            {
+              "type": "image",
+              "id": 30,
+              "page number": 8,
+              "bounding box": [
+                117.12,
+                405.84,
+                132.48,
+                417.6
+              ],
+              "source": "KCI_FI000873798_images/imageFile634.png"
+            },
+            {
+              "type": "image",
+              "id": 31,
+              "page number": 8,
+              "bounding box": [
+                84.72,
+                394.8,
+                107.28,
+                406.56
+              ],
+              "source": "KCI_FI000873798_images/imageFile635.png"
+            },
+            {
+              "type": "paragraph",
+              "id": 32,
+              "page number": 8,
+              "bounding box": [
+                87.12,
+                395.875,
+                123.695,
+                405.235
+              ],
+              "font": "Batang",
+              "font size": 9.36,
+              "text color": "[0.0, 0.0, 0.0]",
+              "content": "μμ μ μμ"
+            },
+            {
+              "type": "image",
+              "id": 33,
+              "page number": 8,
+              "bounding box": [
+                109.68,
+                394.8,
+                117.36,
+                406.56
+              ],
+              "source": "KCI_FI000873798_images/imageFile636.png"
+            }
+          ]
+        },
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            145.2,
+            394.26,
+            291.3,
+            417.54
+          ],
+          "row number": 3,
+          "column number": 2,
+          "row span": 1,
+          "column span": 1,
+          "kids": []
+        }
+      ]
+    },
+    {
+      "type": "table row",
+      "row number": 4,
+      "cells": [
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            50.94,
+            370.98,
+            145.2,
+            394.26
+          ],
+          "row number": 4,
+          "column number": 1,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 34,
+              "page number": 8,
+              "bounding box": [
+                74.64,
+                382.56,
+                98.64,
+                394.32
+              ],
+              "source": "KCI_FI000873798_images/imageFile637.png"
+            },
+            {
+              "type": "image",
+              "id": 35,
+              "page number": 8,
+              "bounding box": [
+                93.12,
+                382.56,
+                102.72,
+                394.32
+              ],
+              "source": "KCI_FI000873798_images/imageFile638.png"
+            },
+            {
+              "type": "image",
+              "id": 36,
+              "page number": 8,
+              "bounding box": [
+                96.72,
+                382.56,
+                131.04,
+                394.32
+              ],
+              "source": "KCI_FI000873798_images/imageFile639.png"
+            },
+            {
+              "type": "image",
+              "id": 37,
+              "page number": 8,
+              "bounding box": [
+                84.72,
+                371.52,
+                127.92,
+                383.28
+              ],
+              "source": "KCI_FI000873798_images/imageFile640.png"
+            },
+            {
+              "type": "paragraph",
+              "id": 38,
+              "page number": 8,
+              "bounding box": [
+                87.12,
+                372.595,
+                127.775,
+                381.955
+              ],
+              "font": "Batang",
+              "font size": 9.36,
+              "text color": "[0.0, 0.0, 0.0]",
+              "content": "μμ μ μ μ"
+            }
+          ]
+        },
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            145.2,
+            370.98,
+            291.3,
+            394.26
+          ],
+          "row number": 4,
+          "column number": 2,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 41,
+              "page number": 8,
+              "bounding box": [
+                266.4,
+                377.04,
+                278.64,
+                388.8
+              ],
+              "source": "KCI_FI000873798_images/imageFile641.png"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "table row",
+      "row number": 5,
+      "cells": [
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            50.94,
+            348.3,
+            145.2,
+            370.98
+          ],
+          "row number": 5,
+          "column number": 1,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 42,
+              "page number": 8,
+              "bounding box": [
+                74.64,
+                359.52,
+                99.12,
+                371.04
+              ],
+              "source": "KCI_FI000873798_images/imageFile642.png"
+            },
+            {
+              "type": "image",
+              "id": 43,
+              "page number": 8,
+              "bounding box": [
+                93.36,
+                359.52,
+                102.96,
+                371.04
+              ],
+              "source": "KCI_FI000873798_images/imageFile643.png"
+            },
+            {
+              "type": "image",
+              "id": 44,
+              "page number": 8,
+              "bounding box": [
+                96.96,
+                359.52,
+                131.28,
+                371.04
+              ],
+              "source": "KCI_FI000873798_images/imageFile644.png"
+            },
+            {
+              "type": "image",
+              "id": 45,
+              "page number": 8,
+              "bounding box": [
+                84.72,
+                348.24,
+                107.28,
+                360.0
+              ],
+              "source": "KCI_FI000873798_images/imageFile645.png"
+            },
+            {
+              "type": "paragraph",
+              "id": 46,
+              "page number": 8,
+              "bounding box": [
+                87.12,
+                349.315,
+                124.895,
+                358.675
+              ],
+              "font": "Batang",
+              "font size": 9.36,
+              "text color": "[0.0, 0.0, 0.0]",
+              "content": "μμ μ μμ"
+            },
+            {
+              "type": "image",
+              "id": 47,
+              "page number": 8,
+              "bounding box": [
+                109.44,
+                348.24,
+                117.12,
+                360.0
+              ],
+              "source": "KCI_FI000873798_images/imageFile646.png"
+            },
+            {
+              "type": "image",
+              "id": 48,
+              "page number": 8,
+              "bounding box": [
+                113.76,
+                348.24,
+                134.4,
+                360.0
+              ],
+              "source": "KCI_FI000873798_images/imageFile647.png"
+            }
+          ]
+        },
+        {
+          "type": "table cell",
+          "page number": 8,
+          "bounding box": [
+            145.2,
+            348.3,
+            291.3,
+            370.98
+          ],
+          "row number": 5,
+          "column number": 2,
+          "row span": 1,
+          "column span": 1,
+          "kids": [
+            {
+              "type": "image",
+              "id": 51,
+              "page number": 8,
+              "bounding box": [
+                172.32,
+                354.0,
+                185.04,
+                365.76
+              ],
+              "source": "KCI_FI000873798_images/imageFile648.png"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+The Effects of Lead Time Variability on Managing Component Replenishment for Customized Manufacturing
+
+• Impact of M on the optimal performance as a function of c_h^1: In <Table 4>, 15 examples are grouped into 3 sets by c_h^1 = 3, 5, and 7. We observe that given M(>1), an increase in c_h^1 enlarges the % value. We also observed that given M, Q* is not nearly affected by the increase in c_h^1. This observation implies that as service delay becomes more expensive, reducing lead time variability becomes more effective than increasing the replenishment order quantity.
+
+• Impact of M on the optimal performance as a function of c_R: <Table 5> presents 15 examples grouped into 3 sets by c_R = 25, 50, and 75. Given M(>1), the % value increases as the customer order rejection cost increases. In addition, given M(>1), Q* is not nearly affected by the increase in c_R. Analogous to the case of c_h^1, this test implies that if order rejection becomes expensive, reducing lead time variability is more effective than increasing the replenishment order quantity.
+
+• Impact of M on the optimal performance as a function of c_K: In <Table 6>, we group 15 examples into 3 sets by c_K = 100, 200, and 300. <Table 6> shows that given M(>1), an increase in c_K tends to shrink the % value. Since the increase in c_K restricts the inventory replenishment, reducing lead time variability becomes more effective than increasing the replenishment order quantity.
+
+<Table 4> Impact of M as a function of c_h^1
+
+| No | Parameters | Optimal performance |  |
+| --- | --- | --- | --- |
+|  | c_K | c_R | c_h^1 | c_h^2 | λ | μ | d | B | M | Q* | g | % | EOQ |
+| 1 | 300 | 50 | 3 | 1 | 0.7 | 1 | 0.1 | 10 | 1 | 27 | 33.15 |  | 20 |
+| 2 |  |  |  |  |  |  |  |  | 2 | 25 | 31.43 | 5.19 | 20 |
+| 3 |  |  |  |  |  |  |  |  | 3 | 24 | 30.76 | 2.13 | 20 |
+| 4 |  |  |  |  |  |  |  |  | 4 | 24 | 30.35 | 1.33 | 20 |
+| 5 |  |  |  |  |  |  |  |  | 5 | 23 | 30.07 | 0.92 | 20 |
+| 6 |  |  | 5 |  |  |  |  |  | 1 | 27 | 39.59 | 5.71 | 20 |
+| 7 |  |  |  |  |  |  |  |  | 2 | 25 | 37.33 | 2.44 | 20 |
+| 8 |  |  |  |  |  |  |  |  | 3 | 24 | 36.42 | 1.51 | 20 |
+| 9 |  |  |  |  |  |  |  |  | 4 | 23 | 35.49 | 1.06 | 20 |
+| 10 |  |  | 7 |  |  |  |  |  | 5 | 28 | 45.52 | 5.98 | 20 |
+| 11 |  |  |  |  |  |  |  |  | 1 | 25 | 42.80 | 2.64 | 20 |
+| 12 |  |  |  |  |  |  |  |  | 2 | 24 | 41.67 | 1.61 | 20 |
+| 13 |  |  |  |  |  |  |  |  | 3 | 24 | 41.00 | 1.61 | 20 |
+| 14 |  |  |  |  |  |  |  |  | 4 | 23 | 40.54 | 1.12 | 20 |
+| 15 |  |  |  |  |  |  |  |  | 5 | 23 | 40.54 | 1.12 | 20 |
+
+한국생산관리학회지 제21권 제3호 2010년 9월
+www.kci.go.kr
+279

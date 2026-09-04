@@ -1,0 +1,25 @@
+180 西語西文研究
+
+2. H Contreras (1983)
+
+스페인어의 어순과 관련해서 가장 주목받는 연구를 한 학자는 Contreras (1983)이다. 스페인어의 어순이 동사의 위치와 관련해서 제약이 있다는 사실을 Contreras는 다음과 같이 정보구조와 연관지어 설명한다. 즉, 그는 스페인어의 정상어순이 영어처럼 Sujeto(주어) + Predicado(술어) 어순이 아니라, 정보구조와 밀접하게 연관되는 Tema(구정보) + Rema(신정보) 어순이라고 지적한다. 따라서 동사의 위치와 관련해서는 동사 앞에는 구정보든 신정보든 간에 하나의 문장 구성분만이 나타날 수 있다는 설명이다. 다음의 예문들을 보자.
+
+(20) a. ¿Qué empezó?
+    b. Empezó la RESISTENCIA.
+
+(21) a. ¿Qué pasó con la resistencia?
+    b. La resistencia EMPEZÓ.
+
+위의 예문들에서 보다시피, 스페인어의 어순은 주술관계의 어순이 아니라 신정보와 구정보의 관계어순임을 알 수 있다. 즉, 일반적인 무표적(no-marcado) 어순은 새로운 내용(Rema)을 문 뒤에 나열시키는 어순인 것이다.
+
+3. 스페인어 어순구조
+
+3.1. 기존의 제안
+
+스페인어의 동사 앞 전치주어는 다른 어휘구들과 마찬가지로 Topic 지질을 띠며, 문장(IP/TP) 밖의 A'-위치에 있다는 제안은 Solà (1992), Contreras (1991), Zubizarreta (1994), Ordóñez & Treviño (1995) 등 많은 학자들에 의해 이미 제안된 바 있다. 이들 학자들은 스페인어 전치주어(22a)는 [Spec, TP]의 위치에 있는 것이 아니라, 동사 앞으로 전치된 다른 문장 구성분들(22b, c)과 마찬가지로 문장 밖의 A'-위치에 있다고 가정한다.
+
+(22) a. Mis padres regalaron el reloj al maestro.
+    b. El reloj lo regalaron mis padres al maestro.
+    c. Al maestro le regalaron mis padres el reloj.
+
+한 예로서, 스페인어의 전치주어는 동사 앞에 위치한 여타 구성성분들과 마찬가지로

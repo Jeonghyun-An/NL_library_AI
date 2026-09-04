@@ -1,0 +1,31 @@
+음성데이터베이스로부터의 효율적인 색인데이터베이스 구축과 정보검색
+The Extraction of Effective Index Database from Voice Database and Information Retrieval
+박 미 성 (Mi-Sung Park)*
+
+<목 차>
+I. 서론
+II. 음성데이터베이스의 텍스트데이터베이스로의 변환
+1. 어절생성기
+2. 음절복원기
+3. 형태소분석기
+4. 교정기
+III. 텍스트데이터베이스에서 색인데이터베이스 구축
+1. 고빈도 색인어 추출기
+2. 합성명사 생성기
+3. 합성명사 분해
+IV. 음성의 색인데이터베이스를 활용한 정보검색모델
+1. 정보검색
+2. 정보검색모델
+V. 결론
+
+초 록
+전자도서관과 같은 정보제공원은 이미지, 음성, 동영상 등과 같은 비정형 멀티미디어 데이터 서비스에 대한 요구를 받고 있다. 그리하여 본 연구에서는 음성 처리를 위해 어절생성기, 음절복원기, 형태소분석기, 교정기를 제안하였다. 제안한 음성처리 기술로 음성데이터베이스를 텍스트데이터베이스로 변환한 후 텍스트와 음성의 내용기반정보검색에 활용할 수 있음을 보이기 위해 정보검색모델을 제안하였다.
+주제어 : 음성데이터베이스, 색인데이터베이스, 어절생성기, 음절복원기, 색인추출, 정보검색
+
+Abstract
+Such information services source like digital library has been asked information services of atypical multimedia database like image, voice, VOD/AOD. Examined in this study are suggestions such as as word-phrase generator, syllable recoverer, morphological analyzer, corrector for voice processing. Suggested voice processing technique transform voice database into text database, then extract index database from text database. On top of this, the study suggest a information retrieval model to use in extracted index database, voice full-text information retrieval.
+Key Words : voice database, index database, word-phrase generator, syllable recoveror, index extraction, information retrieval
+
+* 경북대학교 중앙도서관 전산관리팀 팀장(mspark@kmu.ac.kr)
+· 접수일 : 2004. 9. 1 · 최초심사일 : 2004. 9. 4 · 최종심사일 : 2004. 9. 12
+- 271 -

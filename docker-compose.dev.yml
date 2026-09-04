@@ -42,13 +42,27 @@ x-common-env-dev: &common-env-dev
   MILVUS_NLIST: ${MILVUS_NLIST:-256}
   MILVUS_NPROBE: ${MILVUS_NPROBE:-32}
 
+  # OCR 엔진 선택 (vlm|surya) — surya는 dev 전용 별도 컨테이너 HTTP 호출
+  # A/B 테스트: Portainer env 에서 OCR_ENGINE_DEV=surya 로 토글
+  OCR_ENGINE: ${OCR_ENGINE_DEV:-vlm}
+  SURYA_BASE_URL: "http://nl-lib-dev-surya:8000"
+
   # VLM / LLM / FLUX — 운영 스택 컨테이너를 nl-lib-net 경유로 그대로 공유
   VLM_BASE_URL: "http://nl-lib-vllm:8000/v1"
   VLM_MODEL: "qwen3-vl-8b"
-  LLM_BASE_URL: "http://nl-lib-gemma:8000/v1"
-  LLM_MODEL: "gemma-3-12b"
+  # LLM 서빙 토글 (Portainer env 로 전환, compose 수정 불필요).
+  # 기본 = 운영 vLLM(gemma3, openai). dev 서비스는 nl-lib-net 공유라 컨테이너명 직접 호출.
+  # Ollama gemma4 테스트:
+  #   LLM_API_STYLE_DEV=ollama
+  #   LLM_BASE_URL_DEV=http://nl-lib-ollama:11434
+  #   LLM_MODEL_DEV=gemma4:26b-a4b-it-qat
+  LLM_API_STYLE: ${LLM_API_STYLE_DEV:-openai}
+  LLM_BASE_URL: ${LLM_BASE_URL_DEV:-http://nl-lib-gemma:8000/v1}
+  LLM_MODEL: ${LLM_MODEL_DEV:-gemma-3-12b}
   LLM_TIMEOUT: "120"
   LLM_SECTION_CONCURRENCY: "4"
+  LLM_THINK: ${LLM_THINK_DEV:-false}    # ollama 모드에서만 유효(openai는 무시). gemma4=false
+  OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX_DEV:-8192}
   FLUX_BASE_URL: "http://nl-lib-flux:8000"
   FLUX_TIMEOUT: "300"
 
@@ -493,6 +507,38 @@ services:
       redis-dev:
         condition: service_healthy
     restart: unless-stopped
+
+  # ── Surya OCR (전용 문서 OCR — 비활성화) ──────────────────────────
+  # A/B 결과: surya-ocr-2 ≈ Qwen3-VL 품질(동급)이라 H200에선 Qwen 유지.
+  # surya-ocr-2(qwen3_5, 1.37GB)는 국회 A100 40GB 납품 시 경량 대안으로 재활성화 대상.
+  # ⚠️ 주의: surya 0.22는 인프로세스가 아니라 vLLM/llama-server 백엔드를 스폰함.
+  #   컨테이너 배포 시 datalab-to/surya-ocr-2 를 vLLM으로 서빙하고
+  #   surya 클라이언트가 SURYA_INFERENCE_URL 로 attach 하는 구성이 필요.
+  # 재활성화하려면 아래 블록 주석 해제 + OCR_ENGINE_DEV=surya + surya_service 재설계.
+  # surya-dev:
+  #   image: landsoftdocker/nl-lib-surya:dev
+  #   container_name: nl-lib-dev-surya
+  #   <<: *nl-lib-dev-net-and-prod
+  #   environment:
+  #     HF_HOME: /models
+  #     TORCH_DEVICE: cuda
+  #     RECOGNITION_BATCH_SIZE: ${SURYA_REC_BATCH_DEV:-16}
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   volumes:
+  #     - /data/models/.hf-cache:/models:rw
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health',timeout=5).status==200 else 1)"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+  #     start_period: 120s
+  #   restart: unless-stopped
 
   # ── Nuxt ──────────────────────────────────────
   nuxt-dev:

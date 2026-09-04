@@ -1,0 +1,18 @@
+국제합작투자에서 학습 딜레마와 파트너 기업간 신뢰 59
+
+Learning Dilemma and the Role of Trust in Interorganizational Learning in International Joint Ventures
+
+Dongyoub Shin*
+Soora Kwon**
+
+Abstract
+
+This study concerns the role of trust in interorganizational learning in international joint ventures. The importance of learning has been recently emphasized as a core goal of strategic alliances, such as joint ventures. However, interorganizational learning often causes instability in cooperative relations by undermining the structural basis of the complementarity between partner firms, which is referred to as learning dilemma. Therefore, the simultaneous achievement of both dynamic learning and relational stability has been regarded as one of the most difficult challenges in alliance management. Based on the assumption that inter-partner trust will serve as a key solution to the learning dilemma in joint ventures, we empirically test a research model that considers trust as a mediating variable between independent variables and learning. In our research model, trust is treated as a mediating variable which relays the effects of four independent variables including asset specificity, information-sharing, joint venture autonomy, and partner similarity, to the dependent variable of learning. According to the results of our empirical analyses for a data-set on 140 international joint ventures, three independent variables - asset specificity, autonomy, and similarity - turned out to affect interorganizational learning only through the mediation of trust, whereas information-sharing was found to have both direct and mediated effects on learning. The findings of this study suggest that trust is a crucial mediator that enables participants of joint ventures to overcome the learning dilemma.
+
+Key words : trust, interorgnizational learning, learning dilemma, international joint venture, strategic alliance
+
+* Professor, Department of Business Administration, Yonsei University
+** Adjunct Professor, School of Business, Hanyang University
+
+Journal of Strategic Management
+www.kci.go.kr

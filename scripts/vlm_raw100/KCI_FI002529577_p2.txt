@@ -1,0 +1,43 @@
+가한 시뮬레이션을 통해 SMC가 PI 제어기보다 부하 변동 및 모델의 파라미터 변동에 더 강인함을 입증하였다 (Han and Jeong, 2018). 하지만 이 SMC 제어는 무부하 시에는 양호한 제어성능을 발휘하지만, 정격부하 근방의 부하 인가 시에는 미소한 속도 정상상태오차가 발생하는 것으로 확인되었다. 이는 SMC가 전류 제어형이며 SMC의 채터링 방지를 위해 포화함수를 이용한 것에 기인한 것으로 보인다.
+
+따라서 본 연구에서는 이러한 문제점을 보완하고자 외란관측기(DOB; Disturbance OBserver)를 갖는 SMC를 제안한다. 제안된 DOB 기반의 SMC는 계단형 부하 인가와 모터의 파라미터 변동을 상정한 시뮬레이션을 통해 그 타당성을 검증하였다.
+
+재료 및 방법
+
+DC모터의 상태공간 모델링
+
+Fig. 1은 타여자 방식의 전기자 전압 제어형 DC모터 모델의 개념도이다. DC모터의 전기계 동특성은 식 (1), 기계계의 동특성은 식 (2)와 같다(Kim, 2010).
+
+[그림: Equivalent model of a DC motor.]
+
+\begin{equation}
+L_a \frac{di_a(t)}{dt} + R_a i_a(t) = v_a(t) - v_b(t) \quad (1)
+\end{equation}
+
+\begin{equation}
+J \frac{d\omega_m(t)}{dt} + B \omega_m(t) = \tau_e(t) - \tau_L(t) \quad (2)
+\end{equation}
+
+여기서 \(L_a\), \(R_a\)는 전기자의 인덕턴스 및 저항, \(B\), \(J\)는 베어링 마찰계수와 모터 축의 관성모멘트를 각각 나타낸다. 출력변수인 \(i_a(t)\), \(\omega_m(t)\)는 전기자전류와 모터의 회전속도이다.
+
+회전속도, 입력변수인 \(v_a(t)\), \(v_b(t)\)는 전기자전압과 역기전력으로서 \(v_b(t) = K_e \omega_m(t)\)이다. 이때 \(K_e\)는 역기전력 상수이다. \(\tau_e(t)\), \(\tau_L(t)\)는 각각 전자기적 토크와 외란 토크로서 \(\tau_e(t) = K_t i_a(t)\)이고 이때 \(K_t\)는 토크상수이다.
+
+전기자전압 제어를 가정하여 제어입력 \(u(t)\)를 \(u(t) = v_a(t)\)로 두고, 식 (1)과 식 (2)를 \(\dot{\omega}_m(t)\)에 대하여 정리하면 식 (3)과 같이 된다. 이때, 부하 토크 \(\tau_L\)은 미지의 외란이므로 제어 모델에서는 \(\tau_L = 0\)으로 둔다. 또한 시간함수들은 편의상 독립변수 \(t\)의 표기로 생략하여 이하에서는 \(u(t)\)를 \(u\)와 같이 기술한다.
+
+\begin{equation}
+\ddot{\omega}_m = -\left( \frac{J R_a + L_a B}{J L_a} \right) \dot{\omega}_m - \frac{R_a B + K_e K_t}{J L_a} \omega_m + \frac{K_t}{J L_a} u \quad (3)
+\end{equation}
+
+식 (3)에서 \(x_1\)과 \(x_2\)를 \(x_1 = \omega_m\), \(x_2 = \dot{x}_1 = \dot{\omega}_m\)으로 정의하면 상태방정식은 식 (4)와 같이 유도된다.
+
+\begin{equation}
+\begin{bmatrix} \dot{x}_1 \\ \dot{x}_2 \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ -\left( \frac{R_a B + K_t K_e}{J L_a} \right) & -\left( \frac{R_a}{L_a} + \frac{B}{J} \right) \end{bmatrix} \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} + \begin{bmatrix} 0 \\ \frac{K_t}{J L_a} \end{bmatrix} u \quad (4)
+\end{equation}
+
+SMC 설계
+
+슬라이딩모드 제어는 모델의 불확실성, 파라미터의 변동과 외란에 강인한(robust) 제어 기법 중 하나이다. Fig. 2는 SMC의 개념도이다. SMC 설계는 주목하고 있
+
+[그림: Phase plane of sliding mode control.]
+
+Journal of the Korean Society of Fisheries and Ocean Technology | 403

@@ -1,0 +1,43 @@
+한국ITS학회논문지
+J. Korea Inst. Intell. Transp. Syst.
+
+머신러닝을 이용한 이동통신 데이터 기반
+교통량 추정 모형 개발
+A Study on the Development of Traffic Volume Estimation Model Based on Mobile Communication Data Using Machine Learning
+
+오 동 섭* · 윤 소 식** · 이 철 기*** · 조 용 성****
+Dong-seob Oh* · So-sig Yoon** · Choul-ki Lee*** · Yong-Sung CHO****
+
+* 주저자 : 한국지능형교통체계협회 산업진흥부 기술지원센터
+** 교신저자 : 경찰청 교통국 국장
+*** 공저자 : 아주대학교 교통시스템공학과 교수
+**** 공저자 : 한국지능형교통체계협회 기획조정본부 본부장
+* Industry Promotion Office, Center for Supporting Innovative Business, ITS Korea
+** Traffic Bureau of Korea Police Agency
+*** Dept. of Transportation Systems Eng., Univ. of Ajou
+**** Planning and Strategy Office, ITS Korea
+† Corresponding author : Dong-seob Oh, ods76@itskorea.kr
+
+요 약
+본 연구는 이동통신 로그 데이터를 통해 산출된 교통량 정보를 활용하여 기존 검지기에 준하는 교통량 정보를 추정하기 위해, 머신러닝의 양상을 기반으로 하는 이동통신 데이터를 활용하여 계측된 교통량 등의 정보와 VDS 실측 데이터를 활용하여 머신러닝 모형을 비교·분석한 결과, LightGBM 모형이 교통량 추정의 최적 모형으로 선정되었다. 국도 1, 3, 6호선 검지영역 96개소를 대상으로 교통량 추정의 성능을 평가한 결과, 전체 검지영역의 경우 MAPE 8.49로 교통량 추정 정확도가 91.51%로 분석되었다. VDS가 설치되지 않은 구간에서도 LightGBM 교통량 추정 모형이 적용 가능하였다.
+핵심어 : 이동통신 데이터, 교통량, 추정, 머신러닝, LightGBM
+
+ABSTRACT
+This study develops an optimal mobile-communication-based National Highway traffic volume estimation model using an ensemble-based machine learning algorithm. Based on information such as mobile communication data and VDS data, the LightGBM model was selected as the optimal model for estimating traffic volume. As a result of evaluating traffic volume estimation performance from 96 points where VDS was installed, MAPE was 8.49 (accuracy 91.51%). On the roads where VDS was not installed, traffic estimation accuracy was 92.6%.
+Key words : Mobile communication data, Traffic volume, Estimation, Machine learning, LightGBM
+
+Vol. 22 No.4(2023)
+August, 2023
+pp.01~13
+
+pISSN 1738-0774
+eISSN 2384-1729
+https://doi.org/10.12815/kits.2023.22.4.1
+
+Received 25 April 2023
+Revised 12 May 2023
+Accepted 4 July 2023
+
+© 2023. The Korea Institute of Intelligent Transport Systems. All rights reserved.
+
+www.kci.go.kr

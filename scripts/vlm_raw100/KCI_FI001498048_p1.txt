@@ -1,0 +1,25 @@
+한국컴퓨터그래픽스학회
+한국컴퓨터그래픽스학회
+Vol. 16, No. 4, P. 25~33
+
+위치 정보를 갖는 사진집합의 계층적 탐색 인터페이스
+이승훈° 이강훈
+광운대학교
+{1sh,kang}@kw.ac.kr
+
+Hierarchical Browsing Interface for Geo-Referenced Photo Database
+Seung Hoon Lee° Kang Hoon Lee
+Kwangwoon University
+
+요약
+디지털 카메라가 널리 보급되면서 사람들은 언제, 어디서나 사진을 찍고 값싼 저장장치에 많은 수의 사진을 저장할 수 있게 되었다. 하지만 많은 수의 사진 중 원하는 사진을 효율적으로 탐색하는 것은 어려운 문제로 남아 있다. 본 논문은 위치 정보를 갖는 대규모 사진집합을 신속하고 직관적으로 탐색하는 새로운 방법을 제안한다. 전체 사진집합을 구조화 하기 위해 지리적 거리가 가장 근접한 사진들을 묶어 계층적 군집화를 수행한다. 또한 모든 군집의 컨벡스 헬과 넓이를 미리 계산하여 사진들에 포함된 군집들의 넓이를 비교해 적절한 넓이의 군집들을 선별적으로 시각화한다. 이 때 군집은 포함되는 모든 사진의 위치를 보여주는 대신 컨벡스 헬로 시각화하여 사용자는 관심 군집을 클릭하여 해당 군집으로 신속하게 이동할 수 있으며, 시스템은 관심 군집을 지도 영역에 정확히 배치하여 사용자가 사진 분류 등의 일반적인 사진 탐색 예제를 통해 제안된 방법의 유용성을 확인하였다.
+
+Abstract
+With the popularization of digital photography, people are now capturing and storing far more photos than ever before. However, the enormous number of photos often discourages the users to identify desired photos. In this paper, we present a novel method for fast and intuitive browsing through large collections of geo-referenced photographs. Given a set of photos, we construct a hierarchical structure of clusters such that each cluster includes a set of spatially adjacent photos and its sub-clusters divide the photo set disjointly. For each cluster, we pre-compute its convex hull and the corresponding polygon area. At run-time, this pre-computed data allows us to efficiently visualize only a fraction of the clusters that are inside the current view and have easily recognizable sizes with respect to the current zoom level. Each cluster is displayed as a single polygon representing its convex hull instead of every photo location included in the cluster. The users can quickly transfer from clusters to clusters by simply selecting any interesting clusters. Our system automatically pans and zooms the view until the currently selected cluster fits precisely into the view with a moderate size. Our user study demonstrates that these new visualization and interaction techniques can significantly improve the capability of navigating over large collections of geo-referenced photos.
+
+키워드: 사진 탐색, 위치 정보를 갖는 사진, 계층적 군집화, 데이터 시각화, 지리 정보 시스템
+Keywords: photo browsing, geo-referenced photos, hierarchical clustering, data visualization, geographic information system
+
+*투고일: 2010-04-30 / 심사일: 2차 2010-11-11 / 게재확정일: 2010-11-12
+www.kci.go.kr
+- 25 -

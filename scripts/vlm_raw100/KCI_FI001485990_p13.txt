@@ -1,0 +1,34 @@
+The Effects of Lead Time Variability on Managing Component Replenishment for Customized Manufacturing
+
+it is likely that the beneficial effect of lead time reduction under a higher setup cost will be smaller than that under a lower setup cost. <Table 6> also shows that the increase in c_K enhances the optimal replenishment quantity given M, which can be expected from the EOQ formula.
+
+• Impact of M on the optimal performance as a function of c_h^2: <Table 7> presents 15 examples grouped into 3 sets by c_h^2 = 0.5, 1, and 1.5. As one can expect from the EOQ formula, we observe that given M(>1), an increase in c_h^2 decreases Q*. However, it is observed that the increase in c_h^2 can enlarge or shrink the % value,
+
+<Table 7> Impact of M as a function of c_h^2
+
+| No | Parameters | Optimal performance | EOQ |
+|---|---|---|---|
+| | c_K | c_R | c_h^1 | c_h^2 | λ | μ | d | B | M | Q* | g | % |  |
+| 1 | 250 | 40 | 4 | 0.5 | 0.7 | 1 | 0.1 | 10 | 1 | 34 | 26.92 | 5.61 | 26 |
+| 2 |  |  |  |  |  |  |  |  | 2 | 31 | 25.41 | 2.24 | 26 |
+| 3 |  |  |  |  |  |  |  |  | 3 | 30 | 24.50 | 1.37 | 26 |
+| 4 |  |  |  |  |  |  |  |  | 4 | 30 | 24.27 | 0.94 | 26 |
+| 5 |  |  |  | 1 |  |  |  |  | 5 | 29 | 24.67 | 5.45 | 19 |
+| 6 |  |  |  |  |  |  |  |  | 1 | 25 | 32.78 | 2.44 | 19 |
+| 7 |  |  |  |  |  |  |  |  | 2 | 23 | 31.98 | 1.53 | 19 |
+| 8 |  |  |  |  |  |  |  |  | 3 | 22 | 31.49 | 1.05 | 19 |
+| 9 |  |  |  |  |  |  |  |  | 4 | 22 | 31.16 | 4.99 | 15 |
+| 10 |  |  |  |  |  |  |  |  | 5 | 21 | 38.30 | 2.35 | 15 |
+| 11 |  |  |  | 1.5 |  |  |  |  | 1 | 19 | 37.40 | 1.52 | 15 |
+| 12 |  |  |  |  |  |  |  |  | 2 | 19 | 36.83 | 1.06 | 15 |
+| 13 |  |  |  |  |  |  |  |  | 3 | 19 | 36.44 | 1.06 | 15 |
+| 14 |  |  |  |  |  |  |  |  | 4 | 19 | 36.44 | 1.06 | 15 |
+| 15 |  |  |  |  |  |  |  |  | 5 | 18 | 36.44 | 1.06 | 15 |
+
+depending on M. For example, as c_h^2 increases, the % value when M=2 decreases while the % value when M=5 increases.
+
+• Impact of M on the optimal performance as a function of μ: In <Table 8>, we tested 15 examples that are grouped into 3 sets by μ = 1, 1.2, and 1.4. <Table 8> shows that given M(>1), an increase in μ enlarges the % value, which means that if the MTO operation speeds up, it becomes important to reduce lead time variability. <Table 8> also shows that the increase in μ hardly affects Q* even though one might think that a faster MTO process will increase the replenishment
+
+한국생산관리학회지 제21권 제3호 2010년 9월
+www.kci.go.kr
+281

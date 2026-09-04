@@ -1,0 +1,37 @@
+로 드물었다.
+
+3. 시험된 V. parahaemolyticus는 ampicillin, carbenicillin, cefazolin 및 colistin을 제외하고 cefotetan, ceftriaxone, amikacin, gentamicin, tobramycin, tetracycline, nalidixic acid, ciprofloxacin, chloramphenicol 및 cotrimoxazole에 대부분이 감수성을 보였다.
+
+4. V. parahaemolyticus 46주 모두에서 PCR에 의해 toxR 유전자가 검출되었다.
+
+이 연구에서 임상검체에서 분리된 V. parahaemolyticus의 생화학적 성상은 대부분이 전형적이었으며, 혈청형은 O3:K6형이 가장 많았고, ampicillin, carbenicillin 및 cefazolin을 제외한 대부분의 항균제에 감수성이었으며, 임상검체에서 V. parahaemolyticus는 생화학적 시험뿐만 아니라 PCR에 의한 toxR 유전자 검출로도 신속하고 정확하게 동정시험에 이용할 수 있다고 판단되었다.
+
+본 연구의 혈청형 감별시험에 도움을 주신 일본 감염증연구소의 T. Shimada 박사님께 감사드립니다.
+
+참고문헌
+
+1. Bang PK, Nandi S, Bhadra PK, Ramamurthy T, Bhattacharya SK, Nishibuchi M, Hamabata T, Yamasaki S, Takeda Y, and Nair GB. Clonal diversity among recently emerged strains of Vibrio parahaemolyticus O3:K6 associated with pandemic spread. J Clin Microbiol 37:2354-2357, 1999
+
+2. Blake PA, Weaver RE, and Hollis DG. Disease of human (other than cholera) caused by vibrios. Annu Rev Microbiol 34:341-367, 1980
+
+3. CDC. MMWR 47:457-462, 1998
+
+4. CDC. MMWR 48:48-51, 1999
+
+5. Chiou A, Chen LH, and Chen SK. Foodborne illness in Taiwan, 1981-1989. Food Aust 43: 70-71, 1991
+
+6. Dirita VJ. Co-ordinate expression of virulence genes by toxR in Vibrio cholerae. Mol Microbiol 6:451-458, 1992
+
+7. Fujino T. Bacterial food poisoning. Saishin Igaku 6:263-271, 1951
+
+8. Fujino T. From Pasteurella parahaemolytica to Vibrio parahaemolyticus. (in Japanese). p. 13-37. In T. Fujino and Fukumi H (ed.), Vibrio parahaemolyticus. Isseido publishing co, Tokyo 1953
+
+9. Hally RJ, Rubin RA, Fraimow HS, Hoffman-Terry ML. Fatal Vibrio parahemolyticus septicemia in a patient with cirrhosis. A case report and review of the literature. Dig Dis Sci 40:1257-60, 1995
+
+10. Hlady WG, and Klonz KC. The epidemiology of Vibrio infections in Florida, 1981-1993. J Infect Dis 173:1176-1183, 1995
+
+11. Honda S, Goto I, Minematsu I, Ikeda N, Asano N, Ishibashi M, Kinoshita Y, Nishibuchi M, Honda T, 18. and Miwatani T. Gastroenteritis due to Kanagawa negative Vibrio parahaemolyticus. Lancet I:331-332, 1987
+
+12. Honda T, Ni Y, and Miwatani T. Purification and characterization of a hemolysin produced by a 20. clinical isolate of Kanagawa phenomenon negative Vibrio parahaemolyticus and related to the thermostable direct hemolysin. Infect Immun 56:961-965, 1988
+
+13. Kelly MT, Hickman-Brenner FW, Farmer III JJ: Vibrio, p. 384-395. In Balows A, Hausler Jr WJ, Hermann KL, Isenberg, Hhadomy HJ (ed.), Manual of clinical microbiology, 5th ed. American society for microbiology, Washington DC. 1992

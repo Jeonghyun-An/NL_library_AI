@@ -1,0 +1,22 @@
+there-구문에서 Chomsky(1995)는 허사 there는 T의 EPP 자질만을 점검한다고 가정한다. 다시 말해서, 최소주의 MP에서는 GB에서와는 달리 EPP 주어와 주격주어가 분리될 수 있다고 가정하는 것이다. 이러한 가정을 따른다면, 스페인어의 [Spec, TP]에 위치하는 요소들은 격 주어가 아닌 T의 EPP 자질을 점검하는 EPP 주어인 셈이다. 그러나, 영어의 [Spec, TP] 위치는 기존의 A-위치로서, 여기에 오는 EPP 주어(주격점검을 하지 않는 EPP 주어라도)는 의무적 주어역할을 하며, 의미해석 INT 효과를 나타내지 않는다(즉, 영어의 T는 의무적 EPP자질을 가지므로 의무적 병합을 요구한다).10)
+
+이에 반해, 스페인어의 [Spec, TP] 위치는 의미효과 INT를 나타내는 A'-위치로서 의무적 주어역할을 하지 않으며 따라서 that-t effect도 보이지 않는다. 즉, 스페인어의 T는 수의적 EPP 자질을 지녀, 자신의 지정어 위치는 기변적 위치이며 여기에 어떤 구성성분이 이동해 오는 경우에는 반드시 INT효과를 나타내는 것이다.
+
+요약하면, EPP 주어가 주격주어와 분리될 수 있다는 점에서는 영어나 스페인어 모두 같으나, 스페인어의 경우에 EPP 주어가 [+INT] 효과를 나타낸다는 점에서는 영어와 다르다.
+
+3.4. 본 제안의 효과
+
+본 논문의 제안대로 [Spec, TP]가 기존의 A'-위치를 대신할 수 있다면, 몇몇 학자들이 제안한 CP와 TP 사이의 또 다른 기능범주(CP recursion 구조)를 상정할 필요가 없게 된다. 예를 들면, Zubizarreta (1992)는 FP, Ordóñez & Treviño (1995)는 GP, Uriagereka (1995)는 FocoP, Lee (1996)는 TopP를 CP와 TP 사이에 설정하여 스페인어의 동사 앞 전치 요소들을 설명하려 시도했었다. 아래 (27)에서처럼 더 단순화된 구조로서 언어현상을 설명할 수 있다면, 영가설(Null hypothesis)을 추구하는 최소주의 이론에 더 부합할 수 있다고 생각된다.
+
+10) 영어의 경우, 다음에서 보다시피, T의 EPP 주어 역할을 하는 도치된 전치사구(inverted PP)가 (격)주어가 보이는 통사적 양상을 그대로 보인다:
+(i a): subject raising
+(i b): that-t effect
+(i c): tag formation
+(i d): embedded question formation
+(i) a. On the hill appears [t_i to be located a cathedral t_i].
+b. On this wall: I expect [(that) t_i will be hung a picture of Pabbs].
+c. In the garden is a beautiful statue, isn't there?
+d. We suddenly saw how into the pond jumped thousands of frogs.
+한편, 주격 주어가 격점검 위치에서 더 이상 이동할 수 없는 것과 마찬가지로 (iia) 전치사구 역시 격점검 위치에서 “frozen in place”되어야 한다 (iib).
+(ii) a. *A cathedral appears [t_i is located t_i on the hill].
+b. *On the hill appears [t_i is located a cathedral t_i].

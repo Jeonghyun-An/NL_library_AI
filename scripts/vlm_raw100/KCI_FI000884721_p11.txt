@@ -1,0 +1,41 @@
+Vol. 32, No. 5, 2002. Korea. J. Orthod
+
+앞으나 연조직 Gonion은 1.0-3.0mm의 큰 편차를 보여 계측점으로 사용되기에는 부적절하다고 판단되었다. 또한 관골 부위와 뺨과 같은 넓은 부위는 돌출부와 함몰부의 구별은 쉽지만 한 점을 지정하기에는 오차가 너무 커서 제외하였다. 만일 3차원 영상에서 Frankfort 평면과 추가적인 기준평면을 지정하고 (Figure 9) 이에 따라 환자의 두부 자세를 재정립할 수 있고 여기에 심도를 나타내주는 뚜렷한 등고선을 나타내 줄 수 있다면 연조직의 최외각점과 최심점을 지정하기 쉽고 술전과 술후의 변화를 한눈에 알 수 있을 뿐더러 정량화도 가능할 것이다.
+
+반복 재현성이 높게 나타난 경조직 및 연조직 계측점들과 위의 기준 평면들을 이용하여 상악골 및 하악골의 크기 및 면적, 부피를 측정할 수 있고 이들의 비율과 대칭성, 3차원적 위치를 평가할 수 있다. 또한 문제의 원인이 연조직인지 경조직인지, 어떤 부위인지 명확하게 알 수 있을 뿐만 아니라 앞으로의 연구로 정상 계측치를 구할 수 있다면 비율과 대칭에 더하여 변위의 정도까지도 진단할 수 있을 것이다. 한단계 더 발전하면 교정치료나 악안면 수술 후 경조직 뿐만 아니라 연조직과 상기도의 3차원적 변화를 예측하고 simulation할 수 있을 것이다. 특히 평면적인 측모두부방사선 사진에만 의존하였던 연조직 분석 및 예측에 비하여 3차원 입체영상의 이용은 연조직 형태의 진단 및 치료계획의 수립에 많은 도움을 줄 것으로 생각된다.
+
+V. 결 론
+
+본 연구에서는 Vworks 프로그램과 건조두개골을 이용하여 3차원 CT 영상의 오차와 확대율을 평가하고 Vmorph-proto 프로그램을 이용하여 정상인과 비대칭 환자의 3차원 CT 영상에서 지정이 용이하고 반복재현성이 높은 계측점을 제안하고자 하여 다음과 같은 결론을 얻었다 ;
+
+1. 건조두개골의 실측치와 Vworks 프로그램을 이용하여 구성한 3차원 CT 영상에서의 계측치를 비교해본 결과 평균오차 0.99mm, 확대율 1.04%로 나타났다.
+
+2. 3차원 CT 영상에서 경조직 계측점으로 Supraorbital, Lateral orbital margin, Infraorbital, Nasion, ANS, A point, Zygomaticomaxilla, Upper incisor, B point, Pogonion, Menton, PNS, Condylar inner margin, Condylar outer margin, Porion, Condylion, Gonion1, Gonion2, Gonion3, Sigmoid notch, Basion 등이 임상적으로 유용하다고 판단되었다.
+
+3. 3차원 CT 영상에서 연조직 계측점으로 Endocanthion, Exocanthion, Soft tissue Nasion, Pronasale, Alare lateralis, Upper nostril point, Lower nostril point, Subnasale, Upper lip point, Cheilion, Stomion, Lower lip center, Soft tissue B, Pogonion, Menton, Preaurale 등이 임상적으로 유용하다고 판단되었다.
+
+Vworks 프로그램으로 3차원 CT 영상을 구성하고 계측하는 것이 임상적으로 유용하다고 판단되었다. 또한 위에서 제안된 연조직 및 경조직 계측점들은 3차원 CT 영상에서 반복 재현성이 높고 지정이 용이하며 해부학적 특징을 나타내주는 점들로 두개악안면 구조의 3차원적 진단과 술전 술후의 예측과 비교에 유용하게 사용될 것으로 사료되는 바이다.
+
+참 고 문 헌
+
+1. Broadbent BH. A new x-ray technique and its application to orthodontia. Angle Orthod 1931 :1 :45.
+
+2. Hatcher DC. Maxillofacial imaging. In :McNeill C, ed. Science and Practice of Occlusion. Chicago :Quintessence Publishing 1997 : 349-64.
+
+3. Athanasiou AE. Orthodontic Cephalometry. London :Mosby-Wolfe 1997.
+
+4. Vig PS. Orthodontic controversies :Their origins, consequences, and resolution. In :Melsen B, ed. Current Controversies in Orthodontics. Chicago :Quintessence Publishing 1991 :269-310.
+
+5. Wylie W.H. , Elasser W.A. Understated vertical projections of the head from lateral and posteroanterior roentogenograms. Am J Roentenol 1948 :60 :414.
+
+6. Vogel CJ correction of frontal dimensions from head x-rays. Angle Orthod 1967 :37 :1-8.
+
+7. Grayson BH, McCarthy JG, Bookstein F. Analysis of craniofacial asymmetry by multiplane cephalometry. Am J Orthod 1983 :84 :217-24.
+
+8. Grayson BH, Cutting C, Bookstein FL, Kim H, Mccarthy JG. The three-dimensional cephalogram :theory, technique, and clinical application. Am J Orthod Dentofacial Orthop 1988 :94 :327-37.
+
+9. Grayson BH, Cutting C, Bookstein FL, Kim H, Mccarthy JG. Landmarks in three-dimensions :reconstruction from cephalogram versus direct observation. Am J Orthod Dentofacial Orthop 1991 :100 :133-40.
+
+10. Brown T, Abbott AH. Computer assisted location of reference points in three dimensions for radiographic cephalometry. Am J Orthod Dentofacial Orthop 1989 :95 :490-8.
+
+11. Baumrind S, Moffitt FH, Curry S. Three-dimension x-ray stereome 323

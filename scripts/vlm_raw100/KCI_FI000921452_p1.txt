@@ -1,0 +1,12 @@
+이동과 의미해석효과
+이 만 기*
+Lee, Man-Ki (2002). El movimiento y el efecto de la interpretación semántica
+
+El objetivo del presente trabajo, en base del marco teórico del programa minimista, es tantear una posibilidad de que el movimiento opcional de una frase FX tenga una relación estrecha con la interpretación semántica en la Forma Lógica. Para ello revisamos y aceptamos las propuestas de Fox (1998) y de Chomsky (1999) sobre la economía y la interpretación semántica: operaciones opcionales deben tener efectos en la interficie como en la Forma Fonética o en la Forma Lógica. Bajo estas propuestas anteriores, proponemos que, en español, el desplazamiento opcional de la frase FX a la posición del especificador de la FT resulta tener un efecto de la interpretación semántica en la FL como Tópico y Foco. Esta propuesta se deriva de las investigaciones anteriores de que el orden relativamente libre de palabras del español tiene una relación muy estrecha con la estructura informativa. En fin, la meta del presente trabajo es llegar a las siguientes conclusiones teóricas:
+
+(1) El T del español sí puede tener el rasgo PPA (Principio de Proyección Ampliado), pero este rasgo no es obligatorio sino opcional.
+(2) En caso de que una FX se mueva a la posición de [Espec, FT], esta frase tendrá un efecto semántico en la Forma Lógica.
+(3) En español, la posición de [Espec, FT], posición típica para los sujetos gramaticales, puede convertirse en la posición para los non-argumentos.
+
+Key Words : EPP / Movimiento opcional / Interpretación semántica / 확대투사원리 / 수의적 이동/ 의미해석
+* 서울대학교 교수

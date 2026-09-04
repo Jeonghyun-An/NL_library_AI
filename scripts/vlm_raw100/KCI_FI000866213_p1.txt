@@ -1,0 +1,45 @@
+BULLETIN
+OF THE
+KOREAN CHEMICAL SOCIETY
+ISSN 0253-2964
+Volume 23, Number 7
+
+Ab Initio Study of Mutagen X: Importance of Ionization and Solvation
+Seung Joo Cho
+Life Science Division, Korea Institute of Science and Technology, Seoul 130-650, Korea
+Received February 16, 2002
+
+Keywords : Mutagen X, Mutagenicity, SAR, Ab initio, Molecular modeling.
+
+The halogenated oxyfuranones are a class of drinking water disinfection by-products that include 3-chloro-4-(dichloro-methyl)-5-hydroxy-2(5H)-furanone (Mutagen X), one of the most potent direct-acting mutagens ever tested in Salmonella TA100.¹ Because of the extremely high mutagenic potencies, it is estimated that Mutagen X(MX), along with its chlorinated and brominated structural analogues, accounts for up to 70% of the total mutagenicity of drinking water samples, in spite of relatively low concentration exposure levels.² Until recently, MX was assumed to pose little carcinogenic risk due to its low exposure, high reactivity and short residence time. But recent identification of DNA adducts and evidence of carcinogenicity along the gastro-intestinal lining in rodents following MX exposure has heightened concern for this class of chemicals. A relatively large number of MX analogues have been synthesized, tested for mutagenicity, subject to mutational spectral analysis and DNA adducts studies, and modeled by structure-activity relationship methods.³ In spite of this information, a number of basic questions pertaining to the nature of the ultimate reactive species and the mechanism of interaction of these compounds with DNA to produce their remarkable mutagenic potency in SAL TA100 remain unresolved.
+
+MX exists as an equilibrium mixture of both ring and open form in water as shown in Figure 1. The relative concentration of ring and open form depends heavily on the pH of the solution. If the aqueous solution is highly acidic, the ring form is dominant species.⁴ The relative concentration of open form becomes high as the solution gets more basic. This is a very fast process. On the other hand, the existence of regioisomer of open form is also observed. Fifty percent of open form was converted spontaneously into extended form in aqueous solution in several days.⁵ This implies that the extended form is more stable than the open form at the physiological conditions.
+
+There have been many debates which one of three species shown in Figure 1 is responsible for the high mutagenicity in SAL TA100. Experiments showed that the extended form is not much mutagenic.⁵ The observed mutagenicity comes from the experimentally not separable mixture of open and ring form. However, the exact mechanism has never been clarified and which one of two species is responsible for the observed mutagenicity. Understanding the origin of chemical stability of these species is interesting. This may also help to solve this puzzling problem of mutagenic mechanism. It is reported that this equilibrium does not depend on the substituent of 2,3-position of oxyfuranone.⁴ All the chemicals shown in Figure 2 favor open form over ring form.⁴ Therefore it is reasonable to expect that the 5-hydroxy-2(5H)-furanone exists mainly in its open form. In summary, it is reasonable to assume that extended form is the most stable, open form is
+
+[그림: Various forms of mutagen X.]
+
+[그림: All the MX analogues exist open forms at physiological conditions.]
+
+BULLETIN
+OF THE
+KOREAN CHEMICAL SOCIETY
+ISSN 0253-2964
+Volume 23, Number 7
+
+Ab Initio Study of Mutagen X: Importance of Ionization and Solvation
+Seung Joo Cho
+Life Science Division, Korea Institute of Science and Technology, Seoul 130-650, Korea
+Received February 16, 2002
+
+Keywords : Mutagen X, Mutagenicity, SAR, Ab initio, Molecular modeling.
+
+The halogenated oxyfuranones are a class of drinking water disinfection by-products that include 3-chloro-4-(dichloro-methyl)-5-hydroxy-2(5H)-furanone (Mutagen X), one of the most potent direct-acting mutagens ever tested in Salmonella TA100.¹ Because of the extremely high mutagenic potencies, it is estimated that Mutagen X(MX), along with its chlorinated and brominated structural analogues, accounts for up to 70% of the total mutagenicity of drinking water samples, in spite of relatively low concentration exposure levels.² Until recently, MX was assumed to pose little carcinogenic risk due to its low exposure, high reactivity and short residence time. But recent identification of DNA adducts and evidence of carcinogenicity along the gastro-intestinal lining in rodents following MX exposure has heightened concern for this class of chemicals. A relatively large number of MX analogues have been synthesized, tested for mutagenicity, subject to mutational spectral analysis and DNA adducts studies, and modeled by structure-activity relationship methods.³ In spite of this information, a number of basic questions pertaining to the nature of the ultimate reactive species and the mechanism of interaction of these compounds with DNA to produce their remarkable mutagenic potency in SAL TA100 remain unresolved.
+
+MX exists as an equilibrium mixture of both ring and open form in water as shown in Figure 1. The relative concentration of ring and open form depends heavily on the pH of the solution. If the aqueous solution is highly acidic, the ring form is dominant species.⁴ The relative concentration of open form becomes high as the solution gets more basic. This is a very fast process. On the other hand, the existence of regioisomer of open form is also observed. Fifty percent of open form was converted spontaneously into extended form in aqueous solution in several days.⁵ This implies that the extended form is more stable than the open form at the physiological conditions.
+
+There have been many debates which one of three species shown in Figure 1 is responsible for the high mutagenicity in SAL TA100. Experiments showed that the extended form is not much mutagenic.⁵ The observed mutagenicity comes from the experimentally not separable mixture of open and ring form. However, the exact mechanism has never been clarified and which one of two species is responsible for the observed mutagenicity. Understanding the origin of chemical stability of these species is interesting. This may also help to solve this puzzling problem of mutagenic mechanism. It is reported that this equilibrium does not depend on the substituent of 2,3-position of oxyfuranone.⁴ All the chemicals shown in Figure 2 favor open form over ring form.⁴ Therefore it is reasonable to expect that the 5-hydroxy-2(5H)-furanone exists mainly in its open form. In summary, it is reasonable to assume that extended form is the most stable, open form is
+
+[그림: Various forms of mutagen X.]
+
+[그림: All the MX analogues exist open forms at physiological conditions.]

@@ -455,18 +455,13 @@ def _extract_tables(full_text: str) -> list[tuple[str, str]]:
 # ── 4. LLM 표 전체 서술 ──────────────────────────────────────
 
 async def _llm_chat(system: str, user: str, params: dict, timeout: float) -> str:
-    payload = {
-        "model": cfg.LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        **params,
-    }
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+    # LLM 호출은 llm_client 어댑터로 통일 (OpenAI vLLM / Ollama 네이티브 겸용).
+    from services.llm_client import chat
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    return await chat(messages, params=params, timeout=timeout)
 
 
 async def generate_keywords(title: str, text: str) -> list[str]:

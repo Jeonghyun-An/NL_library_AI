@@ -1,0 +1,28 @@
+178 西語西文研究
+
+(14) a. Í fyrra máludu stúdentarnir [VP ekki hús]
+last year painted student-the house [-definite]
+'The students painted a house last year.'
+b. Í fyrra máludu stúdentarnir húsid; [VP ekki ti]
+last year painted student-the house-the [+definite]
+'The students painted the house last year.'
+
+(14)의 예문에서 보다시피, 목적어 이동(object shift)이 일어날 수도 안 일어날 수도 있는 수의적인 작용이며, 단지 이동하는 경우에만 특정성의 해석을 가지는 의미해석 효과와 INT가 나타난다.
+
+2.2. 한국어(wh in-situ 언어)의 수의적 의문사 이동과 초점(focus) 해석
+
+한국어의 의문사는 기저-생성된 위치에 남아 있으면서 의문사 해석을 받을 수 있다 (cf. 15a). 그러나 이 의문사는 이동할 수도 있는데 이 경우 (15b)에서 보듯이 초점(focus) 해석을 받게 된다.
+
+(15) a. 철수가 [CP 영화가 무엇을 샀다고] 생각하니? [-focus s]
+b. 무엇을 철수가 [CP 영화가 t_i 샀다고] 생각하니? [+focus s]
+
+한국어의 의문사 이동 역시, 위에서 보듯이, 수의적 이동이며 따라서 이동하는 경우에는 의미해석 효과와 INT를 나타내어 초점해석을 지니게 된다. 이러한 한국어 의문사의 이동 역시, output에서 의미해석 효과를 나타내는 경우에만 수의적 작용(optional operation)이 적용될 수 있다는 가설을 지지한다.
+
+2.3. 양화사(Quantifier)의 수의적 IF-이동과 작용역 해석(Scope Interpretation)
+
+마지막으로, 앞서 언급했던 양화사 이동을 살펴보자. 다음에서 보듯이, 중의적 해석을 가지는 양화사 구문에서 QR은 의미해석 효과를 유발시키는 경우에만 수의적으로 이동할 수 있다.
+
+(16) A boy loves every girl. (중의적)
+[IP A boy1 ... [VP every girl2 [VP t1 loves t2]]]
+↑
+Optional Movement

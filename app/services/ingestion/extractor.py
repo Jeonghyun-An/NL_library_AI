@@ -1,14 +1,23 @@
 """
 extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
 
-[1티어] OpenDataLoader v2  — 한컴·듀얼랩 하이브리드 엔진 (마크다운 + 표 + 문서 구조 보존)
-[2티어] VLM(Qwen2.5-VL)   — [그림] 플레이스홀더 또는 글자 수 부족 페이지만 선별 보완
-                            (fitz는 페이지 이미지 렌더링 용도로만 사용)
+[1티어] OpenDataLoader v2  — 한컴·듀얼랩 하이브리드 엔진 (마크다운+json 동시 산출,
+                            표·문서 구조 보존). extract_text_opendataloader()가
+                            실제 운영 파이프라인의 1티어 진입점이다(아래 목록의
+                            비교용 standalone 함수와는 별개).
+[2티어] VLM(Qwen3-VL)      — 다음 중 하나라도 해당하면 페이지 단위로 보완:
+                            (a) 표 셀 충전율이 낮음(<0.30) — 빈 표 격자가 글자 수만 채움
+                            (b) 글자 수는 기준(EXTRACT_MIN_CHARS_PER_PAGE) 이상이어도
+                                fitz 추정치의 절반 이하 — 폰트 CMap 손상으로 ODL이
+                                글자를 유실했을 가능성
+                            (c) 글자 수가 기준 미만 **이면서 fitz 추정치도 함께 미만**
+                                — fitz까지 짧으면 표지·구분 페이지 등 원래 짧은
+                                페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다
+                            (fitz는 페이지 이미지 렌더링뿐 아니라 (b)(c)의 교차검증에도 쓰인다)
 
-비교 테스트용 standalone 함수:
+비교 테스트용 standalone 함수(운영 경로 아님):
 - extract_text_fitz_all()         : 모든 페이지 fitz로만
 - extract_text_vlm_all()          : 모든 페이지 VLM으로만
-- extract_text_opendataloader()   : 모든 페이지 OpenDataLoader로만
 """
 import io
 import logging
@@ -26,9 +35,18 @@ cfg = get_settings()
 MIN_CHARS_PER_PAGE = cfg.EXTRACT_MIN_CHARS_PER_PAGE
 
 
-def _clean_text(text: str) -> str:
-    """추출된 텍스트 정제"""
+def _clean_text(text: str, strip_lines: set[str] | None = None) -> str:
+    """추출된 텍스트 정제.
+
+    strip_lines: ODL json에서 type이 header/footer인 요소의 실제 문자열(있으면) —
+    정규식 추측 대신 구조적으로 확정된 머리말/쪽번호를 정확히 제거한다. 정규식은
+    JSON 신호가 없는 경우(VLM 출력 등)를 위한 최후 수단으로 계속 둔다.
+    """
     import re
+    if strip_lines:
+        text = "\n".join(
+            line for line in text.split("\n") if line.strip() not in strip_lines
+        )
     # 연속 줄바꿈을 하나로
     text = re.sub(r'\n{3,}', '\n\n', text)
     # 줄바꿈 + 공백 정리 (단락 구분은 유지)
@@ -42,10 +60,53 @@ def _clean_text(text: str) -> str:
     text = '\n'.join(lines)
     # 연속 공백 제거
     text = re.sub(r' {2,}', ' ', text)
-    # 페이지 번호 패턴 제거 (- 1 -, 1/23, Page 1 등)
+    # 페이지 번호 패턴 제거 (- 1 -, 1/23, Page 1 등) — JSON 신호가 없을 때의 최후 수단
     text = re.sub(r'\n-\s*\d+\s*-\s*\n', '\n', text)
     text = re.sub(r'\n\d+\s*/\s*\d+\s*\n', '\n', text)
     text = re.sub(r'\nPage\s+\d+\s*\n', '\n', text, flags=re.IGNORECASE)
+    return text.strip()
+
+
+# 마크다운 표 구조 문자 + 공백 — 실질 본문 길이 계산에서 제외
+_STRUCT_CHARS = str.maketrans("", "", "|-: \t\n\r")
+
+
+def _body_len(text: str) -> int:
+    """실질 본문 길이. [그림] 마커와 빈 표 껍데기는 길이로 세지 않는다.
+
+    OpenDataLoader 는 사진·도판 위주 페이지를 내용 없는 마크다운 표(`| | | |`)로
+    내보내는데, 파이프 문자만으로 수백 자가 되어 VLM 라우팅 기준을 통과해버린다
+    (→ 그 페이지는 OCR 없이 빈 표만 남아 내용이 유실됨).
+    구조 문자를 뺀 뒤 재므로, 셀에 실제 내용이 있는 표는 그대로 본문으로 카운트된다.
+    """
+    return len(text.replace("[그림]", "").translate(_STRUCT_CHARS))
+
+
+def _collect_content_strings(element: dict) -> list[str]:
+    """ODL json 요소(및 표의 rows/cells, header/footer의 중첩 kids 등)에서
+    실제 텍스트(content)를 재귀적으로 모두 모은다."""
+    out = []
+    content = element.get("content")
+    if isinstance(content, str) and content.strip():
+        out.append(content.strip())
+    for kid in element.get("kids", []):
+        out.extend(_collect_content_strings(kid))
+    for row in element.get("rows", []):
+        for cell in row.get("cells", []):
+            out.extend(_collect_content_strings(cell))
+    return out
+
+
+def _strip_figure_markers(text: str) -> str:
+    """본문 채택 페이지에 남은 단독 [그림] 마커(워터마크·삽화 흔적) 정리.
+
+    그림 자체는 result.figures(base64)로 별도 저장되므로 인라인 마커는 노이즈일 뿐.
+    다운스트림(요약·청킹·검색)에서 [그림] 인라인 마커를 신호로 쓰지 않는다.
+    """
+    import re
+    text = text.replace("[그림]", "")
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r'[ \t]{2,}', ' ', text)
     return text.strip()
 
 
@@ -74,6 +135,10 @@ class ExtractionResult:
     errors: list[str] = field(default_factory=list)
     page_map: dict[int, int] = field(default_factory=dict)
     figures: list[FigureData] = field(default_factory=list)
+    vlm_capped: bool = False  # VLM_MAX_PAGES_PER_DOC 상한에 걸려 일부 페이지가 누락됐는지
+    # 페이지별 표 셀 충전율(있는 페이지만) — 마크다운 평탄화로 사라지는 "셀 비었음"
+    # 정보를 JSON 산출물에서 복원해 라우팅 판정에 쓴다. 0에 가까울수록 빈 격자.
+    table_fill_ratios: dict[int, float] = field(default_factory=dict)
 
     @property
     def full_text(self) -> str:
@@ -105,6 +170,13 @@ _VLM_PROMPT_DIAGRAM = """\
 3. 화살표·연결선은 → 기호로 관계를 명시하세요.
 4. 텍스트가 전혀 없는 순수 사진·삽화만 [그림: 한 줄 설명]으로 표기하세요.
 5. 이미지에 없는 내용은 절대 추가하지 마세요.
+6. 수치는 보이는 값 그대로만 적으세요. 원문에 없는 열(변화량·증감·차이·합계)을 만들거나
+   계산하지 말고, 증감 방향(↑↓)도 원문에 표시된 경우에만 적으세요.
+7. 막대·선·원 그래프는 마크다운 표로 변환하지 마세요(값이 엉뚱한 항목에 붙습니다).
+   보이는 순서대로 "라벨: 값" 을 한 줄씩 나열하세요. 셀 경계가 그려진 진짜 표만 표로 옮기세요.
+8. 수학 공식은 기호를 한 줄에 하나씩 찢어서 옮기지 말고 한 줄로 표현하거나
+   "[수식: 역전파 오차 계산식]"처럼 요약하세요. 순서도가 표로 안 옮겨지면(빈 칸투성이) 대신
+   "[순서도: A → B → C]"처럼 단계를 화살표로 이은 한 줄로 요약하세요.
 마크다운 코드 블록(```)이나 부연 설명 없이 바로 내용만 출력하세요."""
 
 _VLM_PROMPT_OCR = """\
@@ -115,11 +187,42 @@ _VLM_PROMPT_OCR = """\
 - 1단(전체 폭) 구성이면: 위에서 아래로 순서대로 읽으세요.
 - 단 구분이 불명확하면 텍스트 흐름이 자연스러운 방향으로 읽으세요.
 
+표·수치 규칙 (반드시 지킬 것):
+- 표가 있으면 마크다운 표(|---|)로 변환하되, **이미지에 실제로 있는 행·열만** 옮기세요.
+- 원문에 없는 열(변화량·증감·차이·합계 등)을 새로 만들지 마세요. 계산하지 마세요.
+- 숫자는 보이는 값을 그대로 적으세요. 값을 다른 항목에 옮겨 붙이지 마세요.
+- 증감 방향(↑↓, 증가·감소)은 원문에 그렇게 표시된 경우에만 적으세요. 추측하지 마세요.
+- 그래프·차트(막대·선·원 그래프)는 **마크다운 표로 변환하지 마세요.** 표로 재구성하면
+  값이 잘못된 항목에 배치되어 원문과 다른 데이터가 만들어집니다.
+  대신 이미지에 보이는 순서대로 "라벨: 값" 을 한 줄씩 나열하세요.
+
+수식·순서도 규칙:
+- 수학 공식·수식은 기호를 한 줄에 하나씩 찢어서 옮기지 마세요. 수식 전체를 하나의 줄(또는
+  LaTeX 유사 표기, 예: "δ = f'(net) × (t - o)")로 표현하거나, 표현이 어려우면
+  "[수식: 역전파 오차 계산식]"처럼 한 줄로 요약하세요.
+- 순서도·플로우차트는 빈 칸투성이 표로 만들지 마세요. "[순서도: 초기화 → 패턴설정 → 오차계산 → 종료판정]"
+  처럼 단계를 화살표로 이은 한 줄로 요약하세요.
+
 기타 규칙:
-- 표가 있으면 마크다운 표(|---|)로 변환하세요.
 - 그림·사진은 [그림: 한 줄 설명]으로 표기하세요.
 - 마크다운 코드 블록(```)이나 부연 설명 없이 내용만 출력하세요.
 - 이미지에 없는 내용은 추가하지 마세요."""
+
+
+def _strip_reasoning(text: str, thinking: bool) -> tuple[str, bool]:
+    """추론 블록을 제거하고 실제 답변만 돌려준다. returns (본문, 정상종료)
+
+    Qwen3 계열 chat template 은 프롬프트 끝에 `<think>` 를 미리 붙이므로, 모델 출력은
+    여는 태그 없이 "추론… </think> 실제답변" 형태로 온다.
+    thinking 을 켠 채 max_tokens 가 부족하면 `</think>` 를 내기도 전에 잘리는데,
+    그 잘린 사고과정을 OCR 결과로 쓰면 본문이 오염된다(영문 혼잣말이 그대로 색인됨).
+    → 닫는 태그가 없으면 실패로 처리해 호출부가 폴백/재시도하게 한다.
+    """
+    if "</think>" in text:
+        return text.split("</think>")[-1].strip(), True
+    if thinking:
+        return "", False          # 추론 도중 잘림 — 답변 없음
+    return text.strip(), True     # 비추론 모델 (태그 없음이 정상)
 
 
 async def _extract_with_vlm(
@@ -136,37 +239,94 @@ async def _extract_with_vlm(
 
     prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
 
-    payload = {
-        "model": cfg.VLM_MODEL,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{img_b64}"},
-                    },
-                    {"type": "text", "text": prompt},
-                ],
-            }
-        ],
-        "max_tokens": cfg.VLM_MAX_TOKENS,
-        "temperature": cfg.VLM_TEMPERATURE,
-    }
+    async def _ask(thinking: bool | None) -> tuple[str, bool, str | None]:
+        """1회 호출 → (본문, 추론정상종료, finish_reason)"""
+        payload = {
+            "model": cfg.VLM_MODEL,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                        },
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+            "max_tokens": cfg.VLM_MAX_TOKENS,
+            "temperature": cfg.VLM_TEMPERATURE,
+        }
+        # 추론형 VLM(Qwen3.5 등)은 사고과정을 본문에 쏟아내 OCR 결과를 오염시킨다.
+        # vLLM 은 chat_template_kwargs 를 템플릿에 그대로 전달. None 이면 미전송(기존 동작).
+        if thinking is not None:
+            payload["chat_template_kwargs"] = {"enable_thinking": thinking}
 
-    resp = await client.post(
-        f"{cfg.VLM_BASE_URL}/chat/completions",
-        json=payload,
-        timeout=float(cfg.VLM_TIMEOUT),
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    text = data["choices"][0]["message"]["content"].strip()
+        resp = await client.post(
+            f"{cfg.VLM_BASE_URL}/chat/completions",
+            json=payload,
+            timeout=float(cfg.VLM_TIMEOUT),
+        )
+        resp.raise_for_status()
+        choice = resp.json()["choices"][0]
+        msg = choice.get("message", {})
+        raw = (msg.get("content") or "").strip()
+        if msg.get("reasoning_content"):
+            # vLLM --reasoning-parser 사용 시 추론이 별 필드로 분리돼 content 는 이미 깨끗함
+            return raw, True, choice.get("finish_reason")
+        text, complete = _strip_reasoning(raw, thinking=bool(thinking))
+        return text, complete, choice.get("finish_reason")
+
+    # getattr: 구버전 config 가 섞여도 OCR 전체가 죽지 않도록 (미정의 시 미전송)
+    vlm_think = getattr(cfg, "VLM_THINK", None)
+    text, complete, finish = await _ask(vlm_think)
+
+    # 추론이 수렴하지 않는 페이지가 있다(복잡한 도판에서 사고 루프 → max_tokens 소진).
+    # 토큰을 더 줘도 해결되지 않으므로, thinking 을 끄고 한 번만 재시도한다.
+    if not complete:
+        log.warning(
+            f"[p.{page.number}] 추론 미종료(finish={finish}, max_tokens={cfg.VLM_MAX_TOKENS}) "
+            f"→ thinking 끄고 재시도"
+        )
+        text, complete, finish = await _ask(False)
+        if not complete:
+            raise RuntimeError(f"thinking off 재시도도 실패(finish={finish})")
 
     return PageResult(
         page_num=page.number,
         text=text,
         method="vlm",
+        confidence=0.9,
+    )
+
+
+async def _extract_with_surya(
+    page: fitz.Page,
+    client: httpx.AsyncClient,
+) -> PageResult:
+    """Surya 전용 OCR 서비스(별도 컨테이너)로 페이지 이미지 → 텍스트.
+
+    Surya는 transformers 5.x 의존이라 본 이미지(transformers 4.44)와 충돌 →
+    별도 컨테이너로 격리하고 HTTP(/ocr, base64 PNG)로 호출한다.
+    """
+    import base64
+
+    pix = page.get_pixmap(dpi=cfg.FITZ_DPI)
+    img_b64 = base64.b64encode(pix.tobytes("png")).decode()
+
+    resp = await client.post(
+        f"{cfg.SURYA_BASE_URL}/ocr",
+        json={"image_b64": img_b64},
+        timeout=float(cfg.VLM_TIMEOUT),
+    )
+    resp.raise_for_status()
+    text = resp.json().get("text", "").strip()
+
+    return PageResult(
+        page_num=page.number,
+        text=text,
+        method="surya",
         confidence=0.9,
     )
 
@@ -179,8 +339,9 @@ async def extract_text(
 ) -> ExtractionResult:
     """2티어 라우팅 파이프라인.
 
-    1티어: OpenDataLoader로 전체 PDF 마크다운 추출
-    2티어: 페이지 텍스트에 `[그림]`이 있거나 글자수 < MIN_CHARS_PER_PAGE인 경우만 VLM 보완
+    1티어: OpenDataLoader로 전체 PDF 마크다운+json 추출
+    2티어: 본문 부족 / CMap 손상 의심 / 표 셀 충전율 낮음 중 하나라도 해당하는
+           페이지만 VLM 보완 (판단 기준은 파일 상단 docstring 참고)
     """
     result = ExtractionResult(book_id=book_id, total_pages=0)
 
@@ -192,7 +353,7 @@ async def extract_text(
     if odl_result.errors:
         result.errors.extend(odl_result.errors)
 
-    # ── 2티어 라우팅을 위해 fitz로 페이지 이미지 렌더링 준비 ─
+    # ── fitz로 페이지 열기 — VLM용 이미지 렌더링 + CMap 손상 교차검증(page.get_text())에 사용 ─
     try:
         if file_bytes:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -211,39 +372,93 @@ async def extract_text(
         f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
     )
 
+    vlm_pages_used = 0
+    vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
+    vlm_cap_hit = False
+
     async with httpx.AsyncClient() as client:
         for page in doc:
             page_num = page.number
             odl_page = odl_pages_by_num.get(page_num)
 
-            # 라우팅 판단
+            # 라우팅 판단 — "그림 유무"가 아니라 "1티어 결과를 믿을 수 있는지"로 판정.
+            # ① 표 셀 충전율 낮음(빈 표 격자가 글자 수만 채우는 경우) 최우선 체크,
+            # ② 그 외에는 fitz 추정 길이와 교차검증 — 길이 기준 충족 페이지는 fitz가
+            #    크게 더 길면(CMap 손상 의심) VLM, 길이 기준 미달 페이지는 fitz도
+            #    같이 짧으면(원래 짧은 페이지) ODL 그대로 채택, fitz엔 더 있으면 VLM.
+            # 셋 다 아니면 1티어 결과를 그대로 채택하고 VLM은 호출하지 않는다.
+            # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
+            #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵.
+            #  다만 길이 기준 미달 분기는 fitz 교차검증이 없어 표지·구분 페이지처럼
+            #  "원래 짧은 페이지"까지 전부 VLM으로 넘기고 있었다 — 아래에서 통일)
             if odl_page is None:
+                body_len = 0
                 trigger = "ODL 누락"
-            elif "[그림]" in odl_page.text:
-                trigger = "[그림] 검출"
-            elif len(odl_page.text) < MIN_CHARS_PER_PAGE:
-                trigger = f"글자수 부족({len(odl_page.text)}자)"
             else:
-                # 1티어 결과 채택 — VLM 호출 안 함
-                result.pages.append(odl_page)
+                body_len = _body_len(odl_page.text)
+                fill_ratio = odl_result.table_fill_ratios.get(page_num)
+
+                if fill_ratio is not None and fill_ratio < 0.30:
+                    # 마크다운 글자수는 충분해도 표 셀 대부분이 비어있음 — 셀이 빈
+                    # 격자 문자로 렌더링돼 글자수만 채우는 실패(사내 연구로 검증:
+                    # 재현율 48.1%→90.4%, 오탐 비용 < 미탐의 영구 손실).
+                    trigger = f"표 셀 충전율 낮음({fill_ratio:.2f})"
+                else:
+                    # ODL 결과가 충분해 보여도, 폰트 CMap 손상 등으로 ODL(veraPDF 기반)이
+                    # 실제로는 글자 대부분을 유실했을 수 있다("Incorrect bfrange in
+                    # toUnicode CMap" 경고가 뜨는 PDF에서 확인됨 — 워터마크가 아니라
+                    # 폰트 문제였음). fitz는 이런 손상에 관대해서 원문 길이를 정확히
+                    # 반영하므로, 길이 비교만으로 이상 여부를 감지한다(fitz 텍스트 자체는
+                    # 띄어쓰기 소실·컬럼 순서 문제가 있어 채택하지 않고 감지 용도로만 사용).
+                    # 길이 기준 미달 페이지도 동일하게 fitz로 "원래 짧은 페이지"인지
+                    # "ODL이 놓친 페이지"인지 구분한다 — <50자 트리거가 전체 VLM
+                    # 호출의 90% 이상을 차지해 표지·구분 페이지까지 휩쓸고 있었음.
+                    fitz_check_len = _body_len(_clean_text(page.get_text()))
+                    if body_len >= MIN_CHARS_PER_PAGE:
+                        if fitz_check_len <= body_len * 2:
+                            # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
+                            odl_page.text = _strip_figure_markers(odl_page.text)
+                            result.pages.append(odl_page)
+                            continue
+                        trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+                    elif 0 < fitz_check_len < MIN_CHARS_PER_PAGE:
+                        # 페이지 자체가 원래 짧음(표지·구분 페이지 등) — ODL 결과 그대로 채택.
+                        # fitz_check_len == 0(텍스트 레이어 자체가 없음)은 이 분기에서 제외한다 —
+                        # 스캔본 페이지는 fitz도 ODL도 똑같이 0자를 보고하므로 "짧아서 0"과
+                        # "텍스트 레이어가 없어서 0"을 이 신호만으로는 구분할 수 없다. 후자를
+                        # 오분류하면 스캔 문서 전체가 빈 텍스트로 채택돼 섹션이 0개가 된다.
+                        odl_page.text = _strip_figure_markers(odl_page.text)
+                        result.pages.append(odl_page)
+                        continue
+                    else:
+                        trigger = f"본문 텍스트 부족(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+
+            # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
+            # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
+            # (비어있거나 부실해도) 그대로 채택하고 남은 페이지는 VLM을 스킵한다.
+            if vlm_pages_used >= vlm_cap:
+                if not vlm_cap_hit:
+                    vlm_cap_hit = True
+                    result.vlm_capped = True
+                    log.warning(f"[{book_id}] VLM 페이지 상한({vlm_cap}) 도달 — 이후 저텍스트 페이지는 ODL로 대체")
+                if odl_page:
+                    result.pages.append(odl_page)
                 continue
 
-            # 2티어: VLM 보완
-            # diagram 프롬프트는 [그림]이 텍스트 중간에 삽입된 경우(실제 다이어그램)에만 사용.
-            # 페이지 전체가 이미지인 경우(TIF 합성 PDF 등)는 OCR 프롬프트가 적합.
+            # 2티어: 1티어 결과를 못 믿는 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
+            ocr_engine = cfg.OCR_ENGINE.lower()
+            vlm_pages_used += 1  # 실패해도 호출 시도 자체가 시간을 소모하므로 상한에 포함
             try:
-                if trigger == "[그림] 검출" and odl_page:
-                    text_without_fig = odl_page.text.replace("[그림]", "").strip()
-                    prompt_type = "diagram" if len(text_without_fig) >= 80 else "ocr"
+                log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={ocr_engine})")
+                if ocr_engine == "surya":
+                    ocr_page = await _extract_with_surya(page, client)
                 else:
-                    prompt_type = "ocr"
-                log.info(f"[{book_id}] p.{page_num} → VLM 보완 ({trigger}, prompt={prompt_type})")
-                vlm_page = await _extract_with_vlm(page, client, prompt_type=prompt_type)
-                result.pages.append(vlm_page)
+                    ocr_page = await _extract_with_vlm(page, client, prompt_type="ocr")
+                result.pages.append(ocr_page)
             except Exception as e:
-                log.error(f"[{book_id}] p.{page_num} VLM 실패: {e}")
-                result.errors.append(f"p.{page_num} VLM: {e}")
-                if odl_page:  # VLM 실패 시 ODL 결과라도 살리기
+                log.error(f"[{book_id}] p.{page_num} OCR({ocr_engine}) 실패: {e}")
+                result.errors.append(f"p.{page_num} OCR({ocr_engine}): {e}")
+                if odl_page:  # OCR 실패 시 ODL 결과라도 살리기
                     result.pages.append(odl_page)
 
     doc.close()
@@ -347,25 +562,37 @@ async def extract_text_opendataloader(
     file_bytes: bytes | None = None,
     max_pages: int | None = None,
 ) -> ExtractionResult:
-    """OpenDataLoader PDF를 이용한 추출 (3단계, 비교 테스트용)
+    """OpenDataLoader PDF를 이용한 추출 — extract_text()가 호출하는 실제 1티어 진입점.
 
-    설치: pip install open-data-loader
+    설치: pip install opendataloader-pdf
+
+    markdown·json을 한 번의 실행으로 함께 산출한다(추가 비용 없음). markdown은
+    기존과 동일하게 본문으로 쓰고, json은 표 셀이 실제로 비어있는지를 구조
+    그대로 담고 있어 라우팅 판정용 신호(table_fill_ratios)로만 사용한다.
+    (마크다운 평탄화 과정에서 "빈 셀"과 "내용 있는 셀"이 똑같이 `| |` 격자
+    문자로 변해 라우팅 신호가 사라지는 문제 — 사내 연구 결과 반영)
     """
     import asyncio
+    import json as _json
     import os
     import tempfile
+    from collections import defaultdict
+    from pathlib import Path as _Path
 
     result = ExtractionResult(book_id=book_id, total_pages=0)
 
     try:
-        from langchain_opendataloader_pdf import OpenDataLoaderPDFLoader  # pip install langchain-opendataloader-pdf (Java 11+ 필요)
+        import opendataloader_pdf  # pip install opendataloader-pdf (Java 11+ 필요)
     except ImportError:
         result.errors.append(
-            "langchain-opendataloader-pdf 패키지 미설치 — pip install langchain-opendataloader-pdf"
+            "opendataloader-pdf 패키지 미설치 — pip install opendataloader-pdf"
         )
         return result
 
+    _PAGE_SEP = "\n<<<ODL_PAGE_BREAK_%page-number%>>>\n"
+
     tmp_path = None
+    out_dir = None
     try:
         if file_bytes:
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
@@ -375,25 +602,83 @@ async def extract_text_opendataloader(
         else:
             load_path = str(file_path)
 
-        def _load_sync() -> list:
-            loader = OpenDataLoaderPDFLoader(
-                file_path=load_path,
-                format="markdown",        # 표 → markdown table, 그림 → ![]() 참조
+        out_dir = tempfile.mkdtemp()
+
+        def _convert_sync() -> None:
+            opendataloader_pdf.convert(
+                input_path=load_path,
+                output_dir=out_dir,
+                format=["markdown", "json"],
                 image_output="embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
                 image_format="jpeg",      # base64 크기 절감
                 table_method="cluster",   # 무경계/복잡 표까지 검출
-                split_pages=True,         # 페이지별 Document
+                markdown_page_separator=_PAGE_SEP,
                 keep_line_breaks=False,
+                quiet=True,
             )
-            return loader.load()
 
         loop = asyncio.get_event_loop()
-        documents = await loop.run_in_executor(None, _load_sync)
+        await loop.run_in_executor(None, _convert_sync)
+
+        out_path = _Path(out_dir)
+        md_files = list(out_path.glob("*.md"))
+        json_files = list(out_path.glob("*.json"))
+        if not md_files:
+            raise RuntimeError("markdown 출력 파일 없음")
+
+        # ── JSON → 페이지별 표 셀 충전율(라우팅 신호) + 머리말/쪽번호 텍스트 ──
+        page_headers_footers: dict[int, set[str]] = {}
+        if json_files:
+            try:
+                with open(json_files[0], encoding="utf-8") as f:
+                    jdata = _json.load(f)
+                by_page: dict[int, list] = defaultdict(list)
+                for el in jdata.get("kids", []):
+                    by_page[el.get("page number", 1)].append(el)
+                for pnum, elements in by_page.items():
+                    hf_lines: set[str] = set()
+                    for el in elements:
+                        if el.get("type") in ("header", "footer"):
+                            hf_lines.update(_collect_content_strings(el))
+                    if hf_lines:
+                        page_headers_footers[pnum - 1] = hf_lines  # 1-based → 0-based
+                    # 표가 여럿이면 셀 수로 가중 합산(페이지 전체 셀 대비 빈 셀 비율).
+                    # 표별 min()을 쓰면 레이아웃용 소형 빈 표(예: 1x2) 하나만으로
+                    # 본표가 멀쩡해도 폴백이 발동한다 — 큰 표가 자연히 더 반영되도록
+                    # 셀 단위로 합산(연구팀 측정 방식과 동일하게 맞춤).
+                    total = empty = 0
+                    for el in elements:
+                        if el.get("type") != "table":
+                            continue
+                        for row in el.get("rows", []):
+                            for cell in row.get("cells", []):
+                                total += 1
+                                if not cell.get("kids"):
+                                    empty += 1
+                    if total:
+                        result.table_fill_ratios[pnum - 1] = 1 - empty / total  # 1-based → 0-based
+            except Exception as e:
+                log.warning(f"[{book_id}] 표 충전율 파싱 실패(무시하고 진행): {e}")
+
+        # ── markdown → 페이지별 텍스트 ────────────────────────────
+        with open(md_files[0], encoding="utf-8") as f:
+            content = f.read()
+
+        import re
+        sep_pattern = re.escape(_PAGE_SEP).replace(re.escape("%page-number%"), r"(\d+)")
+        parts = re.split(sep_pattern, content)
+
+        documents: list[tuple[int, str]] = []  # (page_num 1-based, text)
+        if parts[0].strip():
+            documents.append((1, parts[0].strip()))
+        for i in range(1, len(parts), 2):
+            if i + 1 < len(parts) and parts[i + 1].strip():
+                documents.append((int(parts[i]), parts[i + 1].strip()))
 
         if max_pages:
             documents = documents[:max_pages]
 
-        import re, base64 as _b64
+        import base64 as _b64
         # base64 이미지 패턴 (embedded)
         img_b64_pattern = re.compile(
             r'!\[([^\]]*)\]\(data:image/[^;]+;base64,([^)]+)\)'
@@ -402,9 +687,8 @@ async def extract_text_opendataloader(
         img_any_pattern = re.compile(r'!\[[^\]]*\]\([^)]+\)')
 
         result.total_pages = len(documents)
-        for i, doc in enumerate(documents):
-            page_num = doc.metadata.get("page", i + 1) - 1  # OpenDataLoader는 1-based → 0-based
-            raw = doc.page_content
+        for i, (doc_page_num, raw) in enumerate(documents):
+            page_num = doc_page_num - 1  # OpenDataLoader는 1-based → 0-based
 
             # ── 그림 추출: base64 이미지마다 앞뒤 컨텍스트 보존 ──
             for img_idx, m in enumerate(img_b64_pattern.finditer(raw)):
@@ -431,7 +715,7 @@ async def extract_text_opendataloader(
 
             img_count = len(img_b64_pattern.findall(raw))
             stripped = img_any_pattern.sub('[그림]', raw)
-            text = _clean_text(stripped)
+            text = _clean_text(stripped, strip_lines=page_headers_footers.get(page_num))
             if img_count:
                 log.info(f"[{book_id}] p.{page_num} 그림 {img_count}개 검출")
             result.pages.append(PageResult(
@@ -450,6 +734,12 @@ async def extract_text_opendataloader(
                 os.unlink(tmp_path)
             except OSError:
                 pass
+        if out_dir:
+            import shutil
+            try:
+                shutil.rmtree(out_dir, ignore_errors=True)
+            except OSError:
+                pass
 
-    log.info(f"[{book_id}] OpenDataLoader 추출 완료 — {result.stats}")
+    log.info(f"[{book_id}] OpenDataLoader 추출 완료 — {result.stats}, 표충전율={result.table_fill_ratios}")
     return result

@@ -1,0 +1,13 @@
+I. 서론
+
+Vibrio parahaemolyticus는 해수중에 있는 호염성인 그람음성 간균으로 이 세균이 들어있는 해산물을 날것으로 먹었을 때 장염을 일으킬 수 있는 세균이다 (Blake et al., 1980; Hlady and Klonz, 1995). 1950년 Fujino(1951)가 일본 오사카에서 절인 정어리를 먹고 272명의 식중독이 발생하여 사망한 20명의 부검한 가검물에서 처음으로 분리하여 Pasteurella parahaemolytica라고 명명하였다 (Fujino, 1953). Sakazaki 등은 이 세균이 Vibrio 특성을 가지고 있다하여 V. parahaemolyticus로 다시 명명하였다 (Sakazaki et al., 1963). 이 세균은 한국을 비롯하여 일본, 대만 등 바다에 인접한 나라에서는 해산물을 날것으로 먹기 때문에 중요한 식중독균의 한가지로 알려져 있다 (Chiou et al., 1991). 임상검체에서의 V. parahaemolyticus 동정은 주로 생화학적 시험에 의하나 종종 V. vulnificus 등의 균종과 혼동되는 예도 알려지고 있다. V. parahaemolyticus 균주는 혈청형 (serovar)에는 O 군 (group)이 13가지, K형 (type)이 71가지가 있음이 알려져 있으며 (Wong et al., 1999) 최근에는 O3:K6형에 의한 식중독이 일본, 미국, 인도 및 동남아시아 지역 등 여러 나라에서 보고되고 있다 (Bang et al., 1999). 그러나 우리나라 환자에서 분리된 V. parahaemolyticus 균주 중에 이러한 혈청형 관련 보고는 드물며, 또한 일본이나 인도 등의 외국에서 분리되는 것과 혈청형별 분리빈도가 비슷한지의 여부는 불명확하다.
+
+Vibrio균종은 항균제 내성성을 잘 얻지 않고 알려져 있으며, 따라서 분리된 균주의 항균제 감수성 양상은 균종 동정에 도움이 될 수 있다. V. parahaemolyticus 균주는 ampicillin과 carbenicillin에 내성이 있고 colistin에는 감수성이 있다고 보고되어 있으나 (정 등, 2000) 최근에 우리나라 환자에서 분리되는 균주중에 이러한 내성은 드물다. 분자생물학적인 역학조사에서 특히 독소인자인 용혈소 유전자 (tdh 또는 thr 또는 모두)는 질병의 유발과 높은 상관관계가 있으며 V. parahaemolyticus의 중요한 병독력 유전자이다 (Takeda, 1983). 그러나 임상검체에서 분리되는 소수의 균주는 이러한 병독력 유전자가 없는 것으로 보고되고 있다 (Nishibuchi et al., 1989). 그러므로 식품이나 임상검체에서 V. parahaemolyticus 균주에 대한 동정은 주로 표준 동정방법에 의한다. 한편 근년에 콜레라독소 오페론 (operon)의 조절된 유전자인 toxR 유전자가 처음 발견되었는데 (DiRita, 1992; Miller et al., 1987) Lin 등은 V. parahemolyticus 균주에서 이 유전자를 발견하였고 Kim et al., (1999)은 PCR법으로 V. parahaemolyticus에만 특이적으로 검출되는 toxR 유전자에 대한 동정법을 보고하였다.
+
+저자들은 환자에서 분리된 V. parahaemolyticus 균주의 생화학적 성상, 혈청형 및 항균제의 감수성 양상을 파악하고, PCR법에 의한 toxR 유전자 검출법이 V. parahaemolyticus 동정법으로 사용할 수 있는지를 규명하고자 하였다.
+
+II. 재료 및 방법
+
+1999년 1월과 12월사이에 전라북도지역의 병원에 내원한 환자의 변검체를 MacConkey 한천배지 (Difco)와 TCBS 한천배지 (Difco)에 접종하여 37℃ 24시간 배양하였다. TCBS 한천배지에 생긴 녹색인 집락을 다시 혈액한천배지에 배양한 후 그 집락으로 그람염색, oxidase, ONPG, 0% NaCl broth에서의 증식, TSI 한천배지에서의 성상, oxidase 양성, ONPG 음성, 0% NaCl broth에서 증식하지 않고, TSI 한천배지에서 사면이 알카리, 고층이 산성인 성상인 균주를 V. parahaemolyticus로 예비 동정하였다.
+
+86

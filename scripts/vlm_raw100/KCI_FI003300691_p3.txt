@@ -1,0 +1,12 @@
+삼목 90일 후 삼목 시기, 토양 종류 및 생장조절물질 처리에 따른 발근 특성을 조사하였다. 발근율(Rooting rate, %)은 길이 1 cm 이상의 뿌리가 발생한 개체의 비율로 산출하였으며, 뿌리가 발생한 개체에 한하여 유근 수(number of roots), 유근 길이(root length)를 조사하였다(Fig. 1). 유근 수는 육안으로 관찰하여 각 처리별 전수조사를 실시하였고, 유근 길이는 디지털 캘리퍼스(CD-200APX, Mitutoyo Co., Shizuoka, Japan)를 이용하여 측정하였다.
+
+통계 분석
+조사된 모든 데이터는 평균 ± 표준편차 (means ± SD)로 나타냈으며, 각 처리구별 발근율과 발근특성을 비교 분석하기 위해 SPSS statistics 27 (IBM Corp., New York, USA)를 이용하여 일원배치 분산분석(One-way ANOVA test, p = 0.05)을 실시하고, 처리별 유의한 차이가 인정되는 경우 Duncan’s multiple range test (DMRT)를 통해 사후 검정을 실시하였다.
+
+결과
+처리구별 삼목 발근율
+본 연구에서 동백나무 삼목 발근율은 삼수채취 시기, 용토의 종류, 그리고 생장조절물질의 처리 농도에 따라 유의미한 차이를 보였다(ANOVA test, P < 0.05). 먼저, 숙지삼의 경우 용토와 생장조절물질의 조합에 따라 0%에서 최대 55.6%까지 넓은 범위의 폭을 나타냈다(Fig. 2a), 특히, 녹소토 IBA 1,000 mg · L⁻¹
+
+[그림: Fig. 1. Criteria for measuring rooting characteristics of Camellia japonica.]
+
+[그림: Fig. 2. Effects of cutting type, rooting medium, and plant growth regulator treatment on rooting percentage of cuttings. K: Kanumatsuchi, Mix: mixed medium (vermiculite: perlite: peat moss = 1:1:1, v/v) *Different letters above the bars indicate significant difference (P < 0.05) among treatments according to ANOVA test followed by Duncan’s multiple range test (n=4).]

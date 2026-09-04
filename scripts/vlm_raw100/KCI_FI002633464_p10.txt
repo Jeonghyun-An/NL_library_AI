@@ -1,0 +1,27 @@
+The Korean Journal of Health Service Management Vol.14 No.3 (September 2020)
+
+점, 고강도 저항운동과의 효과 비교에 대한 제한,
+그리고 저항도구로 탄력밴드와 케틀벨만을 사용하여 연구를 진행했다는 한계를 가지고 있다. 이에 다양한 근육들에 대한 부하저항과 탄력저항의 효과 비교에 관한 연구 및 저항성 소도구들에 적용할 수 있는 다리 운동의 개발과 보행 능력에 관한 연구가 더욱 필요하리라 생각되며, 노인들을 대상으로 근력 및 균형 기능을 향상하여 삶의 질을 높일 수 있는 후속 연구들이 이루어져야 하겠다.
+
+V. 결론
+
+본 연구는 다양한 저항에 따른 스쿼트 운동이 대퇴근의 근 활성도, 근 두께 및 정적 균형능력에 미치는 영향을 알아보았다.
+연구 결과 스쿼트 운동 방법에 따라 근 활성도 및 근 두께와 정적 균형능력은 시간에 따른 효과를 비교한 결과 유의한 증가를 나타냈고(p<.05), 군 간의 효과 비교에서 탄력저항군과 부하저항군이 매몸 스쿼트군에 비해 6주 후에 효과가 있음을 확인할 수 있었다(p<.05).
+본 연구의 결과를 통해 근 활성도, 근 두께 및 정적균형의 향상을 목적으로 운동프로그램을 개발할 때에 탄력저항 및 부하저항을 이용한 스쿼트 운동이 효과적임을 확인하였고, 부하저항을 이용하지 못할 때에 탄성저항을 적용한 운동이 고려되어야 할 것이다.
+
+REFERENCES
+
+1. C.A., Slentz, J.A., Houmard, W.E., Kraus(2009), Exercise, abdominal obesity, skeletal muscle, and metabolic risk: evidence for a dose response. Obesity, Vol.17(S3);S27-S33.
+2. S.M., Kim(2012), Effect of elastic band based resistance exercise on upper limbs strength and
+ADL of frail elders. The Korean Journal of Health Service Management, Vol.6(2);71-80.
+3. V.C., Dionisio, G.L., Almeida, M., Duarte, R.P., Hirata(2008), Kinematic, kinetic and EMG patterns during downward squatting. Journal of Electromyography and Kinesiology, Vol.18(1);134-143.
+4. R.F., Escamilla, C., Lewis, D., Bell, G., Bramblet, J., Daffron, S., Lambert, J.R., Andrews(2010), Core muscle activation during Swiss ball and traditional abdominal exercises. Journal of orthopaedic & sports physical therapy, Vol.40(5);265-276.
+5. R.F., Escamilla(2001), Knee biomechanics of the dynamic squat exercise. Medicine & Science in Sports & Exercise, Vol.33(1);127-141.
+6. A., Selseth, M., Dayton, M.L., Cordova, C.D., Ingersoll, M. A., Merrick(2000), Quadriceps concentric EMG activity is greater than eccentric EMG activity during the lateral step-up exercise. Journal of sport rehabilitation, Vol.9(2);124-134.
+7. B.J., Schoenfeld, J.M., Wilson, R.P., Lowery, J.W., Krieger(2016), Muscular adaptations in low-versus high-load resistance training: A meta-analysis. European Journal of Sport Science, Vol.16(1);1-10.
+8. M.D., Jakobsen, E., Sundstrup, C.H., Andersen, P., Aagaard, L.L., Andersen(2013), Muscle activity during leg strengthening exercise using free weights and elastic resistance: effects of ballistic vs controlled contractions. Human movement science, Vol.32(1);65-78.
+9. M.W., Rogers, M.L., Mille(2003), Lateral stability and falls in older people. Exercise and sport sciences reviews, Vol.31(4);182-187.
+10. R.E., Farrar, J.L., Mayhew, A.J., Koch(2010), Oxygen cost of kettlebell swings. The Journal of Strength & Conditioning Research, Vol.24(1);65-78.
+
+www.kci.go.kr
+- 112 -

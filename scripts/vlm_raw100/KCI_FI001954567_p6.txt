@@ -1,0 +1,33 @@
+368 bp ▶
+[그림: PCR amplification of the V. parahaemolyticus toxR gene segment. Lane M, maker; lanes 1-15, clinical isolates; lane 16, negative control (without bacteria); lane 17, toxR gene positive control (V. parahaemolyticus Kanagawa No. 4750).]
+Table 4. Major pathogenic bacteria from patients with food poisoning in Korea during 1997-1999*
+| Organisms | No. (%) of isolates by years |  |  | Total |
+| --- | --- | --- | --- | --- |
+|  | 1997 | 1998 | 1999 |  |
+| Vibrio parahaemolyticus | 17 (18.1) | 34 (28.6) | 42 (26.4) | 93 (25.0) |
+| Salmonella | 37 (39.4) | 25 (21.0) | 41 (25.8) | 103 (27.7) |
+| Shigella | 1 (1.1) | 0 | 0 | 1 (0.3) |
+| Staphylococcus aureus | 11 (11.7) | 17 (14.2) | 7 (4.4) | 35 (9.4) |
+| Total | 94 (100) | 119 (100) | 159 (100) | 372 (100) |
+*Statistics of food poisoning in Korea, National Institute of Health (CDMR, 2000)
+Table 5. Antimicrobial susceptibility of V. parahaemolyticus from clinical specimens
+| Antimicrobial agents | % susceptible (n = 46)* |  |  |
+| --- | --- | --- | --- |
+|  | S* | I | R |
+| Ampicillin | 0 | 0 | 100 |
+| Carbenicillin | 0 | 0 | 100 |
+| Cephalothin | 33 | 61 | 6 |
+| Cefazolin | 4 | 7 | 89 |
+| Cefotetan | 98 | 2 | 0 |
+| Ceftriaxone | 98 | 2 | 0 |
+| Amikacin | 98 | 2 | 0 |
+| Gentamicin | 100 | 0 | 0 |
+| Kanamycin | 54 | 46 | 0 |
+| Tobramycin | 96 | 4 | 0 |
+| Tetracycline | 98 | 2 | 0 |
+| Nalidixic acid | 100 | 0 | 0 |
+| Ciprofloxacin | 98 | 2 | 0 |
+| Chloramphenicol | 100 | 0 | 0 |
+| Colistin | 9 | 61 | 30 |
+| Co-trimoxazole | 100 | 0 | 0 |
+* No. of isolates tested. ** S, susceptible; I, intermediate; R, resistant.

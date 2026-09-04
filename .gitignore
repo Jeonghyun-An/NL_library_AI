@@ -24,5 +24,4 @@ dist/
 
 # Docker volumes (로컬)
 data/
-.claude/
-/docs
+.claude/settings.local.json

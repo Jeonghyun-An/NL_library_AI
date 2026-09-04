@@ -1,0 +1,23 @@
+〈Figure 3〉 illustrates how the optimal replenishment policy is affected by the phase of Erlang distribution, M. r(x₁)’s in 〈Figure 3〉 are found using the same example as in 〈Figure 2〉 except for varying M. From 〈Figure 3〉, we observe that r(x₁) decreases in M. In other words, when lead time processes are more regular, the optimal policy places the replenishment order less frequently.
+
+〈Figure 3〉 Impact of M on r(x₁)
+
+[그림: Impact of M on r(x₁)]
+
+〈Figure 4〉 and 〈Figure 5〉 respectively show Q* and g as a function of M for the different values of λ. For these two figures, we use the same example as in 〈Figure 2〉 except that M and λ change. As one can expect, it is observed that for each λ, more regular lead time process leads to the lower Q* and g. It is also observed that their marginal reduction seems to be smaller as M becomes larger. 〈Figure 4〉 and 〈Figure 5〉 indicate that it will not be easy to quantify how much the reduction in lead time variability contributes to lowering Q* and g, and under what
+
+V. Numerical study
+
+In this section, we examine how much the reduction in lead time variability contributes to lowering Q* and g, and under what
+
+〈Figure 4〉 Impact of M on Q* varying λ
+
+[그림: Impact of M on Q* varying λ]
+
+〈Figure 5〉 Impact of M on g varying λ
+
+[그림: Impact of M on g varying λ]
+
+Eungab Kim
+
+276

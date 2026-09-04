@@ -1,0 +1,26 @@
+여가학연구
+Journal of Leisure Studies
+2021. Vol. 19, No. 4, 1~16
+https://doi.org/10.22879/slos.2021.19.4.1
+
+The mediating role of empowermentment on golf instructors’ occupational identity and job satisfaction*
+
+Kim, Milyang** · Lim, Soyoun***
+
+Purpose: The current study examined the mediating effect of empowerment on the association between occupational identity and job satisfaction of Korean golf instructors. This study can provide empirical data about the dimensions of empowerment that need to be promoted for golf instructors and their job satisfaction.
+
+Methods: First, the frequency analysis was conducted on the demographic information of respondents. Second, Cronbach’s α and factor analysis were used to determine the reliability and validity of the measurements. Third, Pearson correlation coefficients were used to assess the correlation among variables, then the descriptive statistics were inspected for the normality test. Fourth, to examine the mediating effect, the 3 step mediation analysis proposed by Barron and Kenny was applied while controlling the demographic variables.
+
+Results: First, the mediating effect of impact on the association between occupational identity and job satisfaction was not significant. Therefore, impact fully mediates between occupational identity and job satisfaction. According to the Sobel test, the indirect effect was significant. Second, self-determination fully mediates between occupational identity and job satisfaction. The Sobel test revealed a significant indirect effect. Third, competence fully mediates between occupational identity and job satisfaction. According to the Sobel test, the indirect effect was significant. Lastly, meaningfulness partially mediates between occupational identity and job satisfaction. The mediating effect of meaningfulness on occupational identity and job satisfaction was significant. In addition, the effect of occupational identity on job satisfaction was reduced from step 1.
+
+Conclusion: The results revealed that golf instructors’ high occupational identity may not lead to high job satisfaction if they lack certain elements of empowerment, such as impact, self-determination, and competence. To conclude, for their job satisfaction, it is crucial to promote the instructors’ empowerment as well as occupational identity.
+
+Key words : golf instructor, occupational identity, job satisfaction, empowerment
+
+* This work was supported by the Soonchunhayng University of Korea in 2021.
+** Soonchunhayng University. Department of Sport, Leisure, & Recreation(First author, Corresponding author, E-mail: mlkim@sch.ac.kr)
+*** Mississippi State University. Department of Kinesiology.
+
+- 16 -
+
+www.kci.go.kr

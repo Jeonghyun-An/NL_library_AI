@@ -1,0 +1,27 @@
+즉, 수의적 QR은 INT 효과인 작용역 해석에 영향을 미치는 경우에만 적용될 것이다.
+
+(17) 수의적 QR과 INT 효과(Scope Interpretation)
+a. 양화사 비이동시 : a boy > every girl
+b. 양화사 이동시 : a boy < every girl
+
+이상에서 보았듯이, 수의적 이동은 의무적 이동과는 달리 LF에서 의미해석 효과와 INT를 나타내는 경우에만 적용된다고 볼 수 있다. 다음 장에서는 이러한 수의적 이동과 INT 효과를 스페인어의 어순에 적용해 보겠다.
+
+IV. 스페인어의 어순과 정보구조(Information Structure)
+
+1. Gili y Gaya (1973)
+
+스페인의 전통문법학자 Gili y Gaya(1973)에서는 다음과 같이 동사 앞의 위치에 하나 이상의 요소가 올 수 없다고 가정한다.
+
+(18) a. Mi padre compró una casa.
+b. *Mi padre una casa compró.
+c. Compró mi padre una casa.
+d. Compró una casa mi padre.
+e. Una casa compró mi padre.
+f. *Una casa mi padre compró.
+
+(18)의 예문에서 보다시피, 동사 앞의 위치에 두 개의 구가 오는 경우 이 문장들은 모두 비문 처리된다. 따라서 Gili y Gaya는 다음과 같이 동사의 위치를 제한하는 일반화를 제시한다.7)
+
+(19) a. (XP) V YP ZP ...
+b. El verbo no puede ir sin afección más del segundo lugar.
+
+7) 쉼표나 휴지(pausa)가 오는 경우는 동사 앞에 여러 개의 구가 올 수 있다.

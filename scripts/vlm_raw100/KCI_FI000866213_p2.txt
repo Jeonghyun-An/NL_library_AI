@@ -1,0 +1,37 @@
+930 Bull. Korean Chem. Soc. 2002, Vol. 23, No. 7
+
+Communications to the Editor
+
+well known that carboxylic acids are ionized in physiological conditions. When we consider the anionic forms, the relative energy nicely corresponds with experimental data. i.e. the stability order is extended, open, and ring form. We have also calculated the relative energy of solvation of both neutral and anionic species. Ionization in the gas phase gives a lot less stable species (175 kcal/mol higher in energy). However solvation energy is about 287 kcal/mol. Thus when they are solvated, ionized species becomes very stable in aqueous solution by about 112 kcal/mol.9 The results shows that in the gas phase, ring form is more stable than open one. However solvation and ionization reverses the order of stability. In conclusion, it is interesting that the experimental finding of open form stability comes not from the inherent stability of this compound. Rather, ionization and solvation plays a decisive role in the stability of open form over ring form in physiological conditions.
+
+Figure 3. Various forms of 5-hydroxy-2(5H)-furanone. For each form, the most stable conformer is drawn. The numbers are relative energies against the most stable one. Units are in kcal/mol.
+
+less stable and ring form is least stable at the physiological conditions, regardless of substituents (X, Y, in Figure 2).
+
+All The calculations were done using program JAGUAR 3.0 and Spartan at the LMP2/6-31++G** level of theory.6 To model solvation, Self Consistent Reaction Field method was used. Solvation was calculated by Pöisson-Boltzman solver which is based on continuum model. First gas phase conformations were fully optimized without any constraint. Then using these geometries, the solvation energies were calculated at the same level of theory. The anionic forms are also studied because the open form and extended form may be in anionic state in aqueous solution.
+
+For simplicity, 5-hydroxy-2(5H)-furanone (X=H, Y=H. See figure 2) were calculated. For this molecule, its ring form, open form, and extended form are calculated. For each form, all the possible conformers for both neutral and anionic species are calculated as described above. For ring form, there exist only two conformers. Normally, there exist three conformers for single bond. The extremely strong stereoelectronic effect may be responsible for disappearance of one conformer.7 For open form, 6 conformers were found. Because it is fully conjugated system and there are three single bonds, it is expected that 8 conformers are possible. The two conformers do not exist because of steric repulsion. For extended form, we could find 8 conformers. Anionic species were simple to calculate. The anionic ring form does not exist. It spontaneously opens up to corresponding open form.8 Anionic open form has only one conformer. There are two anionic extended conformations. The most stable conformers are chosen for both neutral and anionic forms (Figure 3).
+
+For neural form, the most stable one is extended form. When we compare ring and open form, the ring form is more stable. This is not consistent with experiments. However, when we consider the anionic species, the open form is much more stable. The ring form does not even exist. It is
+
+References
+
+1. (a) Boorman, G.; Dellarco, V.; Dunnick, J. K.; Chapin, R. E.; Hunter, S.; Hauchman, F.; Gardner, H.; Cox, M.; Sills, R. C. Environmental Health Perspectives 1999, 107, 207. (b) Kronberg, L.; Christman, R. F.; Singh, R.; Ball, L. M. Environ. Sci. Technol. 1991, 25, 99. (c) Rosenkranz, H. S.; Zhang, Y. P.; Macina, O. T.; Mattison, D. R.; Klopmann, G. Mutation Research 1998, 442, 347. (d) Meier, J. R.; Blazak, W. F.; Knohl, R. B. Environmental and Molecular Mutagenesis 1987, 10, 411.
+
+2. Kronberg, K.; Franzen, R. Environ. Sci. Technol. 1993, 27, 187.
+
+3. (a) LaLonde, R.; Bu, L.; Henwood, A.; Fiumano, J.; Zhang, L. Chem. Res. Toxicol. 1997, 10, 1427. (b) Kronberg, L.; Christman, R. F.; Singh, R.; Ball, L. M. Environ. Sci. Technol. 1991, 25, 99. (c) LaLonde, R.; Cook, G. P.; Perakyla, H.; Bu, L. Chem. Res. Toxicol. 1991, 4, 540. (d) Ishiguro, Y.; LaLonde, R. T.; Dence, C. W. Environ. Toxicol. Chem. 1987, 6, 935. (e) LaLonde, R. T.; Xie, S.; Chamulitrat, W.; Mason, R. P. Chem. Res. Toxicol. 1994, 7, 482. (f) LaLonde, R. T.; Leo, H.; Perakyla, H.; Dence, C. W.; Farrell, R. P. Chem. Res. Toxicol. 1992, 5, 392. (g) LaLonde, R.; Cook, G. P.; Perakyla, H.; Dence, C. W.; Babish, J. C. Environmental and Molecular Mutagenesis 1991, 17, 40. (h) LaLonde, R. T.; Leo, H. Chem. Res. Toxicol. 1994, 7, 779. (i) Meier, J. R.; Knohl, R. B.; Coleman, W. E.; Ringhand, H. P.; Munch, J. W.; Kaylor, W. H.; Streicher, R. P.; Kopfler, F. C. Mut. Res. 1987, 189, 363. (j) LaLonde, R. T.; Xie, S.; Bu, L. Chem. Res. Toxicol. 1991, 4, 35. (k) LaLonde, R. T.; Xie, S.; Bu, L. Environmental and Molecular Mutagenesis 1993, 22, 181. (l) LaLonde, R. T.; Xie, S. Chem. Res. Toxicol. 1992, 5, 618. (m) Franzen, R.; Goto, S.; Tanabe, K.; Morita, M. Mut. Res. 1998, 417, 31. (n) Ishiguro, Y.; Santodonato, J.; Neal, M. W. Environmental and Molecular Mutagenesis 1998, 11, 225.
+
+4. Kronberg, L.; Christman, R. F. Sci. Total Environ. 1989, 81, 219.
+
+5. Franzen, R.; Tanabe, K.; Morita, M. Chemosphere 1999, 38, 973.
+
+6. Friesner, R. A.; Dunietz, B. D. Acc. Chem. Res. 2001, 351.
+
+7. (a) Cho, S. J.; Cui, C.; Lee, J. Y.; Park, J. K.; Suh, S. J.; Park, J. K.; Kim, B. H.; Kim, K. S. J. Org. Chem., 1997, 62, 4068. (b) Ganguly, B.; Fuchs, B. J. Org. Chem. 2000, 65, 558.
+
+8. We have tried to obtain this anionic ring form structure. When we deprotonated from neutral form, there was no local minimum. The energy of ring form is about 30 kcal/mol higher than corresponding open form structure.
+
+9. All the energies are electronic energies.
+
+[그림: Various forms of 5-hydroxy-2(5H)-furanone. For each form, the most stable conformer is drawn. The numbers are relative energies against the most stable one. Units are in kcal/mol.]

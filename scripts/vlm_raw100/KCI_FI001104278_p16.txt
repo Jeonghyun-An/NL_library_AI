@@ -1,0 +1,13 @@
+한국심리학회지 : 실험
+
+Figure 9. Mean RT (msec) for shift time from global to local and also from local to global as a function of SOA for each stimulus set.
+
+[그림: Mean RT (msec) for shift time from global to local and also from local to global as a function of SOA for each stimulus set.]
+
+shift in the opposite direction, F(1,11) = 31.64, p < .0001, MSE = 5784.88. As SOA increased, attention shift from global to local had a trend of linear decrease, F(1,11) = 19.84, p < .001, MSE = 531.34, while attention shift from local to global had a quadratic trend, F(1,11) = 5.76, p < .05, MSE = 837.98. There was also an interaction of shift direction and congruity, F(1,11) = 12.01, p < .01, MSE = 3768.21. As shown in Table 1 and discussed in the previous paragraph, global-to-local shift took more time in the congruent stimulus (176 msec) than incongruent stimulus (154 msec), but local-to-global shift took more time in the incongruent stimulus (123 msec) than in the congruent stimulus (83 msec).
+
+Results on shift time are consistence with those of the previous analysis. Though mean RT was longer in the feature set than in the dimension set, shift time was shorter in the former set than in the latter set. This indicates attention is more tightly anchored to either the global or the local level in the dimension set, possibly because stimuli in the dimension set have distinct configurations which can easily attract attention. As the SOA increased, attention shift to the other level became easier (except for a quadratic tendency in shift from local to global in the dimension set). That is, processing of a succeeding stimulus could become free of the influence of a preceding stimulus, as their processing overlapped less and less in time course.
+
+General Discussion
+
+Two experiments examined modes of attention shift to the global versus the local level in the two types of compound stimulus set. In

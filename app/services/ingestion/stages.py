@@ -324,6 +324,7 @@ def run_extract(ctx: StageContext) -> dict:
             "figures": len(extraction.figures),
             "extract_method": max(method_counts, key=method_counts.get) if method_counts else "",
             "doc_type": doc_type,
+            "vlm_capped": extraction.vlm_capped,
         }
     finally:
         if downloaded:
@@ -414,7 +415,7 @@ def run_summarize(ctx: StageContext) -> dict:
     resume = ctx.params.get("resume_summaries", True)
     targets = [s for s in section_data if not (resume and s["summary"])]
 
-    async def _summarize_all() -> list[tuple[str, list[str]] | None]:
+    async def _summarize_batch(items: list[dict]) -> list[tuple[str, list[str]] | None]:
         sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
 
         async def _one(text: str):
@@ -425,9 +426,22 @@ def run_summarize(ctx: StageContext) -> dict:
                     log.warning(f"[{book_id}] 섹션 요약 실패: {e}")
                     return None
 
-        return await asyncio.gather(*[_one(s["text"]) for s in targets])
+        return await asyncio.gather(*[_one(s["text"]) for s in items])
 
-    results = run_async(_summarize_all()) if targets else []
+    async def _summarize_with_retry() -> list[tuple[str, list[str]] | None]:
+        results = await _summarize_batch(targets)
+        # 일부만 실패해도 stage 전체는 성공 처리되어 그 섹션 summary가 영구 NULL로
+        # 남는 문제 방지 — 실패분만 한 번 더 재시도 (타임아웃/부하로 인한 일시적
+        # 실패가 대부분이라 재시도로 대부분 복구됨).
+        failed_idx = [i for i, r in enumerate(results) if r is None]
+        if failed_idx:
+            log.warning(f"[{book_id}] 섹션 요약 실패 {len(failed_idx)}건 재시도")
+            retry_results = await _summarize_batch([targets[i] for i in failed_idx])
+            for i, r in zip(failed_idx, retry_results):
+                results[i] = r
+        return results
+
+    results = run_async(_summarize_with_retry()) if targets else []
     ok = sum(1 for r in results if r)
     log.info(f"[{book_id}] 섹션 요약 {ok}/{len(targets)}개 생성 완료 (스킵 {len(section_data) - len(targets)})")
 
@@ -453,8 +467,10 @@ def run_summarize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
+    failed_section_idxs = [sec["section_idx"] for sec, r in zip(targets, results) if not r]
     return {"sections_total": len(section_data), "sections_summarized": ok,
-            "sections_failed": len(targets) - ok}
+            "sections_failed": len(targets) - ok,
+            "failed_section_idxs": failed_section_idxs}
 
 
 # ── 단계 ③ 청킹 + 임베딩 + Milvus 인덱싱 ─────────────────────

@@ -1,0 +1,27 @@
+44「한국지방재정논집」제20권 제3호
+
+$\frac{\partial \mathcal{L}}{\partial x} = \frac{\partial U}{\partial x} - \lambda = 0$  (21)
+
+$\frac{\partial \mathcal{L}}{\partial y} = n\frac{\partial U}{\partial y} - \lambda \frac{dC(y)}{dy} = 0$  (22)
+
+$\frac{\partial \mathcal{L}}{\partial n} = U + n\frac{\partial U}{\partial n} + \lambda(I - x) = 0$  (23)
+
+$\frac{\partial \mathcal{L}}{\partial \lambda} = nI - nx - C(y) = 0.$  (24)
+
+식(22)와 식(21)을 정리한 다음 대응되는 변수를 나눈 후 정리하면
+
+$n\frac{\partial U}{\partial y} = \frac{dC(y)}{dy}$  (25)
+
+를 얻는다.
+
+식(23)과 식(21)을 정리한 다음 대응되는 변수를 나눈 후 정리하면
+
+$\frac{U + n\frac{\partial U}{\partial n}}{\frac{\partial U}{\partial x}} = \frac{C(y)}{n} (= I - x)$  (26)
+
+를 얻는다.
+
+자발적 클럽의 경우와 비교할 때 식(26)의 좌변의 분모에 U가 들어가 있다는 것이 차이점이다. 회원 증가가 혼잡을 유발하지만 반면에 클럽 회원 전체를 하나의 집단으로 볼 때 총효용을 증가시킨다는 점에서 이것은 우리의 직관을 뒷받침하는 결과이다. 앞으로의 분석을 위해 식(26)을
+
+$-n\frac{\partial U}{\partial n} = \frac{C(y)}{n} + \frac{U}{\partial x}$  (26)'
+
+로 바꾸어 표현해 두자.

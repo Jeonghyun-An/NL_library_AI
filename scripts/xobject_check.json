@@ -1,0 +1,7067 @@
+[
+ {
+  "doc": "CNTS-00049202108",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2700,
+  "fitz": 2698
+ },
+ {
+  "doc": "CNTS-00049202108",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 562,
+  "fitz": 610
+ },
+ {
+  "doc": "CNTS-00049202108",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 481,
+  "fitz": 512
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 596,
+  "fitz": 592
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 953,
+  "fitz": 947
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1066,
+  "fitz": 1095
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 106,
+  "fitz": 233
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 176,
+  "fitz": 595
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 747,
+  "fitz": 748
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 650,
+  "fitz": 629
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 854,
+  "fitz": 855
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 569,
+  "fitz": 575
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1830,
+  "fitz": 1833
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 902,
+  "fitz": 896
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 7,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 994,
+  "fitz": 1001
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1828,
+  "fitz": 1832
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1843,
+  "fitz": 1845
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2519,
+  "fitz": 2569
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 148,
+  "fitz": 612
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 195,
+  "fitz": 741
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 7,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 156,
+  "fitz": 529
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 8,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 157,
+  "fitz": 634
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 9,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 138,
+  "fitz": 617
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 10,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 127,
+  "fitz": 553
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 11,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 160,
+  "fitz": 602
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 12,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 129,
+  "fitz": 545
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 13,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 898,
+  "fitz": 1136
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 14,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1446,
+  "fitz": 1735
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 15,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1292,
+  "fitz": 1516
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 16,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 942,
+  "fitz": 1412
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 17,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 569,
+  "fitz": 862
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 18,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 165,
+  "fitz": 716
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 19,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 224,
+  "fitz": 787
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 20,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 73,
+  "fitz": 291
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 21,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 176,
+  "fitz": 722
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 22,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 116,
+  "fitz": 795
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 23,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 197,
+  "fitz": 872
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 24,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 172,
+  "fitz": 884
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 25,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 166,
+  "fitz": 902
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 26,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 174,
+  "fitz": 910
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 27,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 217,
+  "fitz": 865
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 28,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 146,
+  "fitz": 684
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 29,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 197,
+  "fitz": 859
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 30,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 181,
+  "fitz": 815
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 31,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 147,
+  "fitz": 790
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 32,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 173,
+  "fitz": 766
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 33,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 208,
+  "fitz": 792
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 34,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 129,
+  "fitz": 635
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 35,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 159,
+  "fitz": 774
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 37,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 175,
+  "fitz": 671
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 38,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 146,
+  "fitz": 587
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 39,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 170,
+  "fitz": 702
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 40,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 241,
+  "fitz": 1205
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 41,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 199,
+  "fitz": 970
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 42,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 201,
+  "fitz": 852
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 43,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 70,
+  "fitz": 341
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 44,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 15,
+  "fitz": 2121
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 45,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 159,
+  "fitz": 901
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 46,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 219,
+  "fitz": 1042
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 47,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 107,
+  "fitz": 559
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 48,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 57,
+  "fitz": 814
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 49,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 148,
+  "fitz": 501
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 50,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 107,
+  "fitz": 516
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 51,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 56,
+  "fitz": 1706
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 52,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 56,
+  "fitz": 1907
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 53,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 110,
+  "fitz": 1375
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 54,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 158,
+  "fitz": 801
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 55,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 188,
+  "fitz": 1038
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 56,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 155,
+  "fitz": 663
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 57,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 174,
+  "fitz": 761
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 59,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 137,
+  "fitz": 547
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 60,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 156,
+  "fitz": 746
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 61,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 161,
+  "fitz": 791
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 62,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 178,
+  "fitz": 748
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 63,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 166,
+  "fitz": 736
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 64,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 180,
+  "fitz": 678
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 65,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 189,
+  "fitz": 700
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 66,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 156,
+  "fitz": 802
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 67,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 157,
+  "fitz": 705
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 68,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 139,
+  "fitz": 647
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 69,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 103,
+  "fitz": 503
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 70,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 105,
+  "fitz": 339
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 71,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 97,
+  "fitz": 561
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 72,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 160,
+  "fitz": 720
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 73,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 189,
+  "fitz": 845
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 74,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 138,
+  "fitz": 851
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 75,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 181,
+  "fitz": 801
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 76,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 160,
+  "fitz": 716
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 77,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 171,
+  "fitz": 735
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 78,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 173,
+  "fitz": 778
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 79,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 167,
+  "fitz": 711
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 80,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 170,
+  "fitz": 722
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 81,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 153,
+  "fitz": 693
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 82,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 151,
+  "fitz": 851
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 83,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 99,
+  "fitz": 425
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 84,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 167,
+  "fitz": 557
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 85,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 158,
+  "fitz": 579
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 86,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 147,
+  "fitz": 676
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 87,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 147,
+  "fitz": 1022
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 88,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 150,
+  "fitz": 659
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 89,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 198,
+  "fitz": 769
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 90,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 146,
+  "fitz": 699
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 91,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 56,
+  "fitz": 316
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 92,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 107,
+  "fitz": 543
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 93,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 172,
+  "fitz": 826
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 94,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 148,
+  "fitz": 792
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 95,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 136,
+  "fitz": 693
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 96,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 169,
+  "fitz": 722
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 97,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 167,
+  "fitz": 703
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 98,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 141,
+  "fitz": 626
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 99,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 170,
+  "fitz": 692
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 100,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 75,
+  "fitz": 356
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 101,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 157,
+  "fitz": 663
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 102,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 139,
+  "fitz": 704
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 103,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 181,
+  "fitz": 761
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 104,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 173,
+  "fitz": 731
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 105,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 152,
+  "fitz": 668
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 106,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 156,
+  "fitz": 704
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 107,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 160,
+  "fitz": 807
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 108,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 194,
+  "fitz": 794
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 109,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 182,
+  "fitz": 775
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 110,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 183,
+  "fitz": 726
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 111,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 160,
+  "fitz": 864
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 112,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 97,
+  "fitz": 573
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 113,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 35,
+  "fitz": 984
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 114,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 68,
+  "fitz": 1259
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 115,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 150,
+  "fitz": 930
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 116,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 169,
+  "fitz": 703
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 117,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 171,
+  "fitz": 880
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 118,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 35,
+  "fitz": 1140
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 119,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 138,
+  "fitz": 742
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 120,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 51,
+  "fitz": 871
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 121,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 34,
+  "fitz": 845
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 122,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 67,
+  "fitz": 1144
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 123,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 96,
+  "fitz": 512
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 124,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 38,
+  "fitz": 838
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 125,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 38,
+  "fitz": 871
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 126,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 107,
+  "fitz": 1275
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 127,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 205,
+  "fitz": 774
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 128,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 154,
+  "fitz": 756
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 129,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 180,
+  "fitz": 784
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 130,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 196,
+  "fitz": 1001
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 131,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 183,
+  "fitz": 787
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 132,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 184,
+  "fitz": 771
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 133,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 177,
+  "fitz": 726
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 134,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 178,
+  "fitz": 806
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 135,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 189,
+  "fitz": 793
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 137,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 157,
+  "fitz": 558
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 138,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 135,
+  "fitz": 537
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 139,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 162,
+  "fitz": 737
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 140,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 161,
+  "fitz": 671
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 141,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 159,
+  "fitz": 680
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 142,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 165,
+  "fitz": 653
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 143,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 75,
+  "fitz": 284
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 144,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 145,
+  "fitz": 713
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 145,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 7,
+  "fitz": 1813
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 149,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 15,
+  "fitz": 373
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 150,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 61,
+  "fitz": 512
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 151,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 9,
+  "fitz": 1183
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 152,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 1141
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 153,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 997
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 154,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 836
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 155,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 12,
+  "fitz": 1737
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 156,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 123,
+  "fitz": 676
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 157,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 85,
+  "fitz": 424
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 158,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 128,
+  "fitz": 932
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 159,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 104,
+  "fitz": 1097
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 160,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 55,
+  "fitz": 1407
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 161,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 142,
+  "fitz": 743
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 162,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 152,
+  "fitz": 630
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 163,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 81,
+  "fitz": 397
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 164,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 155,
+  "fitz": 678
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 165,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 157,
+  "fitz": 711
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 166,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 391,
+  "fitz": 641
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 167,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 202,
+  "fitz": 810
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 168,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 138,
+  "fitz": 615
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 169,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 186,
+  "fitz": 733
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 170,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 159,
+  "fitz": 749
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 171,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 132,
+  "fitz": 750
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 172,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 114,
+  "fitz": 491
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 173,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 117,
+  "fitz": 564
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 174,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 115,
+  "fitz": 768
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 175,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 34,
+  "fitz": 462
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 176,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 1280
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 188,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 105,
+  "fitz": 794
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 189,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 61,
+  "fitz": 238
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 553,
+  "fitz": 545
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 347,
+  "fitz": 341
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 571,
+  "fitz": 571
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 328,
+  "fitz": 333
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 618,
+  "fitz": 632
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 750,
+  "fitz": 747
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 7,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 530,
+  "fitz": 558
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 8,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 725,
+  "fitz": 721
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 9,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 390,
+  "fitz": 537
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 10,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1136,
+  "fitz": 1158
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 11,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 808,
+  "fitz": 833
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 12,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 818,
+  "fitz": 838
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 13,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 817,
+  "fitz": 842
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 14,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 791,
+  "fitz": 811
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 15,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 338,
+  "fitz": 363
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 16,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 857,
+  "fitz": 854
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 17,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 821,
+  "fitz": 846
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 18,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 765,
+  "fitz": 790
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 19,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 829,
+  "fitz": 854
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 20,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 796,
+  "fitz": 818
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 21,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 844,
+  "fitz": 871
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 22,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 759,
+  "fitz": 786
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 23,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 761,
+  "fitz": 760
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 24,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 807,
+  "fitz": 836
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 25,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 767,
+  "fitz": 793
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 26,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 798,
+  "fitz": 828
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 27,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 241,
+  "fitz": 266
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 28,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 549,
+  "fitz": 545
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 30,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 119,
+  "fitz": 1229
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 31,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 368,
+  "fitz": 377
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 32,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 432,
+  "fitz": 385
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 609,
+  "fitz": 610
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 515,
+  "fitz": 515
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 623,
+  "fitz": 624
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 647,
+  "fitz": 647
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 545,
+  "fitz": 545
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 483,
+  "fitz": 483
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 427,
+  "fitz": 420
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 7,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 452,
+  "fitz": 404
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 8,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 433,
+  "fitz": 425
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2052,
+  "fitz": 2041
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2617,
+  "fitz": 2617
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2483,
+  "fitz": 2487
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 670,
+  "fitz": 666
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 580,
+  "fitz": 588
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 568,
+  "fitz": 625
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 66,
+  "fitz": 247
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 11,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1572,
+  "fitz": 1556
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 12,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2251,
+  "fitz": 2251
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 115,
+  "fitz": 505
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 241,
+  "fitz": 817
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 283,
+  "fitz": 872
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2207,
+  "fitz": 2209
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2712,
+  "fitz": 2712
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2368,
+  "fitz": 2378
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 239,
+  "fitz": 221
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 496,
+  "fitz": 454
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 715,
+  "fitz": 699
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 480,
+  "fitz": 475
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 518,
+  "fitz": 518
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 7,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 501,
+  "fitz": 489
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1881,
+  "fitz": 1877
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2472,
+  "fitz": 2472
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1765,
+  "fitz": 1765
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 256,
+  "fitz": 234
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1430,
+  "fitz": 1430
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1911,
+  "fitz": 1922
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 461,
+  "fitz": 438
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 346,
+  "fitz": 345
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 332,
+  "fitz": 312
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 55,
+  "fitz": 294
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 260,
+  "fitz": 2262
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 6,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 10,
+  "fitz": 8831
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 7,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 148,
+  "fitz": 646
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 8,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 382,
+  "fitz": 1934
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 9,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 413,
+  "fitz": 2085
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 10,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 448,
+  "fitz": 2062
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 11,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 421,
+  "fitz": 1871
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 12,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 309,
+  "fitz": 1613
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 13,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 8,
+  "fitz": 8833
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 14,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 152,
+  "fitz": 688
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 15,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 417,
+  "fitz": 1931
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 16,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 462,
+  "fitz": 1985
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 17,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 162,
+  "fitz": 666
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 18,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 6,
+  "fitz": 8842
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 19,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 71,
+  "fitz": 473
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 20,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 366,
+  "fitz": 1597
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 21,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 440,
+  "fitz": 1542
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 22,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 377,
+  "fitz": 1403
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 23,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 470,
+  "fitz": 1554
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 24,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 333,
+  "fitz": 1172
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 25,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 412,
+  "fitz": 1342
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 26,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 292,
+  "fitz": 954
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 27,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 386,
+  "fitz": 1300
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 28,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 245,
+  "fitz": 5334
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 29,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 143,
+  "fitz": 425
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 30,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 447,
+  "fitz": 1764
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 31,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 401,
+  "fitz": 1592
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 32,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 512,
+  "fitz": 1743
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 33,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 392,
+  "fitz": 1470
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 34,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 377,
+  "fitz": 1360
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 35,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 338,
+  "fitz": 1189
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 36,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 398,
+  "fitz": 1252
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 37,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 445,
+  "fitz": 1734
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 38,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 392,
+  "fitz": 1786
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 39,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 264,
+  "fitz": 5432
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 40,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 105,
+  "fitz": 433
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 41,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 316,
+  "fitz": 1322
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 42,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 344,
+  "fitz": 831
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 43,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 200,
+  "fitz": 720
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 44,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 398,
+  "fitz": 1658
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 45,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 430,
+  "fitz": 1439
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 46,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 309,
+  "fitz": 1082
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 47,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 338,
+  "fitz": 1265
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 48,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 335,
+  "fitz": 1195
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 49,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 330,
+  "fitz": 1190
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 50,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 272,
+  "fitz": 1061
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 51,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 214,
+  "fitz": 850
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 52,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 306,
+  "fitz": 1256
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 53,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 440,
+  "fitz": 1529
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 54,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 417,
+  "fitz": 1611
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 55,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 409,
+  "fitz": 1501
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 56,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 222,
+  "fitz": 846
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 57,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 337,
+  "fitz": 1344
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 58,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 358,
+  "fitz": 1298
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 59,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 382,
+  "fitz": 1393
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 60,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 293,
+  "fitz": 1102
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 61,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 431,
+  "fitz": 1534
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 62,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 388,
+  "fitz": 1343
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 63,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 410,
+  "fitz": 1628
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 64,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 437,
+  "fitz": 1558
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 65,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 409,
+  "fitz": 1537
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 66,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 196,
+  "fitz": 712
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 67,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 416,
+  "fitz": 1405
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 68,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 338,
+  "fitz": 1187
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 69,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 248,
+  "fitz": 927
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 70,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 336,
+  "fitz": 1238
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 71,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 360,
+  "fitz": 1408
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 72,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 358,
+  "fitz": 1148
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 73,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 246,
+  "fitz": 1041
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 74,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 276,
+  "fitz": 1011
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 75,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 228,
+  "fitz": 826
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 76,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 254,
+  "fitz": 1002
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 77,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 393,
+  "fitz": 1360
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 78,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 382,
+  "fitz": 1135
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 79,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 264,
+  "fitz": 971
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 80,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 423,
+  "fitz": 1588
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 81,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 271,
+  "fitz": 953
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 82,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 369,
+  "fitz": 1207
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 83,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 427,
+  "fitz": 1587
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 84,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 147,
+  "fitz": 591
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 85,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 393,
+  "fitz": 1362
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 86,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 90,
+  "fitz": 341
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 87,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 13,
+  "fitz": 8883
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 88,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 148,
+  "fitz": 813
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 89,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 463,
+  "fitz": 1945
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 90,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 116,
+  "fitz": 1696
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 91,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 260,
+  "fitz": 2120
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 92,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 54,
+  "fitz": 2762
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 93,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 58,
+  "fitz": 2281
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 94,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 392,
+  "fitz": 3683
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 95,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 100,
+  "fitz": 2628
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 96,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 150,
+  "fitz": 1889
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 97,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 140,
+  "fitz": 2020
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 98,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 153,
+  "fitz": 1796
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 99,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 32,
+  "fitz": 539
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 100,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 107,
+  "fitz": 2924
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 101,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 96,
+  "fitz": 2606
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 102,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 41,
+  "fitz": 2019
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 103,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 46,
+  "fitz": 1821
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 104,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 346,
+  "fitz": 3374
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 105,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 281,
+  "fitz": 1789
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 106,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 10,
+  "fitz": 8846
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 107,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 118,
+  "fitz": 1866
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 108,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 123,
+  "fitz": 1222
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 109,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 96,
+  "fitz": 2180
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 110,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 60,
+  "fitz": 1679
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 111,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 102,
+  "fitz": 2200
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 112,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 64,
+  "fitz": 1654
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 113,
+  "kind": "fail",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 214,
+  "fitz": 3574
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 114,
+  "kind": "ok",
+  "has_font": false,
+  "has_xobject": true,
+  "odl": 205,
+  "fitz": 734
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 231,
+  "fitz": 216
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 411,
+  "fitz": 413
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 496,
+  "fitz": 502
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 37187,
+  "fitz": 1515
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 38844,
+  "fitz": 2029
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1389,
+  "fitz": 1411
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 307,
+  "fitz": 307
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 613,
+  "fitz": 603
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1071,
+  "fitz": 1072
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 272,
+  "fitz": 270
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 711,
+  "fitz": 700
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 810,
+  "fitz": 806
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 574,
+  "fitz": 554
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 733,
+  "fitz": 712
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 784,
+  "fitz": 769
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 280,
+  "fitz": 272
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 263,
+  "fitz": 246
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 349,
+  "fitz": 337
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 319,
+  "fitz": 289
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1089,
+  "fitz": 277
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 358,
+  "fitz": 352
+ },
+ {
+  "doc": "CNTS-00049655755_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 3793,
+  "fitz": 3846
+ },
+ {
+  "doc": "CNTS-00049655755_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 5086,
+  "fitz": 5121
+ },
+ {
+  "doc": "CNTS-00049655755_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 3129,
+  "fitz": 3162
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 386,
+  "fitz": 382
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1580,
+  "fitz": 1200
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1452,
+  "fitz": 1460
+ },
+ {
+  "doc": "CNTS-00049655775_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 192,
+  "fitz": 217
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 442,
+  "fitz": 437
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 637,
+  "fitz": 637
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 284,
+  "fitz": 284
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2390,
+  "fitz": 1051
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2407,
+  "fitz": 1127
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1208,
+  "fitz": 663
+ },
+ {
+  "doc": "CNTS-00049655806_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 513,
+  "fitz": 518
+ },
+ {
+  "doc": "CNTS-00049655806_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 445,
+  "fitz": 433
+ },
+ {
+  "doc": "CNTS-00049655806_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 450,
+  "fitz": 441
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 505,
+  "fitz": 388
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 648,
+  "fitz": 534
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 656,
+  "fitz": 523
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 463,
+  "fitz": 450
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 536,
+  "fitz": 525
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 353,
+  "fitz": 341
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 263,
+  "fitz": 251
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 498,
+  "fitz": 490
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 467,
+  "fitz": 474
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 37187,
+  "fitz": 1498
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 38974,
+  "fitz": 2006
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1389,
+  "fitz": 1394
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 199,
+  "fitz": 215
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 57,
+  "fitz": 222
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 381,
+  "fitz": 548
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 284,
+  "fitz": 256
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 355,
+  "fitz": 343
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2302,
+  "fitz": 385
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 8,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 825,
+  "fitz": 622
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 9,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1120,
+  "fitz": 780
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 10,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1369,
+  "fitz": 859
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 4,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 12,
+  "fitz": 441
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 5,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 8,
+  "fitz": 213
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 6,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 603
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 7,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 501
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 8,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 480
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 9,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 8,
+  "fitz": 502
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 11,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 297
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 12,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 373
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 14,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 293
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 20,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 208
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 24,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 335
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 27,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 8,
+  "fitz": 223
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 30,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 897
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 31,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 0,
+  "fitz": 847
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 34,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 301
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 37,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 618
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 39,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 625
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 40,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 331
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 41,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 0,
+  "fitz": 398
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 5906,
+  "fitz": 5914
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 6310,
+  "fitz": 6315
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 5110,
+  "fitz": 5111
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1500,
+  "fitz": 1502
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 248,
+  "fitz": 249
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1210,
+  "fitz": 1209
+ },
+ {
+  "doc": "CNTS-00049662543_",
+  "page": 29,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 712,
+  "fitz": 234
+ },
+ {
+  "doc": "CNTS-00049662543_",
+  "page": 30,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 672,
+  "fitz": 463
+ },
+ {
+  "doc": "CNTS-00049662543_",
+  "page": 31,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 672,
+  "fitz": 421
+ },
+ {
+  "doc": "CNTS-00049662544_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 118,
+  "fitz": 433
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 3,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 43,
+  "fitz": 814
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1259,
+  "fitz": 567
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 449,
+  "fitz": 492
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 6,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 763,
+  "fitz": 844
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 8,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1900,
+  "fitz": 602
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 9,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 85,
+  "fitz": 693
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 10,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 114,
+  "fitz": 594
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 11,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 59,
+  "fitz": 603
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 12,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1583,
+  "fitz": 825
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 13,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 119,
+  "fitz": 540
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 14,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 45,
+  "fitz": 585
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 15,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 43,
+  "fitz": 917
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 16,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 146,
+  "fitz": 681
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 17,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 122,
+  "fitz": 526
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 18,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 135,
+  "fitz": 575
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 19,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 705,
+  "fitz": 960
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 20,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1643,
+  "fitz": 2391
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 21,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 54,
+  "fitz": 973
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 22,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 870,
+  "fitz": 842
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 23,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 374,
+  "fitz": 533
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 24,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 904,
+  "fitz": 1300
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 25,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 1144,
+  "fitz": 1301
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 26,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 565,
+  "fitz": 603
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 27,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 136,
+  "fitz": 239
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 28,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 73,
+  "fitz": 666
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 29,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 199,
+  "fitz": 438
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 31,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 712,
+  "fitz": 990
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 32,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 75,
+  "fitz": 574
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 33,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 41,
+  "fitz": 404
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 34,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 67,
+  "fitz": 811
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 36,
+  "kind": "fail",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 29,
+  "fitz": 362
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 2306,
+  "fitz": 2268
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1896,
+  "fitz": 1924
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 5,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1077,
+  "fitz": 1098
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 291,
+  "fitz": 308
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 650,
+  "fitz": 670
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 292,
+  "fitz": 317
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 341,
+  "fitz": 362
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 765,
+  "fitz": 787
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 419,
+  "fitz": 444
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 331,
+  "fitz": 348
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 596,
+  "fitz": 610
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 613,
+  "fitz": 611
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 395,
+  "fitz": 410
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 662,
+  "fitz": 690
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 686,
+  "fitz": 705
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 351,
+  "fitz": 368
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 762,
+  "fitz": 834
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 574,
+  "fitz": 541
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 346,
+  "fitz": 363
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 676,
+  "fitz": 674
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 484,
+  "fitz": 510
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 323,
+  "fitz": 340
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 812,
+  "fitz": 832
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 718,
+  "fitz": 748
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 295,
+  "fitz": 312
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 698,
+  "fitz": 718
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 722,
+  "fitz": 569
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 346,
+  "fitz": 363
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 808,
+  "fitz": 828
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 548,
+  "fitz": 569
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 337,
+  "fitz": 354
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 851,
+  "fitz": 871
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 599,
+  "fitz": 622
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 309,
+  "fitz": 326
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 612,
+  "fitz": 565
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 577,
+  "fitz": 598
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 310,
+  "fitz": 328
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 731,
+  "fitz": 751
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 715,
+  "fitz": 630
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 307,
+  "fitz": 325
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 995,
+  "fitz": 1015
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 492,
+  "fitz": 516
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 312,
+  "fitz": 329
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1008,
+  "fitz": 1028
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 442,
+  "fitz": 467
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 289,
+  "fitz": 310
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1044,
+  "fitz": 1081
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 644,
+  "fitz": 651
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 306,
+  "fitz": 323
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 897,
+  "fitz": 918
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 359,
+  "fitz": 377
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 349,
+  "fitz": 366
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1096,
+  "fitz": 1116
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 429,
+  "fitz": 455
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 289,
+  "fitz": 306
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1010,
+  "fitz": 1030
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 730,
+  "fitz": 744
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1174,
+  "fitz": 1195
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 818,
+  "fitz": 841
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 531,
+  "fitz": 545
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1133,
+  "fitz": 1154
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 479,
+  "fitz": 500
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 545,
+  "fitz": 467
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 957,
+  "fitz": 978
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 417,
+  "fitz": 440
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 578,
+  "fitz": 588
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1144,
+  "fitz": 1165
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 602,
+  "fitz": 832
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 878,
+  "fitz": 795
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1046,
+  "fitz": 1067
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 780,
+  "fitz": 749
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 703,
+  "fitz": 672
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1117,
+  "fitz": 1138
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 529,
+  "fitz": 551
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 551,
+  "fitz": 493
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1044,
+  "fitz": 1066
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 699,
+  "fitz": 664
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 591,
+  "fitz": 610
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1058,
+  "fitz": 1079
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 609,
+  "fitz": 769
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 538,
+  "fitz": 572
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1100,
+  "fitz": 1121
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 704,
+  "fitz": 542
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 484,
+  "fitz": 504
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 975,
+  "fitz": 995
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 526,
+  "fitz": 546
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 555,
+  "fitz": 562
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1007,
+  "fitz": 1028
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 715,
+  "fitz": 735
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 599,
+  "fitz": 608
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1069,
+  "fitz": 1090
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 718,
+  "fitz": 675
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 623,
+  "fitz": 587
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1021,
+  "fitz": 1042
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 634,
+  "fitz": 577
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 840,
+  "fitz": 829
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 932,
+  "fitz": 953
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 720,
+  "fitz": 744
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 668,
+  "fitz": 677
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1040,
+  "fitz": 1060
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 407,
+  "fitz": 426
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 847,
+  "fitz": 802
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1136,
+  "fitz": 1159
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 723,
+  "fitz": 667
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 687,
+  "fitz": 702
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1099,
+  "fitz": 1120
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 601,
+  "fitz": 574
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 449,
+  "fitz": 433
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 982,
+  "fitz": 1005
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 639,
+  "fitz": 643
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 873,
+  "fitz": 860
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 280,
+  "fitz": 265
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1081,
+  "fitz": 1101
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 893,
+  "fitz": 740
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1028,
+  "fitz": 1050
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 597,
+  "fitz": 619
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 649,
+  "fitz": 605
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 943,
+  "fitz": 964
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 736,
+  "fitz": 676
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 653,
+  "fitz": 658
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1004,
+  "fitz": 1025
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 432,
+  "fitz": 470
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 690,
+  "fitz": 670
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1061,
+  "fitz": 1082
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 563,
+  "fitz": 807
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 587,
+  "fitz": 594
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1048,
+  "fitz": 1069
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 481,
+  "fitz": 503
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 640,
+  "fitz": 647
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1120,
+  "fitz": 1141
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 650,
+  "fitz": 594
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 745,
+  "fitz": 663
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1177,
+  "fitz": 1198
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 578,
+  "fitz": 535
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 528,
+  "fitz": 472
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1069,
+  "fitz": 1090
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 550,
+  "fitz": 586
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 505,
+  "fitz": 494
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1054,
+  "fitz": 1075
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 463,
+  "fitz": 452
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 390,
+  "fitz": 395
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1107,
+  "fitz": 1128
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 619,
+  "fitz": 754
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 865,
+  "fitz": 876
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1078,
+  "fitz": 1099
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 489,
+  "fitz": 511
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 723,
+  "fitz": 736
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 780,
+  "fitz": 761
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 618,
+  "fitz": 626
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 732,
+  "fitz": 571
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1119,
+  "fitz": 1140
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 580,
+  "fitz": 577
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 616,
+  "fitz": 610
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1193,
+  "fitz": 1219
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 600,
+  "fitz": 574
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1046,
+  "fitz": 747
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1156,
+  "fitz": 1176
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 697,
+  "fitz": 721
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 584,
+  "fitz": 582
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1156,
+  "fitz": 1177
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 643,
+  "fitz": 663
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 728,
+  "fitz": 837
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1112,
+  "fitz": 1132
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 474,
+  "fitz": 497
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 510,
+  "fitz": 511
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1184,
+  "fitz": 1205
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 512,
+  "fitz": 679
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 460,
+  "fitz": 447
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1082,
+  "fitz": 1103
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 487,
+  "fitz": 510
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 851,
+  "fitz": 828
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1118,
+  "fitz": 1139
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 710,
+  "fitz": 740
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 771,
+  "fitz": 762
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1163,
+  "fitz": 1184
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 512,
+  "fitz": 538
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 787,
+  "fitz": 735
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1182,
+  "fitz": 1203
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 425,
+  "fitz": 551
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 644,
+  "fitz": 569
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1134,
+  "fitz": 1155
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 617,
+  "fitz": 639
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 669,
+  "fitz": 674
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1195,
+  "fitz": 1216
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 722,
+  "fitz": 744
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 313,
+  "fitz": 314
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1145,
+  "fitz": 1166
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 556,
+  "fitz": 576
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 404,
+  "fitz": 404
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 311,
+  "fitz": 296
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1134,
+  "fitz": 1156
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 442,
+  "fitz": 463
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1174,
+  "fitz": 1195
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 510,
+  "fitz": 530
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 895,
+  "fitz": 791
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1135,
+  "fitz": 1156
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 746,
+  "fitz": 657
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 362,
+  "fitz": 385
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1104,
+  "fitz": 1125
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 628,
+  "fitz": 563
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 609,
+  "fitz": 620
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1112,
+  "fitz": 1133
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 788,
+  "fitz": 709
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 580,
+  "fitz": 499
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1203,
+  "fitz": 1223
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 509,
+  "fitz": 485
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 882,
+  "fitz": 879
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1200,
+  "fitz": 1222
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 426,
+  "fitz": 439
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 512,
+  "fitz": 510
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1153,
+  "fitz": 1174
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 894,
+  "fitz": 834
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 414,
+  "fitz": 435
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1195,
+  "fitz": 1216
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 520,
+  "fitz": 502
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 788,
+  "fitz": 626
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1274,
+  "fitz": 1295
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 767,
+  "fitz": 789
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 972,
+  "fitz": 954
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1153,
+  "fitz": 1173
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 502,
+  "fitz": 473
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 758,
+  "fitz": 687
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1208,
+  "fitz": 1229
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 425,
+  "fitz": 459
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 646,
+  "fitz": 668
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1211,
+  "fitz": 1232
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 534,
+  "fitz": 555
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 634,
+  "fitz": 590
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1232,
+  "fitz": 1253
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 563,
+  "fitz": 584
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 578,
+  "fitz": 592
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1190,
+  "fitz": 1211
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 924,
+  "fitz": 923
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 932,
+  "fitz": 927
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1165,
+  "fitz": 1186
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 707,
+  "fitz": 736
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 860,
+  "fitz": 851
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 1,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 270,
+  "fitz": 247
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1197,
+  "fitz": 1218
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 795,
+  "fitz": 655
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1119,
+  "fitz": 1140
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 372,
+  "fitz": 386
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 633,
+  "fitz": 632
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1197,
+  "fitz": 1219
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 548,
+  "fitz": 568
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1219,
+  "fitz": 1103
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 819,
+  "fitz": 826
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 545,
+  "fitz": 542
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 796,
+  "fitz": 821
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1032,
+  "fitz": 1034
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 354,
+  "fitz": 327
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 339,
+  "fitz": 359
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 905,
+  "fitz": 903
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 466,
+  "fitz": 487
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 744,
+  "fitz": 764
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 995,
+  "fitz": 998
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 513,
+  "fitz": 536
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1089,
+  "fitz": 988
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1263,
+  "fitz": 1129
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 440,
+  "fitz": 465
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 459,
+  "fitz": 468
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1010,
+  "fitz": 1032
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 588,
+  "fitz": 613
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 477,
+  "fitz": 499
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 976,
+  "fitz": 998
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 553,
+  "fitz": 575
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 484,
+  "fitz": 472
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 706,
+  "fitz": 722
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 764,
+  "fitz": 783
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 408,
+  "fitz": 429
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1021,
+  "fitz": 1043
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 357,
+  "fitz": 377
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 469,
+  "fitz": 464
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1023,
+  "fitz": 1049
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 534,
+  "fitz": 542
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 558,
+  "fitz": 541
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 987,
+  "fitz": 1009
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 883,
+  "fitz": 868
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 618,
+  "fitz": 639
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1035,
+  "fitz": 1060
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 809,
+  "fitz": 751
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 365,
+  "fitz": 367
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1045,
+  "fitz": 1070
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 588,
+  "fitz": 587
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 719,
+  "fitz": 679
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 683,
+  "fitz": 699
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1142,
+  "fitz": 1168
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 885,
+  "fitz": 850
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1075,
+  "fitz": 1095
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 633,
+  "fitz": 621
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 414,
+  "fitz": 415
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1078,
+  "fitz": 1099
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 852,
+  "fitz": 865
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 801,
+  "fitz": 792
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 1100,
+  "fitz": 1121
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 518,
+  "fitz": 539
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 638,
+  "fitz": 635
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 2,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 636,
+  "fitz": 656
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 3,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": false,
+  "odl": 879,
+  "fitz": 892
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 4,
+  "kind": "ok",
+  "has_font": true,
+  "has_xobject": true,
+  "odl": 806,
+  "fitz": 815
+ }
+]

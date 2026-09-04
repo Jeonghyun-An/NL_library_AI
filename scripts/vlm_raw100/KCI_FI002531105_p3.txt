@@ -1,0 +1,23 @@
+308 일반논단
+
+이하에서는 앞서 열거한 몇 가지 논제들을, EU-정보보호규칙에 관한 기초적 이해를 바탕으로 연방카르텔청의 Facebook에 대한 이번 결정의 배경과 경과 (Hintergrund und Verfahrensgang)를 살펴보고 사건사실과 위법성 판단의 근거를 결정문 중심으로 살펴보고자 한다. 또한 연방카르텔청이 제시한 논거에 대한 의문을 제기한 뒤셀도르프 고등법원의 판단 내용을 검토하고자 한다.
+
+Ⅱ. 디지털 경제에서 데이터(Daten)의 경쟁법적 함의
+
+1. EU와 독일의 정보보호규범 상 개인정보의 개념적 이해
+
+(1) 데이터의 개념과 정의규정
+
+데이터개념(Datenbegriff)의 명확화 요구에도 불구하고 단일한(einheitliche) 정의와 그 범위를 정하는 일은 결코 쉽지 않으며,⁹⁾ 디지털 시대의 복잡, 급변하는 기술·생활환경을 고려하면 바람직하지 않을 수도 있다. 그럼에도 불구하고 개인정보(personenbezogene Daten)를 포함한 ‘데이터’를 개념화하기 위한 노력이 꾸준히 이어져왔다.¹⁰⁾
+
+보호객체로서 개인정보는 개인 식별가능성(Identifizierbarkeit)이 전제되어야 한다.
+
+---
+
+개정으로 소비자보호법 권한을 얻게 된 연방카르텔청의 역할·기능 변화에 관한 논의가 필요하다. 이와 관련하여 유영국, “소비자 보호에 있어서 독일연방카르텔청의 새로운 집행 권한—개정 GWB와 주목할 만한 기고문, 사설 및 인터뷰를 중심으로—”, 서울대 경쟁법센터 「경쟁과 법」제12호, 2019.6., 51면 이하.
+
+8) 물론 디지털 경제에 대한 경쟁법 적용의 확대·강화로 인한 혁신저해 등을 우려하는 회의적 시각도 존재한다. 그러한 시각에 대한 연방카르텔청의 입장을 엿볼 수 있는 연방카르텔청장의 인터뷰로, Der Präsident des Bundeskartellamts, Andreas Mundt, über den schwierigen Zugriff der Wettbewerbshütter auf die Digitalwirtschaft, die umstrittene Idee europäischer Champions- und die Frage, ob Preiskartelle künftig von Algorithmen organisiert werden (im Interview mit der WirtschaftsWoche, 2019.3.29.) 참조.
+
+9) 실제 독일연방카르텔청과 프랑스 경쟁청(Autorité de la Concurrence)이 공동으로 발간한 보고서 「Competition Law and Data」에서 ‘Data’의 의미를, 용어로서 데이터에 대한 단일한(single) 개념정의는 존재하지 않으며, 좁은 의미에서 과학실험 또는 측정 결과를 나타내는 용어로 종종 사용되고, 넓은 의미에는 주로 일정한 정보 또는 그와 같은 정보가 일정한 방식으로 표현된 것을 가리키는 것으로 설명하였다; Torsten Körber, „Ist Wissen Marktmacht?“ Überlegungen zum Verhältnis von Datenschutz, „Datenmacht“ und Kartellrecht–Teil 1 (이하, Teil 1), NZKart 7/2016, S. 304.
+
+10) 이 글에서는 법문 상 표현인 ‘Daten’을 ‘데이터’로 표기하며, 개인정보에 관한 데이터를 한정하여 지칭할 필요가 있는 경우, ‘personenbezogene Daten’ 내지 ‘개인정보’로 표기하고자 한다.

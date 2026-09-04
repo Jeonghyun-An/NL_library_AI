@@ -1,0 +1,1037 @@
+[
+  {
+    "doc": "KCI_FI002537654.pdf",
+    "pages": [
+      {
+        "page": 8,
+        "fitz_len": 1148,
+        "easyocr_len": 1149,
+        "elapsed_sec": 2.77
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003259902.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 1832,
+        "easyocr_len": 1796,
+        "elapsed_sec": 2.99
+      },
+      {
+        "page": 5,
+        "fitz_len": 2030,
+        "easyocr_len": 1987,
+        "elapsed_sec": 2.93
+      },
+      {
+        "page": 13,
+        "fitz_len": 2065,
+        "easyocr_len": 2035,
+        "elapsed_sec": 3.02
+      },
+      {
+        "page": 16,
+        "fitz_len": 1908,
+        "easyocr_len": 1859,
+        "elapsed_sec": 2.74
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003331310.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 1253,
+        "easyocr_len": 1661,
+        "elapsed_sec": 4.82
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002171174.pdf",
+    "pages": [
+      {
+        "page": 5,
+        "fitz_len": 3857,
+        "easyocr_len": 3746,
+        "elapsed_sec": 4.23
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002524432.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2402,
+        "easyocr_len": 2386,
+        "elapsed_sec": 3.96
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003307529.pdf",
+    "pages": [
+      {
+        "page": 22,
+        "fitz_len": 1419,
+        "easyocr_len": 1416,
+        "elapsed_sec": 2.28
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002633464.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 3090,
+        "easyocr_len": 2940,
+        "elapsed_sec": 7.22
+      },
+      {
+        "page": 10,
+        "fitz_len": 2633,
+        "easyocr_len": 2513,
+        "elapsed_sec": 5.65
+      },
+      {
+        "page": 9,
+        "fitz_len": 2100,
+        "easyocr_len": 2090,
+        "elapsed_sec": 5.11
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002530375.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "fitz_len": 926,
+        "easyocr_len": 908,
+        "elapsed_sec": 1.5
+      },
+      {
+        "page": 15,
+        "fitz_len": 1549,
+        "easyocr_len": 1384,
+        "elapsed_sec": 4.57
+      },
+      {
+        "page": 8,
+        "fitz_len": 1271,
+        "easyocr_len": 1267,
+        "elapsed_sec": 2.91
+      },
+      {
+        "page": 5,
+        "fitz_len": 1526,
+        "easyocr_len": 1532,
+        "elapsed_sec": 2.24
+      },
+      {
+        "page": 7,
+        "fitz_len": 1694,
+        "easyocr_len": 1702,
+        "elapsed_sec": 2.79
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003082850.pdf",
+    "pages": [
+      {
+        "page": 8,
+        "fitz_len": 1097,
+        "easyocr_len": 1108,
+        "elapsed_sec": 3.38
+      },
+      {
+        "page": 35,
+        "fitz_len": 1561,
+        "easyocr_len": 1510,
+        "elapsed_sec": 4.28
+      },
+      {
+        "page": 7,
+        "fitz_len": 1016,
+        "easyocr_len": 1023,
+        "elapsed_sec": 2.98
+      },
+      {
+        "page": 13,
+        "fitz_len": 658,
+        "easyocr_len": 677,
+        "elapsed_sec": 1.91
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001269838.pdf",
+    "pages": [
+      {
+        "page": 15,
+        "fitz_len": 1021,
+        "easyocr_len": 1307,
+        "elapsed_sec": 2.08
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001715647.pdf",
+    "pages": [
+      {
+        "page": 29,
+        "fitz_len": 896,
+        "easyocr_len": 918,
+        "elapsed_sec": 2.29
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003000034.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 1071,
+        "easyocr_len": 1241,
+        "elapsed_sec": 2.28
+      },
+      {
+        "page": 8,
+        "fitz_len": 1406,
+        "easyocr_len": 1500,
+        "elapsed_sec": 3.86
+      },
+      {
+        "page": 17,
+        "fitz_len": 1119,
+        "easyocr_len": 1314,
+        "elapsed_sec": 3.93
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000921452.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 813,
+        "easyocr_len": 942,
+        "elapsed_sec": 1.85
+      },
+      {
+        "page": 9,
+        "fitz_len": 775,
+        "easyocr_len": 842,
+        "elapsed_sec": 2.02
+      },
+      {
+        "page": 7,
+        "fitz_len": 1132,
+        "easyocr_len": 1306,
+        "elapsed_sec": 2.31
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003148640.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1430,
+        "easyocr_len": 1724,
+        "elapsed_sec": 4.07
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003218741.pdf",
+    "pages": [
+      {
+        "page": 9,
+        "fitz_len": 881,
+        "easyocr_len": 887,
+        "elapsed_sec": 1.71
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002164241.pdf",
+    "pages": [
+      {
+        "page": 13,
+        "fitz_len": 2131,
+        "easyocr_len": 2128,
+        "elapsed_sec": 3.12
+      },
+      {
+        "page": 17,
+        "fitz_len": 2061,
+        "easyocr_len": 2060,
+        "elapsed_sec": 3.09
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002068495.pdf",
+    "pages": [
+      {
+        "page": 14,
+        "fitz_len": 549,
+        "easyocr_len": 490,
+        "elapsed_sec": 1.76
+      },
+      {
+        "page": 3,
+        "fitz_len": 1218,
+        "easyocr_len": 1219,
+        "elapsed_sec": 2.01
+      },
+      {
+        "page": 10,
+        "fitz_len": 720,
+        "easyocr_len": 692,
+        "elapsed_sec": 1.86
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000865757.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 1220,
+        "easyocr_len": 1310,
+        "elapsed_sec": 3.3
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001251499.pdf",
+    "pages": [
+      {
+        "page": 39,
+        "fitz_len": 2071,
+        "easyocr_len": 2076,
+        "elapsed_sec": 3.31
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002170660.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1150,
+        "easyocr_len": 1470,
+        "elapsed_sec": 3.4
+      },
+      {
+        "page": 16,
+        "fitz_len": 1153,
+        "easyocr_len": 1599,
+        "elapsed_sec": 3.53
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001160030.pdf",
+    "pages": [
+      {
+        "page": 9,
+        "fitz_len": 990,
+        "easyocr_len": 1239,
+        "elapsed_sec": 2.52
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000896175.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 946,
+        "easyocr_len": 1169,
+        "elapsed_sec": 1.94
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002925182.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 689,
+        "easyocr_len": 697,
+        "elapsed_sec": 1.36
+      },
+      {
+        "page": 32,
+        "fitz_len": 1419,
+        "easyocr_len": 1390,
+        "elapsed_sec": 2.74
+      },
+      {
+        "page": 21,
+        "fitz_len": 1386,
+        "easyocr_len": 1385,
+        "elapsed_sec": 2.32
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000958870.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 1841,
+        "easyocr_len": 1974,
+        "elapsed_sec": 5.19
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002070804.pdf",
+    "pages": [
+      {
+        "page": 9,
+        "fitz_len": 1512,
+        "easyocr_len": 1519,
+        "elapsed_sec": 3.16
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002881823.pdf",
+    "pages": [
+      {
+        "page": 25,
+        "fitz_len": 876,
+        "easyocr_len": 878,
+        "elapsed_sec": 1.72
+      },
+      {
+        "page": 36,
+        "fitz_len": 865,
+        "easyocr_len": 877,
+        "elapsed_sec": 1.57
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002782015.pdf",
+    "pages": [
+      {
+        "page": 8,
+        "fitz_len": 1583,
+        "easyocr_len": 1593,
+        "elapsed_sec": 4.17
+      },
+      {
+        "page": 1,
+        "fitz_len": 1036,
+        "easyocr_len": 1039,
+        "elapsed_sec": 3.17
+      },
+      {
+        "page": 14,
+        "fitz_len": 1438,
+        "easyocr_len": 1433,
+        "elapsed_sec": 3.46
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001159328.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 1849,
+        "easyocr_len": 2079,
+        "elapsed_sec": 5.45
+      },
+      {
+        "page": 19,
+        "fitz_len": 1868,
+        "easyocr_len": 870,
+        "elapsed_sec": 4.3
+      },
+      {
+        "page": 20,
+        "fitz_len": 2157,
+        "easyocr_len": 1776,
+        "elapsed_sec": 7.47
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002404735.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 2134,
+        "easyocr_len": 2540,
+        "elapsed_sec": 6.23
+      },
+      {
+        "page": 4,
+        "fitz_len": 2032,
+        "easyocr_len": 2249,
+        "elapsed_sec": 5.34
+      },
+      {
+        "page": 5,
+        "fitz_len": 2228,
+        "easyocr_len": 2430,
+        "elapsed_sec": 5.57
+      },
+      {
+        "page": 2,
+        "fitz_len": 2414,
+        "easyocr_len": 2589,
+        "elapsed_sec": 5.57
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002073234.pdf",
+    "pages": [
+      {
+        "page": 19,
+        "fitz_len": 2082,
+        "easyocr_len": 2078,
+        "elapsed_sec": 4.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001398897.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 831,
+        "easyocr_len": 944,
+        "elapsed_sec": 1.8
+      },
+      {
+        "page": 13,
+        "fitz_len": 878,
+        "easyocr_len": 1010,
+        "elapsed_sec": 1.77
+      },
+      {
+        "page": 7,
+        "fitz_len": 854,
+        "easyocr_len": 870,
+        "elapsed_sec": 1.51
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003143688.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2261,
+        "easyocr_len": 2273,
+        "elapsed_sec": 4.76
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002529577.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "fitz_len": 1956,
+        "easyocr_len": 1955,
+        "elapsed_sec": 4.03
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001817881.pdf",
+    "pages": [
+      {
+        "page": 33,
+        "fitz_len": 937,
+        "easyocr_len": 959,
+        "elapsed_sec": 1.86
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001954567.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 1298,
+        "easyocr_len": 1273,
+        "elapsed_sec": 3.11
+      },
+      {
+        "page": 10,
+        "fitz_len": 3066,
+        "easyocr_len": 3040,
+        "elapsed_sec": 7.72
+      },
+      {
+        "page": 5,
+        "fitz_len": 1808,
+        "easyocr_len": 1712,
+        "elapsed_sec": 4.48
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000940790.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 1122,
+        "easyocr_len": 1234,
+        "elapsed_sec": 2.21
+      },
+      {
+        "page": 12,
+        "fitz_len": 736,
+        "easyocr_len": 828,
+        "elapsed_sec": 1.8
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002526181.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "fitz_len": 1044,
+        "easyocr_len": 1271,
+        "elapsed_sec": 2.46
+      },
+      {
+        "page": 3,
+        "fitz_len": 1289,
+        "easyocr_len": 1413,
+        "elapsed_sec": 2.86
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001733305.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 902,
+        "easyocr_len": 1138,
+        "elapsed_sec": 2.21
+      },
+      {
+        "page": 31,
+        "fitz_len": 866,
+        "easyocr_len": 1095,
+        "elapsed_sec": 1.98
+      },
+      {
+        "page": 16,
+        "fitz_len": 901,
+        "easyocr_len": 1107,
+        "elapsed_sec": 2.14
+      },
+      {
+        "page": 2,
+        "fitz_len": 1000,
+        "easyocr_len": 1143,
+        "elapsed_sec": 2.67
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001213772.pdf",
+    "pages": [
+      {
+        "page": 25,
+        "fitz_len": 1395,
+        "easyocr_len": 1407,
+        "elapsed_sec": 2.36
+      },
+      {
+        "page": 23,
+        "fitz_len": 1142,
+        "easyocr_len": 1143,
+        "elapsed_sec": 1.92
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002063247.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1325,
+        "easyocr_len": 1497,
+        "elapsed_sec": 3.7
+      },
+      {
+        "page": 1,
+        "fitz_len": 1005,
+        "easyocr_len": 1170,
+        "elapsed_sec": 2.09
+      },
+      {
+        "page": 11,
+        "fitz_len": 926,
+        "easyocr_len": 1095,
+        "elapsed_sec": 2.41
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001498299.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 898,
+        "easyocr_len": 908,
+        "elapsed_sec": 2.62
+      },
+      {
+        "page": 16,
+        "fitz_len": 838,
+        "easyocr_len": 860,
+        "elapsed_sec": 2.33
+      },
+      {
+        "page": 5,
+        "fitz_len": 793,
+        "easyocr_len": 812,
+        "elapsed_sec": 2.45
+      },
+      {
+        "page": 23,
+        "fitz_len": 1072,
+        "easyocr_len": 1083,
+        "elapsed_sec": 2.85
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002519011.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2702,
+        "easyocr_len": 2676,
+        "elapsed_sec": 4.11
+      },
+      {
+        "page": 1,
+        "fitz_len": 3033,
+        "easyocr_len": 2992,
+        "elapsed_sec": 3.54
+      },
+      {
+        "page": 5,
+        "fitz_len": 2731,
+        "easyocr_len": 2714,
+        "elapsed_sec": 3.88
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002275843.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "fitz_len": 1934,
+        "easyocr_len": 1902,
+        "elapsed_sec": 3.25
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000998390.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 2616,
+        "easyocr_len": 2595,
+        "elapsed_sec": 4.14
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001160960.pdf",
+    "pages": [
+      {
+        "page": 18,
+        "fitz_len": 850,
+        "easyocr_len": 1035,
+        "elapsed_sec": 2.26
+      },
+      {
+        "page": 25,
+        "fitz_len": 1121,
+        "easyocr_len": 1379,
+        "elapsed_sec": 2.39
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001579917.pdf",
+    "pages": [
+      {
+        "page": 12,
+        "fitz_len": 1268,
+        "easyocr_len": 1384,
+        "elapsed_sec": 3.99
+      },
+      {
+        "page": 11,
+        "fitz_len": 1142,
+        "easyocr_len": 1208,
+        "elapsed_sec": 4.03
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000958626.pdf",
+    "pages": [
+      {
+        "page": 29,
+        "fitz_len": 1490,
+        "easyocr_len": 1438,
+        "elapsed_sec": 2.48
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002772762.pdf",
+    "pages": [
+      {
+        "page": 41,
+        "fitz_len": 1190,
+        "easyocr_len": 1211,
+        "elapsed_sec": 2.94
+      },
+      {
+        "page": 29,
+        "fitz_len": 1083,
+        "easyocr_len": 1101,
+        "elapsed_sec": 1.99
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003031353.pdf",
+    "pages": [
+      {
+        "page": 10,
+        "fitz_len": 968,
+        "easyocr_len": 975,
+        "elapsed_sec": 2.69
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002528288.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 915,
+        "easyocr_len": 918,
+        "elapsed_sec": 1.69
+      },
+      {
+        "page": 16,
+        "fitz_len": 1064,
+        "easyocr_len": 1081,
+        "elapsed_sec": 1.88
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002405619.pdf",
+    "pages": [
+      {
+        "page": 5,
+        "fitz_len": 1367,
+        "easyocr_len": 1304,
+        "elapsed_sec": 1.58
+      },
+      {
+        "page": 3,
+        "fitz_len": 1230,
+        "easyocr_len": 1203,
+        "elapsed_sec": 1.29
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001919031.pdf",
+    "pages": [
+      {
+        "page": 10,
+        "fitz_len": 893,
+        "easyocr_len": 883,
+        "elapsed_sec": 1.55
+      },
+      {
+        "page": 13,
+        "fitz_len": 1148,
+        "easyocr_len": 1171,
+        "elapsed_sec": 2.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002666141.pdf",
+    "pages": [
+      {
+        "page": 22,
+        "fitz_len": 1091,
+        "easyocr_len": 1103,
+        "elapsed_sec": 1.62
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003306671.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 1234,
+        "easyocr_len": 1489,
+        "elapsed_sec": 2.18
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001929541.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1574,
+        "easyocr_len": 1576,
+        "elapsed_sec": 2.19
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001613384.pdf",
+    "pages": [
+      {
+        "page": 18,
+        "fitz_len": 1355,
+        "easyocr_len": 1361,
+        "elapsed_sec": 1.71
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001837095.pdf",
+    "pages": [
+      {
+        "page": 21,
+        "fitz_len": 836,
+        "easyocr_len": 790,
+        "elapsed_sec": 1.92
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002301995.pdf",
+    "pages": [
+      {
+        "page": 16,
+        "fitz_len": 1385,
+        "easyocr_len": 1404,
+        "elapsed_sec": 1.88
+      },
+      {
+        "page": 30,
+        "fitz_len": 1051,
+        "easyocr_len": 1066,
+        "elapsed_sec": 1.31
+      },
+      {
+        "page": 15,
+        "fitz_len": 1009,
+        "easyocr_len": 1041,
+        "elapsed_sec": 1.28
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002996514.pdf",
+    "pages": [
+      {
+        "page": 17,
+        "fitz_len": 1397,
+        "easyocr_len": 1406,
+        "elapsed_sec": 2.43
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001508965.pdf",
+    "pages": [
+      {
+        "page": 15,
+        "fitz_len": 759,
+        "easyocr_len": 962,
+        "elapsed_sec": 1.41
+      },
+      {
+        "page": 13,
+        "fitz_len": 718,
+        "easyocr_len": 899,
+        "elapsed_sec": 1.32
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001826171.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "fitz_len": 2565,
+        "easyocr_len": 2537,
+        "elapsed_sec": 3.31
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001213046.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2361,
+        "easyocr_len": 2331,
+        "elapsed_sec": 3.43
+      },
+      {
+        "page": 5,
+        "fitz_len": 2153,
+        "easyocr_len": 2104,
+        "elapsed_sec": 4.43
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002917796.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "fitz_len": 2868,
+        "easyocr_len": 2830,
+        "elapsed_sec": 2.51
+      }
+    ]
+  }
+]

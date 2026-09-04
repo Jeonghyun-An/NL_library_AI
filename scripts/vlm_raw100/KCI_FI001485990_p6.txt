@@ -1,0 +1,29 @@
+solve for (2):
+
+$v^{n+1}(x_1, x_2, \delta) = T v^n(x_1, x_2, \delta), \; n \geq 0,$  (3)
+
+where $v^0(x_1, x_2, \delta) = 0$ for every state $(x_1, x_2, \delta)$. Here $v^n(x_1, x_2, \delta)$ can be viewed as the optimal value function in state $(x_1, x_2, \delta)$ when the problem is terminated after the $n^{th}$ iteration of VI algorithm. In the following theorem we show that $v^n(x_1, x_2, \delta)$ converges to $v(x_1, x_2, \delta)$ and (2) has a well-defined solution
+
+Theorem 1. There exist an integer $I$, a constant $g$, and a function $v$ such that
+
+$v^{n+I+r}(x_1, x_2, \delta) - (nI+r)g \to v(x_1, x_2, \delta)$  (4)
+
+for all $r = 0, ..., I-1$ as $n \to \infty$.
+
+Proof. We apply the same argument as used in proving Theorem 1 of Carr and Duenyas(2000). If $x_2 c_h^2 / \gamma > c_K$, it cannot be optimal to place a replenishment order in state $(x_1, x_2, 0)$. $x_2 c_h^2 / \gamma$ is the cost of holding $x_2$ components in inventory during the expected transition time, $1/\gamma$. Intuitively, $x_2 c_h^2 / \gamma > c_K$ implies that there are very large components in inventory, so the facility does not have an incentive to place a replenishment order. Hence, we have $x_2 \leq c_K \gamma / c_h^2$. We also have $x_1 \leq B$ by assumption. Since the original problem can be transformed into a finite state problem, by Theorem 8.4.5. in Puterman (2005), the results follow.
+
+Denote by $v_Q(x_1, x_2, \delta)$ be the optimal value function in state $(x_1, x_2, \delta)$ and by $g(Q)$ the optimal average cost when the replenishment order size is $Q$. Since we cannot prove the convexity of $v_Q(x_1, x_2, \delta)$ with respect to $Q$, we implement the following one dimensional search combined with value iteration. To guarantee that one dimensional search finds $Q^*$, we show that there exists the upper bound on $Q$, $Q^{\max}$.
+
+Theorem 2. The replenishment order size, $Q$, must be less than $1 + c_K \lambda / c_h^1$ regardless of the size of outstanding customer orders, $x_1$.
+
+Proof: It can be shown using the argument similar to the one used in the proof of Lemma 3.1 in He et al.(2002).
+
+In the following, we present a numerical procedure which jointly finds $Q^*$, $g = g(Q^*)$, and the optimal replenishment policy:
+
+〈Optimal solution procedure〉
+Step 1> Start with $Q = 1$.
+Step 2> Given $Q$, perform the following value iteration step:
+1. Initialization: Set $n = 0$. For each state $(x_1, x_2, \delta)$, set $v^0(x_1, x_2, \delta) = 0$.
+2. Value iteration: Implement a VI on the current value function estimate $v^n$:
+
+$T v^n(x_1, x_2, \delta) = \begin{cases} \min \{ T_N v^n(x_1, x_2, 0), T_O v^n(x_1, x_2, 0) \}, & \delta = 0 \\ T_N v^n(x_1, x_2, \delta), & 1 \leq \delta \leq M \end{cases}$  (5)

@@ -1,0 +1,5638 @@
+[
+  {
+    "doc": "KCI_FI001269838.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "tess_len": 1925
+      },
+      {
+        "page": 6,
+        "tess_len": 1710
+      },
+      {
+        "page": 8,
+        "tess_len": 1565
+      },
+      {
+        "page": 10,
+        "tess_len": 1854
+      },
+      {
+        "page": 13,
+        "tess_len": 1321
+      },
+      {
+        "page": 15,
+        "tess_len": 640
+      },
+      {
+        "page": 19,
+        "tess_len": 964
+      },
+      {
+        "page": 20,
+        "tess_len": 1517
+      },
+      {
+        "page": 22,
+        "tess_len": 1387
+      },
+      {
+        "page": 23,
+        "tess_len": 525
+      },
+      {
+        "page": 35,
+        "tess_len": 1231
+      },
+      {
+        "page": 37,
+        "tess_len": 646
+      },
+      {
+        "page": 38,
+        "tess_len": 257
+      },
+      {
+        "page": 39,
+        "tess_len": 1691
+      },
+      {
+        "page": 41,
+        "tess_len": 1293
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000936234.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1807
+      },
+      {
+        "page": 2,
+        "tess_len": 2172
+      },
+      {
+        "page": 3,
+        "tess_len": 1636
+      },
+      {
+        "page": 5,
+        "tess_len": 1335
+      },
+      {
+        "page": 6,
+        "tess_len": 1246
+      },
+      {
+        "page": 8,
+        "tess_len": 998
+      },
+      {
+        "page": 9,
+        "tess_len": 1326
+      },
+      {
+        "page": 10,
+        "tess_len": 1128
+      },
+      {
+        "page": 13,
+        "tess_len": 1181
+      },
+      {
+        "page": 14,
+        "tess_len": 1029
+      },
+      {
+        "page": 15,
+        "tess_len": 354
+      },
+      {
+        "page": 16,
+        "tess_len": 1125
+      },
+      {
+        "page": 17,
+        "tess_len": 1210
+      },
+      {
+        "page": 18,
+        "tess_len": 1192
+      },
+      {
+        "page": 19,
+        "tess_len": 1671
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002164241.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 929
+      },
+      {
+        "page": 2,
+        "tess_len": 2966
+      },
+      {
+        "page": 4,
+        "tess_len": 3612
+      },
+      {
+        "page": 5,
+        "tess_len": 3255
+      },
+      {
+        "page": 6,
+        "tess_len": 2197
+      },
+      {
+        "page": 8,
+        "tess_len": 2630
+      },
+      {
+        "page": 9,
+        "tess_len": 3139
+      },
+      {
+        "page": 10,
+        "tess_len": 2339
+      },
+      {
+        "page": 12,
+        "tess_len": 1088
+      },
+      {
+        "page": 13,
+        "tess_len": 2072
+      },
+      {
+        "page": 14,
+        "tess_len": 1609
+      },
+      {
+        "page": 16,
+        "tess_len": 686
+      },
+      {
+        "page": 17,
+        "tess_len": 2287
+      },
+      {
+        "page": 19,
+        "tess_len": 389
+      },
+      {
+        "page": 20,
+        "tess_len": 13
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001954024.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 877
+      },
+      {
+        "page": 2,
+        "tess_len": 1364
+      },
+      {
+        "page": 3,
+        "tess_len": 2580
+      },
+      {
+        "page": 4,
+        "tess_len": 2144
+      },
+      {
+        "page": 5,
+        "tess_len": 1325
+      },
+      {
+        "page": 7,
+        "tess_len": 1391
+      },
+      {
+        "page": 8,
+        "tess_len": 1383
+      },
+      {
+        "page": 10,
+        "tess_len": 1877
+      },
+      {
+        "page": 11,
+        "tess_len": 1543
+      },
+      {
+        "page": 12,
+        "tess_len": 1761
+      },
+      {
+        "page": 14,
+        "tess_len": 1587
+      },
+      {
+        "page": 15,
+        "tess_len": 1894
+      },
+      {
+        "page": 16,
+        "tess_len": 1474
+      },
+      {
+        "page": 17,
+        "tess_len": 1117
+      },
+      {
+        "page": 19,
+        "tess_len": 1392
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001837095.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1116
+      },
+      {
+        "page": 6,
+        "tess_len": 1267
+      },
+      {
+        "page": 7,
+        "tess_len": 1121
+      },
+      {
+        "page": 9,
+        "tess_len": 2150
+      },
+      {
+        "page": 11,
+        "tess_len": 1068
+      },
+      {
+        "page": 13,
+        "tess_len": 908
+      },
+      {
+        "page": 14,
+        "tess_len": 1456
+      },
+      {
+        "page": 15,
+        "tess_len": 896
+      },
+      {
+        "page": 16,
+        "tess_len": 824
+      },
+      {
+        "page": 21,
+        "tess_len": 1083
+      },
+      {
+        "page": 23,
+        "tess_len": 2558
+      },
+      {
+        "page": 27,
+        "tess_len": 2531
+      },
+      {
+        "page": 30,
+        "tess_len": 2451
+      },
+      {
+        "page": 32,
+        "tess_len": 459
+      },
+      {
+        "page": 33,
+        "tess_len": 830
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001390783.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 757
+      },
+      {
+        "page": 3,
+        "tess_len": 1527
+      },
+      {
+        "page": 4,
+        "tess_len": 1792
+      },
+      {
+        "page": 6,
+        "tess_len": 1993
+      },
+      {
+        "page": 7,
+        "tess_len": 2056
+      },
+      {
+        "page": 8,
+        "tess_len": 1908
+      },
+      {
+        "page": 9,
+        "tess_len": 1553
+      },
+      {
+        "page": 11,
+        "tess_len": 1337
+      },
+      {
+        "page": 12,
+        "tess_len": 1682
+      },
+      {
+        "page": 13,
+        "tess_len": 1771
+      },
+      {
+        "page": 15,
+        "tess_len": 1262
+      },
+      {
+        "page": 17,
+        "tess_len": 1140
+      },
+      {
+        "page": 18,
+        "tess_len": 909
+      },
+      {
+        "page": 19,
+        "tess_len": 1063
+      },
+      {
+        "page": 20,
+        "tess_len": 384
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001215202.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3142
+      },
+      {
+        "page": 2,
+        "tess_len": 3166
+      },
+      {
+        "page": 3,
+        "tess_len": 3213
+      },
+      {
+        "page": 4,
+        "tess_len": 1881
+      },
+      {
+        "page": 5,
+        "tess_len": 1470
+      },
+      {
+        "page": 6,
+        "tess_len": 2787
+      },
+      {
+        "page": 7,
+        "tess_len": 2620
+      },
+      {
+        "page": 8,
+        "tess_len": 2859
+      },
+      {
+        "page": 9,
+        "tess_len": 3887
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001159328.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 2475
+      },
+      {
+        "page": 4,
+        "tess_len": 1982
+      },
+      {
+        "page": 5,
+        "tess_len": 2078
+      },
+      {
+        "page": 6,
+        "tess_len": 1628
+      },
+      {
+        "page": 7,
+        "tess_len": 1113
+      },
+      {
+        "page": 8,
+        "tess_len": 1207
+      },
+      {
+        "page": 10,
+        "tess_len": 1975
+      },
+      {
+        "page": 11,
+        "tess_len": 1913
+      },
+      {
+        "page": 12,
+        "tess_len": 1039
+      },
+      {
+        "page": 13,
+        "tess_len": 2666
+      },
+      {
+        "page": 14,
+        "tess_len": 2458
+      },
+      {
+        "page": 16,
+        "tess_len": 2423
+      },
+      {
+        "page": 17,
+        "tess_len": 2847
+      },
+      {
+        "page": 19,
+        "tess_len": 820
+      },
+      {
+        "page": 20,
+        "tess_len": 2405
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002996514.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 1235
+      },
+      {
+        "page": 3,
+        "tess_len": 763
+      },
+      {
+        "page": 4,
+        "tess_len": 1599
+      },
+      {
+        "page": 5,
+        "tess_len": 1127
+      },
+      {
+        "page": 6,
+        "tess_len": 1037
+      },
+      {
+        "page": 7,
+        "tess_len": 1163
+      },
+      {
+        "page": 8,
+        "tess_len": 342
+      },
+      {
+        "page": 9,
+        "tess_len": 1235
+      },
+      {
+        "page": 10,
+        "tess_len": 335
+      },
+      {
+        "page": 11,
+        "tess_len": 918
+      },
+      {
+        "page": 12,
+        "tess_len": 900
+      },
+      {
+        "page": 13,
+        "tess_len": 862
+      },
+      {
+        "page": 14,
+        "tess_len": 1157
+      },
+      {
+        "page": 16,
+        "tess_len": 1162
+      },
+      {
+        "page": 17,
+        "tess_len": 1414
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000958626.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 1619
+      },
+      {
+        "page": 5,
+        "tess_len": 1161
+      },
+      {
+        "page": 7,
+        "tess_len": 1533
+      },
+      {
+        "page": 9,
+        "tess_len": 1336
+      },
+      {
+        "page": 10,
+        "tess_len": 1359
+      },
+      {
+        "page": 11,
+        "tess_len": 1179
+      },
+      {
+        "page": 13,
+        "tess_len": 1465
+      },
+      {
+        "page": 14,
+        "tess_len": 1260
+      },
+      {
+        "page": 18,
+        "tess_len": 927
+      },
+      {
+        "page": 20,
+        "tess_len": 1189
+      },
+      {
+        "page": 22,
+        "tess_len": 888
+      },
+      {
+        "page": 24,
+        "tess_len": 1042
+      },
+      {
+        "page": 26,
+        "tess_len": 1289
+      },
+      {
+        "page": 29,
+        "tess_len": 1658
+      },
+      {
+        "page": 30,
+        "tess_len": 864
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000950943.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1332
+      },
+      {
+        "page": 2,
+        "tess_len": 1621
+      },
+      {
+        "page": 3,
+        "tess_len": 1682
+      },
+      {
+        "page": 4,
+        "tess_len": 1757
+      },
+      {
+        "page": 5,
+        "tess_len": 1665
+      },
+      {
+        "page": 11,
+        "tess_len": 1436
+      },
+      {
+        "page": 12,
+        "tess_len": 1917
+      },
+      {
+        "page": 13,
+        "tess_len": 1774
+      },
+      {
+        "page": 14,
+        "tess_len": 1254
+      },
+      {
+        "page": 15,
+        "tess_len": 1695
+      },
+      {
+        "page": 16,
+        "tess_len": 1130
+      },
+      {
+        "page": 17,
+        "tess_len": 1991
+      },
+      {
+        "page": 18,
+        "tess_len": 1622
+      },
+      {
+        "page": 22,
+        "tess_len": 1849
+      },
+      {
+        "page": 23,
+        "tess_len": 1247
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001177396.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 637
+      },
+      {
+        "page": 6,
+        "tess_len": 999
+      },
+      {
+        "page": 7,
+        "tess_len": 1006
+      },
+      {
+        "page": 8,
+        "tess_len": 1366
+      },
+      {
+        "page": 12,
+        "tess_len": 1317
+      },
+      {
+        "page": 13,
+        "tess_len": 447
+      },
+      {
+        "page": 15,
+        "tess_len": 1367
+      },
+      {
+        "page": 17,
+        "tess_len": 497
+      },
+      {
+        "page": 19,
+        "tess_len": 615
+      },
+      {
+        "page": 20,
+        "tess_len": 700
+      },
+      {
+        "page": 24,
+        "tess_len": 1424
+      },
+      {
+        "page": 25,
+        "tess_len": 1943
+      },
+      {
+        "page": 28,
+        "tess_len": 840
+      },
+      {
+        "page": 29,
+        "tess_len": 1919
+      },
+      {
+        "page": 33,
+        "tess_len": 877
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001826171.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3635
+      },
+      {
+        "page": 2,
+        "tess_len": 2494
+      },
+      {
+        "page": 3,
+        "tess_len": 2483
+      },
+      {
+        "page": 4,
+        "tess_len": 2553
+      },
+      {
+        "page": 5,
+        "tess_len": 4809
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001929541.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1427
+      },
+      {
+        "page": 2,
+        "tess_len": 1756
+      },
+      {
+        "page": 3,
+        "tess_len": 1954
+      },
+      {
+        "page": 4,
+        "tess_len": 1694
+      },
+      {
+        "page": 5,
+        "tess_len": 1348
+      },
+      {
+        "page": 6,
+        "tess_len": 1128
+      },
+      {
+        "page": 7,
+        "tess_len": 2030
+      },
+      {
+        "page": 8,
+        "tess_len": 1636
+      },
+      {
+        "page": 9,
+        "tess_len": 1609
+      },
+      {
+        "page": 10,
+        "tess_len": 2180
+      },
+      {
+        "page": 11,
+        "tess_len": 1158
+      },
+      {
+        "page": 12,
+        "tess_len": 1584
+      },
+      {
+        "page": 13,
+        "tess_len": 1983
+      },
+      {
+        "page": 14,
+        "tess_len": 369
+      },
+      {
+        "page": 15,
+        "tess_len": 3144
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000940790.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 838
+      },
+      {
+        "page": 2,
+        "tess_len": 715
+      },
+      {
+        "page": 3,
+        "tess_len": 1312
+      },
+      {
+        "page": 5,
+        "tess_len": 1551
+      },
+      {
+        "page": 7,
+        "tess_len": 1108
+      },
+      {
+        "page": 11,
+        "tess_len": 1574
+      },
+      {
+        "page": 12,
+        "tess_len": 1144
+      },
+      {
+        "page": 16,
+        "tess_len": 1348
+      },
+      {
+        "page": 17,
+        "tess_len": 745
+      },
+      {
+        "page": 18,
+        "tess_len": 1184
+      },
+      {
+        "page": 19,
+        "tess_len": 1611
+      },
+      {
+        "page": 21,
+        "tess_len": 1319
+      },
+      {
+        "page": 23,
+        "tess_len": 694
+      },
+      {
+        "page": 24,
+        "tess_len": 1319
+      },
+      {
+        "page": 26,
+        "tess_len": 285
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001715647.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "tess_len": 1763
+      },
+      {
+        "page": 6,
+        "tess_len": 663
+      },
+      {
+        "page": 7,
+        "tess_len": 1155
+      },
+      {
+        "page": 8,
+        "tess_len": 1148
+      },
+      {
+        "page": 11,
+        "tess_len": 916
+      },
+      {
+        "page": 12,
+        "tess_len": 1235
+      },
+      {
+        "page": 15,
+        "tess_len": 962
+      },
+      {
+        "page": 16,
+        "tess_len": 547
+      },
+      {
+        "page": 17,
+        "tess_len": 1005
+      },
+      {
+        "page": 21,
+        "tess_len": 918
+      },
+      {
+        "page": 25,
+        "tess_len": 1402
+      },
+      {
+        "page": 26,
+        "tess_len": 1943
+      },
+      {
+        "page": 28,
+        "tess_len": 382
+      },
+      {
+        "page": 29,
+        "tess_len": 1378
+      },
+      {
+        "page": 32,
+        "tess_len": 1463
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002989221.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1130
+      },
+      {
+        "page": 3,
+        "tess_len": 1704
+      },
+      {
+        "page": 4,
+        "tess_len": 1961
+      },
+      {
+        "page": 12,
+        "tess_len": 2348
+      },
+      {
+        "page": 14,
+        "tess_len": 1696
+      },
+      {
+        "page": 17,
+        "tess_len": 2474
+      },
+      {
+        "page": 21,
+        "tess_len": 1865
+      },
+      {
+        "page": 22,
+        "tess_len": 2218
+      },
+      {
+        "page": 23,
+        "tess_len": 1817
+      },
+      {
+        "page": 25,
+        "tess_len": 1662
+      },
+      {
+        "page": 30,
+        "tess_len": 1738
+      },
+      {
+        "page": 35,
+        "tess_len": 2577
+      },
+      {
+        "page": 36,
+        "tess_len": 1979
+      },
+      {
+        "page": 37,
+        "tess_len": 2374
+      },
+      {
+        "page": 39,
+        "tess_len": 2845
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001830814.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 331
+      },
+      {
+        "page": 2,
+        "tess_len": 71
+      },
+      {
+        "page": 3,
+        "tess_len": 898
+      },
+      {
+        "page": 5,
+        "tess_len": 2086
+      },
+      {
+        "page": 7,
+        "tess_len": 2446
+      },
+      {
+        "page": 9,
+        "tess_len": 1944
+      },
+      {
+        "page": 10,
+        "tess_len": 1885
+      },
+      {
+        "page": 11,
+        "tess_len": 1009
+      },
+      {
+        "page": 12,
+        "tess_len": 2541
+      },
+      {
+        "page": 13,
+        "tess_len": 1901
+      },
+      {
+        "page": 14,
+        "tess_len": 1358
+      },
+      {
+        "page": 15,
+        "tess_len": 2045
+      },
+      {
+        "page": 16,
+        "tess_len": 974
+      },
+      {
+        "page": 17,
+        "tess_len": 2097
+      },
+      {
+        "page": 18,
+        "tess_len": 2001
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003148640.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2373
+      },
+      {
+        "page": 2,
+        "tess_len": 2192
+      },
+      {
+        "page": 3,
+        "tess_len": 2431
+      },
+      {
+        "page": 4,
+        "tess_len": 1024
+      },
+      {
+        "page": 5,
+        "tess_len": 1217
+      },
+      {
+        "page": 6,
+        "tess_len": 2076
+      },
+      {
+        "page": 7,
+        "tess_len": 1085
+      },
+      {
+        "page": 8,
+        "tess_len": 2155
+      },
+      {
+        "page": 9,
+        "tess_len": 1863
+      },
+      {
+        "page": 10,
+        "tess_len": 1618
+      },
+      {
+        "page": 11,
+        "tess_len": 2248
+      },
+      {
+        "page": 12,
+        "tess_len": 2110
+      },
+      {
+        "page": 13,
+        "tess_len": 439
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002171174.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 4034
+      },
+      {
+        "page": 2,
+        "tess_len": 5577
+      },
+      {
+        "page": 3,
+        "tess_len": 5494
+      },
+      {
+        "page": 4,
+        "tess_len": 5846
+      },
+      {
+        "page": 5,
+        "tess_len": 3847
+      },
+      {
+        "page": 6,
+        "tess_len": 864
+      },
+      {
+        "page": 7,
+        "tess_len": 1098
+      },
+      {
+        "page": 8,
+        "tess_len": 933
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000865757.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 4426
+      },
+      {
+        "page": 2,
+        "tess_len": 1292
+      },
+      {
+        "page": 3,
+        "tess_len": 5033
+      },
+      {
+        "page": 4,
+        "tess_len": 2064
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001498048.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2688
+      },
+      {
+        "page": 2,
+        "tess_len": 2454
+      },
+      {
+        "page": 3,
+        "tess_len": 3915
+      },
+      {
+        "page": 4,
+        "tess_len": 2826
+      },
+      {
+        "page": 5,
+        "tess_len": 2365
+      },
+      {
+        "page": 6,
+        "tess_len": 1498
+      },
+      {
+        "page": 7,
+        "tess_len": 3120
+      },
+      {
+        "page": 8,
+        "tess_len": 3242
+      },
+      {
+        "page": 9,
+        "tess_len": 590
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003000034.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1570
+      },
+      {
+        "page": 5,
+        "tess_len": 1661
+      },
+      {
+        "page": 7,
+        "tess_len": 1273
+      },
+      {
+        "page": 8,
+        "tess_len": 1862
+      },
+      {
+        "page": 10,
+        "tess_len": 1638
+      },
+      {
+        "page": 11,
+        "tess_len": 1442
+      },
+      {
+        "page": 13,
+        "tess_len": 1543
+      },
+      {
+        "page": 16,
+        "tess_len": 1131
+      },
+      {
+        "page": 17,
+        "tess_len": 1751
+      },
+      {
+        "page": 19,
+        "tess_len": 1276
+      },
+      {
+        "page": 22,
+        "tess_len": 1271
+      },
+      {
+        "page": 26,
+        "tess_len": 1728
+      },
+      {
+        "page": 27,
+        "tess_len": 1845
+      },
+      {
+        "page": 29,
+        "tess_len": 1631
+      },
+      {
+        "page": 30,
+        "tess_len": 531
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002537654.pdf",
+    "pages": [
+      {
+        "page": 5,
+        "tess_len": 2245
+      },
+      {
+        "page": 6,
+        "tess_len": 2088
+      },
+      {
+        "page": 7,
+        "tess_len": 908
+      },
+      {
+        "page": 8,
+        "tess_len": 1702
+      },
+      {
+        "page": 10,
+        "tess_len": 1654
+      },
+      {
+        "page": 11,
+        "tess_len": 2032
+      },
+      {
+        "page": 12,
+        "tess_len": 1333
+      },
+      {
+        "page": 15,
+        "tess_len": 1805
+      },
+      {
+        "page": 18,
+        "tess_len": 1894
+      },
+      {
+        "page": 20,
+        "tess_len": 1445
+      },
+      {
+        "page": 23,
+        "tess_len": 2305
+      },
+      {
+        "page": 26,
+        "tess_len": 1739
+      },
+      {
+        "page": 28,
+        "tess_len": 2129
+      },
+      {
+        "page": 29,
+        "tess_len": 355
+      },
+      {
+        "page": 30,
+        "tess_len": 460
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002170660.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1147
+      },
+      {
+        "page": 4,
+        "tess_len": 1242
+      },
+      {
+        "page": 5,
+        "tess_len": 1535
+      },
+      {
+        "page": 6,
+        "tess_len": 1523
+      },
+      {
+        "page": 7,
+        "tess_len": 1397
+      },
+      {
+        "page": 8,
+        "tess_len": 1665
+      },
+      {
+        "page": 9,
+        "tess_len": 1153
+      },
+      {
+        "page": 10,
+        "tess_len": 1362
+      },
+      {
+        "page": 11,
+        "tess_len": 1640
+      },
+      {
+        "page": 14,
+        "tess_len": 1774
+      },
+      {
+        "page": 15,
+        "tess_len": 1521
+      },
+      {
+        "page": 16,
+        "tess_len": 1489
+      },
+      {
+        "page": 18,
+        "tess_len": 1606
+      },
+      {
+        "page": 20,
+        "tess_len": 809
+      },
+      {
+        "page": 21,
+        "tess_len": 3021
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001485990.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2270
+      },
+      {
+        "page": 2,
+        "tess_len": 2908
+      },
+      {
+        "page": 3,
+        "tess_len": 2620
+      },
+      {
+        "page": 4,
+        "tess_len": 2139
+      },
+      {
+        "page": 6,
+        "tess_len": 2338
+      },
+      {
+        "page": 7,
+        "tess_len": 1768
+      },
+      {
+        "page": 8,
+        "tess_len": 1529
+      },
+      {
+        "page": 10,
+        "tess_len": 1010
+      },
+      {
+        "page": 11,
+        "tess_len": 1837
+      },
+      {
+        "page": 12,
+        "tess_len": 994
+      },
+      {
+        "page": 13,
+        "tess_len": 1816
+      },
+      {
+        "page": 14,
+        "tess_len": 1621
+      },
+      {
+        "page": 15,
+        "tess_len": 1829
+      },
+      {
+        "page": 16,
+        "tess_len": 2780
+      },
+      {
+        "page": 18,
+        "tess_len": 13
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001817881.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 61
+      },
+      {
+        "page": 8,
+        "tess_len": 1671
+      },
+      {
+        "page": 10,
+        "tess_len": 1489
+      },
+      {
+        "page": 11,
+        "tess_len": 1634
+      },
+      {
+        "page": 13,
+        "tess_len": 1590
+      },
+      {
+        "page": 14,
+        "tess_len": 556
+      },
+      {
+        "page": 18,
+        "tess_len": 1296
+      },
+      {
+        "page": 20,
+        "tess_len": 1596
+      },
+      {
+        "page": 21,
+        "tess_len": 1612
+      },
+      {
+        "page": 24,
+        "tess_len": 540
+      },
+      {
+        "page": 27,
+        "tess_len": 1004
+      },
+      {
+        "page": 28,
+        "tess_len": 1599
+      },
+      {
+        "page": 30,
+        "tess_len": 1421
+      },
+      {
+        "page": 33,
+        "tess_len": 1193
+      },
+      {
+        "page": 37,
+        "tess_len": 1996
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002529577.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2553
+      },
+      {
+        "page": 2,
+        "tess_len": 1340
+      },
+      {
+        "page": 3,
+        "tess_len": 2275
+      },
+      {
+        "page": 4,
+        "tess_len": 2410
+      },
+      {
+        "page": 5,
+        "tess_len": 1915
+      },
+      {
+        "page": 6,
+        "tess_len": 2207
+      },
+      {
+        "page": 7,
+        "tess_len": 4626
+      },
+      {
+        "page": 8,
+        "tess_len": 1772
+      },
+      {
+        "page": 9,
+        "tess_len": 2574
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001213772.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1816
+      },
+      {
+        "page": 5,
+        "tess_len": 1735
+      },
+      {
+        "page": 6,
+        "tess_len": 1308
+      },
+      {
+        "page": 7,
+        "tess_len": 1670
+      },
+      {
+        "page": 8,
+        "tess_len": 1757
+      },
+      {
+        "page": 12,
+        "tess_len": 1195
+      },
+      {
+        "page": 14,
+        "tess_len": 1630
+      },
+      {
+        "page": 17,
+        "tess_len": 1447
+      },
+      {
+        "page": 18,
+        "tess_len": 1057
+      },
+      {
+        "page": 19,
+        "tess_len": 1335
+      },
+      {
+        "page": 23,
+        "tess_len": 1410
+      },
+      {
+        "page": 25,
+        "tess_len": 2023
+      },
+      {
+        "page": 31,
+        "tess_len": 1417
+      },
+      {
+        "page": 32,
+        "tess_len": 2232
+      },
+      {
+        "page": 33,
+        "tess_len": 1092
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001175853.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2271
+      },
+      {
+        "page": 2,
+        "tess_len": 2471
+      },
+      {
+        "page": 3,
+        "tess_len": 2929
+      },
+      {
+        "page": 4,
+        "tess_len": 4138
+      },
+      {
+        "page": 5,
+        "tess_len": 1525
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001022652.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 532
+      },
+      {
+        "page": 4,
+        "tess_len": 949
+      },
+      {
+        "page": 5,
+        "tess_len": 1590
+      },
+      {
+        "page": 7,
+        "tess_len": 1291
+      },
+      {
+        "page": 8,
+        "tess_len": 1325
+      },
+      {
+        "page": 11,
+        "tess_len": 956
+      },
+      {
+        "page": 12,
+        "tess_len": 1467
+      },
+      {
+        "page": 13,
+        "tess_len": 1307
+      },
+      {
+        "page": 15,
+        "tess_len": 1088
+      },
+      {
+        "page": 18,
+        "tess_len": 1567
+      },
+      {
+        "page": 19,
+        "tess_len": 1140
+      },
+      {
+        "page": 20,
+        "tess_len": 1254
+      },
+      {
+        "page": 21,
+        "tess_len": 784
+      },
+      {
+        "page": 24,
+        "tess_len": 1849
+      },
+      {
+        "page": 26,
+        "tess_len": 985
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002073234.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1285
+      },
+      {
+        "page": 2,
+        "tess_len": 2433
+      },
+      {
+        "page": 3,
+        "tess_len": 2212
+      },
+      {
+        "page": 5,
+        "tess_len": 2006
+      },
+      {
+        "page": 6,
+        "tess_len": 2321
+      },
+      {
+        "page": 8,
+        "tess_len": 1327
+      },
+      {
+        "page": 10,
+        "tess_len": 1250
+      },
+      {
+        "page": 11,
+        "tess_len": 1262
+      },
+      {
+        "page": 12,
+        "tess_len": 1223
+      },
+      {
+        "page": 13,
+        "tess_len": 2555
+      },
+      {
+        "page": 14,
+        "tess_len": 1831
+      },
+      {
+        "page": 15,
+        "tess_len": 1946
+      },
+      {
+        "page": 16,
+        "tess_len": 2310
+      },
+      {
+        "page": 17,
+        "tess_len": 2787
+      },
+      {
+        "page": 19,
+        "tess_len": 2092
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001160030.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 809
+      },
+      {
+        "page": 2,
+        "tess_len": 1928
+      },
+      {
+        "page": 3,
+        "tess_len": 1597
+      },
+      {
+        "page": 4,
+        "tess_len": 1917
+      },
+      {
+        "page": 5,
+        "tess_len": 502
+      },
+      {
+        "page": 7,
+        "tess_len": 1604
+      },
+      {
+        "page": 8,
+        "tess_len": 1777
+      },
+      {
+        "page": 9,
+        "tess_len": 1027
+      },
+      {
+        "page": 11,
+        "tess_len": 732
+      },
+      {
+        "page": 12,
+        "tess_len": 1748
+      },
+      {
+        "page": 13,
+        "tess_len": 1724
+      },
+      {
+        "page": 14,
+        "tess_len": 410
+      },
+      {
+        "page": 15,
+        "tess_len": 1354
+      },
+      {
+        "page": 16,
+        "tess_len": 1702
+      },
+      {
+        "page": 17,
+        "tess_len": 1369
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002925182.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 828
+      },
+      {
+        "page": 2,
+        "tess_len": 997
+      },
+      {
+        "page": 4,
+        "tess_len": 687
+      },
+      {
+        "page": 5,
+        "tess_len": 1392
+      },
+      {
+        "page": 12,
+        "tess_len": 1206
+      },
+      {
+        "page": 14,
+        "tess_len": 1683
+      },
+      {
+        "page": 17,
+        "tess_len": 1806
+      },
+      {
+        "page": 20,
+        "tess_len": 997
+      },
+      {
+        "page": 21,
+        "tess_len": 1755
+      },
+      {
+        "page": 22,
+        "tess_len": 1332
+      },
+      {
+        "page": 24,
+        "tess_len": 1274
+      },
+      {
+        "page": 27,
+        "tess_len": 1700
+      },
+      {
+        "page": 29,
+        "tess_len": 1297
+      },
+      {
+        "page": 32,
+        "tess_len": 1529
+      },
+      {
+        "page": 34,
+        "tess_len": 545
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002070804.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 1974
+      },
+      {
+        "page": 3,
+        "tess_len": 2579
+      },
+      {
+        "page": 4,
+        "tess_len": 1537
+      },
+      {
+        "page": 5,
+        "tess_len": 2071
+      },
+      {
+        "page": 6,
+        "tess_len": 1344
+      },
+      {
+        "page": 8,
+        "tess_len": 2090
+      },
+      {
+        "page": 9,
+        "tess_len": 2070
+      },
+      {
+        "page": 10,
+        "tess_len": 2167
+      },
+      {
+        "page": 11,
+        "tess_len": 870
+      },
+      {
+        "page": 12,
+        "tess_len": 1075
+      },
+      {
+        "page": 14,
+        "tess_len": 1494
+      },
+      {
+        "page": 15,
+        "tess_len": 2993
+      },
+      {
+        "page": 16,
+        "tess_len": 571
+      },
+      {
+        "page": 17,
+        "tess_len": 2074
+      },
+      {
+        "page": 18,
+        "tess_len": 13
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001251499.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1698
+      },
+      {
+        "page": 3,
+        "tess_len": 2537
+      },
+      {
+        "page": 10,
+        "tess_len": 3049
+      },
+      {
+        "page": 11,
+        "tess_len": 2533
+      },
+      {
+        "page": 13,
+        "tess_len": 2266
+      },
+      {
+        "page": 14,
+        "tess_len": 2307
+      },
+      {
+        "page": 17,
+        "tess_len": 811
+      },
+      {
+        "page": 19,
+        "tess_len": 2806
+      },
+      {
+        "page": 20,
+        "tess_len": 1826
+      },
+      {
+        "page": 21,
+        "tess_len": 1961
+      },
+      {
+        "page": 27,
+        "tess_len": 1888
+      },
+      {
+        "page": 28,
+        "tess_len": 2358
+      },
+      {
+        "page": 32,
+        "tess_len": 2396
+      },
+      {
+        "page": 37,
+        "tess_len": 1348
+      },
+      {
+        "page": 39,
+        "tess_len": 2095
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000979036.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3303
+      },
+      {
+        "page": 2,
+        "tess_len": 1859
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002786504.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1338
+      },
+      {
+        "page": 4,
+        "tess_len": 2179
+      },
+      {
+        "page": 6,
+        "tess_len": 1400
+      },
+      {
+        "page": 7,
+        "tess_len": 960
+      },
+      {
+        "page": 11,
+        "tess_len": 1551
+      },
+      {
+        "page": 13,
+        "tess_len": 1684
+      },
+      {
+        "page": 14,
+        "tess_len": 1928
+      },
+      {
+        "page": 15,
+        "tess_len": 972
+      },
+      {
+        "page": 17,
+        "tess_len": 1346
+      },
+      {
+        "page": 20,
+        "tess_len": 1653
+      },
+      {
+        "page": 22,
+        "tess_len": 1522
+      },
+      {
+        "page": 25,
+        "tess_len": 1915
+      },
+      {
+        "page": 26,
+        "tess_len": 1903
+      },
+      {
+        "page": 31,
+        "tess_len": 833
+      },
+      {
+        "page": 32,
+        "tess_len": 1721
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002519011.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3353
+      },
+      {
+        "page": 2,
+        "tess_len": 3595
+      },
+      {
+        "page": 3,
+        "tess_len": 1808
+      },
+      {
+        "page": 4,
+        "tess_len": 3203
+      },
+      {
+        "page": 5,
+        "tess_len": 3576
+      },
+      {
+        "page": 6,
+        "tess_len": 3154
+      },
+      {
+        "page": 7,
+        "tess_len": 2525
+      },
+      {
+        "page": 8,
+        "tess_len": 3819
+      },
+      {
+        "page": 9,
+        "tess_len": 4803
+      },
+      {
+        "page": 10,
+        "tess_len": 2583
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002538661.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3285
+      },
+      {
+        "page": 2,
+        "tess_len": 326
+      },
+      {
+        "page": 3,
+        "tess_len": 1473
+      },
+      {
+        "page": 4,
+        "tess_len": 2277
+      },
+      {
+        "page": 5,
+        "tess_len": 1829
+      },
+      {
+        "page": 6,
+        "tess_len": 3139
+      },
+      {
+        "page": 7,
+        "tess_len": 1992
+      },
+      {
+        "page": 8,
+        "tess_len": 1868
+      },
+      {
+        "page": 9,
+        "tess_len": 2394
+      },
+      {
+        "page": 10,
+        "tess_len": 3475
+      },
+      {
+        "page": 11,
+        "tess_len": 2781
+      },
+      {
+        "page": 12,
+        "tess_len": 34
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001021172.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 566
+      },
+      {
+        "page": 2,
+        "tess_len": 688
+      },
+      {
+        "page": 4,
+        "tess_len": 1619
+      },
+      {
+        "page": 5,
+        "tess_len": 559
+      },
+      {
+        "page": 6,
+        "tess_len": 822
+      },
+      {
+        "page": 8,
+        "tess_len": 623
+      },
+      {
+        "page": 9,
+        "tess_len": 534
+      },
+      {
+        "page": 10,
+        "tess_len": 677
+      },
+      {
+        "page": 11,
+        "tess_len": 778
+      },
+      {
+        "page": 13,
+        "tess_len": 772
+      },
+      {
+        "page": 14,
+        "tess_len": 412
+      },
+      {
+        "page": 15,
+        "tess_len": 550
+      },
+      {
+        "page": 16,
+        "tess_len": 274
+      },
+      {
+        "page": 17,
+        "tess_len": 1476
+      },
+      {
+        "page": 19,
+        "tess_len": 1884
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001498299.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 882
+      },
+      {
+        "page": 4,
+        "tess_len": 1144
+      },
+      {
+        "page": 5,
+        "tess_len": 907
+      },
+      {
+        "page": 6,
+        "tess_len": 941
+      },
+      {
+        "page": 11,
+        "tess_len": 657
+      },
+      {
+        "page": 14,
+        "tess_len": 983
+      },
+      {
+        "page": 15,
+        "tess_len": 848
+      },
+      {
+        "page": 16,
+        "tess_len": 654
+      },
+      {
+        "page": 20,
+        "tess_len": 975
+      },
+      {
+        "page": 21,
+        "tess_len": 611
+      },
+      {
+        "page": 22,
+        "tess_len": 650
+      },
+      {
+        "page": 23,
+        "tess_len": 967
+      },
+      {
+        "page": 26,
+        "tess_len": 465
+      },
+      {
+        "page": 27,
+        "tess_len": 972
+      },
+      {
+        "page": 32,
+        "tess_len": 274
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001377838.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 599
+      },
+      {
+        "page": 4,
+        "tess_len": 2617
+      },
+      {
+        "page": 5,
+        "tess_len": 1642
+      },
+      {
+        "page": 6,
+        "tess_len": 1195
+      },
+      {
+        "page": 7,
+        "tess_len": 1737
+      },
+      {
+        "page": 8,
+        "tess_len": 1818
+      },
+      {
+        "page": 10,
+        "tess_len": 1521
+      },
+      {
+        "page": 11,
+        "tess_len": 651
+      },
+      {
+        "page": 12,
+        "tess_len": 1781
+      },
+      {
+        "page": 13,
+        "tess_len": 1070
+      },
+      {
+        "page": 14,
+        "tess_len": 1413
+      },
+      {
+        "page": 15,
+        "tess_len": 1239
+      },
+      {
+        "page": 18,
+        "tess_len": 1062
+      },
+      {
+        "page": 19,
+        "tess_len": 1698
+      },
+      {
+        "page": 20,
+        "tess_len": 144
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002531105.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1650
+      },
+      {
+        "page": 2,
+        "tess_len": 2099
+      },
+      {
+        "page": 3,
+        "tess_len": 2211
+      },
+      {
+        "page": 7,
+        "tess_len": 1879
+      },
+      {
+        "page": 10,
+        "tess_len": 2493
+      },
+      {
+        "page": 12,
+        "tess_len": 2251
+      },
+      {
+        "page": 16,
+        "tess_len": 2147
+      },
+      {
+        "page": 18,
+        "tess_len": 2203
+      },
+      {
+        "page": 19,
+        "tess_len": 2448
+      },
+      {
+        "page": 23,
+        "tess_len": 1777
+      },
+      {
+        "page": 24,
+        "tess_len": 1691
+      },
+      {
+        "page": 29,
+        "tess_len": 2065
+      },
+      {
+        "page": 30,
+        "tess_len": 1153
+      },
+      {
+        "page": 31,
+        "tess_len": 1594
+      },
+      {
+        "page": 34,
+        "tess_len": 823
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002524432.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2625
+      },
+      {
+        "page": 2,
+        "tess_len": 3279
+      },
+      {
+        "page": 3,
+        "tess_len": 3450
+      },
+      {
+        "page": 4,
+        "tess_len": 2514
+      },
+      {
+        "page": 5,
+        "tess_len": 1710
+      },
+      {
+        "page": 6,
+        "tess_len": 1703
+      },
+      {
+        "page": 7,
+        "tess_len": 3267
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001954567.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2383
+      },
+      {
+        "page": 2,
+        "tess_len": 2505
+      },
+      {
+        "page": 3,
+        "tess_len": 2921
+      },
+      {
+        "page": 4,
+        "tess_len": 1131
+      },
+      {
+        "page": 5,
+        "tess_len": 2044
+      },
+      {
+        "page": 6,
+        "tess_len": 1304
+      },
+      {
+        "page": 7,
+        "tess_len": 2152
+      },
+      {
+        "page": 8,
+        "tess_len": 2650
+      },
+      {
+        "page": 9,
+        "tess_len": 2738
+      },
+      {
+        "page": 10,
+        "tess_len": 3071
+      },
+      {
+        "page": 11,
+        "tess_len": 1709
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001508965.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 138
+      },
+      {
+        "page": 2,
+        "tess_len": 1161
+      },
+      {
+        "page": 4,
+        "tess_len": 1072
+      },
+      {
+        "page": 6,
+        "tess_len": 945
+      },
+      {
+        "page": 7,
+        "tess_len": 1194
+      },
+      {
+        "page": 10,
+        "tess_len": 1523
+      },
+      {
+        "page": 12,
+        "tess_len": 1748
+      },
+      {
+        "page": 13,
+        "tess_len": 597
+      },
+      {
+        "page": 15,
+        "tess_len": 1220
+      },
+      {
+        "page": 18,
+        "tess_len": 1354
+      },
+      {
+        "page": 21,
+        "tess_len": 1463
+      },
+      {
+        "page": 22,
+        "tess_len": 861
+      },
+      {
+        "page": 24,
+        "tess_len": 1533
+      },
+      {
+        "page": 26,
+        "tess_len": 756
+      },
+      {
+        "page": 27,
+        "tess_len": 1629
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000854981.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2018
+      },
+      {
+        "page": 2,
+        "tess_len": 1738
+      },
+      {
+        "page": 3,
+        "tess_len": 1459
+      },
+      {
+        "page": 4,
+        "tess_len": 2518
+      },
+      {
+        "page": 5,
+        "tess_len": 2489
+      },
+      {
+        "page": 6,
+        "tess_len": 1839
+      },
+      {
+        "page": 7,
+        "tess_len": 2679
+      },
+      {
+        "page": 8,
+        "tess_len": 2212
+      },
+      {
+        "page": 9,
+        "tess_len": 2046
+      },
+      {
+        "page": 10,
+        "tess_len": 1500
+      },
+      {
+        "page": 11,
+        "tess_len": 948
+      },
+      {
+        "page": 12,
+        "tess_len": 346
+      },
+      {
+        "page": 13,
+        "tess_len": 1568
+      },
+      {
+        "page": 14,
+        "tess_len": 680
+      },
+      {
+        "page": 15,
+        "tess_len": 1582
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003082850.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 1425
+      },
+      {
+        "page": 6,
+        "tess_len": 1347
+      },
+      {
+        "page": 7,
+        "tess_len": 907
+      },
+      {
+        "page": 8,
+        "tess_len": 1503
+      },
+      {
+        "page": 11,
+        "tess_len": 1010
+      },
+      {
+        "page": 13,
+        "tess_len": 826
+      },
+      {
+        "page": 15,
+        "tess_len": 1558
+      },
+      {
+        "page": 21,
+        "tess_len": 1545
+      },
+      {
+        "page": 22,
+        "tess_len": 1477
+      },
+      {
+        "page": 23,
+        "tess_len": 1546
+      },
+      {
+        "page": 29,
+        "tess_len": 1705
+      },
+      {
+        "page": 30,
+        "tess_len": 1685
+      },
+      {
+        "page": 32,
+        "tess_len": 1278
+      },
+      {
+        "page": 33,
+        "tess_len": 1389
+      },
+      {
+        "page": 35,
+        "tess_len": 1589
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001160960.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 2092
+      },
+      {
+        "page": 3,
+        "tess_len": 1867
+      },
+      {
+        "page": 5,
+        "tess_len": 1642
+      },
+      {
+        "page": 6,
+        "tess_len": 1601
+      },
+      {
+        "page": 9,
+        "tess_len": 2215
+      },
+      {
+        "page": 13,
+        "tess_len": 1794
+      },
+      {
+        "page": 15,
+        "tess_len": 1852
+      },
+      {
+        "page": 18,
+        "tess_len": 1247
+      },
+      {
+        "page": 20,
+        "tess_len": 1651
+      },
+      {
+        "page": 21,
+        "tess_len": 1871
+      },
+      {
+        "page": 25,
+        "tess_len": 2052
+      },
+      {
+        "page": 27,
+        "tess_len": 1828
+      },
+      {
+        "page": 30,
+        "tess_len": 2018
+      },
+      {
+        "page": 31,
+        "tess_len": 1057
+      },
+      {
+        "page": 33,
+        "tess_len": 644
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002782015.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1459
+      },
+      {
+        "page": 2,
+        "tess_len": 1688
+      },
+      {
+        "page": 3,
+        "tess_len": 2555
+      },
+      {
+        "page": 4,
+        "tess_len": 1603
+      },
+      {
+        "page": 5,
+        "tess_len": 1420
+      },
+      {
+        "page": 6,
+        "tess_len": 1482
+      },
+      {
+        "page": 7,
+        "tess_len": 1384
+      },
+      {
+        "page": 8,
+        "tess_len": 2201
+      },
+      {
+        "page": 10,
+        "tess_len": 1613
+      },
+      {
+        "page": 11,
+        "tess_len": 1600
+      },
+      {
+        "page": 12,
+        "tess_len": 966
+      },
+      {
+        "page": 13,
+        "tess_len": 2108
+      },
+      {
+        "page": 14,
+        "tess_len": 2106
+      },
+      {
+        "page": 15,
+        "tess_len": 1896
+      },
+      {
+        "page": 16,
+        "tess_len": 2776
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001104278.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 2953
+      },
+      {
+        "page": 3,
+        "tess_len": 3080
+      },
+      {
+        "page": 5,
+        "tess_len": 1987
+      },
+      {
+        "page": 6,
+        "tess_len": 2726
+      },
+      {
+        "page": 7,
+        "tess_len": 1929
+      },
+      {
+        "page": 8,
+        "tess_len": 2133
+      },
+      {
+        "page": 9,
+        "tess_len": 2228
+      },
+      {
+        "page": 10,
+        "tess_len": 2617
+      },
+      {
+        "page": 11,
+        "tess_len": 1862
+      },
+      {
+        "page": 12,
+        "tess_len": 1831
+      },
+      {
+        "page": 15,
+        "tess_len": 2667
+      },
+      {
+        "page": 16,
+        "tess_len": 2019
+      },
+      {
+        "page": 17,
+        "tess_len": 2981
+      },
+      {
+        "page": 18,
+        "tess_len": 2851
+      },
+      {
+        "page": 20,
+        "tess_len": 555
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000866213.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3708
+      },
+      {
+        "page": 2,
+        "tess_len": 6092
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002405619.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1078
+      },
+      {
+        "page": 4,
+        "tess_len": 774
+      },
+      {
+        "page": 5,
+        "tess_len": 1842
+      },
+      {
+        "page": 6,
+        "tess_len": 1023
+      },
+      {
+        "page": 7,
+        "tess_len": 709
+      },
+      {
+        "page": 11,
+        "tess_len": 581
+      },
+      {
+        "page": 12,
+        "tess_len": 629
+      },
+      {
+        "page": 13,
+        "tess_len": 812
+      },
+      {
+        "page": 14,
+        "tess_len": 578
+      },
+      {
+        "page": 15,
+        "tess_len": 1062
+      },
+      {
+        "page": 16,
+        "tess_len": 774
+      },
+      {
+        "page": 18,
+        "tess_len": 1587
+      },
+      {
+        "page": 19,
+        "tess_len": 995
+      },
+      {
+        "page": 20,
+        "tess_len": 1810
+      },
+      {
+        "page": 22,
+        "tess_len": 13
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003143688.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2684
+      },
+      {
+        "page": 2,
+        "tess_len": 1868
+      },
+      {
+        "page": 3,
+        "tess_len": 2021
+      },
+      {
+        "page": 4,
+        "tess_len": 1788
+      },
+      {
+        "page": 5,
+        "tess_len": 2403
+      },
+      {
+        "page": 6,
+        "tess_len": 2142
+      },
+      {
+        "page": 7,
+        "tess_len": 1664
+      },
+      {
+        "page": 8,
+        "tess_len": 794
+      },
+      {
+        "page": 9,
+        "tess_len": 2061
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001213046.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2123
+      },
+      {
+        "page": 2,
+        "tess_len": 1730
+      },
+      {
+        "page": 3,
+        "tess_len": 2969
+      },
+      {
+        "page": 4,
+        "tess_len": 2662
+      },
+      {
+        "page": 5,
+        "tess_len": 2751
+      },
+      {
+        "page": 6,
+        "tess_len": 1924
+      },
+      {
+        "page": 7,
+        "tess_len": 3556
+      },
+      {
+        "page": 8,
+        "tess_len": 2382
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000998390.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3005
+      },
+      {
+        "page": 2,
+        "tess_len": 1873
+      },
+      {
+        "page": 3,
+        "tess_len": 3517
+      },
+      {
+        "page": 4,
+        "tess_len": 2903
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001175912.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2442
+      },
+      {
+        "page": 2,
+        "tess_len": 1431
+      },
+      {
+        "page": 3,
+        "tess_len": 2896
+      },
+      {
+        "page": 4,
+        "tess_len": 2228
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001398897.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 896
+      },
+      {
+        "page": 2,
+        "tess_len": 941
+      },
+      {
+        "page": 4,
+        "tess_len": 1377
+      },
+      {
+        "page": 5,
+        "tess_len": 976
+      },
+      {
+        "page": 7,
+        "tess_len": 441
+      },
+      {
+        "page": 8,
+        "tess_len": 1230
+      },
+      {
+        "page": 9,
+        "tess_len": 1106
+      },
+      {
+        "page": 11,
+        "tess_len": 1328
+      },
+      {
+        "page": 13,
+        "tess_len": 1418
+      },
+      {
+        "page": 14,
+        "tess_len": 1256
+      },
+      {
+        "page": 16,
+        "tess_len": 1544
+      },
+      {
+        "page": 17,
+        "tess_len": 1265
+      },
+      {
+        "page": 18,
+        "tess_len": 1372
+      },
+      {
+        "page": 19,
+        "tess_len": 1499
+      },
+      {
+        "page": 22,
+        "tess_len": 1375
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001314734.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1118
+      },
+      {
+        "page": 2,
+        "tess_len": 872
+      },
+      {
+        "page": 3,
+        "tess_len": 1162
+      },
+      {
+        "page": 4,
+        "tess_len": 1054
+      },
+      {
+        "page": 6,
+        "tess_len": 1578
+      },
+      {
+        "page": 7,
+        "tess_len": 1398
+      },
+      {
+        "page": 8,
+        "tess_len": 962
+      },
+      {
+        "page": 9,
+        "tess_len": 1446
+      },
+      {
+        "page": 10,
+        "tess_len": 992
+      },
+      {
+        "page": 11,
+        "tess_len": 1115
+      },
+      {
+        "page": 13,
+        "tess_len": 1491
+      },
+      {
+        "page": 14,
+        "tess_len": 880
+      },
+      {
+        "page": 15,
+        "tess_len": 1296
+      },
+      {
+        "page": 16,
+        "tess_len": 100
+      },
+      {
+        "page": 17,
+        "tess_len": 1037
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000921452.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1606
+      },
+      {
+        "page": 2,
+        "tess_len": 1864
+      },
+      {
+        "page": 3,
+        "tess_len": 1817
+      },
+      {
+        "page": 4,
+        "tess_len": 1518
+      },
+      {
+        "page": 6,
+        "tess_len": 1263
+      },
+      {
+        "page": 7,
+        "tess_len": 1774
+      },
+      {
+        "page": 8,
+        "tess_len": 1380
+      },
+      {
+        "page": 9,
+        "tess_len": 1063
+      },
+      {
+        "page": 10,
+        "tess_len": 1419
+      },
+      {
+        "page": 11,
+        "tess_len": 1618
+      },
+      {
+        "page": 13,
+        "tess_len": 2150
+      },
+      {
+        "page": 14,
+        "tess_len": 1266
+      },
+      {
+        "page": 15,
+        "tess_len": 2067
+      },
+      {
+        "page": 16,
+        "tess_len": 1718
+      },
+      {
+        "page": 17,
+        "tess_len": 697
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002275843.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2202
+      },
+      {
+        "page": 2,
+        "tess_len": 2076
+      },
+      {
+        "page": 3,
+        "tess_len": 2367
+      },
+      {
+        "page": 4,
+        "tess_len": 1754
+      },
+      {
+        "page": 5,
+        "tess_len": 1602
+      },
+      {
+        "page": 6,
+        "tess_len": 1454
+      },
+      {
+        "page": 7,
+        "tess_len": 2941
+      },
+      {
+        "page": 8,
+        "tess_len": 2293
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003031353.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3391
+      },
+      {
+        "page": 3,
+        "tess_len": 1939
+      },
+      {
+        "page": 4,
+        "tess_len": 2191
+      },
+      {
+        "page": 5,
+        "tess_len": 2059
+      },
+      {
+        "page": 7,
+        "tess_len": 2073
+      },
+      {
+        "page": 8,
+        "tess_len": 1824
+      },
+      {
+        "page": 9,
+        "tess_len": 1465
+      },
+      {
+        "page": 10,
+        "tess_len": 1307
+      },
+      {
+        "page": 12,
+        "tess_len": 1498
+      },
+      {
+        "page": 13,
+        "tess_len": 2050
+      },
+      {
+        "page": 14,
+        "tess_len": 1377
+      },
+      {
+        "page": 15,
+        "tess_len": 2111
+      },
+      {
+        "page": 18,
+        "tess_len": 2106
+      },
+      {
+        "page": 19,
+        "tess_len": 2225
+      },
+      {
+        "page": 20,
+        "tess_len": 1744
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003285675.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 2015
+      },
+      {
+        "page": 3,
+        "tess_len": 2235
+      },
+      {
+        "page": 8,
+        "tess_len": 1507
+      },
+      {
+        "page": 9,
+        "tess_len": 2336
+      },
+      {
+        "page": 10,
+        "tess_len": 2143
+      },
+      {
+        "page": 14,
+        "tess_len": 2064
+      },
+      {
+        "page": 18,
+        "tess_len": 2371
+      },
+      {
+        "page": 20,
+        "tess_len": 1935
+      },
+      {
+        "page": 21,
+        "tess_len": 2288
+      },
+      {
+        "page": 23,
+        "tess_len": 1636
+      },
+      {
+        "page": 26,
+        "tess_len": 167
+      },
+      {
+        "page": 27,
+        "tess_len": 2310
+      },
+      {
+        "page": 31,
+        "tess_len": 2713
+      },
+      {
+        "page": 33,
+        "tess_len": 2363
+      },
+      {
+        "page": 34,
+        "tess_len": 643
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002068495.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 1680
+      },
+      {
+        "page": 3,
+        "tess_len": 859
+      },
+      {
+        "page": 5,
+        "tess_len": 1075
+      },
+      {
+        "page": 7,
+        "tess_len": 752
+      },
+      {
+        "page": 8,
+        "tess_len": 806
+      },
+      {
+        "page": 10,
+        "tess_len": 854
+      },
+      {
+        "page": 11,
+        "tess_len": 1736
+      },
+      {
+        "page": 14,
+        "tess_len": 661
+      },
+      {
+        "page": 15,
+        "tess_len": 913
+      },
+      {
+        "page": 17,
+        "tess_len": 1739
+      },
+      {
+        "page": 20,
+        "tess_len": 773
+      },
+      {
+        "page": 21,
+        "tess_len": 416
+      },
+      {
+        "page": 22,
+        "tess_len": 1113
+      },
+      {
+        "page": 23,
+        "tess_len": 1696
+      },
+      {
+        "page": 26,
+        "tess_len": 390
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003259902.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3172
+      },
+      {
+        "page": 2,
+        "tess_len": 2514
+      },
+      {
+        "page": 4,
+        "tess_len": 2679
+      },
+      {
+        "page": 5,
+        "tess_len": 2881
+      },
+      {
+        "page": 6,
+        "tess_len": 2321
+      },
+      {
+        "page": 7,
+        "tess_len": 2770
+      },
+      {
+        "page": 8,
+        "tess_len": 2919
+      },
+      {
+        "page": 9,
+        "tess_len": 2998
+      },
+      {
+        "page": 11,
+        "tess_len": 2783
+      },
+      {
+        "page": 12,
+        "tess_len": 2944
+      },
+      {
+        "page": 13,
+        "tess_len": 2774
+      },
+      {
+        "page": 14,
+        "tess_len": 3032
+      },
+      {
+        "page": 16,
+        "tess_len": 2755
+      },
+      {
+        "page": 17,
+        "tess_len": 2860
+      },
+      {
+        "page": 18,
+        "tess_len": 2750
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000974008.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 653
+      },
+      {
+        "page": 6,
+        "tess_len": 1152
+      },
+      {
+        "page": 7,
+        "tess_len": 633
+      },
+      {
+        "page": 8,
+        "tess_len": 1005
+      },
+      {
+        "page": 11,
+        "tess_len": 1531
+      },
+      {
+        "page": 12,
+        "tess_len": 1745
+      },
+      {
+        "page": 16,
+        "tess_len": 1695
+      },
+      {
+        "page": 18,
+        "tess_len": 2592
+      },
+      {
+        "page": 19,
+        "tess_len": 1622
+      },
+      {
+        "page": 21,
+        "tess_len": 1511
+      },
+      {
+        "page": 23,
+        "tess_len": 1553
+      },
+      {
+        "page": 24,
+        "tess_len": 695
+      },
+      {
+        "page": 26,
+        "tess_len": 904
+      },
+      {
+        "page": 27,
+        "tess_len": 1882
+      },
+      {
+        "page": 32,
+        "tess_len": 1507
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002301995.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 521
+      },
+      {
+        "page": 7,
+        "tess_len": 1454
+      },
+      {
+        "page": 8,
+        "tess_len": 1285
+      },
+      {
+        "page": 10,
+        "tess_len": 1106
+      },
+      {
+        "page": 12,
+        "tess_len": 1046
+      },
+      {
+        "page": 14,
+        "tess_len": 1055
+      },
+      {
+        "page": 15,
+        "tess_len": 783
+      },
+      {
+        "page": 16,
+        "tess_len": 1372
+      },
+      {
+        "page": 22,
+        "tess_len": 645
+      },
+      {
+        "page": 24,
+        "tess_len": 1000
+      },
+      {
+        "page": 28,
+        "tess_len": 1330
+      },
+      {
+        "page": 30,
+        "tess_len": 962
+      },
+      {
+        "page": 31,
+        "tess_len": 891
+      },
+      {
+        "page": 33,
+        "tess_len": 1241
+      },
+      {
+        "page": 35,
+        "tess_len": 1337
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002543321.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 2059
+      },
+      {
+        "page": 5,
+        "tess_len": 1513
+      },
+      {
+        "page": 7,
+        "tess_len": 1754
+      },
+      {
+        "page": 8,
+        "tess_len": 1713
+      },
+      {
+        "page": 9,
+        "tess_len": 1601
+      },
+      {
+        "page": 11,
+        "tess_len": 1510
+      },
+      {
+        "page": 12,
+        "tess_len": 1763
+      },
+      {
+        "page": 14,
+        "tess_len": 1650
+      },
+      {
+        "page": 15,
+        "tess_len": 1758
+      },
+      {
+        "page": 17,
+        "tess_len": 1805
+      },
+      {
+        "page": 19,
+        "tess_len": 1505
+      },
+      {
+        "page": 20,
+        "tess_len": 1574
+      },
+      {
+        "page": 21,
+        "tess_len": 1717
+      },
+      {
+        "page": 22,
+        "tess_len": 1577
+      },
+      {
+        "page": 24,
+        "tess_len": 1486
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003300691.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3195
+      },
+      {
+        "page": 2,
+        "tess_len": 2664
+      },
+      {
+        "page": 3,
+        "tess_len": 1956
+      },
+      {
+        "page": 4,
+        "tess_len": 2564
+      },
+      {
+        "page": 5,
+        "tess_len": 447
+      },
+      {
+        "page": 6,
+        "tess_len": 3807
+      },
+      {
+        "page": 7,
+        "tess_len": 3323
+      },
+      {
+        "page": 8,
+        "tess_len": 4531
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001733305.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 867
+      },
+      {
+        "page": 2,
+        "tess_len": 1684
+      },
+      {
+        "page": 3,
+        "tess_len": 874
+      },
+      {
+        "page": 10,
+        "tess_len": 1112
+      },
+      {
+        "page": 11,
+        "tess_len": 1492
+      },
+      {
+        "page": 16,
+        "tess_len": 924
+      },
+      {
+        "page": 17,
+        "tess_len": 1451
+      },
+      {
+        "page": 19,
+        "tess_len": 1466
+      },
+      {
+        "page": 22,
+        "tess_len": 962
+      },
+      {
+        "page": 25,
+        "tess_len": 1617
+      },
+      {
+        "page": 27,
+        "tess_len": 1573
+      },
+      {
+        "page": 31,
+        "tess_len": 1150
+      },
+      {
+        "page": 33,
+        "tess_len": 624
+      },
+      {
+        "page": 35,
+        "tess_len": 784
+      },
+      {
+        "page": 38,
+        "tess_len": 1488
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002404735.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 346
+      },
+      {
+        "page": 2,
+        "tess_len": 3188
+      },
+      {
+        "page": 3,
+        "tess_len": 3498
+      },
+      {
+        "page": 4,
+        "tess_len": 2918
+      },
+      {
+        "page": 5,
+        "tess_len": 2460
+      },
+      {
+        "page": 6,
+        "tess_len": 2622
+      },
+      {
+        "page": 7,
+        "tess_len": 2905
+      },
+      {
+        "page": 8,
+        "tess_len": 3205
+      },
+      {
+        "page": 9,
+        "tess_len": 3417
+      },
+      {
+        "page": 10,
+        "tess_len": 2516
+      },
+      {
+        "page": 11,
+        "tess_len": 3415
+      },
+      {
+        "page": 12,
+        "tess_len": 2842
+      },
+      {
+        "page": 13,
+        "tess_len": 3572
+      },
+      {
+        "page": 14,
+        "tess_len": 3176
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000883417.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1552
+      },
+      {
+        "page": 2,
+        "tess_len": 2989
+      },
+      {
+        "page": 3,
+        "tess_len": 2116
+      },
+      {
+        "page": 4,
+        "tess_len": 3367
+      },
+      {
+        "page": 5,
+        "tess_len": 2722
+      },
+      {
+        "page": 6,
+        "tess_len": 2154
+      },
+      {
+        "page": 7,
+        "tess_len": 2300
+      },
+      {
+        "page": 8,
+        "tess_len": 2318
+      },
+      {
+        "page": 9,
+        "tess_len": 2369
+      },
+      {
+        "page": 10,
+        "tess_len": 2079
+      },
+      {
+        "page": 11,
+        "tess_len": 411
+      },
+      {
+        "page": 12,
+        "tess_len": 1591
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002881823.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1677
+      },
+      {
+        "page": 4,
+        "tess_len": 1549
+      },
+      {
+        "page": 7,
+        "tess_len": 1596
+      },
+      {
+        "page": 10,
+        "tess_len": 1727
+      },
+      {
+        "page": 11,
+        "tess_len": 1596
+      },
+      {
+        "page": 20,
+        "tess_len": 1611
+      },
+      {
+        "page": 21,
+        "tess_len": 1351
+      },
+      {
+        "page": 22,
+        "tess_len": 1763
+      },
+      {
+        "page": 25,
+        "tess_len": 1153
+      },
+      {
+        "page": 27,
+        "tess_len": 1584
+      },
+      {
+        "page": 28,
+        "tess_len": 1759
+      },
+      {
+        "page": 31,
+        "tess_len": 1262
+      },
+      {
+        "page": 32,
+        "tess_len": 806
+      },
+      {
+        "page": 36,
+        "tess_len": 1126
+      },
+      {
+        "page": 41,
+        "tess_len": 375
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003042779.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "tess_len": 962
+      },
+      {
+        "page": 4,
+        "tess_len": 1566
+      },
+      {
+        "page": 5,
+        "tess_len": 1709
+      },
+      {
+        "page": 6,
+        "tess_len": 1959
+      },
+      {
+        "page": 10,
+        "tess_len": 1163
+      },
+      {
+        "page": 13,
+        "tess_len": 1351
+      },
+      {
+        "page": 16,
+        "tess_len": 1043
+      },
+      {
+        "page": 19,
+        "tess_len": 1482
+      },
+      {
+        "page": 20,
+        "tess_len": 1352
+      },
+      {
+        "page": 21,
+        "tess_len": 686
+      },
+      {
+        "page": 25,
+        "tess_len": 1510
+      },
+      {
+        "page": 27,
+        "tess_len": 1436
+      },
+      {
+        "page": 29,
+        "tess_len": 1726
+      },
+      {
+        "page": 30,
+        "tess_len": 1139
+      },
+      {
+        "page": 32,
+        "tess_len": 672
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003306671.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2447
+      },
+      {
+        "page": 3,
+        "tess_len": 1827
+      },
+      {
+        "page": 4,
+        "tess_len": 1446
+      },
+      {
+        "page": 8,
+        "tess_len": 1558
+      },
+      {
+        "page": 9,
+        "tess_len": 846
+      },
+      {
+        "page": 10,
+        "tess_len": 1519
+      },
+      {
+        "page": 11,
+        "tess_len": 1663
+      },
+      {
+        "page": 12,
+        "tess_len": 1511
+      },
+      {
+        "page": 13,
+        "tess_len": 1496
+      },
+      {
+        "page": 16,
+        "tess_len": 1062
+      },
+      {
+        "page": 18,
+        "tess_len": 2255
+      },
+      {
+        "page": 19,
+        "tess_len": 1812
+      },
+      {
+        "page": 20,
+        "tess_len": 1976
+      },
+      {
+        "page": 21,
+        "tess_len": 1502
+      },
+      {
+        "page": 22,
+        "tess_len": 1717
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002989262.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2329
+      },
+      {
+        "page": 2,
+        "tess_len": 925
+      },
+      {
+        "page": 3,
+        "tess_len": 2413
+      },
+      {
+        "page": 4,
+        "tess_len": 2240
+      },
+      {
+        "page": 5,
+        "tess_len": 2882
+      },
+      {
+        "page": 6,
+        "tess_len": 915
+      },
+      {
+        "page": 7,
+        "tess_len": 2117
+      },
+      {
+        "page": 8,
+        "tess_len": 2122
+      },
+      {
+        "page": 9,
+        "tess_len": 1315
+      },
+      {
+        "page": 10,
+        "tess_len": 1875
+      },
+      {
+        "page": 11,
+        "tess_len": 1257
+      },
+      {
+        "page": 12,
+        "tess_len": 2497
+      },
+      {
+        "page": 13,
+        "tess_len": 2540
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002772762.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 686
+      },
+      {
+        "page": 2,
+        "tess_len": 1496
+      },
+      {
+        "page": 5,
+        "tess_len": 1901
+      },
+      {
+        "page": 6,
+        "tess_len": 1419
+      },
+      {
+        "page": 11,
+        "tess_len": 1563
+      },
+      {
+        "page": 17,
+        "tess_len": 1277
+      },
+      {
+        "page": 20,
+        "tess_len": 1252
+      },
+      {
+        "page": 21,
+        "tess_len": 1196
+      },
+      {
+        "page": 24,
+        "tess_len": 696
+      },
+      {
+        "page": 29,
+        "tess_len": 1467
+      },
+      {
+        "page": 31,
+        "tess_len": 1282
+      },
+      {
+        "page": 36,
+        "tess_len": 1594
+      },
+      {
+        "page": 41,
+        "tess_len": 1217
+      },
+      {
+        "page": 42,
+        "tess_len": 1416
+      },
+      {
+        "page": 43,
+        "tess_len": 163
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000958870.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2119
+      },
+      {
+        "page": 2,
+        "tess_len": 2793
+      },
+      {
+        "page": 3,
+        "tess_len": 2181
+      },
+      {
+        "page": 4,
+        "tess_len": 2935
+      },
+      {
+        "page": 5,
+        "tess_len": 2764
+      },
+      {
+        "page": 6,
+        "tess_len": 1916
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001613384.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1797
+      },
+      {
+        "page": 5,
+        "tess_len": 1059
+      },
+      {
+        "page": 6,
+        "tess_len": 1227
+      },
+      {
+        "page": 9,
+        "tess_len": 1523
+      },
+      {
+        "page": 10,
+        "tess_len": 1819
+      },
+      {
+        "page": 11,
+        "tess_len": 1826
+      },
+      {
+        "page": 14,
+        "tess_len": 1129
+      },
+      {
+        "page": 17,
+        "tess_len": 1729
+      },
+      {
+        "page": 18,
+        "tess_len": 1461
+      },
+      {
+        "page": 19,
+        "tess_len": 696
+      },
+      {
+        "page": 22,
+        "tess_len": 1285
+      },
+      {
+        "page": 26,
+        "tess_len": 943
+      },
+      {
+        "page": 27,
+        "tess_len": 2204
+      },
+      {
+        "page": 28,
+        "tess_len": 231
+      },
+      {
+        "page": 29,
+        "tess_len": 1984
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001145660.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2352
+      },
+      {
+        "page": 2,
+        "tess_len": 2280
+      },
+      {
+        "page": 3,
+        "tess_len": 1634
+      },
+      {
+        "page": 4,
+        "tess_len": 2252
+      },
+      {
+        "page": 5,
+        "tess_len": 3094
+      },
+      {
+        "page": 6,
+        "tess_len": 4861
+      },
+      {
+        "page": 7,
+        "tess_len": 1706
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003307529.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1280
+      },
+      {
+        "page": 2,
+        "tess_len": 1963
+      },
+      {
+        "page": 3,
+        "tess_len": 2380
+      },
+      {
+        "page": 4,
+        "tess_len": 2131
+      },
+      {
+        "page": 5,
+        "tess_len": 2132
+      },
+      {
+        "page": 11,
+        "tess_len": 1055
+      },
+      {
+        "page": 12,
+        "tess_len": 1405
+      },
+      {
+        "page": 13,
+        "tess_len": 1290
+      },
+      {
+        "page": 14,
+        "tess_len": 1343
+      },
+      {
+        "page": 15,
+        "tess_len": 1010
+      },
+      {
+        "page": 20,
+        "tess_len": 1129
+      },
+      {
+        "page": 22,
+        "tess_len": 2093
+      },
+      {
+        "page": 23,
+        "tess_len": 1848
+      },
+      {
+        "page": 24,
+        "tess_len": 560
+      },
+      {
+        "page": 26,
+        "tess_len": 2111
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002063247.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1434
+      },
+      {
+        "page": 2,
+        "tess_len": 1326
+      },
+      {
+        "page": 3,
+        "tess_len": 2307
+      },
+      {
+        "page": 4,
+        "tess_len": 1899
+      },
+      {
+        "page": 7,
+        "tess_len": 2100
+      },
+      {
+        "page": 10,
+        "tess_len": 2252
+      },
+      {
+        "page": 11,
+        "tess_len": 1493
+      },
+      {
+        "page": 12,
+        "tess_len": 1080
+      },
+      {
+        "page": 13,
+        "tess_len": 1715
+      },
+      {
+        "page": 14,
+        "tess_len": 1245
+      },
+      {
+        "page": 17,
+        "tess_len": 1921
+      },
+      {
+        "page": 20,
+        "tess_len": 1107
+      },
+      {
+        "page": 21,
+        "tess_len": 1785
+      },
+      {
+        "page": 22,
+        "tess_len": 1120
+      },
+      {
+        "page": 23,
+        "tess_len": 1695
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001579917.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2013
+      },
+      {
+        "page": 2,
+        "tess_len": 2130
+      },
+      {
+        "page": 3,
+        "tess_len": 1638
+      },
+      {
+        "page": 5,
+        "tess_len": 2433
+      },
+      {
+        "page": 6,
+        "tess_len": 610
+      },
+      {
+        "page": 7,
+        "tess_len": 1506
+      },
+      {
+        "page": 8,
+        "tess_len": 2046
+      },
+      {
+        "page": 9,
+        "tess_len": 1804
+      },
+      {
+        "page": 11,
+        "tess_len": 1383
+      },
+      {
+        "page": 12,
+        "tess_len": 1602
+      },
+      {
+        "page": 14,
+        "tess_len": 1807
+      },
+      {
+        "page": 15,
+        "tess_len": 2192
+      },
+      {
+        "page": 16,
+        "tess_len": 1995
+      },
+      {
+        "page": 17,
+        "tess_len": 2363
+      },
+      {
+        "page": 18,
+        "tess_len": 3567
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002526181.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2711
+      },
+      {
+        "page": 2,
+        "tess_len": 2411
+      },
+      {
+        "page": 3,
+        "tess_len": 1159
+      },
+      {
+        "page": 4,
+        "tess_len": 1511
+      },
+      {
+        "page": 5,
+        "tess_len": 2252
+      },
+      {
+        "page": 6,
+        "tess_len": 2487
+      },
+      {
+        "page": 7,
+        "tess_len": 2199
+      },
+      {
+        "page": 8,
+        "tess_len": 2790
+      },
+      {
+        "page": 9,
+        "tess_len": 1075
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002530375.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 730
+      },
+      {
+        "page": 4,
+        "tess_len": 1517
+      },
+      {
+        "page": 5,
+        "tess_len": 2181
+      },
+      {
+        "page": 6,
+        "tess_len": 1711
+      },
+      {
+        "page": 7,
+        "tess_len": 2143
+      },
+      {
+        "page": 8,
+        "tess_len": 1618
+      },
+      {
+        "page": 9,
+        "tess_len": 770
+      },
+      {
+        "page": 13,
+        "tess_len": 1440
+      },
+      {
+        "page": 14,
+        "tess_len": 555
+      },
+      {
+        "page": 15,
+        "tess_len": 1457
+      },
+      {
+        "page": 17,
+        "tess_len": 2212
+      },
+      {
+        "page": 18,
+        "tess_len": 1151
+      },
+      {
+        "page": 20,
+        "tess_len": 1197
+      },
+      {
+        "page": 21,
+        "tess_len": 1194
+      },
+      {
+        "page": 22,
+        "tess_len": 171
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002848584.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1002
+      },
+      {
+        "page": 5,
+        "tess_len": 844
+      },
+      {
+        "page": 7,
+        "tess_len": 1363
+      },
+      {
+        "page": 8,
+        "tess_len": 966
+      },
+      {
+        "page": 9,
+        "tess_len": 778
+      },
+      {
+        "page": 10,
+        "tess_len": 1157
+      },
+      {
+        "page": 12,
+        "tess_len": 1104
+      },
+      {
+        "page": 13,
+        "tess_len": 921
+      },
+      {
+        "page": 14,
+        "tess_len": 940
+      },
+      {
+        "page": 16,
+        "tess_len": 901
+      },
+      {
+        "page": 21,
+        "tess_len": 833
+      },
+      {
+        "page": 23,
+        "tess_len": 1064
+      },
+      {
+        "page": 24,
+        "tess_len": 878
+      },
+      {
+        "page": 26,
+        "tess_len": 879
+      },
+      {
+        "page": 28,
+        "tess_len": 1431
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001117764.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 3873
+      },
+      {
+        "page": 2,
+        "tess_len": 3505
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003218741.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 1688
+      },
+      {
+        "page": 4,
+        "tess_len": 2103
+      },
+      {
+        "page": 5,
+        "tess_len": 2167
+      },
+      {
+        "page": 9,
+        "tess_len": 1224
+      },
+      {
+        "page": 10,
+        "tess_len": 1663
+      },
+      {
+        "page": 12,
+        "tess_len": 1078
+      },
+      {
+        "page": 14,
+        "tess_len": 828
+      },
+      {
+        "page": 19,
+        "tess_len": 1217
+      },
+      {
+        "page": 20,
+        "tess_len": 1206
+      },
+      {
+        "page": 21,
+        "tess_len": 981
+      },
+      {
+        "page": 24,
+        "tess_len": 1603
+      },
+      {
+        "page": 25,
+        "tess_len": 1892
+      },
+      {
+        "page": 26,
+        "tess_len": 1897
+      },
+      {
+        "page": 33,
+        "tess_len": 614
+      },
+      {
+        "page": 34,
+        "tess_len": 13
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002803674.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1397
+      },
+      {
+        "page": 2,
+        "tess_len": 1241
+      },
+      {
+        "page": 3,
+        "tess_len": 1188
+      },
+      {
+        "page": 4,
+        "tess_len": 2368
+      },
+      {
+        "page": 5,
+        "tess_len": 1301
+      },
+      {
+        "page": 6,
+        "tess_len": 1448
+      },
+      {
+        "page": 7,
+        "tess_len": 1497
+      },
+      {
+        "page": 8,
+        "tess_len": 1831
+      },
+      {
+        "page": 9,
+        "tess_len": 571
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002528288.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 326
+      },
+      {
+        "page": 3,
+        "tess_len": 1379
+      },
+      {
+        "page": 4,
+        "tess_len": 1323
+      },
+      {
+        "page": 6,
+        "tess_len": 1383
+      },
+      {
+        "page": 7,
+        "tess_len": 1504
+      },
+      {
+        "page": 8,
+        "tess_len": 1507
+      },
+      {
+        "page": 9,
+        "tess_len": 884
+      },
+      {
+        "page": 10,
+        "tess_len": 1460
+      },
+      {
+        "page": 12,
+        "tess_len": 1331
+      },
+      {
+        "page": 13,
+        "tess_len": 1589
+      },
+      {
+        "page": 15,
+        "tess_len": 1254
+      },
+      {
+        "page": 16,
+        "tess_len": 1402
+      },
+      {
+        "page": 17,
+        "tess_len": 1221
+      },
+      {
+        "page": 18,
+        "tess_len": 202
+      },
+      {
+        "page": 19,
+        "tess_len": 826
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000896175.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "tess_len": 658
+      },
+      {
+        "page": 5,
+        "tess_len": 1559
+      },
+      {
+        "page": 6,
+        "tess_len": 1598
+      },
+      {
+        "page": 9,
+        "tess_len": 1918
+      },
+      {
+        "page": 10,
+        "tess_len": 1766
+      },
+      {
+        "page": 18,
+        "tess_len": 2092
+      },
+      {
+        "page": 19,
+        "tess_len": 1526
+      },
+      {
+        "page": 20,
+        "tess_len": 1774
+      },
+      {
+        "page": 21,
+        "tess_len": 1179
+      },
+      {
+        "page": 23,
+        "tess_len": 1503
+      },
+      {
+        "page": 28,
+        "tess_len": 1445
+      },
+      {
+        "page": 29,
+        "tess_len": 2002
+      },
+      {
+        "page": 30,
+        "tess_len": 1574
+      },
+      {
+        "page": 33,
+        "tess_len": 1397
+      },
+      {
+        "page": 37,
+        "tess_len": 714
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001641797.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1319
+      },
+      {
+        "page": 2,
+        "tess_len": 1206
+      },
+      {
+        "page": 3,
+        "tess_len": 1569
+      },
+      {
+        "page": 4,
+        "tess_len": 1297
+      },
+      {
+        "page": 7,
+        "tess_len": 1600
+      },
+      {
+        "page": 8,
+        "tess_len": 1605
+      },
+      {
+        "page": 9,
+        "tess_len": 1614
+      },
+      {
+        "page": 10,
+        "tess_len": 1405
+      },
+      {
+        "page": 12,
+        "tess_len": 1592
+      },
+      {
+        "page": 13,
+        "tess_len": 1720
+      },
+      {
+        "page": 14,
+        "tess_len": 1744
+      },
+      {
+        "page": 15,
+        "tess_len": 1454
+      },
+      {
+        "page": 16,
+        "tess_len": 1612
+      },
+      {
+        "page": 19,
+        "tess_len": 1031
+      },
+      {
+        "page": 20,
+        "tess_len": 0
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001162653.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 817
+      },
+      {
+        "page": 2,
+        "tess_len": 1095
+      },
+      {
+        "page": 4,
+        "tess_len": 1245
+      },
+      {
+        "page": 7,
+        "tess_len": 2065
+      },
+      {
+        "page": 8,
+        "tess_len": 927
+      },
+      {
+        "page": 9,
+        "tess_len": 1415
+      },
+      {
+        "page": 11,
+        "tess_len": 711
+      },
+      {
+        "page": 13,
+        "tess_len": 888
+      },
+      {
+        "page": 14,
+        "tess_len": 870
+      },
+      {
+        "page": 15,
+        "tess_len": 544
+      },
+      {
+        "page": 18,
+        "tess_len": 1029
+      },
+      {
+        "page": 20,
+        "tess_len": 1297
+      },
+      {
+        "page": 21,
+        "tess_len": 1401
+      },
+      {
+        "page": 22,
+        "tess_len": 2074
+      },
+      {
+        "page": 23,
+        "tess_len": 66
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002666141.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1739
+      },
+      {
+        "page": 2,
+        "tess_len": 611
+      },
+      {
+        "page": 3,
+        "tess_len": 1102
+      },
+      {
+        "page": 4,
+        "tess_len": 1228
+      },
+      {
+        "page": 6,
+        "tess_len": 1245
+      },
+      {
+        "page": 9,
+        "tess_len": 764
+      },
+      {
+        "page": 10,
+        "tess_len": 1522
+      },
+      {
+        "page": 11,
+        "tess_len": 772
+      },
+      {
+        "page": 14,
+        "tess_len": 1634
+      },
+      {
+        "page": 15,
+        "tess_len": 2162
+      },
+      {
+        "page": 17,
+        "tess_len": 1718
+      },
+      {
+        "page": 18,
+        "tess_len": 2338
+      },
+      {
+        "page": 19,
+        "tess_len": 1622
+      },
+      {
+        "page": 21,
+        "tess_len": 1854
+      },
+      {
+        "page": 22,
+        "tess_len": 661
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000884721.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2208
+      },
+      {
+        "page": 2,
+        "tess_len": 3538
+      },
+      {
+        "page": 3,
+        "tess_len": 1618
+      },
+      {
+        "page": 4,
+        "tess_len": 1925
+      },
+      {
+        "page": 5,
+        "tess_len": 1375
+      },
+      {
+        "page": 6,
+        "tess_len": 2505
+      },
+      {
+        "page": 7,
+        "tess_len": 1361
+      },
+      {
+        "page": 8,
+        "tess_len": 1952
+      },
+      {
+        "page": 9,
+        "tess_len": 2157
+      },
+      {
+        "page": 10,
+        "tess_len": 2835
+      },
+      {
+        "page": 11,
+        "tess_len": 4123
+      },
+      {
+        "page": 12,
+        "tess_len": 4214
+      },
+      {
+        "page": 13,
+        "tess_len": 1656
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002633464.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2148
+      },
+      {
+        "page": 2,
+        "tess_len": 1542
+      },
+      {
+        "page": 3,
+        "tess_len": 2327
+      },
+      {
+        "page": 4,
+        "tess_len": 2236
+      },
+      {
+        "page": 5,
+        "tess_len": 1860
+      },
+      {
+        "page": 6,
+        "tess_len": 1902
+      },
+      {
+        "page": 7,
+        "tess_len": 1701
+      },
+      {
+        "page": 8,
+        "tess_len": 1753
+      },
+      {
+        "page": 9,
+        "tess_len": 2498
+      },
+      {
+        "page": 10,
+        "tess_len": 2772
+      },
+      {
+        "page": 11,
+        "tess_len": 3054
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001919031.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1805
+      },
+      {
+        "page": 2,
+        "tess_len": 2083
+      },
+      {
+        "page": 4,
+        "tess_len": 1713
+      },
+      {
+        "page": 6,
+        "tess_len": 2107
+      },
+      {
+        "page": 7,
+        "tess_len": 1174
+      },
+      {
+        "page": 9,
+        "tess_len": 1294
+      },
+      {
+        "page": 10,
+        "tess_len": 727
+      },
+      {
+        "page": 11,
+        "tess_len": 1187
+      },
+      {
+        "page": 12,
+        "tess_len": 1481
+      },
+      {
+        "page": 13,
+        "tess_len": 1496
+      },
+      {
+        "page": 16,
+        "tess_len": 1877
+      },
+      {
+        "page": 18,
+        "tess_len": 2140
+      },
+      {
+        "page": 19,
+        "tess_len": 1890
+      },
+      {
+        "page": 20,
+        "tess_len": 520
+      },
+      {
+        "page": 21,
+        "tess_len": 1047
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002917796.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 2856
+      },
+      {
+        "page": 2,
+        "tess_len": 2650
+      },
+      {
+        "page": 3,
+        "tess_len": 2797
+      },
+      {
+        "page": 4,
+        "tess_len": 2227
+      },
+      {
+        "page": 5,
+        "tess_len": 2907
+      },
+      {
+        "page": 6,
+        "tess_len": 1383
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003331310.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "tess_len": 1291
+      },
+      {
+        "page": 2,
+        "tess_len": 1481
+      },
+      {
+        "page": 3,
+        "tess_len": 1576
+      },
+      {
+        "page": 6,
+        "tess_len": 1304
+      },
+      {
+        "page": 7,
+        "tess_len": 1514
+      },
+      {
+        "page": 8,
+        "tess_len": 1249
+      },
+      {
+        "page": 9,
+        "tess_len": 2012
+      },
+      {
+        "page": 10,
+        "tess_len": 1384
+      },
+      {
+        "page": 11,
+        "tess_len": 1936
+      },
+      {
+        "page": 13,
+        "tess_len": 1524
+      },
+      {
+        "page": 14,
+        "tess_len": 1691
+      },
+      {
+        "page": 16,
+        "tess_len": 1782
+      },
+      {
+        "page": 17,
+        "tess_len": 1964
+      },
+      {
+        "page": 19,
+        "tess_len": 2091
+      },
+      {
+        "page": 20,
+        "tess_len": 1521
+      }
+    ]
+  }
+]

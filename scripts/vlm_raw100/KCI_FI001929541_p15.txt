@@ -1,0 +1,19 @@
+『世界國盡』의 외국지명 표기에 대한 고찰 ………………………………………… 변상숙·이경규 39
+
+<要旨>
+
+『世界国尽』의 외국지명 표기에 대한 고찰
+
+본 연구에서는 福沢諭吉의 明治 초기 작품인『世界國盡』에 소개된 외국지명의 한자 표기 실태에 대해서 살펴보았다. 그 결과를 정리하면 다음과 같다.
+
+우선,『世界國盡』에서 이용된 외국지명의 한자 표기는 크게『世界國盡』이전 문헌에서 보이는 표기와『世界國盡』에서 조어된 표기로 나누어서 생각할 수 있다.『世界國盡』이전에 보이는 표기는 기존의 번역서에서 일반적으로 이용되던 표기이다. 이들 지명은 한자 표기로서의 역사가 오래된 국가로, 중국식 표기에서 수용된 것이 상당부분을 차지하고 있다. 이와 달리『世界國盡』에서 조어된 지명들은 일본어 발음 하나하나에 한자를 대응시켜, 한자의 음과 훈을 자유롭게 조합한 형태로 실생활과 밀접한 한자를 이용하여, 세계의 지명을 소개하고 있다. 대부분 幕末·明治 초기 일본과 직접적인 교류를 통해서 알려진 이들 지명은 일본 고유의 표기 방식이 시도되어 세계 지명을 일부 계층뿐만 아니라 서민들에게까지 친숙하게 전달되도록 노력하였다.
+
+그러나『世界國盡』에서 조어된 지명 표기는 이후 일본 사전에 등재된 것을 찾기는 어렵다. 그 이유로는 첫째, 한자의 음을 이용한 지명의 경우 일본어 발음에 따라 한자의 음과 훈이 동시에 존재하는 것은 한자를 읽는 방법에서 혼란을 가져올 수 있으므로, 고유명사인 지명을 나타내는데 적합하지 않다는 점에 있다. 따라서 고정된 한자의 음을 이용한 지명만이 사전에 등재된 것이다.
+
+A study on the foreign place notation in 『Sekai Kunizukushi』
+
+This paper gives an analysis of Kanji notation of the foreign country place names introduced in 『Sekai Kunizukushi』, one of Hukuzawa Yukichi's works. The results of it are as follows.
+
+First of all, Kanji notations of the foreign country place names used in 『Sekai Kunizukushi』can be bisected: notations before 『Sekai Kunizukushi』and coined notations from 『Sekai Kunizukushi』. The former are general ones used in existing translations. They are place names as universal notations in early Meiji era although they are from Hukuzawa yukichi's standard. Chinese notations which have a long history as Kanji notations, take up a considerable part of these place names. Unlike this, the latter are that Kanji corresponds to each Japanese pronunciation, which is the formation to combine meaning and sound of Kanji freely. Using Kanji closely related to real life, the notations introduce world's place names. It shows his effort to try to make Japanese style notations and deliver foreign country place names familiarly to not only a part of class but also ordinary people. These notations are known to everyone through direct interact with westerners during Bakunatsu and early Meiji.
+
+However, it is hard to find the notations made from 『Sekai Kunizukushi』in Japanese dictionaries. There are two reasons. The first reason is that place names are lengthened more than needs. In case of using Kanji's sound, the number of Kanji can be increased according to the Japanese pronunciation. The second reason is that it gives trouble how to read kanji if a place name has both kanji's sound and meaning. So, it is unsuitable to express proper nouns, place names, by using the method. In conclusion, it can be supposed to register only place names using fixed kanji's sound in dictionaries.

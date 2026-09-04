@@ -1,0 +1,45 @@
+The Korean Journal of Health Service Management Vol.14 No.3 (September 2020)
+
+<Table 3> Comparison of muscle thickness by intervention(mm)
+
+| Variables | A group (n=13) | Pre-test | 3 week | 3 week | p |
+| --- | --- | --- | --- | --- | --- |
+| Rt. rectus femoris | 1.63 ± 0.27a | 1.81 ± 0.28 | 2.16 ± 0.27 | .001* |
+|  | B group (n=13) | 1.69 ± 0.21 | 1.86 ± 0.24 | 2.24 ± 0.25 | .001* |
+|  | C group (n=12) | 1.69 ± 0.21 | 1.74 ± 0.23 | 1.85 ± 0.32 | .010* |
+| p |  | 0.550 | 0.011* | A,B>C |
+| Lt. rectus femoris | A group (n=13) | 1.57 ± 0.26 | 1.76 ± 0.27 | 2.14 ± 0.32 | .001* |
+|  | B group (n=13) | 1.62 ± 0.18 | 1.79 ± 0.17 | 2.17 ± 0.16 | .001* |
+|  | C group (n=12) | 1.62 ± 0.16 | 1.65 ± 0.26 | 1.72 ± 0.26 | .003* |
+| p |  | .425 | .002* | A,B>C |
+| Rt. biceps femoris | A group (n=13) | 2.32 ± 0.29 | 2.49 ± 0.32 | 2.90 ± 0.27 | .001* |
+|  | B group (n=13) | 2.32 ± 0.28 | 2.51 ± 0.28 | 2.86 ± 0.30 | .001* |
+|  | C group (n=12) | 2.36 ± 0.21 | 2.40 ± 0.21 | 2.64 ± 0.34 | .017* |
+| p |  | .704 | .033* | A,B>C |
+| Lt. biceps femoris | A group (n=13) | 2.31 ± 0.38a | 2.47 ± 0.37 | 2.75 ± 0.39 | .001* |
+|  | B group (n=13) | 2.35 ± 0.31 | 2.48 ± 0.31 | 2.78 ± 0.26 | .001* |
+|  | C group (n=12) | 2.24 ± 0.17 | 2.24 ± 0.17 | 2.36 ± 0.12 | .020* |
+| p |  | .302 | .003* | A,B>C |
+
+aValues are expressed as mean ± standard deviation, *p<.05
+A group: elastic resistance group, B group: load resistance group, C group: body squat groups.
+
+<Table 4> Comparison of static balance by intervention(mm²)
+
+| Variables | A group (n=13) | Pre-test | 3 week | 6 week | p |
+| --- | --- | --- | --- | --- | --- |
+| BOE | 36.68 ± 5.84a | 29.80 ± 6.19 | 18.30 ± 4.39 | .001* |
+|  | B group (n=13) | 36.55 ± 6.98 | 31.50 ± 6.64 | 22.50 ± 3.59 | .001* |
+|  | C group (n=12) | 35.10 ± 3.81 | 34.20 ± 4.52 | 30.40 ± 1.58 | .002* |
+| p |  | .255 | .001* | A,B>C |
+| BCE | A group (n=13) | 55.73 ± 11.72 | 50.20 ± 14.55 | 43.50 ± 10.31 | .001* |
+|  | B group (n=13) | 56.36 ± 8.02 | 52.50 ± 8.72 | 48.60 ± 8.51 | .001* |
+|  | C group (n=12) | 57.00 ± 7.02 | 55.00 ± 6.47 | 53.80 ± 5.98 | .002* |
+| p |  | .277 | .001* | A,B>C |
+
+aValues are expressed as mean ± standard deviation, *p<.05
+A group: elastic resistance group, B group: load resistance group, C group: body squat groups.
+BOE=balance at opened eyes, BCE= balance at closed eyes.
+
+www.kci.go.kr
+- 110 -

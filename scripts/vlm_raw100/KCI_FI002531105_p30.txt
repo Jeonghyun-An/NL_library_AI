@@ -1,0 +1,11 @@
+개인정보보호(Schutz personenbezogener Daten)와 경쟁법 적용 335
+
+에 없는 앞으로의 상황에서, 연방카르텔청의 이러한 경쟁법 적용 노력은 다른 경쟁당국에게 있어서도 시사하는 바가 크다. 특히 막대한 양의 데이터 역시 시장지배력 보유 여부의 표지로 고려될 수 있으며, 정보보호 관련 문제에 있어서 경쟁당국의 개입을 배제할 이유가 없음을 확인한 점 등은 기존의 몇 가지 논쟁을 정리하는 효과도 있을 것이다.
+
+다만 뒤셀도르프 고등법원의 위와 같은 결정으로 인하여 경쟁당국의 법적용 노력이 무의미해질 수 있다는 견해도 있다. 그러나 뒤셀도르프 고등법원이 GWB 제19조 제2항 제2호의 적용에 있어서 도그마틱한 접근(소위, dogmatisch richtige prüfkonzept I)¹⁴⁰) 방식을 엄격하게 취하고 있는 점에 비추어 보면, 연방대법원이 이러한 접근방식을 이어갈지 여부는 두고 볼 필요가 있다.¹⁴¹) 설사 연방대법원이 뒤셀도르프 고등법원의 이러한 접근방식을 채택하더라도, Facebook 데이터정책 등에 관한 고등법원의 판단에 구속될 필요는 없다.¹⁴²) 아울러 이번 사건에서 Facebook의 데이터 수집과 병합 등에 대한 이용자의 유효한 동의 인정이나 데이터 처리에 있어서 투명성이 충분히 확보되었는지 여부에 대한 이용자의 의구심을 부정할 수 없기 때문에 연방대법원의 판단을 예단하기 어렵다.
+
+140) Monopolkommission, Hauptgutachten XXII, 2018, Rn. 661~670 (3.2.1.1 Prüfkonzept I (§ 19 Abs. 2 Nr. 2 GWB): Vorgehen wie bei Preishöhenmissbrauch).
+
+141) Monopolkommission, Hauptgutachten XXII, 2018, Rn. 671~686 (Prüfkonzept II (§ 19 Abs. 1 GWB): Datenschutzrecht als Maßstab der Angemessenheit von Konditionen).
+
+142) Vgl. Michael Bergmann/Johannes Modest: Vom Umschreiben der Gesichtsbücher-Anmerkungen zu OLG Düsseldorf in Sachen Facebook, NZKart 10/2019, S. 535.

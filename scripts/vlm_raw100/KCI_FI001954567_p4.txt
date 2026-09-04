@@ -1,0 +1,45 @@
+Table 1. Oligonucleotide sequences of primers for detection of the V. parahaemolyticus toxR gene
+
+| Gene | Orientation | Primer | Oligonucleotide sequence (5'-3') | PCR product size (bp) |
+| :--- | :--- | :--- | :--- | :--- |
+| toxR | → | toxR-1 | GTCTTCTGACGCAATCGTTG | 368 |
+|  | ← | toxR-2 | ATACGAGTGGTTGCTGTCATG |  |
+
+Table 2. Cultural and biochemical characteristics of V. parahaemolyticus identified
+
+| Properties | V. parahaemolyticus % positiveᵃ | Clinical isolates (n = 46)ᵇ |
+| :--- | :--- | :--- |
+| TSI | K/A | K/A |
+| H₂S | 0 | 0 |
+| Indole | 99.4 | 100 |
+| Methyl red | 96.8 | 100 |
+| Voges-Proskauer | 0 | 0 |
+| Citrate Simmons | 98.7 | 78 |
+| Motility | 100 | 100 |
+| ONPG | 5 | 0 |
+| Urease | 15 | 0 |
+| Phenylalanine deaminase | 1 | 0 |
+| Arginine dihydrolase, Moeller (1% NaCl) | 0 | 0 |
+| Lysine decarboxylase, Moeller (1% NaCl) | 99.5 | 100 |
+| Ornithine decarboxylase, Moeller (1% NaCl) | 98.1 | 96 |
+| Gas on TSI | 0 | 0 |
+| Acid from: |  |  |
+| Arabinose | 72.2 | 100 |
+| Glucose | 100 | 100 |
+| Inositol | 0 | 0 |
+| Lactose | 0 | 0 |
+| Maltose | 100 | 100 |
+| Mannitol | 100 | 100 |
+| Mannose | 100 | 100 |
+| Rhamnose | 4.6 | NTᶜ |
+| Sucrose | 0 | 0 |
+| Oxidase | 100 | 100 |
+| Growth in: |  |  |
+| 0% NaCl | 0 | 0 |
+| 3% NaCl | 100 | 100 |
+| 7% NaCl | 100 | 100 |
+| 10% NaCl | 0 | 0 |
+
+ᵃ From Kim et al., 1999; K/A, alkaline slant and acidic butt; +, positive; −, negative (Kelly, 1992).
+ᵇ No. of isolates tested.
+ᶜ NT, not tested.

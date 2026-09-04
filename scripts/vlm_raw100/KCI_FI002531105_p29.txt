@@ -1,0 +1,21 @@
+334 일반논단
+
+strukturellen Schwächung) 이어지는 것은 아니라고 판단하였다.¹³⁵) 한편 소비자에 대한 경쟁상 손해(der wettbewerbliche Schaden) 역시 이용자 통제력 상실로 볼 수는 없다고 보면서, Facebook의 시장력이 개별 이용자에 대한 이러한 강박(강제)상태, 궁박에 대한 원인은 아니라는 이유를 들었다.¹³⁶)
+
+그리고 이용약관에 대한 부족한 인지(die fehlende Kenntnisnahme)가 사용자의 무관심 또는 나태함에 기인한 것이라면, 이는 설득력 있는 표지로 볼 수 없다고 (kein stichhaltiges Indiz) 보았다.¹³⁷) 한편 법원은 연방카르텔청이 Facebook의 정보 보호위반이 그 경쟁자에게 정확히 어떻게 손해를 입혔는지,¹³⁸) 그리고 Facebook의 시장력이 다른 시장들로 전이(Übertragung)될 위험을 낳는지에 대하여 설득력 있는 근거를 제시하지 못하였다고 판단하였다.¹³⁹)
+
+V. 결  어
+
+최근 개인정보의 이용과 보호를 둘러싼 다양한 논의가 이루어지고 있는 상황에서 Facebook의 이용약관에 대한 연방카르텔청의 결정은 그 자체만으로도 중요한 의미를 가진다. 이러한 맥락에서 경쟁당국으로서 연방카르텔청이 데이터보호와 경쟁감독을 연결하는 새로운 법 영역에 들어섰다는 평가는 이번 Facebook 결정의 의미를 잘 함축한 것으로 볼 수 있다. 이는 막대한 데이터에 기초한 이른바 시장 지배적 디지털콘체른(markt mächtigen Digitalkonzernen)의 데이터정책에 대한 규범적 한계(normative Grenzen)를 제시하기 위한 경쟁당국의 시도로서 그 자체만으로도 평가받을 만하다. 또한 데이터를 둘러싼 다양한 경쟁법적 이슈가 발생할 수밖에 없다.
+
+---
+
+135) OLG Düsseldorf. Beschl. v. 26.8.2019–VI–Kart 1/19 (V), S. 19~21: „Soweit in solchen Fällen ein Zusammenhang zwischen Missbrauch und Marktmacht im Sinne einer Ergebniskausalität als ausreichend angesehen wird, ist diese Wertung typischerweise auf die Konstellation eines Behinderungsmißbrauchs zugeschnitten. Dagegen beeinflusst ein des Ausbeutungsmißbrauchs verdächtiges Verhalten typischerweise nicht die Marktstruktur.“
+
+136) OLG Düsseldorf. Beschl. v. 26.8.2019–VI–Kart 1/19 (V), S. 9~11.
+
+137) OLG Düsseldorf. Beschl. v. 26.8.2019–VI–Kart 1/19 (V), S. 11.
+
+138) OLG Düsseldorf. Beschl. v. 26.8.2019–VI–Kart 1/19 (V), S. 32~35.
+
+139) OLG Düsseldorf. Beschl. v. 26.8.2019–VI–Kart 1/19 (V), S. 35~36: „Ebenso wenig besteht anders als das Amt meint–die „Gefahr der Übertragung der Marktmacht“ von dem Markt für soziale Netzwerke auf einen Drittmarkt für Online-Werbung für soziale Medien auf.“

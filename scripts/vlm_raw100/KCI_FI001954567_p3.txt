@@ -1,0 +1,11 @@
+였으며 확인동정은 추가된 생화학적인 전통적인 방법과 API 20E kit 방법으로 하였다.
+
+O:K 혈청형 동정에서 O항원형은 1% 식염이 들어있는 tryptic soy agar (TSA, Difco) 배지에 배양된 집락을 식염수 1 ml에 진하게 부유시킨 균액을 100℃에 1시간 가열한 후 식염수로 3000 rpm 15분간 2회 원심세척한 다음 McFarland 4판에 맞춘 균액을 각각의 O혈청과 혼합하여 슬라이드 응집법으로 시험하였다. K항원형은 TSA 배지에 자란 집락으로 식염수로 McFarland 4판에 맞춘 균액을 K항원진단용 각각의 혈청과 혼합하여 1분 이내에 뚜렷한 응집이 보이면 양성으로 판정하였다.
+
+PCR시험용 V. parahaemolyticus 균주의 DNA는 microwave oven법으로 추출하였다. 즉 1.5 μl microfuge 시험관에 1 × washing 용액 200 μl와 세균을 섞어서 우유빛 정도의 부유액을 만든 다음 8,000 rpm으로 2분간 원심분리하여 세척한 후 cell lysis buffer 30 μl (Genotek Co.)를 넣고 완전히 현탁시킨 후 광유 1방울을 넣은 후 원침하였다. Microtube를 microwave oven에 넣고 5분간 (출력 750 watt) 가열하여 DNA를 분리하였다. Microcentrifuge를 사용하여 12,000 rpm에서 10분간 원심분리한 후, 상층액 3 μl를 PCR 반응에 사용하였다.
+
+PCR법으로 toxR 유전자 검출을 위한 primer (Table 1)는 Kim et al. (1999)의 보고에 따라서 Genotek (Taejeon)이 합성한 것을 사용하였다. 대조균주로는 V. parahaemolyticus Kanagawa No. 4750 (O2:K3)을 사용하였고, Primer-A와 Primer-B를 각각 2 μl, mixture reagent (dNTP, Taq polymerase, MgCl₂) 4 μl, 8-MOP 9 μl, DNA sample 3 μl를 넣어 PCR반응의 최종액을 20 μl로 하였으며, primer와 검체 DNA를 제외한 모든 반응액 (0.2 M dATP, 50 mM KCl, 10 mM Tris-HCl pH 8.8, 1.5 mM MgCl₂, 0.1% Triton ×100)은 실험조건을 갖게 상기한 제조번호의 상품화된 (Genotek Co. Taejeon) 시약을 -70℃에 보관하면서 사용하였다. PCR에서 첫째 cycle은 95℃에서 5분간 predenaturation, 60℃ 1분, 72℃ 1분으로 하였고 이어서 2-30 cycles은 94℃에서 1분, 63℃에서 1분, 72℃에서 1.5분으로 31째 cycle은 95℃ 1분, 72℃ last extension 5분으로 thermal cycler (Turbo thermal cycler Bioneer)를 이용하여 증폭하였다. 전기영동에 의한 PCR 생성물의 검색은 PCR 증폭산물 10 μl를 1.0% agarose gel (EtBr 0.5 μg/ml)에 150 v/10cm 로 20분동안 전기영동후에 size marker를 기준으로 확인하였다.
+
+항균제 감수성은 NCCLS의 표준디스크 확산법 (NCCLS, 1997)에 따라, ampicillin 10 μg, carbenicillin 100 μg, cephalothin 30 μg, ceftriaxone 30 μg, amikacin 30 μg, gentamicin 10 μg, kanamycin 30 μg, tobramycin 10 μg, tetracycline 30 μg, nalidixic acid 30 μg, ciprofloxacin 5 μg, chloramphenicol 30 μg, colistin 10 μg, trimethoprim/sulfamethoxazole 1.25/23.75 μg의 디스크를 사용하여 시험하였다.
+
+시험관내 한천희석법에 의한 MIC시험은 ampicillin, cephalothin, amikacin, gentamicin, kanamycin, tobramycin, tetracycline, nalidixic acid 및 chloramphenicol은 Sigma chemical의 표준분말을 사용하였으며, NCCLS방법 (NCCLS, 2000)에 의하였다. 항균제를 규정된 용제로 녹이고 Mueller-Hinton 한천배지에 0.5-128 μg/ml 농도로 만들었다. 시험세균은 tryptic soy broth (1% NaCl)에 접종하여 35℃에 2시간 배양 후 McFaraland 0.5판 탐도에 맞추고 이어서 시험세균의 접종은 35℃에 하룻밤 배양하여 판독하였다. 세균의 증식을 완전히 억제시킨 최소의 항균제 농도를 MIC로 하였다.

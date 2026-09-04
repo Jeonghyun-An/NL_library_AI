@@ -1,0 +1,15 @@
+botester and its application to the study of cryogenic wear of AISI 316 stainless steel Wear, 2022; 496:204309.
+
+[7] Lee M-S, Ji M-K, Hyun Y-T, Kim E-Y, Jun T-S. Effect of texture and temperature gradient on anisotropic plastic deformation of commercially pure titanium at room and low temperatures, Mater. Charact., 2021;172:110834.
+
+[8] Tian X, Zhang Y, Li J. Investigation on tribological behavior of advanced high strength steels: influence of hot stamping process parameters, Tribol. Lett., 2012;45:489-95.
+
+[9] Ni W, Cheng Y-T, Lukitsch MJ, Weiner AM, Lev LC, Grummon DS. Effects of the ratio of hardness to Young’s modulus on the friction and wear behavior of bilayer coatings, Appl. Phys. Lett., 2004;85:4028-30.
+
+[10] Hong SY. Lubrication mechanisms of LN2 in ecological cryogenic machining, Machining Science and Technology, 2006;10:133-55.
+
+[11] Sohn SS, Hong S, Lee J, Suh B-C, Kim S-K, Lee B-J, et al. Effects of Mn and Al contents on cryogenic-temperature tensile and Charpy impact properties in four austenitic high-Mn steels Acta. Mater., 2015;100:39-52.
+
+[12] Jeong D-H, Lee S-G, Jang W-K, Choi J-K, Kim Y-J, Kim S. Cryogenic S-N Fatigue and Fatigue Crack Propagation Behaviors of High Manganese Austenitic Steels, Metallurgical and Materials Transactions A, 2013;44:4601-12.
+
+Tribol. Lubr., 38(6) 2022

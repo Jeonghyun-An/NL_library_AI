@@ -1,0 +1,38 @@
+The Effects of Lead Time Variability on Managing Component Replenishment for Customized Manufacturing
+
+〈Table 9〉 Impact of M as a function of B
+
+| No | Parameters | Optimal performance | EOQ |
+| --- | --- | --- | --- |
+|  | c_K | c_R | c_h^1 | c_h^2 | λ | μ | d | B | M | Q* | g | % | EOQ |
+| 1 | 350 | 50 | 4 | 1 | 0.75 | 1 | 0.1 | 6 | 1 | 27 | 37.01 |  | 23 |
+| 2 |  |  |  |  |  |  |  |  | 2 | 26 | 35.60 | 3.81 | 23 |
+| 3 |  |  |  |  |  |  |  |  | 3 | 25 | 35.11 | 1.38 | 23 |
+| 4 |  |  |  |  |  |  |  |  | 4 | 25 | 34.79 | 0.91 | 23 |
+| 5 |  |  |  |  |  |  |  |  | 5 | 25 | 34.58 | 0.60 | 23 |
+| 6 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 7 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 8 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 9 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 10 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 11 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 12 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 13 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 14 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+| 15 |  |  |  |  |  |  |  |  |  |  |  |  | 23 |
+
+formed numerical experiments and provided managerial insights for better understanding the problem. We showed that the efforts of reducing both lead time variability and mean lead time are essential for reducing the cost, which stands in contrast to Chopra et al. (2004)'s paradoxical result that decreasing mean lead time can cut inventories, not reducing lead time variability.
+
+We find that developing efficient heuristics are demanding because the optimal replenishment policy is complex to implement. Field study also indicates that multiple components with different lead time variances can be more appropriate. We will deal with this case in future research. One of the restrictions in this paper was the assumption of at most one outstanding order. Since the problem with multiple outstanding orders is more applicable, we leave this issue for the future research topic.
+
+References
+
+Benjaafar, S. and M. Elhafsi (2006), “Production and inventory control of a single product assemble-to-order system with multiple customer classes,” Management Science, Vol. 52, 1896-1912.
+
+Berman, O. and E. Kim (1999), “Stochastic models for inventory management at service facilities,” Management Science, Vol. 46, 1183-1197.
+
+한국생산관리학회지 제21권 제3호 2010년 9월
+
+www.kci.go.kr
+
+283

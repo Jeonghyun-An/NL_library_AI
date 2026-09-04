@@ -1,0 +1,25 @@
+184 西語西文研究
+
+(27) [CP [TopP/FP/GP [TP .... ]]] → [CP [TP ... ]]
+
+한편, 본 제안은, 영어에서와 마찬가지로, 스페인어의 [SPEC, TP] 위치는 주격점검 위치가 아닌 T의 EPP 선택자질 점검 위치이라는 점을 보여주는 것이다. 주격점검은 제 자리에서 이동없이 일치 Agree에 의해서 이루어지므로, 어떤 구성성분이 [Spec, TP] 위치로 이동하는 현상은 격점검을 목적으로 하는 것이 아니라 T의 EPP 범주선택자질을 점검하기 위한 것이다. 다음의 영어 자료를 보자.
+
+(28) a. [Just as surprising] was his love for clothes.
+b. [Gathered pointlessly in the yard] stood three women.
+c. [In] came a man.
+d. [Up] jumped a rabbit.
+e. [Down the hill] rolled John.
+
+위에서 보다시피, 영어에 있어서도 T의 EPP 자질을 점검하는 요소는 주격주어가 아닌 전치사구 PPO이다.
+스페인어의 경우, 영어와 다른 점은 T의 EPP 선택자질이 의무적 자질이 아니라 INT 효과를 수반하는 수의적 자질이라는 점이다. 즉, 영어의 경우 동사로 시작되는 평서문이 없는 이유이다.
+
+(29) *Will John love Mary. (평서문)
+
+이에 비해서 스페인어는 T의 EPP 자질은 수의적 자질이어서 예문 (30)에서 보다시피 이동 역시 수의적인 것이다.
+
+(30) [TP Juan_i [T' llegó_v [VP t_v t_i ]]]
+
+↑
+Optional movement
+
+수의적 이동을 겪게 되면, 본 논문의 기본가정처럼 의미해석 효과와 INT가 나타나는 것이다. 즉, (31a)에서는 이동이 없으므로 아무런 의미효과가 나타나지 않지만, 수의적 이동을 겪게되는 (31b, c) 문장의 경우 topic이나 focus와 같은 의미해석 효과와 INT가 나타나는 것이다.

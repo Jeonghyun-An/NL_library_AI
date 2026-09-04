@@ -1,0 +1,254 @@
+"""
+run_vlm_batch2.py — 층화 무작위 표본(100건, 1,284쪽) VLM 일괄 실행.
+
+문서를 앞/중/뒤 3등분해 구간별 무작위 5쪽씩(총 15쪽, 문서가 짧으면 그만큼만) 뽑은
+표본을 대상으로 한다. 페이지 목록은 이 스크립트 안에 이미 박혀 있어 별도 파일이
+필요 없다. 문서 단위로 중간저장(resume)하며, 페이지별로 원문 텍스트 파일도 그대로
+저장해 나중에 반복 루프 등을 직접 확인할 수 있게 한다.
+
+반드시 원격 서버(vLLM 접근 가능한 곳)에서 실행할 것.
+
+사용법:
+    python run_vlm_batch2.py <PDF가 있는 폴더 경로> [vlm_url] [vlm_model]
+    예: python run_vlm_batch2.py /data/kci/pdf
+"""
+import base64
+import os
+import re
+import sys
+import time
+
+import fitz
+import httpx
+
+OCR_PROMPT = """\
+이 페이지의 모든 텍스트를 정확히 추출하세요.
+
+레이아웃 처리 규칙:
+- 2단(두 칸) 구성이면: 반드시 왼쪽 단을 위에서 아래로 모두 읽은 뒤, 오른쪽 단을 위에서 아래로 읽으세요. 양쪽 단을 줄 단위로 섞지 마세요.
+- 1단(전체 폭) 구성이면: 위에서 아래로 순서대로 읽으세요.
+- 단 구분이 불명확하면 텍스트 흐름이 자연스러운 방향으로 읽으세요.
+
+기타 규칙:
+- 표가 있으면 마크다운 표(|---|)로 변환하세요.
+- 그림·사진은 [그림: 한 줄 설명]으로 표기하세요.
+- 마크다운 코드 블록(```)이나 부연 설명 없이 내용만 출력하세요.
+- 이미지에 없는 내용은 추가하지 마세요."""
+
+
+def _clean_text(text):
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    lines = []
+    for line in text.split('\n'):
+        line = line.strip()
+        if line:
+            lines.append(line)
+        elif lines and lines[-1] != '':
+            lines.append('')
+    text = '\n'.join(lines)
+    text = re.sub(r' {2,}', ' ', text)
+    return text.strip()
+
+
+def max_repeat_count(text):
+    """정제된 텍스트에서 가장 많이 반복된 줄의 반복 횟수(빈 줄 제외) — 반복 루프 탐지용."""
+    counts = {}
+    for line in text.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        counts[line] = counts.get(line, 0) + 1
+    return max(counts.values()) if counts else 0
+
+
+def call_vlm(base_url, model, img_b64, max_tokens, timeout):
+    payload = {
+        "model": model,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
+                {"type": "text", "text": OCR_PROMPT},
+            ],
+        }],
+        "max_tokens": max_tokens,
+        "temperature": 0.1,
+    }
+    t0 = time.perf_counter()
+    resp = httpx.post(f"{base_url}/chat/completions", json=payload, timeout=timeout)
+    elapsed = time.perf_counter() - t0
+    resp.raise_for_status()
+    raw = resp.json()["choices"][0]["message"]["content"]
+    return raw, elapsed
+
+
+SELECTION = {
+    'KCI_FI001269838.pdf': [4, 6, 8, 10, 13, 15, 19, 20, 22, 23, 35, 37, 38, 39, 41],
+    'KCI_FI000936234.pdf': [1, 2, 3, 5, 6, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19],
+    'KCI_FI002164241.pdf': [1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 19, 20],
+    'KCI_FI001954024.pdf': [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 14, 15, 16, 17, 19],
+    'KCI_FI001837095.pdf': [3, 6, 7, 9, 11, 13, 14, 15, 16, 21, 23, 27, 30, 32, 33],
+    'KCI_FI001390783.pdf': [1, 3, 4, 6, 7, 8, 9, 11, 12, 13, 15, 17, 18, 19, 20],
+    'KCI_FI001215202.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'KCI_FI001159328.pdf': [3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 16, 17, 19, 20],
+    'KCI_FI002996514.pdf': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17],
+    'KCI_FI000958626.pdf': [2, 5, 7, 9, 10, 11, 13, 14, 18, 20, 22, 24, 26, 29, 30],
+    'KCI_FI000950943.pdf': [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16, 17, 18, 22, 23],
+    'KCI_FI001177396.pdf': [3, 6, 7, 8, 12, 13, 15, 17, 19, 20, 24, 25, 28, 29, 33],
+    'KCI_FI001826171.pdf': [1, 2, 3, 4, 5],
+    'KCI_FI001929541.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    'KCI_FI000940790.pdf': [1, 2, 3, 5, 7, 11, 12, 16, 17, 18, 19, 21, 23, 24, 26],
+    'KCI_FI001715647.pdf': [4, 6, 7, 8, 11, 12, 15, 16, 17, 21, 25, 26, 28, 29, 32],
+    'KCI_FI002989221.pdf': [1, 3, 4, 12, 14, 17, 21, 22, 23, 25, 30, 35, 36, 37, 39],
+    'KCI_FI001830814.pdf': [1, 2, 3, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+    'KCI_FI003148640.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    'KCI_FI002171174.pdf': [1, 2, 3, 4, 5, 6, 7, 8],
+    'KCI_FI000865757.pdf': [1, 2, 3, 4],
+    'KCI_FI001498048.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'KCI_FI003000034.pdf': [3, 5, 7, 8, 10, 11, 13, 16, 17, 19, 22, 26, 27, 29, 30],
+    'KCI_FI002537654.pdf': [5, 6, 7, 8, 10, 11, 12, 15, 18, 20, 23, 26, 28, 29, 30],
+    'KCI_FI002170660.pdf': [3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 18, 20, 21],
+    'KCI_FI001485990.pdf': [1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 18],
+    'KCI_FI001817881.pdf': [1, 8, 10, 11, 13, 14, 18, 20, 21, 24, 27, 28, 30, 33, 37],
+    'KCI_FI002529577.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'KCI_FI001213772.pdf': [3, 5, 6, 7, 8, 12, 14, 17, 18, 19, 23, 25, 31, 32, 33],
+    'KCI_FI001175853.pdf': [1, 2, 3, 4, 5],
+    'KCI_FI001022652.pdf': [1, 4, 5, 7, 8, 11, 12, 13, 15, 18, 19, 20, 21, 24, 26],
+    'KCI_FI002073234.pdf': [1, 2, 3, 5, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17, 19],
+    'KCI_FI001160030.pdf': [1, 2, 3, 4, 5, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17],
+    'KCI_FI002925182.pdf': [1, 2, 4, 5, 12, 14, 17, 20, 21, 22, 24, 27, 29, 32, 34],
+    'KCI_FI002070804.pdf': [2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18],
+    'KCI_FI001251499.pdf': [1, 3, 10, 11, 13, 14, 17, 19, 20, 21, 27, 28, 32, 37, 39],
+    'KCI_FI000979036.pdf': [1, 2],
+    'KCI_FI002786504.pdf': [3, 4, 6, 7, 11, 13, 14, 15, 17, 20, 22, 25, 26, 31, 32],
+    'KCI_FI002519011.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'KCI_FI002538661.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    'KCI_FI001021172.pdf': [1, 2, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19],
+    'KCI_FI001498299.pdf': [2, 4, 5, 6, 11, 14, 15, 16, 20, 21, 22, 23, 26, 27, 32],
+    'KCI_FI001377838.pdf': [1, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 18, 19, 20],
+    'KCI_FI002531105.pdf': [1, 2, 3, 7, 10, 12, 16, 18, 19, 23, 24, 29, 30, 31, 34],
+    'KCI_FI002524432.pdf': [1, 2, 3, 4, 5, 6, 7],
+    'KCI_FI001954567.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    'KCI_FI001508965.pdf': [1, 2, 4, 6, 7, 10, 12, 13, 15, 18, 21, 22, 24, 26, 27],
+    'KCI_FI000854981.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    'KCI_FI003082850.pdf': [2, 6, 7, 8, 11, 13, 15, 21, 22, 23, 29, 30, 32, 33, 35],
+    'KCI_FI001160960.pdf': [2, 3, 5, 6, 9, 13, 15, 18, 20, 21, 25, 27, 30, 31, 33],
+    'KCI_FI002782015.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16],
+    'KCI_FI001104278.pdf': [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 15, 16, 17, 18, 20],
+    'KCI_FI000866213.pdf': [1, 2],
+    'KCI_FI002405619.pdf': [3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 18, 19, 20, 22],
+    'KCI_FI003143688.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'KCI_FI001213046.pdf': [1, 2, 3, 4, 5, 6, 7, 8],
+    'KCI_FI000998390.pdf': [1, 2, 3, 4],
+    'KCI_FI001175912.pdf': [1, 2, 3, 4],
+    'KCI_FI001398897.pdf': [1, 2, 4, 5, 7, 8, 9, 11, 13, 14, 16, 17, 18, 19, 22],
+    'KCI_FI001314734.pdf': [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17],
+    'KCI_FI000921452.pdf': [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17],
+    'KCI_FI002275843.pdf': [1, 2, 3, 4, 5, 6, 7, 8],
+    'KCI_FI003031353.pdf': [1, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 18, 19, 20],
+    'KCI_FI003285675.pdf': [2, 3, 8, 9, 10, 14, 18, 20, 21, 23, 26, 27, 31, 33, 34],
+    'KCI_FI002068495.pdf': [2, 3, 5, 7, 8, 10, 11, 14, 15, 17, 20, 21, 22, 23, 26],
+    'KCI_FI003259902.pdf': [1, 2, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18],
+    'KCI_FI000974008.pdf': [2, 6, 7, 8, 11, 12, 16, 18, 19, 21, 23, 24, 26, 27, 32],
+    'KCI_FI002301995.pdf': [2, 7, 8, 10, 12, 14, 15, 16, 22, 24, 28, 30, 31, 33, 35],
+    'KCI_FI002543321.pdf': [2, 5, 7, 8, 9, 11, 12, 14, 15, 17, 19, 20, 21, 22, 24],
+    'KCI_FI003300691.pdf': [1, 2, 3, 4, 5, 6, 7, 8],
+    'KCI_FI001733305.pdf': [1, 2, 3, 10, 11, 16, 17, 19, 22, 25, 27, 31, 33, 35, 38],
+    'KCI_FI002404735.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    'KCI_FI000883417.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    'KCI_FI002881823.pdf': [3, 4, 7, 10, 11, 20, 21, 22, 25, 27, 28, 31, 32, 36, 41],
+    'KCI_FI003042779.pdf': [2, 4, 5, 6, 10, 13, 16, 19, 20, 21, 25, 27, 29, 30, 32],
+    'KCI_FI003306671.pdf': [1, 3, 4, 8, 9, 10, 11, 12, 13, 16, 18, 19, 20, 21, 22],
+    'KCI_FI002989262.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    'KCI_FI002772762.pdf': [1, 2, 5, 6, 11, 17, 20, 21, 24, 29, 31, 36, 41, 42, 43],
+    'KCI_FI000958870.pdf': [1, 2, 3, 4, 5, 6],
+    'KCI_FI001613384.pdf': [3, 5, 6, 9, 10, 11, 14, 17, 18, 19, 22, 26, 27, 28, 29],
+    'KCI_FI001145660.pdf': [1, 2, 3, 4, 5, 6, 7],
+    'KCI_FI003307529.pdf': [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 20, 22, 23, 24, 26],
+    'KCI_FI002063247.pdf': [1, 2, 3, 4, 7, 10, 11, 12, 13, 14, 17, 20, 21, 22, 23],
+    'KCI_FI001579917.pdf': [1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18],
+    'KCI_FI002526181.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'KCI_FI002530375.pdf': [1, 4, 5, 6, 7, 8, 9, 13, 14, 15, 17, 18, 20, 21, 22],
+    'KCI_FI002848584.pdf': [1, 5, 7, 8, 9, 10, 12, 13, 14, 16, 21, 23, 24, 26, 28],
+    'KCI_FI001117764.pdf': [1, 2],
+    'KCI_FI003218741.pdf': [3, 4, 5, 9, 10, 12, 14, 19, 20, 21, 24, 25, 26, 33, 34],
+    'KCI_FI002803674.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'KCI_FI002528288.pdf': [1, 3, 4, 6, 7, 8, 9, 10, 12, 13, 15, 16, 17, 18, 19],
+    'KCI_FI000896175.pdf': [3, 5, 6, 9, 10, 18, 19, 20, 21, 23, 28, 29, 30, 33, 37],
+    'KCI_FI001641797.pdf': [1, 2, 3, 4, 7, 8, 9, 10, 12, 13, 14, 15, 16, 19, 20],
+    'KCI_FI001162653.pdf': [1, 2, 4, 7, 8, 9, 11, 13, 14, 15, 18, 20, 21, 22, 23],
+    'KCI_FI002666141.pdf': [1, 2, 3, 4, 6, 9, 10, 11, 14, 15, 17, 18, 19, 21, 22],
+    'KCI_FI000884721.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    'KCI_FI002633464.pdf': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    'KCI_FI001919031.pdf': [1, 2, 4, 6, 7, 9, 10, 11, 12, 13, 16, 18, 19, 20, 21],
+    'KCI_FI002917796.pdf': [1, 2, 3, 4, 5, 6],
+    'KCI_FI003331310.pdf': [1, 2, 3, 6, 7, 8, 9, 10, 11, 13, 14, 16, 17, 19, 20],
+}
+
+
+import json as _json
+
+def main():
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(1)
+    pdf_dir = sys.argv[1]
+    vlm_url = sys.argv[2] if len(sys.argv) > 2 else "http://localhost:18081/v1"
+    vlm_model = sys.argv[3] if len(sys.argv) > 3 else "qwen3-vl-8b"
+
+    out_path = "vlm_lengths_result100.json"
+    raw_dir = "vlm_raw100"
+    os.makedirs(raw_dir, exist_ok=True)
+
+    results = []
+    if os.path.exists(out_path):
+        results = _json.load(open(out_path, encoding="utf-8"))
+    done = {r["doc"] for r in results}
+
+    total_docs = len(SELECTION)
+    for i, (fname, pages) in enumerate(SELECTION.items(), 1):
+        if fname in done:
+            print(f"[{i}/{total_docs}] [skip] {fname}", file=sys.stderr)
+            continue
+        pdf_path = os.path.join(pdf_dir, fname)
+        if not os.path.exists(pdf_path):
+            print(f"[{i}/{total_docs}] [파일없음] {pdf_path}", file=sys.stderr)
+            continue
+
+        print(f"[{i}/{total_docs}] {fname} ({len(pages)}쪽)", file=sys.stderr)
+        doc = fitz.open(pdf_path)
+        page_results = []
+        for pg in pages:
+            if pg > len(doc):
+                continue
+            page = doc[pg - 1]
+            pix = page.get_pixmap(dpi=300)
+            img_b64 = base64.b64encode(pix.tobytes("png")).decode()
+            try:
+                raw, elapsed = call_vlm(vlm_url, vlm_model, img_b64, 4096, 120.0)
+            except Exception as e:
+                print(f"    p.{pg}: 실패 — {e}", file=sys.stderr)
+                continue
+            text = _clean_text(raw)
+            rep = max_repeat_count(text)
+            page_results.append({
+                "page": pg, "vlm_len": len(text), "elapsed_sec": round(elapsed, 2),
+                "max_repeat_count": rep,
+            })
+            # 원문(후처리 전) 그대로도 저장 — 나중에 직접 확인 가능하게
+            raw_name = f"{fname.replace('.pdf','')}_p{pg}.txt"
+            with open(os.path.join(raw_dir, raw_name), "w", encoding="utf-8") as f:
+                f.write(raw)
+            flag = f" [반복{rep}회 의심]" if rep >= 10 else ""
+            print(f"    p.{pg}: {len(text)}자, {elapsed:.1f}s{flag}", file=sys.stderr)
+        doc.close()
+
+        results.append({"doc": fname, "pages": page_results})
+        with open(out_path, "w", encoding="utf-8") as f:
+            _json.dump(results, f, ensure_ascii=False, indent=2)
+
+    print(f"저장: {out_path}, 원문: {raw_dir}/", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

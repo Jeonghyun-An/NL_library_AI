@@ -1,0 +1,14 @@
+328 번역학연구 ● 제24권 3호
+
+stirred coffee’에서 ‘stirred(doing)’과 ‘sugar melted’에서 ‘melted’(happening)가 물질적 프로세스에 해당한다. 정신적 프로세스는 의식 있는 존재(conscious being)가 사물을 지각하거나(‘see’, ‘hear’), 인지하거나(‘forget’, ‘consider’), 감정을 표현하는(‘like’, ‘hate’) 것에 관여한다. 관계적 프로세스는 참여자의 속성(attributive)(‘Mary is strong’)이나 식별(identify)(‘Mary is our CEO’)을 보여준다. 행동적 프로세스는 물질적 프로세스와 정신적 프로세스의 특성을 모두 지닌 프로세스로, 의식 있는 존재의 물리적 및 심리적 행동(‘laugh’, ‘smile’, ‘worry’, ‘dream’)을 나타내는 프로세스이다(Eggins 2004: 233). 구두적 프로세스는 ‘say’를 비롯하여 말로 하는 여러 다양한 프로세스(‘explain’, ‘promise’, ‘convince’)를 의미하며, 존재적 프로세스는 주로 ‘there was once a beautiful princess’와 같이 ‘존재하다’를 의미하는 프로세스를 가리킨다. 프로세스별 예문을 포함한 보다 상세한 설명은 아래 <표 1>에서 확인할 수 있다.
+
+<표 1> 프로세스에 대한 설명과 예문(Martin et al. 2020: 4장. 필자의 요약 및 번역)
+
+| 프로세스 | 설명 | 예문 |
+|---|---|---|
+| 물질적 프로세스 | 물질적 세계에서 일어나는 변화로, 공간의 이동이나 물리적 구성의 변화이다. 추상적 변화도 포함한다. | She drove down the coast; The lake froze; He melted the butter; The wind destroyed the gazebo; Their arguments destroyed her theory. |
+| 정신적 프로세스 | 인격체가 인지, 원함, 감정과 같이 의식을 포함하는 프로세스에 관여한다. 의인화된 경우도 포함된다. | The man knew too much; It surprised him to see her so happy; My car doesn’t like hills. |
+| 관계적 프로세스 | 전통적 문법의 be 동사에 해당하는 프로세스. 주어의 주요 유형은 속성과 식별이다. | She is energetic; Red stands for danger; She has lots of energy; She owns her property. |
+| 구두적 프로세스 | saying(말하기)에 해당하는 프로세스. 말하기에 해당하는 다양한 단어(tell, state, inform 등)뿐 아니라 show, indicate와 같은 기호적인 구두적 프로세스도 포함한다. | He told me a strange story; The paper says there will be another election; The sign indicates Gates 50-55 are to the right. |
+
+www.kci.go.kr

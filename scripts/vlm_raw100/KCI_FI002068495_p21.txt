@@ -1,0 +1,25 @@
+클럽세가 클럽의 규모에 미치는 영향 51
+
+\frac{\partial \mathcal{L}}{\partial p} = n + \lambda \frac{\partial U}{\partial x} \frac{\partial x}{\partial p} = 0 \quad (39)
+
+\frac{\partial \mathcal{L}}{\partial y} = - \frac{dC}{dy} + \lambda \frac{\partial U}{\partial y} = 0 \quad (40)
+
+\frac{\partial \mathcal{L}}{\partial n} = (p + t) + \lambda \frac{\partial U}{\partial n} = 0 \quad (41)
+
+\frac{\partial \mathcal{L}}{\partial \lambda} = U(I - p - t, y, n) - U_t^* = 0. \quad (42)
+
+식(40)과 식(39)를 정리한 다음 대응되는 변수를 나눈 후 정리하면
+
+\frac{dC(y)}{dy} = n \frac{\partial U}{\partial y} \quad (\text{이때 } \frac{\partial x}{\partial p} = -1 \text{을 적용}) \quad (43)
+
+를 얻는다. 이것은 자발적 클럽에 조세를 부과할 때 얻은 식(17)과 같다.
+
+한편 식(41)과 식(39)를 정리한 다음 대응되는 변수를 나눈 후 정리하면
+
+- n \frac{\partial U}{\partial n} = p + t \quad (44)
+
+를 얻는다. 이것은 자발적 클럽에 조세를 부과할 때 얻은 식(18)과 사실상 동일하다. 다만 자발적 클럽에서는 클럽재의 공급비용을 증가시키는 형태로 조세가 부과되는 경우로 생각했고 기업클럽의 경우에는 1인당 지불하는 클럽 회비에 조세가 부과되는 경우로 생각했기 때문에 \( t = \frac{t_0}{n} \)가 성립한다는 차이가 있다.
+
+그런데 총효용이 극대화될 때에는
+
+- n \frac{\partial U}{\partial n} = \frac{C(y)}{n} + \frac{U}{\partial x} \quad (26)'

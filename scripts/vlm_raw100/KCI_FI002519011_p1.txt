@@ -1,0 +1,40 @@
+ORIGINAL ARTICLE
+Child Health Nurs Res, Vol.25, No.4, October 2019: 425-434
+https://doi.org/10.4094/chnr.2019.25.4.425
+
+초등학생 고학년의 공격성 구조모형
+유선이¹, 안혜영²
+¹광주대학교 간호학과 교수, ²울지대학교 간호학과 교수
+
+Construction of a Model of Aggression in the Upper Grades of Elementary School
+Sun Yee Yoo¹, Hye Young Ahn²
+¹Professor, Department of Nursing, Gwangju University, Gwangju; ²Professor, College of Nursing, Eulji University, Daejeon, Korea
+
+Purpose: The purpose of this study was to construct a structural model that explains the factors affecting aggression among elementary school students and to verify their suitability. Methods: The study period was from June to August 2018. The study subjects were fifth- and sixth- graders at an elementary school. In total, 291 surveys were collected, of which 259 were analyzed. Data were analyzed using SPSS version 24.0 and AMOS version 24.0. Results: The fit of the final model was acceptable (χ²=160.08 [p<.001], GFI=.921, AGFI=.869, CFI=.919, SRMR=.057, and RMSEA=.086). Thus, eight of the 10 hypotheses were shown to be statistically significant. Conclusion: The results of this study indicate that positive and open parenting behaviors and training children to engage in self-control are needed to reduce their aggression. In addition, considerable attention and education are required in the home, school, and society so that children can learn to properly recognize and express their emotions and establish suitable beliefs regarding aggressive behavior.
+
+Key words: Aggression; Beliefs; Parenting; Emotions; Self-control
+
+Corresponding author Hye Young Ahn
+https://orcid.org/0000-0002-5353-671X
+College of Nursing, Eulji University
+771-77 Beon-gil, Gyeryong-ro, Joong-gu, Daejeon 34824, Korea
+TEL +82-42-259-1715  FAX +82-42-259-1709
+E-MAIL ahanaya@eulji.ac.kr
+
+*이 논문은 유선이의 울지대학교 박사학위논문의 일부를 수정 및 축약하여 작성한 것임.
+*This article was adapted from a dissertation by Sun Yee Yoo in partial fulfillment of the requirements for the dissertation at Eulji University.
+
+Key words 공격성, 공격신념, 부모 양육행동, 정서인식 및 표현, 자기통제
+Received Mar 12, 2019  Revised May 14, 2019  Accepted Jun 24, 2019
+
+© This is an Open Access article distributed under the terms of the Creative Commons Attribution Non-Commercial License (http://creativecommons.org/licenses/by-nc/4.0/) which permits unrestricted non-commercial use, distribution, and reproduction in any medium, provided the original work is properly cited.
+
+Copyright © 2019 Korean Academy of Child Health Nursing
+
+ISSN(Print) 2287-9110
+ISSN(Online) 2287-9129
+CHNCR
+
+서론
+1. 연구의 필요성
+교육부의 ‘2018년 1차 학교폭력 실태조사’에 따르면 학교폭력 피해를 경험했다고 응답한 비율이 1.3% (5만명)로 지난해에 비해 0.4% 증가하였으며, 더욱이 초등학생의 피해응답률 증가(0.7%)가 중학생(0.2%)과 고등학생(0.1%)의 피해응답률 증가보다 더 높은 것으로 나타났다[1]. 이 같은 피해응답률 증가는 우리 사회에서 학교폭력의 심각성을 나타내는 증거로 볼 수 있다. 초등학생의 가해 이유로는 ‘먼저 괴롭혀서(28.9%)’, ‘장난으로(20.0%)’, ‘마음에 안 들어서(11.9%)’, ‘특별한 이유 없이(10.8%)’ 순으로 나타났다[1]. 폭력(Violence)은 공격성이라는 인간 내부의 충동이 행위로 나타난 결과를 의미하므로[2] 초등학생의 공격성에 주목할 필요가 있다. 초등학생의 공격성에 관한 연구가 중요한 이유는 공격성이 높은 아동이 그렇지 않은 아동에 비해 우울을 경험할 확률이 2배나 높으며[3], 공격성이 증가할수록 게임에 대한 몰입도 증가하여 게임중

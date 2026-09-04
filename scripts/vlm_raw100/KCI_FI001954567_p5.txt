@@ -1,0 +1,30 @@
+Ⅲ. 결 과
+
+1. 환자검체에서 분리된 V. parahaemolyticus 균주의 생화학적 성상
+
+1일 배양 후에 전균주가 양성을 보인 시험은 TSI 한천에서 고층의 산생성, indole, methyl red, 운동성, lysine decarboxylase, arabinose, glucose, maltose, mannitol, mannose에서 산생성, oxidase, 3%와 7% NaCl broth에서 증식이며, 음성반응을 보인 시험은 TSI 한천에서 H2S와 가스생성, Voges-Proskauer, ONPG, urease, phenylalanine deaminase, arginine dihydrolase, TSI 한천에서 가스생성, inositol, lactose 및 sucrose에서 산생성, 10% NaCl broth에서 증식이었다. 그러나 urease 시험은 7일 배양 후에 46균주 중 80%가 양성으로 나타났다. 전통적 방법으로 V. parahaemolyticus로 동정된 균주들은 API 20E 키트방법으로도 같은 균종으로 동정되었다 (Table 2).
+
+2. V. parahemolyticus 46균주에 대한 혈청형과 toxR 유전자의 분포
+
+시험된 V. parahaemolyticus 중 O3:K6가 39주 (85%)로 가장 많았고, O3:K56과 O3:KUT가 각각 2주(4%)이었고 O3:K9, O3:K55 및 R형은 각각 1주이었다. 한편 PCR에 의한 toxR 유전자는 모든 균주가 양성이었다 (Table 3, Fig. 1). 한편 우리나라 1997년부터 1999년까지 식중독환자 분포에서 (CDMR, 2000) Salmonella 가 가장 많이 분리보고 되었고 다음은 V. parahaemolyticus 순이었다 (Table 4).
+
+3. 디스크확산법에 의한 항균제 감수성
+
+표준디스크 확산법에 의한 항균제 감수성 시험에서 ampicillin, carbenicillin은 모든 균주가, cefazolin은 89%, colistin은 30%가 내성성을 보였고, cefotetan, ceftriaxone, amikacin, gentamicin, tobramycin, tetracycline, nalidixic acid, ciprofloxacin, chloramphenicol 및 ceftriaxone, cephalexin, kanamycin 및 colistin에는 54% 이하가 감수성을 보였다. 한편 한천희석법에서 ampicillin의 MIC범위는 16-≥128 μg/ml, MIC50과 MIC90은 각각 ≥128 μg/ml이었고, 내성 breakpoint를 적용하여 해석할 때 ampicillin은 100%, cephalexin은 6%가 내성을 보인 반면 시험된 다른 항균제에는 내성이 없었다 (Table 5-6).
+
+Table 3. Serovars. and possession of toxR gene of V. parahaemolyticus strains isolated from patients with diarrhea in 1999
+
+| Serovar | No. (%) of positive strains | toxR gene |
+| --- | --- | --- |
+| O3:K6 | 39 (85) | 39 (85) |
+| O3:K9 | 1 (2) | 1 (2) |
+| O3:K55 | 1 (2) | 1 (2) |
+| O3:K56 | 2 (4) | 2 (4) |
+| O3:KUT* | 2 (4) | 2 (4) |
+| R** | 1 (2) | 1 (2) |
+| Total | 46 (100) | 46 (100) |
+
+*KUT, K untypeable.
+**R, rough colony.
+
+89

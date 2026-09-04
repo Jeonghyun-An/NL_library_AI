@@ -1,0 +1,20 @@
+개인정보보호(Schutz personenbezogener Daten)와 경쟁법 적용*  
+– 연방카르텔청의 Facebook 결정 및 뒤셀도르프 고등법원의 결정(VI–Kart 1/19 (V))을 중심으로 –  
+유영국**  
+
+I. 머리말  
+
+디지털 경제(digitale Ökonomie)로 대표되는 역동적 시장과 급격한 기술·생활 환경 변화에 대한 규범적 적응(nomative Anpassung) 방안 모색은 비단 경쟁법 차원만의 문제도, 각국 경쟁당국의 개별적 노력만으로 해결될 문제도 아니다. 따라서 이러한 변화는 다양한 법 영역에서의 동시적 고려와¹⁾ 경쟁당국 간의 국제적이고 긴밀한 논의와 협조를 통하여 대응해야 할 공통의 과제로 인식되고 있다.²⁾  
+
+과거에는 경쟁법 적용 대상으로 여겨지지 않았던 시장에서의 현상이나 행위 역시 경쟁법 관점에서 그 법위반 여부가 판단될 필요성이 대두되었다. 물론 이에 관하여는 다양한 논의가 여전히 진행 중이며, 무엇보다 빅데이터에 기반한 사업모델을 둘러싼 개인정보보호와 경쟁법 적용 이슈에 이목이 집중되고 있다.³⁾ 특히 2019년 2월 6일 독일연방카르텔청(Bundeskartellamt)이 3년 남짓의 Facebook에 대
+
+* 이 글은 필자의 소속 기관의 입장과는 무관한 개인적 견해에 기초하여 작성되었음.  
+** 한국공정거래조정원 공정거래연구센터 연구위원/법학박사(Dr. jur., LL.M).  
+
+1) 같은 맥락에서 연방독점위원회(Monopolkommission)는 인터넷상의 권리소유자와 소비자에 대한 법적 보호(Rechtsachutz) 강화는 정보보호법, 지적재산권법, 소비자보호법 또는 민법 등 다양한 법 분야에서 이루어질 수 있음을 지적한 바 있다(Sondergutachten 68, 2015, Rn. 532). 정보보호법 적용에 관한 논의는 동 보고서 Rn. 92 ff., 165 f., 282 f., 441.  
+
+2) BKartA, “Bundeskartellamt/Internationale Zusammenarbeit–Gemeinsame Erklärung zu Wettbewerb in der digitalen Wirtschaft”, Pressmitteilung, 2019.7.18.; G7, Common Understanding of G7 Competition Authorities on “Competition and the Digital Economy”, 2019.6.5.  
+
+3) 2014년 Facebook/WhatsApp 그리고 2008년 Google/DoubleClick의 기업결합사례는 디지털 경제로의 전환 과정에서 고려되어야 할 다양한 경쟁법 쟁점들이 제기되었으며, 이러한 문제와 구체적 논의는 관련 법 개정으로까지 이어졌다.  
+
+– 306 –

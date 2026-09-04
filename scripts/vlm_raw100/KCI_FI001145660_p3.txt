@@ -1,0 +1,26 @@
+대한산부회지 제48권 제5호, 2005
+
+40배율 시야에서 탐색한 후 단위 면적당 미세혈관 수가 가장 많은 3개의 시야를 선택하여 200배 배율 (0.74 mm² per field)에서 혈관의 수를 셈하고 그 평균치를 산출하여 대표치로 사용하였다 (Fig. 1).
+
+3) 통계분석
+VEGF의 면역반응에 따른 미세혈관밀도, 나이, SCC (squamous cell carcinoma), CEA (carcinoembryonic antigen), parametrium invasion 여부, 림프혈관침범 (lymphovascular invasion), 림프절침범 (lymph node invasion)의 상관관계는 Chi-square test와 One way Anova test로 분석하였고 p<0.05인 경우를 통계학적으로 유의한 것으로 간주하였다.
+
+결과
+
+1. 자궁경부병변에서 VEGF의 발현과 임상적 인자, 미세혈관밀도와의 관계
+20예의 침윤성 자궁경부암 환자의 임상적인 인자들 중에 나이, SCC, CEA의 정도는 VEGF의 면역반응도와의 관련성이 통계적으로 유의하지 않았다. 하지만,
+
+[그림: Fig. 1. Immunohistochemical staining of cervical cancer tissues. A; CD31 staining of microvessels (×40). The endotheliums of vessels are stained as brown color. B; VEGF (vascular endothelial growth factor) staining of tumor cells (×200). Most of the expressions are seen in the cytoplasms of the cancer cells.]
+
+Table 1. Correlation between VEGF expression and several clinical factors
+
+| Factor | Expression of VEGF |  |  | P |
+| --- | --- | --- | --- | --- |
+|  | Weak positive | Moderate positive | Strong positive |  |
+| Age | 47.5±11.6 (N=12) | 43.2±4.4 (N=5) | 52.0±5.7 (N=3) | 0.476 |
+| MVD | 92.1±21.1 (N=12) | 140.6±14.0 (N=5) | 157.6±27.7 (N=3) | 0.000 |
+| SCC | 1.60±1.89 (N=6) | 1.00±0.60 (N=3) | 2.66±1.9 (N=3) | 0.505 |
+| CEA | 12.3±29.8 (N=8) | 3.75±1.63 (N=2) | 0.87±0.64 (N=3) | 0.770 |
+
+Datas are presented as mean±standard deviation.
+VEGF: vascular endothelial growth factor, MVD: microvessel density, SCC: squamous cell carcinoma antigen, CEA: carcinoembryonic antigen (one way Anova test).

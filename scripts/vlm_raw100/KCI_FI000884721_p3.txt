@@ -1,0 +1,50 @@
+Vol. 32, No. 5, 2002. Korea. J. Orthod
+
+[그림: Fig. 1. Landmarks for dry skull]
+
+[그림: Fig. 2. Measurements for dry skull]
+
+3차원 CT 영상을 이용한 두개악안면 분석을 위한 계측점의 제안
+
+II. 연구 대상 및 방법
+
+1. 연구 대상
+
+(1) 상태가 양호한 1개의 건조두개골을 선정하고 Figure 1의 계측점에 각각 지름 1mm, 높이 1mm인 원통형의 Gutta percha를 이용한 실측치와 3차원 CT 영상 및 다면 재구성 영상 계측치 간의 정확성 및 확대율검사에 사용하였다.
+
+<계측점>
+
+1) N(nasion) : 시상면에서 전두비골 봉합의 최전방점
+2) Or(orbitale) : 안와하연의 최하방점으로 좌우 상의 중간점 (양측성)
+3) Pr(porion, 해부학적) : 외이도의 상방점 (양측성)
+4) ANS(anterior nasal spine) : 정중면에서 골격성 전비극의 끝
+5) A(subspinale) : 전비극과 Prosthion 사이의 상악의 최심점
+6) PNS(posterior nasal spine) : 상악골의 최후방점
+7) Ba(basion) : 후두공 전연의 중간점으로 후두골 기저부 하연 경사의 후방 끝점
+8) Go(gonion) : 하악각 만곡의 최외각점 (양측성)
+9) Co(condylion) : 하악과두의 최상방점 (양측성)
+10) Me(menton) : 하악골정중봉합의 최하방점
+11) B(supramentale) : 정중시상면에서 하악골정중봉합의 infradentale와 pogonion 사이의 최심점
+
+2. 연구 방법
+
+(1) 건조 두개골의 실측치와 3차원 CT 영상 및 다면 재구성 영상 계측치 간의 정확성 및 확대율 검사
+
+<계측 항목>
+
+1) 건조 두개골의 실측
+
+Figure 2의 계측 항목을 한명의 술자가 5회씩 2주 간격으로 2회에 걸쳐 측정하였다. Digital vernia caliper를 이용하여 각 계측항목을 0.01mm까지 측정하였고 N-Ba 항목은 접근이 어려워 craniometer를 이용하여 측정하였다.
+
+<계측 항목>
+
+1) N-Ba : cranial base length
+2) N-Me : anterior facial height
+3) N-ANS : upper facial height
+4) ANS-Me : lower facial height
+5) N-Go : facial depth (양측성)
+6) Go-Me : mandibular body length (양측성)
+7) Co-Go : ramus height (양측성)
+8) Co-Me : mandibular length (양측성)
+
+315

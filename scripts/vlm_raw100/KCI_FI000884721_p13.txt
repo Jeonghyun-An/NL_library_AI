@@ -1,0 +1,15 @@
+Vol. 32, No. 5, 2002. Korea. J. Orthod  3차원 CT 영상을 이용한 두개악안면 분석을 위한 계측점의 제안
+
+Korea) and also to obtain landmarks that are easy to designate and reproduce in three-dimensional images using the Vmorp-h-proto program™ (Cybermed Inc., Seoul, Korea). The following conclusions were obtained;
+
+1. In the comparison of actual measurements from the dried skull and the three-dimensional image obtained from the Vworks program, the mean error was 0.99mm and the magnification was 1.04%.
+
+2. Clinically useful hard tissue landmarks from three-dimensional images were Supraorbitale, Lateral orbital margin, Infraorbitale, Nasion, ANS, A point, Zygomaticomaxilla, Upper incisor, Lower incisor, B point, pogonion, Menton, PNS, Condylar inner margin, Condylar outer margin, Porion, Condylion, Gonion1, Gonion2, Gonion3, Sigmoid notch and Basion.
+
+3. Clinically useful soft tissue landmarks from three-dimensional images were Endocanthion, Exocanthion, Soft tissue Nasion, Pronasale, Alare lateralis, Upper nostril point, Lower nostril point, Subnasale, Upper lip point, Cheilion, Stomion, Lower lip center, Soft tissue B, Pogonion, Menton and Preaurale.
+
+The Vworks program can be considered a clinically efficient tool to produce and measure three-dimensional images. Most of the hard and soft tissue landmarks proposed above are anatomically important points which are also easily reproducible and designated. These landmarks can be beneficial in three-dimensional diagnosis and the prediction of changes before and after surgery.
+
+KOREA. J. ORTHOD. 2002: 32(5): 313-25
+
+Key words : Three-dimensional CT imaging, Craniofacial analysis, Landmarks

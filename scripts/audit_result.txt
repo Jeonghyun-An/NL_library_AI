@@ -1,0 +1,11 @@
+VLM 글자수 상위 10쪽(반복루프 미탐지, 의심스러운 큰 값 있는지 확인):
+  KCI_FI001485990.pdf p.7: vlm=10816, fitz=1625, rep=1, elapsed=27.47
+  KCI_FI001579917.pdf p.2: vlm=8245, fitz=1448, rep=1, elapsed=28.02
+  KCI_FI000854981.pdf p.1: vlm=8008, fitz=0, rep=1, elapsed=28.04
+  KCI_FI001159328.pdf p.8: vlm=7967, fitz=1294, rep=1, elapsed=28.02
+  KCI_FI001021172.pdf p.11: vlm=7804, fitz=0, rep=1, elapsed=27.98
+  KCI_FI002531105.pdf p.16: vlm=7612, fitz=3, rep=1, elapsed=28.01
+  KCI_FI001215202.pdf p.2: vlm=7392, fitz=2274, rep=1, elapsed=27.98
+  KCI_FI001498048.pdf p.3: vlm=7305, fitz=7126, rep=1, elapsed=27.29
+  KCI_FI003259902.pdf p.16: vlm=7234, fitz=1908, rep=1, elapsed=27.26
+  KCI_FI000979036.pdf p.1: vlm=7155, fitz=0, rep=1, elapsed=28.02

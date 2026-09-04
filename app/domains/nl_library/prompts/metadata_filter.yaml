@@ -2,6 +2,24 @@ parser: plain
 params:
   max_tokens: 128
   temperature: 0.0
+  # vLLM guided decoding — 이 스키마를 벗어난 토큰은 아예 샘플링되지 않는다.
+  # 기존엔 LLM이 설명을 덧붙이거나 코드펜스를 빼먹으면 파싱 실패 → 조용히 필터
+  # 없음으로 폴백했다(metadata_filter.py 참고). 서버가 guided decoding을 지원하지
+  # 않으면 vLLM이 이 필드를 무시하고 기존과 동일하게 동작하므로 하위 호환된다.
+  guided_json:
+    type: object
+    properties:
+      pub_year_from:
+        type: [integer, "null"]
+      pub_year_to:
+        type: [integer, "null"]
+      sort_by:
+        type: [string, "null"]
+        enum: [recent, oldest, null]
+      has_filter:
+        type: boolean
+    required: [pub_year_from, pub_year_to, sort_by, has_filter]
+    additionalProperties: false
 system: |-
   사용자의 도서관 검색어에서 날짜·정렬 조건만 JSON으로 추출하세요.
 

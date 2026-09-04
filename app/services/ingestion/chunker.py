@@ -198,7 +198,17 @@ def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[C
     if chunk.token_count <= max_tokens:
         return [chunk]
 
-    sentences = _split_sentences(chunk.text)
+    # 표·OCR 덩어리처럼 문장 종결부호가 없는 텍스트는 '한 문장'이 max_tokens 를 넘길 수
+    # 있고, 그러면 아래 루프가 쪼개지 못해 거대한 청크가 그대로 남는다(LLM 컨텍스트 초과).
+    # → 문장 자체가 상한을 넘으면 글자 단위로 강제 분할한다.
+    max_chars = int(max_tokens * 1.5)
+    sentences: list[str] = []
+    for s in _split_sentences(chunk.text):
+        if _estimate_tokens(s) > max_tokens:
+            sentences.extend(s[i:i + max_chars] for i in range(0, len(s), max_chars))
+        else:
+            sentences.append(s)
+
     sub_chunks = []
     current_text = ""
     current_tokens = 0
@@ -345,6 +355,12 @@ def semantic_chunk(
     final_chunks = []
     for chunk in chunks:
         final_chunks.extend(_split_oversized(chunk, max_tokens=max_tokens))
+
+    # _split_oversized는 max_tokens만 신경 쓰고 min_tokens를 모른다 — 소제목처럼
+    # 작은 청크 뒤에 그 청크 혼자 감당 못할 만큼 큰 본문이 이어지면, 그리디 누적이
+    # 소제목만 먼저 flush해버려 자투리 청크로 고아가 된다(예: "서론 1.1." 7자가
+    # 뒤 본문과 분리됨). 분할 후 다시 한 번 병합해 정리한다.
+    final_chunks = _merge_small_chunks(final_chunks, min_tokens=min_tokens)
 
     # 최종 바이트 가드 — 의미 분할로 안 잡힌 초대형 청크를 강제 분할
     # (VLM 출력처럼 마침표 없는 한 덩어리, 단일 초대형 문장 등)

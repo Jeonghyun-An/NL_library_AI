@@ -1,0 +1,10 @@
+2.2 그리피스 편지 자료의 성격
+
+완성된 메타데이터 파일은 팔라디오 Palladio29를 사용하여 기본적인 시각화 작업을 진행하였다. 팔라디오는 미국 스탠포드대학교 Humanities+Design 부서에서 개발하여 2014년에 출시한 애플리케이션으로 ‘Mapping the Republic of Letters’와 ‘Martin Luther’s Wartburg Letters’ 프로젝트에도 사용된 도구이다. 메타데이터를 사용하여 시각화하는 것은 편지의 이미지와 내용을 직접 확인하기 이전에도 사용자들에게 유용한 것이다. 또한 시각화를 통해 편지와 관련된 관계망을 이해하고 자료의 맥락에 대한 분석이 가능하다. 물론 자료 연구를 위한 가장 좋은 방법은 메타데이터와 함께 이미지나 텍스트 파일이 직접 제공되는 것이지만 양질의 메타데이터를 구축하고 이를 시각화하는 것은 자료를 분석하고 활용하는 기반이 된다.
+
+<그림 3>은 그리피스와 편지를 교환한 사람이나 기관을 나타내며 모두 160곳에 달한다. 그리피스에게 가장 많은 편지를 보낸 사람은 이화학당 교장을 지낸 앨리스 아펜젤러 Alice R. Appenzeller (1885~1950)로 1911년부터 1927년까지 모두 38건의 편지를 남겼다. 그리피스는 아버지 헨리 G. 아펜젤러 Henry Gerhard Appenzeller (1858~1902)를 비롯하여 앨리스의 형제인 헨리 D. 아펜젤러 Henry Dodge Appenzeller (1889~1953), 아이디다 Hannah Appenzeller (1891~1956), 메리 Ella Appenzeller (1893~1963) 와도 편지를 주고 받았다. 그리피스는 아펜젤러 가족이 소장하고 있던 일기와 편지를 사용하여 헨리 G. 아펜젤러의 전기를 썼다. 앨리스는 1911년 8월 31일 편지에 그리피스가 요청한 아버지 헨리의 사진을 보내면서 펜실베이니아주 서덜턴 Souderton, Pa. 에 사는 삼촌 제이콥이 아
+
+29 https://hdlab.stanford.edu/palladio/
+30 Davies, Daniel M., “Henry G. Appenzeller : Pioneer Missionary and Reformer in Korea”, Methodist History 30(4), Penn State University Press, 1992, pp.195~205.
+
+151

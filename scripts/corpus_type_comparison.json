@@ -1,0 +1,47 @@
+[
+ {
+  "label": "학술논문",
+  "docs": 100,
+  "pdf_pages": 2081,
+  "odl_pages": 2024,
+  "odl_missing": 57,
+  "reroute": 6,
+  "reroute_pct": 0.2964426877470355,
+  "fallback_new_pct": 12.157616530514176,
+  "fallback_old_pct": 11.869293608841904,
+  "fitz_short_pct": 13.695338779432964,
+  "reroute_fitz_mean": 8.166666666666666,
+  "reroute_fitz_max": 49,
+  "reroute_fitz_ge200": 0
+ },
+ {
+  "label": "정책·재정자료",
+  "docs": 200,
+  "pdf_pages": 11473,
+  "odl_pages": 11261,
+  "odl_missing": 212,
+  "reroute": 100,
+  "reroute_pct": 0.8880206020779682,
+  "fallback_new_pct": 10.407042621807722,
+  "fallback_old_pct": 9.535431011941078,
+  "fitz_short_pct": 14.878410180423604,
+  "reroute_fitz_mean": 289.47,
+  "reroute_fitz_max": 2397,
+  "reroute_fitz_ge200": 24
+ },
+ {
+  "label": "문학(스캔)",
+  "docs": 100,
+  "pdf_pages": 19626,
+  "odl_pages": 19626,
+  "odl_missing": 0,
+  "reroute": 0,
+  "reroute_pct": 0.0,
+  "fallback_new_pct": 100.0,
+  "fallback_old_pct": 100.0,
+  "fitz_short_pct": 100.0,
+  "reroute_fitz_mean": 0,
+  "reroute_fitz_max": 0,
+  "reroute_fitz_ge200": 0
+ }
+]

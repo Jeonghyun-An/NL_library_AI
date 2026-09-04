@@ -1,0 +1,45 @@
+■ 정태영
+
+받게 된다.
+
+본 논문에서 설계한 SMC는 향후 실험을 거쳐 잇은 외란 인가 또는 파라미터 변동이 수반되는 DC모터의 정밀한 속도제어에 활용될 수 있을 것으로 기대된다.
+
+사 사
+
+이 논문은 부경대학교 자율창의학술연구비(2019년) 에 의하여 연구되었음.
+
+References
+
+Alfonso D, Gatto GL, Ignazio M and Alessandro P. 2004. Second-order sliding-mode control of DC drives. IEEE Transactions on Industrial Electronics 51, 364-373. (DOI:10.1109/tie.2004.825268).
+
+Ahmed AHO. 2012. Performance comparison of sliding mode control and conventional PI controller for speed control of separately excited direct current motors. Journal of Science and Technology 13, 74-80.
+
+Dursun EH and Durdu A. 2016. Speed control of a DC motor with variable load using sliding mode control. International Journal of Computer and Electrical Engineering 8, 219-226. (DOI:10.17706/ijcee.2016.8.3.219-226).
+
+Han CH, Jeong TY, Jung YM and Jeong SK. 2017. Robust speed controller design for DC motors based on sliding mode control. Conference of Korean Society for Power System Engineering, 148-149.
+
+Han CH and Jeong SK. 2018. Comparison of robustness of sliding mode and PI control in DC motor speed control system with periodic loads. Journal of the Korean Society for Power System Engineering 22, 23-31. (DOI:10.9726/)
+
+Hanifi G. 2003. Sliding mode speed control for DC drive systems. Mathematical and Computational Applications 8, 377-384. (DOI:10.3390/mca8030377).
+
+Kim SH. 2010. Electric motor control: DC, AC, and BLDC motors. Bogdoo, 54-111.
+
+Liu J and Wang X. 2011. Advanced sliding mode control for mechanical systems. Springer 9-20. (DOI:10.1007/978-3-642-20907-9_3).
+
+Maheswararao CU, Kishore Babu YS and Amaresh K. 2011. Sliding mode speed control of a DC motor. Communication Systems and Network Technologies (CSNT), International Conference on IEEE, 387-391. (DOI:10.1109/csnt.2011.86).
+
+NAZANIN A and Yazdi MH. 2013. Sliding mode controller for DC motor speed control. Global Journal of Science Engineering and Technology 11, 45-50.
+
+Vadim U, Guldner J and Shi J. 2009. Sliding mode control in electro-mechanical systems. CRC press, 224-237.
+
+Venkatesh T, Tarunkumar M, Jayanthi B, Ramesh B and Chaitanya P. 2016. Speed control of DC motor and performance is compared with PID and SMC controller. International Journal of Engineering Science and Computing 6, 4071-4075. (DOI:10.4010/2016.934).
+
+Wilfrid P and Barbot JP. 2002. Sliding mode control in engineering. CRC Press, 34-36.
+
+2019. 09. 23 Received
+
+2019. 10. 15 Revised
+
+2019. 11. 04 Accepted
+
+410 | The Korean Society of Fisheries and Ocean Technology

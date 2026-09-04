@@ -4,10 +4,13 @@ summarizer.py — 섹션/도서 요약·테마·소개글 생성
 프롬프트는 도메인 프로파일의 YAML 템플릿(domains/{D}/prompts/)에서 로드한다.
 doc_type 판별 로직은 domains/{D}/doc_types.py 로 이동 (아래 shim 으로 호환 유지).
 """
+import logging
 import re
 import httpx
 from core.config import get_settings
 from services.prompts import get_prompt, PromptTemplate
+
+log = logging.getLogger(__name__)
 
 
 # SUMMARY:/THEMES: 라벨 — gemma가 마크다운 볼드(**)·헤더(#)로 감싸도 허용
@@ -93,24 +96,14 @@ def _parse_llm_output(tpl: PromptTemplate, raw: str) -> tuple[str, list[str]]:
 
 
 async def _chat_completion(system: str, user: str, params: dict, timeout: float) -> str:
-    cfg = get_settings()
-    payload = {
-        "model": cfg.LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        **params,
-    }
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(f"{cfg.LLM_BASE_URL}/chat/completions", json=payload)
-        if resp.status_code >= 400:
-            import logging
-            logging.getLogger(__name__).error(
-                f"[summarizer] LLM {resp.status_code} — user={len(user)}자, body={resp.text[:500]}"
-            )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+    # LLM 호출은 llm_client 어댑터로 통일 (OpenAI vLLM / Ollama 네이티브 겸용).
+    # 스타일 분기·think 제어·base URL 처리는 어댑터가 담당한다.
+    from services.llm_client import chat
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    return await chat(messages, params=params, timeout=timeout)
 
 
 async def summarize_section(
@@ -120,6 +113,11 @@ async def summarize_section(
 ) -> tuple[str, list[str]]:
     """섹션 요약 + 테마 키워드 동시 추출. returns (summary, themes)."""
     tpl = get_prompt("section_summary", _normalize_doc_type(doc_type))
+    # 컨텍스트 초과 방어 — 섹션 분할은 토큰을 추정치로 계산하므로 실제 토큰이 더 클 수 있다.
+    cap = getattr(get_settings(), "SUMMARIZER_MAX_SECTION_CHARS", 0)
+    if cap and len(section_text) > cap:
+        log.warning(f"섹션 입력 {len(section_text)}자 → {cap}자로 절단 (컨텍스트 초과 방지)")
+        section_text = section_text[:cap]
     system, user, params = tpl.render(title=book_title, text=section_text)
     raw = await _chat_completion(system, user, params, timeout=get_settings().SUMMARIZER_SECTION_TIMEOUT)
     return _parse_llm_output(tpl, raw)

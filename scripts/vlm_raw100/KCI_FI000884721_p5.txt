@@ -1,0 +1,28 @@
+Vol. 32, No. 5, 2002. Korea. J. Orthod
+
+[그림: 3차원 랜드마크]
+Fig. 5. Three dimensional landmarks
+A : Skeletal landmarks
+B : Soft tissue landmarks
+
+Hispeed Advantage 전산화단층촬영장치로 건조두개골의 전산화 단층 촬영과 같은 방법으로 촬영하였다.
+
+2) 계측점의 3차원 좌표계 지정
+각각의 단면 촬영 영상 정보로 Vworks 프로그램에서 정상인과 안면 비대칭 환자의 경조직과 연조직에 해당되는 3차원 입체 영상을 만들어서 Vmorph-proto프로그램으로 송출하였다. 이 때 두개골 내부의 계측점들의 관찰이 용이하도록 계측에 포함되지 않는 두정골과 후두골 부위를 Vworks 프로그램 상에서 제거하였다. 정상인과 안면 비대칭 환자의 3차원 입체 영상에서 각각 경조직 계측점 37개와 연조직 계측점 26개(Figure 5)를 한명의 술자가 5회씩 2주 간격으로 2회에 걸쳐 측정하였다. 계측점을 지정할 때는 3차원 영상을 회전시켜서 계측점이 정면으로 관찰되도록 위치시키고 지정한 후 다시 회전시켜서 다른 각도에서 위치를 확인하였다.
+Vmorph-proto프로그램에서 불러들인 3차원 입체 영상 위에 계측점을 표시하면 이 점들의 3차원 좌표계가 화면의 좌측에 표시되고 이는 Microsoft excel program으로 송출되어 저장된다. (Figure 6, 7)
+
+< 경조직 계측점 >
+1) Supraorbital foramen과 안와가 만나는 점. 양측성
+2) Lateral orbital margin(Lat. Or. Margin) : 전두골과 관골의 전두돌기, 안와가 만나는 점. 양측성
+
+3차원 CT 영상을 이용한 두개악안면 분석을 위한 계측점의 제안
+
+[그림: 비대칭 환자]
+Fig. 6. Asymmetry patient
+Skeletal and soft tissue landmarks of asymmetry patient in Vmorph-proto program. X, Y, Z value of each landmark appears on the left side of monitor
+
+[그림: 정상 성인]
+Fig. 7. Normal adult
+Skeletal and soft tissue landmarks of normal adult in Vmorph-proto program. X, Y, Z value of each landmark appears on the left side of monitor
+
+317

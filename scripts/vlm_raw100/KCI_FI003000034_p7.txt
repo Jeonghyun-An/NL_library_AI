@@ -1,0 +1,13 @@
+used to go to the shop’의 ‘go(가다)’와 ‘They go, “Okay”’에 나오는 ‘go(말하다)’는 의미가 다르며, ‘She struck the thief’의 ‘struck(쳤다)’와 ‘A brilliant idea struck me’에서 ‘struck(떠올랐다)’ 역시 마찬가지다. 따라서, 같은 동사가 사용되더라도 그 기능과 의미에 따라 다르게 노트해야 함을 알 수 있다.
+
+체계기능언어학에서는, 의미를 기준으로 동사(프로세스)를 여섯 가지 유형으로 나누고 있다.5) 아래 <그림 1>에서 보는 것과 같이 물질적 프로세스(material process), 정신적 프로세스(mental process), 관계적 프로세스(relational process), 행동적 프로세스(behavioural process) 그리고 존재적 프로세스(existential process)가 여기에 해당되며, 이 중 첫 세 유형은 비중이 높은 주요 프로세스에 해당하며, 나머지 세 유형은 상대적으로 비중이 낮은 프로세스이다.
+
+〈그림 1〉 프로세스 유형(Halliday and Matthiessen 2004: 172)
+
+[그림: 프로세스 유형의 원형도. 중심에는 'world of abstract relations'와 'world of physical world', 'world of consciousness'가 있으며, 이 중심을 둘러싸는 외곽에는 'material', 'behavioural', 'mental', 'existential', 'relational' 등의 영역이 나뉘어 있다. 각 영역에는 해당 프로세스의 예시가 적혀 있다. 예: material - doing, acting; behavioural - behaving, seeing; mental - thinking, feeling; existential - existing, having attribute; relational - having identity, symbolizing.]
+
+물질적 프로세스는 ‘hit’, ‘go’와 같이, 동사 즉 순수한 우리말로 움직임이나 작용을 나타내는 동사로, 어떤 행동이 있음으로 인해 그에 따른 상태의 변화(doing)나 원래의 상태가 다른 상태로 바뀌게 되는 상태의 변화(happening)를 의미한다. 예를 들어, ‘he
+
+5) 본고에서 제시하는 여섯 가지 프로세스 유형은 영어 기준이다.
+6) 한국민족문화대백과사전에서 발췌한 내용으로 홈페이지 주소는 다음과 같다.
+https://encykorea.aks.ac.kr/Article/E0016530

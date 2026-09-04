@@ -1,0 +1,23 @@
+146 Bull. Korean Chem. Soc. 2002, Vol. 23, No. 1
+
+Scheme 1. Synthesis of redox switchable anion receptor.
+
+[그림: Scheme 1. Synthesis of redox switchable anion receptor.]
+
+Figure 1. The partial ¹H NMR spectra of 4 in the presence of TBA (tetrabutylammonium) HSO₄⁻ in CDCl₃. Numbers at the left side indicate the equivalent amounts of HSO₄⁻ added.
+
+Table 1. Stability constants (Kₐ) in CDCl₃ and cathodic shifts in the presence of anions in CH₃CN
+
+| Anion | 3 | 4 | 5ᵃ | 4 |
+|---|---|---|---|---|
+| Cl⁻ᵇ | 80 | 52 | 7105 | 10 |
+| Br⁻ | – | 16 | 2555 | <5 |
+| I⁻ | – | – | 605 | 0 |
+| ClO₄⁻ | – | – | – | <6 |
+| HSO₄⁻ | 2,990 | 1170 | – | 110 |
+| H₂PO₄⁻ | 410 | 605 | – | 100 |
+| CH₃CO₂⁻ | 414 | 254 | – | 20 |
+
+ᵃStability constants of 5 were taken from Reinhoudt et al.⁹ ᵇTetabutylammonium salts. Errors estimated to be <10%.
+
+upon titration of TBA (tetrabutylammonium) HSO₄⁻ in CDCl₃ are presented in Figure 2. Obviously OH protons of calix[4]arene 3 help the HSO₄⁻ binding, presumably by the additional hydrogen bond with HSO₄⁻. Hydroxy proton signal was observed at δ 6.98 in the absence of anions. Continuous downfield shift of OH proton resonance at δ 6.98 was observed upon addition of HSO₄⁻ to the CDCl₃ solution of 3. Downfield shift suggests that calixarene OH protons form a hydrogen bond with anions. The receptor 3 shows a high selectivity for HSO₄⁻ over Cl⁻, H₂PO₄⁻, and

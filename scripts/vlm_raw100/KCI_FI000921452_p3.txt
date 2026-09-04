@@ -1,0 +1,23 @@
+기존의 모든 형태론적 자질 점검은 탐색자(probe)가 제자리에 있는 목표(goal) 요소와 일치(Agree)에 의해 이루어진다. 따라서, 통사적 대상 XP가 기저위치를 벗어나 다른 위치로 전위(displacement)되는 현상은 기능적 핵인 탐색자 probe의 형태론적 자질 점검을 위해서가 아니라 probe의 EPP 범주선택자질(비해석 자질) 점검을 위해서이다.²)
+
+1.2. 두 종류의 EPP(XP 이동)
+
+한편으로, Chomsky (1998: 23)에서는 다음과 같은 두 종류의 EPP 자질을 설정한다.
+
+(1) C나 v의 EPP: 수의적 자질
+국면(phase)을 구성하는 C나 v의 EPP 자질은 수의적 자질이며 언어마다 다를 수 있다. (The EPP-feature of phase heads v/C varies parametrically among languages and if available is optional.)
+
+(2) T의 EPP: 보편적·의무적 자질
+T의 EPP 자질은 모든 언어에 공히 나타나는 보편적 자질일 것이다. (The EPP-feature of T might be universal.)
+
+즉, Chomsky (1998)에서는 T의 EPP 자질은 보편적으로 의무적인 반면, C나 v의 EPP 자질은 언어마다 다를 수 있으며 수의적 자질이라고 가정함으로써 두 종류의 이동을 설정하고 있는 셈이다. 다시 말해, Chomsky는 모든 언어에 있어서 문법적 주어는 반드시 [Spec, TP] 위치에 있다고 가정하며, 이러한 가정 때문에 그는 T의 EPP 자질은 보편적으로 의무적 자질이라고 설정한 것이다.³)
+
+1.3. 의미해석 INT(Interpretive complex) 효과
+
+Chomsky (1999: 28)에서는 위에서 언급한 두 종류의 이동 중에서 의무적 이동과는 달리, 수의적 이동은 그 결과 반드시 음성부(PF)나 의미부(LF)에 효과를 나타낼 때만 적용된다고 가정한다. 즉, 수의적 이동의 결과와 의미부나 음성부에서 효과가 나타난다는 것이다. 예를 들어, Icelandic 언어에서 수의적 이동인 목적어 상승(object shift)이 이루어지는 경우는 의미해석 효과 INT를 수반한다는 것이다.
+
+Optional operations can apply only if they have an effect on outcome. The EPP position of vP is assigned interpretive complex INT(semantic interpretation
+
+²) 범주 외현적 이동을 설명하기 위한 이러한 EPP 자질의 일반화는, 이동현상이 기능핵이 지닌 강자질에 기인한다는 다소 유표적인 기존의 설명을 대체하고 있다.
+
+³) T의 EPP 자질이 보편적으로 의무적 자질인가에 관한 논의는 Lee (2001a)를 참조바람.

@@ -1,0 +1,8318 @@
+[
+ {
+  "doc": "CNTS-00049202108",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2700,
+  "fitz": 2698,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202108",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 562,
+  "fitz": 610,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202108",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 481,
+  "fitz": 512,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202108",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 648,
+  "fitz": 678,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 596,
+  "fitz": 592,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 953,
+  "fitz": 947,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1066,
+  "fitz": 1095,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202349",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 787,
+  "fitz": 666,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 106,
+  "fitz": 233,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 176,
+  "fitz": 595,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 747,
+  "fitz": 748,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202451",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 738,
+  "fitz": 734,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 650,
+  "fitz": 629,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 854,
+  "fitz": 855,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 569,
+  "fitz": 575,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202622_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 664,
+  "fitz": 664,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1830,
+  "fitz": 1833,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 902,
+  "fitz": 896,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 994,
+  "fitz": 1001,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049202839_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 722,
+  "fitz": 725,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1828,
+  "fitz": 1832,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1843,
+  "fitz": 1845,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2519,
+  "fitz": 2569,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2519,
+  "fitz": 2538,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 148,
+  "fitz": 612,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 195,
+  "fitz": 741,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 156,
+  "fitz": 529,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 157,
+  "fitz": 634,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 138,
+  "fitz": 617,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 10,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 127,
+  "fitz": 553,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 11,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 160,
+  "fitz": 602,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 12,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 129,
+  "fitz": 545,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 13,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 898,
+  "fitz": 1136,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 14,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1446,
+  "fitz": 1735,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 15,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1292,
+  "fitz": 1516,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 16,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 942,
+  "fitz": 1412,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 17,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 569,
+  "fitz": 862,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 18,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 165,
+  "fitz": 716,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 19,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 224,
+  "fitz": 787,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 20,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 73,
+  "fitz": 291,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 21,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 176,
+  "fitz": 722,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 22,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 116,
+  "fitz": 795,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 23,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 197,
+  "fitz": 872,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 24,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 172,
+  "fitz": 884,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 25,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 166,
+  "fitz": 902,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 26,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 174,
+  "fitz": 910,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 27,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 217,
+  "fitz": 865,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 28,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 146,
+  "fitz": 684,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 29,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 197,
+  "fitz": 859,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 30,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 181,
+  "fitz": 815,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 31,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 147,
+  "fitz": 790,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 32,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 173,
+  "fitz": 766,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 33,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 208,
+  "fitz": 792,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 34,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 129,
+  "fitz": 635,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 35,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 159,
+  "fitz": 774,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 37,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 175,
+  "fitz": 671,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 38,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 146,
+  "fitz": 587,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 39,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 170,
+  "fitz": 702,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 40,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 241,
+  "fitz": 1205,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 41,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 199,
+  "fitz": 970,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 42,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 201,
+  "fitz": 852,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 43,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 70,
+  "fitz": 341,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 44,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 15,
+  "fitz": 2121,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 45,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 159,
+  "fitz": 901,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 46,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 219,
+  "fitz": 1042,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 47,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 107,
+  "fitz": 559,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 48,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 57,
+  "fitz": 814,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 49,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 148,
+  "fitz": 501,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 50,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 107,
+  "fitz": 516,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 51,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 56,
+  "fitz": 1706,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 52,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 56,
+  "fitz": 1907,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 53,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 110,
+  "fitz": 1375,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 54,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 158,
+  "fitz": 801,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 55,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 188,
+  "fitz": 1038,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 56,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 155,
+  "fitz": 663,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 57,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 174,
+  "fitz": 761,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 59,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 137,
+  "fitz": 547,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 60,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 156,
+  "fitz": 746,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 61,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 161,
+  "fitz": 791,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 62,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 178,
+  "fitz": 748,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 63,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 166,
+  "fitz": 736,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 64,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 180,
+  "fitz": 678,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 65,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 189,
+  "fitz": 700,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 66,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 156,
+  "fitz": 802,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 67,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 157,
+  "fitz": 705,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 68,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 139,
+  "fitz": 647,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 69,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 103,
+  "fitz": 503,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 70,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 105,
+  "fitz": 339,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 71,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 97,
+  "fitz": 561,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 72,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 160,
+  "fitz": 720,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 73,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 189,
+  "fitz": 845,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 74,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 138,
+  "fitz": 851,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 75,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 181,
+  "fitz": 801,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 76,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 160,
+  "fitz": 716,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 77,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 171,
+  "fitz": 735,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 78,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 173,
+  "fitz": 778,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 79,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 167,
+  "fitz": 711,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 80,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 170,
+  "fitz": 722,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 81,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 153,
+  "fitz": 693,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 82,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 151,
+  "fitz": 851,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 83,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 99,
+  "fitz": 425,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 84,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 167,
+  "fitz": 557,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 85,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 158,
+  "fitz": 579,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 86,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 147,
+  "fitz": 676,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 87,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 147,
+  "fitz": 1022,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 88,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 150,
+  "fitz": 659,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 89,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 198,
+  "fitz": 769,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 90,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 146,
+  "fitz": 699,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 91,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 56,
+  "fitz": 316,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 92,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 107,
+  "fitz": 543,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 93,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 172,
+  "fitz": 826,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 94,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 148,
+  "fitz": 792,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 95,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 136,
+  "fitz": 693,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 96,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 169,
+  "fitz": 722,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 97,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 167,
+  "fitz": 703,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 98,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 141,
+  "fitz": 626,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 99,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 170,
+  "fitz": 692,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 100,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 75,
+  "fitz": 356,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 101,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 157,
+  "fitz": 663,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 102,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 139,
+  "fitz": 704,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 103,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 181,
+  "fitz": 761,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 104,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 173,
+  "fitz": 731,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 105,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 152,
+  "fitz": 668,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 106,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 156,
+  "fitz": 704,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 107,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 160,
+  "fitz": 807,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 108,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 194,
+  "fitz": 794,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 109,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 182,
+  "fitz": 775,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 110,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 183,
+  "fitz": 726,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 111,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 160,
+  "fitz": 864,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 112,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 97,
+  "fitz": 573,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 113,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 35,
+  "fitz": 984,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 114,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 68,
+  "fitz": 1259,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 115,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 150,
+  "fitz": 930,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 116,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 169,
+  "fitz": 703,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 117,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 171,
+  "fitz": 880,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 118,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 35,
+  "fitz": 1140,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 119,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 138,
+  "fitz": 742,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 120,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 51,
+  "fitz": 871,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 121,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 34,
+  "fitz": 845,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 122,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 67,
+  "fitz": 1144,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 123,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 96,
+  "fitz": 512,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 124,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 38,
+  "fitz": 838,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 125,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 38,
+  "fitz": 871,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 126,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 107,
+  "fitz": 1275,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 127,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 205,
+  "fitz": 774,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 128,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 154,
+  "fitz": 756,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 129,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 180,
+  "fitz": 784,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 130,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 196,
+  "fitz": 1001,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 131,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 183,
+  "fitz": 787,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 132,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 184,
+  "fitz": 771,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 133,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 177,
+  "fitz": 726,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 134,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 178,
+  "fitz": 806,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 135,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 189,
+  "fitz": 793,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 137,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 157,
+  "fitz": 558,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 138,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 135,
+  "fitz": 537,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 139,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 162,
+  "fitz": 737,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 140,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 161,
+  "fitz": 671,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 141,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 159,
+  "fitz": 680,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 142,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 165,
+  "fitz": 653,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 143,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 75,
+  "fitz": 284,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 144,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 145,
+  "fitz": 713,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 145,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 7,
+  "fitz": 1813,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 149,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 15,
+  "fitz": 373,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 150,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 61,
+  "fitz": 512,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 151,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 9,
+  "fitz": 1183,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 152,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 0,
+  "fitz": 1141,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 153,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 0,
+  "fitz": 997,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 154,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 0,
+  "fitz": 836,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 155,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 12,
+  "fitz": 1737,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 156,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 123,
+  "fitz": 676,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 157,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 85,
+  "fitz": 424,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 158,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 128,
+  "fitz": 932,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 159,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 104,
+  "fitz": 1097,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 160,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 55,
+  "fitz": 1407,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 161,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 142,
+  "fitz": 743,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 162,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 152,
+  "fitz": 630,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 163,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 81,
+  "fitz": 397,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 164,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 155,
+  "fitz": 678,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 165,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 157,
+  "fitz": 711,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 166,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 391,
+  "fitz": 641,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 167,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 202,
+  "fitz": 810,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 168,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 138,
+  "fitz": 615,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 169,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 186,
+  "fitz": 733,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 170,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 159,
+  "fitz": 749,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 171,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 132,
+  "fitz": 750,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 172,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 114,
+  "fitz": 491,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 173,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 117,
+  "fitz": 564,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 174,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 115,
+  "fitz": 768,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 175,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 34,
+  "fitz": 462,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 176,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 0,
+  "fitz": 1280,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 188,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 105,
+  "fitz": 794,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 189,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 61,
+  "fitz": 238,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 553,
+  "fitz": 545,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 347,
+  "fitz": 341,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 571,
+  "fitz": 571,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 693,
+  "fitz": 693,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 328,
+  "fitz": 333,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 618,
+  "fitz": 632,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 750,
+  "fitz": 747,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 530,
+  "fitz": 558,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 725,
+  "fitz": 721,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 390,
+  "fitz": 537,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 10,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1136,
+  "fitz": 1158,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 11,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 808,
+  "fitz": 833,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 12,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 818,
+  "fitz": 838,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 13,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 817,
+  "fitz": 842,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 14,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 791,
+  "fitz": 811,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 15,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 338,
+  "fitz": 363,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 16,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 857,
+  "fitz": 854,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 17,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 821,
+  "fitz": 846,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 18,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 765,
+  "fitz": 790,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 19,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 829,
+  "fitz": 854,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 20,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 796,
+  "fitz": 818,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 21,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 844,
+  "fitz": 871,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 22,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 759,
+  "fitz": 786,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 23,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 761,
+  "fitz": 760,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 24,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 807,
+  "fitz": 836,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 25,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 767,
+  "fitz": 793,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 26,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 798,
+  "fitz": 828,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 27,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 241,
+  "fitz": 266,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 28,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 549,
+  "fitz": 545,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 30,
+  "kind": "fail",
+  "cause": "C CMap 결손",
+  "odl": 119,
+  "fitz": 1229,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 31,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 368,
+  "fitz": 377,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 32,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 432,
+  "fitz": 385,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 609,
+  "fitz": 610,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 515,
+  "fitz": 515,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 623,
+  "fitz": 624,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204001_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 763,
+  "fitz": 764,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 647,
+  "fitz": 647,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 545,
+  "fitz": 545,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 483,
+  "fitz": 483,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 647,
+  "fitz": 647,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 427,
+  "fitz": 420,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 452,
+  "fitz": 404,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 433,
+  "fitz": 425,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 378,
+  "fitz": 369,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2052,
+  "fitz": 2041,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2617,
+  "fitz": 2617,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2483,
+  "fitz": 2487,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655206_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1858,
+  "fitz": 1870,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 670,
+  "fitz": 666,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 580,
+  "fitz": 588,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 568,
+  "fitz": 625,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655299_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 790,
+  "fitz": 862,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 66,
+  "fitz": 247,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 11,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1572,
+  "fitz": 1556,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 12,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2251,
+  "fitz": 2251,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 13,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 734,
+  "fitz": 716,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 115,
+  "fitz": 505,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 241,
+  "fitz": 817,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 283,
+  "fitz": 872,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655314_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 261,
+  "fitz": 536,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2207,
+  "fitz": 2209,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2712,
+  "fitz": 2712,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2368,
+  "fitz": 2378,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1790,
+  "fitz": 1813,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 239,
+  "fitz": 221,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 496,
+  "fitz": 454,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 715,
+  "fitz": 699,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655323_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 748,
+  "fitz": 718,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 480,
+  "fitz": 475,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 518,
+  "fitz": 518,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 501,
+  "fitz": 489,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655324_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 613,
+  "fitz": 434,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1881,
+  "fitz": 1877,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2472,
+  "fitz": 2472,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1765,
+  "fitz": 1765,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1093,
+  "fitz": 1092,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 256,
+  "fitz": 234,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1430,
+  "fitz": 1430,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1911,
+  "fitz": 1922,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2027,
+  "fitz": 2031,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 461,
+  "fitz": 438,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 346,
+  "fitz": 345,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 332,
+  "fitz": 312,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655448_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 424,
+  "fitz": 414,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 55,
+  "fitz": 294,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 260,
+  "fitz": 2262,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 6,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 10,
+  "fitz": 8831,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 148,
+  "fitz": 646,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 382,
+  "fitz": 1934,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 413,
+  "fitz": 2085,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 10,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 448,
+  "fitz": 2062,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 11,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 421,
+  "fitz": 1871,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 12,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 309,
+  "fitz": 1613,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 13,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 8,
+  "fitz": 8833,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 14,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 152,
+  "fitz": 688,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 15,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 417,
+  "fitz": 1931,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 16,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 462,
+  "fitz": 1985,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 17,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 162,
+  "fitz": 666,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 18,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 6,
+  "fitz": 8842,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 19,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 71,
+  "fitz": 473,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 20,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 366,
+  "fitz": 1597,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 21,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 440,
+  "fitz": 1542,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 22,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 377,
+  "fitz": 1403,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 23,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 470,
+  "fitz": 1554,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 24,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 333,
+  "fitz": 1172,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 25,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 412,
+  "fitz": 1342,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 26,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 292,
+  "fitz": 954,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 27,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 386,
+  "fitz": 1300,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 28,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 245,
+  "fitz": 5334,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 29,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 143,
+  "fitz": 425,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 30,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 447,
+  "fitz": 1764,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 31,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 401,
+  "fitz": 1592,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 32,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 512,
+  "fitz": 1743,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 33,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 392,
+  "fitz": 1470,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 34,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 377,
+  "fitz": 1360,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 35,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 338,
+  "fitz": 1189,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 36,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 398,
+  "fitz": 1252,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 37,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 445,
+  "fitz": 1734,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 38,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 392,
+  "fitz": 1786,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 39,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 264,
+  "fitz": 5432,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 40,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 105,
+  "fitz": 433,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 41,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 316,
+  "fitz": 1322,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 42,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 344,
+  "fitz": 831,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 43,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 200,
+  "fitz": 720,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 44,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 398,
+  "fitz": 1658,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 45,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 430,
+  "fitz": 1439,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 46,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 309,
+  "fitz": 1082,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 47,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 338,
+  "fitz": 1265,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 48,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 335,
+  "fitz": 1195,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 49,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 330,
+  "fitz": 1190,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 50,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 272,
+  "fitz": 1061,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 51,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 214,
+  "fitz": 850,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 52,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 306,
+  "fitz": 1256,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 53,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 440,
+  "fitz": 1529,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 54,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 417,
+  "fitz": 1611,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 55,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 409,
+  "fitz": 1501,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 56,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 222,
+  "fitz": 846,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 57,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 337,
+  "fitz": 1344,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 58,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 358,
+  "fitz": 1298,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 59,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 382,
+  "fitz": 1393,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 60,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 293,
+  "fitz": 1102,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 61,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 431,
+  "fitz": 1534,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 62,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 388,
+  "fitz": 1343,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 63,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 410,
+  "fitz": 1628,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 64,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 437,
+  "fitz": 1558,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 65,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 409,
+  "fitz": 1537,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 66,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 196,
+  "fitz": 712,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 67,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 416,
+  "fitz": 1405,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 68,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 338,
+  "fitz": 1187,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 69,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 248,
+  "fitz": 927,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 70,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 336,
+  "fitz": 1238,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 71,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 360,
+  "fitz": 1408,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 72,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 358,
+  "fitz": 1148,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 73,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 246,
+  "fitz": 1041,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 74,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 276,
+  "fitz": 1011,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 75,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 228,
+  "fitz": 826,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 76,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 254,
+  "fitz": 1002,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 77,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 393,
+  "fitz": 1360,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 78,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 382,
+  "fitz": 1135,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 79,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 264,
+  "fitz": 971,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 80,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 423,
+  "fitz": 1588,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 81,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 271,
+  "fitz": 953,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 82,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 369,
+  "fitz": 1207,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 83,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 427,
+  "fitz": 1587,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 84,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 147,
+  "fitz": 591,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 85,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 393,
+  "fitz": 1362,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 86,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 90,
+  "fitz": 341,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 87,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 13,
+  "fitz": 8883,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 88,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 148,
+  "fitz": 813,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 89,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 463,
+  "fitz": 1945,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 90,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 116,
+  "fitz": 1696,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 91,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 260,
+  "fitz": 2120,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 92,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 54,
+  "fitz": 2762,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 93,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 58,
+  "fitz": 2281,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 94,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 392,
+  "fitz": 3683,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 95,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 100,
+  "fitz": 2628,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 96,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 150,
+  "fitz": 1889,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 97,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 140,
+  "fitz": 2020,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 98,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 153,
+  "fitz": 1796,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 99,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 32,
+  "fitz": 539,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 100,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 107,
+  "fitz": 2924,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 101,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 96,
+  "fitz": 2606,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 102,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 41,
+  "fitz": 2019,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 103,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 46,
+  "fitz": 1821,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 104,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 346,
+  "fitz": 3374,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 105,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 281,
+  "fitz": 1789,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 106,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 10,
+  "fitz": 8846,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 107,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 118,
+  "fitz": 1866,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 108,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 123,
+  "fitz": 1222,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 109,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 96,
+  "fitz": 2180,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 110,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 60,
+  "fitz": 1679,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 111,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 102,
+  "fitz": 2200,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 112,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 64,
+  "fitz": 1654,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 113,
+  "kind": "fail",
+  "cause": "A 폼 중첩",
+  "odl": 214,
+  "fitz": 3574,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 114,
+  "kind": "ok",
+  "cause": "A 폼 중첩",
+  "odl": 205,
+  "fitz": 734,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 231,
+  "fitz": 216,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 411,
+  "fitz": 413,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 496,
+  "fitz": 502,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655484_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 448,
+  "fitz": 440,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 37187,
+  "fitz": 1515,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 38844,
+  "fitz": 2029,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1389,
+  "fitz": 1411,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655651_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2628,
+  "fitz": 1602,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 307,
+  "fitz": 307,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 613,
+  "fitz": 603,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1071,
+  "fitz": 1072,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655709_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 859,
+  "fitz": 849,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 272,
+  "fitz": 270,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 711,
+  "fitz": 700,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 810,
+  "fitz": 806,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655713_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 234,
+  "fitz": 234,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 574,
+  "fitz": 554,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 733,
+  "fitz": 712,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 784,
+  "fitz": 769,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 7,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 404,
+  "fitz": 401,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 280,
+  "fitz": 272,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 263,
+  "fitz": 246,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 349,
+  "fitz": 337,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 482,
+  "fitz": 492,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 319,
+  "fitz": 289,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1089,
+  "fitz": 277,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 358,
+  "fitz": 352,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 4188,
+  "fitz": 334,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655755_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 3793,
+  "fitz": 3846,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655755_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 5086,
+  "fitz": 5121,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655755_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 3129,
+  "fitz": 3162,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 386,
+  "fitz": 382,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1580,
+  "fitz": 1200,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1452,
+  "fitz": 1460,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655760_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1911,
+  "fitz": 1451,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655775_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 192,
+  "fitz": 217,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 442,
+  "fitz": 437,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 637,
+  "fitz": 637,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 284,
+  "fitz": 284,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655779_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 294,
+  "fitz": 278,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2390,
+  "fitz": 1051,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2407,
+  "fitz": 1127,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1208,
+  "fitz": 663,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655786_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 994,
+  "fitz": 1000,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655806_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 513,
+  "fitz": 518,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655806_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 445,
+  "fitz": 433,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655806_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 450,
+  "fitz": 441,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 505,
+  "fitz": 388,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 648,
+  "fitz": 534,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 656,
+  "fitz": 523,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655810_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 433,
+  "fitz": 430,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 463,
+  "fitz": 450,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 536,
+  "fitz": 525,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 353,
+  "fitz": 341,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655815_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 496,
+  "fitz": 485,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 263,
+  "fitz": 251,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 498,
+  "fitz": 490,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 467,
+  "fitz": 474,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655890_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 435,
+  "fitz": 434,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 37187,
+  "fitz": 1498,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 38974,
+  "fitz": 2006,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1389,
+  "fitz": 1394,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655891_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2631,
+  "fitz": 1586,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 199,
+  "fitz": 215,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 57,
+  "fitz": 222,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 381,
+  "fitz": 548,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 272,
+  "fitz": 584,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 284,
+  "fitz": 256,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 355,
+  "fitz": 343,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2302,
+  "fitz": 385,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 3572,
+  "fitz": 320,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 825,
+  "fitz": 622,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1120,
+  "fitz": 780,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 10,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1369,
+  "fitz": 859,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 11,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1519,
+  "fitz": 965,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 4,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 12,
+  "fitz": 441,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 5,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 8,
+  "fitz": 213,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 6,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 603,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 7,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 501,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 8,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 480,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 9,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 8,
+  "fitz": 502,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 11,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 297,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 12,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 373,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 14,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 293,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 20,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 208,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 24,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 335,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 27,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 8,
+  "fitz": 223,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 30,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 897,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 31,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 847,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 34,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 301,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 37,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 618,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 39,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 625,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 40,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 331,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 41,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 0,
+  "fitz": 398,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 5906,
+  "fitz": 5914,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 6310,
+  "fitz": 6315,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 5110,
+  "fitz": 5111,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 732,
+  "fitz": 795,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1500,
+  "fitz": 1502,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 248,
+  "fitz": 249,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1210,
+  "fitz": 1209,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049656308_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 2214,
+  "fitz": 2218,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049662543_",
+  "page": 29,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 712,
+  "fitz": 234,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049662543_",
+  "page": 30,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 672,
+  "fitz": 463,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049662543_",
+  "page": 31,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 672,
+  "fitz": 421,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049662544_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 118,
+  "fitz": 433,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 3,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 43,
+  "fitz": 814,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1259,
+  "fitz": 567,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 449,
+  "fitz": 492,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 763,
+  "fitz": 844,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 8,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1900,
+  "fitz": 602,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 9,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 85,
+  "fitz": 693,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 10,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 114,
+  "fitz": 594,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 11,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 59,
+  "fitz": 603,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 12,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1583,
+  "fitz": 825,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 13,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 119,
+  "fitz": 540,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 14,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 45,
+  "fitz": 585,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 15,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 43,
+  "fitz": 917,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 16,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 146,
+  "fitz": 681,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 17,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 122,
+  "fitz": 526,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 18,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 135,
+  "fitz": 575,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 19,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 705,
+  "fitz": 960,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 20,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1643,
+  "fitz": 2391,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 21,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 54,
+  "fitz": 973,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 22,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 870,
+  "fitz": 842,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 23,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 374,
+  "fitz": 533,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 24,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 904,
+  "fitz": 1300,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 25,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1144,
+  "fitz": 1301,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 26,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 565,
+  "fitz": 603,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 27,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 136,
+  "fitz": 239,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 28,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 73,
+  "fitz": 666,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 29,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 199,
+  "fitz": 438,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 31,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 712,
+  "fitz": 990,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 32,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 75,
+  "fitz": 574,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 33,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 41,
+  "fitz": 404,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 34,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 67,
+  "fitz": 811,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 36,
+  "kind": "fail",
+  "cause": "B CMap 부재",
+  "odl": 29,
+  "fitz": 362,
+  "passed_fix": false
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 2306,
+  "fitz": 2268,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1896,
+  "fitz": 1924,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1077,
+  "fitz": 1098,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 6,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1716,
+  "fitz": 1744,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 291,
+  "fitz": 308,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 650,
+  "fitz": 670,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 292,
+  "fitz": 317,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055089_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 745,
+  "fitz": 753,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 341,
+  "fitz": 362,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 765,
+  "fitz": 787,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 419,
+  "fitz": 444,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055095_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 602,
+  "fitz": 614,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 331,
+  "fitz": 348,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 596,
+  "fitz": 610,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 613,
+  "fitz": 611,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055099_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 561,
+  "fitz": 562,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 395,
+  "fitz": 410,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 662,
+  "fitz": 690,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 686,
+  "fitz": 705,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055103_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 543,
+  "fitz": 563,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 351,
+  "fitz": 368,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 762,
+  "fitz": 834,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 574,
+  "fitz": 541,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055105_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 657,
+  "fitz": 863,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 346,
+  "fitz": 363,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 676,
+  "fitz": 674,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 484,
+  "fitz": 510,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055107_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 408,
+  "fitz": 425,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 323,
+  "fitz": 340,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 812,
+  "fitz": 832,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 718,
+  "fitz": 748,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055110_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 716,
+  "fitz": 756,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 295,
+  "fitz": 312,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 698,
+  "fitz": 718,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 722,
+  "fitz": 569,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055112_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 671,
+  "fitz": 666,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 346,
+  "fitz": 363,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 808,
+  "fitz": 828,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 548,
+  "fitz": 569,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055113_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 712,
+  "fitz": 709,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 337,
+  "fitz": 354,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 851,
+  "fitz": 871,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 599,
+  "fitz": 622,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055114_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 574,
+  "fitz": 566,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 309,
+  "fitz": 326,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 612,
+  "fitz": 565,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 577,
+  "fitz": 598,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055116_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 431,
+  "fitz": 444,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 310,
+  "fitz": 328,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 731,
+  "fitz": 751,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 715,
+  "fitz": 630,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055118_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 651,
+  "fitz": 645,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 307,
+  "fitz": 325,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 995,
+  "fitz": 1015,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 492,
+  "fitz": 516,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055119_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 606,
+  "fitz": 583,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 312,
+  "fitz": 329,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1008,
+  "fitz": 1028,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 442,
+  "fitz": 467,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055129_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 379,
+  "fitz": 378,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 289,
+  "fitz": 310,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1044,
+  "fitz": 1081,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 644,
+  "fitz": 651,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055131_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 602,
+  "fitz": 614,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 306,
+  "fitz": 323,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 897,
+  "fitz": 918,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 359,
+  "fitz": 377,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055133_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 521,
+  "fitz": 535,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 349,
+  "fitz": 366,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1096,
+  "fitz": 1116,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 429,
+  "fitz": 455,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055134_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 356,
+  "fitz": 368,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 289,
+  "fitz": 306,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1010,
+  "fitz": 1030,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 730,
+  "fitz": 744,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055136_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 615,
+  "fitz": 858,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1174,
+  "fitz": 1195,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 818,
+  "fitz": 841,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 531,
+  "fitz": 545,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055141_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 755,
+  "fitz": 667,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1133,
+  "fitz": 1154,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 479,
+  "fitz": 500,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 545,
+  "fitz": 467,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055142_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 513,
+  "fitz": 522,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 957,
+  "fitz": 978,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 417,
+  "fitz": 440,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 578,
+  "fitz": 588,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055144_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 548,
+  "fitz": 556,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1144,
+  "fitz": 1165,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 602,
+  "fitz": 832,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 878,
+  "fitz": 795,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055151_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 720,
+  "fitz": 715,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1046,
+  "fitz": 1067,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 780,
+  "fitz": 749,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 703,
+  "fitz": 672,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055154_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 667,
+  "fitz": 673,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1117,
+  "fitz": 1138,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 529,
+  "fitz": 551,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 551,
+  "fitz": 493,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055156_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 870,
+  "fitz": 755,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1044,
+  "fitz": 1066,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 699,
+  "fitz": 664,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 591,
+  "fitz": 610,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055159_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1281,
+  "fitz": 1038,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1058,
+  "fitz": 1079,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 609,
+  "fitz": 769,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 538,
+  "fitz": 572,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055163_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 692,
+  "fitz": 685,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1100,
+  "fitz": 1121,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 704,
+  "fitz": 542,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 484,
+  "fitz": 504,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055165_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 725,
+  "fitz": 650,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 975,
+  "fitz": 995,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 526,
+  "fitz": 546,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 555,
+  "fitz": 562,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055168_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 394,
+  "fitz": 412,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1007,
+  "fitz": 1028,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 715,
+  "fitz": 735,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 599,
+  "fitz": 608,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055170_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 629,
+  "fitz": 626,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1069,
+  "fitz": 1090,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 718,
+  "fitz": 675,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 623,
+  "fitz": 587,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055180_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 560,
+  "fitz": 562,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1021,
+  "fitz": 1042,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 634,
+  "fitz": 577,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 840,
+  "fitz": 829,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055183_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 803,
+  "fitz": 813,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 932,
+  "fitz": 953,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 720,
+  "fitz": 744,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 668,
+  "fitz": 677,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055184_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 407,
+  "fitz": 543,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1040,
+  "fitz": 1060,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 407,
+  "fitz": 426,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 847,
+  "fitz": 802,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055187_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 596,
+  "fitz": 579,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1136,
+  "fitz": 1159,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 723,
+  "fitz": 667,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 687,
+  "fitz": 702,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055189_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 589,
+  "fitz": 577,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1099,
+  "fitz": 1120,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 601,
+  "fitz": 574,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 449,
+  "fitz": 433,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055192_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 469,
+  "fitz": 486,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 982,
+  "fitz": 1005,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 639,
+  "fitz": 643,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 873,
+  "fitz": 860,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055194_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 559,
+  "fitz": 677,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 280,
+  "fitz": 265,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1081,
+  "fitz": 1101,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 893,
+  "fitz": 740,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055196_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 508,
+  "fitz": 537,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1028,
+  "fitz": 1050,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 597,
+  "fitz": 619,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 649,
+  "fitz": 605,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055199_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 498,
+  "fitz": 552,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 943,
+  "fitz": 964,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 736,
+  "fitz": 676,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 653,
+  "fitz": 658,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055202_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 711,
+  "fitz": 706,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1004,
+  "fitz": 1025,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 432,
+  "fitz": 470,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 690,
+  "fitz": 670,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055206_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 628,
+  "fitz": 537,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1061,
+  "fitz": 1082,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 563,
+  "fitz": 807,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 587,
+  "fitz": 594,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055210_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 557,
+  "fitz": 547,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1048,
+  "fitz": 1069,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 481,
+  "fitz": 503,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 640,
+  "fitz": 647,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055212_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 793,
+  "fitz": 714,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1120,
+  "fitz": 1141,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 650,
+  "fitz": 594,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 745,
+  "fitz": 663,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055214_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 541,
+  "fitz": 537,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1177,
+  "fitz": 1198,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 578,
+  "fitz": 535,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 528,
+  "fitz": 472,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055216_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 551,
+  "fitz": 557,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1069,
+  "fitz": 1090,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 550,
+  "fitz": 586,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 505,
+  "fitz": 494,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055217_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 684,
+  "fitz": 598,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1054,
+  "fitz": 1075,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 463,
+  "fitz": 452,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 390,
+  "fitz": 395,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055218_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 672,
+  "fitz": 663,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1107,
+  "fitz": 1128,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 619,
+  "fitz": 754,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 865,
+  "fitz": 876,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055219_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 616,
+  "fitz": 606,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1078,
+  "fitz": 1099,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 489,
+  "fitz": 511,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 723,
+  "fitz": 736,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055220_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 530,
+  "fitz": 536,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 780,
+  "fitz": 761,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 618,
+  "fitz": 626,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 732,
+  "fitz": 571,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055223_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 541,
+  "fitz": 502,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1119,
+  "fitz": 1140,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 580,
+  "fitz": 577,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 616,
+  "fitz": 610,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055224_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 676,
+  "fitz": 644,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1193,
+  "fitz": 1219,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 600,
+  "fitz": 574,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 1046,
+  "fitz": 747,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055225_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 723,
+  "fitz": 731,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1156,
+  "fitz": 1176,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 697,
+  "fitz": 721,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 584,
+  "fitz": 582,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055227_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1083,
+  "fitz": 881,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1156,
+  "fitz": 1177,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 643,
+  "fitz": 663,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 728,
+  "fitz": 837,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055230_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 679,
+  "fitz": 673,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1112,
+  "fitz": 1132,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 474,
+  "fitz": 497,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 510,
+  "fitz": 511,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055231_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 595,
+  "fitz": 575,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1184,
+  "fitz": 1205,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 512,
+  "fitz": 679,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 460,
+  "fitz": 447,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055233_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 573,
+  "fitz": 566,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1082,
+  "fitz": 1103,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 487,
+  "fitz": 510,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 851,
+  "fitz": 828,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055235_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 784,
+  "fitz": 796,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1118,
+  "fitz": 1139,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 710,
+  "fitz": 740,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 771,
+  "fitz": 762,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055244_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 360,
+  "fitz": 379,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1163,
+  "fitz": 1184,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 512,
+  "fitz": 538,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 787,
+  "fitz": 735,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055245_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 814,
+  "fitz": 739,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1182,
+  "fitz": 1203,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 425,
+  "fitz": 551,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 644,
+  "fitz": 569,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055248_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 767,
+  "fitz": 614,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1134,
+  "fitz": 1155,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 617,
+  "fitz": 639,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 669,
+  "fitz": 674,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055250_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 707,
+  "fitz": 708,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1195,
+  "fitz": 1216,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 722,
+  "fitz": 744,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 313,
+  "fitz": 314,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055253_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 704,
+  "fitz": 680,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1145,
+  "fitz": 1166,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 556,
+  "fitz": 576,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 404,
+  "fitz": 404,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055256_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 517,
+  "fitz": 508,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 311,
+  "fitz": 296,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1134,
+  "fitz": 1156,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 442,
+  "fitz": 463,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055259_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 851,
+  "fitz": 771,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1174,
+  "fitz": 1195,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 510,
+  "fitz": 530,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 895,
+  "fitz": 791,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055262_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 697,
+  "fitz": 647,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1135,
+  "fitz": 1156,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 746,
+  "fitz": 657,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 362,
+  "fitz": 385,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055264_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 494,
+  "fitz": 519,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1104,
+  "fitz": 1125,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 628,
+  "fitz": 563,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 609,
+  "fitz": 620,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055266_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 853,
+  "fitz": 726,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1112,
+  "fitz": 1133,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 788,
+  "fitz": 709,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 580,
+  "fitz": 499,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055268_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 709,
+  "fitz": 673,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1203,
+  "fitz": 1223,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 509,
+  "fitz": 485,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 882,
+  "fitz": 879,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055275_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 821,
+  "fitz": 740,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1200,
+  "fitz": 1222,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 426,
+  "fitz": 439,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 512,
+  "fitz": 510,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055276_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 630,
+  "fitz": 611,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1153,
+  "fitz": 1174,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 894,
+  "fitz": 834,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 414,
+  "fitz": 435,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055277_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 437,
+  "fitz": 461,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1195,
+  "fitz": 1216,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 520,
+  "fitz": 502,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 788,
+  "fitz": 626,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055279_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 822,
+  "fitz": 744,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1274,
+  "fitz": 1295,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 767,
+  "fitz": 789,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 972,
+  "fitz": 954,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055281_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 589,
+  "fitz": 571,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1153,
+  "fitz": 1173,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 502,
+  "fitz": 473,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 758,
+  "fitz": 687,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055282_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 731,
+  "fitz": 616,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1208,
+  "fitz": 1229,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 425,
+  "fitz": 459,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 646,
+  "fitz": 668,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055285_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 715,
+  "fitz": 691,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1211,
+  "fitz": 1232,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 534,
+  "fitz": 555,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 634,
+  "fitz": 590,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055287_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 729,
+  "fitz": 720,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1232,
+  "fitz": 1253,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 563,
+  "fitz": 584,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 578,
+  "fitz": 592,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055289_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 591,
+  "fitz": 603,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1190,
+  "fitz": 1211,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 924,
+  "fitz": 923,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 932,
+  "fitz": 927,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055292_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1397,
+  "fitz": 1220,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1165,
+  "fitz": 1186,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 707,
+  "fitz": 736,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 860,
+  "fitz": 851,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055295_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 427,
+  "fitz": 442,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 1,
+  "kind": "ok",
+  "cause": "B CMap 부재",
+  "odl": 270,
+  "fitz": 247,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1197,
+  "fitz": 1218,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 795,
+  "fitz": 655,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055297_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 305,
+  "fitz": 332,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1119,
+  "fitz": 1140,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 372,
+  "fitz": 386,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 633,
+  "fitz": 632,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055299_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 688,
+  "fitz": 689,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1197,
+  "fitz": 1219,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 548,
+  "fitz": 568,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1219,
+  "fitz": 1103,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055303_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 719,
+  "fitz": 695,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 819,
+  "fitz": 826,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 545,
+  "fitz": 542,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 796,
+  "fitz": 821,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055307_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 765,
+  "fitz": 740,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1032,
+  "fitz": 1034,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 354,
+  "fitz": 327,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 339,
+  "fitz": 359,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055309_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 620,
+  "fitz": 620,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 905,
+  "fitz": 903,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 466,
+  "fitz": 487,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 744,
+  "fitz": 764,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055312_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 456,
+  "fitz": 412,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 995,
+  "fitz": 998,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 513,
+  "fitz": 536,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1089,
+  "fitz": 988,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055314_",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 479,
+  "fitz": 466,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 2,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 1263,
+  "fitz": 1129,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 3,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 440,
+  "fitz": 465,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 4,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 459,
+  "fitz": 468,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055359",
+  "page": 5,
+  "kind": "ok",
+  "cause": "C CMap 결손",
+  "odl": 509,
+  "fitz": 503,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1010,
+  "fitz": 1032,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 588,
+  "fitz": 613,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 477,
+  "fitz": 499,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055363",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 690,
+  "fitz": 686,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 976,
+  "fitz": 998,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 553,
+  "fitz": 575,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 484,
+  "fitz": 472,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055369",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 708,
+  "fitz": 704,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 706,
+  "fitz": 722,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 764,
+  "fitz": 783,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 408,
+  "fitz": 429,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055374",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 565,
+  "fitz": 560,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1021,
+  "fitz": 1043,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 357,
+  "fitz": 377,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 469,
+  "fitz": 464,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055376",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 438,
+  "fitz": 432,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1023,
+  "fitz": 1049,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 534,
+  "fitz": 542,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 558,
+  "fitz": 541,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055404",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 590,
+  "fitz": 601,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 987,
+  "fitz": 1009,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 883,
+  "fitz": 868,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 618,
+  "fitz": 639,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055405",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 742,
+  "fitz": 737,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1035,
+  "fitz": 1060,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 809,
+  "fitz": 751,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 365,
+  "fitz": 367,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055406",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 740,
+  "fitz": 706,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1045,
+  "fitz": 1070,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 588,
+  "fitz": 587,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 719,
+  "fitz": 679,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055408",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 662,
+  "fitz": 664,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 683,
+  "fitz": 699,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1142,
+  "fitz": 1168,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 885,
+  "fitz": 850,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055411",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 615,
+  "fitz": 609,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1075,
+  "fitz": 1095,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 633,
+  "fitz": 621,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 414,
+  "fitz": 415,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055412",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 677,
+  "fitz": 691,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1078,
+  "fitz": 1099,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 852,
+  "fitz": 865,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 801,
+  "fitz": 792,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055413",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 744,
+  "fitz": 719,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 1100,
+  "fitz": 1121,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 518,
+  "fitz": 539,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 638,
+  "fitz": 635,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055414",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 426,
+  "fitz": 423,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 2,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 636,
+  "fitz": 656,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 3,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 879,
+  "fitz": 892,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 4,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 806,
+  "fitz": 815,
+  "passed_fix": true
+ },
+ {
+  "doc": "CNTS-00066055415",
+  "page": 5,
+  "kind": "ok",
+  "cause": "정상 폰트",
+  "odl": 824,
+  "fitz": 782,
+  "passed_fix": true
+ }
+]

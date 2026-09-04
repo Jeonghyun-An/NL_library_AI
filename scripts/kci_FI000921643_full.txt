@@ -1,0 +1,251 @@
+담화와 인지, 제10권 2호, 2003년
+
+Benefactive Verbal Constructions in Korean: A Functional Approach*
+
+Seok-Hoon You (Korea University)
+
+You, Seok-Hoon. Benefactive Verbal Constructions in Korean: A Functional Approach. Discourse and Cognition 10.2, 75-93. The so-called benefactive verbal construction (BVC hereafter) in the form of 'V + /e/a cwuta/tulita' is pervasive in Korean language and has drawn attentions from many researchers in the following terms: First, the unique underlying argument structure of the construction as a subtype of complex verbal constructions (CVC hereafter). Second, the rules and constraints involved in the realization of underlying argument structures to the nominals in the surface sentences. Third, the selectional restrictions involved in the selection of cooccurring verbs. Fourth, change of meaning due to grammaticalization from CVC's (donatory or transferentive meaning) to BVC's (benefactive meaning). In this paper, the unique properties and the licensing mechanism of the argument structure of BVC's are explored and two contrasting approaches will be reviewed: one is rather a formal one and the other one is a functional one. It will be suggested as a conclusion that a set of functional filters provide clearer explanation about the construction. (Korea University)
+
+Key words: argument structure, benefactive verbal construction, functional approach, functional filters, grammaticalization, transferentive meaning
+
+1. Introduction
+
+In Korean, there are two means of expressing the benefactive function.
+One is to attach an adverbial phrase -(l)ul wiha-ye(-se)¹⁾ 'for, in the favor of' after a beneficiary NP as shown in example (1). The other is to attach a transferentive or donatory verbal¹⁾ -cwuta(plain style)/tulita (poite style) 'do something for someone, (lit.) give the benefit of' after non-final verb(s) and a complementizer marker -E²⁾ as shown in example (2):
+
+(1) Yumi-ka John-ul wihaye(se) chayk-ul sa-Ess-ta. * This research was supported by the Korea University Grant, 2002.
+I appreciate valuable comments and suggestions of anonymous reviewers who read a draft version of this paper.
+All errors and shortcomings are mine, though. 1) Yale romanization system is adopted for the representation of Korean examples.
+Also refer to the following for abbreviations:
+
+AC Accusative Case marker AS Argument Structure Ben Benefactive phrase BEN give-PST-DC ending CM Complementizer CM Complementizer CS Complement Sentence DC Descriptive ending NM Nominative Case marker NOM Nominalizer marker PST Past Tense marker TC Topic marker
+
+1) 'Verbals' and 'predicates' are used interchangeably and the number of component verbals within a CVC is limited to two in this paper.
+A verbal is taken to be a carrier of thematic arguments. Thus, not only verbs (e.g., ponayta 'to send') and adjectives (e.g., pwudepta 'to envy'), but also verbal nouns (e.g., paytal 'delivery'), adjectival nouns (e.g., hayngpok 'happiness'), causative suffixes (e.g., -hi 'to cause'), and passive suffixes (e.g., -hi 'to undergo') are assumed to have an inherent argument structure or theta-grid, hence selecting and carrying required arguments, whether overt or covert. 2) Covers infinitive suffixes -e/-a and ZERO (Ø) complementizer.
+Some monosyllabic verbals such as pha 'to dig', sa 'to buy' ka 'to go', etc. are assumed to have ZERO complementizer. Seok-Hoon You
+
+Yumi-NM John-Ben book-AC buy-PST-DC 'Yumi bought a book FOR John.'
+
+(2) Yumi-ka John-eykey chayk-ul sa-E-cwu-Ess-ta.
+Yumi-NM John-GO book-AC buy-CM-give-PST-DC 'Yumi bought a book FOR John.'
+
+When the verb cwuta ‘to give’ functions as a main verb, it represents a donatory action of giving something to a recipient NP. On the other hand, when it is attached after another action verbal as in sentence (2), it loses its core meaning and represents the meaning of benefaction done for the recipient NP.
+There have been extensive debates on the characteristics of BVC’s as for their syntactic structure and semantic interpretation.
+As for the syntactic structure, there are two distinctive positions: monoclausal (I.
+Jo 1990; I.
+Lee 1990, J.D.
+Kim 1993, and Y. Suh 2000) and biclausal (S. Lee 1992; S. You 1998, S. Bak 2001).
+These two positions are divided by disparity of the syntactic and morphological evidences of various natures such as insertion of pause or case particles or delimiters or adverbials or a nominal between constituent verbals.
+Semantically, though, there has been no serious confrontation between the two that the constituent verbals are cohesive with each other in the sense that when there is no intervening element (such as a pause, a case particle, a delimiter, an adverbial, or a nominal), they tend to be bound together, manifesting tight morphological agglutination and single assertion of two coextensive events.
+Diachronically, the main clause verbals underwent grammaticalization from independent verbs to complement verbs with semantic change usually from concrete to abstract, physical to mental, and objective to subjective. (Hopper and Traugott, 1993; Sohn 1999b) All syntactically relevant CVC’s³, including BVC’s, have the AS form of V1<xn> V2<yn> where x and y stand for theta roles and n stands for one or more occurrences of different theta roles such as Agent (ag), Experiencer (ex), Theme (th), Goal (go), Source (so), Location (lo), etc.
+You (1998) proposes that the CVC’s in Korean be described in biclausal framework rather than in monoclausal one, and also proposes following barebone syntactic structure:
+
+(3) S NP VP NP* VP CS V2 S CM
+
+3) Refer to You (2000) for specific classification of various types of CVC’s in Korean language. Benefactive Verbal Constructions in Korean: A Functional Approach
+
+NP | |--- VP | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* | |--- V1 | |--- NP* |
+
+Cases are assigned, will grammatical strings be generated. Compare (4a) with the following:
+
+(5) a.
+yel-E cwuta 'open (the door for someone)' yelta 'open' [Vt] <ag1 th> cwuta 'do for' [Vt] [+CS] <ag2 go> CM = E <ag1 = <ag2
+
+b.
+[agJohn-i i] [goSue-eykey] [cs [agPRO i]] [thmun-ul] yel-E-cwu-ess-ta. John-NM Sue-to door-AC open-CM-BEN 'John opened the door to/for Sue.'
+
+c. *[agmun-i i] [goSue-lul] [cs [agPRO i]] [thJohn-ul] yel-E-cwu-ess-ta. door-NM Sue-AC John-AC open-CM-BEN 'John opened the door to/for Sue. (?)'
+
+(5a) specifies that the Korean CVC yel-E cwuta 'open (the door) for someone' is a complex of a dyadic verbal yelta 'open', requiring an agent argument (<ag1>) and a theme argument (<th>), and the so-called auxiliary cwuta 'give the benefit of, do for' requiring an agent (<ag2>) and a goal argument (<go>).
+It also specifies that the simple sentence generated by the AS of yelta can be placed in the complement sentential position in certain contexts, i.e., when it is immediately followed by another V that requires a complement sentence, and that the auxiliary verb cwuta 'do for' requires a complement sentence in addition to the clausemate NP's.
+It also specifies that the first NP arguments of the respective verbals should be referentially identical to each other.
+Two specifications, (4a) and (5a), look similar in terms of the number of argument NP's and other contextual information. However, there is a crucial difference between the two. The former is specified in terms of NP's while the latter is in terms of theta roles. Thus, the latter is more revealing with regard to the mapping between the semantics and syntax of the target expression in the sense that the thematically appropriate NP's are automatically inserted in the syntactically appropriate positions within the sentence without causing any misinterpretation of the sentence. Notice that the ungrammaticality of (5c) is correctly predicted by the specification in (5a) in that the NP's are unable to assume proper theta roles, Cases, and hence they are not proper arguments. From the above illustration, it is clear that, first of all, EAS plays a critical role in determining the syntactic form of lexical items, since constraints on EAS can determine
+
+Benefactive Verbal Constructions in Korean: A Functional Approach
+
+the grammaticality of BVC's, and that the theta role values of arguments should be retained, so that the EAS of CVC's may be accounted for in both semantically and syntactically appropriate manner.
+As in previous studies (Grimshaw and Mester 1988; Grimshaw 1990; Zaenen and Goldberg 1993; Chung 1993; You 1998), I assume that AS is the level of linguistic representation that mediates between lexical semantics and syntactic representation. In most current syntactic and morphological theories, it is generally accepted that every verbal element carries more or less fully specified AS in terms of thematic roles. On surface syntactic level, thematic roles are mapped onto grammatical relations such as Subject, Direct Object, Indirect Object, Complement, Locative, etc., on one hand, and onto Cases such as Nominative, Accusative, Dative, Locative, Genitive, etc. on the other by the application of relevant rules and principles. Arguments are realized on the surface as nominals (noun, pronoun, nominalized clause, etc.) typically followed by one or more overt or covert Case particles, and optionally flanked by one or more delimiter particles. Under the monoclausal approach, due to the single-predicate assumption, it is inevitable to introduce the notion of argument percolation or merger or identification or inheritance (Higginbotham 1985, Rosen 1989, and Li 1990) in order to decide the AS of complex predicates.
+For example, viewing SVC's as compound verbs, Chung (1993) proposes the following for mantul-e cwuta 'to make to give'.
+(6) ``` V3 <ag=ag' th=th' go'> / \ V1 V2 <ag th> <ag' th' go'> ```
+
+Suh (2000), adopting Jackendoff (1990, 1997), also follows monoclausal approach for a treatment of seemingly complicated Auxiliary Verbal Constructions (AVC's hereafter). He argues that an otherwise full lexical verb, once it takes part in the AVC, comes to exhibit drastically different syntactic and semantic properties from its lexical verb counterpart.
+He assumes that such properties of the auxiliary verbs follow from the assumption that the AVC is a type of 'constructional idiom'4) listed in the lexicon. Thus, he claims that AUX-verbs do not have any AS. Argument Licensing
+
+3.1 Argument Licensing for Grammaticality
+
+In this paper, it is assumed that the licensing of argument NP's is tightly controlled by the EAS of the component verbals, and Korean BVC's are essentially biclausal.
+4) Compare to 'conventional idioms' such as the following: Babe Ruth homered his way into hearts of America, We're twistin' the night away. Seok-Hoon You
+
+Consequently, the manner of control is relevant to the biclausal nature of the construction.
+It is proposed that the following conditions, parameter, and rule control the licensing of arguments in Korean BVC's to determine their grammaticality:
+
+(7) a.
+Subject Identity Condition (SIC): The first theta role (subject) of V1 and the first theta role (subject) of V2 are required to be referentially identical.
+Object Identity Condition (OIC): The theme of V1 is referentially identical with the theme of V2. Exhaustive Discharge Condition (EDC): All theta roles in both AS's must be discharged to overt or covert clause-mate argument NP's exhaustively. Head-final Parameter (HFP): The theta roles of the head verb (V2) take precedence in realizing the arguments and Case marking them. Stray Argument Licensing Rule (SAL): V1 realizes only those of its arguments that are not referentially taken care of by the theta roles of V2. 3.2 Subject Choice Hierarchy and Grammatical Relations
+
+It has been proposed in the literature that there is a universal hierarchy of theta roles (e.g., Bresnan and Kanerva 1989; Foley and van Valin 1984, Grimshaw 1990). Such theta role hierarchy is necessary, first of all, to explicate subject choice. For example, for a verbal with the <ag th go> theta-grid, <ag> is chosen as subject, and for a verbal with the <th go> theta-grid, <th> is chosen as subject, and so on following the order of theta roles within the hierarchy. I will simply assume the following as a basic theta role hierarchy for subject choice in Korean. (8) Subject Choice Hierarchy in Korean ag > ex > ins > go/so/di > th > co > lo
+
+Thus, the nominal argument corresponding to the leftmost theta role of the verbal functions as the subject of the clause. When theme is not at the leftmost position, its corresponding nominal argument is the object of the clause. The other oblique grammatical relations such as instrument, goal, source, comitative, and locative remain the same as their theta roles, unless they function as subject. Analysis
+
+Benefactive Verbal Constructions in Korean: A Functional Approach
+
+4.1 Grammaticalization in -E cwuta and Valency Differences in AS
+
+In this section, I claim that the constructions actually reflect different stages of an on-going gradual grammaticalization process along the cline from a full donatory or dative to a full benefactive construction.
+I also claim that both structural and functional factors are deeply involved in the process. The grammaticalization has taken place only when cwuta occurred after a complementizer -E. Thus, -E cwuta has the original ungrammaticalized meaning 'and then give something to' as in (9a) and the grammaticalized benefactive meaning 'give the benefit/act of doing/being for' as in (9b). I thus claim that the donatory cwuta and the benefactive cwuta have different AS's as in the following:
+
+(9) a. donatory cwuta: <ag go th> b. benefactive cwuta: <ag (go) th> [+CS]
+
+As shown in the following, the grammaticalization process causes valency differences in the realization of arguments in donatory and benefactive constructions: i.e., the donatory cwuta has one or two fewer arguments than the benefactive cwuta. (10) Mia-ka Sumi-eykey chayk-ul sa-E-cwu-Ess-ta.
+Mia-NM Sumi-to book-AC buy-CM-BEN saV1 + cwuV2 sa-cwutaV1-V2 AS: <ag1 th1>v1 + <ag2 go2 th2>v2 ⇒ <ag12 go2 th12>v1-v2 (i) 'Mia bought-gave a book to Sumi.' (ii) 'Mia bought a book FOR Sumi.'
+
+(11) Mia-ka (*Sumi-eykey) kukcang-ey ka-E-cwu-Ess-ta. Mia-Nm Sumi-Go theater-Loc go-CM-BEN AS: <ag1 gol>v1 + <ag2>v2 ⇒ <ag12 gol>v1-v2 'Mia went to the theater (for Sumi).'
+
+(12) Mia-ka apenim-kkey yo-lul kkal-E-tuly-Ess-ta. Mia-NM father-to mattress-AC spread-CM-BEN kkalaV1+ tulyV2 ⇒ kkala-tulyta V1-V2 AS: [<ag1 th1>v1]TH + <ag2 go2 th2>v2 ⇒ <ag12 go2 TH>v1-v2 'Mia spread a mattress FOR her father.'
+
+In the above examples, the valency of V2 is determined mostly by the transitivity and
+
+other properties of V1: an intransitive V1 causes V2 to take only a single argument <ag> while a transitive V1 causes V2 to take two arguments (<ag, go>) depending on context. ((11) and (12) respectively)
+
+Benefactive Verbal Constructions in Korean: A Functional Approach
+
+4.2 Functional Filters
+
+With argument licensing mechanism mentioned in 3, most well-formed sentences can be neatly described and explained. However, they fail to explain the oddity of interpretations and syntactic structure of the following sentences:
+
+(13) Yumi-ka Sumi-eykey kaps-ul kkak-E-cwu-Ess-ta.
+Yumi-NM Sumi-to price-AC cut-CM-BEN (i) *Yumi cut the price and gave it TO Sumi.
+(ii) Yumi cut the price FOR Sumi. (14) Yumi-ka Sumi-eykey iyakiha-E-cwu-Ess-ta. Yumi-NM Sumi-to tell story-CM-BEN (i) Yumi said to Sumi about it. (ii) *'Yumi said to Sumi about it and gave it (the story) to her.' (iii) Yumi said to Sumi about it FOR Sumi. (15) Yumi-ka Sumi-eykey kulim-ul chingchanha-E-cwu-Ess-ta. Yumi-NM Sumi-to picture-AC praise-CM-BEN (i) Yumi praised Sumi for her painting (FOR Sumi). (ii) ?*Yumi praised Sumi for someone else's painting (FOR Sumi). (16) a. Yumi-ka apenim-kkey yo-lul kkal-E-tuly-Ess-ta.
+Yumi-NM father-to mattress-AC spread-CM-BEN 'Yumi spread a mattress for her father.' b. *Yumi-ka apenim-kkey yo-lul kay-E-tuly-Ess-ta. Yumi-NM father-to mattress-AC fold up-CM-BEN 'Yumi folded up a mattress for her father.'
+
+(17) a. Yumi-ka sensayngnim-kkey kutu-lul takk-E-tuly-Ess-ta. Yumi-Nm teacher-Dat shoes-Ac clean-CM-BEN 'Yumi polished the shoes for her teacher.' b. ?*Yumi-ka takk-E-tuly-Ess-ta. Yumi-Nm teacher-Dat glass-Ac clean-CM-BEN 'Yumi cleaned the window glass for her teacher.'
+
+(18) a. Yumi-ka sensayngnim-kkey mun-ul yel-E-tuly-Ess-ta. Yumi-Nm teacher-Dat door-Ac open-CM-BEN Yumi opened the door for her teacher. ?*Yumi-ka sensayngnim-kkey mun-ul tat-E-tuly-Ess-ta. Yumi-Nm teacher-Dat glass-Ac clean-CM-BEN 'Yumi cleaned the window glass for her teacher.'
+
+Seok-Hoon You
+
+Yumi-Nm teacher-Dat door-Ac close-CM-BEN 'Yumi closed the door for her teacher.'
+
+Even though all the (b) sentences in (13) through (18) carry a transitive verb as a main verb in subordinate sentence as do the (a) sentences, they are not acceptable.
+Grammaticality is not simply as categorical as these formal analyses suggest.
+Furthermore, even the same verb shows significant difference in the acceptability depending on context. In this section, a set of functional filters will be proposed in order to provide a better explanation about the peculiarity of the above sentences. 4.2.1 Theme Referent-Transferability Condition
+
+The properties of the theme object argument is crucial in the judgment of grammaticality. Only a tangible, and transferable object can be employed as a theme object for a dative interpretation.
+Compare (19i) with (20i):
+
+(19) Mia-ka Sumi-eykey chayk-ul sa-E-cwu-Ess-ta.
+Mia-NM Sumi-to book-AC buy-CM-BEN saV1 + cwuV2 sa-cwutaV1-V2 (i) 'Mia bought-gave a book to Sumi.' AS: <ag1 th1>v1 + <ag2 go2 th2>v2 ⇒ <ag12 go2 th12>v1-v2 (ii) 'Mia bought a book FOR Sumi.' AS: [<ag1 th1>v1]TH + <ag2 go2 th2>v2 ⇒ <ag12 go2 TH>v1-v2
+
+This becomes evident if we compare the AS in (19i) with the following:
+
+(20) Yumi-ka Sumi-eykey kaps-ul kkak-E-cwu-Ess-ta. Yumi-NM Sumi-to price-AC cut-CM-BEN kkak V1 + cwu V2 ⇒ kkak-E-cwuV1-V2
+
+Benefactive Verbal Constructions in Korean: A Functional Approach
+
+(i) *'Yumi cut the price TO Sumi.' AS: <ag1 th1>v1 + <ag2 go2 th2>v2 ⇒ <ag12 go2 th12>v1-v2 (ii) 'Yumi cut the price FOR Sumi.' AS: [<ag1 th1>v1]TH + <ag2 go2 th2>v2 ⇒ <ag12 go2 TH>v1-v2
+
+The theme argument kaps 'price' is a non-transferable object, thus the first dative interpretation (20i) is unacceptable. Following is an additional example with benefactive-only interpretation:
+
+(21) Yumi-ka Sumi-eykey iyakiha-E-cwu-Ess-ta. Yumi-NM Sumi-to tell-CM-BEN iyakihaV1 + cwuV2 ⇒ iyakiha-E-cwuV1-V2 AS: [<ag1 go1 th1>v1]TH + <ag2 go2 th2>v2 ⇒ <ag12 go2 TH>v1-v2 'Yumi talked to Sumi about it (FOR Sumi).'
+
+4.2.2 Temporal/Spatial Immediacy Condition
+
+The second condition is the 'Temporal/Spatial immediacy condition'. This pragmatic and functional condition requires a goal NP referent (usually a beneficiary) to be present at the event scene at the time when the sentence is uttered in order to avoid the violation of the felicity code in the given situation. Consider the following examples:
+
+(22) Yumi-ka halapenim-kkey yo-lul kkal-E-tuly-Ess-ta. Yumi-NM grandfather-to mattress-AC spread-CM-BEN kkalaV1+ tulyV2 ⇒ kkal-E-tuly V1-V2 AS: [<ag1 th1>v1]TH + <ag2 go2>v2 ⇒ <ag12 go2 TH>v1-v2 'Yumi spread a mattress (made a bed) for her grandfather.'
+
+The acceptability of sentence (22) dramatically degrades if Yumi's grandfather is absent at the moment of speaking due to violation of the felicity code. 4.2.3 Appropriateness Condition
+
+This condition requires a sentence be uttered in appropriate context. Consider the following:
+
+(23) a. Yumi-ka sensayngnim-kkey kutu-lul takk-E-tuly-Ess-ta.
+Yumi-Nm teacher-Dat shoes-Ac clean-CM-BEN AS: [<ag1 th1>v1]TH + <ag2 go2>v2 ⇒ <ag12 go2 TH>v1-v2 'Yumi polished the shoes for her teacher.' b. ?*Yumi-ka sensayngnim-kkey yulichang-ul 'Yumi-ka sensayngnim-kkey yulichang-ul'
+
+takk-E-tuly-Ess-ta. Yumi-Nm teacher-Dat glass-Ac clean-CM-BEN 'Yumi cleaned window panes for her teacher.'
+
+(24) a. Yumi-ka sensayngnim-kkey mun-ul yel-E-tuly-Ess-ta. Yumi-Nm teacher-Dat door-Ac open -CM-BEN AS: [<ag1 th1>v1]TH + <ag2 go2>v2 ⇒ <ag12 go2 TH>v1-v2 'Yumi opened the door for her teacher.' b. ?*Yumi-ka sensayngnim-kkey mun-ul tat-E-tuly-Ess-ta. Yumi-Nm teacher-Dat door-Ac close-CM-BEN 'Yumi closed the door for her teacher.'
+
+Despite that all V1's in the sentences in (23) and (24) are uniformly transitive, the grammaticality of the (b) sentences is unacceptable.
+The (b) sentences do not fit into appropriate situations in normal context while (a) sentences do. The acceptability improves when the sentences are appropriately accompanied by contexts such as Sensayngnim-kkeyse pwuthakhasiesski ttaymune y 'Since her teacher asked Yumi to do so'
+
+4.2.4 Intransitivity Filter
+
+When an intransitive verb is employed as a V1 in BVC, it triggers the so-called 'intransitivity filter'. Consider the following example:
+
+(25) a.
+Mia-ka (*Sumi-eykey) kukcang-ey ka-E-cwu-Ess-ta. Mia-Nm Sumi-Go theater-Loc go-CM-BEN AS: <ag1 gol>v1 + <ag2>v2 ⇒ <ag12 gol>v1-v2 'Mia went to the theater (for Sumi).' b. Yumi-ka (*Sumi-eykey) nol-E-cwu-Ess-ta. Yumi-Nm Sumi-Go play-CM-BEN AS: <ag1>v1 + <ag2>v2 ⇒ <ag12>v1-v2 'Yumi played with Sumi for her.'
+
+The 'intransitivity filter' obligatorily suppresses the surface realization of a beneficiary argument. Otherwise, the false surfacing of a beneficiary argument render the output sentence unacceptable as marked in (25a, b). This also affects meaning of the sentence. Since a goal argument never surfaces, the meaning must not be realized either.
+The only way to express the beneficiary argument on surface is to put it in an adjunct position as in the following:
+
+(26) (Sumi-ka puthakhay-ss-ki ttaymune y,)
+
+Benefactive Verbal Constructions in Korean: A Functional Approach
+
+(Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm
+(Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-Nm (Sumi-N
+
+Seok-Hoon You
+
+Sumi-NM Yumi/mom-GO the work-AC help-CM-BEN AS: <ag1 th1> v1 + <ag2 go2> v2 ⇒ <ag12 go2> v1-v2 'Sumi helped with the work for Yumi.'
+
+Thus, when V1 has an animate theme argument, V2 seems to become more cohesive with V1, as if V1 + V2 were a single compound verb. It is because an animate NP is the strongest nominal argument, so strong that it makes the benefactive verb function only as an auxiliary to V1 without having a separate beneficiary argument. This intriguing syntactico-semantic issue needs further study.
+Argument Licensing
+
+Since BVC's are a subtype of AVC's, they share the following lexico-syntactic properties. (30) V2: cwuta 'give the benefit of doing to (someone)/to do/be for (someone)' [+ CM] <ag (go)> V1: Verb CM: -E
+
+Again, observe the following tree diagram of BVC's and notice how the argument licensing conditions are satisfied. (31) S VP NP NP <ag2> <go2> NP NP <ag1> <th1> CS CM S VP NP NP V Sumi-ka Yumi-eykey [PROi sakwa-lul sa-E] cwu-ess-ta <ag2> <go2> <ag1> <th1> <ag2 go2> 'Sumi bought some apples for Yumi.'
+
+BVCs' must take a complement clause ([+CS]) and second, they do not have a theme
+
+Benefactive Verbal Constructions in Korean: A Functional Approach
+
+argument. Thus, the Object Identity Condition is vacuous. Notice in the above diagram that the embedded theme argument is realized according to the SAL rule because V2 does not contain its own theme. 5.1 Argument Licensing Mechanism in BVC's
+
+Korean auxiliary verbs are a group of verbs that have undergone syntactic and semantic change due to grammaticalization processes. (Sohn 1994) Thus, they cannot stand alone without support from a preceding verb that is often called a main verb. Consider the examples below and compare the differences between the two in the manner of argument licensing:
+
+(32) a.
+John-i PROi phyenci-lul ttut-E po-ass-ta.
+John-NM ag2 agl thl <ag1 thl>v1 <ag2>v2 (i) 'John opened and read the letter.' (ii) 'John tried opening the letter.'
+
+b. Yumii-ka John-eykey PROi sakwa-lul sa-E cwu-ess-ta. Yumi-NM ag2 go2 agl thl <ag1 thl>v1 <ag2 thl go2>v2 (i) 'Yumi bought an apple and gave it to John.' (ii) 'Yumi bought an apple for John.'
+
+I suggest that the grammaticality of the above and all other CVC's be licensed by a set of argument licensing conditions that were proposed in (7).
+As already claimed, the so-called auxiliary benefactive verb cwuta 'to do V1 for ...', is required to have a complement clause.
+Sentence (32a) satisfies the SIC in that the subject of the main clause John (<ag2>) and the embedded subject (PRO: <ag1>) are coreferential. The OIC is vacuously met because the auxiliary verb pota 'try to' has only <ag> as a theta role. The EDC is also met in that all the theta roles of both V1 and V2 are discharged, one to one, to all the overt or covert nominal arguments. The HFP is also satisfied because the argument with <ag2> is realized on the surface. Finally, the SAL is also observed because the embedded theme (<th1>) phyenci whose theta role is not specified in the EAS of V2 is realized on the surface. Thus, the sentence is licensed as grammatical.
+Concluding Remarks
+
+In this paper, I have discussed the BVC's in Korean as for their AS to see whether previous proposals about the AS of the BVC's adequately explain the ubiquitous nature of them.
+It has been found that the AS proposed by previous researchers is not rich
+
+Seok-Hoon You
+
+enough to explain the behavior of the BVC's. The following are proposed to provide better explanation of the ubiquitous behavior of argument licensing in the BVC's in Korean: First, the enriched representation of the AS of BVC's; second, an extensive taxonomy of clause combining constructions in terms of syntactic and AS's; and third, five argument licensing conditions and their applications to different BVC's. I have also discussed the mapping of arguments into Cases (nominative, accusative, dative, locative, etc.) and grammatical relations (subject, direct or indirect object, complement, etc.).
+References
+
+Bresnan, Joan.
+and J.
+Kanerva. "Locative Inversion in Chichewa: A Case Study of Factorization in Grammar," Linguistic Inquiry 20, 1-50. Chomsky, Noam. Lectures on Government and Binding. Dordrecht: Foris.
+Chung, Taegoo. Argument Structure and Serial Verbs in Korean. Ph.D Dissertation. The University of Texas at Austin. Seoul: Hankook Publishers. Foley, William and Van Valin, Robert. Functional Syntax and Universal Grammar. Cambridge Studies in Linguistics 38. Cambridge: Cambridge University Press. Grimshaw, Jane. Argument Structure, Linguistic Inquiry Monograph 17, Cambridge, Massachusetts: The MIT Press. ______.
+and Armin Mester. Light verbs and theta-marking. Linguistic Inquiry. 19, 205-232. Heine, Bernd, Ulrike Claudi, and Friederike Hunnemeyer. Grammaticalization: A conceptual framework. Chicago: University of Chicago Press
+
+Higginbotham, J. On Semantics. Linguistic Inquiry 16, 547-593. Hopper, Paul J. and Elizabeth Closs Traugott. Grammaticalization. London: Cambridge University Press. Lee, In. Analysis of Korean Complex Predicates: An Argument Structure Account. Ph.D Dissertation. University of Kansas. Seoul: Hankook Publishers. Jackendoff, Ray. Semantic Structures. Cambridge, Massachusetts: The MIT Press. ______. The Architecture of the Language Faculty. Cambridge, Massachusetts: The MIT Press. Jo, In-Hee.
+Multi-verb Constructions in Korean, In B.D. Joseph and A. Zwicky eds., When Verbs Collide: Papers From the 1990 Ohio State Multi-Conference on Serial Verbs, Dept.
+of Linguistics, Ohio State University. Kang, Sun-Young.
+Serial Verb in Korean. Proceedings of SICOL 92. by The Linguistic Society of Korea. Lee, Sookhee. The Syntax and Semantics of Serial Verb Constructions, PhD. Dissertation, University of Washington, Seattle. Li, Yafei. On Chinese V-V Compounds. Natural Language and Linguistic Theory 8, 177-207. O'Grady, William. 1992a. Korean paratactic serial verbs. Paper presented at SICOL 3. ______. 1992b. Serialization and Coordination in Korean, Unpublished manuscript.
+Bak, Seung-Yun.
+Grammaticalization of Korean Auxiliary Verb Construction: With focus on Benefactive Construction. Proceedings of 11th conference on Discourse and Cognitive Linguistics, Seoul, Korea. Rosen, S.
+Argument structure and complex predicates.
+Ph.D Dissertation. Brandeis University. Shibatani, M. Applicatives and Benefactives: A Cognitive Account. Manuscript. Sohn, Ho-min. 1999a. The Korean Language. Cambridge: Cambridge University Press. ______. 1999b. Functional Transfer in Sentence-final Positions in Korean and Japanese.
+Invited Speech delivered at the Research Institute of Language and Informations, Korea University, Seoul. Suh, Younghwan. A Study of the Auxiliary Verb Construction and Verb Serialization in Korean. Ph.D Dissertation. University of Washington. Seoul: Hankook Publishers. Williams, Edwin. Predication. Linguistic Inquiry 11, 208-238. ______. Argument structure and morphology. Linguistic Review 1, 81-114. Benefactive Verbal Constructions in Korean: A Functional Approach
+
+You, Seok-Hoon. Argument Licensing in Complex Verbal Constructions in Korean. Ph.D Dissertation, University of Hawaii.
+Seoul: Hankook Publishers.
+Zaenen, A.
+and A. Goldberg. Review of J.
+Grimshaw: Argument Structure, Cambridge, MIT Press, 1990.
+Language 69:4, 807-17. Zubizarreta, M.
+Levels of Representation in the Lexicon and in the Syntax.
+Dordrecht, Holland: Foris. Seok-Hoon You Department of Linguistics Korea University 5-1 Anam-dong, Sungbuk-ku Seoul, Korea 136-701 Telephone: 82-2-3290-2176 Fax: 82-2-3290-2555 E-mail: syou@korea.ac.kr
+
+이 논문은 2003년 6월 30일 투고 완료되어 2003년 7월 1일부터 7월 25일까지 심사위원이 심사하고 2003년 7월 30일 편집위원 회의에서 게재 결정된 것임. Seok-Hoon You

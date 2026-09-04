@@ -1,0 +1,61 @@
+외란관측기를 갖는 SMC에 의한 DC모터의 강인한 속도제어
+
+Torque [N·m]
+0.8
+0.6
+0.4
+0.2
+0
+-0.2
+0  2  4  6  8  10
+Time[sec]
+(a) 80% step load and variation of 150% in Rₐ, Lₐ
+
+Torque [N·m]
+0.8
+0.6
+0.4
+0.2
+0
+-0.2
+0  2  4  6  8  10
+Time[sec]
+(b) 80% step load and variation of 150% in Rₐ, Lₐ, J, B
+
+Torque [N·m]
+0.8
+0.6
+0.4
+0.2
+0
+-0.2
+0  2  4  6  8  10
+Time[sec]
+(c) 80% step load and variation of 150% in B
+
+Torque [N·m]
+0.8
+0.6
+0.4
+0.2
+0
+-0.2
+0  2  4  6  8  10
+Time[sec]
+(d) 80% step load and variation of 150% in J
+
+Fig. 9. Estimated disturbance torque from DOB.
+
+결 론
+
+본 논문에서는 계단형 부하 및 파라미터 변동을 포함하는 DC모터 속도제어의 강인한 제어 성능 확보를 위해 SMC의 DOB를 설계하였고, 그 타당성을 Matlab 시뮬레이션을 통해 확인하였다. 시뮬레이션을 통해 얻은 주요 결과들은 다음과 같다.
+
+(1) DOB를 갖지 않는 종래의 SMC는 외란 토크 인가 시 정상 속도오차를 발생한다. 이는 SMC가 PID 피드백 제어계와 같이 정상오차를 빠르게 보상하는 전류 제어기를 내부루프로 갖지 않기 때문이며, 피드포워드적으로 전압을 지령하는 SMC 제어 특성에 기인한다.
+
+(2) DOB 기반의 SMC는 정격토크의 부하 인가 시에도 정상상태오차를 발생하지 않는다. 이는 DOB가 미지의 외란을 추정하여 이에 상당하는 전압 지령을 기존 지령값에 보상해 주기 때문이다.
+
+(3) DOB 기반의 SMC는 모터의 전기계 및 기계계 파라미터가 변동하고 동시에 계단형 부하가 인가되는 경우에도 아주 작은 정상오차를 발생할 뿐 강인한 속도제어 성능을 보였다.
+
+(4) 본 논문에서 제안된 DOB는 전류와 속도 정보만을 이용하며, 속도의 미분 항을 갖지 않는 구조로 설계된다. 전류는 모터의 안전 확보 차원에서 속도 제어를 위한 별도의 부가 센서 장착 없이도 제안된 DOB의 구현이 가능하다. 또한 미분 항을 갖지 않으므로 고조파의 영향을 덜 받는다.
+
+Journal of the Korean Society of Fisheries and Ocean Technology | 409

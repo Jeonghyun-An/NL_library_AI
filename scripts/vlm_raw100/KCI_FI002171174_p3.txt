@@ -1,0 +1,27 @@
+from a universe of stocks. (Being able to select eight-stock portfolios from 500 stocks, there are over several hundred million different eight-stock portfolios; conceivably, any combination, however bizarre to the investment professional, might be owned by some investor.)
+
+Given that the individual investor is exposed to the risk on his or her individual portfolio, rather than the risk on the average of 500 similar size portfolios, the next logical step is to compute the ranges of risk likely to be found on the fully hedged global portfolio and then to move on to the ranges of risk that will exist when the investor chooses not to hedge a global portfolio against exchange rate risk.
+
+THE RANGES OF RISK ON THE FULLY HEDGED GLOBAL PORTFOLIO
+
+Using the same monthly return data, 500 global equally-weighted portfolios at each size from 1 stock to 100 stocks (stocks were randomly selected among Japan, UK, and US) were constructed and the returns hedged against exchange rate fluctuations among the three currencies.⁶ Exchange rate risk was hedged according to conventional calculations. Thus, consider an US investor investing in a foreign country (say, Japan), the investment’s total return in US dollars, R_T, can be expressed as:
+
+(1) (1+R_T) = (1+R_I) (1+R_C)
+
+where R_I represents the investment return in the local currency (say, the Japanese Yen) of the investment. R_C represents the return to that investor due to changes in the exchange rate. In other words, R_C is the rate of return to the investor if the investor converted a given amount of US dollars to Japanese Yen at the beginning of the period and held it until the end of the period at which time it was converted back into US dollars. R_I and R_C may be positive, zero or negative, month by month, currency by currency and stock by stock. Looking at the risk impact of the two constituent returns:
+
+(2) σ_T = [σ_I² + σ_C² + 2σ_IC]¹/²
+
+It is clear that risk impact is derived not only from the volatility of currency and investment returns but also from the relationship between the volatility of these two returns. In contrast, running a continuous currency hedge would make portfolio risk dependent only upon the covariances between investment returns and would put investors in each country into equality in terms of portfolio risk. To show how exchange rate risk may be hedged, we can rearrange equation (1) as follows,
+
+(3) R_T = R_I + R_C + R_I R_C
+
+UNHEDGED AND HEDGED EFFICIENT GLOBAL PORTFOLIO DIVERSIFICATION
+
+where R_I R_C is just a cross-product between R_I and R_C, representing the impact of exchange rate on the investment’s return. Exchange rate risk can be completely hedged if we assume R_C = 0. That is, R_T = R_I or an US investor investing in Japan will earn R_I, the same return the investor would earn if he/she was a Japanese citizen.
+
+The 95% confidence limits of portfolio risk on the fully hedged global portfolio were computed and are graphed in Figure 3. Looking first at the eight-stock size portfolio, which is the normal lower limit for a recommended portfolio size, the average risk on the fully hedged global portfolio is 4.4825% (scaled as 100 in Figure 3) but the ranges of risk to which the individual investor is exposed are from 67% to 133% of this average. Going to the normal upper limit of the standard recommendations of twenty stocks, average risk has declined to 3.6740% but the ranges still cover 77% to 123% of this average.
+
+It is feasible to put the question that after studying Solnik and Evans/Archer results in the standard textbooks: “What does the investor expect?” In our own informal tests with students and investment professionals, after reiterating the textbook explanation and wording and showing the standard Figure 1, it is in fact uncommon for a person to question whether any portfolio risk would be different from the textbook figure. Given this unquestioned acceptance of the textbook figure, it is a simple matter to demonstrate that actual risk can lie on either side of the average, and therefore, that the investor must expect some departure from the textbook average risk. It then becomes legitimate to ask what departure from average risk - 5, 10, 15, or 20% - would be deemed acceptable by each investor. Clearly, different investors give different answers as to how comfortable they would feel in departing from the average risk, depending upon their own risk aversion. This approach of letting the individual investor decide what departure is acceptable is the basis for Table 2.
+
+The fully hedged global portfolio is shown in the first column. Thus, if an investor is comfortable to have his portfolio within 10% of average portfolio risk, his fully hedged global portfolio should contain a minimum of ninety-one stocks. A more risk accepting person, content to experience risk within 15% of the average, would need only forty stocks in her portfolio. Note our “only forty” is double the size some textbooks describe as superfluous diversification; the textbook maximum of twenty stocks would put the investor within approximately 20% of the average risk (which might be acceptable to some, but not other investors). In our view, recommending an eight-stock hedged global portfolio as being efficiently diversified is to say to one investor that the much above average risk she has experienced is of no consequence, since there is another investor who has experienced the exactly equivalent below average

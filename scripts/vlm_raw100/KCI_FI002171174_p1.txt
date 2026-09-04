@@ -1,0 +1,24 @@
+UNHEDGED AND HEDGED EFFICIENT GLOBAL PORTFOLIO DIVERSIFICATION
+
+Gerald D. Newbould
+University of Nevada, Las Vegas
+Percy S. Poon
+University of Nevada, Las Vegas
+Richard L. Constand
+University of Hawaii at Manoa
+Stephen F. Witt
+University of Wales, Swansea
+
+The objective of this paper is to reexamine the widespread recommendation that a portfolio of relatively few global stocks provides efficient diversification. This prescription which is quoted in textbooks and popular press is generated from the pioneering research of Solnik on the diversification effects of global investing. This article first reexamines the logical basis for this widespread prescription, and then, by analyzing stock returns in Japan, UK and USA, this article reaches the conclusion that the minimum number of stocks in an efficiently diversified global portfolio should be dramatically larger than is commonly prescribed - possibly as high as 100 stocks, depending upon how close to average risk the individual investor desires to be.
+
+INTRODUCTION
+
+Since portfolio risk is determined by the number of securities, the risk of the individual securities and the correlation of the individual risks,¹ the major promise of global² investing is that among a basket of stocks drawn globally there are, on average, lower correlation coefficients among the individual stock returns than among those in a basket drawn from purely domestic origins. Solnik (1974), building on the US-only work of Evans and Archer (1968), showed that a portfolio of as few as eight global stocks achieved a portfolio risk level approximately 20% that of the average US stock. From this pioneering work it became a widely-accepted prescription that an efficient global portfolio needs to contain as few as eight stocks and a portfolio of twenty or more stocks represents superfluous diversification.³ This article expands the US-only analyses of Newbould and Poon (1993, 1996) to global investments and attempts to arrive at a meaningful prescription for the individual investors. Stocks’ returns in Japan, UK and USA were collected and used to build domestic and global portfolios with each portfolio consisting of from 1 to 100 stocks. The portfolios are analyzed both hedged and unhedged against exchange rate movements among the three currencies. The conclusions as to minimum sizes of portfolios for a fully hedged global portfolio and for unhedged global portfolios of residents of Japan, UK
+
+EARLY AND CURRENT RESEARCH
+
+Solnik (1974) analyzed stock returns for NYSE stocks and over 300 European stocks for the period 1966-71 and formed domestic (US-only) and (US-based) global portfolios of from one to sixty stocks. For an US based-investor, Solnik showed that a global portfolio of US and European stocks had a portfolio risk “half as risky as a well-diversified portfolio of US stocks (with the same number of holdings).” (p. 51) The Solnik curve graphing portfolio risk against number of stocks (“holdings”) drops as uniformly but more steeply as that shown by Evans and Archer in their study of US stocks. Solnik summarized his US data to be in full conformity with the Evans and Archer conclusions: “An American investor holding twenty securities reduces his total risk by only another 3% if he added another fifty different securities to his portfolio.” (p. 49) These empirical results have given rise to a common prescription to investors in textbooks and more popular publications that simple efficient portfolio diversification can be achieved with a portfolio of as few as eight stocks and that stocks
+
+Richard L. Constand is grateful for the support from the Center for International Business Education and Research at the University of Hawaii.
+
+13

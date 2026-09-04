@@ -1,0 +1,30 @@
+quantity. The reasoning behind this is that since the customer order admission control is static and not affected by the increase in μ, there is no incentive to keep more inventory than before.
+
+• Impact of M on the optimal performance as a function of B: In <Table 9>, 15 examples are grouped into 3 sets by B=6, 9, and 12. <Table 9> shows that given M(>1), an increase in B tends to increase the % value. Interestingly, Q* is not nearly affected by the increase in B when the lead time process is less variable (e.g. M=5) while Q* increases in B when it becomes variable(e.g. M=1). This result indicates that when B increases,
+
+<Table 8> Impact of M as a function of μ
+
+| No | Parameters | Optimal performance |
+| --- | --- | --- |
+|  | c_K | c_R | c_h^1 | c_h^2 | λ | μ | d | B | M | Q* | g | % | EOQ |
+| 1 | 400 | 40 | 4 | 1 | 0.7 | 1 | 0.1 | 10 | 1 | 30 | 38.40 |  | 24 |
+| 2 |  |  |  |  |  |  |  |  | 2 | 28 | 36.71 | 4.40 | 24 |
+| 3 |  |  |  |  |  |  |  |  | 3 | 27 | 36.08 | 1.72 | 24 |
+| 4 |  |  |  |  |  |  |  |  | 4 | 27 | 35.69 | 1.08 | 24 |
+| 5 |  |  |  |  |  |  |  |  | 5 | 27 | 35.42 | 0.76 | 24 |
+| 6 |  |  |  |  |  | 1.2 |  |  | 1 | 30 | 34.54 |  | 24 |
+| 7 |  |  |  |  |  |  |  |  | 2 | 28 | 32.88 | 4.81 | 24 |
+| 8 |  |  |  |  |  |  |  |  | 3 | 27 | 32.27 | 1.86 | 24 |
+| 9 |  |  |  |  |  |  |  |  | 4 | 27 | 31.88 | 1.21 | 24 |
+| 10 |  |  |  |  |  | 1.4 |  |  | 5 | 27 | 31.62 | 0.82 | 24 |
+| 11 |  |  |  |  |  |  |  |  | 1 | 30 | 32.37 |  | 24 |
+| 12 |  |  |  |  |  |  |  |  | 2 | 28 | 30.75 | 5.00 | 24 |
+| 13 |  |  |  |  |  |  |  |  | 3 | 28 | 30.15 | 1.95 | 24 |
+| 14 |  |  |  |  |  |  |  |  | 4 | 28 | 29.80 | 1.16 | 24 |
+| 15 |  |  |  |  |  |  |  |  | 5 | 27 | 29.56 | 0.81 | 24 |
+
+the reduction in lead time variability can contribute to saving more costs and stabilizing the size of the optimal replenishment quantity.
+
+VI. Conclusions
+
+In this paper, we investigated the impact of lead time variability on component replenishment in an MTO facility. To this end, we presented a Markov decision process model with Erlang lead time and setup cost, and a numerical procedure which finds the optimal performances. Using this procedure, we per-

@@ -1,0 +1,17 @@
+대화 텍스트에 실현되는 보조사 ‘마는’의 화용적 기능 연구*  
+- 서술형 어미 ‘-다’와 결합하는 ‘마는’을 중심으로 -  
+이 유 미**
+
+Yumi Lee (2026), The Pragmatic Conversational Functions of the Auxiliary Particle “maneun” with the Declarative Final Ending “-da”.  
+Journal of Language Sciences 33(1), 49-74.
+
+This study aims to elucidate the pragmatic functions performed by the auxiliary particle “maneun” in conversational discourse in Modern Korean. The analysis demonstrates that “maneun” functions both as a discourse connective marker, strategically linking stretches of discourse, and as a discourse modal marker, clearly expressing the speaker’s communicative intent. The pragmatic functions of “maneun” as a discourse connective marker can be classified into four types. First, “maneun” is strategically employed in situations where the speaker freely inserts spontaneously recalled information while continuing the utterance without disrupting the discourse context. Second, it is used to present relevant background information in advance of a forthcoming question or request. Third, “maneun” serves to display politeness by protecting the interlocutor’s face prior to asserting the speaker’s own viewpoint, and it may also function as a strategic device for mitigating the speaker’s responsibility for the subsequent claim. Fourth, “maneun” is used to signal to the listener the dimension or perspective from which the upcoming utterance should be interpreted. When “maneun” appears without linking to a subsequent utterance and instead concludes the turn with sentence-final intonation, marking the utterance as ending with an attitude of uncertainty, it functions as a discourse modal marker. In this role, “maneun” may indicate the speaker’s intention to confront a potential conflict directly by making their uncertainty explicit, or conversely, to defuse or avoid conflict by withholding categorical assertion.
+
+(Gyeongsang National University)
+
+| Key Words |
+|---|
+auxiliary particle, discourse strategy, pragmatic function, discourse connective marker, discourse modal marker, “maneun”
+
+* 이 논문은 2025년 11월 1일 경상국립대학교에서 열린 배달말학회 전국학술대회에서 발표한 내용을 김고 다듬은 것이다. 토론을 맡아주신 목지선 선생님께 깊이 감사드린다. 또한 본 논문에 대한 유익한 논평을 해 주신 익명의 심사위원분께도 진심으로 감사드린다.
+** 이유미/경상국립대학교/강사

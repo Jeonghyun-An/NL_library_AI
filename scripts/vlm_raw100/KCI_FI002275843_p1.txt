@@ -1,0 +1,30 @@
+Journal of the Korea Convergence Society
+Vol. 8. No. 10, pp.45-52, 2017
+https://doi.org/10.15207/JKCS.2017.8.10.045
+
+떨개 이동 예측을 위한 신경망 및 통계 기반 기계학습 기법의 성능 비교
+이찬재, 김경도, 김용혁*
+광운대학교 컴퓨터과학과
+
+Performance Comparison of Machine Learning Based on Neural Networks and Statistical Methods for Prediction of Drifter Movement
+Chan-Jae Lee, Gyoung-Do Kim, Yong-Hyuk Kim*
+Dept. Computer Science, Kwangwoon University
+
+요약
+떨개는 해양에서 해수의 특성 및 흐름을 관측하기 위한 장비로서, 해수의 흐름 관측을 이용해 유출유 확산 예측을 위해 사용될 수 있다. 본 논문에서는 관측기관에서 사용하는 떠개의 특성과 이동경로를 기계학습 기법들을 이용하여 학습시키고 예측하는 모델을 제안한다. 서포트벡터 회귀, 방사기저함수 네트워크, 가우시안 프로세스, 다층 퍼셉트론, 순환신경망을 이용하여 떠개의 이동경로 예측 방법을 제시한다. 기존 MOHID 수치모델과 비교하여 각 기법별로 4개의 사례중 3개에서 성능이 개선되었으며, 가장 좋은 개선율을 보인 기법은 LSTM으로 평균 47.59% 개선되었다. 추후 연구에서는 배깅과 부스팅을 이용하여 정확도를 개선할 예정이다.
+
+• 주제어 : 유류 유출, 떠개, 기계학습, 순환신경망, 예측
+
+Abstract
+Drifter is an equipment for observing the characteristics of seawater in the ocean, and it can be used to predict effluent oil diffusion and to observe ocean currents. In this paper, we design models or the prediction of drifter trajectory using machine learning. We propose methods for estimating the trajectory of drifter using support vector regression, radial basis function network, multilayer perceptron, and recurrent neural network. When the propose methods were compared with the existing MOHID numerical model, performance was improve on three of the four cases. In particular, LSTM, the best performed method, showed the imporvement by 47.59% Future work will improve the accuracy by weighting using bagging and boosting.
+
+• Key Words : Oil Spill, Drifter, Machine learning, Recurrent neural network, LSTM, Prediction
+
+1. 서론
+현대 사회에서 떠개(drifter)는 관측장비로서 많이 사용되고 있고 유출유 확산 예측과 해류를 관찰하기 위해 사용되고 있다. 캘리포니아 북부 해안에서 해류를
+
+*Corresponding Author : 김용혁(yhdfly@kw.ac.kr)
+Received September 5, 2017
+Accepted October 20, 2017
+Revised October 2, 2017
+Published October 28, 2017

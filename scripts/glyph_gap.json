@@ -1,0 +1,1676 @@
+[
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 232,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 44,
+  "odl_only": 4,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049203536_",
+  "page": 1,
+  "kind": "control",
+  "odl": 76,
+  "fitz": 68,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 39,
+  "fitz": 54,
+  "odl_only": 7,
+  "fitz_only": 22
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 3,
+  "kind": "reroute",
+  "odl": 28,
+  "fitz": 45,
+  "odl_only": 2,
+  "fitz_only": 19
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 44,
+  "kind": "reroute",
+  "odl": 15,
+  "fitz": 2121,
+  "odl_only": 0,
+  "fitz_only": 2106
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 113,
+  "kind": "reroute",
+  "odl": 35,
+  "fitz": 984,
+  "odl_only": 6,
+  "fitz_only": 955
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 118,
+  "kind": "reroute",
+  "odl": 35,
+  "fitz": 1140,
+  "odl_only": 6,
+  "fitz_only": 1111
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 121,
+  "kind": "reroute",
+  "odl": 34,
+  "fitz": 845,
+  "odl_only": 6,
+  "fitz_only": 817
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 124,
+  "kind": "reroute",
+  "odl": 38,
+  "fitz": 838,
+  "odl_only": 6,
+  "fitz_only": 806
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 125,
+  "kind": "reroute",
+  "odl": 38,
+  "fitz": 871,
+  "odl_only": 6,
+  "fitz_only": 839
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 151,
+  "kind": "reroute",
+  "odl": 9,
+  "fitz": 1183,
+  "odl_only": 6,
+  "fitz_only": 1180
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 152,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 1141,
+  "odl_only": 0,
+  "fitz_only": 1141
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 153,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 997,
+  "odl_only": 0,
+  "fitz_only": 997
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 154,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 836,
+  "odl_only": 0,
+  "fitz_only": 836
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 155,
+  "kind": "reroute",
+  "odl": 12,
+  "fitz": 1737,
+  "odl_only": 6,
+  "fitz_only": 1731
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 175,
+  "kind": "reroute",
+  "odl": 34,
+  "fitz": 462,
+  "odl_only": 0,
+  "fitz_only": 428
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 4,
+  "kind": "control",
+  "odl": 148,
+  "fitz": 612,
+  "odl_only": 0,
+  "fitz_only": 464
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 5,
+  "kind": "control",
+  "odl": 195,
+  "fitz": 741,
+  "odl_only": 0,
+  "fitz_only": 546
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 7,
+  "kind": "control",
+  "odl": 156,
+  "fitz": 529,
+  "odl_only": 12,
+  "fitz_only": 385
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 8,
+  "kind": "control",
+  "odl": 157,
+  "fitz": 634,
+  "odl_only": 0,
+  "fitz_only": 477
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 9,
+  "kind": "control",
+  "odl": 138,
+  "fitz": 617,
+  "odl_only": 6,
+  "fitz_only": 485
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 10,
+  "kind": "control",
+  "odl": 127,
+  "fitz": 553,
+  "odl_only": 0,
+  "fitz_only": 426
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 11,
+  "kind": "control",
+  "odl": 160,
+  "fitz": 602,
+  "odl_only": 0,
+  "fitz_only": 442
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 12,
+  "kind": "control",
+  "odl": 129,
+  "fitz": 545,
+  "odl_only": 0,
+  "fitz_only": 416
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 13,
+  "kind": "control",
+  "odl": 898,
+  "fitz": 1136,
+  "odl_only": 6,
+  "fitz_only": 244
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 14,
+  "kind": "control",
+  "odl": 1446,
+  "fitz": 1735,
+  "odl_only": 12,
+  "fitz_only": 301
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 15,
+  "kind": "control",
+  "odl": 1292,
+  "fitz": 1516,
+  "odl_only": 12,
+  "fitz_only": 236
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 16,
+  "kind": "control",
+  "odl": 942,
+  "fitz": 1412,
+  "odl_only": 0,
+  "fitz_only": 470
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 17,
+  "kind": "control",
+  "odl": 569,
+  "fitz": 862,
+  "odl_only": 0,
+  "fitz_only": 293
+ },
+ {
+  "doc": "CNTS-00049203605_",
+  "page": 18,
+  "kind": "control",
+  "odl": 165,
+  "fitz": 716,
+  "odl_only": 1,
+  "fitz_only": 552
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 49,
+  "fitz": 50,
+  "odl_only": 0,
+  "fitz_only": 1
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 124,
+  "kind": "reroute",
+  "odl": 20,
+  "fitz": 20,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 125,
+  "kind": "reroute",
+  "odl": 26,
+  "fitz": 30,
+  "odl_only": 0,
+  "fitz_only": 4
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 2,
+  "kind": "control",
+  "odl": 111,
+  "fitz": 7,
+  "odl_only": 104,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 3,
+  "kind": "control",
+  "odl": 71,
+  "fitz": 63,
+  "odl_only": 10,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049203617_",
+  "page": 4,
+  "kind": "control",
+  "odl": 553,
+  "fitz": 545,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 2,
+  "kind": "reroute",
+  "odl": 38,
+  "fitz": 37,
+  "odl_only": 2,
+  "fitz_only": 1
+ },
+ {
+  "doc": "CNTS-00049203988_",
+  "page": 1,
+  "kind": "control",
+  "odl": 430,
+  "fitz": 37,
+  "odl_only": 394,
+  "fitz_only": 1
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 2,
+  "kind": "reroute",
+  "odl": 30,
+  "fitz": 31,
+  "odl_only": 1,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049204004_",
+  "page": 3,
+  "kind": "control",
+  "odl": 647,
+  "fitz": 647,
+  "odl_only": 4,
+  "fitz_only": 4
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 40,
+  "fitz": 62,
+  "odl_only": 1,
+  "fitz_only": 23
+ },
+ {
+  "doc": "CNTS-00049655048_",
+  "page": 3,
+  "kind": "control",
+  "odl": 7764,
+  "fitz": 180,
+  "odl_only": 7587,
+  "fitz_only": 3
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 7,
+  "kind": "reroute",
+  "odl": 37,
+  "fitz": 140,
+  "odl_only": 18,
+  "fitz_only": 121
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 407,
+  "kind": "reroute",
+  "odl": 33,
+  "fitz": 117,
+  "odl_only": 0,
+  "fitz_only": 84
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 3,
+  "kind": "control",
+  "odl": 66,
+  "fitz": 247,
+  "odl_only": 6,
+  "fitz_only": 187
+ },
+ {
+  "doc": "CNTS-00049655312_",
+  "page": 11,
+  "kind": "control",
+  "odl": 1572,
+  "fitz": 1556,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 2,
+  "kind": "reroute",
+  "odl": 25,
+  "fitz": 25,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655319_",
+  "page": 3,
+  "kind": "control",
+  "odl": 2207,
+  "fitz": 2209,
+  "odl_only": 3,
+  "fitz_only": 5
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 2,
+  "kind": "reroute",
+  "odl": 29,
+  "fitz": 26,
+  "odl_only": 3,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 12,
+  "kind": "reroute",
+  "odl": 46,
+  "fitz": 46,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 19,
+  "kind": "reroute",
+  "odl": 46,
+  "fitz": 48,
+  "odl_only": 0,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 1,
+  "kind": "control",
+  "odl": 51,
+  "fitz": 52,
+  "odl_only": 2,
+  "fitz_only": 3
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 3,
+  "kind": "control",
+  "odl": 1881,
+  "fitz": 1877,
+  "odl_only": 4,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655326_",
+  "page": 4,
+  "kind": "control",
+  "odl": 2472,
+  "fitz": 2472,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 44,
+  "fitz": 46,
+  "odl_only": 1,
+  "fitz_only": 3
+ },
+ {
+  "doc": "CNTS-00049655360_",
+  "page": 2,
+  "kind": "control",
+  "odl": 256,
+  "fitz": 234,
+  "odl_only": 24,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 99,
+  "kind": "reroute",
+  "odl": 32,
+  "fitz": 539,
+  "odl_only": 4,
+  "fitz_only": 511
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 102,
+  "kind": "reroute",
+  "odl": 41,
+  "fitz": 2019,
+  "odl_only": 6,
+  "fitz_only": 1984
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 103,
+  "kind": "reroute",
+  "odl": 46,
+  "fitz": 1821,
+  "odl_only": 6,
+  "fitz_only": 1781
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 3,
+  "kind": "control",
+  "odl": 55,
+  "fitz": 294,
+  "odl_only": 0,
+  "fitz_only": 239
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 4,
+  "kind": "control",
+  "odl": 260,
+  "fitz": 2262,
+  "odl_only": 34,
+  "fitz_only": 2036
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 7,
+  "kind": "control",
+  "odl": 148,
+  "fitz": 646,
+  "odl_only": 5,
+  "fitz_only": 503
+ },
+ {
+  "doc": "CNTS-00049655466_",
+  "page": 8,
+  "kind": "control",
+  "odl": 382,
+  "fitz": 1934,
+  "odl_only": 0,
+  "fitz_only": 1552
+ },
+ {
+  "doc": "CNTS-00049655487_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 11,
+  "fitz": 12,
+  "odl_only": 2,
+  "fitz_only": 3
+ },
+ {
+  "doc": "CNTS-00049655487_",
+  "page": 5,
+  "kind": "control",
+  "odl": 1436,
+  "fitz": 4,
+  "odl_only": 1432,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655488_",
+  "page": 114,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 5,
+  "odl_only": 48,
+  "fitz_only": 5
+ },
+ {
+  "doc": "CNTS-00049655488_",
+  "page": 115,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 5,
+  "odl_only": 48,
+  "fitz_only": 5
+ },
+ {
+  "doc": "CNTS-00049655488_",
+  "page": 116,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 5,
+  "odl_only": 48,
+  "fitz_only": 5
+ },
+ {
+  "doc": "CNTS-00049655488_",
+  "page": 1,
+  "kind": "control",
+  "odl": 84,
+  "fitz": 59,
+  "odl_only": 25,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655488_",
+  "page": 8,
+  "kind": "control",
+  "odl": 184,
+  "fitz": 3,
+  "odl_only": 184,
+  "fitz_only": 3
+ },
+ {
+  "doc": "CNTS-00049655488_",
+  "page": 21,
+  "kind": "control",
+  "odl": 432,
+  "fitz": 4,
+  "odl_only": 432,
+  "fitz_only": 4
+ },
+ {
+  "doc": "CNTS-00049655631_",
+  "page": 20,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 0,
+  "odl_only": 48,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655631_",
+  "page": 1,
+  "kind": "control",
+  "odl": 72,
+  "fitz": 0,
+  "odl_only": 72,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655645_",
+  "page": 12,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655645_",
+  "page": 1,
+  "kind": "control",
+  "odl": 240,
+  "fitz": 0,
+  "odl_only": 240,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655660_",
+  "page": 3,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655660_",
+  "page": 1,
+  "kind": "control",
+  "odl": 672,
+  "fitz": 0,
+  "odl_only": 672,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655665_",
+  "page": 2,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655665_",
+  "page": 3,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655665_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655665_",
+  "page": 5,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655665_",
+  "page": 1,
+  "kind": "control",
+  "odl": 528,
+  "fitz": 0,
+  "odl_only": 528,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 8,
+  "kind": "reroute",
+  "odl": 16,
+  "fitz": 0,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 15,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 16,
+  "kind": "reroute",
+  "odl": 24,
+  "fitz": 0,
+  "odl_only": 24,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 17,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 1,
+  "kind": "control",
+  "odl": 584,
+  "fitz": 0,
+  "odl_only": 584,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 2,
+  "kind": "control",
+  "odl": 584,
+  "fitz": 0,
+  "odl_only": 584,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 3,
+  "kind": "control",
+  "odl": 648,
+  "fitz": 0,
+  "odl_only": 648,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655676_",
+  "page": 4,
+  "kind": "control",
+  "odl": 624,
+  "fitz": 0,
+  "odl_only": 624,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655685_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655685_",
+  "page": 1,
+  "kind": "control",
+  "odl": 512,
+  "fitz": 0,
+  "odl_only": 512,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655706_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655706_",
+  "page": 7,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655706_",
+  "page": 1,
+  "kind": "control",
+  "odl": 480,
+  "fitz": 0,
+  "odl_only": 480,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655706_",
+  "page": 2,
+  "kind": "control",
+  "odl": 608,
+  "fitz": 0,
+  "odl_only": 608,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 45,
+  "fitz": 41,
+  "odl_only": 4,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655723_",
+  "page": 2,
+  "kind": "control",
+  "odl": 819,
+  "fitz": 67,
+  "odl_only": 752,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 42,
+  "fitz": 36,
+  "odl_only": 6,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 5,
+  "kind": "reroute",
+  "odl": 43,
+  "fitz": 40,
+  "odl_only": 3,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 2,
+  "kind": "control",
+  "odl": 280,
+  "fitz": 272,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655725_",
+  "page": 3,
+  "kind": "control",
+  "odl": 263,
+  "fitz": 246,
+  "odl_only": 17,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655739_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655739_",
+  "page": 1,
+  "kind": "control",
+  "odl": 584,
+  "fitz": 0,
+  "odl_only": 584,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 36,
+  "fitz": 33,
+  "odl_only": 5,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049655741_",
+  "page": 2,
+  "kind": "control",
+  "odl": 319,
+  "fitz": 289,
+  "odl_only": 30,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655744_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 32,
+  "fitz": 0,
+  "odl_only": 32,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655744_",
+  "page": 1,
+  "kind": "control",
+  "odl": 560,
+  "fitz": 0,
+  "odl_only": 560,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655745_",
+  "page": 5,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655745_",
+  "page": 14,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 0,
+  "odl_only": 48,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655745_",
+  "page": 8,
+  "kind": "control",
+  "odl": 592,
+  "fitz": 0,
+  "odl_only": 592,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655745_",
+  "page": 9,
+  "kind": "control",
+  "odl": 112,
+  "fitz": 0,
+  "odl_only": 112,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655748_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 16,
+  "fitz": 0,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655768_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 32,
+  "fitz": 0,
+  "odl_only": 32,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655775_",
+  "page": 6,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 0,
+  "odl_only": 48,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655775_",
+  "page": 1,
+  "kind": "control",
+  "odl": 944,
+  "fitz": 0,
+  "odl_only": 944,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655787_",
+  "page": 16,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655787_",
+  "page": 1,
+  "kind": "control",
+  "odl": 520,
+  "fitz": 0,
+  "odl_only": 520,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655790_",
+  "page": 5,
+  "kind": "reroute",
+  "odl": 48,
+  "fitz": 0,
+  "odl_only": 48,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655790_",
+  "page": 6,
+  "kind": "reroute",
+  "odl": 32,
+  "fitz": 0,
+  "odl_only": 32,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655790_",
+  "page": 8,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655790_",
+  "page": 1,
+  "kind": "control",
+  "odl": 648,
+  "fitz": 0,
+  "odl_only": 648,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655790_",
+  "page": 2,
+  "kind": "control",
+  "odl": 696,
+  "fitz": 0,
+  "odl_only": 696,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655790_",
+  "page": 3,
+  "kind": "control",
+  "odl": 576,
+  "fitz": 0,
+  "odl_only": 576,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655797_",
+  "page": 3,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655797_",
+  "page": 8,
+  "kind": "reroute",
+  "odl": 16,
+  "fitz": 0,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655797_",
+  "page": 7,
+  "kind": "control",
+  "odl": 720,
+  "fitz": 0,
+  "odl_only": 720,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655798_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655798_",
+  "page": 7,
+  "kind": "reroute",
+  "odl": 24,
+  "fitz": 0,
+  "odl_only": 24,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655798_",
+  "page": 3,
+  "kind": "control",
+  "odl": 376,
+  "fitz": 0,
+  "odl_only": 376,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655798_",
+  "page": 5,
+  "kind": "control",
+  "odl": 200,
+  "fitz": 0,
+  "odl_only": 200,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655800_",
+  "page": 11,
+  "kind": "reroute",
+  "odl": 32,
+  "fitz": 0,
+  "odl_only": 32,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655800_",
+  "page": 12,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655800_",
+  "page": 14,
+  "kind": "reroute",
+  "odl": 8,
+  "fitz": 0,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655800_",
+  "page": 5,
+  "kind": "control",
+  "odl": 232,
+  "fitz": 0,
+  "odl_only": 232,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655800_",
+  "page": 13,
+  "kind": "control",
+  "odl": 64,
+  "fitz": 0,
+  "odl_only": 64,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655832_",
+  "page": 4,
+  "kind": "reroute",
+  "odl": 16,
+  "fitz": 0,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655832_",
+  "page": 11,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655832_",
+  "page": 13,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655832_",
+  "page": 17,
+  "kind": "reroute",
+  "odl": 40,
+  "fitz": 0,
+  "odl_only": 40,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655843_",
+  "page": 3,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 0,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655843_",
+  "page": 5,
+  "kind": "reroute",
+  "odl": 40,
+  "fitz": 0,
+  "odl_only": 40,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655843_",
+  "page": 1,
+  "kind": "control",
+  "odl": 264,
+  "fitz": 0,
+  "odl_only": 264,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655843_",
+  "page": 8,
+  "kind": "control",
+  "odl": 464,
+  "fitz": 0,
+  "odl_only": 464,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 39,
+  "kind": "reroute",
+  "odl": 45,
+  "fitz": 189,
+  "odl_only": 5,
+  "fitz_only": 149
+ },
+ {
+  "doc": "CNTS-00049655897_",
+  "page": 1,
+  "kind": "control",
+  "odl": 101,
+  "fitz": 130,
+  "odl_only": 0,
+  "fitz_only": 29
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 1,
+  "kind": "reroute",
+  "odl": 38,
+  "fitz": 34,
+  "odl_only": 6,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 91,
+  "kind": "reroute",
+  "odl": 37,
+  "fitz": 35,
+  "odl_only": 2,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 2,
+  "kind": "control",
+  "odl": 284,
+  "fitz": 256,
+  "odl_only": 30,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049655899_",
+  "page": 3,
+  "kind": "control",
+  "odl": 355,
+  "fitz": 343,
+  "odl_only": 12,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 26,
+  "kind": "reroute",
+  "odl": 39,
+  "fitz": 38,
+  "odl_only": 1,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 68,
+  "kind": "reroute",
+  "odl": 47,
+  "fitz": 46,
+  "odl_only": 1,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 116,
+  "kind": "reroute",
+  "odl": 34,
+  "fitz": 33,
+  "odl_only": 1,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 205,
+  "kind": "reroute",
+  "odl": 44,
+  "fitz": 43,
+  "odl_only": 1,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 260,
+  "kind": "reroute",
+  "odl": 47,
+  "fitz": 46,
+  "odl_only": 1,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 469,
+  "kind": "reroute",
+  "odl": 40,
+  "fitz": 39,
+  "odl_only": 1,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 2,
+  "kind": "control",
+  "odl": 123,
+  "fitz": 111,
+  "odl_only": 14,
+  "fitz_only": 2
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 3,
+  "kind": "control",
+  "odl": 160,
+  "fitz": 144,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 4,
+  "kind": "control",
+  "odl": 171,
+  "fitz": 155,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 5,
+  "kind": "control",
+  "odl": 167,
+  "fitz": 155,
+  "odl_only": 12,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 6,
+  "kind": "control",
+  "odl": 114,
+  "fitz": 106,
+  "odl_only": 8,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049655903_",
+  "page": 8,
+  "kind": "control",
+  "odl": 825,
+  "fitz": 622,
+  "odl_only": 207,
+  "fitz_only": 4
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 8,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 480,
+  "odl_only": 0,
+  "fitz_only": 480
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 30,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 897,
+  "odl_only": 0,
+  "fitz_only": 897
+ },
+ {
+  "doc": "CNTS-00049655904_",
+  "page": 31,
+  "kind": "reroute",
+  "odl": 0,
+  "fitz": 847,
+  "odl_only": 0,
+  "fitz_only": 847
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 247,
+  "kind": "reroute",
+  "odl": 45,
+  "fitz": 43,
+  "odl_only": 2,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 249,
+  "kind": "reroute",
+  "odl": 31,
+  "fitz": 39,
+  "odl_only": 2,
+  "fitz_only": 10
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 1,
+  "kind": "control",
+  "odl": 182,
+  "fitz": 182,
+  "odl_only": 0,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049656306_",
+  "page": 2,
+  "kind": "control",
+  "odl": 5906,
+  "fitz": 5914,
+  "odl_only": 0,
+  "fitz_only": 8
+ },
+ {
+  "doc": "CNTS-00049662540_",
+  "page": 25,
+  "kind": "reroute",
+  "odl": 16,
+  "fitz": 0,
+  "odl_only": 16,
+  "fitz_only": 0
+ },
+ {
+  "doc": "CNTS-00049662540_",
+  "page": 3,
+  "kind": "control",
+  "odl": 264,
+  "fitz": 8,
+  "odl_only": 264,
+  "fitz_only": 8
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 3,
+  "kind": "reroute",
+  "odl": 43,
+  "fitz": 814,
+  "odl_only": 7,
+  "fitz_only": 778
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 7,
+  "kind": "reroute",
+  "odl": 44,
+  "fitz": 63,
+  "odl_only": 7,
+  "fitz_only": 26
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 14,
+  "kind": "reroute",
+  "odl": 45,
+  "fitz": 585,
+  "odl_only": 7,
+  "fitz_only": 547
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 15,
+  "kind": "reroute",
+  "odl": 43,
+  "fitz": 917,
+  "odl_only": 7,
+  "fitz_only": 881
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 33,
+  "kind": "reroute",
+  "odl": 41,
+  "fitz": 404,
+  "odl_only": 7,
+  "fitz_only": 370
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 36,
+  "kind": "reroute",
+  "odl": 29,
+  "fitz": 362,
+  "odl_only": 0,
+  "fitz_only": 333
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 1,
+  "kind": "control",
+  "odl": 81,
+  "fitz": 71,
+  "odl_only": 11,
+  "fitz_only": 1
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 2,
+  "kind": "control",
+  "odl": 55,
+  "fitz": 62,
+  "odl_only": 13,
+  "fitz_only": 20
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 4,
+  "kind": "control",
+  "odl": 1259,
+  "fitz": 567,
+  "odl_only": 1223,
+  "fitz_only": 531
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 5,
+  "kind": "control",
+  "odl": 449,
+  "fitz": 492,
+  "odl_only": 199,
+  "fitz_only": 242
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 6,
+  "kind": "control",
+  "odl": 763,
+  "fitz": 844,
+  "odl_only": 270,
+  "fitz_only": 351
+ },
+ {
+  "doc": "CNTS-00049667794_",
+  "page": 8,
+  "kind": "control",
+  "odl": 1900,
+  "fitz": 602,
+  "odl_only": 1863,
+  "fitz_only": 565
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 47,
+  "kind": "reroute",
+  "odl": 47,
+  "fitz": 62,
+  "odl_only": 0,
+  "fitz_only": 15
+ },
+ {
+  "doc": "CNTS-00065779283_",
+  "page": 2,
+  "kind": "control",
+  "odl": 65,
+  "fitz": 66,
+  "odl_only": 0,
+  "fitz_only": 1
+ }
+]
