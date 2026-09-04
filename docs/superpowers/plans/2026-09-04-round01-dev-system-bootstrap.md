@@ -398,7 +398,7 @@ git commit -m "[Docs] round01 — 코딩 표준 문서화(app/ 기존 관행 성
 
 ---
 
-### Task 6: docs/ops/recurring-gotchas.md + docs/design/README.md — ✅ 완료 (`77b190a` → 리뷰 수정 예정)
+### Task 6: docs/ops/recurring-gotchas.md + docs/design/README.md — ✅ 완료 (`77b190a` → 표→산문 전환+시딩 `6b83f15` → 트리거·중복제거 `69a060a`)
 
 > **리뷰 발견(Important)**: 표 스키마(6열 마크다운 테이블)가 museum 원본(39개 항목, 산문 섹션 `## N. 제목` 형식, 26줄이 하위 불릿·코드블록 포함, 11줄이 `|` 문자 포함)과 비교하면 실제 항목을 못 담는다 — 지금(비어있을 때) 고치는 게 공짜, 첫 항목이 생긴 뒤엔 마이그레이션 비용 발생. 산문 섹션 형식으로 전환하고, round01 자체에서 발견한 실제 함정 2건(dev 이미지 pull-only·external volume 의존)을 시드 데이터로 넣는다. 쓰기·읽기 트리거도 없었음(CLAUDE.md에 사전 확인 게이트 없음, 완료노트에 구체 지시 없음) — 함께 보강.
 
@@ -1031,7 +1031,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 ```markdown
 ## 현재 상태
 - NL-Lib 핵심 검색 파이프라인(BGE-M3 하이브리드 검색 · 메타데이터 이중 전략 · Contextual Chunking) 구현·운영 중.
-- 대량 인덱싱 파이프라인(OCR 라우팅: VLM/Surya/Tesseract/fitz) 운영 중 — 상세: `docs/bulk_ingest_runbook.md`.
+- 대량 인덱싱 파이프라인(OCR 라우팅: VLM/Surya/Tesseract/fitz) 운영 중 — 상세: `docs/ops/bulk_ingest_runbook.md`.
 - round01: museum 스타일 개발 체계(`CLAUDE.md`·`GIT_WORKFLOW.md`·round 워크플로우·`research/` 산출물 규칙) 도입 완료.
 
 ## 다음 할 일
