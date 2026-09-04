@@ -328,14 +328,16 @@ git commit -m "[Docs] round01 — 라운드 교본 템플릿 추가"
 
 ---
 
-### Task 5: docs/standards/coding-standard.md
+### Task 5: docs/standards/coding-standard.md — ✅ 완료 (`0086ef1` → 리뷰 재작성 `0b338e7` → 정밀도 보정 `4778d4e`)
+
+> **가장 큰 리뷰 발견**: 최초 spec은 "이미 따르고 있는 관행"이라 주장했지만 실측 결과 다수가 거짓이었다(API 얇음·ORM 미유출·비동기 테스트·LLM 격리·의존방향 5개 항목 전부 반례 존재). "지향점 vs 준수 예 vs 실측 반례(백로그)"로 재구성해 정정. **Task 8(`.claude/agents/code-reviewer.md`)의 스펙도 같은 거짓 의존방향 체인을 하드코딩하고 있어 함께 정정함** — 아래 Task 8 섹션은 이미 수정 반영된 버전이다.
 
 **Files:**
 - Create: `docs/standards/coding-standard.md`
 
 이 문서는 `app/`가 **이미** 따르고 있는 패턴(`app/repositories/book.py`의 `BookRepository`, `app/api/health.py`)을 근거로 작성한다 — 새 규칙이 아니라 기존 관행의 성문화.
 
-- [ ] **Step 1: 작성**
+- [x] **Step 1: 작성**
 
 ```markdown
 # 코딩 표준
@@ -382,12 +384,12 @@ api/  → services/ → domains/ → repositories/ → models/
 - 1회성 실험 스크립트와 운영 스크립트를 구분해 위치시킨다(`CLAUDE.md` §1 — `scripts/` vs `research/`).
 ```
 
-- [ ] **Step 2: 검증**
+- [x] **Step 2: 검증**
 
 Run: `grep -q "BookRepository" docs/standards/coding-standard.md && echo GROUNDED`
 Expected: `GROUNDED` (실제 코드 근거를 인용했는지 확인)
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 git add docs/standards/coding-standard.md
@@ -529,12 +531,12 @@ model: opus
 ## 프로젝트 맥락 (판단 기준)
 - 검색: BGE-M3 Dense+Sparse 하이브리드(Milvus `hybrid_search`+RRFRanker) + 메타데이터 이중 전략(전용 청크 `chunk_idx=-1` + 스칼라 필터) + Contextual Chunking.
 - 인덱싱: OCR 라우팅(VLM/Surya/Tesseract/fitz, 표 셀 충전율·폰트 CMap 손상 등 신호 기반 폴백).
-- 계층: `api/ → services/ → domains/ → repositories/ → models/`, 경계 타입은 `schemas/`(Pydantic v2). 상세: `docs/standards/coding-standard.md`.
+- 계층 의존 방향·경계 타입 규칙은 `docs/standards/coding-standard.md`가 정본이다(여기 별도 서술하지 않음 — 그 문서에 "지향점"과 "실측 반례(백로그)"가 파일 단위로 구분돼 있으니, `section.py`·`catalog_bulk.py`처럼 이미 문서화된 반례는 새 발견으로 재보고하지 말고 그 문서의 백로그로 취급한다).
 - 개발 환경: prod(`docker-compose.yml`) 전체 스택, dev(`docker-compose.dev.yml`)는 앱+데이터 계층 모두 별도로 뜨고 GPU 서비스(vllm/gemma/flux)만 prod와 공유. dev는 이미지를 registry에서 pull하므로 `scripts/build_dev_images.sh`로 재빌드+push 없이는 코드 변경이 반영되지 않는다.
 
 ## 점검 항목
 1. **정확성**: 버그·엣지케이스·미구현(placeholder)·죽은 코드.
-2. **코딩표준**: 타입힌트·계층 의존 방향(역방향 의존 금지)·리포지토리가 ORM 모델을 그대로 반환하지 않는지·비동기 일관성.
+2. **코딩표준**: `docs/standards/coding-standard.md` 기준으로 타입힌트·계층 의존 방향·ORM 유출·비동기 일관성을 본다 — 단, 그 문서가 이미 "지향점/백로그"로 명시한 기존 반례(예: `section.py`·`catalog_bulk.py`)는 새 결함으로 보고하지 않는다. **신규/수정 코드**가 그 반례를 새로 늘리는 경우에만 지적한다.
 3. **보안**: 비밀 하드코딩·SQL 인젝션(파라미터 바인딩) · Milvus expression 필터에 사용자 입력이 직접 문자열 결합되지 않는지.
 4. **일관성**(문서 리뷰 시): 문서↔코드, 문서 간(어휘·스택·결정) 정합 + stale 서술.
 5. **반복 함정**(`docs/ops/recurring-gotchas.md`): 라이브에서만 드러나는 패턴을 의식.
