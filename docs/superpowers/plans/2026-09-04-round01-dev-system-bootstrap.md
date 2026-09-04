@@ -13,10 +13,10 @@
 - `feat/search-session-history` 브랜치 로컬·원격 삭제 완료(사용자 승인 하 폐기).
 - GitHub Desktop 자동 stash pop 완료 — 4개 실험 수정(`scripts/build_wikisource_manifest.py`, `scripts/odl_lengths_result.json`, `scripts/audit_routing_fix_result.json`, `scripts/fitz_lengths_result.json`)은 discard, 루트 14개 미추적 파일 + `app/scripts/recheck_table_fill.py`는 작업 트리에 복원됨(미추적 상태 유지).
 - `.gitignore`의 `/docs`·`/scripts`·`.claude/` 오추적 제외 버그 수정 및 기존 문서 백업 완료.
-- **격리 워크트리**: `C:\Users\LANDSOFT\mygit\NL_library_AI\.claude\worktrees\round01-dev-system-bootstrap`, 브랜치 `worktree-round01-dev-system-bootstrap`(`EnterWorktree`가 `origin/main`에서 fresh 분기 — 공유 체크아웃에 미리 만들어 둔 `feat/round01-dev-system-bootstrap`은 내용이 동일하지만 이름 충돌로 rename 불가해 사용하지 않음. 최종 정리 시 빈 브랜치이므로 삭제 대상).
+- **격리 워크트리**: `C:\Users\LANDSOFT\mygit\NL_library_AI\.claude\worktrees\round01-dev-system-bootstrap`, 브랜치 `feat/round01-dev-system-bootstrap-wt`(`EnterWorktree`가 `origin/main`에서 `feat/round01-dev-system-bootstrap-wt`으로 fresh 분기했다가, GIT_WORKFLOW.md의 `<type>/round<NN>-<설명>` 규칙을 따르도록 rename — 공유 체크아웃에 미리 만들어 둔 `feat/round01-dev-system-bootstrap`(접미 `-wt` 없음)은 이름 충돌로 그 이름을 그대로 쓸 수 없어 `-wt` 접미로 구분. 그 빈 브랜치는 최종 정리 시 삭제 대상).
 - **Task 1 완료** (CLAUDE.md): 최초 구현 `f5983bb` → 리뷰(spec 컴플라이언스 ✅, 코드품질 리뷰에서 Important 4건 발견) → 수정 `11815ae`. 아래 Task 1 본문은 **수정 반영된 최종본**이다.
 
-이 plan의 모든 Task는 `worktree-round01-dev-system-bootstrap` 브랜치(워크트리) 위에서 진행한다.
+이 plan의 모든 Task는 `feat/round01-dev-system-bootstrap-wt` 브랜치(워크트리) 위에서 진행한다.
 
 ---
 
@@ -90,7 +90,7 @@ Expected: `CLEAN`
 
 ---
 
-### Task 2: GIT_WORKFLOW.md — ✅ 완료 (`e2911cf` → 리뷰 수정 `457ee1b`)
+### Task 2: GIT_WORKFLOW.md — ✅ 완료 (`e2911cf` → 리뷰 수정 `457ee1b` → `132982f`)
 
 **Files:**
 - Create: `GIT_WORKFLOW.md`
@@ -100,7 +100,7 @@ Expected: `CLEAN`
 Run: `test -f GIT_WORKFLOW.md && echo EXISTS || echo MISSING`
 Expected: `MISSING`
 
-- [ ] **Step 2: 작성**
+- [x] **Step 2: 작성**
 
 ```markdown
 # Git Workflow
@@ -177,12 +177,14 @@ dev ─분기→ <type>/round<NN>-<설명> ─개발·커밋─→ [사용자 �
 - 실행해서 파일을 만들어내는 1회성 스크립트는 대응하는 `research/<주제>/`에 산출물과 함께 둔다(`CLAUDE.md` §1).
 ```
 
-- [ ] **Step 3: 검증**
+> **참고**: 위 "작성" 코드블록은 최초 spec이다. 코드품질 리뷰에서 `## 개발 환경`(dev 스택이 이미지 pull 전용·GPU서버 전용·external volume 의존이라는 사실 누락 등)·`## 머지 승인 규칙`(리뷰 게이트 서술 모순)·`## 흐름`(리뷰 단계 누락) 3곳에 Important 이슈가 나와 `132982f`로 수정 반영됐다. **최종 진실은 커밋된 `GIT_WORKFLOW.md` 파일이다** — Task 13(교본)은 이 코드블록이 아니라 실제 파일을 `Read`해서 옮겨 담는다.
+
+- [x] **Step 3: 검증**
 
 Run: `grep -c "^## " GIT_WORKFLOW.md`
 Expected: `9` (브랜치 모델·흐름·개발 환경·머지 승인 규칙·커밋 메시지·개발 가이드 문서·라운드 생애주기·디자인 트랙·비고 — 최초 plan 작성 시 8로 오기재됐던 것을 Task 2 구현자가 발견해 정정)
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add GIT_WORKFLOW.md
@@ -524,7 +526,7 @@ model: opus
 - 검색: BGE-M3 Dense+Sparse 하이브리드(Milvus `hybrid_search`+RRFRanker) + 메타데이터 이중 전략(전용 청크 `chunk_idx=-1` + 스칼라 필터) + Contextual Chunking.
 - 인덱싱: OCR 라우팅(VLM/Surya/Tesseract/fitz, 표 셀 충전율·폰트 CMap 손상 등 신호 기반 폴백).
 - 계층: `api/ → services/ → domains/ → repositories/ → models/`, 경계 타입은 `schemas/`(Pydantic v2). 상세: `docs/standards/coding-standard.md`.
-- 개발 환경: prod(`docker-compose.yml`) 전체 스택, dev(`docker-compose.dev.yml`)는 데이터 계층만 분리하고 GPU 서비스(vllm/gemma/flux)는 prod와 공유.
+- 개발 환경: prod(`docker-compose.yml`) 전체 스택, dev(`docker-compose.dev.yml`)는 앱+데이터 계층 모두 별도로 뜨고 GPU 서비스(vllm/gemma/flux)만 prod와 공유. dev는 이미지를 registry에서 pull하므로 `scripts/build_dev_images.sh`로 재빌드+push 없이는 코드 변경이 반영되지 않는다.
 
 ## 점검 항목
 1. **정확성**: 버그·엣지케이스·미구현(placeholder)·죽은 코드.
@@ -973,7 +975,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 # round01 완료노트
 
 날짜: 2026-09-04
-브랜치: `worktree-round01-dev-system-bootstrap`
+브랜치: `feat/round01-dev-system-bootstrap-wt`
 
 ## 한 일
 - CLAUDE.md·GIT_WORKFLOW.md 등 운영 진입점 문서 신설
@@ -989,7 +991,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 - 리뷰 게이트는 자가 점검 체크리스트(협업자 없음)
 - ADR 이번 라운드 생략
 - code-reviewer는 `model: opus` 고정
-- 서브에이전트 실행은 격리 워크트리(`worktree-round01-dev-system-bootstrap`)에서 진행(GitHub Desktop 동시 사용 충돌 방지)
+- 서브에이전트 실행은 격리 워크트리(`feat/round01-dev-system-bootstrap-wt`)에서 진행(GitHub Desktop 동시 사용 충돌 방지)
 
 ## 디자인 참조
 해당 없음 — 디자인 트랙 미도입(`docs/design/README.md`)
@@ -1071,13 +1073,13 @@ Expected: `SMOKE_OK`
 
 - [ ] **Step 5: 사용자 승인 요청 — `dev` 머지**
 
-여기서 실행을 멈추고 사용자에게 보고한다: "Task 1~14 완료, Step 1~4 검증 통과. `worktree-round01-dev-system-bootstrap`을 `dev`에 머지해도 될까요?" **승인 전 진행 금지.**
+여기서 실행을 멈추고 사용자에게 보고한다: "Task 1~14 완료, Step 1~4 검증 통과. `feat/round01-dev-system-bootstrap-wt`을 `dev`에 머지해도 될까요?" **승인 전 진행 금지.**
 
 - [ ] **Step 6: 승인 후 `dev` 머지**
 
 ```bash
 git checkout dev
-git merge --no-ff worktree-round01-dev-system-bootstrap -m "Merge worktree-round01-dev-system-bootstrap into dev — round01"
+git merge --no-ff feat/round01-dev-system-bootstrap-wt -m "Merge feat/round01-dev-system-bootstrap-wt into dev — round01"
 git push origin dev
 ```
 
