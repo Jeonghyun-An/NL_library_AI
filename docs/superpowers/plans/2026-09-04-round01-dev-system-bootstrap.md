@@ -450,17 +450,19 @@ git commit -m "[Docs] round01 — 반복 함정 템플릿·디자인 트랙 스�
 
 ---
 
-### Task 7: .claude/skills/round-finish/SKILL.md
+### Task 7: .claude/skills/round-finish/SKILL.md — ✅ 완료 (`ac4b163` → 가드·description 보강 `9baffa8`)
+
+> **리뷰 발견(Important)**: (1) dev 미반영 상태에서 실행하면 `merge --no-ff`가 조용히 no-op하고 성공으로 오보될 수 있었음 — 머지전 `main..dev`/`main..origin/main` 가드 추가. (2) `main`/`dev` 체크아웃은 **격리 워크트리가 아니라 공유 체크아웃에서** 해야 함(워크트리에 dev/main이 이미 물려있으면 체크아웃 자체가 거부되고, 워크트리 안에서 main으로 전환하면 그 라운드 신규 파일이 일시적으로 사라짐) — **Task 15 실행 시 이 규칙을 따른다**: Step 6·8(dev·main 머지)은 이 워크트리가 아니라 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI`)에서 수행한다.
 
 **Files:**
 - Create: `.claude/skills/round-finish/SKILL.md`
 
-- [ ] **Step 1: 디렉토리 없음 확인**
+- [x] **Step 1: 디렉토리 없음 확인**
 
 Run: `test -d .claude/skills && echo EXISTS || echo MISSING`
 Expected: `MISSING`
 
-- [ ] **Step 2: 작성**
+- [x] **Step 2: 작성**
 
 ```markdown
 ---
@@ -497,12 +499,12 @@ description: 한 라운드를 종료할 때 사용 — 검증 확인 후 dev→m
 - 비밀정보·데이터·미공개 자료는 커밋·push 금지(`.gitignore`).
 ```
 
-- [ ] **Step 3: frontmatter 검증**
+- [x] **Step 3: frontmatter 검증**
 
 Run: `python -c "import yaml; d=yaml.safe_load(open('.claude/skills/round-finish/SKILL.md', encoding='utf-8').read().split('---')[1]); assert d['name']=='round-finish'; print('OK')"`
 Expected: `OK`
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add .claude/skills/round-finish/SKILL.md
@@ -1093,7 +1095,9 @@ Expected: `SMOKE_OK`
 
 여기서 실행을 멈추고 사용자에게 보고한다: "Task 1~14 완료, Step 1~4 검증 통과. `feat/round01-dev-system-bootstrap-wt`을 `dev`에 머지해도 될까요?" **승인 전 진행 금지.**
 
-- [ ] **Step 6: 승인 후 `dev` 머지**
+- [ ] **Step 6: 승인 후 `dev` 머지 — 공유 체크아웃에서 수행** (Task 7 리뷰 반영: 격리 워크트리 안에서 `main`/`dev`를 체크아웃하지 않는다)
+
+이 워크트리(`.claude/worktrees/round01-dev-system-bootstrap`)가 아니라 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI`)에서 실행한다. 공유 체크아웃은 지금 빈 브랜치 `feat/round01-dev-system-bootstrap`(이름 충돌로 안 쓰인 것) 위에 있으므로 `dev` 체크아웃이 막히지 않는다.
 
 ```bash
 git checkout dev
@@ -1105,9 +1109,9 @@ git push origin dev
 
 사용자에게 라운드 종료(= `dev→main` 머지 + push) 승인을 구한다. **승인 전 진행 금지.**
 
-- [ ] **Step 8: 승인 후 `/round-finish` 스킬 실행**
+- [ ] **Step 8: 승인 후 `/round-finish` 스킬 실행 — 공유 체크아웃에서**
 
-`.claude/skills/round-finish/SKILL.md`의 절차를 그대로 따른다: `dev→main` 머지 → `git push origin main && git push origin dev` → `git checkout dev`로 복귀.
+공유 체크아웃에서 `.claude/skills/round-finish/SKILL.md`의 절차를 그대로 따른다(머지전 가드 `git rev-list --count main..dev`·`git fetch origin && git rev-list --count main..origin/main` 포함) → `dev→main` 머지 → `git push origin main && git push -u origin dev` → `git checkout dev`로 복귀.
 
 - [ ] **Step 9: 워크트리 정리**
 
