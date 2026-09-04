@@ -193,7 +193,9 @@ git commit -m "[Docs] round01 — GIT_WORKFLOW.md 추가"
 
 ---
 
-### Task 3: docs/roadmap/00_status.md + 완료노트 템플릿
+### Task 3: docs/roadmap/00_status.md + 완료노트 템플릿 — ✅ 완료 (`5b5c914` → 리뷰 수정 `b972752`)
+
+> 최종 파일은 코드블록보다 진전됨(리뷰로 §10 중복 제거·완료노트 링크·리뷰게이트 체크박스 2개·spec/plan/교본 경로 필드 추가) — Task 13은 실제 파일을 `Read`한다.
 
 **Files:**
 - Create: `docs/roadmap/00_status.md`
@@ -471,8 +473,8 @@ description: 한 라운드를 종료할 때 사용 — 검증 확인 후 dev→m
 
 ## 절차
 1. 검증 재확인 — 테스트 green, 핵심 동작 스모크 확인.
-2. 완료노트(`docs/roadmap/round<NN>-완료노트.md`)의 「디자인 참조」 필드 확인 — 디자인 트랙 미도입이면 "해당 없음"으로 채워져 있는지만 확인.
-3. `docs/roadmap/00_status.md` 갱신 확인(현재 상태·다음 할 일·라운드 이력).
+2. 완료노트(`docs/roadmap/round<NN>-완료노트.md`)의 `## 상태` 체크리스트(code-reviewer 정적 리뷰·테스트·스모크·문서 갱신·머지 승인 전부)와 「디자인 참조」 필드(디자인 트랙 미도입이면 "해당 없음") 확인.
+3. `docs/roadmap/00_status.md` 갱신 확인(최종 갱신 날짜·현재 상태·다음 할 일·라운드 이력 — 라운드 이력만 바꾸고 현재 상태를 그대로 두지 않는다).
 4. `dev → main` 머지
    ```bash
    git checkout main
@@ -1011,18 +1013,23 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 - [ ] `dev→main` 머지 + push 완료
 ```
 
-- [ ] **Step 2: `docs/roadmap/00_status.md`의 라운드 이력·다음 할 일 갱신**
+- [ ] **Step 2: `docs/roadmap/00_status.md`의 현재 상태·라운드 이력·다음 할 일 전체 갱신** (Task 3 리뷰 이슈 I1 반영 — 라운드 이력만 "완료"로 바뀌고 현재 상태가 "진행 중"으로 남아 자기모순되는 것 방지)
 
-`docs/roadmap/00_status.md`의 "라운드 이력" 표에서 round01 행의 상태를 "진행 중"→"완료"로, "다음 할 일" 절을 갱신한다:
+`docs/roadmap/00_status.md`의 세 섹션을 함께 갱신한다 — "현재 상태"의 round01 불릿도 반드시 함께 고친다(라운드 이력만 고치면 같은 파일 안에서 "진행 중"과 "완료"가 공존하게 된다):
 
 ```markdown
+## 현재 상태
+- NL-Lib 핵심 검색 파이프라인(BGE-M3 하이브리드 검색 · 메타데이터 이중 전략 · Contextual Chunking) 구현·운영 중.
+- 대량 인덱싱 파이프라인(OCR 라우팅: VLM/Surya/Tesseract/fitz) 운영 중 — 상세: `docs/bulk_ingest_runbook.md`.
+- round01: museum 스타일 개발 체계(`CLAUDE.md`·`GIT_WORKFLOW.md`·round 워크플로우·`research/` 산출물 규칙) 도입 완료.
+
 ## 다음 할 일
 - round01 완료. 다음 라운드 범위는 미정 — 착수 시 이 문서와 `README.md` §10 로드맵을 함께 갱신한다.
 
 ## 라운드 이력
 | 라운드 | 요약 | 상태 |
 |---|---|---|
-| round01 | 개발 체계 도입(museum 스타일 이식) | 완료 |
+| round01 | [개발 체계 도입](round01-완료노트.md)(museum 스타일 이식) | 완료 |
 ```
 
 - [ ] **Step 3: README.md §5(프로젝트 구조) 갱신** (Task 1 리뷰 이슈 10 반영)
