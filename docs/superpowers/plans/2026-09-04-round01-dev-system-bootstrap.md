@@ -277,12 +277,14 @@ git commit -m "[Docs] round01 — 상태 문서·완료노트 템플릿 추가"
 
 ---
 
-### Task 4: docs/guides/_TEMPLATE.md
+### Task 4: docs/guides/_TEMPLATE.md — ✅ 완료 (`e6e5877` → 리뷰 수정 `db142ae`)
+
+> 리뷰에서 Critical 발견: `### 2.5 디자인 참조 요약`이 `### 2.N` 구현 서브섹션 시퀀스와 헤딩레벨 충돌 — 5개 이상 서브섹션(Task 13은 9개)이 있는 라운드에서 `### 2.5`가 중복돼 검증 grep이 깨짐. `## 2.5`로 h2 승격해 수정. 헤더 블록쿼트(발췌·플레이스홀더 금지 상설화)·중첩펜스 안내도 함께 추가.
 
 **Files:**
 - Create: `docs/guides/_TEMPLATE.md`
 
-- [ ] **Step 1: 작성**
+- [x] **Step 1: 작성**
 
 ```markdown
 # round<NN> 교본 — <제목>
@@ -312,12 +314,12 @@ git commit -m "[Docs] round01 — 상태 문서·완료노트 템플릿 추가"
 A. <답변>
 ```
 
-- [ ] **Step 2: 검증**
+- [x] **Step 2: 검증**
 
 Run: `test -f docs/guides/_TEMPLATE.md && echo EXISTS`
 Expected: `EXISTS`
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 git add docs/guides/_TEMPLATE.md
@@ -832,7 +834,9 @@ git commit -m "[Chore] round01 — 애매 파일(build_vlm_policy_selection·cla
 **Files:**
 - Create: `docs/guides/round01/00-체계도입.md`
 
-museum 관행대로 **전체 코드 재수록** — 발췌·"Task N과 동일" 금지. Task 1~12에서 만든 파일들을 실제로 읽어 그대로 옮겨 담는다(내용은 이미 이 plan에 전문이 있으므로, 실행자는 각 파일을 `Read`해서 그 내용을 아래 골격에 채운다). Task 1은 리뷰로 수정된 **최종본**(위 Task 1 섹션 = `11815ae` 시점)을 사용한다.
+museum 관행대로 **전체 코드 재수록** — 발췌·"Task N과 동일" 금지. Task 1~12에서 만든 파일들을 실제로 읽어 그대로 옮겨 담는다(내용은 이미 이 plan에 전문이 있으므로, 실행자는 각 파일을 `Read`해서 그 내용을 아래 골격에 채운다). Task 1·2·3·4는 리뷰로 수정된 **최종본**(커밋된 실제 파일 — Task 1은 `11815ae`, Task 2는 `132982f`, Task 3은 `b972752`, Task 4는 `db142ae` 시점)을 사용한다.
+
+**중첩 코드펜스 주의**: `GIT_WORKFLOW.md`(bash 블록 2개)·`docs/guides/_TEMPLATE.md`(자기 자신이 예시 펜스를 담음)처럼 담을 파일 자체에 ` ``` ` 펜스가 있으면, 그 섹션을 감싸는 바깥 펜스는 4개 백틱(` ```` `)이나 `~~~~`를 써서 조기 종료를 막는다(`docs/guides/_TEMPLATE.md`가 `db142ae`에서 정한 관행).
 
 - [ ] **Step 1: 디렉토리 생성 확인**
 
@@ -920,7 +924,7 @@ museum과의 핵심 차이:
 ### 2.9 research/ 마이그레이션
 Task 10~12의 `git mv` 목록 전체와 최종 `research/` 트리 구조(`find research -maxdepth 1 -type d` 결과)를 표로 정리해 싣는다.
 
-### 2.5 디자인 참조 요약
+## 2.5 디자인 참조 요약
 해당 없음 — 디자인 트랙 미도입(`docs/design/README.md` §현재 상태).
 
 ## 3. 검증
@@ -951,7 +955,10 @@ A. 최초 구현(`f5983bb`) 후 code-quality 리뷰에서 review-순서 모순(�
 - [ ] **Step 3: 검증**
 
 Run: `grep -c "^### 2\." docs/guides/round01/00-체계도입.md`
-Expected: `9` (2.1~2.9)
+Expected: `8` (2.1~2.4, 2.6~2.9 — 2.5 디자인 참조 요약은 `## 2.5`로 h2 승격돼 있어 `### 2.` 패턴에 안 잡힌다. Task 4 리뷰에서 `### 2.5`가 구현 서브섹션 시퀀스와 헤딩레벨이 충돌하는 Critical 버그로 발견돼 `db142ae`에서 h2로 수정됐다 — 원래 "9"였던 기대값도 그에 맞춰 정정)
+
+Run: `grep -c "^## 2\.5" docs/guides/round01/00-체계도입.md`
+Expected: `1`
 
 Run: `grep -c "^\*\*Q" docs/guides/round01/00-체계도입.md`
 Expected: `6`
