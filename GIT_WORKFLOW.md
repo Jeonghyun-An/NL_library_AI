@@ -62,10 +62,9 @@ dev ─분기→ <type>/round<NN>-<설명> ─개발·커밋─→ 리뷰 ─[�
 6. 머지: 작업 브랜치 → 사용자 승인 → `dev`.
 7. 라운드 종료: 완료노트 작성(`docs/roadmap/round<NN>-완료노트.md`, 템플릿 `docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md`) → `docs/roadmap/00_status.md` 갱신 → `dev→main` 머지 + `origin` push. 자동화: `/round-finish` 스킬.
 
-## 디자인 트랙 (미도입)
+## 디자인 트랙
 
-- 현재 Figma·퍼블리싱 트랙 없음. 도입되면 `docs/design/README.md`의 버전 폴더 방식을 따른다.
-- 라운드 완료노트의 「디자인 참조」 항목은 도입 전까지 "해당 없음 — 디자인 트랙 미도입"으로 기입한다.
+정본은 `docs/design/README.md` — 도입 여부·원칙·완료노트 「디자인 참조」 기입 규칙 전부 그 문서를 따른다.
 
 ## 비고
 

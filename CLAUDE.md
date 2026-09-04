@@ -23,6 +23,7 @@
 ## 3. 세션 시작 시 확인
 - 새 세션(=새 라운드)을 열면 먼저 `docs/roadmap/00_status.md`(현재 상태·다음 할 일)와 직전 라운드 완료노트(`docs/roadmap/round<NN>-완료노트.md`)를 읽어 맥락을 이어받는다.
 - 문서와 코드가 어긋나면 코드가 실제이니 문서를 고친다.
+- docker·비동기·배포 작업 전에는 `docs/ops/recurring-gotchas.md`를 먼저 확인한다 — 라이브에서만 드러나는 버그가 많다.
 
 ## 4. 어디를 보나
 | 알고 싶은 것 | 위치 |
@@ -35,7 +36,7 @@
 | 구현 계획(writing-plans) | `docs/superpowers/plans/` |
 | 코딩 표준 | `docs/standards/coding-standard.md` |
 | 반복 함정(라이브에서만 드러나는 버그) | `docs/ops/recurring-gotchas.md` |
-| 대량 인덱싱 배포·검증 런북 | `docs/bulk_ingest_runbook.md` |
+| 대량 인덱싱 배포·검증 런북 | `docs/ops/bulk_ingest_runbook.md` |
 | 디자인 정본(미도입 — 스텁) | `docs/design/README.md` |
 | 시스템 아키텍처 다이어그램 | `docs/architecture.drawio` |
 | 라운드 종료 절차 자동화 | `.claude/skills/round-finish/SKILL.md` |

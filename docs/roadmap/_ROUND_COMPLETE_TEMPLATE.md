@@ -30,6 +30,6 @@ plan: `docs/superpowers/plans/<파일>`
 - [ ] code-reviewer 정적 리뷰 통과(발견 사항 반영 완료)
 - [ ] 테스트 green
 - [ ] 수동 스모크 확인
-- [ ] 문서 갱신(교본·00_status·해당 ops 문서)
+- [ ] 문서 갱신(교본·00_status·라이브에서 새로 겪은 함정을 `docs/ops/recurring-gotchas.md`에 추가)
 - [ ] `dev` 머지 승인
 - [ ] `dev→main` 머지 + push 완료
