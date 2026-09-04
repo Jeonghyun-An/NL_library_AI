@@ -1,0 +1,33 @@
+머신러닝을 이용한 이동통신 데이터 기반 교통량 추정 모형 개발
+
+[그림: Fig. 4> Daily estimated volume and VDS volume]
+
+[그림: Fig. 5> Route 1(VDS 015 case)]
+
+[그림: Fig. 6> Route 3(VDS 443 case)]
+
+[그림: Fig. 7> Route 6(VDS 488 case)]
+
+3) VDS 미운영 구간에 대한 LightGBM 교통량 추정 평가
+
+LightGBM 모형을 통해 추정된 교통량이 VDS가 운영되지 않는 구간에도 활용 가능지 확인하기 위해 VDS가 설치 운영되지 않는 지점을 선정하고, LightGBM 모형에서 추정한 교통량을 이동식 검지기를 통해 집계한 교통량과 비교 분석하였다. 대상 장소는 일반국도 1, 3, 6호선 각 1곳씩 총 3곳으로, ‘22년 4월 7일 10시부터 17시 사이에 1시간 간격으로 장소별 2회씩 총 2시간 자료를 수집하였다.
+
+3개 대상지에 대한 교통량 추정값과 실제 집계 교통량을 비교한 결과, 노선 별 MAPE는 1호선 9.0, 3호선 2.8, 6호선 10.4이며, 전체 평균 MAPE 7.4로 교통량 추정 정확도는 92.6%로 분석되었다. 이는 VDS가 운영되지 않는 구간에서도 이동통신 로그 데이터 기반 LightGBM 모형의 교통량 추정력이 우수하며, VDS가 설치되지 않은 구간에서도 해당 모형을 적용할 수 있음을 의미한다.
+
+[표: Table 7> LightGBM model evaluation results for unoperated segments of VDS]
+
+| Route No | Location | Time | Volume(veh/h) | MAPE | Accuracy (%) |
+| --- | --- | --- | --- | --- | --- |
+| | | | LightGBM | Portable VDS | |
+| 1 | Daeja-dong, Goyang-si | 10~11 | 971 | 905 | 7.3 | 92.7 |
+| | | 13~14 | 967 | 874 | 10.7 | 89.3 |
+| | Average | | - | - | 9.0 | 91.0 |
+| 3 | Bongyang-dong, Yangju-si | 15~16 | 1,077 | 1,030 | 4.6 | 95.4 |
+| | | 16~17 | 1,133 | 1,121 | 1.1 | 98.9 |
+| | Average | | - | - | 2.8 | 97.2 |
+| 6 | Yangpyeong-eup, Yangpyeong-gun | 10~11 | 910 | 1,026 | 11.4 | 88.6 |
+| | | 11~12 | 960 | 1,059 | 9.4 | 90.6 |
+| | Average | | - | - | 10.4 | 89.6 |
+| | Total Average | | - | - | 7.4 | 92.6 |
+
+Vol.22 No.4 (2023. 8) The Journal of The Korea Institute of Intelligent Transport Systems 11

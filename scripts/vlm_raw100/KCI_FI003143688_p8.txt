@@ -1,0 +1,16 @@
+318
+영주호 수질개선을 위한 효과적인 댐 운영계획 적용방안에 관한 연구
+한국습지학회지 제26권 제4호, 2024
+www.kci.go.kr
+
+Fig. 10. Water quality modeling results of YoungJu reservoir (average of YoungJuDam 1~3 observation points) based on the different dam operation scenarios
+
+[그림: Fig. 10. Water quality modeling results of YoungJu reservoir (average of YoungJuDam 1~3 observation points) based on the different dam operation scenarios]
+
+(a) Time-series data of T-P(mg/L)
+
+(b) Time-series data of Chl-a(mg/m³)
+
+(c) Time-series data of TOC(mg/L)
+
+(d) Time-series Data of T-P, Chl-a, TOC

@@ -1,0 +1,16 @@
+ChangHo Park • Jung-Oh Kim / Attention Shift to Global and Local Level of a Form Depends upon Stimulus Set
+
+Table 1. Mean RT (msec) for Each Condition by Stimulus Set, Presentation Order, Judgment Level and by Congruity. Four SOA Levels Were Pooled. Numbers at the Bottom Indicate the Amount of Stroop Interference.
+
+| congruity | feature preceding | feature succeeding | dimension preceding | dimension succeeding |
+| --- | --- | --- | --- | --- |
+| | global | local | global | local | global | local | global | local |
+| incongruent | 467 | 427 | 515 | 519 | 338 | 401 | 524 | 492 |
+| congruent | 457 | 421 | 520 | 527 | 340 | 395 | 478 | 516 |
+| Stroop interference | 10 | 6 | -5 | -8 | -2 | 6 | 46 | -24 |
+
+Note. If participants saw first a global level of preceding stimulus, they came to see later a local level of succeeding stimulus and vice versa. The difference between each pair is mean time for level shift with SOAs pooled.
+
+presented and the local level was later disclosed as in a pair of c1 - d1 or c1 - d2 in Figure 5, participants might be able to detect the contour change more quickly in d2 (incongruent) than in d1 (congruent). This is because contour description of d1 is the same as c1. However, when presentation sequence was from local to global as in a pair of c3 - d1 or c3 - d3, participants might be able to identify d1 (congruent) more aptly than d3 (incongruent), because continuity of contour is better in d1 than in d3.
+
+To decide the identity of a following stimulus, participants should also attend to its preceding stimulus, because they could not tell what preceded from what follows after extra lines or elements are removed. Therefore time for attention shift from a preceding to a succeeding level was included in total response time for the succeeding stimulus. Time taken for attention shift between the levels can be obtained by subtracting RT for the preceding stimulus from RT for the succeeding stimulus. Various effects probably would be involved in the time taken for attention shift, but if it were by and large constant we can compare attention shift time in the feature set with that in the dimension set. Figure 9 shows time for attention shift from global to local or from local to global. Shift time was shorter in the feature set (77 msec) than in the dimension set (134 msec), F(1,22) = 8.37, p < .01, MSE = 37469.54. A repeated measures analysis of variance on shift time indicated that for the feature set attention shift from a global to a local level tended to be easier than the shift in the opposite direction, F(1,11) = 4.50, p = .058, MSE = 11474.35, and shift time of both directions decreased linearly as a function of SOA, F(1,11) = 83.03, p < .001, MSE = 1772.45. Attention shift from local to global level was easier in the dimension set than

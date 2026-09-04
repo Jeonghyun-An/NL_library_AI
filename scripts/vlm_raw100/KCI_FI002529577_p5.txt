@@ -1,0 +1,47 @@
+■ 정태영
+
+[그림: Fig. 4. Disturbance observer.]
+
+(a) principle of DOB
+
+(b) practical DOB for a current controller
+
+(c) suggested DOB for SMC
+
+Table 1. Rated values and parameter of the tested DC motor
+
+| Parameter             | Symbol | Value       | Unit     |
+|-----------------------|--------|-------------|----------|
+| Rated power           | P      | 200         | W        |
+| Rated current          | I_r    | 3.3         | A        |
+| Rated voltage         | V_r    | 75          | V        |
+| Rated torque          | T_r    | 0.637       | N·m      |
+| Rated speed           | ω_r    | 3,000       | rpm      |
+| Armature resistance  | R_a    | 1.53        | Ω        |
+| Armature inductance  | L_a    | 0.0018      | H        |
+| E.M.F constant       | K_e    | 0.216       | V/rad    |
+| Torque constant      | K_t    | 0.216       | N·m/A    |
+| Inertia              | J       | 1.76×10⁻⁵   | Kg·m²    |
+| Friction coefficient | B       | 2.5×10⁻⁴    | N·m·s/rad|
+
+Table 2. Design factors for SMC
+
+| C     | K  | Φ   | T [sec]     |
+|-------|----|-----|-------------|
+| 125   | 75 | 200 | 1.176×10⁻³  |
+
+의 경계층 두께(boundary layer thickness)를 의미하며 200으로 정하였다. 또한 필터의 시정수 T는 모터 전기계의 시정수인 L_a/R_a의 값으로 정하였다.
+
+시뮬레이션에서는 먼저 SMC의 DOB 유무에 따른 무부하 상태 및 부하 인가 시의 속도제어 성능을 확인하였다. 부하는 5 sec 시점에 계단형으로 인가하였고, 속도지령은 0 rpm에서 1,500, 2,000, 2,500 rpm으로 상승시킨 뒤 다시 역순으로 하강시키는 패턴을 인가하였다. 이 시뮬레이션에서는 DOB를 갖지 않는 SMC가 무부하 시에는 엄밀한 속도제어가 가능하지만, 정격부하 근방의 부하 인가 시에는 미소한 정상상태 속도오차가 발생함을 보인다.
+
+Fig. 5와 Fig. 6은 DOB를 갖지 않는 SMC에서 무부하 시와 80% 부하 인가 시의 속도 응답을 나타낸 것이다. 또한 Fig. 5(b)와 Fig. 6(b)는 정상상태에서의 미소한 속도오차를 엄밀하게 확인하기 위해 2,500 rpm 부근의 속도 영역만을 확대시킨 그림이다.
+
+Fig. 5와 Fig. 6을 비교해 보면, DOB를 갖지 않는 SMC는 무부하 시에는 속도의 정상오차가 발생하지 않지만, 정격토크의 80% 계단형 부하 시에는 정상상태에서 출력되는 전압지령 u_c에 의한 τ_L의 보상이 반영되지 않기 때문이다.
+
+한편, Fig. 7은 5 sec 시점에 정격토크의 60%, 80%, 100% 부하 시의 속도 응답을 나타낸 것이다.
+
+결과 및 고찰
+
+Table 1은 본 연구에서 사용한 실제 DC모터 (SK76-NO75200)의 정격값과 제어에 사용된 모터의 파라미터이다. 모터의 최대 허용 전류는 16 A이다. Table 2는 시뮬레이션에서 사용된 SMC의 설계인자와 DOB의 1차 LPF의 시정수이다. SMC의 설계인자 Φ는 포화함수
+
+406 | The Korean Society of Fisheries and Ocean Technology

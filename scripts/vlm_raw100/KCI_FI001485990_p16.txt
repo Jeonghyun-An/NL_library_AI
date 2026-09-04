@@ -1,0 +1,17 @@
+ties,” Communications in Statistics-Stochastic Model, Vol.15, 695-718.
+Carr, S. and I. Duenyas (2000), “Optimal Admission Control and Sequencing in a Make-To-Stock/MaKe-To-Order Production System,” Operations Research, Vol.48, 709-720.
+Chopra, S., Reinhardt, G. and M. Dada (2004), “The Effect of Lead Time Uncertainty on Safety Stocks,” Decision Sciences, Vol. 35, 1-24.
+de Vericourt, F. Karaesmen and Y. Dallery (2002), “Stock allocation for a capacitated supply chain,” Management Science, Vol.48, 1486-1501.
+Elhafsi, M. (2009), “Optimal integrated production and inventory control of an assemble-to-order system with multiple non-unitary demand classes,” European Journal of Operational Research, Vol.194, 127-142.
+Eppen, G. D. and R. K. Martin (1988), “Determining Safety Stock in the Presence of Stochastic Lead Time and Demand,” Management Science, Vol.34, 1380-1390.
+Ha, A. Y. (1997a), “Inventory rationing in a make-to-stock production system with several demand classes and lost sales,” Management Science, Vol.43, 1093-1103.
+Ha, A. Y. (1997b), “Stock rationing policy for a make-to-stock production system with two priority classes and backordering,” Naval Research Logistics, Vol.44, 457-472.
+He, Q. and E.M. Jewkes (2000), “Performance measure of a make-to-order inventory-production system,” IIE Transactions, Vol.
+He, Q., E. M. Jewkes, and J. Buzacott (2002), “Optimal and near-optimal inventory control policies for a make-to-order inventory-production system,” European Journal of Operational Research, Vol.141, 113-132.
+Kim, E. (2005), “Optimal inventory production policy for a queueing system with finite waiting room capacity,” European Journal of Operational Research, Vol.161, 256-274.
+Kim, J., D. Sun, X. He and J. Hayya (2004), “The (s,Q) Inventory Model with Erlang Lead Time and Deterministic Demand,” Naval Research Logistics, Vol.51, 906-923.
+Puterman, M. (2005), Markov Decision Processes, John Wiley and Sons.
+Tempelmeier, H. (2006), “Supply chain inventory optimization with two customer classes in discrete time,” European Journal of Operational Research, Vol.174, 600-621.
+Teunter, R. and W. Haneveld (2008), “Dynamic inventory rationing strategies for inventory systems with two demand classes, Poisson demand and backordering,” European Journal of Operational Research, Vol.190, 156-178.
+Yang, J. X. Qi, Y. Xia, and G. Yu (2006), “Inventory control with Markovian capacity and the option of order rejection,” European Journal of Operational Research, Vol.174, 622-645.
+Xu, S., and Z. Li (2007), “Managing a single-product assemble-to-order system with technology innovations,” Management Science, Vol.53, 1467-1485.

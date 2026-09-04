@@ -1,0 +1,13 @@
+ABSTRACT
+
+A Hierarchical Linear Modelling on the Effects of High School Equalization Policy on High School Students' Achievement
+
+Sung Kisun(Catholic University of Korea)
+
+The major concern of this study is finding and explaining the effect of high school equalization policy(HSEP) in Korea. For this purpose, I reviewed two recent papers on the negative effect of this policy, especially on the area of student achievement level. And I also analyzed new model to find out the effect of HSEP on student achievement level using Hierarchical Linear Model(HLM).
+
+According to the two recent critics, the major reason of under-achievement of students is HSEP. But I think there are so many problems to accept this results. First they used incorrect data for analyzing the effect of HSEP. One of the papers focused on the changes of freshmen's background in Seoul National University, especially the college of social science. If the ratio of low class students within all the freshmen group has been declined during last 30 years, the reason of this phenomenon is not because of the HSEP but because of so many another variables. And the other paper used so much biased data to confirm the effect of HSEP on high school students' achievement change during 3 high school years. And this study used the ‘difference-in-difference regression’ method to estimate the effect size of HSEP. But the structure of school is not one-dimension but multilevel. So if we want to know the exact effect size of school or special policy, then we must consider this multilevel structures and construct a model to fit this point. Anyway the recent critical papers on the HSEP have so profound problems to generalize their results.
+
+I studied multilevel model to know the effect of HSEP on high school students' achievement growth using HLM. According to this study, the HSEP variable's effect coefficient is not significant. So HSEP is not major reason of the drop of all the high school students' achievement level.
+
+* Key words: high school equalization policy(HSEP), school effect, hierarchical

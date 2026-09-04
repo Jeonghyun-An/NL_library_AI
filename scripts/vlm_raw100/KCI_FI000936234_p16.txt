@@ -1,0 +1,43 @@
+16 한국도서관·정보학회지 (제35권 제3호)
+
+[알고리즘 2] Noun_composition_method
+
+Input 합성가능 단위 E₁, ..., Eₙ  
+고빈도어 추출결과 H₁, ..., Hₘ  
+합성규칙 C₁, ..., Cₚ  
+Output 명사합성 결과 R₁, ..., Rₚ  
+
+Noun_composition_method  
+for i = 0 to n do  
+    if (Eᵢ.noun ∈ H) then  
+        if (is_복합명사(Eᵢ.noun))  
+            save_noun_composition(E, C, i);  
+    // 합성규칙에 해당하면 명사를 합성, 분리  
+    for j = 1 to 2 do  
+        if (get_어절규칙(E, i-j) ∈ C) then  
+            save_noun_composition(E, C, i-j, i)  
+            compⱼ = true;  
+        end if  
+        if (get_어절규칙(E, i+j) ∈ C) then  
+            save_noun_composition(E, C, i, i+j)  
+            compⱼ₊₂ = true;  
+        end if  
+    end do  
+end do  
+// 합성결과 좌우로 연결  
+for a = 0 to 1 do  
+    for b = 2 to 3 do  
+        if (compₐ and comp_b)  
+            save_noun_composition(E, C, i-a, i+b)  
+        end do  
+    end do  
+end if  
+end do  
+
+<그림 11> 명사 합성 알고리즘
+
+3. 합성명사 분해
+
+추출된 색인어 후보들 중 고빈도어에 합성규칙을 적용하여 합성명사를 생성하기 때문에 합성규칙을 적용하지 않고 생성된 색인어를 찾아주지 못하는 경우가 있다. 그리고 합성규칙 적용으로 생성된 긴 합성명사의 경우에도 색인어로 사용되기 어려우므로 이러한 경우에 합성명사를 분해하여 단일명사 색인어를 만들게 되는데 분리의 기준을 두 가지로 세웠다. 하나는 조사를 기준으로 분해를 수행하고 또 하나는 고빈도어가 문서 내에서 합성명사의 일부분인 경우로 고빈도어를 중심으로 좌측인접명사 앞에서 분해를 하고, 또 우측인접 명사 뒤에서 분해를 해준다. 이상과 같이 고빈도어 색인어 추출기, 합성명사 분해기 세 과정이 완료되면 텍스트데이터베이스에 대한 색인데이터베이스의 구축이 완료된다.
+
+이상의 전처리과정에서, 음성데이터베이스를 텍스트데이터베이스로 변환하였고, 변환한 텍스트데이터베이스로 색인데이터베이스를 추출하였는데, 이는 다양한 응용시스템에 활용될 수 있다.

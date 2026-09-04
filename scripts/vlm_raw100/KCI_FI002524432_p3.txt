@@ -1,0 +1,44 @@
+블루투스 통신을 이용한 스마트공장 안전관리 시스템 49
+
+에서 제공하는 디바이스 제어 기능인 카메라, 파일, 소리, 진동, GPS, 등의 제어를 할 수 있다[11,12]. Table 1은 아파치 코도바에서 제공하는 기본 플러그인에 대한 설명이다.
+
+Table 1. Plugins for Apache Cordova
+
+| Plugins          | Description                                                                 |
+|------------------|-----------------------------------------------------------------------------|
+| Accelerometer    | Read measurement value of 3-axis acceleration sensor (motion sensor) of device |
+| Camera           | Capture photos using device camera                                          |
+| Capture          | Capture media files using the device's media capture function              |
+| Cmpass           | Read direction information of device                                       |
+| Connection       | Check device network status and read network information                   |
+| Contact          | Can work with device's contact list database                               |
+| Device           | Device-specific information such as device name, platform, version, etc   |
+| Events           | JavaScript can detect events that occur on the device                     |
+| File             | Javascript can use the device's file system                                |
+| Geolocation      | Read device's current location information                                 |
+| Media            | Ability to play and record audio files on the device                      |
+| Notification     | Device notification function is available                                  |
+| Storage          | The device's database is available                                         |
+
+2.2 파이어베이스 클라우드 메시징
+
+파이어베이스 클라우드 메시징 서비스는 파이어베이스 클라우드 서비스 중 하나로서 스마트폰, 개인용 컴퓨터에 실시간 푸시 메시지 전송 기능을 제공한다. 파이어베이스 클라우드 메시징 서비스는 기본적으로 개발자의 편의를 도모하기 위한 SDK를 제공하고 있으며 사용목적과 개발환경에 따라서 쉽게 적용이 가능하도록 파이썬, 자바스크립트, 자바, 오브젝티브-C, 스위프트 등의 언어를 지원하여 다양한 플랫폼에 적용이 가능하다. 또한 서버리스 테스트 환경을 고려하여 웹 브라우저를 이용하여 파이어베이스 클라우드를 콘솔에서 서비스하고 있기 때문에 Android를 개발할 때는 애플에서 제공하는 푸시서비스인 애플 푸시알림서비스(Apple Push Notification Service)와의 연동이 필요하다. APNS 연동을 위해서는 개발자의 인증키, 앱 아이디, 프로비저닝 프로파일 정보를 함께 제공해야 한다[13].
+
+2.3 BLE
+
+블루투스 기술은 1998년 에릭슨, 노키아, 인텔, IBM, 도시바가 설립한 SIG(Special Interest Group)에서 Bluetooth라는 이름으로 발표되었으며 1999년 7월 1.0 버전이 발표되었다. 이후 IEEE 802.15.1로 분류된 후 지속적으로 규격 관리가 이루어졌으며 2009년 10월 저전력 에너지 기술을 적용한 블루투스 4.0 (BLE 기술)이 발표되었다. 2016년 12월에는 버전 5.0이 발표되었다. Table 2는 기존의 블루투스 BR/EDR과 BLE의 특징을 비교한 것이다.[14,15].
+
+BLE는 기존 방식에 비해서 초저전력 대기 상태, 간편한 기기 검색, 다양한 장비로의 데이터 전송, 보안 저전력 전송, 통신거리의 증가, 낮은 duty cycle 등의 특징들을 가진다. 기기 간 연결을 위해 사용하는 유지 전력 소모를 줄이기 위해서 로우 펄싱 기술을 이용하여 장기간 배터리 교환 없이 사용이 가능하다. 특히 다수의 디바이스끼리 통신이 가능하기 때문에 사물인터넷(Internet Of Things) 환경에 적합한 기술로서 평가받는다.
+
+Table 2. Bluetooth BR/EDR and BLE characteristic comparison
+
+| PTechnology     | Bluetooth BR/EDR | BLE     |
+|-----------------|------------------|---------|
+| PRadio Frequency| 2.4GHz           | 2.4GHz  |
+| PRRange         | 10 to 100 meters | 10 to 100+ meters |
+| PPower consumption | 15-20mW       | 1.5-2mW |
+| PLatency        | 100ms            | < 3ms   |
+| PNetwork topology | Scatternet     | Start-bus |
+| PNodes/Active Slaves | 7 / 16777184 | unlimited |
+
+BLE 디바이스는 기본적으로 Advertise 방식을 지원하며 비연결 광고패킷(Non-Connectable Advertising Packet)을 주기적으로 스캔하는 옵저버(Observer) 디바이스 모드와 일정주기 단위로 주변의 모든 디바이스에게 비연결 광고패킷을 전송하는 애드버타이저(Advertiser) 모드를 제공한다. 애드버타이저 모드는 한 번에 한 개 이상의 디바이스와 통신할 수 있으며, 디바이스가 자신의 존재를 알리기 위한 기능이다. 애드버타이저 모드에서 전송하는 데이터의 크기가 제한되어 있기 때문에 Scan Request, Scan Response Packet을 이용하기도 한다.

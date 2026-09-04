@@ -1,0 +1,41 @@
+risk and, between you, average portfolio risk has been achieved.
+
+UNHEDGED GLOBAL PORTFOLIOS
+
+The investor in any of the three nations has the choice of not fully hedging a global portfolio either on the grounds of the cost of hedging or, perhaps equally likely, the difficulty or lack of knowledge of the small investor running a continuous hedge. This choice exposes the portfolios to the risks of currency fluctuations and to the extent that these monthly fluctuations among the three currencies are normally independent of the monthly investment returns on the stocks in the portfolios, the currency risk could be additive or canceling in its effect on overall portfolio risk. (That is, R_C in equation (3) is now not assumed to be zero.) Additionally, because the investor in each country has that country’s currency as the reference point, there need be no consistency of portfolio risk patterns among the three national-based unhedged global portfolios. Table 2, introduced earlier, also contains the portfolio sizes necessary for the investor in each of the three countries, each with the choice of a purely domestic portfolio or an unhedged global portfolio.
+
+A significant point of interest in Table 2 is that to get within 5% of average risk, more than 100 securities are required in a portfolio in 6 of the 7 scenarios shown in Table 2. (The exception is the USA-based investor investing solely in US stocks and that portfolio would have a minimum size of 73 securities.) Notice that, in all cases, the unhedged global portfolios can be smaller than the fully hedged global portfolio, but this may be simply a reflection of the correlation coefficients appearing in this particular time period. Another point of note is the similarity (except as just noted) between the minimum portfolio sizes at the different levels of acceptable risk in the UK and USA, not only for the purely domestic portfolios but also for the unhedged global portfolios. To get within 10% of average risk, investors in the UK and USA would need portfolios of between forty-four and sixty securities, depending upon their desire to be domestic or globally unhedged. In strong contrast to the many similarities between the UK and USA are some differences between Japan and the UK/USA. Thus to get within 15% of average risk, the investor based in Japan needs a domestic portfolio of 99 stocks (compared with 25/26 stocks in the UK and USA) but, by going global, the Japan-based investor is put into close proximity with investors in the UK and USA in terms of portfolio size.
+
+SUMMARY
+
+An investor is concerned with the risk outcome on his or her own portfolio and is not, we suggest, concerned with his or her risk averaged out among a very
+
+large number of other investors. If this is accepted, then the choice as to portfolio size necessary for efficient diversification is determined by the percentage figure for the closeness to the average risk at which each investor feels comfortable, not by a blanket recommendation of the type shown in Appendix 1. This will vary with the risk averseness of each individual investor. Having abandoned the simple eight-stock recommendation of the textbook writers, and having put this choice where it belongs (in the hands of each investor), Table 2, which is subject to the usual caveats about further research involving more extensive time periods and greater numbers of securities in the samples, is an appropriate reference point. The table shows the minimum portfolio sizes for the various scenarios involving the national base of the investor, the desire to be domestic or global in security selection, and, the separate decision to hedge currency risks. Overlying all the necessary detail in Table 2, however, is the basic point that the minimum portfolio size is always considerably higher than the recommendations found in investment textbooks and more popular investment sources. Furthermore, since these minimum portfolio sizes probably exceed many investors’ resources, these investors must restrict themselves to investing in global mutual funds.
+
+ENDNOTES
+
+1 Portfolio (or individual stock) risk is measured by the standard deviation of returns.
+
+2 “Global” is used here in the increasingly common interpretation in the popular investment press to mean “all securities, including domestic securities;” “international” means “securities other than domestic securities.”
+
+3 Diversification discussed in the paper refers to the method of simple or random diversification. That is, stocks are chosen randomly to form portfolios. The other methods to achieve efficient portfolio diversification such as the Markowitz model is not discussed here.
+
+4 Data collection was a global task; main sources were Compustat, London Business School Share Price Database and Pacific Basin Capital Markets Research Center Database.
+
+5 The correlation coefficients in Table 1 are the averages of the Pearson correlation coefficients between two stocks in the same country.
+
+6 Exchange rate data were compiled from The Wall Street Journal.
+
+7 Given the Tokyo board lot minimum of 1,000 shares, the new recommendations effectively put a diversified portfolio beyond the reach of many individual investors.
+
+8 See Essayyad, Madura, and Marx (1996) for the number of international mutual funds needed to make a diversified portfolio.
+
+REFERENCES
+
+Asinof, Lynn. 1996. All Funds and No Stocks? You May be Missing Out. Wall Street Journal: January 12, C1.
+
+Bamford, Janet, Jeff Blyskal, Emily Card, and Aileen Jacobson. 1989. Complete Guide to Managing Your Money. New York: Consumers Union.
+
+Brealey, Richard and Stewart C. Myers. 1991. Principles of Corporate Finance, 4th ed. New York: McGraw-Hill.
+
+GLOBAL BUSINESS AND FINANCE REVIEW SPRING 1997

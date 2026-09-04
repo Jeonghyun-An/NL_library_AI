@@ -1,0 +1,19 @@
+https://doi.org/10.4094/chnr.2019.25.4.425
+
+CHNRR
+
+으며, 이 체계 간의 또는 이 체계 내의 관계가 행동체계로 가는 경로를 설명하고 있다.
+
+선행변수인 사회화는 아동이 속해 있는 사회적 구조에서 사회적 상호작용과 일상의 경험에 대한 것으로 부모의 이데올로기와 가정의 분위기 등이 포함되어[18], 본 연구에서는 선행 연구[13,19]를 근거로 부모 양육행동 변수를 포함시켰다. 심리사회적 변수로 개인성격체계는 사회 인지적 수준에 있는 변수로 개인의 가치, 신념, 통제 등을 의미하며[12], 본 연구에서는 선행 연구를 바탕으로 아동의 공격신념[17], 정서인식 및 표현[16], 자기통제력[15] 변수를 포함시켰다.
+
+개념적 틀을 바탕으로 초등학생의 공격성에 영향을 미치는 요인을 파악하기 위해 가설적 모형을 구축하였다. 가설적 모형은 외생 잠재변수 1개, 내생 잠재변수 4개로 구성하였다. 외생 잠재변수는 부모 양육행동이며, 내생 잠재변수는 정서인식 및 표현, 자기통제력, 공격신념이다. 가설적 모형은 부모 양육행동, 정서인식 및 표현, 자기통제력, 공격신념이 초등학생의 공격성에 영향을 미치는 경로를 포함하였으며, 연구의 가설적 모형은 다음과 같다 (Figure 1).
+
+[그림: 이론적 프레임워크 및 가설적 모델]
+
+x1=Intimacy and rationality; x2=Control; x3=Overprotection; y1=Increase of self-esteem and positive image; y2=Legitimacy of aggression; y3=Lack of emotional awareness; y4=Lack of emotional expression; y5=Long-term control; y6=Short-term control; y7=Proactive overt aggression; y8=Proactive relational aggression; y9=Reactive overt aggression; y10=Reactive relational aggression.
+
+Figure 1. Theoretical framework and hypothetical model.
+
+www.e-chnr.org
+
+유선이, 안혜영 | 427

@@ -1,0 +1,37 @@
+=== SCOPE ===
+total pages: 1284
+flagged (elapsed>=20s): 59 (4.6%)
+clean: 1225
+odl_missing in total: 29
+flagged mean elapsed: 27.94 s
+clean   mean elapsed: 6.42 s
+flagged with line-repeat>=10: 11
+all rows with line-repeat>=10: 12
+
+=== MISJUDGMENT (<50 chars), FULL 1284 ===
+  fitz_len   187 pages (14.6%)
+  odl_len     50 pages (3.9%)
+  vlm_len      5 pages (0.4%)
+  tess_len     7 pages (0.5%)
+  fitz-only=137, odl-only=0, both=50
+  McNemar exact (fitz-only vs odl-only): p=1.15e-41
+
+=== VOLUME, CLEAN 1225 PAGES ===
+  fitz_len   1,435,880  (+0.0% vs fitz)
+  odl_len    1,615,859  (+12.5% vs fitz)
+  vlm_len    1,739,254  (+21.1% vs fitz)
+  tess_len   2,021,216  (+40.8% vs fitz)
+  vlm vs odl: +7.6%
+
+=== DOC-LEVEL (median per doc), n=? ===
+docs with >=1 clean page: 100
+  fitz_len  median-of-medians=1176
+  odl_len   median-of-medians=1310
+  vlm_len   median-of-medians=1375
+  tess_len  median-of-medians=1640
+  Friedman chi2(3)=127.2, p=2.2e-27
+
+=== WILCOXON (doc-level, Bonferroni x3) ===
+  ODL vs fitz: p=1.01e-07 (adj 3.04e-07), r=0.53, docwins 65:34
+  ODL vs VLM: p=0.61 (adj 1), r=0.05, docwins 59:41
+  TESS vs ODL: p=2.15e-12 (adj 6.44e-12), r=0.70, docwins 89:11

@@ -1,0 +1,30 @@
+Journal of Wetlands Research
+Vol. 26, No.4, November 2024, pp.311-319
+ISSN 1229-6031 (Print) / ISSN 2384-0056 (Online)
+DOI https://doi.org/10.17663/JWR.2024.26.4.311
+
+영주호 수질개선을 위한 효과적인 댐 운영계획 적용방안에 관한 연구
+김지원* · 서동일*
+*충남대학교 환경공학과*
+
+A Study on the Application of Effective Dam Operation Plans for Water Quality Improvement of the YoungJu Reservoir
+Ji Won Kim* · Dong Il Seo*
+*Department of Environmental Engineering, Chungnam National University
+
+(Received : 09 September 2024, Revised : 09 September 2024, Accepted : 03 October 2024)
+
+요약
+영주댐은 현재, 갈수기의 낙동강 수질개선을 위한 환경개선용수 공급을 위해 갈수기 최대 방류 및 홍수기 이후 최소 방류 방안으로 운영되고 있으며, 이로 인해 여름철 강우시 유입된 비점오염물질로 인한 녹조현상 발생 등 수질관리에 있어 어려움을 겪고 있다. 본 연구의 목표는 영주댐 상류의 과밀화된 오염원에서 기인한 비점오염원의 댐 내 수질 영향을 저감하기 위하여, 동적 수리-수질모형을 통해 다양한 댐 운영 시나리오별 수질 모의결과 바탕으로 효율적인 댐 운영계획을 제안하는 것이다.
+국내 다목적댐의 월별 댐운영계획은 대략적으로 1)일정량 방류형, 2)평수기 방류형, 3)홍수기 방류형, 4)갈수기 방류형의 4가지 형태로 운영되고 있다. 본 연구에서는, ‘21년 강우사상을 기준으로 영주댐의 기존 기본계획 방류를 포함한 4가지 방류 형태를 적용하여 방류시 영주호 내의 수질변화 여부에 대해 평가하였다. 수질모의 결과, 기존 기본계획 방류시 대비 홍수기 방류식이 전반적으로 홍수기 강우로 인해 유입되는 비점오염원의 효과적인 하류 배제로 댐 내 조류 발생량 및 기간을 최소화함으로써, 댐 수질관리 부담을 줄일 수 있는 것으로 검토되었다. 따라서, 영주댐의 이수측면의 기능상 환경개선용수로서의 측면이 많은 점을 감안할 때, 홍수기 이후 단기적으로도 방류량을 증대할 수 있는 방안을 모색할 필요가 있다.
+핵심용어 : 환경개선용수, 월별 댐 운영계획, 비점오염원, 수리-수질모형
+
+Abstract
+The Youngju Dam is currently operated under a plan to supply environmental improvement water for the Nakdong River's water quality during low water periods, implementing maximum discharge during these periods and minimal discharge following flood events. As a result, the dam faces challenges in water quality management, particularly due to the occurrence of algal blooms caused by non-point source pollution from rainfall runoff during the summer. The aim of this study is to propose an efficient dam operation plan based on dynamic hydraulic and water quality modeling to mitigate the water quality impacts within the dam, stemming from the excessive pollution sources in the upstream area. The monthly operation plans for multi-purpose dams in South Korea generally fall into four categories: 1) uniform discharge type, 2) normal period discharge type, 3) flood period discharge type, and 4) low water period discharge type. This study evaluates the water quality changes in Youngju Dam under these four discharge types, including the existing basic plan discharge, using the rainfall events from 2021 as a reference. The results of the water quality simulation indicated that the flood period discharge method, compared to the existing basic plan, effectively minimized the occurrence and duration of algal blooms in the dam by promoting the downstream exclusion of non-point source pollutants introduced by flood period rainfall. Therefore, considering
+
+*To whom correspondence should be addressed.
+ChungNam National University, DaeJeon, Korea
+School of Civil, Environmental and Architectural Engineering, Korea University, Seoul, Korea
+E-mail : seodi@cnu.ac.kr
+
+• Ji Won Kim ChungNam National University, DaeJeon, Korea/Ph.D. Candidate(doolavam@gmail.com)
+• Dong IL Seo ChungNam National University, DaeJeon, Korea/Professor(seodi@cnu.ac.kr)

@@ -1,0 +1,3409 @@
+{
+ "CNTS-00049203605_/CNTS-00049203605.pdf": {
+  "label": "실패",
+  "fonts": [
+   {
+    "basefont": "HYGoThic-Extra-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HYGoThic-Bold-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "PinoB-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HYTeGoThic-Bold",
+    "type": "Type0",
+    "encoding": "KSCpc-EUC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "HCIGothic-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMgoT-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMgoJ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMmuT-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMmuK-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HCIMyungJo-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HCI_Tulip-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HYSinMyoungJo-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "ÈÞ¸ÕÅÂ¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "ÈÞ¸ÕÅÂ°íµñ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "JCkg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "JCSUamA-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "Times_New_Roman-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "Gulim-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMmuS-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "JCfg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SinMyungJo-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HCI_Tulip,Italic-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "MyungJo-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMmuSE-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "Math,Italic-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "Math-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMmu-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "¿¾ÇÑ±Û-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "SMgoK-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "QQPVBI+MetaPlusNormal-Roman",
+    "type": "Type1",
+    "encoding": "MacRomanEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   }
+  ]
+ },
+ "CNTS-00049655466_/CNTS-00049655466.pdf": {
+  "label": "실패",
+  "fonts": [
+   {
+    "basefont": "@»êµ¹ºÏ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ140-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HYÁß¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹µ¶¼ö¸®-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HY¿ï¸ªµµM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ130-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "°¡½Ã³ª¹«_IIM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HY¿ï¸ªµµM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹µ¶¼ö¸®-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ130-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "MFFLDB+Skia-Regular",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "HYÁß¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "°¡½Ã³ª¹«_IIM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ110-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹µ¶¼ö¸®-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ120-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹ºÏ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "°¡½Ã³ª¹«_IIM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹µ¶¼ö¸®-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ130-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹ºÏ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ110-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HY¿ï¸ªµµM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹µ¶¼ö¸®-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ130-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "MEPGCC+Skia-Regular",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 7,
+    "overflow": 0
+   },
+   {
+    "basefont": "HYÁß¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "°¡½Ã³ª¹«_IIM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹¸íÁ¶-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-L-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "@»êµ¹°íµñ-M-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "À±°íµñ110-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   }
+  ]
+ },
+ "CNTS-00049655904_/CNTS-00049655904.pdf": {
+  "label": "실패",
+  "fonts": [
+   {
+    "basefont": "AHBDBA+MSTT314e5a5831o133067S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDCN+MSTT3195ed4ebao132047S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDDC+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDGG+MSTT314e5a5831o125063S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDGN+MSTT319013d739o141053S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDGP+MSTT3195ed4ebao114040S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDHL+MSTT314e5a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDIC+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDKM+MSTT319013d739o160061S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AHBDMM+MSTT3195ed4ebao170060S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGBBG+MSTT31575a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGBBN+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGBDH+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGDNO+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGDOE+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGEAJ+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGEBF+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGEGC+MSTT315b3b3a84o092037S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGEGI+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGHBD+MSTT314e5a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGHKL+MSTT314e5a5831o092046S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGIAO+MSTT319013d739o093035S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGICJ+MSTT319013d739o104039S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "CenturyGothic-Bold",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEDFK+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEDGF+MSTT319013d739o093035S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEDNK+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEDOG+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEJBP+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEJCG+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEJDC+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJEPJC+MSTT314e5a5831o067034S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJFBBP+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJFBCG+MSTT315b3b3a84o092037S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AJFEMK+MSTT31575a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKBLPP+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKBMFB+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKBMFI+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKBPFC+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKBPFO+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKBPGK+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKCBBJ+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKCBDP+MSTT319013d739o093035S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKCDHK+MSTT314e5a5831o067034S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKCDIC+MSTT3195ed4ebao076027S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNDFB+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNDFN+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNDLO+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIAM+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIBD+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIDD+MSTT314e5a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIDK+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIFF+MSTT314e5a5831o092046S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIHA+MSTT314e5a5831o125063S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNIIG+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNNHJ+MSTT319013d739o076029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNNIA+MSTT314e5a5831o067034S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AKNOOO+MSTT31f34b40do089045S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALLPGF+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALLPHG+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALLPHN+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALMHDL+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALMHEH+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALMIAC+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALNHGI+MSTT314e5a5831o092046S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALNHGP+MSTT316eafa793o107044S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALNKMD+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ALOAKG+MSTT316eafa793o124052S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AMICJC+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AMICJN+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AMICKF+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AMIDPL+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AMIEAC+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCENA+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCFDM+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCFEI+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCJCC+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCJCK+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCJDG+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANCJEO+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNKGL+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNKHB+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNKHN+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNLMJ+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNLNF+MSTT319013d739o133050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNLNM+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNLOD+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNMAD+MSTT314e5a5831o092046S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNPKM+MSTT314e5a5831o067034S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ANNPLD+MSTT3195ed4ebao076027S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOGPNO+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOGPOG+MSTT319013d739o093035S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOGPOM+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOGPPF+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOHBEK+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOHBFF+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOHCME+MSTT314e5a5831o067034S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AOHCML+MSTT3195ed4ebao076027S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APKNPK+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APKOAG+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APKOLH+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLDLJ+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLFAE+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLFBB+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLKOF+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLKPG+MSTT314e5a5831o092046S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLKPN+MSTT316eafa793o107044S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "APLOJH+MSTT315b3b3a84o092037S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDAMBH+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDAMCC+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDAMCJ+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDANHF+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDANIB+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLFPD+MSTT31575a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLGEJ+MSTT319013d739o114043S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLGFF+MSTT31575a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLODE+MSTT31575a5831o058029S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLODJ+MSTT314e5a5831o117059S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLOEF+MSTT314e5a5831o108054S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLOMO+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLONF+MSTT319013d739o093035S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLOOB+MSTT3195ed4ebao094033S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLPAL+MSTT31f34b40do083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDNDGC+MSTT314e5a5831o100050S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDNDNH+MSTT314e5a5831o092046S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BDLOMO+MSTT314e5a5831o083042S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BEAOLC+MSTT314e5a5831o083042S01",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BEBEPD+Wingdings-Regular",
+    "type": "TrueType",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   }
+  ]
+ },
+ "CNTS-00049667794_/CNTS-00049667794.pdf": {
+  "label": "실패",
+  "fonts": [
+   {
+    "basefont": "H2hdrM",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "H2gtrE",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ONGJAC+Wingdings-Regular",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Gulim",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Arial-BoldMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Verdana-BoldItalic",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ONGJOD+SHeadG",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "SHeadR",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "HYgprM",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Verdana",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ArialMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Arial-BoldItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ONIJOK+Webdings",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Arial-ItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "GulimChe",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRomanPSMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   }
+  ]
+ },
+ "CNTS-00049203988_/CNTS-00049203988.pdf": {
+  "label": "실패",
+  "fonts": [
+   {
+    "basefont": "LBFLJJ+ArialMT",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 9,
+    "overflow": 0
+   },
+   {
+    "basefont": "YGO13-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO13-KSCpc-EUC-H-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "SomaM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO11-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "ChungL-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO14-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO12-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "FMLDBF+-À±°íµñ140",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "FMMBAA+ÇÑÄÄ¹ÙÅÁ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "FMMCII+-À±°íµñ120",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 4,
+    "overflow": 0
+   },
+   {
+    "basefont": "FMMCLJ+TimesNewRoman",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "FMMCNJ+»êµ¹¸íÁ¶L",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 85,
+    "overflow": 1
+   },
+   {
+    "basefont": "*ÇÑ¾ç½Å¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "FMMFNK+ÈÞ¸ÕÅÂ°íµñ,Bold",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 6,
+    "overflow": 0
+   },
+   {
+    "basefont": "*ÈÞ¸Õ¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "*HCI-Tulip-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "FMMJIF+HY½Å¸íÁ¶",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 4,
+    "overflow": 0
+   },
+   {
+    "basefont": "*#½Å¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "FMMNNN+HY°ß°íµñ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "FMMOHK+ÈÞ¸Õ°íµñ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "*ÈÞ¸Õ°íµñ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "*¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "*½Å¸íÁ¶-¾àÀÚ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "FMPAAB+ÈÞ¸ÕÅÂ¸íÁ¶,Bold",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "*HCI-Hollyhock-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "EPAMGH+ArialMT",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 9,
+    "overflow": 0
+   },
+   {
+    "basefont": "YGO13-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO13-KSCpc-EUC-H-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "SomaM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO11-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "ChungL-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO14-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO12-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   }
+  ]
+ },
+ "CNTS-00049202839_/CNTS-00049202839.pdf": {
+  "label": "정상",
+  "fonts": [
+   {
+    "basefont": "AIGJKI+Univers-Bold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGJNM+Univers",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGKEC+Univers-CondensedLight",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGLGA+MetaPlusBlack-Roman",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 10,
+    "overflow": 0
+   },
+   {
+    "basefont": "SandSm-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "SandJg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "AIGOBP+Goudy",
+    "type": "Type1",
+    "encoding": "MacRomanEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGOHE+Goudy-Bold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIGOKI+Goudy-BoldItalic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AIHAAI+AGaramond-Semibold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDKII+TimesNewRomanPSMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDJFM+AGaramond-Regular",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDJPJ+AGaramond-Semibold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDMGD+AGaramond-Italic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDMDD+Arial-BoldMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDKOG+AGaramondPro-Semibold",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 9,
+    "overflow": 0
+   },
+   {
+    "basefont": "AGaramond-SemiboldItalic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDNIN+TimesNewRomanPS-ItalicMT",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "IIDOJI+TimesNewRomanPS-BoldMT",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "IIDLEF+AGaramondPro-Regular",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 5,
+    "overflow": 0
+   },
+   {
+    "basefont": "IIEBGI+AGaramond-Bold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIECPA+ArialMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIEIIP+SymbolMT",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "IIFGHK+TimesNewRomanPS-ItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "AGaramond-SemiboldItalic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIJNHI+AGaramond-BoldItalic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIJODG+Arial-ItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IILMJM+JansonText-Bold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "IIDKEI+TimesNewRomanPSMT",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "IJBLDI+JansonText-Italic",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "IJDCBM+JansonText-Roman",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   }
+  ]
+ },
+ "CNTS-00049203536_/CNTS-00049203536.pdf": {
+  "label": "정상",
+  "fonts": [
+   {
+    "basefont": "PFLNBP+StoneSerif-SemiboldItalic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PFMDDH+Goudy",
+    "type": "Type1",
+    "encoding": "MacRomanEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PFMDIN+Goudy-Bold",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PFMDMB+Goudy-BoldItalic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "SandJg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "Helvetica",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRomanPS-ItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRomanPSMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRomanPS-BoldMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BodoniMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Times-Bold",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Times-BoldItalic",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Times-Roman",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Helvetica-Bold",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRomanPS-BoldItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Times-Italic",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Courier",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PFLNED+Univers-CondensedLight",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PFMAHG+StoneSerif",
+    "type": "Type1",
+    "encoding": "MacRomanEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PFMAKK+StoneSerif-Italic",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   }
+  ]
+ },
+ "CNTS-00049203617_/CNTS-00049203617.pdf": {
+  "label": "정상",
+  "fonts": [
+   {
+    "basefont": "SandTg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "PinoB-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "HY½Å¸íÁ¶",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ÈÞ¸Õ°íµñ",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "SandTg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "SandJg-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "SandTm-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "ÈÞ¸ÕÅÂ¸íÁ¶,Bold",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ÈÞ¸ÕÅÂ°íµñ,Bold",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "HY½Å¸íÁ¶,Bold",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ÇÑÄÄ¹ÙÅÁ",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "¹ÙÅÁ",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "µ¸¿ò",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Arial",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Symbol",
+    "type": "TrueType",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRoman,Italic",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRoman",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "¹ÙÅÁÃ¼",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "±¼¸²",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "ÈÞ¸Õ¸íÁ¶",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "Helvetica",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "BHBICH+MetaPlusNormal-Roman",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 17,
+    "overflow": 0
+   },
+   {
+    "basefont": "BHBILP+Meta-Normal",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 36,
+    "overflow": 0
+   }
+  ]
+ },
+ "CNTS-00049204001_/CNTS-00049204001.pdf": {
+  "label": "정상",
+  "fonts": [
+   {
+    "basefont": "YGO11-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO13-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "SomaM-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "*ÇÑ¾ç½Å¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HLBGKC+-À±°íµñ120",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLBIAL+ÇÑÄÄ¹ÙÅÁ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLBIGL+TimesNewRoman",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "HLBIOJ+»êµ¹¸íÁ¶L",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 143,
+    "overflow": 2
+   },
+   {
+    "basefont": "*¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HLBLBO+Wingdings",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLBOAP+»êµ¹»ó¾ÆL",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 5,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLBPDJ+-À±°íµñ130",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLBNAD+ÈÞ¸ÕÅÂ°íµñ,Bold",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 5,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLBNNP+-À±¸íÁ¶120",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCEIK+-2002",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCEKK+Asia¾Æ½Ã¾Æ°íµñL",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCDNN+HY¿ï¸ªµµM",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 6,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCHLI+-¼Ò¸ÁM",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 17,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCHPI+»êµ¹»ó¾ÆB",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 7,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCKJJ+»êµ¹°íµñM",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 10,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCKKK+Arial",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "HLCNJK+TimesNewRoman,Italic",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "HLDAJJ+»êµ¹°íµñL",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "*ÇÑ¾çÁß°íµñ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "*ÈÞ¸Õ°íµñ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HLBIGK+TimesNewRoman",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 4,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLCNJJ+TimesNewRoman,Italic",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 7,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLIGLL+¹ÙÅÁ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 13,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLIJPI+µ¸¿ò",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLIKGG+-À±°íµñ110",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "Helvetica",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "*HCI-Hollyhock-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3165,
+    "overflow": 46
+   },
+   {
+    "basefont": "HLKLDO+ÈÞ¸Õ°íµñ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLKMDK+HY¿ï¸ªµµL",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "HLKMLI+ÈÞ¸ÕÅÂ¸íÁ¶,Bold",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "Times-Roman",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 5,
+    "overflow": 0
+   },
+   {
+    "basefont": "EAFFOA+Univers-Condensed",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "EAFIJF+ArialMT",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "ChungL-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   },
+   {
+    "basefont": "YGO12-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 654,
+    "overflow": 6
+   }
+  ]
+ },
+ "CNTS-00049204004_/CNTS-00049204004.pdf": {
+  "label": "정상",
+  "fonts": [
+   {
+    "basefont": "CIJDIE+YDIYGO120-KSCpc-EUC-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIJGFE+HaansoftBatang",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "*ÇÑ¾ç½Å¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "CIJGPC+SandSm",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 135,
+    "overflow": 1
+   },
+   {
+    "basefont": "CIJHKA+TimesNewRomanPS-ItalicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "CIJIDO+TimesNewRomanPSMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "CIJJAK+SandKm",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 4,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIJKDE+X3DEDDA62",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 7,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIJKEE+SandTg",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 17,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIJKKE+ArialMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "CIKBCN+HYwulM",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 14,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIKBEN+YDI2002",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIKBFO+KoreanAGD-Light-KSCpc-EUC-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIKCPF+YDISomaM-KSCpc-EUC-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 17,
+    "overflow": 0
+   },
+   {
+    "basefont": "*¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "CIKIOD+SandJg",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "CILFNF+SandSaB",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIMGNO+Dotum",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 10,
+    "overflow": 0
+   },
+   {
+    "basefont": "*¼ö½Ä,Italic-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "*¼ö½Ä-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "CIMMHO+Batang",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "CIMNIJ+HyhwpEQ",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 7,
+    "overflow": 0
+   },
+   {
+    "basefont": "*ÇÑ¾ç½Å¸íÁ¶,Italic-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "*ÇÑ¾çÁß°íµñ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "CJDKGO+Gulim",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDLE+MSTT31f94b6886o150065S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 1,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDNG+MSTT31fb441559o167073S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDNN+MSTT31f94b6886o167073S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDOE+MSTT319c623cc2o277081S00",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "KLJDOH+MSTT318b68dc13o250113S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDOK+MSTT31fb441559o250113S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDOO+MSTT319c623cc2o185057S00",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "KLJDPB+MSTT318b68dc13o167079S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJDLE+MSTT31f94b6886o150065S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 2,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJEDC+MSTT31f94b6886o150065IS00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "KLJEGB+MSTT31fb441559o150065S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "*½Å¸í-ÅÂ¸íÁ¶-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "CJDMPA+X26073B90",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "PDLKFL+MSTT31575d7059o360136S00",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PDLKGN+MSTT31672ad835o141064S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 181,
+    "overflow": 0
+   },
+   {
+    "basefont": "PDLKHN+MSTT31ea8bc2b7o158071S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 19,
+    "overflow": 0
+   },
+   {
+    "basefont": "PDLKMG+MSTT31575d7059o360103S00",
+    "type": "Type1",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "PDLKNC+MSTT31672ad835o158075S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 88,
+    "overflow": 0
+   },
+   {
+    "basefont": "PDLKOB+MSTT31ea8bc2b7o158079S00",
+    "type": "Type1",
+    "encoding": "",
+    "has_tounicode": true,
+    "bfranges": 5,
+    "overflow": 0
+   },
+   {
+    "basefont": "*ÅÂ-³ª¹«-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "*ÈÞ¸Õ°íµñ-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "*HCI-Hollyhock-Identity-H",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 3158,
+    "overflow": 120
+   },
+   {
+    "basefont": "CJDOJJ+H2wulL",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   },
+   {
+    "basefont": "CJDPAI+X26A0E674",
+    "type": "Type0",
+    "encoding": "Identity-H",
+    "has_tounicode": true,
+    "bfranges": 0,
+    "overflow": 0
+   }
+  ]
+ },
+ "CNTS-00049655048_/CNTS-00049655048.pdf": {
+  "label": "정상",
+  "fonts": [
+   {
+    "basefont": "¹ÙÅÁÃ¼",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "LetterGothicMT",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRoman",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "¹ÙÅÁÃ¼,Bold",
+    "type": "Type0",
+    "encoding": "KSCms-UHC-H",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   },
+   {
+    "basefont": "TimesNewRoman,Bold",
+    "type": "TrueType",
+    "encoding": "WinAnsiEncoding",
+    "has_tounicode": false,
+    "bfranges": null,
+    "overflow": null
+   }
+  ]
+ }
+}

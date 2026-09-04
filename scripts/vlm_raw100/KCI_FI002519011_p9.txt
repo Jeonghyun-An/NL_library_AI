@@ -1,0 +1,38 @@
+해 접근함으로써 대상자 중심의 접근 용이한 프로그램을 계획할 수 있는 기초자료로써 의미 있는 연구라고 생각된다.
+
+다만, 본 연구에서 문제행동이론에 근거하여 아동의 공격성에 영향을 미치는 요인을 구성할 때 인지된 환경체계를 포함시키지 못하였다. 그러므로 인지된 환경체계를 포함하여 다양한 변수의 관계를 확인하는 조사연구와 모형구축연구가 필요하다. 또한 본 연구는 일부 지역의 초등학교 고학년(5, 6학년)을 대상으로 수행되었으므로 더 다양한 표본 집단에서의 반복 연구가 필요하다.
+
+결 론
+
+본 연구에서는 초등학생을 대상으로 아동의 공격성에 대한 영향요인을 살펴봄으로써 아동의 공격성을 설명하기에 적합한 모형을 구축하였다. 아동의 개인 내·외적 요인의 직·간접적인 경로를 확인함으로써 아동의 공격성에 영향을 줄 수 있는 변수가 간접적 매개역할을 하여 아동의 공격성에 영향을 줄 수 있음을 적절하게 설명하였다.
+
+긍정적인 부모 양육행동은 아동이 정서를 적절하게 인식하고 표현하게 하며, 공격행동에 대한 올바른 신념을 갖게 하여 아동의 자기통제력을 높일 수 있다. 결국 일시적인 만족이나 충동을 지연시킬 수 있는 능력을 가진 아동은 공격행동을 보이지 않는다. 그러므로 아동의 공격성을 감소시키기 위해 긍정적인 부모 양육행동과 아동의 자기통제 훈련이 필요하다. 또한 아동이 정서를 적절하게 인식하고 표현하며 공격행동에 대한 올바른 신념을 확립할 수 있도록 가정, 학교 및 사회에서 많은 관심과 교육이 요구된다.
+
+Conflict of interest
+
+No existing or potential conflict of interest relevant to this article was reported.
+
+REFERENCES
+
+1. Ministry of Education. Results of the first school violence survey in 2018 [Internet]. Seoul: Ministry of Education; 2018 [cited 2018 May 30]. Available from: https://www.moe.go.kr/boardCnts/view.do?boardID=294&lev=0&statusYN=C&rs=moe&m=0204&opType=N&boardSeq=75144.
+2. Ko MY. Aggression in childhood and adolescence: Theories and current practices. Mental Health and Social Work. 1998;6:51-75.
+3. Kim EY, Kim KS. A study of atypical characteristics of adolescent depression: Focusing on aggression. Korean Journal of Educational Therapist. 2017;9(2):291-307.
+4. Jang YB. Effects of loneliness, aggression, self-control and morality on game over-indulgence among adolescents. Journal of The Korean Society for Computer Game. 2017;30(3):69-76.
+5. Kim JW, Kim HJ. Relationships among children's aggression, temperament, home environment, and school adjustment. The Journal of Child Education. 2007;16(2):85-93.
+6. Schaeffer CM, Petras H, Ialongo N, Poduska J, Kellam S. Modeling growth in boys' aggressive behavior across elementary school: Links to later criminal involvement, conduct disorder, and anti-social personality disorder. Developmental Psychology. 2003;39(6):1020-1035. https://doi.org/10.1037/0012-1649.39.6.1020
+7. Crick NR, Grot peter JK. Children's treatment by peers: victims of relational and overt aggression. Development and Psychopathology. 1996;8(2):367-380. https://doi.org/10.1017/S0954579400007148
+8. Crick NR, Grot peter JK. Relational aggression, gender, and social-psychological adjustment. Child Development. 1995;66(3):710-722. https://doi.org/10.2307/1131945
+9. Seo MJ. A meta-analysis of the gender differences and variables related to overt and relational aggression in children and adolescents. Korean Journal of Child Studies. 2011;32(3):143-162. https://doi.org/10.5723/KJCS.2011.32.3.143
+10. Lee AY, Kim YM. The effects of an emotional control program on children's anger and aggression. The Korean Journal of Elementary Counseling. 2015;14(4):519-536.
+11. Bronfenbrenner U. Toward an experimental ecology of human development. American Psychologist. 1977;32(7):513-531. https://doi.org/10.1037/0003-066X.32.7.513
+12. Jessor R. Problem-behavior theory, psychosocial development, and adolescent problem drinking. British Journal of Addiction. 1987;82(4):331-342. https://doi.org/10.1111/j.1360-0443.1987.tb01490.x
+13. Chang HL, Chung IJ. The effects of parenting attitudes on adolescent prosocial behavior and aggression mediated by self-esteem. Korean Journal of Family Social Work. 2013;40:33-61
+14. Kim MJ, Doh HS. The Influence of parenting behaviors, marital conflict, and sibling relations on aggression in children. Korean Journal of Child Studies. 2001;22(2):149-166.
+15. Hyun MJ, Han YS. The effect of the self-regulation group counseling program on the self-control and aggression of juvenile delinquents. Korean Journal of Youth Studies. 2015;22(5):391-420.
+16. Choi ES, Bang HJ. Reliability and validity of the emotion expression scale for children. The Korean Journal of Developmental Psychology. 2011;24(3):105-128.
+17. Son JY. The effects of aggression beliefs and emotion regulation capacity on aggressive behavior: Based on social information processing. The Korea Journal of Youth Counseling. 2003;11(2):96-110.
+18. Jessor R, Jessor SL. Problem behavior and psychosocial development. 1987;82(4):331-342. https://doi.org/10.1111/j.1360-0443.1987.tb01490.x
+
+www.e-chnr.org
+
+유선이, 안혜영 | 433

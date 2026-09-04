@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:github.com)",
+      "PowerShell(Get-Content \"c:\\\\Users\\\\LANDSOFT\\\\mygit\\\\NL_library_AI\\\\nl_cnts_result.csv\" -TotalCount 5; Write-Host \"---\"; \\(Get-Content \"c:\\\\Users\\\\LANDSOFT\\\\mygit\\\\NL_library_AI\\\\nl_cnts_result.csv\"\\).Count)",
+      "PowerShell(python -m py_compile app\\\\services\\\\ingestion\\\\embedder.py app\\\\services\\\\ingestion\\\\indexer.py app\\\\workers\\\\celery_app.py app\\\\workers\\\\tasks.py app\\\\core\\\\config.py)",
+      "PowerShell(if \\($?\\) { \"OK\" })",
+      "PowerShell(python -m pytest app\\\\tests\\\\test_prompts.py -q 2>&1)",
+      "PowerShell(python scripts\\\\verify_prompt_parity.py)",
+      "PowerShell(python -m py_compile app\\\\models\\\\book.py app\\\\models\\\\ingest_job.py app\\\\alembic\\\\versions\\\\0004_doc_type_extra_ingest_jobs.py app\\\\alembic\\\\env.py)",
+      "PowerShell(python -m py_compile app\\\\workers\\\\tasks.py app\\\\workers\\\\job_runtime.py app\\\\workers\\\\celery_app.py app\\\\services\\\\ingestion\\\\stages.py)",
+      "PowerShell(python -c \"import yaml; yaml.safe_load\\(open\\(r'docker-compose.yml', encoding='utf-8'\\)\\); print\\('COMPOSE YAML OK'\\)\")",
+      "PowerShell(pip install pymarc==5.1.2 openpyxl==3.1.5 lxml -q 2>&1)",
+      "PowerShell(python -c \"import pymarc, openpyxl, lxml; print\\('OK'\\)\")",
+      "PowerShell(python -m pytest app\\\\tests\\\\test_loaders.py -q 2>&1)",
+      "PowerShell(git mv app/services/ingestion/marc_parser.py app/domains/nl_library/loaders/marc_parser.py)",
+      "PowerShell(git mv app/services/ingestion/mods_parser.py app/domains/nl_library/loaders/mods_parser.py)",
+      "PowerShell(python -m pytest app\\\\tests -q 2>&1)",
+      "PowerShell(python -c \"import sys; sys.path.insert\\(0, 'app'\\); import services.ingestion.marc_parser as m, services.ingestion.mods_parser as md, services.ingestion.xlsx_loader as x, services.ingestion.kci_loader as k; print\\('shims OK:', m.parse.__module__, md.parse.__module__\\)\")",
+      "PowerShell(python -m py_compile app\\\\workers\\\\tasks.py app\\\\repositories\\\\catalog_bulk.py app\\\\domains\\\\nl_library\\\\loaders\\\\__init__.py app\\\\domains\\\\nl_library\\\\loaders\\\\kci_xlsx.py app\\\\domains\\\\nl_library\\\\loaders\\\\marc_mods_xlsx.py)",
+      "PowerShell(python -m pytest app\\\\tests\\\\test_build_manifest.py -q 2>&1)"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+ChangHo Park • Jung-Oh Kim / Attention Shift to Global and Local Level of a Form Depends upon Stimulus Set
+
+of a response key. Each participant served for the same experiment three times for 3 or 4 days, and the first two experiments were treated as a practice.
+
+Design Stimulus set, a between-subject variable, had two levels, the feature set and the dimension set, each with 6 participants. The SOA between the sound cue and a compound pattern was a within-subject variable with three levels. Judgment level (global vs. local) and congruity between the global and the local level (congruent vs. incongruent) were also within-subject variables.
+
+Results and Discussion
+
+A repeated measure analysis of variance on RT data revealed following effects (see Figures 2 and 3). The RT for the incongruent stimulus was longer than RT for the congruent stimulus (that is, a significant Stroop interference), F(1, 10) = 156.78, p < .001, MSE = 4117.94. The RT increased linearly as a function of SOA, F(1, 10) = 66.80, p < .001, MSE = 2208.03. An interaction effect of stimulus set and congruity was significant, F(1, 10) = 13.41, p < .01, MSE = 4117.94, because a larger Stroop interference was observed in the dimension set than in the feature set, t(10) = 3.66, p < .05, se = 321.39. An interaction effect of congruity and SOA was significant, F(2, 20) = 4.93, p < .05, MSE = 677.35, because the amount of Stroop interference increased linearly as a function of SOA, F(1, 10) = 8.40, p < .05, MSE = 792.14. A three way interaction among stimulus set, judgment level, and congruity approached a significance, F(1, 10) = 3.73, p = .082, MSE = 1924.00, but its nature was not clear.
+
+[그림: Figure 2. Mean RTs (msec) in each condition by levels and by congruity as a function of SOAs for the feature set in Experiment 1.]

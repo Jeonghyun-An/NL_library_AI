@@ -1,0 +1,44 @@
+〈Table 7〉 Performance comparison of all the tested methods
+
+| Instance | Evaluation | SVM | RBFN | GP | MLP | RNN | LSTM | MOHIDmodel |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Instance 1 | MAE | 0.0667 | 0.0929 | 0.0939 | 0.0901 | 0.0576 | 0.0632 | 0.1354 |
+|  | RMSE | 0.0980 | 0.1422 | 0.1398 | 0.1368 | 0.0939 | 0.0974 | 0.2166 |
+|  | NCLS | 0.9383 | 0.9104 | 0.9119 | 0.9138 | 0.9408 | 0.9386 | 0.8634 |
+| Instance 5 | MAE | 0.0927 | 0.0971 | 0.0970 | 0.0996 | 0.0529 | 0.0410 | 0.1229 |
+|  | RMSE | 0.1520 | 0.1631 | 0.1610 | 0.1652 | 0.0854 | 0.0615 | 0.1895 |
+|  | NCLS | 0.7721 | 0.7529 | 0.7585 | 0.7497 | 0.8718 | 0.9077 | 0.7153 |
+| Instance 6 | MAE | 0.0389 | 0.0316 | 0.0355 | 0.0372 | 0.0212 | 0.0234 | 0.0664 |
+|  | RMSE | 0.0613 | 0.0497 | 0.0546 | 0.0569 | 0.0328 | 0.0371 | 0.1165 |
+|  | NCLS | 0.9204 | 0.9354 | 0.9290 | 0.9261 | 0.9572 | 0.9516 | 0.8479 |
+| Instance 7 | MAE | 0.0657 | 0.0854 | 0.0661 | 0.0718 | 0.0700 | 0.0656 | 0.0440 |
+|  | RMSE | 0.0984 | 0.1310 | 0.0960 | 0.1041 | 0.1097 | 0.0992 | 0.0631 |
+|  | NCLS | 0.8805 | 0.8409 | 0.8834 | 0.8736 | 0.8664 | 0.8791 | 0.9231 |
+
+*The lower values of MAE and RMSE are, the higher accuracy is. On the other hand, the closer to 1 NCLS is, the higher accuracy is.
+
+구체적으로는 각각의 데이터를 바탕으로 모델을 만든 후에 가중치를 주는 배깅(bagging)과, 데이터에 여러 알고리즘으로 모델을 만든 후에 가중치를 주는 부스팅(boosing)을 통해 개선해 나아갈 예정이다. 또한 가중치 부여 방법을 성능에 따른 가중치를 할당 해주는 방법과 진화연산과 다른 기계학습 기법을 이용하여 가중치를 최적화 하는 방법을 연구할 예정이다.
+
+ACKNOWLEDGMENTS
+
+본 논문은 해양경찰청의 재원으로 재난안전기술개발사업단의 지원을 받아 수행된 연구입니다. [KCG-01-2017-05]
+
+논문에 사용된 데이터를 제공하고 제공해준 (주)아라종합기술의 김도연 이사님께 깊은 감사를 전합니다.
+
+REFERENCES
+
+[1] Davis, R. E. “Drifter observations of coastal surface currents during CODE: the statistical and dynamical views.” Journal of Geophysical Research: Oceans Vol. 90, No. C3, pp.4756-4772, 1985.
+
+[2] Fratantoni, D. M. “North Atlantic surface circulation during the 1990’s observed with satellite tracked drifters.” Journal of Geophysical Research: Oceans Vol. 106, No. C10, pp.22067-22093, 2001.
+
+[3] MOHID, Water Modeling System, http://www.mohid.com
+
+[4] Y. D. Yun, Y. Wook. Yang, H. S. Ji, H. S. Lim, “Development of Smart Senior Classification Model based on Activity Profile Using Machine Learning Method”, Journal of the Korea Convergence Society, Vol. 8, No. 1, pp.25-34, 2017.
+
+[5] Matkan, A. A., M. Hajeb, and Z. Azarakhsh. “Oil spill detection from SAR image using SVM based classification.” ISPRS-International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences Vol. 1, No. 3, pp.55-60, 2013.
+
+[6] Yoo, C. S., and Park, J. Y. “Combining radar and rain gauge observations utilizing Gaussian-process based regression and support vector learning.” Journal of Korean Institute of Intelligent Systems Vol. 18, No. 3, pp.297-305, 2008.
+
+[7] Đalto, M., Vašak, M., Baotić, M., Matuško, J., and Horvath, K. “Neural-network-based ultra-short-term wind forecasting.” European Wind Energy Association 2014 Annual Event 2014.
+
+[8] Baruque, B., Corchado, E., Mata, A., and Corchado, J. M. “forecasting solution to the oil spill problem

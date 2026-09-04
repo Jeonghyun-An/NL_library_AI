@@ -1,0 +1,47 @@
+ORIGINAL ARTICLE
+J Korean
+Neuropsychiatr Assoc
+2013;52:442-446
+ISSN 1015-4817
+www.knpha.or.kr
+
+Received January 5, 2013
+Revised July 12, 2013
+Accepted September 25, 2013
+
+Address for correspondence
+Beom-Woo Nam, MD, PhD
+Department of Psychiatry,
+School of Medicine, Konkuk University,
+Chungju Hospital, 82 Gugwon-daero,
+Chungju 380-704, Korea
+Tel +82-43-840-8470
+Fax +82-43-843-6655
+E-mail psychiatry@kku.ac.kr
+
+442 Copyright © 2013 Korean Neuropsychiatric Association
+
+일 중소도시 보건소 이용 노인들의 우울장애 유병률
+건국대학교 의학전문대학원 충주병원 정신건강의학교실,¹ 가톨릭대학교 의과대학 예방의학교실,²
+우울증 임상연구센터³
+박철우¹ · 서정석¹ · 임현우²,³ · 조선진²,³ · 정현숙²,³ · 남범우¹
+
+Prevalence of Depressive Disorder among the Elderly Attending Community Health Center in a Small City
+Chul-Woo Park, MD¹, Jeong-Seok Seo, MD, PhD¹, Hyeon Woo Yim, MD, PhD²,³,
+Sun-Jin Jo, PhD²,³, Hyunsuk Jeong, PhD²,³ and Beom-Woo Nam, MD, PhD¹
+¹Department of Psychiatry, School of Medicine, Konkuk University, Chungju Hospital, Chungju, Korea
+²Department of Preventive Medicine, The Catholic University of Korea College of Medicine, Seoul, Korea
+³Clinical Research Center for Depression, Seoul, Korea
+
+Objectives This study was conducted in order to collect data regarding depressive disorder of elderly people at a community health center.
+Methods A total of 109 elderly people participated in this study. Trained examiners evaluated the general characteristics and symptoms of the subjects. Then the doctors conducted interviews with the elderly subjects in person and diagnosed depressive disorder according to the standard of Diagnostic and Statistical Manual of Mental Disorders-IV-TR.
+Results The prevalence of depressive disorder was 19.3%, major depressive disorder 10.1%, dysthymic disorder 1.8%, and others 7.3%. According to results of logistic regression analysis, in terms of demographic variables, the odds ratio of elementary school dropout compared with elementary school graduates was 3.60, after adjusting for age and sex. Thus, we found that elementary school dropout was associated with an increased risk of prevalence of depression.
+Conclusion This is the first study of prevalence of depressive disorder in a primary health care center in Korea. Results of this study confirm that the prevalence of depressive disorder is two times higher among adults in the Chungju community. In addition, the level of education was also highly related. Examiners detected a possible relationship between sex and residence. The results will be helpful in conduct of future studies at the health care center.
+KEY WORDS Prevalence · Depressive disorder · Community health center.
+
+서 론
+인간의 수명은 점점 길어지며 이에 따라 우리 사회에서의 노인인구 비율도 점점 증가하는 추세이다. UN의 통계에 따르면 세계적으로 65세 이상 노인 인구의 비율은 1975년의 5%에서 2025년의 12%로 증가할 것으로 추정하고 있으며 한국에서도 노인 인구의 비율은 계속 증가하는 추세로 1960년 2.9%에서 2010년 11%로 증가하였다.¹ 이에 대한 경제적 부담도 늘어나고 있어 1999년에 Gwangju City Mental Hospital (이하 KCMH)에 입원한 노인의 한 달 입원비는 US$ 500에서 US$ 800으로 이는 1999년 한국의 gross national product (이하 GNP)인 US$ 8490과 비교하였을 때 적지 않은 부분을 차지하고 있다. 이처럼 노인 인구가 증가하고 사회적 비용
+이 늘어남에 따라 노인인구의 정신장애에 대한 연구의 필요성이 점점 커지고 있다.²
+한국의 노인 자살률을 살펴보면 2009년 한국의 65세 이상 노인들의 자살률은 인구 10만 명당 77명으로 20년 전과 비교하여 약 5.4배가 증가하였고 우리나라 전체 자살률과 비교하면 약 2.5배에 달하고 자살한 노인의 77%가 우울증을 포함한 정신장애를 가지고 있는 것으로 보고되었다.³
+노인들의 정신장애 중에서는 주요우울장애가 가장 흔하게 발생하는 정신장애로 보고된다.⁴ 우울증은 환자의 80~90%가 치료에 반응한다고 알려져 있다. 우울증상을 발견하고 진단하는 것은 매우 중요하며 노인 자살을 통제하기 위해서 이에 대한 관리는 필수적이라고 할 수 있다.⁵
+우리나라의 지역사회 거주 노인들에서의 우울장애 유병률

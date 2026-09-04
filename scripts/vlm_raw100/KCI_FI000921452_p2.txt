@@ -1,0 +1,15 @@
+172 西語西文研究
+
+I. 서론
+
+본 연구의 목표는 여러 언어들의 문장들에서 보여지는 의미해석의 효과가 어떤 구(XP)의 수의적 이동(optional movement)과 밀접하게 연관되어 있음을 보이는 것이다. 구체적으로 본 연구는 Fox (1998)가 제시한 Output-Economy와 Chomsky (1999)가 명명한 INT(Interpretability Complex)에 기초를 두고 있으며, 이러한 제안들을 비탕으로 최대투사범주 XP가 기저-생성된 위치를 벗어나 수의적으로 이동하는 경우에 수반하는 사실을 스페인어의 어순에 적용해 보고자 한다. 이를 위해 2장에서는 최근 최소주의 이론 내에서 제안된 이동에 관한 가정들과 Fox가 제안한 경제성 이론을 간략히 살펴볼 것이다. 3장에서는 수의적 이동이 결과적으로 발생시키는 의미해석 효과에 대해 여러 언어를 통해 살펴볼 것이다. 4장에서는 스페인어의 어순이 정보구조와 밀접한 관련을 지니고 있다는 기존의 제안을 받아들이되, 이러한 제안을 앞에서 언급한 수의적 이동과 연관지어 설명할 것이다. 이러한 논의를 통해 본 논문에서는 스페인어의 T가 수의적 EPP(Extended Projection principle; 확대투사원리) 지질을 지닐 수 있다는 점과, 스페인어의 [Spec, TP] 위치는 기존의 제안과는 달리 비논항 위치(A'-position)가 될 수 있음을 제안할 것이다.
+
+II. 두 종류의 이동
+
+1. Chomsky (1998/1999)의 가정
+
+1.1. 최대투사범주(XP)의 이동¹)
+
+Chomsky (1998)에서는 최대투사범주 XP가 기저생성된 위치에서 다른 통사적 위치로 이동하는 이유를 다음과 같이 EPP 지질로 설명한다. 즉, XP가 이동하는 이유는 기능적 핵(functional head)이 지닌 EPP 범주선택지질(c-selectional feature checking)을 위해서라고 가정하는 것이다. (Every functional head may have an uninterpretable selectional feature for its specifier position to be filled by a proper element.) 따라서, 기존의 의미적 주어 현상에 의해 설정된 EPP 지질이 T만이 아니라, C나 v 그리고 D까지도 EPP 지질을 지닐 수 있게 되어, 자신의 지정어(specifier) 위치가 XP에 의해 채워질 수 있다는 설명이다. 이러한 제안은 XP 이동에 대한 하나의 일반화(generalization)라고 할 수 있다.
+
+¹) 본 논문에서는 최대투사범주의 이동에 관해서만 다루며, 핵이동(Xo-Movement)에 관해서는 다루지 않기로 한다. 최근에 핵이동은 통사부가 아닌, 음운부에서 다루어져야 한다는 제안들이 있다.

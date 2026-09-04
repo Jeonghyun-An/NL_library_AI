@@ -1,0 +1,20 @@
+269 한국생산관리학회지 제21권 제3호 2010년 9월(pp. 269~285)
+
+The Effects of Lead Time Variability on Managing Component Replenishment for Customized Manufacturing
+
+Eungab Kim
+Associate Professor, College of Business Administration,
+Ewha Womans University
+(evanston@ewha.ac.kr)
+
+We study the impact of lead time variability on inventory management in a make-to-order system that processes customized manufacturing using a common component. Components are purchased from a supplier with Erlang lead times. In this paper, we investigate the structure of the optimal replenishment policy and examine how the lead time variability affects replenishment decision and supply chain cost. Explicit incorporation of setup cost and lead time variability into the model is the essential contribution to the current literature. To provide better managerial insights on the problem, we perform numerical experiment under different operating conditions of the system parameters.
+
+Key words: Lead time variability, Inventory, Replenishment, Customized manufacturing, Erlang distribution, Numerical analysis
+
+I. Introduction
+
+In this paper, we study what is the impact of lead time variability for managing inventory in a make-to-order(MTO) system that processes customized manufacturing using a common component which is purchased from a supplier under Erlang lead times and setup costs. The advance in information and manufacturing technologies over the past decade has been driving firms to manufacture products that meet end customers requirements with specific configurations. In this sort of business environment, the firms have become widely accepting component-based manufacturing in response to specific customer orders(Xu and Li, 2007).
+
+The component-based MTO model considered in this paper is as follows. When a customer order arrives at the MTO facility, a component is pulled from inventory and the end product is manufactured and delivered to the customer. Each customer order can be accepted or rejected by the facility’s admission control rule. Customer order rejection is used in practice when a firm with a limited production capacity has to face unexpectedly huge demand volumes
+
+논문투고일: 2010. 5. 20 논문수정일: 2010. 8. 5 계재확정일: 2010. 8. 9

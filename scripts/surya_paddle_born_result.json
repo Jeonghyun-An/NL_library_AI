@@ -1,0 +1,1277 @@
+[
+  {
+    "doc": "KCI_FI002537654.pdf",
+    "pages": [
+      {
+        "page": 8,
+        "fitz_len": 1148,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.76
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003259902.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 1832,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.28
+      },
+      {
+        "page": 5,
+        "fitz_len": 2030,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      },
+      {
+        "page": 13,
+        "fitz_len": 2065,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      },
+      {
+        "page": 16,
+        "fitz_len": 1908,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003331310.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 1253,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.3
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002171174.pdf",
+    "pages": [
+      {
+        "page": 5,
+        "fitz_len": 3857,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.33
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002524432.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2402,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.28
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003307529.pdf",
+    "pages": [
+      {
+        "page": 22,
+        "fitz_len": 1419,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002633464.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 3090,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      },
+      {
+        "page": 10,
+        "fitz_len": 2633,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      },
+      {
+        "page": 9,
+        "fitz_len": 2100,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002530375.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "fitz_len": 926,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      },
+      {
+        "page": 15,
+        "fitz_len": 1549,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.24
+      },
+      {
+        "page": 8,
+        "fitz_len": 1271,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      },
+      {
+        "page": 5,
+        "fitz_len": 1526,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      },
+      {
+        "page": 7,
+        "fitz_len": 1694,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003082850.pdf",
+    "pages": [
+      {
+        "page": 8,
+        "fitz_len": 1097,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.44
+      },
+      {
+        "page": 35,
+        "fitz_len": 1561,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.45
+      },
+      {
+        "page": 7,
+        "fitz_len": 1016,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.46
+      },
+      {
+        "page": 13,
+        "fitz_len": 658,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.45
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001269838.pdf",
+    "pages": [
+      {
+        "page": 15,
+        "fitz_len": 1021,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001715647.pdf",
+    "pages": [
+      {
+        "page": 29,
+        "fitz_len": 896,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.17
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003000034.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 1071,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.46
+      },
+      {
+        "page": 8,
+        "fitz_len": 1406,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.46
+      },
+      {
+        "page": 17,
+        "fitz_len": 1119,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.45
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000921452.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 813,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      },
+      {
+        "page": 9,
+        "fitz_len": 775,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.53
+      },
+      {
+        "page": 7,
+        "fitz_len": 1132,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.53
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003148640.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1430,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003218741.pdf",
+    "pages": [
+      {
+        "page": 9,
+        "fitz_len": 881,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.24
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002164241.pdf",
+    "pages": [
+      {
+        "page": 13,
+        "fitz_len": 2131,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.56
+      },
+      {
+        "page": 17,
+        "fitz_len": 2061,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002068495.pdf",
+    "pages": [
+      {
+        "page": 14,
+        "fitz_len": 549,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      },
+      {
+        "page": 3,
+        "fitz_len": 1218,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      },
+      {
+        "page": 10,
+        "fitz_len": 720,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000865757.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 1220,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001251499.pdf",
+    "pages": [
+      {
+        "page": 39,
+        "fitz_len": 2071,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.47
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002170660.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1150,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      },
+      {
+        "page": 16,
+        "fitz_len": 1153,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001160030.pdf",
+    "pages": [
+      {
+        "page": 9,
+        "fitz_len": 990,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000896175.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 946,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002925182.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 689,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.21
+      },
+      {
+        "page": 32,
+        "fitz_len": 1419,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.2
+      },
+      {
+        "page": 21,
+        "fitz_len": 1386,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.2
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000958870.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 1841,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002070804.pdf",
+    "pages": [
+      {
+        "page": 9,
+        "fitz_len": 1512,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002881823.pdf",
+    "pages": [
+      {
+        "page": 25,
+        "fitz_len": 876,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.19
+      },
+      {
+        "page": 36,
+        "fitz_len": 865,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.19
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002782015.pdf",
+    "pages": [
+      {
+        "page": 8,
+        "fitz_len": 1583,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.63
+      },
+      {
+        "page": 1,
+        "fitz_len": 1036,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      },
+      {
+        "page": 14,
+        "fitz_len": 1438,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.6
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001159328.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 1849,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.67
+      },
+      {
+        "page": 19,
+        "fitz_len": 1868,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.58
+      },
+      {
+        "page": 20,
+        "fitz_len": 2157,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002404735.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 2134,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      },
+      {
+        "page": 4,
+        "fitz_len": 2032,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.56
+      },
+      {
+        "page": 5,
+        "fitz_len": 2228,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.56
+      },
+      {
+        "page": 2,
+        "fitz_len": 2414,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002073234.pdf",
+    "pages": [
+      {
+        "page": 19,
+        "fitz_len": 2082,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.53
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001398897.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 831,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      },
+      {
+        "page": 13,
+        "fitz_len": 878,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      },
+      {
+        "page": 7,
+        "fitz_len": 854,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003143688.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2261,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.56
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002529577.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "fitz_len": 1956,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.3
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001817881.pdf",
+    "pages": [
+      {
+        "page": 33,
+        "fitz_len": 937,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.22
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001954567.pdf",
+    "pages": [
+      {
+        "page": 6,
+        "fitz_len": 1298,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.26
+      },
+      {
+        "page": 10,
+        "fitz_len": 3066,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.28
+      },
+      {
+        "page": 5,
+        "fitz_len": 1808,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000940790.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 1122,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      },
+      {
+        "page": 12,
+        "fitz_len": 736,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002526181.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "fitz_len": 1044,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      },
+      {
+        "page": 3,
+        "fitz_len": 1289,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.24
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001733305.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 902,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      },
+      {
+        "page": 31,
+        "fitz_len": 866,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      },
+      {
+        "page": 16,
+        "fitz_len": 901,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      },
+      {
+        "page": 2,
+        "fitz_len": 1000,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001213772.pdf",
+    "pages": [
+      {
+        "page": 25,
+        "fitz_len": 1395,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.48
+      },
+      {
+        "page": 23,
+        "fitz_len": 1142,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.48
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002063247.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1325,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      },
+      {
+        "page": 1,
+        "fitz_len": 1005,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      },
+      {
+        "page": 11,
+        "fitz_len": 926,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.54
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001498299.pdf",
+    "pages": [
+      {
+        "page": 11,
+        "fitz_len": 898,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.2
+      },
+      {
+        "page": 16,
+        "fitz_len": 838,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.2
+      },
+      {
+        "page": 5,
+        "fitz_len": 793,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.2
+      },
+      {
+        "page": 23,
+        "fitz_len": 1072,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.2
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002519011.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2702,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.41
+      },
+      {
+        "page": 1,
+        "fitz_len": 3033,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.38
+      },
+      {
+        "page": 5,
+        "fitz_len": 2731,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.39
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002275843.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "fitz_len": 1934,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.37
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000998390.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 2616,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.5
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001160960.pdf",
+    "pages": [
+      {
+        "page": 18,
+        "fitz_len": 850,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      },
+      {
+        "page": 25,
+        "fitz_len": 1121,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001579917.pdf",
+    "pages": [
+      {
+        "page": 12,
+        "fitz_len": 1268,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.48
+      },
+      {
+        "page": 11,
+        "fitz_len": 1142,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI000958626.pdf",
+    "pages": [
+      {
+        "page": 29,
+        "fitz_len": 1490,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.42
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002772762.pdf",
+    "pages": [
+      {
+        "page": 41,
+        "fitz_len": 1190,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.24
+      },
+      {
+        "page": 29,
+        "fitz_len": 1083,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.23
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003031353.pdf",
+    "pages": [
+      {
+        "page": 10,
+        "fitz_len": 968,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.48
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002528288.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 915,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      },
+      {
+        "page": 16,
+        "fitz_len": 1064,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.5
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002405619.pdf",
+    "pages": [
+      {
+        "page": 5,
+        "fitz_len": 1367,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.5
+      },
+      {
+        "page": 3,
+        "fitz_len": 1230,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.5
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001919031.pdf",
+    "pages": [
+      {
+        "page": 10,
+        "fitz_len": 893,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.37
+      },
+      {
+        "page": 13,
+        "fitz_len": 1148,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.38
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002666141.pdf",
+    "pages": [
+      {
+        "page": 22,
+        "fitz_len": 1091,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.44
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI003306671.pdf",
+    "pages": [
+      {
+        "page": 3,
+        "fitz_len": 1234,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001929541.pdf",
+    "pages": [
+      {
+        "page": 7,
+        "fitz_len": 1574,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.44
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001613384.pdf",
+    "pages": [
+      {
+        "page": 18,
+        "fitz_len": 1355,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.42
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001837095.pdf",
+    "pages": [
+      {
+        "page": 21,
+        "fitz_len": 836,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.48
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002301995.pdf",
+    "pages": [
+      {
+        "page": 16,
+        "fitz_len": 1385,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.25
+      },
+      {
+        "page": 30,
+        "fitz_len": 1051,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.23
+      },
+      {
+        "page": 15,
+        "fitz_len": 1009,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.23
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002996514.pdf",
+    "pages": [
+      {
+        "page": 17,
+        "fitz_len": 1397,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.55
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001508965.pdf",
+    "pages": [
+      {
+        "page": 15,
+        "fitz_len": 759,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.5
+      },
+      {
+        "page": 13,
+        "fitz_len": 718,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001826171.pdf",
+    "pages": [
+      {
+        "page": 4,
+        "fitz_len": 2565,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.42
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI001213046.pdf",
+    "pages": [
+      {
+        "page": 2,
+        "fitz_len": 2361,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.5
+      },
+      {
+        "page": 5,
+        "fitz_len": 2153,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.49
+      }
+    ]
+  },
+  {
+    "doc": "KCI_FI002917796.pdf",
+    "pages": [
+      {
+        "page": 1,
+        "fitz_len": 2868,
+        "surya_len": null,
+        "surya_err": "[Errno 111] Connection refused",
+        "paddle_len": 0,
+        "paddle_sec": 0.38
+      }
+    ]
+  }
+]

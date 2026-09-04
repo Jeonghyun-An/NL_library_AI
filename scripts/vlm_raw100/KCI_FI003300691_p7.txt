@@ -1,0 +1,39 @@
+처리구별 뿌리 발달 특성 분석
+
+처리구에 따른 숙지삼의 뿌리 발달 특성 조사 결과, 녹소토 NAA 1,000 mg·L⁻¹ 처리구에서 유근 수가 가장 많았던 반면, 혼합토 NAA 100 mg·L⁻¹ 처리구에서는 가장 적게 나타났다. 고농도의 NAA가 목질화된 숙지삼의 조직 내 옥신 수용체와 결합하여 유관속 형성층의 세포 분열을 자극하고, 부정근 형성을 효과적으로 촉진했음을 시사한다.
+
+녹지삼의 경우, 생존한 개체에 한해 숙지삼보다 왕성한 뿌리 발달을 보였는데, 특히 모래 IBA 1,000 mg·L⁻¹ 처리구에서 유근 수와 유근 길이가 크게 증가하였다. 이는 생장조절물질 처리가 부정근 형성을 촉진한다고 보고한 Sevik (2013a)의 연구 결과와 일치하며, 녹지삼의 연한 조직이 옥신 처리에 민감하게 반응하여 발근 효율이 높아진 것으로 해석된다.
+
+혼합토 처리구에서는 대부분의 개체가 고사하였으나 생존한 일부 개체는 이례적인 유근 길이(110.0 mm)를 보였다. 이는 다수의 개체가 도태된 환경에서 생존한 소수의 개체가 토양 내 풍부한 영양분과 수분을 독점적으로 흡수한 결과로 추정되며, 긍정적인 신호로 해석하기에는 어려울 것으로 판단된다.
+
+본 연구에서는 삼목의 용토와 생장조절물질 처리에 따라 유근 수, 유근 길이 등 뿌리발달 특성에 유의한 차이를 보였다 (ANOVA test, P < 0.05). Wazir (2014)는 동백나무 삼목시기와 생장조절물질 농도에 따라 뿌리수는 4.60~14.54개, 뿌리 길이가 5.94~18.30 cm로 큰 차이가 있음을 보고하여 본 연구결과와 유사한 경향을 나타냈다. 또한 Oh et al. (2021)은 산꼬리풀 (Veronica rotunda) 삼목에 관한 연구에서 녹소토 단용보다 유기양분이 풍부한 원예상토에서 유근 수가 유의적으로 증가함을 확인하였으며, 이를 통해 상토의 양분과 보수력이 뿌리 발달에 긍정적인 영향을 미친다고 보고하였다. 반면, Son et al. (2022)은 상동나무(Sageretia thea) 삼목 시 용토의 종류(모래, 원예상토, 혼합토)가 근장 생장에 통계적으로 유의한 영향을 미치지 않았다고 보고하였다. 종합하면 삼목시기와 용토, 생장조절물질 농도가 발근율 및 뿌리 발달 양상에 미치는 영향은 해당 조건 하에서 동백나무의 발근율 및 뿌리 발달 양상을 구명한다는 점에서 의미가 있다.
+
+적 요
+
+본 연구는 동백나무를 대상으로 삼목 시기, 삼목 용토 및 식물 생장조절제 처리에 따른 발근 특성을 조사하였다. 동일한 삼목
+
+Rooting of Camellia japonica Cuttings
+
+시기 내에서 처리구별 발근율은 유의한 차이가 인정되었으며, 숙지삼의 경우 녹소토 IBA 1,000 mg·L⁻¹ 및 혼합토 NAA 1,000 mg·L⁻¹에서 55.6%로 가장 높았고, 녹지삼은 모래 IBA 1,000 mg·L⁻¹ 처리구에서 75.6%로 가장 높게 나타났다. 또한, 뿌리 발달 특성도 각 처리구별로 유의한 차이가 인정되었으며, 전체적으로 숙지삼보다 녹지삼에서 더 왕성한 생장을 나타냈으나 발근율에서 다소 불안정한 경향을 나타냈다. 삼목 발근율과 뿌리 발달 특성을 종합적으로 고려할 때, 동백나무 삼목 번식의 성공률을 높이면서 안정적인 방법은 녹지삼을 이용하여 모래에 IBA 1,000 mg·L⁻¹를 처리하는 것이 가장 적합한 것으로 판단된다.
+
+사 사
+
+이 논문은 2024년 국립순천대학교 학술연구비(과제번호: 2024-0348) 공모과제로 연구되었음.
+
+Conflicts of Interest
+
+The authors declare that they have no conflict of interest.
+
+References
+
+Ahn, S.Y., B.S. An, S.J. Park, Z.H. Kim, and S.W. Lee. 2011. Effect of cutting condition on rooting and early growth of a rare endemic Juniperus chinensis var. sargentii HENRY. J. Agric. Life Sci. 45:73-80 (in Korean).
+
+Choi, J.-H., S.-Y. Kwon, and P.-S. Choi. 2011. Anomalous somatic embryos formation and plant regeneration from the cultures of immature embryos of Camellia japonica L. J. Plant Biotechnol. 38:258-262 (in Korean).
+
+Epstein, E. and J. Ludwig-Müller. 1993. Indole-3-butyric acid in plants: occurrence, synthesis, metabolism and transport. Physiol. Plant. 88:382-389.
+
+Gislerød, H.R. 1982. Physical conditions of propagation media and their influence on the rooting of cuttings. Plant Soil 69:445-456.
+
+Hartmann, H.T., D.E. Kester, F.T. Davies, and R.L. Geneve. 2011. Hartmann and Kester’s Plant Propagation: Principles and Practices (8th ed.). Prentice Hall, Upper Saddle River, NJ (USA). pp. 375-377.
+
+Henrique, A., E.N. Campinhos, E.O. Ono, and S.Z.D. Pinho.

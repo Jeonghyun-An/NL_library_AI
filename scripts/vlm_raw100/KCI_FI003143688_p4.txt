@@ -1,0 +1,42 @@
+314
+영주호 수질개선을 위한 효과적인 댐 운영계획 적용방안에 관한 연구
+
+Table 3. Model performance criteria
+
+| Statistical index | Equation | Desired value |
+|---|---|---|
+| Mean Absolute Error | $MAE = \frac{1}{N} \sum_{i=1}^{N} |Q_s - Q_o|$ | 0 |
+| Root Mean Squared Error | $RMSE = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (Q_s - Q_o)^2}$ | 0 |
+| * $Q_o$ = Observed value, $Q_s$ = Simulated value, $N$ = Number of data | | |
+
+Table 4. Dam discharge patterns for river maintenance flow (including the environmental improvement flow)
+
+| Item | Uniform discharge | Dry season discharge | Mid season discharge | Moist season discharge | Non-allocated |
+|---|---|---|---|---|---|
+| Number of dams | 16 | 2 | 1 | 1 | 1 |
+| Dam | Soyanggang Dam, Yongdam Dam, etc. | Namgang Dam, YoungJu Dam | Hoengseong Dam | Jangheung Dam | Daechung Dam |
+
+[그림: Fig. 4. Dam discharge pattern for river maintenance flow]
+
+Table 5. Dam operation scenarios for water quality impact assessment
+
+| Scenario | Scenario summary* | Model application |
+|---|---|---|
+| SCE1 | Basic plan discharge | ○ the pattern according to the basic plan (2009). |
+| SCE2 | Uniform discharge | ○ the pattern of consistent discharge throughout the year. |
+| SCE3 | Jangheungdam Case | ○ the pattern of increasing discharge during flood periods. |
+| SCE4 | Namgangdam Case | ○ the pattern of increasing discharge during low water periods. |
+| * Applying the restricted water level (=EL.148.1) from 21st June to 31st July | | |
+| Simulation year : 2021 |
+| Water quality constituents : TOC, T-P, Chl-a |
+
+Table 6. Dam discharge flow rate by the operation scenarios
+
+| Scenario | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SCE1 | 4.8 | 4.8 | 8.8 | 14.8 | 13.3 | 11.3 | 1.7 | 1.7 | 1.5 | 1.1 | 4.8 | 4.8 |
+| SCE2 | 6.0 | 6.0 | 6.0 | 6.1 | 6.2 | 6.4 | 6.6 | 6.6 | 6.4 | 6.0 | 6.0 | 6.0 |
+| SCE3 | 2.5 | 2.5 | 2.5 | 3.1 | 3.4 | 17.5 | 13.3 | 15.5 | 9.2 | 2.6 | 2.6 | 2.5 |
+| SCE4 | 9.1 | 10.0 | 8.7 | 8.0 | 7.1 | 1.5 | 1.7 | 1.7 | 4.1 | 9.9 | 9.9 | 9.2 |
+
+한국습지학회지 제26권 제4호, 2024

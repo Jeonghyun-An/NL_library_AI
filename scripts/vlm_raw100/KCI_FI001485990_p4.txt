@@ -1,0 +1,18 @@
+Eungab Kim
+
+〈Figure 1〉 An MTO model with M-Erlang lead time process
+
+[그림: M-Erlang lead time process를 갖춘 MTO 모델]
+
+III. Model formulation
+
+Respectively denote x₁ and x₂ the size of outstanding customer orders and the component inventory level. The model is described by the vector (x₁, x₂, δ). The indicator δ describes the remaining phases associated with the replenishment process. More specifically, if δ=0, no orders are in process while if δ>0, an order is in process. In particular, if δ=1, the order arrives at the system after exactly one phase transition. Note that a replenishment order can be placed only in state (x₁, x₂, 0). For the analysis we assume that there is at most one outstanding order. Although the model with multiple outstanding orders can be more realistic in the field, the assumption of one outstanding order is quite common in the inventory management literature and often justified in practice because order cycles are usually large compared to lead times (Temelmeier, 2006; Teunter and Haneveld, 2008). Let γ ≡ λ + μ + Md. The following state transitions can be considered in (x₁, x₂, δ):
+
+- Customer order arrival: x₁ increases by one.
+- MTO operation completion: x₁ and x₂ decrease by one, respectively.
+
+The set of decision epochs corresponds to the epochs of customer order arrival, service completion, and replenishment process completion. At each decision epoch, the MTO facility determines whether or not to place a replenishment order. The goal of this paper is to find an optimal replenishment policy which minimizes the sum of (1) component replenishment cost, (2) production delay cost, and (3) inventory holding cost.
+
+When a replenishment order with size Q units is placed, a setup cost of c_K is incurred. 〈Figure 1〉 illustrates a schematic model of the problem described above.
+
+272

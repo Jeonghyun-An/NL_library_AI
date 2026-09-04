@@ -1,0 +1,15 @@
+complexity independently. Nevertheless, we would like to argue for the hypothesis of stimulus set type, because the stimulus complexity hypothesis speaks little on how either global or local precedence is observed.
+
+Ward (1982) found that participants could judge quickly the same level as the level they judged just before. His level-readiness effect, however, was not observed in the present study. In Experiment 1, RTs for shift of both levels and responses were as fast as RTs for no shift (that is, level repetition). The level-readiness effect is likely to arise from anticipation of a specific level, but not from repetition of judgment on the same level, as Ward (1982) interpreted. In other words, the level-readiness effect might be based on a cognitive factor, not on a perceptual one. Though Robertson et al. (1993) and Stoffer (1993) observed global and local cue validity effects, they could not observe any Stroop interferences between the two levels at the same time. Experiment 1 obtained Stroop interferences in exchange of cue validity effects.
+
+Shift of spatial attention can be conceptualized as having three stages such as disengagement, movement, and engagement (Posner, 1988). Does attention shift on compound stimulus require spatial movement? Or what does attention shift between levels refer to exactly? Both the global and the local feature exist at the same area, but they may have different scales. Attention shift between levels may be a matter of resolution, or
+
+a matter of spatial focusing and expansion, or both, like a zoom-lens (c.f., Stoffer, 1993 for attentional zooming). If attention to the global and the local level has a characteristic of spatial attention, it would be plausible to consider that attention shift between levels of a compound stimulus involves the same three stages as Posner proposed. Results of Experiment 2 could be easily understood by Posner's (1988) scheme. Attention shift can be conceptualized in another way. For example, attention shift can be thought as a kind of switching between processing channels with many leakage (crosstalk) points (c.f., Pomerantz, Pristach, & Carson, 1989). According to this metaphor, easiness of a shift would be determined by the amount of allocated resource, relative speed of processing channels, and the extent of crosstalk, etc. It is plausible a couple of attention mechanisms are involved in the processing of compound stimulus. To distinguish these possibilities, further study is needed.
+
+References
+
+Arnheim, R. (1986). The two faces of Gestalt psychology. American Psychologist, 41, 820-824.
+
+Garner, W. R. (1974). The Processing of Information and Structure. Hillsdale, N.J.: Erlbaum.
+
+Garner, W. R. (1978). Selective attention to attributes and to stimuli. Journal of Experimental Psychology: General, 107, 287-308.

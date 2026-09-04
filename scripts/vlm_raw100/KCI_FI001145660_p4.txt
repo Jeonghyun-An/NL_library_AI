@@ -1,0 +1,41 @@
+박제용 외 5인. VEGF expression and angiogenesis in invasive cervical cancer
+
+미세혈관밀도가 증가할수록 VEGF의 반응정도는 통계적으로 유의하게 증가되었다 (Table 1)(p=0.000).
+
+2. 자궁경부병변에서 VEGF의 발현과 병리학적소견과의 관계
+
+Parametrium을 침범한 환자는 3명 중 모두에서 중등도 이상의 면역강도를 보였고 침범하지 않은 환자는 17명 중 12명에서 약양성을 보이고 5명에서 중등도 이상의 면역강도를 나타내었다. 이는 parametrium의 침범유무와 VEGF의 면역반응강도와의 관련성이 통계적으로 유의함을 보여주었다 (p=0.021). 림프혈관강 침범은 VEGF 면역반응정도와 통계적으로 유의하지 않았다 (Table 2).
+
+Table 2. Correlation between VEGF expression and parametrial invasion
+
+| VEGF Expression | Parametrium invasion | P |
+| --- | --- | --- |
+|  | Negative | Positive |
+| Weak positive | 12 | 0 | 0.021 |
+| Moderate or strong positive | 5 | 3 |  |
+| Total | 17 | 3 |  |
+
+VEGF: vascular endothelial growth factor (χ²-test).
+
+3. 자궁경부병변에서 VEGF의 발현과 자궁경부 침범정도와의 관계
+
+VEGF는 혈관의 기질을 유도해서 직접적으로 혈관내피세포에 mitogen으로써 뿐만 아니라 미세혈관 투과에 도 중요한 매개체 역할을 한다. VEGF는 여러 가지 다양한 양성조직과 악성조직에서 과발현된다. 난소(황체 세포), 난관, 자궁내막 같은 양성조직에서 VEGF가 과발현되고, 이것은 국소적 혈관 투과성을 증가시킴으로, 이 장기들에서의 분비에 있어 중요한 역할을 한다.13,14 대뇌의 맥락층(choroid plexus)과 신장의 사구체에서의
+
+고찰
+
+중양의 맥관형성 (angiogenesis)은 혈관내피세포의 성장, 모세혈관주위의 세포의 물질의 분해, 혈관내피세포의 이동과 기능을 갖춘 모세혈관으로의 분화를 포함하는 복잡한 과정이다. 그 과정에서 관여하는 많은 혈관생성인자들 중, 중앙으로부터 유도되는 중요 인자들은 bFGF, VEGF, PD-ECGF 그리고 IL-8이다.11 그 중 VEGF는 처음에는 vascular permeability factor (34-42 kDa)으로써 인식되었고, 이로 인하여 복수를 유도한다고 생각되었다.11 이후, VEGF는 이런 기능이외에도 혈관내피세포의 성장과 맥관형성에 중요한 역할을 한다고 알려졌다.11 VEGF는 현재까지 알려진 가장 강력한 혈관 생성인자로서 혈관내피세포의 성장뿐만 아니라 혈관의 투과성을 증가시키는 역할을 가지고 있다.2 분자적으로는 VEGF는 45 kD의 분자량을 가진 cytokine으로써 혈관내피세포의 specific class II receptor tyrosine kinase와 결합하여 세포내 calcium ion 농도를 증가시킴으로써 효과를 나타낸다.1 많은 종류의 종양에서 분비되는 VEGF는 중앙세포에 autocrine pathway로써 중앙의 성장을 유도하는 것이 아니라, 주위 미세혈관에 대한 paracrine pathway를 통해서 성장을 유도한다고 알려졌다.12 VEGF의 여러 가지 아형중에서도 특히 VEGF165와 VEGF121이 자궁경부암에서 주로 발현된다고 알려져 있다.12
+
+VEGF는 혈관의 기질을 유도해서 직접적으로 혈관내피세포에 mitogen으로써 뿐만 아니라 미세혈관 투과에 도 중요한 매개체 역할을 한다. VEGF는 여러 가지 다양한 양성조직과 악성조직에서 과발현된다. 난소(황체 세포), 난관, 자궁내막 같은 양성조직에서 VEGF가 과발현되고, 이것은 국소적 혈관 투과성을 증가시킴으로, 이 장기들에서의 분비에 있어 중요한 역할을 한다.13,14 대뇌의 맥락층(choroid plexus)과 신장의 사구체에서의
+
+자궁경부 기질 침범의 정도를 1/3 이하와 1/3 이상으로 나누어서 VEGF 면역반응 정도와 비교 시 통계적으로 유의성이 없었다 (Table 3).
+
+Table 3. Correlation between VEGF expression and cervical invasion depth
+
+| VEGF Expression | Invasion depth | P |
+| --- | --- | --- |
+|  | ≤1/3 | >1/3 |
+| Weak positive | 8 | 4 | 0.542 |
+| Moderate positive | 2 | 2 |  |
+| Strong positive | 1 | 2 |  |
+
+VEGF: vascular endothelial growth factor (χ²-test).

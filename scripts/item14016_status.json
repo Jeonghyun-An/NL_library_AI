@@ -1,0 +1,13 @@
+{
+  "id": 14016,
+  "stage": "summarized",
+  "status": "running",
+  "attempt": 2,
+  "dispatched_at": "2026-08-18 06:13:47.411108+00:00",
+  "updated_at": "2026-08-18 09:47:59.128501+00:00",
+  "last_error": "14400s 무응답 — 워커 중단 추정 (stale 복구)",
+  "stage_timings": {
+    "extract_s": 354.2,
+    "summarize_s": 30.8
+  }
+}

@@ -1,0 +1,17 @@
+7. 결론 및 향후 연구
+
+본 연구는 게임 방송과 esports 대회 운영에서 발생하는 저작권 문제와 중앙 집중화된 구조의 한계를 인식하고, 이를 해결하기 위한 대안으로 DAO 기반의 방송인 중심 게임 대회 운영 모델을 제안하였다. 기존의 게임사 중심 운영 구조에서는 대회의 규칙, 일정, 상금 구조 등이 대형 게임사나 소수의 조직위원회에 의해 독점적으로 결정되며, 방송인과 팬 커뮤니티의 참여가 제한되어 창의성과 공정성이 저해되는 문제가 있었다. 이러한 한계를 극복하기 위해, DAO를 도입하여 방송인, 선수, 팬, 게임사 등 다양한 이해관계자가 대회의 기획과 운영에 직접 참여할 수 있는 탈중앙화된 구조를 설계하였다. 스마트 컨트랙트를 활용한 자동화된 수익 분배와 투명한 의사 결정 과정을 통해 공정성과 신뢰성을 확보하고, 기여도에 따른 보상 체계를 구축함으로써 참여 동기를 강화하였다.
+
+또한, 본 연구는 DAO 기반 모델이 게임 생태계에 미치는 긍정적인 영향을 분석하였다. 탈중앙화된 운영 구조는 소규모 게임사와 인디게임이 대회에 참여하고 성장할 수 있는 기회를 제공하며, 방송인과 팬 커뮤니티의 창의적인 대회를 가능하게 한다. 이는 생태계의 다양성과 지속 가능성을 강화하고, 공정한 경쟁 환경을 조성함으로써 전체적인 게임 산업의 발전에 기여할 수 있다. 그러나 DAO 모델의 성공적인 구현을 위해서는 기술적 보안 강화, 법적 규제 준수, 참여자 유도 및 유지 전략 등 다양한 도전 과제를 해결해야 한다.
+
+향후 연구에서는 DAO 기반 방송인 중심 대회 운영 모델의 실증적 적용 사례를 분석하고, 법적 규제 및 규제적 프레임워크를 정립하며, 사용자 경험을 개선하는 방안을 모색할 필요가 있다. 또한, 기술적 구현과 보안 강화에 대한 지속적인 연구와, 참여자들의 신뢰를 구축하고 커뮤니티를 활성화하기 위한 전략적인 접근이 요구된다. 본 연구를 통해 제안된 DAO 기반 모델은 게임 방송과 esports 대회의 혁신을 이끌어내고, 다양한 이해관계자가 협력할 수 있는 지속 가능한 생태계를 구축하는 데 중요한 역할을 할 것으로 기대된다.
+
+본 연구는 문화체육관광부 및 한국콘텐츠진흥원의 2024년도 신기술 융합 저작권 기술개발 사업으로 수행되었음(과제명 : Web3.0 탈중앙화 환경에서 창작자간의 저작권 이용허락 거래 자동화 기술 개발, 과제번호 : RS-2024-00441360, 기여율 : 100%)
+
+참고 문헌
+
+[1] Gian Luca Vitale, “Publishers & Game Developers: The mighty ones within”, Digital Trend Outlook 2020 : Esports (PricewaterhouseCoopers), (2020), https://www.pwc.de/en/technology-media-and-telecommunication/digital-trend-outlook-esport-2020/publishers-game-developers.html
+
+[2] PSX Extreme, “The Evolution of Esports: Why Indie Games are Taking Center Stage in Competitive Gaming”, PSX Extreme, (2024.09.05.), https://psxextreme.com/feature/the-evolution-of-esports-why-indie-games-are-taking-center-stage-in-competitive-gaming
+
+[3] Olivia, “Famous Streamers Are Investing in Esports”, Abios Press, (2023.09.12), https://abiosgaming.com/press/famous-streamers-investing-esports/

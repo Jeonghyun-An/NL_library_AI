@@ -1,0 +1,51 @@
+장혜숙, 백형선,
+
+3) Infraorbitale(Inf. Or) : 안와의 최하방점이면서 안와하공의 상방에 위치. 양측성
+4) Nasion(N) : 비골의 최상방 봉합부위
+5) Anterior nasal spine(ANS) : 정중면에서 골격성 전비극의 끝
+6) Subspinale(A) : 전비극과 prothion 사이의 최심점. 좌우로 상악의 중심에 위치
+7) Upper incisor(Prosthion, UI) : 상악 치조골 상의 최전하방점이면서 상악 중절치 사이에 위치
+8) Lower incisor(Infradentale, LI) : 하악 치조골 상의 최전상방점이면서 하악 중절치 사이에 위치
+9) Supramentale(B) : 하악골정중봉합의 infradentale와 Pog 사이의 최심점
+10) Pogonion(Pog) : 하악골정중봉합의 가장 돌출된 부위
+11) Menton(Me) : 하악골정중봉합의 최하방점
+12) Posterior nasal spine(PNS) : 바닥에서 올려다본 post. nasal spine
+13) Inner condylar margin(Con.in) : 바닥에서 올려다본 과두의 가장 안쪽. 양측성
+14) Outer condylar margin(Con.out) : 바닥에서 올려다본 과두의 가장 바깥쪽. 양측성
+15) Porion(Por) : 외이공의 최상, 외각점. 양측성
+16) Condylion(Con) : 외측면에서 관찰되는 과두의 최후상방점. 양측성
+17) Upper gonion(Go1) : 하악각 만곡의 시작점. 양측성
+18) Middle gonion(Go2) : 하악각 만곡의 중간지점. 양측성
+19) Lower gonion(Go3) : 하악각 만곡의 최하점. 양측성
+20) Antegonial notch(Ant.Go.notch) : 하악각 전방의 최심점. 양측성
+21) Sigmoid notch(S) : Sigmoid notch의 최심점. 양측성
+22) Basion(Ba) : 후두공의 전연의 중간점
+
+< 연조직 계측점 >
+1) Endocanthion(EN) : 정면에서 보이는 내측 안각. 양측성
+2) Exocanthion(EX) : 정면에서 보이는 외측 안각. 양측성
+3) Soft tissue Nasion(N ') : 정면에서 보이는 연조직 Nasion
+
+4) Pronasale(Prn) : 정면에서 보이는 코의 최전방점
+5) Alare lateralis(AL) : 30도 측면에서 관찰되는 비익의 최외각점. 양측성
+6) Upper nostril point(UNP) : 바닥에서 바라 본 비공의 최상방점. 양측성
+7) Lower nostril point(LNP) : 바닥에서 바라 본 비공의 최하방점. 양측성
+8) Subnasale(Sn) : 코와 상순이 연결되는 중간점이며 인중의 상부 꼭지점
+9) Upper lip point(ULP) : 상순의 좌우 최상방점. 입술산의 꼭지점. 양측성
+10) Cheilion(Ch) : 입꼬리의 끝점. 양측성
+11) Stomion(St) : 상하순이 만나는 선에서 입술의 좌우 중앙에 위치
+12) Lower lip center(LLC) : 하순의 상하, 좌우 중심에 위치
+13) Soft tissue B(B') : 이순구의 최심점, 하악의 좌우 중앙에 위치
+14) Soft tissue Pogonion(Pog') : 가장 전방으로 돌출된 턱끝점, 하악의 좌우 중앙에 위치
+15) Soft tissue Menton(Me') : 턱의 최하방점, 하악의 좌우 중앙에 위치
+16) Preaurale(Pre) : 측면에서 보이는 귓구멍의 최전방점. 양측성
+17) Soft tissue gonion(Go') : 하악의 연조직 gonion. 양측성
+
+3) 계측점의 반복재현성 분석
+정상인과 안면 비대칭환자의 3차원 입체 영상에서 각각 경조직 계측점 37개와 연조직 계측점 26개를 한 명의 술자가 5회씩 2주 간격으로 2회에 걸쳐 측정하였다. Microsoft excel program으로 송출된 각 계측점의 x, y, z 좌표값의 표준편차를 구하여 그 차이를 분석하였다. 표준편차가 작을수록 계측점의 반복 재현성이 높다고 평가하였다.
+
+Ⅲ. 연구결과
+1. 건조두개골의 실측치와 3차원 CT 영상 계측치의 비교 (Table 1, Figure 8)
+2주간격으로 5회씩 총 10회 계측한 값의 평균값을 비교해 볼 때, 실측치와 3차원 CT 영상에서의 계측치
+
+318

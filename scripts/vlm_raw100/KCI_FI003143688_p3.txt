@@ -1,0 +1,42 @@
+김지원·서동일
+313
+
+Table 1. Monthly average rainfall of the YoungJu Dam watershed during 2021–2023(Unit : mm)
+
+| Year | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec | Total |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2021 | 6 | 10 | 112 | 98 | 153 | 62 | 196 | 233 | 153 | 50 | 37 | 0 | 1,110 |
+| 2022 | 0 | 0 | 87 | 41 | 3 | 69 | 145 | 284 | 33 | 45 | 38 | 4 | 749 |
+| 2023 | 24 | 9 | 26 | 57 | 110 | 283 | 372 | 311 | 192 | 10 | 28 | 90 | 1,512 |
+
+Table 2. Model elements of CE–QUAL–W2 model for YoungJu Dam
+
+| Water body | Branch | Segment | Simulation water quality constituents |
+|---|---|---|---|
+| 2 | 3 | 119 | T-P, Chl-a, TOC (38 constituents possible) |
+
+Fig. 2. Model grids of CE–QUAL–W2 model for YoungJu reservoir
+
+[그림: 모델 격자 (Top view, Side view, Data view)]
+
+2020). 영주댐 저수지 모형의 지형요소는 Table 2과 Fig. 2와 같다. 댐 운영 시나리오에 따른 댐 수질변화 모의를 위해 월간단위의 물환경측정망의 자료 개수의 한계를 보완하기 위하여 2021년의 유입지류별 유입량과 수질은 「댐 유역 단위 통합형 물환경 관리기술개발(2nd)」(Lee et al., 2021)의 유역모델을 통해 도출된 일일 수질자료를 활용하였다. 일일 유입수질자료는 Fig. 3와 같으며, 동일한 유입조건을 통해 4가지 댐 운영 시나리오에 대해 적용하였다.
+
+2.2.4 모형의 보정 및 평가지표
+
+본 연구에서는 모의 결과의 신뢰성을 평가하기 위해 MAE (Mean Absolute Error, 절대평균오차)와 RMSE(Root Mean Squared Error, 평균제곱근오차)를 적용하였다(Table 3). 두 개의 지표 모두 실측값과 모의값의 오차율에 대한 지표로써, 0에 가까울수록 모의값이 실측값과 비슷하다는 의미를 나타낸다. 다만, 수질자료와 같은 환경자료들은 일반적인 정규분포를 따르지 않는 자료일수록 높게 나타나는 경향성이 있음을 고려하였다(Shin et al., 2013).
+
+2.3.1 국내 댐 기본계획방류량 현황
+
+국내 다목적댐의 월별 운영계획은 당해 댐의 용수공급 조건에 따라 다양하게 방식으로 배분되어 있다. 실제 댐의 운영은 해당연도의 강수량 등 기상조건에 따라 변동되지만 기본적인 운영계획은 용수공급조건에 따라 설정되어 있는 기본계획방류량을 기준으로 운영되고 있다. 하천유지용수의 경우, 각 댐별 목적에 따라 다양한 형태를 보이고 있으며, Table 4와 Fig. 4와 같이 국내 다목적댐 중 소양강댐, 용담댐, 합천댐, 주암댐 등은 연중 일정량을 방류하고 있고, 남강댐 및 영주댐은 갈수기방류량이 타 시기에 비해 높은 데이며, 대청댐의 경우 기타 용수공급목적으로 인해 별도의 하천유지용수가 배분되어 있지 않다.
+
+2.3 댐 운영 시나리오 검토
+
+2.3.2 댐 운영 시나리오 선정
+
+현재 영주댐의 운영방식인 갈수기 증가방류방식에 대한 평가 및 기타 방류방식으로 변경시 댐 수질의 변화여부를
+
+Fig. 3. Model inflow boundary conditions (Timeseries data of the dam inflow and water quality)
+
+[그림: 모델 유입 경계 조건 (유입량, 수질)]
+
+Journal of Wetlands Research, Vol. 26, No. 4, 2024

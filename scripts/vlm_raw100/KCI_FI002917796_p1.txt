@@ -1,0 +1,38 @@
+Tribol. Lubr., Vol. 38, No. 6, December 2022, pp. 241~246
+Tribology and Lubricants
+ISSN 2713-8011(Print) • 2713-802X(Online)
+http://Journal.tribology.kr
+DOI https://doi.org/10.9725/kts.2022.38.6.241
+
+극저온이 22MnB5강의 냉간 스탬핑 마모에 미치는 영향
+지민기¹ · 노연주² · 강현학³ · 전태성⁴†
+¹인천대학교 기계공학과 박사과정생
+²인천대학교 기계공학과 석사과정생
+³인천대학교 기계공학과 학부생
+⁴인천대학교 기계공학과 부교수
+
+Effects of Cryogenic Temperature on Wear Behavior of 22MnB5 Under Cold Stamping
+Min-Ki Ji¹, Yeonju Noh², Hyun-Hak Kang³ and Tea-Sung Jun⁴†
+¹Ph.D. Student, Dept. of Mechanical Engineering, Incheon National University
+²M.S. Student, Dept. of Mechanical Engineering, Incheon National University
+³Undergraduate Student, Dept. of Mechanical Engineering, Incheon National University
+⁴Associate Professor, Dept. of Mechanical Engineering, Incheon National University
+
+(Received December 1, 2022 ; Revised December 16, 2022 ; Accepted December 16, 2022)
+
+Abstract – This paper presents the effects of cryogenic temperature on the wear behavior of 22MnB5 blank under cold stamping. After immersing the blank in liquid nitrogen (LN2) for 10 min, a strip drawing test was performed within 10 s. The hardness was measured using the Rockwell hardness test, which increased from 165 HV at 20°C to 192 HV at cryogenic temperature. The strip drawing test with 22MnB5 blank and SKD61 tool steel shows that for the different wear mechanisms on the tool surface with respect to temperature; adhesive wear is dominant at 20°C, but abrasive wear is the main mechanism at cryogenic temperature. As the friction test is repeated, sticking gradually increases on the tool surface at 20°C, whereas the scratch increases at cryogenic temperature. For the friction behavior, the friction coefficient rapidly increases when adhesive wear occurs, and it occurs more frequently at 20°C. The results for nanoindentation near the worn blank surface indicate a difference of 1.3 GPa at 20°C and 0.8 GPa at cryogenic temperature, indicating increased deformation by friction at 20°C. This occurs because thermally activated energy available to move the dislocation decreases with decreasing temperature.
+
+© Korean Tribology Society 2022. This is an open access article distributed under the terms of the Creative Commons Attribution License(CC BY, https://creativecommons.org/licenses/by/4.0/), which permits unrestricted use, distribution, and reproduction of the work in any medium, provided the original authors and source are properly cited.
+
+Keywords – Cold stamping(냉간 스탬핑), Cryogenic(극저온), Adhesive wear(접착 마모), Abrasive wear(연마 마모)
+
+†Corresponding author: Tea-Sung Jun
+Tel: +82-32-835-8034, Fax.: +82-32-835-0793
+E-mail: t.jun@inu.ac.kr
+https://orcid.org/0000-0002-4968-2431 (Min-Ki Ji)
+http://orcid.org/0000-0002-6542-9137 (Min-Ki Ji)
+
+1. 서 론
+핫스탬핑 공정은 강판의 미세조직 제어를 통해 강도와 연비 향상에 뛰어난 공정으로 자동차 산업에서 각광받고 있다. 핫스탬핑 공정은 크게 열처리 및 성형기로 이루어져 있다.
+
+[그림: 한 줄 설명]

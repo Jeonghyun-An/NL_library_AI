@@ -1,0 +1,25 @@
+References
+
+Bae SY, Seo DI. (2021). “Changes in algal bloom dynamics in a regulated large river in response to eutrophic status”. Ecological Modelling, 454, 109590.
+
+Jeong SA, Lee HS. (2021). The Study on the Development of Water Quality Models for Rivers Connected to Dams and Weirs, and Polluted Tributaries. Korea Water Resources Corporation.
+
+Kim, JY, Seo DI, Jones J. (2022). “Harmful algal bloom dynamics in a tidal river influenced by hydraulic control structures”. Ecological Modelling, 467, 109931.
+
+Korea Water Resources Corporation. (2022). The Study on Nutrient Source Analysis and Management Strategies in the Upper Reach of NaeseongCheon.
+
+Kim SJ, Seo DI, Ahn KH. (2011). “Estimation of proper parameters to improve modeling of thermal stratification in Korean Reservoir”. Journal of Korean Water Resources Association, Vol 44., No. 9, pp. 741–752.
+
+Lee SY, Choi KS, Lee HJ, Kang BS, Kim DK. (2021). Development of Integrated Water Environment Management
+
+Technology for Dam Watershed(2nd Year). Korea Water Resources Corporation.
+
+Lee SY, Jeong SA, Yi HS. (2017). The Study on Water Quality Stabilization Measures during Initial Dam Impoundment (2nd Year). Korea Water Resources Corporation.
+
+Chung SW, Choi JH, Park JC, Song YI, and Yu KM(2007). “Assessment of selective withdrawal facility in the Imha reservoir using CE–QUAL–W2 model”. Journal of Korean Society on Water Environment 23(2); 228–35.
+
+Ministry of Land, Transport and Maritime Affairs of Korea & Korea Water Resources Corporation. (2009). Basic plan report for the Songriwon multipurpose dam construction project.
+
+Shin YN, Lee S, Kang T, Kim K, Yoo M, Kim M, Lee B, Hong J, Kim S. (2013). “Development of Statistical Analysis Methods for Water Quality Assessment”. National Institute of Environmental Research.
+
+Yi HS, Jeong SA, Park SY, Lee Y. 2008. “Modeling study of turbid water in the stratified reservoir using linkage of HSPF and CE–QUAL–W2”. Journal of Korean Society of Environmental Engineers, 30(1); 69–78.

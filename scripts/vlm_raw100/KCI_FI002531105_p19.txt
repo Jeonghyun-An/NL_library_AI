@@ -1,0 +1,17 @@
+324 일반논단
+
+대방을 불리하게 하는 약관의 내용을 무효로 볼 것인지에 관한 법해석(Inhaltskontrolle)에 따른 ‘허용되지 않는 일반약관’(unzulässige Allgemeine Geschäftsbedingungen)이 사용된 때, 해당 계약조건의 합의는 남용적이라고 판단하였다. 그러면서 이러한 약관이 약관사용자의 시장력 또는 상당한 우월적 힘(Marktmacht oder einer großen Machtüberlegenheit des Verwenders)에 기반한 것이라면 더욱 그러하다.
+
+Pechstein 사건에서 BGH는 거래조건남용의 각 유형을 확정하기 위해서는 언제나 헌법적 지위(grundrechtliche Positionen)에 관한 고려를 포함한 포괄적 이익형량(eine umfassende Interessenabwägung)이 요구된다고 판시하였다. 이에 따르면 GWB 제19조는 기본권 보호를 위해 인용될 수 있는데, 계약 당사자 중 일방이 계약내용을 사실상 일방적으로 정할 수 있는 ‘매우 강력한 우위’(ein so starkes Übergewicht)를 가지며, 그로 인해 상대방에게 있어서 자율성이 결여된 결정(소위 ‘Fremdbestimmung’)을 야기할 수 있는 경우에 적용된다. 그와 같은 상황, 즉 시장지배적 사업자가 헌법상 보장된 거래 상대방의 지위를 자의적으로 다루는 경우, 국가차원의 규제 특히 GWB 제19조를 포함한 민법상 일반조항(§§ 138, 242, 307 u. 315 BGB)이 기본권 보호를 위하여 균형적으로 적용되어야 한다고 판단한다.
+
+우에는, 이는 효력이 없다. 부당한 불리함은 그 조항이 명확하지 아니하고 이해할 수 없는 것이라면 사정에 기하여도 인정될 수 있다. [...]
+
+96) 2002년 BGB 개정에서 구 AGBG 제9조, 제10조, 제11조의 내용은 BGB 제307조 내지 제309조에서 수용되었으며, BGB 제307조에서 신의칙에 반하는 약관조항의 무효를 규정한 일반조항 외에 지침에서 예시한 불공정한 계약조항의 금지에 관해서는 제308조와 제309조에서 상세히 규정하고 있다.
+
+97) BKartA v. 6.2.2019, B6-22/16, Rn. 527, 534; BGH, Urteil v. 24.01.2017, KZR 47/14, Rn. 35-VBL-Gegenwert II. 이러한 BGH의 입장은 Pechstein 판결에서도 동일하게 유지되었다(BGH v. 7.6.2016, KZR 48-Pechstein/International Skating Union). 앞서 베를린 지방법원의 2018.1. 판결에서도 BGB 제307조, 제309조에 위반되는 것으로, 이용자의 의사표시인 일반거래약관으로서 효력 여부를 판단하여 이를 무효로 보았다.
+
+98) BGH v. 6.11.2013, KZR 58/11-VBL-Gegenwert, WuW 2014, 57, Rz. 65; BGH는 이와 유사한 사안에 대해 1986년에 이미 판단을 내린 바 있다. BGH v. 16.12.1986, KZR 36/85-Taxizentrale Essen, WuW/E BGH 2341, 2342 f.
+
+99) BGH v. 7.6.2016, KZR 6/15, Rn. 55-Pechstein; Monopolkommission, Sondergutachten 68, 2015, Rn. 518(Fn. 417: OLG Düsseldorf, Beschluss vom 21. Dezember 2012, VI-Kart 5/11 (V), Rz. 44: „Ein Missbrauch in Form einer unbilligen Behinderung ist zudem aufgrund einer Interessenabwägung festzustellen, bei der alle Belange in die Bewertung einzubeziehen sind, die nicht auf einen gesetzwidrigen Zweck gerichtet sind.“
+
+100) ‘Fremdbestimmung’은 계약 일방의 극복하기 힘든 우위로 인해 그 계약상대방의 사적 자치가 훼손된 상황으로 이해할 수 있다.

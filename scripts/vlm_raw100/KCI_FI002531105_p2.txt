@@ -1,0 +1,21 @@
+개인정보보호(Schutz personenbezogener Daten)와 경쟁법 적용 307
+
+한 조사(Facebook-Verfahren)를 통해, 이용자 및 디바이스 관련 정보처리(Verarbeitung nutzer- und gerätebezogener Daten)에 있어서 광범위한 제한을 부과하는 방향으로 결론을 내리면서 관련 논의의 이정표와 같은 사례로 인식되게 되었다.
+
+그런데 지난 8월 26일 연방카르텔청이 부과한 잠정적 처분의 임시적 명령(einstweilige Anordnungen)에 대한 Facebook의 이의제기를 Düsseldorf 고등법원이 받아들였다.⁴) 그러면서 법원이 당해 결정에서 제시하였던 연방카르텔청의 논거들에 대하여 강한 의구심(massive und ernstliche Zweifel)을 가지고 있음을 밝히면서 그 관심이 증폭되고 있다.⁵)
+
+정보의 수집·분석 및 처리를 통해 구축한 빅데이터를 기반으로 수익을 창출하는 사업모델에 대한 EU차원의 개인정보보호 준수 여부에 관심이 커지는 상황에서⁶) 나온 이번 독일연방카르텔청의 결정과 뒤셀도르프 고등법원의 판단은 개인정보보호와 소비자보호, 경쟁법 집행 방향에 관한 경쟁당국과 법원의 입장을 직·간접적으로 드러내고 있다.
+
+이는 결국 시장지배적 사업자의 정보보호위반(Datenschutzverstoß)이 경쟁법적으로 무관하지 않음을 확인한 것으로 이해될 수 있다. 다만 이와 관련하여 i) 막대한 데이터 보유와 시장지배력의 관계를 어떻게 볼 것인지, ii) 만약 (빅)데이터를 시장지배력의 원천 내지 보유 여부 판단을 위한 주된 표지로 인정한다면 그 집중 또는 남용을 규제할 수 있는 규범적·논리적 근거는 무엇인지, iii) 나아가 경쟁당국이 경쟁법 외에 정보보호규범 등의 위반 여부까지 판단할 수 있는지에 관한 근본적 의문⁷) 등에 대한 선행적 논의가 요구된다.⁸)
+
+---
+
+4) OLG Düsseldorf. Beschl. v. 26.8.2019–VI–Kart 1/19 (V). 아울러 GWB 제60조(Einstweilige Anordnungen), 제64조(Aufschiebende Wirkung) 및 제65조(Anordnung der sofortigen Vollziehung) 등에 관한 자세한 설명은 이 글의 본문을 참조.
+
+5) NRW-Justiz, “Facebook: Anordnungen des Bundeskartellamts möglicherweise rechtswidrig und deshalb einstweilen außer Vollzug”, Pressemitteilung Nr. 25/2019, 2019.8.26.; SPIEGEL Online, „Gericht verpasst Kartellamt im Verfahren gegen Facebook einen Dämpfer“, 2019.8.26.: „Das OLG jedoch hat daran–wie natürlich auch Facebook selbst–ernstliche Zweifel“ und hält die Anordnungen des Amtes für möglicherweise rechtswidrig. „Entgegen der Auffassung des Bundeskartellamts lässt die von ihm beanstandete Datenverarbeitung durch Facebook keinen relevanten Wettbewerbsschaden und auch keine wettbewerbliche Fehlentwicklung besorgen“, so das Gericht.
+
+6) Monopolkommission, Sondergutachten 68, 2015, Rn. 64 ff. (Daten und Relevanz für den Wettbewerb).
+
+7) 독일 경쟁당국의 관할권에 대한 선행적 이해를 위해서는, 비록 제한적이기는 하지만 GWB 제9차
+
+8) www.kci.go.kr

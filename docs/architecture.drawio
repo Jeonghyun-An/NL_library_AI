@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ═══════════════════════════════════════════════════════
+         TITLE BAR
+    ═══════════════════════════════════════════════════════ -->
+    <mxCell id="t1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1B2B5E;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="10" y="8" width="1634" height="42" as="geometry" />
+    </mxCell>
+    <mxCell id="t2" value="NL Library AI — 국립도서관 AI 시맨틱 검색 플랫폼" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontColor=#FFFFFF;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="22" y="8" width="700" height="42" as="geometry" />
+    </mxCell>
+    <mxCell id="t3" value="핵심 기능 — AI 시맨틱 검색 · RAG 심층 대화 · PDF 자동 수집 파이프라인" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontColor=#93C5FD;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="880" y="8" width="752" height="42" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════
+         LEFT — 사용자 채널 (x=10, w=255)
+    ═══════════════════════════════════════════════════════ -->
+    <mxCell id="l0" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEF4FF;strokeColor=#93C5FD;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="10" y="58" width="255" height="1100" as="geometry" />
+    </mxCell>
+    <mxCell id="l1" value="사용자 채널" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E4D9E;strokeColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="18" y="66" width="239" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- Web Browser -->
+    <mxCell id="l2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#BFDBFE;arcSize=4;" vertex="1" parent="1">
+      <mxGeometry x="18" y="106" width="239" height="295" as="geometry" />
+    </mxCell>
+    <mxCell id="l3" value="Web Browser (Nuxt 4 + Vue 3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="22" y="111" width="231" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="l4" value="🔍  도서 검색 UI (SearchBar)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#93C5FD;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="148" width="225" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="l5" value="✨  AI 추천 답변 (TopResult)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE9FE;strokeColor=#C4B5FD;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="184" width="225" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="l6" value="💬  이 책과 대화하기 (BookChat)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE7F3;strokeColor=#F9A8D4;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="220" width="225" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="l7" value="📖  추천 도서 리스트 (ResultList)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#93C5FD;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="256" width="225" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="l8" value="🏷️  키워드 칩 · 관련도 바" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#93C5FD;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="292" width="225" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="l9" value="⚡  SSE 실시간 스트리밍 수신" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#FCD34D;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="328" width="225" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="l9b" value="marked.js 마크다운 렌더링" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#86EFAC;fontSize=10;align=left;" vertex="1" parent="1">
+      <mxGeometry x="27" y="362" width="225" height="28" as="geometry" />
+    </mxCell>
+
+    <!-- REST API Client -->
+    <mxCell id="l10" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#99F6E4;arcSize=4;" vertex="1" parent="1">
+      <mxGeometry x="18" y="415" width="239" height="105" as="geometry" />
+    </mxCell>
+    <mxCell id="l11" value="REST API Client" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F766E;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="22" y="420" width="231" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="l12" value="Swagger UI / OpenAPI 3.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CCFBF1;strokeColor=#5EEAD4;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="27" y="455" width="225" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="l13" value="외부 시스템 연동 (NLOP API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CCFBF1;strokeColor=#5EEAD4;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="27" y="487" width="225" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- 운영 / 모니터링 -->
+    <mxCell id="l14" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D1D5DB;arcSize=4;" vertex="1" parent="1">
+      <mxGeometry x="18" y="535" width="239" height="135" as="geometry" />
+    </mxCell>
+    <mxCell id="l15" value="운영 · 모니터링" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#374151;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="22" y="540" width="231" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="l16" value="Portainer (Docker 스택 관리)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#D1D5DB;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="27" y="575" width="225" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="l17" value="FastAPI /docs (Swagger UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#D1D5DB;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="27" y="607" width="225" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="l18" value="Celery Flower (작업 모니터링)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#D1D5DB;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="27" y="639" width="225" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- 프로토콜 레이블 (좌→중앙 화살표 옆) -->
+    <mxCell id="l19" value="HTTPS" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#1E40AF;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="253" y="190" width="52" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="l20" value="SSE" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#7C3AED;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="253" y="220" width="52" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="l21" value="REST" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#0F766E;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="253" y="460" width="52" height="20" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CENTER — NL Library AI Platform (x=275, w=970)
+    ═══════════════════════════════════════════════════════ -->
+    <mxCell id="c0" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F4FF;strokeColor=#6B7280;arcSize=1;" vertex="1" parent="1">
+      <mxGeometry x="275" y="58" width="970" height="1100" as="geometry" />
+    </mxCell>
+
+    <!-- 플랫폼 헤더 -->
+    <mxCell id="c1" value="NL Library AI Platform" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1B2B5E;strokeColor=none;fontColor=#FFFFFF;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="275" y="58" width="970" height="44" as="geometry" />
+    </mxCell>
+    <mxCell id="c1b" value="FastAPI (Async) · SQLAlchemy · Celery · Docker Compose" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontColor=#93C5FD;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="820" y="58" width="415" height="44" as="geometry" />
+    </mxCell>
+
+    <!-- UI 프리뷰 영역 -->
+    <mxCell id="c2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDE8F8;strokeColor=#93AACF;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="283" y="112" width="954" height="115" as="geometry" />
+    </mxCell>
+    <mxCell id="c3" value="&lt;b&gt;도서 검색 UI&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#374151&apos;&gt;하이브리드 시맨틱 검색&lt;br&gt;쿼리 재작성 + 리랭킹&lt;br&gt;chunk / book 이중 모드&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#BFDBFE;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="290" y="120" width="228" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="c4" value="&lt;b&gt;AI 추천 답변 패널&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#374151&apos;&gt;Gemma 3 SSE 스트리밍&lt;br&gt;마크다운 · 키워드 칩&lt;br&gt;관련도 바 시각화&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#BFDBFE;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="525" y="120" width="228" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="c5" value="&lt;b&gt;이 책과 대화하기&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#374151&apos;&gt;RAG 멀티턴 채팅 UI&lt;br&gt;출처 페이지 칩 표시&lt;br&gt;확장/축소 · 기록 유지&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#BFDBFE;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="760" y="120" width="228" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="c6" value="&lt;b&gt;PDF 수집 관리&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#374151&apos;&gt;업로드 · 배치 수집&lt;br&gt;OpenDataLoader 2-tier&lt;br&gt;추출 품질 비교 API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#BFDBFE;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="995" y="120" width="235" height="100" as="geometry" />
+    </mxCell>
+
+    <!-- ── 도메인 에이전트 행 ── -->
+    <mxCell id="c7" value="도메인 에이전트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A7A;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="283" y="238" width="954" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="c8" value="🔍 시맨틱 검색 에이전트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="287" y="270" width="184" height="48" as="geometry" />
+    </mxCell>
+    <mxCell id="c9" value="💬 RAG 대화 에이전트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="478" y="270" width="184" height="48" as="geometry" />
+    </mxCell>
+    <mxCell id="c10" value="📄 PDF 수집 에이전트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="669" y="270" width="184" height="48" as="geometry" />
+    </mxCell>
+    <mxCell id="c11" value="📚 메타데이터 에이전트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="860" y="270" width="184" height="48" as="geometry" />
+    </mxCell>
+    <mxCell id="c12" value="⚙️ 배치 처리 에이전트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1051" y="270" width="179" height="48" as="geometry" />
+    </mxCell>
+
+    <!-- ── 핵심 모듈 섹션 구분선 ── -->
+    <mxCell id="c13" value="핵심 기능 모듈" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#374151;strokeColor=none;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="283" y="330" width="954" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- ══ ROW 1: 검색 파이프라인 (navy) ══ -->
+    <mxCell id="r1h" value="검색 파이프라인" style="text;html=1;strokeColor=none;fillColor=#E0E8FF;align=center;verticalAlign=middle;fontColor=#1E3A7A;fontSize=10;fontStyle=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="283" y="362" width="954" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="r1a" value="&lt;b&gt;쿼리 재작성&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;Gemma 3 12B 기반&lt;br&gt;의도 분석 · 테마 추출&lt;br&gt;DB 테마 직접 조회 우선&lt;br&gt;유사도 검색 패턴 감지&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A7A;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="287" y="384" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r1b" value="&lt;b&gt;하이브리드 벡터 검색&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;BGE-M3 Dense (1024d)&lt;br&gt;+ Sparse (BM25-like)&lt;br&gt;Milvus ANN · Top-K 후보&lt;br&gt;chunk / book 이중 모드&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A7A;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="521" y="384" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r1c" value="&lt;b&gt;크로스인코더 리랭킹&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;Jina Reranker v2&lt;br&gt;정밀 의미 유사도 재정렬&lt;br&gt;도서별 best_score 집계&lt;br&gt;Top-K 최종 선별&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A7A;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="755" y="384" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r1d" value="&lt;b&gt;키워드 · 메타 필터링&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;LLM 핵심 키워드 추출&lt;br&gt;KDC · 언어 · 연도 필터&lt;br&gt;PostgreSQL 동적 쿼리&lt;br&gt;검색 의도 강화&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A7A;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="989" y="384" width="241" height="95" as="geometry" />
+    </mxCell>
+
+    <!-- ══ ROW 2: RAG · 대화 · 분석 (indigo) ══ -->
+    <mxCell id="r2h" value="RAG · 대화 · 분석" style="text;html=1;strokeColor=none;fillColor=#E0E7FF;align=center;verticalAlign=middle;fontColor=#4338CA;fontSize=10;fontStyle=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="283" y="486" width="954" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="r2a" value="&lt;b&gt;RAG 멀티턴 대화&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;book_filter 청크 검색&lt;br&gt;10턴 대화 컨텍스트&lt;br&gt;출처 페이지 자동 추적&lt;br&gt;SSE 실시간 스트리밍&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4338CA;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="287" y="508" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r2b" value="&lt;b&gt;추천 이유 스트리밍&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;SSE 실시간 생성&lt;br&gt;검색 청크 기반 근거&lt;br&gt;마크다운 렌더링&lt;br&gt;/api/books/reason/stream&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4338CA;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="521" y="508" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r2c" value="&lt;b&gt;도서 요약 · 테마 추출&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;Gemma 3 자동 생성&lt;br&gt;summary · themes 저장&lt;br&gt;RAG 시스템 프롬프트 활용&lt;br&gt;PostgreSQL books 테이블&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4338CA;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="755" y="508" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r2d" value="&lt;b&gt;검색 히스토리 관리&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;세션 기반 이력 저장&lt;br&gt;search_history 테이블&lt;br&gt;x-session-id 헤더 추적&lt;br&gt;최근 50건 조회&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4338CA;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="989" y="508" width="241" height="95" as="geometry" />
+    </mxCell>
+
+    <!-- ══ ROW 3: PDF 수집 파이프라인 (green) ══ -->
+    <mxCell id="r3h" value="PDF 수집 파이프라인 (2-Tier)" style="text;html=1;strokeColor=none;fillColor=#D1FAE5;align=center;verticalAlign=middle;fontColor=#065F46;fontSize=10;fontStyle=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="283" y="610" width="954" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="r3a" value="&lt;b&gt;OpenDataLoader 추출 (1차)&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;langchain-opendataloader-pdf&lt;br&gt;Markdown 포맷 · 표/이미지&lt;br&gt;Java 17 기반 고품질 OCR&lt;br&gt;+51% 텍스트 추출량 향상&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#065F46;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="287" y="632" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r3b" value="&lt;b&gt;VLM 폴백 추출 (2차)&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;Qwen3-VL-8B (vLLM)&lt;br&gt;[그림] 감지 시 다이어그램 프롬프트&lt;br&gt;OCR 전용 프롬프트 자동 라우팅&lt;br&gt;수식 · 표 · 이미지 페이지 처리&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#065F46;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="521" y="632" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r3c" value="&lt;b&gt;청크 분할 · 임베딩&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;페이지 단위 청킹&lt;br&gt;BGE-M3 Dense+Sparse 동시 생성&lt;br&gt;Milvus upsert (cnts_id 기준)&lt;br&gt;is_embedded 상태 업데이트&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#065F46;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="755" y="632" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r3d" value="&lt;b&gt;Celery 비동기 파이프라인&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;MinIO PDF 저장 · 조회&lt;br&gt;Redis 작업 상태 추적&lt;br&gt;배치 수집 · 재처리&lt;br&gt;process_from_minio 태스크&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#065F46;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="989" y="632" width="241" height="95" as="geometry" />
+    </mxCell>
+
+    <!-- ══ ROW 4: 부가 기능 (purple) ══ -->
+    <mxCell id="r4h" value="부가 기능 · 운영 API" style="text;html=1;strokeColor=none;fillColor=#F3E8FF;align=center;verticalAlign=middle;fontColor=#6B21A8;fontSize=10;fontStyle=1;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="283" y="734" width="954" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="r4a" value="&lt;b&gt;도서 썸네일 캐싱&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;PDF 1페이지 JPEG 렌더링&lt;br&gt;PyMuPDF 0.6× 매트릭스&lt;br&gt;MinIO thumbnails/ 캐싱&lt;br&gt;Cache-Control 24h&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6B21A8;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="287" y="756" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r4b" value="&lt;b&gt;엑셀 카탈로그 적재&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;XLSX → PostgreSQL&lt;br&gt;도서 메타데이터 26개 필드&lt;br&gt;upsert (cnts_id 기준)&lt;br&gt;load_catalog_xlsx 태스크&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6B21A8;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="521" y="756" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r4c" value="&lt;b&gt;PDF 추출 비교 API&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;fitz vs VLM vs OpenDataLoader&lt;br&gt;품질 · 속도 동시 벤치마크&lt;br&gt;페이지별 문자 수 비교&lt;br&gt;POST /compare/extract&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6B21A8;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="755" y="756" width="228" height="95" as="geometry" />
+    </mxCell>
+    <mxCell id="r4d" value="&lt;b&gt;태스크 상태 관리&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;Celery AsyncResult 추적&lt;br&gt;PENDING / STARTED / SUCCESS&lt;br&gt;GET /ingest/{task_id}&lt;br&gt;배치 수집 진행률 조회&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6B21A8;strokeColor=none;fontColor=#FFFFFF;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="989" y="756" width="241" height="95" as="geometry" />
+    </mxCell>
+
+    <!-- API 엔드포인트 요약 바 -->
+    <mxCell id="c_api" value="주요 API 엔드포인트: POST /search  ·  POST /chat/{cnts_id}  ·  POST /reason/stream  ·  POST /ingest/upload  ·  GET /{cnts_id}/thumbnail  ·  POST /compare/extract" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A7A;strokeColor=none;fontColor=#CBD5E1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="283" y="862" width="954" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════
+         RIGHT — AI Models + INFRA (x=1255, w=385)
+    ═══════════════════════════════════════════════════════ -->
+    <mxCell id="ri0" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFF;strokeColor=#93C5FD;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="1255" y="58" width="390" height="1100" as="geometry" />
+    </mxCell>
+
+    <!-- LLM -->
+    <mxCell id="ri1" value="생성형 AI (LLM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C2410C;strokeColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1263" y="66" width="374" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="ri2" value="&lt;b&gt;Gemma 3 12B&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#6B7280&apos;&gt;vLLM 서빙 · port 18080 · OpenAI 호환 API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FED7AA;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="102" width="362" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ri3" value="쿼리 재작성" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#FED7AA;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="148" width="115" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri4" value="추천 이유 생성" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#FED7AA;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1388" y="148" width="115" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri5" value="RAG 대화 답변" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#FED7AA;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="180" width="115" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri6" value="도서 요약 · 테마" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#FED7AA;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1388" y="180" width="115" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri6b" value="키워드 추출 · 메타 필터" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#FED7AA;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="212" width="238" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- VLM -->
+    <mxCell id="ri7" value="멀티모달 AI (VLM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7C3AED;strokeColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1263" y="252" width="374" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="ri8" value="&lt;b&gt;Qwen3-VL-8B-Instruct&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#6B7280&apos;&gt;vLLM 서빙 · port 18081 · Vision 호환&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDD6FE;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="288" width="362" height="40" as="geometry" />
+    </mxCell>
+    <mxCell id="ri9" value="다이어그램 추출 프롬프트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#DDD6FE;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="334" width="178" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri10" value="OCR 전용 프롬프트" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#DDD6FE;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1451" y="334" width="178" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri10b" value="수식 · 표 · 이미지 혼합 페이지" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#DDD6FE;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="366" width="362" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- Embedding / Reranker -->
+    <mxCell id="ri11" value="임베딩 · 리랭킹" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F766E;strokeColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1263" y="406" width="374" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="ri12" value="&lt;b&gt;BGE-M3&lt;/b&gt; (FlagEmbedding)&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#374151&apos;&gt;Dense 1024d + Sparse 하이브리드 · is_query 파라미터 분기&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#99F6E4;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="442" width="362" height="42" as="geometry" />
+    </mxCell>
+    <mxCell id="ri13" value="&lt;b&gt;Jina Reranker v2&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px;color:#374151&apos;&gt;크로스인코더 · 최종 정밀 정렬 · 임계값 필터링&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#99F6E4;fontSize=11;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="490" width="362" height="42" as="geometry" />
+    </mxCell>
+
+    <!-- 내부 시스템 연동 -->
+    <mxCell id="ri14" value="내부 시스템 연동" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#374151;strokeColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1263" y="546" width="374" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="ri15" value="국립도서관 NLOP API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#D1D5DB;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="582" width="178" height="26" as="geometry" />
+    </mxCell>
+    <mxCell id="ri16" value="nl.go.kr 원문 링크 연동" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#D1D5DB;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1451" y="582" width="178" height="26" as="geometry" />
+    </mxCell>
+
+    <!-- INFRA -->
+    <mxCell id="ri17" value="INFRA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1F2937;strokeColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="1263" y="622" width="374" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="ri18" value="&lt;b&gt;PostgreSQL&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;books · chunks · search_history&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A5F;strokeColor=none;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="658" width="178" height="52" as="geometry" />
+    </mxCell>
+    <mxCell id="ri19" value="&lt;b&gt;Milvus&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;벡터 DB · HNSW 인덱스&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A5F;strokeColor=none;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1451" y="658" width="178" height="52" as="geometry" />
+    </mxCell>
+    <mxCell id="ri20" value="&lt;b&gt;MinIO&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;originals/ · thumbnails/ S3 호환&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A5F;strokeColor=none;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="716" width="178" height="52" as="geometry" />
+    </mxCell>
+    <mxCell id="ri21" value="&lt;b&gt;Redis&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;Celery 브로커 · 결과 백엔드&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A5F;strokeColor=none;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1451" y="716" width="178" height="52" as="geometry" />
+    </mxCell>
+    <mxCell id="ri22" value="&lt;b&gt;Docker Compose&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;api · worker · vllm-llm · vllm-vlm · milvus · minio · redis&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#374151;strokeColor=none;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="774" width="362" height="48" as="geometry" />
+    </mxCell>
+    <mxCell id="ri23" value="&lt;b&gt;Portainer&lt;/b&gt;&lt;br&gt;&lt;font style=&apos;font-size:9px&apos;&gt;스택 관리 · Recreate 배포 · 로그 모니터링 · 환경변수 관리&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#374151;strokeColor=none;fontColor=#FFFFFF;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1267" y="828" width="362" height="48" as="geometry" />
+    </mxCell>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ARROWS
+    ═══════════════════════════════════════════════════════ -->
+
+    <!-- 웹 클라이언트 → 플랫폼 (HTTPS/SSE) -->
+    <mxCell id="a1" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#1E40AF;strokeWidth=2;exitX=1;exitY=0.4;exitDx=0;exitDy=0;entryX=0;entryY=0.4;entryDx=0;entryDy=0;" edge="1" parent="1" source="l2" target="c0">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- REST API → 플랫폼 -->
+    <mxCell id="a2" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0F766E;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.65;entryDx=0;entryDy=0;" edge="1" parent="1" source="l10" target="c0">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- 플랫폼 → LLM API -->
+    <mxCell id="a3" value="LLM API" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#C2410C;strokeWidth=2;fontColor=#C2410C;fontSize=10;fontStyle=1;exitX=1;exitY=0.22;exitDx=0;exitDy=0;entryX=0;entryY=0.22;entryDx=0;entryDy=0;" edge="1" parent="1" source="c0" target="ri0">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- 플랫폼 → VLM API -->
+    <mxCell id="a4" value="VLM API" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#7C3AED;strokeWidth=2;fontColor=#7C3AED;fontSize=10;fontStyle=1;exitX=1;exitY=0.42;exitDx=0;exitDy=0;entryX=0;entryY=0.42;entryDx=0;entryDy=0;" edge="1" parent="1" source="c0" target="ri0">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- 플랫폼 → Embedding -->
+    <mxCell id="a5" value="Embed" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0F766E;strokeWidth=2;fontColor=#0F766E;fontSize=10;fontStyle=1;exitX=1;exitY=0.58;exitDx=0;exitDy=0;entryX=0;entryY=0.58;entryDx=0;entryDy=0;" edge="1" parent="1" source="c0" target="ri0">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- 플랫폼 → INFRA -->
+    <mxCell id="a6" value="R/W" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#374151;strokeWidth=2;fontColor=#374151;fontSize=10;fontStyle=1;exitX=1;exitY=0.78;exitDx=0;exitDy=0;entryX=0;entryY=0.78;entryDx=0;entryDy=0;" edge="1" parent="1" source="c0" target="ri0">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- API serve 레이블 -->
+    <mxCell id="a7" value="API serve" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontColor=#6B7280;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="1237" y="480" width="65" height="20" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

@@ -1,0 +1,37 @@
+[4] James Hale, “24 Twitch streamers will duke it out in ‘Tekken’ tournament”, Tubefilter, (2024.03.05.), https://www.tubefilter.com/2024/03/05/twitch-sajam-tekken-tournament/
+
+[5] Mohamed hussain, “What Impact Does Streaming Have on the Gaming Community?”, MoeTap, (2024.06.04), https://moetap.com/what-impact-does-streaming-have-on-the-gaming-community/
+
+[6] SOC CSIRT, “The role of streaming platforms in the popularization of esports” SOC Investigation, (2024.05.25.), https://www.socinvestigation.com/the-role-of-streaming-platforms-in-the-popularization-of-esports/
+
+[7] Jacob Rogers, “Crafting an Industry: An Analysis of Korean Starcraft and Intellectual Properties Law”, Harvard Jolt Digest, (2012.08.24.), https://jolt.law.harvard.edu/digest/crafting-an-industry-an-analysis-of-korean-starcraft-and-intellectual-properties-law
+
+[8] Wang, Shuai, et al. "Decentralized autonomous organizations: Concept, model, and applications." IEEE Transactions on Computational Social Systems, 6.5, pp 870-878., (2019), 10.1109/TCSS.2019.2938190
+
+[9] Reitman, Jason G., et al. "Esports research: A literature review." Games and Culture, 15.1, 32-50, (2020), 10.1177/1555412019840
+
+[10] Smith, Thomas, Marianna Obrist, and Peter Wright. "Live-streaming changes the (video) game." Proceedings of the 11th european conference on Interactive TV and video. (2013), 10.1145/2465958.2465971
+
+[11] Faguet, Jean-Paul. "Decentralization and governance." World Development 53, 2-13, (2014), 10.1016/j.worlddev.2013.01.002
+
+저자 소개
+
+[그림: 장성일(Sung-Il Jang)]
+2019.8 숭실대학교 컴퓨터학과 석사
+2021.8 숭실대학교 소프트웨어학과 박사수료
+2021.9-현재 : 엘에스웨어(주) 수석연구원
+<주관심분야> 시스템 프로그래밍, 분산 컴퓨팅, 블록체인
+
+[그림: 홍두표(Du-Pyo Hong)]
+2024.2 숭실대학교 컴퓨터학과 석사
+2024.1-현재 : 엘에스웨어(주) 주임연구원
+<주관심분야> 클라우드, 빅데이터, 블록체인
+
+[그림: 조용준(YongJoon Joe)]
+2011.03 : 큐슈대학교 전기정보공학과 학사
+2013.03 : 큐슈대학교 정보학부 석사
+2013.04-2016.03 : 일본 학술진흥원 특별연구원
+2016.04-현재 : 엘에스웨어(주) 소프트웨어연구소
+<주관심분야> 오픈소스, 저작권, 병렬·분산 컴퓨팅, 게임이론, 분산 제약 최적화 문제
+
+- 222 -

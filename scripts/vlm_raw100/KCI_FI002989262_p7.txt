@@ -1,0 +1,41 @@
+머신러닝을 이용한 이동통신 데이터 기반 교통량 추정 모형 개발
+
+<Table 1> Definition of a dataset
+
+| Category | Lid ID | Description | note |
+| --- | --- | --- | --- |
+| representative ID | | Mobile based traffic data generation segment ID (representative segment when estimating traffic volume using input and label value) | Lid |
+| traffic variable | LID volume | Lid volume(5min) | input value |
+| | LID speed | Lid speed(5min) | km/h |
+| | LID density | Lid density(5min) | veh/km/5min |
+| | LID aggregated volume | 5min, 15min, 60min aggregated volume | confirmation of traffic volume changes |
+| | VDS volume | VDS volume(5min) | lable value |
+| | VDS speed | VDS speed(5min) | km/h |
+| road environment | route number | National Highway route number | 1, 3, 6 |
+| | bus lane | confirmation of the existence of a bus lane | none/opt/non-opt |
+| | number of lanes | number of lanes in the data generation segment | - |
+| | length | length of the data generation segment | m |
+| time element | yyy/mm/dd | data generation year/month/day | yyyy, mm, dd |
+| | hh/mm | data generation time | hh, mm |
+| | number of weeks | number of weeks | 1, 2, 3, 4, 5 |
+| | day | monday~sunday | mon:0, tue:1 ~ sun:6 |
+| | type of day | confirmation of traffic characteristics according to the distinction between holidays and weekdays | - |
+| | holiday | confirmation of traffic characteristics on holidays | - |
+
+<Table 2> Dataset for machine learning analysis
+
+| Mobile based traffic data generation segment ID(Lid ID) | LID volume | LID speed | VDS volume | VDS speed | route number | number of lanes | … |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 003000N002 | 18 | 58.92 | 20 | 76 | 3 | 4 | … |
+| 003000N002 | 17 | 44.96 | 17 | 78 | 3 | 4 | … |
+| 003000N002 | 15 | 52.84 | 31 | 74.8 | 3 | 4 | … |
+| 003000N002 | 14 | 55.09 | 21 | 78.2 | 3 | 4 | … |
+| : | : | : | : | : | : | : | : |
+
+3. 교통량 추정모형의 개발
+
+1) 데이터셋의 분리
+
+교통량 추정모형 선정 및 개발에 앞서, 수집 데이터셋 2,762,252개에 대해 학습 데이터셋과 검증 데이터셋의 분리를 수행하였다. 데이터셋 분리 목적은 주어진 전체 데이터로만 학습이 진행될 경우 머신러닝 모형 개발을 위해서는 학습과 검증 데이터를 나누고 있으며, 머신러닝 관련 연구의 경우 주로 7:3 또는 8:2 비율을 사용(Lee et al., 2019; Lee, 2020; Yaghoubi et al., 2021)하고 있다. 이에 본 연구에서는 ‘21년 12월부터 ‘22년 3월 중 총 62일 동안 수집된 데이터셋 2,762,252개에 대해 학습
+
+Vol.22 No.4 (2023. 8) The Journal of The Korea Institute of Intelligent Transport Systems 7

@@ -1,0 +1,13 @@
+ChangHo Park • Jung-Oh Kim / Attention Shift to Global and Local Level of a Form Depends upon Stimulus Set
+
+[그림: Figure 1. A feature compound stimulus set (4 left figures) and a dimension compound stimulus set (4 right figures). The global and the local level of stimuli 1 and 4 in each set are congruent and those levels of stimuli 2 and 3 incongruent.]
+
+This mode of attention may be useful to global processing, but can hinder local processing which requires focal attention on the local features. In short, local precedence should be observed in the feature set and global precedence in the dimension set.
+
+In summary, the objective of this study was twofold: One was to investigate effects of attention shift to the global and the local level and between these levels in terms of global or local precedence; the other was to explore whether a given precedence would vary with the type of stimulus set.
+
+Experiment 1
+
+The goal of Experiment 1 was to compare speed of attention shift to the global level with that to the local level. Robertson et al., (1993) and Stoffer (1993) used visual cues preceding or overlapping in time with compound stimulus target. Because visual cues could have complicate interactions with compound stimuli, sound cues were used in Experiment 1. Participants had to attend to both the global and the local level of a compound stimulus till they heard a sound cue of a high or a low pitch. Given this cue, they had to shift their attention to one of the two levels so as to judge its identity. The sound cue was presented earlier or simultaneously with or later than the compound stimulus by 100 msec. As discussed before, the feature set and the dimension set of compound stimuli were constructed and contrasted (see Figure 1).
+
+Ward (1982) asked participants to judge a

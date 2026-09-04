@@ -1,0 +1,9 @@
+도시개발로 인한 인구 변동과 범죄 발생의 상관관계 연구: 청주상당경찰서 관할 지역을 중심으로 101
+
+underscore the need for refined analyses and customized response strategies based on monthly precinct-level data.
+
+This research is academically and policy-wise significant in that it suggests the potential for early prediction of public safety demand through 112 emergency call data and provides empirical evidence to support the formulation of proactive, data-driven policing strategies.
+
+• Keywords : Urban Development, Population Change, Crime Occurrence, 112 Emergency Calls, Police Demand, Time-Series Analysis, Correlation
+
+www.kci.go.kr

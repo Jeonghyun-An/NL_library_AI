@@ -1,0 +1,31 @@
+머신러닝을 이용한 이동통신 데이터 기반 교통량 추정 모형 개발
+
+Chung, Y. S., Nam, S. G. and Song, T. J.(2018), “A Travel Time Budget Estimation Using a Mobile Phone Signaling Data”, Journal of the Korean Society of Civil Engineers, vol. 38, no. 3, pp.457-465.
+
+Jang, J. W., Park, C. S., Baek, N. C. and Lee, M. Y.(2011), “Analysis on Video Image Detection System Performance by Vehicle Speed”, Journal of Korea Society of Transportation, vol. 23, no. 5, pp.105-112.
+
+Ji, B. S. and Hong, E. J.(2019), “Deep Learning Based Real Time Road Traffic Prediction Using LongTerm Evolution Access Data”, Sensors, vol. 19, 5327, pp.1-16.
+
+Kim, D. H. and Kim, S. G.(2002), “A study on Testing the Ability of Vehicle Detection System in ATMS”, Journal of Korea Society of Transportation, vol. 20, no. 5, pp.231-244.
+
+Lee, E. J.(2020), A study on road speed of Seoul Gangnam-gu and Jung-gu predictions based on Machine Learning Methods, Ewha Womans University.
+
+Lee, H. M., Jeon, G. S. and Jang, J. A.(2019), “Predicting of the Severity of Car Traffic Accidents on a Highway Using Light Gradient Boosting Model”, Journal of the Korea Institute of Electronic Communication Sciences, vol. 15, no. 6, pp.1123-1130.
+
+Lee, S. B.(2019), Development of Dynamic Traffic Volume Estimation Model Using DSRC Probe Data, Seoul National University.
+
+Lee, Y. H. and Hong, S. Y.(2019), “A Machine Learning Approach to the Prediction of Individual Travel Mode Choices”, Journal of the Korea Data Information Science Society, vol. 30, no. 5, pp.1011-1015.
+
+Nam, M. W., Park, D. S., Jang, Y. J. and Lee, H. C.(2021), “Prediction of Traffic Accident Casualties Using Machine Learning”, Korea Society of Computer Information, vol. 29, no. 1, pp.27-30.
+
+Oh, J. S.(2001), “Development of a Daily Traffic Volume Estimation Model Using Regression Analysis”, Journal of the Korean Official Statistics, vol. 6, no. 2, pp.161-179.
+
+Snowdon, J., Gkountouna, O., Züfle, A. and Pfoser, D.(2018), Spatiotemporal Traffic Volume Estimation Model Based on GPS Samples, Association for Computing Machinery.
+
+Texas Transportation Institute(2002), VEHICLE DETECTOR EVALUATION, pp.1-77.
+
+Yaghoubi, F., Catovic, Armin., Gusmao, A., Pieczkowski, J. and Boros, P.(2021), Traffic Flow Estimation using LTE Radio Frequency Counters and Machine Learning, Cornell University, pp.1-9.
+
+Yoon, H. S.(2016), AADT estimation of connection road section in highway using large-scale GPS trip data, Seoul National University.
+
+Vol.22 No.4 (2023. 8) The Journal of The Korea Institute of Intelligent Transport Systems 13

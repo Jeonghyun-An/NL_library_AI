@@ -1,0 +1,41 @@
+클럽세가 클럽의 규모에 미치는 영향 37
+
+를 내는 데 지출하는 것을 보여준다. 효용극대화 문제를 풀기 위한 라그랑지함수는 다음과 같다.
+
+\[
+\mathcal{L} = U(x, y, n) + \lambda \left( I - x - \frac{C(y)}{n} \right)
+\tag{2}
+\]
+
+효용극대화의 1차조건은 다음과 같다.
+
+\[
+\frac{\partial \mathcal{L}}{\partial x} = \frac{\partial U}{\partial x} - \lambda = 0
+\tag{3}
+\]
+
+\[
+\frac{\partial \mathcal{L}}{\partial y} = \frac{\partial U}{\partial y} - \lambda \frac{1}{n} \frac{dC(y)}{dy} = 0
+\tag{4}
+\]
+
+\[
+\frac{\partial \mathcal{L}}{\partial n} = \frac{\partial U}{\partial n} + \lambda \frac{C(y)}{n^2} = 0
+\tag{5}
+\]
+
+\[
+\frac{\partial \mathcal{L}}{\partial \lambda} = I - x - \frac{C(y)}{n} = 0.
+\tag{6}
+\]
+
+식(4)와 식(3)을 정리한 다음 대응되는 변끼리 나눈 후 정리하면
+
+\[
+n \frac{\frac{\partial U}{\partial y}}{\frac{\partial U}{\partial x}} = \frac{\frac{dC(y)}{dy}}{1}
+\tag{7}
+\]
+
+이 된다. 식(7)의 좌변은 클럽재와 사적재 사이의 각 개인의 MRS를 모든 회원에 대해 합한 것이다. 모든 회원들이 같은 유형이라고 가정했으므로 n배를 한 것이다. 한편 경쟁시장에서 사적재의 한계비용은 그 가격과 같고, 사적재의 가격을 1로 정규화했으므로 식(7)의 우변은 클럽재의 한계비용과 사적재의 한계비용의 비율로 볼 수 있다. 그러므로 두 재화 사이의 MRT와 같다. 따라서 식(7)은
+
+있다. 그러나 이것도 Berglas 자신이 지적한 바와 같이 본 논문에서처럼 \( U(x,y,n) \) 로 쓰더라도 클럽 이론 분석의 기본 특성은 훼손되지 않는다. 이후 학자들은 분석의 편리에 따라 \( U(x,y,n) \) 를 사용하고 있다(Cornes, R. and Sandler, T., 1986 참조)

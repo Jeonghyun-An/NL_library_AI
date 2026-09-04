@@ -1,0 +1,36 @@
+8 한국도서관·정보학회지 (제35권 제3호)
+
+다음 <그림 3>은 음절 분리 가능성도를 이용하여 분할된 대상을 결합해 주는 알고리즘이다.
+
+```
+for(i=0; i<buffer.length; i++)
+    current <- buffer[i]
+    before <- buffer[i-1];
+    next <- buffer[i+1];
+    coda <- before.coda; // 앞 음절의 종성
+    if(before='#' and next='#') // 앞과 뒤가 모두 떠어쓰기 할 대상이면
+        if(before.size > next.size)
+            frontMakeSpace(buffer,i);
+        else if(before.size < next.size)
+            rearMakeSpace(buffer,i);
+        if(current.size=next.size=1)
+            // 음절 분리 가능성도 비교
+            if(Frequency(current) > Frequency(next))
+                frontMakeSpace(buffer,i);
+            else
+                rearMakeSpace(buffer,i);
+```
+
+<그림 3> 음절 분리 가능성도 참조 알고리즘
+
+어절생성기는 이상과 같은 세 단계의 처리 과정을 거쳐 연속된 음성 발음열을 어절이라 추정되는 적절한 크기로 분할시켜 준다. 분할위치가 결정되면 다음 단계의 음절 복원기에서는 분할된 음성열을 기본 입력으로 받아 복원을 수행한다. 복원기의 입력은 다음의 <그림 4>의 식(4)와 같이 표현할 수 있다.
+
+[그림: <그림 4> 추정 어절의 음절 복원기 입력 패턴으로의 대응 관계]
+
+(4) S_a⋯S_b = C_i^1V_f^1C_i^2V_f^2⋯C_i^kV_f^k⋯C_i^nV_f^n
+
+<그림 4> 추정 어절의 음절 복원기 입력 패턴으로의 대응 관계
+
+<그림 4>에서 연속 음성 발음열 S_1S_2⋯⋯S_{n-1}S_n는 어절생성기를 통해, 몇 개의 S_a⋯S_b(1 <= a, b < n, a<=b) 크기로 분할된 각 어절 S_a⋯S_b는 음절복원기의 입력으로 사용되기 위해
+
+- 278 -

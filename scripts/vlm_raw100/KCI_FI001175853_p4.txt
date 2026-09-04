@@ -1,0 +1,37 @@
+78 대한소화기내시경학회지 2005;30:75-79
+
+서 기원한 균일하지 않은 종괴소견이 관찰된다. 향후 위장관 내시경검사시 충혈, 백태, 삼출물 등의 다양한 표면변화를 가진 종괴가 관찰시 화농성 육아종의 가능성을 염두에 두어야 하며 이를 감별진단하기 위한 비침습적 검사로 초음파내시경검사가 고려될 수 있다.
+
+진단은 주로 조직병리학적으로 진단하게 되나 99mTc-labeled 적혈구를 이용한 심광도(scintigraphy)를 이용해 감별진단을 한 뒤 개복술을 시행한 예도 있었다.11,18 조직병리학 소견은 저배율에서는 특징적으로 경(stalk)으로 연결되는 외장성 증식을 하는 용종형태를 보인다. 표면은 이상각화(parakeratosis)되거나 비각화 편평상피세포(nonkeratinized stratified squamous epithelium)로 덮여 있고 세포는 편평하고 위축되어 있다. 약 60%에서는 표면부위에 궤양이 동반되고 궤양부위는 섬유성 바탕질 내에 모세혈관의 증식으로 이루어진 종괴로 내피세포들의 증식으로 모세혈관모양 혈관종 모양을 띄며 외장성 증식이 특징적이다. 병변 내에는 다수의 형질세포와 림프구 모양 세포들의 침윤을 볼 수 있고 이런 염증세포들의 침윤은 궤양부위에 심한 양상을 보여준다.14 화농성 육아종과 공통적으로 혈관에서 유래하여 유란적으로 다양한 표면변화를 보인다는 점에서 감별진단을 해야 할 질환으로 카포시 sarcoma이 있는데 임상적으로 대개 후천성 면역계 증후군, 장기이식 등의 면역이 억제되는 상태가 있으며, 조직병리학적으로 방추형 세포(spindle cell)와 호산구성 소구체(eosinophilic globule)가 확인된다. 점에서 감별진단이 가능하다.19 본 2예의 조직병리검사에서 공통적으로 점막하층에서 모세혈관의 염증증식, 기질내 부종, 염증세포의 침윤을 보였다.
+
+위장관에 발생한 화농성 육아종 증례들을 보면, 내시경으로 접근이 용이한 식도, 위, 십이지장에 발생한 경우 내시경 용종절제술로 제거가 가능하였고,9,11,12-14 공장, 회장, 또는 대장에서 발생한 경우엔 수술을 시행하였는데,10,17,18 생검검사를 이용해 제거한 1예를 제외하곤 내시경 치료술 시행 후 재발한 증례는 드물어 국내에서 재발이 1예5 보고되었다.
+
+저자들은 61세 남자환자와 55세 여자환자에서 위장관 내시경소견에서 다양한 표면의 변화를 보이는 종괴병변이 관찰되어 초음파내시경검사로 감별진단 후 내시경 점막절제술로 완전절제하여 조직병리검사로 확진한 식도 화농성 육아종 2예를 보고하는 바이다.
+
+ABSTRACT
+
+Pyogenic granulomas are benign in nature and commonly found in the skin and mucosa. They rarely involve the gastrointestinal tract other than oral cavity. There are 30 reports in worldwide and only 4 domestic reports of such matter. Upper gastrointestinal endoscopy revealed the pedunculated masses with various surface changes in a 61-year-old man and a 55-year-old women. Endoscopic ultrasonography and endoscopic mucosal resection using snare were performed for accurate diagnosis and treatment. The tumors were pathologically diagnosed as pyogenic granulomas of the esophagus. (Korean J Gastrointest Endosc 2005;30:75-79)
+
+Key Words: Pyogenic granuloma, Endoscopic surgical procedure, Endoscopic ultrasonography
+
+참고 문헌
+
+1. Mills SE, Cooper PH, Fechner RE. Lobular capillary hemangioma: the underlying lesion of pyogenic granuloma. A study of 73 cases from the oral and nasal mucous membranes. Am J Surg Pathol 1980;4:470-479.
+
+2. Enzinger FM, Weiss SW. Soft tissue tumors. 3rd ed. St. Louis: Mosby, 1995.
+
+3. Bhaskar SN, Jacoway JR. Pyogenic granuloma--clinical features, incidence, histology and result of treatment: report of 242 cases. J Oral Surg 1966;24:391-398.
+
+4. Patrice SJ, Wiss K, Mulliken JB. Pyogenic granuloma (lobular capillary hemangioma): a clinicopathologic study of 178 cases. Pediatr Dermatol 1991;8:267-276.
+
+5. 김상우, 김해엽, 정형진, 백승운, 김은주, 윤세옥. 직장 화농성 육아종의 재발 1예. 대한내과학회지 1991;41:135-139.
+
+6. 이강문, 이동수, 안병민 등. 올가미를 이용하여 제거한 말단 회장의 화농성 육아종 1예. 대한소화기내시경학회지 2002; 24:176-180.
+
+7. 노경아, 문정섭, 김경수, 김창덕, 류호상, 현진해. 화농성 육아종 1예. 대한소화기내시경학회지 1989;21:653-657.
+
+8. 권영배, 강 현, 김진하, 이경용, 유재영, 임규성. 직장에 발생한 Pyogenic granuloma 1예. 대한소화기내시경학회지 1990; 10(abstr):16A-17A.
+
+9. Okumura T, Tanoue S, Chiba K, Tanaka S. Lobular capillary hemangioma of the esophagus. A case report and review of the literature. Acta Pathol Jpn 1983;33:1303-1308.
+
+10. Yao T, Nagai E, Utsunomiya T, Tsuneyoshi M. An intestinal counterpart of pyogenic granuloma of the skin. A newly proposed entity. Am J Surg Pathol 1995;19:1054-1060.

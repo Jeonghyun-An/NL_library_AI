@@ -1,0 +1,27 @@
+14. BY, Okuda J, Mastsumoto C, Takahashi N, Hashimoto S, and Nishibuchi M. Identification of Vibrio parahaemolyticus strains at the species level by PCR targeted to the toxR gene. J Clin Microbiol 37:1173-1177, 1999
+
+15. Magalhase M, Takeda Y, Magalhase V, and Tateno S. Brazilian urease-positive strains of Vibrio parahaemolyticus carry genetic potential to produce the TDH-related hemolysin. Mem Inst Oswaldo Cruz 87:167-168, 1992
+
+16. Matsumoto C, Okuda J, Ishibashi M, Iwanaga M, Garg P, Rammamurthy T, Wong HC, Depaola A, Kim YB, Albert MJ, and Nishibuchi M. Pandemic spread of an O3:K6 clone of Vibrio parahaemolyticus and emergence of related strains evidenced by arbitrarily primed PCR and toxRS sequence analysis. J Clin Microbiol 38:578-585, 2000
+
+17. Miller VL, Taylor RK, Mekalanos JJ. Cholera toxin transcriptional activator toxR is a transmembrane DNA binding protein. Cell 48:271-279, 1987
+
+18. Miyamoto Y, Kato T, Obara Y, Akiyama S, Takizawa K, and Yamai S. In vitro hemolytic characteristic of Vibrio parahaemolyticus: its close correlation with human pathogenicity. J Bacteriol 100:1147-1149, 1969
+
+19. NCCLS. MIC testing supplemental tables. M100-S10(M7). National committee for clinical laboratory standards, Villanova, pa., 2000
+
+20. NCCLS. Performance standards for antimicrobial disk susceptibility tests. 6th ed, M2-A6. National committee for clinical laboratory standards, Villanova, pa., 1997
+
+21. Nishibuchi M, Taniguchi T, Misawa T, Khaeomanee-Iam V, Honda T, and Miwatani T. Cloning and nucleotide sequence of the gene (trh) encoding the hemolysin related to
+
+the thermostable direct hemolysin of Vibrio parahaemolyticus. Infect Immun 57:2691-2697, 1989
+
+22. Obata H, Kai A, Sekiguchi K, Matsushita S, Yamada S, Ito T, Ohta K, and Kudoh Y. Detection of the trh gene in Vibrio parahaemolyticus isolated from overseas travelers diarrhea and their biochemical characteristics. J Jpn Assn Infect Dis 70:815-820(In Japanese), 1996
+
+23. Okuda J, Ishibashi M, Abbott SL, Janda JM, and Nishibuchi M. Analysis of the thermostable direct hemolysin (tdh) gene and the tdh-related hemolysin (trh) genes in the urease-positive strains of Vibrio parahaemolyticus isolated on the West Coast of the United States. J Clin Microbiol 35:1965-1971, 1997
+
+24. Okuda J, Ishibashi M, Hayakawa E, Nishino T, Takeda Y, Muhopadhyay AK, Garg S, Bhattacharya SK, Nair GB, and Nishibuchi M. Emergence of a unique O3:K6 clone of Vibrio parahaemolyticus in Calcutta, India, and isolation of strains from the same clonal group from southeast asian travelers arriving in Japan. J Clin Microbiol 35:3150-3155, 1997
+
+25. Osawa R, Okitsu T, Morozumi H, and Yamai S. Occurrence of urease-positive Vibrio parahaemolyticus in Kangawa, Japan, with specific reference to presence of thermostable direct hemolysin (TDH) and the TDH-related hemolysin genes. Appl Environ Microbiol 62:725-727, 1996
+
+26. Sakazaki R, Iwanami S, and Fukumi H. Studies on the enteropathogenic, facultatively halophilic bacteria, Vibrio parahaemolyticus. I. Morphological, cultural and biochemical

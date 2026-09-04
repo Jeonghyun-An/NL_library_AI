@@ -1,0 +1,23 @@
+개인정보보호(Schutz personenbezogener Daten)와 경쟁법 적용 315
+
+4. 경쟁우위의 핵심요소로서 데이터와 시장력(Marktmacht)의 관계
+
+데이터 집약적(data-incentive) 시장에서 데이터가 갖는 경쟁법적 함의와 관련하여, 연방독점위원회는 2012/2013년 ‘Hauptgutachten 20’을 통해 인터넷과 같은 다면시장에 있어서 데이터는 특히 중요한 경쟁요소(Wettbewerbsfaktor)이며, 일정한 경우에는 시장력요소(Machtfaktor)로 작용할 수 있음을 지적하였다.⁴¹) 연방카르텔청 또한 2017년에 발간한 ‘빅데이터와 경쟁’(Big Data und Wettbewerb)에서, 경쟁의 관점에서 데이터의 수집·분석을 어떻게 평가할 수 있을지에 관한 세 가지 측면의 논점을 – i) 데이터가 시장력에 기여할 수 있는 요인이 될 수 있는지, ii) 데이터가 공급자간의 투명성을 높이고 담합을 용이하게 할 수 있는지, iii) 데이터가 반경쟁적 행위에 대한 유인(Anlass für wettbewerbswidriges Verhalten)으로 작용할 수 있는지 – 제시하면서, 시장력의 원천으로서 데이터의 중요성 자체는 인정한 바 있다.⁴⁶)
+
+다만, 소위 데이터력(Datenmacht)과 시장력의 관계를 고려할 때, 데이터력 정량화와 이로부터의 시장력 판단은 매우 어렵고 복잡한 작업으로, 그릇된 전제에 근거한 결과 도출(이른바 ‘Milchmädchenrechnung’)로 이어질 우려가 있다.⁴⁷)
+
+비자에게 있어서도 서비스에 대한 선택권이 제한될 수 있음을 지적하였다. 사례에 대한 자세한 설명은, 이호영, 위의 논문, 311~313면.
+
+41) Monopolkommission, Hauptgutachten 20 (Kapitel I–Google, Facebook & Co–Eine Herausforderung für die Wettbewerbspolitik), 2012/2013, Rn. 20 ff.; Körber, Teil 1, S. 305.
+
+42) BKartA, Big Data und Wettbewerb–Schriftenreihe „Wettbewerb und Verbraucherschutz in der digitalen Wirtschaft“ (이하, ‘Big Data und Wettbewerb’), 2017.11.
+
+43) BKartA, Big Data und Wettbewerb, S. 8.
+
+44) BKartA, Big Data und Wettbewerb, S. 9~11. 연방카르텔청은 이를 다시 세 가지 유형–① 기업 결합에 있어서 데이터 수집 및 이용에 관한 경쟁법적 고려, ② 시장지배적 사업자에 의한 경쟁사 사업자에 대한 데이터 접근 거절, ③ 데이터에 대한 처분권(Verfügbarkeit)에 기한 용이한 가격차별 가능성–으로 나누어 설명하고 있다.
+
+45) BKartA, Big Data und Wettbewerb, S. 6~11.
+
+46) 특정 사업자의 데이터에 대한 용이한 접근은 경쟁사업자의 관점에서 시장진입장벽으로 인식될 수 있으며, 무엇보다 인터넷경제에서 막대한 데이터를 축적하고 있는 거대 온라인 사업자가 존재하는 시장에서 중소사업자 내지 신규사업자가 이를 극복하는 것은 사실상 불가능하다는 점은 인식하고 있는 것으로 보인다.
+
+47) Körber는 이러한 ‘Milchmädchenrechnung’의 예시적 유형(Muster)으로, “Google은 검색 시장에서 90%의 시장점유율을 차지하고 있어 Google은 90% 이상의 데이터를 보유하고 있다. 데이터는 시장력요소(Machtmacht)이기 때문에, Google은 그 데이터력(Datenmacht)으로 인해 시장지배적이고 규제되어야 한다.”; Körber, Teil 1, S. 305~306 (Daten als Wettbewerbs- und

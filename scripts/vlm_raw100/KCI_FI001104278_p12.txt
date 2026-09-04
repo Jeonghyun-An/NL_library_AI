@@ -1,0 +1,13 @@
+한국심리학회지 : 실험
+
+level first and the local level later, or in the opposite sequence. The SOA between presentations of the two levels varied by 50 msec from 100 msec to 250 msec. Participants were instructed to discriminate the identity of the level presented first in a Preceding Judgment condition, and to discriminate the identity of the level presented later in a Succeeding Judgment condition. Stimulus was presented till participants responded. One practice blocks and 4 main blocks of 5 exercise and 96 experimental trials were run with each participant. Two Preceding and two Succeeding Judgment conditions were counterbalanced across experimental blocks. RT was measured from the presentation of the level to be judged.
+
+Design Stimulus set (feature vs. dimension) was a between-subject variable. Sequence of judgment level (preceding vs. succeeding), SOA (100, 150, 200, 250 msec) between preceding and succeeding levels, judgment level (global vs. local) and congruity between global and local level (congruous vs. incongruous) were all within-subject variables.
+
+Results and Discussion
+
+Figures 7 and 8 show mean RT data for the feature and the dimension set, respectively. Mean RT was longer in the feature set (482 msec) than in the dimension set (435 msec), F(1,22) = 6.43, p < .05, MSE = 64516.70. Data of the two stimulus sets were separately analyzed considering the uniqueness of each stimulus set.
+
+[그림: Figure 7. Mean RTs (msec) in each condition by sequence of judgment levels and by judgment levels as a function of SOAs for the feature set in Experiment 2 (In the legend, ‘Pre’ means ‘preceding’, and ‘Suc’ means ‘succeeding’).]
+
+- 180 -

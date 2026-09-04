@@ -1,0 +1,38 @@
+based on a hybrid intelligent system." Information Sciences Vol. 180, No.10, pp.2029-2043, 2010.
+[9] Ramedani, Z., Omid, M., Keyhani, A., Shamshirband, S. and Khoshnevisan, B. "Potential of radial basis function based support vector regression for global solar radiation prediction." Renewable and Sustainable Energy Reviews 39, pp.1005-1011, 2014.
+[10] Basak, D., Pal, S., and Patranabis, D. C. "Support vector regression." Neural Information Processing-Letters and Reviews Vol. 11, No. 10, pp.203-224, 2007.
+[11] Orr, M. J. Introduction to Radial Basis Function Networks, Institute for Adaptive and Neural Computation, Edinburgh Univ 1996.
+[12] Rasmussen, C. E., and Williams, C. K. Gaussian Processes for Machine Learning. Vol. 1. MIT press 2006.
+[13] Gardner, M. W., and Dorling, S. R. "Artificial neural networks (the multilayer perceptron)-a review of applications in the atmospheric sciences." Atmospheric Environment Vol. 32, No. 14, pp.2627-2636, 1998.
+[14] Mikolov, Tomas, et al. "Recurrent neural network based language model." Interspeech. Vol. 2. 2010.
+[15] Sak, Haşim, Andrew Senior, and Françoise Beaufays. "Long short-term memory recurrent neural network architectures for large scale acoustic modeling." Fifteenth Annual Conference of the International Speech Communication Association. 2014.
+[16] Liu, Y., and Weisberg, R. H. "Evaluation of trajectory modeling in different dynamic regions using normalized cumulative Lagrangian separation." Journal of Geophysical Research: Oceans Vol. 116, No.C9, 2011.
+
+저자소개
+이 찬 재(Chan-Jae Lee)
+[정회원]
+• 2017년 2월 : 광운대학교 전자재료공학전공 학사
+• 2017년 3월 ~ 현재 : 광운대학교 컴퓨터과학과 석사과정
+<관심분야> : 기계학습, 최적화
+
+김 경 도(Gyoung-Do Kim)
+[정회원]
+• 2016년 8월 : 광운대학교 컴퓨터소프트웨어전공 학사
+• 2016년 9월 ~ 현재 : 광운대학교 컴퓨터과학과 석사과정
+<관심분야> : 데이터마이닝, 기계학습, 최적화
+
+김 용 혁(Yong-Hyuk Kim)
+[정회원]
+• 1999년 2월 : 서울대학교 전산과학전공 학사
+• 2001년 2월 : 서울대학교 전기컴퓨터공학부 석사
+• 2005년 2월 : 서울대학교 전기컴퓨터공학부 박사
+• 2005년 3월 ~ 2007년 2월 : 서울대학교 반도체공동연구소 연구원
+• 2007년 3월 ~ 2017년 2월 : 광운대학교 컴퓨터소프트웨어학과 조교수/부교수
+• 2017년 3월 ~ 현재 : 광운대학교 소프트웨어학부 교수
+<관심분야> : 최적화, 진화연산, 지식공학
+
+[그림: 이 찬 재]
+[그림: 김 경 도]
+[그림: 김 용 혁]
+
+www.kci.go.kr

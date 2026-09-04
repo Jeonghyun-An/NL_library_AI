@@ -1,0 +1,29 @@
+Korean Journal of Obstetrics and Gynecology
+Vol. 48 No. 5 May 2005
+
+침윤성 자궁경부암에서 혈관내피세포 성장인자의 발현과 혈관신생
+
+한림대학교 의과대학 산부인과학교실, *병리학교실
+박제용 · 박영한 · 최오성 · 장기택 * · 김성주 · 장봉림
+
+VEGF (Vascular Endothelial Growth Factor) Expression and Angiogenesis in Invasive Cervical Cancer
+Je-Yong Park, M.D., Young-Han Park, M.D., Oh-Seoung Choi, M.D., Kee-Taek Jang, M.D.*, Seong-Ju Kim, M.D., Pong-Rheem Jang, M.D.
+Department of Obstetrics and Gynecology, *Department of Pathology, College of Medicine, Hallym University, Kangwon, Korea
+
+Objective: A large body of evidence suggests that vascular endothelial growth factor (VEGF) is important to tumor growth and angiogenesis in cancers. This study was designed to determine the relationship between tumor vascularity and VEGF expression in invasive cervical cancer. Furthermore, we also compared the clinical factors with VEGF expression.
+Methods: We examined the expression of VEGF and microvessel density (MVD) by immunohistochemical staining in 20 specimens collected from invasive cervical cancer patients. Thereafter, we compared the results with several clinical factors. We used the Chi-square test and One way Anova test for statistical analysis.
+Results: All specimens showed weak and strong immunoreactivity. Microvessel counts were high in the strong (median 157.6) VEGF immunoreactivity and low in the weak (median 90) VEGF immunoreactivity (P=0.000). In addition, parametrium invasion showed statistically significant correlation with VEGF expression extent (p=0.021) but age, SCC, CEA, lymphovascular invasion, lymph node invasion and invasion depth of cervix showed no correlation.
+Conclusion: The overexpression of VEGF may play an important role in the promotion of angiogenesis in cervical cancer and may have relation to prognosis.
+
+Key Words: Angiogenesis, VEGF, Cervical cancer
+
+서론
+약성종양의 진행과 전이에 있어 새로운 혈관의 생성 (angiogenesis)은 필수적이다.1 특히, 고형종양의 직경이 2 mm 이상일 때 성장과 영양공급을 위해서 새로운 모세혈관의 성장이 반드시 필요한 것으로 알려져 있다.2
+
+혈관 생성과정에 관여하는 혈관 생성인자에는 acidic and basic fibroblast growth factor (acidic/basic FGF), transforming growth factor alpha와 beta (TGF α/β), interleukin 8 (IL-8), tumor necrosis factor alpha (TNF-α)와 platelet-derived endothelial cell growth factor (PDEGF)/thymidine phosphorylase
+
+접수일 : 2005. 3. 18.
+주관책임자 : 박영한
+E-mail: drparkyh@yahoo.co.kr
+
+- 1258 -

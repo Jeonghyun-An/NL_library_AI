@@ -1,0 +1,39 @@
+REFERENCES
+[1] B. J. Choi. (2019). A study on improvement of the Basic Occupational Safety and Health Training for the Construction Industry on The Occupation safety and health acts, Korean Social Security Law Association, 8(1), 161-191.
+[2] Korea Occupational safety & health agency. (2018). Industrial accident statistics. KOSHA [Omline]. http://www.kosha.or.kr
+[3] D. S. Kim, B. J. Kim & Y. S. Shin. (2019). A Convergent Analysis of the Risk Factors of Falling Accidents in Domestic Construction Sites Using IPA Technique, The Korean Society of Science & Art, 37(3), 31-44. DOI : 10.17548/ksaf.2019.06.30.31
+[4] D. H. Cho, J. E. Ju & I. H. Yu. (2018). IoT Industry in Seoul: Potentials and Strategies, The Seoul Institute, 1-151.
+[5] S. Y. Lee. (2016). Internet of Things Trend for Smart Factory, The Magazine of the IEEE, 43(6), 25-30.
+[6] S. Y. Lee. (2016). The Policy and ICT Trend for Smart Factory, The Magazine of the IEEE, 45(6), 31-34.
+[7] E. Y. Kim & M. S. Park. (2018). A Study on the Limits of Manufacturing Innovation and Policy Direction of SMEs in the 4th Industrial Revolution : Focusing on the Limitations and Examples of Pohang SMEs Smart Factory Introduction, Journal of Science & Technology Studies, 18(2), 269-306.
+[8] H. J. Kang. (2017). Smart Disaster Safety Management System for Social Security, Journal of Digital Contents Society, 18(1), 225-229. DOI : 10.9728/dcs.2017.18.1.225
+[9] J. H. Gu, H. H. Lee, K. S. Lee & M. G. Chun. (2018). Safety Helmet Capable of Indicating the Worker's Risk Indices, The Transaction of The Korean Institute of Electrical Engineers, 67(2), 106-111.
+[10] H. J. Kim. (2017). Using the BeaconSensor and Smartphone Safety Management Implementation Service, The Society of Convergence Knowledge Transactions, 5(1), 25-31.
+[11] Apache Cordova. (2019). Cordova Documentation. Cordova [Online]. https://cordova.apache.org/docs/en/latest/
+[12] Adobe Phonegap. (2019). PhoneGap Documentation. Adobe [Online]. http://docs.phonegap.com/
+[13] Firebase. (2019). Firebase Cloud Messaging Guide. Google [Online]. https://firebase.google.com/docs/cloud-messaging/?hl=ko
+[14] Bluetooth. (2019). Bluetooth Resources. Bluetooth SIG [Online]. https://www.bluetooth.com/bluetooth-resources/?types=paper
+[15] P. S. Jeong & Y. H. Cho. (2017). Smartphone User
+
+블루투스 통신을 이용한 스마트공장 안전관리 시스템 53
+Authentication Algorithm based on Mutual Cooperation in Mobile Environment, Journal of the Korea Institute of Information and Communication Engineering, 21(7), 1393-1400.
+
+정 필 성(Pil-Seong Jeong) [정회원]
+· 2014년 2월 : 서울과학기술대학교 전자공학과(공학사)
+· 2007년 8월 : 광운대학교 전자통신공학과(공학석사)
+· 2013년 8월 : 광운대학교 전자통신공학과(공학박사)
+· 2018년 3월 ~ 현재 : 명지전문대학 보통신공학과 조교수
+· 관심분야 : 사물인터넷, WSN, 임베디드 시스템
+· E-Mail : ibetter.kr@gmail.com
+
+조 양 현(Yang-Hyun Cho) [정회원]
+· 1982년 2월 : 광운대학교 전자통신공학과(공학사)
+· 1985년 2월 : 광운대학교 전자통신공학과(공학석사)
+· 2012년 2월 : 광운대학교 전자통신공학과(공학박사)
+· 1987년 9월 ~ 1997년 8월 : LG정보통신 전송기술개발실 과장
+· 1997년 9월 ~ 현재 : 삼육대학교 컴퓨터·메카트로닉스공학부 교수
+· 관심분야 : 컴퓨터네트워크, 통신망(BcN), GMPLS
+· E-Mail : yhcho@syu.ac.kr
+
+[그림: 정 필 성]
+[그림: 조 양 현]

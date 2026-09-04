@@ -1,0 +1,17 @@
+form (100 mL). After removing the solvent, the crude products were purified by the column chromatography (eluent, CHCl₃ : MeOH = 20 : 1) to give a yellow powder 4 (86 mg, 46%). mp 151-152 °C; ¹H NMR (CDCl₃) δ 7.86 (s, 2H, -NH), 7.46 (d, 4H, ArH, J = 7.8 Hz), 7.25 (t, 4H, ArH, J = 7.8 Hz), 6.95 (t, 2H, ArH, J = 7.8 Hz), 6.71 (s, 8H, ArH), 6.34 (s, 2H, -NH), 4.20 and 3.10 (a pair of d, 8H, ArCH₂Ar, J = 12.9 Hz), 3.69 (t, 4H, -OCH₂-, J = 4.8 Hz), 3.40 (q, 4H, -NCH₂-, J = 5.7 Hz), 1.87 (m, 8H, -CH₂-), 1.03 (s, 18H, -C(CH₃)₃); ¹³C NMR (CDCl₃) δ 188.1 and 185.9 (-CO), 156.6 (-NHCONH-), 152.8, 148.9, 146.3, 139.9, 132.2, 129.0, 125.5, 121.9 and 118.4 (Ar), 75.7 (-OCH₂-), 39.3 (-CH₂N-), 34.0 and 31.2 (-C(CH₃)₃), 30.6 (ArCH₂Ar), 27.2 and 26.9 (-CH₂-).
+
+Acknowledgment. This work was supported by Grant No. R01-2000-00047 from the Basic Research Program of the Korea Science & Engineering Foundation. NMR spectra were taken at the Korea Basic Science Institute, Kwangju, Korea.
+
+References
+
+1. Minami, T.; Shinkai, S.; Manabe, O. Tetrahedron Lett. 1982, 23, 5167.
+2. Vogle, F.; Oepen, G. Liebigs Ann. Chem. 1979, 1094.
+3. Beer, P. D.; Drew, N. G. B.; Hazlewood, C.; Hesek, D.; Hodacova, J.; Stokes, S. E. J. Chem. Soc. Chem. Comm. 1993, 229.
+4. Gustowski, D. A.; Delgado, M.; Gatto, V. J.; Echegoyen, L.; Gokel, G. W. J. Am. Chem. Soc. 1986, 108, 7553.
+5. Chen, Z.; Schall, O. F.; Alcala, M.; Li, Y.; Gokel, G. W.; Echegoyen, L. J. Am. Chem. Soc. 1992, 114, 444.
+6. Echegoyen, L. E.; Yoo, H. K.; Gatoo, V. J.; Gokel, G. W. J. Am. Chem. Soc. 1989, 111, 2440.
+7. Nam, K. C.; Kang, S. O.; Jeong, H. S.; Jeon, S. Tetrahedron Lett. 1999, 40, 7343.
+8. Cho, E. J.; Hwang, S. S.; Oh, J. M.; Lee, H. K.; Jeon, S.; Nam, K. C. Bull. Korean Chem. Soc. 2001, 22, 782.
+9. Scheerder, J.; Fochi, M.; Engbersen, J. F. J.; Reinhoudt, D. N. J. Org. Chem. 1994, 59, 7815.
+10. Jaime, C.; Mendoza, J. D.; Parados, P.; Nieto, P. M.; Sanchez, C. J. Org. Chem. 1991, 56, 3372.
+11. Hynes, M. J. Chem. Soc. Dalton Trans. 1993, 311.

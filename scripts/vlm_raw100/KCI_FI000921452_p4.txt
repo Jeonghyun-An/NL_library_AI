@@ -1,0 +1,29 @@
+such as new information, specificity/definiteness, focus, etc).
+
+본 논문에서는 수의적 이동의 경우에는 반드시 어떠한 의미해석 효과와 INT를 수반한다는 이러한 Chomsky의 가정을 기본적으로 받아들이며 논의를 전개할 것이다.
+
+2. FOX (1998)의 Output-Economy
+
+앞서 언급한 Chomsky (1999)의 수의적 이동과 의미해석 효과와 INT의 상관관계는 Fox (1998: 75)가 제안한 경제성 이론인 Output-Economy에서 출발한다.
+
+(3) Output-Economy: Optional operations must affect the output.
+
+수의적(optional) 자질은 LF 의미해석에 영향을 미치는 경우에만 나타난다.
+
+Fox에게 있어서 가장 중심이 되는 생각은 양화사 인상이 항상 일어나는 것이 아니라 반드시 일어날 이유가 있을 때에만 일어난다는 것으로서 최후수단 원리(Last Resort Principle), 또는 그 바탕에 깔린 경제성의 원리와 상통하는 것이다. Fox의 이 기본 가정은 이래에 제시되어 있다.
+
+(4) Scope Economy (FOX, 1998: 3)
+
+Scope shifting operations can't be semantically vacuous.
+
+양화사 인상은 항상 일어나는 것이 아니라 반드시 의미적 효과가 나타날 때에만 일어난다.
+
+위의 가정이 말해주는 바는 양화사가 의미와 관련된 목적으로 이동을 하는 경우에는 각 단계마다 어떤 동인이 있어야 하고 이 동인은 형태론적인 것이 아니라 의미적인 것이라는 점이다.4) 이 주장은 보다 구체화하여 Fox는 아래의 두 문장에서 목적어 양화사들의 행동에 차이가 있다고 주장한다.
+
+(5) a. A boy loves every girl. (중의적)
+(i) There is a boy who loves every girl.
+(ii) For every girl1, there is a boy who loves her1.
+
+b. John loves every girl. (비중의적)
+
+4) 이러한 가정은 모든 이동의 동인은 형태론적 자질점이라는 최소주의 이론의 가정과는 어긋나는 것이다. Fox의 가정에 따르면, 결국 이동이 반드시 형태자질 점검을 위해서만 발생하는 것이 아니라 의미에 대해서도 일어날 수 있다고 해야 할 것이다.

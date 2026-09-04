@@ -1,0 +1,19 @@
+The Effects of Lead Time Variability on Managing Component Replenishment for Customized Manufacturing
+
+single product assemble-to-order system with multiple components. ElHafsi(2009) analyzed a compound Poisson customer arrival process. Carr and Duenyas(2000) considered a MTO/ MTS system that produces two classes of products.
+
+Our model contributes to the current literature of MTO production-inventory systems in the following essential aspect. We explicitly incorporate lead time variability and setup cost into the model and examine their impact on the optimal cost and the optimal replenishment policy. This issue has not covered yet in the literature with a joint admission and inventory/ production control. Without a setup cost, it is typically assumed that batch size is one and component is replenished one by one. Therefore, the issue of what is the impact of lead time variability on the optimal cost and the optimal policy becomes diminished.
+
+The rest of the paper is organized as follows. We provide problem description and model formulation in section 2 and 3, respectively. Section 4 presents the optimal solution procedure and characterizes the optimal policy. In Section 5, we perform numerical study and present managerial insights. The last section states conclusions.
+
+II. Problem description
+
+Customer orders arrive at the MTO facility according to a Poisson process with rate λ. They are accepted only when the number of customer orders waiting for production (hereinafter they are called outstanding customer orders) is below a threshold B. Whenever each customer order is rejected due to the overflow, a penalty cost of c_R is incurred. Production times of each customer order are exponential random variables with mean μ⁻¹. Components required in MTO production are purchased from a supplier.
+
+The supplier’s lead time D follows an M-Erlang distribution. That is, D = Σ_{i=1}^{M} D_i where D_i’s are i.i.d. exponentially distributed with rate Md. Thus, E(D) = 1/d, V(D) = 1/Md², and V(D)/E²(D) = 1/M. Therefore, lead times become more regular than under the exponential distribution. D_i’s can be considered as order arrival phases that are performed in sequence. For example, if an order is placed, the replenishment process immediately enters phase M, spends D_1 in phase M, and then, enters phase M-1. Note that an actual order arrival occurs on leaving phase 1.
+
+A delay cost is assessed at rate c_h^1 for each outstanding customer order whereas a holding cost is incurred at rate c_h^2 for each component in inventory. At each instant a replenishment process is performed, the replenishment process immediately enters phase M, spends D_1 in phase M, and then, enters phase M-1. Note that an actual order arrival occurs on leaving phase 1.
+
+한국생산관리학회지 제21권 제3호 2010년 9월
+www.kci.go.kr
+271

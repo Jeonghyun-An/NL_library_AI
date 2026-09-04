@@ -1,0 +1,11 @@
+ChangHo Park • Jung-Oh Kim / Attention Shift to Global and Local Level of a Form Depends upon Stimulus Set
+
+[그림: Figure 5. Stimulus displays used in Experiment 2. Eight left figures belong to a feature set and 8 right figures to a dimension set. Preceding figures are (a) and (c) in which upper figures represent the global level and lower ones the local level. Succeeding figures are (b) and (d) in which extra lines or elements in the preceding figures are removed.]
+
+applied to the dimension set, (c) and (d) in Figure 5, likewise.
+
+Procedure A circle was presented for 300 msec at the center of the screen, followed by a compound pattern (see Figure 6). At first only one of the two levels could be identified by participants, because the other level was hidden by extra lines or elements (‘日’ in the feature set, and ‘□’ in the dimension set), and the hidden local or global information was later revealed. Participants could thus see the global
+
+[그림: Figure 6. A preceding stimulus has either a global or a local information, the target of the Preceding Judgment condition (e.g., local ‘ㄱ’ in the figure). Its succeeding stimulus has both global and local information, and the target of the Succeeding Judgment condition is a newly disclosed one (e.g., global ‘ㄴ’ in the figure).]
+
+- 179 -

@@ -1,0 +1,16 @@
+산업혁신연구 (제35권 4호), 2019. 12. pp. 95~124.
+
+Estimating the Economic Impact of Truckers’ Strike on the Korean Economy using Ritz-Spaulding Input-Output Analysis
+Kang, Seung-Gyu¹ · Chon, Joo-Yong² · Jaemin Park³
+
+Abstract
+
+A truckers’ strike is a social disaster caused by conflicts among stakeholders. Production disruption in the logistics industry creates supply constraints in other industries, which causes economic disturbances in other industries. Based on this consciousness, this study adopts the Ritz-Spaulding model based on the relationship between the endogenous and endogenous sectors as an input-output model for analyzing the economic ripple effects of the cargo-linked strikes. And to improve the existing methodological limitations.
+
+As a result of the analysis, three economic impact of the truckers’ strike were confirmed. First, the demand multiplier of the logistics industry related to the cargo solidarity strike is 1.77 and the supply multiplier is 2.54. Second, the economic impact caused by 20% of supply disruption caused by the truckers’ strike was about 60,406 billion won. Of these, about 30,369 billion won was caused by primary production constraints, and about 30,036 billion won was added afterwards. Third, the supply disruption of the logistics industry is strong, mainly in the manufacturing and construction industries, but the damages caused by the decrease in demand from related industries in the process of spreading are affected by restaurants and lodging, professional and
+
+1 Ph.D. Candidate, Department of Technology Management, School of Management, Konkuk University. 120, Neungdong-ro(Hwayang-dong 1), Gwangjin-gu, Seoul, Korea 05029, e-mail: sheuringv@gmail.com (First Author)
+2 Research Fellow, Korea Employment Information Service. 6, Taejeong-ro(Duseong-ri 1445), Maengdong-myeon, Eumseong-gun, Chungcheongbuk-do, Korea 27740, e-mail: achon@keis.or.kr
+3 Professor, Department of Technology Management, School of Management, Konkuk University. 120, Neungdong-ro(Hwayang-dong 1), Gwangjin-gu, Seoul, Korea 05029, e-mail: jpark@konkuk.ac.kr (Corresponding Author)
+
+- 122 -

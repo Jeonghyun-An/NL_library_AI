@@ -1,0 +1,25 @@
+Korean J. Plant Res. 39(1):19-26(2026)
+https://doi.org/10.7732/kjpr.2026.39.1.019
+Print ISSN 1226-3591
+Online ISSN 2287-8203
+Original Research Article
+
+삽목 시기, 토양 종류 및 생장조절제 처리에 따른 동백나무 발근 특성
+장우진¹, 임솔비¹, 정우솔¹, 유성찬¹, 김영기²*
+¹국립순천대학교 산림자원학전공 학부생, ²조교수
+Rooting Characteristics of Camellia japonica L. by Cutting type, Rooting Medium, and Plant Growth Regulator Treatments
+Woo-Jin Jang¹, Sol-bi Lim¹, Woo-sol Jeong¹, Seong-chan Yoo¹, and Young-ki Kim²*
+¹Undergraduate Student and ²Assistant Professor, Department of Forest Resources, Suncheon National University, Suncheon 57922
+
+Abstract - This study aimed to optimize a mass propagation system for Camellia japonica by evaluating rooting responses to cutting type (hardwood vs. softwood), rooting medium (sand, Kanumatsuchi, and mixed medium), and plant growth regulators treatment (IBA, NAA × 0, 100, 500, 1,000 mg·L⁻¹). Rooting performance differed significantly among treatments. In hardwood cuttings, the highest rooting rate (55.6%) was obtained in Kanumatsuchi with IBA or NAA at 1,000 mg·L⁻¹. In softwood cuttings, sand medium treated with IBA at 1,000 mg·L⁻¹ resulted in the highest rooting rate (75.6%), whereas mixed medium showed severe decay. Root development characteristics differed significantly among treatments. Overall, softwood cuttings exhibited more vigorous root growth than hardwood cuttings, although their rooting percentages tended to be relatively unstable. Considering both rooting percentage and root development traits, the use of softwood cuttings treated with IBA at 1,000 mg·L⁻¹ in sand was determined to be the most suitable and reliable method for improving the propagation success of Camellia japonica.
+
+Key words – Camellia japonica, Cutting propagation, Plant growth regulators, Rooting medium, Rooting rate
+
+서 언
+21세기 중심 산업으로 생명공학 및 바이오산업이 급부상함에 따라 건강기능식품 및 천연물 유래 신약 개발 수요가 급증하면서, 시장에서의 경쟁력 확보를 위한 국가 자생 식물의 발견, 안정적인 공급과 대량 생산 체계 구축은 중요한 과제로 대두되었다(Lee et al., 2021). 기후변화에 따른 지구 온난화가 가속화됨에 따라 한반도의 난대 및 아열대 기후대는 점차 북상하여 확대될 것으로 예측되며, 이에 따라 난대림의 생태적 기능은 저하되고 있으며, 자생지 면적은 지속적으로 감소하고 있다(Oh and Choi, 1993). 이에 고부가가치의 유망한 난·아열대 산림자원들을 집약적으로 관리하고 보존하기 위한 최적의 증식 기술 보급의 필요성이 증대되고 있는 실정이다.
+동백나무(Camellia japonica L.)는 차나무과(Theaceae)에 속하는 대표적인 난대 상록활엽교목으로 내한성이 약해 전라남북도, 경상남북도, 제주도 등 남부 지역에 분포하고 있다. 관상가치뿐만 아니라 종자유와 추출물이 보유한 항산화, 항염 및 피부 미용 효과 등으로 인해 산업적 이용 가치가 매우 높아, 예로 부터 머릿기름, 식용유 등으로 활용되어 왔다(Lee et al., 2005). 그에 대한 가치를 인정받아 기능성 성분 분석이나 종자유의 산업적 활용에 대한 연구는 집중적으로 이루어지고 있으나, 우량묘목의 대량 생산을 위한 번식 기술에 관한 연구는 체세포배양 등 조직배양 분야에 일부 국한되어 있으며, 실제 임가에서 적용 가능한 효율적인 삽목 증식 조건에 관한 연구가 미비하여 수요를 따라가지 못하고 있는 상황이다.
+
+*교신저자 : E-mail youngki.kim@scnu.ac.kr
+Tel. +82-61-750-3225
+© 본 학회지의 저작권은 (사)한국자원식물학회에 있으며, 이의 무단전재나 복제를 금합니다.
+This is an Open-Access article distributed under the terms of the Creative Commons Attribution Non-Commercial License (http://creativecommons.org/licenses/by-nc/4.0) which permits unrestricted non-commercial use, distribution, and reproduction in any medium, provided the original work is properly cited.

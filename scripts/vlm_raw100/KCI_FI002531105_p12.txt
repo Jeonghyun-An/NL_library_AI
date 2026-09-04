@@ -1,0 +1,15 @@
+Ⅲ. 개인정보보호와 경쟁법 적용 – 연방카르텔청의 결정을 중심으로
+
+1. 디지털 시대, Facebook 결정의 경쟁당국 차원의 의미
+
+2018년 초 연방카르텔청장 Andreas Mundt는 ZDF Heute와의 연방카르텔청 창립 60주년 기념 인터뷰 중 지난 60년 간 독일 경제에 있어서 특히 중요한 사례로 어떤 것이 있는지에 관한 물음에, 현 시점의 사례로 Facebook 사건을 들며 아래와 같이 답하였다.
+
+“현 시점에서 Facebook 사건이 중요한 의미를 갖는다고 생각한다. (경쟁)당국으로서 우리는 디지털 경제의 심장부(Maschinenraum der digitalen Wirtschaft)를 조사하고, 데이터축적과 시장력 간의 밀접한 관련성을 조명하고자 한다. 이는 우리에게 있어서 하나의 이정표(Meilensteine, 획기적 전환점)로서 의미를 갖는다.”
+
+연방카르텔청장의 위 인터뷰 내용에 의하면 Facebook 사례를 단순히 경쟁당국의 남용규제 사례의 하나로 평가할 것이 아니라, 디지털 경제에서의 경쟁법 집행 방향과 경쟁당국의 역할에 대한 획기적 전환을 의미하는 사례로 받아들일 수 있다.57) 이러한 관점에서, “Das Bundeskartellamt betritt juristisches Neuland mit
+
+55) ZDF Heute, 60 Jahre Bundeskartellamt–“Wettbewerb ist wichtig für den Verbraucher”, 2018.1.15.: „Welcher Fall in den vergangenen 60 Jahren war für die deutsche Wirtschaft besonders wichtig?”
+
+56) Facebook-Verfahren의 소비자보호 관점에서의 함의는, Andreas Mundt, Verbraucherschutz im Bundeskartellamt, WuW(2019), S. 182: „In der Gegenwart denke ich an den Facebook-Fall. Als Behörde schauen wir in den Maschinenraum der digitalen Wirtschaft und beleuchten den engen Zusammenhang zwischen Datenerhebung und wirtschaftlicher Macht. Das sind Meilensteine für uns.“
+
+57) 연방카르텔청 스스로가 Facebook 사례에 어떤 의미를 부여하는지에 관하여, Torsten Körber, Die Facebook-Entscheidung des Bundeskartellamtes-Machtmisbrauch durch Verletzung des Datenschutzrechts? (이하, Facebook-Entscheidung des BKartA), NZKart 4/2019, S. 187: „Das Amt wagt sich mit seiner Entscheidung auf immer noch weitgehend unkartierte Territorium vor und leistet Pionierarbeit.“ 디지털 경제에 대한 경쟁규범(Wettbewerbsnorm) 차원의 대응을 의미하는 GWB 제9차 개정 상의 법 개정 내용에 실제 적용되면서 이러한 평가를 가능하게 하였다. 특히 시장지배적 지위 보유 여부의 판단을 위한 일련의 과정에서 GWB 제18조 제3a항 등의 해석·적용이 주목받았다. 관련하여 BKartA, Hintergrundpapier, S. 4~5: „[...] All diese Kriterien sind für den Facebook-Fall einschlägig und belegen die Marktmacht von Facebook über den hohen Marktanteil hinaus.“

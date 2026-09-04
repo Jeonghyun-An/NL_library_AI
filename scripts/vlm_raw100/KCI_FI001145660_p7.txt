@@ -1,0 +1,24 @@
+대한산부회지 제48권 제5호, 2005
+
+deficiency in multiple spheroids: implication for tumor angiogenesis.
+Proc Natl Acad Sci USA 1995; 92: 768-72.
+
+25. Stein I, Neeman M, Schweiki D, Itin A, Keshher E. Stabilization of vascular endothelial growth factor mRNA by hypoxia and hypoglycemia and coregulation with other ischemia-induced genes. Mol Cell Biol 1995; 15: 5363-8.
+
+26. Teicher BA, Sotomayer EA, Huang ZD. Antiangiogenic agents potentiate cytotoxic cancer therapies against primary and metastatic disease. Cancer Res 1992; 52(23): 6702-4.
+
+27. 김용범, 전혜원, 서상수, 김재원, 박노현, 송용상 등. 자궁경부암에서 자궁경부-질 세척액과 혈청 내의 IL-8과 VEGF의 농도에 대한 환자-대조군 연구. 대한산부회지 2003; 46: 764-76.
+
+= 국문초록 =
+
+목적: 악성종양에서 VEGF가 종양성장과 신생혈관 형성을 통하여 종양화에 관여하는 것으로 알려져 있다. 이에 저자들은 침윤성 자궁경부암 조직에서 VEGF의 발현과 미세혈관밀도를 조사하여 VEGF가 자궁경부암의 성장에 미치는 영향과 임상적 관련성에 대하여 조사하고자 했다.
+
+연구 방법: 1999년 2월 1일부터 2001년 7월 31일까지 한림대학교 산부인과에서 침윤성 자궁경부암으로 진단 받은 환자 중, 외과적으로 절제된 20명을 대상으로 하였다. 적출된 자궁 또는 생검된 조직으로부터 자궁경부암 조직의 절편을 만들고, VEGF 항체와 CD31 항체를 이용하여 혈관들을 면역조직학적으로 염색하였다. 그리고, 이 결과들과 환자들의 임상적 예후인자들과 통계학적 분석을 시행하였다.
+
+결과: 모든 환자들의 조직에서 VEGF의 면역반응은 양성으로 나타나고, 미세혈관밀도는 종양성장과 더 높았으며, 통계적으로 미세혈관밀도는 VEGF와 의미있게 관련있었다. 또한, 여러 임상인자들 중, parametrium 침범이 있었던 조직에서 VEGF 면역반응정도가 통계적으로 유의하게 높은 것이 증명되었다.
+
+결론: VEGF가 자궁경부암의 혈관신생 과정에 중요한 역할을 하며, 예후와 관련가능성이 있음을 알 수 있었다.
+
+중심단어: 혈관신생, 혈관내피세포 성장인자, 자궁경부암
+
+- 1264 -

@@ -1,0 +1,32 @@
+서 위의 가설과 이 번 연구 결과가 일치한다.
+
+국내에서 문 등¹⁸은 자궁경부암에서 혈청 VEGF를 이용해 자궁경부암 II기 이상의 환자에서 치료전과 치료후에 측정한 혈청 VEGF가 통계적으로 의미있게 감소함을 규명하였고, 혈청 SCC와 함께 자궁경부암의 추적관리에 이용할 수 있다고 보고한 바 있으며, 향후 자궁경부암 치료의 추적관리에서 VEGF가 중요한 대상이 될 것으로 기대된다.
+
+결론적으로 본 연구결과를 통해 첫째, 자궁경부암에서 미세혈관밀도는 VEGF의 반응정도가 증가할 수록 비례하여 증가함을 확인할 수 있고 이는 VEGF가 자궁경부암의 종괴형성에 중요한 역할을 함을 알 수 있다. 둘째, parametrium의 침범시 VEGF의 반응정도가 유의하게 증가되는 것으로 보아 진행된 병기의 자궁경부암에서 예후와 관련 가능성을 보여 준다. 셋째, 나이, SCC, CEA, 림프 혈관강 침윤, 림프절 전이 유무, 종양의 침윤정도에 따른 VEGF의 발현은 관련성이 없음을 확인 시켜 준다. 그러나 본 연구는 추적기간이 짧고 증례 수가 적은 한계가 있으며, 앞으로 지속적인 연구를 통해 이를 극복하면 보다 의미 있는 결론을 이끌어낼 수 있을 것으로 생각된다.
+
+참고문헌
+
+1. Folkman J, Klagsburn M. Angiogenic factors. Science 1987; 235: 442-7.
+2. Folkman J. What is evidence that tumors are angiogenesis dependent? J Natl Cancer Inst 1990; 82: 4-6.
+3. Neufeld G, Cohen T, Gitay-Goren H, Poltorak Z, Tessler S, Sharin R, et al. Similarities and difference between the vascular endothelial growth factor(VEGF) splice variants. Cancer Metastasis Rev 1996; 15: 153-8.
+4. Weidner N, Semple JP, Welch WR, Folkman J. Tumor angiogenesis and metastasis-correlation in invasive breast carcinoma. N Engl J Med 1991; 324: 1-8.
+5. Fider IJ, Ellis LM. The implication of angiogenesis for biology and therapy of cancer metastasis. Cell 1994; 74: 185-8.
+6. Plate KH, Breier G, Welch HA, Risau W. Vascular endothelial growth factor is a potential tumor angiogenesis in human glioma in vivo. Nature 1992; 359: 845-8.
+7. Tjalma W, Van Marck E, Weyler J, Dirix L, Van Daele A, Goovaerts G, et al. Quantification and prognostic relevance of angiogenic parameters in invasive cervical cancer. Br J Cancer 1998; 78: 170-4.
+8. Obermair A, Warner C, Bilgi S, Speiser P, Kaider A, Reinthaller A, et al. Tumor angiogenesis in Stage IB cervical cancer; correlation of microvessel density with survival. Am J Obstet Gynecol 1998; 178: 314-9.
+9. Obermair A, Kucera E, Mayerhofer K, Speiser P, Seifert M, Czerwenka, et al. Vascular endothelial growth factor(VEGF) in human breast cancer: Correlation with disease-free survival. Int J Cancer 1997; 74: 455-8.
+10. 박성재, 이선경, 이주희, 김승보. 자궁경부암에서의 COX-2 와 VEGF 발현에 대한 연구. 대한산부회지 2004; 47: 901-7.
+11. Senger DR, Galli SJ, Dvorak AM, Perruzzi CA, Harvey VS, Dvorak HF. Tumor cell secrete a vascular permeability factor that promotes accumulation of ascitic fluid. Science 1983; 219: 983-5.
+12. Poltorak Z, Cohen T, Sivan R, Kandelis Y, Spira G, Vlodasky I, et al. VEGF 145, a secreted vascular endothelial growth factor isoform that binds to extracellular matrix. J Biol Chem 1997; 272: 7151-8.
+13. Gordon JD, Mesiano S, Zaloudek CJ, Jaffe RB. Vascular endothelial growth factor localization in human ovary and fallopian tubes: possible role in reproductive function and ovarian cyst formation. J Clin Endocrinol Metab 1996; 108: 2369-79.
+14. Zhang L, Scott PA, Turley H, Leek R, Lewis CE, Gatter KC, et al. Validation of anti-vascular endothelial growth factor (anti-VEGF) antibodies for immunochemical localization of VEGF in tissue section: expression of VEGF in the human endometrium. J Pathol 1998; 185: 402-8.
+15. Gallo O, Franchi A, Magnelli L, Vannacci A, Bodii V, Chiarugi V, et al. Cyclooxygenase-2 Pathway correlates with VEGF expression in head and neck cancer. Implication for tumor angiogenesis and metastasis. Neoplasia 2001; 3: 53-61.
+16. Weidner N. Intratumoral vascularity as a prognostic factor in cancers of the urogenital tract. Euro J Cancer 1996; 32A(14): 2506-12.
+17. Lancaster JA, Cooper RA, Longue JP, Davidson SE, Hunter RD, West CM. Vascular endothelial growth factor for radiotherapy outcome in advanced carcinoma of the cervix. Br J Cancer 2000; 83: 620-5.
+18. 문혜성, 김승철. 자궁경부암 환자에서의 혈청 VEGF 측정의 임상적 유용성. 대한산부회지 1998; 41: 168-75.
+19. Fujimoto J, Sakaguchi H, Hirose R, Ichigo S, Tamaya T. Expression of vascular endothelial growth factor(VEGF) and its mRNA in uterine cervical cancers. Br J Cancer 1999; 80: 827-33.
+20. Yoshiiji H, Harris SR, Thorgeirsson UP. Vascular endothelial growth factor is essential for initial but not continued in vitro growth of human breast carcinoma cell. Cancer Res 1997; 57: 3924-8.
+21. Tokumo K, Kodama J, Seki N, Nakanishi Y, Miyagi Y, Kamimura S, et al. Different angiogenic pathways in human cervical cancers. Gynecol Oncol 1998; 68: 38-44.
+22. Tjalma W, Weyler J, Weyn B, Van Mark E, Van Daele A, Van Damp, et al. The association between vascular endothelial growth factor, microvessel density and clinicopathologic features in invasive cervical cancer. Eur J Obstet Gynecol Reprod Biol 2000; 92: 251-7.
+23. Neeman M, Abramoritch R, Schifferbauer YS, Temple C. Regulation of angiogenesis by hypoxic stress: from solid tumors to ovarian follicle. Int J Exp Pathol 1997; 78: 57-70.
+24. Snweiki D, Neeman M, Itin A, Keshet E. Induction of vascular endothelial growth factor expression by hypoxia and by glucose.

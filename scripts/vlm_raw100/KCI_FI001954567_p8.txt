@@ -1,0 +1,13 @@
+1996년전에는 분리예가 없었던 O3:K6형이 50-80%로 가장 많이 보고되었다. 일본에서도 1996년 이후에 집단 식중독에 검출된 V. parahaemolyticus 혈청형이 예전에 우세했던 O4:K8형에서 O3:K6형으로 변하였고 1997년부터 1998년에도 이 혈청형이 가장 많은 분리율을 보고하였다 (IASR, 1999). 인도, 방글라데시, 태국, 대만 등에도 1996년 이후에 혈청형 O3:K6형에 의한 식중독이 유행하였다 (CDC, 1998 and 1999). 본 연구에서는 이 세균에 대한 혈청형이 6종류로 분포되었으며, 세계적으로 유행하는 O3:K6 혈청형이 85%로 역시 가장 높은 분리율을 보여 우리나라에서도 이 혈청형으로 인한 집단적 식중독이 앞으로 발생할 수 있다 하겠으며 앞으로 역학 조사를 위해서 V. parahaemolyticus로 인한 식중독 환자에서 이 세균이 분리되었을 때는 혈청형을 비롯하여 pulse field gel electrophoresis (PFGE) 등의 분자생물학적인 감시체계가 필요하다 하겠다. 또한 1998년에 일본, 태국 및 인도에서 새로운 혈청형 O3:K68이 분리되었어 (IASR, 1999; Matsumoto et al., 2000) 우리나라에서도 이 혈청형에 대한 동향도 주시할 필요가 있겠다.
+
+V. parahaemolyticus가 발견된 초기에는 Wagatsuma 한천배지에서 베타형 용혈 (beta type hemolysis) 즉 Kanagawa 현상은 대부분의 임상균주에서는 양성이었으나 환경분리주는 소수로 보고되었다 (Miyamoto et al., 1969; Sakazaki et al., 1968). 이러한 용혈은 V. parahaemolyticus 중에 내열성 용혈소인 thermostable direct hemolysin (TDH)를 생성하는 균주에 의해 일어난다. TDH는 오랫동안 중요한 병독력의 인자로 생각하였었다. 그러나 1985년에 Maldivе 섬에서 발생한 장염환자에서 분리한 V. parahaemolyticus에서 Kanagawa 현상-음성한 균주가 TDH-related hemolysin (TRH)를 생성한다는 것을 발견하였다(Honda et al., 1987; Honda et al., 1988). TDH를 encoding하는 tdh 유전자, TRH를 encoding하는 trh 유전자는 각각 약 70%의 뉴클레오타이드 (nucleotide) sequence를 동정할 수 있으나 임상균주의 일부는 이러한 병독력 유전자를 가지고 있지 않는 것으로 보고되었다 (Nishibuchi et al., 1989). 이러한 이유 때문에 V. parahaemolyticus 중에만 특이적으로 유전자가 검출되는 PCR법이 개발되었다.
+
+toxR 유전자는 콜레라 독소 오페론의 조절 유전자로써 처음 발견되었는데 (Chiou et al., 1991; Wong et al., 1996) V. parahaemolyticus 중에도 toxR 유전자가 있다는 것을 Lin 등은 (1999) 발견하였고 Kim 등 (1999)은 이 세균에 게만 특이적으로 반응하는 primer sequence를 만들었다. 본 연구에서도 생화학적으로 Simmon citrate와 ornithine decarboxylase가 음성인 비전형적인 소수의 V. parahaemolyticus 균주를 PCR법으로 toxR 유전자를 검출한 바 모두 양성으로 나타나 V. parahaemolyticus 균주를 신속하고 정확하게 동정하기에 이용할 수 있음을 제시하였다.
+
+V. 결 론
+
+1999년 1월부터 12월까지 환자검체에서 분리한 V. parahaemolyticus 균주에 대한 생화학적 성상, 혈청형, toxR 유전자 및 항균제 감수성 양상을 알아보고자 하였다.
+
+1. 생화학적 성상은 1일 배양 후 Simmon citrate와 ornithine decarboxylase 시험에서 각각 28%와 4%가 음성반응을 보인 것이외에는 모두 전형적인 생화학적 성상을 보였다.
+
+2. O:K 혈청형은 분리된 균주가 6가지로 대부분은 O3:K6형이 85%이었고, 나머지는 O3:K9, O3:K55, O3:56, O3:KUT 및 R형으로 구성되었다.

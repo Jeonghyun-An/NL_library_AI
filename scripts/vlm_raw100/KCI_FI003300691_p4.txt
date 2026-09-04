@@ -1,0 +1,45 @@
+Korean J. Plant Res. 39(1) : 19~26(2026)
+
+처리구와 혼합토 NAA 1,000 mg·L⁻¹ 처리구에서 각각 55.6% 로 가장 높은 발근율을 보였으며, 혼합토 control 처리구에서 6.7%로 가장 낮은 발근율을 보였다.
+
+혼합토 조건에서는 IBA 처리구들의 발근율이 전반적으로 저조했음에도 불구하고, 유독 NAA 1,000 mg·L⁻¹ 처리구에서만 55.6%라는 높은 발근율을 기록하였다. 모래 용토에서 NAA 처리구의 발근율은 17.8~31.1%로 IBA 처리구에 비해 상대적으로 낮은 경향을 보였으며, IBA 500 mg·L⁻¹ 처리는 모래 용토에서 48.9%의 양호한 발근율을 보였다.
+
+녹지삼은 처리 조건에 따라 발근율이 0~75.6%로 매우 극단적인 차이를 보였다(Fig. 2b). 가장 높은 발근율을 기록한 처리구는 모래 IBA 1,000 mg·L⁻¹ 처리구(75.6%)였으며, 이와 대조적으로 혼합토 처리구에서는 녹지삼의 발근율이 0~8.9%를 보이며 대부분 고사하였다. 녹소토는 8.9~37.8%로 중간 정도의 발근율을 나타냈다.
+
+처리구별 뿌리 발달 특성
+
+뿌리의 발달 지표인 유근 수와 유근 길이를 분석한 결과, 삽목 시기에 따라 뿌리의 형성 및 신장 패턴은 뚜렷하게 구분되었으며, 같은 시기 조건이라도 용토의 물리적 환경과 생장 조절물질의 종류 및 농도 간에 뚜렷한 차이가 관찰되었다(Table 1).
+
+Table 1. Root development characteristics as affected by cutting type, rooting medium, and plant growth regulator (PGR) treatment.
+
+| Rooting medium | PGR treatment | Hardwood cutting |  | Softwood cutting |  |
+| --- | --- | --- | --- | --- | --- |
+|  |  | Number of root | Length of root (mm) | Number of root | Length of root (mm) |
+|  | Control | 7.1 ± 4.6<sup>ab</sup> | 23.1 ± 9.5<sup>de</sup> | 9.0 ± 5.1 | 48.1 ± 16.8 |
+|  | IBA 100 mg·L⁻¹ | 7.1 ± 3.5<sup>b</sup> | 22.6 ± 10.3<sup>e</sup> | 12.9 ± 5.4 | 52.8 ± 25.6 |
+|  | IBA 500 mg·L⁻¹ | 11.4 ± 5.2<sup>b</sup> | 35.0 ± 24.0<sup>a-c</sup> | 12.0 ± 5.2 | 42.4 ± 23.6 |
+|  | IBA 1,000 mg·L⁻¹ | 9.5 ± 5.0<sup>ab</sup> | 47.4 ± 28.3<sup>b-e</sup> | 18.1 ± 10.6 | 49.0 ± 26.2 |
+|  | NAA 100 mg·L⁻¹ | 7.6 ± 3.9<sup>ab</sup> | 21.0 ± 3.8<sup>e</sup> | 9.5 ± 6.3 | 58.1 ± 23.3 |
+|  | NAA 500 mg·L⁻¹ | 8.8 ± 6.4<sup>ab</sup> | 33.9 ± 16.6<sup>b-e</sup> | 7.7 ± 6.5 | 42.6 ± 22.6 |
+|  | NAA 1,000 mg·L⁻¹ | 7.0 ± 3.9<sup>ab</sup> | 35.8 ± 28.3<sup>b-e</sup> | 16.6 ± 9.5 | 79.7 ± 29.2 |
+|  | Control | 6.4 ± 4.4<sup>ab</sup> | 41.5 ± 23.3<sup>a-e</sup> | 6.0 ± 3.3 | 49.9 ± 25.3 |
+|  | IBA 100 mg·L⁻¹ | 7.4 ± 2.5<sup>ab</sup> | 75.1 ± 34.4<sup>a</sup> | 10.4 ± 4.7 | 80.0 ± 25.1 |
+|  | IBA 500 mg·L⁻¹ | 6.5 ± 2.3<sup>ab</sup> | 50.7 ± 21.4<sup>a-e</sup> | 13.5 ± 9.4 | 69.6 ± 57.2 |
+|  | IBA 1,000 mg·L⁻¹ | 10.0 ± 4.4<sup>ab</sup> | 48.2 ± 27.8<sup>a-cde</sup> | - | - |
+|  | NAA 100 mg·L⁻¹ | 5.6 ± 3.2<sup>ab</sup> | 32.0 ± 31.2<sup>cde</sup> | 8.7 ± 3.8 | 65.2 ± 20.8 |
+|  | NAA 500 mg·L⁻¹ | 5.7 ± 3.8<sup>ab</sup> | 36.1 ± 29.0<sup>cde</sup> | 5.4 ± 4.9 | 69.9 ± 36.8 |
+|  | NAA 1,000 mg·L⁻¹ | 18.0 ± 16.9<sup>a</sup> | 30.6 ± 13.0<sup>b-e</sup> | - | - |
+|  | Control | 4.5 ± 3.5<sup>c</sup> | 46.3 ± 25.8<sup>a-e</sup> | - | - |
+|  | IBA 100 mg·L⁻¹ | 5.3 ± 4.4<sup>ab</sup> | 46.0 ± 31.4<sup>a-e</sup> | - | - |
+|  | IBA 500 mg·L⁻¹ | 4.7 ± 2.5<sup>ab</sup> | 59.6 ± 29.4<sup>abc</sup> | 6.8 ± 4.6 | 110.0 ± 34.1 |
+|  | IBA 1,000 mg·L⁻¹ | 9.6 ± 7.6<sup>ab</sup> | 61.2 ± 13.7<sup>abc</sup> | 9.0 ± 1.4 | 40.7 ± 26.7 |
+|  | NAA 100 mg·L⁻¹ | 4.0 ± 2.6<sup>c</sup> | 58.3 ± 38.1<sup>ab</sup> | - | - |
+|  | NAA 500 mg·L⁻¹ | 4.1 ± 2.9<sup>c</sup> | 64.7 ± 23.2<sup>abc</sup> | - | - |
+|  | NAA 1,000 mg·L⁻¹ | 4.2 ± 2.3<sup>c</sup> | 68.8 ± 32.2<sup>abc</sup> | - | - |
+|  | Average | 7.6 ± 5.5 | 47.8 ± 29.6 | 11.5 ± 8.3 | 56.6 ± 30.2 |
+|  | ANOVA test | F | 3.196 | 3.841 | 4.399 | 3.617 |
+|  |  | P value | < 0.01 | < 0.01 | < 0.001 | < 0.001 |
+
+<sup>7</sup>Different letters within a column indicate significant difference (P < 0.05) among treatments according to ANOVA test followed by Duncan’s multiple range test (n ≥ 10).
+
+- 22 -

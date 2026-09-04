@@ -1,0 +1,11 @@
+한국심리학회지 : 실험
+
+Figure 3. Mean RTs (msec) in each condition by levels and by congruity as a function of SOAs for the dimension set in Experiment 1.
+
+Mean accuracy was 93.6% for the whole participants. A repeated measures analysis of variance on accuracy data showed that the congruent stimulus (98.0%) was more accurately judged than the incongruent stimulus (89.2%), F(1, 10) = 62.37, p < .001, MSE = 100.27. That is, Stroop interference was also observed in accuracy.
+
+A large Stroop interference was observed both in the feature set and in the dimension set. Asymmetry of Stroop interference between the global and the local level, however, did not reach significance, though there was a tendency of asymmetry for both stimulus sets. The effect of SOA and its interaction with congruity indicates that as global and local information build up more and more, the interference between them also becomes larger.
+
+Shift of attention can be studied by inter-trial analysis. Each trial could be classified into one of the four distinct states according to the two attention levels (global and local) and the two responses which participants selected (right and left). And there would be four types of state transition between a preceding trial and its succeeding one: 1) no shift, where both level and response of a succeeding trial were the same as those of its preceding one, 2) shift of level, where attention levels were shifted between trials, but with the same response, 3) shift of response, where selected responses were shifted between trials, but with the same level cued, 4) shift of both, where both the level and the response were shifted between trials. Type of state transition had a differential influence on RT histograms according to the type of stimulus set (Figure 4). Four levels of prior states were pooled, because this variable was not statistically significant. Three SOA conditions were also pooled, because this variable did not interact
+
+- 176 -
