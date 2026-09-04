@@ -90,12 +90,12 @@ Expected: `CLEAN`
 
 ---
 
-### Task 2: GIT_WORKFLOW.md
+### Task 2: GIT_WORKFLOW.md — ✅ 완료 (`e2911cf` → 리뷰 수정 `457ee1b`)
 
 **Files:**
 - Create: `GIT_WORKFLOW.md`
 
-- [ ] **Step 1: 파일 없음 확인**
+- [x] **Step 1: 파일 없음 확인**
 
 Run: `test -f GIT_WORKFLOW.md && echo EXISTS || echo MISSING`
 Expected: `MISSING`
@@ -134,9 +134,9 @@ dev ─분기→ <type>/round<NN>-<설명> ─개발·커밋─→ [사용자 �
 ## 개발 환경
 
 - **prod** (`docker-compose.yml`): 전체 스택 — API·워커·데이터 계층(postgres·redis·minio·milvus)·GPU 서비스(vllm·gemma·flux).
-- **dev** (`docker-compose.dev.yml`): 데이터 계층만 별도(`postgres-dev`·`redis-dev`·`minio-dev`·`milvus-dev`, DB명 `nl_lib_dev` 등 `_dev` 접미). GPU를 크게 먹는 vllm/gemma/flux는 prod 스택 컨테이너를 `nl-lib-net` 경유로 그대로 공유한다(따로 띄우지 않음).
-- 두 스택은 완전히 분리된 데이터 계층 + 공유 GPU 서비스라는 단일 서버 구조다. museum류의 별도 물리 노드 SSH 터널은 필요 없다.
-- 개발 사이클: `docker compose -f docker-compose.dev.yml up -d`로 dev 데이터 계층 기동 → 코드 개발·검증 → 확정되면 위 브랜치 흐름대로 병합.
+- **dev** (`docker-compose.dev.yml`): 앱 계층(`fastapi-dev`·celery 워커 4종·`nuxt-dev`·`gateway-dev`)과 데이터 계층(`postgres-dev`·`redis-dev`·`minio-dev`·`milvus-dev`, DB명 `nl_lib_dev` 등 `_dev` 접미)을 **모두** prod와 별도로 띄운다. GPU를 크게 먹는 vllm/gemma/flux만 prod 스택 컨테이너를 `nl-lib-net` 경유로 그대로 공유한다(따로 띄우지 않음).
+- 두 스택은 GPU 서비스만 공유하고 나머지(앱+데이터)는 완전히 분리된 단일 서버 구조다. museum류의 별도 물리 노드 SSH 터널은 필요 없다.
+- 개발 사이클: `docker compose -f docker-compose.dev.yml up -d`로 dev 스택(앱+데이터) 전체 기동 → 코드 개발·검증 → 확정되면 위 브랜치 흐름대로 병합.
 
 ## 머지 승인 규칙
 
@@ -180,7 +180,7 @@ dev ─분기→ <type>/round<NN>-<설명> ─개발·커밋─→ [사용자 �
 - [ ] **Step 3: 검증**
 
 Run: `grep -c "^## " GIT_WORKFLOW.md`
-Expected: `8`
+Expected: `9` (브랜치 모델·흐름·개발 환경·머지 승인 규칙·커밋 메시지·개발 가이드 문서·라운드 생애주기·디자인 트랙·비고 — 최초 plan 작성 시 8로 오기재됐던 것을 Task 2 구현자가 발견해 정정)
 
 - [ ] **Step 4: 커밋**
 
