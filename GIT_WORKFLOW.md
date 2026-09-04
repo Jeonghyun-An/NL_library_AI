@@ -17,25 +17,26 @@
 ## 흐름
 
 ```
-dev ─분기→ <type>/round<NN>-<설명> ─개발·커밋─→ [사용자 승인] ─merge→ dev ─[라운드 종료 승인]→ main ─push→ origin
+dev ─분기→ <type>/round<NN>-<설명> ─개발·커밋─→ 리뷰 ─[사용자 승인]→ merge→ dev ─[라운드 종료 승인]→ main ─push→ origin
 ```
 
 1. `dev`에서 작업 브랜치 분기
-2. 개발 → 커밋 → 원격 푸시
-3. 완성되면 사용자 승인을 받은 뒤 `dev`로 머지 (승인 전 머지 금지)
+2. 개발 → 커밋 → (필요 시) 원격 푸시 — 협업자와 공유할 필요가 없는 솔로 작업은 `dev`·`main` push만으로 충분하다
+3. 완성되면 리뷰(서브에이전트 정적 리뷰 + 자가 점검) → 사용자 승인을 받은 뒤 `dev`로 머지 (승인 전 머지 금지)
 4. `dev` 푸시
 5. 라운드 종료(사용자 승인): `dev → main` 머지 + `origin` push
 
 ## 개발 환경
 
-- **prod** (`docker-compose.yml`): 전체 스택 — API·워커·데이터 계층(postgres·redis·minio·milvus)·GPU 서비스(vllm·gemma·flux).
-- **dev** (`docker-compose.dev.yml`): 앱 계층(`fastapi-dev`·celery 워커 4종·`nuxt-dev`·`gateway-dev`)과 데이터 계층(`postgres-dev`·`redis-dev`·`minio-dev`·`milvus-dev`, DB명 `nl_lib_dev` 등 `_dev` 접미)을 **모두** prod와 별도로 띄운다. GPU를 크게 먹는 vllm/gemma/flux만 prod 스택 컨테이너를 `nl-lib-net` 경유로 그대로 공유한다(따로 띄우지 않음).
+- **prod** (`docker-compose.yml`): 전체 스택 — API·워커·프론트(`nuxt`)·게이트웨이(`gateway`)·데이터 계층(postgres·redis·minio·milvus·etcd)·GPU 서비스(vllm·gemma·flux).
+- **dev** (`docker-compose.dev.yml`): 앱 계층(`fastapi-dev`·celery 워커 4종+스케줄러 `celery-beat-dev`·`nuxt-dev`·`gateway-dev`)과 데이터 계층(`postgres-dev`·`redis-dev`·`minio-dev`·`milvus-dev`·`etcd-dev`·`minio-init-dev`, DB명 `nl_lib_dev` 등 `_dev` 접미)을 **모두** prod와 별도로 띄운다. GPU를 크게 먹는 vllm/gemma/flux만 prod 스택 컨테이너를 `nl-lib-net` 경유로 그대로 공유한다(따로 띄우지 않음).
 - 두 스택은 GPU 서비스만 공유하고 나머지(앱+데이터)는 완전히 분리된 단일 서버 구조다. museum류의 별도 물리 노드 SSH 터널은 필요 없다.
-- 개발 사이클: `docker compose -f docker-compose.dev.yml up -d`로 dev 스택(앱+데이터) 전체 기동 → 코드 개발·검증 → 확정되면 위 브랜치 흐름대로 병합.
+- **dev 스택은 GPU 서버에서 돈다.** 볼륨 5종과 `nl-lib-net`이 전부 `external: true`라 prod 스택이 먼저 떠 있어야 하고, `fastapi-dev`는 NVIDIA GPU를 예약하며 `/data/...` Linux 경로를 바인드마운트한다 — 이 저장소를 체크아웃한 개발 PC(Windows 등)에서 `docker compose -f docker-compose.dev.yml up -d`를 직접 실행할 수 없다.
+- **dev 서비스는 이미지를 registry에서 pull한다** — `build:` 키가 없다. 코드를 고쳐도 `up -d`만으로는 반영되지 않는다. 개발 사이클: 코드 수정 → `bash scripts/build_dev_images.sh`(빌드+push) → Portainer에서 `nl-lib-dev` 스택 Pull & Redeploy → 검증 → 확정되면 위 브랜치 흐름대로 병합.
 
 ## 머지 승인 규칙
 
-- 작업 브랜치 → `dev`: 매번 사용자 채팅 승인 필수. 협업자가 없으므로 리뷰는 자가 점검 체크리스트(테스트 green + 관련 파이프라인 수동 스모크 + 문서 갱신 여부)로 한다.
+- 작업 브랜치 → `dev`: 매번 사용자 채팅 승인 필수. 협업자가 없으므로 팀 PR 리뷰 대신 (1) `.claude/agents/code-reviewer.md` 서브에이전트의 정적 리뷰와 (2) 자가 점검 체크리스트(테스트 green + 관련 파이프라인 수동 스모크 + 문서 갱신 여부)를 순서대로 통과하는 것으로 리뷰 게이트를 구성한다.
 - `dev` → `main`: 라운드 종료 판단·승인은 사용자. 승인되면 `dev→main` 머지 + `origin` push.
 
 ## 커밋 메시지
