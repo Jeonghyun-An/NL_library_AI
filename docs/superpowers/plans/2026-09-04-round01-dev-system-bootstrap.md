@@ -691,12 +691,14 @@ git commit -m "[Chore] round01 — 실험 산출물 research/ocr-extraction-comp
 
 ---
 
-### Task 11: research/ 나머지 5개 주제 이동 + 루트 파일 분배
+### Task 11: research/ 나머지 5개 주제 이동 + 루트 파일 분배 — ✅ 완료
+
+> **Task 10과 동일한 패턴 재발**: 루트 파일 3개(`kci_FI000865437_sections.json`·`paper_chunk_sample.json`·`summary_sample.json`)가 이 워크트리에 한 번도 추적된 적 없어 `git mv` 불가 — 구현자가 BLOCKED로 정확히 보고, 컨트롤러가 공유 체크아웃에서 내용을 읽어와 재생성. **이번엔 `diff --strip-trailing-cr`로 대조하다 실제 오타를 하나 잡았다** — `paper_chunk_sample.json`의 부동소수점 `score` 값을 옮겨적으며 `...306529`로 오기(원본은 `...306549`) — 재대조 후 정정, 최종 확인 완료.
 
 **Files:**
 - Move: `scripts/*` → `research/table-cell-fill/`, `research/font-and-layout-forensics/`, `research/corpus-and-failure-analysis/`, `research/kci-paper-samples/`, `research/gongu-wikisource-manifest-check/`
 
-- [ ] **Step 1: table-cell-fill 이동 (9개)**
+- [x] **Step 1: table-cell-fill 이동 (9개)**
 
 ```bash
 for f in cell_fill.json cell_fill_analysis.py cell_stats_full.py cell_stats_policy.json \
@@ -705,7 +707,7 @@ for f in cell_fill.json cell_fill_analysis.py cell_stats_full.py cell_stats_poli
 done
 ```
 
-- [ ] **Step 2: font-and-layout-forensics 이동 (9개)**
+- [x] **Step 2: font-and-layout-forensics 이동 (9개)**
 
 ```bash
 for f in font_forensics.json font_forensics.py font_targets.json glyph_gap.json glyph_recovery_gap.py \
@@ -714,7 +716,7 @@ for f in font_forensics.json font_forensics.py font_targets.json glyph_gap.json 
 done
 ```
 
-- [ ] **Step 3: corpus-and-failure-analysis 이동 (16개 + root 1개)**
+- [x] **Step 3: corpus-and-failure-analysis 이동 (16개 + root 1개)**
 
 ```bash
 for f in analyze_corpus_types.py cluster_failures.py corpus_type_comparison.json fail_check2.json \
@@ -726,7 +728,7 @@ done
 git mv failures_out.json research/corpus-and-failure-analysis/
 ```
 
-- [ ] **Step 4: kci-paper-samples 이동 (11개 + root 3개)**
+- [x] **Step 4: kci-paper-samples 이동 (11개 + root 3개)**
 
 ```bash
 for f in kci_FI000921643_full.txt kci_sample.txt kci_sample100.txt kci_sample70.txt \
@@ -739,7 +741,7 @@ git mv paper_chunk_sample.json research/kci-paper-samples/
 git mv summary_sample.json research/kci-paper-samples/
 ```
 
-- [ ] **Step 5: gongu-wikisource-manifest-check 이동 (6개)**
+- [x] **Step 5: gongu-wikisource-manifest-check 이동 (6개)**
 
 ```bash
 for f in verify_ws001.txt ws9_fail.json ws_doctype_check.json ws_fail.json ws_search_test.json ws_status.json; do
@@ -747,7 +749,7 @@ for f in verify_ws001.txt ws9_fail.json ws_doctype_check.json ws_fail.json ws_se
 done
 ```
 
-- [ ] **Step 6: 개수 검증**
+- [x] **Step 6: 개수 검증**
 
 Run:
 ```bash
@@ -759,7 +761,7 @@ echo "gongu-wikisource-manifest-check: $(ls research/gongu-wikisource-manifest-c
 ```
 Expected: 괄호 안 숫자와 일치
 
-- [ ] **Step 7: 이동한 .py 문법 검증**
+- [x] **Step 7: 이동한 .py 문법 검증**
 
 ```bash
 find research/table-cell-fill research/font-and-layout-forensics research/corpus-and-failure-analysis -name "*.py" -exec python -m py_compile {} \;
@@ -767,7 +769,7 @@ echo "exit=$?"
 ```
 Expected: `exit=0`
 
-- [ ] **Step 8: scripts/ 잔존 파일 확인 (운영 도구만 남아야 함)**
+- [x] **Step 8: scripts/ 잔존 파일 확인 (운영 도구만 남아야 함)**
 
 Run: `git ls-files scripts/ | grep -v '^scripts/bulk_ingest/'`
 Expected:
@@ -780,7 +782,7 @@ scripts/crawler.py
 ```
 (`build_vlm_policy_selection.py`는 Task 12에서 최종 확정)
 
-- [ ] **Step 9: 커밋**
+- [x] **Step 9: 커밋**
 
 ```bash
 git add research/table-cell-fill research/font-and-layout-forensics research/corpus-and-failure-analysis research/kci-paper-samples research/gongu-wikisource-manifest-check
