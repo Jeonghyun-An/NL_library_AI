@@ -1083,7 +1083,7 @@ git commit -m "[Docs] round01 — 완료노트 작성, 상태 문서 갱신, REA
 
 **Files:** 없음(git 작업만)
 
-> **Task 9 리뷰에서 남은 잔재**: 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI`, 워크트리 아님)에 `scripts_debug_out.txt`·`scripts_debug_out2.txt`·`soffice_log2.txt` 3개 미추적 파일이 격리 때문에 그대로 남아있다(무해하지만 이제 `.gitignore`로 커버됨). 이 Task에서 공유 체크아웃으로 옮겨간 뒤(Step 6) 한 번 `rm scripts_debug_out.txt scripts_debug_out2.txt soffice_log2.txt`로 정리한다.
+> **Task 9·10·11 리뷰에서 남은 잔재**: 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI`, 워크트리 아님)에 미추적 파일 8개가 격리 때문에 그대로 남아있다 — 디버그 로그 3개(`scripts_debug_out.txt`·`scripts_debug_out2.txt`·`soffice_log2.txt`, 이제 `.gitignore`로 커버됨) + Task 10·11에서 워크트리로 재생성해 옮긴 원본 5개(`quality_extra.json`·`vlm_sample.json`·`kci_FI000865437_sections.json`·`paper_chunk_sample.json`·`summary_sample.json` — 내용은 `research/`에 그대로 살아있으므로 이 5개는 중복 잔재). 이 Task에서 공유 체크아웃으로 옮겨간 뒤(Step 6) 한 번에 정리: `rm scripts_debug_out.txt scripts_debug_out2.txt soffice_log2.txt quality_extra.json vlm_sample.json kci_FI000865437_sections.json paper_chunk_sample.json summary_sample.json`.
 
 - [ ] **Step 1: 작업 트리 점검 — 의도한 파일만 변경됐는지**
 
