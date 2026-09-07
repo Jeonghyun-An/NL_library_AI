@@ -21,6 +21,8 @@ dist/
 
 # Logs
 *.log
+*_debug_out*.txt
+soffice_log*.txt
 
 # Docker volumes (로컬)
 data/
