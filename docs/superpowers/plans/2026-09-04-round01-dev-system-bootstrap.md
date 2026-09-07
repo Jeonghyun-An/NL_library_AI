@@ -618,6 +618,8 @@ git commit -m "[Chore] round01 — 디버그 로그 gitignore 패턴 추가 + �
 ### Task 10: research/ 생성 + ocr-extraction-comparison·vlm-routing-policy 이동 — ✅ 완료
 
 > **실행 중 발견**: `quality_extra.json`·`vlm_sample.json`은 실제로는 이 워크트리에 **한 번도 추적된 적 없었음**(공유 체크아웃에만 미추적 파일로 존재 — 워크트리 생성 시 미추적 파일은 안 딸려옴). 구현자가 `git mv` 대신 BLOCKED로 정확히 보고했고, 컨트롤러가 공유 체크아웃에서 내용을 읽어와 동일 내용으로 재생성 후 커밋(구 파일 대비 CRLF→LF·말미 개행 차이만 있고 내용은 100% 동일 — `diff --strip-trailing-cr`로 확인). `research/` 나머지 5개 디렉토리는 의도대로 빈 채로 생성됨(Task 11 대상).
+> **리뷰 발견 + 정정**: `space_stats_full.py`(내용상 `cell_stats_full.py`의 v2 — docstring·OUT 경로 모두 table-cell-fill 주제)가 ocr-extraction-comparison에, `quality_extra.json`(요약·청킹 품질 데이터, VLM 라우팅과 무관)이 vlm-routing-policy에 잘못 배정돼 있었음 — Task 11이 그 두 폴더를 채우기 전에 미리 재배치(`c61f427`). **Task 11의 table-cell-fill·kci-paper-samples 개수 검증값은 이 선(先)배치분을 포함하도록 조정됨(각 +1).**
+> **이월(고치지 않음)**: 이동된 스크립트 20개 중 15개가 산출물 경로를 여전히 `scripts/...` 절대/상대 경로로 하드코딩하고 있어, 재실행하면 새 산출물이 `research/`가 아니라 예전 `scripts/` 위치에 다시 생긴다. 코드 내용 수정은 round01(파일 재배치) 스코프 밖으로 보고 이월 — 완료노트에 기록.
 
 **Files:**
 - Create: `research/` 7개 하위 디렉토리
@@ -749,10 +751,10 @@ done
 
 Run:
 ```bash
-echo "table-cell-fill: $(ls research/table-cell-fill | wc -l) (expect 9)"
+echo "table-cell-fill: $(ls research/table-cell-fill | wc -l) (expect 10 — Task 10 리뷰로 재분류된 space_stats_full.py 1개가 이미 들어있음)"
 echo "font-and-layout-forensics: $(ls research/font-and-layout-forensics | wc -l) (expect 9)"
 echo "corpus-and-failure-analysis: $(ls research/corpus-and-failure-analysis | wc -l) (expect 17)"
-echo "kci-paper-samples: $(ls research/kci-paper-samples | wc -l) (expect 14)"
+echo "kci-paper-samples: $(ls research/kci-paper-samples | wc -l) (expect 15 — Task 10 리뷰로 재분류된 quality_extra.json 1개가 이미 들어있음)"
 echo "gongu-wikisource-manifest-check: $(ls research/gongu-wikisource-manifest-check | wc -l) (expect 6)"
 ```
 Expected: 괄호 안 숫자와 일치
@@ -1023,6 +1025,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 - `app/odl_stderr.log`(8MB, 미추적) 등 `app/` 내부 대용량 로그 정리 — 이번 스코프 밖
 - 루트의 `INDEX.README.md`·`inspect_odl.py`·`migrate_add_*.sql` — round01 스코프 밖(CLAUDE.md §1에 이월 명시)
 - **[보안, 우선순위 높음] `app/api/admin.py:199,378,380` Milvus expression injection** — 인증 없는 엔드포인트에서 `cnts_id`가 검증 없이 f-string으로 `expr`에 삽입돼 임의 삭제 가능. 2026-09-07 발견·보고, 도서관 대회 시연(약 1개월 후) 우선으로 사용자가 명시적으로 이월 지시 + "DB 파괴 행위 절대 금지" 지시(메모리 저장: `nl-lib-never-wipe-db`·`nl-lib-library-competition-deadline`). **대회 이후 최우선으로 별도 라운드에서 처리.**
+- `research/`로 옮긴 스크립트 20개 중 15개가 산출물 경로를 여전히 옛 `scripts/...` 위치로 하드코딩 — 재실행 시 `research/`가 아니라 `scripts/`에 다시 산출물이 생긴다(Task 10 리뷰 발견). 코드 수정은 이번 라운드(파일 재배치) 스코프 밖 — 다음에 그 스크립트들을 실제로 재실행할 일이 생기면 그때 경로 상수를 `Path(__file__).parent` 기준으로 고친다.
 
 ## 다음 라운드 진입점
 - 범위 미정 — `docs/roadmap/00_status.md`와 `README.md` §10 로드맵에서 확인
