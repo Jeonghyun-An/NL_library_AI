@@ -513,12 +513,15 @@ git commit -m "[Chore] round01 — round-finish 스킬 추가"
 
 ---
 
-### Task 8: .claude/agents/code-reviewer.md
+### Task 8: .claude/agents/code-reviewer.md — ✅ 완료 (`ecd18ae` → 리뷰 보강 `3ccea0e`)
+
+> **리뷰 발견**: (1) 항목2에 테스트충분성 축 누락 — 추가. (2) 항목5 "의식"이 실행 불가능한 지시 — "먼저 읽고 대조" 로 수정. (3) **리뷰 중 실제 보안 취약점 발견**: `app/api/admin.py:199,378,380`의 Milvus expression injection(인증 없음, `cnts_id` 미검증 f-string 삽입으로 임의 삭제 가능) — 사용자에게 즉시 보고, 도서관 대회 시연(2026-09-07 기준 약 1개월 후) 우선으로 이월 승인받음 + "DB 파괴 행위 절대 금지" 지시 받아 메모리에 저장([[nl-lib-never-wipe-db]], [[nl-lib-library-competition-deadline]]). code-reviewer 항목3에 이 이슈의 이월 상태와 "데모 전까지 수정 코드 생성 금지"를 명시해 향후 라운드가 재보고하거나 섣불리 손대지 않도록 함. **round01 자체는 이 취약점을 고치지 않는다** — Task 14 완료노트 이월 항목에 반영.
+> **환경 유의**: 이 세션은 museum 프로젝트 루트에서 시작돼 `/round-finish`·`code-reviewer` 등 스킬/에이전트 로더가 museum 버전을 가리키고 있다(NL-Lib 버전은 이 워크트리에만 존재, 아직 dev/main에 없음). Task 15에서 `/round-finish` 스킬을 직접 호출하지 말고 `.claude/skills/round-finish/SKILL.md`의 절차를 수동으로 따른다.
 
 **Files:**
 - Create: `.claude/agents/code-reviewer.md`
 
-- [ ] **Step 1: 작성**
+- [x] **Step 1: 작성**
 
 `model: opus` 명시 — 개발(메인 세션)은 Sonnet이어도 리뷰는 항상 Opus로 고정(2026-09-04 합의).
 
@@ -551,12 +554,12 @@ model: opus
 - 동작을 막는 high는 맨 앞에. 요약 1~2문장 + 결함 목록.
 ```
 
-- [ ] **Step 2: frontmatter 검증**
+- [x] **Step 2: frontmatter 검증**
 
 Run: `python -c "import yaml; d=yaml.safe_load(open('.claude/agents/code-reviewer.md', encoding='utf-8').read().split('---')[1]); assert d['model']=='opus'; print('OK')"`
 Expected: `OK`
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 git add .claude/agents/code-reviewer.md
@@ -1015,6 +1018,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 - `docs/adr/ADR-001-*.md` — 다음 큰 결정 시점에
 - `app/odl_stderr.log`(8MB, 미추적) 등 `app/` 내부 대용량 로그 정리 — 이번 스코프 밖
 - 루트의 `INDEX.README.md`·`inspect_odl.py`·`migrate_add_*.sql` — round01 스코프 밖(CLAUDE.md §1에 이월 명시)
+- **[보안, 우선순위 높음] `app/api/admin.py:199,378,380` Milvus expression injection** — 인증 없는 엔드포인트에서 `cnts_id`가 검증 없이 f-string으로 `expr`에 삽입돼 임의 삭제 가능. 2026-09-07 발견·보고, 도서관 대회 시연(약 1개월 후) 우선으로 사용자가 명시적으로 이월 지시 + "DB 파괴 행위 절대 금지" 지시(메모리 저장: `nl-lib-never-wipe-db`·`nl-lib-library-competition-deadline`). **대회 이후 최우선으로 별도 라운드에서 처리.**
 
 ## 다음 라운드 진입점
 - 범위 미정 — `docs/roadmap/00_status.md`와 `README.md` §10 로드맵에서 확인
@@ -1038,6 +1042,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 
 ## 다음 할 일
 - round01 완료. 다음 라운드 범위는 미정 — 착수 시 이 문서와 `README.md` §10 로드맵을 함께 갱신한다.
+- **[보류 — 도서관 대회 시연 이후]** `app/api/admin.py` Milvus expression injection 보안 수정. 대회 전까지는 손대지 않는다(round01-완료노트 §이월 참고).
 
 ## 라운드 이력
 | 라운드 | 요약 | 상태 |
