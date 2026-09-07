@@ -619,7 +619,7 @@ git commit -m "[Chore] round01 — 디버그 로그 gitignore 패턴 추가 + �
 
 > **실행 중 발견**: `quality_extra.json`·`vlm_sample.json`은 실제로는 이 워크트리에 **한 번도 추적된 적 없었음**(공유 체크아웃에만 미추적 파일로 존재 — 워크트리 생성 시 미추적 파일은 안 딸려옴). 구현자가 `git mv` 대신 BLOCKED로 정확히 보고했고, 컨트롤러가 공유 체크아웃에서 내용을 읽어와 동일 내용으로 재생성 후 커밋(구 파일 대비 CRLF→LF·말미 개행 차이만 있고 내용은 100% 동일 — `diff --strip-trailing-cr`로 확인). `research/` 나머지 5개 디렉토리는 의도대로 빈 채로 생성됨(Task 11 대상).
 > **리뷰 발견 + 정정**: `space_stats_full.py`(내용상 `cell_stats_full.py`의 v2 — docstring·OUT 경로 모두 table-cell-fill 주제)가 ocr-extraction-comparison에, `quality_extra.json`(요약·청킹 품질 데이터, VLM 라우팅과 무관)이 vlm-routing-policy에 잘못 배정돼 있었음 — Task 11이 그 두 폴더를 채우기 전에 미리 재배치(`c61f427`). **Task 11의 table-cell-fill·kci-paper-samples 개수 검증값은 이 선(先)배치분을 포함하도록 조정됨(각 +1).**
-> **이월(고치지 않음)**: 이동된 스크립트 20개 중 15개가 산출물 경로를 여전히 `scripts/...` 절대/상대 경로로 하드코딩하고 있어, 재실행하면 새 산출물이 `research/`가 아니라 예전 `scripts/` 위치에 다시 생긴다. 코드 내용 수정은 round01(파일 재배치) 스코프 밖으로 보고 이월 — 완료노트에 기록.
+> **이월(고치지 않음, Task 11 리뷰로 범위 정정됨)**: `research/`로 옮긴 스크립트 총 32개 중 26개(Task 10분 13 + Task 11분 13)가 입출력 경로를 여전히 옛 `scripts/...` 절대/상대 경로로 하드코딩하고 있다. 이 중 19개는 **입력**부터 `scripts/`에서 못 찾아 `FileNotFoundError`로 죽어 산출물 자체를 못 만들고(자기 폴더로 옮겨온 입력 파일조차 옛 경로로 참조하는 경우 포함 — 예: `font_forensics.py`가 같은 폴더의 `font_targets.json`을 `scripts/font_targets.json`으로 읽으려 함), 나머지 7개만 애초 우려대로 "산출물이 엉뚱한 곳에 다시 생기는" 증상이다. 코드 내용 수정은 round01(파일 재배치) 스코프 밖으로 보고 이월 — 완료노트에 기록. 고칠 때는 입력·출력 상수 둘 다 `Path(__file__).parent` 기준으로 바꿔야 하며, 20건은 다른 주제 폴더(`research/<다른주제>/`)를 참조하므로 단순 자기 폴더 기준으로만 고치면 안 된다.
 
 **Files:**
 - Create: `research/` 7개 하위 디렉토리
@@ -694,6 +694,7 @@ git commit -m "[Chore] round01 — 실험 산출물 research/ocr-extraction-comp
 ### Task 11: research/ 나머지 5개 주제 이동 + 루트 파일 분배 — ✅ 완료
 
 > **Task 10과 동일한 패턴 재발**: 루트 파일 3개(`kci_FI000865437_sections.json`·`paper_chunk_sample.json`·`summary_sample.json`)가 이 워크트리에 한 번도 추적된 적 없어 `git mv` 불가 — 구현자가 BLOCKED로 정확히 보고, 컨트롤러가 공유 체크아웃에서 내용을 읽어와 재생성. **이번엔 `diff --strip-trailing-cr`로 대조하다 실제 오타를 하나 잡았다** — `paper_chunk_sample.json`의 부동소수점 `score` 값을 옮겨적으며 `...306529`로 오기(원본은 `...306549`) — 재대조 후 정정, 최종 확인 완료.
+> **리뷰 발견 + 정정**: `kci-paper-samples`에 있던 `test_plain_sample.txt`(실제로는 wikisource `무정` 텍스트, `gongu-wikisource-manifest-check/verify_ws001.txt`와 동일 내용)·`lit_sample100.txt`(문학작품 스캔 샘플 목록, `vlm-routing-policy`의 `policy_sample200.txt`와 동격)·`kci_sample_comparison.json`(ODL-vs-fitz 추출량 비교, `ocr-extraction-comparison`의 `three_way_comparison.json`과 같은 계열) 3건이 잘못 배정돼 있었음 — 각각 올바른 주제로 재배치(`fb309e7`).
 
 **Files:**
 - Move: `scripts/*` → `research/table-cell-fill/`, `research/font-and-layout-forensics/`, `research/corpus-and-failure-analysis/`, `research/kci-paper-samples/`, `research/gongu-wikisource-manifest-check/`
@@ -797,6 +798,8 @@ git commit -m "[Chore] round01 — 실험 산출물 나머지 5개 주제 resear
 - Move (확인 후): `scripts/build_vlm_policy_selection.py`, root의 `claim17_xml.txt`·`claim2_xml.txt`·`editor_note_heading.txt`·`editor_note_xml.txt`·`effect_close_xml.txt`·`effect_last_para.txt`
 
 spec에서 "확인 필요"로 남겨둔 7개 파일을 사용자에게 실제 용도를 물어 확정한다.
+
+> **Task 11 리뷰에서 나온 참고 근거**: `build_vlm_policy_selection.py`는 이미 `research/`로 옮겨간 파일 3개(`scripts/audit_routing_policy200.json`·`scripts/fitz_lengths_policy200.json`을 읽고, `scripts/run_vlm_policy.py`를 복사)를 참조하고 있어 지금 실행하면 실패한다. 스테이징 경로도 죽은 세션 UUID가 섞인 스크래치패드 경로다 — "1회성 연구였다"쪽에 무게가 실리는 정황 증거. 질의 시 이 사실을 함께 제시한다.
 
 - [ ] **Step 1: 각 파일의 내용을 먼저 훑는다**
 
@@ -1027,7 +1030,8 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 - `app/odl_stderr.log`(8MB, 미추적) 등 `app/` 내부 대용량 로그 정리 — 이번 스코프 밖
 - 루트의 `INDEX.README.md`·`inspect_odl.py`·`migrate_add_*.sql` — round01 스코프 밖(CLAUDE.md §1에 이월 명시)
 - **[보안, 우선순위 높음] `app/api/admin.py:199,378,380` Milvus expression injection** — 인증 없는 엔드포인트에서 `cnts_id`가 검증 없이 f-string으로 `expr`에 삽입돼 임의 삭제 가능. 2026-09-07 발견·보고, 도서관 대회 시연(약 1개월 후) 우선으로 사용자가 명시적으로 이월 지시 + "DB 파괴 행위 절대 금지" 지시(메모리 저장: `nl-lib-never-wipe-db`·`nl-lib-library-competition-deadline`). **대회 이후 최우선으로 별도 라운드에서 처리.**
-- `research/`로 옮긴 스크립트 20개 중 15개가 산출물 경로를 여전히 옛 `scripts/...` 위치로 하드코딩 — 재실행 시 `research/`가 아니라 `scripts/`에 다시 산출물이 생긴다(Task 10 리뷰 발견). 코드 수정은 이번 라운드(파일 재배치) 스코프 밖 — 다음에 그 스크립트들을 실제로 재실행할 일이 생기면 그때 경로 상수를 `Path(__file__).parent` 기준으로 고친다.
+- `research/`로 옮긴 스크립트 32개 중 26개가 입출력 경로를 여전히 옛 `scripts/...` 위치로 하드코딩(19개는 입력부터 못 찾아 실행 자체가 실패, 7개만 산출물이 엉뚱한 곳에 다시 생기는 증상 — Task 10·11 리뷰 발견). 코드 수정은 이번 라운드(파일 재배치) 스코프 밖 — 다음에 그 스크립트들을 실제로 재실행할 일이 생기면 그때 입출력 상수를 `Path(__file__).parent` 기준으로 고친다(20건은 다른 주제 폴더를 참조하므로 자기 폴더 기준만으로는 부족).
+- `scripts/build_vlm_policy_selection.py`(운영 도구로 분류돼 잔류)가 이제 존재하지 않는 경로(`scripts/audit_routing_policy200.json`·`scripts/fitz_lengths_policy200.json`, 둘 다 `research/`로 이동됨)를 참조해 실행하면 실패한다 — 이 파일 자체가 1회성 연구 스크립트였을 가능성이 높다는 근거이기도 함(Task 12에서 최종 확정).
 
 ## 다음 라운드 진입점
 - 범위 미정 — `docs/roadmap/00_status.md`와 `README.md` §10 로드맵에서 확인
