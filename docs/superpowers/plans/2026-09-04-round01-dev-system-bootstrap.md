@@ -615,19 +615,21 @@ git commit -m "[Chore] round01 — 디버그 로그 gitignore 패턴 추가 + �
 
 ---
 
-### Task 10: research/ 생성 + ocr-extraction-comparison·vlm-routing-policy 이동
+### Task 10: research/ 생성 + ocr-extraction-comparison·vlm-routing-policy 이동 — ✅ 완료
+
+> **실행 중 발견**: `quality_extra.json`·`vlm_sample.json`은 실제로는 이 워크트리에 **한 번도 추적된 적 없었음**(공유 체크아웃에만 미추적 파일로 존재 — 워크트리 생성 시 미추적 파일은 안 딸려옴). 구현자가 `git mv` 대신 BLOCKED로 정확히 보고했고, 컨트롤러가 공유 체크아웃에서 내용을 읽어와 동일 내용으로 재생성 후 커밋(구 파일 대비 CRLF→LF·말미 개행 차이만 있고 내용은 100% 동일 — `diff --strip-trailing-cr`로 확인). `research/` 나머지 5개 디렉토리는 의도대로 빈 채로 생성됨(Task 11 대상).
 
 **Files:**
 - Create: `research/` 7개 하위 디렉토리
 - Move: `scripts/*` → `research/ocr-extraction-comparison/`, `research/vlm-routing-policy/` (42 + 19파일 + `vlm_raw100/` 디렉토리 + root 2파일)
 
-- [ ] **Step 1: 대상 디렉토리 전체 생성**
+- [x] **Step 1: 대상 디렉토리 전체 생성**
 
 ```bash
 mkdir -p research/ocr-extraction-comparison research/vlm-routing-policy research/table-cell-fill research/font-and-layout-forensics research/corpus-and-failure-analysis research/kci-paper-samples research/gongu-wikisource-manifest-check
 ```
 
-- [ ] **Step 2: ocr-extraction-comparison 이동 (42개)**
+- [x] **Step 2: ocr-extraction-comparison 이동 (42개)**
 
 ```bash
 for f in compare_extraction_methods.py compare_summary.json compare_vlm.py dump_odl_text.py \
@@ -644,7 +646,7 @@ for f in compare_extraction_methods.py compare_summary.json compare_vlm.py dump_
 done
 ```
 
-- [ ] **Step 3: vlm-routing-policy 이동 (19개 + 디렉토리 1개 + root 2개)**
+- [x] **Step 3: vlm-routing-policy 이동 (19개 + 디렉토리 1개 + root 2개)**
 
 ```bash
 for f in analyze_vlm_policy.py audit_result.txt audit_routing_fix.py audit_routing_fix_result.json \
@@ -659,7 +661,7 @@ git mv quality_extra.json research/vlm-routing-policy/
 git mv vlm_sample.json research/vlm-routing-policy/
 ```
 
-- [ ] **Step 4: 개수 검증**
+- [x] **Step 4: 개수 검증**
 
 Run: `ls research/ocr-extraction-comparison | wc -l`
 Expected: `42`
@@ -670,7 +672,7 @@ Expected: `22` (파일 19 + `vlm_raw100` 디렉토리 1 + root 파일 2)
 Run: `ls research/vlm-routing-policy/vlm_raw100 | wc -l`
 Expected: `1284`
 
-- [ ] **Step 5: 이동한 .py 문법 검증**
+- [x] **Step 5: 이동한 .py 문법 검증**
 
 ```bash
 find research/ocr-extraction-comparison research/vlm-routing-policy -name "*.py" -exec python -m py_compile {} \;
@@ -678,7 +680,7 @@ echo "exit=$?"
 ```
 Expected: `exit=0` (문법 오류 없음 — import 자체는 실행하지 않으므로 서드파티 라이브러리 미설치 환경에서도 통과해야 함)
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add research/ocr-extraction-comparison research/vlm-routing-policy
