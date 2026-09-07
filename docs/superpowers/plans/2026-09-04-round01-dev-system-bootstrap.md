@@ -792,41 +792,27 @@ git commit -m "[Chore] round01 — 실험 산출물 나머지 5개 주제 resear
 
 ---
 
-### Task 12: 애매 파일 확인 및 최종 배치
+### Task 12: 애매 파일 확인 및 최종 배치 — ✅ 완료
 
-**Files:**
-- Move (확인 후): `scripts/build_vlm_policy_selection.py`, root의 `claim17_xml.txt`·`claim2_xml.txt`·`editor_note_heading.txt`·`editor_note_xml.txt`·`effect_close_xml.txt`·`effect_last_para.txt`
+**결과 요약**:
+1. **`build_vlm_policy_selection.py`** → 사용자가 "연구로 분류"를 확정. `research/vlm-routing-policy/`로 이동.
+2. **`claim17_xml.txt`·`claim2_xml.txt`·`editor_note_heading.txt`·`editor_note_xml.txt`·`effect_close_xml.txt`·`effect_last_para.txt`** → 내용을 확인해보니 **미출원 특허 청구항 초안 조각**(OOXML 마크업, NL-Lib 자체의 하이브리드 검색·메타데이터 필터링 기능을 청구항으로 기술)이었다. 사용자가 "아직 출원 전 — 저장소에서 완전히 제외"를 선택 — `research/`가 아니라 **저장소 밖**(`C:\Users\LANDSOFT\patent-drafts-nllib-untracked\`)으로 이동하고, `.gitignore`에 정확한 파일명 패턴을 추가해 재발 방지(공개(공지) 시점 논란 방지 — 미출원 특허 자료는 절대 커밋하지 않는다).
 
-spec에서 "확인 필요"로 남겨둔 7개 파일을 사용자에게 실제 용도를 물어 확정한다.
+- [x] **Step 1: 각 파일의 내용을 먼저 훑는다** — 완료. `build_vlm_policy_selection.py`는 docstring 자체가 "처리군/대조군 비교 실험"임을 명시. claim/editor_note/effect 6개는 특허 청구항·효과·편집자 검토 메모로 확인.
 
-> **Task 11 리뷰에서 나온 참고 근거**: `build_vlm_policy_selection.py`는 이미 `research/`로 옮겨간 파일 3개(`scripts/audit_routing_policy200.json`·`scripts/fitz_lengths_policy200.json`을 읽고, `scripts/run_vlm_policy.py`를 복사)를 참조하고 있어 지금 실행하면 실패한다. 스테이징 경로도 죽은 세션 UUID가 섞인 스크래치패드 경로다 — "1회성 연구였다"쪽에 무게가 실리는 정황 증거. 질의 시 이 사실을 함께 제시한다.
+- [x] **Step 2: 사용자에게 질의 (AskUserQuestion)** — 완료. 두 질문 모두 답변 받음(위 결과 요약 참고).
 
-- [ ] **Step 1: 각 파일의 내용을 먼저 훑는다**
+- [x] **Step 3: 답변에 따라 배치** — 완료.
+  - `git mv scripts/build_vlm_policy_selection.py research/vlm-routing-policy/`
+  - claim/editor_note/effect 6개: 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI\`)에만 미추적 상태로 있던 것을(이 워크트리엔 애초에 없었음 — 미추적 파일 워크트리 미전파 패턴 재발) `C:\Users\LANDSOFT\patent-drafts-nllib-untracked\`로 이동(저장소 완전히 밖). `.gitignore`에 정확한 파일명 패턴(`/claim*_xml.txt`·`/editor_note_*.txt`·`/effect_close_xml.txt`·`/effect_last_para.txt`) 추가해 재발 방지.
 
-```bash
-head -c 500 scripts/build_vlm_policy_selection.py
-head -c 300 claim17_xml.txt claim2_xml.txt editor_note_heading.txt editor_note_xml.txt effect_close_xml.txt effect_last_para.txt
-```
-
-- [ ] **Step 2: 사용자에게 질의 (AskUserQuestion)**
-
-두 질문을 던진다:
-1. `build_vlm_policy_selection.py`가 지금도 파이프라인이 참조하는 정책 산출물을 만드는 운영 스크립트인지, 1회성 연구였는지.
-2. `claim*`·`editor_note*`·`effect*` 6개 파일이 어떤 실험(특허 청구항 처리? 다른 도메인 테스트?)이었는지, 그리고 이 프로젝트에 남겨둘 가치가 있는지 — 있다면 새 주제 폴더명을, 없다면 삭제 여부를.
-
-- [ ] **Step 3: 답변에 따라 배치**
-
-- `build_vlm_policy_selection.py`가 운영 도구라는 답이면: `scripts/`에 잔류(아무 작업 불필요).
-- 1회성 연구라는 답이면: `git mv scripts/build_vlm_policy_selection.py research/vlm-routing-policy/`
-- claim/editor_note/effect 6개는 답변받은 폴더명으로 `mkdir -p research/<확정된 폴더명>` 후 `git mv <파일> research/<확정된 폴더명>/`, 혹은 불필요하다는 답이면 `rm <파일>`(미추적 파일이므로 `git rm` 아님).
-
-- [ ] **Step 4: 검증**
+- [x] **Step 4: 검증** — 완료.
 
 Run: `git status --short | grep -E "^\?\?"`
-Expected: `?? app/scripts/recheck_table_fill.py` 한 줄만(round01 스코프 밖 WIP, 정상).
+실제 결과: 빈 출력(이 워크트리에는 `app/scripts/recheck_table_fill.py`조차 없음 — 미추적 파일 워크트리 미전파 때문. round01 스코프 밖 WIP이니 문제 아님).
 
 Run: `ls *.txt *.json 2>/dev/null | grep -v package-lock`
-Expected: 빈 출력 — 루트에 더 이상 미추적 실험 파일이 없어야 한다(`package-lock.json` 제외).
+실제 결과: 빈 출력 — 확인됨.
 
 Run: `git ls-files scripts/ | grep -v '^scripts/bulk_ingest/'`
 Expected:
@@ -838,9 +824,9 @@ scripts/crawler.py
 ```
 (`build_vlm_policy_selection.py`는 Step 3 결과에 따라 있을 수도 없을 수도 있음)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
-`app/scripts/recheck_table_fill.py`는 round01 스코프 밖의 별개 WIP이므로 반드시 제외하고 스테이징한다(`git add -A` 금지 — 그 파일까지 실수로 딸려 들어감).
+`app/scripts/recheck_table_fill.py`는 round01 스코프 밖의 별개 WIP이므로 반드시 제외하고 스테이징한다(`git add -A` 금지 — 그 파일까지 실수로 딸려 들어감). (실행 결과: 이 워크트리엔 그 파일이 애초에 없어 제외 지정은 no-op였음 — 그래도 안전하게 유지.)
 
 ```bash
 git add -A -- . ':(exclude)app/scripts/recheck_table_fill.py'
@@ -1092,7 +1078,7 @@ git commit -m "[Docs] round01 — 완료노트 작성, 상태 문서 갱신, REA
 - [ ] **Step 1: 작업 트리 점검 — 의도한 파일만 변경됐는지**
 
 Run: `git status --short`
-Expected: `?? app/scripts/recheck_table_fill.py` 한 줄만 — Task 1~14는 전부 커밋 완료했으므로 그 외엔 클린해야 한다. `app/scripts/recheck_table_fill.py`는 round01 스코프 밖의 별개 WIP이므로 미추적 상태로 남아있는 것이 정상이다(round01에서 손대지 않는다).
+Expected: 완전히 빈 출력(클린) — Task 1~14는 전부 커밋 완료했으므로. (Task 12에서 확인됨: `app/scripts/recheck_table_fill.py`는 미추적 파일이라 이 워크트리에 애초에 존재하지 않는다 — 공유 체크아웃에만 있음. Step 6에서 공유 체크아웃으로 넘어간 뒤에는 그 파일이 `??`로 보일 수 있으나 round01 스코프 밖의 별개 WIP이니 손대지 않는다.)
 
 - [ ] **Step 2: docker-compose 파싱 확인 (물리 경로 무변경 실증)**
 

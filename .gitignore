@@ -28,3 +28,9 @@ debug_*.txt
 # Docker volumes (로컬)
 data/
 .claude/settings.local.json
+
+# 미출원 특허초안 조각(민감 — 저장소 밖에 별도 보관, 절대 커밋 금지)
+/claim*_xml.txt
+/editor_note_*.txt
+/effect_close_xml.txt
+/effect_last_para.txt
