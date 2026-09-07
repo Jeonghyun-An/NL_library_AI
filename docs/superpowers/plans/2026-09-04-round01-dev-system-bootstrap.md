@@ -568,7 +568,9 @@ git commit -m "[Chore] round01 — code-reviewer 서브에이전트 추가(model
 
 ---
 
-### Task 9: .gitignore 디버그 로그 패턴 + 로그 파일 삭제
+### Task 9: .gitignore 디버그 로그 패턴 + 로그 파일 삭제 — ✅ 완료 (`f8c9fb7` → 패턴 보강 `89ad0d1`)
+
+> **실행 시 스펙과 다르게 확인된 사실**: `scripts/debug_raw.txt`는 실제로는 **추적 상태**였다(이 라운드 초반의 구제 커밋 `3743453`이 scripts/의 미추적 파일을 통째로 되살릴 때 개별 제외 없이 함께 커밋됨) — `rm` 대신 `git rm`으로 처리(구현자가 올바르게 적응). **리뷰 발견**: 새 패턴 2개(`*_debug_out*.txt`·`soffice_log*.txt`) 중 어느 것도 `debug_raw.txt`류(`debug_*.txt`)를 안 잡아서, 정작 재발 이력이 있는 파일이 재발 방지 대상에서 빠져있었음 — `debug_*.txt` 패턴 추가로 보강. 공유 체크아웃에는 이 3개 미추적 파일(`scripts_debug_out.txt`·`scripts_debug_out2.txt`·`soffice_log2.txt`)이 워크트리 격리 때문에 그대로 남아있음(무해한 로컬 잔재, Task 15에서 공유 체크아웃 작업 시 함께 정리).
 
 **Files:**
 - Modify: `.gitignore`
@@ -576,12 +578,12 @@ git commit -m "[Chore] round01 — code-reviewer 서브에이전트 추가(model
 
 이 4개는 전부 **미추적 상태**(git이 모르는 파일)이므로 `git rm` 대상이 아니라 단순 파일 삭제 + 향후 재발 방지용 gitignore 패턴 추가다.
 
-- [ ] **Step 1: 대상이 정말 미추적인지 확인**
+- [x] **Step 1: 대상이 정말 미추적인지 확인**
 
 Run: `git ls-files scripts_debug_out.txt scripts_debug_out2.txt soffice_log2.txt scripts/debug_raw.txt`
 Expected: (빈 출력 — 4개 다 미추적)
 
-- [ ] **Step 2: `.gitignore`에 패턴 추가**
+- [x] **Step 2: `.gitignore`에 패턴 추가**
 
 `.gitignore`의 `# Logs` 섹션(`*.log` 다음 줄)에 아래 두 줄 추가:
 
@@ -590,13 +592,13 @@ Expected: (빈 출력 — 4개 다 미추적)
 soffice_log*.txt
 ```
 
-- [ ] **Step 3: 로그 파일 삭제**
+- [x] **Step 3: 로그 파일 삭제**
 
 ```bash
 rm scripts_debug_out.txt scripts_debug_out2.txt soffice_log2.txt scripts/debug_raw.txt
 ```
 
-- [ ] **Step 4: 검증**
+- [x] **Step 4: 검증**
 
 Run: `git status --short | grep -E "scripts_debug_out|soffice_log|debug_raw"`
 Expected: (빈 출력 — 삭제된 미추적 파일은 status에 안 잡힘)
@@ -604,7 +606,7 @@ Expected: (빈 출력 — 삭제된 미추적 파일은 status에 안 잡힘)
 Run: `git check-ignore scripts_debug_out.txt`
 Expected: `scripts_debug_out.txt` (지금은 없는 파일이지만 패턴 매칭 자체는 확인 가능 — `git check-ignore`는 파일 존재 여부와 무관하게 패턴만 검사)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add .gitignore
@@ -1073,6 +1075,8 @@ git commit -m "[Docs] round01 — 완료노트 작성, 상태 문서 갱신, REA
 **이 Task는 서브에이전트에 위임하지 않고 컨트롤러(메인 세션)가 직접 수행한다** — 사용자 승인 대기가 포함돼 있어 단발성 subagent 실행과 맞지 않는다.
 
 **Files:** 없음(git 작업만)
+
+> **Task 9 리뷰에서 남은 잔재**: 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI`, 워크트리 아님)에 `scripts_debug_out.txt`·`scripts_debug_out2.txt`·`soffice_log2.txt` 3개 미추적 파일이 격리 때문에 그대로 남아있다(무해하지만 이제 `.gitignore`로 커버됨). 이 Task에서 공유 체크아웃으로 옮겨간 뒤(Step 6) 한 번 `rm scripts_debug_out.txt scripts_debug_out2.txt soffice_log2.txt`로 정리한다.
 
 - [ ] **Step 1: 작업 트리 점검 — 의도한 파일만 변경됐는지**
 
