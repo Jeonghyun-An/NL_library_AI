@@ -835,7 +835,10 @@ git commit -m "[Chore] round01 — 애매 파일(build_vlm_policy_selection·cla
 
 ---
 
-### Task 13: docs/guides/round01/00-체계도입.md 작성
+### Task 13: docs/guides/round01/00-체계도입.md 작성 — ✅ 완료 (`c3b7387` → 리뷰 수정 `8590d24`)
+
+> **리뷰 발견**: code-quality 리뷰에서 교본 자체의 자기모순 5건 발견 — (1) §2.9 재분류 건수 오기재, (2) §3 커밋 카운트가 실측과 어긋남, (3) §2.2에 옮겨 담은 `GIT_WORKFLOW.md`의 dev compose 경고가 실제 파일과 다르게 오기재, (4) 영문 지시문이 그대로 노출된 문장 잔존, (5) Q9 답변이 정확한 건수 대신 모호한 표현으로 얼버무려짐. 전부 `8590d24`로 정정.
+> **Step 3 기대값 정정**: 최초 spec은 `### 2.`=8·`## 2.5`=1·`**Q`=6을 기대했으나, 실제 파일은 `docs/guides/_TEMPLATE.md`를 §2.4에서 **통째로 verbatim 인용**하고 있어(발췌 금지 원칙) 그 템플릿 자체의 예시 헤딩(`### 2.1 <파일/컴포넌트명>`·`## 2.5 디자인 참조 요약`·`**Q1. <질문>**`)이 각 grep 패턴에 함께 걸린다. 실측 결과 `### 2.`=9(실제 섹션 8개 + 템플릿 예시 1개)·`## 2.5`=2(실제 섹션 1개 + 템플릿 예시 1개)·`**Q`=10(실제 Q&A 9개 + 템플릿 예시 1개) — 전부 verbatim 인용 때문이지 결함이 아니다(Task 2에서 `GIT_WORKFLOW.md`의 `## ` 개수가 8→9로 정정된 것과 같은 종류의 최초 spec 추정치 오차). 아래 Step 3 기대값은 이 실측치로 정정한다.
 
 **Files:**
 - Create: `docs/guides/round01/00-체계도입.md`
@@ -844,12 +847,12 @@ museum 관행대로 **전체 코드 재수록** — 발췌·"Task N과 동일" �
 
 **중첩 코드펜스 주의**: `GIT_WORKFLOW.md`(bash 블록 2개)·`docs/guides/_TEMPLATE.md`(자기 자신이 예시 펜스를 담음)처럼 담을 파일 자체에 ` ``` ` 펜스가 있으면, 그 섹션을 감싸는 바깥 펜스는 4개 백틱(` ```` `)이나 `~~~~`를 써서 조기 종료를 막는다(`docs/guides/_TEMPLATE.md`가 `db142ae`에서 정한 관행).
 
-- [ ] **Step 1: 디렉토리 생성 확인**
+- [x] **Step 1: 디렉토리 생성 확인**
 
 Run: `mkdir -p docs/guides/round01 && test -d docs/guides/round01 && echo EXISTS`
 Expected: `EXISTS`
 
-- [ ] **Step 2: 골격 작성 후 각 섹션에 실제 파일 내용을 채운다**
+- [x] **Step 2: 골격 작성 후 각 섹션에 실제 파일 내용을 채운다**
 
 ```markdown
 # round01 교본 — 개발 체계 도입(museum 스타일 이식)
@@ -958,23 +961,25 @@ A. museum은 GitHub·GitLab 이원화 운영이지만, NL-Lib은 `git remote -v`
 A. 최초 구현(`f5983bb`) 후 code-quality 리뷰에서 review-순서 모순(§2가 "리뷰 전 dev 머지"로 잘못 서술), README 로드맵 위치 누락, `docs/specs/` 누락, 루트 파일 규칙 부재 4건의 Important 이슈가 나와 별도 수정 커밋(`11815ae`)으로 반영했다. 리뷰가 실제로 내용을 검증한다는 증거로 남겨둔다.
 ```
 
-- [ ] **Step 3: 검증**
+- [x] **Step 3: 검증**
 
 Run: `grep -c "^### 2\." docs/guides/round01/00-체계도입.md`
-Expected: `8` (2.1~2.4, 2.6~2.9 — 2.5 디자인 참조 요약은 `## 2.5`로 h2 승격돼 있어 `### 2.` 패턴에 안 잡힌다. Task 4 리뷰에서 `### 2.5`가 구현 서브섹션 시퀀스와 헤딩레벨이 충돌하는 Critical 버그로 발견돼 `db142ae`에서 h2로 수정됐다 — 원래 "9"였던 기대값도 그에 맞춰 정정)
+Expected: `9` (실제 섹션 2.1~2.4·2.6~2.9 8개 + `docs/guides/_TEMPLATE.md` verbatim 인용 안의 예시 `### 2.1` 1개 — 위 리뷰 발견 정정 참고)
 
 Run: `grep -c "^## 2\.5" docs/guides/round01/00-체계도입.md`
-Expected: `1`
+Expected: `2` (실제 §2.5 디자인 참조 요약 1개 + 템플릿 인용 안 예시 1개)
 
 Run: `grep -c "^\*\*Q" docs/guides/round01/00-체계도입.md`
-Expected: `6`
+Expected: `10` (실제 Q1~Q9 9개 + 템플릿 인용 안 예시 `**Q1. <질문>**` 1개)
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add docs/guides/round01/00-체계도입.md
 git commit -m "[Docs] round01 — 라운드 교본 작성"
 ```
+
+리뷰 수정 커밋: `8590d24` (`[Fix] round01 — 교본의 자기모순 5건 정정`)
 
 ---
 
