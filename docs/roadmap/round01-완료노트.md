@@ -41,5 +41,5 @@ plan: `docs/superpowers/plans/2026-09-04-round01-dev-system-bootstrap.md`
 - [x] 테스트 green (해당 변경 없음 — 문서/파일 이동만, 이동된 `.py` 전체 `py_compile` 검증 완료)
 - [x] 수동 스모크 확인 (`docker-compose.yml`·`docker-compose.dev.yml` 양쪽 config 파싱 확인)
 - [x] 문서 갱신(교본·00_status·`docs/ops/recurring-gotchas.md`에 dev 스택 함정 2건 반영)
-- [ ] `dev` 머지 승인
+- [x] `dev` 머지 승인 (`126783d`, `origin/dev` push 완료)
 - [ ] `dev→main` 머지 + push 완료
