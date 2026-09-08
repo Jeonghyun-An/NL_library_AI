@@ -985,7 +985,9 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 
 ### Task 14: docs/roadmap/round01-완료노트.md 작성 + 00_status.md 갱신 — ✅ 완료
 
-> **실행 시 spec과 다르게 확인된 사실**: (1) "118개(scripts)+6개(root)" 이동 건수는 착수 전 추정치였고, Task 10·11·12의 실제 리뷰·재분류·`vlm_raw100/` 발견을 거친 뒤의 실측 진실은 교본 §2.9의 `git ls-files research/<dir>` 기준 표(7개 주제, 합계 1,403개 파일)다 — 완료노트는 추정치 대신 이 실측 표를 인용한다. (2) 아래 Step 4 검증 커맨드 `grep -q "dev→main 머지 + push 완료"`가 Step 1 스켈레톤 자체의 텍스트(`` `dev→main` 머지 + push 완료 ``, 백틱이 "dev→main"과 공백 사이에 끼어 있음)와 리터럴 매치가 안 돼 항상 실패하는 버그였다 — 백틱 없는 부분 문자열 `"머지 + push 완료"`로 정정. 개념적으로도 이 체크박스는 Task 15가 실제 머지를 끝내기 전까지는 미체크(`- [ ]`) 상태가 맞으므로,애초에 "완료"로 매치되길 기대한 것 자체가 앞뒤가 안 맞았다.
+> **실행 시 spec과 다르게 확인된 사실**: (1) "118개(scripts)+6개(root)" 이동 건수는 착수 전 추정치였고, Task 10·11·12의 실제 리뷰·재분류·`vlm_raw100/` 발견을 거친 뒤의 실측 진실은 교본 §2.9의 `git ls-files research/<dir>` 기준 표(7개 주제, 합계 1,403개 파일)다 — 완료노트는 추정치 대신 이 실측 표를 인용한다. (2) 아래 Step 1 스켈레톤 자체가 Task 12(`b817b0d`) 이전 시점 기준으로 쓰여 있어 `build_vlm_policy_selection.py`가 여전히 `scripts/`에 남아있다고 서술한다 — 실제로는 Task 12에서 연구용으로 확정돼 `research/vlm-routing-policy/`로 이동됐다(그래서 `scripts/`엔 4개만 남는다). 컨트롤러가 직접 작성한 커밋된 완료노트도 최초엔 이 스켈레톤을 그대로 베껴 같은 오류를 냈으나, code-quality 리뷰로 발견해 `scripts/` 잔류 4개·`research/`로 옮긴 하드코딩-경로 사례 목록 양쪽에서 정정했다(아래 Step 1 스켈레톤 자체는 이력 보존을 위해 원문 그대로 둔다 — 최종 진실은 커밋된 완료노트 파일). (3) 아래 Step 4 검증 커맨드 `grep -q "dev→main 머지 + push 완료"`가 Step 1 스켈레톤 자체의 텍스트(`` `dev→main` 머지 + push 완료 ``, 백틱이 "dev→main"과 공백 사이에 끼어 있음)와 리터럴 매치가 안 돼 항상 실패하는 버그였다 — 백틱 없는 부분 문자열 `"머지 + push 완료"`로 정정(이 문자열은 체크박스가 `[ ]`든 `[x]`든 매치되므로 의미는 그대로 유지된다).
+>
+> **code-quality 리뷰 발견(추가) 및 후속 수정**: 컨트롤러가 직접 작성한 세 파일(완료노트·`00_status.md`·`README.md`)에 대해 Task 1~13과 동일하게 code-quality 리뷰를 돌렸고, 실제 결함을 여러 건 발견해 전부 수정했다 — (High) 위 (2)의 `build_vlm_policy_selection.py` 잔류 오기재가 완료노트 "한 일"·"이월" 두 곳에 전파된 것, `README.md` §8.4가 §5와 별개로 여전히 없는 `migrate_add_KCI.sql`을 실행 커맨드에서 참조하던 것(Task 14는 §5만 고치고 §8.4를 놓쳤었다); (Medium) "디버그 로그 4개 삭제"가 실제로는 추적 삭제 1건 + 미추적 3건(Task 15 정리 예정)이라는 사실을 뭉뚱그린 것, `00_status.md`가 `dev`/`main` 머지 전인데 라운드를 "완료"로 서술해 `CLAUDE.md` §2의 라운드 정의(`dev→main` 머지+push까지)와 어긋난 것(→ "구현 완료(머지 대기)"로 정정, 실제 "완료" 전환은 Task 15 머지 후로 이월); (Low) `SKOVIX-JeongHyun` 브랜치를 "정리"라고 써서 삭제된 것처럼 보였지만 실제로는 로컬·원격 모두 남아있는 완전-병합 브랜치인 점, `README.md` §5 트리에서 새로 추가한 3줄의 주석 컬럼이 1~2칸씩 밀려 있던 정렬 문제. 전부 반영 완료.
 
 **Files:**
 - Create: `docs/roadmap/round01-완료노트.md`
@@ -1126,9 +1128,16 @@ git merge --no-ff feat/round01-dev-system-bootstrap-wt -m "Merge feat/round01-de
 git push origin dev
 ```
 
+**Step 6 부속: 완료 문서 최종 반영** (Task 14 리뷰 M3 반영 — 머지 전에는 "dev 머지 승인"이 아직 사실이 아니므로 미리 체크할 수 없다, 머지 직후 이 자리에서 체크한다). 위 머지가 성공한 직후, 같은 공유 체크아웃의 `dev` 브랜치에서:
+1. `docs/roadmap/round01-완료노트.md`의 `## 상태`에서 `- [ ] dev 머지 승인`을 `- [x]`로 체크(이제 사실이 됐으므로).
+2. `docs/roadmap/00_status.md`를 "구현 완료(머지 대기)"→"완료"로, 현재 상태·라운드 이력 두 곳 모두 갱신(Task 3 리뷰에서 잡힌 것과 같은 종류의 자기모순 방지 — 한쪽만 고치지 않는다). `dev→main` 머지+push는 Step 8에서 마저 끝나야 완전한 "완료"이므로, 이 시점 표현은 "dev 머지 완료 — main 반영은 Step 8에서"처럼 정확히 남긴다.
+3. 커밋: `git add docs/roadmap/round01-완료노트.md docs/roadmap/00_status.md && git commit -m "[Docs] round01 — dev 머지 반영, 완료 문서 갱신"` → `git push origin dev`.
+
 - [ ] **Step 7: 라운드 종료 승인 요청**
 
 사용자에게 라운드 종료(= `dev→main` 머지 + push) 승인을 구한다. **승인 전 진행 금지.**
+
+**Step 7 부속: 승인 후, Step 8 실행 직전에** (Task 14 리뷰 M3 반영) — 공유 체크아웃의 `dev` 브랜치에서 `docs/roadmap/round01-완료노트.md`의 남은 마지막 박스 `- [ ] dev→main 머지 + push 완료`를 `- [x]`로 체크하고, `docs/roadmap/00_status.md`를 최종 "완료"로 갱신(현재 상태·라운드 이력 두 곳 다)한 뒤 `dev`에 커밋+push. 이렇게 하면 Step 8의 `dev→main` 머지 한 번으로 이 최종 상태가 그대로 `main`까지 반영돼, 머지 후 별도로 `main`을 다시 편집할 필요가 없다(`GIT_WORKFLOW.md`가 `main` 직접 편집을 종료 절차 자체로만 한정하는 것과도 부합).
 
 - [ ] **Step 8: 승인 후 `/round-finish` 스킬 실행 — 공유 체크아웃에서**
 
