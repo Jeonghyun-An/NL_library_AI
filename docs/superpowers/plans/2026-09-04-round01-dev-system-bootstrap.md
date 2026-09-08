@@ -1082,12 +1082,14 @@ git commit -m "[Docs] round01 — 완료노트 작성, 상태 문서 갱신, REA
 
 > **Task 9·10·11 리뷰에서 남은 잔재**: 공유 체크아웃(`C:\Users\LANDSOFT\mygit\NL_library_AI`, 워크트리 아님)에 미추적 파일 8개가 격리 때문에 그대로 남아있다 — 디버그 로그 3개(`scripts_debug_out.txt`·`scripts_debug_out2.txt`·`soffice_log2.txt`, 이제 `.gitignore`로 커버됨) + Task 10·11에서 워크트리로 재생성해 옮긴 원본 5개(`quality_extra.json`·`vlm_sample.json`·`kci_FI000865437_sections.json`·`paper_chunk_sample.json`·`summary_sample.json` — 내용은 `research/`에 그대로 살아있으므로 이 5개는 중복 잔재). 이 Task에서 공유 체크아웃으로 옮겨간 뒤(Step 6) 한 번에 정리: `rm scripts_debug_out.txt scripts_debug_out2.txt soffice_log2.txt quality_extra.json vlm_sample.json kci_FI000865437_sections.json paper_chunk_sample.json summary_sample.json`.
 
-- [ ] **Step 1: 작업 트리 점검 — 의도한 파일만 변경됐는지**
+- [x] **Step 1: 작업 트리 점검 — 의도한 파일만 변경됐는지**
 
 Run: `git status --short`
 Expected: 완전히 빈 출력(클린) — Task 1~14는 전부 커밋 완료했으므로. (Task 12에서 확인됨: `app/scripts/recheck_table_fill.py`는 미추적 파일이라 이 워크트리에 애초에 존재하지 않는다 — 공유 체크아웃에만 있음. Step 6에서 공유 체크아웃으로 넘어간 뒤에는 그 파일이 `??`로 보일 수 있으나 round01 스코프 밖의 별개 WIP이니 손대지 않는다.)
 
-- [ ] **Step 2: docker-compose 파싱 확인 (물리 경로 무변경 실증)**
+실측: 빈 출력 확인됨(클린).
+
+- [x] **Step 2: docker-compose 파싱 확인 (물리 경로 무변경 실증)**
 
 Run: `docker compose -f docker-compose.yml config --quiet && echo PROD_OK`
 Expected: `PROD_OK`
@@ -1095,14 +1097,20 @@ Expected: `PROD_OK`
 Run: `docker compose -f docker-compose.dev.yml config --quiet && echo DEV_OK`
 Expected: `DEV_OK`
 
-- [ ] **Step 3: 이동된 스크립트 스모크 실행 (경로 참조 깨짐 없는지 최소 1건)**
+실측: 둘 다 `_OK` 확인됨. prod는 `.env` 미배치 환경이라 `POSTGRES_USER` 등 변수 미설정 경고 다수가 나오나 config 유효성과 무관(교본 §3에도 동일하게 기록됨), dev는 경고 없음.
+
+- [x] **Step 3: 이동된 스크립트 스모크 실행 (경로 참조 깨짐 없는지 최소 1건)**
 
 Run: `python -m py_compile research/ocr-extraction-comparison/compare_extraction_methods.py && echo SMOKE_OK`
 Expected: `SMOKE_OK`
 
-- [ ] **Step 4: CLAUDE.md 경로 참조 실측 스윕 (Task 1 리뷰 이슈 4 반영 — `grep -c "|"` 트리비얼 체크 대체)**
+실측: `SMOKE_OK` 확인됨.
+
+- [x] **Step 4: CLAUDE.md 경로 참조 실측 스윕 (Task 1 리뷰 이슈 4 반영 — `grep -c "|"` 트리비얼 체크 대체)**
 
 `CLAUDE.md` §4 표의 모든 백틱 경로(및 §1에서 언급된 예시 경로)를 하나씩 존재 확인한다 — Task 2~14 완료 후에는 전부 존재해야 한다. 하나라도 dangling이면 BLOCKED로 보고.
+
+실측: §1(`GIT_WORKFLOW.md`·`README.md`·`docker-compose.yml`·`docker-compose.dev.yml`·`app/`·`frontend/`·`infra/`·`docs/`·`scripts/`·`research/`·`INDEX.README.md`·`inspect_odl.py`)과 §3·§4(`docs/roadmap/00_status.md`·`docs/roadmap/_ROUND_COMPLETE_TEMPLATE.md`·`docs/guides/round01/`·`docs/specs/`·`docs/superpowers/specs/`·`docs/superpowers/plans/`·`docs/standards/coding-standard.md`·`docs/ops/recurring-gotchas.md`·`docs/ops/bulk_ingest_runbook.md`·`docs/design/README.md`·`docs/architecture.drawio`·`.claude/skills/round-finish/SKILL.md`·`.claude/agents/code-reviewer.md`) 전부 존재 확인. dangling 없음.
 
 - [ ] **Step 5: 사용자 승인 요청 — `dev` 머지**
 
