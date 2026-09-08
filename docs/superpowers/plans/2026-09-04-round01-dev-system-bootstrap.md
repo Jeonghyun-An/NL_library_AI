@@ -983,13 +983,15 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 
 ---
 
-### Task 14: docs/roadmap/round01-완료노트.md 작성 + 00_status.md 갱신
+### Task 14: docs/roadmap/round01-완료노트.md 작성 + 00_status.md 갱신 — ✅ 완료
+
+> **실행 시 spec과 다르게 확인된 사실**: (1) "118개(scripts)+6개(root)" 이동 건수는 착수 전 추정치였고, Task 10·11·12의 실제 리뷰·재분류·`vlm_raw100/` 발견을 거친 뒤의 실측 진실은 교본 §2.9의 `git ls-files research/<dir>` 기준 표(7개 주제, 합계 1,403개 파일)다 — 완료노트는 추정치 대신 이 실측 표를 인용한다. (2) 아래 Step 4 검증 커맨드 `grep -q "dev→main 머지 + push 완료"`가 Step 1 스켈레톤 자체의 텍스트(`` `dev→main` 머지 + push 완료 ``, 백틱이 "dev→main"과 공백 사이에 끼어 있음)와 리터럴 매치가 안 돼 항상 실패하는 버그였다 — 백틱 없는 부분 문자열 `"머지 + push 완료"`로 정정. 개념적으로도 이 체크박스는 Task 15가 실제 머지를 끝내기 전까지는 미체크(`- [ ]`) 상태가 맞으므로,애초에 "완료"로 매치되길 기대한 것 자체가 앞뒤가 안 맞았다.
 
 **Files:**
 - Create: `docs/roadmap/round01-완료노트.md`
 - Modify: `docs/roadmap/00_status.md`
 
-- [ ] **Step 1: `_ROUND_COMPLETE_TEMPLATE.md`를 기반으로 완료노트 작성**
+- [x] **Step 1: `_ROUND_COMPLETE_TEMPLATE.md`를 기반으로 완료노트 작성**
 
 ```markdown
 # round01 완료노트
@@ -1034,7 +1036,7 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 - [ ] `dev→main` 머지 + push 완료
 ```
 
-- [ ] **Step 2: `docs/roadmap/00_status.md`의 현재 상태·라운드 이력·다음 할 일 전체 갱신** (Task 3 리뷰 이슈 I1 반영 — 라운드 이력만 "완료"로 바뀌고 현재 상태가 "진행 중"으로 남아 자기모순되는 것 방지)
+- [x] **Step 2: `docs/roadmap/00_status.md`의 현재 상태·라운드 이력·다음 할 일 전체 갱신** (Task 3 리뷰 이슈 I1 반영 — 라운드 이력만 "완료"로 바뀌고 현재 상태가 "진행 중"으로 남아 자기모순되는 것 방지)
 
 `docs/roadmap/00_status.md`의 세 섹션을 함께 갱신한다 — "현재 상태"의 round01 불릿도 반드시 함께 고친다(라운드 이력만 고치면 같은 파일 안에서 "진행 중"과 "완료"가 공존하게 된다):
 
@@ -1054,16 +1056,16 @@ git commit -m "[Docs] round01 — 라운드 교본 작성"
 | round01 | [개발 체계 도입](round01-완료노트.md)(museum 스타일 이식) | 완료 |
 ```
 
-- [ ] **Step 3: README.md §5(프로젝트 구조) 갱신** (Task 1 리뷰 이슈 10 반영)
+- [x] **Step 3: README.md §5(프로젝트 구조) 갱신** (Task 1 리뷰 이슈 10 반영)
 
 `README.md` §5의 트리 구조에서 다음을 반영한다: 실존하지 않는 `migrate_add_KCI.sql` 참조 제거(실제 파일명은 4개의 `migrate_add_book_figures.sql`·`migrate_add_cover_image.sql`·`migrate_add_introduction.sql`·`migrate_add_themes.sql` — 파일명은 확인 후 정확히 반영), `docs/`·`scripts/`·`research/`를 트리에 추가, 배치 원칙은 `CLAUDE.md` §1이 정본임을 명시하는 한 줄 추가.
 
-- [ ] **Step 4: 검증**
+- [x] **Step 4: 검증**
 
-Run: `grep -q "완료" docs/roadmap/00_status.md && grep -q "dev→main 머지 + push 완료" docs/roadmap/round01-완료노트.md && grep -q "research/" README.md && echo OK`
-Expected: `OK`
+Run: `grep -q "완료" docs/roadmap/00_status.md && grep -q "머지 + push 완료" docs/roadmap/round01-완료노트.md && grep -q "research/" README.md && echo OK`
+Expected: `OK` (원래 두 번째 조건에 있던 `dev→main` 리터럴은 Step 1 스켈레톤 자체의 백틱 위치 때문에 항상 실패하는 버그였다 — 위 헤더 주석 참고, 백틱 없는 부분 문자열로 정정)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add docs/roadmap/round01-완료노트.md docs/roadmap/00_status.md README.md
