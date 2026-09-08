@@ -290,11 +290,19 @@ figures/{book_id}/p{page}_i{idx}.jpg     — 그림 추출본
 
 ## 5. 프로젝트 구조
 
+산출물을 어디에 두는지(`docs/`·`scripts/`·`research/` 등)는 `CLAUDE.md` §1이 정본이다.
+
 ```
 nl-lib/
 ├── docker-compose.yml
-├── migrate_add_KCI.sql                  # KCI 논문 컬럼 마이그레이션
+├── migrate_add_book_figures.sql         ┐
+├── migrate_add_cover_image.sql          │ 개별 컬럼 마이그레이션(스키마 변경 시 1회 실행)
+├── migrate_add_introduction.sql         │
+├── migrate_add_themes.sql               ┘
 ├── infra/vllm/Dockerfile                # 커스텀 vLLM 이미지 (gemma 서비스용)
+├── docs/                                 # 문서 전용 — round 교본·상태·표준·운영 함정 등
+├── scripts/                               # 재실행되는 운영 도구(대량 인덱싱 매니페스트 빌더 등)
+├── research/                               # 1회성 실험 스크립트 + 산출물(주제별 폴더)
 │
 ├── app/                                  # FastAPI 백엔드
 │   ├── main.py
