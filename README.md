@@ -296,13 +296,13 @@ figures/{book_id}/p{page}_i{idx}.jpg     — 그림 추출본
 nl-lib/
 ├── docker-compose.yml
 ├── migrate_add_book_figures.sql         ┐
-├── migrate_add_cover_image.sql          │ 개별 컬럼 마이그레이션(스키마 변경 시 1회 실행)
+├── migrate_add_cover_image.sql          │ 개별 컬럼 마이그레이션(스키마 변경 시 1회 실행 — 다음 라운드 정리 예정, `CLAUDE.md` §1)
 ├── migrate_add_introduction.sql         │
 ├── migrate_add_themes.sql               ┘
 ├── infra/vllm/Dockerfile                # 커스텀 vLLM 이미지 (gemma 서비스용)
-├── docs/                                 # 문서 전용 — round 교본·상태·표준·운영 함정 등
-├── scripts/                               # 재실행되는 운영 도구(대량 인덱싱 매니페스트 빌더 등)
-├── research/                               # 1회성 실험 스크립트 + 산출물(주제별 폴더)
+├── docs/                                # 문서 전용 — round 교본·상태·표준·운영 함정 등
+├── scripts/                             # 재실행되는 운영 도구(대량 인덱싱 매니페스트 빌더 등)
+├── research/                            # 1회성 실험 스크립트 + 산출물(주제별 폴더)
 │
 ├── app/                                  # FastAPI 백엔드
 │   ├── main.py
@@ -489,10 +489,12 @@ for (cnts_id,) in db.query(Book.cnts_id).filter(Book.is_embedded == False).all()
 "
 ```
 
-### 8.4 KCI 컬럼 마이그레이션 (Alembic 도입 이전 수동 패치)
+### 8.4 수동 컬럼 마이그레이션 (Alembic 도입 이전 patch, 4건)
 
 ```bash
-docker exec -i nl-lib-postgres psql -U admin -d nl_lib < migrate_add_KCI.sql
+for f in migrate_add_book_figures.sql migrate_add_cover_image.sql migrate_add_introduction.sql migrate_add_themes.sql; do
+  docker exec -i nl-lib-postgres psql -U admin -d nl_lib < "$f"
+done
 ```
 
 ### 8.5 Alembic 마이그레이션 운영
