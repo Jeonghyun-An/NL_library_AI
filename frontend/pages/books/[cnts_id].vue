@@ -502,6 +502,14 @@
       </div>
     </div>
 
+    <!-- PDF 뷰어 -->
+    <PdfViewer
+      v-if="pdfOpen"
+      :cnts-id="cnts_id"
+      :title="book?.title"
+      @close="pdfOpen = false"
+    />
+
     <Teleport to="body">
       <Transition name="skx-toast">
         <div v-if="toast" class="skx-toast">{{ toast }}</div>
@@ -636,8 +644,9 @@ function showToast(msg: string) {
 }
 
 // PDF viewer
+const pdfOpen = ref(false);
 function viewPdf() {
-  showToast("원문 보기 기능은 준비 중입니다.");
+  pdfOpen.value = true;
 }
 // ── End publishing additions ──────────────────────────────────
 

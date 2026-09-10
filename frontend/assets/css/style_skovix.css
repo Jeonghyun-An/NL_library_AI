@@ -2166,8 +2166,10 @@ a:hover {
   border-radius: 0.8rem;
   padding: 1.2rem;
   min-height: 16rem;
+  max-height: 16rem;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .skx-reco-detail[hidden] {
   display: none;
@@ -3810,6 +3812,21 @@ a:hover {
 .skx-ptag--kci {
   background: rgba(214, 215, 248, 0.25);
   color: #3f4ef5;
+}
+/* 등재 등급 필터 버튼 — .skx-ptag--kci 뱃지 색을 그대로 물려받아 선택 여부와
+   무관하게 항상 "눌린" 것처럼 보였다. 필터 컨텍스트에서는 상태를 직접 정의. */
+.skx-paper-grade-filter .skx-ptag--filter {
+  cursor: pointer;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--skx-gray-1);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.skx-paper-grade-filter .skx-ptag--filter.is-active {
+  background: var(--skx-primary);
+  color: var(--skx-white);
 }
 .skx-ptag--score {
   background: rgba(51, 51, 51, 0.1);
