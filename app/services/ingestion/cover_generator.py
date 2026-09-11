@@ -58,9 +58,21 @@ async def generate_cover_prompt(
     return text
 
 
+# 표지가 "정책보고서"처럼 사실적/건조하게 나오는 걸 막기 위한 기본 negative prompt.
+# cover_prompt.yaml이 일러스트 계열 스타일을 유도해도 FLUX 자체는 사실적 렌더링 쪽으로
+# 치우치는 경향이 있어, 서버가 받아주는 negative_prompt로 보정한다.
+DEFAULT_NEGATIVE_PROMPT = (
+    "photorealistic, photograph, stock photo, documentary photo, "
+    "corporate report, bureaucratic, PowerPoint, infographic, slide deck, "
+    "office scene, conference room, plain portrait, text, watermark, logo, "
+    "low quality, blurry"
+)
+
+
 # ── FLUX 이미지 생성 ────────────────────────────────────────
 async def render_cover_image(
     prompt: str,
+    negative_prompt: str | None = None,
     width: int | None = None,
     height: int | None = None,
     steps: int | None = None,
@@ -71,6 +83,7 @@ async def render_cover_image(
     cfg = get_settings()
     body = {
         "prompt": prompt,
+        "negative_prompt": negative_prompt if negative_prompt is not None else DEFAULT_NEGATIVE_PROMPT,
         "width":  width if width is not None else cfg.FLUX_WIDTH,
         "height": height if height is not None else cfg.FLUX_HEIGHT,
         "num_inference_steps": steps if steps is not None else cfg.FLUX_STEPS,

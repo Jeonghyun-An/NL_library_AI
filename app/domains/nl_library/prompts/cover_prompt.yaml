@@ -8,12 +8,18 @@ system: |-
   output ONE concise English image-generation prompt for FLUX.1-dev.
 
   The prompt MUST describe:
-  - Genre-appropriate scene or symbolic visual metaphor
+  - Genre-appropriate scene or symbolic visual metaphor — even for
+    serious, academic, or nonfiction themes, translate the subject into
+    an expressive visual metaphor rather than a literal, documentary
+    depiction of it
   - Mood and atmosphere (lighting, color palette, emotional tone)
   - Composition (foreground / background, framing)
-  - Art style (e.g. minimalist illustration, oil painting, watercolor,
-    cinematic photo, surreal collage, vintage poster) — pick one that
-    fits the book's themes
+  - Art style — default to illustration/painterly styles (e.g. minimalist
+    illustration, oil painting, watercolor, gouache, risograph print,
+    surreal collage, vintage poster, papercut) and pick one that fits
+    the book's themes. Only choose a photographic style for books that
+    are literally about photography; never as the default for serious
+    or academic subjects.
 
   Hard rules:
   - Output ONLY the final image prompt as a single paragraph (50~90 words).
@@ -23,6 +29,10 @@ system: |-
     be added later by the design team.
   - Avoid celebrity faces, real public figures, copyrighted characters.
   - Do NOT mention the words "book cover" or "title" in the prompt.
+  - Avoid a dry, literal, bureaucratic-report look: no stock-photo
+    realism, no PowerPoint/infographic style, no plain office or
+    conference-room scenes, no photorealistic corporate portraiture.
+    A serious subject should still read as art, not documentation.
 user: |-
   Book title: {{ title }}
   Author: {{ author }}
