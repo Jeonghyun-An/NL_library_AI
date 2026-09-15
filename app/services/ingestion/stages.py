@@ -519,6 +519,17 @@ def run_embed_index(ctx: StageContext) -> dict:
                 if fallback_parts:
                     full_text = " ".join(fallback_parts)
                     log.info(f"[{book_id}] PDF·abstract 없음 — 메타 필드로 최소 임베딩 ({len(full_text)}자)")
+
+        # index_chunks 는 book_id 기준 delete 후 insert 라, 빈 본문으로 진행하면
+        # 기존 청크가 전부 사라진다. 인덱스를 건드리기 전에 멈춘다.
+        # 공백만 있는 페이지(OCR 저품질)는 truthy라 full_text 가 비어있지 않을 수
+        # 있으므로 strip 기준으로 판단 — chunker 도 최종적으로 strip 해 문장 0개가 된다.
+        if not full_text.strip():
+            raise StageError(
+                "empty_body",
+                "추출 본문이 비어있다(아티팩트 없음 또는 공백뿐) — 빈 본문 인덱싱은 기존 청크를 전부 삭제한다",
+            )
+
         sections_rows = (
             db.query(BookSection)
             .filter_by(book_id=book_id)
