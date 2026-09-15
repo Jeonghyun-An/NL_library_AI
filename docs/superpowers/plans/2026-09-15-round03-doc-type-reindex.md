@@ -30,6 +30,8 @@ chunk_id(PK) · book_id · chunk_idx · section_idx · text · page_start · pag
 
 `_scalar_field_specs()` = `_CORE_SCALAR`(doc_type, pub_date) + 프로파일 스칼라(publisher, corporate_author, kdc). `pub_date` 는 코어로 승격돼 프로파일 쪽에서 중복 제거된다.
 
+**주석 표준** (`docs/standards/coding-standard.md:33`). 기본은 주석 없음. 왜(why)가 non-obvious 할 때만 짧게 단다. **현재 작업·이슈·라운드 번호를 참조하는 주석은 쓰지 않는다** — 사건 경위는 spec 과 완료노트에 적고, 코드에는 비자명한 이유만 남긴다.
+
 **커밋 규칙** (`GIT_WORKFLOW.md:42`). `[Type] 설명` 한국어 한 줄. Type 은 `Feat`·`Fix`·`Docs`·`Chore`·`Refactor`·`Test`. **`Co-Authored-By` 트레일러는 넣지 않는다.**
 
 **작업 브랜치.** `fix/round03-doc-type-reindex` (이미 생성·커밋 3개 존재).
@@ -43,7 +45,7 @@ chunk_id(PK) · book_id · chunk_idx · section_idx · text · page_start · pag
 | `app/domains/nl_library/doc_types.py` (수정) | 문서 유형 판정. PDF 자동추출 `genre` 불신 규칙 추가 |
 | `app/services/ingestion/stages.py` (수정) | 임베딩 단계에 빈 본문 가드 추가 |
 | `scripts/recovery/rewrite_milvus_doc_type.py` (신규) | 재기록 도구. 순수 변환 함수 + I/O 오케스트레이션 |
-| `app/tests/test_doc_types.py` (신규) | 판정 로직 단위 테스트 |
+| `app/tests/test_doc_types.py` (교체) | 판정 로직 단위 테스트. 기존 KCI 회귀 테스트 6개가 있던 파일을 상위집합으로 교체 |
 | `app/tests/test_embed_index_guard.py` (신규) | 빈 본문 가드 단위 테스트 |
 | `app/tests/test_rewrite_milvus_doc_type.py` (신규) | 재기록 도구 순수 함수 단위 테스트 |
 | `docs/ops/bulk_ingest_runbook.md` (수정) | 카탈로그 없는 코퍼스 적재 절차 |
@@ -55,19 +57,20 @@ chunk_id(PK) · book_id · chunk_idx · section_idx · text · page_start · pag
 ## Task 1: `detect_doc_type` — PDF 자동추출 genre 불신
 
 **Files:**
-- Test: `app/tests/test_doc_types.py` (신규)
+- Test: `app/tests/test_doc_types.py` (교체 — 기존 KCI 회귀 테스트 6개가 들어있다. 아래 내용이 그 상위집합이라 통째로 바꾼다. 유일하게 사라지는 `test_pdf_paper_by_genre` 는 이 Task 가 의도적으로 뒤집는 동작이다)
+- Test: `app/tests/test_domains.py` (수정 — `detect_doc_type` parametrize 3건이 옛 동작을 전제한다)
 - Modify: `app/domains/nl_library/doc_types.py:36-39`
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`app/tests/test_doc_types.py` 를 새로 만든다:
+`app/tests/test_doc_types.py` 를 아래 내용으로 교체한다:
 
 ```python
 """test_doc_types.py — 문서 유형 판정 단위 테스트."""
 from domains.nl_library.doc_types import detect_doc_type
 
 
-# ── PDF 자동추출 genre 불신 (round03) ─────────────────────────────
+# ── PDF 자동추출 genre 불신 ──────────────────────────────────────
 
 def test_pdf_autoextract_genre_paper_is_not_trusted():
     """카탈로그 없이 적재된 문서의 genre 는 LLM 추측이라 paper 근거로 쓰지 않는다.
@@ -163,12 +166,9 @@ cd app && python -m pytest tests/test_doc_types.py -q
     genre = meta.get("genre")
     source_format = meta.get("source_format")
 
-    # genre 가 학술 유형이면 paper. 단 source_format="PDF"(카탈로그 없이 적재돼
-    # PDF 에서 자동추출한 메타)의 genre 는 LLM 추측이라 근거로 쓰지 않는다.
-    # 논문 필터에는 `book_id like "KCI_FI%"` ID 폴백이 있어 doc_type 이 틀려도 잡히지만,
-    # 도서 필터 `doc_type != "paper"` 에는 폴백이 없어 paper 오판정 한 번이면
-    # 문서가 도서 검색에서 통째로 사라진다 (round03: 문학 41편이 그 경우였다).
-    # 적재 시 IngestJob.params["doc_type"] 으로 명시하면 그게 최우선이다.
+    # source_format="PDF" 는 카탈로그 없이 적재돼 genre 를 PDF 에서 자동추출(LLM 추측)한
+    # 경우라 paper 판정 근거로 쓰지 않는다. 도서 필터에는 논문 필터의
+    # `book_id like "KCI_FI%"` 같은 ID 폴백이 없어 paper 오판정이 복구 불가능하다.
     if genre in ("paper", "thesis", "report") and source_format != "PDF":
         return "paper"
 ```
@@ -193,12 +193,14 @@ cd app && python -m pytest tests/test_doc_types.py -q
 cd app && python -m pytest tests/ -q
 ```
 
-기대: 기존 테스트 전부 PASS (실패 0). `detect_doc_type` 을 쓰는 다른 테스트가 깨지면 그 테스트가 PDF 자동추출 케이스를 전제하는지 확인한다.
+기대: 실패 0. `app/tests/test_domains.py` 의 `test_detect_doc_type` parametrize 중 `{"source_format": "PDF", "genre": "paper"/"thesis"/"report"}` 3건이 옛 동작(`"paper"`)을 전제하므로 기대값을 `"book"` 으로 바꾼다.
+
+로컬 환경에서는 `test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py` 3개 모듈이 `FlagEmbedding`·`openpyxl` 미설치로 **수집(collect) 단계에서** 실패한다. 이 변경과 무관한 기존 상태이니, 부모 커밋에서도 동일하게 실패하는지 확인하고 넘어간다.
 
 - [ ] **Step 6: 커밋**
 
 ```bash
-git add app/tests/test_doc_types.py app/domains/nl_library/doc_types.py
+git add app/tests/test_doc_types.py app/tests/test_domains.py app/domains/nl_library/doc_types.py
 git commit -F - <<'MSG'
 [Fix] round03 — PDF 자동추출 genre 로 doc_type=paper 판정하지 않도록 수정
 
@@ -223,7 +225,7 @@ MSG
 `app/tests/test_embed_index_guard.py` 를 새로 만든다:
 
 ```python
-"""test_embed_index_guard.py — 임베딩 단계 빈 본문 가드 테스트 (round03).
+"""test_embed_index_guard.py — 임베딩 단계 빈 본문 가드 테스트.
 
 run_finalize 가 성공 문서의 추출 아티팩트를 지우므로, 적재 완료된 문서에서
 임베딩 단계만 다시 돌리면 아티팩트가 없다. 이때 빈 본문으로 진행하면
@@ -318,10 +320,8 @@ cd app && python -m pytest tests/test_embed_index_guard.py -q
                     full_text = " ".join(fallback_parts)
                     log.info(f"[{book_id}] PDF·abstract 없음 — 메타 필드로 최소 임베딩 ({len(full_text)}자)")
 
-        # 빈 본문으로 진행하면 index_chunks 가 book_id 기준 delete 후 0개를 insert 해
-        # 기존 청크가 전멸한다. run_finalize 가 성공 문서의 아티팩트를 지우므로
-        # 적재 완료 문서에서 이 단계만 재실행하면 바로 이 경로를 밟는다.
-        # 인덱스를 건드리기 전에 멈춘다.
+        # index_chunks 는 book_id 기준 delete 후 insert 라, 빈 본문으로 진행하면
+        # 기존 청크가 전부 사라진다. 인덱스를 건드리기 전에 멈춘다.
         if not full_text:
             raise StageError(
                 "artifact_missing",
