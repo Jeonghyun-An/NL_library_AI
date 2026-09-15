@@ -270,7 +270,7 @@ def test_aborts_when_no_artifact_and_not_paper(monkeypatch):
     with pytest.raises(StageError) as exc:
         stages.run_embed_index(StageContext(book_id="WS_001"))
 
-    assert exc.value.error_group == "artifact_missing"
+    assert exc.value.error_group == "empty_body"
     assert called == [], "인덱스를 건드리기 전에 멈춰야 한다"
 
 
@@ -290,7 +290,35 @@ def test_aborts_when_paper_has_no_fallback_text(monkeypatch):
     with pytest.raises(StageError) as exc:
         stages.run_embed_index(StageContext(book_id="KCI_FI000000001"))
 
-    assert exc.value.error_group == "artifact_missing"
+    assert exc.value.error_group == "empty_body"
+    assert called == []
+
+
+def test_aborts_when_artifact_text_is_whitespace_only(monkeypatch):
+    """아티팩트가 있어도 내용이 공백뿐이면 중단한다.
+
+    load_extraction_artifact 의 페이지 필터가 truthiness 기반이라 공백만 있는
+    페이지 텍스트가 걸러지지 않는다. 청킹 단계에서야 빈 문자열이 돼 0청크가 된다.
+    """
+    book = MagicMock(doc_type="literature", abstract=None, title="동백꽃",
+                     personal_author=None, corporate_author=None,
+                     series_title=None, subject=None, keyword=None)
+    _patch_common(monkeypatch, book)
+    monkeypatch.setattr(stages, "load_extraction_artifact",
+                        lambda book_id, client: ("   
+
+  ", {}))
+
+    called = []
+    monkeypatch.setattr(
+        "services.ingestion.indexer.index_chunks",
+        lambda *a, **kw: called.append(True),
+    )
+
+    with pytest.raises(StageError) as exc:
+        stages.run_embed_index(StageContext(book_id="GM_001"))
+
+    assert exc.value.error_group == "empty_body"
     assert called == []
 ```
 
@@ -300,7 +328,7 @@ def test_aborts_when_paper_has_no_fallback_text(monkeypatch):
 cd app && python -m pytest tests/test_embed_index_guard.py -q
 ```
 
-기대: 2개 모두 FAIL. 현재 코드는 `StageError` 를 던지지 않고 빈 본문으로 진행하려다 다른 지점에서 죽거나 `index_chunks` 를 호출한다.
+기대: 3개 모두 FAIL. 현재 코드는 `StageError` 를 던지지 않고 빈 본문으로 진행하려다 다른 지점에서 죽거나 `index_chunks` 를 호출한다.
 
 - [ ] **Step 3: 최소 구현**
 
@@ -322,9 +350,11 @@ cd app && python -m pytest tests/test_embed_index_guard.py -q
 
         # index_chunks 는 book_id 기준 delete 후 insert 라, 빈 본문으로 진행하면
         # 기존 청크가 전부 사라진다. 인덱스를 건드리기 전에 멈춘다.
-        if not full_text:
+        # strip() 필수 — 아티팩트의 페이지 필터가 truthiness 기반이라 공백만 있는
+        # 페이지 텍스트가 살아남고, 청킹 단계에서야 빈 문자열로 정규화된다.
+        if not full_text.strip():
             raise StageError(
-                "artifact_missing",
+                "empty_body",
                 "추출 아티팩트도 폴백 텍스트도 없다 — 빈 본문 인덱싱은 기존 청크를 전부 삭제한다",
             )
 
@@ -337,7 +367,7 @@ cd app && python -m pytest tests/test_embed_index_guard.py -q
 cd app && python -m pytest tests/test_embed_index_guard.py -q
 ```
 
-기대: `2 passed`
+기대: `3 passed`
 
 - [ ] **Step 5: 전체 회귀**
 

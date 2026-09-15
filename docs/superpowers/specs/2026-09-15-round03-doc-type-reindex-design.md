@@ -116,7 +116,11 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_
 
 현재 아티팩트가 없고 `doc_type != "paper"` 면 `full_text = ""` 로 조용히 진행한다(`stages.py:494`). 그러면 청킹 결과 0개인 채로 `col.delete(book_id)` → 메타청크 1개만 insert 가 돌아 **기존 본문 청크가 전멸한다.** `run_finalize` 가 성공한 문서의 추출 아티팩트를 지우므로(`stages.py:803`), 이미 적재 완료된 문서에서 임베딩 단계만 다시 돌리면 바로 이 경로를 밟는다.
 
-폴백 텍스트조차 만들지 못하면 `StageError("artifact_missing", ...)` 로 중단시킨다. **인덱스를 건드리기 전에 멈추는 것**이 요점이다.
+폴백 텍스트조차 만들지 못하면 `StageError("empty_body", ...)` 로 중단시킨다. **인덱스를 건드리기 전에 멈추는 것**이 요점이다.
+
+판정은 `full_text.strip()` 으로 한다. `load_extraction_artifact` 의 페이지 필터가 truthiness 기반이라 공백만 있는 페이지 텍스트가 살아남고, 청킹 단계(`chunker._normalize_linebreaks` 끝의 `strip()`)에서야 빈 문자열이 돼 0청크가 되기 때문이다.
+
+`error_group` 에 기존 `artifact_missing` 을 재사용하지 않는 이유: 위 `strip()` 때문에 **아티팩트가 정상 로드된 문서도 이 가드에 걸린다.** 그런 건을 `artifact_missing` 으로 집계하면 실패 대시보드(`/api/admin/ingest-jobs/{id}/failures`)가 거짓을 말하고, 그 그룹의 표준 복구 절차("extract 단계부터 재실행")도 맞지 않는다. `error_group` 은 `String(32)` 자유 문자열이고 집계·필터에만 쓰여(`app/api/ingest_jobs.py:253`) 새 값 도입에 부수 작업이 없다.
 
 ## 5. 오류 처리 · 롤백
 
