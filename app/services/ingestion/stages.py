@@ -503,7 +503,7 @@ def run_embed_index(ctx: StageContext) -> dict:
             raise StageError("not_found", "카탈로그 row 없음")
 
         # KCI 메타데이터 전용 논문 — abstract → title+journal 순으로 fallback
-        if not full_text and (book.doc_type or "") == "paper":
+        if not full_text.strip() and (book.doc_type or "") == "paper":
             if book.abstract:
                 full_text = book.abstract
                 log.info(f"[{book_id}] PDF 없음 — abstract를 임베딩 텍스트로 사용 ({len(full_text)}자)")

@@ -118,3 +118,45 @@ def test_aborts_when_extracted_text_is_whitespace_only(monkeypatch):
 
     assert exc.value.error_group == "empty_body"
     assert called == []
+
+
+def test_paper_falls_back_to_abstract_when_extracted_text_is_whitespace_only(monkeypatch):
+    """논문 + 추출 본문이 공백뿐이어도 abstract 가 있으면 폴백 텍스트로 계속 진행한다.
+
+    abstract 폴백 조건도 truthiness 가 아니라 strip 기준이어야 한다 — 그렇지 않으면
+    공백뿐인 본문이 폴백을 건너뛰고 바로 empty_body 가드에서 죽어버린다.
+    """
+    book = MagicMock(doc_type="paper", abstract="이 논문은 강화학습 보상 설계를 다룬다.",
+                     title="논문 제목", personal_author=None, corporate_author=None,
+                     series_title=None, subject=None, keyword=None)
+    _patch_common(monkeypatch, book, artifact_loader=lambda book_id, client: ("   \n\n  ", {}))
+
+    # _patch_common 이 pymilvus/FlagEmbedding 미설치 시 indexer·embedder 모듈 캐시를
+    # sys.modules 에서 지워두므로, 문자열 경로 monkeypatch.setattr 대신 여기서 직접
+    # import 해 실제 재로딩을 트리거한 뒤 그 모듈 객체에 patch 한다 — 그래야
+    # run_embed_index 내부의 지연 import 가 동일한(패치된) 모듈을 참조한다.
+    import services.ingestion.chunker as chunker_mod
+    import services.ingestion.embedder as embedder_mod
+    import services.ingestion.indexer as indexer_mod
+
+    monkeypatch.setattr(stages.cfg, "PAPER_ENRICH_ENABLED", False)
+    monkeypatch.setattr(
+        chunker_mod, "semantic_chunk",
+        lambda text, embed_fn, **kw: [chunker_mod.Chunk(chunk_idx=0, text=text, section_idx=None)],
+    )
+    monkeypatch.setattr(
+        embedder_mod, "embed_texts",
+        lambda texts, *a, **kw: ([[0.0] for _ in texts], [{} for _ in texts]),
+    )
+
+    called = []
+    fake_result = MagicMock(errors=[], chunks_indexed=1)
+    monkeypatch.setattr(
+        indexer_mod, "index_chunks",
+        lambda *a, **kw: called.append(True) or fake_result,
+    )
+
+    result = stages.run_embed_index(StageContext(book_id="KCI_FI000000002"))
+
+    assert called == [True], "abstract 폴백 텍스트가 있으면 인덱싱까지 진행해야 한다"
+    assert result["indexed"] == 1

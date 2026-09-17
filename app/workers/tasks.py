@@ -436,7 +436,9 @@ def backfill_summary(limit: int = 500, force: bool = False, doc_types: list[str]
         if doc_types:
             q = q.filter(Book.doc_type.in_(list(doc_types)))
         if not force:
-            q = q.filter(or_(Book.summary.is_(None), Book.introduction.is_(None)))
+            q = q.filter(or_(
+                Book.summary.is_(None), Book.themes.is_(None), Book.introduction.is_(None),
+            ))
         books = q.limit(limit).all()
         log.info(f"backfill_summary 시작: 대상 {len(books)}건 (force={force}, doc_types={doc_types})")
 
@@ -457,13 +459,13 @@ def backfill_summary(limit: int = 500, force: bool = False, doc_types: list[str]
             doc_type = book.doc_type or "book"
             wrote = False
 
-            if force or not book.summary:
+            if force or not book.summary or not book.themes:
                 try:
                     summary, themes_list = run_async(summarize_book_from_sections(
                         title=title, author=author,
                         section_summaries=valid, doc_type=doc_type,
                     ))
-                    if summary:
+                    if summary and (force or not book.summary):
                         book.summary = summary
                         wrote = True
                     if themes_list and (force or not book.themes):

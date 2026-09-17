@@ -140,7 +140,7 @@ async def backfill_summary_api(
     if doc_types:
         stmt = stmt.where(Book.doc_type.in_(doc_types))
     if not force:
-        stmt = stmt.where(sa_text("(summary IS NULL OR introduction IS NULL)"))
+        stmt = stmt.where(sa_text("(summary IS NULL OR themes IS NULL OR introduction IS NULL)"))
     target = (await db.execute(stmt)).scalar() or 0
 
     from workers.tasks import backfill_summary as backfill_summary_task
