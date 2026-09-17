@@ -119,3 +119,212 @@ def records_to_insert_data(
     data.append([record["embedding"] for record in records])
     data.append([denormalize_sparse(record["sparse_embedding"]) for record in records])
     return data
+
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+BACKUP_ROOT = Path("/app/data/recovery/backup")
+QUERY_PAGE = 1000
+
+
+def output_fields(scalar_names: list[str]) -> list[str]:
+    """Milvus query 로 읽어올 필드 — 스키마 전 필드(임베딩 포함)."""
+    return FIXED_ORDER + scalar_names + ["embedding", "sparse_embedding"]
+
+
+def find_targets(db) -> list[tuple[str, str]]:
+    """재기록 대상 → [(cnts_id, Postgres doc_type)].
+
+    Milvus 메타청크로 역복원한 행만 본다 — 전체 24만 행을 훑지 않는다.
+    """
+    from sqlalchemy import text as sa_text
+
+    rows = db.execute(sa_text(
+        "SELECT cnts_id, doc_type FROM library_catalog "
+        "WHERE extra->>'restored_from' = 'milvus_meta_chunk' "
+        "  AND doc_type IS NOT NULL "
+        "ORDER BY cnts_id"
+    ))
+    return [(r[0], r[1]) for r in rows]
+
+
+def milvus_doc_type(col, book_id: str) -> str | None:
+    """메타청크(chunk_idx = -1)의 doc_type. 없으면 None."""
+    rows = col.query(
+        expr=f'book_id == "{book_id}" && chunk_idx == -1',
+        output_fields=["doc_type"],
+        limit=1,
+    )
+    return rows[0].get("doc_type") if rows else None
+
+
+def fetch_chunks(col, book_id: str, scalar_names: list[str]) -> list[dict]:
+    """해당 book_id 의 전 청크를 임베딩까지 읽는다. offset 페이징."""
+    out: list[dict] = []
+    offset = 0
+    while True:
+        page = col.query(
+            expr=f'book_id == "{book_id}"',
+            output_fields=output_fields(scalar_names),
+            limit=QUERY_PAGE,
+            offset=offset,
+        )
+        if not page:
+            break
+        out.extend(page)
+        if len(page) < QUERY_PAGE:
+            break
+        offset += QUERY_PAGE
+    return out
+
+
+def count_chunks(col, book_id: str) -> int:
+    rows = col.query(
+        expr=f'book_id == "{book_id}"', output_fields=["chunk_id"], limit=16384,
+    )
+    return len(rows)
+
+
+def backup_path(stamp: str, book_id: str) -> Path:
+    return BACKUP_ROOT / f"doc_type_{stamp}" / f"{book_id}.jsonl"
+
+
+def write_backup(path: Path, records: list[dict]) -> int:
+    """백업을 쓰고 디스크에서 다시 읽어 줄 수를 센다 — 썼다고 치지 않는다."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for rec in records:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    with path.open(encoding="utf-8") as f:
+        return sum(1 for _ in f)
+
+
+def read_backup(path: Path) -> list[dict]:
+    with path.open(encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def rewrite_one(col, book_id: str, records: list[dict],
+                doc_type: str | None, scalar_names: list[str]) -> None:
+    """읽은 청크를 doc_type 만 바꿔 제자리 교체한다.
+
+    delete 후 insert 가 아니라 upsert 를 쓴다 — 기본키(chunk_id)가 동일해
+    의미는 같으면서, 그 문서의 청크가 0개가 되는 구간이 생기지 않는다.
+    실패해도 기존 청크가 그대로 남는다.
+    """
+    col.upsert(records_to_insert_data(records, doc_type, scalar_names))
+    col.flush()
+
+
+def run(apply: bool, limit: int | None = None) -> int:
+    from db.postgres import SyncSessionLocal
+    from services.ingestion.indexer import ensure_collection
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    col = ensure_collection()
+    scalar_names = scalar_order()
+
+    db = SyncSessionLocal()
+    try:
+        targets = find_targets(db)
+    finally:
+        db.close()
+    print(f"대상 후보: {len(targets)}건")
+
+    pending = []
+    for cnts_id, pg_doc_type in targets:
+        mv = milvus_doc_type(col, cnts_id)
+        if mv == pg_doc_type:
+            continue
+        pending.append((cnts_id, pg_doc_type, mv, count_chunks(col, cnts_id)))
+
+    if not pending:
+        print("불일치 없음 — 할 일이 없다")
+        return 0
+
+    if limit is not None:
+        pending = pending[:limit]
+
+    total_chunks = sum(p[3] for p in pending)
+    print(f"재기록 필요: {len(pending)}건 / 청크 합계 {total_chunks:,}개")
+    print(f"예상 백업 용량: 약 {total_chunks * 12 / 1024:.1f} MB (청크당 ~12KB 추정)\n")
+    for cnts_id, pg, mv, n in pending:
+        print(f"  {cnts_id:22} Milvus {mv!r} → Postgres {pg!r}  (청크 {n:,})")
+
+    if not apply:
+        print("\ndry-run — 아무것도 쓰지 않았다. 반영하려면 --apply")
+        return 0
+
+    print(f"\n백업 위치: {BACKUP_ROOT / ('doc_type_' + stamp)}\n")
+    done = 0
+    for cnts_id, pg_doc_type, _mv, expected in pending:
+        rows = fetch_chunks(col, cnts_id, scalar_names)
+        records = [row_to_record(r, scalar_names) for r in rows]
+        path = backup_path(stamp, cnts_id)
+        written = write_backup(path, records)
+
+        if written != expected:
+            print(f"  [SKIP] {cnts_id} — 백업 {written} != Milvus {expected}, 건드리지 않는다")
+            continue
+
+        rewrite_one(col, cnts_id, records, pg_doc_type, scalar_names)
+
+        after = count_chunks(col, cnts_id)
+        after_doc_type = milvus_doc_type(col, cnts_id)
+        if after != expected or after_doc_type != pg_doc_type:
+            print(f"  [FAIL] {cnts_id} — 검증 실패 (청크 {after}/{expected}, "
+                  f"doc_type {after_doc_type!r}/{pg_doc_type!r})")
+            print(f"         복구: --restore {path.parent}")
+            print("         남은 문서는 손대지 않고 중단한다")
+            return 1
+
+        done += 1
+        print(f"  [OK]   {cnts_id} — 청크 {after:,} · doc_type {after_doc_type!r}")
+
+    print(f"\n재기록 완료: {done}건")
+    return 0
+
+
+def restore(backup_dir: str) -> int:
+    from services.ingestion.indexer import ensure_collection
+
+    col = ensure_collection()
+    scalar_names = scalar_order()
+    files = sorted(Path(backup_dir).glob("*.jsonl"))
+    if not files:
+        print(f"백업 파일이 없다: {backup_dir}")
+        return 1
+
+    print(f"복구 대상: {len(files)}건")
+    for path in files:
+        book_id = path.stem
+        records = read_backup(path)
+        rewrite_one(col, book_id, records, None, scalar_names)
+        print(f"  [OK] {book_id} — 청크 {len(records):,} 복구")
+    return 0
+
+
+def main() -> int:
+    if "--restore" in sys.argv:
+        idx = sys.argv.index("--restore")
+        if idx + 1 >= len(sys.argv):
+            print("--restore <백업디렉터리> 형태로 경로를 지정한다")
+            return 2
+        return restore(sys.argv[idx + 1])
+
+    limit = None
+    if "--limit" in sys.argv:
+        idx = sys.argv.index("--limit")
+        if idx + 1 >= len(sys.argv):
+            print("--limit <N> 형태로 건수를 지정한다")
+            return 2
+        limit = int(sys.argv[idx + 1])
+
+    return run(apply="--apply" in sys.argv, limit=limit)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
