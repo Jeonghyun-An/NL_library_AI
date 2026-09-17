@@ -243,3 +243,67 @@ def test_write_backup_creates_missing_parent_directory(tmp_path):
     write_backup(path, _make_records(1))
 
     assert path.exists()
+
+
+# ── pymilvus 반환 타입 방어 ───────────────────────────────────────
+
+class _NumpyLikeScalar:
+    """numpy.float32 대역 — float 서브클래스가 아니라 float() 로만 변환된다."""
+
+    def __init__(self, value: float):
+        self._value = value
+
+    def __float__(self) -> float:
+        return self._value
+
+
+def _milvus_row() -> dict:
+    """Milvus query 가 돌려주는 1행 모양(백업 레코드 이전 단계)."""
+    return {
+        "chunk_id": "WS_001__0000",
+        "book_id": "WS_001",
+        "chunk_idx": 0,
+        "section_idx": 0,
+        "text": "본문 | 파이프가 들어간 텍스트",
+        "page_start": 1,
+        "page_end": 2,
+        "doc_type": "paper",
+        "pub_date": "1917",
+        "publisher": "출판사",
+        "corporate_author": "기관",
+        "kdc": "813.6",
+        "embedding": [0.5, -0.25],
+        "sparse_embedding": {7: 0.5},
+    }
+
+
+def test_row_to_record_casts_embedding_elements_to_plain_float():
+    """list() 로 감싸는 것만으로는 부족하다 — 원소가 numpy 스칼라면 json.dumps 가 죽는다."""
+    from rewrite_milvus_doc_type import row_to_record
+
+    row = _milvus_row()
+    row["embedding"] = [_NumpyLikeScalar(0.5), _NumpyLikeScalar(-0.25)]
+    record = row_to_record(row, SCALAR_NAMES)
+
+    assert all(type(x) is float for x in record["embedding"])
+    assert record["embedding"] == [0.5, -0.25]
+    json.dumps(record)
+
+
+def test_row_to_record_casts_sparse_values_to_plain_float():
+    from rewrite_milvus_doc_type import row_to_record
+
+    row = _milvus_row()
+    row["sparse_embedding"] = {7: _NumpyLikeScalar(0.5)}
+    record = row_to_record(row, SCALAR_NAMES)
+
+    assert all(type(v) is float for v in record["sparse_embedding"].values())
+    json.dumps(record)
+
+
+def test_row_to_record_preserves_text_verbatim():
+    """구분자가 값 안에 있어도 재가공하지 않는다."""
+    from rewrite_milvus_doc_type import row_to_record
+
+    record = row_to_record(_milvus_row(), SCALAR_NAMES)
+    assert record["text"] == "본문 | 파이프가 들어간 텍스트"

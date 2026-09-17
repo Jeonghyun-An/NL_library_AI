@@ -90,13 +90,14 @@ def row_to_record(row: dict, scalar_names: list[str]) -> dict:
 
     text 는 재가공 없이 그대로 담는다 — 읽은 값을 바이트 단위로 그대로
     되넣는 것이 이 도구의 전제다. 스칼라 필드가 누락된 행은 ""로 채운다.
-    embedding 은 list() 로 감싼다 — pymilvus 가 ndarray 를 반환하면
-    json.dumps 가 죽으므로 반환 타입을 신뢰하지 않는다.
+    embedding 은 원소까지 float 로 캐스팅한다. pymilvus 는 dense 벡터를 numpy
+    배열로 돌려주는데, list() 로 감싸도 원소는 numpy.float32 로 남아 json.dumps 가
+    죽는다(운영 실행에서 실측). 컨테이너를 감싸는 것만으로는 부족하다.
     """
     record = {name: row[name] for name in FIXED_ORDER}
     for name in scalar_names:
         record[name] = row.get(name, "") or ""
-    record["embedding"] = list(row["embedding"])
+    record["embedding"] = [float(x) for x in row["embedding"]]
     record["sparse_embedding"] = normalize_sparse(row["sparse_embedding"])
     return record
 
