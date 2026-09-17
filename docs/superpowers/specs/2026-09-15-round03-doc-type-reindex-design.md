@@ -15,7 +15,9 @@
 복구는 이번 세션에서 이미 끝냈다(§6-1). 이 spec 의 구현 범위는 **복구 과정에서 드러난 별건 버그**다.
 
 ### 1-2. 이번 라운드가 다루는 버그 — 문학 41편이 `doc_type='paper'`
-위키문헌(`WS_*` 36편) · 공유마당(`GM_*` 5편)에서 크롤링한 한국 근대문학(무정 · 진달래꽃 · 님의 침묵 · 구운몽 · 홍길동전 등)이 Milvus 스칼라에 `doc_type='paper'` 로 박혀 있다.
+위키문헌(`WS_*` 36편) · 공유마당(`GM_*` 5편)에서 크롤링한 한국 근대문학(무정 · 진달래꽃 · 님의 침묵 · 구운몽 · 홍길동전 등)의 Milvus `doc_type` 이 Postgres 와 어긋나 있다.
+
+> **실행 dry-run 에서 드러난 정정.** 설계 시점에는 41편 전부가 `paper` 인 줄 알았으나 실제는 이랬다 — `paper` **5건**, `book` **10건**, 이미 `literature` **26건**. 크롤링을 여러 배치로 나눠 하면서 어떤 배치는 `params.doc_type` 을 줬고 어떤 배치는 자동판별에 맡긴 흔적이다. 아래 서술은 이 정정을 반영한 것이다.
 
 **근본 원인**: 이 문서들은 카탈로그 적재를 거치지 않고 바로 인덱싱됐다. `_ensure_book_and_doc_type`(`app/services/ingestion/stages.py:337`)가 카탈로그 행이 없으면 PDF 에서 메타를 자동추출해 행을 만드는데(`source_format="PDF"`), 그때 LLM 이 찍은 `genre` 를 `detect_doc_type` 이 그대로 신뢰한다. `app/domains/nl_library/doc_types.py:38` 이 `genre in ("paper","thesis","report")` 면 **KDC 검사 전에 즉시 `paper` 로 단락**하고, 이 문서들엔 KDC 가 없어 구제되지 못했다.
 
@@ -23,8 +25,8 @@
 
 | 필터 | 표현식 | 결과 |
 |---|---|---|
-| 논문 | `(doc_type == "paper" \|\| book_id like "KCI_FI%")` | 41편이 **논문 검색을 오염** |
-| 도서 | `(doc_type != "paper" && not (book_id like "KCI_FI%"))` | 41편이 **도서 검색에서 완전 실종** |
+| 논문 | `(doc_type == "paper" \|\| book_id like "KCI_FI%")` | `paper` 5건이 **논문 검색을 오염** |
+| 도서 | `(doc_type != "paper" && not (book_id like "KCI_FI%"))` | `paper` 5건만 **실종**. `book`·`literature` 는 통과해 원래 잡히고 있었다 |
 
 논문 쪽엔 `book_id like "KCI_FI%"` 라는 ID 기반 안전망이 있어 진짜 논문은 `doc_type` 이 틀려도 잡힌다. 도서 쪽엔 그런 안전망이 없어, `paper` 오판정 한 번이면 문서가 도서 검색에서 통째로 사라진다. 지금 「무정」을 도서로 검색하면 안 잡힌다.
 

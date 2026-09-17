@@ -86,7 +86,11 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 - **Task 3** Milvus `doc_type` 재기록 도구의 순수 변환 함수 + 테스트 10개.
 - **Task 4** Milvus `doc_type` 재기록 I/O — 문서 단위 백업·검증·`--restore`. `delete`+`insert` 가 아니라 **`upsert` 로 제자리 교체**해 청크가 0개가 되는 구간이 없다(실패해도 기존 청크가 남는다). 백업 완전성 검증은 `fetch_chunks` 직후 다시 센 값과 대조한다. `--limit` 으로 첫 운영 실행을 1건으로 제한.
 - **Task 5** 런북에 `params.doc_type` 명시 절차 추가 + 관리 API 를 컨테이너 경유 호출로 정정(게이트웨이 차단으로 기존 안내가 403 이 됐다).
-- **Task 6~7 미완** — 운영 실행(dry-run → `--limit 1` → 나머지 → 라이브 검증), 교본.
+- **Task 6** 운영 실행 완료. dry-run 에서 **설계 전제가 틀렸음이 드러났다** — 41편 전부가 `paper` 인 줄 알았으나 실제는 `paper` 5건 · `book` 10건 · 이미 `literature` 26건이었다. 도서 필터는 `doc_type != "paper"` 라 `book` 10건은 **원래부터 도서 검색에 잡히고 있었고**, 실제 실종은 `paper` 5건뿐이었다. 재기록 대상은 15건(966청크 · 백업 11.3MB).
+  1건(`GM_001` 동백꽃) 선행 검증에서 `list(row["embedding"])` 이 numpy 원소를 남겨 `json.dumps` 가 죽는 버그를 잡았다 — 백업 쓰기 단계라 Milvus 는 무손상. `[float(x) for x in ...]` 로 고치고 회귀 테스트를 붙였다.
+  재실행 후 `GM_001` 청크 19개·`doc_type {'literature'}`·다른 스칼라 불변·임베딩 1024차원 전부 생존 확인. 나머지 14건 반영 후 멱등 확인.
+  **라이브 검증 통과** — 도서 검색에서 `GM_001` 1위(연관도 0.796), `WS_034`·`WS_006` 동반 노출. 논문 검색 15건 전부 `KCI_FI*`, 문학 혼입 0건.
+- **Task 7 미완** — 교본.
 
 ---
 
@@ -127,7 +131,7 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 
 ## 6. 이월
 
-- **round03 Task 6~7** — 운영 실행(dry-run → `--limit 1` 로 1편 확인 → 나머지 40편 → 라이브 검증), 교본. **문학 41편은 지금도 Milvus 에서 `paper` 라 도서 검색에서 실종 상태다**(Postgres 는 `literature` 로 교정 완료).
+- **round03 Task 7** — 교본 미작성(`docs/guides/round03/`).
 - **`restore()` 의 `book_id` 를 파일명에서 얻는다** — `path.stem` 기반이라, 경고를 무시하고 `.incomplete` 파일을 직접 `--restore` 인자로 넘기면 `book_id` 가 어긋나 허위 `[FAIL]` 이 난다. 데이터 위험은 없다(그 문서는 애초에 upsert 된 적이 없어 no-op). `records[0]["book_id"]` 에서 읽으면 이 오용이 원천 차단된다.
 - **논문 `summary` 29,006건** — `[초록]` 청크가 없어 복원 소스가 없다. LLM 재생성만 가능하며 7.8초/건 기준 단일 63시간 / 4병렬 16시간. 초록 42,850건이 채워져 화면은 정상이라 급하지 않다.
 - **미배포 코드** — `backfill_summary` 태스크·엔드포인트와 백필 집계 수정이 커밋은 됐으나 운영 `:latest` 이미지에 없다. 다음 배포 때 태그 맞춰 빌드해야 한다.
@@ -149,8 +153,8 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 
 ## 상태
 - [x] code-reviewer 정적 리뷰 통과 — Task 1~4 각각 spec-compliance + code-quality 2단계 리뷰, 발견 사항 전부 반영(Task 4 는 Important 3건 포함)
-- [x] 테스트 green — 120 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
-- [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출 확인), 백업 복원 연습 완료
-- [ ] 문서 갱신 — 완료노트 작성(이 문서). 교본·`00_status`·`recurring-gotchas.md` 미반영
+- [x] 테스트 green — 123 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
+- [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출), 백업 복원 연습, doc_type 재기록 후 도서/논문 검색 양방향 확인
+- [ ] 문서 갱신 — 완료노트·`00_status`·`recurring-gotchas.md`·런북 반영 완료. **교본(`docs/guides/round03/`) 미작성**
 - [ ] `dev` 머지 승인
 - [ ] `dev→main` 머지 + push
