@@ -79,9 +79,7 @@ def main(apply: bool) -> None:
                     {"ids": list(present)},
                 )
                 updated += res.rowcount or 0
-
-        if apply:
-            db.commit()
+                db.commit()
 
         print(f"카탈로그에 존재: {matched:,}건 / 카탈로그에 없음(고아): {missing:,}건")
         if apply:

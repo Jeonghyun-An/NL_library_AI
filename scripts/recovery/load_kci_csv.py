@@ -54,7 +54,7 @@ def iter_records(path: str, enc: str, delim: str, headers: list[str]):
 
     with open(path, encoding=enc, newline="") as f:
         reader = csv.reader(f, delimiter=delim)
-        next(reader, None)  # 헤더 skip
+        next(reader, None)
         for row in reader:
             if len(row) <= id_idx:
                 continue

@@ -29,6 +29,7 @@ doc_type:
 import re
 import sys
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 
@@ -36,6 +37,10 @@ from domains.base import ParsedRecord, split_core_extra
 from db.postgres import SyncSessionLocal
 from repositories.catalog_bulk import upsert_catalog_records
 from services.ingestion.indexer import ensure_collection
+
+if TYPE_CHECKING:
+    from pymilvus import Collection
+    from sqlalchemy.orm import Session
 
 LABEL_FIELD = {
     "제목":     "title",
@@ -83,7 +88,7 @@ def doc_type_for(book_id: str, milvus_doc_type: str | None) -> str | None:
     return milvus_doc_type or None
 
 
-def find_orphans(db) -> list[str]:
+def find_orphans(db: "Session") -> list[str]:
     """book_sections 에는 있는데 library_catalog 에 없는 book_id."""
     rows = db.execute(text(
         "SELECT d.book_id FROM (SELECT DISTINCT book_id FROM book_sections) d "
@@ -93,7 +98,7 @@ def find_orphans(db) -> list[str]:
     return [r[0] for r in rows]
 
 
-def fetch_meta(col, book_ids: list[str]) -> dict[str, dict]:
+def fetch_meta(col: "Collection", book_ids: list[str]) -> dict[str, dict]:
     found: dict[str, dict] = {}
     for i in range(0, len(book_ids), 100):
         chunk = book_ids[i:i + 100]

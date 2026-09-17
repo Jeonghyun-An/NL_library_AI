@@ -26,11 +26,16 @@
 import json
 import re
 import sys
+from typing import TYPE_CHECKING
 
 from sqlalchemy import text as sa_text
 
 from db.postgres import SyncSessionLocal
 from services.ingestion.indexer import ensure_collection
+
+if TYPE_CHECKING:
+    from pymilvus import Collection
+    from sqlalchemy.orm import Session
 
 ID_BATCH = 200          # Milvus expr 에 넣을 book_id 개수
 ABSTRACT_PREFIX = "[초록] "
@@ -38,7 +43,7 @@ KEYWORD_PREFIX = "[키워드] "
 _META_ABSTRACT = re.compile(r"(?:^|\s\|\s)초록: (.+)$", re.S)
 
 
-def find_targets(db, doc_type: str | None, limit: int | None) -> list[str]:
+def find_targets(db: "Session", doc_type: str | None, limit: int | None) -> list[str]:
     """abstract 가 비어있는 임베딩 완료 문서."""
     where = ["is_embedded", "abstract IS NULL"]
     params: dict = {}
@@ -56,7 +61,7 @@ def _ids_expr(ids: list[str]) -> str:
     return ", ".join(f'"{b}"' for b in ids)
 
 
-def fetch_from_enrichment(col, ids: list[str]) -> dict[str, dict]:
+def fetch_from_enrichment(col: "Collection", ids: list[str]) -> dict[str, dict]:
     """`[초록]` / `[키워드]` 보강 청크 조회 → {book_id: {abstract, keywords}}.
 
     text 접두 매칭을 Milvus 에 맡긴다 — 청크 전량을 끌어오면 수십 MB 가 된다.
@@ -75,7 +80,7 @@ def fetch_from_enrichment(col, ids: list[str]) -> dict[str, dict]:
     return out
 
 
-def fetch_from_meta(col, ids: list[str]) -> dict[str, dict]:
+def fetch_from_meta(col: "Collection", ids: list[str]) -> dict[str, dict]:
     """메타청크(chunk_idx=-1)의 `초록:` 항목 → {book_id: {abstract}}."""
     rows = col.query(
         expr=f"book_id in [{_ids_expr(ids)}] && chunk_idx == -1",
@@ -90,7 +95,7 @@ def fetch_from_meta(col, ids: list[str]) -> dict[str, dict]:
     return out
 
 
-def apply_batch(db, found: dict[str, dict]) -> int:
+def apply_batch(db: "Session", found: dict[str, dict]) -> int:
     """abstract 는 컬럼에, keywords 는 extra JSONB 에 병합. 기존 값은 덮지 않는다.
 
     `:ext::jsonb` 가 아니라 `CAST(:ext AS jsonb)` 를 쓴다 — SQLAlchemy text() 는
@@ -115,15 +120,22 @@ def apply_batch(db, found: dict[str, dict]) -> int:
     return n
 
 
+def _flag_value(flag: str) -> str | None:
+    if flag not in sys.argv:
+        return None
+    idx = sys.argv.index(flag)
+    if idx + 1 >= len(sys.argv):
+        print(f"{flag} <값> 형태로 지정한다")
+        sys.exit(2)
+    return sys.argv[idx + 1]
+
+
 def main() -> int:
     apply = "--apply" in sys.argv
     from_meta = "--from-meta" in sys.argv
-    doc_type = None
-    if "--doc-type" in sys.argv:
-        doc_type = sys.argv[sys.argv.index("--doc-type") + 1]
-    limit = None
-    if "--limit" in sys.argv:
-        limit = int(sys.argv[sys.argv.index("--limit") + 1])
+    doc_type = _flag_value("--doc-type")
+    limit_raw = _flag_value("--limit")
+    limit = int(limit_raw) if limit_raw is not None else None
 
     col = ensure_collection()
     db = SyncSessionLocal()

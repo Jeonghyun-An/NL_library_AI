@@ -23,6 +23,10 @@
 #     -t library_catalog < /data/nl-lib/backup/daily/library_catalog_<타임스탬프>.dump
 set -eu
 
+# 공유 서버라 로컬 계정 누구나 접근 가능 — weekly 전체 덤프에는
+# search_history.query(사용자 검색어 원문)가 그대로 들어있어 소유자만 읽게 한다.
+umask 077
+
 BACKUP_DIR="${NL_LIB_BACKUP_DIR:-/data/nl-lib/backup}"
 CONTAINER="${NL_LIB_PG_CONTAINER:-nl-lib-postgres}"
 DB="${NL_LIB_PG_DB:-nl_lib}"
