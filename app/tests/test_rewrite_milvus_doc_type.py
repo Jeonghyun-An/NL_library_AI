@@ -207,3 +207,39 @@ def test_scalar_order_matches_schema(monkeypatch):
     from rewrite_milvus_doc_type import scalar_order
 
     assert scalar_order() == ["doc_type", "pub_date", "publisher", "corporate_author", "kdc"]
+
+
+def test_write_backup_returns_line_count_matching_records(tmp_path):
+    from rewrite_milvus_doc_type import write_backup
+
+    records = _make_records(3)
+    path = tmp_path / "WS_001.jsonl"
+
+    written = write_backup(path, records)
+
+    assert written == 3
+
+
+def test_write_backup_then_read_backup_round_trips_records(tmp_path):
+    from rewrite_milvus_doc_type import read_backup, write_backup
+
+    records = _make_records(2)
+    records[0]["sparse_embedding"] = {"1023": 0.03125}
+    path = tmp_path / "WS_001.jsonl"
+
+    write_backup(path, records)
+    restored = read_backup(path)
+
+    assert restored == records
+    assert all(isinstance(k, str) for k in restored[0]["sparse_embedding"])
+
+
+def test_write_backup_creates_missing_parent_directory(tmp_path):
+    from rewrite_milvus_doc_type import write_backup
+
+    path = tmp_path / "missing" / "nested" / "WS_001.jsonl"
+    assert not path.parent.exists()
+
+    write_backup(path, _make_records(1))
+
+    assert path.exists()

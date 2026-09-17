@@ -8,14 +8,16 @@
 
 왜 문서 단위 재기록인가:
   Milvus 는 부분 update 가 없다 — 필드 하나를 고치려면 해당 문서의 모든 청크를
-  delete 후 insert 해야 한다. 트랜잭션도 없으므로 여러 문서를 묶어봐야 원자성
-  이득이 없고, 문서 단위로 끊어야 실패 피해가 그 1편에 갇힌다.
+  다시 써야 한다. 트랜잭션도 없으므로 여러 문서를 묶어봐야 원자성 이득이 없고,
+  문서 단위로 끊어야 실패 피해가 그 1편에 갇힌다.
 
 왜 백업이 필수인가:
-  delete 가 insert 보다 먼저 실행된다 — 그 사이에 중단되면 해당 문서의 청크가
-  전멸한다(임베딩 재생성 없이는 복구 불가). 읽은 청크(embedding·sparse_embedding
-  포함)를 JSONL 로 디스크에 먼저 써 둬야 delete/insert 실패 시 --restore 로
-  되돌릴 수 있다.
+  기본키(chunk_id)로 제자리 교체하는 upsert 를 쓰므로 그 자체가 실패해도
+  기존 청크는 그대로 남는다. 하지만 fetch_chunks 가 애초에 일부 청크를 놓친
+  채로 override_doc_type 만 바꿔 되넣으면, 놓친 청크는 옛 doc_type 을 가진
+  채로 조용히 방치된다. 읽은 청크(embedding·sparse_embedding 포함)를 JSONL 로
+  디스크에 먼저 써서 그 줄 수를 Milvus 청크 수와 대조해야 이 상황을 잡아내고,
+  그래도 사후 검증이 어긋나면 --restore 로 그 문서만 되돌릴 수 있다.
 
 왜 index_chunks() 를 재사용하지 않는가:
   그 함수는 chunk_id 를 f"{book_id}__{chunk_idx:04d}" 로 재생성하고 text 를
@@ -125,6 +127,11 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pymilvus import Collection
+    from sqlalchemy.orm import Session
 
 BACKUP_ROOT = Path("/app/data/recovery/backup")
 QUERY_PAGE = 1000
@@ -135,7 +142,7 @@ def output_fields(scalar_names: list[str]) -> list[str]:
     return FIXED_ORDER + scalar_names + ["embedding", "sparse_embedding"]
 
 
-def find_targets(db) -> list[tuple[str, str]]:
+def find_targets(db: "Session") -> list[tuple[str, str]]:
     """재기록 대상 → [(cnts_id, Postgres doc_type)].
 
     Milvus 메타청크로 역복원한 행만 본다 — 전체 24만 행을 훑지 않는다.
@@ -151,7 +158,7 @@ def find_targets(db) -> list[tuple[str, str]]:
     return [(r[0], r[1]) for r in rows]
 
 
-def milvus_doc_type(col, book_id: str) -> str | None:
+def milvus_doc_type(col: "Collection", book_id: str) -> str | None:
     """메타청크(chunk_idx = -1)의 doc_type. 없으면 None."""
     rows = col.query(
         expr=f'book_id == "{book_id}" && chunk_idx == -1',
@@ -161,7 +168,7 @@ def milvus_doc_type(col, book_id: str) -> str | None:
     return rows[0].get("doc_type") if rows else None
 
 
-def fetch_chunks(col, book_id: str, scalar_names: list[str]) -> list[dict]:
+def fetch_chunks(col: "Collection", book_id: str, scalar_names: list[str]) -> list[dict]:
     """해당 book_id 의 전 청크를 임베딩까지 읽는다. offset 페이징."""
     out: list[dict] = []
     offset = 0
@@ -181,7 +188,9 @@ def fetch_chunks(col, book_id: str, scalar_names: list[str]) -> list[dict]:
     return out
 
 
-def count_chunks(col, book_id: str) -> int:
+def count_chunks(col: "Collection", book_id: str) -> int:
+    """limit=16384 는 실측 최대 511청크 대비 충분히 크다. 그보다 많아도
+    written != current 로 안전하게 스킵될 뿐 데이터가 잘못 쓰이지는 않는다."""
     rows = col.query(
         expr=f'book_id == "{book_id}"', output_fields=["chunk_id"], limit=16384,
     )
@@ -207,7 +216,7 @@ def read_backup(path: Path) -> list[dict]:
         return [json.loads(line) for line in f if line.strip()]
 
 
-def rewrite_one(col, book_id: str, records: list[dict],
+def rewrite_one(col: "Collection", book_id: str, records: list[dict],
                 doc_type: str | None, scalar_names: list[str]) -> None:
     """읽은 청크를 doc_type 만 바꿔 제자리 교체한다.
 
@@ -260,58 +269,86 @@ def run(apply: bool, limit: int | None = None) -> int:
 
     print(f"\n백업 위치: {BACKUP_ROOT / ('doc_type_' + stamp)}\n")
     done = 0
-    for cnts_id, pg_doc_type, _mv, expected in pending:
+    skipped = 0
+    for cnts_id, pg_doc_type, _mv, _prescan_count in pending:
         rows = fetch_chunks(col, cnts_id, scalar_names)
         records = [row_to_record(r, scalar_names) for r in rows]
+        # 사전 스캔 값(_prescan_count)이 아니라 fetch 직후 값과 비교한다 —
+        # fetch_chunks 가 일부를 놓쳤는지 잡는 게 목적이라 기준이 최신이어야 한다.
+        current = count_chunks(col, cnts_id)
         path = backup_path(stamp, cnts_id)
         written = write_backup(path, records)
 
-        if written != expected:
-            print(f"  [SKIP] {cnts_id} — 백업 {written} != Milvus {expected}, 건드리지 않는다")
+        if written != current:
+            incomplete = path.with_name(path.name + ".incomplete")
+            path.rename(incomplete)
+            skipped += 1
+            print(f"  [SKIP] {cnts_id} — 백업 {written} != Milvus {current}, 건드리지 않는다 "
+                  f"({incomplete.name} 로 보존, --restore 대상에서는 제외)")
             continue
 
         rewrite_one(col, cnts_id, records, pg_doc_type, scalar_names)
 
         after = count_chunks(col, cnts_id)
         after_doc_type = milvus_doc_type(col, cnts_id)
-        if after != expected or after_doc_type != pg_doc_type:
-            print(f"  [FAIL] {cnts_id} — 검증 실패 (청크 {after}/{expected}, "
+        if after != current or after_doc_type != pg_doc_type:
+            print(f"  [FAIL] {cnts_id} — 검증 실패 (청크 {after}/{current}, "
                   f"doc_type {after_doc_type!r}/{pg_doc_type!r})")
-            print(f"         복구: --restore {path.parent}")
+            print(f"         복구(이 문서만): --restore {path}")
+            print(f"         디렉터리 전체({path.parent})로 --restore 하면 이번 실행에서 "
+                  "이미 검증을 통과한 앞선 문서들까지 함께 되돌아간다")
             print("         남은 문서는 손대지 않고 중단한다")
             return 1
 
         done += 1
         print(f"  [OK]   {cnts_id} — 청크 {after:,} · doc_type {after_doc_type!r}")
 
-    print(f"\n재기록 완료: {done}건")
-    return 0
+    print()
+    if skipped:
+        print(f"스킵됨: {skipped}건 — 백업 불일치로 건드리지 않음")
+    print(f"재기록 완료: {done}건")
+    return 1 if skipped else 0
 
 
 def restore(backup_dir: str) -> int:
+    """백업디렉터리 또는 단일 .jsonl 파일 하나를 복구한다.
+
+    단일 파일을 받을 수 있어야 하는 이유: [FAIL] 안내가 그 문서 하나의
+    파일을 가리키기 때문이다 — 디렉터리 전체로 복구하면 같은 실행에서
+    이미 검증까지 통과한 다른 문서들까지 되돌아간다.
+    """
     from services.ingestion.indexer import ensure_collection
 
     col = ensure_collection()
     scalar_names = scalar_order()
-    files = sorted(Path(backup_dir).glob("*.jsonl"))
+    target = Path(backup_dir)
+    files = [target] if target.is_file() else sorted(target.glob("*.jsonl"))
     if not files:
         print(f"백업 파일이 없다: {backup_dir}")
         return 1
 
     print(f"복구 대상: {len(files)}건")
+    failed = 0
     for path in files:
         book_id = path.stem
         records = read_backup(path)
         rewrite_one(col, book_id, records, None, scalar_names)
+
+        after = count_chunks(col, book_id)
+        if after != len(records):
+            failed += 1
+            print(f"  [FAIL] {book_id} — 복구 검증 실패 (청크 {after}/{len(records)})")
+            continue
+
         print(f"  [OK] {book_id} — 청크 {len(records):,} 복구")
-    return 0
+    return 1 if failed else 0
 
 
 def main() -> int:
     if "--restore" in sys.argv:
         idx = sys.argv.index("--restore")
         if idx + 1 >= len(sys.argv):
-            print("--restore <백업디렉터리> 형태로 경로를 지정한다")
+            print("--restore <백업디렉터리 또는 .jsonl 파일> 형태로 경로를 지정한다")
             return 2
         return restore(sys.argv[idx + 1])
 
