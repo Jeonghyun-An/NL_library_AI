@@ -218,7 +218,7 @@ MSG
 - Test: `app/tests/test_embed_index_guard.py` (신규)
 - Modify: `app/services/ingestion/stages.py:479-520`
 
-배경: `run_finalize` 가 성공한 문서의 추출 아티팩트를 지운다(`stages.py:803`). 그래서 이미 적재 완료된 문서에서 임베딩 단계만 다시 돌리면 `load_extraction_artifact` 가 `artifact_missing` 을 던지고, 현재 코드는 `full_text = ""` 로 조용히 진행한다. 그러면 청킹 결과 0개인 채로 `index_chunks` 가 `col.delete(book_id)` → 메타청크 1개만 insert 를 돌려 **기존 본문 청크가 전멸한다.**
+배경: `run_finalize` 가 성공한 문서의 추출 아티팩트를 지운다(`stages.py:814`). 그래서 이미 적재 완료된 문서에서 임베딩 단계만 다시 돌리면 `load_extraction_artifact` 가 `artifact_missing` 을 던지고, 현재 코드는 `full_text = ""` 로 조용히 진행한다. 그러면 청킹 결과 0개인 채로 `index_chunks` 가 `col.delete(book_id)` → 메타청크 1개만 insert 를 돌려 **기존 본문 청크가 전멸한다.**
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
@@ -975,9 +975,13 @@ mkdir -p /data/nl-lib/data/recovery && cp scripts/recovery/rewrite_milvus_doc_ty
 docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_milvus_doc_type.py
 ```
 
-기대: `대상 후보: 41건`, `재기록 필요: 41건`, 문서별로 `Milvus 'paper' → Postgres 'literature'` 와 청크 수. 마지막 줄이 `dry-run — 아무것도 쓰지 않았다`.
+> **실행 결과에 따른 정정.** 설계 시점에는 41편 전부가 불일치인 줄 알았으나, 실제 dry-run 은
+> `대상 후보: 41건` / **`재기록 필요: 15건`** 이었다(`paper` 5 · `book` 10 · 이미 `literature` 26).
+> 두 숫자는 다른 개념이다 — 후보는 조회 대상, 재기록 필요는 Postgres 와 어긋난 건수다.
 
-**대상이 41건이 아니면 멈춘다.** `extra->>'restored_from' = 'milvus_meta_chunk'` 조건이 예상과 다른 행을 잡고 있다는 뜻이다.
+기대: `대상 후보: 41건`. `재기록 필요` 는 15건 안팎이고, 문서별로 `Milvus 'paper'|'book' → Postgres 'literature'` 와 청크 수가 찍힌다. 마지막 줄이 `dry-run — 아무것도 쓰지 않았다`.
+
+**대상 후보가 41건이 아니면 멈춘다.** `extra->>'restored_from' = 'milvus_meta_chunk'` 조건이 예상과 다른 행을 잡고 있다는 뜻이다. 재기록 필요 건수는 이미 맞는 문서가 몇이냐에 따라 달라지므로 그 자체로는 중단 사유가 아니다.
 
 - [ ] **Step 3: 1건만 먼저 반영**
 

@@ -93,7 +93,7 @@ curl -s http://<host>/api/books/<cnts_id>/ingest-status
 docker exec nl-lib-fastapi curl -s -X POST "localhost:8000/api/admin/ingest-jobs"   -H 'Content-Type: application/json' -d '{...}'
 ```
 
-아래 §6·§7 의 `http://<host>/api/admin/...` 도 전부 이 형태로 바꿔 읽는다.
+아래 §6 의 `http://<host>/api/admin/...` 도 전부 이 형태로 바꿔 읽는다.
 
 ## 5-b. 카탈로그 없는 코퍼스는 `doc_type` 을 반드시 지정한다
 

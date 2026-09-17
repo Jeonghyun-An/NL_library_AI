@@ -59,10 +59,13 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 | 5 | `is_embedded`·`ingest_state`·`full_text_length` | `book_sections` 존재 여부로 SQL 갱신 | 72,841건 |
 | 6 | `doc_type` (NL 도서 누락분) | KDC 기반 `detect_doc_type` 규칙 SQL 적용 | 658건 |
 | 7 | 논문 `abstract`·`extracted_keywords` | Milvus `[초록]`·`[키워드]` 보강청크 역복원 | 42,850건 (LLM 비용 0) |
+| 7-b | 논문 `extra.references` | `book_sections` 원문 재구성 → `extract_references()` 패턴 추출 | 30,532건 (LLM 비용 0) |
 | 8 | `plot`·`read_effect` | 기존 백필 엔드포인트 | 910건 |
 | 9 | `summary`·`themes`·`introduction` | 신규 백필(섹션 요약 재사용) | 910건 |
 
 고아 문서 **72,601 → 0건**. 복구 스크립트는 `scripts/recovery/` 에 있다.
+
+두 가지 표기 차이를 밝혀둔다. (1) spec §6-1 은 고아를 "2건 남음"으로 적었는데, 그건 KCI 카탈로그 재적재 이전 시점 기록이다 — 그 2건도 재적재로 카탈로그 행을 얻어 orphan 정의에서 빠졌고, 대신 "카탈로그는 있으나 청크가 0건"인 별개 문제로 재분류해 §6 이월에 남겼다. (2) 위 표는 spec §6-1 표에서 6~9행(`doc_type` 658건 · 초록 42,850건 · plot/read_effect · summary/introduction)을 추가해 확장한 것이다. spec 작성 이후 추가로 수행된 복구 단계들이다.
 
 ### 복구가 가능했던 이유 — 운이었다
 원본 카탈로그 파일이 `/data/nl-lib/data/uploads/` 에 남아있었고, 초록이 Milvus 청크에 남아있었기 때문이다. **설계된 안전장치가 아니었다.** `docker-compose.yml` 에 백업 서비스가 없어 `pg_dump` 가 한 번도 돈 적이 없었다.
@@ -146,13 +149,16 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 ---
 
 ## 7. 다음 라운드 진입점
-- round03 Task 6~7 이 우선. 문학 41편 도서 검색 실종이 실사용자에게 보이는 결함이다.
+- **round03 은 Task 7(교본)만 남았다.** doc_type 재기록은 운영 실행·라이브 검증까지 끝났다(§2-3 Task 6).
 - 그 뒤 `docs/superpowers/specs/2026-09-15-search-top-pick-recommend-design.md`(다른 세션의 검색 추천 기획 초안)가 대기 중.
 
 ---
 
 ## 상태
-- [x] code-reviewer 정적 리뷰 통과 — Task 1~4 각각 spec-compliance + code-quality 2단계 리뷰, 발견 사항 전부 반영(Task 4 는 Important 3건 포함)
+- [x] code-reviewer 정적 리뷰 통과 — Task 1~4 각 2단계(spec-compliance + code-quality) 리뷰 + **머지 직전 영역별 전체 리뷰 3건**(앱 코드 / 복구 스크립트·인프라 / 문서 정합성). 발견 사항 전부 반영:
+    - 앱: 논문 abstract 폴백이 `strip()` 기준을 안 써 공백뿐인 아티팩트에서 초록을 못 쓰던 문제, `backfill_summary` 가 `themes` 단독 결손을 선택도 생성도 못 하던 문제
+    - 스크립트·인프라: dev nginx 의 `/docs`·`/openapi.json` 차단 누락, 백업 파일 world-readable(`umask 077`), `restore_cover_keys.py` 배치 커밋 누락, 인자 값 누락 시 트레이스백, 타입힌트
+    - 문서: 완료노트·`00_status` 의 "Task 미완·문학 실종" 잔존 서술, 계획서 Task 6 의 41건 기대치, 고아 건수 표기 차이
 - [x] 테스트 green — 123 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
 - [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출), 백업 복원 연습, doc_type 재기록 후 도서/논문 검색 양방향 확인
 - [ ] 문서 갱신 — 완료노트·`00_status`·`recurring-gotchas.md`·런북 반영 완료. **교본(`docs/guides/round03/`) 미작성**

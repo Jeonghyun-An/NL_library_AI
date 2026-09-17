@@ -117,7 +117,7 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_
 
 ### 4-3. `run_embed_index` 빈 본문 가드 (`app/services/ingestion/stages.py`)
 
-현재 아티팩트가 없고 `doc_type != "paper"` 면 `full_text = ""` 로 조용히 진행한다(`stages.py:494`). 그러면 청킹 결과 0개인 채로 `col.delete(book_id)` → 메타청크 1개만 insert 가 돌아 **기존 본문 청크가 전멸한다.** `run_finalize` 가 성공한 문서의 추출 아티팩트를 지우므로(`stages.py:803`), 이미 적재 완료된 문서에서 임베딩 단계만 다시 돌리면 바로 이 경로를 밟는다.
+현재 아티팩트가 없고 `doc_type != "paper"` 면 `full_text = ""` 로 조용히 진행한다(`stages.py:496`). 그러면 청킹 결과 0개인 채로 `col.delete(book_id)` → 메타청크 1개만 insert 가 돌아 **기존 본문 청크가 전멸한다.** `run_finalize` 가 성공한 문서의 추출 아티팩트를 지우므로(`stages.py:814`), 이미 적재 완료된 문서에서 임베딩 단계만 다시 돌리면 바로 이 경로를 밟는다.
 
 폴백 텍스트조차 만들지 못하면 `StageError("empty_body", ...)` 로 중단시킨다. **인덱스를 건드리기 전에 멈추는 것**이 요점이다.
 
@@ -151,7 +151,7 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_
 | `cover_image_key` 재매핑 (`covers/{cnts_id}.jpg` 결정론적) | 588건, 무손실 |
 | `is_embedded` · `ingest_state` · `full_text_length` | 72,841건 |
 | 파편 정리 (`CNTS-*_` 3건 · `LIT-GUTENBERG-100`) | 임베딩 없는 중단분, 삭제 |
-| 고아 문서 | 72,601 → **2건** (임베딩 없는 논문 2편, §7 이월) |
+| 고아 문서 | 72,601 → **2건** (임베딩 없는 논문 2편, §7 이월) — 이후 KCI 카탈로그 재적재로 그 2건도 카탈로그 행을 얻어 orphan 정의에서 빠졌다. 최종 0건, 대신 '청크 0건' 문제로 재분류(완료노트 §1 참고) |
 | `POST /api/books/curate` | 404 → 200 |
 
 ### 6-2. 단위 테스트 (`app/tests/`)
