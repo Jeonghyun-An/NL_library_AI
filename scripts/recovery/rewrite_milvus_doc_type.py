@@ -1,10 +1,15 @@
-"""rewrite_milvus_doc_type.py — Milvus doc_type 스칼라 재기록 (문학 41편 오분류 교정)
+"""rewrite_milvus_doc_type.py — Milvus doc_type 스칼라 재기록 (문학 오분류 교정)
 
 배경:
   위키문헌(WS_*)·공유마당(GM_*) 문학 작품 41편이 카탈로그 적재 없이 바로
-  인덱싱되면서 doc_type='paper' 로 잘못 박혔다. 논문 검색은 book_id 접두어
-  안전망 덕에 영향이 적지만, 도서 검색은 doc_type 만 보므로 이 41편이
-  도서 검색에서 완전히 실종된다.
+  인덱싱되면서 Milvus doc_type 이 Postgres 와 어긋났다. dry-run 실측 기준
+  41편 중 재기록이 필요한 것은 15건이다 — paper 5 / book 10, 나머지 26 은
+  이미 literature 로 맞게 들어가 있었다.
+
+  피해가 가장 큰 것은 paper 5건이다. 논문 검색은 book_id 접두어 안전망이
+  있어 영향이 적지만 도서 검색은 doc_type != 'paper' 만 보므로, 이 5건은
+  도서 검색에서 완전히 실종된다. book 10건은 도서 검색에는 잡히지만
+  라벨이 틀린 상태라 함께 바로잡는다.
 
 왜 문서 단위 재기록인가:
   Milvus 는 부분 update 가 없다 — 필드 하나를 고치려면 해당 문서의 모든 청크를
