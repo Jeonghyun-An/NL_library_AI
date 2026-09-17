@@ -395,6 +395,15 @@ MSG
 
 ## Task 3: 재기록 도구 — 순수 변환 함수
 
+> **구현 중 설계가 바뀌었다.** 아래 본문은 스칼라 컬럼 순서를 `SCALAR_ORDER` 상수로
+> **하드코딩**하는 원안이다. 실제로는 앱의 `_scalar_field_specs()` 에서 파생시키는
+> `scalar_order()` 로 구현했고, `row_to_record`·`records_to_insert_data` 는 스칼라 이름
+> 목록을 인자로 받는다. 하드코딩은 프로파일 스칼라가 바뀌면 조용히 어긋나
+> **데이터가 엉뚱한 컬럼에 들어가는** 위험이 있었고, Task 2 에서 검증된 조건부 스텁
+> 기법(`app/tests/test_embed_index_guard.py`)으로 `pymilvus` 없이도 앱 값을 읽어
+> 테스트할 수 있게 되면서 하드코딩의 유일한 근거가 사라졌다.
+> 확정된 API 는 `scripts/recovery/rewrite_milvus_doc_type.py` 를 보라. Task 4 는 그쪽에 맞춰져 있다.
+
 **Files:**
 - Create: `scripts/recovery/rewrite_milvus_doc_type.py`
 - Test: `app/tests/test_rewrite_milvus_doc_type.py` (신규)
@@ -612,18 +621,14 @@ cd app && python -m pytest tests/test_rewrite_milvus_doc_type.py -q
 
 - [ ] **Step 5: 스칼라 순서가 실제 스키마와 일치하는지 검증**
 
-`SCALAR_ORDER` 는 하드코딩이라 스키마와 어긋나면 데이터가 엉뚱한 컬럼에 들어간다. 실제 값과 대조한다:
+**확정 구현에서는 수동 대조가 필요 없다.** `scalar_order()` 가 앱의 `_scalar_field_specs()` 를
+직접 읽고, `test_scalar_order_matches_schema` 가 기대 목록
+`['doc_type', 'pub_date', 'publisher', 'corporate_author', 'kdc']` 를 고정한다 —
+프로파일 스칼라가 바뀌면 **테스트가 깨져서** 드러난다.
 
-```bash
-docker exec -e PYTHONPATH=/app nl-lib-fastapi python -c "
-from services.ingestion.indexer import _scalar_field_specs
-print([n for n, _ in _scalar_field_specs()])
-"
-```
-
-기대 출력: `['doc_type', 'pub_date', 'publisher', 'corporate_author', 'kdc']`
-
-**다르면 `SCALAR_ORDER` 를 출력값에 맞추고 Task 3 의 테스트를 다시 돌린다.** Task 4 로 넘어가지 않는다.
+실제로 작동하는지는 변이 테스트로 확인했다: `app/domains/nl_library/profile.py` 의
+`milvus_scalar_fields` 순서를 바꾸면 `test_scalar_order_matches_schema` 가 실패하고,
+되돌리면 다시 통과한다.
 
 - [ ] **Step 6: 커밋**
 
@@ -660,13 +665,16 @@ from pathlib import Path
 BACKUP_ROOT = Path("/app/data/recovery/backup")
 QUERY_PAGE = 1000
 
-OUTPUT_FIELDS = FIXED_ORDER + SCALAR_ORDER + ["embedding", "sparse_embedding"]
+
+def output_fields(scalar_names: list[str]) -> list[str]:
+    """Milvus query 로 읽어올 필드 — 스키마 전 필드(임베딩 포함)."""
+    return FIXED_ORDER + scalar_names + ["embedding", "sparse_embedding"]
 
 
 def find_targets(db) -> list[tuple[str, str]]:
     """재기록 대상 → [(cnts_id, Postgres doc_type)].
 
-    이번 사고에서 Milvus 메타청크로 역복원한 행만 본다. 전체 24만 행을 훑지 않는다.
+    Milvus 메타청크로 역복원한 행만 본다 — 전체 24만 행을 훑지 않는다.
     """
     from sqlalchemy import text as sa_text
 
@@ -689,14 +697,14 @@ def milvus_doc_type(col, book_id: str) -> str | None:
     return rows[0].get("doc_type") if rows else None
 
 
-def fetch_chunks(col, book_id: str) -> list[dict]:
+def fetch_chunks(col, book_id: str, scalar_names: list[str]) -> list[dict]:
     """해당 book_id 의 전 청크를 임베딩까지 읽는다. offset 페이징."""
     out: list[dict] = []
     offset = 0
     while True:
         page = col.query(
             expr=f'book_id == "{book_id}"',
-            output_fields=OUTPUT_FIELDS,
+            output_fields=output_fields(scalar_names),
             limit=QUERY_PAGE,
             offset=offset,
         )
@@ -710,7 +718,9 @@ def fetch_chunks(col, book_id: str) -> list[dict]:
 
 
 def count_chunks(col, book_id: str) -> int:
-    rows = col.query(expr=f'book_id == "{book_id}"', output_fields=["chunk_id"], limit=16384)
+    rows = col.query(
+        expr=f'book_id == "{book_id}"', output_fields=["chunk_id"], limit=16384,
+    )
     return len(rows)
 
 
@@ -719,10 +729,12 @@ def backup_path(stamp: str, book_id: str) -> Path:
 
 
 def write_backup(path: Path, records: list[dict]) -> int:
+    """백업을 쓰고 디스크에서 다시 읽어 줄 수를 센다 — 썼다고 치지 않는다."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         for rec in records:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            f.write(json.dumps(rec, ensure_ascii=False) + "
+")
     with path.open(encoding="utf-8") as f:
         return sum(1 for _ in f)
 
@@ -732,10 +744,11 @@ def read_backup(path: Path) -> list[dict]:
         return [json.loads(line) for line in f if line.strip()]
 
 
-def rewrite_one(col, book_id: str, records: list[dict], doc_type: str | None) -> None:
+def rewrite_one(col, book_id: str, records: list[dict],
+                doc_type: str | None, scalar_names: list[str]) -> None:
     """delete → insert. 여기가 유일한 위험 구간이고, 백업은 이미 디스크에 있다."""
     col.delete(expr=f'book_id == "{book_id}"')
-    col.insert(records_to_insert_data(records, override_doc_type=doc_type))
+    col.insert(records_to_insert_data(records, doc_type, scalar_names))
     col.flush()
 
 
@@ -745,6 +758,8 @@ def run(apply: bool) -> int:
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     col = ensure_collection()
+    scalar_names = scalar_order()
+
     db = SyncSessionLocal()
     try:
         targets = find_targets(db)
@@ -765,19 +780,23 @@ def run(apply: bool) -> int:
 
     total_chunks = sum(p[3] for p in pending)
     print(f"재기록 필요: {len(pending)}건 / 청크 합계 {total_chunks:,}개")
-    print(f"예상 백업 용량: 약 {total_chunks * 12 / 1024:.1f} MB (청크당 ~12KB 추정)\n")
+    print(f"예상 백업 용량: 약 {total_chunks * 12 / 1024:.1f} MB (청크당 ~12KB 추정)
+")
     for cnts_id, pg, mv, n in pending:
         print(f"  {cnts_id:22} Milvus {mv!r} → Postgres {pg!r}  (청크 {n:,})")
 
     if not apply:
-        print("\ndry-run — 아무것도 쓰지 않았다. 반영하려면 --apply")
+        print("
+dry-run — 아무것도 쓰지 않았다. 반영하려면 --apply")
         return 0
 
-    print(f"\n백업 위치: {BACKUP_ROOT / ('doc_type_' + stamp)}\n")
+    print(f"
+백업 위치: {BACKUP_ROOT / ('doc_type_' + stamp)}
+")
     done = 0
     for cnts_id, pg_doc_type, _mv, expected in pending:
-        rows = fetch_chunks(col, cnts_id)
-        records = [row_to_record(r) for r in rows]
+        rows = fetch_chunks(col, cnts_id, scalar_names)
+        records = [row_to_record(r, scalar_names) for r in rows]
         path = backup_path(stamp, cnts_id)
         written = write_backup(path, records)
 
@@ -785,7 +804,7 @@ def run(apply: bool) -> int:
             print(f"  [SKIP] {cnts_id} — 백업 {written} != Milvus {expected}, 건드리지 않는다")
             continue
 
-        rewrite_one(col, cnts_id, records, pg_doc_type)
+        rewrite_one(col, cnts_id, records, pg_doc_type, scalar_names)
 
         after = count_chunks(col, cnts_id)
         after_doc_type = milvus_doc_type(col, cnts_id)
@@ -799,7 +818,8 @@ def run(apply: bool) -> int:
         done += 1
         print(f"  [OK]   {cnts_id} — 청크 {after:,} · doc_type {after_doc_type!r}")
 
-    print(f"\n재기록 완료: {done}건")
+    print(f"
+재기록 완료: {done}건")
     return 0
 
 
@@ -807,6 +827,7 @@ def restore(backup_dir: str) -> int:
     from services.ingestion.indexer import ensure_collection
 
     col = ensure_collection()
+    scalar_names = scalar_order()
     files = sorted(Path(backup_dir).glob("*.jsonl"))
     if not files:
         print(f"백업 파일이 없다: {backup_dir}")
@@ -816,7 +837,7 @@ def restore(backup_dir: str) -> int:
     for path in files:
         book_id = path.stem
         records = read_backup(path)
-        rewrite_one(col, book_id, records, None)   # 백업의 원래 doc_type 유지
+        rewrite_one(col, book_id, records, None, scalar_names)
         print(f"  [OK] {book_id} — 청크 {len(records):,} 복구")
     return 0
 
@@ -1040,4 +1061,6 @@ MSG
 
 **타입 일관성.** `SCALAR_ORDER` · `FIXED_ORDER` · `row_to_record` · `records_to_insert_data` · `normalize_sparse` · `denormalize_sparse` 의 이름과 시그니처가 Task 3 정의와 Task 4 사용처에서 일치한다. `records_to_insert_data(records, override_doc_type)` 는 Task 4 의 `rewrite_one` 에서 키워드로 넘긴다.
 
-**알려진 취약점 — `SCALAR_ORDER` 하드코딩.** `_scalar_field_specs()` 를 import 하지 않고 순서를 복제했다. 스크립트가 앱 모듈 없이도 순수 함수를 테스트할 수 있게 하려는 의도지만, 프로파일 스칼라가 바뀌면 조용히 어긋나 **데이터가 엉뚱한 컬럼에 들어간다.** Task 3 Step 5 에서 실제 값과 대조하는 절차를 넣어 이 라운드에서는 막았다. 장기적으로는 `_scalar_field_specs()` 를 직접 쓰고 테스트에서 앱 모듈을 로드하는 쪽이 옳다 — 완료노트 이월 후보.
+**해소됨 — `SCALAR_ORDER` 하드코딩.** 계획 작성 시점에는 순서를 복제하고 수동 대조로 막으려 했으나, 프로파일 스칼라가 바뀌면 조용히 어긋나 **데이터가 엉뚱한 컬럼에 들어가는** 위험이 남았다. Task 2 에서 검증된 조건부 스텁 기법으로 `pymilvus` 없이도 앱 값을 읽을 수 있게 되면서 하드코딩의 근거가 사라져, 구현 시 `scalar_order()` 파생 + 드리프트 테스트로 바꿨다. 변이 테스트로 실제 탐지됨을 확인했다.
+
+**남은 이월.** `scalar_order()` 가 언더스코어 private 함수 `_scalar_field_specs` 를 모듈 경계 밖에서 참조한다. 드리프트 테스트가 계약을 고정하고 있어 실질 위험은 낮지만, `indexer.py` 에서 공개 이름으로 승격하는 편이 계약을 명시적으로 드러낸다 — 이번 스코프 밖.
