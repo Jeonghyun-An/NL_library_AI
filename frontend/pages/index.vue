@@ -352,9 +352,11 @@
                     alt="SKOVIX AI"
                   />
                   <Transition name="skx-stage-fade" mode="out-in">
-                    <span :key="aiPanelTitle" class="skx-ai-panel__title-text">{{
-                      aiPanelTitle
-                    }}</span>
+                    <span
+                      :key="aiPanelTitle"
+                      class="skx-ai-panel__title-text"
+                      >{{ aiPanelTitle }}</span
+                    >
                   </Transition>
                   <span v-if="curationLoading" class="skx-ai-panel__loading"
                     >●</span
@@ -534,18 +536,18 @@
                     {{ item.book_info?.title || item.book_id }}
                   </h3>
                   <div class="skx-book-card__info-row">
-                    <span
+                    <!-- <span
                       v-if="item.book_info?.material_type"
                       class="skx-meta-text"
                       >{{ item.book_info.material_type }}</span
-                    >
-                    <span
+                    > -->
+                    <!-- <span
                       v-if="
                         item.book_info?.personal_author ||
                         item.book_info?.corporate_author
                       "
                       class="skx-dot"
-                    ></span>
+                    ></span> -->
                     <span class="skx-meta-text">{{
                       item.book_info?.personal_author ||
                       item.book_info?.corporate_author
