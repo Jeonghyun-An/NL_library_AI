@@ -60,17 +60,17 @@
         │
         ▼
 ③ 백업 (문서별)
-   query_iterator 로 해당 book_id 전 청크를 스키마 전 필드 + embedding + sparse_embedding 까지 읽어
+   해당 book_id 전 청크를 스키마 전 필드 + embedding + sparse_embedding 까지 읽어(offset 페이징)
    /app/data/recovery/backup/doc_type_<타임스탬프>/<book_id>.jsonl 로 저장
    (호스트 바인드 마운트 /data/nl-lib/data → 컨테이너가 죽어도 남는다)
         │
         ▼
 ④ 백업 검증
-   백업 줄 수 == Milvus 청크 수 ?  아니면 그 문서는 건너뛴다 — 지우기 전에 멈춘다
+   백업 줄 수 == Milvus 청크 수 ?  아니면 그 문서는 건너뛴다 — 교체하기 전에 멈춘다
         │
         ▼
 ⑤ 재기록
-   col.delete(expr=f'book_id == "{bid}"')  →  col.insert(읽은 값 그대로, doc_type 만 교체)
+   col.upsert(읽은 값 그대로, doc_type 만 교체)  ← 기본키(chunk_id) 제자리 교체
         │
         ▼
 ⑥ 사후 검증
@@ -87,7 +87,8 @@
 |---|---|
 | (기본) dry-run | 대상 목록 · 문서별 청크 수 · 예상 백업 용량만 출력. 아무것도 쓰지 않는다 |
 | `--apply` | §3 의 ③~⑥ 실행 |
-| `--restore <백업디렉터리>` | 백업 JSONL 을 그대로 되돌린다 |
+| `--restore <백업디렉터리>` | 백업 JSONL 을 그대로 되돌린다 (같은 upsert 경로) |
+| `--limit N` | 대상을 N 건으로 자른다 — 첫 운영 실행을 1건으로 하기 위한 안전장치 |
 
 **`index_chunks()` 를 재사용하지 않는다.** 그 함수는 `chunk_id` 를 `{book_id}__{idx:04d}` 로 재생성하고 `text` 를 다시 16,000바이트로 자른다(`app/services/ingestion/indexer.py:223`). 읽은 값을 한 글자도 바꾸지 않고 되넣어야 하므로 별도 insert 경로를 쓴다. 컬럼 순서만 `_scalar_field_specs()` 로 스키마와 맞춘다.
 
@@ -98,7 +99,7 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_
 docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_milvus_doc_type.py --apply
 ```
 
-`pymilvus==2.4.6`. `query_iterator` 가용성은 런타임에 확인하고, 없으면 `query` + offset 페이징으로 폴백한다.
+`pymilvus==2.4.6` — `Collection.upsert` 가용 확인 완료. 청크 조회는 `query` + offset 페이징을 쓴다.
 
 ### 4-2. `detect_doc_type` 수정 (`app/domains/nl_library/doc_types.py`)
 
@@ -128,10 +129,12 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_
 |---|---|---|
 | ③ 백업 중 | Milvus 무손상 | 그 문서 건너뜀, 다음 문서 진행 |
 | ④ 검증 불일치 | Milvus 무손상 | 그 문서 건너뜀 (지우기 전) |
-| ⑤ delete 후 insert 전 | **해당 1문서 청크 소실** | 백업이 이미 디스크에 있음 → `--restore` |
+| ⑤ upsert 실패 | **변화 없음** — 기존 청크 유지 | 재실행 (백업은 그래도 남긴다) |
 | ⑥ 사후 검증 실패 | 해당 문서 의심 | 즉시 전체 중단, 남은 문서는 손대지 않음 |
 
-⑤ 가 유일한 실제 위험 구간이고, 백업이 그 구간을 덮는다. 피해 범위는 항상 1문서다.
+**delete + insert 가 아니라 upsert 를 쓴다.** 기본키(`chunk_id`)가 동일해 의미는 같으면서, 그 문서의 청크가 0개가 되는 구간이 생기지 않는다 — delete 직후 죽으면 지워진 상태로 남지만 upsert 는 실패해도 기존 청크가 그대로다. 이로써 **실제 데이터 소실 경로가 사라진다.**
+
+백업은 그래도 남긴다. `fetch_chunks` 가 일부를 놓치면 upsert 가 읽어온 것만 교체해 옛 `doc_type` 청크가 섞인 채 남을 수 있어, 줄 수 대조(④)와 사후 검증(⑥)이 여전히 필요하고 되돌릴 수단도 있어야 한다. 피해 범위는 항상 1문서다.
 
 ## 6. 검증
 

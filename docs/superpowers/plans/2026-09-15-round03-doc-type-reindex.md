@@ -746,13 +746,17 @@ def read_backup(path: Path) -> list[dict]:
 
 def rewrite_one(col, book_id: str, records: list[dict],
                 doc_type: str | None, scalar_names: list[str]) -> None:
-    """delete → insert. 여기가 유일한 위험 구간이고, 백업은 이미 디스크에 있다."""
-    col.delete(expr=f'book_id == "{book_id}"')
-    col.insert(records_to_insert_data(records, doc_type, scalar_names))
+    """읽은 청크를 doc_type 만 바꿔 제자리 교체한다.
+
+    delete 후 insert 가 아니라 upsert 를 쓴다 — 기본키(chunk_id)가 동일해 의미는
+    같으면서, 그 문서의 청크가 0개가 되는 구간이 생기지 않는다. 실패해도 기존
+    청크가 그대로 남는다.
+    """
+    col.upsert(records_to_insert_data(records, doc_type, scalar_names))
     col.flush()
 
 
-def run(apply: bool) -> int:
+def run(apply: bool, limit: int | None = None) -> int:
     from db.postgres import SyncSessionLocal
     from services.ingestion.indexer import ensure_collection
 
@@ -777,6 +781,9 @@ def run(apply: bool) -> int:
     if not pending:
         print("불일치 없음 — 할 일이 없다")
         return 0
+
+    if limit is not None:
+        pending = pending[:limit]
 
     total_chunks = sum(p[3] for p in pending)
     print(f"재기록 필요: {len(pending)}건 / 청크 합계 {total_chunks:,}개")
@@ -849,7 +856,10 @@ def main() -> int:
             print("--restore <백업디렉터리> 형태로 경로를 지정한다")
             return 2
         return restore(sys.argv[idx + 1])
-    return run(apply="--apply" in sys.argv)
+    limit = None
+    if "--limit" in sys.argv:
+        limit = int(sys.argv[sys.argv.index("--limit") + 1])
+    return run(apply="--apply" in sys.argv, limit=limit)
 
 
 if __name__ == "__main__":
@@ -969,13 +979,40 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_
 
 **대상이 41건이 아니면 멈춘다.** `extra->>'restored_from' = 'milvus_meta_chunk'` 조건이 예상과 다른 행을 잡고 있다는 뜻이다.
 
-- [ ] **Step 3: 반영**
+- [ ] **Step 3: 1건만 먼저 반영**
+
+운영 인덱스를 처음 건드리는 순간이다. 41편을 한 번에 돌리지 않는다.
+
+```bash
+docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_milvus_doc_type.py --apply --limit 1
+```
+
+기대: `[OK] <book_id> — 청크 N · doc_type 'literature'`, `재기록 완료: 1건`.
+
+여기서 확인할 것은 **upsert 가 이 컬렉션에서 실제로 동작하는가**다. sparse 벡터가 있는 컬렉션의 upsert 는 문서로만 봐서는 확신할 수 없다. 그 1건의 청크 수가 전후 동일하고 `doc_type` 이 바뀌었으면 나머지도 안전하다.
+
+곧바로 그 문서를 직접 확인한다(`<book_id>` 를 위 출력값으로 치환):
+
+```bash
+docker exec nl-lib-fastapi python -c "
+from services.ingestion.indexer import ensure_collection
+col = ensure_collection()
+bid = '<book_id>'
+rows = col.query(expr=f'book_id == \"{bid}\"', output_fields=['chunk_id','doc_type','text'], limit=2000)
+print('청크', len(rows), '| doc_type', {r['doc_type'] for r in rows})
+print('본문 샘플:', (rows[0]['text'] or '')[:80])
+"
+```
+
+`doc_type` 이 `{'literature'}` 하나뿐이고 본문이 멀쩡하면 통과다. 섞여 있으면 일부만 교체된 것이므로 **중단하고 `--restore` 로 되돌린다.**
+
+- [ ] **Step 3-b: 나머지 반영**
 
 ```bash
 docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/recovery/rewrite_milvus_doc_type.py --apply
 ```
 
-기대: 문서마다 `[OK] WS_001 — 청크 N · doc_type 'literature'`, 마지막에 `재기록 완료: 41건`.
+기대: 문서마다 `[OK] …`, 마지막에 `재기록 완료: 40건`(1건은 이미 처리돼 불일치 목록에서 빠진다).
 
 `[FAIL]` 이 나오면 즉시 중단되고 복구 명령이 출력된다. 그 명령을 그대로 실행한 뒤 원인을 확인한다.
 
