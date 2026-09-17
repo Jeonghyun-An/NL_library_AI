@@ -7,7 +7,7 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 교본: 미작성 — 라운드 완료 시 `docs/guides/round03/`
 
 > **이 라운드는 아직 진행 중이다.** round03 본 스코프(문학 41편 Milvus `doc_type` 재기록)는
-> Task 1~3 만 끝났고 Task 4~7 이 남아있다. 그럼에도 지금 완료노트를 쓰는 이유는,
+> Task 1~5 가 끝났고 Task 6(운영 실행)·7(교본)이 남아있다. 그럼에도 지금 완료노트를 쓰는 이유는,
 > 이 라운드가 **선행 사고(`library_catalog` 전멸) 복구와 뒤엉켜 진행됐고 그 복구 지식이
 > 휘발성이기 때문**이다. 복구 경로·실패한 시도·함정을 지금 적지 않으면 재현 불가능해진다.
 > 라운드 종료 시 §상태 체크박스를 채우고 교본을 붙인다.
@@ -80,11 +80,13 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 - **읽기 전용 DB 역할 `nl_readonly` 생성** — 조회만 하는 사람이 `admin` 을 쓰면 `TRUNCATE` 권한까지 갖게 된다.
 - **`log_statement='ddl'` + `log_connections=on`** — 다음에 같은 일이 나면 `TRUNCATE`·`DROP` 과 접속 기록이 남는다. `mod` 는 검색마다 `search_history` INSERT 가 찍혀 과하다고 판단.
 
-### 2-3. round03 본 스코프 (Task 1~3 완료)
+### 2-3. round03 본 스코프 (Task 1~5 완료)
 - **Task 1** `detect_doc_type` — `source_format="PDF"`(카탈로그 없이 적재돼 PDF 에서 자동추출한 메타)의 `genre` 를 `paper` 판정 근거로 쓰지 않는다. 테스트 11개.
 - **Task 2** `run_embed_index` 빈 본문 가드 — 아티팩트도 폴백 텍스트도 없으면 `StageError("empty_body")` 로 중단. 테스트 3개.
 - **Task 3** Milvus `doc_type` 재기록 도구의 순수 변환 함수 + 테스트 10개.
-- **Task 4~7 미완** — 재기록 I/O 오케스트레이션, 런북 절차, 운영 실행, 교본.
+- **Task 4** Milvus `doc_type` 재기록 I/O — 문서 단위 백업·검증·`--restore`. `delete`+`insert` 가 아니라 **`upsert` 로 제자리 교체**해 청크가 0개가 되는 구간이 없다(실패해도 기존 청크가 남는다). 백업 완전성 검증은 `fetch_chunks` 직후 다시 센 값과 대조한다. `--limit` 으로 첫 운영 실행을 1건으로 제한.
+- **Task 5** 런북에 `params.doc_type` 명시 절차 추가 + 관리 API 를 컨테이너 경유 호출로 정정(게이트웨이 차단으로 기존 안내가 403 이 됐다).
+- **Task 6~7 미완** — 운영 실행(dry-run → `--limit 1` → 나머지 → 라이브 검증), 교본.
 
 ---
 
@@ -125,7 +127,8 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 
 ## 6. 이월
 
-- **round03 Task 4~7** — 재기록 도구 I/O 오케스트레이션(백업·검증·`--restore`), 런북에 `params.doc_type` 절차, 운영 실행(dry-run→apply→라이브 검증), 교본. **문학 41편은 지금도 Milvus 에서 `paper` 라 도서 검색에서 실종 상태다**(Postgres 는 `literature` 로 교정 완료).
+- **round03 Task 6~7** — 운영 실행(dry-run → `--limit 1` 로 1편 확인 → 나머지 40편 → 라이브 검증), 교본. **문학 41편은 지금도 Milvus 에서 `paper` 라 도서 검색에서 실종 상태다**(Postgres 는 `literature` 로 교정 완료).
+- **`restore()` 의 `book_id` 를 파일명에서 얻는다** — `path.stem` 기반이라, 경고를 무시하고 `.incomplete` 파일을 직접 `--restore` 인자로 넘기면 `book_id` 가 어긋나 허위 `[FAIL]` 이 난다. 데이터 위험은 없다(그 문서는 애초에 upsert 된 적이 없어 no-op). `records[0]["book_id"]` 에서 읽으면 이 오용이 원천 차단된다.
 - **논문 `summary` 29,006건** — `[초록]` 청크가 없어 복원 소스가 없다. LLM 재생성만 가능하며 7.8초/건 기준 단일 63시간 / 4병렬 16시간. 초록 42,850건이 채워져 화면은 정상이라 급하지 않다.
 - **미배포 코드** — `backfill_summary` 태스크·엔드포인트와 백필 집계 수정이 커밋은 됐으나 운영 `:latest` 이미지에 없다. 다음 배포 때 태그 맞춰 빌드해야 한다.
 - **`_BACKFILL_DOC_TYPES` 중복** — `app/api/admin.py:71` 과 `app/workers/tasks.py` 의 `_GENERATE_DOC_TYPES` 가 값으로 중복돼 드리프트 여지가 있다. Task 3 에서 없앤 `SCALAR_ORDER` 하드코딩과 같은 종류.
@@ -139,14 +142,14 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 ---
 
 ## 7. 다음 라운드 진입점
-- round03 Task 4~7 이 우선. 문학 41편 도서 검색 실종이 실사용자에게 보이는 결함이다.
+- round03 Task 6~7 이 우선. 문학 41편 도서 검색 실종이 실사용자에게 보이는 결함이다.
 - 그 뒤 `docs/superpowers/specs/2026-09-15-search-top-pick-recommend-design.md`(다른 세션의 검색 추천 기획 초안)가 대기 중.
 
 ---
 
 ## 상태
-- [x] code-reviewer 정적 리뷰 통과 — Task 1~3 각각 spec-compliance + code-quality 2단계 리뷰, 발견 사항 전부 반영
-- [x] 테스트 green — 117 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
+- [x] code-reviewer 정적 리뷰 통과 — Task 1~4 각각 spec-compliance + code-quality 2단계 리뷰, 발견 사항 전부 반영(Task 4 는 Important 3건 포함)
+- [x] 테스트 green — 120 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
 - [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출 확인), 백업 복원 연습 완료
 - [ ] 문서 갱신 — 완료노트 작성(이 문서). 교본·`00_status`·`recurring-gotchas.md` 미반영
 - [ ] `dev` 머지 승인
