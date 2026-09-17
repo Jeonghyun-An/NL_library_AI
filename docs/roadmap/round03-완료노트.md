@@ -59,13 +59,18 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 | 5 | `is_embedded`·`ingest_state`·`full_text_length` | `book_sections` 존재 여부로 SQL 갱신 | 72,841건 |
 | 6 | `doc_type` (NL 도서 누락분) | KDC 기반 `detect_doc_type` 규칙 SQL 적용 | 658건 |
 | 7 | 논문 `abstract`·`extracted_keywords` | Milvus `[초록]`·`[키워드]` 보강청크 역복원 | 42,850건 (LLM 비용 0) |
-| 7-b | 논문 `extra.references` | `book_sections` 원문 재구성 → `extract_references()` 패턴 추출 | 30,532건 (LLM 비용 0) |
+| 7-b | 논문 `extra.references` | `book_sections` 원문 재구성 → `extract_references()` 패턴 추출 | 1차 30,532건 |
+| 7-c | 논문 `extra.references` (2차) | `extract_references()` 보강(`bdbf86c`) 후 미검출분 재실행 | 6,931건 — 누적 37,463건 (LLM 비용 0) |
 | 8 | `plot`·`read_effect` | 기존 백필 엔드포인트 | 910건 |
 | 9 | `summary`·`themes`·`introduction` | 신규 백필(섹션 요약 재사용) | 910건 |
 
 고아 문서 **72,601 → 0건**. 복구 스크립트는 `scripts/recovery/` 에 있다.
 
 두 가지 표기 차이를 밝혀둔다. (1) spec §6-1 은 고아를 "2건 남음"으로 적었는데, 그건 KCI 카탈로그 재적재 이전 시점 기록이다 — 그 2건도 재적재로 카탈로그 행을 얻어 orphan 정의에서 빠졌고, 대신 "카탈로그는 있으나 청크가 0건"인 별개 문제로 재분류해 §6 이월에 남겼다. (2) 위 표는 spec §6-1 표에서 6~9행(`doc_type` 658건 · 초록 42,850건 · plot/read_effect · summary/introduction)을 추가해 확장한 것이다. spec 작성 이후 추가로 수행된 복구 단계들이다.
+
+참고문헌 2차 복구(7-c)는 1차에서 미검출된 41,399건을 다시 돌린 것이다. 500건 dry-run 에서 25.4% 가 나와 1만 건 안팎을 기대했으나 실제는 **16.7%(6,931건)** 였다 — dry-run 표본이 `ORDER BY cnts_id LIMIT 500` 이라 무작위가 아니었고 ID 앞쪽에 추출 성공률이 높은 문서가 몰려 있었다. 표본 비율을 전체에 곱할 때 정렬이 걸린 LIMIT 은 표본이 아니라는 것을 다시 확인한 셈이다.
+
+남은 34,468건은 참고문헌 섹션 자체가 없거나 OCR 이 깨진 경우다. 또한 2차 반영분에는 레거시 VLM 텍스트 특성상 **한 줄에 여러 항목이 뭉친 문서가 항목이 합쳐진 채로** 저장돼 있다. `restore_references_from_sections.py` 의 `NOT (extra ? 'references')` 가드는 한 번 기록된 문서를 영구히 제외하므로, 줄 내부 분할을 나중에 넣을 수 있도록 `--force` 를 추가해 뒀다(`d5da91d`).
 
 ### 복구가 가능했던 이유 — 운이었다
 원본 카탈로그 파일이 `/data/nl-lib/data/uploads/` 에 남아있었고, 초록이 Milvus 청크에 남아있었기 때문이다. **설계된 안전장치가 아니었다.** `docker-compose.yml` 에 백업 서비스가 없어 `pg_dump` 가 한 번도 돈 적이 없었다.
@@ -75,7 +80,7 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 ## 2. 한 일
 
 ### 2-1. 사고 복구 (§1-4 참고)
-위 9단계. 스크립트 4종을 `scripts/recovery/` 에 남겼다 — `restore_from_milvus_meta.py`(메타청크 역복원), `restore_cover_keys.py`(커버 재매핑), `restore_abstract_from_chunks.py`(초록·키워드 역복원), `load_kci_csv.py`(KCI CSV 우회 로더).
+위 9단계. 스크립트 4종을 `scripts/recovery/` 에 남겼다 — `restore_from_milvus_meta.py`(메타청크 역복원), `restore_cover_keys.py`(커버 재매핑), `restore_abstract_from_chunks.py`(초록·키워드 역복원), `restore_references_from_sections.py`(참고문헌 재추출, `--force` 로 재실행 가능), `load_kci_csv.py`(KCI CSV 우회 로더).
 
 ### 2-2. 보안·운영 보강
 - **`/api/admin`·`/docs`·`/openapi.json` 게이트웨이 차단** (`infra/conf.d/default.conf`, `conf.d.dev` 동일). 외부에서 403 확인. `location ^~ /api/admin` 은 접두 최장일치로 `location /api/` 를 이긴다.

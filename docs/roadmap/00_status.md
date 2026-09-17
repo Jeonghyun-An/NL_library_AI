@@ -20,8 +20,7 @@
 
 ## 다음 할 일
 - **round03 Task 7(교본)** — `docs/guides/round03/`. 그 외 본 스코프는 완료됐다: 문학 문서의 Milvus `doc_type` 재기록 15건 반영, 도서 검색에서 정상 노출·논문 검색에서 제외됨을 라이브로 확인.
-- **논문 참고문헌 재추출 개선** — `extra.references` 를 섹션 원문에서 재추출해 30,532건 복구했으나, 미검출 41,399건 중 표본 60건 기준 **41건은 참고문헌 헤더가 있는데 추출이 실패**했다(`참 고 문 헌` 처럼 OCR 로 글자 사이가 벌어지거나 항목이 한 줄에 뭉친 경우). `paper_enricher.extract_references()` 를 고치면 LLM 없이 상당수를 더 살릴 수 있다.
-- 미배포 코드 반영 — `backfill_summary` 태스크·엔드포인트가 커밋됐으나 운영 `:latest` 이미지에 없다. `NL_LIB_FASTAPI_IMAGE=...:latest` 로 태그 맞춰 빌드 필요.
+- **논문 참고문헌 — 완료(추가 개선 여지 있음)** — 섹션 원문 재추출로 1차 30,532건, `extract_references()` 보강(`bdbf86c`, 붙은 헤더·구분자 없는 `저자(연도)` 항목 인식) 후 2차 6,931건을 더 살려 **누적 37,463건**. 남은 34,468건은 참고문헌 섹션이 없거나 OCR 이 깨진 경우다. 다만 2차 반영분은 한 줄에 여러 항목이 뭉친 문서에서 **항목이 합쳐진 채로** 저장돼 있다 — 줄 내부 분할을 넣으면 `restore_references_from_sections.py --force` 로 덮어쓸 수 있다(가드 기본값은 기록된 문서를 건너뛴다).
 - 논문 `summary` 29,006건 재생성 — 복원 소스 없음, LLM 만 가능(단일 63시간/4병렬 16시간). 초록이 채워져 화면은 정상이라 급하지 않음.
 - `docs/superpowers/specs/2026-09-15-search-top-pick-recommend-design.md` — 검색 결과 최상위 1권 자동추천 기획 초안(별도 세션 작성) 대기.
 - **[보류 — 도서관 대회 시연 이후]** `app/api/admin.py` Milvus expression injection 보안 수정. 대회 전까지는 손대지 않는다(`round01-완료노트.md` §이월 참고).
