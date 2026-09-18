@@ -4,13 +4,12 @@
 브랜치: `fix/round03-doc-type-reindex`
 spec: `docs/superpowers/specs/2026-09-15-round03-doc-type-reindex-design.md`
 plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
-교본: 미작성 — 라운드 완료 시 `docs/guides/round03/`
+교본: `docs/guides/round03/` (4챕터)
 
-> **이 라운드는 아직 진행 중이다.** round03 본 스코프(문학 41편 Milvus `doc_type` 재기록)는
-> Task 1~5 가 끝났고 Task 6(운영 실행)·7(교본)이 남아있다. 그럼에도 지금 완료노트를 쓰는 이유는,
-> 이 라운드가 **선행 사고(`library_catalog` 전멸) 복구와 뒤엉켜 진행됐고 그 복구 지식이
-> 휘발성이기 때문**이다. 복구 경로·실패한 시도·함정을 지금 적지 않으면 재현 불가능해진다.
-> 라운드 종료 시 §상태 체크박스를 채우고 교본을 붙인다.
+> 이 완료노트는 Task 6·7 이 끝나기 전에 먼저 쓰기 시작했다. 이 라운드가 **선행 사고
+> (`library_catalog` 전멸) 복구와 뒤엉켜 진행됐고 그 복구 지식이 휘발성이기 때문**이다 —
+> 복구 경로·실패한 시도·함정을 그때 적지 않으면 재현 불가능해진다. 이후 Task 6(운영 실행)과
+> Task 7(교본)까지 완료해 본문을 갱신했다.
 
 ---
 
@@ -98,7 +97,7 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
   1건(`GM_001` 동백꽃) 선행 검증에서 `list(row["embedding"])` 이 numpy 원소를 남겨 `json.dumps` 가 죽는 버그를 잡았다 — 백업 쓰기 단계라 Milvus 는 무손상. `[float(x) for x in ...]` 로 고치고 회귀 테스트를 붙였다.
   재실행 후 `GM_001` 청크 19개·`doc_type {'literature'}`·다른 스칼라 불변·임베딩 1024차원 전부 생존 확인. 나머지 14건 반영 후 멱등 확인.
   **라이브 검증 통과** — 도서 검색에서 `GM_001` 1위(연관도 0.796), `WS_034`·`WS_006` 동반 노출. 논문 검색 15건 전부 `KCI_FI*`, 문학 혼입 0건.
-- **Task 7 미완** — 교본.
+- **Task 7 완료** — 교본 `docs/guides/round03/` 4챕터(개요·복구 스크립트·재발방지·doc_type 재기록).
 
 ---
 
@@ -139,7 +138,6 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 
 ## 6. 이월
 
-- **round03 Task 7** — 교본 미작성(`docs/guides/round03/`).
 - **`restore()` 의 `book_id` 를 파일명에서 얻는다** — `path.stem` 기반이라, 경고를 무시하고 `.incomplete` 파일을 직접 `--restore` 인자로 넘기면 `book_id` 가 어긋나 허위 `[FAIL]` 이 난다. 데이터 위험은 없다(그 문서는 애초에 upsert 된 적이 없어 no-op). `records[0]["book_id"]` 에서 읽으면 이 오용이 원천 차단된다.
 - **논문 `summary` 29,006건** — `[초록]` 청크가 없어 복원 소스가 없다. LLM 재생성만 가능하며 7.8초/건 기준 단일 63시간 / 4병렬 16시간. 초록 42,850건이 채워져 화면은 정상이라 급하지 않다.
 - **미배포 코드** — `backfill_summary` 태스크·엔드포인트와 백필 집계 수정이 커밋은 됐으나 운영 `:latest` 이미지에 없다. 다음 배포 때 태그 맞춰 빌드해야 한다.
@@ -154,7 +152,7 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 ---
 
 ## 7. 다음 라운드 진입점
-- **round03 은 Task 7(교본)만 남았다.** doc_type 재기록은 운영 실행·라이브 검증까지 끝났다(§2-3 Task 6).
+- **round03 본 스코프는 전부 끝났다.** doc_type 재기록은 운영 실행·라이브 검증까지(§2-3 Task 6), 교본은 `docs/guides/round03/` 에 작성 완료.
 - 그 뒤 `docs/superpowers/specs/2026-09-15-search-top-pick-recommend-design.md`(다른 세션의 검색 추천 기획 초안)가 대기 중.
 
 ---
@@ -164,8 +162,8 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
     - 앱: 논문 abstract 폴백이 `strip()` 기준을 안 써 공백뿐인 아티팩트에서 초록을 못 쓰던 문제, `backfill_summary` 가 `themes` 단독 결손을 선택도 생성도 못 하던 문제
     - 스크립트·인프라: dev nginx 의 `/docs`·`/openapi.json` 차단 누락, 백업 파일 world-readable(`umask 077`), `restore_cover_keys.py` 배치 커밋 누락, 인자 값 누락 시 트레이스백, 타입힌트
     - 문서: 완료노트·`00_status` 의 "Task 미완·문학 실종" 잔존 서술, 계획서 Task 6 의 41건 기대치, 고아 건수 표기 차이
-- [x] 테스트 green — 123 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
+- [x] 테스트 green — 134 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
 - [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출), 백업 복원 연습, doc_type 재기록 후 도서/논문 검색 양방향 확인
-- [ ] 문서 갱신 — 완료노트·`00_status`·`recurring-gotchas.md`·런북 반영 완료. **교본(`docs/guides/round03/`) 미작성**
+- [x] 문서 갱신 — 완료노트·`00_status`·`recurring-gotchas.md`·런북·교본(`docs/guides/round03/`) 반영 완료
 - [ ] `dev` 머지 승인
 - [ ] `dev→main` 머지 + push

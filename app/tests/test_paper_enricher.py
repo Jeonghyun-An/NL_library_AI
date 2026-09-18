@@ -297,3 +297,35 @@ class TestExtractReferences:
         assert len(refs) == 2
         assert "이 현상은 선행 연구" in refs[0]
         assert refs[1].startswith("유현실")
+
+    def test_url_fragment_not_header(self):
+        """URL 프래그먼트(#references)는 헤더가 아니다.
+
+        헤더는 마지막 매칭을 기준으로 자르므로, 참고문헌 뒤의 가짜 헤더 하나가
+        섹션 전체를 날린다. '#' 앞 공백 요구가 없으면 이 입력이 0건이 된다.
+        """
+        text = (
+            "참고문헌\n"
+            "[1] 첫 번째 문헌. (2020). 학회지.\n"
+            "[2] 두 번째 문헌. (2021). 학회지.\n"
+            "[3] 세 번째 문헌. (2022). 원문: https://example.org/doc#references\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 3
+        assert refs[0].startswith("[1]")
+
+    def test_intext_citation_not_entry_start(self):
+        """참고문헌 구간 안의 본문 인용('김영희(2001)는')은 항목 시작이 아니다.
+
+        연도 괄호 뒤 '.'·',' 요구가 없으면 조사가 붙은 인용도 새 항목으로 끊긴다.
+        """
+        text = (
+            "참고문헌\n"
+            "박성수(1997). 천재성의 발달과정과 개발전략. 서울: 청소년대화의 광장.\n"
+            "김영희(2001)는 이 결과를 다르게 해석한다.\n"
+            "유현실(1998). 재능의 발달과정에 관한 연구. 서울대학교 대학원 석사학위 논문.\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 2
+        assert "김영희(2001)는" in refs[0]
+        assert refs[1].startswith("유현실")

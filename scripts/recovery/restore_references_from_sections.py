@@ -1,4 +1,4 @@
-"""restore_references_from_sections.py — 섹션 원문에서 참고문헌 재추출
+r"""restore_references_from_sections.py — 섹션 원문에서 참고문헌 재추출
 
 배경:
   2026-09-14 library_catalog 유실로 extra["references"] 가 날아갔다. 같은 enrichment
@@ -54,13 +54,22 @@ def _arg_value(flag: str) -> str | None:
     return sys.argv[idx + 1]
 
 
+# 적재 파이프라인(stages.py)은 초록·목차·키워드 중 하나만 있어도
+# extra["references"] 를 빈 리스트째로 기록한다. 그래서 "키가 없는" 문서만
+# 고르면 빈 배열로 저장된 문서가 영구히 대상에서 빠진다 — 길이로 판정한다.
+_EMPTY_REFS = (
+    "(jsonb_typeof(coalesce(extra -> 'references', '[]'::jsonb)) != 'array'"
+    " OR jsonb_array_length(coalesce(extra -> 'references', '[]'::jsonb)) = 0)"
+)
+
+
 def find_targets(
     db: "Session", doc_type: str | None, limit: int | None, force: bool = False
 ) -> list[str]:
     """참고문헌이 비어있는 임베딩 완료 문서. force 면 이미 있는 문서도 대상에 넣는다."""
     where = ["is_embedded"]
     if not force:
-        where.append("NOT (coalesce(extra, '{}'::jsonb) ? 'references')")
+        where.append(_EMPTY_REFS)
     params: dict = {}
     if doc_type:
         where.append("doc_type = :dt")
@@ -93,7 +102,10 @@ def main() -> int:
     force = "--force" in sys.argv
     doc_type = _arg_value("--doc-type") or "paper"
     limit_raw = _arg_value("--limit")
-    limit = int(limit_raw) if limit_raw else None
+    limit = int(limit_raw) if limit_raw is not None else None
+    if limit is not None and limit <= 0:
+        print("--limit 는 1 이상이어야 한다")
+        return 2
 
     db = SyncSessionLocal()
     try:
@@ -103,7 +115,7 @@ def main() -> int:
         if not targets:
             return 0
 
-        found = updated = empty = 0
+        found = updated = empty = pending = 0
         sample = None
         for n, book_id in enumerate(targets, 1):
             full_text = rebuild_full_text(db, book_id)
@@ -127,12 +139,17 @@ def main() -> int:
                 )
                 if not force:
                     # 중복 실행이나 동시 실행으로 이미 채워진 행을 덮어쓰지 않는다.
-                    sql += " AND NOT (coalesce(extra, '{}'::jsonb) ? 'references')"
-                updated += db.execute(
+                    sql += " AND " + _EMPTY_REFS
+                n_rows = db.execute(
                     sa_text(sql), {"ext": json.dumps({"references": refs}), "id": book_id}
                 ).rowcount or 0
-                if n % COMMIT_EVERY == 0:
+                updated += n_rows
+                # 전체 순번이 아니라 갱신 건수로 끊는다 — 추출 성공률이 낮으면
+                # 순번 기준 커밋은 수천 문서를 건너뛴다.
+                pending += n_rows
+                if pending >= COMMIT_EVERY:
                     db.commit()
+                    pending = 0
 
             if n % 500 == 0:
                 print(f"  …{n:,}/{len(targets):,} 처리, 추출 {found:,}")
