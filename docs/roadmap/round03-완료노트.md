@@ -162,8 +162,9 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
     - 앱: 논문 abstract 폴백이 `strip()` 기준을 안 써 공백뿐인 아티팩트에서 초록을 못 쓰던 문제, `backfill_summary` 가 `themes` 단독 결손을 선택도 생성도 못 하던 문제
     - 스크립트·인프라: dev nginx 의 `/docs`·`/openapi.json` 차단 누락, 백업 파일 world-readable(`umask 077`), `restore_cover_keys.py` 배치 커밋 누락, 인자 값 누락 시 트레이스백, 타입힌트
     - 문서: 완료노트·`00_status` 의 "Task 미완·문학 실종" 잔존 서술, 계획서 Task 6 의 41건 기대치, 고아 건수 표기 차이
+    - **머지 게이트 리뷰**(교본 작성 후, 이전 리뷰 이후 델타 대상): `extra ? 'references'` 가 빈 배열을 "있음"으로 세어 복구 대상에서 영구 제외되던 문제(Important), `_REF_HEADER` 의 URL 프래그먼트 오탐·`_REF_ENTRY` 의 본문 인용 오탐(Minor), 배치 커밋 기준·`--limit 0`·docstring 이스케이프, 완료노트의 교본 미작성 잔존 서술과 테스트 수 불일치
 - [x] 테스트 green — 134 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
 - [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출), 백업 복원 연습, doc_type 재기록 후 도서/논문 검색 양방향 확인
 - [x] 문서 갱신 — 완료노트·`00_status`·`recurring-gotchas.md`·런북·교본(`docs/guides/round03/`) 반영 완료
-- [ ] `dev` 머지 승인
+- [x] `dev` 머지 승인 — 2026-09-18 사용자 승인
 - [ ] `dev→main` 머지 + push
