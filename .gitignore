@@ -29,6 +29,9 @@ debug_*.txt
 data/
 .claude/settings.local.json
 
+# 브레인스토밍 비주얼 컴패니언 임시 목업
+.superpowers/
+
 # 미출원 특허초안 조각(민감 — 저장소 밖에 별도 보관, 절대 커밋 금지)
 /claim*_xml.txt
 /editor_note_*.txt

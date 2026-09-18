@@ -352,9 +352,11 @@
                     alt="SKOVIX AI"
                   />
                   <Transition name="skx-stage-fade" mode="out-in">
-                    <span :key="aiPanelTitle" class="skx-ai-panel__title-text">{{
-                      aiPanelTitle
-                    }}</span>
+                    <span
+                      :key="aiPanelTitle"
+                      class="skx-ai-panel__title-text"
+                      >{{ aiPanelTitle }}</span
+                    >
                   </Transition>
                   <span v-if="curationLoading" class="skx-ai-panel__loading"
                     >●</span
@@ -534,18 +536,18 @@
                     {{ item.book_info?.title || item.book_id }}
                   </h3>
                   <div class="skx-book-card__info-row">
-                    <span
+                    <!-- <span
                       v-if="item.book_info?.material_type"
                       class="skx-meta-text"
                       >{{ item.book_info.material_type }}</span
-                    >
-                    <span
+                    > -->
+                    <!-- <span
                       v-if="
                         item.book_info?.personal_author ||
                         item.book_info?.corporate_author
                       "
                       class="skx-dot"
-                    ></span>
+                    ></span> -->
                     <span class="skx-meta-text">{{
                       item.book_info?.personal_author ||
                       item.book_info?.corporate_author
@@ -900,9 +902,11 @@ function showToast(msg: string) {
 async function handleSearch(query: string) {
   if (!query.trim()) return;
 
-  // 논문 모드는 papers 전용 페이지로 이동
+  // 논문 모드는 papers 전용 페이지로 이동 — 랜딩에서 고른 등재 필터를 유지해서 넘긴다
   if (mode.value === "paper") {
-    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}`);
+    const grade = activeFilters.value[0];
+    const gradeParam = grade ? `&grade=${encodeURIComponent(grade)}` : "";
+    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}${gradeParam}`);
     return;
   }
 
@@ -1046,7 +1050,15 @@ const collectionIds = computed(() => {
 
 // 컬렉션 도서를 상위로 정렬한 표시용 목록
 const displayBooks = computed(() => {
-  if (mode.value === "paper") return papers.value;
+  if (mode.value === "paper") {
+    if (!activeFilters.value.length) return papers.value;
+    return papers.value.filter((p) => {
+      const grade = p.book_info?.grade;
+      return activeFilters.value.some((f) =>
+        f === "KCI 미등재" ? !grade : grade === f,
+      );
+    });
+  }
   const ids = collectionIds.value;
   const inCollection = books.value.filter((b) => ids.has(b.book_id));
   const rest = books.value.filter((b) => !ids.has(b.book_id));

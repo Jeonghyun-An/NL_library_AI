@@ -409,6 +409,102 @@ def backfill_read_effect(limit: int = 500, force: bool = False):
     return {"done": done, "skipped": skipped, "failed": failed}
 
 
+# ── 4-d. 요약·테마·소개글 백필 ───────────────────────────
+@celery_app.task(name="tasks.backfill_summary", queue="ingestion")
+def backfill_summary(limit: int = 500, force: bool = False, doc_types: list[str] | None = None):
+    """summary·themes·introduction 백필 (섹션 요약 재사용, 재추출 없음).
+
+    plot/read_effect 와 달리 doc_type 을 가리지 않는다 — 요약과 소개글은 논문도 쓴다.
+    대상이 논문까지 포함되면 수만 건이 되므로 doc_types 로 좁혀 나눠 돌린다.
+
+    force=False(기본): summary 나 introduction 중 하나라도 비어있는 임베딩 완료 문서
+    force=True       : 대상 전체 재생성
+    이미 채워진 필드는 force 가 아니면 덮지 않는다. 섹션 요약 없는 문서는 스킵.
+    """
+    from sqlalchemy import or_
+    from models.section import BookSection
+    from services.ingestion.stages import run_async
+    from services.ingestion.summarizer import (
+        generate_book_introduction,
+        summarize_book_from_sections,
+    )
+
+    db = SyncSessionLocal()
+    done = skipped = failed = 0
+    try:
+        q = db.query(Book).filter(Book.is_embedded == True)  # noqa: E712
+        if doc_types:
+            q = q.filter(Book.doc_type.in_(list(doc_types)))
+        if not force:
+            q = q.filter(or_(
+                Book.summary.is_(None), Book.themes.is_(None), Book.introduction.is_(None),
+            ))
+        books = q.limit(limit).all()
+        log.info(f"backfill_summary 시작: 대상 {len(books)}건 (force={force}, doc_types={doc_types})")
+
+        for book in books:
+            rows = (
+                db.query(BookSection.summary)
+                .filter_by(book_id=book.cnts_id)
+                .order_by(BookSection.section_idx)
+                .all()
+            )
+            valid = [r[0] for r in rows if r[0]]
+            if not valid:
+                skipped += 1
+                continue
+
+            title = book.title or book.cnts_id
+            author = book.personal_author or book.corporate_author or ""
+            doc_type = book.doc_type or "book"
+            wrote = False
+
+            if force or not book.summary or not book.themes:
+                try:
+                    summary, themes_list = run_async(summarize_book_from_sections(
+                        title=title, author=author,
+                        section_summaries=valid, doc_type=doc_type,
+                    ))
+                    if summary and (force or not book.summary):
+                        book.summary = summary
+                        wrote = True
+                    if themes_list and (force or not book.themes):
+                        book.themes = ", ".join(themes_list)
+                        wrote = True
+                except Exception as e:
+                    log.warning(f"[{book.cnts_id}] 요약 백필 실패: {e}")
+
+            if force or not book.introduction:
+                try:
+                    intro = run_async(generate_book_introduction(
+                        title=title, author=author,
+                        publisher=book.publisher or "", pub_date=book.pub_date or "",
+                        section_summaries=valid, doc_type=doc_type,
+                    ))
+                    if intro:
+                        book.introduction = intro
+                        wrote = True
+                except Exception as e:
+                    log.warning(f"[{book.cnts_id}] 소개글 백필 실패: {e}")
+
+            if not wrote:
+                db.rollback()
+                failed += 1
+                continue
+            try:
+                db.commit()
+                done += 1
+            except Exception as e:
+                db.rollback()
+                log.warning(f"[{book.cnts_id}] 백필 커밋 실패: {e}")
+                failed += 1
+    finally:
+        db.close()
+
+    log.info(f"backfill_summary 완료: done={done}, skipped={skipped}, failed={failed}")
+    return {"done": done, "skipped": skipped, "failed": failed}
+
+
 # ── 5. 배치 잡 레이어 태스크 (workers/job_runtime.py) ─────
 # 단계 태스크·디스패처는 job_runtime 모듈에 정의하고 여기서 로드한다
 import workers.job_runtime  # noqa: E402, F401

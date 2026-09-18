@@ -81,6 +81,46 @@ curl -s http://<host>/api/books/<cnts_id>/ingest-status
 ```
 로그에서 `scalar: {... 'doc_type': ...}` 가 찍히는지, 검색에 노출되는지 확인.
 
+## 5-a. 관리 API 는 서버 내부에서 호출한다
+
+`/api/admin` 은 게이트웨이에서 외부 차단돼 있다(`infra/conf.d/default.conf`). 2026-09-14
+`library_catalog` 전멸 사고 이후 넣은 조치다 — 인증 없는 전체 삭제 엔드포인트가 인터넷에
+열려 있었다. 이 런북의 `curl http://<host>/api/admin/...` 는 **밖에서는 403 이 난다.**
+
+서버에서 컨테이너를 경유해 호출한다:
+
+```bash
+docker exec nl-lib-fastapi curl -s -X POST "localhost:8000/api/admin/ingest-jobs"   -H 'Content-Type: application/json' -d '{...}'
+```
+
+아래 §6 의 `http://<host>/api/admin/...` 도 전부 이 형태로 바꿔 읽는다.
+
+## 5-b. 카탈로그 없는 코퍼스는 `doc_type` 을 반드시 지정한다
+
+웹 크롤링처럼 **카탈로그 메타 적재를 거치지 않고 바로 인덱싱하는 코퍼스**는 잡 생성 시
+`params.doc_type` 을 반드시 명시한다.
+
+```json
+{"doc_type": "literature", "skip_cover": true}
+```
+
+명시하지 않으면 `_ensure_book_and_doc_type`(`app/services/ingestion/stages.py:337`)이 PDF 에서
+메타를 자동추출하고, 그때 LLM 이 찍은 `genre` 가 `doc_type` 을 정한다. `params.doc_type` 은
+판정 우선순위 1위라 자동추출이 개입할 여지를 없앤다.
+
+**빠뜨리면 생기는 일** — 위키문헌(`WS_*`)·공유마당(`GM_*`) 문학 41편이 `doc_type='paper'` 로
+박혔다. 논문 검색을 오염시켰을 뿐 아니라, 도서 필터가 `doc_type != "paper"` 라
+「무정」·「진달래꽃」·「구운몽」이 **도서 검색에서 완전히 실종됐다.** 논문 필터에는
+`book_id like "KCI_FI%"` ID 폴백이 있지만 도서 필터에는 없다. 되돌리려면 Milvus 스칼라를
+문서 단위로 재기록해야 한다(`scripts/recovery/rewrite_milvus_doc_type.py`).
+
+코드 쪽 안전망(`source_format="PDF"` 의 `genre` 를 학술 유형 근거로 쓰지 않음)이 최악은
+막지만, 그 경우 문서는 `book` 으로 떨어진다 — `literature` 나 `paper` 가 맞는 코퍼스라면
+여기서 명시하는 것 외에 방법이 없다.
+
+한 코퍼스 = 한 `doc_type` 이므로 잡 단위 지정으로 충분하다. 매니페스트 스키마에는
+`doc_type` 필드가 없고, 넣을 필요도 없다.
+
 ## 6. 소량 배치 잡 E2E (10건)
 
 ```bash

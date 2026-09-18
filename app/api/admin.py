@@ -67,6 +67,10 @@ async def get_status(db: AsyncSession = Depends(get_db)):
     }
 
 
+# plot·read_effect 생성 대상 유형 — workers/tasks.py 의 백필 태스크와 같아야 한다
+_BACKFILL_DOC_TYPES = ["book", "literature", "policy"]
+
+
 # ── 줄거리(plot) 백필 ────────────────────────────────────
 @router.post("/backfill/plot")
 async def backfill_plot(
@@ -79,9 +83,11 @@ async def backfill_plot(
     섹션 요약을 재사용하므로 재추출 없이 LLM 호출만 발생한다.
     Celery(ingestion 큐)로 비동기 디스패치하고 task_id 를 반환한다.
     """
+    # 태스크가 doc_type 으로 한 번 더 거른다 — 집계도 같은 조건이어야 후보 수가 실제와 맞는다
     target = (await db.execute(
         select(func.count()).select_from(Book)
         .where(Book.is_embedded == True)  # noqa: E712
+        .where(Book.doc_type.in_(_BACKFILL_DOC_TYPES))
         .where(sa_text("extra->>'plot' IS NULL") if not force else sa_text("TRUE"))
     )).scalar() or 0
 
@@ -101,15 +107,48 @@ async def backfill_read_effect_api(
 
     섹션 요약을 재사용하므로 재추출 없이 LLM 호출만 발생한다.
     """
+    # 태스크가 doc_type 으로 한 번 더 거른다 — 집계도 같은 조건이어야 후보 수가 실제와 맞는다
     target = (await db.execute(
         select(func.count()).select_from(Book)
         .where(Book.is_embedded == True)  # noqa: E712
+        .where(Book.doc_type.in_(_BACKFILL_DOC_TYPES))
         .where(sa_text("extra->>'read_effect' IS NULL") if not force else sa_text("TRUE"))
     )).scalar() or 0
 
     from workers.tasks import backfill_read_effect as backfill_read_effect_task
     task = backfill_read_effect_task.delay(limit=limit, force=force)
     return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
+
+
+# ── 요약·테마·소개글 백필 ───────────────────────────────
+@router.post("/backfill/summary")
+async def backfill_summary_api(
+    limit: int = 500,
+    force: bool = False,
+    doc_types: list[str] | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """summary·introduction 미생성 문서의 요약·테마·소개글을 백필.
+
+    섹션 요약을 재사용하므로 재추출 없이 LLM 호출만 발생한다.
+    doc_types 를 주면 그 유형만 대상으로 한다(논문까지 포함하면 수만 건이라 나눠 돌린다).
+    """
+    stmt = (
+        select(func.count()).select_from(Book)
+        .where(Book.is_embedded == True)  # noqa: E712
+    )
+    if doc_types:
+        stmt = stmt.where(Book.doc_type.in_(doc_types))
+    if not force:
+        stmt = stmt.where(sa_text("(summary IS NULL OR themes IS NULL OR introduction IS NULL)"))
+    target = (await db.execute(stmt)).scalar() or 0
+
+    from workers.tasks import backfill_summary as backfill_summary_task
+    task = backfill_summary_task.delay(limit=limit, force=force, doc_types=doc_types)
+    return {
+        "task_id": task.id, "limit": limit, "force": force,
+        "doc_types": doc_types, "candidates": target,
+    }
 
 
 # ── 도서 목록 ────────────────────────────────────────────

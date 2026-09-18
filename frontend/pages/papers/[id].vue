@@ -45,10 +45,10 @@
                   <button
                     type="button"
                     class="skx-btn-icon-sm"
-                    aria-label="출처 인용"
-                    @click="citationModal = true"
+                    :aria-label="isBookmarked(paperId) ? '북마크 해제' : '북마크'"
+                    @click="toggleBookmark(paperId)"
                   >
-                    <img src="/img/ico-bookmark.svg" alt="" />
+                    <img :src="bookmarkIcon(paperId)" alt="" />
                   </button>
                 </div>
               </div>
@@ -410,12 +410,14 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import { useSearchHistory } from "~/composables/useSearchHistory";
+import { useBookmark } from "~/composables/useBookmark";
 import type { HistoryEntry } from "~/types/history";
 
 const route = useRoute();
 const config = useRuntimeConfig();
 
 const { bookHistory, paperHistory } = useSearchHistory();
+const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
 function restoreSession(entry: HistoryEntry) {
   if (entry.type === "book") {

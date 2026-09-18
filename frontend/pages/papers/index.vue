@@ -908,6 +908,8 @@ onMounted(() => {
       return;
     }
   }
+  const grade = route.query.grade as string | undefined;
+  if (grade) selectedGrade.value = grade;
   const q = route.query.q as string | undefined;
   if (q?.trim()) handleSearch(q.trim());
 });
