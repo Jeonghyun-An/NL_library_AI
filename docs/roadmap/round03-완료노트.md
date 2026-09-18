@@ -167,4 +167,4 @@ plan: `docs/superpowers/plans/2026-09-15-round03-doc-type-reindex.md`
 - [x] 수동 스모크 — 복구 전 구간 라이브 API 검증(`/api/books/curate` 404→200, 초록·제목 노출), 백업 복원 연습, doc_type 재기록 후 도서/논문 검색 양방향 확인
 - [x] 문서 갱신 — 완료노트·`00_status`·`recurring-gotchas.md`·런북·교본(`docs/guides/round03/`) 반영 완료
 - [x] `dev` 머지 승인 — 2026-09-18 사용자 승인
-- [ ] `dev→main` 머지 + push
+- [x] `dev→main` 머지 + push — 2026-09-18
