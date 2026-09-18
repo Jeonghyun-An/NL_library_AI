@@ -91,13 +91,13 @@
                   <h2 class="skx-book-card__title">{{ book.title }}</h2>
                 </div>
                 <div class="skx-book-card__info-row">
-                  <span v-if="book.material_type" class="skx-meta-text">{{
+                  <!-- <span v-if="book.material_type" class="skx-meta-text">{{
                     book.material_type
-                  }}</span>
+                  }}</span> -->
                   <template
                     v-if="book.personal_author || book.corporate_author"
                   >
-                    <span class="skx-dot"></span>
+                    <!-- <span class="skx-dot"></span> -->
                     <span class="skx-meta-text">{{
                       book.personal_author || book.corporate_author
                     }}</span>

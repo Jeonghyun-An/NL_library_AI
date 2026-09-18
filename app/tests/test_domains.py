@@ -3,10 +3,12 @@ import pytest
 
 
 # ── detect_doc_type (기존 summarizer 로직과 동일해야 함) ──────────
+# source_format="PDF" 는 카탈로그 없이 적재돼 genre 를 PDF 에서
+# 자동추출(LLM 추측)한 경우라 paper 판정 근거로 쓰지 않는다 (doc_types.py 참고).
 @pytest.mark.parametrize("meta,expected", [
-    ({"source_format": "PDF", "genre": "paper"}, "paper"),
-    ({"source_format": "PDF", "genre": "thesis"}, "paper"),
-    ({"source_format": "PDF", "genre": "report"}, "paper"),
+    ({"source_format": "PDF", "genre": "paper"}, "book"),
+    ({"source_format": "PDF", "genre": "thesis"}, "book"),
+    ({"source_format": "PDF", "genre": "report"}, "book"),
     ({"source_format": "PDF", "genre": "other"}, "book"),
     ({"kdc": "813.7"}, "literature"),
     ({"kdc": "800"}, "literature"),

@@ -238,3 +238,94 @@ class TestExtractReferences:
         refs = extract_references(text)
         assert len(refs) == 3
         assert refs[0].startswith("[1]")
+
+    def test_glued_markdown_header_after_body_text(self):
+        """레거시 VLM 텍스트 — '## 참고문헌'이 앞선 본문과 한 줄에 붙어 나온다 (KCI_FI000850832 관찰).
+
+        구 라우팅 정책(모든 KCI 페이지를 VLM으로 처리)이 만든 텍스트는 마크다운 헤더가
+        줄 시작이 아니라 본문 뒤에 이어 붙는다. 이 경우도 헤더로 인식해야 한다.
+        """
+        text = (
+            "al Sciences, 59(7-A), 2456.\n"
+            "- 거한 진로상담의 주요한 특징이라고 할 수 있다. ## 참 고 문 헌\n\n"
+            "[1] 첫 번째 문헌. (2020). 학회지.\n"
+            "[2] 두 번째 문헌. (2021). 학회지.\n"
+            "[3] 세 번째 문헌. (2022). 학회지.\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 3
+        assert refs[0].startswith("[1]")
+
+    def test_single_korean_author_year_entry_start(self):
+        """'박성수(1997).'처럼 쉼표 없이 이름에 바로 붙는 단독 저자+연도 항목 시작을 인식."""
+        text = (
+            "참고문헌\n"
+            "박성수(1997). 천재성의 발달과정과 개발전략. 서울: 청소년대화의 광장.\n"
+            "유현실(1998). 재능의 발달과정에 관한 연구. 서울대학교 대학원 석사학위 논문.\n"
+            "Crites, J. (1969). Vocational psychology. New York: McGraw-Hill.\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 3
+        assert refs[0].startswith("박성수")
+        assert refs[1].startswith("유현실")
+
+    def test_single_latin_surname_year_entry_start(self):
+        """'Csikszentmihalyi(1965).'처럼 쉼표 없이 성에 바로 붙는 영문 단독 저자+연도 항목 시작을 인식."""
+        text = (
+            "References\n"
+            "Csikszentmihalyi(1965). Artistic problems and their solution. Some Press.\n"
+            "Crites, J. (1969). Vocational psychology. New York: McGraw-Hill.\n"
+            "Csikszentmihalyi, M. (1975). Beyond boredom and anxiety. San Francisco: Jossey-Bass.\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 3
+        assert refs[0].startswith("Csikszentmihalyi(1965)")
+
+    def test_header_keyword_in_prose_not_matched(self):
+        """문장 중간에 '참고문헌'이 포함돼도(줄 끝이 아니면) 헤더로 오인하지 않는다."""
+        assert extract_references("앞선 연구의 참고문헌을 정리하면 다음과 같다.") == []
+
+    def test_prose_with_parenthesized_year_not_entry_start(self):
+        """본문 문장에 '(1999)'가 있어도 줄 시작이 저자명이 아니면 항목 시작으로 오인하지 않는다."""
+        text = (
+            "참고문헌\n"
+            "박성수(1997). 천재성의 발달과정과 개발전략. 서울: 청소년대화의 광장.\n"
+            "이 현상은 선행 연구(1999)에서도 보고되었다.\n"
+            "유현실(1998). 재능의 발달과정에 관한 연구. 서울대학교 대학원 석사학위 논문.\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 2
+        assert "이 현상은 선행 연구" in refs[0]
+        assert refs[1].startswith("유현실")
+
+    def test_url_fragment_not_header(self):
+        """URL 프래그먼트(#references)는 헤더가 아니다.
+
+        헤더는 마지막 매칭을 기준으로 자르므로, 참고문헌 뒤의 가짜 헤더 하나가
+        섹션 전체를 날린다. '#' 앞 공백 요구가 없으면 이 입력이 0건이 된다.
+        """
+        text = (
+            "참고문헌\n"
+            "[1] 첫 번째 문헌. (2020). 학회지.\n"
+            "[2] 두 번째 문헌. (2021). 학회지.\n"
+            "[3] 세 번째 문헌. (2022). 원문: https://example.org/doc#references\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 3
+        assert refs[0].startswith("[1]")
+
+    def test_intext_citation_not_entry_start(self):
+        """참고문헌 구간 안의 본문 인용('김영희(2001)는')은 항목 시작이 아니다.
+
+        연도 괄호 뒤 '.'·',' 요구가 없으면 조사가 붙은 인용도 새 항목으로 끊긴다.
+        """
+        text = (
+            "참고문헌\n"
+            "박성수(1997). 천재성의 발달과정과 개발전략. 서울: 청소년대화의 광장.\n"
+            "김영희(2001)는 이 결과를 다르게 해석한다.\n"
+            "유현실(1998). 재능의 발달과정에 관한 연구. 서울대학교 대학원 석사학위 논문.\n"
+        )
+        refs = extract_references(text)
+        assert len(refs) == 2
+        assert "김영희(2001)는" in refs[0]
+        assert refs[1].startswith("유현실")
