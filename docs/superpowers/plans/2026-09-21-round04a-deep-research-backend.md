@@ -2473,7 +2473,8 @@ docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id> |
 
 ## 알려진 미확정
 
-- `BookRepository.get_by_cnts_ids` 반환형이 `series_title`·`kci_citations`·`grade` 를 담는지 미확인 (Task 7 Step 5에서 확인하고 필요하면 ORM 직접 조회로 바꾼다)
+- ~~`BookRepository.get_by_cnts_ids` 반환형~~ — **해소됨(2026-09-21).** `dict[str, BookOut]` 이고 `BookOut(BookBase)` 가 `title`·`personal_author`·`series_title`·`vol_issue`·`pub_date`·`kci_citations`·`grade` 를 전부 갖는다. ORM 직접 조회로 바꿀 필요 없다.
+- **`uci`·`url` 컬럼이 `BookBase` 에 있다** — `extra` JSONB 에 없다고 외부 원문 링크가 불가능하다고 단정했던 것이 성급했다. 값이 채워져 있으면 인용 팝업의 `원문 보기` 를 자체 상세 페이지가 아니라 KCI 원문으로 보낼 수 있다. **실측 필요.**
 - `pytest-asyncio` 설치 여부 미확인 (Task 9 Step 1)
 - Celery 워커가 `q_llm` 큐를 소비하도록 이미 떠 있는지 확인 필요 — 안 떠 있으면 태스크가 큐에 쌓이기만 한다
 - `redis.asyncio` 가 이미지에 포함돼 있는지 미확인 (Task 10 Step 7 에서 드러난다)
