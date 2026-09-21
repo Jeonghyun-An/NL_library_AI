@@ -424,82 +424,15 @@ Actual: `146 passed` (기준선 134 + 12)
 
 ---
 
-## Task 2: 상태 객체와 기본 파라미터
+## Task 2: 상태 객체와 기본 파라미터 — **완료**
 
-**Files:**
-- Create: `app/services/research/__init__.py`
-- Create: `app/services/research/state.py`
-- Test: `app/tests/test_research_state.py`
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+딥리서치 실행 중 상태를 담는 dataclass 들과 깊이 파라미터. 파이프라인의 각 단계는 `ResearchState` 를 받아 갱신해 돌려주므로 Celery·Redis·Milvus 없이 테스트된다.
 
-```python
-# app/tests/test_research_state.py
-from services.research.state import (
-    DEFAULT_PARAMS, Chunk, Evidence, ResearchState, SubQuestion, merge_params,
-)
+리뷰 반영으로 초안과 달라진 것: `merge_params` 가 키뿐 아니라 **값의 타입·범위까지 검증**한다(`citation_weight: -0.2` 가 통과하면 영향력 높은 논문 점수를 깎아 순위가 조용히 뒤집힌다). `DEFAULT_PARAMS` 는 `MappingProxyType` 으로 잠갔고, `HitRow(TypedDict)` 와 `VERDICTS` 상수가 추가됐다.
 
-
-class TestMergeParams:
-    def test_empty_override_gives_defaults(self):
-        assert merge_params({}) == DEFAULT_PARAMS
-
-    def test_none_override_gives_defaults(self):
-        assert merge_params(None) == DEFAULT_PARAMS
-
-    def test_override_wins(self):
-        assert merge_params({"max_recheck": 1})["max_recheck"] == 1
-
-    def test_override_does_not_drop_other_keys(self):
-        merged = merge_params({"max_recheck": 1})
-        assert merged["max_subquestions"] == DEFAULT_PARAMS["max_subquestions"]
-
-    def test_unknown_key_is_rejected(self):
-        # 오타로 조용히 무시되는 파라미터가 생기면 시연 직전에 값을 바꿔도 안 먹는다
-        import pytest
-        with pytest.raises(ValueError, match="알 수 없는 파라미터"):
-            merge_params({"max_rechecks": 1})
-
-    def test_defaults_are_not_mutated(self):
-        merge_params({"max_recheck": 99})
-        assert DEFAULT_PARAMS["max_recheck"] == 3
-
-
-class TestState:
-    def test_new_state_has_no_subquestions(self):
-        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
-        assert st.subquestions == []
-        assert st.evidence == {}
-        assert st.recheck_count == 0
-
-    def test_subquestion_defaults_to_pending(self):
-        sq = SubQuestion(idx=0, text="하위질문")
-        assert sq.verdict == "pending"
-        assert sq.queries == []
-        assert sq.evidence_ids == []
-
-    def test_evidence_holds_chunks(self):
-        ev = Evidence(
-            id="E1", cnts_id="KCI_FI000000001", meta={"title": "제목"},
-            chunks=[Chunk(chunk_id="c1", text="본문", page_start=3, page_end=3, score=0.9)],
-        )
-        assert ev.chunks[0].page_start == 3
-
-    def test_corpus_range_defaults_to_none(self):
-        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
-        assert st.corpus_range is None
-```
-
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_state.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research'`
-
-- [ ] **Step 3: 구현**
-
-```python
-# app/services/research/__init__.py
-```
+- [x] **`app/services/research/state.py`**
 
 ```python
 # app/services/research/state.py
@@ -509,10 +442,14 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'services.research'`
 테스트되고, 나중에 다른 오케스트레이션 런타임으로 옮겨도 그대로 쓴다.
 """
 from dataclasses import dataclass, field
+from types import MappingProxyType
+from typing import TypedDict
 
 # 깊이 파라미터 — research_jobs.params 로 덮어쓴다.
 # 시연 직전에 값만 바꿔 짧게 돌릴 수 있어야 하므로 하드코딩하지 않는다.
-DEFAULT_PARAMS: dict = {
+# MappingProxyType 로 감싼 이유: 워커 프로세스가 이 모듈 전역을 한 번이라도
+# 실수로 mutate 하면 그 오염이 프로세스 수명 내내 남는다.
+DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     "max_subquestions": 6,
     "max_recheck": 3,
     "max_evidence": 60,
@@ -520,17 +457,53 @@ DEFAULT_PARAMS: dict = {
     "chunks_per_evidence": 2,
     "citation_weight": 0.2,
     "min_evidence_per_subq": 5,
+})
+
+# (타입, 하한, 상한) — 상한 없음은 None.
+# ResearchCreate.params: dict 가 값 타입을 검증하지 않으므로 여기가 유일한 검증 지점이다.
+_PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
+    "max_subquestions": (int, 1, None),
+    "max_recheck": (int, 0, None),
+    "max_evidence": (int, 1, None),
+    "per_subq_top_k": (int, 1, None),
+    "chunks_per_evidence": (int, 1, None),
+    "citation_weight": (float, 0.0, 1.0),
+    "min_evidence_per_subq": (int, 0, None),
 }
 
 
 def merge_params(override: dict | None) -> dict:
-    """기본값에 override 를 얹는다. 모르는 키는 거부한다."""
+    """기본값에 override 를 얹는다. 모르는 키·타입·범위를 벗어난 값은 거부한다."""
     merged = dict(DEFAULT_PARAMS)
     for key, value in (override or {}).items():
         if key not in DEFAULT_PARAMS:
             raise ValueError(f"알 수 없는 파라미터: {key}")
+        _validate_param(key, value)
         merged[key] = value
     return merged
+
+
+def _validate_param(key: str, value: object) -> None:
+    expected_type, lo, hi = _PARAM_BOUNDS[key]
+    # bool 은 int 의 서브클래스라 isinstance(value, int) 를 그냥 쓰면 True 가 통과해버린다.
+    if isinstance(value, bool):
+        raise ValueError(f"파라미터 {key} 에 bool 값은 쓸 수 없다: {value!r}")
+    if expected_type is int and not isinstance(value, int):
+        raise ValueError(f"파라미터 {key} 는 int 여야 한다: {value!r}")
+    if expected_type is float and not isinstance(value, (int, float)):
+        raise ValueError(f"파라미터 {key} 는 float 여야 한다: {value!r}")
+    if value < lo or (hi is not None and value > hi):
+        raise ValueError(f"파라미터 {key} 가 허용 범위({lo}~{hi})를 벗어났다: {value!r}")
+
+
+class HitRow(TypedDict):
+    """검색 결과 1건 — Milvus 검색 계층(explore)이 만들어 citations.build_evidence 로 넘긴다."""
+    book_id: str
+    chunk_id: str
+    text: str
+    page_start: int
+    page_end: int
+    score: float
 
 
 @dataclass
@@ -550,13 +523,16 @@ class Evidence:
     chunks: list[Chunk] = field(default_factory=list)
 
 
+VERDICTS = ("pending", "sufficient", "insufficient")
+
+
 @dataclass
 class SubQuestion:
     idx: int
     text: str
     queries: list[str] = field(default_factory=list)   # 시도한 검색어 (재검색 이력)
     evidence_ids: list[str] = field(default_factory=list)
-    verdict: str = "pending"                            # pending|sufficient|insufficient
+    verdict: str = "pending"
     note: str = ""                                      # 자기점검 판단 근거
 
 
@@ -574,29 +550,163 @@ class ResearchState:
     report: dict | None = None
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **`app/tests/test_research_state.py`**
 
-Run: `python -m pytest app/tests/test_research_state.py -q`
-Expected: PASS (10 passed)
+```python
+# app/tests/test_research_state.py
+import pytest
 
-- [ ] **Step 5: 커밋**
+from services.research.state import (
+    DEFAULT_PARAMS, VERDICTS, Chunk, Evidence, ResearchState, SubQuestion, merge_params,
+)
 
-```bash
-git add app/services/research/__init__.py app/services/research/state.py app/tests/test_research_state.py
-git commit -m "[Feat] round04a — 딥리서치 상태 객체와 깊이 파라미터"
+
+class TestMergeParams:
+    def test_empty_override_gives_defaults(self):
+        assert merge_params({}) == DEFAULT_PARAMS
+
+    def test_none_override_gives_defaults(self):
+        assert merge_params(None) == DEFAULT_PARAMS
+
+    def test_override_wins(self):
+        assert merge_params({"max_recheck": 1})["max_recheck"] == 1
+
+    def test_override_does_not_drop_other_keys(self):
+        merged = merge_params({"max_recheck": 1})
+        assert merged["max_subquestions"] == DEFAULT_PARAMS["max_subquestions"]
+
+    def test_unknown_key_is_rejected(self):
+        # 오타로 조용히 무시되는 파라미터가 생기면 시연 직전에 값을 바꿔도 안 먹는다
+        with pytest.raises(ValueError, match="알 수 없는 파라미터"):
+            merge_params({"max_rechecks": 1})
+
+    def test_defaults_are_not_mutated(self):
+        merge_params({"max_recheck": 99})
+        assert DEFAULT_PARAMS["max_recheck"] == 3
+
+    def test_default_params_key_set_is_fixed(self):
+        # Task 7·9 가 params["per_subq_top_k"] 로 직접 인덱싱한다 — 이름이
+        # 바뀌면 merge_params 가 옛 이름을 거부하는 쪽으로 실패해야 한다.
+        assert set(DEFAULT_PARAMS) == {
+            "max_subquestions", "max_recheck", "max_evidence", "per_subq_top_k",
+            "chunks_per_evidence", "citation_weight", "min_evidence_per_subq",
+        }
+
+    def test_negative_citation_weight_is_rejected(self):
+        with pytest.raises(ValueError, match="citation_weight"):
+            merge_params({"citation_weight": -0.2})
+
+    def test_citation_weight_above_one_is_rejected(self):
+        with pytest.raises(ValueError, match="citation_weight"):
+            merge_params({"citation_weight": 1.5})
+
+    def test_citation_weight_bounds_are_inclusive(self):
+        assert merge_params({"citation_weight": 0.0})["citation_weight"] == 0.0
+        assert merge_params({"citation_weight": 1.0})["citation_weight"] == 1.0
+
+    def test_string_value_for_int_param_is_rejected(self):
+        # JSON 본문에서 흔한 실수 — 그대로 두면 should_recheck 의 비교에서 TypeError 로 터진다
+        with pytest.raises(ValueError, match="max_recheck"):
+            merge_params({"max_recheck": "3"})
+
+    def test_bool_value_for_int_param_is_rejected(self):
+        # bool 은 int 의 서브클래스라 isinstance(True, int) 가 True 다
+        with pytest.raises(ValueError, match="max_recheck"):
+            merge_params({"max_recheck": True})
+
+    def test_bool_value_for_float_param_is_rejected(self):
+        with pytest.raises(ValueError, match="citation_weight"):
+            merge_params({"citation_weight": True})
+
+    def test_zero_chunks_per_evidence_is_rejected(self):
+        # 0 이면 청크 없는 근거가 만들어져 인용칩 호버가 빈 상태가 된다
+        with pytest.raises(ValueError, match="chunks_per_evidence"):
+            merge_params({"chunks_per_evidence": 0})
+
+    def test_negative_max_recheck_is_rejected(self):
+        with pytest.raises(ValueError, match="max_recheck"):
+            merge_params({"max_recheck": -1})
+
+
+class TestState:
+    def test_new_state_has_no_subquestions(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert st.subquestions == []
+        assert st.evidence == {}
+        assert st.recheck_count == 0
+
+    def test_subquestion_defaults_to_pending(self):
+        sq = SubQuestion(idx=0, text="하위질문")
+        assert sq.verdict == "pending"
+        assert sq.verdict in VERDICTS
+        assert sq.queries == []
+        assert sq.evidence_ids == []
+
+    def test_evidence_holds_chunks(self):
+        ev = Evidence(
+            id="E1", cnts_id="KCI_FI000000001", meta={"title": "제목"},
+            chunks=[Chunk(chunk_id="c1", text="본문", page_start=3, page_end=3, score=0.9)],
+        )
+        assert ev.chunks[0].page_start == 3
+
+    def test_corpus_range_defaults_to_none(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert st.corpus_range is None
 ```
+
+- [x] **검증** — `19 passed`, 전체 회귀 199 passed
 
 ---
 
-## Task 3: 피인용 연차 정규화와 점수 혼합
+## Task 3: 피인용 연차 정규화와 점수 혼합 — **완료**
 
-피인용을 그대로 쓰면 오래된 논문이 무조건 이긴다. 2002년 논문은 24년간 쌓았고 2024년 논문은 2년이다. "최근 동향"을 물었는데 2003년 논문만 올라오는 것을 막는다.
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
 
-**Files:**
-- Create: `app/services/research/scoring.py`
-- Test: `app/tests/test_research_scoring.py`
+피인용을 생값으로 쓰면 오래된 논문이 항상 이긴다. 2002년 논문은 25년간 쌓았고 2024년 논문은 3년이다. 연간 피인용으로 정규화해야 "최근 동향" 질문에서 2000년대 초 논문만 올라오지 않는다. 화면에는 생값을 그대로 보여주고 정규화는 순위에만 쓴다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **`app/services/research/scoring.py`**
+
+```python
+# app/services/research/scoring.py
+"""scoring.py — 근거 순위 계산 (순수 함수)
+
+피인용을 생값으로 쓰면 오래된 논문이 항상 이긴다. now_year 기준 2002년
+논문은 25년간(+1, 발행연도 포함) 쌓았고 2024년 논문은 3년이다. 연간
+피인용으로 정규화해야 "최근 동향" 질문에서 2000년대 초 논문만 올라오지
+않는다.
+
+화면에는 생값(피인용 41회)을 그대로 보여준다 — 정규화는 순위에만 쓴다.
+"""
+import math
+import re
+
+_YEAR = re.compile(r"(19|20)\d{2}")
+
+
+def parse_pub_year(pub_date: str | None) -> int | None:
+    """'2008-06' · '200806' · '2008' → 2008. 해석 불가면 None."""
+    m = _YEAR.search(pub_date or "")
+    return int(m.group(0)) if m else None
+
+
+def impact_per_year(kci_citations: int | None, pub_year: int | None, *, now_year: int) -> float:
+    """연간 피인용. 연도를 모르거나 피인용이 없으면 0."""
+    if kci_citations is None or kci_citations <= 0 or pub_year is None:
+        return 0.0
+    years = max(1, now_year - pub_year + 1)
+    return kci_citations / years
+
+
+def blend_score(rerank_score: float, *, impact: float, weight: float) -> float:
+    """리랭킹 점수를 주로 하고 영향력을 보조 가중으로 얹는다.
+
+    log1p 로 감쇠시키는 이유: 영향력이 100배여도 점수가 100배가 되면
+    의미 유사도가 의미를 잃고 "많이 인용된 논문 목록"이 되어버린다.
+    """
+    return rerank_score * (1.0 + weight * math.log1p(impact))
+```
+
+- [x] **`app/tests/test_research_scoring.py`**
 
 ```python
 # app/tests/test_research_scoring.py
@@ -632,7 +742,7 @@ class TestImpactPerYear:
         """생피인용은 2002년 논문이 크지만 연간으로는 2024년 논문이 크다."""
         old = impact_per_year(50, 2002, now_year=2026)    # 50 / 25 = 2.0
         new = impact_per_year(40, 2024, now_year=2026)    # 40 / 3  = 13.3
-        assert 50 > 40 and new > old
+        assert new > old
 
     def test_future_year_is_clamped(self):
         assert impact_per_year(10, 2030, now_year=2026) == 10.0
@@ -655,80 +765,135 @@ class TestBlendScore:
         assert high < low * 5
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_scoring.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.scoring'`
-
-- [ ] **Step 3: 구현**
-
-```python
-# app/services/research/scoring.py
-"""scoring.py — 근거 순위 계산 (순수 함수)
-
-피인용을 생값으로 쓰면 오래된 논문이 항상 이긴다. 2002년 논문은 24년간
-쌓았고 2024년 논문은 2년이다. 연간 피인용으로 정규화해야 "최근 동향"
-질문에서 2000년대 초 논문만 올라오지 않는다.
-
-화면에는 생값(피인용 41회)을 그대로 보여준다 — 정규화는 순위에만 쓴다.
-"""
-import math
-import re
-
-_YEAR = re.compile(r"(19|20)\d{2}")
-
-
-def parse_pub_year(pub_date: str | None) -> int | None:
-    """'2008-06' · '200806' · '2008' → 2008. 해석 불가면 None."""
-    m = _YEAR.search(pub_date or "")
-    return int(m.group(0)) if m else None
-
-
-def impact_per_year(kci_citations: int | None, pub_year: int | None, *, now_year: int) -> float:
-    """연간 피인용. 연도를 모르거나 피인용이 없으면 0."""
-    if not kci_citations or kci_citations <= 0 or pub_year is None:
-        return 0.0
-    years = max(1, now_year - pub_year + 1)
-    return kci_citations / years
-
-
-def blend_score(rerank_score: float, *, impact: float, weight: float) -> float:
-    """리랭킹 점수를 주로 하고 영향력을 보조 가중으로 얹는다.
-
-    log1p 로 감쇠시키는 이유: 영향력이 100배여도 점수가 100배가 되면
-    의미 유사도가 의미를 잃고 "많이 인용된 논문 목록"이 되어버린다.
-    """
-    return rerank_score * (1.0 + weight * math.log1p(max(0.0, impact)))
-```
-
-- [ ] **Step 4: 테스트 통과 확인**
-
-Run: `python -m pytest app/tests/test_research_scoring.py -q`
-Expected: PASS (15 passed)
-
-- [ ] **Step 5: 커밋**
-
-```bash
-git add app/services/research/scoring.py app/tests/test_research_scoring.py
-git commit -m "[Feat] round04a — 피인용 연차 정규화와 점수 혼합"
-```
+- [x] **검증** — `15 passed`, 전체 회귀 199 passed
 
 ---
 
-## Task 4: 근거 조립과 마커 검증
+## Task 4: 근거 조립과 마커 검증 — **완료**
 
-**이 계획에서 가장 중요한 Task다.** 근거 표기가 틀린 리서치 도구는 안 쓰느니만 못하다. 모델이 없는 `[E99]` 를 뱉었을 때 칩이 만들어지지 않는 것이 인용 무결성의 마지막 방어선이다.
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
 
-**Files:**
-- Create: `app/services/research/citations.py`
-- Test: `app/tests/test_research_citations.py`
+이 계층에서 가장 중요하다. 근거 표기가 틀린 리서치 도구는 안 쓰느니만 못하다. 모델이 없는 `[E99]` 를 뱉었을 때 칩이 만들어지지 않는 것이 인용 무결성의 마지막 방어선이다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+리뷰 반영으로 초안과 달라진 것 셋. (1) **근거 ID 번호 권한을 runner 로 넘겼다** — `build_evidence` 는 묶기만 하고 `id=""` 인 `list[Evidence]` 를 hits 등장 순서로 돌려준다. 초안은 `start_index` 로 번호를 붙였는데 runner 가 그걸 버리고 다시 붙여, 테스트가 버려지는 쪽만 덮고 있었다. (2) **공백 정리를 마커 주변으로 한정했다** — 전역 치환이 `"p < .05"` 같은 논문 통계 표기를 `"p <.05"` 로 훼손했다. (3) **`bind_markers` 가 `used` 를 함께 돌려준다** — 안 그러면 synthesizer 가 마커 정규식을 세 번째로 복제한다.
+
+- [x] **`app/services/research/citations.py`**
+
+```python
+# app/services/research/citations.py
+"""citations.py — 근거 조립과 인용 마커 검증 (순수 함수)
+
+인용은 두 종류다.
+
+구조적 인용 — `대표 논문 요약`은 불릿 하나가 논문 하나라, 그 논문의 근거만
+넣고 생성하면 인용이 추론이 아니라 구조로 정해진다. 모델이 고를 일이 없다.
+
+마커 인용 — `도입 문단`·`향후 과제`는 여러 논문을 가로지르므로 구조로 못
+정한다. 모델이 [E3] 로 달게 하고 여기서 전수 검증한다. 해석 안 되는 마커는
+조용히 통과시키지 않고 제거한 뒤 개수를 보고한다.
+
+근거 ID(E1·E2·...) 는 runner 가 state.evidence 에 넣는 시점에 붙인다 —
+evidence 네임스페이스를 소유한 쪽이 번호도 소유해야 한다. build_evidence
+는 순서만 보장하고(hits 등장 순서) 번호는 매기지 않는다.
+"""
+import re
+from typing import NamedTuple
+
+from services.research.state import Chunk, Evidence, HitRow
+
+_MARKER = re.compile(r"[ \t]*\[(E\d+)\]")
+_SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
+# 마침표 뒤에 붙는 마커("문장이다. [E1]")를 셀 때만 문장 앞으로 당긴다 —
+# LLM 이 마커를 문장 끝 마침표 뒤에 다는 게 흔해서, 그대로 세면 근거가 있는
+# 문장이 무근거로 오분류된다. 반환 텍스트에는 적용하지 않는다.
+_TRAILING_MARKER = re.compile(r"([.!?。])(\s+)(\[E\d+\])")
+
+
+def evidence_id(index: int) -> str:
+    return f"E{index + 1}"
+
+
+def build_evidence(
+    hits: list[HitRow],
+    meta_by_id: dict[str, dict],
+    *,
+    chunks_per_evidence: int,
+) -> list[Evidence]:
+    """검색 결과를 논문 단위 근거로 묶는다.
+
+    같은 논문의 청크 여러 개는 근거 하나가 되고, 점수 높은 순으로
+    chunks_per_evidence 개만 남긴다(호버 팝업의 1/2 페이지네이션).
+    카탈로그에 메타가 없는 청크는 버린다 — 서지를 못 보여주면 근거가 아니다.
+
+    반환 순서는 hits 안에서 각 논문이 처음 등장한 순서다(hits 는 호출 전에
+    점수 내림차순으로 정렬돼 들어온다는 전제). id 는 비워둔다 — runner 가
+    state.evidence 에 넣으며 evidence_id() 로 채운다.
+    """
+    grouped: dict[str, list[HitRow]] = {}
+    for hit in hits:
+        cnts_id = hit["book_id"]
+        if cnts_id not in meta_by_id:
+            continue
+        grouped.setdefault(cnts_id, []).append(hit)
+
+    result: list[Evidence] = []
+    for cnts_id, rows in grouped.items():
+        rows.sort(key=lambda r: r["score"], reverse=True)
+        result.append(Evidence(
+            id="",
+            cnts_id=cnts_id,
+            meta=meta_by_id[cnts_id],
+            chunks=[
+                Chunk(
+                    chunk_id=r["chunk_id"], text=r["text"],
+                    page_start=r["page_start"], page_end=r["page_end"],
+                    score=r["score"],
+                )
+                for r in rows[:chunks_per_evidence]
+            ],
+        ))
+    return result
+
+
+class MarkerResult(NamedTuple):
+    text: str
+    dropped: list[str]
+    used: list[str]      # 등장 순서, 중복 제거 — 유효한 마커를 다시 정규식으로 훑지 않고 여기서 재사용한다
+    unmarked: int
+
+
+def bind_markers(text: str, valid_ids: set[str]) -> MarkerResult:
+    """인용 마커를 검증한다.
+
+    반환 본문은 유효하지 않은 마커(와 그 앞 공백)만 제거하고 나머지는
+    바이트 단위로 보존한다 — "p < .05" 같은 논문 통계 표기를 건드리지 않는다.
+    """
+    dropped: list[str] = []
+    used: list[str] = []
+
+    def _check(m: re.Match) -> str:
+        marker_id = m.group(1)
+        if marker_id in valid_ids:
+            if marker_id not in used:
+                used.append(marker_id)
+            return m.group(0)
+        dropped.append(marker_id)
+        return ""
+
+    cleaned = _MARKER.sub(_check, text).strip()
+
+    count_text = _TRAILING_MARKER.sub(r"\3\1\2", cleaned)
+    sentences = [s for s in _SENT_SPLIT.split(count_text) if s.strip()]
+    unmarked = sum(1 for s in sentences if not _MARKER.search(s))
+
+    return MarkerResult(cleaned, dropped, used, unmarked)
+```
+
+- [x] **`app/tests/test_research_citations.py`**
 
 ```python
 # app/tests/test_research_citations.py
-from services.research.state import Chunk, Evidence
-from services.research.citations import bind_markers, build_evidence, evidence_id
+from services.research.citations import MarkerResult, bind_markers, build_evidence, evidence_id
 
 
 class TestEvidenceId:
@@ -744,196 +909,106 @@ class TestBuildEvidence:
             "page_start": page, "page_end": page, "score": score,
         }
 
-    def _meta(self, cnts_id):
-        return {cnts_id: {"title": f"제목 {cnts_id}", "kci_citations": 3}}
+    def _meta(self, *cnts_ids):
+        return {cnts_id: {"title": f"제목 {cnts_id}", "kci_citations": 3} for cnts_id in cnts_ids}
 
     def test_one_paper_one_evidence(self):
-        ev = build_evidence(
-            [self._hit("A", "c1", 0.9)], self._meta("A"),
-            start_index=0, chunks_per_evidence=2,
-        )
-        assert list(ev.keys()) == ["E1"]
-        assert ev["E1"].cnts_id == "A"
+        ev = build_evidence([self._hit("A", "c1", 0.9)], self._meta("A"), chunks_per_evidence=2)
+        assert len(ev) == 1
+        assert ev[0].cnts_id == "A"
+        assert ev[0].id == ""  # 번호는 runner 가 붙인다 — 여기서는 미할당
 
     def test_chunks_of_same_paper_group_into_one_evidence(self):
         ev = build_evidence(
             [self._hit("A", "c1", 0.9), self._hit("A", "c2", 0.7)],
-            self._meta("A"), start_index=0, chunks_per_evidence=2,
+            self._meta("A"), chunks_per_evidence=2,
         )
         assert len(ev) == 1
-        assert len(ev["E1"].chunks) == 2
+        assert len(ev[0].chunks) == 2
 
     def test_chunks_per_evidence_caps_and_keeps_best(self):
         ev = build_evidence(
             [self._hit("A", "c1", 0.5), self._hit("A", "c2", 0.9),
              self._hit("A", "c3", 0.7)],
-            self._meta("A"), start_index=0, chunks_per_evidence=2,
+            self._meta("A"), chunks_per_evidence=2,
         )
-        assert [c.chunk_id for c in ev["E1"].chunks] == ["c2", "c3"]
-
-    def test_start_index_continues_numbering(self):
-        ev = build_evidence(
-            [self._hit("B", "c9", 0.8)], self._meta("B"),
-            start_index=5, chunks_per_evidence=2,
-        )
-        assert list(ev.keys()) == ["E6"]
+        assert [c.chunk_id for c in ev[0].chunks] == ["c2", "c3"]
 
     def test_hit_without_metadata_is_dropped(self):
         """카탈로그에 없는 청크는 근거로 쓰지 않는다 — 서지를 못 보여준다."""
+        ev = build_evidence([self._hit("GHOST", "c1", 0.9)], {}, chunks_per_evidence=2)
+        assert ev == []
+
+    def test_return_order_follows_hit_appearance_order(self):
+        """점수가 아니라 hits 등장 순서를 따른다 — sorted() 가 몰래 끼어들면 이 테스트가 잡는다."""
         ev = build_evidence(
-            [self._hit("GHOST", "c1", 0.9)], {}, start_index=0, chunks_per_evidence=2,
+            [self._hit("B", "c1", 0.5), self._hit("A", "c2", 0.9)],
+            self._meta("A", "B"), chunks_per_evidence=2,
         )
-        assert ev == {}
+        assert [e.cnts_id for e in ev] == ["B", "A"]
+
+    def test_empty_hits_gives_empty_list(self):
+        assert build_evidence([], {}, chunks_per_evidence=2) == []
+
+    def test_chunks_per_evidence_zero_gives_no_chunks(self):
+        ev = build_evidence([self._hit("A", "c1", 0.9)], self._meta("A"), chunks_per_evidence=0)
+        assert ev[0].chunks == []
 
 
 class TestBindMarkers:
     def test_valid_marker_is_kept(self):
-        text, dropped, unmarked = bind_markers("근거가 있다 [E1].", {"E1"})
-        assert "[E1]" in text
-        assert dropped == []
+        res = bind_markers("근거가 있다 [E1].", {"E1"})
+        assert "[E1]" in res.text
+        assert res.dropped == []
 
     def test_unknown_marker_is_dropped(self):
         """모델이 없는 근거를 지어내면 칩을 만들지 않는다."""
-        text, dropped, unmarked = bind_markers("근거가 있다 [E99].", {"E1"})
-        assert "[E99]" not in text
-        assert dropped == ["E99"]
+        res = bind_markers("근거가 있다 [E99].", {"E1"})
+        assert "[E99]" not in res.text
+        assert res.dropped == ["E99"]
 
     def test_dropping_does_not_leave_double_space(self):
-        text, _, _ = bind_markers("앞 [E99] 뒤.", {"E1"})
-        assert "  " not in text
+        res = bind_markers("앞 [E99] 뒤.", {"E1"})
+        assert "  " not in res.text
 
     def test_sentence_without_marker_is_counted(self):
-        _, _, unmarked = bind_markers("근거 있다 [E1]. 근거 없다.", {"E1"})
-        assert unmarked == 1
+        res = bind_markers("근거 있다 [E1]. 근거 없다.", {"E1"})
+        assert res.unmarked == 1
 
     def test_sentence_whose_only_marker_was_dropped_counts_as_unmarked(self):
-        _, dropped, unmarked = bind_markers("지어낸 근거다 [E99].", {"E1"})
-        assert dropped == ["E99"]
-        assert unmarked == 1
+        res = bind_markers("지어낸 근거다 [E99].", {"E1"})
+        assert res.dropped == ["E99"]
+        assert res.unmarked == 1
 
     def test_empty_text(self):
-        assert bind_markers("", {"E1"}) == ("", [], 0)
+        assert bind_markers("", {"E1"}) == MarkerResult("", [], [], 0)
 
     def test_used_ids_are_reported_in_order(self):
-        text, dropped, unmarked = bind_markers("가 [E2]. 나 [E1].", {"E1", "E2"})
-        assert dropped == []
-        assert unmarked == 0
+        res = bind_markers("가 [E2]. 나 [E1].", {"E1", "E2"})
+        assert res.used == ["E2", "E1"]
+        assert res.dropped == []
+        assert res.unmarked == 0
+
+    def test_trailing_marker_after_period_counts_as_marked(self):
+        """LLM 이 마침표 뒤에 마커를 다는 흔한 패턴 — 앞 문장을 무근거로 오분류하면 안 된다."""
+        res = bind_markers("근거 있다. [E1] 다른 말이다.", {"E1"})
+        assert res.unmarked == 1  # "다른 말이다." 만 무근거
+
+    def test_trailing_marker_normalization_does_not_change_returned_text(self):
+        res = bind_markers("근거 있다. [E1] 다른 말이다.", {"E1"})
+        assert res.text == "근거 있다. [E1] 다른 말이다."
+
+    def test_statistic_notation_is_preserved(self):
+        """p < .05 같은 사회과학 논문의 선행 0 생략 표기를 훼손하면 안 된다."""
+        res = bind_markers("유의수준 p < .05 였다 [E1].", {"E1"})
+        assert "p < .05" in res.text
+
+    def test_newline_is_preserved(self):
+        res = bind_markers("첫 줄 [E1].\n둘째 줄.", {"E1"})
+        assert "\n" in res.text
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_citations.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.citations'`
-
-- [ ] **Step 3: 구현**
-
-```python
-# app/services/research/citations.py
-"""citations.py — 근거 조립과 인용 마커 검증 (순수 함수)
-
-인용은 두 종류다.
-
-구조적 인용 — `대표 논문 요약`은 불릿 하나가 논문 하나라, 그 논문의 근거만
-넣고 생성하면 인용이 추론이 아니라 구조로 정해진다. 모델이 고를 일이 없다.
-
-마커 인용 — `도입 문단`·`향후 과제`는 여러 논문을 가로지르므로 구조로 못
-정한다. 모델이 [E3] 로 달게 하고 여기서 전수 검증한다. 해석 안 되는 마커는
-조용히 통과시키지 않고 제거한 뒤 개수를 보고한다.
-"""
-import re
-
-from services.research.state import Chunk, Evidence
-
-_MARKER = re.compile(r"\[(E\d+)\]")
-_SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
-
-
-def evidence_id(index: int) -> str:
-    return f"E{index + 1}"
-
-
-def build_evidence(
-    hits: list[dict],
-    meta_by_id: dict[str, dict],
-    *,
-    start_index: int,
-    chunks_per_evidence: int,
-) -> dict[str, Evidence]:
-    """검색 결과를 논문 단위 근거로 묶는다.
-
-    같은 논문의 청크 여러 개는 근거 하나가 되고, 점수 높은 순으로
-    chunks_per_evidence 개만 남긴다(호버 팝업의 1/2 페이지네이션).
-    카탈로그에 메타가 없는 청크는 버린다 — 서지를 못 보여주면 근거가 아니다.
-    """
-    grouped: dict[str, list[dict]] = {}
-    for hit in hits:
-        cnts_id = hit["book_id"]
-        if cnts_id not in meta_by_id:
-            continue
-        grouped.setdefault(cnts_id, []).append(hit)
-
-    result: dict[str, Evidence] = {}
-    for offset, (cnts_id, rows) in enumerate(grouped.items()):
-        rows.sort(key=lambda r: r["score"], reverse=True)
-        eid = evidence_id(start_index + offset)
-        result[eid] = Evidence(
-            id=eid,
-            cnts_id=cnts_id,
-            meta=meta_by_id[cnts_id],
-            chunks=[
-                Chunk(
-                    chunk_id=r["chunk_id"], text=r["text"],
-                    page_start=r["page_start"], page_end=r["page_end"],
-                    score=r["score"],
-                )
-                for r in rows[:chunks_per_evidence]
-            ],
-        )
-    return result
-
-
-def bind_markers(text: str, valid_ids: set[str]) -> tuple[str, list[str], int]:
-    """인용 마커를 검증한다.
-
-    returns (정리된 본문, 제거된 마커 목록, 마커 없는 문장 수)
-    """
-    dropped: list[str] = []
-
-    def _check(m: re.Match) -> str:
-        if m.group(1) in valid_ids:
-            return m.group(0)
-        dropped.append(m.group(1))
-        return ""
-
-    cleaned = _MARKER.sub(_check, text)
-    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
-    cleaned = re.sub(r"\s+([.,!?])", r"\1", cleaned).strip()
-
-    sentences = [s for s in _SENT_SPLIT.split(cleaned) if s.strip()]
-    unmarked = sum(1 for s in sentences if not _MARKER.search(s))
-    return cleaned, dropped, unmarked
-```
-
-- [ ] **Step 4: 테스트 통과 확인**
-
-Run: `python -m pytest app/tests/test_research_citations.py -q`
-Expected: PASS (13 passed)
-
-- [ ] **Step 5: 회귀가 실제로 잡히는지 확인**
-
-`citations.py` 의 `_check` 안에서 `dropped.append(...)` 줄과 `return ""` 를 잠시 `return m.group(0)` 으로 바꾼 뒤:
-
-Run: `python -m pytest app/tests/test_research_citations.py -q`
-Expected: FAIL — `test_unknown_marker_is_dropped` 와 `test_sentence_whose_only_marker_was_dropped_counts_as_unmarked` 2건 실패
-
-확인 후 되돌리고 다시 PASS 되는지 본다. **수정을 되돌렸을 때 실패하지 않는 테스트는 아무것도 지키지 않는다.**
-
-- [ ] **Step 6: 커밋**
-
-```bash
-git add app/services/research/citations.py app/tests/test_research_citations.py
-git commit -m "[Feat] round04a — 근거 조립과 인용 마커 검증"
-```
+- [x] **검증** — `19 passed`, 전체 회귀 199 passed
 
 ---
 
