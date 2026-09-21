@@ -1,7 +1,7 @@
 import pytest
 
 from services.research.state import (
-    DEFAULT_PARAMS, Chunk, Evidence, ResearchState, SubQuestion, merge_params,
+    DEFAULT_PARAMS, VERDICTS, Chunk, Evidence, ResearchState, SubQuestion, merge_params,
 )
 
 
@@ -28,6 +28,49 @@ class TestMergeParams:
         merge_params({"max_recheck": 99})
         assert DEFAULT_PARAMS["max_recheck"] == 3
 
+    def test_default_params_key_set_is_fixed(self):
+        # Task 7·9 가 params["per_subq_top_k"] 로 직접 인덱싱한다 — 이름이
+        # 바뀌면 merge_params 가 옛 이름을 거부하는 쪽으로 실패해야 한다.
+        assert set(DEFAULT_PARAMS) == {
+            "max_subquestions", "max_recheck", "max_evidence", "per_subq_top_k",
+            "chunks_per_evidence", "citation_weight", "min_evidence_per_subq",
+        }
+
+    def test_negative_citation_weight_is_rejected(self):
+        with pytest.raises(ValueError, match="citation_weight"):
+            merge_params({"citation_weight": -0.2})
+
+    def test_citation_weight_above_one_is_rejected(self):
+        with pytest.raises(ValueError, match="citation_weight"):
+            merge_params({"citation_weight": 1.5})
+
+    def test_citation_weight_bounds_are_inclusive(self):
+        assert merge_params({"citation_weight": 0.0})["citation_weight"] == 0.0
+        assert merge_params({"citation_weight": 1.0})["citation_weight"] == 1.0
+
+    def test_string_value_for_int_param_is_rejected(self):
+        # JSON 본문에서 흔한 실수 — 그대로 두면 should_recheck 의 비교에서 TypeError 로 터진다
+        with pytest.raises(ValueError, match="max_recheck"):
+            merge_params({"max_recheck": "3"})
+
+    def test_bool_value_for_int_param_is_rejected(self):
+        # bool 은 int 의 서브클래스라 isinstance(True, int) 가 True 다
+        with pytest.raises(ValueError, match="max_recheck"):
+            merge_params({"max_recheck": True})
+
+    def test_bool_value_for_float_param_is_rejected(self):
+        with pytest.raises(ValueError, match="citation_weight"):
+            merge_params({"citation_weight": True})
+
+    def test_zero_chunks_per_evidence_is_rejected(self):
+        # 0 이면 청크 없는 근거가 만들어져 인용칩 호버가 빈 상태가 된다
+        with pytest.raises(ValueError, match="chunks_per_evidence"):
+            merge_params({"chunks_per_evidence": 0})
+
+    def test_negative_max_recheck_is_rejected(self):
+        with pytest.raises(ValueError, match="max_recheck"):
+            merge_params({"max_recheck": -1})
+
 
 class TestState:
     def test_new_state_has_no_subquestions(self):
@@ -39,6 +82,7 @@ class TestState:
     def test_subquestion_defaults_to_pending(self):
         sq = SubQuestion(idx=0, text="하위질문")
         assert sq.verdict == "pending"
+        assert sq.verdict in VERDICTS
         assert sq.queries == []
         assert sq.evidence_ids == []
 

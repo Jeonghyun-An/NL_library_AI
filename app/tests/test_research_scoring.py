@@ -30,7 +30,7 @@ class TestImpactPerYear:
         """생피인용은 2002년 논문이 크지만 연간으로는 2024년 논문이 크다."""
         old = impact_per_year(50, 2002, now_year=2026)    # 50 / 25 = 2.0
         new = impact_per_year(40, 2024, now_year=2026)    # 40 / 3  = 13.3
-        assert 50 > 40 and new > old
+        assert new > old
 
     def test_future_year_is_clamped(self):
         assert impact_per_year(10, 2030, now_year=2026) == 10.0
