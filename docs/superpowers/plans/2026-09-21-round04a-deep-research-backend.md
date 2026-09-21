@@ -1873,6 +1873,9 @@ log = logging.getLogger(__name__)
 
 
 def _step(db, job_id, seq, kind, title, *, subq_idx=None, detail=None):
+    # STEP_KINDS 를 실제로 강제하는 유일한 지점. 상수만 정의하고 아무 데서도
+    # 쓰지 않으면 장식이 되고, 오타난 kind 가 프론트 분기를 조용히 빗나간다.
+    assert kind in STEP_KINDS, f"알 수 없는 kind: {kind}"
     row = ResearchStep(
         job_id=job_id, seq=seq, kind=kind, title=title,
         subq_idx=subq_idx, detail=detail, status="running",
@@ -2044,11 +2047,14 @@ def reap_stale_research() -> dict:
             "RETURNING job_id"
         ), {"m": STALE_MINUTES}).fetchall()
 
+        # coalesce 가 필요한 이유: started_at 은 run_deep_research 에서야 찍힌다.
+        # planning 단계에서 워커가 죽으면 started_at 이 NULL 이고, NULL 비교는
+        # NULL 이라 조건이 참이 되지 않아 그 잡은 영원히 회수되지 않는다.
         jobs = db.execute(sa_text(
             "UPDATE research_jobs SET status = 'failed', "
             "       last_error = 'stale — 워커 응답 없음', finished_at = now() "
             "WHERE status IN ('planning', 'running') "
-            "  AND started_at < now() - make_interval(mins => :m) "
+            "  AND coalesce(started_at, created_at) < now() - make_interval(mins => :m) "
             "RETURNING id"
         ), {"m": STALE_MINUTES}).fetchall()
 
@@ -2225,7 +2231,9 @@ git commit -m "[Feat] round04a — 딥리서치 Celery 태스크와 API"
 
 코드가 아니라 확인 절차다. `docs/ops/bulk_ingest_runbook.md` 의 배포 절차를 따른다.
 
-- [ ] **Step 1: 마이그레이션 적용**
+**순서가 중요하다 — 마이그레이션이 이미지 배포보다 먼저다.** `app/main.py` 의 lifespan 이 `Base.metadata.create_all` 을 부르는데, Task 10 이 research 라우터를 등록하면 `models.research` 가 전이적으로 metadata 에 붙는다. 새 이미지를 먼저 띄우면 `create_all` 이 두 테이블을 만들어버리고, 그 뒤 `alembic upgrade head` 는 `DuplicateTable` 로 죽는다. 더 나쁜 건 `create_all` 이 만든 테이블에는 `server_default` 가 없어(모델은 `default=` 만 가진다) 마이그레이션이 만들었을 스키마와 미묘하게 다른 테이블이 운영에 남는다는 점이다.
+
+- [ ] **Step 1: 마이그레이션 적용 (배포보다 먼저)**
 
 ```bash
 docker exec -e PYTHONPATH=/app nl-lib-fastapi alembic upgrade head
