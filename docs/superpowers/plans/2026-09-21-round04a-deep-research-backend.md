@@ -1575,6 +1575,17 @@ class TestBuildLimitations:
         lims = build_limitations(_state(), unmarked_total=4)
         assert any("근거 표기가 없는 서술 4건" in x for x in lims)
 
+    def test_parse_failed_subquestion_is_reported(self):
+        """판정 실패는 verdict=sufficient 로 떨어지므로 따로 세지 않으면 사라진다."""
+        st = _state()
+        st.subquestions[0].parse_failed = True
+        lims = build_limitations(st, unmarked_total=0)
+        assert any("자동 점검을 완료하지 못한 하위질문이 1건" in x for x in lims)
+
+    def test_no_parse_failure_is_not_reported(self):
+        assert not any("자동 점검을 완료하지 못한" in x
+                       for x in build_limitations(_state(), unmarked_total=0))
+
     def test_zero_unmarked_is_not_reported(self):
         assert not any("근거 표기가 없는" in x for x in build_limitations(_state(), unmarked_total=0))
 
@@ -1664,7 +1675,12 @@ UNMARKED_THRESHOLD = 3
 
 
 def build_limitations(state: ResearchState, *, unmarked_total: int) -> list[str]:
-    """자기점검 결과를 사용자에게 보이는 문장으로 바꾼다."""
+    """자기점검 결과를 사용자에게 보이는 문장으로 바꾼다.
+
+    판정 파싱이 실패한 하위질문(parse_failed)을 반드시 별도로 센다. 실패는
+    verdict="sufficient" 로 떨어지므로 아래 insufficient 분기에 걸리지 않고,
+    그대로 두면 자기점검이 전부 꺼져도 보고서가 "한계 없음"으로 보인다.
+    """
     out: list[str] = []
     for sq in state.subquestions:
         if not sq.evidence_ids:
@@ -1674,6 +1690,14 @@ def build_limitations(state: ResearchState, *, unmarked_total: int) -> list[str]
             out.append(
                 f"'{sq.text}' 는 근거 {len(sq.evidence_ids)}편으로 결론이 약하다{note}"
             )
+
+    unchecked = sum(1 for sq in state.subquestions if sq.parse_failed)
+    if unchecked:
+        out.append(
+            f"자동 점검을 완료하지 못한 하위질문이 {unchecked}건 있다 — "
+            f"그 부분의 근거 충분성은 확인되지 않았다."
+        )
+
     if unmarked_total >= UNMARKED_THRESHOLD:
         out.append(f"근거 표기가 없는 서술 {unmarked_total}건이 있다.")
     return out
