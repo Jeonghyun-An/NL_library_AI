@@ -1862,7 +1862,7 @@ import datetime as _dt
 import logging
 
 from db.postgres import SyncSessionLocal
-from models.research import ResearchJob, ResearchStep
+from models.research import STEP_KINDS, ResearchJob, ResearchStep
 from services.research.relay import publish
 from services.research.runner import explore_subquestion
 from services.research.state import ResearchState, SubQuestion, merge_params
