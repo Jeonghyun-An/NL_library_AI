@@ -20,10 +20,12 @@ from services.research.state import Chunk, Evidence, HitRow
 
 _MARKER = re.compile(r"[ \t]*\[(E\d+)\]")
 _SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
-# 마침표 뒤에 붙는 마커("문장이다. [E1]")를 셀 때만 문장 앞으로 당긴다 —
-# LLM 이 마커를 문장 끝 마침표 뒤에 다는 게 흔해서, 그대로 세면 근거가 있는
-# 문장이 무근거로 오분류된다. 반환 텍스트에는 적용하지 않는다.
-_TRAILING_MARKER = re.compile(r"([.!?。])(\s+)(\[E\d+\])")
+# 마침표 뒤에 붙는 마커 묶음("문장이다. [E1] [E2]")을 셀 때만 통째로 문장
+# 앞으로 당긴다 — LLM 이 마커를 문장 끝 마침표 뒤에 다는 게 흔해서, 그대로
+# 세면 근거가 있는 문장이 무근거로 오분류된다. 마커 하나만 당기면 뒤에
+# 남은 마커가 다음 문장 소속으로 잘못 잡혀 과소 계수된다. 계수용 사본에만
+# 쓰므로 치환 뒤 공백이 지저분해도 무해하다. 반환 텍스트에는 적용하지 않는다.
+_TRAILING_MARKER = re.compile(r"([.!?。])(\s+)((?:\[E\d+\][ \t]*)+)")
 
 
 def evidence_id(index: int) -> str:

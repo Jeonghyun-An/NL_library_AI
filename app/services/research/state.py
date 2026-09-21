@@ -21,16 +21,18 @@ DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     "min_evidence_per_subq": 5,
 })
 
-# (타입, 하한, 상한) — 상한 없음은 None.
-# ResearchCreate.params: dict 가 값 타입을 검증하지 않으므로 여기가 유일한 검증 지점이다.
+# (타입, 하한, 상한). ResearchCreate.params: dict 가 값 타입을 검증하지
+# 않으므로 여기가 유일한 검증 지점이다 — 상한이 없으면 per_subq_top_k 같은
+# 값이 그대로 Milvus AnnSearchRequest(limit=...) 까지 흘러가 요청 하나로
+# 워커를 묶는 자해 경로가 된다. 상한은 시연 현실치 기준.
 _PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
-    "max_subquestions": (int, 1, None),
-    "max_recheck": (int, 0, None),
-    "max_evidence": (int, 1, None),
-    "per_subq_top_k": (int, 1, None),
-    "chunks_per_evidence": (int, 1, None),
+    "max_subquestions": (int, 1, 12),
+    "max_recheck": (int, 0, 10),
+    "max_evidence": (int, 1, 200),
+    "per_subq_top_k": (int, 1, 50),
+    "chunks_per_evidence": (int, 1, 5),
     "citation_weight": (float, 0.0, 1.0),
-    "min_evidence_per_subq": (int, 0, None),
+    "min_evidence_per_subq": (int, 0, 50),
 }
 
 

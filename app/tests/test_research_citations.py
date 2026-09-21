@@ -94,10 +94,26 @@ class TestBindMarkers:
         assert res.dropped == []
         assert res.unmarked == 0
 
-    def test_trailing_marker_after_period_counts_as_marked(self):
-        """LLM 이 마침표 뒤에 마커를 다는 흔한 패턴 — 앞 문장을 무근거로 오분류하면 안 된다."""
+    def test_trailing_marker_after_period_attributes_to_next_sentence(self):
+        """정규화가 없어도 총합(unmarked)은 1로 같다 — 어느 문장이 무근거로
+        지목되는지만 바뀐다. 정규화 유무를 가르는 회귀 테스트가 아니다.
+        (그 검증은 test_trailing_marker_at_end_of_text_counts_as_marked 가 한다.)
+        """
         res = bind_markers("근거 있다. [E1] 다른 말이다.", {"E1"})
         assert res.unmarked == 1  # "다른 말이다." 만 무근거
+
+    def test_trailing_marker_at_end_of_text_counts_as_marked(self):
+        """정규화 유무로 실제 값이 갈리는 케이스 — 뒤 문장이 없어 마커를
+        당기지 않으면 "근거 있다." 자체가 무근거로 잘못 잡힌다."""
+        res = bind_markers("근거 있다. [E1]", {"E1"})
+        assert res.unmarked == 0
+
+    def test_consecutive_trailing_markers_all_attribute_to_previous_sentence(self):
+        """마커가 여럿 쌓여 있으면(". [E1] [E2]") 전부 앞 문장 근거로 봐야
+        한다 — 하나만 당기면 뒤 마커가 다음 문장 소속으로 잘못 잡혀 과소
+        계수된다."""
+        res = bind_markers("문장이다. [E1] [E2] 다음 문장이다.", {"E1", "E2"})
+        assert res.unmarked == 1  # "다음 문장이다." 만 무근거
 
     def test_trailing_marker_normalization_does_not_change_returned_text(self):
         res = bind_markers("근거 있다. [E1] 다른 말이다.", {"E1"})

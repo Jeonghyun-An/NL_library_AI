@@ -25,7 +25,7 @@ class TestMergeParams:
             merge_params({"max_rechecks": 1})
 
     def test_defaults_are_not_mutated(self):
-        merge_params({"max_recheck": 99})
+        merge_params({"max_recheck": 9})
         assert DEFAULT_PARAMS["max_recheck"] == 3
 
     def test_default_params_key_set_is_fixed(self):
@@ -70,6 +70,12 @@ class TestMergeParams:
     def test_negative_max_recheck_is_rejected(self):
         with pytest.raises(ValueError, match="max_recheck"):
             merge_params({"max_recheck": -1})
+
+    def test_per_subq_top_k_upper_bound_is_rejected(self):
+        # 상한 없이 그대로 두면 Milvus AnnSearchRequest(limit=...) 까지 흘러가
+        # 요청 하나로 워커를 묶는 자해 경로가 된다
+        with pytest.raises(ValueError, match="per_subq_top_k"):
+            merge_params({"per_subq_top_k": 1_000_000})
 
 
 class TestState:
