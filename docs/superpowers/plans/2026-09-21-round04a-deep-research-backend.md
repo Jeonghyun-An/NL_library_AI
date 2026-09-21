@@ -459,16 +459,18 @@ DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     "min_evidence_per_subq": 5,
 })
 
-# (타입, 하한, 상한) — 상한 없음은 None.
-# ResearchCreate.params: dict 가 값 타입을 검증하지 않으므로 여기가 유일한 검증 지점이다.
+# (타입, 하한, 상한). ResearchCreate.params: dict 가 값 타입을 검증하지
+# 않으므로 여기가 유일한 검증 지점이다 — 상한이 없으면 per_subq_top_k 같은
+# 값이 그대로 Milvus AnnSearchRequest(limit=...) 까지 흘러가 요청 하나로
+# 워커를 묶는 자해 경로가 된다. 상한은 시연 현실치 기준.
 _PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
-    "max_subquestions": (int, 1, None),
-    "max_recheck": (int, 0, None),
-    "max_evidence": (int, 1, None),
-    "per_subq_top_k": (int, 1, None),
-    "chunks_per_evidence": (int, 1, None),
+    "max_subquestions": (int, 1, 12),
+    "max_recheck": (int, 0, 10),
+    "max_evidence": (int, 1, 200),
+    "per_subq_top_k": (int, 1, 50),
+    "chunks_per_evidence": (int, 1, 5),
     "citation_weight": (float, 0.0, 1.0),
-    "min_evidence_per_subq": (int, 0, None),
+    "min_evidence_per_subq": (int, 0, 50),
 }
 
 
@@ -581,7 +583,7 @@ class TestMergeParams:
             merge_params({"max_rechecks": 1})
 
     def test_defaults_are_not_mutated(self):
-        merge_params({"max_recheck": 99})
+        merge_params({"max_recheck": 9})
         assert DEFAULT_PARAMS["max_recheck"] == 3
 
     def test_default_params_key_set_is_fixed(self):
@@ -627,6 +629,12 @@ class TestMergeParams:
         with pytest.raises(ValueError, match="max_recheck"):
             merge_params({"max_recheck": -1})
 
+    def test_per_subq_top_k_upper_bound_is_rejected(self):
+        # 상한 없이 그대로 두면 Milvus AnnSearchRequest(limit=...) 까지 흘러가
+        # 요청 하나로 워커를 묶는 자해 경로가 된다
+        with pytest.raises(ValueError, match="per_subq_top_k"):
+            merge_params({"per_subq_top_k": 1_000_000})
+
 
 class TestState:
     def test_new_state_has_no_subquestions(self):
@@ -654,7 +662,7 @@ class TestState:
         assert st.corpus_range is None
 ```
 
-- [x] **검증** — `19 passed`, 전체 회귀 199 passed
+- [x] **검증** — `20 passed`, 전체 회귀 202 passed
 
 ---
 
@@ -765,7 +773,7 @@ class TestBlendScore:
         assert high < low * 5
 ```
 
-- [x] **검증** — `15 passed`, 전체 회귀 199 passed
+- [x] **검증** — `15 passed`, 전체 회귀 202 passed
 
 ---
 
@@ -803,10 +811,12 @@ from services.research.state import Chunk, Evidence, HitRow
 
 _MARKER = re.compile(r"[ \t]*\[(E\d+)\]")
 _SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
-# 마침표 뒤에 붙는 마커("문장이다. [E1]")를 셀 때만 문장 앞으로 당긴다 —
-# LLM 이 마커를 문장 끝 마침표 뒤에 다는 게 흔해서, 그대로 세면 근거가 있는
-# 문장이 무근거로 오분류된다. 반환 텍스트에는 적용하지 않는다.
-_TRAILING_MARKER = re.compile(r"([.!?。])(\s+)(\[E\d+\])")
+# 마침표 뒤에 붙는 마커 묶음("문장이다. [E1] [E2]")을 셀 때만 통째로 문장
+# 앞으로 당긴다 — LLM 이 마커를 문장 끝 마침표 뒤에 다는 게 흔해서, 그대로
+# 세면 근거가 있는 문장이 무근거로 오분류된다. 마커 하나만 당기면 뒤에
+# 남은 마커가 다음 문장 소속으로 잘못 잡혀 과소 계수된다. 계수용 사본에만
+# 쓰므로 치환 뒤 공백이 지저분해도 무해하다. 반환 텍스트에는 적용하지 않는다.
+_TRAILING_MARKER = re.compile(r"([.!?。])(\s+)((?:\[E\d+\][ \t]*)+)")
 
 
 def evidence_id(index: int) -> str:
@@ -989,10 +999,26 @@ class TestBindMarkers:
         assert res.dropped == []
         assert res.unmarked == 0
 
-    def test_trailing_marker_after_period_counts_as_marked(self):
-        """LLM 이 마침표 뒤에 마커를 다는 흔한 패턴 — 앞 문장을 무근거로 오분류하면 안 된다."""
+    def test_trailing_marker_after_period_attributes_to_next_sentence(self):
+        """정규화가 없어도 총합(unmarked)은 1로 같다 — 어느 문장이 무근거로
+        지목되는지만 바뀐다. 정규화 유무를 가르는 회귀 테스트가 아니다.
+        (그 검증은 test_trailing_marker_at_end_of_text_counts_as_marked 가 한다.)
+        """
         res = bind_markers("근거 있다. [E1] 다른 말이다.", {"E1"})
         assert res.unmarked == 1  # "다른 말이다." 만 무근거
+
+    def test_trailing_marker_at_end_of_text_counts_as_marked(self):
+        """정규화 유무로 실제 값이 갈리는 케이스 — 뒤 문장이 없어 마커를
+        당기지 않으면 "근거 있다." 자체가 무근거로 잘못 잡힌다."""
+        res = bind_markers("근거 있다. [E1]", {"E1"})
+        assert res.unmarked == 0
+
+    def test_consecutive_trailing_markers_all_attribute_to_previous_sentence(self):
+        """마커가 여럿 쌓여 있으면(". [E1] [E2]") 전부 앞 문장 근거로 봐야
+        한다 — 하나만 당기면 뒤 마커가 다음 문장 소속으로 잘못 잡혀 과소
+        계수된다."""
+        res = bind_markers("문장이다. [E1] [E2] 다음 문장이다.", {"E1", "E2"})
+        assert res.unmarked == 1  # "다음 문장이다." 만 무근거
 
     def test_trailing_marker_normalization_does_not_change_returned_text(self):
         res = bind_markers("근거 있다. [E1] 다른 말이다.", {"E1"})
@@ -1008,7 +1034,7 @@ class TestBindMarkers:
         assert "\n" in res.text
 ```
 
-- [x] **검증** — `19 passed`, 전체 회귀 199 passed
+- [x] **검증** — `21 passed`, 전체 회귀 202 passed
 
 ---
 
