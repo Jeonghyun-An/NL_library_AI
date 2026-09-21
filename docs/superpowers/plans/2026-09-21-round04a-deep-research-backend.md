@@ -484,6 +484,10 @@ class TestState:
             chunks=[Chunk(chunk_id="c1", text="본문", page_start=3, page_end=3, score=0.9)],
         )
         assert ev.chunks[0].page_start == 3
+
+    def test_corpus_range_defaults_to_none(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert st.corpus_range is None
 ```
 
 - [ ] **Step 2: 테스트 실패 확인**
@@ -573,7 +577,7 @@ class ResearchState:
 - [ ] **Step 4: 테스트 통과 확인**
 
 Run: `python -m pytest app/tests/test_research_state.py -q`
-Expected: PASS (9 passed)
+Expected: PASS (10 passed)
 
 - [ ] **Step 5: 커밋**
 
@@ -700,7 +704,7 @@ def blend_score(rerank_score: float, *, impact: float, weight: float) -> float:
 - [ ] **Step 4: 테스트 통과 확인**
 
 Run: `python -m pytest app/tests/test_research_scoring.py -q`
-Expected: PASS (16 passed)
+Expected: PASS (15 passed)
 
 - [ ] **Step 5: 커밋**
 
