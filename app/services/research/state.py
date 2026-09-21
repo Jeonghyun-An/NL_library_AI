@@ -88,6 +88,7 @@ class Evidence:
 
 
 VERDICTS = ("pending", "sufficient", "insufficient")
+LLM_VERDICTS = VERDICTS[1:]   # LLM 이 낼 수 있는 판정 — pending 은 초기상태 전용이라 제외
 
 
 @dataclass
