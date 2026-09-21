@@ -1598,8 +1598,8 @@ def assemble_report(
     out_sections = []
 
     for sec in sections:
-        intro, _, u1 = bind_markers(sec.get("intro", ""), valid)
-        unmarked += u1
+        intro = bind_markers(sec.get("intro", ""), valid)
+        unmarked += intro.unmarked
 
         papers = []
         for p in sec.get("papers", []):
@@ -1614,14 +1614,15 @@ def assemble_report(
 
         future = []
         for f in sec.get("future", []):
-            text, _, u2 = bind_markers(f.get("text", ""), valid)
-            unmarked += u2
-            used = re.findall(r"\[(E\d+)\]", text)
-            future.append({"text": text, "evidence": used})
+            res = bind_markers(f.get("text", ""), valid)
+            unmarked += res.unmarked
+            # used 를 bind_markers 가 돌려준다 — 여기서 정규식을 다시 쓰면
+            # 마커 문법이 두 곳으로 갈라진다.
+            future.append({"text": res.text, "evidence": res.used})
 
         out_sections.append({
             "heading": sec.get("heading", ""),
-            "intro": intro, "papers": papers, "future": future,
+            "intro": intro.text, "papers": papers, "future": future,
         })
 
     return {
@@ -1948,21 +1949,22 @@ async def explore_subquestion(
 
         # 같은 논문이 여러 하위질문에서 나오면 근거를 새로 만들지 않고 재사용한다.
         # 안 그러면 한 논문이 E3 와 E17 로 갈라져 인용칩이 같은 출처를 다른
-        # 번호로 가리킨다. build_evidence 가 붙인 id 는 잠정값이라 여기서 확정한다.
+        # 번호로 가리킨다. 번호는 state.evidence 를 소유한 이쪽이 붙인다 —
+        # build_evidence 는 묶기만 하고 id 를 비워 돌려준다.
         known_by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
-        candidates = build_evidence(
-            hits, meta,
-            start_index=len(state.evidence),
-            chunks_per_evidence=params["chunks_per_evidence"],
-        )
-        for cand in candidates.values():
+        for cand in build_evidence(
+            hits, meta, chunks_per_evidence=params["chunks_per_evidence"],
+        ):
             existing = known_by_cnts.get(cand.cnts_id)
             if existing is not None:
                 if existing not in subq.evidence_ids:
                     subq.evidence_ids.append(existing)
                 continue
+            # break 가 아니라 continue 다. 상한에 닿은 뒤에 나오는 후보 중에도
+            # "이미 있는 근거의 재사용"이 섞여 있는데, 그건 총량을 늘리지 않는다.
+            # break 로 끊으면 그 하위질문이 정당한 근거 링크를 잃는다.
             if len(state.evidence) >= params["max_evidence"]:
-                break
+                continue
             eid = evidence_id(len(state.evidence))
             cand.id = eid
             state.evidence[eid] = cand
