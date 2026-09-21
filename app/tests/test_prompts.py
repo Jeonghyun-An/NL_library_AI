@@ -122,3 +122,13 @@ def test_nl_library_prompts_exist_and_render():
     bc_s, _, bc_p = lib.get("book_chat").render(
         title="t", author="a", pub_date=", 2024", summary="s", themes="th")
     assert "전담 독서 도우미" in bc_s and bc_p.get("max_tokens") == 10000
+
+    # 딥리서치 2종 — StrictUndefined 라 변수명이 호출부와 어긋나면
+    # 여기서 안 잡히고 워커 런타임에서야 UndefinedError 로 터진다.
+    rp_s, rp_u, _ = lib.get("research_plan").render(question="청소년 진로상담", limit=6)
+    assert "연구 사서" in rp_s and "6" in rp_s and "청소년 진로상담" in rp_u
+
+    rc_s, rc_u, _ = lib.get("research_critique").render(
+        subquestion="하위질문", evidence_count=3, evidence_list="- 논문 (2008)",
+        min_evidence=5, tried_queries="검색어")
+    assert '"verdict"' in rc_s and "하위질문" in rc_u and "3편" in rc_u

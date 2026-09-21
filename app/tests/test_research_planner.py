@@ -29,6 +29,27 @@ class TestParsePlan:
     def test_markdown_emphasis_stripped(self):
         assert parse_plan("1. **가** 주제", limit=6) == ["가 주제"]
 
+    def test_fully_bolded_item_is_parsed(self):
+        """모델이 항목 전체를 굵게 쓰면 앞의 * 가 불릿으로 먹혀 매칭이 깨진다.
+
+        그러면 모든 줄이 탈락해 계획 수립이 통째로 실패하고 job 이 죽는다.
+        강조를 항목 매칭보다 먼저 벗겨야 한다.
+        """
+        assert parse_plan("**1. 가**\n**2. 나**", limit=6) == ["가", "나"]
+
+    def test_bolded_bullet_item_is_parsed(self):
+        assert parse_plan("* **가**\n* **나**", limit=6) == ["가", "나"]
+
+    def test_underscore_inside_word_is_preserved(self):
+        """전역으로 [*_`] 를 지우면 TF_IDF → TFIDF 로 훼손된다."""
+        assert parse_plan("1. TF_IDF 가중치 연구", limit=6) == ["TF_IDF 가중치 연구"]
+
+    def test_duplicate_differing_only_in_whitespace_is_dropped(self):
+        assert parse_plan("1. 가 주제\n2. 가  주제", limit=6) == ["가 주제"]
+
+    def test_duplicate_differing_only_in_case_is_dropped(self):
+        assert parse_plan("1. AI 윤리\n2. ai 윤리", limit=6) == ["AI 윤리"]
+
     def test_no_list_raises(self):
         with pytest.raises(ValueError, match="계획을 해석하지 못했다"):
             parse_plan("죄송하지만 답변할 수 없습니다.", limit=6)

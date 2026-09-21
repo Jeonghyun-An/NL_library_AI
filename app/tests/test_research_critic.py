@@ -1,6 +1,8 @@
 import logging
 
-from services.research.critic import Verdict, format_evidence_list, parse_verdict, should_recheck
+from services.research.critic import (
+    _EXCERPT_LEN, _MAX_LISTED, Verdict, format_evidence_list, parse_verdict, should_recheck,
+)
 from services.research.state import Chunk, Evidence, LLM_VERDICTS, SubQuestion, VERDICTS
 
 
@@ -27,21 +29,46 @@ class TestParseVerdict:
         """판정을 못 읽으면 무한 재검색 대신 멈춘다 — 실패가 루프가 되면 안 된다."""
         v = parse_verdict("죄송합니다 판단할 수 없습니다")
         assert v.verdict == "sufficient"
-        assert "판정 해석 실패" in v.note
+        assert v.parse_failed is True
 
     def test_unknown_verdict_value_falls_back(self):
         v = parse_verdict('{"verdict": "maybe", "note": "n", "new_queries": []}')
         assert v.verdict == "sufficient"
+        assert v.parse_failed is True
 
-    def test_parse_failure_is_logged(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="services.research.critic"):
+    def test_successful_parse_is_not_marked_failed(self):
+        v = parse_verdict('{"verdict": "sufficient", "note": "n", "new_queries": []}')
+        assert v.parse_failed is False
+
+    def test_note_does_not_leak_model_output(self):
+        """note 는 탐색 경로·진행 패널에 그대로 실린다 — 모델 원문을 담지 않는다."""
+        v = parse_verdict("죄송합니다 판단할 수 없습니다")
+        assert "죄송합니다" not in v.note
+
+    def test_string_new_queries_does_not_become_characters(self):
+        """문자열을 순회하면 "진" 한 글자로 재검색하는 쓰레기 쿼리가 된다."""
+        raw = '{"verdict": "insufficient", "note": "n", "new_queries": "진로상담 앱 효과"}'
+        assert parse_verdict(raw).new_queries == []
+
+    def test_prose_after_json_does_not_break_parsing(self):
+        """탐욕적 슬라이스는 뒤따르는 산문의 } 까지 먹어 파싱이 깨진다."""
+        raw = '{"verdict": "sufficient", "note": "n", "new_queries": []} 참고: {예시}'
+        assert parse_verdict(raw).verdict == "sufficient"
+
+    def test_parse_failure_logs_raw_for_diagnosis(self, caplog):
+        """로그가 자기점검이 꺼졌음을 아는 유일한 신호다 — 원문 없이는 프롬프트를 못 고친다."""
+        with caplog.at_level(logging.WARNING):
             parse_verdict("죄송합니다 판단할 수 없습니다")
-        assert any("판정 JSON 파싱 실패" in r.message for r in caplog.records)
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert warnings
+        assert any("죄송합니다" in r.getMessage() for r in warnings)
 
-    def test_unknown_verdict_value_is_logged(self, caplog):
-        with caplog.at_level(logging.WARNING, logger="services.research.critic"):
+    def test_unknown_verdict_logs_raw_for_diagnosis(self, caplog):
+        with caplog.at_level(logging.WARNING):
             parse_verdict('{"verdict": "maybe", "note": "n", "new_queries": []}')
-        assert any("알 수 없는 verdict" in r.message for r in caplog.records)
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert warnings
+        assert any("maybe" in r.getMessage() for r in warnings)
 
 
 class TestShouldRecheck:
@@ -68,7 +95,12 @@ class TestShouldRecheck:
 
 
 class TestLlmVerdicts:
-    def test_llm_verdicts_is_subset_of_verdicts(self):
+    def test_llm_verdicts_exact(self):
+        """부분집합 단언은 VERDICTS 순서가 바뀌어 sufficient 가 빠져도 통과한다."""
+        assert LLM_VERDICTS == ("sufficient", "insufficient")
+
+    def test_llm_verdicts_excludes_pending(self):
+        assert "pending" not in LLM_VERDICTS
         assert set(LLM_VERDICTS) <= set(VERDICTS)
 
 
@@ -86,9 +118,32 @@ class TestFormatEvidenceList:
 
     def test_excerpt_truncated(self):
         e = self._evidence("제목", "2020", "가" * 500)
+        excerpt = format_evidence_list([e]).split(" — ", 1)[1]
+        assert excerpt == "가" * _EXCERPT_LEN + "…"
+
+    def test_short_excerpt_has_no_ellipsis(self):
+        e = self._evidence("제목", "2020", "짧다")
+        assert format_evidence_list([e]).endswith("짧다")
+
+    def test_newlines_in_chunk_are_flattened(self):
+        """표 청크에는 개행이 실재한다 — 그대로 쓰면 한 항목이 여러 줄로 퍼진다."""
+        chunk_text = "[표]\n설명\n\n| a | b |\n| 1 | 2 |"
+        e = self._evidence("제목", "2020", chunk_text)
         result = format_evidence_list([e])
-        excerpt = result.split(" — ", 1)[1]
-        assert len(excerpt) == 200
+        assert "\n" not in result
+        assert result == "- 제목 (2020) — [표] 설명 | a | b | | 1 | 2 |"
+
+    def test_list_is_capped_with_remainder_note(self):
+        """상한이 없으면 재검색 누적분이 컨텍스트를 넘겨 system 지시가 잘려 나간다."""
+        many = [self._evidence(f"제목{i}", "2020", "본문") for i in range(_MAX_LISTED + 5)]
+        lines = format_evidence_list(many).splitlines()
+        assert len(lines) == _MAX_LISTED + 1
+        assert lines[-1] == "- …외 5편"
+
+    def test_empty_meta_values_fall_back(self):
+        """이 코드베이스는 빈 메타를 "" 로 표현한다 — get 의 기본값이 안 먹는다."""
+        e = Evidence(id="E1", cnts_id="c", meta={"title": "", "pub_date": ""}, chunks=[])
+        assert format_evidence_list([e]) == "- (제목 없음) (연도미상)"
 
     def test_evidence_without_chunks_falls_back_to_title_year(self):
         e = self._evidence("제목", "2020")

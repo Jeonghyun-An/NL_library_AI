@@ -88,7 +88,10 @@ class Evidence:
 
 
 VERDICTS = ("pending", "sufficient", "insufficient")
-LLM_VERDICTS = VERDICTS[1:]   # LLM 이 낼 수 있는 판정 — pending 은 초기상태 전용이라 제외
+# LLM 이 낼 수 있는 판정 — pending 은 초기상태 전용이라 제외.
+# VERDICTS[1:] 로 쓰면 순서만 바뀌어도 sufficient 가 빠져 모든 정상 판정이
+# "알 수 없는 verdict" 로 떨어진다.
+LLM_VERDICTS = tuple(v for v in VERDICTS if v != "pending")
 
 
 @dataclass
@@ -98,6 +101,7 @@ class SubQuestion:
     queries: list[str] = field(default_factory=list)   # 시도한 검색어 (재검색 이력)
     evidence_ids: list[str] = field(default_factory=list)
     verdict: str = "pending"
+    parse_failed: bool = False          # 판정을 못 읽어 점검이 사실상 건너뛰어진 경우
     note: str = ""                                      # 자기점검 판단 근거
 
 
