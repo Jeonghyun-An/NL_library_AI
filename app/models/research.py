@@ -12,7 +12,7 @@ import uuid
 
 from sqlalchemy import (
     BigInteger, Column, DateTime, ForeignKey, Index, Integer,
-    String, Text, func, text,
+    String, Text, UniqueConstraint, func, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
@@ -34,7 +34,7 @@ class ResearchJob(Base):
     status      = Column(String(24), nullable=False, default="created", index=True)
     params      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     plan        = Column(JSONB)      # 사용자 수정이 반영된 하위질문 목록
-    report      = Column(JSONB)      # 최종 산출물
+    report      = Column(JSONB)
     last_error  = Column(Text)
     created_by  = Column(String(64))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
@@ -45,7 +45,7 @@ class ResearchJob(Base):
 class ResearchStep(Base):
     __tablename__ = "research_steps"
     __table_args__ = (
-        Index("ix_research_steps_job_seq", "job_id", "seq"),
+        UniqueConstraint("job_id", "seq", name="uq_research_steps_job_seq"),
         Index(
             "ix_research_steps_inflight", "updated_at",
             postgresql_where=text("status = 'running'"),
@@ -64,8 +64,11 @@ class ResearchStep(Base):
     title       = Column(Text, nullable=False)
     detail      = Column(Text)
     status      = Column(String(16), nullable=False, default="pending")
-    # {"found": 31, "adopted": 8, "verdict": "insufficient", "note": "...",
-    #  "new_queries": [...]}
+    # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
+    # plan:       {"subquestions": [...]}
+    # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "..."}
+    # synthesize: {"sections": n}
+    # 실패 공통:   {"error": "..."}
     result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
     finished_at = Column(DateTime(timezone=True))

@@ -53,8 +53,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("finished_at", sa.DateTime(timezone=True)),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.UniqueConstraint("job_id", "seq", name="uq_research_steps_job_seq"),
     )
-    op.create_index("ix_research_steps_job_seq", "research_steps", ["job_id", "seq"])
     op.create_index(
         "ix_research_steps_inflight", "research_steps", ["updated_at"],
         postgresql_where=sa.text("status = 'running'"),
@@ -63,5 +63,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("research_steps")
-    op.drop_index("ix_research_jobs_status", table_name="research_jobs")
     op.drop_table("research_jobs")
