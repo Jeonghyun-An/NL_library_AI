@@ -1415,15 +1415,16 @@ from datetime import datetime
 
 from repositories.book import BookRepository
 from services.research.scoring import blend_score, impact_per_year, parse_pub_year
+from services.research.state import HitRow
 from services.search.pipeline import search
 
 log = logging.getLogger(__name__)
 
 
 def rank_hits(
-    hits: list[dict], meta_by_id: dict[str, dict], *,
+    hits: list[HitRow], meta_by_id: dict[str, dict], *,
     citation_weight: float, now_year: int,
-) -> list[dict]:
+) -> list[HitRow]:
     """리랭킹 점수에 연간 피인용을 얹어 다시 정렬한다. 입력은 건드리지 않는다."""
     ranked = []
     for hit in hits:
@@ -1439,7 +1440,7 @@ def rank_hits(
     return ranked
 
 
-async def explore(query: str, *, params: dict, db) -> tuple[list[dict], dict[str, dict]]:
+async def explore(query: str, *, params: dict, db) -> tuple[list[HitRow], dict[str, dict]]:
     """검색 → 서지 조회 → 피인용 가중 재정렬.
 
     returns (정렬된 hit 목록, cnts_id → 서지 메타)
