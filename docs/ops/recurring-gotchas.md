@@ -101,3 +101,11 @@
 - **해결**: 서버에서 `docker pull <이미지>` 로 먼저 받아두고, Portainer 에서는 Redeploy 만 누른다(이미 로컬에 있으면 즉시 끝난다).
 - **재발 방지**: 큰 이미지를 새로 빌드한 배포는 Portainer 에 맡기지 말고 pull 을 분리한다.
 
+## 13. `services.search.pipeline` 을 모듈 최상단에서 import 하면 로컬 테스트가 통째로 죽는다
+
+- **날짜**: 2026-09-21 (round04a)
+- **증상**: 새 모듈이 `from services.search.pipeline import search` 를 최상단에 넣자 `pytest` 가 `ModuleNotFoundError: No module named 'torch'` 로 **collection 단계에서 중단**된다. 그 모듈의 테스트뿐 아니라 세션 전체가 0건이 된다.
+- **원인**: `pipeline.py` → `reranker.py` → `import torch` 인데, **torch 는 로컬 venv 에 의도적으로 없다.** `requirements.txt` 에도 없고 Dockerfile 에서 CUDA 버전으로 따로 설치한다(`reranker.py` 주석 참고).
+- **해결**: torch 를 끌어오는 모듈(`pipeline`·`reranker`·`embedder`)은 **함수 본문 안에서 import 한다.** 이미 코드베이스의 관례다 — `app/api/book.py:619`, `app/main.py:53`, `app/services/ingestion/stages.py:87` 이 전부 그렇게 한다.
+- **재발 방지**: 검색·임베딩·리랭킹을 쓰는 새 모듈을 만들 때 최상단 import 를 쓰지 않는다. 순수 계산 부분을 같은 파일에 두고 싶다면 더더욱 — 그 순수 함수 테스트까지 같이 죽는다.
+

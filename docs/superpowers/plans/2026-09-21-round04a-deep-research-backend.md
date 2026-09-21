@@ -1372,6 +1372,9 @@ git commit -m "[Feat] round04a — 근거 충분성 자기점검"
 
 ## Task 7: 하위질문 탐색
 
+> **함정 — `pipeline` 을 최상단에서 import 하지 마라.** `pipeline.py` → `reranker.py` → `import torch` 인데 torch 는 로컬 venv 에 없다(Dockerfile 에서 CUDA 버전으로 설치). 최상단 import 를 쓰면 `pytest` 가 collection 단계에서 죽어 **세션 전체가 0건**이 된다. 함수 본문 안에서 import 하라 — `app/api/book.py:619` 가 이미 그렇게 한다. `docs/ops/recurring-gotchas.md` 13번.
+
+
 **Files:**
 - Create: `app/services/research/explorer.py`
 - Test: `app/tests/test_research_explorer.py`
