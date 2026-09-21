@@ -49,50 +49,23 @@ python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/
 
 ---
 
-## Task 1: 데이터 모델과 마이그레이션
+## Task 1: 데이터 모델과 마이그레이션 — **완료**
+
+> 구현·리뷰가 끝났다. 아래 코드는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다
+> (착수 시점 초안이 아니다). 커밋: `3973b9e` → `680af5c` → `a326203`.
+>
+> 착수 초안과 달라진 것: `(job_id, seq)` 를 인덱스가 아니라 **유일 제약**으로 걸었고(중복 step 이
+> 조용히 쌓이는 것을 DB 가 막는다), 모델↔마이그레이션 정합·인덱스·유일제약을 실제로 대조하는
+> 테스트를 붙였다. `app/alembic/env.py` 에 모델 등록 1줄도 추가했다 — 빠뜨리면 향후
+> `autogenerate` 가 이 테이블들을 모르는 것으로 보고 `DROP TABLE` 마이그레이션을 만든다.
 
 **Files:**
 - Create: `app/models/research.py`
 - Create: `app/alembic/versions/0005_research_jobs.py`
+- Modify: `app/alembic/env.py` (모델 등록 1줄)
 - Test: `app/tests/test_research_models.py`
 
-- [ ] **Step 1: 실패하는 테스트 작성**
-
-```python
-# app/tests/test_research_models.py
-from models.research import JOB_STATUSES, STEP_KINDS, ResearchJob, ResearchStep
-
-
-class TestResearchModelShape:
-    def test_job_statuses_cover_full_lifecycle(self):
-        assert JOB_STATUSES == (
-            "created", "planning", "awaiting_approval",
-            "running", "completed", "failed", "canceled",
-        )
-
-    def test_step_kinds(self):
-        assert STEP_KINDS == ("plan", "search", "critique", "synthesize")
-
-    def test_job_table_columns(self):
-        cols = set(ResearchJob.__table__.columns.keys())
-        assert {"id", "question", "status", "params", "plan", "report"} <= cols
-
-    def test_step_table_columns(self):
-        cols = set(ResearchStep.__table__.columns.keys())
-        assert {"job_id", "seq", "kind", "subq_idx", "title",
-                "detail", "status", "result", "updated_at"} <= cols
-
-    def test_step_has_job_seq_index(self):
-        names = {ix.name for ix in ResearchStep.__table__.indexes}
-        assert "ix_research_steps_job_seq" in names
-```
-
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_models.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'models.research'`
-
-- [ ] **Step 3: 모델 작성**
+- [x] **Step 1: 모델**
 
 ```python
 # app/models/research.py
@@ -110,7 +83,7 @@ import uuid
 
 from sqlalchemy import (
     BigInteger, Column, DateTime, ForeignKey, Index, Integer,
-    String, Text, func, text,
+    String, Text, UniqueConstraint, func, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
@@ -132,7 +105,7 @@ class ResearchJob(Base):
     status      = Column(String(24), nullable=False, default="created", index=True)
     params      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     plan        = Column(JSONB)      # 사용자 수정이 반영된 하위질문 목록
-    report      = Column(JSONB)      # 최종 산출물
+    report      = Column(JSONB)
     last_error  = Column(Text)
     created_by  = Column(String(64))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
@@ -143,7 +116,7 @@ class ResearchJob(Base):
 class ResearchStep(Base):
     __tablename__ = "research_steps"
     __table_args__ = (
-        Index("ix_research_steps_job_seq", "job_id", "seq"),
+        UniqueConstraint("job_id", "seq", name="uq_research_steps_job_seq"),
         Index(
             "ix_research_steps_inflight", "updated_at",
             postgresql_where=text("status = 'running'"),
@@ -162,8 +135,11 @@ class ResearchStep(Base):
     title       = Column(Text, nullable=False)
     detail      = Column(Text)
     status      = Column(String(16), nullable=False, default="pending")
-    # {"found": 31, "adopted": 8, "verdict": "insufficient", "note": "...",
-    #  "new_queries": [...]}
+    # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
+    # plan:       {"subquestions": [...]}
+    # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "..."}
+    # synthesize: {"sections": n}
+    # 실패 공통:   {"error": "..."}
     result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
     finished_at = Column(DateTime(timezone=True))
@@ -172,12 +148,7 @@ class ResearchStep(Base):
     )
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
-
-Run: `python -m pytest app/tests/test_research_models.py -q`
-Expected: PASS (5 passed)
-
-- [ ] **Step 5: 마이그레이션 작성**
+- [x] **Step 2: 마이그레이션**
 
 ```python
 # app/alembic/versions/0005_research_jobs.py
@@ -236,8 +207,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("finished_at", sa.DateTime(timezone=True)),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.UniqueConstraint("job_id", "seq", name="uq_research_steps_job_seq"),
     )
-    op.create_index("ix_research_steps_job_seq", "research_steps", ["job_id", "seq"])
     op.create_index(
         "ix_research_steps_inflight", "research_steps", ["updated_at"],
         postgresql_where=sa.text("status = 'running'"),
@@ -246,21 +217,210 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("research_steps")
-    op.drop_index("ix_research_jobs_status", table_name="research_jobs")
     op.drop_table("research_jobs")
 ```
 
-- [ ] **Step 6: 마이그레이션이 임포트되는지 확인**
+- [x] **Step 3: `app/alembic/env.py` 에 모델 등록**
 
-Run: `python -c "import sys; sys.path.insert(0,'app'); import importlib.util as u; s=u.spec_from_file_location('m','app/alembic/versions/0005_research_jobs.py'); m=u.module_from_spec(s); s.loader.exec_module(m); print(m.revision, '<-', m.down_revision)"`
-Expected: `0005_research_jobs <- 0004_doc_type_extra_ingest_jobs`
+다른 모델들을 임포트하는 자리에 한 줄을 더한다.
 
-- [ ] **Step 7: 커밋**
-
-```bash
-git add app/models/research.py app/alembic/versions/0005_research_jobs.py app/tests/test_research_models.py
-git commit -m "[Feat] round04a — 딥리서치 잡 테이블과 모델"
+```python
+from models import research as _research_mod  # noqa: F401, E402
 ```
+
+- [x] **Step 4: 테스트**
+
+`_run_migration_upgrade` 가 핵심이다. 로컬에 `alembic` 이 설치돼 있지 않아 `op` 를 스텁으로 갈아끼우고 `upgrade()` 를 실제로 실행한다. 캡처한 인자로 **진짜 `sa.Table` 을 만들어** introspection 하므로, 인자를 직접 파싱할 때 생기는 "캡처 로직 자체가 또 하나의 정합 리스크가 되는" 문제를 피한다.
+
+```python
+# app/tests/test_research_models.py
+import sys
+import types
+from pathlib import Path
+
+import sqlalchemy as sa
+
+from models.research import JOB_STATUSES, STEP_KINDS, STEP_STATUSES, ResearchJob, ResearchStep
+
+MIGRATION_PATH = Path(__file__).resolve().parents[1] / "alembic" / "versions" / "0005_research_jobs.py"
+
+
+def _column_signature(col, include_default=True):
+    """(타입, nullable[, 기본값 유무]) — 컬럼 하나의 스키마 정합성 지문.
+
+    PK 는 include_default=False 로 호출한다: 모델의 id 는 default=uuid.uuid4
+    (ORM 레벨 생성)이고 마이그레이션에는 대응하는 server_default 가 없다 —
+    UUID 를 만드는 주체가 DB 가 아니라 애플리케이션이라는 의도적 설계라
+    기본값 유무를 비교 대상에서 뺀다. 타입·nullable 은 PK 도 계속 비교한다.
+    """
+    sig = [str(col.type), col.nullable]
+    if include_default:
+        sig.append(col.server_default is not None or col.default is not None)
+    return tuple(sig)
+
+
+def _table_signature(table):
+    return {
+        c.name: _column_signature(c, include_default=not c.primary_key)
+        for c in table.columns
+    }
+
+
+def _model_index_signature(table):
+    sig = {}
+    for ix in table.indexes:
+        where = ix.dialect_options["postgresql"].get("where")
+        sig[ix.name] = {
+            "name": ix.name,
+            "table_name": table.name,
+            "columns": [c.name for c in ix.columns],
+            "postgresql_where": str(where) if where is not None else None,
+        }
+    return sig
+
+
+def _run_migration_upgrade(monkeypatch, migration_path=MIGRATION_PATH):
+    """0005 의 upgrade() 를 실제 alembic 없이 실행하고 create_table/create_index 호출을 캡처한다.
+
+    로컬 venv 에 alembic 이 설치돼 있지 않아 (app/requirements.txt 에는 있으나 미설치)
+    `from alembic import op` 를 만족시키는 최소 스텁만 넣는다 — upgrade() 는 op.create_table /
+    op.create_index 만 호출하므로 그 둘만 흉내 내면 충분하다.
+
+    create_table 은 넘어온 Column/UniqueConstraint 인자로 실제 sa.Table 을 만들어 바인딩한다
+    (컬럼 이름만이 아니라 타입·nullable·기본값·제약까지 실제 SQLAlchemy introspection 으로
+    읽기 위해서 — 인자를 훑어 직접 파싱하면 캡처 로직 자체가 또 하나의 정합 리스크가 된다).
+    """
+    import importlib.util as u
+
+    tables = {}
+    unique_constraints = {}
+    indexes = []
+
+    def fake_create_table(name, *args, **kwargs):
+        table = sa.Table(name, sa.MetaData(), *args)
+        tables[name] = _table_signature(table)
+        unique_constraints[name] = {
+            c.name: [col.name for col in c.columns]
+            for c in table.constraints
+            if isinstance(c, sa.UniqueConstraint)
+        }
+
+    def fake_create_index(name, table_name, columns, **kwargs):
+        where = kwargs.get("postgresql_where")
+        indexes.append({
+            "name": name,
+            "table_name": table_name,
+            "columns": list(columns),
+            "postgresql_where": str(where) if where is not None else None,
+        })
+
+    fake_op = types.ModuleType("alembic.op")
+    fake_op.create_table = fake_create_table
+    fake_op.create_index = fake_create_index
+
+    fake_alembic = types.ModuleType("alembic")
+    fake_alembic.op = fake_op
+
+    monkeypatch.setitem(sys.modules, "alembic", fake_alembic)
+    monkeypatch.setitem(sys.modules, "alembic.op", fake_op)
+
+    spec = u.spec_from_file_location("_migration_0005", migration_path)
+    module = u.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.upgrade()
+    return {"tables": tables, "unique_constraints": unique_constraints, "indexes": indexes}
+
+
+class TestResearchModelShape:
+    def test_job_table_columns(self):
+        cols = set(ResearchJob.__table__.columns.keys())
+        assert {"id", "question", "status", "params", "plan", "report"} <= cols
+
+    def test_step_table_columns(self):
+        cols = set(ResearchStep.__table__.columns.keys())
+        assert {"job_id", "seq", "kind", "subq_idx", "title",
+                "detail", "status", "result", "updated_at"} <= cols
+
+    def test_step_has_job_seq_unique_constraint(self):
+        uq = next(
+            c for c in ResearchStep.__table__.constraints
+            if getattr(c, "name", None) == "uq_research_steps_job_seq"
+        )
+        # 순서가 인덱스 활용 여부를 가른다 — job_id 선두가 아니면 job_id 단독 조회에
+        # 이 유일 제약이 인덱스로 쓰이지 못한다.
+        assert [c.name for c in uq.columns] == ["job_id", "seq"]
+
+    def test_inflight_index_condition(self):
+        idx = next(
+            ix for ix in ResearchStep.__table__.indexes
+            if ix.name == "ix_research_steps_inflight"
+        )
+        where_clause = idx.dialect_options["postgresql"]["where"]
+        assert str(where_clause) == "status = 'running'"
+
+    def test_step_job_fk_cascades_on_delete(self):
+        fk = next(iter(ResearchStep.__table__.c.job_id.foreign_keys))
+        assert fk.ondelete == "CASCADE"
+
+    def test_job_status_default_is_valid_status(self):
+        assert ResearchJob.__table__.c.status.default.arg in JOB_STATUSES
+
+    def test_step_status_default_is_valid_status(self):
+        assert ResearchStep.__table__.c.status.default.arg in STEP_STATUSES
+
+    def test_job_statuses_fit_status_column(self):
+        max_len = ResearchJob.__table__.c.status.type.length
+        assert all(len(v) <= max_len for v in JOB_STATUSES)
+
+    def test_step_kinds_and_statuses_fit_their_columns(self):
+        kind_len = ResearchStep.__table__.c.kind.type.length
+        status_len = ResearchStep.__table__.c.status.type.length
+        assert all(len(v) <= kind_len for v in STEP_KINDS)
+        assert all(len(v) <= status_len for v in STEP_STATUSES)
+
+
+class TestMigrationMatchesModel:
+    def test_upgrade_creates_columns_matching_orm(self, monkeypatch):
+        captured = _run_migration_upgrade(monkeypatch)
+
+        assert captured["tables"]["research_jobs"] == _table_signature(ResearchJob.__table__)
+        assert captured["tables"]["research_steps"] == _table_signature(ResearchStep.__table__)
+
+    def test_upgrade_unique_constraint_matches_orm(self, monkeypatch):
+        captured = _run_migration_upgrade(monkeypatch)
+
+        model_uq = {
+            c.name: [col.name for col in c.columns]
+            for c in ResearchStep.__table__.constraints
+            if isinstance(c, sa.UniqueConstraint)
+        }
+        assert captured["unique_constraints"]["research_steps"] == model_uq
+
+    def test_upgrade_indexes_match_orm(self, monkeypatch):
+        captured = _run_migration_upgrade(monkeypatch)
+        migration_indexes = {ix["name"]: ix for ix in captured["indexes"]}
+
+        model_indexes = {}
+        for table in (ResearchJob.__table__, ResearchStep.__table__):
+            model_indexes.update(_model_index_signature(table))
+
+        assert migration_indexes == model_indexes
+```
+
+- [x] **Step 5: 검증**
+
+Run: `python -m pytest app/tests/test_research_models.py -q`
+Actual: `12 passed`
+
+Run: `python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/tests/test_build_manifest.py --ignore=app/tests/test_loaders.py`
+Actual: `146 passed` (기준선 134 + 12)
+
+정합 테스트가 실제로 무언가를 지키는지 되돌려 확인했다.
+
+- 마이그레이션의 `kind` 를 `sa.String(16)` → `sa.String(8)` 로 축소 → `{'kind': ('VARCHAR(8)', False, False)} != {'kind': ('VARCHAR(16)', False, False)}` 로 실패
+- `ix_research_steps_inflight` 의 `postgresql_where` 제거 → `postgresql_where: None` vs `"status = 'running'"` 로 실패
+
+**되돌렸을 때 실패하지 않는 테스트는 아무것도 지키지 않는다.**
 
 ---
 
@@ -1847,6 +2007,10 @@ git commit -m "[Feat] round04a — 탐색 루프 오케스트레이션과 Redis 
 - Create: `app/api/research.py`
 - Modify: `app/workers/celery_app.py` (task_routes 에 항목 추가)
 - Modify: `app/main.py` (라우터 등록)
+
+**착수 전 주의 — 재실행과 유일 제약의 충돌.** Task 1 에서 `research_steps` 에 `(job_id, seq)` 유일 제약이 붙었다. 아래 `_step()` 은 seq 를 0/1..n 으로 **고정 생성**하므로, 같은 잡에 대해 `run_deep_research` 가 두 번 돌면(Celery 브로커 재배달, 수동 재큐) 중복 행 대신 `IntegrityError` 로 태스크가 죽고 잡이 `running` 에 묶인다. API 의 `approve` 중복은 409 로 막히지만 브로커 재배달은 막히지 않는다.
+
+제약 자체는 옳다 — 중복이 조용히 쌓이는 것보다 낫다. 다만 이 Task 에서 재진입을 처리해야 한다. **`run_deep_research` 시작부에서 그 잡의 기존 step 을 지우고 새로 쓰거나**, seq 를 `max(existing) + 1` 로 이어붙여라. 전자가 단순하고, 재실행은 애초에 처음부터 다시 도는 것이므로 의미도 맞는다.
 
 - [ ] **Step 1: Celery 태스크 작성**
 
