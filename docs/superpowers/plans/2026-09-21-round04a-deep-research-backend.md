@@ -2238,127 +2238,25 @@ def test_search_threads_the_flag_into_chunk_mode(monkeypatch):
 | `rank_hits` 에 `kept` 대신 `hits` 를 넘김 | `test_hits_without_bibliography_are_dropped` |
 | `impact_per_year` 가드를 `pub_year is None or kci_citations <= 0 or kci_citations is None` 로 재배치 | `test_null_citations_gives_zero`·`test_null_citations_with_valid_year` (`TypeError`) |
 
-## Task 8: 보고서 종합
+## Task 8: 보고서 종합 — **완료**
 
-**Files:**
-- Create: `app/services/research/synthesizer.py`
-- Create: `app/domains/nl_library/prompts/research_synthesize.yaml`
-- Test: `app/tests/test_research_synthesizer.py`
+> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+인용 무결성의 마지막 층이다. 여기서 두 종류의 인용이 합쳐진다 — 구조로 정해진 것(대표 논문 요약)과 검증으로 지킨 것(도입·향후 과제).
 
-```python
-# app/tests/test_research_synthesizer.py
-from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
-from services.research.synthesizer import assemble_report, build_limitations
+초안과 달라진 것 셋.
 
+**(1) 한계 섹션이 "마커 없는 서술"과 "지어낸 근거 번호"를 나눈다.** 초안은 `UNMARKED_THRESHOLD = 3` 하나로 둘을 묶었는데, 그러면 자기 테스트와 모순됐다 — `[E99]` 하나를 먹인 테스트가 한계 문장을 기대하는데 `1 >= 3` 이 거짓이다. 둘은 성격이 다르다. **마커 없는 문장**은 연결 문장일 수 있어 3건까지 관용한다(`"이 절에서는 …을 다룬다."`). **해석 안 되는 `[E99]`** 는 모델이 근거 번호를 지어낸 것이라 1건부터 보고한다. 하나로 합치면 무해한 쪽을 과다보고하고 심각한 쪽을 과소보고한다.
 
-def _state():
-    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
-    st.subquestions = [
-        SubQuestion(idx=0, text="하위1", evidence_ids=["E1"],
-                    verdict="sufficient", note="충분하다"),
-        SubQuestion(idx=1, text="하위2", evidence_ids=[],
-                    verdict="insufficient", note="2015년 이후 자료가 없다"),
-    ]
-    st.evidence = {
-        "E1": Evidence(id="E1", cnts_id="A", meta={"title": "논문 가", "pub_date": "2008-06"},
-                       chunks=[Chunk("c1", "본문", 3, 3, 0.9)]),
-    }
-    return st
+이 분리가 `MarkerResult.dropped` 를 살렸다. Task 4 에서 만들고 자기 테스트가 단언하는데 **소비하는 코드가 없었다** — 무결성 보장 옆의 죽은 데이터는 없는 것보다 나쁘다. 뭔가 검사하는 것처럼 읽히기 때문이다.
 
+**(2) 근거 0편인 하위질문의 `note` 를 버리지 않는다.** 초안은 `if not sq.evidence_ids` 가 먼저 걸리고 `note` 는 `elif verdict == "insufficient"` 에만 붙어, **왜 아무것도 못 찾았는지가 가장 중요한 순간에** 정확히 그 설명을 버렸다.
 
-class TestBuildLimitations:
-    def test_insufficient_subquestion_is_reported(self):
-        lims = build_limitations(_state(), unmarked_total=0)
-        assert any("하위2" in x for x in lims)
-        assert any("2015년 이후 자료가 없다" in x for x in lims)
+**(3) `dropped_total` 을 기본값 없는 키워드 인자로 받는다.** 무결성 수치가 조용히 "없음"으로 기본값을 갖는 것이 이 결정이 막으려는 실패 그 자체다.
 
-    def test_sufficient_subquestion_is_not_reported(self):
-        assert not any("하위1" in x for x in build_limitations(_state(), unmarked_total=0))
-
-    def test_no_evidence_subquestion_is_reported(self):
-        assert any("근거를 찾지 못했다" in x for x in build_limitations(_state(), unmarked_total=0))
-
-    def test_unmarked_sentences_are_reported(self):
-        lims = build_limitations(_state(), unmarked_total=4)
-        assert any("근거 표기가 없는 서술 4건" in x for x in lims)
-
-    def test_parse_failed_subquestion_is_reported(self):
-        """판정 실패는 verdict=sufficient 로 떨어지므로 따로 세지 않으면 사라진다."""
-        st = _state()
-        st.subquestions[0].parse_failed = True
-        lims = build_limitations(st, unmarked_total=0)
-        assert any("자동 점검을 완료하지 못한 하위질문이 1건" in x for x in lims)
-
-    def test_no_parse_failure_is_not_reported(self):
-        assert not any("자동 점검을 완료하지 못한" in x
-                       for x in build_limitations(_state(), unmarked_total=0))
-
-    def test_zero_unmarked_is_not_reported(self):
-        assert not any("근거 표기가 없는" in x for x in build_limitations(_state(), unmarked_total=0))
-
-
-class TestAssembleReport:
-    def test_sections_match_subquestions(self):
-        report = assemble_report(
-            _state(),
-            sections=[{"heading": "하위1", "intro": "도입 [E1].",
-                       "papers": [{"cnts_id": "A", "summary": "요약"}],
-                       "future": [{"text": "과제 [E1]."}]}],
-            unmarked_total=0,
-        )
-        assert len(report["sections"]) == 1
-        assert report["sections"][0]["papers"][0]["evidence"] == ["E1"]
-
-    def test_paper_bullet_evidence_is_structural(self):
-        """대표 논문 요약의 인용은 모델이 고르는 게 아니라 cnts_id 로 정해진다."""
-        report = assemble_report(
-            _state(),
-            sections=[{"heading": "h", "intro": "", "papers": [{"cnts_id": "A", "summary": "s"}],
-                       "future": []}],
-            unmarked_total=0,
-        )
-        assert report["sections"][0]["papers"][0]["evidence"] == ["E1"]
-
-    def test_unknown_marker_in_intro_is_stripped(self):
-        report = assemble_report(
-            _state(),
-            sections=[{"heading": "h", "intro": "지어냈다 [E99].", "papers": [], "future": []}],
-            unmarked_total=0,
-        )
-        assert "[E99]" not in report["sections"][0]["intro"]
-        assert any("근거 표기가 없는 서술" in x for x in report["limitations"])
-
-    def test_evidence_is_serialized(self):
-        report = assemble_report(_state(), sections=[], unmarked_total=0)
-        assert report["evidence"]["E1"]["chunks"][0]["page_start"] == 3
-        assert report["evidence"]["E1"]["cnts_id"] == "A"
-
-    def test_trail_comes_from_subquestions(self):
-        report = assemble_report(_state(), sections=[], unmarked_total=0)
-        assert [t["subquestion"] for t in report["trail"]] == ["하위1", "하위2"]
-
-    def test_corpus_range_is_carried_into_report(self):
-        """수록 범위는 고정 문구가 아니라 실행 시점 실측값이다."""
-        st = _state()
-        st.corpus_range = {"from": "2002", "to": "2026", "n_papers": 72054}
-        report = assemble_report(st, sections=[], unmarked_total=0)
-        assert report["range"]["n_papers"] == 72054
-
-    def test_missing_corpus_range_is_none(self):
-        assert assemble_report(_state(), sections=[], unmarked_total=0)["range"] is None
-```
-
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_synthesizer.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.synthesizer'`
-
-- [ ] **Step 3: 구현**
+- [x] **`app/services/research/synthesizer.py`**
 
 ```python
-# app/services/research/synthesizer.py
 """synthesizer.py — 보고서 조립
 
 인용을 두 갈래로 다룬다.
@@ -2381,19 +2279,36 @@ log = logging.getLogger(__name__)
 UNMARKED_THRESHOLD = 3
 
 
-def build_limitations(state: ResearchState, *, unmarked_total: int) -> list[str]:
+def build_limitations(
+    state: ResearchState, *, unmarked_total: int, dropped_total: int,
+) -> list[str]:
     """자기점검 결과를 사용자에게 보이는 문장으로 바꾼다.
 
     판정 파싱이 실패한 하위질문(parse_failed)을 반드시 별도로 센다. 실패는
     verdict="sufficient" 로 떨어지므로 아래 insufficient 분기에 걸리지 않고,
     그대로 두면 자기점검이 전부 꺼져도 보고서가 "한계 없음"으로 보인다.
+
+    없는 근거 번호(dropped)와 무근거 서술(unmarked)도 한 문장으로 합치지
+    않는다. 종류가 다른 사건이다 — 마커 없는 문장은 "이 절에서는 …을 다룬다"
+    같은 연결 문장일 때가 많아 몇 건은 넘긴다. 반면 없는 번호를 가리킨 표기는
+    모델이 근거를 지어낸 것이니 1건부터 보고한다. 합치면 흔한 쪽을 과하게
+    알리면서 정작 심각한 쪽을 임계값에 묻는다.
     """
     out: list[str] = []
     for sq in state.subquestions:
-        if not sq.evidence_ids:
-            out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다.")
+        # note 를 두 분기 모두에 붙인다. 근거가 0편인 하위질문은 아래
+        # insufficient 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장
+        # 필요한 경우다 — 여기서 흘리면 critic 의 note 가 어디에도 안 실린다.
+        note = f" — {sq.note}" if sq.note else ""
+        # failed 를 evidence_ids 보다 먼저 본다. 탐색이 예외로 죽은 하위질문도
+        # evidence_ids 가 비어 있어 아래 분기에 걸리는데, 그러면 시스템 장애가
+        # "근거를 찾지 못했다"는 연구 결과로 둔갑한다. 코퍼스에 자료가 없는 것과
+        # 우리 쪽이 터진 것은 사용자에게 완전히 다른 정보다.
+        if sq.failed:
+            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다{note}")
+        elif not sq.evidence_ids:
+            out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다{note}")
         elif sq.verdict == "insufficient":
-            note = f" — {sq.note}" if sq.note else ""
             out.append(
                 f"'{sq.text}' 는 근거 {len(sq.evidence_ids)}편으로 결론이 약하다{note}"
             )
@@ -2403,6 +2318,12 @@ def build_limitations(state: ResearchState, *, unmarked_total: int) -> list[str]
         out.append(
             f"자동 점검을 완료하지 못한 하위질문이 {unchecked}건 있다 — "
             f"그 부분의 근거 충분성은 확인되지 않았다."
+        )
+
+    if dropped_total:
+        out.append(
+            f"존재하지 않는 근거 번호를 가리킨 인용 표기 "
+            f"{dropped_total}건을 본문에서 제거했다."
         )
 
     if unmarked_total >= UNMARKED_THRESHOLD:
@@ -2431,11 +2352,17 @@ def assemble_report(
     valid = set(state.evidence.keys())
     by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
     unmarked = unmarked_total
+    # 마커 검증 결과는 bind_markers 호출마다 누적한다. 섹션마다 도입·향후
+    # 과제로 여러 번 부르므로 한 번의 반환값만 읽으면 나머지 호출에서 지운
+    # 표기가 조용히 사라진다. dropped 는 번호 종류가 아니라 본문에 박힌
+    # 표기 수로 센다 — 사용자가 보는 단위가 그것이다.
+    dropped = 0
     out_sections = []
 
     for sec in sections:
         intro = bind_markers(sec.get("intro", ""), valid)
         unmarked += intro.unmarked
+        dropped += len(intro.dropped)
 
         papers = []
         for p in sec.get("papers", []):
@@ -2452,6 +2379,7 @@ def assemble_report(
         for f in sec.get("future", []):
             res = bind_markers(f.get("text", ""), valid)
             unmarked += res.unmarked
+            dropped += len(res.dropped)
             # used 를 bind_markers 가 돌려준다 — 여기서 정규식을 다시 쓰면
             # 마커 문법이 두 곳으로 갈라진다.
             future.append({"text": res.text, "evidence": res.used})
@@ -2472,7 +2400,9 @@ def assemble_report(
              "verdict": sq.verdict, "note": sq.note}
             for sq in state.subquestions
         ],
-        "limitations": build_limitations(state, unmarked_total=unmarked),
+        "limitations": build_limitations(
+            state, unmarked_total=unmarked, dropped_total=dropped,
+        ),
     }
 
 
@@ -2509,10 +2439,9 @@ async def synthesize(state: ResearchState) -> dict:
     return assemble_report(state, sections, unmarked_total=0)
 ```
 
-- [ ] **Step 4: 프롬프트 작성**
+- [x] **`app/domains/nl_library/prompts/research_synthesize.yaml`**
 
 ```yaml
-# app/domains/nl_library/prompts/research_synthesize.yaml
 parser: plain
 params:
   max_tokens: 8000
@@ -2541,216 +2470,230 @@ user: |-
   {{ evidence_blocks }}
 ```
 
-- [ ] **Step 5: 테스트 통과 확인**
+- [x] **`app/tests/test_research_synthesizer.py`**
 
-Run: `python -m pytest app/tests/test_research_synthesizer.py -q`
-Expected: PASS (10 passed)
+```python
+from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
+from services.research.synthesizer import assemble_report, build_limitations
 
-- [ ] **Step 6: 커밋**
 
-```bash
-git add app/services/research/synthesizer.py app/domains/nl_library/prompts/research_synthesize.yaml app/tests/test_research_synthesizer.py
-git commit -m "[Feat] round04a — 보고서 종합과 한계 섹션"
+def _state():
+    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+    st.subquestions = [
+        SubQuestion(idx=0, text="하위1", evidence_ids=["E1"],
+                    verdict="sufficient", note="충분하다"),
+        SubQuestion(idx=1, text="하위2", evidence_ids=[],
+                    verdict="insufficient", note="2015년 이후 자료가 없다"),
+    ]
+    st.evidence = {
+        "E1": Evidence(id="E1", cnts_id="A", meta={"title": "논문 가", "pub_date": "2008-06"},
+                       chunks=[Chunk("c1", "본문", 3, 3, 0.9)]),
+    }
+    return st
+
+
+class TestBuildLimitations:
+    def test_insufficient_subquestion_is_reported(self):
+        lims = build_limitations(_state(), unmarked_total=0, dropped_total=0)
+        assert any("하위2" in x for x in lims)
+        assert any("2015년 이후 자료가 없다" in x for x in lims)
+
+    def test_sufficient_subquestion_is_not_reported(self):
+        assert not any("하위1" in x
+                       for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+    def test_no_evidence_subquestion_is_reported(self):
+        assert any("근거를 찾지 못했다" in x
+                   for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+    def test_failed_subquestion_is_not_reported_as_missing_evidence(self):
+        """탐색이 예외로 죽은 하위질문을 "근거를 찾지 못했다"로 쓰면 안 된다.
+
+        그건 연구 결과처럼 읽히는 시스템 장애다. 코퍼스에 자료가 없는 것과
+        우리 쪽이 터진 것은 사용자에게 완전히 다른 정보이고, 이 기능의 값이
+        "모른다고 정직하게 말하는 것"인데 장애를 발견으로 포장하면 무너진다.
+        """
+        st = _state()
+        st.subquestions[1].failed = True
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert any("하위2" in x and "오류로 확인하지 못했다" in x for x in lims)
+        assert not any("하위2" in x and "근거를 찾지 못했다" in x for x in lims)
+
+    def test_failed_subquestion_with_evidence_is_still_reported(self):
+        # 근거를 좀 모은 뒤 죽은 경우 — evidence_ids 가 비지 않아도 실패는 실패다
+        st = _state()
+        st.subquestions[0].failed = True
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert any("하위1" in x and "오류로 확인하지 못했다" in x for x in lims)
+
+    def test_healthy_subquestion_is_not_reported_as_failed(self):
+        assert not any("오류로 확인하지 못했다" in x
+                       for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+    def test_unmarked_sentences_are_reported(self):
+        lims = build_limitations(_state(), unmarked_total=4, dropped_total=0)
+        assert any("근거 표기가 없는 서술 4건" in x for x in lims)
+
+    def test_parse_failed_subquestion_is_reported(self):
+        """판정 실패는 verdict=sufficient 로 떨어지므로 따로 세지 않으면 사라진다."""
+        st = _state()
+        st.subquestions[0].parse_failed = True
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert any("자동 점검을 완료하지 못한 하위질문이 1건" in x for x in lims)
+
+    def test_no_parse_failure_is_not_reported(self):
+        assert not any("자동 점검을 완료하지 못한" in x
+                       for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+    def test_zero_unmarked_is_not_reported(self):
+        assert not any("근거 표기가 없는" in x
+                       for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+    def test_single_unmarked_sentence_is_tolerated(self):
+        """마커 없는 문장은 연결 문장일 때가 많아 몇 건은 넘긴다.
+
+        없는 번호를 가리킨 표기(dropped)와 한 문장으로 합치면 이 관용이
+        사라지거나, 반대로 지어낸 번호가 임계값에 묻힌다.
+        """
+        assert not any("근거 표기가 없는" in x
+                       for x in build_limitations(_state(), unmarked_total=1, dropped_total=0))
+
+    def test_dropped_marker_is_reported_at_one(self):
+        """지어낸 근거 번호는 1건부터 보고한다 — 인용 설계가 잡으려는 실패가 이것이다."""
+        lims = build_limitations(_state(), unmarked_total=0, dropped_total=1)
+        assert any("존재하지 않는 근거 번호" in x and "1건" in x for x in lims)
+
+    def test_zero_dropped_is_not_reported(self):
+        assert not any("존재하지 않는 근거 번호" in x
+                       for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+
+class TestAssembleReport:
+    def test_sections_match_subquestions(self):
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "하위1", "intro": "도입 [E1].",
+                       "papers": [{"cnts_id": "A", "summary": "요약"}],
+                       "future": [{"text": "과제 [E1]."}]}],
+            unmarked_total=0,
+        )
+        assert len(report["sections"]) == 1
+        assert report["sections"][0]["papers"][0]["evidence"] == ["E1"]
+
+    def test_paper_bullet_evidence_is_structural(self):
+        """대표 논문 요약의 인용은 모델이 고르는 게 아니라 cnts_id 로 정해진다."""
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "", "papers": [{"cnts_id": "A", "summary": "s"}],
+                       "future": []}],
+            unmarked_total=0,
+        )
+        assert report["sections"][0]["papers"][0]["evidence"] == ["E1"]
+
+    def test_unknown_marker_in_intro_is_stripped(self):
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "지어냈다 [E99].", "papers": [], "future": []}],
+            unmarked_total=0,
+        )
+        assert "[E99]" not in report["sections"][0]["intro"]
+        assert any("존재하지 않는 근거 번호" in x and "1건" in x for x in report["limitations"])
+
+    def test_unknown_marker_in_future_is_stripped(self):
+        """향후 과제도 마커 인용이다 — 도입만 세면 이쪽이 조용히 빠져나간다."""
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "", "papers": [],
+                       "future": [{"text": "과제 [E99]."}]}],
+            unmarked_total=0,
+        )
+        assert "[E99]" not in report["sections"][0]["future"][0]["text"]
+        assert any("존재하지 않는 근거 번호" in x and "1건" in x for x in report["limitations"])
+
+    def test_dropped_markers_accumulate_across_call_sites(self):
+        """bind_markers 는 섹션마다 여러 번 불린다 — 한 번의 반환값만 읽으면 과소 계수된다."""
+        report = assemble_report(
+            _state(),
+            sections=[
+                {"heading": "h1", "intro": "가 [E98].", "papers": [], "future": []},
+                {"heading": "h2", "intro": "", "papers": [],
+                 "future": [{"text": "나 [E99]."}]},
+            ],
+            unmarked_total=0,
+        )
+        assert any("존재하지 않는 근거 번호" in x and "2건" in x for x in report["limitations"])
+
+    def test_same_unknown_marker_twice_counts_twice(self):
+        """사용자에게 보이는 단위는 본문의 표기 수다 — 서로 다른 번호의 수가 아니다."""
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "가 [E99]. 나 [E99].",
+                       "papers": [], "future": []}],
+            unmarked_total=0,
+        )
+        assert any("존재하지 않는 근거 번호" in x and "2건" in x for x in report["limitations"])
+
+    def test_valid_markers_are_not_reported_as_dropped(self):
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "도입 [E1].", "papers": [],
+                       "future": [{"text": "과제 [E1]."}]}],
+            unmarked_total=0,
+        )
+        assert not any("존재하지 않는 근거 번호" in x for x in report["limitations"])
+
+    def test_evidence_is_serialized(self):
+        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        assert report["evidence"]["E1"]["chunks"][0]["page_start"] == 3
+        assert report["evidence"]["E1"]["cnts_id"] == "A"
+
+    def test_trail_comes_from_subquestions(self):
+        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        assert [t["subquestion"] for t in report["trail"]] == ["하위1", "하위2"]
+
+    def test_corpus_range_is_carried_into_report(self):
+        """수록 범위는 고정 문구가 아니라 실행 시점 실측값이다."""
+        st = _state()
+        st.corpus_range = {"from": "2002", "to": "2026", "n_papers": 72054}
+        report = assemble_report(st, sections=[], unmarked_total=0)
+        assert report["range"]["n_papers"] == 72054
+
+    def test_missing_corpus_range_is_none(self):
+        assert assemble_report(_state(), sections=[], unmarked_total=0)["range"] is None
 ```
+
+- [x] **`app/tests/test_prompts.py`** — `research_synthesize` 렌더 가드 3줄 추가(딥리서치 2종 → 3종). `StrictUndefined` 라 변수명이 어긋나면 워커 런타임에서야 터진다.
+
+- [x] **검증** — `21 passed`, 전체 278. 되돌림 9건 확인. 특히 두 `bind_markers` 호출 지점(도입·향후 과제)을 **각각** 깨봤고 양쪽 다 테스트가 잡았다. 임계값 두 개를 서로 바꿔치기하는 되돌림(G·H)도 각각 실패해, 두 경로가 다시 합쳐지지 않는 것이 고정됐다.
 
 ---
 
-## Task 9: 오케스트레이션과 진행 중계
+## Task 9: 오케스트레이션과 진행 중계 — **완료**
 
-**Files:**
-- Create: `app/services/research/relay.py`
-- Create: `app/services/research/runner.py`
-- Test: `app/tests/test_research_runner.py`
+> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+초안과 달라진 것 둘.
 
-```python
-# app/tests/test_research_runner.py
-"""test_research_runner.py — 단계 오케스트레이션
+**(1) `subq.parse_failed = verdict.parse_failed` 를 추가했다 — 사슬의 중간이 비어 있었다.** `critic._failed()` 가 `Verdict.parse_failed` 를 쓰고, `synthesizer.build_limitations` 가 `sq.parse_failed` 를 읽는데, **둘을 잇는 코드가 저장소 어디에도 없었다**(유일한 대입이 테스트 픽스처 한 줄). 운영에서는 항상 `False` 라 자기점검이 전부 실패해도 보고서가 "한계 없음"으로 나온다 — Task 6 리뷰가 고쳤던 실패가 한 층 위에서 되살아나 있었다.
 
-async 테스트는 asyncio.run 으로 돈다. 이 저장소의 관례이고, 이유는 아래
-Step 1 하단의 경고를 보라.
-"""
-import asyncio
+마지막 판정이 이기게 두는 것이 맞다. 파싱 실패는 `verdict="sufficient"` 를 내고 `should_recheck` 는 `"insufficient"` 만 재검색하므로, **파싱 실패는 언제나 루프의 마지막 라운드**다. 누적 OR 이 필요 없다.
 
-from services.research.state import ResearchState, SubQuestion, merge_params
-from services.research.runner import explore_subquestion
+**(2) `test_cap_reached_still_links_already_adopted_paper` 를 추가했다.** 초안의 `max_evidence` 상한 분기는 `break` 가 아니라 `continue` 여야 한다 — 상한에 닿은 뒤에도 "이미 있는 근거의 재사용"이 섞여 있고 그건 총량을 늘리지 않으므로, `break` 로 끊으면 그 하위질문이 정당한 근거 링크를 잃는다. 이 이유는 주석으로 길게 적혀 있었지만 **테스트가 없었다.** 초안의 `test_max_evidence_caps_growth` 는 `len(st.evidence) == 4` 만 보므로 `break` 로도 통과한다(직접 되돌려 확인). 주석이 혼자 일하고 있었다.
 
+그 밖에 초안 테스트 두 건을 강화했다. `subq.note` 복사와 `state.recheck_count` 증가는 커버리지가 0이었고, `emit` 페이로드의 키 이름은 **Task 10 SSE 의 전선 계약**인데 아무것도 고정하지 않고 있었다.
 
-class _FakeCritic:
-    """항상 부족을 반환하는 critic — 루프 상한을 검증한다."""
-    def __init__(self):
-        self.calls = 0
-
-    async def __call__(self, subq, evidence, *, params):
-        from services.research.critic import Verdict
-        self.calls += 1
-        return Verdict("insufficient", note="부족", new_queries=["다른 검색어"])
-
-
-async def _fake_explore(query, *, params, db):
-    hit = {"book_id": "A", "chunk_id": f"c-{query}", "text": "본문",
-           "page_start": 1, "page_end": 1, "score": 0.9}
-    return [hit], {"A": {"title": "논문 가", "pub_date": "2008-06", "kci_citations": 3}}
-
-
-async def _empty_explore(query, *, params, db):
-    return [], {}
-
-
-class TestExploreSubquestion:
-    def test_always_insufficient_stops_at_max_recheck(self):
-        st = ResearchState(job_id="j", question="q",
-                           params=merge_params({"max_recheck": 2}))
-        sq = SubQuestion(idx=0, text="하위질문")
-        critic = _FakeCritic()
-        asyncio.run(explore_subquestion(
-            st, sq, db=None, explore_fn=_fake_explore, critique_fn=critic, emit=None,
-        ))
-        assert critic.calls == 3            # 최초 1 + 재검색 2
-        assert len(sq.queries) == 3
-        assert sq.verdict == "insufficient"
-
-    def test_no_hits_records_no_evidence(self):
-        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
-        sq = SubQuestion(idx=0, text="하위질문")
-        asyncio.run(explore_subquestion(
-            st, sq, db=None, explore_fn=_empty_explore,
-            critique_fn=_FakeCritic(), emit=None,
-        ))
-        assert sq.evidence_ids == []
-
-    def test_same_paper_in_two_subquestions_reuses_one_evidence(self):
-        """한 논문이 두 하위질문에서 나와도 근거는 하나다.
-
-        중복 생성하면 같은 출처가 E1 과 E2 로 갈라져 인용칩이 어긋난다.
-        """
-        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
-        sq1, sq2 = SubQuestion(idx=0, text="가"), SubQuestion(idx=1, text="나")
-        critic = _FakeCritic()
-        asyncio.run(explore_subquestion(st, sq1, db=None, explore_fn=_fake_explore,
-                                        critique_fn=critic, emit=None))
-        asyncio.run(explore_subquestion(st, sq2, db=None, explore_fn=_fake_explore,
-                                        critique_fn=critic, emit=None))
-        assert len(st.evidence) == 1
-        assert sq1.evidence_ids == sq2.evidence_ids == ["E1"]
-        assert len({ev.cnts_id for ev in st.evidence.values()}) == 1
-
-    def test_recheck_does_not_duplicate_same_paper(self):
-        """재검색에서 같은 논문이 또 나와도 evidence_ids 에 두 번 들어가지 않는다."""
-        st = ResearchState(job_id="j", question="q",
-                           params=merge_params({"max_recheck": 2}))
-        sq = SubQuestion(idx=0, text="가")
-        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
-                                        critique_fn=_FakeCritic(), emit=None))
-        assert sq.evidence_ids == ["E1"]
-
-    def test_max_evidence_caps_growth(self):
-        async def _many(query, *, params, db):
-            hits = [
-                {"book_id": f"B{i}", "chunk_id": f"c{i}", "text": "t",
-                 "page_start": 1, "page_end": 1, "score": 0.9}
-                for i in range(10)
-            ]
-            meta = {f"B{i}": {"title": f"t{i}", "pub_date": "2008-06",
-                              "kci_citations": 1} for i in range(10)}
-            return hits, meta
-
-        st = ResearchState(job_id="j", question="q",
-                           params=merge_params({"max_recheck": 0, "max_evidence": 4}))
-        asyncio.run(explore_subquestion(
-            st, SubQuestion(idx=0, text="가"), db=None,
-            explore_fn=_many, critique_fn=_FakeCritic(), emit=None,
-        ))
-        assert len(st.evidence) == 4
-
-    def test_emit_is_called_for_progress(self):
-        events = []
-
-        async def _emit(kind, payload):
-            events.append(kind)
-
-        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
-        asyncio.run(explore_subquestion(
-            st, SubQuestion(idx=0, text="가"), db=None, explore_fn=_fake_explore,
-            critique_fn=_FakeCritic(), emit=_emit,
-        ))
-        assert "search" in events and "critique" in events
-```
-
-> **`pytest-asyncio` 를 쓰지 마라 — 초안이 틀렸다.** 초안은 `@pytest.mark.asyncio` 를 쓰고 "없으면 설치한다"고 적었다. 실측: 이 저장소에 **설치돼 있지 않고**(`pip show pytest-asyncio` → not found), `app/tests` 전체에서 그 데코레이터를 쓰는 테스트가 **0건**이다. 관례는 `asyncio.run(...)` 이고 `test_research_explorer.py`·`test_rewrite_milvus_doc_type.py` 가 그렇게 한다.
->
-> 데코레이터 쪽이 단순히 안 도는 게 아니라 **더 나쁘다.** 플러그인이 없으면 pytest 는 코루틴 함수를 실행하지 않고 경고만 남긴 뒤 **통과로 처리한다.** 테스트 7건이 초록불인 채로 아무것도 검증하지 않는다 — 이 라운드에서 이미 한 번 잡은 "통과하지만 아무것도 지키지 않는 테스트"와 같은 실패다. 새 의존성을 깔아 해결할 이유도 없다: 로컬 venv 에만 깔면 컨테이너에는 없고, `requirements.txt` 에 넣으면 시연 직전에 이미지 재빌드가 필요해진다.
-
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_runner.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.runner'`
-
-- [ ] **Step 3: 중계 구현**
+- [x] **`app/services/research/runner.py`**
 
 ```python
-# app/services/research/relay.py
-"""relay.py — 진행 이벤트 중계 (Redis pub/sub)
-
-잔이벤트는 여기로만 흐르고 Postgres 에 쓰지 않는다. 카운터가 째깍거리는
-것 때문에 DB를 때릴 이유가 없고, 몇 초 뒤 아무도 안 본다.
-재접속하면 research_steps 로 뼈대를 복원하고 그 이후를 여기서 받는다.
-"""
-import json
-import logging
-
-import redis.asyncio as aioredis
-
-from core.config import get_settings
-
-log = logging.getLogger(__name__)
-
-
-def channel(job_id: str) -> str:
-    return f"research:{job_id}"
-
-
-async def publish(job_id: str, kind: str, payload: dict) -> None:
-    """중계 실패가 리서치를 죽이면 안 된다 — 삼키고 로그만 남긴다."""
-    cfg = get_settings()
-    try:
-        client = aioredis.from_url(cfg.REDIS_URL)
-        try:
-            await client.publish(
-                channel(job_id), json.dumps({"kind": kind, **payload}, ensure_ascii=False)
-            )
-        finally:
-            await client.aclose()
-    except Exception as e:
-        log.warning("[research:relay] publish 실패 job=%s kind=%s: %s", job_id, kind, e)
-
-
-async def subscribe(job_id: str):
-    """SSE 엔드포인트가 쓴다. 이벤트 dict 를 yield 한다."""
-    cfg = get_settings()
-    client = aioredis.from_url(cfg.REDIS_URL)
-    pubsub = client.pubsub()
-    await pubsub.subscribe(channel(job_id))
-    try:
-        async for message in pubsub.listen():
-            if message.get("type") != "message":
-                continue
-            yield json.loads(message["data"])
-    finally:
-        await pubsub.unsubscribe(channel(job_id))
-        await pubsub.aclose()
-        await client.aclose()
-```
-
-- [ ] **Step 4: 오케스트레이션 구현**
-
-```python
-# app/services/research/runner.py
 """runner.py — 단계 오케스트레이션
 
 각 단계는 ResearchState 를 받아 갱신한다. explore_fn·critique_fn 을 인자로
 받는 이유는 Milvus·LLM 없이 루프 자체를 테스트하기 위해서다.
+
+진행 중계도 같은 이유로 emit 인자로 주입받는다. `services.research.relay` 를
+여기서 import 하면 relay 가 물고 있는 `redis` 가 이 모듈을 여는 모든 곳에
+필요해지고, 미설치 환경에서는 테스트 수집 단계가 통째로 죽는다
+(`docs/ops/recurring-gotchas.md` 13번의 torch 와 같은 함정).
 """
 import logging
 
@@ -2818,6 +2761,15 @@ async def explore_subquestion(
         )
         subq.verdict = verdict.verdict
         subq.note = verdict.note
+        # 판정을 못 읽었다는 표시를 여기서 옮기지 않으면 보고서까지 닿지 않는다 —
+        # synthesizer.build_limitations 는 subq.parse_failed 만 보고 "자동 점검을
+        # 완료하지 못한 하위질문"을 센다. 자기점검이 전부 실패해도 보고서가
+        # "한계 없음"으로 보이는 게 정확히 critic 의 parse_failed 가 막으려던 실패다.
+        #
+        # 마지막 라운드 값으로 덮어써도 된다(OR 누적이 필요 없다): 파싱 실패는
+        # verdict="sufficient" 로 떨어지고 should_recheck 는 "insufficient" 일 때만
+        # True 이므로, 파싱 실패가 난 라운드가 항상 마지막 라운드다.
+        subq.parse_failed = verdict.parse_failed
         await emit("critique", {
             "subq_idx": subq.idx, "verdict": verdict.verdict,
             "note": verdict.note, "adopted": len(subq.evidence_ids),
@@ -2834,89 +2786,607 @@ async def explore_subquestion(
     return subq
 ```
 
-- [ ] **Step 5: 테스트 통과 확인**
+- [x] **`app/services/research/relay.py`**
 
-Run: `python -m pytest app/tests/test_research_runner.py -q`
-Expected: PASS (6 passed)
+`publish` 가 호출마다 클라이언트를 새로 만드는 것은 낭비가 아니라 필요다 — Celery 태스크가 `asyncio.run` 으로 루프를 새로 만들므로, 모듈 최상단 클라이언트는 첫 루프에 묶여 이후 전부 `Event loop is closed` 가 된다. (Task 10 에서 잡당 루프 1개로 바뀌었으므로 지금은 무해한 여유분이다.)
 
-- [ ] **Step 6: 커밋**
-
-```bash
-git add app/services/research/relay.py app/services/research/runner.py app/tests/test_research_runner.py
-git commit -m "[Feat] round04a — 탐색 루프 오케스트레이션과 Redis 진행 중계"
-```
-
----
-
-## Task 10: Celery 태스크와 API
-
-> **초안을 제품 기준으로 재설계했다.** 초안은 잡 하나를 성공 경로로 한 번 돌리는 데까지만 맞춰져 있었다. 아래 8가지는 두 번째 잡부터, 재시도에서, 또는 사용자가 창을 닫을 때 드러난다. 코드 블록에는 이미 반영돼 있으니 그대로 따르면 된다.
-
-### 초안의 결함과 정정
-
-| # | 결함 | 언제 드러나나 | 정정 |
-|---|---|---|---|
-| 1 | `explore_subquestion(..., db=None)` | 첫 잡에서 즉시 | 잡 전체를 감싸는 async 세션을 넘긴다 |
-| 2 | 단계마다 `asyncio.run` + `db/postgres.py` 의 풀링 async 엔진 | **두 번째 잡부터** | 잡당 `asyncio.run` 1회 + 워커 전용 엔진을 만들고 `dispose()` |
-| 3 | `seq` 를 1부터 다시 시작 | 재시도·재개 시 | DB 의 `max(seq)+1` 에서 이어붙인다 |
-| 4 | `status = "running"` 무조건 대입 | Celery 재배달 시 | 조건부 UPDATE 로 선점하고, 못 잡으면 즉시 반환 |
-| 5 | `stage` 없음 · 근거 미영속 | 종합이 실패할 때 | `stage` + `state_snapshot` 을 추가해 종합부터 재개 |
-| 6 | SSE 에 종료 조건·하트비트 없음 | 잡이 끝나거나 창을 닫을 때 | 종료 이벤트로 끊고, 유휴 시 주석 프레임으로 끊긴 소켓을 감지 |
-| 7 | 시간 상한 없음 | LLM 이 멈출 때 | `soft_time_limit` 으로 워커를 돌려받는다 |
-| 8 | 취소 없음 | 사용자가 창을 닫을 때 | `POST /{job_id}/cancel` + 하위질문 경계에서 확인 |
-
-**2번을 특히 주의하라.** `app/db/postgres.py:9` 의 `engine` 은 `pool_size=10` 짜리 풀링 엔진이고 주석이 "비동기 (FastAPI)" 다 — 장수 이벤트 루프 하나를 전제한 설정이다. Celery 태스크가 `asyncio.run` 을 부르면 루프가 매번 새로 만들어지고 닫히는데, 풀은 **닫힌 루프에 묶인 asyncpg 커넥션을 그대로 들고 있는다.** 다음 잡이 그걸 꺼내 쓰면 `attached to a different loop` 로 죽는다. **첫 잡은 성공하고 두 번째부터 깨지므로 리허설을 통과하고 본 시연에서 터진다.** `AsyncSessionLocal` 을 워커에서 재사용하지 마라.
-
-`NullPool` 로 푸는 방법도 있지만 쓰지 않는다. 잡 하나가 5~7분 동안 수십 번 질의하는데 매번 TCP·인증을 새로 하게 된다. **잡 안에서는 루프가 하나뿐이므로 풀이 안전하다** — 잡 단위로 엔진을 만들고 끝에 `dispose()` 하면 풀의 이점은 얻고 루프 간 누수는 없다.
-
----
-
-- [ ] **Step 0: 모델·마이그레이션 보강 (다른 무엇보다 먼저)**
-
-`0005_research_jobs` 는 **아직 어느 DB 에도 적용되지 않았다**(적용은 Task 11 Step 1). 지금이 리비전을 고칠 수 있는 마지막이자 가장 싼 시점이다. 새 리비전을 얹지 말고 `0005` 를 직접 고친다. 이미 적용된 마이그레이션이라면 절대 하면 안 되는 일이지만, 여기서는 적용 이력이 없다는 것을 먼저 확인하고 하라.
-
-`app/models/research.py` 의 `ResearchJob` 에 두 컬럼을 더한다.
+`runner.py` 가 `relay` 를 임포트하지 않고 `emit` 을 주입받는 것도 설계다. `relay` → `redis` 인데 `redis` 는 `requirements.txt` 에만 있고 로컬 venv 에 없어, 최상단 임포트가 하나라도 생기면 `pytest` 가 수집 단계에서 죽어 **세션 전체가 0건**이 된다(`recurring-gotchas.md` 13번의 `redis` 판).
 
 ```python
-    # status 는 "지금 무슨 상태인가", stage 는 "어디까지 끝냈는가".
-    # 둘을 한 컬럼으로 합치면 실패했을 때 어디부터 다시 할지 알 수 없다.
+"""relay.py — 진행 이벤트 중계 (Redis pub/sub)
+
+잔이벤트는 여기로만 흐르고 Postgres 에 쓰지 않는다. 카운터가 째깍거리는
+것 때문에 DB를 때릴 이유가 없고, 몇 초 뒤 아무도 안 본다.
+재접속하면 research_steps 로 뼈대를 복원하고 그 이후를 여기서 받는다.
+
+이 모듈은 `redis` 를 최상단에서 물고 온다. runner 나 테스트가 이걸 최상단에서
+import 하면 `redis` 미설치 환경에서 수집 단계가 통째로 죽으므로, 주입은
+호출자가 emit 인자로 넘기는 방식으로만 한다(runner.explore_subquestion 참고).
+"""
+import json
+import logging
+
+import redis.asyncio as aioredis
+
+from core.config import get_settings
+
+log = logging.getLogger(__name__)
+
+
+def channel(job_id: str) -> str:
+    return f"research:{job_id}"
+
+
+async def publish(job_id: str, kind: str, payload: dict) -> None:
+    """중계 실패가 리서치를 죽이면 안 된다 — 삼키고 로그만 남긴다.
+
+    클라이언트를 호출마다 새로 만든다. 모듈 전역에 하나 두면 첫 이벤트루프에
+    묶이는데, Celery 태스크는 잡마다 `asyncio.run(...)` 으로 루프를 새로 열고
+    닫으므로 두 번째 잡부터 전부 `Event loop is closed` 로 죽는다.
+    한 잡에 수십 번 도는 정도라 연결 비용보다 이쪽이 싸다.
+    """
+    cfg = get_settings()
+    try:
+        client = aioredis.from_url(cfg.REDIS_URL)
+        try:
+            await client.publish(
+                channel(job_id), json.dumps({"kind": kind, **payload}, ensure_ascii=False)
+            )
+        finally:
+            await client.aclose()
+    except Exception as e:
+        log.warning("[research:relay] publish 실패 job=%s kind=%s: %s", job_id, kind, e)
+
+
+async def subscribe(job_id: str, *, idle_timeout: float = 15.0):
+    """이벤트 dict 를 yield 한다. 유휴 구간에서는 None 을 yield 한다.
+
+    None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 SSE 주석 프레임을 흘려
+    끊긴 소켓을 감지하고, 잡이 이미 끝났는지도 확인한다. listen() 만 쓰면
+    트래픽이 없는 동안 영원히 블록하므로 클라이언트가 조용히 끊겨도 알 방법이
+    없다 — 아무것도 쓰지 않으니 broken pipe 조차 나지 않는다.
+    """
+    cfg = get_settings()
+    client = aioredis.from_url(cfg.REDIS_URL)
+    pubsub = client.pubsub()
+    await pubsub.subscribe(channel(job_id))
+    try:
+        while True:
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True, timeout=idle_timeout,
+            )
+            yield json.loads(message["data"]) if message else None
+    finally:
+        await pubsub.unsubscribe(channel(job_id))
+        await pubsub.aclose()
+        await client.aclose()
+```
+
+- [x] **`app/tests/test_research_runner.py`**
+
+```python
+"""test_research_runner.py — 단계 오케스트레이션
+
+async 테스트는 `asyncio.run` 으로 돈다. `@pytest.mark.asyncio` 를 쓰면 안
+된다 — `pytest-asyncio` 가 이 저장소에 설치돼 있지 않고, 플러그인이 없으면
+pytest 는 코루틴을 **실행하지 않고 경고만 남긴 뒤 통과로 처리한다.** 초록불인
+채로 아무것도 검증하지 않는 테스트가 되므로 관례(`test_research_explorer.py`)
+를 그대로 따른다.
+
+relay 는 모듈 최상단에서 import 하지 않는다. `redis` 는 requirements 에만
+있고 로컬 venv 에는 없어서, 최상단 import 는 수집 단계에서 세션을 통째로
+죽인다(`docs/ops/recurring-gotchas.md` 13번의 torch 와 같은 함정).
+"""
+import asyncio
+import importlib
+import json
+import sys
+from unittest.mock import MagicMock
+
+from services.research.critic import Verdict
+from services.research.runner import explore_subquestion
+from services.research.state import ResearchState, SubQuestion, merge_params
+
+
+class _FakeCritic:
+    """항상 부족을 반환하는 critic — 루프 상한을 검증한다."""
+
+    def __init__(self):
+        self.calls = 0
+
+    async def __call__(self, subq, evidence, *, params):
+        self.calls += 1
+        return Verdict("insufficient", note="부족", new_queries=["다른 검색어"])
+
+
+class _ParseFailedCritic:
+    """판정을 못 읽은 critic — `critic._failed()` 가 내는 형태 그대로다."""
+
+    def __init__(self):
+        self.calls = 0
+
+    async def __call__(self, subq, evidence, *, params):
+        self.calls += 1
+        return Verdict("sufficient", note="자동 점검을 완료하지 못했다", parse_failed=True)
+
+
+def _hits(cnts_ids, *, query="q"):
+    hits = [
+        {"book_id": cid, "chunk_id": f"{cid}-c-{query}", "text": "본문",
+         "page_start": 1, "page_end": 1, "score": 0.9}
+        for cid in cnts_ids
+    ]
+    meta = {
+        cid: {"title": f"논문 {cid}", "pub_date": "2008-06", "kci_citations": 3}
+        for cid in cnts_ids
+    }
+    return hits, meta
+
+
+async def _fake_explore(query, *, params, db):
+    return _hits(["A"], query=query)
+
+
+async def _empty_explore(query, *, params, db):
+    return [], {}
+
+
+class TestExploreSubquestion:
+    def test_always_insufficient_stops_at_max_recheck(self):
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 2}))
+        sq = SubQuestion(idx=0, text="하위질문")
+        critic = _FakeCritic()
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_fake_explore, critique_fn=critic, emit=None,
+        ))
+        assert critic.calls == 3            # 최초 1 + 재검색 2
+        assert len(sq.queries) == 3
+        assert sq.verdict == "insufficient"
+        assert sq.note == "부족"            # note 가 그대로 보고서의 한계 문장이 된다
+        assert st.recheck_count == 2        # 잡 전체 재검색 횟수 — 탐색 경로에 실린다
+
+    def test_no_hits_records_no_evidence(self):
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
+        sq = SubQuestion(idx=0, text="하위질문")
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_empty_explore,
+            critique_fn=_FakeCritic(), emit=None,
+        ))
+        assert sq.evidence_ids == []
+
+    def test_same_paper_in_two_subquestions_reuses_one_evidence(self):
+        """한 논문이 두 하위질문에서 나와도 근거는 하나다.
+
+        중복 생성하면 같은 출처가 E1 과 E2 로 갈라져 인용칩이 어긋난다.
+        """
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
+        sq1, sq2 = SubQuestion(idx=0, text="가"), SubQuestion(idx=1, text="나")
+        critic = _FakeCritic()
+        asyncio.run(explore_subquestion(st, sq1, db=None, explore_fn=_fake_explore,
+                                        critique_fn=critic, emit=None))
+        asyncio.run(explore_subquestion(st, sq2, db=None, explore_fn=_fake_explore,
+                                        critique_fn=critic, emit=None))
+        assert len(st.evidence) == 1
+        assert sq1.evidence_ids == sq2.evidence_ids == ["E1"]
+        assert len({ev.cnts_id for ev in st.evidence.values()}) == 1
+
+    def test_recheck_does_not_duplicate_same_paper(self):
+        """재검색에서 같은 논문이 또 나와도 evidence_ids 에 두 번 들어가지 않는다."""
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 2}))
+        sq = SubQuestion(idx=0, text="가")
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
+                                        critique_fn=_FakeCritic(), emit=None))
+        assert sq.evidence_ids == ["E1"]
+
+    def test_max_evidence_caps_growth(self):
+        async def _many(query, *, params, db):
+            return _hits([f"B{i}" for i in range(10)], query=query)
+
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 0, "max_evidence": 4}))
+        asyncio.run(explore_subquestion(
+            st, SubQuestion(idx=0, text="가"), db=None,
+            explore_fn=_many, critique_fn=_FakeCritic(), emit=None,
+        ))
+        assert len(st.evidence) == 4
+
+    def test_cap_reached_still_links_already_adopted_paper(self):
+        """상한에 닿은 뒤 나온 후보도 '이미 있는 근거'면 링크는 붙는다.
+
+        상한 검사를 break 로 끊으면 그 뒤 후보를 아예 보지 못하고 지나가서,
+        다른 하위질문에서 이미 채택된 논문인데도 이 하위질문만 링크를 잃는다.
+        재사용은 총량을 늘리지 않으므로 상한과 무관한 손실이다.
+        """
+        by_query = {"가": ["A"], "나": ["B", "C", "A"]}
+
+        async def _by_query(query, *, params, db):
+            return _hits(by_query[query], query=query)
+
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 0, "max_evidence": 2}))
+        sq1, sq2 = SubQuestion(idx=0, text="가"), SubQuestion(idx=1, text="나")
+        critic = _FakeCritic()
+        asyncio.run(explore_subquestion(st, sq1, db=None, explore_fn=_by_query,
+                                        critique_fn=critic, emit=None))
+        asyncio.run(explore_subquestion(st, sq2, db=None, explore_fn=_by_query,
+                                        critique_fn=critic, emit=None))
+        assert sq1.evidence_ids == ["E1"]
+        assert sq2.evidence_ids == ["E2", "E1"]     # B 는 새로, C 는 상한에 막히고, A 는 재사용
+        assert len(st.evidence) == 2
+
+    def test_parse_failed_verdict_propagates_to_subquestion(self):
+        """판정 파싱 실패 표시가 하위질문까지 올라와야 한다.
+
+        `synthesizer.build_limitations` 는 `sq.parse_failed` 만 본다. 여기서
+        옮기지 않으면 자기점검이 전부 실패해도 보고서가 "한계 없음"이 된다.
+        """
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 2}))
+        sq = SubQuestion(idx=0, text="가")
+        critic = _ParseFailedCritic()
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
+                                        critique_fn=critic, emit=None))
+        assert sq.parse_failed is True
+        # 파싱 실패는 verdict="sufficient" 로 떨어지므로 루프가 한 바퀴에 끝난다 —
+        # 그래서 마지막 라운드의 값만 옮겨도 표시가 유실되지 않는다.
+        assert critic.calls == 1
+
+    def test_emit_is_called_for_progress(self):
+        events = []
+
+        async def _emit(kind, payload):
+            events.append((kind, payload))
+
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
+        asyncio.run(explore_subquestion(
+            st, SubQuestion(idx=0, text="가"), db=None, explore_fn=_fake_explore,
+            critique_fn=_FakeCritic(), emit=_emit,
+        ))
+        kinds = [k for k, _ in events]
+        assert "search" in kinds and "critique" in kinds
+        by_kind = dict(events)
+        assert by_kind["search"] == {"subq_idx": 0, "query": "가", "found": 1}
+        assert by_kind["critique"]["verdict"] == "insufficient"
+        assert by_kind["critique"]["adopted"] == 1
+
+
+def _load_relay(monkeypatch):
+    """`redis` 미설치 환경에서만 더미를 꽂아 relay import 를 통과시킨다.
+
+    더미를 물린 relay 가 sys.modules 에 남으면 뒤에 도는 테스트가 Mock 을
+    물려받으므로 monkeypatch.delitem 으로 지워 둔다
+    (`test_embed_index_guard.py` 와 같은 방식).
+    """
+    for name in ("redis", "redis.asyncio"):
+        try:
+            importlib.import_module(name)
+        except ModuleNotFoundError:
+            monkeypatch.setitem(sys.modules, name, MagicMock())
+    monkeypatch.delitem(sys.modules, "services.research.relay", raising=False)
+    return importlib.import_module("services.research.relay")
+
+
+class _FakeRedis:
+    def __init__(self, publish_error=None):
+        self.published = []
+        self.closed = False
+        self._publish_error = publish_error
+
+    async def publish(self, channel, data):
+        if self._publish_error is not None:
+            raise self._publish_error
+        self.published.append((channel, data))
+
+    async def aclose(self):
+        self.closed = True
+
+
+class TestRelayPublish:
+    def test_publishes_kind_and_payload_to_job_channel(self, monkeypatch):
+        relay = _load_relay(monkeypatch)
+        client = _FakeRedis()
+        monkeypatch.setattr(relay.aioredis, "from_url", lambda url: client)
+
+        asyncio.run(relay.publish("job-1", "search", {"subq_idx": 0, "query": "한글"}))
+
+        channel, data = client.published[0]
+        assert channel == "research:job-1"
+        assert json.loads(data) == {"kind": "search", "subq_idx": 0, "query": "한글"}
+        assert "한글" in data              # ensure_ascii=False — 로그·SSE 에서 읽혀야 한다
+        assert client.closed is True
+
+    def test_publish_error_is_swallowed_and_client_closed(self, monkeypatch):
+        """중계는 장식이고 보고서는 아니다 — publish 실패가 잡을 죽이면 안 된다."""
+        relay = _load_relay(monkeypatch)
+        client = _FakeRedis(publish_error=RuntimeError("연결 끊김"))
+        monkeypatch.setattr(relay.aioredis, "from_url", lambda url: client)
+
+        assert asyncio.run(relay.publish("job-1", "search", {})) is None
+        assert client.closed is True
+
+    def test_connect_error_is_swallowed(self, monkeypatch):
+        relay = _load_relay(monkeypatch)
+
+        def _boom(url):
+            raise OSError("redis 없음")
+
+        monkeypatch.setattr(relay.aioredis, "from_url", _boom)
+        assert asyncio.run(relay.publish("job-1", "done", {})) is None
+```
+
+- [x] **검증** — `11 passed`, 전체 306. `-W error::RuntimeWarning` 으로도 306 — 어디에서도 코루틴이 await 없이 버려지지 않는다.
+
+---
+
+## Task 10: Celery 태스크와 API — **완료**
+
+> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
+
+이 절의 초안은 **당일 재설계본**이라 Tasks 1~9 보다 검증이 덜 된 상태로 들어갔고, 구현 중에 재설계본 자체의 결함이 셋 나왔다. 전부 "첫 실행에서 바로" 또는 "상한에 닿았을 때" 드러나는 것들이다.
+
+**(1) `approve` 가 `status` 를 바꾸지 않았다.** 재설계본은 `create`·`approve`·`get` 을 "초안 그대로" 쓰라고 했는데, 초안의 `approve_plan` 은 잡을 `awaiting_approval` 에 둔 채 `{"status": "running"}` 을 반환한다. `_claim(allowed=("approved","queued"))` 가 **모든 잡에서 0행을 만나 영원히 `skipped`** 가 된다. 쓰는 쪽과 읽는 쪽이 안 맞는, 이 라운드에서 반복해 잡은 바로 그 결함이다.
+
+문자열 리터럴로 맞추지 않고 구조로 묶었다 — `models/research.py` 가 `STATUS_APPROVED`·`STATUS_QUEUED`·`RUNNABLE_STATUSES` 를 내보내고, API 가 그 이름으로 쓰고, 워커가 그 이름으로 읽는다. `test_run_claims_only_statuses_the_api_writes` 가 워커가 실제로 넘기는 튜플을 단언한다.
+
+**(2) `SoftTimeLimitExceeded` 는 `Exception` 의 서브클래스다.** 하위질문별 `except Exception` 과 종합의 `except Exception` 이 그걸 먼저 삼켜 바깥 핸들러에 도달하지 않는다. 워커는 탐색을 계속하다 하드 리밋에 프로세스째 죽고 **상태를 아무것도 안 남긴다** — 상한을 넣은 목적이 정확히 무효화된다. 두 자리 모두 앞에 `except SoftTimeLimitExceeded: … raise` 를 세웠다.
+
+**(3) SSE 가 이미 닫힌 세션을 쓴다.** `Depends(get_db)` 세션은 핸들러가 반환할 때 닫히는데 `StreamingResponse` 의 제너레이터는 **그 뒤에** 돈다. 하트비트마다 짧은 세션을 새로 여는 `_terminal_status()` 로 바꿨다(API 프로세스는 장수 루프이므로 여기서는 풀링 엔진이 맞다).
+
+그 밖에 `cancelled` → `canceled` 로 통일했다 — 기존 `models/ingest_job.py` 와 `JOB_STATUSES` 가 L 하나를 쓴다. 코드가 실제다.
+
+**재개 경로를 열었다.** `stage`/`state_snapshot` 을 넣어도 종합 실패 후 `status="failed"` 라 `_claim` 이 못 집어, 체크포인트가 또 "쓰기만 하고 안 읽는 필드"가 될 뻔했다. `POST /{job_id}/retry` 가 `failed → queued` 로 되돌리되 `stage`·`state_snapshot` 은 건드리지 않는다. `plan` 이 비어 있으면 409 — 계획 수립 단계에서 실패한 잡을 `run_deep_research` 로 재시도하면 하위질문 0개를 탐색하고 **빈 보고서를 `completed` 로 저장**하는 조용한 성공이 된다.
+
+- [x] **`app/models/research.py`**
+
+```python
+"""research.py — 딥리서치 잡 모델
+
+research_jobs  : 리서치 1건 (질문 1개 = 잡 1개)
+research_steps : 의미 있는 단계 (계획 · 하위질문별 탐색 · 점검 · 종합)
+
+research_steps 는 진행 패널이자 보고서의 탐색 경로 섹션이다. 초당 갱신되는
+잔이벤트(카운터 등)는 여기 쓰지 않고 Redis pub/sub 으로만 흘린다 — 입자가
+다르고, 보고서에 남을 것과 몇 초 뒤 사라질 것을 한 테이블에 섞으면
+보존 정책과 append/update 성격이 충돌한다.
+"""
+import uuid
+
+from sqlalchemy import (
+    BigInteger, Column, DateTime, ForeignKey, Index, Integer,
+    String, Text, UniqueConstraint, func, text,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from models.book import Base
+
+JOB_STATUSES = (
+    "created", "planning", "awaiting_approval",
+    "approved", "queued", "running",
+    "completed", "failed", "canceled",
+)
+# status 는 "지금 무슨 상태인가", stage 는 "어디까지 끝냈는가"다. 둘을 한 컬럼으로
+# 합치면 실패했을 때 어디부터 다시 할지 알 수 없다 — failed 하나로는 계획에서
+# 죽었는지 종합에서 죽었는지 구분되지 않아 5~7분짜리 탐색을 매번 다시 돌게 된다.
+JOB_STAGES = ("created", "planned", "explored", "synthesized")
+
+# run_deep_research 가 선점(_claim)할 수 있는 상태. API 의 approve·retry 가 여기
+# 없는 값을 써 넣으면 워커가 그 잡을 영원히 건너뛰고, stage·state_snapshot 은
+# 쓰기만 하고 아무도 안 읽는 컬럼이 된다. 양쪽이 같은 상수를 보게 묶어둔다.
+STATUS_APPROVED = "approved"     # 사용자가 계획을 승인해 큐에 넣었다
+STATUS_QUEUED = "queued"         # 실패한 잡을 재시도로 다시 큐에 넣었다
+# 철자는 canceled(l 하나) 로 통일한다 — models/ingest_job.py 의 JOB_STATUSES·
+# ITEM_STATUSES 가 이미 그 철자다. 두 잡 계열이 서로 다른 철자를 쓰면 상태
+# 비교가 조용히 빗나간다.
+STATUS_CANCELED = "canceled"
+RUNNABLE_STATUSES = (STATUS_APPROVED, STATUS_QUEUED)
+
+STEP_KINDS = ("plan", "search", "critique", "synthesize")
+STEP_STATUSES = ("pending", "running", "done", "failed")
+
+
+class ResearchJob(Base):
+    __tablename__ = "research_jobs"
+
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    question    = Column(Text, nullable=False)
+    status      = Column(String(24), nullable=False, default="created", index=True)
+    params      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    plan        = Column(JSONB)      # 사용자 수정이 반영된 하위질문 목록
+    report      = Column(JSONB)
     stage       = Column(String(16), nullable=False, server_default=text("'created'"))
     # 탐색이 끝난 시점의 ResearchState 스냅샷. 종합만 재실행하기 위한 체크포인트다.
     # 이게 없으면 종합 LLM 이 실패할 때 5~7분짜리 탐색을 통째로 다시 돌려야 한다.
+    # 읽는 쪽은 workers/research_tasks.py 의 stage == "explored" 분기이고, 그
+    # 분기에 닿는 유일한 경로가 POST /api/research/{job_id}/retry 다.
     state_snapshot = Column(JSONB)
+    last_error  = Column(Text)
+    created_by  = Column(String(64))
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
+    started_at  = Column(DateTime(timezone=True))
+    finished_at = Column(DateTime(timezone=True))
+
+
+class ResearchStep(Base):
+    __tablename__ = "research_steps"
+    __table_args__ = (
+        UniqueConstraint("job_id", "seq", name="uq_research_steps_job_seq"),
+        Index(
+            "ix_research_steps_inflight", "updated_at",
+            postgresql_where=text("status = 'running'"),
+        ),
+    )
+
+    id          = Column(BigInteger, primary_key=True, autoincrement=True)
+    job_id      = Column(
+        UUID(as_uuid=True),
+        ForeignKey("research_jobs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    seq         = Column(Integer, nullable=False)
+    kind        = Column(String(16), nullable=False)
+    subq_idx    = Column(Integer)
+    title       = Column(Text, nullable=False)
+    detail      = Column(Text)
+    status      = Column(String(16), nullable=False, default="pending")
+    # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
+    # plan:       {"subquestions": [...]}
+    # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "..."}
+    # synthesize: {"sections": n}
+    # 실패 공통:   {"error": "..."}
+    result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
+    finished_at = Column(DateTime(timezone=True))
+    updated_at  = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(),
+    )
 ```
 
-같은 파일에 상수를 더한다.
+- [x] **`app/services/research/state.py`** — `SubQuestion.failed` 와 스냅샷 왕복
+
+`failed` 를 `evidence_ids == []` 와 구분하는 이유: 구분이 없으면 보고서가 시스템 장애를 `"'…' 에 대해서는 근거를 찾지 못했다"` 로 써서 **연구 결과처럼 읽히게** 만든다. 코퍼스에 자료가 없는 것과 우리 쪽이 터진 것은 완전히 다른 정보이고, 이 기능의 값이 "모른다고 정직하게 말하는 것"이라 장애를 발견으로 포장하면 값이 무너진다.
 
 ```python
-JOB_STAGES = ("created", "planned", "explored", "synthesized")
-```
+"""state.py — 딥리서치 실행 상태
 
-`app/services/research/state.py` 의 `SubQuestion` 에 한 줄을 더한다.
+각 단계는 ResearchState 를 받아 갱신해 돌려준다. Celery·Redis·Milvus 없이
+테스트되고, 나중에 다른 오케스트레이션 런타임으로 옮겨도 그대로 쓴다.
+"""
+from dataclasses import dataclass, field
+from types import MappingProxyType
+from typing import NotRequired, TypedDict
 
-```python
-    failed: bool = False        # 탐색이 예외로 중단됨 — "근거 없음" 과 구분한다
-```
+# 깊이 파라미터 — research_jobs.params 로 덮어쓴다.
+# 시연 직전에 값만 바꿔 짧게 돌릴 수 있어야 하므로 하드코딩하지 않는다.
+# MappingProxyType 로 감싼 이유: 워커 프로세스가 이 모듈 전역을 한 번이라도
+# 실수로 mutate 하면 그 오염이 프로세스 수명 내내 남는다.
+DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
+    "max_subquestions": 6,
+    "max_recheck": 3,
+    "max_evidence": 60,
+    "per_subq_top_k": 12,
+    "chunks_per_evidence": 2,
+    "citation_weight": 0.2,
+    "min_evidence_per_subq": 5,
+})
 
-**왜 `failed` 가 따로 필요한가.** 초안은 하위질문이 예외로 죽어도 `evidence_ids` 가 빈 채로 남을 뿐이라, 보고서가 `"'…' 에 대해서는 근거를 찾지 못했다"` 로 쓴다. 그건 **연구 결과처럼 읽히는 시스템 장애**다. 코퍼스에 자료가 없는 것과 우리 쪽이 터진 것은 사용자에게 완전히 다른 정보다. 이 기능의 값이 "모른다고 정직하게 말하는 것"인데, 장애를 발견으로 포장하면 그 값이 무너진다.
+# (타입, 하한, 상한). ResearchCreate.params: dict 가 값 타입을 검증하지
+# 않으므로 여기가 유일한 검증 지점이다 — 상한이 없으면 per_subq_top_k 같은
+# 값이 그대로 Milvus AnnSearchRequest(limit=...) 까지 흘러가 요청 하나로
+# 워커를 묶는 자해 경로가 된다. 상한은 시연 현실치 기준.
+_PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
+    "max_subquestions": (int, 1, 12),
+    "max_recheck": (int, 0, 10),
+    "max_evidence": (int, 1, 200),
+    "per_subq_top_k": (int, 1, 50),
+    "chunks_per_evidence": (int, 1, 5),
+    "citation_weight": (float, 0.0, 1.0),
+    "min_evidence_per_subq": (int, 0, 50),
+}
 
-`app/services/research/synthesizer.py` 의 `build_limitations` 에서 `failed` 를 먼저 분기한다.
 
-```python
-    for sq in state.subquestions:
-        if sq.failed:
-            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다.")
-        elif not sq.evidence_ids:
-            out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다")
-        elif sq.verdict == "insufficient":
-            ...
-```
+def merge_params(override: dict | None) -> dict:
+    """기본값에 override 를 얹는다. 모르는 키·타입·범위를 벗어난 값은 거부한다."""
+    merged = dict(DEFAULT_PARAMS)
+    for key, value in (override or {}).items():
+        if key not in DEFAULT_PARAMS:
+            raise ValueError(f"알 수 없는 파라미터: {key}")
+        _validate_param(key, value)
+        merged[key] = value
+    return merged
 
-`app/services/research/state.py` 에 스냅샷 직렬화를 더한다. 순수 함수라 DB 없이 테스트된다.
 
-```python
-def snapshot_state(state: "ResearchState") -> dict:
-    """탐색이 끝난 상태를 JSONB 에 넣을 수 있는 형태로 만든다."""
+def _validate_param(key: str, value: object) -> None:
+    expected_type, lo, hi = _PARAM_BOUNDS[key]
+    # bool 은 int 의 서브클래스라 isinstance(value, int) 를 그냥 쓰면 True 가 통과해버린다.
+    if isinstance(value, bool):
+        raise ValueError(f"파라미터 {key} 에 bool 값은 쓸 수 없다: {value!r}")
+    if expected_type is int and not isinstance(value, int):
+        raise ValueError(f"파라미터 {key} 는 int 여야 한다: {value!r}")
+    if expected_type is float and not isinstance(value, (int, float)):
+        raise ValueError(f"파라미터 {key} 는 float 여야 한다: {value!r}")
+    if value < lo or (hi is not None and value > hi):
+        raise ValueError(f"파라미터 {key} 가 허용 범위({lo}~{hi})를 벗어났다: {value!r}")
+
+
+class HitRow(TypedDict):
+    """검색 결과 1건 — Milvus 검색 계층(explore)이 만들어 citations.build_evidence 로 넘긴다.
+
+    score 와 rank_score 를 나눈 이유: 순위용 혼합값은 1.0 을 넘을 수 있어
+    유사도로 표시하면 141% 같은 값이 나간다. score 는 생값 그대로 두고 순위는
+    rank_score 로만 매긴다(explorer.rank_hits).
+    """
+    book_id: str
+    chunk_id: str
+    text: str
+    page_start: int
+    page_end: int
+    score: float                      # 리랭킹(없으면 RRF) 생값 — 화면에 유사도로 나간다
+    rank_score: NotRequired[float]    # 피인용을 얹은 정렬용 값 — rank_hits 가 채운다
+
+
+@dataclass
+class Chunk:
+    chunk_id: str
+    text: str
+    page_start: int
+    page_end: int
+    score: float
+
+
+@dataclass
+class Evidence:
+    id: str                      # "E12" — 보고서 안에서만 유효한 지역 ID
+    cnts_id: str
+    meta: dict                   # 제목·저자·학술지·권호·연월·피인용·등재구분
+    chunks: list[Chunk] = field(default_factory=list)
+
+
+VERDICTS = ("pending", "sufficient", "insufficient")
+# LLM 이 낼 수 있는 판정 — pending 은 초기상태 전용이라 제외.
+# VERDICTS[1:] 로 쓰면 순서만 바뀌어도 sufficient 가 빠져 모든 정상 판정이
+# "알 수 없는 verdict" 로 떨어진다.
+LLM_VERDICTS = tuple(v for v in VERDICTS if v != "pending")
+
+
+@dataclass
+class SubQuestion:
+    idx: int
+    text: str
+    queries: list[str] = field(default_factory=list)   # 시도한 검색어 (재검색 이력)
+    evidence_ids: list[str] = field(default_factory=list)
+    verdict: str = "pending"
+    parse_failed: bool = False          # 판정을 못 읽어 점검이 사실상 건너뛰어진 경우
+    # 탐색이 예외로 중단됨 — "근거 없음"(연구 결과)과 구분한다. 구분이 없으면
+    # 보고서가 시스템 장애를 "…에 대해서는 근거를 찾지 못했다"로 써서, 우리 쪽이
+    # 터진 것을 코퍼스에 자료가 없는 것처럼 보이게 만든다.
+    failed: bool = False
+    note: str = ""                                      # 자기점검 판단 근거
+
+
+@dataclass
+class ResearchState:
+    job_id: str
+    question: str
+    params: dict
+    subquestions: list[SubQuestion] = field(default_factory=list)
+    evidence: dict[str, Evidence] = field(default_factory=dict)
+    recheck_count: int = 0
+    # 실행 시점의 수록 범위 — 코퍼스가 계속 자라므로 보고서에 고정 문구로
+    # 박지 않고 매번 질의해 넣는다. {"from": "2002", "to": "2026", "n_papers": 72054}
+    corpus_range: dict | None = None
+    # 보고서는 여기에 두지 않는다. synthesize() 가 반환값으로 넘기고 Celery
+    # 태스크가 research_jobs.report 에 바로 쓴다. 항상 None 인 report 필드를
+    # 남겨두면 화면을 붙이는 쪽이 그걸 집어들고 조용히 빈 보고서를 그린다.
+
+
+def snapshot_state(state: ResearchState) -> dict:
+    """탐색이 끝난 상태를 JSONB 에 넣을 수 있는 형태로 만든다.
+
+    recheck_count 는 담지 않는다. 재탐색 상한을 세는 값이고 탐색이 끝난 뒤에는
+    읽는 쪽이 없다 — 복원해 봐야 쓰이지 않는 값을 스냅샷에 넣지 않는다.
+    """
     return {
         "question": state.question,
         "params": state.params,
@@ -2941,8 +3411,12 @@ def snapshot_state(state: "ResearchState") -> dict:
     }
 
 
-def restore_state(job_id: str, snap: dict) -> "ResearchState":
-    """snapshot_state 의 역. 종합 단계부터 재개할 때 쓴다."""
+def restore_state(job_id: str, snap: dict) -> ResearchState:
+    """snapshot_state 의 역. 종합 단계부터 재개할 때 쓴다.
+
+    parse_failed·failed 가 왕복에서 떨어지면 재개한 잡의 한계 섹션이 조용히
+    비고, 보고서가 "한계 없음"으로 보인다 — Task 6·8·9 에서 세 번 고친 실패다.
+    """
     st = ResearchState(
         job_id=job_id, question=snap["question"], params=snap["params"],
         corpus_range=snap.get("corpus_range"),
@@ -2958,28 +3432,19 @@ def restore_state(job_id: str, snap: dict) -> "ResearchState":
     return st
 ```
 
-테스트(`app/tests/test_research_state.py` 에 추가): **왕복이 항등이어야 한다.** `restore_state(job_id, snapshot_state(st))` 가 원래 `st` 와 같은 하위질문·근거·판정을 준다. 특히 `parse_failed` 와 `failed` 가 왕복을 살아남는지 각각 단언하라 — 이 두 값이 스냅샷에서 떨어지면 재개한 잡의 보고서에서 한계 섹션이 조용히 비고, 그건 Task 6·8·9 에서 세 번 고친 바로 그 실패다.
-
-마이그레이션 `app/alembic/versions/0005_research_jobs.py` 의 `research_jobs` 정의에 두 컬럼을 더하고, 적용 이력이 없음을 먼저 확인한다.
-
-```bash
-docker exec nl-lib-postgres psql -U <user> -d <db> -c "select version_num from alembic_version"
-# 0004_... 여야 한다. 0005 가 이미 찍혀 있으면 리비전을 고치지 말고 0006 을 새로 만들어라.
-```
-
-- [ ] **Step 1: Celery 태스크 작성**
+- [x] **`app/workers/research_tasks.py`**
 
 ```python
-# app/workers/research_tasks.py
 """research_tasks.py — 딥리서치 Celery 태스크
 
-동기 워커에서 async 파이프라인을 돌린다. 이 파일이 이 코드베이스에서
-워커가 async 코드를 부르는 첫 자리다(`app/workers/` 에 기존 asyncio 사용 0건).
-그래서 루프와 세션을 다루는 규칙을 여기서 못박아 둔다 — 아래 _job_engine 주석.
+동기 워커에서 async 파이프라인을 돌린다. 이 파일이 이 코드베이스에서 워커가
+async 코드를 부르는 첫 자리다(`app/workers/` 에 기존 asyncio 사용 0건). 그래서
+루프와 세션을 다루는 규칙을 여기서 못박아 둔다 — 아래 _job_engine 주석.
 """
 import asyncio
 import datetime as _dt
 import logging
+import uuid
 
 from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy import select, text as sa_text, update
@@ -2987,7 +3452,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from core.config import get_settings
 from db.postgres import SyncSessionLocal
-from models.research import ResearchJob, ResearchStep, STEP_KINDS
+from models.research import (
+    JOB_STAGES, RUNNABLE_STATUSES, STATUS_CANCELED, STEP_KINDS,
+    ResearchJob, ResearchStep,
+)
 from services.research.relay import publish
 from services.research.runner import explore_subquestion
 from services.research.state import (
@@ -3002,6 +3470,8 @@ log = logging.getLogger(__name__)
 # 상한이 없으면 응답 없는 LLM 호출 하나가 q_llm 워커를 영구 점유한다.
 SOFT_LIMIT = 1800
 HARD_LIMIT = 2100
+
+STALE_MINUTES = 30
 
 
 def _job_engine():
@@ -3024,7 +3494,28 @@ def _job_engine():
     return engine, async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-async def _next_seq(db: AsyncSession, job_id) -> int:
+def _job_uuid(job_id: str) -> uuid.UUID:
+    """Celery 는 job_id 를 문자열로만 실어 나른다 — PK 타입으로 되돌린다.
+
+    research_jobs.id 는 UUID(as_uuid=True) 라 문자열을 그대로 넘기면 identity
+    map 키가 str 과 UUID 로 갈려 같은 잡을 두 객체로 들고 있게 되고, 드라이버
+    쪽 변환에 기대는 부분도 생긴다. app/api 에도 UUID PK 선례가 없으므로
+    여기서 규칙을 정한다 — 경계에서 한 번 변환하고 안쪽은 UUID 만 쓴다.
+    """
+    return uuid.UUID(str(job_id))
+
+
+def _set_stage(job: ResearchJob, stage: str) -> None:
+    """JOB_STAGES 를 실제로 강제하는 유일한 지점.
+
+    stage 오타는 재개 분기(stage == "explored")를 조용히 빗나가게 만든다 —
+    예외도 안 나고 그냥 탐색을 처음부터 다시 돌 뿐이라 알아채기 어렵다.
+    """
+    assert stage in JOB_STAGES, f"알 수 없는 stage: {stage}"
+    job.stage = stage
+
+
+async def _next_seq(db: AsyncSession, job_id: uuid.UUID) -> int:
     """이어붙일 seq. 1 부터 다시 시작하면 uq_research_steps_job_seq 를 위반한다.
 
     재시도·재개는 정상 경로다(워커 사망 복구, 종합만 재실행). 그때마다
@@ -3032,7 +3523,7 @@ async def _next_seq(db: AsyncSession, job_id) -> int:
     """
     row = await db.execute(sa_text(
         "SELECT coalesce(max(seq), -1) + 1 FROM research_steps WHERE job_id = :j"
-    ), {"j": str(job_id)})
+    ), {"j": job_id})
     return int(row.scalar_one())
 
 
@@ -3089,7 +3580,57 @@ async def _is_cancelled(db: AsyncSession, job_id) -> bool:
     """취소 여부를 DB 에서 다시 읽는다 — 취소는 API 프로세스에서 찍힌다."""
     await db.commit()          # 열린 트랜잭션의 스냅샷을 버려야 남의 커밋이 보인다
     res = await db.execute(select(ResearchJob.status).where(ResearchJob.id == job_id))
-    return res.scalar_one_or_none() == "cancelled"
+    return res.scalar_one_or_none() == STATUS_CANCELED
+
+
+@celery_app.task(name="tasks.plan_deep_research", queue="q_llm",
+                 soft_time_limit=SOFT_LIMIT, time_limit=HARD_LIMIT)
+def plan_deep_research(job_id: str) -> dict:
+    """계획만 세우고 승인 대기 상태로 멈춘다. 잡 전체를 이벤트 루프 하나로 돈다."""
+    return asyncio.run(_plan_deep_research(job_id))
+
+
+async def _plan_deep_research(job_id: str) -> dict:
+    from services.research.planner import make_plan
+
+    jid = _job_uuid(job_id)
+    engine, Session = _job_engine()
+    try:
+        async with Session() as db:
+            job = await db.get(ResearchJob, jid)
+            if job is None:
+                return {"error": "job not found", "job_id": job_id}
+
+            if not await _claim(db, jid, allowed=("created",), to="planning"):
+                log.warning("[research] 이미 계획 중이거나 계획된 잡 — 건너뛴다 job=%s", job_id)
+                return {"job_id": job_id, "status": "skipped"}
+
+            await db.refresh(job)
+            seq = await _next_seq(db, jid)
+            row = await _step(db, jid, seq, "plan", "연구 계획 수립",
+                              detail="질문을 하위질문으로 분해하는 중입니다")
+            try:
+                params = merge_params(job.params or {})
+                plan = await make_plan(job.question, params=params)
+                job.plan = plan
+                _set_stage(job, "planned")
+                job.status = "awaiting_approval"
+                await _finish(db, row, "done", {"subquestions": plan})
+            except SoftTimeLimitExceeded:
+                await _finish(db, row, "failed", {"error": "시간 상한 초과"})
+                raise
+            except Exception as e:
+                log.exception("[research] 계획 수립 실패 job=%s", jid)
+                job.status = "failed"
+                job.last_error = str(e)[:1000]
+                await _finish(db, row, "failed", {"error": str(e)[:500]})
+            await db.commit()
+            return {"job_id": str(jid), "status": job.status}
+
+    except SoftTimeLimitExceeded:
+        return await _mark_timed_out(Session, jid)
+    finally:
+        await engine.dispose()
 
 
 @celery_app.task(name="tasks.run_deep_research", queue="q_llm",
@@ -3103,31 +3644,32 @@ def run_deep_research(job_id: str) -> dict:
 
 
 async def _run_deep_research(job_id: str) -> dict:
+    jid = _job_uuid(job_id)
     engine, Session = _job_engine()
     try:
         async with Session() as db:
-            job = await db.get(ResearchJob, job_id)
+            job = await db.get(ResearchJob, jid)
             if job is None:
                 return {"error": "job not found", "job_id": job_id}
 
             # 재개 가능한 상태만 받는다. running 인 잡을 다시 받으면 재배달이다.
-            if not await _claim(db, job.id, allowed=("approved", "queued"), to="running"):
+            if not await _claim(db, jid, allowed=RUNNABLE_STATUSES, to="running"):
                 log.warning("[research] 이미 처리 중이거나 처리된 잡 — 건너뛴다 job=%s", job_id)
                 return {"job_id": job_id, "status": "skipped"}
 
             await db.refresh(job)
-            seq = await _next_seq(db, job.id)
+            seq = await _next_seq(db, jid)
 
             async def _emit(kind, payload):
-                await publish(str(job.id), kind, payload)
+                await publish(str(jid), kind, payload)
 
             # ── 탐색: stage 가 이미 explored 면 건너뛰고 스냅샷을 되살린다 ──
             if job.stage == "explored" and job.state_snapshot:
-                state = restore_state(str(job.id), job.state_snapshot)
+                state = restore_state(str(jid), job.state_snapshot)
                 log.info("[research] 탐색 건너뜀 — 스냅샷에서 재개 job=%s", job_id)
             else:
                 state = ResearchState(
-                    job_id=str(job.id), question=job.question,
+                    job_id=str(jid), question=job.question,
                     params=merge_params(job.params or {}),
                 )
                 state.subquestions = [
@@ -3136,11 +3678,13 @@ async def _run_deep_research(job_id: str) -> dict:
                 state.corpus_range = await _corpus_range(db)
 
                 for subq in state.subquestions:
-                    if await _is_cancelled(db, job.id):
-                        await _emit("cancelled", {})
-                        return {"job_id": job_id, "status": "cancelled"}
+                    if await _is_cancelled(db, jid):
+                        # 이벤트 kind 도 상태와 같은 철자를 쓴다 — api/research.py 의
+                        # TERMINAL_KINDS 가 이 값으로 스트림을 끊는다.
+                        await _emit(STATUS_CANCELED, {})
+                        return {"job_id": job_id, "status": STATUS_CANCELED}
 
-                    row = await _step(db, job.id, seq, "search", subq.text,
+                    row = await _step(db, jid, seq, "search", subq.text,
                                       subq_idx=subq.idx,
                                       detail=f"'{subq.text}' 관련 논문을 찾기 위해 검색 중입니다")
                     seq += 1
@@ -3151,31 +3695,41 @@ async def _run_deep_research(job_id: str) -> dict:
                             "verdict": subq.verdict, "note": subq.note,
                             "parse_failed": subq.parse_failed,
                         })
+                    except SoftTimeLimitExceeded:
+                        # 아래 except Exception 보다 먼저 와야 한다. SoftTimeLimitExceeded
+                        # 도 Exception 이라 거기서 삼키면 남은 하위질문을 계속 돌다가
+                        # 하드 리밋에 프로세스째 죽고, 잡은 running 에 묶여 흔적도 안 남는다.
+                        await _finish(db, row, "failed", {"error": "시간 상한 초과"})
+                        raise
                     except Exception as e:
                         # 부분 실패는 전체 실패가 아니다 — 나머지 하위질문은 계속한다.
                         # 다만 failed 를 남겨야 보고서가 이걸 "근거 없음"(연구 결과)이
                         # 아니라 "오류로 확인 못함"(시스템 장애)으로 쓴다.
-                        log.exception("[research] 하위질문 실패 job=%s idx=%s", job.id, subq.idx)
+                        log.exception("[research] 하위질문 실패 job=%s idx=%s", jid, subq.idx)
                         subq.failed = True
                         await _finish(db, row, "failed", {"error": str(e)[:500]})
 
                 # 체크포인트. 여기까지가 비싼 구간이고, 종합은 다시 돌려도 싸다.
-                job.stage = "explored"
+                _set_stage(job, "explored")
                 job.state_snapshot = snapshot_state(state)
                 await db.commit()
 
             # ── 종합 ──
-            row = await _step(db, job.id, seq, "synthesize", "보고서 종합")
+            row = await _step(db, jid, seq, "synthesize", "보고서 종합")
             try:
                 report = await synthesize(state)
                 job.report = report
-                job.stage = "synthesized"
+                _set_stage(job, "synthesized")
                 job.status = "completed"
                 await _finish(db, row, "done", {"sections": len(report["sections"])})
                 await _emit("done", {"status": "completed"})
+            except SoftTimeLimitExceeded:
+                await _finish(db, row, "failed", {"error": "시간 상한 초과"})
+                raise
             except Exception as e:
                 # stage 는 explored 로 남는다 → 재시도가 탐색을 건너뛰고 여기부터 온다.
-                log.exception("[research] 종합 실패 job=%s", job.id)
+                # 그 재시도를 거는 곳이 POST /api/research/{job_id}/retry 다.
+                log.exception("[research] 종합 실패 job=%s", jid)
                 job.status = "failed"
                 job.last_error = str(e)[:1000]
                 await _finish(db, row, "failed", {"error": str(e)[:500]})
@@ -3183,60 +3737,221 @@ async def _run_deep_research(job_id: str) -> dict:
 
             job.finished_at = _dt.datetime.now(_dt.timezone.utc)
             await db.commit()
-            return {"job_id": str(job.id), "status": job.status}
+            return {"job_id": str(jid), "status": job.status}
 
     except SoftTimeLimitExceeded:
-        # 하드 리밋에 죽으면 상태를 못 남긴다. 소프트에서 잡아 흔적을 남긴다.
-        log.error("[research] 시간 상한 초과 job=%s", job_id)
-        async with Session() as db2:
-            await db2.execute(
-                update(ResearchJob).where(ResearchJob.id == job_id).values(
-                    status="failed", last_error="시간 상한 초과 — 워커를 회수했다",
-                    finished_at=_dt.datetime.now(_dt.timezone.utc),
-                )
-            )
-            await db2.commit()
-        return {"job_id": job_id, "status": "failed"}
+        return await _mark_timed_out(Session, jid)
     finally:
         # 루프가 죽기 전에 커넥션을 닫는다. 빠뜨리면 다음 잡이 남은 커넥션을 만난다.
         await engine.dispose()
-```
 
-**`plan_deep_research` 도 같은 규칙을 따른다** — `asyncio.run` 한 번, 잡 단위 엔진, 조건부 선점(`allowed=("created",)` → `"planning"`), `_next_seq`. 성공 시 `job.stage = "planned"`, `job.status = "awaiting_approval"` 이다. 초안이 `seq` 에 `0` 을 하드코딩한 자리도 `_next_seq` 로 바꾼다.
 
-- [ ] **Step 2: 취소 엔드포인트와 SSE 종료**
+async def _mark_timed_out(Session, jid: uuid.UUID) -> dict:
+    """하드 리밋에 죽으면 상태를 못 남긴다. 소프트에서 잡아 흔적을 남긴다.
 
-`relay.subscribe` 에 유휴 타임아웃을 더한다. `listen()` 은 트래픽이 없으면 영원히 블록하므로, 클라이언트가 조용히 끊겨도 엔드포인트가 그걸 알 방법이 없다 — 아무것도 쓰지 않으니 broken pipe 도 안 난다.
-
-```python
-async def subscribe(job_id: str, *, idle_timeout: float = 15.0):
-    """이벤트 dict 를 yield 한다. 유휴 구간에서는 None 을 yield 한다.
-
-    None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 SSE 주석 프레임을 흘려
-    끊긴 소켓을 감지하고, 잡이 이미 끝났는지도 확인한다. listen() 만 쓰면
-    조용한 잡에서 커넥션이 영원히 남는다.
+    stage 는 건드리지 않는다 — 탐색까지 끝낸 뒤 종합에서 시간을 넘긴 잡은
+    재시도가 스냅샷에서 이어받을 수 있어야 한다.
     """
-    cfg = get_settings()
-    client = aioredis.from_url(cfg.REDIS_URL)
-    pubsub = client.pubsub()
-    await pubsub.subscribe(channel(job_id))
-    try:
-        while True:
-            message = await pubsub.get_message(
-                ignore_subscribe_messages=True, timeout=idle_timeout,
+    log.error("[research] 시간 상한 초과 job=%s", jid)
+    async with Session() as db:
+        await db.execute(
+            update(ResearchJob).where(ResearchJob.id == jid).values(
+                status="failed", last_error="시간 상한 초과 — 워커를 회수했다",
+                finished_at=_dt.datetime.now(_dt.timezone.utc),
             )
-            yield json.loads(message["data"]) if message else None
+        )
+        await db.commit()
+    return {"job_id": str(jid), "status": "failed"}
+
+
+@celery_app.task(name="tasks.reap_stale_research", queue="q_control")
+def reap_stale_research() -> dict:
+    """멈춰버린 리서치를 실패로 떨어뜨린다.
+
+    딥리서치는 한 번에 5~7분이고 종합이 길어도 10분을 안 넘는다.
+    30분 넘게 running 이면 워커가 죽은 것이다.
+
+    approved·queued 는 회수하지 않는다 — 아직 워커가 집지 않은 정상 대기 상태다.
+    """
+    db = SyncSessionLocal()
+    try:
+        steps = db.execute(sa_text(
+            "UPDATE research_steps SET status = 'failed', "
+            "       result = result || '{\"error\": \"stale — 워커 응답 없음\"}'::jsonb, "
+            "       finished_at = now() "
+            "WHERE status = 'running' "
+            "  AND updated_at < now() - make_interval(mins => :m) "
+            "RETURNING job_id"
+        ), {"m": STALE_MINUTES}).fetchall()
+
+        # coalesce 가 필요한 이유: started_at 은 선점 시점에 찍힌다. planning 단계에서
+        # 워커가 죽으면 started_at 이 NULL 이고, NULL 비교는 NULL 이라 조건이 참이
+        # 되지 않아 그 잡은 영원히 회수되지 않는다.
+        jobs = db.execute(sa_text(
+            "UPDATE research_jobs SET status = 'failed', "
+            "       last_error = 'stale — 워커 응답 없음', finished_at = now() "
+            "WHERE status IN ('planning', 'running') "
+            "  AND coalesce(started_at, created_at) < now() - make_interval(mins => :m) "
+            "RETURNING id"
+        ), {"m": STALE_MINUTES}).fetchall()
+
+        db.commit()
+        return {"steps": len(steps), "jobs": len(jobs)}
+    except Exception:
+        db.rollback()
+        raise
     finally:
-        await pubsub.unsubscribe(channel(job_id))
-        await pubsub.aclose()
-        await client.aclose()
+        db.close()
 ```
 
-API 에 취소를 더하고 스트림에 종료 조건을 건다.
+- [x] **`app/api/research.py`**
 
 ```python
-TERMINAL_KINDS = ("done", "failed", "cancelled")
-TERMINAL_STATUSES = ("completed", "failed", "cancelled")
+"""research.py — 딥리서치 API
+
+실행은 Celery 가 맡고 진행은 SSE 로 중계한다. 탭을 닫아도 워커는 계속 돌고,
+다시 열면 research_steps 로 지금까지를 복원한 뒤 이어서 받는다.
+
+상태 전이:
+    created ─plan─→ planning ─→ awaiting_approval ─approve─→ approved
+    approved ─run─→ running ─→ completed | failed
+    failed ─retry─→ queued ─run─→ running (stage=explored 면 종합부터)
+    (거의 모든 상태) ─cancel─→ canceled
+"""
+import json
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.deps import get_db
+from db.postgres import AsyncSessionLocal
+from models.research import (
+    STATUS_APPROVED, STATUS_CANCELED, STATUS_QUEUED, ResearchJob, ResearchStep,
+)
+from services.research.relay import subscribe
+from services.research.state import merge_params
+
+router = APIRouter(prefix="/api/research", tags=["research"])
+
+# 중계를 끊어야 하는 이벤트 / 이미 끝난 잡의 상태.
+# 이벤트 kind 도 상태와 같은 철자(canceled)를 쓴다 — 두 철자가 섞이면
+# 프론트 분기가 조용히 빗나간다.
+TERMINAL_KINDS = ("done", "failed", STATUS_CANCELED)
+TERMINAL_STATUSES = ("completed", "failed", STATUS_CANCELED)
+
+# 취소를 받아주는 상태. completed·failed·canceled 는 이미 끝난 잡이라 409 다.
+CANCELLABLE_STATUSES = (
+    "created", "planning", "awaiting_approval",
+    STATUS_APPROVED, STATUS_QUEUED, "running",
+)
+
+
+class ResearchCreate(BaseModel):
+    question: str = Field(min_length=2, max_length=500)
+    params: dict = Field(default_factory=dict)
+
+
+class ResearchApprove(BaseModel):
+    plan: list[str] | None = None      # 사용자가 수정한 계획. 없으면 제안대로.
+
+
+def _job_uuid(job_id: str) -> uuid.UUID:
+    """경로 파라미터를 PK 타입으로 바꾼다. 형식이 틀리면 422 — 500 이 아니다."""
+    try:
+        return uuid.UUID(job_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="job_id 형식이 올바르지 않습니다")
+
+
+async def _get_job(db: AsyncSession, job_id: str) -> ResearchJob:
+    job = await db.get(ResearchJob, _job_uuid(job_id))
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    return job
+
+
+@router.post("")
+async def create_research(req: ResearchCreate, db: AsyncSession = Depends(get_db)):
+    try:
+        params = merge_params(req.params)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    job = ResearchJob(id=uuid.uuid4(), question=req.question, params=params)
+    db.add(job)
+    await db.commit()
+
+    from workers.celery_app import celery_app
+    celery_app.send_task("tasks.plan_deep_research", args=[str(job.id)])
+    return {"job_id": str(job.id), "status": "created"}
+
+
+@router.post("/{job_id}/approve")
+async def approve_plan(
+    job_id: str, req: ResearchApprove, db: AsyncSession = Depends(get_db),
+):
+    """계획을 확정하고 실행 큐에 넣는다.
+
+    status 를 STATUS_APPROVED 로 바꾸는 것이 핵심이다. 상태를 그대로 두고
+    태스크만 던지면 워커의 _claim(allowed=RUNNABLE_STATUSES) 이 0행을 잡아
+    잡이 영원히 skipped 로 떨어진다 — 그래서 양쪽이 같은 상수를 본다.
+    """
+    job = await _get_job(db, job_id)
+    if job.status != "awaiting_approval":
+        raise HTTPException(
+            status_code=409, detail=f"승인할 수 없는 상태다: {job.status}",
+        )
+    if req.plan is not None:
+        if not req.plan:
+            raise HTTPException(status_code=422, detail="계획이 비어 있다")
+        job.plan = req.plan
+    job.status = STATUS_APPROVED
+    await db.commit()
+
+    from workers.celery_app import celery_app
+    celery_app.send_task("tasks.run_deep_research", args=[str(job.id)])
+    return {"job_id": job_id, "status": job.status, "plan": job.plan}
+
+
+@router.post("/{job_id}/retry")
+async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
+    """실패한 잡을 다시 큐에 넣는다. **체크포인트에 닿는 유일한 경로다.**
+
+    종합이 실패하면 워커는 status="failed" 로 두고 stage="explored" 와
+    state_snapshot 을 남긴다. 그런데 _claim 은 approved·queued 만 받으므로
+    failed 인 잡은 아무도 다시 집을 수 없다 — 이 엔드포인트가 없으면
+    stage·state_snapshot 은 쓰기만 하고 아무도 안 읽는 컬럼이 되고,
+    5~7분짜리 탐색을 지켜둔 의미가 사라진다.
+
+    stage 와 state_snapshot 을 건드리지 않는 것이 이 엔드포인트의 전부다.
+    둘을 초기화하면 재시도가 탐색부터 다시 돌아 체크포인트가 무의미해진다.
+
+    계획 단계에서 실패한 잡(plan 이 비어 있음)은 받지 않는다. 그대로
+    run_deep_research 에 넘기면 하위질문 0개로 탐색이 끝나고 빈 보고서를
+    completed 로 저장한다 — 실패보다 나쁜 조용한 성공이다.
+    """
+    job = await _get_job(db, job_id)
+    if job.status != "failed":
+        raise HTTPException(
+            status_code=409, detail=f"재시도할 수 없는 상태다: {job.status}",
+        )
+    if not job.plan:
+        raise HTTPException(
+            status_code=409, detail="계획이 없는 잡은 재시도할 수 없다 — 새 잡을 만든다",
+        )
+
+    job.status = STATUS_QUEUED
+    job.last_error = None
+    job.finished_at = None      # 큐에 들어간 잡이 종료시각을 들고 있으면 안 된다
+    await db.commit()
+
+    from workers.celery_app import celery_app
+    celery_app.send_task("tasks.run_deep_research", args=[str(job.id)])
+    return {"job_id": job_id, "status": job.status, "stage": job.stage}
 
 
 @router.post("/{job_id}/cancel")
@@ -3248,22 +3963,37 @@ async def cancel_research(job_id: str, db: AsyncSession = Depends(get_db)):
     """
     res = await db.execute(
         update(ResearchJob)
-        .where(ResearchJob.id == uuid.UUID(job_id),
-               ResearchJob.status.in_(("created", "planning", "awaiting_approval",
-                                       "approved", "queued", "running")))
-        .values(status="cancelled", finished_at=func.now())
+        .where(ResearchJob.id == _job_uuid(job_id),
+               ResearchJob.status.in_(CANCELLABLE_STATUSES))
+        .values(status=STATUS_CANCELED, finished_at=func.now())
     )
     await db.commit()
     if res.rowcount == 0:
         raise HTTPException(status_code=409, detail="취소할 수 없는 상태입니다")
-    return {"job_id": job_id, "status": "cancelled"}
+    return {"job_id": job_id, "status": STATUS_CANCELED}
+
+
+@router.get("/{job_id}")
+async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
+    job = await _get_job(db, job_id)
+    rows = (await db.execute(
+        select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
+    )).scalars().all()
+    return {
+        "job_id": job_id, "question": job.question, "status": job.status,
+        "stage": job.stage, "plan": job.plan, "report": job.report,
+        "last_error": job.last_error,
+        "steps": [
+            {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx, "title": s.title,
+             "detail": s.detail, "status": s.status, "result": s.result}
+            for s in rows
+        ],
+    }
 
 
 @router.get("/{job_id}/stream")
 async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
-    job = await db.get(ResearchJob, uuid.UUID(job_id))
-    if job is None:
-        raise HTTPException(status_code=404, detail="job not found")
+    job = await _get_job(db, job_id)
 
     rows = (await db.execute(
         select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
@@ -3273,25 +4003,25 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
          "title": s.title, "detail": s.detail, "status": s.status}
         for s in rows
     ]
-    already_done = job.status in TERMINAL_STATUSES
+    # 제너레이터는 요청 세션이 닫힌 뒤에 돈다 — ORM 객체를 들고 가지 않고
+    # 필요한 값만 미리 꺼내 둔다.
+    job_uuid = job.id
+    job_status = job.status
 
     async def _gen():
         # 재접속 복원 — 뼈대를 먼저 보내고 그 뒤를 중계한다
         yield f"data: {json.dumps({'kind': 'snapshot', 'steps': snapshot}, ensure_ascii=False)}\n\n"
-        if already_done:
+        if job_status in TERMINAL_STATUSES:
             # 끝난 잡에 붙었다면 중계할 것이 없다. 구독하면 영원히 기다린다.
-            yield f"data: {json.dumps({'kind': 'done', 'status': job.status}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'kind': 'done', 'status': job_status}, ensure_ascii=False)}\n\n"
             return
         async for event in subscribe(job_id):
             if event is None:
                 # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 종료 이벤트를
                 # 놓친 채 붙어 있는 경우를 대비해 상태를 한 번 더 확인한다.
                 yield ": ping\n\n"
-                st = (await db.execute(
-                    select(ResearchJob.status).where(ResearchJob.id == job.id)
-                )).scalar_one_or_none()
-                await db.commit()
-                if st in TERMINAL_STATUSES:
+                st = await _terminal_status(job_uuid)
+                if st is not None:
                     yield f"data: {json.dumps({'kind': 'done', 'status': st}, ensure_ascii=False)}\n\n"
                     return
                 continue
@@ -3303,70 +4033,424 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
         _gen(), media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+async def _terminal_status(job_uuid: uuid.UUID) -> str | None:
+    """하트비트마다 짧은 세션을 새로 연다 — Depends(get_db) 세션을 쓰지 않는다.
+
+    FastAPI 는 핸들러가 반환하면 yield 의존성을 닫는다. StreamingResponse 의
+    제너레이터는 그 뒤에 도는데, 닫힌 세션을 계속 쓰면 유휴 SSE 하나가
+    커넥션을 몇 분씩 쥐고 있게 되고 수명도 요청 수명을 벗어난다. 여기는
+    FastAPI 의 장수 루프 안이라 풀링 엔진(AsyncSessionLocal)이 맞다.
+    """
+    async with AsyncSessionLocal() as db:
+        st = (await db.execute(
+            select(ResearchJob.status).where(ResearchJob.id == job_uuid)
+        )).scalar_one_or_none()
+    return st if st in TERMINAL_STATUSES else None
 ```
 
-**Nginx 버퍼링** — `X-Accel-Buffering: no` 는 붙어 있지만, 게이트웨이에 `proxy_buffering off` 와 넉넉한 `proxy_read_timeout` 이 없으면 SSE 가 뭉쳐서 도착하거나 유휴 중에 끊긴다. Task 11 에서 확인한다.
+- [x] **`app/tests/test_research_tasks.py`**
 
-- [ ] **Step 3: 나머지는 초안대로**
+```python
+"""test_research_tasks.py — 딥리서치 Celery 태스크
 
-`create` · `approve` · `get` 엔드포인트, 큐 라우팅(`q_llm`), stale 회수 태스크(`reap_stale_research`)는 초안 그대로 쓴다. 회수 태스크의 `coalesce(started_at, created_at)` 은 그대로 둔다 — `started_at` 이 NULL 인 `planning` 잡이 영원히 회수되지 않는 것을 막는 장치다.
+`workers.research_tasks` 는 celery(태스크 데코레이터)와 redis(relay) 를 물고
+온다. 둘 다 로컬 venv 에 없어서 최상단에서 import 하면 pytest 가 **collection
+단계에서** 죽고 세션 전체가 0건이 된다(`docs/ops/recurring-gotchas.md` 13번).
+그래서 미설치일 때만 더미를 꽂고 함수 안에서 import 한다
+(test_embed_index_guard.py·test_search_chunk_answer_flag.py 와 같은 방식).
 
-다만 회수 대상 상태에 `queued`·`approved` 는 넣지 마라. 그건 아직 워커가 집지 않은 정상 대기 상태다.
+DB 는 대역으로 세운다. 여기서 확인하려는 것은 SQL 이 아니라 **분기**다 —
+stage="explored" 로 다시 들어온 잡이 탐색을 건너뛰고 종합부터 가는가.
+"""
+import asyncio
+import importlib
+import sys
+import types
+import uuid
+from unittest.mock import MagicMock
 
-- [ ] **Step 4: 테스트**
+from services.research.state import (
+    Chunk, Evidence, ResearchState, SubQuestion, merge_params, snapshot_state,
+)
 
-DB·Redis·LLM 없이 도는 것만 테스트한다. 다음 셋은 **반드시** 넣는다.
+_CACHED = ("workers.research_tasks", "workers.celery_app", "services.research.relay")
 
-1. `snapshot_state` ↔ `restore_state` 왕복 항등 — 특히 `parse_failed`·`failed` 보존.
-2. `build_limitations` 가 `failed` 하위질문을 "근거를 찾지 못했다" 가 아니라 "오류로 확인하지 못했다" 로 쓴다.
-3. `_next_seq` 가 기존 최대값 다음을 준다 (SQL 은 대역으로).
 
-`research_tasks.py` 는 `relay`(→`redis`) 와 `explorer`(→간접적으로 torch)를 임포트하므로 **테스트에서 최상단 임포트하지 마라.** 필요하면 `test_search_chunk_answer_flag.py` 의 스텁 패턴을 쓰고, 비용이 이득보다 크면 테스트하지 말고 그렇게 보고하라.
+class _SoftTimeLimitExceeded(Exception):
+    """celery 미설치 환경용 대역. MagicMock 을 except 절에 쓰면 TypeError 가 난다."""
 
-- [ ] **Step 5: 임포트 검증**
 
-```bash
-docker exec nl-lib-worker python -c "import workers.research_tasks; print('OK')"
-docker exec nl-lib-fastapi python -c "import api.research; print('OK')"
+def _stub_missing(monkeypatch, name: str, module=None) -> None:
+    try:
+        importlib.import_module(name)
+    except ModuleNotFoundError:
+        monkeypatch.setitem(sys.modules, name, module or MagicMock())
+
+
+def _load_tasks(monkeypatch):
+    celery_exc = types.ModuleType("celery.exceptions")
+    celery_exc.SoftTimeLimitExceeded = _SoftTimeLimitExceeded
+    _stub_missing(monkeypatch, "celery")
+    _stub_missing(monkeypatch, "celery.exceptions", celery_exc)
+    _stub_missing(monkeypatch, "redis")
+    _stub_missing(monkeypatch, "redis.asyncio")
+    # 더미를 문 채 sys.modules 에 남으면 뒤에 도는 테스트가 Mock 을 물려받는다.
+    for mod in _CACHED:
+        monkeypatch.delitem(sys.modules, mod, raising=False)
+    return importlib.import_module("workers.research_tasks")
+
+
+# ── DB 대역 ────────────────────────────────────────────────────────────
+class _Result:
+    def __init__(self, value):
+        self._value = value
+
+    def scalar_one(self):
+        return self._value
+
+
+class _FakeSession:
+    """execute 를 기록하고 정해진 값을 돌려주는 async 세션 대역."""
+
+    def __init__(self, *, job=None, scalar=None):
+        self.job = job
+        self.scalar = scalar
+        self.sql: list[str] = []
+        self.params: list[dict] = []
+        self.commits = 0
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def execute(self, stmt, params=None):
+        self.sql.append(str(stmt))
+        self.params.append(params)
+        return _Result(self.scalar)
+
+    async def get(self, model, pk):
+        return self.job
+
+    async def refresh(self, obj):
+        return None
+
+    async def commit(self):
+        self.commits += 1
+
+    def add(self, obj):
+        return None
+
+
+class _FakeEngine:
+    def __init__(self):
+        self.disposed = 0
+
+    async def dispose(self):
+        self.disposed += 1
+
+
+class _FakeJob:
+    """ResearchJob 대역 — 태스크가 실제로 읽고 쓰는 필드만 가진다."""
+
+    def __init__(self, *, stage, plan, state_snapshot=None):
+        self.id = uuid.uuid4()
+        self.question = "독서 격차 연구는 어디까지 왔나"
+        self.params = {}
+        self.plan = plan
+        self.stage = stage
+        self.state_snapshot = state_snapshot
+        self.status = "running"
+        self.report = None
+        self.last_error = None
+        self.finished_at = None
+
+
+def _explored_snapshot() -> dict:
+    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+    st.subquestions = [
+        SubQuestion(idx=0, text="스냅샷 하위1", queries=["q1"], evidence_ids=["E0"],
+                    verdict="sufficient", note="충분"),
+        SubQuestion(idx=1, text="스냅샷 하위2", failed=True),
+    ]
+    st.evidence = {
+        "E0": Evidence(id="E0", cnts_id="A", meta={"title": "논문 가"},
+                       chunks=[Chunk("c1", "본문", 3, 4, 0.8)]),
+    }
+    return snapshot_state(st)
+
+
+def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list):
+    """DB·Redis·LLM 을 전부 대역으로 바꾸고 호출만 기록한다."""
+    session = _FakeSession(job=job, scalar=0)
+    engine = _FakeEngine()
+    monkeypatch.setattr(rt, "_job_engine", lambda: (engine, lambda: session))
+
+    async def _claim(db, job_id, *, allowed, to):
+        return True
+
+    async def _next_seq(db, job_id):
+        return 3
+
+    async def _step(db, job_id, seq, kind, title, *, subq_idx=None, detail=None):
+        return MagicMock()
+
+    async def _finish(db, row, status, result=None):
+        return None
+
+    async def _corpus_range(db):
+        return {"from": "2002", "to": "2026", "n_papers": 7}
+
+    async def _is_cancelled(db, job_id):
+        return False
+
+    async def _publish(job_id, kind, payload):
+        return None
+
+    async def _explore(state, subq, *, db, emit=None):
+        explored.append(subq.text)
+        return subq
+
+    async def _synthesize(state):
+        synthesized.append(state)
+        return {"sections": []}
+
+    for name, fn in (
+        ("_claim", _claim), ("_next_seq", _next_seq), ("_step", _step),
+        ("_finish", _finish), ("_corpus_range", _corpus_range),
+        ("_is_cancelled", _is_cancelled), ("publish", _publish),
+        ("explore_subquestion", _explore), ("synthesize", _synthesize),
+    ):
+        monkeypatch.setattr(rt, name, fn)
+    return engine
+
+
+class TestNextSeq:
+    """seq 를 1 로 되돌리면 uq_research_steps_job_seq 를 위반해 재시도가 죽는다."""
+
+    def test_returns_value_from_db_not_a_constant(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession(scalar=7)
+        assert asyncio.run(rt._next_seq(db, uuid.uuid4())) == 7
+
+    def test_empty_table_starts_at_zero(self, monkeypatch):
+        # coalesce(max(seq), -1) + 1 — step 이 없는 잡은 0 에서 시작한다
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession(scalar=0)
+        assert asyncio.run(rt._next_seq(db, uuid.uuid4())) == 0
+
+    def test_query_continues_from_max_for_this_job(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession(scalar=5)
+        jid = uuid.uuid4()
+        asyncio.run(rt._next_seq(db, jid))
+        assert "max(seq)" in db.sql[0]
+        assert "job_id = :j" in db.sql[0]
+        # UUID 로 넘긴다 — 문자열을 넘기면 드라이버 쪽 변환에 기대게 된다
+        assert db.params[0] == {"j": jid}
+
+
+class TestResumeFromSnapshot:
+    """stage="explored" 로 다시 들어온 잡은 탐색을 건너뛰고 종합부터 간다.
+
+    이 분기가 없으면 stage·state_snapshot 은 쓰기만 하고 아무도 안 읽는
+    컬럼이 되고, 종합 실패가 5~7분짜리 탐색을 매번 버린다.
+    """
+
+    def test_explored_job_skips_exploration(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["계획 하위1", "계획 하위2"],
+                       state_snapshot=_explored_snapshot())
+        explored, synthesized = [], []
+        _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=synthesized)
+
+        out = asyncio.run(rt._run_deep_research(str(job.id)))
+
+        # plan 을 일부러 채워 뒀다 — 재개 분기를 지우면 여기서 2건이 탐색된다
+        assert explored == []
+        assert len(synthesized) == 1
+        assert out["status"] == "completed"
+        assert job.stage == "synthesized"
+
+    def test_resumed_state_comes_from_the_snapshot(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["계획 하위1", "계획 하위2"],
+                       state_snapshot=_explored_snapshot())
+        explored, synthesized = [], []
+        _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=synthesized)
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        state = synthesized[0]
+        # plan 이 아니라 스냅샷에서 살아난 하위질문이어야 한다
+        assert [sq.text for sq in state.subquestions] == ["스냅샷 하위1", "스냅샷 하위2"]
+        assert state.subquestions[1].failed is True
+        assert state.evidence["E0"].chunks[0].page_start == 3
+
+    def test_planned_job_runs_the_exploration_loop(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1", "계획 하위2"])
+        explored, synthesized = [], []
+        _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=synthesized)
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert explored == ["계획 하위1", "계획 하위2"]
+        assert job.stage == "synthesized"
+
+    def test_exploration_writes_the_checkpoint(self, monkeypatch):
+        """체크포인트를 안 쓰면 종합이 실패했을 때 되살릴 것이 없다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"])
+        _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert job.state_snapshot is not None
+        assert [sq["text"] for sq in job.state_snapshot["subquestions"]] == ["계획 하위1"]
+
+    def test_stage_explored_without_snapshot_falls_back_to_exploration(self, monkeypatch):
+        # 스냅샷이 비어 있으면 되살릴 것이 없다 — 빈 보고서를 completed 로 저장하느니
+        # 탐색을 다시 도는 쪽이 맞다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["계획 하위1"], state_snapshot=None)
+        explored = []
+        _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert explored == ["계획 하위1"]
+
+    def test_engine_is_disposed(self, monkeypatch):
+        # dispose 를 빠뜨리면 다음 잡이 닫힌 루프에 묶인 커넥션을 만난다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["계획 하위1"],
+                       state_snapshot=_explored_snapshot())
+        engine = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert engine.disposed == 1
+
+
+class TestClaim:
+    """Celery 는 at-least-once 다 — 선점에 실패한 재배달은 즉시 돌아서야 한다."""
+
+    def test_unclaimed_job_is_skipped(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"])
+        explored, synthesized = [], []
+        _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=synthesized)
+
+        async def _no_claim(db, job_id, *, allowed, to):
+            return False
+
+        monkeypatch.setattr(rt, "_claim", _no_claim)
+        out = asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert out["status"] == "skipped"
+        assert explored == [] and synthesized == []
+
+    def test_run_claims_only_statuses_the_api_writes(self, monkeypatch):
+        """approve·retry 가 쓰는 상태를 워커가 받지 못하면 잡이 영원히 skipped 다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"])
+        _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+        seen = {}
+
+        async def _record(db, job_id, *, allowed, to):
+            seen["allowed"], seen["to"] = allowed, to
+            return True
+
+        monkeypatch.setattr(rt, "_claim", _record)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        from models.research import STATUS_APPROVED, STATUS_QUEUED
+        assert STATUS_APPROVED in seen["allowed"]
+        assert STATUS_QUEUED in seen["allowed"]
+        assert seen["to"] == "running"
+
+
+class TestStageGuard:
+    def test_unknown_stage_is_rejected(self, monkeypatch):
+        # stage 오타는 재개 분기를 조용히 빗나가게 만든다 — 예외도 안 난다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=[])
+        try:
+            rt._set_stage(job, "explored_")
+        except AssertionError:
+            return
+        raise AssertionError("알 수 없는 stage 가 통과했다")
 ```
 
-- [ ] **Step 6: 커밋**
-
-```bash
-git add app/models/research.py app/alembic/versions/0005_research_jobs.py \
-        app/services/research/state.py app/services/research/synthesizer.py \
-        app/services/research/relay.py app/workers/research_tasks.py \
-        app/workers/celery_app.py app/api/research.py app/main.py app/tests/
-git commit -m "[Feat] round04a — 딥리서치 Celery 태스크와 API"
-```
+- [x] **검증** — `12 passed`(태스크), state 28 · synthesizer 24 · models 17, 전체 **334**. 되돌림 4건 확인. 재개 분기 테스트는 가짜 잡에 **비어 있지 않은 `plan`** 을 함께 넣어야 물린다 — `plan=None` 이면 되돌린 코드도 똑같이 아무것도 탐색하지 않아 테스트가 공허하게 통과한다.
 
 ---
 
 ## Task 11: 운영 배포와 라이브 검증
 
-코드가 아니라 확인 절차다. `docs/ops/bulk_ingest_runbook.md` 의 배포 절차를 따른다.
+코드가 아니라 확인 절차다. `docs/ops/bulk_ingest_runbook.md` 의 배포 절차를 따른다. **이 절의 명령은 사용자가 서버에서 실행한다.**
 
-**순서가 중요하다 — 마이그레이션이 이미지 배포보다 먼저다.** `app/main.py` 의 lifespan 이 `Base.metadata.create_all` 을 부르는데, Task 10 이 research 라우터를 등록하면 `models.research` 가 전이적으로 metadata 에 붙는다. 새 이미지를 먼저 띄우면 `create_all` 이 두 테이블을 만들어버리고, 그 뒤 `alembic upgrade head` 는 `DuplicateTable` 로 죽는다. 더 나쁜 건 `create_all` 이 만든 테이블에는 `server_default` 가 없어(모델은 `default=` 만 가진다) 마이그레이션이 만들었을 스키마와 미묘하게 다른 테이블이 운영에 남는다는 점이다.
+> **초안의 Step 1 은 그대로는 실패한다.** 2026-09-22 실측: 서버의 `alembic_version` 이 `0003_widen_varchar_fields` 다 — `0004` 조차 찍혀 있지 않다. 반면 `0004` 가 만드는 객체는 **전부 실재한다**(10/10). 운영 스키마를 만들어온 것은 Alembic 이 아니라 `app/main.py:32` 의 `Base.metadata.create_all` 과 수동 SQL 이기 때문이다. 이 상태에서 `alembic upgrade head` 를 돌리면 `0004` 의 `add_column` 이 `DuplicateColumn` 으로 죽는다. 상세: `recurring-gotchas.md` 14번.
 
-- [ ] **Step 1: 마이그레이션 적용 (배포보다 먼저)**
+- [ ] **Step 0-a: `0004` 의 데이터 백필 잔량 확인 (stamp 전에)**
 
-```bash
-docker exec -e PYTHONPATH=/app nl-lib-fastapi alembic upgrade head
-```
-
-- [ ] **Step 2: 테이블 생성 확인**
+`stamp` 는 DDL 뿐 아니라 마이그레이션 안의 `op.execute(UPDATE …)` 도 건너뛴다. `0004` 에는 KCI 논문 `doc_type` 백필이 들어 있다.
 
 ```bash
-docker exec nl-lib-postgres psql -U admin -d nl_lib -c "\d research_jobs" -c "\d research_steps"
+docker exec -i nl-lib-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+select count(*) as kci_doc_type_null
+from library_catalog where source_format = 'KCI' and doc_type is null;
+SQL
 ```
 
-- [ ] **Step 3: 이미지 빌드·배포**
+`0` 이면 Step 0-b 로. `0` 이 아니면 먼저 손으로 돌린다:
+`UPDATE library_catalog SET doc_type = 'paper' WHERE source_format = 'KCI' AND doc_type IS NULL;`
+
+- [ ] **Step 0-b: `0004` 스탬프**
+
+객체 10종이 전부 존재함은 2026-09-22 에 확인했다(`ingest_jobs`·`ingest_job_items`·인덱스 6종·`library_catalog.doc_type`·`extra`).
+
+```bash
+docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic stamp 0004_doc_type_extra_ingest_jobs
+```
+
+- [ ] **Step 1: 이미지 빌드·배포**
 
 `NL_LIB_FASTAPI_IMAGE` 를 `:latest` 로 맞춰 빌드한다(`recurring-gotchas.md` 3번 — `build_dev_images.sh` 는 `:dev` 만 만든다). 큰 이미지는 서버에서 `docker pull` 을 먼저 하고 Portainer 에서는 Redeploy 만 누른다(같은 문서 12번).
 
-- [ ] **Step 4: 계획 수립 확인**
+**round03 이월분이 함께 나간다** — 참고문헌 정규식 강화(`49b0274`)가 아직 배포되지 않았다. 인덱싱 재개 전에 이 이미지가 떠 있어야 한다.
 
-관리 API 는 게이트웨이에서 차단돼 있으므로 컨테이너 내부에서 호출한다(`bulk_ingest_runbook.md` §5-a).
+- [ ] **Step 2: `research_*` 테이블 확인 후 `0005` 스탬프**
+
+새 이미지의 API 가 뜨면 lifespan 의 `create_all` 이 **모델에서** `research_jobs`·`research_steps` 를 만든다. 그래서 `0005` 는 DDL 을 돌리지 않고 스탬프만 맞춘다 — 여기서 `upgrade head` 를 쓰면 `DuplicateTable` 이다.
+
+```bash
+docker exec -i nl-lib-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+\d research_jobs
+\d research_steps
+SQL
+docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic stamp 0005_research_jobs
+```
+
+**확인할 것**: `stage` 가 `not null default 'created'`, `params` 가 `not null default '{}'::jsonb`, `uq_research_steps_job_seq` 와 `ix_research_steps_inflight` 가 존재. `status` 는 `not null` 이되 DB 기본값이 **없다**(모델이 파이썬 측 `default=` 만 쓴다) — 앱 경로로는 항상 채워지므로 정상이며, 손으로 INSERT 할 때만 걸린다.
+
+- [ ] **Step 3: 임포트·큐 확인**
+
+```bash
+docker exec nl-lib-worker python -c "import workers.research_tasks; print('OK')"
+docker exec nl-lib-fastapi python -c "import api.research; print('OK')"
+docker exec nl-lib-worker celery -A workers.celery_app inspect active_queues | grep -c q_llm
+```
+
+마지막이 `0` 이면 **태스크가 큐에 쌓이기만 하고 아무도 소비하지 않는다.** 워커의 `-Q` 설정을 확인한다.
+
+- [ ] **Step 4: 계획 수립**
+
+관리 API 는 게이트웨이에서 차단돼 있으므로 컨테이너 내부에서 호출한다(`bulk_ingest_runbook.md` §5-a). 시연 전 리허설이므로 파라미터를 줄여 짧게 돈다.
 
 ```bash
 docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research -H 'Content-Type: application/json' -d '{"question":"공공도서관 서비스 품질 평가는 어떻게 연구되어 왔는가","params":{"max_subquestions":3,"max_recheck":1,"per_subq_top_k":8}}'
@@ -3380,19 +4464,21 @@ Expected: `{"job_id":"...","status":"created"}`
 docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id>
 ```
 
-`status` 가 `awaiting_approval` 이고 `plan` 에 하위질문 3개가 있어야 한다. 확인 후:
+`status` 가 `awaiting_approval`, `stage` 가 `planned`, `plan` 에 하위질문 3개. 확인 후:
 
 ```bash
 docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<job_id>/approve -H 'Content-Type: application/json' -d '{}'
 ```
 
-- [ ] **Step 6: 진행 중계 확인**
+**반환 `status` 가 `approved` 여야 한다.** `awaiting_approval` 이 그대로 돌아오면 워커가 영원히 `skipped` 를 반환한다.
+
+- [ ] **Step 6: 진행 중계**
 
 ```bash
 docker exec nl-lib-fastapi curl -N -s http://localhost:8000/api/research/<job_id>/stream
 ```
 
-첫 줄에 `snapshot` 이 오고, 이어서 `search`·`critique` 이벤트가 흘러야 한다.
+첫 줄에 `snapshot`, 이어서 `search`·`critique` 이벤트. 유휴 15초마다 `: ping` 주석 프레임이 와야 한다 — 안 오면 nginx 가 버퍼링하는 것이니 `proxy_buffering off` 와 `proxy_read_timeout` 을 확인한다(`X-Accel-Buffering: no` 만으로는 부족할 수 있다). 잡이 끝나면 `done` 이 오고 스트림이 **닫혀야** 한다.
 
 - [ ] **Step 7: 보고서 검증 — 인용 무결성**
 
@@ -3402,9 +4488,24 @@ docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id> |
 
 **`미해석` 이 빈 집합이어야 한다.** 하나라도 남으면 `bind_markers` 가 새는 것이니 멈추고 원인을 찾는다.
 
-- [ ] **Step 8: 실측 기록**
+- [ ] **Step 8: 두 번째 잡 — 이벤트 루프 회귀**
 
-실행 소요 시간, 하위질문별 근거 수, 한계 섹션 내용을 완료노트에 적는다. 이 값으로 `params` 기본값(특히 `per_subq_top_k`·`min_evidence_per_subq`)을 조정한다.
+**첫 잡만 돌려보고 넘어가면 안 된다.** 잡 단위 엔진과 `dispose()` 가 실제로 루프 간 커넥션 누수를 막는지는 두 번째 잡에서만 드러난다. Step 4~7 을 한 번 더 돌린다. `attached to a different loop` 가 나오면 `_job_engine` 이 제 일을 못 하는 것이다.
+
+- [ ] **Step 9: 취소·재개 확인**
+
+```bash
+# 취소 — running 중에
+docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<job_id>/cancel
+```
+
+진행 중이던 하위질문을 마친 뒤 멈추고 `canceled` 가 되어야 한다(진행 중인 LLM 호출을 중간에 끊지는 않는다).
+
+재개는 종합이 실패한 잡에서만 확인할 수 있다. 자연발생하지 않으면 건너뛰고 완료노트에 미검증으로 남긴다 — **억지로 실패시키려 프로덕션 설정을 건드리지 않는다.**
+
+- [ ] **Step 10: 실측 기록**
+
+실행 소요 시간, 하위질문별 근거 수, 한계 섹션 내용을 완료노트에 적는다. 이 값으로 `params` 기본값(특히 `per_subq_top_k`·`min_evidence_per_subq`)을 조정한다. **시연용 파라미터도 여기서 정한다** — 5~7분이 설계값이지만 3분 시연에서는 미리 돌려둔 보고서를 여는 편이 안전하다.
 
 ---
 
@@ -3420,6 +4521,7 @@ docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id> |
 
 - ~~`BookRepository.get_by_cnts_ids` 반환형~~ — **해소됨(2026-09-21).** `dict[str, BookOut]` 이고 `BookOut(BookBase)` 가 `title`·`personal_author`·`series_title`·`vol_issue`·`pub_date`·`kci_citations`·`grade` 를 전부 갖는다. ORM 직접 조회로 바꿀 필요 없다.
 - **`uci`·`url` 컬럼이 `BookBase` 에 있다** — `extra` JSONB 에 없다고 외부 원문 링크가 불가능하다고 단정했던 것이 성급했다. 값이 채워져 있으면 인용 팝업의 `원문 보기` 를 자체 상세 페이지가 아니라 KCI 원문으로 보낼 수 있다. **실측 필요.**
-- `pytest-asyncio` 설치 여부 미확인 (Task 9 Step 1)
+- ~~`pytest-asyncio` 설치 여부~~ — **해소됨(2026-09-22).** 설치돼 있지 않고 `app/tests` 전체에서 `@pytest.mark.asyncio` 사용이 0건이다. 관례는 `asyncio.run(...)`. 설치하지 않는다 — 플러그인이 없으면 pytest 가 코루틴을 실행하지 않고 **통과로 처리해** 테스트가 초록불로 빈다.
+- ~~서버 `alembic_version`~~ — **해소됨(2026-09-22).** `0003_widen_varchar_fields` 다. `0004` 조차 안 찍혀 있는데 그 객체 10종은 전부 실재한다 — 운영 스키마는 `create_all` 과 수동 SQL 이 만들어왔다. `recurring-gotchas.md` 14번, 배포 절차는 Task 11 Step 0.
 - Celery 워커가 `q_llm` 큐를 소비하도록 이미 떠 있는지 확인 필요 — 안 떠 있으면 태스크가 큐에 쌓이기만 한다
 - `redis.asyncio` 가 이미지에 포함돼 있는지 미확인 (Task 10 Step 7 에서 드러난다)

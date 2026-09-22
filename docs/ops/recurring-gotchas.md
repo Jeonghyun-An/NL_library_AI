@@ -109,3 +109,12 @@
 - **해결**: torch 를 끌어오는 모듈(`pipeline`·`reranker`·`embedder`)은 **함수 본문 안에서 import 한다.** 이미 코드베이스의 관례다 — `app/api/book.py:619`, `app/main.py:53`, `app/services/ingestion/stages.py:87` 이 전부 그렇게 한다.
 - **재발 방지**: 검색·임베딩·리랭킹을 쓰는 새 모듈을 만들 때 최상단 import 를 쓰지 않는다. 순수 계산 부분을 같은 파일에 두고 싶다면 더더욱 — 그 순수 함수 테스트까지 같이 죽는다.
 
+
+## 14. 운영 스키마를 만드는 것은 Alembic 이 아니라 `create_all` 이다 — 버전 스탬프가 현실보다 뒤처져 있다
+
+- **날짜**: 2026-09-22 (round04a)
+- **증상**: 서버의 `alembic_version` 이 `0003_widen_varchar_fields` 인데, `0004` 가 만드는 객체(`ingest_jobs`·`ingest_job_items`·`library_catalog.doc_type`·`extra`·인덱스 6종)는 **전부 실재한다**(10/10 확인). 이 상태에서 `alembic upgrade head` 를 돌리면 `0004` 의 `op.add_column("library_catalog", "doc_type")` 이 `DuplicateColumn` 으로 죽는다.
+- **원인**: `app/main.py:32` 의 lifespan 이 `Base.metadata.create_all` 을 부른다. 새 **테이블**은 앱이 뜰 때마다 모델에서 자동 생성되므로 `ingest_jobs` 는 마이그레이션 없이 생겼다. 반면 `create_all` 은 **기존 테이블에 컬럼을 추가하지 못하므로** `doc_type`·`extra` 는 수동 SQL(README §8.4)로 들어갔다. 둘 다 Alembic 을 거치지 않아 스탬프만 뒤처졌다.
+- **파생 함정**: 새 모델이 포함된 이미지가 뜨면 `create_all` 이 그 테이블을 **먼저** 만든다. 그 뒤에 해당 마이그레이션을 돌리면 이번엔 `DuplicateTable` 로 죽는다. 그리고 `create_all` 이 만든 테이블에는 모델의 `server_default` 만 반영되고 `default=`(파이썬 측)는 DB 기본값이 되지 않아, 마이그레이션이 만들었을 테이블과 미묘하게 다르다.
+- **해결**: ① 객체가 전부 실재함을 확인한 뒤 `alembic stamp <리비전>` 으로 현실과 스탬프를 맞춘다. ② **`stamp` 는 DDL 뿐 아니라 마이그레이션 안의 데이터 백필(`op.execute(UPDATE …)`)도 건너뛴다** — 스탬프 전에 그 UPDATE 가 필요한 행이 남아 있는지 따로 세고, 남았으면 손으로 돌린다. ③ 새 테이블은 `create_all` 이 만들게 두고 `stamp` 로 맞추거나, 이미지 배포 전에 마이그레이션을 먼저 돌린다 — 둘 중 하나로 정하고 섞지 않는다.
+- **재발 방지**: 배포 전에 `select version_num from alembic_version` 과 실제 객체 존재를 **따로** 확인한다. 버전 테이블은 현실을 반영하지 않는다. 그리고 **`create_all` 과 Alembic 이 동시에 스키마를 만드는 구조 자체가 원인**이므로, 대회 이후 하나로 정리한다(둘 중 무엇이 정본인지 정하고 나머지는 제거).
