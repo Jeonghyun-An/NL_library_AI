@@ -2850,41 +2850,193 @@ git commit -m "[Feat] round04a — 탐색 루프 오케스트레이션과 Redis 
 
 ## Task 10: Celery 태스크와 API
 
-**Files:**
-- Create: `app/workers/research_tasks.py`
-- Create: `app/api/research.py`
-- Modify: `app/workers/celery_app.py` (task_routes 에 항목 추가)
-- Modify: `app/main.py` (라우터 등록)
+> **초안을 제품 기준으로 재설계했다.** 초안은 잡 하나를 성공 경로로 한 번 돌리는 데까지만 맞춰져 있었다. 아래 8가지는 두 번째 잡부터, 재시도에서, 또는 사용자가 창을 닫을 때 드러난다. 코드 블록에는 이미 반영돼 있으니 그대로 따르면 된다.
 
-**착수 전 주의 — 재실행과 유일 제약의 충돌.** Task 1 에서 `research_steps` 에 `(job_id, seq)` 유일 제약이 붙었다. 아래 `_step()` 은 seq 를 0/1..n 으로 **고정 생성**하므로, 같은 잡에 대해 `run_deep_research` 가 두 번 돌면(Celery 브로커 재배달, 수동 재큐) 중복 행 대신 `IntegrityError` 로 태스크가 죽고 잡이 `running` 에 묶인다. API 의 `approve` 중복은 409 로 막히지만 브로커 재배달은 막히지 않는다.
+### 초안의 결함과 정정
 
-제약 자체는 옳다 — 중복이 조용히 쌓이는 것보다 낫다. 다만 이 Task 에서 재진입을 처리해야 한다. **`run_deep_research` 시작부에서 그 잡의 기존 step 을 지우고 새로 쓰거나**, seq 를 `max(existing) + 1` 로 이어붙여라. 전자가 단순하고, 재실행은 애초에 처음부터 다시 도는 것이므로 의미도 맞는다.
+| # | 결함 | 언제 드러나나 | 정정 |
+|---|---|---|---|
+| 1 | `explore_subquestion(..., db=None)` | 첫 잡에서 즉시 | 잡 전체를 감싸는 async 세션을 넘긴다 |
+| 2 | 단계마다 `asyncio.run` + `db/postgres.py` 의 풀링 async 엔진 | **두 번째 잡부터** | 잡당 `asyncio.run` 1회 + 워커 전용 엔진을 만들고 `dispose()` |
+| 3 | `seq` 를 1부터 다시 시작 | 재시도·재개 시 | DB 의 `max(seq)+1` 에서 이어붙인다 |
+| 4 | `status = "running"` 무조건 대입 | Celery 재배달 시 | 조건부 UPDATE 로 선점하고, 못 잡으면 즉시 반환 |
+| 5 | `stage` 없음 · 근거 미영속 | 종합이 실패할 때 | `stage` + `state_snapshot` 을 추가해 종합부터 재개 |
+| 6 | SSE 에 종료 조건·하트비트 없음 | 잡이 끝나거나 창을 닫을 때 | 종료 이벤트로 끊고, 유휴 시 주석 프레임으로 끊긴 소켓을 감지 |
+| 7 | 시간 상한 없음 | LLM 이 멈출 때 | `soft_time_limit` 으로 워커를 돌려받는다 |
+| 8 | 취소 없음 | 사용자가 창을 닫을 때 | `POST /{job_id}/cancel` + 하위질문 경계에서 확인 |
+
+**2번을 특히 주의하라.** `app/db/postgres.py:9` 의 `engine` 은 `pool_size=10` 짜리 풀링 엔진이고 주석이 "비동기 (FastAPI)" 다 — 장수 이벤트 루프 하나를 전제한 설정이다. Celery 태스크가 `asyncio.run` 을 부르면 루프가 매번 새로 만들어지고 닫히는데, 풀은 **닫힌 루프에 묶인 asyncpg 커넥션을 그대로 들고 있는다.** 다음 잡이 그걸 꺼내 쓰면 `attached to a different loop` 로 죽는다. **첫 잡은 성공하고 두 번째부터 깨지므로 리허설을 통과하고 본 시연에서 터진다.** `AsyncSessionLocal` 을 워커에서 재사용하지 마라.
+
+`NullPool` 로 푸는 방법도 있지만 쓰지 않는다. 잡 하나가 5~7분 동안 수십 번 질의하는데 매번 TCP·인증을 새로 하게 된다. **잡 안에서는 루프가 하나뿐이므로 풀이 안전하다** — 잡 단위로 엔진을 만들고 끝에 `dispose()` 하면 풀의 이점은 얻고 루프 간 누수는 없다.
+
+---
+
+- [ ] **Step 0: 모델·마이그레이션 보강 (다른 무엇보다 먼저)**
+
+`0005_research_jobs` 는 **아직 어느 DB 에도 적용되지 않았다**(적용은 Task 11 Step 1). 지금이 리비전을 고칠 수 있는 마지막이자 가장 싼 시점이다. 새 리비전을 얹지 말고 `0005` 를 직접 고친다. 이미 적용된 마이그레이션이라면 절대 하면 안 되는 일이지만, 여기서는 적용 이력이 없다는 것을 먼저 확인하고 하라.
+
+`app/models/research.py` 의 `ResearchJob` 에 두 컬럼을 더한다.
+
+```python
+    # status 는 "지금 무슨 상태인가", stage 는 "어디까지 끝냈는가".
+    # 둘을 한 컬럼으로 합치면 실패했을 때 어디부터 다시 할지 알 수 없다.
+    stage       = Column(String(16), nullable=False, server_default=text("'created'"))
+    # 탐색이 끝난 시점의 ResearchState 스냅샷. 종합만 재실행하기 위한 체크포인트다.
+    # 이게 없으면 종합 LLM 이 실패할 때 5~7분짜리 탐색을 통째로 다시 돌려야 한다.
+    state_snapshot = Column(JSONB)
+```
+
+같은 파일에 상수를 더한다.
+
+```python
+JOB_STAGES = ("created", "planned", "explored", "synthesized")
+```
+
+`app/services/research/state.py` 의 `SubQuestion` 에 한 줄을 더한다.
+
+```python
+    failed: bool = False        # 탐색이 예외로 중단됨 — "근거 없음" 과 구분한다
+```
+
+**왜 `failed` 가 따로 필요한가.** 초안은 하위질문이 예외로 죽어도 `evidence_ids` 가 빈 채로 남을 뿐이라, 보고서가 `"'…' 에 대해서는 근거를 찾지 못했다"` 로 쓴다. 그건 **연구 결과처럼 읽히는 시스템 장애**다. 코퍼스에 자료가 없는 것과 우리 쪽이 터진 것은 사용자에게 완전히 다른 정보다. 이 기능의 값이 "모른다고 정직하게 말하는 것"인데, 장애를 발견으로 포장하면 그 값이 무너진다.
+
+`app/services/research/synthesizer.py` 의 `build_limitations` 에서 `failed` 를 먼저 분기한다.
+
+```python
+    for sq in state.subquestions:
+        if sq.failed:
+            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다.")
+        elif not sq.evidence_ids:
+            out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다")
+        elif sq.verdict == "insufficient":
+            ...
+```
+
+`app/services/research/state.py` 에 스냅샷 직렬화를 더한다. 순수 함수라 DB 없이 테스트된다.
+
+```python
+def snapshot_state(state: "ResearchState") -> dict:
+    """탐색이 끝난 상태를 JSONB 에 넣을 수 있는 형태로 만든다."""
+    return {
+        "question": state.question,
+        "params": state.params,
+        "corpus_range": state.corpus_range,
+        "subquestions": [
+            {"idx": s.idx, "text": s.text, "queries": s.queries,
+             "evidence_ids": s.evidence_ids, "verdict": s.verdict,
+             "parse_failed": s.parse_failed, "failed": s.failed, "note": s.note}
+            for s in state.subquestions
+        ],
+        "evidence": {
+            eid: {
+                "cnts_id": ev.cnts_id, "meta": ev.meta,
+                "chunks": [
+                    {"chunk_id": c.chunk_id, "text": c.text,
+                     "page_start": c.page_start, "page_end": c.page_end, "score": c.score}
+                    for c in ev.chunks
+                ],
+            }
+            for eid, ev in state.evidence.items()
+        },
+    }
+
+
+def restore_state(job_id: str, snap: dict) -> "ResearchState":
+    """snapshot_state 의 역. 종합 단계부터 재개할 때 쓴다."""
+    st = ResearchState(
+        job_id=job_id, question=snap["question"], params=snap["params"],
+        corpus_range=snap.get("corpus_range"),
+    )
+    st.subquestions = [SubQuestion(**sq) for sq in snap["subquestions"]]
+    st.evidence = {
+        eid: Evidence(
+            id=eid, cnts_id=e["cnts_id"], meta=e["meta"],
+            chunks=[Chunk(**c) for c in e["chunks"]],
+        )
+        for eid, e in snap["evidence"].items()
+    }
+    return st
+```
+
+테스트(`app/tests/test_research_state.py` 에 추가): **왕복이 항등이어야 한다.** `restore_state(job_id, snapshot_state(st))` 가 원래 `st` 와 같은 하위질문·근거·판정을 준다. 특히 `parse_failed` 와 `failed` 가 왕복을 살아남는지 각각 단언하라 — 이 두 값이 스냅샷에서 떨어지면 재개한 잡의 보고서에서 한계 섹션이 조용히 비고, 그건 Task 6·8·9 에서 세 번 고친 바로 그 실패다.
+
+마이그레이션 `app/alembic/versions/0005_research_jobs.py` 의 `research_jobs` 정의에 두 컬럼을 더하고, 적용 이력이 없음을 먼저 확인한다.
+
+```bash
+docker exec nl-lib-postgres psql -U <user> -d <db> -c "select version_num from alembic_version"
+# 0004_... 여야 한다. 0005 가 이미 찍혀 있으면 리비전을 고치지 말고 0006 을 새로 만들어라.
+```
 
 - [ ] **Step 1: Celery 태스크 작성**
 
 ```python
 # app/workers/research_tasks.py
-"""research_tasks.py — 딥리서치 실행 태스크
+"""research_tasks.py — 딥리서치 Celery 태스크
 
-동기 워커에서 async 파이프라인을 돌린다(기존 stage 태스크와 같은 방식).
-부분 실패는 전체 실패가 아니다 — 하위질문 하나가 실패해도 나머지는 계속한다.
+동기 워커에서 async 파이프라인을 돌린다. 이 파일이 이 코드베이스에서
+워커가 async 코드를 부르는 첫 자리다(`app/workers/` 에 기존 asyncio 사용 0건).
+그래서 루프와 세션을 다루는 규칙을 여기서 못박아 둔다 — 아래 _job_engine 주석.
 """
 import asyncio
 import datetime as _dt
 import logging
 
+from celery.exceptions import SoftTimeLimitExceeded
+from sqlalchemy import select, text as sa_text, update
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from core.config import get_settings
 from db.postgres import SyncSessionLocal
-from models.research import STEP_KINDS, ResearchJob, ResearchStep
+from models.research import ResearchJob, ResearchStep, STEP_KINDS
 from services.research.relay import publish
 from services.research.runner import explore_subquestion
-from services.research.state import ResearchState, SubQuestion, merge_params
+from services.research.state import (
+    ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
+)
 from services.research.synthesizer import synthesize
 from workers.celery_app import celery_app
 
 log = logging.getLogger(__name__)
 
+# 5~7분이 설계값이고 종합까지 10분을 안 넘긴다. 30분이면 멈춘 것이다.
+# 상한이 없으면 응답 없는 LLM 호출 하나가 q_llm 워커를 영구 점유한다.
+SOFT_LIMIT = 1800
+HARD_LIMIT = 2100
 
-def _step(db, job_id, seq, kind, title, *, subq_idx=None, detail=None):
+
+def _job_engine():
+    """잡 하나짜리 async 엔진.
+
+    db/postgres.py 의 AsyncSessionLocal 을 쓰면 안 된다. 그건 pool_size=10 인
+    풀링 엔진이고 FastAPI 의 장수 루프 하나를 전제한다. Celery 는 잡마다
+    asyncio.run 으로 루프를 새로 만들고 닫는데, 풀은 닫힌 루프에 묶인
+    asyncpg 커넥션을 그대로 들고 있다가 다음 잡에 건네준다 →
+    "attached to a different loop". 첫 잡은 성공하므로 리허설을 통과한다.
+
+    NullPool 대신 잡 단위 엔진을 쓰는 이유: 잡 안에서는 루프가 하나뿐이라
+    풀이 안전하고, 5~7분 동안 수십 번 질의하는데 매번 새로 접속할 이유가 없다.
+    끝에 dispose() 로 루프가 죽기 전에 커넥션을 정리한다.
+    """
+    cfg = get_settings()
+    engine = create_async_engine(
+        cfg.DATABASE_URL, pool_size=5, max_overflow=0, pool_pre_ping=True,
+    )
+    return engine, async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+async def _next_seq(db: AsyncSession, job_id) -> int:
+    """이어붙일 seq. 1 부터 다시 시작하면 uq_research_steps_job_seq 를 위반한다.
+
+    재시도·재개는 정상 경로다(워커 사망 복구, 종합만 재실행). 그때마다
+    IntegrityError 로 죽으면 복구 기능 자체가 동작하지 않는다.
+    """
+    row = await db.execute(sa_text(
+        "SELECT coalesce(max(seq), -1) + 1 FROM research_steps WHERE job_id = :j"
+    ), {"j": str(job_id)})
+    return int(row.scalar_one())
+
+
+async def _step(db: AsyncSession, job_id, seq, kind, title, *, subq_idx=None, detail=None):
     # STEP_KINDS 를 실제로 강제하는 유일한 지점. 상수만 정의하고 아무 데서도
     # 쓰지 않으면 장식이 되고, 오타난 kind 가 프론트 분기를 조용히 빗나간다.
     assert kind in STEP_KINDS, f"알 수 없는 kind: {kind}"
@@ -2893,286 +3045,218 @@ def _step(db, job_id, seq, kind, title, *, subq_idx=None, detail=None):
         subq_idx=subq_idx, detail=detail, status="running",
     )
     db.add(row)
-    db.commit()
+    await db.commit()
     return row
 
 
-def _finish(db, row, status, result=None):
+async def _finish(db: AsyncSession, row, status, result=None):
     row.status = status
     row.result = result or {}
     row.finished_at = _dt.datetime.now(_dt.timezone.utc)
-    db.commit()
+    await db.commit()
 
 
-def _corpus_range(db) -> dict:
+async def _corpus_range(db: AsyncSession) -> dict:
     """실행 시점의 논문 수록 범위.
 
     인덱싱이 계속 도는 중이라 범위가 매주 달라진다. 보고서에 "2002~2009"
     같은 고정 문구를 박으면 곧 거짓말이 된다 — 매 실행마다 잰다.
     """
-    from sqlalchemy import text as sa_text
-
-    row = db.execute(sa_text(
+    row = (await db.execute(sa_text(
         "SELECT min(substring(pub_date, 1, 4)), max(substring(pub_date, 1, 4)), count(*) "
         "FROM library_catalog WHERE doc_type = 'paper' AND is_embedded"
-    )).first()
+    ))).first()
     return {"from": row[0], "to": row[1], "n_papers": row[2]}
 
 
-@celery_app.task(name="tasks.run_deep_research", queue="q_llm")
-def run_deep_research(job_id: str) -> dict:
-    db = SyncSessionLocal()
-    try:
-        job = db.get(ResearchJob, job_id)
-        if job is None:
-            return {"error": "job not found", "job_id": job_id}
+async def _claim(db: AsyncSession, job_id, *, allowed: tuple[str, ...], to: str) -> bool:
+    """조건부 선점. 못 잡으면 False.
 
-        job.status = "running"
-        job.started_at = _dt.datetime.now(_dt.timezone.utc)
-        db.commit()
-
-        state = ResearchState(
-            job_id=str(job.id), question=job.question,
-            params=merge_params(job.params or {}),
-        )
-        state.subquestions = [
-            SubQuestion(idx=i, text=t) for i, t in enumerate(job.plan or [])
-        ]
-        state.corpus_range = _corpus_range(db)
-
-        async def _emit(kind, payload):
-            await publish(str(job.id), kind, payload)
-
-        seq = 1
-        for subq in state.subquestions:
-            row = _step(db, job.id, seq, "search", subq.text,
-                        subq_idx=subq.idx,
-                        detail=f"'{subq.text}' 관련 논문을 찾기 위해 검색 중입니다")
-            seq += 1
-            try:
-                asyncio.run(explore_subquestion(state, subq, db=None, emit=_emit))
-                _finish(db, row, "done", {
-                    "queries": subq.queries, "adopted": len(subq.evidence_ids),
-                    "verdict": subq.verdict, "note": subq.note,
-                })
-            except Exception as e:
-                log.exception("[research] 하위질문 실패 job=%s idx=%s", job.id, subq.idx)
-                _finish(db, row, "failed", {"error": str(e)[:500]})
-
-        row = _step(db, job.id, seq, "synthesize", "보고서 종합")
-        try:
-            report = asyncio.run(synthesize(state))
-            job.report = report
-            job.status = "completed"
-            _finish(db, row, "done", {"sections": len(report["sections"])})
-        except Exception as e:
-            log.exception("[research] 종합 실패 job=%s", job.id)
-            job.status = "failed"
-            job.last_error = str(e)[:1000]
-            _finish(db, row, "failed", {"error": str(e)[:500]})
-
-        job.finished_at = _dt.datetime.now(_dt.timezone.utc)
-        db.commit()
-        return {"job_id": str(job.id), "status": job.status}
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
-```
-
-- [ ] **Step 2: 계획 수립 태스크 추가**
-
-같은 파일 끝에 붙인다.
-
-```python
-@celery_app.task(name="tasks.plan_deep_research", queue="q_llm")
-def plan_deep_research(job_id: str) -> dict:
-    """계획만 세우고 승인 대기 상태로 멈춘다."""
-    from services.research.planner import make_plan
-
-    db = SyncSessionLocal()
-    try:
-        job = db.get(ResearchJob, job_id)
-        if job is None:
-            return {"error": "job not found", "job_id": job_id}
-
-        job.status = "planning"
-        db.commit()
-        row = _step(db, job.id, 0, "plan", "연구 계획 수립",
-                    detail="질문을 하위질문으로 분해하는 중입니다")
-        try:
-            params = merge_params(job.params or {})
-            plan = asyncio.run(make_plan(job.question, params=params))
-            job.plan = plan
-            job.status = "awaiting_approval"
-            _finish(db, row, "done", {"subquestions": plan})
-        except Exception as e:
-            log.exception("[research] 계획 수립 실패 job=%s", job.id)
-            job.status = "failed"
-            job.last_error = str(e)[:1000]
-            _finish(db, row, "failed", {"error": str(e)[:500]})
-        db.commit()
-        return {"job_id": str(job.id), "status": job.status}
-    finally:
-        db.close()
-```
-
-- [ ] **Step 3: 큐 라우팅 등록**
-
-`app/workers/celery_app.py` 의 `task_routes` 에 두 줄을 추가한다.
-
-```python
-        "tasks.plan_deep_research": {"queue": "q_llm"},
-        "tasks.run_deep_research":  {"queue": "q_llm"},
-```
-
-같은 파일에서 `workers.tasks` 를 임포트하는 자리 옆에 `import workers.research_tasks  # noqa: F401` 를 추가해 태스크가 등록되게 한다. 기존 파일이 `app/workers/tasks.py` 끝에서 `import workers.job_runtime` 하는 방식을 따른다.
-
-- [ ] **Step 3-b: 워커 사망 복구 태스크 추가**
-
-워커가 죽으면 step 이 `running` 인 채로 영원히 남고 job 도 `running` 에 묶인다. `ingest_job_items` 와 같은 stale 감지를 붙인다. `research_steps.ix_research_steps_inflight` 인덱스가 이걸 위한 것이다.
-
-`app/workers/research_tasks.py` 끝에 추가한다.
-
-```python
-STALE_MINUTES = 30
-
-
-@celery_app.task(name="tasks.reap_stale_research", queue="q_control")
-def reap_stale_research() -> dict:
-    """멈춰버린 리서치를 실패로 떨어뜨린다.
-
-    딥리서치는 한 번에 5~7분이고 종합이 길어도 10분을 안 넘는다.
-    30분 넘게 running 이면 워커가 죽은 것이다.
+    Celery 는 at-least-once 다 — 워커가 ack 전에 죽으면 같은 잡이 다시 배달된다.
+    무조건 status="running" 을 대입하면 그때 같은 잡이 두 벌 돌아 step 이 중복되고
+    LLM 비용이 두 배가 되며, 두 실행이 같은 job 행을 서로 덮어쓴다.
     """
-    from sqlalchemy import text as sa_text
+    res = await db.execute(
+        update(ResearchJob)
+        .where(ResearchJob.id == job_id, ResearchJob.status.in_(allowed))
+        .values(status=to, started_at=_dt.datetime.now(_dt.timezone.utc))
+    )
+    await db.commit()
+    return res.rowcount == 1
 
-    db = SyncSessionLocal()
+
+async def _is_cancelled(db: AsyncSession, job_id) -> bool:
+    """취소 여부를 DB 에서 다시 읽는다 — 취소는 API 프로세스에서 찍힌다."""
+    await db.commit()          # 열린 트랜잭션의 스냅샷을 버려야 남의 커밋이 보인다
+    res = await db.execute(select(ResearchJob.status).where(ResearchJob.id == job_id))
+    return res.scalar_one_or_none() == "cancelled"
+
+
+@celery_app.task(name="tasks.run_deep_research", queue="q_llm",
+                 soft_time_limit=SOFT_LIMIT, time_limit=HARD_LIMIT)
+def run_deep_research(job_id: str) -> dict:
+    """동기 Celery 진입점. 잡 전체를 이벤트 루프 하나로 돌린다.
+
+    단계마다 asyncio.run 을 부르지 않는 이유는 _job_engine 주석에 있다.
+    """
+    return asyncio.run(_run_deep_research(job_id))
+
+
+async def _run_deep_research(job_id: str) -> dict:
+    engine, Session = _job_engine()
     try:
-        steps = db.execute(sa_text(
-            "UPDATE research_steps SET status = 'failed', "
-            "       result = result || '{\"error\": \"stale — 워커 응답 없음\"}'::jsonb, "
-            "       finished_at = now() "
-            "WHERE status = 'running' "
-            "  AND updated_at < now() - make_interval(mins => :m) "
-            "RETURNING job_id"
-        ), {"m": STALE_MINUTES}).fetchall()
+        async with Session() as db:
+            job = await db.get(ResearchJob, job_id)
+            if job is None:
+                return {"error": "job not found", "job_id": job_id}
 
-        # coalesce 가 필요한 이유: started_at 은 run_deep_research 에서야 찍힌다.
-        # planning 단계에서 워커가 죽으면 started_at 이 NULL 이고, NULL 비교는
-        # NULL 이라 조건이 참이 되지 않아 그 잡은 영원히 회수되지 않는다.
-        jobs = db.execute(sa_text(
-            "UPDATE research_jobs SET status = 'failed', "
-            "       last_error = 'stale — 워커 응답 없음', finished_at = now() "
-            "WHERE status IN ('planning', 'running') "
-            "  AND coalesce(started_at, created_at) < now() - make_interval(mins => :m) "
-            "RETURNING id"
-        ), {"m": STALE_MINUTES}).fetchall()
+            # 재개 가능한 상태만 받는다. running 인 잡을 다시 받으면 재배달이다.
+            if not await _claim(db, job.id, allowed=("approved", "queued"), to="running"):
+                log.warning("[research] 이미 처리 중이거나 처리된 잡 — 건너뛴다 job=%s", job_id)
+                return {"job_id": job_id, "status": "skipped"}
 
-        db.commit()
-        return {"steps": len(steps), "jobs": len(jobs)}
-    except Exception:
-        db.rollback()
-        raise
+            await db.refresh(job)
+            seq = await _next_seq(db, job.id)
+
+            async def _emit(kind, payload):
+                await publish(str(job.id), kind, payload)
+
+            # ── 탐색: stage 가 이미 explored 면 건너뛰고 스냅샷을 되살린다 ──
+            if job.stage == "explored" and job.state_snapshot:
+                state = restore_state(str(job.id), job.state_snapshot)
+                log.info("[research] 탐색 건너뜀 — 스냅샷에서 재개 job=%s", job_id)
+            else:
+                state = ResearchState(
+                    job_id=str(job.id), question=job.question,
+                    params=merge_params(job.params or {}),
+                )
+                state.subquestions = [
+                    SubQuestion(idx=i, text=t) for i, t in enumerate(job.plan or [])
+                ]
+                state.corpus_range = await _corpus_range(db)
+
+                for subq in state.subquestions:
+                    if await _is_cancelled(db, job.id):
+                        await _emit("cancelled", {})
+                        return {"job_id": job_id, "status": "cancelled"}
+
+                    row = await _step(db, job.id, seq, "search", subq.text,
+                                      subq_idx=subq.idx,
+                                      detail=f"'{subq.text}' 관련 논문을 찾기 위해 검색 중입니다")
+                    seq += 1
+                    try:
+                        await explore_subquestion(state, subq, db=db, emit=_emit)
+                        await _finish(db, row, "done", {
+                            "queries": subq.queries, "adopted": len(subq.evidence_ids),
+                            "verdict": subq.verdict, "note": subq.note,
+                            "parse_failed": subq.parse_failed,
+                        })
+                    except Exception as e:
+                        # 부분 실패는 전체 실패가 아니다 — 나머지 하위질문은 계속한다.
+                        # 다만 failed 를 남겨야 보고서가 이걸 "근거 없음"(연구 결과)이
+                        # 아니라 "오류로 확인 못함"(시스템 장애)으로 쓴다.
+                        log.exception("[research] 하위질문 실패 job=%s idx=%s", job.id, subq.idx)
+                        subq.failed = True
+                        await _finish(db, row, "failed", {"error": str(e)[:500]})
+
+                # 체크포인트. 여기까지가 비싼 구간이고, 종합은 다시 돌려도 싸다.
+                job.stage = "explored"
+                job.state_snapshot = snapshot_state(state)
+                await db.commit()
+
+            # ── 종합 ──
+            row = await _step(db, job.id, seq, "synthesize", "보고서 종합")
+            try:
+                report = await synthesize(state)
+                job.report = report
+                job.stage = "synthesized"
+                job.status = "completed"
+                await _finish(db, row, "done", {"sections": len(report["sections"])})
+                await _emit("done", {"status": "completed"})
+            except Exception as e:
+                # stage 는 explored 로 남는다 → 재시도가 탐색을 건너뛰고 여기부터 온다.
+                log.exception("[research] 종합 실패 job=%s", job.id)
+                job.status = "failed"
+                job.last_error = str(e)[:1000]
+                await _finish(db, row, "failed", {"error": str(e)[:500]})
+                await _emit("failed", {"error": str(e)[:200]})
+
+            job.finished_at = _dt.datetime.now(_dt.timezone.utc)
+            await db.commit()
+            return {"job_id": str(job.id), "status": job.status}
+
+    except SoftTimeLimitExceeded:
+        # 하드 리밋에 죽으면 상태를 못 남긴다. 소프트에서 잡아 흔적을 남긴다.
+        log.error("[research] 시간 상한 초과 job=%s", job_id)
+        async with Session() as db2:
+            await db2.execute(
+                update(ResearchJob).where(ResearchJob.id == job_id).values(
+                    status="failed", last_error="시간 상한 초과 — 워커를 회수했다",
+                    finished_at=_dt.datetime.now(_dt.timezone.utc),
+                )
+            )
+            await db2.commit()
+        return {"job_id": job_id, "status": "failed"}
     finally:
-        db.close()
+        # 루프가 죽기 전에 커넥션을 닫는다. 빠뜨리면 다음 잡이 남은 커넥션을 만난다.
+        await engine.dispose()
 ```
 
-`::jsonb` 캐스트는 바인드 파라미터 뒤가 아니라 리터럴 뒤에 붙으므로 문제없다 (`recurring-gotchas.md` 7번 — 금지되는 건 `:param::type` 이다).
+**`plan_deep_research` 도 같은 규칙을 따른다** — `asyncio.run` 한 번, 잡 단위 엔진, 조건부 선점(`allowed=("created",)` → `"planning"`), `_next_seq`. 성공 시 `job.stage = "planned"`, `job.status = "awaiting_approval"` 이다. 초안이 `seq` 에 `0` 을 하드코딩한 자리도 `_next_seq` 로 바꾼다.
 
-Celery beat 스케줄에 10분 주기로 등록한다. `app/workers/celery_app.py` 에 `beat_schedule` 이 이미 있으면 항목만 추가하고, 없으면 일단 등록만 해두고 수동 호출로 검증한다.
+- [ ] **Step 2: 취소 엔드포인트와 SSE 종료**
 
-- [ ] **Step 4: API 작성**
+`relay.subscribe` 에 유휴 타임아웃을 더한다. `listen()` 은 트래픽이 없으면 영원히 블록하므로, 클라이언트가 조용히 끊겨도 엔드포인트가 그걸 알 방법이 없다 — 아무것도 쓰지 않으니 broken pipe 도 안 난다.
 
 ```python
-# app/api/research.py
-"""research.py — 딥리서치 API
+async def subscribe(job_id: str, *, idle_timeout: float = 15.0):
+    """이벤트 dict 를 yield 한다. 유휴 구간에서는 None 을 yield 한다.
 
-실행은 Celery 가 맡고 진행은 SSE 로 중계한다. 탭을 닫아도 워커는 계속 돌고,
-다시 열면 research_steps 로 지금까지를 복원한 뒤 이어서 받는다.
-"""
-import json
-import uuid
-
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from core.deps import get_db
-from models.research import ResearchJob, ResearchStep
-from services.research.relay import subscribe
-from services.research.state import merge_params
-
-router = APIRouter(prefix="/api/research", tags=["research"])
-
-
-class ResearchCreate(BaseModel):
-    question: str = Field(min_length=2, max_length=500)
-    params: dict = Field(default_factory=dict)
-
-
-class ResearchApprove(BaseModel):
-    plan: list[str] | None = None      # 사용자가 수정한 계획. 없으면 제안대로.
-
-
-@router.post("")
-async def create_research(req: ResearchCreate, db: AsyncSession = Depends(get_db)):
+    None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 SSE 주석 프레임을 흘려
+    끊긴 소켓을 감지하고, 잡이 이미 끝났는지도 확인한다. listen() 만 쓰면
+    조용한 잡에서 커넥션이 영원히 남는다.
+    """
+    cfg = get_settings()
+    client = aioredis.from_url(cfg.REDIS_URL)
+    pubsub = client.pubsub()
+    await pubsub.subscribe(channel(job_id))
     try:
-        params = merge_params(req.params)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        while True:
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True, timeout=idle_timeout,
+            )
+            yield json.loads(message["data"]) if message else None
+    finally:
+        await pubsub.unsubscribe(channel(job_id))
+        await pubsub.aclose()
+        await client.aclose()
+```
 
-    job = ResearchJob(id=uuid.uuid4(), question=req.question, params=params)
-    db.add(job)
+API 에 취소를 더하고 스트림에 종료 조건을 건다.
+
+```python
+TERMINAL_KINDS = ("done", "failed", "cancelled")
+TERMINAL_STATUSES = ("completed", "failed", "cancelled")
+
+
+@router.post("/{job_id}/cancel")
+async def cancel_research(job_id: str, db: AsyncSession = Depends(get_db)):
+    """탐색은 하위질문 경계에서 멈춘다 — 진행 중인 LLM 호출을 중간에 끊지는 않는다.
+
+    5~7분짜리 GPU 작업을 멈출 방법이 없으면, 창을 닫은 사용자의 잡이 공유
+    GPU 를 계속 먹는다. 시연 중에 이게 겹치면 다른 기능까지 느려진다.
+    """
+    res = await db.execute(
+        update(ResearchJob)
+        .where(ResearchJob.id == uuid.UUID(job_id),
+               ResearchJob.status.in_(("created", "planning", "awaiting_approval",
+                                       "approved", "queued", "running")))
+        .values(status="cancelled", finished_at=func.now())
+    )
     await db.commit()
-
-    from workers.celery_app import celery_app
-    celery_app.send_task("tasks.plan_deep_research", args=[str(job.id)])
-    return {"job_id": str(job.id), "status": "created"}
-
-
-@router.post("/{job_id}/approve")
-async def approve_plan(
-    job_id: str, req: ResearchApprove, db: AsyncSession = Depends(get_db),
-):
-    job = await db.get(ResearchJob, uuid.UUID(job_id))
-    if job is None:
-        raise HTTPException(status_code=404, detail="job not found")
-    if job.status != "awaiting_approval":
-        raise HTTPException(
-            status_code=409, detail=f"승인할 수 없는 상태다: {job.status}",
-        )
-    if req.plan is not None:
-        if not req.plan:
-            raise HTTPException(status_code=422, detail="계획이 비어 있다")
-        job.plan = req.plan
-    await db.commit()
-
-    from workers.celery_app import celery_app
-    celery_app.send_task("tasks.run_deep_research", args=[str(job.id)])
-    return {"job_id": job_id, "status": "running", "plan": job.plan}
-
-
-@router.get("/{job_id}")
-async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
-    job = await db.get(ResearchJob, uuid.UUID(job_id))
-    if job is None:
-        raise HTTPException(status_code=404, detail="job not found")
-    rows = (await db.execute(
-        select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
-    )).scalars().all()
-    return {
-        "job_id": job_id, "question": job.question, "status": job.status,
-        "plan": job.plan, "report": job.report, "last_error": job.last_error,
-        "steps": [
-            {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx, "title": s.title,
-             "detail": s.detail, "status": s.status, "result": s.result}
-            for s in rows
-        ],
-    }
+    if res.rowcount == 0:
+        raise HTTPException(status_code=409, detail="취소할 수 없는 상태입니다")
+    return {"job_id": job_id, "status": "cancelled"}
 
 
 @router.get("/{job_id}/stream")
@@ -3189,12 +3273,31 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
          "title": s.title, "detail": s.detail, "status": s.status}
         for s in rows
     ]
+    already_done = job.status in TERMINAL_STATUSES
 
     async def _gen():
         # 재접속 복원 — 뼈대를 먼저 보내고 그 뒤를 중계한다
         yield f"data: {json.dumps({'kind': 'snapshot', 'steps': snapshot}, ensure_ascii=False)}\n\n"
+        if already_done:
+            # 끝난 잡에 붙었다면 중계할 것이 없다. 구독하면 영원히 기다린다.
+            yield f"data: {json.dumps({'kind': 'done', 'status': job.status}, ensure_ascii=False)}\n\n"
+            return
         async for event in subscribe(job_id):
+            if event is None:
+                # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 종료 이벤트를
+                # 놓친 채 붙어 있는 경우를 대비해 상태를 한 번 더 확인한다.
+                yield ": ping\n\n"
+                st = (await db.execute(
+                    select(ResearchJob.status).where(ResearchJob.id == job.id)
+                )).scalar_one_or_none()
+                await db.commit()
+                if st in TERMINAL_STATUSES:
+                    yield f"data: {json.dumps({'kind': 'done', 'status': st}, ensure_ascii=False)}\n\n"
+                    return
+                continue
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            if event.get("kind") in TERMINAL_KINDS:
+                return
 
     return StreamingResponse(
         _gen(), media_type="text/event-stream",
@@ -3202,38 +3305,38 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     )
 ```
 
-- [ ] **Step 5: 라우터 등록**
+**Nginx 버퍼링** — `X-Accel-Buffering: no` 는 붙어 있지만, 게이트웨이에 `proxy_buffering off` 와 넉넉한 `proxy_read_timeout` 이 없으면 SSE 가 뭉쳐서 도착하거나 유휴 중에 끊긴다. Task 11 에서 확인한다.
 
-`app/main.py` 에서 다른 라우터를 `include_router` 하는 자리 옆에 추가한다.
+- [ ] **Step 3: 나머지는 초안대로**
 
-```python
-from api import research as research_api
-app.include_router(research_api.router)
-```
+`create` · `approve` · `get` 엔드포인트, 큐 라우팅(`q_llm`), stale 회수 태스크(`reap_stale_research`)는 초안 그대로 쓴다. 회수 태스크의 `coalesce(started_at, created_at)` 은 그대로 둔다 — `started_at` 이 NULL 인 `planning` 잡이 영원히 회수되지 않는 것을 막는 장치다.
 
-- [ ] **Step 6: 전체 테스트**
+다만 회수 대상 상태에 `queued`·`approved` 는 넣지 마라. 그건 아직 워커가 집지 않은 정상 대기 상태다.
 
-Run:
-```bash
-python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/tests/test_build_manifest.py --ignore=app/tests/test_loaders.py
-```
-Expected: PASS — 기준선 134 + 이 계획에서 추가한 테스트(약 79건)
+- [ ] **Step 4: 테스트**
 
-- [ ] **Step 7: 임포트 검증**
+DB·Redis·LLM 없이 도는 것만 테스트한다. 다음 셋은 **반드시** 넣는다.
 
-Run: `python -c "import sys; sys.path.insert(0,'app'); import api.research, workers.research_tasks; print('OK')"`
-Expected: `OK`
+1. `snapshot_state` ↔ `restore_state` 왕복 항등 — 특히 `parse_failed`·`failed` 보존.
+2. `build_limitations` 가 `failed` 하위질문을 "근거를 찾지 못했다" 가 아니라 "오류로 확인하지 못했다" 로 쓴다.
+3. `_next_seq` 가 기존 최대값 다음을 준다 (SQL 은 대역으로).
 
-Celery·Redis 임포트에서 실패하면 해당 패키지가 로컬에 없는 것이다. 컨테이너 안에서 확인한다:
+`research_tasks.py` 는 `relay`(→`redis`) 와 `explorer`(→간접적으로 torch)를 임포트하므로 **테스트에서 최상단 임포트하지 마라.** 필요하면 `test_search_chunk_answer_flag.py` 의 스텁 패턴을 쓰고, 비용이 이득보다 크면 테스트하지 말고 그렇게 보고하라.
+
+- [ ] **Step 5: 임포트 검증**
 
 ```bash
-docker exec -e PYTHONPATH=/app nl-lib-fastapi python -c "import api.research, workers.research_tasks; print('OK')"
+docker exec nl-lib-worker python -c "import workers.research_tasks; print('OK')"
+docker exec nl-lib-fastapi python -c "import api.research; print('OK')"
 ```
 
-- [ ] **Step 8: 커밋**
+- [ ] **Step 6: 커밋**
 
 ```bash
-git add app/workers/research_tasks.py app/api/research.py app/workers/celery_app.py app/main.py
+git add app/models/research.py app/alembic/versions/0005_research_jobs.py \
+        app/services/research/state.py app/services/research/synthesizer.py \
+        app/services/research/relay.py app/workers/research_tasks.py \
+        app/workers/celery_app.py app/api/research.py app/main.py app/tests/
 git commit -m "[Feat] round04a — 딥리서치 Celery 태스크와 API"
 ```
 
