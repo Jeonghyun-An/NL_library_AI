@@ -4522,6 +4522,7 @@ docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<j
 - ~~`BookRepository.get_by_cnts_ids` 반환형~~ — **해소됨(2026-09-21).** `dict[str, BookOut]` 이고 `BookOut(BookBase)` 가 `title`·`personal_author`·`series_title`·`vol_issue`·`pub_date`·`kci_citations`·`grade` 를 전부 갖는다. ORM 직접 조회로 바꿀 필요 없다.
 - ~~`uci`·`url` 채움률~~ — **해소됨(2026-09-22 실측).** 논문 236,513편 **전부 0건**이다(인덱싱분 74,898편 포함, `source_format` 은 전량 KCI). 컬럼은 `BookBase` 에 실재하지만 값이 없다. 인용칩의 `원문 보기` 는 spec 원안대로 **자체 경로**로 보낸다.
   프론트는 이미 그렇게 동작한다 — `frontend/pages/papers/[id].vue:138` 이 `v-if="paper.url"` 로 외부 링크, `v-else` 로 PDF 모달인데 `url` 이 0건이라 **외부 링크 분기는 운영에서 죽은 코드**이고 전부 우리가 보관한 PDF 로 간다. KCI 랜딩 페이지보다 나은 목적지다(전문이 우리 쪽에 있다). round04b 의 인용칩도 여기에 맞춘다.
+  경로는 `PdfViewer → /api/books/{cnts_id}/pdf → MinIO originals/{cnts_id}/` 다. MinIO 키를 직접 조립하지 말 것 — `_resolve_original_key` 가 폴더형/평탄형 두 적재 형식을 폴백으로 처리한다. 원본이 없는 논문에서 404 가 나는 문제는 미해결이며 round04b 몫이다. 상세: spec §4-3.
 - ~~`pytest-asyncio` 설치 여부~~ — **해소됨(2026-09-22).** 설치돼 있지 않고 `app/tests` 전체에서 `@pytest.mark.asyncio` 사용이 0건이다. 관례는 `asyncio.run(...)`. 설치하지 않는다 — 플러그인이 없으면 pytest 가 코루틴을 실행하지 않고 **통과로 처리해** 테스트가 초록불로 빈다.
 - ~~서버 `alembic_version`~~ — **해소됨(2026-09-22).** `0003_widen_varchar_fields` 다. `0004` 조차 안 찍혀 있는데 그 객체 10종은 전부 실재한다 — 운영 스키마는 `create_all` 과 수동 SQL 이 만들어왔다. `recurring-gotchas.md` 14번, 배포 절차는 Task 11 Step 0.
 - Celery 워커가 `q_llm` 큐를 소비하도록 이미 떠 있는지 확인 필요 — 안 떠 있으면 태스크가 큐에 쌓이기만 한다
