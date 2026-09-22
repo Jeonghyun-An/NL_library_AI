@@ -1038,17 +1038,127 @@ class TestBindMarkers:
 
 ---
 
-## Task 5: 계획 수립 (파싱 + 프롬프트)
+## Task 5: 계획 수립 (파싱 + 프롬프트) — **완료**
 
-**Files:**
-- Create: `app/services/research/planner.py`
-- Create: `app/domains/nl_library/prompts/research_plan.yaml`
-- Test: `app/tests/test_research_planner.py`
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
 
-- [ ] **Step 1: 실패하는 테스트 작성**
+계획 파싱이 이 라운드에서 가장 잘 깨지는 자리다. 실패하면 `ValueError` 가 그대로 올라가 job 이 죽는데, 원인은 모델이 마크다운을 조금 다르게 쓴 것뿐이다.
+
+리뷰 반영으로 초안과 달라진 것 셋.
+
+**(1) 강조를 항목 매칭보다 먼저 벗긴다.** 초안은 `_ITEM` 으로 먼저 매칭하고 그 다음에 강조를 지웠다. 모델이 `**1. 청소년 진로상담**` 처럼 항목 전체를 굵게 쓰면 앞의 `*` 가 불릿으로 먹혀 `1. 청소년…**` 이 남거나 매칭 자체가 깨진다. 모든 줄이 탈락하면 `parse_plan` 이 `ValueError` 를 던지고 계획 수립이 통째로 실패한다 — 전부 아니면 전무인 실패다.
+
+**(2) 줄 전체 강조와 내용 안 강조를 나눠 처리한다.** `_unwrap_line` 하나로 합치면 `* **가**` 에서 불릿 `*` 가 뒤쪽 강조 `*` 와 짝지어져 내용이 사라진다. 여는 표식 뒤가 공백이 아닐 것(`(?=\S)`)을 요구하면 불릿과 강조가 갈린다 — 불릿 뒤에는 공백이 오기 때문이다.
+
+**(3) 전역 문자 제거를 쌍 매칭으로 바꿨다.** 초안의 `_EMPH.sub("", ...)` 는 별표·밑줄·역따옴표를 위치와 무관하게 전부 지워, `TF_IDF 가중치` 를 `TFIDF 가중치` 로 훼손한다. 논문 검색어에 밑줄이 들어간 식별자가 실제로 온다.
+
+중복 제거 키도 원문 그대로가 아니라 `공백 접기 + casefold` 로 바꿨다. `AI 윤리` 와 `ai 윤리` 는 같은 검색을 두 번 돌린다.
+
+- [x] **`app/services/research/planner.py`**
 
 ```python
-# app/tests/test_research_planner.py
+"""planner.py — 질문을 하위질문으로 분해
+
+파싱을 LLM 호출에서 분리한 이유: 모델이 번호 매김을 흐트러뜨리는 것은
+흔한 일이고, 그 처리를 네트워크 없이 테스트할 수 있어야 한다.
+"""
+import logging
+import re
+
+from services.llm_client import chat
+from services.prompts import get_prompt
+
+log = logging.getLogger(__name__)
+
+_ITEM = re.compile(r"^\s*(?:\d+[.)]|[-*•])\s+(.+?)\s*$")
+# 줄 전체를 감싼 강조. 여는 표식 뒤가 공백이 아닐 것을 요구해야 불릿과 구분된다 —
+# "* **가**" 의 앞 "*" 는 불릿이지 강조가 아니다.
+_WRAP = re.compile(r"^\s*(\*\*|__|\*|_)(?=\S)(.*?)\1\s*$", re.S)
+# 쌍으로 감싼 강조만 벗긴다. 전역으로 [*_`] 를 지우면 TF_IDF → TFIDF 처럼
+# 본문 중간 문자까지 훼손된다.
+_PAIRED_EMPH = re.compile(r"(\*\*|__|\*|_|`)(?=\S)(.+?)\1")
+_WS = re.compile(r"\s+")
+
+
+def _unwrap_line(line: str) -> str:
+    """`**1. 가**` 처럼 항목 전체를 감싼 강조를 벗긴다.
+
+    이걸 항목 매칭보다 먼저 해야 한다. 안 그러면 앞의 `*` 가 불릿으로 먹혀
+    매칭이 깨지고, 모든 줄이 탈락해 계획 수립이 통째로 실패한다.
+    """
+    m = _WRAP.match(line)
+    return m.group(2) if m else line
+
+
+def _strip_emphasis(text: str) -> str:
+    prev = None
+    while prev != text:
+        prev = text
+        text = _PAIRED_EMPH.sub(r"\2", text)
+    return text
+
+
+def parse_plan(raw: str, *, limit: int) -> list[str]:
+    """번호/불릿 목록에서 하위질문을 뽑는다. 중복·공백 제거, limit 개까지.
+
+    강조를 항목 매칭보다 먼저 벗기는 이유: 모델이 `**1. 주제**` 처럼 항목
+    전체를 굵게 쓰면 앞의 `*` 가 불릿으로 먹혀 매칭이 깨진다. 그러면 모든
+    줄이 탈락해 계획 수립이 통째로 실패하고 job 이 죽는다.
+    """
+    items: list[str] = []
+    seen: set[str] = set()
+    for line in (raw or "").splitlines():
+        m = _ITEM.match(_unwrap_line(line))
+        if not m:
+            if line.strip():
+                log.debug("[planner] 항목으로 해석되지 않은 줄 — %r", line.strip()[:80])
+            continue
+        text = _strip_emphasis(m.group(1)).strip()
+        key = _WS.sub(" ", text).casefold()
+        if text and key not in seen:
+            seen.add(key)
+            items.append(text)
+    if not items:
+        raise ValueError(f"계획을 해석하지 못했다: {(raw or '')[:120]!r}")
+    return items[:limit]
+
+
+async def make_plan(question: str, *, params: dict) -> list[str]:
+    limit = params["max_subquestions"]
+    system, user, llm_params = get_prompt("research_plan").render(
+        question=question, limit=limit,
+    )
+    raw = await chat(
+        [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        params=llm_params,
+    )
+    return parse_plan(raw, limit=limit)
+```
+
+- [x] **`app/domains/nl_library/prompts/research_plan.yaml`**
+
+```yaml
+parser: plain
+params:
+  max_tokens: 800
+  temperature: 0.3
+system: |-
+  당신은 국내 학술논문 코퍼스를 다루는 연구 사서입니다.
+  사용자의 질문을 검색 가능한 하위질문으로 분해합니다.
+
+  규칙:
+  - 하위질문은 최대 {{ limit }}개입니다.
+  - 각 하위질문은 그 자체로 논문 검색어가 될 만큼 구체적이어야 합니다.
+  - 서로 겹치지 않게 나눕니다.
+  - 번호 목록으로만 출력합니다. 서론·설명·맺음말을 쓰지 마세요.
+  - 한국어로 씁니다.
+user: |-
+  질문: {{ question }}
+```
+
+- [x] **`app/tests/test_research_planner.py`**
+
+```python
 import pytest
 
 from services.research.planner import parse_plan
@@ -1080,115 +1190,259 @@ class TestParsePlan:
     def test_markdown_emphasis_stripped(self):
         assert parse_plan("1. **가** 주제", limit=6) == ["가 주제"]
 
+    def test_fully_bolded_item_is_parsed(self):
+        """모델이 항목 전체를 굵게 쓰면 앞의 * 가 불릿으로 먹혀 매칭이 깨진다.
+
+        그러면 모든 줄이 탈락해 계획 수립이 통째로 실패하고 job 이 죽는다.
+        강조를 항목 매칭보다 먼저 벗겨야 한다.
+        """
+        assert parse_plan("**1. 가**\n**2. 나**", limit=6) == ["가", "나"]
+
+    def test_bolded_bullet_item_is_parsed(self):
+        assert parse_plan("* **가**\n* **나**", limit=6) == ["가", "나"]
+
+    def test_underscore_inside_word_is_preserved(self):
+        """전역으로 [*_`] 를 지우면 TF_IDF → TFIDF 로 훼손된다."""
+        assert parse_plan("1. TF_IDF 가중치 연구", limit=6) == ["TF_IDF 가중치 연구"]
+
+    def test_duplicate_differing_only_in_whitespace_is_dropped(self):
+        assert parse_plan("1. 가 주제\n2. 가  주제", limit=6) == ["가 주제"]
+
+    def test_duplicate_differing_only_in_case_is_dropped(self):
+        assert parse_plan("1. AI 윤리\n2. ai 윤리", limit=6) == ["AI 윤리"]
+
     def test_no_list_raises(self):
         with pytest.raises(ValueError, match="계획을 해석하지 못했다"):
             parse_plan("죄송하지만 답변할 수 없습니다.", limit=6)
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **검증** — `13 passed`. 되돌림 확인: `_unwrap_line` 을 빼면 `parse_plan("**1. 가**", limit=6)` 이 `ValueError` 로 떨어진다.
 
-Run: `python -m pytest app/tests/test_research_planner.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.planner'`
+---
 
-- [ ] **Step 3: 구현**
+## Task 6: 자기점검 — **완료**
+
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
+
+자기점검은 꺼져도 티가 안 나는 기능이다. 판정을 못 읽으면 `sufficient` 로 떨어지는데(무한 재검색을 막으려면 그래야 한다), 그러면 "모델이 충분하다고 판단한 것"과 구분되지 않는다. 자기점검이 전부 실패해도 보고서는 "한계 없음"으로 보인다.
+
+리뷰 반영으로 초안과 달라진 것 넷.
+
+**(1) `parse_failed` 를 따로 들고 간다.** 초안은 실패를 `note` 문자열(`"판정 해석 실패 — …"`)로만 표시했다. 그 `note` 는 그대로 탐색 경로·진행 패널에 실리므로 모델 원문이 사용자 화면에 샌다. 반대로 보고서의 한계 섹션은 `verdict == "insufficient"` 만 세므로 실패를 못 본다 — 노출이 정확히 뒤집혀 있었다. 이제 원문은 로그에만 남기고(`_failed`), `note` 는 중립적인 `"자동 점검을 완료하지 못했다"` 로 두고, 세는 것은 Task 8 이 `parse_failed` 로 한다.
+
+**(2) `new_queries` 가 리스트인지 확인한다.** 모델이 `"new_queries": "진로상담 앱 효과"` 를 보내면 초안의 리스트 컴프리헨션이 문자열을 순회해 `["진","로","상","담", …]` 이 된다. 한 글자짜리 검색어로 재검색이 한 라운드 낭비된다.
+
+**(3) 근거 목록에 본문 발췌를 붙이고 정규화한다.** 제목·연도만으로는 "이 논문이 하위질문을 실제로 다루는가"를 모델이 판단할 수 없어 판정이 사실상 편수 세기가 된다. 발췌를 붙이되 자르기 전에 `" ".join(text.split())` 로 공백을 접는다 — 표 청크는 `[표]\n…\n{table_md}` 로 저장되므로 그대로 쓰면 한 항목이 여러 줄로 퍼져 어느 발췌가 어느 논문 것인지 흐려진다. 목록은 `_MAX_LISTED = 20` 으로 끊는다: 재검색 라운드마다 근거가 누적되는데 상한이 없으면 프롬프트가 컨텍스트를 넘고, 앞쪽부터 잘려 system 의 JSON 출력 지시가 사라진다 — 그러면 산문이 와서 판정이 또 실패하는 악순환이 된다.
+
+**(4) JSON 추출을 `services/research/llm_json.py` 로 뺐다.** 초안의 `body[body.index("{"): body.rindex("}")+1]` 는 JSON 뒤에 `}` 를 포함한 산문(`… 참고: {예시}`)이 붙으면 그 끝까지 먹어 파싱이 깨진다. `json.JSONDecoder().raw_decode()` 는 첫 유효 JSON 에서 멈춘다. **Task 8 synthesizer 도 같은 일을 하므로 반드시 이걸 재사용한다** — 마커 정규식을 두 곳에 두면 갈라지는 것과 같은 이유다.
+
+`state.py` 의 `LLM_VERDICTS` 도 이때 들어왔다. `VERDICTS[1:]` 로 쓰면 `VERDICTS` 순서만 바뀌어도 `sufficient` 가 빠져 **모든 정상 판정이** "알 수 없는 verdict" 로 떨어진다.
+
+- [x] **`app/services/research/llm_json.py`** (신규 — 초안에 없던 파일)
 
 ```python
-# app/services/research/planner.py
-"""planner.py — 질문을 하위질문으로 분해
+"""llm_json.py — LLM 이 산문에 섞어 내보낸 JSON 을 꺼낸다
 
-파싱을 LLM 호출에서 분리한 이유: 모델이 번호 매김을 흐트러뜨리는 것은
-흔한 일이고, 그 처리를 네트워크 없이 테스트할 수 있어야 한다.
+critic 과 synthesizer 가 같은 일을 하므로 한 곳에 둔다. 마커 정규식을
+두 곳에 두면 갈라지는 것과 같은 이유다.
+
+raw_decode 를 쓰는 이유: `body[index("{"):rindex("}")+1]` 는 JSON 뒤에
+`}` 를 포함한 산문이 붙으면 그 끝까지 먹어 파싱이 깨진다. raw_decode 는
+첫 유효 JSON 에서 멈춘다.
 """
+import json
 import re
+
+_FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)
+
+
+def extract_json(raw: str) -> dict | None:
+    """첫 유효 JSON 객체를 반환한다. 못 찾으면 None."""
+    body = raw or ""
+    m = _FENCE.search(body)
+    if m:
+        body = m.group(1)
+
+    start = body.find("{")
+    if start < 0:
+        return None
+    try:
+        data, _ = json.JSONDecoder().raw_decode(body[start:])
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+```
+
+- [x] **`app/services/research/critic.py`**
+
+```python
+"""critic.py — 근거 충분성 자기점검
+
+판정 결과는 내부 제어에만 쓰지 않는다. note 가 그대로 보고서의
+"한계와 미확인 영역" 섹션이 된다 — 모른다고 말하는 것이 이 기능의 값이다.
+
+판정을 못 읽었을 때는 parse_failed 로 표시한다. 그냥 sufficient 로만 두면
+"모델이 충분하다고 판단한 것"과 구분되지 않아, 자기점검이 전부 꺼져도
+보고서가 "한계 없음"으로 보인다.
+"""
+import logging
+from dataclasses import dataclass, field
 
 from services.llm_client import chat
 from services.prompts import get_prompt
+from services.research.llm_json import extract_json
+from services.research.state import Evidence, LLM_VERDICTS, SubQuestion
 
-_ITEM = re.compile(r"^\s*(?:\d+[.)]|[-*•])\s+(.+?)\s*$")
-_EMPH = re.compile(r"[*_`]+")
+log = logging.getLogger(__name__)
+
+_EXCERPT_LEN = 200
+# 근거 목록 길이 상한. 재검색 라운드마다 evidence_ids 가 누적되므로 상한이
+# 없으면 프롬프트가 컨텍스트를 넘고, 앞쪽부터 잘려 system 의 JSON 출력
+# 지시가 사라진다 — 그러면 산문 응답이 와서 판정이 또 실패한다.
+_MAX_LISTED = 20
+_PARSE_FAILED_NOTE = "자동 점검을 완료하지 못했다"
 
 
-def parse_plan(raw: str, *, limit: int) -> list[str]:
-    """번호/불릿 목록에서 하위질문을 뽑는다. 중복·공백 제거, limit 개까지."""
-    items: list[str] = []
-    for line in (raw or "").splitlines():
-        m = _ITEM.match(line)
-        if not m:
+@dataclass
+class Verdict:
+    verdict: str
+    note: str = ""
+    new_queries: list[str] = field(default_factory=list)
+    parse_failed: bool = False
+
+
+def _failed(reason: str, raw: str) -> Verdict:
+    """모델 원문은 로그에만 남긴다 — note 는 사용자 화면(탐색 경로)에 실린다."""
+    log.warning("[critic] %s — raw=%r", reason, (raw or "")[:200])
+    return Verdict("sufficient", note=_PARSE_FAILED_NOTE, parse_failed=True)
+
+
+def parse_verdict(raw: str) -> Verdict:
+    """판정 JSON 을 읽는다. 못 읽으면 sufficient 로 떨어뜨려 루프를 끝낸다.
+
+    해석 실패를 insufficient 로 두면 파싱이 깨질 때마다 재검색이 상한까지
+    돌아 시간을 태운다. 실패가 루프가 되면 안 된다.
+    """
+    data = extract_json(raw)
+    if data is None:
+        return _failed("판정 JSON 파싱 실패", raw)
+
+    verdict = data.get("verdict")
+    if verdict not in LLM_VERDICTS:
+        return _failed(f"알 수 없는 verdict 값 {verdict!r}", raw)
+
+    raw_queries = data.get("new_queries")
+    if not isinstance(raw_queries, list):
+        # 문자열이 오면 순회 시 글자 단위로 쪼개져 "진" 한 글자로 재검색한다
+        raw_queries = []
+    queries = [q for q in raw_queries if isinstance(q, str) and q.strip()]
+    return Verdict(verdict, note=str(data.get("note") or ""), new_queries=queries)
+
+
+def should_recheck(subq: SubQuestion, *, recheck_count: int, max_recheck: int) -> bool:
+    return subq.verdict == "insufficient" and recheck_count < max_recheck
+
+
+def format_evidence_list(evidence: list[Evidence]) -> str:
+    """근거를 critic 프롬프트용 목록 문자열로 만든다.
+
+    제목·연도만으로는 "이 논문이 하위질문을 실제로 다루는가"를 모델이
+    판단하기 어렵다 — 그 하위질문 검색에서 실제로 매칭된 본문(chunks[0])의
+    앞부분을 붙여 직접적인 근거로 준다. 청크가 없는 근거는 제목+연도만
+    남긴다 — 인덱스 오류로 이 계층 전체가 죽으면 안 된다.
+
+    발췌는 자르기 전에 공백을 접는다. 표 청크는 `[표]\\n…\\n{table_md}` 로
+    저장되고 본문 청크도 단락 개행을 보존하므로, 그대로 쓰면 한 항목이
+    여러 줄로 퍼져 어느 발췌가 어느 논문 것인지 흐려진다.
+    """
+    lines: list[str] = []
+    for e in evidence[:_MAX_LISTED]:
+        title = e.meta.get("title") or "(제목 없음)"
+        year = e.meta.get("pub_date") or "연도미상"
+        if not e.chunks:
+            lines.append(f"- {title} ({year})")
             continue
-        text = _EMPH.sub("", m.group(1)).strip()
-        if text and text not in items:
-            items.append(text)
-    if not items:
-        raise ValueError(f"계획을 해석하지 못했다: {(raw or '')[:120]!r}")
-    return items[:limit]
+        flat = " ".join(e.chunks[0].text.split())
+        excerpt = flat[:_EXCERPT_LEN]
+        if len(flat) > _EXCERPT_LEN:
+            excerpt += "…"
+        lines.append(f"- {title} ({year}) — {excerpt}")
+
+    hidden = len(evidence) - _MAX_LISTED
+    if hidden > 0:
+        lines.append(f"- …외 {hidden}편")
+    return "\n".join(lines) or "(없음)"
 
 
-async def make_plan(question: str, *, params: dict) -> list[str]:
-    limit = params["max_subquestions"]
-    system, user, llm_params = get_prompt("research_plan").render(
-        question=question, limit=limit,
+async def critique(
+    subq: SubQuestion, evidence: list[Evidence], *, params: dict,
+) -> Verdict:
+    system, user, llm_params = get_prompt("research_critique").render(
+        subquestion=subq.text,
+        evidence_count=len(evidence),
+        evidence_list=format_evidence_list(evidence),
+        min_evidence=params["min_evidence_per_subq"],
+        tried_queries=", ".join(subq.queries) or "(없음)",
     )
     raw = await chat(
         [{"role": "system", "content": system}, {"role": "user", "content": user}],
         params=llm_params,
     )
-    return parse_plan(raw, limit=limit)
+    return parse_verdict(raw)
 ```
 
-- [ ] **Step 4: 프롬프트 작성**
+- [x] **`app/domains/nl_library/prompts/research_critique.yaml`**
+
+초안의 `{"verdict": …}` 한 줄 예시는 JSON 이 아니라 설명문이었다(`"sufficient" 또는 "insufficient"`). 이 코드베이스의 `curation.yaml` 관례대로 **유효한 JSON 골격 + 플레이스홀더**로 바꿨다. 그리고 편수 기준이 필요조건으로 읽히던 문장을 신호 중 하나로 낮췄다 — 코퍼스가 2002–2009 에 쏠려 있어 `min_evidence` 를 못 채우는 하위질문이 정상적으로 나오는데, 그걸 전부 부족으로 판정하면 재검색이 상한까지 헛돈다.
 
 ```yaml
-# app/domains/nl_library/prompts/research_plan.yaml
 parser: plain
 params:
-  max_tokens: 800
-  temperature: 0.3
+  max_tokens: 600
+  temperature: 0.2
 system: |-
-  당신은 국내 학술논문 코퍼스를 다루는 연구 사서입니다.
-  사용자의 질문을 검색 가능한 하위질문으로 분해합니다.
+  당신은 연구 사서입니다. 하위질문 하나에 대해 모인 근거가 충분한지 판단합니다.
 
-  규칙:
-  - 하위질문은 최대 {{ limit }}개입니다.
-  - 각 하위질문은 그 자체로 논문 검색어가 될 만큼 구체적이어야 합니다.
-  - 서로 겹치지 않게 나눕니다.
-  - 번호 목록으로만 출력합니다. 서론·설명·맺음말을 쓰지 마세요.
-  - 한국어로 씁니다.
+  판단 기준:
+  - 각 근거에 붙은 본문 발췌를 보고, 제목만으로 짐작하지 말고 하위질문의 핵심 개념을 실제로 다루는지 판단하세요.
+  - 하위질문의 핵심 개념을 다루지 않는 논문만 있으면 부족합니다.
+  - 특정 시기에만 쏠려 있으면 부족합니다.
+  - 근거가 {{ min_evidence }}편 미만이면 부족할 가능성이 높습니다.
+
+  편수는 필요조건이 아니라 신호 중 하나입니다. 편수가 부족해도 핵심 개념을
+  정면으로 다루는 근거가 있으면 충분으로 판정하세요. 반대로 편수가 많아도
+  발췌가 하위질문과 겉돌면 부족으로 판정하세요.
+
+  부족하다고 판단하면 이미 시도한 검색어와 다른 검색어를 최대 2개 제안하세요.
+  같은 말을 바꿔 쓴 것이 아니라 다른 용어·다른 각도여야 합니다.
+
+  반드시 아래 JSON 형식으로만 응답하세요. 설명이나 다른 텍스트는 출력하지 마세요.
+  {
+    "verdict": "<sufficient 또는 insufficient>",
+    "note": "<판단 근거 한 문장>",
+    "new_queries": ["<제안 검색어>", "<제안 검색어>"]
+  }
+
+  verdict 에는 sufficient 또는 insufficient 만 씁니다.
+  new_queries 는 항상 배열입니다. 제안할 것이 없으면 빈 배열로 둡니다.
+  note 는 사용자에게 그대로 보여집니다. 한국어로 구체적으로 쓰세요.
 user: |-
-  질문: {{ question }}
+  하위질문: {{ subquestion }}
+  이미 시도한 검색어: {{ tried_queries }}
+  모인 근거: {{ evidence_count }}편
+
+  {{ evidence_list }}
 ```
 
-- [ ] **Step 5: 테스트 통과 확인**
-
-Run: `python -m pytest app/tests/test_research_planner.py -q`
-Expected: PASS (8 passed)
-
-- [ ] **Step 6: 프롬프트가 로드되는지 확인**
-
-Run: `python -c "import sys; sys.path.insert(0,'app'); from services.prompts import get_prompt; s,u,p=get_prompt('research_plan').render(question='테스트', limit=6); print('OK', p)"`
-Expected: `OK {'max_tokens': 800, 'temperature': 0.3}`
-
-- [ ] **Step 7: 커밋**
-
-```bash
-git add app/services/research/planner.py app/domains/nl_library/prompts/research_plan.yaml app/tests/test_research_planner.py
-git commit -m "[Feat] round04a — 연구 계획 수립"
-```
-
----
-
-## Task 6: 자기점검
-
-**Files:**
-- Create: `app/services/research/critic.py`
-- Create: `app/domains/nl_library/prompts/research_critique.yaml`
-- Test: `app/tests/test_research_critic.py`
-
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **`app/tests/test_research_critic.py`**
 
 ```python
-# app/tests/test_research_critic.py
-from services.research.critic import Verdict, parse_verdict, should_recheck
-from services.research.state import SubQuestion
+import logging
+
+from services.research.critic import (
+    _EXCERPT_LEN, _MAX_LISTED, Verdict, format_evidence_list, parse_verdict, should_recheck,
+)
+from services.research.state import Chunk, Evidence, LLM_VERDICTS, SubQuestion, VERDICTS
 
 
 class TestParseVerdict:
@@ -1214,11 +1468,46 @@ class TestParseVerdict:
         """판정을 못 읽으면 무한 재검색 대신 멈춘다 — 실패가 루프가 되면 안 된다."""
         v = parse_verdict("죄송합니다 판단할 수 없습니다")
         assert v.verdict == "sufficient"
-        assert "판정 해석 실패" in v.note
+        assert v.parse_failed is True
 
     def test_unknown_verdict_value_falls_back(self):
         v = parse_verdict('{"verdict": "maybe", "note": "n", "new_queries": []}')
         assert v.verdict == "sufficient"
+        assert v.parse_failed is True
+
+    def test_successful_parse_is_not_marked_failed(self):
+        v = parse_verdict('{"verdict": "sufficient", "note": "n", "new_queries": []}')
+        assert v.parse_failed is False
+
+    def test_note_does_not_leak_model_output(self):
+        """note 는 탐색 경로·진행 패널에 그대로 실린다 — 모델 원문을 담지 않는다."""
+        v = parse_verdict("죄송합니다 판단할 수 없습니다")
+        assert "죄송합니다" not in v.note
+
+    def test_string_new_queries_does_not_become_characters(self):
+        """문자열을 순회하면 "진" 한 글자로 재검색하는 쓰레기 쿼리가 된다."""
+        raw = '{"verdict": "insufficient", "note": "n", "new_queries": "진로상담 앱 효과"}'
+        assert parse_verdict(raw).new_queries == []
+
+    def test_prose_after_json_does_not_break_parsing(self):
+        """탐욕적 슬라이스는 뒤따르는 산문의 } 까지 먹어 파싱이 깨진다."""
+        raw = '{"verdict": "sufficient", "note": "n", "new_queries": []} 참고: {예시}'
+        assert parse_verdict(raw).verdict == "sufficient"
+
+    def test_parse_failure_logs_raw_for_diagnosis(self, caplog):
+        """로그가 자기점검이 꺼졌음을 아는 유일한 신호다 — 원문 없이는 프롬프트를 못 고친다."""
+        with caplog.at_level(logging.WARNING):
+            parse_verdict("죄송합니다 판단할 수 없습니다")
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert warnings
+        assert any("죄송합니다" in r.getMessage() for r in warnings)
+
+    def test_unknown_verdict_logs_raw_for_diagnosis(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            parse_verdict('{"verdict": "maybe", "note": "n", "new_queries": []}')
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert warnings
+        assert any("maybe" in r.getMessage() for r in warnings)
 
 
 class TestShouldRecheck:
@@ -1242,147 +1531,230 @@ class TestShouldRecheck:
             count += 1
             assert count <= 3
         assert count == 3
+
+
+class TestLlmVerdicts:
+    def test_llm_verdicts_exact(self):
+        """부분집합 단언은 VERDICTS 순서가 바뀌어 sufficient 가 빠져도 통과한다."""
+        assert LLM_VERDICTS == ("sufficient", "insufficient")
+
+    def test_llm_verdicts_excludes_pending(self):
+        assert "pending" not in LLM_VERDICTS
+        assert set(LLM_VERDICTS) <= set(VERDICTS)
+
+
+class TestFormatEvidenceList:
+    def _evidence(self, title, year, chunk_text=None):
+        chunks = []
+        if chunk_text is not None:
+            chunks.append(Chunk(chunk_id="c1", text=chunk_text, page_start=1, page_end=1, score=0.9))
+        return Evidence(id="E1", cnts_id="cnts1", meta={"title": title, "pub_date": year}, chunks=chunks)
+
+    def test_includes_excerpt_from_first_chunk(self):
+        e = self._evidence("제목", "2020", "본문 발췌 내용")
+        result = format_evidence_list([e])
+        assert result == "- 제목 (2020) — 본문 발췌 내용"
+
+    def test_excerpt_truncated(self):
+        e = self._evidence("제목", "2020", "가" * 500)
+        excerpt = format_evidence_list([e]).split(" — ", 1)[1]
+        assert excerpt == "가" * _EXCERPT_LEN + "…"
+
+    def test_short_excerpt_has_no_ellipsis(self):
+        e = self._evidence("제목", "2020", "짧다")
+        assert format_evidence_list([e]).endswith("짧다")
+
+    def test_newlines_in_chunk_are_flattened(self):
+        """표 청크에는 개행이 실재한다 — 그대로 쓰면 한 항목이 여러 줄로 퍼진다."""
+        chunk_text = "[표]\n설명\n\n| a | b |\n| 1 | 2 |"
+        e = self._evidence("제목", "2020", chunk_text)
+        result = format_evidence_list([e])
+        assert "\n" not in result
+        assert result == "- 제목 (2020) — [표] 설명 | a | b | | 1 | 2 |"
+
+    def test_list_is_capped_with_remainder_note(self):
+        """상한이 없으면 재검색 누적분이 컨텍스트를 넘겨 system 지시가 잘려 나간다."""
+        many = [self._evidence(f"제목{i}", "2020", "본문") for i in range(_MAX_LISTED + 5)]
+        lines = format_evidence_list(many).splitlines()
+        assert len(lines) == _MAX_LISTED + 1
+        assert lines[-1] == "- …외 5편"
+
+    def test_empty_meta_values_fall_back(self):
+        """이 코드베이스는 빈 메타를 "" 로 표현한다 — get 의 기본값이 안 먹는다."""
+        e = Evidence(id="E1", cnts_id="c", meta={"title": "", "pub_date": ""}, chunks=[])
+        assert format_evidence_list([e]) == "- (제목 없음) (연도미상)"
+
+    def test_evidence_without_chunks_falls_back_to_title_year(self):
+        e = self._evidence("제목", "2020")
+        assert format_evidence_list([e]) == "- 제목 (2020)"
+
+    def test_mixed_evidence_does_not_crash(self):
+        with_chunk = self._evidence("A", "2020", "본문")
+        without_chunk = self._evidence("B", "2021")
+        result = format_evidence_list([with_chunk, without_chunk])
+        lines = result.splitlines()
+        assert lines == ["- A (2020) — 본문", "- B (2021)"]
+
+    def test_empty_list_gives_placeholder(self):
+        assert format_evidence_list([]) == "(없음)"
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_critic.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.critic'`
-
-- [ ] **Step 3: 구현**
+- [x] **`app/tests/test_research_llm_json.py`**
 
 ```python
-# app/services/research/critic.py
-"""critic.py — 근거 충분성 자기점검
-
-판정 결과는 내부 제어에만 쓰지 않는다. note 가 그대로 보고서의
-"한계와 미확인 영역" 섹션이 된다 — 모른다고 말하는 것이 이 기능의 값이다.
-"""
-import json
-import re
-from dataclasses import dataclass, field
-
-from services.llm_client import chat
-from services.prompts import get_prompt
-from services.research.state import Evidence, SubQuestion
-
-_FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)
-_VERDICTS = ("sufficient", "insufficient")
+from services.research.llm_json import extract_json
 
 
-@dataclass
-class Verdict:
-    verdict: str
-    note: str = ""
-    new_queries: list[str] = field(default_factory=list)
+class TestExtractJson:
+    def test_plain_object(self):
+        assert extract_json('{"a": 1}') == {"a": 1}
 
+    def test_code_fence(self):
+        assert extract_json('```json\n{"a": 1}\n```') == {"a": 1}
 
-def parse_verdict(raw: str) -> Verdict:
-    """판정 JSON 을 읽는다. 못 읽으면 sufficient 로 떨어뜨려 루프를 끝낸다.
+    def test_bare_fence(self):
+        assert extract_json('```\n{"a": 1}\n```') == {"a": 1}
 
-    해석 실패를 insufficient 로 두면 파싱이 깨질 때마다 재검색이 상한까지
-    돌아 시간을 태운다. 실패가 루프가 되면 안 된다.
-    """
-    body = raw or ""
-    m = _FENCE.search(body)
-    if m:
-        body = m.group(1)
-    try:
-        data = json.loads(body[body.index("{"): body.rindex("}") + 1])
-    except (ValueError, json.JSONDecodeError):
-        return Verdict("sufficient", note=f"판정 해석 실패 — {(raw or '')[:80]}")
+    def test_preamble_prose(self):
+        assert extract_json('다음과 같습니다.\n{"a": 1}') == {"a": 1}
 
-    verdict = data.get("verdict")
-    if verdict not in _VERDICTS:
-        return Verdict("sufficient", note=f"판정 해석 실패 — verdict={verdict!r}")
+    def test_trailing_prose_with_braces(self):
+        """탐욕적 슬라이스는 뒤따르는 } 까지 먹어 파싱이 깨진다."""
+        assert extract_json('{"a": 1} 참고: {예시}') == {"a": 1}
 
-    queries = [q for q in (data.get("new_queries") or []) if isinstance(q, str) and q.strip()]
-    return Verdict(verdict, note=str(data.get("note") or ""), new_queries=queries)
+    def test_nested_object_is_preserved(self):
+        assert extract_json('{"a": {"b": 2}} 끝') == {"a": {"b": 2}}
 
+    def test_no_json_gives_none(self):
+        assert extract_json("죄송합니다 판단할 수 없습니다") is None
 
-def should_recheck(subq: SubQuestion, *, recheck_count: int, max_recheck: int) -> bool:
-    return subq.verdict == "insufficient" and recheck_count < max_recheck
+    def test_broken_json_gives_none(self):
+        assert extract_json('{"a": ') is None
 
+    def test_array_at_top_level_gives_none(self):
+        """호출부는 dict 를 기대한다 — 리스트를 넘기면 .get 에서 터진다."""
+        assert extract_json("[1, 2, 3]") is None
 
-async def critique(
-    subq: SubQuestion, evidence: list[Evidence], *, params: dict,
-) -> Verdict:
-    lines = [
-        f"- {e.meta.get('title', '(제목 없음)')} ({e.meta.get('pub_date', '연도미상')})"
-        for e in evidence
-    ]
-    system, user, llm_params = get_prompt("research_critique").render(
-        subquestion=subq.text,
-        evidence_count=len(evidence),
-        evidence_list="\n".join(lines) or "(없음)",
-        min_evidence=params["min_evidence_per_subq"],
-        tried_queries=", ".join(subq.queries),
-    )
-    raw = await chat(
-        [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        params=llm_params,
-    )
-    return parse_verdict(raw)
+    def test_empty_input(self):
+        assert extract_json("") is None
+
+    def test_none_input(self):
+        assert extract_json(None) is None
 ```
 
-- [ ] **Step 4: 프롬프트 작성**
+- [x] **`app/tests/test_prompts.py` — 새 프롬프트 2종을 렌더 회귀에 추가**
 
-```yaml
-# app/domains/nl_library/prompts/research_critique.yaml
-parser: plain
-params:
-  max_tokens: 600
-  temperature: 0.2
-system: |-
-  당신은 연구 사서입니다. 하위질문 하나에 대해 모인 근거가 충분한지 판단합니다.
+`PromptLibrary` 는 `StrictUndefined` 라, 호출부와 템플릿의 변수명이 어긋나면 여기서 안 잡히고 **워커 런타임에서야** `UndefinedError` 로 터진다. 프롬프트를 추가하면 이 테스트도 함께 늘린다.
 
-  판단 기준:
-  - 근거가 {{ min_evidence }}편 미만이면 대체로 부족합니다.
-  - 특정 시기에만 쏠려 있으면 부족합니다.
-  - 하위질문의 핵심 개념을 다루지 않는 논문만 있으면 부족합니다.
+```python
+    # 딥리서치 2종 — StrictUndefined 라 변수명이 호출부와 어긋나면
+    # 여기서 안 잡히고 워커 런타임에서야 UndefinedError 로 터진다.
+    rp_s, rp_u, _ = lib.get("research_plan").render(question="청소년 진로상담", limit=6)
+    assert "연구 사서" in rp_s and "6" in rp_s and "청소년 진로상담" in rp_u
 
-  부족하다고 판단하면 이미 시도한 검색어와 다른 검색어를 최대 2개 제안하세요.
-  같은 말을 바꿔 쓴 것이 아니라 다른 용어·다른 각도여야 합니다.
-
-  JSON 하나만 출력하세요. 다른 말을 덧붙이지 마세요.
-  {"verdict": "sufficient" 또는 "insufficient", "note": "판단 근거 한 문장", "new_queries": ["...", "..."]}
-
-  note 는 사용자에게 그대로 보여집니다. 한국어로 구체적으로 쓰세요.
-user: |-
-  하위질문: {{ subquestion }}
-  이미 시도한 검색어: {{ tried_queries }}
-  모인 근거: {{ evidence_count }}편
-
-  {{ evidence_list }}
+    rc_s, rc_u, _ = lib.get("research_critique").render(
+        subquestion="하위질문", evidence_count=3, evidence_list="- 논문 (2008)",
+        min_evidence=5, tried_queries="검색어")
+    assert '"verdict"' in rc_s and "하위질문" in rc_u and "3편" in rc_u
 ```
 
-- [ ] **Step 5: 테스트 통과 확인**
-
-Run: `python -m pytest app/tests/test_research_critic.py -q`
-Expected: PASS (9 passed)
-
-- [ ] **Step 6: 커밋**
-
-```bash
-git add app/services/research/critic.py app/domains/nl_library/prompts/research_critique.yaml app/tests/test_research_critic.py
-git commit -m "[Feat] round04a — 근거 충분성 자기점검"
-```
+- [x] **검증** — critic `26 passed`, llm_json `11 passed`. 되돌림 확인: `new_queries` 타입 검사를 빼면 문자열이 `['진','로','상','담', …]` 로 쪼개지고, 발췌 정규화를 빼면 한 항목이 `'- T (2020) — [표]\n설명\n\n| a |'` 로 퍼진다.
 
 ---
 
-## Task 7: 하위질문 탐색
+## Task 7: 하위질문 탐색 — **완료**
+
+> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
 
 > **함정 — `pipeline` 을 최상단에서 import 하지 마라.** `pipeline.py` → `reranker.py` → `import torch` 인데 torch 는 로컬 venv 에 없다(Dockerfile 에서 CUDA 버전으로 설치). 최상단 import 를 쓰면 `pytest` 가 collection 단계에서 죽어 **세션 전체가 0건**이 된다. 함수 본문 안에서 import 하라 — `app/api/book.py:619` 가 이미 그렇게 한다. `docs/ops/recurring-gotchas.md` 13번.
 
+초안과 달라진 것 둘. **(1)** `from services.search.pipeline import search` 를 `explore()` 함수 본문으로 내렸다(위 함정). **(2)** 초안이 `getattr(b, "series_title", None)` 처럼 방어적으로 읽던 것을 직접 속성 접근으로 바꿨다 — Step 5 에서 확인한 결과 `get_by_cnts_ids` 가 `Book` ORM 을 돌려주고 해당 컬럼이 모두 실재한다. `getattr` 기본값은 컬럼명이 바뀌어도 조용히 `None` 을 넣어 순위가 틀어지는 쪽으로 실패한다.
 
-**Files:**
-- Create: `app/services/research/explorer.py`
-- Test: `app/tests/test_research_explorer.py`
-
-- [ ] **Step 1: 실패하는 테스트 작성**
+- [x] **`app/services/research/explorer.py`**
 
 ```python
-# app/tests/test_research_explorer.py
+"""explorer.py — 하위질문 1개를 탐색한다
+
+기존 검색 파이프라인을 그대로 쓰고(논문 스코프), 그 위에 피인용 가중만
+얹는다. 순위 계산은 rank_hits 로 빼서 Milvus 없이 테스트한다.
+"""
+import logging
+from datetime import datetime
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from repositories.book import BookRepository
+from services.research.scoring import blend_score, impact_per_year, parse_pub_year
+from services.research.state import HitRow
+
+log = logging.getLogger(__name__)
+
+
+def rank_hits(
+    hits: list[HitRow], meta_by_id: dict[str, dict], *,
+    citation_weight: float, now_year: int,
+) -> list[HitRow]:
+    """리랭킹 점수에 연간 피인용을 얹어 다시 정렬한다. 입력은 건드리지 않는다."""
+    ranked = []
+    for hit in hits:
+        meta = meta_by_id.get(hit["book_id"]) or {}
+        impact = impact_per_year(
+            meta.get("kci_citations"), parse_pub_year(meta.get("pub_date")),
+            now_year=now_year,
+        )
+        row = dict(hit)
+        row["score"] = blend_score(hit["score"], impact=impact, weight=citation_weight)
+        ranked.append(row)
+    ranked.sort(key=lambda r: r["score"], reverse=True)
+    return ranked
+
+
+async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[HitRow], dict[str, dict]]:
+    """검색 → 서지 조회 → 피인용 가중 재정렬.
+
+    returns (정렬된 hit 목록, cnts_id → 서지 메타)
+    """
+    # pipeline 은 reranker(torch) 를 물고 와 모듈 최상단에서 임포트하면 이 파일을
+    # 단순히 열기만 해도(rank_hits 만 쓰는 테스트에서도) torch 가 있어야 한다.
+    # 기존 코드베이스도 같은 이유로 지연 임포트한다(api/book.py·main.py 참고).
+    from services.search.pipeline import search
+
+    resp = await search(
+        query, mode="chunk", top_k=params["per_subq_top_k"],
+        doc_scope="paper", db=db,
+    )
+    hits: list[HitRow] = [
+        {
+            "book_id": c.book_id, "chunk_id": c.chunk_id, "text": c.text,
+            "page_start": c.page_start, "page_end": c.page_end,
+            "score": c.rerank_score if c.rerank_score is not None else c.score,
+        }
+        for c in resp.chunks
+    ]
+    if not hits:
+        return [], {}
+
+    repo = BookRepository(db)
+    books = await repo.get_by_cnts_ids(list({h["book_id"] for h in hits}))
+    meta_by_id = {
+        cnts_id: {
+            "title": b.title, "personal_author": b.personal_author,
+            "series_title": b.series_title, "vol_issue": b.vol_issue,
+            "pub_date": b.pub_date, "kci_citations": b.kci_citations,
+            "grade": b.grade,
+        }
+        for cnts_id, b in books.items()
+    }
+    ranked = rank_hits(
+        hits, meta_by_id,
+        citation_weight=params["citation_weight"], now_year=datetime.now().year,
+    )
+    return ranked, meta_by_id
+```
+
+- [x] **`app/tests/test_research_explorer.py`**
+
+```python
 import pytest
 
 from services.research.explorer import rank_hits
@@ -1425,109 +1797,7 @@ class TestRankHits:
         assert hits[0]["score"] == pytest.approx(0.9)
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
-
-Run: `python -m pytest app/tests/test_research_explorer.py -q`
-Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.explorer'`
-
-- [ ] **Step 3: 구현**
-
-```python
-# app/services/research/explorer.py
-"""explorer.py — 하위질문 1개를 탐색한다
-
-기존 검색 파이프라인을 그대로 쓰고(논문 스코프), 그 위에 피인용 가중만
-얹는다. 순위 계산은 rank_hits 로 빼서 Milvus 없이 테스트한다.
-"""
-import logging
-from datetime import datetime
-
-from repositories.book import BookRepository
-from services.research.scoring import blend_score, impact_per_year, parse_pub_year
-from services.research.state import HitRow
-from services.search.pipeline import search
-
-log = logging.getLogger(__name__)
-
-
-def rank_hits(
-    hits: list[HitRow], meta_by_id: dict[str, dict], *,
-    citation_weight: float, now_year: int,
-) -> list[HitRow]:
-    """리랭킹 점수에 연간 피인용을 얹어 다시 정렬한다. 입력은 건드리지 않는다."""
-    ranked = []
-    for hit in hits:
-        meta = meta_by_id.get(hit["book_id"]) or {}
-        impact = impact_per_year(
-            meta.get("kci_citations"), parse_pub_year(meta.get("pub_date")),
-            now_year=now_year,
-        )
-        row = dict(hit)
-        row["score"] = blend_score(hit["score"], impact=impact, weight=citation_weight)
-        ranked.append(row)
-    ranked.sort(key=lambda r: r["score"], reverse=True)
-    return ranked
-
-
-async def explore(query: str, *, params: dict, db) -> tuple[list[HitRow], dict[str, dict]]:
-    """검색 → 서지 조회 → 피인용 가중 재정렬.
-
-    returns (정렬된 hit 목록, cnts_id → 서지 메타)
-    """
-    resp = await search(
-        query, mode="chunk", top_k=params["per_subq_top_k"],
-        doc_scope="paper", db=db,
-    )
-    hits = [
-        {
-            "book_id": c.book_id, "chunk_id": c.chunk_id, "text": c.text,
-            "page_start": c.page_start, "page_end": c.page_end,
-            "score": c.rerank_score if c.rerank_score is not None else c.score,
-        }
-        for c in resp.chunks
-    ]
-    if not hits:
-        return [], {}
-
-    repo = BookRepository(db)
-    books = await repo.get_by_cnts_ids(list({h["book_id"] for h in hits}))
-    meta_by_id = {
-        cnts_id: {
-            "title": b.title, "personal_author": getattr(b, "personal_author", None),
-            "series_title": getattr(b, "series_title", None),
-            "vol_issue": getattr(b, "vol_issue", None),
-            "pub_date": getattr(b, "pub_date", None),
-            "kci_citations": getattr(b, "kci_citations", 0),
-            "grade": getattr(b, "grade", None),
-        }
-        for cnts_id, b in books.items()
-    }
-    ranked = rank_hits(
-        hits, meta_by_id,
-        citation_weight=params["citation_weight"], now_year=datetime.now().year,
-    )
-    return ranked, meta_by_id
-```
-
-- [ ] **Step 4: 테스트 통과 확인**
-
-Run: `python -m pytest app/tests/test_research_explorer.py -q`
-Expected: PASS (5 passed)
-
-- [ ] **Step 5: `BookRepository.get_by_cnts_ids` 의 실제 반환형 확인**
-
-Run: `grep -n "def get_by_cnts_ids" -A 12 app/repositories/book.py`
-
-반환이 `dict[str, BookOut]` 이고 `BookOut` 에 `series_title`·`kci_citations`·`grade` 가 없으면, `explore()` 에서 `Book` ORM 을 직접 조회하도록 바꾼다. `BookOut` 에 필드를 추가하지 말 것 — 검색 응답 스키마가 커진다.
-
-- [ ] **Step 6: 커밋**
-
-```bash
-git add app/services/research/explorer.py app/tests/test_research_explorer.py
-git commit -m "[Feat] round04a — 하위질문 탐색과 피인용 가중 재정렬"
-```
-
----
+- [x] **검증** — `5 passed`, 전체 회귀 `257 passed`
 
 ## Task 8: 보고서 종합
 
@@ -1659,18 +1929,16 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'services.research.synt
 제목·저자·연도는 모델 출력에서 가져오지 않는다. evidence 의 meta 를 쓴다 —
 라벨을 모델이 쓰게 두면 언젠가 없는 논문을 만들어낸다.
 """
-import json
 import logging
-import re
 
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.citations import bind_markers
+from services.research.llm_json import extract_json
 from services.research.state import ResearchState
 
 log = logging.getLogger(__name__)
 
-_FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.S)
 UNMARKED_THRESHOLD = 3
 
 
@@ -1790,16 +2058,14 @@ async def synthesize(state: ResearchState) -> dict:
         [{"role": "system", "content": system}, {"role": "user", "content": user}],
         params=llm_params, timeout=300.0,
     )
-    body = raw
-    m = _FENCE.search(raw or "")
-    if m:
-        body = m.group(1)
-    try:
-        data = json.loads(body[body.index("{"): body.rindex("}") + 1])
-        sections = data.get("sections") or []
-    except (ValueError, json.JSONDecodeError):
+    # Task 6 에서 뺀 공용 추출기를 쓴다. 여기서 다시 구현하지 마라 —
+    # body[index("{"):rindex("}")+1] 은 JSON 뒤에 } 를 포함한 산문이 붙으면
+    # 그 끝까지 먹어 파싱이 깨진다.
+    data = extract_json(raw)
+    if data is None:
         log.error("[research] 종합 JSON 파싱 실패: %s", (raw or "")[:300])
         raise ValueError("보고서 종합 출력을 해석하지 못했다")
+    sections = data.get("sections") or []
 
     return assemble_report(state, sections, unmarked_total=0)
 ```
