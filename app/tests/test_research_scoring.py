@@ -23,6 +23,11 @@ class TestImpactPerYear:
     def test_missing_year_gives_zero(self):
         assert impact_per_year(50, None, now_year=2026) == 0.0
 
+    def test_null_citations_gives_zero(self):
+        """kci_citations 는 nullable 이다(server_default 없음, BookOut 도 Optional).
+        None 검사가 비교 뒤로 밀리면 여기서 TypeError 가 난다."""
+        assert impact_per_year(None, 2008, now_year=2026) == 0.0
+
     def test_same_year_does_not_divide_by_zero(self):
         assert impact_per_year(4, 2026, now_year=2026) == 4.0
 

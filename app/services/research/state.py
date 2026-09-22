@@ -5,7 +5,7 @@
 """
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 # 깊이 파라미터 — research_jobs.params 로 덮어쓴다.
 # 시연 직전에 값만 바꿔 짧게 돌릴 수 있어야 하므로 하드코딩하지 않는다.
@@ -61,13 +61,19 @@ def _validate_param(key: str, value: object) -> None:
 
 
 class HitRow(TypedDict):
-    """검색 결과 1건 — Milvus 검색 계층(explore)이 만들어 citations.build_evidence 로 넘긴다."""
+    """검색 결과 1건 — Milvus 검색 계층(explore)이 만들어 citations.build_evidence 로 넘긴다.
+
+    score 와 rank_score 를 나눈 이유: 순위용 혼합값은 1.0 을 넘을 수 있어
+    유사도로 표시하면 141% 같은 값이 나간다. score 는 생값 그대로 두고 순위는
+    rank_score 로만 매긴다(explorer.rank_hits).
+    """
     book_id: str
     chunk_id: str
     text: str
     page_start: int
     page_end: int
-    score: float
+    score: float                      # 리랭킹(없으면 RRF) 생값 — 화면에 유사도로 나간다
+    rank_score: NotRequired[float]    # 피인용을 얹은 정렬용 값 — rank_hits 가 채운다
 
 
 @dataclass

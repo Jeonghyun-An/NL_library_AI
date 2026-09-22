@@ -75,6 +75,7 @@ async def search(
     use_rewrite: bool = True,
     use_rerank: bool = True,
     doc_scope: str = "all",   # "paper" | "book" | "all"
+    generate_answer: bool = True,   # chunk 모드 전용 — False 면 검색 결과만 돌려준다
     db=None,
 ) -> ChunkSearchResponse | BookSearchResponse:
     t0 = time.perf_counter()
@@ -125,6 +126,7 @@ async def search(
         return await _search_chunk_mode(
             query, rewritten, query_dense, query_sparse, top_k, use_rerank, elapsed, db,
             meta_expr=milvus_expr,
+            generate_answer=generate_answer,
         )
     else:
         return await _search_book_mode(
@@ -145,6 +147,7 @@ async def _search_chunk_mode(
     db=None,
     *,
     meta_expr: str | None = None,
+    generate_answer: bool = True,
 ) -> ChunkSearchResponse:
     t0 = time.perf_counter()
 
@@ -190,16 +193,20 @@ async def _search_chunk_mode(
     chunks = chunks[:top_k]
 
     # 컨텍스트 확장: 청크 주변 원문 로드 (126K 활용)
+    # generate_answer=False 면 확장·생성 둘 다 건너뛴다 — 확장이 먼저 컨텍스트
+    # 예산(CONTEXT_BUDGET_TOKENS)만큼 원문을 끌어오므로, 답변을 버릴 호출자에게는
+    # 생성뿐 아니라 확장도 순수 낭비다.
     answer = None
-    if db:
-        try:
-            expanded = await expand_context(chunks, db)
-            answer = await _generate_answer_with_context(original, expanded)
-        except Exception as e:
-            log.warning(f"컨텍스트 확장 실패, 청크 텍스트로 fallback: {e}")
+    if generate_answer:
+        if db:
+            try:
+                expanded = await expand_context(chunks, db)
+                answer = await _generate_answer_with_context(original, expanded)
+            except Exception as e:
+                log.warning(f"컨텍스트 확장 실패, 청크 텍스트로 fallback: {e}")
+                answer = await _generate_answer(original, chunks)
+        else:
             answer = await _generate_answer(original, chunks)
-    else:
-        answer = await _generate_answer(original, chunks)
 
     elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
 

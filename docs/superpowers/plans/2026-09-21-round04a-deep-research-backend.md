@@ -430,7 +430,7 @@ Actual: `146 passed` (기준선 134 + 12)
 
 딥리서치 실행 중 상태를 담는 dataclass 들과 깊이 파라미터. 파이프라인의 각 단계는 `ResearchState` 를 받아 갱신해 돌려주므로 Celery·Redis·Milvus 없이 테스트된다.
 
-리뷰 반영으로 초안과 달라진 것: `merge_params` 가 키뿐 아니라 **값의 타입·범위까지 검증**한다(`citation_weight: -0.2` 가 통과하면 영향력 높은 논문 점수를 깎아 순위가 조용히 뒤집힌다). `DEFAULT_PARAMS` 는 `MappingProxyType` 으로 잠갔고, `HitRow(TypedDict)` 와 `VERDICTS` 상수가 추가됐다.
+리뷰 반영으로 초안과 달라진 것: `merge_params` 가 키뿐 아니라 **값의 타입·범위까지 검증**한다(`citation_weight: -0.2` 가 통과하면 영향력 높은 논문 점수를 깎아 순위가 조용히 뒤집힌다). `DEFAULT_PARAMS` 는 `MappingProxyType` 으로 잠갔고, `HitRow(TypedDict)` 와 `VERDICTS` 상수가 추가됐다. `HitRow.rank_score` 는 Task 7 리뷰에서 붙었다 — 순위용 혼합값을 화면에 나가는 생 유사도와 분리한다.
 
 - [x] **`app/services/research/state.py`**
 
@@ -443,7 +443,7 @@ Actual: `146 passed` (기준선 134 + 12)
 """
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 # 깊이 파라미터 — research_jobs.params 로 덮어쓴다.
 # 시연 직전에 값만 바꿔 짧게 돌릴 수 있어야 하므로 하드코딩하지 않는다.
@@ -499,13 +499,19 @@ def _validate_param(key: str, value: object) -> None:
 
 
 class HitRow(TypedDict):
-    """검색 결과 1건 — Milvus 검색 계층(explore)이 만들어 citations.build_evidence 로 넘긴다."""
+    """검색 결과 1건 — Milvus 검색 계층(explore)이 만들어 citations.build_evidence 로 넘긴다.
+
+    score 와 rank_score 를 나눈 이유: 순위용 혼합값은 1.0 을 넘을 수 있어
+    유사도로 표시하면 141% 같은 값이 나간다. score 는 생값 그대로 두고 순위는
+    rank_score 로만 매긴다(explorer.rank_hits).
+    """
     book_id: str
     chunk_id: str
     text: str
     page_start: int
     page_end: int
-    score: float
+    score: float                      # 리랭킹(없으면 RRF) 생값 — 화면에 유사도로 나간다
+    rank_score: NotRequired[float]    # 피인용을 얹은 정렬용 값 — rank_hits 가 채운다
 
 
 @dataclass
@@ -743,6 +749,11 @@ class TestImpactPerYear:
     def test_missing_year_gives_zero(self):
         assert impact_per_year(50, None, now_year=2026) == 0.0
 
+    def test_null_citations_gives_zero(self):
+        """kci_citations 는 nullable 이다(server_default 없음, BookOut 도 Optional).
+        None 검사가 비교 뒤로 밀리면 여기서 TypeError 가 난다."""
+        assert impact_per_year(None, 2008, now_year=2026) == 0.0
+
     def test_same_year_does_not_divide_by_zero(self):
         assert impact_per_year(4, 2026, now_year=2026) == 4.0
 
@@ -773,7 +784,7 @@ class TestBlendScore:
         assert high < low * 5
 ```
 
-- [x] **검증** — `15 passed`, 전체 회귀 202 passed
+- [x] **검증** — `16 passed`(Task 7 리뷰에서 `kci_citations=None` 케이스 1건 추가), 작성 시점 전체 회귀 202 passed. 되돌림 확인: `impact_per_year` 의 가드를 `if pub_year is None or kci_citations <= 0 or kci_citations is None:` 으로 바꾸면 `test_null_citations_gives_zero` 가 `TypeError` 로 떨어진다.
 
 ---
 
@@ -1668,7 +1679,76 @@ class TestExtractJson:
 
 > **함정 — `pipeline` 을 최상단에서 import 하지 마라.** `pipeline.py` → `reranker.py` → `import torch` 인데 torch 는 로컬 venv 에 없다(Dockerfile 에서 CUDA 버전으로 설치). 최상단 import 를 쓰면 `pytest` 가 collection 단계에서 죽어 **세션 전체가 0건**이 된다. 함수 본문 안에서 import 하라 — `app/api/book.py:619` 가 이미 그렇게 한다. `docs/ops/recurring-gotchas.md` 13번.
 
-초안과 달라진 것 둘. **(1)** `from services.search.pipeline import search` 를 `explore()` 함수 본문으로 내렸다(위 함정). **(2)** 초안이 `getattr(b, "series_title", None)` 처럼 방어적으로 읽던 것을 직접 속성 접근으로 바꿨다 — Step 5 에서 확인한 결과 `get_by_cnts_ids` 가 `Book` ORM 을 돌려주고 해당 컬럼이 모두 실재한다. `getattr` 기본값은 컬럼명이 바뀌어도 조용히 `None` 을 넣어 순위가 틀어지는 쪽으로 실패한다.
+초안과 달라진 것 여섯.
+
+**(1) `from services.search.pipeline import search` 를 `explore()` 함수 본문으로 내렸다**(위 함정).
+
+**(2) 서지 7개 필드를 방어 없이 직접 속성 접근으로 읽는다.** 초안은 `getattr(b, "series_title", None)` 이었다. `get_by_cnts_ids` 는 `dict[str, BookOut]` 을 돌려주고(`Book` ORM 이 아니다 — `BookRepository` 는 어느 메서드도 ORM 을 밖으로 내보내지 않는다, `docs/standards/coding-standard.md` 가 이 리포지토리를 준수 예로 든다) `BookOut` 에 일곱 필드가 모두 있다. `getattr` 기본값은 컬럼명이 바뀌어도 조용히 `None` 을 넣어 **순위가 틀어지는 쪽으로** 실패한다. 테스트가 실제 `BookOut` 을 만들어 이 이름들을 고정한다.
+
+**(3) 검색만 시킨다 — 답변 생성과 쿼리 재작성을 둘 다 끈다.** 초안은 `search(mode="chunk", db=db)` 를 기본값 그대로 불렀다. 두 기본값이 각각 문제다.
+
+`search` 는 청크 모드에서 **무조건** 답변을 만든다(`db` 가 있으면 `expand_context` + 생성, 없으면 생성). 끌 방법이 없었다. `explore` 는 `resp.chunks` 만 읽고 `resp.answer` 를 버리는데, 기본 파라미터(`max_subquestions=6`·`max_recheck=3`)면 한 잡에 6~24회 도므로 컨텍스트 예산 10만 토큰(`CONTEXT_BUDGET_TOKENS`)짜리 확장+생성이 그 횟수만큼 공유 GPU 를 물고 아무것도 남기지 않는다. 시연 예산이 잡당 5~7분이다. 그래서 `pipeline.search()` 에 `generate_answer: bool = True` 를 추가해 `_search_chunk_mode()` 까지 넘기고, `False` 면 확장과 생성을 둘 다 건너뛴다. 기본값이 `True` 라 기존 호출자(`api/book.py`·`api/paper.py`·`api/scenario.py`·`scripts/eval_*.py` — 어느 쪽도 이 인자를 넘기지 않는다)의 동작은 그대로다. 보고서는 마지막에 근거 전체로 한 번 종합한다(Task 8).
+
+`use_rewrite` 기본값은 `True` 인데, `query_rewrite.yaml` 은 **도서 추천 전용** 프롬프트다 — 유사도 규칙이 "제목·저자명은 쿼리에 절대 포함하지 마세요"이고 예시가 채식주의자·카프카·하루키다. 하위질문("부르디외 문화자본론을 적용한 국내 독서격차 연구")을 통과시키면 고유명사가 떨어져 분위기 키워드로 바뀌어 Milvus 에 닿는 문자열이 하위질문이 아니게 된다. 더 나쁜 건 `_enrich_from_db` 가 `(.+?)(같은|비슷한)\s*책` 에 걸리면 쿼리를 그 책의 `themes` 로 통째로 갈아버리는 것이다. 계획 단계가 이미 검색어로 쓸 수 있는 문장을 내놓으므로(`research_plan.yaml`: "각 하위질문은 그 자체로 논문 검색어가 될 만큼 구체적이어야 합니다") 재작성이 보태는 게 없다. 기록도 이쪽이 맞다 — runner 는 검색 직전 문자열을 `subq.queries` 에 남기므로, 재작성이 켜져 있으면 사용자에게 보이는 탐색 경로와 `research_steps.result["queries"]` 가 둘 다 **실제로 보낸 적 없는 쿼리**를 기록해 0건 하위질문을 사후에 진단할 수 없다.
+
+**(4) 근거가 될 수 없는 hit 을 `explore` 에서 떨군다.** 둘이다.
+
+카탈로그 메타 청크(`chunk_idx == -1`, `제목: … | 기관: … | 저자: … | 초록: …`). `doc_type` 스칼라가 같아 `doc_scope="paper"` 를 통과하고, 제목과 초록을 품고 있어 주제형 하위질문에서 점수가 **오히려 잘 나온다**. 그대로 두면 보고서가 서지 덩어리를 "논문 발췌 (p.0-0)" 로 인용하고(`page_start=None` 이 인덱싱 때 0 이 된다) `critic.format_evidence_list` 도 그걸 발췌로 모델에 먹인다. 도서 모드는 이미 `h.chunk_idx != -1` 로 걸러낸다(`# 응답용 청크: 메타 청크 제외`). 청크 모드는 안 걸러내지만 **거기는 논문 검색 화면이 쓰는 라이브 경로라 건드리지 않고** `explore` 에서만 뺀다 — 청크 모드 자체를 바꾸는 건 별건이다.
+
+서지를 못 찾은 청크. `build_evidence` 가 `meta_by_id` 에 없는 `book_id` 를 말없이 버리므로, 그대로 넘기면 근거 수가 조용히 모자라고 critic 이 `insufficient` 를 내 재검색이 상한까지 돌고도 로그에 흔적이 없다. Milvus 에는 있는데 `library_catalog` 행이 사라진 일이 실제로 있었다(`docs/ops/recurring-gotchas.md` 9번). `explorer.py` 는 `log` 를 만들어 두고 한 번도 쓰지 않았다 — 지금은 제외 건수와 `cnts_id` 를 `log.warning` 으로 남긴다.
+
+**(5) 순위용 혼합값을 `score` 에 덮어쓰지 않고 `rank_score` 로 분리했다.** `scoring.py` 의 모듈 docstring 이 "화면에는 생값을 그대로 보여준다 — 정규화는 순위에만 쓴다" 인데, 초안의 `rank_hits` 는 혼합값을 `row["score"]` 에 써 넣고 `build_evidence` 가 그걸 `Chunk.score` 로 복사했다. 혼합값은 1.0 을 넘는다 — 리랭킹 0.92·피인용 40회·2024년·weight 0.2 면 `0.92 * (1 + 0.2*ln(14.33)) = 1.41` 이다. `Chunk.score` 를 0~1 유사도로 읽는 쪽은 141% 를 그리고, 생 리랭킹 점수는 되찾을 길이 없다. 이제 `score` 는 생값 그대로, 정렬은 `rank_score` 로 한다(`HitRow` 에 `rank_score: NotRequired[float]` 추가 — 검색 계층이 행을 만든 직후에는 없고 `rank_hits` 가 채운다). 한 논문 안에서 청크를 고르는 `build_evidence` 의 `score` 정렬은 그대로 둬도 된다 — 같은 논문이면 가중치가 같아 두 값의 순서가 같다.
+
+**(6) `explore()` 에 테스트가 생겼다.** kwarg 이름·`resp.chunks` 모양·`rerank_score` 폴백·부분 응답이 전부 검증되지 않아, 파이프라인에서 `doc_scope=` 를 `scope=` 로 바꿔도 스위트는 초록불이고 워커가 시연 중에 `TypeError: search() got an unexpected keyword argument` 로 죽을 수 있었다(`docs/standards/coding-standard.md:44-45` 위반). 지연 import 덕에 `monkeypatch.setitem(sys.modules, "services.search.pipeline", 대역)` 으로 Milvus·GPU 없이 다 덮인다. 인자 이름이 파이프라인에 실재하는지는 `pipeline.py` 를 `ast` 로 읽어 확인한다 — 대역은 `**kwargs` 로 다 받아주므로 그것만으로는 rename 을 못 잡는다.
+
+- [x] **`app/services/search/pipeline.py`** — `generate_answer` 스위치 (이 태스크에서 추가된 유일한 기존 파일 변경)
+
+```python
+async def search(
+    query: str,
+    *,
+    mode: str = "book",
+    top_k: int = 10,
+    use_rewrite: bool = True,
+    use_rerank: bool = True,
+    doc_scope: str = "all",   # "paper" | "book" | "all"
+    generate_answer: bool = True,   # chunk 모드 전용 — False 면 검색 결과만 돌려준다
+    db=None,
+) -> ChunkSearchResponse | BookSearchResponse:
+    ...
+    if mode == "chunk":
+        return await _search_chunk_mode(
+            query, rewritten, query_dense, query_sparse, top_k, use_rerank, elapsed, db,
+            meta_expr=milvus_expr,
+            generate_answer=generate_answer,
+        )
+```
+
+```python
+async def _search_chunk_mode(
+    ...
+    db=None,
+    *,
+    meta_expr: str | None = None,
+    generate_answer: bool = True,
+) -> ChunkSearchResponse:
+    ...
+    # 컨텍스트 확장: 청크 주변 원문 로드 (126K 활용)
+    # generate_answer=False 면 확장·생성 둘 다 건너뛴다 — 확장이 먼저 컨텍스트
+    # 예산(CONTEXT_BUDGET_TOKENS)만큼 원문을 끌어오므로, 답변을 버릴 호출자에게는
+    # 생성뿐 아니라 확장도 순수 낭비다.
+    answer = None
+    if generate_answer:
+        if db:
+            try:
+                expanded = await expand_context(chunks, db)
+                answer = await _generate_answer_with_context(original, expanded)
+            except Exception as e:
+                log.warning(f"컨텍스트 확장 실패, 청크 텍스트로 fallback: {e}")
+                answer = await _generate_answer(original, chunks)
+        else:
+            answer = await _generate_answer(original, chunks)
+```
 
 - [x] **`app/services/research/explorer.py`**
 
@@ -1694,7 +1774,13 @@ def rank_hits(
     hits: list[HitRow], meta_by_id: dict[str, dict], *,
     citation_weight: float, now_year: int,
 ) -> list[HitRow]:
-    """리랭킹 점수에 연간 피인용을 얹어 다시 정렬한다. 입력은 건드리지 않는다."""
+    """연간 피인용을 얹은 rank_score 로 다시 정렬한다. 입력은 건드리지 않는다.
+
+    혼합값을 score 에 덮어쓰지 않는 이유: 혼합값은 1.0 을 넘는다. 리랭킹 0.92
+    짜리 2024년 논문이 40회 인용됐으면 0.92 * (1 + 0.2*ln(14.33)) = 1.41 이다.
+    score 를 유사도로 읽는 쪽은 그대로 "141%" 를 그리고, 생 리랭킹 점수는
+    되찾을 길이 없어진다. 정렬은 rank_score 로, 표시는 score 로 한다.
+    """
     ranked = []
     for hit in hits:
         meta = meta_by_id.get(hit["book_id"]) or {}
@@ -1703,9 +1789,9 @@ def rank_hits(
             now_year=now_year,
         )
         row = dict(hit)
-        row["score"] = blend_score(hit["score"], impact=impact, weight=citation_weight)
+        row["rank_score"] = blend_score(hit["score"], impact=impact, weight=citation_weight)
         ranked.append(row)
-    ranked.sort(key=lambda r: r["score"], reverse=True)
+    ranked.sort(key=lambda r: r["rank_score"], reverse=True)
     return ranked
 
 
@@ -1719,10 +1805,30 @@ async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[H
     # 기존 코드베이스도 같은 이유로 지연 임포트한다(api/book.py·main.py 참고).
     from services.search.pipeline import search
 
+    # generate_answer=False — 여기서 만든 답변은 전부 버려진다(resp.chunks 만 쓴다).
+    # 보고서는 마지막에 근거 전체로 한 번 종합한다. 기본 파라미터로도 explore 는 한
+    # 잡에 6~24회 도는데, 하위질문마다 생성하면 컨텍스트 예산 10만 토큰짜리 확장+생성이
+    # 그 횟수만큼 공유 GPU 를 물고 아무것도 남기지 않는다.
+    #
+    # use_rewrite=False — 쿼리 재작성은 도서 추천 전용이다. query_rewrite.yaml 의
+    # 유사도 규칙이 "제목·저자명은 쿼리에 절대 포함하지 마세요"이고 예시가
+    # 채식주의자·카프카·하루키다. 하위질문("부르디외 문화자본론을 적용한 국내 독서격차
+    # 연구")을 통과시키면 고유명사가 떨어져 분위기 키워드로 바뀌고, "X 같은 책" 패턴에
+    # 걸리면 _enrich_from_db 가 쿼리를 그 책의 themes 로 통째로 갈아버린다. 계획
+    # 단계가 이미 검색어로 쓸 수 있는 문장을 내놓는다(research_plan.yaml).
+    # 기록도 이쪽이 맞다 — runner 는 검색 직전 문자열을 subq.queries 에 남기므로,
+    # 재작성이 켜져 있으면 사용자에게 보이는 탐색 경로와 research_steps.result["queries"]
+    # 가 둘 다 실제로 보낸 적 없는 쿼리를 기록해 0건 하위질문을 사후에 진단할 수 없다.
     resp = await search(
         query, mode="chunk", top_k=params["per_subq_top_k"],
-        doc_scope="paper", db=db,
+        doc_scope="paper", generate_answer=False, use_rewrite=False, db=db,
     )
+    # chunk_idx == -1 은 카탈로그 메타 청크다("제목: … | 기관: … | 초록: …").
+    # doc_type 스칼라가 같아 doc_scope="paper" 를 통과하고 제목·초록을 품고 있어
+    # 주제형 하위질문에서 점수가 오히려 잘 나온다. 그대로 두면 보고서가 서지 덩어리를
+    # "논문 발췌 (p.0-0)" 로 인용하고(page_start 가 없어 인덱싱 때 0 이 된다)
+    # critic 에게도 그게 발췌로 들어간다. chunk 모드는 논문 검색 화면이 쓰는 라이브
+    # 경로라 파이프라인은 건드리지 않고 여기서만 걸러낸다(도서 모드는 이미 제외한다).
     hits: list[HitRow] = [
         {
             "book_id": c.book_id, "chunk_id": c.chunk_id, "text": c.text,
@@ -1730,6 +1836,7 @@ async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[H
             "score": c.rerank_score if c.rerank_score is not None else c.score,
         }
         for c in resp.chunks
+        if c.chunk_idx != -1
     ]
     if not hits:
         return [], {}
@@ -1745,8 +1852,20 @@ async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[H
         }
         for cnts_id, b in books.items()
     }
+    # 서지를 못 찾은 청크는 여기서 떨군다. build_evidence 가 meta_by_id 에 없는
+    # book_id 를 말없이 버리기 때문에, 그대로 넘기면 근거 수가 조용히 모자라고
+    # critic 이 insufficient 를 내 재검색이 상한까지 돌고도 로그에 흔적이 없다.
+    # Milvus 에는 있는데 library_catalog 행이 사라진 일이 실제로 있었다
+    # (docs/ops/recurring-gotchas.md 9번).
+    kept = [h for h in hits if h["book_id"] in meta_by_id]
+    if len(kept) < len(hits):
+        orphans = sorted({h["book_id"] for h in hits if h["book_id"] not in meta_by_id})
+        log.warning(
+            "[explore] 서지 없는 청크 %d/%d 건 제외 — cnts_id %s",
+            len(hits) - len(kept), len(hits), orphans[:5],
+        )
     ranked = rank_hits(
-        hits, meta_by_id,
+        kept, meta_by_id,
         citation_weight=params["citation_weight"], now_year=datetime.now().year,
     )
     return ranked, meta_by_id
@@ -1755,9 +1874,28 @@ async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[H
 - [x] **`app/tests/test_research_explorer.py`**
 
 ```python
+"""test_research_explorer.py — 하위질문 탐색.
+
+explore() 는 Milvus·GPU 없이도 대역으로 검증한다. 실제 pipeline 을 import 하면
+reranker → torch 가 필요해 수집 단계에서 세션이 통째로 죽으므로, explore 안의
+지연 import 를 sys.modules 로 가로챈다.
+"""
+import ast
+import asyncio
+import logging
+import sys
+import types
+from datetime import datetime
+from pathlib import Path
+from uuid import uuid4
+
 import pytest
 
-from services.research.explorer import rank_hits
+from schemas.book import BookOut, ChunkHit, ChunkSearchResponse
+from services.research.explorer import explore, rank_hits
+from services.research.state import merge_params
+
+_DB = object()          # explore 가 그대로 흘려보내기만 하는 세션 자리
 
 
 class TestRankHits:
@@ -1774,7 +1912,16 @@ class TestRankHits:
     def test_missing_metadata_scores_as_zero_impact(self):
         hits = [self._hit("A", 0.9)]
         ranked = rank_hits(hits, {}, citation_weight=0.2, now_year=2026)
-        assert ranked[0]["score"] == pytest.approx(0.9)
+        assert ranked[0]["rank_score"] == pytest.approx(0.9)
+
+    def test_raw_score_is_kept_and_blend_goes_to_rank_score(self):
+        """score 는 화면에 유사도로 나간다 — 혼합값을 덮어쓰면 141% 가 표시되고
+        생 리랭킹 점수를 되찾을 길이 없어진다."""
+        hits = [self._hit("A", 0.92)]
+        ranked = rank_hits(hits, {"A": self._meta("2024-01", 40)},
+                           citation_weight=0.2, now_year=2026)
+        assert ranked[0]["score"] == pytest.approx(0.92)
+        assert ranked[0]["rank_score"] > 1.0
 
     def test_impact_reorders_close_scores(self):
         hits = [self._hit("OLD", 0.81), self._hit("NEW", 0.80)]
@@ -1791,13 +1938,305 @@ class TestRankHits:
         ranked = rank_hits(hits, meta, citation_weight=0.0, now_year=2026)
         assert ranked[0]["book_id"] == "OLD"
 
+    def test_null_citations_with_valid_year(self):
+        """kci_citations 는 nullable 이다 — 한 편이 None 이라고 하위질문 전체가
+        TypeError 로 죽으면 안 된다."""
+        ranked = rank_hits([self._hit("A", 0.9)], {"A": self._meta("2008-06", None)},
+                           citation_weight=0.2, now_year=2026)
+        assert ranked[0]["rank_score"] == pytest.approx(0.9)
+
     def test_original_hits_are_not_mutated(self):
         hits = [self._hit("A", 0.9)]
         rank_hits(hits, {"A": self._meta("2008-01", 10)}, citation_weight=0.2, now_year=2026)
         assert hits[0]["score"] == pytest.approx(0.9)
+        assert "rank_score" not in hits[0]
+
+
+def _chunk(book_id, *, chunk_idx=4, text="본문", score=0.5, rerank_score=0.8):
+    """실제 ChunkHit 을 쓴다 — explore 가 읽는 필드가 스키마에 실재하는지도 같이 본다."""
+    return ChunkHit(
+        chunk_id=f"{book_id}__{chunk_idx:04d}", book_id=book_id, chunk_idx=chunk_idx,
+        text=text, page_start=3, page_end=4, score=score, rerank_score=rerank_score,
+    )
+
+
+def _book(cnts_id, *, title="논문 가", pub_date="2008-06", kci_citations=3):
+    """실제 BookOut 을 쓴다 — explore 가 방어 없이 직접 속성 접근으로 읽는 7개
+    필드(title·personal_author·series_title·vol_issue·pub_date·kci_citations·grade)가
+    스키마에 실재하는지 여기서 고정된다."""
+    return BookOut(
+        id=uuid4(), cnts_id=cnts_id, title=title, created_at=datetime(2026, 1, 1),
+        personal_author="저자", series_title="학술지", vol_issue="12(3)",
+        pub_date=pub_date, kci_citations=kci_citations, grade="등재",
+    )
+
+
+class _FakeSearch:
+    """pipeline.search 대역 — 호출 kwargs 를 그대로 붙잡아 둔다."""
+
+    def __init__(self, chunks):
+        self._chunks = chunks
+        self.calls: list[dict] = []
+
+    async def __call__(self, query, **kwargs):
+        self.calls.append({"query": query, **kwargs})
+        return ChunkSearchResponse(query=query, chunks=self._chunks, elapsed_ms=1.0)
+
+
+class _FakeRepo:
+    """BookRepository 대역. 클래스 자리에 인스턴스를 꽂아 `BookRepository(db)` 를 받는다."""
+
+    def __init__(self, books):
+        self._books = books
+        self.requested: list[str] = []
+
+    def __call__(self, db):
+        return self
+
+    async def get_by_cnts_ids(self, cnts_ids):
+        # 실물처럼 찾은 것만 돌려준다 — 없는 cnts_id 는 키가 아예 빠진다.
+        self.requested = list(cnts_ids)
+        return {k: v for k, v in self._books.items() if k in cnts_ids}
+
+
+def _pipeline_search_params() -> set[str]:
+    """pipeline.search 의 인자 이름을 소스에서 읽는다.
+
+    import 하면 torch 가 필요해 로컬에서 수집 단계가 죽는다. explore 가 넘기는
+    kwarg 가 파이프라인에 실재하는지는 확인해야 하고(어긋나면 워커에서
+    TypeError 로만 드러난다) 시그니처만 보면 되므로 ast 로 읽는다.
+    """
+    src = (Path(__file__).resolve().parents[1] / "services" / "search" / "pipeline.py")
+    fn = next(
+        node for node in ast.parse(src.read_text(encoding="utf-8")).body
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "search"
+    )
+    return {a.arg for a in fn.args.args + fn.args.kwonlyargs}
+
+
+class TestExplore:
+    def _run(self, monkeypatch, *, chunks, books, params=None):
+        fake_search = _FakeSearch(chunks)
+        module = types.ModuleType("services.search.pipeline")
+        module.search = fake_search
+        monkeypatch.setitem(sys.modules, "services.search.pipeline", module)
+        fake_repo = _FakeRepo(books)
+        monkeypatch.setattr("services.research.explorer.BookRepository", fake_repo)
+        ranked, meta = asyncio.run(
+            explore("하위질문", params=merge_params(params or {}), db=_DB)
+        )
+        return fake_search, fake_repo, ranked, meta
+
+    def test_search_receives_retrieval_only_kwargs(self, monkeypatch):
+        """딥리서치는 검색만 필요하다 — 답변 생성과 쿼리 재작성을 둘 다 끈다."""
+        fake_search, _, _, _ = self._run(
+            monkeypatch, chunks=[_chunk("A")], books={"A": _book("A")},
+            params={"per_subq_top_k": 7},
+        )
+        assert fake_search.calls == [{
+            "query": "하위질문", "mode": "chunk", "top_k": 7, "doc_scope": "paper",
+            "generate_answer": False, "use_rewrite": False, "db": _DB,
+        }]
+
+    def test_every_kwarg_exists_on_the_real_pipeline(self, monkeypatch):
+        """대역은 **kwargs 로 다 받는다 — 파이프라인에서 인자명이 바뀌어도 초록불이
+        유지되고 워커가 TypeError 로 죽는다. 실제 시그니처와 맞춰 둔다."""
+        fake_search, _, _, _ = self._run(
+            monkeypatch, chunks=[_chunk("A")], books={"A": _book("A")},
+        )
+        assert set(fake_search.calls[0]) <= _pipeline_search_params()
+
+    def test_rerank_zero_is_not_treated_as_missing(self, monkeypatch):
+        """0.0 은 "리랭커가 이 청크를 버렸다"는 정보다. falsy 라고 벡터 점수로
+        되돌리면 버려진 청크가 0.7 로 되살아난다."""
+        _, _, ranked, _ = self._run(
+            monkeypatch, chunks=[_chunk("A", score=0.7, rerank_score=0.0)],
+            books={"A": _book("A")},
+        )
+        assert ranked[0]["score"] == pytest.approx(0.0)
+
+    def test_rerank_none_falls_back_to_vector_score(self, monkeypatch):
+        """리랭킹이 실패하면 rerank_score 가 없는 채로 내려온다."""
+        _, _, ranked, _ = self._run(
+            monkeypatch, chunks=[_chunk("A", score=0.42, rerank_score=None)],
+            books={"A": _book("A")},
+        )
+        assert ranked[0]["score"] == pytest.approx(0.42)
+
+    def test_metadata_chunk_is_excluded(self, monkeypatch):
+        """chunk_idx=-1 은 카탈로그 서지 덩어리다 — 제목·초록을 품어 점수가 잘
+        나오지만 발췌로 인용되면 "논문 발췌 (p.0-0)" 가 된다."""
+        chunks = [
+            _chunk("A", chunk_idx=-1, text="제목: 논문 가 | 기관: … | 초록: …", rerank_score=0.99),
+            _chunk("A", chunk_idx=4, rerank_score=0.5),
+        ]
+        _, _, ranked, _ = self._run(monkeypatch, chunks=chunks, books={"A": _book("A")})
+        assert [h["chunk_id"] for h in ranked] == ["A__0004"]
+
+    def test_only_metadata_chunks_gives_no_hits(self, monkeypatch):
+        _, fake_repo, ranked, meta = self._run(
+            monkeypatch, chunks=[_chunk("A", chunk_idx=-1)], books={"A": _book("A")},
+        )
+        assert (ranked, meta) == ([], {})
+        assert fake_repo.requested == []
+
+    def test_hits_without_bibliography_are_dropped(self, monkeypatch):
+        """서지를 못 찾으면 근거가 될 수 없다 — build_evidence 가 말없이 버리므로
+        여기서 떨궈야 근거 수가 왜 모자란지 드러난다."""
+        chunks = [_chunk("A"), _chunk("GONE")]
+        _, _, ranked, meta = self._run(monkeypatch, chunks=chunks, books={"A": _book("A")})
+        assert [h["book_id"] for h in ranked] == ["A"]
+        assert set(meta) == {"A"}
+
+    def test_dropped_hits_are_logged(self, monkeypatch, caplog):
+        chunks = [_chunk("A"), _chunk("GONE")]
+        with caplog.at_level(logging.WARNING, logger="services.research.explorer"):
+            self._run(monkeypatch, chunks=chunks, books={"A": _book("A")})
+        assert "GONE" in caplog.text
+
+    def test_meta_carries_the_bibliography_fields(self, monkeypatch):
+        _, _, _, meta = self._run(
+            monkeypatch, chunks=[_chunk("A")], books={"A": _book("A")},
+        )
+        assert meta == {"A": {
+            "title": "논문 가", "personal_author": "저자", "series_title": "학술지",
+            "vol_issue": "12(3)", "pub_date": "2008-06", "kci_citations": 3,
+            "grade": "등재",
+        }}
+
+    def test_no_chunks_returns_empty(self, monkeypatch):
+        _, fake_repo, ranked, meta = self._run(monkeypatch, chunks=[], books={})
+        assert (ranked, meta) == ([], {})
+        assert fake_repo.requested == []
 ```
 
-- [x] **검증** — `5 passed`, 전체 회귀 `257 passed`
+- [x] **`app/tests/test_search_chunk_answer_flag.py`** (신규 — 초안에 없던 파일)
+
+```python
+"""test_search_chunk_answer_flag.py — 청크 모드 답변 생성 스위치.
+
+딥리서치 탐색은 resp.chunks 만 쓰고 answer 를 버린다. 하위질문마다 답변을
+만들면 컨텍스트 예산 10만 토큰짜리 확장+생성이 한 잡에 6~24회 돌고 전부
+폐기된다 — 그래서 generate_answer 를 받는다. 기본값은 True 라 기존
+호출자(도서·논문 검색 API)의 동작은 그대로다.
+
+pipeline 은 reranker(torch)·indexer(pymilvus) 를 물고 오므로, 미설치 환경에서만
+더미를 꽂아 import 를 통과시킨다(test_embed_index_guard.py 와 같은 방식).
+"""
+import asyncio
+import importlib
+import sys
+from unittest.mock import MagicMock
+
+_HEAVY = ("torch", "transformers", "FlagEmbedding", "pymilvus")
+# 더미를 꽂은 채 우리 쪽 모듈이 sys.modules 에 남으면 뒤에 도는 테스트가 Mock 을
+# 물려받는다. monkeypatch.delitem 으로 지워 두면 테스트가 끝날 때 없는 상태로
+# 복원되고 다음 사용자가 제대로 다시 import 한다.
+_CACHED = ("services.search.pipeline", "services.search.reranker",
+           "services.ingestion.embedder", "services.ingestion.indexer")
+
+
+def _load_pipeline(monkeypatch):
+    for name in _HEAVY:
+        try:
+            importlib.import_module(name)
+        except ModuleNotFoundError:
+            monkeypatch.setitem(sys.modules, name, MagicMock())
+    for name in _CACHED:
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    return importlib.import_module("services.search.pipeline")
+
+
+class _Hit:
+    """indexer.search_chunks 가 돌려주는 행 대역."""
+
+    chunk_id, book_id, chunk_idx = "A__0004", "A", 4
+    text, page_start, page_end, score = "본문", 3, 4, 0.5
+
+
+def _patch(monkeypatch, pipeline) -> list[str]:
+    """Milvus 검색은 1건으로 고정하고, 확장·생성 3종은 호출 기록만 남긴다."""
+    monkeypatch.setattr(pipeline, "search_chunks", lambda *a, **k: [_Hit()])
+    called: list[str] = []
+
+    async def _expand(chunks, db):
+        called.append("expand")
+        return []
+
+    async def _with_context(query, contexts):
+        called.append("with_context")
+        return "확장 답변"
+
+    async def _plain(query, chunks):
+        called.append("plain")
+        return "기본 답변"
+
+    monkeypatch.setattr(pipeline, "expand_context", _expand)
+    monkeypatch.setattr(pipeline, "_generate_answer_with_context", _with_context)
+    monkeypatch.setattr(pipeline, "_generate_answer", _plain)
+    return called
+
+
+def _chunk_mode(pipeline, *, db, **kwargs):
+    return asyncio.run(pipeline._search_chunk_mode(
+        "질문", None, [0.1], {1: 0.2}, 3, False, 0.0, db, **kwargs,
+    ))
+
+
+def test_default_generates_with_expanded_context(monkeypatch):
+    """기본값 True — 기존 호출자의 동작이 바뀌면 안 된다."""
+    pipeline = _load_pipeline(monkeypatch)
+    called = _patch(monkeypatch, pipeline)
+    resp = _chunk_mode(pipeline, db=MagicMock())
+    assert resp.answer == "확장 답변"
+    assert called == ["expand", "with_context"]
+
+
+def test_false_skips_expansion_and_generation(monkeypatch):
+    pipeline = _load_pipeline(monkeypatch)
+    called = _patch(monkeypatch, pipeline)
+    resp = _chunk_mode(pipeline, db=MagicMock(), generate_answer=False)
+    assert resp.answer is None
+    assert called == []
+    assert len(resp.chunks) == 1        # 검색 결과는 그대로 온다
+
+
+def test_false_also_skips_the_no_db_path(monkeypatch):
+    """db 가 없으면 예전 코드는 _generate_answer 로 답변을 만들었다 — 이쪽도 꺼진다."""
+    pipeline = _load_pipeline(monkeypatch)
+    called = _patch(monkeypatch, pipeline)
+    resp = _chunk_mode(pipeline, db=None, generate_answer=False)
+    assert resp.answer is None
+    assert called == []
+
+
+def test_search_threads_the_flag_into_chunk_mode(monkeypatch):
+    """search() 가 안 넘기면 explore 의 generate_answer=False 가 조용히 무시된다."""
+    pipeline = _load_pipeline(monkeypatch)
+    called = _patch(monkeypatch, pipeline)
+    monkeypatch.setattr(pipeline, "embed_texts", lambda texts, is_query=False: ([[0.1]], [{1: 0.2}]))
+    resp = asyncio.run(pipeline.search(
+        "질문", mode="chunk", top_k=3, use_rewrite=False, use_rerank=False,
+        doc_scope="paper", generate_answer=False, db=None,
+    ))
+    assert resp.answer is None
+    assert called == []
+```
+
+- [x] **검증** — explorer `17 passed`, scoring `16 passed`, 청크 모드 플래그 `4 passed`, 전체 회귀 `295 passed`(Task 8 진행분 포함).
+
+되돌림 확인(프로덕션 코드를 실제로 되돌려 실패를 본 것):
+
+| 되돌린 것 | 떨어지는 테스트 |
+|---|---|
+| `explore` 가 `generate_answer=False` 를 안 넘김 | `test_search_receives_retrieval_only_kwargs` |
+| `pipeline.search` 에서 `generate_answer` 인자 삭제 | `test_every_kwarg_exists_on_the_real_pipeline` |
+| `if generate_answer:` 가드 제거(항상 생성) | `test_false_skips_expansion_and_generation` 외 2건 |
+| `explore` 가 `use_rewrite=False` 를 안 넘김 | `test_search_receives_retrieval_only_kwargs` |
+| `if c.chunk_idx != -1` 제거 | `test_metadata_chunk_is_excluded`·`test_only_metadata_chunks_gives_no_hits` |
+| 혼합값을 `row["score"]` 에 덮어씀 | `test_raw_score_is_kept_and_blend_goes_to_rank_score` 외 3건 |
+| `rank_hits` 에 `kept` 대신 `hits` 를 넘김 | `test_hits_without_bibliography_are_dropped` |
+| `impact_per_year` 가드를 `pub_year is None or kci_citations <= 0 or kci_citations is None` 로 재배치 | `test_null_citations_gives_zero`·`test_null_citations_with_valid_year` (`TypeError`) |
 
 ## Task 8: 보고서 종합
 
