@@ -1,7 +1,8 @@
 import pytest
 
 from services.research.state import (
-    DEFAULT_PARAMS, VERDICTS, Chunk, Evidence, ResearchState, SubQuestion, merge_params,
+    DEFAULT_PARAMS, VERDICTS, Chunk, Evidence, ResearchState, SubQuestion,
+    merge_params, restore_state, snapshot_state,
 )
 
 
@@ -102,3 +103,81 @@ class TestState:
     def test_corpus_range_defaults_to_none(self):
         st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
         assert st.corpus_range is None
+
+
+def _explored_state() -> ResearchState:
+    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+    st.corpus_range = {"from": "2002", "to": "2026", "n_papers": 72054}
+    st.subquestions = [
+        SubQuestion(idx=0, text="하위1", queries=["q1", "q2"], evidence_ids=["E0"],
+                    verdict="sufficient", note="충분하다"),
+        SubQuestion(idx=1, text="하위2", queries=["q3"], verdict="insufficient",
+                    parse_failed=True, note="판정을 못 읽었다"),
+        SubQuestion(idx=2, text="하위3", failed=True),
+    ]
+    st.evidence = {
+        "E0": Evidence(id="E0", cnts_id="KCI_A", meta={"title": "논문 가", "pub_date": "2008-06"},
+                       chunks=[Chunk(chunk_id="c1", text="본문", page_start=3,
+                                     page_end=4, score=0.87)]),
+    }
+    return st
+
+
+class TestSnapshotRoundTrip:
+    """종합만 재실행하는 재개의 전제 — 스냅샷이 원래 상태와 같아야 한다.
+
+    parse_failed·failed 가 왕복에서 떨어지면 재개한 잡의 한계 섹션이 조용히
+    비고, 보고서가 "한계 없음"으로 보인다. Task 6·8·9 에서 세 번 고친 실패다.
+    """
+
+    def test_question_and_params_survive(self):
+        st = _explored_state()
+        back = restore_state("j1", snapshot_state(st))
+        assert back.question == st.question
+        assert back.params == st.params
+
+    def test_corpus_range_survives(self):
+        # 보고서의 "수록 범위" 문구가 여기서 온다 — 떨어지면 재개한 보고서만 비어 보인다
+        back = restore_state("j1", snapshot_state(_explored_state()))
+        assert back.corpus_range == {"from": "2002", "to": "2026", "n_papers": 72054}
+
+    def test_subquestions_survive_in_order(self):
+        st = _explored_state()
+        back = restore_state("j1", snapshot_state(st))
+        assert [s.idx for s in back.subquestions] == [0, 1, 2]
+        assert [s.text for s in back.subquestions] == ["하위1", "하위2", "하위3"]
+        assert [s.queries for s in back.subquestions] == [["q1", "q2"], ["q3"], []]
+        assert [s.evidence_ids for s in back.subquestions] == [["E0"], [], []]
+        assert [s.verdict for s in back.subquestions] == [
+            "sufficient", "insufficient", "pending"]
+        assert [s.note for s in back.subquestions] == [
+            "충분하다", "판정을 못 읽었다", ""]
+
+    def test_parse_failed_survives(self):
+        back = restore_state("j1", snapshot_state(_explored_state()))
+        assert [s.parse_failed for s in back.subquestions] == [False, True, False]
+
+    def test_failed_survives(self):
+        back = restore_state("j1", snapshot_state(_explored_state()))
+        assert [s.failed for s in back.subquestions] == [False, False, True]
+
+    def test_evidence_survives(self):
+        back = restore_state("j1", snapshot_state(_explored_state()))
+        ev = back.evidence["E0"]
+        assert ev.id == "E0"
+        assert ev.cnts_id == "KCI_A"
+        assert ev.meta == {"title": "논문 가", "pub_date": "2008-06"}
+        assert [(c.chunk_id, c.text, c.page_start, c.page_end, c.score) for c in ev.chunks] == [
+            ("c1", "본문", 3, 4, 0.87)
+        ]
+
+    def test_snapshot_is_json_serializable(self):
+        # JSONB 컬럼에 들어간다 — dataclass 가 섞여 있으면 커밋에서야 터진다
+        import json
+
+        json.dumps(snapshot_state(_explored_state()), ensure_ascii=False)
+
+    def test_round_trip_is_stable(self):
+        # 한 번 더 돌려도 같아야 한다 — 복원이 정보를 잃으면 여기서 갈린다
+        snap = snapshot_state(_explored_state())
+        assert snapshot_state(restore_state("j1", snap)) == snap

@@ -28,6 +28,10 @@ def upgrade() -> None:
         sa.Column("params", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
         sa.Column("plan", JSONB()),
         sa.Column("report", JSONB()),
+        # stage 는 "어디까지 끝냈는가" — status 와 역할이 다르다. 종합이 실패해도
+        # stage='explored' 와 state_snapshot 이 남아 탐색을 건너뛰고 재개한다.
+        sa.Column("stage", sa.String(16), nullable=False, server_default="created"),
+        sa.Column("state_snapshot", JSONB()),
         sa.Column("last_error", sa.Text()),
         sa.Column("created_by", sa.String(64)),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),

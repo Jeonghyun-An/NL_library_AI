@@ -26,8 +26,8 @@ async def publish(job_id: str, kind: str, payload: dict) -> None:
     """중계 실패가 리서치를 죽이면 안 된다 — 삼키고 로그만 남긴다.
 
     클라이언트를 호출마다 새로 만든다. 모듈 전역에 하나 두면 첫 이벤트루프에
-    묶이는데, Celery 태스크는 단계마다 `asyncio.run(...)` 으로 새 루프를 열고
-    닫으므로 두 번째 publish 부터 전부 `Event loop is closed` 로 죽는다.
+    묶이는데, Celery 태스크는 잡마다 `asyncio.run(...)` 으로 루프를 새로 열고
+    닫으므로 두 번째 잡부터 전부 `Event loop is closed` 로 죽는다.
     한 잡에 수십 번 도는 정도라 연결 비용보다 이쪽이 싸다.
     """
     cfg = get_settings()
@@ -43,17 +43,24 @@ async def publish(job_id: str, kind: str, payload: dict) -> None:
         log.warning("[research:relay] publish 실패 job=%s kind=%s: %s", job_id, kind, e)
 
 
-async def subscribe(job_id: str):
-    """SSE 엔드포인트가 쓴다. 이벤트 dict 를 yield 한다."""
+async def subscribe(job_id: str, *, idle_timeout: float = 15.0):
+    """이벤트 dict 를 yield 한다. 유휴 구간에서는 None 을 yield 한다.
+
+    None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 SSE 주석 프레임을 흘려
+    끊긴 소켓을 감지하고, 잡이 이미 끝났는지도 확인한다. listen() 만 쓰면
+    트래픽이 없는 동안 영원히 블록하므로 클라이언트가 조용히 끊겨도 알 방법이
+    없다 — 아무것도 쓰지 않으니 broken pipe 조차 나지 않는다.
+    """
     cfg = get_settings()
     client = aioredis.from_url(cfg.REDIS_URL)
     pubsub = client.pubsub()
     await pubsub.subscribe(channel(job_id))
     try:
-        async for message in pubsub.listen():
-            if message.get("type") != "message":
-                continue
-            yield json.loads(message["data"])
+        while True:
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True, timeout=idle_timeout,
+            )
+            yield json.loads(message["data"]) if message else None
     finally:
         await pubsub.unsubscribe(channel(job_id))
         await pubsub.aclose()

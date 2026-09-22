@@ -31,6 +31,30 @@ class TestBuildLimitations:
         assert any("근거를 찾지 못했다" in x
                    for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
 
+    def test_failed_subquestion_is_not_reported_as_missing_evidence(self):
+        """탐색이 예외로 죽은 하위질문을 "근거를 찾지 못했다"로 쓰면 안 된다.
+
+        그건 연구 결과처럼 읽히는 시스템 장애다. 코퍼스에 자료가 없는 것과
+        우리 쪽이 터진 것은 사용자에게 완전히 다른 정보이고, 이 기능의 값이
+        "모른다고 정직하게 말하는 것"인데 장애를 발견으로 포장하면 무너진다.
+        """
+        st = _state()
+        st.subquestions[1].failed = True
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert any("하위2" in x and "오류로 확인하지 못했다" in x for x in lims)
+        assert not any("하위2" in x and "근거를 찾지 못했다" in x for x in lims)
+
+    def test_failed_subquestion_with_evidence_is_still_reported(self):
+        # 근거를 좀 모은 뒤 죽은 경우 — evidence_ids 가 비지 않아도 실패는 실패다
+        st = _state()
+        st.subquestions[0].failed = True
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert any("하위1" in x and "오류로 확인하지 못했다" in x for x in lims)
+
+    def test_healthy_subquestion_is_not_reported_as_failed(self):
+        assert not any("오류로 확인하지 못했다" in x
+                       for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
     def test_unmarked_sentences_are_reported(self):
         lims = build_limitations(_state(), unmarked_total=4, dropped_total=0)
         assert any("근거 표기가 없는 서술 4건" in x for x in lims)

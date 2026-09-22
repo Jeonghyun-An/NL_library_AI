@@ -4,7 +4,10 @@ from pathlib import Path
 
 import sqlalchemy as sa
 
-from models.research import JOB_STATUSES, STEP_KINDS, STEP_STATUSES, ResearchJob, ResearchStep
+from models.research import (
+    JOB_STAGES, JOB_STATUSES, RUNNABLE_STATUSES, STATUS_CANCELED, STEP_KINDS,
+    STEP_STATUSES, ResearchJob, ResearchStep,
+)
 
 MIGRATION_PATH = Path(__file__).resolve().parents[1] / "alembic" / "versions" / "0005_research_jobs.py"
 
@@ -141,6 +144,29 @@ class TestResearchModelShape:
         status_len = ResearchStep.__table__.c.status.type.length
         assert all(len(v) <= kind_len for v in STEP_KINDS)
         assert all(len(v) <= status_len for v in STEP_STATUSES)
+
+    def test_job_stage_default_is_valid_stage(self):
+        default = ResearchJob.__table__.c.stage.server_default.arg.text.strip("'")
+        assert default in JOB_STAGES
+
+    def test_job_stages_fit_stage_column(self):
+        max_len = ResearchJob.__table__.c.stage.type.length
+        assert all(len(v) <= max_len for v in JOB_STAGES)
+
+    def test_stage_is_not_nullable(self):
+        # NULL stage 는 재개 분기(stage == "explored")에서 조용히 탐색부터 다시 돌게 한다
+        assert ResearchJob.__table__.c.stage.nullable is False
+
+    def test_runnable_statuses_are_declared_statuses(self):
+        # API 의 approve·retry 가 쓰는 값이자 워커 _claim 이 받는 값이다.
+        # JOB_STATUSES 에 없는 값을 쓰면 상태 목록이 거짓말이 된다.
+        assert set(RUNNABLE_STATUSES) <= set(JOB_STATUSES)
+
+    def test_canceled_spelling_is_single_l(self):
+        # models/ingest_job.py 가 canceled(l 하나) 다 — 두 잡 계열이 철자를
+        # 달리 쓰면 상태 비교가 조용히 빗나간다
+        assert STATUS_CANCELED == "canceled"
+        assert STATUS_CANCELED in JOB_STATUSES
 
 
 class TestMigrationMatchesModel:

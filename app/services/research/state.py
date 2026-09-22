@@ -108,6 +108,10 @@ class SubQuestion:
     evidence_ids: list[str] = field(default_factory=list)
     verdict: str = "pending"
     parse_failed: bool = False          # 판정을 못 읽어 점검이 사실상 건너뛰어진 경우
+    # 탐색이 예외로 중단됨 — "근거 없음"(연구 결과)과 구분한다. 구분이 없으면
+    # 보고서가 시스템 장애를 "…에 대해서는 근거를 찾지 못했다"로 써서, 우리 쪽이
+    # 터진 것을 코퍼스에 자료가 없는 것처럼 보이게 만든다.
+    failed: bool = False
     note: str = ""                                      # 자기점검 판단 근거
 
 
@@ -125,3 +129,54 @@ class ResearchState:
     # 보고서는 여기에 두지 않는다. synthesize() 가 반환값으로 넘기고 Celery
     # 태스크가 research_jobs.report 에 바로 쓴다. 항상 None 인 report 필드를
     # 남겨두면 화면을 붙이는 쪽이 그걸 집어들고 조용히 빈 보고서를 그린다.
+
+
+def snapshot_state(state: ResearchState) -> dict:
+    """탐색이 끝난 상태를 JSONB 에 넣을 수 있는 형태로 만든다.
+
+    recheck_count 는 담지 않는다. 재탐색 상한을 세는 값이고 탐색이 끝난 뒤에는
+    읽는 쪽이 없다 — 복원해 봐야 쓰이지 않는 값을 스냅샷에 넣지 않는다.
+    """
+    return {
+        "question": state.question,
+        "params": state.params,
+        "corpus_range": state.corpus_range,
+        "subquestions": [
+            {"idx": s.idx, "text": s.text, "queries": s.queries,
+             "evidence_ids": s.evidence_ids, "verdict": s.verdict,
+             "parse_failed": s.parse_failed, "failed": s.failed, "note": s.note}
+            for s in state.subquestions
+        ],
+        "evidence": {
+            eid: {
+                "cnts_id": ev.cnts_id, "meta": ev.meta,
+                "chunks": [
+                    {"chunk_id": c.chunk_id, "text": c.text,
+                     "page_start": c.page_start, "page_end": c.page_end, "score": c.score}
+                    for c in ev.chunks
+                ],
+            }
+            for eid, ev in state.evidence.items()
+        },
+    }
+
+
+def restore_state(job_id: str, snap: dict) -> ResearchState:
+    """snapshot_state 의 역. 종합 단계부터 재개할 때 쓴다.
+
+    parse_failed·failed 가 왕복에서 떨어지면 재개한 잡의 한계 섹션이 조용히
+    비고, 보고서가 "한계 없음"으로 보인다 — Task 6·8·9 에서 세 번 고친 실패다.
+    """
+    st = ResearchState(
+        job_id=job_id, question=snap["question"], params=snap["params"],
+        corpus_range=snap.get("corpus_range"),
+    )
+    st.subquestions = [SubQuestion(**sq) for sq in snap["subquestions"]]
+    st.evidence = {
+        eid: Evidence(
+            id=eid, cnts_id=e["cnts_id"], meta=e["meta"],
+            chunks=[Chunk(**c) for c in e["chunks"]],
+        )
+        for eid, e in snap["evidence"].items()
+    }
+    return st

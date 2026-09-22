@@ -7,7 +7,7 @@ celery_app = Celery(
     "nl-lib",
     broker=cfg.REDIS_URL,
     backend=cfg.REDIS_URL,
-    include=["workers.tasks"],
+    include=["workers.tasks", "workers.research_tasks"],
 )
 celery_app.conf.update(
     task_serializer="json",
@@ -30,6 +30,10 @@ celery_app.conf.update(
         "tasks.stage_finalize":    {"queue": "q_llm"},
         "tasks.dispatch_job_items":  {"queue": "q_control"},
         "tasks.cleanup_temp_files":  {"queue": "q_control"},
+        # 딥리서치 — 계획·실행은 LLM 큐, stale 회수는 제어 큐
+        "tasks.plan_deep_research":  {"queue": "q_llm"},
+        "tasks.run_deep_research":   {"queue": "q_llm"},
+        "tasks.reap_stale_research": {"queue": "q_control"},
     },
     beat_schedule={
         "dispatch-job-items": {
@@ -39,6 +43,11 @@ celery_app.conf.update(
         "cleanup-temp-files": {
             "task": "tasks.cleanup_temp_files",
             "schedule": 3600.0,
+        },
+        # 워커가 죽으면 잡이 running 인 채 영원히 남는다 — 30분 넘은 것만 회수한다
+        "reap-stale-research": {
+            "task": "tasks.reap_stale_research",
+            "schedule": 600.0,
         },
     },
 )

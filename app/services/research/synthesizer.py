@@ -41,7 +41,13 @@ def build_limitations(
         # insufficient 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장
         # 필요한 경우다 — 여기서 흘리면 critic 의 note 가 어디에도 안 실린다.
         note = f" — {sq.note}" if sq.note else ""
-        if not sq.evidence_ids:
+        # failed 를 evidence_ids 보다 먼저 본다. 탐색이 예외로 죽은 하위질문도
+        # evidence_ids 가 비어 있어 아래 분기에 걸리는데, 그러면 시스템 장애가
+        # "근거를 찾지 못했다"는 연구 결과로 둔갑한다. 코퍼스에 자료가 없는 것과
+        # 우리 쪽이 터진 것은 사용자에게 완전히 다른 정보다.
+        if sq.failed:
+            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다{note}")
+        elif not sq.evidence_ids:
             out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다{note}")
         elif sq.verdict == "insufficient":
             out.append(

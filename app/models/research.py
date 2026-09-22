@@ -20,8 +20,25 @@ from models.book import Base
 
 JOB_STATUSES = (
     "created", "planning", "awaiting_approval",
-    "running", "completed", "failed", "canceled",
+    "approved", "queued", "running",
+    "completed", "failed", "canceled",
 )
+# status 는 "지금 무슨 상태인가", stage 는 "어디까지 끝냈는가"다. 둘을 한 컬럼으로
+# 합치면 실패했을 때 어디부터 다시 할지 알 수 없다 — failed 하나로는 계획에서
+# 죽었는지 종합에서 죽었는지 구분되지 않아 5~7분짜리 탐색을 매번 다시 돌게 된다.
+JOB_STAGES = ("created", "planned", "explored", "synthesized")
+
+# run_deep_research 가 선점(_claim)할 수 있는 상태. API 의 approve·retry 가 여기
+# 없는 값을 써 넣으면 워커가 그 잡을 영원히 건너뛰고, stage·state_snapshot 은
+# 쓰기만 하고 아무도 안 읽는 컬럼이 된다. 양쪽이 같은 상수를 보게 묶어둔다.
+STATUS_APPROVED = "approved"     # 사용자가 계획을 승인해 큐에 넣었다
+STATUS_QUEUED = "queued"         # 실패한 잡을 재시도로 다시 큐에 넣었다
+# 철자는 canceled(l 하나) 로 통일한다 — models/ingest_job.py 의 JOB_STATUSES·
+# ITEM_STATUSES 가 이미 그 철자다. 두 잡 계열이 서로 다른 철자를 쓰면 상태
+# 비교가 조용히 빗나간다.
+STATUS_CANCELED = "canceled"
+RUNNABLE_STATUSES = (STATUS_APPROVED, STATUS_QUEUED)
+
 STEP_KINDS = ("plan", "search", "critique", "synthesize")
 STEP_STATUSES = ("pending", "running", "done", "failed")
 
@@ -35,6 +52,12 @@ class ResearchJob(Base):
     params      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     plan        = Column(JSONB)      # 사용자 수정이 반영된 하위질문 목록
     report      = Column(JSONB)
+    stage       = Column(String(16), nullable=False, server_default=text("'created'"))
+    # 탐색이 끝난 시점의 ResearchState 스냅샷. 종합만 재실행하기 위한 체크포인트다.
+    # 이게 없으면 종합 LLM 이 실패할 때 5~7분짜리 탐색을 통째로 다시 돌려야 한다.
+    # 읽는 쪽은 workers/research_tasks.py 의 stage == "explored" 분기이고, 그
+    # 분기에 닿는 유일한 경로가 POST /api/research/{job_id}/retry 다.
+    state_snapshot = Column(JSONB)
     last_error  = Column(Text)
     created_by  = Column(String(64))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
