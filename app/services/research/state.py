@@ -122,4 +122,6 @@ class ResearchState:
     # 실행 시점의 수록 범위 — 코퍼스가 계속 자라므로 보고서에 고정 문구로
     # 박지 않고 매번 질의해 넣는다. {"from": "2002", "to": "2026", "n_papers": 72054}
     corpus_range: dict | None = None
-    report: dict | None = None
+    # 보고서는 여기에 두지 않는다. synthesize() 가 반환값으로 넘기고 Celery
+    # 태스크가 research_jobs.report 에 바로 쓴다. 항상 None 인 report 필드를
+    # 남겨두면 화면을 붙이는 쪽이 그걸 집어들고 조용히 빈 보고서를 그린다.

@@ -2566,7 +2566,12 @@ git commit -m "[Feat] round04a — 보고서 종합과 한계 섹션"
 
 ```python
 # app/tests/test_research_runner.py
-import pytest
+"""test_research_runner.py — 단계 오케스트레이션
+
+async 테스트는 asyncio.run 으로 돈다. 이 저장소의 관례이고, 이유는 아래
+Step 1 하단의 경고를 보라.
+"""
+import asyncio
 
 from services.research.state import ResearchState, SubQuestion, merge_params
 from services.research.runner import explore_subquestion
@@ -2593,30 +2598,29 @@ async def _empty_explore(query, *, params, db):
     return [], {}
 
 
-@pytest.mark.asyncio
 class TestExploreSubquestion:
-    async def test_always_insufficient_stops_at_max_recheck(self):
+    def test_always_insufficient_stops_at_max_recheck(self):
         st = ResearchState(job_id="j", question="q",
                            params=merge_params({"max_recheck": 2}))
         sq = SubQuestion(idx=0, text="하위질문")
         critic = _FakeCritic()
-        await explore_subquestion(
+        asyncio.run(explore_subquestion(
             st, sq, db=None, explore_fn=_fake_explore, critique_fn=critic, emit=None,
-        )
+        ))
         assert critic.calls == 3            # 최초 1 + 재검색 2
         assert len(sq.queries) == 3
         assert sq.verdict == "insufficient"
 
-    async def test_no_hits_records_no_evidence(self):
+    def test_no_hits_records_no_evidence(self):
         st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
         sq = SubQuestion(idx=0, text="하위질문")
-        await explore_subquestion(
+        asyncio.run(explore_subquestion(
             st, sq, db=None, explore_fn=_empty_explore,
             critique_fn=_FakeCritic(), emit=None,
-        )
+        ))
         assert sq.evidence_ids == []
 
-    async def test_same_paper_in_two_subquestions_reuses_one_evidence(self):
+    def test_same_paper_in_two_subquestions_reuses_one_evidence(self):
         """한 논문이 두 하위질문에서 나와도 근거는 하나다.
 
         중복 생성하면 같은 출처가 E1 과 E2 로 갈라져 인용칩이 어긋난다.
@@ -2624,24 +2628,24 @@ class TestExploreSubquestion:
         st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
         sq1, sq2 = SubQuestion(idx=0, text="가"), SubQuestion(idx=1, text="나")
         critic = _FakeCritic()
-        await explore_subquestion(st, sq1, db=None, explore_fn=_fake_explore,
-                                  critique_fn=critic, emit=None)
-        await explore_subquestion(st, sq2, db=None, explore_fn=_fake_explore,
-                                  critique_fn=critic, emit=None)
+        asyncio.run(explore_subquestion(st, sq1, db=None, explore_fn=_fake_explore,
+                                        critique_fn=critic, emit=None))
+        asyncio.run(explore_subquestion(st, sq2, db=None, explore_fn=_fake_explore,
+                                        critique_fn=critic, emit=None))
         assert len(st.evidence) == 1
         assert sq1.evidence_ids == sq2.evidence_ids == ["E1"]
         assert len({ev.cnts_id for ev in st.evidence.values()}) == 1
 
-    async def test_recheck_does_not_duplicate_same_paper(self):
+    def test_recheck_does_not_duplicate_same_paper(self):
         """재검색에서 같은 논문이 또 나와도 evidence_ids 에 두 번 들어가지 않는다."""
         st = ResearchState(job_id="j", question="q",
                            params=merge_params({"max_recheck": 2}))
         sq = SubQuestion(idx=0, text="가")
-        await explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
-                                  critique_fn=_FakeCritic(), emit=None)
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
+                                        critique_fn=_FakeCritic(), emit=None))
         assert sq.evidence_ids == ["E1"]
 
-    async def test_max_evidence_caps_growth(self):
+    def test_max_evidence_caps_growth(self):
         async def _many(query, *, params, db):
             hits = [
                 {"book_id": f"B{i}", "chunk_id": f"c{i}", "text": "t",
@@ -2654,25 +2658,29 @@ class TestExploreSubquestion:
 
         st = ResearchState(job_id="j", question="q",
                            params=merge_params({"max_recheck": 0, "max_evidence": 4}))
-        await explore_subquestion(st, SubQuestion(idx=0, text="가"), db=None,
-                                  explore_fn=_many, critique_fn=_FakeCritic(), emit=None)
+        asyncio.run(explore_subquestion(
+            st, SubQuestion(idx=0, text="가"), db=None,
+            explore_fn=_many, critique_fn=_FakeCritic(), emit=None,
+        ))
         assert len(st.evidence) == 4
 
-    async def test_emit_is_called_for_progress(self):
+    def test_emit_is_called_for_progress(self):
         events = []
 
         async def _emit(kind, payload):
             events.append(kind)
 
         st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
-        await explore_subquestion(
+        asyncio.run(explore_subquestion(
             st, SubQuestion(idx=0, text="가"), db=None, explore_fn=_fake_explore,
             critique_fn=_FakeCritic(), emit=_emit,
-        )
+        ))
         assert "search" in events and "critique" in events
 ```
 
-`pytest-asyncio` 가 없으면 설치한다: `pip install pytest-asyncio`. `app/tests/test_scenario.py` 가 이미 async 테스트를 쓰는지 먼저 확인하고, 쓴다면 같은 방식을 따른다.
+> **`pytest-asyncio` 를 쓰지 마라 — 초안이 틀렸다.** 초안은 `@pytest.mark.asyncio` 를 쓰고 "없으면 설치한다"고 적었다. 실측: 이 저장소에 **설치돼 있지 않고**(`pip show pytest-asyncio` → not found), `app/tests` 전체에서 그 데코레이터를 쓰는 테스트가 **0건**이다. 관례는 `asyncio.run(...)` 이고 `test_research_explorer.py`·`test_rewrite_milvus_doc_type.py` 가 그렇게 한다.
+>
+> 데코레이터 쪽이 단순히 안 도는 게 아니라 **더 나쁘다.** 플러그인이 없으면 pytest 는 코루틴 함수를 실행하지 않고 경고만 남긴 뒤 **통과로 처리한다.** 테스트 7건이 초록불인 채로 아무것도 검증하지 않는다 — 이 라운드에서 이미 한 번 잡은 "통과하지만 아무것도 지키지 않는 테스트"와 같은 실패다. 새 의존성을 깔아 해결할 이유도 없다: 로컬 venv 에만 깔면 컨테이너에는 없고, `requirements.txt` 에 넣으면 시연 직전에 이미지 재빌드가 필요해진다.
 
 - [ ] **Step 2: 테스트 실패 확인**
 
