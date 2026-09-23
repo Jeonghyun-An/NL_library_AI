@@ -10,19 +10,49 @@ import 하면 `redis` 미설치 환경에서 수집 단계가 통째로 죽으�
 """
 import json
 import logging
+import uuid
+from collections.abc import AsyncIterator
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import redis.asyncio as aioredis
 
 from core.config import get_settings
+from models.research import STATUS_CANCELED
 
 log = logging.getLogger(__name__)
 
+# 종료 상태 → SSE 종료 이벤트 kind. 워커가 흘리는 종료 이벤트와 스트림
+# 엔드포인트가 DB 를 보고 만드는 종료 프레임이 둘 다 terminal_event 를 거친다 —
+# 연결 시점에 따라 모양이 갈리면(failed 를 done+status 로 받는 식) 프론트
+# 분기가 조용히 빗나간다.
+TERMINAL_KIND = {"completed": "done", "failed": "failed", STATUS_CANCELED: STATUS_CANCELED}
 
-def channel(job_id: str) -> str:
+# 워커의 emit 경로에 있다. 응답 없는 Redis 는 예외가 아니라 무기한 대기라서
+# publish 가 삼킬 기회조차 없이 잡이 소프트 리밋까지 멈춘다.
+PUBLISH_TIMEOUT = 2.0
+
+
+def channel(job_id: uuid.UUID | str) -> str:
     return f"research:{job_id}"
 
 
-async def publish(job_id: str, kind: str, payload: dict) -> None:
+def terminal_event(status: str, error: str | None = None) -> dict:
+    event = {"kind": TERMINAL_KIND[status], "status": status}
+    if error:
+        event["error"] = error[:200]
+    return event
+
+
+def _with_timeouts(url: str) -> str:
+    """REDIS_URL 에 소켓 타임아웃을 얹는다. URL 에 이미 있는 값은 운영자 설정이라 그대로 둔다."""
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query))
+    query.setdefault("socket_connect_timeout", str(PUBLISH_TIMEOUT))
+    query.setdefault("socket_timeout", str(PUBLISH_TIMEOUT))
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
+async def publish(job_id: uuid.UUID | str, kind: str, payload: dict) -> None:
     """중계 실패가 리서치를 죽이면 안 된다 — 삼키고 로그만 남긴다.
 
     클라이언트를 호출마다 새로 만든다. 모듈 전역에 하나 두면 첫 이벤트루프에
@@ -32,7 +62,7 @@ async def publish(job_id: str, kind: str, payload: dict) -> None:
     """
     cfg = get_settings()
     try:
-        client = aioredis.from_url(cfg.REDIS_URL)
+        client = aioredis.from_url(_with_timeouts(cfg.REDIS_URL))
         try:
             await client.publish(
                 channel(job_id), json.dumps({"kind": kind, **payload}, ensure_ascii=False)
@@ -43,7 +73,14 @@ async def publish(job_id: str, kind: str, payload: dict) -> None:
         log.warning("[research:relay] publish 실패 job=%s kind=%s: %s", job_id, kind, e)
 
 
-async def subscribe(job_id: str, *, idle_timeout: float = 15.0):
+async def publish_terminal(job_id: uuid.UUID | str, status: str, error: str | None = None) -> None:
+    event = terminal_event(status, error)
+    await publish(job_id, event.pop("kind"), event)
+
+
+async def subscribe(
+    job_id: uuid.UUID | str, *, idle_timeout: float = 15.0,
+) -> AsyncIterator[dict | None]:
     """이벤트 dict 를 yield 한다. 유휴 구간에서는 None 을 yield 한다.
 
     None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 SSE 주석 프레임을 흘려

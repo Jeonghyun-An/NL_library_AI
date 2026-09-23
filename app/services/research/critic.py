@@ -5,10 +5,13 @@
 
 판정을 못 읽었을 때는 parse_failed 로 표시한다. 그냥 sufficient 로만 두면
 "모델이 충분하다고 판단한 것"과 구분되지 않아, 자기점검이 전부 꺼져도
-보고서가 "한계 없음"으로 보인다.
+보고서가 "한계 없음"으로 보인다. 판정 호출 자체가 일시 오류로 실패한 경우도
+같다 — 판정을 받지 못한 것이지 탐색이 실패한 것이 아니다.
 """
 import logging
 from dataclasses import dataclass, field
+
+import httpx
 
 from services.llm_client import chat
 from services.prompts import get_prompt
@@ -33,10 +36,14 @@ class Verdict:
     parse_failed: bool = False
 
 
+def _unchecked() -> Verdict:
+    return Verdict("sufficient", note=_PARSE_FAILED_NOTE, parse_failed=True)
+
+
 def _failed(reason: str, raw: str) -> Verdict:
     """모델 원문은 로그에만 남긴다 — note 는 사용자 화면(탐색 경로)에 실린다."""
     log.warning("[critic] %s — raw=%r", reason, (raw or "")[:200])
-    return Verdict("sufficient", note=_PARSE_FAILED_NOTE, parse_failed=True)
+    return _unchecked()
 
 
 def parse_verdict(raw: str) -> Verdict:
@@ -70,8 +77,11 @@ def format_evidence_list(evidence: list[Evidence]) -> str:
 
     제목·연도만으로는 "이 논문이 하위질문을 실제로 다루는가"를 모델이
     판단하기 어렵다 — 그 하위질문 검색에서 실제로 매칭된 본문(chunks[0])의
-    앞부분을 붙여 직접적인 근거로 준다. 청크가 없는 근거는 제목+연도만
+    앞부분을 붙여 직접적인 근거로 준다. runner 가 청크를 그 하위질문 몫으로
+    추려서 넘긴다(citations.chunks_for). 청크가 없는 근거는 제목+연도만
     남긴다 — 인덱스 오류로 이 계층 전체가 죽으면 안 된다.
+
+    evidence 는 하위질문 안 순위순이다 — 상한에서 잘리는 쪽이 순위 낮은 근거다.
 
     발췌는 자르기 전에 공백을 접는다. 표 청크는 `[표]\\n…\\n{table_md}` 로
     저장되고 본문 청크도 단락 개행을 보존하므로, 그대로 쓰면 한 항목이
@@ -106,8 +116,14 @@ async def critique(
         min_evidence=params["min_evidence_per_subq"],
         tried_queries=", ".join(subq.queries) or "(없음)",
     )
-    raw = await chat(
-        [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        params=llm_params,
-    )
+    try:
+        raw = await chat(
+            [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            params=llm_params,
+        )
+    except httpx.HTTPError as e:
+        # 올려 보내면 워커가 하위질문을 failed 로 두고, 이미 모은 근거가 절에서
+        # 빠진 채 "탐색 중 오류"로 보고된다. 파싱 실패와 같은 '판정 불가'로 낮춘다.
+        log.warning("[critic] 판정 호출 실패 subq=%s — %s: %s", subq.idx, type(e).__name__, e)
+        return _unchecked()
     return parse_verdict(raw)

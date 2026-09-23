@@ -1,3 +1,4 @@
+import ast
 import sys
 import types
 from pathlib import Path
@@ -144,6 +145,19 @@ class TestResearchModelShape:
         status_len = ResearchStep.__table__.c.status.type.length
         assert all(len(v) <= kind_len for v in STEP_KINDS)
         assert all(len(v) <= status_len for v in STEP_STATUSES)
+
+    def test_step_kinds_are_exactly_what_the_worker_records(self):
+        """허용값에만 있고 기록되지 않는 kind 는 프론트에 영원히 안 도는 분기를 만든다.
+
+        자기점검은 search 행에 접히고 SSE 이벤트로만 나간다 — critique 행은 없다.
+        """
+        src = (MIGRATION_PATH.parents[2] / "workers" / "research_tasks.py").read_text(encoding="utf-8")
+        recorded = {
+            node.args[3].value
+            for node in ast.walk(ast.parse(src))
+            if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "_step"
+        }
+        assert recorded == set(STEP_KINDS)
 
     def test_job_stage_default_is_valid_stage(self):
         default = ResearchJob.__table__.c.stage.server_default.arg.text.strip("'")

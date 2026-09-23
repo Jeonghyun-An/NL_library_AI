@@ -16,7 +16,7 @@ from uuid import uuid4
 import pytest
 
 from schemas.book import BookOut, ChunkHit, ChunkSearchResponse
-from services.research.explorer import explore, rank_hits
+from services.research.explorer import explore, is_source_passage, rank_hits
 from services.research.state import merge_params
 
 _DB = object()          # explore 가 그대로 흘려보내기만 하는 세션 자리
@@ -76,11 +76,11 @@ class TestRankHits:
         assert "rank_score" not in hits[0]
 
 
-def _chunk(book_id, *, chunk_idx=4, text="본문", score=0.5, rerank_score=0.8):
+def _chunk(book_id, *, chunk_idx=4, text="본문", score=0.5, rerank_score=0.8, pages=(3, 4)):
     """실제 ChunkHit 을 쓴다 — explore 가 읽는 필드가 스키마에 실재하는지도 같이 본다."""
     return ChunkHit(
         chunk_id=f"{book_id}__{chunk_idx:04d}", book_id=book_id, chunk_idx=chunk_idx,
-        text=text, page_start=3, page_end=4, score=score, rerank_score=rerank_score,
+        text=text, page_start=pages[0], page_end=pages[1], score=score, rerank_score=rerank_score,
     )
 
 
@@ -96,7 +96,11 @@ def _book(cnts_id, *, title="논문 가", pub_date="2008-06", kci_citations=3):
 
 
 class _FakeSearch:
-    """pipeline.search 대역 — 호출 kwargs 를 그대로 붙잡아 둔다."""
+    """pipeline.search 대역 — 호출 kwargs 를 그대로 붙잡아 둔다.
+
+    chunk_filter 와 top_k 는 실물과 같은 순서(거른 뒤 자른다)로 적용한다. 실제
+    파이프라인을 거치는 확인은 test_search_research_path.py 에 있다.
+    """
 
     def __init__(self, chunks):
         self._chunks = chunks
@@ -104,7 +108,9 @@ class _FakeSearch:
 
     async def __call__(self, query, **kwargs):
         self.calls.append({"query": query, **kwargs})
-        return ChunkSearchResponse(query=query, chunks=self._chunks, elapsed_ms=1.0)
+        keep = kwargs.get("chunk_filter") or (lambda c: True)
+        chunks = [c for c in self._chunks if keep(c)][: kwargs["top_k"]]
+        return ChunkSearchResponse(query=query, chunks=chunks, elapsed_ms=1.0)
 
 
 class _FakeRepo:
@@ -138,6 +144,37 @@ def _pipeline_search_params() -> set[str]:
     return {a.arg for a in fn.args.args + fn.args.kwonlyargs}
 
 
+class TestIsSourcePassage:
+    """인용칩이 "원문 대목"으로 띄울 수 있는 청크인가. 판단 근거는 explorer 주석."""
+
+    def test_body_chunk_is_kept(self):
+        assert is_source_passage(_chunk("A"))
+
+    def test_metadata_chunk_is_dropped(self):
+        assert not is_source_passage(_chunk("A", chunk_idx=-1, text="제목: … | 초록: …"))
+
+    @pytest.mark.parametrize("text", [
+        "[초록] 이 연구는 공공도서관 …",
+        "[키워드] 공공도서관, 서비스 품질",
+        "[표 설명] 이 표는 연도별 예산이 증가했음을 보여준다",
+        "[그림 설명] 막대그래프가 …",
+    ])
+    def test_generated_or_duplicate_enrichment_is_dropped(self, text):
+        assert not is_source_passage(_chunk("A", chunk_idx=20, text=text, pages=(0, 0)))
+
+    def test_verbatim_table_chunk_is_kept(self):
+        text = "[표]\n예산 추이\n\n| 연도 | 예산 |\n|---|---|"
+        assert is_source_passage(_chunk("A", chunk_idx=20, text=text, pages=(0, 0)))
+
+    def test_page_zero_body_is_kept(self):
+        """첫 쪽 본문, PDF 없이 초록을 본문으로 쓴 논문의 본문도 쪽수가 0 이다."""
+        assert is_source_passage(_chunk("A", chunk_idx=0, text="서론 …", pages=(0, 0)))
+
+    def test_label_lookalike_in_paged_body_is_kept(self):
+        """보강 청크는 쪽수가 늘 0 이다 — 쪽수가 있으면 본문에 우연히 나온 글자다."""
+        assert is_source_passage(_chunk("A", text="[표 설명] 아래 표는 …"))
+
+
 class TestExplore:
     def _run(self, monkeypatch, *, chunks, books, params=None):
         fake_search = _FakeSearch(chunks)
@@ -152,14 +189,16 @@ class TestExplore:
         return fake_search, fake_repo, ranked, meta
 
     def test_search_receives_retrieval_only_kwargs(self, monkeypatch):
-        """딥리서치는 검색만 필요하다 — 답변 생성과 쿼리 재작성을 둘 다 끈다."""
+        """딥리서치는 검색만 필요하다 — 답변 생성·쿼리 재작성·메타데이터 필터를
+        끄고, 원문 대목만 남기는 필터를 리랭크·절단 전에 건다."""
         fake_search, _, _, _ = self._run(
             monkeypatch, chunks=[_chunk("A")], books={"A": _book("A")},
             params={"per_subq_top_k": 7},
         )
         assert fake_search.calls == [{
             "query": "하위질문", "mode": "chunk", "top_k": 7, "doc_scope": "paper",
-            "generate_answer": False, "use_rewrite": False, "db": _DB,
+            "generate_answer": False, "use_rewrite": False, "use_metadata_filter": False,
+            "chunk_filter": is_source_passage, "db": _DB,
         }]
 
     def test_every_kwarg_exists_on_the_real_pipeline(self, monkeypatch):

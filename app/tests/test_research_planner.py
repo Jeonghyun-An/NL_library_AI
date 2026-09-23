@@ -1,6 +1,10 @@
+import asyncio
+
 import pytest
 
-from services.research.planner import parse_plan
+from services.research import planner
+from services.research.planner import parse_plan, query_key
+from services.research.state import merge_params
 
 
 class TestParsePlan:
@@ -53,3 +57,26 @@ class TestParsePlan:
     def test_no_list_raises(self):
         with pytest.raises(ValueError, match="계획을 해석하지 못했다"):
             parse_plan("죄송하지만 답변할 수 없습니다.", limit=6)
+
+
+class TestQueryKey:
+    def test_whitespace_and_case_are_folded(self):
+        assert query_key("  AI  윤리 ") == query_key("ai 윤리")
+
+
+class TestMakePlan:
+    def test_renders_real_template_and_parses_reply(self, monkeypatch):
+        """chat 만 대역으로 바꾼다 — 호출부 kwargs 가 실제 템플릿을 통과하는지 고정한다."""
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return "1. 가\n2. 나\n3. 다"
+
+        monkeypatch.setattr(planner, "chat", fake_chat)
+        plan = asyncio.run(planner.make_plan(
+            "청소년 진로상담", params=merge_params({"max_subquestions": 2}),
+        ))
+        assert plan == ["가", "나"]
+        assert "최대 2개" in seen[0][0]["content"]
+        assert "청소년 진로상담" in seen[0][1]["content"]

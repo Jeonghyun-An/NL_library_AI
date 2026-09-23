@@ -20,7 +20,15 @@
 python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/tests/test_build_manifest.py --ignore=app/tests/test_loaders.py
 ```
 
-제외한 3개는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 collect 단계에서 실패한다. 이 계획과 무관하다. 착수 시점 기준선은 **134 passed** 다.
+제외한 3개는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 collect 단계에서 실패한다. 이 계획과 무관하다. 착수 시점 기준선은 **134 passed** 다. 라운드 종료 시점(머지 전 리뷰와 그 반영 검수까지 끝난 뒤)은 **549 passed** 다(완료노트 §4).
+
+---
+
+## 이 계획의 코드 블록과 최종 코드
+
+> **Task 절의 "완료본" 코드 블록은 최종 코드가 아니다.** 각 절은 그 Task 를 동기화한 시점의 저장소 파일과 일치했지만, 그 뒤에 두 번 더 바뀌었다 — 라이브 검증 중 고친 종합 버그(`b6360b8`, 2026-09-23)와 머지 전 리뷰 반영(2026-09-23, `docs/roadmap/round04a-완료노트.md` §머지 전 리뷰). 바뀐 절 머리에는 **이후 변경** 을 달아 커밋과 요지를 적었다. 코드 블록 자체는 다시 쓰지 않았다.
+>
+> **최종 코드는 저장소가 정본이다.** 교본(클론코딩)·재현은 이 블록이 아니라 저장소 파일에서 옮긴다. 블록을 그대로 옮기면 라이브에서 고친 "절 1개·논문 1편" 종합 버그와, 취소한 잡이 `completed` 로 되살아나는 결함이 그대로 재현된다. 설계가 어떻게 바뀌었는지는 spec 의 **구현 시 변경** 표기에 있다.
 
 ---
 
@@ -38,12 +46,15 @@ python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/
 | `app/services/research/explorer.py` | 하위질문 탐색 (검색·리랭킹·점수) |
 | `app/services/research/synthesizer.py` | 보고서 조립(순수) + LLM 호출 |
 | `app/services/research/runner.py` | 단계 오케스트레이션 |
-| `app/services/research/relay.py` | Redis pub/sub 발행·구독 |
+| `app/services/research/relay.py` | Redis pub/sub 발행·구독 · 종료 이벤트 모양(`terminal_event`) |
+| `app/services/research/llm_json.py` | LLM 응답에서 JSON 추출 — 계획·점검·종합 공용 (Task 5·6 리뷰에서 추가) |
 | `app/domains/nl_library/prompts/research_plan.yaml` | 계획 수립 프롬프트 |
 | `app/domains/nl_library/prompts/research_critique.yaml` | 자기점검 프롬프트 |
 | `app/domains/nl_library/prompts/research_synthesize.yaml` | 종합 프롬프트 |
-| `app/workers/research_tasks.py` | Celery 태스크 |
-| `app/api/research.py` | API 4종 + SSE |
+| `app/workers/research_tasks.py` | Celery 태스크 3종(계획·실행·정체 회수) |
+| `app/api/research.py` | API 5종(생성·승인·재시도·취소·조회) + SSE |
+
+표 밖에서 바뀐 기존 파일(최종 기준): `app/main.py`(라우터 등록) · `app/workers/celery_app.py`(태스크 라우팅·회수 beat) · `app/core/config.py`(`RESEARCH_QUEUE`, 기본 `q_llm` · `RESEARCH_PLAN_QUEUE`, 비우면 `RESEARCH_QUEUE`) · `app/services/search/pipeline.py`(`use_metadata_filter`·`chunk_filter` 인자, 리랭크 폴백 예외 좁힘 — 기본값은 기존 동작) · `app/services/search/reranker.py`(GPU 가 없으면 float32) · `docker-compose*.yml`(전용 워커 `celery-research`·계획 워커 `celery-research-plan`). 적재 코드(`app/services/ingestion/`·`workers/tasks.py`·`workers/job_runtime.py`)는 건드리지 않았다.
 
 순수 계산을 `scoring.py`·`citations.py` 로 뽑아내는 이유는 **Milvus·LLM 없이 테스트하기 위해서**다. `scripts/recovery/rewrite_milvus_doc_type.py` 가 같은 구조로 16개 테스트를 돌린다.
 
@@ -51,7 +62,11 @@ python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/
 
 ## Task 1: 데이터 모델과 마이그레이션 — **완료**
 
-> 구현·리뷰가 끝났다. 아래 코드는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - `f1ba3e1` — `research_jobs` 에 `stage`·`state_snapshot`·`last_error` 컬럼이 추가됐다(Task 10 재설계의 재개 체크포인트). 모델과 `0005` 둘 다 바뀌었는데 Task 10 절은 모델만 다시 싣는다 — **이 계획 어디에도 최종 `0005` 가 없다.** `app/alembic/versions/0005_research_jobs.py` 를 본다.
+> - 머지 전 리뷰 — `models/research.py` 에 종료 상태 상수 `TERMINAL_STATUSES` 추가, `STEP_KINDS` 에서 `critique` 삭제 — 워커가 기록하지 않는 kind 라 프론트에 영원히 안 도는 분기를 만든다(자기점검은 `search` 행의 `verdict`·`note` 로 남는다). 아래 블록의 `STEP_KINDS` 에는 아직 있다. 둘 다 스키마 변화 없음.
+>
+> 구현·리뷰가 끝났다. 아래 코드는 **리뷰 반영이 끝난 Task 1 동기화 시점(`305a52b`)의 상태**이며 그때 저장소 파일과 일치했다
 > (착수 시점 초안이 아니다). 커밋: `3973b9e` → `680af5c` → `a326203`.
 >
 > 착수 초안과 달라진 것: `(job_id, seq)` 를 인덱스가 아니라 **유일 제약**으로 걸었고(중복 step 이
@@ -426,7 +441,11 @@ Actual: `146 passed` (기준선 134 + 12)
 
 ## Task 2: 상태 객체와 기본 파라미터 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - `a29c9a7`·`f1ba3e1` — `SubQuestion.parse_failed`·`failed` 와 `snapshot_state`·`restore_state` 가 추가됐다. 그 시점 모양은 Task 10 절에 다시 실려 있다.
+> - 머지 전 리뷰 — `SubQuestion` 에 `capped`(상한 때문에 못 실은 후보 수)·`evidence_chunks`(하위질문별 매칭 청크)·`chunk_scores`(그 하위질문 검색어로 받은 청크 점수) 추가, `evidence_ids` 는 하위질문 안 순위순. `snapshot_state` 는 `asdict` 로 전 필드를 담고, `restore_state` 는 모르는 키를 무시하고 없는 키는 기본값으로 채우며 params 를 기본값에 다시 얹는다(구버전 스냅샷 재개). `NaN`·무한대 파라미터 거부. 읽는 곳이 없던 `ResearchState.recheck_count` 제거.
+>
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 동기화 시점(`0971f21`·`3c138c6`, `rank_score` 는 `a168e1d`)의 상태**이며 그때 저장소 파일과 일치했다.
 
 딥리서치 실행 중 상태를 담는 dataclass 들과 깊이 파라미터. 파이프라인의 각 단계는 `ResearchState` 를 받아 갱신해 돌려주므로 Celery·Redis·Milvus 없이 테스트된다.
 
@@ -674,7 +693,7 @@ class TestState:
 
 ## Task 3: 피인용 연차 정규화와 점수 혼합 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다. 동기화(`0971f21`) 뒤로 `scoring.py` 는 바뀌지 않았다(2026-09-23 확인).
 
 피인용을 생값으로 쓰면 오래된 논문이 항상 이긴다. 2002년 논문은 25년간 쌓았고 2024년 논문은 3년이다. 연간 피인용으로 정규화해야 "최근 동향" 질문에서 2000년대 초 논문만 올라오지 않는다. 화면에는 생값을 그대로 보여주고 정규화는 순위에만 쓴다.
 
@@ -790,7 +809,11 @@ class TestBlendScore:
 
 ## Task 4: 근거 조립과 마커 검증 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - `b6360b8` — `strip_markers` 추가. 모델이 대표 논문 요약에 시키지 않은 `[E#]` 를 달았고, 요약은 `bind_markers` 를 거치지 않아 지어낸 번호가 검증 없이 나갈 수 있었다.
+> - 머지 전 리뷰 — 마커를 괄호 단위로 해석한다(묶음 `[E1, E2]`·범위·전각 괄호·소문자·0패딩). 단일형 정규식만 보면 `[E2, E99]` 속 없는 번호가 검증도 제거도 안 된 채 실렸다. 읽을 수 없는 인용 표기는 `MarkerResult.unparsed` 로 따로 센다. 재사용 근거의 하위질문별 청크를 다루는 `chunks_for`·`link_chunks` 추가. 청크 점수도 하위질문별이다(`SubQuestion.chunk_scores`) — 한 청크를 두 하위질문이 매칭하면 `Chunk.score` 하나로는 뒤 하위질문의 재검색이 앞 하위질문의 점수로 비교해 더 나은 대목을 밀어냈다. `chunks_for` 는 그 하위질문 점수를 담은 사본을 준다.
+>
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 동기화 시점(`3c138c6`)의 상태**이며 그때 저장소 파일과 일치했다.
 
 이 계층에서 가장 중요하다. 근거 표기가 틀린 리서치 도구는 안 쓰느니만 못하다. 모델이 없는 `[E99]` 를 뱉었을 때 칩이 만들어지지 않는 것이 인용 무결성의 마지막 방어선이다.
 
@@ -1051,7 +1074,10 @@ class TestBindMarkers:
 
 ## Task 5: 계획 수립 (파싱 + 프롬프트) — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - 머지 전 리뷰 — 중복 판정 키를 `planner.query_key` 로 뺐다. 승인 때 사용자가 고친 계획의 중복 검사(API)와 재검색어 중복 제거(runner)가 같은 규칙("AI 윤리" = "ai  윤리")을 쓴다.
+>
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 동기화 시점(`38e6ed1`)의 상태**이며 그때 저장소 파일과 일치했다.
 
 계획 파싱이 이 라운드에서 가장 잘 깨지는 자리다. 실패하면 `ValueError` 가 그대로 올라가 job 이 죽는데, 원인은 모델이 마크다운을 조금 다르게 쓴 것뿐이다.
 
@@ -1233,7 +1259,10 @@ class TestParsePlan:
 
 ## Task 6: 자기점검 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 최종 상태**이며 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - 머지 전 리뷰 — 판정 LLM 호출의 전송 오류(`httpx.HTTPError`: 타임아웃·5xx)도 파싱 실패와 같은 "판정 불가"(`parse_failed`)로 낮춘다. 올려 보내면 워커가 하위질문 전체를 `failed` 로 두어 이미 모은 근거가 절에서 빠졌다. 발췌는 runner 가 그 하위질문 몫 청크로 추려 넘긴다(`citations.chunks_for`).
+>
+> 구현·리뷰가 끝났다. 아래는 **리뷰 반영이 끝난 동기화 시점(`38e6ed1`)의 상태**이며 그때 저장소 파일과 일치했다.
 
 자기점검은 꺼져도 티가 안 나는 기능이다. 판정을 못 읽으면 `sufficient` 로 떨어지는데(무한 재검색을 막으려면 그래야 한다), 그러면 "모델이 충분하다고 판단한 것"과 구분되지 않는다. 자기점검이 전부 실패해도 보고서는 "한계 없음"으로 보인다.
 
@@ -1675,7 +1704,11 @@ class TestExtractJson:
 
 ## Task 7: 하위질문 탐색 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - 머지 전 리뷰 — `search()` 에 `use_metadata_filter=False` 를 넘긴다(db 를 넘기면 도서 검색용 날짜 필터 LLM 이 하위질문의 사건 연도를 발행연도 조건으로 걸었다). 메타청크 제외를 `explore` 의 사후 필터에서 `chunk_filter=is_source_passage` 로 옮겨 top_k 절단·리랭크 **전에** 거른다(사후에 거르면 걸러진 수만큼 `per_subq_top_k` 가 조용히 줄었다). 쪽수 0 인 보강 청크 `[초록]`·`[키워드]`·`[표 설명]`·`[그림 설명]` 도 뺀다. 그래서 `services/search/pipeline.py` 에 두 인자가 생겼고(기본값은 기존 동작), 리랭크 폴백의 `except Exception` 을 허용 목록으로 좁혔다(Celery 소프트 리밋을 삼키지 않게). `reranker.py` 는 GPU 가 없으면 float32 로 올린다.
+> - 아래 "(보고서는 마지막에 근거 전체로 한 번 종합한다)" 류 서술은 옛 설계다 — 종합은 하위질문별 호출이다(Task 8 이후 변경).
+>
+> 구현·리뷰가 끝났다. 아래는 동기화 시점(`38e6ed1`·`a168e1d`)의 저장소 파일과 일치했다.
 
 > **함정 — `pipeline` 을 최상단에서 import 하지 마라.** `pipeline.py` → `reranker.py` → `import torch` 인데 torch 는 로컬 venv 에 없다(Dockerfile 에서 CUDA 버전으로 설치). 최상단 import 를 쓰면 `pytest` 가 collection 단계에서 죽어 **세션 전체가 0건**이 된다. 함수 본문 안에서 import 하라 — `app/api/book.py:619` 가 이미 그렇게 한다. `docs/ops/recurring-gotchas.md` 13번.
 
@@ -2240,7 +2273,12 @@ def test_search_threads_the_flag_into_chunk_mode(monkeypatch):
 
 ## Task 8: 보고서 종합 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 가장 크게 바뀐 절이다. 최종 코드는 저장소가 정본이다.**
+> - `b6360b8` (라이브에서 발견한 버그) — 전체를 한 번에 맡기던 종합을 **하위질문별 호출**로 바꿨다. 절 구성은 코드가 정한다: `build_section`·`section_paper_ids`·`PAPERS_PER_SECTION = 5`·`_synthesize_section`. 한계에 "서술을 생성하지 못한 절 N개"(`failed_sections`)·"요약을 생성하지 못한 논문 N편"(`unsummarized_total`)을 더했고 요약 속 마커는 `strip_markers` 로 걷는다. 프롬프트는 `max_tokens: 4000`, 변수 `question`·`subquestion`·`evidence_block`·`paper_ids`, 출력 `{"intro", "summaries": {"E#": …}, "future"}` 다. **아래 YAML(`max_tokens: 8000`·`sections` 배열 예시·`evidence_blocks`)은 `recurring-gotchas.md` 15번의 원인이던 옛 프롬프트 그대로다** — 최종 파서와 섞으면 `StrictUndefined` 로 렌더부터 실패한다. 아래 테스트 블록에도 `TestBuildSection`·`TestSynthesize` 가 없다.
+> - 머지 전 리뷰 — 절 단위 1회 재시도(전송 오류·JSON 해석 실패·서술 없는 응답, `_SECTION_ATTEMPTS = 2`) 후에도 실패한 절만 논문 목록으로 남기고 다른 절은 버리지 않는다. 성공 판정을 파싱 여부가 아니라 서술 유무(`_has_narrative`)로 한다. 마커 검증 집합을 **그 절에 준 번호**로 한정했다(전역 집합이면 지어낸 작은 번호가 통과). 모델 출력 필드 타입 정리(`_text` — 배열은 잇고 null·dict 는 버림). 취소 확인(`should_stop` → `SynthesisCanceled`). 보고서 청크에 `score` 포함(지금 어느 절이든 가리키는 청크만 점수순), 절별 `evidence_chunks`·`chunk_scores`, `trail` 에 `parse_failed`·`failed`·`capped`, 한계의 이중 계수 제거, 상한(`capped`)·탐색 오류(`failed`)를 "근거 없음"과 구분하는 문구.
+> - 대표 논문 요약은 여전히 절의 논문 최대 5편을 한 호출에 넣고 번호별로 받는다 — spec §4-1 의 구조적 인용과의 차이는 spec §4-1 구현 시 변경.
+>
+> 구현·리뷰가 끝났다. 아래는 동기화 시점(`248b5e8`)의 저장소 파일과 일치했다.
 
 인용 무결성의 마지막 층이다. 여기서 두 종류의 인용이 합쳐진다 — 구조로 정해진 것(대표 논문 요약)과 검증으로 지킨 것(도입·향후 과제).
 
@@ -2670,7 +2708,11 @@ class TestAssembleReport:
 
 ## Task 9: 오케스트레이션과 진행 중계 — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - 머지 전 리뷰 (runner) — `explore()` 직후 `db.commit()` 으로 읽기 트랜잭션을 끝낸다(critic LLM 을 기다리는 동안 `library_catalog` 공유 잠금을 쥐면 FastAPI 기동의 `ALTER TABLE` 이 막히고 그 뒤 조회가 줄 선다 — `recurring-gotchas.md` 18번). 근거 순서를 하위질문 안 순위로(`_rank_order`, 라운드별 1위 앞자리 보장). 재사용 근거에도 그 하위질문에서 매칭된 청크를 기록(`link_chunks`). `max_evidence` 상한은 `break` 가 아니라 `continue` 로 재사용 후보를 살리고, 못 실은 수를 `capped` 로 세고, 상한에 닿으면 재검색을 멈춘다. 이미 시도한 검색어는 다시 돌지 않는다(`_next_query`). `critique` 이벤트에 `parse_failed`·`capped`. 주입 인자 타입힌트.
+> - 머지 전 리뷰 (relay) — 종료 이벤트 모양을 `terminal_event` 하나로 통일(워커 발행·엔드포인트 합성이 같은 모양), `publish_terminal` 추가, publish 소켓 타임아웃 2초(무응답 Redis 가 리서치를 멈추지 않게).
+>
+> 구현·리뷰가 끝났다. 아래는 동기화 시점(`248b5e8`)의 저장소 파일과 일치했다.
 
 초안과 달라진 것 둘.
 
@@ -3122,7 +3164,13 @@ class TestRelayPublish:
 
 ## Task 10: Celery 태스크와 API — **완료**
 
-> 구현·리뷰가 끝났다. 아래는 저장소의 실제 파일과 일치한다.
+> **이후 변경 — 아래 코드 블록은 최종 코드가 아니다. 최종 코드는 저장소가 정본이다.**
+> - 머지 전 리뷰 (워커) — 워커는 job ORM 객체에 대입하지 않고 **모든 상태 전이를 조건부 UPDATE(`_transition`)** 로 한다. 아래 블록의 `job.status = …` 대입은 API 가 찍은 `canceled` 를 덮어 취소한 잡을 `completed`·`awaiting_approval` 로 되살렸다(리뷰의 high). 종합은 절마다 취소를 확인한다. 잡 본문을 자체 데드라인 `JOB_DEADLINE = SOFT_LIMIT - 300` 으로 감싼다 — 소프트 리밋 신호는 LLM 응답을 await 하는 동안 오면 코루틴의 `except` 를 우회한다(`recurring-gotchas.md` 19번). 전멸 가드(`_wiped_out`), 하위질문 예외 시 `rollback`, 가드 밖 예외는 새 세션으로 실패 처리(`_fail_open_job`), 계획 태스크는 LLM 을 부르기 전에 읽기 트랜잭션을 닫는다. 회수 임계 `STALE_MINUTES = 45`(하드 리밋보다 길게), 회수한 잡의 running step 도 같은 문장에서 닫는다. 태스크 큐는 `queue="q_llm"` 이 아니라 설정값이다 — 실행은 `get_settings().RESEARCH_QUEUE`, 계획은 `RESEARCH_PLAN_QUEUE`(아래 설정·배포).
+> - 머지 전 리뷰 (모델) — `STEP_KINDS` 에서 `critique` 를 뺐다(Task 1 이후 변경). 아래 블록의 `models/research.py` 에는 아직 있다.
+> - 머지 전 리뷰 (API) — 승인·재시도·취소 모두 조건부 UPDATE. 승인 본문 선택(`ResearchApprove | None`), 수정 계획 검증(`_validated_plan`: 항목 2~300자·`max_subquestions` 이하·중복 금지). 브로커 전달 실패 시 상태를 되돌리고 503(`_enqueue`). 경로의 UUID 를 표준형으로 바꿔 구독(비표준 표기면 이벤트를 하나도 못 받았다). 종료 프레임을 `relay.terminal_event` 로 통일. 취소는 없는 잡 404·끝난 잡 409 를 가른다. `RESEARCH_QUEUE` 가 적재 큐(기본값 `q_llm`)면 approve·retry 가 실행 슬롯 1개(`approved`·`queued`·`running`)를 넘을 때 429 다(`_to_run_queue` — 트랜잭션 잠금을 잡고 센다). 실행이 적재 요약 슬롯을 쥐어 적재 아이템을 stale 복구로 밀기 때문이다(`recurring-gotchas.md` 16번).
+> - 머지 전 리뷰 (설정·배포) — `celery_app` 라우팅이 `RESEARCH_QUEUE` 를 따르고, 운영 compose 에 전용 워커 `celery-research`(GPU·`/data/models/.hf-cache:/models`·`-Q q_research`·concurrency 1)와 fastapi 의 `RESEARCH_QUEUE: q_research` 가 생겼다. 반영 검수에서 계획만 `RESEARCH_PLAN_QUEUE`·경량 워커 `celery-research-plan`(`-Q q_research_plan`)으로 나눴다 — 실행 슬롯이 하나라 계획이 다른 잡의 실행 뒤에 섰다. 전환 순서는 완료노트 §5.
+>
+> 구현·리뷰가 끝났다. 아래는 동기화 시점(`248b5e8`)의 저장소 파일과 일치했다.
 
 이 절의 초안은 **당일 재설계본**이라 Tasks 1~9 보다 검증이 덜 된 상태로 들어갔고, 구현 중에 재설계본 자체의 결함이 셋 나왔다. 전부 "첫 실행에서 바로" 또는 "상한에 닿았을 때" 드러나는 것들이다.
 
@@ -4392,13 +4440,15 @@ class TestStageGuard:
 
 ## Task 11: 운영 배포와 라이브 검증 — **완료 (재개 경로 미검증)**
 
-> 2026-09-23 실행. Step 4~9 통과, Step 9 의 재개는 종합 실패가 자연발생하지 않아 미검증. Step 10 실측과 도중에 고친 종합 버그(`451f348`)는 `docs/roadmap/round04a-완료노트.md` §2·§3. Step 0 의 `alembic stamp` 실행 여부는 기록되지 않았다.
+> 2026-09-23 실행. Step 4~9 통과, Step 9 의 재개는 종합 실패가 자연발생하지 않아 미검증. Step 10 실측과 도중에 고친 종합 버그(`b6360b8`)는 `docs/roadmap/round04a-완료노트.md` §2·§3. 스탬프는 서버 `alembic_version` 이 `0005_research_jobs` 인 것으로 확인했다(2026-09-23) — Step 0-b·2 는 끝난 상태다. Step 0-a(백필 잔량)·Step 3(임포트·큐)은 실행 기록이 없다.
+>
+> **이 절은 딥리서치가 `q_llm`·`celery-llm` 에서 돌던 시점의 절차다.** 머지 전 리뷰 반영분을 다시 배포할 때는 전용 큐 전환 여부에 따라 Step 3 의 확인 대상이 달라진다(아래 Step 3). 배포 순서와 인덱싱 중 주의는 완료노트 §5·`recurring-gotchas.md` 16번. 이번 반영분은 스키마 변경이 없어 스탬프·마이그레이션이 필요 없다.
 
 코드가 아니라 확인 절차다. `docs/ops/bulk_ingest_runbook.md` 의 배포 절차를 따른다. **이 절의 명령은 사용자가 서버에서 실행한다.**
 
-> **초안의 Step 1 은 그대로는 실패한다.** 2026-09-22 실측: 서버의 `alembic_version` 이 `0003_widen_varchar_fields` 다 — `0004` 조차 찍혀 있지 않다. 반면 `0004` 가 만드는 객체는 **전부 실재한다**(10/10). 운영 스키마를 만들어온 것은 Alembic 이 아니라 `app/main.py:32` 의 `Base.metadata.create_all` 과 수동 SQL 이기 때문이다. 이 상태에서 `alembic upgrade head` 를 돌리면 `0004` 의 `add_column` 이 `DuplicateColumn` 으로 죽는다. 상세: `recurring-gotchas.md` 14번.
+> **초안의 Step 1 은 그대로는 실패한다.** 2026-09-22 실측: 서버의 `alembic_version` 이 `0003_widen_varchar_fields` 다 — `0004` 조차 찍혀 있지 않다. 반면 `0004` 가 만드는 객체는 **전부 실재한다**(10/10). 운영 스키마를 만들어온 것은 Alembic 이 아니라 `app/main.py:33` 의 `Base.metadata.create_all`(새 테이블)과 같은 lifespan 의 `ALTER TABLE … ADD COLUMN IF NOT EXISTS` 블록(`doc_type`·`extra`·인덱스)이기 때문이다. 이 상태에서 `alembic upgrade head` 를 돌리면 `0004` 의 `add_column` 이 `DuplicateColumn` 으로 죽는다. 상세: `recurring-gotchas.md` 14번.
 
-- [ ] **Step 0-a: `0004` 의 데이터 백필 잔량 확인 (stamp 전에)**
+- [ ] **Step 0-a: `0004` 의 데이터 백필 잔량 확인 (stamp 전에)** — 실행 기록 없음
 
 `stamp` 는 DDL 뿐 아니라 마이그레이션 안의 `op.execute(UPDATE …)` 도 건너뛴다. `0004` 에는 KCI 논문 `doc_type` 백필이 들어 있다.
 
@@ -4412,7 +4462,7 @@ SQL
 `0` 이면 Step 0-b 로. `0` 이 아니면 먼저 손으로 돌린다:
 `UPDATE library_catalog SET doc_type = 'paper' WHERE source_format = 'KCI' AND doc_type IS NULL;`
 
-- [ ] **Step 0-b: `0004` 스탬프**
+- [x] **Step 0-b: `0004` 스탬프** — 서버 `alembic_version` 이 `0005` 라 이 단계도 지났다(2026-09-23 확인)
 
 객체 10종이 전부 존재함은 2026-09-22 에 확인했다(`ingest_jobs`·`ingest_job_items`·인덱스 6종·`library_catalog.doc_type`·`extra`).
 
@@ -4420,13 +4470,13 @@ SQL
 docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic stamp 0004_doc_type_extra_ingest_jobs
 ```
 
-- [ ] **Step 1: 이미지 빌드·배포**
+- [x] **Step 1: 이미지 빌드·배포**
 
 `NL_LIB_FASTAPI_IMAGE` 를 `:latest` 로 맞춰 빌드한다(`recurring-gotchas.md` 3번 — `build_dev_images.sh` 는 `:dev` 만 만든다). 큰 이미지는 서버에서 `docker pull` 을 먼저 하고 Portainer 에서는 Redeploy 만 누른다(같은 문서 12번).
 
 **round03 이월분이 함께 나간다** — 참고문헌 정규식 강화(`49b0274`)가 아직 배포되지 않았다. 인덱싱 재개 전에 이 이미지가 떠 있어야 한다.
 
-- [ ] **Step 2: `research_*` 테이블 확인 후 `0005` 스탬프**
+- [x] **Step 2: `research_*` 테이블 확인 후 `0005` 스탬프** — `alembic_version = 0005_research_jobs` 확인(2026-09-23)
 
 새 이미지의 API 가 뜨면 lifespan 의 `create_all` 이 **모델에서** `research_jobs`·`research_steps` 를 만든다. 그래서 `0005` 는 DDL 을 돌리지 않고 스탬프만 맞춘다 — 여기서 `upgrade head` 를 쓰면 `DuplicateTable` 이다.
 
@@ -4440,19 +4490,30 @@ docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic stamp 0005_researc
 
 **확인할 것**: `stage` 가 `not null default 'created'`, `params` 가 `not null default '{}'::jsonb`, `uq_research_steps_job_seq` 와 `ix_research_steps_inflight` 가 존재. `status` 는 `not null` 이되 DB 기본값이 **없다**(모델이 파이썬 측 `default=` 만 쓴다) — 앱 경로로는 항상 채워지므로 정상이며, 손으로 INSERT 할 때만 걸린다.
 
-- [ ] **Step 3: 임포트·큐 확인**
+- [ ] **Step 3: 임포트·큐 확인** — 실행 기록 없음
+
+> 초안은 `nl-lib-worker` 에서 확인했는데 **그런 컨테이너는 없다.** compose 의 워커는 `nl-lib-celery`(`-Q ingestion,default`)·`nl-lib-celery-cpu`·`nl-lib-celery-llm`(`-Q q_llm`)·`nl-lib-celery-embed`·`nl-lib-celery-beat`, 그리고 머지 전 리뷰 이후의 `nl-lib-celery-research`(`-Q q_research`)·`nl-lib-celery-research-plan`(`-Q q_research_plan`)이다. 딥리서치 태스크를 받는 워커는 fastapi 컨테이너의 `RESEARCH_QUEUE`(실행)·`RESEARCH_PLAN_QUEUE`(계획, 비우면 실행과 같은 큐)로 정해진다 — 값이 없으면(기본 `q_llm`) 둘 다 `nl-lib-celery-llm`, 전용 워커로 넘긴 뒤에는 실행은 `nl-lib-celery-research`, 계획은 `nl-lib-celery-research-plan`.
 
 ```bash
-docker exec nl-lib-worker python -c "import workers.research_tasks; print('OK')"
+# 보내는 쪽이 어느 큐로 보내는지
+docker exec nl-lib-fastapi python -c "from core.config import get_settings as g; print(g().RESEARCH_QUEUE, g().RESEARCH_PLAN_QUEUE)"
 docker exec nl-lib-fastapi python -c "import api.research; print('OK')"
-docker exec nl-lib-worker celery -A workers.celery_app inspect active_queues | grep -c q_llm
+
+# RESEARCH_QUEUE 가 q_llm 이면
+docker exec nl-lib-celery-llm python -c "import workers.research_tasks; print('OK')"
+docker exec nl-lib-celery-llm celery -A workers.celery_app inspect active_queues | grep -c q_llm
+
+# RESEARCH_QUEUE 가 q_research 이면
+docker exec nl-lib-celery-research python -c "import workers.research_tasks; print('OK')"
+docker exec nl-lib-celery-research celery -A workers.celery_app inspect active_queues | grep -c q_research
+docker exec nl-lib-celery-research-plan celery -A workers.celery_app inspect active_queues | grep -c q_research_plan
 ```
 
-마지막이 `0` 이면 **태스크가 큐에 쌓이기만 하고 아무도 소비하지 않는다.** 워커의 `-Q` 설정을 확인한다.
+마지막이 `0` 이면 **태스크가 큐에 쌓이기만 하고 아무도 소비하지 않는다.** fastapi 의 `RESEARCH_QUEUE`·`RESEARCH_PLAN_QUEUE` 와 워커의 `-Q` 가 같은지 확인한다.
 
-- [ ] **Step 4: 계획 수립**
+- [x] **Step 4: 계획 수립**
 
-관리 API 는 게이트웨이에서 차단돼 있으므로 컨테이너 내부에서 호출한다(`bulk_ingest_runbook.md` §5-a). 시연 전 리허설이므로 파라미터를 줄여 짧게 돈다.
+컨테이너 내부에서 호출한다 — 게이트웨이 영향을 빼고 앱만 본다. (게이트웨이가 막는 것은 `/api/admin`·`/docs`·`/openapi.json` 이고 `/api/research` 는 열려 있다. 초안의 "관리 API 는 차단돼 있으므로"는 이 경로에 맞지 않는다.) 시연 전 리허설이므로 파라미터를 줄여 짧게 돈다.
 
 ```bash
 docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research -H 'Content-Type: application/json' -d '{"question":"공공도서관 서비스 품질 평가는 어떻게 연구되어 왔는가","params":{"max_subquestions":3,"max_recheck":1,"per_subq_top_k":8}}'
@@ -4460,7 +4521,7 @@ docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research -H
 
 Expected: `{"job_id":"...","status":"created"}`
 
-- [ ] **Step 5: 계획 확인 후 승인**
+- [x] **Step 5: 계획 확인 후 승인**
 
 ```bash
 docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id>
@@ -4474,15 +4535,21 @@ docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<j
 
 **반환 `status` 가 `approved` 여야 한다.** `awaiting_approval` 이 그대로 돌아오면 워커가 영원히 `skipped` 를 반환한다.
 
-- [ ] **Step 6: 진행 중계**
+- [x] **Step 6: 진행 중계** — 앱 직결 경로만 검증했다
 
 ```bash
 docker exec nl-lib-fastapi curl -N -s http://localhost:8000/api/research/<job_id>/stream
 ```
 
-첫 줄에 `snapshot`, 이어서 `search`·`critique` 이벤트. 유휴 15초마다 `: ping` 주석 프레임이 와야 한다 — 안 오면 nginx 가 버퍼링하는 것이니 `proxy_buffering off` 와 `proxy_read_timeout` 을 확인한다(`X-Accel-Buffering: no` 만으로는 부족할 수 있다). 잡이 끝나면 `done` 이 오고 스트림이 **닫혀야** 한다.
+첫 줄에 `snapshot`, 이어서 `search`·`critique` 이벤트. 유휴 15초마다 `: ping` 주석 프레임이 와야 한다. 잡이 끝나면 `done` 이 오고 스트림이 **닫혀야** 한다.
 
-- [ ] **Step 7: 보고서 검증 — 인용 무결성**
+> **이 명령은 게이트웨이(nginx)를 거치지 않는다** — fastapi 컨테이너 안에서 앱에 직접 붙는다. 여기서 ping 이 안 오면 nginx 가 아니라 앱·Redis 쪽 문제다(초안의 "nginx 가 버퍼링하는 것" 진단은 틀렸다). 브라우저가 쓸 게이트웨이 경로(`location /api/`, `proxy_read_timeout 120s`)는 이 절차로 검증되지 않았다 — 앱이 `X-Accel-Buffering: no` 를 보내고 ping(15초)이 타임아웃(120초)보다 짧아 동작할 가능성은 높지만, round04b 에서 게이트웨이 경유로 처음 확인한다:
+>
+> ```bash
+> curl -N http://<서버>:92/api/research/<job_id>/stream
+> ```
+
+- [x] **Step 7: 보고서 검증 — 인용 무결성**
 
 ```bash
 docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id> | python -c "import json,sys,re; d=json.load(sys.stdin); r=d['report']; ids=set(r['evidence']); used=set(); [used.update(re.findall(r'\[(E\d+)\]', s['intro'])) for s in r['sections']]; [used.update(re.findall(r'\[(E\d+)\]', f['text'])) for s in r['sections'] for f in s['future']]; print('근거', len(ids), '사용된 마커', len(used), '미해석', used-ids); print('한계', r['limitations'])"
@@ -4502,11 +4569,11 @@ print('절', len(r['sections']), '| 근거', len(r['evidence']), '| 논문으로
 
 **절 수 = 근거가 있는 하위질문 수, 요약 속 마커 = `[]`** 여야 한다.
 
-- [ ] **Step 8: 두 번째 잡 — 이벤트 루프 회귀**
+- [x] **Step 8: 두 번째 잡 — 이벤트 루프 회귀**
 
 **첫 잡만 돌려보고 넘어가면 안 된다.** 잡 단위 엔진과 `dispose()` 가 실제로 루프 간 커넥션 누수를 막는지는 두 번째 잡에서만 드러난다. Step 4~7 을 한 번 더 돌린다. `attached to a different loop` 가 나오면 `_job_engine` 이 제 일을 못 하는 것이다.
 
-- [ ] **Step 9: 취소·재개 확인**
+- [ ] **Step 9: 취소·재개 확인** — 취소 통과, 재개 미검증
 
 ```bash
 # 취소 — running 중에
@@ -4515,9 +4582,11 @@ docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<j
 
 진행 중이던 하위질문을 마친 뒤 멈추고 `canceled` 가 되어야 한다(진행 중인 LLM 호출을 중간에 끊지는 않는다).
 
+> 2026-09-23 라이브 통과는 **탐색 중 취소**만 본 것이다. 리뷰에서 그 밖의 구간(마지막 하위질문·종합·계획 중 취소)은 워커의 무조건 대입이 `canceled` 를 `completed`·`awaiting_approval` 로 덮는 것이 드러나 고쳤다(머지 전 리뷰 반영 — 조건부 전이, 절마다 취소 확인). 그 구간은 단위 테스트로만 확인했다. 재배포 뒤 다시 확인한다면 종합 단계("보고서 종합" step 이 `running`)에서 취소하고, 잠시 뒤 잡이 `canceled` 로 남고 synthesize step 이 `failed`(`취소됨`)로 닫혔는지 본다.
+
 재개는 종합이 실패한 잡에서만 확인할 수 있다. 자연발생하지 않으면 건너뛰고 완료노트에 미검증으로 남긴다 — **억지로 실패시키려 프로덕션 설정을 건드리지 않는다.**
 
-- [ ] **Step 10: 실측 기록**
+- [x] **Step 10: 실측 기록** — 완료노트 §2. 기본 파라미터 실측·시연 파라미터 선정은 남았다
 
 실행 소요 시간, 하위질문별 근거 수, 한계 섹션 내용을 완료노트에 적는다. 이 값으로 `params` 기본값(특히 `per_subq_top_k`·`min_evidence_per_subq`)을 조정한다. **시연용 파라미터도 여기서 정한다** — 5~7분이 설계값이지만 3분 시연에서는 미리 돌려둔 보고서를 여는 편이 안전하다.
 
@@ -4530,6 +4599,7 @@ docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<j
 - **PDF 내보내기 · AI 생성 다이어그램 · 도서 코퍼스 · 다국어**
 - **시연 분야 우선 인덱싱** — 운영 작업이며 코드와 독립. spec §8
 - `app/api/admin.py` Milvus expression injection — 기존 이월 유지
+- **spec 에 있었지만 구현하지 않은 것** — `deep_read_top_n`("유망 논문은 본문까지 읽는다", spec §3-4), 대표 논문 요약의 논문별 호출(spec §4-1), 실패한 잡의 자동 재개·워커 사망 시 자동 재개(spec §6 — `POST /retry` 로 대체. 종합 LLM 의 1회 재시도는 절 단위로 구현했다). 상세는 spec 의 각 **구현 시 변경**, 이월은 완료노트 §8.
 
 ## 알려진 미확정
 
@@ -4538,6 +4608,6 @@ docker exec nl-lib-fastapi curl -s -X POST http://localhost:8000/api/research/<j
   프론트는 이미 그렇게 동작한다 — `frontend/pages/papers/[id].vue:138` 이 `v-if="paper.url"` 로 외부 링크, `v-else` 로 PDF 모달인데 `url` 이 0건이라 **외부 링크 분기는 운영에서 죽은 코드**이고 전부 우리가 보관한 PDF 로 간다. KCI 랜딩 페이지보다 나은 목적지다(전문이 우리 쪽에 있다). round04b 의 인용칩도 여기에 맞춘다.
   경로는 `PdfViewer → /api/books/{cnts_id}/pdf → MinIO originals/{cnts_id}/` 다. MinIO 키를 직접 조립하지 말 것 — `_resolve_original_key` 가 폴더형/평탄형 두 적재 형식을 폴백으로 처리한다. 원본이 없는 논문에서 404 가 나는 문제는 미해결이며 round04b 몫이다. 상세: spec §4-3.
 - ~~`pytest-asyncio` 설치 여부~~ — **해소됨(2026-09-22).** 설치돼 있지 않고 `app/tests` 전체에서 `@pytest.mark.asyncio` 사용이 0건이다. 관례는 `asyncio.run(...)`. 설치하지 않는다 — 플러그인이 없으면 pytest 가 코루틴을 실행하지 않고 **통과로 처리해** 테스트가 초록불로 빈다.
-- ~~서버 `alembic_version`~~ — **해소됨(2026-09-22).** `0003_widen_varchar_fields` 다. `0004` 조차 안 찍혀 있는데 그 객체 10종은 전부 실재한다 — 운영 스키마는 `create_all` 과 수동 SQL 이 만들어왔다. `recurring-gotchas.md` 14번, 배포 절차는 Task 11 Step 0.
-- Celery 워커가 `q_llm` 큐를 소비하도록 이미 떠 있는지 확인 필요 — 안 떠 있으면 태스크가 큐에 쌓이기만 한다
-- `redis.asyncio` 가 이미지에 포함돼 있는지 미확인 (Task 10 Step 7 에서 드러난다)
+- ~~서버 `alembic_version`~~ — **해소됨(2026-09-22).** `0003_widen_varchar_fields` 다. `0004` 조차 안 찍혀 있는데 그 객체 10종은 전부 실재한다 — 운영 스키마는 `create_all`(새 테이블)과 lifespan 의 `ALTER TABLE … ADD COLUMN IF NOT EXISTS`(`doc_type`·`extra`·인덱스)가 만들어왔다. `recurring-gotchas.md` 14번, 배포 절차는 Task 11 Step 0. **2026-09-23 재확인: `0005_research_jobs`** — 스탬프까지 맞춰졌다.
+- ~~Celery 워커가 `q_llm` 큐를 소비하도록 이미 떠 있는지~~ — **해소됨(2026-09-23).** `nl-lib-celery-llm`(`-Q q_llm`)이 소비한다. 라이브에서 같은 워커 프로세스(`ForkPoolWorker-2`)가 잡 2개를 처리했다(완료노트 §2). 전용 큐로 전환한 뒤에는 실행은 `nl-lib-celery-research`(`-Q q_research`), 계획은 `nl-lib-celery-research-plan`(`-Q q_research_plan`)이 소비자다 — Task 11 Step 3.
+- ~~`redis.asyncio` 가 이미지에 포함돼 있는지~~ — **해소됨(2026-09-23).** 라이브에서 중계(`search`·`critique`·`done`)가 정상 동작했다. (초안이 가리킨 "Task 10 Step 7" 은 없다 — Task 10 은 Step 이 아니라 파일별 체크리스트다. 확인은 Task 11 Step 6 에서 됐다.)

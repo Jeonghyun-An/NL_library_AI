@@ -30,9 +30,11 @@ celery_app.conf.update(
         "tasks.stage_finalize":    {"queue": "q_llm"},
         "tasks.dispatch_job_items":  {"queue": "q_control"},
         "tasks.cleanup_temp_files":  {"queue": "q_control"},
-        # 딥리서치 — 계획·실행은 LLM 큐, stale 회수는 제어 큐
-        "tasks.plan_deep_research":  {"queue": "q_llm"},
-        "tasks.run_deep_research":   {"queue": "q_llm"},
+        # 딥리서치 — 계획·실행은 설정 큐(core/config.py RESEARCH_QUEUE·RESEARCH_PLAN_QUEUE
+        # 주석), stale 회수는 제어 큐. 적재 요약과 같은 q_llm FIFO 에 있으면 사용자의 계획
+        # 요청이 요약 수십 건 뒤에 선다.
+        "tasks.plan_deep_research":  {"queue": cfg.RESEARCH_PLAN_QUEUE},
+        "tasks.run_deep_research":   {"queue": cfg.RESEARCH_QUEUE},
         "tasks.reap_stale_research": {"queue": "q_control"},
     },
     beat_schedule={
@@ -44,7 +46,8 @@ celery_app.conf.update(
             "task": "tasks.cleanup_temp_files",
             "schedule": 3600.0,
         },
-        # 워커가 죽으면 잡이 running 인 채 영원히 남는다 — 30분 넘은 것만 회수한다
+        # 워커가 죽으면 잡이 running 인 채 영원히 남는다 — 하드 리밋을 넘긴 것만 회수한다
+        # (research_tasks.STALE_MINUTES)
         "reap-stale-research": {
             "task": "tasks.reap_stale_research",
             "schedule": 600.0,

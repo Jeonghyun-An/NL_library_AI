@@ -116,6 +116,15 @@ PostgreSQL → cover_image_key, cover_prompt
 프런트 표지 우선순위: ① FLUX 자동표지 → ② PDF 1p 캐시 → ③ PDF 1p 즉석 렌더
 ```
 
+### 1.8 논문 딥리서치 에이전트 (백엔드 — round04a)
+
+질문 하나를 하위질문으로 나누고(사용자가 계획을 고치거나 승인), 하위질문마다 논문 검색 → 자기점검 → 검색어를 바꿔 재검색을 반복한 뒤, **인용이 검증된 보고서 JSON** 을 만든다. 수 분이 걸리는 작업이라 Celery 워커가 돌리고 진행은 Redis pub/sub → SSE 로 중계하며 결과는 Postgres 에 남는다 — 탭을 닫아도 계속 돌고 나중에 다시 연다.
+
+- **인용 무결성**: 절에 실리는 논문과 인용칩, 제목·저자·연도는 코드가 정한다(모델 출력에서 가져오지 않는다). 도입·향후 과제의 `[E#]` 마커는 그 절에 준 근거 번호로만 전수 검증하고, 지어낸 번호는 지운 뒤 개수를 보고한다.
+- **한계 섹션**: 근거 부족·검색 0편·자기점검 실패·근거 상한·탐색 오류를 사용자에게 보이는 문장으로 드러낸다. 수록 범위는 실행 시점에 잰다.
+- **복구**: 탐색이 끝나면 상태 스냅샷을 체크포인트로 남긴다. 종합이 실패하면 `POST /api/research/{id}/retry` 가 탐색을 건너뛰고 종합부터 다시 한다(자동 재개는 없다).
+- 설계: `docs/superpowers/specs/2026-09-21-deep-research-agent-design.md`(구현과 다른 곳은 **구현 시 변경** 표기) · 진행 상황: `docs/roadmap/round04a-완료노트.md`. 프론트(슬래시 진입·진행 패널·인용칩)는 round04b.
+
 ---
 
 ## 2. 시스템 아키텍처
@@ -130,7 +139,12 @@ Nginx (Gateway :92)
   └── /api/              → FastAPI (:18002)
                             ├── /books/*        검색·도서·소개·추천이유·대화·표지·PDF
                             ├── /papers/*       논문 전용 검색·KCI 카탈로그 적재
-                            └── /admin/*        현황·도서·섹션·청크 관리
+                            ├── /research/*     논문 딥리서치 — 잡 생성·승인·재시도·취소·조회·SSE
+                            └── /admin/*        현황·도서·섹션·청크 관리 (게이트웨이에서 외부 차단)
+
+딥리서치:  FastAPI ─(Celery, RESEARCH_PLAN_QUEUE)→ 워커: 계획 ─(승인)→ (RESEARCH_QUEUE) 하위질문별 탐색·자기점검·재검색 → 종합
+           워커 ─(Redis pub/sub research:{job_id})→ FastAPI ─(SSE)→ 브라우저
+           잡·단계·보고서 → Postgres research_jobs / research_steps
 ```
 
 ### 2.2 데이터 수집 파이프라인
@@ -215,7 +229,7 @@ Celery Task: process_book_file
 | **PDF 추출** | OpenDataLoader v2 (1티어) + PyMuPDF (페이지 렌더링) | 마크다운 + 표 + 그림 base64 |
 | **Vector DB** | Milvus 2.4.6 | Dense IVF_FLAT + Sparse INVERTED_INDEX + 스칼라 필터 |
 | **RDB** | PostgreSQL 16 | 도서 메타 + 섹션 + 그림 + 검색 히스토리 |
-| **Queue** | Redis 7 + Celery | 수집 비동기 (concurrency=2) |
+| **Queue** | Redis 7 + Celery | 수집 비동기(단건·배치 잡 큐 분리) · 딥리서치 계획·실행 · 딥리서치 진행 중계(pub/sub) |
 | **Storage** | MinIO | 원본 PDF + 자동표지 + 썸네일 캐시 + 그림 |
 | **Backend** | FastAPI | REST API + SSE 스트리밍 |
 | **Frontend** | Nuxt 3 + Vue 3 | 도서/논문 듀얼 모드 UI + 인라인 채팅 + PDF.js 뷰어 |
@@ -262,6 +276,15 @@ Celery Task: process_book_file
 | 필드 | 설명 |
 | --- | --- |
 | session_id, query, mode, result, created_at | 세션 단위 검색 기록, 결과 JSON |
+
+**research_jobs / research_steps** — 딥리서치 잡과 단계 (round04a, 마이그레이션 `0005`)
+
+| 테이블 | 주요 필드 |
+| --- | --- |
+| research_jobs | question, status(`created`→`planning`→`awaiting_approval`→`approved`→`running`→`completed`\|`failed`\|`canceled`, 재시도 `queued`), stage(어디까지 끝냈나 — `explored` 면 종합부터 재개), params, plan(승인본), report(보고서 JSON), state_snapshot(탐색 체크포인트), last_error |
+| research_steps | job_id, seq, kind(`plan`\|`search`\|`synthesize`), subq_idx, title, detail, status, result — 진행 패널용 실행 이력 |
+
+> 운영 DB 의 새 테이블은 FastAPI lifespan 의 `create_all` 이 만든다 — Alembic 스탬프와 따로 논다(§8.5, `docs/ops/recurring-gotchas.md` 14번).
 
 ### 4.2 Milvus 컬렉션 (nl_lib_embeddings)
 
@@ -310,6 +333,7 @@ nl-lib/
 │   ├── api/
 │   │   ├── book.py                       # 검색·수집·추천이유·대화·PDF·표지·비교
 │   │   ├── paper.py                      # 논문 검색 + KCI 카탈로그 로드
+│   │   ├── research.py                   # 딥리서치 잡 API + SSE 중계
 │   │   ├── admin.py                      # 현황·관리 대시보드
 │   │   └── health.py
 │   ├── services/
@@ -330,16 +354,26 @@ nl-lib/
 │   │   │   ├── metadata_filter.py
 │   │   │   ├── reranker.py
 │   │   │   └── context_expander.py
-│   │   └── chat/
-│   │       └── book_chat.py              # 도서 단위 RAG 대화 + SSE
+│   │   ├── chat/
+│   │   │   └── book_chat.py              # 도서 단위 RAG 대화 + SSE
+│   │   └── research/                     # 논문 딥리서치 (search/ 를 소비)
+│   │       ├── state.py                  # 실행 상태·깊이 파라미터·스냅샷
+│   │       ├── planner.py / critic.py    # 계획 수립 / 근거 충분성 자기점검 (LLM)
+│   │       ├── explorer.py · scoring.py  # 하위질문 탐색 · 피인용 연차 정규화
+│   │       ├── citations.py              # 근거 조립 · 인용 마커 검증 (순수)
+│   │       ├── synthesizer.py            # 하위질문별 절 종합 · 한계 섹션
+│   │       ├── runner.py                 # 탐색 루프 오케스트레이션
+│   │       ├── relay.py                  # Redis pub/sub 진행 중계
+│   │       └── llm_json.py               # LLM 응답 JSON 추출
 │   ├── models/
 │   │   ├── book.py                       # library_catalog
 │   │   ├── section.py                    # book_sections
 │   │   ├── figure.py                     # book_figures
+│   │   ├── research.py                   # research_jobs · research_steps
 │   │   └── search_history.py
 │   ├── schemas/book.py
 │   ├── repositories/{book,section}.py
-│   ├── workers/{celery_app,tasks}.py
+│   ├── workers/{celery_app,tasks,job_runtime,research_tasks}.py
 │   └── db/postgres.py
 │
 └── frontend/                             # Nuxt 3
@@ -406,6 +440,19 @@ nl-lib/
 | GET | /api/admin/books/{cnts_id}/chunks | Milvus 청크 목록 |
 | GET | /api/admin/minio/files | MinIO 파일 목록 |
 
+### 6.5 딥리서치 (round04a)
+
+| Method | Path | 설명 |
+| --- | --- | --- |
+| POST | /api/research | 질문 제출 `{question, params?}` → 잡 생성, 계획 수립 착수 |
+| POST | /api/research/{id}/approve | 계획 승인(수정 계획 `{plan}` 동봉 가능) → 실행 |
+| POST | /api/research/{id}/retry | 실패한 잡 재시도 — 탐색이 끝났으면 종합부터 |
+| POST | /api/research/{id}/cancel | 취소 — 진행 중인 LLM 호출은 끊지 않고 다음 경계에서 멈춘다 |
+| GET | /api/research/{id} | 상태·계획·보고서·단계 조회 |
+| GET | /api/research/{id}/stream | SSE 진행 중계 (`snapshot` → `search`·`critique` → `done`\|`failed`\|`canceled`) |
+
+> 파라미터·상태 전이·SSE 이벤트·보고서 JSON 의 정확한 계약은 spec 의 **구현 시 변경**(§3-2·§3-3·§4-5).
+
 ---
 
 ## 7. 인프라 구성
@@ -418,16 +465,23 @@ nl-lib/
 | minio | minio/minio:latest | 21000, 21001 | 원본·표지·썸네일·그림 |
 | milvus | milvusdb/milvus:v2.4.6 | - | 벡터 DB |
 | postgres | postgres:16-alpine | 15432 | RDB |
-| redis | redis:7-alpine | 16379 | Celery broker/backend |
+| redis | redis:7-alpine | 16379 | Celery broker/backend · 딥리서치 진행 중계(pub/sub) — 인증 없음(보안 이월) |
 | gemma | vllm/vllm-openai (커스텀) | 18080 | Gemma 3 12B (텍스트 LLM) — `--max-model-len 32768` |
 | vllm | vllm/vllm-openai:latest-cu130 | 18081 | Qwen3-VL-8B (VLM) — `--max-model-len 32768` |
 | flux | landsoftdocker/nl-lib-flux:latest | 18090 | FLUX.1-dev 표지 생성 |
 | fastapi | landsoftdocker/nl-lib-fastapi:latest | 18002 | API |
-| celery-worker | landsoftdocker/nl-lib-fastapi:latest | - | 수집 워커 (concurrency=2) |
+| celery-worker | landsoftdocker/nl-lib-fastapi:latest | - | 단건 수집 워커 `-Q ingestion,default` (concurrency=2, GPU) |
+| celery-cpu | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 추출 `-Q q_cpu,q_control` (concurrency=4) |
+| celery-llm | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 요약·마무리 `-Q q_llm` (concurrency=4, GPU·모델 마운트 없음 — 외부 vLLM HTTP). 딥리서치도 `RESEARCH_QUEUE` 기본값(`q_llm`)이면 여기서 돈다 — 이때 실행은 한 번에 한 잡(approve·retry 429)이고, 적재가 running 인 동안에는 운영 딥리서치를 돌리지 않는다(`docs/ops/bulk_ingest_runbook.md` §8) |
+| celery-research | landsoftdocker/nl-lib-fastapi:latest | - | 딥리서치 실행 전용 `-Q q_research` (concurrency=1 — 실행은 한 번에 한 잡, GPU·모델 캐시). fastapi 의 `RESEARCH_QUEUE: q_research` 와 함께 올린다 — 인덱싱이 끝난 뒤, 또는 적재를 pause 해 in-flight 를 비운 뒤 스택 업데이트로 전환(`docs/ops/bulk_ingest_runbook.md` §8, `docs/ops/recurring-gotchas.md` 16번) |
+| celery-research-plan | landsoftdocker/nl-lib-fastapi:latest | - | 딥리서치 계획 전용 `-Q q_research_plan` (concurrency=2, GPU 없음). 계획이 실행 슬롯 뒤에 서지 않게 나눴다. fastapi 의 `RESEARCH_PLAN_QUEUE` 와 함께 올린다 |
+| celery-embed | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 청킹·임베딩·Milvus `-Q q_embed` (concurrency=1, GPU) |
+| celery-beat | landsoftdocker/nl-lib-fastapi:latest | - | 스케줄러 — 배치 디스패처 30s · 임시파일 정리 1h · 딥리서치 정체 회수 10분 |
 | nuxt | landsoftdocker/nl-lib-nuxt:latest | - | 프론트 |
 | gateway | nginx:alpine | 92 | 라우팅 |
 
 > 텍스트 LLM(Gemma 3 12B)을 본 스택의 `gemma` 서비스로 이관 (`LLM_BASE_URL=http://gemma:8000/v1`). 개발 환경에서는 `host.docker.internal:18080` 외부 서버로 분리 가능 (`core/config.py` 기본값).
+> fastapi 와 celery 워커 전부가 같은 `nl-lib-fastapi:latest` 이미지다. 새 이미지로 스택을 업데이트하면 도는 적재 워커까지 재생성된다 — 대량 인덱싱 중 배포 전에 `docs/ops/recurring-gotchas.md` 16번을 본다.
 > PaddleOCR은 비활성화 — OpenDataLoader + VLM 조합으로 대체.
 
 ### 7.2 GPU 메모리 현황 (H200 140GB, 대략치)
@@ -499,6 +553,8 @@ done
 
 ### 8.5 Alembic 마이그레이션 운영
 
+> **`alembic upgrade head` 를 바로 돌리지 않는다.** 운영 스키마는 Alembic 이 아니라 FastAPI lifespan 이 먼저 만든다 — `create_all` 이 새 테이블을, 같은 lifespan 의 `ALTER TABLE … ADD COLUMN IF NOT EXISTS` 블록이 컬럼(`doc_type`·`extra` 등)을 넣는다. 그래서 스탬프가 현실보다 뒤처지기 쉽고, 객체가 이미 있는 리비전을 `upgrade` 하면 `DuplicateColumn`·`DuplicateTable` 로 죽는다(2026-09-22 실제로 `0003` 스탬프에서 `0004` 가 죽었다). 순서: ① `alembic current` 와 실제 객체 존재를 **따로** 확인 → ② 객체가 이미 있으면 마이그레이션 안의 데이터 백필이 필요한지 센 뒤 `alembic stamp <리비전>` → ③ 객체가 없는 리비전만 `upgrade`. 상세: `docs/ops/recurring-gotchas.md` 14번. 2026-09-23 기준 운영은 `0005_research_jobs`.
+
 ```bash
 # 작업 디렉터리는 항상 app/ — alembic.ini 가 거기 있음
 cd /app
@@ -509,14 +565,15 @@ alembic current
 # 운영 DB 첫 도입 시 (이미 베이스 스키마는 존재) — 베이스라인 stamp
 alembic stamp 0001_baseline
 
-# 최신까지 적용
+# 최신까지 적용 — 위 경고의 ①·② 를 거친 뒤에만
 alembic upgrade head
 
 # 새 마이그레이션 생성 (모델 변경 후)
 alembic revision --autogenerate -m "add some column"
 
-# 컨테이너에서 일괄 실행
-docker exec -w /app nl-lib-fastapi alembic upgrade head
+# 컨테이너에서 실행 (스크립트 경로 문제로 PYTHONPATH 를 준다 — recurring-gotchas 4번)
+docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic current
+docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic upgrade head
 ```
 
 > 0002_add_ingest_state 는 `is_embedded=true` 도서를 `ingest_state='embedded'` 로 자동 백필한다.
@@ -615,6 +672,19 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 - **Reranker GPU 분리** — FastAPI + Celery 양쪽에서 Reranker 로드되어 VRAM 중복. 별도 reranker 서비스 컨테이너 분리.
 - **MinIO → S3 호환 마이그레이션** — 클라우드 이전 대비 endpoint·credential 외부화.
 - **PostgreSQL 백업 자동화** — 현재 미설정. `pg_dump` cron + MinIO 업로드.
+
+### 10.7 논문 딥리서치 (round04a 이후)
+
+상세·근거는 `docs/roadmap/round04a-완료노트.md` §8.
+
+- **round04b 프론트** — 슬래시 진입·계획 승인·진행 패널·보고서 렌더·인용칩 호버·재시도 버튼. 착수 전에 백엔드 보강 여부를 정한다: SSE 가 단계 전이·계획 완료·하위질문 실패를 중계하지 않음(지금은 GET 폴링), 진행 카운터(검토 논문·채택 근거) 데이터 없음, 자기점검 강조 장면(다음 검색어·중간 판정) 데이터 없음, 잡 목록 API 없음.
+- **전용 워커 전환** — `celery-research`(`q_research`)·`celery-research-plan`(`q_research_plan`)은 compose 에만 있고 아직 운영에서 안 돈다. 인덱싱이 끝난 뒤, 또는 적재를 pause 해 in-flight 를 비운 뒤 스택 업데이트로 fastapi 의 `RESEARCH_QUEUE`·`RESEARCH_PLAN_QUEUE` 와 함께 올린다. 시연(10월 초 추정)이 인덱싱 완주보다 먼저라 시연 전 전환 여부를 정해야 한다(`docs/ops/bulk_ingest_runbook.md` §8).
+- **전환 전에는 실행 1건 상한, 전환 뒤에는 상한 없음** — 전환 전(`q_llm`)에는 실행이 적재 요약·마무리 슬롯을 쥐어 적재 아이템을 stale 복구로 밀 수 있어(논문 본문 청크가 초록으로 덮이는 중복 체인, `docs/ops/recurring-gotchas.md` 16번) approve·retry 가 실행 슬롯 1개를 넘으면 429 다. 그래도 적재가 running 인 동안에는 운영 딥리서치를 돌리지 않는다 — pause 하고 in-flight 0 을 본 뒤 돌린다. 전환 뒤에는 실행이 직렬이라 두 번째 잡이 `approved` 로 최대 25분 기다린다. 상한·429·큐 순번 표시는 화면과 함께 정한다.
+- **[적재] 복구 경로 이중 실행** — 적재 워커를 재생성하면 stale 복구와 브로커 재전달이 둘 다 돌아 논문 본문 청크가 초록 청크로 덮일 수 있다(`docs/ops/recurring-gotchas.md` 16번). 인덱싱이 끝난 뒤 적재 코드에서 고친다 — 그 전까지는 적재를 pause 해 in-flight 를 비운 뒤에만 재생성한다.
+- **대표 논문 요약의 구조적 인용** — 지금은 절의 논문 5편을 한 호출에 넣고 번호별 요약을 받는다. 논문별 호출 또는 발췌 경계 표시, 오배정 비율 실측.
+- **본문 심층 읽기**(spec 의 `deep_read_top_n`) 미구현 — 근거는 청크 발췌뿐.
+- **탐색 중 시간 초과의 부분 체크포인트**, **재시도 시도 구분(attempt)**, **라우터의 서비스·응답 스키마 분리**(표준 반례).
+- **[보안] Redis 무인증 호스트 노출** — 딥리서치 SSE 가 Redis 메시지를 브라우저로 중계한다. `requirepass` 또는 호스트 포트 제거.
 
 ---
 

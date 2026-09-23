@@ -31,6 +31,11 @@ def _unwrap_line(line: str) -> str:
     return m.group(2) if m else line
 
 
+def query_key(text: str) -> str:
+    """검색어 중복 판정 키. "AI 윤리" 와 "ai  윤리" 는 같은 검색을 두 번 돌린다."""
+    return _WS.sub(" ", text.strip()).casefold()
+
+
 def _strip_emphasis(text: str) -> str:
     prev = None
     while prev != text:
@@ -55,7 +60,7 @@ def parse_plan(raw: str, *, limit: int) -> list[str]:
                 log.debug("[planner] 항목으로 해석되지 않은 줄 — %r", line.strip()[:80])
             continue
         text = _strip_emphasis(m.group(1)).strip()
-        key = _WS.sub(" ", text).casefold()
+        key = query_key(text)
         if text and key not in seen:
             seen.add(key)
             items.append(text)

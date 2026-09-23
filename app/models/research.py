@@ -1,11 +1,14 @@
 """research.py — 딥리서치 잡 모델
 
 research_jobs  : 리서치 1건 (질문 1개 = 잡 1개)
-research_steps : 의미 있는 단계 (계획 · 하위질문별 탐색 · 점검 · 종합)
+research_steps : 의미 있는 단계 (계획 · 하위질문별 탐색 · 종합). 자기점검은 그
+                 하위질문의 탐색 행에 접히고 SSE 이벤트로만 따로 나간다.
 
-research_steps 는 진행 패널이자 보고서의 탐색 경로 섹션이다. 초당 갱신되는
-잔이벤트(카운터 등)는 여기 쓰지 않고 Redis pub/sub 으로만 흘린다 — 입자가
-다르고, 보고서에 남을 것과 몇 초 뒤 사라질 것을 한 테이블에 섞으면
+research_steps 는 진행 패널(실행 이력 — 재시도마다 행이 쌓인다)이다. 보고서의
+탐색 경로 정본은 report.trail, 계획 목록은 research_jobs.plan 이다 — 재시도가
+끼면 steps 에는 모든 시도가, trail 에는 그 보고서를 만든 시도만 남는다.
+초당 갱신되는 잔이벤트(카운터 등)는 여기 쓰지 않고 Redis pub/sub 으로만
+흘린다 — 입자가 다르고, 남을 것과 몇 초 뒤 사라질 것을 한 테이블에 섞으면
 보존 정책과 append/update 성격이 충돌한다.
 """
 import uuid
@@ -38,8 +41,13 @@ STATUS_QUEUED = "queued"         # 실패한 잡을 재시도로 다시 큐에 �
 # 비교가 조용히 빗나간다.
 STATUS_CANCELED = "canceled"
 RUNNABLE_STATUSES = (STATUS_APPROVED, STATUS_QUEUED)
+# 끝난 잡. 워커도 API 도 이 상태를 다시 바꾸지 않는다 — 워커의 상태 쓰기가
+# 조건부 UPDATE 인 이유가 이것이다.
+TERMINAL_STATUSES = ("completed", "failed", STATUS_CANCELED)
 
-STEP_KINDS = ("plan", "search", "critique", "synthesize")
+# 워커가 실제로 기록하는 kind 만 둔다. 쓰이지 않는 허용값은 프론트에 영원히
+# 안 도는 분기를 만든다(자기점검은 search 행의 verdict·note 로 남는다).
+STEP_KINDS = ("plan", "search", "synthesize")
 STEP_STATUSES = ("pending", "running", "done", "failed")
 
 
@@ -88,8 +96,9 @@ class ResearchStep(Base):
     detail      = Column(Text)
     status      = Column(String(16), nullable=False, default="pending")
     # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
-    # plan:       {"subquestions": [...]}
-    # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "..."}
+    # plan:       {"subquestions": [...]}                 LLM 원안 (승인본은 job.plan)
+    # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
+    #              "parse_failed": bool, "capped": n}   verdict·note 는 마지막 라운드 값
     # synthesize: {"sections": n}
     # 실패 공통:   {"error": "..."}
     result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))

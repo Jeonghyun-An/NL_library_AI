@@ -123,8 +123,9 @@ def test_nl_library_prompts_exist_and_render():
         title="t", author="a", pub_date=", 2024", summary="s", themes="th")
     assert "전담 독서 도우미" in bc_s and bc_p.get("max_tokens") == 10000
 
-    # 딥리서치 3종 — StrictUndefined 라 변수명이 호출부와 어긋나면
-    # 여기서 안 잡히고 워커 런타임에서야 UndefinedError 로 터진다.
+    # 딥리서치 3종 — StrictUndefined 라 템플릿 변수가 바뀌면 여기서 잡는다.
+    # 호출부 kwargs 쪽 어긋남은 이 리터럴로는 못 잡는다 — critique()·make_plan()·
+    # synthesize() 를 chat 만 대역으로 바꿔 실제로 부르는 테스트가 그쪽을 지킨다.
     rp_s, rp_u, _ = lib.get("research_plan").render(question="청소년 진로상담", limit=6)
     assert "연구 사서" in rp_s and "6" in rp_s and "청소년 진로상담" in rp_u
 

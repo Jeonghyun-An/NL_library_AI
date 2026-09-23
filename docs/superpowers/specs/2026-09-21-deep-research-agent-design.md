@@ -1,7 +1,9 @@
 # 논문 딥리서치 에이전트 설계
 
 작성일: 2026-09-21
-상태: **설계 확정** (구현 미착수)
+상태: **설계 확정** · 백엔드 구현 완료(round04a, 2026-09-23 머지 전 리뷰 반영까지) · 프론트 미착수(round04b)
+
+> 구현이 설계와 달라진 곳은 해당 절 끝에 **구현 시 변경** 으로 덧붙였다. 원래 결정은 지우지 않았다 — 왜 그렇게 설계했는지가 이 문서의 값이다. 구현 시 변경과 코드가 어긋나면 코드가 정본이다(`app/services/research/`·`app/workers/research_tasks.py`·`app/api/research.py`). round04b 는 §2-3·§3-2·§3-3·§4-5 의 구현 시 변경을 계약으로 삼는다.
 
 ## 0. 사용자 요청
 
@@ -98,6 +100,16 @@ LangGraph를 넣으면 상태 스키마·노드 등록·체크포인터라는 �
 
 별도 이벤트 로그 테이블은 만들지 않는다. 유일한 값인 "에이전트가 왜 그렇게 판단했나"는 **자기점검 단계의 판단 근거를 그 step의 `result` JSONB에 남기면** 대부분 해결된다.
 
+> **구현 시 변경 (round04a)**
+>
+> - **step 입자는 18개가 아니라 하위질문당 1행이다.** 워커가 만드는 행은 `plan` 1 + 하위질문마다 `search` 1 + `synthesize` 1 — 기본 파라미터(하위질문 6)에서 8행이다. 재검색 라운드는 새 행을 만들지 않고 같은 `search` 행에 합쳐져 `result.queries` 에 누적된다. `critique` 는 **행으로 기록되지 않는다**(`STEP_KINDS` 허용값에서도 뺐다 — 쓰이지 않는 kind 는 프론트에 영원히 안 도는 분기를 만든다). 자기점검은 `search` 행의 `verdict`·`note` 와 SSE 이벤트(`kind: critique`)로만 나간다.
+> - **판단 근거는 마지막 라운드 것만 남는다.** `search` 행의 `result` 는 `{queries, adopted, verdict, note, parse_failed, capped}` 인데 `verdict`·`note` 는 라운드마다 덮어쓴 값이다. 재검색을 촉발한 중간 판정의 사유는 영속되지 않는다(라이브 SSE 로만 보인다). 라운드 이력을 남기는 것은 이월(완료노트 §8).
+> - **Redis 계층에 흐르는 것은 카운터·부분 토큰이 아니다.** 실제 이벤트는 `search`·`critique`·종료(`done`·`failed`·`canceled`) 셋뿐이다(§3-3 구현 시 변경). step 의 생성·종료와 계획 완료는 Redis 로 중계되지 않는다 — 진행 패널이 단계 전이를 알려면 `GET /api/research/{id}` 를 폴링한다.
+> - **"`research_steps` 가 그대로 탐색 경로 섹션"은 구현과 다르다.** 보고서의 탐색 경로는 종합 시점에 `state.subquestions` 에서 만든 `report.trail` 이다(§4-5). 둘은 재시도가 끼면 서로 다른 역사를 담는다.
+>   - `research_steps` 는 **실행 이력**이다. 재시도(`POST /retry`)는 `max(seq)+1` 부터 이어 쓰고 이전 시도의 행을 지우거나 표시하지 않는다(시도 구분 컬럼 없음). 탐색 도중 실패한 잡을 재시도하면 같은 `subq_idx` 의 `search` 행이 두 벌 남고 1차의 `failed` 행도 섞인다. `plan` 행의 `result.subquestions` 는 **LLM 원안**이고, 사용자가 승인 때 고친 계획은 `research_jobs.plan` 에만 있다.
+>   - `report.trail` 은 **보고서를 만든 그 시도의 탐색**이다. 완료 시점에 동결되고, 계획은 승인본을 따른다. 필드는 `{subquestion, queries, evidence_count, verdict, note, parse_failed, failed, capped}` — step 의 `adopted` 가 여기서는 `evidence_count` 다.
+>   - 그래서 round04b 의 규칙은 이렇게 제안한다: **보고서 화면의 탐색 경로는 `report.trail` 이 정본**, 진행 패널은 `research_steps`, 계획 목록은 `research_jobs.plan`. 진행 패널에서 같은 `(kind, subq_idx)` 행이 여럿이면 `seq` 가 가장 큰 행이 현재 시도다. 시도 경계(`attempt`)를 스키마에 넣을지는 이월.
+
 ### 2-4. 산출물 구조
 
 디비피아 뼈대를 따르되 한 섹션을 더한다.
@@ -114,6 +126,12 @@ LangGraph를 넣으면 상태 스키마·노드 등록·체크포인터라는 �
 **한계 섹션이 차별점이다.** 자기점검을 내부 로직으로만 쓰지 않고 사용자에게 보여준다. "3번 하위질문은 2015년 이후 자료가 없어 결론이 약하다" 같은 문장이 들어간다. 우리 코퍼스는 구멍이 많은데, **숨기면 들키고 드러내면 강점이 된다.** 사서가 심사위원이라면 모른다고 말하는 시스템이 아는 척하는 시스템보다 신뢰를 얻는다.
 
 수록 범위는 **고정 문구로 박지 않는다.** 코퍼스가 계속 자라는 중이므로 실행 시점에 질의해서 넣는다.
+
+> **구현 시 변경 (round04a)** — 표의 근거 데이터 두 줄이 다르다.
+>
+> - `대표 논문 요약` 의 근거는 초록이 아니라 **그 하위질문 검색에서 매칭된 첫 청크의 앞 400자**다. 초록(`library_catalog.abstract`·`[초록]` 청크)은 쓰지 않는다 — `[초록]` 보강 청크는 근거 후보에서 뺐다(§4-3 구현 시 변경). 발췌가 짧아 "무엇을 했고 무엇을 주장하는지 2~3문장"을 모델이 채울 여지가 크다(§4-1 구현 시 변경).
+> - `탐색 경로` 의 근거는 `research_steps` 가 아니라 `report.trail` 이다(§2-3 구현 시 변경).
+> - 서론 섹션은 별도 서술이 없다. 보고서에는 질문(`question`)과 실행 시점 수록 범위(`range`)만 실리고 문장은 화면이 만든다.
 
 ## 3. 아키텍처
 
@@ -133,6 +151,15 @@ LangGraph를 넣으면 상태 스키마·노드 등록·체크포인터라는 �
 **각 단계는 `ResearchState` 를 받아 갱신해 돌려주는 함수다.** Celery·Redis·Milvus 없이 테스트되고, 나중에 다른 런타임으로 옮길 때도 그대로 쓴다. `scripts/recovery/rewrite_milvus_doc_type.py` 가 순수함수/IO를 갈라 Milvus 없이 테스트한 것과 같은 구조다.
 
 재사용: `search()`, `reranker`, `context_expander`, `paper_citation`, `llm_client`, `prompts` 레지스트리, `sse_helpers`. 신규 프롬프트는 계획·점검·종합 3종.
+
+> **구현 시 변경 (round04a)**
+>
+> - 패키지 파일이 넷 더 있다. `scoring.py`(피인용 연차 정규화·점수 혼합, 순수) · `citations.py`(근거 조립·마커 검증·하위질문별 청크 매핑, 순수) · `llm_json.py`(LLM 응답에서 JSON 추출 — 계획·점검·종합 공용) · `relay.py`(Redis pub/sub 발행·구독). 패키지 밖은 `app/models/research.py`·`app/workers/research_tasks.py`(Celery 태스크 3종)·`app/api/research.py`.
+> - `state.py` 는 보고서를 담지 않는다. `synthesize()` 가 반환값으로 넘기고 워커가 `research_jobs.report` 에 바로 쓴다.
+> - 실제로 재사용한 것은 `search()`(내부에서 BGE-M3·리랭커를 쓴다)·`llm_client.chat`·`prompts` 레지스트리·`BookRepository.get_by_cnts_ids` 다. **`context_expander`·`paper_citation`·`sse_helpers` 는 쓰지 않는다** — 탐색은 `generate_answer=False` 로 검색 결과만 받고(확장·생성은 하위질문마다 버려질 비용이다), SSE 는 `api/research.py` 가 직접 만든다.
+> - 계획·실행 태스크는 설정값 `RESEARCH_QUEUE`(`core/config.py`, 기본 `q_llm`)의 큐로 간다. 계획만 `RESEARCH_PLAN_QUEUE` 로 따로 보낼 수 있다(비우면 `RESEARCH_QUEUE`). 운영 compose 는 전용 워커 `celery-research`(`-Q q_research`·GPU·모델 캐시 마운트·concurrency 1), 계획 전용 경량 워커 `celery-research-plan`(`-Q q_research_plan`·GPU 없음·concurrency 2), fastapi 의 `RESEARCH_QUEUE: q_research`·`RESEARCH_PLAN_QUEUE: q_research_plan` 을 함께 둔다 — 적재 요약과 같은 `q_llm` FIFO 에 있으면 계획 요청이 요약 수십 건 뒤에 선다. 전환 순서는 완료노트 §5, 전환 전 시연 구간의 적재 pause·워밍업은 `bulk_ingest_runbook.md` §8.
+>   - **concurrency 1 은 실행을 직렬로 만든다.** 한 잡이 도는 동안 두 번째 잡은 승인 뒤 `approved` 로 최대 `JOB_DEADLINE`(25분) 기다리고 SSE 는 ping 만 보낸다. 계획까지 같은 슬롯에 두면 새 질문이 `created` 로 멈춰 계획 step 조차 생기지 않으므로 계획 큐를 나눴다. 전환 뒤에는 동시 실행 상한·429·큐 순번 표시가 없다(완료노트 §8).
+>   - **전환 전 과도기(`RESEARCH_QUEUE` 가 적재 큐, 기본값 `q_llm`)에는 실행을 한 번에 한 잡으로 묶는다.** 실행이 적재 요약·마무리와 같은 `celery-llm` 슬롯을 잡마다 최대 25분 쥐므로, 여럿이 쥐면 슬롯을 기다리는 적재 아이템이 단계 타임아웃을 넘겨 stale 복구되고 중복 체인이 논문 본문 청크를 초록으로 덮을 수 있다(`recurring-gotchas.md` 16번). approve·retry 는 `approved`·`queued`·`running` 잡이 이미 있으면 429 다. 상한은 안전장치이고, 적재가 `running` 인 동안 운영 딥리서치를 돌리지 않는 것이 규칙이다(`bulk_ingest_runbook.md` §8).
 
 ### 3-2. 데이터 모델
 
@@ -165,6 +192,34 @@ research_steps
 
 `updated_at` 기반 stale 감지로 워커 사망을 복구한다(`ingest_job_items` 와 동일).
 
+> **구현 시 변경 (round04a)** — 정본은 `app/models/research.py` 와 `0005_research_jobs`.
+>
+> ```
+> research_jobs (추가·변경분)
+>   status        created → planning → awaiting_approval → approved → running
+>                 → completed | failed | canceled
+>                 failed → queued (POST /retry) → running
+>                 created·planning·awaiting_approval·approved·queued·running → canceled (POST /cancel)
+>   stage         created | planned | explored | synthesized   NOT NULL DEFAULT 'created'
+>                 "어디까지 끝냈는가". status 와 분리해야 실패 뒤 어디서 다시 할지 안다
+>   state_snapshot JSONB  탐색이 끝난 시점의 ResearchState — 종합만 재실행하는 체크포인트
+>   last_error    Text    실패 사유 (GET·SSE failed 이벤트로 나간다)
+>   created_by    String  컬럼만 있다 — 아무도 채우지 않는다
+>
+> research_steps (변경분)
+>   kind          plan | search | synthesize (critique 는 쓰이지 않아 허용값에서 뺐다)
+>   status        running | done | failed — 행을 running 으로 만든다 (pending 미사용)
+>   result        plan:       {"subquestions": [...]}              LLM 원안
+>                 search:     {"queries", "adopted", "verdict", "note", "parse_failed", "capped"}
+>                 synthesize: {"sections": n}
+>                 실패 공통:   {"error": "..."}
+>   UNIQUE (job_id, seq) · 부분 인덱스 ix_research_steps_inflight (updated_at) WHERE status='running'
+> ```
+>
+> - `approved`·`queued` 가 추가됐다. 워커는 이 둘만 선점한다(`RUNNABLE_STATUSES`) — 승인·재시도가 다른 값을 쓰면 워커가 그 잡을 영원히 건너뛴다.
+> - 종료 상태는 `completed`·`failed`·`canceled` 다. 워커의 모든 상태 쓰기는 기대한 이전 상태를 `WHERE` 에 건 **조건부 UPDATE** 다 — 취소는 API 프로세스가 찍으므로 조건 없이 쓰면 워커의 마지막 쓰기가 취소를 덮어 취소한 잡이 `completed` 로 되살아난다(머지 전 리뷰에서 잡은 high 결함).
+> - **워커 사망은 "복구"하지 않고 "회수"만 한다.** beat 10분마다 `reap_stale_research` 가 `coalesce(started_at, created_at)` 기준 45분(하드 리밋 35분보다 길게)을 넘긴 `planning`·`running` 잡을 `failed`(`stale — 워커 응답 없음`)로 떨어뜨리고, 그 잡의 `running` step 도 같은 문장에서 닫는다. step 은 자기 `updated_at` 45분 기준으로도 회수된다. 되돌려 재개하는 코드는 없다 — 다시 돌리는 것은 사용자의 `POST /retry` 다(§6 구현 시 변경). `ingest_job_items` 처럼 자동 재시도 대상이 되지도 않는다.
+
 ### 3-3. API
 
 ```
@@ -175,6 +230,34 @@ GET  /api/research/{id}           최종 보고서 조회
 ```
 
 진행 중계 채널은 Redis pub/sub `research:{job_id}`. 워커가 publish, SSE 엔드포인트가 subscribe.
+
+> **구현 시 변경 (round04a)** — 엔드포인트가 6개다. 정본은 `app/api/research.py`.
+>
+> | 메서드 · 경로 | 받는 상태 | 응답 · 오류 |
+> |---|---|---|
+> | `POST /api/research` `{question, params?}` | — | `{job_id, status:"created"}` · 모르는 키·범위 밖 params 422 · 브로커 전달 실패 503(잡은 `failed`) |
+> | `POST /api/research/{id}/approve` `{plan?}` | `awaiting_approval` | `{job_id, status:"approved", plan}` · 본문 생략 가능(제안대로). 수정 계획은 항목 2~300자·`max_subquestions` 이하·중복(공백·대소문자 무시) 금지, 어기면 422 · 그 밖의 상태 409 · 과도기 구성(§3-1)에서 다른 잡이 실행 중·대기 중이면 429(상태 그대로 — 나중에 다시 승인한다) · 브로커 실패 시 `awaiting_approval` 로 되돌리고 503 |
+> | `POST /api/research/{id}/retry` | `failed` 이고 `plan` 이 있음 | `{job_id, status:"queued", stage}` · `stage`·`state_snapshot` 을 건드리지 않는다 — `stage=explored` 면 워커가 탐색을 건너뛰고 종합부터 한다 · 계획 단계에서 실패한 잡(plan 없음) 409 → 새 잡을 만든다 · 과도기 구성(§3-1)에서 다른 잡이 실행 중·대기 중이면 429(`failed`·`last_error` 그대로) |
+> | `POST /api/research/{id}/cancel` | `created`·`planning`·`awaiting_approval`·`approved`·`queued`·`running` | `{job_id, status:"canceled"}` · 끝난 잡 409, 없는 잡 404. 진행 중인 LLM 호출은 끊지 않는다 — 탐색은 다음 하위질문 시작 전, 종합은 다음 절 호출 전에 멈춘다 |
+> | `GET /api/research/{id}` | — | `{job_id, question, status, stage, plan, report, last_error, steps:[{seq, kind, subq_idx, title, detail, status, result}]}` |
+> | `GET /api/research/{id}/stream` | — | SSE (아래) |
+>
+> `{id}` 는 대문자·하이픈 없는 UUID 표기도 받아 표준형으로 바꾼다(워커가 표준형 채널에 publish 하므로). 형식이 틀리면 422. 잡 목록 API 는 없다 — 다시 열려면 `job_id` 를 보관해야 한다(이월).
+>
+> **SSE 이벤트 계약** (`data: {JSON}` 한 줄씩):
+>
+> | kind | 페이로드 | 언제 |
+> |---|---|---|
+> | `snapshot` | `steps: [{seq, kind, subq_idx, title, detail, status}]` — **`result` 는 없다** | 접속 직후 1회 |
+> | `search` | `subq_idx, query, found` — `found` 는 **청크 수**(논문 수 아님) | 검색 라운드마다 |
+> | `critique` | `subq_idx, verdict, note, adopted, parse_failed, capped` — `adopted` 는 그 하위질문의 근거 논문 수 | 자기점검 라운드마다 |
+> | `done` | `status:"completed"` | 종료 — 스트림이 닫힌다 |
+> | `failed` | `status:"failed", error?` | 종료 |
+> | `canceled` | `status:"canceled"` | 종료 |
+>
+> - 종료 이벤트는 워커가 흘리든, 끝난 잡에 붙어 엔드포인트가 DB 를 보고 만들든 같은 모양이다(`relay.terminal_event`).
+> - 유휴 15초마다 `: ping` 주석 프레임. 그때 DB 를 확인해 잡이 이미 끝났으면(회수기가 끝낸 잡 등) 종료 이벤트를 내고 닫는다.
+> - **중계하지 않는 것**: step 생성·종료(보고서 종합 시작 포함), 계획 완료(`awaiting_approval` 은 종료 상태가 아니라 스트림은 ping 만 보낸다), 하위질문 실패, 다음 검색어·재검색 여부. round04b 는 이것들을 `GET` 폴링으로 얻는다. 중계 추가는 이월.
 
 ### 3-4. 파이프라인
 
@@ -197,6 +280,27 @@ GET  /api/research/{id}           최종 보고서 조회
 
 **시연 직전에 값만 바꿔 짧게 돌릴 수 있어야 한다.** `ingest_jobs.params` 가 이미 그 패턴이다.
 
+> **구현 시 변경 (round04a)**
+>
+> - **`deep_read_top_n` 은 없다 — "유망 논문은 본문까지 읽는다"는 구현하지 않았다.** 위 예시 JSON 을 그대로 보내면 `422 알 수 없는 파라미터: deep_read_top_n` 이고 잡이 만들어지지 않는다. 근거로 쓰는 것은 청크 검색 결과뿐이다 — 점검(critic)은 논문당 매칭 청크 앞 200자(최대 20편), 종합은 논문당 매칭 청크 앞 400자(절당 5편)를 받는다. 본문 심층 읽기는 이월(대회 이후).
+> - 실제 파라미터(`state.DEFAULT_PARAMS`). 모르는 키·bool·NaN·범위 밖 값은 422:
+>
+>   | 키 | 기본값 | 허용 범위 | 뜻 |
+>   |---|---|---|---|
+>   | `max_subquestions` | 6 | 1~12 | 계획 하위질문 상한(승인 때 고친 계획에도 적용) |
+>   | `max_recheck` | 3 | 0~10 | 하위질문당 재검색 상한 |
+>   | `max_evidence` | 60 | 1~200 | 잡 전체 고유 논문 상한 |
+>   | `per_subq_top_k` | 12 | 1~50 | 검색 1회에서 받을 청크 수 |
+>   | `chunks_per_evidence` | 2 | 1~5 | 논문·하위질문당 남길 청크(호버 1/2) |
+>   | `citation_weight` | 0.2 | 0.0~1.0 | 연간 피인용 가중 |
+>   | `min_evidence_per_subq` | 5 | 0~50 | critic 에게 주는 충분성 기준 |
+>
+>   리허설 예: `{"max_subquestions": 3, "max_recheck": 1, "per_subq_top_k": 8}`
+>
+> - 탐색 검색은 도서 검색용 전처리를 끈다. 쿼리 재작성(`use_rewrite=False`)은 고유명사를 떨어뜨리고, 메타 필터(`use_metadata_filter=False`)는 하위질문의 사건 연도("2006년 도서관법 개정의 영향")를 발행연도 조건으로 바꿔 그 뒤 연구를 전부 뺀다. 둘 다 탐색 경로에 기록되지 않아 사후 진단이 안 된다. 메타청크(`chunk_idx=-1`)와 원문 대목이 아닌 보강 청크는 리랭크 전에 거른다(§4-3 구현 시 변경).
+> - 근거는 하위질문 안 순위로 정렬한다. 검색 라운드마다 새로 보탠 근거의 1위는 앞자리를 보장하고 나머지는 `rank_score` 순이다 — 점수만으로 정렬하면 자기점검이 "시기 편중" 같은 이유로 찾은 보완 근거가 첫 검색 상위보다 점수가 낮아 절(앞 5편)에서 잘린다. 이미 시도한 검색어(공백·대소문자 무시)는 재검색하지 않고, `max_evidence` 에 닿으면 재검색을 멈춘다(상한 때문에 못 실은 수는 `capped` 로 한계에 따로 적는다).
+> - 실행 시간: 기본 파라미터(5~7분 설계값)는 **아직 재지 않았다**. 리허설 축소값(하위질문 3·재검색 1)은 34~89초(완료노트 §2). 잡 본문에는 자체 상한 25분(`JOB_DEADLINE`, 소프트 리밋 30분·하드 35분보다 짧게)이 있다 — 넘기면 `failed`(`시간 상한 초과`). 파라미터 조합이 상한 안에 드는지는 생성 시점에 검사하지 않는다.
+
 ## 4. 근거·인용 구조
 
 가장 어려운 건 **LLM이 인용을 지어내지 않게 하는 것**이다. 근거 표기가 틀린 리서치 도구는 안 쓰느니만 못하다. 인용을 두 종류로 나눈다.
@@ -207,6 +311,13 @@ GET  /api/research/{id}           최종 보고서 조회
 
 여기에 하나 더 건다 — **논문 제목·저자·연도는 모델 출력에서 가져오지 않고 DB 레코드에서 직접 렌더한다.** 모델은 요약 본문만 쓴다. 라벨을 모델이 쓰게 두면 언젠가 없는 논문을 만들어낸다.
 
+> **구현 시 변경 (round04a) — 구조적 인용은 절반만 성립한다.**
+>
+> - **구조로 정해지는 것**: 절 구성과 칩. 종합은 하위질문 하나당 LLM 호출 하나이고, 소제목은 하위질문 그대로, 실리는 논문은 그 하위질문 근거의 순위 앞 5편(`PAPERS_PER_SECTION`)을 코드가 정한다. 불릿의 칩(`evidence: ["E12"]`)과 서지도 코드가 붙인다. 모델에게 절·논문 선택을 맡겼던 첫 구현은 프롬프트 예시의 개수를 베껴 절 1개·논문 1편만 냈다(`b6360b8` 에서 수정, `recurring-gotchas.md` 15번).
+> - **구조로 정해지지 않는 것**: 요약 문장이 그 논문 내용인가. 요약은 논문별 호출이 아니라 **절의 논문 최대 5편 발췌를 한 프롬프트에 넣고 `{"summaries": {"E1": "…", "E3": "…"}}` 로 번호별 요약을 받는다.** 어느 요약을 어느 번호에 쓸지는 모델이 발췌 머리의 `[E#]` 를 보고 배정한다 — 추론이다. 모델이 E1 요약에 E2 내용을 섞어 써도 잡는 검사가 없다. 마커 검증(§4-2)은 도입·향후 과제에만 걸리고, 요약은 `strip_markers` 로 마커만 걷어낸다. 발췌는 공백을 접지 않아 표 청크의 빈 줄이 항목 안에 남는다(점검 쪽은 접는다).
+> - **논문별 호출로 가지 않은 이유**: 호출 수가 절당 최대 5배다(기본 파라미터 하위질문 6개면 6회 → 최대 30회). 종합 LLM(gemma)은 대량 인덱싱의 요약 단계와 같은 서버를 나눠 쓰고, 종합 구간은 절 3개에 이미 약 17초였다(완료노트 §2). 라이브 드라이런에서 요약은 12/12 채워졌지만 **오배정 여부는 재지 않았다.**
+> - 이월: 논문별 호출(병렬) 또는 최소한 발췌 경계 표시·공백 접기, 그리고 오배정 비율 실측. 그 전까지 "요약도 구조로 정해진다"고 설명하지 않는다.
+
 ### 4-2. 마커 인용 — 검증하는 쪽
 
 `도입 문단`과 `향후 연구 방향`은 여러 논문을 가로지르므로 구조로 못 정한다. 프롬프트에 근거를 `E1`…`En` 으로 주고 모델이 `[E3]` 로 달게 한 뒤 **후처리에서 전수 검증한다.**
@@ -214,6 +325,12 @@ GET  /api/research/{id}           최종 보고서 조회
 - 해석 안 되는 마커 → 칩을 제거한다 (조용히 통과시키지 않는다)
 - 마커 없는 문장 → 남기되 개수를 센다
 - 임계 초과 시 **한계 섹션에 "근거 표기가 없는 서술 N건"으로 기록**
+
+> **구현 시 변경 (round04a)** — 정본은 `citations.bind_markers`.
+>
+> - **검증 집합은 그 절에 준 번호뿐이다.** 근거 번호가 E1…En 으로 연속 발급되므로 전역 집합으로 검증하면 모델이 지어낸 작은 번호는 거의 다 통과한다. 절에 주지 않은 번호를 가리킨 표기는 지우고 **1건부터** 한계에 "그 절의 근거에 없는 번호를 가리킨 인용 표기 N건을 본문에서 제거했다"로 적는다.
+> - 모델은 `[E3]` 한 가지 문법을 지키지 않는다. 괄호 하나를 통째로 해석해 묶음(`[E1, E2]`)·범위(`[E3-E5]`, 사이 번호는 준 것만)·전각 괄호·소문자·0패딩(`E01`→`E1`)을 읽고, 유효한 번호만 표준형 `[E#]` 으로 다시 쓴다. 인용처럼 생겼지만 읽을 수 없는 표기(`[E1 참조]`)는 지우고 따로 센다("해석할 수 없는 인용 표기 N건"). `[표 1]`·`[ICE 2019]` 는 인용으로 보지 않는다.
+> - 마커 없는 문장은 3건부터 보고한다(연결 문장일 수 있어 관용). 대표 논문 요약에 모델이 단 마커는 검증 없이 나가지 않도록 전부 걷어낸다(`strip_markers`) — 그 자리의 인용은 칩이 이미 가진다.
 
 ### 4-3. 근거 단위
 
@@ -227,6 +344,14 @@ Evidence {
 ```
 
 **칩 호버에 초록이 아니라 `chunks[].text` 를 띄운다.** 디비피아는 초록을 보여주지만 우리는 `book_sections` 에 본문이 있으므로 **그 문장의 실제 출처 대목**을 쪽수와 함께 보여준다. 근거가 여럿이면 `1/2` 페이지네이션.
+
+> **구현 시 변경 (round04a)**
+>
+> - `chunks[]` 는 하위질문마다 `chunks_per_evidence`(기본 2)개다. 한 논문이 여러 하위질문에서 근거가 되면 번호(E#)는 하나로 재사용하고, `Evidence.chunks` 는 각 하위질문에서 매칭된 청크의 **합집합**이 된다. 그래서 보고서의 절마다 `evidence_chunks: {"E12": [chunk_id, …]}` 를 둔다 — 호버는 이것으로 그 절의 대목을 고른다. 없으면 한 하위질문의 대목이 다른 절 호버·요약·점검 발췌에 쓰인다.
+> - 점수도 하위질문마다 다르다 — 같은 청크라도 검색어가 달라 리랭크 값이 다르다. 절마다 `chunk_scores: {chunk_id: score}`(그 절 하위질문의 점수)를 두고 **호버는 이 값을 유사도로 띄운다.** `evidence.chunks[].score` 는 그 청크를 매칭한 하위질문 중 최고값이다. 재검색의 대목 교체도 그 하위질문의 점수로 비교한다(`SubQuestion.chunk_scores`) — 앞 하위질문의 점수로 비교하면 더 잘 맞는 대목이 밀려난다.
+> - `evidence.chunks` 에는 지금 어느 절이든 가리키는 청크만 점수순으로 싣는다. 재검색이 갈아끼운 대목은 빠진다 — 삽입 순서대로 실으면 어느 절도 쓰지 않은 약한 대목이 `chunks[0]` 에 온다. 매핑이 없는 옛 스냅샷에서 재개한 보고서는 전부 싣는다.
+> - `score` 는 리랭크 생값(없으면 RRF)이다. 순위는 피인용을 얹은 `rank_score` 로 매기고 이 값은 보고서에 싣지 않는다 — 혼합값은 1.0 을 넘어 유사도로 그리면 141% 가 나온다.
+> - **근거 후보에서 빼는 청크**: 메타청크(`chunk_idx=-1`, "제목: … | 초록: …" 서지 덩어리)와, 쪽수 0 이면서 라벨이 `[초록]`·`[키워드]`·`[표 설명]`·`[그림 설명]` 인 보강 청크. 보강 청크는 적재가 논문 뒤에 붙인 것으로 `[표 설명]`·`[그림 설명]` 은 LLM·VLM 이 쓴 문장이고 `[키워드]` 는 LLM 생성일 수 있다 — 그대로 두면 칩이 모델이 쓴 문장을 "p.0" 원문 대목처럼 띄운다. `[표]` 청크(추출 본문의 표 원문)는 수치 근거라 남긴다.
 
 `원문 보기` 는 UCI·DOI가 없으므로 **우리 쪽 원본 PDF** 로 보낸다.
 
@@ -269,6 +394,8 @@ MinIO 원본이 없는 논문이 있으면 인용칩을 눌렀을 때 빈다. �
 
 **연간 피인용(`kci_citations / 경과연수`)으로 정규화한다.** 최종 점수는 리랭킹 점수를 주로 하고 정규화된 영향력을 보조 가중으로 얹는다. 가중치는 `params.citation_weight`.
 
+> **구현 시 변경 (round04a)** — 설계대로 구현했다(`scoring.py`, `explorer.rank_hits`). 혼합값은 `rank_score` 로 따로 두고 순위에만 쓴다. `grade` 는 서지(`meta`)로 싣기만 하고 순위에는 쓰지 않는다. 하위질문 안의 근거 순서는 이 점수에 "라운드별 1위 앞자리 보장"을 더한 것이다(§3-4 구현 시 변경).
+
 **화면에는 원본 값(`피인용 41회`)을 그대로 보여준다.** 정규화는 순위에만 쓴다 — 사용자가 검증할 수 있어야 한다.
 
 `grade`(KCI 등재 구분)도 보조 신호로 쓸 수 있다.
@@ -287,12 +414,46 @@ MinIO 원본이 없는 논문이 있으면 인용칩을 눌렀을 때 빈다. �
   "limitations": [ "..." ] }
 ```
 
+> **구현 시 변경 (round04a)** — 실제로 나가는 모양(`synthesizer.assemble_report`). `question`·`trail`·`sections[].evidence_chunks`·`sections[].chunk_scores` 가 더 있다.
+>
+> ```json
+> { "question": "공공도서관 서비스 품질 평가는 어떻게 연구되어 왔는가",
+>   "range": { "from": "2002", "to": "2026", "n_papers": 72054 },
+>   "sections": [
+>     { "heading": "하위질문 원문 그대로",
+>       "intro": "… [E1] … [E3]",
+>       "papers": [ { "cnts_id": "KCI_FI…", "summary": "마커 없는 2~3문장", "evidence": ["E1"] } ],
+>       "future": [ { "text": "… [E3]", "evidence": ["E3"] } ],
+>       "evidence_chunks": { "E1": ["KCI_FI…__0012"] },
+>       "chunk_scores": { "KCI_FI…__0012": 0.83 } } ],
+>   "evidence": { "E1": { "cnts_id": "KCI_FI…",
+>       "meta": { "title", "personal_author", "series_title", "vol_issue",
+>                 "pub_date", "kci_citations", "grade" },
+>       "chunks": [ { "chunk_id", "text", "page_start", "page_end", "score" } ] } },
+>   "trail": [ { "subquestion", "queries": ["…"], "evidence_count": 5,
+>                "verdict": "sufficient|insufficient|pending", "note": "…",
+>                "parse_failed": false, "failed": false, "capped": 0 } ],
+>   "limitations": [ "…" ] }
+> ```
+>
+> - 절은 **근거가 1편 이상인 하위질문**마다 하나, 계획 순서대로다. 근거 0편인 하위질문은 절 없이 한계에만 적힌다. 탐색이 도중에 오류로 끊긴 하위질문이라도 그 전에 모은 근거가 있으면 절을 만든다.
+> - 서술을 끝내 받지 못한 절은 `intro`·`future` 가 비고 논문 목록만 남는다(한계에 "서술을 생성하지 못한 절 N개"). 요약을 빠뜨린 논문은 `summary: ""` 로 싣는다(한계에 "요약을 생성하지 못한 논문 N편").
+> - `trail` 은 보고서 화면의 탐색 경로 정본이다(§2-3 구현 시 변경). `verdict` 가 `sufficient` 여도 `parse_failed: true` 면 모델이 충분하다고 한 것이 아니라 판정을 받지 못한 것이다. `failed` 는 탐색 오류, `capped` 는 `max_evidence` 상한 때문에 싣지 못한 후보 수다.
+> - `limitations` 는 사용자에게 보일 문장 배열이다 — 프론트가 가공하지 않고 그대로 싣는다.
+
 ## 5. 화면
 
 - **진입**: 논문 검색창에서 `/deep-research <질문>`. 진입장벽이 낮고 "같은 검색창인데 더 깊은 모드"라는 서사가 산다.
 - **계획 승인**: 하위질문 목록 + `수정` / `승인 및 진행`
 - **진행 패널**: 단계 타임라인 + 실시간 카운터(검토한 논문 · 채택 근거 · 재검색). **자기점검이 근거 부족을 판정하고 검색어를 바꾸는 순간을 명시적으로 강조한다** — 이게 "검색 도구"와 "판단하는 에이전트"를 가르는 장면이다.
 - **보고서**: 섹션별 렌더 + 인용칩 + 호버 팝업
+
+> **구현 시 변경 (round04a) — 백엔드가 지금 주는 데이터로 이 화면을 만들 때의 공백.** round04b 착수 전에 보강할지, 화면을 맞출지 정한다(완료노트 §8).
+>
+> - **실시간 카운터**: "검토한 논문"에 쓸 값이 없다. `search` 이벤트의 `found` 는 청크 수이고 어디에도 영속되지 않는다. "채택 근거"의 `critique.adopted` 는 하위질문별 값이라 합치면 재사용 근거를 중복으로 센다(잡 전체 고유 수는 내보내지 않는다). "재검색" 횟수는 `search` 이벤트를 `subq_idx` 별로 세어 추론해야 한다.
+> - **자기점검 강조 장면**: `critique` 이벤트에 다음 검색어·재검색 여부가 없다 — "검색어를 바꾸는 순간"은 뒤이은 `search` 이벤트의 `query` 로 추론한다. 중간 라운드의 판정 사유는 라이브에서만 보이고 재접속·완료 후에는 사라진다(§2-3 구현 시 변경). 끝난 잡을 여는 시연 방식에서는 이 장면을 재생할 데이터가 없다.
+> - **단계 타임라인**: step 전이·계획 완료·보고서 종합 시작이 중계되지 않고 `snapshot` 에 `result` 가 없다 — 타임라인과 승인 화면은 `GET` 폴링으로 구동한다(§3-3 구현 시 변경).
+> - **재시도 UI 가 필요하다**: 종합 실패·시간 초과·워커 사망 모두 자동 재개가 없다. 사용자가 `POST /retry` 를 눌러야 다시 돈다(§6 구현 시 변경).
 
 ## 6. 실패 처리
 
@@ -309,6 +470,27 @@ MinIO 원본이 없는 논문이 있으면 인용칩을 눌렀을 때 빈다. �
 
 종합만 재실행할 수 있는 것이 `stage`/`status` 분리의 값이다. 5분 탐색을 다시 돌리지 않는다.
 
+> **구현 시 변경 (round04a, 머지 전 리뷰 반영 후 실제 동작)** — **자동 재개는 없다. 다시 돌리는 경로는 `POST /api/research/{id}/retry` 하나다.** 재시도는 `stage` 를 보고 이어받는다: `explored` 면 스냅샷에서 종합만, 그 전이면 탐색부터 전부.
+>
+> | 상황 | 실제 처리 |
+> |---|---|
+> | 계획 수립 LLM 실패 | plan step `failed`, 잡 `failed`(`last_error`), SSE `failed`. 계획이 없어 retry 는 409 — 새 잡을 만든다 |
+> | 하위질문 검색 0편 | 실패 아님. 한계에 "…에 대해서는 근거를 찾지 못했다 — {critic 사유}" |
+> | 재검색 상한까지 부족 | 진행. 한계에 "…는 근거 N편으로 결론이 약하다" |
+> | `max_evidence` 상한에 막힘 | 진행. 재검색을 멈추고 한계에 "근거 상한(N편)에 닿아 … M편을 싣지 못했다" — "근거 없음"(코퍼스 빈틈)과 구분한다 |
+> | 자기점검 판정 실패(응답 해석 실패·LLM 전송 오류) | 하위질문은 모은 근거로 진행(`parse_failed`). 한계에 "자동 점검을 완료하지 못한 하위질문 N건" |
+> | 하위질문 탐색 예외(Milvus·DB 등) | 세션을 롤백하고 그 search step 만 `failed`, 나머지 하위질문은 계속. 한계에 "…는 탐색 중 오류로 확인하지 못했다"(모은 근거가 있으면 그 근거로 절을 쓰고 "끝까지 확인하지 못했다") |
+> | 모든 하위질문이 오류로 실패하고 근거 0편 | 잡 `failed`("모든 하위질문 탐색이 오류로 실패했다"). 체크포인트를 남기지 않는다 — 남기면 retry 가 빈 스냅샷으로 종합만 해 빈 보고서를 `completed` 로 저장한다 |
+> | 종합 LLM 실패 | **절 단위로 1회 재시도**(전송 오류·JSON 해석 실패·서술 없는 응답 모두). 그래도 실패한 절은 논문 목록만 싣고 한계에 "서술을 생성하지 못한 절 N개" — 다른 절은 버리지 않는다. **모든 절이 실패하면** 잡 `failed`, `stage=explored`·`state_snapshot` 유지 → retry 가 종합부터 |
+> | 취소 | 워커는 다음 하위질문 시작 전·종합 전·절마다 LLM 호출 직전에 확인하고 멈춘다. 진행 중인 LLM 호출은 끊지 않는다. 워커의 상태 쓰기는 전부 조건부라 `canceled` 가 뒤집히지 않는다 |
+> | 시간 상한 | 잡 본문 자체 상한 25분(`JOB_DEADLINE`). 넘기면 잡 `failed`(`시간 상한 초과 — 워커를 회수했다`)·열린 step `failed`·SSE `failed`. `stage` 는 그대로라 종합에서 넘겼으면 retry 가 종합부터, 탐색 중이었으면 탐색부터 다시 돈다(하위질문 단위 체크포인트 없음 — 같은 파라미터면 같은 초과를 반복할 수 있다). Celery 소프트 리밋(30분)은 백스톱 |
+> | 워커 사망 | 회수만 한다 — §3-2 구현 시 변경(45분 뒤 `failed`). 복구는 retry |
+> | 준비 구간 예외(스냅샷 복원·수록 범위 조회·step 기록) | 새 세션으로 잡 `failed`·열린 step 정리·SSE `failed` — `running` 에 묶여 회수기를 기다리지 않는다 |
+> | 작업 큐(Redis 브로커) 전달 실패 | 생성은 잡 `failed` + 503, 승인은 `awaiting_approval` 로·재시도는 `failed` 로 되돌리고 503 |
+> | 진행 중계(Redis publish) 실패·무응답 | 중계만 포기한다(소켓 타임아웃 2초). 리서치는 계속 |
+>
+> "Milvus·DB 오류 → 해당 step만 `failed`" 는 세션 롤백을 넣은 뒤에야 성립했다 — 롤백 없이 기록을 시도하면 깨진 트랜잭션에서 다시 터져 태스크 전체가 죽었다. 재개 경로는 세 구간(종합 실패가 `stage=explored`·스냅샷을 남김 → `POST /retry` 가 그대로 두고 `queued` 로 → 워커가 탐색 없이 종합만)을 단위 테스트로 덮었지만 **라이브에서는 아직 한 번도 돌지 않았다**(완료노트 §8).
+
 ## 7. 테스트 전략
 
 LLM과 Milvus는 mock하고 순수 함수를 촘촘히 덮는다.
@@ -320,6 +502,8 @@ LLM과 Milvus는 mock하고 순수 함수를 촘촘히 덮는다.
 - 근거 조립 — 청크 여러 개가 한 evidence로 묶이고 쪽수가 맞는지
 
 **mock 입력의 타입을 실제와 맞춘다.** round03에서 임베딩을 `list[float]` 로 mock해 테스트가 통과했는데 운영에서 `numpy.float32` 로 터진 일이 있다(`docs/ops/recurring-gotchas.md`).
+
+> **구현 시 변경 (round04a)** — 위 다섯 항목 외에 머지 전 리뷰에서 API(6개 엔드포인트, 스트림 포함)·워커 분기(취소·실패·시간 초과·회수·계획)·중계·실제 검색 경로(`explore` → `pipeline.search`, 대역은 Milvus·리랭커만) 테스트를 붙였다. 비동기 테스트는 `asyncio.run(...)` 관례 — `pytest-asyncio` 없이 `@pytest.mark.asyncio` 를 쓰면 코루틴이 실행되지 않고 통과로 처리된다. 라이브 모델에서만 드러나는 실패(구성 베끼기, `recurring-gotchas.md` 15번)는 단위 테스트가 못 잡는다 — 라이브 검증 스크립트가 구성(입력 대비 출력 개수)을 본다.
 
 ## 8. 병행 운영 작업 — 시연 분야 우선 인덱싱
 
@@ -357,6 +541,8 @@ LLM과 Milvus는 mock하고 순수 함수를 촘촘히 덮는다.
 이 spec 하나가 계획 하나로는 크다. 백엔드(패키지 6모듈 · 테이블 2 · API 4 · Celery · Redis 중계)와 프론트(슬래시 진입 · 계획 승인 · 진행 패널 · 보고서 렌더 · 인용칩 호버)가 각각 독립적으로 완결된다.
 
 **백엔드를 먼저 세우고 프론트를 그 위에 얹는 2단계**를 권한다. 백엔드가 서면 `curl` 로 SSE와 보고서 JSON을 확인할 수 있어 프론트 작업의 기준이 생긴다. 시연 일정이 빠듯하면 프론트 단계에서 진행 패널과 인용칩을 우선하고 계획 승인 UI를 뒤로 미룰 수 있다 — API는 이미 있으니 자동 승인으로 돌리면 된다.
+
+> **구현 시 변경 (round04a)** — 분할대로 round04a(백엔드)·round04b(프론트)로 갔다. 백엔드는 패키지 10모듈 · 테이블 2 · **API 6**(생성·승인·재시도·취소·조회·SSE) · Celery 태스크 3(계획·실행·정체 회수) · Redis 중계다. 프론트가 기준으로 삼을 계약은 §2-3·§3-2·§3-3·§4-5 의 구현 시 변경이고, 화면을 만들 때의 데이터 공백은 §5 구현 시 변경에 있다.
 
 ## 11. 미확정 · 확인 필요
 

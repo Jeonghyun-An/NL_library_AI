@@ -1,9 +1,16 @@
+import asyncio
 import logging
 
+import httpx
+
+from services.research import critic
 from services.research.critic import (
-    _EXCERPT_LEN, _MAX_LISTED, Verdict, format_evidence_list, parse_verdict, should_recheck,
+    _EXCERPT_LEN, _MAX_LISTED, _PARSE_FAILED_NOTE, Verdict, format_evidence_list,
+    parse_verdict, should_recheck,
 )
-from services.research.state import Chunk, Evidence, LLM_VERDICTS, SubQuestion, VERDICTS
+from services.research.state import (
+    Chunk, Evidence, LLM_VERDICTS, SubQuestion, VERDICTS, merge_params,
+)
 
 
 class TestParseVerdict:
@@ -158,3 +165,56 @@ class TestFormatEvidenceList:
 
     def test_empty_list_gives_placeholder(self):
         assert format_evidence_list([]) == "(없음)"
+
+
+class TestCritique:
+    """critique() 는 외부 LLM(chat)만 대역으로 바꾸고 실제 템플릿을 거친다.
+
+    critic 을 통째로 대역으로 바꾸면 호출부 kwargs 와 템플릿 변수명이 어긋나도
+    (StrictUndefined → UndefinedError) 테스트가 전부 통과한다.
+    """
+
+    def _evidence(self):
+        return [Evidence(id="E1", cnts_id="A", meta={"title": "논문 가", "pub_date": "2008"},
+                         chunks=[Chunk("c1", "본문 발췌", 1, 1, 0.9)])]
+
+    def _run(self, monkeypatch, chat):
+        monkeypatch.setattr(critic, "chat", chat)
+        sq = SubQuestion(idx=0, text="하위질문", queries=["첫 검색어", "둘째 검색어"])
+        return asyncio.run(critic.critique(
+            sq, self._evidence(), params=merge_params({"min_evidence_per_subq": 4}),
+        ))
+
+    def test_renders_real_template_and_parses_reply(self, monkeypatch):
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return '{"verdict": "insufficient", "note": "부족", "new_queries": ["새 검색어"]}'
+
+        v = self._run(monkeypatch, fake_chat)
+        assert v.verdict == "insufficient" and v.new_queries == ["새 검색어"]
+        system, user = seen[0][0]["content"], seen[0][1]["content"]
+        assert "4편 미만" in system
+        assert "하위질문" in user and "첫 검색어, 둘째 검색어" in user
+        assert "1편" in user and "본문 발췌" in user
+
+    def test_transport_error_is_reported_as_unchecked_not_raised(self, monkeypatch):
+        """판정 호출이 일시 오류로 죽으면 '판정 불가'다 — 탐색 실패로 올리면
+        이미 모은 근거까지 절에서 빠진다."""
+        async def fake_chat(messages, *, params=None, timeout=None):
+            raise httpx.ReadTimeout("timeout")
+
+        v = self._run(monkeypatch, fake_chat)
+        assert v.verdict == "sufficient"
+        assert v.parse_failed is True
+        assert v.note == _PARSE_FAILED_NOTE
+
+    def test_http_status_error_is_reported_as_unchecked(self, monkeypatch):
+        async def fake_chat(messages, *, params=None, timeout=None):
+            req = httpx.Request("POST", "http://llm/chat/completions")
+            raise httpx.HTTPStatusError("503", request=req,
+                                        response=httpx.Response(503, request=req))
+
+        v = self._run(monkeypatch, fake_chat)
+        assert v.parse_failed is True
