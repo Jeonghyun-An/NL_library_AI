@@ -4488,6 +4488,18 @@ docker exec nl-lib-fastapi curl -s http://localhost:8000/api/research/<job_id> |
 
 **`미해석` 이 빈 집합이어야 한다.** 하나라도 남으면 `bind_markers` 가 새는 것이니 멈추고 원인을 찾는다.
 
+> **2026-09-23 실측 — 위 검사만으로는 부족하다.** 미해석은 `set()` 이었는데 보고서는 하위질문 3개 중 **절 1개**, 근거 10편 중 **논문 1편**만 실었다. 한 번의 호출로 전체를 맡긴 종합이 프롬프트 예시 모양(섹션 1·논문 1·과제 1)을 gemma-3-12b 가 그대로 베낀 것이다. 종합을 하위질문별 호출로 바꾸고 절·논문 구성을 코드가 정하게 고쳤다(`synthesizer.build_section`). 같은 잡의 `state_snapshot` 으로 새 종합만 드라이런해 **절 3 · 논문으로 실린 근거 9/10 · 요약 12/12** 를 확인했다(10번째는 `PAPERS_PER_SECTION=5` 상한에 걸림). 그 드라이런에서 모델이 **대표 논문 요약에도 `[E#]` 를 달았다** — 요약은 `bind_markers` 를 안 거치므로 `strip_markers` 로 걷어낸다. 그래서 Step 7 은 아래 구성 검사를 함께 돈다.
+
+```bash
+docker exec nl-lib-fastapi curl -s "http://localhost:8000/api/research/$JOB" | python3 -c "
+import json,sys,re; r=json.load(sys.stdin)['report']
+cited={e for s in r['sections'] for p in s['papers'] for e in p['evidence']}
+leak=[p['evidence'][0] for s in r['sections'] for p in s['papers'] if re.search(r'\[E\d+\]', p['summary'])]
+print('절', len(r['sections']), '| 근거', len(r['evidence']), '| 논문으로 실린 근거', len(cited), '| 요약 속 마커', leak)"
+```
+
+**절 수 = 근거가 있는 하위질문 수, 요약 속 마커 = `[]`** 여야 한다.
+
 - [ ] **Step 8: 두 번째 잡 — 이벤트 루프 회귀**
 
 **첫 잡만 돌려보고 넘어가면 안 된다.** 잡 단위 엔진과 `dispose()` 가 실제로 루프 간 커넥션 누수를 막는지는 두 번째 잡에서만 드러난다. Step 4~7 을 한 번 더 돌린다. `attached to a different loop` 가 나오면 `_job_engine` 이 제 일을 못 하는 것이다.

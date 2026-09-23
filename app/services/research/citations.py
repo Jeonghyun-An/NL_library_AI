@@ -106,3 +106,14 @@ def bind_markers(text: str, valid_ids: set[str]) -> MarkerResult:
     unmarked = sum(1 for s in sentences if not _MARKER.search(s))
 
     return MarkerResult(cleaned, dropped, used, unmarked)
+
+
+def strip_markers(text: str) -> str:
+    """구조적 인용 자리(대표 논문 요약)에서 마커를 전부 걷어낸다.
+
+    그 자리의 인용은 불릿의 논문으로 이미 정해져 있어 마커가 필요 없다. 그런데
+    모델은 시키지 않아도 요약 끝에 [E7] 을 단다(2026-09-23 실측). 요약은
+    bind_markers 를 거치지 않으므로 남겨두면 지어낸 번호가 검증 없이 화면에
+    나간다 — 유효한 번호도 칩과 중복이라 함께 지운다.
+    """
+    return _MARKER.sub("", text).strip()

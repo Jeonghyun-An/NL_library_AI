@@ -1,5 +1,13 @@
+import asyncio
+import json
+
+import pytest
+
+from services.research import synthesizer
 from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
-from services.research.synthesizer import assemble_report, build_limitations
+from services.research.synthesizer import (
+    PAPERS_PER_SECTION, assemble_report, build_limitations, build_section, synthesize,
+)
 
 
 def _state():
@@ -167,6 +175,25 @@ class TestAssembleReport:
         )
         assert not any("존재하지 않는 근거 번호" in x for x in report["limitations"])
 
+    def test_markers_in_paper_summary_are_stripped(self):
+        """요약은 bind_markers 를 안 거친다 — 남기면 지어낸 번호가 검증 없이 나간다."""
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "", "future": [],
+                       "papers": [{"cnts_id": "A", "summary": "무엇을 했다 [E1]. 또 했다 [E99]."}]}],
+            unmarked_total=0,
+        )
+        assert report["sections"][0]["papers"][0]["summary"] == "무엇을 했다. 또 했다."
+
+    def test_marker_only_summary_counts_as_unsummarized(self):
+        report = assemble_report(
+            _state(),
+            sections=[{"heading": "h", "intro": "", "future": [],
+                       "papers": [{"cnts_id": "A", "summary": "[E1]"}]}],
+            unmarked_total=0,
+        )
+        assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
+
     def test_evidence_is_serialized(self):
         report = assemble_report(_state(), sections=[], unmarked_total=0)
         assert report["evidence"]["E1"]["chunks"][0]["page_start"] == 3
@@ -185,3 +212,98 @@ class TestAssembleReport:
 
     def test_missing_corpus_range_is_none(self):
         assert assemble_report(_state(), sections=[], unmarked_total=0)["range"] is None
+
+
+def _state_three():
+    """하위질문 3개, 근거 3편 — 라이브에서 절이 1개만 나온 모양을 재현하는 바탕."""
+    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+    st.subquestions = [
+        SubQuestion(idx=0, text="하위1", evidence_ids=["E1", "E2"], verdict="sufficient"),
+        SubQuestion(idx=1, text="하위2", evidence_ids=["E2", "E3"], verdict="sufficient"),
+        SubQuestion(idx=2, text="하위3", evidence_ids=[], verdict="insufficient"),
+    ]
+    st.evidence = {
+        f"E{i}": Evidence(id=f"E{i}", cnts_id=c, meta={"title": f"논문 {c}"},
+                          chunks=[Chunk(f"c{i}", "본문", 1, 1, 0.9)])
+        for i, c in ((1, "A"), (2, "B"), (3, "C"))
+    }
+    return st
+
+
+class TestBuildSection:
+    def test_heading_and_papers_are_structural(self):
+        """모델이 논문을 하나만 요약해도 절의 논문 목록은 하위질문의 근거 그대로다."""
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0],
+                            {"intro": "도입 [E1].", "summaries": {"E1": "요약"}, "future": []})
+        assert sec["heading"] == "하위1"
+        assert [p["cnts_id"] for p in sec["papers"]] == ["A", "B"]
+        assert sec["papers"][1]["summary"] == ""
+
+    def test_parse_failure_keeps_paper_list(self):
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0], None)
+        assert sec["intro"] == "" and sec["future"] == []
+        assert [p["cnts_id"] for p in sec["papers"]] == ["A", "B"]
+
+    def test_malformed_fields_are_ignored(self):
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0],
+                            {"intro": ["x"], "summaries": ["x"], "future": "x"})
+        assert sec["intro"] == "" and sec["future"] == []
+        assert all(p["summary"] == "" for p in sec["papers"])
+
+    def test_papers_are_capped(self):
+        st = _state_three()
+        ids = [f"E{i}" for i in range(1, 10)]
+        for eid in ids:
+            st.evidence.setdefault(eid, Evidence(id=eid, cnts_id=eid, meta={}))
+        st.subquestions[0].evidence_ids = ids
+        assert len(build_section(st, st.subquestions[0], {})["papers"]) == PAPERS_PER_SECTION
+
+
+class TestSynthesize:
+    def _patch_chat(self, monkeypatch, replies):
+        calls = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            calls.append(messages[1]["content"])
+            return replies[len(calls) - 1]
+        monkeypatch.setattr(synthesizer, "chat", fake_chat)
+        return calls
+
+    def test_one_section_per_subquestion_with_evidence(self, monkeypatch):
+        """2026-09-23 라이브 회귀: 하위질문 3개인데 절이 1개만 나왔다."""
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        calls = self._patch_chat(monkeypatch, [reply, reply])
+        report = asyncio.run(synthesize(_state_three()))
+        assert [s["heading"] for s in report["sections"]] == ["하위1", "하위2"]
+        assert len(calls) == 2                      # 근거 없는 하위3 은 호출하지 않는다
+        assert "하위2" in calls[1] and "[E3]" in calls[1] and "[E1]" not in calls[1]
+
+    def test_every_evidence_appears_in_some_section(self, monkeypatch):
+        reply = json.dumps({"intro": "", "summaries": {}, "future": []})
+        self._patch_chat(monkeypatch, [reply, reply])
+        report = asyncio.run(synthesize(_state_three()))
+        cited = {e for s in report["sections"] for p in s["papers"] for e in p["evidence"]}
+        assert cited == set(report["evidence"])
+
+    def test_missing_summaries_are_reported(self, monkeypatch):
+        reply = json.dumps({"intro": "", "summaries": {"E1": "요약"}, "future": []})
+        self._patch_chat(monkeypatch, [reply, reply])
+        report = asyncio.run(synthesize(_state_three()))
+        # 하위1 의 E2, 하위2 의 E2·E3 — 절마다 따로 센다
+        assert any("요약을 생성하지 못한 논문 3편" in x for x in report["limitations"])
+
+    def test_partial_parse_failure_is_reported_not_raised(self, monkeypatch):
+        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        self._patch_chat(monkeypatch, [good, "모르겠습니다"])
+        report = asyncio.run(synthesize(_state_three()))
+        assert len(report["sections"]) == 2
+        assert any("서술을 생성하지 못한 절이 1개" in x for x in report["limitations"])
+
+    def test_total_parse_failure_raises(self, monkeypatch):
+        """서술 0줄짜리 보고서를 completed 로 두면 재시도 기회가 사라진다."""
+        self._patch_chat(monkeypatch, ["x", "y"])
+        with pytest.raises(ValueError):
+            asyncio.run(synthesize(_state_three()))

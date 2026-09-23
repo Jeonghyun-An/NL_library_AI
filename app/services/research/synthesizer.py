@@ -4,6 +4,12 @@
 - 대표 논문 요약: 불릿 = 논문이므로 인용이 구조로 정해진다. 모델이 고르지 않는다.
 - 도입·향후 과제: 모델이 [E3] 마커를 달고 여기서 전수 검증한다.
 
+종합은 하위질문 하나당 LLM 호출 하나다. 절 구성(소제목·어떤 논문을 싣는지)은
+여기서 정하고 모델은 문장만 쓴다. 전체를 한 번에 맡겼을 때(2026-09-23 실측,
+gemma-3-12b) 프롬프트 예시의 "섹션 1·논문 1·과제 1" 모양을 그대로 베껴
+하위질문 3개 중 1개 절, 근거 10편 중 2편만 실렸다 — 절과 논문 선택을 모델에
+맡기면 그게 구조가 아니라 추론이 된다.
+
 제목·저자·연도는 모델 출력에서 가져오지 않는다. evidence 의 meta 를 쓴다 —
 라벨을 모델이 쓰게 두면 언젠가 없는 논문을 만들어낸다.
 """
@@ -11,17 +17,20 @@ import logging
 
 from services.llm_client import chat
 from services.prompts import get_prompt
-from services.research.citations import bind_markers
+from services.research.citations import bind_markers, strip_markers
 from services.research.llm_json import extract_json
-from services.research.state import ResearchState
+from services.research.state import ResearchState, SubQuestion
 
 log = logging.getLogger(__name__)
 
 UNMARKED_THRESHOLD = 3
+# 절마다 싣는 대표 논문 상한. evidence_ids 는 탐색 순위순이라 앞에서 자른다.
+PAPERS_PER_SECTION = 5
 
 
 def build_limitations(
     state: ResearchState, *, unmarked_total: int, dropped_total: int,
+    failed_sections: int = 0, unsummarized_total: int = 0,
 ) -> list[str]:
     """자기점검 결과를 사용자에게 보이는 문장으로 바꾼다.
 
@@ -61,6 +70,15 @@ def build_limitations(
             f"그 부분의 근거 충분성은 확인되지 않았다."
         )
 
+    if failed_sections:
+        out.append(
+            f"서술을 생성하지 못한 절이 {failed_sections}개 있다 — "
+            f"그 절은 근거 논문 목록만 싣는다."
+        )
+
+    if unsummarized_total:
+        out.append(f"요약을 생성하지 못한 논문 {unsummarized_total}편이 있다.")
+
     if dropped_total:
         out.append(
             f"존재하지 않는 근거 번호를 가리킨 인용 표기 "
@@ -89,6 +107,7 @@ def _serialize_evidence(state: ResearchState) -> dict:
 
 def assemble_report(
     state: ResearchState, sections: list[dict], *, unmarked_total: int,
+    failed_sections: int = 0,
 ) -> dict:
     valid = set(state.evidence.keys())
     by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
@@ -98,6 +117,7 @@ def assemble_report(
     # 표기가 조용히 사라진다. dropped 는 번호 종류가 아니라 본문에 박힌
     # 표기 수로 센다 — 사용자가 보는 단위가 그것이다.
     dropped = 0
+    unsummarized = 0
     out_sections = []
 
     for sec in sections:
@@ -110,9 +130,12 @@ def assemble_report(
             eid = by_cnts.get(p["cnts_id"])
             if eid is None:
                 continue                      # 근거에 없는 논문은 싣지 않는다
+            summary = strip_markers(p.get("summary", ""))
+            if not summary:
+                unsummarized += 1
             papers.append({
                 "cnts_id": p["cnts_id"],
-                "summary": p.get("summary", ""),
+                "summary": summary,
                 "evidence": [eid],            # 구조적 인용 — 모델이 고르지 않는다
             })
 
@@ -143,26 +166,61 @@ def assemble_report(
         ],
         "limitations": build_limitations(
             state, unmarked_total=unmarked, dropped_total=dropped,
+            failed_sections=failed_sections, unsummarized_total=unsummarized,
         ),
     }
 
 
-async def synthesize(state: ResearchState) -> dict:
-    blocks = []
-    for sq in state.subquestions:
-        lines = []
-        for eid in sq.evidence_ids:
-            ev = state.evidence[eid]
-            excerpt = ev.chunks[0].text[:400] if ev.chunks else ""
-            lines.append(
-                f"[{eid}] {ev.meta.get('title')} "
-                f"({ev.meta.get('pub_date')}, {ev.meta.get('series_title')}) "
-                f"cnts_id={ev.cnts_id}\n{excerpt}"
-            )
-        blocks.append(f"## {sq.text}\n" + "\n\n".join(lines))
+def section_paper_ids(state: ResearchState, sq: SubQuestion) -> list[str]:
+    return sq.evidence_ids[:PAPERS_PER_SECTION]
 
+
+def build_section(state: ResearchState, sq: SubQuestion, data: dict | None) -> dict:
+    """하위질문 하나와 모델 출력으로 절을 만든다 (순수 함수).
+
+    소제목은 하위질문 그대로, 논문 목록은 section_paper_ids 그대로다 — 모델
+    출력에 무엇이 있든 없든 바뀌지 않는다. 모델이 요약을 빠뜨린 논문도 빈
+    요약으로 싣고 assemble_report 가 개수를 한계에 올린다. data 가 None(파싱
+    실패)이면 서술 없이 논문 목록만 남는다.
+    """
+    data = data or {}
+    summaries = data.get("summaries")
+    if not isinstance(summaries, dict):
+        summaries = {}
+    future = data.get("future")
+    if not isinstance(future, list):
+        future = []
+    intro = data.get("intro")
+    return {
+        "heading": sq.text,
+        "intro": intro if isinstance(intro, str) else "",
+        "papers": [
+            {"cnts_id": state.evidence[eid].cnts_id,
+             "summary": str(summaries.get(eid) or "").strip()}
+            for eid in section_paper_ids(state, sq)
+        ],
+        "future": [f for f in future if isinstance(f, dict)],
+    }
+
+
+def _evidence_block(state: ResearchState, sq: SubQuestion) -> str:
+    lines = []
+    for eid in section_paper_ids(state, sq):
+        ev = state.evidence[eid]
+        excerpt = ev.chunks[0].text[:400] if ev.chunks else ""
+        lines.append(
+            f"[{eid}] {ev.meta.get('title')} "
+            f"({ev.meta.get('pub_date')}, {ev.meta.get('series_title')})\n{excerpt}"
+        )
+    return "\n\n".join(lines)
+
+
+async def _synthesize_section(state: ResearchState, sq: SubQuestion) -> dict | None:
+    """절 하나의 서술을 받는다. 해석 실패는 None — 보고서 전체를 죽이지 않는다."""
     system, user, llm_params = get_prompt("research_synthesize").render(
-        question=state.question, evidence_blocks="\n\n".join(blocks),
+        question=state.question, subquestion=sq.text,
+        evidence_block=_evidence_block(state, sq),
+        paper_ids=", ".join(section_paper_ids(state, sq)),
     )
     raw = await chat(
         [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -173,8 +231,30 @@ async def synthesize(state: ResearchState) -> dict:
     # 그 끝까지 먹어 파싱이 깨진다.
     data = extract_json(raw)
     if data is None:
-        log.error("[research] 종합 JSON 파싱 실패: %s", (raw or "")[:300])
-        raise ValueError("보고서 종합 출력을 해석하지 못했다")
-    sections = data.get("sections") or []
+        log.error("[research] 절 종합 JSON 파싱 실패 job=%s idx=%s: %s",
+                  state.job_id, sq.idx, (raw or "")[:300])
+    return data
 
-    return assemble_report(state, sections, unmarked_total=0)
+
+async def synthesize(state: ResearchState) -> dict:
+    """하위질문마다 절을 하나씩 만든다.
+
+    근거가 없거나 탐색이 실패한 하위질문은 절을 만들지 않는다 — 한계 섹션이
+    이미 그 사실을 적는다. 일부 절의 파싱 실패는 한계로 보고하고 넘어가지만,
+    전부 실패하면 예외를 던진다. 서술이 한 줄도 없는 보고서를 completed 로
+    두면 재시도(stage=explored 에서 재개) 기회가 사라진다.
+    """
+    targets = [sq for sq in state.subquestions if sq.evidence_ids and not sq.failed]
+    sections, failed = [], 0
+    for sq in targets:
+        data = await _synthesize_section(state, sq)
+        if data is None:
+            failed += 1
+        sections.append(build_section(state, sq, data))
+        log.info("[research] 절 종합 job=%s idx=%s 논문=%d ok=%s",
+                 state.job_id, sq.idx, len(sections[-1]["papers"]), data is not None)
+
+    if targets and failed == len(targets):
+        raise ValueError("보고서 종합 출력을 해석하지 못했다")
+
+    return assemble_report(state, sections, unmarked_total=0, failed_sections=failed)

@@ -134,6 +134,7 @@ def test_nl_library_prompts_exist_and_render():
     assert '"verdict"' in rc_s and "하위질문" in rc_u and "3편" in rc_u
 
     rs_s, rs_u, _ = lib.get("research_synthesize").render(
-        question="청소년 진로상담",
-        evidence_blocks="## 하위질문\n[E1] 논문 가 (2008-06, 학술지) cnts_id=A\n본문")
-    assert '"sections"' in rs_s and "청소년 진로상담" in rs_u and "[E1]" in rs_u
+        question="청소년 진로상담", subquestion="하위질문",
+        evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
+    assert '"summaries"' in rs_s and "E1, E3" in rs_s
+    assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
