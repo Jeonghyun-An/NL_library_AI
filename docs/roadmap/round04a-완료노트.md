@@ -6,7 +6,7 @@ spec: `docs/superpowers/specs/2026-09-21-deep-research-agent-design.md`
 plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 교본: `docs/guides/round04a/` (5챕터 — [00-개요](../guides/round04a/00-개요.md))
 
-> Task 11(운영 배포·라이브 검증) 직후 초안을 쓰고, 머지 전 리뷰 반영·운영 배포(§2-1)·교본 작성 뒤 갱신했다(2026-09-23). `dev` 머지는 아직이다.
+> Task 11(운영 배포·라이브 검증) 직후 초안을 쓰고, 머지 전 리뷰 반영·운영 배포(§2-1)·교본 작성 뒤 갱신했다(2026-09-23). `dev`·`main` 머지와 push 로 라운드를 닫았다.
 > 라이브 실측값은 휘발성이라 먼저 적었다. 프론트(round04b)는 이 백엔드 위에 얹는다 — 계약은 spec 의 **구현 시 변경** 표기다.
 
 ---
@@ -245,5 +245,5 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 - [x] 테스트 green — 549 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
 - [x] 수동 스모크 — §2 라이브 검증(재개 경로 제외), 리뷰 반영분 운영 배포 뒤 워밍업 잡(§2-1)
 - [x] 문서 갱신 — 완료노트·spec **구현 시 변경**·plan **이후 변경**·`recurring-gotchas.md` 14번 정정과 16~19번·README·`00_status` 반영 완료. 교본 `docs/guides/round04a/` 5챕터(수록 코드 46건이 저장소 파일과 글자 그대로 일치함을 스크립트로 대조)
-- [ ] `dev` 머지 승인
-- [ ] `dev→main` 머지 + push
+- [x] `dev` 머지 승인 — 2026-09-23 사용자 승인(`4ca3e90`)
+- [x] `dev→main` 머지 + push — 2026-09-23
