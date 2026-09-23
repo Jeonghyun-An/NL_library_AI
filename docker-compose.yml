@@ -524,6 +524,12 @@ services:
       <<: *common-env
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      # 딥리서치 태스크를 보내는 큐. 실행은 celery-research, 계획은 celery-research-plan
+      # 만 받으므로 셋을 같이 올린다 — 이것만 적용되면 잡이 소비자 없는 큐에 쌓인다.
+      # common-env 에 두지 않는 이유: 거기 넣으면 적재 워커 전부의 설정이 바뀌어
+      # 스택 업데이트 때 돌고 있는 인덱싱 컨테이너까지 재생성된다.
+      RESEARCH_QUEUE: q_research
+      RESEARCH_PLAN_QUEUE: q_research_plan
     deploy:
       resources:
         reservations:
@@ -631,6 +637,77 @@ services:
       PYTHONPATH: /app
     volumes:
       - /data/nl-lib/data:/app/data:rw
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Research Worker (딥리서치 실행: 탐색·재검색·종합 — 전용 큐 q_research, 계획은 celery-research-plan) ──
+  # 적재 요약(q_llm)과 큐를 나눈 이유: 같은 FIFO 면 사용자의 계획 요청이 요약 수십 건
+  # 뒤에 서고, 반대로 상한 25분(JOB_DEADLINE)의 리서치 실행이 적재 요약 슬롯을 쥔다 —
+  # 여럿이 쥐면 슬롯을 기다리는 적재 아이템이 stale 복구돼 중복 체인이 열린다(16번).
+  # 탐색이 BGE-M3·리랭커를 프로세스 안에서 올리므로 GPU 와 모델 캐시가 필요하다
+  # (celery-llm 에는 둘 다 없어 컨테이너마다 모델을 받고 CPU 로 리랭크했다).
+  # concurrency=1: 모델을 자식마다 따로 올리지 않는다. 대신 실행은 한 번에 한 잡이라
+  # 뒤 잡은 approved 로 앞 잡이 끝나길 기다린다(최대 JOB_DEADLINE 25분). 계획까지 이
+  # 슬롯에 두면 새 질문이 created 로 멈추므로 계획은 celery-research-plan 이 받는다.
+  # 배포: fastapi 의 RESEARCH_QUEUE·RESEARCH_PLAN_QUEUE, celery-research-plan 과 같이 올린다.
+  # 인덱싱이 도는 동안에는 배포하지 않는다 —
+  # 같은 :latest 이미지를 쓰는 적재 워커가 새 이미지 기준으로 재생성되면 진행 중인 적재
+  # 태스크가 끊긴다(docs/ops/recurring-gotchas.md 16번). GPU 를 celery-embed 와 나눠 쓰므로
+  # 띄우기 전에 nvidia-smi 로 여유 메모리(BGE-M3+리랭커 약 3~4GB)를 확인한다.
+  celery-research:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-research
+    <<: *nl-lib-net
+    shm_size: "4g"
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=1 -Q q_research
+    environment:
+      <<: *common-env
+      RESEARCH_QUEUE: q_research
+      RESEARCH_PLAN_QUEUE: q_research_plan
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - /data/models/.hf-cache:/models:rw
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Research Plan Worker (딥리서치 계획만 — 전용 큐 q_research_plan) ──
+  # 계획은 LLM HTTP 호출 하나(0.6초)라 GPU·모델 캐시가 필요 없다. celery-research 와 같은
+  # 슬롯에 두면 다른 잡의 실행 뒤에 선다(위 주석). 배포는 celery-research 와 함께.
+  celery-research-plan:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-research-plan
+    <<: *nl-lib-net
+    working_dir: /app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=2 -Q q_research_plan
+    environment:
+      <<: *common-env
+      RESEARCH_QUEUE: q_research
+      RESEARCH_PLAN_QUEUE: q_research_plan
+      PYTHONPATH: /app
     depends_on:
       redis:
         condition: service_healthy

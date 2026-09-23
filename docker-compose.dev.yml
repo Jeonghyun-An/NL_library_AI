@@ -358,6 +358,10 @@ services:
       <<: *common-env-dev
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      # 실행은 celery-research-dev, 계획은 celery-research-plan-dev 만 받으므로 셋을 같이
+      # 올린다(운영 compose 주석 참고)
+      RESEARCH_QUEUE: q_research
+      RESEARCH_PLAN_QUEUE: q_research_plan
     deploy:
       resources:
         reservations:
@@ -454,6 +458,60 @@ services:
       PYTHONPATH: /app
     volumes:
       - /data/nl-lib/dev-data:/app/data:rw
+    depends_on:
+      redis-dev:
+        condition: service_healthy
+      postgres-dev:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Research Worker (딥리서치 전용 큐 q_research — GPU·모델 캐시) ──
+  # 적재 요약과 큐를 나눈 이유·배포 순서는 운영 compose 의 celery-research 주석 참고
+  celery-research-dev:
+    image: landsoftdocker/nl-lib-fastapi:dev
+    container_name: nl-lib-dev-celery-research
+    <<: *nl-lib-dev-net-and-prod
+    shm_size: "4g"
+    working_dir: /app
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=1 -Q q_research
+    environment:
+      <<: *common-env-dev
+      RESEARCH_QUEUE: q_research
+      RESEARCH_PLAN_QUEUE: q_research_plan
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      PYTHONPATH: /app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - /data/models/.hf-cache:/models:rw
+    depends_on:
+      redis-dev:
+        condition: service_healthy
+      postgres-dev:
+        condition: service_healthy
+      milvus-dev:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery Research Plan Worker (딥리서치 계획만 — q_research_plan, GPU 불필요) ──
+  # 실행 슬롯(concurrency 1)과 나눈 이유는 운영 compose 의 celery-research-plan 주석 참고
+  celery-research-plan-dev:
+    image: landsoftdocker/nl-lib-fastapi:dev
+    container_name: nl-lib-dev-celery-research-plan
+    <<: *nl-lib-dev-net-and-prod
+    working_dir: /app
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=2 -Q q_research_plan
+    environment:
+      <<: *common-env-dev
+      RESEARCH_QUEUE: q_research
+      RESEARCH_PLAN_QUEUE: q_research_plan
+      PYTHONPATH: /app
     depends_on:
       redis-dev:
         condition: service_healthy

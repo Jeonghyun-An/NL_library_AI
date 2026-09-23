@@ -14,7 +14,7 @@ import math
 import re
 import time
 import logging
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable
 
 import httpx
 
@@ -44,6 +44,13 @@ cfg = get_settings()
 # 주의: Milvus 표현식은 `not like`를 지원하지 않음 — `not (... like ...)` 형태만 파싱됨
 _PAPER_EXPR = '(doc_type == "paper" || book_id like "KCI_FI%")'
 _BOOK_EXPR  = '(doc_type != "paper" && not (book_id like "KCI_FI%"))'
+
+# 리랭크 폴백은 리랭커가 실제로 내는 실패만 받는다 — 모델 로드(OSError·ImportError),
+# 설정·토크나이저(ValueError), torch 연산(RuntimeError, CUDA OOM 포함). except Exception
+# 이면 Celery 소프트 리밋(SoftTimeLimitExceeded 는 Exception 하위)까지 삼켜, 동기 리랭크
+# 도중 걸린 딥리서치 잡이 시간 상한 처리를 못 거치고 하드 리밋에 프로세스째 죽는다.
+# 허용 목록으로 좁히면 services 가 celery 를 몰라도 된다.
+_RERANK_FAILURES = (RuntimeError, OSError, ValueError, ImportError)
 
 
 def _build_milvus_expr(f: MetadataFilter, doc_scope: str = "all") -> str | None:
@@ -75,6 +82,9 @@ async def search(
     use_rewrite: bool = True,
     use_rerank: bool = True,
     doc_scope: str = "all",   # "paper" | "book" | "all"
+    generate_answer: bool = True,   # chunk 모드 전용 — False 면 검색 결과만 돌려준다
+    use_metadata_filter: bool = True,   # False 면 db 가 있어도 날짜 필터(LLM)를 뽑지 않는다
+    chunk_filter: Callable[[ChunkHit], bool] | None = None,   # chunk 모드 전용 — 리랭크 전에 거른다
     db=None,
 ) -> ChunkSearchResponse | BookSearchResponse:
     t0 = time.perf_counter()
@@ -89,7 +99,7 @@ async def search(
     if use_rewrite:
         coros.append(rewrite_query(query, db=db))
         tags.append("rewrite")
-    if db:
+    if db and use_metadata_filter:
         coros.append(extract_metadata_filter(query))
         tags.append("filter")
 
@@ -125,6 +135,8 @@ async def search(
         return await _search_chunk_mode(
             query, rewritten, query_dense, query_sparse, top_k, use_rerank, elapsed, db,
             meta_expr=milvus_expr,
+            generate_answer=generate_answer,
+            chunk_filter=chunk_filter,
         )
     else:
         return await _search_book_mode(
@@ -145,6 +157,8 @@ async def _search_chunk_mode(
     db=None,
     *,
     meta_expr: str | None = None,
+    generate_answer: bool = True,
+    chunk_filter: Callable[[ChunkHit], bool] | None = None,
 ) -> ChunkSearchResponse:
     t0 = time.perf_counter()
 
@@ -172,6 +186,10 @@ async def _search_chunk_mode(
         )
         for h in candidates
     ]
+    # top_k 로 자른 뒤에 거르면 걸러진 수만큼 결과가 조용히 준다. 리랭크 전에 걸러
+    # 버릴 청크에 cross-encoder 연산도 쓰지 않는다.
+    if chunk_filter is not None:
+        chunks = [c for c in chunks if chunk_filter(c)]
 
     # ④ 리랭킹
     if use_rerank and chunks:
@@ -184,22 +202,26 @@ async def _search_chunk_mode(
                 c.rerank_score = r.score
                 reranked.append(c)
             chunks = reranked
-        except Exception as e:
+        except _RERANK_FAILURES as e:
             log.warning(f"리랭킹 실패, 벡터 점수 유지: {e}")
 
     chunks = chunks[:top_k]
 
     # 컨텍스트 확장: 청크 주변 원문 로드 (126K 활용)
+    # generate_answer=False 면 확장·생성 둘 다 건너뛴다 — 확장이 먼저 컨텍스트
+    # 예산(CONTEXT_BUDGET_TOKENS)만큼 원문을 끌어오므로, 답변을 버릴 호출자에게는
+    # 생성뿐 아니라 확장도 순수 낭비다.
     answer = None
-    if db:
-        try:
-            expanded = await expand_context(chunks, db)
-            answer = await _generate_answer_with_context(original, expanded)
-        except Exception as e:
-            log.warning(f"컨텍스트 확장 실패, 청크 텍스트로 fallback: {e}")
+    if generate_answer:
+        if db:
+            try:
+                expanded = await expand_context(chunks, db)
+                answer = await _generate_answer_with_context(original, expanded)
+            except Exception as e:
+                log.warning(f"컨텍스트 확장 실패, 청크 텍스트로 fallback: {e}")
+                answer = await _generate_answer(original, chunks)
+        else:
             answer = await _generate_answer(original, chunks)
-    else:
-        answer = await _generate_answer(original, chunks)
 
     elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
 
@@ -280,7 +302,7 @@ async def _search_book_mode(
                     c.rerank_score = r.score
                     reranked.append(c)
                 chunks = reranked
-            except Exception as e:
+            except _RERANK_FAILURES as e:
                 log.warning(f"[{book_id}] 도서 내 리랭킹 실패: {e}")
 
         # 리랭킹된 본문 청크 점수, 없으면 메타 청크 점수(best_raw)로 fallback

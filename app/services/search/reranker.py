@@ -4,7 +4,7 @@ reranker.py — Cross-Encoder 리랭킹 (Jina Reranker v2)
 - 모델: jinaai/jina-reranker-v2-base-multilingual
 - 다국어(한국어 포함) 최적화, 8192 토큰 컨텍스트
 - ~278M 파라미터, GPU에서 20개 청크 ~0.3초
-- FastAPI 기동 시 임베딩 모델과 함께 메모리에 로드
+- FastAPI 는 기동 시 임베딩 모델과 함께 로드(warmup), 딥리서치 워커는 첫 호출 때 로드
 """
 import logging
 from dataclasses import dataclass
@@ -35,15 +35,18 @@ def _load_model():
     model_name = cfg.RERANKER_MODEL_NAME
     log.info(f"리랭커 모델 로딩: {model_name}")
 
+    _device = "cuda" if torch.cuda.is_available() else "cpu"
+    # fp16 은 GPU 에서만 쓴다. GPU 가 안 보이는 프로세스(GPU 예약 없는 Celery 워커)도
+    # 이 경로를 타는데, CPU 반정밀도는 빨라지지도 않고 연산에 따라 정밀도·지원이 흔들린다.
+    dtype = torch.float16 if _device == "cuda" else torch.float32
+
     _tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     _model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         trust_remote_code=True,
-        torch_dtype=torch.float16,
+        torch_dtype=dtype,
     )
     _model.eval()
-
-    _device = "cuda" if torch.cuda.is_available() else "cpu"
     _model = _model.to(_device)
     log.info(f"리랭커 로드 완료 ({_device}, {model_name})")
 
