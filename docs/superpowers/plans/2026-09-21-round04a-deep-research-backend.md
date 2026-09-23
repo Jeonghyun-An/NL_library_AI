@@ -4390,7 +4390,9 @@ class TestStageGuard:
 
 ---
 
-## Task 11: 운영 배포와 라이브 검증
+## Task 11: 운영 배포와 라이브 검증 — **완료 (재개 경로 미검증)**
+
+> 2026-09-23 실행. Step 4~9 통과, Step 9 의 재개는 종합 실패가 자연발생하지 않아 미검증. Step 10 실측과 도중에 고친 종합 버그(`451f348`)는 `docs/roadmap/round04a-완료노트.md` §2·§3. Step 0 의 `alembic stamp` 실행 여부는 기록되지 않았다.
 
 코드가 아니라 확인 절차다. `docs/ops/bulk_ingest_runbook.md` 의 배포 절차를 따른다. **이 절의 명령은 사용자가 서버에서 실행한다.**
 
