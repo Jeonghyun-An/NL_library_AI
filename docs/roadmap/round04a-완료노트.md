@@ -203,6 +203,7 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 
 **운영·배포**
 - ~~머지 전 리뷰 반영분 운영 배포~~ — **해소(2026-09-23 18:23 KST).** 적재 pause 안에서 2단계 스택 업데이트로 배포하고 워밍업까지 확인했다(§2-1).
+- **미병합 브랜치 `hyoni2/epic-ishizaka-cf9743`(`fd513e6`, 다른 세션)와 겹침 — 그 브랜치를 머지할 때 정리** — 같은 문제(메타·보강 청크가 검색 결과에 섞임)를 따로 풀었다. ① `pipeline.py`: 이 라운드는 리랭크 전 범용 필터 `chunk_filter`, 그쪽은 `content_only` 옵트인 + 판별 모듈 `services/search/chunk_kinds.py` — 시그니처가 충돌한다. `chunk_kinds` 를 공용 판별기로 살리고 `content_only` 는 `chunk_filter` 위에 얹는다(explorer 의 보강 청크 판별도 그걸 쓰게 할지 함께 정한다). ② `recurring-gotchas.md` 13번이 서로 다른 내용으로 겹친다 — 그쪽을 다음 빈 번호로 옮긴다. ③ `research/chunk-mode-meta-leak/explorer-augmentation-filter.patch` 는 이 라운드 이전 explorer 용이라 낡았다. round04a 가 `main` 에 들어간 뒤 그 브랜치를 새 `main` 위로 올리며 한다.
 - **Portainer 스택 정의와 저장소 `docker-compose.yml` 불일치** — 운영은 Portainer 에서 직접 작성한 스택으로 돈다. 저장소 compose 는 `flux` 가 켜져 있고 `paddleocr` 가 없는데, 스택은 `flux` 를 주석 처리했고 `paddleocr` 도 이번 업데이트에서 주석 처리했다(쓰지 않는 서비스). 주석 처리 뒤에도 `nl-lib-paddleocr` 컨테이너가 남았는지 확인해 정리한다. 어느 쪽을 정본으로 둘지 정해 맞춘다 — 저장소 compose 로 배포 절차를 안내하면 실제 스택과 어긋난다.
 - ~~시연 구간 운영 방식 결정~~ — **해소.** 전용 워커로 먼저 넘겼다(§2-1).
 - **[적재] 복구 경로 이중 실행 — 인덱싱이 끝난 뒤 적재 코드에서 고친다** — 끊긴 아이템을 stale 복구가 새 체인으로 끝낸 뒤 브로커가 옛 체인을 재전달해 같은 아이템을 다시 돌린다(단계 래퍼가 `done`·체크포인트를 보지 않고, stale 복구가 옛 태스크를 revoke 하지 않음). 논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다. 그 전까지는 적재 워커를 in-flight 0 에서만 재생성하고, 이미 재생성한 적이 있으면 stale 복구를 거친 아이템을 찾아 추출부터 다시 돌린다(함정 16번). round04a 스코프 밖 — 인덱싱이 도는 동안 적재 코드는 건드리지 않는다.
