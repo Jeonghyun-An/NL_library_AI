@@ -4,9 +4,9 @@
 브랜치: `feat/round04-deep-research-agent`
 spec: `docs/superpowers/specs/2026-09-21-deep-research-agent-design.md`
 plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
-교본: 미작성 — `docs/guides/round04a/`
+교본: `docs/guides/round04a/` (5챕터 — [00-개요](../guides/round04a/00-개요.md))
 
-> Task 11(운영 배포·라이브 검증) 직후 초안을 쓰고, 머지 전 리뷰 반영 뒤 갱신했다(2026-09-23). 교본·`dev` 머지는 아직이다.
+> Task 11(운영 배포·라이브 검증) 직후 초안을 쓰고, 머지 전 리뷰 반영·운영 배포(§2-1)·교본 작성 뒤 갱신했다(2026-09-23). `dev` 머지는 아직이다.
 > 라이브 실측값은 휘발성이라 먼저 적었다. 프론트(round04b)는 이 백엔드 위에 얹는다 — 계약은 spec 의 **구현 시 변경** 표기다.
 
 ---
@@ -38,7 +38,7 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 
 ## 2. 라이브 검증 실측 (Task 11 Step 4~10)
 
-조건: 질문 `공공도서관 서비스 품질 평가는 어떻게 연구되어 왔는가`, 파라미터 `max_subquestions=3 · max_recheck=1 · per_subq_top_k=8`(리허설용 축소값). 모델 gemma-3-12b. **이 실측은 머지 전 리뷰 반영 이전 코드(`b6360b8`)다** — 반영분은 아직 운영에 배포하지 않았다(배포 순서 §5).
+조건: 질문 `공공도서관 서비스 품질 평가는 어떻게 연구되어 왔는가`, 파라미터 `max_subquestions=3 · max_recheck=1 · per_subq_top_k=8`(리허설용 축소값). 모델 gemma-3-12b. **이 실측은 머지 전 리뷰 반영 이전 코드(`b6360b8`)다** — 반영분은 같은 날 저녁 2단계 전환으로 배포했다(§2-1).
 
 | 잡 | 코드 | 결과 |
 |---|---|---|
@@ -68,6 +68,21 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 하위질문별 채택 근거는 2편·5편·6편(고유 10편)이고, **세 하위질문 모두 재탐색 후에도 `insufficient`** 였다. critic 의 사유는 "평가 지표 자체의 심층 분석 부족", "시기 편중(2004~2006)", "공공도서관 특화 모델 부족" — 코퍼스 빈틈으로 보이며, 한계 섹션이 이를 그대로 드러낸다(spec §2-4 의 의도대로).
 
 **planner 는 결정적이지 않다.** 같은 질문에서 세 번째 하위질문이 한 번은 `공공도서관 서비스 품질 평가 모델`, 한 번은 `서비스 품질 평가 모델 (SERVQUAL 등) 적용 사례 - 공공도서관` 으로 나왔다.
+
+### 2-1. 리뷰 반영분 배포와 전용 워커 전환 (2026-09-23 18:23 KST)
+
+§5 의 2단계를 적재 pause 안에서 했다.
+
+| 순서 | 내용 | 결과 |
+|---|---|---|
+| 적재 비우기 | `kci-full-236k` pause. `status_counts` 에 `dispatched`·`running` 없음, 다른 잡 중 `running` 없음, 브로커 큐 `q_llm`·`q_embed`·`q_cpu`·`ingestion` 길이 0 | in-flight 0 |
+| 이미지 | 로컬 빌드·푸시(`:latest`) → 서버 `docker pull`(digest `70a82803…`). 이미지 안 `core/config.py` 에 `RESEARCH_PLAN_QUEUE` 가 있음을 `docker run --rm --entrypoint grep` 으로 확인 | 새 코드 |
+| GPU | 143.7GB 중 116.2GB 사용 — 여유 약 27GB | 전용 워커(약 3~4GB)에 충분 |
+| 스택 업데이트 | Portainer 스택에 fastapi env 두 줄(`RESEARCH_QUEUE`·`RESEARCH_PLAN_QUEUE`)과 서비스 두 개(`celery-research`·`celery-research-plan`) 추가. **첫 시도는 "Re-pull image" 토글을 켠 채라 500 으로 실패**했다 — 적용 전 단계에서 끊겨 컨테이너 변화는 없었다(함정 12번 재발). 이미지는 이미 받아 뒀으므로 토글을 끄고 성공 | fastapi·celery 계열 전부 18:23 재생성, 전용 워커 두 개 기동 |
+| 확인 | `inspect active_queues` 에 `q_research`·`q_research_plan`·`q_llm` 소비자, fastapi env `RESEARCH_QUEUE=q_research` | 정상 |
+| 워밍업 잡 `4631e4ed` | 축소 파라미터(하위질문 3) | 계획~완료 **30초**, 절 3 · 근거 9 · 논문으로 실린 근거 8(세 번째 절 6편 → 상한 5) · 요약 속 마커 0 · `last_error` 없음. 리랭커 **`cuda`** 로드 |
+
+같은 질문의 실행이 `celery-llm`(recreate 직후, CPU 리랭크) 89초에서 전용 워커 30초(계획 포함)로 줄었다. 전환을 마쳤으므로 과도기 구성의 운영 규칙(적재 `running` 중 딥리서치 금지·실행 한 번에 한 잡 429)은 더 이상 해당하지 않는다. **인덱싱 워커를 재생성하는 배포는 여전히 pause·in-flight 0 뒤에 한다**(함정 16번). 워밍업 뒤 적재를 resume 한다(런북 §8).
 
 ---
 
@@ -144,11 +159,11 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
   - **concurrency 1 의 대가** — 실행은 한 번에 한 잡이다. 두 번째 잡은 계획 승인 뒤 `approved` 로 앞 잡이 끝나길 기다린다(최대 `JOB_DEADLINE` 25분, SSE 는 ping 만). 계획까지 같은 슬롯이면 새 질문이 `created` 로 멈춰 "계획 수립 중"조차 안 뜨므로, 계획은 GPU 가 필요 없는 경량 워커(`--concurrency=2`)가 따로 받는다(`RESEARCH_PLAN_QUEUE` — 비우면 `RESEARCH_QUEUE` 를 따라 지금처럼 `q_llm`). 전환 뒤에는 동시 실행 상한·429 가 없다(§8). 전환 전 과도기에는 approve·retry 가 실행 슬롯 1개(`approved`·`queued`·`running`)를 넘으면 429 다.
 - **`RESEARCH_QUEUE` 기본값은 `q_llm` 으로 두고, 전용 워커 전환은 스택 업데이트 한 번으로 한다 — 인덱싱이 끝난 뒤, 또는 적재를 pause 해 in-flight 를 비운 뒤.** compose 는 `RESEARCH_QUEUE: q_research`·`RESEARCH_PLAN_QUEUE: q_research_plan` 을 `x-common-env` 가 아니라 fastapi·`celery-research`·`celery-research-plan` 서비스 env 에만 둔다.
   - **1단계(선택, 인덱싱 중에도 가능)** — 리뷰 반영 코드를 먼저 내보내야 하면, 서버에서 새 `:latest` 를 `docker pull` 해 두고 Portainer 에서 `nl-lib-fastapi`·`nl-lib-celery-llm` 컨테이너만 Recreate 한다. 컨테이너 Recreate 는 기존 설정을 그대로 써서 `RESEARCH_QUEUE` 가 없으므로 딥리서치는 지금처럼 `q_llm`·`celery-llm` 에서 돈다. 비용: `celery-llm` 은 적재의 요약·마무리 단계도 돌리므로 recreate 순간의 적재 태스크(최대 4개)가 끊기고, 끊긴 아이템은 약 2시간 뒤 옛 태스크가 재전달돼 다시 돈다(아래 이유) — **적재를 pause 하고 in-flight 가 0 이 된 뒤 Recreate 하면 끊기는 태스크가 없다**(런북 §8). fastapi Recreate 는 lifespan 의 `ALTER TABLE library_catalog` 가 잠금을 기다리는 동안 조회를 줄 세운다(함정 18번). **새 compose 로 `docker compose up -d fastapi celery-llm` 을 하면 안 된다** — fastapi 만 `q_research` 로 보내 잡이 소비자 없는 큐에 쌓인다. 1단계에서는 Portainer 스택 정의(compose)도 바꾸지 않는다 — 스택 정의를 고쳐 업데이트하는 것이 곧 2단계다. 스택이 git 저장소 자동 업데이트에 묶여 있다면 compose 변경을 push 하는 것만으로 2단계가 일어날 수 있으니 인덱싱 중에는 먼저 확인한다(설정은 저장소에 기록돼 있지 않다). **1단계 구성에서 적재가 `running` 인 동안에는 운영 딥리서치를 돌리지 않는다** — 적재를 pause 하고 in-flight 0 을 본 뒤 돌린다(런북 §8). API 의 상한 1 은 몰아서 승인하는 사고를 막는 안전장치다.
-  - **2단계(인덱싱이 끝난 뒤, 또는 적재 pause 로 in-flight 를 비운 뒤)** — 스택 업데이트 한 번. fastapi 가 계획은 `q_research_plan`, 실행은 `q_research` 로 보내고 `celery-research`·`celery-research-plan` 이 생긴다. 띄우기 전에 `nvidia-smi` 로 GPU 여유(BGE-M3+리랭커 약 3~4GB)를 본다. 확인은 plan Task 11 Step 3. 끝나면 워밍업 잡 1회 뒤 resume(런북 §8).
+  - **2단계(인덱싱이 끝난 뒤, 또는 적재 pause 로 in-flight 를 비운 뒤)** — **2026-09-23 18:23 KST 완료(§2-1).** 스택 업데이트 한 번. fastapi 가 계획은 `q_research_plan`, 실행은 `q_research` 로 보내고 `celery-research`·`celery-research-plan` 이 생긴다. 띄우기 전에 `nvidia-smi` 로 GPU 여유(BGE-M3+리랭커 약 3~4GB)를 본다. 확인은 plan Task 11 Step 3. 끝나면 워밍업 잡 1회 뒤 resume(런북 §8).
   - **이유** — 스택 업데이트는 같은 `:latest` 를 쓰는 적재 워커 5개를 모두 재생성할 수 있다(함정 16번). Postgres·Milvus·MinIO 는 외부 볼륨이라 재생성으로 지워지지 않는다. 문제는 끊긴 아이템이다 — 디스패처의 stale 복구(약 20분 뒤 새 체인)와 브로커 재전달(`task_acks_late=True`·`visibility_timeout` 7200초 뒤 옛 체인)이 **둘 다** 돈다. 새 체인이 끝나며 추출 아티팩트를 지운 뒤 옛 체인이 같은 아이템의 `embed_index` 를 다시 돌면, 논문은 PDF 본문 청크가 초록 청크로 덮이고 도서는 멀쩡한 벡터에 `ingest_state='failed'` 가 찍힌다. 그래서 적재 워커는 in-flight 가 0 일 때만 재생성한다. 근본 수정은 적재 코드라 인덱싱이 끝난 뒤로 미룬다(§8).
-- **시연 구간 운영.** 인덱싱 완주는 11월 초, 대회는 10월 초로 추정한다(spec §1). 2단계를 인덱싱 뒤로 미루면 시연은 과도기 구성(`q_llm`·`celery-llm`)으로 치르게 되고, 계획·실행이 적재 요약 FIFO 뒤에 서며 recreate 뒤 첫 탐색은 모델을 새로 받는다. 시연 전에 둘 중 하나를 정한다 — (a) 적재 pause → in-flight 0 → 2단계 스택 업데이트 → 워밍업 → resume, (b) 과도기 구성 그대로 두고 시연·리허설 구간만 적재 pause + 워커 기동 뒤 워밍업. (b)는 `celery-llm` 자식 4개가 모델을 따로 올려 워밍업 1회가 모두를 데우지 못한다. 어느 쪽이든 과도기 구성에서 딥리서치를 돌리는 구간(리허설·미리 돌리기·실측 포함)은 적재 pause·in-flight 0 안이어야 한다 — 적재가 돌 때 실행이 슬롯을 쥐면 적재 아이템이 stale 복구로 밀린다(함정 16번). 절차는 `bulk_ingest_runbook.md` §8, 미리 돌려둔 보고서를 여는 방식(§8 시연 질문)이면 둘 다 필요 없다.
+- **시연 구간 운영.** (해소 — 2단계를 인덱싱 도중 pause 안에서 마쳐 시연은 전용 워커 구성으로 치른다. 아래는 그 전의 판단 기록.) 인덱싱 완주는 11월 초, 대회는 10월 초로 추정한다(spec §1). 2단계를 인덱싱 뒤로 미루면 시연은 과도기 구성(`q_llm`·`celery-llm`)으로 치르게 되고, 계획·실행이 적재 요약 FIFO 뒤에 서며 recreate 뒤 첫 탐색은 모델을 새로 받는다. 시연 전에 둘 중 하나를 정한다 — (a) 적재 pause → in-flight 0 → 2단계 스택 업데이트 → 워밍업 → resume, (b) 과도기 구성 그대로 두고 시연·리허설 구간만 적재 pause + 워커 기동 뒤 워밍업. (b)는 `celery-llm` 자식 4개가 모델을 따로 올려 워밍업 1회가 모두를 데우지 못한다. 어느 쪽이든 과도기 구성에서 딥리서치를 돌리는 구간(리허설·미리 돌리기·실측 포함)은 적재 pause·in-flight 0 안이어야 한다 — 적재가 돌 때 실행이 슬롯을 쥐면 적재 아이템이 stale 복구로 밀린다(함정 16번). 절차는 `bulk_ingest_runbook.md` §8, 미리 돌려둔 보고서를 여는 방식(§8 시연 질문)이면 둘 다 필요 없다.
 - **원문 보기는 자체 PDF(`/api/books/{cnts_id}/pdf`).** `uci`·`url` 이 논문 236,513편 전부 0건이라 외부 링크 분기는 운영에서 죽은 코드다.
-- **비동기 테스트는 `asyncio.run(...)` 관례.** `pytest-asyncio` 는 설치하지 않는다 — 플러그인 없이 `@pytest.mark.asyncio` 를 쓰면 코루틴이 실행되지 않고 통과로 처리된다.
+- **비동기 테스트는 `asyncio.run(...)` 관례.** `pytest-asyncio` 는 설치하지 않는다 — 플러그인 없이 `@pytest.mark.asyncio` 를 쓰면 코루틴 본문이 실행되지 않는다(로컬 pytest 9.1.1 은 `async def functions are not natively supported` 로 실패 처리한다 — 예전 판본은 경고만 남기고 통과시켰다).
 
 ---
 
@@ -187,9 +202,11 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 - **전용 워커 전환 뒤의 동시 실행 상한·대기 신호 없음** — 과도기(`q_llm`)에는 실행 슬롯 1개를 넘으면 approve·retry 가 429 다(프론트가 이 응답을 처리해야 한다). 전용 워커 전환 뒤에는 실행이 한 번에 한 잡이라 두 번째 잡은 `approved` 로 최대 25분 기다리고, 그동안 SSE 는 ping 만 보낸다(계획은 별도 워커라 막히지 않는다). 상한·429 나 큐 순번 표시를 둘지 화면과 함께 정한다(75).
 
 **운영·배포**
-- **머지 전 리뷰 반영분 운영 배포** — 스키마 변경 없음. 순서는 §5(적재 워커 재생성은 적재 pause 로 in-flight 를 비운 뒤, 전용 워커 전환은 인덱싱 뒤 또는 같은 절차 안에서 스택 업데이트).
-- **시연 구간 운영 방식 결정** — 전용 워커로 먼저 넘길지, 과도기 구성으로 시연 구간만 적재를 pause 할지(§5 시연 구간, 런북 §8).
+- ~~머지 전 리뷰 반영분 운영 배포~~ — **해소(2026-09-23 18:23 KST).** 적재 pause 안에서 2단계 스택 업데이트로 배포하고 워밍업까지 확인했다(§2-1).
+- **Portainer 스택 정의와 저장소 `docker-compose.yml` 불일치** — 운영은 Portainer 에서 직접 작성한 스택으로 돈다. 저장소 compose 는 `flux` 가 켜져 있고 `paddleocr` 가 없는데, 스택은 `flux` 를 주석 처리했고 `paddleocr` 도 이번 업데이트에서 주석 처리했다(쓰지 않는 서비스). 주석 처리 뒤에도 `nl-lib-paddleocr` 컨테이너가 남았는지 확인해 정리한다. 어느 쪽을 정본으로 둘지 정해 맞춘다 — 저장소 compose 로 배포 절차를 안내하면 실제 스택과 어긋난다.
+- ~~시연 구간 운영 방식 결정~~ — **해소.** 전용 워커로 먼저 넘겼다(§2-1).
 - **[적재] 복구 경로 이중 실행 — 인덱싱이 끝난 뒤 적재 코드에서 고친다** — 끊긴 아이템을 stale 복구가 새 체인으로 끝낸 뒤 브로커가 옛 체인을 재전달해 같은 아이템을 다시 돌린다(단계 래퍼가 `done`·체크포인트를 보지 않고, stale 복구가 옛 태스크를 revoke 하지 않음). 논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다. 그 전까지는 적재 워커를 in-flight 0 에서만 재생성하고, 이미 재생성한 적이 있으면 stale 복구를 거친 아이템을 찾아 추출부터 다시 돌린다(함정 16번). round04a 스코프 밖 — 인덱싱이 도는 동안 적재 코드는 건드리지 않는다.
+- **[적재] 손상 의심 논문 2건 — 나중에 한꺼번에 처리** — 2026-09-23 서버 조회에서 stale 복구를 거친 아이템이 둘 나왔다: `81262`(`KCI_FI001484600`)·`81260`(`KCI_FI001484593`), 둘 다 논문·`done`·`finalized`·`attempt=1`, `updated_at` 03:02 UTC. 복구 시각으로 보아 끊긴 시점은 round04a 첫 배포 무렵이고, `updated_at` 이 그 뒤로 바뀌지 않아 옛 체인이 다시 돈 흔적은 조회 시점까지 없다. 확인할 것: ① Redis `unacked` 에 두 아이템 메시지가 남았는지(`redis-cli -n 0 HVALS unacked | grep -cE '8126(0|2)'`, 0 이면 재실행 위험 없음) ② Milvus 청크가 본문(쪽 범위 1 이상·수십 개)인지 초록(쪽 `(0, 0)`·몇 개)인지. 초록으로 덮였으면 `POST /api/admin/ingest-jobs/{job_id}/retry` `{"item_ids": [...], "reset_stage": "pending"}` 로 원본 PDF 에서 다시 적재한다(함정 16번).
 - **재개(retry) 경로 라이브 미검증** — 종합 실패가 자연발생하지 않았다. 단위 테스트는 머지 전 리뷰에서 체인의 세 구간(종합 실패가 `stage=explored`·스냅샷을 남김 → `POST /retry` 가 그대로 두고 `queued` 로 → 워커가 탐색 없이 종합만)을 덮도록 보강했지만, 라이브에서는 한 번도 돌지 않았다.
 - **종합·계획 중 취소 라이브 미검증** — 리뷰에서 고친 구간이다. 단위 테스트로만 확인했다.
 - **기본 파라미터 실측 없음** — 설계값 5~7분(하위질문 6·재탐색 3) 미측정. 잡 상한 25분 안에 드는지도 여기서 본다. 시연 전 1회 필요. 과도기 구성이면 적재 pause·in-flight 0 안에서 잰다(런북 §8).
@@ -225,7 +242,7 @@ plan: `docs/superpowers/plans/2026-09-21-round04a-deep-research-backend.md`
 ## 상태
 - [x] code-reviewer 정적 리뷰 통과 — 머지 전 영역별 리뷰 + 적대적 검증(§4). 고칠 것은 반영했고 나머지는 §8 이월로 옮겼다.
 - [x] 테스트 green — 549 passed (로컬 미설치 패키지로 collect 실패하는 3개 모듈 제외: `FlagEmbedding`·`openpyxl`)
-- [x] 수동 스모크 — §2 라이브 검증(재개 경로 제외). 머지 전 리뷰 반영분은 운영 미배포(§5 순서, §8)
-- [ ] 문서 갱신 — 완료노트·spec **구현 시 변경**·plan **이후 변경**·`recurring-gotchas.md` 14번 정정과 16~19번·README·`00_status` 반영 완료. **교본 미작성**
+- [x] 수동 스모크 — §2 라이브 검증(재개 경로 제외), 리뷰 반영분 운영 배포 뒤 워밍업 잡(§2-1)
+- [x] 문서 갱신 — 완료노트·spec **구현 시 변경**·plan **이후 변경**·`recurring-gotchas.md` 14번 정정과 16~19번·README·`00_status` 반영 완료. 교본 `docs/guides/round04a/` 5챕터(수록 코드 46건이 저장소 파일과 글자 그대로 일치함을 스크립트로 대조)
 - [ ] `dev` 머지 승인
 - [ ] `dev→main` 머지 + push

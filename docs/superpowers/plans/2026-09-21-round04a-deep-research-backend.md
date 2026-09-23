@@ -2911,8 +2911,9 @@ async def subscribe(job_id: str, *, idle_timeout: float = 15.0):
 
 async 테스트는 `asyncio.run` 으로 돈다. `@pytest.mark.asyncio` 를 쓰면 안
 된다 — `pytest-asyncio` 가 이 저장소에 설치돼 있지 않고, 플러그인이 없으면
-pytest 는 코루틴을 **실행하지 않고 경고만 남긴 뒤 통과로 처리한다.** 초록불인
-채로 아무것도 검증하지 않는 테스트가 되므로 관례(`test_research_explorer.py`)
+pytest 는 코루틴 본문을 **실행하지 않는다** — 로컬 pytest 9.1.1 은 `async def
+functions are not natively supported` 로 실패 처리하고, 예전 판본은 경고만 남긴
+채 통과시켰다. 어느 쪽이든 검증은 일어나지 않으므로 관례(`test_research_explorer.py`)
 를 그대로 따른다.
 
 relay 는 모듈 최상단에서 import 하지 않는다. `redis` 는 requirements 에만

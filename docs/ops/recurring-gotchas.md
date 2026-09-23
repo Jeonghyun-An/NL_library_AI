@@ -100,6 +100,7 @@
 - **원인**: Portainer 의 Docker API 클라이언트 타임아웃이 CUDA 포함 수 GB 이미지 pull 시간을 못 견딘다.
 - **해결**: 서버에서 `docker pull <이미지>` 로 먼저 받아두고, Portainer 에서는 Redeploy 만 누른다(이미 로컬에 있으면 즉시 끝난다).
 - **재발 방지**: 큰 이미지를 새로 빌드한 배포는 Portainer 에 맡기지 말고 pull 을 분리한다.
+- **재발 (2026-09-23, round04a)**: 스택 정의를 고쳐 **Update the stack** 을 누를 때 "Re-pull image" 토글을 켠 채였더니 `Request failed with status code 500` 으로 실패했다. 새 이미지는 서버에서 이미 받아 둔 상태였는데, 토글이 스택의 **모든** 이미지(`vllm/vllm-openai:latest-cu130` 등)를 다시 받으려다 끊긴 것이다. 적용 전 단계에서 실패해 컨테이너는 하나도 바뀌지 않았고, 토글을 끄고 다시 누르자 바로 됐다. UI 는 원인을 보여 주지 않으니, 500 이 나면 재시도 전에 `docker ps -a --format '{{.Names}}	{{.CreatedAt}}'` 로 무엇이 바뀌었는지부터 본다. Portainer 로그는 오류를 `ERR` 로 적는다(`grep -i error` 로는 안 걸린다).
 
 ## 13. `services.search.pipeline` 을 모듈 최상단에서 import 하면 로컬 테스트가 통째로 죽는다
 
