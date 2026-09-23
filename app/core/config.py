@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -111,6 +111,22 @@ class Settings(BaseSettings):
 
     # ── 도메인 프로파일 ──────────────────────────────
     DOMAIN_PROFILE: str = "nl_library"
+
+    # ── 딥리서치 ─────────────────────────────────────
+    # 계획·실행 태스크의 큐. 기본값이 q_llm 인 이유: 코드만 먼저 배포하면(기존
+    # 컨테이너 env 그대로) 지금처럼 celery-llm 이 받는다. 전용 워커(-Q q_research)를
+    # 띄울 때 보내는 쪽(fastapi)과 같이 q_research 로 바꾼다.
+    RESEARCH_QUEUE: str = "q_llm"
+    # 계획 태스크만 따로 보내는 큐. 비우면 RESEARCH_QUEUE 를 따른다(코드만 먼저 배포할
+    # 때 그대로 q_llm). 전용 워커는 concurrency 1 이라 계획(0.6초)이 같은 큐에 있으면
+    # 다른 잡의 실행(최대 25분) 뒤에 서서 새 질문이 created 로 멈춘다.
+    RESEARCH_PLAN_QUEUE: str = ""
+
+    @model_validator(mode="after")
+    def _plan_queue_follows_research_queue(self) -> "Settings":
+        if not self.RESEARCH_PLAN_QUEUE.strip():
+            self.RESEARCH_PLAN_QUEUE = self.RESEARCH_QUEUE
+        return self
 
     # ── 대량 인덱싱 잡 ───────────────────────────────
     INGEST_HIGH_WATER: int = 32          # 잡당 동시 in-flight 아이템 수

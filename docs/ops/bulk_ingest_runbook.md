@@ -11,11 +11,15 @@ docker compose build fastapi
 # 워커 4종(celery-worker/cpu/llm/embed/beat)은 같은 이미지(nl-lib-fastapi)를 공유
 ```
 
+> **대량 인덱싱이 도는 중이면 스택을 업데이트하지 않는다.** 앱 서비스가 전부 같은 `:latest` 라 스택 업데이트 한 번이 도는 적재 워커를 모두 재생성하고, 진행 중이던 아이템이 끊긴다. 볼륨의 데이터는 지워지지 않지만, 끊긴 아이템은 stale 복구로 다시 끝난 뒤 약 2시간 뒤 브로커가 옛 태스크를 재전달해 단계가 한 번 더 돈다 — 논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다(`docs/ops/recurring-gotchas.md` 16번). 꼭 재생성해야 하면 **§8 대로 적재를 pause 하고 in-flight 가 0 이 된 뒤** 한다. 딥리서치 전용 워커(`celery-research`·`celery-research-plan`) 전환도 인덱싱이 끝난 뒤, 또는 §8 절차 안에서 한다.
+
 ## 1. DB 마이그레이션 (additive — 무중단)
+
+> **2026-09-22 실측: 이 절은 그대로는 실패한다.** 운영 DB 는 FastAPI lifespan(`create_all`·`ALTER TABLE … ADD COLUMN IF NOT EXISTS`)이 `0004` 객체를 먼저 만들어 두었고 스탬프만 `0003` 이었다 — `upgrade head` 가 `DuplicateColumn` 으로 죽는다. 객체 존재를 확인하고 `stamp` 로 맞춘다(`docs/ops/recurring-gotchas.md` 14번). 현재 운영은 `0005_research_jobs`(2026-09-23).
 
 ```bash
 docker compose exec -w /app fastapi alembic current        # 0003 확인
-docker compose exec -w /app fastapi alembic upgrade head    # → 0004
+docker compose exec -w /app fastapi alembic upgrade head    # → 0004  (위 경고 — 객체가 이미 있으면 stamp)
 ```
 
 0004가 하는 일 (전부 additive, 기존 데이터 영향 없음):
@@ -147,6 +151,52 @@ curl -s http://<host>/api/admin/ingest-jobs/<job_id>
 
 - 건당 처리시간 분포, VLM 폴백률(`item.meta.extract_method`), 시간당 처리율/ETA 확인
 - `INGEST_HIGH_WATER`/워커 concurrency 튜닝 → 일 4,000건 처리율 달성 확인 후 30만건 1회차
+
+## 8. 적재를 잠시 멈춰야 할 때 — 과도기 구성의 운영 딥리서치 · 적재 워커 재생성 전
+
+세 경우에 쓴다.
+
+- **과도기 구성에서 운영 딥리서치를 돌릴 때 — 시연·리허설, 시연 후보 미리 돌리기, 기본 파라미터 실측, 워밍업 전부.** 전용 워커로 넘기기 전(`RESEARCH_QUEUE` 기본값 `q_llm`)에는 딥리서치 계획·실행이 적재의 요약·마무리와 같은 `q_llm` FIFO 에서, GPU·모델 캐시가 없는 `celery-llm`(슬롯 4개)으로 돈다. 문제는 대기만이 아니다.
+  - **적재 데이터가 손상될 수 있다.** 실행 잡 하나가 슬롯 하나를 최대 25분(`JOB_DEADLINE`) 쥔다. 여럿이 겹쳐 슬롯이 모자라면, 요약·마무리를 기다리는 적재 아이템이 단계 타임아웃(요약 1200초·마무리 900초)을 넘긴다 — 타임아웃은 `updated_at` 부터 재고, 큐에서 기다리는 동안에는 갱신되지 않는다. 그러면 디스패처가 stale 복구로 새 체인을 띄우고 큐에 남은 옛 메시지도 그대로 돌아 함정 16번의 중복 체인이 된다 — **논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다.**
+  - 그래서 **적재 잡이 `running` 인 동안에는 운영 딥리서치를 돌리지 않는다. 먼저 pause 하고 in-flight(`dispatched`·`running`)가 0 이 된 것을 본 뒤 돌린다**(아래 절차). pause 만 하고 in-flight 가 남은 채 돌리면 안 된다 — `paused` 동안은 stale 판정이 멈출 뿐이고, `resume` 뒤 첫 디스패처 틱이 슬롯을 기다리다 타임아웃을 넘긴 아이템을 그때 복구한다.
+  - API 는 이 구성에서 실행을 한 번에 한 잡으로 묶는다 — 실행 중·대기 중(`approved`·`queued`·`running`) 잡이 있으면 approve·retry 가 429 다(`api/research.py` `_to_run_queue`, round04a 머지 전 리뷰 반영분부터 — 그 전 코드가 도는 운영에는 상한이 없다). 몰아서 승인하는 사고를 막는 안전장치이지, 적재 중 실행을 허락한다는 뜻이 아니다. 429 가 풀리지 않으면 막고 있는 잡을 찾아 취소한다 — 회수기는 `running` 만 45분 뒤에 거두고, 브로커 메시지를 잃은 `approved`·`queued` 잡은 건드리지 않는다.
+
+    ```bash
+    docker exec nl-lib-postgres psql -U <user> -d <db> -c \
+      "SELECT id, status, started_at FROM research_jobs WHERE status IN ('approved','queued','running')"
+    docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/research/<research_job_id>/cancel
+    ```
+  - 적재가 돌면 계획(0.6초)도 요약 수십 건 뒤에 서서 화면이 `created` 로 멈춘다. spec 추정으로 `kci-full-236k` 는 11월 초에 끝나고 대회는 10월 초라, 인덱싱이 끝나길 기다리면 시연은 이 구성으로 치른다.
+- **적재 워커를 재생성하는 배포 전**(스택 업데이트, `nl-lib-celery-llm` 컨테이너 Recreate 등). 도는 적재 태스크를 끊으면 stale 복구와 브로커 재전달이 둘 다 일어나 끝난 아이템의 단계가 다시 돈다(`recurring-gotchas.md` 16번). **in-flight 가 0 일 때 재생성하면 끊기는 태스크가 없다.** 전용 워커 전환(완료노트 §5 2단계)을 시연 전에 하려면 이 절차 안에서 한다.
+
+**pause 는 적재된 데이터도, 진행 중인 아이템도 버리지 않는다.** `pause` 는 잡 상태만 `paused` 로 바꾼다. 디스패처는 `running` 잡에만 새 아이템을 넣으므로 신규 디스패치가 멈추고, 이미 디스패치된 체인은 끝까지 돈다 — 그래서 pause 직후에도 요약·마무리가 한동안 `q_llm` 으로 들어온다. `paused` 동안은 stale 복구도 돌지 않고, `resume` 하면 멈춘 자리부터 이어간다. 다만 `resume` 뒤 첫 틱에서 stale 판정을 다시 하므로, 딥리서치·재생성은 **in-flight 0 을 본 뒤에** 한다 — 비운 채로 멈춰 두면 resume 때 복구될 아이템이 없다.
+
+```bash
+# 서버에서 컨테이너 경유로 호출한다(§5-a — /api/admin 은 외부 차단)
+docker exec nl-lib-fastapi curl -s localhost:8000/api/admin/ingest-jobs      # status=running 인 잡을 전부 멈춘다
+docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/<job_id>/pause
+
+# 비우기 — 잡마다 status_counts 의 dispatched·running 이 0 이 될 때까지 기다린다
+docker exec nl-lib-fastapi curl -s localhost:8000/api/admin/ingest-jobs/<job_id>
+docker exec nl-lib-redis redis-cli LLEN q_llm      # 0 이면 q_llm 에 남은 적재 메시지가 없다
+```
+
+- **비우는 데 걸리는 시간.** 잡당 in-flight 는 `INGEST_HIGH_WATER`(기본 32)건이고, 잡 처리율(69~143건/h) 기준이면 15~30분 안팎이다. 시연 1시간 전에 pause 한다. 단계 타임아웃(요약·임베딩 1200초)의 두 배를 넘겨도 줄지 않으면 재생성하기 전에 워커 로그부터 본다.
+- **멈춘 동안 — 배포.** 이 상태에서 스택 업데이트나 컨테이너 Recreate 를 한다. 적재 워커가 재생성돼도 끊기는 태스크가 없다.
+- **멈춘 동안 — 시연·리허설·미리 돌리기.** in-flight 0 을 확인한 뒤에만 딥리서치를 승인한다. 워커를 띄우거나 재생성했으면 **워밍업 잡을 한 번** 돌린다. 탐색은 BGE-M3·리랭커를 워커 프로세스 안에서 처음 쓸 때 올리고, `celery-llm` 은 모델 캐시 마운트가 없어 recreate 뒤 첫 탐색이 모델을 새로 받는다(함정 17번). 축소 파라미터로 잡을 만들어 승인하고 `completed` 까지 본다. 워커 로그의 `리랭커 로드 완료 (cuda|cpu, …)` 로 장치도 확인한다.
+
+  ```bash
+  docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/research -H 'Content-Type: application/json' \
+    -d '{"question":"공공도서관 서비스 품질 평가 연구","params":{"max_subquestions":1,"max_recheck":0,"per_subq_top_k":4}}'
+  docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/research/<research_job_id>/approve
+  ```
+
+  과도기 구성의 한계: `celery-llm` 은 prefork 자식 4개가 모델을 따로 올리므로 워밍업 1회가 모든 자식을 데우지 않는다. 시연에서 첫 잡의 지연을 없애려면 전용 워커(`--concurrency=1`)로 먼저 넘긴다.
+- **끝나면 바로 resume.**
+
+  ```bash
+  docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/<job_id>/resume
+  ```
 
 ## 롤백
 

@@ -26,6 +26,7 @@ from models import section as _section_mod    # noqa: F401, E402
 from models import figure as _figure_mod      # noqa: F401, E402
 from models import search_history as _hist_mod  # noqa: F401, E402
 from models import ingest_job as _job_mod     # noqa: F401, E402
+from models import research as _research_mod  # noqa: F401, E402
 
 config = context.config
 if config.config_file_name is not None:

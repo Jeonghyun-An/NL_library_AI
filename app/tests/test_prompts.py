@@ -122,3 +122,20 @@ def test_nl_library_prompts_exist_and_render():
     bc_s, _, bc_p = lib.get("book_chat").render(
         title="t", author="a", pub_date=", 2024", summary="s", themes="th")
     assert "전담 독서 도우미" in bc_s and bc_p.get("max_tokens") == 10000
+
+    # 딥리서치 3종 — StrictUndefined 라 템플릿 변수가 바뀌면 여기서 잡는다.
+    # 호출부 kwargs 쪽 어긋남은 이 리터럴로는 못 잡는다 — critique()·make_plan()·
+    # synthesize() 를 chat 만 대역으로 바꿔 실제로 부르는 테스트가 그쪽을 지킨다.
+    rp_s, rp_u, _ = lib.get("research_plan").render(question="청소년 진로상담", limit=6)
+    assert "연구 사서" in rp_s and "6" in rp_s and "청소년 진로상담" in rp_u
+
+    rc_s, rc_u, _ = lib.get("research_critique").render(
+        subquestion="하위질문", evidence_count=3, evidence_list="- 논문 (2008)",
+        min_evidence=5, tried_queries="검색어")
+    assert '"verdict"' in rc_s and "하위질문" in rc_u and "3편" in rc_u
+
+    rs_s, rs_u, _ = lib.get("research_synthesize").render(
+        question="청소년 진로상담", subquestion="하위질문",
+        evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
+    assert '"summaries"' in rs_s and "E1, E3" in rs_s
+    assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
