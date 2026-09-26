@@ -19,6 +19,7 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncIterator
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,14 +29,16 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
-from core.deps import get_db
+from core.deps import get_browser_id_optional, get_db
 from db.postgres import AsyncSessionLocal
 from models.research import (
     RUNNABLE_STATUSES, STATUS_APPROVED, STATUS_CANCELED, STATUS_QUEUED, TERMINAL_STATUSES,
     ResearchJob, ResearchStep,
 )
 from services.research.planner import query_key
-from services.research.relay import TERMINAL_KIND, publish_terminal, subscribe, terminal_event
+from services.research.relay import (
+    TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
+)
 from services.research.state import merge_params
 
 log = logging.getLogger(__name__)
@@ -149,6 +152,12 @@ def _enqueue(task_name: str, jid: uuid.UUID) -> bool:
     return True
 
 
+async def _announce(jid: uuid.UUID, status: str, stage: str) -> None:
+    """상태 전이를 스트림에 알린다. 전이가 성공한 뒤에만 부른다. 종료 상태는
+    publish_terminal 이 알린다 — status 로 내면 스트림이 닫히지 않는다."""
+    await publish(jid, "status", {"status": status, "stage": stage})
+
+
 def _broker_unavailable() -> HTTPException:
     return HTTPException(status_code=503, detail="작업 큐에 연결하지 못했습니다 — 잠시 후 다시 시도하세요")
 
@@ -171,13 +180,19 @@ def _validated_plan(plan: list[str], *, limit: int) -> list[str]:
 
 
 @router.post("")
-async def create_research(req: ResearchCreate, db: AsyncSession = Depends(get_db)):
+async def create_research(
+    req: ResearchCreate, db: AsyncSession = Depends(get_db),
+    browser_id: uuid.UUID | None = Depends(get_browser_id_optional),
+):
     try:
         params = merge_params(req.params)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    job = ResearchJob(id=uuid.uuid4(), question=req.question, params=params)
+    # 헤더가 없거나 틀려도 잡은 만든다 — 기록 API 와 달리 헤더 없는 curl 시연과
+    # 옛 화면이 그대로 돌아야 한다.
+    job = ResearchJob(id=uuid.uuid4(), question=req.question, params=params,
+                      created_by=str(browser_id) if browser_id else None)
     db.add(job)
     await db.commit()
 
@@ -213,9 +228,13 @@ async def approve_plan(
                                status=STATUS_APPROVED, plan=plan):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
+    # 큐에 넣기 전에 알린다. 넣은 뒤에 알리면 워커가 먼저 집어 낸 running 뒤에
+    # approved 가 도착해 화면이 한 단계 뒤로 간다.
+    await _announce(jid, STATUS_APPROVED, job.stage)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_APPROVED,),
                           status="awaiting_approval", plan=old_plan)
+        await _announce(jid, "awaiting_approval", job.stage)
         raise _broker_unavailable()
     return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan}
 
@@ -252,9 +271,12 @@ async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
                                last_error=None, finished_at=None):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
+    # 큐에 넣기 전에 알리는 이유는 approve 와 같다
+    await _announce(jid, STATUS_QUEUED, job.stage)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_QUEUED,), status="failed",
                           last_error=old_error, finished_at=old_finished)
+        await publish_terminal(jid, "failed", old_error)
         raise _broker_unavailable()
     return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": job.stage}
 
@@ -278,21 +300,35 @@ async def cancel_research(job_id: str, db: AsyncSession = Depends(get_db)):
     return {"job_id": str(jid), "status": STATUS_CANCELED}
 
 
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
+async def _steps(db: AsyncSession, jid: uuid.UUID) -> list[dict]:
+    """GET 과 스트림 스냅샷이 같은 모양을 쓴다 — 갈리면 새로고침한 화면과 재접속한
+    화면이 같은 잡을 다르게 그린다."""
+    rows = (await db.execute(
+        select(ResearchStep).where(ResearchStep.job_id == jid).order_by(ResearchStep.seq)
+    )).scalars().all()
+    return [
+        {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx, "title": s.title,
+         "detail": s.detail, "status": s.status, "result": s.result}
+        for s in rows
+    ]
+
+
 @router.get("/{job_id}")
 async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
     job = await _get_job(db, _job_uuid(job_id))
-    rows = (await db.execute(
-        select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
-    )).scalars().all()
+    # created_by 는 싣지 않는다. 이 조회에는 소유 확인이 없어 링크만 알면 누구나 여는데,
+    # 남의 브라우저 ID 가 나가면 그걸 헤더에 넣어 그 사람의 기록을 읽을 수 있다.
     return {
         "job_id": str(job.id), "question": job.question, "status": job.status,
         "stage": job.stage, "plan": job.plan, "report": job.report,
-        "last_error": job.last_error,
-        "steps": [
-            {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx, "title": s.title,
-             "detail": s.detail, "status": s.status, "result": s.result}
-            for s in rows
-        ],
+        "last_error": job.last_error, "params": job.params,
+        "created_at": _iso(job.created_at), "started_at": _iso(job.started_at),
+        "finished_at": _iso(job.finished_at),
+        "steps": await _steps(db, job.id),
     }
 
 
@@ -305,21 +341,17 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     jid = _job_uuid(job_id)
     job = await _get_job(db, jid)
 
-    rows = (await db.execute(
-        select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
-    )).scalars().all()
-    snapshot = [
-        {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx,
-         "title": s.title, "detail": s.detail, "status": s.status}
-        for s in rows
-    ]
     # 제너레이터는 요청 세션이 닫힌 뒤에 돈다 — ORM 객체를 들고 가지 않고
     # 필요한 값만 미리 꺼내 둔다.
+    snapshot = {
+        "kind": "snapshot", "steps": await _steps(db, job.id),
+        "job": {"status": job.status, "stage": job.stage, "plan": job.plan},
+    }
     job_status, job_error = job.status, job.last_error
 
     async def _gen() -> AsyncIterator[str]:
         # 재접속 복원 — 뼈대를 먼저 보내고 그 뒤를 중계한다
-        yield _sse({"kind": "snapshot", "steps": snapshot})
+        yield _sse(snapshot)
         if job_status in TERMINAL_STATUSES:
             # 끝난 잡에 붙었다면 중계할 것이 없다. 구독하면 영원히 기다린다.
             yield _sse(terminal_event(job_status, job_error))

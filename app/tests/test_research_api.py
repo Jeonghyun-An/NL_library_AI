@@ -12,6 +12,7 @@ import json
 import sys
 import types
 import uuid
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -86,7 +87,7 @@ class _FakeDB:
             "id": jid, "question": "공공도서관 서비스 품질 평가", "status": "created",
             "params": {"max_subquestions": 3}, "plan": None, "report": None,
             "stage": "created", "state_snapshot": None, "last_error": None,
-            "finished_at": None,
+            "created_by": None, "created_at": None, "started_at": None, "finished_at": None,
         }
         row.update(fields)
         self.jobs[jid] = row
@@ -103,7 +104,8 @@ class _FakeDB:
         self.jobs[obj.id] = {
             "id": obj.id, "question": obj.question, "status": obj.status or "created",
             "params": obj.params, "plan": None, "report": None, "stage": "created",
-            "state_snapshot": None, "last_error": None, "finished_at": None,
+            "state_snapshot": None, "last_error": None, "created_by": obj.created_by,
+            "created_at": None, "started_at": None, "finished_at": None,
         }
 
     async def execute(self, stmt, params=None):
@@ -148,12 +150,16 @@ class _FakeCelery:
 
 
 class _Api:
-    def __init__(self, client, db, celery, published, research):
+    def __init__(self, client, db, celery, published, research, events):
         self.client = client
         self.db = db
         self.celery = celery
         self.published = published
         self.research = research
+        self.events = events
+
+    def announced(self) -> list[tuple[str, dict]]:
+        return [(kind, payload) for _, kind, payload in self.events]
 
 
 _CACHED = ("api.research", "services.research.relay")
@@ -206,11 +212,18 @@ def api(monkeypatch):
 
     monkeypatch.setattr(research, "publish_terminal", _publish_terminal)
 
+    events: list[tuple] = []
+
+    async def _publish(job_id, kind, payload):
+        events.append((job_id, kind, payload))
+
+    monkeypatch.setattr(research, "publish", _publish)
+
     db = _FakeDB()
     app = FastAPI()
     app.include_router(research.router)
     app.dependency_overrides[get_db] = lambda: db
-    return _Api(TestClient(app), db, celery, published, research)
+    return _Api(TestClient(app), db, celery, published, research, events)
 
 
 def _frames(body: str) -> list[dict]:
@@ -501,6 +514,145 @@ class TestStream:
         frames = _frames(api.client.get(f"/api/research/{jid}/stream").text)
 
         assert frames[-1] == {"kind": "canceled", "status": "canceled"}
+
+
+class TestCreatedBy:
+    """잡에 브라우저 ID 를 남긴다(research_jobs.created_by) — 누가 만든 잡인지의 유일한 근거다."""
+
+    def _row(self, api, res) -> dict:
+        return api.db.jobs[uuid.UUID(res.json()["job_id"])]
+
+    def test_browser_id_header_fills_created_by(self, api):
+        sid = str(uuid.uuid4())
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구"},
+                              headers={"x-session-id": sid})
+        assert res.status_code == 200
+        assert self._row(api, res)["created_by"] == sid
+
+    def test_missing_header_still_creates_the_job(self, api):
+        # 기록 API 와 달리 필수가 아니다 — 헤더 없는 curl 시연·옛 화면이 그대로 돌아야 한다
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구"})
+        assert res.status_code == 200
+        assert self._row(api, res)["created_by"] is None
+
+    def test_malformed_header_is_ignored(self, api):
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구"},
+                              headers={"x-session-id": "not-a-uuid"})
+        assert res.status_code == 200
+        assert self._row(api, res)["created_by"] is None
+
+
+class TestGetFields:
+    _T0 = datetime(2026, 9, 26, 1, 2, 3, tzinfo=timezone.utc)
+
+    def test_times_and_params_are_returned(self, api):
+        jid = api.db.add_job(status="completed", params={"max_subquestions": 3},
+                             created_at=self._T0, started_at=self._T0.replace(minute=3),
+                             finished_at=self._T0.replace(minute=9))
+        body = api.client.get(f"/api/research/{jid}").json()
+        assert body["created_at"] == "2026-09-26T01:02:03+00:00"
+        assert body["started_at"] == "2026-09-26T01:03:03+00:00"
+        assert body["finished_at"] == "2026-09-26T01:09:03+00:00"
+        assert body["params"] == {"max_subquestions": 3}
+
+    def test_times_not_reached_yet_are_null(self, api):
+        jid = api.db.add_job(status="created", created_at=self._T0)
+        body = api.client.get(f"/api/research/{jid}").json()
+        assert body["started_at"] is None and body["finished_at"] is None
+
+    def test_creator_is_not_exposed(self, api):
+        """조회에는 소유 확인이 없다 — 링크만 알면 누구나 여는 응답에 남의 브라우저 ID 가
+        실리면 그걸 헤더에 넣어 그 사람의 기록을 읽을 수 있다."""
+        jid = api.db.add_job(status="completed", created_by=str(uuid.uuid4()))
+        assert "created_by" not in api.client.get(f"/api/research/{jid}").json()
+
+
+_ROUNDS = [{"round": 1, "query": "가", "found_chunks": 4, "new_papers": 3,
+            "verdict": "insufficient", "note": "부족", "next_query": "가 보완"}]
+
+
+def _search_step():
+    return SimpleNamespace(seq=1, kind="search", subq_idx=0, title="가", detail="검색 중",
+                           status="done", result={"rounds": _ROUNDS})
+
+
+class TestSnapshot:
+    """재접속한 화면은 스냅샷만으로 지금까지의 장면을 복원한다."""
+
+    def test_snapshot_carries_step_results_and_job_state(self, api):
+        jid = api.db.add_job(status="completed", stage="synthesized", plan=["가"])
+        api.db.steps = [_search_step()]
+
+        snap = _frames(api.client.get(f"/api/research/{jid}/stream").text)[0]
+
+        assert snap["job"] == {"status": "completed", "stage": "synthesized", "plan": ["가"]}
+        assert snap["steps"][0]["result"] == {"rounds": _ROUNDS}
+
+    def test_snapshot_steps_match_get(self, api):
+        # 새로고침한 화면(GET)과 재접속한 화면(스냅샷)이 같은 모양을 받아야 한다
+        jid = api.db.add_job(status="completed", stage="synthesized", plan=["가"])
+        api.db.steps = [_search_step()]
+
+        snap = _frames(api.client.get(f"/api/research/{jid}/stream").text)[0]
+
+        assert snap["steps"] == api.client.get(f"/api/research/{jid}").json()["steps"]
+
+
+class TestStatusEvents:
+    """승인·재시도는 처리 즉시 status 를 발행한다 — 스트림에 붙은 화면이 폴링 없이 따라온다."""
+
+    def test_approve_announces_approved(self, api):
+        jid = api.db.add_job(status="awaiting_approval", stage="planned", plan=["가설 A"])
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+        assert api.announced() == [("status", {"status": "approved", "stage": "planned"})]
+
+    def test_approve_is_announced_before_the_worker_can_claim(self, api):
+        """큐에 넣은 뒤에 알리면 워커가 먼저 낸 running 뒤에 approved 가 도착해
+        화면이 한 단계 뒤로 간다."""
+        jid = api.db.add_job(status="awaiting_approval", stage="planned", plan=["가설 A"])
+        at_send = []
+        send = api.celery.send_task
+
+        def _send(name, args=None, **kw):
+            at_send.append(api.announced())
+            return send(name, args, **kw)
+
+        api.celery.send_task = _send
+        api.client.post(f"/api/research/{jid}/approve")
+
+        assert at_send == [[("status", {"status": "approved", "stage": "planned"})]]
+
+    def test_broker_failure_announces_the_reverted_status(self, api):
+        jid = api.db.add_job(status="awaiting_approval", stage="planned", plan=["가설 A"])
+        api.celery.fail = True
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 503
+        assert api.announced() == [
+            ("status", {"status": "approved", "stage": "planned"}),
+            ("status", {"status": "awaiting_approval", "stage": "planned"}),
+        ]
+
+    def test_rejected_approve_announces_nothing(self, api):
+        jid = api.db.add_job(status="planning")
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 409
+        assert api.events == []
+
+    def test_retry_announces_queued_with_stage(self, api):
+        # stage=explored 면 화면이 "종합부터 다시"로 그린다
+        jid = api.db.add_job(status="failed", plan=["가"], stage="explored",
+                             last_error="종합 실패")
+        assert api.client.post(f"/api/research/{jid}/retry").status_code == 200
+        assert api.announced() == [("status", {"status": "queued", "stage": "explored"})]
+
+    def test_retry_broker_failure_ends_with_the_old_failure(self, api):
+        """되돌린 상태는 종료 상태다 — status 가 아니라 종료 프레임으로 알려야 스트림이 닫힌다."""
+        jid = api.db.add_job(status="failed", plan=["가"], stage="explored",
+                             last_error="종합 실패")
+        api.celery.fail = True
+
+        assert api.client.post(f"/api/research/{jid}/retry").status_code == 503
+        assert api.announced() == [("status", {"status": "queued", "stage": "explored"})]
+        assert api.published == [(jid, "failed", "종합 실패")]
 
 
 class TestLoaderIsolation:
