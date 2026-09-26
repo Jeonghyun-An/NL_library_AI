@@ -161,6 +161,17 @@ export function withPlan(view: ResearchView, plan: string[]): ResearchView {
   return rebuild({ ...view, plan });
 }
 
+// 승인 응답(HTTP)을 화면에 반영한다. 승인 대기는 종료 상태가 아니라 승인하는 동안 스트림이 열려
+// 있고, 서버는 approved 를 알린 뒤 큐에 넣고 나서야 응답한다 — 워커가 곧바로 집어 낸 running
+// (또는 재접속 snapshot)이 응답보다 먼저 올 수 있다. 그 뒤에 응답의 approved 로 덮으면 화면이
+// 대기열로 되돌아가고, step·search 는 status 를 바꾸지 않으니 다음 status(탐색 끝)까지 복구되지
+// 않는다. 그래서 status 는 아직 승인 대기일 때만 바꾸고, 계획은 언제나 반영한다.
+export function applyApproval(view: ResearchView, status: ResearchStatus, plan: string[] | null | undefined): ResearchView {
+  const planned = plan?.length ? withPlan(view, plan) : view;
+  if (planned.status !== "awaiting_approval") return planned;
+  return applyResearchEvent(planned, { kind: "status", status, stage: planned.stage });
+}
+
 export function applyResearchEvent(view: ResearchView, event: ResearchEvent): ResearchView {
   switch (event.kind) {
     case "snapshot":

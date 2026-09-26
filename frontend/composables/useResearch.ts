@@ -10,7 +10,7 @@ import type {
   ResearchRetryResponse,
   ResearchView,
 } from "~/types/research";
-import { applyResearchEvent, initialResearchView, isTerminalEvent, isTerminalStatus, refreshView, withPlan } from "~/utils/researchEvents";
+import { applyApproval, applyResearchEvent, initialResearchView, isTerminalEvent, isTerminalStatus, refreshView } from "~/utils/researchEvents";
 import { httpStatus, researchErrorMessage } from "~/utils/researchErrors";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";
@@ -225,8 +225,8 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       () => research.approve(toValue(jobId), plan),
       (res) => {
         if (!view.value) return;
-        const planned = res.plan?.length ? withPlan(view.value, res.plan) : view.value;
-        view.value = applyResearchEvent(planned, { kind: "status", status: res.status, stage: planned.stage });
+        // 스트림이 응답보다 먼저 running 을 알렸으면 status 는 그대로 둔다(applyApproval)
+        view.value = applyApproval(view.value, res.status, res.plan);
         connect();
       },
       "계획을 승인하지 못했습니다",

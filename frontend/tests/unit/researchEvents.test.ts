@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { ResearchEvent, ResearchJob, ResearchReport, ResearchStepRow } from "~/types/research";
 import {
+  applyApproval,
   applyResearchEvent,
   initialResearchView,
   isTerminalEvent,
@@ -454,5 +455,47 @@ describe("refreshView·withPlan", () => {
   it("승인한 계획으로 하위질문 제목을 바꾼다", () => {
     const v = withPlan(initialResearchView(job({ status: "awaiting_approval" })), ["새 질문 하나"]);
     expect(v.subqs.map((s) => s.title)).toEqual(["새 질문 하나"]);
+  });
+});
+
+describe("applyApproval", () => {
+  const AWAITING = () => initialResearchView(job({ status: "awaiting_approval", started_at: null }));
+
+  it("아직 승인 대기면 응답의 approved 와 계획을 반영한다", () => {
+    const v = applyApproval(AWAITING(), "approved", ["새 질문 하나"]);
+    expect(v.status).toBe("approved");
+    expect(researchPhase(v)).toBe("queued");
+    expect(v.subqs.map((s) => s.title)).toEqual(["새 질문 하나"]);
+  });
+
+  it("스트림이 먼저 running 을 알렸으면 응답의 approved 로 되돌리지 않는다", () => {
+    // 서버는 큐에 넣기 전에 approved 를 알린다 — 워커가 곧바로 집으면 running·단계 이벤트가
+    // HTTP 응답보다 먼저 온다. 되돌리면 다음 status(explored)까지 탐색 화면이 대기열로 가려진다.
+    const live = run([
+      { kind: "status", status: "approved", stage: "planned" },
+      { kind: "status", status: "running", stage: "planned" },
+      SEARCH_STARTED,
+      { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+    ], AWAITING());
+    const v = applyApproval(live, "approved", ["효과 측정", "교사 인식"]);
+    expect(v.status).toBe("running");
+    expect(researchPhase(v)).toBe("exploring");
+    expect(v.subqs[0]!.rounds.map((r) => r.query)).toEqual(["효과 측정"]);
+  });
+
+  it("재접속 snapshot 이 먼저 와 running 이 됐어도 되돌리지 않는다", () => {
+    const live = run([{
+      kind: "snapshot", steps: [PLAN_ROW, SAVED_SEARCH_ROW],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: SAVED },
+    }], AWAITING());
+    const v = applyApproval(live, "approved", ["효과 측정", "교사 인식"]);
+    expect(v.status).toBe("running");
+    expect(researchPhase(v)).toBe("exploring");
+  });
+
+  it("응답에 계획이 없으면 화면의 계획을 그대로 둔다", () => {
+    const v = applyApproval(AWAITING(), "approved", null);
+    expect(v.status).toBe("approved");
+    expect(v.plan).toEqual(["효과 측정", "교사 인식"]);
   });
 });
