@@ -3,14 +3,15 @@ import { describe, expect, it } from "vitest";
 import type { ReportEvidence, ReportSection } from "~/types/research";
 import { citeChunks, citeLabel, metaLine, pageLabel, pdfPage, splitAuthors, splitCitations } from "~/utils/citations";
 
-function chunk(id: string, page = 3) {
-  return { chunk_id: id, text: `본문 ${id}`, page_start: page, page_end: page, score: 0.5 };
+function chunk(id: string, score = 0.5, page = 3) {
+  return { chunk_id: id, text: `본문 ${id}`, page_start: page, page_end: page, score };
 }
 
 const evidence: ReportEvidence = {
   cnts_id: "CNTS-1",
   meta: { title: "AI 윤리 교육", personal_author: "김철수; 이영희", pub_date: "2019-03" },
-  chunks: [chunk("c1"), chunk("c2"), chunk("c3")],
+  // 보고서의 evidence.chunks 는 전역 최고점 순이다(synthesizer._serialize_evidence)
+  chunks: [chunk("c1", 0.9), chunk("c2", 0.6), chunk("c3", 0.3)],
 };
 
 function section(map: Record<string, string[]>): ReportSection {
@@ -101,8 +102,13 @@ describe("pageLabel·pdfPage", () => {
 });
 
 describe("citeChunks", () => {
-  it("그 절에서 매칭된 대목만 근거의 점수 순서대로 고른다", () => {
-    expect(citeChunks(section({ E1: ["c3", "c1"] }), evidence, "E1").map((c) => c.chunk_id)).toEqual(["c1", "c3"]);
+  it("그 절에서 매칭된 대목만 서버가 준 절별 순서(그 하위질문의 점수 순) 그대로 고른다", () => {
+    // 이 절의 검색어로는 c3 가 c1 보다 잘 맞았다 — 전역 최고점 순(c1, c3)으로 되돌리면 안 된다
+    expect(citeChunks(section({ E1: ["c3", "c1"] }), evidence, "E1").map((c) => c.chunk_id)).toEqual(["c3", "c1"]);
+  });
+
+  it("절 매핑 가운데 근거에 없는 대목은 건너뛴다", () => {
+    expect(citeChunks(section({ E1: ["c2", "zz", "c1"] }), evidence, "E1").map((c) => c.chunk_id)).toEqual(["c2", "c1"]);
   });
 
   it("절 매핑이 없거나 모르는 대목만 가리키면 근거의 대목 전부를 쓴다", () => {

@@ -67,6 +67,9 @@ export function metaLine(meta: EvidenceMeta | undefined): string {
 
 // 한 논문이 여러 절에 실리면 evidence.chunks 는 그 합집합이다 — 칩은 자기 절에서
 // 매칭된 대목만 보여 줘야 절 내용과 맞는다. 매핑이 없으면(옛 보고서) 전부 보여 준다.
+// 순서는 절 매핑(evidence_chunks)의 순서를 그대로 쓴다 — 서버가 그 하위질문의 점수 순으로
+// 준다(citations.link_chunks). evidence.chunks 는 전역 최고점 순이라 그 순서로 고르면 이 절의
+// 검색어로는 덜 맞은 대목이 먼저 나온다.
 export function citeChunks(
   section: ReportSection | undefined,
   evidence: ReportEvidence | undefined,
@@ -75,8 +78,8 @@ export function citeChunks(
   if (!evidence) return [];
   const ids = section?.evidence_chunks?.[eid];
   if (!ids || !ids.length) return evidence.chunks;
-  const wanted = new Set(ids);
-  const picked = evidence.chunks.filter((c) => wanted.has(c.chunk_id));
+  const byId = new Map(evidence.chunks.map((c) => [c.chunk_id, c]));
+  const picked = ids.map((id) => byId.get(id)).filter((c): c is ReportChunk => c !== undefined);
   return picked.length ? picked : evidence.chunks;
 }
 
