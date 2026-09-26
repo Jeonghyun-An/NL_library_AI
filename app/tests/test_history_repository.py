@@ -8,9 +8,11 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+import sqlalchemy as sa
 from pydantic import ValidationError
 
 from history_sqlite import SID_A, SID_B, AsyncSessionOverSync, add_research_job, make_engine, raw_row
+from models.history import HistoryItem
 from repositories.history import (
     HistoryRepository, InvalidCursor, decode_cursor, encode_cursor, legacy_history_id,
 )
@@ -201,8 +203,9 @@ class TestList:
 
     def test_pages_do_not_skip_or_repeat(self, engine):
         ids = [uuid.uuid4() for _ in range(5)]
-        # 두 행이 같은 시각이어도 쪽 경계에서 빠지거나 겹치지 않아야 한다
-        times = [_at(1), _at(2), _at(2), _at(3), _at(4)]
+        # 같은 시각 두 행이 쪽 경계에 걸려도 빠지거나 겹치지 않아야 한다. limit=2 면 첫 쪽이
+        # [t4, t3 중 id 가 큰 쪽] 으로 끝나 나머지 t3 이 다음 쪽으로 넘어간다
+        times = [_at(1), _at(2), _at(3), _at(3), _at(4)]
         _import(engine, SID_A, *[
             {"id": i, "kind": "book", "title": f"검색 {n}", "created_at": t}
             for n, (i, t) in enumerate(zip(ids, times))
@@ -213,7 +216,8 @@ class TestList:
             seen += [i.id for i in items]
             if cursor is None:
                 break
-        assert len(seen) == 5 and set(seen) == set(ids)
+        expected = [i for _, i in sorted(zip(times, ids), reverse=True)]
+        assert seen == expected
         assert cursor is None
 
     def test_malformed_cursor_raises(self, engine):
@@ -284,9 +288,14 @@ class TestSoftDelete:
         item_id = uuid.uuid4()
         _put(engine, SID_A, item_id)
         _call(engine, lambda r: r.soft_delete(SID_A, item_id))
-        first = raw_row(engine, item_id).deleted_at
+        # SQLite 의 now() 는 초 단위라 두 삭제가 같은 초에 끝나면 시각을 덮어써도 같아 보인다.
+        # 첫 삭제 시각을 과거로 옮겨 두고 두 번째 삭제가 그것을 지키는지 본다
+        with engine.begin() as conn:
+            conn.execute(sa.update(HistoryItem.__table__)
+                         .where(HistoryItem.__table__.c.id == item_id)
+                         .values(deleted_at=T0))
         assert _call(engine, lambda r: r.soft_delete(SID_A, item_id)) is True
-        assert raw_row(engine, item_id).deleted_at == first
+        assert raw_row(engine, item_id).deleted_at.replace(tzinfo=timezone.utc) == T0
 
     def test_other_browser_cannot_delete(self, engine):
         item_id = uuid.uuid4()
