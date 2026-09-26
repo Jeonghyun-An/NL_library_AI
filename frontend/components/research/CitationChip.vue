@@ -57,7 +57,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
 import type { OpenPdfPayload, ReportChunk, ReportEvidence } from "~/types/research";
 import { citeLabel, metaLine, pageLabel, pdfPage } from "~/utils/citations";
-import { stepChunk } from "~/utils/researchReport";
+import { hideOnPointerLeave, stepChunk } from "~/utils/researchReport";
 
 const props = defineProps<{ eid: string; evidence?: ReportEvidence; chunks: ReportChunk[] }>();
 const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload] }>();
@@ -125,7 +125,8 @@ function onEnter(): void {
 
 function onLeave(): void {
   hovering = false;
-  scheduleHide();
+  const focused = document.activeElement;
+  if (hideOnPointerLeave(pinned.value, !!focused && !!wrap.value?.contains(focused))) scheduleHide();
 }
 
 function step(delta: number): void {

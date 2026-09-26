@@ -1,7 +1,7 @@
 // frontend/tests/unit/researchReport.test.ts
 import { describe, expect, it } from "vitest";
 import type { ResearchReport } from "~/types/research";
-import { paperByline, rangeLabel, reportIntro, reportSlot, stepChunk } from "~/utils/researchReport";
+import { hideOnPointerLeave, paperByline, rangeLabel, reportIntro, reportSlot, stepChunk } from "~/utils/researchReport";
 
 function report(over: Partial<ResearchReport> = {}): ResearchReport {
   return {
@@ -60,6 +60,20 @@ describe("stepChunk", () => {
   it("대목이 줄어 범위를 벗어난 위치는 마지막 대목으로 당기고, 대목이 없으면 0 이다", () => {
     expect(stepChunk(5, 1, 2)).toBe(1);
     expect(stepChunk(0, 1, 0)).toBe(0);
+  });
+});
+
+describe("hideOnPointerLeave", () => {
+  it("올려서만 연 팝오버는 포인터가 벗어나면 닫는다", () => {
+    expect(hideOnPointerLeave(false, false)).toBe(true);
+  });
+
+  it("초점이 팝오버 안에 있으면 포인터가 벗어나도 닫지 않는다(닫기는 focusout 이 맡는다)", () => {
+    expect(hideOnPointerLeave(false, true)).toBe(false);
+  });
+
+  it("클릭으로 고정한 팝오버는 닫지 않는다", () => {
+    expect(hideOnPointerLeave(true, false)).toBe(false);
   });
 });
 

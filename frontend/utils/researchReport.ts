@@ -27,6 +27,13 @@ export function stepChunk(index: number, delta: number, total: number): number {
   return Math.min(Math.max(index + delta, 0), total - 1);
 }
 
+// 포인터가 칩·팝오버를 벗어날 때 닫을지. 클릭으로 고정했거나 초점이 안에 있으면 닫지 않는다 —
+// 초점을 쥔 팝오버를 닫으면 초점이 body 로 떨어진다(키보드 사용자는 제자리를 잃는다). 초점이
+// 안에 있을 때 닫는 일은 focusout(초점이 밖으로 옮겨 가거나 빠질 때)이 맡는다.
+export function hideOnPointerLeave(pinned: boolean, focusInside: boolean): boolean {
+  return !pinned && !focusInside;
+}
+
 export type ReportSlot = "ready" | "loading" | "failed";
 
 // 완료 이벤트에는 보고서가 없어 GET 으로 다시 받는다. 그 사이·실패해 다시 시도하는 동안 본문
