@@ -786,6 +786,11 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   const signal = beginRun();
   currentQuery.value = query;
   currentHistoryId.value = null;
+  // 등재 필터는 검색을 시작할 때의 값으로 한 번 정한다 — 주소와 기록에 같은 값이 들어가게
+  const grade = selectedGrade.value !== "all" ? selectedGrade.value : "";
+  // 주소의 이전 h 도 함께 내린다 — 남겨 두면 검색이 도는 동안·실패한 뒤에도 사이드바가 이전 기록을 강조하고,
+  // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
+  router.replace({ query: { q: query, ...(grade ? { grade } : {}) } });
   loading.value = true;
   error.value = null;
   paperResult.value = null;
@@ -813,7 +818,6 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
     loading.value = false;
 
     // 기록 id 를 먼저 확정해 요약 스트림에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
-    const grade = selectedGrade.value !== "all" ? selectedGrade.value : "";
     const snapshot = slimPaperResult(data) ?? undefined;
     const entry = reuse
       ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
@@ -832,6 +836,26 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   }
 }
 
+// 랜딩으로 되돌린다 — 진행 중인 검색·복원·요약 묶음을 끊고 결과 화면 상태를 비운다.
+// hasResults 가 paperResult·loading 에서 나오므로 둘을 비우면 화면이 랜딩으로 바뀐다
+function goLanding() {
+  runCtrl?.abort();
+  runCtrl = null;
+  paperResult.value = null;
+  loading.value = false;
+  error.value = null;
+  currentQuery.value = "";
+  currentHistoryId.value = null;
+  aiText.value = "";
+  aiRefs.value = [];
+  aiLoading.value = false;
+  selectedGrade.value = "all";
+  // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
+  pdfItem.value = null;
+  citeModalOpen.value = false;
+  chatPaperId.value = null;
+}
+
 // ── 기록 복원 ─────────────────────────────────────────────────
 // 주소(?h=)가 복원의 정본이다 — 사이드바·뒤로가기·새로고침이 모두 이 한 길로 들어온다
 async function restoreFromQuery() {
@@ -839,7 +863,13 @@ async function restoreFromQuery() {
   if (route.path !== "/papers") return;
   const { h, q, grade } = readHistoryQuery(route.query, readV1Map(safeLocalStorage()));
   if (!h) {
-    if (q && q !== currentQuery.value) {
+    if (!q) {
+      // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤
+      // 뒤로가기 등) 결과 화면과 진행 중인 요청을 직접 걷는다. 안 걷으면 주소는 '/papers' 인데 결과가 남는다
+      goLanding();
+      return;
+    }
+    if (q !== currentQuery.value) {
       selectedGrade.value = grade ?? "all";
       await handleSearch(q);
     }
@@ -976,9 +1006,10 @@ onMounted(() => {
   restoreFromQuery();
 });
 
-// 같은 경로에서 쿼리만 바뀌면(사이드바 클릭·뒤로가기) 페이지가 다시 마운트되지 않는다
+// 같은 경로에서 쿼리만 바뀌면(사이드바 클릭·뒤로가기) 페이지가 다시 마운트되지 않는다.
+// q 도 본다 — h 가 없는 주소(검색 중·실패 뒤의 ?q=)에서 랜딩 주소로 돌아오면 h 는 그대로 없어 변화를 놓친다
 watch(
-  () => route.query.h ?? route.query.restore,
+  [() => route.query.h ?? route.query.restore, () => route.query.q],
   () => {
     restoreFromQuery();
   },
