@@ -231,14 +231,14 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
   let cacheMem: HistoryEntry[] = [];
   let outboxMem: OutboxOp[] = [];
 
-  function read<T>(key: string, mem: T[]): T[] {
-    if (memoryOnly || !storage) return mem;
+  // 읽지 못하면 undefined — 키가 없거나 깨진 값은 빈 목록이다
+  function load<T>(key: string): T[] | undefined {
+    if (!storage) return undefined;
     let raw: string | null;
     try {
       raw = storage.getItem(key);
     } catch {
-      memoryOnly = true;
-      return mem;
+      return undefined;
     }
     if (raw === null) return [];
     try {
@@ -249,6 +249,25 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     }
   }
 
+  // 메모리 사본은 이 인스턴스가 마지막으로 쓴 값뿐이라, 새로고침 뒤처럼 편지함을 쓴 적 없는 인스턴스가 그대로 넘어가면
+  // 저장소에 남은 편지가 이번 수명 동안 안 보이고 새 변경이 그 편지를 앞질러 서버로 간다 — 넘어가기 전에 두 키를 읽어 둔다
+  function goMemory(): void {
+    if (memoryOnly) return;
+    cacheMem = load<HistoryEntry>(HISTORY_CACHE_KEY) ?? cacheMem;
+    outboxMem = load<OutboxOp>(HISTORY_OUTBOX_KEY) ?? outboxMem;
+    memoryOnly = true;
+  }
+
+  function read<T>(key: string, mem: () => T[]): T[] {
+    if (!memoryOnly && storage) {
+      const stored = load<T>(key);
+      if (stored) return stored;
+      goMemory();
+    }
+    return mem();
+  }
+
+  // 메모리로 넘어가면 호출부가 이번 쓰기 결과(돌려준 목록)로 그 키의 사본을 덮는다
   function write<T>(key: string, list: T[], shed: (current: T[]) => T[] | null): T[] {
     if (memoryOnly || !storage) return list;
     let attempt = list;
@@ -259,11 +278,24 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
       } catch (e) {
         const lighter = isQuotaError(e) ? shed(attempt) : null;
         if (!lighter) {
-          memoryOnly = true;
+          goMemory();
           return attempt;
         }
         attempt = lighter;
       }
+    }
+  }
+
+  // 메모리 모드에서 보낸 편지는 메모리에서만 빠진다. 저장소 사본에 남으면 다음 새로고침에 한 번 더 나가,
+  // 그 사이 지운 기록을 upsert 가 되살리고 고친 값을 옛 값으로 덮는다 — 저장소에서도 그 편지만 뺀다.
+  // 줄어드는 쓰기라 쿼터에는 걸리지 않고, 그래도 막히면 저장소 자체가 막힌 것이라 할 수 있는 일이 없다
+  function forgetStored(opId: string): void {
+    const stored = load<OutboxOp>(HISTORY_OUTBOX_KEY);
+    if (!storage || !stored?.some((o) => o.opId === opId)) return;
+    try {
+      storage.setItem(HISTORY_OUTBOX_KEY, JSON.stringify(stored.filter((o) => o.opId !== opId)));
+    } catch {
+      // 위 이유로 무시한다
     }
   }
 
@@ -306,11 +338,11 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     return shedStoredCache() ? ops : shedOutbox(ops);
   }
 
-  const readCache = () => read(HISTORY_CACHE_KEY, cacheMem);
+  const readCache = () => read(HISTORY_CACHE_KEY, () => cacheMem);
   const writeCache = (list: HistoryEntry[]) => {
     cacheMem = write(HISTORY_CACHE_KEY, capPerKind(list), shedCache);
   };
-  const readOutboxList = () => read(HISTORY_OUTBOX_KEY, outboxMem);
+  const readOutboxList = () => read(HISTORY_OUTBOX_KEY, () => outboxMem);
   const writeOutbox = (ops: OutboxOp[]) => {
     outboxMem = write(HISTORY_OUTBOX_KEY, ops.slice(-OUTBOX_LIMIT), shedForOutbox);
   };
@@ -375,6 +407,7 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     },
     dropOutbox(opId) {
       writeOutbox(readOutboxList().filter((o) => o.opId !== opId));
+      if (memoryOnly) forgetStored(opId);
     },
   };
 }

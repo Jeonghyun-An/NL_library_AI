@@ -270,6 +270,32 @@ describe("createLocalStore", () => {
     expect(await local.get(ID1)).toMatchObject({ id: ID1 });
   });
 
+  it("새로고침 뒤 쿼터가 아닌 오류로 메모리로 넘어가도 저장소에 남아 있던 편지를 읽어 둔다", async () => {
+    const storage = new MemoryStorage();
+    const before = createLocalStore(storage);
+    await before.put(bookEntry(ID1));
+    before.enqueue({ op: "put", entry: bookEntry(ID1) });
+    // 새로고침한 인스턴스는 편지함을 한 번도 쓰지 않았다
+    storage.failWith = new DOMException("막힘", "SecurityError");
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID2));
+    local.enqueue({ op: "put", entry: bookEntry(ID2) });
+    expect(local.readOutbox().map((o) => o.op === "put" && o.entry.id)).toEqual([ID1, ID2]);
+    expect((await local.list("book")).items.map((e) => e.id).sort()).toEqual([ID1, ID2].sort());
+  });
+
+  it("읽기마저 막혀 메모리로 넘어가면 이 인스턴스가 쓴 값을 그대로 쓴다", async () => {
+    const storage = new MemoryStorage();
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID1));
+    local.enqueue({ op: "remove", id: ID2 });
+    storage.getItem = () => {
+      throw new DOMException("막힘", "SecurityError");
+    };
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toMatchObject([{ op: "remove", id: ID2 }]);
+  });
+
   it("깨진 JSON 은 빈 목록으로 읽는다", async () => {
     const storage = new MemoryStorage();
     storage.setItem(HISTORY_CACHE_KEY, "{깨짐");
@@ -596,5 +622,61 @@ describe("createHybridStore", () => {
     const reopened = createLocalStore(storage);
     expect(reopened.readOutbox()).toMatchObject([{ op: "put", entry: { id: ID1, snapshot: heavy } }]);
     expect((await reopened.list("book")).items).toHaveLength(ids.length + 1);
+  });
+
+  /**
+   * 오프라인 저장 편지(put ID1)가 저장소에 남은 채 새로고침한 인스턴스가, 캐시에서 덜 것이 없는
+   * 긴 제목 저장(put ID2)으로 메모리 모드에 들어간 상태를 만든다
+   */
+  async function refreshedIntoMemory() {
+    const storage = new MemoryStorage(1200);
+    // v1 백업은 지우지 않으므로 계속 쿼터를 차지한다
+    storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+    const server = fakeServer();
+    server.fail(networkError());
+    await createHybridStore(server, createLocalStore(storage)).put(bookEntry(ID1));
+    const local = createLocalStore(storage);
+    const store = createHybridStore(server, local);
+    await store.put(bookEntry(ID2, { title: "긴 제목".repeat(100) }));
+    expect(storage.getItem(HISTORY_CACHE_KEY)).not.toContain(ID2);
+    return { storage, server, local, store };
+  }
+
+  const pendingOf = (local: ReturnType<typeof createLocalStore>) =>
+    local.readOutbox().map((o) => [o.op, o.op === "put" ? o.entry.id : o.op === "clear" ? o.kind : o.id]);
+
+  it("새로고침한 인스턴스가 캐시 쓰기에 막혀 메모리로 넘어가도 저장소의 편지가 남고 remove 는 그 뒤에 줄 선다", async () => {
+    const { storage, server, local, store } = await refreshedIntoMemory();
+    expect(pendingOf(local)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+    ]);
+    await store.remove(ID1);
+    expect(server.remove).not.toHaveBeenCalled();
+    expect(pendingOf(local)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+      ["remove", ID1],
+    ]);
+    server.recover();
+    await store.flush();
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(server.rows.has(ID2)).toBe(true);
+    // 다시 새로고침해도 이미 보낸 편지가 한 번 더 나가 지운 기록을 되살리지 않는다
+    await createHybridStore(server, createLocalStore(storage)).flush();
+    expect(server.rows.has(ID1)).toBe(false);
+  });
+
+  it("메모리 모드에서 온라인으로 지우면 저장소에 있던 put 을 먼저 보내고, 새로고침 뒤에도 되살아나지 않는다", async () => {
+    const { storage, server, local, store } = await refreshedIntoMemory();
+    server.recover();
+    await store.remove(ID1);
+    expect(local.readOutbox()).toEqual([]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(server.rows.has(ID2)).toBe(true);
+    const reopened = createLocalStore(storage);
+    expect(reopened.readOutbox()).toEqual([]);
+    await createHybridStore(server, reopened).flush();
+    expect(server.rows.has(ID1)).toBe(false);
   });
 });
