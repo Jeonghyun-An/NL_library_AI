@@ -380,4 +380,37 @@ describe("createHybridStore", () => {
     server.fail(networkError());
     expect(await store.get(ID1)).toMatchObject({ snapshot: snap });
   });
+
+  it("put·patch 가 줄 선 뒤 patch 만 다시 보낼 오류로 실패해도 get 은 최근 수정을 돌려준다", async () => {
+    const { server, local, store } = setup();
+    const ai = { intro: "소개", items: [] };
+    server.fail(networkError());
+    await store.put(bookEntry(ID1));
+    await store.patch(ID1, { ai });
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "patch"]);
+    server.recover();
+    server.patch.mockRejectedValueOnce(httpError(503));
+    expect(await store.get(ID1)).toMatchObject({ ai });
+    expect(server.rows.has(ID1)).toBe(true);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["patch"]);
+    // 남은 편지까지 다 보낸 뒤에도 오프라인 복원용 캐시에 수정이 남아 있어야 한다
+    await store.flush();
+    expect(local.readOutbox()).toEqual([]);
+    expect(server.rows.get(ID1)).toMatchObject({ ai });
+    expect(await local.get(ID1)).toMatchObject({ ai });
+  });
+
+  it("put·remove 가 줄 선 뒤 remove 만 다시 보낼 오류로 실패해도 지운 기록이 목록에 되살아나지 않는다", async () => {
+    const { server, local, store } = setup();
+    server.fail(networkError());
+    await store.put(bookEntry(ID1));
+    await store.remove(ID1);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "remove"]);
+    server.recover();
+    server.remove.mockRejectedValueOnce(httpError(429));
+    expect((await store.list("book")).items).toEqual([]);
+    expect(server.list).not.toHaveBeenCalled();
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["remove"]);
+    expect(await local.get(ID1)).toBeNull();
+  });
 });

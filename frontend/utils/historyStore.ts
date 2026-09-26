@@ -360,10 +360,12 @@ type Sent<T> = { ok: true; value: T } | { ok: false };
 export function createHybridStore(server: HistoryStore, local: LocalHistoryStore): HybridHistoryStore {
   let flushing: Promise<void> | null = null;
 
+  // 편지를 보낼 때는 캐시를 건드리지 않는다 — 캐시는 줄 세울 때 이미 뒤따른 수정·삭제까지 반영하고 있어서,
+  // 서버 응답으로 덮으면 그 뒤 편지가 아직 못 간 동안 사용자의 최근 변경이 사라진다. 정합은 다음 list·get 이 맞춘다
   async function apply(op: OutboxOp): Promise<void> {
     switch (op.op) {
       case "put":
-        await local.put(await server.put(op.entry));
+        await server.put(op.entry);
         return;
       case "patch":
         await server.patch(op.id, op.partial);
