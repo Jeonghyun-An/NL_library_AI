@@ -30,7 +30,7 @@ from models.research import (
 from services.research.relay import publish, publish_terminal
 from services.research.runner import explore_subquestion
 from services.research.state import (
-    ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
+    ResearchState, SubQuestion, merge_params, research_stats, restore_state, snapshot_state,
 )
 from services.research.synthesizer import SynthesisCanceled, synthesize
 from workers.celery_app import celery_app
@@ -172,11 +172,54 @@ async def _finish(db: AsyncSession, step: _StepRef, status: str, result: dict | 
     await publish(step.job_id, "step", step.event(status, result))
 
 
+async def _save_progress(db: AsyncSession, step: _StepRef, result: dict) -> None:
+    """도는 중인 단계의 result 를 지금까지의 진행으로 덮어쓰고 알린다.
+
+    단계를 닫을 때만 쓰면 탐색 중에 새로 연 화면·재접속한 화면이 그 단계의 앞 회차와
+    카운터를 잃는다. 실패해도 탐색은 계속한다 — 이 기록은 화면 복원용이고, 단계를 닫을
+    때 _finish 가 최종 결과를 다시 쓴다.
+    """
+    try:
+        await db.execute(
+            update(ResearchStep).where(ResearchStep.id == step.id).values(result=result)
+        )
+        await db.commit()
+    except SoftTimeLimitExceeded:
+        raise
+    except Exception:
+        log.warning("[research] 진행 기록 실패 job=%s seq=%s", step.job_id, step.seq,
+                    exc_info=True)
+        # 깨진 트랜잭션을 되돌려 두지 않으면 다음 회차의 검색 조회가 여기서 터진다
+        await db.rollback()
+        return
+    await publish(step.job_id, "step", step.event("running", result))
+
+
+def _search_progress(state: ResearchState, subq: SubQuestion) -> dict:
+    # 목록을 복사한다 — 이어지는 회차가 같은 목록에 덧붙여도 저장한 값이 바뀌지 않게
+    return {"rounds": list(subq.rounds), "counters": research_stats(state)}
+
+
+def _round_emitter(
+    db: AsyncSession, job_id: uuid.UUID, state: ResearchState, subq: SubQuestion,
+    step: _StepRef,
+) -> Callable[[str, dict], Awaitable[None]]:
+    """러너 이벤트를 흘리고, 자기점검(회차의 끝)마다 진행을 단계 result 에 남긴다."""
+    async def _emit(kind: str, payload: dict) -> None:
+        await publish(job_id, kind, payload)
+        if kind == "critique":
+            await _save_progress(db, step, _search_progress(state, subq))
+    return _emit
+
+
 @dataclass
 class _SynthProgress:
     """synthesize 의 on_section 콜백. 절 진행을 synth 이벤트로 흘리면서 종합 단계
-    result 에 남길 값도 모은다 — 실패·취소로 끝나도 거기까지의 진행이 남는다."""
+    result 에 남길 값도 모은다 — 실패·취소로 끝나도 거기까지의 진행이 남는다.
+    step 이 있으면 절이 바뀔 때마다 도는 중인 단계 result 에도 남긴다."""
     job_id: uuid.UUID
+    db: AsyncSession | None = None
+    step: _StepRef | None = None
     total: int = 0
     statuses: dict[int, str] = field(default_factory=dict)
 
@@ -184,6 +227,8 @@ class _SynthProgress:
         self.total = total
         self.statuses[idx] = status
         await publish(self.job_id, "synth", {"section_idx": idx, "total": total, "status": status})
+        if self.step is not None:
+            await _save_progress(self.db, self.step, self.result())
 
     def result(self, **extra: object) -> dict:
         return {
@@ -420,9 +465,6 @@ async def _run_deep_research(job_id: str) -> dict:
             await db.commit()
             await _announce(jid, "running", stage)
 
-            async def _emit(kind: str, payload: dict) -> None:
-                await publish(jid, kind, payload)
-
             # ── 탐색: stage 가 이미 explored 면 건너뛰고 스냅샷을 되살린다 ──
             state = restore_state(str(jid), snapshot) if stage == "explored" and snapshot else None
             if state is not None and _wiped_out(state):
@@ -453,7 +495,10 @@ async def _run_deep_research(job_id: str) -> dict:
                     )
                     seq += 1
                     try:
-                        await explore_subquestion(state, subq, db=db, emit=_emit)
+                        await explore_subquestion(
+                            state, subq, db=db,
+                            emit=_round_emitter(db, jid, state, subq, step),
+                        )
                     except SoftTimeLimitExceeded:
                         # except Exception 보다 먼저 와야 한다 — SoftTimeLimitExceeded 도
                         # Exception 이라 거기서 삼키면 남은 하위질문을 계속 돌다 하드 리밋에 죽는다.
@@ -465,14 +510,15 @@ async def _run_deep_research(job_id: str) -> dict:
                         log.exception("[research] 하위질문 실패 job=%s idx=%s", jid, subq.idx)
                         await db.rollback()     # DB 오류면 트랜잭션이 깨져 있어 기록부터 터진다
                         subq.failed = True
-                        await _finish(db, step, "failed",
-                                      {"error": str(e)[:500], "rounds": subq.rounds})
+                        await _finish(db, step, "failed", {
+                            "error": str(e)[:500], **_search_progress(state, subq),
+                        })
                     else:
                         await _finish(db, step, "done", {
                             "queries": subq.queries, "adopted": len(subq.evidence_ids),
                             "verdict": subq.verdict, "note": subq.note,
                             "parse_failed": subq.parse_failed, "capped": subq.capped,
-                            "rounds": subq.rounds,
+                            **_search_progress(state, subq),
                         })
 
                 # 전멸은 연구 결과가 아니라 장애다. 체크포인트를 남기면 retry 가 전부
@@ -491,7 +537,7 @@ async def _run_deep_research(job_id: str) -> dict:
 
             # ── 종합 ──
             step = await _step(db, jid, seq, "synthesize", "보고서 종합")
-            progress = _SynthProgress(jid)
+            progress = _SynthProgress(jid, db=db, step=step)
             try:
                 report = await synthesize(state, should_stop=lambda: _is_cancelled(db, jid),
                                           on_section=progress)

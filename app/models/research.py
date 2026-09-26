@@ -101,11 +101,14 @@ class ResearchStep(Base):
     # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
     #              "parse_failed": bool, "capped": n,
     #              "rounds": [{"round", "query", "found_chunks", "new_papers",
-    #                          "verdict", "note", "next_query"}]}
+    #                          "verdict", "note", "next_query"}],
+    #              "counters": {"papers_reviewed", "evidence_adopted", "rechecks"}}
     #             verdict·note 는 마지막 라운드 값, 회차별 값은 rounds.
+    #             도는 중에는 회차가 끝날 때마다 {"rounds", "counters"} 로 갱신된다.
     #             rounds 가 없는 행은 보강 전 잡이다 — 화면은 report.trail 로 대체한다.
     # synthesize: {"sections_total": n, "sections": [{"idx": i, "status": "..."}]}
-    #             idx 는 절 순번. 보강 전 잡은 {"sections": n}(정수)이다.
+    #             idx 는 절 순번. 도는 중에는 절이 바뀔 때마다 갱신된다.
+    #             보강 전 잡은 {"sections": n}(정수)이다.
     # 실패 공통:   {"error": "..."} — search·synthesize 는 그때까지의 rounds·sections 도 싣는다
     result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())

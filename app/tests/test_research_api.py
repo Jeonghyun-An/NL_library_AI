@@ -697,6 +697,48 @@ class TestSnapshot:
         assert snap["steps"] == api.client.get(f"/api/research/{jid}").json()["steps"]
 
 
+class TestSnapshotCounters:
+    """카운터 이벤트는 저장되지 않는다 — 재접속한 화면은 스냅샷의 job.counters 로 채운다."""
+
+    _EARLY = {"papers_reviewed": 5, "evidence_adopted": 2, "rechecks": 0}
+    _LATE = {"papers_reviewed": 9, "evidence_adopted": 4, "rechecks": 1}
+
+    @staticmethod
+    def _step(seq, result):
+        return SimpleNamespace(seq=seq, kind="search", subq_idx=seq, title="가", detail=None,
+                               status="done", result=result)
+
+    @staticmethod
+    def _snapshot(api, monkeypatch, jid) -> dict:
+        async def _subscribe(job_id):
+            yield {"kind": "canceled", "status": "canceled"}
+
+        monkeypatch.setattr(api.research, "subscribe", _subscribe)
+        return _frames(api.client.get(f"/api/research/{jid}/stream").text)[0]
+
+    def test_running_job_takes_the_latest_saved_counters(self, api, monkeypatch):
+        jid = api.db.add_job(status="running", stage="planned", plan=["가", "나", "다"])
+        api.db.steps = [self._step(1, {"counters": self._EARLY}),
+                        self._step(2, {"counters": self._LATE}), self._step(3, {})]
+
+        assert self._snapshot(api, monkeypatch, jid)["job"]["counters"] == self._LATE
+
+    def test_finished_job_takes_report_stats(self, api):
+        jid = api.db.add_job(status="completed", stage="synthesized", plan=["가"],
+                             report={"stats": self._EARLY})
+        api.db.steps = [self._step(1, {"counters": self._LATE})]
+
+        snap = _frames(api.client.get(f"/api/research/{jid}/stream").text)[0]
+
+        assert snap["job"]["counters"] == self._EARLY
+
+    def test_no_counters_yet_leaves_the_key_out(self, api, monkeypatch):
+        jid = api.db.add_job(status="running", stage="planned", plan=["가"])
+        api.db.steps = [self._step(1, {})]
+
+        assert "counters" not in self._snapshot(api, monkeypatch, jid)["job"]
+
+
 class TestStatusEvents:
     """승인·재시도는 처리 즉시 status 를 발행한다 — 스트림에 붙은 화면이 폴링 없이 따라온다."""
 

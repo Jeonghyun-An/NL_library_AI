@@ -317,6 +317,19 @@ async def _steps(db: AsyncSession, jid: uuid.UUID) -> list[dict]:
     ]
 
 
+def _live_counters(steps: list[dict], report: dict | None) -> dict | None:
+    """재접속한 화면의 카운터. 끝난 잡은 보고서의 stats, 도는 잡은 워커가 마지막으로
+    단계 result 에 남긴 값이다 — counters 이벤트는 저장되지 않아, 이게 없으면 다음
+    회차까지 카운터가 빈칸이다."""
+    if report and report.get("stats"):
+        return report["stats"]
+    for step in reversed(steps):
+        counters = (step["result"] or {}).get("counters")
+        if counters:
+            return counters
+    return None
+
+
 @router.get("/{job_id}")
 async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
     job = await _get_job(db, _job_uuid(job_id))
@@ -339,11 +352,12 @@ def _sse(event: dict) -> str:
 async def _snapshot(db: AsyncSession, job: ResearchJob) -> dict:
     """재접속 복원용 뼈대. 연결 직후와 하트비트가 어긋남을 본 뒤가 이 한 곳에서 만든다 —
     모양이 갈리면 화면이 같은 잡을 두 경로에서 다르게 그린다."""
-    snapshot = {
-        "kind": "snapshot", "steps": await _steps(db, job.id),
-        "job": {"status": job.status, "stage": job.stage, "plan": job.plan},
-    }
-    return snapshot
+    steps = await _steps(db, job.id)
+    job_state = {"status": job.status, "stage": job.stage, "plan": job.plan}
+    counters = _live_counters(steps, job.report)
+    if counters is not None:
+        job_state["counters"] = counters
+    return {"kind": "snapshot", "steps": steps, "job": job_state}
 
 
 def _plan_known(snapshot: dict) -> bool:
