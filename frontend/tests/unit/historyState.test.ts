@@ -1,6 +1,6 @@
 // frontend/tests/unit/historyState.test.ts
-import { describe, expect, it } from "vitest";
-import type { HistoryKind } from "~/types/history";
+import { describe, expect, it, vi } from "vitest";
+import type { HistoryEntry, HistoryKind } from "~/types/history";
 import { createHistoryState } from "~/utils/historyState";
 import { createHybridStore, createLocalStore, type HybridHistoryStore } from "~/utils/historyStore";
 import { ID1, ID2, ID3, bookEntry, fakeServer, httpError, paperEntry, researchEntry } from "./helpers/fakeHistory";
@@ -37,6 +37,29 @@ function holdNextList(server: ReturnType<typeof fakeServer>): () => void {
     return { items, nextCursor: null };
   });
   return release;
+}
+
+/** 다음 저장 요청을 풀어 줄 때까지 붙잡았다가 서버에 쓴다 — 스냅샷이 커서 오래 걸리는 저장 */
+function holdNextPut(server: ReturnType<typeof fakeServer>): () => void {
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  server.put.mockImplementationOnce(async (entry: HistoryEntry) => {
+    await released;
+    server.rows.set(entry.id, entry);
+    return entry;
+  });
+  return release;
+}
+
+/** 앱과 같은 하이브리드 저장소 위의 상태 — 이 탭의 동작이 부른 순서대로 서버에 닿는다 */
+function setupHybrid() {
+  const server = fakeServer();
+  const hybrid: HybridHistoryStore = createHybridStore(server, createLocalStore(new MemoryStorage()));
+  const ids = [ID1, ID2, ID3];
+  const state = createHistoryState(() => hybrid, { now: () => NOW, genId: () => ids.shift()!, warn: () => {} });
+  return { server, state };
 }
 
 describe("createHistoryState", () => {
@@ -187,6 +210,60 @@ describe("createHistoryState", () => {
     expect(state.byKind("book").value.map((e) => e.id)).toEqual([ID1]);
   });
 
+  it("저장하는 사이 지운 기록은 늦게 도착한 저장 응답이 되살리지 않는다", async () => {
+    const { server, state } = setupHybrid();
+    const release = holdNextPut(server);
+    const adding = state.add({ kind: "book", title: "한국 경제", params: {}, snapshot: snap });
+    // 사이드바는 낙관적으로 올라간 기록을 저장이 끝나기 전에 지울 수 있다
+    const removing = state.remove(ID1);
+    release();
+    await Promise.all([adding, removing]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(state.entries.value).toEqual([]);
+  });
+
+  it("저장하는 사이 비운 종류는 늦게 도착한 저장 응답이 다시 채우지 않는다", async () => {
+    const { server, state } = setupHybrid();
+    server.rows.set(ID3, paperEntry(ID3));
+    await state.refresh();
+    const release = holdNextPut(server);
+    const adding = state.add({ kind: "book", title: "한국 경제", params: {}, snapshot: snap });
+    const clearing = state.clear("book");
+    release();
+    await Promise.all([adding, clearing]);
+    expect([...server.rows.values()].filter((e) => e.kind === "book")).toEqual([]);
+    expect(state.byKind("book").value).toEqual([]);
+    expect(state.byKind("paper").value.map((e) => e.id)).toEqual([ID3]);
+  });
+
+  it("목록 읽기가 저장보다 먼저 끝나도 저장하는 사이 지운 기록은 되살아나지 않는다", async () => {
+    const { server, state } = setupHybrid();
+    const releaseList = holdNextList(server);
+    const releasePut = holdNextPut(server);
+    const refreshing = state.refresh("book");
+    const adding = state.add({ kind: "book", title: "한국 경제", params: {} });
+    const removing = state.remove(ID1);
+    // 읽는 중인 목록은 없어졌지만 저장 응답은 아직 오지 않았다 — 지운 순번을 이때 버리면 안 된다
+    releaseList();
+    await refreshing;
+    releasePut();
+    await Promise.all([adding, removing]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(state.entries.value).toEqual([]);
+  });
+
+  it("저장하는 사이 지운 것은 그 기록뿐이면 다른 기록의 저장 응답은 그대로 올린다", async () => {
+    const { server, state } = setupHybrid();
+    server.rows.set(ID3, bookEntry(ID3, { title: "다른 검색" }));
+    await state.refresh();
+    const release = holdNextPut(server);
+    const adding = state.add({ kind: "book", title: "한국 경제", params: {} });
+    const removing = state.remove(ID3);
+    release();
+    await Promise.all([adding, removing]);
+    expect(state.byKind("book").value.map((e) => e.id)).toEqual([ID1]);
+  });
+
   it("upsertResearch 는 이미 목록에 있으면 서버에 묻지 않는다", async () => {
     const { store, state } = setup();
     store.rows.set(ID2, researchEntry(ID2));
@@ -210,5 +287,39 @@ describe("createHistoryState", () => {
     store.put.mockRejectedValueOnce(httpError(404));
     expect(await state.upsertResearch(ID2, "질문")).toBeNull();
     expect(state.entries.value).toEqual([]);
+  });
+
+  it("upsertResearch 가 만드는 사이 딥리서치 기록을 비우면 늦게 도착한 저장 응답이 다시 채우지 않는다", async () => {
+    const { server, state } = setupHybrid();
+    const release = holdNextPut(server);
+    const upserting = state.upsertResearch(ID2, "국내 AI 규제 연구 동향");
+    // 조회가 끝나 저장 요청이 나간 뒤에 비운다
+    await vi.waitFor(() => expect(server.put).toHaveBeenCalled());
+    const clearing = state.clear("research");
+    release();
+    await Promise.all([upserting, clearing]);
+    expect(server.rows.has(ID2)).toBe(false);
+    expect(state.byKind("research").value).toEqual([]);
+  });
+
+  it("upsertResearch 가 서버의 기록을 읽는 사이 딥리서치 기록을 비우면 읽은 기록을 목록에 올리지 않는다", async () => {
+    const { server, state } = setupHybrid();
+    // 다른 탭이 만든 기록 — 이 탭의 목록에는 아직 없다
+    server.rows.set(ID2, researchEntry(ID2));
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.get.mockImplementationOnce(async (id: string) => {
+      const found = server.rows.get(id) ?? null;
+      await released;
+      return found;
+    });
+    const upserting = state.upsertResearch(ID2, "질문");
+    const clearing = state.clear("research");
+    release();
+    await Promise.all([upserting, clearing]);
+    expect(server.rows.has(ID2)).toBe(false);
+    expect(state.byKind("research").value).toEqual([]);
   });
 });

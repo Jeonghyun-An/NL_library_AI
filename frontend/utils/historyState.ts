@@ -71,12 +71,25 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     return view;
   }
 
-  // 목록 응답은 요청이 출발한 때의 서버 상태다. 그 사이 이 탭에서 지운 기록을 늦게 도착한 응답이 되살리지 않도록
+  // 목록·저장 응답은 요청이 출발한 때의 서버 상태다. 그 사이 이 탭에서 지운 기록을 늦게 도착한 응답이 되살리지 않도록
   // 지운 순번을 남기고, 그보다 먼저 출발한 응답에서는 그 기록을(비운 종류면 응답 전체를) 버린다
   let deleteSeq = 0;
   const removedAt = new Map<string, number>();
   const clearedAt = new Map<HistoryKind, number>();
   let listing = 0;
+  let saving = 0;
+
+  /** 순번 since 뒤에(=요청이 출발한 뒤에) 이 탭에서 그 기록을 지웠거나 그 종류를 비웠는가 */
+  function deletedSince(entry: Pick<HistoryEntry, "id" | "kind">, since: number): boolean {
+    return (removedAt.get(entry.id) ?? 0) > since || (clearedAt.get(entry.kind) ?? 0) > since;
+  }
+
+  // 기다리는 목록·저장 응답이 없으면 이후의 응답은 모두 지금 뒤에 출발한다 — 남긴 순번은 더 쓸 일이 없다
+  function forgetDeletes(): void {
+    if (listing || saving) return;
+    removedAt.clear();
+    clearedAt.clear();
+  }
 
   async function refresh(kind?: HistoryKind): Promise<void> {
     const kinds = kind ? [kind] : KINDS;
@@ -93,11 +106,7 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
           warn("목록을 읽지 못했다", e);
         } finally {
           listing -= 1;
-          // 읽는 중인 목록이 없으면 이후의 응답은 모두 지금 뒤에 출발한다 — 남긴 순번은 더 쓸 일이 없다
-          if (!listing) {
-            removedAt.clear();
-            clearedAt.clear();
-          }
+          forgetDeletes();
         }
       }),
     );
@@ -114,16 +123,22 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
       updatedAt: iso,
     } as HistoryEntry;
     place(entry, true);
+    const since = deleteSeq;
+    saving += 1;
     try {
       // 축약 결과가 너무 커서 난 413 은 저장소가 결과 없이 다시 보내 처리한다 — 여기로 오는 거절은 기록 자체를 받지 않은 것이다
       const saved = await store().put(entry);
-      place(saved, true);
+      // 저장하는 사이 낙관적으로 올린 기록을 지웠거나 그 종류를 비웠다 — 뒤따른 삭제가 서버에서도 지우니 다시 올리지 않는다
+      if (!deletedSince(entry, since)) place(saved, true);
       changed();
       return saved;
     } catch (e) {
       warn("기록을 저장하지 못했다", e);
       if (!dup) drop(entry.id);
       return entry;
+    } finally {
+      saving -= 1;
+      forgetDeletes();
     }
   }
 
@@ -174,30 +189,38 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
   async function upsertResearch(jobId: string, question: string): Promise<HistoryEntry | null> {
     const known = entries.value.find((e) => e.id === jobId);
     if (known) return known;
-    const found = await get(jobId);
-    if (found) {
-      place(found, false);
-      return found;
-    }
-    const iso = new Date(now()).toISOString();
-    const entry: ResearchEntry = {
-      id: jobId,
-      kind: "research",
-      title: question.trim().slice(0, 500),
-      createdAt: iso,
-      updatedAt: iso,
-      params: {},
-      refId: jobId,
-    };
+    // 조회·저장 응답 모두 요청이 출발한 때의 상태다 — 그 사이 지웠거나 비웠으면 목록에 올리지 않는다(add 와 같다)
+    const since = deleteSeq;
+    saving += 1;
     try {
-      const saved = await store().put(entry);
-      place(saved, true);
-      changed();
-      return saved;
-    } catch (e) {
-      // 다른 브라우저가 만든 잡이면 서버가 404 로 막는다 — 보고서는 열리고 사이드바에만 없다
-      warn("딥리서치 기록을 만들지 못했다", e);
-      return null;
+      const found = await get(jobId);
+      if (found) {
+        if (!deletedSince(found, since)) place(found, false);
+        return found;
+      }
+      const iso = new Date(now()).toISOString();
+      const entry: ResearchEntry = {
+        id: jobId,
+        kind: "research",
+        title: question.trim().slice(0, 500),
+        createdAt: iso,
+        updatedAt: iso,
+        params: {},
+        refId: jobId,
+      };
+      try {
+        const saved = await store().put(entry);
+        if (!deletedSince(entry, since)) place(saved, true);
+        changed();
+        return saved;
+      } catch (e) {
+        // 다른 브라우저가 만든 잡이면 서버가 404 로 막는다 — 보고서는 열리고 사이드바에만 없다
+        warn("딥리서치 기록을 만들지 못했다", e);
+        return null;
+      }
+    } finally {
+      saving -= 1;
+      forgetDeletes();
     }
   }
 
