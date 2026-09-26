@@ -584,7 +584,7 @@ import { useHistory } from "~/composables/useHistory";
 import { safeLocalStorage } from "~/utils/browserId";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { readV1Map } from "~/utils/historyStore";
-import { readHistoryQuery, routeFor } from "~/utils/historyRoute";
+import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
 
@@ -869,7 +869,19 @@ function goLanding() {
 async function restoreFromQuery() {
   // 다른 페이지로 넘어가는 중에는 그 주소의 q 로 재검색하지 않는다
   if (route.path !== "/papers") return;
-  const { h, q, grade } = readHistoryQuery(route.query, readV1Map(safeLocalStorage()));
+  const query = route.query;
+  const v1Map = readV1Map(safeLocalStorage());
+  let target = readHistoryQuery(query, v1Map);
+  if (awaitsV1Map(query, v1Map)) {
+    // 사이드바가 시작한 이전이 대응표를 남길 때까지 기다린다 — 주소가 그대로라 지금 랜딩으로 빠지면 다시 복원할 계기가 없다.
+    // 기다리는 사이 다른 복원·검색·이동이 끼면 그쪽이 묶음을 가져가 이 복원은 물러난다
+    const signal = beginRun();
+    loading.value = false;
+    await historyApi.migrated();
+    if (signal.aborted) return;
+    target = readHistoryQuery(query, readV1Map(safeLocalStorage()));
+  }
+  const { h, q, grade } = target;
   if (!h) {
     if (!q) {
       // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤

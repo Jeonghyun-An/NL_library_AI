@@ -12,6 +12,7 @@ import {
   normalizeTitle,
   readV1Map,
 } from "~/utils/historyStore";
+import { awaitsV1Map, readHistoryQuery } from "~/utils/historyRoute";
 import { MemoryStorage } from "./helpers/memoryStorage";
 import { ID1, ID2, bookEntry, networkError, paperEntry, researchEntry } from "./helpers/fakeHistory";
 
@@ -149,6 +150,33 @@ describe("migrateLegacy", () => {
       "1727000000000": "uuid-1727000000000",
       "1727000000001": "uuid-1727000000001",
     });
+  });
+
+  it("업그레이드 뒤 첫 로드에서 이전이 응답을 기다리는 동안 연 옛 ?restore= 는 대응표를 기다렸다가 새 id 로 풀린다", async () => {
+    const s = new MemoryStorage();
+    s.setItem(LEGACY_HISTORY_KEY, JSON.stringify(v1(1)));
+    let answer!: () => void;
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    const server = importer();
+    const base = server.importItems.getMockImplementation()!;
+    server.importItems.mockImplementationOnce(async (items) => {
+      await answered;
+      return base(items);
+    });
+    // 사이드바가 이전을 시작하고, 곧이어 페이지가 같은 마운트 흐름에서 주소를 읽는다
+    const migrating = migrateLegacy(s, server);
+    const query = { restore: "1727000000000" };
+    const early = readV1Map(s);
+    // 이때 풀면 h 도 q 도 없어 랜딩으로 빠지고, 주소가 그대로라 다시 복원할 계기가 없다
+    expect(readHistoryQuery(query, early)).toEqual({});
+    expect(awaitsV1Map(query, early)).toBe(true);
+    answer();
+    await migrating;
+    const later = readV1Map(s);
+    expect(awaitsV1Map(query, later)).toBe(false);
+    expect(readHistoryQuery(query, later)).toEqual({ h: "uuid-1727000000000" });
   });
 
   it("서버가 실패하면 v1 을 그대로 두고 null", async () => {

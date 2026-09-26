@@ -255,6 +255,10 @@ watch(hasLiveResearch, syncPolling);
 onMounted(() => {
   v1Map.value = readV1Map(safeLocalStorage());
   void history.load();
+  // 업그레이드 뒤 첫 로드에서는 이전이 서버 응답을 받아야 대응표가 생긴다 — 옛 ?restore= 주소의 강조를 그때 맞춘다
+  void history.migrated().then(() => {
+    v1Map.value = readV1Map(safeLocalStorage());
+  });
   syncPolling();
   document.addEventListener("visibilitychange", onVisibility);
 });

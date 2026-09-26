@@ -1,6 +1,6 @@
 // frontend/tests/unit/historyRoute.test.ts
 import { describe, expect, it } from "vitest";
-import { activeIdFor, activeKindForPath, readHistoryQuery, routeFor } from "~/utils/historyRoute";
+import { activeIdFor, activeKindForPath, awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { ID1, ID2, bookEntry, paperEntry, researchEntry } from "./helpers/fakeHistory";
 
 const MIXED = "AbCdEf01-2345-4789-abcd-0123456789ab";
@@ -49,6 +49,22 @@ describe("readHistoryQuery", () => {
 
   it("대문자 id 는 소문자로 맞춘다", () => {
     expect(readHistoryQuery({ h: MIXED })).toEqual({ h: MIXED.toLowerCase() });
+  });
+});
+
+describe("awaitsV1Map", () => {
+  it("h·restore 의 옛 숫자 id 가 대응표에 없을 때만 대응표를 기다린다", () => {
+    expect(awaitsV1Map({ restore: "1727000000000" })).toBe(true);
+    expect(awaitsV1Map({ h: "1727000000000", q: "경제" }, {})).toBe(true);
+    expect(awaitsV1Map({ restore: "1727000000000" }, { "1727000000000": ID1 })).toBe(false);
+  });
+
+  it("새 id·형식이 틀린 값·빈 주소는 기다리지 않고, h 가 새 id 면 restore 는 보지 않는다", () => {
+    expect(awaitsV1Map({ restore: ID1 })).toBe(false);
+    expect(awaitsV1Map({ h: ID2, restore: "1727000000000" })).toBe(false);
+    expect(awaitsV1Map({ restore: "12ab" })).toBe(false);
+    expect(awaitsV1Map({ q: "경제" })).toBe(false);
+    expect(awaitsV1Map({})).toBe(false);
   });
 });
 

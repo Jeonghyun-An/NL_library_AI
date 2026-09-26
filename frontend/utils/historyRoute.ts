@@ -45,6 +45,12 @@ export function readHistoryQuery(
   return out;
 }
 
+// 업그레이드 뒤 첫 로드에서는 v1 이전이 서버 응답을 받아야 대응표가 생긴다 — 그 전에 푼 옛 주소는 랜딩으로 빠진다
+export function awaitsV1Map(query: Record<string, unknown>, v1Map: Record<string, string> = {}): boolean {
+  const raw = first(query.h) ?? first(query.restore);
+  return !!raw && V1_ID.test(raw) && !v1Map[raw];
+}
+
 export function activeKindForPath(path: string): HistoryKind {
   if (path === "/research" || path.startsWith("/research/")) return "research";
   if (path === "/papers" || path.startsWith("/papers/")) return "paper";

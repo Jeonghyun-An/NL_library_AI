@@ -20,7 +20,10 @@ let server: ServerHistoryStore | null = null;
 let hybrid: HybridHistoryStore | null = null;
 let state: HistoryState | null = null;
 let loading: Promise<void> | null = null;
+let migrating: Promise<void> | null = null;
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+const noop = () => {};
 
 function stores(): { server: ServerHistoryStore; hybrid: HybridHistoryStore } {
   if (!server || !hybrid) {
@@ -56,6 +59,14 @@ function scheduleRefresh(): void {
   }, 300);
 }
 
+// 사이드바의 load() 와 옛 ?restore= 를 복원하는 페이지가 같은 이전을 기다린다. 실패해도 이룬다 — 목록은 읽어야 하고,
+// 다음 로드가 다시 올린다
+function migrated(): Promise<void> {
+  if (!import.meta.client) return Promise.resolve();
+  if (!migrating) migrating = migrateLegacy(safeLocalStorage(), stores().server).then(noop, noop);
+  return migrating;
+}
+
 function load(): Promise<void> {
   if (!import.meta.client) return Promise.resolve();
   if (!loading) {
@@ -64,7 +75,7 @@ function load(): Promise<void> {
         if (e.key === HISTORY_PING_KEY) scheduleRefresh();
       });
       window.addEventListener("online", scheduleRefresh);
-      await migrateLegacy(safeLocalStorage(), stores().server);
+      await migrated();
       await historyState().refresh();
     })();
   }
@@ -75,6 +86,7 @@ export interface UseHistory {
   entries: Ref<HistoryEntry[]>;
   byKind(kind: HistoryKind): ComputedRef<HistoryEntry[]>;
   load(): Promise<void>;
+  migrated(): Promise<void>;
   refresh(kind?: HistoryKind): Promise<void>;
   add(input: HistoryEntryInput): Promise<HistoryEntry>;
   patch(id: string, partial: HistoryPatch): Promise<HistoryEntry | null>;
@@ -90,6 +102,7 @@ export function useHistory(): UseHistory {
     entries: s.entries,
     byKind: s.byKind,
     load,
+    migrated,
     refresh: (kind) => (import.meta.client ? s.refresh(kind) : Promise.resolve()),
     add: s.add,
     patch: s.patch,
