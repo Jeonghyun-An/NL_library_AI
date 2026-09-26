@@ -19,7 +19,9 @@ from services.research.critic import critique as _critique
 from services.research.critic import should_recheck
 from services.research.explorer import explore as _explore
 from services.research.planner import query_key
-from services.research.state import Evidence, HitRow, ResearchState, SubQuestion
+from services.research.state import (
+    Evidence, HitRow, ResearchState, SubQuestion, research_stats,
+)
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +71,30 @@ def _as_seen_by(ev: Evidence, subq: SubQuestion) -> Evidence:
     return Evidence(id=ev.id, cnts_id=ev.cnts_id, meta=ev.meta, chunks=chunks_for(ev, subq))
 
 
+def _mark_seen(state: ResearchState, hits: list[HitRow], meta: dict[str, dict]) -> int:
+    """이번 검색에서 처음 본 논문 수. 하위질문을 건너 같은 논문을 다시 세지 않는다.
+
+    서지가 없는 논문은 build_evidence 가 버린다 — 검토한 논문으로 세면 근거가 될 수
+    없던 것까지 "검토"로 부풀린다.
+    """
+    fresh = {h["book_id"] for h in hits if h["book_id"] in meta} - state.seen_cnts
+    state.seen_cnts |= fresh
+    return len(fresh)
+
+
+def _recheck_query(
+    state: ResearchState, subq: SubQuestion, verdict: Verdict, *, recheck: int,
+) -> str | None:
+    """다음 회차에 검색할 검색어. 재검색하지 않으면 None."""
+    params = state.params
+    if not should_recheck(subq, recheck_count=recheck, max_recheck=params["max_recheck"]):
+        return None
+    # 상한에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
+    if len(state.evidence) >= params["max_evidence"]:
+        return None
+    return _next_query(verdict.new_queries, subq.queries)
+
+
 async def explore_subquestion(
     state: ResearchState,
     subq: SubQuestion,
@@ -78,7 +104,11 @@ async def explore_subquestion(
     critique_fn: CritiqueFn = _critique,
     emit: EmitFn | None = None,
 ) -> SubQuestion:
-    """한 하위질문을 탐색하고, 부족하면 쿼리를 바꿔 상한까지 재탐색한다."""
+    """한 하위질문을 탐색하고, 부족하면 쿼리를 바꿔 상한까지 재탐색한다.
+
+    회차마다 subq.rounds 에 한 줄을 남긴다 — 이벤트로 흘린 자기점검 장면을 끝난
+    잡에서 다시 보여 주려면 저장된 이력이 있어야 한다.
+    """
     emit = emit or _noop_emit
     params = state.params
     query = subq.text
@@ -88,6 +118,7 @@ async def explore_subquestion(
     capped: set[str] = set()
 
     while True:
+        round_no = recheck + 1
         subq.queries.append(query)
         hits, meta = await explore_fn(query, params=params, db=db)
         # 읽기 트랜잭션을 여기서 끝낸다. 이어지는 critic 은 LLM 을 수십 초 기다리는데,
@@ -95,8 +126,10 @@ async def explore_subquestion(
         # lifespan 의 ALTER TABLE library_catalog 가 막히고 그 뒤 모든 조회가 줄 선다.
         if db is not None:
             await db.commit()
+        new_papers = _mark_seen(state, hits, meta)
         await emit("search", {
             "subq_idx": subq.idx, "query": query, "found": len(hits),
+            "round": round_no, "new_papers": new_papers,
         })
 
         # 같은 논문이 여러 하위질문에서 나오면 근거를 새로 만들지 않고 재사용한다.
@@ -134,6 +167,7 @@ async def explore_subquestion(
             leaders.append(fresh[0])
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
         subq.capped = len(capped)
+        await emit("counters", research_stats(state))
 
         verdict = await critique_fn(
             subq, [_as_seen_by(state.evidence[e], subq) for e in subq.evidence_ids],
@@ -150,18 +184,20 @@ async def explore_subquestion(
         # verdict="sufficient" 로 떨어지고 should_recheck 는 "insufficient" 일 때만
         # True 이므로, 판정 불가가 난 라운드가 항상 마지막 라운드다.
         subq.parse_failed = verdict.parse_failed
+        next_query = _recheck_query(state, subq, verdict, recheck=recheck)
+        subq.rounds.append({
+            "round": round_no, "query": query, "found_chunks": len(hits),
+            "new_papers": new_papers, "verdict": verdict.verdict,
+            "note": verdict.note, "next_query": next_query,
+        })
         await emit("critique", {
             "subq_idx": subq.idx, "verdict": verdict.verdict,
             "note": verdict.note, "adopted": len(subq.evidence_ids),
             "parse_failed": verdict.parse_failed, "capped": subq.capped,
+            "round": round_no, "next_query": next_query,
+            "will_recheck": next_query is not None,
         })
 
-        if not should_recheck(subq, recheck_count=recheck, max_recheck=params["max_recheck"]):
-            break
-        # 상한에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
-        if len(state.evidence) >= params["max_evidence"]:
-            break
-        next_query = _next_query(verdict.new_queries, subq.queries)
         if next_query is None:
             break
         query = next_query
