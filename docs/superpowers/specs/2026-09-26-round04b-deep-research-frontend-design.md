@@ -102,9 +102,9 @@
 | `user_id` | VARCHAR(64) NULL | **로그인 도입 시 자리.** 지금은 항상 NULL |
 | `kind` | VARCHAR(16) NOT NULL | `book` · `paper` · `research` |
 | `title` | TEXT NOT NULL | 검색어 또는 연구 질문 |
-| `params` | JSONB NOT NULL DEFAULT `{}` | 검색 조건(논문 등재구분 등) |
+| `params` | JSONB NOT NULL DEFAULT `{}` | 검색 조건(논문 등재구분 등). 8KB 상한, 넘으면 413 |
 | `snapshot` | JSONB NULL | 복원용 **축약** 결과 — 목록 카드에 필요한 필드만(§4-5). 200KB 상한, 넘으면 413 |
-| `ai` | JSONB NULL | AI 요약. 도서 `{intro, items}`, 논문 `{text, refs}` |
+| `ai` | JSONB NULL | AI 요약. 도서 `{intro, items}`, 논문 `{text, refs}`. 64KB 상한, 넘으면 413 |
 | `ref_id` | VARCHAR(64) NULL | 딥리서치 `job_id` |
 | `created_at` / `updated_at` | TIMESTAMPTZ | |
 | `deleted_at` | TIMESTAMPTZ NULL | **소프트 삭제** — 사용자가 지워도 행은 남는다 |
@@ -126,6 +126,9 @@
 | `DELETE /api/history/{id}` | — | 204. 소프트 삭제 |
 | `DELETE /api/history?kind=` | — | 204. 그 종류 전부 소프트 삭제 |
 | `POST /api/history/import` | `{items:[v2 항목 + legacy_id(v1 숫자 id)…]}` 최대 100건 | `{imported, skipped, id_map:{v1id: id}}`. id 기준 중복 무시(§4-2) |
+
+- 상한은 JSON 칸을 UTF-8 로 직렬화한 바이트로 잰다(한글 3바이트, `\uXXXX` 이스케이프 길이가 아니다). PUT·PATCH 는 하나라도 넘으면 413 으로 거절한다. import 는 413 을 내지 않고 넘친 칸만 비운 뒤(`snapshot`·`ai` 는 null, NOT NULL 인 `params` 는 `{}`) 나머지를 옮긴다 — 한 건 때문에 묶음 전체가 매번 실패하지 않게.
+- import 의 `created_at` 은 서버 현재 시각을 넘지 못한다(미래 시각은 지금으로 자른다). 목록이 `created_at` 내림차순이라 미래 시각 항목이 새 기록 위에 계속 고정되지 않게.
 
 - 소유 확인: 행의 `session_id` 가 헤더와 다르면 404(존재 여부를 드러내지 않는다).
 - 딥리서치 잡 생성(`POST /api/research`)은 헤더의 브라우저 ID 를 `research_jobs.created_by` 에도 넣는다(기존 컬럼). 기록 항목은 화면이 `PUT` 으로 만든다 — 모든 종류가 같은 경로로 저장되게.
@@ -317,7 +320,7 @@ Figma 에는 두 배치를 같은 상태별로 나란히 그려 비교할 수 �
 
 | 영역 | 방법 |
 |---|---|
-| 기록 API | pytest(TestClient + 의존성 교체). upsert 반복 안전, 소프트 삭제, 남의 기록 404(읽기·쓰기·삭제), import 중복 무시, v1 id 결정론 변환, snapshot 상한 413, 딥리서치 상태 붙이기 |
+| 기록 API | pytest(TestClient + 의존성 교체). upsert 반복 안전, 소프트 삭제, 남의 기록 404(읽기·쓰기·삭제), import 중복 무시, v1 id 결정론 변환, snapshot·params·ai 상한 413(UTF-8 바이트, import 는 넘친 칸만 비움), import 미래 시각 자르기, 딥리서치 상태 붙이기 |
 | 스키마 | 모델 ↔ `0006` 마이그레이션 정합 테스트(`test_research_models.py` 방식) |
 | 딥리서치 이벤트 | 워커·러너 테스트 확장: `status`·`step`·`counters`·`synth` 발행, **같은 내용이 `research_steps.result` 에 남는지**, snapshot 에 `result`·`job` 포함, 고유 논문 계수(재사용 근거 중복 없음), `seen_cnts` 스냅샷 왕복, 계획 태스크 이벤트 |
 | 프론트 순수 로직 | **Vitest 를 개발용으로 추가**. 기록 저장소(서버 실패 → outbox, 쿼터 처리, v1 이전과 백업 보존), 마커 분해, 슬래시 파싱, URL 규칙(`?h=`, `?restore=` 별칭, v1 id 변환) |

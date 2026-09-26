@@ -220,25 +220,25 @@ class TestList:
         assert res.status_code == 400
 
 
-class TestSnapshotLimit:
-    @staticmethod
-    def _snapshot(size: int) -> dict:
-        # {"b":"xxx…"} 의 직렬화 길이가 정확히 size 바이트가 되게 맞춘다
-        return {"b": "x" * (size - len('{"b": ""}'))}
+def _sized(size: int) -> dict:
+    # {"b": "xxx…"} 의 직렬화 길이가 정확히 size 바이트가 되게 맞춘다
+    return {"b": "x" * (size - len('{"b": ""}'))}
 
+
+class TestSnapshotLimit:
     def test_at_limit_is_accepted(self, api):
-        assert api.put(uuid.uuid4(), snapshot=self._snapshot(200 * 1024)).status_code == 200
+        assert api.put(uuid.uuid4(), snapshot=_sized(200 * 1024)).status_code == 200
 
     def test_put_over_limit_is_413(self, api):
         item_id = uuid.uuid4()
-        assert api.put(item_id, snapshot=self._snapshot(200 * 1024 + 1)).status_code == 413
+        assert api.put(item_id, snapshot=_sized(200 * 1024 + 1)).status_code == 413
         assert raw_row(api.engine, item_id) is None
 
     def test_patch_over_limit_is_413(self, api):
         item_id = uuid.uuid4()
         api.put(item_id)
         res = api.client.patch(f"/api/history/{item_id}", headers=A,
-                               json={"snapshot": self._snapshot(200 * 1024 + 1)})
+                               json={"snapshot": _sized(200 * 1024 + 1)})
         assert res.status_code == 413
         assert raw_row(api.engine, item_id).snapshot is None
 
@@ -247,10 +247,16 @@ class TestSnapshotLimit:
         snapshot = {"b": "가" * (70 * 1024)}
         assert api.put(uuid.uuid4(), snapshot=snapshot).status_code == 413
 
+    def test_limit_is_not_ascii_escaped_length(self, api):
+        # 반대쪽 퇴행 — ensure_ascii 로 재면 한글 한 글자가 가 6바이트가 되어 상한이 절반으로 엄격해진다.
+        # UTF-8 로 약 180KB(상한 아래), ASCII 이스케이프로 약 360KB(상한 위)인 결과는 받아야 한다
+        snapshot = {"b": "가" * (60 * 1024)}
+        assert api.put(uuid.uuid4(), snapshot=snapshot).status_code == 200
+
     def test_import_drops_only_the_oversized_snapshot(self, api):
         res = api.client.post("/api/history/import", headers=A, json={"items": [
             {"legacy_id": "1727000000000", "kind": "book", "title": "큰 결과",
-             "snapshot": self._snapshot(200 * 1024 + 1)},
+             "snapshot": _sized(200 * 1024 + 1)},
             {"legacy_id": "1727000000001", "kind": "book", "title": "작은 결과",
              "snapshot": {"books": [1]}},
         ]})
@@ -258,6 +264,52 @@ class TestSnapshotLimit:
         by_title = {i["title"]: i for i in api.client.get("/api/history", headers=A).json()["items"]}
         assert by_title["큰 결과"]["has_snapshot"] is False
         assert by_title["작은 결과"]["has_snapshot"] is True
+
+
+class TestParamsAndAiLimits:
+    """snapshot 만 재면 params·ai 로 상한을 우회해, 인증 없는 요청이 행마다 수십 MB 를 쌓을 수 있다."""
+
+    LIMITS = [("params", 8 * 1024), ("ai", 64 * 1024)]
+
+    @pytest.mark.parametrize("field,limit", LIMITS)
+    def test_at_limit_is_accepted(self, api, field, limit):
+        assert api.put(uuid.uuid4(), **{field: _sized(limit)}).status_code == 200
+
+    @pytest.mark.parametrize("field,limit", LIMITS)
+    def test_put_over_limit_is_413(self, api, field, limit):
+        item_id = uuid.uuid4()
+        res = api.put(item_id, **{field: _sized(limit + 1)})
+        assert res.status_code == 413 and field in res.json()["detail"]
+        assert raw_row(api.engine, item_id) is None
+
+    @pytest.mark.parametrize("field,limit", LIMITS)
+    def test_patch_over_limit_is_413(self, api, field, limit):
+        item_id = uuid.uuid4()
+        api.put(item_id, params={"grade": "KCI"}, ai={"intro": "요약", "items": []})
+        res = api.client.patch(f"/api/history/{item_id}", headers=A, json={field: _sized(limit + 1)})
+        assert res.status_code == 413
+        row = raw_row(api.engine, item_id)
+        assert (row.params, row.ai) == ({"grade": "KCI"}, {"intro": "요약", "items": []})
+
+    @pytest.mark.parametrize("field,limit", LIMITS)
+    def test_limit_counts_utf8_bytes(self, api, field, limit):
+        # 한글 한 글자는 3바이트 — 글자 수는 상한의 절반이어도 바이트로는 넘는다
+        assert api.put(uuid.uuid4(), **{field: {"b": "가" * (limit // 2)}}).status_code == 413
+
+    def test_import_drops_only_the_oversized_field(self, api):
+        res = api.client.post("/api/history/import", headers=A, json={"items": [
+            {"legacy_id": "1727000000000", "kind": "book", "title": "큰 조건",
+             "params": _sized(8 * 1024 + 1), "ai": {"intro": "요약", "items": []}},
+            {"legacy_id": "1727000000001", "kind": "paper", "title": "큰 요약",
+             "params": {"grade": "KCI"}, "ai": _sized(64 * 1024 + 1)},
+        ]})
+        assert res.status_code == 200 and res.json()["imported"] == 2
+        id_map = res.json()["id_map"]
+        big_params = api.client.get(f"/api/history/{id_map['1727000000000']}", headers=A).json()
+        # params 는 NOT NULL 칸이라 null 이 아니라 빈 조건으로 옮긴다
+        assert big_params["params"] == {} and big_params["ai"] == {"intro": "요약", "items": []}
+        big_ai = api.client.get(f"/api/history/{id_map['1727000000001']}", headers=A).json()
+        assert big_ai["ai"] is None and big_ai["params"] == {"grade": "KCI"}
 
 
 class TestImport:

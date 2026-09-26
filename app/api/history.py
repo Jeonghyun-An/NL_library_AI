@@ -15,26 +15,61 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.deps import get_browser_id, get_db
 from repositories.history import HistoryRepository, InvalidCursor
 from schemas.history import (
-    HistoryImportIn, HistoryImportOut, HistoryItemDetail, HistoryItemIn,
+    HistoryImportIn, HistoryImportItem, HistoryImportOut, HistoryItemDetail, HistoryItemIn,
     HistoryItemPatch, HistoryKind, HistoryListOut,
 )
 
 router = APIRouter(prefix="/api/history", tags=["history"])
 
-# 목록 카드를 다시 그릴 만큼만 담는 칸이다. 결과 전체(청크 원문)를 넣으면 행 하나가
-# 수 MB 가 되고, 사이드바를 여는 것만으로 그만큼을 읽게 된다.
+# snapshot 은 목록 카드를 다시 그릴 만큼만 담는 칸이다. 결과 전체(청크 원문)를 넣으면 행
+# 하나가 수 MB 가 되고, 사이드바를 여는 것만으로 그만큼을 읽게 된다.
 SNAPSHOT_MAX_BYTES = 200 * 1024
+# 검색 조건(등재구분 등) 몇 개다.
+PARAMS_MAX_BYTES = 8 * 1024
+# 도서 {intro, items}·논문 {text, refs} 요약. 실제로는 수 KB 다.
+AI_MAX_BYTES = 64 * 1024
+
+# 인증 없는 요청이 한 칸이라도 상한 없이 쓰면 행마다 수십 MB 를 쌓을 수 있다 — JSON 칸은 모두 잰다.
+# 세 번째 값은 import 가 넘친 칸을 비울 때 넣는 값이다(params 는 NOT NULL 칸이라 빈 조건).
+_JSON_FIELD_LIMITS = (
+    ("snapshot", SNAPSHOT_MAX_BYTES, None),
+    ("params", PARAMS_MAX_BYTES, {}),
+    ("ai", AI_MAX_BYTES, None),
+)
+_TOO_LARGE_DETAIL = {
+    "snapshot": "snapshot 은 200KB 까지다 — 목록 카드 필드만 담는다",
+    "params": "params 는 8KB 까지다 — 검색 조건만 담는다",
+    "ai": "ai 는 64KB 까지다 — AI 요약만 담는다",
+}
 
 
-def _snapshot_bytes(snapshot: dict | None) -> int:
-    if snapshot is None:
+def _json_bytes(value: dict | None) -> int:
+    # 한글은 UTF-8 로 3바이트다. ensure_ascii 로 재면 \uXXXX 6바이트가 되어 상한이 절반으로 엄격해진다.
+    if value is None:
         return 0
-    return len(json.dumps(snapshot, ensure_ascii=False).encode("utf-8"))
+    return len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
 
 
-def _reject_large_snapshot(snapshot: dict | None) -> None:
-    if _snapshot_bytes(snapshot) > SNAPSHOT_MAX_BYTES:
-        raise HTTPException(status_code=413, detail="snapshot 은 200KB 까지다 — 목록 카드 필드만 담는다")
+def _oversized_fields(req: HistoryItemIn | HistoryItemPatch) -> list[str]:
+    return [
+        name for name, limit, _ in _JSON_FIELD_LIMITS
+        if _json_bytes(getattr(req, name)) > limit
+    ]
+
+
+def _reject_large_fields(req: HistoryItemIn | HistoryItemPatch) -> None:
+    oversized = _oversized_fields(req)
+    if oversized:
+        raise HTTPException(status_code=413, detail=_TOO_LARGE_DETAIL[oversized[0]])
+
+
+def _drop_large_fields(item: HistoryImportItem) -> HistoryImportItem:
+    oversized = set(_oversized_fields(item))
+    if not oversized:
+        return item
+    return item.model_copy(update={
+        name: empty for name, _, empty in _JSON_FIELD_LIMITS if name in oversized
+    })
 
 
 def _not_found() -> HTTPException:
@@ -62,13 +97,9 @@ async def import_history(
     browser_id: uuid.UUID = Depends(get_browser_id),
     db: AsyncSession = Depends(get_db),
 ):
-    # 이전은 한 건이라도 413 이면 묶음 전체가 매번 실패해 영영 옮겨지지 않는다. 큰 결과만
-    # 버리고 기록(제목·검색 조건)은 옮긴다 — 원본은 브라우저의 백업 키에 남아 있다.
-    items = [
-        item.model_copy(update={"snapshot": None})
-        if _snapshot_bytes(item.snapshot) > SNAPSHOT_MAX_BYTES else item
-        for item in req.items
-    ]
+    # 이전은 한 건이라도 413 이면 묶음 전체가 매번 실패해 영영 옮겨지지 않는다. 상한을 넘은
+    # 칸(결과·검색 조건·AI 요약)만 비우고 기록은 옮긴다 — 원본은 브라우저의 백업 키에 남아 있다.
+    items = [_drop_large_fields(item) for item in req.items]
     out = await HistoryRepository(db).import_items(browser_id, items)
     await db.commit()
     return out
@@ -93,7 +124,7 @@ async def put_history_item(
     browser_id: uuid.UUID = Depends(get_browser_id),
     db: AsyncSession = Depends(get_db),
 ):
-    _reject_large_snapshot(req.snapshot)
+    _reject_large_fields(req)
     item = await HistoryRepository(db).upsert(browser_id, item_id, req)
     if item is None:
         raise _not_found()
@@ -108,7 +139,7 @@ async def patch_history_item(
     browser_id: uuid.UUID = Depends(get_browser_id),
     db: AsyncSession = Depends(get_db),
 ):
-    _reject_large_snapshot(req.snapshot)
+    _reject_large_fields(req)
     item = await HistoryRepository(db).patch(browser_id, item_id, req)
     if item is None:
         raise _not_found()
