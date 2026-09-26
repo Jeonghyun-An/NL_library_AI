@@ -96,11 +96,17 @@ class ResearchStep(Base):
     detail      = Column(Text)
     status      = Column(String(16), nullable=False, default="pending")
     # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
+    # SSE step 이벤트가 같은 값을 싣는다(workers/research_tasks.py _finish).
     # plan:       {"subquestions": [...]}                 LLM 원안 (승인본은 job.plan)
     # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
-    #              "parse_failed": bool, "capped": n}   verdict·note 는 마지막 라운드 값
-    # synthesize: {"sections": n}
-    # 실패 공통:   {"error": "..."}
+    #              "parse_failed": bool, "capped": n,
+    #              "rounds": [{"round", "query", "found_chunks", "new_papers",
+    #                          "verdict", "note", "next_query"}]}
+    #             verdict·note 는 마지막 라운드 값, 회차별 값은 rounds.
+    #             rounds 가 없는 행은 보강 전 잡이다 — 화면은 report.trail 로 대체한다.
+    # synthesize: {"sections_total": n, "sections": [{"idx": i, "status": "..."}]}
+    #             idx 는 절 순번. 보강 전 잡은 {"sections": n}(정수)이다.
+    # 실패 공통:   {"error": "..."} — search·synthesize 는 그때까지의 rounds·sections 도 싣는다
     result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
     finished_at = Column(DateTime(timezone=True))

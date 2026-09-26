@@ -230,6 +230,7 @@ class _Harness:
         self.events: list[tuple] = []
         self.steps: list[tuple] = []
         self.finished: list[tuple] = []
+        self.on_section = None
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
@@ -269,9 +270,10 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
             await explore(state, subq)
         return subq
 
-    async def _synthesize(state, *, should_stop=None):
+    async def _synthesize(state, *, should_stop=None, on_section=None):
         assert not session.in_txn, "종합(LLM) 직전에 읽기 트랜잭션이 열려 있다"
         synthesized.append(state)
+        h.on_section = on_section
         if synthesize is not None:
             return await synthesize(state, should_stop)
         return {"sections": []}
@@ -1012,6 +1014,128 @@ class TestStatusEvents:
 
         assert _statuses(h) == [{"status": "planning", "stage": "created"}]
         assert [t[0] for t in _terminals(h)] == ["failed"]
+
+
+_ROUNDS = [
+    {"round": 1, "query": "하위1", "found_chunks": 4, "new_papers": 3,
+     "verdict": "insufficient", "note": "부족", "next_query": "보완 검색어"},
+    {"round": 2, "query": "보완 검색어", "found_chunks": 2, "new_papers": 1,
+     "verdict": "sufficient", "note": "충분", "next_query": None},
+]
+
+
+class TestStepResults:
+    """이벤트로 흘린 것은 research_steps.result 에도 남는다 — 끝난 잡을 다시 열어도
+    자기점검·종합 진행 장면을 재생할 수 있어야 한다."""
+
+    def test_search_step_result_carries_round_history(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+
+        async def _two_rounds(state, subq):
+            subq.rounds = [dict(r) for r in _ROUNDS]
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_two_rounds)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert h.finished[0][2]["rounds"] == _ROUNDS
+
+    def test_failed_search_step_keeps_the_rounds_done_so_far(self, monkeypatch):
+        # 실패 화면의 "멈춘 지점"이 여기서 온다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1", "하위2"])
+
+        async def _fails_in_round_two(state, subq):
+            if subq.idx == 0:
+                subq.rounds = [dict(_ROUNDS[0])]
+                raise ConnectionError("재검색 중 끊김")
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_fails_in_round_two)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        _, status, result, _ = h.finished[0]
+        assert status == "failed"
+        assert result["rounds"] == [_ROUNDS[0]] and "끊김" in result["error"]
+
+    def test_synthesis_progress_is_streamed_and_saved(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _two_sections(state, should_stop):
+            for idx, status in ((0, "running"), (0, "done"), (1, "running"), (1, "failed")):
+                await h.on_section(idx, 2, status)
+            return {"sections": [{}, {}]}
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_two_sections)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [e[1] for e in h.events if e[0] == "synth"] == [
+            {"section_idx": 0, "total": 2, "status": "running"},
+            {"section_idx": 0, "total": 2, "status": "done"},
+            {"section_idx": 1, "total": 2, "status": "running"},
+            {"section_idx": 1, "total": 2, "status": "failed"},
+        ]
+        _, status, result, _ = h.finished[-1]
+        assert status == "done"
+        assert result == {"sections_total": 2, "sections": [
+            {"idx": 0, "status": "done"}, {"idx": 1, "status": "failed"}]}
+
+    def test_failed_synthesis_keeps_the_sections_done_so_far(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _second_raises(state, should_stop):
+            await h.on_section(0, 2, "running")
+            await h.on_section(0, 2, "done")
+            await h.on_section(1, 2, "running")
+            raise ValueError("종합 호출 실패")
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_second_raises)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed"
+        assert result == {"error": "종합 호출 실패", "sections_total": 2, "sections": [
+            {"idx": 0, "status": "done"}, {"idx": 1, "status": "running"}]}
+
+    def test_canceled_synthesis_keeps_the_sections_done_so_far(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _canceled_after_first(state, should_stop):
+            await h.on_section(0, 3, "running")
+            await h.on_section(0, 3, "done")
+            job.status = "canceled"
+            raise rt.SynthesisCanceled()
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_canceled_after_first)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed"
+        assert result == {"error": "취소됨", "sections_total": 3,
+                          "sections": [{"idx": 0, "status": "done"}]}
+
+    def test_report_without_sections_saves_zero_total(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert h.finished[-1][2] == {"sections_total": 0, "sections": []}
 
 
 class TestReaper:

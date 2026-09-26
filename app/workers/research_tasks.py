@@ -13,7 +13,7 @@ import datetime as _dt
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy import insert, select, text as sa_text, update
@@ -170,6 +170,26 @@ async def _finish(db: AsyncSession, step: _StepRef, status: str, result: dict | 
     await db.commit()
     # 저장한 result 를 그대로 싣는다 — 라이브로 본 장면과 다시 연 장면이 같아야 한다.
     await publish(step.job_id, "step", step.event(status, result))
+
+
+@dataclass
+class _SynthProgress:
+    """synthesize 의 on_section 콜백. 절 진행을 synth 이벤트로 흘리면서 종합 단계
+    result 에 남길 값도 모은다 — 실패·취소로 끝나도 거기까지의 진행이 남는다."""
+    job_id: uuid.UUID
+    total: int = 0
+    statuses: dict[int, str] = field(default_factory=dict)
+
+    async def __call__(self, idx: int, total: int, status: str) -> None:
+        self.total = total
+        self.statuses[idx] = status
+        await publish(self.job_id, "synth", {"section_idx": idx, "total": total, "status": status})
+
+    def result(self, **extra: object) -> dict:
+        return {
+            **extra, "sections_total": self.total,
+            "sections": [{"idx": i, "status": st} for i, st in sorted(self.statuses.items())],
+        }
 
 
 async def _announce(job_id: uuid.UUID, status: str, stage: str) -> None:
@@ -445,12 +465,14 @@ async def _run_deep_research(job_id: str) -> dict:
                         log.exception("[research] 하위질문 실패 job=%s idx=%s", jid, subq.idx)
                         await db.rollback()     # DB 오류면 트랜잭션이 깨져 있어 기록부터 터진다
                         subq.failed = True
-                        await _finish(db, step, "failed", {"error": str(e)[:500]})
+                        await _finish(db, step, "failed",
+                                      {"error": str(e)[:500], "rounds": subq.rounds})
                     else:
                         await _finish(db, step, "done", {
                             "queries": subq.queries, "adopted": len(subq.evidence_ids),
                             "verdict": subq.verdict, "note": subq.note,
                             "parse_failed": subq.parse_failed, "capped": subq.capped,
+                            "rounds": subq.rounds,
                         })
 
                 # 전멸은 연구 결과가 아니라 장애다. 체크포인트를 남기면 retry 가 전부
@@ -469,10 +491,12 @@ async def _run_deep_research(job_id: str) -> dict:
 
             # ── 종합 ──
             step = await _step(db, jid, seq, "synthesize", "보고서 종합")
+            progress = _SynthProgress(jid)
             try:
-                report = await synthesize(state, should_stop=lambda: _is_cancelled(db, jid))
+                report = await synthesize(state, should_stop=lambda: _is_cancelled(db, jid),
+                                          on_section=progress)
             except SynthesisCanceled:
-                await _finish(db, step, "failed", {"error": "취소됨"})
+                await _finish(db, step, "failed", progress.result(error="취소됨"))
                 return await _stopped(db, jid)
             except SoftTimeLimitExceeded:
                 raise
@@ -481,10 +505,10 @@ async def _run_deep_research(job_id: str) -> dict:
                 # 탐색을 건너뛰고 여기부터 다시 온다.
                 log.exception("[research] 종합 실패 job=%s", jid)
                 await db.rollback()
-                await _finish(db, step, "failed", {"error": str(e)[:500]})
+                await _finish(db, step, "failed", progress.result(error=str(e)[:500]))
                 return await _end_failed(db, jid, str(e))
 
-            await _finish(db, step, "done", {"sections": len(report["sections"])})
+            await _finish(db, step, "done", progress.result())
             if not await _transition(db, jid, expect=("running",), status="completed",
                                      report=report, stage=_stage("synthesized"),
                                      finished_at=_now()):
