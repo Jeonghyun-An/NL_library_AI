@@ -88,10 +88,7 @@
           </div>
 
           <aside class="rs-col-side">
-            <section class="rs-card">
-              <h2 class="rs-card__title">진행</h2>
-              <p class="rs-muted">{{ phaseLabel(phase) }}</p>
-            </section>
+            <ProgressPanel :view="view" :phase="phase" />
           </aside>
         </div>
       </template>
@@ -108,10 +105,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import PlanCard from "~/components/research/PlanCard.vue";
+import ProgressPanel from "~/components/research/ProgressPanel.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { safeLocalStorage } from "~/utils/browserId";
-import { phaseLabel, researchPhase, synthProgress } from "~/utils/researchEvents";
+import { researchPhase, synthProgress } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import {
