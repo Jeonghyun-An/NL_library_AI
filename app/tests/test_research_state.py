@@ -4,7 +4,7 @@ import pytest
 
 from services.research.state import (
     _PARAM_BOUNDS, DEFAULT_PARAMS, VERDICTS, Chunk, Evidence, ResearchState, SubQuestion,
-    merge_params, restore_state, snapshot_state,
+    merge_params, research_stats, restore_state, snapshot_state,
 )
 
 
@@ -251,3 +251,82 @@ class TestSnapshotEvolution:
         snap["params"]["retired_param"] = 1
         back = restore_state("j1", snap)
         assert back.params == DEFAULT_PARAMS
+
+
+_ROUNDS = [
+    {"round": 1, "query": "q1", "found_chunks": 12, "new_papers": 7,
+     "verdict": "insufficient", "note": "2015년 이후 자료가 없다", "next_query": "q2"},
+    {"round": 2, "query": "q2", "found_chunks": 9, "new_papers": 3,
+     "verdict": "sufficient", "note": "충분하다", "next_query": None},
+]
+
+
+class TestSeenPapers:
+    """검토한 고유 논문은 진행 카운터와 보고서 서론의 원천이다 — 재개해도 같아야 한다."""
+
+    def test_new_state_has_seen_nothing(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert st.seen_cnts == set()
+
+    def test_subquestion_has_no_rounds_by_default(self):
+        assert SubQuestion(idx=0, text="하위").rounds == []
+
+    def test_seen_papers_survive_round_trip(self):
+        st = _explored_state()
+        st.seen_cnts = {"KCI_C", "KCI_A", "KCI_B"}
+        snap = snapshot_state(st)
+        # 집합은 JSONB 에 들어가지 않는다 — 정렬한 목록이라야 왕복 비교도 결정론적이다
+        assert snap["seen_cnts"] == ["KCI_A", "KCI_B", "KCI_C"]
+        assert restore_state("j1", snap).seen_cnts == {"KCI_A", "KCI_B", "KCI_C"}
+
+    def test_old_snapshot_falls_back_to_adopted_papers(self):
+        """보강 전 스냅샷에는 seen_cnts 가 없다. 빈 집합으로 두면 재개한 보고서가
+        '논문 0편을 검토하고 1편을 근거로 삼았다'고 쓴다."""
+        snap = snapshot_state(_explored_state())
+        del snap["seen_cnts"]
+        assert restore_state("j1", snap).seen_cnts == {"KCI_A"}
+
+    def test_empty_seen_list_is_trusted(self):
+        # 키가 있는 빈 목록까지 하한으로 바꾸면 왕복할 때마다 값이 달라진다
+        snap = snapshot_state(_explored_state())
+        assert snap["seen_cnts"] == []
+        assert restore_state("j1", snap).seen_cnts == set()
+
+    def test_rounds_survive_round_trip(self):
+        st = _explored_state()
+        st.subquestions[0].rounds = [dict(r) for r in _ROUNDS]
+        back = restore_state("j1", snapshot_state(st))
+        assert back.subquestions[0].rounds == _ROUNDS
+        assert back.subquestions[1].rounds == []
+
+    def test_old_snapshot_without_rounds_gets_empty_history(self):
+        snap = snapshot_state(_explored_state())
+        for sq in snap["subquestions"]:
+            del sq["rounds"]
+        assert [s.rounds for s in restore_state("j1", snap).subquestions] == [[], [], []]
+
+    def test_snapshot_carries_every_state_field(self):
+        """ResearchState 의 필드는 손으로 나열해 담는다 — 필드를 추가하고 여기에 빠뜨리면
+        재개한 잡에서만 그 값이 기본값으로 돌아간다. job_id 는 컬럼이 따로 있다."""
+        snap = snapshot_state(_explored_state())
+        assert set(snap) == {f.name for f in fields(ResearchState)} - {"job_id"}
+
+
+class TestResearchStats:
+    def test_counts_unique_papers_adopted_evidence_and_rechecks(self):
+        st = _explored_state()          # 검색어 이력: ["q1", "q2"], ["q3"], []
+        st.seen_cnts = {"KCI_A", "KCI_B", "KCI_C"}
+        assert research_stats(st) == {
+            "papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1,
+        }
+
+    def test_empty_state_is_all_zero(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert research_stats(st) == {
+            "papers_reviewed": 0, "evidence_adopted": 0, "rechecks": 0,
+        }
+
+    def test_same_after_resume(self):
+        st = _explored_state()
+        st.seen_cnts = {"KCI_A", "KCI_B"}
+        assert research_stats(restore_state("j1", snapshot_state(st))) == research_stats(st)
