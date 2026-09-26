@@ -603,6 +603,9 @@ function beginRun(): AbortSignal {
 
 // ── 검색 상태 ────────────────────────────────────────────────
 const currentQuery = ref("");
+// 화면에 떠 있는 결과의 검색어(앞뒤 공백 제거) — currentQuery 는 검색바 v-model 이라 사용자가 고치는 중일 수 있어,
+// 결과에 묶인 이동·주소 비교는 이 값을 쓴다
+const resultQuery = ref("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 const paperResult = ref<BookSearchResponse | null>(null);
@@ -770,7 +773,8 @@ function openRefCitation(ref: { book_id: string }) {
 
 // 상세로 갈 때 기록 id 를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원된다
 function detailUrl(bookId: string, extra: Record<string, string> = {}): string {
-  const params = new URLSearchParams({ q: currentQuery.value, ...extra });
+  // q 는 검색바가 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
+  const params = new URLSearchParams({ q: resultQuery.value, ...extra });
   if (currentHistoryId.value) params.set("h", currentHistoryId.value);
   return `/papers/${bookId}?${params}`;
 }
@@ -785,6 +789,7 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   if (!query || loading.value) return;
   const signal = beginRun();
   currentQuery.value = query;
+  resultQuery.value = query;
   currentHistoryId.value = null;
   // 등재 필터는 검색을 시작할 때의 값으로 한 번 정한다 — 주소와 기록에 같은 값이 들어가게
   const grade = selectedGrade.value !== "all" ? selectedGrade.value : "";
@@ -845,6 +850,7 @@ function goLanding() {
   loading.value = false;
   error.value = null;
   currentQuery.value = "";
+  resultQuery.value = "";
   currentHistoryId.value = null;
   aiText.value = "";
   aiRefs.value = [];
@@ -869,7 +875,9 @@ async function restoreFromQuery() {
       goLanding();
       return;
     }
-    if (q !== currentQuery.value) {
+    // 검색바가 아니라 화면 결과의 검색어와 비교한다 — 검색바를 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.
+    // 둘 다 앞뒤 공백을 뗀 값이라 같은 검색어를 공백 차이로 다시 찾지 않는다
+    if (q !== resultQuery.value) {
       selectedGrade.value = grade ?? "all";
       await handleSearch(q);
     }
@@ -909,6 +917,7 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   loading.value = false;
   error.value = null;
   currentQuery.value = entry.title;
+  resultQuery.value = entry.title;
   currentHistoryId.value = entry.id;
   paperResult.value = {
     mode: "book",
