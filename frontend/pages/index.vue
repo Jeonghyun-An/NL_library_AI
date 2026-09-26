@@ -286,17 +286,20 @@
     <!-- ===== RESULTS VIEW ===== -->
     <main v-else-if="view === 'results'" class="skx-result">
       <div class="skx-rsearch">
+        <!-- 검색 중에는 잠근다 — 검색 중 엔터는 무시되므로 고친 검색어가 조용히 버려지지 않게 -->
         <input
           type="text"
           class="skx-rsearch__input"
           v-model="currentQuery"
           aria-label="검색어 입력"
+          :disabled="loading"
           @keydown.enter.prevent="handleSearch(currentQuery)"
         />
         <button
           type="button"
           class="skx-send"
           aria-label="검색"
+          :disabled="loading"
           @click="handleSearch(currentQuery)"
         >
           <img src="/img/ico-send.svg" alt="" />
@@ -687,6 +690,9 @@ const mode = ref<"book" | "paper">("book");
 
 // ── 검색 ──────────────────────────────────────────────────
 const currentQuery = ref("");
+// 화면에 떠 있는 결과의 검색어(앞뒤 공백 제거) — currentQuery 는 입력창 v-model 이라 사용자가 고치는 중일 수 있어,
+// 결과에 묶인 이동·주소 비교는 이 값을 쓴다
+const resultQuery = ref("");
 const rewrittenQuery = ref("");
 const loading = ref(false);
 const searchError = ref("");
@@ -903,6 +909,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
 
   const signal = beginRun();
   currentQuery.value = query;
+  resultQuery.value = query.trim();
   currentHistoryId.value = null;
   // 주소의 이전 h 도 함께 내린다 — 남겨 두면 검색이 도는 동안·실패한 뒤에도 사이드바가 이전 기록을 강조하고,
   // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
@@ -951,7 +958,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
     router.replace({ query: { q: query.trim(), h: entry.id } });
-    if (books.value.length) fetchCuration(entry.id, signal);
+    if (books.value.length) fetchCuration(entry.id, query.trim(), rewrittenQuery.value, signal);
   } catch (e: any) {
     if (signal.aborted) return;
     searchError.value =
@@ -966,12 +973,30 @@ function handleChip(chip: string) {
   handleSearch(chip);
 }
 
+// 랜딩으로 되돌린다 — 진행 중인 검색·복원·큐레이션 묶음을 끊고 결과 화면 상태를 비운다
 function goLanding() {
+  runCtrl?.abort();
+  runCtrl = null;
   view.value = "landing";
   currentQuery.value = "";
+  resultQuery.value = "";
+  rewrittenQuery.value = "";
+  currentHistoryId.value = null;
+  loading.value = false;
+  searchError.value = "";
   books.value = [];
+  papers.value = [];
+  keywordChips.value = [];
   curation.value = null;
+  curationIntro.value = "";
+  curationItems.value = [];
+  curationLoading.value = false;
+  curationTyping.value = false;
   selectedItem.value = null;
+  pdfOpen.value = false;
+  citationModal.value = false;
+  // 결과 화면으로 처음 열린 페이지는 탭이 그려진 적이 없어 슬라이더 폭이 0 이다 — 탭이 다시 그려진 뒤 맞춘다
+  nextTick(() => updateTabSlider());
 }
 
 // ── 기록 복원 ─────────────────────────────────────────────
@@ -981,8 +1006,15 @@ async function restoreFromQuery() {
   if (route.path !== "/") return;
   const { h, q } = readHistoryQuery(route.query, readV1Map(safeLocalStorage()));
   if (!h) {
-    // 주소의 q 는 앞뒤 공백을 뗀 값이다 — 같은 검색어를 공백 차이로 다시 찾지 않게 맞춰 비교한다
-    if (q && q !== currentQuery.value.trim()) {
+    if (!q) {
+      // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤
+      // 뒤로가기 등) 결과 화면과 진행 중인 요청을 직접 걷는다. 안 걷으면 주소는 '/' 인데 결과가 남는다
+      goLanding();
+      return;
+    }
+    // 입력창이 아니라 화면 결과의 검색어와 비교한다 — 입력창을 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.
+    // 둘 다 앞뒤 공백을 뗀 값이라 같은 검색어를 공백 차이로 다시 찾지 않는다
+    if (q !== resultQuery.value) {
       mode.value = "book";
       await handleSearch(q);
     }
@@ -1022,6 +1054,7 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   loading.value = false;
   searchError.value = "";
   currentQuery.value = entry.title;
+  resultQuery.value = entry.title;
   currentHistoryId.value = entry.id;
   rewrittenQuery.value = snap.rewritten_query || entry.title;
   books.value = snap.books as unknown as BookChunkGroup[];
@@ -1039,12 +1072,15 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 큐레이션이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
-  if (!entry.ai && books.value.length) fetchCuration(entry.id, signal);
+  if (!entry.ai && books.value.length) {
+    fetchCuration(entry.id, entry.title, rewrittenQuery.value, signal);
+  }
 }
 
-// 같은 경로에서 쿼리만 바뀌면(사이드바 클릭·뒤로가기) 페이지가 다시 마운트되지 않는다
+// 같은 경로에서 쿼리만 바뀌면(사이드바 클릭·뒤로가기) 페이지가 다시 마운트되지 않는다.
+// q 도 본다 — h 가 없는 주소(검색 중·실패 뒤의 ?q=)에서 랜딩 주소로 돌아오면 h 는 그대로 없어 변화를 놓친다
 watch(
-  () => route.query.h ?? route.query.restore,
+  [() => route.query.h ?? route.query.restore, () => route.query.q],
   () => {
     restoreFromQuery();
   },
@@ -1141,7 +1177,14 @@ function typeInto(target: Ref<string>, text: string, signal: AbortSignal): Promi
 }
 
 // ── 큐레이션 (도서) ── 타이프라이터 출력 ──────────────────────
-async function fetchCuration(historyId: string, signal: AbortSignal) {
+// 기록 id 와 함께 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가 고치는 중일 수 있어,
+// 지금 값을 읽으면 다른 검색어로 만든 요약이 이 기록에 저장된다
+async function fetchCuration(
+  historyId: string,
+  query: string,
+  rewritten: string,
+  signal: AbortSignal,
+) {
   // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
   const topBooks = books.value
     .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
@@ -1156,10 +1199,10 @@ async function fetchCuration(historyId: string, signal: AbortSignal) {
     const data = await api<any>("/books/curate", {
       method: "POST",
       body: {
-        query: currentQuery.value,
+        query,
         book_ids: topBooks.map((b) => b.book_id),
         scores: topBooks.map((b) => b.best_score || 0),
-        rewritten_query: rewrittenQuery.value,
+        rewritten_query: rewritten,
       },
       signal,
     });
@@ -1226,8 +1269,9 @@ function openDetail(item: BookChunkGroup) {
     );
     return;
   }
+  // q 는 입력창이 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
   const params = new URLSearchParams({
-    q: currentQuery.value,
+    q: resultQuery.value,
     score: String(item.best_score || 0),
   });
   // 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원되게
@@ -1248,7 +1292,7 @@ function openDetailWithChat(item: BookChunkGroup) {
     return;
   }
   const params = new URLSearchParams({
-    q: currentQuery.value,
+    q: resultQuery.value,
     score: String(item.best_score || 0),
     chat: "1",
   });
