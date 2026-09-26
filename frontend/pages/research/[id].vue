@@ -130,7 +130,7 @@ import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import type { OpenPdfPayload } from "~/types/research";
 import { safeLocalStorage } from "~/utils/browserId";
 import { researchPhase, synthProgress } from "~/utils/researchEvents";
-import { researchErrorMessage } from "~/utils/researchErrors";
+import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { reportSlot } from "~/utils/researchReport";
 import {
@@ -227,14 +227,14 @@ async function copyLink(): Promise<void> {
 // ── 원문 보기 ─────────────────────────────────────────────
 const pdf = ref<OpenPdfPayload | null>(null);
 
-async function pdfExists(cntsId: string): Promise<boolean> {
+// 확인 요청의 HTTP 상태. 요청 자체가 실패하면 null
+async function pdfStatus(cntsId: string): Promise<number | null> {
   const ctrl = new AbortController();
   try {
     const res = await fetch(`${pdfBase}/${encodeURIComponent(cntsId)}/pdf`, { headers: apiHeaders(), signal: ctrl.signal });
-    return res.ok;
+    return res.status;
   } catch {
-    // 확인 요청 자체가 실패하면 판단하지 않고 뷰어가 직접 보여 주게 둔다
-    return true;
+    return null;
   } finally {
     // 본문은 필요 없다 — 뷰어가 다시 받는다. 끊지 않으면 PDF 전체를 두 번 내려받는다
     ctrl.abort();
@@ -242,8 +242,9 @@ async function pdfExists(cntsId: string): Promise<boolean> {
 }
 
 async function openPdf(target: OpenPdfPayload): Promise<void> {
-  if (await pdfExists(target.cntsId)) pdf.value = target;
-  else showToast("원문 파일이 없습니다");
+  const problem = pdfCheckProblem(await pdfStatus(target.cntsId));
+  if (problem) showToast(problem);
+  else pdf.value = target;
 }
 
 // ── 토스트 ────────────────────────────────────────────────

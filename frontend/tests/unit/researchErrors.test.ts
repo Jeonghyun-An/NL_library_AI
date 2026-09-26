@@ -1,6 +1,6 @@
 // frontend/tests/unit/researchErrors.test.ts
 import { describe, expect, it } from "vitest";
-import { detailMessage, httpStatus, researchErrorMessage } from "~/utils/researchErrors";
+import { detailMessage, httpStatus, pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
 
 function fetchError(status: number, detail?: unknown) {
   return Object.assign(new Error(`HTTP ${status}`), { status, statusCode: status, data: detail === undefined ? undefined : { detail } });
@@ -46,5 +46,26 @@ describe("researchErrorMessage", () => {
     expect(researchErrorMessage(new Error("Failed to fetch"), "딥리서치를 시작하지 못했습니다"))
       .toBe("딥리서치를 시작하지 못했습니다 — 네트워크 연결을 확인하세요");
     expect(researchErrorMessage(fetchError(500, "Internal"), "실패")).toBe("실패");
+  });
+});
+
+describe("pdfCheckProblem", () => {
+  it("원문이 있으면 뷰어를 연다", () => {
+    expect(pdfCheckProblem(200)).toBeNull();
+    expect(pdfCheckProblem(206)).toBeNull();
+  });
+
+  it("404 만 원문 파일이 없다고 알린다", () => {
+    expect(pdfCheckProblem(404)).toBe("원문 파일이 없습니다");
+  });
+
+  it("서버 오류 등은 파일이 없다고 하지 않고 다시 시도하라고 알린다", () => {
+    expect(pdfCheckProblem(500)).toBe("원문을 불러오지 못했습니다. 잠시 뒤 다시 시도하세요");
+    expect(pdfCheckProblem(502)).toBe("원문을 불러오지 못했습니다. 잠시 뒤 다시 시도하세요");
+    expect(pdfCheckProblem(403)).toBe("원문을 불러오지 못했습니다. 잠시 뒤 다시 시도하세요");
+  });
+
+  it("확인 요청 자체가 실패하면 판단하지 않고 뷰어에 맡긴다", () => {
+    expect(pdfCheckProblem(null)).toBeNull();
   });
 });
