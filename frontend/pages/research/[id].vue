@@ -79,8 +79,25 @@
               </div>
             </section>
 
-            <section v-if="phase === 'completed' && view.report" class="rs-block rs-block--report">
-              <ReportView :report="view.report" :generated-at="view.finishedAt" @open-pdf="openPdf" @copy-link="copyLink" />
+            <section v-if="reportState" class="rs-block rs-block--report">
+              <ReportView
+                v-if="reportState === 'ready' && view.report"
+                :report="view.report"
+                :generated-at="view.finishedAt"
+                @open-pdf="openPdf"
+                @copy-link="copyLink"
+              />
+              <div v-else-if="reportState === 'failed'" class="rs-card rs-card--error">
+                <p class="rs-card__title">보고서를 불러오지 못했습니다</p>
+                <p class="rs-muted">잠시 뒤 자동으로 다시 시도합니다</p>
+                <div class="rs-card__actions">
+                  <button type="button" class="rs-btn" :disabled="syncing" @click="resync">다시 불러오기</button>
+                </div>
+              </div>
+              <div v-else class="rs-card rs-card--wait" role="status">
+                <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+                <p>보고서를 불러오는 중입니다</p>
+              </div>
             </section>
           </div>
 
@@ -115,6 +132,7 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { researchPhase, synthProgress } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
+import { reportSlot } from "~/utils/researchReport";
 import {
   SHOW_LAYOUT_TOGGLE,
   WIDE_MIN_PX,
@@ -125,13 +143,13 @@ import {
 } from "~/utils/researchLayout";
 
 const route = useRoute();
-const { view, notFound, loadError, actionError, busy, load, approve, retry, cancel } = useResearchJob(
-  () => String(route.params.id ?? ""),
-);
+const { view, notFound, loadError, actionError, busy, syncFailed, syncing, load, resync, approve, retry, cancel } =
+  useResearchJob(() => String(route.params.id ?? ""));
 const { startResearch } = useResearchStarter();
 const pdfBase = apiUrl("/books");
 
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
+const reportState = computed(() => reportSlot(phase.value, !!view.value?.report, syncFailed.value));
 const maxSubquestions = computed(() => Number(view.value?.params.max_subquestions) || DEFAULT_MAX_SUBQUESTIONS);
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다
 const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);

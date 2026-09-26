@@ -66,8 +66,13 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   const actionError = ref("");
   const busy = ref(false);
   const connected = ref(false);
+  // 마지막 GET 재동기화가 실패했는지(다시 시도 대기 중) — 완료 뒤 보고서를 못 받은 화면이
+  // 빈 본문 대신 [다시 불러오기] 를 보이게 한다
+  const syncFailed = ref(false);
+  const syncing = ref(false);
 
   let source: EventSource | null = null;
+  let syncToken = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let attempts = 0;
   // 주소의 잡이 바뀌거나 페이지를 떠난 뒤 도착한 이전 요청의 응답을 버린다
@@ -90,6 +95,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     loading.value = true;
     notFound.value = false;
     loadError.value = "";
+    syncFailed.value = false;
     setActionError("");
     try {
       const job = await research.get(toValue(jobId));
@@ -110,10 +116,13 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   // 서버 상태로 맞췄으면 true
   async function refresh(): Promise<boolean> {
     const gen = generation;
+    const token = ++syncToken;
+    syncing.value = true;
     try {
       const job = await research.get(toValue(jobId));
       if (gen !== generation) return false;
       view.value = refreshView(view.value, job);
+      syncFailed.value = false;
       if (syncError && actionError.value === syncError) actionError.value = "";
       syncError = "";
       if (!isTerminalStatus(view.value.status)) connect();
@@ -123,9 +132,19 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       const message = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
       actionError.value = message;
       syncError = message;
+      syncFailed.value = true;
       scheduleReconnect();
       return false;
+    } finally {
+      if (token === syncToken) syncing.value = false;
     }
+  }
+
+  // 사용자가 누른 [다시 불러오기] — 백오프로 잡힌 다음 시도를 기다리지 않고 지금 읽는다
+  function resync(): Promise<boolean> {
+    clearReconnect();
+    attempts = 0;
+    return refresh();
   }
 
   function connect(): void {
@@ -271,5 +290,8 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     },
   );
 
-  return { view, loading, notFound, loadError, actionError, busy, connected, load, refresh, connect, disconnect, approve, retry, cancel };
+  return {
+    view, loading, notFound, loadError, actionError, busy, connected, syncFailed, syncing,
+    load, refresh, resync, connect, disconnect, approve, retry, cancel,
+  };
 }

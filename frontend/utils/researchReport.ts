@@ -27,6 +27,16 @@ export function stepChunk(index: number, delta: number, total: number): number {
   return Math.min(Math.max(index + delta, 0), total - 1);
 }
 
+export type ReportSlot = "ready" | "loading" | "failed";
+
+// 완료 이벤트에는 보고서가 없어 GET 으로 다시 받는다. 그 사이·실패해 다시 시도하는 동안 본문
+// 칼럼을 비우면 연구가 사라진 것처럼 보인다 — 불러오는 중, 실패 중이면 다시 불러오기를 그린다.
+export function reportSlot(phase: string | null, hasReport: boolean, syncFailed: boolean): ReportSlot | null {
+  if (phase !== "completed") return null;
+  if (hasReport) return "ready";
+  return syncFailed ? "failed" : "loading";
+}
+
 export function paperByline(meta: EvidenceMeta | undefined): string {
   const authors = splitAuthors(meta?.personal_author);
   const who = authors.length > 1 ? `${authors[0]} 외` : (authors[0] ?? "저자 미상");

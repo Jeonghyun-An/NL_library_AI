@@ -1,7 +1,7 @@
 // frontend/tests/unit/researchReport.test.ts
 import { describe, expect, it } from "vitest";
 import type { ResearchReport } from "~/types/research";
-import { paperByline, rangeLabel, reportIntro, stepChunk } from "~/utils/researchReport";
+import { paperByline, rangeLabel, reportIntro, reportSlot, stepChunk } from "~/utils/researchReport";
 
 function report(over: Partial<ResearchReport> = {}): ResearchReport {
   return {
@@ -60,6 +60,27 @@ describe("stepChunk", () => {
   it("대목이 줄어 범위를 벗어난 위치는 마지막 대목으로 당기고, 대목이 없으면 0 이다", () => {
     expect(stepChunk(5, 1, 2)).toBe(1);
     expect(stepChunk(0, 1, 0)).toBe(0);
+  });
+});
+
+describe("reportSlot", () => {
+  it("끝나지 않은 연구는 보고서 칸을 그리지 않는다", () => {
+    expect(reportSlot("exploring", false, false)).toBeNull();
+    expect(reportSlot("failed", false, true)).toBeNull();
+    expect(reportSlot(null, false, false)).toBeNull();
+  });
+
+  it("완료 이벤트 뒤 보고서를 받기 전에는 본문을 비우지 않고 불러오는 중으로 둔다", () => {
+    expect(reportSlot("completed", false, false)).toBe("loading");
+  });
+
+  it("보고서를 받지 못하고 다시 시도하는 동안은 다시 불러오기를 보인다", () => {
+    expect(reportSlot("completed", false, true)).toBe("failed");
+  });
+
+  it("보고서가 있으면 그 뒤의 재동기화 실패와 상관없이 보고서를 그린다", () => {
+    expect(reportSlot("completed", true, false)).toBe("ready");
+    expect(reportSlot("completed", true, true)).toBe("ready");
   });
 });
 
