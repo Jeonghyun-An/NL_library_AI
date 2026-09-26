@@ -23,13 +23,16 @@
 const props = defineProps<{
   cntsId: string;
   title?: string;
+  page?: number;
 }>();
 
 defineEmits<{ close: [] }>();
 
 const viewerUrl = computed(() => {
   const file = encodeURIComponent(`/api/books/${props.cntsId}/pdf`);
-  return `/pdfjs/web/viewer.html?file=${file}`;
+  // pdf.js 뷰어는 해시의 page 로 첫 화면 쪽을 정한다(1부터 센다)
+  const hash = props.page && props.page > 0 ? `#page=${props.page}` : "";
+  return `/pdfjs/web/viewer.html?file=${file}${hash}`;
 });
 </script>
 

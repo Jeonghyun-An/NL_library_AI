@@ -80,10 +80,7 @@
             </section>
 
             <section v-if="phase === 'completed' && view.report" class="rs-block rs-block--report">
-              <div class="rs-card">
-                <p class="rs-card__title">보고서</p>
-                <p class="rs-muted">절 {{ view.report.sections.length }}개</p>
-              </div>
+              <ReportView :report="view.report" :generated-at="view.finishedAt" @open-pdf="openPdf" @copy-link="copyLink" />
             </section>
           </div>
 
@@ -93,6 +90,8 @@
         </div>
       </template>
     </main>
+
+    <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" @close="pdf = null" />
 
     <Teleport to="body">
       <Transition name="skx-toast">
@@ -104,10 +103,14 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import PdfViewer from "~/components/PdfViewer.vue";
 import PlanCard from "~/components/research/PlanCard.vue";
 import ProgressPanel from "~/components/research/ProgressPanel.vue";
+import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
+import { apiHeaders, apiUrl } from "~/composables/useApi";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
+import type { OpenPdfPayload } from "~/types/research";
 import { safeLocalStorage } from "~/utils/browserId";
 import { researchPhase, synthProgress } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
@@ -126,6 +129,7 @@ const { view, notFound, loadError, actionError, busy, load, approve, retry, canc
   () => String(route.params.id ?? ""),
 );
 const { startResearch } = useResearchStarter();
+const pdfBase = apiUrl("/books");
 
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
 const maxSubquestions = computed(() => Number(view.value?.params.max_subquestions) || DEFAULT_MAX_SUBQUESTIONS);
@@ -200,6 +204,28 @@ async function copyLink(): Promise<void> {
     // 운영 게이트웨이가 http 라 clipboard API 가 없을 수 있다(보안 컨텍스트 전용)
     window.prompt("아래 주소를 복사하세요", url);
   }
+}
+
+// ── 원문 보기 ─────────────────────────────────────────────
+const pdf = ref<OpenPdfPayload | null>(null);
+
+async function pdfExists(cntsId: string): Promise<boolean> {
+  const ctrl = new AbortController();
+  try {
+    const res = await fetch(`${pdfBase}/${encodeURIComponent(cntsId)}/pdf`, { headers: apiHeaders(), signal: ctrl.signal });
+    return res.ok;
+  } catch {
+    // 확인 요청 자체가 실패하면 판단하지 않고 뷰어가 직접 보여 주게 둔다
+    return true;
+  } finally {
+    // 본문은 필요 없다 — 뷰어가 다시 받는다. 끊지 않으면 PDF 전체를 두 번 내려받는다
+    ctrl.abort();
+  }
+}
+
+async function openPdf(target: OpenPdfPayload): Promise<void> {
+  if (await pdfExists(target.cntsId)) pdf.value = target;
+  else showToast("원문 파일이 없습니다");
 }
 
 // ── 토스트 ────────────────────────────────────────────────
