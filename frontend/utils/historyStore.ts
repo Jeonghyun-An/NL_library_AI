@@ -20,6 +20,7 @@ import { slimBookResult, slimPaperResult } from "./historySnapshot";
 export const HISTORY_CACHE_KEY = "skx_history_v2";
 export const HISTORY_OUTBOX_KEY = "skx_history_outbox";
 export const HISTORY_PING_KEY = "skx_history_ping";
+export const HISTORY_FLUSH_LOCK_KEY = "skx_history_flush_lock";
 export const HISTORY_PAGE_SIZE = 30;
 
 const CACHE_LIMIT_PER_KIND = 100;
@@ -438,7 +439,105 @@ type Sent<T> = { ok: true; value: T } | { ok: false };
 
 const noop = () => {};
 
-export function createHybridStore(server: HistoryStore, local: LocalHistoryStore): HybridHistoryStore {
+// 편지함은 모든 탭이 나눠 쓰고, 온라인으로 돌아오면 탭마다 같은 편지를 보낸다. 한 탭이 보낸 편지의 응답이 늦는 사이
+// 다른 탭이 같은 편지를 다시 보내 빼고 지우면, 늦게 닿은 put 을 upsert 가 받아 지운 기록을 되살린다 — 보내기를 탭 사이에서
+// 한 번에 하나만 돌린다. renew 는 편지가 많아 오래 도는 보내기가 한 통마다 잠금 기한을 늘인다
+export type FlushLock = <T>(run: (renew: () => void) => Promise<T>) => Promise<T>;
+
+export const noFlushLock: FlushLock = (run) => run(noop);
+
+export interface StorageLockTiming {
+  leaseMs: number;
+  settleMs: number;
+  retryMs: number;
+}
+
+// 기한은 한 통을 보내는 동안(413 이면 요청이 두 번 간다) 풀리지 않을 만큼 길다. 쓴 뒤 잠깐 기다렸다 다시 읽어,
+// 거의 같은 순간에 쓴 다른 탭과 둘 다 쥐었다고 믿지 않게 한다
+const STORAGE_LOCK_TIMING: StorageLockTiming = { leaseMs: 2 * REQUEST_TIMEOUT_MS + 5_000, settleMs: 50, retryMs: 100 };
+
+/** Web Locks 가 없는 곳(운영 게이트웨이는 http)의 잠금 — 저장소 한 키에 `기한|주인` 을 둔다 */
+export function storageFlushLock(storage: Storage, timing: StorageLockTiming = STORAGE_LOCK_TIMING): FlushLock {
+  const owner = newOpId();
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  function holder(): { owner: string; until: number } | null {
+    let raw: string | null;
+    try {
+      raw = storage.getItem(HISTORY_FLUSH_LOCK_KEY);
+    } catch {
+      return null;
+    }
+    const cut = raw?.indexOf("|") ?? -1;
+    if (!raw || cut < 0) return null;
+    const until = Number(raw.slice(0, cut));
+    return Number.isFinite(until) ? { owner: raw.slice(cut + 1), until } : null;
+  }
+
+  function claim(): boolean {
+    try {
+      storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() + timing.leaseMs}|${owner}`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function acquire(): Promise<boolean> {
+    for (;;) {
+      const current = holder();
+      if (current && current.owner !== owner && current.until > Date.now()) {
+        await sleep(timing.retryMs);
+        continue;
+      }
+      // 잠금 값조차 못 쓰는 저장소(쿼터·차단)면 잠그지 않고 보낸다 — 멈추면 편지가 영영 서버로 가지 않는다
+      if (!claim()) return false;
+      await sleep(timing.settleMs);
+      if (holder()?.owner === owner) return true;
+    }
+  }
+
+  function release(): void {
+    try {
+      if (holder()?.owner === owner) storage.removeItem(HISTORY_FLUSH_LOCK_KEY);
+    } catch {
+      // 못 지우면 기한이 지나 풀린다
+    }
+  }
+
+  return async (run) => {
+    const held = await acquire();
+    // 보내는 도중 탭을 닫으면 기한까지 다른 탭이 기다린다 — 떠날 때 먼저 푼다
+    const onLeave = typeof window !== "undefined" && held ? release : null;
+    if (onLeave) window.addEventListener("pagehide", onLeave);
+    try {
+      // 기한이 지나 다른 탭에 넘어간 잠금은 덮지 않는다
+      return await run(() => {
+        if (held && holder()?.owner === owner) claim();
+      });
+    } finally {
+      if (onLeave) window.removeEventListener("pagehide", onLeave);
+      if (held) release();
+    }
+  };
+}
+
+/** Web Locks 는 https·localhost 에서만 있다 — 없으면 저장소로 잠그고, 저장소도 없으면 편지함을 나누는 탭이 없다 */
+export function createFlushLock(
+  storage: Storage | null,
+  locks: LockManager | undefined = typeof navigator === "undefined" ? undefined : navigator.locks,
+): FlushLock {
+  if (locks && typeof locks.request === "function") {
+    return async (run) => await locks.request(HISTORY_FLUSH_LOCK_KEY, () => run(noop));
+  }
+  return storage ? storageFlushLock(storage) : noFlushLock;
+}
+
+export function createHybridStore(
+  server: HistoryStore,
+  local: LocalHistoryStore,
+  lock: FlushLock = noFlushLock,
+): HybridHistoryStore {
   let flushing: Promise<void> | null = null;
 
   // 이 탭의 동작을 부른 순서대로 끝낸다. 편지함만 보고 순서를 맞추면 아직 응답을 기다리는 직접 요청을 앞질러,
@@ -489,8 +588,10 @@ export function createHybridStore(server: HistoryStore, local: LocalHistoryStore
     }
   }
 
-  async function drain(): Promise<void> {
+  // 잠금을 쥔 뒤에 편지함을 읽는다 — 앞서 잠금을 쥔 탭이 보내고 뺀 편지는 다시 보내지 않는다
+  async function drain(renew: () => void): Promise<void> {
     for (const op of local.readOutbox()) {
+      renew();
       try {
         await apply(op);
       } catch (e) {
@@ -503,7 +604,10 @@ export function createHybridStore(server: HistoryStore, local: LocalHistoryStore
 
   function flush(): Promise<void> {
     if (!flushing) {
-      flushing = drain().finally(() => {
+      // 보낼 편지가 없으면 잠그지 않는다 — 모든 읽기·쓰기가 여기를 지나므로 잠금 대기를 매번 물지 않게. 다른 탭이
+      // 보내는 중인 편지는 응답을 받은 뒤에야 빠지므로 그동안은 여기서 보여 잠금을 기다린다
+      if (!local.readOutbox().length) return Promise.resolve();
+      flushing = lock(drain).finally(() => {
         flushing = null;
       });
     }

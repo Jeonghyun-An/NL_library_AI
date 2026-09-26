@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { HistoryItemDetail } from "~/types/history";
 import {
   HISTORY_CACHE_KEY,
+  HISTORY_FLUSH_LOCK_KEY,
   HISTORY_OUTBOX_KEY,
+  createFlushLock,
   createHybridStore,
   createLocalStore,
   createServerStore,
@@ -10,7 +12,9 @@ import {
   fromWire,
   isQuotaError,
   isRetryable,
+  storageFlushLock,
   toWire,
+  type FlushLock,
   type HistoryFetchOptions,
   type HistoryFetcher,
 } from "~/utils/historyStore";
@@ -734,5 +738,130 @@ describe("createHybridStore", () => {
     expect(localA.readOutbox()).toEqual([]);
     // 보낸 편지는 저장소에서도 빠지고, 다른 탭이 더한 편지는 남는다
     expect(pendingOf(createLocalStore(storage))).toEqual([["patch", ID1]]);
+  });
+});
+
+describe("탭 사이 편지함 잠금", () => {
+  const fast = { leaseMs: 1_000, settleMs: 5, retryMs: 5 };
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it("두 탭이 같은 편지함을 보낼 때 한 탭이 보내는 동안 다른 탭은 기다려, 늦게 닿은 put 이 그 사이 지운 기록을 되살리지 않는다", async () => {
+    const storage = new MemoryStorage();
+    const server = fakeServer();
+    const tabA = createHybridStore(server, createLocalStore(storage), storageFlushLock(storage, fast));
+    const tabB = createHybridStore(server, createLocalStore(storage), storageFlushLock(storage, fast));
+    server.fail(networkError());
+    await tabA.put(bookEntry(ID1));
+    server.recover();
+    server.put.mockClear();
+    let open!: () => void;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    server.put.mockImplementationOnce(async (entry) => {
+      await opened;
+      server.rows.set(entry.id, entry);
+      return entry;
+    });
+    // 온라인으로 돌아와 B 가 목록을 다시 읽으며 편지(put ID1)를 보내는데 응답이 늦다
+    const listing = tabB.list("book");
+    await vi.waitFor(() => expect(server.put).toHaveBeenCalledTimes(1));
+    // 그 사이 A 에서 지운다 — A 는 같은 편지를 다시 보내지 않고 B 가 끝나기를 기다린다
+    const removing = tabA.remove(ID1);
+    await sleep(40);
+    expect(server.remove).not.toHaveBeenCalled();
+    open();
+    await Promise.all([listing, removing]);
+    expect(server.put).toHaveBeenCalledTimes(1);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect((await tabA.list("book")).items).toEqual([]);
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+  });
+
+  it("보낼 편지가 없으면 잠그지 않고, 편지가 있을 때만 잠근다", async () => {
+    const storage = new MemoryStorage();
+    const server = fakeServer();
+    const inner = storageFlushLock(storage, fast);
+    let locked = 0;
+    const lock: FlushLock = (run) => {
+      locked += 1;
+      return inner(run);
+    };
+    const store = createHybridStore(server, createLocalStore(storage), lock);
+    await store.put(bookEntry(ID1));
+    await store.list("book");
+    await store.get(ID1);
+    expect(locked).toBe(0);
+    server.fail(networkError());
+    await store.remove(ID1);
+    server.recover();
+    await store.list("book");
+    expect(locked).toBe(1);
+    expect(server.rows.has(ID1)).toBe(false);
+  });
+
+  it("다른 탭이 쥔 잠금은 기한까지 기다리고, 기한이 지난 잠금(닫힌 탭)은 가져간다", async () => {
+    const storage = new MemoryStorage();
+    const lock = storageFlushLock(storage, fast);
+    storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() + 60_000}|other`);
+    const run = vi.fn(async () => "sent");
+    const locked = lock(run);
+    await sleep(30);
+    expect(run).not.toHaveBeenCalled();
+    storage.removeItem(HISTORY_FLUSH_LOCK_KEY);
+    expect(await locked).toBe("sent");
+
+    storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() - 1}|gone`);
+    expect(await lock(run)).toBe("sent");
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+  });
+
+  it("오래 도는 보내기는 편지마다 잠금 기한을 늘이고, 그 사이 다른 탭에 넘어간 잠금은 덮지 않는다", async () => {
+    const storage = new MemoryStorage();
+    const lock = storageFlushLock(storage, fast);
+    const untilOf = () => Number(storage.getItem(HISTORY_FLUSH_LOCK_KEY)!.split("|")[0]);
+    await lock(async (renew) => {
+      const first = untilOf();
+      await sleep(20);
+      renew();
+      expect(untilOf()).toBeGreaterThan(first);
+      storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() + 60_000}|other`);
+      renew();
+      expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toMatch(/\|other$/);
+    });
+    // 남의 잠금은 풀지 않는다
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toMatch(/\|other$/);
+  });
+
+  it("잠금 값을 쓰지 못하는 저장소에서도 보내기는 멈추지 않는다", async () => {
+    const storage = new MemoryStorage();
+    storage.failWith = new DOMException("쿼터 초과", "QuotaExceededError");
+    expect(await storageFlushLock(storage, fast)(async () => "sent")).toBe("sent");
+  });
+
+  it("보내기가 실패해도 잠금을 풀어 다른 탭이 기다리지 않는다", async () => {
+    const storage = new MemoryStorage();
+    await expect(
+      storageFlushLock(storage, fast)(async () => {
+        throw networkError();
+      }),
+    ).rejects.toThrow("fetch failed");
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+  });
+
+  it("Web Locks 가 있으면(https·localhost) 그것으로 잠그고, 없으면 저장소로 잠근다", async () => {
+    const request = vi.fn(async (_name: string, cb: (lock: Lock | null) => unknown) => cb(null));
+    const locks = { request, query: vi.fn() } as unknown as LockManager;
+    const storage = new MemoryStorage();
+    expect(await createFlushLock(storage, locks)(async () => "sent")).toBe("sent");
+    expect(request).toHaveBeenCalledWith(HISTORY_FLUSH_LOCK_KEY, expect.any(Function));
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+
+    let seen: string | null = null;
+    await createFlushLock(storage, undefined)(async () => {
+      seen = storage.getItem(HISTORY_FLUSH_LOCK_KEY);
+    });
+    expect(seen).toMatch(/\|/);
+    expect(await createFlushLock(null, undefined)(async () => "sent")).toBe("sent");
   });
 });

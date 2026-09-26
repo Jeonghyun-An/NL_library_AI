@@ -5,6 +5,7 @@ import { generateUuidV4, safeLocalStorage } from "~/utils/browserId";
 import { createHistoryState, type HistoryState } from "~/utils/historyState";
 import {
   HISTORY_PING_KEY,
+  createFlushLock,
   createHybridStore,
   createLocalStore,
   createServerStore,
@@ -30,7 +31,8 @@ function stores(): { server: ServerHistoryStore; hybrid: HybridHistoryStore } {
     // Nitro 의 경로별 응답 타입 추론이 저장소의 제네릭 응답 타입과 맞물리면 타입검사가 깊이 한도를 넘는다 — 응답 모양은 저장소가 안다
     const fetcher = useApi() as unknown as HistoryFetcher;
     server = createServerStore(fetcher);
-    hybrid = createHybridStore(server, createLocalStore(safeLocalStorage()));
+    const storage = safeLocalStorage();
+    hybrid = createHybridStore(server, createLocalStore(storage), createFlushLock(storage));
   }
   return { server, hybrid };
 }
