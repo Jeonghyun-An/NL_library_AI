@@ -347,7 +347,7 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
         "kind": "snapshot", "steps": await _steps(db, job.id),
         "job": {"status": job.status, "stage": job.stage, "plan": job.plan},
     }
-    job_status, job_error = job.status, job.last_error
+    job_status, job_stage, job_error = job.status, job.stage, job.last_error
 
     async def _gen() -> AsyncIterator[str]:
         # 재접속 복원 — 뼈대를 먼저 보내고 그 뒤를 중계한다
@@ -356,16 +356,27 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
             # 끝난 잡에 붙었다면 중계할 것이 없다. 구독하면 영원히 기다린다.
             yield _sse(terminal_event(job_status, job_error))
             return
+        last = (job_status, job_stage)
         async for event in subscribe(str(jid)):
             if event is None:
-                # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 종료 이벤트를
-                # 놓친 채 붙어 있는 경우(회수기가 끝낸 잡 등)를 대비해 상태를 확인한다.
+                # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 DB 와 맞춰 본다 —
+                # 종료 이벤트를 놓친 채 붙어 있는 경우(회수기가 끝낸 잡 등)와, 스냅샷을
+                # 읽은 뒤 구독이 붙기 전에 나간 status 를 놓친 경우(계획이 그 틈에
+                # 끝나면 화면이 승인 대기를 영영 모른다)를 여기서 되살린다.
                 yield ": ping\n\n"
-                ended = await _terminal_status(jid)
-                if ended is not None:
-                    yield _sse(terminal_event(*ended))
+                current = await _job_status(jid)
+                if current is None:
+                    continue
+                status, stage, error = current
+                if status in TERMINAL_STATUSES:
+                    yield _sse(terminal_event(status, error))
                     return
+                if (status, stage) != last:
+                    last = (status, stage)
+                    yield _sse({"kind": "status", "status": status, "stage": stage})
                 continue
+            if event.get("kind") == "status":
+                last = (event.get("status"), event.get("stage"))
             yield _sse(event)
             if event.get("kind") in TERMINAL_KINDS:
                 return
@@ -376,8 +387,8 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     )
 
 
-async def _terminal_status(jid: uuid.UUID) -> tuple[str, str | None] | None:
-    """끝난 잡이면 (status, last_error). 하트비트마다 짧은 세션을 새로 연다 —
+async def _job_status(jid: uuid.UUID) -> tuple[str, str, str | None] | None:
+    """(status, stage, last_error). 하트비트마다 짧은 세션을 새로 연다 —
     Depends(get_db) 세션을 쓰지 않는다.
 
     FastAPI 는 핸들러가 반환하면 yield 의존성을 닫는다. StreamingResponse 의
@@ -387,8 +398,7 @@ async def _terminal_status(jid: uuid.UUID) -> tuple[str, str | None] | None:
     """
     async with AsyncSessionLocal() as db:
         row = (await db.execute(
-            select(ResearchJob.status, ResearchJob.last_error).where(ResearchJob.id == jid)
+            select(ResearchJob.status, ResearchJob.stage, ResearchJob.last_error)
+            .where(ResearchJob.id == jid)
         )).first()
-    if row is None or row[0] not in TERMINAL_STATUSES:
-        return None
-    return row[0], row[1]
+    return None if row is None else (row[0], row[1], row[2])

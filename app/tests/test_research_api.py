@@ -506,14 +506,59 @@ class TestStream:
         async def _subscribe(job_id):
             yield None
 
-        async def _terminal_status(job_uuid):
-            return "canceled", None
+        async def _job_status(job_uuid):
+            return "canceled", "planned", None
 
         monkeypatch.setattr(api.research, "subscribe", _subscribe)
-        monkeypatch.setattr(api.research, "_terminal_status", _terminal_status)
+        monkeypatch.setattr(api.research, "_job_status", _job_status)
         frames = _frames(api.client.get(f"/api/research/{jid}/stream").text)
 
         assert frames[-1] == {"kind": "canceled", "status": "canceled"}
+
+
+class TestHeartbeatStatus:
+    """스냅샷을 읽은 뒤 구독이 붙기 전에 나간 status 는 중계되지 않는다. 계획은 1초 안에
+    끝나므로 그 틈에 빠진 화면은 승인 대기를 영영 모른다 — 하트비트가 DB 와 맞춘다."""
+
+    def _stream(self, api, monkeypatch, *, live, db_status):
+        jid = api.db.add_job(status="planning", stage="created")
+
+        async def _subscribe(job_id):
+            for event in live:
+                yield event
+
+        async def _job_status(job_uuid):
+            return db_status
+
+        monkeypatch.setattr(api.research, "subscribe", _subscribe)
+        monkeypatch.setattr(api.research, "_job_status", _job_status)
+        return _frames(api.client.get(f"/api/research/{jid}/stream").text)
+
+    def test_missed_status_change_is_recovered_once(self, api, monkeypatch):
+        frames = self._stream(
+            api, monkeypatch,
+            live=[None, None, {"kind": "canceled", "status": "canceled"}],
+            db_status=("awaiting_approval", "planned", None),
+        )
+        assert [f["kind"] for f in frames] == ["snapshot", "status", "canceled"]
+        assert frames[1] == {"kind": "status", "status": "awaiting_approval", "stage": "planned"}
+
+    def test_unchanged_status_stays_quiet(self, api, monkeypatch):
+        frames = self._stream(
+            api, monkeypatch,
+            live=[None, {"kind": "canceled", "status": "canceled"}],
+            db_status=("planning", "created", None),
+        )
+        assert [f["kind"] for f in frames] == ["snapshot", "canceled"]
+
+    def test_relayed_status_is_not_repeated(self, api, monkeypatch):
+        frames = self._stream(
+            api, monkeypatch,
+            live=[{"kind": "status", "status": "awaiting_approval", "stage": "planned"},
+                  None, {"kind": "canceled", "status": "canceled"}],
+            db_status=("awaiting_approval", "planned", None),
+        )
+        assert [f["kind"] for f in frames] == ["snapshot", "status", "canceled"]
 
 
 class TestCreatedBy:
