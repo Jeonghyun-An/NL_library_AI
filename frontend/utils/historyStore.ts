@@ -230,6 +230,8 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
   let memoryOnly = storage === null;
   let cacheMem: HistoryEntry[] = [];
   let outboxMem: OutboxOp[] = [];
+  // 메모리로 넘어갈 때 저장소에 있던 편지 — 살아 있는 다른 탭도 같은 편지를 보고 보낸다
+  const adopted = new Set<string>();
 
   // 읽지 못하면 undefined — 키가 없거나 깨진 값은 빈 목록이다
   function load<T>(key: string): T[] | undefined {
@@ -255,7 +257,24 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     if (memoryOnly) return;
     cacheMem = load<HistoryEntry>(HISTORY_CACHE_KEY) ?? cacheMem;
     outboxMem = load<OutboxOp>(HISTORY_OUTBOX_KEY) ?? outboxMem;
+    // 읽지 못해 마지막으로 쓴 값을 그대로 둘 때도 그 편지는 모두 저장소에 쓴 것이다
+    for (const o of outboxMem) adopted.add(o.opId);
     memoryOnly = true;
+  }
+
+  // 가져온 편지를 다른 탭이 먼저 보내 저장소에서 뺀 뒤 이 탭이 메모리 사본대로 또 보내면, 그 사이 지운 기록을
+  // upsert 가 되살린다 — 저장소를 읽을 수 있으면 거기서 사라진 편지는 보내지 않고 뺀다. 메모리 모드에서 줄 세운 편지는
+  // 저장소에 없어 대상이 아니고, 새로고침 전의 편지는 보낼 때까지 저장소에 남아 있어 그대로 나간다
+  function outboxInMemory(): OutboxOp[] {
+    if (!adopted.size) return outboxMem;
+    const stored = load<OutboxOp>(HISTORY_OUTBOX_KEY);
+    if (!stored) return outboxMem;
+    const pending = new Set(stored.map((o) => o.opId));
+    const gone = [...adopted].filter((opId) => !pending.has(opId));
+    if (!gone.length) return outboxMem;
+    for (const opId of gone) adopted.delete(opId);
+    outboxMem = outboxMem.filter((o) => !gone.includes(o.opId));
+    return outboxMem;
   }
 
   function read<T>(key: string, mem: () => T[]): T[] {
@@ -342,7 +361,7 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
   const writeCache = (list: HistoryEntry[]) => {
     cacheMem = write(HISTORY_CACHE_KEY, capPerKind(list), shedCache);
   };
-  const readOutboxList = () => read(HISTORY_OUTBOX_KEY, () => outboxMem);
+  const readOutboxList = () => read(HISTORY_OUTBOX_KEY, outboxInMemory);
   const writeOutbox = (ops: OutboxOp[]) => {
     outboxMem = write(HISTORY_OUTBOX_KEY, ops.slice(-OUTBOX_LIMIT), shedForOutbox);
   };
@@ -407,7 +426,8 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     },
     dropOutbox(opId) {
       writeOutbox(readOutboxList().filter((o) => o.opId !== opId));
-      if (memoryOnly) forgetStored(opId);
+      // 메모리 모드에서 저장소에 남아 있을 수 있는 편지는 넘어갈 때 가져온 것뿐이다
+      if (memoryOnly && adopted.delete(opId)) forgetStored(opId);
     },
   };
 }

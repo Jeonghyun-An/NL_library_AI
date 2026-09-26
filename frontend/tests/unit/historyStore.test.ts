@@ -679,4 +679,60 @@ describe("createHybridStore", () => {
     await createHybridStore(server, reopened).flush();
     expect(server.rows.has(ID1)).toBe(false);
   });
+
+  it("메모리 모드 탭이 저장소에서 가져온 편지를 살아 있는 다른 탭이 먼저 보내고 지우면 그 편지를 다시 보내지 않는다", async () => {
+    const storage = new MemoryStorage(1200);
+    storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+    const server = fakeServer();
+    server.fail(networkError());
+    // 탭 B 가 오프라인에서 저장해 편지(put ID1)를 저장소에 남긴다
+    const tabB = createHybridStore(server, createLocalStore(storage));
+    await tabB.put(bookEntry(ID1));
+    // 탭 A 는 긴 제목 저장에서 메모리 모드로 넘어가며 그 편지를 가져온다
+    const localA = createLocalStore(storage);
+    const tabA = createHybridStore(server, localA);
+    await tabA.put(bookEntry(ID2, { title: "긴 제목".repeat(100) }));
+    expect(storage.getItem(HISTORY_CACHE_KEY)).not.toContain(ID2);
+    expect(pendingOf(localA)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+    ]);
+    server.recover();
+    await tabB.flush();
+    expect(server.rows.has(ID1)).toBe(true);
+    await tabB.remove(ID1);
+    expect(server.rows.has(ID1)).toBe(false);
+    server.put.mockClear();
+    // B 의 변경 알림을 받은 A 가 목록을 다시 읽는다
+    const { items } = await tabA.list("book");
+    expect(server.put.mock.calls.map(([e]) => e.id)).toEqual([ID2]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(server.rows.has(ID2)).toBe(true);
+    expect(items.map((e) => e.id)).toEqual([ID2]);
+    expect(localA.readOutbox()).toEqual([]);
+  });
+
+  it("메모리 모드 탭이 가져온 편지가 저장소에 남아 있는 동안에는 보낸다", async () => {
+    const storage = new MemoryStorage(1200);
+    storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+    const server = fakeServer();
+    server.fail(networkError());
+    await createHybridStore(server, createLocalStore(storage)).put(bookEntry(ID1));
+    const localA = createLocalStore(storage);
+    const tabA = createHybridStore(server, localA);
+    await tabA.put(bookEntry(ID2, { title: "긴 제목".repeat(100) }));
+    // 다른 탭이 저장소 편지함에 새 편지를 더해도 A 가 가져온 편지는 그대로 남는다
+    createLocalStore(storage).enqueue({ op: "patch", id: ID1, partial: { title: "새 제목" } });
+    expect(pendingOf(localA)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+    ]);
+    server.recover();
+    await tabA.flush();
+    expect(server.rows.has(ID1)).toBe(true);
+    expect(server.rows.has(ID2)).toBe(true);
+    expect(localA.readOutbox()).toEqual([]);
+    // 보낸 편지는 저장소에서도 빠지고, 다른 탭이 더한 편지는 남는다
+    expect(pendingOf(createLocalStore(storage))).toEqual([["patch", ID1]]);
+  });
 });
