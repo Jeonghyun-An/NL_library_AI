@@ -319,6 +319,10 @@ async def _close_orphan_steps(db: AsyncSession, job_id: uuid.UUID, error: str) -
     """끝난 잡에 running 으로 남은 step 을 닫는다.
 
     잡이 아직 진행 중이면 건드리지 않는다 — 회수 뒤 retry 한 새 실행의 step 일 수 있다.
+
+    result 는 바꾸지 않고 error 만 더한다(jsonb ||). 도는 단계에는 _save_progress 가
+    쌓은 rounds·counters·sections 가 있다 — 통째로 바꾸면 라이브로 본 회차·절이 다시 연
+    화면에서 사라진다. 회수기(reap_stale_research)도 같은 방식으로 합친다.
     """
     await db.execute(
         update(ResearchStep)
@@ -329,7 +333,8 @@ async def _close_orphan_steps(db: AsyncSession, job_id: uuid.UUID, error: str) -
                 ResearchJob.id == job_id, ResearchJob.status.in_(TERMINAL_STATUSES),
             ).exists(),
         )
-        .values(status="failed", result={"error": error[:500]}, finished_at=_now())
+        .values(status="failed", result=ResearchStep.result.concat({"error": error[:500]}),
+                finished_at=_now())
     )
     await db.commit()
 

@@ -19,7 +19,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.sql import operators
-from sqlalchemy.sql.elements import BindParameter, BooleanClauseList
+from sqlalchemy.sql.elements import BinaryExpression, BindParameter, BooleanClauseList, Grouping
+from sqlalchemy.sql.selectable import Exists
 
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, snapshot_state,
@@ -236,12 +237,14 @@ class _Harness:
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
-                    explore=None, synthesize=None) -> _Harness:
+                    explore=None, synthesize=None, session=None) -> _Harness:
     """DB·Redis·LLM 을 대역으로 바꾸고 호출만 기록한다.
 
     explore·synthesize 로 하위 동작을 끼워 넣는다(취소를 찍거나 예외를 던지는 식).
+    session 을 주면 그 대역을 쓴다(research_steps 행까지 흉내 내야 할 때).
     """
-    session = _FakeSession(job=job, scalar=0)
+    if session is None:
+        session = _FakeSession(job=job, scalar=0)
     h = _Harness(session, _FakeEngine())
     monkeypatch.setattr(rt, "_job_engine", lambda: (h.engine, lambda: session))
 
@@ -1264,6 +1267,161 @@ class TestLiveProgress:
             {"sections_total": 2, "sections": [{"idx": 0, "status": "running"}]},
             {"sections_total": 2, "sections": [{"idx": 0, "status": "done"}]},
         ]
+
+
+class _StepTableSession(_FakeSession):
+    """research_steps 행을 들고, 그 테이블의 INSERT·UPDATE 를 실제로 적용한다.
+
+    닫는 쓰기가 진행 중 저장한 result 를 합치는지(jsonb ||) 통째로 바꾸는지는 SQL
+    문자열로는 확인이 약하다 — 값으로 확인한다. 모르는 식을 만나면 조용히 넘기지 않고
+    터뜨려, 대역이 모르는 구현을 통과시키지 않게 한다.
+    """
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.steps: list[types.SimpleNamespace] = []
+
+    async def execute(self, stmt, params=None):
+        if getattr(getattr(stmt, "table", None), "name", None) != "research_steps":
+            return await super().execute(stmt, params)
+        self.sql.append(str(stmt))
+        self.params.append(params)
+        self.in_txn = True
+        if getattr(stmt, "is_insert", False):
+            row = types.SimpleNamespace(id=len(self.steps) + 1, result={}, finished_at=None)
+            for key, value in stmt._values.items():
+                setattr(row, getattr(key, "key", key), self._eval(value, row))
+            self.steps.append(row)
+            return _Result(row.id)
+        assert getattr(stmt, "is_update", False), f"대역이 모르는 문장: {stmt}"
+        hit = [row for row in self.steps if self._matches(stmt.whereclause, row)]
+        for row in hit:
+            for key, value in stmt._values.items():
+                setattr(row, getattr(key, "key", key), self._eval(value, row))
+        return _Result(rowcount=len(hit))
+
+    def _matches(self, clause, row) -> bool:
+        if isinstance(clause, BooleanClauseList):
+            return all(self._matches(c, row) for c in clause.clauses)
+        if isinstance(clause, Grouping) and isinstance(clause.element, Exists):
+            # EXISTS (SELECT research_jobs.id WHERE ...) — 잡 행에 대해 평가한다
+            inner = clause.element.element.element
+            return self.job is not None and _matches(inner.whereclause, self.job)
+        return _matches(clause, row)
+
+    @staticmethod
+    def _eval(value, row):
+        if isinstance(value, BindParameter):
+            return value.value
+        if (isinstance(value, BinaryExpression) and value.operator is operators.concat_op
+                and getattr(value.left, "key", None) == "result"
+                and isinstance(value.right, BindParameter)):
+            # jsonb || jsonb — 같은 키는 오른쪽이 이긴다
+            return {**row.result, **value.right.value}
+        raise AssertionError(f"대역이 모르는 값 식: {value!r}")
+
+
+class TestOrphanStepsKeepProgress:
+    """시간 상한·가드 밖 예외로 잡을 닫을 때 running 단계에 진행 중 저장한 result
+    (rounds·counters·sections)를 지우지 않고 error 만 더한다.
+
+    회수기(reap_stale_research)는 `result || {"error": ...}` 로 합친다. 이 경로만
+    통째로 바꾸면 어느 경로로 실패했는지에 따라 다시 연 화면이 달라진다 — 라이브로
+    2회차까지 본 하위질문이 다시 열면 오류 문구만 남고, 카운터가 앞 하위질문 값으로 돌아간다.
+    """
+
+    _PROGRESS = {
+        "rounds": [{"round": 1, "query": "q1"}, {"round": 2, "query": "q2"}],
+        "counters": {"papers_reviewed": 31, "evidence_adopted": 9, "rechecks": 1},
+    }
+
+    def _row(self, db, job_id, *, status, result):
+        row = types.SimpleNamespace(id=len(db.steps) + 1, job_id=job_id, status=status,
+                                    result=dict(result), finished_at=None)
+        db.steps.append(row)
+        return row
+
+    def test_closing_keeps_saved_keys_and_adds_error(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"], status="failed")
+        db = _StepTableSession(job=job)
+        running = self._row(db, job.id, status="running", result=self._PROGRESS)
+        done = self._row(db, job.id, status="done", result={"adopted": 3})
+
+        asyncio.run(rt._close_orphan_steps(db, job.id, rt.TIMEOUT_ERROR))
+
+        assert running.status == "failed" and running.finished_at is not None
+        assert running.result == {**self._PROGRESS, "error": rt.TIMEOUT_ERROR}
+        assert done.status == "done" and done.result == {"adopted": 3}
+
+    def test_step_of_a_job_still_in_flight_is_left_alone(self, monkeypatch):
+        # 회수 뒤 retry 한 새 실행의 step 일 수 있다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"], status="running")
+        db = _StepTableSession(job=job)
+        running = self._row(db, job.id, status="running", result=self._PROGRESS)
+
+        asyncio.run(rt._close_orphan_steps(db, job.id, rt.TIMEOUT_ERROR))
+
+        assert running.status == "running" and running.result == self._PROGRESS
+
+    def _run_until_deadline(self, monkeypatch, rt, job, harness: dict, **pipeline):
+        """진짜 _step·_save_progress 로 진행을 쌓다가 JOB_DEADLINE 에 끊긴다.
+
+        explore·synthesize 대역이 emit·on_section 을 쓰도록 harness["h"] 에 하네스를 둔다."""
+        real = {name: getattr(rt, name) for name in ("_step", "_save_progress")}
+        db = _StepTableSession(job=job, scalar=0)
+        harness["h"] = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                                       session=db, **pipeline)
+        for name, fn in real.items():
+            monkeypatch.setattr(rt, name, fn)
+        monkeypatch.setattr(rt, "JOB_DEADLINE", 0.3)
+        return rt._run_job(rt._run_deep_research, str(job.id)), db
+
+    def test_deadline_keeps_rounds_and_counters_of_the_running_search(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        harness = {}
+
+        async def _two_rounds_then_hang(state, subq):
+            for r in _ROUNDS:
+                subq.rounds.append(dict(r))
+                state.seen_cnts.add(f"P{r['round']}")
+                await harness["h"].emit("critique", {"subq_idx": 0, "verdict": r["verdict"]})
+            await asyncio.sleep(5)      # 3회차 자기점검 LLM 이 늘어진다
+
+        out, db = self._run_until_deadline(monkeypatch, rt, job, harness,
+                                           explore=_two_rounds_then_hang)
+
+        assert out["status"] == "failed" and job.status == "failed"
+        (step,) = db.steps
+        assert step.kind == "search" and step.status == "failed"
+        assert step.result["error"] == rt.TIMEOUT_ERROR
+        assert [r["round"] for r in step.result["rounds"]] == [1, 2]
+        assert step.result["counters"]["papers_reviewed"] == 2
+
+    def test_deadline_keeps_sections_of_the_running_synthesis(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        harness = {}
+
+        async def _one_section_then_hang(state, should_stop):
+            await harness["h"].on_section(0, 2, "done")
+            await harness["h"].on_section(1, 2, "running")
+            await asyncio.sleep(5)      # 두 번째 절 LLM 이 늘어진다
+
+        out, db = self._run_until_deadline(monkeypatch, rt, job, harness,
+                                           synthesize=_one_section_then_hang)
+
+        assert out["status"] == "failed" and job.status == "failed"
+        (step,) = db.steps
+        assert step.kind == "synthesize" and step.status == "failed"
+        assert step.result == {
+            "sections_total": 2,
+            "sections": [{"idx": 0, "status": "done"}, {"idx": 1, "status": "running"}],
+            "error": rt.TIMEOUT_ERROR,
+        }
 
 
 class TestReaper:
