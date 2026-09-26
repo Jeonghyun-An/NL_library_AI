@@ -25,7 +25,9 @@ from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.citations import bind_markers, chunks_for, strip_markers
 from services.research.llm_json import extract_json
-from services.research.state import Chunk, Evidence, ResearchState, SubQuestion
+from services.research.state import (
+    Chunk, Evidence, ResearchState, SubQuestion, research_stats,
+)
 
 log = logging.getLogger(__name__)
 
@@ -42,8 +44,15 @@ _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
 
 
+SectionFn = Callable[[int, int, str], Awaitable[None]]
+
+
 class SynthesisCanceled(Exception):
     """취소가 확인돼 종합을 멈췄다 — 실패가 아니라 사용자의 결정이다."""
+
+
+async def _no_progress(idx: int, total: int, status: str) -> None:
+    return None
 
 
 def build_limitations(
@@ -248,6 +257,7 @@ def assemble_report(
             failed_sections=failed_sections, unsummarized_total=unsummarized,
             unparsed_total=unparsed, introless_sections=introless,
         ),
+        "stats": research_stats(state),
     }
 
 
@@ -388,6 +398,7 @@ async def _synthesize_section(
 
 async def synthesize(
     state: ResearchState, *, should_stop: Callable[[], Awaitable[bool]] | None = None,
+    on_section: SectionFn | None = None,
 ) -> dict:
     """하위질문마다 절을 하나씩 만든다.
 
@@ -402,14 +413,21 @@ async def synthesize(
 
     should_stop 은 LLM 을 부르기 직전마다 확인하고, True 면 SynthesisCanceled 를
     던진다 — 취소 뒤에도 남은 절을 다 부르면 GPU 를 비운다는 취소의 약속이 거짓이 된다.
+
+    on_section(idx, total, status) 는 절을 쓰기 시작할 때 "running", 끝낼 때 "done"
+    또는 "failed" 로 부른다. idx 는 절 순번(0부터)이지 하위질문 번호가 아니다 — 근거
+    없는 하위질문은 절이 되지 않아 둘이 어긋나고, 화면의 "2/3" 은 절 순번으로 센다.
     """
+    on_section = on_section or _no_progress
     targets = [sq for sq in state.subquestions if sq.evidence_ids]
     sections = []
-    for sq in targets:
+    for i, sq in enumerate(targets):
+        await on_section(i, len(targets), "running")
         section = await _synthesize_section(state, sq, should_stop=should_stop)
         sections.append(section)
         log.info("[research] 절 종합 job=%s idx=%s 논문=%d ok=%s",
                  state.job_id, sq.idx, len(section["papers"]), not section["failed"])
+        await on_section(i, len(targets), "failed" if section["failed"] else "done")
 
     if targets and all(s["failed"] for s in sections):
         raise ValueError("보고서의 어느 절도 서술을 받지 못했다")

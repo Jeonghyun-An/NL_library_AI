@@ -675,3 +675,60 @@ class TestReportChunks:
 
         assert report["sections"][0]["chunk_scores"] == {"c1": 0.9, "c2": 0.2}
         assert report["sections"][1]["chunk_scores"] == {"c2": 0.95, "c3": 0.9}
+
+
+class TestSectionProgress:
+    """절 진행을 콜백으로 알린다 — 워커가 synth 이벤트로 흘리고 종합 단계 result 에도 남긴다."""
+
+    def _record(self):
+        seen: list[tuple[int, int, str]] = []
+
+        async def on_section(idx, total, status):
+            seen.append((idx, total, status))
+
+        return seen, on_section
+
+    def test_each_section_reports_start_and_end(self, monkeypatch):
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
+        seen, on_section = self._record()
+        asyncio.run(synthesize(_state_three(), on_section=on_section))
+        # 근거 없는 하위3 은 절이 되지 않는다 — total 은 실제로 쓰는 절 수이고 idx 는 절 순번이다
+        assert seen == [(0, 2, "running"), (0, 2, "done"), (1, 2, "running"), (1, 2, "done")]
+
+    def test_section_without_narrative_reports_failed(self, monkeypatch):
+        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
+        seen, on_section = self._record()
+        asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert seen[-1] == (1, 2, "failed")
+
+    def test_canceled_section_is_never_reported_finished(self, monkeypatch):
+        # 끝났다고 알리지 않는다 — 워커가 종합 단계를 failed 로 닫는다
+        TestSynthesize()._patch_chat(monkeypatch, [])
+        seen, on_section = self._record()
+
+        async def stop():
+            return True
+
+        with pytest.raises(SynthesisCanceled):
+            asyncio.run(synthesize(_state_three(), should_stop=stop, on_section=on_section))
+        assert seen == [(0, 2, "running")]
+
+
+class TestReportStats:
+    """보고서 서론 한 줄("논문 N편을 검토하고 M편을 근거로")의 원천."""
+
+    def test_report_carries_research_stats(self):
+        st = _state()
+        st.seen_cnts = {"A", "B", "C"}
+        st.subquestions[0].queries = ["q1", "q2"]
+        report = assemble_report(st, sections=[], unmarked_total=0)
+        assert report["stats"] == {"papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1}
+
+    def test_existing_keys_are_kept(self):
+        # 키 추가만 한다 — 옛 보고서를 그리는 화면과 교본이 기존 키에 기대고 있다
+        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        assert set(report) == {
+            "question", "range", "sections", "evidence", "trail", "limitations", "stats",
+        }
