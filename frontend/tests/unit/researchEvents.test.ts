@@ -8,6 +8,7 @@ import {
   isTerminalEvent,
   refreshView,
   researchPhase,
+  stopPoint,
   subqStatusLabel,
   synthProgress,
   withPlan,
@@ -497,5 +498,122 @@ describe("applyApproval", () => {
     const v = applyApproval(AWAITING(), "approved", null);
     expect(v.status).toBe("approved");
     expect(v.plan).toEqual(["효과 측정", "교사 인식"]);
+  });
+});
+
+describe("stopPoint — 멈춘 지점", () => {
+  // 워커는 하위질문을 idx 순서로 하나씩 돌고, 하위질문 하나가 오류로 끝나도 잡을 멈추지 않는다
+  // (부분 실패는 전체 실패가 아니다). 그래서 failed 하위질문이 곧 멈춘 지점은 아니다.
+  const PLAN3 = ["효과 측정", "교사 인식", "정책 과제"];
+  const planRow = step({ seq: 0, result: { subquestions: PLAN3 } });
+  const searchRow = (idx: number, status: ResearchStepRow["status"], result: ResearchStepRow["result"] = {}) =>
+    step({ seq: idx + 1, kind: "search", subq_idx: idx, title: PLAN3[idx]!, status, result });
+  const synthRow = (error: string) => step({
+    seq: 4, kind: "synthesize", title: "보고서 종합", status: "failed",
+    result: { sections_total: 2, sections: [{ idx: 0, status: "done" }], error },
+  });
+  const PARTIAL = searchRow(0, "failed", { error: "검색 오류" });
+  const at = (over: Partial<ResearchJob>) => stopPoint(initialResearchView(job({ plan: PLAN3, ...over })));
+
+  it("앞 하위질문이 부분 실패하고 종합에서 실패한 잡은 보고서 작성 단계에서 멈췄다", () => {
+    expect(at({
+      status: "failed", stage: "explored", last_error: "종합 실패",
+      steps: [planRow, PARTIAL, searchRow(1, "done"), searchRow(2, "done"), synthRow("종합 실패")],
+    })).toEqual({ kind: "synth" });
+  });
+
+  it("종합 중 취소도 앞선 부분 실패가 아니라 보고서 작성 단계를 짚는다", () => {
+    expect(at({
+      status: "canceled", stage: "explored",
+      steps: [planRow, PARTIAL, searchRow(1, "done"), searchRow(2, "done"), synthRow("취소됨")],
+    })).toEqual({ kind: "synth" });
+  });
+
+  it("종합 단계 행이 생기기 전에 멈춘 stage=explored 잡도 보고서 작성 단계다", () => {
+    expect(at({
+      status: "canceled", stage: "explored",
+      steps: [planRow, PARTIAL, searchRow(1, "done"), searchRow(2, "done")],
+    })).toEqual({ kind: "synth" });
+  });
+
+  it("탐색 중 취소 — 앞에 부분 실패가 있어도 돌던 하위질문을 짚는다", () => {
+    expect(at({
+      status: "canceled", stage: "planned",
+      steps: [planRow, PARTIAL, searchRow(1, "running")],
+    })).toEqual({ kind: "subq", idx: 1 });
+  });
+
+  it("탐색 중 취소 이벤트를 받은 직후에도 돌던 하위질문을 짚는다", () => {
+    expect(stopPoint(run([SEARCH_STARTED, { kind: "canceled", status: "canceled" }]))).toEqual({ kind: "subq", idx: 0 });
+  });
+
+  it("하위질문 경계에서 취소된 뒤 다시 연 잡은 시작하지 못한 첫 하위질문을 짚는다", () => {
+    // 취소는 워커가 하위질문 경계에서 확인한다 — 돌던 하위질문은 끝까지 돌아 done 으로 닫힌다
+    expect(at({
+      status: "canceled", stage: "planned",
+      steps: [planRow, PARTIAL, searchRow(1, "done")],
+    })).toEqual({ kind: "subq", idx: 2 });
+  });
+
+  it("취소 뒤 끝까지 돌고 오류로 닫힌 하위질문이 있어도 취소는 그 다음 경계에서 멈춘 것이다", () => {
+    expect(at({
+      status: "canceled", stage: "planned",
+      steps: [planRow, searchRow(0, "done"), searchRow(1, "failed", { error: "검색 오류" })],
+    })).toEqual({ kind: "subq", idx: 2 });
+  });
+
+  it("시간 상한·회수기가 닫은 하위질문은 거기서 멈춘 것이다", () => {
+    expect(at({
+      status: "failed", stage: "planned", last_error: "시간 상한 초과 — 워커를 회수했다",
+      steps: [planRow, searchRow(0, "done"), searchRow(1, "failed", { error: "시간 상한 초과 — 워커를 회수했다" })],
+    })).toEqual({ kind: "subq", idx: 1 });
+  });
+
+  it("다음 하위질문을 열다 실패한 잡은 시작하지 못한 하위질문을 짚는다", () => {
+    expect(at({
+      status: "failed", stage: "planned", last_error: "DB 오류",
+      steps: [planRow, searchRow(0, "done")],
+    })).toEqual({ kind: "subq", idx: 1 });
+  });
+
+  it("전멸 실패는 마지막 하위질문에서 멈췄다", () => {
+    expect(at({
+      status: "failed", stage: "planned", last_error: "모든 하위질문 탐색이 오류로 실패했다",
+      steps: [
+        planRow,
+        searchRow(0, "failed", { error: "검색 오류" }),
+        searchRow(1, "failed", { error: "검색 오류" }),
+        searchRow(2, "failed", { error: "검색 오류" }),
+      ],
+    })).toEqual({ kind: "subq", idx: 2 });
+  });
+
+  it("탐색을 다 마치고 종합 전에 취소된 잡은 보고서 작성 단계다 — 마지막 하위질문이 부분 실패여도", () => {
+    const explored = [planRow, searchRow(0, "done"), searchRow(1, "done")];
+    expect(at({ status: "canceled", stage: "planned", steps: [...explored, searchRow(2, "done")] }))
+      .toEqual({ kind: "synth" });
+    expect(at({ status: "canceled", stage: "planned", steps: [...explored, searchRow(2, "failed", { error: "검색 오류" })] }))
+      .toEqual({ kind: "synth" });
+  });
+
+  it("계획 단계 실패는 탐색을 시작하기 전이다", () => {
+    expect(at({
+      status: "failed", stage: "created", plan: null, last_error: "LLM 오류", started_at: null,
+      steps: [step({ seq: 0, status: "failed", result: { error: "LLM 오류" } })],
+    })).toEqual({ kind: "before" });
+  });
+
+  it("승인 대기·대기열에서 취소된 잡도 탐색을 시작하기 전이다", () => {
+    expect(at({ status: "canceled", stage: "planned", started_at: null, steps: [planRow] })).toEqual({ kind: "before" });
+  });
+
+  it("멈추지 않은 잡은 멈춘 지점이 없다", () => {
+    const steps = [planRow, PARTIAL, searchRow(1, "running")];
+    expect(at({ status: "running", stage: "planned", steps })).toBeNull();
+    expect(at({ status: "awaiting_approval", stage: "planned", steps: [planRow] })).toBeNull();
+    expect(at({
+      status: "completed", stage: "synthesized",
+      steps: [planRow, PARTIAL, searchRow(1, "done"), searchRow(2, "done")],
+    })).toBeNull();
   });
 });

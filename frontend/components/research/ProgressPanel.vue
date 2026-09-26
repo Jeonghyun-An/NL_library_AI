@@ -49,7 +49,7 @@
             <span class="rs-badge" :class="`rs-badge--${sq.status}`">{{ subqStatusLabel(sq) }}</span>
           </div>
           <p v-if="stoppedIdx === sq.idx" class="rs-subq__stopped">
-            여기서 멈췄습니다<span v-if="sq.error"> — {{ sq.error }}</span>
+            {{ sq.status === "pending" ? "이 하위질문을 시작하기 전에 멈췄습니다" : "여기서 멈췄습니다" }}<span v-if="sq.error"> — {{ sq.error }}</span>
           </p>
           <ol v-if="sq.rounds.length" class="rs-rounds">
             <li v-for="r in sq.rounds" :key="r.round" class="rs-round" :class="{ 'is-recheck': !!r.nextQuery }">
@@ -67,7 +67,8 @@
           </ol>
         </li>
       </ol>
-      <p v-if="stoppedAtSynth" class="rs-subq__stopped">보고서 작성 단계에서 멈췄습니다</p>
+      <p v-if="stop?.kind === 'synth'" class="rs-subq__stopped">보고서 작성 단계에서 멈췄습니다</p>
+      <p v-else-if="stop?.kind === 'before'" class="rs-subq__stopped">탐색을 시작하기 전에 멈췄습니다</p>
     </template>
   </section>
 </template>
@@ -75,7 +76,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ResearchView } from "~/types/research";
-import { subqStatusLabel, synthProgress, verdictLabel, type ResearchPhase } from "~/utils/researchEvents";
+import { stopPoint, subqStatusLabel, synthProgress, verdictLabel, type ResearchPhase } from "~/utils/researchEvents";
 
 const props = defineProps<{ view: ResearchView; phase: ResearchPhase }>();
 
@@ -87,14 +88,8 @@ const TITLES: Partial<Record<ResearchPhase, string>> = {
 };
 
 const title = computed(() => TITLES[props.phase] ?? "진행");
-const stopped = computed(() => props.phase === "failed" || props.phase === "canceled");
-const stoppedIdx = computed(() => {
-  if (!stopped.value) return null;
-  return props.view.subqs.find((s) => s.status === "failed" || s.status === "running")?.idx ?? null;
-});
-const stoppedAtSynth = computed(
-  () => stopped.value && stoppedIdx.value === null && (props.view.synth.status !== null || props.view.stage === "explored"),
-);
+const stop = computed(() => stopPoint(props.view));
+const stoppedIdx = computed(() => (stop.value?.kind === "subq" ? stop.value.idx : null));
 const synthLine = computed(() => {
   const p = synthProgress(props.view);
   return p.total ? `보고서 작성 중 ${p.current}/${p.total}` : "보고서 작성 중";
