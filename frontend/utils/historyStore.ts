@@ -11,9 +11,11 @@ import type {
   HistoryKind,
   HistoryListOut,
   HistoryPatch,
+  LegacyHistoryEntry,
   PaperAi,
   PaperSnapshot,
 } from "~/types/history";
+import { slimBookResult, slimPaperResult } from "./historySnapshot";
 
 export const HISTORY_CACHE_KEY = "skx_history_v2";
 export const HISTORY_OUTBOX_KEY = "skx_history_outbox";
@@ -576,4 +578,162 @@ export function createHybridStore(server: HistoryStore, local: LocalHistoryStore
         if (!res.ok) local.enqueue({ op: "clear", kind });
       }),
   };
+}
+
+export const LEGACY_HISTORY_KEY = "skx_search_history";
+export const LEGACY_BACKUP_KEY = "skx_search_history_backup_v1";
+export const LEGACY_MIGRATED_KEY = "skx_history_v1_migrated";
+export const V1_MAP_KEY = "skx_history_v1_map";
+export const DEDUPE_WINDOW_MS = 10 * 60 * 1000;
+
+const IMPORT_BATCH = 100;
+
+export function normalizeTitle(title: string): string {
+  return title.normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function paramsKey(params: Record<string, unknown> | undefined): string {
+  const entries = Object.entries(params ?? {})
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return JSON.stringify(entries);
+}
+
+export function findRecentDuplicate(
+  list: readonly HistoryEntry[],
+  input: { kind: HistoryKind; title: string; params?: Record<string, unknown> },
+  nowMs: number,
+  windowMs = DEDUPE_WINDOW_MS,
+): HistoryEntry | null {
+  if (input.kind === "research") return null;
+  const title = normalizeTitle(input.title);
+  const key = paramsKey(input.params);
+  return (
+    list.find((e) => {
+      if (e.kind !== input.kind || normalizeTitle(e.title) !== title || paramsKey(e.params) !== key) return false;
+      const at = Date.parse(e.updatedAt ?? e.createdAt);
+      return !Number.isNaN(at) && nowMs - at <= windowMs;
+    }) ?? null
+  );
+}
+
+export function readV1Map(storage: Storage | null): Record<string, string> {
+  if (!storage) return {};
+  try {
+    const parsed: unknown = JSON.parse(storage.getItem(V1_MAP_KEY) ?? "{}");
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter((kv): kv is [string, string] => typeof kv[1] === "string"),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function legacyTime(ts: unknown): string | null {
+  if (typeof ts !== "number" && typeof ts !== "string") return null;
+  const value = typeof ts === "string" && /^\d+$/.test(ts) ? Number(ts) : ts;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function legacyAi(kind: "book" | "paper", raw: unknown): BookAi | PaperAi | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = null;
+  }
+  const obj =
+    typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
+  if (kind === "book") {
+    return obj
+      ? { intro: typeof obj.intro === "string" ? obj.intro : "", items: Array.isArray(obj.items) ? obj.items : [] }
+      : { intro: raw, items: [] };
+  }
+  return obj
+    ? { text: typeof obj.text === "string" ? obj.text : "", refs: Array.isArray(obj.refs) ? obj.refs : [] }
+    : { text: raw, refs: [] };
+}
+
+export function convertLegacy(v1: LegacyHistoryEntry[]): HistoryImportItem[] {
+  const seen = new Set<string>();
+  const out: HistoryImportItem[] = [];
+  // 브라우저 저장소에서 온 값이라 타입을 믿지 않고 한 칸씩 확인한다
+  for (const raw of v1 as unknown[]) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const { id, type, query, timestamp, result, aiSummary } = raw as Partial<LegacyHistoryEntry>;
+    if ((type !== "book" && type !== "paper") || typeof query !== "string" || !query.trim()) continue;
+    const legacyId = String(id ?? "");
+    if (!legacyId || seen.has(legacyId)) continue;
+    seen.add(legacyId);
+    out.push({
+      legacy_id: legacyId,
+      kind: type,
+      title: query.trim().slice(0, 500),
+      params: {},
+      snapshot: type === "book" ? slimBookResult(result) : slimPaperResult(result),
+      ai: legacyAi(type, aiSummary),
+      ref_id: null,
+      created_at: legacyTime(timestamp) ?? legacyTime(legacyId),
+    });
+  }
+  return out;
+}
+
+export async function migrateLegacy(
+  storage: Storage | null,
+  server: Pick<ServerHistoryStore, "importItems">,
+): Promise<{ imported: number } | null> {
+  if (!storage) return null;
+  let raw: string | null;
+  try {
+    if (storage.getItem(LEGACY_MIGRATED_KEY)) return null;
+    raw = storage.getItem(LEGACY_HISTORY_KEY);
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = null;
+  }
+  const items = Array.isArray(parsed) ? convertLegacy(parsed as LegacyHistoryEntry[]) : [];
+
+  const idMap = readV1Map(storage);
+  let imported = 0;
+  try {
+    for (let i = 0; i < items.length; i += IMPORT_BATCH) {
+      const res = await server.importItems(items.slice(i, i + IMPORT_BATCH));
+      imported += res.imported;
+      Object.assign(idMap, res.id_map);
+    }
+  } catch {
+    // 서버가 받기 전에는 v1 을 건드리지 않는다 — 다음 로드에서 다시 시도한다
+    return null;
+  }
+
+  try {
+    storage.setItem(V1_MAP_KEY, JSON.stringify(idMap));
+  } catch {
+    // 대응표를 못 남기면 옛 ?restore= 주소만 새 id 를 못 찾는다 — 기록 자체는 이미 서버에 있다
+  }
+  try {
+    const backupKey =
+      storage.getItem(LEGACY_BACKUP_KEY) === null ? LEGACY_BACKUP_KEY : `${LEGACY_BACKUP_KEY}_${Date.now()}`;
+    storage.setItem(backupKey, raw);
+    storage.removeItem(LEGACY_HISTORY_KEY);
+  } catch {
+    // 사본 둘 자리가 없다 — 원본을 그대로 백업으로 남기고 다시 올리지 않게 표시만 한다
+    try {
+      storage.setItem(LEGACY_MIGRATED_KEY, "1");
+    } catch {
+      // 표시도 못 하면 다음 로드에 한 번 더 올린다 — 서버가 같은 id 를 건너뛴다
+    }
+  }
+  return { imported };
 }
