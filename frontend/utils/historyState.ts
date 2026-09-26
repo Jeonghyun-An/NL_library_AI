@@ -7,7 +7,7 @@ import type {
   HistoryPatch,
   ResearchEntry,
 } from "~/types/history";
-import { HISTORY_PAGE_SIZE, errorStatus, findRecentDuplicate, type HybridHistoryStore } from "./historyStore";
+import { HISTORY_PAGE_SIZE, findRecentDuplicate, type HybridHistoryStore } from "./historyStore";
 
 const KINDS: HistoryKind[] = ["book", "paper", "research"];
 
@@ -71,31 +71,36 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     return view;
   }
 
+  // 목록 응답은 요청이 출발한 때의 서버 상태다. 그 사이 이 탭에서 지운 기록을 늦게 도착한 응답이 되살리지 않도록
+  // 지운 순번을 남기고, 그보다 먼저 출발한 응답에서는 그 기록을(비운 종류면 응답 전체를) 버린다
+  let deleteSeq = 0;
+  const removedAt = new Map<string, number>();
+  const clearedAt = new Map<HistoryKind, number>();
+  let listing = 0;
+
   async function refresh(kind?: HistoryKind): Promise<void> {
     const kinds = kind ? [kind] : KINDS;
     await Promise.all(
       kinds.map(async (k) => {
+        const since = deleteSeq;
+        listing += 1;
         try {
           const { items } = await store().list(k, { limit: HISTORY_PAGE_SIZE });
-          entries.value = [...entries.value.filter((e) => e.kind !== k), ...items.map(toListItem)];
+          if ((clearedAt.get(k) ?? 0) > since) return;
+          const kept = items.filter((e) => (removedAt.get(e.id) ?? 0) <= since);
+          entries.value = [...entries.value.filter((e) => e.kind !== k), ...kept.map(toListItem)];
         } catch (e) {
           warn("목록을 읽지 못했다", e);
+        } finally {
+          listing -= 1;
+          // 읽는 중인 목록이 없으면 이후의 응답은 모두 지금 뒤에 출발한다 — 남긴 순번은 더 쓸 일이 없다
+          if (!listing) {
+            removedAt.clear();
+            clearedAt.clear();
+          }
         }
       }),
     );
-  }
-
-  // 축약 결과가 서버 상한(200KB)을 넘으면 413 이다. 4xx 는 보낼 편지함이 다시 보내지 않아
-  // 그대로 두면 기록이 사라진다 — 결과 없이라도 남긴다(복원은 q 재검색으로 물러선다).
-  async function putEntry(entry: HistoryEntry): Promise<HistoryEntry> {
-    try {
-      return await store().put(entry);
-    } catch (e) {
-      if (errorStatus(e) !== 413 || entry.kind === "research" || !entry.snapshot) throw e;
-      const lighter = { ...entry };
-      delete lighter.snapshot;
-      return store().put(lighter);
-    }
   }
 
   async function add(input: HistoryEntryInput): Promise<HistoryEntry> {
@@ -110,7 +115,8 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     } as HistoryEntry;
     place(entry, true);
     try {
-      const saved = await putEntry(entry);
+      // 축약 결과가 너무 커서 난 413 은 저장소가 결과 없이 다시 보내 처리한다 — 여기로 오는 거절은 기록 자체를 받지 않은 것이다
+      const saved = await store().put(entry);
       place(saved, true);
       changed();
       return saved;
@@ -135,6 +141,7 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
   }
 
   async function remove(id: string): Promise<void> {
+    removedAt.set(id, ++deleteSeq);
     drop(id);
     try {
       await store().remove(id);
@@ -145,6 +152,7 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
   }
 
   async function clear(kind: HistoryKind): Promise<void> {
+    clearedAt.set(kind, ++deleteSeq);
     entries.value = entries.value.filter((e) => e.kind !== kind);
     try {
       await store().clear(kind);
