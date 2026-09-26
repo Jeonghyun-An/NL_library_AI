@@ -143,15 +143,17 @@ export function initialResearchView(job: ResearchJob): ResearchView {
   return view.status === "running" ? { ...view, highlight: latestHighlight(view.subqs) } : view;
 }
 
-// 종료 이벤트 뒤·409 뒤 GET 으로 다시 맞출 때 쓴다. GET 에 저장된 카운터가 아직 없으면
-// (첫 회차가 저장되기 전·보강 전 잡) 스트림으로 먼저 받은 값을 잃지 않게 라이브 값을 지킨다.
+// 종료 이벤트 뒤·409 뒤 GET 으로 다시 맞출 때 쓴다. 카운터는 보고서 stats(최종 확정값)가
+// 있거나 라이브 값이 없을 때만 GET 값을 쓴다. 워커는 검색 직후 counters 를 흘리고 자기점검
+// (LLM)이 끝나야 단계 result 에 저장하므로, 매 회차 점검을 기다리는 동안 저장본은 한 회차
+// 뒤처져 있다 — 취소·실패는 대개 이 구간에 오고, 스트림도 닫혀 뒤에 바로잡히지 않는다.
 export function refreshView(prev: ResearchView | null, job: ResearchJob): ResearchView {
   const fresh = initialResearchView(job);
   if (!prev || prev.jobId !== fresh.jobId) return fresh;
   const merged = rebuild({ ...fresh, subqs: prev.subqs, synth: prev.synth });
-  const counters = fresh.counters.papersReviewed === null && prev.counters.papersReviewed !== null
-    ? prev.counters
-    : fresh.counters;
+  const counters = fresh.report?.stats || prev.counters.papersReviewed === null
+    ? fresh.counters
+    : prev.counters;
   const highlight = merged.status === "running" ? (prev.highlight ?? latestHighlight(merged.subqs)) : null;
   return { ...merged, counters, highlight };
 }

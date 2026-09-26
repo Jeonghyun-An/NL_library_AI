@@ -308,13 +308,54 @@ describe("refreshView·withPlan", () => {
     expect(v.counters.papersReviewed).toBe(20);
   });
 
-  it("GET 에 저장된 카운터가 있으면 그 값으로 맞춘다", () => {
-    const live = run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1 }]);
+  it("회차 도중 취소 — 저장본이 한 회차 뒤처져 있어도 라이브 카운터를 지킨다", () => {
+    // 워커는 검색 직후 counters 를 흘리고, 자기점검(LLM)이 끝나야 단계 result 에 저장한다.
+    // 점검을 기다리는 동안 취소하면 GET 에는 앞 회차 카운터만 들어 있다.
+    const round1 = {
+      round: 1, query: "효과 측정", found_chunks: 12, new_papers: 5,
+      verdict: "insufficient" as const, note: "초등 대상 연구가 없다", next_query: "초등 AI 윤리 교육 효과",
+    };
+    const saved = { papers_reviewed: 20, evidence_adopted: 5, rechecks: 0 };
+    const live = run([
+      SEARCH_STARTED,
+      { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+      { kind: "counters", ...saved },
+      {
+        kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 5,
+        parse_failed: false, capped: 0, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+      },
+      { ...SEARCH_STARTED, result: { rounds: [round1], counters: saved } },
+      { kind: "search", subq_idx: 0, query: "초등 AI 윤리 교육 효과", found: 9, round: 2, new_papers: 6 },
+      { kind: "counters", papers_reviewed: 26, evidence_adopted: 7, rechecks: 1 },
+      { kind: "canceled", status: "canceled" },
+    ]);
     const v = refreshView(live, job({
-      status: "failed", last_error: "종합 실패",
-      steps: [step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done", result: { rounds: [], counters: { papers_reviewed: 20, evidence_adopted: 7, rechecks: 2 } } })],
+      status: "canceled", finished_at: "2026-09-26T01:05:00Z",
+      steps: [
+        step({ seq: 0, result: { subquestions: ["효과 측정", "교사 인식"] } }),
+        step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [round1], counters: saved } }),
+      ],
     }));
-    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 2 });
+    expect(v.status).toBe("canceled");
+    expect(v.subqs[0]!.rounds.map((r) => r.round)).toEqual([1, 2]);
+    expect(v.counters).toEqual({ papersReviewed: 26, evidenceAdopted: 7, rechecks: 1 });
+  });
+
+  it("라이브 카운터를 받은 적이 없으면 GET 에 저장된 카운터로 채운다", () => {
+    const v = refreshView(initialResearchView(job()), job({
+      status: "canceled",
+      steps: [step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [], counters: { papers_reviewed: 20, evidence_adopted: 5, rechecks: 0 } } })],
+    }));
+    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 5, rechecks: 0 });
+  });
+
+  it("완료 잡은 라이브 카운터보다 보고서 stats(최종값)를 쓴다", () => {
+    const live = run([{ kind: "counters", papers_reviewed: 26, evidence_adopted: 7, rechecks: 1 }]);
+    const v = refreshView(live, job({
+      status: "completed", stage: "synthesized",
+      report: oldReport({ stats: { papers_reviewed: 30, evidence_adopted: 9, rechecks: 2 } }),
+    }));
+    expect(v.counters).toEqual({ papersReviewed: 30, evidenceAdopted: 9, rechecks: 2 });
   });
 
   it("다른 잡의 응답이면 이전 화면을 섞지 않는다", () => {
