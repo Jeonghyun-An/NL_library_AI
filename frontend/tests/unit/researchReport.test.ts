@@ -1,7 +1,7 @@
 // frontend/tests/unit/researchReport.test.ts
 import { describe, expect, it } from "vitest";
 import type { ResearchReport } from "~/types/research";
-import { paperByline, rangeLabel, reportIntro } from "~/utils/researchReport";
+import { paperByline, rangeLabel, reportIntro, stepChunk } from "~/utils/researchReport";
 
 function report(over: Partial<ResearchReport> = {}): ResearchReport {
   return {
@@ -43,6 +43,23 @@ describe("reportIntro", () => {
 
   it("보강 전 보고서는 근거 수만 쓴다", () => {
     expect(reportIntro(report())).toBe("하위질문 3개로 나눠 논문 2편을 근거로 삼았다.");
+  });
+});
+
+describe("stepChunk", () => {
+  it("범위 안에서 한 칸씩 옮긴다", () => {
+    expect(stepChunk(0, 1, 3)).toBe(1);
+    expect(stepChunk(2, -1, 3)).toBe(1);
+  });
+
+  it("끝에서는 제자리에 선다", () => {
+    expect(stepChunk(0, -1, 2)).toBe(0);
+    expect(stepChunk(1, 1, 2)).toBe(1);
+  });
+
+  it("대목이 줄어 범위를 벗어난 위치는 마지막 대목으로 당기고, 대목이 없으면 0 이다", () => {
+    expect(stepChunk(5, 1, 2)).toBe(1);
+    expect(stepChunk(0, 1, 0)).toBe(0);
   });
 });
 

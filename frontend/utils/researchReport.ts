@@ -20,6 +20,13 @@ export function reportIntro(report: ResearchReport): string {
   return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
 }
 
+// 끝에서는 제자리에 선다. 버튼을 disabled 로 막으면 초점을 쥔 버튼이 비활성이 되는 순간
+// 초점이 body 로 떨어져 팝오버가 닫히므로, 화면은 aria-disabled 로 알리기만 하고 범위는 여기서 지킨다
+export function stepChunk(index: number, delta: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(Math.max(index + delta, 0), total - 1);
+}
+
 export function paperByline(meta: EvidenceMeta | undefined): string {
   const authors = splitAuthors(meta?.personal_author);
   const who = authors.length > 1 ? `${authors[0]} 외` : (authors[0] ?? "저자 미상");

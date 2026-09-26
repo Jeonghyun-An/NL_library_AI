@@ -3,8 +3,8 @@
   <span
     ref="wrap"
     class="rs-cite"
-    @mouseenter="show"
-    @mouseleave="scheduleHide"
+    @mouseenter="onEnter"
+    @mouseleave="onLeave"
     @focusin="show"
     @focusout="onFocusOut"
     @keydown.escape.stop="close"
@@ -20,12 +20,14 @@
     >
       {{ label }}
     </button>
+    <!-- tabindex=-1: 안쪽 글을 눌러도 초점이 팝오버로 옮겨 와 wrap 안에 머문다 — 그래야 Esc 가 먹는다 -->
     <span
       v-if="open"
       :id="popId"
       ref="pop"
       class="rs-cite__pop"
       role="dialog"
+      tabindex="-1"
       :aria-label="`${eid} 근거`"
       :style="shift ? { left: `${shift}px` } : undefined"
     >
@@ -36,9 +38,9 @@
         <span class="rs-cite__foot">
           <span>{{ pageLabel(current) }}</span>
           <span v-if="chunks.length > 1" class="rs-cite__pager">
-            <button type="button" aria-label="이전 대목" :disabled="index === 0" @click="index -= 1">‹</button>
+            <button type="button" aria-label="이전 대목" :aria-disabled="!canPrev" @click="step(-1)">‹</button>
             <span>{{ index + 1 }}/{{ chunks.length }}</span>
-            <button type="button" aria-label="다음 대목" :disabled="index >= chunks.length - 1" @click="index += 1">›</button>
+            <button type="button" aria-label="다음 대목" :aria-disabled="!canNext" @click="step(1)">›</button>
           </span>
         </span>
       </template>
@@ -55,6 +57,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
 import type { OpenPdfPayload, ReportChunk, ReportEvidence } from "~/types/research";
 import { citeLabel, metaLine, pageLabel, pdfPage } from "~/utils/citations";
+import { stepChunk } from "~/utils/researchReport";
 
 const props = defineProps<{ eid: string; evidence?: ReportEvidence; chunks: ReportChunk[] }>();
 const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload] }>();
@@ -72,11 +75,15 @@ const open = ref(false);
 const pinned = ref(false);
 const index = ref(0);
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
+// 포인터가 칩·팝오버 위에 있는지 — 초점이 어디로도 옮겨 가지 않고 빠질 때 닫을지 가른다
+let hovering = false;
 
 const label = computed(() => citeLabel(props.evidence?.meta, props.eid));
 const title = computed(() => props.evidence?.meta.title || "근거 정보를 찾을 수 없습니다");
 const meta = computed(() => metaLine(props.evidence?.meta));
 const current = computed<ReportChunk | undefined>(() => props.chunks[index.value]);
+const canPrev = computed(() => stepChunk(index.value, -1, props.chunks.length) !== index.value);
+const canNext = computed(() => stepChunk(index.value, 1, props.chunks.length) !== index.value);
 
 watch(() => props.chunks, () => {
   index.value = 0;
@@ -111,6 +118,20 @@ function scheduleHide(): void {
   }, HIDE_DELAY_MS);
 }
 
+function onEnter(): void {
+  hovering = true;
+  show();
+}
+
+function onLeave(): void {
+  hovering = false;
+  scheduleHide();
+}
+
+function step(delta: number): void {
+  index.value = stepChunk(index.value, delta, props.chunks.length);
+}
+
 // 초점을 먼저 옮긴다 — focus() 가 동기로 쏘는 focusin 이 wrap 의 show 로 올라가 닫힘을 되돌리지 않게
 function close(): void {
   cancelHide();
@@ -128,7 +149,14 @@ function togglePin(): void {
 }
 
 function onFocusOut(e: FocusEvent): void {
-  if (e.relatedTarget instanceof Node && wrap.value?.contains(e.relatedTarget)) return;
+  const to = e.relatedTarget;
+  if (to instanceof Node && wrap.value?.contains(to)) return;
+  // 초점이 다른 요소로 옮겨 가지 않고 그냥 빠진 것(창 전환, 초점을 받지 않는 곳 클릭)은 떠난 게 아니다 —
+  // 고정은 바깥 클릭·Esc 가 풀고, 포인터가 안에 있으면 닫는 일은 mouseleave 에 맡긴다
+  if (!to) {
+    if (!hovering) scheduleHide();
+    return;
+  }
   pinned.value = false;
   document.removeEventListener("click", onDocumentClick);
   scheduleHide();
@@ -136,6 +164,9 @@ function onFocusOut(e: FocusEvent): void {
 
 function onDocumentClick(e: MouseEvent): void {
   if (e.target instanceof Node && wrap.value?.contains(e.target)) return;
+  // 대목을 끌어 선택하다 팝오버 밖에서 놓으면 click 이 바깥 공통 조상에 떨어진다 — 복사하려던 선택을 지키게 둔다
+  const sel = window.getSelection();
+  if (sel && !sel.isCollapsed && sel.anchorNode && wrap.value?.contains(sel.anchorNode)) return;
   pinned.value = false;
   open.value = false;
   document.removeEventListener("click", onDocumentClick);
