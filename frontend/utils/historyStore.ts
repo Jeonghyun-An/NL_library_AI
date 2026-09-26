@@ -357,15 +357,46 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
 
 type Sent<T> = { ok: true; value: T } | { ok: false };
 
+const noop = () => {};
+
 export function createHybridStore(server: HistoryStore, local: LocalHistoryStore): HybridHistoryStore {
   let flushing: Promise<void> | null = null;
+
+  // 이 탭의 동작을 부른 순서대로 끝낸다. 편지함만 보고 순서를 맞추면 아직 응답을 기다리는 직접 요청을 앞질러,
+  // 저장이 끝나기 전에 누른 삭제가 서버에 먼저 닿고(404 → 성공) 늦게 끝난 저장이 기록을 되살린다.
+  // 변경은 앞의 모든 동작이 끝난 뒤 혼자 돌고, 읽기는 앞의 변경만 기다리며 읽기끼리는 나란히 돈다
+  let writesDone: Promise<void> = Promise.resolve();
+  let allDone: Promise<void> = Promise.resolve();
+
+  function exclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const run = allDone.then(fn);
+    writesDone = allDone = run.then(noop, noop);
+    return run;
+  }
+
+  function shared<T>(fn: () => Promise<T>): Promise<T> {
+    const run = writesDone.then(fn);
+    allDone = Promise.all([allDone, run.then(noop, noop)]).then(noop);
+    return run;
+  }
+
+  // 축약 결과가 서버 상한(200KB)을 넘으면 413 이다. 4xx 라 편지함도 다시 보내지 않으니 그대로 두면
+  // 기록이 통째로 사라진다 — 결과 없이라도 남긴다(복원은 q 재검색으로 물러선다). 바로 보낼 때와 편지함이 같이 쓴다
+  async function putToServer(entry: HistoryEntry): Promise<HistoryEntry> {
+    try {
+      return await server.put(entry);
+    } catch (e) {
+      if (errorStatus(e) !== 413 || entry.kind === "research" || !entry.snapshot) throw e;
+      return server.put(withoutField(entry, "snapshot"));
+    }
+  }
 
   // 편지를 보낼 때는 캐시를 건드리지 않는다 — 캐시는 줄 세울 때 이미 뒤따른 수정·삭제까지 반영하고 있어서,
   // 서버 응답으로 덮으면 그 뒤 편지가 아직 못 간 동안 사용자의 최근 변경이 사라진다. 정합은 다음 list·get 이 맞춘다
   async function apply(op: OutboxOp): Promise<void> {
     switch (op.op) {
       case "put":
-        await server.put(op.entry);
+        await putToServer(op.entry);
         return;
       case "patch":
         await server.patch(op.id, op.partial);
@@ -413,53 +444,59 @@ export function createHybridStore(server: HistoryStore, local: LocalHistoryStore
   }
 
   return {
-    flush,
-    async list(kind, opts) {
-      const res = await direct(() => server.list(kind, opts));
-      if (!res.ok) return local.list(kind, opts);
-      if (!opts?.before) local.replaceKind(kind, res.value.items);
-      return res.value;
-    },
-    async get(id) {
-      const res = await direct(() => server.get(id));
-      if (!res.ok) return local.get(id);
-      if (res.value) {
-        await local.put(res.value);
+    flush: () => exclusive(flush),
+    list: (kind, opts) =>
+      shared(async () => {
+        const res = await direct(() => server.list(kind, opts));
+        if (!res.ok) return local.list(kind, opts);
+        if (!opts?.before) local.replaceKind(kind, res.value.items);
         return res.value;
-      }
-      await local.remove(id);
-      return null;
-    },
-    async put(entry) {
-      const res = await direct(() => server.put(entry));
-      if (res.ok) {
-        await local.put(res.value);
-        return res.value;
-      }
-      await local.put(entry);
-      local.enqueue({ op: "put", entry });
-      return entry;
-    },
-    async patch(id, partial) {
-      const res = await direct(() => server.patch(id, partial));
-      if (res.ok) {
-        if (res.value) await local.put(res.value);
-        else await local.remove(id);
-        return res.value;
-      }
-      const merged = await local.patch(id, partial);
-      local.enqueue({ op: "patch", id, partial });
-      return merged;
-    },
-    async remove(id) {
-      await local.remove(id);
-      const res = await direct(() => server.remove(id));
-      if (!res.ok) local.enqueue({ op: "remove", id });
-    },
-    async clear(kind) {
-      await local.clear(kind);
-      const res = await direct(() => server.clear(kind));
-      if (!res.ok) local.enqueue({ op: "clear", kind });
-    },
+      }),
+    get: (id) =>
+      shared(async () => {
+        const res = await direct(() => server.get(id));
+        if (!res.ok) return local.get(id);
+        if (res.value) {
+          await local.put(res.value);
+          return res.value;
+        }
+        await local.remove(id);
+        return null;
+      }),
+    put: (entry) =>
+      exclusive(async () => {
+        const res = await direct(() => putToServer(entry));
+        if (res.ok) {
+          await local.put(res.value);
+          return res.value;
+        }
+        await local.put(entry);
+        local.enqueue({ op: "put", entry });
+        return entry;
+      }),
+    patch: (id, partial) =>
+      exclusive(async () => {
+        const res = await direct(() => server.patch(id, partial));
+        if (res.ok) {
+          if (res.value) await local.put(res.value);
+          else await local.remove(id);
+          return res.value;
+        }
+        const merged = await local.patch(id, partial);
+        local.enqueue({ op: "patch", id, partial });
+        return merged;
+      }),
+    remove: (id) =>
+      exclusive(async () => {
+        await local.remove(id);
+        const res = await direct(() => server.remove(id));
+        if (!res.ok) local.enqueue({ op: "remove", id });
+      }),
+    clear: (kind) =>
+      exclusive(async () => {
+        await local.clear(kind);
+        const res = await direct(() => server.clear(kind));
+        if (!res.ok) local.enqueue({ op: "clear", kind });
+      }),
   };
 }

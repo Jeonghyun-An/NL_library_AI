@@ -413,4 +413,134 @@ describe("createHybridStore", () => {
     expect(local.readOutbox().map((o) => o.op)).toEqual(["remove"]);
     expect(await local.get(ID1)).toBeNull();
   });
+
+  it("바로 보낸 put 이 413 이면 결과 없이 다시 보내 서버·캐시에 남긴다", async () => {
+    const { server, local, store } = setup();
+    server.put.mockRejectedValueOnce(httpError(413));
+    const saved = await store.put(bookEntry(ID1, { snapshot: snap }));
+    expect(saved).toMatchObject({ id: ID1 });
+    expect(saved).not.toHaveProperty("snapshot");
+    expect(server.rows.get(ID1)).not.toHaveProperty("snapshot");
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("줄 선 put 이 보낼 때 413 이면 결과 없이라도 서버·캐시에 남는다", async () => {
+    const { server, local, store } = setup();
+    server.fail(networkError());
+    await store.put(bookEntry(ID1, { snapshot: snap }));
+    server.recover();
+    server.put.mockRejectedValueOnce(httpError(413));
+    const { items } = await store.list("book");
+    expect(items.map((e) => e.id)).toEqual([ID1]);
+    expect(server.rows.get(ID1)).not.toHaveProperty("snapshot");
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("결과가 없는 기록의 413 은 다시 보내지 않고 그대로 던진다", async () => {
+    const { server, store } = setup();
+    server.put.mockRejectedValueOnce(httpError(413));
+    await expect(store.put(bookEntry(ID1))).rejects.toMatchObject({ status: 413 });
+    expect(server.put).toHaveBeenCalledTimes(1);
+  });
+
+  /** 열어 줄 때까지 요청을 붙잡아 두는 문 — 느린 네트워크를 흉내 낸다 */
+  function gate() {
+    let open!: () => void;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    return { opened, open };
+  }
+
+  // 붙잡히지 않은 비동기 작업을 끝까지 흘려보낸다
+  const idle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  function slowPut(server: ReturnType<typeof fakeServer>) {
+    const slow = gate();
+    server.put.mockImplementationOnce(async (entry) => {
+      await slow.opened;
+      server.rows.set(entry.id, entry);
+      return entry;
+    });
+    return slow;
+  }
+
+  it("put 이 응답을 기다리는 동안 누른 remove 는 put 뒤에 가서 기록이 되살아나지 않는다", async () => {
+    const { server, local, store } = setup();
+    const slow = slowPut(server);
+    const putting = store.put(bookEntry(ID1));
+    const removing = store.remove(ID1);
+    await idle();
+    expect(server.remove).not.toHaveBeenCalled();
+    slow.open();
+    await Promise.all([putting, removing]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(await local.get(ID1)).toBeNull();
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("기다리던 put 이 네트워크 오류로 줄 서면 뒤따른 remove 도 그 뒤에 줄 선다", async () => {
+    const { server, local, store } = setup();
+    const slow = gate();
+    server.put.mockImplementationOnce(async () => {
+      await slow.opened;
+      throw networkError();
+    });
+    const putting = store.put(bookEntry(ID1));
+    const removing = store.remove(ID1);
+    await idle();
+    server.fail(networkError());
+    slow.open();
+    await Promise.all([putting, removing]);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "remove"]);
+    expect(await local.get(ID1)).toBeNull();
+    server.recover();
+    await store.flush();
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("put 이 응답을 기다리는 동안 누른 patch 는 put 뒤에 가서 수정이 사라지지 않는다", async () => {
+    const { server, local, store } = setup();
+    const slow = slowPut(server);
+    const putting = store.put(bookEntry(ID1));
+    const patching = store.patch(ID1, { title: "새 제목" });
+    await idle();
+    expect(server.patch).not.toHaveBeenCalled();
+    slow.open();
+    await putting;
+    expect(await patching).toMatchObject({ id: ID1, title: "새 제목" });
+    expect(server.rows.get(ID1)).toMatchObject({ title: "새 제목" });
+    expect(await local.get(ID1)).toMatchObject({ title: "새 제목" });
+  });
+
+  it("put 이 응답을 기다리는 동안 부른 get 은 저장이 끝난 뒤 답한다", async () => {
+    const { server, local, store } = setup();
+    const slow = slowPut(server);
+    const putting = store.put(bookEntry(ID1));
+    const getting = store.get(ID1);
+    await idle();
+    expect(server.get).not.toHaveBeenCalled();
+    slow.open();
+    await putting;
+    expect(await getting).toMatchObject({ id: ID1 });
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+  });
+
+  it("읽기끼리는 서로 기다리지 않는다", async () => {
+    const { server, store } = setup();
+    const slow = gate();
+    server.list.mockImplementationOnce(async () => {
+      await slow.opened;
+      return { items: [], nextCursor: null };
+    });
+    const books = store.list("book");
+    const papers = store.list("paper");
+    await idle();
+    expect(server.list).toHaveBeenCalledTimes(2);
+    slow.open();
+    await Promise.all([books, papers]);
+  });
 });
