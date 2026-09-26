@@ -1,0 +1,712 @@
+/* frontend/assets/css/research.css */
+/* 딥리서치 화면 전용. 기획자 디자인이 나오면 이 파일만 갈아입힌다 —
+   style_skovix.css 끝에 덧붙이면 화면 고도화 작업과 거의 확실히 충돌한다.
+   색·모서리·그림자는 --skx-* 토큰만 읽는다. 1rem = 20px(style_skovix.css). */
+
+/* ── 페이지 골격 ─────────────────────────────────────────── */
+.rs-page {
+  --rs-side-width: 17rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+  color: var(--skx-ink);
+}
+.rs-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.rs-col-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+/* A: 본문 + 진행 패널 2단 */
+.rs-body--A {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--rs-side-width);
+  align-items: start;
+}
+.rs-body--A .rs-col-side {
+  position: sticky;
+  top: 1.2rem;
+  max-height: calc(100vh - 2.4rem);
+  overflow-y: auto;
+}
+/* B: 계획 → 탐색 과정 → 보고서가 한 줄로 쌓인다. 본문 묶음을 풀어 진행 패널을 가운데 끼운다 */
+.rs-body--B .rs-col-main {
+  display: contents;
+}
+.rs-body--B .rs-block--plan {
+  order: 1;
+}
+.rs-body--B .rs-col-side {
+  order: 2;
+}
+.rs-body--B .rs-block--report {
+  order: 3;
+}
+
+/* ── 공통 부품 ───────────────────────────────────────────── */
+.rs-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem;
+  background: var(--skx-white);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.rs-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.rs-card__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.rs-card--wait {
+  flex-direction: row;
+  align-items: center;
+  font-size: 0.75rem;
+}
+.rs-card--error {
+  border: 1px solid var(--skx-line);
+}
+.rs-state {
+  align-items: flex-start;
+}
+.rs-state__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.rs-muted {
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--skx-gray-1);
+  line-height: 1.5;
+}
+.rs-alert {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-md);
+}
+.rs-spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.rs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-white);
+  white-space: nowrap;
+  text-decoration: none;
+  background: var(--skx-primary);
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-btn--ghost {
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border-color: var(--skx-border-c1);
+}
+.rs-btn--small {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.6rem;
+}
+.rs-icon-btn {
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--skx-gray-1);
+  background: none;
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.rs-badge {
+  flex-shrink: 0;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-badge--running {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.rs-badge--done {
+  color: var(--skx-ink-2);
+  border-color: var(--skx-border-c1);
+}
+.rs-badge--failed {
+  color: var(--skx-ink);
+  border-color: var(--skx-ink);
+}
+
+/* ── 머리 ────────────────────────────────────────────────── */
+.rs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 1.2rem;
+  background: var(--skx-white);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.rs-head__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.rs-head__kicker {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-head__question {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+.rs-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.rs-status {
+  align-self: flex-start;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-status--completed {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.rs-status--failed,
+.rs-status--canceled {
+  color: var(--skx-gray-1);
+  border-color: var(--skx-line);
+}
+
+/* ── 계획 카드 ───────────────────────────────────────────── */
+.rs-plan__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-plan__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+.rs-plan__no {
+  flex-shrink: 0;
+  width: 1.2rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  text-align: center;
+}
+.rs-plan__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: var(--skx-ink);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+}
+.rs-plan__input:focus {
+  outline: none;
+  border-color: var(--skx-primary);
+}
+.rs-plan__text {
+  flex: 1;
+  min-width: 0;
+}
+.rs-plan__add {
+  align-self: flex-start;
+}
+.rs-plan__problem {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
+/* ── 진행 패널 ───────────────────────────────────────────── */
+.rs-counters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+}
+.rs-counter {
+  padding: 0.5rem;
+  text-align: center;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.rs-counter dt {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+}
+.rs-counter dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-highlight {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-md);
+  animation: rs-pulse 1.6s ease-out 2;
+}
+.rs-highlight__kicker {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-highlight__main {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-highlight__note {
+  margin: 0.2rem 0 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+@keyframes rs-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--skx-border-c1);
+  }
+  100% {
+    box-shadow: 0 0 0 0.6rem transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-highlight {
+    animation: none;
+  }
+}
+.rs-progress__synth {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.rs-timeline,
+.rs-rounds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.rs-subq__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+}
+.rs-subq__no {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-subq__title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+}
+.rs-subq.is-pending .rs-subq__title {
+  color: var(--skx-gray-2);
+}
+.rs-subq__stopped {
+  margin: 0.3rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0 0.8rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--skx-border-c1);
+}
+.rs-round {
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+.rs-round p {
+  margin: 0;
+}
+.rs-round__line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.rs-round__no {
+  font-weight: 700;
+}
+.rs-round__stat,
+.rs-round__verdict {
+  color: var(--skx-gray-1);
+}
+.rs-round__next {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-round.is-recheck {
+  padding-left: 0.3rem;
+  border-left: 2px solid var(--skx-border-c2);
+}
+
+/* ── 보고서 ──────────────────────────────────────────────── */
+.rs-report {
+  gap: 1.2rem;
+}
+.rs-report__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.rs-report__question {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.rs-report__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.rs-report__intro {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.7rem;
+  background: var(--skx-white);
+  border-left: 3px solid var(--skx-primary);
+}
+.rs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rs-section__heading {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.rs-section__intro,
+.rs-future li,
+.rs-paper {
+  font-size: 0.7rem;
+  line-height: 1.7;
+}
+.rs-section__intro {
+  margin: 0;
+}
+.rs-section__sub {
+  margin: 0.3rem 0 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+}
+.rs-papers,
+.rs-future {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding-left: 1rem;
+}
+.rs-paper__who {
+  font-weight: 700;
+}
+.rs-paper__title {
+  margin-left: 0.3rem;
+  color: var(--skx-gray-1);
+}
+.rs-paper__title::before {
+  content: "「";
+}
+.rs-paper__title::after {
+  content: "」";
+}
+.rs-paper__summary::before {
+  content: ": ";
+}
+.rs-limits {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-md);
+}
+.rs-limits__title {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-limits ul {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.65rem;
+  line-height: 1.7;
+}
+
+/* ── 인용칩 ──────────────────────────────────────────────── */
+.rs-cite {
+  position: relative;
+  display: inline-block;
+  margin: 0 0.1rem;
+}
+.rs-cite__chip {
+  padding: 0 0.4rem;
+  font-family: inherit;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.rs-cite__chip:hover,
+.rs-cite__chip:focus-visible,
+.rs-cite__chip[aria-expanded="true"] {
+  border-color: var(--skx-primary);
+  outline: none;
+}
+.rs-cite__pop {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: min(24rem, 80vw);
+  padding: 0.8rem;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+.rs-cite__title {
+  font-size: 0.65rem;
+}
+.rs-cite__meta {
+  color: var(--skx-gray-1);
+}
+.rs-cite__quote {
+  display: block;
+  max-height: 8rem;
+  padding-left: 0.5rem;
+  overflow-y: auto;
+  border-left: 2px solid var(--skx-border-c1);
+}
+.rs-cite__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--skx-gray-1);
+}
+.rs-cite__pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.rs-cite__pager button {
+  padding: 0 0.3rem;
+  background: none;
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-cite__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ── 입력창 + 메뉴 ───────────────────────────────────────── */
+.rs-plus {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 결과 검색바는 위치 기준이 없어 오류 문구가 엉뚱한 곳에 뜬다 */
+.skx-rsearch:has(> .rs-plus) {
+  position: relative;
+}
+.rs-plus__anchor {
+  position: relative;
+}
+.rs-plus__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.rs-plus__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-plus__menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 40;
+  min-width: 16rem;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+.rs-plus__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-plus__item:hover,
+.rs-plus__item:focus-visible,
+.rs-plus__item.is-selected {
+  background: var(--skx-border-c1);
+  outline: none;
+}
+.rs-plus__icon {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+}
+.rs-plus__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.rs-plus__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-plus__desc {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  line-height: 1.4;
+}
+.rs-plus__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-white);
+  background: var(--skx-primary);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-plus__chip-x {
+  padding: 0 0.2rem;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--skx-white);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.rs-plus__error {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
