@@ -46,31 +46,19 @@
                 <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
                 <p>연구 계획을 세우는 중입니다</p>
               </div>
-              <div v-else-if="phase === 'awaiting'" class="rs-card">
-                <p class="rs-card__title">연구 계획 확인</p>
-                <ol class="rs-plan__list">
-                  <li v-for="(q, i) in view.plan" :key="i" class="rs-plan__item">
-                    <span class="rs-plan__no">{{ i + 1 }}</span>
-                    <span class="rs-plan__text">{{ q }}</span>
-                  </li>
-                </ol>
-                <div class="rs-card__actions">
-                  <button type="button" class="rs-btn" :disabled="busy" @click="approve()">승인하고 시작</button>
-                  <button type="button" class="rs-btn rs-btn--ghost" :disabled="busy" @click="onCancel">취소</button>
-                </div>
-              </div>
+              <PlanCard
+                v-else-if="phase === 'awaiting'"
+                :plan="view.plan"
+                :max="maxSubquestions"
+                editable
+                :busy="busy"
+                @approve="approve"
+                @cancel="onCancel"
+              />
               <div v-else-if="phase === 'queued'" class="rs-card rs-card--wait">
                 <p>앞선 연구가 끝나면 시작합니다</p>
               </div>
-              <div v-else-if="phase === 'exploring'" class="rs-card">
-                <p class="rs-card__title">연구 계획</p>
-                <ol class="rs-plan__list">
-                  <li v-for="(q, i) in view.plan" :key="i" class="rs-plan__item">
-                    <span class="rs-plan__no">{{ i + 1 }}</span>
-                    <span class="rs-plan__text">{{ q }}</span>
-                  </li>
-                </ol>
-              </div>
+              <PlanCard v-else-if="phase === 'exploring'" :plan="view.plan" :max="maxSubquestions" :subqs="view.subqs" />
               <div v-else-if="phase === 'synthesizing'" class="rs-card rs-card--wait">
                 <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
                 <p>{{ synthLine }}</p>
@@ -119,6 +107,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import PlanCard from "~/components/research/PlanCard.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { safeLocalStorage } from "~/utils/browserId";
