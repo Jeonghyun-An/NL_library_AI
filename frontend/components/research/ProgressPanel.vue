@@ -41,15 +41,15 @@
           v-for="sq in view.subqs"
           :key="sq.idx"
           class="rs-subq"
-          :class="[`is-${sq.status}`, { 'is-stopped': stoppedIdx === sq.idx }]"
+          :class="[`is-${sq.status}`, { 'is-stopped': stoppedSubq?.idx === sq.idx }]"
         >
           <div class="rs-subq__head">
             <span class="rs-subq__no">{{ sq.idx + 1 }}</span>
             <span class="rs-subq__title">{{ sq.title }}</span>
             <span class="rs-badge" :class="`rs-badge--${sq.status}`">{{ subqStatusLabel(sq) }}</span>
           </div>
-          <p v-if="stoppedIdx === sq.idx" class="rs-subq__stopped">
-            {{ sq.status === "pending" ? "이 하위질문을 시작하기 전에 멈췄습니다" : "여기서 멈췄습니다" }}<span v-if="sq.error"> — {{ sq.error }}</span>
+          <p v-if="stoppedSubq && stoppedSubq.idx === sq.idx" class="rs-subq__stopped">
+            {{ stoppedSubq.started ? "여기서 멈췄습니다" : "이 하위질문을 시작하기 전에 멈췄습니다" }}<span v-if="stoppedSubq.error"> — {{ stoppedSubq.error }}</span>
           </p>
           <ol v-if="sq.rounds.length" class="rs-rounds">
             <li v-for="r in sq.rounds" :key="r.round" class="rs-round" :class="{ 'is-recheck': !!r.nextQuery }">
@@ -89,7 +89,7 @@ const TITLES: Partial<Record<ResearchPhase, string>> = {
 
 const title = computed(() => TITLES[props.phase] ?? "진행");
 const stop = computed(() => stopPoint(props.view));
-const stoppedIdx = computed(() => (stop.value?.kind === "subq" ? stop.value.idx : null));
+const stoppedSubq = computed(() => (stop.value?.kind === "subq" ? stop.value : null));
 const synthLine = computed(() => {
   const p = synthProgress(props.view);
   return p.total ? `보고서 작성 중 ${p.current}/${p.total}` : "보고서 작성 중";

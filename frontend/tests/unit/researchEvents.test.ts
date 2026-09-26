@@ -514,6 +514,9 @@ describe("stopPoint — 멈춘 지점", () => {
   });
   const PARTIAL = searchRow(0, "failed", { error: "검색 오류" });
   const at = (over: Partial<ResearchJob>) => stopPoint(initialResearchView(job({ plan: PLAN3, ...over })));
+  // 그 하위질문을 돌다 멈춤 / 그 하위질문을 시작하기 전에 멈춤
+  const inSubq = (idx: number, error: string | null = null) => ({ kind: "subq", idx, started: true, error });
+  const beforeSubq = (idx: number) => ({ kind: "subq", idx, started: false, error: null });
 
   it("앞 하위질문이 부분 실패하고 종합에서 실패한 잡은 보고서 작성 단계에서 멈췄다", () => {
     expect(at({
@@ -540,11 +543,11 @@ describe("stopPoint — 멈춘 지점", () => {
     expect(at({
       status: "canceled", stage: "planned",
       steps: [planRow, PARTIAL, searchRow(1, "running")],
-    })).toEqual({ kind: "subq", idx: 1 });
+    })).toEqual(inSubq(1));
   });
 
   it("탐색 중 취소 이벤트를 받은 직후에도 돌던 하위질문을 짚는다", () => {
-    expect(stopPoint(run([SEARCH_STARTED, { kind: "canceled", status: "canceled" }]))).toEqual({ kind: "subq", idx: 0 });
+    expect(stopPoint(run([SEARCH_STARTED, { kind: "canceled", status: "canceled" }]))).toEqual(inSubq(0));
   });
 
   it("하위질문 경계에서 취소된 뒤 다시 연 잡은 시작하지 못한 첫 하위질문을 짚는다", () => {
@@ -552,28 +555,28 @@ describe("stopPoint — 멈춘 지점", () => {
     expect(at({
       status: "canceled", stage: "planned",
       steps: [planRow, PARTIAL, searchRow(1, "done")],
-    })).toEqual({ kind: "subq", idx: 2 });
+    })).toEqual(beforeSubq(2));
   });
 
   it("취소 뒤 끝까지 돌고 오류로 닫힌 하위질문이 있어도 취소는 그 다음 경계에서 멈춘 것이다", () => {
     expect(at({
       status: "canceled", stage: "planned",
       steps: [planRow, searchRow(0, "done"), searchRow(1, "failed", { error: "검색 오류" })],
-    })).toEqual({ kind: "subq", idx: 2 });
+    })).toEqual(beforeSubq(2));
   });
 
   it("시간 상한·회수기가 닫은 하위질문은 거기서 멈춘 것이다", () => {
     expect(at({
       status: "failed", stage: "planned", last_error: "시간 상한 초과 — 워커를 회수했다",
       steps: [planRow, searchRow(0, "done"), searchRow(1, "failed", { error: "시간 상한 초과 — 워커를 회수했다" })],
-    })).toEqual({ kind: "subq", idx: 1 });
+    })).toEqual(inSubq(1, "시간 상한 초과 — 워커를 회수했다"));
   });
 
   it("다음 하위질문을 열다 실패한 잡은 시작하지 못한 하위질문을 짚는다", () => {
     expect(at({
       status: "failed", stage: "planned", last_error: "DB 오류",
       steps: [planRow, searchRow(0, "done")],
-    })).toEqual({ kind: "subq", idx: 1 });
+    })).toEqual(beforeSubq(1));
   });
 
   it("전멸 실패는 마지막 하위질문에서 멈췄다", () => {
@@ -585,7 +588,7 @@ describe("stopPoint — 멈춘 지점", () => {
         searchRow(1, "failed", { error: "검색 오류" }),
         searchRow(2, "failed", { error: "검색 오류" }),
       ],
-    })).toEqual({ kind: "subq", idx: 2 });
+    })).toEqual(inSubq(2, "검색 오류"));
   });
 
   it("탐색을 다 마치고 종합 전에 취소된 잡은 보고서 작성 단계다 — 마지막 하위질문이 부분 실패여도", () => {
@@ -605,6 +608,53 @@ describe("stopPoint — 멈춘 지점", () => {
 
   it("승인 대기·대기열에서 취소된 잡도 탐색을 시작하기 전이다", () => {
     expect(at({ status: "canceled", stage: "planned", started_at: null, steps: [planRow] })).toEqual({ kind: "before" });
+  });
+
+  describe("탐색부터 다시 도는 재시도(stage=planned)", () => {
+    // 재시도는 idx 0 부터 새 seq 로 행을 쌓는다. 이번 시도가 아직 닿지 않은 하위질문에는 이전
+    // 시도의 행(done·failed·그 오류)이 그대로 남는다.
+    const TIMEOUT = "시간 상한 초과 — 워커를 회수했다";
+    const REAPED = "stale — 워커 응답 없음";
+    const rowAt = (seq: number, idx: number, status: ResearchStepRow["status"], result: ResearchStepRow["result"] = {}) =>
+      step({ seq, kind: "search", subq_idx: idx, title: PLAN3[idx]!, status, result });
+    // 1차 시도: 하위질문 0·1 을 마치고 2 에서 시간 상한에 걸려 실패했다
+    const FIRST_TRY = [planRow, searchRow(0, "done"), searchRow(1, "done"), searchRow(2, "failed", { error: TIMEOUT })];
+
+    it("재시도가 하위질문 0 을 마치고 취소되면 하위질문 1 을 시작하기 전이다 — 이전 시도의 done 행에 속지 않는다", () => {
+      expect(at({ status: "canceled", stage: "planned", steps: [...FIRST_TRY, rowAt(4, 0, "done")] }))
+        .toEqual(beforeSubq(1));
+    });
+
+    it("재시도가 하위질문 1 에서 실패하면 거기서 멈췄고, 이전 시도가 아니라 이번 시도의 오류를 붙인다", () => {
+      expect(at({
+        status: "failed", stage: "planned", last_error: REAPED,
+        steps: [...FIRST_TRY, rowAt(4, 0, "done"), rowAt(5, 1, "failed", { error: REAPED })],
+      })).toEqual(inSubq(1, REAPED));
+    });
+
+    it("재시도 후 대기열에서 취소 — 앞 시도의 행으로 판정하고, 닿지 않은 하위질문의 옛 오류는 붙이지 않는다", () => {
+      // 2차 시도가 하위질문 1 에서 실패한 뒤 다시 재시도하고 대기열에서 취소했다. 단계 행에 시각이
+      // 없어 "2차 시도가 하위질문 1 을 돌다 취소됨"과 모양이 같다 — 둘 다 하위질문 2 는 시작하지 않았다.
+      expect(at({
+        status: "canceled", stage: "planned",
+        steps: [...FIRST_TRY, rowAt(4, 0, "done"), rowAt(5, 1, "failed", { error: REAPED })],
+      })).toEqual(beforeSubq(2));
+    });
+
+    it("재시도를 라이브로 보다 취소 이벤트를 받아도 다시 열었을 때와 같은 곳을 짚는다", () => {
+      const failed = initialResearchView(job({
+        plan: PLAN3, status: "failed", stage: "planned", last_error: TIMEOUT, steps: FIRST_TRY,
+      }));
+      const opened = { kind: "step", seq: 4, step_kind: "search", subq_idx: 0, title: PLAN3[0]!, status: "running" } as const;
+      const live = run([
+        { kind: "status", status: "queued", stage: "planned" },
+        { kind: "status", status: "running", stage: "planned" },
+        opened,
+        { ...opened, status: "done", result: {} },
+        { kind: "canceled", status: "canceled" },
+      ], failed);
+      expect(stopPoint(live)).toEqual(beforeSubq(1));
+    });
   });
 
   it("멈추지 않은 잡은 멈춘 지점이 없다", () => {

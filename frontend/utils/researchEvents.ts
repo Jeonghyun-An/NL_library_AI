@@ -38,8 +38,14 @@ export type ResearchPhase =
   | "canceled";
 
 // 실패·취소한 잡이 멈춘 곳. before = 탐색을 시작하기 전(계획 단계·승인 대기·대기열),
-// subq = 그 하위질문을 돌다가 또는 시작하기 전에, synth = 탐색을 마친 뒤(보고서 작성 단계)
-export type StopPoint = { kind: "before" } | { kind: "subq"; idx: number } | { kind: "synth" };
+// subq = 그 하위질문을 돌다가(started) 또는 시작하기 전에(!started) — error 는 이번 시도에서
+// 그 하위질문이 남긴 오류다. synth = 탐색을 마친 뒤(보고서 작성 단계)
+export type StopPoint =
+  | { kind: "before" }
+  | { kind: "subq"; idx: number; started: boolean; error: string | null }
+  | { kind: "synth" };
+
+type OpenedSubq = SubqView & { seq: number };
 
 export const TERMINAL_STATUSES: readonly ResearchStatus[] = ["completed", "failed", "canceled"];
 
@@ -126,19 +132,32 @@ export function synthProgress(view: ResearchView): { current: number; total: num
 // 워커는 하위질문을 idx 순서로 돌고, 하나가 오류로 끝나도 다음 하위질문과 종합으로 넘어간다
 // (부분 실패는 전체 실패가 아니다). 그래서 failed 하위질문을 곧 멈춘 곳으로 보면, 종합에서
 // 실패·취소한 잡이 앞선 부분 실패를 짚어 본문의 실패 사유와 어긋난다 — 뒤 단계부터 본다.
+// 탐색부터 다시 도는 재시도는 idx 0 부터 새 행을 쌓고, 이번 시도가 아직 닿지 않은 하위질문에는
+// 이전 시도의 행(done·failed 와 그 오류)이 남는다 — 이번 시도에서 연 행만 보고, 순서도 seq 로 잡는다.
 export function stopPoint(view: ResearchView): StopPoint | null {
   if (view.status !== "failed" && view.status !== "canceled") return null;
   if (view.synth.status !== null || view.stage === "explored") return { kind: "synth" };
-  const running = view.subqs.find((s) => s.status === "running");
-  if (running) return { kind: "subq", idx: running.idx };
-  const last = view.subqs.filter((s) => s.status !== "pending").at(-1);
+  const since = attemptStart(view.steps);
+  // 행 없이 라이브 search 이벤트로만 도는 하위질문(seq 없음)도 이번 시도의 것이다
+  const running = view.subqs.find((s) => s.status === "running" && (s.seq === null || s.seq >= since));
+  if (running) return { kind: "subq", idx: running.idx, started: true, error: null };
+  const opened = view.subqs.filter((s): s is OpenedSubq => s.seq !== null && s.seq >= since);
+  const last = opened.reduce<OpenedSubq | undefined>((a, s) => (a && a.seq > s.seq ? a : s), undefined);
   if (!last) return { kind: "before" };
   // 실패한 잡의 마지막으로 돈 하위질문이 오류면 거기서 멈췄다 — 시간 상한·회수기·예기치 못한
   // 예외는 도는 단계를 failed 로 닫고, 전멸도 마지막 하위질문 뒤에 끝난다. 취소는 워커가
   // 하위질문 경계에서만 확인해(돌던 하위질문은 끝까지 돈다) 그 오류와 무관하다.
-  if (view.status === "failed" && last.status === "failed") return { kind: "subq", idx: last.idx };
-  const next = view.subqs.find((s) => s.idx > last.idx && s.status === "pending");
-  return next ? { kind: "subq", idx: next.idx } : { kind: "synth" };
+  if (view.status === "failed" && last.status === "failed") {
+    return { kind: "subq", idx: last.idx, started: true, error: last.error };
+  }
+  // 뒤 하위질문의 상태는 보지 않는다 — 이전 시도의 행이면 done·failed 로 남아 있다
+  const next = view.subqs.find((s) => s.idx > last.idx);
+  return next ? { kind: "subq", idx: next.idx, started: false, error: null } : { kind: "synth" };
+}
+
+// 탐색은 시도마다 idx 0 부터 다시 돈다 — 하위질문 0 의 search 행 중 가장 늦은 것이 이번 시도의 시작이다
+function attemptStart(steps: ResearchStepRow[]): number {
+  return latestBySubq(steps, "search").get(0)?.seq ?? Number.NEGATIVE_INFINITY;
 }
 
 export function initialResearchView(job: ResearchJob): ResearchView {
