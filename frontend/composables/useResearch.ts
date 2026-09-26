@@ -72,14 +72,25 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   let attempts = 0;
   // 주소의 잡이 바뀌거나 페이지를 떠난 뒤 도착한 이전 요청의 응답을 버린다
   let generation = 0;
+  // 백그라운드 재동기화(refresh)가 actionError 에 넣은 문구. 재동기화가 성공하면 이것만 지운다 —
+  // 사용자는 아무것도 하지 않았으니, 스트림이 복구된 뒤에도 오류가 남아 있으면 안 된다.
+  // 사용자 동작의 오류는 그 동작을 다시 하거나 새로 읽을 때까지 남긴다.
+  let syncError = "";
+
+  function setActionError(message: string): void {
+    actionError.value = message;
+    syncError = "";
+  }
 
   async function load(): Promise<void> {
     const gen = ++generation;
     disconnect();
+    // 이전 잡의 화면을 남기면 새 잡을 읽는 동안 그 화면의 버튼이 새 잡 id 로 요청을 보낸다
+    view.value = null;
     loading.value = true;
     notFound.value = false;
     loadError.value = "";
-    actionError.value = "";
+    setActionError("");
     try {
       const job = await research.get(toValue(jobId));
       if (gen !== generation) return;
@@ -96,17 +107,24 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     }
   }
 
-  async function refresh(): Promise<void> {
+  // 서버 상태로 맞췄으면 true
+  async function refresh(): Promise<boolean> {
     const gen = generation;
     try {
       const job = await research.get(toValue(jobId));
-      if (gen !== generation) return;
+      if (gen !== generation) return false;
       view.value = refreshView(view.value, job);
+      if (syncError && actionError.value === syncError) actionError.value = "";
+      syncError = "";
       if (!isTerminalStatus(view.value.status)) connect();
+      return true;
     } catch (e) {
-      if (gen !== generation) return;
-      actionError.value = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
+      if (gen !== generation) return false;
+      const message = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
+      actionError.value = message;
+      syncError = message;
       scheduleReconnect();
+      return false;
     }
   }
 
@@ -172,19 +190,29 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
 
   async function act<T>(run: () => Promise<T>, onOk: (res: T) => void, fallback: string): Promise<boolean> {
     if (busy.value || !view.value) return false;
+    // 응답을 기다리는 사이 페이지를 떠났거나 주소의 잡이 바뀌었으면 그 응답으로 화면을 건드리지
+    // 않는다 — 떠난 뒤의 onOk·refresh 가 connect() 를 부르면 닫을 주체가 없는 EventSource 가
+    // 잡이 끝날 때까지 남고, 잡이 바뀐 뒤면 이전 잡의 계획·상태가 새 잡 화면에 섞인다.
+    const gen = generation;
     busy.value = true;
-    actionError.value = "";
+    setActionError("");
     try {
-      onOk(await run());
+      const res = await run();
+      // 서버에서는 이미 바뀌었다 — 사이드바 배지는 이 화면이 남아 있든 말든 맞춘다
       void history.refresh("research");
+      if (gen !== generation) return false;
+      onOk(res);
       return true;
     } catch (e) {
+      if (gen !== generation) return false;
       if (httpStatus(e) === 409) {
-        // 이미 진행·종료된 잡 — 사유를 보여 주기보다 화면을 서버 상태로 맞추는 게 답이다
-        await refresh();
-        actionError.value = "그 사이 상태가 바뀌어 최신 상태로 맞췄습니다";
+        // 이미 진행·종료된 잡 — 사유를 보여 주기보다 화면을 서버 상태로 맞추는 게 답이다.
+        // 다시 읽기마저 실패하면 refresh 가 넣은 문구를 둔다(맞추지 못했으니).
+        const synced = await refresh();
+        if (gen !== generation) return false;
+        if (synced) setActionError("그 사이 상태가 바뀌어 최신 상태로 맞췄습니다");
       } else {
-        actionError.value = researchErrorMessage(e, fallback);
+        setActionError(researchErrorMessage(e, fallback));
       }
       return false;
     } finally {
