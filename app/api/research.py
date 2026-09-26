@@ -336,6 +336,30 @@ def _sse(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
+async def _snapshot(db: AsyncSession, job: ResearchJob) -> dict:
+    """재접속 복원용 뼈대. 연결 직후와 하트비트가 어긋남을 본 뒤가 이 한 곳에서 만든다 —
+    모양이 갈리면 화면이 같은 잡을 두 경로에서 다르게 그린다."""
+    snapshot = {
+        "kind": "snapshot", "steps": await _steps(db, job.id),
+        "job": {"status": job.status, "stage": job.stage, "plan": job.plan},
+    }
+    return snapshot
+
+
+def _plan_known(snapshot: dict) -> bool:
+    """이 스냅샷만으로 화면이 계획을 그릴 수 있는가. 화면은 job.plan 을, 없으면 plan
+    단계 result 의 원안을 쓴다."""
+    return bool(snapshot["job"]["plan"]) or any(
+        s["kind"] == "plan" and (s["result"] or {}).get("subquestions")
+        for s in snapshot["steps"]
+    )
+
+
+def _carries_plan(event: dict) -> bool:
+    return (event.get("kind") == "step" and event.get("step_kind") == "plan"
+            and bool((event.get("result") or {}).get("subquestions")))
+
+
 @router.get("/{job_id}/stream")
 async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     jid = _job_uuid(job_id)
@@ -343,10 +367,7 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
 
     # 제너레이터는 요청 세션이 닫힌 뒤에 돈다 — ORM 객체를 들고 가지 않고
     # 필요한 값만 미리 꺼내 둔다.
-    snapshot = {
-        "kind": "snapshot", "steps": await _steps(db, job.id),
-        "job": {"status": job.status, "stage": job.stage, "plan": job.plan},
-    }
+    snapshot = await _snapshot(db, job)
     job_status, job_stage, job_error = job.status, job.stage, job.last_error
 
     async def _gen() -> AsyncIterator[str]:
@@ -356,27 +377,44 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
             # 끝난 잡에 붙었다면 중계할 것이 없다. 구독하면 영원히 기다린다.
             yield _sse(terminal_event(job_status, job_error))
             return
-        last = (job_status, job_stage)
+        # 화면이 지금 아는 상태와 계획 유무 — 하트비트가 DB 와 견줄 기준이다
+        last, plan_sent = (job_status, job_stage), _plan_known(snapshot)
         async for event in subscribe(str(jid)):
             if event is None:
                 # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 DB 와 맞춰 본다 —
                 # 종료 이벤트를 놓친 채 붙어 있는 경우(회수기가 끝낸 잡 등)와, 스냅샷을
-                # 읽은 뒤 구독이 붙기 전에 나간 status 를 놓친 경우(계획이 그 틈에
-                # 끝나면 화면이 승인 대기를 영영 모른다)를 여기서 되살린다.
+                # 읽은 뒤 구독이 붙기 전에 나간 이벤트를 놓친 경우다. 계획은 1초 안팎이라
+                # plan 단계 done(계획 원안)과 awaiting_approval 이 함께, 또는 done 만
+                # 그 틈에 빠지기 쉽다. 상태만 되살리면 화면은 승인 대기로 가도 승인할
+                # 계획이 없어 막힌다 — 어긋나면 스냅샷을 통째로 다시 보낸다. 다시 읽는
+                # 조회는 어긋났을 때만 한다.
                 yield ": ping\n\n"
                 current = await _job_status(jid)
                 if current is None:
                     continue
-                status, stage, error = current
+                status, stage, error, has_plan = current
                 if status in TERMINAL_STATUSES:
                     yield _sse(terminal_event(status, error))
                     return
-                if (status, stage) != last:
-                    last = (status, stage)
-                    yield _sse({"kind": "status", "status": status, "stage": stage})
+                if (status, stage) == last and (plan_sent or not has_plan):
+                    continue
+                fresh = await _fresh_snapshot(jid)
+                if fresh is None:
+                    continue
+                snap, error = fresh
+                status, stage = snap["job"]["status"], snap["job"]["stage"]
+                if status in TERMINAL_STATUSES:
+                    # 두 조회 사이에 끝났다. 끝난 상태를 스냅샷으로 보내면 화면이
+                    # 스트림을 닫지 않는다 — 종료 프레임으로만 알린다.
+                    yield _sse(terminal_event(status, error))
+                    return
+                last, plan_sent = (status, stage), _plan_known(snap)
+                yield _sse(snap)
                 continue
             if event.get("kind") == "status":
                 last = (event.get("status"), event.get("stage"))
+            elif _carries_plan(event):
+                plan_sent = True
             yield _sse(event)
             if event.get("kind") in TERMINAL_KINDS:
                 return
@@ -387,8 +425,8 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     )
 
 
-async def _job_status(jid: uuid.UUID) -> tuple[str, str, str | None] | None:
-    """(status, stage, last_error). 하트비트마다 짧은 세션을 새로 연다 —
+async def _job_status(jid: uuid.UUID) -> tuple[str, str, str | None, bool] | None:
+    """(status, stage, last_error, 계획 유무). 하트비트마다 짧은 세션을 새로 연다 —
     Depends(get_db) 세션을 쓰지 않는다.
 
     FastAPI 는 핸들러가 반환하면 yield 의존성을 닫는다. StreamingResponse 의
@@ -398,7 +436,18 @@ async def _job_status(jid: uuid.UUID) -> tuple[str, str, str | None] | None:
     """
     async with AsyncSessionLocal() as db:
         row = (await db.execute(
-            select(ResearchJob.status, ResearchJob.stage, ResearchJob.last_error)
+            select(ResearchJob.status, ResearchJob.stage, ResearchJob.last_error,
+                   ResearchJob.plan)
             .where(ResearchJob.id == jid)
         )).first()
-    return None if row is None else (row[0], row[1], row[2])
+    return None if row is None else (row[0], row[1], row[2], bool(row[3]))
+
+
+async def _fresh_snapshot(jid: uuid.UUID) -> tuple[dict, str | None] | None:
+    """하트비트가 화면과 DB 의 어긋남을 봤을 때 다시 보낼 (스냅샷, last_error).
+    짧은 세션을 새로 여는 이유는 _job_status 와 같다."""
+    async with AsyncSessionLocal() as db:
+        job = await db.get(ResearchJob, jid)
+        if job is None:
+            return None
+        return await _snapshot(db, job), job.last_error

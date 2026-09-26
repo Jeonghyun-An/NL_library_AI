@@ -82,7 +82,7 @@ Nuxt 페이지·컴포넌트·composable 의 Nuxt 결합부는 단위 테스트�
 | `app/services/research/synthesizer.py` | `on_section` 콜백 · 보고서 `stats` | 7 |
 | `app/workers/research_tasks.py` | `step`·`status` 이벤트(8), 단계 result 의 `rounds`·`sections`(9), 진행 중 result 갱신(12) | 8·9·12 |
 | `app/models/research.py` | `ResearchStep.result` 모양 주석만 | 9·12 |
-| `app/api/research.py` | 스냅샷 `result`·`job`, GET 시각·`params`, 승인·재시도 `status`, `created_by`(10), 하트비트 상태 복구(11), 스냅샷 `job.counters`(12) | 10·11·12 |
+| `app/api/research.py` | 스냅샷 `result`·`job`, GET 시각·`params`, 승인·재시도 `status`, `created_by`(10), 하트비트 스냅샷 재전송(11), 스냅샷 `job.counters`(12) | 10·11·12 |
 | `app/tests/history_sqlite.py` 외 `test_history_*.py`·`test_browser_id.py` | 기록 백엔드 테스트(동기 SQLite 를 감싼 AsyncSession 대역) | 1~4 |
 | `app/tests/test_research_{state,runner,synthesizer,tasks,api}.py` | 딥리서치 보강 테스트(기존 파일에 추가) | 5~12 |
 | `frontend/package.json` · `frontend/vitest.config.ts` · `frontend/tests/unit/helpers/*` | Vitest 도입(`include: tests/unit/**/*.test.ts`, 별칭 `~/`) | 13 |
@@ -154,8 +154,8 @@ Nuxt 페이지·컴포넌트·composable 의 Nuxt 결합부는 단위 테스트�
 
 | kind | payload | 발행처 |
 |---|---|---|
-| `snapshot` | `{steps:[{seq, kind, subq_idx, title, detail, status, result}], job:{status, stage, plan, counters?}}` — steps 는 `GET` 과 같은 모양(단계 종류 키 `kind`). `counters` 는 끝난 잡이면 `report.stats`, 도는 잡이면 단계 result 에 마지막으로 남은 값, 없으면 키가 없다 | API 스트림 연결 직후 |
-| `status` | `{status, stage}` — `planning`·`awaiting_approval`·`approved`·`queued`·`running`(stage `planned`/`explored`). 종료 상태는 내지 않는다 | 워커 · API(승인·재시도, 되돌린 승인) · 스트림 하트비트(놓친 전이 복구, 같은 값 반복 없음) |
+| `snapshot` | `{steps:[{seq, kind, subq_idx, title, detail, status, result}], job:{status, stage, plan, counters?}}` — steps 는 `GET` 과 같은 모양(단계 종류 키 `kind`). `counters` 는 끝난 잡이면 `report.stats`, 도는 잡이면 단계 result 에 마지막으로 남은 값, 없으면 키가 없다 | API 스트림 연결 직후 · 스트림 하트비트(DB 상태·단계가 화면이 아는 값과 다르거나, 계획이 생겼는데 화면에 준 적이 없으면 다시 읽어 같은 모양으로 한 번 더) |
+| `status` | `{status, stage}` — `planning`·`awaiting_approval`·`approved`·`queued`·`running`(stage `planned`/`explored`). 종료 상태는 내지 않는다 | 워커 · API(승인·재시도, 되돌린 승인). 스트림 하트비트는 놓친 전이를 status 가 아니라 snapshot 으로 되살린다(계획 원안까지 함께) |
 | `step` | `{seq, step_kind, subq_idx, title, detail, status, result?}` — 열 때 `running`(result 없음), 탐색 중 회차가 끝날 때·종합 중 절이 바뀔 때 `running` + 지금까지의 result, 닫을 때 `done`/`failed` + 저장한 result 그대로 | 워커 |
 | `search` | `{subq_idx, query, found, round(1부터), new_papers}` | 러너 |
 | `counters` | `{papers_reviewed, evidence_adopted, rechecks}` — 잡 전체·고유 논문, 검색 결과를 근거로 묶은 직후 회차마다 | 러너 |
@@ -2200,8 +2200,8 @@ python -m pytest app/tests -q --ignore=app/tests/test_book_chat.py --ignore=app/
 
 | kind | payload | 발행처 |
 |---|---|---|
-| `snapshot` | `{steps:[{seq, kind, subq_idx, title, detail, status, result}], job:{status, stage, plan, counters?}}` — steps 는 `GET` 의 steps 와 같은 모양(단계 종류 키는 `kind`). `counters` 는 Task 12 — 끝난 잡은 `report.stats`, 도는 잡은 단계 result 에 마지막으로 남은 값, 없으면 키가 없다 | API 스트림 연결 직후 |
-| `status` | `{status, stage}` | 워커(planning·awaiting_approval·running(planned/explored)), API(approved·queued·되돌린 awaiting_approval), 스트림 하트비트(놓친 전이 복구) |
+| `snapshot` | `{steps:[{seq, kind, subq_idx, title, detail, status, result}], job:{status, stage, plan, counters?}}` — steps 는 `GET` 의 steps 와 같은 모양(단계 종류 키는 `kind`). `counters` 는 Task 12 — 끝난 잡은 `report.stats`, 도는 잡은 단계 result 에 마지막으로 남은 값, 없으면 키가 없다 | API 스트림 연결 직후 · 스트림 하트비트(DB 상태·단계가 화면이 아는 값과 다르거나, 계획이 생겼는데 화면에 준 적이 없으면 다시 읽어 같은 모양으로 한 번 더) |
+| `status` | `{status, stage}` | 워커(planning·awaiting_approval·running(planned/explored)), API(approved·queued·되돌린 awaiting_approval). 놓친 전이는 스트림 하트비트가 snapshot 으로 되살린다 |
 | `step` | `{seq, step_kind, subq_idx, title, detail, status, result?}` — 열 때 `status:"running"`(result 없음), 탐색 중 회차가 끝날 때·종합 중 절이 바뀔 때 `running` + 지금까지의 result(Task 12), 닫을 때 `done`/`failed` + 저장한 result 그대로 | 워커 `_step`·`_save_progress`·`_finish` |
 | `search` | 기존 `{subq_idx, query, found}` + `round`(1부터), `new_papers` | 러너 |
 | `counters` | `{papers_reviewed, evidence_adopted, rechecks}` — 잡 전체·고유 논문 | 러너, 검색 결과를 근거로 묶은 직후(회차마다 1회) |

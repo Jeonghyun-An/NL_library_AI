@@ -507,7 +507,7 @@ class TestStream:
             yield None
 
         async def _job_status(job_uuid):
-            return "canceled", "planned", None
+            return "canceled", "planned", None, True
 
         monkeypatch.setattr(api.research, "subscribe", _subscribe)
         monkeypatch.setattr(api.research, "_job_status", _job_status)
@@ -516,49 +516,103 @@ class TestStream:
         assert frames[-1] == {"kind": "canceled", "status": "canceled"}
 
 
-class TestHeartbeatStatus:
-    """스냅샷을 읽은 뒤 구독이 붙기 전에 나간 status 는 중계되지 않는다. 계획은 1초 안에
-    끝나므로 그 틈에 빠진 화면은 승인 대기를 영영 모른다 — 하트비트가 DB 와 맞춘다."""
+_PLAN = ["초등 독서 효과", "중등 독서 효과"]
+_CANCELED = {"kind": "canceled", "status": "canceled"}
+_PLAN_DONE_EVENT = {"kind": "step", "seq": 1, "step_kind": "plan", "subq_idx": None,
+                    "title": "연구 계획 수립", "detail": None, "status": "done",
+                    "result": {"subquestions": _PLAN}}
+_AWAITING_EVENT = {"kind": "status", "status": "awaiting_approval", "stage": "planned"}
 
-    def _stream(self, api, monkeypatch, *, live, db_status):
+
+class TestHeartbeatStatus:
+    """스냅샷을 읽은 뒤 구독이 붙기 전에 나간 이벤트는 중계되지 않는다. 계획은 1초 안에
+    끝나므로 plan 단계 done(계획 원안)과 awaiting_approval 이 함께 그 틈에 빠지기 쉽다.
+    상태만 되살리면 화면은 승인 대기로 가도 승인할 계획이 없다 — 하트비트가 DB 와 맞춰
+    보고, 어긋나면 스냅샷을 다시 보낸다."""
+
+    def _stream(self, api, monkeypatch, *, live, job_status=None) -> list[dict]:
+        """live 의 dict 는 중계된 이벤트, None 은 하트비트, 호출 가능한 값은 중계되지 않은
+        채 DB 에만 남은 워커의 한 걸음(구독이 붙기 전에 publish 된 것)이다."""
         jid = api.db.add_job(status="planning", stage="created")
+        api.db.steps = [SimpleNamespace(seq=1, kind="plan", subq_idx=None, title="연구 계획 수립",
+                                        detail=None, status="running", result=None)]
 
         async def _subscribe(job_id):
-            for event in live:
-                yield event
+            for item in live:
+                if callable(item):
+                    item(api.db.jobs[jid])
+                    continue
+                yield item
 
         async def _job_status(job_uuid):
-            return db_status
+            row = api.db.jobs[job_uuid]
+            return row["status"], row["stage"], row["last_error"], bool(row["plan"])
+
+        class _Session:
+            async def __aenter__(self):
+                return api.db
+
+            async def __aexit__(self, *exc):
+                return False
 
         monkeypatch.setattr(api.research, "subscribe", _subscribe)
-        monkeypatch.setattr(api.research, "_job_status", _job_status)
+        monkeypatch.setattr(api.research, "_job_status", job_status or _job_status)
+        monkeypatch.setattr(api.research, "AsyncSessionLocal", _Session)
         return _frames(api.client.get(f"/api/research/{jid}/stream").text)
 
-    def test_missed_status_change_is_recovered_once(self, api, monkeypatch):
-        frames = self._stream(
-            api, monkeypatch,
-            live=[None, None, {"kind": "canceled", "status": "canceled"}],
-            db_status=("awaiting_approval", "planned", None),
-        )
-        assert [f["kind"] for f in frames] == ["snapshot", "status", "canceled"]
-        assert frames[1] == {"kind": "status", "status": "awaiting_approval", "stage": "planned"}
+    def _plan_done(self, api):
+        """워커의 계획 마무리 — plan 단계를 닫고(원안) 승인 대기로 전이한다."""
+        def step(row):
+            api.db.steps[0].status = "done"
+            api.db.steps[0].result = {"subquestions": _PLAN}
+            row.update(status="awaiting_approval", stage="planned", plan=_PLAN)
+        return step
+
+    def test_plan_finished_in_the_gap_is_recovered_with_the_plan(self, api, monkeypatch):
+        frames = self._stream(api, monkeypatch,
+                              live=[self._plan_done(api), None, None, _CANCELED])
+
+        assert [f["kind"] for f in frames] == ["snapshot", "snapshot", "canceled"]
+        first, recovered = frames[0], frames[1]
+        assert first["job"]["plan"] is None and first["steps"][0]["result"] is None
+        assert recovered["job"] == {"status": "awaiting_approval", "stage": "planned", "plan": _PLAN}
+        assert recovered["steps"][0]["result"] == {"subquestions": _PLAN}
+        # 연결 직후 스냅샷과 같은 모양이어야 화면이 같은 경로로 받는다
+        assert recovered.keys() == first.keys() and recovered["job"].keys() == first["job"].keys()
+
+    def test_status_relayed_but_plan_missed_is_recovered(self, api, monkeypatch):
+        # plan 단계 done 은 틈에 빠지고 몇 ms 뒤의 awaiting_approval 만 중계된 경우 —
+        # 상태는 맞지만 화면에 계획이 없다
+        frames = self._stream(api, monkeypatch,
+                              live=[self._plan_done(api), _AWAITING_EVENT, None, None, _CANCELED])
+
+        assert [f["kind"] for f in frames] == ["snapshot", "status", "snapshot", "canceled"]
+        assert frames[2]["job"]["plan"] == _PLAN
 
     def test_unchanged_status_stays_quiet(self, api, monkeypatch):
-        frames = self._stream(
-            api, monkeypatch,
-            live=[None, {"kind": "canceled", "status": "canceled"}],
-            db_status=("planning", "created", None),
-        )
+        frames = self._stream(api, monkeypatch, live=[None, _CANCELED])
         assert [f["kind"] for f in frames] == ["snapshot", "canceled"]
 
-    def test_relayed_status_is_not_repeated(self, api, monkeypatch):
+    def test_relayed_plan_and_status_are_not_repeated(self, api, monkeypatch):
         frames = self._stream(
             api, monkeypatch,
-            live=[{"kind": "status", "status": "awaiting_approval", "stage": "planned"},
-                  None, {"kind": "canceled", "status": "canceled"}],
-            db_status=("awaiting_approval", "planned", None),
+            live=[self._plan_done(api), _PLAN_DONE_EVENT, _AWAITING_EVENT, None, _CANCELED],
         )
-        assert [f["kind"] for f in frames] == ["snapshot", "status", "canceled"]
+        assert [f["kind"] for f in frames] == ["snapshot", "step", "status", "canceled"]
+
+    def test_termination_between_the_two_reads_sends_the_terminal_frame(self, api, monkeypatch):
+        # 하트비트 조회는 승인 대기였는데 스냅샷을 다시 읽을 때는 이미 취소됐다 —
+        # 끝난 상태를 스냅샷으로 보내면 화면이 스트림을 닫지 않는다
+        def canceled(row):
+            row.update(status="canceled", stage="planned", plan=_PLAN)
+
+        async def _stale(job_uuid):
+            return "awaiting_approval", "planned", None, True
+
+        frames = self._stream(api, monkeypatch, live=[canceled, None], job_status=_stale)
+
+        assert [f["kind"] for f in frames] == ["snapshot", "canceled"]
+        assert frames[1] == _CANCELED
 
 
 class TestCreatedBy:
