@@ -658,6 +658,7 @@ import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
+import { useCuration } from "~/composables/useCuration";
 import { safeLocalStorage } from "~/utils/browserId";
 import { slimBookResult } from "~/utils/historySnapshot";
 import { readV1Map } from "~/utils/historyStore";
@@ -767,8 +768,9 @@ const toast = ref("");
 const historyApi = useHistory();
 const currentHistoryId = ref<string | null>(null);
 // 검색·복원·큐레이션을 한 묶음으로 끊는다 — 새 검색이나 복원이 시작되면 이전 묶음의
-// 응답·타이핑·저장이 새 화면과 새 기록을 덮지 못하게 한다
+// 응답·타이핑·저장이 새 화면과 새 기록을 덮지 못하게 한다. 큐레이션은 화면 갱신만 끊고 요청·저장은 끝까지 간다
 let runCtrl: AbortController | null = null;
+const curationRequests = useCuration();
 function beginRun(): AbortSignal {
   runCtrl?.abort();
   runCtrl = new AbortController();
@@ -855,8 +857,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // 떠난 화면에 늦게 온 응답·타이핑 타이머가 상태를 고치지 않게 묶음을 끊는다
-  // (백엔드 /books/curate 는 연결 끊김을 보지 않아 서버 쪽 생성은 끊어도 끝까지 돈다)
+  // 떠난 화면에 늦게 온 응답·타이핑 타이머가 상태를 고치지 않게 묶음을 끊는다.
+  // 큐레이션 요청은 끊지 않는다 — 끝까지 받아 기록에 저장해야 돌아왔을 때 다시 만들지 않는다(fetchCuration)
   runCtrl?.abort();
   window.removeEventListener("resize", updateTabSlider);
   document.removeEventListener("click", onDocClick);
@@ -1084,7 +1086,7 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
-  // 큐레이션이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
+  // 요약이 비어 있으면 큐레이션이 아직 도는 중이거나 실패한 기록이다 — 도는 중이면 그 요청을 이어받고, 실패했으면 다시 만든다
   if (!entry.ai && books.value.length) {
     fetchCuration(entry.id, entry.title, rewrittenQuery.value, signal);
   }
@@ -1209,26 +1211,19 @@ async function fetchCuration(
   curationIntro.value = "";
   curationItems.value = [];
   try {
-    const data = await api<any>("/books/curate", {
-      method: "POST",
-      body: {
-        query,
-        book_ids: topBooks.map((b) => b.book_id),
-        scores: topBooks.map((b) => b.best_score || 0),
-        rewritten_query: rewritten,
-      },
-      signal,
+    // 요청은 묶음의 signal 로 끊지 않는다 — 단발 POST 라 끊어도 서버 생성은 끝까지 돌고 결과만 버려져, 돌아오면 다시 만든다.
+    // 응답이 오면 시작 때 붙잡은 id 로 저장되고(떠난 뒤에 와도), 같은 기록의 요청이 도는 중이면 새로 부르지 않고 이어받는다.
+    // 타이핑은 화면 연출로만 둔다 — 떠났거나 다른 묶음이 시작됐으면 화면만 건너뛴다
+    const result = await curationRequests.run(historyId, {
+      query,
+      book_ids: topBooks.map((b) => b.book_id),
+      scores: topBooks.map((b) => b.best_score || 0),
+      rewritten_query: rewritten,
     });
-    if (signal.aborted) return;
-    curation.value = data;
+    if (signal.aborted || !result) return;
+    curation.value = result.data;
     curationLoading.value = false;
-    const intro: string = data?.intro || "";
-    const items: Array<{ book_id: string; reason: string }> = (data?.items || []).map(
-      (ci: { book_id: string; reason: string }) => ({ book_id: ci.book_id, reason: ci.reason }),
-    );
-    // 응답이 오자마자 저장하고 타이핑은 화면 연출로만 둔다 — 타이핑이 끝난 뒤로 미루면 그 사이 상세로 가거나
-    // 다른 기록을 열었다 돌아올 때 요약이 비어 있어 생성을 다시 부른다. id 는 시작 때 붙잡은 값이라 다른 기록을 덮지 않는다
-    void historyApi.patch(historyId, { ai: { intro, items } });
+    const { intro, items } = result;
     if (intro) {
       curationOpen.value = true;
       await typeInto(curationIntro, intro, signal);
@@ -1237,7 +1232,7 @@ async function fetchCuration(
     curationItems.value = items;
     curationTyping.value = false;
   } catch {
-    /* 큐레이션 실패·중단 시 조용히 무시 */
+    /* 큐레이션 실패 시 조용히 무시 */
   } finally {
     if (!signal.aborted) {
       curationLoading.value = false;
