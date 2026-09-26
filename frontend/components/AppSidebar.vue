@@ -1,6 +1,6 @@
 <!-- frontend/components/AppSidebar.vue -->
 <template>
-  <aside :class="['skx-lnb', !open && 'is-lnb-collapsed']">
+  <aside :class="['skx-lnb', isCollapsed && 'is-lnb-collapsed']">
     <!-- 접힌 상태에서 펼치기 버튼 -->
     <button
       type="button"
@@ -169,7 +169,10 @@ const route = useRoute();
 const router = useRouter();
 const history = useHistory();
 
+// open 에는 사용자가 누른 상태만 둔다 — 채팅 때문에 접힌 상태를 여기 쓰면, 채팅을 연 채 페이지를 떠날 때
+// 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다
 const open = useState<boolean>("skx:lnb-open", () => true);
+const isCollapsed = computed(() => !open.value || !!props.collapsed);
 const historyTab = ref<HistoryKind>(activeKindForPath(route.path));
 const confirmOpen = ref(false);
 const v1Map = ref<Record<string, string>>({});
@@ -180,19 +183,6 @@ const hasLiveResearch = computed(() =>
   history
     .byKind("research")
     .value.some((h) => h.kind === "research" && !!h.research && LIVE_STATUSES.has(h.research.status)),
-);
-
-let openBeforeCollapse = true;
-watch(
-  () => props.collapsed,
-  (val, old) => {
-    if (val) {
-      openBeforeCollapse = open.value;
-      open.value = false;
-    } else if (old) {
-      open.value = openBeforeCollapse;
-    }
-  },
 );
 
 function selectTab(kind: HistoryKind) {
@@ -244,7 +234,7 @@ function formatTime(ts: string): string {
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 function pollOnce() {
-  if (document.hidden || !open.value) return;
+  if (document.hidden || isCollapsed.value) return;
   void history.refresh("research");
 }
 
