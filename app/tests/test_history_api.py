@@ -1,8 +1,12 @@
 """test_history_api.py — 기록 API 엔드포인트
 
 요청은 TestClient 로 실제 라우팅을 거친다(헤더 400·경로 422·본문 검증은 라우팅을 거쳐야
-드러난다). DB 는 history_sqlite 의 SQLite 다 — 요청마다 세션을 새로 열고 get_db 처럼
-끝나면 커밋, 예외면 되돌린다.
+드러난다). DB 는 history_sqlite 의 SQLite 다 — 요청마다 세션을 새로 연다.
+
+세션 대역은 get_db 의 마무리 커밋에 기대지 않는다 — 요청이 끝나면 늘 되돌리므로 핸들러가
+응답 전에 직접 커밋한 것만 남는다. 마무리 커밋이 대신 남겨 주면, 핸들러의 커밋이 빠져
+운영에서 마무리 커밋이 실패할 때(화면은 이미 성공 응답을 받아 outbox 에 다시 넣지 않는다)
+기록이 조용히 사라지는 것을 여기서 잡지 못한다.
 """
 import ast
 import uuid
@@ -39,11 +43,9 @@ def api():
         db = AsyncSessionOverSync(engine)
         try:
             yield db
-            await db.commit()
-        except Exception:
-            await db.rollback()
-            raise
         finally:
+            # 성공해도 되돌린다 — 핸들러가 직접 커밋한 쓰기만 남아야 한다
+            await db.rollback()
             await db.close()
 
     app = FastAPI()
@@ -146,6 +148,9 @@ class TestPatch:
         assert res.status_code == 200
         body = res.json()
         assert body["ai"] == {"intro": "요약", "items": []} and body["snapshot"] == {"books": [1]}
+        # 응답은 RETURNING 값이라 커밋이 빠져도 맞다 — 다음 요청에서 다시 읽어야 드러난다
+        again = api.client.get(f"/api/history/{item_id}", headers=A).json()
+        assert again["ai"] == {"intro": "요약", "items": []}
 
     def test_null_title_is_422(self, api):
         item_id = uuid.uuid4()
