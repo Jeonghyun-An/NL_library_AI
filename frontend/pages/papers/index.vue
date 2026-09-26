@@ -1,14 +1,9 @@
 <template>
   <div :class="['skx-app', chatPaperId && 'is-lnb-collapsed']">
     <AppSidebar
-      default-tab="paper"
       :collapsed="!!chatPaperId"
-      :book-history="bookHistory"
-      :paper-history="paperHistory"
-      :active-id="currentHistoryId ?? undefined"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
-      @restore="restoreSession"
     />
 
     <!-- 랜딩 (검색 전) -->
@@ -129,11 +124,7 @@
                     <div class="skx-pai-ref__body">
                       <p
                         class="skx-pai-ref__title skx-pai-ref__title--link"
-                        @click="
-                          navigateTo(
-                            `/papers/${ref.book_id}?q=${encodeURIComponent(currentQuery)}`,
-                          )
-                        "
+                        @click="navigateTo(detailUrl(ref.book_id))"
                       >
                         {{ ref.title }}
                       </p>
@@ -458,11 +449,7 @@
                   <button
                     type="button"
                     class="skx-btn-ptalk"
-                    @click.stop="
-                      navigateTo(
-                        `/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`,
-                      )
-                    "
+                    @click.stop="navigateTo(detailUrl(paper.book_id, { chat: '1' }))"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
                     DeepSearch
@@ -590,15 +577,29 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
+import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { useHistory } from "~/composables/useHistory";
+import { safeLocalStorage } from "~/utils/browserId";
+import { slimPaperResult } from "~/utils/historySnapshot";
+import { readV1Map } from "~/utils/historyStore";
+import { readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
-import type { HistoryEntry } from "~/types/history";
+import type { PaperEntry, PaperSnapshot } from "~/types/history";
 
-const config = useRuntimeConfig();
-const apiBase = config.public.apiBase as string;
+const api = useApi();
+const route = useRoute();
+const router = useRouter();
 
-const { bookHistory, paperHistory, addEntry, updateAiSummary, getById } =
-  useSearchHistory();
+const historyApi = useHistory();
 const currentHistoryId = ref<string | null>(null);
+// 검색·복원·요약 스트림을 한 묶음으로 끊는다 — 새 검색이나 복원이 시작되면 이전 묶음의
+// 응답·스트림·저장이 새 화면과 새 기록을 덮지 못하게 한다
+let runCtrl: AbortController | null = null;
+function beginRun(): AbortSignal {
+  runCtrl?.abort();
+  runCtrl = new AbortController();
+  return runCtrl.signal;
+}
 
 // ── 검색 상태 ────────────────────────────────────────────────
 const currentQuery = ref("");
@@ -767,28 +768,36 @@ function openRefCitation(ref: { book_id: string }) {
   citeModalOpen.value = true;
 }
 
+// 상세로 갈 때 기록 id 를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원된다
+function detailUrl(bookId: string, extra: Record<string, string> = {}): string {
+  const params = new URLSearchParams({ q: currentQuery.value, ...extra });
+  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
+  return `/papers/${bookId}?${params}`;
+}
+
 function goToDetail(paper: any) {
-  navigateTo(
-    `/papers/${paper.book_id}?q=${encodeURIComponent(currentQuery.value)}`,
-  );
+  navigateTo(detailUrl(paper.book_id));
 }
 
 // ── 검색 ─────────────────────────────────────────────────────
-async function handleSearch(q?: string) {
+async function handleSearch(q?: string, reuse?: PaperEntry) {
   const query = (q ?? currentQuery.value).trim();
   if (!query || loading.value) return;
+  const signal = beginRun();
   currentQuery.value = query;
+  currentHistoryId.value = null;
   loading.value = true;
   error.value = null;
   paperResult.value = null;
   aiText.value = "";
   aiRefs.value = [];
+  aiLoading.value = false;
   aiExpanded.value = false;
   currentPage.value = 1;
   sortBy.value = "relevance";
 
   try {
-    const data = await $fetch<BookSearchResponse>(`${apiBase}/papers/search`, {
+    const data = await api<BookSearchResponse>("/papers/search", {
       method: "POST",
       body: {
         query,
@@ -797,55 +806,112 @@ async function handleSearch(q?: string) {
         use_rewrite: true,
         use_rerank: true,
       },
+      signal,
     });
+    if (signal.aborted) return;
     paperResult.value = data;
-    // 세션 저장 — 청크 원문은 제외해 localStorage 용량 절약
-    // (references는 인용 모달에서 사용하므로 book_info는 유지)
-    currentHistoryId.value = addEntry({
-      type: "paper",
-      query,
-      result: {
-        ...data,
-        books: (data.books ?? []).map((b) => ({ ...b, chunks: [] })),
-      },
-    });
-    // AI 요약 SSE 병렬 시작
-    if (data.books?.length) {
-      streamAiSummary(query, data.books);
-    }
+    loading.value = false;
+
+    // 기록 id 를 먼저 확정해 요약 스트림에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
+    const grade = selectedGrade.value !== "all" ? selectedGrade.value : "";
+    const snapshot = slimPaperResult(data) ?? undefined;
+    const entry = reuse
+      ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
+      : await historyApi.add({ kind: "paper", title: query, params: grade ? { grade } : {}, snapshot });
+    if (signal.aborted) return;
+    currentHistoryId.value = entry.id;
+    router.replace({ query: { q: query, h: entry.id, ...(grade ? { grade } : {}) } });
+    if (data.books?.length) streamAiSummary(entry.id, query, data.books, signal);
   } catch (e: any) {
+    if (signal.aborted) return;
     error.value =
       e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
     paperResult.value = { mode: "book", query, books: [], elapsed_ms: 0 };
   } finally {
-    loading.value = false;
+    if (!signal.aborted) loading.value = false;
   }
 }
 
-// ── 세션 복원 ─────────────────────────────────────────────────
-function restoreSession(entry: HistoryEntry) {
-  if (entry.type === "book") {
-    navigateTo(`/?restore=${entry.id}`);
+// ── 기록 복원 ─────────────────────────────────────────────────
+// 주소(?h=)가 복원의 정본이다 — 사이드바·뒤로가기·새로고침이 모두 이 한 길로 들어온다
+async function restoreFromQuery() {
+  // 다른 페이지로 넘어가는 중에는 그 주소의 q 로 재검색하지 않는다
+  if (route.path !== "/papers") return;
+  const { h, q, grade } = readHistoryQuery(route.query, readV1Map(safeLocalStorage()));
+  if (!h) {
+    if (q && q !== currentQuery.value) {
+      selectedGrade.value = grade ?? "all";
+      await handleSearch(q);
+    }
     return;
   }
-  currentQuery.value = entry.query;
-  currentHistoryId.value = entry.id;
-  paperResult.value = entry.result ?? null;
-  try {
-    const parsed = JSON.parse(entry.aiSummary ?? "");
-    aiText.value = parsed.text ?? "";
-    aiRefs.value = parsed.refs ?? [];
-  } catch {
-    aiText.value = entry.aiSummary ?? "";
-    aiRefs.value = [];
+  if (h === currentHistoryId.value) return;
+
+  const signal = beginRun();
+  loading.value = false;
+  const entry = await historyApi.get(h);
+  if (signal.aborted) return;
+  if (entry && entry.kind !== "paper") {
+    // 다른 종류의 기록 id 가 이 주소로 왔다(옛 ?restore= 등) — 그 종류의 주소로 보낸다
+    router.replace(routeFor(entry));
+    return;
   }
+  const paper = entry?.kind === "paper" ? entry : null;
+  if (paper?.snapshot) {
+    applyPaperEntry(paper, signal);
+    return;
+  }
+  // 없거나 남의 기록이면 검색어로 새로 찾는다(D7). 결과만 비어 있던 내 기록은 같은 id 를 채운다
+  if (!paper) void historyApi.refresh("paper");
+  const retryQuery = q ?? paper?.title;
+  if (retryQuery) {
+    const savedGrade = typeof paper?.params.grade === "string" ? paper.params.grade : "";
+    selectedGrade.value = savedGrade || grade || "all";
+    await handleSearch(retryQuery, paper ?? undefined);
+    return;
+  }
+  showToast("없는 기록입니다. 목록을 새로 고쳤습니다.");
+}
+
+function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
+  const snap = entry.snapshot as PaperSnapshot;
+  const grade = typeof entry.params.grade === "string" ? entry.params.grade : "";
+  loading.value = false;
+  error.value = null;
+  currentQuery.value = entry.title;
+  currentHistoryId.value = entry.id;
+  paperResult.value = {
+    mode: "book",
+    query: entry.title,
+    books: snap.books as unknown as BookChunkGroup[],
+    elapsed_ms: 0,
+  };
+  aiText.value = entry.ai?.text ?? "";
+  aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
+  aiLoading.value = false;
+  aiExpanded.value = true;
   currentPage.value = 1;
   sortBy.value = "relevance";
-  aiExpanded.value = true;
+  selectedGrade.value = grade || "all";
+  if (route.query.h !== entry.id || route.query.q !== entry.title) {
+    router.replace({ query: { q: entry.title, h: entry.id, ...(grade ? { grade } : {}) } });
+  }
+  // 요약이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
+  if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);
 }
 
 // ── AI 요약 SSE ───────────────────────────────────────────────
-async function streamAiSummary(query: string, books: any[]) {
+type SummarySource = {
+  book_id: string;
+  book_info?: { title?: string; personal_author?: string; corporate_author?: string };
+};
+
+async function streamAiSummary(
+  historyId: string,
+  query: string,
+  books: SummarySource[],
+  signal: AbortSignal,
+) {
   aiLoading.value = true;
   const papers = books.slice(0, 5).map((b) => ({
     book_id: b.book_id,
@@ -854,11 +920,14 @@ async function streamAiSummary(query: string, books: any[]) {
       b.book_info?.personal_author || b.book_info?.corporate_author || "",
     best_chunk_text: "",
   }));
+  let text = "";
+  let refs: typeof aiRefs.value = [];
   try {
-    const resp = await fetch(`${apiBase}/papers/summary/stream`, {
+    const resp = await fetch(apiUrl("/papers/summary/stream"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ query, papers }),
+      signal,
     });
     if (!resp.ok || !resp.body) return;
     const reader = resp.body.getReader();
@@ -876,43 +945,47 @@ async function streamAiSummary(query: string, books: any[]) {
         if (raw === "[DONE]") return;
         try {
           const evt = JSON.parse(raw);
-          if (evt.text) aiText.value += evt.text;
-          if (evt.sources) aiRefs.value = evt.sources;
+          if (evt.text) {
+            text += evt.text;
+            aiText.value = text;
+          }
+          if (evt.sources) {
+            refs = evt.sources;
+            aiRefs.value = refs;
+          }
         } catch {}
       }
     }
   } catch {
-    /* ignore */
+    /* 중단·네트워크 오류 — 받은 데까지만 남긴다 */
   } finally {
-    aiLoading.value = false;
-    if (currentHistoryId.value && aiText.value) {
-      updateAiSummary(
-        currentHistoryId.value,
-        JSON.stringify({ text: aiText.value, refs: aiRefs.value }),
-      );
+    // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
+    if (!signal.aborted) {
+      aiLoading.value = false;
+      if (text) historyApi.patch(historyId, { ai: { text, refs } });
     }
   }
 }
 
-// ── 페이지당 개수 드롭다운 닫기 + URL 초기 검색 ───────────────
+// ── 페이지당 개수 드롭다운 닫기 + 주소 기준 첫 복원 ─────────────
 onMounted(() => {
   document.addEventListener("click", () => {
     perpageOpen.value = false;
   });
-  const route = useRoute();
-  const restoreId = route.query.restore as string | undefined;
-  if (restoreId) {
-    const entry = getById(restoreId);
-    if (entry) {
-      restoreSession(entry);
-      return;
-    }
-  }
-  const grade = route.query.grade as string | undefined;
-  if (grade) selectedGrade.value = grade;
-  const q = route.query.q as string | undefined;
-  if (q?.trim()) handleSearch(q.trim());
+  // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
+  restoreFromQuery();
 });
+
+// 같은 경로에서 쿼리만 바뀌면(사이드바 클릭·뒤로가기) 페이지가 다시 마운트되지 않는다
+watch(
+  () => route.query.h ?? route.query.restore,
+  () => {
+    restoreFromQuery();
+  },
+);
+
+// 페이지를 떠나면 요약 스트림도 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
+onBeforeUnmount(() => runCtrl?.abort());
 
 watch(currentPage, () => window.scrollTo({ top: 0, behavior: "smooth" }));
 </script>
