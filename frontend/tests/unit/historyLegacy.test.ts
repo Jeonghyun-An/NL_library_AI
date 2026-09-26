@@ -181,6 +181,37 @@ describe("migrateLegacy", () => {
     expect(extra).toHaveLength(1);
   });
 
+  it("두 탭이 같은 v1 을 함께 올려도 백업 사본은 하나만 남긴다", async () => {
+    const s = new MemoryStorage();
+    const raw = JSON.stringify(v1(2));
+    s.setItem(LEGACY_HISTORY_KEY, raw);
+    const server = importer();
+    expect(await Promise.all([migrateLegacy(s, server), migrateLegacy(s, server)])).toEqual([
+      { imported: 2 },
+      { imported: 2 },
+    ]);
+    expect(server.importItems).toHaveBeenCalledTimes(2);
+    expect(s.getItem(LEGACY_HISTORY_KEY)).toBeNull();
+    const backups = Array.from({ length: s.length }, (_, i) => s.key(i)).filter((k) =>
+      k?.startsWith(LEGACY_BACKUP_KEY),
+    );
+    expect(backups).toEqual([LEGACY_BACKUP_KEY]);
+    expect(s.getItem(LEGACY_BACKUP_KEY)).toBe(raw);
+  });
+
+  it("같은 내용의 백업이 이미 있으면 사본 없이 v1 만 치운다", async () => {
+    const s = new MemoryStorage();
+    const raw = JSON.stringify(v1(1));
+    s.setItem(LEGACY_BACKUP_KEY, raw);
+    s.setItem(LEGACY_HISTORY_KEY, raw);
+    expect(await migrateLegacy(s, importer())).toEqual({ imported: 1 });
+    expect(s.getItem(LEGACY_HISTORY_KEY)).toBeNull();
+    const backups = Array.from({ length: s.length }, (_, i) => s.key(i)).filter((k) =>
+      k?.startsWith(LEGACY_BACKUP_KEY),
+    );
+    expect(backups).toEqual([LEGACY_BACKUP_KEY]);
+  });
+
   it("사본 둘 자리가 없으면 원본을 남기고 다시 올리지 않게 표시한다", async () => {
     const raw = JSON.stringify(v1(5));
     const s = new MemoryStorage(Math.floor(raw.length * 1.5));

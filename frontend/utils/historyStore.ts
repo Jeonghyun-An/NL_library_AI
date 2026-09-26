@@ -730,10 +730,19 @@ export async function migrateLegacy(
       return false;
     }
   };
+  let backup: string | null;
   try {
-    const backupKey =
-      storage.getItem(LEGACY_BACKUP_KEY) === null ? LEGACY_BACKUP_KEY : `${LEGACY_BACKUP_KEY}_${Date.now()}`;
-    storage.setItem(backupKey, raw);
+    // 같은 v1 을 함께 올린 다른 탭이 먼저 백업하고 지웠다 — 사본을 하나 더 두면 쿼터만 잡아먹는다
+    if (storage.getItem(LEGACY_HISTORY_KEY) === null) return { imported };
+    backup = storage.getItem(LEGACY_BACKUP_KEY);
+  } catch {
+    return { imported };
+  }
+  try {
+    // 시각 접미 키는 기존 백업과 내용이 다른 v1 을 보존할 때만 쓴다 — 같은 내용이면 사본 없이 v1 만 치운다
+    if (backup !== raw) {
+      storage.setItem(backup === null ? LEGACY_BACKUP_KEY : `${LEGACY_BACKUP_KEY}_${Date.now()}`, raw);
+    }
     if (legacyUnchanged()) storage.removeItem(LEGACY_HISTORY_KEY);
   } catch {
     if (!legacyUnchanged()) return { imported };
