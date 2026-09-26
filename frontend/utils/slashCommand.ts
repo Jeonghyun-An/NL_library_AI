@@ -1,4 +1,6 @@
 // frontend/utils/slashCommand.ts
+import { questionProblem } from "./researchInput";
+
 export type SearchModeId = "deep-research";
 export type SearchInputKind = "book" | "paper";
 
@@ -45,4 +47,44 @@ export function parseSlash(input: string): { mode: SearchModeId | null; text: st
 export function shouldAutoChip(input: string): boolean {
   const { mode, text } = parseSlash(input);
   return mode !== null && (text !== "" || /\s$/.test(input));
+}
+
+export interface SlashSubmit {
+  mode: SearchModeId;
+  // 서버로 보낼 질문(앞뒤 공백을 뗀 글)
+  question: string;
+  // 입력창에 되돌려 쓸 값 — 슬래시 접두를 뗀 글. 접두가 없었으면 null(입력창을 건드리지 않는다)
+  stripped: string | null;
+  // 보내기 전에 알릴 검증 오류. 이때도 접두는 떼어 칩으로 바꾼다 — 사용자는 질문만 고치면 된다
+  problem: string | null;
+}
+
+// 입력창의 제출을 딥리서치로 보낼지와 그때 할 일을 정한다. 칩도 명령도 없으면 null(원래 검색).
+export function planSlashSubmit(
+  text: string,
+  activeId: SearchModeId | null,
+  available: readonly SearchMode[],
+): SlashSubmit | null {
+  const slash = parseSlash(text);
+  const mode = activeId ?? (available.some((m) => m.id === slash.mode) ? slash.mode : null);
+  if (!mode) return null;
+  const question = (slash.mode ? slash.text : text).trim();
+  return { mode, question, stripped: slash.mode ? slash.text : null, problem: questionProblem(question) };
+}
+
+// 컴포넌트가 스스로 emit 한 값이 v-model 로 되돌아온 것인지 가린다. 되돌아온 값에 반응해
+// 방금 넣은 검증 오류를 지우면 오류가 한 번도 보이지 않는다. 한 번 보면 잊는다 — 부모가 값을
+// 받지 않아 되돌아오지 않았으면 다음 변화는 사용자의 것이다.
+export function createEchoGuard() {
+  let pending: string | null = null;
+  return {
+    mark(value: string): void {
+      pending = value;
+    },
+    take(value: string): boolean {
+      const echoed = pending !== null && pending === value;
+      pending = null;
+      return echoed;
+    },
+  };
 }

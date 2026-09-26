@@ -43,10 +43,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useResearchStarter } from "~/composables/useResearch";
 import { researchErrorMessage } from "~/utils/researchErrors";
-import { questionProblem } from "~/utils/researchInput";
 import {
+  createEchoGuard,
   modesFor,
   parseSlash,
+  planSlashSubmit,
   shouldAutoChip,
   type SearchInputKind,
   type SearchMode,
@@ -70,9 +71,16 @@ const error = ref("");
 let host: HTMLElement | null = null;
 let field: HTMLTextAreaElement | HTMLInputElement | null = null;
 let basePlaceholder = "";
+const echo = createEchoGuard();
 
 function modeFor(id: SearchModeId | null): SearchMode | undefined {
   return modes.value.find((m) => m.id === id);
+}
+
+// 입력창 값은 모두 여기로 바꾼다 — 되돌아오는 modelValue 를 watch 가 사용자 입력과 가려 보게
+function emitText(value: string): void {
+  echo.mark(value);
+  emit("update:modelValue", value);
 }
 
 function currentText(): string {
@@ -89,7 +97,7 @@ function choose(mode: SearchMode): void {
   menuOpen.value = false;
   activate(mode);
   const slash = parseSlash(props.modelValue);
-  if (slash.mode) emit("update:modelValue", slash.text);
+  if (slash.mode) emitText(slash.text);
   field?.focus();
 }
 
@@ -103,7 +111,9 @@ function clear(): void {
 watch(
   () => props.modelValue,
   (value) => {
-    if (error.value && !busy.value) error.value = "";
+    // 접두를 떼며 스스로 emit 한 값이 되돌아온 것이면 submit 이 방금 넣은 검증 오류를 두고,
+    // 사용자가 글을 고칠 때만 지운다
+    if (!echo.take(value) && error.value && !busy.value) error.value = "";
     // 같은 검색어를 다른 입력창·코드도 바꾼다(메인 랜딩은 도서·논문 패널이 한 currentQuery 에
     // 묶여 있고, 숨은 논문 패널의 이 컴포넌트도 마운트된 채다. 기록 복원도 값을 넣는다). 자기
     // 입력창에 사용자가 친 글에만 칩을 켠다. 부모 상자의 캡처 단계 input 리스너로 가리면 입력창의
@@ -114,7 +124,7 @@ watch(
     const mode = modeFor(slash.mode);
     if (!mode) return;
     activate(mode);
-    emit("update:modelValue", slash.text);
+    emitText(slash.text);
   },
 );
 
@@ -124,21 +134,19 @@ function researchWanted(): boolean {
 
 async function submit(): Promise<void> {
   if (busy.value || props.disabled) return;
-  const slash = parseSlash(currentText());
-  const mode = active.value ?? modeFor(slash.mode);
-  if (!mode) return;
+  const plan = planSlashSubmit(currentText(), active.value?.id ?? null, modes.value);
+  const mode = active.value ?? modeFor(plan?.mode ?? null);
+  if (!plan || !mode) return;
   if (!active.value) activate(mode);
-  const question = (slash.mode ? slash.text : currentText()).trim();
-  if (slash.mode) emit("update:modelValue", slash.text);
-  const problem = questionProblem(question);
-  if (problem) {
-    error.value = problem;
+  if (plan.stripped !== null) emitText(plan.stripped);
+  if (plan.problem) {
+    error.value = plan.problem;
     return;
   }
   busy.value = true;
   error.value = "";
   try {
-    const jobId = await startResearch(question);
+    const jobId = await startResearch(plan.question);
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     // 입력은 지우지 않는다 — 사용자가 고쳐서 다시 보낼 수 있어야 한다
