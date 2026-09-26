@@ -722,12 +722,21 @@ export async function migrateLegacy(
   } catch {
     // 대응표를 못 남기면 옛 ?restore= 주소만 새 id 를 못 찾는다 — 기록 자체는 이미 서버에 있다
   }
+  // 요청이 오가는 사이 구버전 탭이 v1 을 다시 썼으면 서버가 받지 않은 항목이 섞여 있다 — 그때는 v1 을 남겨 다음 로드에 다시 올린다
+  const legacyUnchanged = (): boolean => {
+    try {
+      return storage.getItem(LEGACY_HISTORY_KEY) === raw;
+    } catch {
+      return false;
+    }
+  };
   try {
     const backupKey =
       storage.getItem(LEGACY_BACKUP_KEY) === null ? LEGACY_BACKUP_KEY : `${LEGACY_BACKUP_KEY}_${Date.now()}`;
     storage.setItem(backupKey, raw);
-    storage.removeItem(LEGACY_HISTORY_KEY);
+    if (legacyUnchanged()) storage.removeItem(LEGACY_HISTORY_KEY);
   } catch {
+    if (!legacyUnchanged()) return { imported };
     // 사본 둘 자리가 없다 — 원본을 그대로 백업으로 남기고 다시 올리지 않게 표시만 한다
     try {
       storage.setItem(LEGACY_MIGRATED_KEY, "1");

@@ -193,6 +193,53 @@ describe("migrateLegacy", () => {
     expect(server.importItems).toHaveBeenCalledTimes(1);
   });
 
+  it("올리는 사이 구버전 탭이 v1 을 다시 쓰면 v1 을 남겨 다음 로드에 다시 올린다", async () => {
+    const s = new MemoryStorage();
+    const raw = JSON.stringify(v1(1));
+    const rewritten = JSON.stringify([{ ...V1_BOOK, id: "1727000009999" }, ...v1(1)]);
+    s.setItem(LEGACY_HISTORY_KEY, raw);
+    const server = importer();
+    const base = server.importItems.getMockImplementation()!;
+    server.importItems.mockImplementationOnce(async (items) => {
+      s.setItem(LEGACY_HISTORY_KEY, rewritten);
+      return base(items);
+    });
+
+    expect(await migrateLegacy(s, server)).toEqual({ imported: 1 });
+    expect(s.getItem(LEGACY_HISTORY_KEY)).toBe(rewritten);
+    expect(s.getItem(LEGACY_BACKUP_KEY)).toBe(raw);
+
+    expect(await migrateLegacy(s, server)).toEqual({ imported: 2 });
+    expect(server.importItems.mock.calls[1]![0].map((i) => i.legacy_id)).toEqual(["1727000009999", "1727000000000"]);
+    expect(s.getItem(LEGACY_HISTORY_KEY)).toBeNull();
+    expect(s.getItem(LEGACY_BACKUP_KEY)).toBe(raw);
+    const extra = Array.from({ length: s.length }, (_, i) => s.key(i)).filter((k) =>
+      k?.startsWith(`${LEGACY_BACKUP_KEY}_`),
+    );
+    expect(extra.map((k) => s.getItem(k!))).toEqual([rewritten]);
+  });
+
+  it("사본 둘 자리가 없어도 올리는 사이 v1 이 바뀌었으면 다시 올리지 않게 표시하지 않는다", async () => {
+    const raw = JSON.stringify(v1(5));
+    const rewritten = JSON.stringify([{ ...V1_BOOK, id: "1727000009999" }, ...v1(5)]);
+    const s = new MemoryStorage(Math.floor(raw.length * 1.5));
+    s.setItem(LEGACY_HISTORY_KEY, raw);
+    const server = importer();
+    const base = server.importItems.getMockImplementation()!;
+    server.importItems.mockImplementationOnce(async (items) => {
+      s.setItem(LEGACY_HISTORY_KEY, rewritten);
+      return base(items);
+    });
+
+    expect(await migrateLegacy(s, server)).toEqual({ imported: 5 });
+    expect(s.getItem(LEGACY_HISTORY_KEY)).toBe(rewritten);
+    expect(s.getItem(LEGACY_MIGRATED_KEY)).toBeNull();
+
+    expect(await migrateLegacy(s, server)).toEqual({ imported: 6 });
+    expect(s.getItem(LEGACY_HISTORY_KEY)).toBe(rewritten);
+    expect(s.getItem(LEGACY_MIGRATED_KEY)).toBe("1");
+  });
+
   it("깨진 v1 도 원문 그대로 백업으로 옮긴다", async () => {
     const s = new MemoryStorage();
     s.setItem(LEGACY_HISTORY_KEY, "[깨짐");
