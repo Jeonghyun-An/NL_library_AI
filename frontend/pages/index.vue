@@ -162,6 +162,7 @@
         <div class="skx-panel" :hidden="mode !== 'paper'">
           <div class="skx-search">
             <div class="skx-search__box">
+              <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" :disabled="loading" />
               <label class="skx-search__field">
                 <span class="skx-sr-only">논문 검색어</span>
                 <textarea

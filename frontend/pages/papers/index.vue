@@ -12,6 +12,7 @@
         <h1 class="skx-hero">논문 의미 기반 검색</h1>
         <div class="skx-search">
           <div class="skx-search__box">
+            <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" :disabled="loading" />
             <label class="skx-search__field">
               <span class="skx-sr-only">논문 검색어</span>
               <textarea
@@ -42,6 +43,7 @@
 
       <!-- 검색바 -->
       <div class="skx-rsearch">
+        <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" />
         <input
           type="text"
           class="skx-rsearch__input"
