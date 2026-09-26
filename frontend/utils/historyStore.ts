@@ -282,13 +282,37 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     return ops.map((o) => (o === victim ? { ...victim, entry: withoutField(victim.entry, "snapshot") } : o));
   }
 
+  // 저장된 캐시를 한 칸 덜어 고쳐 쓴다. 덜 것이 없거나 쓰지 못하면 false
+  function shedStoredCache(): boolean {
+    if (!storage) return false;
+    let lighter = shedCache(readCache());
+    while (lighter) {
+      try {
+        storage.setItem(HISTORY_CACHE_KEY, JSON.stringify(lighter));
+        cacheMem = lighter;
+        return true;
+      } catch (e) {
+        if (!isQuotaError(e)) return false;
+        lighter = shedCache(lighter);
+      }
+    }
+    return false;
+  }
+
+  // 쿼터 대부분은 캐시가 쓰고, 쿼터에 닿은 캐시는 겨우 들어갈 만큼만 덜어 늘 한계 바로 아래에 있다.
+  // 편지는 아직 서버에 없는 사용자 변경이고 캐시는 서버 값·편지의 사본이라, 편지함이 막히면 캐시부터 던다 —
+  // 여기서 메모리로 넘어가면 새로고침 한 번에 편지가 사라진다
+  function shedForOutbox(ops: OutboxOp[]): OutboxOp[] | null {
+    return shedStoredCache() ? ops : shedOutbox(ops);
+  }
+
   const readCache = () => read(HISTORY_CACHE_KEY, cacheMem);
   const writeCache = (list: HistoryEntry[]) => {
     cacheMem = write(HISTORY_CACHE_KEY, capPerKind(list), shedCache);
   };
   const readOutboxList = () => read(HISTORY_OUTBOX_KEY, outboxMem);
   const writeOutbox = (ops: OutboxOp[]) => {
-    outboxMem = write(HISTORY_OUTBOX_KEY, ops.slice(-OUTBOX_LIMIT), shedOutbox);
+    outboxMem = write(HISTORY_OUTBOX_KEY, ops.slice(-OUTBOX_LIMIT), shedForOutbox);
   };
 
   return {

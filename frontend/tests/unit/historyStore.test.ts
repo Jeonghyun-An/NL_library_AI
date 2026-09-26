@@ -29,6 +29,19 @@ import {
 
 const snap = { query: "한국 경제", books: [{ book_id: "B1", best_score: 0.9, chunks: [] as never[] }] };
 
+/** 쿼터를 금방 채우는 무거운 축약 결과 */
+function heavySnapshot() {
+  return {
+    query: "q",
+    books: Array.from({ length: 20 }, (_, i) => ({
+      book_id: `B${i}`,
+      best_score: 0.5,
+      chunks: [] as never[],
+      book_info: { title: "제목".repeat(40) },
+    })),
+  };
+}
+
 function wire(over: Partial<HistoryItemDetail> = {}): HistoryItemDetail {
   return {
     id: ID1,
@@ -226,15 +239,7 @@ describe("createLocalStore", () => {
   });
 
   it("쿼터에 걸리면 오래된 snapshot 부터 비우고 목록은 남긴다", async () => {
-    const heavy = {
-      query: "q",
-      books: Array.from({ length: 20 }, (_, i) => ({
-        book_id: `B${i}`,
-        best_score: 0.5,
-        chunks: [] as never[],
-        book_info: { title: "제목".repeat(40) },
-      })),
-    };
+    const heavy = heavySnapshot();
     const oneSize = JSON.stringify([bookEntry(ID1, { snapshot: heavy })]).length;
     const storage = new MemoryStorage(Math.floor(oneSize * 1.6));
     const local = createLocalStore(storage);
@@ -244,6 +249,17 @@ describe("createLocalStore", () => {
     expect(cached.map((e) => e.id).sort()).toEqual([ID1, ID2].sort());
     expect(cached.find((e) => e.id === ID1)!.snapshot).toBeUndefined();
     expect(cached.find((e) => e.id === ID2)!.snapshot).toEqual(heavy);
+  });
+
+  it("캐시를 다 덜어도 편지가 들어가지 않을 때만 던지지 않고 메모리로 넘어간다", async () => {
+    const storage = new MemoryStorage(2000);
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID1, { snapshot: snap }));
+    const ai = { intro: "소개".repeat(1000), items: [] };
+    local.enqueue({ op: "patch", id: ID1, partial: { ai } });
+    expect(storage.getItem(HISTORY_OUTBOX_KEY)).toBeNull();
+    expect(local.readOutbox()).toMatchObject([{ op: "patch", id: ID1, partial: { ai } }]);
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
   });
 
   it("쿼터가 아닌 쓰기 오류는 던지지 않고 메모리로 넘어간다", async () => {
@@ -542,5 +558,43 @@ describe("createHybridStore", () => {
     expect(server.list).toHaveBeenCalledTimes(2);
     slow.open();
     await Promise.all([books, papers]);
+  });
+
+  /** 쿼터에 한 번 닿은 캐시는 겨우 들어갈 만큼만 덜어 내므로 늘 한계 바로 아래에 머문다 — 그 상태를 만든다 */
+  async function fullCache(count: number, slots: number) {
+    const heavy = heavySnapshot();
+    const snapSize = JSON.stringify(heavy).length;
+    const storage = new MemoryStorage(snapSize * slots);
+    const server = fakeServer();
+    const store = createHybridStore(server, createLocalStore(storage));
+    const ids = Array.from({ length: count }, (_, i) => `${i}0000000-0000-4000-8000-000000000000`);
+    for (const [i, id] of ids.entries()) {
+      await store.put(bookEntry(id, { createdAt: `2026-09-26T0${i}:00:00.000Z`, snapshot: heavy }));
+    }
+    const cached = JSON.parse(storage.getItem(HISTORY_CACHE_KEY)!) as Array<{ snapshot?: unknown }>;
+    expect(cached.filter((e) => e.snapshot).length).toBeLessThan(count);
+    return { storage, server, store, ids, heavy, snapSize };
+  }
+
+  it("캐시가 쿼터 한계까지 찬 채 오프라인에서 고쳐도 편지는 저장소에 남는다", async () => {
+    const { storage, server, store, ids, snapSize } = await fullCache(8, 6);
+    const target = ids[ids.length - 1]!;
+    const ai = { intro: "소개".repeat(snapSize), items: [] };
+    server.fail(networkError());
+    await store.patch(target, { ai });
+    // 새로고침한 것처럼 같은 저장소를 새 인스턴스로 다시 연다
+    const reopened = createLocalStore(storage);
+    expect(reopened.readOutbox()).toMatchObject([{ op: "patch", id: target, partial: { ai } }]);
+    expect(await reopened.get(target)).toMatchObject({ ai });
+    expect((await reopened.list("book")).items).toHaveLength(ids.length);
+  });
+
+  it("편지함이 쿼터에 걸리면 보낼 편지의 결과보다 캐시 사본을 먼저 덜어 낸다", async () => {
+    const { storage, server, store, ids, heavy } = await fullCache(8, 6);
+    server.fail(networkError());
+    await store.put(bookEntry(ID1, { createdAt: "2026-09-26T09:00:00.000Z", snapshot: heavy }));
+    const reopened = createLocalStore(storage);
+    expect(reopened.readOutbox()).toMatchObject([{ op: "put", entry: { id: ID1, snapshot: heavy } }]);
+    expect((await reopened.list("book")).items).toHaveLength(ids.length + 1);
   });
 });
