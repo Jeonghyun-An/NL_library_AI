@@ -78,6 +78,28 @@ describe("initialResearchView", () => {
     }));
     expect(v.counters).toEqual({ papersReviewed: 38, evidenceAdopted: 11, rechecks: 2 });
   });
+
+  it("보고서가 없는 실패 잡은 seq 가 가장 큰 단계 result 의 카운터를 쓴다", () => {
+    const v = initialResearchView(job({
+      status: "failed", stage: "explored", last_error: "종합 실패",
+      steps: [
+        step({ seq: 0, result: { subquestions: ["효과 측정", "교사 인식"] } }),
+        step({ seq: 2, kind: "search", subq_idx: 1, title: "교사 인식", result: { rounds: [], counters: { papers_reviewed: 20, evidence_adopted: 7, rechecks: 1 } } }),
+        step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", result: { rounds: [], counters: { papers_reviewed: 12, evidence_adopted: 4, rechecks: 0 } } }),
+        step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "failed", result: { sections_total: 2, sections: [], error: "종합 실패" } }),
+      ],
+    }));
+    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 1 });
+  });
+
+  it("보고서 stats 가 단계 result 의 카운터보다 앞선다", () => {
+    const v = initialResearchView(job({
+      status: "completed", stage: "synthesized",
+      report: oldReport({ stats: { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 } }),
+      steps: [step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", result: { rounds: [], counters: { papers_reviewed: 30, evidence_adopted: 9, rechecks: 1 } } })],
+    }));
+    expect(v.counters).toEqual({ papersReviewed: 38, evidenceAdopted: 11, rechecks: 2 });
+  });
 });
 
 describe("applyResearchEvent — 탐색", () => {
@@ -284,6 +306,15 @@ describe("refreshView·withPlan", () => {
     const v = refreshView(live, job({ status: "failed", last_error: "종합 실패" }));
     expect(v.status).toBe("failed");
     expect(v.counters.papersReviewed).toBe(20);
+  });
+
+  it("GET 에 저장된 카운터가 있으면 그 값으로 맞춘다", () => {
+    const live = run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1 }]);
+    const v = refreshView(live, job({
+      status: "failed", last_error: "종합 실패",
+      steps: [step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done", result: { rounds: [], counters: { papers_reviewed: 20, evidence_adopted: 7, rechecks: 2 } } })],
+    }));
+    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 2 });
   });
 
   it("다른 잡의 응답이면 이전 화면을 섞지 않는다", () => {

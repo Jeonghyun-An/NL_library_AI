@@ -47,6 +47,8 @@ export interface StepResult {
   // 보강 전 잡은 절 수(number), 보강 후는 절별 상태 목록이다
   sections?: number | SynthSectionResult[];
   sections_total?: number;
+  // search 단계가 회차 끝·종료 때 남기는 잡 전체 카운터 — 보강 전 잡에는 없다
+  counters?: CountersPayload;
   error?: string;
 }
 

@@ -135,7 +135,7 @@ export function initialResearchView(job: ResearchJob): ResearchView {
     finishedAt: job.finished_at ?? null,
     steps,
     subqs: [],
-    counters: countersFromReport(job.report ?? null),
+    counters: countersFromJob(job.report ?? null, steps),
     highlight: null,
     synth: { ...EMPTY_SYNTH },
     source: "none",
@@ -143,8 +143,8 @@ export function initialResearchView(job: ResearchJob): ResearchView {
   return view.status === "running" ? { ...view, highlight: latestHighlight(view.subqs) } : view;
 }
 
-// 종료 이벤트 뒤·409 뒤 GET 으로 다시 맞출 때 쓴다. 보고서가 없는 잡(실패·취소)은
-// 서버가 카운터를 돌려주지 않으므로 라이브로 받은 값을 버리지 않는다.
+// 종료 이벤트 뒤·409 뒤 GET 으로 다시 맞출 때 쓴다. GET 에 저장된 카운터가 아직 없으면
+// (첫 회차가 저장되기 전·보강 전 잡) 스트림으로 먼저 받은 값을 잃지 않게 라이브 값을 지킨다.
 export function refreshView(prev: ResearchView | null, job: ResearchJob): ResearchView {
   const fresh = initialResearchView(job);
   if (!prev || prev.jobId !== fresh.jobId) return fresh;
@@ -463,10 +463,20 @@ function countersFromPayload(p: CountersPayload): CountersView {
   return { papersReviewed: p.papers_reviewed, evidenceAdopted: p.evidence_adopted, rechecks: p.rechecks };
 }
 
-function countersFromReport(report: ResearchReport | null): CountersView {
+// 서버 스냅샷(api/research.py _live_counters)과 같은 순서로 고른다 — 갈리면 끝난 뒤 다시 연
+// 실패·취소 잡의 카운터가 라이브로 볼 때와 다르게(빈칸으로) 나온다. steps 는 seq 오름차순이다.
+function countersFromJob(report: ResearchReport | null, steps: ResearchStepRow[]): CountersView {
+  if (report?.stats) return countersFromPayload(report.stats);
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const counters = steps[i]?.result?.counters;
+    if (counters) return countersFromPayload(counters);
+  }
+  return countersFromLegacyReport(report);
+}
+
+// 보강 전 보고서(stats 없음) — 검토한 논문 수는 어디에도 남아 있지 않다
+function countersFromLegacyReport(report: ResearchReport | null): CountersView {
   if (!report) return { ...EMPTY_COUNTERS };
-  if (report.stats) return countersFromPayload(report.stats);
-  // 보강 전 보고서 — 검토한 논문 수는 어디에도 남아 있지 않다
   return {
     papersReviewed: null,
     evidenceAdopted: Object.keys(report.evidence ?? {}).length,
