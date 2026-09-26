@@ -188,7 +188,9 @@ class HistoryRepository:
                 item_id = uuid.uuid4()
             if item.legacy_id is not None:
                 id_map[item.legacy_id] = str(item_id)
-            created_at = item.created_at or now
+            # 목록은 created_at 내림차순이다 — 시계가 앞선 브라우저나 조작한 요청의 미래 시각을 믿으면
+            # 그 항목이 이후에 새로 저장한 기록보다 계속 위에 고정된다. 과거 시각은 옛 순서대로 지킨다
+            created_at = min(item.created_at or now, now)
             rows.setdefault(item_id, {
                 "id": item_id, "session_id": session_id,
                 **item.model_dump(include=_ITEM_FIELDS),

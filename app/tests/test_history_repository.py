@@ -328,6 +328,17 @@ class TestImport:
         assert [i.title for i in items] == ["나", "가"]
         assert items[1].created_at.replace(tzinfo=timezone.utc) == _at(1)
 
+    def test_future_created_at_is_capped_to_now(self, engine):
+        # 목록은 created_at 내림차순이다. 시계가 앞선 브라우저나 조작한 요청의 미래 시각을 믿으면
+        # 그 항목이 이후에 새로 저장한 기록보다 계속 위에 고정된다
+        item_id = uuid.uuid4()
+        _import(engine, SID_A, {"id": item_id, "kind": "book", "title": "미래",
+                                "created_at": datetime.now(timezone.utc) + timedelta(days=365)})
+        after = datetime.now(timezone.utc)
+        row = raw_row(engine, item_id)
+        assert row.created_at.replace(tzinfo=timezone.utc) <= after
+        assert row.updated_at == row.created_at
+
     def test_second_import_skips_and_returns_same_map(self, engine):
         item = {"legacy_id": "1727000000000", "kind": "book", "title": "가"}
         first = _import(engine, SID_A, item)
