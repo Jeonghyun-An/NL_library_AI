@@ -143,17 +143,16 @@ export function initialResearchView(job: ResearchJob): ResearchView {
   return view.status === "running" ? { ...view, highlight: latestHighlight(view.subqs) } : view;
 }
 
-// 종료 이벤트 뒤·409 뒤 GET 으로 다시 맞출 때 쓴다. 카운터는 보고서 stats(최종 확정값)가
-// 있거나 라이브 값이 없을 때만 GET 값을 쓴다. 워커는 검색 직후 counters 를 흘리고 자기점검
-// (LLM)이 끝나야 단계 result 에 저장하므로, 매 회차 점검을 기다리는 동안 저장본은 한 회차
-// 뒤처져 있다 — 취소·실패는 대개 이 구간에 오고, 스트림도 닫혀 뒤에 바로잡히지 않는다.
+// 종료 이벤트 뒤·409 뒤·재연결 때 GET 으로 다시 맞출 때 쓴다. 카운터는 보고서 stats(최종
+// 확정값)가 있으면 그것을, 없으면 라이브 값과 저장본을 reconcileCounters 로 합친다 — 취소·
+// 실패는 대개 저장본이 뒤처진 구간에 오고, 스트림도 닫혀 뒤에 바로잡히지 않는다.
 export function refreshView(prev: ResearchView | null, job: ResearchJob): ResearchView {
   const fresh = initialResearchView(job);
   if (!prev || prev.jobId !== fresh.jobId) return fresh;
   const merged = rebuild({ ...fresh, subqs: prev.subqs, synth: prev.synth });
-  const counters = fresh.report?.stats || prev.counters.papersReviewed === null
+  const counters = fresh.report?.stats
     ? fresh.counters
-    : prev.counters;
+    : reconcileCounters(prev.counters, prev.steps, fresh.counters, fresh.steps);
   const highlight = merged.status === "running" ? (prev.highlight ?? latestHighlight(merged.subqs)) : null;
   return { ...merged, counters, highlight };
 }
@@ -208,7 +207,13 @@ function applySnapshot(view: ResearchView, event: SnapshotEvent): ResearchView {
     next.status = event.job.status;
     next.stage = event.job.stage;
     if (event.job.plan?.length) next.plan = event.job.plan;
-    if (event.job.counters) next.counters = countersFromPayload(event.job.counters);
+    if (event.job.counters) {
+      const stored = countersFromPayload(event.job.counters);
+      // 완료 잡의 스냅샷 카운터는 보고서 stats(확정값)다
+      next.counters = event.job.status === "completed"
+        ? stored
+        : reconcileCounters(view.counters, view.steps, stored, event.steps ?? []);
+    }
   }
   if (!next.plan.length) next.plan = planFromSteps(next.steps);
   const rebuilt = rebuild(next);
@@ -229,7 +234,11 @@ function applyStep(view: ResearchView, event: StepEvent): ResearchView {
   };
   const steps = [...view.steps.filter((s) => s.seq !== event.seq), row].sort(bySeq);
   const plan = view.plan.length ? view.plan : planFromSteps(steps);
-  return rebuild({ ...view, steps, plan });
+  // 진행 저장·단계 닫기에 실린 카운터는 저장한 그 순간의 값이다. 이벤트는 순서대로 오고
+  // 하위질문은 하나씩 도므로 마지막 counters 이벤트와 같다 — 재접속 스냅샷이 뒤처진 값을
+  // 줬어도 여기서 바로잡힌다.
+  const counters = event.result?.counters ? countersFromPayload(event.result.counters) : view.counters;
+  return rebuild({ ...view, steps, plan, counters });
 }
 
 function applySearch(view: ResearchView, event: SearchEvent): ResearchView {
@@ -466,14 +475,45 @@ function countersFromPayload(p: CountersPayload): CountersView {
 }
 
 // 서버 스냅샷(api/research.py _live_counters)과 같은 순서로 고른다 — 갈리면 끝난 뒤 다시 연
-// 실패·취소 잡의 카운터가 라이브로 볼 때와 다르게(빈칸으로) 나온다. steps 는 seq 오름차순이다.
+// 실패·취소 잡의 카운터가 라이브로 볼 때와 다르게(빈칸으로) 나온다.
 function countersFromJob(report: ResearchReport | null, steps: ResearchStepRow[]): CountersView {
   if (report?.stats) return countersFromPayload(report.stats);
-  for (let i = steps.length - 1; i >= 0; i--) {
-    const counters = steps[i]?.result?.counters;
-    if (counters) return countersFromPayload(counters);
-  }
-  return countersFromLegacyReport(report);
+  const counters = countersStep(steps)?.result?.counters;
+  return counters ? countersFromPayload(counters) : countersFromLegacyReport(report);
+}
+
+// 서버가 저장본 카운터를 꺼내는 단계 — 카운터를 실은 단계 중 seq 가 가장 큰 행
+function countersStep(steps: ResearchStepRow[]): ResearchStepRow | undefined {
+  let best: ResearchStepRow | undefined;
+  for (const s of steps) if (s.result?.counters && (!best || s.seq > best.seq)) best = s;
+  return best;
+}
+
+// 라이브 카운터와 저장본(스냅샷·GET) 카운터를 합친다. 한 시도 안에서 카운터는 줄지 않는다
+// (research_stats 의 seen_cnts·evidence·queries 는 늘기만 한다). 저장본은 자기점검(LLM)이
+// 끝나야 쓰여 점검을 기다리는 동안 검색 직후 받은 counters 이벤트보다 한 회차 뒤처지고,
+// 반대로 스트림이 끊긴 사이에는 저장본이 앞선다 — 그래서 필드별로 큰 값을 남긴다.
+// 다만 화면이 모르는 뒤 단계에서 나온 저장본은 그대로 쓴다. 탐색부터 다시 도는 재시도는
+// 카운터를 0 부터 새로 세므로, 큰 값을 남기면 이전 시도의 숫자가 버티고 선다.
+function reconcileCounters(
+  live: CountersView,
+  liveSteps: ResearchStepRow[],
+  stored: CountersView,
+  storedSteps: ResearchStepRow[],
+): CountersView {
+  const source = countersStep(storedSteps);
+  if (source && liveSteps.every((s) => s.seq < source.seq)) return stored;
+  return {
+    papersReviewed: larger(live.papersReviewed, stored.papersReviewed),
+    evidenceAdopted: larger(live.evidenceAdopted, stored.evidenceAdopted),
+    rechecks: larger(live.rechecks, stored.rechecks),
+  };
+}
+
+function larger(a: number | null, b: number | null): number | null {
+  if (a === null) return b;
+  if (b === null) return a;
+  return Math.max(a, b);
 }
 
 // 보강 전 보고서(stats 없음) — 검토한 논문 수는 어디에도 남아 있지 않다

@@ -59,6 +59,36 @@ const SEARCH_STARTED: ResearchEvent = {
   kind: "step", seq: 1, step_kind: "search", subq_idx: 0, title: "효과 측정", status: "running",
 };
 
+// 1회차 점검까지 끝나 저장됐고, 2회차 검색 직후 counters 를 받은 채 점검(LLM)을 기다리는 장면.
+// 워커는 자기점검이 끝나야 단계 result 에 저장하므로 이 동안 저장본은 라이브보다 한 회차 뒤처진다.
+const ROUND1 = {
+  round: 1, query: "효과 측정", found_chunks: 12, new_papers: 5,
+  verdict: "insufficient" as const, note: "초등 대상 연구가 없다", next_query: "초등 AI 윤리 교육 효과",
+};
+const ROUND2 = {
+  round: 2, query: "초등 AI 윤리 교육 효과", found_chunks: 9, new_papers: 6,
+  verdict: "sufficient" as const, note: "충분", next_query: null,
+};
+const SAVED = { papers_reviewed: 20, evidence_adopted: 5, rechecks: 0 };
+const LIVE = { papers_reviewed: 26, evidence_adopted: 7, rechecks: 1 };
+const AWAITING_ROUND2_CRITIQUE: ResearchEvent[] = [
+  SEARCH_STARTED,
+  { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+  { kind: "counters", ...SAVED },
+  {
+    kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 5,
+    parse_failed: false, capped: 0, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+  },
+  { ...SEARCH_STARTED, result: { rounds: [ROUND1], counters: SAVED } },
+  { kind: "search", subq_idx: 0, query: "초등 AI 윤리 교육 효과", found: 9, round: 2, new_papers: 6 },
+  { kind: "counters", ...LIVE },
+];
+const PLAN_ROW = step({ seq: 0, result: { subquestions: ["효과 측정", "교사 인식"] } });
+const SAVED_SEARCH_ROW = step({
+  seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [ROUND1], counters: SAVED },
+});
+const LIVE_VIEW = { papersReviewed: 26, evidenceAdopted: 7, rechecks: 1 };
+
 describe("initialResearchView", () => {
   it("승인 대기 잡은 계획을 대기 중인 하위질문으로 펼친다", () => {
     const v = initialResearchView(job({ status: "awaiting_approval", steps: [step({ result: { subquestions: ["효과 측정", "교사 인식"] } })] }));
@@ -206,6 +236,47 @@ describe("applyResearchEvent — snapshot·상태", () => {
     expect(v.highlight).toEqual({ subqIdx: 0, round: 1, note: "부족", nextQuery: "초등 효과" });
   });
 
+  it("탐색 중 재접속 — 한 회차 뒤처진 snapshot 카운터가 라이브 카운터를 되돌리지 않는다", () => {
+    const v = applyResearchEvent(run(AWAITING_ROUND2_CRITIQUE), {
+      kind: "snapshot",
+      steps: [PLAN_ROW, SAVED_SEARCH_ROW],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: SAVED },
+    });
+    expect(v.counters).toEqual(LIVE_VIEW);
+    expect(v.subqs[0]!.rounds.map((r) => r.round)).toEqual([1, 2]);
+  });
+
+  it("진행 저장 step 이벤트의 result.counters 로 뒤처진 카운터를 바로잡는다", () => {
+    // 저장본으로 연 화면이 counters 이벤트를 놓쳤다 — 점검 직후의 진행 저장이 라이브 값을 싣는다
+    const start = initialResearchView(job({ steps: [PLAN_ROW, SAVED_SEARCH_ROW] }));
+    expect(start.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 5, rechecks: 0 });
+    const v = applyResearchEvent(start, { ...SEARCH_STARTED, result: { rounds: [ROUND1, ROUND2], counters: LIVE } });
+    expect(v.counters).toEqual(LIVE_VIEW);
+  });
+
+  it("탐색부터 다시 도는 재시도 — 화면이 모르는 뒤 단계의 저장본은 작아도 그대로 쓴다", () => {
+    // 재시도는 카운터를 0 부터 새로 센다. 이전 시도의 큰 값을 남기면 안 된다.
+    const failed = initialResearchView(job({
+      status: "failed", last_error: "x",
+      steps: [
+        PLAN_ROW,
+        step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", result: { rounds: [ROUND1], counters: SAVED } }),
+        step({ seq: 2, kind: "search", subq_idx: 1, title: "교사 인식", status: "failed", result: { error: "e", rounds: [], counters: LIVE } }),
+      ],
+    }));
+    const queued = applyResearchEvent(failed, { kind: "status", status: "queued", stage: "planned" });
+    const retried = { papers_reviewed: 3, evidence_adopted: 1, rechecks: 0 };
+    const v = applyResearchEvent(queued, {
+      kind: "snapshot",
+      steps: [
+        ...failed.steps,
+        step({ seq: 3, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [ROUND1], counters: retried } }),
+      ],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: retried },
+    });
+    expect(v.counters).toEqual({ papersReviewed: 3, evidenceAdopted: 1, rechecks: 0 });
+  });
+
   it("status 이벤트는 상태·단계를 바꾸고, 다시 도는 잡이면 실패 사유를 지운다", () => {
     const failed = initialResearchView(job({ status: "failed", last_error: "종합 실패" }));
     const v = applyResearchEvent(failed, { kind: "status", status: "queued", stage: "explored" });
@@ -309,36 +380,52 @@ describe("refreshView·withPlan", () => {
   });
 
   it("회차 도중 취소 — 저장본이 한 회차 뒤처져 있어도 라이브 카운터를 지킨다", () => {
-    // 워커는 검색 직후 counters 를 흘리고, 자기점검(LLM)이 끝나야 단계 result 에 저장한다.
-    // 점검을 기다리는 동안 취소하면 GET 에는 앞 회차 카운터만 들어 있다.
-    const round1 = {
-      round: 1, query: "효과 측정", found_chunks: 12, new_papers: 5,
-      verdict: "insufficient" as const, note: "초등 대상 연구가 없다", next_query: "초등 AI 윤리 교육 효과",
-    };
-    const saved = { papers_reviewed: 20, evidence_adopted: 5, rechecks: 0 };
-    const live = run([
-      SEARCH_STARTED,
-      { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
-      { kind: "counters", ...saved },
-      {
-        kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 5,
-        parse_failed: false, capped: 0, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
-      },
-      { ...SEARCH_STARTED, result: { rounds: [round1], counters: saved } },
-      { kind: "search", subq_idx: 0, query: "초등 AI 윤리 교육 효과", found: 9, round: 2, new_papers: 6 },
-      { kind: "counters", papers_reviewed: 26, evidence_adopted: 7, rechecks: 1 },
-      { kind: "canceled", status: "canceled" },
-    ]);
+    // 점검을 기다리는 동안 취소하면 GET 에는 앞 회차 카운터만 들어 있다
+    const live = run([...AWAITING_ROUND2_CRITIQUE, { kind: "canceled", status: "canceled" }]);
     const v = refreshView(live, job({
       status: "canceled", finished_at: "2026-09-26T01:05:00Z",
-      steps: [
-        step({ seq: 0, result: { subquestions: ["효과 측정", "교사 인식"] } }),
-        step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [round1], counters: saved } }),
-      ],
+      steps: [PLAN_ROW, SAVED_SEARCH_ROW],
     }));
     expect(v.status).toBe("canceled");
     expect(v.subqs[0]!.rounds.map((r) => r.round)).toEqual([1, 2]);
-    expect(v.counters).toEqual({ papersReviewed: 26, evidenceAdopted: 7, rechecks: 1 });
+    expect(v.counters).toEqual(LIVE_VIEW);
+  });
+
+  it("탐색 중 재접속한 뒤 종합이 실패해도 다시 연 화면과 카운터가 같다", () => {
+    const doneSearch = step({
+      seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done",
+      result: { queries: ["효과 측정", "초등 AI 윤리 교육 효과"], adopted: 7, rounds: [ROUND1, ROUND2], counters: LIVE },
+    });
+    const live = run([
+      ...AWAITING_ROUND2_CRITIQUE,
+      {
+        kind: "snapshot", steps: [PLAN_ROW, SAVED_SEARCH_ROW],
+        job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: SAVED },
+      },
+      { ...SEARCH_STARTED, result: { rounds: [ROUND1, ROUND2], counters: LIVE } },
+      { ...SEARCH_STARTED, status: "done", result: doneSearch.result },
+      { kind: "status", status: "running", stage: "explored" },
+      { kind: "step", seq: 2, step_kind: "synthesize", subq_idx: null, title: "보고서 종합", status: "running" },
+      { kind: "failed", status: "failed", error: "종합 실패" },
+    ]);
+    const got = job({
+      status: "failed", stage: "explored", last_error: "종합 실패",
+      steps: [
+        PLAN_ROW, doneSearch,
+        step({ seq: 2, kind: "synthesize", title: "보고서 종합", status: "failed", result: { sections_total: 1, sections: [], error: "종합 실패" } }),
+      ],
+    });
+    expect(live.counters).toEqual(LIVE_VIEW);
+    expect(refreshView(live, got).counters).toEqual(initialResearchView(got).counters);
+    expect(refreshView(live, got).counters).toEqual(LIVE_VIEW);
+  });
+
+  it("스트림이 끊긴 사이 앞서 나간 GET 카운터는 라이브보다 커도 받아들인다", () => {
+    const live = run([SEARCH_STARTED, { kind: "counters", ...SAVED }]);
+    const v = refreshView(live, job({
+      steps: [PLAN_ROW, step({ ...SAVED_SEARCH_ROW, result: { rounds: [ROUND1, ROUND2], counters: LIVE } })],
+    }));
+    expect(v.counters).toEqual(LIVE_VIEW);
   });
 
   it("라이브 카운터를 받은 적이 없으면 GET 에 저장된 카운터로 채운다", () => {
