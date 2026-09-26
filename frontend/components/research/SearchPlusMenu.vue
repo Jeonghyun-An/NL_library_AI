@@ -104,6 +104,11 @@ watch(
   () => props.modelValue,
   (value) => {
     if (error.value && !busy.value) error.value = "";
+    // 같은 검색어를 다른 입력창·코드도 바꾼다(메인 랜딩은 도서·논문 패널이 한 currentQuery 에
+    // 묶여 있고, 숨은 논문 패널의 이 컴포넌트도 마운트된 채다. 기록 복원도 값을 넣는다). 자기
+    // 입력창에 사용자가 친 글에만 칩을 켠다. 부모 상자의 캡처 단계 input 리스너로 가리면 입력창의
+    // v-model 보다 먼저 돌아 접두를 뗀 값이 원문으로 다시 덮이므로, 값이 바뀐 뒤 도는 여기서 가린다.
+    if (!field || document.activeElement !== field) return;
     if (active.value || !shouldAutoChip(value)) return;
     const slash = parseSlash(value);
     const mode = modeFor(slash.mode);
