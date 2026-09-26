@@ -13,6 +13,7 @@ import datetime as _dt
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 
 from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy import insert, select, text as sa_text, update
@@ -112,16 +113,37 @@ async def _next_seq(db: AsyncSession, job_id: uuid.UUID) -> int:
     return int(row.scalar_one())
 
 
+@dataclass(frozen=True)
+class _StepRef:
+    """열린 step 의 id 와, 닫을 때 화면에 다시 알릴 머리 정보.
+
+    ORM 객체를 들고 다니지 않는 이유: 예외 핸들러는 rollback 부터 하는데, rollback 은
+    세션의 모든 인스턴스를 만료시켜 그 뒤 속성 접근이 async 세션에서 MissingGreenlet
+    으로 터진다. 평범한 값 객체는 rollback 과 무관하다.
+    """
+    id: int
+    job_id: uuid.UUID
+    seq: int
+    kind: str
+    title: str
+    subq_idx: int | None
+    detail: str | None
+
+    def event(self, status: str, result: dict | None = None) -> dict:
+        # 이벤트 자체의 kind 와 겹치지 않게 step_kind 로 싣는다
+        payload = {
+            "seq": self.seq, "step_kind": self.kind, "subq_idx": self.subq_idx,
+            "title": self.title, "detail": self.detail, "status": status,
+        }
+        if result is not None:
+            payload["result"] = result
+        return payload
+
+
 async def _step(
     db: AsyncSession, job_id: uuid.UUID, seq: int, kind: str, title: str, *,
     subq_idx: int | None = None, detail: str | None = None,
-) -> int:
-    """step 을 열고 id 를 돌려준다.
-
-    ORM 객체가 아니라 id 를 들고 다니는 이유: 예외 핸들러는 rollback 부터 하는데,
-    rollback 은 세션의 모든 인스턴스를 만료시켜 그 뒤 속성 접근이 async 세션에서
-    MissingGreenlet 으로 터진다.
-    """
+) -> _StepRef:
     # STEP_KINDS 를 실제로 강제하는 유일한 지점. 상수만 정의하고 아무 데서도
     # 쓰지 않으면 장식이 되고, 오타난 kind 가 프론트 분기를 조용히 빗나간다.
     assert kind in STEP_KINDS, f"알 수 없는 kind: {kind}"
@@ -132,15 +154,28 @@ async def _step(
         ).returning(ResearchStep.id)
     )).scalar_one()
     await db.commit()
-    return step_id
+    step = _StepRef(step_id, job_id, seq, kind, title, subq_idx, detail)
+    # 커밋 뒤에 알린다. 먼저 알리면 그 틈에 재접속한 화면의 스냅샷에는 없는 단계가
+    # 이벤트로만 도착한다.
+    await publish(job_id, "step", step.event("running"))
+    return step
 
 
-async def _finish(db: AsyncSession, step_id: int, status: str, result: dict | None = None) -> None:
+async def _finish(db: AsyncSession, step: _StepRef, status: str, result: dict | None = None) -> None:
+    result = result or {}
     await db.execute(
-        update(ResearchStep).where(ResearchStep.id == step_id)
-        .values(status=status, result=result or {}, finished_at=_now())
+        update(ResearchStep).where(ResearchStep.id == step.id)
+        .values(status=status, result=result, finished_at=_now())
     )
     await db.commit()
+    # 저장한 result 를 그대로 싣는다 — 라이브로 본 장면과 다시 연 장면이 같아야 한다.
+    await publish(step.job_id, "step", step.event(status, result))
+
+
+async def _announce(job_id: uuid.UUID, status: str, stage: str) -> None:
+    """상태 전이를 알린다. 전이가 성공한 뒤에만 부른다 — 취소에 진 전이를 알리면
+    화면이 취소된 잡을 진행 중으로 그린다. 종료 상태는 publish_terminal 이 알린다."""
+    await publish(job_id, "status", {"status": status, "stage": stage})
 
 
 async def _corpus_range(db: AsyncSession) -> dict:
@@ -310,25 +345,27 @@ async def _plan_deep_research(job_id: str) -> dict:
                 return {"job_id": job_id, "status": "skipped"}
 
             job = await db.get(ResearchJob, jid)
-            question, params = job.question, merge_params(job.params or {})
+            question, params, stage = job.question, merge_params(job.params or {}), job.stage
             seq = await _next_seq(db, jid)
             await db.commit()      # 읽기 트랜잭션을 닫고 LLM 으로 간다
+            await _announce(jid, "planning", stage)
 
-            step_id = await _step(db, jid, seq, "plan", "연구 계획 수립",
-                                  detail="질문을 하위질문으로 분해하는 중입니다")
+            step = await _step(db, jid, seq, "plan", "연구 계획 수립",
+                               detail="질문을 하위질문으로 분해하는 중입니다")
             try:
                 plan = await make_plan(question, params=params)
             except SoftTimeLimitExceeded:
                 raise
             except Exception as e:
                 log.exception("[research] 계획 수립 실패 job=%s", jid)
-                await _finish(db, step_id, "failed", {"error": str(e)[:500]})
+                await _finish(db, step, "failed", {"error": str(e)[:500]})
                 return await _end_failed(db, jid, str(e), expect=("planning",))
 
-            await _finish(db, step_id, "done", {"subquestions": plan})
+            await _finish(db, step, "done", {"subquestions": plan})
             if not await _transition(db, jid, expect=("planning",), status="awaiting_approval",
                                      plan=plan, stage=_stage("planned")):
                 return await _stopped(db, jid)
+            await _announce(jid, "awaiting_approval", "planned")
             return {"job_id": str(jid), "status": "awaiting_approval"}
 
     except SoftTimeLimitExceeded:
@@ -361,6 +398,7 @@ async def _run_deep_research(job_id: str) -> dict:
             question, params, plan = job.question, job.params, job.plan
             seq = await _next_seq(db, jid)
             await db.commit()
+            await _announce(jid, "running", stage)
 
             async def _emit(kind: str, payload: dict) -> None:
                 await publish(jid, kind, payload)
@@ -389,7 +427,7 @@ async def _run_deep_research(job_id: str) -> dict:
                     if await _is_cancelled(db, jid):
                         return await _stopped(db, jid)
 
-                    step_id = await _step(
+                    step = await _step(
                         db, jid, seq, "search", subq.text, subq_idx=subq.idx,
                         detail=f"'{subq.text}' 관련 논문을 찾기 위해 검색 중입니다",
                     )
@@ -407,9 +445,9 @@ async def _run_deep_research(job_id: str) -> dict:
                         log.exception("[research] 하위질문 실패 job=%s idx=%s", jid, subq.idx)
                         await db.rollback()     # DB 오류면 트랜잭션이 깨져 있어 기록부터 터진다
                         subq.failed = True
-                        await _finish(db, step_id, "failed", {"error": str(e)[:500]})
+                        await _finish(db, step, "failed", {"error": str(e)[:500]})
                     else:
-                        await _finish(db, step_id, "done", {
+                        await _finish(db, step, "done", {
                             "queries": subq.queries, "adopted": len(subq.evidence_ids),
                             "verdict": subq.verdict, "note": subq.note,
                             "parse_failed": subq.parse_failed, "capped": subq.capped,
@@ -424,16 +462,17 @@ async def _run_deep_research(job_id: str) -> dict:
                 if not await _transition(db, jid, expect=("running",), stage=_stage("explored"),
                                          state_snapshot=snapshot_state(state)):
                     return await _stopped(db, jid)
+                await _announce(jid, "running", "explored")
 
             if await _is_cancelled(db, jid):
                 return await _stopped(db, jid)
 
             # ── 종합 ──
-            step_id = await _step(db, jid, seq, "synthesize", "보고서 종합")
+            step = await _step(db, jid, seq, "synthesize", "보고서 종합")
             try:
                 report = await synthesize(state, should_stop=lambda: _is_cancelled(db, jid))
             except SynthesisCanceled:
-                await _finish(db, step_id, "failed", {"error": "취소됨"})
+                await _finish(db, step, "failed", {"error": "취소됨"})
                 return await _stopped(db, jid)
             except SoftTimeLimitExceeded:
                 raise
@@ -442,10 +481,10 @@ async def _run_deep_research(job_id: str) -> dict:
                 # 탐색을 건너뛰고 여기부터 다시 온다.
                 log.exception("[research] 종합 실패 job=%s", jid)
                 await db.rollback()
-                await _finish(db, step_id, "failed", {"error": str(e)[:500]})
+                await _finish(db, step, "failed", {"error": str(e)[:500]})
                 return await _end_failed(db, jid, str(e))
 
-            await _finish(db, step_id, "done", {"sections": len(report["sections"])})
+            await _finish(db, step, "done", {"sections": len(report["sections"])})
             if not await _transition(db, jid, expect=("running",), status="completed",
                                      report=report, stage=_stage("synthesized"),
                                      finished_at=_now()):

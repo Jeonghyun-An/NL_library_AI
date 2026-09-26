@@ -836,6 +836,184 @@ class TestPlan:
         assert job.status == "canceled" and job.plan is None
 
 
+class _RecordingSession(_FakeSession):
+    """실행한 문장 객체를 남긴다 — UPDATE 에 실제로 실은 값을 읽기 위해서다."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.stmts: list = []
+
+    async def execute(self, stmt, params=None):
+        self.stmts.append(stmt)
+        return await super().execute(stmt, params)
+
+
+def _update_values(stmt) -> dict:
+    return {getattr(k, "key", k): (v.value if isinstance(v, BindParameter) else v)
+            for k, v in stmt._values.items()}
+
+
+class TestStepEvents:
+    """단계가 열리고 닫힐 때 화면에 알린다. 닫을 때는 저장한 result 를 그대로 싣는다 —
+    라이브로 본 장면과 끝난 뒤 다시 연 장면이 같아야 한다."""
+
+    def _capture(self, monkeypatch, rt) -> list[tuple]:
+        events: list[tuple] = []
+
+        async def _publish(job_id, kind, payload):
+            events.append((job_id, kind, payload))
+
+        monkeypatch.setattr(rt, "publish", _publish)
+        return events
+
+    def test_opening_a_step_announces_it_running(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        jid = uuid.uuid4()
+
+        step = asyncio.run(rt._step(_FakeSession(scalar=41), jid, 4, "search", "하위1",
+                                    subq_idx=0, detail="검색 중"))
+
+        assert step.id == 41
+        assert events == [(jid, "step", {
+            "seq": 4, "step_kind": "search", "subq_idx": 0, "title": "하위1",
+            "detail": "검색 중", "status": "running",
+        })]
+
+    def test_step_is_announced_after_its_row_is_committed(self, monkeypatch):
+        # 커밋 전에 알리면 그 틈에 재접속한 화면은 스냅샷에 없는 단계를 이벤트로만 받는다
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession(scalar=41)
+        commits_at_publish = []
+
+        async def _publish(job_id, kind, payload):
+            commits_at_publish.append(db.commits)
+
+        monkeypatch.setattr(rt, "publish", _publish)
+        asyncio.run(rt._step(db, uuid.uuid4(), 0, "plan", "연구 계획 수립"))
+
+        assert commits_at_publish == [1]
+
+    def test_closing_a_step_streams_the_result_it_saved(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        jid = uuid.uuid4()
+        db = _RecordingSession(scalar=41)
+        step = asyncio.run(rt._step(db, jid, 4, "search", "하위1", subq_idx=0))
+        result = {"queries": ["q1"], "rounds": [{"round": 1, "query": "q1"}]}
+
+        asyncio.run(rt._finish(db, step, "done", result))
+
+        saved = _update_values(db.stmts[-1])
+        assert saved["status"] == "done" and saved["result"] == result
+        assert events[-1] == (jid, "step", {
+            "seq": 4, "step_kind": "search", "subq_idx": 0, "title": "하위1",
+            "detail": None, "status": "done", "result": result,
+        })
+
+    def test_closing_without_result_streams_an_empty_result(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        db = _FakeSession(scalar=7)
+        step = asyncio.run(rt._step(db, uuid.uuid4(), 0, "synthesize", "보고서 종합"))
+
+        asyncio.run(rt._finish(db, step, "failed"))
+
+        assert events[-1][2]["status"] == "failed" and events[-1][2]["result"] == {}
+
+    def test_unknown_step_kind_is_not_announced(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        with pytest.raises(AssertionError):
+            asyncio.run(rt._step(_FakeSession(scalar=1), uuid.uuid4(), 0, "critique", "점검"))
+        assert events == []
+
+
+def _statuses(h: _Harness) -> list[dict]:
+    return [e[1] for e in h.events if e[0] == "status"]
+
+
+class TestStatusEvents:
+    """상태·단계가 바뀔 때마다 알린다 — 스트림에 붙은 화면이 폴링 없이 따라온다.
+    종료 상태는 기존 종료 프레임이 알리므로 status 로 따로 내지 않는다."""
+
+    def test_run_announces_exploring_then_synthesizing(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert _statuses(h) == [
+            {"status": "running", "stage": "planned"},
+            {"status": "running", "stage": "explored"},
+        ]
+        assert h.events[-1] == ("terminal", "completed", None)
+
+    def test_resumed_run_goes_straight_to_synthesis(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert _statuses(h) == [{"status": "running", "stage": "explored"}]
+
+    def test_checkpoint_lost_to_cancel_is_not_announced(self, monkeypatch):
+        # 취소에 진 전이를 알리면 화면이 취소된 잡을 "종합 중"으로 그린다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+
+        async def _cancel(state, subq):
+            job.status = "canceled"
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_cancel)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert _statuses(h) == [{"status": "running", "stage": "planned"}]
+        assert _terminals(h) == [("canceled", None)]
+
+    def test_skipped_redelivery_announces_nothing(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"], status="running")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert h.events == []
+
+    def test_plan_announces_planning_then_awaiting_approval(self, monkeypatch):
+        """계획 단계에 붙은 스트림은 이 이벤트가 없으면 계획이 끝난 것을 모른다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+
+        async def _plan(question, params):
+            return ["하위1", "하위2"]
+
+        h = TestPlan()._patch(monkeypatch, rt, job, _plan)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert _statuses(h) == [
+            {"status": "planning", "stage": "created"},
+            {"status": "awaiting_approval", "stage": "planned"},
+        ]
+
+    def test_failed_plan_announces_only_planning(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+
+        async def _plan(question, params):
+            raise ValueError("계획을 해석하지 못했다")
+
+        h = TestPlan()._patch(monkeypatch, rt, job, _plan)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert _statuses(h) == [{"status": "planning", "stage": "created"}]
+        assert [t[0] for t in _terminals(h)] == ["failed"]
+
+
 class TestReaper:
     class _SyncSession:
         def __init__(self):
