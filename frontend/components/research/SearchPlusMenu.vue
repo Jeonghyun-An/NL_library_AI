@@ -1,23 +1,28 @@
 <!-- frontend/components/research/SearchPlusMenu.vue -->
 <template>
-  <div v-if="modes.length" ref="root" class="rs-plus" :class="{ 'is-active': !!active }">
+  <div v-if="modes.length" ref="root" class="rs-plus" :class="{ 'is-active': !!active }" @keydown="onRootKeydown">
     <span class="rs-plus__anchor">
       <button
+        ref="trigger"
         type="button"
         class="rs-plus__btn"
         aria-haspopup="menu"
         :aria-expanded="menuOpen"
+        :aria-controls="menuOpen ? menuId : undefined"
         aria-label="검색 모드 선택"
         :disabled="disabled || busy"
-        @click="menuOpen = !menuOpen"
+        @click="toggleMenu"
+        @keydown="onTriggerKeydown"
       >
         +
       </button>
-      <ul v-if="menuOpen" class="rs-plus__menu" role="menu" @keydown.escape.stop="menuOpen = false">
+      <ul v-if="menuOpen" :id="menuId" ref="menu" class="rs-plus__menu" role="menu" aria-label="검색 모드" @keydown="onMenuKeydown">
         <li v-for="m in modes" :key="m.id" role="none">
+          <!-- tabindex=-1: 항목 사이는 방향키로 옮긴다. Tab 은 메뉴를 닫고 다음 요소로 간다 -->
           <button
             type="button"
             role="menuitem"
+            tabindex="-1"
             class="rs-plus__item"
             :class="{ 'is-selected': active?.id === m.id }"
             @click="choose(m)"
@@ -40,8 +45,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 import { useResearchStarter } from "~/composables/useResearch";
+import { menuStep } from "~/utils/menuNav";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   createEchoGuard,
@@ -63,6 +69,9 @@ const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 const { startResearch } = useResearchStarter();
 const modes = computed(() => modesFor(props.kind));
 const root = ref<HTMLElement | null>(null);
+const trigger = ref<HTMLButtonElement | null>(null);
+const menu = ref<HTMLElement | null>(null);
+const menuId = useId();
 const menuOpen = ref(false);
 const active = ref<SearchMode | null>(null);
 const busy = ref(false);
@@ -91,6 +100,62 @@ function activate(mode: SearchMode): void {
   active.value = mode;
   error.value = "";
   if (field) field.placeholder = mode.placeholder;
+}
+
+// ── + 메뉴 키보드(WAI-ARIA 메뉴 버튼 관례) ─────────────────
+function menuItems(): HTMLElement[] {
+  return Array.from(menu.value?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+}
+
+function focusItem(key: string): boolean {
+  const items = menuItems();
+  const at = items.findIndex((el) => el === document.activeElement);
+  const next = menuStep(at, key, items.length);
+  if (next === null) return false;
+  items[next]?.focus();
+  return true;
+}
+
+// 열면 첫 항목(위 방향키로 열면 마지막 항목)으로 초점을 옮긴다 — 방향키·Esc 가 메뉴 안에서 먹게
+async function openMenu(key: "ArrowDown" | "ArrowUp" = "ArrowDown"): Promise<void> {
+  menuOpen.value = true;
+  await nextTick();
+  focusItem(key);
+}
+
+function closeMenu(returnFocus: boolean): void {
+  menuOpen.value = false;
+  if (returnFocus) trigger.value?.focus();
+}
+
+function toggleMenu(): void {
+  if (menuOpen.value) closeMenu(false);
+  else void openMenu();
+}
+
+function onTriggerKeydown(e: KeyboardEvent): void {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  if (menuOpen.value) focusItem(e.key === "ArrowUp" ? "End" : "Home");
+  else void openMenu(e.key);
+}
+
+function onMenuKeydown(e: KeyboardEvent): void {
+  // Tab 은 막지 않는다 — + 버튼으로 초점을 돌려 둔 뒤 기본 동작이 그 앞뒤 요소로 옮긴다.
+  // 초점을 쥔 항목을 그대로 지우면 초점이 body 로 떨어져 Tab 순서를 잃는다.
+  if (e.key === "Tab") {
+    closeMenu(true);
+    return;
+  }
+  if (focusItem(e.key)) e.preventDefault();
+}
+
+// + 버튼에 초점이 있어도(마우스로 연 뒤) Esc 로 닫히게 메뉴가 아니라 묶음 전체에서 듣는다
+function onRootKeydown(e: KeyboardEvent): void {
+  if (e.key !== "Escape" || !menuOpen.value) return;
+  e.preventDefault();
+  e.stopPropagation();
+  closeMenu(true);
 }
 
 function choose(mode: SearchMode): void {
