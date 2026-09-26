@@ -848,7 +848,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // 페이지를 떠나면 큐레이션 요청도 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
+  // 떠난 화면에 늦게 온 응답·타이핑 타이머가 상태를 고치지 않게 묶음을 끊는다
+  // (백엔드 /books/curate 는 연결 끊김을 보지 않아 서버 쪽 생성은 끊어도 끝까지 돈다)
   runCtrl?.abort();
   window.removeEventListener("resize", updateTabSlider);
   document.removeEventListener("click", onDocClick);
@@ -903,6 +904,9 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   const signal = beginRun();
   currentQuery.value = query;
   currentHistoryId.value = null;
+  // 주소의 이전 h 도 함께 내린다 — 남겨 두면 검색이 도는 동안·실패한 뒤에도 사이드바가 이전 기록을 강조하고,
+  // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
+  router.replace({ query: { q: query.trim() } });
   loading.value = true;
   searchError.value = "";
   books.value = [];
@@ -946,7 +950,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       : await historyApi.add({ kind: "book", title: query.trim(), params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query, h: entry.id } });
+    router.replace({ query: { q: query.trim(), h: entry.id } });
     if (books.value.length) fetchCuration(entry.id, signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -977,7 +981,8 @@ async function restoreFromQuery() {
   if (route.path !== "/") return;
   const { h, q } = readHistoryQuery(route.query, readV1Map(safeLocalStorage()));
   if (!h) {
-    if (q && q !== currentQuery.value) {
+    // 주소의 q 는 앞뒤 공백을 뗀 값이다 — 같은 검색어를 공백 차이로 다시 찾지 않게 맞춰 비교한다
+    if (q && q !== currentQuery.value.trim()) {
       mode.value = "book";
       await handleSearch(q);
     }
@@ -1165,6 +1170,9 @@ async function fetchCuration(historyId: string, signal: AbortSignal) {
     const items: Array<{ book_id: string; reason: string }> = (data?.items || []).map(
       (ci: { book_id: string; reason: string }) => ({ book_id: ci.book_id, reason: ci.reason }),
     );
+    // 응답이 오자마자 저장하고 타이핑은 화면 연출로만 둔다 — 타이핑이 끝난 뒤로 미루면 그 사이 상세로 가거나
+    // 다른 기록을 열었다 돌아올 때 요약이 비어 있어 생성을 다시 부른다. id 는 시작 때 붙잡은 값이라 다른 기록을 덮지 않는다
+    void historyApi.patch(historyId, { ai: { intro, items } });
     if (intro) {
       curationOpen.value = true;
       await typeInto(curationIntro, intro, signal);
@@ -1172,7 +1180,6 @@ async function fetchCuration(historyId: string, signal: AbortSignal) {
     }
     curationItems.value = items;
     curationTyping.value = false;
-    await historyApi.patch(historyId, { ai: { intro, items } });
   } catch {
     /* 큐레이션 실패·중단 시 조용히 무시 */
   } finally {
