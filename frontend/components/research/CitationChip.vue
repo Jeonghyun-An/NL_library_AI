@@ -111,11 +111,13 @@ function scheduleHide(): void {
   }, HIDE_DELAY_MS);
 }
 
+// 초점을 먼저 옮긴다 — focus() 가 동기로 쏘는 focusin 이 wrap 의 show 로 올라가 닫힘을 되돌리지 않게
 function close(): void {
   cancelHide();
+  chip.value?.focus();
   pinned.value = false;
   open.value = false;
-  chip.value?.focus();
+  document.removeEventListener("click", onDocumentClick);
 }
 
 function togglePin(): void {
