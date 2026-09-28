@@ -843,6 +843,9 @@ class TestSectionEvidence:
         ev = section_evidence(st, self._finalized(st, 1))["E3"]
         assert ev == {"cnts_id": "C", "meta": {"title": "논문 C"}, "chunks": [
             {"chunk_id": "c3", "text": "본문", "page_start": 1, "page_end": 1, "score": 0.9}]}
+        # 손으로 적은 기대값만으로는 보고서 쪽 모양이 바뀌어도 통과한다 — 실제 보고서 출력과도 맞춘다
+        # (E3 은 한 절에만 실려 두 쪽의 대목 선택이 같다)
+        assert ev == assemble_report(st, [], unmarked_total=0)["evidence"]["E3"]
 
     def test_chunks_are_limited_to_the_section(self):
         # 한 논문이 두 절에 실리면 Evidence.chunks 는 합집합이다 — 절 미리보기는 제 대목만 싣는다

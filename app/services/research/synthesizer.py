@@ -140,6 +140,19 @@ def build_limitations(
     return out
 
 
+def _evidence_entry(ev: Evidence, keep: list[Chunk]) -> dict:
+    """report.evidence 한 항목의 모양. 청크는 점수순으로 싣는다.
+
+    완성본(_serialize_evidence)과 작성 중 초안(section_evidence)이 이 함수 하나로 만든다 —
+    따로 만들면 한쪽 모양만 바뀌어 초안과 완성본의 인용칩 팝오버가 조용히 갈린다.
+    """
+    return {
+        "cnts_id": ev.cnts_id,
+        "meta": ev.meta,
+        "chunks": [asdict(c) for c in sorted(keep, key=lambda c: c.score, reverse=True)],
+    }
+
+
 def _serialize_evidence(state: ResearchState) -> dict:
     """보고서의 근거 목록. 청크는 지금 어느 하위질문이든 가리키는 것만, 점수순으로 싣는다.
 
@@ -155,18 +168,11 @@ def _serialize_evidence(state: ResearchState) -> dict:
         unmapped.update(e for e in sq.evidence_ids if not sq.evidence_chunks.get(e))
 
     def _shown(eid: str, ev: Evidence) -> list[Chunk]:
-        keep = ev.chunks if eid in unmapped or eid not in mapped else [
-            c for c in ev.chunks if c.chunk_id in mapped[eid]]
-        return sorted(keep, key=lambda c: c.score, reverse=True)
+        if eid in unmapped or eid not in mapped:
+            return ev.chunks
+        return [c for c in ev.chunks if c.chunk_id in mapped[eid]]
 
-    return {
-        eid: {
-            "cnts_id": ev.cnts_id,
-            "meta": ev.meta,
-            "chunks": [asdict(c) for c in _shown(eid, ev)],
-        }
-        for eid, ev in state.evidence.items()
-    }
+    return {eid: _evidence_entry(ev, _shown(eid, ev)) for eid, ev in state.evidence.items()}
 
 
 def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
@@ -184,16 +190,13 @@ def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
     mapped = section.get("evidence_chunks", {})
     out: dict[str, dict] = {}
     for eid in cited:
-        ev = state.evidence.get(eid)
-        if ev is None or eid in out:
+        if eid in out:
             continue
+        # finalize_section 은 근거에 있는 번호만 남긴다 — 어기면 KeyError 로 바로 드러난다
+        ev = state.evidence[eid]
         ids = set(mapped.get(eid) or [])
-        keep = [c for c in ev.chunks if c.chunk_id in ids] if ids else ev.chunks
-        out[eid] = {
-            "cnts_id": ev.cnts_id,
-            "meta": ev.meta,
-            "chunks": [asdict(c) for c in sorted(keep, key=lambda c: c.score, reverse=True)],
-        }
+        out[eid] = _evidence_entry(ev, [c for c in ev.chunks if c.chunk_id in ids] if ids
+                                   else ev.chunks)
     return out
 
 
