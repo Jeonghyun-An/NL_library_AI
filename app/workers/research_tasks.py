@@ -174,7 +174,8 @@ async def _finish(
         .values(status=status, result=result, finished_at=_now())
     )
     await db.commit()
-    # 저장한 result 를 싣는다 — 라이브로 본 장면과 다시 연 장면이 같아야 한다.
+    # event_result 가 없으면 저장한 result 를 그대로 싣는다 — 라이브로 본 장면과 다시 연 장면이
+    # 같아야 한다. 종합 단계는 가벼운 값을 싣지만 빠진 절 내용은 synth 이벤트가 이미 날랐다.
     await publish(step.job_id, "step", step.event(
         status, result if event_result is None else event_result))
 
