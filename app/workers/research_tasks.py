@@ -295,22 +295,60 @@ class _SynthProgress:
                 **have, "chunks": sorted(chunks, key=lambda c: c["score"], reverse=True)}
 
     def result(self, *, previews: bool = True, **extra: object) -> dict:
-        """종합 단계 result. previews=False 면 절 미리보기(sections[].section)와 근거(evidence)를
-        뺀다 — 알리는 step 이벤트와, 완료로 닫는 기록(최종 보고서와 중복)에 쓴다."""
+        """종합 단계 result. previews=False 면 절 미리보기와 근거를 뺀다(_without_previews) —
+        알리는 step 이벤트와, 완료로 닫는 기록(최종 보고서와 중복)에 쓴다."""
         sections = []
         for i, status in sorted(self.statuses.items()):
             d = self.details.get(i, {})
             entry = {"idx": i, "status": status, "subq_idx": d.get("subq_idx"),
                      "heading": d.get("heading"), "started_at": d.get("started_at"),
                      "duration_ms": d.get("duration_ms")}
-            if previews and "section" in d:
+            if "section" in d:
                 entry["section"] = d["section"]
             sections.append(entry)
         out = {**extra, "sections_total": self.total, "headings": list(self.headings),
                "sections": sections}
-        if previews and self.evidence:
+        if self.evidence:
             out["evidence"] = dict(self.evidence)
-        return out
+        return out if previews else _without_previews(out)
+
+
+def _without_previews(result: dict) -> dict:
+    """종합 단계 result 에서 절 미리보기(sections[].section)와 근거(evidence)를 뺀 값.
+
+    지금 시도의 가벼운 값(_SynthProgress.result)과 이전 시도의 정리(_drop_stale_previews)가 같이
+    쓴다. 보강 전 잡의 sections 는 정수라(models/research.py) 목록일 때만 절마다 걷는다.
+    """
+    light = {k: v for k, v in result.items() if k != "evidence"}
+    if isinstance(result.get("sections"), list):
+        light["sections"] = [{k: v for k, v in s.items() if k != "section"}
+                             for s in result["sections"]]
+    return light
+
+
+async def _drop_stale_previews(db: AsyncSession, step: _StepRef) -> None:
+    """재시도가 완료되면 같은 잡의 이전 시도 종합 단계에 남은 멈춘 초안을 걷는다.
+
+    실패·취소로 닫은 종합 단계는 멈춘 초안을 남긴다. 재시도가 완료하면 화면은 최신 시도의
+    단계만 읽는데, 남겨 두면 완성된 보고서를 열 때마다 GET·스냅샷이 아무도 읽지 않는 수백 KB 를
+    더 나른다. 실패는 경고만 남긴다 — 잡은 이미 완료로 끝났고 이것은 크기 정리다(시간 상한
+    신호도 삼킨다 — 남은 일이 없다).
+    """
+    try:
+        rows = (await db.execute(
+            select(ResearchStep.id, ResearchStep.result).where(
+                ResearchStep.job_id == step.job_id, ResearchStep.kind == "synthesize",
+                ResearchStep.seq < step.seq,
+            )
+        )).all()
+        for step_id, result in rows:
+            light = _without_previews(result)
+            if light != result:
+                await db.execute(
+                    update(ResearchStep).where(ResearchStep.id == step_id).values(result=light))
+        await db.commit()
+    except Exception:
+        log.warning("[research] 이전 시도의 초안 정리 실패 job=%s", step.job_id, exc_info=True)
 
 
 async def _announce(job_id: uuid.UUID, status: str, stage: str) -> None:
@@ -654,6 +692,7 @@ async def _run_deep_research(job_id: str) -> dict:
             # 완료로 닫을 때는 미리보기를 지운다 — 최종 보고서(research_jobs.report)와 같은 내용이다
             await _finish(db, step, "done", progress.result(previews=False))
             await publish_terminal(jid, "completed")
+            await _drop_stale_previews(db, step)
             return {"job_id": str(jid), "status": "completed"}
 
     except SoftTimeLimitExceeded:

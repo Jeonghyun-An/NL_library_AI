@@ -14,6 +14,7 @@ import asyncio
 import datetime as _dt
 import importlib
 import json
+import logging
 import sys
 import types
 import uuid
@@ -110,6 +111,8 @@ def _matches(clause, obj) -> bool:
     op = clause.operator
     if op is operators.eq:
         return left == right
+    if op is operators.lt:
+        return left < right
     if op is operators.in_op:
         return left in right
     if op is operators.is_not:
@@ -118,15 +121,19 @@ def _matches(clause, obj) -> bool:
 
 
 class _Result:
-    def __init__(self, value=None, rowcount: int = 0):
+    def __init__(self, value=None, rowcount: int = 0, rows: list | None = None):
         self._value = value
         self.rowcount = rowcount
+        self._rows = rows or []
 
     def scalar_one(self):
         return self._value
 
     def scalar_one_or_none(self):
         return self._value
+
+    def all(self):
+        return self._rows
 
 
 class _FakeSession:
@@ -238,6 +245,8 @@ class _Harness:
         self.progress: list[tuple] = []
         # (단계, status, 알린 result) — _finish·_save_progress 가 step 이벤트로 흘리는 값
         self.announced: list[tuple] = []
+        # (단계, 그때까지 나간 종료 이벤트) — 이전 시도의 초안 정리
+        self.drops: list[tuple] = []
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
@@ -285,6 +294,9 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
         h.progress.append((step, result))
         h.announced.append((step, "running", result if event_result is None else event_result))
 
+    async def _drop_stale_previews(db, step):
+        h.drops.append((step, _terminals(h)))
+
     async def _synthesize(state, *, should_stop=None, on_section=None):
         assert not session.in_txn, "종합(LLM) 직전에 읽기 트랜잭션이 열려 있다"
         synthesized.append(state)
@@ -298,7 +310,7 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
         ("_corpus_range", _corpus_range), ("publish", _publish),
         ("publish_terminal", _publish_terminal),
         ("explore_subquestion", _explore), ("synthesize", _synthesize),
-        ("_save_progress", _save_progress),
+        ("_save_progress", _save_progress), ("_drop_stale_previews", _drop_stale_previews),
     ):
         monkeypatch.setattr(rt, name, fn)
     return h
@@ -1551,6 +1563,22 @@ class TestSynthPreview:
 
         assert seen == [("done", "completed", {"sections": [{}, {}]})]
 
+    def test_completion_drops_drafts_of_earlier_attempts_after_announcing(self, monkeypatch):
+        # 완료를 먼저 알린다 — 정리가 늘어지거나 실패해도 화면은 완료를 받는다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt)
+
+        assert h.drops == [(1, [("completed", None)])]
+
+    @pytest.mark.parametrize("stop", ["failed", "canceled", "lost_completion"])
+    def test_attempt_that_does_not_complete_leaves_earlier_drafts(self, monkeypatch, stop):
+        rt = _load_tasks(monkeypatch)
+        stop_with = {"failed": ValueError("종합 호출 실패"),
+                     "canceled": rt.SynthesisCanceled()}.get(stop)
+        h = self._run(monkeypatch, rt, stop_with=stop_with, cancel_late=stop == "lost_completion")
+
+        assert h.drops == []
+
     def test_six_sections_of_thirty_papers_stay_at_report_scale(self, monkeypatch):
         """대목 원문이 대부분이라 미리보기는 최종 보고서와 같은 규모여야 하고, 절마다 알리는
         step 이벤트는 대목 길이와 무관하게 작아야 한다(spec §14-2 크기)."""
@@ -1591,7 +1619,7 @@ class TestSynthPreview:
 
 
 class _StepTableSession(_FakeSession):
-    """research_steps 행을 들고, 그 테이블의 INSERT·UPDATE 를 실제로 적용한다.
+    """research_steps 행을 들고, 그 테이블의 INSERT·UPDATE·SELECT 를 실제로 적용한다.
 
     닫는 쓰기가 진행 중 저장한 result 를 합치는지(jsonb ||) 통째로 바꾸는지는 SQL
     문자열로는 확인이 약하다 — 값으로 확인한다. 모르는 식을 만나면 조용히 넘기지 않고
@@ -1603,6 +1631,14 @@ class _StepTableSession(_FakeSession):
         self.steps: list[types.SimpleNamespace] = []
 
     async def execute(self, stmt, params=None):
+        if getattr(stmt, "is_select", False) and [
+                f.name for f in stmt.get_final_froms()] == ["research_steps"]:
+            self.sql.append(str(stmt))
+            self.params.append(params)
+            self.in_txn = True
+            hit = [row for row in self.steps if self._matches(stmt.whereclause, row)]
+            return _Result(rows=[tuple(getattr(row, c.key) for c in stmt.selected_columns)
+                                 for row in hit])
         if getattr(getattr(stmt, "table", None), "name", None) != "research_steps":
             return await super().execute(stmt, params)
         self.sql.append(str(stmt))
@@ -1745,6 +1781,85 @@ class TestOrphanStepsKeepProgress:
         assert step.result["sections"][0]["section"] == _synth_info(0, done=True)["section"]
         assert step.result["evidence"] == _synth_info(0, done=True)["evidence"]
         assert step.result["sections"][1]["started_at"] is not None
+
+
+class TestDropStalePreviews:
+    """재시도가 완료되면 이전 시도의 종합 단계에 남은 멈춘 초안(절 미리보기·근거)을 걷는다.
+
+    화면은 최신 시도의 단계만 읽는다. 남겨 두면 완성된 보고서를 열 때마다 GET·스냅샷이 아무도
+    읽지 않는 수백 KB 를 더 나르고, 재시도를 거듭할수록 쌓인다.
+    """
+
+    _LIGHT = {"sections_total": 2, "headings": ["하위1", "하위2"],
+              "sections": [_bare(0, "done"), _bare(1, "running")]}
+
+    def _draft(self, error: str) -> dict:
+        done = _synth_info(0, done=True)
+        return {"error": error, **self._LIGHT,
+                "sections": [{**_bare(0, "done"), "section": done["section"]}, _bare(1, "running")],
+                "evidence": done["evidence"]}
+
+    def _row(self, db, job_id, seq, kind, result):
+        row = types.SimpleNamespace(id=len(db.steps) + 1, job_id=job_id, seq=seq, kind=kind,
+                                    status="failed", result=result, finished_at=None)
+        db.steps.append(row)
+        return row
+
+    def _step(self, rt, row):
+        return rt._StepRef(row.id, row.job_id, row.seq, row.kind, "보고서 종합", None, None)
+
+    def test_earlier_synthesis_steps_of_the_job_lose_their_drafts(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="synthesized", plan=["하위1"], status="completed")
+        db = _StepTableSession(job=job)
+        search = self._row(db, job.id, 1, "search", dict(TestOrphanStepsKeepProgress._PROGRESS))
+        failed = self._row(db, job.id, 2, "synthesize", self._draft("종합 호출 실패"))
+        timed_out = self._row(db, job.id, 3, "synthesize", self._draft(rt.TIMEOUT_ERROR))
+        # 지금 시도의 단계 — 이미 가볍게 닫혔지만, 걸러 내는 조건이 seq 로 가르는지 보려고 초안을 둔다
+        current = self._row(db, job.id, 4, "synthesize", self._draft("지금 시도"))
+        other_job = self._row(db, uuid.uuid4(), 2, "synthesize", self._draft("다른 잡"))
+
+        asyncio.run(rt._drop_stale_previews(db, self._step(rt, current)))
+
+        # 절 목록·시각·오류는 남긴다 — 멈춘 지점 표시는 그대로다
+        assert failed.result == {"error": "종합 호출 실패", **self._LIGHT}
+        assert timed_out.result == {"error": rt.TIMEOUT_ERROR, **self._LIGHT}
+        assert current.result == self._draft("지금 시도")
+        assert other_job.result == self._draft("다른 잡")
+        assert search.result == TestOrphanStepsKeepProgress._PROGRESS
+        assert db.commits == 1
+
+    def test_rows_of_older_shapes_are_left_as_they_are(self, monkeypatch):
+        # 보강 전 잡은 sections 가 정수고, 첫 절 전에 끊긴 단계는 error 만 있다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="synthesized", plan=["하위1"], status="completed")
+        db = _StepTableSession(job=job)
+        old = self._row(db, job.id, 1, "synthesize", {"sections": 3, "error": "옛 실패"})
+        bare = self._row(db, job.id, 2, "synthesize", {"error": rt.TIMEOUT_ERROR})
+        current = self._row(db, job.id, 3, "synthesize", dict(self._LIGHT))
+
+        asyncio.run(rt._drop_stale_previews(db, self._step(rt, current)))
+
+        assert old.result == {"sections": 3, "error": "옛 실패"}
+        assert bare.result == {"error": rt.TIMEOUT_ERROR}
+        # 걷을 것이 없는 행은 다시 쓰지 않는다
+        assert not any(sql.startswith("UPDATE") for sql in db.sql)
+
+    def test_failure_is_logged_not_raised(self, monkeypatch, caplog):
+        # 잡은 이미 완료로 끝났다 — 크기 정리가 실패했다고 완료를 되돌리거나 태스크를 터뜨리지 않는다
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession()
+
+        async def _broken(stmt, params=None):
+            raise ConnectionError("DB 연결 끊김")
+
+        db.execute = _broken
+        step = rt._StepRef(9, uuid.uuid4(), 4, "synthesize", "보고서 종합", None, None)
+
+        with caplog.at_level(logging.WARNING, logger="workers.research_tasks"):
+            asyncio.run(rt._drop_stale_previews(db, step))
+
+        assert "초안 정리 실패" in caplog.text
 
 
 class TestReaper:
