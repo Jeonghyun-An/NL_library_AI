@@ -7,8 +7,8 @@ import pytest
 from services.research import synthesizer
 from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
 from services.research.synthesizer import (
-    PAPERS_PER_SECTION, SynthesisCanceled, assemble_report, build_limitations, build_section,
-    synthesize,
+    PAPERS_PER_SECTION, SectionTally, SynthesisCanceled, assemble_report, build_limitations,
+    build_section, finalize_section, section_evidence, synthesize,
 )
 
 _DROPPED = "그 절의 근거에 없는 번호"
@@ -732,3 +732,102 @@ class TestReportStats:
         assert set(report) == {
             "question", "range", "sections", "evidence", "trail", "limitations", "stats",
         }
+
+
+class TestFinalizeSection:
+    """assemble_report 의 절 단위 처리를 떼어 낸 함수. 작성 중 초안(절 미리보기)과 최종본이
+    이 함수 하나로 다듬은 절을 쓴다 — 둘이 갈리면 초안에서 읽은 글이 완성본에서 바뀐다."""
+
+    def _sections(self):
+        return [
+            {"heading": "하위1", "intro": "도입 [E1] [E99]. 연결 문장.",
+             "papers": [{"cnts_id": "A", "summary": "요약 [E1]."}, {"cnts_id": "B", "summary": ""}],
+             "future": [{"text": "과제 [E2]."}, {"text": "[E7]"}],
+             "evidence_chunks": {"E1": ["c1"], "E2": ["c2"]},
+             "chunk_scores": {"c1": 0.9, "c2": 0.8}},
+            {"heading": "하위2", "intro": "", "failed": True, "future": [],
+             "papers": [{"cnts_id": "B", "summary": ""}, {"cnts_id": "C", "summary": ""}]},
+        ]
+
+    def test_section_equals_the_assembled_report_section(self):
+        st = _state_three()
+        sections = self._sections()
+        report = assemble_report(st, sections, unmarked_total=0)
+        assert [finalize_section(st, s)[0] for s in sections] == report["sections"]
+
+    def test_tally_counts_one_section(self):
+        # 도입의 [E99]·과제의 [E7] 은 이 절 근거(E1·E2)에 없다 → 삭제 2, "연결 문장." → 무표기 1,
+        # 요약이 빈 B → 요약 누락 1
+        _, tally = finalize_section(_state_three(), self._sections()[0])
+        assert tally == SectionTally(unmarked=1, dropped=2, unsummarized=1)
+
+    def test_failed_section_counts_only_as_failed(self):
+        _, tally = finalize_section(_state_three(), self._sections()[1])
+        assert tally == SectionTally(failed=1)
+
+    def test_tallies_add_up_to_the_report_limitations(self):
+        st = _state_three()
+        total = SectionTally()
+        for s in self._sections():
+            total.add(finalize_section(st, s)[1])
+        assert total == SectionTally(unmarked=1, dropped=2, unsummarized=1, failed=1)
+        assert assemble_report(st, self._sections(), unmarked_total=0)["limitations"] == (
+            build_limitations(st, unmarked_total=1, dropped_total=2, failed_sections=1,
+                              unsummarized_total=1))
+
+
+class TestSectionEvidence:
+    """절 미리보기에 싣는 근거 — 그 절이 인용한 근거만, 대목은 그 절이 매칭한 것만."""
+
+    def _state(self):
+        st = _state_three()
+        st.evidence["E2"].chunks = [Chunk("c2a", "하위1 대목", 1, 1, 0.4),
+                                    Chunk("c2b", "하위2 대목", 2, 2, 0.8)]
+        st.subquestions[0].evidence_chunks = {"E1": ["c1"], "E2": ["c2a"]}
+        st.subquestions[1].evidence_chunks = {"E2": ["c2b"], "E3": ["c3"]}
+        return st
+
+    def _finalized(self, st, i):
+        return finalize_section(st, build_section(st, st.subquestions[i], {"intro": "도입 [E2]."}))[0]
+
+    def test_only_cited_evidence_is_carried(self):
+        st = self._state()
+        # 하위1 절의 논문은 E1·E2 다 — E3 은 하위2 절의 근거라 싣지 않는다
+        assert set(section_evidence(st, self._finalized(st, 0))) == {"E1", "E2"}
+
+    def test_shape_matches_report_evidence(self):
+        st = self._state()
+        ev = section_evidence(st, self._finalized(st, 1))["E3"]
+        assert ev == {"cnts_id": "C", "meta": {"title": "논문 C"}, "chunks": [
+            {"chunk_id": "c3", "text": "본문", "page_start": 1, "page_end": 1, "score": 0.9}]}
+
+    def test_chunks_are_limited_to_the_section(self):
+        # 한 논문이 두 절에 실리면 Evidence.chunks 는 합집합이다 — 절 미리보기는 제 대목만 싣는다
+        st = self._state()
+        first = section_evidence(st, self._finalized(st, 0))["E2"]["chunks"]
+        second = section_evidence(st, self._finalized(st, 1))["E2"]["chunks"]
+        assert [c["chunk_id"] for c in first] == ["c2a"]
+        assert [c["chunk_id"] for c in second] == ["c2b"]
+
+    def test_chunks_are_best_first(self):
+        st = self._state()
+        st.evidence["E1"].chunks = [Chunk("c1a", "약한 대목", 1, 1, 0.3),
+                                    Chunk("c1b", "강한 대목", 2, 2, 0.9)]
+        st.subquestions[0].evidence_chunks = {"E1": ["c1a", "c1b"], "E2": ["c2a"]}
+        chunks = section_evidence(st, self._finalized(st, 0))["E1"]["chunks"]
+        assert [c["chunk_id"] for c in chunks] == ["c1b", "c1a"]
+
+    def test_section_without_chunk_mapping_keeps_every_chunk(self):
+        """매핑 없는 절(옛 모양)은 _serialize_evidence 처럼 전부 준다 — 거르면 대목이 0개가 된다."""
+        st = self._state()
+        sec, _ = finalize_section(st, {"heading": "h", "intro": "도입 [E1].", "future": [],
+                                       "papers": [{"cnts_id": "A", "summary": "s"},
+                                                  {"cnts_id": "B", "summary": "s"}]})
+        assert [c["chunk_id"] for c in section_evidence(st, sec)["E2"]["chunks"]] == ["c2b", "c2a"]
+
+    def test_markers_in_intro_and_future_are_cited_too(self):
+        # 칩은 대표 논문만이 아니다 — 도입·향후 과제의 [E#] 도 팝오버를 연다
+        st = self._state()
+        sec = {"heading": "h", "intro": "도입 [E3].", "papers": [],
+               "future": [{"text": "과제 [E2].", "evidence": ["E2"]}], "evidence_chunks": {}}
+        assert set(section_evidence(st, sec)) == {"E2", "E3"}

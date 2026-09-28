@@ -17,7 +17,7 @@ gemma-3-12b) 프롬프트 예시의 "섹션 1·논문 1·과제 1" 모양을 그
 import logging
 import re
 from collections.abc import Awaitable, Callable
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, fields
 
 import httpx
 
@@ -167,78 +167,131 @@ def _serialize_evidence(state: ResearchState) -> dict:
     }
 
 
+def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
+    """다듬은 절(finalize_section) 하나가 인용한 근거만 report.evidence 와 같은 모양으로 만든다.
+
+    작성 중 초안의 인용칩 팝오버가 쓴다. 근거 전체를 절마다 실으면 절이 쌓일수록 같은 대목을
+    거듭 나른다. 대목은 이 절이 매칭한 것(evidence_chunks)만 점수순으로 싣고, 매핑이 없으면
+    _serialize_evidence 와 같이 전부 싣는다.
+    """
+    # 다듬은 도입에는 표준형 [E#] 만 남는다 — bind_markers 의 used 로 읽는다. 여기서 정규식을
+    # 다시 쓰면 마커 문법이 두 곳으로 갈라진다.
+    cited = list(bind_markers(section.get("intro", ""), set(state.evidence)).used)
+    for item in (*section.get("papers", []), *section.get("future", [])):
+        cited.extend(item.get("evidence", []))
+    mapped = section.get("evidence_chunks", {})
+    out: dict[str, dict] = {}
+    for eid in cited:
+        ev = state.evidence.get(eid)
+        if ev is None or eid in out:
+            continue
+        ids = set(mapped.get(eid) or [])
+        keep = [c for c in ev.chunks if c.chunk_id in ids] if ids else ev.chunks
+        out[eid] = {
+            "cnts_id": ev.cnts_id,
+            "meta": ev.meta,
+            "chunks": [asdict(c) for c in sorted(keep, key=lambda c: c.score, reverse=True)],
+        }
+    return out
+
+
+@dataclass
+class SectionTally:
+    """절 하나를 다듬으며 센 검증 결과. 보고서의 한계 문장은 이것을 절마다 더한 값이다."""
+    unmarked: int = 0
+    dropped: int = 0
+    unparsed: int = 0
+    unsummarized: int = 0
+    failed: int = 0
+    introless: int = 0
+
+    def add(self, other: "SectionTally") -> None:
+        # 칸을 손으로 나열하지 않는다 — 칸을 더하고 여기서 빠뜨리면 한계 문장이 조용히 준다
+        for f in fields(self):
+            setattr(self, f.name, getattr(self, f.name) + getattr(other, f.name))
+
+
+def finalize_section(state: ResearchState, sec: dict) -> tuple[dict, SectionTally]:
+    """모델 출력으로 만든 절(build_section)을 보고서에 싣는 모양으로 다듬는다 (순수 함수).
+
+    작성 중 초안(절마다 워커가 미리 보여 준다)과 최종 보고서가 이 함수 하나를 쓴다 — 따로
+    다듬으면 초안에서 읽은 글과 완성본의 글이 갈린다.
+
+    마커 검증 결과는 bind_markers 호출마다 누적한다. 절마다 도입·향후 과제로 여러 번
+    부르므로 한 번의 반환값만 읽으면 나머지 호출에서 지운 표기가 조용히 사라진다. dropped 는
+    번호 종류가 아니라 본문에 박힌 표기 수로 센다 — 사용자가 보는 단위가 그것이다.
+    """
+    by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
+    tally = SectionTally()
+    failed = bool(sec.get("failed"))
+    # 모델은 절마다 그 절의 논문만 받는다 — 검증도 그 번호로 한정한다. 근거
+    # 번호가 E1..En 으로 연속 발급되므로 전역 집합으로 검증하면 모델이 지어낸
+    # 작은 번호는 거의 다 통과하고, 본 적 없는 논문을 가리키는 칩이 생긴다.
+    valid = {by_cnts[p["cnts_id"]] for p in sec.get("papers", []) if p["cnts_id"] in by_cnts}
+    intro = bind_markers(sec.get("intro", ""), valid)
+    tally.unmarked += intro.unmarked
+    tally.dropped += len(intro.dropped)
+    tally.unparsed += len(intro.unparsed)
+    # 칩만 남은 도입("[E1]")은 문장이 아니다 — 도입 없음으로 센다
+    intro_text = intro.text if _prose(intro.text) else ""
+    if failed:
+        tally.failed += 1
+    elif not intro_text:
+        tally.introless += 1
+
+    papers = []
+    for p in sec.get("papers", []):
+        eid = by_cnts.get(p["cnts_id"])
+        if eid is None:
+            continue                      # 근거에 없는 논문은 싣지 않는다
+        summary = strip_markers(p.get("summary", ""))
+        if not _prose(summary):
+            summary = ""                  # "[E1]." 에서 번호만 걷으면 마침표 하나가 남는다
+        # 서술이 통째로 실패한 절은 위의 failed 로 이미 센다 —
+        # 그 절의 논문을 요약 누락으로 또 세면 실패가 두 건처럼 보인다.
+        if not summary and not failed:
+            tally.unsummarized += 1
+        papers.append({
+            "cnts_id": p["cnts_id"],
+            "summary": summary,
+            "evidence": [eid],            # 구조적 인용 — 모델이 고르지 않는다
+        })
+
+    future = []
+    for f in sec.get("future", []):
+        res = bind_markers(f.get("text", ""), valid)
+        tally.unmarked += res.unmarked
+        tally.dropped += len(res.dropped)
+        tally.unparsed += len(res.unparsed)
+        # 지운 번호는 위에서 이미 셌다. 마커만 있던 항목은 빈 불릿이나 칩 하나짜리
+        # 불릿이 되므로 싣지 않는다.
+        if not _prose(res.text):
+            continue
+        # used 를 bind_markers 가 돌려준다 — 여기서 정규식을 다시 쓰면
+        # 마커 문법이 두 곳으로 갈라진다.
+        future.append({"text": res.text, "evidence": res.used})
+
+    return {
+        "heading": sec.get("heading", ""),
+        "intro": intro_text, "papers": papers, "future": future,
+        # 근거 ID → 이 절에서 매칭된 청크 ID. 한 논문이 여러 절에 실리면
+        # evidence.chunks 는 그 합집합이라, 호버는 이걸로 그 절의 대목을 고른다.
+        "evidence_chunks": sec.get("evidence_chunks", {}),
+        # 청크 ID → 이 절의 하위질문 검색어로 받은 점수. 두 절이 한 청크를 쓰면
+        # evidence.chunks[].score(최고값) 하나로는 한쪽 절에 남의 점수가 뜬다.
+        "chunk_scores": sec.get("chunk_scores", {}),
+    }, tally
+
+
 def assemble_report(
     state: ResearchState, sections: list[dict], *, unmarked_total: int,
 ) -> dict:
-    by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
-    unmarked = unmarked_total
-    # 마커 검증 결과는 bind_markers 호출마다 누적한다. 섹션마다 도입·향후
-    # 과제로 여러 번 부르므로 한 번의 반환값만 읽으면 나머지 호출에서 지운
-    # 표기가 조용히 사라진다. dropped 는 번호 종류가 아니라 본문에 박힌
-    # 표기 수로 센다 — 사용자가 보는 단위가 그것이다.
-    dropped = unparsed = 0
-    unsummarized = failed_sections = introless = 0
+    tally = SectionTally(unmarked=unmarked_total)
     out_sections = []
-
     for sec in sections:
-        failed = bool(sec.get("failed"))
-        # 모델은 절마다 그 절의 논문만 받는다 — 검증도 그 번호로 한정한다. 근거
-        # 번호가 E1..En 으로 연속 발급되므로 전역 집합으로 검증하면 모델이 지어낸
-        # 작은 번호는 거의 다 통과하고, 본 적 없는 논문을 가리키는 칩이 생긴다.
-        valid = {by_cnts[p["cnts_id"]] for p in sec.get("papers", []) if p["cnts_id"] in by_cnts}
-        intro = bind_markers(sec.get("intro", ""), valid)
-        unmarked += intro.unmarked
-        dropped += len(intro.dropped)
-        unparsed += len(intro.unparsed)
-        # 칩만 남은 도입("[E1]")은 문장이 아니다 — 도입 없음으로 센다
-        intro_text = intro.text if _prose(intro.text) else ""
-        if failed:
-            failed_sections += 1
-        elif not intro_text:
-            introless += 1
-
-        papers = []
-        for p in sec.get("papers", []):
-            eid = by_cnts.get(p["cnts_id"])
-            if eid is None:
-                continue                      # 근거에 없는 논문은 싣지 않는다
-            summary = strip_markers(p.get("summary", ""))
-            if not _prose(summary):
-                summary = ""                  # "[E1]." 에서 번호만 걷으면 마침표 하나가 남는다
-            # 서술이 통째로 실패한 절은 위의 failed_sections 로 이미 보고한다 —
-            # 그 절의 논문을 요약 누락으로 또 세면 실패가 두 건처럼 보인다.
-            if not summary and not failed:
-                unsummarized += 1
-            papers.append({
-                "cnts_id": p["cnts_id"],
-                "summary": summary,
-                "evidence": [eid],            # 구조적 인용 — 모델이 고르지 않는다
-            })
-
-        future = []
-        for f in sec.get("future", []):
-            res = bind_markers(f.get("text", ""), valid)
-            unmarked += res.unmarked
-            dropped += len(res.dropped)
-            unparsed += len(res.unparsed)
-            # 지운 번호는 위에서 이미 셌다. 마커만 있던 항목은 빈 불릿이나 칩 하나짜리
-            # 불릿이 되므로 싣지 않는다.
-            if not _prose(res.text):
-                continue
-            # used 를 bind_markers 가 돌려준다 — 여기서 정규식을 다시 쓰면
-            # 마커 문법이 두 곳으로 갈라진다.
-            future.append({"text": res.text, "evidence": res.used})
-
-        out_sections.append({
-            "heading": sec.get("heading", ""),
-            "intro": intro_text, "papers": papers, "future": future,
-            # 근거 ID → 이 절에서 매칭된 청크 ID. 한 논문이 여러 절에 실리면
-            # evidence.chunks 는 그 합집합이라, 호버는 이걸로 그 절의 대목을 고른다.
-            "evidence_chunks": sec.get("evidence_chunks", {}),
-            # 청크 ID → 이 절의 하위질문 검색어로 받은 점수. 두 절이 한 청크를 쓰면
-            # evidence.chunks[].score(최고값) 하나로는 한쪽 절에 남의 점수가 뜬다.
-            "chunk_scores": sec.get("chunk_scores", {}),
-        })
+        section, counted = finalize_section(state, sec)
+        out_sections.append(section)
+        tally.add(counted)
 
     return {
         "question": state.question,
@@ -253,9 +306,9 @@ def assemble_report(
             for sq in state.subquestions
         ],
         "limitations": build_limitations(
-            state, unmarked_total=unmarked, dropped_total=dropped,
-            failed_sections=failed_sections, unsummarized_total=unsummarized,
-            unparsed_total=unparsed, introless_sections=introless,
+            state, unmarked_total=tally.unmarked, dropped_total=tally.dropped,
+            failed_sections=tally.failed, unsummarized_total=tally.unsummarized,
+            unparsed_total=tally.unparsed, introless_sections=tally.introless,
         ),
         "stats": research_stats(state),
     }
