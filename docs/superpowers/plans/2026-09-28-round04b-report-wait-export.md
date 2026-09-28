@@ -17,7 +17,12 @@
 - 프론트 데이터(Task 4·5): 사본에서 구현 전 실패(Task 4 는 9 failed / 56 passed, Task 5 는 모듈 없음)와 구현 후 통과(65·18 passed), strict·`noUncheckedIndexedAccess` 의 `tsc` 통과를 확인했다.
 - 초안 화면(Task 6·7): 계약대로 만든 임시 `researchDraft`·타입 위에서 `nuxi typecheck` 오류 0, `nuxt build` 성공, 가짜 뷰 하네스 페이지로 브라우저 동작을 봤다.
 - 내보내기(Task 8~10): `reportDocument.test.ts` 20 passed, `reportDocx.test.ts` 3 passed, 엄격 옵션 `tsc` 오류 0. 앞 태스크를 계약 모양 대역으로 채운 사본 위에서 Task 10 의 `nuxi typecheck` 오류 0, `npm run build` 통과, docx 별도 청크 1개를 확인했다.
-- **조립 때 태스크 사이를 잇느라 고친 곳**(아래 "조립 때 맞춘 것")은 사본에서 다시 돌리지 않았다. Task 11 의 전체 테스트·`nuxi typecheck`·`npm run build` 가 방어선이다.
+- **검토 드라이런**(계획 검토 때): 이 문서의 코드 블록을 HEAD `03cc294` 사본에 Task 1→10 순서로 기계적으로 적용했다(조립 때 고친 Task 7→10 이음새 포함).
+  - "교체 전" 문자열은 모두 대상 파일 한 곳에서만 맞았다.
+  - 백엔드 `test_research_synthesizer.py` 91 · `test_research_tasks.py` 82 · 전체 770 passed. 프론트 20파일 / 348 passed, `nuxi typecheck` 오류 0, `npm run build` 통과, docx 청크 1개(436K)를 딥리서치 페이지 청크만 부른다.
+  - "실패 확인" 수치도 같게 나왔다: Task 2 `6 failed, 85 passed`, Task 3 `18 failed, 64 passed`, Task 4 `9 failed | 56 passed`, Task 7 `3 failed | 15 passed`.
+  - 가짜 뷰 하네스 페이지로 현황 카드(막대·경과 시계·체크 튀어오름·`aria-live` 문구), 항목 포인터 강조·클릭 이동·초점 이동, 멈춘 초안 배지·문구, 내려받기 메뉴 키보드(↓·End·Esc), [PDF로 저장]의 제목 교체·`afterprint` 복구·인쇄 문서 내용을 브라우저에서 확인했다.
+  - 확인하지 못한 것: 실제 인쇄 창·Word/한글에서 파일 열기·운영 데이터. Task 10 Step 9 와 운영 확인(Task 11 Step 6)이 방어선이다.
 
 ---
 
@@ -67,7 +72,7 @@ cd frontend && npm run build 2>&1 | tail -1                # └  ✨ Build comp
 - 메시지는 `[Feat] round04b — …` 처럼 대괄호 접두사(`[Feat]`·`[Fix]`·`[Test]`·`[Docs]`)와 한국어로 쓴다. 태스크 하나 = 커밋 하나(Task 11 은 문서 커밋 하나).
 - **`Co-Authored-By`·"Generated with Claude Code" 같은 트레일러를 절대 붙이지 않는다**(사용자 단독 저자). 각 Step 의 `git commit -m "…"` 을 그대로 쓴다.
 - 파일 첫 줄은 경로 주석이다. 코드 주석은 "왜"를 한국어로, 과하지 않게 쓰고 태스크 번호를 적지 않는다(`docs/standards/coding-standard.md`). 기존 이름을 재사용한다.
-- 작업 트리의 기존 파일은 CRLF 다(`core.autocrlf=true`). 기존 파일은 **Edit 도구로 고쳐** 줄바꿈을 유지한다. 새 파일은 LF 로 써도 커밋 때 정규화된다.
+- 줄바꿈은 파일마다 다르다(`core.autocrlf=true`): 작업 트리에서 백엔드 `app/` 파일은 CRLF, `frontend/`·`docs/` 파일은 LF 다. 기존 파일은 **Edit 도구로 고쳐** 원래 줄바꿈을 유지한다. 새 파일은 LF 로 써도 커밋 때 정규화된다.
 - 기존 파일을 고치는 Step 의 줄 번호는 착수 시점(브랜치 `feat/round04b-deep-research-frontend`, `a6fd98c`) 기준 참고값이다. 앞 태스크가 같은 파일을 고쳤으면 줄이 밀리므로 "교체 전" 코드 문자열로 찾는다.
 
 ---
@@ -112,6 +117,11 @@ cd frontend && npm run build 2>&1 | tail -1                # └  ✨ Build comp
 | 5 | Task 11 (최종 확인) | 전부 뒤 |
 
 화면이 온전히 움직이는 것(절 미리보기)은 워커(Task 1~3)가 운영에 배포된 뒤다. 새 필드가 없으면 화면은 옛 동작("보고서 작성 중 2/5" 에 해당하는 막대·절 목록)으로 되돌아간다.
+
+**병렬로 돌릴 때(같은 작업 트리)**:
+- 커밋은 한 번에 하나씩 한다. 두 에이전트가 동시에 `git add`·`git commit` 하면 `index.lock` 충돌이 나거나 남의 파일이 커밋에 섞인다 — 각 Step 의 `git add` 는 자기 파일만 적었으니 커밋 직전에 `git status --short` 로 스테이징을 확인한다.
+- 위 "누적 기대치"의 전체 수(`npx vitest run`·백엔드 전체)는 **태스크 번호 순서대로** 적용했을 때의 값이다. 병렬 중에는 다른 태스크가 테스트만 먼저 써 둔 상태가 섞여 전체 수가 다르거나 실패가 보일 수 있다 — 각 태스크는 자기 테스트 파일로 확인하고, 전체 수는 Task 11 에서 본다.
+- `npm run build`·`npx nuxi typecheck` 는 `.nuxt`·`.output` 을 함께 쓴다. 두 태스크가 동시에 돌리지 않는다.
 
 ---
 
@@ -1946,7 +1956,8 @@ export interface SynthSectionResult {
 ```
 교체 후:
 ```ts
-// idx·status 뒤의 칸은 절 미리보기(spec §14)를 싣는 워커만 남긴다 — 옛 결과에는 없다.
+// idx·status 뒤의 칸은 절 미리보기(spec §14)를 싣는 워커만 남긴다 — 옛 결과에는 없다. 워커는 모르는
+// 칸을 null 로 싣는다(subq_idx·heading 포함) — 화면은 toSectionView 의 ?? 로 받는다.
 // section 은 진행 저장본(DB)에만 있고, 알리는 step 이벤트·완료로 닫힌 단계에서는 빠진다
 export interface SynthSectionResult {
   idx: number;
@@ -4127,10 +4138,10 @@ npm run build 2>&1 | tail -1
   select id from research_jobs where status='completed' order by finished_at desc limit 3;
   select id from research_jobs where status in ('failed','canceled') order by created_at desc limit 3;
   ```
-- 로컬 화면을 띄운다.
+- 로컬 화면을 띄운다(`<서버>` 는 운영 서버 주소다 — 저장소 문서에 적지 않는 관례라 선행 계획과 같은 표기를 쓴다).
   ```bash
   cd frontend
-  NUXT_DEV_API_TARGET=http://<운영 서버>:92/api npm run dev
+  NUXT_DEV_API_TARGET=http://<서버>:92/api npm run dev
   ```
 - `http://localhost:3000/research/<완료 잡 id>` 에서 확인한다.
   - 절·도입·대표 논문·향후 과제·인용칩 팝오버·[원문 보기]·한계 섹션이 전과 같다.
@@ -4192,9 +4203,10 @@ git commit -m "[Feat] round04b — 보고서 초안: 종합 중 다 쓴 절부�
   - `npx nuxi typecheck` 오류 0.
   - `npm run build` 통과.
   - docx 는 별도 청크 1개(436KB)로 나뉘고, 그 청크를 부르는 것은 딥리서치 페이지 청크 하나뿐이다.
-- 확인하지 못한 것:
-  - 앞 태스크가 실제로 만든 페이지·컴포넌트 위에서의 타입검사. 특히 Task 10 의 템플릿 교체(조립 때 Task 7 코드에 맞춰 고쳤다)는 Task 10 Step 8·Task 11 의 `nuxi typecheck` 가 방어선이다.
-  - 브라우저에서 메뉴를 누르고 인쇄해 보는 동작 확인. Task 10 Step 9 의 수동 확인이 방어선이다.
+- 작성 때 확인하지 못했던 것 → 계획 검토 드라이런(문서 머리 "검토 드라이런")에서 확인했다:
+  - 앞 태스크가 실제로 만든 페이지·컴포넌트 위에서의 타입검사 — Task 1→10 을 순서대로 적용한 사본에서 `nuxi typecheck` 오류 0, `npm run build` 통과.
+  - 메뉴 키보드와 [PDF로 저장]의 제목 교체·복구·인쇄 문서 내용 — 가짜 뷰 하네스에서 `window.print` 를 가로채 확인했다.
+- 여전히 확인하지 못한 것: 실제 인쇄 창(미리보기·저장 파일 이름)과 Word·한글에서 연 모양. Task 10 Step 9 의 수동 확인이 방어선이다.
 
 ---
 
@@ -4583,9 +4595,10 @@ describe("docInputFromDraft", () => {
   it("부록은 화면의 탐색 타임라인에서, 서론의 하위질문 수는 끝난 절 수가 아니라 탐색한 하위질문 수로 쓴다", () => {
     const got = docInputFromDraft(draft, v, "http://x/research/job-1");
     expect(got.intro).toBe("하위질문 3개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
+    // 오류로 멈춘 하위질문은 판정을 싣지 않고, 모르는 채택 수는 0 이 아니라 비워 둔다
     expect(got.trail).toEqual([
       { subquestion: "하위질문 1", queries: ["가", "가 재검색"], verdict: "sufficient", evidenceCount: 1 },
-      { subquestion: "하위질문 2", queries: [], verdict: null, evidenceCount: 0 },
+      { subquestion: "하위질문 2", queries: [], verdict: null, evidenceCount: null },
       { subquestion: "하위질문 3", queries: [], verdict: "sufficient", evidenceCount: 1 },
     ]);
     expect(got).toMatchObject({
@@ -4825,7 +4838,7 @@ export function docInputFromDraft(draft: DraftReport, view: ResearchView, url: s
     sections: draft.report.sections,
     evidence: draft.report.evidence,
     limitations: null,
-    trail: trail.map(docTrailItem),
+    trail: view.subqs.map(docTrailFromSubq),
     draft: { done: draft.done, total: draft.total },
   };
 }
@@ -4893,6 +4906,18 @@ function docTrailItem(t: TrailItem): DocTrailItem {
   };
 }
 
+// 초안 부록은 화면의 탐색 타임라인에서 만든다. 채택 수를 모르는 하위질문(채택 전에 오류로 멈춤)은 0편으로
+// 채우지 않고 비운다 — 부록은 모르는 칸을 뺀다(0 으로 적으면 모은 근거가 있어도 "0편"이라고 쓴다)
+function docTrailFromSubq(sq: SubqView): DocTrailItem {
+  return {
+    subquestion: sq.title,
+    queries: sq.rounds.map((r) => r.query).filter(Boolean),
+    verdict: sq.status === "failed" ? null : sq.verdict,
+    evidenceCount: sq.adopted,
+  };
+}
+
+// reportIntro 가 하위질문 수를 세는 데만 쓴다
 function trailFromSubq(sq: SubqView): TrailItem {
   return {
     subquestion: sq.title,
@@ -5428,6 +5453,10 @@ git commit -m "[Feat] round04b — Word 내보내기: docx 를 추가하고 문�
   .rs-page .rs-dl,
   .rs-page .rs-btn {
     display: none !important;
+  }
+  /* 진행 패널을 뺀 자리에 빈 칸이 남지 않게 배치 A 의 2단 격자를 푼다 — 본문이 용지 폭을 다 쓴다 */
+  .rs-page .rs-body {
+    display: block;
   }
   .rs-print {
     display: block;
@@ -5971,7 +6000,7 @@ cd frontend && NUXT_DEV_API_TARGET=http://<서버>:92/api npm run dev
 - **키보드**
   - [다운로드]에 Tab → ↓ 로 열면 첫 항목에 초점이 간다. ↑↓·Home·End 로 옮기고, Enter 로 고른다.
   - Esc 는 닫고 버튼으로 초점을 돌린다. Tab 은 닫고 다음 요소로 간다.
-- **Ctrl+P(메뉴 없이)**: 딥리서치 화면을 그대로 인쇄해도 사이드바·머리·버튼·진행 패널이 빠진다. 다른 페이지(논문 검색)의 인쇄는 전과 같다.
+- **Ctrl+P(메뉴 없이)**: 딥리서치 화면을 그대로 인쇄해도 사이드바·머리·버튼·진행 패널이 빠지고, 배치 A 에서도 본문이 용지 폭을 다 쓴다(진행 패널 자리에 빈 칸이 남지 않는다). 다른 페이지(논문 검색)의 인쇄는 전과 같다.
 - **작성 중**(종합 단계 잡 — 워커 배포 뒤 운영에서 본다)
   - 현황 카드의 [초안 저장 ▾]는 끝난 절이 없을 때 흐리고 눌리지 않는다. 포인터를 올리면 "아직 내려받을 내용이 없습니다" 가 뜬다.
   - 첫 절이 끝나면 활성이 된다.
@@ -6030,13 +6059,13 @@ git log --format='%h %an <%ae> %s' a6fd98c..HEAD
 git log --format=%B a6fd98c..HEAD | grep -ciE "co-authored-by|generated with claude"
 ```
 기대:
-- 첫 명령: 계획 커밋 1개 + Task 1~10 커밋 10개가 모두 저장소 사용자(`git config user.name` — Hyonii) 이름으로 나온다.
+- 첫 명령: 계획 문서 커밋 2개(작성 `03cc294`·검토 반영) + Task 1~10 커밋 10개가 모두 저장소 사용자(`git config user.name` — Hyonii) 이름으로 나온다. 그 사이에 다른 커밋(수정 커밋 등)이 끼었으면 그것도 같은 저자여야 한다.
 - 둘째 명령: `0`.
 - 하나라도 트레일러가 나오면 멈추고 사용자에게 알린다. 이미 쌓인 커밋의 메시지를 고치려면 사용자 승인 아래 비대화형 rebase 가 필요하다.
 
 - [ ] **Step 4: spec 머리 상태 줄 갱신**
 
-`docs/superpowers/specs/2026-09-26-round04b-deep-research-frontend-design.md` 3행을 Edit 도구로 고친다(CRLF 유지).
+`docs/superpowers/specs/2026-09-26-round04b-deep-research-frontend-design.md` 3행을 Edit 도구로 고친다(원래 줄바꿈 LF 유지).
 
 교체 전:
 ```markdown
