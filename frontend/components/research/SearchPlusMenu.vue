@@ -41,6 +41,37 @@
       <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">×</button>
     </span>
     <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
+    <!-- 슬래시 명령 목록: 초점은 입력창에 둔 채(aria-activedescendant) 방향키로 고른다.
+         mousedown 을 막아 항목·여백을 눌러도 입력창 초점이 빠지지 않게 한다 -->
+    <ul
+      v-if="paletteOpen"
+      :id="paletteId"
+      class="rs-plus__palette"
+      role="listbox"
+      aria-label="슬래시 명령"
+      @mousedown.prevent
+    >
+      <li
+        v-for="(m, i) in suggestions"
+        :id="optionId(m)"
+        :key="m.id"
+        role="option"
+        class="rs-plus__option"
+        :class="{ 'is-selected': i === highlight }"
+        :aria-selected="i === highlight"
+        @mouseenter="highlight = i"
+        @click="pick(m)"
+      >
+        <img class="rs-plus__icon" :src="m.icon" alt="" />
+        <span class="rs-plus__text">
+          <span class="rs-plus__cmd">
+            <span class="rs-plus__slash">{{ m.slash }}</span>
+            <span class="rs-plus__alias">{{ m.label }}</span>
+          </span>
+          <span class="rs-plus__desc">{{ m.description }}</span>
+        </span>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -52,9 +83,11 @@ import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   createEchoGuard,
   modesFor,
+  paletteKeyAction,
   parseSlash,
   planSlashSubmit,
   shouldAutoChip,
+  slashSuggestions,
   type SearchInputKind,
   type SearchMode,
   type SearchModeId,
@@ -173,6 +206,93 @@ function clear(): void {
   field?.focus();
 }
 
+// ── 슬래시 명령 목록(WAI-ARIA 콤보박스 관례: 초점은 입력창, 강조는 aria-activedescendant) ──
+const paletteId = useId();
+// document.activeElement 는 반응형이 아니라 입력창의 focus·blur 로 따로 쥔다
+const focused = ref(false);
+// Esc 로 닫으면 입력값이 바뀔 때까지 다시 띄우지 않는다
+const dismissed = ref(false);
+const highlight = ref(0);
+const suggestions = computed(() => slashSuggestions(props.modelValue, modes.value));
+// 메인 랜딩은 숨은 논문 패널의 이 컴포넌트도 마운트돼 있고 도서 입력창과 값을 공유한다 —
+// 값만 보고 띄우면 엉뚱한 곳에 뜨므로 자기 입력창에 초점이 있을 때만 띄운다(watch 의 가림과 같은 이유)
+const paletteOpen = computed(
+  () =>
+    focused.value &&
+    !active.value &&
+    !props.disabled &&
+    !busy.value &&
+    !menuOpen.value &&
+    !dismissed.value &&
+    suggestions.value.length > 0,
+);
+const highlighted = computed(() => suggestions.value[highlight.value] ?? suggestions.value[0] ?? null);
+
+function optionId(mode: SearchMode): string {
+  return `${paletteId}-${mode.id}`;
+}
+
+function pick(mode: SearchMode): void {
+  activate(mode);
+  // 목록은 글 전체가 "/토큰" 하나일 때만 뜬다 — 토큰(앞 공백 포함)을 떼고 질문 칸을 비워 준다
+  emitText(currentText().trimStart().replace(/^\S+/, ""));
+  field?.focus();
+}
+
+// 처리한 키면 true — 기존 엔터 처리(딥리서치 제출)와 페이지의 검색 핸들러까지 가지 않게 끊는다
+function onPaletteKey(e: KeyboardEvent): boolean {
+  const action = paletteKeyAction(e.key, { composing: e.isComposing, shift: e.shiftKey });
+  if (!action) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  const count = suggestions.value.length;
+  if (action === "next" || action === "prev") {
+    highlight.value = menuStep(highlight.value, action === "next" ? "ArrowDown" : "ArrowUp", count) ?? 0;
+  } else if (action === "select") {
+    if (highlighted.value) pick(highlighted.value);
+  } else if (action === "close") {
+    dismissed.value = true;
+  }
+  return true;
+}
+
+function onFieldFocus(): void {
+  focused.value = true;
+}
+
+function onFieldBlur(): void {
+  focused.value = false;
+}
+
+// 입력창은 페이지가 가진 요소라 마크업을 고치지 않고 목록이 떠 있는 동안만 속성을 단다
+const FIELD_ARIA = ["aria-controls", "aria-expanded", "aria-activedescendant", "aria-autocomplete"] as const;
+
+function syncFieldAria(): void {
+  if (!field) return;
+  if (!paletteOpen.value) {
+    for (const name of FIELD_ARIA) field.removeAttribute(name);
+    return;
+  }
+  field.setAttribute("aria-controls", paletteId);
+  field.setAttribute("aria-expanded", "true");
+  field.setAttribute("aria-autocomplete", "list");
+  if (highlighted.value) field.setAttribute("aria-activedescendant", optionId(highlighted.value));
+  else field.removeAttribute("aria-activedescendant");
+}
+
+// 목록이 바뀌거나 새로 뜨면 강조는 첫 항목으로 돌아간다
+watch([paletteOpen, () => suggestions.value.map((m) => m.id).join(" ")], () => {
+  highlight.value = 0;
+});
+// 항목의 id 가 DOM 에 생긴 뒤 aria-activedescendant 가 가리키게 렌더 뒤에 맞춘다
+watch([paletteOpen, highlighted], syncFieldAria, { flush: "post" });
+watch(
+  () => props.modelValue,
+  () => {
+    dismissed.value = false;
+  },
+);
+
 watch(
   () => props.modelValue,
   (value) => {
@@ -225,6 +345,9 @@ async function submit(): Promise<void> {
 // 겹치는 곳이다) 부모 상자에서 캡처 단계로 엔터·전송 클릭을 가로챈다. 캡처 단계에서
 // 전파를 끊으면 입력창·전송 버튼에 달린 페이지의 검색 핸들러까지 가지 않는다.
 function onHostKeydown(e: KeyboardEvent): void {
+  // 슬래시 명령 목록이 떠 있으면 그 키(엔터 포함)를 먼저 쓴다 — "/deep-research" 까지만 치고
+  // 엔터를 쳐도 빈 질문 오류 대신 칩이 켜진다
+  if (e.target === field && paletteOpen.value && onPaletteKey(e)) return;
   if (e.key !== "Enter" || e.target !== field || !researchWanted()) return;
   if (e.shiftKey && field instanceof HTMLTextAreaElement) return;
   e.preventDefault();
@@ -252,12 +375,18 @@ onMounted(() => {
   host = root.value?.parentElement ?? null;
   field = host?.querySelector<HTMLTextAreaElement | HTMLInputElement>("textarea, input[type='text'], input:not([type])") ?? null;
   basePlaceholder = field?.placeholder ?? "";
+  focused.value = !!field && document.activeElement === field;
+  field?.addEventListener("focus", onFieldFocus);
+  field?.addEventListener("blur", onFieldBlur);
   host?.addEventListener("keydown", onHostKeydown, true);
   host?.addEventListener("click", onHostClick, true);
   document.addEventListener("click", onDocumentClick);
 });
 
 onBeforeUnmount(() => {
+  field?.removeEventListener("focus", onFieldFocus);
+  field?.removeEventListener("blur", onFieldBlur);
+  if (field) for (const name of FIELD_ARIA) field.removeAttribute(name);
   host?.removeEventListener("keydown", onHostKeydown, true);
   host?.removeEventListener("click", onHostClick, true);
   document.removeEventListener("click", onDocumentClick);

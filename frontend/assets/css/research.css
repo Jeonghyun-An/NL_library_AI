@@ -637,12 +637,12 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-.rs-plus__menu {
+.rs-plus__menu,
+.rs-plus__palette {
   position: absolute;
   top: calc(100% + 0.3rem);
   left: 0;
   z-index: 40;
-  min-width: 16rem;
   margin: 0;
   padding: 0.3rem;
   list-style: none;
@@ -651,7 +651,16 @@
   border-radius: var(--skx-radius-md);
   box-shadow: var(--skx-shadow-banner);
 }
-.rs-plus__item {
+.rs-plus__menu {
+  min-width: 16rem;
+}
+/* 슬래시 명령 목록은 + 버튼이 아니라 입력 상자(.rs-plus 의 부모 — 랜딩 상자·결과 검색바 모두
+   위치 기준이 있다) 아래에 상자 폭으로 뜬다. z-index 로 같은 자리의 오류 문구 위에 온다 */
+.rs-plus__palette {
+  right: 0;
+}
+.rs-plus__item,
+.rs-plus__option {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
@@ -666,7 +675,8 @@
 }
 .rs-plus__item:hover,
 .rs-plus__item:focus-visible,
-.rs-plus__item.is-selected {
+.rs-plus__item.is-selected,
+.rs-plus__option.is-selected {
   background: var(--skx-border-c1);
   outline: none;
 }
@@ -689,6 +699,20 @@
   font-size: 0.55rem;
   color: var(--skx-gray-1);
   line-height: 1.4;
+}
+.rs-plus__cmd {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.rs-plus__slash {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-plus__alias {
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
 }
 .rs-plus__chip {
   display: inline-flex;

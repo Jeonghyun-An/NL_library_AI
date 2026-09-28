@@ -49,6 +49,40 @@ export function shouldAutoChip(input: string): boolean {
   return mode !== null && (text !== "" || /\s$/.test(input));
 }
 
+// 슬래시 명령 목록에 띄울 명령. 글 전체가 "/" 로 시작하는 한 토큰일 때만 고른다 — 토큰 뒤에
+// 공백이 붙으면 shouldAutoChip 이 칩으로 바꾸거나 사용자가 일반 글을 치는 중이다.
+// "/딥" 처럼 슬래시 뒤를 한글 라벨로 쳐도 찾게 라벨 접두도 본다.
+export function slashSuggestions(input: string, modes: readonly SearchMode[]): SearchMode[] {
+  const token = input.trimStart().toLowerCase();
+  if (!token.startsWith("/") || /\s/.test(token)) return [];
+  const name = token.slice(1);
+  return modes.filter((m) => m.slash.startsWith(token) || (name !== "" && m.label.toLowerCase().startsWith(name)));
+}
+
+export type PaletteKeyAction = "next" | "prev" | "select" | "close" | "block";
+
+// 슬래시 명령 목록이 떠 있을 때 입력창의 키를 어떻게 쓸지 정한다. null 이면 목록의 키가 아니다 —
+// 화면은 막지 않고 입력창·기존 엔터 처리에 그대로 넘긴다.
+export function paletteKeyAction(key: string, state: { composing: boolean; shift: boolean }): PaletteKeyAction | null {
+  switch (key) {
+    case "ArrowDown":
+      return state.composing ? null : "next";
+    case "ArrowUp":
+      return state.composing ? null : "prev";
+    case "Enter":
+      // 한글 조합 중의 엔터는 글자 확정용이다 — 고르지 않되 페이지의 검색 핸들러로도 보내지 않는다
+      if (state.shift) return null;
+      return state.composing ? "block" : "select";
+    case "Tab":
+      // Shift+Tab 은 초점을 뒤로 보내는 키다 — 고르지 않고 초점이 빠지며 목록이 닫힌다
+      return state.composing || state.shift ? null : "select";
+    case "Escape":
+      return "close";
+    default:
+      return null;
+  }
+}
+
 export interface SlashSubmit {
   mode: SearchModeId;
   // 서버로 보낼 질문(앞뒤 공백을 뗀 글)

@@ -1,6 +1,15 @@
 // frontend/tests/unit/slashCommand.test.ts
 import { describe, expect, it } from "vitest";
-import { createEchoGuard, modesFor, parseSlash, planSlashSubmit, shouldAutoChip } from "~/utils/slashCommand";
+import {
+  createEchoGuard,
+  modesFor,
+  paletteKeyAction,
+  parseSlash,
+  planSlashSubmit,
+  shouldAutoChip,
+  slashSuggestions,
+  type SearchMode,
+} from "~/utils/slashCommand";
 
 describe("parseSlash", () => {
   it("명령 뒤의 글을 질문으로 떼어 낸다", () => {
@@ -91,5 +100,89 @@ describe("createEchoGuard", () => {
 
   it("표시한 적이 없으면 어떤 값도 되돌아온 것이 아니다", () => {
     expect(createEchoGuard().take("")).toBe(false);
+  });
+});
+
+describe("slashSuggestions", () => {
+  const paper = modesFor("paper");
+  const deep = paper[0]!;
+  // 모드가 여럿일 때 접두로 걸러지는지 보려고 가짜 모드를 하나 더한다
+  const summary: SearchMode = { ...deep, label: "요약", slash: "/summary" };
+  const two = [deep, summary];
+  const slashes = (input: string, modes: readonly SearchMode[] = two) => slashSuggestions(input, modes).map((m) => m.slash);
+
+  it("슬래시 하나만 치면 그 입력창에서 쓸 수 있는 명령 전부", () => {
+    expect(slashes("/")).toEqual(["/deep-research", "/summary"]);
+    expect(slashSuggestions("/", paper)).toEqual(paper);
+  });
+
+  it("명령 이름의 접두로 거르고 대소문자는 가리지 않는다", () => {
+    expect(slashes("/dee")).toEqual(["/deep-research"]);
+    expect(slashes("/DEEP")).toEqual(["/deep-research"]);
+    expect(slashes("/s")).toEqual(["/summary"]);
+  });
+
+  it("슬래시 뒤의 글이 라벨의 접두여도 걸린다", () => {
+    expect(slashes("/딥")).toEqual(["/deep-research"]);
+    expect(slashes("/요")).toEqual(["/summary"]);
+  });
+
+  it("앞 공백은 무시하고 명령을 끝까지 쳐도 목록에 남는다", () => {
+    expect(slashes("  /de")).toEqual(["/deep-research"]);
+    expect(slashes("/deep-research")).toEqual(["/deep-research"]);
+  });
+
+  it("토큰 뒤에 공백·글·줄바꿈이 붙으면 목록을 띄우지 않는다", () => {
+    expect(slashes("/deep-research ")).toEqual([]);
+    expect(slashes("/deep-research 질문")).toEqual([]);
+    expect(slashes("/de\n")).toEqual([]);
+    expect(slashes("/de\nep")).toEqual([]);
+  });
+
+  it("맞는 명령이 없거나 슬래시로 시작하지 않으면 빈 목록", () => {
+    expect(slashes("/xyz")).toEqual([]);
+    expect(slashes("abc")).toEqual([]);
+    expect(slashes("a/deep")).toEqual([]);
+    expect(slashes("")).toEqual([]);
+    expect(slashes("   ")).toEqual([]);
+  });
+
+  it("쓸 수 있는 명령이 없는 입력창(도서)에는 목록이 없다", () => {
+    expect(slashSuggestions("/", [])).toEqual([]);
+    expect(slashSuggestions("/deep", modesFor("book"))).toEqual([]);
+  });
+});
+
+describe("paletteKeyAction", () => {
+  const plain = { composing: false, shift: false };
+
+  it("방향키는 강조를 옮기고 엔터·Tab 은 고르고 Esc 는 닫는다", () => {
+    expect(paletteKeyAction("ArrowDown", plain)).toBe("next");
+    expect(paletteKeyAction("ArrowUp", plain)).toBe("prev");
+    expect(paletteKeyAction("Enter", plain)).toBe("select");
+    expect(paletteKeyAction("Tab", plain)).toBe("select");
+    expect(paletteKeyAction("Escape", plain)).toBe("close");
+  });
+
+  it("한글 조합 중 엔터는 막기만 하고 방향키·Tab 은 건드리지 않는다", () => {
+    const composing = { composing: true, shift: false };
+    expect(paletteKeyAction("Enter", composing)).toBe("block");
+    expect(paletteKeyAction("ArrowDown", composing)).toBeNull();
+    expect(paletteKeyAction("ArrowUp", composing)).toBeNull();
+    expect(paletteKeyAction("Tab", composing)).toBeNull();
+    expect(paletteKeyAction("Escape", composing)).toBe("close");
+  });
+
+  it("Shift 를 쥔 엔터·Tab 은 목록의 키가 아니다", () => {
+    const shift = { composing: false, shift: true };
+    expect(paletteKeyAction("Enter", shift)).toBeNull();
+    expect(paletteKeyAction("Tab", shift)).toBeNull();
+    expect(paletteKeyAction("Enter", { composing: true, shift: true })).toBeNull();
+  });
+
+  it("그 밖의 키는 입력창에 그대로 둔다", () => {
+    expect(paletteKeyAction("a", plain)).toBeNull();
+    expect(paletteKeyAction("Home", plain)).toBeNull();
+    expect(paletteKeyAction("Backspace", plain)).toBeNull();
   });
 });
