@@ -3,8 +3,8 @@ import type { Document as DocxDocument, Paragraph } from "docx";
 import { docRunText, xmlSafe, type DocBlock, type DocRun, type ReportDoc } from "./reportDocument";
 
 // docx 는 1MB 가 넘는다 — 화면 번들에 넣지 않고 내려받기를 누를 때 받는다(동적 import).
-// 구성 함수는 모듈을 인자로 받아 Node 테스트가 브라우저와 같은 코드를 그대로 돌린다.
-export type DocxModule = typeof import("docx");
+// 구성 함수는 그때 받은 모듈을 인자로 쓴다 — 값으로 import 하면 정적 번들에 들어간다
+type DocxModule = typeof import("docx");
 
 const FONT = "맑은 고딕";
 const MUTED = "666666";
@@ -17,7 +17,7 @@ function pt(n: number): number {
   return Math.round(n * 2);
 }
 
-export function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
+function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
   const { AlignmentType, Document, Footer, HeadingLevel, PageNumber, Paragraph, TextRun } = docx;
 
   // docx 는 &<>"' 만 이스케이프하고 제어문자는 <w:t> 에 그대로 쓴다. 모델이 이미 거르지만
@@ -102,12 +102,6 @@ export function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocumen
 export async function toDocxBlob(doc: ReportDoc): Promise<Blob> {
   const docx = await import("docx");
   return docx.Packer.toBlob(buildDocxDocument(docx, doc));
-}
-
-// Node 에는 Blob 을 파일로 풀어 볼 도구가 마땅치 않다 — 테스트는 같은 경로로 바이트를 받는다
-export async function toDocxBuffer(doc: ReportDoc): Promise<Uint8Array> {
-  const docx = await import("docx");
-  return new Uint8Array(await docx.Packer.toArrayBuffer(buildDocxDocument(docx, doc)));
 }
 
 export function downloadBlob(blob: Blob, fileName: string): void {

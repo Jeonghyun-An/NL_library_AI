@@ -3,7 +3,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import type { ReportDoc } from "~/utils/reportDocument";
-import { toDocxBuffer } from "~/utils/reportDocx";
+import { toDocxBlob } from "~/utils/reportDocx";
 
 const doc: ReportDoc = {
   fileName: "딥리서치_국내_AI_규제_연구_동향_20260928.docx",
@@ -23,7 +23,8 @@ const doc: ReportDoc = {
 };
 
 async function unzip(target: ReportDoc): Promise<JSZip> {
-  return JSZip.loadAsync(await toDocxBuffer(target));
+  // 내려받기가 쓰는 Blob 을 그대로 푼다 — Node 에도 Blob 이 있어 브라우저와 같은 경로를 지난다
+  return JSZip.loadAsync(await (await toDocxBlob(target)).arrayBuffer());
 }
 
 async function read(zip: JSZip, path: string): Promise<string> {
@@ -39,7 +40,7 @@ function runTexts(paragraph: string): string[] {
   return [...paragraph.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map((m) => m[1] ?? "");
 }
 
-describe("toDocxBuffer", () => {
+describe("toDocxBlob", () => {
   it("본문 문단·글머리표의 글 조각 사이에 인용 번호를 잇고 참고문헌을 뒤에 싣는다", async () => {
     const xml = await read(await unzip(doc), "word/document.xml");
     expect(xml).toContain("국내 AI 규제 연구 동향");
