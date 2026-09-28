@@ -1,7 +1,7 @@
 // frontend/tests/unit/citations.test.ts
 import { describe, expect, it } from "vitest";
 import type { ReportEvidence, ReportSection } from "~/types/research";
-import { citeChunks, citeLabel, metaLine, pageLabel, pdfPage, splitAuthors, splitCitations } from "~/utils/citations";
+import { chunkListKey, citeChunks, citeLabel, metaLine, pageLabel, pdfPage, splitAuthors, splitCitations } from "~/utils/citations";
 
 function chunk(id: string, score = 0.5, page = 3) {
   return { chunk_id: id, text: `본문 ${id}`, page_start: page, page_end: page, score };
@@ -119,5 +119,21 @@ describe("citeChunks", () => {
 
   it("근거가 없으면 빈 배열이다", () => {
     expect(citeChunks(section({ E9: ["c1"] }), undefined, "E9")).toEqual([]);
+  });
+});
+
+describe("chunkListKey", () => {
+  it("초안이 최종본으로 바뀌어 같은 대목의 새 배열이 와도 열쇠는 같다 — 팝오버에서 보던 대목을 첫 대목으로 돌리지 않게", () => {
+    const draftEv: ReportEvidence = { ...evidence, chunks: evidence.chunks.map((c) => ({ ...c })) };
+    const map = section({ E1: ["c3", "c1"] });
+    const inDraft = citeChunks(map, draftEv, "E1");
+    const inFinal = citeChunks(map, evidence, "E1");
+    expect(inFinal).not.toBe(inDraft);
+    expect(chunkListKey(inFinal)).toBe(chunkListKey(inDraft));
+  });
+
+  it("대목이 바뀌면 열쇠도 바뀐다", () => {
+    expect(chunkListKey([chunk("c1"), chunk("c2")])).not.toBe(chunkListKey([chunk("c1")]));
+    expect(chunkListKey([chunk("c1"), chunk("c2")])).not.toBe(chunkListKey([chunk("c2"), chunk("c1")]));
   });
 });

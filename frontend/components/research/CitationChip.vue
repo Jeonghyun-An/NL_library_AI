@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
 import type { OpenPdfPayload, ReportChunk, ReportEvidence } from "~/types/research";
-import { citeLabel, metaLine, pageLabel, pdfPage } from "~/utils/citations";
+import { chunkListKey, citeLabel, metaLine, pageLabel, pdfPage } from "~/utils/citations";
 import { hideOnPointerLeave, stepChunk } from "~/utils/researchReport";
 
 const props = defineProps<{ eid: string; evidence?: ReportEvidence; chunks: ReportChunk[] }>();
@@ -85,7 +85,8 @@ const current = computed<ReportChunk | undefined>(() => props.chunks[index.value
 const canPrev = computed(() => stepChunk(index.value, -1, props.chunks.length) !== index.value);
 const canNext = computed(() => stepChunk(index.value, 1, props.chunks.length) !== index.value);
 
-watch(() => props.chunks, () => {
+// 대목 목록이 실제로 바뀔 때만 첫 대목으로 돌린다 — 다시 그릴 때마다 돌리면 열어 둔 팝오버에서 보던 대목을 잃는다
+watch(() => chunkListKey(props.chunks), () => {
   index.value = 0;
 });
 

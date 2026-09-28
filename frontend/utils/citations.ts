@@ -83,6 +83,12 @@ export function citeChunks(
   return picked.length ? picked : evidence.chunks;
 }
 
+// 인용칩이 보던 대목을 첫 대목으로 돌릴지 견주는 열쇠. 초안에 절이 더해지거나 초안이 최종본으로 바뀌어 다시
+// 그리면 citeChunks 가 같은 대목의 새 배열을 돌려주므로, 배열이 아니라 대목 id 로 견준다
+export function chunkListKey(chunks: readonly ReportChunk[]): string {
+  return chunks.map((c) => c.chunk_id).join("|");
+}
+
 // 저장된 쪽수는 0부터 센다(ingestion/extractor). 0 은 "첫 쪽"과 "쪽 정보 없음"
 // (indexer 의 `or 0`)이 겹쳐 구분할 수 없으므로 쪽을 표시하지 않는다.
 export function pageLabel(chunk: Pick<ReportChunk, "page_start" | "page_end">): string {
