@@ -30,19 +30,35 @@ async function read(zip: JSZip, path: string): Promise<string> {
   return (await zip.file(path)?.async("string")) ?? "";
 }
 
+// 글이 든 첫 문단(<w:p>…</w:p>)과 그 안의 런 글자를 순서대로 본다
+function paragraphWith(xml: string, text: string): string {
+  return (xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) ?? []).find((p) => p.includes(text)) ?? "";
+}
+
+function runTexts(paragraph: string): string[] {
+  return [...paragraph.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map((m) => m[1] ?? "");
+}
+
 describe("toDocxBuffer", () => {
-  it("본문에 질문·인용 번호·참고문헌을 싣는다", async () => {
+  it("본문 문단·글머리표의 글 조각 사이에 인용 번호를 잇고 참고문헌을 뒤에 싣는다", async () => {
     const xml = await read(await unzip(doc), "word/document.xml");
     expect(xml).toContain("국내 AI 규제 연구 동향");
-    expect(xml).toContain("[1]");
-    expect(xml).toContain("[2]");
     expect(xml).toContain("참고문헌");
     expect(xml).toContain("[1] 김철수 (2019). AI 윤리 교육.");
+    // 참고문헌 줄도 [1]·[2] 로 시작한다 — 본문 인용은 참고문헌 앞 구간의 문단 안 런 순서로 본다
+    const body = xml.slice(0, xml.indexOf("참고문헌"));
+    expect(runTexts(paragraphWith(body, "규제 논의가 늘었다"))).toEqual(["규제 논의가 늘었다 ", "[1]", "."]);
+    const bullet = paragraphWith(body, "국제 비교가 필요하다");
+    expect(bullet).toContain("<w:numPr>");
+    expect(runTexts(bullet)).toEqual(["국제 비교가 필요하다 ", "[2]"]);
   });
 
-  it("A4 용지·맑은 고딕으로 만들고 바닥글에 쪽 번호를 단다", async () => {
+  it("A4 용지·맑은 고딕으로 만들고 흐린 문단만 회색으로, 바닥글에 쪽 번호를 단다", async () => {
     const zip = await unzip(doc);
-    expect(await read(zip, "word/document.xml")).toMatch(/<w:pgSz [^>]*w:w="11906"[^>]*w:h="16838"/);
+    const xml = await read(zip, "word/document.xml");
+    expect(xml).toMatch(/<w:pgSz [^>]*w:w="11906"[^>]*w:h="16838"/);
+    expect(paragraphWith(xml, "보고할 한계가 발견되지")).toContain('<w:color w:val="666666"/>');
+    expect(paragraphWith(xml, "규제 논의가 늘었다")).not.toContain("<w:color");
     expect(await read(zip, "word/styles.xml")).toContain('w:eastAsia="맑은 고딕"');
     const footer = Object.keys(zip.files).find((name) => /^word\/footer\d+\.xml$/.test(name));
     expect(footer).toBeDefined();
