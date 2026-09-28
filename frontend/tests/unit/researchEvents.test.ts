@@ -459,6 +459,29 @@ describe("applyResearchEvent — 절 미리보기", () => {
     expect(v.synth.evidence).toEqual(EV0);
   });
 
+  it("근거가 없는 step 이벤트는 받은 근거 객체를 그대로 둔다", () => {
+    // 근거를 읽는 computed(초안·인용칩)가 절과 무관한 이벤트마다 다시 돌지 않게
+    const before = run([SYNTH_STEP, S0_RUNNING, S0_DONE]);
+    const after = applyResearchEvent(before, { ...SYNTH_STEP, result: LIGHT_RESULT });
+    expect(after.synth.evidence).toBe(before.synth.evidence);
+  });
+
+  it("워커가 모르는 칸을 null 로 실은 절(info 없이 부른 옛 콜백)은 빈 칸으로 받는다", () => {
+    const v = initialResearchView(job({
+      status: "running", stage: "explored",
+      steps: [step({
+        seq: 3, kind: "synthesize", title: "보고서 종합", status: "running",
+        result: {
+          sections_total: 1,
+          sections: [{ idx: 0, status: "done", subq_idx: null, heading: null, started_at: null, duration_ms: null }],
+        },
+      })],
+    }));
+    expect(v.synth.sections).toEqual([
+      { idx: 0, status: "done", subqIdx: null, heading: null, startedAt: null, durationMs: null, section: null },
+    ]);
+  });
+
   it("끊겼다 다시 받은 snapshot 이 뒤처져 있어도 라이브로 받은 절 상태·내용·걸린 시간을 지킨다", () => {
     const behind: StepResult = {
       sections_total: 2,

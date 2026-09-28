@@ -437,7 +437,8 @@ function synthFrom(view: ResearchView): SynthView {
     total: Math.max(total, prior.total),
     sections: mergeSections(listed, prior.sections),
     headings: r.headings?.length ? r.headings : prior.headings,
-    evidence: mergeEvidence(r.evidence ?? {}, prior.evidence),
+    // 근거가 없는 값(가벼운 step 이벤트)이면 받은 객체를 그대로 둔다 — applySynth 와 같은 규칙
+    evidence: r.evidence ? mergeEvidence(r.evidence, prior.evidence) : prior.evidence,
   };
 }
 

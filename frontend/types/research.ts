@@ -35,8 +35,8 @@ export interface SearchRoundResult {
 export interface SynthSectionResult {
   idx: number;
   status: SynthSectionStatus;
-  subq_idx?: number;
-  heading?: string;
+  subq_idx?: number | null;
+  heading?: string | null;
   started_at?: string | null;
   duration_ms?: number | null;
   section?: ReportSection;
