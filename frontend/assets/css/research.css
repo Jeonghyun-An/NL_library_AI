@@ -1064,7 +1064,9 @@ button.rs-synth__item:focus-visible,
   position: relative;
   display: inline-flex;
 }
-.rs-dl__btn[aria-disabled="true"] {
+/* 만드는 중에도 aria-disabled 가 걸리지만 흐리게 두면 '누를 수 없음'으로 읽혀 점과 글자가 묻힌다 —
+   흐림은 내려받을 내용이 없을 때만 */
+.rs-dl__btn[aria-disabled="true"]:not([aria-busy="true"]) {
   opacity: 0.5;
   cursor: not-allowed;
 }
