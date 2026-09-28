@@ -69,4 +69,25 @@ describe("toDocxBuffer", () => {
     const xml = await read(await unzip({ ...doc, references: [] }), "word/document.xml");
     expect(xml).not.toContain("참고문헌");
   });
+
+  // 합성 출력의 JSON 을 풀면 LLM 이 쓴 LaTeX(\frac·\beta)가 이스케이프 \f·\b 로 풀려 이런 글자가 된다
+  it("XML 에 쓸 수 없는 제어문자는 어느 자리에서도 빼고 쓴다 — Word 가 열지 못하는 파일이 되지 않게", async () => {
+    const dirty: ReportDoc = {
+      ...doc,
+      blocks: [
+        { type: "title", text: "국내\u0001 AI 규제" },
+        { type: "meta", text: "생성 일시\u000B 2026년" },
+        { type: "heading", level: 1, text: "1. 계수\u001F 추정" },
+        { type: "para", runs: [{ text: "분수 \u000Crac 와 \u0008eta 계수 " }, { cite: 1 }] },
+        { type: "bullets", items: [[{ text: "과제\u0000 하나" }]] },
+      ],
+      references: [{ n: 1, eid: "E1", text: "김철수 (2019).\u000E 추정." }],
+    };
+    const xml = await read(await unzip(dirty), "word/document.xml");
+    expect(xml).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    expect(runTexts(paragraphWith(xml, "분수"))).toEqual(["분수 rac 와 eta 계수 ", "[1]"]);
+    for (const text of ["국내 AI 규제", "생성 일시 2026년", "1. 계수 추정", "과제 하나", "[1] 김철수 (2019). 추정."]) {
+      expect(xml).toContain(text);
+    }
+  });
 });

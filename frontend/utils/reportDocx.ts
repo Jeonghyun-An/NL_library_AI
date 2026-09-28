@@ -1,6 +1,6 @@
 // frontend/utils/reportDocx.ts
 import type { Document as DocxDocument, Paragraph } from "docx";
-import { docRunText, type DocBlock, type DocRun, type ReportDoc } from "./reportDocument";
+import { docRunText, xmlSafe, type DocBlock, type DocRun, type ReportDoc } from "./reportDocument";
 
 // docx 는 1MB 가 넘는다 — 화면 번들에 넣지 않고 내려받기를 누를 때 받는다(동적 import).
 // 구성 함수는 모듈을 인자로 받아 Node 테스트가 브라우저와 같은 코드를 그대로 돌린다.
@@ -20,20 +20,25 @@ function pt(n: number): number {
 export function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
   const { AlignmentType, Document, Footer, HeadingLevel, PageNumber, Paragraph, TextRun } = docx;
 
+  // docx 는 &<>"' 만 이스케이프하고 제어문자는 <w:t> 에 그대로 쓴다. 모델이 이미 거르지만
+  // 손으로 만든 ReportDoc 도 열리는 파일이 되도록 XML 에 쓰는 자리에서 한 번 더 막는다
+  const run = (text: string, opts: { size?: number; color?: string } = {}) =>
+    new TextRun({ ...opts, text: xmlSafe(text) });
+
   const runsOf = (runs: DocRun[], muted = false) =>
-    runs.map((r) => new TextRun({ text: docRunText(r), color: muted ? MUTED : undefined }));
+    runs.map((r) => run(docRunText(r), { color: muted ? MUTED : undefined }));
 
   function paragraphs(block: DocBlock): Paragraph[] {
     switch (block.type) {
       case "title":
-        return [new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun(block.text)] })];
+        return [new Paragraph({ heading: HeadingLevel.TITLE, children: [run(block.text)] })];
       case "meta":
-        return [new Paragraph({ children: [new TextRun({ text: block.text, size: pt(9), color: MUTED })] })];
+        return [new Paragraph({ children: [run(block.text, { size: pt(9), color: MUTED })] })];
       case "heading":
         return [
           new Paragraph({
             heading: block.level === 1 ? HeadingLevel.HEADING_1 : HeadingLevel.HEADING_2,
-            children: [new TextRun(block.text)],
+            children: [run(block.text)],
           }),
         ];
       case "para":
@@ -50,7 +55,7 @@ export function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocumen
         ...doc.references.map(
           (r) =>
             new Paragraph({
-              children: [new TextRun(`[${r.n}] ${r.text}`)],
+              children: [run(`[${r.n}] ${r.text}`)],
               indent: { left: 440, hanging: 440 },
               spacing: { after: 80 },
             }),
@@ -60,7 +65,7 @@ export function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocumen
 
   return new Document({
     creator: "NL-Lib 딥리서치",
-    title: doc.fileName.replace(/\.docx$/i, ""),
+    title: xmlSafe(doc.fileName.replace(/\.docx$/i, "")),
     styles: {
       default: {
         document: { run: { font: FONT, size: pt(10.5) }, paragraph: { spacing: { line: 312 } } },

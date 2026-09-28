@@ -72,6 +72,13 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 // Windows·macOS 파일 이름에 못 쓰는 글자와 제어문자
 const FILE_FORBIDDEN = /[\\/:*?"<>|\u0000-\u001f\u007f]/g;
 const FILE_HEAD_CHARS = 20;
+// XML 1.0 에 쓸 수 없는 글자(탭·줄바꿈을 뺀 C0 제어문자, U+FFFE·U+FFFF). 합성 출력의 JSON 을 풀 때
+// LLM 이 쓴 LaTeX(\frac·\beta)가 이스케이프 \f·\b 로 풀려 들어온다 — Word 는 이 글자가 든 .docx 를 열지 못한다
+const XML_ILLEGAL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g;
+
+export function xmlSafe(s: string): string {
+  return s.replace(XML_ILLEGAL, "");
+}
 
 export function docRunText(run: DocRun): string {
   return "text" in run ? run.text : `[${run.cite}]`;
@@ -138,9 +145,29 @@ export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc
   const references = [...numbers].map(([eid, n]) => ({
     n,
     eid,
-    text: referenceText(input.evidence[eid], citedIn.get(eid) ?? [], eid),
+    text: xmlSafe(referenceText(input.evidence[eid], citedIn.get(eid) ?? [], eid)),
   }));
-  return { fileName: reportFileName(input.question, now, input.draft !== null), blocks, references };
+  // 화면은 보이지 않는 글자로 넘기지만 문서는 깨진다 — Word·인쇄가 같은 글을 쓰도록 모델에서 한 번에 뺀다
+  return {
+    fileName: reportFileName(input.question, now, input.draft !== null),
+    blocks: blocks.map(cleanBlock),
+    references,
+  };
+}
+
+function cleanRun(run: DocRun): DocRun {
+  return "text" in run ? { text: xmlSafe(run.text) } : run;
+}
+
+function cleanBlock(block: DocBlock): DocBlock {
+  switch (block.type) {
+    case "para":
+      return { ...block, runs: block.runs.map(cleanRun) };
+    case "bullets":
+      return { ...block, items: block.items.map((runs) => runs.map(cleanRun)) };
+    default:
+      return { ...block, text: xmlSafe(block.text) };
+  }
 }
 
 export function docInputFromReport(

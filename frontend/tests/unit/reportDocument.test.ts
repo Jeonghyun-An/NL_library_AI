@@ -166,6 +166,44 @@ describe("buildReportDocument — 구성", () => {
     const doc = buildReportDocument(input(), NOW);
     expect(lines(doc)).not.toContain("heading1: 부록: 탐색 경로");
   });
+
+  // 합성 출력의 JSON 을 풀면 LLM 이 쓴 LaTeX(\frac·\beta)가 이스케이프 \f·\b 로 풀려 제어문자가 된다
+  it("XML 에 쓸 수 없는 제어문자는 모든 블록과 참고문헌에서 뺀다 — Word·인쇄가 같은 글을 쓴다", () => {
+    const doc = buildReportDocument(
+      input({
+        question: "국내\u0001 AI 규제",
+        intro: "서론\u000B 문장",
+        sections: [
+          section({
+            heading: "계수\u0008 추정",
+            intro: "\u000Crac{1}{2} 로 적는다 [E1].",
+            papers: [{ cnts_id: "C1", summary: "\u0008eta 계수를 추정했다", evidence: ["E1"] }],
+            future: [{ text: "과제\u001F 하나", evidence: [] }],
+          }),
+        ],
+        evidence: { E1: ev("C1", { title: "회귀\u0007 분석", personal_author: "김철수", pub_date: "2019" }) },
+        limitations: ["한계\u000E 문장"],
+        trail: [{ subquestion: "하위\u0002질문", queries: ["검색\u0003어"], verdict: null, evidenceCount: null }],
+      }),
+      NOW,
+    );
+    const all = [...lines(doc), ...doc.references.map((r) => r.text)];
+    expect(all.join("\n")).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    expect(all).toEqual(
+      expect.arrayContaining([
+        "title: 국내 AI 규제",
+        "para: 서론 문장",
+        "heading1: 1. 계수 추정",
+        "para: rac{1}{2} 로 적는다 [1].",
+        "bullets: 김철수 (2019) 「회귀 분석」 — eta 계수를 추정했다 [1]",
+        "bullets: 과제 하나",
+        "bullets: 한계 문장",
+        "heading2: 1. 하위질문",
+        "bullets: 검색어: ‘검색어’",
+        "김철수 (2019). 회귀 분석.",
+      ]),
+    );
+  });
 });
 
 describe("buildReportDocument — 인용 번호", () => {
