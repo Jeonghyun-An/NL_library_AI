@@ -1,6 +1,6 @@
 # 딥리서치 화면·기록 세션 설계 (round04b)
 
-> 상태: 설계 확정(2026-09-26, 사용자 승인) · 구현 전
+> 상태: 설계 확정(2026-09-26, 사용자 승인) · §1~13 구현·운영 배포 완료 · **§14 보고서 작성 대기 화면·내보내기 추가(2026-09-28, 사용자 승인) · 구현 전**
 > 선행: round04a 딥리서치 백엔드(`docs/superpowers/specs/2026-09-21-deep-research-agent-design.md`, `docs/roadmap/round04a-완료노트.md`)
 > 브랜치: `feat/round04b-deep-research-frontend`
 
@@ -351,7 +351,7 @@ Figma 에는 두 배치를 같은 상태별로 나란히 그려 비교할 수 �
 - 채팅(BookChat·논문 채팅) 대화 기록의 서버 저장 — `kind` 를 하나 더하면 되도록 구조만 둔다
 - 기존 `search_history` 정리(청크 원문 제거·보존 기한·연관 검색 로그 제외)와 `GET /api/books/history/{session_id}` 폐기
 - 도서 입력창의 `+`, 딥리서치 외 `+` 메뉴 항목
-- PDF 내보내기, 인용 그래프, AI 다이어그램(round04 spec §9)
+- 인용 그래프, AI 다이어그램(round04 spec §9). 보고서 내보내기(Word·PDF)는 §14 로 범위에 들어왔다
 - `pages/index.vue` 의 죽은 코드 정리(도서 추천 개편 spec `2026-09-15-search-top-pick-recommend-design.md` 몫)
 - `app/api/admin.py` Milvus expression injection(대회 이후)
 
@@ -372,3 +372,144 @@ Figma 에는 두 배치를 같은 상태별로 나란히 그려 비교할 수 �
 - Figma `paradeigma` 팀 계정이 화면 기획자와 함께 쓰는 계정인지(사용자가 (a) Figma 진행을 지시함)
 - PDF 유무를 보고서에 미리 실을지(`has_pdf`) — 지금은 클릭 시 404 를 안내로 처리한다
 - 하위질문별 근거 예산(round04a 이월)을 이번 화면 카운터와 함께 정할지
+
+---
+
+## 14. 보고서 작성 대기 화면·내보내기 (2026-09-28 추가)
+
+### 14-0. 사용자 요청 (paraphrase)
+
+> 보고서를 쓰는 동안(화면에 "보고서 작성 중 2/5" 만 뜨는 구간) 보여 주는 게 부족해서 기다리기 지루하다. 그리고 보고서를 문서로 내려받는 기능이 있었으면 좋겠다. 내려받기는 최종본이 완성된 뒤에 하는 게 깔끔하지만, 중간에도 저장할 수 있으면 그렇게 해 달라.
+
+**배경(조사일 2026-09-28)**: 종합 단계에서 화면은 본문 카드(스피너 + "보고서 작성 중 2/5")와 진행 패널에 같은 한 줄만 그린다. 워커의 `synth` 이벤트가 `{section_idx, total, status}` 뿐이라 화면이 더 그릴 재료가 없다. 절 하나는 LLM 호출 1회(round04a 실측: GPU 가 한가할 때 절당 약 6초)지만 운영에서는 vLLM 을 적재 요약과 나눠 써 절마다 수십 초씩 늘어난다.
+
+### 14-1. 결정
+
+| # | 결정 | 근거 |
+|---|---|---|
+| E1 | **다 쓴 절부터 보고서 자리에 바로 보여 준다**(초안) + 절 목록·경과·남은 시간 | 기다리는 동안 읽을 것이 생기는 것이 지루함을 가장 크게 줄인다. 진행 표시만 늘리는 안(B)은 끝까지 읽을 것이 없고, 토큰 스트리밍(C)은 모델이 JSON 으로 답해 중간 글을 풀기 어렵고 인용 검증 전 글이 보였다 바뀐다 |
+| E2 | 초안의 절은 **최종본과 같은 코드로 다듬은 절**이다 | `assemble_report` 의 절 단위 처리(마커 검증·요약 정리)를 함수로 떼어 둘이 함께 쓴다. 초안과 최종본의 글이 갈리지 않는다 |
+| E3 | 내보내기는 **Word(.docx) + PDF(브라우저 인쇄 → PDF로 저장)** | Word 는 고쳐 쓰기 좋고 한글(HWP)에서도 열린다. PDF 는 인쇄 전용 화면이라 서버·의존성 변경이 없다. Markdown·HWPX 는 범위 밖 |
+| E4 | **완성 뒤 [다운로드]가 기본, 작성 중·멈춘 초안도 [초안 저장]** | 사용자 요청. 초안도 보고서와 같은 모양이라 같은 코드로 문서를 만든다. 초안 문서는 제목·파일 이름에 초안임을 밝힌다 |
+| E5 | Word·PDF 는 **문서 모델 하나**에서 만든다 | 인용 번호·참고문헌·부록이 두 형식에서 어긋나지 않는다. 모델 생성은 순수 함수라 Vitest 로 검증한다 |
+| E6 | 문서에 **부록: 탐색 경로**를 싣는다 | 자기점검·재검색 과정이 딥리서치의 차별점이다(사용자 결정) |
+| E7 | **DB 구조 변경 없음**, 백엔드 배포는 `nl-lib-celery-research` 하나 | 초안 데이터는 기존 `research_steps.result`(JSONB)에 담는다. 보고서를 쓰는 곳이 그 워커뿐이고 fastapi 는 단계 결과를 그대로 전달한다 |
+
+### 14-2. 백엔드 — 절 미리보기
+
+**절 단위 처리 분리 (`app/services/research/synthesizer.py`)**
+- `assemble_report` 의 절 루프 본문을 `finalize_section(state, sec) -> (절, 집계)` 로 떼어 낸다. 절은 지금 `report.sections[i]` 와 같은 모양(`heading·intro·papers·future·evidence_chunks·chunk_scores`)이고, 집계는 무표기·삭제·미파싱·요약 누락·도입 없음·실패 절 수다. `assemble_report` 는 절마다 이 함수를 부르고 집계를 더한다 — **출력은 한 글자도 바뀌지 않는다**(기존 테스트가 그대로 통과해야 한다).
+- `section_evidence(state, sec) -> dict` — 그 절이 인용한 근거만(`papers[].evidence` 와 도입·향후 과제의 마커) `report.evidence` 와 같은 모양으로 만든다. 대목은 그 절의 `evidence_chunks` 가 가리키는 것만 점수순으로 싣는다(없으면 `_serialize_evidence` 와 같은 규칙으로 전부).
+
+**진행 콜백 (`synthesize` 의 `on_section`)**
+- 시그니처를 `on_section(idx, total, status, info)` 로 넓힌다. `info` 는 `{subq_idx, heading}`, 절을 끝낼 때(`done`·`failed`)는 여기에 `section`(finalize 한 절)과 `evidence`(section_evidence)를 더한다. 서술을 끝내 받지 못한 절(`failed`)도 논문 목록만 있는 절로 싣는다.
+
+**워커 (`app/workers/research_tasks.py` 의 `_SynthProgress`)**
+- `synth` 이벤트: `{section_idx, total, status, subq_idx, heading}` + 시작 때 `started_at`(ISO, UTC), 끝날 때 `duration_ms`(워커가 잰 값 — 화면 시계와 무관)와 `section`·`evidence`.
+- 단계 `result`: `sections_total`, `sections:[{idx, status, subq_idx, heading, started_at, duration_ms, section?}]`, `evidence:{…}`(끝난 절들의 근거 합집합). 절이 바뀔 때마다 지금처럼 `_save_progress` 로 저장한다 → **새로고침·재접속한 화면이 이미 쓴 절을 그대로 받는다**(snapshot 의 `steps[].result`).
+- **알리는 `step` 이벤트는 가볍게**: `_save_progress` 는 저장 뒤 단계 `result` 전체를 `step` 이벤트로 흘린다. 종합 단계에서는 절이 쌓일수록 매번 전부를 다시 보내게 되므로, 이벤트에는 `section`·`evidence` 를 뺀 `result` 를 싣는다. 절 내용은 `synth` 이벤트가 절마다 한 번만 나른다. 화면은 가벼운 `step` 이벤트가 이미 받은 절 내용을 지우지 않게 합친다(§14-3).
+- **완료로 닫을 때**(`_finish(..., "done")`)는 `section`·`evidence` 를 뺀다 — 최종 보고서와 중복이다. **실패·취소로 닫을 때는 남긴다** — 멈춘 초안을 보여 주고 내려받을 원천이다.
+- 크기: 절 하나에 수 KB~수십 KB(대목 원문이 대부분). 하위질문 상한 12 · 절당 논문 5 에서도 최종 보고서의 `evidence` 와 같은 규모다.
+- 재시도(`POST /retry`, `stage=explored`)는 새 종합 단계(새 `seq`)를 만든다 → 초안은 처음 절부터 다시 쌓인다.
+
+### 14-3. 화면 — 작성 중
+
+**데이터 (`types/research.ts`, `utils/researchEvents.ts`)**
+- `SynthEvent`·`SynthSectionView`·`SynthView` 를 넓힌다: 절마다 `subqIdx·heading·startedAt·durationMs·section`, `SynthView.evidence`(근거 합집합 — 같은 근거가 두 절에 나오면 대목을 `chunk_id` 로 합친다).
+- `synth` 이벤트와 단계 `result`(snapshot·step 이벤트) 어느 쪽으로 와도 같은 모양으로 합친다. `section` 이 없는 값이 있는 값을 덮지 않는다. 새 시도(`seq` 가 바뀜)면 비운다 — 기존 `sameAttempt` 규칙.
+- 새 필드가 없는 옛 잡·옛 서버는 지금 동작("보고서 작성 중 2/5")으로 되돌아간다.
+
+**순수 로직 (`utils/researchDraft.ts` 신규)**
+- `draftReport(view)` — 끝난 절들을 절 순서대로 모아 `ResearchReport` 모양(질문·절·근거, `limitations` 없음, `stats` 는 라이브 카운터)으로 만든다. 절이 하나도 없으면 null.
+- `synthEta(view, now)` — `{done, total, runningElapsedMs, remainingMs|null}`. 남은 시간은 끝난 절들의 `durationMs` 평균 × 남은 절 수(쓰는 중인 절은 평균에서 경과를 뺀 값, 0 미만이면 0). 끝난 절이 없으면 null. 쓰는 중인 절의 경과는 `startedAt` 기준이고 음수가 되지 않게 자른다(서버·브라우저 시계 차이).
+
+**배치 (`pages/research/[id].vue` 의 종합 단계 본문 — 배치 A·B 공통)**
+- **보고서 작성 현황 카드**(`components/research/SynthProgressCard.vue` 신규)
+  - 진행 막대 + "2/5 절 완료 · 약 1분 30초 남음"(첫 절 전에는 "첫 절을 쓰는 중")
+  - 절 목록: `✓ 완료 0:38` · `◐ 작성 중 0:12`(1초마다 갱신) · `· 대기` · `✕ 서술 받지 못함`. 제목은 하위질문(`heading`)
+  - **[초안 저장 ▾]** — 끝난 절이 하나 이상일 때만 누를 수 있다
+- **보고서 초안** — `ReportView` 에 `draft` 모드를 더해 그린다: 머리에 "작성 중" 배지, 끝난 절은 최종본과 똑같이(인용칩·원문 보기 동작), 쓰는 중인 절은 제목 + 은은하게 움직이는 회색 줄, 대기 절은 제목 + "작성 대기". 한계 섹션·[다운로드]는 없다.
+- 절이 완성되면 제자리에 부드럽게 나타난다(애니메이션은 `prefers-reduced-motion` 이면 끈다). **자동 스크롤하지 않는다** — 초안을 읽는 사람을 끌고 가지 않는다. 절 완성은 `aria-live="polite"` 로 한 번 알린다.
+- 진행 패널(카운터·탐색 타임라인)은 그대로 둔다.
+- **작성 중 실패·취소**: 실패·취소 카드 아래에 초안을 "완성되지 않은 초안입니다" 안내와 함께 보이고 [초안 저장]을 둔다. 재시도하면 종합 단계로 돌아가 초안이 새로 쌓인다.
+- **완료**: 최종 보고서를 GET 으로 받으면 초안을 최종본으로 바꾼다(서론·한계가 붙는다). 받는 동안과 받기에 실패해 다시 시도하는 동안에도 초안이 있으면 초안을 그대로 두고, 그 위에 지금의 불러오는 중·다시 불러오기 안내를 작게 둔다. 초안이 없으면(옛 잡) 지금 카드 그대로다. 완료 뒤 새로 연 화면은 보고서를 바로 받으므로 초안이 필요 없다 — 완료로 닫힌 단계에는 미리보기가 없다(§14-2).
+
+### 14-4. 내보내기
+
+**버튼 (`components/research/ReportDownloadMenu.vue` 신규)**
+- 완성된 보고서 머리의 [링크 복사] 옆 **[다운로드 ▾]**, 작성 현황 카드와 멈춘 초안의 **[초안 저장 ▾]**. 메뉴: "Word 문서(.docx)" · "PDF로 저장". 키보드는 `+` 메뉴와 같은 규칙(`utils/menuNav.ts`).
+
+**문서 모델 (`utils/reportDocument.ts` 신규, 순수 함수)**
+- 입력: `{question, range, generatedAt, url, sections, evidence, limitations | null, trail, draft: {done, total} | null}`. 페이지가 최종 보고서(`view.report`) 또는 초안(`draftReport`)에서 만든다. 초안의 부록은 화면의 탐색 타임라인(`view.subqs` — 탐색은 이미 끝났다)에서, 최종본은 `report.trail` 에서 만든다.
+- 출력: 블록 목록(제목·메타·문단·목록·참고문헌) — 문단은 글 조각과 인용 번호의 배열.
+- 구성
+  1. 제목(질문). 초안이면 "(초안 · 5개 절 중 2개 작성)"
+  2. 메타: 생성 일시 · 수록 범위(`rangeLabel`) · 연구 주소(`<origin>/research/<id>`)
+  3. 서론 한 줄(`reportIntro` — 화면과 같은 문장)
+  4. 절: "1. 소제목" → 도입 → "대표 논문"(`저자 외 (연도) 「제목」 — 요약 [n]`) → "향후 과제" 목록. 도입이 없는 절은 화면과 같은 안내 문장
+  5. **이 보고서의 한계**(최종본). 한계가 없으면 화면과 같은 문구. 초안이면 대신 "작성 중에 저장한 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다."
+  6. **부록: 탐색 경로** — 하위질문마다 검색어 이력(→ 재검색), 판정, 근거 수
+  7. **참고문헌**
+- **인용 번호**: 문서에 처음 나온 순서(절 순서 → 도입 → 대표 논문 → 향후 과제)로 `[1]`, `[2]` … 를 매긴다. 같은 근거는 어디서 나와도 같은 번호. 참고문헌에는 인용된 근거만 싣는다.
+- **참고문헌 한 줄**: `[n] 저자1, 저자2 (연도). 제목. 학술지명, 권(호). 인용 쪽: 12–13, 20` — 메타가 빠진 칸은 생략한다(`splitAuthors`·`pubYear` 재사용). 인용 쪽은 그 근거를 인용한 절들이 쓴 대목(`evidence_chunks` → `chunks[].page_start·page_end`)을 모아 정렬·중복 제거한다. 쪽 번호는 화면의 `pageLabel`·`pdfPage` 와 같은 규칙이다 — 저장값은 0-based 라 1 을 더해 적고, `page_start` 가 0 인 대목은 쪽 정보 없음으로 보고 뺀다(§6-3). 남는 쪽이 없으면 "인용 쪽" 칸을 싣지 않는다.
+- **파일 이름**: `딥리서치_<질문 앞 20자>_<YYYYMMDD>.docx`(초안은 `…_초안.docx`). 파일 이름에 못 쓰는 글자(`\ / : * ? " < > |`·제어문자)는 빼고 공백은 `_` 로.
+
+**Word (`utils/reportDocx.ts` 신규)**
+- `docx`(npm) 로 브라우저에서 만든다. **다운로드를 누를 때 동적 import** 한다 — 평소 화면 번들에 넣지 않는다. 의존성 추가는 이것 하나.
+- A4, 글꼴 맑은 고딕, 제목·절 제목·소제목·본문 크기 구분, 바닥글 쪽 번호. 인용 번호는 본문과 같은 줄의 `[n]`.
+
+**PDF (`components/research/ReportPrint.vue` 신규)**
+- 같은 문서 모델을 인쇄 전용 화면으로 그린다(화면에서는 숨김). [PDF로 저장]을 누르면 그린 뒤 `window.print()` 를 부르고, `@media print` 로 사이드바·머리·버튼·진행 패널을 숨긴 A4 문서만 찍는다. 인쇄하는 동안 `document.title` 을 파일 이름으로 바꿔 "PDF로 저장"의 기본 파일명이 되게 하고, `afterprint` 에서 되돌린다.
+- 대상 브라우저: Chrome·Edge(인쇄 창의 머리글·바닥글은 사용자 설정이다).
+
+### 14-5. 코드 구조
+
+| 파일 | 변경 |
+|---|---|
+| `app/services/research/synthesizer.py` | `finalize_section`·`section_evidence` 분리, `on_section` 에 `info` |
+| `app/workers/research_tasks.py` | `_SynthProgress` 확장, 종합 단계의 가벼운 `step` 이벤트, 완료 시 미리보기 제거 |
+| `frontend/types/research.ts` · `utils/researchEvents.ts` | 절 미리보기 합치기 |
+| `frontend/utils/researchDraft.ts` · `reportDocument.ts` · `reportDocx.ts` (신규) | 초안·남은 시간·문서 모델·Word |
+| `frontend/components/research/SynthProgressCard.vue` · `ReportDownloadMenu.vue` · `ReportPrint.vue` (신규) | 작성 현황·내보내기 메뉴·인쇄 화면 |
+| `frontend/components/research/ReportView.vue` · `pages/research/[id].vue` · `assets/css/research.css` | 초안 모드·배치·인쇄 CSS |
+| `frontend/package.json` | `docx` 추가 |
+
+### 14-6. 테스트·검증
+
+| 대상 | 방법 |
+|---|---|
+| 절 단위 처리 분리 | 기존 보고서 테스트 무변경 통과 + 같은 입력에서 `finalize_section` 의 절 == `assemble_report` 의 절 |
+| 진행 콜백·이벤트 | 시작에 `subq_idx·heading·started_at`, 끝에 `duration_ms·section·evidence`(그 절이 인용한 근거·대목만), 실패 절은 논문 목록만 |
+| 단계 result | 절마다 저장, 가벼운 `step` 이벤트에는 `section`·`evidence` 없음, 완료로 닫으면 제거·실패·취소로 닫으면 유지, 절 6개·논문 30편 기준 크기 확인 |
+| 화면 데이터 | 이벤트 누적, snapshot 복원, 가벼운 step 이벤트가 내용을 지우지 않음, 새 시도면 비움, 옛 신호 폴백 |
+| 남은 시간 | 끝난 절 없음(null), 평균 계산, 쓰는 중인 절 경과 차감, 음수 방지 |
+| 문서 모델 | 첫 등장 순 번호, 같은 근거 같은 번호, 미인용 근거 제외, 인용 쪽 정렬·중복 제거·0 쪽 제외, 초안 표시·한계 대체 문구, 도입 없는 절, 한계 없음 문구, 부록 |
+| Word | Node 에서 실제로 만들어 압축을 풀고 `word/document.xml` 에 질문·`[1]`·참고문헌이 있는지 |
+| 파일 이름 | 금지 문자 제거·20자 자르기·초안 접미 |
+| 공통 | `npx vitest run` · `npx nuxi typecheck` · `npm run build` · `pytest` |
+| 화면(로컬) | 완성된 연구로 [다운로드] Word·PDF — 운영 서버 프록시(`NUXT_DEV_API_TARGET`)가 필요하다 |
+| 화면(운영, 배포 뒤 잡 1회) | 절이 하나씩 나타나는지, 작성 중 새로고침 복원, 남은 시간, [초안 저장], 완성 뒤 [다운로드] Word(Word·한글에서 열기)·PDF |
+
+### 14-7. 배포
+
+1. 도는 딥리서치 잡이 없는지 확인한다 — 종합 중에 워커를 Recreate 하면 그 잡은 회수기가 `failed` 로 떨어뜨린다.
+   `select id, status, stage from research_jobs where status in ('approved','queued','running');`
+2. fastapi 이미지 빌드·푸시(`NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi`) → 서버에서 `docker pull` → **`nl-lib-celery-research` 하나만** Recreate(re-pull 끔). `nl-lib-fastapi`·`nl-lib-celery-research-plan`·적재 워커는 그대로 둔다 — 같은 `:latest` 를 pull 해도 돌고 있는 컨테이너는 바뀌지 않는다.
+3. nuxt 이미지 빌드·푸시 → pull → `nl-lib-nuxt` Recreate → **`docker exec nl-lib-gateway nginx -s reload`**(Recreate 로 바뀐 컨테이너 IP 를 게이트웨이가 다시 찾게 — 2026-09-28 502 재발 방지).
+4. 잡 1회로 §14-6 의 운영 화면 확인.
+
+### 14-8. 범위 밖
+
+- Markdown·HWPX 내보내기, 서버에서 만드는 PDF
+- 절 서술의 토큰 스트리밍(타이핑 효과)
+- 탐색 단계(하위질문 검색·점검) 화면 보강 — 이번 요청은 종합 단계다
+
+### 14-9. 위험과 대응
+
+| 위험 | 대응 |
+|---|---|
+| 초안과 최종본의 글이 다름 | 같은 `finalize_section` 을 쓰고 동일성 테스트로 묶는다 |
+| 단계 result·snapshot 이 커짐 | 절 미리보기는 완료 시 지우고, 라이브 `step` 이벤트에는 싣지 않는다 |
+| `docx` 번들 크기 | 동적 import — 다운로드를 누를 때만 받는다 |
+| 인쇄 결과가 브라우저마다 다름 | 대상은 Chrome·Edge, 인쇄 CSS 는 A4 기준 |
+| 워커만 새 이미지(혼재 버전) | fastapi 는 단계 result 를 그대로 전달하므로 영향 없다. 화면은 새 필드가 없으면 옛 동작으로 되돌아간다 |
