@@ -8,6 +8,7 @@ import type {
   ResearchJob,
   ResearchReport,
   ResearchStepRow,
+  ResearchView,
   StepEvent,
   StepResult,
   SynthEvent,
@@ -20,6 +21,7 @@ import {
   mergeEvidence,
   refreshView,
   researchPhase,
+  sectionGapToRecover,
   stopPoint,
   subqStatusLabel,
   synthClosePending,
@@ -669,6 +671,68 @@ describe("취소 뒤 워커가 종합 단계를 닫기까지", () => {
 
   it("도는 잡은 기다리지 않는다 — 단계를 닫는 이벤트를 스트림이 나른다", () => {
     expect(synthClosePending(run([SYNTH_STEP, S0_RUNNING], initialResearchView(job({ stage: "explored" }))))).toBe(false);
+  });
+});
+
+// 화면을 열거나 다시 붙는 순간, 스트림은 스냅샷(DB)을 읽은 뒤에야 구독을 붙인다. 워커가 그 사이에 절을
+// 끝내면 synth(done) 이벤트는 놓치고 스냅샷에도 아직 없으며, 뒤따르는 step 이벤트는 절 내용을 싣지 않는다.
+describe("sectionGapToRecover — 놓친 절 내용을 저장본으로 한 번 다시 맞춘다", () => {
+  const S0_RUNNING_ROW = step({
+    seq: 3, kind: "synthesize", title: "보고서 종합", status: "running",
+    result: {
+      sections_total: 2, headings: HEADINGS,
+      sections: [{ idx: 0, status: "running", subq_idx: 0, heading: "효과 측정", started_at: T0, duration_ms: null }],
+    },
+  });
+  const LIGHT_BOTH_FINISHED: StepResult = {
+    ...LIGHT_RESULT,
+    sections: [
+      { idx: 0, status: "done", subq_idx: 0, heading: "효과 측정", started_at: T0, duration_ms: 38000 },
+      { idx: 1, status: "failed", subq_idx: 2, heading: "정책 과제", started_at: T1, duration_ms: 52000 },
+    ],
+  };
+  const opened = () => applyResearchEvent(
+    initialResearchView(job({ stage: "explored" })),
+    { kind: "snapshot", steps: [PLAN_ROW, S0_RUNNING_ROW] },
+  );
+  // 절 0 의 synth(done) 는 구독이 붙기 전에 나갔다 — 뒤따른 가벼운 step 이벤트만 받는다
+  const missed = () => applyResearchEvent(opened(), { ...SYNTH_STEP, result: LIGHT_RESULT });
+
+  it("끝났다고 알려진 절에 내용이 없으면 열쇠를 주고, 같은 부족분이면 다시 주지 않는다", () => {
+    expect(sectionGapToRecover(opened(), null)).toBeNull();
+    const key = sectionGapToRecover(missed(), null);
+    expect(key).not.toBeNull();
+    expect(sectionGapToRecover(missed(), key)).toBeNull();
+  });
+
+  it("저장본(GET)을 받으면 놓친 절 내용이 채워지고 부족분이 사라진다", () => {
+    const v = refreshView(missed(), job({ stage: "explored", steps: [PLAN_ROW, SYNTH_ROW] }));
+    expect(v.synth.sections[0]!.section).toEqual(SEC0);
+    expect(v.synth.evidence).toEqual(EV0);
+    expect(sectionGapToRecover(v, null)).toBeNull();
+  });
+
+  it("부족한 절이 늘거나(내용 없는 failed 절 포함) 새 시도면 새 열쇠를 준다", () => {
+    const key = sectionGapToRecover(missed(), null);
+    const more = applyResearchEvent(missed(), { ...SYNTH_STEP, result: LIGHT_BOTH_FINISHED });
+    const moreKey = sectionGapToRecover(more, key);
+    expect(moreKey).not.toBeNull();
+    expect(moreKey).not.toBe(key);
+    const nextAttempt: ResearchView = { ...missed(), synth: { ...missed().synth, seq: 5 } };
+    expect(sectionGapToRecover(nextAttempt, key)).not.toBeNull();
+  });
+
+  it("받은 절·옛 워커(절 내용 없음)·닫힌 종합 단계는 다시 읽지 않는다", () => {
+    expect(sectionGapToRecover(run([SYNTH_STEP, S0_RUNNING, S0_DONE, { ...SYNTH_STEP, result: LIGHT_RESULT }]), null)).toBeNull();
+    const oldWorker = run([
+      SYNTH_STEP,
+      { kind: "synth", section_idx: 0, total: 2, status: "done" },
+      { ...SYNTH_STEP, result: { sections_total: 2, sections: [{ idx: 0, status: "done" }] } },
+    ]);
+    expect(sectionGapToRecover(oldWorker, null)).toBeNull();
+    // 완료로 닫는 단계는 미리보기를 지우고 온다 — 종료 뒤 GET 이 보고서로 맞춘다
+    const closing = applyResearchEvent(missed(), { ...SYNTH_STEP, status: "done", result: LIGHT_BOTH_FINISHED });
+    expect(sectionGapToRecover(closing, null)).toBeNull();
   });
 });
 

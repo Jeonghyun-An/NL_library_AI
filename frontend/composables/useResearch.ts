@@ -17,6 +17,7 @@ import {
   isTerminalEvent,
   isTerminalStatus,
   refreshView,
+  sectionGapToRecover,
   synthClosePending,
 } from "~/utils/researchEvents";
 import { httpStatus, researchErrorMessage } from "~/utils/researchErrors";
@@ -90,6 +91,8 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   // 이 화면에서 잡이 끝난 것을 본 뒤 종합 단계가 닫히기를 기다리며 다시 읽은 횟수 — null 이면 기다리지 않는다
   let closeChecks: number | null = null;
   let closeTimer: ReturnType<typeof setTimeout> | null = null;
+  // 저장본으로 다시 맞춘 절 부족분(sectionGapToRecover 의 열쇠) — 같은 부족분으로 GET 을 되풀이하지 않는다
+  let recoveredGap: string | null = null;
   // 주소의 잡이 바뀌거나 페이지를 떠난 뒤 도착한 이전 요청의 응답을 버린다
   let generation = 0;
   // 백그라운드 재동기화(refresh)가 actionError 에 넣은 문구. 재동기화가 성공하면 이것만 지운다 —
@@ -112,6 +115,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     loadError.value = "";
     syncFailed.value = false;
     closeChecks = null;
+    recoveredGap = null;
     setActionError("");
     try {
       const job = await research.get(toValue(jobId));
@@ -136,7 +140,9 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     syncing.value = true;
     try {
       const job = await research.get(toValue(jobId));
-      if (gen !== generation) return false;
+      // 뒤에 보낸 GET 이 있으면 이 응답은 버린다 — 도는 동안 보낸 GET 이 종료 뒤에 도착해 끝난 화면을
+      // 도는 잡으로 되돌리면 재시도로 읽혀(refreshView) 멈춘 초안까지 비운다. 뒤의 GET 이 맞춘다.
+      if (gen !== generation || token !== syncToken) return false;
       view.value = refreshView(view.value, job);
       syncFailed.value = false;
       if (syncError && actionError.value === syncError) actionError.value = "";
@@ -145,7 +151,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       else awaitSynthClose(view.value);
       return true;
     } catch (e) {
-      if (gen !== generation) return false;
+      if (gen !== generation || token !== syncToken) return false;
       const message = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
       actionError.value = message;
       syncError = message;
@@ -187,6 +193,13 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
         settle();
         // 사이드바 배지는 30초마다만 다시 읽는다 — 끝난 순간에 한 번 맞춘다
         void history.refresh("research");
+        return;
+      }
+      // 스냅샷과 구독 사이에 놓친 절 내용은 스트림으로 다시 오지 않는다 — 저장본으로 한 번 맞춘다
+      const gap = sectionGapToRecover(view.value, recoveredGap);
+      if (gap) {
+        recoveredGap = gap;
+        void refresh();
       }
     };
     es.onerror = () => {

@@ -142,6 +142,21 @@ export function synthClosePending(view: ResearchView): boolean {
   return view.status === "canceled" && view.synth.status === "running";
 }
 
+// 끝났다고 알려졌는데 내용을 받지 못한 절을 저장본(GET)으로 다시 맞출지. 화면을 열거나 다시 붙는 순간
+// 스트림은 스냅샷을 읽은 뒤에야 구독을 붙이므로, 그 사이에 나간 synth(done) 이벤트는 다시 오지 않고
+// 뒤따르는 step 이벤트는 절 내용을 싣지 않는다(서버는 상태·단계가 바뀔 때만 스냅샷을 다시 보낸다).
+// 부족분을 가리키는 열쇠(종합 단계 seq·절 번호)를 돌려주되, 이미 그 열쇠로 다시 읽었으면(recovered)
+// null — 같은 부족분으로 GET 을 되풀이하지 않는다. 절 내용을 싣는 워커(절 제목 목록을 보낸다)가 종합
+// 단계를 쓰는 동안만 본다 — 옛 워커의 절은 원래 내용이 없고, 닫힌 단계는 종료 뒤 GET 이 맞춘다.
+export function sectionGapToRecover(view: ResearchView, recovered: string | null): string | null {
+  const { seq, status, headings, sections } = view.synth;
+  if (status !== "running" || !headings.length) return null;
+  const missing = sections.filter((s) => s.status !== "running" && !s.section).map((s) => s.idx);
+  if (!missing.length) return null;
+  const key = `${seq}:${missing.join(",")}`;
+  return key === recovered ? null : key;
+}
+
 // 워커는 하위질문을 idx 순서로 돌고, 하나가 오류로 끝나도 다음 하위질문과 종합으로 넘어간다
 // (부분 실패는 전체 실패가 아니다). 그래서 failed 하위질문을 곧 멈춘 곳으로 보면, 종합에서
 // 실패·취소한 잡이 앞선 부분 실패를 짚어 본문의 실패 사유와 어긋난다 — 뒤 단계부터 본다.
