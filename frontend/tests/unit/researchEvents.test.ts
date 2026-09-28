@@ -22,6 +22,7 @@ import {
   researchPhase,
   stopPoint,
   subqStatusLabel,
+  synthClosePending,
   synthProgress,
   withPlan,
 } from "~/utils/researchEvents";
@@ -623,6 +624,51 @@ describe("재시도 — 이전 시도의 종합 단계", () => {
     ], initialResearchView(job({ stage: "explored" })));
     const failed = applyResearchEvent(closing, { kind: "failed", status: "failed", error: "종합 실패" });
     for (const v of [closing, failed]) expect(v.synth.sections[0]!.section).toEqual(SEC0);
+  });
+});
+
+// 종합 중에 취소하면 API 는 곧바로 잡을 끝내지만, 워커는 LLM 을 부르기 직전에만 멈춤을 보므로 쓰던
+// 절을 마저 쓰고(그 미리보기를 저장하고) 나서야 종합 단계를 failed 로 닫는다.
+describe("취소 뒤 워커가 종합 단계를 닫기까지", () => {
+  const S1_SECTION = S1_DONE.section!;
+  const canceledLive = () => run(
+    [SYNTH_STEP, S0_RUNNING, S0_DONE, S1_RUNNING, { kind: "canceled", status: "canceled" }],
+    initialResearchView(job({ stage: "explored" })),
+  );
+  const closedJob = job({
+    status: "canceled", stage: "explored",
+    steps: [PLAN_ROW, step({
+      seq: 3, kind: "synthesize", title: "보고서 종합", status: "failed",
+      result: {
+        sections_total: 2, headings: HEADINGS, error: "취소됨",
+        sections: [
+          { idx: 0, status: "done", subq_idx: 0, heading: "효과 측정", started_at: T0, duration_ms: 38000, section: SEC0 },
+          { idx: 1, status: "done", subq_idx: 2, heading: "정책 과제", started_at: T1, duration_ms: 52000, section: S1_SECTION },
+        ],
+        evidence: mergeEvidence(EV0, S1_DONE.evidence!),
+      },
+    })],
+  });
+
+  it("취소한 잡의 종합 단계가 아직 열려 있으면 닫힐 때까지 다시 맞춰야 한다", () => {
+    const live = canceledLive();
+    expect(synthClosePending(live)).toBe(true);
+    // 종료 직후의 GET 도 워커가 절을 쓰는 동안이면 단계가 아직 열려 있다
+    const early = refreshView(live, job({ status: "canceled", stage: "explored", steps: [PLAN_ROW, SYNTH_ROW] }));
+    expect(synthClosePending(early)).toBe(true);
+  });
+
+  it("워커가 닫은 단계를 GET 으로 받으면 마저 쓴 절이 멈춘 초안에 합쳐져 다시 연 화면과 같아진다", () => {
+    const v = refreshView(canceledLive(), closedJob);
+    expect(v.synth.status).toBe("failed");
+    expect(v.synth.sections.map((s) => [s.idx, s.status, s.section])).toEqual([[0, "done", SEC0], [1, "done", S1_SECTION]]);
+    expect(v.synth.sections).toEqual(initialResearchView(closedJob).synth.sections);
+    expect(v.synth.evidence).toEqual(initialResearchView(closedJob).synth.evidence);
+    expect(synthClosePending(v)).toBe(false);
+  });
+
+  it("도는 잡은 기다리지 않는다 — 단계를 닫는 이벤트를 스트림이 나른다", () => {
+    expect(synthClosePending(run([SYNTH_STEP, S0_RUNNING], initialResearchView(job({ stage: "explored" }))))).toBe(false);
   });
 });
 

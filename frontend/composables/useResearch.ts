@@ -10,13 +10,25 @@ import type {
   ResearchRetryResponse,
   ResearchView,
 } from "~/types/research";
-import { applyApproval, applyResearchEvent, initialResearchView, isTerminalEvent, isTerminalStatus, refreshView } from "~/utils/researchEvents";
+import {
+  applyApproval,
+  applyResearchEvent,
+  initialResearchView,
+  isTerminalEvent,
+  isTerminalStatus,
+  refreshView,
+  synthClosePending,
+} from "~/utils/researchEvents";
 import { httpStatus, researchErrorMessage } from "~/utils/researchErrors";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";
 
 const RECONNECT_BASE_MS = 2000;
 const RECONNECT_MAX_MS = 30000;
+// 취소 뒤 워커가 종합 단계를 닫기를 기다리며 다시 읽는 횟수 상한 — 재연결과 같은 간격(2·4·8·16·30·30초,
+// 약 1분 반)이다. 쓰던 절 하나를 마저 쓰는 시간(운영에서 수십 초)을 덮고, 워커가 죽어 단계가 끝내 열려
+// 있어도 멈춘다 — 그때는 다시 열면 맞는다
+const CLOSE_CHECKS_MAX = 6;
 
 export function useResearchApi() {
   const api = useApi();
@@ -75,6 +87,9 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   let syncToken = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let attempts = 0;
+  // 이 화면에서 잡이 끝난 것을 본 뒤 종합 단계가 닫히기를 기다리며 다시 읽은 횟수 — null 이면 기다리지 않는다
+  let closeChecks: number | null = null;
+  let closeTimer: ReturnType<typeof setTimeout> | null = null;
   // 주소의 잡이 바뀌거나 페이지를 떠난 뒤 도착한 이전 요청의 응답을 버린다
   let generation = 0;
   // 백그라운드 재동기화(refresh)가 actionError 에 넣은 문구. 재동기화가 성공하면 이것만 지운다 —
@@ -96,6 +111,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     notFound.value = false;
     loadError.value = "";
     syncFailed.value = false;
+    closeChecks = null;
     setActionError("");
     try {
       const job = await research.get(toValue(jobId));
@@ -126,6 +142,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       if (syncError && actionError.value === syncError) actionError.value = "";
       syncError = "";
       if (!isTerminalStatus(view.value.status)) connect();
+      else awaitSynthClose(view.value);
       return true;
     } catch (e) {
       if (gen !== generation) return false;
@@ -167,10 +184,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       }
       view.value = applyResearchEvent(view.value, event);
       if (isTerminalEvent(event)) {
-        // 닫지 않으면 EventSource 가 스스로 다시 붙어 snapshot·종료를 끝없이 되받는다.
-        // 종료 이벤트에는 보고서가 없으므로 GET 으로 다시 읽는다.
-        disconnect();
-        void refresh();
+        settle();
         // 사이드바 배지는 30초마다만 다시 읽는다 — 끝난 순간에 한 번 맞춘다
         void history.refresh("research");
       }
@@ -200,8 +214,33 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     reconnectTimer = null;
   }
 
+  // 잡이 끝난 것을 이 화면에서 봤다(종료 이벤트·취소 응답). 스트림을 닫고 — 닫지 않으면 EventSource 가
+  // 스스로 다시 붙어 snapshot·종료를 끝없이 되받는다 — 보고서·마지막 저장본을 GET 으로 다시 읽는다.
+  // 취소였으면 워커가 종합 단계를 닫을 때까지 이어서 다시 읽는다(awaitSynthClose)
+  function settle(): void {
+    disconnect();
+    closeChecks = 0;
+    void refresh();
+  }
+
+  function awaitSynthClose(v: ResearchView): void {
+    if (closeChecks === null || closeTimer || !synthClosePending(v)) return;
+    if (closeChecks >= CLOSE_CHECKS_MAX) {
+      closeChecks = null;
+      return;
+    }
+    const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** closeChecks);
+    closeChecks += 1;
+    closeTimer = setTimeout(() => {
+      closeTimer = null;
+      void refresh();
+    }, delay);
+  }
+
   function disconnect(): void {
     clearReconnect();
+    if (closeTimer) clearTimeout(closeTimer);
+    closeTimer = null;
     source?.close();
     source = null;
     connected.value = false;
@@ -268,7 +307,8 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       () => {
         if (!view.value) return;
         view.value = applyResearchEvent(view.value, { kind: "canceled", status: "canceled" });
-        disconnect();
+        // 스트림보다 응답이 먼저 오면 종료 이벤트를 받지 못한다 — 여기서도 종료를 마무리한다
+        settle();
       },
       "취소하지 못했습니다",
     );

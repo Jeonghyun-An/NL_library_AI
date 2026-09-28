@@ -134,6 +134,14 @@ export function synthProgress(view: ResearchView): { current: number; total: num
   return { current: Math.min(total, Math.max(1, finished + running)), total };
 }
 
+// 취소한 잡의 종합 단계가 아직 열려 있다. 취소는 API 가 곧바로 잡을 끝내고 스트림도 닫지만, 워커는
+// LLM 을 부르기 직전에만 멈춤을 보므로 쓰던 절을 마저 쓰고(그 미리보기도 저장하고) 나서야 단계를
+// 닫는다. 이 상태로 받은 화면은 단계가 닫힐 때까지 GET 으로 다시 맞춰야 멈춘 초안·[초안 저장]이 다시
+// 연 화면과 같아진다. 실패는 워커가 단계를 먼저 닫고 잡을 끝내므로 해당하지 않는다.
+export function synthClosePending(view: ResearchView): boolean {
+  return view.status === "canceled" && view.synth.status === "running";
+}
+
 // 워커는 하위질문을 idx 순서로 돌고, 하나가 오류로 끝나도 다음 하위질문과 종합으로 넘어간다
 // (부분 실패는 전체 실패가 아니다). 그래서 failed 하위질문을 곧 멈춘 곳으로 보면, 종합에서
 // 실패·취소한 잡이 앞선 부분 실패를 짚어 본문의 실패 사유와 어긋난다 — 뒤 단계부터 본다.
