@@ -185,15 +185,14 @@ export function docInputFromReport(
 }
 
 export function docInputFromDraft(draft: DraftReport, view: ResearchView, url: string): ReportDocInput {
-  // 초안에는 trail 이 없다(종합이 끝나야 생긴다). 탐색은 이미 끝났으니 화면의 탐색 타임라인이 같은 내용이다.
-  // reportIntro 는 하위질문 수를 trail 로 세므로, 끝난 절 수로 세지 않게 채워 넘긴다
-  const trail = view.subqs.map(trailFromSubq);
+  // 초안에는 trail 이 없다(종합이 끝나야 생긴다). 탐색은 이미 끝났으니 화면의 탐색 타임라인이 같은 내용이다 —
+  // 서론의 하위질문 수도 끝난 절 수가 아니라 탐색한 하위질문 수로 센다
   return {
     question: draft.report.question,
     range: draft.report.range,
     generatedAt: null,
     url,
-    intro: reportIntro({ ...draft.report, trail }),
+    intro: reportIntro(draft.report, view.subqs.length),
     sections: draft.report.sections,
     evidence: draft.report.evidence,
     limitations: null,
@@ -273,20 +272,6 @@ function docTrailFromSubq(sq: SubqView): DocTrailItem {
     queries: sq.rounds.map((r) => r.query).filter(Boolean),
     verdict: sq.status === "failed" ? null : sq.verdict,
     evidenceCount: sq.adopted,
-  };
-}
-
-// reportIntro 가 하위질문 수를 세는 데만 쓴다
-function trailFromSubq(sq: SubqView): TrailItem {
-  return {
-    subquestion: sq.title,
-    queries: sq.rounds.map((r) => r.query).filter(Boolean),
-    evidence_count: sq.adopted ?? 0,
-    verdict: sq.verdict ?? "pending",
-    note: sq.note,
-    parse_failed: sq.parseFailed,
-    failed: sq.status === "failed",
-    capped: 0,
   };
 }
 

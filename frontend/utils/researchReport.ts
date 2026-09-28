@@ -12,9 +12,10 @@ export function rangeLabel(range: Partial<ReportRange> | null | undefined): stri
   return `${years} ${count}`;
 }
 
-// 서론 문장은 모델이 아니라 화면이 만든다 — 수치를 모델에게 쓰게 하면 틀린 숫자가 실린다
-export function reportIntro(report: ResearchReport): string {
-  const subqs = report.trail.length || report.sections.length;
+// 서론 문장은 모델이 아니라 화면이 만든다 — 수치를 모델에게 쓰게 하면 틀린 숫자가 실린다.
+// 하위질문 수는 탐색 경로(trail)로 센다. trail 은 종합이 끝나야 생기므로 초안은 탐색한 하위질문 수를 넘긴다
+export function reportIntro(report: ResearchReport, subqCount = report.trail.length): string {
+  const subqs = subqCount || report.sections.length;
   const s = report.stats;
   if (s) {
     return `하위질문 ${subqs}개로 나눠 논문 ${s.papers_reviewed}편을 검토하고 ${s.evidence_adopted}편을 근거로 삼았다.`;

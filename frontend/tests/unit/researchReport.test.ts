@@ -55,6 +55,11 @@ describe("reportIntro", () => {
   it("보강 전 보고서는 근거 수만 쓴다", () => {
     expect(reportIntro(report())).toBe("하위질문 3개로 나눠 논문 2편을 근거로 삼았다.");
   });
+
+  it("trail 이 아직 없는 초안은 끝난 절 수가 아니라 넘겨받은 하위질문 수로 쓴다", () => {
+    const sec = { heading: "가", intro: "", papers: [], future: [], evidence_chunks: {}, chunk_scores: {} };
+    expect(reportIntro(report({ trail: [], sections: [sec] }), 3)).toBe("하위질문 3개로 나눠 논문 2편을 근거로 삼았다.");
+  });
 });
 
 describe("stepChunk", () => {
