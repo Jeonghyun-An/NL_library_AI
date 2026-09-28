@@ -119,7 +119,7 @@
                 >
                   <!-- 멈춘 초안에만 둔다 — 작성 중 저장은 현황 카드가 맡고, 완료 직후에는 곧 최종본의 [다운로드]로 바뀐다 -->
                   <template #actions>
-                    <ReportDownloadMenu v-if="draftMode?.interrupted" label="초안 저장" :busy="exporting" @select="saveDraft" />
+                    <ReportDownloadMenu v-if="draftMode?.state === 'interrupted'" label="초안 저장" :busy="exporting" @select="saveDraft" />
                   </template>
                 </ReportView>
               </template>
@@ -172,7 +172,7 @@ import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import type { OpenPdfPayload } from "~/types/research";
 import { safeLocalStorage } from "~/utils/browserId";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
-import { researchPhase, type ResearchPhase } from "~/utils/researchEvents";
+import { researchPhase } from "~/utils/researchEvents";
 import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
 import {
   buildReportDocument,
@@ -182,7 +182,7 @@ import {
   type ReportExportFormat,
 } from "~/utils/reportDocument";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
-import { reportSlot } from "~/utils/researchReport";
+import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import {
   SHOW_LAYOUT_TOGGLE,
   WIDE_MIN_PX,
@@ -238,21 +238,19 @@ onBeforeUnmount(() => {
 });
 
 // ── 보고서 작성 현황·초안 ─────────────────────────────────
-// 초안은 쓰는 동안·멈춘 뒤·완료 직후 최종본을 받기 전까지만 보인다 — 최종본이 오면 그것으로 바꾼다
-const DRAFT_PHASES: readonly ResearchPhase[] = ["synthesizing", "failed", "canceled", "completed"];
 const EMPTY_ETA: SynthEta = { done: 0, total: 0, runningIdx: null, runningElapsedMs: null, remainingMs: null };
 // 절이 쌓이는 동안만 1초마다 시계를 읽는다 — 쓰는 중인 절의 경과·남은 시간·막대가 따라 움직인다
 const now = useNow(computed(() => phase.value === "synthesizing"));
 const slots = computed(() => (view.value ? draftSlots(view.value) : []));
 const eta = computed<SynthEta>(() => (view.value ? synthEta(view.value, now.value) : EMPTY_ETA));
-const draft = computed(() => {
-  if (!view.value || !phase.value || !DRAFT_PHASES.includes(phase.value) || reportState.value === "ready") return null;
-  return draftReport(view.value);
-});
+// 초안은 쓰는 동안·멈춘 뒤·완료 직후 최종본을 받기 전까지만 보인다 — 최종본이 오면 그것으로 바꾼다
+const draftState = computed(() => draftStateFor(phase.value, reportState.value));
+const draft = computed(() => (view.value && draftState.value ? draftReport(view.value) : null));
 // 템플릿에서 객체를 만들면 1초마다 도는 시계 때문에 초안 전체가 매초 다시 그려진다
-const draftMode = computed(() =>
-  draft.value ? { slots: draft.value.slots, interrupted: phase.value === "failed" || phase.value === "canceled" } : null,
-);
+const draftMode = computed(() => {
+  const state = draftState.value;
+  return draft.value && state ? { slots: draft.value.slots, state } : null;
+});
 
 // 현황 카드 항목에 포인터·초점을 올린 절, 눌러서 옮겨 간 절을 초안에서 함께 강조한다
 const FLASH_MS = 1600;

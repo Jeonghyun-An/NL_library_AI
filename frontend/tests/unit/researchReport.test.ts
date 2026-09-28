@@ -2,7 +2,17 @@
 import { describe, expect, it } from "vitest";
 import type { ResearchReport } from "~/types/research";
 import type { DraftSlot } from "~/utils/researchDraft";
-import { draftIntro, hideOnPointerLeave, paperByline, rangeLabel, reportIntro, reportSlot, stepChunk } from "~/utils/researchReport";
+import {
+  draftBadge,
+  draftIntro,
+  draftStateFor,
+  hideOnPointerLeave,
+  paperByline,
+  rangeLabel,
+  reportIntro,
+  reportSlot,
+  stepChunk,
+} from "~/utils/researchReport";
 
 function report(over: Partial<ResearchReport> = {}): ResearchReport {
   return {
@@ -116,16 +126,55 @@ describe("draftIntro", () => {
     { idx: 3, heading: "라", status: "waiting", durationMs: null, startedAt: null, sectionIndex: null },
   ];
 
+  const stats = { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 };
+
   it("전체 절 수는 슬롯으로, 쓴 절은 초안에 실린 절로 센다", () => {
-    expect(draftIntro(slots, false)).toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다.");
+    expect(draftIntro(slots, "writing")).toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다.");
   });
 
   it("라이브 카운터가 있으면 검토·채택 수를 덧붙인다", () => {
-    expect(draftIntro(slots, false, { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 }))
+    expect(draftIntro(slots, "writing", stats))
       .toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다. 지금까지 논문 38편을 검토하고 11편을 근거로 삼았습니다.");
   });
 
   it("멈춘 초안은 완성되지 않았음과 한계가 빠졌음을 알린다", () => {
-    expect(draftIntro(slots, true)).toBe("4개 절 중 2개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.");
+    expect(draftIntro(slots, "interrupted")).toBe("4개 절 중 2개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.");
+    expect(draftIntro(slots, "interrupted", stats))
+      .toBe("4개 절 중 2개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다. 지금까지 논문 38편을 검토하고 11편을 근거로 삼았습니다.");
+  });
+
+  it("작성을 마치고 완성본을 기다리는 초안은 더 쓰는 중이라고 하지 않는다", () => {
+    expect(draftIntro(slots, "finishing")).toBe("4개 절을 모두 쓴 초안입니다. 서론과 한계 점검은 완성본에 실립니다.");
+    expect(draftIntro(slots, "finishing", stats))
+      .toBe("4개 절을 모두 쓴 초안입니다. 서론과 한계 점검은 완성본에 실립니다. 논문 38편을 검토하고 11편을 근거로 삼았습니다.");
+  });
+});
+
+describe("draftStateFor", () => {
+  it("보고서를 쓰는 동안은 작성 중, 실패·취소로 멈추면 멈춘 초안", () => {
+    expect(draftStateFor("synthesizing", null)).toBe("writing");
+    expect(draftStateFor("failed", null)).toBe("interrupted");
+    expect(draftStateFor("canceled", null)).toBe("interrupted");
+  });
+
+  it("완료 뒤 최종본을 받는 동안·받기에 실패해 다시 시도하는 동안은 작성을 마친 초안", () => {
+    expect(draftStateFor("completed", "loading")).toBe("finishing");
+    expect(draftStateFor("completed", "failed")).toBe("finishing");
+  });
+
+  it("최종본을 받았거나 보고서를 쓰기 전이면 초안을 그리지 않는다", () => {
+    expect(draftStateFor("completed", "ready")).toBeNull();
+    for (const phase of ["planning", "awaiting", "queued", "exploring"] as const) {
+      expect(draftStateFor(phase, null)).toBeNull();
+    }
+    expect(draftStateFor(null, null)).toBeNull();
+  });
+});
+
+describe("draftBadge", () => {
+  it("쓰는 동안에만 깜빡이는 점을 단다 — 작성을 마쳤거나 멈춘 초안은 차분하게", () => {
+    expect(draftBadge("writing")).toEqual({ label: "작성 중", live: true });
+    expect(draftBadge("finishing")).toEqual({ label: "작성을 마친 초안", live: false });
+    expect(draftBadge("interrupted")).toEqual({ label: "완성되지 않은 초안", live: false });
   });
 });

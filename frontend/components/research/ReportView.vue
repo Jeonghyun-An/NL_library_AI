@@ -3,10 +3,8 @@
   <article class="rs-card rs-report" :class="{ 'rs-report--draft': !!draft }">
     <header class="rs-report__head">
       <div>
-        <p v-if="draft" class="rs-report__kicker">
-          <span class="rs-badge rs-badge--draft" :class="{ 'rs-badge--live': !draft.interrupted }">
-            {{ draft.interrupted ? "완성되지 않은 초안" : "작성 중" }}
-          </span>
+        <p v-if="badge" class="rs-report__kicker">
+          <span class="rs-badge rs-badge--draft" :class="{ 'rs-badge--live': badge.live }">{{ badge.label }}</span>
         </p>
         <h2 class="rs-report__question">{{ report.question }}</h2>
         <p v-if="range || generated" class="rs-report__meta">
@@ -33,7 +31,8 @@
     >
       <h3 class="rs-section__heading">{{ row.idx + 1 }}. {{ row.heading }}</h3>
       <ReportSectionBody v-if="row.sec" :sec="row.sec" :evidence="report.evidence" @open-pdf="$emit('open-pdf', $event)" />
-      <p v-else-if="draft?.interrupted" class="rs-muted">작성을 마치지 못한 절입니다.</p>
+      <p v-else-if="draft?.state === 'interrupted'" class="rs-muted">작성을 마치지 못한 절입니다.</p>
+      <p v-else-if="draft?.state === 'finishing'" class="rs-muted">이 절은 완성본에 실립니다.</p>
       <template v-else-if="row.state === 'running'">
         <p class="rs-muted">이 절을 쓰는 중입니다</p>
         <div class="rs-skeleton" aria-hidden="true">
@@ -60,7 +59,7 @@
 import { computed } from "vue";
 import type { OpenPdfPayload, ReportSection, ResearchReport } from "~/types/research";
 import type { DraftSlot, DraftSlotStatus } from "~/utils/researchDraft";
-import { draftIntro, rangeLabel, reportIntro } from "~/utils/researchReport";
+import { draftBadge, draftIntro, rangeLabel, reportIntro, type DraftState } from "~/utils/researchReport";
 import ReportSectionBody from "./ReportSectionBody.vue";
 
 interface SectionRow {
@@ -74,7 +73,7 @@ const props = withDefaults(
   defineProps<{
     report: ResearchReport;
     generatedAt: string | null;
-    draft?: { slots: DraftSlot[]; interrupted: boolean } | null;
+    draft?: { slots: DraftSlot[]; state: DraftState } | null;
     highlightIdx?: number | null;
   }>(),
   { draft: null, highlightIdx: null },
@@ -82,8 +81,9 @@ const props = withDefaults(
 defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; "copy-link": [] }>();
 
 const range = computed(() => rangeLabel(props.report.range));
+const badge = computed(() => (props.draft ? draftBadge(props.draft.state) : null));
 const intro = computed(() =>
-  props.draft ? draftIntro(props.draft.slots, props.draft.interrupted, props.report.stats) : reportIntro(props.report),
+  props.draft ? draftIntro(props.draft.slots, props.draft.state, props.report.stats) : reportIntro(props.report),
 );
 const generated = computed(() => {
   if (!props.generatedAt) return "";
