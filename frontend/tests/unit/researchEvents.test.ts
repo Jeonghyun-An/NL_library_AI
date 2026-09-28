@@ -562,6 +562,70 @@ describe("applyResearchEvent — 절 미리보기", () => {
   });
 });
 
+// 보고서 작성부터 다시 시도(stage=explored)하면 워커는 running 을 알린 뒤 스냅샷을 되살리고서야
+// 새 종합 단계를 연다. 그 사이 화면에 남은 종합 단계는 이전 시도의 닫힌 단계다.
+describe("재시도 — 이전 시도의 종합 단계", () => {
+  const EMPTY = { seq: null, status: null, total: 0, sections: [], headings: [], evidence: {} };
+  // 2개 절 중 1개를 쓰고 실패한 잡 — 종합 단계(seq 3)가 미리보기를 남긴 채 failed 로 닫혔다
+  const FAILED_SYNTH_ROW = step({
+    seq: 3, kind: "synthesize", title: "보고서 종합", status: "failed", result: { ...SAVED_RESULT, error: "종합 실패" },
+  });
+  const NEW_SYNTH_ROW = step({
+    seq: 5, kind: "synthesize", title: "보고서 종합", status: "running",
+    result: { sections_total: 2, headings: HEADINGS, sections: [{ idx: 0, status: "running", subq_idx: 0, heading: "효과 측정", started_at: T1 }] },
+  });
+  const failedJob = (over: Partial<ResearchJob> = {}) => job({
+    status: "failed", stage: "explored", last_error: "종합 실패", steps: [PLAN_ROW, FAILED_SYNTH_ROW], ...over,
+  });
+
+  it("재시도를 누르면 새 종합 단계가 열리기 전까지 이전 시도의 초안을 되살리지 않는다", () => {
+    const failed = initialResearchView(failedJob());
+    expect(failed.synth.sections[0]!.section).toEqual(SEC0);
+    const queued = applyResearchEvent(failed, { kind: "status", status: "queued", stage: "explored" });
+    // 재접속 snapshot 이 이전 시도의 종합 단계를 다시 실어도 되살리지 않는다
+    const snap = applyResearchEvent(queued, {
+      kind: "snapshot", steps: [PLAN_ROW, FAILED_SYNTH_ROW], job: { status: "queued", stage: "explored", plan: job().plan },
+    });
+    const running = applyResearchEvent(snap, { kind: "status", status: "running", stage: "explored" });
+    expect(researchPhase(running)).toBe("synthesizing");
+    for (const v of [queued, snap, running]) expect(v.synth).toMatchObject(EMPTY);
+    expect(synthProgress(running)).toEqual({ current: 0, total: 0 });
+
+    const next = run([{ ...SYNTH_STEP, seq: 5 }, S0_RUNNING], running);
+    expect(next.synth.seq).toBe(5);
+    expect(next.synth.sections.map((s) => [s.idx, s.status, s.section])).toEqual([[0, "running", null]]);
+  });
+
+  it("끝난 화면이 GET 으로 도는 잡을 받으면(409 뒤·다시 불러오기) 그 사이의 재시도로 보고 비운다", () => {
+    const failed = initialResearchView(failedJob());
+    const gap = refreshView(failed, failedJob({ status: "running", last_error: null }));
+    expect(researchPhase(gap)).toBe("synthesizing");
+    expect(gap.synth).toMatchObject(EMPTY);
+    // 새 종합 단계가 이미 열렸으면 그것을 읽는다
+    const opened = refreshView(failed, failedJob({ status: "running", last_error: null, steps: [PLAN_ROW, FAILED_SYNTH_ROW, NEW_SYNTH_ROW] }));
+    expect(opened.synth.seq).toBe(5);
+    expect(opened.synth.sections.map((s) => [s.idx, s.status, s.section])).toEqual([[0, "running", null]]);
+    expect(opened.synth.evidence).toEqual({});
+  });
+
+  it("재시도로 큐에 든 잡(queued)을 새로 열어도 워커가 집은 뒤 이전 시도의 초안이 되살아나지 않는다", () => {
+    // queued 는 재시도로 다시 큐에 든 상태다 — 워커가 집기 전이라 남은 종합 단계는 모두 이전 시도의 것이다
+    const opened = initialResearchView(failedJob({ status: "queued", last_error: null }));
+    const running = applyResearchEvent(opened, { kind: "status", status: "running", stage: "explored" });
+    for (const v of [opened, running]) expect(v.synth).toMatchObject(EMPTY);
+    expect(refreshView(initialResearchView(job()), failedJob({ status: "queued", last_error: null })).synth).toMatchObject(EMPTY);
+  });
+
+  it("실패로 닫히는 동안(종합 단계 failed → 잡 failed)은 초안을 비우지 않는다", () => {
+    const closing = run([
+      SYNTH_STEP, S0_RUNNING, S0_DONE,
+      { ...SYNTH_STEP, status: "failed", result: { ...LIGHT_RESULT, error: "종합 실패" } },
+    ], initialResearchView(job({ stage: "explored" })));
+    const failed = applyResearchEvent(closing, { kind: "failed", status: "failed", error: "종합 실패" });
+    for (const v of [closing, failed]) expect(v.synth.sections[0]!.section).toEqual(SEC0);
+  });
+});
+
 describe("보강 전 잡", () => {
   it("단계 결과에 rounds 가 없으면 report.trail 로 회차를 대신 보여 준다", () => {
     const v = initialResearchView(job({

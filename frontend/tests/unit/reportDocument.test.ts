@@ -370,7 +370,7 @@ function view(subqs: SubqView[]): ResearchView {
     subqs,
     counters: { papersReviewed: 38, evidenceAdopted: 11, rechecks: 1 },
     highlight: null,
-    synth: { seq: 9, status: "running", total: 3, sections: [], headings: [], evidence: {} },
+    synth: { seq: 9, status: "running", total: 3, sections: [], headings: [], evidence: {}, retiredSeq: null },
     source: "rounds",
   };
 }

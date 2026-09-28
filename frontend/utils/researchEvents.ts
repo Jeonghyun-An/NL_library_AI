@@ -53,7 +53,9 @@ type OpenedSubq = SubqView & { seq: number };
 export const TERMINAL_STATUSES: readonly ResearchStatus[] = ["completed", "failed", "canceled"];
 
 const EMPTY_COUNTERS: CountersView = { papersReviewed: null, evidenceAdopted: null, rechecks: null };
-const EMPTY_SYNTH: SynthView = { seq: null, status: null, total: 0, sections: [], headings: [], evidence: {} };
+const EMPTY_SYNTH: SynthView = {
+  seq: null, status: null, total: 0, sections: [], headings: [], evidence: {}, retiredSeq: null,
+};
 // 끊겼다 다시 받은 snapshot 이 라이브로 받은 절 상태를 되돌리지 않게, 더 나아간 쪽을 남긴다
 const SECTION_RANK: Record<SynthSectionStatus, number> = { running: 1, done: 2, failed: 2 };
 const SOURCE_ORDER: readonly RoundSource[] = ["rounds", "trail", "queries"];
@@ -181,7 +183,9 @@ export function initialResearchView(job: ResearchJob): ResearchView {
     subqs: [],
     counters: countersFromJob(job.report ?? null, steps),
     highlight: null,
-    synth: { ...EMPTY_SYNTH },
+    // queued 는 재시도로 다시 큐에 든 상태다(models/research.py) — 워커가 집기 전이라 남은 종합
+    // 단계는 모두 이전 시도의 것이다
+    synth: job.status === "queued" ? retiredSynth(steps) : { ...EMPTY_SYNTH },
     source: "none",
   });
   return view.status === "running" ? { ...view, highlight: latestHighlight(view.subqs) } : view;
@@ -193,7 +197,7 @@ export function initialResearchView(job: ResearchJob): ResearchView {
 export function refreshView(prev: ResearchView | null, job: ResearchJob): ResearchView {
   const fresh = initialResearchView(job);
   if (!prev || prev.jobId !== fresh.jobId) return fresh;
-  const merged = rebuild({ ...fresh, subqs: prev.subqs, synth: prev.synth });
+  const merged = rebuild({ ...fresh, subqs: prev.subqs, synth: carriedSynth(prev, fresh) });
   const counters = fresh.report?.stats
     ? fresh.counters
     : reconcileCounters(prev.counters, prev.steps, fresh.counters, fresh.steps);
@@ -220,13 +224,15 @@ export function applyResearchEvent(view: ResearchView, event: ResearchEvent): Re
   switch (event.kind) {
     case "snapshot":
       return applySnapshot(view, event);
-    case "status":
-      return {
+    case "status": {
+      const next: ResearchView = {
         ...view,
         status: event.status,
         stage: event.stage ?? view.stage,
         lastError: isTerminalStatus(event.status) ? view.lastError : null,
       };
+      return isRetry(view.status, event.status) ? { ...next, synth: retiredSynth(view.steps) } : next;
+    }
     case "step":
       return applyStep(view, event);
     case "search":
@@ -425,7 +431,8 @@ function buildSubq(
 // 않게 한다. 재시도로 새 종합 단계가 열리면(seq 가 바뀜) 이전 시도의 절은 버린다.
 function synthFrom(view: ResearchView): SynthView {
   const step = latestOf(view.steps, "synthesize");
-  if (!step) return view.synth;
+  const retired = view.synth.retiredSeq;
+  if (!step || (retired !== null && step.seq <= retired)) return view.synth;
   const r: StepResult = step.result ?? {};
   const listed: SynthSectionView[] = Array.isArray(r.sections) ? r.sections.map(toSectionView) : [];
   const total = r.sections_total ?? (typeof r.sections === "number" ? r.sections : listed.length);
@@ -439,7 +446,30 @@ function synthFrom(view: ResearchView): SynthView {
     headings: r.headings?.length ? r.headings : prior.headings,
     // 근거가 없는 값(가벼운 step 이벤트)이면 받은 객체를 그대로 둔다 — applySynth 와 같은 규칙
     evidence: r.evidence ? mergeEvidence(r.evidence, prior.evidence) : prior.evidence,
+    retiredSeq: retired,
   };
+}
+
+// 끝난 잡이 다시 진행으로 바뀌었다 — 재시도다. 스트림은 종료 상태에서 닫히므로 화면이 이것을 보는
+// 길은 재시도 응답과 GET 재동기화(409 뒤·다시 불러오기)뿐이다
+function isRetry(prev: ResearchStatus, next: ResearchStatus): boolean {
+  return isTerminalStatus(prev) && !isTerminalStatus(next);
+}
+
+// 재시도로 물러난 시도의 종합. 워커는 running 을 알리고 스냅샷을 되살린 뒤에야 새 종합 단계를 연다 —
+// 그 사이 이전 시도의 닫힌 단계를 읽으면 멈춘 초안·남은 시간이 '작성 중'으로 잠깐 되살아난다. 그래서
+// 화면을 비우고, 그 단계의 seq 를 기억해 새 종합 단계(더 큰 seq)가 열릴 때까지 읽지 않는다(synthFrom).
+// "실패 단계면 숨긴다"로 가르면 실패로 닫히는 길(단계 failed → 잡 failed)의 멈춘 초안까지 깜빡인다.
+function retiredSynth(steps: ResearchStepRow[]): SynthView {
+  return { ...EMPTY_SYNTH, retiredSeq: latestOf(steps, "synthesize")?.seq ?? null };
+}
+
+// GET 으로 다시 맞출 때 이어 갈 종합 화면
+function carriedSynth(prev: ResearchView, fresh: ResearchView): SynthView {
+  // queued 로 읽은 잡은 initialResearchView 가 새로 읽은 단계까지 모두 물렸다
+  if (fresh.status === "queued") return fresh.synth;
+  // 끝난 화면이 도는 잡을 받았다 — 새로 읽은 단계에는 새 시도의 종합 단계가 있을 수 있어 화면이 알던 단계만 물린다
+  return isRetry(prev.status, fresh.status) ? retiredSynth(prev.steps) : prev.synth;
 }
 
 // 재검색은 판정이 부족일 때만 일어난다(critic.should_recheck) — 마지막 전 회차는 모두 부족이다

@@ -54,7 +54,7 @@ function viewWith(synth: Partial<SynthView>, over: Partial<ResearchView> = {}): 
   return {
     ...initialResearchView(job()),
     ...over,
-    synth: { seq: 3, status: "running", total: 0, sections: [], headings: [], evidence: {}, ...synth },
+    synth: { seq: 3, status: "running", total: 0, sections: [], headings: [], evidence: {}, retiredSeq: null, ...synth },
   };
 }
 
@@ -171,6 +171,31 @@ describe("draftReport", () => {
     expect(d.report.evidence).toEqual(EV);
     expect(d.slots.map((s) => [s.heading, s.status])).toEqual([["효과 측정", "done"], ["정책 과제", "waiting"]]);
     expect(synthEta(v, NOW)).toEqual({ done: 1, total: 2, runningIdx: null, runningElapsedMs: null, remainingMs: 38000 });
+  });
+
+  it("보고서 작성부터 다시 시도하면 새 종합 단계가 열리기 전에도 이전 시도의 초안·남은 시간을 보이지 않는다", () => {
+    const failed = initialResearchView(job({
+      status: "failed", stage: "explored", last_error: "종합 실패",
+      steps: [{
+        seq: 4, kind: "synthesize", subq_idx: null, title: "보고서 종합", status: "failed",
+        result: {
+          sections_total: 3, headings: HEADINGS3, evidence: EV, error: "종합 실패",
+          sections: [
+            { idx: 0, status: "done", duration_ms: 30000, section: section("효과 측정") },
+            { idx: 1, status: "running", started_at: ago(5000) },
+          ],
+        },
+      }],
+    }));
+    expect(draftReport(failed)?.done).toBe(1);
+    const events: ResearchEvent[] = [
+      { kind: "status", status: "queued", stage: "explored" },
+      { kind: "status", status: "running", stage: "explored" },
+    ];
+    const running = events.reduce((view, e) => applyResearchEvent(view, e), failed);
+    expect(draftReport(running)).toBeNull();
+    expect(draftSlots(running)).toEqual([]);
+    expect(synthEta(running, NOW)).toEqual({ done: 0, total: 0, runningIdx: null, runningElapsedMs: null, remainingMs: null });
   });
 });
 

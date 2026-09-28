@@ -349,6 +349,8 @@ export interface SynthView {
   headings: string[];
   // 끝난 절들이 인용한 근거 합집합 — 초안의 인용칩·내보내기가 읽는다
   evidence: Record<string, ReportEvidence>;
+  // 재시도로 물러난 이전 시도의 마지막 종합 단계 seq — 새 종합 단계가 열릴 때까지 그 이하의 단계는 읽지 않는다
+  retiredSeq: number | null;
 }
 
 export interface ResearchView {
