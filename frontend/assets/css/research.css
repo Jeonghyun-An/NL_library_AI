@@ -985,11 +985,14 @@ button.rs-synth__item:focus-visible,
   outline-offset: 0.4rem;
   transition: outline-color 0.2s ease;
 }
-.rs-section:focus {
-  outline-color: transparent;
-}
 .rs-section.is-linked {
   outline-color: var(--skx-border-c2);
+}
+/* 강제 색 모드(Windows 고대비)는 투명 outline 도 시스템 색으로 칠해 절마다 테두리 상자가 생긴다 — 강조한 절에만 남긴다 */
+@media (forced-colors: active) {
+  .rs-section:not(.is-linked) {
+    outline: none;
+  }
 }
 .rs-section.is-waiting .rs-section__heading {
   color: var(--skx-gray-2);
