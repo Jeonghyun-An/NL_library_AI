@@ -20,14 +20,15 @@
 
     <p class="rs-report__intro">{{ intro }}</p>
 
-    <!-- 절 id 는 작성 현황 카드가 눌러 옮겨 오는 자리다. 초안은 초점도 받아 키보드로 옮긴 사람이 이어 읽는다 -->
+    <!-- 절 id 는 작성 현황 카드가 눌러 옮겨 오는 자리다. 초점도 받아 키보드로 옮긴 사람이 이어 읽는다 —
+         초안이 같은 자리에서 최종본으로 바뀔 때 tabindex 가 빠지면 그 절에 있던 초점이 body 로 떨어지므로 최종본에도 둔다 -->
     <section
       v-for="row in rows"
       :id="`rs-sec-${row.idx}`"
       :key="row.idx"
       class="rs-section"
       :class="[`is-${row.state}`, { 'is-linked': highlightIdx === row.idx }]"
-      :tabindex="draft ? -1 : undefined"
+      tabindex="-1"
     >
       <h3 class="rs-section__heading">{{ row.idx + 1 }}. {{ row.heading }}</h3>
       <ReportSectionBody v-if="row.sec" :sec="row.sec" :evidence="report.evidence" @open-pdf="$emit('open-pdf', $event)" />

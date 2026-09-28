@@ -88,18 +88,7 @@
             </section>
 
             <section v-if="reportState || draft" class="rs-block rs-block--report">
-              <ReportView
-                v-if="reportState === 'ready' && view.report"
-                :report="view.report"
-                :generated-at="view.finishedAt"
-                @open-pdf="openPdf"
-                @copy-link="copyLink"
-              >
-                <template #actions>
-                  <ReportDownloadMenu label="다운로드" :busy="exporting" @select="downloadReport" />
-                </template>
-              </ReportView>
-              <template v-else-if="draft">
+              <template v-if="shownReport">
                 <!-- 완료 이벤트 뒤 최종본을 받는 동안·실패해 다시 시도하는 동안에도 읽던 초안을 치우지 않는다 -->
                 <div v-if="reportState === 'failed'" class="rs-report-note" role="alert">
                   <p>최종 보고서를 불러오지 못했습니다. 잠시 뒤 자동으로 다시 시도합니다 — 아래는 작성 중에 받은 초안입니다.</p>
@@ -110,16 +99,22 @@
                   <p>최종 보고서를 불러오는 중입니다 — 서론과 한계가 붙은 완성본으로 곧 바뀝니다.</p>
                 </div>
                 <ReportView
-                  :report="draft.report"
-                  :generated-at="null"
+                  :report="shownReport"
+                  :generated-at="reportState === 'ready' ? view.finishedAt : null"
                   :draft="draftMode"
                   :highlight-idx="linkedIdx"
                   @open-pdf="openPdf"
                   @copy-link="copyLink"
                 >
-                  <!-- 멈춘 초안에만 둔다 — 작성 중 저장은 현황 카드가 맡고, 완료 직후에는 곧 최종본의 [다운로드]로 바뀐다 -->
                   <template #actions>
-                    <ReportDownloadMenu v-if="draftMode?.state === 'interrupted'" label="초안 저장" :busy="exporting" @select="saveDraft" />
+                    <ReportDownloadMenu v-if="reportState === 'ready'" label="다운로드" :busy="exporting" @select="downloadReport" />
+                    <!-- 초안 저장은 멈춘 초안에만 둔다 — 작성 중 저장은 현황 카드가 맡고, 완료 직후에는 곧 최종본의 [다운로드]로 바뀐다 -->
+                    <ReportDownloadMenu
+                      v-else-if="draftMode?.state === 'interrupted'"
+                      label="초안 저장"
+                      :busy="exporting"
+                      @select="saveDraft"
+                    />
                   </template>
                 </ReportView>
               </template>
@@ -251,6 +246,9 @@ const draftMode = computed(() => {
   const state = draftState.value;
   return draft.value && state ? { slots: draft.value.slots, state } : null;
 });
+// 최종본이 오면 초안을 그리던 같은 ReportView 에 넘긴다 — 갈아 끼우면 초안 안의 초점·열린 인용 팝오버가
+// 사라지고, 스크롤 기준이던 노드도 없어져 읽던 자리가 튄다
+const shownReport = computed(() => (reportState.value === "ready" ? view.value?.report : draft.value?.report) ?? null);
 
 // 현황 카드 항목에 포인터·초점을 올린 절, 눌러서 옮겨 간 절을 초안에서 함께 강조한다
 const FLASH_MS = 1600;
