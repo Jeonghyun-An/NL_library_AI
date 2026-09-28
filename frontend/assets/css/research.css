@@ -993,8 +993,9 @@ button.rs-synth__item:focus-visible,
   flex-direction: column;
   gap: 0.5rem;
 }
+/* fill 은 backwards 만 — both·forwards 면 끝난 뒤에도 효과가 남아 본문마다 쌓임 맥락이 생겨 인용칩 팝오버가 다음 절 본문 아래로 깔린다 */
 .rs-report--draft .rs-section__body {
-  animation: rs-reveal 0.45s ease-out both;
+  animation: rs-reveal 0.45s ease-out backwards;
 }
 .rs-skeleton {
   --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, var(--skx-white));
