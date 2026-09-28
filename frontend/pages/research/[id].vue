@@ -59,10 +59,14 @@
                 <p>앞선 연구가 끝나면 시작합니다</p>
               </div>
               <PlanCard v-else-if="phase === 'exploring'" :plan="view.plan" :max="maxSubquestions" :subqs="view.subqs" />
-              <div v-else-if="phase === 'synthesizing'" class="rs-card rs-card--wait">
-                <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
-                <p>{{ synthLine }}</p>
-              </div>
+              <SynthProgressCard
+                v-else-if="phase === 'synthesizing'"
+                :slots="slots"
+                :eta="eta"
+                :highlight-idx="linkedIdx"
+                @jump="jumpToSection"
+                @hover="hoverIdx = $event"
+              />
               <div v-else-if="phase === 'failed'" class="rs-card rs-card--error">
                 <p class="rs-card__title">연구가 도중에 멈췄습니다</p>
                 <p v-if="view.lastError" class="rs-muted">{{ view.lastError }}</p>
@@ -79,7 +83,7 @@
               </div>
             </section>
 
-            <section v-if="reportState" class="rs-block rs-block--report">
+            <section v-if="reportState || draft" class="rs-block rs-block--report">
               <ReportView
                 v-if="reportState === 'ready' && view.report"
                 :report="view.report"
@@ -87,6 +91,25 @@
                 @open-pdf="openPdf"
                 @copy-link="copyLink"
               />
+              <template v-else-if="draft">
+                <!-- 완료 이벤트 뒤 최종본을 받는 동안·실패해 다시 시도하는 동안에도 읽던 초안을 치우지 않는다 -->
+                <div v-if="reportState === 'failed'" class="rs-report-note" role="alert">
+                  <p>최종 보고서를 불러오지 못했습니다. 잠시 뒤 자동으로 다시 시도합니다 — 아래는 작성 중에 받은 초안입니다.</p>
+                  <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" :disabled="syncing" @click="resync">다시 불러오기</button>
+                </div>
+                <div v-else-if="reportState === 'loading'" class="rs-report-note" role="status">
+                  <img src="/img/ico-spinner.svg" alt="" class="rs-spinner rs-spinner--small" />
+                  <p>최종 보고서를 불러오는 중입니다 — 서론과 한계가 붙은 완성본으로 곧 바뀝니다.</p>
+                </div>
+                <ReportView
+                  :report="draft.report"
+                  :generated-at="null"
+                  :draft="draftMode"
+                  :highlight-idx="linkedIdx"
+                  @open-pdf="openPdf"
+                  @copy-link="copyLink"
+                />
+              </template>
               <div v-else-if="reportState === 'failed'" class="rs-card rs-card--error">
                 <p class="rs-card__title">보고서를 불러오지 못했습니다</p>
                 <p class="rs-muted">잠시 뒤 자동으로 다시 시도합니다</p>
@@ -119,17 +142,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import PdfViewer from "~/components/PdfViewer.vue";
 import PlanCard from "~/components/research/PlanCard.vue";
 import ProgressPanel from "~/components/research/ProgressPanel.vue";
 import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
+import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
 import { apiHeaders, apiUrl } from "~/composables/useApi";
+import { useNow } from "~/composables/useNow";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import type { OpenPdfPayload } from "~/types/research";
 import { safeLocalStorage } from "~/utils/browserId";
-import { researchPhase, synthProgress } from "~/utils/researchEvents";
+import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
+import { researchPhase, type ResearchPhase } from "~/utils/researchEvents";
 import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { reportSlot } from "~/utils/researchReport";
@@ -154,11 +180,6 @@ const maxSubquestions = computed(() => Number(view.value?.params.max_subquestion
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다
 const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);
 const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
-const synthLine = computed(() => {
-  if (!view.value) return "";
-  const p = synthProgress(view.value);
-  return p.total ? `보고서 작성 중 ${p.current}/${p.total}` : "보고서 작성 중";
-});
 
 useHead({ title: () => (view.value ? `${view.value.question} — 딥리서치` : "딥리서치") });
 
@@ -189,6 +210,54 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   media?.removeEventListener("change", onMediaChange);
+});
+
+// ── 보고서 작성 현황·초안 ─────────────────────────────────
+// 초안은 쓰는 동안·멈춘 뒤·완료 직후 최종본을 받기 전까지만 보인다 — 최종본이 오면 그것으로 바꾼다
+const DRAFT_PHASES: readonly ResearchPhase[] = ["synthesizing", "failed", "canceled", "completed"];
+const EMPTY_ETA: SynthEta = { done: 0, total: 0, runningIdx: null, runningElapsedMs: null, remainingMs: null };
+// 절이 쌓이는 동안만 1초마다 시계를 읽는다 — 쓰는 중인 절의 경과·남은 시간·막대가 따라 움직인다
+const now = useNow(computed(() => phase.value === "synthesizing"));
+const slots = computed(() => (view.value ? draftSlots(view.value) : []));
+const eta = computed<SynthEta>(() => (view.value ? synthEta(view.value, now.value) : EMPTY_ETA));
+const draft = computed(() => {
+  if (!view.value || !phase.value || !DRAFT_PHASES.includes(phase.value) || reportState.value === "ready") return null;
+  return draftReport(view.value);
+});
+// 템플릿에서 객체를 만들면 1초마다 도는 시계 때문에 초안 전체가 매초 다시 그려진다
+const draftMode = computed(() =>
+  draft.value ? { slots: draft.value.slots, interrupted: phase.value === "failed" || phase.value === "canceled" } : null,
+);
+
+// 현황 카드 항목에 포인터·초점을 올린 절, 눌러서 옮겨 간 절을 초안에서 함께 강조한다
+const FLASH_MS = 1600;
+const hoverIdx = ref<number | null>(null);
+const flashIdx = ref<number | null>(null);
+const linkedIdx = computed(() => hoverIdx.value ?? flashIdx.value);
+let flashTimer: ReturnType<typeof setTimeout> | null = null;
+
+// 사용자가 누를 때만 옮긴다 — 절이 완성될 때마다 끌고 가면 초안을 읽던 자리를 잃는다
+function jumpToSection(idx: number): void {
+  const el = document.getElementById(`rs-sec-${idx}`);
+  if (!el) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  // 키보드로 누른 사람이 그 절부터 이어 읽게 초점도 옮긴다(스크롤은 위에서 했다)
+  el.focus({ preventScroll: true });
+  flashIdx.value = idx;
+  if (flashTimer) clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => {
+    flashIdx.value = null;
+  }, FLASH_MS);
+}
+
+// 종합이 끝나 카드가 사라지면 mouseleave 가 오지 않는다 — 올려 둔 강조가 초안에 남지 않게 푼다
+watch(phase, (p) => {
+  if (p !== "synthesizing") hoverIdx.value = null;
+});
+
+onBeforeUnmount(() => {
+  if (flashTimer) clearTimeout(flashTimer);
 });
 
 // ── 동작 ──────────────────────────────────────────────────

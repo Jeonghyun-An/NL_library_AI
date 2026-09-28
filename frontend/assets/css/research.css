@@ -918,3 +918,133 @@ button.rs-synth__item:focus-visible,
     animation: none;
   }
 }
+
+/* ── 보고서 초안 ─────────────────────────────────────────── */
+.rs-block--report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.rs-report-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.rs-report-note p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.rs-spinner--small {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.rs-report__kicker {
+  margin: 0 0 0.3rem;
+}
+.rs-report__actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.rs-badge--draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.rs-badge--live::before {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  background: var(--skx-primary);
+  border-radius: 50%;
+  animation: rs-blink 1.2s ease-in-out infinite;
+}
+/* 카드 목록에서 눌러 옮겨 오는 자리 — 화면 맨 위에 딱 붙지 않게 조금 띄우고, 강조는 바깥 테두리로 한다 */
+.rs-section {
+  scroll-margin-top: 1.2rem;
+  border-radius: var(--skx-radius-sm);
+  outline: 2px solid transparent;
+  outline-offset: 0.4rem;
+  transition: outline-color 0.2s ease;
+}
+.rs-section:focus {
+  outline-color: transparent;
+}
+.rs-section.is-linked {
+  outline-color: var(--skx-border-c2);
+}
+.rs-section.is-waiting .rs-section__heading {
+  color: var(--skx-gray-2);
+}
+.rs-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rs-report--draft .rs-section__body {
+  animation: rs-reveal 0.45s ease-out both;
+}
+.rs-skeleton {
+  --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, var(--skx-white));
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rs-skeleton__line {
+  height: 0.55rem;
+  background: linear-gradient(90deg, var(--rs-skeleton) 25%, var(--skx-white) 50%, var(--rs-skeleton) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--skx-radius-pill);
+  animation: rs-shimmer 1.6s linear infinite;
+}
+.rs-skeleton__line:nth-child(2) {
+  width: 92%;
+}
+.rs-skeleton__line:nth-child(3) {
+  width: 64%;
+}
+@keyframes rs-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rs-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@keyframes rs-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-section {
+    transition: none;
+  }
+  .rs-badge--live::before,
+  .rs-report--draft .rs-section__body,
+  .rs-skeleton__line {
+    animation: none;
+  }
+}

@@ -1,6 +1,7 @@
 // frontend/utils/researchReport.ts
-import type { EvidenceMeta, ReportRange, ResearchReport } from "../types/research";
+import type { CountersPayload, EvidenceMeta, ReportRange, ResearchReport } from "../types/research";
 import { pubYear, splitAuthors } from "./citations";
+import type { DraftSlot } from "./researchDraft";
 
 export function rangeLabel(range: Partial<ReportRange> | null | undefined): string | null {
   if (!range?.n_papers) return null;
@@ -18,6 +19,18 @@ export function reportIntro(report: ResearchReport): string {
     return `하위질문 ${subqs}개로 나눠 논문 ${s.papers_reviewed}편을 검토하고 ${s.evidence_adopted}편을 근거로 삼았다.`;
   }
   return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
+}
+
+// 초안의 서론 자리. 초안에는 trail 이 없고 끝난 절만 있어 reportIntro 로 세면 하위질문 수가 틀린다 —
+// 전체 절 수는 자리를 잡아 둔 슬롯 수로, 쓴 절은 초안에 실린 절로 센다
+export function draftIntro(slots: readonly DraftSlot[], interrupted: boolean, stats?: CountersPayload): string {
+  const done = slots.filter((s) => s.sectionIndex !== null).length;
+  const head = interrupted
+    ? `${slots.length}개 절 중 ${done}개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.`
+    : `${slots.length}개 절 중 ${done}개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다.`;
+  return stats
+    ? `${head} 지금까지 논문 ${stats.papers_reviewed}편을 검토하고 ${stats.evidence_adopted}편을 근거로 삼았습니다.`
+    : head;
 }
 
 // 끝에서는 제자리에 선다. 버튼을 disabled 로 막으면 초점을 쥔 버튼이 비활성이 되는 순간

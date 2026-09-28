@@ -1,7 +1,8 @@
 // frontend/tests/unit/researchReport.test.ts
 import { describe, expect, it } from "vitest";
 import type { ResearchReport } from "~/types/research";
-import { hideOnPointerLeave, paperByline, rangeLabel, reportIntro, reportSlot, stepChunk } from "~/utils/researchReport";
+import type { DraftSlot } from "~/utils/researchDraft";
+import { draftIntro, hideOnPointerLeave, paperByline, rangeLabel, reportIntro, reportSlot, stepChunk } from "~/utils/researchReport";
 
 function report(over: Partial<ResearchReport> = {}): ResearchReport {
   return {
@@ -104,5 +105,27 @@ describe("paperByline", () => {
     expect(paperByline({ personal_author: "김철수" })).toBe("김철수");
     expect(paperByline({ personal_author: "Smith, John", pub_date: "2021" })).toBe("Smith, John (2021)");
     expect(paperByline(undefined)).toBe("저자 미상");
+  });
+});
+
+describe("draftIntro", () => {
+  const slots: DraftSlot[] = [
+    { idx: 0, heading: "가", status: "done", durationMs: 30_000, startedAt: null, sectionIndex: 0 },
+    { idx: 1, heading: "나", status: "failed", durationMs: 20_000, startedAt: null, sectionIndex: 1 },
+    { idx: 2, heading: "다", status: "running", durationMs: null, startedAt: null, sectionIndex: null },
+    { idx: 3, heading: "라", status: "waiting", durationMs: null, startedAt: null, sectionIndex: null },
+  ];
+
+  it("전체 절 수는 슬롯으로, 쓴 절은 초안에 실린 절로 센다", () => {
+    expect(draftIntro(slots, false)).toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다.");
+  });
+
+  it("라이브 카운터가 있으면 검토·채택 수를 덧붙인다", () => {
+    expect(draftIntro(slots, false, { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 }))
+      .toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다. 지금까지 논문 38편을 검토하고 11편을 근거로 삼았습니다.");
+  });
+
+  it("멈춘 초안은 완성되지 않았음과 한계가 빠졌음을 알린다", () => {
+    expect(draftIntro(slots, true)).toBe("4개 절 중 2개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.");
   });
 });
