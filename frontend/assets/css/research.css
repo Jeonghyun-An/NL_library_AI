@@ -1049,3 +1049,178 @@ button.rs-synth__item:focus-visible,
     animation: none;
   }
 }
+
+/* ── 내려받기 메뉴 ───────────────────────────────────────── */
+.rs-dl {
+  position: relative;
+  display: inline-flex;
+}
+.rs-dl__btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-dl__btn[aria-busy="true"] {
+  cursor: progress;
+}
+/* 만드는 중 — 누른 뒤 아무 일도 없는 것처럼 보이지 않게 버튼 안에서 점이 숨 쉰다 */
+.rs-dl__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--skx-primary);
+  border-radius: 50%;
+  animation: rs-dl-breathe 1s ease-in-out infinite alternate;
+}
+@keyframes rs-dl-breathe {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.rs-dl__menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 40;
+  min-width: 13rem;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+  transform-origin: top right;
+  animation: rs-dl-in 0.14s ease-out;
+}
+@keyframes rs-dl-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.2rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rs-dl__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-dl__item:hover,
+.rs-dl__item:focus-visible {
+  background: var(--skx-border-c1);
+  outline: none;
+}
+.rs-dl__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-dl__desc {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  line-height: 1.4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-dl__menu,
+  .rs-dl__dot {
+    animation: none;
+  }
+}
+
+/* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
+/* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
+.rs-print {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 16mm;
+  }
+  /* [PDF로 저장] 중에는 인쇄 전용 문서만 찍는다 — body 의 다른 자식(앱·토스트·원문 뷰어)은 숨긴다 */
+  body:has(> .rs-print) > :not(.rs-print) {
+    display: none !important;
+  }
+  /* 딥리서치 화면을 그대로 인쇄(Ctrl+P)해도 사이드바·머리·버튼·진행 패널은 뺀다.
+     이 파일은 모든 페이지에 실리므로 다른 화면의 인쇄에는 걸리지 않게 딥리서치 화면으로 좁힌다 */
+  .skx-app:has(.rs-page) .skx-lnb,
+  body:has(.rs-page) .skx-footer,
+  .rs-page .rs-head,
+  .rs-page .rs-col-side,
+  .rs-page .rs-dl,
+  .rs-page .rs-btn {
+    display: none !important;
+  }
+  /* 진행 패널을 뺀 자리에 빈 칸이 남지 않게 배치 A 의 2단 격자를 푼다 — 본문이 용지 폭을 다 쓴다 */
+  .rs-page .rs-body {
+    display: block;
+  }
+  .rs-print {
+    display: block;
+    font-family: "맑은 고딕", "Malgun Gothic", "Pretendard", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.6;
+    color: var(--skx-ink);
+  }
+  .rs-print__title {
+    margin: 0 0 6pt;
+    font-size: 18pt;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .rs-print__meta {
+    margin: 0;
+    font-size: 9pt;
+    color: var(--skx-gray-1);
+    word-break: break-all;
+  }
+  .rs-print__h1 {
+    margin: 18pt 0 6pt;
+    font-size: 14pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  .rs-print__h2 {
+    margin: 10pt 0 4pt;
+    font-size: 12pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  .rs-print__para {
+    margin: 0 0 6pt;
+  }
+  .rs-print__para.is-muted {
+    color: var(--skx-gray-1);
+  }
+  .rs-print__list {
+    margin: 0 0 6pt;
+    padding-left: 16pt;
+  }
+  .rs-print__refs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rs-print__list li,
+  .rs-print__refs li {
+    margin-bottom: 3pt;
+    break-inside: avoid;
+  }
+  /* 번호로 찾아 읽는 목록이라 둘째 줄부터 들여 번호가 튀어나오게 한다 */
+  .rs-print__refs li {
+    padding-left: 22pt;
+    text-indent: -22pt;
+  }
+}

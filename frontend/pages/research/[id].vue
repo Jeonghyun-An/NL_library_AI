@@ -66,7 +66,11 @@
                 :highlight-idx="linkedIdx"
                 @jump="jumpToSection"
                 @hover="hoverIdx = $event"
-              />
+              >
+                <template #actions>
+                  <ReportDownloadMenu label="초안 저장" :disabled="!draft" :busy="exporting" @select="saveDraft" />
+                </template>
+              </SynthProgressCard>
               <div v-else-if="phase === 'failed'" class="rs-card rs-card--error">
                 <p class="rs-card__title">연구가 도중에 멈췄습니다</p>
                 <p v-if="view.lastError" class="rs-muted">{{ view.lastError }}</p>
@@ -90,7 +94,11 @@
                 :generated-at="view.finishedAt"
                 @open-pdf="openPdf"
                 @copy-link="copyLink"
-              />
+              >
+                <template #actions>
+                  <ReportDownloadMenu label="다운로드" :busy="exporting" @select="downloadReport" />
+                </template>
+              </ReportView>
               <template v-else-if="draft">
                 <!-- 완료 이벤트 뒤 최종본을 받는 동안·실패해 다시 시도하는 동안에도 읽던 초안을 치우지 않는다 -->
                 <div v-if="reportState === 'failed'" class="rs-report-note" role="alert">
@@ -108,7 +116,12 @@
                   :highlight-idx="linkedIdx"
                   @open-pdf="openPdf"
                   @copy-link="copyLink"
-                />
+                >
+                  <!-- 멈춘 초안에만 둔다 — 작성 중 저장은 현황 카드가 맡고, 완료 직후에는 곧 최종본의 [다운로드]로 바뀐다 -->
+                  <template #actions>
+                    <ReportDownloadMenu v-if="draftMode?.interrupted" label="초안 저장" :busy="exporting" @select="saveDraft" />
+                  </template>
+                </ReportView>
               </template>
               <div v-else-if="reportState === 'failed'" class="rs-card rs-card--error">
                 <p class="rs-card__title">보고서를 불러오지 못했습니다</p>
@@ -132,6 +145,7 @@
     </main>
 
     <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" @close="pdf = null" />
+    <ReportPrint v-if="printDoc" :doc="printDoc" />
 
     <Teleport to="body">
       <Transition name="skx-toast">
@@ -146,17 +160,27 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import PdfViewer from "~/components/PdfViewer.vue";
 import PlanCard from "~/components/research/PlanCard.vue";
 import ProgressPanel from "~/components/research/ProgressPanel.vue";
+import ReportDownloadMenu from "~/components/research/ReportDownloadMenu.vue";
+import ReportPrint from "~/components/research/ReportPrint.vue";
 import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
 import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
 import { apiHeaders, apiUrl } from "~/composables/useApi";
 import { useNow } from "~/composables/useNow";
+import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import type { OpenPdfPayload } from "~/types/research";
 import { safeLocalStorage } from "~/utils/browserId";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { researchPhase, type ResearchPhase } from "~/utils/researchEvents";
 import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
+import {
+  buildReportDocument,
+  docInputFromDraft,
+  docInputFromReport,
+  type ReportDoc,
+  type ReportExportFormat,
+} from "~/utils/reportDocument";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { reportSlot } from "~/utils/researchReport";
 import {
@@ -314,6 +338,48 @@ async function openPdf(target: OpenPdfPayload): Promise<void> {
   const problem = pdfCheckProblem(await pdfStatus(target.cntsId));
   if (problem) showToast(problem);
   else pdf.value = target;
+}
+
+// ── 내려받기(Word·PDF) ────────────────────────────────────
+const { exporting, printDoc, exportDocx, printPdf } = useReportExport();
+
+// 문서에 싣는 연구 주소 — 주소창의 쿼리·해시는 빼고 잡 주소 정본만 적는다
+function researchUrl(jobId: string): string {
+  return `${window.location.origin}/research/${jobId}`;
+}
+
+async function runExport(doc: ReportDoc, format: ReportExportFormat): Promise<void> {
+  try {
+    if (format === "docx") {
+      await exportDocx(doc);
+      showToast("Word 문서를 내려받았습니다");
+    } else {
+      await printPdf(doc);
+    }
+  } catch (e) {
+    console.warn("[research] 내보내기 실패", e);
+    // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
+    showToast(
+      format === "docx"
+        ? "Word 문서를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요."
+        : "인쇄 창을 열지 못했습니다. 다시 시도해 주세요.",
+    );
+  }
+}
+
+function downloadReport(format: ReportExportFormat): void {
+  const v = view.value;
+  if (!v?.report) return;
+  const input = docInputFromReport(v.report, { generatedAt: v.finishedAt, url: researchUrl(v.jobId) });
+  void runExport(buildReportDocument(input, new Date()), format);
+}
+
+// 작성 중·멈춘 초안은 화면에 보이는 초안(draft — 끝난 절이 하나도 없으면 null)을 그대로 문서로 만든다
+function saveDraft(format: ReportExportFormat): void {
+  const v = view.value;
+  const saved = draft.value;
+  if (!v || !saved) return;
+  void runExport(buildReportDocument(docInputFromDraft(saved, v, researchUrl(v.jobId)), new Date()), format);
 }
 
 // ── 토스트 ────────────────────────────────────────────────
