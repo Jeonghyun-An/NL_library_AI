@@ -1,11 +1,23 @@
 // frontend/tests/unit/researchEvents.test.ts
 import { describe, expect, it } from "vitest";
-import type { ResearchEvent, ResearchJob, ResearchReport, ResearchStepRow } from "~/types/research";
+import type {
+  ReportChunk,
+  ReportEvidence,
+  ReportSection,
+  ResearchEvent,
+  ResearchJob,
+  ResearchReport,
+  ResearchStepRow,
+  StepEvent,
+  StepResult,
+  SynthEvent,
+} from "~/types/research";
 import {
   applyApproval,
   applyResearchEvent,
   initialResearchView,
   isTerminalEvent,
+  mergeEvidence,
   refreshView,
   researchPhase,
   stopPoint,
@@ -333,7 +345,7 @@ describe("applyResearchEvent — 종합", () => {
       kind: "snapshot",
       steps: [step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "running", result: { sections_total: 2, sections: [{ idx: 0, status: "running" }] } })],
     });
-    expect(v.synth.sections).toEqual([{ idx: 0, status: "done" }]);
+    expect(v.synth.sections.map((s) => [s.idx, s.status])).toEqual([[0, "done"]]);
   });
 
   it("보강 전 종합 결과(절 수)도 완료로 센다", () => {
@@ -342,6 +354,188 @@ describe("applyResearchEvent — 종합", () => {
       steps: [step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "done", result: { sections: 3 } })],
     }));
     expect(synthProgress(v)).toEqual({ current: 3, total: 3 });
+  });
+});
+
+// ── 절 미리보기(spec §14) ─────────────────────────────────
+// 절 순번(section_idx)과 하위질문 번호(subq_idx)는 다르다 — 근거 없는 하위질문은 절이 되지 않는다.
+// 워커는 절이 끝날 때 synth 이벤트로 다듬은 절·근거를 한 번만 보내고, 진행 저장본(DB)에는 남기되
+// 알리는 step 이벤트에는 뺀다(가벼운 step 이벤트).
+const T0 = "2026-09-28T01:00:00.123456+00:00";
+const T1 = "2026-09-28T01:00:40.654321+00:00";
+const HEADINGS = ["효과 측정", "정책 과제"];
+
+function chunk(id: string, score: number): ReportChunk {
+  return { chunk_id: id, text: `대목 ${id}`, page_start: 3, page_end: 3, score };
+}
+
+function evidence(cntsId: string, chunks: ReportChunk[]): ReportEvidence {
+  return { cnts_id: cntsId, meta: { title: `논문 ${cntsId}` }, chunks };
+}
+
+const SEC0: ReportSection = {
+  heading: "효과 측정",
+  intro: "효과가 있었다 [E1]",
+  papers: [{ cnts_id: "C1", summary: "요약", evidence: ["E1"] }],
+  future: [],
+  evidence_chunks: { E1: ["k1"] },
+  chunk_scores: { k1: 0.9 },
+};
+const EV0 = { E1: evidence("C1", [chunk("k1", 0.9)]) };
+const SYNTH_STEP: StepEvent = {
+  kind: "step", seq: 3, step_kind: "synthesize", subq_idx: null, title: "보고서 종합", status: "running",
+};
+const S0_RUNNING: SynthEvent = {
+  kind: "synth", section_idx: 0, total: 2, status: "running",
+  subq_idx: 0, heading: "효과 측정", headings: HEADINGS, started_at: T0,
+};
+const S0_DONE: SynthEvent = {
+  kind: "synth", section_idx: 0, total: 2, status: "done",
+  subq_idx: 0, heading: "효과 측정", headings: HEADINGS, duration_ms: 38000, section: SEC0, evidence: EV0,
+};
+const S1_RUNNING: SynthEvent = {
+  kind: "synth", section_idx: 1, total: 2, status: "running",
+  subq_idx: 2, heading: "정책 과제", headings: HEADINGS, started_at: T1,
+};
+// 절 1 도 근거 E1 을 쓰지만 자기 절에서 매칭된 대목(k4·k1)만 싣는다
+const S1_DONE: SynthEvent = {
+  kind: "synth", section_idx: 1, total: 2, status: "done",
+  subq_idx: 2, heading: "정책 과제", headings: HEADINGS, duration_ms: 52000,
+  section: { ...SEC0, heading: "정책 과제", evidence_chunks: { E1: ["k4", "k1"], E2: ["k9"] } },
+  evidence: { E1: evidence("C1", [chunk("k4", 0.95), chunk("k1", 0.9)]), E2: evidence("C2", [chunk("k9", 0.4)]) },
+};
+// 알리는 step 이벤트·완료로 닫힌 단계의 result — 절 내용(section)·근거(evidence)가 없다
+const LIGHT_RESULT: StepResult = {
+  sections_total: 2,
+  headings: HEADINGS,
+  sections: [
+    { idx: 0, status: "done", subq_idx: 0, heading: "효과 측정", started_at: T0, duration_ms: 38000 },
+    { idx: 1, status: "running", subq_idx: 2, heading: "정책 과제", started_at: T1, duration_ms: null },
+  ],
+};
+// 진행 저장본(snapshot·GET 의 steps[].result) — 끝난 절의 내용과 근거 합집합이 있다
+const SAVED_RESULT: StepResult = {
+  sections_total: 2,
+  headings: HEADINGS,
+  sections: [
+    { idx: 0, status: "done", subq_idx: 0, heading: "효과 측정", started_at: T0, duration_ms: 38000, section: SEC0 },
+    { idx: 1, status: "running", subq_idx: 2, heading: "정책 과제", started_at: T1, duration_ms: null },
+  ],
+  evidence: EV0,
+};
+const SYNTH_ROW = step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "running", result: SAVED_RESULT });
+
+describe("applyResearchEvent — 절 미리보기", () => {
+  it("synth 이벤트로 절 제목·시작 시각·걸린 시간·다듬은 절·근거를 쌓는다", () => {
+    const v = run([SYNTH_STEP, S0_RUNNING, S0_DONE, S1_RUNNING]);
+    expect(v.synth.headings).toEqual(HEADINGS);
+    expect(v.synth.sections).toEqual([
+      // done 이벤트에는 started_at 이 없다 — running 때 받은 시작 시각을 지킨다
+      { idx: 0, status: "done", subqIdx: 0, heading: "효과 측정", startedAt: T0, durationMs: 38000, section: SEC0 },
+      { idx: 1, status: "running", subqIdx: 2, heading: "정책 과제", startedAt: T1, durationMs: null, section: null },
+    ]);
+    expect(v.synth.evidence).toEqual(EV0);
+    expect(synthProgress(v)).toEqual({ current: 2, total: 2 });
+  });
+
+  it("진행 저장본(snapshot·GET)으로 다시 연 화면이 라이브로 본 화면과 같은 절을 받는다", () => {
+    const live = run([SYNTH_STEP, S0_RUNNING, S0_DONE, S1_RUNNING]);
+    const opened = initialResearchView(job({ status: "running", stage: "explored", steps: [PLAN_ROW, SYNTH_ROW] }));
+    const snap = applyResearchEvent(initialResearchView(job({ status: "running", stage: "explored" })), {
+      kind: "snapshot",
+      steps: [PLAN_ROW, SYNTH_ROW],
+    });
+    for (const v of [opened, snap]) {
+      expect(v.synth.sections).toEqual(live.synth.sections);
+      expect(v.synth.headings).toEqual(HEADINGS);
+      expect(v.synth.evidence).toEqual(EV0);
+      expect(v.synth.total).toBe(2);
+    }
+  });
+
+  it("가벼운 step 이벤트(절 내용·근거 없음)가 받은 절 내용을 지우지 않는다", () => {
+    const v = run([SYNTH_STEP, S0_RUNNING, S0_DONE, { ...SYNTH_STEP, result: LIGHT_RESULT }]);
+    expect(v.synth.sections.map((s) => [s.idx, s.status, s.section])).toEqual([[0, "done", SEC0], [1, "running", null]]);
+    expect(v.synth.evidence).toEqual(EV0);
+  });
+
+  it("끊겼다 다시 받은 snapshot 이 뒤처져 있어도 라이브로 받은 절 상태·내용·걸린 시간을 지킨다", () => {
+    const behind: StepResult = {
+      sections_total: 2,
+      headings: HEADINGS,
+      sections: [{ idx: 0, status: "running", subq_idx: 0, heading: "효과 측정", started_at: T0, duration_ms: null }],
+    };
+    const v = applyResearchEvent(run([SYNTH_STEP, S0_RUNNING, S0_DONE]), {
+      kind: "snapshot",
+      steps: [PLAN_ROW, step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "running", result: behind })],
+    });
+    expect(v.synth.sections[0]).toEqual({
+      idx: 0, status: "done", subqIdx: 0, heading: "효과 측정", startedAt: T0, durationMs: 38000, section: SEC0,
+    });
+    expect(v.synth.evidence).toEqual(EV0);
+  });
+
+  it("완료로 닫힌 단계(미리보기 없음)를 GET 으로 다시 맞춰도 받은 절 내용은 남는다", () => {
+    // 완료 이벤트 뒤 보고서를 받는 동안·받기에 실패해 다시 시도하는 동안 초안을 그대로 보여 줄 원천
+    const live = run([SYNTH_STEP, S0_RUNNING, S0_DONE, { kind: "done", status: "completed" }]);
+    const got = job({
+      status: "completed", stage: "synthesized",
+      steps: [PLAN_ROW, step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "done", result: LIGHT_RESULT })],
+    });
+    const v = refreshView(live, got);
+    expect(v.synth.status).toBe("done");
+    expect(v.synth.sections[0]!.section).toEqual(SEC0);
+    expect(v.synth.evidence).toEqual(EV0);
+  });
+
+  it("새 시도(종합 단계 seq 가 바뀜)면 이전 시도의 절·제목·근거를 비운다", () => {
+    const v = run([
+      SYNTH_STEP, S0_RUNNING, S0_DONE,
+      { ...SYNTH_STEP, status: "failed", result: { ...LIGHT_RESULT, error: "취소됨" } },
+      { kind: "status", status: "queued", stage: "explored" },
+      { ...SYNTH_STEP, seq: 4 },
+    ]);
+    expect(v.synth.seq).toBe(4);
+    expect(v.synth.sections).toEqual([]);
+    expect(v.synth.headings).toEqual([]);
+    expect(v.synth.evidence).toEqual({});
+  });
+
+  it("새 필드가 없는 옛 이벤트·옛 결과는 빈 칸으로 두고 진행만 센다", () => {
+    const live = run([
+      SYNTH_STEP,
+      { kind: "synth", section_idx: 0, total: 3, status: "running" },
+      { kind: "synth", section_idx: 0, total: 3, status: "done" },
+    ]);
+    expect(live.synth.sections).toEqual([
+      { idx: 0, status: "done", subqIdx: null, heading: null, startedAt: null, durationMs: null, section: null },
+    ]);
+    expect(live.synth.headings).toEqual([]);
+    expect(live.synth.evidence).toEqual({});
+    expect(synthProgress(live)).toEqual({ current: 1, total: 3 });
+    const opened = initialResearchView(job({
+      status: "running", stage: "explored",
+      steps: [step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "running", result: { sections_total: 3, sections: [{ idx: 0, status: "done" }] } })],
+    }));
+    expect(opened.synth.sections).toEqual(live.synth.sections);
+    expect(opened.synth.headings).toEqual([]);
+    expect(opened.synth.evidence).toEqual({});
+  });
+
+  it("같은 근거가 두 절에 나오면 대목을 chunk_id 로 합쳐 점수순으로 둔다", () => {
+    const v = run([SYNTH_STEP, S0_RUNNING, S0_DONE, S1_RUNNING, S1_DONE]);
+    expect(Object.keys(v.synth.evidence).sort()).toEqual(["E1", "E2"]);
+    expect(v.synth.evidence.E1!.chunks.map((c) => c.chunk_id)).toEqual(["k4", "k1"]);
+    expect(synthProgress(v)).toEqual({ current: 2, total: 2 });
+  });
+
+  it("mergeEvidence 는 원본을 바꾸지 않고 한쪽에만 있는 근거도 싣는다", () => {
+    const a = { E1: evidence("C1", [chunk("k1", 0.9), chunk("k2", 0.5)]) };
+    const b = { E1: evidence("C1", [chunk("k2", 0.5), chunk("k3", 0.7)]), E2: evidence("C2", [chunk("k9", 0.4)]) };
+    const m = mergeEvidence(a, b);
+    expect(m.E1!.chunks.map((c) => c.chunk_id)).toEqual(["k1", "k3", "k2"]);
+    expect(m.E2).toEqual(b.E2);
+    expect(a.E1.chunks.map((c) => c.chunk_id)).toEqual(["k1", "k2"]);
   });
 });
 

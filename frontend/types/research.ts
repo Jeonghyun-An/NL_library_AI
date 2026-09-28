@@ -29,9 +29,17 @@ export interface SearchRoundResult {
   next_query?: string | null;
 }
 
+// idx·status 뒤의 칸은 절 미리보기(spec §14)를 싣는 워커만 남긴다 — 옛 결과에는 없다. 워커는 모르는
+// 칸을 null 로 싣는다(subq_idx·heading 포함) — 화면은 toSectionView 의 ?? 로 받는다.
+// section 은 진행 저장본(DB)에만 있고, 알리는 step 이벤트·완료로 닫힌 단계에서는 빠진다
 export interface SynthSectionResult {
   idx: number;
   status: SynthSectionStatus;
+  subq_idx?: number;
+  heading?: string;
+  started_at?: string | null;
+  duration_ms?: number | null;
+  section?: ReportSection;
 }
 
 export interface StepResult {
@@ -47,6 +55,10 @@ export interface StepResult {
   // 보강 전 잡은 절 수(number), 보강 후는 절별 상태 목록이다
   sections?: number | SynthSectionResult[];
   sections_total?: number;
+  // 종합 단계의 절 제목(절 순서)과 끝난 절들이 인용한 근거 합집합 — 보강 전 잡에는 없고,
+  // evidence 는 알리는 step 이벤트·완료로 닫힌 단계에서도 빠진다
+  headings?: string[];
+  evidence?: Record<string, ReportEvidence>;
   // search 단계가 회차 끝·종료 때 남기는 잡 전체 카운터 — 보강 전 잡에는 없다
   counters?: CountersPayload;
   error?: string;
@@ -239,6 +251,15 @@ export interface SynthEvent {
   section_idx: number;
   total: number;
   status: SynthSectionStatus;
+  // 보강 전 워커는 위 셋만 보낸다. started_at 은 running 에, duration_ms·section·evidence 는
+  // done·failed 에만 온다 — evidence 는 그 절이 인용한 근거·대목만이다
+  subq_idx?: number;
+  heading?: string;
+  headings?: string[];
+  started_at?: string;
+  duration_ms?: number;
+  section?: ReportSection;
+  evidence?: Record<string, ReportEvidence>;
 }
 
 export interface DoneEvent {
@@ -311,6 +332,12 @@ export interface HighlightView {
 export interface SynthSectionView {
   idx: number;
   status: SynthSectionStatus;
+  subqIdx: number | null;
+  heading: string | null;
+  startedAt: string | null;
+  durationMs: number | null;
+  // 최종본과 같은 코드(finalize_section)로 다듬은 절 — 끝난 절에만 있다
+  section: ReportSection | null;
 }
 
 export interface SynthView {
@@ -318,6 +345,10 @@ export interface SynthView {
   status: StepStatus | null;
   total: number;
   sections: SynthSectionView[];
+  // 절 순서의 제목 — 아직 쓰기 시작하지 않은 절도 이름을 보여 줄 수 있다
+  headings: string[];
+  // 끝난 절들이 인용한 근거 합집합 — 초안의 인용칩·내보내기가 읽는다
+  evidence: Record<string, ReportEvidence>;
 }
 
 export interface ResearchView {

@@ -4,6 +4,7 @@ import type {
   CountersView,
   CritiqueEvent,
   HighlightView,
+  ReportEvidence,
   ResearchEvent,
   ResearchJob,
   ResearchReport,
@@ -20,6 +21,8 @@ import type {
   StepResult,
   StepStatus,
   SubqView,
+  SynthEvent,
+  SynthSectionResult,
   SynthSectionStatus,
   SynthSectionView,
   SynthView,
@@ -50,7 +53,7 @@ type OpenedSubq = SubqView & { seq: number };
 export const TERMINAL_STATUSES: readonly ResearchStatus[] = ["completed", "failed", "canceled"];
 
 const EMPTY_COUNTERS: CountersView = { papersReviewed: null, evidenceAdopted: null, rechecks: null };
-const EMPTY_SYNTH: SynthView = { seq: null, status: null, total: 0, sections: [] };
+const EMPTY_SYNTH: SynthView = { seq: null, status: null, total: 0, sections: [], headings: [], evidence: {} };
 // 끊겼다 다시 받은 snapshot 이 라이브로 받은 절 상태를 되돌리지 않게, 더 나아간 쪽을 남긴다
 const SECTION_RANK: Record<SynthSectionStatus, number> = { running: 1, done: 2, failed: 2 };
 const SOURCE_ORDER: readonly RoundSource[] = ["rounds", "trail", "queries"];
@@ -233,15 +236,7 @@ export function applyResearchEvent(view: ResearchView, event: ResearchEvent): Re
     case "counters":
       return { ...view, counters: countersFromPayload(event) };
     case "synth":
-      return {
-        ...view,
-        synth: {
-          ...view.synth,
-          status: view.synth.status ?? "running",
-          total: Math.max(view.synth.total, event.total),
-          sections: mergeSections(view.synth.sections, [{ idx: event.section_idx, status: event.status }]),
-        },
-      };
+      return { ...view, synth: applySynth(view.synth, event) };
     case "done":
       return { ...view, status: "completed", highlight: null };
     case "failed":
@@ -333,6 +328,29 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
   return { ...next, highlight };
 }
 
+// 다듬은 절·근거는 절이 끝날 때 synth 이벤트로 한 번만 온다 — 알리는 step 이벤트는 그것을 뺀
+// 가벼운 result 를 싣는다(spec §14-2). 보강 전 워커의 이벤트는 idx·total·status 뿐이라 나머지
+// 칸은 null 로 남고, 화면은 "보고서 작성 중 2/5" 로 되돌아간다.
+function applySynth(synth: SynthView, event: SynthEvent): SynthView {
+  const entry = toSectionView({
+    idx: event.section_idx,
+    status: event.status,
+    subq_idx: event.subq_idx,
+    heading: event.heading,
+    started_at: event.started_at,
+    duration_ms: event.duration_ms,
+    section: event.section,
+  });
+  return {
+    ...synth,
+    status: synth.status ?? "running",
+    total: Math.max(synth.total, event.total),
+    sections: mergeSections(synth.sections, [entry]),
+    headings: event.headings?.length ? event.headings : synth.headings,
+    evidence: event.evidence ? mergeEvidence(synth.evidence, event.evidence) : synth.evidence,
+  };
+}
+
 function rebuild(view: ResearchView): ResearchView {
   const searchSteps = latestBySubq(view.steps, "search");
   const prior = new Map(view.subqs.map((s) => [s.idx, s]));
@@ -402,20 +420,24 @@ function buildSubq(
   };
 }
 
+// 단계 result 는 진행 저장본(snapshot·GET — 절 내용·근거 포함)과 알리는 step 이벤트(가볍다 —
+// 절 내용·근거 없음) 두 길로 온다. 어느 쪽이든 같은 모양으로 합치고 없는 칸이 받은 칸을 지우지
+// 않게 한다. 재시도로 새 종합 단계가 열리면(seq 가 바뀜) 이전 시도의 절은 버린다.
 function synthFrom(view: ResearchView): SynthView {
   const step = latestOf(view.steps, "synthesize");
   if (!step) return view.synth;
   const r: StepResult = step.result ?? {};
-  const listed: SynthSectionView[] = Array.isArray(r.sections)
-    ? r.sections.map((s) => ({ idx: s.idx, status: s.status }))
-    : [];
+  const listed: SynthSectionView[] = Array.isArray(r.sections) ? r.sections.map(toSectionView) : [];
   const total = r.sections_total ?? (typeof r.sections === "number" ? r.sections : listed.length);
   const sameAttempt = view.synth.seq === null || view.synth.seq === step.seq;
+  const prior = sameAttempt ? view.synth : EMPTY_SYNTH;
   return {
     seq: step.seq,
     status: step.status,
-    total: Math.max(total, sameAttempt ? view.synth.total : 0),
-    sections: mergeSections(listed, sameAttempt ? view.synth.sections : []),
+    total: Math.max(total, prior.total),
+    sections: mergeSections(listed, prior.sections),
+    headings: r.headings?.length ? r.headings : prior.headings,
+    evidence: mergeEvidence(r.evidence ?? {}, prior.evidence),
   };
 }
 
@@ -466,9 +488,56 @@ function mergeSections(base: SynthSectionView[], extra: SynthSectionView[]): Syn
   const out = new Map(base.map((s) => [s.idx, s]));
   for (const s of extra) {
     const cur = out.get(s.idx);
-    if (!cur || SECTION_RANK[s.status] >= SECTION_RANK[cur.status]) out.set(s.idx, s);
+    out.set(s.idx, cur ? mergeSection(cur, s) : s);
   }
   return [...out.values()].sort((a, b) => a.idx - b.idx);
+}
+
+// 상태는 더 나아간 쪽, 나머지 칸은 들어온 값이 있을 때만 바꾼다 — 가벼운 step 이벤트·뒤처진
+// snapshot 이 이미 받은 절 내용·걸린 시간을 지우지 않게
+function mergeSection(cur: SynthSectionView, s: SynthSectionView): SynthSectionView {
+  return {
+    idx: cur.idx,
+    status: SECTION_RANK[s.status] >= SECTION_RANK[cur.status] ? s.status : cur.status,
+    subqIdx: s.subqIdx ?? cur.subqIdx,
+    heading: s.heading ?? cur.heading,
+    startedAt: s.startedAt ?? cur.startedAt,
+    durationMs: s.durationMs ?? cur.durationMs,
+    section: s.section ?? cur.section,
+  };
+}
+
+function toSectionView(s: SynthSectionResult): SynthSectionView {
+  return {
+    idx: s.idx,
+    status: s.status,
+    subqIdx: s.subq_idx ?? null,
+    heading: s.heading ?? null,
+    startedAt: s.started_at ?? null,
+    durationMs: s.duration_ms ?? null,
+    section: s.section ?? null,
+  };
+}
+
+// 같은 근거가 여러 절에 나오면 절마다 자기 절이 쓴 대목만 온다(section_evidence) — 대목을
+// chunk_id 로 합집합하고, 보고서의 evidence(_serialize_evidence)처럼 점수순으로 둔다
+export function mergeEvidence(
+  a: Record<string, ReportEvidence>,
+  b: Record<string, ReportEvidence>,
+): Record<string, ReportEvidence> {
+  const out: Record<string, ReportEvidence> = { ...a };
+  for (const [eid, ev] of Object.entries(b)) {
+    const cur = out[eid];
+    if (!cur) {
+      out[eid] = ev;
+      continue;
+    }
+    const known = new Set(cur.chunks.map((c) => c.chunk_id));
+    const chunks = [...cur.chunks, ...ev.chunks.filter((c) => !known.has(c.chunk_id))]
+      .sort((x, y) => y.score - x.score);
+    out[eid] = { ...cur, chunks };
+  }
+  return out;
 }
 
 function updateSubq(view: ResearchView, idx: number, fn: (sq: SubqView) => SubqView): ResearchView {
