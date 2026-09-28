@@ -40,9 +40,10 @@ export interface SynthEta {
 export function draftSlots(view: ResearchView): DraftSlot[] {
   const byIdx = new Map(view.synth.sections.map((s) => [s.idx, s]));
   const stopped = isStopped(view);
+  const count = slotCount(view);
   const slots: DraftSlot[] = [];
   let placed = 0;
-  for (let idx = 0; idx < slotCount(view); idx++) {
+  for (let idx = 0; idx < count; idx++) {
     const s = byIdx.get(idx);
     const finished = s?.status === "done" || s?.status === "failed";
     slots.push({

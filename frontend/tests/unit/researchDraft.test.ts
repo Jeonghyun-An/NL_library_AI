@@ -106,10 +106,15 @@ describe("draftSlots", () => {
     expect(draftSlots(v).map((s) => s.sectionIndex)).toEqual([null, 0]);
   });
 
-  it("실패·취소로 멈춘 초안에서는 작성 중이던 절을 대기로 본다", () => {
+  // 멈춘 초안의 세 조건을 하나씩 — 하나만 빠져도 그 경우의 경과 시계가 멈추지 않는다
+  it.each<[string, Partial<SynthView>, Partial<ResearchView>]>([
+    ["잡이 끝났다(취소 직후 — 워커가 쓰던 절을 마저 쓰느라 종합 단계는 아직 열려 있다)", { status: "running" }, { status: "canceled" }],
+    ["종합 단계가 failed 로 닫혔다(잡은 아직 running — 실패로 닫히는 중)", { status: "failed" }, {}],
+    ["종합 단계가 done 으로 닫혔다(잡은 아직 running — 완료로 닫히는 중)", { status: "done" }, {}],
+  ])("멈춘 초안에서는 작성 중이던 절을 대기로 본다 — %s", (_, synth, over) => {
     const v = viewWith(
-      { status: "failed", total: 2, sections: [sec(0, "done", { section: section("효과 측정") }), sec(1, "running", { startedAt: ago(5000) })] },
-      { status: "canceled" },
+      { ...synth, total: 2, sections: [sec(0, "done", { section: section("효과 측정") }), sec(1, "running", { startedAt: ago(5000) })] },
+      over,
     );
     expect(draftSlots(v).map((s) => s.status)).toEqual(["done", "waiting"]);
     expect(synthEta(v, NOW).runningIdx).toBeNull();
