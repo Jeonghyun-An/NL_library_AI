@@ -1423,8 +1423,11 @@ class TestSynthPreview:
 
         assert [c["chunk_id"] for c in before["evidence"]["E0"]["chunks"]] == ["c0"]
 
-    def _run(self, monkeypatch, rt, *, stop_with: Exception | None = None):
-        """절 0 을 끝내고 절 1 을 쓰기 시작한다. stop_with 가 없으면 절 1 도 끝내고 완료한다."""
+    def _run(self, monkeypatch, rt, *, stop_with: Exception | None = None,
+             cancel_late: bool = False):
+        """절 0 을 끝내고 절 1 을 쓰기 시작한다. stop_with 가 없으면 절 1 도 끝내고 완료한다.
+        cancel_late 면 절 1 의 LLM 을 기다리는 동안 취소가 들어온다 — synthesize 는 LLM 을
+        부르기 직전에만 멈춤을 보므로 보고서를 돌려준 뒤 완료 전이에서야 걸린다."""
         job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
                        status="queued")
         ref = {}
@@ -1438,6 +1441,8 @@ class TestSynthPreview:
                 if isinstance(stop_with, rt.SynthesisCanceled):
                     job.status = "canceled"
                 raise stop_with
+            if cancel_late:
+                job.status = "canceled"
             await h.on_section(1, 2, "done", _synth_info(1, done=True))
             return {"sections": [{}, {}]}
 
@@ -1500,6 +1505,23 @@ class TestSynthPreview:
         assert result["evidence"] == _synth_info(0, done=True)["evidence"]
         _, _, announced = h.announced[-1]
         assert announced["error"] == "취소됨" and "evidence" not in announced
+
+    def test_cancel_during_the_last_section_keeps_the_draft(self, monkeypatch):
+        # 완료 전이가 취소에 지면 보고서는 버려진다 — 미리보기까지 지우면 초안도 보고서도 없다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt, cancel_late=True)
+
+        assert h.session.job.status == "canceled" and h.session.job.report is None
+        assert _terminals(h) == [("canceled", None)]
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed" and result["error"] == "취소됨"
+        assert [s["section"] for s in result["sections"]] == [
+            _synth_info(0, done=True)["section"], _synth_info(1, done=True)["section"]]
+        assert set(result["evidence"]) == {"E0", "E1"}
+        _, announced_status, announced = h.announced[-1]
+        assert announced_status == "failed" and announced["error"] == "취소됨"
+        assert "evidence" not in announced
+        assert all("section" not in s for s in announced["sections"])
 
     def test_six_sections_of_thirty_papers_stay_at_report_scale(self, monkeypatch):
         """대목 원문이 대부분이라 미리보기는 최종 보고서와 같은 규모여야 하고, 절마다 알리는

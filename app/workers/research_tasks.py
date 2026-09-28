@@ -643,6 +643,10 @@ async def _run_deep_research(job_id: str) -> dict:
             if not await _transition(db, jid, expect=("running",), status="completed",
                                      report=report, stage=_stage("synthesized"),
                                      finished_at=_now()):
+                # 대개 마지막 절을 쓰는 도중에 들어온 취소다(synthesize 는 LLM 을 부르기 직전에만
+                # 멈춤을 본다). 보고서가 버려지므로 지운 미리보기를 되살려 멈춘 초안으로 닫는다.
+                await _finish(db, step, "failed", progress.result(error="취소됨"),
+                              event_result=progress.result(error="취소됨", previews=False))
                 return await _stopped(db, jid)
             await publish_terminal(jid, "completed")
             return {"job_id": str(jid), "status": "completed"}
