@@ -76,7 +76,7 @@ describe("toDocxBuffer", () => {
       ...doc,
       blocks: [
         { type: "title", text: "국내\u0001 AI 규제" },
-        { type: "meta", text: "생성 일시\u000B 2026년" },
+        { type: "meta", text: "생성 일시\u000B 2026\uFFFE년\uFFFF" },
         { type: "heading", level: 1, text: "1. 계수\u001F 추정" },
         { type: "para", runs: [{ text: "분수 \u000Crac 와 \u0008eta 계수 " }, { cite: 1 }] },
         { type: "bullets", items: [[{ text: "과제\u0000 하나" }]] },
@@ -84,7 +84,7 @@ describe("toDocxBuffer", () => {
       references: [{ n: 1, eid: "E1", text: "김철수 (2019).\u000E 추정." }],
     };
     const xml = await read(await unzip(dirty), "word/document.xml");
-    expect(xml).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    expect(xml).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/);
     expect(runTexts(paragraphWith(xml, "분수"))).toEqual(["분수 rac 와 eta 계수 ", "[1]"]);
     for (const text of ["국내 AI 규제", "생성 일시 2026년", "1. 계수 추정", "과제 하나", "[1] 김철수 (2019). 추정."]) {
       expect(xml).toContain(text);

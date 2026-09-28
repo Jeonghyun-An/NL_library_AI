@@ -172,7 +172,7 @@ describe("buildReportDocument — 구성", () => {
     const doc = buildReportDocument(
       input({
         question: "국내\u0001 AI 규제",
-        intro: "서론\u000B 문장",
+        intro: "서론\u000B 문\uFFFE장\uFFFF",
         sections: [
           section({
             heading: "계수\u0008 추정",
@@ -188,7 +188,7 @@ describe("buildReportDocument — 구성", () => {
       NOW,
     );
     const all = [...lines(doc), ...doc.references.map((r) => r.text)];
-    expect(all.join("\n")).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    expect(all.join("\n")).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/);
     expect(all).toEqual(
       expect.arrayContaining([
         "title: 국내 AI 규제",
