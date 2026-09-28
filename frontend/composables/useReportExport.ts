@@ -22,7 +22,11 @@ export function useReportExport() {
     if (exporting.value) return;
     exporting.value = true;
     const previousTitle = document.title;
+    let restored = false;
     const restore = () => {
+      if (restored) return;
+      restored = true;
+      window.removeEventListener("afterprint", restore);
       document.title = previousTitle;
       printDoc.value = null;
       exporting.value = false;
@@ -35,10 +39,11 @@ export function useReportExport() {
       document.title = doc.fileName.replace(/\.docx$/i, "");
       window.addEventListener("afterprint", restore, { once: true });
       window.print();
-    } catch (e) {
-      window.removeEventListener("afterprint", restore);
+    } finally {
+      // print() 는 인쇄 창이 닫힐 때까지 막혀 있다가 돌아온다(afterprint 도 그 전에 온다).
+      // 정책으로 인쇄를 막았거나 인앱 브라우저처럼 창 없이 곧바로 돌아오는 곳은 afterprint 를
+      // 쏘지 않으니, 돌아온 뒤에도 되돌려 버튼이 '만드는 중…'에 멈추지 않게 한다
       restore();
-      throw e;
     }
   }
 
