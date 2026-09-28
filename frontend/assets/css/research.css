@@ -1145,9 +1145,16 @@ button.rs-synth__item:focus-visible,
   display: none;
 }
 @media print {
-  @page {
+  /* 이름 없는 @page 는 선택자로 좁힐 수 없어 모든 페이지의 인쇄에 걸린다(이 파일은 모든 페이지에 실린다).
+     그래서 이름 붙은 페이지로 두고 인쇄 전용 문서와 딥리서치 화면에만 준다 — 다른 페이지는 브라우저 기본값
+     (용지·여백·가로/세로 선택)을 그대로 쓰고, page 속성을 모르는 브라우저는 기본 여백으로 찍힌다 */
+  @page rs-report {
     size: A4;
     margin: 18mm 16mm;
+  }
+  .rs-print,
+  .skx-app:has(.rs-page) {
+    page: rs-report;
   }
   /* [PDF로 저장] 중에는 인쇄 전용 문서만 찍는다 — body 의 다른 자식(앱·토스트·원문 뷰어)은 숨긴다 */
   body:has(> .rs-print) > :not(.rs-print) {
