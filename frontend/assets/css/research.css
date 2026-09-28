@@ -824,12 +824,18 @@
 button.rs-synth__item {
   cursor: pointer;
 }
-button.rs-synth__item:hover,
 button.rs-synth__item:focus-visible,
 .rs-synth__item.is-linked {
   background: var(--skx-border-c1);
   border-color: var(--skx-border-c2);
   outline: none;
+}
+/* 터치 화면의 :hover 는 탭한 뒤에도 다음 탭까지 남는다 — 포인터를 올려 둘 수 있는 기기에서만 쓴다 */
+@media (hover: hover) {
+  button.rs-synth__item:hover {
+    background: var(--skx-border-c1);
+    border-color: var(--skx-border-c2);
+  }
 }
 .rs-synth__icon {
   display: inline-flex;

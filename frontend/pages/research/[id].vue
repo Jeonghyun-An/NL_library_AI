@@ -65,7 +65,7 @@
                 :eta="eta"
                 :highlight-idx="linkedIdx"
                 @jump="jumpToSection"
-                @hover="hoverIdx = $event"
+                @hover="hover = nextSlotHover(hover, $event)"
               >
                 <template #actions>
                   <ReportDownloadMenu label="초안 저장" :disabled="!draft" :busy="exporting" @select="saveDraft" />
@@ -191,6 +191,7 @@ import {
   writeLayoutPref,
   type ResearchLayout,
 } from "~/utils/researchLayout";
+import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 
 const route = useRoute();
 const { view, notFound, loadError, actionError, busy, syncFailed, syncing, load, resync, approve, retry, cancel } =
@@ -255,9 +256,9 @@ const draftMode = computed(() =>
 
 // 현황 카드 항목에 포인터·초점을 올린 절, 눌러서 옮겨 간 절을 초안에서 함께 강조한다
 const FLASH_MS = 1600;
-const hoverIdx = ref<number | null>(null);
+const hover = ref<SlotHover>(NO_SLOT_HOVER);
 const flashIdx = ref<number | null>(null);
-const linkedIdx = computed(() => hoverIdx.value ?? flashIdx.value);
+const linkedIdx = computed(() => linkedSlot(flashIdx.value, hover.value));
 let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 사용자가 누를 때만 옮긴다 — 절이 완성될 때마다 끌고 가면 초안을 읽던 자리를 잃는다
@@ -266,7 +267,8 @@ function jumpToSection(idx: number): void {
   if (!el) return;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  // 키보드로 누른 사람이 그 절부터 이어 읽게 초점도 옮긴다(스크롤은 위에서 했다)
+  // 키보드로 누른 사람이 그 절부터 이어 읽게 초점도 옮긴다(스크롤은 위에서 했다). 이때 카드 항목의
+  // blur 는 초점 상태만 푼다 — 포인터가 항목에 남아 있으면 flash 가 끝난 뒤에도 그 강조가 이어진다
   el.focus({ preventScroll: true });
   flashIdx.value = idx;
   if (flashTimer) clearTimeout(flashTimer);
@@ -275,9 +277,9 @@ function jumpToSection(idx: number): void {
   }, FLASH_MS);
 }
 
-// 종합이 끝나 카드가 사라지면 mouseleave 가 오지 않는다 — 올려 둔 강조가 초안에 남지 않게 푼다
+// 종합이 끝나 카드가 사라지면 pointerleave·blur 가 오지 않는다 — 올려 둔 강조가 초안에 남지 않게 푼다
 watch(phase, (p) => {
-  if (p !== "synthesizing") hoverIdx.value = null;
+  if (p !== "synthesizing") hover.value = NO_SLOT_HOVER;
 });
 
 onBeforeUnmount(() => {

@@ -52,6 +52,42 @@ export function barFraction(eta: SynthEta): number {
   return Math.min(1, (done + part) / eta.total);
 }
 
+// 현황 카드 항목에 올라가 있는 포인터·초점. 한 칸을 같이 쓰면 마우스가 떠날 때 키보드 초점의 강조까지 풀리고,
+// 누른 뒤 초점이 초안으로 옮겨 가며 난 blur 가 포인터가 아직 올라가 있는 항목의 강조를 지운다
+export interface SlotHover {
+  pointer: number | null;
+  focus: number | null;
+}
+
+export type SlotHoverEvent =
+  | { kind: "pointerenter"; idx: number; pointerType: string }
+  | { kind: "pointerleave"; idx: number }
+  | { kind: "focus"; idx: number }
+  | { kind: "blur"; idx: number };
+
+export const NO_SLOT_HOVER: SlotHover = { pointer: null, focus: null };
+
+export function nextSlotHover(s: SlotHover, e: SlotHoverEvent): SlotHover {
+  switch (e.kind) {
+    case "pointerenter":
+      // 터치는 올려 둔 상태가 없다 — iOS Safari 는 탭한 항목에 떠날 신호를 다른 항목을 탭할 때까지 보내지 않아
+      // 강조가 남는다. 탭은 곧바로 초안으로 옮겨 가 그 절을 잠깐 강조하므로 따로 강조할 까닭도 없다
+      return e.pointerType === "touch" ? s : { ...s, pointer: e.idx };
+    case "pointerleave":
+      return s.pointer === e.idx ? { ...s, pointer: null } : s;
+    case "focus":
+      return { ...s, focus: e.idx };
+    case "blur":
+      return s.focus === e.idx ? { ...s, focus: null } : s;
+  }
+}
+
+// 초안에서 함께 강조할 절. 눌러 옮긴 절(flash)이 잠깐 가장 앞선다 — 옮기며 화면이 움직여 포인터 밑에
+// 우연히 온 다른 항목이 옮겨 간 자리를 가리지 않게. 그다음은 포인터, 초점 순이다
+export function linkedSlot(flash: number | null, hover: SlotHover): number | null {
+  return flash ?? hover.pointer ?? hover.focus;
+}
+
 // 직전 목록과 비교해 이번에 끝난 절. 처음 그릴 때(prev 가 null)는 없다 — 새로고침한 화면에서
 // 이미 끝난 절이 한꺼번에 튀어 오르거나 스크린리더가 몰아 읽지 않게
 export function newlyFinished(prev: ReadonlyMap<number, DraftSlotStatus> | null, slots: readonly DraftSlot[]): number[] {

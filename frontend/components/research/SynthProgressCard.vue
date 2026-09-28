@@ -33,10 +33,10 @@
           :class="[`is-${slot.status}`, { 'is-linked': highlightIdx === slot.idx }]"
           :title="canJump ? '초안의 이 절로 이동' : undefined"
           @click="jump(slot.idx)"
-          @mouseenter="hover(slot.idx)"
-          @mouseleave="hover(null)"
-          @focus="hover(slot.idx)"
-          @blur="hover(null)"
+          @pointerenter="hover({ kind: 'pointerenter', idx: slot.idx, pointerType: $event.pointerType })"
+          @pointerleave="hover({ kind: 'pointerleave', idx: slot.idx })"
+          @focus="hover({ kind: 'focus', idx: slot.idx })"
+          @blur="hover({ kind: 'blur', idx: slot.idx })"
         >
           <span class="rs-synth__icon" :class="{ 'is-fresh': fresh.includes(slot.idx) }" aria-hidden="true">{{ ICONS[slot.status] }}</span>
           <span class="rs-synth__name">{{ slot.idx + 1 }}. {{ slot.heading }}</span>
@@ -53,12 +53,19 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import type { DraftSlot, DraftSlotStatus, SynthEta } from "~/utils/researchDraft";
-import { barFraction, finishedAnnouncement, newlyFinished, slotStateLabel, synthSummary } from "~/utils/synthCard";
+import {
+  barFraction,
+  finishedAnnouncement,
+  newlyFinished,
+  slotStateLabel,
+  synthSummary,
+  type SlotHoverEvent,
+} from "~/utils/synthCard";
 
 const props = withDefaults(defineProps<{ slots: DraftSlot[]; eta: SynthEta; highlightIdx?: number | null }>(), {
   highlightIdx: null,
 });
-const emit = defineEmits<{ jump: [idx: number]; hover: [idx: number | null] }>();
+const emit = defineEmits<{ jump: [idx: number]; hover: [event: SlotHoverEvent] }>();
 
 const ICONS: Record<DraftSlotStatus, string> = { done: "✓", running: "", waiting: "·", failed: "✕" };
 // 체크 표시가 튀어 오르는 시간(research.css 의 rs-pop 과 맞춘다)
@@ -93,8 +100,8 @@ function jump(idx: number): void {
   if (canJump.value) emit("jump", idx);
 }
 
-function hover(idx: number | null): void {
-  if (canJump.value) emit("hover", idx);
+function hover(event: SlotHoverEvent): void {
+  if (canJump.value) emit("hover", event);
 }
 
 onBeforeUnmount(() => {

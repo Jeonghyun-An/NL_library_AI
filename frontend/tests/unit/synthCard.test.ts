@@ -2,7 +2,18 @@
 import { describe, expect, it } from "vitest";
 import type { DraftSlot, DraftSlotStatus, SynthEta } from "~/utils/researchDraft";
 import { formatClock, formatRemaining } from "~/utils/researchDraft";
-import { barFraction, finishedAnnouncement, newlyFinished, slotStateLabel, synthSummary } from "~/utils/synthCard";
+import {
+  NO_SLOT_HOVER,
+  barFraction,
+  finishedAnnouncement,
+  linkedSlot,
+  newlyFinished,
+  nextSlotHover,
+  slotStateLabel,
+  synthSummary,
+  type SlotHover,
+  type SlotHoverEvent,
+} from "~/utils/synthCard";
 
 function eta(over: Partial<SynthEta> = {}): SynthEta {
   return { done: 0, total: 5, runningIdx: null, runningElapsedMs: null, remainingMs: null, ...over };
@@ -112,5 +123,61 @@ describe("finishedAnnouncement", () => {
     const slots = [slot({ idx: 0, heading: "가", status: "done" }), slot({ idx: 1, heading: "나", status: "failed" })];
     expect(finishedAnnouncement(slots, [0, 1])).toBe("절 1 작성 완료: 가. 절 2 서술 받지 못함, 논문 목록만 싣습니다: 나");
     expect(finishedAnnouncement(slots, [])).toBe("");
+  });
+});
+
+describe("nextSlotHover · linkedSlot", () => {
+  function run(events: SlotHoverEvent[]): SlotHover {
+    return events.reduce(nextSlotHover, NO_SLOT_HOVER);
+  }
+
+  it("마우스·펜은 올린 항목을 강조하고 떠나면 푼다", () => {
+    expect(linkedSlot(null, run([{ kind: "pointerenter", idx: 2, pointerType: "mouse" }]))).toBe(2);
+    expect(linkedSlot(null, run([{ kind: "pointerenter", idx: 1, pointerType: "pen" }]))).toBe(1);
+    expect(linkedSlot(null, run([
+      { kind: "pointerenter", idx: 2, pointerType: "mouse" },
+      { kind: "pointerleave", idx: 2 },
+    ]))).toBeNull();
+  });
+
+  it("터치는 강조하지 않는다 — 탭한 뒤 떠날 신호가 오지 않아도(iOS) 옮겨 간 절의 잠깐 강조만 남았다 풀린다", () => {
+    const tapped = run([{ kind: "pointerenter", idx: 2, pointerType: "touch" }]);
+    expect(tapped).toEqual(NO_SLOT_HOVER);
+    expect(linkedSlot(2, tapped)).toBe(2);
+    expect(linkedSlot(null, tapped)).toBeNull();
+  });
+
+  it("포인터와 초점은 따로 든다 — 마우스가 다른 항목에서 떠나도 키보드 초점의 강조는 남는다", () => {
+    const s = run([
+      { kind: "focus", idx: 2 },
+      { kind: "pointerenter", idx: 0, pointerType: "mouse" },
+      { kind: "pointerleave", idx: 0 },
+    ]);
+    expect(linkedSlot(null, s)).toBe(2);
+  });
+
+  it("누른 뒤 초점이 초안으로 옮겨 가며 난 blur 는 포인터가 올라가 있는 항목의 강조를 지우지 않는다", () => {
+    const s = run([
+      { kind: "pointerenter", idx: 2, pointerType: "mouse" },
+      { kind: "focus", idx: 2 },
+      { kind: "blur", idx: 2 },
+    ]);
+    expect(s).toEqual({ pointer: 2, focus: null });
+    expect(linkedSlot(null, s)).toBe(2);
+  });
+
+  it("앞 항목의 늦은 떠남·blur 가 새로 올린 항목을 지우지 않는다", () => {
+    expect(run([
+      { kind: "pointerenter", idx: 3, pointerType: "mouse" },
+      { kind: "pointerleave", idx: 1 },
+      { kind: "focus", idx: 3 },
+      { kind: "blur", idx: 1 },
+    ])).toEqual({ pointer: 3, focus: 3 });
+  });
+
+  it("눌러 옮긴 절이 잠깐 가장 앞선다 — 옮기며 화면이 움직여 포인터 밑에 온 다른 항목이 가리지 않게", () => {
+    const s = run([{ kind: "focus", idx: 1 }, { kind: "pointerenter", idx: 4, pointerType: "mouse" }]);
+    expect(linkedSlot(2, s)).toBe(2);
+    expect(linkedSlot(null, s)).toBe(4);
   });
 });
