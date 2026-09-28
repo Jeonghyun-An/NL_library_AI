@@ -639,16 +639,20 @@ async def _run_deep_research(job_id: str) -> dict:
                               event_result=progress.result(error=error, previews=False))
                 return await _end_failed(db, jid, str(e))
 
-            # 완료로 닫을 때는 미리보기를 지운다 — 최종 보고서(research_jobs.report)와 같은 내용이다
-            await _finish(db, step, "done", progress.result(previews=False))
+            # 보고서를 먼저 저장하고 단계를 닫는다. 단계를 먼저 done(미리보기 없음)으로 닫으면
+            # 전이가 질 때 초안을 되살리려 한 번 더 닫아야 하고, 그 사이 데드라인에 걸리면 보고서도
+            # 초안도 없다. 이 순서에서는 전이와 단계 닫기 사이 잠깐 잡은 completed·단계는 running
+            # 으로 보인다 — 그 틈에 끊겨도 보고서는 저장됐고 _close_orphan_steps 가 단계를 닫는다.
             if not await _transition(db, jid, expect=("running",), status="completed",
                                      report=report, stage=_stage("synthesized"),
                                      finished_at=_now()):
                 # 대개 마지막 절을 쓰는 도중에 들어온 취소다(synthesize 는 LLM 을 부르기 직전에만
-                # 멈춤을 본다). 보고서가 버려지므로 지운 미리보기를 되살려 멈춘 초안으로 닫는다.
+                # 멈춤을 본다). 보고서가 버려지므로 미리보기를 남겨 멈춘 초안으로 닫는다.
                 await _finish(db, step, "failed", progress.result(error="취소됨"),
                               event_result=progress.result(error="취소됨", previews=False))
                 return await _stopped(db, jid)
+            # 완료로 닫을 때는 미리보기를 지운다 — 최종 보고서(research_jobs.report)와 같은 내용이다
+            await _finish(db, step, "done", progress.result(previews=False))
             await publish_terminal(jid, "completed")
             return {"job_id": str(jid), "status": "completed"}
 

@@ -1424,10 +1424,11 @@ class TestSynthPreview:
         assert [c["chunk_id"] for c in before["evidence"]["E0"]["chunks"]] == ["c0"]
 
     def _run(self, monkeypatch, rt, *, stop_with: Exception | None = None,
-             cancel_late: bool = False):
+             cancel_late: bool = False, patch=None):
         """절 0 을 끝내고 절 1 을 쓰기 시작한다. stop_with 가 없으면 절 1 도 끝내고 완료한다.
         cancel_late 면 절 1 의 LLM 을 기다리는 동안 취소가 들어온다 — synthesize 는 LLM 을
-        부르기 직전에만 멈춤을 보므로 보고서를 돌려준 뒤 완료 전이에서야 걸린다."""
+        부르기 직전에만 멈춤을 보므로 보고서를 돌려준 뒤 완료 전이에서야 걸린다.
+        patch(h) 는 대역을 세운 뒤, 잡을 돌리기 전에 부른다 — 대역 위에 기록을 더 끼울 때 쓴다."""
         job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
                        status="queued")
         ref = {}
@@ -1448,6 +1449,8 @@ class TestSynthPreview:
 
         ref["h"] = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
                                    synthesize=_synth)
+        if patch is not None:
+            patch(ref["h"])
         asyncio.run(rt._run_deep_research(str(job.id)))
         return ref["h"]
 
@@ -1522,6 +1525,31 @@ class TestSynthPreview:
         assert announced_status == "failed" and announced["error"] == "취소됨"
         assert "evidence" not in announced
         assert all("section" not in s for s in announced["sections"])
+
+    def test_lost_completion_closes_the_step_once(self, monkeypatch):
+        # done 으로 먼저 닫았다가 failed 로 다시 닫으면 화면에 done 이 한 번 스친다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt, cancel_late=True)
+
+        assert [f[1] for f in h.finished] == ["failed"]
+
+    def test_step_is_closed_done_after_the_report_is_saved(self, monkeypatch):
+        # 전이보다 먼저 미리보기를 지운 done 으로 닫으면, 그 틈에 데드라인에 걸린 잡은 보고서도 초안도 없다
+        rt = _load_tasks(monkeypatch)
+        seen = []
+
+        def _patch(h):
+            closing = rt._finish
+
+            async def _finish(db, step, status, result=None, event_result=None):
+                seen.append((status, h.session.job.status, h.session.job.report))
+                await closing(db, step, status, result, event_result)
+
+            monkeypatch.setattr(rt, "_finish", _finish)
+
+        self._run(monkeypatch, rt, patch=_patch)
+
+        assert seen == [("done", "completed", {"sections": [{}, {}]})]
 
     def test_six_sections_of_thirty_papers_stay_at_report_scale(self, monkeypatch):
         """대목 원문이 대부분이라 미리보기는 최종 보고서와 같은 규모여야 하고, 절마다 알리는
