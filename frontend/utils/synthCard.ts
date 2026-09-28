@@ -13,9 +13,8 @@ export function synthSummary(eta: SynthEta): string {
   if (eta.total <= 0) return "보고서 작성을 준비하는 중";
   const head = `${Math.min(eta.done, eta.total)}/${eta.total} 절 완료`;
   if (eta.done >= eta.total) return `${head} · 보고서를 마무리하는 중`;
-  // 절마다 걸린 시간을 주지 않는 옛 워커면 남은 시간을 셀 수 없다 — 모른다고 추측하지 않는다
-  if (eta.done > 0 && eta.remainingMs === null) return head;
-  return `${head} · ${formatRemaining(eta.remainingMs, eta.done)}`;
+  const remaining = formatRemaining(eta.remainingMs, eta.done);
+  return remaining ? `${head} · ${remaining}` : head;
 }
 
 export function slotStateLabel(slot: DraftSlot, eta: SynthEta): string {

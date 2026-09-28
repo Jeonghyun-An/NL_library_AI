@@ -115,10 +115,12 @@ export function formatClock(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-export function formatRemaining(ms: number | null, done: number): string {
+// 요약 줄의 남은 시간 칸. null 이면 칸을 비운다
+export function formatRemaining(ms: number | null, done: number): string | null {
   if (done <= 0) return "첫 절을 쓰는 중";
-  // 끝난 절은 있는데 걸린 시간을 모른다(옛 워커의 결과) — "첫 절을 쓰는 중"이라 적으면 틀린 말이 된다
-  if (ms === null || !Number.isFinite(ms)) return "남은 시간 계산 중";
+  // 끝난 절은 있는데 남은 시간이 없다 = 절마다 걸린 시간을 주지 않는 옛 워커다. 절이 더 끝나도 끝내
+  // 나오지 않으므로 "계산 중"이라 적으면 끝까지 틀린 말이 된다
+  if (ms === null) return null;
   const sec = Math.round(Math.max(0, ms) / 1000);
   if (sec < 10) return "곧 끝납니다";
   if (sec < 60) return `약 ${sec}초 남음`;

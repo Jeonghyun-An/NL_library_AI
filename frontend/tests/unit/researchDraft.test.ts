@@ -252,13 +252,13 @@ describe("synthEta", () => {
     expect(formatRemaining(eta.remainingMs, eta.done)).toBe("곧 끝납니다");
   });
 
-  it("걸린 시간이 없는 끝난 절(옛 워커)만 있으면 남은 시간을 모른다", () => {
+  it("걸린 시간이 없는 끝난 절(옛 워커)만 있으면 남은 시간을 모른다 — 남은 시간 칸을 쓰지 않는다", () => {
     const eta = synthEta(viewWith({
       total: 2,
       sections: [sec(0, "done", { section: section("가") }), sec(1, "running", { startedAt: ago(3000) })],
     }), NOW);
     expect(eta.remainingMs).toBeNull();
-    expect(formatRemaining(eta.remainingMs, eta.done)).toBe("남은 시간 계산 중");
+    expect(formatRemaining(eta.remainingMs, eta.done)).toBeNull();
   });
 });
 
@@ -282,6 +282,9 @@ describe("formatRemaining", () => {
     expect(formatRemaining(59_700, 1)).toBe("약 1분 남음");
     expect(formatRemaining(90_000, 2)).toBe("약 1분 30초 남음");
     expect(formatRemaining(124_000, 2)).toBe("약 2분 남음");
-    expect(formatRemaining(null, 2)).toBe("남은 시간 계산 중");
+  });
+
+  it("끝난 절은 있는데 남은 시간을 모르면(옛 워커) 칸을 비운다", () => {
+    expect(formatRemaining(null, 2)).toBeNull();
   });
 });
