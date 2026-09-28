@@ -44,14 +44,16 @@ _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
 
 
-SectionFn = Callable[[int, int, str], Awaitable[None]]
+# on_section(idx, total, status, info) — info 의 모양은 synthesize 독스트링에 있다. 인자 수를
+# 타입에 못박지 않는 이유: 워커의 콜백은 info 를 선택 인자로 받는다(info 없는 호출과 호환).
+SectionFn = Callable[..., Awaitable[None]]
 
 
 class SynthesisCanceled(Exception):
     """취소가 확인돼 종합을 멈췄다 — 실패가 아니라 사용자의 결정이다."""
 
 
-async def _no_progress(idx: int, total: int, status: str) -> None:
+async def _no_progress(idx: int, total: int, status: str, info: dict | None = None) -> None:
     return None
 
 
@@ -467,20 +469,30 @@ async def synthesize(
     should_stop 은 LLM 을 부르기 직전마다 확인하고, True 면 SynthesisCanceled 를
     던진다 — 취소 뒤에도 남은 절을 다 부르면 GPU 를 비운다는 취소의 약속이 거짓이 된다.
 
-    on_section(idx, total, status) 는 절을 쓰기 시작할 때 "running", 끝낼 때 "done"
+    on_section(idx, total, status, info) 는 절을 쓰기 시작할 때 "running", 끝낼 때 "done"
     또는 "failed" 로 부른다. idx 는 절 순번(0부터)이지 하위질문 번호가 아니다 — 근거
     없는 하위질문은 절이 되지 않아 둘이 어긋나고, 화면의 "2/3" 은 절 순번으로 센다.
+    info 는 {subq_idx, heading, headings(쓸 절 전부의 소제목, 절 순서)} 이고, 끝낼 때는
+    finalize_section 으로 다듬은 절(section)과 그 절이 인용한 근거(evidence)를 더한다 —
+    화면이 다 쓴 절부터 초안으로 보여 준다. 서술을 받지 못한 절(failed)도 최종본처럼
+    논문 목록만 있는 절로 싣는다.
     """
     on_section = on_section or _no_progress
     targets = [sq for sq in state.subquestions if sq.evidence_ids]
+    # 첫 절을 쓰는 동안에도 화면이 남은 절을 "작성 대기"로 그릴 수 있게 소제목을 전부 싣는다
+    headings = [sq.text for sq in targets]
     sections = []
     for i, sq in enumerate(targets):
-        await on_section(i, len(targets), "running")
+        info = {"subq_idx": sq.idx, "heading": sq.text, "headings": headings}
+        await on_section(i, len(targets), "running", info)
         section = await _synthesize_section(state, sq, should_stop=should_stop)
         sections.append(section)
         log.info("[research] 절 종합 job=%s idx=%s 논문=%d ok=%s",
                  state.job_id, sq.idx, len(section["papers"]), not section["failed"])
-        await on_section(i, len(targets), "failed" if section["failed"] else "done")
+        preview, _ = finalize_section(state, section)
+        await on_section(i, len(targets), "failed" if section["failed"] else "done",
+                         {**info, "section": preview,
+                          "evidence": section_evidence(state, preview)})
 
     if targets and all(s["failed"] for s in sections):
         raise ValueError("보고서의 어느 절도 서술을 받지 못했다")

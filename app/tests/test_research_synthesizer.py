@@ -680,11 +680,13 @@ class TestReportChunks:
 class TestSectionProgress:
     """절 진행을 콜백으로 알린다 — 워커가 synth 이벤트로 흘리고 종합 단계 result 에도 남긴다."""
 
-    def _record(self):
+    def _record(self, infos: list | None = None):
         seen: list[tuple[int, int, str]] = []
 
-        async def on_section(idx, total, status):
+        async def on_section(idx, total, status, info):
             seen.append((idx, total, status))
+            if infos is not None:
+                infos.append(info)
 
         return seen, on_section
 
@@ -714,6 +716,47 @@ class TestSectionProgress:
         with pytest.raises(SynthesisCanceled):
             asyncio.run(synthesize(_state_three(), should_stop=stop, on_section=on_section))
         assert seen == [(0, 2, "running")]
+
+    def test_start_carries_the_subquestion_and_every_heading(self, monkeypatch):
+        # 절 순번과 하위질문 번호는 다르다 — 근거 없는 하위질문은 절이 되지 않는다
+        st = _state_three()
+        st.subquestions[0].evidence_ids = []
+        reply = json.dumps({"intro": "도입 [E2].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply])
+        infos = []
+        seen, on_section = self._record(infos)
+        asyncio.run(synthesize(st, on_section=on_section))
+        assert seen[0] == (0, 1, "running")
+        assert infos[0] == {"subq_idx": 1, "heading": "하위2", "headings": ["하위2"]}
+
+    def test_end_carries_the_finalized_section_and_its_evidence(self, monkeypatch):
+        reply = json.dumps({"intro": "도입 [E1] [E2].", "summaries": {"E1": "요약 [E1]."},
+                            "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
+        infos = []
+        _, on_section = self._record(infos)
+        report = asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert "section" not in infos[0] and "evidence" not in infos[0]
+        assert infos[1]["subq_idx"] == 0 and infos[1]["headings"] == ["하위1", "하위2"]
+        # 초안의 절은 최종본의 절과 같다 — 같은 finalize_section 으로 다듬는다
+        assert [infos[1]["section"], infos[3]["section"]] == report["sections"]
+        assert set(infos[1]["evidence"]) == {"E1", "E2"}
+        assert set(infos[3]["evidence"]) == {"E2", "E3"}
+        assert infos[1]["evidence"]["E1"] == report["evidence"]["E1"]
+
+    def test_failed_section_is_carried_with_its_paper_list(self, monkeypatch):
+        # 서술을 끝내 받지 못한 절도 초안에 싣는다 — 최종본도 그 절을 논문 목록만으로 싣는다
+        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
+        infos = []
+        seen, on_section = self._record(infos)
+        report = asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert seen[-1] == (1, 2, "failed")
+        sec = infos[-1]["section"]
+        assert sec == report["sections"][1]
+        assert sec["intro"] == "" and sec["future"] == []
+        assert [(p["cnts_id"], p["summary"]) for p in sec["papers"]] == [("B", ""), ("C", "")]
+        assert set(infos[-1]["evidence"]) == {"E2", "E3"}
 
 
 class TestReportStats:
