@@ -14,7 +14,7 @@
         />
       </template>
     </p>
-    <p v-else class="rs-muted">이 절은 도입 서술을 받지 못했습니다. 아래 논문 목록만 싣습니다.</p>
+    <p v-else class="rs-muted">{{ INTROLESS }}</p>
 
     <template v-if="sec.papers.length">
       <h4 class="rs-section__sub">대표 논문</h4>
@@ -22,7 +22,7 @@
         <li v-for="p in sec.papers" :key="p.cnts_id" class="rs-paper">
           <span class="rs-paper__who">{{ paperByline(paperMeta(p)) }}</span>
           <span v-if="paperMeta(p)?.title" class="rs-paper__title">{{ paperMeta(p)?.title }}</span>
-          <span class="rs-paper__summary">{{ p.summary || "요약을 받지 못했습니다." }}</span>
+          <span class="rs-paper__summary">{{ p.summary || NO_SUMMARY }}</span>
           <CitationChip
             v-for="eid in p.evidence"
             :key="eid"
@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import type { EvidenceMeta, OpenPdfPayload, ReportEvidence, ReportPaper, ReportSection } from "~/types/research";
 import { citeChunks, splitCitations } from "~/utils/citations";
-import { paperByline } from "~/utils/researchReport";
+import { INTROLESS, NO_SUMMARY, paperByline } from "~/utils/researchReport";
 import CitationChip from "./CitationChip.vue";
 
 const props = defineProps<{ sec: ReportSection; evidence: Record<string, ReportEvidence> }>();

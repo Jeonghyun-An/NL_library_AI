@@ -51,7 +51,7 @@
       <ul v-if="report.limitations.length">
         <li v-for="(line, li) in report.limitations" :key="li">{{ line }}</li>
       </ul>
-      <p v-else class="rs-muted">자동 점검에서 보고할 한계가 발견되지 않았습니다.</p>
+      <p v-else class="rs-muted">{{ NO_LIMITS }}</p>
     </section>
   </article>
 </template>
@@ -60,7 +60,7 @@
 import { computed } from "vue";
 import type { OpenPdfPayload, ReportSection, ResearchReport } from "~/types/research";
 import type { DraftSlot, DraftSlotStatus } from "~/utils/researchDraft";
-import { draftBadge, draftIntro, rangeLabel, reportIntro, type DraftState } from "~/utils/researchReport";
+import { NO_LIMITS, draftBadge, draftIntro, rangeLabel, reportIntro, type DraftState } from "~/utils/researchReport";
 import ReportSectionBody from "./ReportSectionBody.vue";
 
 interface SectionRow {

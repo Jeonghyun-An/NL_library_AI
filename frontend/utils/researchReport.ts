@@ -22,6 +22,11 @@ export function reportIntro(report: ResearchReport): string {
   return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
 }
 
+// 빈자리 문구는 화면(절 본문·보고서)과 내려받은 문서가 같이 쓴다 — 문서가 화면과 다른 말을 하지 않게
+export const INTROLESS = "이 절은 도입 서술을 받지 못했습니다. 아래 논문 목록만 싣습니다.";
+export const NO_SUMMARY = "요약을 받지 못했습니다.";
+export const NO_LIMITS = "자동 점검에서 보고할 한계가 발견되지 않았습니다.";
+
 // 초안이 놓인 때 — writing: 쓰는 중, finishing: 다 쓰고 최종본을 받는 중(받기에 실패해 다시 시도하는 중 포함),
 // interrupted: 실패·취소로 멈춤
 export type DraftState = "writing" | "finishing" | "interrupted";

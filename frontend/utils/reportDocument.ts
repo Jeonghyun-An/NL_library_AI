@@ -13,7 +13,7 @@ import type {
 import { citeChunks, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
 import type { DraftReport } from "./researchDraft";
 import { verdictLabel } from "./researchEvents";
-import { paperByline, rangeLabel, reportIntro } from "./researchReport";
+import { INTROLESS, NO_LIMITS, NO_SUMMARY, paperByline, rangeLabel, reportIntro } from "./researchReport";
 
 // Word·PDF 가 같은 모델에서 그려진다 — 인용 번호·참고문헌·부록이 두 형식에서 어긋나지 않게
 
@@ -60,10 +60,6 @@ export interface ReportDoc {
   references: DocReference[];
 }
 
-// 화면(ReportView)과 같은 문구 — 내려받은 문서가 화면과 다른 말을 하지 않게
-const INTROLESS = "이 절은 도입 서술을 받지 못했습니다. 아래 논문 목록만 싣습니다.";
-const NO_SUMMARY = "요약을 받지 못했습니다.";
-const NO_LIMITS = "자동 점검에서 보고할 한계가 발견되지 않았습니다.";
 const DRAFT_LIMITS = "작성 중에 저장한 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.";
 const MISSING_EVIDENCE = "근거 정보를 찾을 수 없습니다";
 
