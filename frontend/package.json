@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "docx": "^9.8.0",
     "marked": "^18.0.0",
     "nuxt": "^4.4.2",
     "vue": "^3.5.31",
