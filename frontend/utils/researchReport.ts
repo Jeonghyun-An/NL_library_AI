@@ -32,9 +32,11 @@ export function reportIntro(report: ResearchReport, subqCount = report.trail.len
 }
 
 // 걸러낸 수를 서론에 덧붙인다 — 채택 수만 적으면 무관 제외로 결과가 줄어든 것처럼 읽힌다.
+// 제외 수는 하위질문별 판단의 수다(한 논문을 두 하위질문이 빼면 두 번, 한 하위질문이 뺀 논문을 다른 하위질문이
+// 채택하면 채택 수에도 든다). "편"으로 적으면 검토·채택 수와 더해 맞아야 할 서로 다른 논문 수로 읽혀 "건"으로 적는다.
 // 뺀 것이 없거나(0) 제외 수가 없는 잡(무관 제외 전)은 적지 않는다
 function droppedNote(stats: CountersPayload, verb: string): string {
-  return stats.excluded ? `(무관한 ${stats.excluded}편은 ${verb})` : "";
+  return stats.excluded ? `(하위질문별로 무관하다고 본 ${stats.excluded}건은 ${verb})` : "";
 }
 
 // 빈자리 문구는 화면(절 본문·보고서)과 내려받은 문서가 같이 쓴다 — 문서가 화면과 다른 말을 하지 않게
