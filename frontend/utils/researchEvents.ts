@@ -681,8 +681,11 @@ function countersStep(steps: ResearchStepRow[]): ResearchStepRow | undefined {
 // 반대로 스트림이 끊긴 사이에는 저장본이 앞선다 — 그래서 필드별로 큰 값을 남긴다.
 // 다만 화면이 모르는 뒤 단계에서 나온 저장본은 그대로 쓴다. 탐색부터 다시 도는 재시도는
 // 카운터를 0 부터 새로 세므로, 큰 값을 남기면 이전 시도의 숫자가 버티고 선다.
-// 채택한 근거는 자기점검이 무관 근거를 풀에서 지우면 준다. 끊긴 사이 저장본이 지운 뒤의 값이면
-// 이 규칙이 지우기 전의 수를 잠시 남기지만, 다음 counters·step 이벤트가 받은 값으로 바로잡는다.
+// 저장본을 쓴 단계가 닫혔고 그 뒤로 열린 탐색 단계가 없어도 저장본을 그대로 쓴다 — 단계를 닫을 때 쓴
+// 값이라 그 단계의 어떤 counters 이벤트보다 새롭다. 채택한 근거는 자기점검이 무관 근거를 풀에서 지우면
+// 주는데, 탐색이 끝난 뒤의 종합 단계 이벤트는 카운터를 싣지 않아 큰 값을 남기면 바로잡히지 않는다.
+// 도는 단계 안에서는 여전히 필드별 큰 값이다 — 그 동안 지운 뒤의 저장본이 오면 지우기 전의 수가
+// 다음 counters·step 이벤트까지 남는다.
 function reconcileCounters(
   live: CountersView,
   liveSteps: ResearchStepRow[],
@@ -691,6 +694,8 @@ function reconcileCounters(
 ): CountersView {
   const source = countersStep(storedSteps);
   if (source && liveSteps.every((s) => s.seq < source.seq)) return stored;
+  if (source && source.status !== "running"
+    && ![...liveSteps, ...storedSteps].some((s) => s.kind === "search" && s.seq > source.seq)) return stored;
   return {
     papersReviewed: larger(live.papersReviewed, stored.papersReviewed),
     evidenceAdopted: larger(live.evidenceAdopted, stored.evidenceAdopted),

@@ -845,6 +845,53 @@ describe("refreshView·withPlan", () => {
     expect(refreshView(live, got).counters).toEqual(LIVE_VIEW);
   });
 
+  it("탐색이 끝난 뒤 재접속·실패 — 무관 제외로 준 채택 수를 닫힌 탐색 단계의 저장본대로 받아 다시 연 화면과 같다", () => {
+    // 점검 전 counters(20편)를 받고 끊긴 사이 자기점검이 3편을 빼고 탐색이 닫혔다. 종합 단계 이벤트는
+    // 카운터를 싣지 않아, 큰 값을 남기면 종합 내내(실패하면 새로고침 전까지) 20편이 남는다.
+    const before = { papers_reviewed: 26, evidence_adopted: 20, rechecks: 1 };
+    const after = { papers_reviewed: 26, evidence_adopted: 17, rechecks: 1 };
+    const doneSearch = step({
+      seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done",
+      result: { rounds: [ROUND1, { ...ROUND2, excluded: 3 }], counters: after },
+    });
+    const synth = step({ seq: 2, kind: "synthesize", title: "보고서 종합", status: "running" });
+    const live = run([...AWAITING_ROUND2_CRITIQUE.slice(0, -1), { kind: "counters", ...before }]);
+
+    const steps = [PLAN_ROW, doneSearch, synth];
+    const reconnected = applyResearchEvent(live, {
+      kind: "snapshot", steps,
+      job: { status: "running", stage: "explored", plan: ["효과 측정", "교사 인식"], counters: after },
+    });
+    expect(reconnected.counters).toEqual(initialResearchView(job({ stage: "explored", steps })).counters);
+    expect(reconnected.counters.evidenceAdopted).toBe(17);
+
+    const got = job({
+      status: "failed", stage: "explored", last_error: "종합 실패",
+      steps: [PLAN_ROW, doneSearch, step({ ...synth, status: "failed", result: { error: "종합 실패" } })],
+    });
+    const failed = applyResearchEvent(live, { kind: "failed", status: "failed", error: "종합 실패" });
+    expect(refreshView(failed, got).counters).toEqual(initialResearchView(got).counters);
+    expect(refreshView(failed, got).counters.evidenceAdopted).toBe(17);
+  });
+
+  it("다음 하위질문의 탐색 단계가 열려 있으면 닫힌 앞 단계의 저장본이 라이브를 되돌리지 않는다", () => {
+    // 다음 하위질문은 첫 점검 뒤에야 저장본에 카운터를 쓴다 — 그 전까지는 라이브(검색 직후 counters)가 앞선다
+    const closed = step({ ...SAVED_SEARCH_ROW, status: "done" });
+    const next = step({ seq: 2, kind: "search", subq_idx: 1, title: "교사 인식", status: "running" });
+    const live = run([
+      SEARCH_STARTED, { kind: "counters", ...SAVED },
+      { ...SEARCH_STARTED, status: "done", result: closed.result },
+      { kind: "step", seq: 2, step_kind: "search", subq_idx: 1, title: "교사 인식", status: "running" },
+      { kind: "search", subq_idx: 1, query: "교사 인식", found: 9, round: 1, new_papers: 6 },
+      { kind: "counters", ...LIVE },
+    ]);
+    const v = applyResearchEvent(live, {
+      kind: "snapshot", steps: [PLAN_ROW, closed, next],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: SAVED },
+    });
+    expect(v.counters).toEqual(LIVE_VIEW);
+  });
+
   it("스트림이 끊긴 사이 앞서 나간 GET 카운터는 라이브보다 커도 받아들인다", () => {
     const live = run([SEARCH_STARTED, { kind: "counters", ...SAVED }]);
     const v = refreshView(live, job({
