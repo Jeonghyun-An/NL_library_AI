@@ -473,6 +473,15 @@ class TestAssembleReport:
         trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
         assert [t["excluded_papers"] for t in trail] == [[edge, mpeg], []]
 
+    def test_trail_carries_the_flagged_count_of_a_job_with_exclusion_off(self):
+        """무관 제외를 끈 잡이 무관하다고 본 수 — 켠 잡의 trail.excluded 와 같은 쿼리로 나란히 본다.
+        회차 기록의 flagged 는 처음 가리킨 논문만 세므로 더하면 하위질문별 논문 수다."""
+        st = _state()
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 0, "flagged": 2},
+                                     {"round": 2, "excluded": 0, "flagged": 1}]
+        trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
+        assert [t["flagged"] for t in trail] == [3, 0]
+
     def test_resumed_job_with_rounds_recorded_before_the_bibliography_has_no_excluded_papers(self):
         # 보강 전 회차 기록에는 excluded_papers 가 없다 — 그 스냅샷에서 종합만 다시 해도 보고서가 깨지지 않는다
         st = _state()

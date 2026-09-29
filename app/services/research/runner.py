@@ -113,6 +113,18 @@ def _exclude_off_topic(state: ResearchState, subq: SubQuestion, numbers: list[in
     return papers
 
 
+def _newly_flagged(state: ResearchState, subq: SubQuestion, numbers: list[int]) -> list[dict]:
+    """무관 제외를 끈 잡에서 자기점검이 무관하다고 가리킨 근거(목록 번호, 1부터) 중 이 하위질문에서 처음
+    가리킨 것의 서지 요약.
+
+    끈 잡은 빼지 않으니 가리킨 논문이 다음 회차 목록에 남아 또 가리켜진다. 회차마다 세면 켠 잡(한 번 뺀
+    논문은 다시 들지 않는다)보다 부풀고, 회차들이 서로 다른 논문을 의심한 것처럼 읽힌다.
+    """
+    seen = {p["cnts_id"] for r in subq.rounds for p in r.get("flagged_papers", [])}
+    briefs = [_paper_brief(state.evidence[subq.evidence_ids[n - 1]]) for n in numbers]
+    return [b for b in briefs if b["cnts_id"] not in seen]
+
+
 def subq_budget(state: ResearchState) -> int:
     """하위질문 하나가 새로 만들 수 있는 근거 수.
 
@@ -254,12 +266,12 @@ async def explore_subquestion(
         # 이므로, 판정 불가가 난 라운드가 항상 마지막 라운드다.
         subq.parse_failed = verdict.parse_failed
         if params["exclude_off_topic"]:
-            excluded_papers, flagged = _exclude_off_topic(state, subq, verdict.off_topic), 0
+            excluded_papers, flagged_papers = _exclude_off_topic(state, subq, verdict.off_topic), []
         else:
-            # 끈 잡은 빼지 않고 무관하다고 본 수만 남긴다 — 켠 잡과 나란히 볼 때 "끈 잡에서도 이만큼을
+            # 끈 잡은 빼지 않고 무관하다고 본 논문만 남긴다 — 켠 잡과 나란히 볼 때 "끈 잡에서도 이만큼을
             # 무관하다고 봤다"를 알 수 있게. 근거·몫·막힌 수는 그대로다
-            excluded_papers, flagged = [], len(verdict.off_topic)
-        excluded = len(excluded_papers)
+            excluded_papers, flagged_papers = [], _newly_flagged(state, subq, verdict.off_topic)
+        excluded, flagged = len(excluded_papers), len(flagged_papers)
         own = len(made.intersection(subq.evidence_ids))
         # 막힌 후보는 그 상한이 지금도 차 있을 때만 상한 탓이다. 무관 제외로 자리가 났는데 다음 검색이
         # 그 후보를 다시 찾지 못하면 싣지 못한 것은 검색어가 바뀐 탓이다 — 그대로 세면 한계 문장이
@@ -272,14 +284,14 @@ async def explore_subquestion(
             "round": round_no, "query": query, "found_chunks": len(hits),
             "new_papers": new_papers, "verdict": verdict.verdict,
             "note": verdict.note, "next_query": next_query, "excluded": excluded,
-            "excluded_papers": excluded_papers, "flagged": flagged,
+            "excluded_papers": excluded_papers, "flagged": flagged, "flagged_papers": flagged_papers,
         })
         await emit("critique", {
             "subq_idx": subq.idx, "verdict": verdict.verdict,
             "note": verdict.note, "adopted": len(subq.evidence_ids),
             "parse_failed": verdict.parse_failed, "capped": subq.capped,
             "round": round_no, "next_query": next_query, "excluded": excluded,
-            "excluded_papers": excluded_papers, "flagged": flagged,
+            "excluded_papers": excluded_papers, "flagged": flagged, "flagged_papers": flagged_papers,
             "will_recheck": next_query is not None,
         })
 

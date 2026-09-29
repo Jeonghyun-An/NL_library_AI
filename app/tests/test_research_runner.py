@@ -368,10 +368,10 @@ class TestRoundHistory:
         assert sq.rounds == [
             {"round": 1, "query": "가", "found_chunks": 2, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1",
-             "excluded": 0, "excluded_papers": [], "flagged": 0},
+             "excluded": 0, "excluded_papers": [], "flagged": 0, "flagged_papers": []},
             {"round": 2, "query": "다른 검색어 1", "found_chunks": 3, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": None, "excluded": 0,
-             "excluded_papers": [], "flagged": 0},
+             "excluded_papers": [], "flagged": 0, "flagged_papers": []},
         ]
 
     def test_history_matches_what_was_streamed(self):
@@ -386,7 +386,8 @@ class TestRoundHistory:
             {"round": s["round"], "query": s["query"], "found_chunks": s["found"],
              "new_papers": s["new_papers"], "verdict": c["verdict"], "note": c["note"],
              "next_query": c["next_query"], "excluded": c["excluded"],
-             "excluded_papers": c["excluded_papers"], "flagged": c["flagged"]}
+             "excluded_papers": c["excluded_papers"], "flagged": c["flagged"],
+             "flagged_papers": c["flagged_papers"]}
             for s, c in zip(_of(events, "search"), _of(events, "critique"))
         ]
         assert sq.rounds == streamed
@@ -1010,7 +1011,36 @@ class TestOffTopicExclusionOff:
             st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B"]}),
             critique_fn=_ScriptedCritic(("sufficient", [2], [])), emit=None,
         ))
-        assert [(r["excluded"], r["flagged"]) for r in sq.rounds] == [(1, 0)]
+        assert [(r["excluded"], r["flagged"], r["flagged_papers"]) for r in sq.rounds] == [(1, 0, [])]
+
+    def test_paper_flagged_again_in_a_later_round_is_counted_once(self):
+        """끈 잡은 빼지 않아 가리킨 논문이 다음 회차 목록에 남고 또 가리켜진다. 회차마다 세면 켠 잡(한 번 뺀
+        논문은 다시 들지 않는다)보다 부풀고 두 회차가 서로 다른 논문을 의심한 것처럼 보인다 — 처음 가리킨
+        회차에만 세고, 어떤 논문인지 서지를 남긴다."""
+        class _FlagByPaper:
+            def __init__(self, *turns):
+                self._turns = list(turns)
+
+            async def __call__(self, subq, evidence, *, params):
+                verdict, off, queries = self._turns.pop(0)
+                ids = [e.cnts_id for e in evidence]
+                return Verdict(verdict, note="점검", new_queries=list(queries),
+                               off_topic=[ids.index(c) + 1 for c in off])
+
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=1, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B"], "보완": ["C", "B"]}),
+            critique_fn=_FlagByPaper(("insufficient", ["B"], ["보완"]), ("sufficient", ["B", "C"], [])),
+            emit=emit,
+        ))
+        assert [r["flagged"] for r in sq.rounds] == [1, 1]
+        assert [[p["cnts_id"] for p in r["flagged_papers"]] for r in sq.rounds] == [["B"], ["C"]]
+        assert sq.rounds[0]["flagged_papers"] == [
+            {"cnts_id": "B", "title": "논문 B", "personal_author": None, "pub_date": "2008-06"}]
+        assert [(c["flagged"], c["flagged_papers"]) for c in _of(events, "critique")] == [
+            (r["flagged"], r["flagged_papers"]) for r in sq.rounds]
 
     def test_every_listed_evidence_flagged_does_not_search_again(self, monkeypatch):
         """끈 잡은 판정을 뒤집지 않는다 — 근거가 그대로 남아 '충분'이 본 근거가 있다. 뒤집으면 끈 잡만

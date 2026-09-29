@@ -31,7 +31,8 @@ export interface SearchRoundResult {
   excluded?: number | null;
   // 이 회차에 뺀 논문의 서지 — 풀에서 지운 뒤에도 무엇을 뺐는지 남는다. 목록을 기록하기 전 잡에는 없다
   excluded_papers?: ExcludedPaper[] | null;
-  // 무관 제외를 끈 잡(exclude_off_topic=0)이 빼지 않고 무관하다고만 본 수. 켠 잡은 0, 그 전 잡에는 없다
+  // 무관 제외를 끈 잡(exclude_off_topic=0)이 빼지 않고 무관하다고만 본 수. 그 하위질문에서 처음 본 논문만
+  // 센다(빼지 않은 논문은 다음 회차 목록에 남아 또 가리켜진다). 켠 잡은 0, 그 전 잡에는 없다
   flagged?: number | null;
 }
 

@@ -151,7 +151,7 @@
 ### 11-3. 무관 제외 켜고 끄기 — `exclude_off_topic`
 
 - 잡 파라미터 `exclude_off_topic`(int, 0 또는 1, 기본 1). `_PARAM_BOUNDS` 에 `(int, 0, 1)`. 잡을 만들 때 API 가 합쳐 저장하므로 `nl-lib-fastapi` 도 새 이미지여야 한다(이미 배포 대상).
-- 0 이면 critic 은 그대로 번호를 돌려주지만 러너는 빼지 않는다. 대신 회차 기록에 `flagged`(무관하다고 본 수)를 남겨, 켠 잡과 끈 잡을 나란히 비교할 때 "끈 잡에서도 이만큼을 무관하다고 봤다"를 알 수 있게 한다. 끈 잡의 화면은 "무관 의심 N편(제외 안 함)"으로 보인다.
+- 0 이면 critic 은 그대로 번호를 돌려주지만 러너는 빼지 않는다. 대신 회차 기록에 `flagged`(무관하다고 본 수)와 `flagged_papers`(그 서지 요약)를 남겨, 켠 잡과 끈 잡을 나란히 비교할 때 "끈 잡에서도 이만큼을 무관하다고 봤다"를 알 수 있게 한다. 빼지 않은 논문은 다음 회차 목록에 남아 또 가리켜지므로 그 하위질문에서 **처음 가리킨 논문만** 센다 — 켠 잡은 한 번 뺀 논문을 다시 넣지 않아 한 번만 세므로, 회차마다 세면 끈 잡만 부푼다. 보고서 `trail[]` 에는 하위질문별 `flagged` 합을 싣는다(켠 잡의 `excluded` 와 같은 쿼리로 본다). 끈 잡의 화면은 "무관 의심 N편(제외 안 함)"으로 보인다.
 - 끄는 방법(화면 입력 없음 — 운영자가 API 로): `curl -s -X POST http://<서버>:92/api/research -H 'Content-Type: application/json' -d '{"question":"…","params":{"exclude_off_topic":0}}'`.
 
 ### 11-4. 운영 합격 기준
@@ -175,7 +175,7 @@ select id, left(question, 20) as q, finished_at - started_at as took,
 from research_jobs where status = 'completed' order by created_at desc limit 5;
 ```
 
-하위질문별로는 `select t->>'subquestion', t->>'evidence_count', t->>'excluded' from research_jobs, jsonb_array_elements(report->'trail') t where id = '<잡 id>';`.
+하위질문별로는 `select t->>'subquestion', t->>'evidence_count', t->>'excluded', t->>'flagged' from research_jobs, jsonb_array_elements(report->'trail') t where id = '<잡 id>';`(`flagged` 는 끈 잡에서만 0 보다 크다).
 
 ### 11-5. 테스트
 
@@ -183,6 +183,6 @@ from research_jobs where status = 'completed' order by created_at desc limit 5;
 |---|---|
 | 제외 서지 기록 | 뺀 논문의 서지가 회차 기록·trail 에 남음(풀에서 지운 뒤에도), 옛 스냅샷·회차 기록 복원(빈 목록) |
 | 카운터 | `research_stats.excluded` 누적·이벤트·보고서 stats, 화면 합치기(옛 잡 null) |
-| 켜고 끄기 | 파라미터 검증(0·1만), 0 이면 빼지 않고 `flagged` 기록, 1 이면 지금 동작 |
+| 켜고 끄기 | 파라미터 검증(0·1만), 0 이면 빼지 않고 `flagged` 기록(다음 회차에 다시 가리킨 논문은 세지 않음)·trail 의 `flagged` 합, 1 이면 지금 동작 |
 | 화면 | 타임라인 펼치기(버튼·aria-expanded·키보드), 보고서 접힌 섹션(없으면 안 그림), 초안의 같은 목록, 카운터 칸, 서론 문구 |
 | 문서 | 부록 뒤 "관련성이 낮아 제외한 논문", 참고문헌 번호 없음 |

@@ -355,7 +355,10 @@ def assemble_report(
              # 자기점검이 이 하위질문에서 무관하다고 뺀 논문 수 — 한 번 뺀 논문은 다시 들지 않는다
              "excluded": len(sq.excluded_cnts),
              # 보고서의 '관련성이 낮아 제외한 논문'과 문서 부록 — 풀에서 지운 논문도 서지가 남는다
-             "excluded_papers": _excluded_papers(sq)}
+             "excluded_papers": _excluded_papers(sq),
+             # 무관 제외를 끈 잡이 무관하다고 본 논문 수(켠 잡은 0) — 켠 잡의 excluded 와 같은 쿼리로 나란히
+             # 본다. 회차 기록의 flagged 는 처음 가리킨 논문만 센다(runner)
+             "flagged": sum(r.get("flagged", 0) for r in sq.rounds)}
             for sq in state.subquestions
         ],
         "limitations": build_limitations(
