@@ -301,18 +301,20 @@ class TestCritique:
         assert "[1] 논문 가 (2008) — 본문 발췌" in user
         assert v.off_topic == [1]              # 근거 1편에 2번은 없다
 
+    def _many(self):
+        # 목록 상한보다 5편 많다 — 잘린 나머지는 '…외 5편' 한 줄로만 보인다. n번째 제목은 '논문n'
+        return [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": f"논문{i}", "pub_date": "2020"},
+                         chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+                for i in range(1, _MAX_LISTED + 6)]
+
     def test_off_topic_is_limited_to_listed_not_all_evidence(self, monkeypatch):
         """목록 상한 밖 근거는 발췌를 보이지 않았다 — '…외 5편' 줄을 다음 번호로 센 답으로
         runner 가 읽지도 않은 근거를 지우면 안 된다."""
-        many = [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": f"논문{i}", "pub_date": "2020"},
-                         chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
-                for i in range(_MAX_LISTED + 5)]
-
         async def fake_chat(messages, *, params=None, timeout=None):
             return json.dumps({"verdict": "sufficient", "note": "n", "new_queries": [],
                                "off_topic": [_MAX_LISTED, _MAX_LISTED + 1]})
 
-        v = self._run(monkeypatch, fake_chat, evidence=many)
+        v = self._run(monkeypatch, fake_chat, evidence=self._many())
         assert v.off_topic == [_MAX_LISTED]
 
     def _note_run(self, monkeypatch, note, evidence):
@@ -338,6 +340,10 @@ class TestCritique:
         assert v.note == "「논문 나」·「논문 가」은 다른 뜻의 자원을 다룬다"
 
     def test_note_number_outside_the_list_is_left_as_is(self, monkeypatch):
-        # 가리킨 논문을 알 수 없는 번호다 — 다른 논문의 제목을 대면 없는 판단을 지어낸다
-        v, _ = self._note_run(monkeypatch, "[2]는 다른 뜻의 자원을 다룬다", self._evidence())
-        assert v.note == "[2]는 다른 뜻의 자원을 다룬다"
+        """가리킨 논문을 알 수 없는 번호다 — 다른 논문의 제목을 대면 없는 판단을 지어낸다.
+        근거가 목록 상한보다 많아야 '보인 목록 밖'과 '근거가 없는 번호'가 갈린다: '…외 5편' 줄을
+        다음 번호로 센 [21] 에는 21번째 근거가 있지만 모델은 그 발췌를 보지 못했다."""
+        v, _ = self._note_run(
+            monkeypatch, f"[{_MAX_LISTED}]·[{_MAX_LISTED + 1}]·[0]은 다른 뜻의 자원을 다룬다",
+            self._many())
+        assert v.note == f"「논문{_MAX_LISTED}」·[{_MAX_LISTED + 1}]·[0]은 다른 뜻의 자원을 다룬다"
