@@ -98,7 +98,7 @@ describe("buildReportDocument — 구성", () => {
         evidence: { E1: ev("C1", { title: "AI 규제", personal_author: "김철수; 이영희", pub_date: "2021" }) },
         limitations: ["근거가 1편뿐인 절이 있다."],
         trail: [
-          { subquestion: "규제 논의의 흐름", queries: ["AI 규제", "AI 규제 샌드박스"], verdict: "sufficient", evidenceCount: 1 },
+          { subquestion: "규제 논의의 흐름", queries: ["AI 규제", "AI 규제 샌드박스"], verdict: "sufficient", evidenceCount: 1, excluded: 0 },
         ],
       }),
       NOW,
@@ -147,8 +147,8 @@ describe("buildReportDocument — 구성", () => {
     const doc = buildReportDocument(
       input({
         trail: [
-          { subquestion: "가", queries: ["가"], verdict: "insufficient", evidenceCount: 0 },
-          { subquestion: "나", queries: [], verdict: null, evidenceCount: null },
+          { subquestion: "가", queries: ["가"], verdict: "insufficient", evidenceCount: 0, excluded: 0 },
+          { subquestion: "나", queries: [], verdict: null, evidenceCount: null, excluded: 0 },
         ],
       }),
       NOW,
@@ -159,6 +159,23 @@ describe("buildReportDocument — 구성", () => {
       "heading2: 1. 가",
       "bullets: 검색어: ‘가’ / 판정: 근거 부족 / 채택한 근거: 0편",
       "heading2: 2. 나",
+    ]);
+  });
+
+  it("부록은 자기점검이 무관하다고 뺀 근거 수를 탐색 타임라인과 같은 문구로 싣는다", () => {
+    const doc = buildReportDocument(
+      input({
+        trail: [
+          { subquestion: "엣지 컴퓨팅", queries: ["엣지 컴퓨팅", "엣지 컴퓨팅 자원 할당"], verdict: "sufficient", evidenceCount: 6, excluded: 3 },
+        ],
+      }),
+      NOW,
+    );
+    const all = lines(doc);
+    expect(all.slice(all.indexOf("heading1: 부록: 탐색 경로"))).toEqual([
+      "heading1: 부록: 탐색 경로",
+      "heading2: 1. 엣지 컴퓨팅",
+      "bullets: 검색어: ‘엣지 컴퓨팅’ → ‘엣지 컴퓨팅 자원 할당’ (재검색 1회) / 판정: 근거 충분 / 채택한 근거: 6편 / 무관 3편 제외",
     ]);
   });
 
@@ -183,7 +200,7 @@ describe("buildReportDocument — 구성", () => {
         ],
         evidence: { E1: ev("C1", { title: "회귀\u0007 분석", personal_author: "김철수", pub_date: "2019" }) },
         limitations: ["한계\u000E 문장"],
-        trail: [{ subquestion: "하위\u0002질문", queries: ["검색\u0003어"], verdict: null, evidenceCount: null }],
+        trail: [{ subquestion: "하위\u0002질문", queries: ["검색\u0003어"], verdict: null, evidenceCount: null, excluded: 0 }],
       }),
       NOW,
     );
@@ -308,7 +325,8 @@ describe("docInputFromReport", () => {
       sections: [section()],
       evidence: {},
       trail: [
-        { subquestion: "가", queries: ["가", "가2"], evidence_count: 2, verdict: "sufficient", note: "", parse_failed: false, failed: false, capped: 0 },
+        { subquestion: "가", queries: ["가", "가2"], evidence_count: 2, verdict: "sufficient", note: "", parse_failed: false, failed: false, capped: 0, excluded: 3 },
+        // 무관 제외 전 보고서의 trail 에는 excluded 가 없다
         { subquestion: "나", queries: ["나"], evidence_count: 0, verdict: "pending", note: "", parse_failed: false, failed: true, capped: 0 },
       ],
       limitations: ["한계"],
@@ -319,8 +337,8 @@ describe("docInputFromReport", () => {
     expect(got.intro).toBe("하위질문 2개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
     // 오류로 끝난 하위질문은 판정을 싣지 않는다
     expect(got.trail).toEqual([
-      { subquestion: "가", queries: ["가", "가2"], verdict: "sufficient", evidenceCount: 2 },
-      { subquestion: "나", queries: ["나"], verdict: null, evidenceCount: 0 },
+      { subquestion: "가", queries: ["가", "가2"], verdict: "sufficient", evidenceCount: 2, excluded: 3 },
+      { subquestion: "나", queries: ["나"], verdict: null, evidenceCount: 0, excluded: 0 },
     ]);
     expect(got).toMatchObject({
       question: "q",
@@ -395,7 +413,7 @@ describe("docInputFromDraft", () => {
     total: 3,
   };
   const v = view([
-    subq(0, { rounds: [round(1, "가"), round(2, "가 재검색")] }),
+    subq(0, { rounds: [{ ...round(1, "가"), excluded: 2 }, { ...round(2, "가 재검색"), excluded: 1 }] }),
     subq(1, { status: "failed", verdict: null, adopted: null }),
     subq(2),
   ]);
@@ -403,11 +421,12 @@ describe("docInputFromDraft", () => {
   it("부록은 화면의 탐색 타임라인에서, 서론의 하위질문 수는 끝난 절 수가 아니라 탐색한 하위질문 수로 쓴다", () => {
     const got = docInputFromDraft(draft, v, "http://x/research/job-1");
     expect(got.intro).toBe("하위질문 3개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
-    // 오류로 멈춘 하위질문은 판정을 싣지 않고, 모르는 채택 수는 0 이 아니라 비워 둔다
+    // 오류로 멈춘 하위질문은 판정을 싣지 않고, 모르는 채택 수는 0 이 아니라 비워 둔다.
+    // 무관하다고 뺀 수는 회차마다 뺀 수의 합이다(최종본 trail 의 총수와 같다)
     expect(got.trail).toEqual([
-      { subquestion: "하위질문 1", queries: ["가", "가 재검색"], verdict: "sufficient", evidenceCount: 1 },
-      { subquestion: "하위질문 2", queries: [], verdict: null, evidenceCount: null },
-      { subquestion: "하위질문 3", queries: [], verdict: "sufficient", evidenceCount: 1 },
+      { subquestion: "하위질문 1", queries: ["가", "가 재검색"], verdict: "sufficient", evidenceCount: 1, excluded: 3 },
+      { subquestion: "하위질문 2", queries: [], verdict: null, evidenceCount: null, excluded: 0 },
+      { subquestion: "하위질문 3", queries: [], verdict: "sufficient", evidenceCount: 1, excluded: 0 },
     ]);
     expect(got).toMatchObject({
       question: "초안 질문",

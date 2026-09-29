@@ -12,7 +12,7 @@ import type {
 } from "../types/research";
 import { citeChunks, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
 import type { DraftReport } from "./researchDraft";
-import { verdictLabel } from "./researchEvents";
+import { excludedLabel, verdictLabel } from "./researchEvents";
 import { INTROLESS, NO_LIMITS, NO_SUMMARY, paperByline, rangeLabel, reportIntro } from "./researchReport";
 
 // Word·PDF 가 같은 모델에서 그려진다 — 인용 번호·참고문헌·부록이 두 형식에서 어긋나지 않게
@@ -24,6 +24,8 @@ export interface DocTrailItem {
   queries: string[];
   verdict: Verdict | null;
   evidenceCount: number | null;
+  // 자기점검이 무관하다고 뺀 근거 수. 무관 제외 전 잡은 0 — 0 이면 적지 않는다
+  excluded: number;
 }
 
 export interface ReportDocInput {
@@ -243,12 +245,14 @@ function trailBlocks(trail: DocTrailItem[]): DocBlock[] {
     if (t.queries.length) items.push([{ text: `검색어: ${queryPath(t.queries)}` }]);
     if (t.verdict) items.push([{ text: `판정: ${verdictLabel(t.verdict)}` }]);
     if (t.evidenceCount !== null) items.push([{ text: `채택한 근거: ${t.evidenceCount}편` }]);
+    const excluded = excludedLabel(t.excluded);
+    if (excluded) items.push([{ text: excluded }]);
     if (items.length) out.push({ type: "bullets", items });
   });
   return out;
 }
 
-// 재검색은 근거가 부족하다고 판정했을 때만 일어난다 — 검색어가 바뀐 흐름이 곧 자기점검의 기록이다
+// 재검색은 근거가 부족할 때만 일어난다(부족 판정, 또는 무관 근거를 빼고 0편이 됐을 때) — 검색어가 바뀐 흐름이 곧 자기점검의 기록이다
 function queryPath(queries: string[]): string {
   const path = queries.map((q) => `‘${q}’`).join(" → ");
   return queries.length > 1 ? `${path} (재검색 ${queries.length - 1}회)` : path;
@@ -261,6 +265,7 @@ function docTrailItem(t: TrailItem): DocTrailItem {
     queries: t.queries,
     verdict: t.failed ? null : t.verdict,
     evidenceCount: t.evidence_count,
+    excluded: t.excluded ?? 0,
   };
 }
 
@@ -272,6 +277,8 @@ function docTrailFromSubq(sq: SubqView): DocTrailItem {
     queries: sq.rounds.map((r) => r.query).filter(Boolean),
     verdict: sq.status === "failed" ? null : sq.verdict,
     evidenceCount: sq.adopted,
+    // 초안에는 trail 이 없어 회차마다 뺀 수를 더한다 — 최종본 trail 의 총수와 같은 값이다
+    excluded: sq.rounds.reduce((n, r) => n + (r.excluded ?? 0), 0),
   };
 }
 
