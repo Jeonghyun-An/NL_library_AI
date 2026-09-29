@@ -368,10 +368,10 @@ class TestRoundHistory:
         assert sq.rounds == [
             {"round": 1, "query": "가", "found_chunks": 2, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1",
-             "excluded": 0, "excluded_papers": []},
+             "excluded": 0, "excluded_papers": [], "flagged": 0},
             {"round": 2, "query": "다른 검색어 1", "found_chunks": 3, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": None, "excluded": 0,
-             "excluded_papers": []},
+             "excluded_papers": [], "flagged": 0},
         ]
 
     def test_history_matches_what_was_streamed(self):
@@ -386,7 +386,7 @@ class TestRoundHistory:
             {"round": s["round"], "query": s["query"], "found_chunks": s["found"],
              "new_papers": s["new_papers"], "verdict": c["verdict"], "note": c["note"],
              "next_query": c["next_query"], "excluded": c["excluded"],
-             "excluded_papers": c["excluded_papers"]}
+             "excluded_papers": c["excluded_papers"], "flagged": c["flagged"]}
             for s, c in zip(_of(events, "search"), _of(events, "critique"))
         ]
         assert sq.rounds == streamed
@@ -975,6 +975,60 @@ class TestJudgedBeforeExclusion:
         assert sq.queries == ["엣지 컴퓨팅 자원", "보완"]
         assert "모인 근거: 3편" in seen[1]
         assert sq.verdict == "sufficient" and len(sq.evidence_ids) == 3
+
+
+class TestOffTopicExclusionOff:
+    """exclude_off_topic=0 — 자기점검은 번호를 그대로 돌려주지만 러너는 빼지 않고 flagged 로만 센다.
+    운영에서 무관 제외가 결과를 줄이면 재배포 없이 끄고, 켠 잡과 나란히 비교한다."""
+
+    def _state(self, text, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=0, text=text)]
+        return st
+
+    def test_flagged_evidence_stays_in_the_subquestion_and_the_pool(self):
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=0, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B", "C"]}),
+            critique_fn=_ScriptedCritic(("sufficient", [1, 3], [])), emit=emit,
+        ))
+        assert [st.evidence[e].cnts_id for e in sq.evidence_ids] == ["A", "B", "C"]
+        assert len(st.evidence) == 3 and sq.excluded_cnts == []
+        assert [(r["excluded"], r["excluded_papers"], r["flagged"]) for r in sq.rounds] == [
+            (0, [], 2)]
+        (critique,) = _of(events, "critique")
+        assert (critique["excluded"], critique["excluded_papers"], critique["flagged"]) == (0, [], 2)
+        assert critique["adopted"] == 3
+
+    def test_job_with_exclusion_on_records_no_flagged(self):
+        # 켠 잡은 뺀 수가 excluded 에 있다 — flagged 는 끈 잡에서만 센다
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B"]}),
+            critique_fn=_ScriptedCritic(("sufficient", [2], [])), emit=None,
+        ))
+        assert [(r["excluded"], r["flagged"]) for r in sq.rounds] == [(1, 0)]
+
+    def test_every_listed_evidence_flagged_does_not_search_again(self, monkeypatch):
+        """끈 잡은 판정을 뒤집지 않는다 — 근거가 그대로 남아 '충분'이 본 근거가 있다. 뒤집으면 끈 잡만
+        재검색을 더 돌아 켠 잡과 비교할 기준(걸린 시간·근거 수)이 흐려진다. 실제 critique·parse_verdict 를 거친다."""
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return json.dumps({"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"],
+                               "off_topic": [1, 2]}, ensure_ascii=False)
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        st = self._state("엣지 컴퓨팅 자원", max_recheck=3, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None,
+            explore_fn=_explore_table({"엣지 컴퓨팅 자원": ["A", "B"], "보완": []}), emit=None,
+        ))
+        assert sq.queries == ["엣지 컴퓨팅 자원"]
+        assert (sq.verdict, sq.note) == ("sufficient", "충분하다")
+        assert len(sq.evidence_ids) == 2 and sq.rounds[0]["flagged"] == 2
 
 
 _RELAY = "services.research.relay"

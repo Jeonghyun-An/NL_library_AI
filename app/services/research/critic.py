@@ -60,7 +60,7 @@ def _failed(reason: str, raw: str) -> Verdict:
     return _unchecked()
 
 
-def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
+def parse_verdict(raw: str, *, listed: int = 0, exclude_off_topic: bool = True) -> Verdict:
     """판정 JSON 을 읽는다. 못 읽으면 sufficient 로 떨어뜨려 루프를 끝낸다.
 
     해석 실패를 insufficient 로 두면 파싱이 깨질 때마다 재검색이 상한까지
@@ -73,6 +73,10 @@ def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
     내린 것이고, 빼고 나면 남는 것은 0편이거나 발췌를 보이지 않은 목록 밖 근거뿐이다 — 그대로 두면
     러너가 다시 찾지 않고 '충분·근거 0편'이나 판정받지 않은 근거로 절을 쓴다. note 는 뒤집은
     판정의 이유라 싣지 않는다.
+
+    exclude_off_topic 이 False(무관 제외를 끈 잡)면 뒤집지 않는다. 러너가 근거를 빼지 않으니 판정이 본
+    근거가 그대로 남는다 — 뒤집으면 끈 잡만 재검색을 더 돌아 켠 잡과 나란히 비교할 기준이 흐려진다.
+    off_topic 은 그대로 돌려준다(러너가 flagged 로 센다).
     """
     data = extract_json(raw)
     if data is None:
@@ -89,7 +93,7 @@ def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
     queries = [q for q in raw_queries if isinstance(q, str) and q.strip()]
     note = str(data.get("note") or "")
     off_topic = _off_topic(data.get("off_topic"), listed)
-    if verdict == "sufficient" and off_topic and len(off_topic) == listed:
+    if exclude_off_topic and verdict == "sufficient" and off_topic and len(off_topic) == listed:
         verdict, note = "insufficient", ""
     return Verdict(verdict, note=note, new_queries=queries, off_topic=off_topic)
 
@@ -203,6 +207,7 @@ async def critique(
         # 빠진 채 "탐색 중 오류"로 보고된다. 파싱 실패와 같은 '판정 불가'로 낮춘다.
         log.warning("[critic] 판정 호출 실패 subq=%s — %s: %s", subq.idx, type(e).__name__, e)
         return _unchecked()
-    verdict = parse_verdict(raw, listed=min(len(evidence), _MAX_LISTED))
+    verdict = parse_verdict(raw, listed=min(len(evidence), _MAX_LISTED),
+                            exclude_off_topic=bool(params["exclude_off_topic"]))
     verdict.note = _titled_note(verdict.note, evidence)
     return verdict

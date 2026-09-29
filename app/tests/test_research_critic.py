@@ -156,6 +156,14 @@ class TestOffTopic:
         v = self._parse([1], listed=2, verdict="sufficient")
         assert (v.verdict, v.note) == ("sufficient", "n")
 
+    def test_job_with_exclusion_off_keeps_a_sufficient_verdict(self):
+        """무관 제외를 끈 잡은 근거를 빼지 않는다 — 판정이 본 근거가 그대로 남아 뒤집을 이유가 없고, 뒤집으면
+        끈 잡만 재검색을 더 돌아 켠 잡과 나란히 볼 기준이 흐려진다. 번호는 러너가 flagged 로 세도록 남긴다."""
+        raw = json.dumps({"verdict": "sufficient", "note": "n", "new_queries": [],
+                          "off_topic": [2, 1]})
+        v = parse_verdict(raw, listed=2, exclude_off_topic=False)
+        assert (v.verdict, v.note, v.off_topic) == ("sufficient", "n", [2, 1])
+
 
 class TestShouldRecheck:
     def _sq(self, verdict):
@@ -351,6 +359,16 @@ class TestCritique:
 
         v = self._run(monkeypatch, fake_chat, evidence=self._many())
         assert v.off_topic == [_MAX_LISTED]
+
+    def test_job_with_exclusion_off_does_not_flip_the_verdict(self, monkeypatch):
+        # 잡 파라미터가 parse_verdict 까지 닿아야 한다 — 끈 잡에서 뒤집으면 켠 잡과 같은 재검색을 돈다
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": [1]}'
+
+        monkeypatch.setattr(critic, "chat", fake_chat)
+        v = asyncio.run(critic.critique(SubQuestion(idx=0, text="하위질문"), self._evidence(),
+                                        params=merge_params({"exclude_off_topic": 0})))
+        assert (v.verdict, v.note, v.off_topic) == ("sufficient", "충분하다", [1])
 
     def _note_run(self, monkeypatch, note, evidence):
         seen = []

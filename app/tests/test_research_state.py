@@ -37,6 +37,7 @@ class TestMergeParams:
         assert set(DEFAULT_PARAMS) == {
             "max_subquestions", "max_recheck", "max_evidence", "per_subq_top_k",
             "chunks_per_evidence", "citation_weight", "min_evidence_per_subq",
+            "exclude_off_topic",
         }
 
     def test_bounds_cover_exactly_the_default_keys(self):
@@ -94,6 +95,20 @@ class TestMergeParams:
         # 요청 하나로 워커를 묶는 자해 경로가 된다
         with pytest.raises(ValueError, match="per_subq_top_k"):
             merge_params({"per_subq_top_k": 1_000_000})
+
+    def test_off_topic_exclusion_is_on_by_default(self):
+        assert DEFAULT_PARAMS["exclude_off_topic"] == 1
+
+    @pytest.mark.parametrize("value", [0, 1])
+    def test_off_topic_exclusion_takes_zero_or_one(self, value):
+        # 운영에서 결과가 나쁘면 재배포 없이 잡 파라미터 0 으로 끈다
+        assert merge_params({"exclude_off_topic": value})["exclude_off_topic"] == value
+
+    @pytest.mark.parametrize("value", [2, -1, True, "0", 0.0])
+    def test_off_topic_exclusion_rejects_anything_else(self, value):
+        # True 는 int 의 서브클래스라 막지 않으면 1 로 통과한다
+        with pytest.raises(ValueError, match="exclude_off_topic"):
+            merge_params({"exclude_off_topic": value})
 
 
 class TestState:
