@@ -13,7 +13,19 @@ import type {
 import { citeChunks, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
 import type { DraftReport } from "./researchDraft";
 import { excludedLabel, verdictLabel } from "./researchEvents";
-import { INTROLESS, NO_LIMITS, NO_SUMMARY, paperByline, rangeLabel, reportIntro } from "./researchReport";
+import {
+  EXCLUDED_TITLE,
+  EXCLUDED_WHY,
+  INTROLESS,
+  NO_LIMITS,
+  NO_SUMMARY,
+  excludedFromTrail,
+  excludedPaperLine,
+  paperByline,
+  rangeLabel,
+  reportIntro,
+  type ExcludedGroup,
+} from "./researchReport";
 
 // Word·PDF 가 같은 모델에서 그려진다 — 인용 번호·참고문헌·부록이 두 형식에서 어긋나지 않게
 
@@ -38,6 +50,8 @@ export interface ReportDocInput {
   evidence: Record<string, ReportEvidence>;
   limitations: string[] | null;
   trail: DocTrailItem[];
+  // 자기점검이 하위질문별로 뺀 논문 — 최종본은 report.trail, 초안은 화면과 같은 draft.excluded 에서 온다
+  excluded: ExcludedGroup[];
   draft: { done: number; total: number } | null;
 }
 
@@ -64,6 +78,7 @@ export interface ReportDoc {
 
 const DRAFT_LIMITS = "작성 중에 저장한 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.";
 const MISSING_EVIDENCE = "근거 정보를 찾을 수 없습니다";
+const EXCLUDED_NOT_CITED = "인용한 근거가 아니어서 참고문헌 번호를 매기지 않습니다.";
 
 // 사용자는 한국에 있다 — 문서의 날짜를 브라우저·테스트 기계의 시간대와 무관하게 한국 시각으로 적는다
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -138,7 +153,7 @@ export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc
     }
   });
 
-  blocks.push(...limitBlocks(input), ...trailBlocks(input.trail));
+  blocks.push(...limitBlocks(input), ...trailBlocks(input.trail), ...excludedBlocks(input.excluded));
 
   const references = [...numbers].map(([eid, n]) => ({
     n,
@@ -182,6 +197,7 @@ export function docInputFromReport(
     evidence: report.evidence,
     limitations: report.limitations,
     trail: report.trail.map(docTrailItem),
+    excluded: excludedFromTrail(report.trail),
     draft: null,
   };
 }
@@ -199,6 +215,7 @@ export function docInputFromDraft(draft: DraftReport, view: ResearchView, url: s
     evidence: draft.report.evidence,
     limitations: null,
     trail: view.subqs.map(docTrailFromSubq),
+    excluded: draft.excluded,
     draft: { done: draft.done, total: draft.total },
   };
 }
@@ -249,6 +266,21 @@ function trailBlocks(trail: DocTrailItem[]): DocBlock[] {
     if (excluded) items.push([{ text: excluded }]);
     if (items.length) out.push({ type: "bullets", items });
   });
+  return out;
+}
+
+// 탐색 경로 부록 뒤에 하위질문별로 싣는다. 인용이 아니라 글 조각으로만 적는다 — 참고문헌 번호가 붙으면
+// 본문이 인용한 논문으로 읽힌다
+function excludedBlocks(groups: ExcludedGroup[]): DocBlock[] {
+  if (!groups.length) return [];
+  const out: DocBlock[] = [
+    { type: "heading", level: 1, text: `부록: ${EXCLUDED_TITLE}` },
+    { type: "para", runs: [{ text: `${EXCLUDED_WHY} ${EXCLUDED_NOT_CITED}` }], muted: true },
+  ];
+  for (const g of groups) {
+    out.push({ type: "heading", level: 2, text: `${g.subqIdx + 1}. ${g.subquestion}` });
+    out.push({ type: "bullets", items: g.papers.map((p) => [{ text: excludedPaperLine(p) }]) });
+  }
   return out;
 }
 

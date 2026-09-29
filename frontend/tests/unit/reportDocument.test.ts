@@ -48,6 +48,7 @@ function input(over: Partial<ReportDocInput> = {}): ReportDocInput {
     evidence: {},
     limitations: [],
     trail: [],
+    excluded: [],
     draft: null,
     ...over,
   };
@@ -177,6 +178,45 @@ describe("buildReportDocument — 구성", () => {
       "heading2: 1. 엣지 컴퓨팅",
       "bullets: 검색어: ‘엣지 컴퓨팅’ → ‘엣지 컴퓨팅 자원 할당’ (재검색 1회) / 판정: 근거 충분 / 채택한 근거: 6편 / 무관 3편 제외",
     ]);
+  });
+
+  it("제외한 논문은 탐색 경로 부록 뒤에 하위질문별로 싣고 참고문헌 번호를 매기지 않는다", () => {
+    const doc = buildReportDocument(
+      input({
+        sections: [section({ heading: "엣지 컴퓨팅", intro: "자원을 나눈다 [E1]." })],
+        evidence: { E1: ev("C1", { title: "엣지 자원 할당", personal_author: "김철수", pub_date: "2021" }) },
+        trail: [{ subquestion: "엣지 컴퓨팅", queries: ["엣지 컴퓨팅"], verdict: "sufficient", evidenceCount: 1, excluded: 2 }],
+        excluded: [{
+          subqIdx: 0,
+          subquestion: "엣지 컴퓨팅",
+          papers: [
+            { cntsId: "C8", title: "의료영상 Edge method", personalAuthor: "최지훈", pubDate: "2011" },
+            { cntsId: "C9", title: "CMOS 에지 검출 회로", personalAuthor: "박민수; 이영희", pubDate: "2008-05" },
+          ],
+        }],
+      }),
+      NOW,
+    );
+    const all = lines(doc);
+    expect(all.slice(all.indexOf("heading1: 부록: 탐색 경로"))).toEqual([
+      "heading1: 부록: 탐색 경로",
+      "heading2: 1. 엣지 컴퓨팅",
+      "bullets: 검색어: ‘엣지 컴퓨팅’ / 판정: 근거 충분 / 채택한 근거: 1편 / 무관 2편 제외",
+      "heading1: 부록: 관련성이 낮아 제외한 논문",
+      "para: 자기점검이 하위질문의 핵심 개념과 무관하다고 판단해 근거에서 뺀 논문입니다. 인용한 근거가 아니어서 참고문헌 번호를 매기지 않습니다.",
+      "heading2: 1. 엣지 컴퓨팅",
+      "bullets: 최지훈 (2011) 「의료영상 Edge method」 / 박민수 외 (2008) 「CMOS 에지 검출 회로」",
+    ]);
+    // 참고문헌은 본문이 인용한 근거뿐이다 — 뺀 논문은 글 조각으로만 적힌다
+    expect(doc.references.map((r) => r.eid)).toEqual(["E1"]);
+  });
+
+  it("제외한 논문이 없으면 그 부록을 싣지 않는다", () => {
+    const doc = buildReportDocument(
+      input({ trail: [{ subquestion: "가", queries: ["가"], verdict: "sufficient", evidenceCount: 1, excluded: 0 }] }),
+      NOW,
+    );
+    expect(lines(doc)).not.toContain("heading1: 부록: 관련성이 낮아 제외한 논문");
   });
 
   it("탐색 경로가 없으면 부록을 싣지 않는다", () => {
@@ -349,6 +389,27 @@ describe("docInputFromReport", () => {
       draft: null,
     });
   });
+
+  it("제외한 논문은 보고서 trail 에서 하위질문별로 옮긴다", () => {
+    const report: ResearchReport = {
+      question: "q",
+      range: null,
+      sections: [],
+      evidence: {},
+      trail: [
+        { subquestion: "가", queries: ["가"], evidence_count: 2, verdict: "sufficient", note: "", parse_failed: false, failed: false, capped: 0, excluded: 0, excluded_papers: [] },
+        {
+          subquestion: "엣지 컴퓨팅", queries: ["엣지 컴퓨팅"], evidence_count: 4, verdict: "sufficient", note: "",
+          parse_failed: false, failed: false, capped: 0, excluded: 1,
+          excluded_papers: [{ cnts_id: "C9", title: "CMOS 에지 검출 회로", personal_author: "박민수", pub_date: "2008" }],
+        },
+      ],
+      limitations: [],
+    };
+    expect(docInputFromReport(report, { generatedAt: null, url: "" }).excluded).toEqual([
+      { subqIdx: 1, subquestion: "엣지 컴퓨팅", papers: [{ cntsId: "C9", title: "CMOS 에지 검출 회로", personalAuthor: "박민수", pubDate: "2008" }] },
+    ]);
+  });
 });
 
 function round(n: number, query: string): RoundView {
@@ -443,6 +504,10 @@ describe("docInputFromDraft", () => {
       limitations: null,
       draft: { done: 1, total: 3 },
     });
+  });
+
+  it("제외한 논문은 화면의 초안과 같은 목록(탐색 타임라인에서 만든 draft.excluded)을 쓴다", () => {
+    expect(docInputFromDraft(draft, v, "").excluded).toEqual(draft.excluded);
   });
 
   it("초안 문서는 제목·파일 이름에 초안임을 밝힌다", () => {
