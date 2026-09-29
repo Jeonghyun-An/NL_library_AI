@@ -569,9 +569,12 @@ class TestSynthesize:
     def test_every_evidence_appears_in_some_section(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
         self._patch_chat(monkeypatch, [reply, reply])
-        report = asyncio.run(synthesize(_state_three()))
+        st = _state_three()
+        report = asyncio.run(synthesize(st))
         cited = {e for s in report["sections"] for p in s["papers"] for e in p["evidence"]}
-        assert cited == set(report["evidence"])
+        # 보고서 evidence 는 절에 실린 근거만 담아 절과 늘 같다 — 채택 근거 전체와 비교해야
+        # 절에서 빠진 근거가 드러난다.
+        assert cited == set(st.evidence)
 
     def test_missing_summaries_are_reported(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {"E1": "요약"}, "future": []})
