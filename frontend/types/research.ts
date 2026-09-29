@@ -27,6 +27,8 @@ export interface SearchRoundResult {
   verdict?: Verdict | null;
   note?: string | null;
   next_query?: string | null;
+  // 자기점검이 무관하다고 보고 이 회차에 뺀 근거 수 — 무관 제외 전 잡의 회차에는 없다
+  excluded?: number | null;
 }
 
 // idx·status 뒤의 칸은 절 미리보기(spec §14)를 싣는 워커만 남긴다 — 옛 결과에는 없다. 워커는 모르는
@@ -135,6 +137,8 @@ export interface TrailItem {
   parse_failed: boolean;
   failed: boolean;
   capped: number;
+  // 하위질문에서 무관하다고 뺀 근거 총수 — 무관 제외 전 보고서에는 없다
+  excluded?: number | null;
 }
 
 export interface CountersPayload {
@@ -237,6 +241,8 @@ export interface CritiqueEvent {
   adopted: number;
   parse_failed: boolean;
   capped: number;
+  // 이번 회차에 무관하다고 뺀 근거 수 — 무관 제외 전 워커는 보내지 않는다
+  excluded?: number | null;
   round?: number;
   next_query?: string | null;
   will_recheck?: boolean;
@@ -301,6 +307,7 @@ export interface RoundView {
   verdict: Verdict | null;
   note: string;
   nextQuery: string | null;
+  excluded: number | null;
 }
 
 export interface SubqView {

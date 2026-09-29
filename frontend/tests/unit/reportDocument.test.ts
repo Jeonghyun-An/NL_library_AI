@@ -334,7 +334,7 @@ describe("docInputFromReport", () => {
 });
 
 function round(n: number, query: string): RoundView {
-  return { round: n, query, foundChunks: 3, newPapers: 1, verdict: null, note: "", nextQuery: null };
+  return { round: n, query, foundChunks: 3, newPapers: 1, verdict: null, note: "", nextQuery: null, excluded: null };
 }
 
 function subq(idx: number, over: Partial<SubqView> = {}): SubqView {

@@ -58,6 +58,7 @@
                 <span class="rs-round__query">‘{{ r.query }}’</span>
                 <span v-if="r.foundChunks !== null" class="rs-round__stat">대목 {{ r.foundChunks }}개</span>
                 <span v-if="r.newPapers !== null" class="rs-round__stat">새 논문 {{ r.newPapers }}편</span>
+                <span v-if="excludedLabel(r.excluded)" class="rs-round__stat">{{ excludedLabel(r.excluded) }}</span>
               </p>
               <p v-if="r.verdict" class="rs-round__verdict">
                 {{ verdictLabel(r.verdict) }}<span v-if="r.note"> — {{ r.note }}</span>
@@ -76,7 +77,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ResearchView } from "~/types/research";
-import { stopPoint, subqStatusLabel, synthProgress, verdictLabel, type ResearchPhase } from "~/utils/researchEvents";
+import {
+  excludedLabel,
+  stopPoint,
+  subqStatusLabel,
+  synthProgress,
+  verdictLabel,
+  type ResearchPhase,
+} from "~/utils/researchEvents";
 
 const props = defineProps<{ view: ResearchView; phase: ResearchPhase }>();
 

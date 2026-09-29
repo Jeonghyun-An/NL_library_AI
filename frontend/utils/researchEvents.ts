@@ -111,6 +111,12 @@ export function verdictLabel(verdict: Verdict): string {
   return VERDICT_LABEL[verdict];
 }
 
+// 자기점검이 하위질문의 핵심과 무관하다고 보고 뺀 근거 수 — 타임라인 회차 줄과 문서 부록이 같은
+// 문구를 쓴다. 뺀 것이 없거나 무관 제외 전 잡(null)이면 적지 않는다
+export function excludedLabel(n: number | null): string | null {
+  return n ? `무관 ${n}편 제외` : null;
+}
+
 export function subqStatusLabel(sq: SubqView): string {
   switch (sq.status) {
     case "pending":
@@ -341,6 +347,7 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
       verdict: event.verdict,
       note: event.note,
       nextQuery: event.next_query ?? null,
+      excluded: event.excluded ?? null,
     };
     return {
       ...sq,
@@ -495,7 +502,7 @@ function carriedSynth(prev: ResearchView, fresh: ResearchView): SynthView {
   return isRetry(prev.status, fresh.status) ? retiredSynth(prev.steps) : prev.synth;
 }
 
-// 재검색은 판정이 부족일 때만 일어난다(critic.should_recheck) — 마지막 전 회차는 모두 부족이다
+// 회차 기록이 없는 옛 잡에서 재검색은 판정이 부족일 때만 일어났다(무관 제외 전이다) — 마지막 전 회차는 모두 부족이다
 function roundsFromQueries(queries: string[], verdict: Verdict | null, note: string): RoundView[] {
   const last = queries.length - 1;
   return queries.map((query, i) => ({
@@ -506,6 +513,7 @@ function roundsFromQueries(queries: string[], verdict: Verdict | null, note: str
     verdict: i < last ? "insufficient" : verdict,
     note: i < last ? "" : note,
     nextQuery: i < last ? (queries[i + 1] ?? null) : null,
+    excluded: null,
   }));
 }
 
@@ -518,11 +526,14 @@ function toRoundView(r: SearchRoundResult): RoundView {
     verdict: r.verdict ?? null,
     note: r.note ?? "",
     nextQuery: r.next_query ?? null,
+    excluded: r.excluded ?? null,
   };
 }
 
 function blankRound(round: number): RoundView {
-  return { round, query: "", foundChunks: null, newPapers: null, verdict: null, note: "", nextQuery: null };
+  return {
+    round, query: "", foundChunks: null, newPapers: null, verdict: null, note: "", nextQuery: null, excluded: null,
+  };
 }
 
 function mergeRounds(base: RoundView[], live: RoundView[]): RoundView[] {
@@ -664,12 +675,14 @@ function countersStep(steps: ResearchStepRow[]): ResearchStepRow | undefined {
   return best;
 }
 
-// 라이브 카운터와 저장본(스냅샷·GET) 카운터를 합친다. 한 시도 안에서 카운터는 줄지 않는다
-// (research_stats 의 seen_cnts·evidence·queries 는 늘기만 한다). 저장본은 자기점검(LLM)이
+// 라이브 카운터와 저장본(스냅샷·GET) 카운터를 합친다. 한 시도 안에서 검토한 논문·재검색은
+// 줄지 않는다(research_stats 의 seen_cnts·queries 는 늘기만 한다). 저장본은 자기점검(LLM)이
 // 끝나야 쓰여 점검을 기다리는 동안 검색 직후 받은 counters 이벤트보다 한 회차 뒤처지고,
 // 반대로 스트림이 끊긴 사이에는 저장본이 앞선다 — 그래서 필드별로 큰 값을 남긴다.
 // 다만 화면이 모르는 뒤 단계에서 나온 저장본은 그대로 쓴다. 탐색부터 다시 도는 재시도는
 // 카운터를 0 부터 새로 세므로, 큰 값을 남기면 이전 시도의 숫자가 버티고 선다.
+// 채택한 근거는 자기점검이 무관 근거를 풀에서 지우면 준다. 끊긴 사이 저장본이 지운 뒤의 값이면
+// 이 규칙이 지우기 전의 수를 잠시 남기지만, 다음 counters·step 이벤트가 받은 값으로 바로잡는다.
 function reconcileCounters(
   live: CountersView,
   liveSteps: ResearchStepRow[],

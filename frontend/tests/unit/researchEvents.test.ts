@@ -16,6 +16,7 @@ import type {
 import {
   applyApproval,
   applyResearchEvent,
+  excludedLabel,
   initialResearchView,
   isTerminalEvent,
   mergeEvidence,
@@ -163,8 +164,8 @@ describe("applyResearchEvent — 탐색", () => {
     const sq = v.subqs[0]!;
     expect(sq.status).toBe("running");
     expect(sq.rounds).toEqual([
-      { round: 1, query: "효과 측정", foundChunks: 12, newPapers: 5, verdict: "insufficient", note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과" },
-      { round: 2, query: "초등 AI 윤리 교육 효과", foundChunks: 9, newPapers: 4, verdict: null, note: "", nextQuery: null },
+      { round: 1, query: "효과 측정", foundChunks: 12, newPapers: 5, verdict: "insufficient", note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과", excluded: null },
+      { round: 2, query: "초등 AI 윤리 교육 효과", foundChunks: 9, newPapers: 4, verdict: null, note: "", nextQuery: null, excluded: null },
     ]);
     expect(v.highlight).toEqual({ subqIdx: 0, round: 1, note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과" });
     expect(researchPhase(v)).toBe("exploring");
@@ -216,6 +217,37 @@ describe("applyResearchEvent — 탐색", () => {
     ]);
     expect(v.subqs[0]!.rounds.map((r) => [r.round, r.note])).toEqual([[1, "저장본"], [2, ""]]);
     expect(v.source).toBe("rounds");
+  });
+
+  it("점검 이벤트의 excluded(이번 회차에 무관하다고 뺀 근거 수)를 그 회차에 싣는다", () => {
+    const v = run([
+      SEARCH_STARTED,
+      { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+      {
+        kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 3,
+        parse_failed: false, capped: 0, excluded: 2, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+      },
+      { kind: "search", subq_idx: 0, query: "초등 AI 윤리 교육 효과", found: 9, round: 2, new_papers: 4 },
+    ]);
+    // 2회차는 아직 점검 전이다
+    expect(v.subqs[0]!.rounds.map((r) => [r.round, r.excluded])).toEqual([[1, 2], [2, null]]);
+  });
+
+  it("진행 저장본의 회차 excluded 를 다시 연 화면·재접속 snapshot 이 같게 받고, 필드가 없는 회차는 비워 둔다", () => {
+    const saved = step({ ...SAVED_SEARCH_ROW, result: { rounds: [{ ...ROUND1, excluded: 2 }, ROUND2], counters: LIVE } });
+    const opened = initialResearchView(job({ steps: [PLAN_ROW, saved] }));
+    const snap = applyResearchEvent(initialResearchView(job()), { kind: "snapshot", steps: [PLAN_ROW, saved] });
+    for (const v of [opened, snap]) {
+      expect(v.subqs[0]!.rounds.map((r) => [r.round, r.excluded])).toEqual([[1, 2], [2, null]]);
+    }
+  });
+});
+
+describe("excludedLabel", () => {
+  it("뺀 근거가 있을 때만 타임라인·문서 부록의 문구를 주고, 0·옛 잡(null)은 적지 않는다", () => {
+    expect(excludedLabel(3)).toBe("무관 3편 제외");
+    expect(excludedLabel(0)).toBeNull();
+    expect(excludedLabel(null)).toBeNull();
   });
 });
 
@@ -747,8 +779,8 @@ describe("보강 전 잡", () => {
     }));
     expect(v.source).toBe("trail");
     expect(v.subqs[0]!.rounds).toEqual([
-      { round: 1, query: "효과 측정", foundChunks: null, newPapers: null, verdict: "insufficient", note: "", nextQuery: "초등 효과" },
-      { round: 2, query: "초등 효과", foundChunks: null, newPapers: null, verdict: "sufficient", note: "충분하다", nextQuery: null },
+      { round: 1, query: "효과 측정", foundChunks: null, newPapers: null, verdict: "insufficient", note: "", nextQuery: "초등 효과", excluded: null },
+      { round: 2, query: "초등 효과", foundChunks: null, newPapers: null, verdict: "sufficient", note: "충분하다", nextQuery: null, excluded: null },
     ]);
     expect(v.counters).toEqual({ papersReviewed: null, evidenceAdopted: 1, rechecks: 1 });
     expect(v.highlight).toBeNull();
