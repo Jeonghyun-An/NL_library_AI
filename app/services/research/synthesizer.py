@@ -24,6 +24,7 @@ import httpx
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.citations import bind_markers, chunks_for, strip_markers
+from services.research.hangul import josa
 from services.research.llm_json import extract_json
 from services.research.runner import subq_budget
 from services.research.state import (
@@ -59,15 +60,8 @@ async def _no_progress(idx: int, total: int, status: str, info: dict | None = No
 
 
 def _topic(text: str) -> str:
-    """한계 문장의 주어 조각. 조사는 마지막 글자의 받침에 맞춘다.
-
-    한글로 끝나지 않으면(영문·괄호) 읽는 소리를 코드가 알 수 없다 — 'HPC' 는 '는'(에이치피시)이지만
-    'LAN' 은 '은'(랜)이다. 틀린 조사보다 병기가 낫다.
-    """
-    last = text[-1:]
-    if "가" <= last <= "힣":
-        return f"'{text}' {'은' if (ord(last) - ord('가')) % 28 else '는'}"
-    return f"'{text}' (은)는"
+    """한계 문장의 주어 조각. 조사는 마지막 글자의 받침에 맞춘다(한글로 끝나지 않으면 '(은)는')."""
+    return f"'{text}' {josa(text, '은는')}"
 
 
 def _capped_clause(state: ResearchState, sq: SubQuestion, noun: str) -> str:

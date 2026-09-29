@@ -3,6 +3,7 @@ import json
 import logging
 
 import httpx
+import pytest
 
 from services.research import critic
 from services.research.critic import (
@@ -120,6 +121,26 @@ class TestOffTopic:
         v = parse_verdict(raw, listed=5)
         assert v.parse_failed is True
         assert v.off_topic == []
+
+    def test_bracketed_numbers_are_read(self):
+        # 목록 줄이 '[3] 제목 …' 모양이라 그 표기 그대로 답하기 쉽다 — 괄호 하나에 숫자 하나면 뜻이 모호하지 않다
+        assert self._parse(["[3]", "[ 1 ]"]).off_topic == [3, 1]
+
+    def test_dropped_values_are_logged_with_the_raw_list(self, caplog):
+        """버린 값이 로그에 없으면 운영에서 '제외 0'이 모델 판단인지 형식 탓인지 가를 수 없다."""
+        with caplog.at_level(logging.WARNING):
+            assert self._parse(["5번", 2]).off_topic == [2]
+            assert self._parse("2, 3").off_topic == []
+        messages = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(messages) == 2
+        assert "5번" in messages[0] and "2, 3" in messages[1]
+
+    def test_fully_read_or_missing_off_topic_is_not_logged(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            self._parse([2, "3"])
+            self._parse([])
+            parse_verdict('{"verdict": "sufficient", "note": "n", "new_queries": []}', listed=5)
+        assert not [r for r in caplog.records if r.levelno == logging.WARNING]
 
     def test_sufficient_with_every_listed_evidence_off_topic_reads_as_insufficient(self):
         """판정은 뺀 근거까지 보고 내린 것이다. 보인 근거가 모두 무관하면 남는 것은 0편이거나 발췌를
@@ -350,8 +371,8 @@ class TestCritique:
                for i, t in enumerate(["논문 가", "논문 나"], start=1)]
         v, system = self._note_run(monkeypatch, "[2]·[ 1 ]은 다른 뜻의 자원을 다룬다", evs)
         assert "note 에서 근거를 목록 번호로 가리키지 말고" in system
-        # 지우면 '·은 다른 뜻의…' 로 문장이 깨진다 — 제목으로 바꾼다
-        assert v.note == "「논문 나」·「논문 가」은 다른 뜻의 자원을 다룬다"
+        # 지우면 '·은 다른 뜻의…' 로 문장이 깨진다 — 제목으로 바꾸고, 조사는 제목 끝 받침에 맞춘다
+        assert v.note == "「논문 나」·「논문 가」는 다른 뜻의 자원을 다룬다"
 
     def test_note_number_outside_the_list_is_left_as_is(self, monkeypatch):
         """가리킨 논문을 알 수 없는 번호다 — 다른 논문의 제목을 대면 없는 판단을 지어낸다.
@@ -361,3 +382,38 @@ class TestCritique:
             monkeypatch, f"[{_MAX_LISTED}]·[{_MAX_LISTED + 1}]·[0]은 다른 뜻의 자원을 다룬다",
             self._many())
         assert v.note == f"「논문{_MAX_LISTED}」·[{_MAX_LISTED + 1}]·[0]은 다른 뜻의 자원을 다룬다"
+
+    def _titled(self, *titles):
+        return [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": t, "pub_date": "2020"},
+                         chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+                for i, t in enumerate(titles, start=1)]
+
+    def test_several_numbers_in_one_bracket_become_titles(self, monkeypatch):
+        """off_topic 을 [2, 3] 으로 쓴 모델은 note 에도 같은 모양을 쓰기 쉽다. 남기면 .docx 가 참고문헌
+        2·3번으로 읽힌다."""
+        evs = self._titled("자원 관리", "영상 에지", "에지 검출 회로", "스케줄링")
+        v, _ = self._note_run(monkeypatch, "[1]은 자원을 다루고 [2, 3]은 영상을, [2-4]는 회로를 다룬다", evs)
+        assert v.note == ("「자원 관리」는 자원을 다루고 「영상 에지」·「에지 검출 회로」는 영상을, "
+                          "「영상 에지」·「에지 검출 회로」·「스케줄링」은 회로를 다룬다")
+
+    def test_bracket_with_a_number_outside_the_list_is_left_whole(self, monkeypatch):
+        # 한 번호라도 가리킨 논문을 알 수 없으면 그 괄호의 뜻을 알 수 없다
+        v, _ = self._note_run(monkeypatch, "[1, 9]는 무관하다", self._titled("가", "나"))
+        assert v.note == "[1, 9]는 무관하다"
+
+    @pytest.mark.parametrize(("note", "expected"), [
+        ("[1]은 다른 뜻을 다룬다", "「자원 할당 기법에 관한 연구」는 다른 뜻을 다룬다"),
+        ("[2]는 무관하다", "「엣지 컴퓨팅 스케줄링」은 무관하다"),
+        ("[1]을 제외했다", "「자원 할당 기법에 관한 연구」를 제외했다"),
+        ("[2]가 핵심이다", "「엣지 컴퓨팅 스케줄링」이 핵심이다"),
+        ("[1]과 [2]는 다르다", "「자원 할당 기법에 관한 연구」와 「엣지 컴퓨팅 스케줄링」은 다르다"),
+        ("[3]는 무관하다", "「MPEG-7」(은)는 무관하다"),
+        # 조사가 아니라 낱말의 첫 글자다('이다'·'이라는') — 받침으로 바꾸면 말이 깨진다
+        ("[2]이다", "「엣지 컴퓨팅 스케줄링」이다"),
+        ("[1]에서 다룬다", "「자원 할당 기법에 관한 연구」에서 다룬다"),
+    ])
+    def test_particle_after_a_title_follows_its_final_consonant(self, monkeypatch, note, expected):
+        """모델은 번호를 읽는 소리([1]=일)에 맞춰 조사를 붙인다 — 제목으로 바꾸면 끝 받침과 어긋난다."""
+        evs = self._titled("자원 할당 기법에 관한 연구", "엣지 컴퓨팅 스케줄링", "MPEG-7")
+        v, _ = self._note_run(monkeypatch, note, evs)
+        assert v.note == expected

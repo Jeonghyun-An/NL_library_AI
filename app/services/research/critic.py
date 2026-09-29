@@ -16,6 +16,7 @@ import httpx
 
 from services.llm_client import chat
 from services.prompts import get_prompt
+from services.research.hangul import josa
 from services.research.llm_json import extract_json
 from services.research.state import Evidence, LLM_VERDICTS, SubQuestion
 
@@ -27,9 +28,14 @@ _EXCERPT_LEN = 200
 # 지시가 사라진다 — 그러면 산문 응답이 와서 판정이 또 실패한다.
 _MAX_LISTED = 20
 _PARSE_FAILED_NOTE = "자동 점검을 완료하지 못했다"
-# note 에서 목록 번호를 가리킨 표기. 목록에 번호가 붙고 off_topic 을 번호로 받으니 모델이 note 에도
-# 쓰기 쉽다. 사용자는 이 목록을 보지 못하고 보고서는 인용을 [n] 으로 렌더해, 남기면 참고문헌 번호로 읽힌다.
-_LIST_REF = re.compile(r"\[\s*(\d+)\s*\]")
+# note 에서 목록 번호를 가리킨 표기 — 한 괄호에 여러 번호([2, 3])나 범위([2-4])도 쓴다. 목록에 번호가 붙고
+# off_topic 을 번호로 받으니 모델이 note 에도 쓰기 쉽다. 사용자는 이 목록을 보지 못하고 보고서는 인용을 [n] 으로
+# 렌더해, 남기면 참고문헌 번호로 읽힌다. 바로 뒤 조사도 잡는다 — 모델은 번호를 읽는 소리([1]=일)에 맞춰 붙여,
+# 제목으로 바꾸면 끝 받침과 어긋난다. 뒤에 한글이 이어지면('[2]이다') 조사가 아니라 낱말이라 잡지 않는다.
+_LIST_REF = re.compile(r"\[\s*(\d+(?:\s*[,·~-]\s*\d+)*)\s*\](?:(은|는|이|가|을|를|과|와)(?![가-힣]))?")
+_JOSA_PAIRS = ("은는", "이가", "을를", "과와")
+# off_topic 값 하나. 목록 줄이 '[3] 제목 …' 모양이라 그 표기 그대로 답하기 쉽다 — 괄호 안 숫자 하나는 뜻이 모호하지 않다
+_OFF_TOPIC_NUMBER = re.compile(r"\[?\s*(\d+)\s*\]?")
 
 
 @dataclass
@@ -89,17 +95,23 @@ def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
 
 
 def _off_topic(raw: object, listed: int) -> list[int]:
-    """보인 목록 안의 번호만 순서대로·중복 없이 받는다. 배열이 아니거나 숫자로 읽히지 않는 값은
-    버린다 — 잘못 읽은 번호로 관련 있는 근거를 지우느니 무관한 근거 하나를 남기는 편이 낫다."""
-    if not isinstance(raw, list):
+    """보인 목록 안의 번호만 순서대로·중복 없이 받는다. 배열이 아니거나 숫자 하나로 읽히지 않는 값은
+    버린다 — 잘못 읽은 번호로 관련 있는 근거를 지우느니 무관한 근거 하나를 남기는 편이 낫다.
+
+    버린 값이 있으면 원본을 로그에 남긴다. 운영에서 '무관 0편 제외'가 모델이 무관을 못 찾은 것인지
+    형식이 어긋나 버린 것인지 가를 곳이 여기뿐이다(응답 원문은 어디에도 남지 않는다).
+    """
+    if raw is None:
         return []
     out: list[int] = []
-    for v in raw:
-        if isinstance(v, str) and v.strip().isdecimal():
-            v = int(v)
+    for v in raw if isinstance(raw, list) else []:
+        if isinstance(v, str) and (m := _OFF_TOPIC_NUMBER.fullmatch(v.strip())):
+            v = int(m.group(1))
         # bool 은 int 의 서브클래스라 true 가 1번으로 읽힌다
         if isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= listed and v not in out:
             out.append(v)
+    if not isinstance(raw, list) or len(out) < len(raw):
+        log.warning("[critic] off_topic 일부를 버렸다 — raw=%r listed=%d", raw, listed)
     return out
 
 
@@ -150,13 +162,23 @@ def _title(e: Evidence) -> str:
 
 
 def _titled_note(note: str, evidence: list[Evidence]) -> str:
-    """note 의 목록 번호([2])를 그 논문 제목으로 바꾼다 — 지우면 '[2]는 …' 문장이 깨진다.
-    보인 목록 밖의 번호는 가리킨 논문을 알 수 없으니 그대로 둔다."""
+    """note 의 목록 번호를 그 논문 제목으로 바꾸고 바로 뒤 조사를 제목 끝 받침에 맞춘다 — 지우면
+    '[2]는 …' 문장이 깨진다. 괄호 안 번호가 하나라도 보인 목록 밖이면 가리킨 논문을 알 수 없으니
+    그 괄호는 통째로 둔다."""
     listed = evidence[:_MAX_LISTED]
 
     def _sub(m: re.Match) -> str:
-        n = int(m.group(1))
-        return f"「{_title(listed[n - 1])}」" if 1 <= n <= len(listed) else m.group(0)
+        numbers: list[int] = []
+        for part in re.split(r"\s*[,·]\s*", m.group(1)):
+            ends = [int(x) for x in re.split(r"\s*[~-]\s*", part)]
+            if not all(1 <= n <= len(listed) for n in ends):
+                return m.group(0)
+            numbers.extend(range(min(ends), max(ends) + 1))     # '2-4' 는 2·3·4
+        titles = [_title(listed[n - 1]) for n in numbers]
+        particle = m.group(2) or ""
+        if particle:
+            particle = josa(titles[-1], next(p for p in _JOSA_PAIRS if particle in p))
+        return "·".join(f"「{t}」" for t in titles) + particle
 
     return _LIST_REF.sub(_sub, note)
 
