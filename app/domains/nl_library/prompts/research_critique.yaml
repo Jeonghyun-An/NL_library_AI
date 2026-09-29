@@ -27,7 +27,7 @@ system: |-
 
   verdict 에는 sufficient 또는 insufficient 만 씁니다.
   new_queries 는 항상 배열입니다. 제안할 것이 없으면 빈 배열로 둡니다.
-  note 는 사용자에게 그대로 보여집니다. 한국어로 구체적으로 쓰세요.
+  note 는 사용자에게 그대로 보여집니다(보고서의 한계 섹션에 실립니다). 한국어로 구체적으로, '~다'로 끝나는 문어체 평서문으로 쓰세요('~합니다'·'~입니다' 금지).
 user: |-
   하위질문: {{ subquestion }}
   이미 시도한 검색어: {{ tried_queries }}

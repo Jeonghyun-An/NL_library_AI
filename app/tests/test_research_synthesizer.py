@@ -521,7 +521,7 @@ class TestBuildSection:
         """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다."""
         st = _state_three()
         sec = build_section(st, st.subquestions[0], {
-            "intro": "이 하위질문에 대한 연구 흐름을 설명하는 2~4문장. 문장마다 [E#] 를 답니다.",
+            "intro": "이 하위질문에 대한 연구 흐름을 설명하는 2~4문장. 문장마다 [E#] 를 단다.",
             "summaries": {"E#": "그 논문이 무엇을 했고"},
             "future": [{"text": "남은 과제 한 문장 [E#]."}]})
         assert sec["intro"] == "" and sec["future"] == []
@@ -693,6 +693,33 @@ class TestSynthesize:
         with pytest.raises(SynthesisCanceled):
             asyncio.run(synthesize(_state_three(), should_stop=stop))
         assert len(calls) == 1
+
+
+class TestSynthesizePrompt:
+    """절 서술의 문체 — 운영 보고서에서 5절만 '~합니다' 체였다."""
+
+    def _system(self, monkeypatch):
+        systems = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            systems.append(messages[0]["content"])
+            return json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+
+        monkeypatch.setattr(synthesizer, "chat", fake_chat)
+        asyncio.run(synthesize(_state_three()))
+        return systems[0]
+
+    def test_every_field_is_asked_in_plain_written_style(self, monkeypatch):
+        system = self._system(monkeypatch)
+        assert "'~다'로 끝나는 문어체 평서문" in system
+        assert "'~합니다'·'~입니다' 금지" in system
+        assert "intro·summaries·future 모두" in system
+
+    def test_json_example_does_not_model_the_polite_style(self, monkeypatch):
+        # gemma 는 예시를 견본으로 베낀다(recurring-gotchas 15번) — 예시 값이 '~ㅂ니다'로 끝나면 규칙과 싸운다
+        system = self._system(monkeypatch)
+        example = system.split("JSON 하나만 출력하세요.", 1)[1].split("summaries 에는", 1)[0]
+        assert "니다" not in example
 
 
 class TestReportChunks:

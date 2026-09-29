@@ -199,6 +199,19 @@ class TestCritique:
         assert "하위질문" in user and "첫 검색어, 둘째 검색어" in user
         assert "1편" in user and "본문 발췌" in user
 
+    def test_prompt_asks_for_plain_written_style_note(self, monkeypatch):
+        # note 는 보고서 한계 섹션에 그대로 실린다 — 서술은 '~다'인데 note 만 '~합니다'면 한 보고서에서 문체가 갈린다
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return '{"verdict": "sufficient", "note": "충분하다", "new_queries": []}'
+
+        self._run(monkeypatch, fake_chat)
+        system = seen[0][0]["content"]
+        assert "'~다'로 끝나는 문어체 평서문" in system
+        assert "'~합니다'·'~입니다' 금지" in system
+
     def test_transport_error_is_reported_as_unchecked_not_raised(self, monkeypatch):
         """판정 호출이 일시 오류로 죽으면 '판정 불가'다 — 탐색 실패로 올리면
         이미 모은 근거까지 절에서 빠진다."""
