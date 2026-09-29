@@ -288,7 +288,9 @@
 /* ── 진행 패널 ───────────────────────────────────────────── */
 .rs-counters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 칸 수가 잡마다 다르다(제외 칸은 무관 제외 뒤 잡에만 있다) — 있는 칸끼리 폭을 똑같이 나눈다 */
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: 0.4rem;
   margin: 0;
 }
@@ -301,6 +303,8 @@
 .rs-counter dt {
   font-size: 0.55rem;
   color: var(--skx-gray-1);
+  /* 네 칸이면 좁은 진행 패널에서 "검토한 논문"이 줄바꿈된다 — 글자 중간이 아니라 띄어쓰기에서 끊는다 */
+  word-break: keep-all;
 }
 .rs-counter dd {
   margin: 0.2rem 0 0;
@@ -1055,6 +1059,101 @@ button.rs-synth__item:focus-visible,
   .rs-badge--live::before,
   .rs-report--draft .rs-section__body,
   .rs-skeleton__line {
+    animation: none;
+  }
+}
+
+/* ── 무관 제외 ─────────────────────────────────────────── */
+/* 회차 줄의 "무관 N편 제외 ▾"와 보고서의 접힌 섹션 머리. 눌러 펼친다는 게 보이게 글자색·밑줄로 버튼임을 드러낸다 */
+.rs-round__toggle,
+.rs-excluded__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--skx-primary);
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-round__toggle {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.15em;
+}
+.rs-round__toggle:focus-visible,
+.rs-excluded__toggle:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 2px;
+}
+.rs-caret {
+  display: inline-block;
+  font-size: 0.8em;
+  transition: transform 0.15s ease;
+}
+[aria-expanded="true"] > .rs-caret {
+  transform: rotate(180deg);
+}
+.rs-round__excluded {
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  background: color-mix(in srgb, var(--skx-border-c1) 35%, var(--skx-white));
+  border-radius: var(--skx-radius-sm);
+  animation: rs-reveal 0.2s ease-out;
+}
+.rs-round__why {
+  color: var(--skx-gray-1);
+}
+.rs-excluded-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0.3rem 0 0;
+  padding-left: 1rem;
+}
+.rs-excluded-list a {
+  color: var(--skx-ink);
+  text-decoration: none;
+}
+.rs-excluded-list a:hover,
+.rs-excluded-list a:focus-visible {
+  color: var(--skx-primary);
+  text-decoration: underline;
+}
+/* 한계 섹션(실선·강조색)과 구분되게 점선 — 본문이 인용한 논문이 아니다 */
+.rs-excluded {
+  padding: 0.8rem 1rem;
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-md);
+}
+.rs-excluded__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.rs-excluded__toggle {
+  font-weight: inherit;
+  color: var(--skx-ink-2);
+}
+.rs-excluded__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  animation: rs-reveal 0.25s ease-out;
+}
+.rs-excluded .rs-excluded-list {
+  font-size: 0.65rem;
+  line-height: 1.7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-caret {
+    transition: none;
+  }
+  .rs-round__excluded,
+  .rs-excluded__body {
     animation: none;
   }
 }

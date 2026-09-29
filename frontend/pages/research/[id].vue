@@ -244,7 +244,7 @@ const draft = computed(() => (view.value && draftState.value ? draftReport(view.
 // 템플릿에서 객체를 만들면 1초마다 도는 시계 때문에 초안 전체가 매초 다시 그려진다
 const draftMode = computed(() => {
   const state = draftState.value;
-  return draft.value && state ? { slots: draft.value.slots, state } : null;
+  return draft.value && state ? { slots: draft.value.slots, state, excluded: draft.value.excluded } : null;
 });
 // 최종본이 오면 초안을 그리던 같은 ReportView 에 넘긴다 — 갈아 끼우면 초안 안의 초점·열린 인용 팝오버가
 // 사라지고, 스크롤 기준이던 노드도 없어져 읽던 자리가 튄다
