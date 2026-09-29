@@ -266,10 +266,14 @@ def research_stats(state: ResearchState) -> dict:
     보고서의 숫자가 어긋나지 않는다.
 
     재검색 횟수는 따로 세지 않고 시도한 검색어 이력에서 얻는다 — 검색어는 이미
-    스냅샷에 실리므로 재개한 잡에서도 같은 값이 나온다.
+    스냅샷에 실리므로 재개한 잡에서도 같은 값이 나온다. 제외 수도 같은 이유로 회차 기록에서 얻는다.
+
+    excluded 는 하위질문별 판단의 수다 — 같은 논문을 두 하위질문이 뺐으면 두 번 센다. 채택 수만 보이면
+    무관 제외로 줄어든 숫자가 결과가 준 것으로 읽힌다. 보강 전 회차에는 excluded 가 없다.
     """
     return {
         "papers_reviewed": len(state.seen_cnts),
         "evidence_adopted": len(state.evidence),
         "rechecks": sum(max(len(sq.queries) - 1, 0) for sq in state.subquestions),
+        "excluded": sum(r.get("excluded", 0) for sq in state.subquestions for r in sq.rounds),
     }

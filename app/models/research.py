@@ -104,7 +104,7 @@ class ResearchStep(Base):
     #                          "verdict", "note", "next_query", "excluded"?, "excluded_papers"?}],
     #             excluded 는 그 회차 자기점검이 무관하다고 뺀 근거 수, excluded_papers 는 뺀 논문의
     #             서지 요약 [{"cnts_id", "title", "personal_author", "pub_date"}](보강 전 잡의 회차에는 없다).
-    #              "counters": {"papers_reviewed", "evidence_adopted", "rechecks"}}
+    #              "counters": {"papers_reviewed", "evidence_adopted", "rechecks", "excluded"?}}
     #             verdict·note 는 마지막 라운드 값, 회차별 값은 rounds.
     #             도는 중에는 회차가 끝날 때마다 {"rounds", "counters"} 로 갱신된다.
     #             rounds 가 없는 행은 보강 전 잡이다 — 화면은 report.trail 로 대체한다.

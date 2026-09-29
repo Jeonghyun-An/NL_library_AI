@@ -329,16 +329,28 @@ class TestRoundEvents:
         assert [k for k, _ in events] == [
             "search", "counters", "critique", "search", "counters", "critique"]
         assert _of(events, "counters") == [
-            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0},
-            {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1},
+            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0, "excluded": 0},
+            {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1, "excluded": 0},
         ]
 
     def test_counters_are_job_wide(self):
         st = self._state("가", "나", max_recheck=0)
         events = self._run(st, explore=_fake_explore)
         assert _of(events, "counters")[-1] == {
-            "papers_reviewed": 1, "evidence_adopted": 1, "rechecks": 0,
+            "papers_reviewed": 1, "evidence_adopted": 1, "rechecks": 0, "excluded": 0,
         }
+
+    def test_counters_show_papers_excluded_in_earlier_rounds(self):
+        """무관 제외로 채택 수가 줄 때 제외를 따로 보여야 결과가 준 것으로 읽히지 않는다. counters 는 검색
+        직후에 나가 앞 회차까지 뺀 수다 — 이번 회차의 제외는 회차를 닫으며 저장하는 단계 result 가 싣는다."""
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, explore=_explore_table({"가": ["A", "B"], "보완": ["C"]}),
+                           critic=_ScriptedCritic(("insufficient", [2], ["보완"]),
+                                                  ("sufficient", [], [])))
+        assert _of(events, "counters") == [
+            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0, "excluded": 0},
+            {"papers_reviewed": 3, "evidence_adopted": 2, "rechecks": 1, "excluded": 1},
+        ]
 
 
 class TestRoundHistory:

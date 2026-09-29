@@ -376,16 +376,30 @@ class TestResearchStats:
         st = _explored_state()          # 검색어 이력: ["q1", "q2"], ["q3"], []
         st.seen_cnts = {"KCI_A", "KCI_B", "KCI_C"}
         assert research_stats(st) == {
-            "papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1,
+            "papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1, "excluded": 0,
         }
 
     def test_empty_state_is_all_zero(self):
         st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
         assert research_stats(st) == {
-            "papers_reviewed": 0, "evidence_adopted": 0, "rechecks": 0,
+            "papers_reviewed": 0, "evidence_adopted": 0, "rechecks": 0, "excluded": 0,
         }
+
+    def test_excluded_sums_every_round_of_every_subquestion(self):
+        # 하위질문별 판단의 수다 — 같은 논문을 두 하위질문이 뺐으면 두 번 센다
+        st = _explored_state()
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 2}, {"round": 2, "excluded": 1}]
+        st.subquestions[1].rounds = [{"round": 1, "excluded": 1}]
+        assert research_stats(st)["excluded"] == 4
+
+    def test_rounds_recorded_before_exclusion_count_as_zero(self):
+        # 보강 전 회차 기록에는 excluded 가 없다
+        st = _explored_state()
+        st.subquestions[0].rounds = [dict(r) for r in _ROUNDS]
+        assert research_stats(st)["excluded"] == 0
 
     def test_same_after_resume(self):
         st = _explored_state()
         st.seen_cnts = {"KCI_A", "KCI_B"}
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 2}]
         assert research_stats(restore_state("j1", snapshot_state(st))) == research_stats(st)

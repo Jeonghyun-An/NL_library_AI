@@ -935,8 +935,11 @@ class TestReportStats:
         st = _state()
         st.seen_cnts = {"A", "B", "C"}
         st.subquestions[0].queries = ["q1", "q2"]
+        st.subquestions[1].excluded_cnts = ["B", "C"]
+        st.subquestions[1].rounds = [{"round": 1, "excluded": 2}]
         report = assemble_report(st, sections=[], unmarked_total=0)
-        assert report["stats"] == {"papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1}
+        assert report["stats"] == {"papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1,
+                                   "excluded": 2}
 
     def test_existing_keys_are_kept(self):
         # 키 추가만 한다 — 옛 보고서를 그리는 화면과 교본이 기존 키에 기대고 있다
