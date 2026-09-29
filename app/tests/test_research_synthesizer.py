@@ -7,8 +7,8 @@ import pytest
 from services.research import synthesizer
 from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
 from services.research.synthesizer import (
-    PAPERS_PER_SECTION, SectionTally, SynthesisCanceled, assemble_report, build_limitations,
-    build_section, finalize_section, section_evidence, synthesize,
+    PAPERS_PER_SECTION, SectionTally, SynthesisCanceled, _topic, assemble_report,
+    build_limitations, build_section, finalize_section, section_evidence, synthesize,
 )
 
 _DROPPED = "그 절의 근거에 없는 번호"
@@ -71,7 +71,8 @@ class TestBuildLimitations:
         st.subquestions[1].note = "관련 논문이 없다"
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
         line = next(x for x in lims if "하위2" in x)
-        assert "근거 상한(90편)" in line and "7편" in line
+        assert "전체 근거 상한(90편)" in line and "7편" in line
+        assert "하위질문당" not in line
         assert "근거를 찾지 못했다" not in line and "관련 논문이 없다" not in line
 
     def test_capped_insufficient_subquestion_mentions_cap(self):
@@ -81,6 +82,34 @@ class TestBuildLimitations:
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
         line = next(x for x in lims if "하위1" in x)
         assert "결론이 약하다" in line and "근거 상한" in line and "2편" in line
+
+    def test_budget_capped_insufficient_subquestion_names_the_per_subquestion_cap(self):
+        # 몫에 막힌 것을 전체 상한 탓으로 쓰면 max_evidence 를 올리라는 잘못된 신호가 된다
+        st = _state()                       # 하위질문 2개 · 기본 90편 → 몫 45편
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].budget_capped = 3
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위1" in x)
+        assert "(하위질문당 근거 상한(45편)에 닿아 후보 3편을 더 싣지 못했다)" in line
+        assert "전체 근거 상한" not in line
+
+    def test_both_caps_are_named_separately(self):
+        st = _state()
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].budget_capped = 2
+        st.subquestions[0].capped = 1
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위1" in x)
+        assert ("(하위질문당 근거 상한(45편)에 닿아 후보 2편을, "
+                "전체 근거 상한(90편)에 닿아 후보 1편을 더 싣지 못했다)") in line
+
+    def test_subquestion_starved_by_its_share_is_not_reported_as_missing_evidence(self):
+        st = _state()
+        st.subquestions[1].budget_capped = 4
+        st.subquestions[1].note = "관련 논문이 없다"
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위2" in x)
+        assert line == "'하위2' (은)는 하위질문당 근거 상한(45편)에 닿아 검색된 논문 4편을 싣지 못했다"
 
     def test_unchecked_subquestion_without_evidence_is_not_counted_twice(self):
         """근거가 0편이면 충분성을 따질 대상이 없다 — '못 찾았다'와 '점검 못 함'을 둘 다 쓰지 않는다."""
@@ -140,6 +169,35 @@ class TestBuildLimitations:
     def test_zero_dropped_is_not_reported(self):
         assert not any(_DROPPED in x
                        for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+
+class TestTopic:
+    """한계 문장의 주어 조각 — 조사를 받침에 맞춘다. ' 는' 으로 고정하면 받침 있는 말에서 틀린다."""
+
+    @pytest.mark.parametrize(("text", "expected"), [
+        ("컴퓨팅 자원 관리", "'컴퓨팅 자원 관리' 는"),
+        ("엣지 컴퓨팅의 자원 할당", "'엣지 컴퓨팅의 자원 할당' 은"),
+    ])
+    def test_particle_follows_the_final_consonant(self, text, expected):
+        assert _topic(text) == expected
+
+    @pytest.mark.parametrize("text", ["고성능 컴퓨팅 (HPC)", "클라우드 SLA", "IoT"])
+    def test_non_hangul_ending_gets_both_particles(self, text):
+        # 'HPC' 는 '는'(에이치피시)이지만 'LAN' 은 '은'(랜)이다 — 읽는 소리는 코드가 모른다
+        assert _topic(text) == f"'{text}' (은)는"
+
+    def test_limitation_sentence_uses_the_matching_particle(self):
+        st = _state()
+        st.subquestions[0].text = "자원 할당"
+        st.subquestions[0].verdict = "insufficient"
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "자원 할당" in x)
+        assert line.startswith("'자원 할당' 은 근거 1편으로 결론이 약하다")
+
+    def test_about_phrase_keeps_its_fixed_particle(self):
+        # '에 대해서는' 은 받침과 무관하다 — 그대로 둔다
+        lims = build_limitations(_state(), unmarked_total=0, dropped_total=0)
+        assert any(x.startswith("'하위2' 에 대해서는 근거를 찾지 못했다") for x in lims)
 
 
 class TestAssembleReport:

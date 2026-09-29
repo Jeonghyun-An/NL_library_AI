@@ -25,6 +25,7 @@ from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.citations import bind_markers, chunks_for, strip_markers
 from services.research.llm_json import extract_json
+from services.research.runner import subq_budget
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, research_stats,
 )
@@ -57,6 +58,34 @@ async def _no_progress(idx: int, total: int, status: str, info: dict | None = No
     return None
 
 
+def _topic(text: str) -> str:
+    """한계 문장의 주어 조각. 조사는 마지막 글자의 받침에 맞춘다.
+
+    한글로 끝나지 않으면(영문·괄호) 읽는 소리를 코드가 알 수 없다 — 'HPC' 는 '는'(에이치피시)이지만
+    'LAN' 은 '은'(랜)이다. 틀린 조사보다 병기가 낫다.
+    """
+    last = text[-1:]
+    if "가" <= last <= "힣":
+        return f"'{text}' {'은' if (ord(last) - ord('가')) % 28 else '는'}"
+    return f"'{text}' (은)는"
+
+
+def _capped_clause(state: ResearchState, sq: SubQuestion, noun: str) -> str:
+    """상한에 막힌 후보를 원인별로 적는다 — "…에 닿아 {noun} N편을" 을 쉼표로 잇는다.
+
+    하위질문당 몫과 전체 상한을 한 수로 합치지 않는다. 풀리는 방법이 다르다 — 몫은 계획에서
+    하위질문을 줄이면 커지고, 전체 상한은 max_evidence 를 올려야 풀린다.
+    """
+    parts = []
+    if sq.budget_capped:
+        parts.append(f"하위질문당 근거 상한({subq_budget(state)}편)에 닿아 "
+                     f"{noun} {sq.budget_capped}편을")
+    if sq.capped:
+        parts.append(f"전체 근거 상한({state.params['max_evidence']}편)에 닿아 "
+                     f"{noun} {sq.capped}편을")
+    return ", ".join(parts)
+
+
 def build_limitations(
     state: ResearchState, *, unmarked_total: int, dropped_total: int,
     failed_sections: int = 0, unsummarized_total: int = 0,
@@ -75,7 +104,6 @@ def build_limitations(
     과하게 알리면서 정작 심각한 쪽을 임계값에 묻는다.
     """
     out: list[str] = []
-    max_evidence = state.params["max_evidence"]
     for sq in state.subquestions:
         # note 를 여러 분기에 붙인다. 근거가 0편인 하위질문은 아래 insufficient
         # 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장 필요한 경우다.
@@ -83,27 +111,25 @@ def build_limitations(
         # 아래 집계 문장이 따로 센다.
         note = f" — {sq.note}" if sq.note and not sq.parse_failed else ""
         n = len(sq.evidence_ids)
-        # failed·capped 를 "근거 없음"보다 먼저 본다. 시스템 장애나 우리 쪽 상한을
+        topic = _topic(sq.text)
+        blocked = sq.capped or sq.budget_capped
+        # failed·상한을 "근거 없음"보다 먼저 본다. 시스템 장애나 우리 쪽 상한을
         # "근거를 찾지 못했다"로 쓰면 연구 결과(코퍼스 빈틈)로 둔갑한다.
         if sq.failed and n:
             out.append(
-                f"'{sq.text}' 는 탐색이 오류로 중단돼 끝까지 확인하지 못했다"
+                f"{topic} 탐색이 오류로 중단돼 끝까지 확인하지 못했다"
                 f"(중단 전까지 모은 근거 {n}편으로만 썼다){note}"
             )
         elif sq.failed:
-            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다{note}")
-        elif not n and sq.capped:
+            out.append(f"{topic} 탐색 중 오류로 확인하지 못했다{note}")
+        elif not n and blocked:
             # 상한 때문에 0편이면 critic 은 "(없음)"을 보고 판정한다 — 그 note 는 오보다
-            out.append(
-                f"'{sq.text}' 는 근거 상한({max_evidence}편)에 닿아 "
-                f"검색된 논문 {sq.capped}편을 싣지 못했다"
-            )
+            out.append(f"{topic} {_capped_clause(state, sq, '검색된 논문')} 싣지 못했다")
         elif not n:
             out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다{note}")
         elif sq.verdict == "insufficient":
-            cap = (f"(근거 상한({max_evidence}편)에 닿아 후보 {sq.capped}편을 더 싣지 못했다)"
-                   if sq.capped else "")
-            out.append(f"'{sq.text}' 는 근거 {n}편으로 결론이 약하다{cap}{note}")
+            cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
+            out.append(f"{topic} 근거 {n}편으로 결론이 약하다{cap}{note}")
 
     # 근거가 0편이면 충분성을 따질 대상이 없고, failed 는 위에서 이미 알렸다
     unchecked = sum(1 for sq in state.subquestions
