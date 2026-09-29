@@ -20,7 +20,7 @@
           <dd>{{ shown(view.counters.evidenceAdopted) }}</dd>
         </div>
         <!-- 자기점검이 걸러낸 수 — 채택 수만 보이면 무관 제외로 결과가 줄어든 것처럼 읽힌다. 제외 수를 모르는 옛 잡은 칸을 그리지 않는다 -->
-        <div v-if="view.counters.excluded !== null" class="rs-counter">
+        <div v-if="showsExcludedCounter(view)" class="rs-counter">
           <dt>제외</dt>
           <dd>{{ shown(view.counters.excluded) }}</dd>
         </div>
@@ -83,9 +83,9 @@
                 :id="panelId(sq.idx, r.round)"
                 class="rs-round__excluded"
               >
-                <p class="rs-round__why">
-                  자기점검이 이 하위질문의 핵심 개념과 무관하다고 판단했습니다<span v-if="r.note"> — {{ r.note }}</span>
-                </p>
+                <!-- 그 회차의 판단(note)은 바로 아래 판정 줄이 보여 준다 — 여기에 이어 붙이면 같은 문장이 두 번 나오고
+                     충분·부족의 이유가 논문을 뺀 이유처럼 읽힌다 -->
+                <p class="rs-round__why">{{ EXCLUDED_WHY }}</p>
                 <ul class="rs-excluded-list">
                   <li v-for="p in r.excludedPapers" :key="p.cntsId">
                     <a :href="`/papers/${p.cntsId}`" target="_blank" rel="noopener">
@@ -114,13 +114,14 @@ import type { ResearchView } from "~/types/research";
 import {
   excludedLabel,
   flaggedLabel,
+  showsExcludedCounter,
   stopPoint,
   subqStatusLabel,
   synthProgress,
   verdictLabel,
   type ResearchPhase,
 } from "~/utils/researchEvents";
-import { excludedPaperLine } from "~/utils/researchReport";
+import { EXCLUDED_WHY, excludedPaperLine } from "~/utils/researchReport";
 
 const props = defineProps<{ view: ResearchView; phase: ResearchPhase }>();
 

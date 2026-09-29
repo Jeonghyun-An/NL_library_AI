@@ -125,6 +125,13 @@ export function flaggedLabel(n: number | null): string | null {
   return n ? `무관 의심 ${n}편(제외 안 함)` : null;
 }
 
+// 카운터에 제외 칸을 그릴지. 제외 수를 모르는 옛 잡은 그리지 않는다. 새 잡은 API 가 잡을 만들 때 기본 파라미터를
+// 합쳐 저장해 params 에 exclude_off_topic 이 있으므로 첫 counters 이벤트 전에도 그린다 — 수를 받고서야 그리면
+// 첫 검색이 끝날 때 칸이 셋에서 넷으로 늘며 카운터 줄이 흔들린다
+export function showsExcludedCounter(view: Pick<ResearchView, "counters" | "params">): boolean {
+  return view.counters.excluded !== null || "exclude_off_topic" in view.params;
+}
+
 export function subqStatusLabel(sq: SubqView): string {
   switch (sq.status) {
     case "pending":

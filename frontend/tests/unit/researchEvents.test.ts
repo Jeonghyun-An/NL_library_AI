@@ -25,6 +25,7 @@ import {
   refreshView,
   researchPhase,
   sectionGapToRecover,
+  showsExcludedCounter,
   stopPoint,
   subqStatusLabel,
   synthClosePending,
@@ -312,6 +313,22 @@ describe("flaggedLabel", () => {
     expect(flaggedLabel(3)).toBe("무관 의심 3편(제외 안 함)");
     expect(flaggedLabel(0)).toBeNull();
     expect(flaggedLabel(null)).toBeNull();
+  });
+});
+
+describe("showsExcludedCounter", () => {
+  it("새 잡은 첫 counters 이벤트 전에도 제외 칸을 그린다 — 잡을 만들 때 API 가 합쳐 저장한 params 에 exclude_off_topic 이 있다", () => {
+    const fresh = initialResearchView(job({ params: { max_subquestions: 6, exclude_off_topic: 1 } }));
+    expect(fresh.counters.excluded).toBeNull();
+    expect(showsExcludedCounter(fresh)).toBe(true);
+    expect(showsExcludedCounter(initialResearchView(job({ params: { exclude_off_topic: 0 } })))).toBe(true);
+  });
+
+  it("제외 수를 받았으면 그리고, 파라미터도 제외 수도 없는 옛 잡은 그리지 않는다", () => {
+    const old = initialResearchView(job());
+    expect(showsExcludedCounter(old)).toBe(false);
+    const counted = run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1, excluded: 3 }], old);
+    expect(showsExcludedCounter(counted)).toBe(true);
   });
 });
 

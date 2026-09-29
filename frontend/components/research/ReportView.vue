@@ -70,8 +70,10 @@
       </h3>
       <div v-show="excludedOpen" id="rs-excluded-body" class="rs-excluded__body">
         <p class="rs-muted">{{ EXCLUDED_WHY }}</p>
+        <!-- 묶음 번호는 탐색 타임라인의 하위질문 번호다. 절은 근거가 남은 하위질문만 만들어 절 번호와 다를 수
+             있으므로(모두 걸러진 하위질문이 바로 그렇다) 절 제목의 "N." 꼴을 쓰지 않는다 -->
         <div v-for="g in excluded" :key="g.subqIdx" class="rs-excluded__group">
-          <h4 class="rs-section__sub">{{ g.subqIdx + 1 }}. {{ g.subquestion }}</h4>
+          <h4 class="rs-section__sub">하위질문 {{ g.subqIdx + 1 }} · {{ g.subquestion }}</h4>
           <ul class="rs-excluded-list">
             <li v-for="p in g.papers" :key="p.cntsId">
               <a :href="`/papers/${p.cntsId}`" target="_blank" rel="noopener">
