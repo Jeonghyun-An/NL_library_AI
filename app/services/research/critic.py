@@ -95,8 +95,12 @@ def _off_topic(raw: object, listed: int) -> list[int]:
     return out
 
 
-def should_recheck(subq: SubQuestion, *, recheck_count: int, max_recheck: int) -> bool:
-    return subq.verdict == "insufficient" and recheck_count < max_recheck
+def should_recheck(
+    subq: SubQuestion, *, recheck_count: int, max_recheck: int, emptied: bool = False,
+) -> bool:
+    """emptied — 이 회차에 무관 근거를 빼고 나니 0편이다. 그때는 판정이 충분이어도 다시 찾는다 —
+    그 판정은 뺀 근거까지 보고 내린 것이고, 근거 없는 "충분"은 없다."""
+    return (subq.verdict == "insufficient" or emptied) and recheck_count < max_recheck
 
 
 def format_evidence_list(evidence: list[Evidence]) -> str:

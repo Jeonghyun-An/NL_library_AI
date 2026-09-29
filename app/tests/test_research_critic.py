@@ -135,6 +135,15 @@ class TestShouldRecheck:
     def test_sufficient_stops(self):
         assert not should_recheck(self._sq("sufficient"), recheck_count=0, max_recheck=3)
 
+    def test_emptied_by_exclusion_rechecks_even_if_sufficient(self):
+        """무관 근거를 빼고 0편이면 '충분' 판정은 뺀 근거까지 보고 내린 것이다."""
+        assert should_recheck(self._sq("sufficient"), recheck_count=0, max_recheck=3,
+                              emptied=True)
+
+    def test_emptied_still_stops_at_limit(self):
+        assert not should_recheck(self._sq("sufficient"), recheck_count=3, max_recheck=3,
+                                  emptied=True)
+
     def test_always_insufficient_critic_still_terminates(self):
         """항상 부족을 반환하는 critic 을 물려도 멈춘다."""
         sq = self._sq("insufficient")

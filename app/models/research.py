@@ -101,7 +101,8 @@ class ResearchStep(Base):
     # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
     #              "parse_failed": bool, "capped": n,
     #              "rounds": [{"round", "query", "found_chunks", "new_papers",
-    #                          "verdict", "note", "next_query"}],
+    #                          "verdict", "note", "next_query", "excluded"?}],
+    #             excluded 는 그 회차 자기점검이 무관하다고 뺀 근거 수(보강 전 잡의 회차에는 없다).
     #              "counters": {"papers_reviewed", "evidence_adopted", "rechecks"}}
     #             verdict·note 는 마지막 라운드 값, 회차별 값은 rounds.
     #             도는 중에는 회차가 끝날 때마다 {"rounds", "counters"} 로 갱신된다.
