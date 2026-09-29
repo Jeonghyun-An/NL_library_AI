@@ -8,6 +8,7 @@ import type {
   SynthSectionView,
 } from "../types/research";
 import { isTerminalStatus } from "./researchEvents";
+import { excludedFromSubqs, type ExcludedGroup } from "./researchReport";
 
 export type DraftSlotStatus = "done" | "failed" | "running" | "waiting";
 
@@ -27,6 +28,8 @@ export interface DraftReport {
   slots: DraftSlot[];
   done: number;
   total: number;
+  // 하위질문별로 뺀 논문 — 초안에는 trail 이 없어 탐색 타임라인(회차 기록)에서 만든다
+  excluded: ExcludedGroup[];
 }
 
 export interface SynthEta {
@@ -82,6 +85,7 @@ export function draftReport(view: ResearchView): DraftReport | null {
     slots,
     done: sections.length,
     total: slots.length,
+    excluded: excludedFromSubqs(view.subqs),
   };
 }
 
@@ -155,10 +159,12 @@ function isStopped(view: ResearchView): boolean {
 }
 
 // 보고서 서론 한 줄(reportIntro)이 읽는 stats — 라이브 카운터가 셋 다 있을 때만 싣는다.
-// 하나라도 비면(옛 잡) 서론은 근거 수만 쓰는 옛 문장으로 되돌아간다
+// 하나라도 비면(옛 잡) 서론은 근거 수만 쓰는 옛 문장으로 되돌아간다. 제외 수는 무관 제외 뒤 잡에만
+// 있어 따로 붙인다 — 없으면 서론이 걸러낸 수를 적지 않는다
 function liveStats(c: CountersView): CountersPayload | null {
   if (c.papersReviewed === null || c.evidenceAdopted === null || c.rechecks === null) return null;
-  return { papers_reviewed: c.papersReviewed, evidence_adopted: c.evidenceAdopted, rechecks: c.rechecks };
+  const stats: CountersPayload = { papers_reviewed: c.papersReviewed, evidence_adopted: c.evidenceAdopted, rechecks: c.rechecks };
+  return c.excluded === null ? stats : { ...stats, excluded: c.excluded };
 }
 
 function elapsedSince(startedAt: string | null, nowMs: number): number | null {

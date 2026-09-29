@@ -151,6 +151,31 @@ describe("draftReport", () => {
     expect(d.slots.map((s) => s.sectionIndex)).toEqual([0, null, 1]);
   });
 
+  it("초안의 제외한 논문은 탐색 타임라인(회차 기록)에서 만들고, stats 에는 라이브 카운터의 제외 수를 싣는다", () => {
+    const explored = initialResearchView(job({
+      steps: [{
+        seq: 1, kind: "search", subq_idx: 1, title: "교사 인식", status: "done",
+        result: {
+          rounds: [{
+            round: 1, query: "교사 인식", excluded: 1, flagged: 0,
+            excluded_papers: [{ cnts_id: "C9", title: "CMOS 에지 검출 회로", personal_author: "박민수", pub_date: "2008" }],
+          }],
+        },
+      }],
+    }));
+    const v = viewWith(
+      { total: 1, sections: [sec(0, "done", { section: section("효과 측정") })] },
+      { subqs: explored.subqs, counters: { papersReviewed: 38, evidenceAdopted: 11, rechecks: 2, excluded: 1 } },
+    );
+    const d = draftReport(v)!;
+    expect(d.excluded).toEqual([{
+      subqIdx: 1,
+      subquestion: "교사 인식",
+      papers: [{ cntsId: "C9", title: "CMOS 에지 검출 회로", personalAuthor: "박민수", pubDate: "2008" }],
+    }]);
+    expect(d.report.stats).toEqual({ papers_reviewed: 38, evidence_adopted: 11, rechecks: 2, excluded: 1 });
+  });
+
   it("라이브 카운터가 하나라도 비면 stats 를 싣지 않는다", () => {
     const v = viewWith(
       { total: 1, sections: [sec(0, "done", { section: section("효과 측정") })] },

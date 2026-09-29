@@ -414,6 +414,11 @@ describe("docInputFromDraft", () => {
     ],
     done: 1,
     total: 3,
+    excluded: [{
+      subqIdx: 0,
+      subquestion: "하위질문 1",
+      papers: [{ cntsId: "C9", title: "CMOS 에지 검출 회로", personalAuthor: "박민수", pubDate: "2008" }],
+    }],
   };
   const v = view([
     subq(0, { rounds: [{ ...round(1, "가"), excluded: 2 }, { ...round(2, "가 재검색"), excluded: 1 }] }),
