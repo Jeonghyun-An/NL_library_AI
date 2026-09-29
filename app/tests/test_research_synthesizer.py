@@ -5,7 +5,9 @@ import httpx
 import pytest
 
 from services.research import synthesizer
-from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
+from services.research.state import (
+    Chunk, Evidence, ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
+)
 from services.research.synthesizer import (
     PAPERS_PER_SECTION, SectionTally, SynthesisCanceled, _topic, assemble_report,
     build_limitations, build_section, finalize_section, section_evidence, synthesize,
@@ -456,6 +458,30 @@ class TestAssembleReport:
         st.subquestions[0].excluded_cnts = ["X", "Y"]
         trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
         assert [t["excluded"] for t in trail] == [2, 0]
+
+    def test_trail_carries_the_excluded_papers_in_round_order(self):
+        """보고서 '관련성이 낮아 제외한 논문'과 문서 부록의 원천 — 풀에서 지운 논문도 회차 기록의 서지로 남는다."""
+        st = _state()
+        edge = {"cnts_id": "X", "title": "의료영상 Edge method", "personal_author": "김",
+                "pub_date": "2001"}
+        mpeg = {"cnts_id": "Y", "title": "MPEG-7 Edge Histogram", "personal_author": None,
+                "pub_date": "2003"}
+        st.subquestions[0].excluded_cnts = ["X", "Y"]
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 1, "excluded_papers": [edge]},
+                                     {"round": 2, "excluded": 0, "excluded_papers": []},
+                                     {"round": 3, "excluded": 1, "excluded_papers": [mpeg]}]
+        trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
+        assert [t["excluded_papers"] for t in trail] == [[edge, mpeg], []]
+
+    def test_resumed_job_with_rounds_recorded_before_the_bibliography_has_no_excluded_papers(self):
+        # 보강 전 회차 기록에는 excluded_papers 가 없다 — 그 스냅샷에서 종합만 다시 해도 보고서가 깨지지 않는다
+        st = _state()
+        st.subquestions[0].rounds = [{"round": 1, "query": "하위1", "found_chunks": 3,
+                                      "new_papers": 1, "verdict": "sufficient", "note": "충분하다",
+                                      "next_query": None, "excluded": 0}]
+        back = restore_state("j1", snapshot_state(st))
+        trail = assemble_report(back, sections=[], unmarked_total=0)["trail"]
+        assert [t["excluded_papers"] for t in trail] == [[], []]
 
     def test_corpus_range_is_carried_into_report(self):
         """수록 범위는 고정 문구가 아니라 실행 시점 실측값이다."""

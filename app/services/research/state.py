@@ -139,10 +139,10 @@ class SubQuestion:
     # Chunk.score 는 하나뿐이라, 이게 없으면 재검색 비교·발췌·절 호버가 다른 하위질문의
     # 점수로 돈다(0.95 로 찾은 대목이 남의 0.2 로 비교돼 밀려난다).
     chunk_scores: dict[str, float] = field(default_factory=dict)
-    # 회차 이력 — [{round, query, found_chunks, new_papers, verdict, note, next_query, excluded}].
-    # verdict·note 는 마지막 회차 값만 남으므로, 이게 없으면 끝난 잡을 다시 열었을 때
-    # "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다. excluded(그 회차에 무관하다고 뺀 수)는
-    # 보강 전 잡의 회차에는 없다.
+    # 회차 이력 — [{round, query, found_chunks, new_papers, verdict, note, next_query, excluded,
+    # excluded_papers}]. verdict·note 는 마지막 회차 값만 남으므로, 이게 없으면 끝난 잡을 다시 열었을 때
+    # "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다. excluded(그 회차에 무관하다고 뺀 수)·excluded_papers
+    # (뺀 논문의 서지 요약 — 풀에서 지운 뒤에도 무엇을 뺐는지 남는다)는 보강 전 잡의 회차에는 없다.
     rounds: list[dict] = field(default_factory=list)
     # 자기점검이 무관하다고 뺀 논문(cnts_id). 같은 하위질문의 다음 회차 검색에 다시 걸려도 넣지
     # 않는다 — 넣으면 같은 논문을 또 판정받고 또 빼며 회차를 태운다. 다른 하위질문은 막지 않는다.

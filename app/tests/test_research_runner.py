@@ -356,9 +356,10 @@ class TestRoundHistory:
         assert sq.rounds == [
             {"round": 1, "query": "가", "found_chunks": 2, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1",
-             "excluded": 0},
+             "excluded": 0, "excluded_papers": []},
             {"round": 2, "query": "다른 검색어 1", "found_chunks": 3, "new_papers": 2,
-             "verdict": "insufficient", "note": "부족", "next_query": None, "excluded": 0},
+             "verdict": "insufficient", "note": "부족", "next_query": None, "excluded": 0,
+             "excluded_papers": []},
         ]
 
     def test_history_matches_what_was_streamed(self):
@@ -372,7 +373,8 @@ class TestRoundHistory:
         streamed = [
             {"round": s["round"], "query": s["query"], "found_chunks": s["found"],
              "new_papers": s["new_papers"], "verdict": c["verdict"], "note": c["note"],
-             "next_query": c["next_query"], "excluded": c["excluded"]}
+             "next_query": c["next_query"], "excluded": c["excluded"],
+             "excluded_papers": c["excluded_papers"]}
             for s, c in zip(_of(events, "search"), _of(events, "critique"))
         ]
         assert sq.rounds == streamed
@@ -789,6 +791,33 @@ class TestOffTopicExclusion:
         assert [c["excluded"] for c in critiques] == [2, 0]
         # 뺀 뒤의 수다 — 화면의 채택 수와 한계 문장이 같은 값을 본다
         assert critiques[0]["adopted"] == 1
+
+    def test_excluded_papers_keep_their_bibliography_after_leaving_the_pool(self):
+        """풀에서 지우면 무엇을 뺐는지 알 길이 없다 — 회차 기록과 critique 이벤트에 서지를 남겨 타임라인·
+        보고서가 걸러낸 논문을 보여 준다."""
+        async def _with_author(query, *, params, db):
+            hits, meta = _hits(["A", "B"], query=query)
+            meta["B"]["personal_author"] = "홍길동"
+            return hits, meta
+
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_with_author,
+                                        critique_fn=_ScriptedCritic(("sufficient", [2], [])),
+                                        emit=emit))
+        paper = {"cnts_id": "B", "title": "논문 B", "personal_author": "홍길동", "pub_date": "2008-06"}
+        assert "E2" not in st.evidence
+        assert [r["excluded_papers"] for r in sq.rounds] == [[paper]]
+        assert [c["excluded_papers"] for c in _of(events, "critique")] == [[paper]]
+
+    def test_each_round_records_only_the_papers_it_excluded(self):
+        st = self._state("가", max_recheck=2)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("insufficient", [2], ["보완"]), ("insufficient", [], ["추가"]),
+                                 ("sufficient", [1], []))
+        self._run(st, sq, {"가": ["A", "B"], "보완": ["C"], "추가": ["D"]}, critic)
+        assert [[p["cnts_id"] for p in r["excluded_papers"]] for r in sq.rounds] == [["B"], [], ["A"]]
 
     def test_freed_budget_lets_the_subquestion_search_again(self):
         """예산은 지금 남아 있는 자기 근거로 센다 — 무관 제외로 자리가 비면 재검색이 새 근거를 만든다."""

@@ -324,6 +324,12 @@ def finalize_section(state: ResearchState, sec: dict) -> tuple[dict, SectionTall
     }, tally
 
 
+def _excluded_papers(sq: SubQuestion) -> list[dict]:
+    """하위질문이 무관하다고 뺀 논문의 서지 요약을 회차 순으로 잇는다. 한 번 뺀 논문은 같은 하위질문에
+    다시 들지 않으니(runner) 중복이 없다. 보강 전 회차 기록에는 excluded_papers 가 없다."""
+    return [p for r in sq.rounds for p in r.get("excluded_papers", [])]
+
+
 def assemble_report(
     state: ResearchState, sections: list[dict], *, unmarked_total: int,
 ) -> dict:
@@ -347,7 +353,9 @@ def assemble_report(
              "verdict": sq.verdict, "note": sq.note,
              "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped,
              # 자기점검이 이 하위질문에서 무관하다고 뺀 논문 수 — 한 번 뺀 논문은 다시 들지 않는다
-             "excluded": len(sq.excluded_cnts)}
+             "excluded": len(sq.excluded_cnts),
+             # 보고서의 '관련성이 낮아 제외한 논문'과 문서 부록 — 풀에서 지운 논문도 서지가 남는다
+             "excluded_papers": _excluded_papers(sq)}
             for sq in state.subquestions
         ],
         "limitations": build_limitations(

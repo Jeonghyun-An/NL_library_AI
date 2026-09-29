@@ -82,8 +82,16 @@ def _mark_seen(state: ResearchState, hits: list[HitRow], meta: dict[str, dict]) 
     return len(fresh)
 
 
-def _exclude_off_topic(state: ResearchState, subq: SubQuestion, numbers: list[int]) -> int:
-    """자기점검이 무관하다고 가리킨 근거(목록 번호, 1부터)를 이 하위질문에서 빼고 뺀 수를 돌려준다.
+def _paper_brief(ev: Evidence) -> dict:
+    """뺀 논문의 서지 요약 — 회차 기록(excluded_papers)에 남는다. 풀에서 지운 뒤에는 이것 말고 무엇을
+    뺐는지 알 길이 없다."""
+    return {"cnts_id": ev.cnts_id, "title": ev.meta.get("title"),
+            "personal_author": ev.meta.get("personal_author"), "pub_date": ev.meta.get("pub_date")}
+
+
+def _exclude_off_topic(state: ResearchState, subq: SubQuestion, numbers: list[int]) -> list[dict]:
+    """자기점검이 무관하다고 가리킨 근거(목록 번호, 1부터)를 이 하위질문에서 빼고, 뺀 논문의 서지 요약
+    (_paper_brief)을 뺀 순서대로 돌려준다.
 
     번호는 critic 에게 넘긴 목록의 순서이고, 그 목록은 subq.evidence_ids 순서 그대로다.
     다른 하위질문이 링크하지 않은 근거는 풀에서도 지운다 — 남기면 어느 절에도 실리지 않을 논문이
@@ -92,14 +100,17 @@ def _exclude_off_topic(state: ResearchState, subq: SubQuestion, numbers: list[in
     """
     off = [subq.evidence_ids[n - 1] for n in numbers]
     linked_elsewhere = {e for sq in state.subquestions if sq is not subq for e in sq.evidence_ids}
+    papers = []
     for eid in off:
         subq.evidence_ids.remove(eid)
         for cid in subq.evidence_chunks.pop(eid):
             del subq.chunk_scores[cid]
-        subq.excluded_cnts.append(state.evidence[eid].cnts_id)
+        ev = state.evidence[eid]
+        subq.excluded_cnts.append(ev.cnts_id)
+        papers.append(_paper_brief(ev))
         if eid not in linked_elsewhere:
             del state.evidence[eid]
-    return len(off)
+    return papers
 
 
 def subq_budget(state: ResearchState) -> int:
@@ -242,7 +253,8 @@ async def explore_subquestion(
         # verdict="sufficient" 로 떨어지고 should_recheck 는 "insufficient" 일 때만 True
         # 이므로, 판정 불가가 난 라운드가 항상 마지막 라운드다.
         subq.parse_failed = verdict.parse_failed
-        excluded = _exclude_off_topic(state, subq, verdict.off_topic)
+        excluded_papers = _exclude_off_topic(state, subq, verdict.off_topic)
+        excluded = len(excluded_papers)
         own = len(made.intersection(subq.evidence_ids))
         # 막힌 후보는 그 상한이 지금도 차 있을 때만 상한 탓이다. 무관 제외로 자리가 났는데 다음 검색이
         # 그 후보를 다시 찾지 못하면 싣지 못한 것은 검색어가 바뀐 탓이다 — 그대로 세면 한계 문장이
@@ -255,12 +267,14 @@ async def explore_subquestion(
             "round": round_no, "query": query, "found_chunks": len(hits),
             "new_papers": new_papers, "verdict": verdict.verdict,
             "note": verdict.note, "next_query": next_query, "excluded": excluded,
+            "excluded_papers": excluded_papers,
         })
         await emit("critique", {
             "subq_idx": subq.idx, "verdict": verdict.verdict,
             "note": verdict.note, "adopted": len(subq.evidence_ids),
             "parse_failed": verdict.parse_failed, "capped": subq.capped,
             "round": round_no, "next_query": next_query, "excluded": excluded,
+            "excluded_papers": excluded_papers,
             "will_recheck": next_query is not None,
         })
 
