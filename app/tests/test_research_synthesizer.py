@@ -431,6 +431,13 @@ class TestAssembleReport:
         assert [(t["parse_failed"], t["failed"], t["capped"]) for t in trail] == [
             (True, False, 0), (False, True, 4)]
 
+    def test_trail_carries_excluded_count(self):
+        """문서 부록과 옛 잡 타임라인의 '무관 N편 제외' 원천이다."""
+        st = _state()
+        st.subquestions[0].excluded_cnts = ["X", "Y"]
+        trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
+        assert [t["excluded"] for t in trail] == [2, 0]
+
     def test_corpus_range_is_carried_into_report(self):
         """수록 범위는 고정 문구가 아니라 실행 시점 실측값이다."""
         st = _state()

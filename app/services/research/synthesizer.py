@@ -345,7 +345,9 @@ def assemble_report(
             {"subquestion": sq.text, "queries": sq.queries,
              "evidence_count": len(sq.evidence_ids),
              "verdict": sq.verdict, "note": sq.note,
-             "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped}
+             "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped,
+             # 자기점검이 이 하위질문에서 무관하다고 뺀 논문 수 — 한 번 뺀 논문은 다시 들지 않는다
+             "excluded": len(sq.excluded_cnts)}
             for sq in state.subquestions
         ],
         "limitations": build_limitations(
