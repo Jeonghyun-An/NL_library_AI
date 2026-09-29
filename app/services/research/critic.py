@@ -9,6 +9,7 @@
 같다 — 판정을 받지 못한 것이지 탐색이 실패한 것이 아니다.
 """
 import logging
+import re
 from dataclasses import dataclass, field
 
 import httpx
@@ -26,6 +27,9 @@ _EXCERPT_LEN = 200
 # 지시가 사라진다 — 그러면 산문 응답이 와서 판정이 또 실패한다.
 _MAX_LISTED = 20
 _PARSE_FAILED_NOTE = "자동 점검을 완료하지 못했다"
+# note 에서 목록 번호를 가리킨 표기. 목록에 번호가 붙고 off_topic 을 번호로 받으니 모델이 note 에도
+# 쓰기 쉽다. 사용자는 이 목록을 보지 못하고 보고서는 인용을 [n] 으로 렌더해, 남기면 참고문헌 번호로 읽힌다.
+_LIST_REF = re.compile(r"\[\s*(\d+)\s*\]")
 
 
 @dataclass
@@ -116,7 +120,7 @@ def format_evidence_list(evidence: list[Evidence]) -> str:
     """
     lines: list[str] = []
     for n, e in enumerate(evidence[:_MAX_LISTED], start=1):
-        title = e.meta.get("title") or "(제목 없음)"
+        title = _title(e)
         year = e.meta.get("pub_date") or "연도미상"
         if not e.chunks:
             lines.append(f"[{n}] {title} ({year})")
@@ -131,6 +135,22 @@ def format_evidence_list(evidence: list[Evidence]) -> str:
     if hidden > 0:
         lines.append(f"…외 {hidden}편")
     return "\n".join(lines) or "(없음)"
+
+
+def _title(e: Evidence) -> str:
+    return e.meta.get("title") or "(제목 없음)"
+
+
+def _titled_note(note: str, evidence: list[Evidence]) -> str:
+    """note 의 목록 번호([2])를 그 논문 제목으로 바꾼다 — 지우면 '[2]는 …' 문장이 깨진다.
+    보인 목록 밖의 번호는 가리킨 논문을 알 수 없으니 그대로 둔다."""
+    listed = evidence[:_MAX_LISTED]
+
+    def _sub(m: re.Match) -> str:
+        n = int(m.group(1))
+        return f"「{_title(listed[n - 1])}」" if 1 <= n <= len(listed) else m.group(0)
+
+    return _LIST_REF.sub(_sub, note)
 
 
 async def critique(
@@ -153,4 +173,6 @@ async def critique(
         # 빠진 채 "탐색 중 오류"로 보고된다. 파싱 실패와 같은 '판정 불가'로 낮춘다.
         log.warning("[critic] 판정 호출 실패 subq=%s — %s: %s", subq.idx, type(e).__name__, e)
         return _unchecked()
-    return parse_verdict(raw, listed=min(len(evidence), _MAX_LISTED))
+    verdict = parse_verdict(raw, listed=min(len(evidence), _MAX_LISTED))
+    verdict.note = _titled_note(verdict.note, evidence)
+    return verdict

@@ -314,3 +314,30 @@ class TestCritique:
 
         v = self._run(monkeypatch, fake_chat, evidence=many)
         assert v.off_topic == [_MAX_LISTED]
+
+    def _note_run(self, monkeypatch, note, evidence):
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return json.dumps({"verdict": "sufficient", "note": note, "new_queries": [],
+                               "off_topic": []}, ensure_ascii=False)
+
+        v = self._run(monkeypatch, fake_chat, evidence=evidence)
+        return v, seen[0][0]["content"]
+
+    def test_note_names_papers_by_title_not_list_number(self, monkeypatch):
+        """note 는 한계 섹션·진행 패널에 그대로 실린다. 사용자는 critic 목록을 보지 못하고
+        보고서(.docx)는 인용을 [n] 으로 렌더하므로, 목록 번호가 남으면 참고문헌 번호로 읽힌다."""
+        evs = [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": t, "pub_date": "2020"},
+                        chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+               for i, t in enumerate(["논문 가", "논문 나"], start=1)]
+        v, system = self._note_run(monkeypatch, "[2]·[ 1 ]은 다른 뜻의 자원을 다룬다", evs)
+        assert "note 에서 근거를 목록 번호로 가리키지 말고" in system
+        # 지우면 '·은 다른 뜻의…' 로 문장이 깨진다 — 제목으로 바꾼다
+        assert v.note == "「논문 나」·「논문 가」은 다른 뜻의 자원을 다룬다"
+
+    def test_note_number_outside_the_list_is_left_as_is(self, monkeypatch):
+        # 가리킨 논문을 알 수 없는 번호다 — 다른 논문의 제목을 대면 없는 판단을 지어낸다
+        v, _ = self._note_run(monkeypatch, "[2]는 다른 뜻의 자원을 다룬다", self._evidence())
+        assert v.note == "[2]는 다른 뜻의 자원을 다룬다"
