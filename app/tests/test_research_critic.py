@@ -230,11 +230,11 @@ class TestCritique:
         return [Evidence(id="E1", cnts_id="A", meta={"title": "논문 가", "pub_date": "2008"},
                          chunks=[Chunk("c1", "본문 발췌", 1, 1, 0.9)])]
 
-    def _run(self, monkeypatch, chat):
+    def _run(self, monkeypatch, chat, evidence=None):
         monkeypatch.setattr(critic, "chat", chat)
         sq = SubQuestion(idx=0, text="하위질문", queries=["첫 검색어", "둘째 검색어"])
         return asyncio.run(critic.critique(
-            sq, self._evidence(), params=merge_params({"min_evidence_per_subq": 4}),
+            sq, evidence or self._evidence(), params=merge_params({"min_evidence_per_subq": 4}),
         ))
 
     def test_renders_real_template_and_parses_reply(self, monkeypatch):
@@ -300,3 +300,17 @@ class TestCritique:
         assert "남는 근거가 없으니 new_queries 에 다른 검색어를 제안하세요" in system
         assert "[1] 논문 가 (2008) — 본문 발췌" in user
         assert v.off_topic == [1]              # 근거 1편에 2번은 없다
+
+    def test_off_topic_is_limited_to_listed_not_all_evidence(self, monkeypatch):
+        """목록 상한 밖 근거는 발췌를 보이지 않았다 — '…외 5편' 줄을 다음 번호로 센 답으로
+        runner 가 읽지도 않은 근거를 지우면 안 된다."""
+        many = [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": f"논문{i}", "pub_date": "2020"},
+                         chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+                for i in range(_MAX_LISTED + 5)]
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return json.dumps({"verdict": "sufficient", "note": "n", "new_queries": [],
+                               "off_topic": [_MAX_LISTED, _MAX_LISTED + 1]})
+
+        v = self._run(monkeypatch, fake_chat, evidence=many)
+        assert v.off_topic == [_MAX_LISTED]
