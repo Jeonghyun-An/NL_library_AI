@@ -352,7 +352,10 @@ describe("docInputFromReport", () => {
 });
 
 function round(n: number, query: string): RoundView {
-  return { round: n, query, foundChunks: 3, newPapers: 1, verdict: null, note: "", nextQuery: null, excluded: null };
+  return {
+    round: n, query, foundChunks: 3, newPapers: 1, verdict: null, note: "", nextQuery: null,
+    excluded: null, excludedPapers: [], flagged: null,
+  };
 }
 
 function subq(idx: number, over: Partial<SubqView> = {}): SubqView {
@@ -386,7 +389,7 @@ function view(subqs: SubqView[]): ResearchView {
     finishedAt: null,
     steps: [],
     subqs,
-    counters: { papersReviewed: 38, evidenceAdopted: 11, rechecks: 1 },
+    counters: { papersReviewed: 38, evidenceAdopted: 11, rechecks: 1, excluded: null },
     highlight: null,
     synth: { seq: 9, status: "running", total: 3, sections: [], headings: [], evidence: {}, retiredSeq: null },
     source: "rounds",

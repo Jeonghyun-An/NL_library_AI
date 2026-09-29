@@ -135,7 +135,7 @@ describe("draftReport", () => {
         total: 3, headings: HEADINGS3, evidence: EV,
         sections: [sec(0, "done", { section: s0 }), sec(1, "running"), sec(2, "done", { section: s2 })],
       },
-      { counters: { papersReviewed: 38, evidenceAdopted: 11, rechecks: 2 } },
+      { counters: { papersReviewed: 38, evidenceAdopted: 11, rechecks: 2, excluded: null } },
     );
     const d = draftReport(v)!;
     expect(d.report).toEqual({
@@ -154,7 +154,7 @@ describe("draftReport", () => {
   it("라이브 카운터가 하나라도 비면 stats 를 싣지 않는다", () => {
     const v = viewWith(
       { total: 1, sections: [sec(0, "done", { section: section("효과 측정") })] },
-      { counters: { papersReviewed: null, evidenceAdopted: 3, rechecks: 0 } },
+      { counters: { papersReviewed: null, evidenceAdopted: 3, rechecks: 0, excluded: null } },
     );
     expect("stats" in draftReport(v)!.report).toBe(false);
   });
