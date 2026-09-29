@@ -35,6 +35,7 @@
   - Task 8: 막혔던 후보가 빈 자리에 실리면 막힌 수에서 뺀다(`discard`, 테스트 1개).
   - Task 10: 카운터 합치기(`reconcileCounters`)와 `roundsFromQueries` 의 주석.
   - Task 11: `queryPath` 의 주석.
+- 검토 때 HEAD(`f8f8a3d`) 의 임시 git worktree 에 Task 1→12 를 다시 기계적으로 적용해 같은 결과를 얻었다. "교체 전" 117개가 모두 한 곳씩 맞고, 각 Step 의 실패·통과 수와 위 누적 기대치, 백엔드 837 passed · 프론트 21 / 387 passed · typecheck 오류 0 · `Build complete!` 가 같았다. 검토에서 고친 두 곳(Task 6 의 프롬프트 한 줄과 테스트 단언 하나, Task 10 의 카운터 주석 순서)도 같은 방법으로 다시 적용해 수치가 그대로임을 확인했다.
 - 확인하지 못한 것: 실제 LLM(gemma)이 새 프롬프트 규칙을 따르는지, 운영 데이터에서 무관 제외가 얼마나 걸러내는지, 실제 화면. 운영 전후 비교(spec §7)가 방어선이다.
 
 ---
@@ -1375,6 +1376,7 @@ git commit -m "[Feat] round04c — 계획 프롬프트: 하위질문은 원 질�
   - critique 이벤트: `"round": round_no, "next_query": next_query,`
   - 재검색 검사: `_recheck_query` 안의 `if not should_recheck(...)` 두 줄
 - Task 8 의 `test_freed_budget_lets_the_subquestion_search_again` 은 Task 1 의 예산과 이 단계의 제외를 함께 검증한다. 예산을 줄지 않는 누적 카운터로 세면 이 테스트가 실패해서 드러난다.
+- 제외 뒤 0편이면 판정이 충분이어도 재검색 대상이지만(Task 8 의 `emptied`), 재검색어는 critic 이 제안한 `new_queries` 에서만 나온다(`_next_query`). 그런데 기존 critique 프롬프트는 "부족하다고 판단하면" 검색어를 제안하라고 해서 충분 판정에는 `new_queries` 가 비기 쉽고, 그러면 재검색이 일어나지 않는다. Task 6 이 off_topic 설명 뒤에 "모두 뺐으면 남는 근거가 없으니 검색어를 제안하라"는 한 줄을 더해 막는다(예시 없이 규칙만).
 - spec 과 다르게 한 점: spec §4 는 제외할 때 순위 보조값 `relevance`·`leaders` 도 지우라고 한다. 그런데 `_rank_order` 는 `evidence_ids` 에 남은 id 만 보고, 번호를 다시 쓰지 않으므로(`evidence_seq`) 지워도 결과가 같다. 효과 없는 코드라 지우지 않는다(Task 8 의 `_exclude_off_topic` docstring 에 이유를 적는다).
 - `evidence_adopted`(= `len(state.evidence)`)는 이제 줄 수 있다(무관 근거를 풀에서 지운다, spec §4). 라이브 경로는 critique 때 `_save_progress` 가 올리는 step 이벤트의 `result.counters` 를 프론트 `applyStep` 이 그대로 쓰므로 괜찮다. 재접속 때 카운터를 합치는 `reconcileCounters` 의 "카운터는 줄지 않는다" 주석은 Task 10 에서 고친다.
 
@@ -1636,6 +1638,9 @@ TestCritique 끝(`test_http_status_error_is_reported_as_unchecked` 뒤)에 테�
         v = self._run(monkeypatch, fake_chat)
         system, user = seen[0][0]["content"], seen[0][1]["content"]
         assert '"off_topic": []' in system     # 예시는 빈 배열뿐 — gemma 는 예시의 개수를 베낀다
+        # 모두 빼 0편이 되면 runner 가 다시 찾는데(should_recheck 의 emptied), 충분 판정에는 검색어를
+        # 제안하지 않는 규칙만 있으면 찾을 검색어가 없다
+        assert "남는 근거가 없으니 new_queries 에 다른 검색어를 제안하세요" in system
         assert "[1] 논문 가 (2008) — 본문 발췌" in user
         assert v.off_topic == [1]              # 근거 1편에 2번은 없다
 ```
@@ -1756,6 +1761,7 @@ def _off_topic(raw: object, listed: int) -> list[int]:
 ```yaml
   new_queries 는 항상 배열입니다. 제안할 것이 없으면 빈 배열로 둡니다.
   off_topic 에는 발췌가 하위질문의 핵심 개념을 다루지 않는 근거(같은 단어를 다른 뜻으로 쓴 논문 포함)의 번호를 정수로 씁니다. 번호는 근거 목록 맨 앞 [ ] 안의 숫자입니다. 여기에 넣은 근거는 이 하위질문의 근거에서 빠집니다. 없으면 빈 배열로 둡니다.
+  모든 근거를 off_topic 에 넣었다면 남는 근거가 없으니 new_queries 에 다른 검색어를 제안하세요.
 ```
 
 - [ ] **Step 8: 통과 확인**
@@ -1775,7 +1781,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/app && python -m pytest tests -q --igno
 ```bash
 cd C:/Users/LANDSOFT/mygit/NL_library_AI
 git add app/services/research/critic.py app/domains/nl_library/prompts/research_critique.yaml app/tests/test_research_critic.py
-git commit -m "[Feat] round04c — 자기점검이 무관한 근거를 번호로 돌려준다: critic 목록에 [1]부터 번호를 붙이고(잘린 나머지는 번호 없이 수만), 응답 JSON 의 off_topic 을 보인 목록 안의 정수(또는 정수 문자열)만 순서대로·중복 없이 받는다. 배열이 아니거나 판정을 못 읽으면 비운다 — 판정을 못 읽었는데 근거를 지우면 안 된다. 프롬프트 예시는 빈 배열만 보인다(gemma 가 예시의 개수를 베낀다)"
+git commit -m "[Feat] round04c — 자기점검이 무관한 근거를 번호로 돌려준다: critic 목록에 [1]부터 번호를 붙이고(잘린 나머지는 번호 없이 수만), 응답 JSON 의 off_topic 을 보인 목록 안의 정수(또는 정수 문자열)만 순서대로·중복 없이 받는다. 배열이 아니거나 판정을 못 읽으면 비운다 — 판정을 못 읽었는데 근거를 지우면 안 된다. 프롬프트 예시는 빈 배열만 보인다(gemma 가 예시의 개수를 베낀다). 근거를 모두 무관으로 빼면 남는 근거가 없으니 검색어를 제안하라는 규칙도 더한다 — 빼고 0편이면 러너가 판정과 무관하게 다시 찾는데, 충분 판정에는 검색어를 제안하지 않아 찾을 검색어가 없게 된다"
 ```
 
 ---
@@ -2215,6 +2221,7 @@ class TestOffTopicExclusion:
         """근거 없는 '충분'은 없다 — 그 판정은 뺀 근거까지 보고 내린 것이다."""
         st = self._state("가", max_recheck=1)
         (sq,) = st.subquestions
+        # 모두 뺐으면 판정이 충분이어도 검색어를 제안하라고 프롬프트가 요구한다(research_critique.yaml)
         critic = _ScriptedCritic(("sufficient", [1], ["보완"]), ("sufficient", [], []))
         self._run(st, sq, {"가": ["A"], "보완": ["C"]}, critic)
         assert sq.queries == ["가", "보완"]
@@ -2795,7 +2802,7 @@ export function excludedLabel(n: number | null): string | null {
   };
 ```
 
-(6) `reconcileCounters` 의 주석을 고친다. 채택한 근거 수(`evidence_adopted = len(state.evidence)`)는 이제 무관 근거를 풀에서 지우면 준다. 합치는 규칙(필드별 큰 값)은 그대로 둔다 — 라이브 `counters`·`step` 이벤트는 받은 값을 그대로 쓰므로, 끊긴 사이의 잠깐 어긋남은 다음 이벤트가 바로잡는다.
+(6) `reconcileCounters` 의 주석을 고친다. 채택한 근거 수(`evidence_adopted = len(state.evidence)`)는 이제 무관 근거를 풀에서 지우면 준다. 합치는 규칙(필드별 큰 값)은 그대로 둔다 — 라이브 `counters`·`step` 이벤트는 받은 값을 그대로 쓰므로, 끊긴 사이의 잠깐 어긋남은 다음 이벤트가 바로잡는다. 새 두 줄은 기존 "다만 …" 두 줄 뒤에 둔다 — 앞에 두면 "다만" 이 가리키는 규칙(필드별 큰 값)과 떨어진다.
 
 교체 전:
 ```ts
@@ -2803,6 +2810,8 @@ export function excludedLabel(n: number | null): string | null {
 // (research_stats 의 seen_cnts·evidence·queries 는 늘기만 한다). 저장본은 자기점검(LLM)이
 // 끝나야 쓰여 점검을 기다리는 동안 검색 직후 받은 counters 이벤트보다 한 회차 뒤처지고,
 // 반대로 스트림이 끊긴 사이에는 저장본이 앞선다 — 그래서 필드별로 큰 값을 남긴다.
+// 다만 화면이 모르는 뒤 단계에서 나온 저장본은 그대로 쓴다. 탐색부터 다시 도는 재시도는
+// 카운터를 0 부터 새로 세므로, 큰 값을 남기면 이전 시도의 숫자가 버티고 선다.
 ```
 교체 후:
 ```ts
@@ -2810,6 +2819,8 @@ export function excludedLabel(n: number | null): string | null {
 // 줄지 않는다(research_stats 의 seen_cnts·queries 는 늘기만 한다). 저장본은 자기점검(LLM)이
 // 끝나야 쓰여 점검을 기다리는 동안 검색 직후 받은 counters 이벤트보다 한 회차 뒤처지고,
 // 반대로 스트림이 끊긴 사이에는 저장본이 앞선다 — 그래서 필드별로 큰 값을 남긴다.
+// 다만 화면이 모르는 뒤 단계에서 나온 저장본은 그대로 쓴다. 탐색부터 다시 도는 재시도는
+// 카운터를 0 부터 새로 세므로, 큰 값을 남기면 이전 시도의 숫자가 버티고 선다.
 // 채택한 근거는 자기점검이 무관 근거를 풀에서 지우면 준다. 끊긴 사이 저장본이 지운 뒤의 값이면
 // 이 규칙이 지우기 전의 수를 잠시 남기지만, 다음 counters·step 이벤트가 받은 값으로 바로잡는다.
 ```
@@ -3210,7 +3221,7 @@ git log --format='%h %an <%ae> %s' 738bc07..HEAD
 git log --format=%B 738bc07..HEAD | grep -ciE "co-authored-by|generated with claude"
 ```
 기대:
-- 첫 명령: 계획 문서 커밋 1개(`[Docs] round04c — 딥리서치 품질 구현 계획`)와 Task 1~11 커밋 11개가 모두 저장소 사용자(`git config user.name` — Hyonii) 이름으로 나온다. 그 사이에 다른 커밋(수정 커밋 등)이 끼었으면 그것도 같은 저자여야 한다.
+- 첫 명령: 계획 문서 커밋 2개(`[Docs] round04c — 딥리서치 품질 구현 계획`, `[Docs] round04c — 구현 계획 검토 반영`)와 Task 1~11 커밋 11개가 모두 저장소 사용자(`git config user.name` — Hyonii) 이름으로 나온다. 그 사이에 다른 커밋(수정 커밋 등)이 끼었으면 그것도 같은 저자여야 한다.
 - 둘째 명령: `0`.
 - 하나라도 트레일러가 나오면 멈추고 사용자에게 알린다. 이미 쌓인 커밋의 메시지를 고치려면 사용자 승인 아래 비대화형 rebase 가 필요하다.
 
@@ -3251,5 +3262,6 @@ git commit -m "[Docs] round04c — spec 상태를 구현 완료(운영 배포 �
 - 운영 배포와 운영 전후 비교(spec §7·§9) — 사용자 승인 뒤 따로 한다.
 - 제외할 때 순위 보조값 `relevance`·`leaders` 삭제(spec §4) — 효과가 없어 하지 않는다(단계 2 머리 참고).
 - 제외 뒤 0편으로 재검색할 때 강조 카드의 "근거 부족 → …" 고정 문구(단계 3 머리 참고).
+- 무관 제외로 근거가 0편이 된 채 끝난 하위질문(재검색 한도·상한에 닿았거나 제안 검색어가 없을 때)의 한계 문장. 지금 규칙대로 "'…' 에 대해서는 근거를 찾지 못했다 — note" 로 나오고, note 는 제외 전 목록을 보고 쓴 것이라 "충분하다"일 수도 있다. spec 에 문구가 없어 두고, 운영 전후 비교에서 이런 하위질문이 나오는지 본다.
 - 모델이 섞어 쓴 '~합니다' 문체를 코드로 고치기(spec §6 — 뜻이 바뀔 수 있다).
 - DB 구조·워커·fastapi 코드 변경.
