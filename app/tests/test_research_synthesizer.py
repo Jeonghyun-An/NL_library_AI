@@ -71,7 +71,7 @@ class TestBuildLimitations:
         st.subquestions[1].note = "관련 논문이 없다"
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
         line = next(x for x in lims if "하위2" in x)
-        assert "근거 상한(60편)" in line and "7편" in line
+        assert "근거 상한(90편)" in line and "7편" in line
         assert "근거를 찾지 못했다" not in line and "관련 논문이 없다" not in line
 
     def test_capped_insufficient_subquestion_mentions_cap(self):

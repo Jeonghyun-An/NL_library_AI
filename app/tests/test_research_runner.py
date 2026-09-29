@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from services.research.critic import Verdict
-from services.research.runner import explore_subquestion
+from services.research.runner import explore_subquestion, subq_budget
 from services.research.state import ResearchState, SubQuestion, merge_params
 
 
@@ -593,6 +593,89 @@ class TestEvidenceCap:
         assert critic.calls == 1
         assert sq.queries == ["가"]
         assert sq.capped == 1
+
+
+class TestSubqBudget:
+    """하위질문 하나가 새로 만들 수 있는 근거 수 — 전체 상한을 하위질문 수로 나눈 몫."""
+
+    def _state(self, n, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=f"하위{i}") for i in range(n)]
+        return st
+
+    def test_default_share_for_six_subquestions_is_fifteen(self):
+        # 60 이면 10편씩이라 첫 검색(보통 8~10편)만으로 몫이 차 자기점검의 재검색이 헛돈다
+        assert subq_budget(self._state(6)) == 15
+
+    def test_share_is_floor_divided(self):
+        assert subq_budget(self._state(12)) == 7
+
+    def test_share_below_minimum_is_raised_to_minimum(self):
+        assert subq_budget(self._state(12, max_evidence=50)) == 5
+
+    def test_single_subquestion_gets_the_whole_pool(self):
+        assert subq_budget(self._state(1)) == 90
+
+    def test_dropping_subquestions_enlarges_the_rest(self):
+        # 계획에서 하위질문을 지우면 남은 하위질문의 몫이 저절로 커진다
+        assert subq_budget(self._state(3)) == 30
+
+
+class TestEvidenceBudget:
+    """하위질문은 제 몫까지만 근거를 새로 만든다 — 먼저 탐색한 하위질문이 풀을 독식하지 못한다."""
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 0, **params}))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def _explore(self, table):
+        async def _explore(query, *, params, db):
+            return _hits(table.get(query, []), query=query)
+        return _explore
+
+    def _run(self, st, table):
+        for sq in st.subquestions:
+            asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=self._explore(table),
+                                            critique_fn=_FakeCritic(), emit=None))
+
+    def test_subquestion_stops_creating_at_its_share(self):
+        # 운영에서 먼저 탐색한 HPC 가 60편 중 32편을 가져가 핵심 하위질문은 2편에 그쳤다
+        st = self._state("가", "나", max_evidence=4, min_evidence_per_subq=1)
+        self._run(st, {"가": ["A", "B", "C"], "나": ["D"]})
+        first, second = st.subquestions
+        assert len(first.evidence_ids) == 2
+        assert (first.budget_capped, first.capped) == (1, 0)
+        assert len(second.evidence_ids) == 1
+
+    def test_reused_evidence_does_not_use_up_the_share(self):
+        # 이미 있는 근거에 링크하는 것은 전체 풀을 늘리지 않는다
+        st = self._state("가", "나", max_evidence=4, min_evidence_per_subq=1)
+        self._run(st, {"가": ["A", "B"], "나": ["A", "B", "C", "D"]})
+        second = st.subquestions[1]
+        assert sorted(st.evidence[e].cnts_id for e in second.evidence_ids) == ["A", "B", "C", "D"]
+        assert second.budget_capped == 0
+
+    def test_share_and_global_cap_are_counted_apart(self):
+        # 최솟값이 몫을 끌어올려 몫의 합이 전체 상한을 넘으면 전체 상한이 먼저 막는다
+        st = self._state("가", "나", max_evidence=3, min_evidence_per_subq=2)
+        self._run(st, {"가": ["A", "B", "C"], "나": ["D", "E", "F"]})
+        first, second = st.subquestions
+        assert (first.budget_capped, first.capped) == (1, 0)
+        assert (second.budget_capped, second.capped) == (0, 2)
+
+    def test_no_recheck_once_the_share_is_used_up(self):
+        # 전체 풀은 남아 있어도 이 하위질문은 더 만들 수 없다 — 재검색은 검색·LLM 호출만 태운다
+        st = self._state("가", "나", max_evidence=4, min_evidence_per_subq=1, max_recheck=3)
+        critic = _FakeCritic()
+        asyncio.run(explore_subquestion(
+            st, st.subquestions[0], db=None, explore_fn=self._explore({"가": ["A", "B", "C"]}),
+            critique_fn=critic, emit=None,
+        ))
+        assert critic.calls == 1
+        assert st.subquestions[0].queries == ["가"]
+        assert len(st.evidence) == 2
 
 
 _RELAY = "services.research.relay"

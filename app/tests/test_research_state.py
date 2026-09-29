@@ -126,7 +126,7 @@ def _explored_state() -> ResearchState:
     st.corpus_range = {"from": "2002", "to": "2026", "n_papers": 72054}
     st.subquestions = [
         SubQuestion(idx=0, text="하위1", queries=["q1", "q2"], evidence_ids=["E0"],
-                    verdict="sufficient", note="충분하다", capped=3,
+                    verdict="sufficient", note="충분하다", capped=3, budget_capped=2,
                     evidence_chunks={"E0": ["c1"]}, chunk_scores={"c1": 0.91}),
         SubQuestion(idx=1, text="하위2", queries=["q3"], verdict="insufficient",
                     parse_failed=True, note="판정을 못 읽었다"),
@@ -204,6 +204,11 @@ class TestSnapshotRoundTrip:
         assert [s.capped for s in back.subquestions] == [3, 0, 0]
         assert back.subquestions[0].evidence_chunks == {"E0": ["c1"]}
 
+    def test_budget_capped_survives(self):
+        # 떨어지면 재개한 잡의 한계 문장이 하위질문당 몫에 막힌 후보를 잃는다
+        back = restore_state("j1", snapshot_state(_explored_state()))
+        assert [s.budget_capped for s in back.subquestions] == [2, 0, 0]
+
     def test_chunk_scores_survive(self):
         # 떨어지면 재개한 잡의 절 호버가 다른 하위질문이 준 점수를 띄운다
         back = restore_state("j1", snapshot_state(_explored_state()))
@@ -238,6 +243,13 @@ class TestSnapshotEvolution:
         assert [s.capped for s in back.subquestions] == [0, 0, 0]
         assert back.subquestions[0].evidence_chunks == {}
         assert back.subquestions[0].chunk_scores == {}
+
+    def test_old_snapshot_without_budget_capped_gets_zero(self):
+        # 몫이 생기기 전 스냅샷 — 그때는 전체 상한만 있었으니 몫에 막힌 후보는 0 이다
+        snap = snapshot_state(_explored_state())
+        for sq in snap["subquestions"]:
+            del sq["budget_capped"]
+        assert [s.budget_capped for s in restore_state("j1", snap).subquestions] == [0, 0, 0]
 
     def test_unknown_chunk_key_is_ignored(self):
         snap = snapshot_state(_explored_state())

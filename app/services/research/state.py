@@ -18,7 +18,8 @@ log = logging.getLogger(__name__)
 DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     "max_subquestions": 6,
     "max_recheck": 3,
-    "max_evidence": 60,
+    # 하위질문 6개면 몫이 15편(runner.subq_budget) — 첫 검색(보통 8~10편) 뒤에도 재검색이 보탤 자리가 남는다
+    "max_evidence": 90,
     "per_subq_top_k": 12,
     "chunks_per_evidence": 2,
     "citation_weight": 0.2,
@@ -127,6 +128,9 @@ class SubQuestion:
     # max_evidence 상한 때문에 채택하지 못한 후보 논문 수. failed 와 같은 이유로
     # 따로 둔다 — 없으면 시스템 상한이 "근거를 찾지 못했다"(코퍼스 빈틈)로 보고된다.
     capped: int = 0
+    # 하위질문당 몫(runner.subq_budget) 때문에 채택하지 못한 후보 논문 수. capped 와 따로 세는
+    # 이유는 풀리는 방법이 달라서다 — 몫은 하위질문을 줄이면 커지고, 전체 상한은 max_evidence 를 올려야 풀린다.
+    budget_capped: int = 0
     # 근거 ID → 이 하위질문 검색에서 매칭된 청크 ID(점수순). 한 논문이 여러
     # 하위질문에서 재사용되면 Evidence.chunks 는 그 합집합이라, 이게 없으면 critic
     # 발췌·절 요약·호버가 처음 채택한 하위질문의 대목으로 고정된다.

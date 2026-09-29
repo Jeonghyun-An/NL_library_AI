@@ -82,15 +82,30 @@ def _mark_seen(state: ResearchState, hits: list[HitRow], meta: dict[str, dict]) 
     return len(fresh)
 
 
+def subq_budget(state: ResearchState) -> int:
+    """하위질문 하나가 새로 만들 수 있는 근거 수.
+
+    전체 상한을 선착순으로 쓰면 먼저 탐색한 하위질문이 풀을 독식한다(운영에서 HPC 가 60편 중
+    32편, 질문의 핵심인 하위질문은 2편). 몫은 기존 두 파라미터로만 정한다 — 계획에서 하위질문을
+    지우면 남은 하위질문의 몫이 저절로 커진다.
+    """
+    params = state.params
+    return max(params["min_evidence_per_subq"],
+               params["max_evidence"] // max(1, len(state.subquestions)))
+
+
 def _recheck_query(
-    state: ResearchState, subq: SubQuestion, verdict: Verdict, *, recheck: int,
+    state: ResearchState, subq: SubQuestion, verdict: Verdict, *, recheck: int, own: int,
 ) -> str | None:
-    """다음 회차에 검색할 검색어. 재검색하지 않으면 None."""
+    """다음 회차에 검색할 검색어. 재검색하지 않으면 None.
+
+    own 은 이 하위질문이 만들어 지금 갖고 있는 근거 수다(몫을 쓰는 쪽).
+    """
     params = state.params
     if not should_recheck(subq, recheck_count=recheck, max_recheck=params["max_recheck"]):
         return None
-    # 상한에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
-    if len(state.evidence) >= params["max_evidence"]:
+    # 전체 상한이나 이 하위질문의 몫에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
+    if len(state.evidence) >= params["max_evidence"] or own >= subq_budget(state):
         return None
     return _next_query(verdict.new_queries, subq.queries)
 
@@ -116,6 +131,11 @@ async def explore_subquestion(
     relevance: dict[str, float] = {}
     leaders: list[str] = []
     capped: set[str] = set()
+    budget_capped: set[str] = set()
+    budget = subq_budget(state)
+    # 이 하위질문이 새로 만든 근거. 몫은 이 중 지금 subq.evidence_ids 에 남은 것으로 센다 —
+    # 재사용 링크는 전체 풀을 늘리지 않으니 몫을 쓰지 않고, 하위질문에서 빠진 근거는 자리를 돌려준다.
+    made: set[str] = set()
 
     while True:
         round_no = recheck + 1
@@ -139,6 +159,7 @@ async def explore_subquestion(
         known_by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
         best = _best_rank(hits)
         before = set(subq.evidence_ids)
+        own = len(made & before)
         linked: list[str] = []
         for cand in build_evidence(
             hits, meta, chunks_per_evidence=params["chunks_per_evidence"],
@@ -148,12 +169,20 @@ async def explore_subquestion(
                 # break 가 아니라 continue 다. 상한에 닿은 뒤에 나오는 후보 중에도
                 # "이미 있는 근거의 재사용"이 섞여 있는데, 그건 총량을 늘리지 않는다.
                 # break 로 끊으면 그 하위질문이 정당한 근거 링크를 잃는다.
+                #
+                # 몫을 전체 상한보다 먼저 본다. 몫을 다 쓴 하위질문은 풀이 남아 있어도 못 만드는데,
+                # 그걸 전체 상한 탓으로 적으면 한계 문장이 max_evidence 를 올리라는 잘못된 신호가 된다.
+                if own >= budget:
+                    budget_capped.add(cand.cnts_id)
+                    continue
                 if len(state.evidence) >= params["max_evidence"]:
                     capped.add(cand.cnts_id)
                     continue
                 eid = evidence_id(len(state.evidence))
                 state.evidence[eid] = Evidence(id=eid, cnts_id=cand.cnts_id, meta=cand.meta)
                 known_by_cnts[cand.cnts_id] = eid
+                made.add(eid)
+                own += 1
             # 재사용이어도 이번 검색에서 매칭된 대목은 버리지 않는다 — 그 하위질문의
             # critic 발췌·절 요약·호버는 이 대목을 써야 한다.
             link_chunks(state.evidence[eid], subq, cand.chunks,
@@ -167,6 +196,7 @@ async def explore_subquestion(
             leaders.append(fresh[0])
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
         subq.capped = len(capped)
+        subq.budget_capped = len(budget_capped)
         await emit("counters", research_stats(state))
 
         verdict = await critique_fn(
@@ -184,7 +214,8 @@ async def explore_subquestion(
         # verdict="sufficient" 로 떨어지고 should_recheck 는 "insufficient" 일 때만
         # True 이므로, 판정 불가가 난 라운드가 항상 마지막 라운드다.
         subq.parse_failed = verdict.parse_failed
-        next_query = _recheck_query(state, subq, verdict, recheck=recheck)
+        next_query = _recheck_query(state, subq, verdict, recheck=recheck,
+                                    own=len(made.intersection(subq.evidence_ids)))
         subq.rounds.append({
             "round": round_no, "query": query, "found_chunks": len(hits),
             "new_papers": new_papers, "verdict": verdict.verdict,
