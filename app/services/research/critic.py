@@ -34,6 +34,10 @@ class Verdict:
     note: str = ""
     new_queries: list[str] = field(default_factory=list)
     parse_failed: bool = False
+    # 발췌가 하위질문의 핵심 개념을 다루지 않는 근거의 목록 번호(1부터, format_evidence_list 의 [n]).
+    # runner 가 그 하위질문에서 뺀다 — 같은 단어를 다른 뜻으로 쓴 논문을 걸러낼 수 있는 곳은
+    # 발췌를 읽는 critic 뿐이다.
+    off_topic: list[int] = field(default_factory=list)
 
 
 def _unchecked() -> Verdict:
@@ -46,11 +50,14 @@ def _failed(reason: str, raw: str) -> Verdict:
     return _unchecked()
 
 
-def parse_verdict(raw: str) -> Verdict:
+def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
     """판정 JSON 을 읽는다. 못 읽으면 sufficient 로 떨어뜨려 루프를 끝낸다.
 
     해석 실패를 insufficient 로 두면 파싱이 깨질 때마다 재검색이 상한까지
     돌아 시간을 태운다. 실패가 루프가 되면 안 된다.
+
+    listed 는 번호를 붙여 보인 근거 수다(format_evidence_list). 판정을 못 읽으면
+    off_topic 도 비어 있다 — 판정을 못 읽었는데 근거를 지우면 안 된다.
     """
     data = extract_json(raw)
     if data is None:
@@ -65,7 +72,23 @@ def parse_verdict(raw: str) -> Verdict:
         # 문자열이 오면 순회 시 글자 단위로 쪼개져 "진" 한 글자로 재검색한다
         raw_queries = []
     queries = [q for q in raw_queries if isinstance(q, str) and q.strip()]
-    return Verdict(verdict, note=str(data.get("note") or ""), new_queries=queries)
+    return Verdict(verdict, note=str(data.get("note") or ""), new_queries=queries,
+                   off_topic=_off_topic(data.get("off_topic"), listed))
+
+
+def _off_topic(raw: object, listed: int) -> list[int]:
+    """보인 목록 안의 번호만 순서대로·중복 없이 받는다. 배열이 아니거나 숫자로 읽히지 않는 값은
+    버린다 — 잘못 읽은 번호로 관련 있는 근거를 지우느니 무관한 근거 하나를 남기는 편이 낫다."""
+    if not isinstance(raw, list):
+        return []
+    out: list[int] = []
+    for v in raw:
+        if isinstance(v, str) and v.strip().isdecimal():
+            v = int(v)
+        # bool 은 int 의 서브클래스라 true 가 1번으로 읽힌다
+        if isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= listed and v not in out:
+            out.append(v)
+    return out
 
 
 def should_recheck(subq: SubQuestion, *, recheck_count: int, max_recheck: int) -> bool:
@@ -83,26 +106,30 @@ def format_evidence_list(evidence: list[Evidence]) -> str:
 
     evidence 는 하위질문 안 순위순이다 — 상한에서 잘리는 쪽이 순위 낮은 근거다.
 
+    항목마다 [1]부터 번호를 붙인다. 모델은 이 번호로 무관한 근거를 가리키고(off_topic),
+    runner 가 넘긴 순서로 근거 id 에 되돌린다. 잘린 나머지는 번호 없이 수만 적는다 —
+    발췌를 보지 못한 근거를 무관하다고 가리키게 두지 않는다.
+
     발췌는 자르기 전에 공백을 접는다. 표 청크는 `[표]\\n…\\n{table_md}` 로
     저장되고 본문 청크도 단락 개행을 보존하므로, 그대로 쓰면 한 항목이
     여러 줄로 퍼져 어느 발췌가 어느 논문 것인지 흐려진다.
     """
     lines: list[str] = []
-    for e in evidence[:_MAX_LISTED]:
+    for n, e in enumerate(evidence[:_MAX_LISTED], start=1):
         title = e.meta.get("title") or "(제목 없음)"
         year = e.meta.get("pub_date") or "연도미상"
         if not e.chunks:
-            lines.append(f"- {title} ({year})")
+            lines.append(f"[{n}] {title} ({year})")
             continue
         flat = " ".join(e.chunks[0].text.split())
         excerpt = flat[:_EXCERPT_LEN]
         if len(flat) > _EXCERPT_LEN:
             excerpt += "…"
-        lines.append(f"- {title} ({year}) — {excerpt}")
+        lines.append(f"[{n}] {title} ({year}) — {excerpt}")
 
     hidden = len(evidence) - _MAX_LISTED
     if hidden > 0:
-        lines.append(f"- …외 {hidden}편")
+        lines.append(f"…외 {hidden}편")
     return "\n".join(lines) or "(없음)"
 
 
@@ -126,4 +153,4 @@ async def critique(
         # 빠진 채 "탐색 중 오류"로 보고된다. 파싱 실패와 같은 '판정 불가'로 낮춘다.
         log.warning("[critic] 판정 호출 실패 subq=%s — %s: %s", subq.idx, type(e).__name__, e)
         return _unchecked()
-    return parse_verdict(raw)
+    return parse_verdict(raw, listed=min(len(evidence), _MAX_LISTED))

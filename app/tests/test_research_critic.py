@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 
 import httpx
@@ -78,6 +79,49 @@ class TestParseVerdict:
         assert any("maybe" in r.getMessage() for r in warnings)
 
 
+class TestOffTopic:
+    """무관 근거 번호 — 잘못 읽은 번호로 관련 있는 근거를 지우면 안 된다."""
+
+    def _parse(self, off_topic, *, listed=5, verdict="insufficient"):
+        raw = json.dumps({"verdict": verdict, "note": "n", "new_queries": [],
+                          "off_topic": off_topic}, ensure_ascii=False)
+        return parse_verdict(raw, listed=listed)
+
+    def test_integer_numbers_are_read(self):
+        assert self._parse([2, 4]).off_topic == [2, 4]
+
+    def test_numeric_strings_are_read(self):
+        assert self._parse(["3", " 1 "]).off_topic == [3, 1]
+
+    def test_numbers_outside_the_list_are_dropped(self):
+        assert self._parse([0, 1, 5, 6, -2], listed=5).off_topic == [1, 5]
+
+    def test_duplicates_are_dropped(self):
+        assert self._parse([2, "2", 2]).off_topic == [2]
+
+    def test_non_numbers_are_dropped(self):
+        # true 는 int 의 서브클래스라 그냥 두면 1번으로 읽힌다
+        assert self._parse([1.0, "둘", None, True, {"n": 3}, "3"]).off_topic == [3]
+
+    def test_non_list_gives_empty(self):
+        assert self._parse("2, 3").off_topic == []
+        assert self._parse(2).off_topic == []
+
+    def test_missing_key_gives_empty(self):
+        v = parse_verdict('{"verdict": "sufficient", "note": "n", "new_queries": []}', listed=5)
+        assert v.off_topic == []
+
+    def test_sufficient_verdict_may_still_name_off_topic(self):
+        assert self._parse([1], verdict="sufficient").off_topic == [1]
+
+    def test_unreadable_verdict_excludes_nothing(self):
+        """판정을 못 읽었는데 근거를 지우면 안 된다."""
+        raw = '{"verdict": "maybe", "note": "n", "new_queries": [], "off_topic": [1, 2]}'
+        v = parse_verdict(raw, listed=5)
+        assert v.parse_failed is True
+        assert v.off_topic == []
+
+
 class TestShouldRecheck:
     def _sq(self, verdict):
         return SubQuestion(idx=0, text="q", verdict=verdict)
@@ -121,7 +165,13 @@ class TestFormatEvidenceList:
     def test_includes_excerpt_from_first_chunk(self):
         e = self._evidence("제목", "2020", "본문 발췌 내용")
         result = format_evidence_list([e])
-        assert result == "- 제목 (2020) — 본문 발췌 내용"
+        assert result == "[1] 제목 (2020) — 본문 발췌 내용"
+
+    def test_items_are_numbered_from_one_in_given_order(self):
+        """critic 은 이 번호로 무관한 근거를 가리키고, runner 는 넘긴 순서로 id 에 되돌린다."""
+        evs = [self._evidence(f"제목{i}", "2020") for i in range(3)]
+        assert format_evidence_list(evs).splitlines() == [
+            "[1] 제목0 (2020)", "[2] 제목1 (2020)", "[3] 제목2 (2020)"]
 
     def test_excerpt_truncated(self):
         e = self._evidence("제목", "2020", "가" * 500)
@@ -138,30 +188,32 @@ class TestFormatEvidenceList:
         e = self._evidence("제목", "2020", chunk_text)
         result = format_evidence_list([e])
         assert "\n" not in result
-        assert result == "- 제목 (2020) — [표] 설명 | a | b | | 1 | 2 |"
+        assert result == "[1] 제목 (2020) — [표] 설명 | a | b | | 1 | 2 |"
 
     def test_list_is_capped_with_remainder_note(self):
         """상한이 없으면 재검색 누적분이 컨텍스트를 넘겨 system 지시가 잘려 나간다."""
         many = [self._evidence(f"제목{i}", "2020", "본문") for i in range(_MAX_LISTED + 5)]
         lines = format_evidence_list(many).splitlines()
         assert len(lines) == _MAX_LISTED + 1
-        assert lines[-1] == "- …외 5편"
+        assert lines[_MAX_LISTED - 1].startswith(f"[{_MAX_LISTED}] ")
+        # 잘린 나머지에는 번호가 없다 — 발췌를 보지 못한 근거를 무관하다고 가리키게 두지 않는다
+        assert lines[-1] == "…외 5편"
 
     def test_empty_meta_values_fall_back(self):
         """이 코드베이스는 빈 메타를 "" 로 표현한다 — get 의 기본값이 안 먹는다."""
         e = Evidence(id="E1", cnts_id="c", meta={"title": "", "pub_date": ""}, chunks=[])
-        assert format_evidence_list([e]) == "- (제목 없음) (연도미상)"
+        assert format_evidence_list([e]) == "[1] (제목 없음) (연도미상)"
 
     def test_evidence_without_chunks_falls_back_to_title_year(self):
         e = self._evidence("제목", "2020")
-        assert format_evidence_list([e]) == "- 제목 (2020)"
+        assert format_evidence_list([e]) == "[1] 제목 (2020)"
 
     def test_mixed_evidence_does_not_crash(self):
         with_chunk = self._evidence("A", "2020", "본문")
         without_chunk = self._evidence("B", "2021")
         result = format_evidence_list([with_chunk, without_chunk])
         lines = result.splitlines()
-        assert lines == ["- A (2020) — 본문", "- B (2021)"]
+        assert lines == ["[1] A (2020) — 본문", "[2] B (2021)"]
 
     def test_empty_list_gives_placeholder(self):
         assert format_evidence_list([]) == "(없음)"
@@ -231,3 +283,20 @@ class TestCritique:
 
         v = self._run(monkeypatch, fake_chat)
         assert v.parse_failed is True
+
+    def test_prompt_numbers_the_evidence_and_asks_for_off_topic(self, monkeypatch):
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return ('{"verdict": "sufficient", "note": "n", "new_queries": [], '
+                    '"off_topic": [1, 2]}')
+
+        v = self._run(monkeypatch, fake_chat)
+        system, user = seen[0][0]["content"], seen[0][1]["content"]
+        assert '"off_topic": []' in system     # 예시는 빈 배열뿐 — gemma 는 예시의 개수를 베낀다
+        # 모두 빼 0편이 되면 runner 가 다시 찾는데(should_recheck 의 emptied), 충분 판정에는 검색어를
+        # 제안하지 않는 규칙만 있으면 찾을 검색어가 없다
+        assert "남는 근거가 없으니 new_queries 에 다른 검색어를 제안하세요" in system
+        assert "[1] 논문 가 (2008) — 본문 발췌" in user
+        assert v.off_topic == [1]              # 근거 1편에 2번은 없다
