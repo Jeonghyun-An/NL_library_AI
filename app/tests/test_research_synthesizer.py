@@ -29,6 +29,12 @@ def _state():
     return st
 
 
+def _section_of(*cnts_ids):
+    """cnts_ids 를 대표 논문으로 싣는 절 — 보고서 evidence 는 절에 실린 근거만 담는다."""
+    return {"heading": "h", "intro": "", "future": [],
+            "papers": [{"cnts_id": c, "summary": "s"} for c in cnts_ids]}
+
+
 class TestBuildLimitations:
     def test_insufficient_subquestion_is_reported(self):
         lims = build_limitations(_state(), unmarked_total=0, dropped_total=0)
@@ -401,13 +407,13 @@ class TestAssembleReport:
         assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
 
     def test_evidence_is_serialized(self):
-        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        report = assemble_report(_state(), sections=[_section_of("A")], unmarked_total=0)
         assert report["evidence"]["E1"]["chunks"][0]["page_start"] == 3
         assert report["evidence"]["E1"]["cnts_id"] == "A"
 
     def test_evidence_chunk_score_is_serialized(self):
         # score 는 화면에 유사도로 나간다 — 프론트는 report 만 받으므로 여기서 빠지면 닿을 길이 없다
-        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        report = assemble_report(_state(), sections=[_section_of("A")], unmarked_total=0)
         assert report["evidence"]["E1"]["chunks"][0]["score"] == 0.9
 
     def test_trail_comes_from_subquestions(self):
@@ -640,7 +646,7 @@ class TestSynthesize:
 
     def test_failed_subquestion_with_evidence_gets_a_section(self, monkeypatch):
         """재검색·판정 중 예외로 끝난 하위질문도 그 전에 모은 근거는 실재한다 —
-        절에서 빼면 근거가 report.evidence 에만 고아로 남는다."""
+        절에서 빼면 그 근거가 보고서에서 사라진다(report.evidence 는 절에 실린 근거만 담는다)."""
         st = _state_three()
         st.subquestions[1].failed = True
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
@@ -698,7 +704,7 @@ class TestReportChunks:
         return st
 
     def test_chunk_no_section_points_to_is_not_served(self):
-        report = assemble_report(self._replaced(), sections=[], unmarked_total=0)
+        report = assemble_report(self._replaced(), sections=[_section_of("A")], unmarked_total=0)
         assert [c["chunk_id"] for c in report["evidence"]["E1"]["chunks"]] == ["P-재1"]
 
     def test_chunks_of_several_sections_are_best_first(self):
@@ -708,14 +714,14 @@ class TestReportChunks:
                                     Chunk("c2b", "하위2 대목", 2, 2, 0.8)]
         st.subquestions[0].evidence_chunks = {"E1": ["c1"], "E2": ["c2a"]}
         st.subquestions[1].evidence_chunks = {"E2": ["c2b"], "E3": ["c3"]}
-        report = assemble_report(st, sections=[], unmarked_total=0)
+        report = assemble_report(st, sections=[_section_of("B")], unmarked_total=0)
         assert [c["chunk_id"] for c in report["evidence"]["E2"]["chunks"]] == ["c2b", "c2a"]
 
     def test_evidence_without_mapping_keeps_every_chunk(self):
         """매핑이 없는 옛 스냅샷은 chunks_for 처럼 전부 준다 — 거르면 청크가 0개가 된다."""
         st = self._replaced()
         st.subquestions[0].evidence_chunks = {}
-        report = assemble_report(st, sections=[], unmarked_total=0)
+        report = assemble_report(st, sections=[_section_of("A")], unmarked_total=0)
         assert [c["chunk_id"] for c in report["evidence"]["E1"]["chunks"]] == ["P-재1", "P-가"]
 
     def test_section_carries_its_own_chunk_scores(self):
@@ -817,6 +823,29 @@ class TestSectionProgress:
         assert set(infos[-1]["evidence"]) == {"E2", "E3"}
 
 
+class TestReportEvidence:
+    """보고서 evidence 는 절에 실린 근거만 담는다 — 채택 수는 stats 가 센다."""
+
+    def test_evidence_beyond_the_section_papers_is_left_out(self):
+        # 절은 하위질문마다 앞 5편만 싣는다 — 나머지까지 실으면 상한을 올릴수록 보고서 JSON 만 분다
+        st = _state_three()
+        ids = [f"E{i}" for i in range(1, 8)]
+        for eid in ids:
+            st.evidence.setdefault(eid, Evidence(id=eid, cnts_id=eid, meta={}))
+        st.subquestions[0].evidence_ids = ids
+        sections = [build_section(st, sq, {"intro": "도입."})
+                    for sq in st.subquestions if sq.evidence_ids]
+        report = assemble_report(st, sections, unmarked_total=0)
+        assert list(report["evidence"]) == ["E1", "E2", "E3", "E4", "E5"]
+        assert report["stats"]["evidence_adopted"] == 7
+
+    def test_evidence_of_a_subquestion_without_a_section_is_left_out(self):
+        st = _state_three()
+        report = assemble_report(st, [build_section(st, st.subquestions[0], {"intro": "도입."})],
+                                 unmarked_total=0)
+        assert set(report["evidence"]) == {"E1", "E2"}
+
+
 class TestReportStats:
     """보고서 서론 한 줄("논문 N편을 검토하고 M편을 근거로")의 원천."""
 
@@ -903,7 +932,7 @@ class TestSectionEvidence:
             {"chunk_id": "c3", "text": "본문", "page_start": 1, "page_end": 1, "score": 0.9}]}
         # 손으로 적은 기대값만으로는 보고서 쪽 모양이 바뀌어도 통과한다 — 실제 보고서 출력과도 맞춘다
         # (E3 은 한 절에만 실려 두 쪽의 대목 선택이 같다)
-        assert ev == assemble_report(st, [], unmarked_total=0)["evidence"]["E3"]
+        assert ev == assemble_report(st, [_section_of("C")], unmarked_total=0)["evidence"]["E3"]
 
     def test_chunks_are_limited_to_the_section(self):
         # 한 논문이 두 절에 실리면 Evidence.chunks 는 합집합이다 — 절 미리보기는 제 대목만 싣는다

@@ -179,8 +179,22 @@ def _evidence_entry(ev: Evidence, keep: list[Chunk]) -> dict:
     }
 
 
-def _serialize_evidence(state: ResearchState) -> dict:
-    """보고서의 근거 목록. 청크는 지금 어느 하위질문이든 가리키는 것만, 점수순으로 싣는다.
+def _cited(state: ResearchState, section: dict) -> list[str]:
+    """다듬은 절(finalize_section) 하나가 인용한 근거 번호 — 대표 논문·도입·향후 과제의 칩 전부."""
+    # 다듬은 도입에는 표준형 [E#] 만 남는다 — bind_markers 의 used 로 읽는다. 여기서 정규식을
+    # 다시 쓰면 마커 문법이 두 곳으로 갈라진다.
+    cited = list(bind_markers(section.get("intro", ""), set(state.evidence)).used)
+    for item in (*section.get("papers", []), *section.get("future", [])):
+        cited.extend(item.get("evidence", []))
+    return cited
+
+
+def _serialize_evidence(state: ResearchState, cited: set[str]) -> dict:
+    """보고서의 근거 목록. 절에 실린(cited) 근거만, 청크는 지금 어느 하위질문이든 가리키는 것만
+    점수순으로 싣는다.
+
+    채택한 근거를 전부 싣지 않는 이유: 절은 하위질문마다 앞 5편만 쓰므로 나머지는 어느 칩도
+    가리키지 않는다. 그대로 두면 상한을 올릴수록 보고서 JSON 만 분다. 채택 수는 stats 가 센다.
 
     Evidence.chunks 는 매칭된 적 있는 청크의 저장소라 재검색이 갈아끼운 대목도 남아 있다.
     그대로 실으면 어느 절도 그 대목으로 쓰지 않았는데 삽입 순서대로 chunks[0] 에 나간다.
@@ -198,7 +212,8 @@ def _serialize_evidence(state: ResearchState) -> dict:
             return ev.chunks
         return [c for c in ev.chunks if c.chunk_id in mapped[eid]]
 
-    return {eid: _evidence_entry(ev, _shown(eid, ev)) for eid, ev in state.evidence.items()}
+    return {eid: _evidence_entry(ev, _shown(eid, ev))
+            for eid, ev in state.evidence.items() if eid in cited}
 
 
 def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
@@ -208,14 +223,9 @@ def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
     거듭 나른다. 대목은 이 절이 매칭한 것(evidence_chunks)만 점수순으로 싣고, 매핑이 없으면
     _serialize_evidence 와 같이 전부 싣는다.
     """
-    # 다듬은 도입에는 표준형 [E#] 만 남는다 — bind_markers 의 used 로 읽는다. 여기서 정규식을
-    # 다시 쓰면 마커 문법이 두 곳으로 갈라진다.
-    cited = list(bind_markers(section.get("intro", ""), set(state.evidence)).used)
-    for item in (*section.get("papers", []), *section.get("future", [])):
-        cited.extend(item.get("evidence", []))
     mapped = section.get("evidence_chunks", {})
     out: dict[str, dict] = {}
-    for eid in cited:
+    for eid in _cited(state, section):
         if eid in out:
             continue
         # finalize_section 은 근거에 있는 번호만 남긴다 — 어기면 KeyError 로 바로 드러난다
@@ -319,16 +329,18 @@ def assemble_report(
 ) -> dict:
     tally = SectionTally(unmarked=unmarked_total)
     out_sections = []
+    cited: set[str] = set()
     for sec in sections:
         section, counted = finalize_section(state, sec)
         out_sections.append(section)
         tally.add(counted)
+        cited.update(_cited(state, section))
 
     return {
         "question": state.question,
         "range": state.corpus_range,
         "sections": out_sections,
-        "evidence": _serialize_evidence(state),
+        "evidence": _serialize_evidence(state, cited),
         "trail": [
             {"subquestion": sq.text, "queries": sq.queries,
              "evidence_count": len(sq.evidence_ids),
@@ -488,8 +500,8 @@ async def synthesize(
 
     근거가 없는 하위질문은 절을 만들지 않는다 — 한계 섹션이 그 사실을 적는다.
     탐색이 도중에 실패한 하위질문이라도 그 전에 모은 근거가 있으면 절을 만든다.
-    빼면 실재하는 근거가 report.evidence 에만 고아로 남고, 한계에는 사실과 다른
-    "확인하지 못했다"만 실린다.
+    빼면 실재하는 근거가 보고서에서 사라지고(report.evidence 는 절에 실린 근거만 담는다),
+    한계에는 사실과 다른 "확인하지 못했다"만 실린다.
 
     일부 절의 실패는 한계로 보고하고 넘어가지만, 전부 실패하면 예외를 던진다.
     서술이 한 줄도 없는 보고서를 completed 로 두면 재시도(stage=explored 에서
