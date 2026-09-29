@@ -23,18 +23,20 @@
 
 **실행 전 확인:**
 - `docs/ops/recurring-gotchas.md` 13번: torch 를 끌어오는 모듈은 함수 안에서 import 한다(로컬 `app/.venv` 에 torch·DB·Redis 가 없다. 테스트는 대역으로 돈다).
-- 운영 배포와 운영 합격 기준 비교(spec §11-4)는 이 계획 밖이다. 공유 운영 서버라 **사용자 승인 뒤** 따로 한다. spec §11-3 대로 API 가 잡 파라미터를 합쳐 저장하므로 `nl-lib-fastapi` 도 새 이미지여야 한다.
+- 운영 배포와 운영 합격 기준 비교(spec §11-4)는 이 계획 밖이다. 공유 운영 서버라 **사용자 승인 뒤** 따로 한다. spec §11-3 대로 API 가 잡 파라미터를 합쳐 저장하므로 `nl-lib-fastapi` 도 새 이미지여야 한다. 이때 워커(`nl-lib-celery-research`·`nl-lib-celery-research-plan`)를 먼저 바꾸고 fastapi 를 나중에 바꾼다. 새 fastapi 는 새 잡마다 `exclude_off_topic` 을 합쳐 저장하는데 옛 워커의 `merge_params` 는 모르는 키를 거부한다. 순서가 거꾸로면 그 사이에 만든 잡이 계획 단계에서 실패한다(Task 8 Step 6).
 - 인덱싱 코드(`app/services/ingestion/`, `app/workers/tasks.py`, `app/workers/job_runtime.py`)와 DB 스키마는 건드리지 않는다.
 
 **계획 조립 때 정한 것:**
 - 끈 잡(`exclude_off_topic=0`)에서는 `parse_verdict` 의 "모두 빼면 insufficient" 규칙을 쓰지 않는다(Task 3). 근거를 빼지 않으니 판정이 본 근거가 그대로 남고, 뒤집으면 끈 잡만 재검색을 더 돌아 켠 잡과 나란히 볼 기준(걸린 시간·근거 수)이 흐려진다. 테스트 3개(critic 2, runner 1)로 고정한다.
 - `critique` 이벤트에도 `excluded_papers`·`flagged` 를 싣고(Task 1·3), 화면의 점검 이벤트 합치기가 그 값으로 회차를 바로 채운다(Task 4). 뒤따르는 진행 저장 step 이벤트(`result.rounds`)도 같은 값을 싣지만, 워커의 `_save_progress` 는 저장에 실패하면 step 이벤트를 보내지 않는다. 그러면 새로고침 전까지 목록을 펼칠 수 없게 된다.
+- 끈 잡도 critic 프롬프트(`research_critique.yaml`)는 그대로다(spec §11-3). 프롬프트는 off_topic 에 넣은 근거가 빠진다고 알리고, 모두 넣었으면 insufficient 로 답하라고 한다. 그래서 끈 잡에서도 모델이 스스로 부족으로 답해 다시 찾을 수 있다. 끈 잡은 러너가 빼는 것과 `parse_verdict` 의 뒤집기만 되돌리고, 무관 제외 전(round04c B 이전)의 판정까지 되돌리지는 않는다. 운영 비교(spec §11-4)에서 끈 잡의 걸린 시간·재검색을 읽을 때 이 점을 감안한다.
 
 **계획 작성 시 검증:** 이 문서의 코드 블록을 저장소 밖 사본(`b84ce41` 작업 트리의 `app/`·`frontend/`·`scripts/` 복사본, 줄바꿈 그대로)에 Task 1→7 순서로 기계적으로 적용하고, 각 Step 의 명령을 그대로 돌렸다.
 - "교체 전" 문자열 108개는 모두 그 시점의 대상 파일에서 한 곳씩만 맞았다. `replace_all` 로 적은 세 곳(Task 4 Step 1)은 적은 대로 2·2·4곳이 맞았다.
 - 각 태스크의 "실패 확인"·"통과 확인" 출력과 아래 "누적 기대치"는 이 사본의 실측이다. 백엔드는 865 → 888 passed, 프론트는 21파일 / 389 → 405 passed 다. `nuxi typecheck` 는 각 태스크 뒤 오류 0 이고(Task 7 Step 2 에서 페이지를 고치기 전에는 `TS2322` 가 나는 것도 확인했다), `npm run build` 는 `└  ✨ Build complete!` 다.
 - 두 초안(백엔드·화면)이 만나는 곳은 조립 때 맞췄다. 화면 초안은 "점검 이벤트는 뺀 수만 싣는다"고 봤지만 백엔드는 `critique` 이벤트에 `excluded_papers`·`flagged` 를 싣는다. 그래서 Task 4 에 `CritiqueEvent` 의 두 칸, `applyCritique` 가 그 값으로 채우는 두 줄, 그 테스트(점검 이벤트만으로 채움·옛 워커는 빈 목록)를 넣고, Task 7 의 주석 한 줄을 맞췄다. 모두 위 검증에 들어 있다.
 - 확인하지 못한 것: 실제 LLM(gemma)이 돌려주는 `off_topic` 으로 운영에서 얼마나 걸러내는지, 실제 화면(키보드·스크린리더). 운영 합격 기준(spec §11-4)과 Task 7 의 화면 확인 목록이 방어선이다.
+- 계획 검토(2026-09-29)에서 같은 절차를 다시 돌렸다. `c71a8cd` 의 임시 git worktree 에 Task 1→8 을 기계적으로 적용했다. 결과는 위와 같다. "교체 전" 108개는 한 곳씩 맞았고 `replace_all` 은 2·2·4곳이었다. 태스크별 실패·통과 수와 누적 기대치(865 → 888, 21 / 389 → 405)도 같았다. typecheck 는 Task 7 Step 2 의 `TS2322` 한 줄 말고는 오류가 없었고, build 는 완료됐다.
 
 ---
 
@@ -82,7 +84,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/frontend && npm run build 2>&1 | tail -
 - **`Co-Authored-By`·"Generated with Claude Code" 같은 트레일러를 절대 붙이지 않는다**(사용자 단독 저자).
 - `git add` 는 그 태스크의 파일만 적는다. 커밋 직전에 `git status --short` 로 스테이징에 자기 파일만 있는지 본다.
 - 파일 첫 줄의 경로 주석은 있는 파일이면 그대로 둔다. 코드 주석은 "왜"를 한국어로, 과하지 않게 쓰고 태스크 번호를 적지 않는다. 기존 이름을 재사용하고, 일어날 수 없는 상황을 방어하지 않는다(`docs/standards/coding-standard.md`). `v-html` 은 쓰지 않는다.
-- 줄바꿈은 파일마다 다르다(`core.autocrlf=true`). 작업 트리에서 `app/` 은 CRLF 가 대부분이지만 이 계획이 고치는 파일 중 `runner.py`·`critic.py`·`synthesizer.py`·`test_research_runner.py`·`test_research_critic.py` 는 LF 다. `frontend/`·`docs/` 는 LF 다. 기존 파일은 **Edit 도구로 고쳐** 원래 줄바꿈을 유지한다.
+- 줄바꿈은 파일마다 다르다(`core.autocrlf=true`). 작업 트리에서 `app/` 은 CRLF 가 대부분이지만 이 계획이 고치는 파일 중 `runner.py`·`critic.py`·`synthesizer.py`·`test_research_runner.py`·`test_research_critic.py` 는 LF 다. `frontend/`·`docs/` 는 LF 가 대부분이지만 `frontend/utils/researchDraft.ts`·`frontend/pages/research/[id].vue` 는 CRLF 다. 기존 파일은 **Edit 도구로 고쳐** 원래 줄바꿈을 유지한다.
 - push·브랜치 전환·rebase·reset·stash·amend 는 하지 않는다.
 - "교체 전" 코드는 착수 시점(`feat/round04c-research-quality`, `b84ce41`)의 파일에서 그대로 복사했다. 앞 태스크가 같은 파일을 고쳤으면 그 결과를 반영한 원문이다("교체 전은 Task N 을 반영한 상태다"라고 적었다). 줄 번호가 아니라 "교체 전" 문자열로 찾는다.
 
@@ -759,7 +761,7 @@ git commit -m "[Feat] round04c — 진행 카운터·단계 result·보고서 st
 
 ### Task 3: `exclude_off_topic` 파라미터 — 끈 잡은 빼지 않고 `flagged`만 기록 (§11-3 백엔드)
 
-**끈 잡에서 판정을 어떻게 할지 정했다:** 끈 잡(`exclude_off_topic=0`)에서는 `parse_verdict`의 "보인 근거를 모두 무관하다고 하면서 충분이라는 답은 부족으로 읽는다" 규칙을 **적용하지 않는다**. 그 규칙은 "빼고 나면 남는 것은 0편이거나 목록 밖 근거뿐"이라는 전제에서만 맞다. 끈 잡은 근거를 빼지 않으므로 판정이 본 근거가 그대로 남는다. 또 끈 잡만 뒤집으면 재검색이 늘어, 켠 잡과 나란히 비교할 기준(걸린 시간·근거 수)이 흐려진다. `off_topic` 번호는 그대로 돌려주고 러너가 `flagged`로 센다. critic 프롬프트는 바꾸지 않는다(spec §11-3 "critic 은 그대로 번호를 돌려주지만").
+**끈 잡에서 판정을 어떻게 할지 정했다:** 끈 잡(`exclude_off_topic=0`)에서는 `parse_verdict`의 "보인 근거를 모두 무관하다고 하면서 충분이라는 답은 부족으로 읽는다" 규칙을 **적용하지 않는다**. 그 규칙은 "빼고 나면 남는 것은 0편이거나 목록 밖 근거뿐"이라는 전제에서만 맞다. 끈 잡은 근거를 빼지 않으므로 판정이 본 근거가 그대로 남는다. 또 끈 잡만 뒤집으면 재검색이 늘어, 켠 잡과 나란히 비교할 기준(걸린 시간·근거 수)이 흐려진다. `off_topic` 번호는 그대로 돌려주고 러너가 `flagged`로 센다. critic 프롬프트는 바꾸지 않는다(spec §11-3 "critic 은 그대로 번호를 돌려주지만"). 그래서 모델이 프롬프트대로 스스로 insufficient 로 답하면 끈 잡도 다시 찾는다. 이 결정은 코드가 판정을 더 바꾸지 않는다는 뜻이다.
 
 **계약 추가:**
 - `critic.parse_verdict(raw, *, listed=0, exclude_off_topic=True)`: 키워드 인자를 새로 둔다. `critique()`가 `params["exclude_off_topic"]`를 넘긴다.
@@ -1240,7 +1242,7 @@ const LIVE_VIEW = { papersReviewed: 26, evidenceAdopted: 7, rechecks: 1 };
 const LIVE_VIEW = { papersReviewed: 26, evidenceAdopted: 7, rechecks: 1, excluded: null };
 ```
 
-똑같은 줄이 두 곳 있다(127·149행). Edit 도구에서 `replace_all: true` 로 바꾼다.
+똑같은 줄이 두 곳 있다(착수 시점 파일의 127·149행 — 위 import 두 줄을 더한 뒤라 2줄씩 밀려 있다. 아래 두 곳도 같다). Edit 도구에서 `replace_all: true` 로 바꾼다.
 
 교체 전:
 ```ts
@@ -2956,6 +2958,9 @@ Expected: `└  ✨ Build complete!`
 - `exclude_off_topic: 0` 잡에서 "무관 의심 N편(제외 안 함)" 으로 보이는지
 - 카운터가 4칸인지
 - 보고서 한계 뒤에 접힌 섹션이 있는지, 작성 중 초안에도 같은 섹션이 있는지
+- 펼친 회차 목록에 그 회차의 판단(note)이 함께 보이는지, 제외가 없는 잡(끈 잡 포함)에는 보고서 섹션·문서 부록이 없는지
+- 보강 전 잡을 다시 열면 회차 줄이 버튼 없이 글자("무관 N편 제외")만 있고 카운터가 3칸인지
+- `prefers-reduced-motion` 에서 펼침 움직임(화살표 회전·나타나기)이 없는지
 
 - [ ] **Step 7: 커밋**
 
@@ -3003,7 +3008,7 @@ git log --format='%h %an <%ae> %s' b84ce41..HEAD
 git log --format=%B b84ce41..HEAD | grep -ciE "co-authored-by|generated with claude"
 ```
 기대:
-- 첫 명령: 계획 문서 커밋(`[Docs] round04c — §11 보완 구현 계획`)과 Task 1~7 커밋 7개가 모두 저장소 사용자(`git config user.name` — Hyonii) 이름으로 나온다. 그 사이에 다른 커밋(리뷰 반영 수정 커밋 등)이 끼었으면 그것도 같은 저자여야 한다.
+- 첫 명령: 계획 문서 커밋 2개(`[Docs] round04c — §11 보완 구현 계획`·`[Docs] round04c — §11 계획 검토 반영`)와 Task 1~7 커밋 7개가 모두 저장소 사용자(`git config user.name` — Hyonii) 이름으로 나온다. 그 사이에 다른 커밋(리뷰 반영 수정 커밋 등)이 끼었으면 그것도 같은 저자여야 한다.
 - 둘째 명령: `0`.
 - 하나라도 트레일러가 나오면 멈추고 사용자에게 알린다. 이미 쌓인 커밋의 메시지를 고치려면 사용자 승인 아래 비대화형 rebase 가 필요하다(이 계획에서는 하지 않는다).
 
@@ -3031,8 +3036,10 @@ git commit -m "[Docs] round04c — spec 상태에 §11 보완 구현 완료(운�
 - [ ] **Step 6: 남은 일 알리기(이 계획에서 실행하지 않는다)**
 
 사용자에게 다음을 알린다.
-- 운영 배포(spec §9·§11-3): 도는 딥리서치 잡 확인 → fastapi 이미지 빌드·푸시 → `nl-lib-fastapi`(잡 파라미터를 합쳐 저장한다)·`nl-lib-celery-research`·`nl-lib-celery-research-plan` Recreate(적재 워커는 건드리지 않는다, fastapi 재시작 전 `idle in transaction` 세션 확인 — recurring-gotchas 18번) → nuxt 이미지 → `nl-lib-nuxt` Recreate → `docker exec nl-lib-gateway nginx -s reload`. 공유 운영 서버라 **사용자 승인 뒤** 한다.
-- 배포 뒤 운영 합격 기준(spec §11-4): 기준 잡(2026-09-29 10:20, "컴퓨팅 자원에 대한 연구가 궁금해", 6절 27편)과 같은 질문을 기본 파라미터로, 가능하면 `exclude_off_topic: 0` 잡도 하나 돌려 셋을 나란히 본다 — 보고서 논문 27편 이상, 핵심 하위질문(자원 관리·할당) 근거가 2편보다 늘어남, 걸린 시간 1.5배 이내, 같은 단어·다른 뜻 논문이 절 본문에서 빠지고 "제외한 논문"에 보임. spec §11-4 의 비교 쿼리를 쓴다.
+- 운영 배포(spec §9·§11-3): 도는 딥리서치 잡 확인 → fastapi 이미지 빌드·푸시 → `nl-lib-celery-research`·`nl-lib-celery-research-plan` Recreate → `nl-lib-fastapi`(잡 파라미터를 합쳐 저장한다) Recreate → nuxt 이미지 → `nl-lib-nuxt` Recreate → `docker exec nl-lib-gateway nginx -s reload`. 공유 운영 서버라 **사용자 승인 뒤** 한다.
+  - 워커를 fastapi 보다 먼저 바꾼다. 새 fastapi 는 새 잡마다 `exclude_off_topic` 을 합쳐 저장하고, 옛 워커의 `merge_params` 는 모르는 키를 거부한다. 거꾸로 하면 그 사이에 만든 잡이 계획 단계에서 실패한다.
+  - 적재 워커는 건드리지 않는다. fastapi 재시작 전에는 `idle in transaction` 세션을 확인한다(recurring-gotchas 18번).
+- 배포 뒤 운영 합격 기준(spec §11-4): 기준 잡(2026-09-29 10:20, "컴퓨팅 자원에 대한 연구가 궁금해", 6절 27편)과 같은 질문을 기본 파라미터로, 가능하면 `exclude_off_topic: 0` 잡도 하나 돌려 셋을 나란히 본다 — 보고서 논문 27편 이상, 핵심 하위질문(자원 관리·할당) 근거가 2편보다 늘어남, 걸린 시간 1.5배 이내, 같은 단어·다른 뜻 논문이 절 본문에서 빠지고 "제외한 논문"에 보임. spec §11-4 의 비교 쿼리를 쓴다. 끈 잡도 critic 프롬프트는 같아서 재검색 판단까지 무관 제외 전으로 돌아가지는 않는다("계획 조립 때 정한 것" 참고).
 - 어긋나면 제외 기준 문구를 "명백히 무관한 것만"으로 좁히거나(`research_critique.yaml`) 잡 파라미터로 끈다(spec §11-3 의 curl).
 - 라운드 마무리(완료노트·교본·dev 머지)는 라운드 종료 절차(`GIT_WORKFLOW.md`, `.claude/skills/round-finish/SKILL.md`)를 따른다.
 
