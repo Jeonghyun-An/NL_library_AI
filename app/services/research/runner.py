@@ -178,7 +178,8 @@ async def explore_subquestion(
                 if len(state.evidence) >= params["max_evidence"]:
                     capped.add(cand.cnts_id)
                     continue
-                eid = evidence_id(len(state.evidence))
+                eid = evidence_id(state.evidence_seq)
+                state.evidence_seq += 1
                 state.evidence[eid] = Evidence(id=eid, cnts_id=cand.cnts_id, meta=cand.meta)
                 known_by_cnts[cand.cnts_id] = eid
                 made.add(eid)

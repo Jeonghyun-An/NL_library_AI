@@ -324,6 +324,53 @@ class TestSeenPapers:
         assert set(snap) == {f.name for f in fields(ResearchState)} - {"job_id"}
 
 
+class TestEvidenceSeq:
+    """근거 번호는 늘리기만 한다 — 무관 근거를 지운 뒤에도 새 번호가 남은 번호와 겹치지 않게."""
+
+    def test_new_state_starts_numbering_at_zero(self):
+        assert ResearchState(job_id="j1", question="질문", params=merge_params({})).evidence_seq == 0
+
+    def test_evidence_seq_survives_round_trip(self):
+        st = _explored_state()
+        st.evidence_seq = 7
+        snap = snapshot_state(st)
+        assert snap["evidence_seq"] == 7
+        assert restore_state("j1", snap).evidence_seq == 7
+
+    def test_old_snapshot_resumes_after_the_largest_number(self):
+        # 개수(2)로 되살리면 다음 근거가 E3 을 받아 남아 있는 E3 을 덮어쓴다
+        snap = snapshot_state(_explored_state())
+        del snap["evidence_seq"]
+        ev = snap["evidence"].pop("E0")
+        snap["evidence"] = {"E3": ev, "E9": dict(ev, cnts_id="KCI_B")}
+        assert restore_state("j1", snap).evidence_seq == 9
+
+    def test_old_snapshot_without_evidence_starts_at_zero(self):
+        snap = snapshot_state(_explored_state())
+        del snap["evidence_seq"]
+        snap["evidence"] = {}
+        assert restore_state("j1", snap).evidence_seq == 0
+
+
+class TestExcludedPapers:
+    """하위질문이 무관하다고 뺀 논문 — 재개해도 같아야 한다."""
+
+    def test_subquestion_has_no_excluded_papers_by_default(self):
+        assert SubQuestion(idx=0, text="하위").excluded_cnts == []
+
+    def test_excluded_papers_survive_round_trip(self):
+        st = _explored_state()
+        st.subquestions[0].excluded_cnts = ["KCI_X", "KCI_Y"]
+        back = restore_state("j1", snapshot_state(st))
+        assert [s.excluded_cnts for s in back.subquestions] == [["KCI_X", "KCI_Y"], [], []]
+
+    def test_old_snapshot_without_excluded_papers_gets_empty_list(self):
+        snap = snapshot_state(_explored_state())
+        for sq in snap["subquestions"]:
+            del sq["excluded_cnts"]
+        assert [s.excluded_cnts for s in restore_state("j1", snap).subquestions] == [[], [], []]
+
+
 class TestResearchStats:
     def test_counts_unique_papers_adopted_evidence_and_rechecks(self):
         st = _explored_state()          # 검색어 이력: ["q1", "q2"], ["q3"], []

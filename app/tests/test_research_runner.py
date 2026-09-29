@@ -22,7 +22,7 @@ import pytest
 
 from services.research.critic import Verdict
 from services.research.runner import explore_subquestion, subq_budget
-from services.research.state import ResearchState, SubQuestion, merge_params
+from services.research.state import Evidence, ResearchState, SubQuestion, merge_params
 
 
 class _FakeCritic:
@@ -676,6 +676,20 @@ class TestEvidenceBudget:
         assert critic.calls == 1
         assert st.subquestions[0].queries == ["가"]
         assert len(st.evidence) == 2
+
+
+class TestEvidenceNumbering:
+    def test_new_evidence_never_takes_a_number_still_in_use(self):
+        """근거 수로 번호를 매기면 지운 자리가 있을 때 새 근거가 남아 있는 번호를 받아 덮어쓴다."""
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
+        st.evidence = {"E2": Evidence(id="E2", cnts_id="OLD", meta={"title": "남은 논문"})}
+        st.evidence_seq = 2
+        sq = SubQuestion(idx=0, text="가")
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
+                                        critique_fn=_FakeCritic(), emit=None))
+        assert st.evidence["E2"].cnts_id == "OLD"
+        assert sq.evidence_ids == ["E3"] and st.evidence["E3"].cnts_id == "A"
+        assert st.evidence_seq == 3
 
 
 _RELAY = "services.research.relay"

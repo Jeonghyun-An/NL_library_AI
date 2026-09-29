@@ -143,6 +143,9 @@ class SubQuestion:
     # verdict·note 는 마지막 회차 값만 남으므로, 이게 없으면 끝난 잡을 다시 열었을 때
     # "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다.
     rounds: list[dict] = field(default_factory=list)
+    # 자기점검이 무관하다고 뺀 논문(cnts_id). 같은 하위질문의 다음 회차 검색에 다시 걸려도 넣지
+    # 않는다 — 넣으면 같은 논문을 또 판정받고 또 빼며 회차를 태운다. 다른 하위질문은 막지 않는다.
+    excluded_cnts: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -152,6 +155,9 @@ class ResearchState:
     params: dict
     subquestions: list[SubQuestion] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
+    # 다음 근거 번호 — evidence_id(evidence_seq) 로 쓰고 1 늘린다. 근거 수로 매기면 무관 근거를
+    # 지운 뒤 새 근거가 남아 있는 번호를 다시 받아 그 근거를 덮어쓴다.
+    evidence_seq: int = 0
     # 검색에서 본 고유 논문(cnts_id). 청크 수로 세면 한 논문의 여러 대목이 따로 세이고,
     # 하위질문마다 세면 재사용 논문이 겹친다 — "논문 N편을 검토"는 이 집합의 크기다.
     seen_cnts: set[str] = field(default_factory=set)
@@ -182,6 +188,7 @@ def snapshot_state(state: ResearchState) -> dict:
             }
             for eid, ev in state.evidence.items()
         },
+        "evidence_seq": state.evidence_seq,
         # 집합은 JSONB 에 들어가지 않는다. 정렬해 두면 왕복 비교도 결정론적이다.
         "seen_cnts": sorted(state.seen_cnts),
     }
@@ -231,6 +238,7 @@ def restore_state(job_id: str, snap: dict) -> ResearchState:
         )
         for eid, e in snap["evidence"].items()
     }
+    st.evidence_seq = _restored_evidence_seq(snap)
     st.seen_cnts = _restored_seen_cnts(snap)
     return st
 
@@ -242,6 +250,14 @@ def _restored_seen_cnts(snap: dict) -> set[str]:
     if "seen_cnts" in snap:
         return set(snap["seen_cnts"])
     return {e["cnts_id"] for e in snap["evidence"].values()}
+
+
+def _restored_evidence_seq(snap: dict) -> int:
+    """보강 전 스냅샷에는 evidence_seq 가 없다. 근거 수가 아니라 가장 큰 번호(E<n> 의 n)로
+    되살린다 — 다음 번호가 남아 있는 번호와 겹치면 인용칩이 다른 논문을 가리킨다."""
+    if "evidence_seq" in snap:
+        return snap["evidence_seq"]
+    return max((int(eid[1:]) for eid in snap["evidence"]), default=0)
 
 
 def research_stats(state: ResearchState) -> dict:
