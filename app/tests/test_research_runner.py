@@ -772,6 +772,16 @@ class TestOffTopicExclusion:
         assert sq.queries == ["가", "보완"]
         assert self._cnts(st, sq.evidence_ids) == ["C"]
 
+    def test_subquestion_with_evidence_left_after_exclusion_trusts_sufficient(self):
+        """남은 근거가 있으면 '충분' 판정을 따른다 — 한 편이라도 뺐다고 다시 찾으면 하위질문마다
+        검색·LLM 회차가 max_recheck 까지 헛돈다."""
+        st = self._state("가", max_recheck=1)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("sufficient", [1], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B"], "보완": ["C"]}, critic)
+        assert sq.queries == ["가"]
+        assert self._cnts(st, sq.evidence_ids) == ["B"]
+
     def test_excluded_count_is_recorded_and_streamed(self):
         events, emit = _recorder()
         st = self._state("가", max_recheck=1)
