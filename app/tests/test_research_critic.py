@@ -121,6 +121,20 @@ class TestOffTopic:
         assert v.parse_failed is True
         assert v.off_topic == []
 
+    def test_sufficient_with_every_listed_evidence_off_topic_reads_as_insufficient(self):
+        """판정은 뺀 근거까지 보고 내린 것이다. 보인 근거가 모두 무관하면 남는 것은 0편이거나 발췌를
+        보지 못한 근거뿐이라 '충분'일 수 없다. note 는 뒤집은 판정의 이유라 싣지 않는다."""
+        v = self._parse([3, 1, 2], listed=3, verdict="sufficient")
+        assert (v.verdict, v.note, v.off_topic) == ("insufficient", "", [3, 1, 2])
+
+    def test_insufficient_with_every_listed_evidence_off_topic_keeps_its_note(self):
+        v = self._parse([1, 2], listed=2)
+        assert (v.verdict, v.note) == ("insufficient", "n")
+
+    def test_sufficient_with_listed_evidence_left_is_trusted(self):
+        v = self._parse([1], listed=2, verdict="sufficient")
+        assert (v.verdict, v.note) == ("sufficient", "n")
+
 
 class TestShouldRecheck:
     def _sq(self, verdict):
@@ -134,15 +148,6 @@ class TestShouldRecheck:
 
     def test_sufficient_stops(self):
         assert not should_recheck(self._sq("sufficient"), recheck_count=0, max_recheck=3)
-
-    def test_emptied_by_exclusion_rechecks_even_if_sufficient(self):
-        """무관 근거를 빼고 0편이면 '충분' 판정은 뺀 근거까지 보고 내린 것이다."""
-        assert should_recheck(self._sq("sufficient"), recheck_count=0, max_recheck=3,
-                              emptied=True)
-
-    def test_emptied_still_stops_at_limit(self):
-        assert not should_recheck(self._sq("sufficient"), recheck_count=3, max_recheck=3,
-                                  emptied=True)
 
     def test_always_insufficient_critic_still_terminates(self):
         """항상 부족을 반환하는 critic 을 물려도 멈춘다."""
@@ -304,9 +309,9 @@ class TestCritique:
         v = self._run(monkeypatch, fake_chat)
         system, user = seen[0][0]["content"], seen[0][1]["content"]
         assert '"off_topic": []' in system     # 예시는 빈 배열뿐 — gemma 는 예시의 개수를 베낀다
-        # 모두 빼 0편이 되면 runner 가 다시 찾는데(should_recheck 의 emptied), 충분 판정에는 검색어를
-        # 제안하지 않는 규칙만 있으면 찾을 검색어가 없다
-        assert "남는 근거가 없으니 new_queries 에 다른 검색어를 제안하세요" in system
+        # 모두 빼면 판정을 부족으로 읽어 다시 찾는데(parse_verdict), 부족할 때만 검색어를 제안하는
+        # 규칙만 있으면 충분이라고 답한 모델은 검색어를 비워 찾을 검색어가 없다
+        assert "남는 근거가 없으니 verdict 는 insufficient 로 하고 new_queries 에 다른 검색어를 제안하세요" in system
         assert "[1] 논문 가 (2008) — 본문 발췌" in user
         assert v.off_topic == [1]              # 근거 1편에 2번은 없다
 

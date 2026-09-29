@@ -122,6 +122,12 @@ def build_limitations(
             )
         elif sq.failed:
             out.append(f"{topic} 탐색 중 오류로 확인하지 못했다{note}")
+        elif not n and sq.excluded_cnts:
+            # 자기점검이 실제 근거를 읽고 모두 뺐다 — 상한 분기로 보내면 이 원인과 note 가 가려지고,
+            # '근거를 찾지 못했다'(코퍼스 빈틈)로 쓰면 찾아서 읽은 사실이 사라진다
+            cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
+            out.append(f"'{sq.text}' 에 대해서는 모은 논문 {len(sq.excluded_cnts)}편이 모두 "
+                       f"하위질문과 무관해 근거에서 뺐다{cap}{note}")
         elif not n and blocked:
             # 상한 때문에 0편이면 critic 은 "(없음)"을 보고 판정한다 — 그 note 는 오보다
             out.append(f"{topic} {_capped_clause(state, sq, '검색된 논문')} 싣지 못했다")

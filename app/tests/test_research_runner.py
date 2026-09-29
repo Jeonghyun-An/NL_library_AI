@@ -20,7 +20,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from services.research.critic import Verdict
+from services.research import critic as critic_module
+from services.research.critic import _MAX_LISTED, Verdict
 from services.research.runner import explore_subquestion, subq_budget
 from services.research.state import Evidence, ResearchState, SubQuestion, merge_params
 
@@ -621,6 +622,11 @@ class TestSubqBudget:
         # 계획에서 하위질문을 지우면 남은 하위질문의 몫이 저절로 커진다
         assert subq_budget(self._state(3)) == 30
 
+    def test_share_never_drops_to_zero(self):
+        # 전체 상한이 하위질문 수보다 작고 최솟값이 0 이면 몫이 0 이 된다 — 어느 하위질문도 근거를
+        # 만들지 못해 절 0개짜리 보고서가 completed 로 끝난다
+        assert subq_budget(self._state(6, max_evidence=5, min_evidence_per_subq=0)) == 1
+
 
 class TestEvidenceBudget:
     """하위질문은 제 몫까지만 근거를 새로 만든다 — 먼저 탐색한 하위질문이 풀을 독식하지 못한다."""
@@ -762,16 +768,6 @@ class TestOffTopicExclusion:
         self._run(st, sq2, table, _ScriptedCritic(("sufficient", [], [])))
         assert sq2.evidence_ids == ["E3"] and st.evidence["E3"].cnts_id == "B"
 
-    def test_subquestion_emptied_by_exclusion_searches_again_even_if_judged_sufficient(self):
-        """근거 없는 '충분'은 없다 — 그 판정은 뺀 근거까지 보고 내린 것이다."""
-        st = self._state("가", max_recheck=1)
-        (sq,) = st.subquestions
-        # 모두 뺐으면 판정이 충분이어도 검색어를 제안하라고 프롬프트가 요구한다(research_critique.yaml)
-        critic = _ScriptedCritic(("sufficient", [1], ["보완"]), ("sufficient", [], []))
-        self._run(st, sq, {"가": ["A"], "보완": ["C"]}, critic)
-        assert sq.queries == ["가", "보완"]
-        assert self._cnts(st, sq.evidence_ids) == ["C"]
-
     def test_subquestion_with_evidence_left_after_exclusion_trusts_sufficient(self):
         """남은 근거가 있으면 '충분' 판정을 따른다 — 한 편이라도 뺐다고 다시 찾으면 하위질문마다
         검색·LLM 회차가 max_recheck 까지 헛돈다."""
@@ -824,6 +820,120 @@ class TestOffTopicExclusion:
         self._run(st, sq2, table, critic)
         assert set(self._cnts(st, sq2.evidence_ids)) == {"C", "D"}
         assert sq2.capped == 1             # 2회차에 막힌 E 뿐이다
+
+    def _limitation(self, st, text):
+        from services.research.synthesizer import build_limitations
+
+        return next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if f"'{text}'" in x)
+
+    def test_seat_freed_by_exclusion_is_not_blamed_on_the_share(self):
+        """제외로 몫에 자리가 났는데 다음 검색이 막혔던 후보를 다시 찾지 못했다 — 싣지 못한 것은 이제
+        상한 탓이 아니다. 막힌 수를 남기면 한계 문장이 '근거 1편 … 상한(2편)에 닿아'로 스스로 모순된다."""
+        st = self._state("엣지 컴퓨팅", "나", max_recheck=1, max_evidence=4, min_evidence_per_subq=0)
+        sq = st.subquestions[0]            # 몫 2 — 1회차에 A·B 를 만들고 C 는 막힌다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("insufficient", [], []))
+        self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
+        assert self._cnts(st, sq.evidence_ids) == ["B"]
+        assert sq.budget_capped == 0
+        assert self._limitation(st, "엣지 컴퓨팅") == "'엣지 컴퓨팅' 은 근거 1편으로 결론이 약하다 — 점검"
+
+    def test_pool_seat_freed_by_exclusion_is_not_blamed_on_the_global_cap(self):
+        st = self._state("가", "나", max_recheck=1, max_evidence=3, min_evidence_per_subq=3)
+        sq1, sq2 = st.subquestions
+        table = {"가": ["A"], "나": ["B", "C", "D"], "보완": []}
+        self._run(st, sq1, table, _ScriptedCritic(("sufficient", [], [])))
+        # 1회차에 B·C 를 만들고 D 는 전체 상한에 막힌다. B 를 빼 풀에 자리가 나도 보완 검색이 D 를 못 찾는다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("insufficient", [], []))
+        self._run(st, sq2, table, critic)
+        assert self._cnts(st, sq2.evidence_ids) == ["C"]
+        assert sq2.capped == 0
+
+    def test_subquestion_emptied_by_exclusion_names_the_exclusion_not_a_cap(self):
+        """모두 빼 0편으로 끝났다 — 상한 문장은 원인을 가리고, '근거를 찾지 못했다'(코퍼스 빈틈)는 찾아서
+        읽고 뺀 사실을 지운다."""
+        st = self._state("엣지 컴퓨팅", "나", max_recheck=1, max_evidence=4, min_evidence_per_subq=0)
+        sq = st.subquestions[0]
+        critic = _ScriptedCritic(("insufficient", [1, 2], ["보완"]), ("insufficient", [], []))
+        self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
+        assert sq.evidence_ids == [] and (sq.budget_capped, sq.capped) == (0, 0)
+        assert self._limitation(st, "엣지 컴퓨팅") == (
+            "'엣지 컴퓨팅' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다 — 점검")
+
+
+class TestJudgedBeforeExclusion:
+    """판정은 뺀 근거까지 보고 내린 것이다 — 보인 근거를 모두 빼면 '충분'을 따르지 않는다.
+    critic 은 LLM(chat)만 대역으로 바꿔 실제 critique·parse_verdict 를 거친다."""
+
+    def _run(self, monkeypatch, table, *replies, **params):
+        seen: list[str] = []
+        pending = list(replies)
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages[1]["content"])
+            return json.dumps(pending.pop(0), ensure_ascii=False)
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=0, text="엣지 컴퓨팅 자원")]
+        sq = st.subquestions[0]
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_explore_table(table),
+                                        emit=None))
+        return st, sq, seen
+
+    def _limitations(self, st):
+        from services.research.synthesizer import build_limitations
+
+        return build_limitations(st, unmarked_total=0, dropped_total=0)
+
+    def test_emptied_subquestion_searches_again_even_if_judged_sufficient(self, monkeypatch):
+        """근거 없는 '충분'은 없다 — 모두 뺐으면 판정이 충분이어도 다시 찾는다."""
+        _, sq, _ = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": ["A"], "보완": ["C"]},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"], "off_topic": [1]},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []},
+            max_recheck=1,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원", "보완"]
+        assert len(sq.evidence_ids) == 1 and sq.verdict == "sufficient"
+
+    def test_emptied_subquestion_without_a_new_query_is_not_left_sufficient(self, monkeypatch):
+        # 원래 규칙은 부족할 때만 검색어를 제안하게 해, 충분 판정에서는 빈 배열이 오기 쉽다
+        st, sq, _ = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": ["A", "B"]},
+            {"verdict": "sufficient", "note": "근거가 하위질문을 충분히 다룬다",
+             "new_queries": [], "off_topic": [1, 2]},
+            max_recheck=3,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원"] and sq.evidence_ids == []
+        assert (sq.verdict, sq.note) == ("insufficient", "")
+        assert [(r["verdict"], r["note"]) for r in sq.rounds] == [("insufficient", "")]
+        assert self._limitations(st) == [
+            "'엣지 컴퓨팅 자원' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다"]
+
+    def test_emptied_subquestion_on_its_last_round_is_not_left_sufficient(self, monkeypatch):
+        _, sq, _ = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": ["A"]},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"], "off_topic": [1]},
+            max_recheck=0,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원"]
+        assert sq.verdict == "insufficient"
+
+    def test_evidence_beyond_the_listed_is_judged_before_sufficient_is_trusted(self, monkeypatch):
+        """보인 20편을 모두 뺐는데 목록 밖 근거가 남았다 — 발췌를 한 번도 보지 않은 근거로 '충분'을
+        확정하지 않고 다시 찾는다. 다음 회차 critic 이 남은 근거를 처음으로 본다."""
+        papers = [f"P{i}" for i in range(_MAX_LISTED + 3)]
+        _, sq, seen = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": papers, "보완": []},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"],
+             "off_topic": list(range(1, _MAX_LISTED + 1))},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []},
+            max_recheck=1,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원", "보완"]
+        assert "모인 근거: 3편" in seen[1]
+        assert sq.verdict == "sufficient" and len(sq.evidence_ids) == 3
 
 
 _RELAY = "services.research.relay"

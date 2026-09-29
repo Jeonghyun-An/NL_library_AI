@@ -252,7 +252,7 @@ function trailBlocks(trail: DocTrailItem[]): DocBlock[] {
   return out;
 }
 
-// 재검색은 근거가 부족할 때만 일어난다(부족 판정, 또는 무관 근거를 빼고 0편이 됐을 때) — 검색어가 바뀐 흐름이 곧 자기점검의 기록이다
+// 재검색은 근거가 부족하다고 판정할 때만 일어난다(보인 근거를 모두 무관하다고 빼면 부족으로 읽는다) — 검색어가 바뀐 흐름이 곧 자기점검의 기록이다
 function queryPath(queries: string[]): string {
   const path = queries.map((q) => `‘${q}’`).join(" → ");
   return queries.length > 1 ? `${path} (재검색 ${queries.length - 1}회)` : path;

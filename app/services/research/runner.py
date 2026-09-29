@@ -108,9 +108,12 @@ def subq_budget(state: ResearchState) -> int:
     전체 상한을 선착순으로 쓰면 먼저 탐색한 하위질문이 풀을 독식한다(운영에서 HPC 가 60편 중
     32편, 질문의 핵심인 하위질문은 2편). 몫은 기존 두 파라미터로만 정한다 — 계획에서 하위질문을
     지우면 남은 하위질문의 몫이 저절로 커진다.
+
+    1편 아래로는 내리지 않는다. 전체 상한이 하위질문 수보다 작고 최솟값이 0 이면 몫이 0 이 되어,
+    어느 하위질문도 근거를 만들지 못한 채 절 0개짜리 보고서가 completed 로 끝난다.
     """
     params = state.params
-    return max(params["min_evidence_per_subq"],
+    return max(1, params["min_evidence_per_subq"],
                params["max_evidence"] // max(1, len(state.subquestions)))
 
 
@@ -122,10 +125,7 @@ def _recheck_query(
     own 은 이 하위질문이 만들어 지금 갖고 있는 근거 수다(몫을 쓰는 쪽).
     """
     params = state.params
-    # verdict.off_topic 이 있으면 이 회차에 그만큼 뺐다(_exclude_off_topic)
-    emptied = bool(verdict.off_topic) and not subq.evidence_ids
-    if not should_recheck(subq, recheck_count=recheck, max_recheck=params["max_recheck"],
-                          emptied=emptied):
+    if not should_recheck(subq, recheck_count=recheck, max_recheck=params["max_recheck"]):
         return None
     # 전체 상한이나 이 하위질문의 몫에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
     if len(state.evidence) >= params["max_evidence"] or own >= subq_budget(state):
@@ -225,8 +225,6 @@ async def explore_subquestion(
         if fresh:
             leaders.append(fresh[0])
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
-        subq.capped = len(capped)
-        subq.budget_capped = len(budget_capped)
         await emit("counters", research_stats(state))
 
         verdict = await critique_fn(
@@ -241,13 +239,18 @@ async def explore_subquestion(
         # "한계 없음"으로 보이는 게 정확히 critic 의 parse_failed 가 막으려던 실패다.
         #
         # 마지막 라운드 값으로 덮어써도 된다(OR 누적이 필요 없다): 판정 불가는
-        # verdict="sufficient" 에 무관 번호가 비어 있고, should_recheck 는 "insufficient"
-        # 이거나 무관 근거를 빼 0편이 됐을 때만 True 이므로, 판정 불가가 난 라운드가 항상
-        # 마지막 라운드다.
+        # verdict="sufficient" 로 떨어지고 should_recheck 는 "insufficient" 일 때만 True
+        # 이므로, 판정 불가가 난 라운드가 항상 마지막 라운드다.
         subq.parse_failed = verdict.parse_failed
         excluded = _exclude_off_topic(state, subq, verdict.off_topic)
-        next_query = _recheck_query(state, subq, verdict, recheck=recheck,
-                                    own=len(made.intersection(subq.evidence_ids)))
+        own = len(made.intersection(subq.evidence_ids))
+        # 막힌 후보는 그 상한이 지금도 차 있을 때만 상한 탓이다. 무관 제외로 자리가 났는데 다음 검색이
+        # 그 후보를 다시 찾지 못하면 싣지 못한 것은 검색어가 바뀐 탓이다 — 그대로 세면 한계 문장이
+        # "근거 1편 … 하위질문당 근거 상한(2편)에 닿아"처럼 스스로 모순된다. 집합은 지우지 않는다 —
+        # 다음 회차가 자리를 다시 채우면 그 후보들은 다시 상한에 막힌 것이다.
+        subq.budget_capped = len(budget_capped) if own >= budget else 0
+        subq.capped = len(capped) if len(state.evidence) >= params["max_evidence"] else 0
+        next_query = _recheck_query(state, subq, verdict, recheck=recheck, own=own)
         subq.rounds.append({
             "round": round_no, "query": query, "found_chunks": len(hits),
             "new_papers": new_papers, "verdict": verdict.verdict,

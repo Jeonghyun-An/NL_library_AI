@@ -62,6 +62,11 @@ def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
 
     listed 는 번호를 붙여 보인 근거 수다(format_evidence_list). 판정을 못 읽으면
     off_topic 도 비어 있다 — 판정을 못 읽었는데 근거를 지우면 안 된다.
+
+    보인 근거를 모두 무관하다고 하면서 충분이라는 답은 부족으로 읽는다. 판정은 뺀 근거까지 보고
+    내린 것이고, 빼고 나면 남는 것은 0편이거나 발췌를 보이지 않은 목록 밖 근거뿐이다 — 그대로 두면
+    러너가 다시 찾지 않고 '충분·근거 0편'이나 판정받지 않은 근거로 절을 쓴다. note 는 뒤집은
+    판정의 이유라 싣지 않는다.
     """
     data = extract_json(raw)
     if data is None:
@@ -76,8 +81,11 @@ def parse_verdict(raw: str, *, listed: int = 0) -> Verdict:
         # 문자열이 오면 순회 시 글자 단위로 쪼개져 "진" 한 글자로 재검색한다
         raw_queries = []
     queries = [q for q in raw_queries if isinstance(q, str) and q.strip()]
-    return Verdict(verdict, note=str(data.get("note") or ""), new_queries=queries,
-                   off_topic=_off_topic(data.get("off_topic"), listed))
+    note = str(data.get("note") or "")
+    off_topic = _off_topic(data.get("off_topic"), listed)
+    if verdict == "sufficient" and off_topic and len(off_topic) == listed:
+        verdict, note = "insufficient", ""
+    return Verdict(verdict, note=note, new_queries=queries, off_topic=off_topic)
 
 
 def _off_topic(raw: object, listed: int) -> list[int]:
@@ -95,12 +103,8 @@ def _off_topic(raw: object, listed: int) -> list[int]:
     return out
 
 
-def should_recheck(
-    subq: SubQuestion, *, recheck_count: int, max_recheck: int, emptied: bool = False,
-) -> bool:
-    """emptied — 이 회차에 무관 근거를 빼고 나니 0편이다. 그때는 판정이 충분이어도 다시 찾는다 —
-    그 판정은 뺀 근거까지 보고 내린 것이고, 근거 없는 "충분"은 없다."""
-    return (subq.verdict == "insufficient" or emptied) and recheck_count < max_recheck
+def should_recheck(subq: SubQuestion, *, recheck_count: int, max_recheck: int) -> bool:
+    return subq.verdict == "insufficient" and recheck_count < max_recheck
 
 
 def format_evidence_list(evidence: list[Evidence]) -> str:

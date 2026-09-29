@@ -117,6 +117,25 @@ class TestBuildLimitations:
                     if "하위2" in x)
         assert line == "'하위2' (은)는 하위질문당 근거 상한(45편)에 닿아 검색된 논문 4편을 싣지 못했다"
 
+    def test_subquestion_emptied_by_exclusion_names_the_exclusion(self):
+        """자기점검이 실제 근거를 읽고 모두 뺐다 — '근거를 찾지 못했다'(코퍼스 빈틈)로 쓰면 그 사실이 사라진다."""
+        st = _state()
+        st.subquestions[1].excluded_cnts = ["B", "C"]
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위2" in x)
+        assert line == ("'하위2' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다"
+                        " — 2015년 이후 자료가 없다")
+
+    def test_emptied_subquestion_still_names_a_cap_that_blocked_more(self):
+        # 모두 뺀 것이 먼저다 — 상한은 덧붙인다. 상한 분기로 보내면 critic 이 근거를 읽고 뺀 사실과 note 가 사라진다
+        st = _state()
+        st.subquestions[1].excluded_cnts = ["B"]
+        st.subquestions[1].capped = 3
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위2" in x)
+        assert line == ("'하위2' 에 대해서는 모은 논문 1편이 모두 하위질문과 무관해 근거에서 뺐다"
+                        "(전체 근거 상한(90편)에 닿아 후보 3편을 더 싣지 못했다) — 2015년 이후 자료가 없다")
+
     def test_unchecked_subquestion_without_evidence_is_not_counted_twice(self):
         """근거가 0편이면 충분성을 따질 대상이 없다 — '못 찾았다'와 '점검 못 함'을 둘 다 쓰지 않는다."""
         st = _state()
