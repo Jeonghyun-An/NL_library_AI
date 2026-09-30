@@ -165,7 +165,6 @@ import { useNow } from "~/composables/useNow";
 import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import type { OpenPdfPayload } from "~/types/research";
-import { safeLocalStorage } from "~/utils/browserId";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { researchPhase } from "~/utils/researchEvents";
 import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
@@ -178,14 +177,7 @@ import {
 } from "~/utils/reportDocument";
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
-import {
-  SHOW_LAYOUT_TOGGLE,
-  WIDE_MIN_PX,
-  effectiveLayout,
-  readLayoutPref,
-  writeLayoutPref,
-  type ResearchLayout,
-} from "~/utils/researchLayout";
+import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 
 const route = useRoute();
@@ -202,35 +194,6 @@ const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);
 const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
 
 useHead({ title: () => (view.value ? `${view.value.question} — 딥리서치` : "딥리서치") });
-
-// ── 배치 A·B ──────────────────────────────────────────────
-// 서버 렌더에는 폭을 모르므로 넓은 화면으로 두고, 마운트 뒤 실제 폭으로 맞춘다
-const wide = ref(true);
-const layoutPref = ref<ResearchLayout | null>(null);
-const layout = computed(() => effectiveLayout(layoutPref.value, wide.value));
-const canToggle = computed(() => SHOW_LAYOUT_TOGGLE && wide.value);
-let media: MediaQueryList | null = null;
-
-function onMediaChange(e: MediaQueryListEvent): void {
-  wide.value = e.matches;
-}
-
-function toggleLayout(): void {
-  const next: ResearchLayout = layout.value === "A" ? "B" : "A";
-  layoutPref.value = next;
-  writeLayoutPref(safeLocalStorage(), next);
-}
-
-onMounted(() => {
-  layoutPref.value = readLayoutPref(safeLocalStorage());
-  media = window.matchMedia(`(min-width: ${WIDE_MIN_PX}px)`);
-  wide.value = media.matches;
-  media.addEventListener("change", onMediaChange);
-});
-
-onBeforeUnmount(() => {
-  media?.removeEventListener("change", onMediaChange);
-});
 
 // ── 보고서 작성 현황·초안 ─────────────────────────────────
 const EMPTY_ETA: SynthEta = { done: 0, total: 0, runningIdx: null, runningElapsedMs: null, remainingMs: null };
@@ -249,6 +212,40 @@ const draftMode = computed(() => {
 // 최종본이 오면 초안을 그리던 같은 ReportView 에 넘긴다 — 갈아 끼우면 초안 안의 초점·열린 인용 팝오버가
 // 사라지고, 스크롤 기준이던 노드도 없어져 읽던 자리가 튄다
 const shownReport = computed(() => (reportState.value === "ready" ? view.value?.report : draft.value?.report) ?? null);
+
+// ── 배치 A·B ──────────────────────────────────────────────
+// 보고서 자리가 생기면(초안의 첫 절이 나오거나 완료) 2단으로 바뀐다 — 보고서 섹션을 그리는 조건과 같다
+const hasReport = computed(() => !!reportState.value || !!draft.value);
+// 서버 렌더에는 폭을 모르므로 넓은 화면으로 두고, 마운트 뒤 실제 폭으로 맞춘다
+const wide = ref(true);
+// 손으로 고른 보기는 이번 방문의 지금 단계에서만 따른다. 저장해 두면 한 번 고른 사람은 보고서가 나와도 바뀌지 않는다
+const layoutOverride = ref<ResearchLayout | null>(null);
+const layout = computed(() => effectiveLayout(layoutOverride.value, wide.value, hasReport.value));
+const canToggle = computed(() => SHOW_LAYOUT_TOGGLE && wide.value);
+let media: MediaQueryList | null = null;
+
+// 보고서가 나오는(또는 재시도로 사라지는) 순간 자동 보기로 돌아간다
+watch(hasReport, () => {
+  layoutOverride.value = null;
+});
+
+function onMediaChange(e: MediaQueryListEvent): void {
+  wide.value = e.matches;
+}
+
+function toggleLayout(): void {
+  layoutOverride.value = layout.value === "A" ? "B" : "A";
+}
+
+onMounted(() => {
+  media = window.matchMedia(`(min-width: ${WIDE_MIN_PX}px)`);
+  wide.value = media.matches;
+  media.addEventListener("change", onMediaChange);
+});
+
+onBeforeUnmount(() => {
+  media?.removeEventListener("change", onMediaChange);
+});
 
 // 현황 카드 항목에 포인터·초점을 올린 절, 눌러서 옮겨 간 절을 초안에서 함께 강조한다
 const FLASH_MS = 1600;
