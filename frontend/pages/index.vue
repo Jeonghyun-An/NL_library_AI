@@ -76,6 +76,7 @@
               <label class="skx-search__field">
                 <span class="skx-sr-only">도서 검색어</span>
                 <textarea
+                  ref="bookInputRef"
                   class="skx-search__input"
                   v-model="currentQuery"
                   placeholder="찾고싶은 도서를 문장으로 검색해보세요!"
@@ -99,7 +100,7 @@
                 <button
                   type="button"
                   class="skx-chip"
-                  @click="handleSearch(chip)"
+                  @click="fillChip(chip, bookInputRef)"
                 >
                   {{ chip }}
                 </button>
@@ -166,6 +167,7 @@
               <label class="skx-search__field">
                 <span class="skx-sr-only">논문 검색어</span>
                 <textarea
+                  ref="paperInputRef"
                   class="skx-search__input"
                   v-model="currentQuery"
                   placeholder="찾고싶은 논문을 문장으로 검색해보세요!"
@@ -189,7 +191,7 @@
                 <button
                   type="button"
                   class="skx-chip"
-                  @click="handleSearch(chip)"
+                  @click="fillChip(chip, paperInputRef)"
                 >
                   {{ chip }}
                 </button>
@@ -971,9 +973,19 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   }
 }
 
-function handleChip(chip: string) {
+// 예시 질의는 입력창에만 채운다 — 바로 검색하지 않아 고쳐 쓰거나(논문은 + 메뉴로 딥리서치를 골라) 보낼 수 있다.
+// 이어 쓰기 좋게 초점을 입력창 끝에 둔다. 두 패널이 입력값(currentQuery)을 같이 쓰므로 초점만 패널별로 옮긴다
+const bookInputRef = ref<HTMLTextAreaElement | null>(null);
+const paperInputRef = ref<HTMLTextAreaElement | null>(null);
+
+function fillChip(chip: string, input: HTMLTextAreaElement | null) {
+  if (loading.value) return;
   currentQuery.value = chip;
-  handleSearch(chip);
+  nextTick(() => {
+    if (!input) return;
+    input.focus();
+    input.setSelectionRange(chip.length, chip.length);
+  });
 }
 
 // 랜딩으로 되돌린다 — 진행 중인 검색·복원·큐레이션 묶음을 끊고 결과 화면 상태를 비운다
