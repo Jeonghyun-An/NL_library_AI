@@ -45,7 +45,7 @@ export const NO_SUMMARY = "요약을 받지 못했습니다.";
 export const NO_LIMITS = "자동 점검에서 보고할 한계가 발견되지 않았습니다.";
 // 제외한 논문 목록의 제목·설명 — 보고서 화면의 접힌 섹션과 내려받은 문서의 부록이 같은 말을 쓴다
 export const EXCLUDED_TITLE = "관련성이 낮아 제외한 논문";
-export const EXCLUDED_WHY = "자기점검이 하위질문의 핵심 개념과 무관하다고 판단해 근거에서 뺀 논문입니다.";
+export const EXCLUDED_WHY = "자기점검이 하위질문의 핵심 개념과 무관하다고 판단해 근거에서 제외한 논문입니다.";
 
 // 초안이 놓인 때 — writing: 쓰는 중, finishing: 다 쓰고 최종본을 받는 중(받기에 실패해 다시 시도하는 중 포함),
 // interrupted: 실패·취소로 멈춤
