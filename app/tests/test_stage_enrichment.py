@@ -42,9 +42,10 @@ def _session(book, section_rows=()):
 # ── run_summarize ────────────────────────────────────────────
 
 
-def _patch_summarize(monkeypatch, *, doc_type="paper", n_sections=3, artifact=ARTIFACT_TEXT, enrich=None):
-    """요약 단계 대역 — 섹션 n 개(요약 없음), 추출 아티팩트, 보강 삭제·저장 기록."""
-    rows = [SimpleNamespace(section_idx=i, full_text=f"섹션 {i} 본문", summary=None) for i in range(n_sections)]
+def _patch_summarize(monkeypatch, *, doc_type="paper", n_sections=3, artifact=ARTIFACT_TEXT, enrich=None,
+                     summary=None):
+    """요약 단계 대역 — 섹션 n 개(summary: 이미 저장된 섹션 요약, 기본 없음), 추출 아티팩트, 보강 삭제·저장 기록."""
+    rows = [SimpleNamespace(section_idx=i, full_text=f"섹션 {i} 본문", summary=summary) for i in range(n_sections)]
     monkeypatch.setattr(stages, "SyncSessionLocal", lambda: _session(SimpleNamespace(title="논문 제목", doc_type=doc_type), rows))
     monkeypatch.setattr(stages, "minio_client", lambda: "MINIO")
     monkeypatch.setattr(stages.cfg, "PAPER_ENRICH_ENABLED", True)
@@ -150,6 +151,24 @@ def test_enrichment_coverage_overwrites_a_stale_enrich_error():
 
     assert merged["enriched"] is True
     assert merged["enrich_error"] is None
+
+
+def test_retry_with_every_section_summarized_still_enriches_with_the_run_token(monkeypatch):
+    """재시도에서 섹션 요약이 모두 남아 있으면(resume_summaries 기본) 섹션 요약 호출은 없다. 그래도 논문 보강은
+    돌아 이번 실행 토큰으로 아티팩트를 남긴다 — 앞 시도가 옛 보강을 지웠으므로, 건너뛰면 embed 가 보강을
+    다시 만들거나(인라인) 보강 없이 색인한다."""
+    enrichment = _enrichment()
+    rec = _patch_summarize(monkeypatch, enrich=enrichment, summary="앞 시도의 섹션 요약")
+
+    result = stages.run_summarize(StageContext(book_id="KCI_1", item_meta={"run_token": "T2"}))
+
+    assert rec.sections == []                                   # 이미 요약된 섹션은 다시 부르지 않는다
+    assert rec.events == ["delete", "enrich"]
+    assert isinstance(rec.enrich_calls[0][4], asyncio.Semaphore)
+    assert rec.saved == [("KCI_1", enrichment, "MINIO", "T2")]   # 이번 실행 토큰을 붙여 저장
+    assert rec.persisted == [("KCI_1", enrichment)]
+    assert (result["sections_total"], result["sections_summarized"], result["sections_failed"]) == (3, 0, 0)
+    assert result["enriched"] is True and result["enrich_error"] is None
 
 
 def test_summarize_without_run_token_saves_none(monkeypatch):
