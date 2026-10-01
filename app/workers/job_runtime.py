@@ -59,7 +59,11 @@ def _stage_timeout(stage_name: str) -> int:
     }[stage_name]
 
 
-# 디스패치 후 워커가 잡기까지의 허용 대기 (큐 적체 고려 — visibility_timeout 의 2배)
+# 큐에서 기다리는 아이템의 stale 상한(초) — 디스패치 뒤 첫 단계를 기다리는 dispatched 와,
+# 한 단계를 끝내고 다음 단계 큐를 기다리는 running(meta.stage_running 없음)에 쓴다. 실행 중인
+# 단계는 _stage_timeout 으로 따로 잰다. 기본 14400초(4시간)는 broker visibility_timeout
+# 7200초(workers/celery_app.py)의 2배다 — 워커가 받은 채 죽어 ack 되지 않은 메시지가 7200초 뒤
+# 재전달돼 다시 집힐 때까지 기다린다.
 DISPATCH_STALE_SECONDS = cfg.DISPATCH_STALE_SECONDS
 
 # 같은 코드로 다시 해도 결과가 같은 실패 — 자동 재시도하지 않는다(attempt 를 한도로 올린다)
@@ -323,8 +327,34 @@ def dispatch_job_items():
         db.close()
 
 
+def _parse_iso(value) -> _dt.datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return _dt.datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _stale_window(item) -> tuple[int, _dt.datetime | None, str]:
+    """(타임아웃 초, 재기 시작한 시각, 설명) — 실행 중인 단계와 큐 대기를 나눠 잰다."""
+    meta = item.meta or {}
+    running = meta.get("stage_running") if item.status == "running" else None
+    if isinstance(running, str) and running in STAGE_CHECKPOINT:
+        started = _parse_iso(meta.get("stage_started_at"))
+        return _stage_timeout(running), started or item.updated_at, f"{running} 실행 중"
+    what = "디스패치 대기" if item.status == "dispatched" else "다음 단계 대기"
+    return DISPATCH_STALE_SECONDS, item.updated_at or item.dispatched_at or item.created_at, what
+
+
 def _recover_stale(db, job) -> int:
-    """워커 사망 등으로 멈춘 아이템 → failed(stale) 전이 (자동 재시도 대상이 됨)."""
+    """워커 사망 등으로 멈춘 아이템 → failed(stale) 전이 (자동 재시도 대상이 됨).
+
+    실행 중인 단계(meta.stage_running)는 그 단계 타임아웃을 단계 시작 시각부터 잰다. 디스패치된
+    뒤 아직 안 집혔거나 단계 사이에서 다음 단계 큐를 기다리는 아이템은 DISPATCH_STALE_SECONDS 를
+    마지막 갱신 시각부터 잰다 — 큐 대기를 실행 시간으로 세면 바쁜 큐 뒤의 아이템이 stale 로
+    오판돼 중복 체인이 열린다(함정 16).
+    """
     now = _now()
     recovered = 0
     inflight = (
@@ -336,12 +366,7 @@ def _recover_stale(db, job) -> int:
         .all()
     )
     for item in inflight:
-        if item.status == "dispatched":
-            timeout = DISPATCH_STALE_SECONDS
-        else:
-            remaining = CHECKPOINT_TO_REMAINING.get(item.stage) or ["extract"]
-            timeout = _stage_timeout(remaining[0])
-        ref = item.updated_at or item.dispatched_at or item.created_at
+        timeout, ref, what = _stale_window(item)
         if ref is None:
             continue
         if ref.tzinfo is None:
@@ -349,11 +374,11 @@ def _recover_stale(db, job) -> int:
         if (now - ref).total_seconds() > timeout:
             item.status = "failed"
             item.error_group = "stale"
-            item.last_error = f"{timeout}s 무응답 — 워커 중단 추정 (stale 복구)"
+            item.last_error = f"{timeout}s 무응답 — 워커 중단 추정 (stale 복구, {what})"
             item.attempt = (item.attempt or 0) + 1
             item.updated_at = now
             recovered += 1
-            log.warning(f"[{item.book_id}] item={item.id} stale 복구 (stage={item.stage})")
+            log.warning(f"[{item.book_id}] item={item.id} stale 복구 (stage={item.stage}, {what})")
     if recovered:
         db.commit()
     return recovered

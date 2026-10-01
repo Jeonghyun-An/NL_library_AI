@@ -597,3 +597,62 @@ class TestRetryPolicy:
         env.add_item(1, status="failed", attempt=1, updated_at=_ago(10))
 
         assert env.dispatch() == 1
+
+
+# ── stale 판정: 실행 중 vs 다음 단계 대기 ────────────────────────────────
+class TestRecoverStale:
+    def test_running_stage_is_timed_from_its_start(self, env):
+        env.add_item(1, stage="summarized", status="running", updated_at=_ago(5),
+                     meta={"stage_running": "embed_index", "stage_started_at": _ago(1300).isoformat()})
+
+        assert env.recover_stale() == 1
+
+        row = env.item(1)
+        assert row.status == "failed" and row.error_group == "stale" and row.attempt == 1
+        assert "stale 복구" in row.last_error and "embed_index" in row.last_error
+
+    def test_running_stage_within_timeout(self, env):
+        env.add_item(1, stage="pending", status="running", updated_at=_ago(3500),
+                     meta={"stage_running": "extract", "stage_started_at": _ago(3500).isoformat()})
+
+        assert env.recover_stale() == 0
+        assert env.item(1).status == "running"
+
+    def test_waiting_for_next_stage_is_not_execution(self, env):
+        # 임베딩을 끝내고 마무리(q_llm) 큐에서 2000초째 기다린다 — 예전에는 마무리 타임아웃
+        # 900초로 재서 stale 로 오판하고 중복 체인을 열었다
+        env.add_item(1, stage="indexed", status="running", updated_at=_ago(2000),
+                     meta={"stage_running": None, "stage_started_at": _ago(2300).isoformat()})
+
+        assert env.recover_stale() == 0
+        assert env.item(1).status == "running"
+
+    def test_waiting_beyond_dispatch_window(self, env):
+        env.add_item(1, stage="indexed", status="running", updated_at=_ago(14500),
+                     meta={"stage_running": None})
+
+        assert env.recover_stale() == 1
+        assert "다음 단계 대기" in env.item(1).last_error
+
+    def test_item_without_stage_running_key_counts_as_waiting(self, env):
+        # 배포 전에 마지막 단계를 끝낸 아이템은 meta 에 stage_running 키가 없다
+        env.add_item(1, stage="indexed", status="running", updated_at=_ago(2000), meta={})
+
+        assert env.recover_stale() == 0
+
+    def test_dispatched_unchanged(self, env):
+        env.add_item(1, stage="pending", status="dispatched", updated_at=_ago(2000))
+        env.add_item(2, stage="pending", status="dispatched", updated_at=_ago(14500))
+
+        assert env.recover_stale() == 1
+        assert env.item(1).status == "dispatched" and env.item(2).status == "failed"
+
+    def test_requeued_item_with_leftover_stage_running_is_not_execution(self, env):
+        # 단계 도중 워커가 죽어 stale 복구된 아이템은 meta.stage_running 이 남은 채 다시 dispatched 가
+        # 된다. 이때는 실행 중이 아니라 큐 대기다 — 옛 stage_started_at 으로 재면 큐에서 기다리는
+        # 동안 다음 틱이 또 stale 로 오판해 중복 체인을 연다
+        env.add_item(1, stage="pending", status="dispatched", updated_at=_ago(30),
+                     meta={"stage_running": "extract", "stage_started_at": _ago(7200).isoformat()})
+
+        assert env.recover_stale() == 0
+        assert env.item(1).status == "dispatched"
