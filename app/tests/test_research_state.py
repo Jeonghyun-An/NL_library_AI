@@ -4,7 +4,7 @@ import pytest
 
 from services.research.state import (
     _PARAM_BOUNDS, DEFAULT_PARAMS, VERDICTS, Chunk, Evidence, ResearchState, SubQuestion,
-    merge_params, restore_state, snapshot_state,
+    merge_params, research_stats, restore_state, snapshot_state,
 )
 
 
@@ -37,6 +37,7 @@ class TestMergeParams:
         assert set(DEFAULT_PARAMS) == {
             "max_subquestions", "max_recheck", "max_evidence", "per_subq_top_k",
             "chunks_per_evidence", "citation_weight", "min_evidence_per_subq",
+            "exclude_off_topic",
         }
 
     def test_bounds_cover_exactly_the_default_keys(self):
@@ -95,6 +96,20 @@ class TestMergeParams:
         with pytest.raises(ValueError, match="per_subq_top_k"):
             merge_params({"per_subq_top_k": 1_000_000})
 
+    def test_off_topic_exclusion_is_on_by_default(self):
+        assert DEFAULT_PARAMS["exclude_off_topic"] == 1
+
+    @pytest.mark.parametrize("value", [0, 1])
+    def test_off_topic_exclusion_takes_zero_or_one(self, value):
+        # 운영에서 결과가 나쁘면 재배포 없이 잡 파라미터 0 으로 끈다
+        assert merge_params({"exclude_off_topic": value})["exclude_off_topic"] == value
+
+    @pytest.mark.parametrize("value", [2, -1, True, "0", 0.0])
+    def test_off_topic_exclusion_rejects_anything_else(self, value):
+        # True 는 int 의 서브클래스라 막지 않으면 1 로 통과한다
+        with pytest.raises(ValueError, match="exclude_off_topic"):
+            merge_params({"exclude_off_topic": value})
+
 
 class TestState:
     def test_new_state_has_no_subquestions(self):
@@ -126,7 +141,7 @@ def _explored_state() -> ResearchState:
     st.corpus_range = {"from": "2002", "to": "2026", "n_papers": 72054}
     st.subquestions = [
         SubQuestion(idx=0, text="하위1", queries=["q1", "q2"], evidence_ids=["E0"],
-                    verdict="sufficient", note="충분하다", capped=3,
+                    verdict="sufficient", note="충분하다", capped=3, budget_capped=2,
                     evidence_chunks={"E0": ["c1"]}, chunk_scores={"c1": 0.91}),
         SubQuestion(idx=1, text="하위2", queries=["q3"], verdict="insufficient",
                     parse_failed=True, note="판정을 못 읽었다"),
@@ -204,6 +219,11 @@ class TestSnapshotRoundTrip:
         assert [s.capped for s in back.subquestions] == [3, 0, 0]
         assert back.subquestions[0].evidence_chunks == {"E0": ["c1"]}
 
+    def test_budget_capped_survives(self):
+        # 떨어지면 재개한 잡의 한계 문장이 하위질문당 몫에 막힌 후보를 잃는다
+        back = restore_state("j1", snapshot_state(_explored_state()))
+        assert [s.budget_capped for s in back.subquestions] == [2, 0, 0]
+
     def test_chunk_scores_survive(self):
         # 떨어지면 재개한 잡의 절 호버가 다른 하위질문이 준 점수를 띄운다
         back = restore_state("j1", snapshot_state(_explored_state()))
@@ -239,6 +259,13 @@ class TestSnapshotEvolution:
         assert back.subquestions[0].evidence_chunks == {}
         assert back.subquestions[0].chunk_scores == {}
 
+    def test_old_snapshot_without_budget_capped_gets_zero(self):
+        # 몫이 생기기 전 스냅샷 — 그때는 전체 상한만 있었으니 몫에 막힌 후보는 0 이다
+        snap = snapshot_state(_explored_state())
+        for sq in snap["subquestions"]:
+            del sq["budget_capped"]
+        assert [s.budget_capped for s in restore_state("j1", snap).subquestions] == [0, 0, 0]
+
     def test_unknown_chunk_key_is_ignored(self):
         snap = snapshot_state(_explored_state())
         snap["evidence"]["E0"]["chunks"][0]["old_field"] = 1
@@ -251,3 +278,143 @@ class TestSnapshotEvolution:
         snap["params"]["retired_param"] = 1
         back = restore_state("j1", snap)
         assert back.params == DEFAULT_PARAMS
+
+
+_ROUNDS = [
+    {"round": 1, "query": "q1", "found_chunks": 12, "new_papers": 7,
+     "verdict": "insufficient", "note": "2015년 이후 자료가 없다", "next_query": "q2"},
+    {"round": 2, "query": "q2", "found_chunks": 9, "new_papers": 3,
+     "verdict": "sufficient", "note": "충분하다", "next_query": None},
+]
+
+
+class TestSeenPapers:
+    """검토한 고유 논문은 진행 카운터와 보고서 서론의 원천이다 — 재개해도 같아야 한다."""
+
+    def test_new_state_has_seen_nothing(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert st.seen_cnts == set()
+
+    def test_subquestion_has_no_rounds_by_default(self):
+        assert SubQuestion(idx=0, text="하위").rounds == []
+
+    def test_seen_papers_survive_round_trip(self):
+        st = _explored_state()
+        st.seen_cnts = {"KCI_C", "KCI_A", "KCI_B"}
+        snap = snapshot_state(st)
+        # 집합은 JSONB 에 들어가지 않는다 — 정렬한 목록이라야 왕복 비교도 결정론적이다
+        assert snap["seen_cnts"] == ["KCI_A", "KCI_B", "KCI_C"]
+        assert restore_state("j1", snap).seen_cnts == {"KCI_A", "KCI_B", "KCI_C"}
+
+    def test_old_snapshot_falls_back_to_adopted_papers(self):
+        """보강 전 스냅샷에는 seen_cnts 가 없다. 빈 집합으로 두면 재개한 보고서가
+        '논문 0편을 검토하고 1편을 근거로 삼았다'고 쓴다."""
+        snap = snapshot_state(_explored_state())
+        del snap["seen_cnts"]
+        assert restore_state("j1", snap).seen_cnts == {"KCI_A"}
+
+    def test_empty_seen_list_is_trusted(self):
+        # 키가 있는 빈 목록까지 하한으로 바꾸면 왕복할 때마다 값이 달라진다
+        snap = snapshot_state(_explored_state())
+        assert snap["seen_cnts"] == []
+        assert restore_state("j1", snap).seen_cnts == set()
+
+    def test_rounds_survive_round_trip(self):
+        st = _explored_state()
+        st.subquestions[0].rounds = [dict(r) for r in _ROUNDS]
+        back = restore_state("j1", snapshot_state(st))
+        assert back.subquestions[0].rounds == _ROUNDS
+        assert back.subquestions[1].rounds == []
+
+    def test_old_snapshot_without_rounds_gets_empty_history(self):
+        snap = snapshot_state(_explored_state())
+        for sq in snap["subquestions"]:
+            del sq["rounds"]
+        assert [s.rounds for s in restore_state("j1", snap).subquestions] == [[], [], []]
+
+    def test_snapshot_carries_every_state_field(self):
+        """ResearchState 의 필드는 손으로 나열해 담는다 — 필드를 추가하고 여기에 빠뜨리면
+        재개한 잡에서만 그 값이 기본값으로 돌아간다. job_id 는 컬럼이 따로 있다."""
+        snap = snapshot_state(_explored_state())
+        assert set(snap) == {f.name for f in fields(ResearchState)} - {"job_id"}
+
+
+class TestEvidenceSeq:
+    """근거 번호는 늘리기만 한다 — 무관 근거를 지운 뒤에도 새 번호가 남은 번호와 겹치지 않게."""
+
+    def test_new_state_starts_numbering_at_zero(self):
+        assert ResearchState(job_id="j1", question="질문", params=merge_params({})).evidence_seq == 0
+
+    def test_evidence_seq_survives_round_trip(self):
+        st = _explored_state()
+        st.evidence_seq = 7
+        snap = snapshot_state(st)
+        assert snap["evidence_seq"] == 7
+        assert restore_state("j1", snap).evidence_seq == 7
+
+    def test_old_snapshot_resumes_after_the_largest_number(self):
+        # 개수(2)로 되살리면 다음 근거가 E3 을 받아 남아 있는 E3 을 덮어쓴다
+        snap = snapshot_state(_explored_state())
+        del snap["evidence_seq"]
+        ev = snap["evidence"].pop("E0")
+        snap["evidence"] = {"E3": ev, "E9": dict(ev, cnts_id="KCI_B")}
+        assert restore_state("j1", snap).evidence_seq == 9
+
+    def test_old_snapshot_without_evidence_starts_at_zero(self):
+        snap = snapshot_state(_explored_state())
+        del snap["evidence_seq"]
+        snap["evidence"] = {}
+        assert restore_state("j1", snap).evidence_seq == 0
+
+
+class TestExcludedPapers:
+    """하위질문이 무관하다고 뺀 논문 — 재개해도 같아야 한다."""
+
+    def test_subquestion_has_no_excluded_papers_by_default(self):
+        assert SubQuestion(idx=0, text="하위").excluded_cnts == []
+
+    def test_excluded_papers_survive_round_trip(self):
+        st = _explored_state()
+        st.subquestions[0].excluded_cnts = ["KCI_X", "KCI_Y"]
+        back = restore_state("j1", snapshot_state(st))
+        assert [s.excluded_cnts for s in back.subquestions] == [["KCI_X", "KCI_Y"], [], []]
+
+    def test_old_snapshot_without_excluded_papers_gets_empty_list(self):
+        snap = snapshot_state(_explored_state())
+        for sq in snap["subquestions"]:
+            del sq["excluded_cnts"]
+        assert [s.excluded_cnts for s in restore_state("j1", snap).subquestions] == [[], [], []]
+
+
+class TestResearchStats:
+    def test_counts_unique_papers_adopted_evidence_and_rechecks(self):
+        st = _explored_state()          # 검색어 이력: ["q1", "q2"], ["q3"], []
+        st.seen_cnts = {"KCI_A", "KCI_B", "KCI_C"}
+        assert research_stats(st) == {
+            "papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1, "excluded": 0,
+        }
+
+    def test_empty_state_is_all_zero(self):
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert research_stats(st) == {
+            "papers_reviewed": 0, "evidence_adopted": 0, "rechecks": 0, "excluded": 0,
+        }
+
+    def test_excluded_sums_every_round_of_every_subquestion(self):
+        # 하위질문별 판단의 수다 — 같은 논문을 두 하위질문이 뺐으면 두 번 센다
+        st = _explored_state()
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 2}, {"round": 2, "excluded": 1}]
+        st.subquestions[1].rounds = [{"round": 1, "excluded": 1}]
+        assert research_stats(st)["excluded"] == 4
+
+    def test_rounds_recorded_before_exclusion_count_as_zero(self):
+        # 보강 전 회차 기록에는 excluded 가 없다
+        st = _explored_state()
+        st.subquestions[0].rounds = [dict(r) for r in _ROUNDS]
+        assert research_stats(st)["excluded"] == 0
+
+    def test_same_after_resume(self):
+        st = _explored_state()
+        st.seen_cnts = {"KCI_A", "KCI_B"}
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 2}]
+        assert research_stats(restore_state("j1", snapshot_state(st))) == research_stats(st)

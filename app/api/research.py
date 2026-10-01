@@ -19,6 +19,7 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncIterator
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,14 +29,16 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
-from core.deps import get_db
+from core.deps import get_browser_id_optional, get_db
 from db.postgres import AsyncSessionLocal
 from models.research import (
     RUNNABLE_STATUSES, STATUS_APPROVED, STATUS_CANCELED, STATUS_QUEUED, TERMINAL_STATUSES,
     ResearchJob, ResearchStep,
 )
 from services.research.planner import query_key
-from services.research.relay import TERMINAL_KIND, publish_terminal, subscribe, terminal_event
+from services.research.relay import (
+    TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
+)
 from services.research.state import merge_params
 
 log = logging.getLogger(__name__)
@@ -149,6 +152,12 @@ def _enqueue(task_name: str, jid: uuid.UUID) -> bool:
     return True
 
 
+async def _announce(jid: uuid.UUID, status: str, stage: str) -> None:
+    """상태 전이를 스트림에 알린다. 전이가 성공한 뒤에만 부른다. 종료 상태는
+    publish_terminal 이 알린다 — status 로 내면 스트림이 닫히지 않는다."""
+    await publish(jid, "status", {"status": status, "stage": stage})
+
+
 def _broker_unavailable() -> HTTPException:
     return HTTPException(status_code=503, detail="작업 큐에 연결하지 못했습니다 — 잠시 후 다시 시도하세요")
 
@@ -171,13 +180,19 @@ def _validated_plan(plan: list[str], *, limit: int) -> list[str]:
 
 
 @router.post("")
-async def create_research(req: ResearchCreate, db: AsyncSession = Depends(get_db)):
+async def create_research(
+    req: ResearchCreate, db: AsyncSession = Depends(get_db),
+    browser_id: uuid.UUID | None = Depends(get_browser_id_optional),
+):
     try:
         params = merge_params(req.params)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    job = ResearchJob(id=uuid.uuid4(), question=req.question, params=params)
+    # 헤더가 없거나 틀려도 잡은 만든다 — 기록 API 와 달리 헤더 없는 curl 시연과
+    # 옛 화면이 그대로 돌아야 한다.
+    job = ResearchJob(id=uuid.uuid4(), question=req.question, params=params,
+                      created_by=str(browser_id) if browser_id else None)
     db.add(job)
     await db.commit()
 
@@ -213,9 +228,13 @@ async def approve_plan(
                                status=STATUS_APPROVED, plan=plan):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
+    # 큐에 넣기 전에 알린다. 넣은 뒤에 알리면 워커가 먼저 집어 낸 running 뒤에
+    # approved 가 도착해 화면이 한 단계 뒤로 간다.
+    await _announce(jid, STATUS_APPROVED, job.stage)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_APPROVED,),
                           status="awaiting_approval", plan=old_plan)
+        await _announce(jid, "awaiting_approval", job.stage)
         raise _broker_unavailable()
     return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan}
 
@@ -252,9 +271,12 @@ async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
                                last_error=None, finished_at=None):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
+    # 큐에 넣기 전에 알리는 이유는 approve 와 같다
+    await _announce(jid, STATUS_QUEUED, job.stage)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_QUEUED,), status="failed",
                           last_error=old_error, finished_at=old_finished)
+        await publish_terminal(jid, "failed", old_error)
         raise _broker_unavailable()
     return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": job.stage}
 
@@ -278,21 +300,48 @@ async def cancel_research(job_id: str, db: AsyncSession = Depends(get_db)):
     return {"job_id": str(jid), "status": STATUS_CANCELED}
 
 
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
+async def _steps(db: AsyncSession, jid: uuid.UUID) -> list[dict]:
+    """GET 과 스트림 스냅샷이 같은 모양을 쓴다 — 갈리면 새로고침한 화면과 재접속한
+    화면이 같은 잡을 다르게 그린다."""
+    rows = (await db.execute(
+        select(ResearchStep).where(ResearchStep.job_id == jid).order_by(ResearchStep.seq)
+    )).scalars().all()
+    return [
+        {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx, "title": s.title,
+         "detail": s.detail, "status": s.status, "result": s.result}
+        for s in rows
+    ]
+
+
+def _live_counters(steps: list[dict], report: dict | None) -> dict | None:
+    """재접속한 화면의 카운터. 끝난 잡은 보고서의 stats, 도는 잡은 워커가 마지막으로
+    단계 result 에 남긴 값이다 — counters 이벤트는 저장되지 않아, 이게 없으면 다음
+    회차까지 카운터가 빈칸이다."""
+    if report and report.get("stats"):
+        return report["stats"]
+    for step in reversed(steps):
+        counters = (step["result"] or {}).get("counters")
+        if counters:
+            return counters
+    return None
+
+
 @router.get("/{job_id}")
 async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
     job = await _get_job(db, _job_uuid(job_id))
-    rows = (await db.execute(
-        select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
-    )).scalars().all()
+    # created_by 는 싣지 않는다. 이 조회에는 소유 확인이 없어 링크만 알면 누구나 여는데,
+    # 남의 브라우저 ID 가 나가면 그걸 헤더에 넣어 그 사람의 기록을 읽을 수 있다.
     return {
         "job_id": str(job.id), "question": job.question, "status": job.status,
         "stage": job.stage, "plan": job.plan, "report": job.report,
-        "last_error": job.last_error,
-        "steps": [
-            {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx, "title": s.title,
-             "detail": s.detail, "status": s.status, "result": s.result}
-            for s in rows
-        ],
+        "last_error": job.last_error, "params": job.params,
+        "created_at": _iso(job.created_at), "started_at": _iso(job.started_at),
+        "finished_at": _iso(job.finished_at),
+        "steps": await _steps(db, job.id),
     }
 
 
@@ -300,40 +349,86 @@ def _sse(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
+async def _snapshot(db: AsyncSession, job: ResearchJob) -> dict:
+    """재접속 복원용 뼈대. 연결 직후와 하트비트가 어긋남을 본 뒤가 이 한 곳에서 만든다 —
+    모양이 갈리면 화면이 같은 잡을 두 경로에서 다르게 그린다."""
+    steps = await _steps(db, job.id)
+    job_state = {"status": job.status, "stage": job.stage, "plan": job.plan}
+    counters = _live_counters(steps, job.report)
+    if counters is not None:
+        job_state["counters"] = counters
+    return {"kind": "snapshot", "steps": steps, "job": job_state}
+
+
+def _plan_known(snapshot: dict) -> bool:
+    """이 스냅샷만으로 화면이 계획을 그릴 수 있는가. 화면은 job.plan 을, 없으면 plan
+    단계 result 의 원안을 쓴다."""
+    return bool(snapshot["job"]["plan"]) or any(
+        s["kind"] == "plan" and (s["result"] or {}).get("subquestions")
+        for s in snapshot["steps"]
+    )
+
+
+def _carries_plan(event: dict) -> bool:
+    return (event.get("kind") == "step" and event.get("step_kind") == "plan"
+            and bool((event.get("result") or {}).get("subquestions")))
+
+
 @router.get("/{job_id}/stream")
 async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     jid = _job_uuid(job_id)
     job = await _get_job(db, jid)
 
-    rows = (await db.execute(
-        select(ResearchStep).where(ResearchStep.job_id == job.id).order_by(ResearchStep.seq)
-    )).scalars().all()
-    snapshot = [
-        {"seq": s.seq, "kind": s.kind, "subq_idx": s.subq_idx,
-         "title": s.title, "detail": s.detail, "status": s.status}
-        for s in rows
-    ]
     # 제너레이터는 요청 세션이 닫힌 뒤에 돈다 — ORM 객체를 들고 가지 않고
     # 필요한 값만 미리 꺼내 둔다.
-    job_status, job_error = job.status, job.last_error
+    snapshot = await _snapshot(db, job)
+    job_status, job_stage, job_error = job.status, job.stage, job.last_error
 
     async def _gen() -> AsyncIterator[str]:
         # 재접속 복원 — 뼈대를 먼저 보내고 그 뒤를 중계한다
-        yield _sse({"kind": "snapshot", "steps": snapshot})
+        yield _sse(snapshot)
         if job_status in TERMINAL_STATUSES:
             # 끝난 잡에 붙었다면 중계할 것이 없다. 구독하면 영원히 기다린다.
             yield _sse(terminal_event(job_status, job_error))
             return
+        # 화면이 지금 아는 상태와 계획 유무 — 하트비트가 DB 와 견줄 기준이다
+        last, plan_sent = (job_status, job_stage), _plan_known(snapshot)
         async for event in subscribe(str(jid)):
             if event is None:
-                # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 종료 이벤트를
-                # 놓친 채 붙어 있는 경우(회수기가 끝낸 잡 등)를 대비해 상태를 확인한다.
+                # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 DB 와 맞춰 본다 —
+                # 종료 이벤트를 놓친 채 붙어 있는 경우(회수기가 끝낸 잡 등)와, 스냅샷을
+                # 읽은 뒤 구독이 붙기 전에 나간 이벤트를 놓친 경우다. 계획은 1초 안팎이라
+                # plan 단계 done(계획 원안)과 awaiting_approval 이 함께, 또는 done 만
+                # 그 틈에 빠지기 쉽다. 상태만 되살리면 화면은 승인 대기로 가도 승인할
+                # 계획이 없어 막힌다 — 어긋나면 스냅샷을 통째로 다시 보낸다. 다시 읽는
+                # 조회는 어긋났을 때만 한다.
                 yield ": ping\n\n"
-                ended = await _terminal_status(jid)
-                if ended is not None:
-                    yield _sse(terminal_event(*ended))
+                current = await _job_status(jid)
+                if current is None:
+                    continue
+                status, stage, error, has_plan = current
+                if status in TERMINAL_STATUSES:
+                    yield _sse(terminal_event(status, error))
                     return
+                if (status, stage) == last and (plan_sent or not has_plan):
+                    continue
+                fresh = await _fresh_snapshot(jid)
+                if fresh is None:
+                    continue
+                snap, error = fresh
+                status, stage = snap["job"]["status"], snap["job"]["stage"]
+                if status in TERMINAL_STATUSES:
+                    # 두 조회 사이에 끝났다. 끝난 상태를 스냅샷으로 보내면 화면이
+                    # 스트림을 닫지 않는다 — 종료 프레임으로만 알린다.
+                    yield _sse(terminal_event(status, error))
+                    return
+                last, plan_sent = (status, stage), _plan_known(snap)
+                yield _sse(snap)
                 continue
+            if event.get("kind") == "status":
+                last = (event.get("status"), event.get("stage"))
+            elif _carries_plan(event):
+                plan_sent = True
             yield _sse(event)
             if event.get("kind") in TERMINAL_KINDS:
                 return
@@ -344,8 +439,8 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
     )
 
 
-async def _terminal_status(jid: uuid.UUID) -> tuple[str, str | None] | None:
-    """끝난 잡이면 (status, last_error). 하트비트마다 짧은 세션을 새로 연다 —
+async def _job_status(jid: uuid.UUID) -> tuple[str, str, str | None, bool] | None:
+    """(status, stage, last_error, 계획 유무). 하트비트마다 짧은 세션을 새로 연다 —
     Depends(get_db) 세션을 쓰지 않는다.
 
     FastAPI 는 핸들러가 반환하면 yield 의존성을 닫는다. StreamingResponse 의
@@ -355,8 +450,18 @@ async def _terminal_status(jid: uuid.UUID) -> tuple[str, str | None] | None:
     """
     async with AsyncSessionLocal() as db:
         row = (await db.execute(
-            select(ResearchJob.status, ResearchJob.last_error).where(ResearchJob.id == jid)
+            select(ResearchJob.status, ResearchJob.stage, ResearchJob.last_error,
+                   ResearchJob.plan)
+            .where(ResearchJob.id == jid)
         )).first()
-    if row is None or row[0] not in TERMINAL_STATUSES:
-        return None
-    return row[0], row[1]
+    return None if row is None else (row[0], row[1], row[2], bool(row[3]))
+
+
+async def _fresh_snapshot(jid: uuid.UUID) -> tuple[dict, str | None] | None:
+    """하트비트가 화면과 DB 의 어긋남을 봤을 때 다시 보낼 (스냅샷, last_error).
+    짧은 세션을 새로 여는 이유는 _job_status 와 같다."""
+    async with AsyncSessionLocal() as db:
+        job = await db.get(ResearchJob, jid)
+        if job is None:
+            return None
+        return await _snapshot(db, job), job.last_error

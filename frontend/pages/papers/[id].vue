@@ -1,12 +1,8 @@
 <template>
   <div class="skx-app">
     <AppSidebar
-      default-tab="paper"
-      :book-history="bookHistory"
-      :paper-history="paperHistory"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
-      @restore="restoreSession"
     />
 
     <div class="skx-result-card">
@@ -409,23 +405,18 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
-import { useSearchHistory } from "~/composables/useSearchHistory";
 import { useBookmark } from "~/composables/useBookmark";
-import type { HistoryEntry } from "~/types/history";
+import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 
 const route = useRoute();
 const config = useRuntimeConfig();
+const api = useApi();
+// 페이지를 떠나면 추천 이유·연관 이유 스트림을 끊는다 — 연관 논문마다 동시에 도는 생성이 끝까지 돈다
+const pageAbort = new AbortController();
+onBeforeUnmount(() => pageAbort.abort());
 
-const { bookHistory, paperHistory } = useSearchHistory();
 const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
-function restoreSession(entry: HistoryEntry) {
-  if (entry.type === "book") {
-    navigateTo(`/?restore=${entry.id}`);
-  } else {
-    navigateTo(`/papers?restore=${entry.id}`);
-  }
-}
 const paperId = route.params.id as string;
 
 const matchScore = computed(() => {
@@ -573,7 +564,7 @@ function showToast(msg: string) {
 async function fetchPaper() {
   loading.value = true;
   try {
-    const data = await $fetch<any>(`${config.public.apiBase}/books/${paperId}`);
+    const data = await api<any>(`/books/${paperId}`, { signal: pageAbort.signal });
     paper.value = data;
   } catch {
     paper.value = null;
@@ -585,9 +576,9 @@ async function fetchPaper() {
 async function fetchRelated() {
   relatedLoading.value = true;
   try {
-    const data = await $fetch<any>(
-      `${config.public.apiBase}/papers/${paperId}/related`,
-    );
+    const data = await api<any>(`/papers/${paperId}/related`, {
+      signal: pageAbort.signal,
+    });
     relatedItems.value = data?.results || [];
   } catch {
     /* silent */
@@ -607,10 +598,11 @@ async function streamPaperReason() {
   summaryText.value = "";
   summaryLoading.value = true;
   try {
-    const resp = await fetch(`${config.public.apiBase}/papers/reason/stream`, {
+    const resp = await fetch(apiUrl("/papers/reason/stream"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ paper_id: paperId, query }),
+      signal: pageAbort.signal,
     });
     await readSSE(resp, (json) => {
       if (json.text) summaryText.value += json.text;
@@ -628,14 +620,12 @@ async function streamRelatedReason(relatedId: string) {
     relatedId,
   ]);
   try {
-    const resp = await fetch(
-      `${config.public.apiBase}/papers/related-reason/stream`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
-      },
-    );
+    const resp = await fetch(apiUrl("/papers/related-reason/stream"), {
+      method: "POST",
+      headers: apiHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
+      signal: pageAbort.signal,
+    });
     await readSSE(resp, (json) => {
       if (json.text) {
         relatedReasons.value = {

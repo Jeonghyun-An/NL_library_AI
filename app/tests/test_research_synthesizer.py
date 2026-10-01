@@ -5,10 +5,12 @@ import httpx
 import pytest
 
 from services.research import synthesizer
-from services.research.state import Chunk, Evidence, ResearchState, SubQuestion, merge_params
+from services.research.state import (
+    Chunk, Evidence, ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
+)
 from services.research.synthesizer import (
-    PAPERS_PER_SECTION, SynthesisCanceled, assemble_report, build_limitations, build_section,
-    synthesize,
+    PAPERS_PER_SECTION, SectionTally, SynthesisCanceled, _topic, assemble_report,
+    build_limitations, build_section, finalize_section, section_evidence, synthesize,
 )
 
 _DROPPED = "그 절의 근거에 없는 번호"
@@ -27,6 +29,12 @@ def _state():
                        chunks=[Chunk("c1", "본문", 3, 3, 0.9)]),
     }
     return st
+
+
+def _section_of(*cnts_ids):
+    """cnts_ids 를 대표 논문으로 싣는 절 — 보고서 evidence 는 절에 실린 근거만 담는다."""
+    return {"heading": "h", "intro": "", "future": [],
+            "papers": [{"cnts_id": c, "summary": "s"} for c in cnts_ids]}
 
 
 class TestBuildLimitations:
@@ -71,7 +79,8 @@ class TestBuildLimitations:
         st.subquestions[1].note = "관련 논문이 없다"
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
         line = next(x for x in lims if "하위2" in x)
-        assert "근거 상한(60편)" in line and "7편" in line
+        assert "전체 근거 상한(90편)" in line and "7편" in line
+        assert "하위질문당" not in line
         assert "근거를 찾지 못했다" not in line and "관련 논문이 없다" not in line
 
     def test_capped_insufficient_subquestion_mentions_cap(self):
@@ -81,6 +90,53 @@ class TestBuildLimitations:
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
         line = next(x for x in lims if "하위1" in x)
         assert "결론이 약하다" in line and "근거 상한" in line and "2편" in line
+
+    def test_budget_capped_insufficient_subquestion_names_the_per_subquestion_cap(self):
+        # 몫에 막힌 것을 전체 상한 탓으로 쓰면 max_evidence 를 올리라는 잘못된 신호가 된다
+        st = _state()                       # 하위질문 2개 · 기본 90편 → 몫 45편
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].budget_capped = 3
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위1" in x)
+        assert "(하위질문당 근거 상한(45편)에 닿아 후보 3편을 더 싣지 못했다)" in line
+        assert "전체 근거 상한" not in line
+
+    def test_both_caps_are_named_separately(self):
+        st = _state()
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].budget_capped = 2
+        st.subquestions[0].capped = 1
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위1" in x)
+        assert ("(하위질문당 근거 상한(45편)에 닿아 후보 2편을, "
+                "전체 근거 상한(90편)에 닿아 후보 1편을 더 싣지 못했다)") in line
+
+    def test_subquestion_starved_by_its_share_is_not_reported_as_missing_evidence(self):
+        st = _state()
+        st.subquestions[1].budget_capped = 4
+        st.subquestions[1].note = "관련 논문이 없다"
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위2" in x)
+        assert line == "'하위2' (은)는 하위질문당 근거 상한(45편)에 닿아 검색된 논문 4편을 싣지 못했다"
+
+    def test_subquestion_emptied_by_exclusion_names_the_exclusion(self):
+        """자기점검이 실제 근거를 읽고 모두 뺐다 — '근거를 찾지 못했다'(코퍼스 빈틈)로 쓰면 그 사실이 사라진다."""
+        st = _state()
+        st.subquestions[1].excluded_cnts = ["B", "C"]
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위2" in x)
+        assert line == ("'하위2' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다"
+                        " — 2015년 이후 자료가 없다")
+
+    def test_emptied_subquestion_still_names_a_cap_that_blocked_more(self):
+        # 모두 뺀 것이 먼저다 — 상한은 덧붙인다. 상한 분기로 보내면 critic 이 근거를 읽고 뺀 사실과 note 가 사라진다
+        st = _state()
+        st.subquestions[1].excluded_cnts = ["B"]
+        st.subquestions[1].capped = 3
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "하위2" in x)
+        assert line == ("'하위2' 에 대해서는 모은 논문 1편이 모두 하위질문과 무관해 근거에서 뺐다"
+                        "(전체 근거 상한(90편)에 닿아 후보 3편을 더 싣지 못했다) — 2015년 이후 자료가 없다")
 
     def test_unchecked_subquestion_without_evidence_is_not_counted_twice(self):
         """근거가 0편이면 충분성을 따질 대상이 없다 — '못 찾았다'와 '점검 못 함'을 둘 다 쓰지 않는다."""
@@ -140,6 +196,35 @@ class TestBuildLimitations:
     def test_zero_dropped_is_not_reported(self):
         assert not any(_DROPPED in x
                        for x in build_limitations(_state(), unmarked_total=0, dropped_total=0))
+
+
+class TestTopic:
+    """한계 문장의 주어 조각 — 조사를 받침에 맞춘다. ' 는' 으로 고정하면 받침 있는 말에서 틀린다."""
+
+    @pytest.mark.parametrize(("text", "expected"), [
+        ("컴퓨팅 자원 관리", "'컴퓨팅 자원 관리' 는"),
+        ("엣지 컴퓨팅의 자원 할당", "'엣지 컴퓨팅의 자원 할당' 은"),
+    ])
+    def test_particle_follows_the_final_consonant(self, text, expected):
+        assert _topic(text) == expected
+
+    @pytest.mark.parametrize("text", ["고성능 컴퓨팅 (HPC)", "클라우드 SLA", "IoT"])
+    def test_non_hangul_ending_gets_both_particles(self, text):
+        # 'HPC' 는 '는'(에이치피시)이지만 'LAN' 은 '은'(랜)이다 — 읽는 소리는 코드가 모른다
+        assert _topic(text) == f"'{text}' (은)는"
+
+    def test_limitation_sentence_uses_the_matching_particle(self):
+        st = _state()
+        st.subquestions[0].text = "자원 할당"
+        st.subquestions[0].verdict = "insufficient"
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "자원 할당" in x)
+        assert line.startswith("'자원 할당' 은 근거 1편으로 결론이 약하다")
+
+    def test_about_phrase_keeps_its_fixed_particle(self):
+        # '에 대해서는' 은 받침과 무관하다 — 그대로 둔다
+        lims = build_limitations(_state(), unmarked_total=0, dropped_total=0)
+        assert any(x.startswith("'하위2' 에 대해서는 근거를 찾지 못했다") for x in lims)
 
 
 class TestAssembleReport:
@@ -343,13 +428,13 @@ class TestAssembleReport:
         assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
 
     def test_evidence_is_serialized(self):
-        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        report = assemble_report(_state(), sections=[_section_of("A")], unmarked_total=0)
         assert report["evidence"]["E1"]["chunks"][0]["page_start"] == 3
         assert report["evidence"]["E1"]["cnts_id"] == "A"
 
     def test_evidence_chunk_score_is_serialized(self):
         # score 는 화면에 유사도로 나간다 — 프론트는 report 만 받으므로 여기서 빠지면 닿을 길이 없다
-        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        report = assemble_report(_state(), sections=[_section_of("A")], unmarked_total=0)
         assert report["evidence"]["E1"]["chunks"][0]["score"] == 0.9
 
     def test_trail_comes_from_subquestions(self):
@@ -366,6 +451,46 @@ class TestAssembleReport:
         trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
         assert [(t["parse_failed"], t["failed"], t["capped"]) for t in trail] == [
             (True, False, 0), (False, True, 4)]
+
+    def test_trail_carries_excluded_count(self):
+        """문서 부록과 옛 잡 타임라인의 '무관 N편 제외' 원천이다."""
+        st = _state()
+        st.subquestions[0].excluded_cnts = ["X", "Y"]
+        trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
+        assert [t["excluded"] for t in trail] == [2, 0]
+
+    def test_trail_carries_the_excluded_papers_in_round_order(self):
+        """보고서 '관련성이 낮아 제외한 논문'과 문서 부록의 원천 — 풀에서 지운 논문도 회차 기록의 서지로 남는다."""
+        st = _state()
+        edge = {"cnts_id": "X", "title": "의료영상 Edge method", "personal_author": "김",
+                "pub_date": "2001"}
+        mpeg = {"cnts_id": "Y", "title": "MPEG-7 Edge Histogram", "personal_author": None,
+                "pub_date": "2003"}
+        st.subquestions[0].excluded_cnts = ["X", "Y"]
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 1, "excluded_papers": [edge]},
+                                     {"round": 2, "excluded": 0, "excluded_papers": []},
+                                     {"round": 3, "excluded": 1, "excluded_papers": [mpeg]}]
+        trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
+        assert [t["excluded_papers"] for t in trail] == [[edge, mpeg], []]
+
+    def test_trail_carries_the_flagged_count_of_a_job_with_exclusion_off(self):
+        """무관 제외를 끈 잡이 무관하다고 본 수 — 켠 잡의 trail.excluded 와 같은 쿼리로 나란히 본다.
+        회차 기록의 flagged 는 처음 가리킨 논문만 세므로 더하면 하위질문별 논문 수다."""
+        st = _state()
+        st.subquestions[0].rounds = [{"round": 1, "excluded": 0, "flagged": 2},
+                                     {"round": 2, "excluded": 0, "flagged": 1}]
+        trail = assemble_report(st, sections=[], unmarked_total=0)["trail"]
+        assert [t["flagged"] for t in trail] == [3, 0]
+
+    def test_resumed_job_with_rounds_recorded_before_the_bibliography_has_no_excluded_papers(self):
+        # 보강 전 회차 기록에는 excluded_papers 가 없다 — 그 스냅샷에서 종합만 다시 해도 보고서가 깨지지 않는다
+        st = _state()
+        st.subquestions[0].rounds = [{"round": 1, "query": "하위1", "found_chunks": 3,
+                                      "new_papers": 1, "verdict": "sufficient", "note": "충분하다",
+                                      "next_query": None, "excluded": 0}]
+        back = restore_state("j1", snapshot_state(st))
+        trail = assemble_report(back, sections=[], unmarked_total=0)["trail"]
+        assert [t["excluded_papers"] for t in trail] == [[], []]
 
     def test_corpus_range_is_carried_into_report(self):
         """수록 범위는 고정 문구가 아니라 실행 시점 실측값이다."""
@@ -457,7 +582,7 @@ class TestBuildSection:
         """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다."""
         st = _state_three()
         sec = build_section(st, st.subquestions[0], {
-            "intro": "이 하위질문에 대한 연구 흐름을 설명하는 2~4문장. 문장마다 [E#] 를 답니다.",
+            "intro": "이 하위질문에 대한 연구 흐름을 설명하는 2~4문장. 문장마다 [E#] 를 단다.",
             "summaries": {"E#": "그 논문이 무엇을 했고"},
             "future": [{"text": "남은 과제 한 문장 [E#]."}]})
         assert sec["intro"] == "" and sec["future"] == []
@@ -505,9 +630,12 @@ class TestSynthesize:
     def test_every_evidence_appears_in_some_section(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
         self._patch_chat(monkeypatch, [reply, reply])
-        report = asyncio.run(synthesize(_state_three()))
+        st = _state_three()
+        report = asyncio.run(synthesize(st))
         cited = {e for s in report["sections"] for p in s["papers"] for e in p["evidence"]}
-        assert cited == set(report["evidence"])
+        # 보고서 evidence 는 절에 실린 근거만 담아 절과 늘 같다 — 채택 근거 전체와 비교해야
+        # 절에서 빠진 근거가 드러난다.
+        assert cited == set(st.evidence)
 
     def test_missing_summaries_are_reported(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {"E1": "요약"}, "future": []})
@@ -582,7 +710,7 @@ class TestSynthesize:
 
     def test_failed_subquestion_with_evidence_gets_a_section(self, monkeypatch):
         """재검색·판정 중 예외로 끝난 하위질문도 그 전에 모은 근거는 실재한다 —
-        절에서 빼면 근거가 report.evidence 에만 고아로 남는다."""
+        절에서 빼면 그 근거가 보고서에서 사라진다(report.evidence 는 절에 실린 근거만 담는다)."""
         st = _state_three()
         st.subquestions[1].failed = True
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
@@ -628,6 +756,33 @@ class TestSynthesize:
         assert len(calls) == 1
 
 
+class TestSynthesizePrompt:
+    """절 서술의 문체 — 운영 보고서에서 5절만 '~합니다' 체였다."""
+
+    def _system(self, monkeypatch):
+        systems = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            systems.append(messages[0]["content"])
+            return json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+
+        monkeypatch.setattr(synthesizer, "chat", fake_chat)
+        asyncio.run(synthesize(_state_three()))
+        return systems[0]
+
+    def test_every_field_is_asked_in_plain_written_style(self, monkeypatch):
+        system = self._system(monkeypatch)
+        assert "'~다'로 끝나는 문어체 평서문" in system
+        assert "'~합니다'·'~입니다' 금지" in system
+        assert "intro·summaries·future 모두" in system
+
+    def test_json_example_does_not_model_the_polite_style(self, monkeypatch):
+        # gemma 는 예시를 견본으로 베낀다(recurring-gotchas 15번) — 예시 값이 '~ㅂ니다'로 끝나면 규칙과 싸운다
+        system = self._system(monkeypatch)
+        example = system.split("JSON 하나만 출력하세요.", 1)[1].split("summaries 에는", 1)[0]
+        assert "니다" not in example
+
+
 class TestReportChunks:
     """보고서의 근거 청크 — Evidence.chunks 는 매칭된 적 있는 청크의 저장소라 재검색이
     갈아끼운 대목도 남아 있다. 보고서에는 지금 어느 절이 가리키는 대목만, 좋은 순으로 싣는다."""
@@ -640,7 +795,7 @@ class TestReportChunks:
         return st
 
     def test_chunk_no_section_points_to_is_not_served(self):
-        report = assemble_report(self._replaced(), sections=[], unmarked_total=0)
+        report = assemble_report(self._replaced(), sections=[_section_of("A")], unmarked_total=0)
         assert [c["chunk_id"] for c in report["evidence"]["E1"]["chunks"]] == ["P-재1"]
 
     def test_chunks_of_several_sections_are_best_first(self):
@@ -650,14 +805,14 @@ class TestReportChunks:
                                     Chunk("c2b", "하위2 대목", 2, 2, 0.8)]
         st.subquestions[0].evidence_chunks = {"E1": ["c1"], "E2": ["c2a"]}
         st.subquestions[1].evidence_chunks = {"E2": ["c2b"], "E3": ["c3"]}
-        report = assemble_report(st, sections=[], unmarked_total=0)
+        report = assemble_report(st, sections=[_section_of("B")], unmarked_total=0)
         assert [c["chunk_id"] for c in report["evidence"]["E2"]["chunks"]] == ["c2b", "c2a"]
 
     def test_evidence_without_mapping_keeps_every_chunk(self):
         """매핑이 없는 옛 스냅샷은 chunks_for 처럼 전부 준다 — 거르면 청크가 0개가 된다."""
         st = self._replaced()
         st.subquestions[0].evidence_chunks = {}
-        report = assemble_report(st, sections=[], unmarked_total=0)
+        report = assemble_report(st, sections=[_section_of("A")], unmarked_total=0)
         assert [c["chunk_id"] for c in report["evidence"]["E1"]["chunks"]] == ["P-재1", "P-가"]
 
     def test_section_carries_its_own_chunk_scores(self):
@@ -675,3 +830,231 @@ class TestReportChunks:
 
         assert report["sections"][0]["chunk_scores"] == {"c1": 0.9, "c2": 0.2}
         assert report["sections"][1]["chunk_scores"] == {"c2": 0.95, "c3": 0.9}
+
+
+class TestSectionProgress:
+    """절 진행을 콜백으로 알린다 — 워커가 synth 이벤트로 흘리고 종합 단계 result 에도 남긴다."""
+
+    def _record(self, infos: list | None = None):
+        seen: list[tuple[int, int, str]] = []
+
+        async def on_section(idx, total, status, info):
+            seen.append((idx, total, status))
+            if infos is not None:
+                infos.append(info)
+
+        return seen, on_section
+
+    def test_each_section_reports_start_and_end(self, monkeypatch):
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
+        seen, on_section = self._record()
+        asyncio.run(synthesize(_state_three(), on_section=on_section))
+        # 근거 없는 하위3 은 절이 되지 않는다 — total 은 실제로 쓰는 절 수이고 idx 는 절 순번이다
+        assert seen == [(0, 2, "running"), (0, 2, "done"), (1, 2, "running"), (1, 2, "done")]
+
+    def test_section_without_narrative_reports_failed(self, monkeypatch):
+        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
+        seen, on_section = self._record()
+        asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert seen[-1] == (1, 2, "failed")
+
+    def test_canceled_section_is_never_reported_finished(self, monkeypatch):
+        # 끝났다고 알리지 않는다 — 워커가 종합 단계를 failed 로 닫는다
+        TestSynthesize()._patch_chat(monkeypatch, [])
+        seen, on_section = self._record()
+
+        async def stop():
+            return True
+
+        with pytest.raises(SynthesisCanceled):
+            asyncio.run(synthesize(_state_three(), should_stop=stop, on_section=on_section))
+        assert seen == [(0, 2, "running")]
+
+    def test_start_carries_the_subquestion_and_every_heading(self, monkeypatch):
+        # 절 순번과 하위질문 번호는 다르다 — 근거 없는 하위질문은 절이 되지 않는다
+        st = _state_three()
+        st.subquestions[0].evidence_ids = []
+        reply = json.dumps({"intro": "도입 [E2].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply])
+        infos = []
+        seen, on_section = self._record(infos)
+        asyncio.run(synthesize(st, on_section=on_section))
+        assert seen[0] == (0, 1, "running")
+        assert infos[0] == {"subq_idx": 1, "heading": "하위2", "headings": ["하위2"]}
+
+    def test_end_carries_the_finalized_section_and_its_evidence(self, monkeypatch):
+        reply = json.dumps({"intro": "도입 [E1] [E2].", "summaries": {"E1": "요약 [E1]."},
+                            "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
+        infos = []
+        _, on_section = self._record(infos)
+        report = asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert "section" not in infos[0] and "evidence" not in infos[0]
+        assert infos[1]["subq_idx"] == 0 and infos[1]["headings"] == ["하위1", "하위2"]
+        # 초안의 절은 최종본의 절과 같다 — 같은 finalize_section 으로 다듬는다
+        assert [infos[1]["section"], infos[3]["section"]] == report["sections"]
+        assert set(infos[1]["evidence"]) == {"E1", "E2"}
+        assert set(infos[3]["evidence"]) == {"E2", "E3"}
+        assert infos[1]["evidence"]["E1"] == report["evidence"]["E1"]
+
+    def test_failed_section_is_carried_with_its_paper_list(self, monkeypatch):
+        # 서술을 끝내 받지 못한 절도 초안에 싣는다 — 최종본도 그 절을 논문 목록만으로 싣는다
+        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
+        infos = []
+        seen, on_section = self._record(infos)
+        report = asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert seen[-1] == (1, 2, "failed")
+        sec = infos[-1]["section"]
+        assert sec == report["sections"][1]
+        assert sec["intro"] == "" and sec["future"] == []
+        assert [(p["cnts_id"], p["summary"]) for p in sec["papers"]] == [("B", ""), ("C", "")]
+        assert set(infos[-1]["evidence"]) == {"E2", "E3"}
+
+
+class TestReportEvidence:
+    """보고서 evidence 는 절에 실린 근거만 담는다 — 채택 수는 stats 가 센다."""
+
+    def test_evidence_beyond_the_section_papers_is_left_out(self):
+        # 절은 하위질문마다 앞 5편만 싣는다 — 나머지까지 실으면 상한을 올릴수록 보고서 JSON 만 분다
+        st = _state_three()
+        ids = [f"E{i}" for i in range(1, 8)]
+        for eid in ids:
+            st.evidence.setdefault(eid, Evidence(id=eid, cnts_id=eid, meta={}))
+        st.subquestions[0].evidence_ids = ids
+        sections = [build_section(st, sq, {"intro": "도입."})
+                    for sq in st.subquestions if sq.evidence_ids]
+        report = assemble_report(st, sections, unmarked_total=0)
+        assert list(report["evidence"]) == ["E1", "E2", "E3", "E4", "E5"]
+        assert report["stats"]["evidence_adopted"] == 7
+
+    def test_evidence_of_a_subquestion_without_a_section_is_left_out(self):
+        st = _state_three()
+        report = assemble_report(st, [build_section(st, st.subquestions[0], {"intro": "도입."})],
+                                 unmarked_total=0)
+        assert set(report["evidence"]) == {"E1", "E2"}
+
+
+class TestReportStats:
+    """보고서 서론 한 줄("논문 N편을 검토하고 M편을 근거로")의 원천."""
+
+    def test_report_carries_research_stats(self):
+        st = _state()
+        st.seen_cnts = {"A", "B", "C"}
+        st.subquestions[0].queries = ["q1", "q2"]
+        st.subquestions[1].excluded_cnts = ["B", "C"]
+        st.subquestions[1].rounds = [{"round": 1, "excluded": 2}]
+        report = assemble_report(st, sections=[], unmarked_total=0)
+        assert report["stats"] == {"papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 1,
+                                   "excluded": 2}
+
+    def test_existing_keys_are_kept(self):
+        # 키 추가만 한다 — 옛 보고서를 그리는 화면과 교본이 기존 키에 기대고 있다
+        report = assemble_report(_state(), sections=[], unmarked_total=0)
+        assert set(report) == {
+            "question", "range", "sections", "evidence", "trail", "limitations", "stats",
+        }
+
+
+class TestFinalizeSection:
+    """assemble_report 의 절 단위 처리를 떼어 낸 함수. 작성 중 초안(절 미리보기)과 최종본이
+    이 함수 하나로 다듬은 절을 쓴다 — 둘이 갈리면 초안에서 읽은 글이 완성본에서 바뀐다."""
+
+    def _sections(self):
+        return [
+            {"heading": "하위1", "intro": "도입 [E1] [E99]. 연결 문장.",
+             "papers": [{"cnts_id": "A", "summary": "요약 [E1]."}, {"cnts_id": "B", "summary": ""}],
+             "future": [{"text": "과제 [E2]."}, {"text": "[E7]"}],
+             "evidence_chunks": {"E1": ["c1"], "E2": ["c2"]},
+             "chunk_scores": {"c1": 0.9, "c2": 0.8}},
+            {"heading": "하위2", "intro": "", "failed": True, "future": [],
+             "papers": [{"cnts_id": "B", "summary": ""}, {"cnts_id": "C", "summary": ""}]},
+        ]
+
+    def test_section_equals_the_assembled_report_section(self):
+        st = _state_three()
+        sections = self._sections()
+        report = assemble_report(st, sections, unmarked_total=0)
+        assert [finalize_section(st, s)[0] for s in sections] == report["sections"]
+
+    def test_tally_counts_one_section(self):
+        # 도입의 [E99]·과제의 [E7] 은 이 절 근거(E1·E2)에 없다 → 삭제 2, "연결 문장." → 무표기 1,
+        # 요약이 빈 B → 요약 누락 1
+        _, tally = finalize_section(_state_three(), self._sections()[0])
+        assert tally == SectionTally(unmarked=1, dropped=2, unsummarized=1)
+
+    def test_failed_section_counts_only_as_failed(self):
+        _, tally = finalize_section(_state_three(), self._sections()[1])
+        assert tally == SectionTally(failed=1)
+
+    def test_tallies_add_up_to_the_report_limitations(self):
+        st = _state_three()
+        total = SectionTally()
+        for s in self._sections():
+            total.add(finalize_section(st, s)[1])
+        assert total == SectionTally(unmarked=1, dropped=2, unsummarized=1, failed=1)
+        assert assemble_report(st, self._sections(), unmarked_total=0)["limitations"] == (
+            build_limitations(st, unmarked_total=1, dropped_total=2, failed_sections=1,
+                              unsummarized_total=1))
+
+
+class TestSectionEvidence:
+    """절 미리보기에 싣는 근거 — 그 절이 인용한 근거만, 대목은 그 절이 매칭한 것만."""
+
+    def _state(self):
+        st = _state_three()
+        st.evidence["E2"].chunks = [Chunk("c2a", "하위1 대목", 1, 1, 0.4),
+                                    Chunk("c2b", "하위2 대목", 2, 2, 0.8)]
+        st.subquestions[0].evidence_chunks = {"E1": ["c1"], "E2": ["c2a"]}
+        st.subquestions[1].evidence_chunks = {"E2": ["c2b"], "E3": ["c3"]}
+        return st
+
+    def _finalized(self, st, i):
+        return finalize_section(st, build_section(st, st.subquestions[i], {"intro": "도입 [E2]."}))[0]
+
+    def test_only_cited_evidence_is_carried(self):
+        st = self._state()
+        # 하위1 절의 논문은 E1·E2 다 — E3 은 하위2 절의 근거라 싣지 않는다
+        assert set(section_evidence(st, self._finalized(st, 0))) == {"E1", "E2"}
+
+    def test_shape_matches_report_evidence(self):
+        st = self._state()
+        ev = section_evidence(st, self._finalized(st, 1))["E3"]
+        assert ev == {"cnts_id": "C", "meta": {"title": "논문 C"}, "chunks": [
+            {"chunk_id": "c3", "text": "본문", "page_start": 1, "page_end": 1, "score": 0.9}]}
+        # 손으로 적은 기대값만으로는 보고서 쪽 모양이 바뀌어도 통과한다 — 실제 보고서 출력과도 맞춘다
+        # (E3 은 한 절에만 실려 두 쪽의 대목 선택이 같다)
+        assert ev == assemble_report(st, [_section_of("C")], unmarked_total=0)["evidence"]["E3"]
+
+    def test_chunks_are_limited_to_the_section(self):
+        # 한 논문이 두 절에 실리면 Evidence.chunks 는 합집합이다 — 절 미리보기는 제 대목만 싣는다
+        st = self._state()
+        first = section_evidence(st, self._finalized(st, 0))["E2"]["chunks"]
+        second = section_evidence(st, self._finalized(st, 1))["E2"]["chunks"]
+        assert [c["chunk_id"] for c in first] == ["c2a"]
+        assert [c["chunk_id"] for c in second] == ["c2b"]
+
+    def test_chunks_are_best_first(self):
+        st = self._state()
+        st.evidence["E1"].chunks = [Chunk("c1a", "약한 대목", 1, 1, 0.3),
+                                    Chunk("c1b", "강한 대목", 2, 2, 0.9)]
+        st.subquestions[0].evidence_chunks = {"E1": ["c1a", "c1b"], "E2": ["c2a"]}
+        chunks = section_evidence(st, self._finalized(st, 0))["E1"]["chunks"]
+        assert [c["chunk_id"] for c in chunks] == ["c1b", "c1a"]
+
+    def test_section_without_chunk_mapping_keeps_every_chunk(self):
+        """매핑 없는 절(옛 모양)은 _serialize_evidence 처럼 전부 준다 — 거르면 대목이 0개가 된다."""
+        st = self._state()
+        sec, _ = finalize_section(st, {"heading": "h", "intro": "도입 [E1].", "future": [],
+                                       "papers": [{"cnts_id": "A", "summary": "s"},
+                                                  {"cnts_id": "B", "summary": "s"}]})
+        assert [c["chunk_id"] for c in section_evidence(st, sec)["E2"]["chunks"]] == ["c2b", "c2a"]
+
+    def test_markers_in_intro_and_future_are_cited_too(self):
+        # 칩은 대표 논문만이 아니다 — 도입·향후 과제의 [E#] 도 팝오버를 연다
+        st = self._state()
+        sec = {"heading": "h", "intro": "도입 [E3].", "papers": [],
+               "future": [{"text": "과제 [E2].", "evidence": ["E2"]}], "evidence_chunks": {}}
+        assert set(section_evidence(st, sec)) == {"E2", "E3"}

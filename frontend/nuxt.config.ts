@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   css: [
     resolve(__dirname, "assets/css/tailwind.css"),
     resolve(__dirname, "assets/css/style_skovix.css"),
+    resolve(__dirname, "assets/css/research.css"),
   ],
 
   runtimeConfig: {
@@ -24,7 +25,9 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       "/api": {
-        target: "http://localhost:18002",
+        // devProxy 는 "/api" 접두를 떼고 넘긴다 — 대상 주소에 /api 를 붙여야 FastAPI 경로와 맞는다.
+        // 로컬 화면을 운영 게이트웨이에 붙일 때는 NUXT_DEV_API_TARGET=http://<서버>:92/api 로 띄운다.
+        target: process.env.NUXT_DEV_API_TARGET ?? "http://localhost:18002/api",
         changeOrigin: true,
       },
     },

@@ -11,6 +11,7 @@ from api.paper import router as paper_router
 from api.ingest_jobs import router as ingest_jobs_router
 from api.scenario import router as scenario_router
 from api.research import router as research_router
+from api.history import router as history_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
     import models.section
     import models.search_history
     import models.ingest_job
+    import models.history
     from sqlalchemy import text
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -85,3 +87,4 @@ app.include_router(paper_router)
 app.include_router(ingest_jobs_router)
 app.include_router(scenario_router)
 app.include_router(research_router)
+app.include_router(history_router)

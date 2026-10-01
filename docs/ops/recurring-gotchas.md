@@ -123,7 +123,7 @@
 - **파생 함정**: 새 모델이 포함된 이미지가 뜨면 `create_all` 이 그 테이블을 **먼저** 만든다. 그 뒤에 해당 마이그레이션을 돌리면 이번엔 `DuplicateTable` 로 죽는다. 그리고 `create_all` 이 만든 테이블에는 모델의 `server_default` 만 반영되고 `default=`(파이썬 측)는 DB 기본값이 되지 않아, 마이그레이션이 만들었을 테이블과 미묘하게 다르다.
 - **해결**: ① 객체가 전부 실재함을 확인한 뒤 `alembic stamp <리비전>` 으로 현실과 스탬프를 맞춘다. ② **`stamp` 는 DDL 뿐 아니라 마이그레이션 안의 데이터 백필(`op.execute(UPDATE …)`)도 건너뛴다** — 스탬프 전에 그 UPDATE 가 필요한 행이 남아 있는지 따로 세고, 남았으면 손으로 돌린다. ③ 새 테이블은 `create_all` 이 만들게 두고 `stamp` 로 맞추거나, 이미지 배포 전에 마이그레이션을 먼저 돌린다 — 둘 중 하나로 정하고 섞지 않는다.
 - **재발 방지**: 배포 전에 `select version_num from alembic_version` 과 실제 객체 존재를 **따로** 확인한다. 버전 테이블은 현실을 반영하지 않는다. 그리고 **스키마를 만드는 경로가 셋(`create_all` · lifespan 의 ad-hoc `ALTER` · Alembic)인 구조 자체가 원인**이므로, 대회 이후 정본 하나만 남긴다. `create_all` 만 지우고 lifespan `ALTER` 블록을 남기면 앱이 뜰 때마다 Alembic 밖에서 DDL 이 계속 돌아 같은 사고가 다음 컬럼에서 재발한다. 그 `ALTER` 는 컬럼이 이미 있어도 테이블 배타 잠금을 요구한다는 부작용도 있다(18번).
-- **현재 서버**: `alembic_version = 0005_research_jobs`(2026-09-23 확인) — round04a 의 `0004`·`0005` 스탬프까지 맞춰졌다.
+- **현재 서버**: `alembic_version = 0006_history_items` — round04b 운영 배포(2026-09-28) 때 `stamp` 로 맞췄다(`history_items` 는 lifespan 이 `models.history` 를 import 해 `create_all` 이 만드는 새 테이블이다 — 위 ③ 의 `create_all` + `stamp` 경로). 그 전 `0005_research_jobs` 는 2026-09-23 확인.
 
 
 ## 15. LLM 은 프롬프트 JSON 예시의 개수를 베낀다 — 구성은 코드가 정한다
@@ -141,7 +141,7 @@
 - **원인**:
   - fastapi 와 적재 워커 5개(그리고 round04a 의 `celery-research`·`celery-research-plan`)가 전부 `landsoftdocker/nl-lib-fastapi:latest` 를 쓴다. 서버에서 새 이미지를 `docker pull` 하면(12번 절차) 로컬 `:latest` 가 새 이미지를 가리키고, 스택 업데이트(compose `up`)는 이미지가 바뀐 서비스를 모두 재생성한다. `x-common-env` 를 고쳐도 같다 — 그걸 물고 있는 서비스 전부의 설정이 바뀐다.
   - `q_llm` 은 딥리서치 전용이 아니다. `tasks.stage_summarize`·`tasks.stage_finalize` 가 같은 큐이고 소비자는 `celery-llm` 하나다(`workers/celery_app.py`). 컨테이너를 멈추면 도커가 SIGTERM 뒤 10초 만에 SIGKILL 하므로 수 분짜리 요약 태스크는 중간에 죽는다.
-- **해결**: 인덱싱이 도는 동안에는 스택 업데이트(Pull & Redeploy 포함)를 하지 않는다. 앱 코드 배포는 인덱싱이 끝난 뒤, 또는 적재를 pause 해 in-flight 를 비운 뒤(아래) 한 번에 한다. 딥리서치 큐 전환처럼 일부 서비스만 바뀌는 설정은 `x-common-env` 가 아니라 해당 서비스 env 에 둔다(`RESEARCH_QUEUE`·`RESEARCH_PLAN_QUEUE` 가 fastapi·딥리서치 워커에만 있는 이유). 인덱싱 중에 꼭 먼저 내보내야 하면 **바뀐 코드를 쓰는 컨테이너만** recreate 하되, 새 compose 를 다시 읽지 않는 방식으로 한다 — 서버에서 `docker pull` 로 이미지를 받아 두고(12번, pull 만으로는 아무것도 재시작되지 않는다) Portainer 에서 해당 컨테이너만 Recreate 한다. 컨테이너 Recreate 는 기존 컨테이너 설정(env 포함)을 그대로 쓴다. 새 compose 로 `docker compose up -d fastapi celery-llm` 을 하면 fastapi 만 `RESEARCH_QUEUE: q_research` 를 받아 딥리서치 잡이 소비자 없는 큐에 쌓인다. 어느 쪽이든 `celery-llm` recreate 는 그 순간의 적재 요약·마무리 태스크(최대 4개)를 끊는다. **끊지 않으려면 적재 잡을 pause 하고 in-flight(`dispatched`·`running`)가 0 이 된 뒤 재생성한다**(`bulk_ingest_runbook.md` §8) — 끊기는 태스크가 없으면 아래 복구 경로도 돌지 않는다.
+- **해결**: 인덱싱이 도는 동안에는 스택 업데이트(Pull & Redeploy 포함)를 하지 않는다. 앱 코드 배포는 인덱싱이 끝난 뒤, 또는 적재를 pause 해 in-flight 를 비운 뒤(아래) 한 번에 한다. 딥리서치 큐 전환처럼 일부 서비스만 바뀌는 설정은 `x-common-env` 가 아니라 해당 서비스 env 에 둔다(`RESEARCH_QUEUE`·`RESEARCH_PLAN_QUEUE` 가 fastapi·딥리서치 워커에만 있는 이유). 인덱싱 중에 꼭 먼저 내보내야 하면 **바뀐 코드를 쓰는 컨테이너만** recreate 하되, 새 compose 를 다시 읽지 않는 방식으로 한다 — 서버에서 `docker pull` 로 이미지를 받아 두고(12번, pull 만으로는 아무것도 재시작되지 않는다) Portainer 에서 해당 컨테이너만 Recreate 한다(`nl-lib-fastapi`·`nl-lib-nuxt` 를 Recreate 했으면 끝에 게이트웨이를 reload 한다 — 20번). 컨테이너 Recreate 는 기존 컨테이너 설정(env 포함)을 그대로 쓴다. 새 compose 로 `docker compose up -d fastapi celery-llm` 을 하면 fastapi 만 `RESEARCH_QUEUE: q_research` 를 받아 딥리서치 잡이 소비자 없는 큐에 쌓인다. 어느 쪽이든 `celery-llm` recreate 는 그 순간의 적재 요약·마무리 태스크(최대 4개)를 끊는다. **끊지 않으려면 적재 잡을 pause 하고 in-flight(`dispatched`·`running`)가 0 이 된 뒤 재생성한다**(`bulk_ingest_runbook.md` §8) — 끊기는 태스크가 없으면 아래 복구 경로도 돌지 않는다.
 - **끊긴 적재 아이템은 어떻게 되나 (코드 근거)**: 볼륨의 데이터는 컨테이너 재생성으로 지워지지 않는다 — Postgres·Milvus·MinIO 는 외부 볼륨(`external: true`)이고, 끝난 단계의 결과는 이미 커밋돼 있다. 문제는 끊긴 아이템이다. 복구 경로가 **둘 다** 돈다 — 한쪽이 다른 쪽을 막지 않는다.
   - ① stale 복구: 디스패처(beat 30초)가 단계 타임아웃(요약·임베딩 1200초·마무리 900초, 아직 안 집힌 디스패치는 14400초)을 넘긴 아이템을 `failed`(`error_group=stale`)·`attempt+1` 로 표시하고, `attempt < max_attempts`(기본 3)면 **마지막 체크포인트(`item.stage`)부터** 새 체인을 디스패치한다. 옛 태스크를 revoke 하지는 않는다(`job_runtime._recover_stale`·`_dispatch_for_job`).
   - ② 브로커 재전달: `task_acks_late=True` 라 끊긴 태스크의 메시지는 ack 되지 않은 채 Redis 에 남는다. 도커는 SIGTERM 10초 뒤 SIGKILL 해 워커가 메시지를 되돌리지 못하고, 메시지는 전달 시각 기준 `visibility_timeout`(7200초) 뒤 재전달된다 — 체인의 뒤 단계(`embed_index`·`finalize`)까지 달고.
@@ -180,3 +180,26 @@
   - `SoftTimeLimitExceeded` 는 `Exception` 의 하위다. 동기 리랭크 도중 걸리면 `pipeline.py` 의 리랭크 폴백 `except Exception` 이 삼키고 "리랭킹 실패, 벡터 점수 유지" 경고 한 줄만 남긴 채 계속 돈다.
 - **해결**: 잡 본문을 자체 asyncio 데드라인(`JOB_DEADLINE = SOFT_LIMIT - 300`)으로 감쌌다. `asyncio.timeout` 은 await 지점에서 `CancelledError` 로 끊으므로 코루틴 안에서 확실히 잡히고, 초과하면 조건부 UPDATE 로 잡을 `failed`(`시간 상한 초과`)로 두고 열린 step 을 닫는다. `asyncio.run` 밖으로 튄 소프트 리밋은 새 루프·새 엔진으로 같은 정리를 한다(백스톱 — 데드라인이 못 끊는 동기 구간용). 리랭크 폴백은 리랭커가 실제로 내는 실패(`RuntimeError`·`OSError`·`ValueError`·`ImportError`)만 잡는다.
 - **재발 방지**: Celery 태스크에서 asyncio 를 돌리면 시간 상한을 Celery 에 맡기지 말고 코루틴 안의 데드라인으로 둔다. 하위 계층의 폴백 `except Exception` 은 태스크 제어 예외까지 삼킨다 — 폴백은 실제로 나는 실패 타입만 잡는다.
+
+## 20. 컨테이너를 개별 Recreate 하면 nginx 게이트웨이가 옛 IP 로 보내 502 가 난다
+
+- **날짜**: 2026-09-28 (round04b)
+- **증상**: round04b 운영 배포(`nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`·`nl-lib-nuxt` 를 컨테이너별로 Recreate) 직후 게이트웨이(포트 92)를 거친 요청이 502 Bad Gateway 를 냈다. nginx 가 요청을 Recreate **전** 컨테이너의 IP(`172.21.0.14`)로 보내고 있었다(사용자 기록). 진단은 nginx 오류 로그(`docker logs nl-lib-gateway`)의 upstream 오류 줄에 찍힌 `upstream:` 주소를 `docker inspect` 로 본 그 컨테이너의 지금 IP 와 견주는 것이다 — 다르면 이 함정이다.
+- **원인**: `infra/conf.d/default.conf` 의 `upstream fastapi { server fastapi:8000; }`·`upstream nuxt { server nuxt:3000; }` 처럼 upstream 블록에 쓴 호스트 이름은 nginx 가 **설정을 읽을 때(시작·reload) 한 번만** IP 로 바꿔 쥐고, 그 뒤로는 DNS 를 다시 묻지 않는다. 도커 네트워크(`nl-lib-net`)는 컨테이너를 만들 때마다 빈 IP 를 배정하므로(compose 에 고정 `ipv4_address` 가 없다) Recreate 한 컨테이너는 다른 IP 를 받을 수 있다. 도커 내장 DNS(`127.0.0.11`)는 새 IP 를 알려 주지만 nginx 가 묻지 않는다. 게이트웨이는 Recreate 대상이 아니어서 옛 IP 를 그대로 쥐고 있었다. 함정 16번이 권하는 "바뀐 코드를 쓰는 컨테이너만 Recreate" 가 이 함정을 연다 — 게이트웨이도 함께 다시 시작되면 그때 이름을 새로 풀어서 드러나지 않는다.
+- **해결**: `docker exec nl-lib-gateway nginx -s reload`. 설정을 다시 읽으며 이름을 새로 푼다. 컨테이너를 재시작하지 않고 새 워커 프로세스로 넘어가며, 옛 워커는 붙어 있던 연결을 마저 처리하고 내려간다. reload 는 서버의 `/data/nl-lib/nginx/conf.d`(바인드 마운트 — `docker-compose.yml` 의 `gateway`)를 지금 내용 그대로 다시 읽는다. 저장소의 `infra/conf.d/default.conf` 와 다르면 그 차이도 함께 적용되니, 서버 파일을 손댄 적이 있으면 `docker exec nl-lib-gateway nginx -t` 로 먼저 본다.
+- **재발 방지**:
+  - 게이트웨이가 보내는 곳은 `fastapi`·`nuxt` 둘뿐이다(`infra/conf.d/default.conf`). **둘 중 하나라도 Recreate 했으면 배포의 마지막 단계로 reload 한다.** 워커(`celery-*`)만 Recreate 한 배포에는 필요 없다. round04b §14·round04c 계획의 배포 순서에 넣었고(`docs/superpowers/plans/2026-09-28-round04b-report-wait-export.md`·`2026-09-29-round04c-research-quality.md`·`2026-09-29-round04c-safeguards.md`), round04c 배포(2026-09-30)는 워커 → fastapi → nuxt → `nginx -s reload` 순서로 했다.
+  - 배포 뒤 확인은 컨테이너에 직접 붙지 말고 게이트웨이를 거쳐 한다(`curl -s -o /dev/null -w '%{http_code}\n' http://<서버>:92/health` — `/health` 는 fastapi 로, `/` 는 nuxt 로 간다). round04a 의 SSE 확인처럼 컨테이너 안에서 앱에 붙는 확인은 이 함정을 못 잡는다.
+  - 게이트웨이 헬스체크(`wget http://127.0.0.1/health` — fastapi upstream 을 탄다)도 같은 이유로 실패하므로, fastapi IP 가 바뀐 채 두면 10초 간격 10회 뒤 `docker ps` 에 `unhealthy` 로 보일 것이다. 도커는 unhealthy 라고 재시작하지 않는다. (compose 설정으로 본 추론이다 — 이번에는 reload 로 바로 고쳐 관찰하지 않았다.)
+  - **근본 해결(검토)**: 실행 중에도 이름을 다시 풀게 한다. nginx 1.27.3 부터 오픈소스판도 upstream 의 `server … resolve` 를 쓸 수 있다(upstream 이 공유 메모리 `zone` 에 있어야 한다). 도커 내장 DNS 의 TTL 을 따르지 않게 `valid` 를 짧게 둔다.
+
+    ```nginx
+    resolver 127.0.0.11 valid=10s ipv6=off;   # 도커 내장 DNS
+    upstream fastapi {
+        zone fastapi 64k;
+        server fastapi:8000 resolve;
+    }
+    ```
+
+    적용 전에 확인할 것: 게이트웨이 이미지는 버전 고정이 없는 `nginx:alpine`(`docker-compose.yml`)이라 서버의 실제 버전을 `docker exec nl-lib-gateway nginx -v` 로 본다. 설정은 서버의 `/data/nl-lib/nginx/conf.d` 를 마운트하므로 저장소 파일을 고친 뒤 서버 파일에도 옮겨야 한다. 그 전까지는 reload 를 절차로 지킨다.
+- **참고 — 같은 배포에서 SSE 는 게이트웨이 설정을 바꾸지 않고 통과했다.** round04a 는 스트림을 컨테이너 안에서만 확인했었다(`round04a-완료노트.md` §2). 딥리서치 스트림 응답이 `X-Accel-Buffering: no` 헤더(`app/api/research.py`)로 nginx 응답 버퍼링을 끄고, 15초 하트비트(`relay.subscribe` 의 `idle_timeout=15.0` → `: ping`)가 `location /api/` 의 `proxy_read_timeout 120s` 안에서 연결을 이어 준다. 하트비트 간격을 120초보다 길게 늘리면 게이트웨이가 스트림을 끊는다.

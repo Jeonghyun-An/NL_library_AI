@@ -17,15 +17,19 @@ gemma-3-12b) 프롬프트 예시의 "섹션 1·논문 1·과제 1" 모양을 그
 import logging
 import re
 from collections.abc import Awaitable, Callable
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, fields
 
 import httpx
 
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.citations import bind_markers, chunks_for, strip_markers
+from services.research.hangul import josa
 from services.research.llm_json import extract_json
-from services.research.state import Chunk, Evidence, ResearchState, SubQuestion
+from services.research.runner import subq_budget
+from services.research.state import (
+    Chunk, Evidence, ResearchState, SubQuestion, research_stats,
+)
 
 log = logging.getLogger(__name__)
 
@@ -42,8 +46,38 @@ _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
 
 
+# on_section(idx, total, status, info) — info 의 모양은 synthesize 독스트링에 있다. 인자 수를
+# 타입에 못박지 않는 이유: 워커의 콜백은 info 를 선택 인자로 받는다(info 없는 호출과 호환).
+SectionFn = Callable[..., Awaitable[None]]
+
+
 class SynthesisCanceled(Exception):
     """취소가 확인돼 종합을 멈췄다 — 실패가 아니라 사용자의 결정이다."""
+
+
+async def _no_progress(idx: int, total: int, status: str, info: dict | None = None) -> None:
+    return None
+
+
+def _topic(text: str) -> str:
+    """한계 문장의 주어 조각. 조사는 마지막 글자의 받침에 맞춘다(한글로 끝나지 않으면 '(은)는')."""
+    return f"'{text}' {josa(text, '은는')}"
+
+
+def _capped_clause(state: ResearchState, sq: SubQuestion, noun: str) -> str:
+    """상한에 막힌 후보를 원인별로 적는다 — "…에 닿아 {noun} N편을" 을 쉼표로 잇는다.
+
+    하위질문당 몫과 전체 상한을 한 수로 합치지 않는다. 풀리는 방법이 다르다 — 몫은 계획에서
+    하위질문을 줄이면 커지고, 전체 상한은 max_evidence 를 올려야 풀린다.
+    """
+    parts = []
+    if sq.budget_capped:
+        parts.append(f"하위질문당 근거 상한({subq_budget(state)}편)에 닿아 "
+                     f"{noun} {sq.budget_capped}편을")
+    if sq.capped:
+        parts.append(f"전체 근거 상한({state.params['max_evidence']}편)에 닿아 "
+                     f"{noun} {sq.capped}편을")
+    return ", ".join(parts)
 
 
 def build_limitations(
@@ -64,7 +98,6 @@ def build_limitations(
     과하게 알리면서 정작 심각한 쪽을 임계값에 묻는다.
     """
     out: list[str] = []
-    max_evidence = state.params["max_evidence"]
     for sq in state.subquestions:
         # note 를 여러 분기에 붙인다. 근거가 0편인 하위질문은 아래 insufficient
         # 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장 필요한 경우다.
@@ -72,27 +105,31 @@ def build_limitations(
         # 아래 집계 문장이 따로 센다.
         note = f" — {sq.note}" if sq.note and not sq.parse_failed else ""
         n = len(sq.evidence_ids)
-        # failed·capped 를 "근거 없음"보다 먼저 본다. 시스템 장애나 우리 쪽 상한을
+        topic = _topic(sq.text)
+        blocked = sq.capped or sq.budget_capped
+        # failed·상한을 "근거 없음"보다 먼저 본다. 시스템 장애나 우리 쪽 상한을
         # "근거를 찾지 못했다"로 쓰면 연구 결과(코퍼스 빈틈)로 둔갑한다.
         if sq.failed and n:
             out.append(
-                f"'{sq.text}' 는 탐색이 오류로 중단돼 끝까지 확인하지 못했다"
+                f"{topic} 탐색이 오류로 중단돼 끝까지 확인하지 못했다"
                 f"(중단 전까지 모은 근거 {n}편으로만 썼다){note}"
             )
         elif sq.failed:
-            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다{note}")
-        elif not n and sq.capped:
+            out.append(f"{topic} 탐색 중 오류로 확인하지 못했다{note}")
+        elif not n and sq.excluded_cnts:
+            # 자기점검이 실제 근거를 읽고 모두 뺐다 — 상한 분기로 보내면 이 원인과 note 가 가려지고,
+            # '근거를 찾지 못했다'(코퍼스 빈틈)로 쓰면 찾아서 읽은 사실이 사라진다
+            cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
+            out.append(f"'{sq.text}' 에 대해서는 모은 논문 {len(sq.excluded_cnts)}편이 모두 "
+                       f"하위질문과 무관해 근거에서 뺐다{cap}{note}")
+        elif not n and blocked:
             # 상한 때문에 0편이면 critic 은 "(없음)"을 보고 판정한다 — 그 note 는 오보다
-            out.append(
-                f"'{sq.text}' 는 근거 상한({max_evidence}편)에 닿아 "
-                f"검색된 논문 {sq.capped}편을 싣지 못했다"
-            )
+            out.append(f"{topic} {_capped_clause(state, sq, '검색된 논문')} 싣지 못했다")
         elif not n:
             out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다{note}")
         elif sq.verdict == "insufficient":
-            cap = (f"(근거 상한({max_evidence}편)에 닿아 후보 {sq.capped}편을 더 싣지 못했다)"
-                   if sq.capped else "")
-            out.append(f"'{sq.text}' 는 근거 {n}편으로 결론이 약하다{cap}{note}")
+            cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
+            out.append(f"{topic} 근거 {n}편으로 결론이 약하다{cap}{note}")
 
     # 근거가 0편이면 충분성을 따질 대상이 없고, failed 는 위에서 이미 알렸다
     unchecked = sum(1 for sq in state.subquestions
@@ -129,8 +166,35 @@ def build_limitations(
     return out
 
 
-def _serialize_evidence(state: ResearchState) -> dict:
-    """보고서의 근거 목록. 청크는 지금 어느 하위질문이든 가리키는 것만, 점수순으로 싣는다.
+def _evidence_entry(ev: Evidence, keep: list[Chunk]) -> dict:
+    """report.evidence 한 항목의 모양. 청크는 점수순으로 싣는다.
+
+    완성본(_serialize_evidence)과 작성 중 초안(section_evidence)이 이 함수 하나로 만든다 —
+    따로 만들면 한쪽 모양만 바뀌어 초안과 완성본의 인용칩 팝오버가 조용히 갈린다.
+    """
+    return {
+        "cnts_id": ev.cnts_id,
+        "meta": ev.meta,
+        "chunks": [asdict(c) for c in sorted(keep, key=lambda c: c.score, reverse=True)],
+    }
+
+
+def _cited(state: ResearchState, section: dict) -> list[str]:
+    """다듬은 절(finalize_section) 하나가 인용한 근거 번호 — 대표 논문·도입·향후 과제의 칩 전부."""
+    # 다듬은 도입에는 표준형 [E#] 만 남는다 — bind_markers 의 used 로 읽는다. 여기서 정규식을
+    # 다시 쓰면 마커 문법이 두 곳으로 갈라진다.
+    cited = list(bind_markers(section.get("intro", ""), set(state.evidence)).used)
+    for item in (*section.get("papers", []), *section.get("future", [])):
+        cited.extend(item.get("evidence", []))
+    return cited
+
+
+def _serialize_evidence(state: ResearchState, cited: set[str]) -> dict:
+    """보고서의 근거 목록. 절에 실린(cited) 근거만, 청크는 지금 어느 하위질문이든 가리키는 것만
+    점수순으로 싣는다.
+
+    채택한 근거를 전부 싣지 않는 이유: 절은 하위질문마다 앞 5편만 쓰므로 나머지는 어느 칩도
+    가리키지 않는다. 그대로 두면 상한을 올릴수록 보고서 JSON 만 분다. 채택 수는 stats 가 센다.
 
     Evidence.chunks 는 매칭된 적 있는 청크의 저장소라 재검색이 갈아끼운 대목도 남아 있다.
     그대로 실으면 어느 절도 그 대목으로 쓰지 않았는데 삽입 순서대로 chunks[0] 에 나간다.
@@ -144,110 +208,165 @@ def _serialize_evidence(state: ResearchState) -> dict:
         unmapped.update(e for e in sq.evidence_ids if not sq.evidence_chunks.get(e))
 
     def _shown(eid: str, ev: Evidence) -> list[Chunk]:
-        keep = ev.chunks if eid in unmapped or eid not in mapped else [
-            c for c in ev.chunks if c.chunk_id in mapped[eid]]
-        return sorted(keep, key=lambda c: c.score, reverse=True)
+        if eid in unmapped or eid not in mapped:
+            return ev.chunks
+        return [c for c in ev.chunks if c.chunk_id in mapped[eid]]
+
+    return {eid: _evidence_entry(ev, _shown(eid, ev))
+            for eid, ev in state.evidence.items() if eid in cited}
+
+
+def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
+    """다듬은 절(finalize_section) 하나가 인용한 근거만 report.evidence 와 같은 모양으로 만든다.
+
+    작성 중 초안의 인용칩 팝오버가 쓴다. 근거 전체를 절마다 실으면 절이 쌓일수록 같은 대목을
+    거듭 나른다. 대목은 이 절이 매칭한 것(evidence_chunks)만 점수순으로 싣고, 매핑이 없으면
+    _serialize_evidence 와 같이 전부 싣는다.
+    """
+    mapped = section.get("evidence_chunks", {})
+    out: dict[str, dict] = {}
+    for eid in _cited(state, section):
+        if eid in out:
+            continue
+        # finalize_section 은 근거에 있는 번호만 남긴다 — 어기면 KeyError 로 바로 드러난다
+        ev = state.evidence[eid]
+        ids = set(mapped.get(eid) or [])
+        out[eid] = _evidence_entry(ev, [c for c in ev.chunks if c.chunk_id in ids] if ids
+                                   else ev.chunks)
+    return out
+
+
+@dataclass
+class SectionTally:
+    """절 하나를 다듬으며 센 검증 결과. 보고서의 한계 문장은 이것을 절마다 더한 값이다."""
+    unmarked: int = 0
+    dropped: int = 0
+    unparsed: int = 0
+    unsummarized: int = 0
+    failed: int = 0
+    introless: int = 0
+
+    def add(self, other: "SectionTally") -> None:
+        # 칸을 손으로 나열하지 않는다 — 칸을 더하고 여기서 빠뜨리면 한계 문장이 조용히 준다
+        for f in fields(self):
+            setattr(self, f.name, getattr(self, f.name) + getattr(other, f.name))
+
+
+def finalize_section(state: ResearchState, sec: dict) -> tuple[dict, SectionTally]:
+    """모델 출력으로 만든 절(build_section)을 보고서에 싣는 모양으로 다듬는다 (순수 함수).
+
+    작성 중 초안(절마다 워커가 미리 보여 준다)과 최종 보고서가 이 함수 하나를 쓴다 — 따로
+    다듬으면 초안에서 읽은 글과 완성본의 글이 갈린다.
+
+    마커 검증 결과는 bind_markers 호출마다 누적한다. 절마다 도입·향후 과제로 여러 번
+    부르므로 한 번의 반환값만 읽으면 나머지 호출에서 지운 표기가 조용히 사라진다. dropped 는
+    번호 종류가 아니라 본문에 박힌 표기 수로 센다 — 사용자가 보는 단위가 그것이다.
+    """
+    by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
+    tally = SectionTally()
+    failed = bool(sec.get("failed"))
+    # 모델은 절마다 그 절의 논문만 받는다 — 검증도 그 번호로 한정한다. 근거
+    # 번호가 E1..En 으로 연속 발급되므로 전역 집합으로 검증하면 모델이 지어낸
+    # 작은 번호는 거의 다 통과하고, 본 적 없는 논문을 가리키는 칩이 생긴다.
+    valid = {by_cnts[p["cnts_id"]] for p in sec.get("papers", []) if p["cnts_id"] in by_cnts}
+    intro = bind_markers(sec.get("intro", ""), valid)
+    tally.unmarked += intro.unmarked
+    tally.dropped += len(intro.dropped)
+    tally.unparsed += len(intro.unparsed)
+    # 칩만 남은 도입("[E1]")은 문장이 아니다 — 도입 없음으로 센다
+    intro_text = intro.text if _prose(intro.text) else ""
+    if failed:
+        tally.failed += 1
+    elif not intro_text:
+        tally.introless += 1
+
+    papers = []
+    for p in sec.get("papers", []):
+        eid = by_cnts.get(p["cnts_id"])
+        if eid is None:
+            continue                      # 근거에 없는 논문은 싣지 않는다
+        summary = strip_markers(p.get("summary", ""))
+        if not _prose(summary):
+            summary = ""                  # "[E1]." 에서 번호만 걷으면 마침표 하나가 남는다
+        # 서술이 통째로 실패한 절은 위의 failed 로 이미 센다 —
+        # 그 절의 논문을 요약 누락으로 또 세면 실패가 두 건처럼 보인다.
+        if not summary and not failed:
+            tally.unsummarized += 1
+        papers.append({
+            "cnts_id": p["cnts_id"],
+            "summary": summary,
+            "evidence": [eid],            # 구조적 인용 — 모델이 고르지 않는다
+        })
+
+    future = []
+    for f in sec.get("future", []):
+        res = bind_markers(f.get("text", ""), valid)
+        tally.unmarked += res.unmarked
+        tally.dropped += len(res.dropped)
+        tally.unparsed += len(res.unparsed)
+        # 지운 번호는 위에서 이미 셌다. 마커만 있던 항목은 빈 불릿이나 칩 하나짜리
+        # 불릿이 되므로 싣지 않는다.
+        if not _prose(res.text):
+            continue
+        # used 를 bind_markers 가 돌려준다 — 여기서 정규식을 다시 쓰면
+        # 마커 문법이 두 곳으로 갈라진다.
+        future.append({"text": res.text, "evidence": res.used})
 
     return {
-        eid: {
-            "cnts_id": ev.cnts_id,
-            "meta": ev.meta,
-            "chunks": [asdict(c) for c in _shown(eid, ev)],
-        }
-        for eid, ev in state.evidence.items()
-    }
+        "heading": sec.get("heading", ""),
+        "intro": intro_text, "papers": papers, "future": future,
+        # 근거 ID → 이 절에서 매칭된 청크 ID. 한 논문이 여러 절에 실리면
+        # evidence.chunks 는 그 합집합이라, 호버는 이걸로 그 절의 대목을 고른다.
+        "evidence_chunks": sec.get("evidence_chunks", {}),
+        # 청크 ID → 이 절의 하위질문 검색어로 받은 점수. 두 절이 한 청크를 쓰면
+        # evidence.chunks[].score(최고값) 하나로는 한쪽 절에 남의 점수가 뜬다.
+        "chunk_scores": sec.get("chunk_scores", {}),
+    }, tally
+
+
+def _excluded_papers(sq: SubQuestion) -> list[dict]:
+    """하위질문이 무관하다고 뺀 논문의 서지 요약을 회차 순으로 잇는다. 한 번 뺀 논문은 같은 하위질문에
+    다시 들지 않으니(runner) 중복이 없다. 보강 전 회차 기록에는 excluded_papers 가 없다."""
+    return [p for r in sq.rounds for p in r.get("excluded_papers", [])]
 
 
 def assemble_report(
     state: ResearchState, sections: list[dict], *, unmarked_total: int,
 ) -> dict:
-    by_cnts = {ev.cnts_id: eid for eid, ev in state.evidence.items()}
-    unmarked = unmarked_total
-    # 마커 검증 결과는 bind_markers 호출마다 누적한다. 섹션마다 도입·향후
-    # 과제로 여러 번 부르므로 한 번의 반환값만 읽으면 나머지 호출에서 지운
-    # 표기가 조용히 사라진다. dropped 는 번호 종류가 아니라 본문에 박힌
-    # 표기 수로 센다 — 사용자가 보는 단위가 그것이다.
-    dropped = unparsed = 0
-    unsummarized = failed_sections = introless = 0
+    tally = SectionTally(unmarked=unmarked_total)
     out_sections = []
-
+    cited: set[str] = set()
     for sec in sections:
-        failed = bool(sec.get("failed"))
-        # 모델은 절마다 그 절의 논문만 받는다 — 검증도 그 번호로 한정한다. 근거
-        # 번호가 E1..En 으로 연속 발급되므로 전역 집합으로 검증하면 모델이 지어낸
-        # 작은 번호는 거의 다 통과하고, 본 적 없는 논문을 가리키는 칩이 생긴다.
-        valid = {by_cnts[p["cnts_id"]] for p in sec.get("papers", []) if p["cnts_id"] in by_cnts}
-        intro = bind_markers(sec.get("intro", ""), valid)
-        unmarked += intro.unmarked
-        dropped += len(intro.dropped)
-        unparsed += len(intro.unparsed)
-        # 칩만 남은 도입("[E1]")은 문장이 아니다 — 도입 없음으로 센다
-        intro_text = intro.text if _prose(intro.text) else ""
-        if failed:
-            failed_sections += 1
-        elif not intro_text:
-            introless += 1
-
-        papers = []
-        for p in sec.get("papers", []):
-            eid = by_cnts.get(p["cnts_id"])
-            if eid is None:
-                continue                      # 근거에 없는 논문은 싣지 않는다
-            summary = strip_markers(p.get("summary", ""))
-            if not _prose(summary):
-                summary = ""                  # "[E1]." 에서 번호만 걷으면 마침표 하나가 남는다
-            # 서술이 통째로 실패한 절은 위의 failed_sections 로 이미 보고한다 —
-            # 그 절의 논문을 요약 누락으로 또 세면 실패가 두 건처럼 보인다.
-            if not summary and not failed:
-                unsummarized += 1
-            papers.append({
-                "cnts_id": p["cnts_id"],
-                "summary": summary,
-                "evidence": [eid],            # 구조적 인용 — 모델이 고르지 않는다
-            })
-
-        future = []
-        for f in sec.get("future", []):
-            res = bind_markers(f.get("text", ""), valid)
-            unmarked += res.unmarked
-            dropped += len(res.dropped)
-            unparsed += len(res.unparsed)
-            # 지운 번호는 위에서 이미 셌다. 마커만 있던 항목은 빈 불릿이나 칩 하나짜리
-            # 불릿이 되므로 싣지 않는다.
-            if not _prose(res.text):
-                continue
-            # used 를 bind_markers 가 돌려준다 — 여기서 정규식을 다시 쓰면
-            # 마커 문법이 두 곳으로 갈라진다.
-            future.append({"text": res.text, "evidence": res.used})
-
-        out_sections.append({
-            "heading": sec.get("heading", ""),
-            "intro": intro_text, "papers": papers, "future": future,
-            # 근거 ID → 이 절에서 매칭된 청크 ID. 한 논문이 여러 절에 실리면
-            # evidence.chunks 는 그 합집합이라, 호버는 이걸로 그 절의 대목을 고른다.
-            "evidence_chunks": sec.get("evidence_chunks", {}),
-            # 청크 ID → 이 절의 하위질문 검색어로 받은 점수. 두 절이 한 청크를 쓰면
-            # evidence.chunks[].score(최고값) 하나로는 한쪽 절에 남의 점수가 뜬다.
-            "chunk_scores": sec.get("chunk_scores", {}),
-        })
+        section, counted = finalize_section(state, sec)
+        out_sections.append(section)
+        tally.add(counted)
+        cited.update(_cited(state, section))
 
     return {
         "question": state.question,
         "range": state.corpus_range,
         "sections": out_sections,
-        "evidence": _serialize_evidence(state),
+        "evidence": _serialize_evidence(state, cited),
         "trail": [
             {"subquestion": sq.text, "queries": sq.queries,
              "evidence_count": len(sq.evidence_ids),
              "verdict": sq.verdict, "note": sq.note,
-             "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped}
+             "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped,
+             # 자기점검이 이 하위질문에서 무관하다고 뺀 논문 수 — 한 번 뺀 논문은 다시 들지 않는다
+             "excluded": len(sq.excluded_cnts),
+             # 보고서의 '관련성이 낮아 제외한 논문'과 문서 부록 — 풀에서 지운 논문도 서지가 남는다
+             "excluded_papers": _excluded_papers(sq),
+             # 무관 제외를 끈 잡이 무관하다고 본 논문 수(켠 잡은 0) — 켠 잡의 excluded 와 같은 쿼리로 나란히
+             # 본다. 회차 기록의 flagged 는 처음 가리킨 논문만 센다(runner)
+             "flagged": sum(r.get("flagged", 0) for r in sq.rounds)}
             for sq in state.subquestions
         ],
         "limitations": build_limitations(
-            state, unmarked_total=unmarked, dropped_total=dropped,
-            failed_sections=failed_sections, unsummarized_total=unsummarized,
-            unparsed_total=unparsed, introless_sections=introless,
+            state, unmarked_total=tally.unmarked, dropped_total=tally.dropped,
+            failed_sections=tally.failed, unsummarized_total=tally.unsummarized,
+            unparsed_total=tally.unparsed, introless_sections=tally.introless,
         ),
+        "stats": research_stats(state),
     }
 
 
@@ -388,13 +507,14 @@ async def _synthesize_section(
 
 async def synthesize(
     state: ResearchState, *, should_stop: Callable[[], Awaitable[bool]] | None = None,
+    on_section: SectionFn | None = None,
 ) -> dict:
     """하위질문마다 절을 하나씩 만든다.
 
     근거가 없는 하위질문은 절을 만들지 않는다 — 한계 섹션이 그 사실을 적는다.
     탐색이 도중에 실패한 하위질문이라도 그 전에 모은 근거가 있으면 절을 만든다.
-    빼면 실재하는 근거가 report.evidence 에만 고아로 남고, 한계에는 사실과 다른
-    "확인하지 못했다"만 실린다.
+    빼면 실재하는 근거가 보고서에서 사라지고(report.evidence 는 절에 실린 근거만 담는다),
+    한계에는 사실과 다른 "확인하지 못했다"만 실린다.
 
     일부 절의 실패는 한계로 보고하고 넘어가지만, 전부 실패하면 예외를 던진다.
     서술이 한 줄도 없는 보고서를 completed 로 두면 재시도(stage=explored 에서
@@ -402,14 +522,31 @@ async def synthesize(
 
     should_stop 은 LLM 을 부르기 직전마다 확인하고, True 면 SynthesisCanceled 를
     던진다 — 취소 뒤에도 남은 절을 다 부르면 GPU 를 비운다는 취소의 약속이 거짓이 된다.
+
+    on_section(idx, total, status, info) 는 절을 쓰기 시작할 때 "running", 끝낼 때 "done"
+    또는 "failed" 로 부른다. idx 는 절 순번(0부터)이지 하위질문 번호가 아니다 — 근거
+    없는 하위질문은 절이 되지 않아 둘이 어긋나고, 화면의 "2/3" 은 절 순번으로 센다.
+    info 는 {subq_idx, heading, headings(쓸 절 전부의 소제목, 절 순서)} 이고, 끝낼 때는
+    finalize_section 으로 다듬은 절(section)과 그 절이 인용한 근거(evidence)를 더한다 —
+    화면이 다 쓴 절부터 초안으로 보여 준다. 서술을 받지 못한 절(failed)도 최종본처럼
+    논문 목록만 있는 절로 싣는다.
     """
+    on_section = on_section or _no_progress
     targets = [sq for sq in state.subquestions if sq.evidence_ids]
+    # 첫 절을 쓰는 동안에도 화면이 남은 절을 "작성 대기"로 그릴 수 있게 소제목을 전부 싣는다
+    headings = [sq.text for sq in targets]
     sections = []
-    for sq in targets:
+    for i, sq in enumerate(targets):
+        info = {"subq_idx": sq.idx, "heading": sq.text, "headings": headings}
+        await on_section(i, len(targets), "running", info)
         section = await _synthesize_section(state, sq, should_stop=should_stop)
         sections.append(section)
         log.info("[research] 절 종합 job=%s idx=%s 논문=%d ok=%s",
                  state.job_id, sq.idx, len(section["papers"]), not section["failed"])
+        preview, _ = finalize_section(state, section)
+        await on_section(i, len(targets), "failed" if section["failed"] else "done",
+                         {**info, "section": preview,
+                          "evidence": section_evidence(state, preview)})
 
     if targets and all(s["failed"] for s in sections):
         raise ValueError("보고서의 어느 절도 서술을 받지 못했다")

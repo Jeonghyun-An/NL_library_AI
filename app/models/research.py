@@ -96,11 +96,33 @@ class ResearchStep(Base):
     detail      = Column(Text)
     status      = Column(String(16), nullable=False, default="pending")
     # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
+    # SSE step 이벤트가 같은 값을 싣는다(workers/research_tasks.py _finish).
     # plan:       {"subquestions": [...]}                 LLM 원안 (승인본은 job.plan)
     # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
-    #              "parse_failed": bool, "capped": n}   verdict·note 는 마지막 라운드 값
-    # synthesize: {"sections": n}
-    # 실패 공통:   {"error": "..."}
+    #              "parse_failed": bool, "capped": n,
+    #              "rounds": [{"round", "query", "found_chunks", "new_papers",
+    #                          "verdict", "note", "next_query", "excluded"?, "excluded_papers"?,
+    #                          "flagged"?, "flagged_papers"?}],
+    #             excluded 는 그 회차 자기점검이 무관하다고 뺀 근거 수, excluded_papers 는 뺀 논문의
+    #             서지 요약 [{"cnts_id", "title", "personal_author", "pub_date"}], flagged·flagged_papers 는
+    #             무관 제외를 끈 잡(params.exclude_off_topic=0)에서 그 하위질문이 처음 무관하다고 본 수와
+    #             서지(켠 잡은 0·빈 목록). 보강 전 잡의 회차에는 없다.
+    #              "counters": {"papers_reviewed", "evidence_adopted", "rechecks", "excluded"?}}
+    #             verdict·note 는 마지막 라운드 값, 회차별 값은 rounds.
+    #             도는 중에는 회차가 끝날 때마다 {"rounds", "counters"} 로 갱신된다.
+    #             rounds 가 없는 행은 보강 전 잡이다 — 화면은 report.trail 로 대체한다.
+    # synthesize: {"sections_total": n, "headings": [...],
+    #              "sections": [{"idx", "status", "subq_idx", "heading", "started_at",
+    #                            "duration_ms", "section"?}],
+    #              "evidence"?: {eid: {"cnts_id", "meta", "chunks"}}}
+    #             idx 는 절 순번. 도는 중에는 절이 바뀔 때마다 갱신된다.
+    #             section(다듬은 절)·evidence(끝난 절들의 근거 합집합)는 작성 중 초안의 원천이다.
+    #             step 이벤트에는 싣지 않고(synth 이벤트가 절마다 나른다), 완료로 닫으면 지우며
+    #             (최종 보고서와 중복), 실패·취소로 닫으면 남긴다(멈춘 초안). 재시도가 완료되면
+    #             이전 시도의 종합 단계에 남은 멈춘 초안도 지운다.
+    #             보강 전 잡은 {"sections": n}(정수)이고, 절 미리보기 보강 전 잡은
+    #             sections[] 에 {"idx", "status"} 만 있다.
+    # 실패 공통:   {"error": "..."} — search·synthesize 는 그때까지의 rounds·sections 도 싣는다
     result      = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
     finished_at = Column(DateTime(timezone=True))

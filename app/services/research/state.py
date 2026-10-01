@@ -18,11 +18,15 @@ log = logging.getLogger(__name__)
 DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     "max_subquestions": 6,
     "max_recheck": 3,
-    "max_evidence": 60,
+    # 하위질문 6개면 몫이 15편(runner.subq_budget) — 첫 검색(보통 8~10편) 뒤에도 재검색이 보탤 자리가 남는다
+    "max_evidence": 90,
     "per_subq_top_k": 12,
     "chunks_per_evidence": 2,
     "citation_weight": 0.2,
     "min_evidence_per_subq": 5,
+    # 자기점검이 무관하다고 본 근거를 뺄지(1) 세기만 할지(0). 운영에서 결과가 줄면 재배포 없이 잡 파라미터로
+    # 끄고, 끈 잡의 회차 기록 flagged 로 켠 잡과 나란히 비교한다
+    "exclude_off_topic": 1,
 })
 
 # (타입, 하한, 상한). ResearchCreate.params: dict 가 값 타입을 검증하지
@@ -37,6 +41,7 @@ _PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
     "chunks_per_evidence": (int, 1, 5),
     "citation_weight": (float, 0.0, 1.0),
     "min_evidence_per_subq": (int, 0, 50),
+    "exclude_off_topic": (int, 0, 1),
 }
 
 
@@ -127,6 +132,9 @@ class SubQuestion:
     # max_evidence 상한 때문에 채택하지 못한 후보 논문 수. failed 와 같은 이유로
     # 따로 둔다 — 없으면 시스템 상한이 "근거를 찾지 못했다"(코퍼스 빈틈)로 보고된다.
     capped: int = 0
+    # 하위질문당 몫(runner.subq_budget) 때문에 채택하지 못한 후보 논문 수. capped 와 따로 세는
+    # 이유는 풀리는 방법이 달라서다 — 몫은 하위질문을 줄이면 커지고, 전체 상한은 max_evidence 를 올려야 풀린다.
+    budget_capped: int = 0
     # 근거 ID → 이 하위질문 검색에서 매칭된 청크 ID(점수순). 한 논문이 여러
     # 하위질문에서 재사용되면 Evidence.chunks 는 그 합집합이라, 이게 없으면 critic
     # 발췌·절 요약·호버가 처음 채택한 하위질문의 대목으로 고정된다.
@@ -135,6 +143,16 @@ class SubQuestion:
     # Chunk.score 는 하나뿐이라, 이게 없으면 재검색 비교·발췌·절 호버가 다른 하위질문의
     # 점수로 돈다(0.95 로 찾은 대목이 남의 0.2 로 비교돼 밀려난다).
     chunk_scores: dict[str, float] = field(default_factory=dict)
+    # 회차 이력 — [{round, query, found_chunks, new_papers, verdict, note, next_query, excluded,
+    # excluded_papers, flagged, flagged_papers}]. verdict·note 는 마지막 회차 값만 남으므로, 이게 없으면 끝난 잡을
+    # 다시 열었을 때 "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다. excluded(그 회차에 무관하다고 뺀 수)·
+    # excluded_papers(뺀 논문의 서지 요약 — 풀에서 지운 뒤에도 무엇을 뺐는지 남는다)·flagged·flagged_papers(무관
+    # 제외를 끈 잡에서 이 하위질문이 그 회차에 처음 무관하다고 본 수와 서지, 켠 잡은 0·빈 목록)는 보강 전 잡의
+    # 회차에는 없다.
+    rounds: list[dict] = field(default_factory=list)
+    # 자기점검이 무관하다고 뺀 논문(cnts_id). 같은 하위질문의 다음 회차 검색에 다시 걸려도 넣지
+    # 않는다 — 넣으면 같은 논문을 또 판정받고 또 빼며 회차를 태운다. 다른 하위질문은 막지 않는다.
+    excluded_cnts: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -144,6 +162,12 @@ class ResearchState:
     params: dict
     subquestions: list[SubQuestion] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
+    # 다음 근거 번호 — evidence_id(evidence_seq) 로 쓰고 1 늘린다. 근거 수로 매기면 무관 근거를
+    # 지운 뒤 새 근거가 남아 있는 번호를 다시 받아 그 근거를 덮어쓴다.
+    evidence_seq: int = 0
+    # 검색에서 본 고유 논문(cnts_id). 청크 수로 세면 한 논문의 여러 대목이 따로 세이고,
+    # 하위질문마다 세면 재사용 논문이 겹친다 — "논문 N편을 검토"는 이 집합의 크기다.
+    seen_cnts: set[str] = field(default_factory=set)
     # 실행 시점의 수록 범위 — 코퍼스가 계속 자라므로 보고서에 고정 문구로
     # 박지 않고 매번 질의해 넣는다. {"from": "2002", "to": "2026", "n_papers": 72054}
     corpus_range: dict | None = None
@@ -171,6 +195,9 @@ def snapshot_state(state: ResearchState) -> dict:
             }
             for eid, ev in state.evidence.items()
         },
+        "evidence_seq": state.evidence_seq,
+        # 집합은 JSONB 에 들어가지 않는다. 정렬해 두면 왕복 비교도 결정론적이다.
+        "seen_cnts": sorted(state.seen_cnts),
     }
 
 
@@ -218,4 +245,43 @@ def restore_state(job_id: str, snap: dict) -> ResearchState:
         )
         for eid, e in snap["evidence"].items()
     }
+    st.evidence_seq = _restored_evidence_seq(snap)
+    st.seen_cnts = _restored_seen_cnts(snap)
     return st
+
+
+def _restored_seen_cnts(snap: dict) -> set[str]:
+    """보강 전 스냅샷에는 seen_cnts 가 없다. 채택한 논문은 적어도 검토한 것이니 그걸
+    하한으로 쓴다 — 빈 집합으로 두면 재개한 보고서가 "0편을 검토하고 11편을 근거로
+    삼았다"고 쓴다. 키가 있으면 빈 목록이라도 그대로 믿는다."""
+    if "seen_cnts" in snap:
+        return set(snap["seen_cnts"])
+    return {e["cnts_id"] for e in snap["evidence"].values()}
+
+
+def _restored_evidence_seq(snap: dict) -> int:
+    """보강 전 스냅샷에는 evidence_seq 가 없다. 근거 수가 아니라 가장 큰 번호(E<n> 의 n)로
+    되살린다 — 다음 번호가 남아 있는 번호와 겹치면 인용칩이 다른 논문을 가리킨다."""
+    if "evidence_seq" in snap:
+        return snap["evidence_seq"]
+    return max((int(eid[1:]) for eid in snap["evidence"]), default=0)
+
+
+def research_stats(state: ResearchState) -> dict:
+    """진행 카운터와 보고서 서론의 숫자. 둘이 같은 함수를 봐야 진행 중에 본 숫자와
+    보고서의 숫자가 어긋나지 않는다.
+
+    재검색 횟수는 따로 세지 않고 시도한 검색어 이력에서 얻는다 — 검색어는 이미
+    스냅샷에 실리므로 재개한 잡에서도 같은 값이 나온다. 제외 수도 같은 이유로 회차 기록에서 얻는다.
+
+    excluded 는 하위질문별 판단의 수다 — 같은 논문을 두 하위질문이 뺐으면 두 번 세고, 한 하위질문이 뺀 논문을
+    다른 하위질문이 채택하면 evidence_adopted 에도 든다. 그래서 검토·채택 수와 더해 맞지 않으며, 화면 서론은
+    "편"이 아니라 "하위질문별로 … 건"으로 적는다. 채택 수만 보이면 무관 제외로 줄어든 숫자가 결과가 준 것으로
+    읽힌다. 보강 전 회차에는 excluded 가 없다.
+    """
+    return {
+        "papers_reviewed": len(state.seen_cnts),
+        "evidence_adopted": len(state.evidence),
+        "rechecks": sum(max(len(sq.queries) - 1, 0) for sq in state.subquestions),
+        "excluded": sum(r.get("excluded", 0) for sq in state.subquestions for r in sq.rounds),
+    }

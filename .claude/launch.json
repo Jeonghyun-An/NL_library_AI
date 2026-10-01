@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "frontend-prod-api",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
+      "env": { "NUXT_DEV_API_TARGET": "https://skovix.landsoft.co.kr/api" },
+      "port": 3000
     }
   ]
 }

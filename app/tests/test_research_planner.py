@@ -80,3 +80,24 @@ class TestMakePlan:
         assert plan == ["가", "나"]
         assert "최대 2개" in seen[0][0]["content"]
         assert "청소년 진로상담" in seen[0][1]["content"]
+
+    def test_prompt_keeps_subquestions_inside_the_core_concept(self, monkeypatch):
+        """운영에서 '컴퓨팅 자원' 질문이 HPC·클라우드·엣지처럼 이웃한 기술 목록으로 나뉘었다.
+
+        예시는 넣지 않는다 — gemma 는 예시의 개수·분야를 베낀다(recurring-gotchas 15번).
+        """
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return "1. 가"
+
+        monkeypatch.setattr(planner, "chat", fake_chat)
+        asyncio.run(planner.make_plan("컴퓨팅 자원에 대한 연구", params=merge_params({})))
+        system = seen[0][0]["content"]
+        assert "원 질문의 핵심 개념 안에 머뭅니다" in system
+        assert "이웃한 기술·분야를 나열하는 식으로 나누지 마세요" in system
+        assert "개념·정의, 방법·기법, 적용 분야, 성과·평가, 한계·과제 중 질문에 맞는 것만" in system
+        assert "원 질문의 핵심어를 그대로 넣습니다" in system
+        assert "최대 6개" in system and "더 적어도 됩니다" in system
+        assert "예:" not in system and "예시" not in system

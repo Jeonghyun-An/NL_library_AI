@@ -1,7 +1,7 @@
 # 논문 딥리서치 에이전트 설계
 
 작성일: 2026-09-21
-상태: **설계 확정** · 백엔드 구현 완료(round04a, 2026-09-23 머지 전 리뷰 반영까지) · 프론트 미착수(round04b)
+상태: **설계 확정** · 백엔드 구현 완료(round04a, 2026-09-23 머지 전 리뷰 반영까지) · 프론트 구현·운영 배포(round04b, 2026-09-28 — 설계는 `docs/superpowers/specs/2026-09-26-round04b-deep-research-frontend-design.md`)
 
 > 구현이 설계와 달라진 곳은 해당 절 끝에 **구현 시 변경** 으로 덧붙였다. 원래 결정은 지우지 않았다 — 왜 그렇게 설계했는지가 이 문서의 값이다. 구현 시 변경과 코드가 어긋나면 코드가 정본이다(`app/services/research/`·`app/workers/research_tasks.py`·`app/api/research.py`). round04b 는 §2-3·§3-2·§3-3·§4-5 의 구현 시 변경을 계약으로 삼는다.
 

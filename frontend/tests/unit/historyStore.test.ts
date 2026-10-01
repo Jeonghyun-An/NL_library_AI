@@ -1,0 +1,867 @@
+import { describe, expect, it, vi } from "vitest";
+import type { HistoryItemDetail } from "~/types/history";
+import {
+  HISTORY_CACHE_KEY,
+  HISTORY_FLUSH_LOCK_KEY,
+  HISTORY_OUTBOX_KEY,
+  createFlushLock,
+  createHybridStore,
+  createLocalStore,
+  createServerStore,
+  errorStatus,
+  fromWire,
+  isQuotaError,
+  isRetryable,
+  storageFlushLock,
+  toWire,
+  type FlushLock,
+  type HistoryFetchOptions,
+  type HistoryFetcher,
+} from "~/utils/historyStore";
+import { MemoryStorage } from "./helpers/memoryStorage";
+import {
+  ID1,
+  ID2,
+  ID3,
+  bookEntry,
+  fakeServer,
+  httpError,
+  networkError,
+  paperEntry,
+  researchEntry,
+} from "./helpers/fakeHistory";
+
+const snap = { query: "한국 경제", books: [{ book_id: "B1", best_score: 0.9, chunks: [] as never[] }] };
+
+/** 쿼터를 금방 채우는 무거운 축약 결과 */
+function heavySnapshot() {
+  return {
+    query: "q",
+    books: Array.from({ length: 20 }, (_, i) => ({
+      book_id: `B${i}`,
+      best_score: 0.5,
+      chunks: [] as never[],
+      book_info: { title: "제목".repeat(40) },
+    })),
+  };
+}
+
+function wire(over: Partial<HistoryItemDetail> = {}): HistoryItemDetail {
+  return {
+    id: ID1,
+    kind: "book",
+    title: "한국 경제",
+    params: {},
+    ref_id: null,
+    created_at: "2026-09-26T01:00:00+00:00",
+    updated_at: "2026-09-26T01:00:00+00:00",
+    has_snapshot: false,
+    has_ai: false,
+    research: null,
+    snapshot: null,
+    ai: null,
+    ...over,
+  };
+}
+
+function fakeFetcher(respond: (path: string, opts?: HistoryFetchOptions) => unknown) {
+  const calls: Array<{ path: string; opts?: HistoryFetchOptions }> = [];
+  const fetcher: HistoryFetcher = async <T,>(path: string, opts?: HistoryFetchOptions) => {
+    calls.push({ path, opts });
+    return (await respond(path, opts)) as T;
+  };
+  return { fetcher, calls };
+}
+
+describe("오류 분류", () => {
+  it("errorStatus 는 status·statusCode·response.status 를 읽는다", () => {
+    expect(errorStatus(httpError(404))).toBe(404);
+    expect(errorStatus({ statusCode: 503 })).toBe(503);
+    expect(errorStatus({ response: { status: 500 } })).toBe(500);
+    expect(errorStatus(networkError())).toBeNull();
+  });
+
+  it("네트워크·408·429·5xx 만 다시 보낸다", () => {
+    expect(isRetryable(networkError())).toBe(true);
+    expect(isRetryable(httpError(503))).toBe(true);
+    expect(isRetryable(httpError(429))).toBe(true);
+    expect(isRetryable(httpError(404))).toBe(false);
+    expect(isRetryable(httpError(413))).toBe(false);
+  });
+
+  it("쿼터 초과만 쿼터 오류로 본다", () => {
+    expect(isQuotaError(new DOMException("x", "QuotaExceededError"))).toBe(true);
+    expect(isQuotaError(new DOMException("x", "SecurityError"))).toBe(false);
+    expect(isQuotaError(new Error("QuotaExceededError"))).toBe(false);
+  });
+});
+
+describe("선 모양 변환", () => {
+  it("fromWire 는 종류별 필드를 옮긴다", () => {
+    expect(fromWire(wire({ snapshot: snap, ai: { intro: "소개", items: [] } }))).toEqual({
+      id: ID1,
+      kind: "book",
+      title: "한국 경제",
+      params: {},
+      createdAt: "2026-09-26T01:00:00+00:00",
+      updatedAt: "2026-09-26T01:00:00+00:00",
+      snapshot: snap,
+      ai: { intro: "소개", items: [] },
+    });
+    expect(
+      fromWire(wire({ id: ID2, kind: "research", ref_id: ID2, research: { status: "running", stage: "planned" } })),
+    ).toMatchObject({ kind: "research", refId: ID2, research: { status: "running", stage: "planned" } });
+  });
+
+  it("toWire 는 딥리서치에 ref_id 를 싣고 snapshot·ai 는 비운다", () => {
+    expect(toWire(researchEntry(ID3))).toEqual({
+      kind: "research",
+      title: "국내 AI 규제 연구 동향",
+      params: {},
+      snapshot: null,
+      ai: null,
+      ref_id: ID3,
+    });
+    expect(toWire(bookEntry(ID1, { snapshot: snap }))).toMatchObject({
+      kind: "book",
+      snapshot: snap,
+      ai: null,
+      ref_id: null,
+    });
+  });
+});
+
+describe("createServerStore", () => {
+  it("list 는 kind·limit·before 를 쿼리로 보내고 항목을 바꿔 돌려준다", async () => {
+    const { fetcher, calls } = fakeFetcher(() => ({ items: [wire()], next_cursor: "c1" }));
+    const res = await createServerStore(fetcher).list("book", { limit: 10, before: "c0" });
+    expect(calls[0]).toMatchObject({
+      path: "/history",
+      opts: { method: "GET", query: { kind: "book", limit: 10, before: "c0" } },
+    });
+    expect(res.nextCursor).toBe("c1");
+    expect(res.items[0]).toMatchObject({ id: ID1, kind: "book" });
+  });
+
+  it("get 은 404 면 null, 다른 오류는 그대로 던진다", async () => {
+    const notFound = fakeFetcher(() => {
+      throw httpError(404);
+    });
+    expect(await createServerStore(notFound.fetcher).get(ID1)).toBeNull();
+    const broken = fakeFetcher(() => {
+      throw httpError(500);
+    });
+    await expect(createServerStore(broken.fetcher).get(ID1)).rejects.toMatchObject({ status: 500 });
+  });
+
+  it("put 은 PUT 본문에 선 모양을 싣는다", async () => {
+    const { fetcher, calls } = fakeFetcher(() => wire({ snapshot: snap }));
+    const saved = await createServerStore(fetcher).put(bookEntry(ID1, { snapshot: snap }));
+    expect(calls[0]).toMatchObject({
+      path: `/history/${ID1}`,
+      opts: { method: "PUT", body: { kind: "book", title: "한국 경제", snapshot: snap } },
+    });
+    expect(saved).toMatchObject({ id: ID1, snapshot: snap });
+  });
+
+  it("patch 는 정의된 필드만 보내고 404 면 null", async () => {
+    const { fetcher, calls } = fakeFetcher(() => {
+      throw httpError(404);
+    });
+    const res = await createServerStore(fetcher).patch(ID1, { ai: { text: "요약", refs: [] }, title: undefined });
+    expect(res).toBeNull();
+    expect(calls[0]!.opts).toMatchObject({ method: "PATCH", body: { ai: { text: "요약", refs: [] } } });
+    expect(calls[0]!.opts!.body).not.toHaveProperty("title");
+  });
+
+  it("remove 는 404 를 성공으로 본다", async () => {
+    const { fetcher } = fakeFetcher(() => {
+      throw httpError(404);
+    });
+    await expect(createServerStore(fetcher).remove(ID1)).resolves.toBeUndefined();
+  });
+
+  it("clear 는 kind 를 쿼리로 보낸다", async () => {
+    const { fetcher, calls } = fakeFetcher(() => undefined);
+    await createServerStore(fetcher).clear("paper");
+    expect(calls[0]).toMatchObject({ path: "/history", opts: { method: "DELETE", query: { kind: "paper" } } });
+  });
+
+  it("importItems 는 items 를 POST 한다", async () => {
+    const { fetcher, calls } = fakeFetcher(() => ({ imported: 1, skipped: 0, id_map: { "1727": ID1 } }));
+    const res = await createServerStore(fetcher).importItems([
+      { kind: "book", title: "a", params: {}, snapshot: null, ai: null, ref_id: null, legacy_id: "1727" },
+    ]);
+    expect(calls[0]).toMatchObject({ path: "/history/import", opts: { method: "POST" } });
+    expect(res.id_map["1727"]).toBe(ID1);
+  });
+});
+
+describe("createLocalStore", () => {
+  it("종류별로 최신순 목록을 돌려준다", async () => {
+    const local = createLocalStore(new MemoryStorage());
+    await local.put(bookEntry(ID1, { createdAt: "2026-09-26T01:00:00.000Z" }));
+    await local.put(bookEntry(ID2, { createdAt: "2026-09-26T02:00:00.000Z" }));
+    await local.put(paperEntry(ID3));
+    const { items } = await local.list("book");
+    expect(items.map((e) => e.id)).toEqual([ID2, ID1]);
+  });
+
+  it("before 커서로 다음 쪽을 읽는다", async () => {
+    const local = createLocalStore(new MemoryStorage());
+    await local.put(bookEntry(ID1, { createdAt: "2026-09-26T01:00:00.000Z" }));
+    await local.put(bookEntry(ID2, { createdAt: "2026-09-26T02:00:00.000Z" }));
+    const first = await local.list("book", { limit: 1 });
+    expect(first.items.map((e) => e.id)).toEqual([ID2]);
+    const second = await local.list("book", { limit: 1, before: first.nextCursor! });
+    expect(second.items.map((e) => e.id)).toEqual([ID1]);
+    expect(second.nextCursor).toBeNull();
+  });
+
+  it("patch·remove·clear 가 캐시에 반영된다", async () => {
+    const local = createLocalStore(new MemoryStorage());
+    await local.put(bookEntry(ID1));
+    await local.put(paperEntry(ID2));
+    expect(await local.patch(ID1, { title: "새 제목" })).toMatchObject({ id: ID1, title: "새 제목" });
+    expect(await local.patch(ID3, { title: "x" })).toBeNull();
+    await local.remove(ID1);
+    expect(await local.get(ID1)).toBeNull();
+    await local.clear("paper");
+    expect((await local.list()).items).toEqual([]);
+  });
+
+  it("같은 저장소를 여는 다른 인스턴스(다른 탭)가 같은 내용을 본다", async () => {
+    const storage = new MemoryStorage();
+    await createLocalStore(storage).put(bookEntry(ID1));
+    expect(await createLocalStore(storage).get(ID1)).toMatchObject({ id: ID1 });
+  });
+
+  it("저장소가 없으면 메모리로 동작한다", async () => {
+    const local = createLocalStore(null);
+    await local.put(bookEntry(ID1));
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+  });
+
+  it("쿼터에 걸리면 오래된 snapshot 부터 비우고 목록은 남긴다", async () => {
+    const heavy = heavySnapshot();
+    const oneSize = JSON.stringify([bookEntry(ID1, { snapshot: heavy })]).length;
+    const storage = new MemoryStorage(Math.floor(oneSize * 1.6));
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID1, { createdAt: "2026-09-26T01:00:00.000Z", snapshot: heavy }));
+    await local.put(bookEntry(ID2, { createdAt: "2026-09-26T02:00:00.000Z", snapshot: heavy }));
+    const cached = JSON.parse(storage.getItem(HISTORY_CACHE_KEY)!) as Array<{ id: string; snapshot?: unknown }>;
+    expect(cached.map((e) => e.id).sort()).toEqual([ID1, ID2].sort());
+    expect(cached.find((e) => e.id === ID1)!.snapshot).toBeUndefined();
+    expect(cached.find((e) => e.id === ID2)!.snapshot).toEqual(heavy);
+  });
+
+  it("캐시를 다 덜어도 편지가 들어가지 않을 때만 던지지 않고 메모리로 넘어간다", async () => {
+    const storage = new MemoryStorage(2000);
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID1, { snapshot: snap }));
+    const ai = { intro: "소개".repeat(1000), items: [] };
+    local.enqueue({ op: "patch", id: ID1, partial: { ai } });
+    expect(storage.getItem(HISTORY_OUTBOX_KEY)).toBeNull();
+    expect(local.readOutbox()).toMatchObject([{ op: "patch", id: ID1, partial: { ai } }]);
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+  });
+
+  it("쿼터가 아닌 쓰기 오류는 던지지 않고 메모리로 넘어간다", async () => {
+    const storage = new MemoryStorage();
+    storage.failWith = new DOMException("막힘", "SecurityError");
+    const local = createLocalStore(storage);
+    await expect(local.put(bookEntry(ID1))).resolves.toMatchObject({ id: ID1 });
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+  });
+
+  it("새로고침 뒤 쿼터가 아닌 오류로 메모리로 넘어가도 저장소에 남아 있던 편지를 읽어 둔다", async () => {
+    const storage = new MemoryStorage();
+    const before = createLocalStore(storage);
+    await before.put(bookEntry(ID1));
+    before.enqueue({ op: "put", entry: bookEntry(ID1) });
+    // 새로고침한 인스턴스는 편지함을 한 번도 쓰지 않았다
+    storage.failWith = new DOMException("막힘", "SecurityError");
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID2));
+    local.enqueue({ op: "put", entry: bookEntry(ID2) });
+    expect(local.readOutbox().map((o) => o.op === "put" && o.entry.id)).toEqual([ID1, ID2]);
+    expect((await local.list("book")).items.map((e) => e.id).sort()).toEqual([ID1, ID2].sort());
+  });
+
+  it("읽기마저 막혀 메모리로 넘어가면 이 인스턴스가 쓴 값을 그대로 쓴다", async () => {
+    const storage = new MemoryStorage();
+    const local = createLocalStore(storage);
+    await local.put(bookEntry(ID1));
+    local.enqueue({ op: "remove", id: ID2 });
+    storage.getItem = () => {
+      throw new DOMException("막힘", "SecurityError");
+    };
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toMatchObject([{ op: "remove", id: ID2 }]);
+  });
+
+  it("깨진 JSON 은 빈 목록으로 읽는다", async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(HISTORY_CACHE_KEY, "{깨짐");
+    expect((await createLocalStore(storage).list()).items).toEqual([]);
+  });
+
+  it("replaceKind 는 서버 목록으로 갈아 끼우되 캐시에 있던 snapshot 은 붙여 둔다", async () => {
+    const local = createLocalStore(new MemoryStorage());
+    await local.put(bookEntry(ID1, { snapshot: snap }));
+    await local.put(bookEntry(ID2));
+    await local.put(paperEntry(ID3));
+    local.replaceKind("book", [bookEntry(ID1, { title: "서버 제목" })]);
+    expect(await local.get(ID1)).toMatchObject({ title: "서버 제목", snapshot: snap });
+    expect(await local.get(ID2)).toBeNull();
+    expect(await local.get(ID3)).toMatchObject({ kind: "paper" });
+  });
+
+  it("outbox 는 넣은 순서대로 쌓이고 opId 로 뺀다", () => {
+    const storage = new MemoryStorage();
+    const local = createLocalStore(storage);
+    local.enqueue({ op: "remove", id: ID1 });
+    local.enqueue({ op: "clear", kind: "book" });
+    const ops = local.readOutbox();
+    expect(ops.map((o) => o.op)).toEqual(["remove", "clear"]);
+    expect(storage.getItem(HISTORY_OUTBOX_KEY)).not.toBeNull();
+    local.dropOutbox(ops[0]!.opId);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["clear"]);
+  });
+});
+
+describe("createHybridStore", () => {
+  function setup() {
+    const server = fakeServer();
+    const local = createLocalStore(new MemoryStorage());
+    return { server, local, store: createHybridStore(server, local) };
+  }
+
+  it("서버 저장이 되면 캐시에도 남긴다", async () => {
+    const { server, local, store } = setup();
+    await store.put(bookEntry(ID1, { snapshot: snap }));
+    expect(server.rows.has(ID1)).toBe(true);
+    expect(await local.get(ID1)).toMatchObject({ snapshot: snap });
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("서버가 안 되면 브라우저에 먼저 저장하고 보낼 편지함에 넣는다", async () => {
+    const { server, local, store } = setup();
+    server.fail(networkError());
+    const saved = await store.put(bookEntry(ID1));
+    expect(saved.id).toBe(ID1);
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toMatchObject([{ op: "put", entry: { id: ID1 } }]);
+  });
+
+  it("다음 목록 읽기에서 편지함을 먼저 보내고 서버 목록을 쓴다", async () => {
+    const { server, local, store } = setup();
+    server.fail(httpError(503));
+    await store.put(bookEntry(ID1));
+    server.recover();
+    const { items } = await store.list("book");
+    expect(server.rows.has(ID1)).toBe(true);
+    expect(items.map((e) => e.id)).toEqual([ID1]);
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("편지함이 남아 있으면 목록은 캐시로 답한다", async () => {
+    const { server, store } = setup();
+    server.fail(networkError());
+    await store.put(bookEntry(ID1));
+    const { items } = await store.list("book");
+    expect(items.map((e) => e.id)).toEqual([ID1]);
+    expect(server.list).not.toHaveBeenCalled();
+  });
+
+  it("4xx 거절은 편지함에 넣지 않고 그대로 던진다", async () => {
+    const { server, local, store } = setup();
+    server.fail(httpError(422));
+    await expect(store.put(bookEntry(ID1))).rejects.toMatchObject({ status: 422 });
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("보낼 때 4xx 로 거절된 편지는 버리고 다음 편지를 보낸다", async () => {
+    const { server, local, store } = setup();
+    local.enqueue({ op: "patch", id: ID1, partial: { title: "x" } });
+    local.enqueue({ op: "put", entry: bookEntry(ID2) });
+    server.patch.mockRejectedValueOnce(httpError(422));
+    await store.flush();
+    expect(server.rows.has(ID2)).toBe(true);
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("다시 보낼 만한 실패에서는 멈추고 순서를 지킨다", async () => {
+    const { server, local, store } = setup();
+    local.enqueue({ op: "put", entry: bookEntry(ID1) });
+    local.enqueue({ op: "remove", id: ID1 });
+    server.put.mockRejectedValueOnce(networkError());
+    await store.flush();
+    expect(server.remove).not.toHaveBeenCalled();
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "remove"]);
+  });
+
+  it("편지함이 남아 있을 때의 수정은 서버로 바로 가지 않고 뒤에 줄 선다", async () => {
+    const { server, local, store } = setup();
+    server.fail(networkError());
+    await store.put(bookEntry(ID1));
+    server.recover();
+    server.put.mockRejectedValueOnce(networkError());
+    await store.patch(ID1, { ai: { intro: "소개", items: [] } });
+    expect(server.patch).not.toHaveBeenCalled();
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "patch"]);
+    expect(await local.get(ID1)).toMatchObject({ ai: { intro: "소개", items: [] } });
+  });
+
+  it("서버에 없는 기록은 캐시에서도 지운다", async () => {
+    const { local, store } = setup();
+    await local.put(bookEntry(ID1));
+    expect(await store.get(ID1)).toBeNull();
+    expect(await local.get(ID1)).toBeNull();
+  });
+
+  it("서버가 안 되면 get 은 캐시로 답한다", async () => {
+    const { server, local, store } = setup();
+    await local.put(bookEntry(ID1, { snapshot: snap }));
+    server.fail(networkError());
+    expect(await store.get(ID1)).toMatchObject({ snapshot: snap });
+  });
+
+  it("put·patch 가 줄 선 뒤 patch 만 다시 보낼 오류로 실패해도 get 은 최근 수정을 돌려준다", async () => {
+    const { server, local, store } = setup();
+    const ai = { intro: "소개", items: [] };
+    server.fail(networkError());
+    await store.put(bookEntry(ID1));
+    await store.patch(ID1, { ai });
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "patch"]);
+    server.recover();
+    server.patch.mockRejectedValueOnce(httpError(503));
+    expect(await store.get(ID1)).toMatchObject({ ai });
+    expect(server.rows.has(ID1)).toBe(true);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["patch"]);
+    // 남은 편지까지 다 보낸 뒤에도 오프라인 복원용 캐시에 수정이 남아 있어야 한다
+    await store.flush();
+    expect(local.readOutbox()).toEqual([]);
+    expect(server.rows.get(ID1)).toMatchObject({ ai });
+    expect(await local.get(ID1)).toMatchObject({ ai });
+  });
+
+  it("put·remove 가 줄 선 뒤 remove 만 다시 보낼 오류로 실패해도 지운 기록이 목록에 되살아나지 않는다", async () => {
+    const { server, local, store } = setup();
+    server.fail(networkError());
+    await store.put(bookEntry(ID1));
+    await store.remove(ID1);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "remove"]);
+    server.recover();
+    server.remove.mockRejectedValueOnce(httpError(429));
+    expect((await store.list("book")).items).toEqual([]);
+    expect(server.list).not.toHaveBeenCalled();
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["remove"]);
+    expect(await local.get(ID1)).toBeNull();
+  });
+
+  it("바로 보낸 put 이 413 이면 결과 없이 다시 보내 서버·캐시에 남긴다", async () => {
+    const { server, local, store } = setup();
+    server.put.mockRejectedValueOnce(httpError(413));
+    const saved = await store.put(bookEntry(ID1, { snapshot: snap }));
+    expect(saved).toMatchObject({ id: ID1 });
+    expect(saved).not.toHaveProperty("snapshot");
+    expect(server.rows.get(ID1)).not.toHaveProperty("snapshot");
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("줄 선 put 이 보낼 때 413 이면 결과 없이라도 서버·캐시에 남는다", async () => {
+    const { server, local, store } = setup();
+    server.fail(networkError());
+    await store.put(bookEntry(ID1, { snapshot: snap }));
+    server.recover();
+    server.put.mockRejectedValueOnce(httpError(413));
+    const { items } = await store.list("book");
+    expect(items.map((e) => e.id)).toEqual([ID1]);
+    expect(server.rows.get(ID1)).not.toHaveProperty("snapshot");
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("결과가 없는 기록의 413 은 다시 보내지 않고 그대로 던진다", async () => {
+    const { server, store } = setup();
+    server.put.mockRejectedValueOnce(httpError(413));
+    await expect(store.put(bookEntry(ID1))).rejects.toMatchObject({ status: 413 });
+    expect(server.put).toHaveBeenCalledTimes(1);
+  });
+
+  /** 열어 줄 때까지 요청을 붙잡아 두는 문 — 느린 네트워크를 흉내 낸다 */
+  function gate() {
+    let open!: () => void;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    return { opened, open };
+  }
+
+  // 붙잡히지 않은 비동기 작업을 끝까지 흘려보낸다
+  const idle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  function slowPut(server: ReturnType<typeof fakeServer>) {
+    const slow = gate();
+    server.put.mockImplementationOnce(async (entry) => {
+      await slow.opened;
+      server.rows.set(entry.id, entry);
+      return entry;
+    });
+    return slow;
+  }
+
+  it("put 이 응답을 기다리는 동안 누른 remove 는 put 뒤에 가서 기록이 되살아나지 않는다", async () => {
+    const { server, local, store } = setup();
+    const slow = slowPut(server);
+    const putting = store.put(bookEntry(ID1));
+    const removing = store.remove(ID1);
+    await idle();
+    expect(server.remove).not.toHaveBeenCalled();
+    slow.open();
+    await Promise.all([putting, removing]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(await local.get(ID1)).toBeNull();
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("기다리던 put 이 네트워크 오류로 줄 서면 뒤따른 remove 도 그 뒤에 줄 선다", async () => {
+    const { server, local, store } = setup();
+    const slow = gate();
+    server.put.mockImplementationOnce(async () => {
+      await slow.opened;
+      throw networkError();
+    });
+    const putting = store.put(bookEntry(ID1));
+    const removing = store.remove(ID1);
+    await idle();
+    server.fail(networkError());
+    slow.open();
+    await Promise.all([putting, removing]);
+    expect(local.readOutbox().map((o) => o.op)).toEqual(["put", "remove"]);
+    expect(await local.get(ID1)).toBeNull();
+    server.recover();
+    await store.flush();
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(local.readOutbox()).toEqual([]);
+  });
+
+  it("put 이 응답을 기다리는 동안 누른 patch 는 put 뒤에 가서 수정이 사라지지 않는다", async () => {
+    const { server, local, store } = setup();
+    const slow = slowPut(server);
+    const putting = store.put(bookEntry(ID1));
+    const patching = store.patch(ID1, { title: "새 제목" });
+    await idle();
+    expect(server.patch).not.toHaveBeenCalled();
+    slow.open();
+    await putting;
+    expect(await patching).toMatchObject({ id: ID1, title: "새 제목" });
+    expect(server.rows.get(ID1)).toMatchObject({ title: "새 제목" });
+    expect(await local.get(ID1)).toMatchObject({ title: "새 제목" });
+  });
+
+  it("put 이 응답을 기다리는 동안 부른 get 은 저장이 끝난 뒤 답한다", async () => {
+    const { server, local, store } = setup();
+    const slow = slowPut(server);
+    const putting = store.put(bookEntry(ID1));
+    const getting = store.get(ID1);
+    await idle();
+    expect(server.get).not.toHaveBeenCalled();
+    slow.open();
+    await putting;
+    expect(await getting).toMatchObject({ id: ID1 });
+    expect(await local.get(ID1)).toMatchObject({ id: ID1 });
+  });
+
+  it("읽기끼리는 서로 기다리지 않는다", async () => {
+    const { server, store } = setup();
+    const slow = gate();
+    server.list.mockImplementationOnce(async () => {
+      await slow.opened;
+      return { items: [], nextCursor: null };
+    });
+    const books = store.list("book");
+    const papers = store.list("paper");
+    await idle();
+    expect(server.list).toHaveBeenCalledTimes(2);
+    slow.open();
+    await Promise.all([books, papers]);
+  });
+
+  /** 쿼터에 한 번 닿은 캐시는 겨우 들어갈 만큼만 덜어 내므로 늘 한계 바로 아래에 머문다 — 그 상태를 만든다 */
+  async function fullCache(count: number, slots: number) {
+    const heavy = heavySnapshot();
+    const snapSize = JSON.stringify(heavy).length;
+    const storage = new MemoryStorage(snapSize * slots);
+    const server = fakeServer();
+    const store = createHybridStore(server, createLocalStore(storage));
+    const ids = Array.from({ length: count }, (_, i) => `${i}0000000-0000-4000-8000-000000000000`);
+    for (const [i, id] of ids.entries()) {
+      await store.put(bookEntry(id, { createdAt: `2026-09-26T0${i}:00:00.000Z`, snapshot: heavy }));
+    }
+    const cached = JSON.parse(storage.getItem(HISTORY_CACHE_KEY)!) as Array<{ snapshot?: unknown }>;
+    expect(cached.filter((e) => e.snapshot).length).toBeLessThan(count);
+    return { storage, server, store, ids, heavy, snapSize };
+  }
+
+  it("캐시가 쿼터 한계까지 찬 채 오프라인에서 고쳐도 편지는 저장소에 남는다", async () => {
+    const { storage, server, store, ids, snapSize } = await fullCache(8, 6);
+    const target = ids[ids.length - 1]!;
+    const ai = { intro: "소개".repeat(snapSize), items: [] };
+    server.fail(networkError());
+    await store.patch(target, { ai });
+    // 새로고침한 것처럼 같은 저장소를 새 인스턴스로 다시 연다
+    const reopened = createLocalStore(storage);
+    expect(reopened.readOutbox()).toMatchObject([{ op: "patch", id: target, partial: { ai } }]);
+    expect(await reopened.get(target)).toMatchObject({ ai });
+    expect((await reopened.list("book")).items).toHaveLength(ids.length);
+  });
+
+  it("편지함이 쿼터에 걸리면 보낼 편지의 결과보다 캐시 사본을 먼저 덜어 낸다", async () => {
+    const { storage, server, store, ids, heavy } = await fullCache(8, 6);
+    server.fail(networkError());
+    await store.put(bookEntry(ID1, { createdAt: "2026-09-26T09:00:00.000Z", snapshot: heavy }));
+    const reopened = createLocalStore(storage);
+    expect(reopened.readOutbox()).toMatchObject([{ op: "put", entry: { id: ID1, snapshot: heavy } }]);
+    expect((await reopened.list("book")).items).toHaveLength(ids.length + 1);
+  });
+
+  /**
+   * 오프라인 저장 편지(put ID1)가 저장소에 남은 채 새로고침한 인스턴스가, 캐시에서 덜 것이 없는
+   * 긴 제목 저장(put ID2)으로 메모리 모드에 들어간 상태를 만든다
+   */
+  async function refreshedIntoMemory() {
+    const storage = new MemoryStorage(1200);
+    // v1 백업은 지우지 않으므로 계속 쿼터를 차지한다
+    storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+    const server = fakeServer();
+    server.fail(networkError());
+    await createHybridStore(server, createLocalStore(storage)).put(bookEntry(ID1));
+    const local = createLocalStore(storage);
+    const store = createHybridStore(server, local);
+    await store.put(bookEntry(ID2, { title: "긴 제목".repeat(100) }));
+    expect(storage.getItem(HISTORY_CACHE_KEY)).not.toContain(ID2);
+    return { storage, server, local, store };
+  }
+
+  const pendingOf = (local: ReturnType<typeof createLocalStore>) =>
+    local.readOutbox().map((o) => [o.op, o.op === "put" ? o.entry.id : o.op === "clear" ? o.kind : o.id]);
+
+  it("새로고침한 인스턴스가 캐시 쓰기에 막혀 메모리로 넘어가도 저장소의 편지가 남고 remove 는 그 뒤에 줄 선다", async () => {
+    const { storage, server, local, store } = await refreshedIntoMemory();
+    expect(pendingOf(local)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+    ]);
+    await store.remove(ID1);
+    expect(server.remove).not.toHaveBeenCalled();
+    expect(pendingOf(local)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+      ["remove", ID1],
+    ]);
+    server.recover();
+    await store.flush();
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(server.rows.has(ID2)).toBe(true);
+    // 다시 새로고침해도 이미 보낸 편지가 한 번 더 나가 지운 기록을 되살리지 않는다
+    await createHybridStore(server, createLocalStore(storage)).flush();
+    expect(server.rows.has(ID1)).toBe(false);
+  });
+
+  it("메모리 모드에서 온라인으로 지우면 저장소에 있던 put 을 먼저 보내고, 새로고침 뒤에도 되살아나지 않는다", async () => {
+    const { storage, server, local, store } = await refreshedIntoMemory();
+    server.recover();
+    await store.remove(ID1);
+    expect(local.readOutbox()).toEqual([]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(server.rows.has(ID2)).toBe(true);
+    const reopened = createLocalStore(storage);
+    expect(reopened.readOutbox()).toEqual([]);
+    await createHybridStore(server, reopened).flush();
+    expect(server.rows.has(ID1)).toBe(false);
+  });
+
+  it("메모리 모드 탭이 저장소에서 가져온 편지를 살아 있는 다른 탭이 먼저 보내고 지우면 그 편지를 다시 보내지 않는다", async () => {
+    const storage = new MemoryStorage(1200);
+    storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+    const server = fakeServer();
+    server.fail(networkError());
+    // 탭 B 가 오프라인에서 저장해 편지(put ID1)를 저장소에 남긴다
+    const tabB = createHybridStore(server, createLocalStore(storage));
+    await tabB.put(bookEntry(ID1));
+    // 탭 A 는 긴 제목 저장에서 메모리 모드로 넘어가며 그 편지를 가져온다
+    const localA = createLocalStore(storage);
+    const tabA = createHybridStore(server, localA);
+    await tabA.put(bookEntry(ID2, { title: "긴 제목".repeat(100) }));
+    expect(storage.getItem(HISTORY_CACHE_KEY)).not.toContain(ID2);
+    expect(pendingOf(localA)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+    ]);
+    server.recover();
+    await tabB.flush();
+    expect(server.rows.has(ID1)).toBe(true);
+    await tabB.remove(ID1);
+    expect(server.rows.has(ID1)).toBe(false);
+    server.put.mockClear();
+    // B 의 변경 알림을 받은 A 가 목록을 다시 읽는다
+    const { items } = await tabA.list("book");
+    expect(server.put.mock.calls.map(([e]) => e.id)).toEqual([ID2]);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect(server.rows.has(ID2)).toBe(true);
+    expect(items.map((e) => e.id)).toEqual([ID2]);
+    expect(localA.readOutbox()).toEqual([]);
+  });
+
+  it("메모리 모드 탭이 가져온 편지가 저장소에 남아 있는 동안에는 보낸다", async () => {
+    const storage = new MemoryStorage(1200);
+    storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+    const server = fakeServer();
+    server.fail(networkError());
+    await createHybridStore(server, createLocalStore(storage)).put(bookEntry(ID1));
+    const localA = createLocalStore(storage);
+    const tabA = createHybridStore(server, localA);
+    await tabA.put(bookEntry(ID2, { title: "긴 제목".repeat(100) }));
+    // 다른 탭이 저장소 편지함에 새 편지를 더해도 A 가 가져온 편지는 그대로 남는다
+    createLocalStore(storage).enqueue({ op: "patch", id: ID1, partial: { title: "새 제목" } });
+    expect(pendingOf(localA)).toEqual([
+      ["put", ID1],
+      ["put", ID2],
+    ]);
+    server.recover();
+    await tabA.flush();
+    expect(server.rows.has(ID1)).toBe(true);
+    expect(server.rows.has(ID2)).toBe(true);
+    expect(localA.readOutbox()).toEqual([]);
+    // 보낸 편지는 저장소에서도 빠지고, 다른 탭이 더한 편지는 남는다
+    expect(pendingOf(createLocalStore(storage))).toEqual([["patch", ID1]]);
+  });
+});
+
+describe("탭 사이 편지함 잠금", () => {
+  const fast = { leaseMs: 1_000, settleMs: 5, retryMs: 5 };
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  it("두 탭이 같은 편지함을 보낼 때 한 탭이 보내는 동안 다른 탭은 기다려, 늦게 닿은 put 이 그 사이 지운 기록을 되살리지 않는다", async () => {
+    const storage = new MemoryStorage();
+    const server = fakeServer();
+    const tabA = createHybridStore(server, createLocalStore(storage), storageFlushLock(storage, fast));
+    const tabB = createHybridStore(server, createLocalStore(storage), storageFlushLock(storage, fast));
+    server.fail(networkError());
+    await tabA.put(bookEntry(ID1));
+    server.recover();
+    server.put.mockClear();
+    let open!: () => void;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    server.put.mockImplementationOnce(async (entry) => {
+      await opened;
+      server.rows.set(entry.id, entry);
+      return entry;
+    });
+    // 온라인으로 돌아와 B 가 목록을 다시 읽으며 편지(put ID1)를 보내는데 응답이 늦다
+    const listing = tabB.list("book");
+    await vi.waitFor(() => expect(server.put).toHaveBeenCalledTimes(1));
+    // 그 사이 A 에서 지운다 — A 는 같은 편지를 다시 보내지 않고 B 가 끝나기를 기다린다
+    const removing = tabA.remove(ID1);
+    await sleep(40);
+    expect(server.remove).not.toHaveBeenCalled();
+    open();
+    await Promise.all([listing, removing]);
+    expect(server.put).toHaveBeenCalledTimes(1);
+    expect(server.rows.has(ID1)).toBe(false);
+    expect((await tabA.list("book")).items).toEqual([]);
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+  });
+
+  it("보낼 편지가 없으면 잠그지 않고, 편지가 있을 때만 잠근다", async () => {
+    const storage = new MemoryStorage();
+    const server = fakeServer();
+    const inner = storageFlushLock(storage, fast);
+    let locked = 0;
+    const lock: FlushLock = (run) => {
+      locked += 1;
+      return inner(run);
+    };
+    const store = createHybridStore(server, createLocalStore(storage), lock);
+    await store.put(bookEntry(ID1));
+    await store.list("book");
+    await store.get(ID1);
+    expect(locked).toBe(0);
+    server.fail(networkError());
+    await store.remove(ID1);
+    server.recover();
+    await store.list("book");
+    expect(locked).toBe(1);
+    expect(server.rows.has(ID1)).toBe(false);
+  });
+
+  it("다른 탭이 쥔 잠금은 기한까지 기다리고, 기한이 지난 잠금(닫힌 탭)은 가져간다", async () => {
+    const storage = new MemoryStorage();
+    const lock = storageFlushLock(storage, fast);
+    storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() + 60_000}|other`);
+    const run = vi.fn(async () => "sent");
+    const locked = lock(run);
+    await sleep(30);
+    expect(run).not.toHaveBeenCalled();
+    storage.removeItem(HISTORY_FLUSH_LOCK_KEY);
+    expect(await locked).toBe("sent");
+
+    storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() - 1}|gone`);
+    expect(await lock(run)).toBe("sent");
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+  });
+
+  it("오래 도는 보내기는 편지마다 잠금 기한을 늘이고, 그 사이 다른 탭에 넘어간 잠금은 덮지 않는다", async () => {
+    const storage = new MemoryStorage();
+    const lock = storageFlushLock(storage, fast);
+    const untilOf = () => Number(storage.getItem(HISTORY_FLUSH_LOCK_KEY)!.split("|")[0]);
+    await lock(async (renew) => {
+      const first = untilOf();
+      await sleep(20);
+      renew();
+      expect(untilOf()).toBeGreaterThan(first);
+      storage.setItem(HISTORY_FLUSH_LOCK_KEY, `${Date.now() + 60_000}|other`);
+      renew();
+      expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toMatch(/\|other$/);
+    });
+    // 남의 잠금은 풀지 않는다
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toMatch(/\|other$/);
+  });
+
+  it("잠금 값을 쓰지 못하는 저장소에서도 보내기는 멈추지 않는다", async () => {
+    const storage = new MemoryStorage();
+    storage.failWith = new DOMException("쿼터 초과", "QuotaExceededError");
+    expect(await storageFlushLock(storage, fast)(async () => "sent")).toBe("sent");
+  });
+
+  it("보내기가 실패해도 잠금을 풀어 다른 탭이 기다리지 않는다", async () => {
+    const storage = new MemoryStorage();
+    await expect(
+      storageFlushLock(storage, fast)(async () => {
+        throw networkError();
+      }),
+    ).rejects.toThrow("fetch failed");
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+  });
+
+  it("Web Locks 가 있으면(https·localhost) 그것으로 잠그고, 없으면 저장소로 잠근다", async () => {
+    const request = vi.fn(async (_name: string, cb: (lock: Lock | null) => unknown) => cb(null));
+    const locks = { request, query: vi.fn() } as unknown as LockManager;
+    const storage = new MemoryStorage();
+    expect(await createFlushLock(storage, locks)(async () => "sent")).toBe("sent");
+    expect(request).toHaveBeenCalledWith(HISTORY_FLUSH_LOCK_KEY, expect.any(Function));
+    expect(storage.getItem(HISTORY_FLUSH_LOCK_KEY)).toBeNull();
+
+    let seen: string | null = null;
+    await createFlushLock(storage, undefined)(async () => {
+      seen = storage.getItem(HISTORY_FLUSH_LOCK_KEY);
+    });
+    expect(seen).toMatch(/\|/);
+    expect(await createFlushLock(null, undefined)(async () => "sent")).toBe("sent");
+  });
+});

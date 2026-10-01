@@ -1,7 +1,9 @@
 import asyncio
+import json
 import logging
 
 import httpx
+import pytest
 
 from services.research import critic
 from services.research.critic import (
@@ -78,6 +80,91 @@ class TestParseVerdict:
         assert any("maybe" in r.getMessage() for r in warnings)
 
 
+class TestOffTopic:
+    """무관 근거 번호 — 잘못 읽은 번호로 관련 있는 근거를 지우면 안 된다."""
+
+    def _parse(self, off_topic, *, listed=5, verdict="insufficient"):
+        raw = json.dumps({"verdict": verdict, "note": "n", "new_queries": [],
+                          "off_topic": off_topic}, ensure_ascii=False)
+        return parse_verdict(raw, listed=listed)
+
+    def test_integer_numbers_are_read(self):
+        assert self._parse([2, 4]).off_topic == [2, 4]
+
+    def test_numeric_strings_are_read(self):
+        assert self._parse(["3", " 1 "]).off_topic == [3, 1]
+
+    def test_numbers_outside_the_list_are_dropped(self):
+        assert self._parse([0, 1, 5, 6, -2], listed=5).off_topic == [1, 5]
+
+    def test_duplicates_are_dropped(self):
+        assert self._parse([2, "2", 2]).off_topic == [2]
+
+    def test_non_numbers_are_dropped(self):
+        # true 는 int 의 서브클래스라 그냥 두면 1번으로 읽힌다
+        assert self._parse([1.0, "둘", None, True, {"n": 3}, "3"]).off_topic == [3]
+
+    def test_non_list_gives_empty(self):
+        assert self._parse("2, 3").off_topic == []
+        assert self._parse(2).off_topic == []
+
+    def test_missing_key_gives_empty(self):
+        v = parse_verdict('{"verdict": "sufficient", "note": "n", "new_queries": []}', listed=5)
+        assert v.off_topic == []
+
+    def test_sufficient_verdict_may_still_name_off_topic(self):
+        assert self._parse([1], verdict="sufficient").off_topic == [1]
+
+    def test_unreadable_verdict_excludes_nothing(self):
+        """판정을 못 읽었는데 근거를 지우면 안 된다."""
+        raw = '{"verdict": "maybe", "note": "n", "new_queries": [], "off_topic": [1, 2]}'
+        v = parse_verdict(raw, listed=5)
+        assert v.parse_failed is True
+        assert v.off_topic == []
+
+    def test_bracketed_numbers_are_read(self):
+        # 목록 줄이 '[3] 제목 …' 모양이라 그 표기 그대로 답하기 쉽다 — 괄호 하나에 숫자 하나면 뜻이 모호하지 않다
+        assert self._parse(["[3]", "[ 1 ]"]).off_topic == [3, 1]
+
+    def test_dropped_values_are_logged_with_the_raw_list(self, caplog):
+        """버린 값이 로그에 없으면 운영에서 '제외 0'이 모델 판단인지 형식 탓인지 가를 수 없다."""
+        with caplog.at_level(logging.WARNING):
+            assert self._parse(["5번", 2]).off_topic == [2]
+            assert self._parse("2, 3").off_topic == []
+        messages = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(messages) == 2
+        assert "5번" in messages[0] and "2, 3" in messages[1]
+
+    def test_fully_read_or_missing_off_topic_is_not_logged(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            self._parse([2, "3"])
+            self._parse([])
+            parse_verdict('{"verdict": "sufficient", "note": "n", "new_queries": []}', listed=5)
+        assert not [r for r in caplog.records if r.levelno == logging.WARNING]
+
+    def test_sufficient_with_every_listed_evidence_off_topic_reads_as_insufficient(self):
+        """판정은 뺀 근거까지 보고 내린 것이다. 보인 근거가 모두 무관하면 남는 것은 0편이거나 발췌를
+        보지 못한 근거뿐이라 '충분'일 수 없다. note 는 뒤집은 판정의 이유라 싣지 않는다."""
+        v = self._parse([3, 1, 2], listed=3, verdict="sufficient")
+        assert (v.verdict, v.note, v.off_topic) == ("insufficient", "", [3, 1, 2])
+
+    def test_insufficient_with_every_listed_evidence_off_topic_keeps_its_note(self):
+        v = self._parse([1, 2], listed=2)
+        assert (v.verdict, v.note) == ("insufficient", "n")
+
+    def test_sufficient_with_listed_evidence_left_is_trusted(self):
+        v = self._parse([1], listed=2, verdict="sufficient")
+        assert (v.verdict, v.note) == ("sufficient", "n")
+
+    def test_job_with_exclusion_off_keeps_a_sufficient_verdict(self):
+        """무관 제외를 끈 잡은 근거를 빼지 않는다 — 판정이 본 근거가 그대로 남아 뒤집을 이유가 없고, 뒤집으면
+        끈 잡만 재검색을 더 돌아 켠 잡과 나란히 볼 기준이 흐려진다. 번호는 러너가 flagged 로 세도록 남긴다."""
+        raw = json.dumps({"verdict": "sufficient", "note": "n", "new_queries": [],
+                          "off_topic": [2, 1]})
+        v = parse_verdict(raw, listed=2, exclude_off_topic=False)
+        assert (v.verdict, v.note, v.off_topic) == ("sufficient", "n", [2, 1])
+
+
 class TestShouldRecheck:
     def _sq(self, verdict):
         return SubQuestion(idx=0, text="q", verdict=verdict)
@@ -121,7 +208,13 @@ class TestFormatEvidenceList:
     def test_includes_excerpt_from_first_chunk(self):
         e = self._evidence("제목", "2020", "본문 발췌 내용")
         result = format_evidence_list([e])
-        assert result == "- 제목 (2020) — 본문 발췌 내용"
+        assert result == "[1] 제목 (2020) — 본문 발췌 내용"
+
+    def test_items_are_numbered_from_one_in_given_order(self):
+        """critic 은 이 번호로 무관한 근거를 가리키고, runner 는 넘긴 순서로 id 에 되돌린다."""
+        evs = [self._evidence(f"제목{i}", "2020") for i in range(3)]
+        assert format_evidence_list(evs).splitlines() == [
+            "[1] 제목0 (2020)", "[2] 제목1 (2020)", "[3] 제목2 (2020)"]
 
     def test_excerpt_truncated(self):
         e = self._evidence("제목", "2020", "가" * 500)
@@ -138,30 +231,32 @@ class TestFormatEvidenceList:
         e = self._evidence("제목", "2020", chunk_text)
         result = format_evidence_list([e])
         assert "\n" not in result
-        assert result == "- 제목 (2020) — [표] 설명 | a | b | | 1 | 2 |"
+        assert result == "[1] 제목 (2020) — [표] 설명 | a | b | | 1 | 2 |"
 
     def test_list_is_capped_with_remainder_note(self):
         """상한이 없으면 재검색 누적분이 컨텍스트를 넘겨 system 지시가 잘려 나간다."""
         many = [self._evidence(f"제목{i}", "2020", "본문") for i in range(_MAX_LISTED + 5)]
         lines = format_evidence_list(many).splitlines()
         assert len(lines) == _MAX_LISTED + 1
-        assert lines[-1] == "- …외 5편"
+        assert lines[_MAX_LISTED - 1].startswith(f"[{_MAX_LISTED}] ")
+        # 잘린 나머지에는 번호가 없다 — 발췌를 보지 못한 근거를 무관하다고 가리키게 두지 않는다
+        assert lines[-1] == "…외 5편"
 
     def test_empty_meta_values_fall_back(self):
         """이 코드베이스는 빈 메타를 "" 로 표현한다 — get 의 기본값이 안 먹는다."""
         e = Evidence(id="E1", cnts_id="c", meta={"title": "", "pub_date": ""}, chunks=[])
-        assert format_evidence_list([e]) == "- (제목 없음) (연도미상)"
+        assert format_evidence_list([e]) == "[1] (제목 없음) (연도미상)"
 
     def test_evidence_without_chunks_falls_back_to_title_year(self):
         e = self._evidence("제목", "2020")
-        assert format_evidence_list([e]) == "- 제목 (2020)"
+        assert format_evidence_list([e]) == "[1] 제목 (2020)"
 
     def test_mixed_evidence_does_not_crash(self):
         with_chunk = self._evidence("A", "2020", "본문")
         without_chunk = self._evidence("B", "2021")
         result = format_evidence_list([with_chunk, without_chunk])
         lines = result.splitlines()
-        assert lines == ["- A (2020) — 본문", "- B (2021)"]
+        assert lines == ["[1] A (2020) — 본문", "[2] B (2021)"]
 
     def test_empty_list_gives_placeholder(self):
         assert format_evidence_list([]) == "(없음)"
@@ -178,11 +273,11 @@ class TestCritique:
         return [Evidence(id="E1", cnts_id="A", meta={"title": "논문 가", "pub_date": "2008"},
                          chunks=[Chunk("c1", "본문 발췌", 1, 1, 0.9)])]
 
-    def _run(self, monkeypatch, chat):
+    def _run(self, monkeypatch, chat, evidence=None):
         monkeypatch.setattr(critic, "chat", chat)
         sq = SubQuestion(idx=0, text="하위질문", queries=["첫 검색어", "둘째 검색어"])
         return asyncio.run(critic.critique(
-            sq, self._evidence(), params=merge_params({"min_evidence_per_subq": 4}),
+            sq, evidence or self._evidence(), params=merge_params({"min_evidence_per_subq": 4}),
         ))
 
     def test_renders_real_template_and_parses_reply(self, monkeypatch):
@@ -198,6 +293,19 @@ class TestCritique:
         assert "4편 미만" in system
         assert "하위질문" in user and "첫 검색어, 둘째 검색어" in user
         assert "1편" in user and "본문 발췌" in user
+
+    def test_prompt_asks_for_plain_written_style_note(self, monkeypatch):
+        # note 는 보고서 한계 섹션에 그대로 실린다 — 서술은 '~다'인데 note 만 '~합니다'면 한 보고서에서 문체가 갈린다
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return '{"verdict": "sufficient", "note": "충분하다", "new_queries": []}'
+
+        self._run(monkeypatch, fake_chat)
+        system = seen[0][0]["content"]
+        assert "'~다'로 끝나는 문어체 평서문" in system
+        assert "'~합니다'·'~입니다' 금지" in system
 
     def test_transport_error_is_reported_as_unchecked_not_raised(self, monkeypatch):
         """판정 호출이 일시 오류로 죽으면 '판정 불가'다 — 탐색 실패로 올리면
@@ -218,3 +326,112 @@ class TestCritique:
 
         v = self._run(monkeypatch, fake_chat)
         assert v.parse_failed is True
+
+    def test_prompt_numbers_the_evidence_and_asks_for_off_topic(self, monkeypatch):
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return ('{"verdict": "sufficient", "note": "n", "new_queries": [], '
+                    '"off_topic": [1, 2]}')
+
+        v = self._run(monkeypatch, fake_chat)
+        system, user = seen[0][0]["content"], seen[0][1]["content"]
+        assert '"off_topic": []' in system     # 예시는 빈 배열뿐 — gemma 는 예시의 개수를 베낀다
+        # 모두 빼면 판정을 부족으로 읽어 다시 찾는데(parse_verdict), 부족할 때만 검색어를 제안하는
+        # 규칙만 있으면 충분이라고 답한 모델은 검색어를 비워 찾을 검색어가 없다
+        assert "남는 근거가 없으니 verdict 는 insufficient 로 하고 new_queries 에 다른 검색어를 제안하세요" in system
+        assert "[1] 논문 가 (2008) — 본문 발췌" in user
+        assert v.off_topic == [1]              # 근거 1편에 2번은 없다
+
+    def _many(self):
+        # 목록 상한보다 5편 많다 — 잘린 나머지는 '…외 5편' 한 줄로만 보인다. n번째 제목은 '논문n'
+        return [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": f"논문{i}", "pub_date": "2020"},
+                         chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+                for i in range(1, _MAX_LISTED + 6)]
+
+    def test_off_topic_is_limited_to_listed_not_all_evidence(self, monkeypatch):
+        """목록 상한 밖 근거는 발췌를 보이지 않았다 — '…외 5편' 줄을 다음 번호로 센 답으로
+        runner 가 읽지도 않은 근거를 지우면 안 된다."""
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return json.dumps({"verdict": "sufficient", "note": "n", "new_queries": [],
+                               "off_topic": [_MAX_LISTED, _MAX_LISTED + 1]})
+
+        v = self._run(monkeypatch, fake_chat, evidence=self._many())
+        assert v.off_topic == [_MAX_LISTED]
+
+    def test_job_with_exclusion_off_does_not_flip_the_verdict(self, monkeypatch):
+        # 잡 파라미터가 parse_verdict 까지 닿아야 한다 — 끈 잡에서 뒤집으면 켠 잡과 같은 재검색을 돈다
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": [1]}'
+
+        monkeypatch.setattr(critic, "chat", fake_chat)
+        v = asyncio.run(critic.critique(SubQuestion(idx=0, text="하위질문"), self._evidence(),
+                                        params=merge_params({"exclude_off_topic": 0})))
+        assert (v.verdict, v.note, v.off_topic) == ("sufficient", "충분하다", [1])
+
+    def _note_run(self, monkeypatch, note, evidence):
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return json.dumps({"verdict": "sufficient", "note": note, "new_queries": [],
+                               "off_topic": []}, ensure_ascii=False)
+
+        v = self._run(monkeypatch, fake_chat, evidence=evidence)
+        return v, seen[0][0]["content"]
+
+    def test_note_names_papers_by_title_not_list_number(self, monkeypatch):
+        """note 는 한계 섹션·진행 패널에 그대로 실린다. 사용자는 critic 목록을 보지 못하고
+        보고서(.docx)는 인용을 [n] 으로 렌더하므로, 목록 번호가 남으면 참고문헌 번호로 읽힌다."""
+        evs = [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": t, "pub_date": "2020"},
+                        chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+               for i, t in enumerate(["논문 가", "논문 나"], start=1)]
+        v, system = self._note_run(monkeypatch, "[2]·[ 1 ]은 다른 뜻의 자원을 다룬다", evs)
+        assert "note 에서 근거를 목록 번호로 가리키지 말고" in system
+        # 지우면 '·은 다른 뜻의…' 로 문장이 깨진다 — 제목으로 바꾸고, 조사는 제목 끝 받침에 맞춘다
+        assert v.note == "「논문 나」·「논문 가」는 다른 뜻의 자원을 다룬다"
+
+    def test_note_number_outside_the_list_is_left_as_is(self, monkeypatch):
+        """가리킨 논문을 알 수 없는 번호다 — 다른 논문의 제목을 대면 없는 판단을 지어낸다.
+        근거가 목록 상한보다 많아야 '보인 목록 밖'과 '근거가 없는 번호'가 갈린다: '…외 5편' 줄을
+        다음 번호로 센 [21] 에는 21번째 근거가 있지만 모델은 그 발췌를 보지 못했다."""
+        v, _ = self._note_run(
+            monkeypatch, f"[{_MAX_LISTED}]·[{_MAX_LISTED + 1}]·[0]은 다른 뜻의 자원을 다룬다",
+            self._many())
+        assert v.note == f"「논문{_MAX_LISTED}」·[{_MAX_LISTED + 1}]·[0]은 다른 뜻의 자원을 다룬다"
+
+    def _titled(self, *titles):
+        return [Evidence(id=f"E{i}", cnts_id=f"c{i}", meta={"title": t, "pub_date": "2020"},
+                         chunks=[Chunk(f"k{i}", "본문", 1, 1, 0.9)])
+                for i, t in enumerate(titles, start=1)]
+
+    def test_several_numbers_in_one_bracket_become_titles(self, monkeypatch):
+        """off_topic 을 [2, 3] 으로 쓴 모델은 note 에도 같은 모양을 쓰기 쉽다. 남기면 .docx 가 참고문헌
+        2·3번으로 읽힌다."""
+        evs = self._titled("자원 관리", "영상 에지", "에지 검출 회로", "스케줄링")
+        v, _ = self._note_run(monkeypatch, "[1]은 자원을 다루고 [2, 3]은 영상을, [2-4]는 회로를 다룬다", evs)
+        assert v.note == ("「자원 관리」는 자원을 다루고 「영상 에지」·「에지 검출 회로」는 영상을, "
+                          "「영상 에지」·「에지 검출 회로」·「스케줄링」은 회로를 다룬다")
+
+    def test_bracket_with_a_number_outside_the_list_is_left_whole(self, monkeypatch):
+        # 한 번호라도 가리킨 논문을 알 수 없으면 그 괄호의 뜻을 알 수 없다
+        v, _ = self._note_run(monkeypatch, "[1, 9]는 무관하다", self._titled("가", "나"))
+        assert v.note == "[1, 9]는 무관하다"
+
+    @pytest.mark.parametrize(("note", "expected"), [
+        ("[1]은 다른 뜻을 다룬다", "「자원 할당 기법에 관한 연구」는 다른 뜻을 다룬다"),
+        ("[2]는 무관하다", "「엣지 컴퓨팅 스케줄링」은 무관하다"),
+        ("[1]을 제외했다", "「자원 할당 기법에 관한 연구」를 제외했다"),
+        ("[2]가 핵심이다", "「엣지 컴퓨팅 스케줄링」이 핵심이다"),
+        ("[1]과 [2]는 다르다", "「자원 할당 기법에 관한 연구」와 「엣지 컴퓨팅 스케줄링」은 다르다"),
+        ("[3]는 무관하다", "「MPEG-7」(은)는 무관하다"),
+        # 조사가 아니라 낱말의 첫 글자다('이다'·'이라는') — 받침으로 바꾸면 말이 깨진다
+        ("[2]이다", "「엣지 컴퓨팅 스케줄링」이다"),
+        ("[1]에서 다룬다", "「자원 할당 기법에 관한 연구」에서 다룬다"),
+    ])
+    def test_particle_after_a_title_follows_its_final_consonant(self, monkeypatch, note, expected):
+        """모델은 번호를 읽는 소리([1]=일)에 맞춰 조사를 붙인다 — 제목으로 바꾸면 끝 받침과 어긋난다."""
+        evs = self._titled("자원 할당 기법에 관한 연구", "엣지 컴퓨팅 스케줄링", "MPEG-7")
+        v, _ = self._note_run(monkeypatch, note, evs)
+        assert v.note == expected
