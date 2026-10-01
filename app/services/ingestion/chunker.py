@@ -193,21 +193,55 @@ def _split_by_bytes(chunk: Chunk, max_bytes: int = MAX_CHUNK_BYTES) -> list[Chun
     return parts
 
 
-def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[Chunk]:
-    """max_tokens 초과 청크를 문장 경계에서 분할"""
+def _split_by_chars(s: str, max_chars: int) -> list[str]:
+    """줄바꿈/문장부호/공백 경계를 우선해 글자 수 기준으로 강제 분할 (nanet 493f760).
+
+    문장(또는 줄) 하나가 상한을 넘을 때의 최후 수단. 조각마다 뒤쪽 절반 안에서 경계를
+    찾고, 못 찾으면 max_chars 지점에서 자른다. 조각을 이어 붙이면 원문 그대로다(손실 없음)."""
+    parts = []
+    cursor = 0
+    n = len(s)
+    while cursor < n:
+        end = min(n, cursor + max_chars)
+        if end < n:  # 마지막 조각이면 경계 탐색 불필요
+            for break_char in ("\n", ". ", "。", "! ", "? ", " "):
+                idx = s.rfind(break_char, cursor + max_chars // 2, end)
+                if idx > cursor:
+                    end = idx + len(break_char)
+                    break
+        parts.append(s[cursor:end])
+        cursor = end
+    return parts
+
+
+def _split_oversized(
+    chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS, *, mode: str = "legacy",
+) -> list[Chunk]:
+    """max_tokens 초과 청크를 문장 경계에서 분할.
+
+    mode — 부르는 자리마다 자르는 규칙이 다르다.
+      "legacy"   의미 경계로 만든 청크. 지금까지의 규칙 그대로 — 상한을 넘는 문장은 글자 수
+                 지점에서 자르고, 문장별 추정치를 더해 묶는다. 이 자리를 바꾸면 그 뒤 문장들의
+                 묶음까지 밀려 마침표가 충분한 일반 본문의 청크 경계가 달라지므로 그대로 둔다.
+      "sentence" 문장 5개 이하 분기(nanet 7128e09 — 지금까지 크기를 안 보던 곳). 상한을 넘는 문장은
+                 줄바꿈·문장부호·공백 경계에서 자르고(_split_by_chars), 이어 붙인 텍스트로 잰다.
+    """
     if chunk.token_count <= max_tokens:
         return [chunk]
 
+    legacy = mode == "legacy"
     # 표·OCR 덩어리처럼 문장 종결부호가 없는 텍스트는 '한 문장'이 max_tokens 를 넘길 수
     # 있고, 그러면 아래 루프가 쪼개지 못해 거대한 청크가 그대로 남는다(LLM 컨텍스트 초과).
-    # → 문장 자체가 상한을 넘으면 글자 단위로 강제 분할한다.
+    # → 문장 자체가 상한을 넘으면 강제 분할한다.
     max_chars = int(max_tokens * 1.5)
     sentences: list[str] = []
     for s in _split_sentences(chunk.text):
-        if _estimate_tokens(s) > max_tokens:
+        if _estimate_tokens(s) <= max_tokens:
+            sentences.append(s)
+        elif legacy:
             sentences.extend(s[i:i + max_chars] for i in range(0, len(s), max_chars))
         else:
-            sentences.append(s)
+            sentences.extend(_split_by_chars(s, max_chars))
 
     sub_chunks = []
     current_text = ""
@@ -215,7 +249,13 @@ def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[C
 
     for sent in sentences:
         sent_tokens = _estimate_tokens(sent)
-        if current_tokens + sent_tokens > max_tokens and current_text:
+        if legacy:
+            over = bool(current_text) and current_tokens + sent_tokens > max_tokens
+        else:
+            # 짧은 조각을 많이 이을 때 조각마다 내림한 추정치를 더하면 구분자 몫과 내림 오차가
+            # 쌓여 상한을 넘는다 → 이어 붙인 텍스트로 잰다(nanet 493f760).
+            over = bool(current_text) and _estimate_tokens(f"{current_text} {sent}") > max_tokens
+        if over:
             sub_chunks.append(Chunk(
                 chunk_idx=0,  # 나중에 재번호
                 text=current_text.strip(),
@@ -313,10 +353,14 @@ def semantic_chunk(
 
     log.info(f"문장 {len(sentences)}개 분리 완료")
 
-    # 문장 수가 적으면 그냥 하나로 (바이트 가드는 마지막에 일괄 적용)
+    # 문장 수가 적으면 의미 경계 탐지는 생략하지만 크기 상한(max_tokens)은 그대로 적용한다
+    # (nanet 7128e09) — 문장부호가 적은 텍스트는 "문장" 5개 이하로 잡혀도 수만~십만 자일 수
+    # 있고, 상한 없이 한 덩어리로 나가면 섹션 요약 입력 상한(SUMMARIZER_MAX_SECTION_CHARS)에서
+    # 뒷부분이 통째로 잘린다. 바이트 가드는 그 뒤에 따로 건다.
     if len(sentences) <= 5:
-        single = Chunk(chunk_idx=0, text=text)
-        parts = _split_by_bytes(single) if apply_byte_guard else [single]
+        parts = _split_oversized(Chunk(chunk_idx=0, text=text), max_tokens=max_tokens, mode="sentence")
+        if apply_byte_guard:
+            parts = [g for c in parts for g in _split_by_bytes(c)]
         for i, c in enumerate(parts):
             c.chunk_idx = i
         return parts
