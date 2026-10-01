@@ -33,11 +33,11 @@
 | `SCAN_REPEAT_LINE_RATIO` | float 0.6 | 머리말·꼬리말·스탬프 판정: 쪽의 60% 이상에 되풀이되는 줄 |
 | `SCAN_SHORT_PAGE_RATIO` | float 0.5 | 짧은 쪽 비율이 이보다 크면 문서 단위 스캔본 |
 | `SCAN_MIN_PAGES` | int 3 | 문서 단위 스캔 판정 최소 쪽수 |
+| `ODL_TIMEOUT_BASE_SECONDS` | float 5.0 | ODL 타임아웃 = max(기본, 쪽수 × 쪽당) |
+| `ODL_TIMEOUT_PER_PAGE_SECONDS` | float 0.5 | 위 (올릴지는 사용자 결정 대기 — Task 5 실행 메모) |
+| `ODL_IMAGE_OUTPUT` | str "off" — `off`·`embedded`·`external` 만(설정을 읽을 때 검증) | ODL `image_output` |
 
 (쪽 면적 이미지 규칙과 `SCAN_IMAGE_AREA_RATIO` 는 쓰지 않는다 — 이미지 표지를 다시 VLM 으로 보내 d85df93 의 표지 수정을 되돌린다. spec 7번.)
-| `ODL_TIMEOUT_BASE_SECONDS` | float 10.0 (처음 5.0 — Task 5 실행 메모) | ODL 타임아웃 = max(기본, 쪽수 × 쪽당) |
-| `ODL_TIMEOUT_PER_PAGE_SECONDS` | float 1.5 (처음 0.5) | 위 |
-| `ODL_IMAGE_OUTPUT` | str "off" — `off`·`embedded`·`external` 만(설정을 읽을 때 검증) | ODL `image_output` |
 
 **`ingest_job_items.meta` 키**
 
@@ -84,7 +84,8 @@ def trim_repetition(text: str) -> tuple[str, bool]: ...   # (다듬은 텍스트
 async def extract_text(file_path, book_id, *, file_bytes=None, force_ocr_short_pages: bool = False, deadline_s: float | None = None) -> ExtractionResult: ...
 # deadline_s: 추출 전체 데드라인(초, None 이면 INGEST_EXTRACT_DEADLINE) — 섹션 0개 강제 재추출은 첫 추출이 남긴 시간(하한 60초)을 넘긴다
 # ExtractionResult 에 필드 추가: vlm_truncated: int = 0, deadline_hit: bool = False, ocr_errors: int = 0,
-#   render_errors: int = 0, short_kept: int = 0 (원래 짧은 쪽으로 ODL 결과를 채택한 쪽 수 — 0 이면 섹션 0개 재추출을 해도 같다)
+#   render_errors: int = 0, short_kept: int = 0 (원래 짧은 쪽으로 ODL 결과를 채택한 쪽 수 — 0 이면 섹션 0개 재추출을 해도 같다),
+#   odl_fallback: str | None = None ("resaved"·"fitz"), odl_seconds: float = 0.0 (Task 5 실행 메모)
 
 # app/services/ingestion/paper_enricher.py  (Task 6)
 async def enrich_paper(book_id, title, full_text, minio_client, *, sem: asyncio.Semaphore | None = None) -> PaperEnrichment: ...
@@ -139,7 +140,7 @@ def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None, run_to
 
 ### Task 0: 설정 키·compose·beat
 
-> **실행 메모(2026-10-02, Task 5 리뷰 반영):** 아래 config·compose 블록의 ODL 기본값(`ODL_TIMEOUT_BASE_SECONDS` 5.0·`ODL_TIMEOUT_PER_PAGE_SECONDS` 0.5)은 첫 구현 값이다. Task 5 리뷰 측정으로 10.0·1.5 로 올렸고 `fastapi`·`celery-worker`·`celery-cpu` 에 `init: true` 를 더했다(Task 5 실행 메모). 공통 계약 표는 지금 값이다.
+> **실행 메모(2026-10-02, Task 5 리뷰 반영):** compose 에서 ODL 을 돌리는 `fastapi`·`celery-worker`·`celery-cpu` 에 `init: true` 를 더했고(97ca88c), `ODL_IMAGE_OUTPUT` 은 `Literal["off", "embedded", "external"]` 로 검증한다(1a56e93). ODL 타임아웃 기본값(5.0·0.5)은 아래 블록 그대로다 — 리뷰가 올리자고 한 값은 사용자 결정을 기다린다(Task 5 실행 메모).
 
 **왜:** 다른 작업이 쓸 설정 키를 먼저 한꺼번에 만든다(공통 계약 표). Portainer 는 compose 에 `${이름:-기본값}` 선언이 없는 스택 env 를 무시하므로 `x-common-env` 선언도 같이 한다. 제어 큐(`q_control`: 디스패치·정리·딥리서치 회수)를 추출 워커에서 떼어 새 경량 워커가 받고, beat 틱에 `expires` 를 둔다(spec 6번). 추출 stale 판정은 3600초로 맞춘다(spec 16번 — 추출 데드라인 2700초 위, Celery `visibility_timeout` 7200초 아래).
 
@@ -4306,7 +4307,7 @@ git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix]
 
 ### Task 5: ODL 타임아웃·fitz 재저장 재시도·fitz 폴백과 이미지 끄기
 
-> **실행 메모(2026-10-02, Task 5 리뷰 반영):** 아래 기본값(5초·쪽당 0.5초)과 근거 ③(이 PC 에서 표 많은 문서가 상한의 78%)은 첫 구현 기준이다. 리뷰가 24스레드 PC 에서 동시 변환을 재 보니 KCI_FI001930485(37쪽)가 혼자 12초, 4건 동시 28초, 8건 동시 47초였다 — `celery-cpu` 4칸이 함께 변환하면 옛 상한 18.5초를 넘어 재저장본 재시도 뒤 fitz 텍스트(표 구조·머리말 제거 없음)로 떨어진다. 그래서 기본값을 `ODL_TIMEOUT_BASE_SECONDS` 10.0·`ODL_TIMEOUT_PER_PAGE_SECONDS` 1.5 로 올렸다(config·compose). 함께 바뀐 것: `fastapi`·`celery-worker`·`celery-cpu` 에 `init: true`(ODL 타임아웃으로 끈 java 를 거두고 SIGTERM 을 넘긴다), ODL 자식이 상한 + 5초에 SIGALRM 으로 java 까지 스스로 끈다(풀 자식이 끊겨도 ODL 이 끝없이 돌지 않게), `ODL_IMAGE_OUTPUT` 은 설정을 읽을 때 `off`·`embedded`·`external` 만 받는다(오타가 모든 문서를 조용히 fitz 텍스트로 바꾸지 않고 앱이 뜨지 않게), `run_extract` 가 meta 에 `odl_fallback`(`resaved`·`fitz`·null)과 `odl_seconds` 를 싣고 시도마다 걸린 시간과 상한을 INFO 로 남긴다. 카나리에서 보는 법은 `docs/ops/bulk_ingest_runbook.md` §9-7 ⑩.
+> **실행 메모(2026-10-02, Task 5 리뷰 반영):** 근거 ③(이 PC 에서 표 많은 문서가 상한의 78%)은 한 건씩 변환한 값이다. 리뷰가 24스레드 PC 에서 동시 변환을 재 보니 KCI_FI001930485(37쪽, 상한 18.5초)가 혼자 12초, 4건 동시 28초, 8건 동시 47초였다 — `celery-cpu` 4칸이 함께 변환하면 상한을 넘어 재저장본 재시도 뒤 fitz 텍스트(표 구조·머리말 제거 없음)로 떨어질 수 있다. 기본값(`ODL_TIMEOUT_BASE_SECONDS` 5.0·`ODL_TIMEOUT_PER_PAGE_SECONDS` 0.5)을 올릴지는 사용자 결정을 기다리고, 그 전까지는 카나리에서 운영 값을 보고 필요하면 스택 env 로 올린다. 리뷰 뒤 더한 것: `fastapi`·`celery-worker`·`celery-cpu` 에 `init: true`(97ca88c — 시간 초과로 끈 자식의 고아 java 를 PID 1 이 거둔다), `ODL_IMAGE_OUTPUT` 을 `off`·`embedded`·`external` 로 검증(1a56e93 — 오타가 모든 문서를 조용히 fitz 텍스트로 바꾸지 않고 앱이 뜨지 않게), `run_extract` 의 meta 에 `odl_fallback`(`resaved`·`fitz`·null)·`odl_seconds` 와 시도마다 `ODL {초}초 / 상한 {초}초` INFO 로그(3ccaaf5), 실패 메시지에 원인 줄(6294130), ODL 자식이 상한 + 5초에 SIGALRM 으로 자기 프로세스 그룹(java 포함)을 끈다(8bfe4a6 — 부모 풀 자식이 먼저 끊겨도 끝없이 돌지 않게). 카나리에서 보는 법은 `docs/ops/bulk_ingest_runbook.md` §9-7 ⑩.
 
 **Files:**
 - Modify: `app/services/ingestion/extractor.py` (import, `_ODL_CHILD`·`_kill_process_group`·`_odl_convert`·`_run_odl`·`_fitz_text_pages`(새), `extract_text_opendataloader`)
@@ -9645,7 +9646,7 @@ git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Chor
 
 ### Task 12: 문서 — 런북 배포 절차·함정·현재 상태
 
-> **실행 메모(2026-10-02 — 코드가 정본):** 아래 초안은 계획 때 쓴 것이고, 커밋한 런북 §9·함정 16·21·`00_status.md` 는 HEAD 코드에 맞춰 고쳤다. 초안과 다른 곳: ① 락 경합은 `pending` 으로 되돌리지 않고 아이템을 둔 채 체인만 멈춘다(진행 상한 한 칸을 쥔 채 `DISPATCH_STALE_SECONDS` 뒤 stale 복구) — 함정 16 의 '락 경합' 줄과 spec 18 을 고쳤다. ② 스키마가 다를 때 컬렉션을 지울 수 있는 것은 fastapi 기동만이 아니라 `ensure_collection()` 을 부르는 모든 프로세스(검색·색인·제어 워커의 1시간 flush)다 — 모두 `x-common-env` 라 `printenv` 하나로 본다. ③ stale 확인은 `last_error LIKE '%stale 복구%'`(성공 뒤에도 남는다)와 제어 워커 로그의 `stale 복구 (stage=` 로 센다. ④ 9-7 ② 에 `ocr_errors`·`render_errors`·`extract_deadline_hit` 를 더했다. ⑤ 9-3 의 옮길 목록은 `git diff 9798f46 -- docker-compose.yml` 과 Task 5 리뷰(`init: true`·ODL 기본값 10·1.5)대로다. ⑥ 9-8 은 다시 돌릴 그룹을 `for` 하나로 보내고 `no_text` 는 보내지 않는다. ⑦ 배포 규칙(한 번에·모든 워커 새 이미지·두 잡 동시 `running` 금지·되돌리기), 9-1 의 `unacked`·문서 락·jsonb 확인, 9-6 의 `CANARY` 자동 받기, 9-7 ⑧~⑬(단계 꼬리·겹쳐 쓴 흔적·ODL·보강·계층 요약·나중에 다시 돌릴 목록), 9-9 의 '다시 돌린 아이템이 먼저 나감', 9-10 의 인덱스 확인·선정 수 견주기를 더했다. ⑧ 함정 21 의 '남은 글자'는 DBPIA 스탬프로 확인된 것(조각 D 근거 ①)으로, 섹션 0개 처리는 faf0fac 의 갈래(첫 추출 OCR 실패·데드라인 → `vlm_error`, `short_kept` 0 → `no_text`)대로 적었다. ⑨ 날짜는 2026-10-02, round07 상태는 '구현·리뷰 마무리, 배포 대기'.
+> **실행 메모(2026-10-02 — 코드가 정본):** 아래 초안은 계획 때 쓴 것이고, 커밋한 런북 §9·함정 16·21·`00_status.md` 는 HEAD 코드에 맞춰 고쳤다. 초안과 다른 곳: ① 락 경합은 `pending` 으로 되돌리지 않고 아이템을 둔 채 체인만 멈춘다(진행 상한 한 칸을 쥔 채 `DISPATCH_STALE_SECONDS` 뒤 stale 복구) — 함정 16 의 '락 경합' 줄과 spec 18 을 고쳤다. ② 스키마가 다를 때 컬렉션을 지울 수 있는 것은 fastapi 기동만이 아니라 `ensure_collection()` 을 부르는 모든 프로세스(검색·색인·제어 워커의 1시간 flush)다 — 모두 `x-common-env` 라 `printenv` 하나로 본다. ③ stale 확인은 `last_error LIKE '%stale 복구%'`(성공 뒤에도 남는다)와 제어 워커 로그의 `stale 복구 (stage=` 로 센다. ④ 9-7 ② 에 `ocr_errors`·`render_errors`·`extract_deadline_hit` 를 더했다. ⑤ 9-3 의 옮길 목록은 `git diff 9798f46 -- docker-compose.yml` 그대로다(Task 5 리뷰의 `init: true` 포함 — ODL 타임아웃 기본값은 5.0·0.5 그대로). ⑥ 9-8 은 다시 돌릴 그룹을 `for` 하나로 보내고 `no_text` 는 보내지 않는다. ⑦ 배포 규칙(한 번에·모든 워커 새 이미지·두 잡 동시 `running` 금지·되돌리기), 9-1 의 `unacked`·문서 락·jsonb 확인, 9-6 의 `CANARY` 자동 받기, 9-7 ⑧~⑬(단계 꼬리·겹쳐 쓴 흔적·ODL·보강·계층 요약·나중에 다시 돌릴 목록), 9-9 의 '다시 돌린 아이템이 먼저 나감', 9-10 의 인덱스 확인·선정 수 견주기를 더했다. ⑧ 함정 21 의 '남은 글자'는 DBPIA 스탬프로 확인된 것(조각 D 근거 ①)으로, 섹션 0개 처리는 faf0fac 의 갈래(첫 추출 OCR 실패·데드라인 → `vlm_error`, `short_kept` 0 → `no_text`)대로 적었다. ⑨ 날짜는 2026-10-02, round07 상태는 '구현·리뷰 마무리, 배포 대기'.
 
 **왜:** 배포·카나리·재처리를 사용자가 운영 서버에서 순서대로 따라 할 수 있게 런북에 적고(spec §6), 고친 함정(16번)과 새 함정(21번)을 기록하고, 현재 상태에 round07 진행·적재 진단·round06 기획 중단을 적는다.
 
