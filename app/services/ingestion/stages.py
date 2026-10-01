@@ -4,7 +4,9 @@
   run_extract     : 다운로드 → 텍스트 추출 → 그림 저장 → 섹션 분할 → PG 저장
                     + MinIO artifacts/{book_id}/extraction.json.gz (재개용 중간 산출물)
   run_summarize   : 섹션 요약/테마 LLM → book_sections UPDATE (doc_type 판별·영속화 포함)
+                    + [paper] 보강 LLM(섹션 요약과 같은 세마포어) → enrichment.json.gz·카탈로그
   run_embed_index : 아티팩트 + 섹션 요약 로드 → 청킹 → 임베딩 → Milvus delete+insert
+                    ([paper] 보강 아티팩트로 보강 청크 — 없거나 다른 실행의 것이면 여기서 보강 LLM)
   run_finalize    : 문서 요약/소개글 LLM → library_catalog UPDATE
                     (skip_cover 파라미터로 FLUX 생략 — 썸네일은 API가 온디맨드 생성)
 
@@ -18,11 +20,16 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from core.config import get_settings
 from db.postgres import SyncSessionLocal
 from models.book import Book
 from models.section import BookSection
+
+if TYPE_CHECKING:   # 실행 시에는 함수 안에서 import 한다 (기존 관례)
+    from services.ingestion.chunker import Chunk
+    from services.ingestion.paper_enricher import PaperEnrichment
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -382,6 +389,77 @@ def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
         db.close()
 
 
+# ── [paper] 보강 — 요약 단계가 만들고 embed 단계가 청크로 쓴다 ──────
+
+
+def _enrichment_coverage(enrichment: "PaperEnrichment") -> dict:
+    """보강 커버리지 — item.meta 로 노출 (전부 0이면 PDF 추출 품질 의심)."""
+    return {
+        "enriched": True,
+        "has_abstract": bool(enrichment.abstract),
+        "n_keywords": len(enrichment.keywords),
+        "n_references": len(enrichment.references),
+        "n_tables": len(enrichment.table_chunks),
+        "n_figures": len(enrichment.figure_chunks),
+        "n_toc": len(enrichment.toc),
+    }
+
+
+def _persist_enrichment(book_id: str, enrichment: "PaperEnrichment") -> None:
+    """보강 결과를 카탈로그에 반영 — 초록·키워드는 비어 있을 때만 채우고 extra 에 참고문헌·목차·키워드.
+
+    LLM 을 다 기다린 뒤에 세션을 연다(함정 18). 실패해도 경고만 — 보강이 색인을 막지 않는다.
+    """
+    if not (enrichment.abstract or enrichment.references or enrichment.keywords or enrichment.toc):
+        return
+    from sqlalchemy.orm.attributes import flag_modified
+
+    db = SyncSessionLocal()
+    try:
+        book_row = db.query(Book).filter_by(cnts_id=book_id).first()
+        if book_row:
+            if enrichment.abstract and not book_row.abstract:
+                book_row.abstract = enrichment.abstract
+            if enrichment.keywords and not book_row.keyword:
+                book_row.keyword = ", ".join(enrichment.keywords)
+            extra = dict(book_row.extra or {})
+            extra["references"] = enrichment.references
+            if enrichment.toc:
+                extra["toc"] = enrichment.toc
+            if enrichment.keywords:
+                extra["keywords"] = enrichment.keywords
+            book_row.extra = extra
+            flag_modified(book_row, "extra")
+            db.commit()
+    except Exception as e:
+        log.warning(f"[{book_id}] enrichment DB 저장 실패: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def _build_enriched_chunks(enrichment: "PaperEnrichment", base_idx: int) -> "list[Chunk]":
+    """보강 결과 → 색인 청크(초록·키워드·표 원본·표 설명·그림 설명). chunk_idx 는 base_idx 부터 잇는다.
+
+    표 원본은 수치 질문용, 표 설명은 해석·의미 검색용이다(설명이 비면 생략).
+    """
+    from services.ingestion.chunker import Chunk
+
+    texts: list[str] = []
+    if enrichment.abstract:
+        texts.append(f"[초록] {enrichment.abstract}")
+    if enrichment.keywords:
+        texts.append(f"[키워드] {', '.join(enrichment.keywords)}")
+    for tc in enrichment.table_chunks:
+        table_text = f"[표]\n{tc.context}\n\n{tc.table_md}" if tc.context else f"[표]\n{tc.table_md}"
+        texts.append(table_text.encode("utf-8")[: cfg.MAX_CHUNK_BYTES].decode("utf-8", errors="ignore"))
+        if tc.description:
+            texts.append(f"[표 설명] {tc.description}")
+    for fc in enrichment.figure_chunks:
+        texts.append(f"[그림 설명] {fc.description}")
+    return [Chunk(chunk_idx=base_idx + i, text=t, section_idx=None) for i, t in enumerate(texts)]
+
+
 # ── 단계 ② 섹션 요약 ─────────────────────────────────────────
 
 
@@ -417,9 +495,29 @@ def run_summarize(ctx: StageContext) -> dict:
     resume = ctx.params.get("resume_summaries", True)
     targets = [s for s in section_data if not (resume and s["summary"])]
 
-    async def _summarize_batch(items: list[dict]) -> list[tuple[str, list[str]] | None]:
-        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
+    # [paper] 보강(키워드·참고문헌 폴백·표 해석·그림 설명)을 섹션 요약과 같은 루프에서 돌린다 —
+    # embed 단계(celery-embed 1칸)가 LLM 을 기다리지 않게 결과를 아티팩트로 넘긴다.
+    # 아티팩트에는 이 체인의 run_token 을 붙이고, 시작 전에 옛 아티팩트를 지운다 — 재처리
+    # 문서에는 이전 실행이 남긴 보강이 있고(마무리는 지우지 않는다) 배포 전 것은 토큰이 없어,
+    # 이번 보강이 실패하면 embed 가 그것을 읽게 되기 때문이다.
+    run_token = (ctx.item_meta or {}).get("run_token")
+    client = None
+    enrich_text: str | None = None
+    if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
+        from services.ingestion.paper_enricher import delete_enrichment_artifact
 
+        client = minio_client()
+        delete_enrichment_artifact(book_id, client)
+        try:
+            enrich_text, _ = load_extraction_artifact(book_id, client)
+        except StageError as e:
+            if e.error_group != "artifact_missing":
+                raise
+            log.warning(f"[{book_id}] 추출 아티팩트 없음 — 보강은 embed 단계가 맡는다")
+        if enrich_text is not None and not enrich_text.strip():
+            enrich_text = None
+
+    async def _summarize_batch(items: list[dict], sem: asyncio.Semaphore) -> list[tuple[str, list[str]] | None]:
         async def _one(text: str):
             async with sem:
                 try:
@@ -430,20 +528,42 @@ def run_summarize(ctx: StageContext) -> dict:
 
         return await asyncio.gather(*[_one(s["text"]) for s in items])
 
-    async def _summarize_with_retry() -> list[tuple[str, list[str]] | None]:
-        results = await _summarize_batch(targets)
+    async def _summarize_with_retry(sem: asyncio.Semaphore) -> list[tuple[str, list[str]] | None]:
+        results = await _summarize_batch(targets, sem)
         # 일부만 실패해도 stage 전체는 성공 처리되어 그 섹션 summary가 영구 NULL로
         # 남는 문제 방지 — 실패분만 한 번 더 재시도 (타임아웃/부하로 인한 일시적
         # 실패가 대부분이라 재시도로 대부분 복구됨).
         failed_idx = [i for i, r in enumerate(results) if r is None]
         if failed_idx:
             log.warning(f"[{book_id}] 섹션 요약 실패 {len(failed_idx)}건 재시도")
-            retry_results = await _summarize_batch([targets[i] for i in failed_idx])
+            retry_results = await _summarize_batch([targets[i] for i in failed_idx], sem)
             for i, r in zip(failed_idx, retry_results):
                 results[i] = r
         return results
 
-    results = run_async(_summarize_with_retry()) if targets else []
+    async def _enrich(sem: asyncio.Semaphore):
+        from services.ingestion.paper_enricher import enrich_paper
+
+        try:
+            return await enrich_paper(book_id, title, enrich_text, client, sem=sem), None
+        except Exception as e:
+            log.warning(f"[{book_id}] paper enrichment 실패 — 섹션 요약은 계속: {e}")
+            return None, e
+
+    async def _run_llm():
+        # 섹션 요약과 보강의 LLM 호출이 세마포어 하나를 나눠 쓴다 — celery-llm 은 프로세스당
+        # 태스크 1개라 이것이 프로세스의 동시 LLM 상한이다. run_async 가 단계마다 새 루프를
+        # 만들므로 세마포어도 이 루프 안에서 만든다(모듈 전역 금지).
+        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
+        if enrich_text is None:
+            return await _summarize_with_retry(sem), (None, None)
+        summaries, enriched = await asyncio.gather(_summarize_with_retry(sem), _enrich(sem))
+        return summaries, enriched
+
+    if targets or enrich_text is not None:
+        results, (enrichment, enrich_error) = run_async(_run_llm())
+    else:
+        results, enrichment, enrich_error = [], None, None
     ok = sum(1 for r in results if r)
     log.info(f"[{book_id}] 섹션 요약 {ok}/{len(targets)}개 생성 완료 (스킵 {len(section_data) - len(targets)})")
 
@@ -469,10 +589,21 @@ def run_summarize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
+    # 보강 결과 저장 — 아티팩트(embed 단계가 읽는다) + 카탈로그(초록·키워드·extra)
+    enrich_meta: dict = {}
+    if enrichment is not None:
+        from services.ingestion.paper_enricher import save_enrichment_artifact
+
+        save_enrichment_artifact(book_id, enrichment, client, run_token=run_token)
+        _persist_enrichment(book_id, enrichment)
+        enrich_meta = _enrichment_coverage(enrichment)
+    elif enrich_error is not None:
+        enrich_meta = {"enriched": False, "enrich_error": str(enrich_error)[:500]}
+
     failed_section_idxs = [sec["section_idx"] for sec, r in zip(targets, results) if not r]
     return {"sections_total": len(section_data), "sections_summarized": ok,
             "sections_failed": len(targets) - ok,
-            "failed_section_idxs": failed_section_idxs}
+            "failed_section_idxs": failed_section_idxs, **enrich_meta}
 
 
 # ── 단계 ③ 청킹 + 임베딩 + Milvus 인덱싱 ─────────────────────
@@ -591,77 +722,30 @@ def run_embed_index(ctx: StageContext) -> dict:
         contextual_texts.append("\n".join(parts))
 
     # ── [paper] 보강 청크 ────────────────────────────────────
+    # 보강 LLM 은 요약 단계가 돌려 아티팩트로 남겼다 — 여기서는 청크만 만든다. 아티팩트가
+    # 없거나 다른 실행(run_token)의 것이면(요약 단계가 보강을 못 한 아이템, 배포 전
+    # 체크포인트, embed 부터 다시 도는 체인) 예전처럼 여기서 돌린다.
     enriched_chunks: list[ChunkType] = []
     enrich_meta: dict = {}   # enrichment 커버리지 — 검증/모니터링용 (item.meta 로 노출)
     if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
         try:
-            from services.ingestion.paper_enricher import enrich_paper, save_enrichment_artifact
-            from sqlalchemy.orm.attributes import flag_modified as _flag_modified
+            from services.ingestion.paper_enricher import (
+                enrich_paper,
+                load_enrichment_artifact,
+                save_enrichment_artifact,
+            )
 
-            enrichment = run_async(enrich_paper(book_id, title, full_text, client))
-            save_enrichment_artifact(book_id, enrichment, client)
+            run_token = (ctx.item_meta or {}).get("run_token")
+            enrichment = load_enrichment_artifact(book_id, client, run_token=run_token)
+            if enrichment is None:
+                log.info(f"[{book_id}] 이번 실행의 보강 아티팩트 없음 — embed 단계에서 보강을 돌린다")
+                enrichment = run_async(enrich_paper(book_id, title, full_text, client))
+                save_enrichment_artifact(book_id, enrichment, client, run_token=run_token)
+                _persist_enrichment(book_id, enrichment)
 
             # 추출이 조용히 실패해도 보이도록 커버리지 기록 (전부 0이면 PDF 추출 품질 의심)
-            enrich_meta = {
-                "enriched": True,
-                "has_abstract": bool(enrichment.abstract),
-                "n_keywords": len(enrichment.keywords),
-                "n_references": len(enrichment.references),
-                "n_tables": len(enrichment.table_chunks),
-                "n_figures": len(enrichment.figure_chunks),
-                "n_toc": len(enrichment.toc),
-            }
-
-            if enrichment.abstract or enrichment.references or enrichment.keywords or enrichment.toc:
-                db2 = SyncSessionLocal()
-                try:
-                    book_row = db2.query(Book).filter_by(cnts_id=book_id).first()
-                    if book_row:
-                        if enrichment.abstract and not book_row.abstract:
-                            book_row.abstract = enrichment.abstract
-                        if enrichment.keywords and not book_row.keyword:
-                            book_row.keyword = ", ".join(enrichment.keywords)
-                        extra = dict(book_row.extra or {})
-                        extra["references"] = enrichment.references
-                        if enrichment.toc:
-                            extra["toc"] = enrichment.toc
-                        if enrichment.keywords:
-                            extra["keywords"] = enrichment.keywords
-                        book_row.extra = extra
-                        _flag_modified(book_row, "extra")
-                        db2.commit()
-                except Exception as _e:
-                    log.warning(f"[{book_id}] enrichment DB 저장 실패: {_e}")
-                    db2.rollback()
-                finally:
-                    db2.close()
-
-            base_idx = len(chunks)
-            if enrichment.abstract:
-                enriched_chunks.append(ChunkType(
-                    chunk_idx=base_idx, text=f"[초록] {enrichment.abstract}", section_idx=None,
-                ))
-                base_idx += 1
-            if enrichment.keywords:
-                kw_text = f"[키워드] {', '.join(enrichment.keywords)}"
-                enriched_chunks.append(ChunkType(chunk_idx=base_idx, text=kw_text, section_idx=None))
-                base_idx += 1
-            for tc in enrichment.table_chunks:
-                # ① 원본 마크다운 청크 — 수치 질문용
-                table_text = f"[표]\n{tc.context}\n\n{tc.table_md}" if tc.context else f"[표]\n{tc.table_md}"
-                table_text = table_text.encode("utf-8")[: cfg.MAX_CHUNK_BYTES].decode("utf-8", errors="ignore")
-                enriched_chunks.append(ChunkType(chunk_idx=base_idx, text=table_text, section_idx=None))
-                base_idx += 1
-                # ② LLM 서술 청크 — 해석·의미 검색용 (실패 시 생략)
-                if tc.description:
-                    enriched_chunks.append(ChunkType(
-                        chunk_idx=base_idx, text=f"[표 설명] {tc.description}", section_idx=None,
-                    ))
-                    base_idx += 1
-            for i, fc in enumerate(enrichment.figure_chunks):
-                enriched_chunks.append(ChunkType(
-                    chunk_idx=base_idx + i, text=f"[그림 설명] {fc.description}", section_idx=None,
-                ))
+            enrich_meta = _enrichment_coverage(enrichment)
+            enriched_chunks = _build_enriched_chunks(enrichment, base_idx=len(chunks))
         except Exception as _e:
             import traceback
             log.warning(f"[{book_id}] paper enrichment 실패, 계속 진행: {_e}\n{traceback.format_exc()}")
