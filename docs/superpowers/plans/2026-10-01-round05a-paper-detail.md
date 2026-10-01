@@ -55,6 +55,12 @@
 - 확인하지 못한 것: 실제 화면(spec §7 화면 ①~⑪).
   - 원문 뷰어 초안은 작성 때 가짜 API 와 하네스 페이지로 브라우저에서 확인했다. 확인한 것은 Esc·초점·배경 고정·쪽 표시·인용 대목 넘기기·404/502 안내·⑧ 흐름이다. 조립 때 바꾼 배너 버튼과 클래스 이름은 브라우저에서 다시 보지 않았다.
   - 주소·복원과 상세 화면은 브라우저에서 보지 않았다. 각 태스크의 "화면 확인"과 Task 13 Step 6 이 방어선이다.
+- 계획 검토에서 고친 것:
+  - Task 4 Step 7 은 ④를 Task 8 로 미뤘는데 Task 8 Step 10 목록에 ④·⑥이 없었다. 둘을 더하고, Task 13 Step 6 에 spec §7 화면 ①~⑪ 수동 목록을 풀어 적었다.
+  - Task 8 의 연관 논문 카드는 제목 링크라 키보드로 갈 수 있게 됐지만 '유사한 점'은 마우스를 올려야만 펼쳐졌다. `:focus-within` 으로 초점이 가도 펼친다.
+  - Task 9 배너 CSS 주석에 있던 "(원문 뷰어 태스크)"를 뺐다. 코드 주석에는 계획의 작업 단위를 적지 않는다.
+  - Task 3 에 `behavior: "instant"` 를 쓰는 까닭(spec §4 의 `'auto'` 와의 차이)을 적었다.
+  - 고친 계획을 HEAD(`8ac17b9`)의 임시 git worktree 에 Task 1→13 순서로 다시 기계적으로 적용했다. 새 파일 14개, "교체 전" 96개가 모두 한 곳씩 맞았다. 각 Step 의 실패·통과 출력, 21 / 406 → 27 / 469, 매 태스크 typecheck 0건, Task 4·5·8·9·11·12 뒤 build 통과, 백엔드 890 passed 가 위 수치와 같았다.
 
 ---
 
@@ -71,7 +77,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/frontend && npm run build 2>&1 | tail -
 
 - Vitest 는 `environment: "node"` 로 `tests/unit/**/*.test.ts` 만 돈다. 컴포넌트 마운트 도구는 없다. 컴포넌트·페이지는 로직을 utils/composables 로 빼서 테스트하고, 나머지는 typecheck·build·grep 으로 본다.
 - `[Vue] Resolve plugin path failed …` 줄은 typecheck 의 기존 소음이다. `grep "error TS"` 에 걸리지 않는다.
-- `npm run build` 의 `WARN` 줄(Browserslist·Sourcemap)도 기존 소음이다.
+- `npm run build` 의 `WARN` 줄(Browserslist·Sourcemap·`../img/… didn't resolve at build time`)도 기존 소음이다.
 
 **백엔드** — Task 13 에서 한 번만 돈다(바꾸지 않았음을 확인한다).
 
@@ -889,6 +895,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI && git add frontend/utils/historyRoute.
 - `useDetailLeave(): { leave(url, spot) }`: 떠나기 전에 **출처 화면 주소에도 at·y를 `router.replace`로 실어 둔다**. 그래야 상세의 [돌아가기]가 `router.back()`을 고르거나 브라우저 뒤로 가기로 돌아와도 맞출 자리가 주소에 남는다. spec §7 ② 확인 항목을 위해 필요하다.
 - `stampExcludedLink(e, job, cnts)`: 새 창으로 여는 제외 논문 링크에 누르는 순간의 높이를 싣는다.
 - **화면 규약**: 이 composable을 쓰는 페이지는 `definePageMeta({ scrollToTop: (to) => !to.query.at })`를 둔다. Nuxt 기본 스크롤(`node_modules/nuxt/dist/pages/runtime/router.options.js`)은 page:loading:end 다음 프레임에 맨 위나 저장 위치로 움직이는데, 이것과 경합하지 않게 하기 위해서다.
+- 맞출 때의 `scrollBy`·`scrollTo`는 `behavior: "instant"`로 쓴다. spec §4의 `behavior: 'auto'`는 "즉시"라는 뜻인데, `auto`는 CSS `scroll-behavior: smooth`가 붙으면 부드럽게 굴러간다. `instant`는 CSS와 상관없이 즉시 옮긴다.
 
 선행: Task 1(`ReturnSpot`·앵커 함수·`excludedDetailUrl`).
 
@@ -2662,6 +2669,11 @@ useHead({ title: () => (paper.value?.title ? `${paper.value.title} — 논문` :
   outline: 2px solid var(--skx-primary);
   outline-offset: 2px;
 }
+/* '유사한 점'은 카드에 마우스를 올려야 펼쳐진다(.skx-prelate-card:hover) — 키보드로 카드 링크에 초점이 가도 같이 펼친다 */
+.pd-rel:focus-within .skx-prelate-card__ai {
+  max-height: 12rem;
+  opacity: 1;
+}
 @media (prefers-reduced-motion: reduce) {
   .pd-keyword {
     transition: none;
@@ -2746,13 +2758,16 @@ Expected: 출력 없음
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/frontend && npm run build 2>&1 | tail -1`
 Expected: `└  ✨ Build complete!`
 
-- [ ] **Step 10: 화면 확인(선택, `frontend-prod-api`)** — Task 4·5 와 함께 spec §7 ①③⑤⑦⑧ 을 본다.
+- [ ] **Step 10: 화면 확인(선택, `frontend-prod-api`)** — Task 4·5 와 함께 spec §7 ①③④⑤⑥⑦⑧ 을 본다.
 
 - 보고서 인용칩 → [논문 상세] → [딥리서치 보고서로]: 같은 칩이 같은 높이에 오고 팝오버가 열린다(①).
 - 상세 → 연관 논문 2편 → [딥리서치 보고서로]: 처음 칩 자리로 간다(③).
+- 보고서의 "제외한 논문"을 새 탭으로 열고 그 탭에서 [딥리서치 보고서로]: 접힌 제외 목록이 펼쳐진 채 그 항목이 같은 높이에 온다(④).
 - 검색 결과 중간 카드 → 상세 → [검색 결과로]: 재검색 없이 그 카드 자리(⑤).
+- 메인 화면 논문 탭에서 검색(`/papers` 로 넘어간다) → 카드 → 상세 → [검색 결과로]: ⑤와 같다(⑥).
 - 주소 직접 입력(`/papers/<id>`) → "검색으로" → 홈(⑦).
 - 사이드바 강조와 탭 제목 "논문 제목 — 논문"(⑧).
+- 연관 논문 카드의 제목 링크에 Tab 으로 초점을 주면 마우스를 올린 것처럼 '유사한 점'이 펼쳐진다.
 
 - [ ] **Step 11: 커밋**
 
@@ -3044,7 +3059,7 @@ onMounted(async () => {
 ```
 교체 후:
 ```css
-/* 인용 맥락 배너 — 보고서의 인용칩에서 온 상세에만 뜬다. 글과 [인용 대목 보기](원문 뷰어 태스크)를 한 줄에 둔다 */
+/* 인용 맥락 배너 — 보고서의 인용칩에서 온 상세에만 뜬다. 글과 [인용 대목 보기] 버튼을 한 줄에 둔다 */
 .pd-cite {
   padding: 0.7rem 1rem;
   border: 1px solid var(--skx-border-c1);
@@ -4532,7 +4547,18 @@ Task 12 를 건너뛰었으면 메시지의 "·이 논문으로 딥리서치" �
 - [ ] **Step 6: 남은 일 알리기(이 계획에서 실행하지 않는다)**
 
 사용자에게 다음을 알린다.
-- 화면 확인(spec §7 화면 ①~⑪): 운영 API 미리보기 `frontend-prod-api` 로 각 태스크의 "화면 확인" 항목과 배치 A/B 둘 다(⑪)를 본다.
+- 화면 확인(spec §7 화면 ①~⑪): 운영 API 미리보기 `frontend-prod-api` 로 아래 수동 목록을 본다. 각 태스크의 "화면 확인" 항목을 모은 것이다.
+  - ① 보고서 중간의 인용칩 → [논문 상세] → [딥리서치 보고서로]: 그 칩이 떠날 때와 같은 화면 높이에 오고 팝오버가 열린다. 주소에서 `at`·`y` 가 빠진다.
+  - ② 같은 흐름을 [딥리서치 보고서로] 대신 브라우저 뒤로 가기로 해도 ①과 같다.
+  - ③ 상세 → 연관 논문 2편 → [딥리서치 보고서로]: 처음 누른 칩 자리로 간다. 연관 논문 주소에는 `e` 가 없고 `at`·`y` 는 처음 것이다.
+  - ④ 보고서·탐색 타임라인의 "제외한 논문"을 새 탭으로 열고 그 탭에서 [딥리서치 보고서로]: 접힌 제외 목록·회차가 펼쳐진 채 그 항목이 같은 높이에 온다.
+  - ⑤ 검색 결과 둘째 쪽 중간의 카드 → 상세 → [검색 결과로]: `/papers/search` 요청 없이(`/api/history/<h>` 한 번) 둘째 쪽이 열리고 그 카드가 같은 높이에 온다.
+  - ⑥ 메인 화면 논문 탭에서 검색(`/papers` 로 넘어간다) → 카드 → 상세 → [검색 결과로]: ⑤와 같다.
+  - ⑦ 주소 직접 입력(`/papers/<id>`): 돌아가기 문구가 "검색으로"이고 누르면 홈으로 간다.
+  - ⑧ 사이드바: 보고서에서 온 상세는 딥리서치 탭과 그 보고서, 검색에서 온 상세는 논문 탭과 그 기록을 강조한다. 탭 제목은 "논문 제목 — 논문"이다.
+  - ⑨ 상세 → 다른 화면 → 뒤로 → 앞으로: 네트워크 탭에 `/papers/reason/stream`·`/papers/related-reason/stream` 요청이 다시 나가지 않는다.
+  - ⑩ 원문 뷰어: Esc 로 닫힌다(뷰어 안을 누른 뒤에도). 닫으면 연 버튼으로 초점이 돌아온다. 머리의 쪽 표시·쪽 넘기기, 배너 [인용 대목 보기]의 인용 대목 넘기기, PDF 없는 논문의 안내를 본다(Task 11 Step 10).
+  - ⑪ 딥리서치 화면의 ①·④를 배치 A(2단)와 B(한 줄) 둘 다에서 본다. 상세에 있는 동안 창 폭을 바꿔 배치가 바뀌어도 같은 요소 자리로 돌아와야 한다.
 - 운영 배포(spec §9): `nl-lib-nuxt` 이미지 빌드·푸시 → 서버 pull → Recreate(Portainer re-pull 끔) → `docker exec nl-lib-gateway nginx -s reload`. 공유 운영 서버라 **사용자 승인 뒤** 한다.
 - 라운드 마무리(완료노트·교본·dev 머지)는 라운드 종료 절차(`GIT_WORKFLOW.md`, `.claude/skills/round-finish/SKILL.md`)를 따른다.
 
@@ -4545,5 +4571,6 @@ Task 12 를 건너뛰었으면 메시지의 "·이 논문으로 딥리서치" �
 - 인용칩 팝오버의 [원문 보기]에 그 절의 대목 목록(passages)을 넘기는 것 — 지금은 쪽만 넘긴다. 대목 넘기기는 상세 배너의 [인용 대목 보기]만 쓴다.
 - 검색 결과 화면 오른쪽 "AI 분석 결과" 참고 논문 목록에서 연 상세의 자리 복원 — 결과 카드(`p-<cnts>`)만 자리를 싣는다.
 - 메인 화면(`pages/index.vue`) 논문 분기의 앵커·복원 — 그 분기는 지금 실행될 수 없는 코드라 주소 형식만 맞췄다(Task 5 참고).
+- 배치 A 에서 진행 패널(자체 스크롤)에만 있는 제외 논문의 자리 — 복원은 창 스크롤만 움직인다. 보고서에 같은 항목이 있으면(round04c 뒤의 보고서·작성 중 초안) DOM 순서상 보고서 쪽 항목으로 맞추므로, 제외 목록이 없는 옛 보고서만 해당한다.
 - AI 글 캐시의 만료·용량 관리 — sessionStorage 라 탭을 닫으면 사라지고, 용량을 넘으면 캐시 없이 새로 만든다.
 - 백엔드 변경, 운영 배포(spec §9), 화면 확인(spec §7 화면 ①~⑪) — 배포는 사용자 승인 뒤 따로 한다.
