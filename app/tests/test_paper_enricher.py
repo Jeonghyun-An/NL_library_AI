@@ -6,11 +6,26 @@
   - 참고문헌 항목 사이에 빈 줄이 없어 전체가 1개 덩어리로 뭉침
   - "**참고문헌**" 처럼 헤더 뒤 마크다운이 붙으면 헤더 인식 실패
 """
+import asyncio
+import gzip
+import json
+import logging
+
 import pytest
 
+from services.ingestion import paper_enricher
 from services.ingestion.paper_enricher import (
+    FigureChunk,
+    PaperEnrichment,
+    TableChunk,
+    delete_enrichment_artifact,
+    enrich_paper,
     extract_abstract,
     extract_references,
+    interpret_table,
+    load_enrichment_artifact,
+    save_enrichment_artifact,
+    trim_to_last_sentence,
 )
 
 
@@ -329,3 +344,257 @@ class TestExtractReferences:
         assert len(refs) == 2
         assert "김영희(2001)는" in refs[0]
         assert refs[1].startswith("유현실")
+
+
+# ── 표 해석 잘림 다듬기 ──────────────────────────────────────
+
+class TestTrimToLastSentence:
+    def test_cuts_unfinished_tail(self):
+        text = "표 1은 집단별 평균을 보여 준다. 실험군이 대조군보다 높았다. 반면 남성 집단의 경우"
+        assert trim_to_last_sentence(text) == "표 1은 집단별 평균을 보여 준다. 실험군이 대조군보다 높았다."
+
+    def test_korean_endings_and_other_marks(self):
+        assert trim_to_last_sentence("차이가 컸어요. 그런데 이") == "차이가 컸어요."
+        assert trim_to_last_sentence("유의한가? 그렇다! 그러나 표본이") == "유의한가? 그렇다!"
+        assert trim_to_last_sentence("增加了。 然后") == "增加了。"
+
+    def test_decimal_point_is_not_a_sentence_end(self):
+        assert trim_to_last_sentence("평균은 3.5점이다. 표준편차는 1.2") == "평균은 3.5점이다."
+
+    def test_finished_text_is_kept(self):
+        assert trim_to_last_sentence("두 집단의 차이는 유의했다.\n") == "두 집단의 차이는 유의했다."
+
+    def test_no_finished_sentence_returns_original(self):
+        text = "남성 45.2, 여성 52"
+        assert trim_to_last_sentence(text) == text
+
+
+class TestInterpretTable:
+    TABLE = "| 집단 | 평균 |\n|---|---|\n| A | 1 |\n| B | 2 |"
+
+    def _patch_chat_full(self, monkeypatch, content, finish_reason):
+        from services import llm_client
+
+        seen = {}
+
+        async def fake_chat_full(messages, *, params=None, timeout=120.0):
+            seen["messages"] = messages
+            seen["params"] = params
+            return llm_client.LLMResult(content=content, finish_reason=finish_reason)
+
+        monkeypatch.setattr(llm_client, "chat_full", fake_chat_full)
+        return seen
+
+    def test_length_trims_to_last_finished_sentence(self, monkeypatch):
+        seen = self._patch_chat_full(monkeypatch, "A 집단의 평균이 더 높다. B 집단은", "length")
+
+        out = asyncio.run(interpret_table("논문", "표 앞 맥락", self.TABLE))
+
+        assert out == "A 집단의 평균이 더 높다."
+        assert seen["params"]["max_tokens"] == 600           # 상한은 올리지 않는다
+        assert self.TABLE in seen["messages"][1]["content"]
+
+    def test_stop_keeps_whole_text(self, monkeypatch):
+        self._patch_chat_full(monkeypatch, "A 집단의 평균이 더 높다. B 집단은", "stop")
+
+        out = asyncio.run(interpret_table("논문", "표 앞 맥락", self.TABLE))
+
+        assert out == "A 집단의 평균이 더 높다. B 집단은"
+
+
+# ── 단계 세마포어 ─────────────────────────────────────────────
+
+class _Gauge:
+    """동시에 몇 개가 LLM 을 부르고 있는지 잰다."""
+
+    def __init__(self):
+        self.active = 0
+        self.peak = 0
+        self.calls: list[str] = []
+
+    async def hold(self, name: str):
+        self.calls.append(name)
+        self.active += 1
+        self.peak = max(self.peak, self.active)
+        await asyncio.sleep(0.01)
+        self.active -= 1
+
+
+def _paper_text(n_tables: int) -> str:
+    """키워드 줄·참고문헌 헤더가 없어 둘 다 LLM 폴백을 타는 본문 + 표 n_tables 개."""
+    parts = ["서론 문단이다. " * 30]
+    for i in range(n_tables):
+        parts.append(f"표 {i + 1} 앞 문단이다.\n| 집단 | 평균 |\n|---|---|\n| A | {i} |\n| B | {i + 1} |\n")
+    return "\n\n".join(parts)
+
+
+def _patch_enrich_llm(monkeypatch) -> _Gauge:
+    gauge = _Gauge()
+
+    async def fake_keywords(title, text):
+        await gauge.hold("kw")
+        return ["가", "나"]
+
+    async def fake_references(text):
+        await gauge.hold("ref")
+        return ["r1", "r2", "r3"]
+
+    async def fake_table(title, ctx, md):
+        await gauge.hold("table")
+        return "A 가 더 높다."
+
+    monkeypatch.setattr(paper_enricher, "generate_keywords", fake_keywords)
+    monkeypatch.setattr(paper_enricher, "generate_references", fake_references)
+    monkeypatch.setattr(paper_enricher, "interpret_table", fake_table)
+    monkeypatch.setattr(paper_enricher, "_list_figure_keys", lambda book_id, client: [])
+    return gauge
+
+
+class TestEnrichPaperSemaphore:
+    def test_given_semaphore_caps_every_llm_call(self, monkeypatch):
+        """sem 을 주면 표 해석도 그 세마포어만 쓴다 — 표용 세마포어를 따로 만들면 peak 가 4 가 된다."""
+        gauge = _patch_enrich_llm(monkeypatch)
+        monkeypatch.setattr(paper_enricher.cfg, "LLM_SECTION_CONCURRENCY", 4)
+
+        async def run():
+            return await enrich_paper("B1", "제목", _paper_text(5), None, sem=asyncio.Semaphore(1))
+
+        result = asyncio.run(run())
+
+        assert gauge.peak == 1
+        assert gauge.calls.count("table") == 5 and "kw" in gauge.calls and "ref" in gauge.calls
+        assert len(result.table_chunks) == 5
+        assert all(tc.description == "A 가 더 높다." for tc in result.table_chunks)
+
+    def test_without_semaphore_uses_section_concurrency(self, monkeypatch):
+        gauge = _patch_enrich_llm(monkeypatch)
+        monkeypatch.setattr(paper_enricher.cfg, "LLM_SECTION_CONCURRENCY", 2)
+
+        asyncio.run(enrich_paper("B1", "제목", _paper_text(5), None))
+
+        assert gauge.peak == 2
+
+    def test_keyword_and_reference_fallbacks_wait_for_the_semaphore(self, monkeypatch):
+        """섹션 요약이 자리를 모두 쥐고 있으면 키워드·참고문헌 LLM 폴백도 기다린다."""
+        gauge = _patch_enrich_llm(monkeypatch)
+
+        async def scenario():
+            sem = asyncio.Semaphore(1)
+            await sem.acquire()
+            task = asyncio.create_task(enrich_paper("B1", "제목", _paper_text(0), None, sem=sem))
+            for _ in range(5):
+                await asyncio.sleep(0)
+            started_while_held = list(gauge.calls)
+            sem.release()
+            await task
+            return started_while_held
+
+        assert asyncio.run(scenario()) == []
+        assert gauge.calls == ["kw", "ref"]
+
+
+# ── 보강 아티팩트 ─────────────────────────────────────────────
+
+class _NoSuchKey(Exception):
+    code = "NoSuchKey"     # minio S3Error 와 같은 속성
+
+
+class _FakeResp:
+    def __init__(self, data: bytes):
+        self._data = data
+
+    def read(self):
+        return self._data
+
+    def close(self):
+        pass
+
+    def release_conn(self):
+        pass
+
+
+class _FakeMinio:
+    def __init__(self, fail_remove: bool = False):
+        self.objects: dict[str, bytes] = {}
+        self.fail_remove = fail_remove
+
+    def put_object(self, bucket, key, data, length, content_type=None):
+        self.objects[key] = data.read()
+
+    def get_object(self, bucket, key):
+        if key not in self.objects:
+            raise _NoSuchKey(key)
+        return _FakeResp(self.objects[key])
+
+    def remove_object(self, bucket, key):
+        if self.fail_remove:
+            raise ConnectionError("minio down")
+        self.objects.pop(key, None)        # S3 처럼 없는 키를 지워도 성공
+
+
+class TestEnrichmentArtifact:
+    def test_save_then_load_round_trips(self):
+        client = _FakeMinio()
+        enrichment = PaperEnrichment(
+            abstract="초록 본문",
+            keywords=["가", "나"],
+            toc=["1. 서론", "2. 방법", "3. 결론"],
+            references=["[1] 김. (2020).", "[2] 이. (2021)."],
+            table_chunks=[TableChunk(context="맥락", table_md="| a | b |", description="설명."),
+                          TableChunk(context="", table_md="| c | d |", description="")],
+            figure_chunks=[FigureChunk(minio_key="figures/B1/p1_i0.jpg", description="그림 설명.")],
+        )
+
+        save_enrichment_artifact("B1", enrichment, client)
+
+        assert list(client.objects) == ["artifacts/B1/enrichment.json.gz"]
+        assert load_enrichment_artifact("B1", client) == enrichment
+
+    def test_run_token_must_match_when_both_sides_have_one(self):
+        client = _FakeMinio()
+        enrichment = PaperEnrichment(abstract="이번 실행의 초록")
+        save_enrichment_artifact("B1", enrichment, client, run_token="T1")
+
+        assert load_enrichment_artifact("B1", client, run_token="T1") == enrichment
+        assert load_enrichment_artifact("B1", client, run_token="T2") is None   # 다른 실행이 남긴 것
+        assert load_enrichment_artifact("B1", client) == enrichment             # 토큰 없는 호출(단건 흐름)
+
+    def test_pre_deploy_payload_without_token_is_still_used(self):
+        """배포 전 embed 가 남긴 아티팩트(run_token 키 없음)는 토큰이 있는 호출에서도 쓴다."""
+        client = _FakeMinio()
+        old_payload = {"abstract": "옛 초록", "keywords": [], "toc": [], "references": [],
+                       "table_chunks": [], "figure_chunks": []}
+        client.objects["artifacts/B1/enrichment.json.gz"] = gzip.compress(
+            json.dumps(old_payload, ensure_ascii=False).encode("utf-8"))
+
+        assert load_enrichment_artifact("B1", client, run_token="T1") == PaperEnrichment(abstract="옛 초록")
+
+    def test_delete_removes_artifact_and_never_raises(self, caplog):
+        client = _FakeMinio()
+        save_enrichment_artifact("B1", PaperEnrichment(abstract="초록"), client, run_token="T1")
+
+        delete_enrichment_artifact("B1", client)
+        delete_enrichment_artifact("B1", client)          # 없는 키도 조용히
+
+        assert client.objects == {}
+        with caplog.at_level(logging.WARNING, logger=paper_enricher.log.name):
+            delete_enrichment_artifact("B1", _FakeMinio(fail_remove=True))
+        assert [r for r in caplog.records if r.levelno == logging.WARNING]
+
+    def test_missing_artifact_returns_none_quietly(self, caplog):
+        with caplog.at_level(logging.WARNING, logger=paper_enricher.log.name):
+            assert load_enrichment_artifact("B1", _FakeMinio()) is None
+        assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+    @pytest.mark.parametrize("raw", [
+        b"not gzip",
+        gzip.compress(b"{not json"),
+        gzip.compress(b"[1, 2]"),
+    ], ids=["not-gzip", "not-json", "not-object"])
+    def test_broken_artifact_returns_none_with_warning(self, caplog, raw):
+        client = _FakeMinio()
+        client.objects["artifacts/B1/enrichment.json.gz"] = raw
+
+        with caplog.at_level(logging.WARNING, logger=paper_enricher.log.name):
+            assert load_enrichment_artifact("B1", client) is None
+        assert [r for r in caplog.records if r.levelno == logging.WARNING]
