@@ -431,8 +431,10 @@ async def _ocr_pages(
                         result.errors.append(f"{e} — ODL 결과 채택")
                         result.vlm_truncated += 1
                     except Exception as e:
-                        log.error(f"[{book_id}] p.{page_num} OCR({engine}) 실패: {e}")
-                        result.errors.append(f"p.{page_num} OCR({engine}): {e}")
+                        # httpx.ReadTimeout 은 메시지가 빈 채로 오기도 한다 — 이름을 남겨 타임아웃·연결 실패·HTTP 오류를 가른다.
+                        detail = f"{type(e).__name__}: {e}" if str(e) else type(e).__name__
+                        log.error(f"[{book_id}] p.{page_num} OCR({engine}) 실패: {detail}")
+                        result.errors.append(f"p.{page_num} OCR({engine}): {detail}")
                         result.ocr_errors += 1
                     else:
                         if ocr_page.truncated:

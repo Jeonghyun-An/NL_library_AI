@@ -340,7 +340,8 @@ def run_extract(ctx: StageContext) -> dict:
                     "no_text",
                     f"섹션 0개 — 본문 없음({extraction.total_pages}쪽, 강제 OCR 로 바뀔 쪽 없음)",
                 )
-            # 두 추출을 합쳐도 INGEST_EXTRACT_DEADLINE 안에 들게(stale 판정 3600초 아래) 첫 추출이 남긴 시간만 준다.
+            # 첫 추출이 남긴 시간만 준다. 하한 60초와, 데드라인이 끊지 않는 두 번째 ODL 실행(쪽수 비례 상한)만큼 두 추출을
+            # 합치면 INGEST_EXTRACT_DEADLINE 을 조금 넘을 수 있다 — 지키는 것은 stale 판정(INGEST_STAGE_TIMEOUT_EXTRACT 3600초) 아래다.
             deadline_s = max(
                 cfg.INGEST_EXTRACT_DEADLINE - (time.monotonic() - t_first), FORCED_OCR_MIN_DEADLINE_SECONDS
             )

@@ -152,6 +152,17 @@ def test_degenerate_and_failed_pages_fall_back_to_odl(monkeypatch):
     assert result.render_errors == 0
 
 
+def test_request_error_with_empty_message_keeps_exception_name(monkeypatch):
+    """httpx.ReadTimeout 은 메시지가 빈 채로 오기도 한다 — 오류 기록에 예외 이름을 남겨 타임아웃·연결 실패·HTTP 오류를 가른다."""
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        raise httpx.ReadTimeout("")
+
+    _patch(monkeypatch, 1, fake_vlm)
+    result = _extract(1)
+    assert result.ocr_errors == 1
+    assert "p.0 OCR(vlm): ReadTimeout" in result.errors
+
+
 def test_deadline_adopts_odl_for_pages_not_done(monkeypatch):
     async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
         if page.number > 0:
