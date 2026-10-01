@@ -3,7 +3,7 @@ api/ingest_jobs.py — 대량 인덱싱 배치 잡 관리 API
 
 POST   /api/admin/ingest-jobs            잡 생성 (매니페스트 검증 → items 적재 → ready)
 GET    /api/admin/ingest-jobs            잡 목록
-GET    /api/admin/ingest-jobs/{id}       잡 상세 (stage/status 카운트, 처리율, ETA)
+GET    /api/admin/ingest-jobs/{id}       잡 상세 (stage/status 카운트, 처리율 1h·24h, ETA)
 POST   /api/admin/ingest-jobs/{id}/start|pause|resume|cancel
 GET    /api/admin/ingest-jobs/{id}/items 아이템 목록 (status/stage/error_group 필터)
 GET    /api/admin/ingest-jobs/{id}/failures   error_group별 집계
@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, literal_column, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import get_settings
 from core.deps import get_db
 from models.ingest_job import IngestJob, IngestJobItem
 
@@ -82,6 +83,38 @@ async def list_jobs(db: AsyncSession = Depends(get_db), limit: int = 50):
 
 
 # ── 상세 (카운트 + 처리율 + ETA) ──────────────────────────────
+def compute_eta(remaining: int, done_last_24h: int, status: str) -> float | None:
+    """남은 건수 ÷ 최근 24시간의 시간당 처리량(시간). 멈춘 잡·처리량 0 이면 None.
+
+    1시간 창은 스캔본(VLM)이 몰리면 처리량이 몇 분의 1로 떨어져 ETA 가 48시간 기준의
+    0.73~5.7배로 출렁였다. 24시간 창은 두 구간(ODL·스캔본)이 섞여 덜 흔들린다.
+    """
+    if status == "paused":
+        return None
+    if remaining <= 0:
+        return 0.0
+    if done_last_24h <= 0:
+        return None
+    return round(remaining * 24 / done_last_24h, 1)
+
+
+def _done_since(job_id: str, since: _dt.datetime):
+    return select(func.count()).where(
+        IngestJobItem.job_id == job_id,
+        IngestJobItem.status == "done",
+        IngestJobItem.finished_at >= since,
+    )
+
+
+def _permanently_failed(job_id: str, max_attempts: int):
+    """자동 재시도 한도에 닿은 failed — 디스패처가 다시 집지 않는다(수동 retry 전까지)."""
+    return select(func.count()).where(
+        IngestJobItem.job_id == job_id,
+        IngestJobItem.status == "failed",
+        IngestJobItem.attempt >= max_attempts,
+    )
+
+
 @router.get("/{job_id}")
 async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     job = (await db.execute(select(IngestJob).where(IngestJob.id == job_id))).scalar_one_or_none()
@@ -102,21 +135,27 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     status_counts = {s: c for s, c in status_rows}
     stage_counts = {s: c for s, c in stage_rows}
 
-    # 처리율: 최근 1시간 done 건수 → 시간당 처리율
-    one_hour_ago = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(hours=1)
+    # 처리율: 최근 1시간·24시간 done 건수. ETA 는 24시간 기준(compute_eta)
+    now = _dt.datetime.now(_dt.timezone.utc)
     done_last_hour = (await db.execute(
-        select(func.count())
-        .where(
-            IngestJobItem.job_id == job_id,
-            IngestJobItem.status == "done",
-            IngestJobItem.finished_at >= one_hour_ago,
-        )
+        _done_since(job_id, now - _dt.timedelta(hours=1))
+    )).scalar() or 0
+    done_last_24h = (await db.execute(
+        _done_since(job_id, now - _dt.timedelta(hours=24))
+    )).scalar() or 0
+
+    # 영구 실패는 더 처리되지 않으므로 남은 수에서 뺀다
+    params = dict(job.params or {})
+    max_attempts = int(params.get("max_attempts") or get_settings().INGEST_MAX_ATTEMPTS)
+    permanently_failed = (await db.execute(
+        _permanently_failed(job_id, max_attempts)
     )).scalar() or 0
 
     done_total = status_counts.get("done", 0)
-    remaining = job.total_items - done_total
+    remaining = job.total_items - done_total - permanently_failed
     rate_per_hour = done_last_hour
-    eta_hours = round(remaining / rate_per_hour, 1) if rate_per_hour > 0 else None
+    rate_per_hour_24h = round(done_last_24h / 24, 1)
+    eta_hours = compute_eta(remaining, done_last_24h, job.status)
 
     # 추출 방법 분포 (meta.extract_method)
     _extract_method = literal_column("ingest_job_items.meta ->> 'extract_method'")
@@ -133,8 +172,10 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
         "status_counts": status_counts,
         "stage_counts": stage_counts,
         "done_total": done_total,
+        "permanently_failed": permanently_failed,
         "remaining": remaining,
         "rate_per_hour": rate_per_hour,
+        "rate_per_hour_24h": rate_per_hour_24h,
         "eta_hours": eta_hours,
         "extract_methods": extract_methods,
     }
@@ -246,18 +287,24 @@ async def list_items(
 
 
 # ── 실패 그룹 집계 ────────────────────────────────────────────
-@router.get("/{job_id}/failures")
-async def list_failures(job_id: str, db: AsyncSession = Depends(get_db)):
-    rows = (await db.execute(
+def _failure_groups(job_id: str):
+    # 대표 메시지는 그룹 안에서 가장 흔한 것(mode). max() 는 사전순 최댓값이라
+    # not_found 545건('섹션 없음')이 15건뿐인 '카탈로그 row 없음'으로 보였다.
+    return (
         select(
             IngestJobItem.error_group,
             func.count(),
-            func.max(IngestJobItem.last_error),
+            func.mode().within_group(IngestJobItem.last_error),
         )
         .where(IngestJobItem.job_id == job_id, IngestJobItem.status == "failed")
         .group_by(IngestJobItem.error_group)
         .order_by(func.count().desc())
-    )).all()
+    )
+
+
+@router.get("/{job_id}/failures")
+async def list_failures(job_id: str, db: AsyncSession = Depends(get_db)):
+    rows = (await db.execute(_failure_groups(job_id))).all()
     return {
         "groups": [
             {"error_group": g or "unknown", "count": c, "sample_error": (err or "")[:300]}
