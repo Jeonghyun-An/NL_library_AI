@@ -211,4 +211,4 @@ plan: `docs/superpowers/plans/2026-09-26-round04b-deep-research-frontend.md`(본
 - [x] 수동 스모크 — 운영 배포 뒤 사용자 확인(2026-09-29: 초안 화면 동적·Word·PDF 정상), 운영 검증 잡(§2-1)
 - [x] 문서 갱신 — 완료노트(이 문서)·교본 `docs/guides/round04b/` 6챕터(`7dbd962`)·`00_status`·함정 20번·spec 상태 줄. 계획 체크박스는 갱신하지 않았다(§8 문서)
 - [x] `dev` 머지 승인 — 2026-10-01(`9b776d2`)
-- [ ] `dev→main` 머지 + push
+- [x] `dev→main` 머지 + push — 2026-10-01
