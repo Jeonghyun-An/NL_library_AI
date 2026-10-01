@@ -99,6 +99,14 @@ def test_control_worker_takes_q_control_without_gpu():
     assert ctl["restart"] == cpu["restart"] == "unless-stopped"
 
 
+def test_services_running_odl_reap_orphans_with_init():
+    # ODL 을 돌리는 서비스 — 추출(celery-cpu), 단건 흐름(celery-worker), 관리·도서 API(fastapi). 시간을 넘긴 ODL 의
+    # java 손자는 고아가 돼 PID 1 로 넘어간다 — init(tini)이 PID 1 이어야 좀비로 남지 않는다
+    services = _compose()["services"]
+    for name in ("fastapi", "celery-worker", "celery-cpu"):
+        assert services[name].get("init") is True, name
+
+
 def test_no_page_image_area_setting():
     # 쪽 단위 이미지 면적 규칙은 두지 않는다 — 디지털 논문의 이미지 표지·간지를 다시 VLM 으로 보낸다.
     # 스캔본 판정은 문서 단위(SCAN_*)뿐이다

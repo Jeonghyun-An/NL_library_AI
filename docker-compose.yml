@@ -538,6 +538,11 @@ services:
     container_name: nl-lib-fastapi
     <<: *nl-lib-net
     shm_size: "4g"
+    # ODL 변환이 시간을 넘기면 자식 파이썬과 java 손자를 프로세스 그룹째 끈다. 고아가 된 java 는 PID 1
+    # (uvicorn·celery master)로 넘어가는데 그쪽은 회수하지 않아 시간 초과마다 좀비가 남는다 — init(tini)을
+    # PID 1 로 두어 회수한다. SIGTERM 은 그대로 넘겨 celery warm shutdown 은 같다. ODL 을 돌리는 서비스
+    # (fastapi·celery-worker·celery-cpu)에만 둔다
+    init: true
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
     environment:
@@ -589,6 +594,7 @@ services:
     container_name: nl-lib-celery
     <<: *nl-lib-net
     shm_size: "4g"
+    init: true  # ODL 시간 초과로 고아가 된 java 회수 — fastapi 의 init 주석
     working_dir: /app
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
@@ -623,6 +629,7 @@ services:
     container_name: nl-lib-celery-cpu
     <<: *nl-lib-net
     shm_size: "4g"
+    init: true  # ODL 시간 초과로 고아가 된 java 회수 — fastapi 의 init 주석
     working_dir: /app
     extra_hosts:
       - "host.docker.internal:host-gateway"
