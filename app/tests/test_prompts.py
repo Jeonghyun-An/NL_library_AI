@@ -1,4 +1,5 @@
 """PromptLibrary — 도메인 프롬프트 YAML 로딩/렌더링 단위 테스트."""
+import re
 import textwrap
 from pathlib import Path
 
@@ -139,3 +140,20 @@ def test_nl_library_prompts_exist_and_render():
         evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
     assert '"summaries"' in rs_s and "E1, E3" in rs_s
     assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
+
+
+def test_paper_table_interp_asks_for_key_findings_not_every_row():
+    """표 원본 마크다운 청크가 따로 색인되므로 표 해석은 핵심 비교·경향만 짧게 쓴다.
+
+    상한(600)은 그대로 — 올려도 임베딩 창(512토큰)이 같은 자리를 자른다. 개수 예시
+    ("3문장")는 모델이 베끼므로 쓰지 않는다(함정 15).
+    """
+    real_dir = Path(__file__).resolve().parents[1] / "domains" / "nl_library" / "prompts"
+    system, user, params = PromptLibrary(real_dir).get("paper_table_interp").render(
+        title="논문", context="표 앞 맥락", table_markdown="| 집단 | 평균 |\n|---|---|\n| A | 1 |")
+
+    assert params["max_tokens"] == 600
+    assert "핵심" in system and "경향" in system
+    assert "빠짐없이" not in system + user
+    assert not re.search(r"\d+\s*(?:문장|줄|개)", system + user)
+    assert "| 집단 | 평균 |" in user
