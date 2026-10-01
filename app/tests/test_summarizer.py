@@ -1,6 +1,7 @@
 """_combine_sections — 입력 상한 + 전체 균등 샘플링 (재귀/앞부분편향 회귀 방지)."""
 import asyncio
 import re
+import time
 
 from services.ingestion import summarizer
 from services.ingestion.summarizer import _parse_summary_themes
@@ -355,3 +356,169 @@ def test_generators_without_combined_text_still_combine(monkeypatch):
         title="제목", author="저자", section_summaries=["가나다", "라마바"], doc_type="book",
     ))
     assert users == ["user::[섹션 1] 가나다\n\n[섹션 2] 라마바"] * 2
+
+
+# ── reduce_section_summaries — 묶음 하나 실패 시 남은 호출 취소·바깥 취소 전파·실행 기록 ──────
+# (round07 Task 8 리뷰 반영) 한 묶음이 실패하면 그 단계 결과는 어차피 버려지므로 남은 호출을 바로 끊는다.
+# 마무리 단계의 시간 예산(asyncio.wait_for)이 바깥에서 취소할 때도 호출이 남지 않아야 한다.
+def _leftover_tasks():
+    """지금 도는 태스크(현재 것 제외) — reduce 가 끝난 뒤 남은 중간 요약 호출이 없어야 한다."""
+    return [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+
+
+def _n_groups(items, cap):
+    return len(summarizer._group_for_reduce([(i + 1, i + 1, s) for i, s in enumerate(items)], cap))
+
+
+def test_reduce_cancels_remaining_groups_when_one_group_fails(monkeypatch):
+    """묶음 하나가 실패하면 남은 호출(진행 중이거나 세마포어를 기다리는 것)을 바로 취소하고 균등 샘플링으로 돌아간다 —
+    어차피 그 단계 결과는 버리므로, 응답 없는 장애에서 시간과 gemma 자리를 아낀다."""
+    items = _items(60)                                   # 묶음 여러 개, 동시 호출은 2개까지
+    state = {"started": 0, "cancelled": 0}
+
+    async def fake_chat(system, user, params, timeout):
+        state["started"] += 1
+        if "섹션요약000" in user:                         # 첫 묶음은 곧바로 실패
+            await asyncio.sleep(0.01)
+            raise RuntimeError("LLM 다운")
+        try:
+            await asyncio.sleep(30)                      # 나머지는 응답이 없다
+        except asyncio.CancelledError:
+            state["cancelled"] += 1
+            raise
+        return "중간요약"
+
+    _patch_reduce(monkeypatch, 1000, fake_chat, concurrency=2)
+    stats = summarizer.ReduceStats()
+
+    async def scenario():
+        out = await summarizer.reduce_section_summaries("제목", "저자", items, stats=stats)
+        return out, _leftover_tasks()
+
+    t0 = time.monotonic()
+    out, leftover = asyncio.run(scenario())
+
+    assert time.monotonic() - t0 < 5                     # 30초 응답을 기다리지 않았다
+    assert out == summarizer._combine_sections(items)
+    assert state["started"] < _n_groups(items, 1000)     # 세마포어를 기다리던 묶음은 시작도 못 했다
+    assert state["cancelled"] == state["started"] - 1    # 시작한 나머지 호출은 모두 취소됐다
+    assert leftover == []                                # 취소된 호출이 루프 밖에 남지 않았다
+    assert stats.fallback is True and stats.levels == 1
+
+
+def test_reduce_outer_cancellation_propagates_and_cancels_calls(monkeypatch):
+    """바깥이 reduce 를 취소하면 CancelledError 를 삼키지 않고 올리며, 진행 중인 호출도 모두 취소된다."""
+    state = {"started": 0, "cancelled": 0}
+
+    async def fake_chat(system, user, params, timeout):
+        state["started"] += 1
+        try:
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            state["cancelled"] += 1
+            raise
+        return "중간요약"
+
+    _patch_reduce(monkeypatch, 1000, fake_chat)
+
+    async def scenario():
+        task = asyncio.ensure_future(summarizer.reduce_section_summaries("제목", "저자", _items(60)))
+        await asyncio.sleep(0.05)                        # 호출이 나가도록 기다린 뒤 취소
+        task.cancel()
+        outcome = "returned"
+        try:
+            await task
+        except asyncio.CancelledError:
+            outcome = "cancelled"
+        return outcome, _leftover_tasks()
+
+    outcome, leftover = asyncio.run(scenario())
+    assert outcome == "cancelled"                        # 폴백으로 돌아가며 삼키지 않았다
+    assert state["started"] > 0 and state["cancelled"] == state["started"]
+    assert leftover == []
+
+
+def test_reduce_wait_for_timeout_leaves_no_calls_running(monkeypatch):
+    """마무리 단계가 쓰는 방식 그대로 asyncio.wait_for 로 감싸 시간이 다 되면 TimeoutError 가 나고 호출이 남지 않는다."""
+    state = {"started": 0, "cancelled": 0}
+
+    async def fake_chat(system, user, params, timeout):
+        state["started"] += 1
+        try:
+            await asyncio.sleep(30)
+        except asyncio.CancelledError:
+            state["cancelled"] += 1
+            raise
+        return "중간요약"
+
+    _patch_reduce(monkeypatch, 1000, fake_chat)
+    stats = summarizer.ReduceStats()
+
+    async def scenario():
+        outcome = "returned"
+        try:
+            await asyncio.wait_for(
+                summarizer.reduce_section_summaries("제목", "저자", _items(60), stats=stats), timeout=0.1)
+        except asyncio.TimeoutError:
+            outcome = "timeout"
+        return outcome, _leftover_tasks()
+
+    t0 = time.monotonic()
+    outcome, leftover = asyncio.run(scenario())
+    assert outcome == "timeout" and time.monotonic() - t0 < 5
+    assert state["started"] > 0 and state["cancelled"] == state["started"]
+    assert leftover == []
+    assert stats.levels == 1 and stats.groups > 0        # 끊기기 전까지의 기록이 남는다(fallback 표시는 호출자 몫)
+
+
+def test_reduce_stats_report_levels_groups_and_fallback(monkeypatch):
+    """실행 기록 — 마무리 단계가 meta 에 싣는다. levels 0 = 합치기만, 시작한 중간 요약 단계까지 센다(실패한 단계 포함)."""
+    assert (summarizer.ReduceStats().levels, summarizer.ReduceStats().groups,
+            summarizer.ReduceStats().fallback) == (0, 0, False)
+
+    async def short(system, user, params, timeout):
+        return "요" * 200
+
+    def run(cap, chat, items):
+        _patch_reduce(monkeypatch, cap, chat)
+        stats = summarizer.ReduceStats()
+        out = asyncio.run(summarizer.reduce_section_summaries("제목", "저자", items, stats=stats))
+        return stats, out
+
+    # 상한 이하 — 합치기만
+    stats, _ = run(10000, short, _items(5))
+    assert (stats.levels, stats.groups, stats.fallback) == (0, 0, False)
+
+    # 1단계에서 상한 안으로
+    items = _items(40)
+    stats, out = run(1000, short, items)
+    n1 = _n_groups(items, 1000)
+    assert (stats.levels, stats.groups, stats.fallback) == (1, n1, False) and len(out) <= 1000
+
+    # 중간 요약을 이어도 넘어 2단계까지
+    items = _items(60, filler=90)
+    stats, out = run(1000, short, items)
+    assert stats.levels == 2 and stats.groups > _n_groups(items, 1000) and stats.fallback is False
+    assert len(out) <= 1000
+
+    # 묶음 하나가 실패 → 1단계에서 샘플링으로
+    async def failing(system, user, params, timeout):
+        raise RuntimeError("LLM 다운")
+
+    items = _items(40)
+    stats, out = run(1000, failing, items)
+    assert (stats.levels, stats.groups, stats.fallback) == (1, n1, True)
+    assert out == summarizer._combine_sections(items)
+
+    # 2단계 뒤에도 상한 초과 → 샘플링
+    async def long(system, user, params, timeout):
+        return "요" * 900
+
+    items = _items(60, filler=90)
+    stats, out = run(1000, long, items)
+    assert stats.levels == 2 and stats.fallback is True
+    assert out == summarizer._combine_sections(items)
+
+    # 섹션 요약이 없으면 아무것도 하지 않는다
+    stats, out = run(1000, short, [])
+    assert out == "" and (stats.levels, stats.groups, stats.fallback) == (0, 0, False)

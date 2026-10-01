@@ -804,11 +804,36 @@ def run_embed_index(ctx: StageContext) -> dict:
 
 # ── 단계 ④ 문서 요약/소개글 + (선택) 표지 ─────────────────────
 
+# 계층 요약의 시간 예산. INGEST_STAGE_TIMEOUT_FINALIZE 는 시도별 하드 마감이다 — 넘으면 stale 복구가 토큰을
+# 바꿔 늦게 끝난 성공은 버려지고(job_runtime._run_stage) 같은 일이 처음부터 되풀이된다. 그래서 계층 요약이
+# 그 마감 안에서 끝나도록, 뒤따르는 최종 호출과 표지가 쓸 시간과 여유를 뺀 만큼만 쓰게 하고 못 끝내면 끊어서
+# 균등 샘플링 입력으로 이어 간다.
+_FINALIZE_MARGIN_SECONDS = 60       # 마감 앞 여유 (DB 저장·아티팩트 정리·큐 지연)
+_REDUCE_MIN_BUDGET_SECONDS = 60     # 몫을 빼고 남는 시간이 이보다 적어도 이만큼은 준다
+
+
+def _reduce_budget_seconds(final_call_seconds: float, make_cover: bool) -> float:
+    """계층 요약이 쓸 수 있는 최대 시간(초).
+
+    INGEST_STAGE_TIMEOUT_FINALIZE − final_call_seconds − 여유 (표지를 만들면 표지 프롬프트 LLM·FLUX
+    타임아웃도 뺀다), 하한 _REDUCE_MIN_BUDGET_SECONDS. final_call_seconds 는 함께 나가는 최종 호출
+    (요약·소개글·줄거리·독후 효과) 중 가장 긴 타임아웃이다 — 동시 호출 한도(LLM_SECTION_CONCURRENCY)가
+    호출 수 이상이라 한 번에 나간다고 본다.
+    """
+    reserve = final_call_seconds + _FINALIZE_MARGIN_SECONDS
+    if make_cover:
+        reserve += cfg.COVER_PROMPT_TIMEOUT + cfg.FLUX_TIMEOUT
+    return max(_REDUCE_MIN_BUDGET_SECONDS, cfg.INGEST_STAGE_TIMEOUT_FINALIZE - reserve)
+
 
 def run_finalize(ctx: StageContext) -> dict:
-    """문서 요약·테마·소개글 (+선택적 FLUX 표지) → library_catalog UPDATE + 아티팩트 정리."""
+    """문서 요약·테마·소개글 (+선택적 FLUX 표지) → library_catalog UPDATE + 아티팩트 정리.
+
+    계층 요약 실행 기록(reduce_levels·reduce_groups·reduce_fallback)을 반환 meta 에 남긴다.
+    """
     from sqlalchemy.orm.attributes import flag_modified
     from services.ingestion.summarizer import (
+        ReduceStats,
         reduce_section_summaries,
         summarize_book_from_sections,
         generate_book_introduction,
@@ -842,13 +867,35 @@ def run_finalize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
+    # 표지 생성 여부 — skip_cover=true 이거나 논문이면 생략한다(썸네일 폴백 사용).
+    # 논문은 표지를 만들지 않는다(사용자 결정 2026-10-01): 잡 params 에 skip_cover 가 빠져도
+    # 논문마다 표지 프롬프트 LLM(+FLUX)을 부르지 않도록 doc_type 으로도 막는다.
+    # 계층 요약 시간 예산이 표지 몫을 남겨 둘지 가르는 데도 쓰므로 먼저 정한다.
+    make_cover = not ctx.params.get("skip_cover") and doc_type != "paper"
+
+    reduce_stats = ReduceStats()
+
     async def _generate_texts() -> dict:
-        # 계층 요약 입력을 한 번 만들어 넷이 같이 쓴다. 만들다 실패하면 None — 각 생성 함수가
-        # 지금처럼 _combine_sections(균등 샘플링)로 합친다.
+        # 계층 요약 입력을 한 번 만들어 넷이 같이 쓴다. 시간 예산 안에 못 끝내거나 실패하면 None — 각 생성
+        # 함수가 지금처럼 _combine_sections(균등 샘플링)로 합친다. 어느 쪽이든 마무리는 이어서 끝난다.
+        final_timeouts = [cfg.SUMMARIZER_BOOK_TIMEOUT, cfg.SUMMARIZER_INTRO_TIMEOUT]
+        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
+            final_timeouts += [cfg.SUMMARIZER_PLOT_TIMEOUT, cfg.SUMMARIZER_READ_EFFECT_TIMEOUT]
+        budget = _reduce_budget_seconds(max(final_timeouts), make_cover)
         try:
-            combined = await reduce_section_summaries(title, author, valid_summaries, doc_type)
+            combined = await asyncio.wait_for(
+                reduce_section_summaries(title, author, valid_summaries, doc_type, stats=reduce_stats),
+                timeout=budget,
+            )
+        except asyncio.TimeoutError:
+            log.warning(f"[{book_id}] 계층 요약이 시간 예산 {budget:g}초 안에 끝나지 않아 중단 — "
+                        f"균등 샘플링 입력으로 진행 (단계 {reduce_stats.levels}, 묶음 {reduce_stats.groups})")
+            reduce_stats.fallback = True
+            combined = None
         except Exception as e:
-            log.warning(f"[{book_id}] 계층 요약 실패 — 균등 샘플링 입력으로 진행: {e}")
+            log.warning(f"[{book_id}] 계층 요약 실패 — 균등 샘플링 입력으로 진행: "
+                        f"{str(e) or type(e).__name__}")
+            reduce_stats.fallback = True
             combined = None
         calls = {
             "summary": summarize_book_from_sections(
@@ -890,7 +937,8 @@ def run_finalize(ctx: StageContext) -> dict:
         texts = run_async(_generate_texts())
         for key, value in texts.items():
             if isinstance(value, BaseException):
-                log.warning(f"[{book_id}] {_FAILURE_LABELS[key]} 생성 실패: {value}")
+                log.warning(f"[{book_id}] {_FAILURE_LABELS[key]} 생성 실패: "
+                            f"{str(value) or type(value).__name__}")
                 texts[key] = None
         if texts["summary"] is not None:
             book_summary, themes_list = texts["summary"]
@@ -899,11 +947,9 @@ def run_finalize(ctx: StageContext) -> dict:
         book_plot = texts.get("plot")
         book_read_effect = texts.get("read_effect")
 
-    # 표지 생성 — skip_cover=true 이거나 논문이면 생략한다(썸네일 폴백 사용).
-    # 논문은 표지를 만들지 않는다(사용자 결정 2026-10-01): 잡 params 에 skip_cover 가 빠져도
-    # 논문마다 표지 프롬프트 LLM(+FLUX)을 부르지 않도록 doc_type 으로도 막는다.
+    # 표지 생성 — make_cover(위에서 정한다)인 문서만
     cover_key = cover_prompt = None
-    if not ctx.params.get("skip_cover") and doc_type != "paper":
+    if make_cover:
         try:
             from services.ingestion.cover_generator import generate_and_store_cover
 
@@ -965,6 +1011,13 @@ def run_finalize(ctx: StageContext) -> dict:
         "read_effect": bool(book_read_effect),
         "introduction": bool(book_introduction),
         "cover": bool(cover_key),
+        # 계층 요약 실행 기록 — 카나리에서 섹션이 많은 문서가 계층 요약을 탔는지 meta 로 센다. 섹션 요약이 없어
+        # 계층 요약을 안 불러도 0·0·False 로 늘 싣는다(재처리 때 이전 실행의 값이 남지 않게).
+        # reduce_levels: 시작한 중간 요약 단계 수(0 = 상한 이하라 합치기만), reduce_groups: 묶음 수(단계 합),
+        # reduce_fallback: 실패·시간 예산 초과로 균등 샘플링 입력을 썼는가
+        "reduce_levels": reduce_stats.levels,
+        "reduce_groups": reduce_stats.groups,
+        "reduce_fallback": reduce_stats.fallback,
     }
 
 
