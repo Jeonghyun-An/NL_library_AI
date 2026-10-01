@@ -234,6 +234,9 @@ def retry_items(
             "error_group": None,
             "last_error": None,
             "attempt": 0,
+            # 실행 토큰을 지운다 — 옛 체인의 남은 메시지(재전달·큐 대기)가 디스패처가 새 토큰을 적기 전에
+            # 같은 토큰으로 통과해 pending 으로 되돌린 아이템을 돌리지 못하게 한다(워커가 토큰 불일치로 멈춘다)
+            "meta": IngestJobItem.meta.delete_path(["run_token"]),
         }
         if reset_stage:
             update_vals["stage"] = reset_stage

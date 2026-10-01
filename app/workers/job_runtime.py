@@ -20,6 +20,7 @@ job_runtime.py — 배치 잡 레이어 (단계 태스크 + 디스패처 + stale
     (stale 복구 전의 옛 체인·재전달 메시지가 같은 아이템을 다시 돌지 못하게 — 함정 16)
 """
 import datetime as _dt
+import functools
 import logging
 import os
 import time
@@ -431,18 +432,33 @@ def _recover_stale(db, job) -> int:
     return recovered
 
 
-def _retry_backoff_steps() -> list[int]:
-    """INGEST_RETRY_BACKOFF_SECONDS("120,600") → [120, 600]. 정수가 아닌 칸은 경고하고 건너뛴다."""
+@functools.lru_cache(maxsize=16)
+def _parse_retry_backoff(schedule: str) -> tuple[int, ...]:
+    """"120,600" → (120, 600). 정수가 아닌 칸은 건너뛰고 경고한다.
+
+    디스패처가 30초마다 읽으므로 lru_cache 로 같은 설정 문자열은 한 번만 해석하고 경고한다
+    (llm_client._parse_backoff_schedule 과 같은 방식). 빈 칸(끝 쉼표·빈 설정)은 조용히 건너뛴다.
+    """
     steps: list[int] = []
-    for part in str(cfg.INGEST_RETRY_BACKOFF_SECONDS or "").split(","):
+    skipped: list[str] = []
+    for part in schedule.split(","):
         part = part.strip()
         if not part:
             continue
         try:
             steps.append(max(0, int(part)))
         except ValueError:
-            log.warning(f"INGEST_RETRY_BACKOFF_SECONDS 의 '{part}' 는 초(정수)가 아니다 — 건너뜀")
-    return steps
+            skipped.append(part)
+    if skipped:
+        log.warning(
+            f"INGEST_RETRY_BACKOFF_SECONDS={schedule!r} — 초(정수)가 아닌 칸 {skipped} 은 건너뜀"
+        )
+    return tuple(steps)
+
+
+def _retry_backoff_steps() -> list[int]:
+    """INGEST_RETRY_BACKOFF_SECONDS("120,600") → [120, 600]. 칸 해석·경고는 _parse_retry_backoff."""
+    return list(_parse_retry_backoff(str(cfg.INGEST_RETRY_BACKOFF_SECONDS or "")))
 
 
 def _retry_ready(now: _dt.datetime):

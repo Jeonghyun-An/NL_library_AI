@@ -774,6 +774,30 @@ class TestRetryPolicy:
 
         assert env.dispatch() == 1
 
+    def test_bad_backoff_setting_warns_once_per_string(self, env, monkeypatch, caplog):
+        # 디스패처가 30초마다 이 값을 읽는다 — 잘못된 칸 경고가 틱마다 쏟아지면 안 된다
+        # (llm_client 의 백오프 파서와 같은 방식: 같은 설정 문자열은 한 번만 해석하고 경고한다)
+        monkeypatch.setattr(env.rt.cfg, "INGEST_RETRY_BACKOFF_SECONDS", "30,x,90")
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            for _ in range(3):
+                env.dispatch()
+            monkeypatch.setattr(env.rt.cfg, "INGEST_RETRY_BACKOFF_SECONDS", "5,y,z")
+            env.dispatch()
+
+        warned = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warned) == 2   # 같은 설정 문자열은 한 번, 다른 문자열은 따로
+        assert "'30,x,90'" in warned[0] and "'x'" in warned[0]
+        assert "'5,y,z'" in warned[1] and "'y'" in warned[1] and "'z'" in warned[1]
+
+    @pytest.mark.parametrize("raw", ["120,600", "", "120,600,", " 30 "])
+    def test_valid_backoff_settings_log_nothing(self, env, monkeypatch, caplog, raw):
+        monkeypatch.setattr(env.rt.cfg, "INGEST_RETRY_BACKOFF_SECONDS", raw)
+
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            env.rt._retry_backoff_steps()
+
+        assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
+
 
 # ── stale 판정: 실행 중 vs 다음 단계 대기 ────────────────────────────────
 class TestRecoverStale:
@@ -878,6 +902,65 @@ class TestRecoverStale:
         with env.Session() as s:
             assert env.rt._recover_stale(s, s.get(IngestJob, env.job_id)) == 0
             assert not s.in_transaction()
+
+
+# ── 수동 retry: 실행 토큰을 지운다 ───────────────────────────────────────
+class TestManualRetryDropsToken:
+    """수동 retry 는 아이템을 pending 으로 되돌린다. meta.run_token 을 그대로 두면 옛 체인의 남은 메시지
+    (재전달·큐 대기)가 디스패처가 새 토큰을 적기 전에 같은 토큰으로 _skip_reason 을 통과해 pending
+    아이템을 돌린다. 토큰을 지우면 그 메시지는 토큰 불일치로 멈춘다."""
+
+    def test_retry_update_removes_run_token_from_meta(self, monkeypatch):
+        # JSONB 키 삭제(#-)는 SQLite 가 모르므로, retry_items 가 내는 UPDATE 값을 PostgreSQL 로 컴파일해 본다
+        import db.postgres as pg
+        from services.ingestion.job_manager import retry_items
+
+        sink: dict = {}
+
+        class _Query:
+            def filter(self, *a, **kw):
+                return self
+
+            def update(self, values, **kw):
+                sink["values"] = dict(values)
+                return 2
+
+            def first(self):
+                return None
+
+        class _Session:
+            def query(self, model):
+                return _Query()
+
+            def commit(self):
+                pass
+
+            def rollback(self):
+                pass
+
+            def close(self):
+                pass
+
+        monkeypatch.setattr(pg, "SyncSessionLocal", lambda: _Session())
+
+        assert retry_items("job-1", item_ids=[1, 2]) == 2
+
+        values = sink["values"]
+        assert values["status"] == "pending" and values["attempt"] == 0
+        stmt = sa.update(IngestJobItem.__table__).values(**values)
+        compiled = stmt.compile(dialect=postgresql.dialect())
+        assert "ingest_job_items.meta #- " in str(compiled)
+        assert "run_token" in compiled.params.values()
+
+    def test_old_chain_message_stops_once_the_token_is_dropped(self, env):
+        # retry 가 meta 에서 run_token 을 뺀 아이템(pending) — 옛 체인의 남은 메시지는 토큰 불일치로 멈춘다
+        env.add_item(1, stage="extracted", status="pending", meta={"pages": 4})
+        before = _snapshot(env.item(1))
+
+        with pytest.raises(env.rt.Ignore):
+            env.rt._run_stage("summarize", 1, "celery-old", "old-token")
+
+        assert env.calls == [] and _snapshot(env.item(1)) == before
 
     def test_requeued_item_with_leftover_stage_running_is_not_execution(self, env):
         # 단계 도중 워커가 죽어 stale 복구된 아이템은 meta.stage_running 이 남은 채 다시 dispatched 가
