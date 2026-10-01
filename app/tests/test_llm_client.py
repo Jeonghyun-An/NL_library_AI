@@ -3,7 +3,7 @@
 실제 LLM 은 부르지 않는다. llm_client 가 만드는 httpx.AsyncClient 에 MockTransport 를
 끼워 응답(또는 예외)을 순서대로 돌려주고, asyncio.sleep 을 기록용 가짜로 바꿔 백오프
 간격을 실제로 기다리지 않고 확인한다. 시간은 가짜 시계(llm_client._monotonic)로 고정해
-기다린 시간(sleeps)과 요청이 쓴 시간(Took)만큼만 흐르게 한다 — 재시도가 호출자의
+기다린 시간(sleeps)과 요청이 쓴 시간(Took, Stall)만큼만 흐르게 한다 — 재시도가 호출자의
 timeout 안에 들어가는지를 초 단위로 정확히 확인하려는 것이다.
 """
 import asyncio
@@ -31,6 +31,13 @@ class Took:
     outcome: httpx.Response | Exception
 
 
+@dataclass
+class Stall:
+    """server.queue 항목 — 연결이 붙지 않거나('connect') 응답이 오지 않는('read') 장애. 그 요청의 httpx
+    timeout 중 해당 칸만큼 가짜 시계를 흘린 뒤 그 칸의 타임아웃 예외를 낸다 — httpx 가 끊는 시점 그대로다."""
+    phase: str
+
+
 @pytest.fixture
 def clock(monkeypatch):
     """llm_client 의 시계(_monotonic)를 고정한다. 시간은 sleeps 의 대기와 Took 항목만 흘린다."""
@@ -55,7 +62,7 @@ def cfg(monkeypatch):
 def server(monkeypatch, clock):
     """queue 에 넣은 응답·예외를 요청마다 하나씩 꺼낸다.
 
-    calls 에 (url, body), timeouts 에 시도마다 httpx 클라이언트에 준 timeout 을 쌓는다.
+    calls 에 (url, body), timeouts 에 시도마다 httpx 클라이언트에 준 timeout(httpx.Timeout)을 쌓는다.
     """
     state = SimpleNamespace(queue=[], calls=[], timeouts=[])
 
@@ -65,6 +72,9 @@ def server(monkeypatch, clock):
         if isinstance(item, Took):
             clock.now += item.seconds
             item = item.outcome
+        if isinstance(item, Stall):
+            clock.now += request.extensions["timeout"][item.phase]
+            item = {"connect": httpx.ConnectTimeout, "read": httpx.ReadTimeout}[item.phase](f"{item.phase} 시간 초과")
         if isinstance(item, Exception):
             raise item
         return item
@@ -213,6 +223,14 @@ def test_other_4xx_raise_immediately(cfg, server, sleeps, status):
     assert sleeps == []
 
 
+_GIVE_UP_WORDS = ("시도 횟수 소진", "남은 시간 부족")
+
+
+def _give_up_reasons(record) -> set[str]:
+    """로그가 밝힌, 더 시도하지 않는 까닭."""
+    return {w for w in _GIVE_UP_WORDS if w in record.getMessage()}
+
+
 def test_retried_status_errors_warn_and_only_the_final_failure_is_error(cfg, server, sleeps, caplog):
     server.queue.extend([httpx.Response(503, text="busy") for _ in range(3)])
 
@@ -223,6 +241,43 @@ def test_retried_status_errors_warn_and_only_the_final_failure_is_error(cfg, ser
     records = [r for r in caplog.records if r.name == llm_client.log.name]
     assert [r.levelno for r in records] == [logging.WARNING, logging.WARNING, logging.ERROR]
     assert "1/3" in records[0].getMessage() and "3/3" in records[2].getMessage()
+
+
+@pytest.mark.parametrize("queue, timeout, reason", [
+    (lambda: [httpx.Response(503, text="busy") for _ in range(3)], 120.0, "시도 횟수 소진"),
+    # 두 번째 백오프(8초) + 1초를 기다릴 시간이 없다 — 시도는 남았지만 멈춘다
+    (lambda: [httpx.Response(503, text="첫째"), httpx.Response(503, text="둘째")], 10.0, "남은 시간 부족"),
+], ids=["attempts", "deadline"])
+def test_final_retryable_status_says_why_it_stopped(cfg, server, sleeps, caplog, queue, timeout, reason):
+    server.queue.extend(queue())
+
+    with caplog.at_level(logging.WARNING, logger=llm_client.log.name):
+        with pytest.raises(httpx.HTTPStatusError):
+            asyncio.run(llm_client.chat_full(MESSAGES, timeout=timeout))
+
+    records = [r for r in caplog.records if r.name == llm_client.log.name]
+    assert records[-1].levelno == logging.ERROR and _give_up_reasons(records[-1]) == {reason}
+    assert all(r.levelno == logging.WARNING and not _give_up_reasons(r) for r in records[:-1])
+
+
+@pytest.mark.parametrize("queue, timeout, levels, reason", [
+    (lambda: [httpx.ConnectError("1"), httpx.ReadError(""), httpx.ConnectError("3")], 120.0,
+     [logging.WARNING, logging.WARNING, logging.ERROR], "시도 횟수 소진"),
+    # 응답 없이 timeout 을 다 썼다 — 시도는 남았지만 다음 시도가 deadline 안에 들지 못한다
+    (lambda: [Stall("read")], 120.0, [logging.ERROR], "남은 시간 부족"),
+], ids=["attempts", "deadline"])
+def test_final_network_failure_is_error_with_the_reason(cfg, server, sleeps, caplog, queue, timeout, levels, reason):
+    """다시 보낼 네트워크 실패는 경고, 여기서 끝나는 실패만 error — 왜 멈췄는지(횟수·시간)를 남긴다."""
+    server.queue.extend(queue())
+
+    with caplog.at_level(logging.WARNING, logger=llm_client.log.name):
+        with pytest.raises(httpx.TransportError):
+            asyncio.run(llm_client.chat_full(MESSAGES, timeout=timeout))
+
+    records = [r for r in caplog.records if r.name == llm_client.log.name]
+    assert [r.levelno for r in records] == levels
+    assert _give_up_reasons(records[-1]) == {reason}
+    assert not any(_give_up_reasons(r) for r in records[:-1])
 
 
 def test_status_error_that_recovers_logs_no_error(cfg, server, sleeps, caplog):
@@ -245,6 +300,7 @@ def test_non_retryable_status_is_logged_as_error(cfg, server, sleeps, caplog):
 
     records = [r for r in caplog.records if r.name == llm_client.log.name]
     assert [r.levelno for r in records] == [logging.ERROR]
+    assert not _give_up_reasons(records[0])          # 재시도 대상이 아니다 — 횟수·시간 때문에 멈춘 것이 아니다
 
 
 def test_backoff_repeats_last_value_when_schedule_is_short(cfg, server, sleeps, monkeypatch):
@@ -267,19 +323,59 @@ def test_single_attempt_means_no_retry(cfg, server, sleeps, monkeypatch):
 
 
 # ── 재시도 전체가 호출자의 timeout 안에 들어간다 ────────────────────────────────
-# deadline = 시작 + timeout. 시도마다 httpx timeout 은 min(timeout, 남은 시간)이고, 실패 뒤
-# 남은 시간 <= 다음 백오프 + 1초이면 재시도하지 않고 마지막 예외를 그대로 올린다.
+# deadline = 시작 + timeout. 시도마다 httpx 의 읽기·쓰기·풀 timeout 은 남은 시간, 연결 timeout 은
+# min(10초, 남은 시간)이고, 실패 뒤 남은 시간 <= 다음 백오프 + 1초이면 재시도하지 않고 마지막 예외를
+# 그대로 올린다.
 
-def test_read_timeout_that_uses_the_whole_timeout_is_not_retried(cfg, server, sleeps):
+def test_read_timeout_that_uses_the_whole_timeout_is_not_retried(cfg, server, sleeps, clock):
     """응답 없이 붙잡는 장애는 예전처럼 timeout 한 번으로 끝난다 — 재시도로 지연이 3배가 되지 않는다."""
-    server.queue.append(Took(120.0, httpx.ReadTimeout("응답 없음")))
+    server.queue.append(Stall("read"))
 
     with pytest.raises(httpx.ReadTimeout):
         asyncio.run(llm_client.chat_full(MESSAGES, timeout=120.0))
 
     assert len(server.calls) == 1
     assert sleeps == []
-    assert server.timeouts == [120.0]
+    assert server.timeouts == [httpx.Timeout(120.0, connect=10.0)]
+    assert clock.now == 1000.0 + 120.0                   # 읽기 timeout 은 남은 시간 전부였다
+
+
+def test_connect_stall_fails_fast_and_is_retried_within_the_deadline(cfg, server, sleeps, clock):
+    """연결이 붙지 않는 장애(vLLM 재기동 중)는 10초에서 끊고 남은 시간 안에서 다시 보낸다 — 연결 timeout 이
+    남은 시간 전부면 연결 시도 한 번이 timeout 을 다 써 재시도할 시간이 남지 않는다."""
+    server.queue.extend([Stall("connect"), _ok("회복")])
+
+    result = asyncio.run(llm_client.chat_full(MESSAGES, timeout=120.0))
+
+    assert result.content == "회복"
+    assert len(server.calls) == 2 and sleeps == [2.0]
+    # 10초 끊김 → 2초 쉼 → 시작 후 12초에 두 번째 시도
+    assert server.timeouts == [httpx.Timeout(120.0, connect=10.0), httpx.Timeout(108.0, connect=10.0)]
+    assert clock.now == 1000.0 + 12.0
+
+
+def test_connect_stalls_are_retried_until_the_attempts_run_out(cfg, server, sleeps):
+    server.queue.extend([Stall("connect"), Stall("connect"), Stall("connect")])
+
+    with pytest.raises(httpx.ConnectTimeout):
+        asyncio.run(llm_client.chat_full(MESSAGES, timeout=120.0))
+
+    assert len(server.calls) == 3 and sleeps == [2.0, 8.0]
+
+
+@pytest.mark.parametrize("style, response", [
+    ("openai", lambda: _ok()),
+    ("ollama", lambda: httpx.Response(200, json={"message": {"content": "응답"}, "done": True})),
+])
+def test_client_connect_timeout_is_ten_seconds_at_most(cfg, server, sleeps, monkeypatch, style, response):
+    monkeypatch.setattr(cfg, "LLM_API_STYLE", style)
+    server.queue.extend([response(), response()])
+
+    asyncio.run(llm_client.chat_full(MESSAGES, timeout=120.0))
+    asyncio.run(llm_client.chat_full(MESSAGES, timeout=5.0))
+
+    # 남은 시간이 10초보다 짧으면 연결 timeout 도 남은 시간
+    assert server.timeouts == [httpx.Timeout(120.0, connect=10.0), httpx.Timeout(5.0, connect=5.0)]
 
 
 def test_fast_failures_are_retried_inside_the_time_budget(cfg, server, sleeps):
@@ -305,7 +401,9 @@ def test_each_attempt_timeout_shrinks_to_the_remaining_time(cfg, server, sleeps)
 
     asyncio.run(llm_client.chat_full(MESSAGES, timeout=20.0))
 
-    assert server.timeouts == [20.0, 13.0, 4.0]          # 20 - 0, 20 - 7, 20 - 16
+    assert server.timeouts == [                          # 20 - 0, 20 - 7, 20 - 16 (연결은 10초까지)
+        httpx.Timeout(20.0, connect=10.0), httpx.Timeout(13.0, connect=10.0), httpx.Timeout(4.0, connect=4.0),
+    ]
     assert sleeps == [2.0, 8.0]
 
 
@@ -319,7 +417,7 @@ def test_stops_when_remaining_time_cannot_cover_the_next_backoff(cfg, server, sl
     assert exc.value.response.text == "둘째"
     assert len(server.calls) == 2                        # 세 번째 시도는 없다
     assert sleeps == [2.0]
-    assert server.timeouts == [10.0, 8.0]
+    assert server.timeouts == [httpx.Timeout(10.0, connect=10.0), httpx.Timeout(8.0, connect=8.0)]
 
 
 def test_retries_when_remaining_is_more_than_backoff_plus_one_second(cfg, server, sleeps):
@@ -329,7 +427,7 @@ def test_retries_when_remaining_is_more_than_backoff_plus_one_second(cfg, server
 
     assert result.content == "회복"
     assert sleeps == [2.0]
-    assert server.timeouts == [16.0, 1.5]
+    assert server.timeouts == [httpx.Timeout(16.0, connect=10.0), httpx.Timeout(1.5, connect=1.5)]
 
 
 def test_does_not_retry_when_remaining_equals_backoff_plus_one_second(cfg, server, sleeps):
