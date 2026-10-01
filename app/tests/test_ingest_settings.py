@@ -6,6 +6,7 @@ config 와 x-common-env 양쪽에 같은 기본값으로 있어야 한다.
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 COMPOSE = Path(__file__).resolve().parents[2] / "docker-compose.yml"
@@ -40,10 +41,23 @@ def _compose() -> dict:
 
 
 def _queues(command) -> set[str]:
-    if not isinstance(command, str):
+    """compose command 가 celery 워커로 받는 큐 — 문자열·리스트(sh -c "…" 포함) 명령,
+    -Q a,b · -Qa,b · --queues a,b · --queues=a,b."""
+    if isinstance(command, str):
+        args = command.split()
+    elif isinstance(command, list):
+        args = [token for part in command for token in str(part).split()]
+    else:
         return set()
-    args = command.split()
-    return set(args[args.index("-Q") + 1].split(",")) if "-Q" in args else set()
+    names: list[str] = []
+    for i, arg in enumerate(args):
+        if arg in ("-Q", "--queues"):
+            names += args[i + 1].split(",") if i + 1 < len(args) else []
+        elif arg.startswith("--queues="):
+            names += arg.split("=", 1)[1].split(",")
+        elif arg.startswith("-Q"):
+            names += arg[2:].split(",")
+    return {name for name in names if name}
 
 
 def test_round07_settings_have_contract_defaults(monkeypatch):
@@ -81,6 +95,18 @@ def test_control_worker_takes_q_control_without_gpu():
     assert ctl["volumes"] == ["/data/nl-lib/data:/app/data:rw"]
     assert ctl["environment"]["PYTHONPATH"] == "/app"
     assert ctl["environment"]["DB_HOST"] == "postgres"  # x-common-env 를 물고 있다
+    # 다른 celery 워커와 같다 — 죽은 채 남으면 디스패치·stale 복구·정리가 모두 멈춘다
+    assert ctl["restart"] == cpu["restart"] == "unless-stopped"
+
+
+def test_no_page_image_area_setting():
+    # 쪽 단위 이미지 면적 규칙은 두지 않는다 — 디지털 논문의 이미지 표지·간지를 다시 VLM 으로 보낸다.
+    # 스캔본 판정은 문서 단위(SCAN_*)뿐이다
+    from core.config import Settings
+
+    assert "SCAN_IMAGE_AREA_RATIO" not in Settings.model_fields
+    assert not hasattr(Settings, "SCAN_IMAGE_AREA_RATIO")
+    assert "SCAN_IMAGE_AREA_RATIO" not in _compose()["x-common-env"]
 
 
 def test_q_control_has_a_single_consumer():
@@ -88,3 +114,20 @@ def test_q_control_has_a_single_consumer():
     consumers = [name for name, svc in services.items() if "q_control" in _queues(svc.get("command"))]
     assert consumers == ["celery-control"]
     assert _queues(services["celery-cpu"]["command"]) == {"q_cpu"}
+
+
+@pytest.mark.parametrize("command, expected", [
+    ("celery -A workers.celery_app worker -Q q_cpu,q_control", {"q_cpu", "q_control"}),
+    (["celery", "-A", "workers.celery_app", "worker", "-Q", "q_control"], {"q_control"}),
+    ("celery -A workers.celery_app worker --queues=q_llm,q_control", {"q_llm", "q_control"}),
+    ("celery -A workers.celery_app worker --queues q_control", {"q_control"}),
+    (["celery", "worker", "--queues=q_control"], {"q_control"}),
+    (["sh", "-c", "celery -A workers.celery_app worker -Q q_control"], {"q_control"}),
+    ("celery -A workers.celery_app worker -Qq_control", {"q_control"}),
+    ("celery -A workers.celery_app beat --loglevel=info", set()),
+    (["milvus", "run", "standalone"], set()),
+    (None, set()),
+])
+def test_queues_reads_every_command_form(command, expected):
+    # 다른 서비스가 q_control 을 문자열·리스트 명령이나 긴 옵션으로 받아도 위 단일 소비자 검사가 잡는다
+    assert _queues(command) == expected
