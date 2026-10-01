@@ -22,8 +22,10 @@ extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
 - extract_text_fitz_all()         : 모든 페이지 fitz로만
 - extract_text_vlm_all()          : 모든 페이지 VLM으로만
 """
+import asyncio
 import io
 import logging
+import time
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -103,6 +105,16 @@ def _strip_figure_markers(text: str) -> str:
     return text.strip()
 
 
+def _adopt_odl(odl_page: "PageResult") -> "PageResult":
+    """ODL 결과를 그 쪽의 최종 결과로 쓴다 — 남은 [그림] 마커를 지우고 <br> 연속을 다시 줄인다.
+
+    본문 채택·원래 짧은 쪽뿐 아니라 OCR 결과가 없는 쪽(VLM 쪽수 상한·요청 실패·퇴화 출력·렌더링 실패·
+    데드라인)도 이 길로 채택한다.
+    """
+    odl_page.text = _strip_figure_markers(odl_page.text)
+    return odl_page
+
+
 @dataclass
 class PageResult:
     page_num: int
@@ -133,6 +145,11 @@ class ExtractionResult:
     # 페이지별 표 셀 충전율(있는 페이지만) — 마크다운 평탄화로 사라지는 "셀 비었음"
     # 정보를 JSON 산출물에서 복원해 라우팅 판정에 쓴다. 0에 가까울수록 빈 격자.
     table_fill_ratios: dict[int, float] = field(default_factory=dict)
+    vlm_truncated: int = 0      # finish_reason=length 로 끝난 OCR 쪽 수(꼬리를 걷어 냈거나 퇴화로 버림)
+    deadline_hit: bool = False  # 추출 데드라인에 걸려 OCR 을 끝내지 못한 쪽을 ODL 결과로 채택했다
+    # VLM 요청 실패 수(연결·타임아웃·HTTP 오류 등 다시 하면 달라질 수 있는 것) — 퇴화 출력·렌더링 실패는 세지 않는다
+    ocr_errors: int = 0
+    render_errors: int = 0      # 쪽 이미지 렌더링 실패 수(fitz get_pixmap 예외 — 다시 해도 같다)
 
     @property
     def full_text(self) -> str:
@@ -223,10 +240,27 @@ class VlmDegenerateOutput(Exception):
     """VLM 이 같은 구절을 되풀이하다 max_tokens 로 끝나, 꼬리를 걷어 내도 쓸 본문이 없다."""
 
 
+class PageRenderError(Exception):
+    """fitz 가 쪽 이미지를 만들지 못했다(get_pixmap 예외 — 예: FzErrorLimit). 다시 해도 같은 결정적 실패다."""
+
+
 def _render_png_b64(page: fitz.Page) -> str:
     import base64
 
-    return base64.b64encode(page.get_pixmap(dpi=cfg.FITZ_DPI).tobytes("png")).decode()
+    try:
+        png = page.get_pixmap(dpi=cfg.FITZ_DPI).tobytes("png")
+    except Exception as e:
+        raise PageRenderError(f"p.{page.number} 쪽 이미지 렌더링 실패: {e}") from e
+    return base64.b64encode(png).decode()
+
+
+async def _render_page(page: fitz.Page, render_lock: asyncio.Lock | None) -> str:
+    # PyMuPDF 는 다중 스레드를 지원하지 않아 렌더링은 이벤트 루프 스레드에서 한다. 잠금은 동시에
+    # 도는 OCR 코루틴이 한 번에 한 쪽만 렌더하도록 지키는 자리다 — 요청만 동시에 보낸다.
+    if render_lock is None:
+        return _render_png_b64(page)
+    async with render_lock:
+        return _render_png_b64(page)
 
 
 async def _extract_with_vlm(
@@ -234,8 +268,9 @@ async def _extract_with_vlm(
     client: httpx.AsyncClient,
     *,
     prompt_type: str = "ocr",  # "ocr" | "diagram"
+    render_lock: asyncio.Lock | None = None,
 ) -> PageResult:
-    img_b64 = _render_png_b64(page)
+    img_b64 = await _render_page(page, render_lock)
 
     prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
 
@@ -313,13 +348,15 @@ async def _extract_with_vlm(
 async def _extract_with_surya(
     page: fitz.Page,
     client: httpx.AsyncClient,
+    *,
+    render_lock: asyncio.Lock | None = None,
 ) -> PageResult:
     """Surya 전용 OCR 서비스(별도 컨테이너)로 페이지 이미지 → 텍스트.
 
     Surya는 transformers 5.x 의존이라 본 이미지(transformers 4.44)와 충돌 →
     별도 컨테이너로 격리하고 HTTP(/ocr, base64 PNG)로 호출한다.
     """
-    img_b64 = _render_png_b64(page)
+    img_b64 = await _render_page(page, render_lock)
 
     resp = await client.post(
         f"{cfg.SURYA_BASE_URL}/ocr",
@@ -337,21 +374,116 @@ async def _extract_with_surya(
     )
 
 
+async def _ocr_pages(
+    jobs: list[tuple[fitz.Page, PageResult | None, str]],
+    result: ExtractionResult,
+    book_id: str,
+    remaining: float,
+    deadline: float,
+) -> dict[int, PageResult]:
+    """OCR 이 필요한 쪽을 VLM_PAGE_CONCURRENCY 건씩 동시에 보내고 {쪽 번호: 채택 결과} 를 돌려준다.
+
+    렌더링은 잠금 안에서 한 쪽씩(이벤트 루프 스레드), 요청만 동시에 나간다. OCR 결과가 없는 쪽(요청 실패·
+    퇴화 출력·렌더링 실패·데드라인 초과)은 ODL 결과(있으면)를 채택 때처럼 다듬어 쓴다. remaining 초 안에
+    끝나지 않으면 남은 요청을 끊고 deadline_hit 를 남긴다.
+    """
+    if not jobs:
+        return {}
+    engine = cfg.OCR_ENGINE.lower()
+    ocr_done: dict[int, PageResult] = {}
+    finished: set[int] = set()  # OCR 시도가 끝난 쪽(성공·실패) — 데드라인에 걸린 쪽과 가른다
+    deadline_hit = remaining <= 0  # 1티어·판정에 시간을 다 썼으면 렌더링도 요청도 하지 않는다
+
+    if not deadline_hit:
+        # 0 이하 설정이면 세마포어가 막혀 데드라인까지 아무 쪽도 OCR 하지 못한다 — 최소 1건은 보낸다.
+        sem = asyncio.Semaphore(max(1, cfg.VLM_PAGE_CONCURRENCY))
+        render_lock = asyncio.Lock()
+
+        async with httpx.AsyncClient() as client:
+            async def _one(page: fitz.Page, trigger: str) -> None:
+                page_num = page.number
+                async with sem:
+                    log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={engine})")
+                    try:
+                        if engine == "surya":
+                            ocr_page = await _extract_with_surya(page, client, render_lock=render_lock)
+                        else:
+                            ocr_page = await _extract_with_vlm(
+                                page, client, prompt_type="ocr", render_lock=render_lock
+                            )
+                    except PageRenderError as e:
+                        # 다시 해도 같은 결정적 실패 — VLM 요청 실패(ocr_errors)와 따로 센다.
+                        log.warning(f"[{book_id}] {e} — ODL 결과 채택")
+                        result.errors.append(f"{e} — ODL 결과 채택")
+                        result.render_errors += 1
+                    except VlmDegenerateOutput as e:
+                        # 같은 쪽은 다시 해도 대개 같다 — ocr_errors 가 아니라 vlm_truncated 로만 센다.
+                        log.warning(f"[{book_id}] {e} — ODL 결과 채택")
+                        result.errors.append(f"{e} — ODL 결과 채택")
+                        result.vlm_truncated += 1
+                    except Exception as e:
+                        log.error(f"[{book_id}] p.{page_num} OCR({engine}) 실패: {e}")
+                        result.errors.append(f"p.{page_num} OCR({engine}): {e}")
+                        result.ocr_errors += 1
+                    else:
+                        if ocr_page.truncated:
+                            result.vlm_truncated += 1
+                        ocr_done[page_num] = ocr_page
+                    finished.add(page_num)
+
+            tasks = [asyncio.create_task(_one(page, trigger)) for page, _, trigger in jobs]
+            try:
+                # Celery 소프트 리밋은 코루틴 안에서 믿을 수 없다(함정 19) — 자체 데드라인으로 끊는다.
+                async with asyncio.timeout(remaining):
+                    await asyncio.gather(*tasks)
+            except TimeoutError:
+                deadline_hit = True
+            finally:
+                # 데드라인·바깥 취소·예기치 못한 예외 어느 쪽이든 남은 요청을 끊고 회수한 뒤 클라이언트를
+                # 닫는다. 바깥 취소의 CancelledError 는 잡지 않으므로 그대로 올라간다.
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+
+    if deadline_hit:
+        result.deadline_hit = True
+        left = sum(1 for page, _, _ in jobs if page.number not in finished)
+        log.warning(
+            f"[{book_id}] 추출 데드라인({deadline:g}s) 초과 — OCR 못 한 {left}쪽은 ODL 결과로 채택"
+        )
+        result.errors.append(f"추출 데드라인 초과 — {left}쪽 ODL 결과 채택")
+
+    adopted: dict[int, PageResult] = {}
+    for page, odl_page, _ in jobs:
+        if page.number in ocr_done:
+            adopted[page.number] = ocr_done[page.number]
+        elif odl_page is not None:  # OCR 결과가 없으면 ODL 결과라도 살리기
+            adopted[page.number] = _adopt_odl(odl_page)
+    return adopted
+
+
 async def extract_text(
     file_path: str | Path,
     book_id: str,
     *,
     file_bytes: bytes | None = None,
     force_ocr_short_pages: bool = False,
+    deadline_s: float | None = None,
 ) -> ExtractionResult:
     """2티어 라우팅 파이프라인.
 
     force_ocr_short_pages: ODL 본문이 짧은 쪽을 판정 없이 모두 OCR 한다(섹션 0개 재추출용).
+    deadline_s: 추출 전체 데드라인(초, 이 함수 시작부터). None 이면 INGEST_EXTRACT_DEADLINE —
+        섹션 0개 재추출은 첫 추출이 남긴 시간을 넘긴다.
 
     1티어: OpenDataLoader로 전체 PDF 마크다운+json 추출
     2티어: 본문 부족 / CMap 손상 의심 / 표 셀 충전율 낮음 중 하나라도 해당하는
-           페이지만 VLM 보완 (판단 기준은 파일 상단 docstring 참고)
+           페이지만 VLM 보완 (판단 기준은 파일 상단 docstring 참고). 판정은 쪽 순서대로 하고,
+           OCR 은 문서 안에서 VLM_PAGE_CONCURRENCY 건씩 동시에 보내 결과를 쪽 순서로 조립한다.
+           데드라인을 넘으면 OCR 을 끝내지 못한 쪽은 ODL 결과로 채택한다(deadline_hit).
     """
+    t_start = time.monotonic()
+    deadline = float(cfg.INGEST_EXTRACT_DEADLINE if deadline_s is None else deadline_s)
     result = ExtractionResult(book_id=book_id, total_pages=0)
 
     # ── 1티어: OpenDataLoader 전체 추출 ──────────────────
@@ -375,46 +507,47 @@ async def extract_text(
         result.total_pages = len(result.pages)
         return result
 
-    result.total_pages = len(doc)
-    log.info(
-        f"[{book_id}] {result.total_pages}p — 1티어 ODL 완료 "
-        f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
-    )
+    try:
+        result.total_pages = len(doc)
+        log.info(
+            f"[{book_id}] {result.total_pages}p — 1티어 ODL 완료 "
+            f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
+        )
 
-    # 문서 단위 스캔본 판정(short_flags)의 '짧은 쪽'만 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
-    # 뺀 fitz 길이로 센다. 쪽별 OCR 판정(CMap 손상 2배 비교·짧은 쪽 분기)은 예전처럼 원래 fitz 길이를 쓴다.
-    fitz_texts: list[str] = []
-    for p in doc:
-        try:
-            fitz_texts.append(_clean_text(p.get_text()))
-        except Exception as e:
-            # 쪽 하나의 파싱 실패('too many nested graphics states' 등)가 문서 전체 추출을 막지 않게 한다 —
-            # 그 쪽은 텍스트 층이 없는 쪽으로 보고(ODL 도 짧으면 OCR) 오류만 남긴다.
-            log.warning(f"[{book_id}] p.{p.number} fitz 텍스트 추출 실패(빈 쪽으로 처리): {e}")
-            result.errors.append(f"p.{p.number} fitz 텍스트 추출 실패: {e}")
-            fitz_texts.append("")
-    repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
-    fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]
-    fitz_stripped_lens = [
-        page_routing.body_len(page_routing.strip_lines(t, repeated)) for t in fitz_texts
-    ]
-    short_flags = [
-        page_routing.body_len(odl_pages_by_num[n].text if n in odl_pages_by_num else "")
-        < MIN_CHARS_PER_PAGE
-        and fitz_stripped_lens[n] < MIN_CHARS_PER_PAGE
-        for n in range(len(doc))
-    ]
-    doc_is_scan = page_routing.is_scan_document(
-        short_flags, min_pages=cfg.SCAN_MIN_PAGES, ratio=cfg.SCAN_SHORT_PAGE_RATIO
-    )
-    if doc_is_scan:
-        log.info(f"[{book_id}] 짧은 쪽 {sum(short_flags)}/{len(doc)} — 스캔본 문서로 보고 짧은 쪽을 OCR")
+        # 문서 단위 스캔본 판정(short_flags)의 '짧은 쪽'만 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
+        # 뺀 fitz 길이로 센다. 쪽별 OCR 판정(CMap 손상 2배 비교·짧은 쪽 분기)은 예전처럼 원래 fitz 길이를 쓴다.
+        fitz_texts: list[str] = []
+        for p in doc:
+            try:
+                fitz_texts.append(_clean_text(p.get_text()))
+            except Exception as e:
+                # 쪽 하나의 파싱 실패('too many nested graphics states' 등)가 문서 전체 추출을 막지 않게 한다 —
+                # 그 쪽은 텍스트 층이 없는 쪽으로 보고(ODL 도 짧으면 OCR) 오류만 남긴다.
+                log.warning(f"[{book_id}] p.{p.number} fitz 텍스트 추출 실패(빈 쪽으로 처리): {e}")
+                result.errors.append(f"p.{p.number} fitz 텍스트 추출 실패: {e}")
+                fitz_texts.append("")
+        repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
+        fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]
+        fitz_stripped_lens = [
+            page_routing.body_len(page_routing.strip_lines(t, repeated)) for t in fitz_texts
+        ]
+        short_flags = [
+            page_routing.body_len(odl_pages_by_num[n].text if n in odl_pages_by_num else "")
+            < MIN_CHARS_PER_PAGE
+            and fitz_stripped_lens[n] < MIN_CHARS_PER_PAGE
+            for n in range(len(doc))
+        ]
+        doc_is_scan = page_routing.is_scan_document(
+            short_flags, min_pages=cfg.SCAN_MIN_PAGES, ratio=cfg.SCAN_SHORT_PAGE_RATIO
+        )
+        if doc_is_scan:
+            log.info(f"[{book_id}] 짧은 쪽 {sum(short_flags)}/{len(doc)} — 스캔본 문서로 보고 짧은 쪽을 OCR")
 
-    vlm_pages_used = 0
-    vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
-    vlm_cap_hit = False
+        vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
+        # 판정은 쪽 순서대로 — ODL 결과를 쓰는 쪽은 adopted, OCR 할 쪽은 ocr_jobs 에 모아 아래에서 동시에 보낸다.
+        adopted: dict[int, PageResult] = {}
+        ocr_jobs: list[tuple[fitz.Page, PageResult | None, str]] = []
 
-    async with httpx.AsyncClient() as client:
         for page in doc:
             page_num = page.number
             odl_page = odl_pages_by_num.get(page_num)
@@ -455,8 +588,7 @@ async def extract_text(
                     if body_len >= MIN_CHARS_PER_PAGE:
                         if fitz_check_len <= body_len * 2:
                             # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
-                            odl_page.text = _strip_figure_markers(odl_page.text)
-                            result.pages.append(odl_page)
+                            adopted[page_num] = _adopt_odl(odl_page)
                             continue
                         trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
                     else:
@@ -472,40 +604,30 @@ async def extract_text(
                         )
                         if not need_ocr:
                             # 원래 짧은 쪽(표지·간지 등) — ODL 결과 그대로 채택.
-                            odl_page.text = _strip_figure_markers(odl_page.text)
-                            result.pages.append(odl_page)
+                            adopted[page_num] = _adopt_odl(odl_page)
                             continue
                         trigger = f"{why}(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
 
-            # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
-            # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
-            # (비어있거나 부실해도) 그대로 채택하고 남은 페이지는 VLM을 스킵한다.
-            if vlm_pages_used >= vlm_cap:
-                if not vlm_cap_hit:
-                    vlm_cap_hit = True
+            # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 잡 전체를 지연시키는 것을
+            # 방지. 초과분은 ODL 결과(비어있거나 부실해도) 그대로 채택하고 VLM은 스킵한다.
+            # 실패해도 호출 시도 자체가 시간을 소모하므로 OCR 로 보낸 쪽은 모두 상한에 넣는다.
+            if len(ocr_jobs) >= vlm_cap:
+                if not result.vlm_capped:
                     result.vlm_capped = True
                     log.warning(f"[{book_id}] VLM 페이지 상한({vlm_cap}) 도달 — 이후 저텍스트 페이지는 ODL로 대체")
                 if odl_page:
-                    result.pages.append(odl_page)
+                    adopted[page_num] = _adopt_odl(odl_page)
                 continue
-
             # 2티어: 1티어 결과를 못 믿는 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
-            ocr_engine = cfg.OCR_ENGINE.lower()
-            vlm_pages_used += 1  # 실패해도 호출 시도 자체가 시간을 소모하므로 상한에 포함
-            try:
-                log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={ocr_engine})")
-                if ocr_engine == "surya":
-                    ocr_page = await _extract_with_surya(page, client)
-                else:
-                    ocr_page = await _extract_with_vlm(page, client, prompt_type="ocr")
-                result.pages.append(ocr_page)
-            except Exception as e:
-                log.error(f"[{book_id}] p.{page_num} OCR({ocr_engine}) 실패: {e}")
-                result.errors.append(f"p.{page_num} OCR({ocr_engine}): {e}")
-                if odl_page:  # OCR 실패 시 ODL 결과라도 살리기
-                    result.pages.append(odl_page)
+            ocr_jobs.append((page, odl_page, trigger))
 
-    doc.close()
+        remaining = deadline - (time.monotonic() - t_start)
+        adopted.update(await _ocr_pages(ocr_jobs, result, book_id, remaining, deadline))
+    finally:
+        doc.close()
+
+    # 결과는 쪽 순서로 조립한다(OCR 은 끝나는 순서가 뒤섞인다).
+    result.pages = [adopted[n] for n in range(result.total_pages) if n in adopted]
 
     # 페이지 번호 매핑 생성 (full_text와 동일하게 빈 페이지 제외)
     cursor = 0
