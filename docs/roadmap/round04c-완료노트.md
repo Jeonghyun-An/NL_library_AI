@@ -4,10 +4,10 @@
 브랜치: `feat/round04c-research-quality` (round04b 브랜치 끝 `d845b8b` 에서 땄다 · 커밋 42개 · `dev` 머지 `3dfeb45`)
 spec: `docs/superpowers/specs/2026-09-29-round04c-research-quality-design.md` (§1~10 A·B·C·G, §11 보완)
 plan: `docs/superpowers/plans/2026-09-29-round04c-research-quality.md`(A·B·C·G, Task 1~12) · `docs/superpowers/plans/2026-09-29-round04c-safeguards.md`(§11 보완, Task 1~8)
-교본: `docs/guides/round04c/` — 이 노트를 쓴 시점(2026-10-01)에는 아직 없다
+교본: `docs/guides/round04c/` (4챕터 — [00-개요](../guides/round04c/00-개요.md), `0d37a9a`)
 
-> 운영 배포 뒤 첫 잡 결과까지 담아 `dev` 머지(`3dfeb45`) 뒤에 썼다. `dev→main` 머지와 push 는 아직이다.
-> 한 줄 요약: **수치는 합격선이지만 보고서의 질 문제가 남았다**(§4). 계획은 여전히 일반 틀이고, 무관 제외는 주제에 맞는 논문까지 빼면서 정작 무관한 논문은 남겼다. 다음 과제는 §8.
+> 운영 배포 뒤 첫 잡 결과까지 담아 `dev` 머지(`3dfeb45`) 뒤에 썼고, 교본 커밋(`0d37a9a`)과 마감 문서 검토를 반영해 같은 날 갱신했다. `dev→main` 머지와 push 는 아직이다.
+> 한 줄 요약: **수치는 합격선이지만 보고서의 질 문제가 남았다**(§4). 계획은 여전히 일반 틀이고, 무관 제외는 주제에 맞는 논문까지 빼면서 정작 무관한 논문은 남겼다. 다음 과제는 §10.
 
 ---
 
@@ -32,10 +32,10 @@ round04b 운영 검증 잡 "컴퓨팅 자원에 대한 연구가 궁금해"(2026
 | **B** 무관한 근거 걸러내기 | critic 목록에 `[1]` 부터 번호를 붙인다(상위 `_MAX_LISTED` = 20편). 응답 JSON 의 `off_topic` 은 보인 목록 안의 번호만 받는다. 판정을 못 읽으면 비운다. 러너는 가리킨 근거를 그 하위질문에서 빼고, 다른 하위질문이 쓰지 않으면 풀에서도 지운다. 뺀 논문은 `excluded_cnts` 에 남겨 같은 하위질문에 다시 들이지 않는다. 근거 번호는 개수가 아니라 늘리기만 하는 `evidence_seq` 로 매긴다(지운 뒤 번호 겹침 방지). 보인 근거를 모두 빼면서 "충분"이라고 한 답은 부족으로 읽어 다시 찾는다. note 에 남은 목록 번호는 논문 제목(「…」)으로 바꾼다. 타임라인 회차 줄과 문서 부록에 "무관 N편 제외"를 보인다 | `critic.py`·`runner.py`·`state.py`·`research_critique.yaml`·`ProgressPanel.vue`·`researchEvents.ts`·`reportDocument.ts` |
 | **C** 계획 프롬프트 | 하위질문은 원 질문의 핵심 개념 안에 머문다(이웃 기술·분야 나열 금지). 질문이 넓으면 핵심 개념의 측면(개념·정의, 방법·기법, 적용 분야, 성과·평가, 한계·과제 중 맞는 것)으로 나눈다. 하위질문마다 원 질문의 핵심어를 넣는다. 핵심이 좁으면 최대 개수보다 적어도 된다. 예시는 넣지 않았다(함정 15번) | `research_plan.yaml` |
 | **G** 문체·조사 | 종합(intro·summaries·future)과 critic note 에 "'~다' 문어체 평서문('~합니다'·'~입니다' 금지)" 규칙을 넣었다. 종합 JSON 예시의 "답니다"도 "단다"로 바꿨다. 한계 문장 주어와 note 제목 뒤 조사는 받침으로 고르고, 한글로 끝나지 않으면 `(은)는` 처럼 병기한다(새 모듈 `hangul.josa`) | `research_synthesize.yaml`·`research_critique.yaml`·`synthesizer.py`·`critic.py`·`hangul.py` |
-| **§11 보완** 결과가 줄어 보이지 않게 | 사용자 우려(§11-0): "시간은 늘어나는데 결과는 줄어든다는 게 크리티컬하다". ① 뺀 논문의 서지(`cnts_id`·제목·저자·연도)를 회차 기록·`critique` 이벤트(`excluded_papers`)와 보고서 `trail` 에 남긴다. ② 화면에서 펼쳐 본다. 타임라인은 "무관 N편 제외 ▾" 버튼(`aria-expanded`)으로, 보고서는 한계 뒤 접힌 섹션 "관련성이 낮아 제외한 논문 (N)"으로, 문서는 부록 뒤 목록(참고문헌 번호 없음)으로 보인다. ③ `research_stats.excluded` 를 카운터 넷째 칸 "제외"와 보고서 서론 "(하위질문별로 무관하다고 본 N건은 걸러냈다)"에 쓴다. ④ 잡 파라미터 `exclude_off_topic`(0·1, 기본 1)을 더했다. 끈 잡은 빼지 않고 `flagged`·`flagged_papers` 만 남기며, 화면에는 "무관 의심 N편(제외 안 함)"으로 보인다 | 위 백엔드 4모듈 + `types/research.ts`·`researchReport.ts`·`researchDraft.ts`·`ReportView.vue`·`ProgressPanel.vue`·`research.css` |
+| **§11 보완** 결과가 줄어 보이지 않게 | 사용자 우려(§11-0): "시간은 늘어나는데 결과는 줄어든다는 게 크리티컬하다". ① 뺀 논문의 서지(`cnts_id`·제목·저자·연도)를 회차 기록·`critique` 이벤트(`excluded_papers`)와 보고서 `trail` 에 남긴다. ② 화면에서 펼쳐 본다. 타임라인은 "무관 N편 제외 ▾" 버튼(`aria-expanded`)으로, 보고서는 한계 뒤 접힌 섹션 "관련성이 낮아 제외한 논문 (N)"으로, 문서는 부록 뒤 목록(참고문헌 번호 없음)으로 보인다. ③ `research_stats.excluded` 를 카운터 넷째 칸 "제외"와 보고서 서론 "(하위질문별로 무관하다고 본 N건은 걸러냈다)"에 쓴다. ④ 잡 파라미터 `exclude_off_topic`(0·1, 기본 1)을 더했다. 끈 잡은 빼지 않고 `flagged`·`flagged_papers` 만 남기며, 화면에는 "무관 의심 N편(제외 안 함)"으로 보인다 | 위 백엔드 4모듈(`critic.py`·`runner.py`·`state.py`·`synthesizer.py`) + `types/research.ts`·`researchEvents.ts`·`researchReport.ts`·`researchDraft.ts`·`reportDocument.ts`·`ReportView.vue`·`ProgressPanel.vue`·`pages/research/[id].vue`·`research.css` |
 | 운영 확인 반영·화면 수정 (2026-09-30) | ① 제외 설명 문구를 "근거에서 뺀 논문입니다"에서 "…제외한 논문입니다"로 바꿨다(`a303325`, 상수 `EXCLUDED_WHY`). ② 딥리서치 기본 보기가 단계에 따라 바뀐다. 보고서가 나오기 전에는 B(문서형), 보고서 자리가 생기면 A(2단)다. 고른 보기를 localStorage(`skx_research_layout`)에 기억하던 것은 없앴다(`2e3d87a`, round04b spec §7-5). ③ 랜딩의 예시 질의를 눌러도 바로 검색하지 않고 입력창만 채운다(`2d8320d`). ④ 로컬 화면을 운영 API 에 붙이는 미리보기 설정 `frontend-prod-api`(`NUXT_DEV_API_TARGET`)를 더했다(`9bba9c4`) | `researchReport.ts`·`researchLayout.ts`·`pages/research/[id].vue`·`pages/index.vue`·`.claude/launch.json` |
 
-**건드리지 않은 것.** DB 스키마(새 값은 `state_snapshot`·`research_steps.result`·`report` JSONB 안에서만 는다 — spec Q7), 워커 `research_tasks.py`, API `api/research.py`, 적재 코드다. `models/research.py` 는 step result 모양을 적은 주석만 바뀌었다. 옛 스냅샷은 새 필드의 기본값으로 되살아난다. `evidence_seq` 가 없으면 가장 큰 근거 번호+1, 목록은 빈 목록이다.
+**건드리지 않은 것.** DB 스키마(새 값은 `state_snapshot`·`research_steps.result`·`report` JSONB 안에서만 는다 — spec Q7), 워커 `research_tasks.py`, API `api/research.py`, 적재 코드다. `models/research.py` 는 step result 모양을 적은 주석만 바뀌었다. 옛 스냅샷은 새 필드의 기본값으로 되살아난다. `budget_capped` 는 0, `excluded_cnts` 는 빈 목록이고, `evidence_seq` 가 없으면 남은 근거 번호 중 가장 큰 값으로 되살려 다음 근거가 그다음 번호를 받는다(E9 가 가장 크면 E10 — `evidence_id(n)` 은 `E{n+1}`).
 
 ---
 
@@ -145,7 +145,7 @@ spec §7 의 운영 전후 비교 항목 가운데 ④ 문체가 "~다"로 통�
 - 위 네 수치는 2026-10-01 이 노트를 쓰며 두 커밋의 스냅샷에서 직접 돌린 값이다. 백엔드는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집에서 죽는 3개 모듈(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)을 뺐고, 경고 2건은 기존 것이다.
 - 프론트는 `796e6aa` 기록(407)에서 하나 줄었다. `2e3d87a` 가 `researchLayout.test.ts` 의 테스트 4개(고른 보기·저장소 기억)를 3개(단계별 기본 보기·고른 보기 우선·좁은 화면)로 바꿨기 때문이다.
 - 백엔드 증가분은 `test_research_runner.py`·`test_research_critic.py`·`test_research_synthesizer.py`·`test_research_state.py` 가 대부분이고 `test_research_api.py`·`test_research_tasks.py`·`test_research_planner.py` 에도 조금 더했다. 프론트는 `researchEvents`·`reportDocument`·`researchReport`·`researchDraft`·`researchLayout` 테스트다.
-- 타입검사 오류 0·빌드 완료는 `796e6aa` 커밋 메시지의 기록이다. 그 뒤 화면 커밋 3개(`a303325`·`2e3d87a`·`2d8320d`) 이후로는 이 노트에서 다시 돌리지 않았다.
+- 타입검사 오류 0·빌드 완료는 `796e6aa` 커밋 메시지의 기록이다. 화면 커밋 3개(`a303325`·`2e3d87a`·`2d8320d`) 뒤(dev `3dfeb45`)는 교본(00-개요 §3-1)이 다시 돌려 타입검사 오류 0·빌드 완료를 적었고, 빌드(`npm run build` → `Build complete!`)는 마감 검토에서 한 번 더 확인했다.
 
 ---
 
@@ -157,7 +157,7 @@ spec §7 의 운영 전후 비교 항목 가운데 ④ 문체가 "~다"로 통�
 ## 10. 이월
 
 **품질 — 다음 과제**
-- **① 제외 기준 좁히기(spec §11-4 의 "어긋나면" 대응).** `research_critique.yaml` 의 `off_topic` 기준을 "원 질문 주제와 명백히 무관한 것만"으로 바꾼다. 지금은 하위질문의 핵심 개념이 기준이라 과잉 제외가 난다(§4-3 ②). 그런데 critic 프롬프트는 지금 원 질문을 받지 않는다. user 템플릿에는 `하위질문`·`이미 시도한 검색어`·`모인 근거`·근거 목록만 있고, `critic.py` 도 `render(subquestion=…)` 로 하위질문만 넘긴다. 문구만 바꿔서는 안 되고 원 질문도 넘겨야 한다. 재배포 없이 당장 끄려면 `exclude_off_topic: 0` 이 있다.
+- **① 제외 기준 좁히기(spec §11-4 의 "어긋나면" 대응).** `research_critique.yaml` 의 `off_topic` 기준을 "원 질문 주제와 명백히 무관한 것만"으로 바꾼다. 지금은 하위질문의 핵심 개념이 기준이라 과잉 제외가 난다(§4-3 ②). 그런데 critic 프롬프트는 지금 원 질문을 받지 않는다. user 템플릿에는 `하위질문`·`이미 시도한 검색어`·`모인 근거`·근거 목록만 있고, `critic.py` 의 `render(…)` 도 질문으로는 하위질문(`subquestion`)만 넘긴다(나머지 인자는 근거 수·근거 목록·최소 근거 수·시도한 검색어). 문구만 바꿔서는 안 되고 원 질문도 넘겨야 한다. 재배포 없이 당장 끄려면 `exclude_off_topic: 0` 이 있다.
 - **② 계획 프롬프트 재검토.** C 의 규칙을 넣고도 일반 틀이 나왔다(§4-3 ①). 측면 나열이 틀 노릇을 했는지(§7 배운 점 4)부터 본다.
 - **③ 무관 논문이 남은 원인.** 「DI 한글읽기프로그램」·「발명교육」이 방법론 절에 들어갔다(§4-3 ③). critic 이 번호로 보는 목록은 상위 20편(`_MAX_LISTED`)이다. 남은 논문이 목록 안이었는지 밖이었는지, 판정은 어땠는지를 그 잡의 회차 기록으로 먼저 본다.
 - **④ 끈 잡 비교를 하지 않았다.** spec §11-4 는 "가능하면 `exclude_off_topic: 0` 잡도 하나 돌려 셋을 나란히" 보라고 했다. 이 노트에 기록된 운영 잡은 켠 잡 하나뿐이다.
@@ -174,8 +174,9 @@ spec §7 의 운영 전후 비교 항목 가운데 ④ 문체가 "~다"로 통�
 
 **운영·문서**
 - **화면 수정 3가지(`a303325`·`2e3d87a`·`2d8320d`)가 운영에 반영됐는지** 이 노트에서 확인하지 않았다. 2026-09-30 배포 뒤의 운영 확인을 받아 커밋한 것이라 nuxt 재배포가 필요한지 본다.
-- spec 머리 상태 줄이 아직 "구현 완료(§11 보완 포함, **운영 배포 전**)"다. 2026-09-30 운영 배포 사실로 고친다.
-- 교본 `docs/guides/round04c/` 미작성.
+- ~~spec 머리 상태 줄이 아직 "구현 완료(§11 보완 포함, **운영 배포 전**)"다~~ — **해소(2026-10-01, 마감 문서 검토).** 2026-09-30 운영 배포 사실로 고쳤고, 선행 줄의 round04b "미머지"도 `dev` 머지(`9b776d2`)로 고쳤다.
+- ~~교본 `docs/guides/round04c/` 미작성~~ — **해소(`0d37a9a`, 4챕터).**
+- 계획 문서의 체크박스를 갱신하지 않았다(A·B·C·G 83개·§11 60개가 모두 `- [ ]`).
 - round04a·04b 에서 넘어온 이월은 각 완료노트에 있다.
 
 ---
@@ -187,9 +188,9 @@ spec §7 의 운영 전후 비교 항목 가운데 ④ 문체가 "~다"로 통�
 ---
 
 ## 상태
-- [x] 리뷰 반영 — 태스크별 품질 검토, A·B·C·G 최종 리뷰, §11 최종 리뷰(§3)
+- [x] code-reviewer 정적 리뷰 통과 — 태스크별 품질 검토, A·B·C·G 최종 리뷰, §11 최종 리뷰 반영(§3)
 - [x] 테스트 green — 백엔드 890 passed · 프론트 21파일 406 passed(§8)
 - [x] 수동 스모크 — 2026-09-30 운영 배포 뒤 첫 잡과 화면 확인(§4). 질 문제는 §10 으로 넘겼다
-- [ ] 문서 갱신 — 완료노트 작성. 함정 20번은 round04b 쪽에서 추가. spec 상태 줄·교본은 미반영(§10)
+- [x] 문서 갱신 — 완료노트(이 문서)·교본 `docs/guides/round04c/` 4챕터(`0d37a9a`)·`00_status`·spec 상태 줄. 새 함정 없음(20번은 round04b 쪽에서 추가). 계획 체크박스는 갱신하지 않았다(§10)
 - [x] `dev` 머지 승인 — 2026-10-01(`3dfeb45`)
 - [ ] `dev→main` 머지 + push

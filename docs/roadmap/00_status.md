@@ -9,10 +9,10 @@
 - round02a: 공공영역 문학 215권 자동 적재 — 계획까지 작성, 구현은 부분 진행(문학 211권 적재됨).
 - **round03 종료** — 2026-09-14 `library_catalog` 전멸 사고 복구, doc_type 재기록 운영 실행·라이브 검증, 교본(`docs/guides/round03/` 4챕터)까지 완료하고 `main` 에 머지·push 했다. 상세: `round03-완료노트.md`.
 - **round04a 종료** — 논문 딥리서치 에이전트 백엔드(계획·탐색·자기점검·종합·Celery·SSE). 운영 라이브 검증(Step 4~9, 재개 경로 제외) 중 종합이 절 1개만 내던 버그를 고쳤고(`b6360b8`), 머지 전 영역별 리뷰 + 적대적 검증(발견 133 · CONFIRMED 118 · 원인 약 18개)을 반영했다 — 취소한 잡이 `completed` 로 되살아나던 high 결함 포함, 테스트 549 passed. **반영분은 2026-09-23 18:23 KST 운영 배포 완료** — 적재 pause·in-flight 0 안에서 스택 업데이트로 딥리서치 전용 워커(`nl-lib-celery-research`·`nl-lib-celery-research-plan`)로 전환했고, 워밍업 잡이 30초에 끝났다(리랭커 `cuda`). 교본 `docs/guides/round04a/` 5챕터 작성. `dev`·`main` 머지와 push 로 라운드를 닫았다. 상세: `round04a-완료노트.md`.
-- **round04b — `dev` 머지(`9b776d2`), `main` 머지·push 대기** — 딥리서치 화면(계획 카드·진행 패널·보고서·인용칩 팝오버)·기록 세션 서버 저장(`history_items`, 마이그레이션 `0006`)·입력창 + 메뉴와 슬래시 명령, 그리고 spec §14 보고서 작성 대기 화면(다 쓴 절부터 초안·남은 시간)·Word·PDF 내보내기. 브랜치 `feat/round04b-deep-research-frontend` 커밋 120개(2026-09-26~29).
+- **round04b — `dev` 머지(`9b776d2`), `main` 머지·push 대기** — 딥리서치 화면(계획 카드·진행 패널·보고서·인용칩 팝오버)·기록 세션 서버 저장(`history_items`, 마이그레이션 `0006`)·입력창 + 메뉴와 슬래시 명령, 그리고 spec §14 보고서 작성 대기 화면(다 쓴 절부터 초안·남은 시간)·Word·PDF 내보내기. 브랜치 `feat/round04b-deep-research-frontend` 커밋 120개(2026-09-26~29). 교본 `docs/guides/round04b/` 6챕터.
   - **운영 배포 2026-09-28** — 적재 워커는 건드리지 않고 `nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`·`nl-lib-nuxt` 를 컨테이너별로 Recreate, `alembic stamp 0006_history_items`(서버 `alembic_version` 은 이제 `0006_history_items`). 배포 직후 게이트웨이가 502 를 냈다 — nginx 가 Recreate 전 컨테이너 IP 로 보내고 있었고 `docker exec nl-lib-gateway nginx -s reload` 로 풀었다(함정 20번). SSE 는 게이트웨이 설정을 바꾸지 않고 통과했다(`X-Accel-Buffering: no` + 15초 하트비트). 같은 날 §14 를 `celery-research`·`nuxt` 로 배포했다.
-  - 2026-09-29 사용자 확인: 작성 중 초안 화면이 동적으로 바뀌고 Word·PDF 둘 다 정상. 기획자 시연 피드백은 배치 A(우측 패널 과정)가 덜 인터랙티브해 보인다는 것 — 화면은 인터랙티브함을 최우선으로 한다(spec §7-4).
-- **round04c — `dev` 머지(`3dfeb45`), `main` 머지·push 대기** — 딥리서치 보고서 품질 A·B·C·G: 하위질문별 근거 예산(A), 자기점검이 무관하다고 본 근거 제외(B)와 제외한 논문을 타임라인·보고서·문서에 보이기·카운터 "제외"·잡 파라미터 `exclude_off_topic` 으로 끄기(spec §11), 계획을 원 질문의 핵심 개념 중심으로(C), 문체 "~다" 통일(G). 브랜치 `feat/round04c-research-quality` 커밋 42개(2026-09-29~30).
+  - 2026-09-29 사용자 확인: 작성 중 초안 화면이 동적으로 바뀌고 Word·PDF 둘 다 정상. 기획자 시연(2026-09-28) 피드백은 배치 A(우측 패널 과정)가 덜 인터랙티브해 보인다는 것 — 화면은 인터랙티브함을 최우선으로 한다(spec §7-4).
+- **round04c — `dev` 머지(`3dfeb45`), `main` 머지·push 대기** — 딥리서치 보고서 품질 A·B·C·G: 하위질문별 근거 예산(A), 자기점검이 무관하다고 본 근거 제외(B)와 제외한 논문을 타임라인·보고서·문서에 보이기·카운터 "제외"·잡 파라미터 `exclude_off_topic` 으로 끄기(spec §11), 계획을 원 질문의 핵심 개념 중심으로(C), 문체 "~다" 통일(G). 브랜치 `feat/round04c-research-quality` 커밋 42개(2026-09-29~30). 교본 `docs/guides/round04c/` 4챕터.
   - 계기: round04b 운영 검증 잡 "컴퓨팅 자원에 대한 연구가 궁금해"(2026-09-29 10:20) — 6절 27편, 근거 60 중 HPC 32·자원관리 2, 엣지 절에 의료영상 Edge method 처럼 같은 단어·다른 뜻 논문. 같은 질문의 DBpia AI 답변과 비교해 착수했다.
   - **운영 배포 2026-09-30** — 워커 먼저 → fastapi → nuxt → `nginx -s reload`. 배포 뒤 첫 잡 `2a56f8b6-e841-4a3c-88e6-9ccc6e76908b`(같은 질문): 6절, papers 합 30(서로 다른 27), 검토 121·채택 48·제외 91건·재검색 16, started→finished 1분 42초. 수치는 합격선(spec §11-4)이지만 **질 문제가 남았다** — 다음 할 일.
   - 같은 날 사용자 요청 화면 수정 3가지 — 제외 캡션 문구(`a303325`), 딥리서치 배치 자동 전환(보고서 전 B·보고서가 나오면 A, localStorage 기억 폐지 — `2e3d87a`), 예시 질의는 입력창만 채움(`2d8320d`) — 와 로컬 화면을 운영 API 에 붙이는 미리보기 설정(`frontend-prod-api`, `9bba9c4`)도 이 브랜치에 커밋됐다.
@@ -30,7 +30,7 @@
 
 ## 다음 할 일
 - **round05a 진행** — `feat/round05a-paper-detail` 에서 논문 상세 재구현(위 현재 상태). 화면은 인터랙티브함 최우선(round04b spec §7-4).
-- **round04b·04c 라운드 종료** — 완료노트·교본을 갖춘 뒤 `/round-finish` 로 `dev→main` 머지 + `origin` push.
+- **round04b·04c 라운드 종료** — 완료노트·교본을 갖췄다. `/round-finish` 로 `dev→main` 머지 + `origin` push.
 - **round04c 품질 후속** — 배포 뒤 첫 잡에서 남은 문제: ① 계획이 여전히 일반 틀(정의·방법론·적용 분야·성과·한계·동향)이라 C 미달이고, 6개 하위질문 모두 재검색 한도까지 "근거 부족" ② 과잉 제외 — 「프록시기반 모바일 그리드 자원관리」·「웹기반 대용량 계산환경」처럼 주제에 맞는 논문을 하위질문 측면에 안 맞는다고 뺐다 ③ 반대로 방법론 절에 「DI 한글읽기프로그램」·「발명교육」이 근거로 들어갔다. 대응: spec §11-4 의 "어긋나면" — 제외 기준을 "원 질문 주제와 명백히 무관한 것만"으로 좁히고(`app/domains/nl_library/prompts/research_critique.yaml`), 계획 프롬프트(`research_plan.yaml`)를 다시 본다. 그다음 묶음은 D 핵심 요약·주제 종합, E 이어서 물어보기, F 화면 참고문헌(spec §8).
 - **[배포] 04c 운영 확인을 반영한 화면 수정** — `a303325`·`2e3d87a`·`2d8320d` 는 2026-09-30 배포 뒤 운영 확인을 반영한 커밋이라 운영 배포 기록이 없다. 나갔는지 확인하고, 안 나갔으면 nuxt 이미지 → `nl-lib-nuxt` Recreate → 게이트웨이 reload(함정 20번).
 - **round04a 후속** — 시연 질문·파라미터 선정(spec 설계값 5~7분 대비 실측 포함). 손상 의심 논문 2건 확인·미병합 브랜치 `hyoni2/epic-ishizaka-cf9743`(chunk_kinds) 정리·Portainer 스택과 저장소 compose 맞추기는 round04a 완료노트 §8.
@@ -51,6 +51,6 @@
 | round02a | 공공영역 문학 215권 자동 적재 | 계획 완료, 구현 부분 진행 |
 | round03 | [카탈로그 전멸 복구 + doc_type 오분류 교정](round03-완료노트.md) · [교본](../guides/round03/00-개요.md) | 완료 (`main` 머지·push) |
 | round04a | [논문 딥리서치 백엔드](round04a-완료노트.md) · [교본](../guides/round04a/00-개요.md) | 완료 (`main` 머지·push) |
-| round04b | [딥리서치 화면·기록 세션·보고서 작성 대기 화면·Word·PDF 내보내기](round04b-완료노트.md) · [교본](../guides/round04b/) | `dev` 머지 — `main` 머지·push 대기 |
-| round04c | [딥리서치 보고서 품질(근거 예산·무관 제외·계획·문체)](round04c-완료노트.md) · [교본](../guides/round04c/) | `dev` 머지 — `main` 머지·push 대기 |
+| round04b | [딥리서치 화면·기록 세션·보고서 작성 대기 화면·Word·PDF 내보내기](round04b-완료노트.md) · [교본](../guides/round04b/00-개요.md) | `dev` 머지 — `main` 머지·push 대기 |
+| round04c | [딥리서치 보고서 품질(근거 예산·무관 제외·계획·문체)](round04c-완료노트.md) · [교본](../guides/round04c/00-개요.md) | `dev` 머지 — `main` 머지·push 대기 |
 | round05a | 논문 상세 재구현(돌아가기·주소·보던 위치 복원) | 진행 중 (`feat/round05a-paper-detail`) |

@@ -4,9 +4,9 @@
 브랜치: `feat/round04b-deep-research-frontend` (끝 커밋 `d845b8b` · 커밋 120개 · `dev` 머지 `9b776d2`)
 spec: `docs/superpowers/specs/2026-09-26-round04b-deep-research-frontend-design.md` (§1~13 본편, §14 보고서 작성 대기 화면·내보내기)
 plan: `docs/superpowers/plans/2026-09-26-round04b-deep-research-frontend.md`(본편, Task 1~38) · `docs/superpowers/plans/2026-09-28-round04b-report-wait-export.md`(§14, Task 1~11)
-교본: `docs/guides/round04b/` — 이 노트와 따로 작성·커밋한다(이 노트를 커밋한 시점에는 아직 커밋 전)
+교본: `docs/guides/round04b/` (6챕터 — [00-개요](../guides/round04b/00-개요.md), `7dbd962`)
 
-> `dev` 머지(`9b776d2`) 뒤에 썼다. round04c 가 이 브랜치 끝(`d845b8b`)에서 땄고 같은 날 함께 `dev` 에 머지됐다(`3dfeb45`). `dev→main` 머지와 push 는 아직이다.
+> `dev` 머지(`9b776d2`) 뒤에 썼고, 교본 커밋(`7dbd962`)과 마감 문서 검토를 반영해 같은 날 갱신했다. round04c 가 이 브랜치 끝(`d845b8b`)에서 땄고 같은 날 함께 `dev` 에 머지됐다(`3dfeb45`). `dev→main` 머지와 push 는 아직이다.
 > 구현 기간은 사용자 기록이다. 브랜치 커밋은 2026-09-26 18:40(spec `ae00bfd`)부터 2026-09-29 00:14(`d845b8b`)까지다.
 > 한 줄 요약: round04a 백엔드에 **딥리서치 화면**을 붙이고 **사이드바 기록을 서버에 저장**하게 바꿨다. 이어서 §14 로 **보고서를 쓰는 동안 다 쓴 절부터 초안으로 보이고 Word·PDF 로 내려받게** 했다. 운영 검증 잡에서 화면이 아니라 **보고서 내용의 품질 문제**가 드러나 round04c 로 넘겼다.
 
@@ -81,11 +81,11 @@ plan: `docs/superpowers/plans/2026-09-26-round04b-deep-research-frontend.md`(본
 | 본편 계획의 기대치 | — | 728 | 14 / 158 | 본편 계획 머리(계획 작성 때 저장소 밖 사본의 실측) |
 | 본편 + 최종 리뷰 + 슬래시 명령 목록 | `a6fd98c` | **745** | **16 / 277** | 백엔드는 다시 돌림, 프론트는 §14 계획의 기준선 |
 | §14 계획의 기대치 | — | 770 | 20 / 348 | §14 계획 누적 기대치 |
-| 라운드 끝 | `d845b8b` | **780** | **21 / 383** | 백엔드는 다시 돌림, 프론트는 round04c 계획의 기준선(`738bc07` 에서 잼 — `d845b8b` 바로 다음의 문서 커밋이라 코드가 같다) |
+| 라운드 끝 | `d845b8b` | **780** | **21 / 383** | 둘 다 다시 돌림. 프론트는 round04c 계획의 기준선(`738bc07` 에서 잼 — `d845b8b` 바로 다음의 문서 커밋이라 코드가 같다)과도 같다 |
 
 - 백엔드 명령: `python -m pytest tests -q --ignore=tests/test_book_chat.py --ignore=tests/test_build_manifest.py --ignore=tests/test_loaders.py`(`app/` 에서). 제외한 3개는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 죽는다. 경고 2건(Pydantic class-based config)은 기존 것이다.
 - 다시 돌린 방법: 각 커밋을 `git archive <커밋> app scripts` 로 스크래치에 꺼내 돌렸다. **`scripts/` 도 함께 꺼내야 한다** — `test_rewrite_milvus_doc_type.py` 가 `scripts/recovery/` 를 import 해서, `app/` 만 꺼내면 16건이 `ModuleNotFoundError` 로 실패한다.
-- 프론트 수치는 다시 돌리지 않았다. 이 worktree 에 `node_modules` 가 없다. 위 표의 프론트 수치는 다음 계획이 착수 때 잰 기준선이다.
+- 프론트 수치: `a6fd98c` 의 16 / 277 은 §14 계획이 착수 때 잰 기준선 기록이다. `d845b8b` 의 21 / 383 은 마감 검토에서 `git archive d845b8b frontend` 사본으로 `npx vitest run` 을 다시 돌려 확인했다(파일별 건수는 교본 00-개요 §3-1 의 표와 같다).
 - 타입검사·빌드: §14 Task 11 커밋(`c427f61`)이 "전체 테스트·타입검사·빌드 통과"를 적었다. 그 뒤 다듬기 21건 이후의 타입검사 결과는 커밋에 수치로 남지 않았다.
 
 백엔드 증가분(파일별 수집 수, 세 커밋에서 다시 셈):
@@ -140,7 +140,7 @@ plan: `docs/superpowers/plans/2026-09-26-round04b-deep-research-frontend.md`(본
 
 ## 7. 배운 점
 
-- **컨테이너를 개별 Recreate 하면 게이트웨이가 옛 IP 로 보낸다(함정 20번).** nginx 는 upstream 호스트 이름을 설정을 읽을 때 한 번만 푼다. 함정 16번이 권하는 "바뀐 코드를 쓰는 컨테이너만 Recreate" 가 이 함정을 연다. `fastapi`·`nuxt` 를 Recreate 했으면 마지막에 `nginx -s reload` 를 한다. round04c 배포부터 순서에 넣었다.
+- **컨테이너를 개별 Recreate 하면 게이트웨이가 옛 IP 로 보낸다(함정 20번).** nginx 는 upstream 호스트 이름을 설정을 읽을 때 한 번만 푼다. 함정 16번이 권하는 "바뀐 코드를 쓰는 컨테이너만 Recreate" 가 이 함정을 연다. `fastapi`·`nuxt` 를 Recreate 했으면 마지막에 `nginx -s reload` 를 한다. 같은 날 쓴 §14 배포 순서(spec §14-7·§14 계획)부터 넣었고, round04c 배포(2026-09-30)도 그 순서로 했다.
 - **SSE 가 게이트웨이를 통과한 조건은 코드에 있다.** `X-Accel-Buffering: no` 와 15초 하트비트다. 하트비트 간격을 `proxy_read_timeout`(120초)보다 길게 늘리면 게이트웨이가 스트림을 끊는다. 컨테이너 안 직결 확인(round04a)으로는 둘 다 검증되지 않는다.
 - **화면이 좋아도 보고서 내용은 따로 봐야 한다.** 무결성·구성 검사(round04a 함정 15번)를 통과한 보고서가 같은 질문의 외부 서비스 답변보다 내용이 못했다. 운영 잡 하나와 외부 비교로 드러났고 round04c 의 출발점이 됐다.
 - **브라우저 기록을 서버 정본으로 옮기면 경합이 리뷰의 큰 몫이 된다.** 여러 탭·늦게 온 응답·편지함 재전송·메모리 모드 전환이 겹친다. "지운 기록이 되살아나는" 반영만 5건이었고, 순서 번호·잠금(Web Locks, 없으면 저장소 키 잠금)으로 막았다.
@@ -190,8 +190,8 @@ plan: `docs/superpowers/plans/2026-09-26-round04b-deep-research-frontend.md`(본
 - 운영·적재·보안 — 적재 복구 경로 이중 실행과 손상 의심 논문 2건, Portainer 스택과 저장소 compose 불일치, 스키마를 만드는 세 경로, Redis 무인증 호스트 노출, `app/api/admin.py` Milvus expression injection.
 
 **문서**
-- 계획 문서의 체크박스를 갱신하지 않았다(본편 240개 중 1개, §14 84개 중 0개만 `[x]`).
-- spec 머리 상태 줄이 "§14 … 구현 완료(운영 배포 전)"로 남아 있다 — §14 는 2026-09-28 에 배포됐다.
+- 계획 문서의 체크박스를 갱신하지 않았다(본편 237개·§14 83개가 모두 `- [ ]` — 코드 블록 밖 체크박스 줄을 셌다).
+- ~~spec 머리 상태 줄이 "§14 … 구현 완료(운영 배포 전)"로 남아 있다~~ — **해소(2026-10-01, 마감 문서 검토).** §14 는 2026-09-28 에 배포됐으므로 "구현·운영 배포 완료(2026-09-28)"로 고쳤다. 같은 이유로 round04a spec 머리의 "프론트 미착수(round04b)"도 고쳤다.
 
 ---
 
@@ -200,15 +200,15 @@ plan: `docs/superpowers/plans/2026-09-26-round04b-deep-research-frontend.md`(본
 - **round05a — 논문 상세 재구현**(UI 고도화 기능 명세서 03·S6: 돌아가기·주소·보던 위치 복원). 브랜치 `feat/round05a-paper-detail`(`dev` `3dfeb45` 에서 분기), 설계 `docs/superpowers/specs/2026-10-01-round05a-paper-detail-design.md`(그 브랜치 `d7f7e95`). 화면은 인터랙티브함이 최우선이다(spec §7-4). 이 라운드의 URL 규칙(`utils/historyRoute.ts` — 상세로 갈 때 `h` 를 넘겨 뒤로가기가 복원되게)이 돌아가기·주소 복원의 출발점이다.
 - **딥리서치 품질의 다음 과제**는 round04c 완료노트에 있다 — 제외 기준을 "원 질문 주제와 명백히 무관한 것만"으로 좁히기(round04c spec §11-4), 계획 프롬프트 재검토. 그 뒤 D(핵심 요약·주제 종합)·E(이어서 물어보기)·F(화면 참고문헌).
 - **적재 현황(2026-09-29)** — `kci-full-236k` 47%: done 111,658 / pending 123,979 / failed 782. 항목 번호(옛 논문) 순으로 돌아 딥리서치 코퍼스가 2013년까지다. 하루 약 5,200건 → 10월 23일쯤 완료 예상(목표 10월 28일). 최신순 재배열은 하지 않기로 했다. 추가 수집(메타 없는 PDF 28,074편, 연도별 1만 건 상한 뒤 나머지 — 수집기가 KCI 검색 200쪽 상한을 봇 탐지로 오인)과 모델 교체(Qwen3.6-35B-A3B-FP8 로 OCR·텍스트 통합 검토)는 적재가 끝난 뒤다.
-- **라운드 종료** — 교본 `docs/guides/round04b/` 를 쓴 뒤 `/round-finish` 로 `dev→main` 머지 + `origin` push.
+- **라운드 종료** — 완료노트·교본을 갖췄다. `/round-finish` 로 `dev→main` 머지 + `origin` push.
 - 배포할 때는 컨테이너별 Recreate(스택 업데이트 금지, 함정 16번)와 끝의 `nginx -s reload`(함정 20번)를 지킨다.
 
 ---
 
 ## 상태
 - [x] code-reviewer 정적 리뷰 통과 — 태스크별 품질 검토 33건·본편 최종 리뷰 12건·§14 다듬기 21건 반영(§4). 반영하지 않은 minor 는 §8.
-- [x] 테스트 green — 백엔드 780 passed(`d845b8b`, 이 노트를 쓰며 다시 돌림, 로컬 미설치 패키지로 수집이 죽는 3개 모듈 제외), 프론트 Vitest 21파일 / 383(round04c 계획 기준선 기록)
+- [x] 테스트 green — 백엔드 780 passed(`d845b8b`, 이 노트를 쓰며 다시 돌림, 로컬 미설치 패키지로 수집이 죽는 3개 모듈 제외), 프론트 Vitest 21파일 / 383(`d845b8b` 사본에서 다시 돌림)
 - [x] 수동 스모크 — 운영 배포 뒤 사용자 확인(2026-09-29: 초안 화면 동적·Word·PDF 정상), 운영 검증 잡(§2-1)
-- [ ] 문서 갱신 — 완료노트(이 문서)·`00_status`·함정 20번은 반영됐다. 교본 `docs/guides/round04b/` 는 따로 커밋한다. 계획 체크박스·spec 상태 줄(§8 문서)이 남았다
+- [x] 문서 갱신 — 완료노트(이 문서)·교본 `docs/guides/round04b/` 6챕터(`7dbd962`)·`00_status`·함정 20번·spec 상태 줄. 계획 체크박스는 갱신하지 않았다(§8 문서)
 - [x] `dev` 머지 승인 — 2026-10-01(`9b776d2`)
 - [ ] `dev→main` 머지 + push

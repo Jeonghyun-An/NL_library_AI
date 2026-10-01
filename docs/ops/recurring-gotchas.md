@@ -184,7 +184,7 @@
 ## 20. 컨테이너를 개별 Recreate 하면 nginx 게이트웨이가 옛 IP 로 보내 502 가 난다
 
 - **날짜**: 2026-09-28 (round04b)
-- **증상**: round04b 운영 배포(`nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`·`nl-lib-nuxt` 를 컨테이너별로 Recreate) 직후 게이트웨이(포트 92)를 거친 요청이 502 Bad Gateway 를 냈다. `docker logs nl-lib-gateway` 에 `connect() failed (111: Connection refused) while connecting to upstream` 이 찍혔고, 그 줄의 `upstream:` 주소가 Recreate **전** 컨테이너의 IP(`172.21.0.14`)였다.
+- **증상**: round04b 운영 배포(`nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`·`nl-lib-nuxt` 를 컨테이너별로 Recreate) 직후 게이트웨이(포트 92)를 거친 요청이 502 Bad Gateway 를 냈다. nginx 가 요청을 Recreate **전** 컨테이너의 IP(`172.21.0.14`)로 보내고 있었다(사용자 기록). 진단은 nginx 오류 로그(`docker logs nl-lib-gateway`)의 upstream 오류 줄에 찍힌 `upstream:` 주소를 `docker inspect` 로 본 그 컨테이너의 지금 IP 와 견주는 것이다 — 다르면 이 함정이다.
 - **원인**: `infra/conf.d/default.conf` 의 `upstream fastapi { server fastapi:8000; }`·`upstream nuxt { server nuxt:3000; }` 처럼 upstream 블록에 쓴 호스트 이름은 nginx 가 **설정을 읽을 때(시작·reload) 한 번만** IP 로 바꿔 쥐고, 그 뒤로는 DNS 를 다시 묻지 않는다. 도커 네트워크(`nl-lib-net`)는 컨테이너를 만들 때마다 빈 IP 를 배정하므로(compose 에 고정 `ipv4_address` 가 없다) Recreate 한 컨테이너는 다른 IP 를 받을 수 있다. 도커 내장 DNS(`127.0.0.11`)는 새 IP 를 알려 주지만 nginx 가 묻지 않는다. 게이트웨이는 Recreate 대상이 아니어서 옛 IP 를 그대로 쥐고 있었다. 함정 16번이 권하는 "바뀐 코드를 쓰는 컨테이너만 Recreate" 가 이 함정을 연다 — 게이트웨이도 함께 다시 시작되면 그때 이름을 새로 풀어서 드러나지 않는다.
 - **해결**: `docker exec nl-lib-gateway nginx -s reload`. 설정을 다시 읽으며 이름을 새로 푼다. 컨테이너를 재시작하지 않고 새 워커 프로세스로 넘어가며, 옛 워커는 붙어 있던 연결을 마저 처리하고 내려간다. reload 는 서버의 `/data/nl-lib/nginx/conf.d`(바인드 마운트 — `docker-compose.yml` 의 `gateway`)를 지금 내용 그대로 다시 읽는다. 저장소의 `infra/conf.d/default.conf` 와 다르면 그 차이도 함께 적용되니, 서버 파일을 손댄 적이 있으면 `docker exec nl-lib-gateway nginx -t` 로 먼저 본다.
 - **재발 방지**:
