@@ -298,3 +298,60 @@ def test_reduce_pairs_up_large_summaries(monkeypatch):
     out = asyncio.run(summarizer.reduce_section_summaries("제목", "저자", items))
     assert len(out) <= 14000 and "중" * 1000 in out
     assert out != summarizer._combine_sections(items)      # 샘플링으로 떨어지지 않았다
+
+
+# ── combined_text — 마무리 단계가 한 번 만든 입력을 넷이 같이 쓴다 (round07 Task 8) ──────
+class _AllCfg(_FakeCfg):
+    def __init__(self, cap):
+        super().__init__(cap)
+        self.SUMMARIZER_BOOK_TIMEOUT = 120
+        self.SUMMARIZER_INTRO_TIMEOUT = 120
+
+
+def test_generators_use_given_combined_text(monkeypatch):
+    """combined_text 를 주면 _combine_sections 를 다시 부르지 않고 그 입력을 프롬프트에 넣는다."""
+    users = []
+
+    async def fake_chat(system, user, params, timeout):
+        users.append(user)
+        return "본문"
+
+    def no_combine(_):
+        raise AssertionError("combined_text 가 있는데 _combine_sections 를 불렀다")
+
+    monkeypatch.setattr(summarizer, "get_settings", lambda: _AllCfg(10000))
+    monkeypatch.setattr(summarizer, "_normalize_doc_type", lambda d: d or "book")
+    monkeypatch.setattr(summarizer, "get_prompt", lambda name, doc_type=None: _FakeTpl())
+    monkeypatch.setattr(summarizer, "_chat_completion", fake_chat)
+    monkeypatch.setattr(summarizer, "_combine_sections", no_combine)
+
+    given = "[섹션 1~40] 미리 합친 입력"
+    sums = ["섹션 요약"]
+    asyncio.run(summarizer.summarize_book_from_sections("제목", "저자", sums, "book", combined_text=given))
+    asyncio.run(summarizer.generate_book_introduction("제목", "저자", "출판사", "2020", sums, "book", combined_text=given))
+    asyncio.run(summarizer.generate_book_plot("제목", "저자", sums, "book", combined_text=given))
+    asyncio.run(summarizer.generate_read_effect("제목", "저자", sums, "book", combined_text=given))
+    assert len(users) == 4 and all(given in u for u in users)
+
+
+def test_generators_without_combined_text_still_combine(monkeypatch):
+    """combined_text 없이 부르는 기존 호출(백필 태스크)은 지금처럼 _combine_sections 로 합친다."""
+    users = []
+
+    async def fake_chat(system, user, params, timeout):
+        users.append(user)
+        return "본문"
+
+    monkeypatch.setattr(summarizer, "get_settings", lambda: _AllCfg(10000))
+    monkeypatch.setattr(summarizer, "_normalize_doc_type", lambda d: d or "book")
+    monkeypatch.setattr(summarizer, "get_prompt", lambda name, doc_type=None: _FakeTpl())
+    monkeypatch.setattr(summarizer, "_chat_completion", fake_chat)
+
+    asyncio.run(summarizer.generate_book_introduction(
+        title="제목", author="저자", publisher="출판사", pub_date="2020",
+        section_summaries=["가나다", "라마바"], doc_type="book",
+    ))
+    asyncio.run(summarizer.summarize_book_from_sections(
+        title="제목", author="저자", section_summaries=["가나다", "라마바"], doc_type="book",
+    ))
+    assert users == ["user::[섹션 1] 가나다\n\n[섹션 2] 라마바"] * 2

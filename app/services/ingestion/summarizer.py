@@ -291,11 +291,17 @@ async def generate_book_introduction(
     pub_date: str,
     section_summaries: list[str],
     doc_type: str = "book",
+    *,
+    combined_text: str | None = None,
 ) -> str | None:
-    """도서/논문 소개글 생성 (doc_type별 프롬프트 — paper는 학술 톤). 실패 시 None 반환."""
-    if not section_summaries:
+    """도서/논문 소개글 생성 (doc_type별 프롬프트 — paper는 학술 톤). 실패 시 None 반환.
+
+    combined_text 를 주면(마무리 단계가 reduce_section_summaries 로 한 번 만든 입력) 그대로 쓰고,
+    없으면 section_summaries 를 _combine_sections 로 합친다(백필 등 기존 호출).
+    """
+    if not section_summaries and not combined_text:
         return None
-    combined = _combine_sections(section_summaries)
+    combined = combined_text or _combine_sections(section_summaries)
     tpl = get_prompt("introduction", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(
         title=title,
@@ -313,14 +319,17 @@ async def generate_read_effect(
     author: str,
     section_summaries: list[str],
     doc_type: str = "book",
+    *,
+    combined_text: str | None = None,
 ) -> str | None:
     """독후 효과(read_effect) 생성 — 인덱싱 시 사전 저장용. 실패 시 None 반환.
 
     doc_type 별 프롬프트(read_effect.{doc_type}.yaml)로 분기한다.
+    combined_text 를 주면 _combine_sections 대신 그 입력을 쓴다(generate_book_introduction 참고).
     """
-    if not section_summaries:
+    if not section_summaries and not combined_text:
         return None
-    combined = _combine_sections(section_summaries)
+    combined = combined_text or _combine_sections(section_summaries)
     tpl = get_prompt("read_effect", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(
         title=title,
@@ -336,15 +345,17 @@ async def generate_book_plot(
     author: str,
     section_summaries: list[str],
     doc_type: str = "book",
+    *,
+    combined_text: str | None = None,
 ) -> str | None:
     """도서 줄거리(plot) 생성 — 인덱싱 시 사전 저장용. 실패 시 None 반환.
 
     doc_type 별 프롬프트(plot.{doc_type}.yaml)로 분기한다.
-    introduction 과 동일하게 균등 샘플링된 섹션 요약을 입력으로 받는다.
+    introduction 과 같은 입력을 받는다 — combined_text 가 있으면 그것, 없으면 _combine_sections.
     """
-    if not section_summaries:
+    if not section_summaries and not combined_text:
         return None
-    combined = _combine_sections(section_summaries)
+    combined = combined_text or _combine_sections(section_summaries)
     tpl = get_prompt("plot", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(
         title=title,
@@ -360,9 +371,14 @@ async def summarize_book_from_sections(
     author: str,
     section_summaries: list[str],
     doc_type: str = "book",
+    *,
+    combined_text: str | None = None,
 ) -> tuple[str, list[str]]:
-    """전체 도서 요약 + 테마 키워드 생성. returns (summary, themes)."""
-    combined = _combine_sections(section_summaries)
+    """전체 도서 요약 + 테마 키워드 생성. returns (summary, themes).
+
+    combined_text 를 주면 _combine_sections 대신 그 입력을 쓴다(generate_book_introduction 참고).
+    """
+    combined = combined_text or _combine_sections(section_summaries)
     tpl = get_prompt("book_summary", _normalize_doc_type(doc_type))
     system, user, params = tpl.render(
         title=title, author=author, section_summaries=combined,
