@@ -6,7 +6,7 @@ import asyncio
 
 import fitz
 
-from services.ingestion import extractor, page_routing
+from services.ingestion import extractor, page_routing, paper_enricher
 from services.ingestion.extractor import ExtractionResult, PageResult
 
 STAMP = "Copyright (C) 2002 Nuri Media Co., Ltd."
@@ -221,11 +221,14 @@ MIN_CHARS = 50
 
 
 class _FakePage:
-    def __init__(self, number: int, text: str = ""):
+    def __init__(self, number: int, text: str = "", error: Exception | None = None):
         self.number = number
         self._text = text
+        self._error = error
 
     def get_text(self, *_a, **_kw) -> str:
+        if self._error is not None:
+            raise self._error
         return self._text
 
 
@@ -383,3 +386,64 @@ def test_decision_table_matches_legacy_rule_outside_scan_and_force(monkeypatch):
     assert not harness_errors, "\n".join(harness_errors[:10])
     assert checked > 2000
     assert not mismatches, f"{len(mismatches)}/{checked} 칸이 다르다:\n" + "\n".join(mismatches[:15])
+
+
+# ── <br> 연속 처리 ─────────────────────────────────────────────────────────────
+
+TABLE_A = (
+    "| 구분 | 설명 |\n| --- | --- |\n"
+    "| 가 | 첫째 문단<br><br><br>둘째 문단 |\n"
+    "| 나 | 값<br><br><br><br><br>비고 |\n"
+    "| 다 | 끝 |\n"
+)
+TABLE_B = "| 항목 | 값 |\n| --- | --- |\n| 라 | 하나<br><br><br>둘 |\n| 마 | 셋 |\n"
+
+
+def test_clean_text_keeps_markdown_table_rows_whole():
+    """<br> 연속을 줄바꿈으로 바꾸면 표 칸 안 문단 사이 <br><br><br> 가 행을 쪼개 paper_enricher 표 추출이 줄어든다
+    (KCI_FI002990049 15→13개). <br> 하나로 줄이면 표 행 수도, 표 추출 개수도 그대로다."""
+    raw = "서론 문단이다.\n\n" + TABLE_A + "\n본문 문단이다.\n\n" + TABLE_B
+    cleaned = extractor._clean_text(raw)
+    rows = [ln for ln in cleaned.split("\n") if ln.startswith("|") and ln.endswith("|")]
+    assert len(rows) == 9  # 표 A 5행 + 표 B 4행이 온전한 한 줄씩 — 줄바꿈이 끼어 행이 쪼개지지 않는다
+    assert "| 가 | 첫째 문단<br>둘째 문단 |" in rows
+    assert "| 나 | 값<br>비고 |" in rows
+    assert len(paper_enricher._extract_tables(raw)) == 2
+    assert len(paper_enricher._extract_tables(cleaned)) == 2
+
+
+def test_figure_br_grid_is_shortened_again_after_figure_markers_are_removed():
+    """`[그림]<br><br>[그림]` 반복 격자는 [그림] 을 지우면 <br> 긴 연속이 된다 — 채택 때 <br> 하나로 줄인다."""
+    row = "| " + "[그림]<br><br>" * 40 + "[그림] |"
+    assert extractor._clean_text(row).count("<br>") == 80  # [그림] 사이 <br> 은 2개씩이라 첫 정제로는 안 줄어든다
+    stripped = extractor._strip_figure_markers(row)
+    assert stripped.replace(" ", "") == "|<br>|"  # 한 줄 그대로, <br> 하나만 남는다
+
+
+def test_page_with_failing_get_text_does_not_break_the_whole_extraction(monkeypatch):
+    """회귀: 쪽 하나의 fitz get_text 가 실패('too many nested graphics states')해도 문서 추출은 계속된다 —
+    그 쪽은 텍스트 층이 없는 쪽으로 보고 errors 에 남긴다."""
+    state = _patch_fakes(monkeypatch)
+    boom = RuntimeError("too many nested graphics states")
+
+    def doc_with_bad_page(bad_odl: str) -> None:
+        state["pages"] = [
+            _FakePage(n, "\n".join(BODIES[n]), error=boom if n == 2 else None) for n in range(5)
+        ]
+        state["odl"] = {n: _body_text(n) for n in range(5)}
+        state["odl"][2] = bad_odl
+        state["ocr"] = []
+
+    # ODL 도 짧은 쪽 → 텍스트 층을 못 읽었으니 OCR
+    doc_with_bad_page("[그림]")
+    result = asyncio.run(extractor.extract_text(None, "T_ERR", file_bytes=b"x"))
+    assert state["ocr"] == [2]
+    assert [p.page_num for p in result.pages] == [0, 1, 2, 3, 4]
+    assert any("p.2" in e and "too many nested graphics states" in e for e in result.errors)
+
+    # ODL 본문이 충분한 쪽 → 그대로 채택, 오류만 남는다
+    doc_with_bad_page(_body_text(2))
+    result = asyncio.run(extractor.extract_text(None, "T_ERR", file_bytes=b"x"))
+    assert state["ocr"] == []
+    assert [p.method for p in result.pages] == ["opendataloader"] * 5
+    assert any("p.2" in e and "too many nested graphics states" in e for e in result.errors)

@@ -27,12 +27,23 @@ class TestBodyLen:
 
 
 class TestCollapseBrRuns:
-    def test_three_or_more_become_one_newline(self):
-        assert collapse_br_runs("가<br><br><br>나") == "가\n나"
-        assert collapse_br_runs("가" + "<br> " * 500 + "나") == "가\n나"
+    def test_three_or_more_become_one_br(self):
+        assert collapse_br_runs("가<br><br><br>나") == "가<br>나"
+        assert collapse_br_runs("가" + "<br> " * 500 + "나") == "가<br>나"
+        assert collapse_br_runs("가<br/><BR ><br>\t<br>나") == "가<br>나"
 
     def test_one_or_two_are_kept(self):
         assert collapse_br_runs("셀<br>안<br><br>줄") == "셀<br>안<br><br>줄"
+
+    def test_never_adds_a_newline(self):
+        # 줄바꿈이 들어가면 마크다운 표 행이 쪼개진다 — 표 칸 안 문단 사이의 <br> 연속도 <br> 로만 줄인다
+        row = "| 가 | 첫째 문단<br><br><br>둘째 문단<br><br><br><br><br>셋째 |"
+        assert collapse_br_runs(row) == "| 가 | 첫째 문단<br>둘째 문단<br>셋째 |"
+
+    def test_is_idempotent(self):
+        once = collapse_br_runs("가" + "<br>" * 9 + "나<br><br>다")
+        assert once == "가<br>나<br><br>다"
+        assert collapse_br_runs(once) == once
 
 
 class TestRepeatedLines:

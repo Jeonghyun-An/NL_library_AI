@@ -22,8 +22,12 @@ def body_len(text: str) -> int:
 
 
 def collapse_br_runs(text: str) -> str:
-    """3개 이상 이어진 <br> 를 줄바꿈 하나로 줄인다(1~2개는 표 셀 안 줄바꿈이라 둔다)."""
-    return _BR_RUN.sub("\n", text)
+    """3개 이상 이어진 <br> 를 <br> 하나로 줄인다(1~2개는 표 칸 안 줄바꿈이라 둔다).
+
+    줄바꿈("\\n")으로 바꾸지 않는다 — 표 칸 안 문단 사이의 <br><br><br> 가 마크다운 표 행을 쪼개
+    표 추출이 줄어든다(KCI_FI002990049 15→13개).
+    """
+    return _BR_RUN.sub("<br>", text)
 
 
 def _line_key(line: str) -> str:

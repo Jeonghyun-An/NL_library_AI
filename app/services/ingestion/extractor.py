@@ -47,7 +47,7 @@ def _clean_text(text: str, strip_lines: set[str] | None = None) -> str:
     JSON 신호가 없는 경우(VLM 출력 등)를 위한 최후 수단으로 계속 둔다.
     """
     import re
-    # 빈 표 격자의 <br> 수천 개가 섹션 본문을 채우지 않게 줄바꿈 하나로 줄인다.
+    # 빈 표 격자의 <br> 수천 개가 섹션 본문을 채우지 않게 <br> 하나로 줄인다(줄바꿈으로 바꾸면 표 행이 쪼개진다).
     text = page_routing.collapse_br_runs(text)
     if strip_lines:
         text = "\n".join(
@@ -96,6 +96,8 @@ def _strip_figure_markers(text: str) -> str:
     """
     import re
     text = text.replace("[그림]", "")
+    # `[그림]<br><br>[그림]` 반복 격자는 마커를 지우면 <br> 긴 연속이 된다 — 한 번 더 줄인다.
+    text = page_routing.collapse_br_runs(text)
     text = re.sub(r'\n{3,}', '\n\n', text)
     text = re.sub(r'[ \t]{2,}', ' ', text)
     return text.strip()
@@ -368,7 +370,16 @@ async def extract_text(
 
     # 문서 단위 스캔본 판정(short_flags)의 '짧은 쪽'만 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
     # 뺀 fitz 길이로 센다. 쪽별 OCR 판정(CMap 손상 2배 비교·짧은 쪽 분기)은 예전처럼 원래 fitz 길이를 쓴다.
-    fitz_texts = [_clean_text(p.get_text()) for p in doc]
+    fitz_texts: list[str] = []
+    for p in doc:
+        try:
+            fitz_texts.append(_clean_text(p.get_text()))
+        except Exception as e:
+            # 쪽 하나의 파싱 실패('too many nested graphics states' 등)가 문서 전체 추출을 막지 않게 한다 —
+            # 그 쪽은 텍스트 층이 없는 쪽으로 보고(ODL 도 짧으면 OCR) 오류만 남긴다.
+            log.warning(f"[{book_id}] p.{p.number} fitz 텍스트 추출 실패(빈 쪽으로 처리): {e}")
+            result.errors.append(f"p.{p.number} fitz 텍스트 추출 실패: {e}")
+            fitz_texts.append("")
     repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
     fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]
     fitz_stripped_lens = [
