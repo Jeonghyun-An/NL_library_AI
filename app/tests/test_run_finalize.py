@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import httpx
+import pytest
 
 import services.ingestion.cover_generator as cover_generator
 from services.ingestion import stages, summarizer
@@ -203,25 +204,46 @@ def _fix_timeouts(monkeypatch, *, finalize=900, book=120, intro=120, plot=120, r
 
 
 def test_reduce_budget_formula(monkeypatch):
-    """예산 = 마무리 단계 타임아웃 − 최종 호출 몫 − 여유 60초(− 표지를 만들면 표지 프롬프트 LLM + FLUX), 하한 60초."""
+    """예산 = 마무리 단계 타임아웃 − 최종 호출 몫 − 여유 60초(− 표지를 만들면 표지 프롬프트 LLM + FLUX), 하한 60초.
+    동시 한도가 호출 수 이상이면 최종 호출은 한 차례라 몫은 가장 긴 타임아웃 하나다."""
     _fix_timeouts(monkeypatch)
-    assert stages._reduce_budget_seconds(120, make_cover=False) == 900 - 120 - 60
-    assert stages._reduce_budget_seconds(120, make_cover=True) == 900 - 120 - 60 - (60 + 300)
+    monkeypatch.setattr(stages.cfg, "LLM_SECTION_CONCURRENCY", 4)
+    assert stages._reduce_budget_seconds([120, 100], make_cover=False) == 900 - 120 - 60
+    assert stages._reduce_budget_seconds([120, 100], make_cover=True) == 900 - 120 - 60 - (60 + 300)
     monkeypatch.setattr(stages.cfg, "INGEST_STAGE_TIMEOUT_FINALIZE", 100)    # 몫이 마감을 넘으면 하한
-    assert stages._reduce_budget_seconds(120, make_cover=False) == 60
-    assert stages._reduce_budget_seconds(120, make_cover=True) == 60
+    assert stages._reduce_budget_seconds([120, 100], make_cover=False) == 60
+    assert stages._reduce_budget_seconds([120, 100], make_cover=True) == 60
 
 
-def test_finalize_reserves_the_longest_final_call_and_the_cover(monkeypatch):
-    """run_finalize 가 예산 계산에 넘기는 몫: 논문은 요약·소개글 중 긴 타임아웃에 표지 없음, 도서류는 줄거리·독후 효과까지
-    보고(함께 나가는 호출 중 가장 긴 것), 표지를 만들 때만(skip_cover 없음) 표지 몫을 뺀다."""
+@pytest.mark.parametrize("concurrency, budget", [
+    (1, 900 - 4 * 130 - 60),          # 넷이 차례로 — 네 차례
+    (2, 900 - 2 * 130 - 60),
+    (3, 900 - 2 * 130 - 60),          # 셋 + 하나
+    (4, 900 - 130 - 60),              # 한 번에
+    (8, 900 - 130 - 60),
+    (0, 900 - 4 * 130 - 60),          # 0 이하는 1 로 본다(마무리 단계의 세마포어와 같다)
+])
+def test_reduce_budget_reserves_the_longest_timeout_per_wave(monkeypatch, concurrency, budget):
+    """최종 호출은 LLM_SECTION_CONCURRENCY 개씩 나가므로 몫은 ceil(호출 수 / 동시 한도) 차례 × 가장 긴 타임아웃이다.
+    한 번에 나간다고 보면 동시 한도 1 에서 도서류 넷이 차례로 돌 때 계층 요약에 시간을 너무 줘 마감을 넘는다."""
+    _fix_timeouts(monkeypatch)
+    monkeypatch.setattr(stages.cfg, "LLM_SECTION_CONCURRENCY", concurrency)
+    timeouts = [100, 110, 130, 90]
+    assert stages._reduce_budget_seconds(timeouts, make_cover=False) == budget
+    expected_with_cover = max(60, budget - (60 + 300))
+    assert stages._reduce_budget_seconds(timeouts, make_cover=True) == expected_with_cover
+
+
+def test_finalize_reserves_the_final_calls_and_the_cover(monkeypatch):
+    """run_finalize 가 예산 계산에 넘기는 최종 호출 타임아웃: 논문은 요약·소개글에 표지 없음, 도서류는 줄거리·독후 효과까지,
+    표지를 만들 때만(skip_cover 없음) 표지 몫을 뺀다."""
     _fix_timeouts(monkeypatch, book=100, intro=110, plot=130, read_effect=90)
     seen = []
     real = stages._reduce_budget_seconds
 
-    def spy(final_call_seconds, make_cover):
-        seen.append((final_call_seconds, make_cover))
-        return real(final_call_seconds, make_cover)
+    def spy(final_timeouts, make_cover):
+        seen.append((list(final_timeouts), make_cover))
+        return real(final_timeouts, make_cover)
 
     monkeypatch.setattr(stages, "_reduce_budget_seconds", spy)
 
@@ -232,7 +254,26 @@ def test_finalize_reserves_the_longest_final_call_and_the_cover(monkeypatch):
     _patch(monkeypatch, _book("book"))
     stages.run_finalize(StageContext(book_id="B1", params={}))
 
-    assert seen == [(110, False), (130, False), (130, True)]
+    assert seen == [([100, 110], False), ([100, 110, 130, 90], False), ([100, 110, 130, 90], True)]
+
+
+def test_finalize_budget_counts_waves_with_low_concurrency(monkeypatch, caplog):
+    """동시 한도 1 이면 도서류 최종 호출 넷이 차례로 돈다 — 계층 요약 예산은 900 − 4 × 120 − 60 = 360초다."""
+    _fix_timeouts(monkeypatch)
+    budgets = []
+    real = stages._reduce_budget_seconds
+
+    def spy(final_timeouts, make_cover):
+        budgets.append(real(final_timeouts, make_cover))
+        return budgets[-1]
+
+    monkeypatch.setattr(stages, "_reduce_budget_seconds", spy)
+    state = _patch(monkeypatch, _book("book"), concurrency=1)
+
+    stages.run_finalize(StageContext(book_id="B1", params={"skip_cover": True}))
+
+    assert budgets == [360]
+    assert state["peak"] == 1 and len(state["calls"]) == 4
 
 
 def test_reduce_over_budget_falls_back_without_waiting(monkeypatch, caplog):

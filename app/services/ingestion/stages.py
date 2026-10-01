@@ -19,6 +19,7 @@ import gzip
 import io
 import json
 import logging
+import math
 import os
 import time
 from dataclasses import dataclass, field
@@ -871,15 +872,17 @@ _FINALIZE_MARGIN_SECONDS = 60       # 마감 앞 여유 (DB 저장·아티팩트
 _REDUCE_MIN_BUDGET_SECONDS = 60     # 몫을 빼고 남는 시간이 이보다 적어도 이만큼은 준다
 
 
-def _reduce_budget_seconds(final_call_seconds: float, make_cover: bool) -> float:
+def _reduce_budget_seconds(final_timeouts: list[float], make_cover: bool) -> float:
     """계층 요약이 쓸 수 있는 최대 시간(초).
 
-    INGEST_STAGE_TIMEOUT_FINALIZE − final_call_seconds − 여유 (표지를 만들면 표지 프롬프트 LLM·FLUX
-    타임아웃도 뺀다), 하한 _REDUCE_MIN_BUDGET_SECONDS. final_call_seconds 는 함께 나가는 최종 호출
-    (요약·소개글·줄거리·독후 효과) 중 가장 긴 타임아웃이다 — 동시 호출 한도(LLM_SECTION_CONCURRENCY)가
-    호출 수 이상이라 한 번에 나간다고 본다.
+    INGEST_STAGE_TIMEOUT_FINALIZE − 최종 호출 몫 − 여유 (표지를 만들면 표지 프롬프트 LLM·FLUX 타임아웃도
+    뺀다), 하한 _REDUCE_MIN_BUDGET_SECONDS. final_timeouts 는 계층 요약 뒤에 나가는 최종 호출(요약·소개글,
+    도서류는 줄거리·독후 효과까지)의 타임아웃이다. 이 호출들은 LLM_SECTION_CONCURRENCY 개씩(0 이하는 1)
+    동시에 나가므로 몫은 ceil(호출 수 / 동시 한도) 차례 × 가장 긴 타임아웃이다 — 차례마다 가장 긴 것만큼
+    걸린다고 보면 어떤 순서로 끝나도 그 안에 든다.
     """
-    reserve = final_call_seconds + _FINALIZE_MARGIN_SECONDS
+    waves = math.ceil(len(final_timeouts) / max(1, cfg.LLM_SECTION_CONCURRENCY))
+    reserve = waves * max(final_timeouts) + _FINALIZE_MARGIN_SECONDS
     if make_cover:
         reserve += cfg.COVER_PROMPT_TIMEOUT + cfg.FLUX_TIMEOUT
     return max(_REDUCE_MIN_BUDGET_SECONDS, cfg.INGEST_STAGE_TIMEOUT_FINALIZE - reserve)
@@ -940,7 +943,7 @@ def run_finalize(ctx: StageContext) -> dict:
         final_timeouts = [cfg.SUMMARIZER_BOOK_TIMEOUT, cfg.SUMMARIZER_INTRO_TIMEOUT]
         if doc_type in _GENERATE_EXTRA_DOC_TYPES:
             final_timeouts += [cfg.SUMMARIZER_PLOT_TIMEOUT, cfg.SUMMARIZER_READ_EFFECT_TIMEOUT]
-        budget = _reduce_budget_seconds(max(final_timeouts), make_cover)
+        budget = _reduce_budget_seconds(final_timeouts, make_cover)
         try:
             combined = await asyncio.wait_for(
                 reduce_section_summaries(title, author, valid_summaries, doc_type, stats=reduce_stats),
