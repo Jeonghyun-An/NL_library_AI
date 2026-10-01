@@ -173,3 +173,24 @@ def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
         time.sleep(0.1)
     else:
         pytest.fail("timeout 뒤에도 손자 프로세스가 살아 있다")
+
+
+# ── 5-2 ──────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("mode", ["off", "embedded"])
+def test_convert_uses_image_output_setting(monkeypatch, mode):
+    calls = _patch_convert(monkeypatch, [{1: "본문"}])
+    monkeypatch.setattr(extractor.cfg, "ODL_IMAGE_OUTPUT", mode)
+    _run(_pdf(["a"]))
+    assert calls[0]["image_output"] == mode
+
+
+def test_image_only_page_stays_as_empty_odl_page(monkeypatch):
+    """image_output=off 면 그림만 있는 쪽이 markdown 에서 빠진다 — json 의 그림 요소로 빈 쪽을 남긴다."""
+    kids = [{"type": "paragraph", "page number": 1, "content": "첫 쪽"},
+            {"type": "image", "page number": 2},
+            {"type": "paragraph", "page number": 3, "content": "셋째 쪽"}]
+    _patch_convert(monkeypatch, [({1: "첫 쪽", 3: "셋째 쪽"}, kids)])
+    result = _run(_pdf(["a", "b", "c"]))
+    assert [(p.page_num, p.text) for p in result.pages] == [(0, "첫 쪽"), (1, ""), (2, "셋째 쪽")]

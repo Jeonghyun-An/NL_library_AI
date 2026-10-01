@@ -783,8 +783,8 @@ async def _run_odl(input_path: str, out_dir: str, page_sep: str, timeout: float)
             "input_path": input_path,
             "output_dir": out_dir,
             "format": ["markdown", "json"],
-            "image_output": "embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
-            "image_format": "jpeg",      # base64 크기 절감
+            "image_output": cfg.ODL_IMAGE_OUTPUT,  # 그림 저장은 운영 0건 — 기본 off 로 인코딩을 아낀다
+            "image_format": "jpeg",
             "table_method": "cluster",   # 무경계/복잡 표까지 검출
             "markdown_page_separator": page_sep,
             "keep_line_breaks": False,
@@ -917,6 +917,7 @@ async def extract_text_opendataloader(
 
         # ── JSON → 페이지별 표 셀 충전율(라우팅 신호) + 머리말/쪽번호 텍스트 ──
         page_headers_footers: dict[int, set[str]] = {}
+        image_pages: set[int] = set()  # 1-based — 그림 요소가 있는 쪽
         if json_files:
             try:
                 with open(json_files[0], encoding="utf-8") as f:
@@ -925,6 +926,8 @@ async def extract_text_opendataloader(
                 for el in jdata.get("kids", []):
                     by_page[el.get("page number", 1)].append(el)
                 for pnum, elements in by_page.items():
+                    if any(el.get("type") == "image" for el in elements):
+                        image_pages.add(pnum)
                     hf_lines: set[str] = set()
                     for el in elements:
                         if el.get("type") in ("header", "footer"):
@@ -963,6 +966,12 @@ async def extract_text_opendataloader(
         for i in range(1, len(parts), 2):
             if i + 1 < len(parts) and parts[i + 1].strip():
                 documents.append((int(parts[i]), parts[i + 1].strip()))
+
+        # image_output=off 면 그림만 있는 쪽이 markdown 에서 통째로 빠진다. embedded 일 때처럼
+        # 'ODL 이 본 빈 쪽'으로 남겨야 extract_text 가 'ODL 누락'(판정 없이 OCR) 대신 fitz 교차검증을 탄다.
+        seen = {pnum for pnum, _ in documents}
+        documents.extend((pnum, "") for pnum in image_pages if pnum not in seen)
+        documents.sort(key=lambda d: d[0])
 
         if max_pages:
             documents = documents[:max_pages]
