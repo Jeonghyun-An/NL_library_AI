@@ -4,6 +4,7 @@ import datetime as _dt
 import json
 import re
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -14,14 +15,54 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 UTC = _dt.timezone.utc
 KST = _dt.timezone(_dt.timedelta(hours=9))
+META_COLUMNS = ["extract_method", "sections", "chunks", "vlm_capped"]
 
 
-def _row(item_id, pages, body_chars, finished_at=None):
+def _row(item_id, pages, body_chars, finished_at=None, **meta):
+    """SQL 이 돌려주는 한 줄. meta 에서 꺼낸 칼럼은 문자열(`meta ->> 'x'`)이고, 키가 없으면 None."""
     return {
         "item_id": item_id, "book_id": f"KCI_FI{item_id:09d}", "pages": pages,
         "body_chars": body_chars,
         "finished_at": finished_at or _dt.datetime(2026, 9, 3, 4, 0, tzinfo=UTC),
+        **{name: None for name in META_COLUMNS},
+        **meta,
     }
+
+
+class _FakeSession:
+    """db.postgres.SyncSessionLocal() 이 돌려주는 세션 대역 - 실행한 문장을 순서대로 기록한다."""
+
+    def __init__(self):
+        self.rows = []
+        self.executed = []          # [(SQL 문장, 바인드)]
+        self.rolled_back = False
+        self.closed = False
+
+    def execute(self, statement, params=None):
+        sql = str(statement)
+        self.executed.append((sql, params))
+        if sql.startswith("SET "):
+            return None
+        return [types.SimpleNamespace(_mapping=row) for row in self.rows]
+
+    def rollback(self):
+        self.rolled_back = True
+
+    def close(self):
+        self.closed = True
+
+
+@pytest.fixture
+def fake_session(monkeypatch):
+    """스크립트가 함수 안에서 import 하는 db.postgres 를 대역으로 바꾼다 - 진짜 DB 에 닿지 않는다."""
+    session = _FakeSession()
+    db_pkg = types.ModuleType("db")
+    db_pg = types.ModuleType("db.postgres")
+    db_pg.SyncSessionLocal = lambda: session
+    db_pkg.postgres = db_pg
+    monkeypatch.setitem(sys.modules, "db", db_pkg)
+    monkeypatch.setitem(sys.modules, "db.postgres", db_pg)
+    return session
 
 
 def test_selects_long_documents_below_threshold():
@@ -65,7 +106,8 @@ def test_retry_body_is_what_the_retry_api_takes():
 def test_write_outputs(tmp_path):
     from select_near_empty_items import retry_body, select_near_empty, write_outputs
 
-    picked = select_near_empty([_row(5, pages=12, body_chars=120)], min_pages=8, max_chars_per_page=150)
+    row = _row(5, pages=12, body_chars=120, extract_method="vlm", sections="3", chunks="9", vlm_capped="true")
+    picked = select_near_empty([row], min_pages=8, max_chars_per_page=150)
     csv_path, json_path = write_outputs(tmp_path / "out", picked)
 
     with open(csv_path, encoding="utf-8", newline="") as f:
@@ -73,8 +115,29 @@ def test_write_outputs(tmp_path):
     assert rows == [{
         "item_id": "5", "book_id": "KCI_FI000000005", "pages": "12", "body_chars": "120",
         "chars_per_page": "10.0", "finished_at": "2026-09-03T04:00:00+00:00",
+        # 사람 검토용 - meta 에서 그대로 옮긴 값
+        "extract_method": "vlm", "sections": "3", "chunks": "9", "vlm_capped": "true",
     }]
+    # retry API 본문은 meta 칼럼과 상관없이 item_ids·reset_stage 뿐이다
+    assert json.loads(json_path.read_text(encoding="utf-8")) == {"item_ids": [5], "reset_stage": "pending"}
     assert json.loads(json_path.read_text(encoding="utf-8")) == retry_body(picked)
+
+
+def test_csv_columns_and_blank_meta(tmp_path):
+    from select_near_empty_items import select_near_empty, write_outputs
+
+    # meta 에 그 키가 없는 아이템(SQL 이 NULL 을 돌려준다)은 칸을 비운다 - 'None' 글자가 들어가면 안 된다
+    picked = select_near_empty([_row(6, pages=12, body_chars=0)], min_pages=8, max_chars_per_page=150)
+    csv_path, _ = write_outputs(tmp_path / "out", picked)
+
+    with open(csv_path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        [row] = list(reader)
+    assert reader.fieldnames == [
+        "item_id", "book_id", "pages", "body_chars", "chars_per_page", "finished_at",
+        "extract_method", "sections", "chunks", "vlm_capped",
+    ]
+    assert [row[name] for name in META_COLUMNS] == ["", "", "", ""]
 
 
 def test_candidate_sql_binds_and_avoids_param_cast():
@@ -85,6 +148,52 @@ def test_candidate_sql_binds_and_avoids_param_cast():
     assert re.search(r":\w+::", CANDIDATES_SQL) is None
     # 완료 12만 건의 본문을 다 풀지 않게, 크기만 보는 octet_length 로 먼저 거른다
     assert "octet_length" in CANDIDATES_SQL
+    # 사람 검토용 meta 칼럼 - SQL 별칭이 CSV 칼럼 이름과 같다
+    for name in META_COLUMNS:
+        assert f"meta ->> '{name}' AS {name}" in CANDIDATES_SQL
+
+
+def test_fetch_candidates_is_read_only_with_a_statement_timeout(fake_session):
+    from select_near_empty_items import CANDIDATES_SQL, fetch_candidates
+
+    fake_session.rows = [_row(1, pages=10, body_chars=0, extract_method="odl", vlm_capped="false")]
+    rows = fetch_candidates("job-1", min_pages=8, max_chars_per_page=150.0, finished_before=None)
+
+    # 본 질의보다 먼저: 쓰기는 DB 가 막고, 큰 집계가 길게 도는 동안 fastapi 가 재생성되면 lifespan 의
+    # ALTER 가 배타 잠금을 기다리며 적재의 book_sections 접근을 줄 세운다(함정 18) - 15분에 끊는다
+    assert [sql for sql, _ in fake_session.executed] == [
+        "SET TRANSACTION READ ONLY",
+        "SET LOCAL statement_timeout = '15min'",
+        CANDIDATES_SQL,
+    ]
+    assert fake_session.executed[2][1] == {"job": "job-1", "before": None, "min_pages": 8, "max_cpp": 150.0}
+    assert rows == fake_session.rows
+    assert fake_session.rolled_back and fake_session.closed
+
+
+def test_help_prints_on_a_cp949_console(capsys):
+    from select_near_empty_items import parse_args
+
+    with pytest.raises(SystemExit) as exc:
+        parse_args(["--help"])
+    assert exc.value.code == 0
+    out = capsys.readouterr().out
+    assert "--finished-before" in out
+    # Windows 한국어 콘솔(cp949)에서 --help 가 도는지 보는 로컬 확인 단계 - cp949 로 못 쓰는 글자(— 등)가
+    # 있으면 UnicodeEncodeError 로 죽는다
+    out.encode("cp949")
+
+
+@pytest.mark.parametrize("value", ["2026-10-02T03:00:00", "내일"])
+def test_argument_errors_print_on_a_cp949_console(value, capsys):
+    from select_near_empty_items import parse_args
+
+    with pytest.raises(SystemExit) as exc:
+        parse_args(["--job", "j", "--out", "o", "--finished-before", value])
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "--finished-before" in err
+    err.encode("cp949")
 
 
 def test_finished_before_needs_a_timezone():

@@ -13,7 +13,9 @@ r"""build_canary_manifest.py — 카나리 잡 매니페스트 만들기 (DB 읽
 id 순 앞부분은 표본이 아니고(docs/ops/recurring-gotchas.md 11번), 같은 seed 면 다시 돌려도 같은
 50건이 나온다. 후보는 SQL 이 범주마다 같은 해시 순으로 (몫 × --oversample)건까지만 읽는다.
 
-DB 는 읽기만 하고(READ ONLY 트랜잭션) 매니페스트는 로컬 파일로만 쓴다. MinIO 업로드·잡 생성·시작은
+DB 는 읽기만 하고(READ ONLY 트랜잭션, 문장마다 15분 상한 SET LOCAL statement_timeout) 매니페스트는 로컬
+파일로만 쓴다. 상한을 두는 까닭: 질의가 오래 도는 동안 fastapi 가 재생성되면 lifespan 의 ALTER 가 배타
+잠금을 기다리며 적재의 접근이 줄을 선다(docs/ops/recurring-gotchas.md 18번). MinIO 업로드·잡 생성·시작은
 하지 않고 명령만 출력한다 — 운영에 쓰는 일은 사람이 한다(docs/ops/bulk_ingest_runbook.md §9).
 
 매니페스트 형식: build_manifest.py 와 같은 JSONL, 한 줄 = 한 문서. 잡 생성(job_manager.build_job_plan)은
@@ -43,6 +45,8 @@ QUOTAS = {
 DEFAULT_SEED = "round07"
 MANIFEST_NAME = "manifest.jsonl"
 NO_SECTIONS_PREFIX = "섹션 없음"   # stages.run_summarize 의 StageError("not_found", "섹션 없음 — …")
+# 읽기 전용 트랜잭션 안에서 문장마다 15분 상한 - 질의가 배타 잠금 요청 뒤에서 오래 버티지 않게 한다(함정 18번)
+STATEMENT_TIMEOUT_SQL = "SET LOCAL statement_timeout = '15min'"
 
 
 def _num(meta: dict, key: str) -> float:
@@ -161,6 +165,7 @@ def fetch_candidates(job_id: str, seed: str, oversample: int) -> list[dict]:
     db = SyncSessionLocal()
     try:
         db.execute(sa_text("SET TRANSACTION READ ONLY"))
+        db.execute(sa_text(STATEMENT_TIMEOUT_SQL))   # 같은 트랜잭션이라 아래 범주 질의 다섯 개 모두에 걸린다
         rows: list[dict] = []
         for category, quota in QUOTAS.items():
             params = {"job": job_id, "seed": seed, "cap": quota * oversample}
