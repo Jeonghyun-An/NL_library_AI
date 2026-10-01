@@ -280,10 +280,14 @@ def _split_oversized(
       "legacy"   의미 경계로 만든 청크. 지금까지의 규칙 그대로 — 상한을 넘는 문장은 글자 수
                  지점에서 자르고, 문장별 추정치를 더해 묶는다. 이 자리를 바꾸면 그 뒤 문장들의
                  묶음까지 밀려 마침표가 충분한 일반 본문의 청크 경계가 달라지므로 그대로 둔다.
-      "sentence" 문장 5개 이하 분기(nanet 7128e09 — 지금까지 크기를 안 보던 곳). 상한을 넘는 문장은
-                 줄바꿈·문장부호·공백 경계에서 자르고(_split_by_chars), 이어 붙인 텍스트로 잰다.
+      "sentence" 문장 5개 이하 분기(크기 상한이 없던 곳 — 표·통계가 섹션 하나로 나갔다). 문장으로
+                 다시 나누지 않고 본문을 바로 _split_by_chars 로 줄바꿈·문장부호·공백 경계에서 자른다.
+                 문장 분리는 5자 이하 조각('2. 3. 4.' 같은 번호)을 버리지만 _split_by_chars 는 이어 붙이면
+                 원문 그대로다. 문장이 5개 이하라 문장 경계로 얻을 것이 거의 없고, _split_by_chars 도
+                 문장부호 경계를 먼저 찾는다. 끝 조각이 아니면 max_chars 의 절반 넘게 차므로 자투리는
+                 끝에만 생긴다.
       "line"     줄바꿈 폴백. 정규화 전 줄 단위로 나눈 청크를 줄 단위로 다시 나누고 줄바꿈으로
-                 잇는다(표의 행 보존). 자르는 규칙은 "sentence" 와 같다.
+                 잇는다(표의 행 보존). 상한을 넘는 줄은 _split_by_chars 로 자르고, 이어 붙인 텍스트로 잰다.
     """
     if chunk.token_count <= max_tokens:
         return [chunk]
@@ -293,6 +297,11 @@ def _split_oversized(
     # 있고, 그러면 아래 루프가 쪼개지 못해 거대한 청크가 그대로 남는다(LLM 컨텍스트 초과).
     # → 문장 자체가 상한을 넘으면 강제 분할한다.
     max_chars = int(max_tokens * 1.5)
+    if mode == "sentence":
+        return [
+            Chunk(chunk_idx=0, text=part.strip(), page_start=chunk.page_start, page_end=chunk.page_end)
+            for part in _split_by_chars(chunk.text, max_chars) if part.strip()
+        ]
     units = (
         [u["text"] for u in _split_lines_with_offsets(chunk.text)] if mode == "line"
         else _split_sentences(chunk.text)
@@ -439,6 +448,8 @@ def semantic_chunk(
             Chunk(chunk_idx=0, text=body), max_tokens=max_tokens,
             mode="line" if line_mode else "sentence",
         )
+        # 자르고 남은 min_tokens 미만 자투리는 본 경로처럼 이웃 조각에 붙인다 — 혼자 섹션·청크가 되지 않게
+        parts = _merge_small_chunks(parts, min_tokens=min_tokens)
         if apply_byte_guard:
             parts = [g for c in parts for g in _split_by_bytes(c)]
         for i, c in enumerate(parts):

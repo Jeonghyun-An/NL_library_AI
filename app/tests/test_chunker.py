@@ -171,6 +171,30 @@ def test_few_giant_sentences_are_capped():
     assert max(len(c.text.encode("utf-8")) for c in search) <= MAX_CHUNK_BYTES
 
 
+def _nonspace(s: str) -> str:
+    return "".join(s.split())
+
+
+def test_few_sentences_over_cap_keep_short_fragments_and_merge_the_tail():
+    """문장 5개 이하인데 상한을 넘는 본문 — 잘라도 문장 분리가 버리는 5자 이하 조각('2.'·'3.' 같은 번호·'끝')까지
+    글자가 하나도 빠지지 않아야 하고, 상한 근처에서 자른 뒤 남은 자투리(min_tokens 미만)는 혼자 섹션·청크가
+    되지 않고 이웃 조각에 붙는다(본 경로의 재병합과 같다)."""
+    for params in (SECTION, SEARCH):
+        max_chars = int(params["max_tokens"] * 1.5)
+        numbered = "1. " + "가나다라마바사 " * 700 + "2. 3. 4. " + "아자차카타파하 " * 700 + "5. 끝"
+        just_over = "가나다라 " * (max_chars // 5 + 2) + "2. 3. 4. 끝"      # 한 조각을 조금 넘는다
+        for text in (numbered, just_over):
+            out = semantic_chunk(text, _hash_embed, page_map={}, **params)
+            assert _nonspace("".join(c.text for c in out)) == _nonspace(text), params["max_tokens"]
+            assert all(c.token_count >= params["min_tokens"] for c in out), [c.token_count for c in out]
+            assert max(c.token_count for c in out) <= params["max_tokens"] + params["min_tokens"]
+            assert [c.chunk_idx for c in out] == list(range(len(out)))
+    # 본문 전체가 min_tokens 보다 작으면 그대로 한 덩어리다
+    tiny = "1. 서론에서는 연구 배경을 다룬다. 2. 3. 끝"
+    for params in (SECTION, SEARCH):
+        assert [c.text for c in semantic_chunk(tiny, _hash_embed, page_map={}, **params)] == [tiny]
+
+
 def test_period_free_table_is_capped():
     """마침표 없는 표·통계 14만 자 — 지금은 '문장' 1개로 잡혀 섹션 하나(약 9.4만 토큰)가 되고,
     섹션 요약이 앞 12,000자(SUMMARIZER_MAX_SECTION_CHARS)만 읽는다. 상한 이하 여러 개여야 한다."""
@@ -181,11 +205,13 @@ def test_period_free_table_is_capped():
     assert max(c.token_count for c in sections) <= SECTION["max_tokens"]
     chunks = semantic_chunk(text, _hash_embed, page_map=page_map, **SEARCH)
     assert max(c.token_count for c in chunks) <= SEARCH["max_tokens"]
-    # 의미 경계가 하나도 안 나는 최악의 경우 — 크기 분할 뒤 자투리 재병합(5a7613b)이 끝 조각을
-    # 앞 조각에 붙이면 상한을 min_tokens 만큼까지 넘을 수 있다. 그래도 섹션 요약 입력 상한 아래다.
+    # 의미 경계가 하나도 안 나는 최악의 경우 — 크기 분할 뒤 자투리 재병합(_merge_small_chunks)이 상한을 넘길 수
+    # 있다. min_tokens 미만 조각이 다음 조각(≤ max_tokens)을 흡수하면 < max + min, 그 뒤 끝 자투리(< min)를 다시
+    # 앞에 붙이면 < max + 2·min 이다(추정치 내림 오차 몇 토큰 제외). 섹션 설정이면 5,000 + 2 × 800 = 6,600토큰
+    # ≈ 9,900자라 섹션 요약 입력 상한(SUMMARIZER_MAX_SECTION_CHARS 12,000자) 아래다.
     worst = semantic_chunk(text, _flat_embed, page_map=page_map, **SECTION)
     assert len(worst) > 1
-    assert max(c.token_count for c in worst) <= SECTION["max_tokens"] + SECTION["min_tokens"]
+    assert max(c.token_count for c in worst) <= SECTION["max_tokens"] + 2 * SECTION["min_tokens"]
     assert max(len(c.text) for c in worst) <= 12_000
 
 
