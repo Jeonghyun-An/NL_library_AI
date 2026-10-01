@@ -13,9 +13,9 @@ extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
                             (c) 글자 수가 기준 미만 **이면서 fitz 추정치도 함께 미만**
                                 — fitz까지 짧으면 표지·구분 페이지 등 원래 짧은
                                 페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다.
-                                fitz 는 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
-                                뺀 길이로 견주고, 3쪽 이상 문서에서 이런 짧은 쪽이 절반을
-                                넘으면 스캔본으로 보고 짧은 쪽을 모두 OCR 한다(page_routing.py)
+                                다만 3쪽 이상 문서에서, ODL 본문이 짧고 문서 전체에 되풀이되는
+                                줄(머리말·꼬리말·스탬프)을 뺀 fitz 길이도 짧은 쪽이 절반을 넘으면
+                                스캔본으로 보고 짧은 쪽을 모두 OCR 한다(page_routing.py)
                             (fitz는 페이지 이미지 렌더링뿐 아니라 (b)(c)의 교차검증에도 쓰인다)
 
 비교 테스트용 standalone 함수(운영 경로 아님):
@@ -366,8 +366,8 @@ async def extract_text(
         f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
     )
 
-    # 짧은 쪽은 같은 것끼리 견준다 — ODL 은 머리말·꼬리말을 지운 길이라 fitz 도 문서 전체에
-    # 되풀이되는 줄을 뺀 길이로 잰다. CMap 손상 2배 비교는 예전처럼 원래 fitz 길이를 쓴다.
+    # 문서 단위 스캔본 판정(short_flags)의 '짧은 쪽'만 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
+    # 뺀 fitz 길이로 센다. 쪽별 OCR 판정(CMap 손상 2배 비교·짧은 쪽 분기)은 예전처럼 원래 fitz 길이를 쓴다.
     fitz_texts = [_clean_text(p.get_text()) for p in doc]
     repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
     fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]

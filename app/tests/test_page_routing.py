@@ -76,6 +76,16 @@ class TestIsScanDocument:
     def test_half_is_not_more_than_half(self):
         assert not is_scan_document([True, True, False, False], min_pages=3, ratio=0.5)
 
+    def test_zero_pages_do_not_divide_by_zero(self):
+        # 0쪽 문서 또는 min_pages <= 0 설정이어도 ZeroDivisionError 가 나면 안 된다
+        assert not is_scan_document([], min_pages=3, ratio=0.5)
+        assert not is_scan_document([], min_pages=0, ratio=0.5)
+        assert not is_scan_document([], min_pages=-1, ratio=0.5)
+
+    def test_non_positive_min_pages_still_apply_ratio(self):
+        assert is_scan_document([True], min_pages=0, ratio=0.5)
+        assert not is_scan_document([False], min_pages=0, ratio=0.5)
+
 
 class TestShortPageNeedsOcr:
     def _call(self, *, stripped, raw, scan=False, force=False):
@@ -104,6 +114,38 @@ class TestShortPageNeedsOcr:
 
     def test_genuine_short_page_is_kept(self):
         assert self._call(stripped=7, raw=7) == (False, "원래 짧은 쪽")
+
+    def test_repeated_lines_do_not_hide_a_missed_body(self):
+        # 비스캔 문서: 되풀이 줄을 빼면 짧아도(42) fitz 원래 길이가 50자 이상(60)이면 'ODL 이 놓친 쪽' → OCR.
+        # 이미지 본문 쪽에 머리말·꼬리말만 텍스트로 남은 경우(KCI_FI003011274 1·2·8·9쪽)를 옛 규칙대로 구한다.
+        need, why = self._call(stripped=42, raw=60)
+        assert need and "놓친" in why
+
+    def test_min_chars_boundary_uses_raw_length(self):
+        assert self._call(stripped=0, raw=49) == (False, "원래 짧은 쪽")
+        assert self._call(stripped=0, raw=50)[0]
+
+    def test_decision_order(self):
+        # 강제 → 텍스트 층 없음 → 스캔본 → 놓친 본문 → 원래 짧은 쪽
+        assert "강제" in self._call(stripped=0, raw=0, scan=True, force=True)[1]
+        assert "텍스트 층 없음" in self._call(stripped=0, raw=0, scan=True)[1]
+        assert "스캔본" in self._call(stripped=0, raw=60, scan=True)[1]
+        assert "놓친" in self._call(stripped=0, raw=60)[1]
+
+    def test_non_scan_non_forced_matches_legacy_rule_for_every_length(self):
+        # 옛 규칙(이 작업 전 extract_text): 0 < fitz 원래 길이 < min_chars 인 쪽만 ODL 채택, 나머지는 OCR.
+        # 되풀이 줄 뺀 길이(stripped)는 이 판정에 쓰이지 않으므로 어떤 값이어도 결과가 같아야 한다.
+        for raw in range(0, 131):
+            for stripped in range(0, raw + 1):
+                need, _ = self._call(stripped=stripped, raw=raw)
+                assert need == (not 0 < raw < 50), (raw, stripped)
+
+    def test_scan_or_force_always_sends_the_page_to_ocr(self):
+        # 스캔본 문서·강제는 OCR 를 더할 뿐 빼지 않는다(짧은 쪽 분기에서는 모두 OCR)
+        for raw in range(0, 131):
+            for stripped in sorted({0, min(raw, 42), raw}):
+                for scan, force in ((True, False), (False, True), (True, True)):
+                    assert self._call(stripped=stripped, raw=raw, scan=scan, force=force)[0], (raw, stripped, scan, force)
 
 
 class TestTrimRepetition:

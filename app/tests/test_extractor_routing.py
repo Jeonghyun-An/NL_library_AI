@@ -6,7 +6,7 @@ import asyncio
 
 import fitz
 
-from services.ingestion import extractor
+from services.ingestion import extractor, page_routing
 from services.ingestion.extractor import ExtractionResult, PageResult
 
 STAMP = "Copyright (C) 2002 Nuri Media Co., Ltd."
@@ -36,10 +36,18 @@ def _pdf(pages: list[list[str]], *, stamp: bool = True, image_pages: tuple[int, 
     return data
 
 
-def _run(monkeypatch, pdf: bytes, odl_texts: dict[int, str], **kwargs) -> tuple[list[int], ExtractionResult]:
+def _run(
+    monkeypatch,
+    pdf: bytes,
+    odl_texts: dict[int, str],
+    *,
+    fill_ratios: dict[int, float] | None = None,
+    **kwargs,
+) -> tuple[list[int], ExtractionResult]:
     async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
         res = ExtractionResult(book_id=book_id, total_pages=len(odl_texts))
         res.pages = [PageResult(n, t, "opendataloader", 0.95) for n, t in sorted(odl_texts.items())]
+        res.table_fill_ratios = dict(fill_ratios or {})
         return res
 
     ocr_calls: list[int] = []
@@ -118,14 +126,66 @@ def test_empty_br_grid_is_not_counted_as_body(monkeypatch):
     assert ocr == [3]
 
 
-def test_header_footer_only_page_is_compared_without_repeated_lines(monkeypatch):
-    """fitz 원래 길이는 머리말+꼬리말로 50자를 넘지만 되풀이 줄을 빼면 0 — 디지털 문서에선 ODL 채택."""
+def test_header_footer_only_page_in_digital_document_goes_to_ocr(monkeypatch):
+    """회귀(비스캔 문서): fitz 원래 길이가 머리말+꼬리말로 50자를 넘으면 되풀이 줄을 빼면 0이어도
+    예전처럼 'ODL 이 놓친 쪽' → OCR. 되풀이 줄 뺀 길이는 문서 단위 스캔 판정(short_flags)에만 쓴다."""
     header = "Journal of Archival Studies 3"
     pages = [[header] + BODIES[n] for n in range(4)] + [[header]]
     pdf = _pdf(pages)
     odl = {**{n: _body_text(n) for n in range(4)}, 4: ""}
     ocr, _ = _run(monkeypatch, pdf, odl)
-    assert ocr == []
+    assert ocr == [4]
+
+
+def _fitz_lens(pdf: bytes) -> tuple[list[int], list[int]]:
+    """extract_text 가 쪽마다 재는 (fitz 원래 길이, 되풀이 줄 뺀 길이) — 시나리오 전제를 못 박는 용도."""
+    doc = fitz.open(stream=pdf, filetype="pdf")
+    texts = [extractor._clean_text(p.get_text()) for p in doc]
+    doc.close()
+    return _lens(texts)
+
+
+def _lens(texts: list[str]) -> tuple[list[int], list[int]]:
+    repeated = page_routing.repeated_lines(texts, extractor.cfg.SCAN_REPEAT_LINE_RATIO)
+    raw = [page_routing.body_len(t) for t in texts]
+    stripped = [page_routing.body_len(page_routing.strip_lines(t, repeated)) for t in texts]
+    return raw, stripped
+
+
+def test_non_scan_page_with_long_raw_but_short_stripped_goes_to_ocr(monkeypatch):
+    """회귀(KCI_FI003011274 류): 이미지 본문 쪽에 머리말·꼬리말만 텍스트로 남아 ODL < 50, fitz 원래 길이 60,
+    되풀이 줄 뺀 길이 42 — 비스캔 문서에서 옛 코드는 'ODL 이 놓친 쪽'으로 OCR 했다. ODL 채택하면 본문이 사라진다."""
+    header = "Smart Media Journal 3"
+    pages = [[header] + BODIES[n] for n in range(4)] + [[header, "Resonance peak shifts upward under heavier load."]]
+    pdf = _pdf(pages, stamp=False)
+    raw, stripped = _fitz_lens(pdf)
+    assert (raw[4], stripped[4]) == (60, 42)
+    odl = {**{n: _body_text(n) for n in range(4)}, 4: "[그림]"}
+    ocr, result = _run(monkeypatch, pdf, odl)
+    assert ocr == [4]
+    assert result.pages[4].method == "vlm"
+
+
+def test_scan_decision_counts_short_pages_without_repeated_lines(monkeypatch):
+    """문서 단위 스캔 판정의 '짧은 쪽'은 되풀이 줄을 뺀 fitz 길이로 센다 — 머리말이 길어 원래 길이가 50자를
+    넘는 쪽(0~2쪽)도 짧은 쪽이라 스캔본이 되고, 원래 길이 50자 미만의 간지(3·4쪽)까지 OCR 로 간다."""
+    headers = ["Smart Media Journal Vol 3 No 2 pp 100", "Korea Society of Smart Media"]
+    pages = [headers] * 3 + [["Part Two"], ["Part Three"]]
+    pdf = _pdf(pages, stamp=False, image_pages=(0, 1, 2))
+    raw, stripped = _fitz_lens(pdf)
+    assert all(r >= 50 for r in raw[:3]) and all(s < 50 for s in stripped)
+    odl = {0: "[그림]", 1: "[그림]", 2: "[그림]", 3: "Part Two", 4: "Part Three"}
+    ocr, _ = _run(monkeypatch, pdf, odl)
+    assert ocr == [0, 1, 2, 3, 4]
+
+
+def test_low_table_fill_ratio_goes_to_ocr_even_with_long_text(monkeypatch):
+    """회귀: ODL 글자 수가 충분해도 표 셀 충전율 < 0.30 이면 OCR (경계 0.30 은 채택)."""
+    pdf = _pdf(BODIES[:4])
+    odl = {n: _body_text(n) for n in range(4)}
+    ocr, result = _run(monkeypatch, pdf, odl, fill_ratios={1: 0.29, 2: 0.30, 3: 0.95})
+    assert ocr == [1]
+    assert [p.method for p in result.pages] == ["opendataloader", "vlm", "opendataloader", "opendataloader"]
 
 
 def test_figure_heavy_document_counts_as_scan(monkeypatch):
@@ -150,3 +210,176 @@ def test_page_missing_from_odl_still_goes_to_ocr(monkeypatch):
     odl = {n: _body_text(n) for n in range(3)}
     ocr, _ = _run(monkeypatch, pdf, odl)
     assert ocr == [3]
+
+
+# ── 결정표 전수 열거 ───────────────────────────────────────────────────────────
+# 쪽 판정의 입력(ODL 본문 길이·fitz 원래 길이·되풀이 줄 뺀 길이·표 셀 충전율·문서 단위 스캔본 여부·강제)을
+# 모든 조합으로 돌려, 비스캔·비강제 문서의 모든 칸이 옛 규칙과 같고 스캔본·강제일 때는 짧은 쪽만 OCR 가
+# 더해지는지 본다. PDF 를 만들면 수천 칸을 못 돌므로 가짜 fitz 문서를 쓴다(ODL·VLM 도 목).
+
+MIN_CHARS = 50
+
+
+class _FakePage:
+    def __init__(self, number: int, text: str = ""):
+        self.number = number
+        self._text = text
+
+    def get_text(self, *_a, **_kw) -> str:
+        return self._text
+
+
+class _FakeDoc:
+    def __init__(self, pages: list[_FakePage]):
+        self._pages = pages
+
+    def __len__(self) -> int:
+        return len(self._pages)
+
+    def __iter__(self):
+        return iter(self._pages)
+
+    def __getitem__(self, i: int) -> _FakePage:
+        return self._pages[i]
+
+    def load_page(self, i: int) -> _FakePage:
+        return self._pages[i]
+
+    def close(self) -> None:
+        pass
+
+
+class _NullClient:
+    """httpx.AsyncClient 대용 — 목 VLM 은 클라이언트를 안 쓰고, 진짜는 만들 때마다 TLS 컨텍스트를 읽어 느리다."""
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_exc):
+        return False
+
+
+def _patch_fakes(monkeypatch) -> dict:
+    """extract_text 의 fitz 문서·ODL·VLM·httpx 를 목으로 바꾸고, 호출마다 채우는 상태 dict 를 돌려준다."""
+    state: dict = {"pages": [], "odl": {}, "fill": {}, "ocr": []}
+
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+        res = ExtractionResult(book_id=book_id, total_pages=len(state["odl"]))
+        res.pages = [PageResult(n, t, "opendataloader", 0.95) for n, t in sorted(state["odl"].items())]
+        res.table_fill_ratios = dict(state["fill"])
+        return res
+
+    async def fake_vlm(page, client, *, prompt_type="ocr", **_kw):
+        state["ocr"].append(page.number)
+        return PageResult(page.number, f"VLM 본문 {page.number}", "vlm", 0.9)
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+    monkeypatch.setattr(extractor, "_extract_with_vlm", fake_vlm)
+    monkeypatch.setattr(extractor.cfg, "OCR_ENGINE", "vlm")
+    monkeypatch.setattr(extractor.fitz, "open", lambda *_a, **_kw: _FakeDoc(state["pages"]))
+    monkeypatch.setattr(extractor.httpx, "AsyncClient", _NullClient)
+    return state
+
+
+def _legacy_sends_to_ocr(odl_len: int | None, raw: int, fill: float | None) -> bool:
+    """이 작업 전 extract_text 의 쪽 분기를 그대로 옮긴 옛 판정(d85df93·0df3001·8b1511a 이후) — OCR 로 가는가."""
+    if odl_len is None:  # ODL 누락
+        return True
+    if fill is not None and fill < 0.30:  # 표 셀 충전율 낮음
+        return True
+    if odl_len >= MIN_CHARS:  # CMap 손상 의심: fitz 원래 길이가 ODL 의 2배를 넘으면
+        return raw > odl_len * 2
+    return not 0 < raw < MIN_CHARS  # 원래 짧은 쪽(0 < fitz < 50)만 ODL 채택, fitz 0자·50자 이상은 OCR
+
+
+def _expected_ocr(odl_len: int | None, raw: int, fill: float | None, *, scan: bool, force: bool) -> bool:
+    if _legacy_sends_to_ocr(odl_len, raw, fill):
+        return True
+    # 옛 규칙이 ODL 을 채택하던 칸 — 짧은 쪽(ODL < 50)만 스캔본 문서·강제에서 OCR 로 바뀐다
+    return odl_len < MIN_CHARS and (scan or force)
+
+
+def _chunks(n: int, ch: str, width: int = 30) -> list[str]:
+    """ch 를 n 글자 모은 줄들 — 한 줄이 40자 이하라야 되풀이 줄 후보가 된다."""
+    return [ch * min(width, n - i) for i in range(0, n, width)]
+
+
+def _build_case(
+    state: dict, odl_len: int | None, raw: int, stripped: int, fill: float | None, *, scan: bool
+) -> None:
+    """쪽 0 이 검사 대상(ODL 길이 odl_len — None 이면 ODL 누락, fitz 원래 길이 raw, 되풀이 줄 뺀 길이 stripped).
+
+    쪽 1~4 는 채움 쪽이다: 머리말(문서 전체에 되풀이되는 줄)을 만들고, scan 이면 짧은 쪽이 과반이 되게
+    텍스트 층에는 되풀이 줄(머리말 + 쪽 0 에는 없는 60자 스탬프)뿐·ODL 은 그림뿐인 쪽으로 — fitz 원래
+    길이는 50자를 넘어도 되풀이 줄을 빼면 0이라 짧은 쪽이다 — 아니면 본문이 충분한 쪽으로 채운다.
+    """
+    header = _chunks(raw - stripped, "나")
+    stamp = _chunks(60, "라")
+    pages = [_FakePage(0, "\n".join(_chunks(stripped, "가") + header))]
+    odl: dict[int, str] = {}
+    if odl_len is not None:
+        odl[0] = "다" * odl_len if odl_len else "[그림]"
+    for k in range(1, 5):
+        if scan:
+            pages.append(_FakePage(k, "\n".join(stamp + header)))
+            odl[k] = "[그림]"
+        else:
+            body = chr(0xB300 + k)
+            pages.append(_FakePage(k, "\n".join(_chunks(60, body) + header)))
+            odl[k] = body * 60
+    state["pages"] = pages
+    state["odl"] = odl
+    state["fill"] = {} if fill is None else {0: fill}
+
+
+def test_decision_table_matches_legacy_rule_outside_scan_and_force(monkeypatch):
+    """비스캔·비강제 문서의 모든 칸은 옛 규칙과 같고, 스캔본·강제 문서는 ODL < 50 인 짧은 쪽만 OCR 가 더해진다."""
+    state = _patch_fakes(monkeypatch)
+    odl_lens = [None, 0, 30, 49, 50, 60, 130]
+    raws = [0, 1, 30, 49, 50, 51, 60, 100, 101, 120, 121, 260, 261]
+    fills = [None, 0.29, 0.30]
+    harness_errors: list[str] = []
+    mismatches: list[str] = []
+    checked = 0
+
+    async def sweep() -> None:
+        nonlocal checked
+        for odl_len in odl_lens:
+            for raw in raws:
+                for stripped in sorted({0, min(raw, 42), raw}):
+                    for fill in fills:
+                        for scan in (False, True):
+                            _build_case(state, odl_len, raw, stripped, fill, scan=scan)
+                            # 시나리오 전제 확인 — 쪽 0 의 길이와 문서 단위 스캔본 여부가 의도대로 만들어졌는가
+                            lens = _lens([extractor._clean_text(p.get_text()) for p in state["pages"]])
+                            flags = [
+                                page_routing.body_len(state["odl"].get(n, "")) < MIN_CHARS and lens[1][n] < MIN_CHARS
+                                for n in range(5)
+                            ]
+                            is_scan = page_routing.is_scan_document(
+                                flags, min_pages=extractor.cfg.SCAN_MIN_PAGES, ratio=extractor.cfg.SCAN_SHORT_PAGE_RATIO
+                            )
+                            if (lens[0][0], lens[1][0], is_scan) != (raw, stripped, scan):
+                                harness_errors.append(
+                                    f"odl={odl_len} raw={raw} stripped={stripped} scan={scan}: "
+                                    f"만들어진 값 raw={lens[0][0]} stripped={lens[1][0]} scan={is_scan}"
+                                )
+                                continue
+                            for force in (False, True):
+                                state["ocr"] = []
+                                await extractor.extract_text(
+                                    None, "T_TABLE", file_bytes=b"x", force_ocr_short_pages=force
+                                )
+                                got = 0 in state["ocr"]
+                                want = _expected_ocr(odl_len, raw, fill, scan=scan, force=force)
+                                checked += 1
+                                if got != want:
+                                    mismatches.append(
+                                        f"odl={odl_len} raw={raw} stripped={stripped} fill={fill} "
+                                        f"scan={scan} force={force}: OCR {got}, 기대 {want}"
+                                    )
+
+    asyncio.run(sweep())
+    assert not harness_errors, "\n".join(harness_errors[:10])
+    assert checked > 2000
+    assert not mismatches, f"{len(mismatches)}/{checked} 칸이 다르다:\n" + "\n".join(mismatches[:15])

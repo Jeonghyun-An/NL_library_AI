@@ -54,8 +54,11 @@ def strip_lines(text: str, lines: set[str]) -> str:
 
 
 def is_scan_document(short_flags: list[bool], *, min_pages: int, ratio: float) -> bool:
-    """min_pages 쪽 이상 문서에서 짧은 쪽 비율이 ratio 를 넘으면 문서 단위 스캔본이다."""
-    if len(short_flags) < min_pages:
+    """min_pages 쪽 이상 문서에서 짧은 쪽 비율이 ratio 를 넘으면 문서 단위 스캔본이다.
+
+    0쪽 문서나 min_pages <= 0 설정에서도 0 으로 나누지 않는다(쪽이 없으면 스캔본이 아니다).
+    """
+    if not short_flags or len(short_flags) < min_pages:
         return False
     return sum(short_flags) / len(short_flags) > ratio
 
@@ -70,19 +73,25 @@ def short_page_needs_ocr(
 ) -> tuple[bool, str]:
     """ODL 본문이 min_chars 미만인 쪽을 OCR 로 보낼지와 그 사유.
 
-    ODL 은 머리말·꼬리말을 지운 길이라, fitz 도 되풀이 줄을 뺀 길이(fitz_len_stripped)로 견준다.
-    fitz_len_raw == 0 은 텍스트 층 자체가 없는 쪽이다. 되풀이 줄만 남은 쪽(이미지 표지의
-    스탬프 등)은 문서 전체가 스캔본일 때만 OCR 로 보낸다 — 쪽 단위로 보내면 디지털 논문의
-    표지·간지가 다시 VLM 을 탄다.
+    판정 순서: 강제 → fitz 0자(텍스트 층 없음) → 문서 단위 스캔본 → fitz 원래 길이가 min_chars 이상
+    (ODL 이 놓친 본문) → 그 밖에는 원래 짧은 쪽이라 ODL 채택.
+
+    비스캔·비강제 문서에서는 옛 코드와 모든 칸이 같다 — 0 < fitz 원래 길이 < min_chars 인 쪽만 ODL 을
+    채택하고 나머지는 OCR 한다. 문서 전체가 스캔본(또는 강제)일 때만 그 짧은 쪽도 OCR 로 보낸다 —
+    쪽 단위로 보내면 디지털 논문의 이미지 표지·간지가 다시 VLM 을 탄다.
+
+    fitz_len_stripped(되풀이 줄을 뺀 길이)는 문서 단위 스캔 판정(extract_text 의 short_flags)에서만
+    쓰고 이 판정에는 쓰지 않는다. 되풀이 줄을 빼면 짧아도 fitz 원래 길이가 길면, ODL 이 이미지 본문 쪽의
+    글자를 놓친 것일 수 있어(KCI_FI003011274 1·2·8·9쪽) 옛 규칙대로 OCR 한다. 시그니처만 유지한다.
     """
     if force:
         return True, "강제 OCR(섹션 0개 재추출)"
     if fitz_len_raw == 0:
         return True, "텍스트 층 없음(fitz 0자)"
-    if fitz_len_stripped >= min_chars:
-        return True, f"ODL 이 놓친 본문(되풀이 줄 뺀 fitz {fitz_len_stripped}자)"
     if doc_is_scan:
         return True, "스캔본 문서(짧은 쪽 과반)"
+    if fitz_len_raw >= min_chars:
+        return True, "ODL 이 놓친 본문"
     return False, "원래 짧은 쪽"
 
 
