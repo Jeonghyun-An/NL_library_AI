@@ -150,6 +150,9 @@ class ExtractionResult:
     # VLM 요청 실패 수(연결·타임아웃·HTTP 오류 등 다시 하면 달라질 수 있는 것) — 퇴화 출력·렌더링 실패는 세지 않는다
     ocr_errors: int = 0
     render_errors: int = 0      # 쪽 이미지 렌더링 실패 수(fitz get_pixmap 예외 — 다시 해도 같다)
+    # ODL 본문이 짧은데 '원래 짧은 쪽'으로 ODL 결과를 채택한 쪽 수 — 강제 OCR(force_ocr_short_pages)이
+    # 판정을 바꾸는 쪽은 이것뿐이라, 0 이면 섹션 0개 재추출을 해도 결과가 같다
+    short_kept: int = 0
 
     @property
     def full_text(self) -> str:
@@ -605,6 +608,7 @@ async def extract_text(
                         if not need_ocr:
                             # 원래 짧은 쪽(표지·간지 등) — ODL 결과 그대로 채택.
                             adopted[page_num] = _adopt_odl(odl_page)
+                            result.short_kept += 1
                             continue
                         trigger = f"{why}(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
 

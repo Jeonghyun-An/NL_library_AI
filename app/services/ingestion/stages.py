@@ -1,8 +1,8 @@
 """
 단계(체크포인트) 단위로 분리되어 실패 시 해당 단계부터 재개 가능:
 
-  run_extract     : 다운로드 → 텍스트 추출 → 그림 저장 → 섹션 분할 → PG 저장
-                    + MinIO artifacts/{book_id}/extraction.json.gz (재개용 중간 산출물)
+  run_extract     : 다운로드 → 텍스트 추출 → 섹션 분할(0개면 강제 OCR 재추출 → no_text/vlm_error)
+                    → 그림 저장 → PG 저장 + MinIO artifacts/{book_id}/extraction.json.gz (재개용 중간 산출물)
   run_summarize   : 섹션 요약/테마 LLM → book_sections UPDATE (doc_type 판별·영속화 포함)
                     + [paper] 보강 LLM(섹션 요약과 같은 세마포어) → enrichment.json.gz·카탈로그
   run_embed_index : 아티팩트 + 섹션 요약 로드 → 청킹 → 임베딩 → Milvus delete+insert
@@ -20,6 +20,7 @@ import io
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -39,6 +40,10 @@ SECTION_MIN_TOKENS = cfg.SECTION_MIN_TOKENS
 SECTION_MAX_TOKENS = cfg.SECTION_MAX_TOKENS
 
 DOWNLOAD_DIR = cfg.DOWNLOAD_DIR
+
+# 섹션 0개 강제 OCR 재추출에 주는 데드라인의 하한(초) — 첫 추출이 INGEST_EXTRACT_DEADLINE 을 거의 다 썼어도
+# 이만큼은 OCR 할 시간을 준다
+FORCED_OCR_MIN_DEADLINE_SECONDS = 60
 
 
 class StageError(Exception):
@@ -286,7 +291,12 @@ def delete_artifact(book_id: str, client) -> None:
 
 
 def run_extract(ctx: StageContext) -> dict:
-    """다운로드 → 추출 → 그림 저장 → 메타 보장/doc_type 판별 → 섹션 PG 저장 → 아티팩트."""
+    """다운로드 → 추출 → 섹션 분할 → 그림 저장 → 메타 보장/doc_type 판별 → 섹션 PG 저장 → 아티팩트.
+
+    섹션 0개는 추출 성공으로 넘기지 않는다. 첫 추출에 OCR 요청 실패·데드라인이 있었으면 vlm_error(추출부터
+    재시도), '원래 짧은 쪽'으로 ODL 채택한 쪽이 없으면 no_text(재시도 안 함), 있으면 그 쪽까지 OCR 하는 강제
+    재추출을 첫 추출이 남긴 시간 안에서 한 번 더 하고, 그래도 0개면 같은 기준으로 vlm_error/no_text.
+    """
     from services.ingestion.extractor import extract_text
 
     book_id = ctx.book_id
@@ -306,17 +316,60 @@ def run_extract(ctx: StageContext) -> dict:
             raise StageError("minio_error", f"MinIO 다운로드 실패 ({ctx.source_key}): {e}") from e
 
     try:
+        t_first = time.monotonic()
         extraction = run_async(extract_text(local_path, book_id))
         if not extraction.pages:
             raise StageError("extract_empty", f"텍스트 추출 실패: {extraction.errors}")
         log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
 
+        sections = split_into_sections(extraction.pages)
+        forced_ocr = False
+        if not sections:
+            # 첫 추출에서 OCR 요청이 실패했거나 데드라인에 걸렸으면 지금 강제 OCR 을 해도 같은 장애·시간 부족을
+            # 되풀이한다 — 추출부터 재시도(백오프)하도록 넘긴다.
+            if extraction.ocr_errors or extraction.deadline_hit:
+                raise StageError(
+                    "vlm_error",
+                    f"섹션 0개 — OCR 오류 {extraction.ocr_errors}건·데드라인 {extraction.deadline_hit}: "
+                    f"{extraction.errors[:3]}",
+                )
+            # 강제 OCR 이 판정을 바꾸는 것은 '원래 짧은 쪽'으로 ODL 결과를 채택한 쪽뿐이다 — 그런 쪽이 없으면
+            # (스캔본처럼 짧은 쪽을 이미 다 OCR 했으면) 다시 추출해도 같으므로 바로 no_text.
+            if not extraction.short_kept:
+                raise StageError(
+                    "no_text",
+                    f"섹션 0개 — 본문 없음({extraction.total_pages}쪽, 강제 OCR 로 바뀔 쪽 없음)",
+                )
+            # 두 추출을 합쳐도 INGEST_EXTRACT_DEADLINE 안에 들게(stale 판정 3600초 아래) 첫 추출이 남긴 시간만 준다.
+            deadline_s = max(
+                cfg.INGEST_EXTRACT_DEADLINE - (time.monotonic() - t_first), FORCED_OCR_MIN_DEADLINE_SECONDS
+            )
+            log.warning(
+                f"[{book_id}] 섹션 0개 — 원래 짧은 쪽 {extraction.short_kept}쪽까지 OCR 로 보내 다시 추출"
+                f"(데드라인 {deadline_s:.0f}초)"
+            )
+            forced_ocr = True
+            extraction = run_async(
+                extract_text(local_path, book_id, force_ocr_short_pages=True, deadline_s=deadline_s)
+            )
+            log.info(f"[{book_id}] 강제 OCR 재추출 완료: {extraction.stats}")
+            sections = split_into_sections(extraction.pages) if extraction.pages else []
+            if not sections:
+                if extraction.ocr_errors or extraction.deadline_hit:
+                    raise StageError(
+                        "vlm_error",
+                        f"섹션 0개(강제 OCR) — OCR 오류 {extraction.ocr_errors}건·데드라인 "
+                        f"{extraction.deadline_hit}: {extraction.errors[:3]}",
+                    )
+                raise StageError(
+                    "no_text",
+                    f"섹션 0개 — 강제 OCR 재추출로도 본문 없음({extraction.total_pages}쪽)",
+                )
+        log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
+
         if extraction.figures:
             n_figs = save_figures(book_id, extraction.figures, client)
             log.info(f"[{book_id}] 그림 {n_figs}개 저장 완료")
-
-        sections = split_into_sections(extraction.pages)
-        log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
 
         doc_type = _ensure_book_and_doc_type(ctx, local_path)
 
@@ -350,6 +403,11 @@ def run_extract(ctx: StageContext) -> dict:
             "extract_method": max(method_counts, key=method_counts.get) if method_counts else "",
             "doc_type": doc_type,
             "vlm_capped": extraction.vlm_capped,
+            "forced_ocr": forced_ocr,
+            "vlm_truncated": extraction.vlm_truncated,
+            "extract_deadline_hit": extraction.deadline_hit,
+            "ocr_errors": extraction.ocr_errors,
+            "render_errors": extraction.render_errors,
         }
     finally:
         if downloaded:
