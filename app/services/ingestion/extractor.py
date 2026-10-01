@@ -749,6 +749,28 @@ _ODL_CHILD = (
 )
 
 
+# 자식 출력에서 원인으로 보이는 줄의 표식. opendataloader 의 run_jar 는 실패하면 java 출력(Output:·Stderr:·Stdout:
+# 구획)을 먼저 찍고 CalledProcessError 추적을 끝에 찍는데, 맨 끝 줄은 CLI 인자 전부라 끝만 남기면 원인이 잘린다
+_ODL_ERROR_MARKERS = ("Exception", "Error", "Unsupported", "Caused by")
+
+
+def _odl_failure_summary(output: str, *, cause_chars: int = 300, last_chars: int = 300) -> str:
+    """자식의 stderr 에서 실패 원인을 추린다 — 오류처럼 보이는 앞쪽 줄(합쳐 cause_chars 자까지)과 마지막 줄의 끝."""
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    if not lines:
+        return ""
+    *body, last = lines
+    causes: list[str] = []
+    room = cause_chars
+    for line in body:
+        if room <= 0:
+            break
+        if any(marker in line for marker in _ODL_ERROR_MARKERS):
+            causes.append(line[:room])
+            room -= len(causes[-1]) + 3  # 구분자 " | " 몫
+    return " | ".join([*causes, last[-last_chars:]])
+
+
 def _kill_process_group(proc: asyncio.subprocess.Process) -> None:
     if proc.returncode is not None:
         return
@@ -779,8 +801,8 @@ async def _odl_convert(convert_kwargs: dict, timeout: float) -> None:
             raise
         if proc.returncode != 0:
             err_file.seek(0)
-            tail = err_file.read().decode("utf-8", "replace").strip()[-300:]
-            raise RuntimeError(f"ODL 변환 실패(exit {proc.returncode}): {tail}")
+            summary = _odl_failure_summary(err_file.read().decode("utf-8", "replace"))
+            raise RuntimeError(f"ODL 변환 실패(exit {proc.returncode}): {summary}")
 
 
 async def _run_odl(input_path: str, out_dir: str, page_sep: str, timeout: float) -> Path:

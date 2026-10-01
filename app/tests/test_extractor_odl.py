@@ -239,6 +239,34 @@ def test_nonzero_exit_raises_runtime_error(monkeypatch):
         asyncio.run(extractor._odl_convert({}, 30))
 
 
+def test_failure_message_keeps_the_cause_and_the_last_line(monkeypatch):
+    """opendataloader 의 run_jar 는 실패하면 java 출력(Output:·Stderr:·Stdout: 구획)을 먼저 찍고 끝에
+    CalledProcessError 추적(맨 끝 줄에 CLI 인자 전부)을 찍는다 — 끝 300자만 남기면 원인 줄이 잘린다."""
+    script = r'''
+import sys
+w = sys.stderr.write
+w("Error running opendataloader-pdf CLI.\nReturn code: 2\n")
+w("Stdout: " + "".join("INFO processing element %d of the document tree\n" % i for i in range(200)))
+w("SEVERE: Unsupported image output mode 'bogus'\n")
+w("".join("INFO cleanup step %d\n" % i for i in range(200)))
+w('Traceback (most recent call last):\n  File "<string>", line 3, in <module>\n')
+args = ", ".join("'--option-%d'" % i for i in range(80))
+w("subprocess.CalledProcessError: Command '['java', '-jar', 'opendataloader-pdf-cli.jar', " + args
+  + "]' returned non-zero exit status 2.\n")
+sys.exit(1)
+'''
+    monkeypatch.setattr(extractor, "_ODL_CHILD", script)
+
+    with pytest.raises(RuntimeError) as exc:
+        asyncio.run(extractor._odl_convert({}, 30))
+
+    message = str(exc.value)
+    assert message.startswith("ODL 변환 실패(exit 1): ")
+    assert "Unsupported image output mode 'bogus'" in message
+    assert message.endswith("returned non-zero exit status 2.")
+    assert "INFO" not in message and len(message) <= 650
+
+
 def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
     """시간을 넘기면 자식(파이썬)과 그 자식(java 자리)을 함께 끈다. 손자 확인은 killpg 가 있는 리눅스에서만."""
     pid_file = tmp_path / "grandchild.pid"
