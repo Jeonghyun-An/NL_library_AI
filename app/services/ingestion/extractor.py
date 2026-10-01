@@ -12,7 +12,10 @@ extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
                                 글자를 유실했을 가능성
                             (c) 글자 수가 기준 미만 **이면서 fitz 추정치도 함께 미만**
                                 — fitz까지 짧으면 표지·구분 페이지 등 원래 짧은
-                                페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다
+                                페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다.
+                                fitz 는 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
+                                뺀 길이로 견주고, 3쪽 이상 문서에서 이런 짧은 쪽이 절반을
+                                넘으면 스캔본으로 보고 짧은 쪽을 모두 OCR 한다(page_routing.py)
                             (fitz는 페이지 이미지 렌더링뿐 아니라 (b)(c)의 교차검증에도 쓰인다)
 
 비교 테스트용 standalone 함수(운영 경로 아님):
@@ -28,6 +31,7 @@ import fitz  # PyMuPDF
 import httpx
 
 from core.config import get_settings
+from services.ingestion import page_routing
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -43,6 +47,8 @@ def _clean_text(text: str, strip_lines: set[str] | None = None) -> str:
     JSON 신호가 없는 경우(VLM 출력 등)를 위한 최후 수단으로 계속 둔다.
     """
     import re
+    # 빈 표 격자의 <br> 수천 개가 섹션 본문을 채우지 않게 줄바꿈 하나로 줄인다.
+    text = page_routing.collapse_br_runs(text)
     if strip_lines:
         text = "\n".join(
             line for line in text.split("\n") if line.strip() not in strip_lines
@@ -65,21 +71,6 @@ def _clean_text(text: str, strip_lines: set[str] | None = None) -> str:
     text = re.sub(r'\n\d+\s*/\s*\d+\s*\n', '\n', text)
     text = re.sub(r'\nPage\s+\d+\s*\n', '\n', text, flags=re.IGNORECASE)
     return text.strip()
-
-
-# 마크다운 표 구조 문자 + 공백 — 실질 본문 길이 계산에서 제외
-_STRUCT_CHARS = str.maketrans("", "", "|-: \t\n\r")
-
-
-def _body_len(text: str) -> int:
-    """실질 본문 길이. [그림] 마커와 빈 표 껍데기는 길이로 세지 않는다.
-
-    OpenDataLoader 는 사진·도판 위주 페이지를 내용 없는 마크다운 표(`| | | |`)로
-    내보내는데, 파이프 문자만으로 수백 자가 되어 VLM 라우팅 기준을 통과해버린다
-    (→ 그 페이지는 OCR 없이 빈 표만 남아 내용이 유실됨).
-    구조 문자를 뺀 뒤 재므로, 셀에 실제 내용이 있는 표는 그대로 본문으로 카운트된다.
-    """
-    return len(text.replace("[그림]", "").translate(_STRUCT_CHARS))
 
 
 def _collect_content_strings(element: dict) -> list[str]:
@@ -336,8 +327,11 @@ async def extract_text(
     book_id: str,
     *,
     file_bytes: bytes | None = None,
+    force_ocr_short_pages: bool = False,
 ) -> ExtractionResult:
     """2티어 라우팅 파이프라인.
+
+    force_ocr_short_pages: ODL 본문이 짧은 쪽을 판정 없이 모두 OCR 한다(섹션 0개 재추출용).
 
     1티어: OpenDataLoader로 전체 PDF 마크다운+json 추출
     2티어: 본문 부족 / CMap 손상 의심 / 표 셀 충전율 낮음 중 하나라도 해당하는
@@ -372,6 +366,26 @@ async def extract_text(
         f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
     )
 
+    # 짧은 쪽은 같은 것끼리 견준다 — ODL 은 머리말·꼬리말을 지운 길이라 fitz 도 문서 전체에
+    # 되풀이되는 줄을 뺀 길이로 잰다. CMap 손상 2배 비교는 예전처럼 원래 fitz 길이를 쓴다.
+    fitz_texts = [_clean_text(p.get_text()) for p in doc]
+    repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
+    fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]
+    fitz_stripped_lens = [
+        page_routing.body_len(page_routing.strip_lines(t, repeated)) for t in fitz_texts
+    ]
+    short_flags = [
+        page_routing.body_len(odl_pages_by_num[n].text if n in odl_pages_by_num else "")
+        < MIN_CHARS_PER_PAGE
+        and fitz_stripped_lens[n] < MIN_CHARS_PER_PAGE
+        for n in range(len(doc))
+    ]
+    doc_is_scan = page_routing.is_scan_document(
+        short_flags, min_pages=cfg.SCAN_MIN_PAGES, ratio=cfg.SCAN_SHORT_PAGE_RATIO
+    )
+    if doc_is_scan:
+        log.info(f"[{book_id}] 짧은 쪽 {sum(short_flags)}/{len(doc)} — 스캔본 문서로 보고 짧은 쪽을 OCR")
+
     vlm_pages_used = 0
     vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
     vlm_cap_hit = False
@@ -395,7 +409,7 @@ async def extract_text(
                 body_len = 0
                 trigger = "ODL 누락"
             else:
-                body_len = _body_len(odl_page.text)
+                body_len = page_routing.body_len(odl_page.text)
                 fill_ratio = odl_result.table_fill_ratios.get(page_num)
 
                 if fill_ratio is not None and fill_ratio < 0.30:
@@ -413,7 +427,7 @@ async def extract_text(
                     # 길이 기준 미달 페이지도 동일하게 fitz로 "원래 짧은 페이지"인지
                     # "ODL이 놓친 페이지"인지 구분한다 — <50자 트리거가 전체 VLM
                     # 호출의 90% 이상을 차지해 표지·구분 페이지까지 휩쓸고 있었음.
-                    fitz_check_len = _body_len(_clean_text(page.get_text()))
+                    fitz_check_len = fitz_raw_lens[page_num]
                     if body_len >= MIN_CHARS_PER_PAGE:
                         if fitz_check_len <= body_len * 2:
                             # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
@@ -421,17 +435,23 @@ async def extract_text(
                             result.pages.append(odl_page)
                             continue
                         trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
-                    elif 0 < fitz_check_len < MIN_CHARS_PER_PAGE:
-                        # 페이지 자체가 원래 짧음(표지·구분 페이지 등) — ODL 결과 그대로 채택.
-                        # fitz_check_len == 0(텍스트 레이어 자체가 없음)은 이 분기에서 제외한다 —
-                        # 스캔본 페이지는 fitz도 ODL도 똑같이 0자를 보고하므로 "짧아서 0"과
-                        # "텍스트 레이어가 없어서 0"을 이 신호만으로는 구분할 수 없다. 후자를
-                        # 오분류하면 스캔 문서 전체가 빈 텍스트로 채택돼 섹션이 0개가 된다.
-                        odl_page.text = _strip_figure_markers(odl_page.text)
-                        result.pages.append(odl_page)
-                        continue
                     else:
-                        trigger = f"본문 텍스트 부족(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+                        # fitz 0자(텍스트 층 없음)는 '원래 짧은 쪽'이 아니다 — 스캔본 쪽은 fitz 도
+                        # ODL 도 0자를 보고해 이 신호만으로는 못 가르므로 short_page_needs_ocr 가
+                        # OCR 로 보낸다(오분류하면 스캔 문서 전체가 빈 텍스트로 채택돼 섹션이 0개가 된다).
+                        need_ocr, why = page_routing.short_page_needs_ocr(
+                            fitz_len_stripped=fitz_stripped_lens[page_num],
+                            fitz_len_raw=fitz_check_len,
+                            doc_is_scan=doc_is_scan,
+                            force=force_ocr_short_pages,
+                            min_chars=MIN_CHARS_PER_PAGE,
+                        )
+                        if not need_ocr:
+                            # 원래 짧은 쪽(표지·간지 등) — ODL 결과 그대로 채택.
+                            odl_page.text = _strip_figure_markers(odl_page.text)
+                            result.pages.append(odl_page)
+                            continue
+                        trigger = f"{why}(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
 
             # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
             # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
