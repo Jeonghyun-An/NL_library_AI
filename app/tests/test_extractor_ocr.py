@@ -1,4 +1,4 @@
-"""extract_text OCR — VLM 잘림 다듬기(4-1), 문서 안 동시 요청·렌더 잠금·데드라인·OCR 실패 폴백(4-2)."""
+"""extract_text OCR — VLM 잘림 다듬기, 문서 안 동시 요청·렌더 잠금·데드라인·OCR 실패 폴백."""
 import asyncio
 import time
 
@@ -49,7 +49,7 @@ def test_stop_finish_is_not_trimmed(monkeypatch):
     assert not page.truncated
 
 
-# ── 4-2 ──────────────────────────────────────────────────────
+# ── 문서 안 동시 요청·렌더 잠금·데드라인·OCR 실패 폴백 ─────────────────
 
 
 def _blank_pdf(n_pages: int) -> bytes:

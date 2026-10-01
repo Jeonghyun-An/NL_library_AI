@@ -1,4 +1,4 @@
-"""extract_text_opendataloader — 쪽수 비례 타임아웃 → fitz 재저장본 재시도 → fitz 텍스트 폴백(5-1), 이미지 끄기(5-2).
+"""extract_text_opendataloader — 쪽수 비례 타임아웃 → fitz 재저장본 재시도 → fitz 텍스트 폴백, 이미지 끄기.
 
 ODL 변환(_odl_convert)은 목으로 바꾸고 산출물(markdown·json)을 직접 써 넣는다. 자식 프로세스를
 끄는 동작만 실제 하위 프로세스로 확인한다.
@@ -175,7 +175,7 @@ def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
         pytest.fail("timeout 뒤에도 손자 프로세스가 살아 있다")
 
 
-# ── 5-2 ──────────────────────────────────────────────────────
+# ── 이미지 끄기(ODL_IMAGE_OUTPUT) ──────────────────────────────────
 
 
 @pytest.mark.parametrize("mode", ["off", "embedded"])
