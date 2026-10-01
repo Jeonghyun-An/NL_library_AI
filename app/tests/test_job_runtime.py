@@ -17,6 +17,7 @@ DB 는 SQLite 다(history_sqlite.py 와 같은 방식 — JSONB 를 JSON 으로 
 import datetime as _dt
 import importlib
 import logging
+import re
 import sys
 import types
 import uuid
@@ -905,16 +906,18 @@ class TestRecoverStale:
             assert not s.in_transaction()
 
 
-# ── 수동 retry: 실행 토큰을 지운다 ───────────────────────────────────────
-class TestManualRetryDropsToken:
+# ── 수동 retry: 실행 토큰을 디스패처가 내지 않는 값으로 바꾼다 ───────────────────
+class TestManualRetryToken:
     """수동 retry 는 아이템을 pending 으로 되돌린다. meta.run_token 을 그대로 두면 옛 체인의 남은 메시지
     (재전달·큐 대기)가 디스패처가 새 토큰을 적기 전에 같은 토큰으로 _skip_reason 을 통과해 pending
-    아이템을 돌린다. 토큰을 지우면 그 메시지는 토큰 불일치로 멈춘다."""
+    아이템을 돌린다. 토큰을 지우기만 하면 배포 전에 보낸 토큰 없는 메시지가 통과한다(아이템에도 토큰이
+    없으니). 그래서 디스패처가 내지 않는 값(RETRY_RUN_TOKEN)을 적는다 — 토큰이 있는 옛 메시지는 토큰
+    불일치로, 토큰 없는 옛 메시지는 '아이템에 토큰이 있다'로 멈추고, 디스패처의 새 토큰이 이어받는다."""
 
-    def test_retry_update_removes_run_token_from_meta(self, monkeypatch):
-        # JSONB 키 삭제(#-)는 SQLite 가 모르므로, retry_items 가 내는 UPDATE 값을 PostgreSQL 로 컴파일해 본다
+    def test_retry_update_sets_the_retry_token(self, monkeypatch):
+        # JSONB 이어 붙이기(||)는 SQLite 가 모르므로, retry_items 가 내는 UPDATE 값을 PostgreSQL 로 컴파일해 본다
         import db.postgres as pg
-        from services.ingestion.job_manager import retry_items
+        from services.ingestion.job_manager import RETRY_RUN_TOKEN, retry_items
 
         sink: dict = {}
 
@@ -948,20 +951,52 @@ class TestManualRetryDropsToken:
 
         values = sink["values"]
         assert values["status"] == "pending" and values["attempt"] == 0
-        stmt = sa.update(IngestJobItem.__table__).values(**values)
-        compiled = stmt.compile(dialect=postgresql.dialect())
-        assert "ingest_job_items.meta #- " in str(compiled)
-        assert "run_token" in compiled.params.values()
+        stmt = sa.update(IngestJobItem.__table__).values(meta=values["meta"])
+        sql = str(stmt.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}))
+        # 다른 meta 키는 그대로 두고 run_token 만 덮는다(meta 가 NULL 이어도 객체가 된다)
+        assert "meta=(coalesce(ingest_job_items.meta, '{}'::jsonb) || " \
+               f"jsonb_build_object('run_token', '{RETRY_RUN_TOKEN}'))" in sql
 
-    def test_old_chain_message_stops_once_the_token_is_dropped(self, env):
-        # retry 가 meta 에서 run_token 을 뺀 아이템(pending) — 옛 체인의 남은 메시지는 토큰 불일치로 멈춘다
-        env.add_item(1, stage="extracted", status="pending", meta={"pages": 4})
+    def test_retry_token_is_never_a_dispatcher_token(self):
+        from services.ingestion.job_manager import RETRY_RUN_TOKEN
+
+        # 디스패처의 토큰은 uuid4().hex(32자 16진수)다 — 어떤 체인의 메시지도 이 값을 싣지 않는다
+        assert RETRY_RUN_TOKEN and not re.fullmatch(r"[0-9a-f]{32}", RETRY_RUN_TOKEN)
+
+    @pytest.mark.parametrize("old_token", ["old-token", None], ids=["old_chain", "tokenless_old_message"])
+    def test_every_old_message_stops_on_a_retried_item(self, env, old_token):
+        from services.ingestion.job_manager import RETRY_RUN_TOKEN
+
+        # retry 가 pending 으로 되돌린 아이템 — 디스패처가 아직 새 토큰을 적지 않았다
+        env.add_item(1, stage="extracted", status="pending", meta={"pages": 4, "run_token": RETRY_RUN_TOKEN})
         before = _snapshot(env.item(1))
 
         with pytest.raises(env.rt.Ignore):
-            env.rt._run_stage("summarize", 1, "celery-old", "old-token")
+            env.rt._run_stage("summarize", 1, "celery-old", old_token)
 
         assert env.calls == [] and _snapshot(env.item(1)) == before
+
+    def test_old_running_chain_cannot_record_on_a_retried_item(self, env):
+        # 옛 체인이 단계를 도는 중에 retry 됐다 — 그 체인의 기록(토큰 대조)은 버려진다
+        from services.ingestion.job_manager import RETRY_RUN_TOKEN
+
+        env.add_item(1, stage="extracted", status="pending", meta={"run_token": RETRY_RUN_TOKEN})
+        before = _snapshot(env.item(1))
+
+        assert env.rt._update_item(1, status="running", expect_token="old-token") is False
+        assert _snapshot(env.item(1)) == before
+
+    def test_dispatcher_token_takes_over_from_the_retry_token(self, env):
+        from services.ingestion.job_manager import RETRY_RUN_TOKEN
+
+        env.add_item(1, stage="extracted", status="pending", meta={"pages": 4, "run_token": RETRY_RUN_TOKEN})
+
+        assert env.dispatch() == 1
+
+        token = env.sent[0].token
+        assert token != RETRY_RUN_TOKEN and env.item(1).meta == {"pages": 4, "run_token": token}
+        env.rt._run_stage("summarize", 1, "celery-new", token)       # 새 체인은 돈다
+        assert [name for name, _ in env.calls] == ["summarize"]
 
     def test_requeued_item_with_leftover_stage_running_is_not_execution(self, env):
         # 단계 도중 워커가 죽어 stale 복구된 아이템은 meta.stage_running 이 남은 채 다시 dispatched 가

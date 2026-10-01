@@ -193,6 +193,10 @@ def create_job(name: str, manifest_key: str, params: dict, created_by: str | Non
 
 # ── 재시도 ────────────────────────────────────────────────────
 
+# 수동 재시도가 적는 실행 토큰. 디스패처의 토큰은 uuid4().hex 라 어떤 체인의 메시지도 이 값을 싣지 않는다 —
+# 디스패처가 아이템을 다시 보낼 때 새 토큰으로 덮는다(job_runtime._dispatch_for_job).
+RETRY_RUN_TOKEN = "retry"
+
 
 def retry_items(
     job_id: str,
@@ -209,6 +213,7 @@ def retry_items(
     reset_stage 지정 시 처음부터(특정 체크포인트부터) 재실행.
     force_all=True 이면 done 포함 전체 아이템 강제 재실행.
     """
+    from sqlalchemy import func, text
     from db.postgres import SyncSessionLocal
     from models.ingest_job import IngestJob, IngestJobItem
 
@@ -234,9 +239,13 @@ def retry_items(
             "error_group": None,
             "last_error": None,
             "attempt": 0,
-            # 실행 토큰을 지운다 — 옛 체인의 남은 메시지(재전달·큐 대기)가 디스패처가 새 토큰을 적기 전에
-            # 같은 토큰으로 통과해 pending 으로 되돌린 아이템을 돌리지 못하게 한다(워커가 토큰 불일치로 멈춘다)
-            "meta": IngestJobItem.meta.delete_path(["run_token"]),
+            # 실행 토큰을 RETRY_RUN_TOKEN 으로 바꾼다 — 디스패처가 새 토큰을 적기 전에 옛 체인의 남은 메시지
+            # (재전달·큐 대기)가 pending 으로 되돌린 아이템을 돌리지 못하게. 토큰이 있는 메시지는 토큰 불일치로,
+            # 배포 전에 보낸 토큰 없는 메시지는 '아이템에 토큰이 있다'로 멈춘다(job_runtime._skip_reason).
+            # 토큰을 지우기만 하면 토큰 없는 메시지가 통과한다
+            "meta": func.coalesce(IngestJobItem.meta, text("'{}'::jsonb")).concat(
+                func.jsonb_build_object("run_token", RETRY_RUN_TOKEN)
+            ),
         }
         if reset_stage:
             update_vals["stage"] = reset_stage
