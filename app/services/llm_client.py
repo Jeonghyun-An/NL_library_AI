@@ -10,17 +10,25 @@ Ollama 의 OpenAI 호환(/v1) 엔드포인트는 think 파라미터를 무시하
 
   chat_full() → LLMResult(content, finish_reason). 잘림(finish_reason == "length")을
   호출부가 처리해야 할 때 쓴다. chat() 은 그 content 만 돌려준다.
-  비스트리밍 호출은 연결 오류·타임아웃·연결 끊김·429·5xx 를 LLM_RETRY_ATTEMPTS(첫 시도
-  포함)까지 LLM_RETRY_BACKOFF_SECONDS("2,8" — 모자라면 마지막 값 반복) 간격으로 다시
-  보낸다. 그 밖의 4xx 는 요청 자체 문제라 바로 올린다. chat_stream() 은 재시도하지 않는다.
+  비스트리밍 호출은 네트워크 오류(연결 거부, 서버 재기동·RST 로 읽기/쓰기 도중 끊김)·
+  타임아웃·응답 도중 끊김·429·5xx 를 LLM_RETRY_ATTEMPTS(첫 시도 포함)까지
+  LLM_RETRY_BACKOFF_SECONDS("2,8" — 모자라면 마지막 값 반복, 칸마다 60초 상한) 간격으로
+  다시 보낸다. 그 밖의 4xx 는 요청 자체 문제라 바로 올린다. chat_stream() 은 재시도하지 않는다.
+  재시도 전체는 호출자의 timeout 안에서만 한다 — 시도마다 httpx timeout 은 남은 시간으로
+  줄고, 남은 시간이 다음 백오프 + 1초 이하이면 마지막 예외를 그대로 올린다. 그래서 응답 없이
+  붙잡는 장애(ReadTimeout)는 예전처럼 timeout 한 번으로 끝나고 빠른 실패(연결 리셋·429·5xx)만
+  재시도되며, 최악 지연은 재시도가 없던 때와 같다.
 
   think 필드 처리:
     LLM_THINK is None  → think 필드 자체를 안 보냄 (gemma3 등 비-thinking 모델 안전)
     LLM_THINK True/False → 그 값 전송 (gemma4 요약은 false 로 추론 비용 제거)
 """
 import asyncio
+import functools
 import json
 import logging
+import math
+import time
 from dataclasses import dataclass
 from typing import AsyncGenerator
 
@@ -30,8 +38,15 @@ from core.config import get_settings
 
 log = logging.getLogger(__name__)
 
-# 다시 보내면 나을 수 있는 실패 — 연결 거부·타임아웃(연결·읽기·쓰기·풀)·응답 도중 끊김.
-_RETRYABLE_ERRORS = (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError)
+_monotonic = time.monotonic     # 테스트에서 시간을 고정할 수 있게 모듈 이름으로 둔다
+
+# 다시 보내면 나을 수 있는 실패 — 네트워크 오류(연결 거부, 서버 재기동·RST 로 읽기/쓰기 도중
+# 끊김: Connect·Read·Write·CloseError)·타임아웃(연결·읽기·쓰기·풀)·응답 도중 끊김.
+# TransportError 전체로 넓히지는 않는다 — 주소·프록시·요청 조립 오류는 다시 보내도 같다.
+_RETRYABLE_ERRORS = (httpx.NetworkError, httpx.TimeoutException, httpx.RemoteProtocolError)
+
+_MAX_BACKOFF_SECONDS = 60.0     # 백오프 한 칸의 상한 — inf·잘못 쓴 큰 값이 와도 이 이상은 안 기다린다
+_MIN_ATTEMPT_SECONDS = 1.0      # 재시도하려면 백오프 말고도 다음 시도에 이만큼은 남아 있어야 한다
 
 
 @dataclass
@@ -45,20 +60,68 @@ def _is_retryable_status(code: int) -> bool:
     return code == 429 or 500 <= code < 600
 
 
+@functools.lru_cache(maxsize=16)
+def _parse_backoff_schedule(schedule: str) -> tuple[float, ...]:
+    """"2,8" → (2.0, 8.0). 칸마다 0 ~ _MAX_BACKOFF_SECONDS 초로 맞춘다.
+
+    숫자가 아닌 칸(nan 포함)은 건너뛰고 상한을 넘는 칸(inf 포함)은 상한으로 줄이는데, 둘 다
+    설정이 잘못됐다는 뜻이라 경고를 남긴다. lru_cache 라 같은 설정 문자열은 한 번만 해석하고
+    경고한다. 빈 칸(끝 쉼표·빈 설정)은 조용히 건너뛴다.
+    """
+    delays: list[float] = []
+    skipped: list[str] = []
+    capped: list[str] = []
+    for tok in schedule.split(","):
+        tok = tok.strip()
+        if not tok:
+            continue
+        try:
+            value = float(tok)
+        except ValueError:
+            skipped.append(tok)
+            continue
+        if math.isnan(value):
+            skipped.append(tok)
+            continue
+        if value > _MAX_BACKOFF_SECONDS:
+            capped.append(tok)
+        delays.append(min(_MAX_BACKOFF_SECONDS, max(0.0, value)))
+    problems: list[str] = []
+    if skipped:
+        problems.append(f"숫자가 아닌 칸 {skipped} 은 건너뜀")
+    if capped:
+        problems.append(
+            f"{_MAX_BACKOFF_SECONDS:g}초를 넘는 칸 {capped} 은 {_MAX_BACKOFF_SECONDS:g}초로 줄임"
+        )
+    if problems:
+        log.warning(f"[llm_client] LLM_RETRY_BACKOFF_SECONDS={schedule!r} — " + ", ".join(problems))
+    return tuple(delays)
+
+
 def _backoff_delay(schedule: str, retry_no: int) -> float:
     """retry_no 번째 재시도 전 대기(초). "2,8" → 1번째 2초, 2번째부터 8초(마지막 값 반복).
 
-    숫자가 아닌 칸은 건너뛰고, 쓸 값이 하나도 없으면 기다리지 않는다.
+    쓸 값이 하나도 없으면 기다리지 않는다. 칸 해석·상한·경고는 _parse_backoff_schedule.
     """
-    delays: list[float] = []
-    for tok in str(schedule).split(","):
-        try:
-            delays.append(max(0.0, float(tok)))
-        except ValueError:
-            continue
+    delays = _parse_backoff_schedule(str(schedule))
     if not delays:
         return 0.0
     return delays[min(retry_no, len(delays)) - 1]
+
+
+def _retry_delay(attempt: int, attempts: int, schedule: str, deadline: float) -> float | None:
+    """attempt 번째 시도가 일시적으로 실패한 뒤 기다릴 초. 더 시도하지 않으면 None.
+
+    None — 시도 횟수를 다 썼거나, 호출자의 timeout(deadline) 안에 다음 시도가 들어가지 못할 때
+    (남은 시간 <= 백오프 + _MIN_ATTEMPT_SECONDS). 그래서 응답 없이 붙잡는 장애(ReadTimeout)는
+    예전처럼 timeout 한 번으로 끝나고, 연결 리셋·429·5xx 같은 빠른 실패만 재시도된다.
+    """
+    if attempt >= attempts:
+        return None
+    delay = _backoff_delay(schedule, attempt)
+    if deadline - _monotonic() <= delay + _MIN_ATTEMPT_SECONDS:
+        return None
+    return delay
 
 
 def _ollama_root(base_url: str) -> str:
@@ -122,27 +185,37 @@ async def chat_full(
     params: dict | None = None,
     timeout: float = 120.0,
 ) -> LLMResult:
-    """비스트리밍 chat 완성 → LLMResult(content, finish_reason). 일시적 실패는 재시도한다."""
+    """비스트리밍 chat 완성 → LLMResult(content, finish_reason). 일시적 실패는 재시도한다.
+
+    재시도 전체가 호출자의 timeout 안에 들어간다 — 시작 시각 + timeout 이 deadline 이고,
+    시도마다 httpx timeout 은 min(timeout, 남은 시간)이다 (더 시도할지는 _retry_delay).
+    """
     cfg = get_settings()
     params = params or {}
     attempts = max(1, int(cfg.LLM_RETRY_ATTEMPTS))
+    schedule = cfg.LLM_RETRY_BACKOFF_SECONDS
+    deadline = _monotonic() + timeout
     attempt = 1
     while True:
         try:
-            result = await _request_once(messages, params, timeout)
+            result = await _request_once(messages, params, min(timeout, deadline - _monotonic()))
         except httpx.HTTPStatusError as e:
             code = e.response.status_code
-            log.error(
+            delay = _retry_delay(attempt, attempts, schedule, deadline) if _is_retryable_status(code) else None
+            # 다시 보낼 실패는 경고, 여기서 끝나는 실패(재시도 불가 4xx·횟수/시간 소진)만 error
+            log.log(
+                logging.ERROR if delay is None else logging.WARNING,
                 f"[llm_client:{cfg.LLM_API_STYLE}] {code} ({attempt}/{attempts}회차) — "
-                f"{e.response.text[:400]}"
+                f"{e.response.text[:400]}",
             )
-            if not _is_retryable_status(code) or attempt >= attempts:
+            if delay is None:
                 raise
         except _RETRYABLE_ERRORS as e:
+            delay = _retry_delay(attempt, attempts, schedule, deadline)
             log.warning(
                 f"[llm_client:{cfg.LLM_API_STYLE}] {type(e).__name__} ({attempt}/{attempts}회차) — {e}"
             )
-            if attempt >= attempts:
+            if delay is None:
                 raise
         else:
             if result.finish_reason == "length":
@@ -151,7 +224,7 @@ async def chat_full(
                     f"model={cfg.LLM_MODEL} max_tokens={params.get('max_tokens')}"
                 )
             return result
-        await asyncio.sleep(_backoff_delay(cfg.LLM_RETRY_BACKOFF_SECONDS, attempt))
+        await asyncio.sleep(delay)          # 여기까지 온 것은 다시 보낼 실패뿐 (delay 는 위 except 에서 정해졌다)
         attempt += 1
 
 
