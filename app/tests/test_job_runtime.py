@@ -16,6 +16,7 @@ DB 는 SQLite 다(history_sqlite.py 와 같은 방식 — JSONB 를 JSON 으로 
 """
 import datetime as _dt
 import importlib
+import logging
 import sys
 import types
 import uuid
@@ -179,6 +180,8 @@ class _Env:
         # 락 대역 — lock_free=False 면 다른 워커가 쥐고 있는 것처럼 acquire 가 실패한다
         self.lock_free = True
         self.locks: list = []
+        # 락을 잡으려는 순간 돌 함수 — _run_stage 의 첫 읽기와 시작 기록 사이에 일어나는 일을 흉내 낸다
+        self.on_acquire = None
         env = self
 
         class _Lock:
@@ -187,6 +190,8 @@ class _Env:
                 env.locks.append(self)
 
             def acquire(self):
+                if env.on_acquire:
+                    env.on_acquire()
                 return env.lock_free
 
             def release(self):
@@ -200,11 +205,15 @@ class _Env:
         self.meta_during: list[dict] = []
         self.results: dict[str, dict] = {}
         self.errors: dict[str, Exception] = {}
+        # 단계 이름 → 단계가 도는 동안 돌 함수(토큰 교체·stale 복구 흉내). 단계 함수가 결과를 내기 전에 실행된다
+        self.during: dict[str, object] = {}
 
         def _make(name):
             def _fn(ctx):
                 env.calls.append((name, ctx))
                 env.meta_during.append(dict(env.item(ctx.job_item_id).meta or {}))
+                if name in env.during:
+                    env.during[name]()
                 if name in env.errors:
                     raise env.errors[name]
                 return dict(env.results.get(name, {}))
@@ -241,6 +250,13 @@ class _Env:
         with self.Session() as s:
             return s.get(IngestJobItem, item_id)
 
+    def set_token(self, item_id, token):
+        """다른 체인이 커밋한 새 토큰을 흉내 낸다 — 디스패처의 재디스패치나 stale 복구가 하는 일."""
+        with self.Session() as s:
+            row = s.get(IngestJobItem, item_id)
+            row.meta = {**(row.meta or {}), "run_token": token}
+            s.commit()
+
     def set_job(self, **values):
         with self.Session() as s:
             job = s.get(IngestJob, self.job_id)
@@ -260,6 +276,19 @@ class _Env:
 @pytest.fixture
 def env(monkeypatch):
     return _Env(monkeypatch)
+
+
+def _record_selects(env) -> list[str]:
+    """env.Session 으로 나가는 SELECT 를 PostgreSQL 문장으로 컴파일해 모은다. SQLite 는 FOR UPDATE 같은
+    잠금을 그리지 않으므로, 잠금이 있는지는 같은 문장을 Postgres 로 컴파일해 본다."""
+    selects: list[str] = []
+
+    @event.listens_for(env.Session, "do_orm_execute")
+    def _record(state):
+        if state.is_select:
+            selects.append(str(state.statement.compile(dialect=postgresql.dialect())))
+
+    return selects
 
 
 # ── _run_stage: 실행하지 않고 체인을 멈추는 경우 ─────────────────────────
@@ -365,12 +394,7 @@ class TestStopsChain:
         (SELECT … FOR UPDATE SKIP LOCKED)이 풀릴 때까지 기다린다. SQLite 는 잠금을 그리지
         않으므로 같은 문장을 Postgres 로 컴파일해 본다."""
         env.add_item(1, stage="summarized", status="running", meta={"run_token": "new"})
-        selects: list[str] = []
-
-        @event.listens_for(env.Session, "do_orm_execute")
-        def _record(state):
-            if state.is_select:
-                selects.append(str(state.statement.compile(dialect=postgresql.dialect())))
+        selects = _record_selects(env)
 
         with pytest.raises(env.rt.Ignore):
             env.rt._run_stage("embed_index", 1, "celery-old", "old")
@@ -443,6 +467,145 @@ class TestRunsStage:
         assert env.locks[0].released
 
 
+# ── 늦은 기록: 단계가 도는 동안 새 체인이 토큰을 바꾼 경우 ─────────────────
+class TestLateRecords:
+    """첫 읽기의 토큰 대조는 그 순간의 판단일 뿐이다. 단계가 도는 동안 디스패처의 재디스패치나 stale
+    복구가 토큰을 바꾸면 이 체인은 옛 체인이 되는데, 그 뒤의 시작·성공·실패 기록이 새 체인의 상태를
+    덮으면 안 된다(함정 16 — 늦게 끝난 옛 체인의 성공이 failed·재디스패치 상태를 덮던 경로).
+    _update_item 이 FOR UPDATE 로 읽은 토큰과 대조해 다르면 아무것도 쓰지 않는다."""
+
+    def _swap(self, env, item_id=1):
+        return lambda: env.set_token(item_id, "new")
+
+    def test_start_record_is_dropped_and_the_lock_released(self, env, caplog):
+        # 첫 읽기(토큰 일치)와 시작 기록 사이에 새 체인이 토큰을 바꿨다
+        env.add_item(1, stage="pending", status="dispatched", meta={"run_token": "t"})
+        env.on_acquire = self._swap(env)
+
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            with pytest.raises(env.rt.Ignore):
+                env.rt._run_stage("extract", 1, "celery-1", "t")
+
+        row = env.item(1)
+        assert env.calls == [], "단계 함수가 돌면 안 된다"
+        assert row.status == "dispatched" and row.meta == {"run_token": "new"}, "시작 기록을 쓰면 안 된다"
+        assert env.ingest_states == [], "카탈로그를 processing 으로 바꾸면 안 된다"
+        assert env.locks[0].released, "쥔 락은 풀어야 새 체인이 락 경합으로 막히지 않는다"
+        assert "[KCI_0001] item=1 extract 실행 안 함 — 실행 토큰 불일치(시작 기록) → 체인 정지" in caplog.text
+
+    def test_late_success_is_dropped_and_the_chain_stops(self, env, caplog):
+        env.add_item(1, stage="extracted", status="dispatched", meta={"run_token": "t"})
+        env.results["summarize"] = {"sections_total": 3}
+        env.during["summarize"] = self._swap(env)   # 단계가 도는 동안 새 체인이 토큰을 바꿨다
+
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            with pytest.raises(env.rt.Ignore):   # 체인 정지 — 다음 단계(embed_index)로 가지 않는다
+                env.rt._run_stage("summarize", 1, "celery-1", "t")
+
+        row = env.item(1)
+        assert row.stage == "extracted", "체크포인트를 올리면 새 체인의 위치를 건너뛴다"
+        assert "sections_total" not in row.meta
+        assert row.meta["stage_running"] == "summarize", "성공 기록이 stage_running 을 지우면 안 된다"
+        assert row.meta["run_token"] == "new"
+        assert row.error_group is None and row.attempt == 0, "Ignore 는 Exception 의 하위라 실패로 기록되기 쉽다"
+        assert env.locks[0].released
+        assert "늦은 성공 기록 버림 — 새 체인이 있다" in caplog.text
+
+    def test_late_finalize_is_not_marked_done_or_embedded(self, env):
+        env.add_item(1, stage="indexed", status="running", meta={"run_token": "t"})
+        env.during["finalize"] = self._swap(env)
+
+        with pytest.raises(env.rt.Ignore):
+            env.rt._run_stage("finalize", 1, "celery-1", "t")
+
+        row = env.item(1)
+        assert row.status == "running" and row.stage == "indexed" and row.finished_at is None
+        assert env.ingest_states == [], "카탈로그를 embedded 로 바꾸면 안 된다"
+
+    def test_late_failure_is_dropped_but_the_error_still_propagates(self, env, caplog):
+        env.add_item(1, stage="extracted", status="dispatched", attempt=0, meta={"run_token": "t"})
+        env.errors["summarize"] = StageError("llm_error", "섹션 요약 전체 실패 (3건)")
+        env.during["summarize"] = self._swap(env)
+
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            with pytest.raises(StageError):   # Ignore 로 바꾸지 않는다 — 원래 예외가 그대로 올라간다
+                env.rt._run_stage("summarize", 1, "celery-1", "t")
+
+        row = env.item(1)
+        assert row.status == "running" and row.attempt == 0, "새 체인의 아이템에 실패를 찍으면 안 된다"
+        assert row.error_group is None and row.last_error is None
+        assert row.meta["run_token"] == "new" and row.meta["stage_running"] == "summarize"
+        assert env.ingest_states == [], "카탈로그를 failed 로 바꾸면 안 된다"
+        assert env.locks[0].released
+        assert "늦은 실패 기록 버림" in caplog.text
+
+    def test_message_without_token_is_not_compared(self, env):
+        # 배포 전 메시지(토큰 없음)는 지금처럼 대조 없이 쓴다 — 아이템에도 토큰이 없을 때만 여기까지 온다
+        env.add_item(1, stage="extracted", status="dispatched", meta={})
+        env.results["summarize"] = {"sections_total": 3}
+        env.during["summarize"] = self._swap(env)   # 어떤 토큰이 생겨도 대조 대상이 아니다
+
+        out = env.rt._run_stage("summarize", 1, "celery-legacy", None)
+
+        row = env.item(1)
+        assert out["stage"] == "summarize"
+        assert row.stage == "summarized" and row.meta["sections_total"] == 3
+
+
+class TestUpdateItemToken:
+    def test_mismatch_writes_nothing_and_returns_false(self, env):
+        env.add_item(1, stage="extracted", status="running",
+                     meta={"run_token": "new", "stage_running": "summarize"})
+        before = _snapshot(env.item(1))
+
+        done = env.rt._update_item(
+            1, stage="summarized", status="failed", error_group="llm_error", last_error="x",
+            bump_attempt=True, min_attempt=3, timing=("summarize", 1.0),
+            meta_update={"stage_running": None}, set_finished=True, expect_token="old",
+        )
+
+        assert done is False
+        assert _snapshot(env.item(1)) == before
+        assert env.item(1).finished_at is None
+
+    def test_match_writes_and_returns_true(self, env):
+        env.add_item(1, stage="extracted", status="running", meta={"run_token": "t"})
+
+        done = env.rt._update_item(1, stage="summarized", meta_update={"x": 1}, expect_token="t")
+
+        assert done is True
+        row = env.item(1)
+        assert row.stage == "summarized" and row.meta == {"run_token": "t", "x": 1}
+
+    def test_without_expect_token_writes_whatever_the_token_is(self, env):
+        env.add_item(1, stage="extracted", status="running", meta={"run_token": "new"})
+
+        assert env.rt._update_item(1, stage="summarized") is True
+        assert env.item(1).stage == "summarized"
+
+    def test_missing_item_returns_false(self, env):
+        assert env.rt._update_item(999, status="running", expect_token="t") is False
+        assert env.rt._update_item(999, status="running") is False
+
+    def test_db_error_is_swallowed_as_before(self, env, monkeypatch, caplog):
+        # 토큰 때문에 안 쓴 것이 아니다 — 예전처럼 경고만 남기고 단계 흐름은 그대로(True)
+        class _Broken:
+            def query(self, *a, **kw):
+                raise RuntimeError("db down")
+
+            def rollback(self):
+                pass
+
+            def close(self):
+                pass
+
+        monkeypatch.setattr(env.rt, "SyncSessionLocal", lambda: _Broken())
+
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            assert env.rt._update_item(1, status="running", expect_token="t") is True
+        assert "상태 갱신 실패" in caplog.text
+
+
 # ── 단계 태스크·체인 ───────────────────────────────────────────────────
 class TestTasksAndChain:
     def test_build_item_chain(self, monkeypatch):
@@ -490,6 +653,19 @@ class TestDispatchToken:
 
         assert env.sent[0].token != "old"
         assert env.item(1).meta["run_token"] == env.sent[0].token
+
+    def test_candidate_query_holds_row_locks_with_skip_locked(self, env):
+        """워커의 첫 읽기(FOR UPDATE)가 새 토큰을 보는 것은 디스패처의 SELECT … FOR UPDATE SKIP LOCKED
+        행 잠금과 READ COMMITTED 에 기댄다 — 잠금이 커밋까지 유지되고 워커는 그 커밋을 기다린 뒤
+        읽는다. SKIP LOCKED 는 다른 디스패치 틱이 쥔 행을 건너뛴다. SQLite 는 잠금을 그리지
+        않으므로 PostgreSQL 로 컴파일해 본다."""
+        env.add_item(1)
+        selects = _record_selects(env)
+
+        env.dispatch()
+
+        candidates = [s for s in selects if "FROM ingest_job_items" in s and "LIMIT" in s]
+        assert len(candidates) == 1 and "FOR UPDATE SKIP LOCKED" in candidates[0]
 
 
 # ── 재시도: 결정적 실패 제외·추출부터 다시·백오프 ─────────────────────
@@ -646,6 +822,62 @@ class TestRecoverStale:
 
         assert env.recover_stale() == 1
         assert env.item(1).status == "dispatched" and env.item(2).status == "failed"
+
+    def test_stale_recovery_replaces_run_token(self, env):
+        # 옛 체인을 이 순간 끊는다 — 아직 도는 워커의 기록은 토큰이 달라 버려지고, 큐에 남은 옛 메시지는 멈춘다
+        env.add_item(1, stage="summarized", status="running", updated_at=_ago(5),
+                     meta={"run_token": "old", "pages": 4, "stage_running": "embed_index",
+                           "stage_started_at": _ago(1300).isoformat()})
+
+        assert env.recover_stale() == 1
+
+        meta = env.item(1).meta
+        assert meta["run_token"] != "old" and len(meta["run_token"]) == 32
+        assert meta["pages"] == 4, "다른 meta 키는 그대로 둔다"
+
+    def test_old_chain_that_outlives_stale_recovery_is_cut(self, env, monkeypatch):
+        """단계가 타임아웃을 넘겨 도는 사이 stale 복구가 아이템을 failed 로 돌렸다. 뒤늦게 끝난 옛 체인이
+        성공을 써 failed·재디스패치 상태를 덮으면 안 된다 — 토큰이 바뀌었으니 그 기록은 버려지고 체인이 멈춘다."""
+        env.add_item(1, stage="extracted", status="dispatched", meta={"run_token": "t"})
+        env.results["summarize"] = {"sections_total": 3}
+
+        def _clock_runs_past_the_timeout():
+            late = NOW + _dt.timedelta(seconds=1300)   # 요약 타임아웃은 1200초
+            monkeypatch.setattr(env.rt, "_now", lambda: late)
+            assert env.recover_stale() == 1
+
+        env.during["summarize"] = _clock_runs_past_the_timeout
+
+        with pytest.raises(env.rt.Ignore):
+            env.rt._run_stage("summarize", 1, "celery-1", "t")
+
+        row = env.item(1)
+        assert row.status == "failed" and row.error_group == "stale" and row.attempt == 1
+        assert row.stage == "extracted" and "sections_total" not in row.meta
+        assert row.meta["run_token"] != "t"
+        assert env.ingest_states == []
+
+    def test_scan_locks_rows_with_skip_locked(self, env):
+        """워커가 같은 순간 단계 기록을 쓰는 중이면(그쪽 _update_item 이 FOR UPDATE 로 행을 쥔다) 이번 틱은
+        그 행을 건너뛴다 — 방금 끝난 단계를 failed 로 덮지 않는다. 안 잡힌 행은 다음 틱에 다시 본다.
+        SQLite 는 잠금을 그리지 않으므로 PostgreSQL 로 컴파일해 본다."""
+        env.add_item(1, stage="indexed", status="running", meta={"stage_running": None})
+        selects = _record_selects(env)
+
+        env.recover_stale()
+
+        scans = [s for s in selects if "FROM ingest_job_items" in s]
+        assert scans and all("FOR UPDATE SKIP LOCKED" in s for s in scans)
+
+    def test_scan_ends_its_transaction_even_when_nothing_is_stale(self, env):
+        # 스캔이 쥔 행 잠금은 트랜잭션이 끝나야 풀린다 — 복구할 게 없어도 끝내지 않으면 이번 틱이 끝날
+        # 때까지 워커의 단계 기록과 다음 단계의 첫 읽기가 기다린다
+        env.add_item(1, stage="indexed", status="running", updated_at=_ago(60),
+                     meta={"stage_running": None})
+
+        with env.Session() as s:
+            assert env.rt._recover_stale(s, s.get(IngestJob, env.job_id)) == 0
+            assert not s.in_transaction()
 
     def test_requeued_item_with_leftover_stage_running_is_not_execution(self, env):
         # 단계 도중 워커가 죽어 stale 복구된 아이템은 meta.stage_running 이 남은 채 다시 dispatched 가

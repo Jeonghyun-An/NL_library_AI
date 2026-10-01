@@ -122,8 +122,13 @@ def _run_stage(
     """단계 하나를 실행한다. 실행하지 않을 때는 Ignore 를 던져 체인을 멈춘다.
 
     Ignore 는 Exception 의 하위라 아래 except Exception 안에서 던지면 실패로 기록된다 —
-    그래서 실행 판단은 모두 그 try 밖에서 한다. Celery 는 Ignore 를 던진 태스크의 상태를
+    그래서 Ignore 는 모두 그 try 밖에서 던진다. Celery 는 Ignore 를 던진 태스크의 상태를
     남기지 않고 메시지를 ack 하며, 체인의 다음 단계는 성공했을 때만 보낸다.
+
+    첫 읽기의 토큰 대조는 그 순간의 판단이다. 단계가 도는 동안 새 체인이 토큰을 바꿀 수 있어
+    (디스패처의 재디스패치·stale 복구) 시작·성공·실패 기록마다 _update_item 이 토큰을 다시 대조한다.
+    달라졌으면 아무것도 쓰지 않고, 시작 기록이면 실행 안 함, 성공 기록이면 체인 정지(Ignore),
+    실패 기록이면 예외만 그대로 올린다. 토큰 없는 옛 메시지(run_token=None)는 대조 없이 쓴다.
     """
     from workers.tasks import _set_ingest_state
 
@@ -156,14 +161,21 @@ def _run_stage(
         raise Ignore("락 경합")
 
     t0 = time.monotonic()
-    _update_item(
+    started = _update_item(
         item_id,
         status="running",
         celery_task_id=celery_task_id,
         set_started=True,
         # stale 판정이 실행 시간을 이 시각부터 잰다 — 끝나면 stage_running 을 지운다
         meta_update={"stage_running": stage_name, "stage_started_at": _now().isoformat()},
+        expect_token=run_token,
     )
+    if not started:
+        # 첫 읽기와 이 기록 사이에 새 체인이 토큰을 바꿨다 — 단계를 돌리지 않는다. 쥔 락은 풀어야
+        # 새 체인의 같은 단계가 락 경합으로 막히지 않는다
+        lock.release()
+        log.warning(f"[{book_id}] item={item_id} {stage_name} 실행 안 함 — 실행 토큰 불일치(시작 기록) → 체인 정지")
+        raise Ignore("실행 토큰 불일치(시작 기록)")
     if stage_name == "extract":
         _set_ingest_state(book_id, "processing", task_id=celery_task_id)
 
@@ -179,21 +191,21 @@ def _run_stage(
         elapsed = round(time.monotonic() - t0, 1)
 
         is_final = stage_name == "finalize"
-        _update_item(
+        recorded = _update_item(
             item_id,
             stage=STAGE_CHECKPOINT[stage_name],
             status="done" if is_final else "running",
             timing=(stage_name, elapsed),
             meta_update={**result, "stage_running": None},
             set_finished=is_final,
+            expect_token=run_token,
         )
-        if is_final:
+        if recorded and is_final:
             _set_ingest_state(book_id, "embedded", task_id=celery_task_id)
-        return {"item_id": item_id, "stage": stage_name, "elapsed_s": elapsed}
     except Exception as e:
         group = classify_error(e)
         log.exception(f"[{book_id}] item={item_id} {stage_name} 실패 ({group}): {e}")
-        _update_item(
+        fail_recorded = _update_item(
             item_id,
             status="failed",
             error_group=group,
@@ -203,11 +215,23 @@ def _run_stage(
             min_attempt=max_attempts if group in NO_RETRY_GROUPS else None,
             timing=(stage_name, round(time.monotonic() - t0, 1)),
             meta_update={"stage_running": None},
+            expect_token=run_token,
         )
-        _set_ingest_state(book_id, "failed", task_id=celery_task_id, error=str(e))
+        if fail_recorded:
+            _set_ingest_state(book_id, "failed", task_id=celery_task_id, error=str(e))
+        else:
+            # 새 체인의 아이템·카탈로그 상태에 옛 체인의 실패를 찍지 않는다. 예외는 그대로 올린다
+            log.warning(f"[{book_id}] item={item_id} {stage_name} 늦은 실패 기록 버림 — 새 체인이 있다")
         raise  # 체인 중단 (남은 단계 실행 안 함)
     finally:
         lock.release()
+
+    if not recorded:
+        # 단계는 끝났지만 그 사이 새 체인이 토큰을 바꿨다 — 결과를 쓰지 않고 이 체인의 다음 단계도
+        # 보내지 않는다(Ignore). 위 try 안에서 던지면 except Exception 이 실패로 기록한다
+        log.warning(f"[{book_id}] item={item_id} {stage_name} 늦은 성공 기록 버림 — 새 체인이 있다 → 체인 정지")
+        raise Ignore("늦은 성공 기록 버림")
+    return {"item_id": item_id, "stage": stage_name, "elapsed_s": elapsed}
 
 
 def _update_item(
@@ -224,12 +248,22 @@ def _update_item(
     min_attempt: int | None = None,
     set_started: bool = False,
     set_finished: bool = False,
-) -> None:
+    expect_token: str | None = None,
+) -> bool:
+    """아이템 상태를 기록한다. 기록해도 되는 아이템이면 True, 아니면 False(아무것도 쓰지 않았다).
+
+    expect_token 이 주어지면 FOR UPDATE 로 읽은 아이템의 meta.run_token 과 같을 때만 쓴다. 단계가 도는
+    동안 디스패처의 재디스패치나 stale 복구가 토큰을 바꿨으면 이 체인은 옛 체인이라 쓰면 안 된다.
+    False 는 아이템이 없거나 토큰이 다른 경우뿐이다. DB 오류는 예전처럼 삼키고 경고만 남기며
+    True 를 돌려준다 — 토큰 때문에 안 쓴 것이 아니라서 단계 흐름은 그대로다.
+    """
     db = SyncSessionLocal()
     try:
         item = db.query(IngestJobItem).filter_by(id=item_id).with_for_update().first()
         if not item:
-            return
+            return False
+        if expect_token is not None and (item.meta or {}).get("run_token") != expect_token:
+            return False   # 읽기만 했다 — finally 의 db.close() 가 행 잠금을 푼다
         if stage is not None:
             item.stage = stage
         if status is not None:
@@ -261,9 +295,11 @@ def _update_item(
             item.finished_at = now
         item.updated_at = now
         db.commit()
+        return True
     except Exception as e:
         db.rollback()
         log.warning(f"item={item_id} 상태 갱신 실패: {e}")
+        return True
     finally:
         db.close()
 
@@ -354,6 +390,9 @@ def _recover_stale(db, job) -> int:
     뒤 아직 안 집혔거나 단계 사이에서 다음 단계 큐를 기다리는 아이템은 DISPATCH_STALE_SECONDS 를
     마지막 갱신 시각부터 잰다 — 큐 대기를 실행 시간으로 세면 바쁜 큐 뒤의 아이템이 stale 로
     오판돼 중복 체인이 열린다(함정 16).
+
+    stale 로 찍을 때 meta.run_token 을 새 값으로 바꿔 옛 체인을 그 순간 끊는다 — 아직 도는 워커의
+    기록은 토큰이 달라 버려지고(_update_item), 큐에 남은 옛 메시지는 _skip_reason 이 멈춘다.
     """
     now = _now()
     recovered = 0
@@ -363,6 +402,9 @@ def _recover_stale(db, job) -> int:
             IngestJobItem.job_id == job.id,
             IngestJobItem.status.in_(("dispatched", "running")),
         )
+        # SKIP LOCKED: 워커가 같은 순간 단계 기록을 쓰는 중이면(그쪽 _update_item 이 행을 쥐고 있다)
+        # 이번 틱은 건너뛴다 — 방금 끝난 단계의 기록을 failed 로 덮지 않는다. 다음 틱에 다시 본다
+        .with_for_update(skip_locked=True)
         .all()
     )
     for item in inflight:
@@ -377,10 +419,15 @@ def _recover_stale(db, job) -> int:
             item.last_error = f"{timeout}s 무응답 — 워커 중단 추정 (stale 복구, {what})"
             item.attempt = (item.attempt or 0) + 1
             item.updated_at = now
+            item.meta = {**(item.meta or {}), "run_token": uuid.uuid4().hex}
             recovered += 1
             log.warning(f"[{item.book_id}] item={item.id} stale 복구 (stage={item.stage}, {what})")
     if recovered:
         db.commit()
+    else:
+        # 위 조회가 쥔 행 잠금을 바로 놓는다 — 안 놓으면 이번 틱이 끝날 때까지 워커의 단계 기록과
+        # 다음 단계의 첫 읽기(둘 다 FOR UPDATE)가 기다린다
+        db.rollback()
     return recovered
 
 
@@ -456,6 +503,7 @@ def _dispatch_for_job(db, job) -> int:
         )
         .order_by(IngestJobItem.id)
         .limit(need)
+        # 워커의 첫 FOR UPDATE 읽기(_run_stage)가 새 토큰을 보는 것은 READ COMMITTED 와 이 행 잠금(커밋까지 유지)에 기댄다
         .with_for_update(skip_locked=True)
         .all()
     )
