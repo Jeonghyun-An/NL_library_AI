@@ -10,6 +10,7 @@ import asyncio
 import gzip
 import json
 import logging
+import zlib
 
 import pytest
 
@@ -368,6 +369,35 @@ class TestTrimToLastSentence:
         text = "남성 45.2, 여성 52"
         assert trim_to_last_sentence(text) == text
 
+    def test_truncated_numbered_list_tail_is_dropped(self):
+        """잘린 번호 목록의 꼬리 — 줄머리 '2.' 는 문장 끝이 아니라 목록 표식이다."""
+        assert trim_to_last_sentence("A 집단의 평균이 더 높다.\n2. B 집단은") == "A 집단의 평균이 더 높다."
+        assert trim_to_last_sentence("1. A 집단이 높다.\n2. B 집단이 낮다.\n3. C 집단은") == \
+            "1. A 집단이 높다.\n2. B 집단이 낮다."
+        assert trim_to_last_sentence("1. A 집단이 높다.\n  2.") == "1. A 집단이 높다."
+
+    def test_finished_numbered_list_is_kept_and_marker_only_returns_original(self):
+        done = "1. A 집단이 높다.\n2. B 집단이 낮다."
+        assert trim_to_last_sentence(done) == done
+        unfinished = "1. A 집단이 높"           # 끝난 문장이 없다 — 목록 표식 '1.' 만 있다
+        assert trim_to_last_sentence(unfinished) == unfinished
+
+    @pytest.mark.parametrize("text, expected", [
+        ('차이가 크다.” 반면 남성은', '차이가 크다.”'),
+        ('차이가 크다." 반면 남성은', '차이가 크다."'),
+        ("차이가 크다.' 반면 남성은", "차이가 크다.'"),
+        ("차이가 크다.’ 반면 남성은", "차이가 크다.’"),
+        ("차이가 크다.) 반면 남성은", "차이가 크다.)"),
+        ("차이가 크다.」 반면 남성은", "차이가 크다.」"),
+        ('집단 차이가 컸다. 그는 "차이가 크다."', '집단 차이가 컸다. 그는 "차이가 크다."'),
+    ], ids=["curly-dq", "dq", "sq", "curly-sq", "paren", "corner", "closer-at-end"])
+    def test_closing_quote_or_bracket_after_period_ends_the_sentence(self, text, expected):
+        assert trim_to_last_sentence(text) == expected
+
+    def test_period_followed_by_closer_and_letters_is_not_a_sentence_end(self):
+        """닫는 부호 뒤에 공백이 없으면(`다."라고`) 문장 끝이 아니다."""
+        assert trim_to_last_sentence('그는 "높다."라고 했다. 반면 B 집단은') == '그는 "높다."라고 했다.'
+
 
 class TestInterpretTable:
     TABLE = "| 집단 | 평균 |\n|---|---|\n| A | 1 |\n| B | 2 |"
@@ -532,6 +562,24 @@ class _FakeMinio:
         self.objects.pop(key, None)        # S3 처럼 없는 키를 지워도 성공
 
 
+def _gzip_that_raises_zlib_error() -> bytes:
+    """유효한 gzip 의 1바이트를 뒤집어 gzip.decompress 가 zlib.error 를 내게 한 것.
+
+    zlib.error 는 OSError·ValueError 가 아니라 Exception 직계라 해석 실패 튜플에 따로 넣어야 잡힌다.
+    """
+    good = gzip.compress(json.dumps({"abstract": "초록 본문 " * 20}, ensure_ascii=False).encode("utf-8"))
+    for i in range(10, len(good)):        # 10바이트 머리말 뒤 — 압축 본문
+        broken = bytearray(good)
+        broken[i] ^= 0xFF
+        try:
+            gzip.decompress(bytes(broken))
+        except zlib.error:
+            return bytes(broken)
+        except Exception:
+            continue
+    raise AssertionError("zlib.error 를 내는 손상 위치를 찾지 못했다")
+
+
 class TestEnrichmentArtifact:
     def test_save_then_load_round_trips(self):
         client = _FakeMinio()
@@ -590,7 +638,8 @@ class TestEnrichmentArtifact:
         b"not gzip",
         gzip.compress(b"{not json"),
         gzip.compress(b"[1, 2]"),
-    ], ids=["not-gzip", "not-json", "not-object"])
+        _gzip_that_raises_zlib_error(),
+    ], ids=["not-gzip", "not-json", "not-object", "corrupt-deflate"])
     def test_broken_artifact_returns_none_with_warning(self, caplog, raw):
         client = _FakeMinio()
         client.objects["artifacts/B1/enrichment.json.gz"] = raw

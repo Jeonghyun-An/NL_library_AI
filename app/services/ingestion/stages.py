@@ -230,8 +230,8 @@ def save_extraction_artifact(book_id: str, extraction, client) -> str:
     return key
 
 
-def load_extraction_artifact(book_id: str, client) -> tuple[str, dict[int, int]]:
-    """아티팩트 로드 → (full_text, page_map) 재구성 (extractor와 동일 로직)."""
+def _read_extraction_artifact(book_id: str, client) -> dict:
+    """아티팩트(JSON) 원본을 읽는다. 읽지 못하면 artifact_missing."""
     try:
         resp = client.get_object(cfg.MINIO_BUCKET, artifact_key(book_id))
         raw = resp.read()
@@ -242,7 +242,22 @@ def load_extraction_artifact(book_id: str, client) -> tuple[str, dict[int, int]]
             "artifact_missing",
             f"추출 아티팩트 없음 ({artifact_key(book_id)}) — extract 단계부터 재실행 필요: {e}",
         ) from e
-    data = json.loads(gzip.decompress(raw).decode("utf-8"))
+    return json.loads(gzip.decompress(raw).decode("utf-8"))
+
+
+def load_extraction_text(book_id: str, client) -> str:
+    """아티팩트에서 본문(full_text)만 읽는다 — 쪽 위치(page_map)가 필요 없는 호출용.
+
+    page_map 은 글자마다 항목을 만드는 큰 dict 라, 본문만 쓰는 호출(요약 단계의 논문 보강)이
+    load_extraction_artifact 를 부르면 쓰지 않을 것을 만든다.
+    """
+    data = _read_extraction_artifact(book_id, client)
+    return "\n\n".join(p["text"] for p in data["pages"] if p["text"])
+
+
+def load_extraction_artifact(book_id: str, client) -> tuple[str, dict[int, int]]:
+    """아티팩트 로드 → (full_text, page_map) 재구성 (extractor와 동일 로직)."""
+    data = _read_extraction_artifact(book_id, client)
 
     texts = [p["text"] for p in data["pages"] if p["text"]]
     full_text = "\n\n".join(texts)
@@ -393,9 +408,14 @@ def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
 
 
 def _enrichment_coverage(enrichment: "PaperEnrichment") -> dict:
-    """보강 커버리지 — item.meta 로 노출 (전부 0이면 PDF 추출 품질 의심)."""
+    """보강 커버리지 — item.meta 로 노출 (전부 0이면 PDF 추출 품질 의심).
+
+    enrich_error 는 None 으로 싣는다 — 단계 결과는 item.meta 에 병합되고 None 값도 기록되므로,
+    요약 단계의 보강이 실패해 남은 사유를 이어서 보강에 성공한 단계(embed 의 인라인 보강)가 지운다.
+    """
     return {
         "enriched": True,
+        "enrich_error": None,
         "has_abstract": bool(enrichment.abstract),
         "n_keywords": len(enrichment.keywords),
         "n_references": len(enrichment.references),
@@ -509,7 +529,7 @@ def run_summarize(ctx: StageContext) -> dict:
         client = minio_client()
         delete_enrichment_artifact(book_id, client)
         try:
-            enrich_text, _ = load_extraction_artifact(book_id, client)
+            enrich_text = load_extraction_text(book_id, client)
         except StageError as e:
             if e.error_group != "artifact_missing":
                 raise
@@ -727,6 +747,10 @@ def run_embed_index(ctx: StageContext) -> dict:
     # 체크포인트, embed 부터 다시 도는 체인) 예전처럼 여기서 돌린다.
     enriched_chunks: list[ChunkType] = []
     enrich_meta: dict = {}   # enrichment 커버리지 — 검증/모니터링용 (item.meta 로 노출)
+    # 보강 출처 — "artifact"(요약 단계가 만든 것을 읽음) | "inline"(여기서 보강 LLM 을 다시 기다림,
+    # 실패해도 inline) | "none"(논문이 아니거나 보강이 꺼져 있음). 카나리에서 embed 칸이 보강을
+    # 다시 돌린 비율을 센다.
+    enrich_source = "none"
     if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
         try:
             from services.ingestion.paper_enricher import (
@@ -737,6 +761,7 @@ def run_embed_index(ctx: StageContext) -> dict:
 
             run_token = (ctx.item_meta or {}).get("run_token")
             enrichment = load_enrichment_artifact(book_id, client, run_token=run_token)
+            enrich_source = "artifact" if enrichment is not None else "inline"
             if enrichment is None:
                 log.info(f"[{book_id}] 이번 실행의 보강 아티팩트 없음 — embed 단계에서 보강을 돌린다")
                 enrichment = run_async(enrich_paper(book_id, title, full_text, client))
@@ -772,7 +797,8 @@ def run_embed_index(ctx: StageContext) -> dict:
         raise StageError("milvus_error", f"Milvus 인덱싱 실패: {idx_result.errors}")
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
-    return {"chunks": len(chunks), "indexed": idx_result.chunks_indexed, **enrich_meta}
+    return {"chunks": len(chunks), "indexed": idx_result.chunks_indexed, **enrich_meta,
+            "enrich_source": enrich_source}
 
 
 # ── 단계 ④ 문서 요약/소개글 + (선택) 표지 ─────────────────────

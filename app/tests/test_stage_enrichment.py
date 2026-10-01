@@ -12,6 +12,8 @@ import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
+
 from models.book import Book
 from services.ingestion import paper_enricher, stages, summarizer
 from services.ingestion.paper_enricher import FigureChunk, PaperEnrichment, TableChunk
@@ -53,7 +55,10 @@ def _patch_summarize(monkeypatch, *, doc_type="paper", n_sections=3, artifact=AR
         rec.loaded.append(book_id)
         if artifact is None:
             raise StageError("artifact_missing", "아티팩트 없음")
-        return artifact, {}
+        return artifact
+
+    def no_page_map_loader(book_id, client):
+        pytest.fail("요약 단계는 쪽 위치가 필요 없다 — page_map 을 만드는 load_extraction_artifact 를 부르면 안 된다")
 
     async def fake_section(title, text, doc_type="book"):
         rec.sections.append(text)
@@ -69,7 +74,8 @@ def _patch_summarize(monkeypatch, *, doc_type="paper", n_sections=3, artifact=AR
     def fake_save(book_id, e, client, *, run_token=None):
         rec.saved.append((book_id, e, client, run_token))
 
-    monkeypatch.setattr(stages, "load_extraction_artifact", fake_load)
+    monkeypatch.setattr(stages, "load_extraction_text", fake_load)
+    monkeypatch.setattr(stages, "load_extraction_artifact", no_page_map_loader)
     monkeypatch.setattr(summarizer, "summarize_section", fake_section)
     monkeypatch.setattr(paper_enricher, "enrich_paper", fake_enrich)
     monkeypatch.setattr(paper_enricher, "delete_enrichment_artifact",
@@ -132,6 +138,20 @@ def test_summarize_enrichment_failure_keeps_section_summaries(monkeypatch):
     assert rec.saved == [] and rec.persisted == []
 
 
+def test_enrichment_coverage_overwrites_a_stale_enrich_error():
+    """요약 단계의 보강이 실패해 meta 에 남은 enrich_error 를, 이어서 성공한 단계의 커버리지가 지운다.
+
+    잡 레이어는 단계 결과를 item.meta 에 병합하고 None 값도 그대로 기록하므로(키를 빼지 않는다),
+    커버리지가 enrich_error=None 을 싣지 않으면 embed 가 인라인 보강에 성공해도 옛 사유가 남는다.
+    """
+    stale_meta = {"enriched": False, "enrich_error": "표 파싱 폭주"}
+
+    merged = {**stale_meta, **stages._enrichment_coverage(_enrichment())}
+
+    assert merged["enriched"] is True
+    assert merged["enrich_error"] is None
+
+
 def test_summarize_without_run_token_saves_none(monkeypatch):
     """단건 흐름(process_book_file)은 item_meta 가 비어 있다 — 토큰 없이 저장한다."""
     rec = _patch_summarize(monkeypatch)
@@ -167,8 +187,8 @@ def test_section_summaries_and_enrichment_share_one_semaphore(monkeypatch):
     tables = "\n\n".join(
         f"표 {i} 앞 문단.\n| 집단 | 평균 |\n|---|---|\n| A | {i} |\n| B | {i + 1} |\n" for i in range(4)
     )
-    monkeypatch.setattr(stages, "load_extraction_artifact",
-                        lambda book_id, client: (ARTIFACT_TEXT + "\n\n" + tables, {}))
+    monkeypatch.setattr(stages, "load_extraction_text",
+                        lambda book_id, client: ARTIFACT_TEXT + "\n\n" + tables)
     gauge = SimpleNamespace(active=0, peak=0, kinds=[])
 
     async def hold(kind):
@@ -326,15 +346,15 @@ def _stub_missing_module(monkeypatch, name: str, cache_clear: tuple[str, ...] = 
             monkeypatch.delitem(sys.modules, mod, raising=False)
 
 
-def _patch_embed(monkeypatch, *, stored: bytes | None):
-    """embed 단계 대역 — 추출 본문 있음, 논문, MinIO 에 보강 아티팩트 stored(없으면 None)."""
+def _patch_embed(monkeypatch, *, stored: bytes | None, doc_type: str = "paper"):
+    """embed 단계 대역 — 추출 본문 있음, 기본은 논문, MinIO 에 보강 아티팩트 stored(없으면 None)."""
     _stub_missing_module(monkeypatch, "pymilvus", cache_clear=("services.ingestion.indexer",))
     _stub_missing_module(monkeypatch, "FlagEmbedding", cache_clear=("services.ingestion.embedder",))
     import services.ingestion.chunker as chunker_mod
     import services.ingestion.embedder as embedder_mod
     import services.ingestion.indexer as indexer_mod
 
-    book = MagicMock(doc_type="paper", abstract="카탈로그 초록", title="논문 제목",
+    book = MagicMock(doc_type=doc_type, abstract="카탈로그 초록", title="논문 제목",
                      personal_author=None, corporate_author=None, series_title=None,
                      subject=None, keyword=None)
     minio = _FakeMinio()
@@ -374,13 +394,15 @@ def test_embed_uses_artifact_written_by_this_run(monkeypatch):
     texts = [c.text for c in rec.indexed]
     assert "[초록] 초록 본문" in texts and "[표 설명] 설명." in texts
     assert result["enriched"] is True and result["n_tables"] == 1
+    assert result["enrich_source"] == "artifact"
 
 
 def test_embed_rebuilds_inline_when_artifact_is_from_another_run(monkeypatch):
     rec = _patch_embed(monkeypatch, stored=_stored(_enrichment(), run_token="T0"))
 
-    stages.run_embed_index(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"}))
+    result = stages.run_embed_index(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"}))
 
+    assert result["enrich_source"] == "inline"
     assert rec.enrich_calls == [ARTIFACT_TEXT] and len(rec.persisted) == 1
     texts = [c.text for c in rec.indexed]
     assert "[초록] 인라인 초록" in texts and "[초록] 초록 본문" not in texts
@@ -395,10 +417,11 @@ def test_embed_uses_pre_deploy_artifact_without_token(monkeypatch):
            "table_chunks": [], "figure_chunks": []}
     rec = _patch_embed(monkeypatch, stored=gzip.compress(json.dumps(old, ensure_ascii=False).encode("utf-8")))
 
-    stages.run_embed_index(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"}))
+    result = stages.run_embed_index(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"}))
 
     assert rec.enrich_calls == []
     assert "[초록] 배포 전 초록" in [c.text for c in rec.indexed]
+    assert result["enrich_source"] == "artifact"
 
 
 def test_embed_enriches_inline_when_artifact_is_missing(monkeypatch):
@@ -409,3 +432,60 @@ def test_embed_enriches_inline_when_artifact_is_missing(monkeypatch):
     assert rec.enrich_calls == [ARTIFACT_TEXT] and len(rec.persisted) == 1
     assert "[초록] 인라인 초록" in [c.text for c in rec.indexed]
     assert result["enriched"] is True and result["has_abstract"] is True
+    assert result["enrich_source"] == "inline"      # embed 칸이 보강 LLM 을 다시 기다렸다
+    assert result["enrich_error"] is None           # 요약 단계가 남긴 옛 사유를 meta 병합이 지운다
+
+
+def test_embed_inline_enrichment_failure_still_counts_as_inline(monkeypatch):
+    """인라인 보강이 예외로 끝나도 embed 는 보강 없이 계속하고, 출처는 inline 으로 남는다(카나리 집계)."""
+    rec = _patch_embed(monkeypatch, stored=None)
+
+    async def boom(book_id, title, full_text, minio_client, *, sem=None):
+        raise RuntimeError("보강 폭주")
+
+    monkeypatch.setattr(paper_enricher, "enrich_paper", boom)
+
+    result = stages.run_embed_index(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"}))
+
+    assert result["enriched"] is False and "보강 폭주" in result["enrich_error"]
+    assert result["enrich_source"] == "inline"
+    assert result["indexed"] == len(rec.indexed) and not any(c.text.startswith("[초록]") for c in rec.indexed)
+
+
+@pytest.mark.parametrize("doc_type, enabled", [("literature", True), ("paper", False)],
+                         ids=["not-a-paper", "enrichment-disabled"])
+def test_embed_enrich_source_is_none_when_not_a_paper_or_disabled(monkeypatch, doc_type, enabled):
+    rec = _patch_embed(monkeypatch, stored=_stored(_enrichment(), run_token="T1"), doc_type=doc_type)
+    monkeypatch.setattr(stages.cfg, "PAPER_ENRICH_ENABLED", enabled)
+
+    result = stages.run_embed_index(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"}))
+
+    assert result["enrich_source"] == "none" and "enriched" not in result
+    assert rec.enrich_calls == []
+
+
+# ── 추출 아티팩트 본문만 읽기 ─────────────────────────────────
+
+
+def _extraction(pages: list[tuple[int, str]]):
+    return SimpleNamespace(
+        total_pages=len(pages), errors=[],
+        pages=[SimpleNamespace(page_num=n, text=t, method="fitz", confidence=1.0) for n, t in pages],
+    )
+
+
+def test_load_extraction_text_returns_the_same_text_as_the_full_loader():
+    client = _FakeMinio()
+    stages.save_extraction_artifact("KCI_1", _extraction([(1, "첫 쪽 본문"), (2, ""), (3, "셋째 쪽 본문")]), client)
+
+    full_text, page_map = stages.load_extraction_artifact("KCI_1", client)
+
+    assert stages.load_extraction_text("KCI_1", client) == full_text == "첫 쪽 본문\n\n셋째 쪽 본문"
+    assert page_map[0] == 1 and page_map[len("첫 쪽 본문") + 2] == 3     # 전체 로더는 그대로 page_map 을 만든다
+
+
+def test_load_extraction_text_missing_artifact_is_artifact_missing():
+    with pytest.raises(StageError) as exc:
+        stages.load_extraction_text("KCI_1", _FakeMinio())
+
+    assert exc.value.error_group == "artifact_missing"

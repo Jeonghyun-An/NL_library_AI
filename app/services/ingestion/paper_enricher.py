@@ -22,6 +22,7 @@ import io
 import json
 import logging
 import re
+import zlib
 from dataclasses import dataclass, field
 
 import httpx
@@ -503,19 +504,25 @@ async def generate_references(text: str) -> list[str]:
     return refs[:200]
 
 
-# 문장 끝 — . ! ? 。 뒤에 공백이나 글 끝이 오는 자리('…다.'·'…요.' 포함). 소수점(3.5)은 제외된다.
-_SENTENCE_END = re.compile(r'[.!?。](?=\s|$)')
+# 문장 끝 — . ! ? 。 뒤에 (닫는 따옴표·괄호가 붙어도) 공백이나 글 끝이 오는 자리:
+# '…다.'·'…요.'·'…다.”'·'…다.)'. 소수점(3.5)은 뒤에 숫자가 와서 제외된다.
+_CLOSING_MARKS = "\"'”’)）]」』》〉】"
+_SENTENCE_END = re.compile(rf"[.!?。][{re.escape(_CLOSING_MARKS)}]*(?=\s|$)")
+# 줄머리 번호 목록 표식('2.')의 마침표 앞 — 이 마침표는 문장 끝이 아니다.
+_LIST_MARKER_BEFORE_PERIOD = re.compile(r"(?:^|\n)[ \t]*\d{1,3}$")
 
 
 def trim_to_last_sentence(text: str) -> str:
     """마지막으로 끝난 문장까지만 남긴다 — max_tokens 에서 잘린 응답의 끊긴 꼬리를 걷어 낸다.
 
-    끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
+    줄머리 번호 목록 표식('2.')은 문장 끝으로 보지 않는다 — 번호 목록이 항목 중간에서 잘려도
+    표식('2.')만 남지 않고 앞 항목까지 남는다. 끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
     """
-    ends = list(_SENTENCE_END.finditer(text))
-    if not ends:
-        return text
-    return text[: ends[-1].end()].rstrip()
+    for end in reversed(list(_SENTENCE_END.finditer(text))):
+        if _LIST_MARKER_BEFORE_PERIOD.search(text[: end.start()]):
+            continue
+        return text[: end.end()].rstrip()
+    return text
 
 
 async def interpret_table(title: str, context: str, table_md: str) -> str:
@@ -599,8 +606,8 @@ def save_enrichment_artifact(
 ) -> None:
     """보강 결과 → MinIO artifacts/{book_id}/enrichment.json.gz.
 
-    run_token: 이 보강을 만든 체인의 실행 토큰(ingest_job_items.meta.run_token — Task 2).
-    embed 단계가 같은 실행의 아티팩트인지 가린다. 단건 흐름은 None.
+    run_token: 이 보강을 만든 체인의 실행 토큰(ingest_job_items.meta.run_token — 디스패처가 체인마다
+    새로 적는다). embed 단계가 같은 실행의 아티팩트인지 가린다. 단건 흐름은 None.
     """
     payload = {
         "run_token": run_token,
@@ -671,7 +678,8 @@ def load_enrichment_artifact(
                 for f in data.get("figure_chunks") or []
             ],
         )
-    except (OSError, EOFError, ValueError, KeyError, TypeError, AttributeError) as e:
+    # zlib.error: 압축 본문이 한 바이트만 깨져도 OSError·ValueError 가 아니라 이것으로 올라온다
+    except (OSError, EOFError, zlib.error, ValueError, KeyError, TypeError, AttributeError) as e:
         log.warning(f"[{book_id}] enrichment 아티팩트가 깨졌다 — 보강을 다시 만든다: {e}")
         return None
 
