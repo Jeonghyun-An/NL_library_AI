@@ -923,7 +923,7 @@ async def extract_text_opendataloader(
         md_file: Path | None = None
         try:
             md_file = await _convert(load_path, out_dir)
-        except (TimeoutError, RuntimeError, OSError) as e:
+        except (TimeoutError, RuntimeError, ValueError, OSError) as e:
             reason = f"{odl_timeout:.0f}초 초과" if isinstance(e, TimeoutError) else str(e)
             log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
             result.errors.append(f"ODL 실패(원본): {reason}")

@@ -90,6 +90,16 @@ def test_timeout_retries_once_with_fitz_resaved_pdf(monkeypatch):
     assert any("ODL 실패(원본)" in e for e in result.errors)
 
 
+def test_value_error_on_the_original_also_retries_with_resaved_pdf(monkeypatch):
+    """원본 변환의 ValueError(자식 실행 인자의 NUL 문자 등)도 재저장본 재시도·fitz 폴백으로 간다 — 재저장 갈래와
+    같은 예외를 받는다. 바깥 except 로 새면 폴백 없이 빈 결과가 된다."""
+    calls = _patch_convert(monkeypatch, [ValueError("embedded null byte"), {1: "재저장본 본문"}])
+    result = _run(_pdf(["a", "b"]))
+    assert len(calls) == 2
+    assert [p.text for p in result.pages] == ["재저장본 본문"]
+    assert any("ODL 실패(원본): embedded null byte" in e for e in result.errors)
+
+
 def test_both_attempts_fail_falls_back_to_fitz_text(monkeypatch):
     _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)"), TimeoutError()])
     result = _run(_pdf(["First page body", "", "Third page body"]))
@@ -267,31 +277,53 @@ sys.exit(1)
     assert "INFO" not in message and len(message) <= 650
 
 
+def _sleeping_grandchild_script(pid_file: Path) -> str:
+    """잠자는 손자(java 자리)를 띄워 pid 를 남기고 자기도 잠드는 자식 — pid 는 다 쓴 뒤 이름을 바꿔 반쯤 쓴 파일이 없다."""
+    tmp = str(pid_file) + ".tmp"
+    return (
+        "import os, subprocess, sys, time\n"
+        "p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
+        f"open({tmp!r}, 'w').write(str(p.pid))\n"
+        f"os.replace({tmp!r}, {str(pid_file)!r})\n"
+        "time.sleep(20)\n"
+    )
+
+
+def _wait_for_pid_file(pid_file: Path, seconds: float = 5.0) -> int:
+    for _ in range(int(seconds / 0.05)):
+        if pid_file.exists():
+            return int(pid_file.read_text())
+        time.sleep(0.05)
+    pytest.fail(f"{seconds:g}초 안에 손자 pid 를 받지 못했다")
+
+
+def _gone(pid: int) -> bool:
+    """프로세스가 끝났는가 — 없거나, 회수 전 좀비(Z)이거나, 확인하는 사이 /proc 에서 사라졌다(리눅스)."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().rsplit(")", 1)[1].split()[0] == "Z"
+    except FileNotFoundError:
+        return True
+
+
 def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
     """시간을 넘기면 자식(파이썬)과 그 자식(java 자리)을 함께 끈다. 손자 확인은 killpg 가 있는 리눅스에서만."""
     pid_file = tmp_path / "grandchild.pid"
-    script = (
-        "import subprocess, sys, time\n"
-        "p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
-        f"open({str(pid_file)!r}, 'w').write(str(p.pid))\n"
-        "time.sleep(20)\n"
-    )
-    monkeypatch.setattr(extractor, "_ODL_CHILD", script)
+    monkeypatch.setattr(extractor, "_ODL_CHILD", _sleeping_grandchild_script(pid_file))
     t0 = time.monotonic()
     with pytest.raises(TimeoutError):
-        asyncio.run(extractor._odl_convert({}, 2.0))
+        asyncio.run(extractor._odl_convert({}, 3.0))
     assert time.monotonic() - t0 < 10
     if sys.platform == "win32":
         return
-    grandchild = int(pid_file.read_text())
+    grandchild = _wait_for_pid_file(pid_file)
     for _ in range(50):
-        try:
-            os.kill(grandchild, 0)
-        except ProcessLookupError:
+        if _gone(grandchild):
             break
-        with open(f"/proc/{grandchild}/stat") as f:  # 회수 전 좀비(Z)면 끝난 것으로 본다
-            if f.read().split()[2] == "Z":
-                break
         time.sleep(0.1)
     else:
         pytest.fail("timeout 뒤에도 손자 프로세스가 살아 있다")
