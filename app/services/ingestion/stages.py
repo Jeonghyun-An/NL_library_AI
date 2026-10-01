@@ -7,8 +7,9 @@
                     + [paper] 보강 LLM(섹션 요약과 같은 세마포어) → enrichment.json.gz·카탈로그
   run_embed_index : 아티팩트 + 섹션 요약 로드 → 청킹 → 임베딩 → Milvus delete+insert
                     ([paper] 보강 아티팩트로 보강 청크 — 없거나 다른 실행의 것이면 여기서 보강 LLM)
-  run_finalize    : 문서 요약/소개글 LLM → library_catalog UPDATE
-                    (skip_cover 파라미터로 FLUX 생략 — 썸네일은 API가 온디맨드 생성)
+  run_finalize    : 계층 요약 입력 1회 → 문서 요약/소개글(도서류는 줄거리·독후 효과도) LLM 동시 호출
+                    → library_catalog UPDATE (skip_cover 파라미터 또는 논문이면 FLUX 표지 생략 —
+                    썸네일은 API가 온디맨드 생성)
 
 잡 레이어(workers/job_runtime.py)는 이 함수들의 시그니처(StageContext → dict)만 의존한다.
 ingest_state 전이·락·타이밍 기록은 호출자(태스크 래퍼) 책임.
@@ -808,6 +809,7 @@ def run_finalize(ctx: StageContext) -> dict:
     """문서 요약·테마·소개글 (+선택적 FLUX 표지) → library_catalog UPDATE + 아티팩트 정리."""
     from sqlalchemy.orm.attributes import flag_modified
     from services.ingestion.summarizer import (
+        reduce_section_summaries,
         summarize_book_from_sections,
         generate_book_introduction,
         generate_book_plot,
@@ -840,45 +842,68 @@ def run_finalize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
+    async def _generate_texts() -> dict:
+        # 계층 요약 입력을 한 번 만들어 넷이 같이 쓴다. 만들다 실패하면 None — 각 생성 함수가
+        # 지금처럼 _combine_sections(균등 샘플링)로 합친다.
+        try:
+            combined = await reduce_section_summaries(title, author, valid_summaries, doc_type)
+        except Exception as e:
+            log.warning(f"[{book_id}] 계층 요약 실패 — 균등 샘플링 입력으로 진행: {e}")
+            combined = None
+        calls = {
+            "summary": summarize_book_from_sections(
+                title=title, author=author, section_summaries=valid_summaries,
+                doc_type=doc_type, combined_text=combined,
+            ),
+            "introduction": generate_book_introduction(
+                title=title, author=author, publisher=publisher, pub_date=pub_date,
+                section_summaries=valid_summaries, doc_type=doc_type, combined_text=combined,
+            ),
+        }
+        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
+            calls["plot"] = generate_book_plot(
+                title=title, author=author, section_summaries=valid_summaries,
+                doc_type=doc_type, combined_text=combined,
+            )
+            calls["read_effect"] = generate_read_effect(
+                title=title, author=author, section_summaries=valid_summaries,
+                doc_type=doc_type, combined_text=combined,
+            )
+        # 서로 기다릴 이유가 없는 호출들이라 한 이벤트 루프에서 동시에 보낸다(프로세스당 LLM 동시
+        # 호출은 요약 단계와 같은 LLM_SECTION_CONCURRENCY 까지). 하나가 실패해도 나머지는 그대로
+        # 받는다(return_exceptions) — 실패한 것만 아래에서 경고 후 None.
+        sem = asyncio.Semaphore(max(1, cfg.LLM_SECTION_CONCURRENCY))
+
+        async def _bounded(coro):
+            async with sem:
+                return await coro
+
+        results = await asyncio.gather(*(_bounded(c) for c in calls.values()), return_exceptions=True)
+        return dict(zip(calls, results))
+
+    _FAILURE_LABELS = {
+        "summary": "도서 요약", "introduction": "도서 소개글",
+        "plot": "도서 줄거리", "read_effect": "독후 효과",
+    }
     book_summary = book_themes = book_introduction = book_plot = book_read_effect = None
     if valid_summaries:
-        try:
-            book_summary, themes_list = run_async(summarize_book_from_sections(
-                title=title, author=author,
-                section_summaries=valid_summaries, doc_type=doc_type,
-            ))
+        texts = run_async(_generate_texts())
+        for key, value in texts.items():
+            if isinstance(value, BaseException):
+                log.warning(f"[{book_id}] {_FAILURE_LABELS[key]} 생성 실패: {value}")
+                texts[key] = None
+        if texts["summary"] is not None:
+            book_summary, themes_list = texts["summary"]
             book_themes = ", ".join(themes_list) if themes_list else None
-        except Exception as e:
-            log.warning(f"[{book_id}] 도서 요약 생성 실패: {e}")
+        book_introduction = texts["introduction"]
+        book_plot = texts.get("plot")
+        book_read_effect = texts.get("read_effect")
 
-        try:
-            book_introduction = run_async(generate_book_introduction(
-                title=title, author=author, publisher=publisher,
-                pub_date=pub_date, section_summaries=valid_summaries, doc_type=doc_type,
-            ))
-        except Exception as e:
-            log.warning(f"[{book_id}] 도서 소개글 생성 실패: {e}")
-
-        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
-            try:
-                book_plot = run_async(generate_book_plot(
-                    title=title, author=author,
-                    section_summaries=valid_summaries, doc_type=doc_type,
-                ))
-            except Exception as e:
-                log.warning(f"[{book_id}] 도서 줄거리 생성 실패: {e}")
-
-            try:
-                book_read_effect = run_async(generate_read_effect(
-                    title=title, author=author,
-                    section_summaries=valid_summaries, doc_type=doc_type,
-                ))
-            except Exception as e:
-                log.warning(f"[{book_id}] 독후 효과 생성 실패: {e}")
-
-    # 표지 생성 — 대량 논문 인덱싱에서는 skip_cover=true 로 생략 (썸네일 폴백 사용)
+    # 표지 생성 — skip_cover=true 이거나 논문이면 생략한다(썸네일 폴백 사용).
+    # 논문은 표지를 만들지 않는다(사용자 결정 2026-10-01): 잡 params 에 skip_cover 가 빠져도
+    # 논문마다 표지 프롬프트 LLM(+FLUX)을 부르지 않도록 doc_type 으로도 막는다.
     cover_key = cover_prompt = None
-    if not ctx.params.get("skip_cover"):
+    if not ctx.params.get("skip_cover") and doc_type != "paper":
         try:
             from services.ingestion.cover_generator import generate_and_store_cover
 
