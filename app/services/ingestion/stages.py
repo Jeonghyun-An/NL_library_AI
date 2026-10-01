@@ -49,6 +49,8 @@ class StageContext:
     file_path: str | None = None     # 로컬 파일 경로 (단건 흐름에서 전달)
     job_item_id: int | None = None   # 잡 아이템 (단건 흐름이면 None)
     params: dict = field(default_factory=dict)  # {"skip_cover": true, "doc_type": "paper", ...}
+    # 잡 아이템 meta 사본 — 앞 단계가 남긴 값(예: 추출의 pages). 단건 흐름이면 빈 dict
+    item_meta: dict = field(default_factory=dict)
 
 
 # ── 공통 헬퍼 ────────────────────────────────────────────────
@@ -492,6 +494,15 @@ def run_embed_index(ctx: StageContext) -> dict:
     except StageError as _se:
         if _se.error_group != "artifact_missing":
             raise
+        # 추출이 쪽수를 남긴 문서는 PDF 가 있었다. 아티팩트가 없는 것은 마무리가 이미 지웠거나
+        # (옛 체인의 재실행 — 함정 16) 읽지 못한 것이다. 초록으로 진행하면 index_chunks 가 본문
+        # 청크를 지우고 초록 청크로 덮으므로 인덱스를 건드리기 전에 멈춘다
+        pages = ctx.item_meta.get("pages")
+        if isinstance(pages, (int, float)) and pages > 0:
+            raise StageError(
+                "artifact_missing",
+                f"PDF 가 있던 문서(pages={pages})라 초록으로 대체하지 않는다 — {_se}",
+            ) from _se
         # PDF 없는 메타데이터 전용 논문 — abstract를 임베딩 텍스트로 사용
         full_text = ""
         page_map = {}
