@@ -83,13 +83,22 @@ async def list_jobs(db: AsyncSession = Depends(get_db), limit: int = 50):
 
 
 # ── 상세 (카운트 + 처리율 + ETA) ──────────────────────────────
+_FINISHED_JOB_STATUSES = ("completed", "completed_with_errors")
+
+
 def compute_eta(remaining: int, done_last_24h: int, status: str) -> float | None:
-    """남은 건수 ÷ 최근 24시간의 시간당 처리량(시간). 멈춘 잡·처리량 0 이면 None.
+    """남은 건수 ÷ 최근 24시간의 시간당 처리량(시간).
+
+    숫자를 내는 것은 돌고 있는 잡(running)뿐이다. 멈춘(paused)·취소한(canceled)·아직 시작 전인
+    (created·validating·ready) 잡은 처리되지 않으니 None, 끝난 잡(completed·completed_with_errors)은
+    0.0. 돌고 있어도 남은 게 없으면 0.0, 24시간 처리량이 0 이면 None.
 
     1시간 창은 스캔본(VLM)이 몰리면 처리량이 몇 분의 1로 떨어져 ETA 가 48시간 기준의
     0.73~5.7배로 출렁였다. 24시간 창은 두 구간(ODL·스캔본)이 섞여 덜 흔들린다.
     """
-    if status == "paused":
+    if status in _FINISHED_JOB_STATUSES:
+        return 0.0
+    if status != "running":
         return None
     if remaining <= 0:
         return 0.0
@@ -98,11 +107,14 @@ def compute_eta(remaining: int, done_last_24h: int, status: str) -> float | None
     return round(remaining * 24 / done_last_24h, 1)
 
 
-def _done_since(job_id: str, since: _dt.datetime):
-    return select(func.count()).where(
+def _done_counts(job_id: str, since_1h: _dt.datetime, since_24h: _dt.datetime):
+    """최근 1시간·24시간에 끝난 done 건수 — done 행을 한 번만 훑어 두 칸(1h, 24h)으로 센다."""
+    return select(
+        func.count().filter(IngestJobItem.finished_at >= since_1h).label("done_1h"),
+        func.count().filter(IngestJobItem.finished_at >= since_24h).label("done_24h"),
+    ).where(
         IngestJobItem.job_id == job_id,
         IngestJobItem.status == "done",
-        IngestJobItem.finished_at >= since,
     )
 
 
@@ -135,16 +147,13 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     status_counts = {s: c for s, c in status_rows}
     stage_counts = {s: c for s, c in stage_rows}
 
-    # 처리율: 최근 1시간·24시간 done 건수. ETA 는 24시간 기준(compute_eta)
+    # 처리율: 최근 1시간·24시간 done 건수(한 문장). ETA 는 24시간 기준(compute_eta)
     now = _dt.datetime.now(_dt.timezone.utc)
-    done_last_hour = (await db.execute(
-        _done_since(job_id, now - _dt.timedelta(hours=1))
-    )).scalar() or 0
-    done_last_24h = (await db.execute(
-        _done_since(job_id, now - _dt.timedelta(hours=24))
-    )).scalar() or 0
+    done_last_hour, done_last_24h = (await db.execute(
+        _done_counts(job_id, now - _dt.timedelta(hours=1), now - _dt.timedelta(hours=24))
+    )).one()
 
-    # 영구 실패는 더 처리되지 않으므로 남은 수에서 뺀다
+    # 영구 실패(시도 한도에 닿은 failed)와 취소한 아이템은 더 처리되지 않으므로 남은 수에서 뺀다
     params = dict(job.params or {})
     max_attempts = int(params.get("max_attempts") or get_settings().INGEST_MAX_ATTEMPTS)
     permanently_failed = (await db.execute(
@@ -152,7 +161,8 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     )).scalar() or 0
 
     done_total = status_counts.get("done", 0)
-    remaining = job.total_items - done_total - permanently_failed
+    canceled_total = status_counts.get("canceled", 0)
+    remaining = job.total_items - done_total - permanently_failed - canceled_total
     rate_per_hour = done_last_hour
     rate_per_hour_24h = round(done_last_24h / 24, 1)
     eta_hours = compute_eta(remaining, done_last_24h, job.status)

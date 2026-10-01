@@ -12,8 +12,13 @@ import pytest
 from sqlalchemy.dialects import postgresql
 
 from api import ingest_jobs
+from models.ingest_job import JOB_STATUSES
 
 JOB_ID = "1ca22f59-1e50-4dd1-81f5-2d3c79126825"
+
+# ETA 를 내는 잡 상태(running)와 끝난 잡 상태, 그 밖(멈춤·취소·시작 전)
+FINISHED = ("completed", "completed_with_errors")
+NOT_RUNNING = ["created", "validating", "ready", "paused", "canceled"]
 
 
 def _compiled(stmt):
@@ -31,8 +36,15 @@ class _Result:
     def scalar_one_or_none(self):
         return self._scalar
 
+    def one(self):
+        return self._rows[0]
+
     def all(self):
         return self._rows
+
+
+def _hours_ago(moment: _dt.datetime) -> float:
+    return (_dt.datetime.now(_dt.timezone.utc) - moment).total_seconds() / 3600
 
 
 class _FakeDB:
@@ -48,6 +60,7 @@ class _FakeDB:
         self.failure_rows = failure_rows or []
         self.sql: list[str] = []
         self.attempt_limits: list[int] = []
+        self.done_windows: list[tuple[float, float]] = []   # (1시간 칸, 24시간 칸)이 쓴 창 길이(시간)
 
     async def execute(self, stmt):
         compiled = _compiled(stmt)
@@ -64,10 +77,11 @@ class _FakeDB:
         if "ingest_job_items.attempt >=" in sql:
             self.attempt_limits.append(compiled.params["attempt_1"])
             return _Result(scalar=self.permanently_failed)
-        if "ingest_job_items.finished_at >=" in sql:
-            since = compiled.params["finished_at_1"]
-            hours = (_dt.datetime.now(_dt.timezone.utc) - since).total_seconds() / 3600
-            return _Result(scalar=self.done_1h if hours < 2 else self.done_24h)
+        if "FILTER (WHERE ingest_job_items.finished_at >=" in sql:
+            self.done_windows.append(
+                (_hours_ago(compiled.params["finished_at_1"]), _hours_ago(compiled.params["finished_at_2"]))
+            )
+            return _Result(rows=[(self.done_1h, self.done_24h)])
         raise AssertionError(f"대역이 모르는 문장: {sql}")
 
 
@@ -101,6 +115,20 @@ class TestComputeEta:
     def test_nothing_left_is_zero(self):
         assert ingest_jobs.compute_eta(0, 0, "running") == 0.0
 
+    @pytest.mark.parametrize("status", NOT_RUNNING)
+    def test_a_job_that_is_not_running_has_no_eta(self, status):
+        # 멈춤·취소·시작 전 잡은 처리되지 않는다 — 24시간 처리량이 남아 있어도 숫자를 내지 않는다
+        assert ingest_jobs.compute_eta(360, 480, status) is None
+
+    @pytest.mark.parametrize("status", FINISHED)
+    def test_a_finished_job_has_zero_eta(self, status):
+        assert ingest_jobs.compute_eta(0, 0, status) == 0.0
+        assert ingest_jobs.compute_eta(5, 480, status) == 0.0   # 끝난 잡은 상태가 정한다
+
+    def test_every_job_status_has_an_eta_rule(self):
+        # 새 잡 상태가 생기면 이 목록(과 compute_eta)을 고쳐 ETA 를 낼지 정하게 한다
+        assert set(NOT_RUNNING) | set(FINISHED) | {"running"} == set(JOB_STATUSES)
+
 
 class TestJobDetail:
     def _get(self, db):
@@ -125,6 +153,47 @@ class TestJobDetail:
         assert out["eta_hours"] is None
         assert out["rate_per_hour_24h"] == 20.0
 
+    def test_canceled_job_has_no_eta_and_canceled_items_are_not_remaining(self):
+        # cancel 은 pending·failed 를 canceled 로 바꾸고 진행 중이던 10건만 자연 종료까지 남는다
+        db = _FakeDB(
+            _job(status="canceled", total_items=1000),
+            status_counts={"done": 600, "canceled": 390, "running": 10},
+            done_1h=0, done_24h=480,
+        )
+        out = self._get(db)
+        assert out["remaining"] == 1000 - 600 - 390
+        assert out["eta_hours"] is None
+        assert out["rate_per_hour_24h"] == 20.0     # 처리율 자체는 그대로 낸다
+
+    def test_canceled_items_are_not_remaining_in_a_running_job(self):
+        # 취소했다가 다시 start 한 잡 — 취소된 아이템은 다시 집히지 않는다
+        db = _FakeDB(
+            _job(total_items=1000),
+            status_counts={"done": 600, "canceled": 100, "pending": 300},
+            done_1h=20, done_24h=480,
+        )
+        out = self._get(db)
+        assert out["remaining"] == 300
+        assert out["eta_hours"] == 15.0             # 300 ÷ 20
+
+    def test_finished_job_reports_zero_eta(self):
+        db = _FakeDB(
+            _job(status="completed_with_errors", total_items=1000),
+            status_counts={"done": 960, "failed": 40}, permanently_failed=40,
+        )
+        out = self._get(db)
+        assert out["remaining"] == 0
+        assert out["eta_hours"] == 0.0
+
+    def test_done_counts_are_one_statement_over_1h_and_24h_windows(self):
+        db = _FakeDB(_job(), status_counts={"done": 600}, done_1h=10, done_24h=480)
+        out = self._get(db)
+        assert sum("FILTER" in s for s in db.sql) == 1      # done 행을 한 번만 훑는다
+        [(hours_1, hours_24)] = db.done_windows
+        assert hours_1 == pytest.approx(1, abs=0.01)         # 첫 칸이 1시간
+        assert hours_24 == pytest.approx(24, abs=0.01)       # 둘째 칸이 24시간
+        assert (out["rate_per_hour"], out["rate_per_hour_24h"]) == (10, 20.0)
+
     def test_permanent_failures_use_job_max_attempts(self):
         db = _FakeDB(_job(params={"reembed": True, "max_attempts": 5}), status_counts={"done": 1})
         self._get(db)
@@ -136,7 +205,44 @@ class TestJobDetail:
         assert db.attempt_limits == [3]
 
 
+class TestCountStatements:
+    """count 문장의 상태·시도 한도·시간 창 조건을 컴파일한 SQL 로 고정한다.
+
+    대역 세션은 문장을 부분 문자열로만 구별해서, 조건 하나가 빠져도 엔드포인트 테스트는 통과한다.
+    """
+
+    def test_permanently_failed_counts_failed_items_at_the_attempt_limit(self):
+        compiled = _compiled(ingest_jobs._permanently_failed(JOB_ID, 5))
+        sql = str(compiled)
+        assert "ingest_job_items.status = %(status_1)s" in sql
+        assert "ingest_job_items.attempt >= %(attempt_1)s" in sql
+        # 값까지 고정: 이 잡의 failed 만, 한도 5 이상만
+        assert compiled.params == {"job_id_1": JOB_ID, "status_1": "failed", "attempt_1": 5}
+
+    def test_done_counts_scan_the_jobs_done_items_once(self):
+        t1h = _dt.datetime(2026, 10, 2, 11, 0, tzinfo=_dt.timezone.utc)
+        t24h = _dt.datetime(2026, 10, 1, 12, 0, tzinfo=_dt.timezone.utc)
+        compiled = _compiled(ingest_jobs._done_counts(JOB_ID, t1h, t24h))
+        sql = str(compiled)
+        assert sql.count("FROM ingest_job_items") == 1       # done 행을 한 번만 훑는다
+        assert "ingest_job_items.status = %(status_1)s" in sql.split("FROM ingest_job_items", 1)[1]
+        # 첫 칸은 1시간, 둘째 칸은 24시간
+        assert (
+            "count(*) FILTER (WHERE ingest_job_items.finished_at >= %(finished_at_1)s) AS done_1h, "
+            "count(*) FILTER (WHERE ingest_job_items.finished_at >= %(finished_at_2)s) AS done_24h"
+        ) in sql
+        # 값까지 고정: 이 잡의 done 만, 창 시작 시각 둘
+        assert compiled.params == {
+            "job_id_1": JOB_ID, "status_1": "done", "finished_at_1": t1h, "finished_at_2": t24h,
+        }
+
+
 class TestFailureGroups:
+    def test_counts_only_the_jobs_failed_items(self):
+        compiled = _compiled(ingest_jobs._failure_groups(JOB_ID))
+        assert "GROUP BY ingest_job_items.error_group" in str(compiled)
+        assert compiled.params == {"job_id_1": JOB_ID, "status_1": "failed"}
+
     def test_sample_is_the_most_common_message(self):
         sql = str(_compiled(ingest_jobs._failure_groups(JOB_ID)))
         assert "mode() WITHIN GROUP (ORDER BY ingest_job_items.last_error)" in sql
