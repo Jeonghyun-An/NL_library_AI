@@ -78,6 +78,13 @@ describe("activeKindForPath", () => {
     expect(activeKindForPath(`/research/${ID1}`)).toBe("research");
     expect(activeKindForPath("/papersX")).toBe("book");
   });
+
+  it("보고서에서 온 상세는 딥리서치 탭, 검색에서 온 상세는 논문 탭이다 — 잡 id 모양이 틀리면 논문 탭", () => {
+    expect(activeKindForPath("/papers/CNTS-2", { from: "research", job: ID1, e: "E3" })).toBe("research");
+    expect(activeKindForPath("/papers/CNTS-2", { from: "search", h: ID2, q: "nlp" })).toBe("paper");
+    expect(activeKindForPath("/papers/CNTS-2", { from: "research", job: "../admin" })).toBe("paper");
+    expect(activeKindForPath("/papers", { from: "research", job: ID1 })).toBe("paper");
+  });
 });
 
 describe("activeIdFor", () => {
@@ -85,5 +92,13 @@ describe("activeIdFor", () => {
     expect(activeIdFor(`/research/${ID1}`, {})).toBe(ID1);
     expect(activeIdFor("/papers/CNTS-2", { h: ID2 })).toBe(ID2);
     expect(activeIdFor("/", {})).toBeNull();
+  });
+
+  it("상세는 출처의 잡·기록을 강조한다 — 잡 id 는 소문자로 맞추고 모양이 틀리면 버린다", () => {
+    expect(activeIdFor("/papers/CNTS-2", { from: "research", job: ID1, e: "E3" })).toBe(ID1);
+    expect(activeIdFor("/papers/CNTS-2", { from: "research", job: MIXED })).toBe(MIXED.toLowerCase());
+    expect(activeIdFor("/papers/CNTS-2", { from: "search", h: ID2, q: "nlp" })).toBe(ID2);
+    expect(activeIdFor("/papers/CNTS-2", { from: "search", q: "nlp" })).toBeNull();
+    expect(activeIdFor("/papers/CNTS-2", { from: "research", job: "nope" })).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 // frontend/utils/historyRoute.ts
 import type { HistoryEntry, HistoryKind } from "~/types/history";
+import { isUuid, readDetailSource } from "~/utils/detailSource";
 
 export interface HistoryRoute {
   path: string;
@@ -12,8 +13,6 @@ export interface HistoryQuery {
   grade?: string;
 }
 
-// 서버 기록 id 는 브라우저 v4 · 잡 id v4 · v1 이전분 uuid5 가 섞여 있어 버전을 가리지 않는다
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const V1_ID = /^\d{10,16}$/;
 
 function first(v: unknown): string | undefined {
@@ -36,7 +35,7 @@ export function readHistoryQuery(
 ): HistoryQuery {
   const out: HistoryQuery = {};
   const raw = first(query.h) ?? first(query.restore);
-  if (raw && UUID.test(raw)) out.h = raw.toLowerCase();
+  if (raw && isUuid(raw)) out.h = raw.toLowerCase();
   else if (raw && V1_ID.test(raw) && v1Map[raw]) out.h = v1Map[raw];
   const q = first(query.q);
   if (q) out.q = q;
@@ -51,8 +50,10 @@ export function awaitsV1Map(query: Record<string, unknown>, v1Map: Record<string
   return !!raw && V1_ID.test(raw) && !v1Map[raw];
 }
 
-export function activeKindForPath(path: string): HistoryKind {
+// 보고서에서 온 상세(from=research)는 그 보고서를 읽던 중으로 본다 — 사이드바가 딥리서치 탭과 그 보고서를 강조한다
+export function activeKindForPath(path: string, query: Record<string, unknown> = {}): HistoryKind {
   if (path === "/research" || path.startsWith("/research/")) return "research";
+  if (path.startsWith("/papers/") && readDetailSource(query).kind === "research") return "research";
   if (path === "/papers" || path.startsWith("/papers/")) return "paper";
   return "book";
 }
@@ -64,5 +65,7 @@ export function activeIdFor(
 ): string | null {
   const match = /^\/research\/([^/?#]+)/.exec(path);
   if (match) return decodeURIComponent(match[1]!);
+  const source = path.startsWith("/papers/") ? readDetailSource(query) : null;
+  if (source?.kind === "research") return source.job;
   return readHistoryQuery(query, v1Map).h ?? null;
 }

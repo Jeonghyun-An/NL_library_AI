@@ -173,7 +173,7 @@ const history = useHistory();
 // 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다
 const open = useState<boolean>("skx:lnb-open", () => true);
 const isCollapsed = computed(() => !open.value || !!props.collapsed);
-const historyTab = ref<HistoryKind>(activeKindForPath(route.path));
+const historyTab = ref<HistoryKind>(activeKindForPath(route.path, route.query));
 const confirmOpen = ref(false);
 const v1Map = ref<Record<string, string>>({});
 
