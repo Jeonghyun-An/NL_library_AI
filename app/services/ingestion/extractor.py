@@ -109,6 +109,7 @@ class PageResult:
     text: str
     method: str          # "fitz" | "vlm"
     confidence: float
+    truncated: bool = False  # VLM 응답이 max_tokens 로 끝나 되풀이 꼬리를 걷어 냈다
 
 
 @dataclass
@@ -218,17 +219,23 @@ def _strip_reasoning(text: str, thinking: bool) -> tuple[str, bool]:
     return text.strip(), True     # 비추론 모델 (태그 없음이 정상)
 
 
+class VlmDegenerateOutput(Exception):
+    """VLM 이 같은 구절을 되풀이하다 max_tokens 로 끝나, 꼬리를 걷어 내도 쓸 본문이 없다."""
+
+
+def _render_png_b64(page: fitz.Page) -> str:
+    import base64
+
+    return base64.b64encode(page.get_pixmap(dpi=cfg.FITZ_DPI).tobytes("png")).decode()
+
+
 async def _extract_with_vlm(
     page: fitz.Page,
     client: httpx.AsyncClient,
     *,
     prompt_type: str = "ocr",  # "ocr" | "diagram"
 ) -> PageResult:
-    import base64
-
-    pix = page.get_pixmap(dpi=cfg.FITZ_DPI)
-    img_bytes = pix.tobytes("png")
-    img_b64 = base64.b64encode(img_bytes).decode()
+    img_b64 = _render_png_b64(page)
 
     prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
 
@@ -286,11 +293,20 @@ async def _extract_with_vlm(
         if not complete:
             raise RuntimeError(f"thinking off 재시도도 실패(finish={finish})")
 
+    # 비추론 모드도 max_tokens 소진을 본다 — 대부분 같은 구절을 되풀이하다 잘린 출력이다.
+    truncated = finish == "length"
+    if truncated:
+        text, degenerate = page_routing.trim_repetition(text)
+        if degenerate:
+            raise VlmDegenerateOutput(f"p.{page.number} VLM 퇴화 출력(finish=length)")
+        log.warning(f"[p.{page.number}] VLM 응답이 max_tokens({cfg.VLM_MAX_TOKENS})에서 잘림 — 되풀이 꼬리 정리")
+
     return PageResult(
         page_num=page.number,
         text=text,
         method="vlm",
         confidence=0.9,
+        truncated=truncated,
     )
 
 
@@ -303,10 +319,7 @@ async def _extract_with_surya(
     Surya는 transformers 5.x 의존이라 본 이미지(transformers 4.44)와 충돌 →
     별도 컨테이너로 격리하고 HTTP(/ocr, base64 PNG)로 호출한다.
     """
-    import base64
-
-    pix = page.get_pixmap(dpi=cfg.FITZ_DPI)
-    img_b64 = base64.b64encode(pix.tobytes("png")).decode()
+    img_b64 = _render_png_b64(page)
 
     resp = await client.post(
         f"{cfg.SURYA_BASE_URL}/ocr",
