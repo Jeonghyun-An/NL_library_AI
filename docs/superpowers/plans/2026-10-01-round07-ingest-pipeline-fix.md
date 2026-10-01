@@ -35,9 +35,9 @@
 | `SCAN_MIN_PAGES` | int 3 | 문서 단위 스캔 판정 최소 쪽수 |
 
 (쪽 면적 이미지 규칙과 `SCAN_IMAGE_AREA_RATIO` 는 쓰지 않는다 — 이미지 표지를 다시 VLM 으로 보내 d85df93 의 표지 수정을 되돌린다. spec 7번.)
-| `ODL_TIMEOUT_BASE_SECONDS` | float 5.0 | ODL 타임아웃 = max(기본, 쪽수 × 쪽당) |
-| `ODL_TIMEOUT_PER_PAGE_SECONDS` | float 0.5 | 위 |
-| `ODL_IMAGE_OUTPUT` | str "off" | ODL `image_output` |
+| `ODL_TIMEOUT_BASE_SECONDS` | float 10.0 (처음 5.0 — Task 5 실행 메모) | ODL 타임아웃 = max(기본, 쪽수 × 쪽당) |
+| `ODL_TIMEOUT_PER_PAGE_SECONDS` | float 1.5 (처음 0.5) | 위 |
+| `ODL_IMAGE_OUTPUT` | str "off" — `off`·`embedded`·`external` 만(설정을 읽을 때 검증) | ODL `image_output` |
 
 **`ingest_job_items.meta` 키**
 
@@ -46,10 +46,15 @@
 | `run_token` | str(uuid4 hex) | 디스패처가 체인마다 새로 적음 → `_run_stage` 가 대조 |
 | `stage_running` | str 단계 이름 또는 null | `_run_stage` 시작 때 적고 끝날 때 null |
 | `stage_started_at` | ISO8601 UTC 문자열 | 위 |
-| `vlm_truncated` | int | 추출: length 로 끝나 꼬리를 걷어 낸 OCR 쪽 수 |
+| `vlm_truncated` | int | 추출: length 로 끝난 OCR 쪽 수 — 되풀이 꼬리를 걷어 내고 채택했거나 퇴화 출력이라 버리고 ODL 결과를 쓴 쪽 |
 | `extract_deadline_hit` | bool | 추출 데드라인에 걸림 |
 | `forced_ocr` | bool | 섹션 0개로 강제 OCR 재추출을 했음 |
-| `ocr_errors` | int | OCR 호출 예외 수 |
+| `ocr_errors` | int | VLM 요청 실패 수(연결·타임아웃·HTTP 오류 — 다시 하면 달라질 수 있는 것). 퇴화 출력(`vlm_truncated`)·렌더링 실패(`render_errors`)는 세지 않는다 |
+| `render_errors` | int | 쪽 이미지 렌더링 실패 수(fitz `get_pixmap` 예외 — 다시 해도 같다) |
+| `odl_fallback` | str 또는 null | 추출: `resaved`(원본 ODL 실패, fitz 재저장본으로 변환)·`fitz`(둘 다 실패, fitz 텍스트) — 정상이면 null (Task 5 실행 메모) |
+| `odl_seconds` | float | 추출: ODL 시도를 모두 더한 시간(0.1초) |
+| `enrich_source` | str | embed: `artifact`(요약 단계의 보강을 읽음)·`inline`(embed 가 보강 LLM 을 다시 돌림)·`none`(논문 아님·보강 꺼짐) (Task 6) |
+| `reduce_levels`·`reduce_groups`·`reduce_fallback` | int·int·bool | 마무리: 계층 요약 단계 수(0 = 합치기만)·묶음 수·균등 샘플링으로 돌아감 (Task 8) |
 
 **오류 그룹(`error_group`)**: 기존 `not_found`·`extract_empty`·`llm_error`·`llm_timeout`·`milvus_error`·`minio_error`·`vlm_error`·`stale`·`artifact_missing`·`empty_body`·`unknown` 에 더해 `no_text`(결정적 — 자동 재시도 안 함).
 
@@ -68,7 +73,7 @@ async def chat(messages: list[dict], *, params: dict | None = None, timeout: flo
 
 # app/services/ingestion/page_routing.py  (Task 3 — 새 파일, fitz·httpx import 금지)
 def body_len(text: str) -> int: ...                       # [그림]·<br>·구조 문자 뺀 글자 수
-def collapse_br_runs(text: str) -> str: ...               # <br> 3개 이상 연속 → "\n"
+def collapse_br_runs(text: str) -> str: ...               # <br> 3개 이상 연속 → <br> 하나(줄바꿈으로 바꾸면 표 행이 쪼개진다 — Task 3 리뷰)
 def repeated_lines(page_texts: list[str], ratio: float, max_len: int = 40) -> set[str]: ...
 def strip_lines(text: str, lines: set[str]) -> str: ...
 def is_scan_document(short_flags: list[bool], *, min_pages: int, ratio: float) -> bool: ...
@@ -76,8 +81,10 @@ def short_page_needs_ocr(*, fitz_len_stripped: int, fitz_len_raw: int, doc_is_sc
 def trim_repetition(text: str) -> tuple[str, bool]: ...   # (다듬은 텍스트, 퇴화 출력인가)
 
 # app/services/ingestion/extractor.py  (Task 3·4·5)
-async def extract_text(file_path, book_id, *, file_bytes=None, force_ocr_short_pages: bool = False) -> ExtractionResult: ...
-# ExtractionResult 에 필드 추가: vlm_truncated: int = 0, deadline_hit: bool = False, ocr_errors: int = 0
+async def extract_text(file_path, book_id, *, file_bytes=None, force_ocr_short_pages: bool = False, deadline_s: float | None = None) -> ExtractionResult: ...
+# deadline_s: 추출 전체 데드라인(초, None 이면 INGEST_EXTRACT_DEADLINE) — 섹션 0개 강제 재추출은 첫 추출이 남긴 시간(하한 60초)을 넘긴다
+# ExtractionResult 에 필드 추가: vlm_truncated: int = 0, deadline_hit: bool = False, ocr_errors: int = 0,
+#   render_errors: int = 0, short_kept: int = 0 (원래 짧은 쪽으로 ODL 결과를 채택한 쪽 수 — 0 이면 섹션 0개 재추출을 해도 같다)
 
 # app/services/ingestion/paper_enricher.py  (Task 6)
 async def enrich_paper(book_id, title, full_text, minio_client, *, sem: asyncio.Semaphore | None = None) -> PaperEnrichment: ...
@@ -93,7 +100,7 @@ class StageContext:  # 필드 추가 (Task 2)
     item_meta: dict = field(default_factory=dict)
 
 # app/services/ingestion/summarizer.py  (Task 8)
-async def reduce_section_summaries(title: str, author: str, section_summaries: list[str], doc_type: str = "book") -> str: ...
+async def reduce_section_summaries(title: str, author: str, section_summaries: list[str], doc_type: str = "book", *, stats: ReduceStats | None = None) -> str: ...
 
 # app/workers/job_runtime.py  (Task 2)
 def build_item_chain(item_stage: str, item_id: int, run_token: str | None = None): ...
@@ -131,6 +138,8 @@ def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None, run_to
 ## 작업
 
 ### Task 0: 설정 키·compose·beat
+
+> **실행 메모(2026-10-02, Task 5 리뷰 반영):** 아래 config·compose 블록의 ODL 기본값(`ODL_TIMEOUT_BASE_SECONDS` 5.0·`ODL_TIMEOUT_PER_PAGE_SECONDS` 0.5)은 첫 구현 값이다. Task 5 리뷰 측정으로 10.0·1.5 로 올렸고 `fastapi`·`celery-worker`·`celery-cpu` 에 `init: true` 를 더했다(Task 5 실행 메모). 공통 계약 표는 지금 값이다.
 
 **왜:** 다른 작업이 쓸 설정 키를 먼저 한꺼번에 만든다(공통 계약 표). Portainer 는 compose 에 `${이름:-기본값}` 선언이 없는 스택 env 를 무시하므로 `x-common-env` 선언도 같이 한다. 제어 큐(`q_control`: 디스패치·정리·딥리서치 회수)를 추출 워커에서 떼어 새 경량 워커가 받고, beat 틱에 `expires` 를 둔다(spec 6번). 추출 stale 판정은 3600초로 맞춘다(spec 16번 — 추출 데드라인 2700초 위, Celery `visibility_timeout` 7200초 아래).
 
@@ -600,6 +609,8 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 && git add app/core/
 ---
 
 ### Task 1: llm_client 재시도와 finish_reason
+
+> **실행 메모(2026-10-02, 리뷰 반영 7f5a4f5·a53c3b0):** 아래 '재시도 대상'·'최악 시간'과 Step 4 의 `22 passed` 는 첫 구현(d9c5135) 기준이다. 구현은 `httpx.NetworkError`(Connect·Read·Write·CloseError — gemma 재기동 때 처리 중이던 요청은 `ReadError` 로 끊긴다)·`httpx.TimeoutException`·`httpx.RemoteProtocolError` 와 429·5xx 를 재시도하고, 재시도 전체를 호출자의 timeout 안에 묶는다 — 시작 시각 + timeout 이 deadline 이고 시도마다 남은 시간만 쓰며, 남은 시간이 다음 백오프 + 1초 이하이면 더 시도하지 않는다(spec 9). 그래서 최악 시간은 '3 × timeout + 10초'가 아니라 재시도가 없던 때와 같은 timeout 하나다. 다듬기(a53c3b0)에서 시도마다 연결 timeout 을 10초로 묶어(`_CONNECT_TIMEOUT_SECONDS` — 읽기 timeout 은 남은 시간 그대로) vLLM 재기동 중의 연결 대기도 남은 시간 안에서 재시도되게 했고, 더 시도하지 않는 마지막 실패는 ERROR 로 까닭(시도 횟수 소진·남은 시간 부족)과 함께 남긴다. 테스트도 리뷰 반영으로 늘었다.
 
 spec 9번. 지금 `chat()` 은 실패를 바로 올리고(LLM 장애 때 `llm_error` 264건이 영구 실패) `finish_reason` 을 버린다(잘린 응답을 모른다). `chat_full()` 을 더해 `LLMResult(content, finish_reason)` 를 돌려주고, 비스트리밍 호출을 재시도한다. `chat()` 은 시그니처를 그대로 두고 `chat_full()` 의 `content` 만 돌려준다 — 기존 호출부(`summarizer`·`paper_enricher`·`cover_generator`·`pdf_meta_extractor`·`research/critic`·`planner`·`synthesizer`)는 고치지 않는다. `chat_stream()` 은 그대로 둔다(재시도 없음).
 
@@ -4295,6 +4306,8 @@ git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix]
 
 ### Task 5: ODL 타임아웃·fitz 재저장 재시도·fitz 폴백과 이미지 끄기
 
+> **실행 메모(2026-10-02, Task 5 리뷰 반영):** 아래 기본값(5초·쪽당 0.5초)과 근거 ③(이 PC 에서 표 많은 문서가 상한의 78%)은 첫 구현 기준이다. 리뷰가 24스레드 PC 에서 동시 변환을 재 보니 KCI_FI001930485(37쪽)가 혼자 12초, 4건 동시 28초, 8건 동시 47초였다 — `celery-cpu` 4칸이 함께 변환하면 옛 상한 18.5초를 넘어 재저장본 재시도 뒤 fitz 텍스트(표 구조·머리말 제거 없음)로 떨어진다. 그래서 기본값을 `ODL_TIMEOUT_BASE_SECONDS` 10.0·`ODL_TIMEOUT_PER_PAGE_SECONDS` 1.5 로 올렸다(config·compose). 함께 바뀐 것: `fastapi`·`celery-worker`·`celery-cpu` 에 `init: true`(ODL 타임아웃으로 끈 java 를 거두고 SIGTERM 을 넘긴다), ODL 자식이 상한 + 5초에 SIGALRM 으로 java 까지 스스로 끈다(풀 자식이 끊겨도 ODL 이 끝없이 돌지 않게), `ODL_IMAGE_OUTPUT` 은 설정을 읽을 때 `off`·`embedded`·`external` 만 받는다(오타가 모든 문서를 조용히 fitz 텍스트로 바꾸지 않고 앱이 뜨지 않게), `run_extract` 가 meta 에 `odl_fallback`(`resaved`·`fitz`·null)과 `odl_seconds` 를 싣고 시도마다 걸린 시간과 상한을 INFO 로 남긴다. 카나리에서 보는 법은 `docs/ops/bulk_ingest_runbook.md` §9-7 ⑩.
+
 **Files:**
 - Modify: `app/services/ingestion/extractor.py` (import, `_ODL_CHILD`·`_kill_process_group`·`_odl_convert`·`_run_odl`·`_fitz_text_pages`(새), `extract_text_opendataloader`)
 - Test: `app/tests/test_extractor_odl.py`(새)
@@ -6502,7 +6515,7 @@ nanet 7128e09(문장 5개 이하 분기에도 크기 상한)와 493f760(줄바�
 - 문장 5개 이하이면서 섹션 상한을 넘는 문서는 488편 중 3편이었고 셋 다 줄바꿈이 있어 줄 모드로 갔다. 줄바꿈조차 없는 거대 덩어리(VLM 이 한 줄로 낸 판독문 등)는 `"sentence"` 모드가 받는다.
 - 이 회귀를 테스트로 묶었다: 회귀 지문 테스트에 '표가 낀 일반 본문'의 검색 청크(`_GOLDEN_TABLE_SEARCH`)를 넣었고, 본 경로를 `"sentence"` 로 바꾸면 이 테스트가 실패하는 것을 사본에서 확인했다.
 
-알아 둘 한계(둘 다 지금 동작이고 손대지 않는다): 의미 경계가 하나도 안 나는 최악의 경우(같은 줄 반복 등) 크기 분할 뒤 5a7613b 재병합이 끝 조각을 앞에 붙여 상한을 `min_tokens` 만큼까지 넘길 수 있다(섹션 ≤ 5,800토큰 ≈ 8,700자 — 섹션 요약 입력 상한 12,000자 아래). 일반 본문도 문장별 추정치 합산 때문에 상한을 2% 안팎 넘는 섹션이 나온다(회귀 지문의 7,663자 = 5,108토큰).
+알아 둘 한계(둘 다 지금 동작이고 손대지 않는다): 의미 경계가 하나도 안 나는 최악의 경우(같은 줄 반복 등) 크기 분할 뒤 5a7613b 재병합이 상한을 `2 × min_tokens` 까지 넘길 수 있다 — `_merge_small_chunks` 의 앞으로 가는 병합에서 `min_tokens` 미만 조각이 상한 크기 조각을 흡수하고(< `max_tokens + min_tokens`), 끝에 남은 `min_tokens` 미만 조각을 다시 그 앞에 붙이면 `max_tokens + 2·min_tokens` 다(섹션 ≤ 약 6,600토큰 ≈ 9,900자 — 섹션 요약 입력 상한 12,000자 아래). 아래 회귀 테스트의 `max + min` 단언은 그 표본에서 맞는 값이고 일반 상한은 아니다. 일반 본문도 문장별 추정치 합산 때문에 상한을 2% 안팎 넘는 섹션이 나온다(회귀 지문의 7,663자 = 5,108토큰).
 
 **Files:**
 - Modify: `app/services/ingestion/chunker.py` — `_split_sentences`(66-74) 뒤에 폴백 도구, `_split_oversized`(196-239) 교체와 `_split_by_chars` 추가, `semantic_chunk` 의 문장 분리·5개 이하 분기(308-322)·청크 잇기(340)·크기 분할 호출(357)
@@ -9631,6 +9644,8 @@ git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Chor
 ---
 
 ### Task 12: 문서 — 런북 배포 절차·함정·현재 상태
+
+> **실행 메모(2026-10-02 — 코드가 정본):** 아래 초안은 계획 때 쓴 것이고, 커밋한 런북 §9·함정 16·21·`00_status.md` 는 HEAD 코드에 맞춰 고쳤다. 초안과 다른 곳: ① 락 경합은 `pending` 으로 되돌리지 않고 아이템을 둔 채 체인만 멈춘다(진행 상한 한 칸을 쥔 채 `DISPATCH_STALE_SECONDS` 뒤 stale 복구) — 함정 16 의 '락 경합' 줄과 spec 18 을 고쳤다. ② 스키마가 다를 때 컬렉션을 지울 수 있는 것은 fastapi 기동만이 아니라 `ensure_collection()` 을 부르는 모든 프로세스(검색·색인·제어 워커의 1시간 flush)다 — 모두 `x-common-env` 라 `printenv` 하나로 본다. ③ stale 확인은 `last_error LIKE '%stale 복구%'`(성공 뒤에도 남는다)와 제어 워커 로그의 `stale 복구 (stage=` 로 센다. ④ 9-7 ② 에 `ocr_errors`·`render_errors`·`extract_deadline_hit` 를 더했다. ⑤ 9-3 의 옮길 목록은 `git diff 9798f46 -- docker-compose.yml` 과 Task 5 리뷰(`init: true`·ODL 기본값 10·1.5)대로다. ⑥ 9-8 은 다시 돌릴 그룹을 `for` 하나로 보내고 `no_text` 는 보내지 않는다. ⑦ 배포 규칙(한 번에·모든 워커 새 이미지·두 잡 동시 `running` 금지·되돌리기), 9-1 의 `unacked`·문서 락·jsonb 확인, 9-6 의 `CANARY` 자동 받기, 9-7 ⑧~⑬(단계 꼬리·겹쳐 쓴 흔적·ODL·보강·계층 요약·나중에 다시 돌릴 목록), 9-9 의 '다시 돌린 아이템이 먼저 나감', 9-10 의 인덱스 확인·선정 수 견주기를 더했다. ⑧ 함정 21 의 '남은 글자'는 DBPIA 스탬프로 확인된 것(조각 D 근거 ①)으로, 섹션 0개 처리는 faf0fac 의 갈래(첫 추출 OCR 실패·데드라인 → `vlm_error`, `short_kept` 0 → `no_text`)대로 적었다. ⑨ 날짜는 2026-10-02, round07 상태는 '구현·리뷰 마무리, 배포 대기'.
 
 **왜:** 배포·카나리·재처리를 사용자가 운영 서버에서 순서대로 따라 할 수 있게 런북에 적고(spec §6), 고친 함정(16번)과 새 함정(21번)을 기록하고, 현재 상태에 round07 진행·적재 진단·round06 기획 중단을 적는다.
 

@@ -4,8 +4,9 @@
 **옛 규칙**(round07 이전 운영 코드)과 **새 규칙**(이 브랜치 HEAD)으로 각각 내려 쪽 단위로 비교한다.
 VLM·ODL·서버에는 요청하지 않는다. 코드를 고치는 도구가 아니라 재는 도구이며, 결과는 아래 통과 기준으로 판정한다.
 
-실행: `python research/round07-ingest-regression/route_compare.py --per-group 200` (시드 20261001, 8워커).
+실행: `python research/round07-ingest-regression/route_compare.py --per-group 200 --workers 8` (시드 20261001 — `--workers` 기본값은 min(6, CPU 수)라 이 실행은 8 을 줬다).
 첫 실행 511초(디스크 캐시 없음), 다시 돌리면 59초이고 두 실행의 결과는 같다. 표본 752건(고유 PDF 747건 — 이름 오른 문서가 다른 묶음과 겹친다).
+결과는 이 PC 의 PyMuPDF 1.28.0 으로 냈다(`summary.json` 의 `meta.pymupdf`). 운영 이미지는 1.24.10 을 고정한다(`app/requirements.txt`) — 라우팅 단위 테스트는 1.24.10 에서도 돌렸지만, 이 하네스의 수치는 1.28.0 의 fitz 텍스트로 낸 것이라 버전에 따라 텍스트가 달라지면 달라질 수 있다.
 
 ## 두 규칙 (ODL 본문이 50자 미만인 쪽)
 
