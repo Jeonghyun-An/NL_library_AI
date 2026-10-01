@@ -78,6 +78,8 @@
 </template>
 
 <script setup lang="ts">
+import { useApi } from "~/composables/useApi";
+
 const props = defineProps<{
   open: boolean;
   bookId: string | null;
@@ -85,8 +87,7 @@ const props = defineProps<{
 }>();
 defineEmits<{ (e: "close"): void }>();
 
-const config = useRuntimeConfig();
-const apiBase = (config.public.apiBase as string) || "";
+const api = useApi();
 
 const citeStyle = ref<"APA">("APA");
 const lang = ref<"ko" | "en">("ko");
@@ -108,8 +109,8 @@ async function loadCitation() {
   citation.value = null;
   copied.value = "";
   try {
-    citation.value = await $fetch<{ korean: string; english: string }>(
-      `${apiBase}/papers/${props.bookId}/citation`,
+    citation.value = await api<{ korean: string; english: string }>(
+      `/papers/${props.bookId}/citation`,
     );
   } catch {
     citation.value = {

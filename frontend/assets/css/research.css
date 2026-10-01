@@ -1,0 +1,1244 @@
+/* frontend/assets/css/research.css */
+/* 딥리서치 화면 전용. 기획자 디자인이 나오면 이 파일만 갈아입힌다 —
+   style_skovix.css 끝에 덧붙이면 화면 고도화 작업과 거의 확실히 충돌한다.
+   색·모서리·그림자는 --skx-* 토큰만 읽는다. 1rem = 20px(style_skovix.css). */
+
+/* ── 페이지 골격 ─────────────────────────────────────────── */
+.rs-page {
+  --rs-side-width: 17rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+  color: var(--skx-ink);
+}
+.rs-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.rs-col-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+/* A: 본문 + 진행 패널 2단 */
+.rs-body--A {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--rs-side-width);
+  align-items: start;
+}
+.rs-body--A .rs-col-side {
+  position: sticky;
+  top: 1.2rem;
+  max-height: calc(100vh - 2.4rem);
+  overflow-y: auto;
+}
+/* B: 계획 → 탐색 과정 → 보고서가 한 줄로 쌓인다. 본문 묶음을 풀어 진행 패널을 가운데 끼운다 */
+.rs-body--B .rs-col-main {
+  display: contents;
+}
+.rs-body--B .rs-block--plan {
+  order: 1;
+}
+.rs-body--B .rs-col-side {
+  order: 2;
+}
+.rs-body--B .rs-block--report {
+  order: 3;
+}
+
+/* ── 공통 부품 ───────────────────────────────────────────── */
+.rs-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem;
+  background: var(--skx-white);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.rs-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.rs-card__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.rs-card--wait {
+  flex-direction: row;
+  align-items: center;
+  font-size: 0.75rem;
+}
+.rs-card--error {
+  border: 1px solid var(--skx-line);
+}
+.rs-state {
+  align-items: flex-start;
+}
+.rs-state__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.rs-muted {
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--skx-gray-1);
+  line-height: 1.5;
+}
+.rs-alert {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-md);
+}
+.rs-spinner {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.rs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-white);
+  white-space: nowrap;
+  text-decoration: none;
+  background: var(--skx-primary);
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-btn--ghost {
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border-color: var(--skx-border-c1);
+}
+.rs-btn--small {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.6rem;
+}
+.rs-icon-btn {
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--skx-gray-1);
+  background: none;
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.rs-badge {
+  flex-shrink: 0;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-badge--running {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.rs-badge--done {
+  color: var(--skx-ink-2);
+  border-color: var(--skx-border-c1);
+}
+.rs-badge--failed {
+  color: var(--skx-ink);
+  border-color: var(--skx-ink);
+}
+
+/* ── 머리 ────────────────────────────────────────────────── */
+.rs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 1.2rem;
+  background: var(--skx-white);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.rs-head__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.rs-head__kicker {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-head__question {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+.rs-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.rs-status {
+  align-self: flex-start;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-status--completed {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.rs-status--failed,
+.rs-status--canceled {
+  color: var(--skx-gray-1);
+  border-color: var(--skx-line);
+}
+
+/* ── 계획 카드 ───────────────────────────────────────────── */
+.rs-plan__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-plan__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+.rs-plan__no {
+  flex-shrink: 0;
+  width: 1.2rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  text-align: center;
+}
+.rs-plan__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: var(--skx-ink);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+}
+.rs-plan__input:focus {
+  outline: none;
+  border-color: var(--skx-primary);
+}
+.rs-plan__text {
+  flex: 1;
+  min-width: 0;
+}
+.rs-plan__add {
+  align-self: flex-start;
+}
+.rs-plan__problem {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
+/* ── 진행 패널 ───────────────────────────────────────────── */
+.rs-counters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+}
+.rs-counter {
+  padding: 0.5rem;
+  text-align: center;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.rs-counter dt {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+}
+.rs-counter dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-highlight {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-md);
+  animation: rs-pulse 1.6s ease-out 2;
+}
+.rs-highlight__kicker {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-highlight__main {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-highlight__note {
+  margin: 0.2rem 0 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+@keyframes rs-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--skx-border-c1);
+  }
+  100% {
+    box-shadow: 0 0 0 0.6rem transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-highlight {
+    animation: none;
+  }
+}
+.rs-progress__synth {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.rs-timeline,
+.rs-rounds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.rs-subq__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+}
+.rs-subq__no {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-subq__title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+}
+.rs-subq.is-pending .rs-subq__title {
+  color: var(--skx-gray-2);
+}
+.rs-subq__stopped {
+  margin: 0.3rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0 0.8rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--skx-border-c1);
+}
+.rs-round {
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+.rs-round p {
+  margin: 0;
+}
+.rs-round__line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.rs-round__no {
+  font-weight: 700;
+}
+.rs-round__stat,
+.rs-round__verdict {
+  color: var(--skx-gray-1);
+}
+.rs-round__next {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-round.is-recheck {
+  padding-left: 0.3rem;
+  border-left: 2px solid var(--skx-border-c2);
+}
+
+/* ── 보고서 ──────────────────────────────────────────────── */
+.rs-report {
+  gap: 1.2rem;
+}
+.rs-report__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.rs-report__question {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.rs-report__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.rs-report__intro {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.7rem;
+  background: var(--skx-white);
+  border-left: 3px solid var(--skx-primary);
+}
+.rs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rs-section__heading {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.rs-section__intro,
+.rs-future li,
+.rs-paper {
+  font-size: 0.7rem;
+  line-height: 1.7;
+}
+.rs-section__intro {
+  margin: 0;
+}
+.rs-section__sub {
+  margin: 0.3rem 0 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+}
+.rs-papers,
+.rs-future {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding-left: 1rem;
+}
+.rs-paper__who {
+  font-weight: 700;
+}
+.rs-paper__title {
+  margin-left: 0.3rem;
+  color: var(--skx-gray-1);
+}
+.rs-paper__title::before {
+  content: "「";
+}
+.rs-paper__title::after {
+  content: "」";
+}
+.rs-paper__summary::before {
+  content: ": ";
+}
+.rs-limits {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-md);
+}
+.rs-limits__title {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-limits ul {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.65rem;
+  line-height: 1.7;
+}
+
+/* ── 인용칩 ──────────────────────────────────────────────── */
+.rs-cite {
+  position: relative;
+  display: inline-block;
+  margin: 0 0.1rem;
+}
+.rs-cite__chip {
+  padding: 0 0.4rem;
+  font-family: inherit;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.rs-cite__chip:hover,
+.rs-cite__chip:focus-visible,
+.rs-cite__chip[aria-expanded="true"] {
+  border-color: var(--skx-primary);
+  outline: none;
+}
+.rs-cite__pop {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: min(24rem, 80vw);
+  padding: 0.8rem;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+/* 안쪽 글을 누를 때 초점을 받아 두는 용도라 테두리는 그리지 않는다(Tab 순서에는 없다) */
+.rs-cite__pop:focus {
+  outline: none;
+}
+.rs-cite__title {
+  font-size: 0.65rem;
+}
+.rs-cite__meta {
+  color: var(--skx-gray-1);
+}
+.rs-cite__quote {
+  display: block;
+  max-height: 8rem;
+  padding-left: 0.5rem;
+  overflow-y: auto;
+  border-left: 2px solid var(--skx-border-c1);
+}
+.rs-cite__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--skx-gray-1);
+}
+.rs-cite__pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.rs-cite__pager button {
+  padding: 0 0.3rem;
+  background: none;
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-cite__pager button[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+.rs-cite__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ── 입력창 + 메뉴 ───────────────────────────────────────── */
+.rs-plus {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 결과 검색바는 위치 기준이 없어 오류 문구가 엉뚱한 곳에 뜬다 */
+.skx-rsearch:has(> .rs-plus) {
+  position: relative;
+}
+.rs-plus__anchor {
+  position: relative;
+}
+.rs-plus__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.rs-plus__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-plus__menu,
+.rs-plus__palette {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+.rs-plus__menu {
+  min-width: 16rem;
+}
+/* 슬래시 명령 목록은 + 버튼이 아니라 입력 상자(.rs-plus 의 부모 — 랜딩 상자·결과 검색바 모두
+   위치 기준이 있다) 아래에 상자 폭으로 뜬다. z-index 로 같은 자리의 오류 문구 위에 온다 */
+.rs-plus__palette {
+  right: 0;
+}
+.rs-plus__item,
+.rs-plus__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-plus__item:hover,
+.rs-plus__item:focus-visible,
+.rs-plus__item.is-selected,
+.rs-plus__option.is-selected {
+  background: var(--skx-border-c1);
+  outline: none;
+}
+.rs-plus__icon {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+}
+.rs-plus__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.rs-plus__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-plus__desc {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  line-height: 1.4;
+}
+.rs-plus__cmd {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.rs-plus__slash {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-plus__alias {
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.rs-plus__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-white);
+  background: var(--skx-primary);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-plus__chip-x {
+  padding: 0 0.2rem;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--skx-white);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.rs-plus__error {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
+/* ── 보고서 작성 현황 ────────────────────────────────────── */
+.rs-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.rs-synth__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.rs-synth__summary {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-synth__actions:empty {
+  display: none;
+}
+.rs-synth__bar {
+  position: relative;
+  height: 0.4rem;
+  overflow: hidden;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-synth__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  overflow: hidden;
+  background: var(--skx-primary);
+  border-radius: inherit;
+  /* 폭은 1초마다 다시 잰다 — 같은 1초로 이어 붙여 멈춤 없이 늘어나 보이게 한다 */
+  transition: width 1s linear;
+}
+.rs-synth__fill.is-running::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--skx-white) 45%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: rs-sheen 1.8s ease-in-out infinite;
+}
+.rs-synth__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-synth__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--skx-radius-sm);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+button.rs-synth__item {
+  cursor: pointer;
+}
+button.rs-synth__item:focus-visible,
+.rs-synth__item.is-linked {
+  background: var(--skx-border-c1);
+  border-color: var(--skx-border-c2);
+  outline: none;
+}
+/* 터치 화면의 :hover 는 탭한 뒤에도 다음 탭까지 남는다 — 포인터를 올려 둘 수 있는 기기에서만 쓴다 */
+@media (hover: hover) {
+  button.rs-synth__item:hover {
+    background: var(--skx-border-c1);
+    border-color: var(--skx-border-c2);
+  }
+}
+.rs-synth__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 50%;
+}
+.rs-synth__item.is-done .rs-synth__icon {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+}
+.rs-synth__item.is-running .rs-synth__icon {
+  border: 2px solid var(--skx-border-c1);
+  border-top-color: var(--skx-primary);
+  animation: rs-spin 0.9s linear infinite;
+}
+.rs-synth__item.is-waiting .rs-synth__icon {
+  color: var(--skx-gray-2);
+  border: 1px dashed var(--skx-line);
+}
+.rs-synth__item.is-failed .rs-synth__icon {
+  color: var(--skx-ink);
+  border: 1px solid var(--skx-ink);
+}
+.rs-synth__icon.is-fresh {
+  animation: rs-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.rs-synth__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rs-synth__item.is-waiting .rs-synth__name {
+  font-weight: 400;
+  color: var(--skx-gray-2);
+}
+.rs-synth__state {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-gray-1);
+}
+.rs-synth__item.is-running .rs-synth__state {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+@keyframes rs-sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes rs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes rs-pop {
+  0% {
+    transform: scale(0.3);
+  }
+  55% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-synth__fill,
+  .rs-synth__item {
+    transition: none;
+  }
+  .rs-synth__fill.is-running::after,
+  .rs-synth__item.is-running .rs-synth__icon,
+  .rs-synth__icon.is-fresh {
+    animation: none;
+  }
+}
+
+/* ── 보고서 초안 ─────────────────────────────────────────── */
+.rs-block--report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.rs-report-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.rs-report-note p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.rs-spinner--small {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.rs-report__kicker {
+  margin: 0 0 0.3rem;
+}
+.rs-report__actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.rs-badge--draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.rs-badge--live::before {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  background: var(--skx-primary);
+  border-radius: 50%;
+  animation: rs-blink 1.2s ease-in-out infinite;
+}
+/* 카드 목록에서 눌러 옮겨 오는 자리 — 화면 맨 위에 딱 붙지 않게 조금 띄우고, 강조는 바깥 테두리로 한다 */
+.rs-section {
+  scroll-margin-top: 1.2rem;
+  border-radius: var(--skx-radius-sm);
+  outline: 2px solid transparent;
+  outline-offset: 0.4rem;
+  transition: outline-color 0.2s ease;
+}
+.rs-section.is-linked {
+  outline-color: var(--skx-border-c2);
+}
+/* 강제 색 모드(Windows 고대비)는 투명 outline 도 시스템 색으로 칠해 절마다 테두리 상자가 생긴다 — 강조한 절에만 남긴다 */
+@media (forced-colors: active) {
+  .rs-section:not(.is-linked) {
+    outline: none;
+  }
+}
+.rs-section.is-waiting .rs-section__heading {
+  color: var(--skx-gray-2);
+}
+.rs-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+/* fill 은 backwards 만 — both·forwards 면 끝난 뒤에도 효과가 남아 본문마다 쌓임 맥락이 생겨 인용칩 팝오버가 다음 절 본문 아래로 깔린다 */
+.rs-report--draft .rs-section__body {
+  animation: rs-reveal 0.45s ease-out backwards;
+}
+.rs-skeleton {
+  --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, var(--skx-white));
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rs-skeleton__line {
+  height: 0.55rem;
+  background: linear-gradient(90deg, var(--rs-skeleton) 25%, var(--skx-white) 50%, var(--rs-skeleton) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--skx-radius-pill);
+  animation: rs-shimmer 1.6s linear infinite;
+}
+.rs-skeleton__line:nth-child(2) {
+  width: 92%;
+}
+.rs-skeleton__line:nth-child(3) {
+  width: 64%;
+}
+@keyframes rs-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rs-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@keyframes rs-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-section {
+    transition: none;
+  }
+  .rs-badge--live::before,
+  .rs-report--draft .rs-section__body,
+  .rs-skeleton__line {
+    animation: none;
+  }
+}
+
+/* ── 내려받기 메뉴 ───────────────────────────────────────── */
+.rs-dl {
+  position: relative;
+  display: inline-flex;
+}
+/* 만드는 중에도 aria-disabled 가 걸리지만 흐리게 두면 '누를 수 없음'으로 읽혀 점과 글자가 묻힌다 —
+   흐림은 내려받을 내용이 없을 때만 */
+.rs-dl__btn[aria-disabled="true"]:not([aria-busy="true"]) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-dl__btn[aria-busy="true"] {
+  cursor: progress;
+}
+/* 만드는 중 — 누른 뒤 아무 일도 없는 것처럼 보이지 않게 버튼 안에서 점이 숨 쉰다 */
+.rs-dl__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  background: var(--skx-primary);
+  border-radius: 50%;
+  animation: rs-dl-breathe 1s ease-in-out infinite alternate;
+}
+@keyframes rs-dl-breathe {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.rs-dl__menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 40;
+  min-width: 13rem;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+  transform-origin: top right;
+  animation: rs-dl-in 0.14s ease-out;
+}
+@keyframes rs-dl-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.2rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rs-dl__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  width: 100%;
+  padding: 0.5rem;
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.rs-dl__item:hover,
+.rs-dl__item:focus-visible {
+  background: var(--skx-border-c1);
+  outline: none;
+}
+.rs-dl__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.rs-dl__desc {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  line-height: 1.4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-dl__menu,
+  .rs-dl__dot {
+    animation: none;
+  }
+}
+
+/* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
+/* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
+.rs-print {
+  display: none;
+}
+@media print {
+  /* 이름 없는 @page 는 선택자로 좁힐 수 없어 모든 페이지의 인쇄에 걸린다(이 파일은 모든 페이지에 실린다).
+     그래서 이름 붙은 페이지로 두고 인쇄 전용 문서와 딥리서치 화면에만 준다 — 다른 페이지는 브라우저 기본값
+     (용지·여백·가로/세로 선택)을 그대로 쓰고, page 속성을 모르는 브라우저는 기본 여백으로 찍힌다 */
+  @page rs-report {
+    size: A4;
+    margin: 18mm 16mm;
+  }
+  .rs-print,
+  .skx-app:has(.rs-page) {
+    page: rs-report;
+  }
+  /* [PDF로 저장] 중에는 인쇄 전용 문서만 찍는다 — body 의 다른 자식(앱·토스트·원문 뷰어)은 숨긴다 */
+  body:has(> .rs-print) > :not(.rs-print) {
+    display: none !important;
+  }
+  /* 딥리서치 화면을 그대로 인쇄(Ctrl+P)해도 사이드바·머리·버튼·진행 패널은 뺀다.
+     이 파일은 모든 페이지에 실리므로 다른 화면의 인쇄에는 걸리지 않게 딥리서치 화면으로 좁힌다 */
+  .skx-app:has(.rs-page) .skx-lnb,
+  body:has(.rs-page) .skx-footer,
+  .rs-page .rs-head,
+  .rs-page .rs-col-side,
+  .rs-page .rs-dl,
+  .rs-page .rs-btn {
+    display: none !important;
+  }
+  /* 진행 패널을 뺀 자리에 빈 칸이 남지 않게 배치 A 의 2단 격자를 푼다 — 본문이 용지 폭을 다 쓴다 */
+  .rs-page .rs-body {
+    display: block;
+  }
+  .rs-print {
+    display: block;
+    font-family: "맑은 고딕", "Malgun Gothic", "Pretendard", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.6;
+    color: var(--skx-ink);
+  }
+  .rs-print__title {
+    margin: 0 0 6pt;
+    font-size: 18pt;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .rs-print__meta {
+    margin: 0;
+    font-size: 9pt;
+    color: var(--skx-gray-1);
+    word-break: break-all;
+  }
+  .rs-print__h1 {
+    margin: 18pt 0 6pt;
+    font-size: 14pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  .rs-print__h2 {
+    margin: 10pt 0 4pt;
+    font-size: 12pt;
+    font-weight: 700;
+    break-after: avoid;
+  }
+  .rs-print__para {
+    margin: 0 0 6pt;
+  }
+  .rs-print__para.is-muted {
+    color: var(--skx-gray-1);
+  }
+  .rs-print__list {
+    margin: 0 0 6pt;
+    padding-left: 16pt;
+  }
+  .rs-print__refs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rs-print__list li,
+  .rs-print__refs li {
+    margin-bottom: 3pt;
+    break-inside: avoid;
+  }
+  /* 번호로 찾아 읽는 목록이라 둘째 줄부터 들여 번호가 튀어나오게 한다 */
+  .rs-print__refs li {
+    padding-left: 22pt;
+    text-indent: -22pt;
+  }
+}

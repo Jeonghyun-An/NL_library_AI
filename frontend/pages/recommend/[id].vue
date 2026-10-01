@@ -272,9 +272,10 @@
 </template>
 
 <script setup lang="ts">
+import { useApi } from "~/composables/useApi";
+
 const route = useRoute();
-const config = useRuntimeConfig();
-const apiBase = config.public.apiBase as string;
+const api = useApi();
 const scenarioId = route.params.id as string;
 
 const toast = ref("");
@@ -385,7 +386,7 @@ async function fetchRecommend() {
   loading.value = true;
   typedText.value = "";
   try {
-    const data = await $fetch<any>(`${apiBase}/scenario/recommend`, {
+    const data = await api<any>("/scenario/recommend", {
       method: "POST",
       body: { concern: meta.value.concern, top_k: 4 },
     });

@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
+import { apiHeaders, apiUrl } from "~/composables/useApi";
 
 const props = defineProps<{
   cntsId: string;
@@ -97,9 +98,6 @@ const isStreaming = ref(false);
 const streamingText = ref("");
 const messagesEl = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
-
-const config = useRuntimeConfig();
-const apiBase = (config.public.apiBase as string) || "";
 
 function formatText(text: string) {
   if (!text) return "";
@@ -130,9 +128,9 @@ async function send() {
   let pendingSources: Source[] | undefined;
 
   try {
-    const resp = await fetch(`${apiBase}/books/chat/${props.cntsId}`, {
+    const resp = await fetch(apiUrl(`/books/chat/${props.cntsId}`), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ message: text, history }),
     });
 

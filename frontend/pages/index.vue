@@ -1,12 +1,8 @@
 <template>
   <div class="skx-app">
     <AppSidebar
-      :book-history="bookHistory"
-      :paper-history="paperHistory"
-      :active-id="currentHistoryId ?? undefined"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
-      @restore="restoreSession"
     />
 
     <!-- ===== LANDING VIEW ===== -->
@@ -166,6 +162,7 @@
         <div class="skx-panel" :hidden="mode !== 'paper'">
           <div class="skx-search">
             <div class="skx-search__box">
+              <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" :disabled="loading" />
               <label class="skx-search__field">
                 <span class="skx-sr-only">논문 검색어</span>
                 <textarea
@@ -290,17 +287,20 @@
     <!-- ===== RESULTS VIEW ===== -->
     <main v-else-if="view === 'results'" class="skx-result">
       <div class="skx-rsearch">
+        <!-- 검색 중에는 잠근다 — 검색 중 엔터는 무시되므로 고친 검색어가 조용히 버려지지 않게 -->
         <input
           type="text"
           class="skx-rsearch__input"
           v-model="currentQuery"
           aria-label="검색어 입력"
+          :disabled="loading"
           @keydown.enter.prevent="handleSearch(currentQuery)"
         />
         <button
           type="button"
           class="skx-send"
           aria-label="검색"
+          :disabled="loading"
           @click="handleSearch(currentQuery)"
         >
           <img src="/img/ico-send.svg" alt="" />
@@ -653,10 +653,18 @@
 </template>
 
 <script setup lang="ts">
+import type { Ref } from "vue";
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
+import { useApi } from "~/composables/useApi";
+import { useHistory } from "~/composables/useHistory";
+import { useCuration } from "~/composables/useCuration";
+import { safeLocalStorage } from "~/utils/browserId";
+import { slimBookResult } from "~/utils/historySnapshot";
+import { readV1Map } from "~/utils/historyStore";
+import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import type { BookChunkGroup } from "~/types/search";
-import type { HistoryEntry } from "~/types/history";
+import type { BookEntry, BookSnapshot } from "~/types/history";
 
 // ── 상수 ──────────────────────────────────────────────────
 const SUGGESTIONS: Record<string, string[]> = {
@@ -674,28 +682,9 @@ const SUGGESTIONS: Record<string, string[]> = {
 
 const config = useRuntimeConfig();
 const apiBase = config.public.apiBase as string;
-
-// ── 세션 ──────────────────────────────────────────────────
-function generateUUID(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function getSessionId(): string {
-  if (!process.client) return "";
-  let sid = localStorage.getItem("sid");
-  if (!sid) {
-    sid = generateUUID();
-    localStorage.setItem("sid", sid);
-  }
-  return sid;
-}
+const api = useApi();
+const route = useRoute();
+const router = useRouter();
 
 // ── 뷰 상태 ───────────────────────────────────────────────
 const view = ref<"landing" | "results" | "detail">("landing");
@@ -703,6 +692,9 @@ const mode = ref<"book" | "paper">("book");
 
 // ── 검색 ──────────────────────────────────────────────────
 const currentQuery = ref("");
+// 화면에 떠 있는 결과의 검색어(앞뒤 공백 제거) — currentQuery 는 입력창 v-model 이라 사용자가 고치는 중일 수 있어,
+// 결과에 묶인 이동·주소 비교는 이 값을 쓴다
+const resultQuery = ref("");
 const rewrittenQuery = ref("");
 const loading = ref(false);
 const searchError = ref("");
@@ -773,9 +765,17 @@ const citationBook = ref<BookChunkGroup | null>(null);
 const toast = ref("");
 
 // ── 검색 기록 ─────────────────────────────────────────────
-const { bookHistory, paperHistory, addEntry, updateAiSummary, getById } =
-  useSearchHistory();
+const historyApi = useHistory();
 const currentHistoryId = ref<string | null>(null);
+// 검색·복원·큐레이션을 한 묶음으로 끊는다 — 새 검색이나 복원이 시작되면 이전 묶음의
+// 응답·타이핑·저장이 새 화면과 새 기록을 덮지 못하게 한다. 큐레이션은 화면 갱신만 끊고 요청·저장은 끝까지 간다
+let runCtrl: AbortController | null = null;
+const curationRequests = useCuration();
+function beginRun(): AbortSignal {
+  runCtrl?.abort();
+  runCtrl = new AbortController();
+  return runCtrl.signal;
+}
 
 // ── Publishing additions ──────────────────────────────────────
 // Tab slider
@@ -834,11 +834,8 @@ function onDocClick() {
 
 onMounted(async () => {
   if (!process.client) return;
-  const restoreId = (useRoute().query.restore as string) ?? null;
-  if (restoreId) {
-    const entry = getById(restoreId);
-    if (entry) restoreSession(entry);
-  }
+  // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
+  restoreFromQuery();
 
   // Tab slider
   nextTick(() => updateTabSlider());
@@ -860,6 +857,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  // 떠난 화면에 늦게 온 응답·타이핑 타이머가 상태를 고치지 않게 묶음을 끊는다.
+  // 큐레이션 요청은 끊지 않는다 — 끝까지 받아 기록에 저장해야 돌아왔을 때 다시 만들지 않는다(fetchCuration)
+  runCtrl?.abort();
   window.removeEventListener("resize", updateTabSlider);
   document.removeEventListener("click", onDocClick);
   if (aiStageTimer) clearTimeout(aiStageTimer);
@@ -899,8 +899,8 @@ function showToast(msg: string) {
 }
 
 // ── 검색 ──────────────────────────────────────────────────
-async function handleSearch(query: string) {
-  if (!query.trim()) return;
+async function handleSearch(query: string, reuse?: BookEntry) {
+  if (!query.trim() || loading.value) return;
 
   // 논문 모드는 papers 전용 페이지로 이동 — 랜딩에서 고른 등재 필터를 유지해서 넘긴다
   if (mode.value === "paper") {
@@ -910,7 +910,13 @@ async function handleSearch(query: string) {
     return;
   }
 
+  const signal = beginRun();
   currentQuery.value = query;
+  resultQuery.value = query.trim();
+  currentHistoryId.value = null;
+  // 주소의 이전 h 도 함께 내린다 — 남겨 두면 검색이 도는 동안·실패한 뒤에도 사이드바가 이전 기록을 강조하고,
+  // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
+  router.replace({ query: { q: query.trim() } });
   loading.value = true;
   searchError.value = "";
   books.value = [];
@@ -918,6 +924,8 @@ async function handleSearch(query: string) {
   curation.value = null;
   curationIntro.value = "";
   curationItems.value = [];
+  curationLoading.value = false;
+  curationTyping.value = false;
   curationOpen.value = true;
   bookListExpanded.value = false;
   aiExpanded.value = false;
@@ -926,60 +934,41 @@ async function handleSearch(query: string) {
   view.value = "results";
 
   try {
-    {
-      const data = await $fetch<any>(`${apiBase}/books/search`, {
-        method: "POST",
-        headers: { "x-session-id": getSessionId() },
-        body: {
-          query,
-          mode: "book",
-          // 컬렉션 크기 + 더보기 목록용 여유분 확보 (백엔드 상한 20)
-          top_k: Math.min(20, Math.max(collectionSize.value + 5, 10)),
-          use_rewrite: true,
-          use_rerank: true,
-        },
-      });
-      if (data?.books) {
-        books.value = data.books;
-        rewrittenQuery.value = data.rewritten_query || query;
-      }
-      // 세션 저장을 먼저 확정한 뒤 큐레이션 시작 (완료 시 updateAiSummary가 이 id에 기록)
-      currentHistoryId.value = addEntry({
-        type: "book",
+    const data = await api<any>("/books/search", {
+      method: "POST",
+      body: {
         query,
-        result: slimResultForHistory(data),
-      });
-      if (books.value.length) fetchCuration();
+        mode: "book",
+        // 컬렉션 크기 + 더보기 목록용 여유분 확보 (백엔드 상한 20)
+        top_k: Math.min(20, Math.max(collectionSize.value + 5, 10)),
+        use_rewrite: true,
+        use_rerank: true,
+      },
+      signal,
+    });
+    if (signal.aborted) return;
+    if (data?.books) {
+      books.value = data.books;
+      rewrittenQuery.value = data.rewritten_query || query;
     }
+    loading.value = false;
+
+    // 기록 id 를 먼저 확정해 큐레이션에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
+    const snapshot = slimBookResult(data) ?? undefined;
+    const entry = reuse
+      ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
+      : await historyApi.add({ kind: "book", title: query.trim(), params: {}, snapshot });
+    if (signal.aborted) return;
+    currentHistoryId.value = entry.id;
+    router.replace({ query: { q: query.trim(), h: entry.id } });
+    if (books.value.length) fetchCuration(entry.id, query.trim(), rewrittenQuery.value, signal);
   } catch (e: any) {
+    if (signal.aborted) return;
     searchError.value =
       e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
   } finally {
-    loading.value = false;
+    if (!signal.aborted) loading.value = false;
   }
-}
-
-// 세션 저장용 결과 슬림화 — 청크 원문과 book_info의 대용량 생성 텍스트 제거
-// (복원 시 목록 카드 렌더링에 필요 없는 필드. 상세 페이지는 자체 fetch)
-function slimResultForHistory(data: any) {
-  if (!data?.books) return data;
-  return {
-    ...data,
-    books: data.books.map((b: any) => ({
-      ...b,
-      chunks: [],
-      book_info: b.book_info
-        ? {
-            ...b.book_info,
-            summary: undefined,
-            plot: undefined,
-            introduction: undefined,
-            read_effect: undefined,
-            abstract: undefined,
-          }
-        : b.book_info,
-    })),
-  };
 }
 
 function handleChip(chip: string) {
@@ -987,40 +976,130 @@ function handleChip(chip: string) {
   handleSearch(chip);
 }
 
+// 랜딩으로 되돌린다 — 진행 중인 검색·복원·큐레이션 묶음을 끊고 결과 화면 상태를 비운다
 function goLanding() {
+  runCtrl?.abort();
+  runCtrl = null;
   view.value = "landing";
   currentQuery.value = "";
+  resultQuery.value = "";
+  rewrittenQuery.value = "";
+  currentHistoryId.value = null;
+  loading.value = false;
+  searchError.value = "";
   books.value = [];
+  papers.value = [];
+  keywordChips.value = [];
   curation.value = null;
+  curationIntro.value = "";
+  curationItems.value = [];
+  curationLoading.value = false;
+  curationTyping.value = false;
   selectedItem.value = null;
+  pdfOpen.value = false;
+  citationModal.value = false;
+  // 결과 화면으로 처음 열린 페이지는 탭이 그려진 적이 없어 슬라이더 폭이 0 이다 — 탭이 다시 그려진 뒤 맞춘다
+  nextTick(() => updateTabSlider());
 }
 
-function restoreSession(entry: HistoryEntry) {
-  if (entry.type === "paper") {
-    navigateTo(`/papers?restore=${entry.id}`);
+// ── 기록 복원 ─────────────────────────────────────────────
+// 주소(?h=)가 복원의 정본이다 — 사이드바·뒤로가기·새로고침이 모두 이 한 길로 들어온다
+async function restoreFromQuery() {
+  // 다른 페이지로 넘어가는 중에는 그 주소의 q 로 재검색하지 않는다
+  if (route.path !== "/") return;
+  const query = route.query;
+  const v1Map = readV1Map(safeLocalStorage());
+  let target = readHistoryQuery(query, v1Map);
+  if (awaitsV1Map(query, v1Map)) {
+    // 사이드바가 시작한 이전이 대응표를 남길 때까지 기다린다 — 주소가 그대로라 지금 랜딩으로 빠지면 다시 복원할 계기가 없다.
+    // 기다리는 사이 다른 복원·검색·이동이 끼면 그쪽이 묶음을 가져가 이 복원은 물러난다
+    const signal = beginRun();
+    loading.value = false;
+    await historyApi.migrated();
+    if (signal.aborted) return;
+    target = readHistoryQuery(query, readV1Map(safeLocalStorage()));
+  }
+  const { h, q } = target;
+  if (!h) {
+    if (!q) {
+      // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤
+      // 뒤로가기 등) 결과 화면과 진행 중인 요청을 직접 걷는다. 안 걷으면 주소는 '/' 인데 결과가 남는다
+      goLanding();
+      return;
+    }
+    // 입력창이 아니라 화면 결과의 검색어와 비교한다 — 입력창을 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.
+    // 둘 다 앞뒤 공백을 뗀 값이라 같은 검색어를 공백 차이로 다시 찾지 않는다
+    if (q !== resultQuery.value) {
+      mode.value = "book";
+      await handleSearch(q);
+    }
     return;
   }
-  currentQuery.value = entry.query;
-  currentHistoryId.value = entry.id;
-  view.value = "results";
-  books.value = entry.result?.books ?? [];
-  if (entry.aiSummary) {
-    try {
-      const ai = JSON.parse(entry.aiSummary);
-      curationIntro.value = ai.intro ?? "";
-      curationItems.value = ai.items ?? [];
-    } catch {
-      curationIntro.value = entry.aiSummary;
-      curationItems.value = [];
-    }
-  } else {
-    curationIntro.value = "";
-    curationItems.value = [];
+  if (h === currentHistoryId.value) return;
+
+  const signal = beginRun();
+  loading.value = false;
+  const entry = await historyApi.get(h);
+  if (signal.aborted) return;
+  if (entry && entry.kind !== "book") {
+    // 다른 종류의 기록 id 가 이 주소로 왔다(옛 ?restore= 등) — 그 종류의 주소로 보낸다
+    router.replace(routeFor(entry));
+    return;
   }
+  const book = entry?.kind === "book" ? entry : null;
+  if (book?.snapshot) {
+    applyBookEntry(book, signal);
+    return;
+  }
+  // 없거나 남의 기록이면 검색어로 새로 찾는다(D7). 결과만 비어 있던 내 기록은 같은 id 를 채운다
+  if (!book) void historyApi.refresh("book");
+  const retryQuery = q ?? book?.title;
+  if (retryQuery) {
+    mode.value = "book";
+    await handleSearch(retryQuery, book ?? undefined);
+    return;
+  }
+  showToast("없는 기록입니다. 목록을 새로 고쳤습니다.");
+}
+
+function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
+  const snap = entry.snapshot as BookSnapshot;
+  mode.value = "book";
+  view.value = "results";
+  loading.value = false;
+  searchError.value = "";
+  currentQuery.value = entry.title;
+  resultQuery.value = entry.title;
+  currentHistoryId.value = entry.id;
+  rewrittenQuery.value = snap.rewritten_query || entry.title;
+  books.value = snap.books as unknown as BookChunkGroup[];
+  papers.value = [];
+  keywordChips.value = [];
+  curation.value = null;
+  curationLoading.value = false;
+  curationTyping.value = false;
+  curationIntro.value = entry.ai?.intro ?? "";
+  curationItems.value = (entry.ai?.items ?? []) as Array<{ book_id: string; reason: string }>;
   curationOpen.value = true;
   bookListExpanded.value = false;
   aiExpanded.value = false;
+  if (route.query.h !== entry.id || route.query.q !== entry.title) {
+    router.replace({ query: { q: entry.title, h: entry.id } });
+  }
+  // 요약이 비어 있으면 큐레이션이 아직 도는 중이거나 실패한 기록이다 — 도는 중이면 그 요청을 이어받고, 실패했으면 다시 만든다
+  if (!entry.ai && books.value.length) {
+    fetchCuration(entry.id, entry.title, rewrittenQuery.value, signal);
+  }
 }
+
+// 같은 경로에서 쿼리만 바뀌면(사이드바 클릭·뒤로가기) 페이지가 다시 마운트되지 않는다.
+// q 도 본다 — h 가 없는 주소(검색 중·실패 뒤의 ?q=)에서 랜딩 주소로 돌아오면 h 는 그대로 없어 변화를 놓친다
+watch(
+  [() => route.query.h ?? route.query.restore, () => route.query.q],
+  () => {
+    restoreFromQuery();
+  },
+);
 
 // ── 컬렉션 개수 조정 (AI 답변에 사용될 도서 수, 랜딩 드롭다운) ──
 const COLLECTION_SIZES = [3, 5, 10, 20];
@@ -1097,8 +1176,30 @@ function startAiStages() {
 // 타이프라이터 출력 중 여부 (아이콘은 타이핑 종료까지 ing 유지)
 const curationTyping = ref(false);
 
-// ── 큐레이션 (도서) ── SSE 타이프라이터 스트리밍 ──────────────
-async function fetchCuration() {
+function typeInto(target: Ref<string>, text: string, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    let i = 0;
+    const step = () => {
+      if (signal.aborted || i >= text.length) {
+        resolve();
+        return;
+      }
+      target.value += text.charAt(i++);
+      setTimeout(step, 18);
+    };
+    step();
+  });
+}
+
+// ── 큐레이션 (도서) ── 타이프라이터 출력 ──────────────────────
+// 기록 id 와 함께 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가 고치는 중일 수 있어,
+// 지금 값을 읽으면 다른 검색어로 만든 요약이 이 기록에 저장된다
+async function fetchCuration(
+  historyId: string,
+  query: string,
+  rewritten: string,
+  signal: AbortSignal,
+) {
   // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
   const topBooks = books.value
     .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
@@ -1110,59 +1211,33 @@ async function fetchCuration() {
   curationIntro.value = "";
   curationItems.value = [];
   try {
-    const data = await $fetch<any>(`${apiBase}/books/curate`, {
-      method: "POST",
-      body: {
-        query: currentQuery.value,
-        book_ids: topBooks.map((b) => b.book_id),
-        scores: topBooks.map((b) => b.best_score || 0),
-        rewritten_query: rewrittenQuery.value,
-      },
+    // 요청은 묶음의 signal 로 끊지 않는다 — 단발 POST 라 끊어도 서버 생성은 끝까지 돌고 결과만 버려져, 돌아오면 다시 만든다.
+    // 응답이 오면 시작 때 붙잡은 id 로 저장되고(떠난 뒤에 와도), 같은 기록의 요청이 도는 중이면 새로 부르지 않고 이어받는다.
+    // 타이핑은 화면 연출로만 둔다 — 떠났거나 다른 묶음이 시작됐으면 화면만 건너뛴다
+    const result = await curationRequests.run(historyId, {
+      query,
+      book_ids: topBooks.map((b) => b.book_id),
+      scores: topBooks.map((b) => b.best_score || 0),
+      rewritten_query: rewritten,
     });
-    curation.value = data;
-    // intro 타이프라이터 효과
-    const intro: string = data?.intro || "";
-    const items: Array<{ book_id: string; reason: string }> = data?.items || [];
-    let i = 0;
-    const typeIntro = () => {
-      if (i < intro.length) {
-        curationIntro.value += intro[i++];
-        setTimeout(typeIntro, 18);
-      } else {
-        for (const ci of items) {
-          curationItems.value.push({ book_id: ci.book_id, reason: ci.reason });
-        }
-        if (currentHistoryId.value) {
-          updateAiSummary(
-            currentHistoryId.value,
-            JSON.stringify({
-              intro: curationIntro.value,
-              items: curationItems.value,
-            }),
-          );
-        }
-        curationTyping.value = false;
-      }
-    };
+    if (signal.aborted || !result) return;
+    curation.value = result.data;
+    curationLoading.value = false;
+    const { intro, items } = result;
     if (intro) {
       curationOpen.value = true;
-      typeIntro();
-    } else {
-      curationIntro.value = intro;
-      curationItems.value = items;
-      if (currentHistoryId.value) {
-        updateAiSummary(
-          currentHistoryId.value,
-          JSON.stringify({ intro: "", items }),
-        );
-      }
-      curationTyping.value = false;
+      await typeInto(curationIntro, intro, signal);
+      if (signal.aborted) return;
     }
+    curationItems.value = items;
+    curationTyping.value = false;
   } catch {
     /* 큐레이션 실패 시 조용히 무시 */
-    curationTyping.value = false;
   } finally {
-    curationLoading.value = false;
+    if (!signal.aborted) {
+      curationLoading.value = false;
+      curationTyping.value = false;
+    }
   }
 }
 
@@ -1202,10 +1277,13 @@ function openDetail(item: BookChunkGroup) {
     );
     return;
   }
+  // q 는 입력창이 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
   const params = new URLSearchParams({
-    q: currentQuery.value,
+    q: resultQuery.value,
     score: String(item.best_score || 0),
   });
+  // 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원되게
+  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
   if (item.title_score !== undefined)
     params.set("title_score", String(item.title_score));
   if (item.content_score !== undefined)
@@ -1222,10 +1300,11 @@ function openDetailWithChat(item: BookChunkGroup) {
     return;
   }
   const params = new URLSearchParams({
-    q: currentQuery.value,
+    q: resultQuery.value,
     score: String(item.best_score || 0),
     chat: "1",
   });
+  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
   if (item.title_score !== undefined)
     params.set("title_score", String(item.title_score));
   if (item.content_score !== undefined)

@@ -11,7 +11,10 @@ DB 는 대역으로 세운다. 대역은 research_jobs 의 UPDATE·status 조회
 UPDATE 로 생기는데, 대역이 조건을 무시하면 그 회귀를 못 잡는다.
 """
 import asyncio
+import datetime as _dt
 import importlib
+import json
+import logging
 import sys
 import types
 import uuid
@@ -19,7 +22,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.sql import operators
-from sqlalchemy.sql.elements import BindParameter, BooleanClauseList
+from sqlalchemy.sql.elements import BinaryExpression, BindParameter, BooleanClauseList, Grouping
+from sqlalchemy.sql.selectable import Exists
 
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, snapshot_state,
@@ -107,6 +111,8 @@ def _matches(clause, obj) -> bool:
     op = clause.operator
     if op is operators.eq:
         return left == right
+    if op is operators.lt:
+        return left < right
     if op is operators.in_op:
         return left in right
     if op is operators.is_not:
@@ -115,15 +121,19 @@ def _matches(clause, obj) -> bool:
 
 
 class _Result:
-    def __init__(self, value=None, rowcount: int = 0):
+    def __init__(self, value=None, rowcount: int = 0, rows: list | None = None):
         self._value = value
         self.rowcount = rowcount
+        self._rows = rows or []
 
     def scalar_one(self):
         return self._value
 
     def scalar_one_or_none(self):
         return self._value
+
+    def all(self):
+        return self._rows
 
 
 class _FakeSession:
@@ -230,15 +240,24 @@ class _Harness:
         self.events: list[tuple] = []
         self.steps: list[tuple] = []
         self.finished: list[tuple] = []
+        self.on_section = None
+        self.emit = None
+        self.progress: list[tuple] = []
+        # (단계, status, 알린 result) — _finish·_save_progress 가 step 이벤트로 흘리는 값
+        self.announced: list[tuple] = []
+        # (단계, 그때까지 나간 종료 이벤트) — 이전 시도의 초안 정리
+        self.drops: list[tuple] = []
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
-                    explore=None, synthesize=None) -> _Harness:
+                    explore=None, synthesize=None, session=None) -> _Harness:
     """DB·Redis·LLM 을 대역으로 바꾸고 호출만 기록한다.
 
     explore·synthesize 로 하위 동작을 끼워 넣는다(취소를 찍거나 예외를 던지는 식).
+    session 을 주면 그 대역을 쓴다(research_steps 행까지 흉내 내야 할 때).
     """
-    session = _FakeSession(job=job, scalar=0)
+    if session is None:
+        session = _FakeSession(job=job, scalar=0)
     h = _Harness(session, _FakeEngine())
     monkeypatch.setattr(rt, "_job_engine", lambda: (h.engine, lambda: session))
 
@@ -249,9 +268,10 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
         h.steps.append((kind, title))
         return len(h.steps)
 
-    async def _finish(db, step_id, status, result=None):
+    async def _finish(db, step_id, status, result=None, event_result=None):
         # 롤백 없이 쓰면 깨진 트랜잭션 위에서 다시 터진다 — 몇 번 롤백한 뒤였는지 남긴다
         h.finished.append((step_id, status, result, session.rollbacks))
+        h.announced.append((step_id, status, result if event_result is None else event_result))
 
     async def _corpus_range(db):
         return {"from": "2002", "to": "2026", "n_papers": 7}
@@ -265,13 +285,22 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
     async def _explore(state, subq, *, db, emit=None):
         assert not session.in_txn, "탐색(LLM) 직전에 읽기 트랜잭션이 열려 있다"
         explored.append(subq.text)
+        h.emit = emit
         if explore is not None:
             await explore(state, subq)
         return subq
 
-    async def _synthesize(state, *, should_stop=None):
+    async def _save_progress(db, step, result, event_result=None):
+        h.progress.append((step, result))
+        h.announced.append((step, "running", result if event_result is None else event_result))
+
+    async def _drop_stale_previews(db, step):
+        h.drops.append((step, _terminals(h)))
+
+    async def _synthesize(state, *, should_stop=None, on_section=None):
         assert not session.in_txn, "종합(LLM) 직전에 읽기 트랜잭션이 열려 있다"
         synthesized.append(state)
+        h.on_section = on_section
         if synthesize is not None:
             return await synthesize(state, should_stop)
         return {"sections": []}
@@ -281,6 +310,7 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
         ("_corpus_range", _corpus_range), ("publish", _publish),
         ("publish_terminal", _publish_terminal),
         ("explore_subquestion", _explore), ("synthesize", _synthesize),
+        ("_save_progress", _save_progress), ("_drop_stale_previews", _drop_stale_previews),
     ):
         monkeypatch.setattr(rt, name, fn)
     return h
@@ -834,6 +864,1002 @@ class TestPlan:
 
         assert out["status"] == "canceled"
         assert job.status == "canceled" and job.plan is None
+
+
+class _RecordingSession(_FakeSession):
+    """실행한 문장 객체를 남긴다 — UPDATE 에 실제로 실은 값을 읽기 위해서다."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.stmts: list = []
+
+    async def execute(self, stmt, params=None):
+        self.stmts.append(stmt)
+        return await super().execute(stmt, params)
+
+
+def _update_values(stmt) -> dict:
+    return {getattr(k, "key", k): (v.value if isinstance(v, BindParameter) else v)
+            for k, v in stmt._values.items()}
+
+
+class TestStepEvents:
+    """단계가 열리고 닫힐 때 화면에 알린다. 닫을 때는 저장한 result 를 그대로 싣는다 —
+    라이브로 본 장면과 끝난 뒤 다시 연 장면이 같아야 한다."""
+
+    def _capture(self, monkeypatch, rt) -> list[tuple]:
+        events: list[tuple] = []
+
+        async def _publish(job_id, kind, payload):
+            events.append((job_id, kind, payload))
+
+        monkeypatch.setattr(rt, "publish", _publish)
+        return events
+
+    def test_opening_a_step_announces_it_running(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        jid = uuid.uuid4()
+
+        step = asyncio.run(rt._step(_FakeSession(scalar=41), jid, 4, "search", "하위1",
+                                    subq_idx=0, detail="검색 중"))
+
+        assert step.id == 41
+        assert events == [(jid, "step", {
+            "seq": 4, "step_kind": "search", "subq_idx": 0, "title": "하위1",
+            "detail": "검색 중", "status": "running",
+        })]
+
+    def test_step_is_announced_after_its_row_is_committed(self, monkeypatch):
+        # 커밋 전에 알리면 그 틈에 재접속한 화면은 스냅샷에 없는 단계를 이벤트로만 받는다
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession(scalar=41)
+        commits_at_publish = []
+
+        async def _publish(job_id, kind, payload):
+            commits_at_publish.append(db.commits)
+
+        monkeypatch.setattr(rt, "publish", _publish)
+        asyncio.run(rt._step(db, uuid.uuid4(), 0, "plan", "연구 계획 수립"))
+
+        assert commits_at_publish == [1]
+
+    def test_closing_a_step_streams_the_result_it_saved(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        jid = uuid.uuid4()
+        db = _RecordingSession(scalar=41)
+        step = asyncio.run(rt._step(db, jid, 4, "search", "하위1", subq_idx=0))
+        result = {"queries": ["q1"], "rounds": [{"round": 1, "query": "q1"}]}
+
+        asyncio.run(rt._finish(db, step, "done", result))
+
+        saved = _update_values(db.stmts[-1])
+        assert saved["status"] == "done" and saved["result"] == result
+        assert events[-1] == (jid, "step", {
+            "seq": 4, "step_kind": "search", "subq_idx": 0, "title": "하위1",
+            "detail": None, "status": "done", "result": result,
+        })
+
+    def test_closing_without_result_streams_an_empty_result(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        db = _FakeSession(scalar=7)
+        step = asyncio.run(rt._step(db, uuid.uuid4(), 0, "synthesize", "보고서 종합"))
+
+        asyncio.run(rt._finish(db, step, "failed"))
+
+        assert events[-1][2]["status"] == "failed" and events[-1][2]["result"] == {}
+
+    def test_closing_can_announce_a_lighter_result(self, monkeypatch):
+        # 종합 단계는 절 미리보기를 저장만 하고 알리지 않는다 — synth 이벤트가 이미 날랐다
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        db = _RecordingSession(scalar=7)
+        step = asyncio.run(rt._step(db, uuid.uuid4(), 0, "synthesize", "보고서 종합"))
+        saved = {"error": "취소됨", "sections": [{"idx": 0, "section": {"heading": "h"}}],
+                 "evidence": {"E1": {}}}
+        light = {"error": "취소됨", "sections": [{"idx": 0}]}
+
+        asyncio.run(rt._finish(db, step, "failed", saved, event_result=light))
+
+        assert _update_values(db.stmts[-1])["result"] == saved
+        assert events[-1][2]["result"] == light
+
+    def test_unknown_step_kind_is_not_announced(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = self._capture(monkeypatch, rt)
+        with pytest.raises(AssertionError):
+            asyncio.run(rt._step(_FakeSession(scalar=1), uuid.uuid4(), 0, "critique", "점검"))
+        assert events == []
+
+
+def _statuses(h: _Harness) -> list[dict]:
+    return [e[1] for e in h.events if e[0] == "status"]
+
+
+class TestStatusEvents:
+    """상태·단계가 바뀔 때마다 알린다 — 스트림에 붙은 화면이 폴링 없이 따라온다.
+    종료 상태는 기존 종료 프레임이 알리므로 status 로 따로 내지 않는다."""
+
+    def test_run_announces_exploring_then_synthesizing(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert _statuses(h) == [
+            {"status": "running", "stage": "planned"},
+            {"status": "running", "stage": "explored"},
+        ]
+        assert h.events[-1] == ("terminal", "completed", None)
+
+    def test_resumed_run_goes_straight_to_synthesis(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert _statuses(h) == [{"status": "running", "stage": "explored"}]
+
+    def test_checkpoint_lost_to_cancel_is_not_announced(self, monkeypatch):
+        # 취소에 진 전이를 알리면 화면이 취소된 잡을 "종합 중"으로 그린다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+
+        async def _cancel(state, subq):
+            job.status = "canceled"
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_cancel)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert _statuses(h) == [{"status": "running", "stage": "planned"}]
+        assert _terminals(h) == [("canceled", None)]
+
+    def test_skipped_redelivery_announces_nothing(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"], status="running")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert h.events == []
+
+    def test_plan_announces_planning_then_awaiting_approval(self, monkeypatch):
+        """계획 단계에 붙은 스트림은 이 이벤트가 없으면 계획이 끝난 것을 모른다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+
+        async def _plan(question, params):
+            return ["하위1", "하위2"]
+
+        h = TestPlan()._patch(monkeypatch, rt, job, _plan)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert _statuses(h) == [
+            {"status": "planning", "stage": "created"},
+            {"status": "awaiting_approval", "stage": "planned"},
+        ]
+
+    def test_failed_plan_announces_only_planning(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+
+        async def _plan(question, params):
+            raise ValueError("계획을 해석하지 못했다")
+
+        h = TestPlan()._patch(monkeypatch, rt, job, _plan)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert _statuses(h) == [{"status": "planning", "stage": "created"}]
+        assert [t[0] for t in _terminals(h)] == ["failed"]
+
+
+_ROUNDS = [
+    {"round": 1, "query": "하위1", "found_chunks": 4, "new_papers": 3,
+     "verdict": "insufficient", "note": "부족", "next_query": "보완 검색어"},
+    {"round": 2, "query": "보완 검색어", "found_chunks": 2, "new_papers": 1,
+     "verdict": "sufficient", "note": "충분", "next_query": None},
+]
+
+
+def _bare(idx: int, status: str) -> dict:
+    """info 없이 부른 절의 기록 — 절 머리·시각을 모른다."""
+    return {"idx": idx, "status": status, "subq_idx": None, "heading": None,
+            "started_at": None, "duration_ms": None}
+
+
+def _synth_info(idx: int, *, done: bool = False) -> dict:
+    """synthesize 가 on_section 에 넘기는 info 대역. 끝난 절이면 다듬은 절과 그 근거를 더한다."""
+    info = {"subq_idx": idx, "heading": f"하위{idx + 1}", "headings": ["하위1", "하위2"]}
+    if done:
+        eid, chunk = f"E{idx}", f"c{idx}"
+        info["section"] = {
+            "heading": f"하위{idx + 1}", "intro": f"도입 [{eid}].", "future": [],
+            "papers": [{"cnts_id": f"C{idx}", "summary": "요약", "evidence": [eid]}],
+            "evidence_chunks": {eid: [chunk]}, "chunk_scores": {chunk: 0.9},
+        }
+        info["evidence"] = {eid: {
+            "cnts_id": f"C{idx}", "meta": {"title": f"논문 {idx}"},
+            "chunks": [{"chunk_id": chunk, "text": "대목", "page_start": 1, "page_end": 1,
+                        "score": 0.9}],
+        }}
+    return info
+
+
+class TestStepResults:
+    """이벤트로 흘린 것은 research_steps.result 에도 남는다 — 끝난 잡을 다시 열어도
+    자기점검·종합 진행 장면을 재생할 수 있어야 한다."""
+
+    def test_search_step_result_carries_round_history(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+
+        async def _two_rounds(state, subq):
+            subq.rounds = [dict(r) for r in _ROUNDS]
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_two_rounds)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert h.finished[0][2]["rounds"] == _ROUNDS
+
+    def test_failed_search_step_keeps_the_rounds_done_so_far(self, monkeypatch):
+        # 실패 화면의 "멈춘 지점"이 여기서 온다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1", "하위2"])
+
+        async def _fails_in_round_two(state, subq):
+            if subq.idx == 0:
+                subq.rounds = [dict(_ROUNDS[0])]
+                raise ConnectionError("재검색 중 끊김")
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_fails_in_round_two)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        _, status, result, _ = h.finished[0]
+        assert status == "failed"
+        assert result["rounds"] == [_ROUNDS[0]] and "끊김" in result["error"]
+
+    def test_synthesis_progress_is_streamed_and_saved(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _two_sections(state, should_stop):
+            for idx, status in ((0, "running"), (0, "done"), (1, "running"), (1, "failed")):
+                await h.on_section(idx, 2, status)
+            return {"sections": [{}, {}]}
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_two_sections)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [e[1] for e in h.events if e[0] == "synth"] == [
+            {"section_idx": 0, "total": 2, "status": "running"},
+            {"section_idx": 0, "total": 2, "status": "done"},
+            {"section_idx": 1, "total": 2, "status": "running"},
+            {"section_idx": 1, "total": 2, "status": "failed"},
+        ]
+        _, status, result, _ = h.finished[-1]
+        assert status == "done"
+        # info 없이 불러도(옛 호출) 이벤트는 옛 모양 그대로고, 기록은 모르는 칸을 비워 둔다
+        assert result == {"sections_total": 2, "headings": [],
+                          "sections": [_bare(0, "done"), _bare(1, "failed")]}
+
+    def test_failed_synthesis_keeps_the_sections_done_so_far(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _second_raises(state, should_stop):
+            await h.on_section(0, 2, "running")
+            await h.on_section(0, 2, "done")
+            await h.on_section(1, 2, "running")
+            raise ValueError("종합 호출 실패")
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_second_raises)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed"
+        assert result == {"error": "종합 호출 실패", "sections_total": 2, "headings": [],
+                          "sections": [_bare(0, "done"), _bare(1, "running")]}
+
+    def test_canceled_synthesis_keeps_the_sections_done_so_far(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _canceled_after_first(state, should_stop):
+            await h.on_section(0, 3, "running")
+            await h.on_section(0, 3, "done")
+            job.status = "canceled"
+            raise rt.SynthesisCanceled()
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_canceled_after_first)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed"
+        assert result == {"error": "취소됨", "sections_total": 3, "headings": [],
+                          "sections": [_bare(0, "done")]}
+
+    def test_report_without_sections_saves_zero_total(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert h.finished[-1][2] == {"sections_total": 0, "headings": [], "sections": []}
+
+
+class _FailingUpdateSession(_FakeSession):
+    """UPDATE 만 실패한다 — 진행 기록이 깨져도 탐색이 계속되는지 본다."""
+
+    async def execute(self, stmt, params=None):
+        if getattr(stmt, "is_update", False):
+            raise ConnectionError("DB 연결 끊김")
+        return await super().execute(stmt, params)
+
+
+class TestSaveProgress:
+    """도는 중인 단계의 result 를 지금까지의 진행으로 덮어쓰고 알린다 — 탐색 중에 새로
+    연 화면이 스냅샷만으로 앞 회차를 되살린다."""
+
+    def test_running_step_result_is_overwritten_and_announced(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        jid = uuid.uuid4()
+        db = _RecordingSession(scalar=41)
+        step = asyncio.run(rt._step(db, jid, 4, "search", "하위1", subq_idx=0))
+        result = {"rounds": [dict(_ROUNDS[0])],
+                  "counters": {"papers_reviewed": 3, "evidence_adopted": 1, "rechecks": 0}}
+
+        asyncio.run(rt._save_progress(db, step, result))
+
+        # 단계를 닫지 않는다 — status·finished_at 은 _finish 몫이다
+        assert _update_values(db.stmts[-1]) == {"result": result}
+        assert db.commits == 2
+        assert events[-1] == (jid, "step", {
+            "seq": 4, "step_kind": "search", "subq_idx": 0, "title": "하위1",
+            "detail": None, "status": "running", "result": result,
+        })
+
+    def test_db_failure_does_not_stop_exploration(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        db = _FailingUpdateSession(scalar=41)
+        step = asyncio.run(rt._step(db, uuid.uuid4(), 4, "search", "하위1", subq_idx=0))
+
+        asyncio.run(rt._save_progress(db, step, {"rounds": []}))
+
+        assert db.rollbacks == 1
+        assert [e[2]["status"] for e in events] == ["running"]
+        assert "result" not in events[-1][2]
+
+    def test_time_limit_is_not_swallowed(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        TestStepEvents()._capture(monkeypatch, rt)
+        db = _FakeSession(scalar=41)
+        step = asyncio.run(rt._step(db, uuid.uuid4(), 4, "search", "하위1", subq_idx=0))
+
+        async def _limit(stmt, params=None):
+            raise rt.SoftTimeLimitExceeded()
+
+        db.execute = _limit
+        with pytest.raises(rt.SoftTimeLimitExceeded):
+            asyncio.run(rt._save_progress(db, step, {"rounds": []}))
+
+    def test_event_result_is_announced_instead_of_the_saved_result(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        db = _RecordingSession(scalar=41)
+        step = asyncio.run(rt._step(db, uuid.uuid4(), 5, "synthesize", "보고서 종합"))
+        saved = {"sections_total": 2, "sections": [{"idx": 0, "section": {"heading": "h"}}],
+                 "evidence": {"E1": {}}}
+        light = {"sections_total": 2, "sections": [{"idx": 0}]}
+
+        asyncio.run(rt._save_progress(db, step, saved, event_result=light))
+
+        assert _update_values(db.stmts[-1]) == {"result": saved}
+        assert events[-1][2]["status"] == "running" and events[-1][2]["result"] == light
+
+
+class TestLiveProgress:
+    """회차·절이 끝날 때마다 진행을 단계 result 에 남긴다 — 카운터와 회차 이력이 끝날
+    때만 저장되면 탐색 중에 새로 연 화면은 다음 이벤트까지 빈칸이다."""
+
+    def test_each_critique_saves_rounds_and_counters(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        h = None
+
+        async def _two_rounds(state, subq):
+            for r in _ROUNDS:
+                subq.rounds.append(dict(r))
+                state.seen_cnts.add(f"P{r['round']}")
+                await h.emit("search", {"subq_idx": 0, "query": r["query"], "found": 1})
+                await h.emit("critique", {"subq_idx": 0, "verdict": r["verdict"]})
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_two_rounds)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [([r["round"] for r in res["rounds"]], res["counters"]["papers_reviewed"])
+                for _, res in h.progress] == [([1], 1), ([1, 2], 2)]
+        # 진행을 남겨도 이벤트는 그대로 흐른다
+        assert [e[0] for e in h.events if e[0] in ("search", "critique")] == [
+            "search", "critique", "search", "critique"]
+
+    def test_finished_search_step_keeps_counters(self, monkeypatch):
+        # 다음 하위질문의 첫 회차 전까지 재접속한 화면은 이 값을 카운터로 쓴다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1", "하위2"])
+
+        async def _saw_papers(state, subq):
+            state.seen_cnts.add(f"P{subq.idx}")
+            if subq.idx == 1:
+                raise ConnectionError("끊김")
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_saw_papers)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [f[2]["counters"]["papers_reviewed"] for f in h.finished[:2]] == [1, 2]
+
+    def test_section_progress_is_saved_on_the_synthesis_step(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        h = None
+
+        async def _one_section(state, should_stop):
+            await h.on_section(0, 2, "running")
+            await h.on_section(0, 2, "done")
+            return {"sections": [{}]}
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            synthesize=_one_section)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [res for _, res in h.progress] == [
+            {"sections_total": 2, "headings": [], "sections": [_bare(0, "running")]},
+            {"sections_total": 2, "headings": [], "sections": [_bare(0, "done")]},
+        ]
+
+
+class TestSynthPreview:
+    """다 쓴 절을 작성 중 초안으로 보여 준다. synth 이벤트가 절 내용을 절마다 한 번 나르고, 단계
+    result 가 그것을 들고 있어 새로고침·재접속한 화면이 되살린다. step 이벤트는 가볍게 둔다."""
+
+    _T0 = _dt.datetime(2026, 9, 28, 1, 2, 3, tzinfo=_dt.timezone.utc)
+
+    def _progress(self, monkeypatch, rt, ticks=(10.0, 12.5)):
+        monkeypatch.setattr(rt, "_now", lambda: self._T0)
+        clock = iter(ticks)
+        return rt._SynthProgress(uuid.uuid4(), clock=lambda: next(clock))
+
+    def test_running_event_carries_heading_and_start_time(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        progress = self._progress(monkeypatch, rt)
+
+        asyncio.run(progress(0, 2, "running", _synth_info(0)))
+
+        assert events[-1][1:] == ("synth", {
+            "section_idx": 0, "total": 2, "status": "running", "subq_idx": 0,
+            "heading": "하위1", "headings": ["하위1", "하위2"],
+            "started_at": "2026-09-28T01:02:03+00:00",
+        })
+
+    def test_done_event_carries_duration_section_and_evidence(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        progress = self._progress(monkeypatch, rt)
+        done = _synth_info(0, done=True)
+
+        asyncio.run(progress(0, 2, "running", _synth_info(0)))
+        asyncio.run(progress(0, 2, "done", done))
+
+        # 소요 시간은 워커가 잰 값이다 — 화면 시계와 무관하다
+        assert events[-1][1:] == ("synth", {
+            "section_idx": 0, "total": 2, "status": "done", "subq_idx": 0,
+            "heading": "하위1", "headings": ["하위1", "하위2"], "duration_ms": 2500,
+            "section": done["section"], "evidence": done["evidence"],
+        })
+
+    def test_call_without_info_keeps_the_old_event(self, monkeypatch):
+        # info 를 모르는 호출과 호환 — 이벤트는 옛 모양 그대로다
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        progress = rt._SynthProgress(uuid.uuid4())
+
+        asyncio.run(progress(0, 1, "running"))
+
+        assert events[-1][2] == {"section_idx": 0, "total": 1, "status": "running"}
+        assert progress.result() == {"sections_total": 1, "headings": [],
+                                     "sections": [_bare(0, "running")]}
+
+    def test_result_keeps_previews_and_merges_evidence(self, monkeypatch):
+        # 한 논문이 두 절에 실리면 절마다 제 대목만 온다 — 합쳐야 앞 절 칩의 대목이 남는다
+        rt = _load_tasks(monkeypatch)
+        TestStepEvents()._capture(monkeypatch, rt)
+        progress = self._progress(monkeypatch, rt, ticks=(0.0, 1.0, 2.0, 4.0))
+        first, second = _synth_info(0, done=True), _synth_info(1, done=True)
+        second["evidence"]["E0"] = {**first["evidence"]["E0"], "chunks": [
+            {"chunk_id": "c0b", "text": "하위2 대목", "page_start": 4, "page_end": 4,
+             "score": 0.95}]}
+
+        for idx, info in ((0, first), (1, second)):
+            asyncio.run(progress(idx, 2, "running", _synth_info(idx)))
+            asyncio.run(progress(idx, 2, "done", info))
+
+        full = progress.result()
+        assert [s["section"] for s in full["sections"]] == [first["section"], second["section"]]
+        assert [s["duration_ms"] for s in full["sections"]] == [1000, 2000]
+        assert set(full["evidence"]) == {"E0", "E1"}
+        assert [c["chunk_id"] for c in full["evidence"]["E0"]["chunks"]] == ["c0b", "c0"]
+
+        light = progress.result(previews=False)
+        assert "evidence" not in light
+        assert all("section" not in s for s in light["sections"])
+        assert light["headings"] == ["하위1", "하위2"]
+        assert light["sections"][0]["started_at"] == "2026-09-28T01:02:03+00:00"
+
+    def test_result_handed_out_earlier_does_not_change(self, monkeypatch):
+        # 저장·알림에 넘긴 값을 뒤따르는 절이 고치면 앞서 저장한 기록이 바뀐다
+        rt = _load_tasks(monkeypatch)
+        TestStepEvents()._capture(monkeypatch, rt)
+        progress = rt._SynthProgress(uuid.uuid4())
+        first, second = _synth_info(0, done=True), _synth_info(1, done=True)
+        second["evidence"] = {"E0": {**first["evidence"]["E0"], "chunks": [
+            {"chunk_id": "c0b", "text": "하위2 대목", "page_start": 4, "page_end": 4,
+             "score": 0.95}]}}
+
+        asyncio.run(progress(0, 2, "done", first))
+        before = progress.result()
+        asyncio.run(progress(1, 2, "done", second))
+
+        assert [c["chunk_id"] for c in before["evidence"]["E0"]["chunks"]] == ["c0"]
+
+    def _run(self, monkeypatch, rt, *, stop_with: Exception | None = None,
+             cancel_late: bool = False, patch=None):
+        """절 0 을 끝내고 절 1 을 쓰기 시작한다. stop_with 가 없으면 절 1 도 끝내고 완료한다.
+        cancel_late 면 절 1 의 LLM 을 기다리는 동안 취소가 들어온다 — synthesize 는 LLM 을
+        부르기 직전에만 멈춤을 보므로 보고서를 돌려준 뒤 완료 전이에서야 걸린다.
+        patch(h) 는 대역을 세운 뒤, 잡을 돌리기 전에 부른다 — 대역 위에 기록을 더 끼울 때 쓴다."""
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        ref = {}
+
+        async def _synth(state, should_stop):
+            h = ref["h"]
+            await h.on_section(0, 2, "running", _synth_info(0))
+            await h.on_section(0, 2, "done", _synth_info(0, done=True))
+            await h.on_section(1, 2, "running", _synth_info(1))
+            if stop_with is not None:
+                if isinstance(stop_with, rt.SynthesisCanceled):
+                    job.status = "canceled"
+                raise stop_with
+            if cancel_late:
+                job.status = "canceled"
+            await h.on_section(1, 2, "done", _synth_info(1, done=True))
+            return {"sections": [{}, {}]}
+
+        ref["h"] = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                                   synthesize=_synth)
+        if patch is not None:
+            patch(ref["h"])
+        asyncio.run(rt._run_deep_research(str(job.id)))
+        return ref["h"]
+
+    def test_saved_progress_carries_previews_but_step_events_do_not(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt)
+
+        # 새로고침한 화면은 저장된 result 에서 이미 쓴 절을 되살린다
+        saved = h.progress[-1][1]
+        assert [s["section"] for s in saved["sections"]] == [
+            _synth_info(0, done=True)["section"], _synth_info(1, done=True)["section"]]
+        assert set(saved["evidence"]) == {"E0", "E1"}
+        # 절 내용은 synth 이벤트가 절마다 한 번만 나른다 — step 이벤트는 매번 가볍다
+        assert ["section" in e[1] for e in h.events if e[0] == "synth"] == [
+            False, True, False, True]
+        assert len(h.announced) == 5          # 진행 저장 4번 + 닫기 1번
+        for _, _, res in h.announced:
+            assert "evidence" not in res
+            assert all("section" not in s for s in res["sections"])
+
+    def test_completed_step_drops_previews(self, monkeypatch):
+        # 완료 뒤에는 최종 보고서가 같은 내용을 들고 있다 — 단계 result 에 두 벌 두지 않는다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt)
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "done"
+        assert "evidence" not in result
+        assert [(s["idx"], s["status"], s["heading"]) for s in result["sections"]] == [
+            (0, "done", "하위1"), (1, "done", "하위2")]
+        assert all("section" not in s for s in result["sections"])
+
+    def test_failed_step_keeps_the_draft(self, monkeypatch):
+        # 멈춘 초안을 보여 주고 내려받는 원천이다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt, stop_with=ValueError("종합 호출 실패"))
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed" and result["error"] == "종합 호출 실패"
+        assert result["sections"][0]["section"] == _synth_info(0, done=True)["section"]
+        assert "section" not in result["sections"][1]
+        assert result["evidence"] == _synth_info(0, done=True)["evidence"]
+        _, announced_status, announced = h.announced[-1]
+        assert announced_status == "failed" and announced["error"] == "종합 호출 실패"
+        assert "evidence" not in announced
+        assert all("section" not in s for s in announced["sections"])
+
+    def test_canceled_step_keeps_the_draft(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt, stop_with=rt.SynthesisCanceled())
+
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed" and result["error"] == "취소됨"
+        assert result["sections"][0]["section"] == _synth_info(0, done=True)["section"]
+        assert result["evidence"] == _synth_info(0, done=True)["evidence"]
+        _, _, announced = h.announced[-1]
+        assert announced["error"] == "취소됨" and "evidence" not in announced
+
+    def test_cancel_during_the_last_section_keeps_the_draft(self, monkeypatch):
+        # 완료 전이가 취소에 지면 보고서는 버려진다 — 미리보기까지 지우면 초안도 보고서도 없다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt, cancel_late=True)
+
+        assert h.session.job.status == "canceled" and h.session.job.report is None
+        assert _terminals(h) == [("canceled", None)]
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed" and result["error"] == "취소됨"
+        assert [s["section"] for s in result["sections"]] == [
+            _synth_info(0, done=True)["section"], _synth_info(1, done=True)["section"]]
+        assert set(result["evidence"]) == {"E0", "E1"}
+        _, announced_status, announced = h.announced[-1]
+        assert announced_status == "failed" and announced["error"] == "취소됨"
+        assert "evidence" not in announced
+        assert all("section" not in s for s in announced["sections"])
+
+    def test_lost_completion_closes_the_step_once(self, monkeypatch):
+        # done 으로 먼저 닫았다가 failed 로 다시 닫으면 화면에 done 이 한 번 스친다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt, cancel_late=True)
+
+        assert [f[1] for f in h.finished] == ["failed"]
+
+    def test_step_is_closed_done_after_the_report_is_saved(self, monkeypatch):
+        # 전이보다 먼저 미리보기를 지운 done 으로 닫으면, 그 틈에 데드라인에 걸린 잡은 보고서도 초안도 없다
+        rt = _load_tasks(monkeypatch)
+        seen = []
+
+        def _patch(h):
+            closing = rt._finish
+
+            async def _finish(db, step, status, result=None, event_result=None):
+                seen.append((status, h.session.job.status, h.session.job.report))
+                await closing(db, step, status, result, event_result)
+
+            monkeypatch.setattr(rt, "_finish", _finish)
+
+        self._run(monkeypatch, rt, patch=_patch)
+
+        assert seen == [("done", "completed", {"sections": [{}, {}]})]
+
+    def test_completion_drops_drafts_of_earlier_attempts_after_announcing(self, monkeypatch):
+        # 완료를 먼저 알린다 — 정리가 늘어지거나 실패해도 화면은 완료를 받는다
+        rt = _load_tasks(monkeypatch)
+        h = self._run(monkeypatch, rt)
+
+        assert h.drops == [(1, [("completed", None)])]
+
+    @pytest.mark.parametrize("stop", ["failed", "canceled", "lost_completion"])
+    def test_attempt_that_does_not_complete_leaves_earlier_drafts(self, monkeypatch, stop):
+        rt = _load_tasks(monkeypatch)
+        stop_with = {"failed": ValueError("종합 호출 실패"),
+                     "canceled": rt.SynthesisCanceled()}.get(stop)
+        h = self._run(monkeypatch, rt, stop_with=stop_with, cancel_late=stop == "lost_completion")
+
+        assert h.drops == []
+
+    def test_six_sections_of_thirty_papers_stay_at_report_scale(self, monkeypatch):
+        """대목 원문이 대부분이라 미리보기는 최종 보고서와 같은 규모여야 하고, 절마다 알리는
+        step 이벤트는 대목 길이와 무관하게 작아야 한다(spec §14-2 크기)."""
+        from services.research import synthesizer
+        rt = _load_tasks(monkeypatch)
+        events = TestStepEvents()._capture(monkeypatch, rt)
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        for i in range(6):
+            eids = [f"E{i * 5 + k + 1}" for k in range(5)]
+            st.subquestions.append(SubQuestion(idx=i, text=f"하위질문 {i + 1}", evidence_ids=eids))
+            for eid in eids:
+                # 청크 상한(MAX_CHUNK_TOKENS=1024)에 가까운 1,500자 대목 2개
+                st.evidence[eid] = Evidence(
+                    id=eid, cnts_id=f"C{eid}", meta={"title": f"논문 {eid}", "authors": "홍길동"},
+                    chunks=[Chunk(f"{eid}-{j}", "가" * 1500, j, j, 0.9 - j / 10) for j in range(2)])
+        reply = json.dumps({
+            "intro": "이 절은 연구 흐름을 정리한다 [E1]. " * 3,
+            "summaries": {f"E{n}": "무엇을 했고 무엇을 밝혔는지 요약한다. " * 3 for n in range(1, 31)},
+            "future": [{"text": "남은 과제를 적는다."}],
+        }, ensure_ascii=False)
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return reply
+
+        monkeypatch.setattr(synthesizer, "chat", fake_chat)
+        progress = rt._SynthProgress(uuid.uuid4())
+        report = asyncio.run(rt.synthesize(st, on_section=progress))
+
+        def size(value) -> int:
+            return len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
+
+        # 대목 1,500자(4.5KB) × 2 × 30편 ≈ 270KB — 최종 보고서의 evidence 와 같은 규모
+        assert size(progress.result()) < size(report) * 1.1
+        assert size(progress.result()) < 400_000
+        assert size(progress.result(previews=False)) < 3_000
+        per_section = [size(e[2]) for e in events if e[1] == "synth" and e[2]["status"] == "done"]
+        assert len(per_section) == 6 and max(per_section) < size(report) / 4
+
+
+class _StepTableSession(_FakeSession):
+    """research_steps 행을 들고, 그 테이블의 INSERT·UPDATE·SELECT 를 실제로 적용한다.
+
+    닫는 쓰기가 진행 중 저장한 result 를 합치는지(jsonb ||) 통째로 바꾸는지는 SQL
+    문자열로는 확인이 약하다 — 값으로 확인한다. 모르는 식을 만나면 조용히 넘기지 않고
+    터뜨려, 대역이 모르는 구현을 통과시키지 않게 한다.
+    """
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.steps: list[types.SimpleNamespace] = []
+
+    async def execute(self, stmt, params=None):
+        if getattr(stmt, "is_select", False) and [
+                f.name for f in stmt.get_final_froms()] == ["research_steps"]:
+            self.sql.append(str(stmt))
+            self.params.append(params)
+            self.in_txn = True
+            hit = [row for row in self.steps if self._matches(stmt.whereclause, row)]
+            return _Result(rows=[tuple(getattr(row, c.key) for c in stmt.selected_columns)
+                                 for row in hit])
+        if getattr(getattr(stmt, "table", None), "name", None) != "research_steps":
+            return await super().execute(stmt, params)
+        self.sql.append(str(stmt))
+        self.params.append(params)
+        self.in_txn = True
+        if getattr(stmt, "is_insert", False):
+            row = types.SimpleNamespace(id=len(self.steps) + 1, result={}, finished_at=None)
+            for key, value in stmt._values.items():
+                setattr(row, getattr(key, "key", key), self._eval(value, row))
+            self.steps.append(row)
+            return _Result(row.id)
+        assert getattr(stmt, "is_update", False), f"대역이 모르는 문장: {stmt}"
+        hit = [row for row in self.steps if self._matches(stmt.whereclause, row)]
+        for row in hit:
+            for key, value in stmt._values.items():
+                setattr(row, getattr(key, "key", key), self._eval(value, row))
+        return _Result(rowcount=len(hit))
+
+    def _matches(self, clause, row) -> bool:
+        if isinstance(clause, BooleanClauseList):
+            return all(self._matches(c, row) for c in clause.clauses)
+        if isinstance(clause, Grouping) and isinstance(clause.element, Exists):
+            # EXISTS (SELECT research_jobs.id WHERE ...) — 잡 행에 대해 평가한다
+            inner = clause.element.element.element
+            return self.job is not None and _matches(inner.whereclause, self.job)
+        return _matches(clause, row)
+
+    @staticmethod
+    def _eval(value, row):
+        if isinstance(value, BindParameter):
+            return value.value
+        if (isinstance(value, BinaryExpression) and value.operator is operators.concat_op
+                and getattr(value.left, "key", None) == "result"
+                and isinstance(value.right, BindParameter)):
+            # jsonb || jsonb — 같은 키는 오른쪽이 이긴다
+            return {**row.result, **value.right.value}
+        raise AssertionError(f"대역이 모르는 값 식: {value!r}")
+
+
+class TestOrphanStepsKeepProgress:
+    """시간 상한·가드 밖 예외로 잡을 닫을 때 running 단계에 진행 중 저장한 result
+    (rounds·counters·sections)를 지우지 않고 error 만 더한다.
+
+    회수기(reap_stale_research)는 `result || {"error": ...}` 로 합친다. 이 경로만
+    통째로 바꾸면 어느 경로로 실패했는지에 따라 다시 연 화면이 달라진다 — 라이브로
+    2회차까지 본 하위질문이 다시 열면 오류 문구만 남고, 카운터가 앞 하위질문 값으로 돌아간다.
+    """
+
+    _PROGRESS = {
+        "rounds": [{"round": 1, "query": "q1"}, {"round": 2, "query": "q2"}],
+        "counters": {"papers_reviewed": 31, "evidence_adopted": 9, "rechecks": 1},
+    }
+
+    def _row(self, db, job_id, *, status, result):
+        row = types.SimpleNamespace(id=len(db.steps) + 1, job_id=job_id, status=status,
+                                    result=dict(result), finished_at=None)
+        db.steps.append(row)
+        return row
+
+    def test_closing_keeps_saved_keys_and_adds_error(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"], status="failed")
+        db = _StepTableSession(job=job)
+        running = self._row(db, job.id, status="running", result=self._PROGRESS)
+        done = self._row(db, job.id, status="done", result={"adopted": 3})
+
+        asyncio.run(rt._close_orphan_steps(db, job.id, rt.TIMEOUT_ERROR))
+
+        assert running.status == "failed" and running.finished_at is not None
+        assert running.result == {**self._PROGRESS, "error": rt.TIMEOUT_ERROR}
+        assert done.status == "done" and done.result == {"adopted": 3}
+
+    def test_step_of_a_job_still_in_flight_is_left_alone(self, monkeypatch):
+        # 회수 뒤 retry 한 새 실행의 step 일 수 있다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"], status="running")
+        db = _StepTableSession(job=job)
+        running = self._row(db, job.id, status="running", result=self._PROGRESS)
+
+        asyncio.run(rt._close_orphan_steps(db, job.id, rt.TIMEOUT_ERROR))
+
+        assert running.status == "running" and running.result == self._PROGRESS
+
+    def _run_until_deadline(self, monkeypatch, rt, job, harness: dict, **pipeline):
+        """진짜 _step·_save_progress 로 진행을 쌓다가 JOB_DEADLINE 에 끊긴다.
+
+        explore·synthesize 대역이 emit·on_section 을 쓰도록 harness["h"] 에 하네스를 둔다."""
+        real = {name: getattr(rt, name) for name in ("_step", "_save_progress")}
+        db = _StepTableSession(job=job, scalar=0)
+        harness["h"] = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                                       session=db, **pipeline)
+        for name, fn in real.items():
+            monkeypatch.setattr(rt, name, fn)
+        monkeypatch.setattr(rt, "JOB_DEADLINE", 0.3)
+        return rt._run_job(rt._run_deep_research, str(job.id)), db
+
+    def test_deadline_keeps_rounds_and_counters_of_the_running_search(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        harness = {}
+
+        async def _two_rounds_then_hang(state, subq):
+            for r in _ROUNDS:
+                subq.rounds.append(dict(r))
+                state.seen_cnts.add(f"P{r['round']}")
+                await harness["h"].emit("critique", {"subq_idx": 0, "verdict": r["verdict"]})
+            await asyncio.sleep(5)      # 3회차 자기점검 LLM 이 늘어진다
+
+        out, db = self._run_until_deadline(monkeypatch, rt, job, harness,
+                                           explore=_two_rounds_then_hang)
+
+        assert out["status"] == "failed" and job.status == "failed"
+        (step,) = db.steps
+        assert step.kind == "search" and step.status == "failed"
+        assert step.result["error"] == rt.TIMEOUT_ERROR
+        assert [r["round"] for r in step.result["rounds"]] == [1, 2]
+        assert step.result["counters"]["papers_reviewed"] == 2
+
+    def test_deadline_keeps_sections_of_the_running_synthesis(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
+                       status="queued")
+        harness = {}
+
+        async def _one_section_then_hang(state, should_stop):
+            await harness["h"].on_section(0, 2, "done", _synth_info(0, done=True))
+            await harness["h"].on_section(1, 2, "running", _synth_info(1))
+            await asyncio.sleep(5)      # 두 번째 절 LLM 이 늘어진다
+
+        out, db = self._run_until_deadline(monkeypatch, rt, job, harness,
+                                           synthesize=_one_section_then_hang)
+
+        assert out["status"] == "failed" and job.status == "failed"
+        (step,) = db.steps
+        assert step.kind == "synthesize" and step.status == "failed"
+        assert step.result["error"] == rt.TIMEOUT_ERROR
+        assert [(s["idx"], s["status"]) for s in step.result["sections"]] == [
+            (0, "done"), (1, "running")]
+        # 시간 상한으로 닫혀도 멈춘 초안(다 쓴 절과 그 근거)이 남는다
+        assert step.result["sections"][0]["section"] == _synth_info(0, done=True)["section"]
+        assert step.result["evidence"] == _synth_info(0, done=True)["evidence"]
+        assert step.result["sections"][1]["started_at"] is not None
+
+
+class TestDropStalePreviews:
+    """재시도가 완료되면 이전 시도의 종합 단계에 남은 멈춘 초안(절 미리보기·근거)을 걷는다.
+
+    화면은 최신 시도의 단계만 읽는다. 남겨 두면 완성된 보고서를 열 때마다 GET·스냅샷이 아무도
+    읽지 않는 수백 KB 를 더 나르고, 재시도를 거듭할수록 쌓인다.
+    """
+
+    _LIGHT = {"sections_total": 2, "headings": ["하위1", "하위2"],
+              "sections": [_bare(0, "done"), _bare(1, "running")]}
+
+    def _draft(self, error: str) -> dict:
+        done = _synth_info(0, done=True)
+        return {"error": error, **self._LIGHT,
+                "sections": [{**_bare(0, "done"), "section": done["section"]}, _bare(1, "running")],
+                "evidence": done["evidence"]}
+
+    def _row(self, db, job_id, seq, kind, result):
+        row = types.SimpleNamespace(id=len(db.steps) + 1, job_id=job_id, seq=seq, kind=kind,
+                                    status="failed", result=result, finished_at=None)
+        db.steps.append(row)
+        return row
+
+    def _step(self, rt, row):
+        return rt._StepRef(row.id, row.job_id, row.seq, row.kind, "보고서 종합", None, None)
+
+    def test_earlier_synthesis_steps_of_the_job_lose_their_drafts(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="synthesized", plan=["하위1"], status="completed")
+        db = _StepTableSession(job=job)
+        search = self._row(db, job.id, 1, "search", dict(TestOrphanStepsKeepProgress._PROGRESS))
+        failed = self._row(db, job.id, 2, "synthesize", self._draft("종합 호출 실패"))
+        timed_out = self._row(db, job.id, 3, "synthesize", self._draft(rt.TIMEOUT_ERROR))
+        # 지금 시도의 단계 — 이미 가볍게 닫혔지만, 걸러 내는 조건이 seq 로 가르는지 보려고 초안을 둔다
+        current = self._row(db, job.id, 4, "synthesize", self._draft("지금 시도"))
+        other_job = self._row(db, uuid.uuid4(), 2, "synthesize", self._draft("다른 잡"))
+
+        asyncio.run(rt._drop_stale_previews(db, self._step(rt, current)))
+
+        # 절 목록·시각·오류는 남긴다 — 멈춘 지점 표시는 그대로다
+        assert failed.result == {"error": "종합 호출 실패", **self._LIGHT}
+        assert timed_out.result == {"error": rt.TIMEOUT_ERROR, **self._LIGHT}
+        assert current.result == self._draft("지금 시도")
+        assert other_job.result == self._draft("다른 잡")
+        assert search.result == TestOrphanStepsKeepProgress._PROGRESS
+        assert db.commits == 1
+
+    def test_rows_of_older_shapes_are_left_as_they_are(self, monkeypatch):
+        # 보강 전 잡은 sections 가 정수고, 첫 절 전에 끊긴 단계는 error 만 있다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="synthesized", plan=["하위1"], status="completed")
+        db = _StepTableSession(job=job)
+        old = self._row(db, job.id, 1, "synthesize", {"sections": 3, "error": "옛 실패"})
+        bare = self._row(db, job.id, 2, "synthesize", {"error": rt.TIMEOUT_ERROR})
+        current = self._row(db, job.id, 3, "synthesize", dict(self._LIGHT))
+
+        asyncio.run(rt._drop_stale_previews(db, self._step(rt, current)))
+
+        assert old.result == {"sections": 3, "error": "옛 실패"}
+        assert bare.result == {"error": rt.TIMEOUT_ERROR}
+        # 걷을 것이 없는 행은 다시 쓰지 않는다
+        assert not any(sql.startswith("UPDATE") for sql in db.sql)
+
+    def test_failure_is_logged_not_raised(self, monkeypatch, caplog):
+        # 잡은 이미 완료로 끝났다 — 크기 정리가 실패했다고 완료를 되돌리거나 태스크를 터뜨리지 않는다
+        rt = _load_tasks(monkeypatch)
+        db = _FakeSession()
+
+        async def _broken(stmt, params=None):
+            raise ConnectionError("DB 연결 끊김")
+
+        db.execute = _broken
+        step = rt._StepRef(9, uuid.uuid4(), 4, "synthesize", "보고서 종합", None, None)
+
+        with caplog.at_level(logging.WARNING, logger="workers.research_tasks"):
+            asyncio.run(rt._drop_stale_previews(db, step))
+
+        assert "초안 정리 실패" in caplog.text
 
 
 class TestReaper:

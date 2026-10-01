@@ -208,7 +208,9 @@ class TestExploreSubquestion:
         kinds = [k for k, _ in events]
         assert "search" in kinds and "critique" in kinds
         by_kind = dict(events)
-        assert by_kind["search"] == {"subq_idx": 0, "query": "가", "found": 1}
+        assert by_kind["search"] == {
+            "subq_idx": 0, "query": "가", "found": 1, "round": 1, "new_papers": 1,
+        }
         assert by_kind["critique"]["verdict"] == "insufficient"
         assert by_kind["critique"]["adopted"] == 1
 
@@ -227,6 +229,151 @@ class TestExploreSubquestion:
         critique = dict(events)["critique"]
         assert critique["parse_failed"] is True
         assert critique["capped"] == 0
+
+
+def _recorder():
+    events: list[tuple[str, dict]] = []
+
+    async def _emit(kind, payload):
+        events.append((kind, payload))
+
+    return events, _emit
+
+
+def _of(events, kind):
+    return [p for k, p in events if k == kind]
+
+
+def _explore_table(table):
+    async def _explore(query, *, params, db):
+        return _hits(table[query], query=query)
+    return _explore
+
+
+class TestRoundEvents:
+    """화면이 회차·새 논문·다음 검색어를 뒤이은 이벤트로 추론하지 않고 그대로 받는다."""
+
+    def _run(self, st, *, explore, critic=None):
+        events, emit = _recorder()
+        for sq in st.subquestions:
+            asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=explore,
+                                            critique_fn=critic or _FakeCritic(), emit=emit))
+        return events
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def test_search_carries_round_and_new_papers(self):
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, explore=_explore_table(
+            {"가": ["A", "B"], "다른 검색어 1": ["B", "C", "D"]}))
+        assert [(s["round"], s["query"], s["found"], s["new_papers"])
+                for s in _of(events, "search")] == [(1, "가", 2, 2), (2, "다른 검색어 1", 3, 2)]
+
+    def test_paper_seen_in_an_earlier_subquestion_is_not_new(self):
+        """재사용 근거를 새 논문으로 세면 카운터가 하위질문 수만큼 부풀려진다."""
+        st = self._state("가", "나", max_recheck=0)
+        events = self._run(st, explore=_fake_explore)
+        assert [s["new_papers"] for s in _of(events, "search")] == [1, 0]
+        assert st.seen_cnts == {"A"}
+
+    def test_chunks_of_one_paper_count_once(self):
+        async def _two_chunks(query, *, params, db):
+            hits, meta = _hits(["A"], query=query)
+            hits.append({**hits[0], "chunk_id": "A-c-2", "score": 0.5, "rank_score": 0.5})
+            return hits, meta
+
+        st = self._state("가", max_recheck=0)
+        (search,) = _of(self._run(st, explore=_two_chunks), "search")
+        assert (search["found"], search["new_papers"]) == (2, 1)
+
+    def test_paper_without_catalog_meta_is_not_counted(self):
+        # 서지가 없는 논문은 근거가 되지 못한다(build_evidence) — 검토한 논문으로 세면 숫자만 부풀린다
+        async def _no_meta_for_b(query, *, params, db):
+            hits, meta = _hits(["A", "B"], query=query)
+            del meta["B"]
+            return hits, meta
+
+        st = self._state("가", max_recheck=0)
+        (search,) = _of(self._run(st, explore=_no_meta_for_b), "search")
+        assert search["new_papers"] == 1
+        assert st.seen_cnts == {"A"}
+
+    def test_critique_names_the_query_it_will_search_next(self):
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, explore=_fake_explore)
+        critiques = _of(events, "critique")
+        assert [(c["round"], c["next_query"], c["will_recheck"]) for c in critiques] == [
+            (1, "다른 검색어 1", True), (2, None, False)]
+        assert _of(events, "search")[1]["query"] == critiques[0]["next_query"]
+
+    def test_no_next_query_when_every_suggestion_was_tried(self):
+        st = self._state("AI 윤리", max_recheck=3)
+        (critique,) = _of(self._run(st, explore=_fake_explore,
+                                    critic=_SuggestingCritic(["ai 윤리"])), "critique")
+        assert critique["verdict"] == "insufficient"
+        assert (critique["next_query"], critique["will_recheck"]) == (None, False)
+
+    def test_no_recheck_once_the_evidence_cap_is_reached(self):
+        st = self._state("가", max_recheck=3, max_evidence=1)
+        (critique,) = _of(self._run(st, explore=_fake_explore), "critique")
+        assert critique["will_recheck"] is False
+
+    def test_counters_follow_each_search(self):
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, explore=_explore_table(
+            {"가": ["A", "B"], "다른 검색어 1": ["B", "C"]}))
+        assert [k for k, _ in events] == [
+            "search", "counters", "critique", "search", "counters", "critique"]
+        assert _of(events, "counters") == [
+            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0},
+            {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1},
+        ]
+
+    def test_counters_are_job_wide(self):
+        st = self._state("가", "나", max_recheck=0)
+        events = self._run(st, explore=_fake_explore)
+        assert _of(events, "counters")[-1] == {
+            "papers_reviewed": 1, "evidence_adopted": 1, "rechecks": 0,
+        }
+
+
+class TestRoundHistory:
+    """이벤트로 흘린 장면은 subq.rounds 에도 남는다 — 워커가 그걸 search 단계 result 에 쓴다."""
+
+    def _explore(self):
+        return _explore_table({"가": ["A", "B"], "다른 검색어 1": ["B", "C", "D"]})
+
+    def test_every_round_is_recorded_on_the_subquestion(self):
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 1}))
+        sq = SubQuestion(idx=0, text="가")
+        st.subquestions = [sq]
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=self._explore(),
+                                        critique_fn=_FakeCritic(), emit=None))
+        assert sq.rounds == [
+            {"round": 1, "query": "가", "found_chunks": 2, "new_papers": 2,
+             "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1"},
+            {"round": 2, "query": "다른 검색어 1", "found_chunks": 3, "new_papers": 2,
+             "verdict": "insufficient", "note": "부족", "next_query": None},
+        ]
+
+    def test_history_matches_what_was_streamed(self):
+        """라이브로 본 장면과 끝난 뒤 다시 연 장면이 같아야 한다."""
+        events, emit = _recorder()
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 1}))
+        sq = SubQuestion(idx=0, text="가")
+        st.subquestions = [sq]
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=self._explore(),
+                                        critique_fn=_FakeCritic(), emit=emit))
+        streamed = [
+            {"round": s["round"], "query": s["query"], "found_chunks": s["found"],
+             "new_papers": s["new_papers"], "verdict": c["verdict"], "note": c["note"],
+             "next_query": c["next_query"]}
+            for s, c in zip(_of(events, "search"), _of(events, "critique"))
+        ]
+        assert sq.rounds == streamed
 
 
 class TestReadTransaction:

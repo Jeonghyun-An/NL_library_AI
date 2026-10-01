@@ -135,6 +135,10 @@ class SubQuestion:
     # Chunk.score 는 하나뿐이라, 이게 없으면 재검색 비교·발췌·절 호버가 다른 하위질문의
     # 점수로 돈다(0.95 로 찾은 대목이 남의 0.2 로 비교돼 밀려난다).
     chunk_scores: dict[str, float] = field(default_factory=dict)
+    # 회차 이력 — [{round, query, found_chunks, new_papers, verdict, note, next_query}].
+    # verdict·note 는 마지막 회차 값만 남으므로, 이게 없으면 끝난 잡을 다시 열었을 때
+    # "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다.
+    rounds: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -144,6 +148,9 @@ class ResearchState:
     params: dict
     subquestions: list[SubQuestion] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
+    # 검색에서 본 고유 논문(cnts_id). 청크 수로 세면 한 논문의 여러 대목이 따로 세이고,
+    # 하위질문마다 세면 재사용 논문이 겹친다 — "논문 N편을 검토"는 이 집합의 크기다.
+    seen_cnts: set[str] = field(default_factory=set)
     # 실행 시점의 수록 범위 — 코퍼스가 계속 자라므로 보고서에 고정 문구로
     # 박지 않고 매번 질의해 넣는다. {"from": "2002", "to": "2026", "n_papers": 72054}
     corpus_range: dict | None = None
@@ -171,6 +178,8 @@ def snapshot_state(state: ResearchState) -> dict:
             }
             for eid, ev in state.evidence.items()
         },
+        # 집합은 JSONB 에 들어가지 않는다. 정렬해 두면 왕복 비교도 결정론적이다.
+        "seen_cnts": sorted(state.seen_cnts),
     }
 
 
@@ -218,4 +227,28 @@ def restore_state(job_id: str, snap: dict) -> ResearchState:
         )
         for eid, e in snap["evidence"].items()
     }
+    st.seen_cnts = _restored_seen_cnts(snap)
     return st
+
+
+def _restored_seen_cnts(snap: dict) -> set[str]:
+    """보강 전 스냅샷에는 seen_cnts 가 없다. 채택한 논문은 적어도 검토한 것이니 그걸
+    하한으로 쓴다 — 빈 집합으로 두면 재개한 보고서가 "0편을 검토하고 11편을 근거로
+    삼았다"고 쓴다. 키가 있으면 빈 목록이라도 그대로 믿는다."""
+    if "seen_cnts" in snap:
+        return set(snap["seen_cnts"])
+    return {e["cnts_id"] for e in snap["evidence"].values()}
+
+
+def research_stats(state: ResearchState) -> dict:
+    """진행 카운터와 보고서 서론의 숫자. 둘이 같은 함수를 봐야 진행 중에 본 숫자와
+    보고서의 숫자가 어긋나지 않는다.
+
+    재검색 횟수는 따로 세지 않고 시도한 검색어 이력에서 얻는다 — 검색어는 이미
+    스냅샷에 실리므로 재개한 잡에서도 같은 값이 나온다.
+    """
+    return {
+        "papers_reviewed": len(state.seen_cnts),
+        "evidence_adopted": len(state.evidence),
+        "rechecks": sum(max(len(sq.queries) - 1, 0) for sq in state.subquestions),
+    }

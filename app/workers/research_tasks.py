@@ -11,8 +11,10 @@ _transition 의 조건부 UPDATE 로만 한다. 취소는 API 프로세스가 �
 import asyncio
 import datetime as _dt
 import logging
+import time
 import uuid
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 
 from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy import insert, select, text as sa_text, update
@@ -29,7 +31,7 @@ from models.research import (
 from services.research.relay import publish, publish_terminal
 from services.research.runner import explore_subquestion
 from services.research.state import (
-    ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
+    ResearchState, SubQuestion, merge_params, research_stats, restore_state, snapshot_state,
 )
 from services.research.synthesizer import SynthesisCanceled, synthesize
 from workers.celery_app import celery_app
@@ -112,16 +114,37 @@ async def _next_seq(db: AsyncSession, job_id: uuid.UUID) -> int:
     return int(row.scalar_one())
 
 
+@dataclass(frozen=True)
+class _StepRef:
+    """열린 step 의 id 와, 닫을 때 화면에 다시 알릴 머리 정보.
+
+    ORM 객체를 들고 다니지 않는 이유: 예외 핸들러는 rollback 부터 하는데, rollback 은
+    세션의 모든 인스턴스를 만료시켜 그 뒤 속성 접근이 async 세션에서 MissingGreenlet
+    으로 터진다. 평범한 값 객체는 rollback 과 무관하다.
+    """
+    id: int
+    job_id: uuid.UUID
+    seq: int
+    kind: str
+    title: str
+    subq_idx: int | None
+    detail: str | None
+
+    def event(self, status: str, result: dict | None = None) -> dict:
+        # 이벤트 자체의 kind 와 겹치지 않게 step_kind 로 싣는다
+        payload = {
+            "seq": self.seq, "step_kind": self.kind, "subq_idx": self.subq_idx,
+            "title": self.title, "detail": self.detail, "status": status,
+        }
+        if result is not None:
+            payload["result"] = result
+        return payload
+
+
 async def _step(
     db: AsyncSession, job_id: uuid.UUID, seq: int, kind: str, title: str, *,
     subq_idx: int | None = None, detail: str | None = None,
-) -> int:
-    """step 을 열고 id 를 돌려준다.
-
-    ORM 객체가 아니라 id 를 들고 다니는 이유: 예외 핸들러는 rollback 부터 하는데,
-    rollback 은 세션의 모든 인스턴스를 만료시켜 그 뒤 속성 접근이 async 세션에서
-    MissingGreenlet 으로 터진다.
-    """
+) -> _StepRef:
     # STEP_KINDS 를 실제로 강제하는 유일한 지점. 상수만 정의하고 아무 데서도
     # 쓰지 않으면 장식이 되고, 오타난 kind 가 프론트 분기를 조용히 빗나간다.
     assert kind in STEP_KINDS, f"알 수 없는 kind: {kind}"
@@ -132,15 +155,206 @@ async def _step(
         ).returning(ResearchStep.id)
     )).scalar_one()
     await db.commit()
-    return step_id
+    step = _StepRef(step_id, job_id, seq, kind, title, subq_idx, detail)
+    # 커밋 뒤에 알린다. 먼저 알리면 그 틈에 재접속한 화면의 스냅샷에는 없는 단계가
+    # 이벤트로만 도착한다.
+    await publish(job_id, "step", step.event("running"))
+    return step
 
 
-async def _finish(db: AsyncSession, step_id: int, status: str, result: dict | None = None) -> None:
+async def _finish(
+    db: AsyncSession, step: _StepRef, status: str, result: dict | None = None,
+    event_result: dict | None = None,
+) -> None:
+    """단계를 닫는다. event_result 를 주면 알리는 step 이벤트에는 저장한 result 대신 그것을
+    싣는다 — 종합 단계의 절 미리보기는 synth 이벤트가 절마다 이미 날랐다."""
+    result = result or {}
     await db.execute(
-        update(ResearchStep).where(ResearchStep.id == step_id)
-        .values(status=status, result=result or {}, finished_at=_now())
+        update(ResearchStep).where(ResearchStep.id == step.id)
+        .values(status=status, result=result, finished_at=_now())
     )
     await db.commit()
+    # event_result 가 없으면 저장한 result 를 그대로 싣는다 — 라이브로 본 장면과 다시 연 장면이
+    # 같아야 한다. 종합 단계는 가벼운 값을 싣지만 빠진 절 내용은 synth 이벤트가 이미 날랐다.
+    await publish(step.job_id, "step", step.event(
+        status, result if event_result is None else event_result))
+
+
+async def _save_progress(
+    db: AsyncSession, step: _StepRef, result: dict, event_result: dict | None = None,
+) -> None:
+    """도는 중인 단계의 result 를 지금까지의 진행으로 덮어쓰고 알린다.
+
+    단계를 닫을 때만 쓰면 탐색 중에 새로 연 화면·재접속한 화면이 그 단계의 앞 회차와
+    카운터를 잃는다. 실패해도 탐색은 계속한다 — 이 기록은 화면 복원용이고, 단계를 닫을
+    때 _finish 가 최종 결과를 다시 쓴다.
+
+    event_result 를 주면 알리는 step 이벤트에는 그것을 싣는다. 종합 단계는 절이 쌓일수록
+    result 가 커져, 전부를 매번 알리면 이미 보낸 절 내용을 절마다 다시 나른다.
+    """
+    try:
+        await db.execute(
+            update(ResearchStep).where(ResearchStep.id == step.id).values(result=result)
+        )
+        await db.commit()
+    except SoftTimeLimitExceeded:
+        raise
+    except Exception:
+        log.warning("[research] 진행 기록 실패 job=%s seq=%s", step.job_id, step.seq,
+                    exc_info=True)
+        # 깨진 트랜잭션을 되돌려 두지 않으면 다음 회차의 검색 조회가 여기서 터진다
+        await db.rollback()
+        return
+    await publish(step.job_id, "step", step.event(
+        "running", result if event_result is None else event_result))
+
+
+def _search_progress(state: ResearchState, subq: SubQuestion) -> dict:
+    # 목록을 복사한다 — 이어지는 회차가 같은 목록에 덧붙여도 저장한 값이 바뀌지 않게
+    return {"rounds": list(subq.rounds), "counters": research_stats(state)}
+
+
+def _round_emitter(
+    db: AsyncSession, job_id: uuid.UUID, state: ResearchState, subq: SubQuestion,
+    step: _StepRef,
+) -> Callable[[str, dict], Awaitable[None]]:
+    """러너 이벤트를 흘리고, 자기점검(회차의 끝)마다 진행을 단계 result 에 남긴다."""
+    async def _emit(kind: str, payload: dict) -> None:
+        await publish(job_id, kind, payload)
+        if kind == "critique":
+            await _save_progress(db, step, _search_progress(state, subq))
+    return _emit
+
+
+@dataclass
+class _SynthProgress:
+    """synthesize 의 on_section 콜백. 절 진행을 synth 이벤트로 흘리면서 종합 단계
+    result 에 남길 값도 모은다 — 실패·취소로 끝나도 거기까지의 진행이 남는다.
+    step 이 있으면 절이 바뀔 때마다 도는 중인 단계 result 에도 남긴다.
+
+    다 쓴 절의 미리보기(section)와 그 근거(evidence)도 모은다. 작성 중 화면이 그것을 초안으로
+    보여 주고, 새로고침·재접속한 화면은 단계 result 에서 이미 쓴 절을 되살린다."""
+    job_id: uuid.UUID
+    db: AsyncSession | None = None
+    step: _StepRef | None = None
+    total: int = 0
+    statuses: dict[int, str] = field(default_factory=dict)
+    headings: list[str] = field(default_factory=list)
+    # 절 순번 → {subq_idx, heading, started_at, duration_ms, section}
+    details: dict[int, dict] = field(default_factory=dict)
+    evidence: dict[str, dict] = field(default_factory=dict)
+    # 소요 시간은 단조 시계로 잰다 — 벽시계는 시각 보정으로 뒤로 갈 수 있다. 테스트가 바꿔 끼운다.
+    clock: Callable[[], float] = time.monotonic
+    _started: dict[int, float] = field(default_factory=dict, init=False, repr=False)
+
+    async def __call__(self, idx: int, total: int, status: str, info: dict | None = None) -> None:
+        self.total = total
+        self.statuses[idx] = status
+        payload = {"section_idx": idx, "total": total, "status": status}
+        if info is not None:
+            payload.update(self._record(idx, status, info))
+        await publish(self.job_id, "synth", payload)
+        if self.step is not None:
+            # 저장에는 미리보기를 싣고 알림에서는 뺀다 — 절 내용은 위 synth 이벤트가 한 번만 나른다
+            await _save_progress(self.db, self.step, self.result(),
+                                 event_result=self.result(previews=False))
+
+    def _record(self, idx: int, status: str, info: dict) -> dict:
+        """info 를 절 기록에 남기고, synth 이벤트에 더할 값을 돌려준다."""
+        self.headings = list(info.get("headings") or self.headings)
+        extra = {"subq_idx": info.get("subq_idx"), "heading": info.get("heading"),
+                 "headings": self.headings}
+        detail = self.details.setdefault(idx, {})
+        detail.update(subq_idx=extra["subq_idx"], heading=extra["heading"])
+        if status == "running":
+            self._started[idx] = self.clock()
+            detail["started_at"] = extra["started_at"] = _now().isoformat()
+            return extra
+        started = self._started.get(idx)
+        if started is not None:
+            detail["duration_ms"] = extra["duration_ms"] = int((self.clock() - started) * 1000)
+        if "section" in info:
+            detail["section"] = extra["section"] = info["section"]
+        if "evidence" in info:
+            self._merge_evidence(info["evidence"])
+            extra["evidence"] = info["evidence"]
+        return extra
+
+    def _merge_evidence(self, more: dict[str, dict]) -> None:
+        """끝난 절들의 근거를 합친다. 한 논문이 두 절에 실리면 절마다 제 대목만 가져오므로
+        대목을 chunk_id 로 합친다 — 덮어쓰면 앞 절 인용칩의 대목이 사라진다. 들고 있던 값을
+        고치지 않고 새 dict 로 바꿔 넣는다 — 앞서 넘긴 result 가 뒤따라 바뀌지 않게."""
+        for eid, ev in more.items():
+            have = self.evidence.get(eid)
+            if have is None:
+                self.evidence[eid] = {**ev, "chunks": list(ev["chunks"])}
+                continue
+            seen = {c["chunk_id"] for c in have["chunks"]}
+            chunks = have["chunks"] + [c for c in ev["chunks"] if c["chunk_id"] not in seen]
+            self.evidence[eid] = {
+                **have, "chunks": sorted(chunks, key=lambda c: c["score"], reverse=True)}
+
+    def result(self, *, previews: bool = True, **extra: object) -> dict:
+        """종합 단계 result. previews=False 면 절 미리보기와 근거를 뺀다(_without_previews) —
+        알리는 step 이벤트와, 완료로 닫는 기록(최종 보고서와 중복)에 쓴다."""
+        sections = []
+        for i, status in sorted(self.statuses.items()):
+            d = self.details.get(i, {})
+            entry = {"idx": i, "status": status, "subq_idx": d.get("subq_idx"),
+                     "heading": d.get("heading"), "started_at": d.get("started_at"),
+                     "duration_ms": d.get("duration_ms")}
+            if "section" in d:
+                entry["section"] = d["section"]
+            sections.append(entry)
+        out = {**extra, "sections_total": self.total, "headings": list(self.headings),
+               "sections": sections}
+        if self.evidence:
+            out["evidence"] = dict(self.evidence)
+        return out if previews else _without_previews(out)
+
+
+def _without_previews(result: dict) -> dict:
+    """종합 단계 result 에서 절 미리보기(sections[].section)와 근거(evidence)를 뺀 값.
+
+    지금 시도의 가벼운 값(_SynthProgress.result)과 이전 시도의 정리(_drop_stale_previews)가 같이
+    쓴다. 보강 전 잡의 sections 는 정수라(models/research.py) 목록일 때만 절마다 걷는다.
+    """
+    light = {k: v for k, v in result.items() if k != "evidence"}
+    if isinstance(result.get("sections"), list):
+        light["sections"] = [{k: v for k, v in s.items() if k != "section"}
+                             for s in result["sections"]]
+    return light
+
+
+async def _drop_stale_previews(db: AsyncSession, step: _StepRef) -> None:
+    """재시도가 완료되면 같은 잡의 이전 시도 종합 단계에 남은 멈춘 초안을 걷는다.
+
+    실패·취소로 닫은 종합 단계는 멈춘 초안을 남긴다. 재시도가 완료하면 화면은 최신 시도의
+    단계만 읽는데, 남겨 두면 완성된 보고서를 열 때마다 GET·스냅샷이 아무도 읽지 않는 수백 KB 를
+    더 나른다. 실패는 경고만 남긴다 — 잡은 이미 완료로 끝났고 이것은 크기 정리다(시간 상한
+    신호도 삼킨다 — 남은 일이 없다).
+    """
+    try:
+        rows = (await db.execute(
+            select(ResearchStep.id, ResearchStep.result).where(
+                ResearchStep.job_id == step.job_id, ResearchStep.kind == "synthesize",
+                ResearchStep.seq < step.seq,
+            )
+        )).all()
+        for step_id, result in rows:
+            light = _without_previews(result)
+            if light != result:
+                await db.execute(
+                    update(ResearchStep).where(ResearchStep.id == step_id).values(result=light))
+        await db.commit()
+    except Exception:
+        log.warning("[research] 이전 시도의 초안 정리 실패 job=%s", step.job_id, exc_info=True)
+
+
+async def _announce(job_id: uuid.UUID, status: str, stage: str) -> None:
+    """상태 전이를 알린다. 전이가 성공한 뒤에만 부른다 — 취소에 진 전이를 알리면
+    화면이 취소된 잡을 진행 중으로 그린다. 종료 상태는 publish_terminal 이 알린다."""
+    await publish(job_id, "status", {"status": status, "stage": stage})
 
 
 async def _corpus_range(db: AsyncSession) -> dict:
@@ -219,6 +433,10 @@ async def _close_orphan_steps(db: AsyncSession, job_id: uuid.UUID, error: str) -
     """끝난 잡에 running 으로 남은 step 을 닫는다.
 
     잡이 아직 진행 중이면 건드리지 않는다 — 회수 뒤 retry 한 새 실행의 step 일 수 있다.
+
+    result 는 바꾸지 않고 error 만 더한다(jsonb ||). 도는 단계에는 _save_progress 가
+    쌓은 rounds·counters·sections 가 있다 — 통째로 바꾸면 라이브로 본 회차·절이 다시 연
+    화면에서 사라진다. 회수기(reap_stale_research)도 같은 방식으로 합친다.
     """
     await db.execute(
         update(ResearchStep)
@@ -229,7 +447,8 @@ async def _close_orphan_steps(db: AsyncSession, job_id: uuid.UUID, error: str) -
                 ResearchJob.id == job_id, ResearchJob.status.in_(TERMINAL_STATUSES),
             ).exists(),
         )
-        .values(status="failed", result={"error": error[:500]}, finished_at=_now())
+        .values(status="failed", result=ResearchStep.result.concat({"error": error[:500]}),
+                finished_at=_now())
     )
     await db.commit()
 
@@ -310,25 +529,27 @@ async def _plan_deep_research(job_id: str) -> dict:
                 return {"job_id": job_id, "status": "skipped"}
 
             job = await db.get(ResearchJob, jid)
-            question, params = job.question, merge_params(job.params or {})
+            question, params, stage = job.question, merge_params(job.params or {}), job.stage
             seq = await _next_seq(db, jid)
             await db.commit()      # 읽기 트랜잭션을 닫고 LLM 으로 간다
+            await _announce(jid, "planning", stage)
 
-            step_id = await _step(db, jid, seq, "plan", "연구 계획 수립",
-                                  detail="질문을 하위질문으로 분해하는 중입니다")
+            step = await _step(db, jid, seq, "plan", "연구 계획 수립",
+                               detail="질문을 하위질문으로 분해하는 중입니다")
             try:
                 plan = await make_plan(question, params=params)
             except SoftTimeLimitExceeded:
                 raise
             except Exception as e:
                 log.exception("[research] 계획 수립 실패 job=%s", jid)
-                await _finish(db, step_id, "failed", {"error": str(e)[:500]})
+                await _finish(db, step, "failed", {"error": str(e)[:500]})
                 return await _end_failed(db, jid, str(e), expect=("planning",))
 
-            await _finish(db, step_id, "done", {"subquestions": plan})
+            await _finish(db, step, "done", {"subquestions": plan})
             if not await _transition(db, jid, expect=("planning",), status="awaiting_approval",
                                      plan=plan, stage=_stage("planned")):
                 return await _stopped(db, jid)
+            await _announce(jid, "awaiting_approval", "planned")
             return {"job_id": str(jid), "status": "awaiting_approval"}
 
     except SoftTimeLimitExceeded:
@@ -361,9 +582,7 @@ async def _run_deep_research(job_id: str) -> dict:
             question, params, plan = job.question, job.params, job.plan
             seq = await _next_seq(db, jid)
             await db.commit()
-
-            async def _emit(kind: str, payload: dict) -> None:
-                await publish(jid, kind, payload)
+            await _announce(jid, "running", stage)
 
             # ── 탐색: stage 가 이미 explored 면 건너뛰고 스냅샷을 되살린다 ──
             state = restore_state(str(jid), snapshot) if stage == "explored" and snapshot else None
@@ -389,13 +608,16 @@ async def _run_deep_research(job_id: str) -> dict:
                     if await _is_cancelled(db, jid):
                         return await _stopped(db, jid)
 
-                    step_id = await _step(
+                    step = await _step(
                         db, jid, seq, "search", subq.text, subq_idx=subq.idx,
                         detail=f"'{subq.text}' 관련 논문을 찾기 위해 검색 중입니다",
                     )
                     seq += 1
                     try:
-                        await explore_subquestion(state, subq, db=db, emit=_emit)
+                        await explore_subquestion(
+                            state, subq, db=db,
+                            emit=_round_emitter(db, jid, state, subq, step),
+                        )
                     except SoftTimeLimitExceeded:
                         # except Exception 보다 먼저 와야 한다 — SoftTimeLimitExceeded 도
                         # Exception 이라 거기서 삼키면 남은 하위질문을 계속 돌다 하드 리밋에 죽는다.
@@ -407,12 +629,15 @@ async def _run_deep_research(job_id: str) -> dict:
                         log.exception("[research] 하위질문 실패 job=%s idx=%s", jid, subq.idx)
                         await db.rollback()     # DB 오류면 트랜잭션이 깨져 있어 기록부터 터진다
                         subq.failed = True
-                        await _finish(db, step_id, "failed", {"error": str(e)[:500]})
+                        await _finish(db, step, "failed", {
+                            "error": str(e)[:500], **_search_progress(state, subq),
+                        })
                     else:
-                        await _finish(db, step_id, "done", {
+                        await _finish(db, step, "done", {
                             "queries": subq.queries, "adopted": len(subq.evidence_ids),
                             "verdict": subq.verdict, "note": subq.note,
                             "parse_failed": subq.parse_failed, "capped": subq.capped,
+                            **_search_progress(state, subq),
                         })
 
                 # 전멸은 연구 결과가 아니라 장애다. 체크포인트를 남기면 retry 가 전부
@@ -424,16 +649,21 @@ async def _run_deep_research(job_id: str) -> dict:
                 if not await _transition(db, jid, expect=("running",), stage=_stage("explored"),
                                          state_snapshot=snapshot_state(state)):
                     return await _stopped(db, jid)
+                await _announce(jid, "running", "explored")
 
             if await _is_cancelled(db, jid):
                 return await _stopped(db, jid)
 
             # ── 종합 ──
-            step_id = await _step(db, jid, seq, "synthesize", "보고서 종합")
+            step = await _step(db, jid, seq, "synthesize", "보고서 종합")
+            progress = _SynthProgress(jid, db=db, step=step)
             try:
-                report = await synthesize(state, should_stop=lambda: _is_cancelled(db, jid))
+                report = await synthesize(state, should_stop=lambda: _is_cancelled(db, jid),
+                                          on_section=progress)
             except SynthesisCanceled:
-                await _finish(db, step_id, "failed", {"error": "취소됨"})
+                # 실패·취소로 닫을 때는 절 미리보기를 남긴다 — 멈춘 초안을 보여 주고 내려받는 원천이다
+                await _finish(db, step, "failed", progress.result(error="취소됨"),
+                              event_result=progress.result(error="취소됨", previews=False))
                 return await _stopped(db, jid)
             except SoftTimeLimitExceeded:
                 raise
@@ -442,15 +672,27 @@ async def _run_deep_research(job_id: str) -> dict:
                 # 탐색을 건너뛰고 여기부터 다시 온다.
                 log.exception("[research] 종합 실패 job=%s", jid)
                 await db.rollback()
-                await _finish(db, step_id, "failed", {"error": str(e)[:500]})
+                error = str(e)[:500]
+                await _finish(db, step, "failed", progress.result(error=error),
+                              event_result=progress.result(error=error, previews=False))
                 return await _end_failed(db, jid, str(e))
 
-            await _finish(db, step_id, "done", {"sections": len(report["sections"])})
+            # 보고서를 먼저 저장하고 단계를 닫는다. 단계를 먼저 done(미리보기 없음)으로 닫으면
+            # 전이가 질 때 초안을 되살리려 한 번 더 닫아야 하고, 그 사이 데드라인에 걸리면 보고서도
+            # 초안도 없다. 이 순서에서는 전이와 단계 닫기 사이 잠깐 잡은 completed·단계는 running
+            # 으로 보인다 — 그 틈에 끊겨도 보고서는 저장됐고 _close_orphan_steps 가 단계를 닫는다.
             if not await _transition(db, jid, expect=("running",), status="completed",
                                      report=report, stage=_stage("synthesized"),
                                      finished_at=_now()):
+                # 대개 마지막 절을 쓰는 도중에 들어온 취소다(synthesize 는 LLM 을 부르기 직전에만
+                # 멈춤을 본다). 보고서가 버려지므로 미리보기를 남겨 멈춘 초안으로 닫는다.
+                await _finish(db, step, "failed", progress.result(error="취소됨"),
+                              event_result=progress.result(error="취소됨", previews=False))
                 return await _stopped(db, jid)
+            # 완료로 닫을 때는 미리보기를 지운다 — 최종 보고서(research_jobs.report)와 같은 내용이다
+            await _finish(db, step, "done", progress.result(previews=False))
             await publish_terminal(jid, "completed")
+            await _drop_stale_previews(db, step)
             return {"job_id": str(jid), "status": "completed"}
 
     except SoftTimeLimitExceeded:

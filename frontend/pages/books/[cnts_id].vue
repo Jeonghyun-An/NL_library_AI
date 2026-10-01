@@ -1,11 +1,8 @@
 <template>
   <div class="skx-app">
     <AppSidebar
-      :book-history="bookHistory"
-      :paper-history="paperHistory"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
-      @restore="restoreSession"
     />
 
     <main class="skx-result">
@@ -521,27 +518,18 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
-import { useSearchHistory } from "~/composables/useSearchHistory";
+import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import type { BookInfo } from "~/types/search";
-import type { HistoryEntry } from "~/types/history";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
 const cnts_id = route.params.cnts_id as string;
 const searchQuery = (route.query.q as string) || "";
 
-const config = useRuntimeConfig();
-const apiBase = config.public.apiBase as string;
-
-const { bookHistory, paperHistory } = useSearchHistory();
-
-function restoreSession(entry: HistoryEntry) {
-  if (entry.type === "book") {
-    navigateTo(`/?restore=${entry.id}`);
-  } else {
-    navigateTo(`/papers?restore=${entry.id}`);
-  }
-}
+const api = useApi();
+// 페이지를 떠나면 추천 이유 스트림을 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
+const pageAbort = new AbortController();
+onBeforeUnmount(() => pageAbort.abort());
 
 // ── 도서 데이터 ────────────────────────────────────────────
 const book = ref<BookInfo | null>(null);
@@ -669,7 +657,7 @@ async function fetchBook() {
   pageLoading.value = true;
   pageError.value = "";
   try {
-    const data = await $fetch<BookInfo>(`${apiBase}/books/${cnts_id}`);
+    const data = await api<BookInfo>(`/books/${cnts_id}`, { signal: pageAbort.signal });
     book.value = data;
   } catch (e: any) {
     pageError.value = e?.data?.detail || "도서 정보를 불러올 수 없습니다.";
@@ -684,15 +672,16 @@ async function streamReason() {
   reasonLoading.value = true;
   reasonText.value = "";
   try {
-    const resp = await fetch(`${apiBase}/books/reason/stream`, {
+    const resp = await fetch(apiUrl("/books/reason/stream"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         query: searchQuery,
         book_id: cnts_id,
         chunk_texts: [],
         rewritten_query: "",
       }),
+      signal: pageAbort.signal,
     });
     await readSSE(resp, (json) => {
       if (json.text) reasonText.value += json.text;
@@ -710,7 +699,7 @@ async function fetchRelatedBooks() {
   relatedLoading.value = true;
   const query = book.value.title || "";
   try {
-    const data = await $fetch<any>(`${apiBase}/books/search`, {
+    const data = await api<any>("/books/search", {
       method: "POST",
       body: {
         query,
@@ -719,6 +708,7 @@ async function fetchRelatedBooks() {
         use_rewrite: false,
         use_rerank: true,
       },
+      signal: pageAbort.signal,
     });
     if (data?.books) {
       relatedItems.value = (data.books as any[])
