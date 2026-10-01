@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
@@ -178,8 +179,9 @@ class Settings(BaseSettings):
     # ODL 타임아웃(초) = max(기본, 쪽수 × 쪽당)
     ODL_TIMEOUT_BASE_SECONDS: float = 5.0
     ODL_TIMEOUT_PER_PAGE_SECONDS: float = 0.5
-    # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다
-    ODL_IMAGE_OUTPUT: str = "off"
+    # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다.
+    # opendataloader-pdf CLI 가 받는 값만 — 모르는 값이면 java 가 문서마다 exit 2 로 끝나 모두 fitz 텍스트가 된다
+    ODL_IMAGE_OUTPUT: Literal["off", "embedded", "external"] = "off"
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
     # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.

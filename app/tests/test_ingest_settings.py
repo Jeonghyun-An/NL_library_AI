@@ -67,6 +67,22 @@ def test_round07_settings_have_contract_defaults(monkeypatch):
         assert value == expected and type(value) is type(expected), f"{key}={value!r}"
 
 
+def test_odl_image_output_accepts_only_cli_values(monkeypatch):
+    # opendataloader-pdf CLI 가 받지 않는 값이면 java 가 문서마다 exit 2 로 끝나 모든 문서가 조용히 fitz 텍스트가
+    # 된다 — 설정을 읽을 때 막는다
+    from pydantic import ValidationError
+
+    from core.config import Settings
+
+    for value in ("off", "embedded", "external"):
+        monkeypatch.setenv("ODL_IMAGE_OUTPUT", value)
+        assert Settings(_env_file=None).ODL_IMAGE_OUTPUT == value
+    for value in ("bogus", "OFF", ""):
+        monkeypatch.setenv("ODL_IMAGE_OUTPUT", value)
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None)
+
+
 def test_extract_deadline_ends_before_stale_timeout(monkeypatch):
     # 추출은 데드라인에서 스스로 멈추고 결과를 남긴다 — stale 판정이 그보다 먼저 오면 안 된다
     s = _fresh_settings(monkeypatch)
