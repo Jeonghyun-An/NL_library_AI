@@ -5,12 +5,13 @@
 - _topic_embed: 문장에 든 주제어로 정한 one-hot — 같은 주제 안은 유사도가 똑같아 주제가 바뀌는 곳에서만 경계가 난다.
 - _flat_embed: 모든 문장이 같은 벡터 — 의미 경계가 하나도 안 나는 최악의 경우.
 """
+import collections
 import hashlib
 
 import numpy as np
 
 from services.ingestion import chunker
-from services.ingestion.chunker import MAX_CHUNK_BYTES, semantic_chunk
+from services.ingestion.chunker import MAX_CHUNK_BYTES, _normalize_linebreaks, semantic_chunk
 
 SECTION = dict(min_tokens=800, max_tokens=5000, apply_byte_guard=False)   # stages.split_into_sections 와 같은 값
 SEARCH = dict(min_tokens=128, max_tokens=1024, apply_byte_guard=True)     # stages.run_embed_index(검색 청크) 기본값
@@ -195,3 +196,51 @@ def test_split_by_chars_prefers_boundaries_and_loses_nothing():
     assert all(len(p) <= 700 for p in parts)
     assert all(p.endswith(" ") for p in parts[:-1])   # 글자 중간이 아니라 공백에서 끊었다
     assert chunker._split_by_chars("가" * 1500, 700) == ["가" * 700, "가" * 700, "가" * 100]   # 경계가 없으면 글자 수에서
+
+
+# ── 줄바꿈 폴백 — 정규화 전 원문을 줄 단위로 (nanet 493f760 을 SKOVIX 정규화 순서에 맞게) ──
+
+
+def test_line_split_keeps_table_rows_whole():
+    """마침표 없는 표는 줄(행) 단위로 나뉜다 — 섹션·청크의 줄 하나하나가 표의 온전한 행이고, 모든 행이
+    정확히 한 번 나온다. 정규화 뒤에 나누면 홑줄바꿈이 공백이 돼 한 쪽의 행이 한 줄로 뭉치고 행 중간에서 끊긴다."""
+    text, page_map, rows = _stat_table_document()
+    for embed in (_hash_embed, _flat_embed):
+        for params in (SECTION, SEARCH):
+            seen = collections.Counter()
+            for c in semantic_chunk(text, embed, page_map=page_map, **params):
+                for line in c.text.split("\n"):
+                    if not line.startswith("표 "):        # 쪽마다 붙은 표 제목 줄은 빼고 센다
+                        seen[line] += 1
+            assert seen == collections.Counter(rows), (embed.__name__, params["max_tokens"])
+
+
+def test_line_mode_resolves_pages():
+    """줄 단위 위치는 원문 기준이라 page_map 과 맞는다 — 섹션마다 쪽 범위가 붙고 1쪽부터 100쪽까지 순서대로 이어진다."""
+    text, page_map, _ = _stat_table_document()
+    pages = [(c.page_start, c.page_end) for c in semantic_chunk(text, _hash_embed, page_map=page_map, **SECTION)]
+    assert all(s is not None and s <= e for s, e in pages)
+    assert pages[0][0] == 1 and pages[-1][1] == 100
+    assert [s for s, _ in pages] == sorted(s for s, _ in pages)
+
+
+def test_split_lines_keeps_short_lines_with_raw_offsets():
+    """5자 이하 줄(합계·셀 하나)은 버리지 않고 다음 줄과 묶고, 끝에 남으면 앞 단위에 붙인다.
+    줄 안의 연속 공백만 줄이고, start/end 는 원문 위치다."""
+    raw = "합계\n|001|가|\n\n  |002|  나|  \n12"
+    units = chunker._split_lines_with_offsets(raw)
+    assert units == [
+        {"text": "합계\n|001|가|", "start": 0, "end": 10},
+        {"text": "|002| 나|\n12", "start": 12, "end": 28},
+    ]
+    assert raw[0:10] == "합계\n|001|가|" and raw[12:28] == "  |002|  나|  \n12"
+
+
+def test_line_fallback_skips_text_within_cap():
+    """상한 안에 드는 짧은 본문(문장 5개 이하 초록·작은 표)은 줄바꿈 폴백 없이 지금처럼 정규화한 한 덩어리다."""
+    abstract = "본 연구는 지역 도서관의\n이용 실태를 조사하였다. 표본은 전국 30개 관\n이다. 그 결과 이용률이 높아졌다."
+    small_table = "\n".join(f"|{r:03d}|지역{r % 5}|{r * 3}|" for r in range(20))
+    for t in (abstract, small_table):
+        for params in (SECTION, SEARCH):
+            out = semantic_chunk(t, _hash_embed, page_map={}, **params)
+            assert [c.text for c in out] == [_normalize_linebreaks(t)]
