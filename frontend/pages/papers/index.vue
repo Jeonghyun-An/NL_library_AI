@@ -126,7 +126,7 @@
                     <div class="skx-pai-ref__body">
                       <p
                         class="skx-pai-ref__title skx-pai-ref__title--link"
-                        @click="navigateTo(detailUrl(ref.book_id))"
+                        @click="navigateTo(paperDetailUrl(ref.book_id))"
                       >
                         {{ ref.title }}
                       </p>
@@ -357,6 +357,7 @@
                 v-for="paper in pagedPapers"
                 :key="paper.book_id"
                 class="skx-paper-item"
+                :data-anchor="resultAnchor(paper.book_id)"
               >
                 <div class="skx-paper-item__left">
                   <div class="skx-paper-tags">
@@ -380,7 +381,7 @@
                   <h3
                     class="skx-paper-title"
                     style="cursor: pointer"
-                    @click="goToDetail(paper)"
+                    @click="goToDetail(paper, $event)"
                   >
                     {{ paper.book_info?.title || paper.book_id }}
                   </h3>
@@ -451,7 +452,7 @@
                   <button
                     type="button"
                     class="skx-btn-ptalk"
-                    @click.stop="navigateTo(detailUrl(paper.book_id, { chat: '1' }))"
+                    @click.stop="goToDetail(paper, $event, { chat: '1' })"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
                     DeepSearch
@@ -581,8 +582,11 @@
 import { marked } from "marked";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
+import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
 import { safeLocalStorage } from "~/utils/browserId";
+import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { slimPaperResult } from "~/utils/historySnapshot";
+import { pageOfItem, spotOf } from "~/utils/restorePosition";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
@@ -611,6 +615,13 @@ const resultQuery = ref("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 const paperResult = ref<BookSearchResponse | null>(null);
+
+// ── 상세에서 돌아온 자리 ──────────────────────────────────────
+// 결과는 기록에서 비동기로 복원해 브라우저·Nuxt 의 스크롤 복원이 목록보다 먼저 끝난다 — 돌아온 주소(at)면
+// Nuxt 는 맞추지 않고, 누른 카드를 목록이 그려진 뒤 직접 맞춘다
+definePageMeta({ scrollToTop: (to) => !to.query.at });
+const restore = useRestorePosition(computed(() => paperResult.value !== null && !loading.value));
+const { leave } = useDetailLeave();
 
 // ── 인라인 채팅 ──────────────────────────────────────────────
 const chatPaperId = ref<string | null>(null);
@@ -773,16 +784,23 @@ function openRefCitation(ref: { book_id: string }) {
   citeModalOpen.value = true;
 }
 
-// 상세로 갈 때 기록 id 를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원된다
-function detailUrl(bookId: string, extra: Record<string, string> = {}): string {
-  // q 는 검색바가 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
-  const params = new URLSearchParams({ q: resultQuery.value, ...extra });
-  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
-  return `/papers/${bookId}?${params}`;
+// 상세로 갈 때 출처(이 검색 기록)를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, [검색 결과로]가 재검색 없이
+// 복원된다. q 는 검색바가 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색). 관련도는 상세 머리 카드가 보인다
+function paperDetailUrl(bookId: string, spot?: ReturnSpot, extra: Record<string, string> = {}): string {
+  const score = aiRefPaperMap.value.get(bookId)?.best_score;
+  return detailUrl(
+    bookId,
+    { kind: "search", h: currentHistoryId.value, q: resultQuery.value },
+    spot,
+    score === undefined ? extra : { score: String(score), ...extra },
+  );
 }
 
-function goToDetail(paper: any) {
-  navigateTo(detailUrl(paper.book_id));
+// 누른 카드의 지금 화면 높이를 싣고 떠난다 — [검색 결과로]·뒤로 가기로 돌아오면 이 카드를 같은 높이에 맞춘다
+function goToDetail(paper: BookChunkGroup, e: MouseEvent, extra: Record<string, string> = {}) {
+  const card = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]")!;
+  const spot = spotOf(card, resultAnchor(paper.book_id));
+  void leave(paperDetailUrl(paper.book_id, spot, extra), spot);
 }
 
 // ── 검색 ─────────────────────────────────────────────────────
@@ -943,14 +961,23 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
   aiLoading.value = false;
   aiExpanded.value = true;
-  currentPage.value = 1;
   sortBy.value = "relevance";
   selectedGrade.value = grade || "all";
+  // 정렬·필터를 정한 뒤에 찾아야 화면 목록과 같은 순서다
+  currentPage.value = returnPage();
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id, ...(grade ? { grade } : {}) } });
   }
   // 요약이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
   if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);
+}
+
+// 상세에서 돌아왔으면 그 카드가 있는 쪽을 연다 — 첫 쪽만 열면 다음 쪽에서 누른 카드의 자리를 찾지 못한다.
+// 쪽 크기·정렬은 기록에 없어 기본값으로 찾는다
+function returnPage(): number {
+  const anchor = restore.pending.value ? restore.anchor : null;
+  if (anchor?.kind !== "result") return 1;
+  return pageOfItem(filteredPapers.value.map((p) => p.book_id), anchor.cnts, pageSize.value) ?? 1;
 }
 
 // ── AI 요약 SSE ───────────────────────────────────────────────
@@ -1041,5 +1068,8 @@ watch(
 // 페이지를 떠나면 요약 스트림도 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
 onBeforeUnmount(() => runCtrl?.abort());
 
-watch(currentPage, () => window.scrollTo({ top: 0, behavior: "smooth" }));
+// 돌아온 카드의 쪽을 여는 동안에는 맨 위로 올리지 않는다 — 그 카드 자리를 맞추는 중이다
+watch(currentPage, () => {
+  if (!restore.pending.value) window.scrollTo({ top: 0, behavior: "smooth" });
+});
 </script>

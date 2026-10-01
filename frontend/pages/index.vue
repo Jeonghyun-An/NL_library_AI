@@ -665,6 +665,7 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { slimBookResult } from "~/utils/historySnapshot";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
+import { detailUrl } from "~/utils/detailSource";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
 
@@ -1282,11 +1283,15 @@ async function fetchPaperSummary(query: string) {
 }
 
 // ── 상세 열기 ──────────────────────────────────────────────
+// 논문 상세의 출처는 결과의 검색어로 싣는다(입력창 글자가 아니다). 이 화면의 기록은 도서 기록이라 h 로 싣지 않는다 —
+// [검색 결과로]가 논문 검색에서 같은 검색어로 다시 찾는다
+function paperDetailUrl(bookId: string, extra: Record<string, string> = {}): string {
+  return detailUrl(bookId, { kind: "search", h: null, q: resultQuery.value }, undefined, extra);
+}
+
 function openDetail(item: BookChunkGroup) {
   if (mode.value === "paper") {
-    navigateTo(
-      `/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}`,
-    );
+    navigateTo(paperDetailUrl(item.book_id));
     return;
   }
   // q 는 입력창이 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
@@ -1306,9 +1311,7 @@ function openDetail(item: BookChunkGroup) {
 // 이 책과 대화하기 → detail + chat 자동 오픈
 function openDetailWithChat(item: BookChunkGroup) {
   if (mode.value === "paper") {
-    navigateTo(
-      `/papers/${item.book_id}?q=${encodeURIComponent(currentQuery.value)}&chat=1`,
-    );
+    navigateTo(paperDetailUrl(item.book_id, { chat: "1" }));
     return;
   }
   const params = new URLSearchParams({
