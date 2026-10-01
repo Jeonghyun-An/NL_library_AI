@@ -14,13 +14,18 @@ job_runtime.py — 배치 잡 레이어 (단계 태스크 + 디스패처 + stale
   - item.stage  = 마지막 완료된 체크포인트 → 재시도는 그 다음 단계부터 체인 구성
   - item.status = 실행 상태. 자동 재시도: failed && attempt < max_attempts 인 아이템을
     디스패처가 다시 픽업 (수동 재시도 API는 status='pending' + attempt 리셋)
+  - 실행 토큰: 디스패처가 체인을 보낼 때마다 새 meta.run_token 을 적고 모든 단계에 넘긴다.
+    단계 래퍼는 토큰이 다르거나·이미 지난 단계거나·락 경합이면 Ignore 로 체인을 멈춘다
+    (stale 복구 전의 옛 체인·재전달 메시지가 같은 아이템을 다시 돌지 못하게 — 함정 16)
 """
 import datetime as _dt
 import logging
 import os
 import time
+import uuid
 
 from celery import chain
+from celery.exceptions import Ignore
 
 from core.config import get_settings
 from core.lock import BookLock
@@ -84,30 +89,61 @@ def classify_error(exc: BaseException) -> str:
 # ── 단계 태스크 공통 래퍼 ─────────────────────────────────────
 
 
-def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None) -> dict:
+def _skip_reason(stage_name: str, item, job, run_token: str | None) -> str | None:
+    """이 단계 메시지를 실행하지 않을 이유. 이유가 있으면 _run_stage 가 체인을 멈춘다."""
+    if item is None:
+        return "아이템 없음"
+    if item.status == "canceled" or (job is not None and job.status == "canceled"):
+        return "취소됨"
+    current = (item.meta or {}).get("run_token")
+    if run_token is not None and run_token != current:
+        return f"실행 토큰 불일치(메시지 {run_token[:8]}, 아이템 {str(current)[:8]}) — 옛 체인"
+    if run_token is None and current:
+        return "토큰 없는 옛 메시지인데 아이템에는 실행 토큰이 있다 — 새 체인이 떴다"
+    if item.status == "done":
+        return "이미 완료(done)"
+    if stage_name not in CHECKPOINT_TO_REMAINING.get(item.stage, list(STAGE_CHECKPOINT)):
+        return f"이미 지난 단계(체크포인트 {item.stage})"
+    return None
+
+
+def _run_stage(
+    stage_name: str, item_id: int, celery_task_id: str | None, run_token: str | None = None,
+) -> dict:
+    """단계 하나를 실행한다. 실행하지 않을 때는 Ignore 를 던져 체인을 멈춘다.
+
+    Ignore 는 Exception 의 하위라 아래 except Exception 안에서 던지면 실패로 기록된다 —
+    그래서 실행 판단은 모두 그 try 밖에서 한다. Celery 는 Ignore 를 던진 태스크의 상태를
+    남기지 않고 메시지를 ack 하며, 체인의 다음 단계는 성공했을 때만 보낸다.
+    """
     from workers.tasks import _set_ingest_state
 
     db = SyncSessionLocal()
     try:
-        item = db.query(IngestJobItem).filter_by(id=item_id).first()
-        if not item:
-            return {"item_id": item_id, "skipped": "not_found"}
-        job = db.query(IngestJob).filter_by(id=item.job_id).first()
-        if item.status == "canceled" or (job and job.status == "canceled"):
-            return {"item_id": item_id, "skipped": "canceled"}
+        # FOR UPDATE: 디스패처는 메시지를 보낸 뒤 루프 끝에서 토큰을 커밋한다. 그 전에 읽으면
+        # 옛 토큰을 보고 새 체인을 멈추므로, 디스패처의 행 잠금이 풀릴 때까지 기다렸다 읽는다
+        item = db.query(IngestJobItem).filter_by(id=item_id).with_for_update().first()
+        job = db.query(IngestJob).filter_by(id=item.job_id).first() if item else None
+        reason = _skip_reason(stage_name, item, job, run_token)
+        if reason:
+            book = item.book_id if item else "-"
+            log.warning(f"[{book}] item={item_id} {stage_name} 실행 안 함 — {reason} → 체인 정지")
+            raise Ignore(reason)
         book_id = item.book_id
         source_key = item.source_key
         params = dict(job.params or {}) if job else {}
+        item_meta = dict(item.meta or {})
     finally:
         db.close()
 
     timeout = _stage_timeout(stage_name)
     lock = BookLock(book_id, ttl=timeout)
     if not lock.acquire():
-        # 다른 워커가 처리 중 — pending 으로 되돌려 디스패처가 재픽업
-        _update_item(item_id, status="pending")
-        log.warning(f"[{book_id}] item={item_id} 락 경합 → pending 복귀")
-        return {"item_id": item_id, "skipped": "locked"}
+        # 다른 워커가 이 문서를 처리 중이다. pending 으로 되돌리면 디스패처가 새 토큰으로 다시
+        # 보내 락을 쥔 체인의 다음 단계를 끊고 경합을 되풀이한다 — 상태는 그대로 두고 이 체인만
+        # 멈춘다. 아이템이 그대로 멈춰 있으면 stale 복구가 회수한다
+        log.warning(f"[{book_id}] item={item_id} {stage_name} 실행 안 함 — 락 경합 → 체인 정지")
+        raise Ignore("락 경합")
 
     t0 = time.monotonic()
     _update_item(
@@ -115,6 +151,8 @@ def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None) -> dic
         status="running",
         celery_task_id=celery_task_id,
         set_started=True,
+        # stale 판정이 실행 시간을 이 시각부터 잰다 — 끝나면 stage_running 을 지운다
+        meta_update={"stage_running": stage_name, "stage_started_at": _now().isoformat()},
     )
     if stage_name == "extract":
         _set_ingest_state(book_id, "processing", task_id=celery_task_id)
@@ -125,6 +163,7 @@ def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None) -> dic
             source_key=source_key,
             job_item_id=item_id,
             params=params,
+            item_meta=item_meta,
         )
         result = STAGE_FUNCS[stage_name](ctx) or {}
         elapsed = round(time.monotonic() - t0, 1)
@@ -135,7 +174,7 @@ def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None) -> dic
             stage=STAGE_CHECKPOINT[stage_name],
             status="done" if is_final else "running",
             timing=(stage_name, elapsed),
-            meta_update=result,
+            meta_update={**result, "stage_running": None},
             set_finished=is_final,
         )
         if is_final:
@@ -151,6 +190,7 @@ def _run_stage(stage_name: str, item_id: int, celery_task_id: str | None) -> dic
             last_error=str(e)[:2000],
             bump_attempt=True,
             timing=(stage_name, round(time.monotonic() - t0, 1)),
+            meta_update={"stage_running": None},
         )
         _set_ingest_state(book_id, "failed", task_id=celery_task_id, error=str(e))
         raise  # 체인 중단 (남은 단계 실행 안 함)
@@ -192,7 +232,7 @@ def _update_item(
         if timing is not None:
             item.stage_timings = {**(item.stage_timings or {}), f"{timing[0]}_s": timing[1]}
         if meta_update:
-            # JSON 직렬화 가능한 값만 기록
+            # JSON 직렬화 가능한 값만 기록 (None 도 기록한다 — stage_running 을 지울 때 쓴다)
             safe = {k: v for k, v in meta_update.items()
                     if isinstance(v, (str, int, float, bool, type(None)))}
             item.meta = {**(item.meta or {}), **safe}
@@ -212,24 +252,25 @@ def _update_item(
         db.close()
 
 
+# run_token 기본값 None: 배포 전에 보낸 메시지(인자 item_id 하나)도 받는다 — _skip_reason 참고
 @celery_app.task(name="tasks.stage_extract", bind=True, acks_late=True)
-def stage_extract(self, item_id: int):
-    return _run_stage("extract", item_id, self.request.id)
+def stage_extract(self, item_id: int, run_token: str | None = None):
+    return _run_stage("extract", item_id, self.request.id, run_token)
 
 
 @celery_app.task(name="tasks.stage_summarize", bind=True, acks_late=True)
-def stage_summarize(self, item_id: int):
-    return _run_stage("summarize", item_id, self.request.id)
+def stage_summarize(self, item_id: int, run_token: str | None = None):
+    return _run_stage("summarize", item_id, self.request.id, run_token)
 
 
 @celery_app.task(name="tasks.stage_embed_index", bind=True, acks_late=True)
-def stage_embed_index(self, item_id: int):
-    return _run_stage("embed_index", item_id, self.request.id)
+def stage_embed_index(self, item_id: int, run_token: str | None = None):
+    return _run_stage("embed_index", item_id, self.request.id, run_token)
 
 
 @celery_app.task(name="tasks.stage_finalize", bind=True, acks_late=True)
-def stage_finalize(self, item_id: int):
-    return _run_stage("finalize", item_id, self.request.id)
+def stage_finalize(self, item_id: int, run_token: str | None = None):
+    return _run_stage("finalize", item_id, self.request.id, run_token)
 
 
 _STAGE_TASKS = {
@@ -240,12 +281,15 @@ _STAGE_TASKS = {
 }
 
 
-def build_item_chain(item_stage: str, item_id: int):
-    """체크포인트 기준 남은 단계 체인 구성. 남은 단계 없으면 None."""
+def build_item_chain(item_stage: str, item_id: int, run_token: str | None = None):
+    """체크포인트 기준 남은 단계 체인 구성. 남은 단계 없으면 None.
+
+    모든 단계에 같은 실행 토큰을 싣는다 — 단계 래퍼가 아이템의 현재 토큰과 대조해 옛 체인을 멈춘다.
+    """
     remaining = CHECKPOINT_TO_REMAINING.get(item_stage, list(STAGE_CHECKPOINT))
     if not remaining:
         return None
-    return chain(*[_STAGE_TASKS[s].si(item_id) for s in remaining])
+    return chain(*[_STAGE_TASKS[s].si(item_id, run_token) for s in remaining])
 
 
 # ── 디스패처 (beat 30s) ───────────────────────────────────────
@@ -337,12 +381,17 @@ def _dispatch_for_job(db, job) -> int:
     dispatched = 0
     now = _now()
     for item in items:
-        sig = build_item_chain(item.stage, item.id)
+        # 체인마다 새 토큰 — 이 아이템의 옛 체인(stale 복구 전 체인·재전달 메시지)은 단계 래퍼가
+        # 멈춘다. 토큰은 루프 끝 commit 에 보이고, 단계 래퍼의 첫 읽기(FOR UPDATE)가 그 commit 을
+        # 기다린다(이 SELECT … FOR UPDATE 가 행을 잠그고 있다)
+        run_token = uuid.uuid4().hex
+        sig = build_item_chain(item.stage, item.id, run_token)
         if sig is None:
             item.status = "done"
             item.finished_at = now
             item.updated_at = now
             continue
+        item.meta = {**(item.meta or {}), "run_token": run_token}
         res = sig.apply_async()
         item.status = "dispatched"
         item.dispatched_at = now
