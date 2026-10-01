@@ -88,7 +88,14 @@
                 <p class="rs-round__why">{{ EXCLUDED_WHY }}</p>
                 <ul class="rs-excluded-list">
                   <li v-for="p in r.excludedPapers" :key="p.cntsId">
-                    <a :href="`/papers/${p.cntsId}`" target="_blank" rel="noopener">
+                    <a
+                      :href="excludedDetailUrl(view.jobId, p.cntsId)"
+                      :data-anchor="excludedAnchor(p.cntsId)"
+                      target="_blank"
+                      rel="noopener"
+                      @click="stampExcludedLink($event, view.jobId, p.cntsId)"
+                      @auxclick="stampExcludedLink($event, view.jobId, p.cntsId)"
+                    >
                       {{ excludedPaperLine(p) }}<span class="rs-sr-only"> (새 창)</span>
                     </a>
                   </li>
@@ -109,8 +116,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, shallowRef, useId } from "vue";
+import { computed, shallowRef, useId, watch } from "vue";
+import { stampExcludedLink } from "~/composables/useRestorePosition";
 import type { ResearchView } from "~/types/research";
+import { excludedAnchor, excludedDetailUrl } from "~/utils/detailSource";
 import {
   excludedLabel,
   flaggedLabel,
@@ -123,7 +132,8 @@ import {
 } from "~/utils/researchEvents";
 import { EXCLUDED_WHY, excludedPaperLine } from "~/utils/researchReport";
 
-const props = defineProps<{ view: ResearchView; phase: ResearchPhase }>();
+// revealExcluded: 새 창으로 연 제외 논문에서 돌아와 맞출 논문 — 그 논문을 뺀 회차를 펼쳐 둬야 자리가 생긴다
+const props = defineProps<{ view: ResearchView; phase: ResearchPhase; revealExcluded?: string | null }>();
 
 const TITLES: Partial<Record<ResearchPhase, string>> = {
   synthesizing: "탐색 완료 요약",
@@ -167,4 +177,18 @@ function toggleRound(subqIdx: number, round: number): void {
 function panelId(subqIdx: number, round: number): string {
   return `${uid}-excluded-${subqIdx}-${round}`;
 }
+
+// 타임라인은 이벤트를 다시 받으며 늦게 채워질 수 있어 회차 목록이 바뀔 때도 다시 본다 —
+// 맞추고 나면 화면이 revealExcluded 를 비워 사용자가 접은 회차를 다시 펼치지 않는다
+watch(
+  [() => props.revealExcluded, () => props.view.subqs],
+  ([cnts, subqs]) => {
+    if (!cnts) return;
+    const keys = subqs.flatMap((sq) =>
+      sq.rounds.filter((r) => r.excludedPapers.some((p) => p.cntsId === cnts)).map((r) => roundKey(sq.idx, r.round)),
+    );
+    if (keys.length) openRounds.value = new Set([...openRounds.value, ...keys]);
+  },
+  { immediate: true },
+);
 </script>

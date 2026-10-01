@@ -31,7 +31,13 @@
       tabindex="-1"
     >
       <h3 class="rs-section__heading">{{ row.idx + 1 }}. {{ row.heading }}</h3>
-      <ReportSectionBody v-if="row.sec" :sec="row.sec" :evidence="report.evidence" @open-pdf="$emit('open-pdf', $event)" />
+      <ReportSectionBody
+        v-if="row.sec"
+        :sec="row.sec"
+        :section-idx="row.idx"
+        :evidence="report.evidence"
+        @open-pdf="$emit('open-pdf', $event)"
+      />
       <p v-else-if="draft?.state === 'interrupted'" class="rs-muted">작성을 마치지 못한 절입니다.</p>
       <p v-else-if="draft?.state === 'finishing'" class="rs-muted">이 절은 완성본에 실립니다.</p>
       <template v-else-if="row.state === 'running'">
@@ -76,7 +82,14 @@
           <h4 class="rs-section__sub">하위질문 {{ g.subqIdx + 1 }} · {{ g.subquestion }}</h4>
           <ul class="rs-excluded-list">
             <li v-for="p in g.papers" :key="p.cntsId">
-              <a :href="`/papers/${p.cntsId}`" target="_blank" rel="noopener">
+              <a
+                :href="excludedDetailUrl(jobId, p.cntsId)"
+                :data-anchor="excludedAnchor(p.cntsId)"
+                target="_blank"
+                rel="noopener"
+                @click="stampExcludedLink($event, jobId, p.cntsId)"
+                @auxclick="stampExcludedLink($event, jobId, p.cntsId)"
+              >
                 {{ excludedPaperLine(p) }}<span class="rs-sr-only"> (새 창)</span>
               </a>
             </li>
@@ -88,8 +101,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, provide, ref, watch } from "vue";
+import { stampExcludedLink } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload, ReportSection, ResearchReport } from "~/types/research";
+import { REPORT_JOB, excludedAnchor, excludedDetailUrl } from "~/utils/detailSource";
 import type { DraftSlot, DraftSlotStatus } from "~/utils/researchDraft";
 import {
   EXCLUDED_TITLE,
@@ -116,13 +131,19 @@ interface SectionRow {
 const props = withDefaults(
   defineProps<{
     report: ResearchReport;
+    jobId: string;
     generatedAt: string | null;
     draft?: { slots: DraftSlot[]; state: DraftState; excluded: ExcludedGroup[] } | null;
     highlightIdx?: number | null;
+    // 새 창으로 연 제외 논문에서 돌아와 맞출 논문 — 접힌 목록을 펼쳐 둬야 그 항목의 자리가 생긴다
+    revealExcluded?: string | null;
   }>(),
-  { draft: null, highlightIdx: null },
+  { draft: null, highlightIdx: null, revealExcluded: null },
 );
 defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; "copy-link": [] }>();
+
+// 인용칩의 [논문 상세]가 이 보고서로 돌아올 주소를 만든다 — 절·본문 부품을 거치지 않고 칩이 받는다
+provide(REPORT_JOB, computed(() => props.jobId));
 
 const range = computed(() => rangeLabel(props.report.range));
 const badge = computed(() => (props.draft ? draftBadge(props.draft.state) : null));
@@ -156,4 +177,14 @@ const excluded = computed<ExcludedGroup[]>(() =>
 const excludedCount = computed(() => excluded.value.reduce((n, g) => n + g.papers.length, 0));
 // 초안이 같은 자리에서 최종본으로 바뀌어도 이 부품은 그대로라 펼친 상태가 이어진다
 const excludedOpen = ref(false);
+
+// 맞출 논문이 든 접힌 목록을 펼친다. 초안이 같은 자리에서 최종본으로 바뀌면 목록도 바뀌므로 목록이 바뀔 때도
+// 다시 본다 — 맞추고 나면 화면이 revealExcluded 를 비워 사용자가 접은 목록을 다시 펼치지 않는다
+watch(
+  [() => props.revealExcluded, excluded],
+  ([cnts, groups]) => {
+    if (cnts && groups.some((g) => g.papers.some((p) => p.cntsId === cnts))) excludedOpen.value = true;
+  },
+  { immediate: true },
+);
 </script>

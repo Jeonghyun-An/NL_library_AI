@@ -100,9 +100,11 @@
                 </div>
                 <ReportView
                   :report="shownReport"
+                  :job-id="view.jobId"
                   :generated-at="reportState === 'ready' ? view.finishedAt : null"
                   :draft="draftMode"
                   :highlight-idx="linkedIdx"
+                  :reveal-excluded="revealExcluded"
                   @open-pdf="openPdf"
                   @copy-link="copyLink"
                 >
@@ -133,7 +135,7 @@
           </div>
 
           <aside class="rs-col-side">
-            <ProgressPanel :view="view" :phase="phase" />
+            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" />
           </aside>
         </div>
       </template>
@@ -164,6 +166,7 @@ import { apiHeaders, apiUrl } from "~/composables/useApi";
 import { useNow } from "~/composables/useNow";
 import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
+import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { researchPhase } from "~/utils/researchEvents";
@@ -212,6 +215,18 @@ const draftMode = computed(() => {
 // 최종본이 오면 초안을 그리던 같은 ReportView 에 넘긴다 — 갈아 끼우면 초안 안의 초점·열린 인용 팝오버가
 // 사라지고, 스크롤 기준이던 노드도 없어져 읽던 자리가 튄다
 const shownReport = computed(() => (reportState.value === "ready" ? view.value?.report : draft.value?.report) ?? null);
+
+// ── 상세에서 돌아온 자리 ──────────────────────────────────
+// 보고서는 비동기로 다시 그려 브라우저·Nuxt 의 스크롤 복원이 내용보다 먼저 끝난다 — 돌아온 주소(at)면 Nuxt 는
+// 맞추지 않고, 누른 칩·항목을 내용이 그려진 뒤 직접 맞춘다. 완료된 연구는 최종본을 받은 뒤에 맞춘다 —
+// 초안 위에서 맞추면 서론·한계가 붙는 순간 자리가 밀린다
+definePageMeta({ scrollToTop: (to) => !to.query.at });
+const restoreReady = computed(() => !!view.value && !!phase.value && reportState.value !== "loading");
+const restore = useRestorePosition(restoreReady);
+// 맞추는 동안만 알린다 — 다 맞춘 뒤 사용자가 접은 목록을 다시 펼치지 않게
+const revealExcluded = computed(() =>
+  restore.pending.value && restore.anchor?.kind === "excluded" ? restore.anchor.cnts : null,
+);
 
 // ── 배치 A·B ──────────────────────────────────────────────
 // 보고서 자리가 생기면(초안의 첫 절이 나오거나 완료) 2단으로 바뀐다 — 보고서 섹션을 그리는 조건과 같다
