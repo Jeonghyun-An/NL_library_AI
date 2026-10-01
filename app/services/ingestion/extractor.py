@@ -24,7 +24,13 @@ extractor.py — 텍스트 추출 (2티어 라우팅 파이프라인)
 """
 import asyncio
 import io
+import json
 import logging
+import os
+import shutil
+import signal
+import sys
+import tempfile
 import time
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -725,6 +731,97 @@ async def extract_text_vlm_all(
     return result
 
 
+# opendataloader_pdf.convert → runner.run_jar 는 java 를 subprocess.run(timeout 없음)으로 띄우고 끝날
+# 때까지 막는다. 같은 프로세스의 스레드에서 돌리면 wait_for 가 시간을 넘겨도 스레드와 java 는 계속
+# 돈다(nanet 5f8fb80 주석도 같은 한계를 적어 두었다). 그래서 convert 를 자식 파이썬에서 부르고,
+# 새 세션(프로세스 그룹)으로 떼어 두었다가 시간을 넘기면 그룹째 끈다 — java 손자까지 함께 죽는다.
+_ODL_CHILD = (
+    "import json, sys\n"
+    "import opendataloader_pdf\n"
+    "opendataloader_pdf.convert(**json.loads(sys.argv[1]))\n"
+)
+
+
+def _kill_process_group(proc: asyncio.subprocess.Process) -> None:
+    if proc.returncode is not None:
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)  # start_new_session → pgid == pid
+    except (AttributeError, ProcessLookupError, PermissionError):
+        proc.kill()  # Windows(개발 PC)에는 killpg 가 없다 — 자식 파이썬만 끈다
+
+
+async def _odl_convert(convert_kwargs: dict, timeout: float) -> None:
+    """opendataloader_pdf.convert(**convert_kwargs) 를 자식 프로세스에서 timeout 초 안에 끝낸다.
+
+    stderr 는 파이프가 아니라 임시 파일로 받는다 — 파이프면 끈 뒤에도 그 끝을 쥔 손자 프로세스가
+    살아 있는 동안 이벤트 루프가 읽기를 기다린다(Windows 에서 20초 대기로 확인).
+    """
+    with tempfile.TemporaryFile() as err_file:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-c", _ODL_CHILD, json.dumps(convert_kwargs),
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=err_file.fileno(),
+            start_new_session=True,
+        )
+        try:
+            await asyncio.wait_for(proc.wait(), timeout)
+        except BaseException:
+            _kill_process_group(proc)
+            await proc.wait()
+            raise
+        if proc.returncode != 0:
+            err_file.seek(0)
+            tail = err_file.read().decode("utf-8", "replace").strip()[-300:]
+            raise RuntimeError(f"ODL 변환 실패(exit {proc.returncode}): {tail}")
+
+
+async def _run_odl(input_path: str, out_dir: str, page_sep: str, timeout: float) -> Path:
+    """ODL 변환 1회 — markdown·json 을 한 번에 out_dir 에 쓰고 markdown 경로를 돌려준다."""
+    await _odl_convert(
+        {
+            "input_path": input_path,
+            "output_dir": out_dir,
+            "format": ["markdown", "json"],
+            "image_output": "embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
+            "image_format": "jpeg",      # base64 크기 절감
+            "table_method": "cluster",   # 무경계/복잡 표까지 검출
+            "markdown_page_separator": page_sep,
+            "keep_line_breaks": False,
+            "quiet": True,
+        },
+        timeout,
+    )
+    md_files = sorted(Path(out_dir).glob("*.md"))
+    if not md_files:
+        raise RuntimeError("markdown 출력 파일 없음")
+    return md_files[0]
+
+
+def _fitz_text_pages(path: str, max_pages: int | None) -> list[PageResult]:
+    """ODL 이 끝내 실패한 문서 — fitz 텍스트를 1티어 결과로 쓴다(머리말·꼬리말 제거와 표 구조는 잃는다 — json 이 없다).
+
+    extract_text 의 교차검증은 이 결과에서도 뜻이 흐려지지 않는다. CMap 2배 비교는 fitz 대 fitz(비율 1)라
+    걸리지 않는데, 'ODL 이 글자를 잃었나'를 물을 ODL 이 없고 fitz 는 그 비교의 기준(손상에 관대한 쪽)이다.
+    짧은 쪽 분기는 그대로 돈다 — 글자가 없는 쪽은 넣지 않아(ODL 이 빈 쪽을 내지 않는 것과 같게) 'ODL 누락'
+    → OCR(= 텍스트 층 없음 → OCR), 글자가 조금 있는 쪽은 문서 단위 스캔 판정을 그대로 탄다.
+    """
+    pages: list[PageResult] = []
+    with fitz.open(path) as doc:
+        for page in doc:
+            if max_pages and page.number >= max_pages:
+                break
+            try:
+                raw = page.get_text("text").strip()
+            except RuntimeError:  # 'too many nested graphics states' 등 — PyMuPDF 가 RuntimeError 로 올린다
+                # 쪽 하나의 파싱 실패가 폴백 전체를 버리지 않게 그 쪽만 뺀다('ODL 누락' → OCR). 같은 쪽은
+                # extract_text 가 fitz 텍스트를 미리 받을 때도 실패해 거기서 오류로 남는다.
+                continue
+            if raw:
+                pages.append(PageResult(page_num=page.number, text=_clean_text(raw), method="fitz", confidence=0.5))
+    return pages
+
+
 async def extract_text_opendataloader(
     file_path: str | Path | None,
     book_id: str,
@@ -741,18 +838,18 @@ async def extract_text_opendataloader(
     그대로 담고 있어 라우팅 판정용 신호(table_fill_ratios)로만 사용한다.
     (마크다운 평탄화 과정에서 "빈 셀"과 "내용 있는 셀"이 똑같이 `| |` 격자
     문자로 변해 라우팅 신호가 사라지는 문제 — 사내 연구 결과 반영)
+
+    변환은 max(ODL_TIMEOUT_BASE_SECONDS, 쪽수 × ODL_TIMEOUT_PER_PAGE_SECONDS) 초 안에 끝나야 한다.
+    넘거나 실패하면 fitz 로 다시 저장한 PDF 로 한 번 더, 그래도 안 되면 fitz 텍스트로 대신한다
+    (쪽 method "fitz"). fitz 로도 열리지 않는 파일은 재저장·fitz 폴백 없이 오류만 남긴다.
     """
-    import asyncio
     import json as _json
-    import os
-    import tempfile
     from collections import defaultdict
-    from pathlib import Path as _Path
 
     result = ExtractionResult(book_id=book_id, total_pages=0)
 
     try:
-        import opendataloader_pdf  # pip install opendataloader-pdf (Java 11+ 필요)
+        import opendataloader_pdf  # noqa: F401 — 설치 확인. 변환은 자식 프로세스가 한다(_odl_convert)
     except ImportError:
         result.errors.append(
             "opendataloader-pdf 패키지 미설치 — pip install opendataloader-pdf"
@@ -762,6 +859,7 @@ async def extract_text_opendataloader(
     _PAGE_SEP = "\n<<<ODL_PAGE_BREAK_%page-number%>>>\n"
 
     tmp_path = None
+    resaved_path = None
     out_dir = None
     try:
         if file_bytes:
@@ -772,29 +870,50 @@ async def extract_text_opendataloader(
         else:
             load_path = str(file_path)
 
+        try:
+            with fitz.open(load_path) as probe:
+                page_count: int | None = len(probe)
+        except RuntimeError as e:  # FileDataError·EmptyFileError·FileNotFoundError — PyMuPDF 1.24·1.28 모두 RuntimeError 하위
+            page_count = None
+            log.warning(f"[{book_id}] fitz 로 열리지 않는 PDF — ODL 만 한 번 시도: {e}")
+        odl_timeout = max(
+            cfg.ODL_TIMEOUT_BASE_SECONDS, (page_count or 0) * cfg.ODL_TIMEOUT_PER_PAGE_SECONDS
+        )
+
         out_dir = tempfile.mkdtemp()
+        md_file: Path | None = None
+        try:
+            md_file = await _run_odl(load_path, out_dir, _PAGE_SEP, odl_timeout)
+        except (TimeoutError, RuntimeError, OSError) as e:
+            reason = f"{odl_timeout:.0f}초 초과" if isinstance(e, TimeoutError) else str(e)
+            log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
+            result.errors.append(f"ODL 실패(원본): {reason}")
+            if page_count is not None:
+                # xref 손상 문서에서 ODL(Java)이 브루트포스 복구로 수십 배 느려지는 문제 대응(nanet 5f8fb80)
+                try:
+                    fd, resaved_path = tempfile.mkstemp(suffix=".pdf")
+                    os.close(fd)
+                    with fitz.open(load_path) as src:
+                        src.save(resaved_path, garbage=4, clean=True, deflate=True)
+                    shutil.rmtree(out_dir, ignore_errors=True)
+                    out_dir = tempfile.mkdtemp()
+                    md_file = await _run_odl(resaved_path, out_dir, _PAGE_SEP, odl_timeout)
+                except (TimeoutError, RuntimeError, ValueError, OSError, fitz.mupdf.FzErrorBase) as e2:
+                    # 손상 PDF 의 재저장은 mupdf FzErrorBase 로도 실패한다(RuntimeError 가 아니다 — PyMuPDF 1.24·1.28
+                    # 모두 FzErrorArgument 'not a dict'). 그래도 아래 fitz 텍스트 폴백으로 간다.
+                    reason2 = f"{odl_timeout:.0f}초 초과" if isinstance(e2, TimeoutError) else str(e2)
+                    result.errors.append(f"ODL 실패(fitz 재저장본): {reason2}")
 
-        def _convert_sync() -> None:
-            opendataloader_pdf.convert(
-                input_path=load_path,
-                output_dir=out_dir,
-                format=["markdown", "json"],
-                image_output="embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
-                image_format="jpeg",      # base64 크기 절감
-                table_method="cluster",   # 무경계/복잡 표까지 검출
-                markdown_page_separator=_PAGE_SEP,
-                keep_line_breaks=False,
-                quiet=True,
-            )
+        if md_file is None:
+            if page_count is not None:
+                result.pages = _fitz_text_pages(load_path, max_pages)
+                result.total_pages = len(result.pages)
+                result.errors.append("ODL 실패 — fitz 텍스트로 대체")
+                log.warning(f"[{book_id}] ODL 실패 — fitz 텍스트 {len(result.pages)}쪽으로 대체")
+            return result
 
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, _convert_sync)
-
-        out_path = _Path(out_dir)
-        md_files = list(out_path.glob("*.md"))
+        out_path = Path(out_dir)
         json_files = list(out_path.glob("*.json"))
-        if not md_files:
-            raise RuntimeError("markdown 출력 파일 없음")
 
         # ── JSON → 페이지별 표 셀 충전율(라우팅 신호) + 머리말/쪽번호 텍스트 ──
         page_headers_footers: dict[int, set[str]] = {}
@@ -831,7 +950,7 @@ async def extract_text_opendataloader(
                 log.warning(f"[{book_id}] 표 충전율 파싱 실패(무시하고 진행): {e}")
 
         # ── markdown → 페이지별 텍스트 ────────────────────────────
-        with open(md_files[0], encoding="utf-8") as f:
+        with open(md_file, encoding="utf-8") as f:
             content = f.read()
 
         import re
@@ -899,17 +1018,14 @@ async def extract_text_opendataloader(
         log.error(f"[{book_id}] OpenDataLoader 추출 실패: {e}")
         result.errors.append(f"OpenDataLoader 추출 실패: {e}")
     finally:
-        if tmp_path:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
+        for path in (tmp_path, resaved_path):
+            if path:
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
         if out_dir:
-            import shutil
-            try:
-                shutil.rmtree(out_dir, ignore_errors=True)
-            except OSError:
-                pass
+            shutil.rmtree(out_dir, ignore_errors=True)
 
     log.info(f"[{book_id}] OpenDataLoader 추출 완료 — {result.stats}, 표충전율={result.table_fill_ratios}")
     return result
