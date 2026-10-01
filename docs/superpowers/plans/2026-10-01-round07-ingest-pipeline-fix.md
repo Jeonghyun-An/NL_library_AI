@@ -2541,6 +2541,2367 @@ git commit -m "[Fix] round07 — stale 판정을 실행 중(meta.stage_running �
 
 ---
 
+### Task 3: 페이지 판정 순수 모듈과 스캔본 문서 단위 라우팅·`<br>`
+
+#### 조각 D 머리말 (Task 공통 메모·근거)
+
+##### 계획 조각 D — Task 3·4·5·11 (추출: 짧은 쪽 라우팅·`<br>`·VLM 잘림·페이지 병렬·추출 데드라인·섹션 0·ODL 타임아웃·이미지 끄기·실제 PDF 회귀)
+
+> 머리말·공통 계약은 `docs/superpowers/plans/2026-10-01-round07-ingest-pipeline-fix.md` 를 따른다. 아래 코드·테스트·기대 출력은 모두 `app/` 사본(`scratchpad/draft_D/app` — Task 0 의 설정 키만 임시로 넣은 상태)에 실제로 적용해 묶음마다 '고치기 전 실패 → 고친 뒤 통과'를 확인한 것이다. 운영 서버에는 아무 요청도 보내지 않았다(실제 PDF 관찰은 이 PC 의 `D:/SKOVIX/KCI/pdf` 와 이 PC 의 자바로 돈 ODL 만 썼다).
+
+##### 머리말·공통 계약에 반영할 것
+
+1. **`short_page_needs_ocr` 시그니처(조정자 결정)** — `def short_page_needs_ocr(*, fitz_len_stripped: int, fitz_len_raw: int, doc_is_scan: bool, force: bool, min_chars: int) -> tuple[bool, str]`. 쪽 면적 이미지 인자(`image_area_ratio`·`image_ratio_threshold`)는 없다.
+2. **`SCAN_IMAGE_AREA_RATIO` — 쓰지 않음.** Task 0 의 설정 표·compose 선언에서 뺀다.
+3. **extractor 에 새로 생기는 이름**(계약 밖, 이 조각만 쓴다): `PageResult.truncated: bool = False`, `VlmDegenerateOutput`, `_render_png_b64`, `_render_page`, `_ocr_pages`, `_ODL_CHILD`, `_kill_process_group`, `_odl_convert`, `_run_odl`, `_fitz_text_pages`. `_body_len` 은 없어진다(`page_routing.body_len`).
+4. **`run_extract` 의 섹션 0개** — 계약대로 강제 OCR 재추출 → `no_text`/`vlm_error` 이되, **첫 추출에서 이미 OCR 오류나 데드라인이 있었으면 강제 재추출 없이 `vlm_error`**(이유는 Task 4 설계 메모). Task 2 는 `no_text` 를 재시도 불가 그룹, `vlm_error` 를 체크포인트 `pending`·백오프 재시도로 다룬다.
+5. **전체 테스트 명령** — `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest -q --continue-on-collection-errors`. 이 PC 기준선은 `890 passed` + 수집 오류 3(`test_book_chat`·`test_build_manifest`·`test_loaders` — PATH 의 python 에 FlagEmbedding·openpyxl 이 없다). 맨 `python -m pytest -q` 는 수집 오류에서 멈춘다. 이 조각의 새 테스트는 64개다(사본: 890 → 929 → 944 → 954).
+6. **함정 갱신 후보(Task 12)** — ① `opendataloader_pdf.convert` 는 java 를 timeout 없는 `subprocess.run` 으로 띄워 스레드 `wait_for` 로는 못 끊는다(자식 프로세스 그룹으로 끈다), ② ODL `image_output=off` 면 그림만 있는 쪽이 markdown 에서 통째로 빠진다(json 그림 요소로 빈 쪽을 남긴다), ③ 자식을 끈 뒤 그 stderr 파이프를 손자가 쥐고 있으면 이벤트 루프가 읽기를 기다린다(파일로 받는다), ④ 표 칸 그림을 embedded 로 인코딩하면 `<br>` 격자 수십만 개가 생긴다.
+
+##### 실제 PDF 관찰 (근거)
+
+관찰 방법: 같은 PDF 를 ① 옛 함수(지금 운영 코드 — ODL `embedded`·타임아웃 없음·옛 라우팅), ② 새 함수(`ODL_IMAGE_OUTPUT=off`·타임아웃·새 라우팅), ③ 새 함수 + `embedded` 로 돌리고, VLM 은 쪽 번호만 적는 목으로 바꿔 어느 쪽이 OCR 로 가는지 셌다. ODL 은 이 PC 의 자바(opendataloader-pdf 2.5.0)로 실제로 돌렸다. 표본 186건: 10-01 '섹션 없음' 블록(item id 126,398~ 의 281건) 무작위 40 · 2015년 이후 무작위 40 · 2005~2014 무작위 40 · 2004년 이전 무작위 40 · 2005년 이후 중 첫 두 쪽에 짧은 쪽(표지·간지)이 있는 문서 25 · `<br>` 격자 문서 1(KCI_FI001930485). 스크립트·원자료는 `scratchpad/draft_D/obs/`(route_real.py·full_final.json).
+
+**① 실패 블록의 '남은 글자'는 DBPIA 스탬프다.** KCI_FI002025246(14쪽)은 쪽마다 fitz 텍스트가 `Copyright (C) 2002 Nuri Media Co., Ltd.` 한 줄(body_len 33)이고, ODL json 요소는 쪽마다 그림 2개(쪽 전체를 덮는 스캔 이미지 + 스탬프 이미지)뿐, ODL embedded markdown 은 쪽마다 `[그림]\n\n[그림]` 이다. 옛 규칙은 `0 < 33 < 50` 이라 14쪽 모두 '원래 짧은 쪽'으로 채택해 섹션 0개가 됐다. 새 규칙: 되풀이 줄 키 `Copyright (C) # Nuri Media Co., Ltd.`(36자 ≤ 40)를 빼면 fitz 0자 → 짧은 쪽 14/14 → 스캔본 → 14쪽 모두 OCR. 표본 40건 전부 같은 모양이었고(옛 OCR 0/850쪽 → 새 844/850쪽, 남은 6쪽은 66쪽 문서의 VLM 60쪽 상한), 3쪽 미만 문서는 없었다.
+
+**② 묶음별 결과(실제 ODL)**
+
+| 묶음 | 문서 | 쪽 | 옛 OCR 쪽 | 새 OCR 쪽 | 새로 OCR | OCR 에서 빠짐 | 스캔본 판정 | VLM 타는 문서(옛→새) |
+|---|---|---|---|---|---|---|---|---|
+| 실패 블록 | 40 | 850 | 0 | 844 | 844 | 0 | 40 | 0 → 40 |
+| 2015년 이후 | 40 | 848 | 7 | 32 | 25 | 0 | 1 | 6 → 6 |
+| 2005~2014 | 40 | 961 | 82 | 160 | 78 | 0 | 6 | 11 → 11 |
+| 2004년 이전 | 40 | 736 | 351 | 438 | 87 | 0 | 21 | 27 → 27 |
+| 표지·간지 문서 | 25 | 1,673 | 110 | 109 | 0 | 1 | 0 | 14 → 14 |
+| `<br>` 격자(KCI_FI001930485) | 1 | 37 | 0 | 0 | 0 | 0 | 0 | 0 → 0 |
+
+- 새로 OCR 로 간 쪽의 사유: 스캔본 문서 983쪽, 텍스트 층 없음 49쪽, ODL 글자 유실 의심 2쪽. 뒤의 51쪽은 옛 규칙에서 'ODL 본문 50자 이상'으로 채택되던 쪽이다 — 옛 `_body_len` 은 `<br>` 를 4자씩 셌고, 표 칸이 그림 요소로 차 있으면 표 셀 충전율도 1.0 이라 어느 규칙도 못 잡았다(확인한 예: KCI_FI000897237 7·9·10쪽, 쪽마다 `[그림]<br><br>[그림]` 격자 1,000자 안팎·`<br>` 28~136개).
+- 2005년 이후 무작위 80건 중 스캔본 판정 7건(KCI_FI002517336·KCI_FI001147574·KCI_FI001667680·KCI_FI001001873·KCI_FI000972623·KCI_FI001172688·KCI_FI001187224)은 모두 텍스트 층이 사실상 없는 문서다(쪽마다 fitz 0~30자 — 예: KCI_FI002517336 은 26쪽 모두 머리말 `한국유아교육연구 제#권 제#호` 15자뿐). 지금은 fitz 0자 쪽만 OCR 하고 나머지는 빈 쪽·`<br>` 쓰레기로 채택하던 '빈·부분 본문 완료' 유형이다.
+- **스캔본이 아닌 문서 118건에서 쪽 판정이 바뀐 문서는 2건뿐**이고 표지(0쪽) 판정은 한 건도 바뀌지 않았다: KCI_FI001343547 2·13쪽(`<br>` 를 빼니 ODL 본문이 줄어 CMap 2배 분기 → OCR), KCI_FI001141801 4쪽(fitz 51자 중 쪽 번호 줄을 빼면 48자 → 이제 '원래 짧은 쪽'으로 ODL 채택 — 같은 것끼리 견주기의 경계 사례). 표지·간지 문서 25건은 표지 OCR 1건 → 1건, 첫 두 쪽 OCR 7건 → 7건으로 그대로다. 이미지 표지 디지털 논문(KCI_FI002252358 — 316쪽, 0쪽을 쪽 전체 이미지가 덮고 글자 24자)도 표지는 옛·새 모두 ODL 채택이다.
+- 비용: 무작위 묶음에서 'VLM 을 타는 문서' 수는 그대로이고(스캔형 문서는 fitz 0자 쪽 때문에 이미 일부 쪽을 OCR 하고 있었다), OCR 쪽 비율이 오른다 — 2015년 이후 0.8% → 3.8%, 2005~2014 8.5% → 16.6%, 2004년 이전 47.7% → 59.5%. 2005년 이후 무작위 80건 기준 문서당 +1.3쪽이다. Task 11 하네스(ODL 근사, 무작위 200건씩)로는 2005년 이후 문서당 +0.36쪽(OCR 쪽 비율 5.3% → 6.8%), 2004년 이전 +1.6쪽(50.9% → 59.7%)이다 — 근사는 `<br>` 격자 쪽을 못 보므로 실제는 두 값 사이로 본다. **spec 의 '총 처리 시간 +2~4%' 추정보다 클 수 있다** — 카나리와 재개 1~2시간 실측으로 다시 잰다. 늘어나는 쪽은 모두 지금 빈·부분 본문으로 완료되던 스캔형 문서의 쪽이다. 하네스에서 옛 규칙으로는 OCR 0쪽이던 스캔본(실패 블록과 같은 모양)이 2005년 이후 200건 중 3건(KCI_FI001314298·KCI_FI001030932·KCI_FI001107507), 2004년 이전 200건 중 10건 나왔다 — 남은 pending 에도 같은 실패가 흩어져 있다는 spec 의 추정과 맞는다.
+
+**③ ODL 시간과 쪽수 비례 타임아웃(새 함수, off, 자식 프로세스 포함).** 186건에서 '걸린 시간 ÷ 상한' 중앙값 0.119, 90분위 0.264. 0.5 를 넘은 것은 KCI_FI001930485(37쪽 14.4초 / 18.5초 = 0.78)·KCI_FI000858331(6쪽 2.82/5.0)·KCI_FI001410528(13쪽 3.44/6.5)이다. 쪽당 시간 중앙값 0.06초. 같은 문서들의 옛 함수(embedded·같은 프로세스) 중앙값 1.96초 → 새 함수(off·자식 프로세스) 1.46초. **이 PC 기준이라 부하가 걸린 운영 서버에서는 표가 많은 문서(KCI_FI001930485 류)가 상한에 닿을 수 있다** — 닿으면 재저장본 재시도까지 두 배 시간을 쓴 뒤 fitz 텍스트(표 구조 없음)로 떨어진다. 카나리에서 `ODL 실패(원본)` 오류 수를 본다.
+
+**④ 타임아웃이 실제로 막는 문서.** KCI_FI001238691(26쪽, 15.9MB, 2008년 Distiller 산출 — 텍스트 층 0자)은 옛 함수의 ODL 이 877초가 지나도 끝나지 않았다(java 상주 메모리 8.9GB, CPU 928초 — 관찰을 이어 가려고 내가 java 를 껐다). 새 함수는 원본 13초 초과 → 재저장본 13초 초과 → fitz 폴백으로 32.8초에 끝났고, 텍스트 층이 없어 26쪽 모두 OCR 로 갔다(옛 경로가 ODL 실패로 맞는 결과와 같다). 운영 관측 최대 추출 2,785초도 이런 문서일 수 있다. 또 KCI_FI000858284(14쪽)는 embedded 로는 13.4초(상한 7초 초과)인데 off 로는 1.85초다 — 그림 인코딩이 시간을 쓰고 있었다.
+
+**⑤ `<br>` 격자의 출처.** KCI_FI001930485(섹션 196개 중 172개가 `<br>` 반복)는 옛 함수(embedded) markdown 이 2,039,820자·`<br>` 324,402개였는데 off 로는 `<br>` 104개다. 표 칸에 박힌 그림 인코딩이 격자를 만들고 있었다 — 이미지 끄기만으로 이 문서의 쓰레기 섹션 원천이 사라진다(`collapse_br_runs` 는 남는 경우를 막는 두 번째 그물이다).
+
+**⑥ 이미지 끄기 전후 비교(새 함수 off vs 옛 함수 embedded, 같은 문서 186건).** 쪽 목록 같음 185/186(다른 1건은 ④ 의 타임아웃 문서), 표 셀 충전율 같음 186/186, **새 함수의 off·embedded OCR 판정 같음 186/186**. 쪽 텍스트가 다른 58건을 같은 새 함수로 off/embedded 만 바꿔 다시 비교하면 차이 쪽 225개는 모두 그림이 든 표 칸의 빈칸·`<br>` 모양(`||` ↔ `| |`, `<br><br>① …` ↔ `① …`)이고, 실질 본문 길이(body_len)가 다른 쪽 15개는 embedded 쪽이 시간 상한을 넘겨 fitz 로 폴백된 경우였다(KCI_FI000858284 14쪽 — ④, KCI_FI001177531 1쪽 — 다른 작업과 겹쳐 돌린 회차에서만 넘었고 다시 돌리면 두 모드가 같다). 그림만 있는 쪽을 json 그림 요소로 남기지 않으면 off 에서 실패 블록 스캔본은 markdown 에 쪽이 하나도 없다(embedded 14쪽 → off 0쪽) — 5-2 의 보존이 있어 위 판정이 같다.
+
+**⑦ 참고 — CMap 2배 분기와 머리말·꼬리말.** 186건에서 CMap 2배 분기에 걸린 쪽 70개 가운데 되풀이 줄을 빼면 2배 안쪽으로 들어오는 쪽(머리말·꼬리말 때문에 걸린 쪽)은 0개였다. 조건대로 이 분기는 원래 fitz 길이를 쓰고 바꾸지 않는다.
+
+**⑧ VLM 반복 꼬리(`trim_repetition`).** VLM 으로 추출한 문서 392건의 섹션 미리보기 6,124개(`scratchpad/vlmlen/vlm_secs.json`, 미리보기 200자)에서, 앞선 검증의 반복 탐지기로 잡힌 31개 중 30개의 꼬리를 찾았다. 그 탐지기에 안 잡혔는데 꼬리로 잡은 5개는 빈 표 칸 `| | | |` 줄 4개와 목차 점선 1개였다 — 실제 본문을 잘못 자른 사례는 없었다. 8,000자 최악 입력('a'×8000)도 0.07초다.
+
+**⑨ 자식 프로세스 ODL.** 실제 PDF 6건(실패 블록·디지털·`<br>` 격자 포함)을 예전 방식(같은 프로세스 `convert`)과 새 방식(`_odl_convert`)으로 돌려 markdown·json 의 sha256 이 6/6 같았다. 새 방식이 평균 0.057초 더 든다. 리눅스(WSL Ubuntu, 파이썬 3.12)에서 2초 상한 → 2.0초에 `TimeoutError`, 손자 프로세스 사라짐. FastAPI(uvloop) 쪽 호출은 관리자 디버그 API(`api/admin.py`)뿐이고 이 PC 에서는 uvloop 로 돌려 보지 못했다.
+
+**⑩ 운영 고정 버전.** 사본 venv 에 PyMuPDF 1.24.10·httpx 0.27.2·pydantic 2.8.2·pydantic-settings 2.4.0·SQLAlchemy 2.0.36(requirements 고정 버전)을 깔고 이 조각의 새 테스트 64개를 돌려 모두 통과했다. 이 PC 의 PATH python 은 PyMuPDF 1.28.0 이다.
+
+**Files:**
+- Create: `app/services/ingestion/page_routing.py`
+- Modify: `app/services/ingestion/extractor.py` (import, `_clean_text`, `_STRUCT_CHARS`·`_body_len` 삭제, 모듈 docstring (c), `extract_text`)
+- Test: `app/tests/test_page_routing.py`(새), `app/tests/test_extractor_routing.py`(새)
+
+**이 작업이 지키는 것(조정자 조건).** d85df93·0df3001·8b1511a 의 fitz 교차검증 구조를 그대로 둔다 — 표 셀 충전율 < 0.30 → OCR, ODL 50자 이상이면 **원래 fitz 길이**로 CMap 손상 2배 비교, ODL 50자 미만이면 fitz 로 '원래 짧은 쪽'과 'ODL 이 놓친 쪽'을 가르고 fitz 0자는 텍스트 층 없음 → OCR, ODL 누락 쪽 → OCR, VLM 60쪽 상한. 바뀌는 곳은 `:424` 짧은 쪽 분기 하나다.
+- 같은 것끼리 견준다: ODL 은 json header/footer 로 머리말·꼬리말을 지운 길이라, 짧은 쪽 분기의 fitz 길이도 문서 전체 쪽의 60% 이상에 되풀이되는 40자 이하 줄(머리말·꼬리말·스탬프·쪽 번호)을 뺀 값으로 잰다. 뺀 뒤 50자 이상이면 'ODL 이 놓친 본문' → OCR.
+- 쪽 단위 규칙은 더하지 않는다. 쪽 면적 이미지 규칙도, '되풀이 줄을 빼면 0자인 쪽만 OCR' 도 쓰지 않는다 — 디지털 논문의 이미지 표지(큰 이미지 + 매 쪽 스탬프)가 다시 VLM 을 타기 때문이다(d85df93 이 고친 것).
+- 문서 단위로만 스캔본을 본다: 쪽마다 '짧음' = ODL `body_len` < 50 **이고** 되풀이 줄을 뺀 fitz 길이 < 50. 3쪽(`SCAN_MIN_PAGES`) 이상 문서에서 짧은 쪽 비율이 0.5(`SCAN_SHORT_PAGE_RATIO`)를 넘으면 스캔본 → 짧은 쪽을 모두 OCR. 스캔본이 아니면 지금 동작 그대로.
+- `body_len` 은 `<br>` 태그를 세지 않는다(지금은 4자로 셈). `_clean_text` 는 3개 이상 이어진 `<br>` 를 줄바꿈 하나로 줄인다.
+- `extract_text(..., force_ocr_short_pages=True)` 면 ODL 50자 미만 쪽은 판정 없이 전부 OCR(Task 4-3 이 섹션 0개일 때 쓴다).
+- `SCAN_IMAGE_AREA_RATIO` 는 쓰지 않는다.
+
+#### 묶음 3-1: `page_routing.py` 순수 함수
+
+- [ ] **Step 1: 실패하는 테스트 작성** — `app/tests/test_page_routing.py`
+
+```python
+"""page_routing 순수 함수 단위 테스트 — 추출 2티어 라우팅의 짧은 쪽 판정·VLM 반복 꼬리."""
+from services.ingestion.page_routing import (
+    body_len,
+    collapse_br_runs,
+    is_scan_document,
+    repeated_lines,
+    short_page_needs_ocr,
+    strip_lines,
+    trim_repetition,
+)
+
+STAMP = "Copyright (C) 2002 Nuri Media Co., Ltd."
+
+
+class TestBodyLen:
+    def test_br_tags_do_not_count(self):
+        assert body_len("|<br>|<br/>|<BR >|" * 20) == 0
+
+    def test_figure_markers_and_table_structure_do_not_count(self):
+        assert body_len("[그림]\n| --- | :-: |\n|  |  |") == 0
+
+    def test_cell_text_counts(self):
+        assert body_len("| 본문 | 12.5 |<br>") == len("본문12.5")
+
+    def test_empty(self):
+        assert body_len("") == 0
+
+
+class TestCollapseBrRuns:
+    def test_three_or_more_become_one_newline(self):
+        assert collapse_br_runs("가<br><br><br>나") == "가\n나"
+        assert collapse_br_runs("가" + "<br> " * 500 + "나") == "가\n나"
+
+    def test_one_or_two_are_kept(self):
+        assert collapse_br_runs("셀<br>안<br><br>줄") == "셀<br>안<br><br>줄"
+
+
+class TestRepeatedLines:
+    def test_stamp_and_running_header_with_page_numbers(self):
+        pages = [f"한국문학연구 제3집 {227 + i}\n{body}\n{STAMP}" for i, body in enumerate(
+            ["고려가요의 계통을 살핀다", "향가와의 관계를 본다", "속요의 형식을 논한다", "결론을 맺는다"])]
+        keys = repeated_lines(pages, 0.6)
+        assert strip_lines(pages[1], keys) == "향가와의 관계를 본다"
+
+    def test_bare_page_numbers_are_repeated_lines(self):
+        pages = [f"{n}\n본문 내용 {chr(0xAC00 + n)}" for n in range(10, 15)]
+        assert strip_lines(pages[0], repeated_lines(pages, 0.6)) == "본문 내용 " + chr(0xAC00 + 10)
+
+    def test_below_ratio_is_not_repeated(self):
+        pages = [STAMP] * 3 + [f"다른 쪽 {chr(0xAC00 + i)}" for i in range(7)]
+        assert repeated_lines(pages, 0.6) == set()
+
+    def test_long_line_is_not_a_candidate(self):
+        long_line = "가" * 41
+        assert repeated_lines([long_line] * 5, 0.6) == set()
+
+    def test_duplicates_inside_one_page_count_once(self):
+        pages = ["\n".join([STAMP] * 3)] + [f"본문 {chr(0xAC00 + i)}" for i in range(4)]
+        assert repeated_lines(pages, 0.6) == set()
+
+    def test_single_page_has_no_repeated_lines(self):
+        assert repeated_lines([STAMP], 0.6) == set()
+
+    def test_strip_lines_with_empty_set_keeps_text(self):
+        assert strip_lines("a\nb", set()) == "a\nb"
+
+
+class TestIsScanDocument:
+    def test_majority_short_with_enough_pages(self):
+        assert is_scan_document([True, True, True], min_pages=3, ratio=0.5)
+        assert is_scan_document([True, True, True, False], min_pages=3, ratio=0.5)
+
+    def test_too_few_pages(self):
+        assert not is_scan_document([True, True], min_pages=3, ratio=0.5)
+
+    def test_half_is_not_more_than_half(self):
+        assert not is_scan_document([True, True, False, False], min_pages=3, ratio=0.5)
+
+
+class TestShortPageNeedsOcr:
+    def _call(self, *, stripped, raw, scan=False, force=False):
+        return short_page_needs_ocr(
+            fitz_len_stripped=stripped, fitz_len_raw=raw, doc_is_scan=scan, force=force, min_chars=50,
+        )
+
+    def test_force(self):
+        assert self._call(stripped=7, raw=7, force=True)[0]
+
+    def test_no_text_layer(self):
+        need, why = self._call(stripped=0, raw=0)
+        assert need and "텍스트 층 없음" in why
+
+    def test_odl_missed_body(self):
+        need, why = self._call(stripped=120, raw=150)
+        assert need and "놓친" in why
+
+    def test_stamp_only_page_in_digital_document_is_kept(self):
+        # 이미지 표지에 매 쪽 반복 스탬프만 있는 쪽 — 쪽 단위로는 OCR 하지 않는다
+        assert self._call(stripped=0, raw=33) == (False, "원래 짧은 쪽")
+
+    def test_stamp_only_page_in_scan_document_goes_to_ocr(self):
+        need, why = self._call(stripped=0, raw=33, scan=True)
+        assert need and "스캔본" in why
+
+    def test_genuine_short_page_is_kept(self):
+        assert self._call(stripped=7, raw=7) == (False, "원래 짧은 쪽")
+
+
+class TestTrimRepetition:
+    LEAD = "이 논문은 북위 조정의 관직 수여 기록을 분석하고 그 의미를 살핀다. "
+
+    def test_tail_loop_is_cut_to_one_copy(self):
+        text = self.LEAD + "고위직을 내려주고, 이후 " * 300 + "고위직을 내"
+        trimmed, degenerate = trim_repetition(text)
+        assert trimmed.startswith(self.LEAD.strip())
+        assert trimmed.count("고위직을 내려주고") == 1
+        assert not degenerate
+
+    def test_whole_output_loop_is_degenerate(self):
+        trimmed, degenerate = trim_repetition("ti [VP " * 500)
+        assert degenerate
+
+    def test_empty_table_rows_are_degenerate(self):
+        assert trim_repetition("| | | |\n" * 400)[1]
+
+    def test_normal_text_is_unchanged(self):
+        text = "\n".join(f"{chr(0xAC00 + i * 37)}{chr(0xAC00 + i * 53)} 문장 {i}번째 내용입니다." for i in range(60))
+        assert trim_repetition(text) == (text, False)
+
+    def test_short_trailing_dots_are_kept(self):
+        text = self.LEAD + "그 결과는 다음과 같다..."
+        assert trim_repetition(text) == (text, False)
+
+    def test_mostly_duplicate_lines_are_degenerate(self):
+        lines = ["첫째 줄에 같은 내용이 반복된다"] * 4 + ["둘째 줄도 다시 나온다"] * 3 + ["마지막 줄은 한 번"]
+        order = [lines[0], lines[4], lines[1], lines[5], lines[2], lines[6], lines[3], lines[7]]
+        assert trim_repetition("\n".join(order))[1]
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_page_routing.py -q`
+Expected: 수집 단계에서 `ModuleNotFoundError: No module named 'services.ingestion.page_routing'` (`1 error`)
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/page_routing.py` 새 파일(fitz·httpx import 금지)
+
+`trim_repetition` 은 Task 4-1 이 쓰지만 순수 함수라 여기서 정의한다. 반복 꼬리 판정은 VLM 섹션 미리보기 실측(위 근거 ⑧)으로 정했다.
+
+```python
+"""추출 2티어 라우팅의 페이지 판정 — 순수 함수만 둔다.
+
+fitz·httpx 를 import 하지 않는다. extractor.extract_text 가 fitz 로 구한 쪽별 텍스트를
+넘기고, 여기서는 ODL 본문이 짧은 쪽을 OCR 로 보낼지만 정한다.
+"""
+import math
+import re
+from collections import Counter
+
+_STRUCT_CHARS = str.maketrans("", "", "|-: \t\n\r")
+_BR_TAG = re.compile(r"<br\s*/?>", re.IGNORECASE)
+_BR_RUN = re.compile(r"(?:<br\s*/?>[ \t]*){3,}", re.IGNORECASE)
+_WS = re.compile(r"\s+")
+_DIGITS = re.compile(r"\d+")
+
+
+def body_len(text: str) -> int:
+    """[그림] 마커·<br> 태그·표 구조 문자·공백을 뺀 실질 본문 글자 수."""
+    if not text:
+        return 0
+    return len(_BR_TAG.sub("", text.replace("[그림]", "")).translate(_STRUCT_CHARS))
+
+
+def collapse_br_runs(text: str) -> str:
+    """3개 이상 이어진 <br> 를 줄바꿈 하나로 줄인다(1~2개는 표 셀 안 줄바꿈이라 둔다)."""
+    return _BR_RUN.sub("\n", text)
+
+
+def _line_key(line: str) -> str:
+    # 쪽 번호·연도만 다른 머리말·꼬리말을 같은 줄로 보려고 숫자 묶음을 '#' 하나로 접는다.
+    return _DIGITS.sub("#", _WS.sub(" ", line).strip())
+
+
+def repeated_lines(page_texts: list[str], ratio: float, max_len: int = 40) -> set[str]:
+    """문서 쪽의 ratio 이상에 되풀이되는 max_len 자 이하 줄의 키(_line_key) 집합.
+
+    한 쪽 안의 중복은 한 번으로 센다. 쪽이 하나뿐이면 되풀이를 판단할 수 없어 빈 집합이다.
+    """
+    if len(page_texts) < 2:
+        return set()
+    counts: Counter[str] = Counter()
+    for text in page_texts:
+        keys = {_line_key(line) for line in text.split("\n")}
+        counts.update(k for k in keys if k and len(k) <= max_len)
+    need = max(2, math.ceil(len(page_texts) * ratio))
+    return {k for k, c in counts.items() if c >= need}
+
+
+def strip_lines(text: str, lines: set[str]) -> str:
+    """repeated_lines 가 돌려준 키에 해당하는 줄을 뺀다."""
+    if not lines:
+        return text
+    return "\n".join(line for line in text.split("\n") if _line_key(line) not in lines)
+
+
+def is_scan_document(short_flags: list[bool], *, min_pages: int, ratio: float) -> bool:
+    """min_pages 쪽 이상 문서에서 짧은 쪽 비율이 ratio 를 넘으면 문서 단위 스캔본이다."""
+    if len(short_flags) < min_pages:
+        return False
+    return sum(short_flags) / len(short_flags) > ratio
+
+
+def short_page_needs_ocr(
+    *,
+    fitz_len_stripped: int,
+    fitz_len_raw: int,
+    doc_is_scan: bool,
+    force: bool,
+    min_chars: int,
+) -> tuple[bool, str]:
+    """ODL 본문이 min_chars 미만인 쪽을 OCR 로 보낼지와 그 사유.
+
+    ODL 은 머리말·꼬리말을 지운 길이라, fitz 도 되풀이 줄을 뺀 길이(fitz_len_stripped)로 견준다.
+    fitz_len_raw == 0 은 텍스트 층 자체가 없는 쪽이다. 되풀이 줄만 남은 쪽(이미지 표지의
+    스탬프 등)은 문서 전체가 스캔본일 때만 OCR 로 보낸다 — 쪽 단위로 보내면 디지털 논문의
+    표지·간지가 다시 VLM 을 탄다.
+    """
+    if force:
+        return True, "강제 OCR(섹션 0개 재추출)"
+    if fitz_len_raw == 0:
+        return True, "텍스트 층 없음(fitz 0자)"
+    if fitz_len_stripped >= min_chars:
+        return True, f"ODL 이 놓친 본문(되풀이 줄 뺀 fitz {fitz_len_stripped}자)"
+    if doc_is_scan:
+        return True, "스캔본 문서(짧은 쪽 과반)"
+    return False, "원래 짧은 쪽"
+
+
+def _tail_period(text: str, *, max_unit: int, min_repeats: int, min_span: int) -> tuple[int, int] | None:
+    # 끝에서부터 text[i] == text[i + p] 가 이어지는 가장 앞 자리를 주기 p 마다 찾는다.
+    # 마지막 반복이 중간에 잘려 있어도(max_tokens 소진) 주기 비교는 그대로 맞는다.
+    n = len(text)
+    best: tuple[int, int] | None = None
+    for p in range(1, min(max_unit, n // min_repeats) + 1):
+        i = n - p - 1
+        while i >= 0 and text[i] == text[i + p]:
+            i -= 1
+        start = i + 1
+        if n - start >= max(p * min_repeats, min_span) and text[start:start + p].strip():
+            if best is None or start < best[0]:
+                best = (start, p)
+    return best
+
+
+def trim_repetition(text: str) -> tuple[str, bool]:
+    """VLM 이 max_tokens 까지 같은 줄·구절을 되풀이한 꼬리를 걷어 낸다.
+
+    returns (다듬은 텍스트, 퇴화 출력인가). 되풀이는 한 번만 남긴다. 다듬은 뒤 실질 본문이
+    20자 미만이거나, 남은 줄(5줄 이상)의 절반 이상이 앞 줄의 되풀이면 퇴화 출력이다.
+    """
+    found = _tail_period(text, max_unit=200, min_repeats=3, min_span=60)
+    trimmed = text[: found[0] + found[1]].rstrip() if found else text.rstrip()
+    if body_len(trimmed) < 20:
+        return trimmed, True
+    lines = [line.strip() for line in trimmed.split("\n") if line.strip()]
+    if len(lines) >= 5 and (len(lines) - len(set(lines))) / len(lines) >= 0.5:
+        return trimmed, True
+    return trimmed, False
+```
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_page_routing.py -q`
+Expected: `28 passed`
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/page_routing.py app/tests/test_page_routing.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Feat] round07 — 추출 라우팅 판정 순수 모듈(page_routing): <br>·[그림]·표 구조 문자를 뺀 본문 길이, <br> 3개 이상 연속을 줄바꿈 하나로, 문서 쪽 60% 이상에 되풀이되는 40자 이하 줄(숫자는 접어 쪽 번호·연도 차이를 무시)과 그 줄 빼기, 3쪽 이상·짧은 쪽 과반이면 문서 단위 스캔본, ODL 이 짧은 쪽의 OCR 여부(강제·텍스트 층 없음·ODL 이 놓친 본문·스캔본 문서), VLM 반복 꼬리 걷어 내기와 퇴화 판정"
+```
+
+#### 묶음 3-2: `extract_text` 짧은 쪽 분기·`<br>`
+
+- [ ] **Step 1: 실패하는 테스트 작성** — `app/tests/test_extractor_routing.py`
+
+PDF 는 fitz 로 메모리에서 만든다(텍스트 쪽·스탬프만 있는 쪽·큰 이미지 쪽). ODL(`extract_text_opendataloader`)과 `_extract_with_vlm` 은 목이다. 목 VLM 은 `**_kw` 를 받아 Task 4-2 가 더하는 `render_lock` 인자에도 그대로 맞는다. 회귀 테스트 다섯(CMap 손상 의심 → VLM, 진짜 짧은 간지 → ODL, fitz 0자 → VLM, 이미지 표지 → ODL, ODL 누락 → OCR)은 고치기 전에도 통과한다.
+
+```python
+"""extract_text 2티어 라우팅 — 어느 쪽이 OCR 로 가는지 (ODL·VLM 은 목, PDF 는 fitz 로 메모리에서 만든다).
+
+ODL 은 json header/footer 로 머리말·꼬리말을 지운 본문을 돌려주므로, 목 ODL 텍스트에는 스탬프를 넣지 않는다.
+"""
+import asyncio
+
+import fitz
+
+from services.ingestion import extractor
+from services.ingestion.extractor import ExtractionResult, PageResult
+
+STAMP = "Copyright (C) 2002 Nuri Media Co., Ltd."
+BODIES = [
+    ["Alpha chapter reviews the archival record of royal court", "appointments and the ranks given to envoys from abroad."],
+    ["Bravo chapter compares the ritual songs with older folk", "ballads and traces how their refrains were borrowed."],
+    ["Charlie chapter reads the land registers kept by county", "offices and estimates how much farmland was taxed."],
+    ["Delta chapter sums up the findings and lists the open", "questions that later studies should take up again."],
+    ["Echo chapter maps the trade routes that carried paper", "and ink between the capital and the southern ports."],
+]
+
+
+def _pdf(pages: list[list[str]], *, stamp: bool = True, image_pages: tuple[int, ...] = ()) -> bytes:
+    doc = fitz.open()
+    for n, lines in enumerate(pages):
+        page = doc.new_page(width=420, height=595)
+        if n in image_pages:
+            pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 8, 8), False)
+            pix.clear_with(180)
+            page.insert_image(page.rect, pixmap=pix)
+        for i, line in enumerate(lines):
+            page.insert_text((36, 60 + 14 * i), line, fontsize=9)
+        if stamp:
+            page.insert_text((36, 580), STAMP, fontsize=6)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def _run(monkeypatch, pdf: bytes, odl_texts: dict[int, str], **kwargs) -> tuple[list[int], ExtractionResult]:
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+        res = ExtractionResult(book_id=book_id, total_pages=len(odl_texts))
+        res.pages = [PageResult(n, t, "opendataloader", 0.95) for n, t in sorted(odl_texts.items())]
+        return res
+
+    ocr_calls: list[int] = []
+
+    async def fake_vlm(page, client, *, prompt_type="ocr", **_kw):
+        ocr_calls.append(page.number)
+        return PageResult(page.number, f"VLM 본문 {page.number}", "vlm", 0.9)
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+    monkeypatch.setattr(extractor, "_extract_with_vlm", fake_vlm)
+    monkeypatch.setattr(extractor.cfg, "OCR_ENGINE", "vlm")
+    result = asyncio.run(extractor.extract_text(None, "T_ROUTE", file_bytes=pdf, **kwargs))
+    return sorted(ocr_calls), result
+
+
+def _body_text(n: int) -> str:
+    return " ".join(BODIES[n])
+
+
+def test_digital_paper_with_image_cover_keeps_cover_from_odl(monkeypatch):
+    """표지 쪽 텍스트가 매 쪽 반복 스탬프뿐인 이미지 표지 → 쪽 단위로 OCR 하지 않는다."""
+    pdf = _pdf([[]] + BODIES[:4], image_pages=(0,))
+    odl = {0: "[그림]", **{n + 1: _body_text(n) for n in range(4)}}
+    ocr, result = _run(monkeypatch, pdf, odl)
+    assert ocr == []
+    assert [p.page_num for p in result.pages] == [0, 1, 2, 3, 4]
+    assert result.pages[0].text == ""
+
+
+def test_scan_document_with_stamp_only_pages_goes_to_ocr(monkeypatch):
+    """모든 쪽이 이미지 + 스탬프뿐인 스캔본(「한국문학연구」 실패 블록) → 짧은 쪽 전부 OCR."""
+    pdf = _pdf([[]] * 4, image_pages=(0, 1, 2, 3))
+    ocr, result = _run(monkeypatch, pdf, {n: "[그림]\n\n[그림]" for n in range(4)})
+    assert ocr == [0, 1, 2, 3]
+    assert [p.method for p in result.pages] == ["vlm"] * 4
+
+
+def test_two_page_scan_is_below_document_rule(monkeypatch):
+    """3쪽 미만은 문서 단위 판정을 하지 않는다 — 섹션 0개 강제 재추출(run_extract)이 맡는다."""
+    pdf = _pdf([[]] * 2, image_pages=(0, 1))
+    ocr, _ = _run(monkeypatch, pdf, {0: "[그림]", 1: "[그림]"})
+    assert ocr == []
+
+
+def test_genuine_short_divider_page_keeps_odl(monkeypatch):
+    """디지털 문서의 진짜 짧은 간지(실제 글자 몇 개) → ODL 채택."""
+    pdf = _pdf(BODIES[:4] + [["Part Two"]])
+    odl = {**{n: _body_text(n) for n in range(4)}, 4: "Part Two"}
+    ocr, result = _run(monkeypatch, pdf, odl)
+    assert ocr == []
+    assert result.pages[4].text == "Part Two"
+
+
+def test_cmap_loss_suspect_page_goes_to_vlm(monkeypatch):
+    """회귀: ODL 50자 이상인데 fitz(원래 길이)가 2배 넘게 길면 CMap 손상 의심 → VLM."""
+    long_page = BODIES[0] + BODIES[1] + BODIES[2]
+    pdf = _pdf([long_page, BODIES[3], BODIES[4]])
+    odl = {0: BODIES[0][0], 1: _body_text(3), 2: _body_text(4)}
+    ocr, _ = _run(monkeypatch, pdf, odl)
+    assert ocr == [0]
+
+
+def test_page_without_text_layer_goes_to_vlm(monkeypatch):
+    """회귀: fitz 0자(텍스트 층 없음) → VLM. 스탬프도 없는 이미지 쪽."""
+    pdf = _pdf(BODIES[:3] + [[]], stamp=False, image_pages=(3,))
+    odl = {**{n: _body_text(n) for n in range(3)}, 3: "[그림]"}
+    ocr, _ = _run(monkeypatch, pdf, odl)
+    assert ocr == [3]
+
+
+def test_empty_br_grid_is_not_counted_as_body(monkeypatch):
+    """ODL 이 빈 표 격자를 <br> 로 채운 쪽 — <br> 를 본문으로 세지 않아 fitz 0자 → VLM."""
+    pdf = _pdf(BODIES[:3] + [[]], stamp=False)
+    odl = {**{n: _body_text(n) for n in range(3)}, 3: "|<br>|<br>|" * 30}
+    ocr, _ = _run(monkeypatch, pdf, odl)
+    assert ocr == [3]
+
+
+def test_header_footer_only_page_is_compared_without_repeated_lines(monkeypatch):
+    """fitz 원래 길이는 머리말+꼬리말로 50자를 넘지만 되풀이 줄을 빼면 0 — 디지털 문서에선 ODL 채택."""
+    header = "Journal of Archival Studies 3"
+    pages = [[header] + BODIES[n] for n in range(4)] + [[header]]
+    pdf = _pdf(pages)
+    odl = {**{n: _body_text(n) for n in range(4)}, 4: ""}
+    ocr, _ = _run(monkeypatch, pdf, odl)
+    assert ocr == []
+
+
+def test_figure_heavy_document_counts_as_scan(monkeypatch):
+    """3쪽 이상에서 짧은 쪽이 절반을 넘으면 문서 단위 스캔본 → 짧은 쪽만 OCR, 본문 쪽은 ODL."""
+    pdf = _pdf([["Plate one"], ["Plate two"], ["Plate three"], BODIES[0]])
+    odl = {0: "Plate one", 1: "Plate two", 2: "Plate three", 3: _body_text(0)}
+    ocr, result = _run(monkeypatch, pdf, odl)
+    assert ocr == [0, 1, 2]
+    assert result.pages[3].method == "opendataloader"
+
+
+def test_force_sends_every_short_page_to_ocr(monkeypatch):
+    pdf = _pdf(BODIES[:4] + [["Part Two"]])
+    odl = {**{n: _body_text(n) for n in range(4)}, 4: "Part Two"}
+    ocr, _ = _run(monkeypatch, pdf, odl, force_ocr_short_pages=True)
+    assert ocr == [4]
+
+
+def test_page_missing_from_odl_still_goes_to_ocr(monkeypatch):
+    """회귀: ODL 결과에 없는 쪽은 예전처럼 판정 없이 OCR."""
+    pdf = _pdf(BODIES[:3] + [["Part Two"]])
+    odl = {n: _body_text(n) for n in range(3)}
+    ocr, _ = _run(monkeypatch, pdf, odl)
+    assert ocr == [3]
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_routing.py -q`
+Expected: `5 failed, 6 passed` — 실패는 `test_scan_document_with_stamp_only_pages_goes_to_ocr`(OCR `[]`), `test_empty_br_grid_is_not_counted_as_body`, `test_header_footer_only_page_is_compared_without_repeated_lines`(지금은 머리말+꼬리말 58자로 OCR), `test_figure_heavy_document_counts_as_scan`, `test_force_sends_every_short_page_to_ocr`(`TypeError: ... unexpected keyword argument 'force_ocr_short_pages'`)
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/extractor.py`
+
+(1) import 에 한 줄 더한다.
+
+```python
+# old
+from core.config import get_settings
+
+log = logging.getLogger(__name__)
+# new
+from core.config import get_settings
+from services.ingestion import page_routing
+
+log = logging.getLogger(__name__)
+```
+
+(2) `_clean_text` 첫머리(`import re` 바로 다음)에 두 줄을 더한다.
+
+```python
+# old
+    import re
+    if strip_lines:
+# new
+    import re
+    # 빈 표 격자의 <br> 수천 개가 섹션 본문을 채우지 않게 줄바꿈 하나로 줄인다.
+    text = page_routing.collapse_br_runs(text)
+    if strip_lines:
+```
+
+(3) `# 마크다운 표 구조 문자 + 공백 — 실질 본문 길이 계산에서 제외` 주석부터 `_body_len` 함수 끝까지(지금 `extractor.py:70-82`)를 지운다 — `page_routing.body_len` 이 대신한다.
+
+(4) 모듈 docstring 의 (c) 항목 끝에 세 줄을 더한다.
+
+```python
+# old
+                                페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다
+# new
+                                페이지이므로 VLM 없이 ODL 결과를 그대로 채택한다.
+                                fitz 는 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을
+                                뺀 길이로 견주고, 3쪽 이상 문서에서 이런 짧은 쪽이 절반을
+                                넘으면 스캔본으로 보고 짧은 쪽을 모두 OCR 한다(page_routing.py)
+```
+
+(5) `extract_text` 를 아래 전체로 바꾼다(바뀐 곳: 시그니처의 `force_ocr_short_pages`, 라우팅 전 문서 단위 계산 블록, `page_routing.body_len`, `fitz_check_len = fitz_raw_lens[page_num]`, 짧은 쪽 분기의 `short_page_needs_ocr`. 나머지 줄은 그대로다).
+
+```python
+async def extract_text(
+    file_path: str | Path,
+    book_id: str,
+    *,
+    file_bytes: bytes | None = None,
+    force_ocr_short_pages: bool = False,
+) -> ExtractionResult:
+    """2티어 라우팅 파이프라인.
+
+    force_ocr_short_pages: ODL 본문이 짧은 쪽을 판정 없이 모두 OCR 한다(섹션 0개 재추출용).
+
+    1티어: OpenDataLoader로 전체 PDF 마크다운+json 추출
+    2티어: 본문 부족 / CMap 손상 의심 / 표 셀 충전율 낮음 중 하나라도 해당하는
+           페이지만 VLM 보완 (판단 기준은 파일 상단 docstring 참고)
+    """
+    result = ExtractionResult(book_id=book_id, total_pages=0)
+
+    # ── 1티어: OpenDataLoader 전체 추출 ──────────────────
+    odl_result = await extract_text_opendataloader(
+        file_path, book_id, file_bytes=file_bytes
+    )
+    odl_pages_by_num: dict[int, PageResult] = {p.page_num: p for p in odl_result.pages}
+    if odl_result.errors:
+        result.errors.extend(odl_result.errors)
+
+    # ── fitz로 페이지 열기 — VLM용 이미지 렌더링 + CMap 손상 교차검증(page.get_text())에 사용 ─
+    try:
+        if file_bytes:
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+        else:
+            doc = fitz.open(str(file_path))
+    except Exception as e:
+        result.errors.append(f"파일 열기 실패: {e}")
+        # OpenDataLoader 결과만이라도 반환
+        result.pages = list(odl_result.pages)
+        result.total_pages = len(result.pages)
+        return result
+
+    result.total_pages = len(doc)
+    log.info(
+        f"[{book_id}] {result.total_pages}p — 1티어 ODL 완료 "
+        f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
+    )
+
+    # 짧은 쪽은 같은 것끼리 견준다 — ODL 은 머리말·꼬리말을 지운 길이라 fitz 도 문서 전체에
+    # 되풀이되는 줄을 뺀 길이로 잰다. CMap 손상 2배 비교는 예전처럼 원래 fitz 길이를 쓴다.
+    fitz_texts = [_clean_text(p.get_text()) for p in doc]
+    repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
+    fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]
+    fitz_stripped_lens = [
+        page_routing.body_len(page_routing.strip_lines(t, repeated)) for t in fitz_texts
+    ]
+    short_flags = [
+        page_routing.body_len(odl_pages_by_num[n].text if n in odl_pages_by_num else "")
+        < MIN_CHARS_PER_PAGE
+        and fitz_stripped_lens[n] < MIN_CHARS_PER_PAGE
+        for n in range(len(doc))
+    ]
+    doc_is_scan = page_routing.is_scan_document(
+        short_flags, min_pages=cfg.SCAN_MIN_PAGES, ratio=cfg.SCAN_SHORT_PAGE_RATIO
+    )
+    if doc_is_scan:
+        log.info(f"[{book_id}] 짧은 쪽 {sum(short_flags)}/{len(doc)} — 스캔본 문서로 보고 짧은 쪽을 OCR")
+
+    vlm_pages_used = 0
+    vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
+    vlm_cap_hit = False
+
+    async with httpx.AsyncClient() as client:
+        for page in doc:
+            page_num = page.number
+            odl_page = odl_pages_by_num.get(page_num)
+
+            # 라우팅 판단 — "그림 유무"가 아니라 "1티어 결과를 믿을 수 있는지"로 판정.
+            # ① 표 셀 충전율 낮음(빈 표 격자가 글자 수만 채우는 경우) 최우선 체크,
+            # ② 그 외에는 fitz 추정 길이와 교차검증 — 길이 기준 충족 페이지는 fitz가
+            #    크게 더 길면(CMap 손상 의심) VLM, 길이 기준 미달 페이지는 fitz도
+            #    같이 짧으면(원래 짧은 페이지) ODL 그대로 채택, fitz엔 더 있으면 VLM.
+            # 셋 다 아니면 1티어 결과를 그대로 채택하고 VLM은 호출하지 않는다.
+            # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
+            #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵.
+            #  다만 길이 기준 미달 분기는 fitz 교차검증이 없어 표지·구분 페이지처럼
+            #  "원래 짧은 페이지"까지 전부 VLM으로 넘기고 있었다 — 아래에서 통일)
+            if odl_page is None:
+                body_len = 0
+                trigger = "ODL 누락"
+            else:
+                body_len = page_routing.body_len(odl_page.text)
+                fill_ratio = odl_result.table_fill_ratios.get(page_num)
+
+                if fill_ratio is not None and fill_ratio < 0.30:
+                    # 마크다운 글자수는 충분해도 표 셀 대부분이 비어있음 — 셀이 빈
+                    # 격자 문자로 렌더링돼 글자수만 채우는 실패(사내 연구로 검증:
+                    # 재현율 48.1%→90.4%, 오탐 비용 < 미탐의 영구 손실).
+                    trigger = f"표 셀 충전율 낮음({fill_ratio:.2f})"
+                else:
+                    # ODL 결과가 충분해 보여도, 폰트 CMap 손상 등으로 ODL(veraPDF 기반)이
+                    # 실제로는 글자 대부분을 유실했을 수 있다("Incorrect bfrange in
+                    # toUnicode CMap" 경고가 뜨는 PDF에서 확인됨 — 워터마크가 아니라
+                    # 폰트 문제였음). fitz는 이런 손상에 관대해서 원문 길이를 정확히
+                    # 반영하므로, 길이 비교만으로 이상 여부를 감지한다(fitz 텍스트 자체는
+                    # 띄어쓰기 소실·컬럼 순서 문제가 있어 채택하지 않고 감지 용도로만 사용).
+                    # 길이 기준 미달 페이지도 동일하게 fitz로 "원래 짧은 페이지"인지
+                    # "ODL이 놓친 페이지"인지 구분한다 — <50자 트리거가 전체 VLM
+                    # 호출의 90% 이상을 차지해 표지·구분 페이지까지 휩쓸고 있었음.
+                    fitz_check_len = fitz_raw_lens[page_num]
+                    if body_len >= MIN_CHARS_PER_PAGE:
+                        if fitz_check_len <= body_len * 2:
+                            # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
+                            odl_page.text = _strip_figure_markers(odl_page.text)
+                            result.pages.append(odl_page)
+                            continue
+                        trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+                    else:
+                        need_ocr, why = page_routing.short_page_needs_ocr(
+                            fitz_len_stripped=fitz_stripped_lens[page_num],
+                            fitz_len_raw=fitz_check_len,
+                            doc_is_scan=doc_is_scan,
+                            force=force_ocr_short_pages,
+                            min_chars=MIN_CHARS_PER_PAGE,
+                        )
+                        if not need_ocr:
+                            # 원래 짧은 쪽(표지·간지 등) — ODL 결과 그대로 채택.
+                            odl_page.text = _strip_figure_markers(odl_page.text)
+                            result.pages.append(odl_page)
+                            continue
+                        trigger = f"{why}(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+
+            # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 페이지마다
+            # 순차 VLM 호출로 잡 전체를 지연시키는 것을 방지. 초과분은 ODL 결과
+            # (비어있거나 부실해도) 그대로 채택하고 남은 페이지는 VLM을 스킵한다.
+            if vlm_pages_used >= vlm_cap:
+                if not vlm_cap_hit:
+                    vlm_cap_hit = True
+                    result.vlm_capped = True
+                    log.warning(f"[{book_id}] VLM 페이지 상한({vlm_cap}) 도달 — 이후 저텍스트 페이지는 ODL로 대체")
+                if odl_page:
+                    result.pages.append(odl_page)
+                continue
+
+            # 2티어: 1티어 결과를 못 믿는 페이지 OCR 보완 (엔진은 OCR_ENGINE 플래그로 선택).
+            ocr_engine = cfg.OCR_ENGINE.lower()
+            vlm_pages_used += 1  # 실패해도 호출 시도 자체가 시간을 소모하므로 상한에 포함
+            try:
+                log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={ocr_engine})")
+                if ocr_engine == "surya":
+                    ocr_page = await _extract_with_surya(page, client)
+                else:
+                    ocr_page = await _extract_with_vlm(page, client, prompt_type="ocr")
+                result.pages.append(ocr_page)
+            except Exception as e:
+                log.error(f"[{book_id}] p.{page_num} OCR({ocr_engine}) 실패: {e}")
+                result.errors.append(f"p.{page_num} OCR({ocr_engine}): {e}")
+                if odl_page:  # OCR 실패 시 ODL 결과라도 살리기
+                    result.pages.append(odl_page)
+
+    doc.close()
+
+    # 페이지 번호 매핑 생성 (full_text와 동일하게 빈 페이지 제외)
+    cursor = 0
+    page_map = {}
+    for p in result.pages:
+        if not p.text:
+            continue
+        for i in range(len(p.text)):
+            page_map[cursor + i] = p.page_num
+        cursor += len(p.text) + 2  # "\n\n"
+    result.page_map = page_map
+
+    log.info(f"[{book_id}] 추출 완료 — {result.stats}, page_map={len(page_map)}")
+    return result
+```
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_routing.py tests/test_page_routing.py -q`
+Expected: `39 passed`
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest -q --continue-on-collection-errors`
+Expected: 이 작업 직전 수 + 39 passed, 수집 오류 3(사본 측정: 890 → 929)
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/extractor.py app/tests/test_extractor_routing.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix] round07 — 텍스트 층에 스탬프만 남은 스캔본이 VLM 을 건너뛰던 :424 분기를 표적 수정: 짧은 쪽은 fitz 도 문서 전체에 되풀이되는 줄(머리말·꼬리말·스탬프)을 뺀 길이로 견주고, 3쪽 이상 문서에서 짧은 쪽이 과반이면 스캔본으로 보고 짧은 쪽을 OCR 한다(쪽 단위 규칙은 더하지 않아 디지털 논문의 이미지 표지·간지는 그대로 ODL 채택). CMap 2배·표 셀 충전율·fitz 0자·ODL 누락 판정은 그대로. 본문 길이에서 <br> 를 빼고 _clean_text 가 <br> 3개 이상 연속을 줄바꿈 하나로 줄인다. extract_text 에 force_ocr_short_pages"
+```
+
+---
+
+### Task 4: VLM 잘림·페이지 병렬·추출 데드라인·섹션 0 처리
+
+**Files:**
+- Modify: `app/services/ingestion/extractor.py` (`PageResult`·`ExtractionResult` 필드, `VlmDegenerateOutput`, `_render_png_b64`·`_render_page`, `_extract_with_vlm`, `_extract_with_surya`, `_ocr_pages`(새), `extract_text`)
+- Modify: `app/services/ingestion/stages.py` (`run_extract`)
+- Test: `app/tests/test_extractor_ocr.py`(새), `app/tests/test_run_extract_sections.py`(새)
+
+**설계 메모.**
+- 렌더링(`page.get_pixmap`)은 이벤트 루프 스레드에서 동기로 한다. PyMuPDF 는 다중 스레드를 지원하지 않으므로 `to_thread` 로 빼지 않는다. `asyncio.Lock` 은 동시에 도는 OCR 코루틴이 한 번에 한 쪽만 렌더하도록 지키는 자리이고, 요청(`client.post`)만 `asyncio.Semaphore(VLM_PAGE_CONCURRENCY)` 안에서 동시에 나간다. 결과는 `{쪽 번호: PageResult}` 로 모아 쪽 순서로 조립한다.
+- 판정(fitz 교차검증)은 지금처럼 쪽 순서대로 하고, OCR 이 필요한 쪽만 모은다. VLM 60쪽 상한은 모으는 단계에서 센다(넘는 쪽은 ODL 채택 — 예전과 같다).
+- 데드라인: `extract_text` 시작 시각부터 `INGEST_EXTRACT_DEADLINE` 초. OCR 묶음 전체를 `asyncio.timeout(남은 시간)` 으로 감싸고, 넘으면 끝나지 않은 쪽은 ODL 결과로 채택하고 `deadline_hit=True`. `asyncio.timeout` 은 await 지점에서 취소하므로 코루틴 안에서 확실히 잡힌다(함정 19 — Celery 소프트 리밋에 맡기지 않는다).
+- VLM 잘림: 비추론 모드에서도 `finish_reason == "length"` 면 `trim_repetition` 으로 되풀이 꼬리를 걷어 내고 `PageResult.truncated=True`. 걷어 내도 퇴화면 `VlmDegenerateOutput` 을 던져 호출부가 ODL 결과로 채택한다. 둘 다 `vlm_truncated` 로 센다. 퇴화는 `ocr_errors` 에 넣지 않는다(같은 페이지는 다시 해도 대개 같아서, 섹션 0개일 때 `vlm_error` 로 재시도할 거리가 아니다).
+- 섹션 0개(4-3): 강제 OCR(`force_ocr_short_pages=True`)로 한 번 더 추출 → 그래도 0개면 OCR 오류·데드라인이 있었으면 `StageError("vlm_error")`, 없었으면 `StageError("no_text")`. **첫 추출에서 이미 OCR 오류나 데드라인이 있었으면 강제 재추출 없이 바로 `vlm_error`** 다(계약보다 한 걸음 더 — 이유: 첫 추출이 데드라인 2,700초를 다 쓴 뒤 두 번째 추출이 또 2,700초를 쓰면 단계가 stale 판정 3,600초를 넘어 중복 체인이 열린다. VLM 장애 중의 강제 OCR 은 같은 실패를 되풀이할 뿐이고, `vlm_error` 는 Task 2 의 백오프 재시도가 추출부터 다시 한다).
+- 반환 meta 키: `forced_ocr`·`vlm_truncated`·`extract_deadline_hit`·`ocr_errors`(공통 계약).
+
+#### 묶음 4-1: VLM `finish_reason == "length"` 다듬기
+
+- [ ] **Step 1: 실패하는 테스트 작성** — `app/tests/test_extractor_ocr.py`
+
+```python
+"""extract_text OCR — VLM 잘림 다듬기(4-1), 문서 안 동시 요청·렌더 잠금·데드라인·OCR 실패 폴백(4-2)."""
+import asyncio
+
+import httpx
+import pytest
+
+from services.ingestion import extractor
+from services.ingestion.extractor import PageResult, VlmDegenerateOutput
+
+LEAD = "이 논문은 북위 조정의 관직 수여 기록을 분석하고 그 의미를 살핀다. "
+
+
+class _Page:
+    number = 4
+
+
+def _vlm(monkeypatch, content: str, finish: str) -> PageResult:
+    """실제 _extract_with_vlm 을 목 HTTP 응답으로 부른다(렌더링은 목)."""
+    monkeypatch.setattr(extractor, "_render_png_b64", lambda page: "QUJD")
+
+    def handler(request):
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}, "finish_reason": finish}]})
+
+    async def go() -> PageResult:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await extractor._extract_with_vlm(_Page(), client)
+
+    return asyncio.run(go())
+
+
+def test_length_finish_trims_repeated_tail(monkeypatch):
+    page = _vlm(monkeypatch, LEAD + "고위직을 내려주고, 이후 " * 300, "length")
+    assert page.truncated
+    assert page.text.startswith(LEAD.strip())
+    assert page.text.count("고위직을 내려주고") == 1
+
+
+def test_degenerate_length_output_raises(monkeypatch):
+    with pytest.raises(VlmDegenerateOutput):
+        _vlm(monkeypatch, "| | | |\n" * 400, "length")
+
+
+def test_stop_finish_is_not_trimmed(monkeypatch):
+    content = LEAD + "같은 문장이 반복된다. " * 10
+    page = _vlm(monkeypatch, content, "stop")
+    assert page.text == content.strip()
+    assert not page.truncated
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_ocr.py -q`
+Expected: 수집 단계에서 `ImportError: cannot import name 'VlmDegenerateOutput' from 'services.ingestion.extractor'` (`1 error`)
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/extractor.py`
+
+(1) `PageResult` 에 필드 하나를 더한다.
+
+```python
+@dataclass
+class PageResult:
+    page_num: int
+    text: str
+    method: str          # "fitz" | "vlm"
+    confidence: float
+    truncated: bool = False  # VLM 응답이 max_tokens 로 끝나 되풀이 꼬리를 걷어 냈다
+```
+
+(2) `_extract_with_vlm` 바로 위에 예외와 렌더 함수를 두고, `_extract_with_vlm` 을 아래 전체로 바꾼다(렌더를 `_render_png_b64` 로 빼고, 마지막 `_ask` 뒤에 length 다듬기).
+
+```python
+class VlmDegenerateOutput(Exception):
+    """VLM 이 같은 구절을 되풀이하다 max_tokens 로 끝나, 꼬리를 걷어 내도 쓸 본문이 없다."""
+
+
+def _render_png_b64(page: fitz.Page) -> str:
+    import base64
+
+    return base64.b64encode(page.get_pixmap(dpi=cfg.FITZ_DPI).tobytes("png")).decode()
+
+
+async def _extract_with_vlm(
+    page: fitz.Page,
+    client: httpx.AsyncClient,
+    *,
+    prompt_type: str = "ocr",  # "ocr" | "diagram"
+) -> PageResult:
+    img_b64 = _render_png_b64(page)
+
+    prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
+
+    async def _ask(thinking: bool | None) -> tuple[str, bool, str | None]:
+        """1회 호출 → (본문, 추론정상종료, finish_reason)"""
+        payload = {
+            "model": cfg.VLM_MODEL,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                        },
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+            "max_tokens": cfg.VLM_MAX_TOKENS,
+            "temperature": cfg.VLM_TEMPERATURE,
+        }
+        # 추론형 VLM(Qwen3.5 등)은 사고과정을 본문에 쏟아내 OCR 결과를 오염시킨다.
+        # vLLM 은 chat_template_kwargs 를 템플릿에 그대로 전달. None 이면 미전송(기존 동작).
+        if thinking is not None:
+            payload["chat_template_kwargs"] = {"enable_thinking": thinking}
+
+        resp = await client.post(
+            f"{cfg.VLM_BASE_URL}/chat/completions",
+            json=payload,
+            timeout=float(cfg.VLM_TIMEOUT),
+        )
+        resp.raise_for_status()
+        choice = resp.json()["choices"][0]
+        msg = choice.get("message", {})
+        raw = (msg.get("content") or "").strip()
+        if msg.get("reasoning_content"):
+            # vLLM --reasoning-parser 사용 시 추론이 별 필드로 분리돼 content 는 이미 깨끗함
+            return raw, True, choice.get("finish_reason")
+        text, complete = _strip_reasoning(raw, thinking=bool(thinking))
+        return text, complete, choice.get("finish_reason")
+
+    # getattr: 구버전 config 가 섞여도 OCR 전체가 죽지 않도록 (미정의 시 미전송)
+    vlm_think = getattr(cfg, "VLM_THINK", None)
+    text, complete, finish = await _ask(vlm_think)
+
+    # 추론이 수렴하지 않는 페이지가 있다(복잡한 도판에서 사고 루프 → max_tokens 소진).
+    # 토큰을 더 줘도 해결되지 않으므로, thinking 을 끄고 한 번만 재시도한다.
+    if not complete:
+        log.warning(
+            f"[p.{page.number}] 추론 미종료(finish={finish}, max_tokens={cfg.VLM_MAX_TOKENS}) "
+            f"→ thinking 끄고 재시도"
+        )
+        text, complete, finish = await _ask(False)
+        if not complete:
+            raise RuntimeError(f"thinking off 재시도도 실패(finish={finish})")
+
+    # 비추론 모드도 max_tokens 소진을 본다 — 대부분 같은 구절을 되풀이하다 잘린 출력이다.
+    truncated = finish == "length"
+    if truncated:
+        text, degenerate = page_routing.trim_repetition(text)
+        if degenerate:
+            raise VlmDegenerateOutput(f"p.{page.number} VLM 퇴화 출력(finish=length)")
+        log.warning(f"[p.{page.number}] VLM 응답이 max_tokens({cfg.VLM_MAX_TOKENS})에서 잘림 — 되풀이 꼬리 정리")
+
+    return PageResult(
+        page_num=page.number,
+        text=text,
+        method="vlm",
+        confidence=0.9,
+        truncated=truncated,
+    )
+```
+
+(3) `_extract_with_surya` 의 렌더 세 줄(`import base64` · `pix = page.get_pixmap(...)` · `img_b64 = base64.b64encode(...)`)을 `img_b64 = _render_png_b64(page)` 한 줄로 바꾼다.
+
+이 상태에서 퇴화 출력은 기존 순차 루프의 `except Exception` 이 받아 ODL 결과로 채택한다(세는 것은 4-2).
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_ocr.py tests/test_extractor_routing.py tests/test_page_routing.py -q`
+Expected: `42 passed`
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/extractor.py app/tests/test_extractor_ocr.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix] round07 — VLM 이 max_tokens 로 끝난 쪽(finish_reason=length)을 비추론 모드에서도 본다: 같은 구절을 되풀이한 꼬리를 한 번만 남기고 걷어 내 truncated 로 표시하고, 걷어 내도 본문이 없거나 줄 절반 이상이 되풀이면 VlmDegenerateOutput 으로 ODL 결과를 쓰게 한다. 렌더링은 _render_png_b64 로 뺀다"
+```
+
+#### 묶음 4-2: 문서 안 OCR 병렬·렌더 잠금·추출 데드라인
+
+- [ ] **Step 1: 실패하는 테스트 작성** — `app/tests/test_extractor_ocr.py` 를 아래 전체로 바꾼다(4-1 의 세 테스트를 그대로 담는다)
+
+```python
+"""extract_text OCR — VLM 잘림 다듬기(4-1), 문서 안 동시 요청·렌더 잠금·데드라인·OCR 실패 폴백(4-2)."""
+import asyncio
+import time
+
+import fitz
+import httpx
+import pytest
+
+from services.ingestion import extractor
+from services.ingestion.extractor import ExtractionResult, PageResult, VlmDegenerateOutput
+
+LEAD = "이 논문은 북위 조정의 관직 수여 기록을 분석하고 그 의미를 살핀다. "
+
+
+class _Page:
+    number = 4
+
+
+def _vlm(monkeypatch, content: str, finish: str) -> PageResult:
+    """실제 _extract_with_vlm 을 목 HTTP 응답으로 부른다(렌더링은 목)."""
+    monkeypatch.setattr(extractor, "_render_png_b64", lambda page: "QUJD")
+
+    def handler(request):
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}, "finish_reason": finish}]})
+
+    async def go() -> PageResult:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await extractor._extract_with_vlm(_Page(), client)
+
+    return asyncio.run(go())
+
+
+def test_length_finish_trims_repeated_tail(monkeypatch):
+    page = _vlm(monkeypatch, LEAD + "고위직을 내려주고, 이후 " * 300, "length")
+    assert page.truncated
+    assert page.text.startswith(LEAD.strip())
+    assert page.text.count("고위직을 내려주고") == 1
+
+
+def test_degenerate_length_output_raises(monkeypatch):
+    with pytest.raises(VlmDegenerateOutput):
+        _vlm(monkeypatch, "| | | |\n" * 400, "length")
+
+
+def test_stop_finish_is_not_trimmed(monkeypatch):
+    content = LEAD + "같은 문장이 반복된다. " * 10
+    page = _vlm(monkeypatch, content, "stop")
+    assert page.text == content.strip()
+    assert not page.truncated
+
+
+# ── 4-2 ──────────────────────────────────────────────────────
+
+
+def _blank_pdf(n_pages: int) -> bytes:
+    """텍스트 층이 없는 쪽만 — fitz 0자라 전부 OCR 로 간다."""
+    doc = fitz.open()
+    for _ in range(n_pages):
+        doc.new_page(width=200, height=300)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def _patch(monkeypatch, n_pages: int, fake_vlm, *, concurrency: int = 2) -> None:
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+        res = ExtractionResult(book_id=book_id, total_pages=n_pages)
+        res.pages = [PageResult(n, f"ODL 대체 {n}", "opendataloader", 0.95) for n in range(n_pages)]
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+    monkeypatch.setattr(extractor, "_extract_with_vlm", fake_vlm)
+    monkeypatch.setattr(extractor.cfg, "OCR_ENGINE", "vlm")
+    monkeypatch.setattr(extractor.cfg, "VLM_PAGE_CONCURRENCY", concurrency)
+
+
+def _extract(n_pages: int, **kwargs) -> ExtractionResult:
+    return asyncio.run(extractor.extract_text(None, "T_OCR", file_bytes=_blank_pdf(n_pages), **kwargs))
+
+
+def test_render_happens_inside_render_lock(monkeypatch):
+    seen: list[bool] = []
+
+    async def go() -> PageResult:
+        lock = asyncio.Lock()
+
+        def fake_render(page):
+            seen.append(lock.locked())
+            return "QUJD"
+
+        monkeypatch.setattr(extractor, "_render_png_b64", fake_render)
+
+        def handler(request):
+            return httpx.Response(200, json={"choices": [{"message": {"content": "본문"}, "finish_reason": "stop"}]})
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await extractor._extract_with_vlm(_Page(), client, render_lock=lock)
+
+    assert asyncio.run(go()).text == "본문"
+    assert seen == [True]
+
+
+def test_ocr_runs_concurrently_up_to_limit_and_keeps_page_order(monkeypatch):
+    state = {"now": 0, "max": 0}
+
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        state["now"] += 1
+        state["max"] = max(state["max"], state["now"])
+        await asyncio.sleep(0.01 * (6 - page.number))  # 앞쪽이 더 늦게 끝난다
+        state["now"] -= 1
+        return PageResult(page.number, f"VLM {page.number}", "vlm", 0.9)
+
+    _patch(monkeypatch, 6, fake_vlm, concurrency=2)
+    result = _extract(6)
+    assert state["max"] == 2
+    assert [p.text for p in result.pages] == [f"VLM {n}" for n in range(6)]
+
+
+def test_all_pages_share_one_render_lock(monkeypatch):
+    locks = []
+
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        locks.append(render_lock)
+        return PageResult(page.number, "VLM 본문", "vlm", 0.9)
+
+    _patch(monkeypatch, 3, fake_vlm)
+    _extract(3)
+    assert len(locks) == 3
+    assert isinstance(locks[0], asyncio.Lock)
+    assert all(lock is locks[0] for lock in locks)
+
+
+def test_degenerate_and_failed_pages_fall_back_to_odl(monkeypatch):
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        if page.number == 0:
+            raise VlmDegenerateOutput("p.0 VLM 퇴화 출력(finish=length)")
+        if page.number == 1:
+            raise httpx.ConnectError("VLM 연결 실패")
+        return PageResult(page.number, "VLM 본문", "vlm", 0.9, truncated=True)
+
+    _patch(monkeypatch, 3, fake_vlm)
+    result = _extract(3)
+    assert [p.text for p in result.pages] == ["ODL 대체 0", "ODL 대체 1", "VLM 본문"]
+    assert result.vlm_truncated == 2  # 퇴화로 버린 쪽 1 + 꼬리를 걷어 내고 채택한 쪽 1
+    assert result.ocr_errors == 1     # 퇴화 출력은 OCR 오류로 세지 않는다
+
+
+def test_deadline_adopts_odl_for_pages_not_done(monkeypatch):
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        if page.number > 0:
+            await asyncio.sleep(5)
+        return PageResult(page.number, "VLM 본문", "vlm", 0.9)
+
+    _patch(monkeypatch, 4, fake_vlm, concurrency=4)
+    monkeypatch.setattr(extractor.cfg, "INGEST_EXTRACT_DEADLINE", 0.5)
+    t0 = time.monotonic()
+    result = _extract(4)
+    assert time.monotonic() - t0 < 3
+    assert result.deadline_hit
+    assert [p.text for p in result.pages] == ["VLM 본문", "ODL 대체 1", "ODL 대체 2", "ODL 대체 3"]
+    assert result.ocr_errors == 0
+
+
+def test_vlm_page_cap_still_applies(monkeypatch):
+    calls = []
+
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        calls.append(page.number)
+        return PageResult(page.number, "VLM 본문", "vlm", 0.9)
+
+    _patch(monkeypatch, 4, fake_vlm)
+    monkeypatch.setattr(extractor.cfg, "VLM_MAX_PAGES_PER_DOC", 2)
+    result = _extract(4)
+    assert sorted(calls) == [0, 1]
+    assert result.vlm_capped
+    assert [p.method for p in result.pages] == ["vlm", "vlm", "opendataloader", "opendataloader"]
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_ocr.py -q`
+Expected: `5 failed, 4 passed` — 실패: `test_render_happens_inside_render_lock`(`TypeError: _extract_with_vlm() got an unexpected keyword argument 'render_lock'`), `test_ocr_runs_concurrently_up_to_limit_and_keeps_page_order`(`assert 1 == 2` — 순차), `test_all_pages_share_one_render_lock`(`isinstance(None, asyncio.Lock)`), `test_degenerate_and_failed_pages_fall_back_to_odl`(`AttributeError: ... 'vlm_truncated'`), `test_deadline_adopts_odl_for_pages_not_done`(순차라 약 15초 뒤 실패). 4-1 의 세 테스트와 `test_vlm_page_cap_still_applies`(회귀)는 통과한다.
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/extractor.py`
+
+(1) import 에 `asyncio`·`time` 을 더한다.
+
+```python
+# old
+import io
+import logging
+from pathlib import Path
+# new
+import asyncio
+import io
+import logging
+import time
+from pathlib import Path
+```
+
+(2) `ExtractionResult` 에 공통 계약의 세 필드를 더한다(`table_fill_ratios` 다음).
+
+```python
+@dataclass
+class ExtractionResult:
+    book_id: str
+    total_pages: int
+    pages: list[PageResult] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    page_map: dict[int, int] = field(default_factory=dict)
+    figures: list[FigureData] = field(default_factory=list)
+    vlm_capped: bool = False  # VLM_MAX_PAGES_PER_DOC 상한에 걸려 일부 페이지가 누락됐는지
+    # 페이지별 표 셀 충전율(있는 페이지만) — 마크다운 평탄화로 사라지는 "셀 비었음"
+    # 정보를 JSON 산출물에서 복원해 라우팅 판정에 쓴다. 0에 가까울수록 빈 격자.
+    table_fill_ratios: dict[int, float] = field(default_factory=dict)
+    vlm_truncated: int = 0      # finish_reason=length 로 끝난 OCR 쪽 수(꼬리를 걷어 냈거나 퇴화로 버림)
+    deadline_hit: bool = False  # INGEST_EXTRACT_DEADLINE 에 걸려 남은 쪽을 ODL 결과로 채택했다
+    ocr_errors: int = 0         # OCR 호출 예외 수(퇴화 출력은 세지 않는다)
+
+    @property
+    def full_text(self) -> str:
+        return "\n\n".join(p.text for p in self.pages if p.text)
+
+    @property
+    def stats(self) -> dict:
+        from collections import Counter
+        method_counts = Counter(p.method for p in self.pages)
+        return {
+            "total": self.total_pages,
+            **method_counts,
+            "errors": len(self.errors),
+        }
+```
+
+(3) `_render_png_b64` 다음에 `_render_page` 를 두고, `_extract_with_vlm`·`_extract_with_surya` 를 아래 전체로 바꾼다(키워드 인자 `render_lock` 을 받아 `_render_page` 로 렌더).
+
+```python
+async def _render_page(page: fitz.Page, render_lock: asyncio.Lock | None) -> str:
+    # PyMuPDF 는 다중 스레드를 지원하지 않아 렌더링은 이벤트 루프 스레드에서 한다. 잠금은 동시에
+    # 도는 OCR 코루틴이 한 번에 한 쪽만 렌더하도록 지키는 자리다 — 요청만 동시에 보낸다.
+    if render_lock is None:
+        return _render_png_b64(page)
+    async with render_lock:
+        return _render_png_b64(page)
+
+
+async def _extract_with_vlm(
+    page: fitz.Page,
+    client: httpx.AsyncClient,
+    *,
+    prompt_type: str = "ocr",  # "ocr" | "diagram"
+    render_lock: asyncio.Lock | None = None,
+) -> PageResult:
+    img_b64 = await _render_page(page, render_lock)
+
+    prompt = _VLM_PROMPT_DIAGRAM if prompt_type == "diagram" else _VLM_PROMPT_OCR
+
+    async def _ask(thinking: bool | None) -> tuple[str, bool, str | None]:
+        """1회 호출 → (본문, 추론정상종료, finish_reason)"""
+        payload = {
+            "model": cfg.VLM_MODEL,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                        },
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ],
+            "max_tokens": cfg.VLM_MAX_TOKENS,
+            "temperature": cfg.VLM_TEMPERATURE,
+        }
+        # 추론형 VLM(Qwen3.5 등)은 사고과정을 본문에 쏟아내 OCR 결과를 오염시킨다.
+        # vLLM 은 chat_template_kwargs 를 템플릿에 그대로 전달. None 이면 미전송(기존 동작).
+        if thinking is not None:
+            payload["chat_template_kwargs"] = {"enable_thinking": thinking}
+
+        resp = await client.post(
+            f"{cfg.VLM_BASE_URL}/chat/completions",
+            json=payload,
+            timeout=float(cfg.VLM_TIMEOUT),
+        )
+        resp.raise_for_status()
+        choice = resp.json()["choices"][0]
+        msg = choice.get("message", {})
+        raw = (msg.get("content") or "").strip()
+        if msg.get("reasoning_content"):
+            # vLLM --reasoning-parser 사용 시 추론이 별 필드로 분리돼 content 는 이미 깨끗함
+            return raw, True, choice.get("finish_reason")
+        text, complete = _strip_reasoning(raw, thinking=bool(thinking))
+        return text, complete, choice.get("finish_reason")
+
+    # getattr: 구버전 config 가 섞여도 OCR 전체가 죽지 않도록 (미정의 시 미전송)
+    vlm_think = getattr(cfg, "VLM_THINK", None)
+    text, complete, finish = await _ask(vlm_think)
+
+    # 추론이 수렴하지 않는 페이지가 있다(복잡한 도판에서 사고 루프 → max_tokens 소진).
+    # 토큰을 더 줘도 해결되지 않으므로, thinking 을 끄고 한 번만 재시도한다.
+    if not complete:
+        log.warning(
+            f"[p.{page.number}] 추론 미종료(finish={finish}, max_tokens={cfg.VLM_MAX_TOKENS}) "
+            f"→ thinking 끄고 재시도"
+        )
+        text, complete, finish = await _ask(False)
+        if not complete:
+            raise RuntimeError(f"thinking off 재시도도 실패(finish={finish})")
+
+    # 비추론 모드도 max_tokens 소진을 본다 — 대부분 같은 구절을 되풀이하다 잘린 출력이다.
+    truncated = finish == "length"
+    if truncated:
+        text, degenerate = page_routing.trim_repetition(text)
+        if degenerate:
+            raise VlmDegenerateOutput(f"p.{page.number} VLM 퇴화 출력(finish=length)")
+        log.warning(f"[p.{page.number}] VLM 응답이 max_tokens({cfg.VLM_MAX_TOKENS})에서 잘림 — 되풀이 꼬리 정리")
+
+    return PageResult(
+        page_num=page.number,
+        text=text,
+        method="vlm",
+        confidence=0.9,
+        truncated=truncated,
+    )
+
+
+async def _extract_with_surya(
+    page: fitz.Page,
+    client: httpx.AsyncClient,
+    *,
+    render_lock: asyncio.Lock | None = None,
+) -> PageResult:
+    """Surya 전용 OCR 서비스(별도 컨테이너)로 페이지 이미지 → 텍스트.
+
+    Surya는 transformers 5.x 의존이라 본 이미지(transformers 4.44)와 충돌 →
+    별도 컨테이너로 격리하고 HTTP(/ocr, base64 PNG)로 호출한다.
+    """
+    img_b64 = await _render_page(page, render_lock)
+
+    resp = await client.post(
+        f"{cfg.SURYA_BASE_URL}/ocr",
+        json={"image_b64": img_b64},
+        timeout=float(cfg.VLM_TIMEOUT),
+    )
+    resp.raise_for_status()
+    text = resp.json().get("text", "").strip()
+
+    return PageResult(
+        page_num=page.number,
+        text=text,
+        method="surya",
+        confidence=0.9,
+    )
+```
+
+(4) `extract_text` 바로 위에 `_ocr_pages` 를 두고, `extract_text` 를 아래 전체로 바꾼다(라우팅 루프는 Task 3 그대로 두되 채택은 `adopted`, OCR 대상은 `ocr_jobs` 로 모은다).
+
+```python
+async def _ocr_pages(
+    doc: fitz.Document,
+    jobs: list[tuple[int, PageResult | None, str]],
+    result: ExtractionResult,
+    book_id: str,
+    remaining: float,
+) -> dict[int, PageResult]:
+    """OCR 이 필요한 쪽을 VLM_PAGE_CONCURRENCY 건씩 동시에 보내고 {쪽 번호: 채택 결과} 를 돌려준다.
+
+    실패·퇴화 출력·데드라인 초과로 OCR 결과가 없는 쪽은 ODL 결과(있으면)로 채운다.
+    """
+    done: dict[int, PageResult] = {}
+    if not jobs:
+        return done
+    engine = cfg.OCR_ENGINE.lower()
+    sem = asyncio.Semaphore(cfg.VLM_PAGE_CONCURRENCY)
+    render_lock = asyncio.Lock()
+
+    async with httpx.AsyncClient() as client:
+        async def _one(page_num: int, odl_page: PageResult | None, trigger: str) -> None:
+            async with sem:
+                log.info(f"[{book_id}] p.{page_num} → OCR 보완 ({trigger}, engine={engine})")
+                page = doc.load_page(page_num)
+                try:
+                    if engine == "surya":
+                        ocr_page = await _extract_with_surya(page, client, render_lock=render_lock)
+                    else:
+                        ocr_page = await _extract_with_vlm(
+                            page, client, prompt_type="ocr", render_lock=render_lock
+                        )
+                except VlmDegenerateOutput as e:
+                    log.warning(f"[{book_id}] {e} — ODL 결과 채택")
+                    result.errors.append(f"{e} — ODL 결과 채택")
+                    result.vlm_truncated += 1
+                    ocr_page = odl_page
+                except Exception as e:
+                    log.error(f"[{book_id}] p.{page_num} OCR({engine}) 실패: {e}")
+                    result.errors.append(f"p.{page_num} OCR({engine}): {e}")
+                    result.ocr_errors += 1
+                    ocr_page = odl_page  # OCR 실패 시 ODL 결과라도 살리기
+                else:
+                    if ocr_page.truncated:
+                        result.vlm_truncated += 1
+                if ocr_page is not None:
+                    done[page_num] = ocr_page
+
+        tasks = [asyncio.create_task(_one(*job)) for job in jobs]
+        try:
+            # Celery 소프트 리밋은 코루틴 안에서 믿을 수 없다(함정 19) — 자체 데드라인으로 끊는다.
+            async with asyncio.timeout(max(remaining, 0.0)):
+                await asyncio.gather(*tasks)
+        except TimeoutError:
+            await asyncio.gather(*tasks, return_exceptions=True)
+            left = [n for n, _, _ in jobs if n not in done]
+            result.deadline_hit = True
+            log.warning(
+                f"[{book_id}] 추출 데드라인({cfg.INGEST_EXTRACT_DEADLINE}s) 초과 — "
+                f"OCR 못 한 {len(left)}쪽은 ODL 결과로 채택"
+            )
+            result.errors.append(f"추출 데드라인 초과 — {len(left)}쪽 ODL 결과 채택")
+            for page_num, odl_page, _ in jobs:
+                if page_num not in done and odl_page is not None:
+                    done[page_num] = odl_page
+    return done
+
+
+async def extract_text(
+    file_path: str | Path,
+    book_id: str,
+    *,
+    file_bytes: bytes | None = None,
+    force_ocr_short_pages: bool = False,
+) -> ExtractionResult:
+    """2티어 라우팅 파이프라인.
+
+    force_ocr_short_pages: ODL 본문이 짧은 쪽을 판정 없이 모두 OCR 한다(섹션 0개 재추출용).
+
+    1티어: OpenDataLoader로 전체 PDF 마크다운+json 추출
+    2티어: 본문 부족 / CMap 손상 의심 / 표 셀 충전율 낮음 중 하나라도 해당하는
+           페이지만 VLM 보완 (판단 기준은 파일 상단 docstring 참고). 판정은 쪽 순서대로 하고,
+           OCR 은 문서 안에서 VLM_PAGE_CONCURRENCY 건씩 동시에 보내 결과를 쪽 순서로 조립한다.
+           추출 전체가 INGEST_EXTRACT_DEADLINE 을 넘으면 남은 쪽은 ODL 결과로 채택한다.
+    """
+    t_start = time.monotonic()
+    result = ExtractionResult(book_id=book_id, total_pages=0)
+
+    # ── 1티어: OpenDataLoader 전체 추출 ──────────────────
+    odl_result = await extract_text_opendataloader(
+        file_path, book_id, file_bytes=file_bytes
+    )
+    odl_pages_by_num: dict[int, PageResult] = {p.page_num: p for p in odl_result.pages}
+    if odl_result.errors:
+        result.errors.extend(odl_result.errors)
+
+    # ── fitz로 페이지 열기 — VLM용 이미지 렌더링 + CMap 손상 교차검증(page.get_text())에 사용 ─
+    try:
+        if file_bytes:
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+        else:
+            doc = fitz.open(str(file_path))
+    except Exception as e:
+        result.errors.append(f"파일 열기 실패: {e}")
+        # OpenDataLoader 결과만이라도 반환
+        result.pages = list(odl_result.pages)
+        result.total_pages = len(result.pages)
+        return result
+
+    result.total_pages = len(doc)
+    log.info(
+        f"[{book_id}] {result.total_pages}p — 1티어 ODL 완료 "
+        f"({len(odl_result.pages)}p 추출), 2티어 라우팅 시작"
+    )
+
+    # 짧은 쪽은 같은 것끼리 견준다 — ODL 은 머리말·꼬리말을 지운 길이라 fitz 도 문서 전체에
+    # 되풀이되는 줄을 뺀 길이로 잰다. CMap 손상 2배 비교는 예전처럼 원래 fitz 길이를 쓴다.
+    fitz_texts = [_clean_text(p.get_text()) for p in doc]
+    repeated = page_routing.repeated_lines(fitz_texts, cfg.SCAN_REPEAT_LINE_RATIO)
+    fitz_raw_lens = [page_routing.body_len(t) for t in fitz_texts]
+    fitz_stripped_lens = [
+        page_routing.body_len(page_routing.strip_lines(t, repeated)) for t in fitz_texts
+    ]
+    short_flags = [
+        page_routing.body_len(odl_pages_by_num[n].text if n in odl_pages_by_num else "")
+        < MIN_CHARS_PER_PAGE
+        and fitz_stripped_lens[n] < MIN_CHARS_PER_PAGE
+        for n in range(len(doc))
+    ]
+    doc_is_scan = page_routing.is_scan_document(
+        short_flags, min_pages=cfg.SCAN_MIN_PAGES, ratio=cfg.SCAN_SHORT_PAGE_RATIO
+    )
+    if doc_is_scan:
+        log.info(f"[{book_id}] 짧은 쪽 {sum(short_flags)}/{len(doc)} — 스캔본 문서로 보고 짧은 쪽을 OCR")
+
+    vlm_cap = cfg.VLM_MAX_PAGES_PER_DOC
+    adopted: dict[int, PageResult] = {}
+    ocr_jobs: list[tuple[int, PageResult | None, str]] = []
+
+    for page in doc:
+        page_num = page.number
+        odl_page = odl_pages_by_num.get(page_num)
+
+        # 라우팅 판단 — "그림 유무"가 아니라 "1티어 결과를 믿을 수 있는지"로 판정.
+        # ① 표 셀 충전율 낮음(빈 표 격자가 글자 수만 채우는 경우) 최우선 체크,
+        # ② 그 외에는 fitz 추정 길이와 교차검증 — 길이 기준 충족 페이지는 fitz가
+        #    크게 더 길면(CMap 손상 의심) VLM, 길이 기준 미달 페이지는 fitz도
+        #    같이 짧으면(원래 짧은 페이지) ODL 그대로 채택, fitz엔 더 있으면 VLM.
+        # 셋 다 아니면 1티어 결과를 그대로 채택하고 VLM은 호출하지 않는다.
+        # (KCI 논문 대부분은 페이지마다 워터마크가 [그림]으로 잡혀 예전엔 전 페이지가
+        #  불필요하게 VLM으로 넘어갔음 — 본문 길이 기준으로 바꿔 텍스트 페이지는 스킵.
+        #  다만 길이 기준 미달 분기는 fitz 교차검증이 없어 표지·구분 페이지처럼
+        #  "원래 짧은 페이지"까지 전부 VLM으로 넘기고 있었다 — 아래에서 통일)
+        if odl_page is None:
+            body_len = 0
+            trigger = "ODL 누락"
+        else:
+            body_len = page_routing.body_len(odl_page.text)
+            fill_ratio = odl_result.table_fill_ratios.get(page_num)
+
+            if fill_ratio is not None and fill_ratio < 0.30:
+                # 마크다운 글자수는 충분해도 표 셀 대부분이 비어있음 — 셀이 빈
+                # 격자 문자로 렌더링돼 글자수만 채우는 실패(사내 연구로 검증:
+                # 재현율 48.1%→90.4%, 오탐 비용 < 미탐의 영구 손실).
+                trigger = f"표 셀 충전율 낮음({fill_ratio:.2f})"
+            else:
+                # ODL 결과가 충분해 보여도, 폰트 CMap 손상 등으로 ODL(veraPDF 기반)이
+                # 실제로는 글자 대부분을 유실했을 수 있다("Incorrect bfrange in
+                # toUnicode CMap" 경고가 뜨는 PDF에서 확인됨 — 워터마크가 아니라
+                # 폰트 문제였음). fitz는 이런 손상에 관대해서 원문 길이를 정확히
+                # 반영하므로, 길이 비교만으로 이상 여부를 감지한다(fitz 텍스트 자체는
+                # 띄어쓰기 소실·컬럼 순서 문제가 있어 채택하지 않고 감지 용도로만 사용).
+                # 길이 기준 미달 페이지도 동일하게 fitz로 "원래 짧은 페이지"인지
+                # "ODL이 놓친 페이지"인지 구분한다 — <50자 트리거가 전체 VLM
+                # 호출의 90% 이상을 차지해 표지·구분 페이지까지 휩쓸고 있었음.
+                fitz_check_len = fitz_raw_lens[page_num]
+                if body_len >= MIN_CHARS_PER_PAGE:
+                    if fitz_check_len <= body_len * 2:
+                        # 정상 — 1티어 결과 채택, VLM 호출 안 함. 잔여 [그림] 마커 정리.
+                        odl_page.text = _strip_figure_markers(odl_page.text)
+                        adopted[page_num] = odl_page
+                        continue
+                    trigger = f"ODL 글자 유실 의심(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+                else:
+                    need_ocr, why = page_routing.short_page_needs_ocr(
+                        fitz_len_stripped=fitz_stripped_lens[page_num],
+                        fitz_len_raw=fitz_check_len,
+                        doc_is_scan=doc_is_scan,
+                        force=force_ocr_short_pages,
+                        min_chars=MIN_CHARS_PER_PAGE,
+                    )
+                    if not need_ocr:
+                        # 원래 짧은 쪽(표지·간지 등) — ODL 결과 그대로 채택.
+                        odl_page.text = _strip_figure_markers(odl_page.text)
+                        adopted[page_num] = odl_page
+                        continue
+                    trigger = f"{why}(ODL {body_len}자 vs 원본 추정 {fitz_check_len}자)"
+
+        # 문서당 VLM 보완 페이지 수 상한 — 완전 스캔본 대형 문서가 잡 전체를 지연시키는
+        # 것을 방지. 초과분은 ODL 결과(비어있거나 부실해도) 그대로 채택하고 VLM은 스킵한다.
+        if len(ocr_jobs) >= vlm_cap:
+            if not result.vlm_capped:
+                result.vlm_capped = True
+                log.warning(f"[{book_id}] VLM 페이지 상한({vlm_cap}) 도달 — 이후 저텍스트 페이지는 ODL로 대체")
+            if odl_page:
+                adopted[page_num] = odl_page
+            continue
+        ocr_jobs.append((page_num, odl_page, trigger))
+
+    remaining = cfg.INGEST_EXTRACT_DEADLINE - (time.monotonic() - t_start)
+    ocr_done = await _ocr_pages(doc, ocr_jobs, result, book_id, remaining)
+    doc.close()
+
+    for page_num in range(result.total_pages):
+        page_result = adopted.get(page_num) or ocr_done.get(page_num)
+        if page_result is not None:
+            result.pages.append(page_result)
+
+    # 페이지 번호 매핑 생성 (full_text와 동일하게 빈 페이지 제외)
+    cursor = 0
+    page_map = {}
+    for p in result.pages:
+        if not p.text:
+            continue
+        for i in range(len(p.text)):
+            page_map[cursor + i] = p.page_num
+        cursor += len(p.text) + 2  # "\n\n"
+    result.page_map = page_map
+
+    log.info(f"[{book_id}] 추출 완료 — {result.stats}, page_map={len(page_map)}")
+    return result
+```
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_ocr.py tests/test_extractor_routing.py tests/test_page_routing.py -q`
+Expected: `48 passed`
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/extractor.py app/tests/test_extractor_ocr.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Feat] round07 — 스캔본 OCR 을 문서 안에서 VLM_PAGE_CONCURRENCY 건씩 동시에 보낸다: 판정은 쪽 순서대로, 렌더링은 asyncio.Lock 안에서 한 쪽씩(이벤트 루프 스레드), 결과는 쪽 순서로 조립. 추출 전체에 INGEST_EXTRACT_DEADLINE asyncio 데드라인을 두어 넘으면 남은 쪽은 ODL 결과로 채택하고 deadline_hit 를 남긴다(함정 19). OCR 실패 수(ocr_errors)·length 로 끝난 쪽 수(vlm_truncated)를 센다. VLM 60쪽 상한·OCR 실패 시 ODL 폴백은 그대로"
+```
+
+#### 묶음 4-3: `run_extract` 섹션 0개 — 강제 OCR 재추출 → `no_text` / `vlm_error`
+
+- [ ] **Step 1: 실패하는 테스트 작성** — `app/tests/test_run_extract_sections.py`
+
+`split_into_sections` 는 embedder(FlagEmbedding)를 끌어오므로 목으로 바꾼다(함정 13). DB·MinIO·doc_type 판별도 목이다.
+
+```python
+"""run_extract — 섹션 0개를 추출 성공으로 넘기지 않는다: 강제 OCR 재추출 → no_text / vlm_error."""
+from unittest.mock import MagicMock
+
+import pytest
+
+from services.ingestion import extractor, stages
+from services.ingestion.extractor import ExtractionResult, PageResult
+from services.ingestion.stages import StageContext, StageError
+
+
+def _extraction(text: str, *, ocr_errors: int = 0, deadline_hit: bool = False, vlm_truncated: int = 0):
+    res = ExtractionResult(book_id="KCI_T", total_pages=3)
+    res.pages = [PageResult(n, text, "opendataloader", 0.95) for n in range(3)]
+    res.ocr_errors = ocr_errors
+    res.deadline_hit = deadline_hit
+    res.vlm_truncated = vlm_truncated
+    return res
+
+
+@pytest.fixture
+def run_extract_with(monkeypatch):
+    """extract_text 가 차례로 돌려줄 결과를 받아 run_extract 를 돌린다 → (meta, force 인자 기록, 저장된 추출)."""
+    calls: list[bool] = []
+    saved: list[ExtractionResult] = []
+
+    def _run(*results: ExtractionResult) -> dict:
+        queue = list(results)
+
+        async def fake_extract_text(file_path, book_id, *, file_bytes=None, force_ocr_short_pages=False):
+            calls.append(force_ocr_short_pages)
+            return queue.pop(0)
+
+        def fake_split(pages):
+            if not any(p.text for p in pages):
+                return []
+            return [{"section_idx": 0, "text": "본문", "page_start": 0, "page_end": 2, "token_count": 10}]
+
+        monkeypatch.setattr(extractor, "extract_text", fake_extract_text)
+        monkeypatch.setattr(stages, "minio_client", lambda: MagicMock())
+        monkeypatch.setattr(stages, "split_into_sections", fake_split)
+        monkeypatch.setattr(stages, "_ensure_book_and_doc_type", lambda ctx, path: "paper")
+        monkeypatch.setattr(stages, "SyncSessionLocal", lambda: MagicMock())
+        monkeypatch.setattr(stages, "save_extraction_artifact", lambda book_id, ext, client: saved.append(ext))
+        return stages.run_extract(StageContext(book_id="KCI_T", file_path="C:/nowhere/KCI_T.pdf"))
+
+    return _run, calls, saved
+
+
+def test_sections_on_first_pass_do_not_reextract(run_extract_with):
+    run, calls, _ = run_extract_with
+    meta = run(_extraction("본문"))
+    assert calls == [False]
+    assert meta["sections"] == 1
+    assert (meta["forced_ocr"], meta["vlm_truncated"], meta["extract_deadline_hit"], meta["ocr_errors"]) == (
+        False, 0, False, 0)
+
+
+def test_zero_sections_reextracts_with_forced_ocr(run_extract_with):
+    run, calls, saved = run_extract_with
+    second = _extraction("VLM 본문", vlm_truncated=1)
+    meta = run(_extraction(""), second)
+    assert calls == [False, True]
+    assert meta["forced_ocr"] is True
+    assert meta["vlm_truncated"] == 1
+    assert saved == [second]
+
+
+def test_zero_sections_after_forced_ocr_is_no_text(run_extract_with):
+    run, calls, saved = run_extract_with
+    with pytest.raises(StageError) as exc:
+        run(_extraction(""), _extraction(""))
+    assert exc.value.error_group == "no_text"
+    assert calls == [False, True]
+    assert saved == []
+
+
+def test_zero_sections_after_forced_ocr_with_ocr_errors_is_vlm_error(run_extract_with):
+    run, _, _ = run_extract_with
+    with pytest.raises(StageError) as exc:
+        run(_extraction(""), _extraction("", ocr_errors=2))
+    assert exc.value.error_group == "vlm_error"
+
+
+@pytest.mark.parametrize("first", [_extraction("", ocr_errors=3), _extraction("", deadline_hit=True)])
+def test_ocr_trouble_on_first_pass_skips_forced_ocr(run_extract_with, first):
+    run, calls, _ = run_extract_with
+    with pytest.raises(StageError) as exc:
+        run(first)
+    assert exc.value.error_group == "vlm_error"
+    assert calls == [False]
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_run_extract_sections.py -q`
+Expected: `6 failed` — `KeyError: 'forced_ocr'`, `assert [False] == [False, True]`, `Failed: DID NOT RAISE <class 'services.ingestion.stages.StageError'>` ×4
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/stages.py` 의 `run_extract` 두 곳(다른 작업이 같은 파일의 다른 함수를 고치므로 블록 단위로 바꾼다)
+
+(1) 섹션 분할을 그림 저장 앞으로 올리고 섹션 0개를 처리한다.
+
+```python
+# old
+        log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
+
+        if extraction.figures:
+            n_figs = save_figures(book_id, extraction.figures, client)
+            log.info(f"[{book_id}] 그림 {n_figs}개 저장 완료")
+
+        sections = split_into_sections(extraction.pages)
+        log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
+# new
+        log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
+
+        sections = split_into_sections(extraction.pages)
+        forced_ocr = False
+        if not sections:
+            # 첫 추출에서 OCR 이 실패했거나 데드라인에 걸렸으면 지금 다시 해도 같다 — 추출부터
+            # 재시도하도록 넘긴다(두 번째 추출까지 돌면 단계 시간이 stale 판정 3600초를 넘을 수 있다).
+            if extraction.ocr_errors or extraction.deadline_hit:
+                raise StageError(
+                    "vlm_error",
+                    f"섹션 0개 — OCR 오류 {extraction.ocr_errors}건·데드라인 {extraction.deadline_hit}: "
+                    f"{extraction.errors[:3]}",
+                )
+            log.warning(f"[{book_id}] 섹션 0개 — 짧은 쪽을 모두 OCR 로 보내 다시 추출")
+            forced_ocr = True
+            extraction = run_async(extract_text(local_path, book_id, force_ocr_short_pages=True))
+            sections = split_into_sections(extraction.pages) if extraction.pages else []
+            if not sections:
+                if extraction.ocr_errors or extraction.deadline_hit:
+                    raise StageError(
+                        "vlm_error",
+                        f"섹션 0개(강제 OCR) — OCR 오류 {extraction.ocr_errors}건·데드라인 "
+                        f"{extraction.deadline_hit}: {extraction.errors[:3]}",
+                    )
+                raise StageError(
+                    "no_text",
+                    f"섹션 0개 — 강제 OCR 재추출로도 본문 없음({extraction.total_pages}쪽)",
+                )
+        log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
+
+        if extraction.figures:
+            n_figs = save_figures(book_id, extraction.figures, client)
+            log.info(f"[{book_id}] 그림 {n_figs}개 저장 완료")
+```
+
+(2) 반환 meta 에 공통 계약의 네 키를 더한다.
+
+```python
+# old
+            "doc_type": doc_type,
+            "vlm_capped": extraction.vlm_capped,
+# new
+            "doc_type": doc_type,
+            "vlm_capped": extraction.vlm_capped,
+            "forced_ocr": forced_ocr,
+            "vlm_truncated": extraction.vlm_truncated,
+            "extract_deadline_hit": extraction.deadline_hit,
+            "ocr_errors": extraction.ocr_errors,
+```
+
+`_run_stage` 는 성공한 단계의 반환 dict 만 `meta_update` 로 적는다 — `no_text`·`vlm_error` 로 끝난 추출은 이 네 키가 남지 않고 `error_group`·`last_error` 로만 보인다(Task 2 가 실패 meta 를 따로 적지 않는 한).
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_run_extract_sections.py tests/test_embed_index_guard.py -q`
+Expected: `10 passed`
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest -q --continue-on-collection-errors`
+Expected: Task 3 뒤 수 + 15 passed, 수집 오류 3(사본 측정: 929 → 944)
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/stages.py app/tests/test_run_extract_sections.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix] round07 — 섹션 0개를 추출 성공으로 넘기지 않는다: 짧은 쪽을 모두 OCR 로 보내 한 번 더 추출하고, 그래도 0개면 OCR 오류·데드라인이 있었으면 vlm_error(추출부터 재시도), 없었으면 no_text(결정적 — 재시도 안 함). 첫 추출에서 이미 OCR 이 실패했거나 데드라인에 걸렸으면 강제 재추출 없이 vlm_error(두 번째 추출까지 돌면 stale 판정 3600초를 넘을 수 있다). meta 에 forced_ocr·vlm_truncated·extract_deadline_hit·ocr_errors"
+```
+
+---
+
+### Task 5: ODL 타임아웃·fitz 재저장 재시도·fitz 폴백과 이미지 끄기
+
+**Files:**
+- Modify: `app/services/ingestion/extractor.py` (import, `_ODL_CHILD`·`_kill_process_group`·`_odl_convert`·`_run_odl`·`_fitz_text_pages`(새), `extract_text_opendataloader`)
+- Test: `app/tests/test_extractor_odl.py`(새)
+
+**이 작업이 지키는 것(조정자 조건).** SKOVIX 의 저수준 로더 호출을 그대로 둔다 — `opendataloader_pdf.convert(format=["markdown","json"], table_method="cluster", markdown_page_separator=…, keep_line_breaks=False, quiet=True)` 한 번으로 markdown·json 을 함께 받고, json 으로 `table_fill_ratios`·`page_headers_footers` 를 만드는 코드(4e10275·ac0a213·7cdf27b·8b1511a)는 한 줄도 바꾸지 않는다. nanet 의 고수준 `OpenDataLoaderPDFLoader` 로 되돌리지 않는다. 그 위에 타임아웃·재저장 재시도·fitz 폴백만 얹는다.
+
+**자바 프로세스를 남기지 않는 방법 — 패키지 실제 구현 근거.** 이 PC 설치본 `opendataloader-pdf 2.5.0`(`C:/Users/LANDSOFT/AppData/Local/hermes/hermes-agent/venv/Lib/site-packages/opendataloader_pdf/`):
+- `convert_generated.py` 의 `convert(...)` 는 인자를 CLI 옵션 목록으로 바꿔 `run_jar(args, quiet)` 를 부를 뿐이다.
+- `runner.py` 의 `run_jar` 는 `quiet=True` 일 때 `subprocess.run(["java", "-Djava.awt.headless=true", "-Dapple.awt.UIElement=true", "-jar", <패키지 jar/opendataloader-pdf-cli.jar>, *args], stdout=PIPE, stderr=PIPE, check=True, …)` — **timeout 인자가 없고 Popen 핸들도 밖으로 내주지 않는다.** `start_new_session` 도 쓰지 않으므로 java 는 부른 프로세스와 같은 프로세스 그룹에 들어간다.
+- 그래서 지금처럼(또 nanet 5f8fb80 처럼) `run_in_executor` 를 `wait_for` 로 감싸면, 시간이 지나도 스레드는 `subprocess.run` 안에서 계속 막혀 있고 java 도 끝까지 돈다. nanet 5f8fb80 의 주석이 이 한계를 그대로 적어 두었다("run_in_executor 스레드 자체는 Python에서 강제 종료할 수 없어 백그라운드에서 계속 돌 수 있음"). **nanet 에는 프로세스를 끄는 구현이 없다** — 가져올 것이 없어 새로 둔다.
+- 방법: `convert(**kwargs)` 를 자식 파이썬(`sys.executable -c …`)에서 부르고 `start_new_session=True` 로 새 세션(그룹 id = 자식 pid)에 둔다. 시간을 넘기면 `os.killpg(pid, SIGKILL)` 로 자식 파이썬과 java 손자를 함께 끈다. 셀러리 prefork 워커는 데몬 프로세스라 `multiprocessing` 자식을 둘 수 없어서 `create_subprocess_exec` 를 쓴다. convert 의 인자→CLI 변환은 패키지에 그대로 맡긴다(requirements 가 버전을 고정하지 않아, jar 경로·CLI 옵션을 우리가 베끼면 패키지 업데이트 때 깨진다).
+- stderr 는 파이프가 아니라 임시 파일로 받는다. 파이프로 받으면 자식을 끈 뒤에도 그 파이프 끝을 쥔 손자가 살아 있는 동안 이벤트 루프가 읽기를 기다린다(사본에서 Windows 20초 대기로 확인 — 리눅스는 killpg 로 손자가 죽어 문제가 없지만 두 OS 에서 같게 둔다).
+- 확인: WSL Ubuntu(파이썬 3.12)에서 `_odl_convert` 소스만 떼어 '손자를 띄우고 잠드는 자식'을 2초 상한으로 돌리면 2.0초에 `TimeoutError`, 손자 프로세스는 사라졌다(`/proc/<pid>` 없음). 실제 PDF 6건을 예전 방식(같은 프로세스 `convert`)과 자식 방식으로 돌려 markdown·json 의 sha256 이 6/6 같았고, 자식 방식이 평균 0.057초 더 걸렸다.
+
+**재시도·폴백 순서와 손상 판정의 뜻.**
+1. fitz 로 쪽수를 센다 → 타임아웃 = max(`ODL_TIMEOUT_BASE_SECONDS`, 쪽수 × `ODL_TIMEOUT_PER_PAGE_SECONDS`).
+2. 원본으로 ODL. 시간 초과·비정상 종료·markdown 없음이면 → 3.
+3. fitz 로 다시 저장한(`garbage=4, clean=True, deflate=True`, nanet 5f8fb80 — xref 손상 문서 15분 → 3분) PDF 로 ODL 한 번 더. 그래도 안 되면 → 4.
+4. fitz 텍스트를 1티어 결과로 쓴다(쪽 method `"fitz"`, 글자 없는 쪽은 넣지 않음).
+- fitz 로도 열리지 않는 파일(쪽수 0 포함 손상): 원본 ODL 한 번만(기본 타임아웃) 시도하고 재저장·fitz 폴백은 하지 않는다. ODL 도 실패하면 결과가 비고, `extract_text` 의 fitz 열기도 실패해 `run_extract` 는 지금처럼 `extract_empty` 다.
+- 폴백 경로에서도 교차검증의 뜻은 흐려지지 않는다: 1티어가 fitz 텍스트이므로 CMap 2배 비교는 fitz 대 fitz(비율 1)라 걸리지 않는다 — 'ODL 이 글자를 잃었나'를 물을 ODL 이 없고, fitz 는 그 비교의 기준(손상에 관대한 쪽)이다. 짧은 쪽 분기는 그대로 돈다: fitz 0자 쪽은 폴백 결과에 넣지 않아 'ODL 누락' → OCR(= 텍스트 층 없음 → OCR), 글자가 조금 있는 쪽은 Task 3 의 문서 단위 판정을 그대로 탄다. 잃는 것은 머리말·꼬리말 제거(json 이 없다)와 표 구조뿐이다.
+
+**이미지 끄기(`image_output` → `cfg.ODL_IMAGE_OUTPUT`, 기본 `"off"`)에 기대는 코드 점검 — 하나씩.**
+- `FigureData`·`figures` 생성: `extract_text_opendataloader` 만 만들고, `extract_text` 는 `odl_result.figures` 를 결과로 옮기지 않는다 → `run_extract` 의 `if extraction.figures:`(stages.py:289) 는 늘 거짓이라 `save_figures` 가 돌지 않고, `paper_enricher` 의 그림 설명은 MinIO `figures/{id}/` 를 읽는데 거기 쓰는 곳은 `save_figures` 뿐이다(운영 그림 저장 0건과 일치). `api/book.py` 비교 API 와 `pdf_meta_extractor` 는 `pages` 만 쓴다 → 영향 없음.
+- `[그림]` 마커 정리(`_strip_figure_markers`·`body_len`): off 면 마커가 아예 생기지 않을 뿐이다. 라우팅 주석의 '워터마크가 [그림]으로 잡힘'은 이미 길이에서 빼고 있던 것이라 판정이 같다.
+- `table_fill_ratios`·머리말/꼬리말 제거: 둘 다 json 에서 만든다. json 에는 off 에서도 `image` 요소가 그대로 있다. 실제 PDF 비교는 위 근거 ⑥.
+- **영향이 있는 곳 하나 — 그림만 있는 쪽.** embedded 에서는 그 쪽 markdown 이 `[그림]` 이라 'ODL 이 본 빈 쪽'(본문 0자 → fitz 교차검증)인데, off 에서는 markdown 에서 쪽이 통째로 빠져 `extract_text` 가 'ODL 누락'(판정 없이 OCR)으로 본다 — 실패 블록 스캔본에서 확인했다(embedded 14쪽 모두 `[그림]\n\n[그림]`, off 0쪽). 그대로 두면 그림만 있는 쪽(디지털 논문의 그림 쪽 포함)이 fitz 교차검증 없이 모두 VLM 을 탄다. 그래서 json 에 그림 요소가 있는데 markdown 에 없는 쪽을 빈 텍스트 쪽으로 남긴다(5-2). 이렇게 하면 라우팅 판정이 embedded 와 같다(근거 ⑥).
+- VLM 실패 시 ODL 폴백 텍스트: embedded 에서는 그림 쪽 폴백이 `[그림]\n\n[그림]` 을 그대로 본문으로 남겼고(`_strip_figure_markers` 를 거치지 않음), off 에서는 빈 쪽이다 — 나아지는 쪽이다.
+- 덤: KCI_FI001930485(섹션 196개 중 172개가 `<br>` 반복)는 embedded markdown 파일이 107MB(그림 base64 포함)·`<br>` 324,402개, off 는 83KB·`<br>` 104개였다 — 표 칸에 박힌 그림 인코딩이 `<br>` 격자를 만들고 있었다(근거 ⑤). 그림 인코딩이 큰 문서는 off 가 훨씬 빠르다(KCI_FI000858284 14쪽: embedded 13.4초 → off 1.85초, 근거 ④).
+- 쪽수 비례 상한(0.5초/쪽)은 이 PC 에서 표가 많은 문서가 상한의 78%까지 썼다(근거 ③). 운영에서 `embedded` 로 되돌리면 그림 인코딩 시간 때문에 상한에 자주 닿는다 — `ODL_IMAGE_OUTPUT` 를 바꿀 때는 `ODL_TIMEOUT_PER_PAGE_SECONDS` 도 함께 본다.
+
+#### 묶음 5-1: 자식 프로세스 변환·쪽수 비례 타임아웃·재저장 재시도·fitz 폴백
+
+- [ ] **Step 1: 실패하는 테스트 작성** — `app/tests/test_extractor_odl.py`
+
+`_odl_convert` 를 목으로 바꿔 산출물을 직접 써 넣는다. 패키지가 없는 환경에서도 돌게 `opendataloader_pdf` 를 빈 모듈로 꽂는다. 마지막 두 테스트는 실제 하위 프로세스로 끄기·종료 코드를 확인한다(손자 확인은 리눅스에서만).
+
+```python
+"""extract_text_opendataloader — 쪽수 비례 타임아웃 → fitz 재저장본 재시도 → fitz 텍스트 폴백(5-1), 이미지 끄기(5-2).
+
+ODL 변환(_odl_convert)은 목으로 바꾸고 산출물(markdown·json)을 직접 써 넣는다. 자식 프로세스를
+끄는 동작만 실제 하위 프로세스로 확인한다.
+"""
+import asyncio
+import json
+import os
+import sys
+import time
+import types
+from pathlib import Path
+
+import fitz
+import pytest
+
+from services.ingestion import extractor
+
+SEP = "\n<<<ODL_PAGE_BREAK_%page-number%>>>\n"
+
+
+@pytest.fixture(autouse=True)
+def _odl_package(monkeypatch):
+    """설치 확인용 import 만 통과시킨다 — 변환은 _odl_convert 목이 하므로 패키지가 없어도 된다."""
+    monkeypatch.setitem(sys.modules, "opendataloader_pdf", types.ModuleType("opendataloader_pdf"))
+
+
+def _pdf(texts: list[str]) -> bytes:
+    doc = fitz.open()
+    for text in texts:
+        page = doc.new_page(width=300, height=400)
+        if text:
+            page.insert_text((36, 60), text, fontsize=9)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def _write_outputs(out_dir: str, pages: dict[int, str], json_kids: list[dict] | None = None) -> None:
+    md = "".join(SEP.replace("%page-number%", str(n)) + text for n, text in sorted(pages.items()))
+    Path(out_dir, "doc.md").write_text(md, encoding="utf-8")
+    Path(out_dir, "doc.json").write_text(json.dumps({"kids": json_kids or []}), encoding="utf-8")
+
+
+def _patch_convert(monkeypatch, behaviours: list) -> list[dict]:
+    """behaviours[i] — i 번째 변환에서 던질 예외, 또는 써 넣을 {쪽: 텍스트} / ({쪽: 텍스트}, json kids)."""
+    calls: list[dict] = []
+
+    async def fake_convert(kwargs, timeout):
+        calls.append({**kwargs, "timeout": timeout, "input_exists": os.path.exists(kwargs["input_path"])})
+        b = behaviours[len(calls) - 1]
+        if isinstance(b, BaseException):
+            raise b
+        pages, kids = b if isinstance(b, tuple) else (b, None)
+        _write_outputs(kwargs["output_dir"], pages, kids)
+
+    monkeypatch.setattr(extractor, "_odl_convert", fake_convert)
+    return calls
+
+
+def _run(pdf: bytes, **kwargs):
+    return asyncio.run(extractor.extract_text_opendataloader(None, "T_ODL", file_bytes=pdf, **kwargs))
+
+
+def test_convert_writes_markdown_and_json_with_page_scaled_timeout(monkeypatch):
+    calls = _patch_convert(monkeypatch, [{1: "첫 쪽 본문", 2: "둘째 쪽 본문"}])
+    result = _run(_pdf(["a"] * 30))
+    assert calls[0]["format"] == ["markdown", "json"]
+    assert calls[0]["timeout"] == 15.0  # max(5, 30 × 0.5)
+    assert [(p.page_num, p.text, p.method) for p in result.pages] == [
+        (0, "첫 쪽 본문", "opendataloader"), (1, "둘째 쪽 본문", "opendataloader")]
+    assert result.errors == []
+
+
+def test_short_document_gets_base_timeout(monkeypatch):
+    calls = _patch_convert(monkeypatch, [{1: "본문"}])
+    _run(_pdf(["a"] * 4))
+    assert calls[0]["timeout"] == 5.0
+
+
+def test_timeout_retries_once_with_fitz_resaved_pdf(monkeypatch):
+    calls = _patch_convert(monkeypatch, [TimeoutError(), {1: "재저장본 본문"}])
+    result = _run(_pdf(["a", "b"]))
+    assert len(calls) == 2
+    assert calls[1]["input_path"] != calls[0]["input_path"]
+    assert calls[1]["input_exists"]
+    assert not os.path.exists(calls[1]["input_path"])  # 재저장 임시 파일은 지운다
+    assert [p.text for p in result.pages] == ["재저장본 본문"]
+    assert any("ODL 실패(원본)" in e for e in result.errors)
+
+
+def test_both_attempts_fail_falls_back_to_fitz_text(monkeypatch):
+    _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)"), TimeoutError()])
+    result = _run(_pdf(["First page body", "", "Third page body"]))
+    assert [(p.page_num, p.text, p.method) for p in result.pages] == [
+        (0, "First page body", "fitz"), (2, "Third page body", "fitz")]
+    assert "ODL 실패 — fitz 텍스트로 대체" in result.errors
+
+
+def test_unopenable_file_gets_no_resave_or_fitz_fallback(monkeypatch):
+    calls = _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)")])
+    result = _run(bytes(range(256)) * 40)
+    assert len(calls) == 1
+    assert calls[0]["timeout"] == 5.0
+    assert result.pages == []
+    assert any("ODL 실패(원본)" in e for e in result.errors)
+
+
+def test_nonzero_exit_raises_runtime_error(monkeypatch):
+    monkeypatch.setattr(extractor, "_ODL_CHILD", "import sys; sys.stderr.write('boom'); sys.exit(3)")
+    with pytest.raises(RuntimeError, match="exit 3"):
+        asyncio.run(extractor._odl_convert({}, 30))
+
+
+def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
+    """시간을 넘기면 자식(파이썬)과 그 자식(java 자리)을 함께 끈다. 손자 확인은 killpg 가 있는 리눅스에서만."""
+    pid_file = tmp_path / "grandchild.pid"
+    script = (
+        "import subprocess, sys, time\n"
+        "p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
+        f"open({str(pid_file)!r}, 'w').write(str(p.pid))\n"
+        "time.sleep(20)\n"
+    )
+    monkeypatch.setattr(extractor, "_ODL_CHILD", script)
+    t0 = time.monotonic()
+    with pytest.raises(TimeoutError):
+        asyncio.run(extractor._odl_convert({}, 2.0))
+    assert time.monotonic() - t0 < 10
+    if sys.platform == "win32":
+        return
+    grandchild = int(pid_file.read_text())
+    for _ in range(50):
+        try:
+            os.kill(grandchild, 0)
+        except ProcessLookupError:
+            break
+        with open(f"/proc/{grandchild}/stat") as f:  # 회수 전 좀비(Z)면 끝난 것으로 본다
+            if f.read().split()[2] == "Z":
+                break
+        time.sleep(0.1)
+    else:
+        pytest.fail("timeout 뒤에도 손자 프로세스가 살아 있다")
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_odl.py -q`
+Expected: `7 failed` — `AttributeError: <module 'services.ingestion.extractor' ...> has no attribute '_odl_convert'`(5), `... has no attribute '_ODL_CHILD'`(2)
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/extractor.py`
+
+(1) import 를 아래로 바꾼다.
+
+```python
+# old
+import asyncio
+import io
+import logging
+import time
+from pathlib import Path
+# new
+import asyncio
+import io
+import json
+import logging
+import os
+import shutil
+import signal
+import sys
+import tempfile
+import time
+from pathlib import Path
+```
+
+(2) `async def extract_text_opendataloader(` 부터 파일 끝까지를 아래로 바꾼다. 변환 인자·json 파싱·markdown 쪽 나누기·그림 추출 코드는 지금 것 그대로이고(`image_output` 은 이 묶음에서는 `"embedded"` 그대로), 바뀐 곳은 변환을 `_run_odl` 로 부르는 부분과 실패 시 재저장·폴백, 정리(`finally`)다.
+
+```python
+# opendataloader_pdf.convert → runner.run_jar 는 java 를 subprocess.run(timeout 없음)으로 띄우고 끝날
+# 때까지 막는다. 같은 프로세스의 스레드에서 돌리면 wait_for 가 시간을 넘겨도 스레드와 java 는 계속
+# 돈다(nanet 5f8fb80 주석도 같은 한계를 적어 두었다). 그래서 convert 를 자식 파이썬에서 부르고,
+# 새 세션(프로세스 그룹)으로 떼어 두었다가 시간을 넘기면 그룹째 끈다 — java 손자까지 함께 죽는다.
+_ODL_CHILD = (
+    "import json, sys\n"
+    "import opendataloader_pdf\n"
+    "opendataloader_pdf.convert(**json.loads(sys.argv[1]))\n"
+)
+
+
+def _kill_process_group(proc: asyncio.subprocess.Process) -> None:
+    if proc.returncode is not None:
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)  # start_new_session → pgid == pid
+    except (AttributeError, ProcessLookupError, PermissionError):
+        proc.kill()  # Windows(개발 PC)에는 killpg 가 없다 — 자식 파이썬만 끈다
+
+
+async def _odl_convert(convert_kwargs: dict, timeout: float) -> None:
+    """opendataloader_pdf.convert(**convert_kwargs) 를 자식 프로세스에서 timeout 초 안에 끝낸다.
+
+    stderr 는 파이프가 아니라 임시 파일로 받는다 — 파이프면 끈 뒤에도 그 끝을 쥔 손자 프로세스가
+    살아 있는 동안 이벤트 루프가 읽기를 기다린다(Windows 에서 20초 대기로 확인).
+    """
+    with tempfile.TemporaryFile() as err_file:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-c", _ODL_CHILD, json.dumps(convert_kwargs),
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=err_file.fileno(),
+            start_new_session=True,
+        )
+        try:
+            await asyncio.wait_for(proc.wait(), timeout)
+        except BaseException:
+            _kill_process_group(proc)
+            await proc.wait()
+            raise
+        if proc.returncode != 0:
+            err_file.seek(0)
+            tail = err_file.read().decode("utf-8", "replace").strip()[-300:]
+            raise RuntimeError(f"ODL 변환 실패(exit {proc.returncode}): {tail}")
+
+
+async def _run_odl(input_path: str, out_dir: str, page_sep: str, timeout: float) -> Path:
+    """ODL 변환 1회 — markdown·json 을 한 번에 out_dir 에 쓰고 markdown 경로를 돌려준다."""
+    await _odl_convert(
+        {
+            "input_path": input_path,
+            "output_dir": out_dir,
+            "format": ["markdown", "json"],
+            "image_output": "embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
+            "image_format": "jpeg",      # base64 크기 절감
+            "table_method": "cluster",   # 무경계/복잡 표까지 검출
+            "markdown_page_separator": page_sep,
+            "keep_line_breaks": False,
+            "quiet": True,
+        },
+        timeout,
+    )
+    md_files = sorted(Path(out_dir).glob("*.md"))
+    if not md_files:
+        raise RuntimeError("markdown 출력 파일 없음")
+    return md_files[0]
+
+
+def _fitz_text_pages(path: str, max_pages: int | None) -> list[PageResult]:
+    """ODL 이 끝내 실패한 문서 — fitz 텍스트를 1티어 결과로 쓴다(표·머리말 구조 없음).
+
+    글자가 없는 쪽은 넣지 않는다 — ODL 이 빈 쪽을 내지 않는 것과 같게 두어 extract_text 가
+    'ODL 누락'으로 OCR 하게 한다.
+    """
+    pages: list[PageResult] = []
+    with fitz.open(path) as doc:
+        for page in doc:
+            if max_pages and page.number >= max_pages:
+                break
+            raw = page.get_text("text").strip()
+            if raw:
+                pages.append(PageResult(page_num=page.number, text=_clean_text(raw), method="fitz", confidence=0.5))
+    return pages
+
+
+async def extract_text_opendataloader(
+    file_path: str | Path | None,
+    book_id: str,
+    *,
+    file_bytes: bytes | None = None,
+    max_pages: int | None = None,
+) -> ExtractionResult:
+    """OpenDataLoader PDF를 이용한 추출 — extract_text()가 호출하는 실제 1티어 진입점.
+
+    설치: pip install opendataloader-pdf
+
+    markdown·json을 한 번의 실행으로 함께 산출한다(추가 비용 없음). markdown은
+    기존과 동일하게 본문으로 쓰고, json은 표 셀이 실제로 비어있는지를 구조
+    그대로 담고 있어 라우팅 판정용 신호(table_fill_ratios)로만 사용한다.
+    (마크다운 평탄화 과정에서 "빈 셀"과 "내용 있는 셀"이 똑같이 `| |` 격자
+    문자로 변해 라우팅 신호가 사라지는 문제 — 사내 연구 결과 반영)
+
+    변환은 max(ODL_TIMEOUT_BASE_SECONDS, 쪽수 × ODL_TIMEOUT_PER_PAGE_SECONDS) 초 안에 끝나야 한다.
+    넘거나 실패하면 fitz 로 다시 저장한 PDF 로 한 번 더, 그래도 안 되면 fitz 텍스트로 대신한다
+    (쪽 method "fitz"). fitz 로도 열리지 않는 파일은 재저장·fitz 폴백 없이 오류만 남긴다.
+    """
+    from collections import defaultdict
+
+    result = ExtractionResult(book_id=book_id, total_pages=0)
+
+    try:
+        import opendataloader_pdf  # noqa: F401 — 설치 확인. 변환은 자식 프로세스가 한다(_odl_convert)
+    except ImportError:
+        result.errors.append(
+            "opendataloader-pdf 패키지 미설치 — pip install opendataloader-pdf"
+        )
+        return result
+
+    _PAGE_SEP = "\n<<<ODL_PAGE_BREAK_%page-number%>>>\n"
+
+    tmp_path = None
+    resaved_path = None
+    out_dir = None
+    try:
+        if file_bytes:
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                tmp.write(file_bytes)
+                tmp_path = tmp.name
+            load_path = tmp_path
+        else:
+            load_path = str(file_path)
+
+        try:
+            with fitz.open(load_path) as probe:
+                page_count: int | None = len(probe)
+        except RuntimeError as e:
+            page_count = None
+            log.warning(f"[{book_id}] fitz 로 열리지 않는 PDF — ODL 만 한 번 시도: {e}")
+        odl_timeout = max(
+            cfg.ODL_TIMEOUT_BASE_SECONDS, (page_count or 0) * cfg.ODL_TIMEOUT_PER_PAGE_SECONDS
+        )
+
+        out_dir = tempfile.mkdtemp()
+        md_file: Path | None = None
+        try:
+            md_file = await _run_odl(load_path, out_dir, _PAGE_SEP, odl_timeout)
+        except (TimeoutError, RuntimeError, OSError) as e:
+            reason = f"{odl_timeout:.0f}초 초과" if isinstance(e, TimeoutError) else str(e)
+            log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
+            result.errors.append(f"ODL 실패(원본): {reason}")
+            if page_count is not None:
+                # xref 손상 문서에서 ODL(Java)이 브루트포스 복구로 수십 배 느려지는 문제 대응(nanet 5f8fb80)
+                try:
+                    fd, resaved_path = tempfile.mkstemp(suffix=".pdf")
+                    os.close(fd)
+                    with fitz.open(load_path) as src:
+                        src.save(resaved_path, garbage=4, clean=True, deflate=True)
+                    shutil.rmtree(out_dir, ignore_errors=True)
+                    out_dir = tempfile.mkdtemp()
+                    md_file = await _run_odl(resaved_path, out_dir, _PAGE_SEP, odl_timeout)
+                except (TimeoutError, RuntimeError, ValueError, OSError) as e2:
+                    reason2 = f"{odl_timeout:.0f}초 초과" if isinstance(e2, TimeoutError) else str(e2)
+                    result.errors.append(f"ODL 실패(fitz 재저장본): {reason2}")
+
+        if md_file is None:
+            if page_count is not None:
+                result.pages = _fitz_text_pages(load_path, max_pages)
+                result.total_pages = len(result.pages)
+                result.errors.append("ODL 실패 — fitz 텍스트로 대체")
+                log.warning(f"[{book_id}] ODL 실패 — fitz 텍스트 {len(result.pages)}쪽으로 대체")
+            return result
+
+        out_path = Path(out_dir)
+        json_files = list(out_path.glob("*.json"))
+
+        # ── JSON → 페이지별 표 셀 충전율(라우팅 신호) + 머리말/쪽번호 텍스트 ──
+        page_headers_footers: dict[int, set[str]] = {}
+        if json_files:
+            try:
+                with open(json_files[0], encoding="utf-8") as f:
+                    jdata = json.load(f)
+                by_page: dict[int, list] = defaultdict(list)
+                for el in jdata.get("kids", []):
+                    by_page[el.get("page number", 1)].append(el)
+                for pnum, elements in by_page.items():
+                    hf_lines: set[str] = set()
+                    for el in elements:
+                        if el.get("type") in ("header", "footer"):
+                            hf_lines.update(_collect_content_strings(el))
+                    if hf_lines:
+                        page_headers_footers[pnum - 1] = hf_lines  # 1-based → 0-based
+                    # 표가 여럿이면 셀 수로 가중 합산(페이지 전체 셀 대비 빈 셀 비율).
+                    # 표별 min()을 쓰면 레이아웃용 소형 빈 표(예: 1x2) 하나만으로
+                    # 본표가 멀쩡해도 폴백이 발동한다 — 큰 표가 자연히 더 반영되도록
+                    # 셀 단위로 합산(연구팀 측정 방식과 동일하게 맞춤).
+                    total = empty = 0
+                    for el in elements:
+                        if el.get("type") != "table":
+                            continue
+                        for row in el.get("rows", []):
+                            for cell in row.get("cells", []):
+                                total += 1
+                                if not cell.get("kids"):
+                                    empty += 1
+                    if total:
+                        result.table_fill_ratios[pnum - 1] = 1 - empty / total  # 1-based → 0-based
+            except Exception as e:
+                log.warning(f"[{book_id}] 표 충전율 파싱 실패(무시하고 진행): {e}")
+
+        # ── markdown → 페이지별 텍스트 ────────────────────────────
+        with open(md_file, encoding="utf-8") as f:
+            content = f.read()
+
+        import re
+        sep_pattern = re.escape(_PAGE_SEP).replace(re.escape("%page-number%"), r"(\d+)")
+        parts = re.split(sep_pattern, content)
+
+        documents: list[tuple[int, str]] = []  # (page_num 1-based, text)
+        if parts[0].strip():
+            documents.append((1, parts[0].strip()))
+        for i in range(1, len(parts), 2):
+            if i + 1 < len(parts) and parts[i + 1].strip():
+                documents.append((int(parts[i]), parts[i + 1].strip()))
+
+        if max_pages:
+            documents = documents[:max_pages]
+
+        import base64 as _b64
+        # base64 이미지 패턴 (embedded)
+        img_b64_pattern = re.compile(
+            r'!\[([^\]]*)\]\(data:image/[^;]+;base64,([^)]+)\)'
+        )
+        # 외부 경로 이미지 패턴 (비 base64)
+        img_any_pattern = re.compile(r'!\[[^\]]*\]\([^)]+\)')
+
+        result.total_pages = len(documents)
+        for i, (doc_page_num, raw) in enumerate(documents):
+            page_num = doc_page_num - 1  # OpenDataLoader는 1-based → 0-based
+
+            # ── 그림 추출: base64 이미지마다 앞뒤 컨텍스트 보존 ──
+            for img_idx, m in enumerate(img_b64_pattern.finditer(raw)):
+                try:
+                    img_bytes = _b64.b64decode(m.group(2))
+                except Exception:
+                    continue
+
+                # 앞 300자: 다른 base64 이미지는 [그림]으로 치환 후 추출
+                before_raw = raw[max(0, m.start() - 300):m.start()]
+                before = img_b64_pattern.sub('[그림]', before_raw).strip()
+
+                # 뒤 300자: 동일 처리
+                after_raw = raw[m.end():m.end() + 300]
+                after = img_b64_pattern.sub('[그림]', after_raw).strip()
+
+                result.figures.append(FigureData(
+                    page_num=page_num,
+                    img_idx=img_idx,
+                    img_bytes=img_bytes,
+                    before_context=before,
+                    after_context=after,
+                ))
+
+            img_count = len(img_b64_pattern.findall(raw))
+            stripped = img_any_pattern.sub('[그림]', raw)
+            text = _clean_text(stripped, strip_lines=page_headers_footers.get(page_num))
+            if img_count:
+                log.info(f"[{book_id}] p.{page_num} 그림 {img_count}개 검출")
+            result.pages.append(PageResult(
+                page_num=page_num,
+                text=text,
+                method="opendataloader",
+                confidence=0.95,
+            ))
+
+    except Exception as e:
+        log.error(f"[{book_id}] OpenDataLoader 추출 실패: {e}")
+        result.errors.append(f"OpenDataLoader 추출 실패: {e}")
+    finally:
+        for path in (tmp_path, resaved_path):
+            if path:
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
+        if out_dir:
+            shutil.rmtree(out_dir, ignore_errors=True)
+
+    log.info(f"[{book_id}] OpenDataLoader 추출 완료 — {result.stats}, 표충전율={result.table_fill_ratios}")
+    return result
+```
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_odl.py tests/test_extractor_ocr.py tests/test_extractor_routing.py -q`
+Expected: `27 passed` (타임아웃 테스트가 약 2초)
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/extractor.py app/tests/test_extractor_odl.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix] round07 — ODL 변환에 쪽수 비례 타임아웃 max(ODL_TIMEOUT_BASE_SECONDS, 쪽수×ODL_TIMEOUT_PER_PAGE_SECONDS) 을 두고, 넘거나 실패하면 fitz 로 다시 저장한 PDF 로 한 번 더, 그래도 안 되면 fitz 텍스트로 대신한다(nanet 5f8fb80). convert 는 java 를 timeout 없는 subprocess.run 으로 띄워 스레드 wait_for 로는 못 끊으므로 자식 파이썬의 새 세션에서 부르고 넘으면 프로세스 그룹째 끈다. convert(markdown+json) 호출과 json 기반 표 셀 충전율·머리말 제거는 그대로. fitz 로도 안 열리는 파일은 재저장·폴백 없이 지금처럼 extract_empty"
+```
+
+#### 묶음 5-2: `image_output` 끄기와 그림만 있는 쪽 보존
+
+- [ ] **Step 1: 실패하는 테스트 추가** — `app/tests/test_extractor_odl.py` 끝에 덧붙인다
+
+```python
+# ── 5-2 ──────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("mode", ["off", "embedded"])
+def test_convert_uses_image_output_setting(monkeypatch, mode):
+    calls = _patch_convert(monkeypatch, [{1: "본문"}])
+    monkeypatch.setattr(extractor.cfg, "ODL_IMAGE_OUTPUT", mode)
+    _run(_pdf(["a"]))
+    assert calls[0]["image_output"] == mode
+
+
+def test_image_only_page_stays_as_empty_odl_page(monkeypatch):
+    """image_output=off 면 그림만 있는 쪽이 markdown 에서 빠진다 — json 의 그림 요소로 빈 쪽을 남긴다."""
+    kids = [{"type": "paragraph", "page number": 1, "content": "첫 쪽"},
+            {"type": "image", "page number": 2},
+            {"type": "paragraph", "page number": 3, "content": "셋째 쪽"}]
+    _patch_convert(monkeypatch, [({1: "첫 쪽", 3: "셋째 쪽"}, kids)])
+    result = _run(_pdf(["a", "b", "c"]))
+    assert [(p.page_num, p.text) for p in result.pages] == [(0, "첫 쪽"), (1, ""), (2, "셋째 쪽")]
+```
+
+- [ ] **Step 2: 실패 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_odl.py -q`
+Expected: `2 failed, 8 passed` — `test_convert_uses_image_output_setting[off]`(`'embedded' == 'off'`), `test_image_only_page_stays_as_empty_odl_page`(쪽 1 없음)
+
+- [ ] **Step 3: 최소 구현** — `app/services/ingestion/extractor.py`
+
+(1) `_run_odl` 의 이미지 두 줄:
+
+```python
+# old
+            "image_output": "embedded",  # 이미지 base64 인라인 (없으면 그림 흔적조차 안 남음)
+            "image_format": "jpeg",      # base64 크기 절감
+# new
+            "image_output": cfg.ODL_IMAGE_OUTPUT,  # 그림 저장은 운영 0건 — 기본 off 로 인코딩을 아낀다
+            "image_format": "jpeg",
+```
+
+(2) json 파싱에서 그림 요소가 있는 쪽을 모은다.
+
+```python
+# old
+        page_headers_footers: dict[int, set[str]] = {}
+# new
+        page_headers_footers: dict[int, set[str]] = {}
+        image_pages: set[int] = set()  # 1-based — 그림 요소가 있는 쪽
+```
+
+```python
+# old
+                for pnum, elements in by_page.items():
+                    hf_lines: set[str] = set()
+# new
+                for pnum, elements in by_page.items():
+                    if any(el.get("type") == "image" for el in elements):
+                        image_pages.add(pnum)
+                    hf_lines: set[str] = set()
+```
+
+(3) markdown 쪽 목록을 만든 바로 다음(`if max_pages:` 앞)에 그림만 있는 쪽을 빈 쪽으로 넣는다.
+
+```python
+        # image_output=off 면 그림만 있는 쪽이 markdown 에서 통째로 빠진다. embedded 일 때처럼
+        # 'ODL 이 본 빈 쪽'으로 남겨야 extract_text 가 'ODL 누락'(판정 없이 OCR) 대신 fitz 교차검증을 탄다.
+        seen = {pnum for pnum, _ in documents}
+        documents.extend((pnum, "") for pnum in image_pages if pnum not in seen)
+        documents.sort(key=lambda d: d[0])
+```
+
+- [ ] **Step 4: 통과 확인**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest tests/test_extractor_odl.py -q`
+Expected: `10 passed`
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07/app && python -m pytest -q --continue-on-collection-errors`
+Expected: Task 4 뒤 수 + 10 passed, 수집 오류 3(사본 측정: 944 → 954)
+
+- [ ] **Step 5: 커밋**
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add app/services/ingestion/extractor.py app/tests/test_extractor_odl.py
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Fix] round07 — ODL image_output 을 ODL_IMAGE_OUTPUT(기본 off)으로: 추출 결과의 그림은 저장되지 않아(운영 0건) base64 인코딩만 비용이었다. off 면 그림만 있는 쪽이 markdown 에서 빠져 'ODL 누락'(판정 없이 OCR)이 되므로, json 에 그림 요소가 있는 쪽은 빈 쪽으로 남겨 라우팅 판정을 embedded 와 같게 둔다. 표 칸 그림 인코딩이 만들던 <br> 격자도 사라진다"
+```
+
+---
+
 ### Task 6: 논문 보강을 요약 단계로, 단계 세마포어, 표 해석 잘림
 
 spec 1·5·10번. embed 칸(`celery-embed` 동시 1) 시간의 46~59%가 그 안의 논문 보강 LLM 대기다. 보강(`enrich_paper` — 키워드·참고문헌 LLM 폴백·표 해석·그림 설명)을 요약 단계(`q_llm`, `celery-llm`)로 옮겨 섹션 요약과 같은 asyncio 루프에서 돌리고, embed 단계는 보강 아티팩트(`artifacts/{id}/enrichment.json.gz`)로 청크만 만든다.
@@ -7018,6 +9379,248 @@ Expected: failed 0, errors 는 기존 수집 오류 3 그대로 — Task 0 직�
 
 ```bash
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 && git add scripts/bulk_ingest/select_near_empty_items.py scripts/bulk_ingest/build_canary_manifest.py scripts/bulk_ingest/README.md app/tests/test_select_near_empty_items.py app/tests/test_build_canary_manifest.py && git status --short && git commit -m "[Feat] round07 — 재처리·카나리 도구(서버에서 사람이 돌리는 읽기 전용 스크립트): select_near_empty_items 는 done·8쪽 이상인데 쪽당 본문 글자 수가 150자 미만인 아이템을 골라 CSV 와 retry API 본문 JSON 으로 쓴다(청크 수 기준은 표 하나짜리 정상 문서가 섞여 쓰지 않는다, octet_length 로 먼저 걸러 본문을 다 풀지 않는다, 배포 전에 끝난 것만). build_canary_manifest 는 본 잡에서 스캔본 '섹션 없음' 20·표 많은 문서 10·쪽당 청크 6 초과 5·섹션 40개 초과 5·보통 10 을 seed 해시 순으로 골라 기존 매니페스트와 같은 JSONL 로 쓰고, MinIO 업로드·잡 생성·시작 명령은 출력만 한다"
+```
+
+---
+
+### Task 11: 실제 PDF 라우팅 회귀 하네스 (`research/round07-ingest-regression/`, 1회성)
+
+**Files:**
+- Create: `research/round07-ingest-regression/route_compare.py`
+- Create(실행 산출물): `research/round07-ingest-regression/pages.csv`·`docs.csv`·`summary.json`
+
+이 PC 의 `D:/SKOVIX/KCI/pdf` 로 옛 규칙과 새 규칙의 쪽별 판정(OCR 로 가는 쪽 수)을 비교한다. **VLM·ODL 은 부르지 않는다.** ODL 본문은 'fitz 텍스트에서 문서 전체에 되풀이되는 줄을 뺀 `body_len`' 으로 근사하고, 근사가 놓치는 것(CMap 손상·`<br>` 격자·표 셀 충전율·ODL 누락)을 스크립트 docstring 에 적는다. 그래서 이 결과는 '짧은 쪽 분기'의 차이만 보여 준다 — 실제 ODL 을 돌린 관찰은 위 근거 ①~⑥ 이다. 새 규칙은 `page_routing` 의 실제 함수를 부르고, 옛 규칙은 d85df93 의 `extractor.py:405-434` 분기를 그대로 옮겼다.
+
+묶음: `fail_block`(metadata.csv 의 「한국문학연구」 2002년 이전 — 10-01 '섹션 없음' 281건이 모두 이 안에 있다, 이 PC 에 318건), `pre2005`(2004년 이전 다른 학술지 무작위), `digital`(2005년 이후 무작위), `short_front`(2005년 이후 중 첫 두 쪽에 짧은 쪽이 있는 문서 — 이미지 표지 포함), `br_grid`(ODL embedded 에서 `<br>` 빈 격자가 나왔던 KCI_FI001930485·KCI_FI000897237).
+
+- [ ] **Step 1: 스크립트 작성** — `research/round07-ingest-regression/route_compare.py`
+
+```python
+"""route_compare.py — round07 짧은 쪽 라우팅, 옛 규칙 vs 새 규칙 실제 PDF 회귀 (1회성)
+
+VLM·ODL 을 부르지 않는다. 이 PC 의 D:/SKOVIX/KCI/pdf 를 fitz 로만 읽어, extract_text 의
+'ODL 본문이 짧은 쪽' 판정을 옛 규칙(d85df93 의 extractor.py:424 분기)과 새 규칙
+(page_routing.short_page_needs_ocr + is_scan_document)으로 각각 내리고 OCR 로 가는 쪽을 센다.
+
+ODL 본문 근사 — ODL 은 json header/footer 로 머리말·꼬리말을 지운 markdown 을 낸다. 여기서는 그 길이를
+'fitz 텍스트에서 문서 전체에 되풀이되는 줄(repeated_lines)을 뺀 body_len' 으로 둔다. 근사가 놓치는 것:
+  - ODL 이 fitz 보다 글자를 잃는 쪽(CMap 손상) — 근사에선 ODL ≈ fitz 라 CMap 2배 분기는 머리말·꼬리말이
+    길 때만 걸린다(cmap_by_header 로 따로 센다 — 실제 ODL 에서도 그 쪽이 걸리는지는 알 수 없다)
+  - ODL 의 <br> 빈 표 격자·[그림] 마커 — 근사 텍스트엔 없다. br_grid 묶음은 fitz 쪽 판정이 바뀌지 않는지만 본다
+  - 표 셀 충전율(json) 판정과 'ODL 누락' 쪽 — 쓰지 않는다
+그래서 이 결과는 '짧은 쪽 분기' 의 차이만 보여 준다. 두 규칙 모두 VLM 60쪽 상한을 적용한다.
+
+묶음:
+  fail_block  — metadata.csv 의 「한국문학연구」 2002년 이전(10-01 '섹션 없음' 281건이 모두 이 안에 있다)
+  pre2005     — 2004년 이전 다른 학술지 무작위
+  digital     — 2005년 이후 무작위
+  short_front — 2005년 이후 문서 중 첫 두 쪽 안에 짧은 쪽(표지·간지, 이미지 표지 포함)이 있는 문서(digital 다음 순서에서 최대 25건)
+  br_grid     — ODL embedded 에서 <br> 빈 격자가 나왔던 문서
+
+산출물(이 폴더): pages.csv(쪽별 판정)·docs.csv(문서별)·summary.json(묶음별 합계)
+사용법: python research/round07-ingest-regression/route_compare.py [--per-group 200] [--seed 20261001]
+"""
+import argparse
+import csv
+import json
+import os
+import random
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1] / "app"))
+
+import fitz  # noqa: E402
+
+from services.ingestion import page_routing as pr  # noqa: E402
+from services.ingestion.extractor import _clean_text  # noqa: E402
+
+PDF_DIR = Path("D:/SKOVIX/KCI/pdf")
+META = Path("D:/SKOVIX/KCI/metadata.csv")
+MIN_CHARS = 50
+VLM_CAP = 60
+REPEAT_RATIO = 0.6
+SHORT_RATIO = 0.5
+SCAN_MIN_PAGES = 3
+BR_GRID = ["KCI_FI001930485", "KCI_FI000897237"]
+FRONT_TARGET = 25
+
+
+def old_decision(odl_len: int, raw: int) -> tuple[bool, str]:
+    if odl_len >= MIN_CHARS:
+        return (True, "CMap 의심") if raw > odl_len * 2 else (False, "본문 충분")
+    if 0 < raw < MIN_CHARS:
+        return False, "원래 짧은 쪽"
+    return True, "본문 텍스트 부족"
+
+
+def new_decision(odl_len: int, raw: int, stripped: int, doc_is_scan: bool) -> tuple[bool, str]:
+    if odl_len >= MIN_CHARS:
+        return (True, "CMap 의심") if raw > odl_len * 2 else (False, "본문 충분")
+    return pr.short_page_needs_ocr(
+        fitz_len_stripped=stripped, fitz_len_raw=raw, doc_is_scan=doc_is_scan, force=False, min_chars=MIN_CHARS,
+    )
+
+
+def _cap(flags: list[bool]) -> list[bool]:
+    out, used = [], 0
+    for f in flags:
+        out.append(f and used < VLM_CAP)
+        used += f
+    return out
+
+
+def analyze(pid: str, group: str) -> tuple[dict, list[dict]] | None:
+    try:
+        with fitz.open(PDF_DIR / f"{pid}.pdf") as doc:
+            texts = [_clean_text(p.get_text()) for p in doc]
+    except RuntimeError:
+        return None
+    if not texts:
+        return None
+    rep = pr.repeated_lines(texts, REPEAT_RATIO)
+    raw = [pr.body_len(t) for t in texts]
+    stripped = [pr.body_len(pr.strip_lines(t, rep)) for t in texts]
+    odl = stripped  # ODL 본문 근사(위 docstring)
+    short = [odl[n] < MIN_CHARS and stripped[n] < MIN_CHARS for n in range(len(texts))]
+    scan = pr.is_scan_document(short, min_pages=SCAN_MIN_PAGES, ratio=SHORT_RATIO)
+    old = [old_decision(odl[n], raw[n]) for n in range(len(texts))]
+    new = [new_decision(odl[n], raw[n], stripped[n], scan) for n in range(len(texts))]
+    old_ocr, new_ocr = _cap([o for o, _ in old]), _cap([o for o, _ in new])
+    pages = [
+        {"id": pid, "group": group, "page": n, "fitz_raw": raw[n], "fitz_stripped": stripped[n],
+         "odl_approx": odl[n], "short": short[n], "old_ocr": old_ocr[n], "old_reason": old[n][1],
+         "new_ocr": new_ocr[n], "new_reason": new[n][1]}
+        for n in range(len(texts))
+    ]
+    cmap = [n for n in range(len(texts)) if odl[n] >= MIN_CHARS and raw[n] > odl[n] * 2]
+    doc_row = {
+        "id": pid, "group": group, "pages": len(texts), "short_pages": sum(short), "doc_is_scan": scan,
+        "old_ocr": sum(old_ocr), "new_ocr": sum(new_ocr),
+        "newly_ocr": sum(n and not o for o, n in zip(old_ocr, new_ocr)),
+        "no_longer_ocr": sum(o and not n for o, n in zip(old_ocr, new_ocr)),
+        "cover_old": old_ocr[0], "cover_new": new_ocr[0], "cmap_by_header": len(cmap),
+        "repeated": " / ".join(sorted(rep)[:3]),
+    }
+    return doc_row, pages
+
+
+def pick(per_group: int, seed: int) -> list[tuple[str, str]]:
+    rng = random.Random(seed)
+    rows = list(csv.DictReader(open(META, encoding="utf-8-sig")))
+
+    def year(r):
+        return int(r["year_month"][:4]) if r["year_month"][:4].isdigit() else None
+
+    # 26만 파일 폴더라 파일마다 exists() 를 부르면 수십 분 걸린다 — 목록을 한 번만 읽는다.
+    local = {e.name[:-4] for e in os.scandir(PDF_DIR) if e.name.endswith(".pdf")}
+
+    def ids(cond) -> list[str]:  # metadata.csv 에 같은 id 가 두 번 있는 행이 있다
+        return list(dict.fromkeys(r["kci_fi_id"] for r in rows if cond(r) and r["kci_fi_id"] in local))
+
+    fail = ids(lambda r: r["journal"] == "한국문학연구" and year(r) and year(r) <= 2002)
+    fail_set = set(fail)
+    pre = ids(lambda r: year(r) and year(r) < 2005 and r["kci_fi_id"] not in fail_set)
+    digital = ids(lambda r: year(r) and year(r) >= 2005)
+    rng.shuffle(pre)
+    rng.shuffle(digital)
+    out = [(p, "fail_block") for p in fail]
+    out += [(p, "pre2005") for p in pre[:per_group]]
+    out += [(p, "digital") for p in digital[:per_group]]
+    front = []
+    for p in digital[per_group:per_group * 20]:
+        try:
+            with fitz.open(PDF_DIR / f"{p}.pdf") as doc:
+                if len(doc) < SCAN_MIN_PAGES:
+                    continue
+                texts = [_clean_text(pg.get_text()) for pg in doc]
+        except RuntimeError:
+            continue
+        rep = pr.repeated_lines(texts, REPEAT_RATIO)
+        s = [pr.body_len(pr.strip_lines(t, rep)) for t in texts]
+        if any(pr.body_len(texts[n]) > 0 and s[n] < MIN_CHARS for n in (0, 1)) and sum(x >= MIN_CHARS for x in s) >= len(s) * 0.6:
+            front.append(p)
+        if len(front) >= FRONT_TARGET:
+            break
+    out += [(p, "short_front") for p in front]
+    out += [(p, "br_grid") for p in BR_GRID if p in local]
+    return out
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--per-group", type=int, default=200)
+    ap.add_argument("--seed", type=int, default=20261001)
+    args = ap.parse_args()
+    fitz.TOOLS.mupdf_display_errors(False)
+
+    docs, pages = [], []
+    for pid, group in pick(args.per_group, args.seed):
+        got = analyze(pid, group)
+        if got:
+            docs.append(got[0])
+            pages.extend(got[1])
+
+    for name, rows in (("docs.csv", docs), ("pages.csv", pages)):
+        with open(HERE / name, "w", encoding="utf-8-sig", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0]))
+            w.writeheader()
+            w.writerows(rows)
+
+    summary: dict = defaultdict(lambda: defaultdict(int))
+    for d in docs:
+        s = summary[d["group"]]
+        s["docs"] += 1
+        s["pages"] += d["pages"]
+        s["old_ocr_pages"] += d["old_ocr"]
+        s["new_ocr_pages"] += d["new_ocr"]
+        s["newly_ocr_pages"] += d["newly_ocr"]
+        s["no_longer_ocr_pages"] += d["no_longer_ocr"]
+        s["docs_changed"] += bool(d["newly_ocr"] or d["no_longer_ocr"])
+        s["scan_docs"] += d["doc_is_scan"]
+        s["missed_scan_docs"] += d["old_ocr"] == 0 and d["doc_is_scan"]  # 옛 규칙으론 OCR 0쪽이던 스캔본
+        s["cmap_by_header_pages"] += d["cmap_by_header"]
+        key = "scan" if d["doc_is_scan"] else "nonscan"
+        s[f"{key}_newly_ocr_pages"] += d["newly_ocr"]
+        s[f"{key}_no_longer_ocr_pages"] += d["no_longer_ocr"]
+        s[f"{key}_cover_old_ocr"] += d["cover_old"]
+        s[f"{key}_cover_new_ocr"] += d["cover_new"]
+    out = {g: dict(v) for g, v in summary.items()}
+    (HERE / "summary.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(json.dumps(out, ensure_ascii=False, indent=1))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+- [ ] **Step 2: 실행**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 && python research/round07-ingest-regression/route_compare.py --per-group 200`
+Expected — `summary.json` 이 아래와 같다(사본 실행 값, 같은 시드·같은 PDF 폴더면 같은 표본. PDF 폴더 목록을 한 번 읽는 데 약 15초, 전체 약 24분 — 표본 약 760건과 표지·간지 후보 수천 건을 fitz 로 읽는다):
+
+| 묶음 | 문서 | 쪽 | 옛 OCR 쪽 | 새 OCR 쪽 | 스캔본 | 옛 0쪽→스캔본 | 새로 OCR(스캔본) | 새로 OCR(비스캔) | OCR 에서 빠짐(비스캔) | 표지 OCR 옛(비스캔) | 표지 OCR 새(비스캔) | cmap_by_header |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| fail_block | 318 | 6862 | 0 | 6837 | 318 | 318 | 6837 | 0 | 0 | 0 | 0 | 0 |
+| pre2005 | 200 | 3673 | 1870 | 2194 | 102 | 10 | 326 | 0 | 2 | 4 | 4 | 11 |
+| digital | 200 | 4701 | 248 | 318 | 13 | 3 | 72 | 0 | 2 | 0 | 0 | 0 |
+| short_front | 24 | 1828 | 49 | 38 | 0 | 0 | 0 | 0 | 11 | 0 | 0 | 1 |
+| br_grid | 2 | 54 | 16 | 17 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+
+- [ ] **Step 3: 결과 확인 — 통과 기준**
+  - `fail_block`: `scan_docs == docs` 이고 `missed_scan_docs == docs`(옛 규칙에서 OCR 0쪽이던 문서가 모두 스캔본으로 잡힌다). `new_ocr_pages` 가 `pages` 보다 적은 만큼은 60쪽 넘는 문서의 VLM 상한이다.
+  - 스캔본이 아닌 문서: `nonscan_newly_ocr_pages == 0` 이고 `nonscan_cover_new_ocr <= nonscan_cover_old_ocr` 다 — 디지털 논문의 표지·간지가 새로 OCR 로 가지 않는다. (근사에서는 ODL 길이 = 되풀이 줄 뺀 fitz 길이라 비스캔 문서가 새로 OCR 로 갈 길은 없다. 0 이 아니면 근사나 규칙 구현이 틀린 것이다.)
+  - `nonscan_no_longer_ocr_pages` 는 '머리말·꼬리말·쪽 번호를 빼면 50자 미만'이라 옛 규칙이 'ODL 이 놓친 쪽'으로 OCR 하던 쪽이다. 근사에서는 ODL 길이도 그 값이라 실제보다 크게 나온다 — 실제 ODL 관찰(근거 ②)에서 같은 변화는 표지·간지 묶음 1,673쪽 중 1쪽이었다. 사본 실행의 short_front 11쪽은 4건(KCI_FI001667569 3·KCI_FI003011274 4·KCI_FI001158431 3·KCI_FI001141801 1)으로, 예컨대 KCI_FI003011274(2023년 디지털 논문) 1·2·8·9쪽은 fitz 60자 중 머리말 `#년#월스마트미디어저널`·쪽 번호를 빼면 42자인 그림 쪽이다 — 머리말·꼬리말이 fitz 를 50자 위로 올려 VLM 을 타던 쪽이 '원래 짧은 쪽'으로 돌아간다(같은 것끼리 견주기의 의도된 효과). 숫자가 크게 다르면 `pages.csv` 에서 그 쪽의 fitz 텍스트가 구두점·숫자 줄뿐인(CMap 손상) 문서인지 보고 계획서에 적는다.
+  - `br_grid`: KCI_FI001930485 는 판정이 바뀌지 않는다(근사로는 `<br>` 가 안 보인다 — 근거 ⑤). KCI_FI000897237 은 스캔본이라 짧은 쪽이 OCR 로 간다.
+
+- [ ] **Step 4: 커밋** — `*.csv` 는 `.gitignore` 4행 대상이라 CSV 두 개는 `-f` 로 더한다(research/ 는 산출물을 스크립트와 함께 둔다 — CLAUDE.md §1).
+
+```bash
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add research/round07-ingest-regression/route_compare.py research/round07-ingest-regression/summary.json
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 add -f research/round07-ingest-regression/pages.csv research/round07-ingest-regression/docs.csv
+git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round07 commit -m "[Chore] round07 — 실제 PDF 라우팅 회귀(1회성): 이 PC 의 KCI PDF 로 「한국문학연구」 실패 블록·2005년 이전·디지털 논문·표지/간지 문서·<br> 격자 문서의 짧은 쪽 판정을 옛 규칙과 새 규칙으로 내려 쪽별 CSV·문서별 CSV·묶음 요약을 남긴다. VLM·ODL 은 부르지 않고 ODL 본문은 되풀이 줄을 뺀 fitz 길이로 근사한다(근사가 놓치는 것은 스크립트 docstring)"
 ```
 
 ---
