@@ -5,6 +5,7 @@ ODL 변환(_odl_convert)은 목으로 바꾸고 산출물(markdown·json)을 직
 """
 import asyncio
 import json
+import logging
 import os
 import sys
 import time
@@ -137,6 +138,99 @@ def test_fitz_fallback_skips_only_the_page_whose_text_fails(monkeypatch):
     result = _run(_pdf(["First page body", "Second page body", "Third page body"]))
     assert [(p.page_num, p.method) for p in result.pages] == [(0, "fitz"), (2, "fitz")]
     assert "ODL 실패 — fitz 텍스트로 대체" in result.errors
+
+
+# ── 폴백·변환 시간 기록 — 아이템 meta 에서 어느 문서가 ODL 폴백을 탔는지 센다 ─────────────
+
+
+@pytest.fixture
+def odl_clock(monkeypatch):
+    """extractor 의 시계를 가짜로 바꾼다 — 변환 대역이 쓴 시간만큼만 흘러 odl_seconds 를 정확히 본다.
+    쪽수 비례 상한은 기본값에 기대지 않게 5 + 쪽당 0.5 초로 둔다."""
+    clock = types.SimpleNamespace(now=100.0)
+    monkeypatch.setattr(extractor, "time", types.SimpleNamespace(monotonic=lambda: clock.now))
+    monkeypatch.setattr(extractor.cfg, "ODL_TIMEOUT_BASE_SECONDS", 5.0)
+    monkeypatch.setattr(extractor.cfg, "ODL_TIMEOUT_PER_PAGE_SECONDS", 0.5)
+    return clock
+
+
+def _patch_timed_convert(monkeypatch, clock, steps: list[tuple[float, object]]) -> list[dict]:
+    """steps[i] = (걸린 초, _patch_convert 의 behaviour) — 가짜 시계를 그만큼 흘린 뒤 behaviour 대로 한다."""
+    calls = _patch_convert(monkeypatch, [behaviour for _, behaviour in steps])
+    convert = extractor._odl_convert
+
+    async def timed_convert(kwargs, timeout):
+        clock.now += steps[len(calls)][0]
+        await convert(kwargs, timeout)
+
+    monkeypatch.setattr(extractor, "_odl_convert", timed_convert)
+    return calls
+
+
+def _odl_time_logs(caplog) -> list[str]:
+    return [r.getMessage() for r in caplog.records
+            if r.levelno == logging.INFO and "초 / 상한 " in r.getMessage()]
+
+
+@pytest.mark.parametrize("steps, fallback, method", [
+    ([(12.5, {1: "본문"})], None, "opendataloader"),
+    ([(15.0, TimeoutError()), (3.0, {1: "재저장본 본문"})], "resaved", "opendataloader"),
+    ([(4.0, RuntimeError("ODL 변환 실패(exit 1)")), (15.0, TimeoutError())], "fitz", "fitz"),
+], ids=["original", "resaved", "fitz"])
+def test_odl_fallback_and_time_are_recorded(monkeypatch, odl_clock, caplog, steps, fallback, method):
+    _patch_timed_convert(monkeypatch, odl_clock, steps)
+    caplog.set_level(logging.INFO, logger=extractor.log.name)
+
+    result = _run(_pdf(["First page body"] * 30))         # 상한 max(5, 30 × 0.5) = 15초
+
+    assert result.odl_fallback == fallback
+    assert result.odl_seconds == sum(seconds for seconds, _ in steps)
+    assert {p.method for p in result.pages} == {method}
+    # 변환 시도마다 한 줄 — 실패한 시도도 남긴다
+    assert _odl_time_logs(caplog) == [f"[T_ODL] ODL {seconds:.1f}초 / 상한 15초" for seconds, _ in steps]
+
+
+def test_failed_resave_still_reports_fitz_fallback(monkeypatch, odl_clock):
+    _patch_timed_convert(monkeypatch, odl_clock, [(2.0, RuntimeError("ODL 변환 실패(exit 1)"))])
+    pdf = _pdf(["First page body"])  # tobytes 도 save 를 부르므로 save 를 바꾸기 전에 만든다
+
+    def broken_save(self, *args, **kwargs):
+        raise fitz.mupdf.FzErrorArgument("not a dict (null)")
+
+    monkeypatch.setattr(fitz.Document, "save", broken_save)
+    result = _run(pdf)
+
+    assert (result.odl_fallback, result.odl_seconds) == ("fitz", 2.0)
+
+
+def test_unopenable_file_has_no_fallback_but_records_time(monkeypatch, odl_clock, caplog):
+    """fitz 로도 안 열리는 파일은 재저장·fitz 폴백이 없다 — 폴백 None, 시도 한 번의 시간만 남는다."""
+    _patch_timed_convert(monkeypatch, odl_clock, [(1.5, RuntimeError("ODL 변환 실패(exit 1)"))])
+    caplog.set_level(logging.INFO, logger=extractor.log.name)
+
+    result = _run(bytes(range(256)) * 40)
+
+    assert (result.pages, result.odl_fallback, result.odl_seconds) == ([], None, 1.5)
+    assert _odl_time_logs(caplog) == ["[T_ODL] ODL 1.5초 / 상한 5초"]
+
+
+@pytest.mark.parametrize("pdf", [_pdf(["First page body has enough letters to keep."] * 2), bytes(range(256)) * 40],
+                         ids=["normal", "fitz_cannot_open"])
+def test_extract_text_carries_odl_fallback_and_time(monkeypatch, pdf):
+    """extract_text 는 1티어 결과의 폴백·변환 시간을 그대로 싣는다 — fitz 로 안 열려 ODL 결과만 돌려줄 때도."""
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+        res = extractor.ExtractionResult(book_id=book_id, total_pages=2)
+        res.pages = [extractor.PageResult(n, "First page body has enough letters to keep.", "fitz", 0.5)
+                     for n in range(2)]
+        res.odl_fallback, res.odl_seconds = "fitz", 31.25
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    result = asyncio.run(extractor.extract_text(None, "T_ODL", file_bytes=pdf))
+
+    assert (result.odl_fallback, result.odl_seconds) == ("fitz", 31.25)
+    assert len(result.pages) == 2
 
 
 def test_nonzero_exit_raises_runtime_error(monkeypatch):

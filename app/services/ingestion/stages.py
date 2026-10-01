@@ -410,6 +410,8 @@ def run_extract(ctx: StageContext) -> dict:
             "extract_deadline_hit": extraction.deadline_hit,
             "ocr_errors": extraction.ocr_errors,
             "render_errors": extraction.render_errors,
+            "odl_fallback": extraction.odl_fallback,
+            "odl_seconds": round(extraction.odl_seconds, 1),
         }
     finally:
         if downloaded:

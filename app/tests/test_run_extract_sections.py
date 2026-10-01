@@ -23,6 +23,8 @@ def _extraction(
     vlm_truncated: int = 0,
     short_kept: int = 0,
     render_errors: int = 0,
+    odl_fallback: str | None = None,
+    odl_seconds: float = 0.0,
 ):
     res = ExtractionResult(book_id="KCI_T", total_pages=3)
     res.pages = [PageResult(n, text, "opendataloader", 0.95) for n in range(3)]
@@ -31,6 +33,8 @@ def _extraction(
     res.vlm_truncated = vlm_truncated
     res.short_kept = short_kept
     res.render_errors = render_errors
+    res.odl_fallback = odl_fallback
+    res.odl_seconds = odl_seconds
     return res
 
 
@@ -78,6 +82,22 @@ def test_sections_on_first_pass_do_not_reextract(run_extract_with):
     assert (
         meta["forced_ocr"], meta["vlm_truncated"], meta["extract_deadline_hit"], meta["ocr_errors"], meta["render_errors"]
     ) == (False, 0, False, 0, 0)
+
+
+def test_meta_reports_odl_fallback_and_time(run_extract_with):
+    # 카나리·본 잡에서 ODL 폴백을 탄 문서와 변환 시간을 아이템 meta 로 센다
+    run, _, _ = run_extract_with
+    meta = run(_extraction("본문", odl_fallback="resaved", odl_seconds=12.345))
+    assert (meta["odl_fallback"], meta["odl_seconds"]) == ("resaved", 12.3)
+    meta = run(_extraction("본문"))
+    assert (meta["odl_fallback"], meta["odl_seconds"]) == (None, 0.0)
+
+
+def test_meta_odl_fields_come_from_the_forced_reextract(run_extract_with):
+    run, _, _ = run_extract_with
+    meta = run(_extraction("", short_kept=1, odl_fallback="fitz", odl_seconds=40.0),
+               _extraction("VLM 본문", odl_seconds=7.06))
+    assert (meta["odl_fallback"], meta["odl_seconds"]) == (None, 7.1)
 
 
 def test_zero_sections_reextracts_with_forced_ocr(run_extract_with):

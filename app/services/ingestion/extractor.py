@@ -159,6 +159,10 @@ class ExtractionResult:
     # ODL 본문이 짧은데 '원래 짧은 쪽'으로 ODL 결과를 채택한 쪽 수 — 강제 OCR(force_ocr_short_pages)이
     # 판정을 바꾸는 쪽은 이것뿐이라, 0 이면 섹션 0개 재추출을 해도 결과가 같다
     short_kept: int = 0
+    # 원본 변환이 실패해 대신 쓴 것 — "resaved"(fitz 재저장본이 변환됐다)·"fitz"(둘 다 실패해 fitz 텍스트를
+    # 썼다). None 이면 원본이 변환됐거나 폴백할 것이 없었다(fitz 로도 열리지 않는 파일)
+    odl_fallback: str | None = None
+    odl_seconds: float = 0.0    # ODL 변환 시도 전부의 벽시계 시간(초)
 
     @property
     def full_text(self) -> str:
@@ -501,6 +505,7 @@ async def extract_text(
     odl_result = await extract_text_opendataloader(
         file_path, book_id, file_bytes=file_bytes
     )
+    result.odl_fallback, result.odl_seconds = odl_result.odl_fallback, odl_result.odl_seconds
     odl_pages_by_num: dict[int, PageResult] = {p.page_num: p for p in odl_result.pages}
     if odl_result.errors:
         result.errors.extend(odl_result.errors)
@@ -882,10 +887,20 @@ async def extract_text_opendataloader(
             cfg.ODL_TIMEOUT_BASE_SECONDS, (page_count or 0) * cfg.ODL_TIMEOUT_PER_PAGE_SECONDS
         )
 
+        async def _convert(input_path: str, output_dir: str) -> Path:
+            # 변환 한 번 — 실패해도 걸린 시간을 쌓고 상한과 함께 남긴다(상한을 정할 실측 자료)
+            t0 = time.monotonic()
+            try:
+                return await _run_odl(input_path, output_dir, _PAGE_SEP, odl_timeout)
+            finally:
+                seconds = time.monotonic() - t0
+                result.odl_seconds += seconds
+                log.info(f"[{book_id}] ODL {seconds:.1f}초 / 상한 {odl_timeout:.0f}초")
+
         out_dir = tempfile.mkdtemp()
         md_file: Path | None = None
         try:
-            md_file = await _run_odl(load_path, out_dir, _PAGE_SEP, odl_timeout)
+            md_file = await _convert(load_path, out_dir)
         except (TimeoutError, RuntimeError, OSError) as e:
             reason = f"{odl_timeout:.0f}초 초과" if isinstance(e, TimeoutError) else str(e)
             log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
@@ -900,7 +915,8 @@ async def extract_text_opendataloader(
                         src.save(resaved_path, garbage=4, clean=True, deflate=True)
                     shutil.rmtree(out_dir, ignore_errors=True)
                     out_dir = tempfile.mkdtemp()
-                    md_file = await _run_odl(resaved_path, out_dir, _PAGE_SEP, odl_timeout)
+                    md_file = await _convert(resaved_path, out_dir)
+                    result.odl_fallback = "resaved"
                 except (TimeoutError, RuntimeError, ValueError, OSError, fitz.mupdf.FzErrorBase) as e2:
                     # 손상 PDF 의 재저장은 mupdf FzErrorBase 로도 실패한다(RuntimeError 가 아니다 — PyMuPDF 1.24·1.28
                     # 모두 FzErrorArgument 'not a dict'). 그래도 아래 fitz 텍스트 폴백으로 간다.
@@ -910,6 +926,7 @@ async def extract_text_opendataloader(
         if md_file is None:
             if page_count is not None:
                 result.pages = _fitz_text_pages(load_path, max_pages)
+                result.odl_fallback = "fitz"
                 result.total_pages = len(result.pages)
                 result.errors.append("ODL 실패 — fitz 텍스트로 대체")
                 log.warning(f"[{book_id}] ODL 실패 — fitz 텍스트 {len(result.pages)}쪽으로 대체")
