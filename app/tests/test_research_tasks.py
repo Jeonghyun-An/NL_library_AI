@@ -1320,6 +1320,24 @@ class TestLiveProgress:
 
         assert [f[2]["counters"]["papers_reviewed"] for f in h.finished[:2]] == [1, 2]
 
+    def test_saved_counters_include_papers_excluded_in_the_round(self, monkeypatch):
+        """counters 이벤트는 검색 직후라 이번 회차의 제외를 모른다 — 회차를 닫으며 저장·알리는 단계 result
+        와 닫힌 단계가 제외 수를 싣는다(재접속한 화면의 카운터 '제외' 칸 원천)."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        h = None
+
+        async def _excluding_round(state, subq):
+            subq.rounds.append({**_ROUNDS[0], "excluded": 2})
+            await h.emit("critique", {"subq_idx": 0, "verdict": "insufficient", "excluded": 2})
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[],
+                            explore=_excluding_round)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [res["counters"]["excluded"] for _, res in h.progress] == [2]
+        assert h.finished[0][2]["counters"]["excluded"] == 2
+
     def test_section_progress_is_saved_on_the_synthesis_step(self, monkeypatch):
         rt = _load_tasks(monkeypatch)
         job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),

@@ -20,9 +20,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from services.research.critic import Verdict
-from services.research.runner import explore_subquestion
-from services.research.state import ResearchState, SubQuestion, merge_params
+from services.research import critic as critic_module
+from services.research.critic import _MAX_LISTED, Verdict
+from services.research.runner import explore_subquestion, subq_budget
+from services.research.state import Evidence, ResearchState, SubQuestion, merge_params
 
 
 class _FakeCritic:
@@ -328,16 +329,28 @@ class TestRoundEvents:
         assert [k for k, _ in events] == [
             "search", "counters", "critique", "search", "counters", "critique"]
         assert _of(events, "counters") == [
-            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0},
-            {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1},
+            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0, "excluded": 0},
+            {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1, "excluded": 0},
         ]
 
     def test_counters_are_job_wide(self):
         st = self._state("가", "나", max_recheck=0)
         events = self._run(st, explore=_fake_explore)
         assert _of(events, "counters")[-1] == {
-            "papers_reviewed": 1, "evidence_adopted": 1, "rechecks": 0,
+            "papers_reviewed": 1, "evidence_adopted": 1, "rechecks": 0, "excluded": 0,
         }
+
+    def test_counters_show_papers_excluded_in_earlier_rounds(self):
+        """무관 제외로 채택 수가 줄 때 제외를 따로 보여야 결과가 준 것으로 읽히지 않는다. counters 는 검색
+        직후에 나가 앞 회차까지 뺀 수다 — 이번 회차의 제외는 회차를 닫으며 저장하는 단계 result 가 싣는다."""
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, explore=_explore_table({"가": ["A", "B"], "보완": ["C"]}),
+                           critic=_ScriptedCritic(("insufficient", [2], ["보완"]),
+                                                  ("sufficient", [], [])))
+        assert _of(events, "counters") == [
+            {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0, "excluded": 0},
+            {"papers_reviewed": 3, "evidence_adopted": 2, "rechecks": 1, "excluded": 1},
+        ]
 
 
 class TestRoundHistory:
@@ -354,9 +367,11 @@ class TestRoundHistory:
                                         critique_fn=_FakeCritic(), emit=None))
         assert sq.rounds == [
             {"round": 1, "query": "가", "found_chunks": 2, "new_papers": 2,
-             "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1"},
+             "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1",
+             "excluded": 0, "excluded_papers": [], "flagged": 0, "flagged_papers": []},
             {"round": 2, "query": "다른 검색어 1", "found_chunks": 3, "new_papers": 2,
-             "verdict": "insufficient", "note": "부족", "next_query": None},
+             "verdict": "insufficient", "note": "부족", "next_query": None, "excluded": 0,
+             "excluded_papers": [], "flagged": 0, "flagged_papers": []},
         ]
 
     def test_history_matches_what_was_streamed(self):
@@ -370,7 +385,9 @@ class TestRoundHistory:
         streamed = [
             {"round": s["round"], "query": s["query"], "found_chunks": s["found"],
              "new_papers": s["new_papers"], "verdict": c["verdict"], "note": c["note"],
-             "next_query": c["next_query"]}
+             "next_query": c["next_query"], "excluded": c["excluded"],
+             "excluded_papers": c["excluded_papers"], "flagged": c["flagged"],
+             "flagged_papers": c["flagged_papers"]}
             for s, c in zip(_of(events, "search"), _of(events, "critique"))
         ]
         assert sq.rounds == streamed
@@ -593,6 +610,455 @@ class TestEvidenceCap:
         assert critic.calls == 1
         assert sq.queries == ["가"]
         assert sq.capped == 1
+
+
+class TestSubqBudget:
+    """하위질문 하나가 새로 만들 수 있는 근거 수 — 전체 상한을 하위질문 수로 나눈 몫."""
+
+    def _state(self, n, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=f"하위{i}") for i in range(n)]
+        return st
+
+    def test_default_share_for_six_subquestions_is_fifteen(self):
+        # 60 이면 10편씩이라 첫 검색(보통 8~10편)만으로 몫이 차 자기점검의 재검색이 헛돈다
+        assert subq_budget(self._state(6)) == 15
+
+    def test_share_is_floor_divided(self):
+        assert subq_budget(self._state(12)) == 7
+
+    def test_share_below_minimum_is_raised_to_minimum(self):
+        assert subq_budget(self._state(12, max_evidence=50)) == 5
+
+    def test_single_subquestion_gets_the_whole_pool(self):
+        assert subq_budget(self._state(1)) == 90
+
+    def test_dropping_subquestions_enlarges_the_rest(self):
+        # 계획에서 하위질문을 지우면 남은 하위질문의 몫이 저절로 커진다
+        assert subq_budget(self._state(3)) == 30
+
+    def test_share_never_drops_to_zero(self):
+        # 전체 상한이 하위질문 수보다 작고 최솟값이 0 이면 몫이 0 이 된다 — 어느 하위질문도 근거를
+        # 만들지 못해 절 0개짜리 보고서가 completed 로 끝난다
+        assert subq_budget(self._state(6, max_evidence=5, min_evidence_per_subq=0)) == 1
+
+
+class TestEvidenceBudget:
+    """하위질문은 제 몫까지만 근거를 새로 만든다 — 먼저 탐색한 하위질문이 풀을 독식하지 못한다."""
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q",
+                           params=merge_params({"max_recheck": 0, **params}))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def _explore(self, table):
+        async def _explore(query, *, params, db):
+            return _hits(table.get(query, []), query=query)
+        return _explore
+
+    def _run(self, st, table):
+        for sq in st.subquestions:
+            asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=self._explore(table),
+                                            critique_fn=_FakeCritic(), emit=None))
+
+    def test_subquestion_stops_creating_at_its_share(self):
+        # 운영에서 먼저 탐색한 HPC 가 60편 중 32편을 가져가 핵심 하위질문은 2편에 그쳤다
+        st = self._state("가", "나", max_evidence=4, min_evidence_per_subq=1)
+        self._run(st, {"가": ["A", "B", "C"], "나": ["D"]})
+        first, second = st.subquestions
+        assert len(first.evidence_ids) == 2
+        assert (first.budget_capped, first.capped) == (1, 0)
+        assert len(second.evidence_ids) == 1
+
+    def test_reused_evidence_does_not_use_up_the_share(self):
+        # 이미 있는 근거에 링크하는 것은 전체 풀을 늘리지 않는다
+        st = self._state("가", "나", max_evidence=4, min_evidence_per_subq=1)
+        self._run(st, {"가": ["A", "B"], "나": ["A", "B", "C", "D"]})
+        second = st.subquestions[1]
+        assert sorted(st.evidence[e].cnts_id for e in second.evidence_ids) == ["A", "B", "C", "D"]
+        assert second.budget_capped == 0
+
+    def test_share_and_global_cap_are_counted_apart(self):
+        # 최솟값이 몫을 끌어올려 몫의 합이 전체 상한을 넘으면 전체 상한이 먼저 막는다
+        st = self._state("가", "나", max_evidence=3, min_evidence_per_subq=2)
+        self._run(st, {"가": ["A", "B", "C"], "나": ["D", "E", "F"]})
+        first, second = st.subquestions
+        assert (first.budget_capped, first.capped) == (1, 0)
+        assert (second.budget_capped, second.capped) == (0, 2)
+
+    def test_no_recheck_once_the_share_is_used_up(self):
+        # 전체 풀은 남아 있어도 이 하위질문은 더 만들 수 없다 — 재검색은 검색·LLM 호출만 태운다
+        st = self._state("가", "나", max_evidence=4, min_evidence_per_subq=1, max_recheck=3)
+        critic = _FakeCritic()
+        asyncio.run(explore_subquestion(
+            st, st.subquestions[0], db=None, explore_fn=self._explore({"가": ["A", "B", "C"]}),
+            critique_fn=critic, emit=None,
+        ))
+        assert critic.calls == 1
+        assert st.subquestions[0].queries == ["가"]
+        assert len(st.evidence) == 2
+
+
+class TestEvidenceNumbering:
+    def test_new_evidence_never_takes_a_number_still_in_use(self):
+        """근거 수로 번호를 매기면 지운 자리가 있을 때 새 근거가 남아 있는 번호를 받아 덮어쓴다."""
+        st = ResearchState(job_id="j", question="q", params=merge_params({"max_recheck": 0}))
+        st.evidence = {"E2": Evidence(id="E2", cnts_id="OLD", meta={"title": "남은 논문"})}
+        st.evidence_seq = 2
+        sq = SubQuestion(idx=0, text="가")
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_fake_explore,
+                                        critique_fn=_FakeCritic(), emit=None))
+        assert st.evidence["E2"].cnts_id == "OLD"
+        assert sq.evidence_ids == ["E3"] and st.evidence["E3"].cnts_id == "A"
+        assert st.evidence_seq == 3
+
+
+class _ScriptedCritic:
+    """회차마다 정해 둔 (판정, 무관 번호, 제안 검색어)를 낸다. 받은 근거 목록도 남긴다."""
+
+    def __init__(self, *turns):
+        self._turns = list(turns)
+        self.seen: list[list] = []
+
+    async def __call__(self, subq, evidence, *, params):
+        self.seen.append(evidence)
+        verdict, off_topic, queries = self._turns.pop(0)
+        return Verdict(verdict, note="점검", new_queries=list(queries), off_topic=list(off_topic))
+
+
+class TestOffTopicExclusion:
+    """자기점검이 무관하다고 가리킨 근거는 그 하위질문에서 빠진다 — 같은 단어를 다른 뜻으로 쓴
+    논문이 절에 실리지 않게."""
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def _run(self, st, sq, table, critic, emit=None):
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_explore_table(table),
+                                        critique_fn=critic, emit=emit))
+
+    def _cnts(self, st, ids):
+        return [st.evidence[e].cnts_id for e in ids]
+
+    def test_off_topic_evidence_leaves_the_subquestion_and_the_pool(self):
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        self._run(st, sq, {"가": ["A", "B", "C"]}, _ScriptedCritic(("sufficient", [2], [])))
+        assert self._cnts(st, sq.evidence_ids) == ["A", "C"]
+        # 어느 하위질문도 쓰지 않는 근거를 남기면 어느 절에도 실리지 않은 채 전체 상한만 차지한다
+        assert "E2" not in st.evidence and len(st.evidence) == 2
+        assert "E2" not in sq.evidence_chunks and "B-c-가" not in sq.chunk_scores
+        assert sq.excluded_cnts == ["B"]
+
+    def test_evidence_another_subquestion_uses_stays_in_the_pool(self):
+        """같은 논문이 다른 하위질문에는 관련 있을 수 있다 — 그쪽 링크를 끊지 않는다."""
+        st = self._state("가", "나", max_recheck=0)
+        sq1, sq2 = st.subquestions
+        table = {"가": ["A", "B"], "나": ["B", "C"]}
+        self._run(st, sq1, table, _ScriptedCritic(("sufficient", [], [])))
+        self._run(st, sq2, table, _ScriptedCritic(("sufficient", [1], [])))
+        assert sq2.evidence_ids == ["E3"]
+        assert sq1.evidence_ids == ["E1", "E2"] and st.evidence["E2"].cnts_id == "B"
+        assert sq2.excluded_cnts == ["B"] and sq1.excluded_cnts == []
+
+    def test_excluded_paper_is_not_taken_back_in_a_later_round(self):
+        """다시 넣으면 같은 논문을 또 판정받고 또 빼며 회차를 태운다."""
+        st = self._state("가", max_recheck=1)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("insufficient", [2], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B"], "보완": ["B", "C"]}, critic)
+        assert self._cnts(st, sq.evidence_ids) == ["A", "C"]
+        assert [e.cnts_id for e in critic.seen[1]] == ["A", "C"]
+        # 지운 E2 의 번호를 C 가 다시 받지 않는다
+        assert sq.evidence_ids == ["E1", "E3"]
+
+    def test_other_subquestion_may_still_adopt_the_paper(self):
+        st = self._state("가", "나", max_recheck=0)
+        sq1, sq2 = st.subquestions
+        table = {"가": ["A", "B"], "나": ["B"]}
+        self._run(st, sq1, table, _ScriptedCritic(("sufficient", [2], [])))
+        self._run(st, sq2, table, _ScriptedCritic(("sufficient", [], [])))
+        assert sq2.evidence_ids == ["E3"] and st.evidence["E3"].cnts_id == "B"
+
+    def test_subquestion_with_evidence_left_after_exclusion_trusts_sufficient(self):
+        """남은 근거가 있으면 '충분' 판정을 따른다 — 한 편이라도 뺐다고 다시 찾으면 하위질문마다
+        검색·LLM 회차가 max_recheck 까지 헛돈다."""
+        st = self._state("가", max_recheck=1)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("sufficient", [1], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B"], "보완": ["C"]}, critic)
+        assert sq.queries == ["가"]
+        assert self._cnts(st, sq.evidence_ids) == ["B"]
+
+    def test_excluded_count_is_recorded_and_streamed(self):
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=1)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("insufficient", [1, 3], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B", "C"], "보완": ["D"]}, critic, emit=emit)
+        assert [r["excluded"] for r in sq.rounds] == [2, 0]
+        critiques = _of(events, "critique")
+        assert [c["excluded"] for c in critiques] == [2, 0]
+        # 뺀 뒤의 수다 — 화면의 채택 수와 한계 문장이 같은 값을 본다
+        assert critiques[0]["adopted"] == 1
+
+    def test_excluded_papers_keep_their_bibliography_after_leaving_the_pool(self):
+        """풀에서 지우면 무엇을 뺐는지 알 길이 없다 — 회차 기록과 critique 이벤트에 서지를 남겨 타임라인·
+        보고서가 걸러낸 논문을 보여 준다."""
+        async def _with_author(query, *, params, db):
+            hits, meta = _hits(["A", "B"], query=query)
+            meta["B"]["personal_author"] = "홍길동"
+            return hits, meta
+
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_with_author,
+                                        critique_fn=_ScriptedCritic(("sufficient", [2], [])),
+                                        emit=emit))
+        paper = {"cnts_id": "B", "title": "논문 B", "personal_author": "홍길동", "pub_date": "2008-06"}
+        assert "E2" not in st.evidence
+        assert [r["excluded_papers"] for r in sq.rounds] == [[paper]]
+        assert [c["excluded_papers"] for c in _of(events, "critique")] == [[paper]]
+
+    def test_each_round_records_only_the_papers_it_excluded(self):
+        st = self._state("가", max_recheck=2)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("insufficient", [2], ["보완"]), ("insufficient", [], ["추가"]),
+                                 ("sufficient", [1], []))
+        self._run(st, sq, {"가": ["A", "B"], "보완": ["C"], "추가": ["D"]}, critic)
+        assert [[p["cnts_id"] for p in r["excluded_papers"]] for r in sq.rounds] == [["B"], [], ["A"]]
+
+    def test_freed_budget_lets_the_subquestion_search_again(self):
+        """예산은 지금 남아 있는 자기 근거로 센다 — 무관 제외로 자리가 비면 재검색이 새 근거를 만든다."""
+        st = self._state("가", "나", max_recheck=1, max_evidence=4, min_evidence_per_subq=0)
+        sq = st.subquestions[0]            # 예산 4 // 2 = 2 — A·B 를 만들고 C 는 막힌다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B", "C"], "보완": ["A", "D"]}, critic)
+        assert sq.queries == ["가", "보완"]
+        assert set(self._cnts(st, sq.evidence_ids)) == {"B", "D"}
+
+    def test_candidate_adopted_after_a_freed_seat_is_not_counted_as_blocked(self):
+        """앞 회차에 몫에 막혔던 후보가 제외로 빈 자리에 실리면 '싣지 못한 후보'가 아니다 —
+        그대로 세면 한계 문장이 실린 논문까지 싣지 못했다고 쓴다."""
+        st = self._state("가", "나", max_recheck=1, max_evidence=4, min_evidence_per_subq=0)
+        sq = st.subquestions[0]            # 예산 2 — 1회차에 A·B 를 만들고 C 는 막힌다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B", "C"], "보완": ["C", "D"]}, critic)
+        assert set(self._cnts(st, sq.evidence_ids)) == {"B", "C"}
+        assert sq.budget_capped == 1       # 2회차에 막힌 D 뿐이다
+
+    def test_candidate_adopted_after_a_freed_pool_seat_is_not_counted_as_capped(self):
+        """전체 상한에 막혔던 후보도 같다 — 제외로 풀에 자리가 나 실리면 막힌 수에서 뺀다."""
+        st = self._state("가", "나", max_recheck=1, max_evidence=3, min_evidence_per_subq=3)
+        sq1, sq2 = st.subquestions
+        table = {"가": ["A"], "나": ["B", "C", "D"], "보완": ["D", "E"]}
+        self._run(st, sq1, table, _ScriptedCritic(("sufficient", [], [])))
+        # 몫은 3 이지만 풀에 2자리뿐 — 1회차에 B·C 를 만들고 D 는 전체 상한에 막힌다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq2, table, critic)
+        assert set(self._cnts(st, sq2.evidence_ids)) == {"C", "D"}
+        assert sq2.capped == 1             # 2회차에 막힌 E 뿐이다
+
+    def _limitation(self, st, text):
+        from services.research.synthesizer import build_limitations
+
+        return next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if f"'{text}'" in x)
+
+    def test_seat_freed_by_exclusion_is_not_blamed_on_the_share(self):
+        """제외로 몫에 자리가 났는데 다음 검색이 막혔던 후보를 다시 찾지 못했다 — 싣지 못한 것은 이제
+        상한 탓이 아니다. 막힌 수를 남기면 한계 문장이 '근거 1편 … 상한(2편)에 닿아'로 스스로 모순된다."""
+        st = self._state("엣지 컴퓨팅", "나", max_recheck=1, max_evidence=4, min_evidence_per_subq=0)
+        sq = st.subquestions[0]            # 몫 2 — 1회차에 A·B 를 만들고 C 는 막힌다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("insufficient", [], []))
+        self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
+        assert self._cnts(st, sq.evidence_ids) == ["B"]
+        assert sq.budget_capped == 0
+        assert self._limitation(st, "엣지 컴퓨팅") == "'엣지 컴퓨팅' 은 근거 1편으로 결론이 약하다 — 점검"
+
+    def test_pool_seat_freed_by_exclusion_is_not_blamed_on_the_global_cap(self):
+        st = self._state("가", "나", max_recheck=1, max_evidence=3, min_evidence_per_subq=3)
+        sq1, sq2 = st.subquestions
+        table = {"가": ["A"], "나": ["B", "C", "D"], "보완": []}
+        self._run(st, sq1, table, _ScriptedCritic(("sufficient", [], [])))
+        # 1회차에 B·C 를 만들고 D 는 전체 상한에 막힌다. B 를 빼 풀에 자리가 나도 보완 검색이 D 를 못 찾는다
+        critic = _ScriptedCritic(("insufficient", [1], ["보완"]), ("insufficient", [], []))
+        self._run(st, sq2, table, critic)
+        assert self._cnts(st, sq2.evidence_ids) == ["C"]
+        assert sq2.capped == 0
+
+    def test_subquestion_emptied_by_exclusion_names_the_exclusion_not_a_cap(self):
+        """모두 빼 0편으로 끝났다 — 상한 문장은 원인을 가리고, '근거를 찾지 못했다'(코퍼스 빈틈)는 찾아서
+        읽고 뺀 사실을 지운다."""
+        st = self._state("엣지 컴퓨팅", "나", max_recheck=1, max_evidence=4, min_evidence_per_subq=0)
+        sq = st.subquestions[0]
+        critic = _ScriptedCritic(("insufficient", [1, 2], ["보완"]), ("insufficient", [], []))
+        self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
+        assert sq.evidence_ids == [] and (sq.budget_capped, sq.capped) == (0, 0)
+        assert self._limitation(st, "엣지 컴퓨팅") == (
+            "'엣지 컴퓨팅' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다 — 점검")
+
+
+class TestJudgedBeforeExclusion:
+    """판정은 뺀 근거까지 보고 내린 것이다 — 보인 근거를 모두 빼면 '충분'을 따르지 않는다.
+    critic 은 LLM(chat)만 대역으로 바꿔 실제 critique·parse_verdict 를 거친다."""
+
+    def _run(self, monkeypatch, table, *replies, **params):
+        seen: list[str] = []
+        pending = list(replies)
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages[1]["content"])
+            return json.dumps(pending.pop(0), ensure_ascii=False)
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=0, text="엣지 컴퓨팅 자원")]
+        sq = st.subquestions[0]
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_explore_table(table),
+                                        emit=None))
+        return st, sq, seen
+
+    def _limitations(self, st):
+        from services.research.synthesizer import build_limitations
+
+        return build_limitations(st, unmarked_total=0, dropped_total=0)
+
+    def test_emptied_subquestion_searches_again_even_if_judged_sufficient(self, monkeypatch):
+        """근거 없는 '충분'은 없다 — 모두 뺐으면 판정이 충분이어도 다시 찾는다."""
+        _, sq, _ = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": ["A"], "보완": ["C"]},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"], "off_topic": [1]},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []},
+            max_recheck=1,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원", "보완"]
+        assert len(sq.evidence_ids) == 1 and sq.verdict == "sufficient"
+
+    def test_emptied_subquestion_without_a_new_query_is_not_left_sufficient(self, monkeypatch):
+        # 원래 규칙은 부족할 때만 검색어를 제안하게 해, 충분 판정에서는 빈 배열이 오기 쉽다
+        st, sq, _ = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": ["A", "B"]},
+            {"verdict": "sufficient", "note": "근거가 하위질문을 충분히 다룬다",
+             "new_queries": [], "off_topic": [1, 2]},
+            max_recheck=3,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원"] and sq.evidence_ids == []
+        assert (sq.verdict, sq.note) == ("insufficient", "")
+        assert [(r["verdict"], r["note"]) for r in sq.rounds] == [("insufficient", "")]
+        assert self._limitations(st) == [
+            "'엣지 컴퓨팅 자원' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다"]
+
+    def test_emptied_subquestion_on_its_last_round_is_not_left_sufficient(self, monkeypatch):
+        _, sq, _ = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": ["A"]},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"], "off_topic": [1]},
+            max_recheck=0,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원"]
+        assert sq.verdict == "insufficient"
+
+    def test_evidence_beyond_the_listed_is_judged_before_sufficient_is_trusted(self, monkeypatch):
+        """보인 20편을 모두 뺐는데 목록 밖 근거가 남았다 — 발췌를 한 번도 보지 않은 근거로 '충분'을
+        확정하지 않고 다시 찾는다. 다음 회차 critic 이 남은 근거를 처음으로 본다."""
+        papers = [f"P{i}" for i in range(_MAX_LISTED + 3)]
+        _, sq, seen = self._run(
+            monkeypatch, {"엣지 컴퓨팅 자원": papers, "보완": []},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"],
+             "off_topic": list(range(1, _MAX_LISTED + 1))},
+            {"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []},
+            max_recheck=1,
+        )
+        assert sq.queries == ["엣지 컴퓨팅 자원", "보완"]
+        assert "모인 근거: 3편" in seen[1]
+        assert sq.verdict == "sufficient" and len(sq.evidence_ids) == 3
+
+
+class TestOffTopicExclusionOff:
+    """exclude_off_topic=0 — 자기점검은 번호를 그대로 돌려주지만 러너는 빼지 않고 flagged 로만 센다.
+    운영에서 무관 제외가 결과를 줄이면 재배포 없이 끄고, 켠 잡과 나란히 비교한다."""
+
+    def _state(self, text, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=0, text=text)]
+        return st
+
+    def test_flagged_evidence_stays_in_the_subquestion_and_the_pool(self):
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=0, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B", "C"]}),
+            critique_fn=_ScriptedCritic(("sufficient", [1, 3], [])), emit=emit,
+        ))
+        assert [st.evidence[e].cnts_id for e in sq.evidence_ids] == ["A", "B", "C"]
+        assert len(st.evidence) == 3 and sq.excluded_cnts == []
+        assert [(r["excluded"], r["excluded_papers"], r["flagged"]) for r in sq.rounds] == [
+            (0, [], 2)]
+        (critique,) = _of(events, "critique")
+        assert (critique["excluded"], critique["excluded_papers"], critique["flagged"]) == (0, [], 2)
+        assert critique["adopted"] == 3
+
+    def test_job_with_exclusion_on_records_no_flagged(self):
+        # 켠 잡은 뺀 수가 excluded 에 있다 — flagged 는 끈 잡에서만 센다
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B"]}),
+            critique_fn=_ScriptedCritic(("sufficient", [2], [])), emit=None,
+        ))
+        assert [(r["excluded"], r["flagged"], r["flagged_papers"]) for r in sq.rounds] == [(1, 0, [])]
+
+    def test_paper_flagged_again_in_a_later_round_is_counted_once(self):
+        """끈 잡은 빼지 않아 가리킨 논문이 다음 회차 목록에 남고 또 가리켜진다. 회차마다 세면 켠 잡(한 번 뺀
+        논문은 다시 들지 않는다)보다 부풀고 두 회차가 서로 다른 논문을 의심한 것처럼 보인다 — 처음 가리킨
+        회차에만 세고, 어떤 논문인지 서지를 남긴다."""
+        class _FlagByPaper:
+            def __init__(self, *turns):
+                self._turns = list(turns)
+
+            async def __call__(self, subq, evidence, *, params):
+                verdict, off, queries = self._turns.pop(0)
+                ids = [e.cnts_id for e in evidence]
+                return Verdict(verdict, note="점검", new_queries=list(queries),
+                               off_topic=[ids.index(c) + 1 for c in off])
+
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=1, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None, explore_fn=_explore_table({"가": ["A", "B"], "보완": ["C", "B"]}),
+            critique_fn=_FlagByPaper(("insufficient", ["B"], ["보완"]), ("sufficient", ["B", "C"], [])),
+            emit=emit,
+        ))
+        assert [r["flagged"] for r in sq.rounds] == [1, 1]
+        assert [[p["cnts_id"] for p in r["flagged_papers"]] for r in sq.rounds] == [["B"], ["C"]]
+        assert sq.rounds[0]["flagged_papers"] == [
+            {"cnts_id": "B", "title": "논문 B", "personal_author": None, "pub_date": "2008-06"}]
+        assert [(c["flagged"], c["flagged_papers"]) for c in _of(events, "critique")] == [
+            (r["flagged"], r["flagged_papers"]) for r in sq.rounds]
+
+    def test_every_listed_evidence_flagged_does_not_search_again(self, monkeypatch):
+        """끈 잡은 판정을 뒤집지 않는다 — 근거가 그대로 남아 '충분'이 본 근거가 있다. 뒤집으면 끈 잡만
+        재검색을 더 돌아 켠 잡과 비교할 기준(걸린 시간·근거 수)이 흐려진다. 실제 critique·parse_verdict 를 거친다."""
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return json.dumps({"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"],
+                               "off_topic": [1, 2]}, ensure_ascii=False)
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        st = self._state("엣지 컴퓨팅 자원", max_recheck=3, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(
+            st, sq, db=None,
+            explore_fn=_explore_table({"엣지 컴퓨팅 자원": ["A", "B"], "보완": []}), emit=None,
+        ))
+        assert sq.queries == ["엣지 컴퓨팅 자원"]
+        assert (sq.verdict, sq.note) == ("sufficient", "충분하다")
+        assert len(sq.evidence_ids) == 2 and sq.rounds[0]["flagged"] == 2
 
 
 _RELAY = "services.research.relay"

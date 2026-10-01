@@ -3,6 +3,8 @@ import type {
   CountersPayload,
   CountersView,
   CritiqueEvent,
+  ExcludedPaper,
+  ExcludedPaperView,
   HighlightView,
   ReportEvidence,
   ResearchEvent,
@@ -52,7 +54,7 @@ type OpenedSubq = SubqView & { seq: number };
 
 export const TERMINAL_STATUSES: readonly ResearchStatus[] = ["completed", "failed", "canceled"];
 
-const EMPTY_COUNTERS: CountersView = { papersReviewed: null, evidenceAdopted: null, rechecks: null };
+const EMPTY_COUNTERS: CountersView = { papersReviewed: null, evidenceAdopted: null, rechecks: null, excluded: null };
 const EMPTY_SYNTH: SynthView = {
   seq: null, status: null, total: 0, sections: [], headings: [], evidence: {}, retiredSeq: null,
 };
@@ -109,6 +111,25 @@ export function phaseLabel(phase: ResearchPhase): string {
 
 export function verdictLabel(verdict: Verdict): string {
   return VERDICT_LABEL[verdict];
+}
+
+// 자기점검이 하위질문의 핵심과 무관하다고 보고 뺀 근거 수 — 타임라인 회차 줄과 문서 부록이 같은
+// 문구를 쓴다. 뺀 것이 없거나 무관 제외 전 잡(null)이면 적지 않는다
+export function excludedLabel(n: number | null): string | null {
+  return n ? `무관 ${n}편 제외` : null;
+}
+
+// 무관 제외를 끈 잡(exclude_off_topic=0)은 빼지 않고 무관하다고 본 수만 남긴다 — 켠 잡의 "제외"와
+// 헷갈리지 않게 빼지 않았음을 문구에 밝힌다. 켠 잡(0)·그 전 잡(null)은 적지 않는다
+export function flaggedLabel(n: number | null): string | null {
+  return n ? `무관 의심 ${n}편(제외 안 함)` : null;
+}
+
+// 카운터에 제외 칸을 그릴지. 제외 수를 모르는 옛 잡은 그리지 않는다. 새 잡은 API 가 잡을 만들 때 기본 파라미터를
+// 합쳐 저장해 params 에 exclude_off_topic 이 있으므로 첫 counters 이벤트 전에도 그린다 — 수를 받고서야 그리면
+// 첫 검색이 끝날 때 칸이 셋에서 넷으로 늘며 카운터 줄이 흔들린다
+export function showsExcludedCounter(view: Pick<ResearchView, "counters" | "params">): boolean {
+  return view.counters.excluded !== null || "exclude_off_topic" in view.params;
 }
 
 export function subqStatusLabel(sq: SubqView): string {
@@ -341,6 +362,11 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
       verdict: event.verdict,
       note: event.note,
       nextQuery: event.next_query ?? null,
+      excluded: event.excluded ?? null,
+      // 뒤따르는 진행 저장 step 이벤트의 회차 기록도 같은 값을 싣지만, 저장이 실패하면 오지 않는다 —
+      // 점검 이벤트의 값으로 바로 채운다. 목록을 보내지 않는 옛 워커는 빈 목록·null
+      excludedPapers: (event.excluded_papers ?? []).map(toExcludedPaperView),
+      flagged: event.flagged ?? null,
     };
     return {
       ...sq,
@@ -495,7 +521,7 @@ function carriedSynth(prev: ResearchView, fresh: ResearchView): SynthView {
   return isRetry(prev.status, fresh.status) ? retiredSynth(prev.steps) : prev.synth;
 }
 
-// 재검색은 판정이 부족일 때만 일어난다(critic.should_recheck) — 마지막 전 회차는 모두 부족이다
+// 회차 기록이 없는 옛 잡에서 재검색은 판정이 부족일 때만 일어났다(무관 제외 전이다) — 마지막 전 회차는 모두 부족이다
 function roundsFromQueries(queries: string[], verdict: Verdict | null, note: string): RoundView[] {
   const last = queries.length - 1;
   return queries.map((query, i) => ({
@@ -506,7 +532,20 @@ function roundsFromQueries(queries: string[], verdict: Verdict | null, note: str
     verdict: i < last ? "insufficient" : verdict,
     note: i < last ? "" : note,
     nextQuery: i < last ? (queries[i + 1] ?? null) : null,
+    excluded: null,
+    excludedPapers: [],
+    flagged: null,
   }));
+}
+
+// 뺀 논문의 서지 — 회차 기록(타임라인)과 보고서 trail(제외한 논문 섹션·문서 부록)이 같은 모양으로 받는다
+export function toExcludedPaperView(p: ExcludedPaper): ExcludedPaperView {
+  return {
+    cntsId: p.cnts_id,
+    title: p.title?.trim() ?? "",
+    personalAuthor: p.personal_author ?? null,
+    pubDate: p.pub_date ?? null,
+  };
 }
 
 function toRoundView(r: SearchRoundResult): RoundView {
@@ -518,11 +557,17 @@ function toRoundView(r: SearchRoundResult): RoundView {
     verdict: r.verdict ?? null,
     note: r.note ?? "",
     nextQuery: r.next_query ?? null,
+    excluded: r.excluded ?? null,
+    excludedPapers: (r.excluded_papers ?? []).map(toExcludedPaperView),
+    flagged: r.flagged ?? null,
   };
 }
 
 function blankRound(round: number): RoundView {
-  return { round, query: "", foundChunks: null, newPapers: null, verdict: null, note: "", nextQuery: null };
+  return {
+    round, query: "", foundChunks: null, newPapers: null, verdict: null, note: "", nextQuery: null,
+    excluded: null, excludedPapers: [], flagged: null,
+  };
 }
 
 function mergeRounds(base: RoundView[], live: RoundView[]): RoundView[] {
@@ -646,7 +691,12 @@ function latestBySubq(steps: ResearchStepRow[], kind: StepKind): Map<number, Res
 }
 
 function countersFromPayload(p: CountersPayload): CountersView {
-  return { papersReviewed: p.papers_reviewed, evidenceAdopted: p.evidence_adopted, rechecks: p.rechecks };
+  return {
+    papersReviewed: p.papers_reviewed,
+    evidenceAdopted: p.evidence_adopted,
+    rechecks: p.rechecks,
+    excluded: p.excluded ?? null,
+  };
 }
 
 // 서버 스냅샷(api/research.py _live_counters)과 같은 순서로 고른다 — 갈리면 끝난 뒤 다시 연
@@ -664,12 +714,17 @@ function countersStep(steps: ResearchStepRow[]): ResearchStepRow | undefined {
   return best;
 }
 
-// 라이브 카운터와 저장본(스냅샷·GET) 카운터를 합친다. 한 시도 안에서 카운터는 줄지 않는다
-// (research_stats 의 seen_cnts·evidence·queries 는 늘기만 한다). 저장본은 자기점검(LLM)이
+// 라이브 카운터와 저장본(스냅샷·GET) 카운터를 합친다. 한 시도 안에서 검토한 논문·재검색·제외 수는
+// 줄지 않는다(research_stats 의 seen_cnts·queries·회차 기록은 늘기만 한다). 저장본은 자기점검(LLM)이
 // 끝나야 쓰여 점검을 기다리는 동안 검색 직후 받은 counters 이벤트보다 한 회차 뒤처지고,
 // 반대로 스트림이 끊긴 사이에는 저장본이 앞선다 — 그래서 필드별로 큰 값을 남긴다.
 // 다만 화면이 모르는 뒤 단계에서 나온 저장본은 그대로 쓴다. 탐색부터 다시 도는 재시도는
 // 카운터를 0 부터 새로 세므로, 큰 값을 남기면 이전 시도의 숫자가 버티고 선다.
+// 저장본을 쓴 단계가 닫혔고 그 뒤로 열린 탐색 단계가 없어도 저장본을 그대로 쓴다 — 단계를 닫을 때 쓴
+// 값이라 그 단계의 어떤 counters 이벤트보다 새롭다. 채택한 근거는 자기점검이 무관 근거를 풀에서 지우면
+// 주는데, 탐색이 끝난 뒤의 종합 단계 이벤트는 카운터를 싣지 않아 큰 값을 남기면 바로잡히지 않는다.
+// 도는 단계 안에서는 여전히 필드별 큰 값이다 — 그 동안 지운 뒤의 저장본이 오면 지우기 전의 수가
+// 다음 counters·step 이벤트까지 남는다.
 function reconcileCounters(
   live: CountersView,
   liveSteps: ResearchStepRow[],
@@ -678,10 +733,13 @@ function reconcileCounters(
 ): CountersView {
   const source = countersStep(storedSteps);
   if (source && liveSteps.every((s) => s.seq < source.seq)) return stored;
+  if (source && source.status !== "running"
+    && ![...liveSteps, ...storedSteps].some((s) => s.kind === "search" && s.seq > source.seq)) return stored;
   return {
     papersReviewed: larger(live.papersReviewed, stored.papersReviewed),
     evidenceAdopted: larger(live.evidenceAdopted, stored.evidenceAdopted),
     rechecks: larger(live.rechecks, stored.rechecks),
+    excluded: larger(live.excluded, stored.excluded),
   };
 }
 
@@ -698,6 +756,7 @@ function countersFromLegacyReport(report: ResearchReport | null): CountersView {
     papersReviewed: null,
     evidenceAdopted: Object.keys(report.evidence ?? {}).length,
     rechecks: report.trail.reduce((n, t) => n + Math.max(0, t.queries.length - 1), 0),
+    excluded: null,
   };
 }
 

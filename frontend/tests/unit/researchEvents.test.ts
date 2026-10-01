@@ -1,6 +1,7 @@
 // frontend/tests/unit/researchEvents.test.ts
 import { describe, expect, it } from "vitest";
 import type {
+  CritiqueEvent,
   ReportChunk,
   ReportEvidence,
   ReportSection,
@@ -16,12 +17,15 @@ import type {
 import {
   applyApproval,
   applyResearchEvent,
+  excludedLabel,
+  flaggedLabel,
   initialResearchView,
   isTerminalEvent,
   mergeEvidence,
   refreshView,
   researchPhase,
   sectionGapToRecover,
+  showsExcludedCounter,
   stopPoint,
   subqStatusLabel,
   synthClosePending,
@@ -104,7 +108,7 @@ const PLAN_ROW = step({ seq: 0, result: { subquestions: ["효과 측정", "교�
 const SAVED_SEARCH_ROW = step({
   seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [ROUND1], counters: SAVED },
 });
-const LIVE_VIEW = { papersReviewed: 26, evidenceAdopted: 7, rechecks: 1 };
+const LIVE_VIEW = { papersReviewed: 26, evidenceAdopted: 7, rechecks: 1, excluded: null };
 
 describe("initialResearchView", () => {
   it("승인 대기 잡은 계획을 대기 중인 하위질문으로 펼친다", () => {
@@ -123,7 +127,7 @@ describe("initialResearchView", () => {
       status: "completed", stage: "synthesized",
       report: oldReport({ stats: { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 } }),
     }));
-    expect(v.counters).toEqual({ papersReviewed: 38, evidenceAdopted: 11, rechecks: 2 });
+    expect(v.counters).toEqual({ papersReviewed: 38, evidenceAdopted: 11, rechecks: 2, excluded: null });
   });
 
   it("보고서가 없는 실패 잡은 seq 가 가장 큰 단계 result 의 카운터를 쓴다", () => {
@@ -136,7 +140,7 @@ describe("initialResearchView", () => {
         step({ seq: 3, kind: "synthesize", title: "보고서 종합", status: "failed", result: { sections_total: 2, sections: [], error: "종합 실패" } }),
       ],
     }));
-    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 1 });
+    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 1, excluded: null });
   });
 
   it("보고서 stats 가 단계 result 의 카운터보다 앞선다", () => {
@@ -145,7 +149,7 @@ describe("initialResearchView", () => {
       report: oldReport({ stats: { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 } }),
       steps: [step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", result: { rounds: [], counters: { papers_reviewed: 30, evidence_adopted: 9, rechecks: 1 } } })],
     }));
-    expect(v.counters).toEqual({ papersReviewed: 38, evidenceAdopted: 11, rechecks: 2 });
+    expect(v.counters).toEqual({ papersReviewed: 38, evidenceAdopted: 11, rechecks: 2, excluded: null });
   });
 });
 
@@ -163,8 +167,8 @@ describe("applyResearchEvent — 탐색", () => {
     const sq = v.subqs[0]!;
     expect(sq.status).toBe("running");
     expect(sq.rounds).toEqual([
-      { round: 1, query: "효과 측정", foundChunks: 12, newPapers: 5, verdict: "insufficient", note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과" },
-      { round: 2, query: "초등 AI 윤리 교육 효과", foundChunks: 9, newPapers: 4, verdict: null, note: "", nextQuery: null },
+      { round: 1, query: "효과 측정", foundChunks: 12, newPapers: 5, verdict: "insufficient", note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과", excluded: null, excludedPapers: [], flagged: null },
+      { round: 2, query: "초등 AI 윤리 교육 효과", foundChunks: 9, newPapers: 4, verdict: null, note: "", nextQuery: null, excluded: null, excludedPapers: [], flagged: null },
     ]);
     expect(v.highlight).toEqual({ subqIdx: 0, round: 1, note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과" });
     expect(researchPhase(v)).toBe("exploring");
@@ -189,9 +193,15 @@ describe("applyResearchEvent — 탐색", () => {
     expect(v.subqs[0]!.adopted).toBe(6);
   });
 
+  it("counters 이벤트의 excluded(모든 하위질문에서 뺀 수)를 싣고, 보내지 않는 옛 워커는 null 로 둔다", () => {
+    expect(run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1, excluded: 3 }]).counters)
+      .toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 1, excluded: 3 });
+    expect(run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1 }]).counters.excluded).toBeNull();
+  });
+
   it("counters 이벤트는 카운터를 통째로 바꾼다", () => {
     const v = run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1 }]);
-    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 1 });
+    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 7, rechecks: 1, excluded: null });
   });
 
   it("같은 하위질문의 새 시도는 이전 시도의 회차를 버린다", () => {
@@ -216,6 +226,109 @@ describe("applyResearchEvent — 탐색", () => {
     ]);
     expect(v.subqs[0]!.rounds.map((r) => [r.round, r.note])).toEqual([[1, "저장본"], [2, ""]]);
     expect(v.source).toBe("rounds");
+  });
+
+  it("점검 이벤트의 excluded(이번 회차에 무관하다고 뺀 근거 수)를 그 회차에 싣는다", () => {
+    const v = run([
+      SEARCH_STARTED,
+      { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+      {
+        kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 3,
+        parse_failed: false, capped: 0, excluded: 2, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+      },
+      { kind: "search", subq_idx: 0, query: "초등 AI 윤리 교육 효과", found: 9, round: 2, new_papers: 4 },
+    ]);
+    // 2회차는 아직 점검 전이다
+    expect(v.subqs[0]!.rounds.map((r) => [r.round, r.excluded])).toEqual([[1, 2], [2, null]]);
+  });
+
+  it("진행 저장본의 회차 excluded 를 다시 연 화면·재접속 snapshot 이 같게 받고, 필드가 없는 회차는 비워 둔다", () => {
+    const saved = step({ ...SAVED_SEARCH_ROW, result: { rounds: [{ ...ROUND1, excluded: 2 }, ROUND2], counters: LIVE } });
+    const opened = initialResearchView(job({ steps: [PLAN_ROW, saved] }));
+    const snap = applyResearchEvent(initialResearchView(job()), { kind: "snapshot", steps: [PLAN_ROW, saved] });
+    for (const v of [opened, snap]) {
+      expect(v.subqs[0]!.rounds.map((r) => [r.round, r.excluded])).toEqual([[1, 2], [2, null]]);
+    }
+  });
+
+  // 자기점검이 무관하다고 뺀 논문의 서지(회차 기록) — 제목 앞뒤 공백은 화면에서 뗀다
+  const EDGE_PAPER = { cnts_id: "C9", title: " CMOS 에지 검출 회로 ", personal_author: "박민수; 이영희", pub_date: "2008-05" };
+  const EDGE_VIEW = { cntsId: "C9", title: "CMOS 에지 검출 회로", personalAuthor: "박민수; 이영희", pubDate: "2008-05" };
+
+  it("진행 저장본 회차의 뺀 논문 서지·flagged 를 받고, 필드가 없는 옛 회차는 빈 목록·null 로 둔다", () => {
+    const saved = step({
+      ...SAVED_SEARCH_ROW,
+      result: { rounds: [{ ...ROUND1, excluded: 1, flagged: 0, excluded_papers: [EDGE_PAPER] }, ROUND2], counters: LIVE },
+    });
+    const v = initialResearchView(job({ steps: [PLAN_ROW, saved] }));
+    expect(v.subqs[0]!.rounds.map((r) => [r.round, r.excludedPapers, r.flagged])).toEqual([
+      [1, [EDGE_VIEW], 0],
+      [2, [], null],
+    ]);
+  });
+
+  it("점검 이벤트가 이번 회차에 뺀 논문 서지·flagged 를 바로 싣고, 보내지 않는 옛 워커는 빈 목록·null 로 둔다", () => {
+    // 점검 직후의 진행 저장이 실패하면 회차 기록을 실은 step 이벤트가 오지 않는다 — 점검 이벤트만으로 목록을 펼친다
+    const searched: ResearchEvent[] = [
+      SEARCH_STARTED,
+      { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+    ];
+    const critique: CritiqueEvent = {
+      kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 4,
+      parse_failed: false, capped: 0, excluded: 1, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+    };
+    const live = run([...searched, { ...critique, excluded_papers: [EDGE_PAPER], flagged: 0 }]);
+    expect(live.subqs[0]!.rounds[0]).toMatchObject({ excluded: 1, excludedPapers: [EDGE_VIEW], flagged: 0 });
+    // 뒤따르는 진행 저장 step 이벤트는 같은 회차 기록을 싣는다 — 받아도 그대로다
+    const saved = applyResearchEvent(live, {
+      ...SEARCH_STARTED,
+      result: { rounds: [{ ...ROUND1, excluded: 1, flagged: 0, excluded_papers: [EDGE_PAPER] }], counters: SAVED },
+    });
+    expect(saved.subqs[0]!.rounds[0]).toMatchObject({ excluded: 1, excludedPapers: [EDGE_VIEW], flagged: 0 });
+    expect(run([...searched, critique]).subqs[0]!.rounds[0]).toMatchObject({ excluded: 1, excludedPapers: [], flagged: null });
+  });
+
+  it("무관 제외를 끈 잡의 회차는 뺀 목록 없이 flagged(무관하다고만 본 수)를 싣는다", () => {
+    const saved = step({
+      ...SAVED_SEARCH_ROW,
+      result: { rounds: [{ ...ROUND1, excluded: 0, flagged: 3, excluded_papers: [] }], counters: SAVED },
+    });
+    const r = initialResearchView(job({ steps: [PLAN_ROW, saved] })).subqs[0]!.rounds[0]!;
+    expect([r.excluded, r.excludedPapers, r.flagged]).toEqual([0, [], 3]);
+    expect(excludedLabel(r.excluded)).toBeNull();
+    expect(flaggedLabel(r.flagged)).toBe("무관 의심 3편(제외 안 함)");
+  });
+});
+
+describe("excludedLabel", () => {
+  it("뺀 근거가 있을 때만 타임라인·문서 부록의 문구를 주고, 0·옛 잡(null)은 적지 않는다", () => {
+    expect(excludedLabel(3)).toBe("무관 3편 제외");
+    expect(excludedLabel(0)).toBeNull();
+    expect(excludedLabel(null)).toBeNull();
+  });
+});
+
+describe("flaggedLabel", () => {
+  it("끈 잡이 무관하다고 본 수가 있을 때만 '제외 안 함'을 밝혀 적고, 0·옛 잡(null)은 적지 않는다", () => {
+    expect(flaggedLabel(3)).toBe("무관 의심 3편(제외 안 함)");
+    expect(flaggedLabel(0)).toBeNull();
+    expect(flaggedLabel(null)).toBeNull();
+  });
+});
+
+describe("showsExcludedCounter", () => {
+  it("새 잡은 첫 counters 이벤트 전에도 제외 칸을 그린다 — 잡을 만들 때 API 가 합쳐 저장한 params 에 exclude_off_topic 이 있다", () => {
+    const fresh = initialResearchView(job({ params: { max_subquestions: 6, exclude_off_topic: 1 } }));
+    expect(fresh.counters.excluded).toBeNull();
+    expect(showsExcludedCounter(fresh)).toBe(true);
+    expect(showsExcludedCounter(initialResearchView(job({ params: { exclude_off_topic: 0 } })))).toBe(true);
+  });
+
+  it("제외 수를 받았으면 그리고, 파라미터도 제외 수도 없는 옛 잡은 그리지 않는다", () => {
+    const old = initialResearchView(job());
+    expect(showsExcludedCounter(old)).toBe(false);
+    const counted = run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1, excluded: 3 }], old);
+    expect(showsExcludedCounter(counted)).toBe(true);
   });
 });
 
@@ -263,10 +376,22 @@ describe("applyResearchEvent — snapshot·상태", () => {
     expect(v.subqs[0]!.rounds.map((r) => r.round)).toEqual([1, 2]);
   });
 
+  it("탐색 중 재접속 — 제외 수는 줄지 않아 필드별 큰 값을 남긴다", () => {
+    // 끊긴 사이 2회차 점검이 2편을 더 빼고 저장했다 — 검색 직후 받은 counters 는 1회차에 뺀 3편까지만 센다
+    const live = run([...AWAITING_ROUND2_CRITIQUE.slice(0, -1), { kind: "counters", ...LIVE, excluded: 3 }]);
+    const stored = { ...LIVE, evidence_adopted: 5, excluded: 5 };
+    const v = applyResearchEvent(live, {
+      kind: "snapshot",
+      steps: [PLAN_ROW, step({ ...SAVED_SEARCH_ROW, result: { rounds: [ROUND1, ROUND2], counters: stored } })],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: stored },
+    });
+    expect(v.counters.excluded).toBe(5);
+  });
+
   it("진행 저장 step 이벤트의 result.counters 로 뒤처진 카운터를 바로잡는다", () => {
     // 저장본으로 연 화면이 counters 이벤트를 놓쳤다 — 점검 직후의 진행 저장이 라이브 값을 싣는다
     const start = initialResearchView(job({ steps: [PLAN_ROW, SAVED_SEARCH_ROW] }));
-    expect(start.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 5, rechecks: 0 });
+    expect(start.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 5, rechecks: 0, excluded: null });
     const v = applyResearchEvent(start, { ...SEARCH_STARTED, result: { rounds: [ROUND1, ROUND2], counters: LIVE } });
     expect(v.counters).toEqual(LIVE_VIEW);
   });
@@ -291,7 +416,7 @@ describe("applyResearchEvent — snapshot·상태", () => {
       ],
       job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: retried },
     });
-    expect(v.counters).toEqual({ papersReviewed: 3, evidenceAdopted: 1, rechecks: 0 });
+    expect(v.counters).toEqual({ papersReviewed: 3, evidenceAdopted: 1, rechecks: 0, excluded: null });
   });
 
   it("status 이벤트는 상태·단계를 바꾸고, 다시 도는 잡이면 실패 사유를 지운다", () => {
@@ -747,10 +872,10 @@ describe("보강 전 잡", () => {
     }));
     expect(v.source).toBe("trail");
     expect(v.subqs[0]!.rounds).toEqual([
-      { round: 1, query: "효과 측정", foundChunks: null, newPapers: null, verdict: "insufficient", note: "", nextQuery: "초등 효과" },
-      { round: 2, query: "초등 효과", foundChunks: null, newPapers: null, verdict: "sufficient", note: "충분하다", nextQuery: null },
+      { round: 1, query: "효과 측정", foundChunks: null, newPapers: null, verdict: "insufficient", note: "", nextQuery: "초등 효과", excluded: null, excludedPapers: [], flagged: null },
+      { round: 2, query: "초등 효과", foundChunks: null, newPapers: null, verdict: "sufficient", note: "충분하다", nextQuery: null, excluded: null, excludedPapers: [], flagged: null },
     ]);
-    expect(v.counters).toEqual({ papersReviewed: null, evidenceAdopted: 1, rechecks: 1 });
+    expect(v.counters).toEqual({ papersReviewed: null, evidenceAdopted: 1, rechecks: 1, excluded: null });
     expect(v.highlight).toBeNull();
   });
 
@@ -813,6 +938,53 @@ describe("refreshView·withPlan", () => {
     expect(refreshView(live, got).counters).toEqual(LIVE_VIEW);
   });
 
+  it("탐색이 끝난 뒤 재접속·실패 — 무관 제외로 준 채택 수를 닫힌 탐색 단계의 저장본대로 받아 다시 연 화면과 같다", () => {
+    // 점검 전 counters(20편)를 받고 끊긴 사이 자기점검이 3편을 빼고 탐색이 닫혔다. 종합 단계 이벤트는
+    // 카운터를 싣지 않아, 큰 값을 남기면 종합 내내(실패하면 새로고침 전까지) 20편이 남는다.
+    const before = { papers_reviewed: 26, evidence_adopted: 20, rechecks: 1 };
+    const after = { papers_reviewed: 26, evidence_adopted: 17, rechecks: 1 };
+    const doneSearch = step({
+      seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done",
+      result: { rounds: [ROUND1, { ...ROUND2, excluded: 3 }], counters: after },
+    });
+    const synth = step({ seq: 2, kind: "synthesize", title: "보고서 종합", status: "running" });
+    const live = run([...AWAITING_ROUND2_CRITIQUE.slice(0, -1), { kind: "counters", ...before }]);
+
+    const steps = [PLAN_ROW, doneSearch, synth];
+    const reconnected = applyResearchEvent(live, {
+      kind: "snapshot", steps,
+      job: { status: "running", stage: "explored", plan: ["효과 측정", "교사 인식"], counters: after },
+    });
+    expect(reconnected.counters).toEqual(initialResearchView(job({ stage: "explored", steps })).counters);
+    expect(reconnected.counters.evidenceAdopted).toBe(17);
+
+    const got = job({
+      status: "failed", stage: "explored", last_error: "종합 실패",
+      steps: [PLAN_ROW, doneSearch, step({ ...synth, status: "failed", result: { error: "종합 실패" } })],
+    });
+    const failed = applyResearchEvent(live, { kind: "failed", status: "failed", error: "종합 실패" });
+    expect(refreshView(failed, got).counters).toEqual(initialResearchView(got).counters);
+    expect(refreshView(failed, got).counters.evidenceAdopted).toBe(17);
+  });
+
+  it("다음 하위질문의 탐색 단계가 열려 있으면 닫힌 앞 단계의 저장본이 라이브를 되돌리지 않는다", () => {
+    // 다음 하위질문은 첫 점검 뒤에야 저장본에 카운터를 쓴다 — 그 전까지는 라이브(검색 직후 counters)가 앞선다
+    const closed = step({ ...SAVED_SEARCH_ROW, status: "done" });
+    const next = step({ seq: 2, kind: "search", subq_idx: 1, title: "교사 인식", status: "running" });
+    const live = run([
+      SEARCH_STARTED, { kind: "counters", ...SAVED },
+      { ...SEARCH_STARTED, status: "done", result: closed.result },
+      { kind: "step", seq: 2, step_kind: "search", subq_idx: 1, title: "교사 인식", status: "running" },
+      { kind: "search", subq_idx: 1, query: "교사 인식", found: 9, round: 1, new_papers: 6 },
+      { kind: "counters", ...LIVE },
+    ]);
+    const v = applyResearchEvent(live, {
+      kind: "snapshot", steps: [PLAN_ROW, closed, next],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], counters: SAVED },
+    });
+    expect(v.counters).toEqual(LIVE_VIEW);
+  });
+
   it("스트림이 끊긴 사이 앞서 나간 GET 카운터는 라이브보다 커도 받아들인다", () => {
     const live = run([SEARCH_STARTED, { kind: "counters", ...SAVED }]);
     const v = refreshView(live, job({
@@ -826,7 +998,7 @@ describe("refreshView·withPlan", () => {
       status: "canceled",
       steps: [step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running", result: { rounds: [], counters: { papers_reviewed: 20, evidence_adopted: 5, rechecks: 0 } } })],
     }));
-    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 5, rechecks: 0 });
+    expect(v.counters).toEqual({ papersReviewed: 20, evidenceAdopted: 5, rechecks: 0, excluded: null });
   });
 
   it("완료 잡은 라이브 카운터보다 보고서 stats(최종값)를 쓴다", () => {
@@ -835,7 +1007,7 @@ describe("refreshView·withPlan", () => {
       status: "completed", stage: "synthesized",
       report: oldReport({ stats: { papers_reviewed: 30, evidence_adopted: 9, rechecks: 2 } }),
     }));
-    expect(v.counters).toEqual({ papersReviewed: 30, evidenceAdopted: 9, rechecks: 2 });
+    expect(v.counters).toEqual({ papersReviewed: 30, evidenceAdopted: 9, rechecks: 2, excluded: null });
   });
 
   it("다른 잡의 응답이면 이전 화면을 섞지 않는다", () => {

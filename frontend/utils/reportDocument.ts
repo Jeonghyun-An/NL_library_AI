@@ -12,8 +12,20 @@ import type {
 } from "../types/research";
 import { citeChunks, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
 import type { DraftReport } from "./researchDraft";
-import { verdictLabel } from "./researchEvents";
-import { INTROLESS, NO_LIMITS, NO_SUMMARY, paperByline, rangeLabel, reportIntro } from "./researchReport";
+import { excludedLabel, verdictLabel } from "./researchEvents";
+import {
+  EXCLUDED_TITLE,
+  EXCLUDED_WHY,
+  INTROLESS,
+  NO_LIMITS,
+  NO_SUMMARY,
+  excludedFromTrail,
+  excludedPaperLine,
+  paperByline,
+  rangeLabel,
+  reportIntro,
+  type ExcludedGroup,
+} from "./researchReport";
 
 // Word·PDF 가 같은 모델에서 그려진다 — 인용 번호·참고문헌·부록이 두 형식에서 어긋나지 않게
 
@@ -24,6 +36,8 @@ export interface DocTrailItem {
   queries: string[];
   verdict: Verdict | null;
   evidenceCount: number | null;
+  // 자기점검이 무관하다고 뺀 근거 수. 무관 제외 전 잡은 0 — 0 이면 적지 않는다
+  excluded: number;
 }
 
 export interface ReportDocInput {
@@ -36,6 +50,8 @@ export interface ReportDocInput {
   evidence: Record<string, ReportEvidence>;
   limitations: string[] | null;
   trail: DocTrailItem[];
+  // 자기점검이 하위질문별로 뺀 논문 — 최종본은 report.trail, 초안은 화면과 같은 draft.excluded 에서 온다
+  excluded: ExcludedGroup[];
   draft: { done: number; total: number } | null;
 }
 
@@ -62,6 +78,7 @@ export interface ReportDoc {
 
 const DRAFT_LIMITS = "작성 중에 저장한 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.";
 const MISSING_EVIDENCE = "근거 정보를 찾을 수 없습니다";
+const EXCLUDED_NOT_CITED = "인용한 근거가 아니어서 참고문헌 번호를 매기지 않습니다.";
 
 // 사용자는 한국에 있다 — 문서의 날짜를 브라우저·테스트 기계의 시간대와 무관하게 한국 시각으로 적는다
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -136,7 +153,7 @@ export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc
     }
   });
 
-  blocks.push(...limitBlocks(input), ...trailBlocks(input.trail));
+  blocks.push(...limitBlocks(input), ...trailBlocks(input.trail), ...excludedBlocks(input.excluded));
 
   const references = [...numbers].map(([eid, n]) => ({
     n,
@@ -180,6 +197,7 @@ export function docInputFromReport(
     evidence: report.evidence,
     limitations: report.limitations,
     trail: report.trail.map(docTrailItem),
+    excluded: excludedFromTrail(report.trail),
     draft: null,
   };
 }
@@ -197,6 +215,7 @@ export function docInputFromDraft(draft: DraftReport, view: ResearchView, url: s
     evidence: draft.report.evidence,
     limitations: null,
     trail: view.subqs.map(docTrailFromSubq),
+    excluded: draft.excluded,
     draft: { done: draft.done, total: draft.total },
   };
 }
@@ -243,12 +262,29 @@ function trailBlocks(trail: DocTrailItem[]): DocBlock[] {
     if (t.queries.length) items.push([{ text: `검색어: ${queryPath(t.queries)}` }]);
     if (t.verdict) items.push([{ text: `판정: ${verdictLabel(t.verdict)}` }]);
     if (t.evidenceCount !== null) items.push([{ text: `채택한 근거: ${t.evidenceCount}편` }]);
+    const excluded = excludedLabel(t.excluded);
+    if (excluded) items.push([{ text: excluded }]);
     if (items.length) out.push({ type: "bullets", items });
   });
   return out;
 }
 
-// 재검색은 근거가 부족하다고 판정했을 때만 일어난다 — 검색어가 바뀐 흐름이 곧 자기점검의 기록이다
+// 탐색 경로 부록 뒤에 하위질문별로 싣는다. 인용이 아니라 글 조각으로만 적는다 — 참고문헌 번호가 붙으면
+// 본문이 인용한 논문으로 읽힌다
+function excludedBlocks(groups: ExcludedGroup[]): DocBlock[] {
+  if (!groups.length) return [];
+  const out: DocBlock[] = [
+    { type: "heading", level: 1, text: `부록: ${EXCLUDED_TITLE}` },
+    { type: "para", runs: [{ text: `${EXCLUDED_WHY} ${EXCLUDED_NOT_CITED}` }], muted: true },
+  ];
+  for (const g of groups) {
+    out.push({ type: "heading", level: 2, text: `${g.subqIdx + 1}. ${g.subquestion}` });
+    out.push({ type: "bullets", items: g.papers.map((p) => [{ text: excludedPaperLine(p) }]) });
+  }
+  return out;
+}
+
+// 재검색은 근거가 부족하다고 판정할 때만 일어난다(보인 근거를 모두 무관하다고 빼면 부족으로 읽는다) — 검색어가 바뀐 흐름이 곧 자기점검의 기록이다
 function queryPath(queries: string[]): string {
   const path = queries.map((q) => `‘${q}’`).join(" → ");
   return queries.length > 1 ? `${path} (재검색 ${queries.length - 1}회)` : path;
@@ -261,6 +297,7 @@ function docTrailItem(t: TrailItem): DocTrailItem {
     queries: t.queries,
     verdict: t.failed ? null : t.verdict,
     evidenceCount: t.evidence_count,
+    excluded: t.excluded ?? 0,
   };
 }
 
@@ -272,6 +309,8 @@ function docTrailFromSubq(sq: SubqView): DocTrailItem {
     queries: sq.rounds.map((r) => r.query).filter(Boolean),
     verdict: sq.status === "failed" ? null : sq.verdict,
     evidenceCount: sq.adopted,
+    // 초안에는 trail 이 없어 회차마다 뺀 수를 더한다 — 최종본 trail 의 총수와 같은 값이다
+    excluded: sq.rounds.reduce((n, r) => n + (r.excluded ?? 0), 0),
   };
 }
 

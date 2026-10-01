@@ -24,7 +24,9 @@ import httpx
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.citations import bind_markers, chunks_for, strip_markers
+from services.research.hangul import josa
 from services.research.llm_json import extract_json
+from services.research.runner import subq_budget
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, research_stats,
 )
@@ -57,6 +59,27 @@ async def _no_progress(idx: int, total: int, status: str, info: dict | None = No
     return None
 
 
+def _topic(text: str) -> str:
+    """한계 문장의 주어 조각. 조사는 마지막 글자의 받침에 맞춘다(한글로 끝나지 않으면 '(은)는')."""
+    return f"'{text}' {josa(text, '은는')}"
+
+
+def _capped_clause(state: ResearchState, sq: SubQuestion, noun: str) -> str:
+    """상한에 막힌 후보를 원인별로 적는다 — "…에 닿아 {noun} N편을" 을 쉼표로 잇는다.
+
+    하위질문당 몫과 전체 상한을 한 수로 합치지 않는다. 풀리는 방법이 다르다 — 몫은 계획에서
+    하위질문을 줄이면 커지고, 전체 상한은 max_evidence 를 올려야 풀린다.
+    """
+    parts = []
+    if sq.budget_capped:
+        parts.append(f"하위질문당 근거 상한({subq_budget(state)}편)에 닿아 "
+                     f"{noun} {sq.budget_capped}편을")
+    if sq.capped:
+        parts.append(f"전체 근거 상한({state.params['max_evidence']}편)에 닿아 "
+                     f"{noun} {sq.capped}편을")
+    return ", ".join(parts)
+
+
 def build_limitations(
     state: ResearchState, *, unmarked_total: int, dropped_total: int,
     failed_sections: int = 0, unsummarized_total: int = 0,
@@ -75,7 +98,6 @@ def build_limitations(
     과하게 알리면서 정작 심각한 쪽을 임계값에 묻는다.
     """
     out: list[str] = []
-    max_evidence = state.params["max_evidence"]
     for sq in state.subquestions:
         # note 를 여러 분기에 붙인다. 근거가 0편인 하위질문은 아래 insufficient
         # 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장 필요한 경우다.
@@ -83,27 +105,31 @@ def build_limitations(
         # 아래 집계 문장이 따로 센다.
         note = f" — {sq.note}" if sq.note and not sq.parse_failed else ""
         n = len(sq.evidence_ids)
-        # failed·capped 를 "근거 없음"보다 먼저 본다. 시스템 장애나 우리 쪽 상한을
+        topic = _topic(sq.text)
+        blocked = sq.capped or sq.budget_capped
+        # failed·상한을 "근거 없음"보다 먼저 본다. 시스템 장애나 우리 쪽 상한을
         # "근거를 찾지 못했다"로 쓰면 연구 결과(코퍼스 빈틈)로 둔갑한다.
         if sq.failed and n:
             out.append(
-                f"'{sq.text}' 는 탐색이 오류로 중단돼 끝까지 확인하지 못했다"
+                f"{topic} 탐색이 오류로 중단돼 끝까지 확인하지 못했다"
                 f"(중단 전까지 모은 근거 {n}편으로만 썼다){note}"
             )
         elif sq.failed:
-            out.append(f"'{sq.text}' 는 탐색 중 오류로 확인하지 못했다{note}")
-        elif not n and sq.capped:
+            out.append(f"{topic} 탐색 중 오류로 확인하지 못했다{note}")
+        elif not n and sq.excluded_cnts:
+            # 자기점검이 실제 근거를 읽고 모두 뺐다 — 상한 분기로 보내면 이 원인과 note 가 가려지고,
+            # '근거를 찾지 못했다'(코퍼스 빈틈)로 쓰면 찾아서 읽은 사실이 사라진다
+            cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
+            out.append(f"'{sq.text}' 에 대해서는 모은 논문 {len(sq.excluded_cnts)}편이 모두 "
+                       f"하위질문과 무관해 근거에서 뺐다{cap}{note}")
+        elif not n and blocked:
             # 상한 때문에 0편이면 critic 은 "(없음)"을 보고 판정한다 — 그 note 는 오보다
-            out.append(
-                f"'{sq.text}' 는 근거 상한({max_evidence}편)에 닿아 "
-                f"검색된 논문 {sq.capped}편을 싣지 못했다"
-            )
+            out.append(f"{topic} {_capped_clause(state, sq, '검색된 논문')} 싣지 못했다")
         elif not n:
             out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다{note}")
         elif sq.verdict == "insufficient":
-            cap = (f"(근거 상한({max_evidence}편)에 닿아 후보 {sq.capped}편을 더 싣지 못했다)"
-                   if sq.capped else "")
-            out.append(f"'{sq.text}' 는 근거 {n}편으로 결론이 약하다{cap}{note}")
+            cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
+            out.append(f"{topic} 근거 {n}편으로 결론이 약하다{cap}{note}")
 
     # 근거가 0편이면 충분성을 따질 대상이 없고, failed 는 위에서 이미 알렸다
     unchecked = sum(1 for sq in state.subquestions
@@ -153,8 +179,22 @@ def _evidence_entry(ev: Evidence, keep: list[Chunk]) -> dict:
     }
 
 
-def _serialize_evidence(state: ResearchState) -> dict:
-    """보고서의 근거 목록. 청크는 지금 어느 하위질문이든 가리키는 것만, 점수순으로 싣는다.
+def _cited(state: ResearchState, section: dict) -> list[str]:
+    """다듬은 절(finalize_section) 하나가 인용한 근거 번호 — 대표 논문·도입·향후 과제의 칩 전부."""
+    # 다듬은 도입에는 표준형 [E#] 만 남는다 — bind_markers 의 used 로 읽는다. 여기서 정규식을
+    # 다시 쓰면 마커 문법이 두 곳으로 갈라진다.
+    cited = list(bind_markers(section.get("intro", ""), set(state.evidence)).used)
+    for item in (*section.get("papers", []), *section.get("future", [])):
+        cited.extend(item.get("evidence", []))
+    return cited
+
+
+def _serialize_evidence(state: ResearchState, cited: set[str]) -> dict:
+    """보고서의 근거 목록. 절에 실린(cited) 근거만, 청크는 지금 어느 하위질문이든 가리키는 것만
+    점수순으로 싣는다.
+
+    채택한 근거를 전부 싣지 않는 이유: 절은 하위질문마다 앞 5편만 쓰므로 나머지는 어느 칩도
+    가리키지 않는다. 그대로 두면 상한을 올릴수록 보고서 JSON 만 분다. 채택 수는 stats 가 센다.
 
     Evidence.chunks 는 매칭된 적 있는 청크의 저장소라 재검색이 갈아끼운 대목도 남아 있다.
     그대로 실으면 어느 절도 그 대목으로 쓰지 않았는데 삽입 순서대로 chunks[0] 에 나간다.
@@ -172,7 +212,8 @@ def _serialize_evidence(state: ResearchState) -> dict:
             return ev.chunks
         return [c for c in ev.chunks if c.chunk_id in mapped[eid]]
 
-    return {eid: _evidence_entry(ev, _shown(eid, ev)) for eid, ev in state.evidence.items()}
+    return {eid: _evidence_entry(ev, _shown(eid, ev))
+            for eid, ev in state.evidence.items() if eid in cited}
 
 
 def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
@@ -182,14 +223,9 @@ def section_evidence(state: ResearchState, section: dict) -> dict[str, dict]:
     거듭 나른다. 대목은 이 절이 매칭한 것(evidence_chunks)만 점수순으로 싣고, 매핑이 없으면
     _serialize_evidence 와 같이 전부 싣는다.
     """
-    # 다듬은 도입에는 표준형 [E#] 만 남는다 — bind_markers 의 used 로 읽는다. 여기서 정규식을
-    # 다시 쓰면 마커 문법이 두 곳으로 갈라진다.
-    cited = list(bind_markers(section.get("intro", ""), set(state.evidence)).used)
-    for item in (*section.get("papers", []), *section.get("future", [])):
-        cited.extend(item.get("evidence", []))
     mapped = section.get("evidence_chunks", {})
     out: dict[str, dict] = {}
-    for eid in cited:
+    for eid in _cited(state, section):
         if eid in out:
             continue
         # finalize_section 은 근거에 있는 번호만 남긴다 — 어기면 KeyError 로 바로 드러난다
@@ -288,26 +324,41 @@ def finalize_section(state: ResearchState, sec: dict) -> tuple[dict, SectionTall
     }, tally
 
 
+def _excluded_papers(sq: SubQuestion) -> list[dict]:
+    """하위질문이 무관하다고 뺀 논문의 서지 요약을 회차 순으로 잇는다. 한 번 뺀 논문은 같은 하위질문에
+    다시 들지 않으니(runner) 중복이 없다. 보강 전 회차 기록에는 excluded_papers 가 없다."""
+    return [p for r in sq.rounds for p in r.get("excluded_papers", [])]
+
+
 def assemble_report(
     state: ResearchState, sections: list[dict], *, unmarked_total: int,
 ) -> dict:
     tally = SectionTally(unmarked=unmarked_total)
     out_sections = []
+    cited: set[str] = set()
     for sec in sections:
         section, counted = finalize_section(state, sec)
         out_sections.append(section)
         tally.add(counted)
+        cited.update(_cited(state, section))
 
     return {
         "question": state.question,
         "range": state.corpus_range,
         "sections": out_sections,
-        "evidence": _serialize_evidence(state),
+        "evidence": _serialize_evidence(state, cited),
         "trail": [
             {"subquestion": sq.text, "queries": sq.queries,
              "evidence_count": len(sq.evidence_ids),
              "verdict": sq.verdict, "note": sq.note,
-             "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped}
+             "parse_failed": sq.parse_failed, "failed": sq.failed, "capped": sq.capped,
+             # 자기점검이 이 하위질문에서 무관하다고 뺀 논문 수 — 한 번 뺀 논문은 다시 들지 않는다
+             "excluded": len(sq.excluded_cnts),
+             # 보고서의 '관련성이 낮아 제외한 논문'과 문서 부록 — 풀에서 지운 논문도 서지가 남는다
+             "excluded_papers": _excluded_papers(sq),
+             # 무관 제외를 끈 잡이 무관하다고 본 논문 수(켠 잡은 0) — 켠 잡의 excluded 와 같은 쿼리로 나란히
+             # 본다. 회차 기록의 flagged 는 처음 가리킨 논문만 센다(runner)
+             "flagged": sum(r.get("flagged", 0) for r in sq.rounds)}
             for sq in state.subquestions
         ],
         "limitations": build_limitations(
@@ -462,8 +513,8 @@ async def synthesize(
 
     근거가 없는 하위질문은 절을 만들지 않는다 — 한계 섹션이 그 사실을 적는다.
     탐색이 도중에 실패한 하위질문이라도 그 전에 모은 근거가 있으면 절을 만든다.
-    빼면 실재하는 근거가 report.evidence 에만 고아로 남고, 한계에는 사실과 다른
-    "확인하지 못했다"만 실린다.
+    빼면 실재하는 근거가 보고서에서 사라지고(report.evidence 는 절에 실린 근거만 담는다),
+    한계에는 사실과 다른 "확인하지 못했다"만 실린다.
 
     일부 절의 실패는 한계로 보고하고 넘어가지만, 전부 실패하면 예외를 던진다.
     서술이 한 줄도 없는 보고서를 completed 로 두면 재시도(stage=explored 에서

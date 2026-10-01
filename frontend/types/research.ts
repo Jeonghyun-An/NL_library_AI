@@ -27,6 +27,21 @@ export interface SearchRoundResult {
   verdict?: Verdict | null;
   note?: string | null;
   next_query?: string | null;
+  // 자기점검이 무관하다고 보고 이 회차에 뺀 근거 수 — 무관 제외 전 잡의 회차에는 없다
+  excluded?: number | null;
+  // 이 회차에 뺀 논문의 서지 — 풀에서 지운 뒤에도 무엇을 뺐는지 남는다. 목록을 기록하기 전 잡에는 없다
+  excluded_papers?: ExcludedPaper[] | null;
+  // 무관 제외를 끈 잡(exclude_off_topic=0)이 빼지 않고 무관하다고만 본 수. 그 하위질문에서 처음 본 논문만
+  // 센다(빼지 않은 논문은 다음 회차 목록에 남아 또 가리켜진다). 켠 잡은 0, 그 전 잡에는 없다
+  flagged?: number | null;
+}
+
+// 자기점검이 무관하다고 보고 뺀 논문의 서지 요약(회차 기록·보고서 trail)
+export interface ExcludedPaper {
+  cnts_id: string;
+  title?: string | null;
+  personal_author?: string | null;
+  pub_date?: string | null;
 }
 
 // idx·status 뒤의 칸은 절 미리보기(spec §14)를 싣는 워커만 남긴다 — 옛 결과에는 없다. 워커는 모르는
@@ -135,12 +150,18 @@ export interface TrailItem {
   parse_failed: boolean;
   failed: boolean;
   capped: number;
+  // 하위질문에서 무관하다고 뺀 근거 총수 — 무관 제외 전 보고서에는 없다
+  excluded?: number | null;
+  // 하위질문에서 뺀 논문 전체(회차 순·중복 없음) — 목록을 기록하기 전 보고서에는 없다
+  excluded_papers?: ExcludedPaper[] | null;
 }
 
 export interface CountersPayload {
   papers_reviewed: number;
   evidence_adopted: number;
   rechecks: number;
+  // 모든 하위질문에서 뺀 논문 수(두 하위질문이 같은 논문을 빼면 두 번 센다) — 무관 제외 전 잡에는 없다
+  excluded?: number;
 }
 
 export interface ResearchReport {
@@ -237,6 +258,12 @@ export interface CritiqueEvent {
   adopted: number;
   parse_failed: boolean;
   capped: number;
+  // 이번 회차에 무관하다고 뺀 근거 수 — 무관 제외 전 워커는 보내지 않는다
+  excluded?: number | null;
+  // 이번 회차에 뺀 논문의 서지와 무관 제외를 끈 잡이 무관하다고만 본 수 — 회차 기록(SearchRoundResult)과
+  // 같은 값이다. 점검 직후 진행 저장이 실패해도 타임라인이 목록을 펼칠 수 있게 이벤트에도 싣는다
+  excluded_papers?: ExcludedPaper[] | null;
+  flagged?: number | null;
   round?: number;
   next_query?: string | null;
   will_recheck?: boolean;
@@ -301,6 +328,18 @@ export interface RoundView {
   verdict: Verdict | null;
   note: string;
   nextQuery: string | null;
+  excluded: number | null;
+  // 뺀 논문 목록이 있는 회차만 타임라인에서 펼칠 수 있다 — 목록을 기록하기 전 회차는 빈 목록
+  excludedPapers: ExcludedPaperView[];
+  flagged: number | null;
+}
+
+export interface ExcludedPaperView {
+  cntsId: string;
+  // 제목이 없으면 빈 문자열
+  title: string;
+  personalAuthor: string | null;
+  pubDate: string | null;
 }
 
 export interface SubqView {
@@ -320,6 +359,8 @@ export interface CountersView {
   papersReviewed: number | null;
   evidenceAdopted: number | null;
   rechecks: number | null;
+  // 제외 수를 모르는 잡(무관 제외 전)은 null — 화면은 제외 칸을 그리지 않는다
+  excluded: number | null;
 }
 
 export interface HighlightView {

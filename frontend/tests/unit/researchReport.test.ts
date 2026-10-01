@@ -1,11 +1,14 @@
 // frontend/tests/unit/researchReport.test.ts
 import { describe, expect, it } from "vitest";
-import type { ResearchReport } from "~/types/research";
+import type { ExcludedPaperView, ResearchReport, RoundView, SubqView } from "~/types/research";
 import type { DraftSlot } from "~/utils/researchDraft";
 import {
   draftBadge,
   draftIntro,
   draftStateFor,
+  excludedFromSubqs,
+  excludedFromTrail,
+  excludedPaperLine,
   hideOnPointerLeave,
   paperByline,
   rangeLabel,
@@ -49,6 +52,15 @@ describe("rangeLabel", () => {
 describe("reportIntro", () => {
   it("stats 가 있으면 검토·채택 수를 쓴다", () => {
     expect(reportIntro(report({ stats: { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2 } })))
+      .toBe("하위질문 3개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
+  });
+
+  // 제외 수는 하위질문별 판단의 수라 한 논문을 두 하위질문이 빼면 두 번 센다 — "편"으로 적으면 검토·채택 수와
+  // 더해 맞지 않는 서로 다른 논문 수로 읽힌다
+  it("제외 수가 있으면 하위질문별 판단의 수(건)로 덧붙이고, 0 이면(뺀 것 없음) 덧붙이지 않는다", () => {
+    expect(reportIntro(report({ stats: { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2, excluded: 5 } })))
+      .toBe("하위질문 3개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다(하위질문별로 무관하다고 본 5건은 걸러냈다).");
+    expect(reportIntro(report({ stats: { papers_reviewed: 38, evidence_adopted: 11, rechecks: 2, excluded: 0 } })))
       .toBe("하위질문 3개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
   });
 
@@ -142,6 +154,11 @@ describe("draftIntro", () => {
       .toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다. 지금까지 논문 38편을 검토하고 11편을 근거로 삼았습니다.");
   });
 
+  it("라이브 카운터에 제외 수가 있으면 하위질문별 판단의 수(건)로 덧붙인다", () => {
+    expect(draftIntro(slots, "writing", { ...stats, excluded: 4 }))
+      .toBe("4개 절 중 2개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다. 지금까지 논문 38편을 검토하고 11편을 근거로 삼았습니다(하위질문별로 무관하다고 본 4건은 걸러냈습니다).");
+  });
+
   it("멈춘 초안은 완성되지 않았음과 한계가 빠졌음을 알린다", () => {
     expect(draftIntro(slots, "interrupted")).toBe("4개 절 중 2개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.");
     expect(draftIntro(slots, "interrupted", stats))
@@ -181,5 +198,58 @@ describe("draftBadge", () => {
     expect(draftBadge("writing")).toEqual({ label: "작성 중", live: true });
     expect(draftBadge("finishing")).toEqual({ label: "작성을 마친 초안", live: false });
     expect(draftBadge("interrupted")).toEqual({ label: "완성되지 않은 초안", live: false });
+  });
+});
+
+const C8: ExcludedPaperView = { cntsId: "C8", title: "의료영상 Edge method", personalAuthor: "최지훈", pubDate: "2011" };
+const C9: ExcludedPaperView = { cntsId: "C9", title: "CMOS 에지 검출 회로", personalAuthor: "박민수; 이영희", pubDate: "2008-05" };
+
+function round(n: number, papers: ExcludedPaperView[]): RoundView {
+  return {
+    round: n, query: `검색 ${n}`, foundChunks: 3, newPapers: 1, verdict: "insufficient", note: "", nextQuery: null,
+    excluded: papers.length, excludedPapers: papers, flagged: 0,
+  };
+}
+
+function subq(idx: number, title: string, rounds: RoundView[]): SubqView {
+  return {
+    idx, title, seq: idx + 1, status: "done", rounds,
+    verdict: "sufficient", note: "", adopted: 3, parseFailed: false, error: null,
+  };
+}
+
+describe("excludedFromTrail", () => {
+  it("하위질문별로 뺀 논문을 묶고, 뺀 것이 없거나 목록을 기록하기 전인 하위질문은 뺀다", () => {
+    const groups = excludedFromTrail([
+      { subquestion: "가", queries: ["가"], evidence_count: 1, verdict: "sufficient", note: "", parse_failed: false, failed: false, capped: 0, excluded: 0, excluded_papers: [] },
+      {
+        subquestion: "엣지 컴퓨팅", queries: ["엣지 컴퓨팅"], evidence_count: 4, verdict: "sufficient", note: "",
+        parse_failed: false, failed: false, capped: 0, excluded: 2,
+        excluded_papers: [
+          { cnts_id: "C8", title: "의료영상 Edge method", personal_author: "최지훈", pub_date: "2011" },
+          { cnts_id: "C9", title: "CMOS 에지 검출 회로", personal_author: "박민수; 이영희", pub_date: "2008-05" },
+        ],
+      },
+      // 무관 제외 전 보고서의 trail 에는 excluded_papers 가 없다
+      { subquestion: "다", queries: ["다"], evidence_count: 0, verdict: "insufficient", note: "", parse_failed: false, failed: false, capped: 0 },
+    ]);
+    expect(groups).toEqual([{ subqIdx: 1, subquestion: "엣지 컴퓨팅", papers: [C8, C9] }]);
+  });
+});
+
+describe("excludedFromSubqs", () => {
+  it("초안은 탐색 타임라인의 회차 기록을 회차 순으로 이어 하위질문별로 묶고, 뺀 것이 없는 하위질문은 뺀다", () => {
+    const groups = excludedFromSubqs([
+      subq(0, "가", [round(1, [])]),
+      subq(1, "엣지 컴퓨팅", [round(1, [C8]), round(2, []), round(3, [C9])]),
+    ]);
+    expect(groups).toEqual([{ subqIdx: 1, subquestion: "엣지 컴퓨팅", papers: [C8, C9] }]);
+  });
+});
+
+describe("excludedPaperLine", () => {
+  it("저자 외 (연도) 「제목」 으로 쓰고, 제목이 없으면 저자·연도만 쓴다", () => {
+    expect(excludedPaperLine(C9)).toBe("박민수 외 (2008) 「CMOS 에지 검출 회로」");
+    expect(excludedPaperLine({ cntsId: "C7", title: "", personalAuthor: null, pubDate: "2010" })).toBe("저자 미상 (2010)");
   });
 });

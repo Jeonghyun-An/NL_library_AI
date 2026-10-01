@@ -1,47 +1,22 @@
 // frontend/tests/unit/researchLayout.test.ts
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LAYOUT, LAYOUT_KEY, effectiveLayout, readLayoutPref, writeLayoutPref } from "~/utils/researchLayout";
-
-function memoryStorage(initial: Record<string, string> = {}): Storage {
-  const data = new Map(Object.entries(initial));
-  return {
-    get length() { return data.size; },
-    clear: () => data.clear(),
-    getItem: (k: string) => data.get(k) ?? null,
-    key: (i: number) => [...data.keys()][i] ?? null,
-    removeItem: (k: string) => { data.delete(k); },
-    setItem: (k: string, v: string) => { data.set(k, v); },
-  };
-}
-
-const blocked = {
-  getItem: () => { throw new Error("SecurityError"); },
-  setItem: () => { throw new Error("QuotaExceededError"); },
-} as unknown as Storage;
+import { LAYOUT_BEFORE_REPORT, LAYOUT_WITH_REPORT, effectiveLayout } from "~/utils/researchLayout";
 
 describe("effectiveLayout", () => {
-  it("넓은 화면은 고른 보기, 고른 적 없으면 기본 보기다", () => {
-    expect(effectiveLayout(null, true)).toBe(DEFAULT_LAYOUT);
-    expect(effectiveLayout("B", true)).toBe("B");
+  it("보고서가 나오기 전에는 문서형, 나오면 2단이다", () => {
+    expect(LAYOUT_BEFORE_REPORT).toBe("B");
+    expect(LAYOUT_WITH_REPORT).toBe("A");
+    expect(effectiveLayout(null, true, false)).toBe("B");
+    expect(effectiveLayout(null, true, true)).toBe("A");
   });
 
-  it("좁은 화면은 고른 보기와 무관하게 B 다", () => {
-    expect(effectiveLayout("A", false)).toBe("B");
-  });
-});
-
-describe("보기 선택 기억", () => {
-  it("저장한 보기를 다시 읽는다", () => {
-    const storage = memoryStorage();
-    writeLayoutPref(storage, "B");
-    expect(storage.getItem(LAYOUT_KEY)).toBe("B");
-    expect(readLayoutPref(storage)).toBe("B");
+  it("넓은 화면은 손으로 고른 보기를 자동 보기보다 먼저 따른다", () => {
+    expect(effectiveLayout("A", true, false)).toBe("A");
+    expect(effectiveLayout("B", true, true)).toBe("B");
   });
 
-  it("모르는 값·없는 저장소·막힌 저장소는 기억 없음으로 본다", () => {
-    expect(readLayoutPref(memoryStorage({ [LAYOUT_KEY]: "C" }))).toBeNull();
-    expect(readLayoutPref(null)).toBeNull();
-    expect(readLayoutPref(blocked)).toBeNull();
-    writeLayoutPref(blocked, "A");
+  it("좁은 화면은 고른 보기·보고서와 무관하게 B 다", () => {
+    expect(effectiveLayout("A", false, true)).toBe("B");
+    expect(effectiveLayout(null, false, true)).toBe("B");
   });
 });

@@ -53,14 +53,57 @@
       </ul>
       <p v-else class="rs-muted">{{ NO_LIMITS }}</p>
     </section>
+
+    <!-- 자기점검이 걸러낸 논문을 버리지 않고 보인다 — 무엇을 왜 뺐는지 보여야 결과가 줄어든 것으로 읽히지 않는다.
+         본문이 인용한 논문이 아니라 접어 둔다. 초안은 탐색 타임라인에서 같은 목록을 만든다 -->
+    <section v-if="excluded.length" class="rs-excluded" aria-labelledby="rs-excluded-title">
+      <h3 id="rs-excluded-title" class="rs-excluded__title">
+        <button
+          type="button"
+          class="rs-excluded__toggle"
+          :aria-expanded="excludedOpen"
+          aria-controls="rs-excluded-body"
+          @click="excludedOpen = !excludedOpen"
+        >
+          {{ EXCLUDED_TITLE }} ({{ excludedCount }})<span class="rs-caret" aria-hidden="true">▾</span>
+        </button>
+      </h3>
+      <div v-show="excludedOpen" id="rs-excluded-body" class="rs-excluded__body">
+        <p class="rs-muted">{{ EXCLUDED_WHY }}</p>
+        <!-- 묶음 번호는 탐색 타임라인의 하위질문 번호다. 절은 근거가 남은 하위질문만 만들어 절 번호와 다를 수
+             있으므로(모두 걸러진 하위질문이 바로 그렇다) 절 제목의 "N." 꼴을 쓰지 않는다 -->
+        <div v-for="g in excluded" :key="g.subqIdx" class="rs-excluded__group">
+          <h4 class="rs-section__sub">하위질문 {{ g.subqIdx + 1 }} · {{ g.subquestion }}</h4>
+          <ul class="rs-excluded-list">
+            <li v-for="p in g.papers" :key="p.cntsId">
+              <a :href="`/papers/${p.cntsId}`" target="_blank" rel="noopener">
+                {{ excludedPaperLine(p) }}<span class="rs-sr-only"> (새 창)</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </article>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { OpenPdfPayload, ReportSection, ResearchReport } from "~/types/research";
 import type { DraftSlot, DraftSlotStatus } from "~/utils/researchDraft";
-import { NO_LIMITS, draftBadge, draftIntro, rangeLabel, reportIntro, type DraftState } from "~/utils/researchReport";
+import {
+  EXCLUDED_TITLE,
+  EXCLUDED_WHY,
+  NO_LIMITS,
+  draftBadge,
+  draftIntro,
+  excludedFromTrail,
+  excludedPaperLine,
+  rangeLabel,
+  reportIntro,
+  type DraftState,
+  type ExcludedGroup,
+} from "~/utils/researchReport";
 import ReportSectionBody from "./ReportSectionBody.vue";
 
 interface SectionRow {
@@ -74,7 +117,7 @@ const props = withDefaults(
   defineProps<{
     report: ResearchReport;
     generatedAt: string | null;
-    draft?: { slots: DraftSlot[]; state: DraftState } | null;
+    draft?: { slots: DraftSlot[]; state: DraftState; excluded: ExcludedGroup[] } | null;
     highlightIdx?: number | null;
   }>(),
   { draft: null, highlightIdx: null },
@@ -105,4 +148,12 @@ const rows = computed<SectionRow[]>(() => {
     sec: slot.sectionIndex !== null ? (sections[slot.sectionIndex] ?? null) : null,
   }));
 });
+
+// 최종본은 보고서 trail 에서, 초안은 탐색 타임라인에서 만든 목록이다(초안에는 trail 이 없다)
+const excluded = computed<ExcludedGroup[]>(() =>
+  props.draft ? props.draft.excluded : excludedFromTrail(props.report.trail),
+);
+const excludedCount = computed(() => excluded.value.reduce((n, g) => n + g.papers.length, 0));
+// 초안이 같은 자리에서 최종본으로 바뀌어도 이 부품은 그대로라 펼친 상태가 이어진다
+const excludedOpen = ref(false);
 </script>

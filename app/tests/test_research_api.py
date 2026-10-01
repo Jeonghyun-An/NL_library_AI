@@ -257,6 +257,20 @@ class TestCreate:
         (row,) = api.db.jobs.values()
         assert row["status"] == "failed" and row["last_error"]
 
+    def test_operator_can_turn_off_topic_exclusion_off_per_job(self, api):
+        # 운영에서 결과가 나쁘면 재배포 없이 끈다(spec §11-3 의 curl) — 기본값에 합쳐 저장한다
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구",
+                                                      "params": {"exclude_off_topic": 0}})
+        assert res.status_code == 200
+        (row,) = api.db.jobs.values()
+        assert row["params"]["exclude_off_topic"] == 0
+        assert row["params"]["max_evidence"] == 90
+
+    def test_off_topic_exclusion_other_than_zero_or_one_is_422(self, api):
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구",
+                                                      "params": {"exclude_off_topic": 2}})
+        assert res.status_code == 422
+
 
 class TestApprove:
     def test_approve_sets_status_the_worker_claims(self, api):

@@ -1,8 +1,16 @@
 // frontend/utils/researchReport.ts
-import type { CountersPayload, EvidenceMeta, ReportRange, ResearchReport } from "../types/research";
+import type {
+  CountersPayload,
+  EvidenceMeta,
+  ExcludedPaperView,
+  ReportRange,
+  ResearchReport,
+  SubqView,
+  TrailItem,
+} from "../types/research";
 import { pubYear, splitAuthors } from "./citations";
 import type { DraftSlot } from "./researchDraft";
-import type { ResearchPhase } from "./researchEvents";
+import { toExcludedPaperView, type ResearchPhase } from "./researchEvents";
 
 export function rangeLabel(range: Partial<ReportRange> | null | undefined): string | null {
   if (!range?.n_papers) return null;
@@ -18,15 +26,26 @@ export function reportIntro(report: ResearchReport, subqCount = report.trail.len
   const subqs = subqCount || report.sections.length;
   const s = report.stats;
   if (s) {
-    return `하위질문 ${subqs}개로 나눠 논문 ${s.papers_reviewed}편을 검토하고 ${s.evidence_adopted}편을 근거로 삼았다.`;
+    return `하위질문 ${subqs}개로 나눠 논문 ${s.papers_reviewed}편을 검토하고 ${s.evidence_adopted}편을 근거로 삼았다${droppedNote(s, "걸러냈다")}.`;
   }
   return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
+}
+
+// 걸러낸 수를 서론에 덧붙인다 — 채택 수만 적으면 무관 제외로 결과가 줄어든 것처럼 읽힌다.
+// 제외 수는 하위질문별 판단의 수다(한 논문을 두 하위질문이 빼면 두 번, 한 하위질문이 뺀 논문을 다른 하위질문이
+// 채택하면 채택 수에도 든다). "편"으로 적으면 검토·채택 수와 더해 맞아야 할 서로 다른 논문 수로 읽혀 "건"으로 적는다.
+// 뺀 것이 없거나(0) 제외 수가 없는 잡(무관 제외 전)은 적지 않는다
+function droppedNote(stats: CountersPayload, verb: string): string {
+  return stats.excluded ? `(하위질문별로 무관하다고 본 ${stats.excluded}건은 ${verb})` : "";
 }
 
 // 빈자리 문구는 화면(절 본문·보고서)과 내려받은 문서가 같이 쓴다 — 문서가 화면과 다른 말을 하지 않게
 export const INTROLESS = "이 절은 도입 서술을 받지 못했습니다. 아래 논문 목록만 싣습니다.";
 export const NO_SUMMARY = "요약을 받지 못했습니다.";
 export const NO_LIMITS = "자동 점검에서 보고할 한계가 발견되지 않았습니다.";
+// 제외한 논문 목록의 제목·설명 — 보고서 화면의 접힌 섹션과 내려받은 문서의 부록이 같은 말을 쓴다
+export const EXCLUDED_TITLE = "관련성이 낮아 제외한 논문";
+export const EXCLUDED_WHY = "자기점검이 하위질문의 핵심 개념과 무관하다고 판단해 근거에서 제외한 논문입니다.";
 
 // 초안이 놓인 때 — writing: 쓰는 중, finishing: 다 쓰고 최종본을 받는 중(받기에 실패해 다시 시도하는 중 포함),
 // interrupted: 실패·취소로 멈춤
@@ -71,7 +90,7 @@ export function draftIntro(slots: readonly DraftSlot[], state: DraftState, stats
   if (!stats) return head;
   // 다 쓴 뒤의 카운터는 최종 집계라 "지금까지"를 붙이지 않는다
   const upTo = state === "finishing" ? "" : "지금까지 ";
-  return `${head} ${upTo}논문 ${stats.papers_reviewed}편을 검토하고 ${stats.evidence_adopted}편을 근거로 삼았습니다.`;
+  return `${head} ${upTo}논문 ${stats.papers_reviewed}편을 검토하고 ${stats.evidence_adopted}편을 근거로 삼았습니다${droppedNote(stats, "걸러냈습니다")}.`;
 }
 
 // 끝에서는 제자리에 선다. 버튼을 disabled 로 막으면 초점을 쥔 버튼이 비활성이 되는 순간
@@ -103,4 +122,36 @@ export function paperByline(meta: EvidenceMeta | undefined): string {
   const who = authors.length > 1 ? `${authors[0]} 외` : (authors[0] ?? "저자 미상");
   const year = pubYear(meta?.pub_date);
   return year ? `${who} (${year})` : who;
+}
+
+// 하위질문 하나에서 뺀 논문들. subqIdx 는 탐색 타임라인·부록의 하위질문 번호(0부터)다
+export interface ExcludedGroup {
+  subqIdx: number;
+  subquestion: string;
+  papers: ExcludedPaperView[];
+}
+
+// 최종본은 보고서 trail 에서 만든다. 뺀 논문이 없는 하위질문과 목록을 기록하기 전 보고서는 빠진다
+export function excludedFromTrail(trail: TrailItem[]): ExcludedGroup[] {
+  return trail
+    .map((t, i) => ({
+      subqIdx: i,
+      subquestion: t.subquestion,
+      papers: (t.excluded_papers ?? []).map(toExcludedPaperView),
+    }))
+    .filter((g) => g.papers.length > 0);
+}
+
+// 초안에는 trail 이 없다(종합이 끝나야 생긴다) — 탐색 타임라인의 회차 기록을 회차 순으로 이어 같은 목록을
+// 만든다. 한 하위질문은 뺀 논문을 다시 넣지 않으므로 이어 붙여도 겹치지 않는다(최종본 trail 과 같다)
+export function excludedFromSubqs(subqs: SubqView[]): ExcludedGroup[] {
+  return subqs
+    .map((sq) => ({ subqIdx: sq.idx, subquestion: sq.title, papers: sq.rounds.flatMap((r) => r.excludedPapers) }))
+    .filter((g) => g.papers.length > 0);
+}
+
+// 뺀 논문 한 줄 — "저자 외 (연도) 「제목」". 타임라인·보고서·문서가 같이 쓴다
+export function excludedPaperLine(p: ExcludedPaperView): string {
+  const who = paperByline({ personal_author: p.personalAuthor, pub_date: p.pubDate });
+  return p.title ? `${who} 「${p.title}」` : who;
 }
