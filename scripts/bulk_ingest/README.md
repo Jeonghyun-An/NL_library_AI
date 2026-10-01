@@ -102,3 +102,15 @@ curl -X POST http://<서버IP>/api/admin/ingest-jobs/<job_id>/start
 ```
 
 진행 현황은 `/admin/jobs` 대시보드 또는 `GET /api/admin/ingest-jobs/{id}`로 확인합니다.
+
+## 5) 재처리·카나리 도구 (서버에서, DB 읽기 전용)
+
+둘 다 앱 모듈(`db.postgres`)을 쓰므로 서버의 `/data/nl-lib/data/round07/` 에 복사해 `nl-lib-fastapi` 안에서
+`docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round07/<스크립트> …` 로 돌린다
+(`docs/ops/recurring-gotchas.md` 4번). 인자·출력은 각 파일 머리말, 배포 순서 안의 쓰임은
+`docs/ops/bulk_ingest_runbook.md` §9.
+
+| 스크립트 | 하는 일 | 쓰는 것 |
+|---|---|---|
+| `select_near_empty_items.py` | done 이고 8쪽 이상인데 쪽당 본문 글자 수가 150자 미만인 아이템 | CSV(사람이 본다) + retry API 본문 JSON |
+| `build_canary_manifest.py` | 본 잡에서 문제 유형별 50건(스캔본 20·표 10·잘게 쪼개짐 5·섹션 40개 초과 5·보통 10) | 매니페스트 JSONL — 업로드·잡 생성·시작 명령은 출력만 |
