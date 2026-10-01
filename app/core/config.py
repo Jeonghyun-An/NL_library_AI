@@ -74,7 +74,11 @@ class Settings(BaseSettings):
     LLM_TIMEOUT: int = 120
     # 섹션 요약 등 태스크 내부 동시 LLM 호출 수
     # (글로벌 동시 LLM = celery-llm concurrency × 이 값 ≤ vLLM max-num-seqs)
+    # 요약 단계는 섹션 요약과 논문 보강(표 해석 등)의 LLM 호출이 이 세마포어 하나를 나눠 쓴다.
     LLM_SECTION_CONCURRENCY: int = 4
+    # llm_client 재시도 — 횟수는 첫 시도 포함, 간격은 쉼표로 이은 초(n번째 실패 뒤 n번째 값)
+    LLM_RETRY_ATTEMPTS: int = 3
+    LLM_RETRY_BACKOFF_SECONDS: str = "2,8"
 
     # ── LLM API 스타일 (OpenAI 호환 vLLM / Ollama 네이티브) ──
     # "openai" → {LLM_BASE_URL}/chat/completions (기본, 운영 vLLM — 무영향)
@@ -131,8 +135,13 @@ class Settings(BaseSettings):
     # ── 대량 인덱싱 잡 ───────────────────────────────
     INGEST_HIGH_WATER: int = 32          # 잡당 동시 in-flight 아이템 수
     INGEST_MAX_ATTEMPTS: int = 3         # 아이템당 자동 재시도 한도
-    # 단계별 타임아웃(초) — 초과 시 stale 판정 후 재디스패치
-    INGEST_STAGE_TIMEOUT_EXTRACT: int = 1800
+    # 자동 재시도 백오프(초, 쉼표로 이음) — attempt 1 이면 첫 값, 2 면 둘째 값만큼 지난 뒤 다시 집는다
+    INGEST_RETRY_BACKOFF_SECONDS: str = "120,600"
+    # 추출 전체 asyncio 데드라인(초) — 넘으면 남은 쪽은 ODL 결과로 채택한다
+    INGEST_EXTRACT_DEADLINE: int = 2700
+    # 단계별 타임아웃(초) — 초과 시 stale 판정 후 재디스패치.
+    # 추출은 데드라인(INGEST_EXTRACT_DEADLINE) 위, Celery visibility_timeout(7200) 아래.
+    INGEST_STAGE_TIMEOUT_EXTRACT: int = 3600
     INGEST_STAGE_TIMEOUT_SUMMARIZE: int = 1200
     INGEST_STAGE_TIMEOUT_EMBED: int = 1200
     INGEST_STAGE_TIMEOUT_FINALIZE: int = 900
@@ -158,6 +167,19 @@ class Settings(BaseSettings):
     # 순차 VLM 호출을 유발해 잡 전체 처리량을 끌어내리는 것을 방지.
     # 초과분은 ODL 결과(비어있거나 부실해도)를 그대로 채택하고 VLM은 스킵한다.
     VLM_MAX_PAGES_PER_DOC: int = 60
+    # 문서 하나 안에서 동시에 보내는 OCR 요청 수 (추출 워커 4 × 2 = VLM max-num-seqs 8)
+    VLM_PAGE_CONCURRENCY: int = 2
+    # 스캔본 판정(문서 단위만 — 쪽 단위 규칙은 표지·간지를 다시 VLM 으로 보낸다).
+    # 머리말·꼬리말·스탬프 = 문서 쪽의 이 비율 이상에 되풀이되는 짧은 줄 — fitz 쪽 길이에서 뺀다
+    SCAN_REPEAT_LINE_RATIO: float = 0.6
+    # 짧은 쪽 비율이 이보다 크면 스캔본 (SCAN_MIN_PAGES 쪽 이상 문서만)
+    SCAN_SHORT_PAGE_RATIO: float = 0.5
+    SCAN_MIN_PAGES: int = 3
+    # ODL 타임아웃(초) = max(기본, 쪽수 × 쪽당)
+    ODL_TIMEOUT_BASE_SECONDS: float = 5.0
+    ODL_TIMEOUT_PER_PAGE_SECONDS: float = 0.5
+    # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다
+    ODL_IMAGE_OUTPUT: str = "off"
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
     # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.

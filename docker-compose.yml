@@ -44,6 +44,9 @@ x-common-env: &common-env
   LLM_MODEL: ${LLM_MODEL:-gemma-3-12b}
   LLM_TIMEOUT: ${LLM_TIMEOUT:-120}
   LLM_SECTION_CONCURRENCY: ${LLM_SECTION_CONCURRENCY:-4}
+  # llm_client 재시도(첫 시도 포함 횟수, 실패 뒤 기다릴 초를 쉼표로)
+  LLM_RETRY_ATTEMPTS: ${LLM_RETRY_ATTEMPTS:-3}
+  LLM_RETRY_BACKOFF_SECONDS: ${LLM_RETRY_BACKOFF_SECONDS:-2,8}
 
   # FLUX (자동 표지 이미지 생성 — black-forest-labs/FLUX.1-dev)
   FLUX_BASE_URL: ${FLUX_BASE_URL:-http://flux:8000}
@@ -146,6 +149,16 @@ x-common-env: &common-env
   VLM_MAX_TOKENS: ${VLM_MAX_TOKENS:-4096}
   VLM_TEMPERATURE: ${VLM_TEMPERATURE:-0.1}
   VLM_TIMEOUT: ${VLM_TIMEOUT:-120}
+  # 문서 안 OCR 동시 요청 — celery-cpu 4 × 2 = vllm --max-num-seqs 8
+  VLM_PAGE_CONCURRENCY: ${VLM_PAGE_CONCURRENCY:-2}
+  # 문서 단위 스캔본 판정(머리말·꼬리말·스탬프 줄 비율, 짧은 쪽 비율, 최소 쪽수)
+  SCAN_REPEAT_LINE_RATIO: ${SCAN_REPEAT_LINE_RATIO:-0.6}
+  SCAN_SHORT_PAGE_RATIO: ${SCAN_SHORT_PAGE_RATIO:-0.5}
+  SCAN_MIN_PAGES: ${SCAN_MIN_PAGES:-3}
+  # ODL 타임아웃 = max(기본, 쪽수 × 쪽당) 초, 이미지 출력(off = 인코딩 안 함)
+  ODL_TIMEOUT_BASE_SECONDS: ${ODL_TIMEOUT_BASE_SECONDS:-5.0}
+  ODL_TIMEOUT_PER_PAGE_SECONDS: ${ODL_TIMEOUT_PER_PAGE_SECONDS:-0.5}
+  ODL_IMAGE_OUTPUT: ${ODL_IMAGE_OUTPUT:-off}
 
   # PDF 메타 자동추출
   PDF_META_MAX_CHARS: ${PDF_META_MAX_CHARS:-3000}
@@ -171,9 +184,15 @@ x-common-env: &common-env
   # 대량 인덱싱 잡 / 배치 / 락
   INGEST_HIGH_WATER: ${INGEST_HIGH_WATER:-32}
   INGEST_MAX_ATTEMPTS: ${INGEST_MAX_ATTEMPTS:-3}
-  # 30분 기본값은 대형 스캔 문서(632p 실측 210분)보다 짧아 정상 작업을 stale 로 오판,
-  # 같은 문서를 3회까지 중복 실행시켰다(파일럿 2026-08-06). 실측 최악값 위로 올림.
-  INGEST_STAGE_TIMEOUT_EXTRACT: ${INGEST_STAGE_TIMEOUT_EXTRACT:-14400}
+  # 자동 재시도 백오프 — attempt 1 이면 120초, 2 면 600초 지난 뒤 다시 집는다
+  INGEST_RETRY_BACKOFF_SECONDS: ${INGEST_RETRY_BACKOFF_SECONDS:-120,600}
+  # 추출 전체 데드라인(초) — 넘으면 남은 쪽은 ODL 결과로 채택하고 meta.extract_deadline_hit 를 남긴다
+  INGEST_EXTRACT_DEADLINE: ${INGEST_EXTRACT_DEADLINE:-2700}
+  # 추출 stale 판정(초). 14400 은 문서당 VLM 상한(VLM_MAX_PAGES_PER_DOC 60)이 없던 파일럿
+  # (2026-08-06, 632쪽 스캔본 210분)에 맞춘 값이었다. 상한 뒤 관측 최대 추출은 2785초(표본
+  # 27,000건)이고 추출은 데드라인(2700초)에서 스스로 멈춘다. Celery visibility_timeout(7200초)
+  # 안쪽이라 실행 중인 추출 메시지가 재전달되지 않는다.
+  INGEST_STAGE_TIMEOUT_EXTRACT: ${INGEST_STAGE_TIMEOUT_EXTRACT:-3600}
   INGEST_STAGE_TIMEOUT_SUMMARIZE: ${INGEST_STAGE_TIMEOUT_SUMMARIZE:-1200}
   INGEST_STAGE_TIMEOUT_EMBED: ${INGEST_STAGE_TIMEOUT_EMBED:-1200}
   INGEST_STAGE_TIMEOUT_FINALIZE: ${INGEST_STAGE_TIMEOUT_FINALIZE:-900}
@@ -426,7 +445,8 @@ services:
       - bfloat16
       - --gpu-memory-utilization
       - "0.30"
-      # 대량 인덱싱 동시 LLM(celery-llm 4 × LLM_SECTION_CONCURRENCY 4 = 16) 수용
+      # 대량 인덱싱 동시 LLM(celery-llm 4 × LLM_SECTION_CONCURRENCY 4 = 16) 수용 — 요약 단계는
+      # 섹션 요약과 논문 보강(표 해석 등)의 LLM 호출이 세마포어 하나를 나눠 쓴다
       - --max-num-seqs
       - "16"
       - --host
@@ -606,7 +626,7 @@ services:
     working_dir: /app
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: celery -A workers.celery_app worker --loglevel=info --concurrency=4 -Q q_cpu,q_control --max-tasks-per-child=50
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=4 -Q q_cpu --max-tasks-per-child=50
     environment:
       <<: *common-env
       PYTHONPATH: /app
@@ -622,8 +642,32 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Celery LLM Worker (배치 잡: 섹션 요약·문서 요약/소개 — 외부 vLLM HTTP) ──
-  # 글로벌 동시 LLM = concurrency(4) × LLM_SECTION_CONCURRENCY(4) ≤ vLLM max-num-seqs(16)
+  # ── Celery Control Worker (제어 큐 q_control: 디스패치 30s·정리 1h·딥리서치 회수 10m) ──
+  # 추출 워커(celery-cpu)에서 뗐다. 같이 있으면 추출 4칸이 다 찼을 때 디스패치 틱이 그 뒤에
+  # 쌓였다가 칸이 비면 여럿이 한꺼번에 돌아, in-flight 를 같이 읽고 상한을 넘겨 보낼 수 있다.
+  # concurrency=1 이라 디스패처는 한 번에 하나만 돈다(beat 일정의 expires 가 밀린 틱을 버린다).
+  # GPU·모델 캐시는 필요 없다. 정리 태스크가 /app/data/downloads 를 지우므로 데이터 볼륨만 단다.
+  celery-control:
+    image: landsoftdocker/nl-lib-fastapi:latest
+    container_name: nl-lib-celery-control
+    <<: *nl-lib-net
+    working_dir: /app
+    command: celery -A workers.celery_app worker --loglevel=info --concurrency=1 -Q q_control
+    environment:
+      <<: *common-env
+      PYTHONPATH: /app
+    volumes:
+      - /data/nl-lib/data:/app/data:rw
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Celery LLM Worker (배치 잡: 섹션 요약·논문 보강·문서 요약/소개 — 외부 vLLM HTTP) ──
+  # 글로벌 동시 LLM = concurrency(4) × LLM_SECTION_CONCURRENCY(4) ≤ vLLM max-num-seqs(16).
+  # 요약 단계는 섹션 요약과 논문 보강의 LLM 호출이 세마포어 하나(LLM_SECTION_CONCURRENCY)를 나눠 쓴다.
   celery-llm:
     image: landsoftdocker/nl-lib-fastapi:latest
     container_name: nl-lib-celery-llm
