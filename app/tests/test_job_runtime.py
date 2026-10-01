@@ -490,3 +490,110 @@ class TestDispatchToken:
 
         assert env.sent[0].token != "old"
         assert env.item(1).meta["run_token"] == env.sent[0].token
+
+
+# ── 재시도: 결정적 실패 제외·추출부터 다시·백오프 ─────────────────────
+class TestRetryPolicy:
+    def test_no_text_exhausts_attempts(self, env):
+        """같은 코드로 다시 해도 결과가 같은 실패 — 자동 재시도에서 뺀다."""
+        env.add_item(1, stage="pending", status="dispatched", attempt=0, meta={"run_token": "t"})
+        env.errors["extract"] = StageError("no_text", "강제 OCR 뒤에도 섹션 0개")
+
+        with pytest.raises(StageError):
+            env.rt._run_stage("extract", 1, "celery-1", "t")
+
+        assert env.item(1).attempt == 3   # cfg.INGEST_MAX_ATTEMPTS
+
+    def test_no_text_uses_job_max_attempts(self, env):
+        env.set_job(params={"max_attempts": 5})
+        env.add_item(1, stage="pending", status="dispatched", attempt=1, meta={"run_token": "t"})
+        env.errors["extract"] = StageError("no_text", "강제 OCR 뒤에도 섹션 0개")
+
+        with pytest.raises(StageError):
+            env.rt._run_stage("extract", 1, "celery-1", "t")
+
+        assert env.item(1).attempt == 5
+
+    def test_no_text_item_is_not_picked_again(self, env, monkeypatch):
+        env.add_item(1, stage="pending", status="dispatched", attempt=0, meta={"run_token": "t"})
+        env.errors["extract"] = StageError("no_text", "강제 OCR 뒤에도 섹션 0개")
+        with pytest.raises(StageError):
+            env.rt._run_stage("extract", 1, "celery-1", "t")
+        monkeypatch.setattr(env.rt, "_now", lambda: NOW + _dt.timedelta(days=1))   # 백오프는 한참 지났다
+
+        assert env.dispatch() == 0
+        assert env.item(1).status == "failed"
+
+    def test_section_missing_failure_restarts_from_extract(self, env):
+        # 옛 코드가 섹션 0개를 추출 성공으로 넘겨 요약에서 실패한 아이템 — 요약부터 다시 하면 같은 실패다
+        env.add_item(1, stage="extracted", status="failed", attempt=1, error_group="not_found",
+                     last_error="섹션 없음 — extract 단계부터 재실행 필요", updated_at=_ago(1000))
+
+        env.dispatch()
+
+        assert env.item(1).stage == "pending"
+        assert env.sent[0].sigs[0].task_name == "tasks.stage_extract"
+
+    def test_vlm_error_restarts_from_extract(self, env):
+        env.add_item(1, stage="extracted", status="failed", attempt=1, error_group="vlm_error",
+                     last_error="VLM 호출 실패", updated_at=_ago(1000))
+
+        env.dispatch()
+
+        assert env.item(1).stage == "pending"
+        assert env.sent[0].sigs[0].task_name == "tasks.stage_extract"
+
+    def test_other_failures_keep_checkpoint(self, env):
+        env.add_item(1, stage="extracted", status="failed", attempt=1, error_group="not_found",
+                     last_error="카탈로그 row 없음 — extract 단계부터 재실행 필요", updated_at=_ago(1000))
+        env.add_item(2, stage="extracted", status="failed", attempt=1, error_group="llm_error",
+                     last_error="섹션 요약 전체 실패 (3건)", updated_at=_ago(1000))
+
+        env.dispatch()
+
+        assert env.item(1).stage == "extracted" and env.item(2).stage == "extracted"
+        assert {s.sigs[0].task_name for s in env.sent} == {"tasks.stage_summarize"}
+
+    def test_backoff_by_attempt(self, env):
+        env.set_job(params={"max_attempts": 5})
+        env.add_item(1, status="failed", attempt=1, updated_at=_ago(100))   # 120초 전 — 대기
+        env.add_item(2, status="failed", attempt=1, updated_at=_ago(120))   # 딱 120초 — 집는다
+        env.add_item(3, status="failed", attempt=2, updated_at=_ago(500))   # 600초 전 — 대기
+        env.add_item(4, status="failed", attempt=2, updated_at=_ago(700))
+        env.add_item(5, status="failed", attempt=3, updated_at=_ago(500))   # 값이 모자라면 마지막(600) 반복
+        env.add_item(6, status="failed", attempt=3, updated_at=_ago(700))
+        env.add_item(7, status="pending", attempt=0, updated_at=NOW)        # pending 은 백오프 없음
+
+        env.dispatch()
+
+        assert sorted(s.item_id for s in env.sent) == [2, 4, 6, 7]
+        assert env.item(1).status == "failed" and env.item(3).status == "failed"
+
+    def test_items_in_backoff_do_not_block_pending(self, env):
+        env.set_job(params={"high_water": 2})
+        for item_id in range(1, 6):   # id 가 앞선 실패 5건이 모두 백오프 중
+            env.add_item(item_id, status="failed", attempt=1, updated_at=_ago(10))
+        env.add_item(6)
+        env.add_item(7)
+        env.add_item(8)
+
+        assert env.dispatch() == 2
+
+        assert [s.item_id for s in env.sent] == [6, 7], "id 순서는 지키고 백오프 중인 실패는 건너뛴다"
+
+    def test_exhausted_attempts_not_picked(self, env):
+        env.add_item(1, status="failed", attempt=3, updated_at=_ago(100000))
+
+        assert env.dispatch() == 0
+
+    def test_backoff_setting_parsing(self, env, monkeypatch):
+        # 디스패처는 30초마다 이 값을 읽는다 — 잘못된 칸 하나로 디스패처가 죽으면 적재가 멈춘다
+        for raw, want in {"120,600": [120, 600], " 30 , x ,90": [30, 90], "": []}.items():
+            monkeypatch.setattr(env.rt.cfg, "INGEST_RETRY_BACKOFF_SECONDS", raw)
+            assert env.rt._retry_backoff_steps() == want, raw
+
+    def test_empty_backoff_setting_means_no_wait(self, env, monkeypatch):
+        monkeypatch.setattr(env.rt.cfg, "INGEST_RETRY_BACKOFF_SECONDS", "")
+        env.add_item(1, status="failed", attempt=1, updated_at=_ago(10))
+
+        assert env.dispatch() == 1

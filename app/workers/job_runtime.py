@@ -13,7 +13,8 @@ job_runtime.py — 배치 잡 레이어 (단계 태스크 + 디스패처 + stale
 핵심 규칙:
   - item.stage  = 마지막 완료된 체크포인트 → 재시도는 그 다음 단계부터 체인 구성
   - item.status = 실행 상태. 자동 재시도: failed && attempt < max_attempts 인 아이템을
-    디스패처가 다시 픽업 (수동 재시도 API는 status='pending' + attempt 리셋)
+    디스패처가 다시 픽업 (수동 재시도 API는 status='pending' + attempt 리셋).
+    attempt 번째 실패 뒤에는 INGEST_RETRY_BACKOFF_SECONDS 만큼 기다렸다 집는다
   - 실행 토큰: 디스패처가 체인을 보낼 때마다 새 meta.run_token 을 적고 모든 단계에 넘긴다.
     단계 래퍼는 토큰이 다르거나·이미 지난 단계거나·락 경합이면 Ignore 로 체인을 멈춘다
     (stale 복구 전의 옛 체인·재전달 메시지가 같은 아이템을 다시 돌지 못하게 — 함정 16)
@@ -26,6 +27,7 @@ import uuid
 
 from celery import chain
 from celery.exceptions import Ignore
+from sqlalchemy import and_, or_, true
 
 from core.config import get_settings
 from core.lock import BookLock
@@ -59,6 +61,9 @@ def _stage_timeout(stage_name: str) -> int:
 
 # 디스패치 후 워커가 잡기까지의 허용 대기 (큐 적체 고려 — visibility_timeout 의 2배)
 DISPATCH_STALE_SECONDS = cfg.DISPATCH_STALE_SECONDS
+
+# 같은 코드로 다시 해도 결과가 같은 실패 — 자동 재시도하지 않는다(attempt 를 한도로 올린다)
+NO_RETRY_GROUPS = frozenset({"no_text"})
 
 
 def classify_error(exc: BaseException) -> str:
@@ -136,6 +141,7 @@ def _run_stage(
     finally:
         db.close()
 
+    max_attempts = int(params.get("max_attempts") or cfg.INGEST_MAX_ATTEMPTS)
     timeout = _stage_timeout(stage_name)
     lock = BookLock(book_id, ttl=timeout)
     if not lock.acquire():
@@ -189,6 +195,8 @@ def _run_stage(
             error_group=group,
             last_error=str(e)[:2000],
             bump_attempt=True,
+            # 결정적 실패는 다시 해도 같다 — attempt 를 한도로 올려 자동 재시도에서 뺀다
+            min_attempt=max_attempts if group in NO_RETRY_GROUPS else None,
             timing=(stage_name, round(time.monotonic() - t0, 1)),
             meta_update={"stage_running": None},
         )
@@ -209,6 +217,7 @@ def _update_item(
     timing: tuple[str, float] | None = None,
     meta_update: dict | None = None,
     bump_attempt: bool = False,
+    min_attempt: int | None = None,
     set_started: bool = False,
     set_finished: bool = False,
 ) -> None:
@@ -238,6 +247,9 @@ def _update_item(
             item.meta = {**(item.meta or {}), **safe}
         if bump_attempt:
             item.attempt = (item.attempt or 0) + 1
+        if min_attempt is not None:
+            # 재시도 불가 실패 — 자동 재시도 조건(attempt < max_attempts)에서 빠지도록 올린다
+            item.attempt = max(item.attempt or 0, min_attempt)
         now = _now()
         if set_started and item.started_at is None:
             item.started_at = now
@@ -347,10 +359,50 @@ def _recover_stale(db, job) -> int:
     return recovered
 
 
+def _retry_backoff_steps() -> list[int]:
+    """INGEST_RETRY_BACKOFF_SECONDS("120,600") → [120, 600]. 정수가 아닌 칸은 경고하고 건너뛴다."""
+    steps: list[int] = []
+    for part in str(cfg.INGEST_RETRY_BACKOFF_SECONDS or "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            steps.append(max(0, int(part)))
+        except ValueError:
+            log.warning(f"INGEST_RETRY_BACKOFF_SECONDS 의 '{part}' 는 초(정수)가 아니다 — 건너뜀")
+    return steps
+
+
+def _retry_ready(now: _dt.datetime):
+    """failed 아이템 가운데 백오프가 지난 것 — attempt 번째 실패 뒤 steps[attempt-1] 초를
+    updated_at(실패를 기록한 시각)부터 기다린다. 값이 모자라면 마지막 값을 되풀이한다."""
+    steps = _retry_backoff_steps()
+    if not steps:
+        return true()
+    conds = [IngestJobItem.attempt < 1]
+    for n, wait in enumerate(steps, start=1):
+        same = IngestJobItem.attempt >= n if n == len(steps) else IngestJobItem.attempt == n
+        conds.append(and_(same, IngestJobItem.updated_at <= now - _dt.timedelta(seconds=wait)))
+    return or_(*conds)
+
+
+def _needs_reextract(item) -> bool:
+    """자동 재시도를 추출부터 다시 해야 하는 실패인가.
+
+    vlm_error: OCR 이 VLM 장애로 실패했다 — 추출을 다시 해야 본문이 생긴다.
+    not_found '섹션 없음': 옛 코드가 섹션 0개를 추출 성공으로 넘겨 요약에서 실패했다.
+    체크포인트(extracted)부터 다시 하면 같은 실패를 되풀이해 시도만 다 쓴다.
+    """
+    if item.error_group == "vlm_error":
+        return True
+    return item.error_group == "not_found" and "섹션 없음" in (item.last_error or "")
+
+
 def _dispatch_for_job(db, job) -> int:
     params = dict(job.params or {})
     high_water = int(params.get("high_water") or cfg.INGEST_HIGH_WATER)
     max_attempts = int(params.get("max_attempts") or cfg.INGEST_MAX_ATTEMPTS)
+    now = _now()
 
     in_flight = (
         db.query(IngestJobItem)
@@ -364,13 +416,18 @@ def _dispatch_for_job(db, job) -> int:
     if need <= 0:
         return 0
 
-    # pending(신규/수동 재시도) + failed(자동 재시도, attempt < max)
+    # pending(신규/수동 재시도) + failed(자동 재시도, attempt < max, 백오프 지남).
+    # 백오프를 SQL 조건으로 거른다 — limit 뒤 파이썬에서 거르면 id 가 앞선 백오프 중 실패가
+    # limit 을 채워 뒤의 pending 을 막는다
     items = (
         db.query(IngestJobItem)
         .filter(
             IngestJobItem.job_id == job.id,
-            IngestJobItem.status.in_(("pending", "failed")),
             IngestJobItem.attempt < max_attempts,
+            or_(
+                IngestJobItem.status == "pending",
+                and_(IngestJobItem.status == "failed", _retry_ready(now)),
+            ),
         )
         .order_by(IngestJobItem.id)
         .limit(need)
@@ -379,8 +436,13 @@ def _dispatch_for_job(db, job) -> int:
     )
 
     dispatched = 0
-    now = _now()
     for item in items:
+        if item.status == "failed" and item.stage != "pending" and _needs_reextract(item):
+            log.info(
+                f"[{item.book_id}] item={item.id} {item.error_group} 재시도 — "
+                f"체크포인트 {item.stage} → pending (추출부터)"
+            )
+            item.stage = "pending"
         # 체인마다 새 토큰 — 이 아이템의 옛 체인(stale 복구 전 체인·재전달 메시지)은 단계 래퍼가
         # 멈춘다. 토큰은 루프 끝 commit 에 보이고, 단계 래퍼의 첫 읽기(FOR UPDATE)가 그 commit 을
         # 기다린다(이 SELECT … FOR UPDATE 가 행을 잠그고 있다)
