@@ -160,7 +160,7 @@ def test_paper_table_interp_asks_for_key_findings_not_every_row():
 
 
 def test_section_group_summary_prompt_renders_without_count_examples():
-    """계층 요약 중간 요약 프롬프트(round07 Task 8) — doc_type 변형 없이 기본 파일 하나를 쓰고,
+    """계층 요약 중간 요약 프롬프트 — doc_type 변형 없이 기본 파일 하나를 쓰고,
     StrictUndefined 렌더가 호출부 변수(title·author·section_summaries)와 맞는다.
     함정 15(LLM 은 프롬프트 예시의 개수를 베낀다) — 'N개'·'N가지' 같은 개수 예시를 넣지 않는다."""
     real_dir = Path(__file__).resolve().parents[1] / "domains" / "nl_library" / "prompts"

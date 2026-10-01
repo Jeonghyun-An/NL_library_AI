@@ -146,7 +146,7 @@ def test_generate_read_effect_uses_doc_type_prompt(monkeypatch):
     assert "가나다" in captured["user"]
 
 
-# ── reduce_section_summaries (2단계 계층 요약 — round07 Task 8) ─────────────
+# ── reduce_section_summaries (2단계 계층 요약) ──────────────────────
 # 섹션 요약을 이어 붙인 길이가 상한을 넘으면 _combine_sections 는 균등 샘플링으로 일부 섹션을
 # 버린다(마지막 섹션이 늘 빠진다). 그 전에 연속 섹션끼리 묶어 중간 요약으로 줄인다.
 class _ReduceCfg:
@@ -301,7 +301,7 @@ def test_reduce_pairs_up_large_summaries(monkeypatch):
     assert out != summarizer._combine_sections(items)      # 샘플링으로 떨어지지 않았다
 
 
-# ── combined_text — 마무리 단계가 한 번 만든 입력을 넷이 같이 쓴다 (round07 Task 8) ──────
+# ── combined_text — 마무리 단계가 한 번 만든 입력을 넷이 같이 쓴다 ──────
 class _AllCfg(_FakeCfg):
     def __init__(self, cap):
         super().__init__(cap)
@@ -359,7 +359,7 @@ def test_generators_without_combined_text_still_combine(monkeypatch):
 
 
 # ── reduce_section_summaries — 묶음 하나 실패 시 남은 호출 취소·바깥 취소 전파·실행 기록 ──────
-# (round07 Task 8 리뷰 반영) 한 묶음이 실패하면 그 단계 결과는 어차피 버려지므로 남은 호출을 바로 끊는다.
+# 한 묶음이 실패하면 그 단계 결과는 어차피 버려지므로 남은 호출을 바로 끊는다.
 # 마무리 단계의 시간 예산(asyncio.wait_for)이 바깥에서 취소할 때도 호출이 남지 않아야 한다.
 def _leftover_tasks():
     """지금 도는 태스크(현재 것 제외) — reduce 가 끝난 뒤 남은 중간 요약 호출이 없어야 한다."""

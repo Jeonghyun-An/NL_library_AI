@@ -285,7 +285,7 @@ def _patch_fakes(monkeypatch) -> dict:
 
 
 def _legacy_sends_to_ocr(odl_len: int | None, raw: int, fill: float | None) -> bool:
-    """이 작업 전 extract_text 의 쪽 분기를 그대로 옮긴 옛 판정(d85df93·0df3001·8b1511a 이후) — OCR 로 가는가."""
+    """문서 단위 스캔본 판정을 넣기 전 extract_text 의 쪽 분기를 그대로 옮긴 옛 판정(d85df93·0df3001·8b1511a 이후) — OCR 로 가는가."""
     if odl_len is None:  # ODL 누락
         return True
     if fill is not None and fill < 0.30:  # 표 셀 충전율 낮음

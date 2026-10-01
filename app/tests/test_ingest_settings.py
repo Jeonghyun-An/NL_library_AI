@@ -1,4 +1,4 @@
-"""round07 적재 설정 — config 기본값과 docker-compose.yml 선언·워커 큐.
+"""적재 설정 — config 기본값과 docker-compose.yml 선언·워커 큐.
 
 Portainer 는 compose 에 `${이름:-기본값}` 선언이 없는 스택 env 를 무시한다. 그래서 새 설정은
 config 와 x-common-env 양쪽에 같은 기본값으로 있어야 한다.

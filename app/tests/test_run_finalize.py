@@ -1,4 +1,4 @@
-"""stages.run_finalize — 계층 요약 입력 공유·LLM 동시 호출·논문 표지 끄기·시간 예산·실행 기록 (round07 Task 8).
+"""stages.run_finalize — 계층 요약 입력 공유·LLM 동시 호출·논문 표지 끄기·시간 예산·실행 기록.
 
 DB 세션·MinIO·LLM 생성 함수를 대역으로 바꿔 마무리 단계의 흐름만 본다.
 생성 함수는 run_finalize 가 함수 안에서 import 하므로 summarizer 모듈 속성을 바꿔 둔다.
@@ -189,7 +189,7 @@ def test_book_cover_follows_skip_cover_param(monkeypatch):
     assert state["cover"] == 0
 
 
-# ── 계층 요약 시간 예산 (round07 Task 8 리뷰 반영) ────────────────────────────
+# ── 계층 요약 시간 예산 ─────────────────────────────────────────────
 # INGEST_STAGE_TIMEOUT_FINALIZE 는 시도별 하드 마감이다 — 넘으면 stale 복구가 토큰을 바꿔 늦은 성공이 버려지고
 # 같은 일이 되풀이된다. 계층 요약이 그 안에서 끝나도록 최종 호출·표지·여유를 뺀 만큼만 쓰게 한다.
 def _fix_timeouts(monkeypatch, *, finalize=900, book=120, intro=120, plot=120, read_effect=120,

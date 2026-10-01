@@ -48,7 +48,7 @@ def clock(monkeypatch):
 
 @pytest.fixture
 def cfg(monkeypatch):
-    """openai 호환 경로 + 재시도 3회(첫 시도 포함)·백오프 2초→8초 (Task 0 이 더한 키)."""
+    """openai 호환 경로 + 재시도 3회(첫 시도 포함)·백오프 2초→8초."""
     settings = llm_client.get_settings()
     monkeypatch.setattr(settings, "LLM_API_STYLE", "openai")
     monkeypatch.setattr(settings, "LLM_BASE_URL", "http://llm.test/v1")

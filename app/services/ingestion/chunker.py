@@ -74,8 +74,9 @@ def _split_sentences(text: str) -> list[str]:
     return [s.strip() for s in sentences if len(s.strip()) > 5]
 
 
-# 줄바꿈 폴백 기준(nanet 493f760 과 같은 값) — 문장부호로 나눈 결과가 이 개수 이하이거나
-# 평균 길이가 이보다 길면, 문장부호가 거의 없는 본문(표·통계·양식)이 뭉친 것으로 본다.
+# 줄바꿈 폴백 기준 — 문장부호로 나눈 결과가 이 개수 이하이거나 평균 길이가 이보다 길면, 문장부호가
+# 거의 없는 본문(표·통계·양식)이 뭉친 것으로 본다. 실제 KCI 논문 631편에서 이 폴백으로 결과가 바뀐
+# 것은 텍스트 층이 깨진 문서뿐이었다.
 _LINE_FALLBACK_MAX_SENTENCES = 5
 _LINE_FALLBACK_AVG_CHARS = 500
 
@@ -251,7 +252,7 @@ def _split_by_bytes(chunk: Chunk, max_bytes: int = MAX_CHUNK_BYTES) -> list[Chun
 
 
 def _split_by_chars(s: str, max_chars: int) -> list[str]:
-    """줄바꿈/문장부호/공백 경계를 우선해 글자 수 기준으로 강제 분할 (nanet 493f760).
+    """줄바꿈/문장부호/공백 경계를 우선해 글자 수 기준으로 강제 분할.
 
     문장(또는 줄) 하나가 상한을 넘을 때의 최후 수단. 조각마다 뒤쪽 절반 안에서 경계를
     찾고, 못 찾으면 max_chars 지점에서 자른다. 조각을 이어 붙이면 원문 그대로다(손실 없음)."""
@@ -326,7 +327,7 @@ def _split_oversized(
             over = bool(current_text) and current_tokens + sent_tokens > max_tokens
         else:
             # 짧은 조각을 많이 이을 때 조각마다 내림한 추정치를 더하면 구분자 몫과 내림 오차가
-            # 쌓여 상한을 넘는다 → 이어 붙인 텍스트로 잰다(nanet 493f760).
+            # 쌓여 상한을 넘는다 → 이어 붙인 텍스트로 잰다.
             over = bool(current_text) and _estimate_tokens(current_text + sep + sent) > max_tokens
         if over:
             sub_chunks.append(Chunk(
@@ -438,10 +439,10 @@ def semantic_chunk(
 
     log.info(f"{'줄' if line_mode else '문장'} {len(sentences)}개 분리 완료")
 
-    # 문장 수가 적으면 의미 경계 탐지는 생략하지만 크기 상한(max_tokens)은 그대로 적용한다
-    # (nanet 7128e09) — 문장부호가 적은 텍스트는 "문장" 5개 이하로 잡혀도 수만~십만 자일 수
-    # 있고, 상한 없이 한 덩어리로 나가면 섹션 요약 입력 상한(SUMMARIZER_MAX_SECTION_CHARS)에서
-    # 뒷부분이 통째로 잘린다. 바이트 가드는 그 뒤에 따로 건다.
+    # 문장 수가 적으면 의미 경계 탐지는 생략하지만 크기 상한(max_tokens)은 그대로 적용한다 —
+    # 문장부호가 적은 텍스트는 "문장" 5개 이하로 잡혀도 수만~십만 자일 수 있고, 상한 없이 한
+    # 덩어리로 나가면 섹션 요약 입력 상한(SUMMARIZER_MAX_SECTION_CHARS)에서 뒷부분이 통째로
+    # 잘린다. 바이트 가드는 그 뒤에 따로 건다.
     if len(sentences) <= 5:
         body = sep.join(s["text"] for s in sentences) if line_mode else text
         parts = _split_oversized(

@@ -155,7 +155,7 @@ def _combine_sections(section_summaries: list[str]) -> str:
     return _join_sections(picked)[:cap]  # 최종 안전 가드
 
 
-# ── 계층 요약 (nanet 746744e 이식) ──────────────────────────────
+# ── 계층 요약 ──────────────────────────────────────────────
 # 섹션 요약을 이어 붙인 길이가 SUMMARIZER_MAX_INPUT_CHARS 를 넘으면 _combine_sections 는 균등
 # 샘플링으로 일부 섹션을 버린다(마지막 섹션이 늘 빠진다). 그 전에 연속한 섹션 요약을 묶어
 # 묶음마다 중간 요약을 만들고, 중간 요약을 이어 붙여 문서 요약·소개글의 입력으로 쓴다.

@@ -144,7 +144,7 @@ class TestShortPageNeedsOcr:
         assert "놓친" in self._call(stripped=0, raw=60)[1]
 
     def test_non_scan_non_forced_matches_legacy_rule_for_every_length(self):
-        # 옛 규칙(이 작업 전 extract_text): 0 < fitz 원래 길이 < min_chars 인 쪽만 ODL 채택, 나머지는 OCR.
+        # 옛 규칙(문서 단위 스캔본 판정을 넣기 전 extract_text): 0 < fitz 원래 길이 < min_chars 인 쪽만 ODL 채택, 나머지는 OCR.
         # 되풀이 줄 뺀 길이(stripped)는 이 판정에 쓰이지 않으므로 어떤 값이어도 결과가 같아야 한다.
         for raw in range(0, 131):
             for stripped in range(0, raw + 1):

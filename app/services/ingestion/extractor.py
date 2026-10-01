@@ -735,8 +735,8 @@ async def extract_text_vlm_all(
 
 # opendataloader_pdf.convert → runner.run_jar 는 java 를 subprocess.run(timeout 없음)으로 띄우고 끝날
 # 때까지 막는다. 같은 프로세스의 스레드에서 돌리면 wait_for 가 시간을 넘겨도 스레드와 java 는 계속
-# 돈다(nanet 5f8fb80 주석도 같은 한계를 적어 두었다). 그래서 convert 를 자식 파이썬에서 부르고,
-# 새 세션(프로세스 그룹)으로 떼어 두었다가 시간을 넘기면 그룹째 끈다 — java 손자까지 함께 죽는다.
+# 돈다. 그래서 convert 를 자식 파이썬에서 부르고, 새 세션(프로세스 그룹)으로 떼어 두었다가 시간을
+# 넘기면 그룹째 끈다 — java 손자까지 함께 죽는다.
 _ODL_CHILD = (
     "import json, sys\n"
     "import opendataloader_pdf\n"
@@ -891,7 +891,8 @@ async def extract_text_opendataloader(
             log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
             result.errors.append(f"ODL 실패(원본): {reason}")
             if page_count is not None:
-                # xref 손상 문서에서 ODL(Java)이 브루트포스 복구로 수십 배 느려지는 문제 대응(nanet 5f8fb80)
+                # xref 손상 문서에서 ODL(Java)이 브루트포스 복구로 수십 배 느려지는 문제 대응 — fitz 로 다시
+                # 저장하면 xref 를 새로 쓴다
                 try:
                     fd, resaved_path = tempfile.mkstemp(suffix=".pdf")
                     os.close(fd)

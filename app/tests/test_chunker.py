@@ -1,4 +1,4 @@
-"""chunker.semantic_chunk — 문장 5개 이하 분기 크기 상한·줄바꿈 폴백 (round07 Task 7).
+"""chunker.semantic_chunk — 문장 5개 이하 분기 크기 상한·줄바꿈 폴백.
 
 임베딩 모델 없이 돈다. embed_fn 자리에 결정적인 가짜 임베딩을 넣는다.
 - _hash_embed: 문장마다 md5 로 만든 벡터 — 실제 모델처럼 이웃 유사도가 제각각이라 경계가 고르게 난다.
@@ -113,9 +113,9 @@ def _fingerprint(chunks):
 
 
 # ── 일반 본문: 고치기 전과 같은 경계 (회귀) ──────────────────────────────
-# Task 7 적용 전 chunker.py(5a7613b)로 뽑은 지문이다. 고치기 전에도 통과하고(현재 동작 고정)
-# 고친 뒤에도 그대로 통과해야 한다. '분석결과' 섹션(7,663자 = 5,108토큰)이 상한을 조금 넘는
-# 것도 지금 동작이다 — 문장마다 내림한 추정치를 더하는 묶기 규칙 때문이고 손대지 않는다.
+# 문장 5개 이하 분기 상한·줄바꿈 폴백을 넣기 전 chunker.py(5a7613b)로 뽑은 지문이다. 고치기 전에도
+# 통과하고(현재 동작 고정) 고친 뒤에도 그대로 통과해야 한다. '분석결과' 섹션(7,663자 = 5,108토큰)이
+# 상한을 조금 넘는 것도 지금 동작이다 — 문장마다 내림한 추정치를 더하는 묶기 규칙 때문이고 손대지 않는다.
 _GOLDEN_TOPIC_SECTION = (
     [(1460, 1, 1), (2063, 1, 2), (1233, 2, 3), (7663, 3, 8), (2817, 3, 8), (2413, 8, 10)],
     "579b8cef380708da",
@@ -151,7 +151,7 @@ def test_prose_boundaries_unchanged():
     assert _fingerprint(semantic_chunk(text, _topic_embed, page_map=page_map, **SEARCH)) == _GOLDEN_TABLE_SEARCH
 
 
-# ── 문장 5개 이하 분기에도 크기 상한 (nanet 7128e09) ─────────────────────
+# ── 문장 5개 이하 분기에도 크기 상한 ─────────────────────────────────
 
 
 def test_few_giant_sentences_are_capped():
@@ -224,7 +224,7 @@ def test_split_by_chars_prefers_boundaries_and_loses_nothing():
     assert chunker._split_by_chars("가" * 1500, 700) == ["가" * 700, "가" * 700, "가" * 100]   # 경계가 없으면 글자 수에서
 
 
-# ── 줄바꿈 폴백 — 정규화 전 원문을 줄 단위로 (nanet 493f760 을 SKOVIX 정규화 순서에 맞게) ──
+# ── 줄바꿈 폴백 — 정규화 전 원문을 줄 단위로(정규화가 홑줄바꿈을 먼저 공백으로 바꾼다) ──
 
 
 def test_line_split_keeps_table_rows_whole():
