@@ -742,8 +742,14 @@ async def extract_text_vlm_all(
 # 때까지 막는다. 같은 프로세스의 스레드에서 돌리면 wait_for 가 시간을 넘겨도 스레드와 java 는 계속
 # 돈다. 그래서 convert 를 자식 파이썬에서 부르고, 새 세션(프로세스 그룹)으로 떼어 두었다가 시간을
 # 넘기면 그룹째 끈다 — java 손자까지 함께 죽는다.
+# 자식은 스스로도 int(timeout) + 5 초 뒤 자기 그룹을 끈다(argv[2] = timeout). 부모(Celery 풀 자식)가 먼저
+# 죽으면(revoke(terminate=True) 등) 시간을 넘겨도 끌 사람이 없어 java 가 끝없이 돈다. signal.alarm 이 없는
+# Windows(개발 PC)는 건너뛴다.
 _ODL_CHILD = (
-    "import json, sys\n"
+    "import json, os, signal, sys\n"
+    "if hasattr(signal, 'alarm'):\n"
+    "    signal.signal(signal.SIGALRM, lambda *_: os.killpg(0, signal.SIGKILL))\n"
+    "    signal.alarm(int(float(sys.argv[2])) + 5)\n"
     "import opendataloader_pdf\n"
     "opendataloader_pdf.convert(**json.loads(sys.argv[1]))\n"
 )
@@ -788,7 +794,7 @@ async def _odl_convert(convert_kwargs: dict, timeout: float) -> None:
     """
     with tempfile.TemporaryFile() as err_file:
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", _ODL_CHILD, json.dumps(convert_kwargs),
+            sys.executable, "-c", _ODL_CHILD, json.dumps(convert_kwargs), str(timeout),
             stdout=asyncio.subprocess.DEVNULL,
             stderr=err_file.fileno(),
             start_new_session=True,

@@ -7,6 +7,8 @@ import asyncio
 import json
 import logging
 import os
+import signal
+import subprocess
 import sys
 import time
 import types
@@ -327,6 +329,44 @@ def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
         time.sleep(0.1)
     else:
         pytest.fail("timeout 뒤에도 손자 프로세스가 살아 있다")
+
+
+def test_child_gets_the_timeout_as_its_second_argument(monkeypatch, tmp_path):
+    seen = tmp_path / "argv.json"
+    monkeypatch.setattr(extractor, "_ODL_CHILD", f"import json, sys; open({str(seen)!r}, 'w').write(json.dumps(sys.argv[1:]))")
+    asyncio.run(extractor._odl_convert({"input_path": "x.pdf"}, 12.5))
+    assert json.loads(seen.read_text()) == [json.dumps({"input_path": "x.pdf"}), "12.5"]
+
+
+@pytest.mark.skipif(not hasattr(signal, "alarm"), reason="signal.alarm·killpg 가 없다(Windows 개발 PC)")
+def test_child_kills_its_own_group_when_nobody_else_does(tmp_path):
+    """부모(Celery 풀 자식)가 죽으면(revoke(terminate=True) 등) 시간을 넘겨도 끌 사람이 없다 — ODL 자식은 스스로
+    int(timeout) + 5 초 뒤 자기 프로세스 그룹을 끈다. 진짜 _ODL_CHILD 를 가짜 opendataloader_pdf(잠자는 손자를
+    띄우고 잠든다)로 직접 돌려 자식과 손자가 모두 끝나는지 본다."""
+    pid_file = tmp_path / "grandchild.pid"
+    fake_pkg = tmp_path / "fake_odl"
+    fake_pkg.mkdir()
+    body = "\n".join("    " + line for line in _sleeping_grandchild_script(pid_file).splitlines())
+    (fake_pkg / "opendataloader_pdf.py").write_text(f"def convert(**kwargs):\n{body}\n", encoding="utf-8")
+
+    t0 = time.monotonic()
+    child = subprocess.Popen(
+        [sys.executable, "-c", extractor._ODL_CHILD, "{}", "1"],   # 부모가 하듯 새 세션 — killpg(0) 이 자기 그룹만 끈다
+        env={**os.environ, "PYTHONPATH": str(fake_pkg)}, start_new_session=True,
+    )
+    try:
+        grandchild = _wait_for_pid_file(pid_file)
+        assert child.wait(timeout=20) == -signal.SIGKILL
+        assert 5 <= time.monotonic() - t0 < 20                     # int(1) + 5 = 6초 뒤
+        for _ in range(50):
+            if _gone(grandchild):
+                break
+            time.sleep(0.1)
+        else:
+            pytest.fail("자식이 스스로 끝난 뒤에도 손자 프로세스가 살아 있다")
+    finally:
+        if child.poll() is None:
+            os.killpg(child.pid, signal.SIGKILL)
 
 
 # ── 이미지 끄기(ODL_IMAGE_OUTPUT) ──────────────────────────────────
