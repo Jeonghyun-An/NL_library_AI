@@ -594,8 +594,20 @@ def _maybe_complete(db, job) -> bool:
 
 # ── 정리 태스크 (beat 1h) ─────────────────────────────────────
 
+# 정리 태스크는 제어 워커(celery-control, 한 칸)에서 디스패치 틱과 같은 q_control 을 쓴다. 틱은 25초 뒤
+# 만료되므로(workers/celery_app.py) 이 태스크가 붙잡는 동안의 틱은 모두 버려진다 — Milvus 가 응답하지 않아도
+# 끝나도록 flush 에 타임아웃을 주고, 연결·컬렉션 로드처럼 타임아웃이 없는 호출까지 태스크 시간 제한으로 끊는다.
+# flush 타임아웃은 정수로 준다 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다.
+_CLEANUP_FLUSH_TIMEOUT_SECONDS = 60
+_CLEANUP_SOFT_TIME_LIMIT = 120      # SoftTimeLimitExceeded 는 Exception 이라 flush 의 except 가 경고로 받는다
+_CLEANUP_HARD_TIME_LIMIT = 150      # 소프트 제한이 블로킹 호출을 못 끊으면 자식 프로세스째 끝낸다
 
-@celery_app.task(name="tasks.cleanup_temp_files")
+
+@celery_app.task(
+    name="tasks.cleanup_temp_files",
+    soft_time_limit=_CLEANUP_SOFT_TIME_LIMIT,
+    time_limit=_CLEANUP_HARD_TIME_LIMIT,
+)
 def cleanup_temp_files(max_age_hours: int = 24):
     """임시 다운로드 파일 정리 + Milvus 주기 flush (num_entities 최신화)."""
     download_dir = "/app/data/downloads"
@@ -614,9 +626,9 @@ def cleanup_temp_files(max_age_hours: int = 24):
     # 건당 flush 제거에 대한 보상 — 주기 flush 1회 (검색 num_entities 가드 최신화)
     try:
         from services.ingestion.indexer import ensure_collection
-        ensure_collection().flush()
+        ensure_collection().flush(timeout=_CLEANUP_FLUSH_TIMEOUT_SECONDS)
     except Exception as e:
-        log.warning(f"주기 Milvus flush 실패: {e}")
+        log.warning(f"주기 Milvus flush 실패: {str(e) or type(e).__name__}")
 
     log.info(f"cleanup_temp_files: 임시 파일 {removed}개 삭제")
     return {"removed": removed}

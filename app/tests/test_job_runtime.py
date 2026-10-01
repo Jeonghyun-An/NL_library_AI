@@ -64,9 +64,10 @@ class _Chain:
 
 
 class _Task:
-    def __init__(self, fn, name: str):
+    def __init__(self, fn, name: str, options: dict | None = None):
         self.fn = fn
         self.name = name
+        self.options = dict(options or {})   # 데코레이터 인자(name·soft_time_limit·time_limit …)
 
     def __call__(self, *a, **kw):
         return self.fn(*a, **kw)
@@ -87,7 +88,7 @@ class _Celery:
 
     def task(self, *a, **kw):
         def _decorator(fn):
-            return _Task(fn, kw.get("name"))
+            return _Task(fn, kw.get("name"), kw)
         return _decorator
 
 
@@ -971,3 +972,55 @@ class TestManualRetryDropsToken:
 
         assert env.recover_stale() == 0
         assert env.item(1).status == "dispatched"
+
+
+# ── 정리 태스크: 제어 워커를 오래 붙잡지 않는다 ───────────────────────────
+class TestCleanupIsBounded:
+    """cleanup_temp_files 는 제어 워커(celery-control, concurrency 1)에서 디스패치 틱과 같은 큐를 쓴다.
+    틱은 25초 뒤 만료되므로(workers/celery_app.py beat options), Milvus flush 가 응답 없이 붙잡으면
+    그동안의 틱이 모두 만료돼 디스패치·stale 복구가 멈춘다."""
+
+    def _load(self, monkeypatch, flush):
+        rt = _load_runtime(monkeypatch, [])
+        indexer = types.ModuleType("services.ingestion.indexer")   # 진짜는 pymilvus 를 물고 온다
+        indexer.ensure_collection = lambda: types.SimpleNamespace(flush=flush)
+        monkeypatch.setitem(sys.modules, "services.ingestion.indexer", indexer)
+        # 다운로드 디렉터리(/app/data/downloads)는 건드리지 않는다 — 컨테이너 안에서 돌려도 지우지 않게
+        monkeypatch.setattr(rt, "os", types.SimpleNamespace(path=types.SimpleNamespace(isdir=lambda p: False)))
+        return rt
+
+    def test_task_has_soft_and_hard_time_limits(self, monkeypatch):
+        rt = _load_runtime(monkeypatch, [])
+        options = rt.cleanup_temp_files.options
+        assert options["name"] == "tasks.cleanup_temp_files"
+        assert (options["soft_time_limit"], options["time_limit"]) == (120, 150)
+
+    def test_flush_gets_an_integer_timeout(self, monkeypatch):
+        # pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다(float 면 횟수로 75번)
+        calls = []
+        rt = self._load(monkeypatch, flush=lambda **kw: calls.append(kw))
+
+        assert rt.cleanup_temp_files() == {"removed": 0}
+
+        assert calls == [{"timeout": 60}] and type(calls[0]["timeout"]) is int
+
+    @pytest.mark.parametrize("make_error", [
+        lambda: sys.modules["celery.exceptions"].SoftTimeLimitExceeded(),
+        lambda: RuntimeError("wait for flush timeout, collection: nl_lib_chunks"),
+        lambda: TimeoutError(),
+    ], ids=["soft_time_limit", "milvus_timeout", "empty_message"])
+    def test_flush_failure_is_logged_and_the_task_still_returns(self, monkeypatch, caplog, make_error):
+        raised = []
+
+        def _flush(**kw):
+            raised.append(make_error())
+            raise raised[-1]
+
+        rt = self._load(monkeypatch, flush=_flush)
+
+        with caplog.at_level(logging.WARNING, logger=rt.log.name):
+            assert rt.cleanup_temp_files() == {"removed": 0}
+
+        warned = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warned) == 1 and "주기 Milvus flush 실패" in warned[0]
+        assert (str(raised[0]) or type(raised[0]).__name__) in warned[0]   # 빈 메시지 예외는 이름을 남긴다
