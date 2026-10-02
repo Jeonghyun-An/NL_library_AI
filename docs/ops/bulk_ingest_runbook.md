@@ -211,8 +211,8 @@ round07(spec `docs/superpowers/specs/2026-10-01-round07-ingest-pipeline-fix-desi
 - **되돌리기도 in-flight 0 에서만 한다.** 큐에 새 형식 메시지가 남은 채 되돌리면 옛 워커가 `TypeError` 로 실패한다. 순서:
   1. 9-1 처럼 비운다(본 잡·카나리 잡 모두 `running` 이 아니고 in-flight 0, 큐와 `unacked` 0).
   2. 9-2 에서 남긴 이미지를 `:latest` 로 다시 붙인다 — `docker tag landsoftdocker/nl-lib-fastapi:pre-round07 landsoftdocker/nl-lib-fastapi:latest`.
-  3. 9-3 에서 받아 둔 옛 스택 정의(`celery-cpu` 가 `-Q q_cpu,q_control`, `celery-control` 없음, 추출 stale 14400)로 9-3 처럼 업데이트한다("Re-pull image" 끔).
-  4. `celery-control` 을 지운다. 옛 정의에는 그 서비스가 없는데 compose·Portainer 는 정의에서 빠진 컨테이너를 지우지 않는다 — 남은 `nl-lib-celery-control` 은 새 이미지로 계속 돌며 새 디스패처가 두 인자 메시지를 옛 `celery-cpu` 로 보내 `TypeError` 가 난다. `docker ps -a --filter name=nl-lib-celery-control` 이 비어 있어야 하고, 남았으면 `docker rm -f nl-lib-celery-control`(또는 업데이트 때 Portainer 의 prune 선택을 켠다).
+  3. 스택 env 에서 round07 때 넣은 값을 지운다 — 특히 `INGEST_STAGE_TIMEOUT_EXTRACT`. 옛 정의도 `${INGEST_STAGE_TIMEOUT_EXTRACT:-14400}` 으로 선언하므로 남아 있으면 14400 대신 그 값이 들어간다. round07 에만 있는 키(`VLM_PAGE_CONCURRENCY`·`SCAN_*`·`ODL_*`·`INGEST_EXTRACT_DEADLINE`·`INGEST_RETRY_BACKOFF_SECONDS`·`LLM_RETRY_*`)는 옛 정의가 선언하지 않아 무시되지만 같이 지운다. round07 때 바꾼 옛 키(예: `VLM_TIMEOUT`·다른 `INGEST_STAGE_TIMEOUT_*`)가 있으면 그 전 값으로 돌린다. 그다음 9-3 에서 받아 둔 옛 스택 정의(`celery-cpu` 가 `-Q q_cpu,q_control`, `celery-control` 없음, 추출 stale 14400)로 9-3 처럼 업데이트한다("Re-pull image" 끔). `docker exec nl-lib-celery-cpu printenv INGEST_STAGE_TIMEOUT_EXTRACT` 가 14400 이다.
+  4. `celery-control` 을 지운다. 옛 정의에는 그 서비스가 없는데 compose·Portainer 는 정의에서 빠진 컨테이너를 지우지 않는다 — 남은 `nl-lib-celery-control` 은 새 이미지로 계속 돌며 새 디스패처가 두 인자 메시지를 옛 `celery-cpu` 로 보내 `TypeError` 가 난다. `docker ps -aq --filter name=nl-lib-celery-control` 이 아무것도 내지 않아야 하고(`-q` 없이 쓰면 머리줄이 늘 나온다), 무엇이 나오면 `docker rm -f nl-lib-celery-control`(또는 업데이트 때 Portainer 의 prune 선택을 켠다).
   5. `docker exec nl-lib-celery-cpu celery -A workers.celery_app inspect active_queues --timeout 5 | grep -c "'name': 'q_control'"` 이 1 이다 — q_control 을 받는 워커가 하나(옛 구성에서는 `celery-cpu`)뿐이다.
   6. fastapi 가 재생성됐으므로 9-4 처럼 게이트웨이를 reload 한다.
 
@@ -242,6 +242,8 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 ### 9-2. 이미지 빌드·받기
 
 운영 스택은 `:latest` 를 쓴다(함정 3번). Portainer 에 pull 을 맡기지 않는다(함정 12번) — pull 만으로는 아무것도 재시작되지 않는다. round07 은 화면을 고치지 않으므로 nuxt 이미지는 그대로다.
+
+> **opendataloader-pdf 2.5.9 비교 전에는 카나리(9-6)를 시작하지 않는다.** round07 의 ODL 관찰과 구현 근거는 개발 PC 의 2.5.0 으로 냈고, 이미지는 운영이 적재해 온 2.5.9 로 고정했다. 같은 문서를 2.5.9 로 돌린 비교(계획 `docs/superpowers/plans/2026-10-01-round07-ingest-pipeline-fix.md` 조각 D 머리말 실행 메모에 기록)가 2.5.0 과 같은 쪽·같은 OCR 판정을 보인 뒤에 간다.
 
 ```bash
 # 개발 PC — 리뷰를 마친 round07 커밋에서(.worktrees/round07). 빌드한 커밋을 적어 둔다
@@ -365,7 +367,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 ```
 
 - `extract_methods` 는 문서마다 가장 많이 쓴 쪽 방법의 분포다 — `opendataloader`(ODL 채택) · `vlm`(OCR) · `fitz`(ODL 이 두 번 다 실패해 fitz 텍스트로 대신 — ⑩).
-- `no_text` 는 강제 OCR 까지 해도 글자가 없거나 강제 OCR 로 바뀔 쪽이 없는 문서다 — 결정적 실패라 자동 재시도하지 않고 목록만 남긴다(②).
+- `no_text` 는 강제 OCR 까지 해도 글자가 없거나 강제 OCR 로 바뀔 쪽이 없는 문서다 — 결정적 실패라 자동 재시도하지 않고 목록만 남긴다(②). VLM 이 쪽을 거절해 비었으면 `last_error` 에 `거절` 이 있다 — 그런 문서만 VLM 설정을 고친 뒤 다시 보낼 만하다(9-9).
 - 멈춤: `no_text` 가 아닌 실패가 남았다(`vlm_error`·`extract_empty`·`llm_error`·`llm_timeout`·`artifact_missing`·`milvus_error`·`unknown` 등 — 자동 재시도를 다 쓴 것이다). `last_error` 로 원인을 안 뒤에 간다. 일시 장애로 보이면(예: 카나리 중 gemma 재기동) 카나리를 다시 돌려 사라지는지 본다.
 
 ② 스캔본이 VLM 으로 가고 섹션이 생겼는가 — 본 잡에서 '섹션 없음'으로 실패한 문서(`scan_no_sections`)만 본다.
@@ -375,7 +377,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT c.status, c.error_
 ```
 
 - 이 묶음의 9할 이상이 `done`·`vlm`·`with_sections` 여야 한다 — 회귀 하네스에서 같은 블록 318건이 모두 스캔본으로 잡혔다(`research/round07-ingest-regression/README.md`).
-- 칸: `forced_ocr` = 섹션 0개라 짧은 쪽을 모두 OCR 로 보내 다시 추출했다 — 스캔본으로 잡힌 문서는 짧은 쪽을 처음부터 OCR 하므로 0 이어야 하고, 0 이 아니면 스캔본 판정이 놓친 문서다. `vlm_truncated` = max_tokens 에서 끝난 OCR 쪽(되풀이 꼬리를 걷어 냈거나 퇴화 출력이라 버렸다). `ocr_errors` = 다시 하면 달라질 수 있는 VLM 요청 실패(연결·타임아웃·408·429·5xx)만. `ocr_rejected` = VLM 이 그 쪽을 결정적인 HTTP 4xx(408·429 말고)로 거절했다 — 다시 보내지 않고 `ocr_errors` 에도 세지 않는다. `render_errors` = 쪽 이미지 렌더링 실패. `deadline_hit` = 추출 데드라인(2,700초)에 걸렸다. 추출이 실패한 아이템은 이 칸들이 비어 있다(추출이 성공했을 때만 meta 에 남는다).
+- 칸: `forced_ocr` = 섹션 0개라 짧은 쪽을 모두 OCR 로 보내 다시 추출했다 — 스캔본으로 잡힌 문서는 짧은 쪽을 처음부터 OCR 하므로 0 이어야 하고, 0 이 아니면 스캔본 판정이 놓친 문서다. `vlm_truncated` = max_tokens 에서 끝난 OCR 쪽(되풀이 꼬리를 걷어 냈거나 퇴화 출력이라 버렸다). `ocr_errors` = 다시 하면 달라질 수 있는 VLM 요청 실패(연결·타임아웃·5xx, 그리고 400·413·422 밖의 4xx — 401·403·404 처럼 서버 전체 설정 문제인 것도 여기 들어 `vlm_error` 로 재시도된다). `ocr_rejected` = VLM 이 그 쪽 요청을 HTTP 400·413·422 로 거절했다(쪽 이미지가 `max-model-len` 을 넘는 등 그 쪽만의 문제) — 다시 보내지 않고 `ocr_errors` 에도 세지 않는다. 거절 때문에 섹션이 0개이거나 본문이 비면 `no_text` 로 끝나고 `last_error` 에 `거절` 과 그 수가 남는다(9-9). `render_errors` = 쪽 이미지 렌더링 실패. `deadline_hit` = 추출 데드라인(2,700초)에 걸렸다. 추출이 실패한 아이템은 이 칸들이 비어 있다(추출이 성공했을 때만 meta 에 남는다).
 - 멈춤: `done`·`vlm` 이 9할 미만이거나 `forced_ocr` 이 0 이 아니다. `vlm_error` 가 있으면 ④ 로 VLM 부터 본다.
 
 ③ embed 단계가 GPU 일만 남아 줄었는가 — 같은 문서의 본 잡(옛 코드) 시간과 견준다. 표 5개 이상 문서의 `embed_after` 가 크게 줄고(진단 때 표 9개 이상 문서의 embed 중앙 24.6초) 그만큼 `summarize_after` 가 는다.
@@ -399,11 +401,12 @@ docker exec nl-lib-fastapi curl -s vllm:8000/metrics | grep -E '^vllm:(num_reque
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR 보완 ('                   # OCR 로 보낸 쪽
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR(vlm) 실패'                # 그중 VLM 요청 실패(줄에 예외 이름이 붙는다 — 거절도 여기 든다)
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR(vlm) 실패: ReadTimeout'   # 그중 읽기 타임아웃
-docker logs nl-lib-celery-cpu 2>&1 | grep -c "OCR(vlm) 실패: HTTPStatusError: Client error '4"   # 그중 4xx(대부분 결정적 거절 ocr_rejected — 408·429 는 OCR 오류)
+docker logs nl-lib-celery-cpu 2>&1 | grep -cE "OCR\(vlm\) 실패: HTTPStatusError: Client error '(400|413|422)"   # 그중 거절(ocr_rejected) — 그 밖의 4xx 는 OCR 오류
 docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT count(*) AS done, count(*) FILTER (WHERE (meta->>'ocr_errors')::int > 0) AS docs_ocr_errors, coalesce(sum((meta->>'ocr_errors')::int), 0) AS ocr_errors, count(*) FILTER (WHERE (meta->>'ocr_rejected')::int > 0) AS docs_ocr_rejected, coalesce(sum((meta->>'ocr_rejected')::int), 0) AS ocr_rejected, count(*) FILTER (WHERE (meta->>'render_errors')::int > 0) AS docs_render_errors, count(*) FILTER (WHERE (meta->>'extract_deadline_hit')::boolean) AS docs_deadline_hit FROM ingest_job_items WHERE job_id = '$CANARY' AND status = 'done'"
 ```
 
-- `ocr_errors > 0` 인 완료 문서는 OCR 하지 못한 쪽을 ODL 결과(대개 빈 쪽)로 채웠다 — ⑬ 의 다시 돌릴 목록에 오른다. `ocr_rejected`(결정적 4xx 거절)·`render_errors`·`deadline_hit` 은 다시 해도 대개 같아 그 목록에 넣지 않는다. `ocr_rejected` 가 여럿이면 VLM 로그(`docker logs nl-lib-vllm`)에서 거절 사유(입력 길이 초과 등)를 본다.
+- `ocr_errors > 0` 인 완료 문서는 OCR 하지 못한 쪽을 ODL 결과(대개 빈 쪽)로 채웠다 — ⑬ 의 다시 돌릴 목록에 오른다. `ocr_rejected`(400·413·422 거절)·`render_errors`·`deadline_hit` 은 같은 설정으로 다시 해도 대개 같아 그 목록에 넣지 않는다. 거절은 VLM 이나 `FITZ_DPI`·`max-model-len` 을 바꾼 뒤에는 달라질 수 있다(9-9 의 거절 `no_text` 목록).
+- 멈춤(거절): 거절(`ocr_rejected` 합, 또는 위 거절 줄 수)이 OCR 로 보낸 쪽의 5% 를 넘는다 — 쪽마다의 문제가 아니라 VLM 쪽 설정(`max-model-len`·렌더링 해상도 `FITZ_DPI`) 때문에 거의 모든 쪽이 400 을 받는 것일 수 있다. `docker logs nl-lib-vllm` 에서 거절 사유(입력 길이 초과 등)를 본다.
 - 멈춤: 다시 하면 달라질 VLM 요청 실패(위 SQL 의 `ocr_errors` 합 — 결정적 거절 `ocr_rejected` 는 뺀다)가 OCR 로 보낸 쪽의 1% 를 넘는다(대개 `ReadTimeout` — `num_requests_waiting` 이 오래 0 보다 크고 선점이 늘었으면 대기열 때문이다). 스택 env 에 `VLM_PAGE_CONCURRENCY=1`(문서 안 병렬을 끈다 — 옛 코드처럼 동시 4건) 또는 `VLM_TIMEOUT=180`~`240` 을 넣는다. 둘 다 compose 에 선언돼 있다.
 
 ⑤ gemma 잘림 비율 — 9-6 에서 적은 값과의 차이로 (length 증가분) ÷ (stop 증가분 + length 증가분) 을 구한다. 진단 때 5.3%(대부분 표 해석)보다 낮아야 한다.
@@ -575,7 +578,7 @@ docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/
   -H 'Content-Type: application/json' -d @/app/data/round07/ocr_errors_retry.json
 ```
 
-- 본 잡 아이템에 `ocr_errors` 가 없으면(`meta->'ocr_errors' IS NULL` — jsonb `?` 는 쓰지 않는다, 함정 10번) 옛 코드로 끝난 것이다 — 그런 문서는 카나리(새 코드) 결과로 고른다. `ocr_rejected`(결정적 4xx 거절)는 다시 해도 같아 이 목록에 넣지 않는다.
+- 본 잡 아이템에 `ocr_errors` 가 없으면(`meta->'ocr_errors' IS NULL` — jsonb `?` 는 쓰지 않는다, 함정 10번) 옛 코드로 끝난 것이다 — 그런 문서는 카나리(새 코드) 결과로 고른다. `ocr_rejected`(400·413·422 거절)는 같은 설정으로는 다시 해도 같아 이 목록에 넣지 않는다 — VLM·`FITZ_DPI`·`max-model-len` 을 바꿨으면 9-9 의 거절 `no_text` 목록과 함께 다시 본다.
 - **보낼 순서**: 9-10 의 빈 본문 목록을 먼저 보내고 이 목록은 그 뒤에 만들어 보낸다. retry 의 `item_ids` 는 상태를 거르지 않아, 두 목록에 같은 아이템이 있으면 먼저 보낸 쪽으로 이미 도는 아이템을 다시 `pending` 으로 돌린다 — 도는 체인의 기록은 버려지고 새 체인은 그 체인이 쥔 문서 락에 막혀 멈춘다(진행 상한 한 칸을 쥔 채 4시간). 이 SQL 은 만들 때 `done` 만 고르므로 보내기 직전에 만든다. 미리 만들어 둔 목록은 9-10 의 다시 거르기로 `done` 만 남긴다.
 
 ### 9-8. 본 잡 실패분 재시도
@@ -588,7 +591,7 @@ docker exec nl-lib-fastapi curl -s localhost:8000/api/admin/ingest-jobs/$JOB/fai
 
 - 본 잡의 실패는 모두 옛 코드가 낸 것이다(10-01 pause 뒤 in-flight 0 — 9-1). 진단 때는 `not_found` 560(그중 '섹션 없음' 545 · '카탈로그 row 없음' 15) · `extract_empty` 275 · `llm_error` 264, 합 1,099건이었다.
 - `not_found` 는 '섹션 없음'만 `item_ids` 로 보낸다. '카탈로그 row 없음'은 카탈로그 문제라 재시도하지 않고 목록만 남긴다 — 행이 지금도 없으면 추출 단계가 PDF 메타 자동추출로 카탈로그 행을 새로 만들고 `doc_type` 이 어긋날 수 있다(§5-b).
-- 나머지는 `error_group` 별로 보낸다. 아래 `for` 는 다시 돌려 볼 만한 그룹을 모두 담았다 — `/failures` 에 없는 그룹은 `retried` 가 0 이다. `unknown` 은 대표 메시지(`sample_error`)를 본 뒤 정하고, `no_text` 는 보내지 않는다(같은 코드로 다시 해도 같다 — 옛 코드는 이 그룹을 내지 않으므로 본 잡에는 아직 없다).
+- 나머지는 `error_group` 별로 보낸다. 아래 `for` 는 다시 돌려 볼 만한 그룹을 모두 담았다 — `/failures` 에 없는 그룹은 `retried` 가 0 이다. `unknown` 은 대표 메시지(`sample_error`)를 본 뒤 정하고, `no_text` 는 보내지 않는다(같은 코드로 다시 해도 같다 — 옛 코드는 이 그룹을 내지 않으므로 본 잡에는 아직 없다). 재개 뒤 생긴 `no_text` 가운데 `last_error` 에 `거절` 이 있는 것만 VLM 설정을 고친 뒤 다시 보낼 만하다(9-9).
 
 ```bash
 docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
@@ -626,12 +629,29 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
 
 - 그 뒤 1~2시간 동안 `GET …/ingest-jobs/$JOB` 의 `rate_per_hour`(최근 1시간)로 처리량을 잰다. 기대치(추정, spec §2.1)는 ODL 문서 약 340~390건/h, 스캔본 약 80~100건/h 다.
 - `rate_per_hour_24h`·`eta_hours`(24시간 기준)는 재개 직후엔 멈춰 있던 시간이 창에 섞여 처리량은 낮게, ETA 는 길게 나온다 — 재개 하루 뒤부터 본다.
+- 도는 동안 하루에 한 번쯤 `no_text` 비율과 OCR 거절을 본다. 멈춤(본 잡 pause): 최근 24시간에 끝난 아이템 가운데 `no_text` 가 카나리 때보다 뚜렷이 늘었거나(예: 1% 를 넘는다) `ocr_rejected` 가 있는 문서가 몰려 나온다 — VLM 서버 쪽 설정(`max-model-len` 등)이 바뀌어 모든 쪽이 400 을 받으면 이렇게 보인다. `docker logs nl-lib-vllm` 과 9-7 ④ 의 거절 줄을 본다.
+
+```bash
+docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT count(*) FILTER (WHERE status = 'done') AS done, count(*) FILTER (WHERE error_group = 'no_text') AS no_text, count(*) FILTER (WHERE error_group = 'no_text' AND last_error LIKE '%거절%') AS no_text_rejected, count(*) FILTER (WHERE status = 'done' AND (meta->>'ocr_rejected')::int > 0) AS done_with_rejected FROM ingest_job_items WHERE job_id = '$JOB' AND updated_at > now() - interval '24 hours'"
+```
+
 - 도는 동안 생기는 `no_text` 는 자동 재시도하지 않는다 — 가끔 목록을 뽑아 둔다(강제 OCR 까지 해도 글자가 없거나 강제 OCR 로 바뀔 쪽이 없는 문서).
 
 ```bash
 docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
   "SELECT id, book_id, last_error FROM ingest_job_items WHERE job_id = '$JOB' AND status = 'failed' AND error_group = 'no_text'" \
   > /data/nl-lib/data/round07/no_text.txt
+```
+
+- 그 가운데 `last_error` 에 `거절` 이 있는 것(VLM 이 쪽을 400·413·422 로 거절해 본문이 빈 문서)은 VLM·`FITZ_DPI`·`max-model-len` 을 바꾼 뒤 다시 보낼 만하다. 나머지 `no_text` 는 같은 코드로 다시 해도 같다 — 보내지 않는다.
+
+```bash
+docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
+  "SELECT json_build_object('item_ids', coalesce(json_agg(id ORDER BY id), '[]'::json), 'reset_stage', 'pending') FROM ingest_job_items WHERE job_id = '$JOB' AND status = 'failed' AND error_group = 'no_text' AND last_error LIKE '%거절%'" \
+  > /data/nl-lib/data/round07/no_text_rejected_retry.json
+cat /data/nl-lib/data/round07/no_text_rejected_retry.json
+docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$JOB/retry \
+  -H 'Content-Type: application/json' -d @/app/data/round07/no_text_rejected_retry.json
 ```
 
 ### 9-10. 빈 본문 완료분 재처리
@@ -654,7 +674,7 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round07/select_ne
 
 - 서버의 `/data/nl-lib/data/round07/near_empty_items.csv`(기준을 올렸으면 `cpp300/` 아래)를 사람이 본다. 뺄 문서가 있으면 같은 폴더 `near_empty_retry.json` 의 `item_ids` 에서도 뺀다. `vlm_capped` 가 true 인 문서는 VLM 60쪽 상한에 걸린 것이라 다시 돌려도 결과가 같다.
 - 재처리는 대부분 VLM 으로 가서 약 1만 쪽·약 10시간(추정)이 든다. id 가 앞이라 본 잡의 새 아이템보다 먼저 돈다.
-- 보내기 직전에 목록을 지금 `done` 인 아이템으로 다시 거른다. retry 의 `item_ids` 는 상태를 거르지 않아, 그 사이 다른 retry(9-7 ⑬ 등)로 이미 도는 아이템이 섞이면 다시 `pending` 이 된다 — 도는 체인의 기록은 버려지고 새 체인은 문서 락에 막혀 진행 상한 한 칸을 쥔 채 4시간 멈춘다. 기준을 올려 고른 목록을 쓰면 아래 두 경로를 `cpp300/near_empty_retry.json` 으로 바꾼다.
+- 보내기 직전에 목록을 지금 `done` 인 아이템으로 다시 거른다. retry 의 `item_ids` 는 상태를 거르지 않아, 그 사이 다른 retry(9-7 ⑬ 등)로 이미 도는 아이템이 섞이면 다시 `pending` 이 된다 — 도는 체인의 기록은 버려지고 새 체인은 문서 락에 막혀 진행 상한 한 칸을 쥔 채 4시간 멈춘다. 기준을 올려 고른 목록을 쓰면 첫 줄의 `$(cat /data/nl-lib/data/round07/near_empty_retry.json)` 만 `/data/nl-lib/data/round07/cpp300/near_empty_retry.json` 으로 바꾼다 — 걸러 낸 결과 `near_empty_retry_done.json` 과 curl 의 `-d @/app/data/round07/near_empty_retry_done.json` 은 그대로 둔다.
 
 ```bash
 docker exec -i nl-lib-postgres psql -U <user> -d <db> -At -v ids="$(cat /data/nl-lib/data/round07/near_empty_retry.json)" -v job="$JOB" \
@@ -673,6 +693,6 @@ docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/
 
 ## 롤백
 
-- 코드: 운영 스택은 §9 머리말의 **되돌리기** 순서로만 한다 — 9-1 비움 확인(in-flight 0) → `pre-round07` 이미지를 `:latest` 로 다시 붙이기 → 9-3 에서 받아 둔 옛 스택 정의로 Portainer 업데이트("Re-pull image" 끔) → 남은 `nl-lib-celery-control` 지우기와 q_control 소비자 하나 확인 → 게이트웨이 reload. 서버에서 저장소 compose 로 `docker compose up -d` 를 하지 않는다 — 운영 스택 정의와 달라 FLUX 가 켜지고(§9 머리말), Portainer 스택이 만든 같은 `container_name` 과 부딪친다. 도는 적재 태스크가 있는 채 되돌리면 새 형식 메시지를 옛 워커가 받아 `TypeError` 로 실패한다.
+- 코드: 운영 스택은 §9 머리말의 **되돌리기** 순서로만 한다 — 9-1 비움 확인(in-flight 0) → `pre-round07` 이미지를 `:latest` 로 다시 붙이기 → 스택 env 에서 round07 때 넣은 값(특히 `INGEST_STAGE_TIMEOUT_EXTRACT`) 지우기 → 9-3 에서 받아 둔 옛 스택 정의로 Portainer 업데이트("Re-pull image" 끔) → 남은 `nl-lib-celery-control` 지우기와 q_control 소비자 하나 확인 → 게이트웨이 reload. 서버에서 저장소 compose 로 `docker compose up -d` 를 하지 않는다 — 운영 스택 정의와 달라 FLUX 가 켜지고(§9 머리말), Portainer 스택이 만든 같은 `container_name` 과 부딪친다. 도는 적재 태스크가 있는 채 되돌리면 새 형식 메시지를 옛 워커가 받아 `TypeError` 로 실패한다.
 - DB: `alembic downgrade 0003_widen_varchar_fields` (doc_type/extra/잡 테이블 제거 — additive라 안전)
 - Milvus: 인덱스 파라미터 env를 되돌리고 재생성하면 IVF_FLAT로 복귀
