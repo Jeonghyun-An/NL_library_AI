@@ -247,7 +247,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 # 개발 PC — 리뷰를 마친 round07 커밋에서(.worktrees/round07). 빌드한 커밋을 적어 둔다
 git rev-parse --short HEAD
 NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
-# 서버가 받기 전에, 빌드한 이미지의 패키지 버전을 본다 — opendataloader-pdf 2.5.0 · PyMuPDF 1.24.10(app/requirements.txt 고정값)
+# 서버가 받기 전에, 빌드한 이미지의 패키지 버전을 본다 — opendataloader-pdf 2.5.9(운영이 적재해 온 버전) · PyMuPDF 1.24.10(app/requirements.txt 고정값)
 docker run --rm --entrypoint pip landsoftdocker/nl-lib-fastapi:latest show opendataloader-pdf PyMuPDF | grep -E '^(Name|Version):'
 ```
 
@@ -517,7 +517,7 @@ PY
 ```
 
 - 어긋난 아이템은 추출부터 다시 돌리면 고쳐진다 — 추출이 그 문서의 `book_sections` 를, embed 가 Milvus 청크를 `book_id` 로 모두 지우고 다시 쓴다. ⑧ 의 원인을 고친 뒤, 본 잡은 paused 인 채로 카나리 잡에서 다시 돌리고(retry 는 끝난 카나리 잡을 `running` 으로 되돌린다) 끝나면 ① 부터 다시 본다. 워커는 재생성되지 않으므로 다시 볼 때 ⑦ 의 로그 수에 앞 실행이 섞인다 — 아래처럼 보내기 직전 시각을 적어 두고 ⑦ 의 `docker logs` 에 `--since "$SINCE"` 를 붙인다(워커를 재생성했으면 필요 없다 — 9-7 머리말).
-- **본 잡을 재개한 뒤(9-9)에는 카나리 잡을 retry 하지 않는다.** retry 는 끝난 잡을 `running` 으로 되돌려 두 잡이 같은 문서를 함께 돌게 된다(위 배포 규칙 — 락 경합으로 멈춘 아이템이 4시간 묶인다). 그런 retry 가 들어오면 코드가 경고 로그를 남긴다. 그 뒤에 다시 돌릴 문서는 본 잡 아이템으로 보낸다(⑬ 과 같은 방법).
+- **본 잡을 재개한 뒤(9-9)에는 카나리 잡을 retry 하지 않는다.** retry 는 끝난 잡을 `running` 으로 되돌려 두 잡이 같은 문서를 함께 돌게 된다(위 배포 규칙 — 락 경합으로 멈춘 아이템이 4시간 묶인다). 그런 retry 가 들어오면 fastapi 가 경고를 남긴다 — `docker logs nl-lib-fastapi 2>&1 | grep '다시 running 으로 돌린다'`(`잡 '…' 을 다시 running 으로 돌린다 — 이미 running 인 잡 […] 과 함께 돈다`). 그 뒤에 다시 돌릴 문서는 본 잡 아이템으로 보낸다(⑬ 과 같은 방법).
 
 ```bash
 SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
