@@ -8,8 +8,8 @@
 |---|---|---|
 | `questions.json` | 고정 질문 5개 `[{key, question}]` — `key` 가 라벨 파일 이름이 된다 | — |
 | `run_pair.py` | 질문마다 갈래 0·1 잡을 만들고(갈래 1 은 갈래 0 의 계획으로 승인) 완료까지 기다려 `{key: {"0": 잡 id, "1": 잡 id}}` 를 쓴다 | 안 씀(HTTP) |
-| `make_labels.py` | 두 갈래 보고서의 절 논문·제외 논문을 합쳐 `labels/<key>.csv`(`cnts_id,title,authors,label`)를 쓴다. 이미 단 라벨은 남긴다 | 안 씀(HTTP) |
-| `score.py` | 라벨과 보고서를 맞대어 갈래마다 절별 무관 수·과잉 제외 비율·판정(합격·불합격·판정 보류)을 찍는다 | 안 씀(HTTP) |
+| `make_labels.py` | 두 갈래 보고서의 절 논문·제외 논문을 합쳐 `labels/<key>.csv`(`cnts_id,title,authors,label`)를 쓴다. 새 줄은 제목 순으로 섞는다(어느 줄이 critic 이 뺀 논문인지 드러나지 않게 — 맹검). 이미 단 라벨과 엑셀에서 더한 칸은 남긴다 | 안 씀(HTTP) |
+| `score.py` | 라벨과 보고서를 맞대어 갈래마다 절별 무관 수·과잉 제외 비율·판정(합격·불합격·판정 보류)을 찍는다. 합격 질문의 분모는 `questions.json` 의 질문 수다(pairs 에 빠진 질문도 '채점하지 못한 질문') | 안 씀(HTTP) |
 | `mark_example.py` | 연구를 예시 연구로 지정·해제(`research_works.is_example`) — `--yes` 없으면 할 일만 찍는다 | 씀(`--yes` 일 때만) |
 | `labels/<key>.csv` | 사람이 단 라벨(질문 단위 — 두 갈래에 함께 나온 논문은 한 줄). `*.csv` 는 `.gitignore` 대상이라 `git add -f` 로 올린다 | — |
 
@@ -17,7 +17,7 @@
 
 1. **질문 확인.** `questions.json` 의 5개를 쓴다. 첫 질문(`computing`)은 운영 잡 `2a56f8b6` 의 질문이다. 질문을 바꾸면 라벨 파일도 새로 만든다.
 2. **서버로 옮기기.** `scripts/` 는 앱 이미지에 없다(함정 4번). 이 폴더를 서버의 `/data/nl-lib/data/research_eval/` 로 옮긴다(scp 등 평소 쓰는 방법). 컨테이너 안에서는 `/app/data/research_eval/` 이다.
-3. **두 갈래 실행.** 실행 워커가 하나라 잡 10개가 차례로 돈다(잡 하나 약 2분 — 25분 안팎). 끊기지 않게 tmux 같은 세션에서 돌린다.
+3. **두 갈래 실행.** 전제: 운영 `nl-lib-fastapi` 의 `RESEARCH_QUEUE` 가 딥리서치 전용 큐 `q_research` 여야 한다(`docker exec nl-lib-fastapi printenv RESEARCH_QUEUE`) — 적재 큐를 나눠 쓰는 모드(`q_llm` 등)면 실행이 한 번에 하나라 갈래 0 이 도는 동안 갈래 1 승인이 늘 429 `shared_queue` 로 막힌다. 실행 워커가 하나라 잡 10개가 차례로 돈다(잡 하나 약 2분 — 25분 안팎). 끊기지 않게 tmux 같은 세션에서 돌린다. 잡 id 는 만들자마자 `갈래 0 …`·`갈래 1 …` 로 찍힌다.
    ```bash
    RUN=pairs_$(date +%Y%m%d)
    docker exec nl-lib-fastapi python /app/data/research_eval/run_pair.py \

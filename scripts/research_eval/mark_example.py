@@ -12,7 +12,7 @@ import argparse
 import sys
 import uuid
 
-SELECT_SQL = "SELECT is_example FROM research_works WHERE id = CAST(:id AS uuid)"
+SELECT_SQL = "SELECT is_example, deleted_at FROM research_works WHERE id = CAST(:id AS uuid)"
 UPDATE_SQL = ("UPDATE research_works SET is_example = :flag, updated_at = now() "
               "WHERE id = CAST(:id AS uuid)")
 
@@ -37,9 +37,14 @@ def main(argv: list[str] | None = None) -> int:
 
     db = SyncSessionLocal()
     try:
-        current = db.execute(sa_text(SELECT_SQL), {"id": args.work}).scalar_one_or_none()
-        if current is None:
+        row = db.execute(sa_text(SELECT_SQL), {"id": args.work}).one_or_none()
+        if row is None:
             print(f"연구 {args.work} 가 없다 - [이 연구 이어가기] 를 누른 딥리서치 잡 id 인지 본다")
+            return 1
+        current, deleted_at = row
+        if deleted_at is not None:
+            # 지운 연구는 목록(GET /api/research-works)에 나오지 않는다 — 지정해도 방문자에게 보이지 않는다
+            print(f"연구 {args.work} 는 지운 연구다(deleted_at={deleted_at}) - 바꾸지 않는다")
             return 1
         if current == target:
             print(f"연구 {args.work} 는 이미 is_example={current} - 바꿀 것이 없다")
