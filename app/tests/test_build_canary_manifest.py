@@ -100,6 +100,15 @@ class TestClassify:
         assert classify(_item(4, pages=10, chunks=20, sections_total=41)) == "many_sections"
         assert classify(_item(5)) == "normal"                                 # meta 가 비어도 보통
 
+    def test_meta_numbers_must_be_json_numbers_like_the_sql(self):
+        # SQL 의 _meta_num 은 jsonb 숫자만 숫자로 본다(숫자 문자열은 NULL) — 파이썬 판정도 같아야 후보와 범주가 맞는다
+        from build_canary_manifest import _num, classify
+
+        assert classify(_item(1, n_tables="7", pages=10, chunks=10)) == "normal"
+        assert classify(_item(2, pages="10", chunks=90)) == "normal"        # 쪽수가 문자열이면 0 — 쪼개짐 판정 없음
+        assert classify(_item(3, n_tables=7.0, pages=10, chunks=10)) == "many_tables"
+        assert [_num({"x": v}, "x") for v in (True, False, None, "3", 3, 2.5)] == [0, 0, 0, 0, 3, 2.5]
+
     def test_earlier_category_wins(self):
         from build_canary_manifest import classify
 
@@ -206,6 +215,17 @@ def test_fetch_candidates_is_read_only_with_a_statement_timeout(fake_session):
     assert [p["cap"] for p in params] == [quota * 20 for quota in QUOTAS.values()]
     assert ["pat" in p for p in params] == [True, False, False, False, False]
     assert fake_session.rolled_back and fake_session.closed
+
+
+def test_summary_prints_on_a_cp949_console(fake_session, tmp_path, capsys):
+    # 후보가 없어 범주마다 '모자람' 줄까지 찍힌다 — 요약 출력도 Windows 한국어 콘솔(cp949)에서 죽지 않아야 한다
+    from build_canary_manifest import main
+
+    main(["--job", "job-1", "--out", str(tmp_path)])
+
+    out = capsys.readouterr().out
+    assert "모자람" in out
+    out.encode("cp949")
 
 
 def test_help_prints_on_a_cp949_console(capsys):

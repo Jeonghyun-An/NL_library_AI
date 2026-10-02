@@ -50,7 +50,9 @@ STATEMENT_TIMEOUT_SQL = "SET LOCAL statement_timeout = '15min'"
 
 
 def _num(meta: dict, key: str) -> float:
-    return float(meta.get(key) or 0)
+    # SQL 의 _meta_num 처럼 JSON 숫자만 숫자로 본다 — 숫자 문자열·bool 은 0
+    value = meta.get(key)
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else 0.0
 
 
 def classify(row: dict) -> str | None:
@@ -197,7 +199,7 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  {category:<17} {quota:>3} / {got}")
     short = shortfalls(picked)
     if short:
-        print(f"  모자람: {short} — --oversample 을 늘려 다시 돌리거나 그대로 쓴다")
+        print(f"  모자람: {short} - --oversample 을 늘려 다시 돌리거나 그대로 쓴다")
     print(f"\n→ {path} ({len(picked)}건)")
     print("\n다음은 사람이 차례로 한다 (이 스크립트는 운영에 쓰지 않는다):")
     for i, cmd in enumerate(next_steps(str(path), args.name), 1):
