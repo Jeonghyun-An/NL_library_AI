@@ -31,6 +31,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import load_only
 
 from core.config import get_settings
 from core.deps import get_browser_id_optional, get_db
@@ -583,6 +584,10 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                 continue
             if event.get("kind") == "status":
                 last = (event.get("status"), event.get("stage"))
+                if event.get("status") not in RUNNABLE_STATUSES:
+                    # 대기를 벗어났다(브로커 실패로 승인 대기로 되돌아감 등) — 화면도 순번을 비운다.
+                    # 다시 줄에 서면 다시 센 값이 옛 값과 같아도 queue 이벤트를 다시 보내야 한다
+                    last_queue = None
             elif _carries_plan(event):
                 plan_sent = True
             yield _sse(event)
@@ -624,7 +629,15 @@ async def _fresh_snapshot(jid: uuid.UUID) -> tuple[dict, str | None] | None:
 
 
 async def _queue_now(jid: uuid.UUID) -> dict | None:
-    """하트비트 때 다시 센 대기 순번. 짧은 세션을 새로 여는 이유는 _job_status 와 같다."""
+    """하트비트 때 다시 센 대기 순번. 짧은 세션을 새로 여는 이유는 _job_status 와 같다.
+
+    순번 계산(_queue_info)이 읽는 칼럼(id·status·created_at)만 읽는다 — 행 전체를 읽으면 재시도로 줄에 선
+    잡(stage=explored)의 탐색 스냅숏(state_snapshot)·report JSONB 를 열린 탭마다 15초마다 읽고 버린다.
+    """
     async with AsyncSessionLocal() as db:
-        job = await db.get(ResearchJob, jid)
+        job = (await db.execute(
+            select(ResearchJob)
+            .options(load_only(ResearchJob.id, ResearchJob.status, ResearchJob.created_at))
+            .where(ResearchJob.id == jid)
+        )).scalar_one_or_none()
         return None if job is None else await _queue_info(db, job)

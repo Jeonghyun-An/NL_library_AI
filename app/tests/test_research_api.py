@@ -74,6 +74,9 @@ class _Result:
     def scalar(self):
         return self._scalar
 
+    def scalar_one_or_none(self):
+        return self._scalar
+
 
 class _FakeDB:
     """research_jobs 를 dict 로 들고 get·조건부 UPDATE·개수 조회·step 조회를 흉내 낸다.
@@ -123,6 +126,11 @@ class _FakeDB:
         if sql.startswith("SELECT pg_advisory_xact_lock"):
             self.locks.extend(stmt.compile().params.values())
             return _Result()
+        if sql.startswith("SELECT research_jobs.id, research_jobs.status, research_jobs.created_at \nFROM"):
+            # 하트비트의 대기 순번 — 순번 계산이 읽는 칼럼만(load_only)
+            rows = [row for row in self.jobs.values() if _matches(stmt.whereclause, row)]
+            return _Result(scalar=SimpleNamespace(
+                **{k: rows[0][k] for k in ("id", "status", "created_at")}) if rows else None)
         if sql.startswith("SELECT research_jobs.id \nFROM research_jobs") and "LIMIT" in sql:
             ids = [row["id"] for row in self.jobs.values() if _matches(stmt.whereclause, row)]
             return _Result(scalar=ids[0] if ids else None)
@@ -639,9 +647,27 @@ class TestBrowserRunLimit:
         assert api.db.locks == [api.research._RUN_SLOT_LOCK,
                                 api.research._browser_lock_key(_SID)]
 
+    def test_same_job_approved_in_the_gap_is_409_not_its_own_429(self, api, monkeypatch):
+        """더블클릭 경합 — 읽은 뒤 다른 요청이 이 잡을 먼저 승인했다. 브라우저 검사가 잡 자신을 세면
+        자기 job_id 를 실은 429 browser_active 가 나가고, 화면은 같은 잡으로 가는 링크를 띄운다."""
+        _queue(api, monkeypatch, "q_research")
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        def approved_meanwhile(pk):
+            api.db.jobs[pk]["status"] = "approved"
+
+        api.db.after_get = approved_meanwhile
+
+        res = api.client.post(f"/api/research/{jid}/approve")
+
+        assert res.status_code == 409
+        assert api.celery.sent == []
+
     def test_lock_key_is_a_stable_signed_bigint_per_browser(self, api):
         key = api.research._browser_lock_key
         assert key(_SID) == key(_SID)
+        # 프로세스·재시작과 무관한 값이어야 한다 — hash() 로 바뀌면 워커마다 다른 키로 잠근다
+        assert key(_SID) == 3811234064939730100
         assert key(_SID) != key(_OTHER_SID)
         for sid in (_SID, _OTHER_SID):
             assert -(2 ** 63) <= key(sid) < 2 ** 63
@@ -1001,9 +1027,10 @@ class TestStatusEvents:
 class TestWaitLine:
     """실행 큐에 들어간 잡은 대기 순번 ZSET 에 들어가고, 나오면 빠진다."""
 
-    def test_approve_marks_the_job_before_it_is_enqueued(self, api):
+    @pytest.mark.parametrize("action, status", [("approve", "awaiting_approval"), ("retry", "failed")])
+    def test_the_job_is_marked_before_it_is_enqueued(self, api, action, status):
         """큐에 넣은 뒤에 넣으면, 바로 집은 워커가 먼저 뺀 뒤에 들어가 줄에 영영 남는다."""
-        jid = api.db.add_job(status="awaiting_approval", stage="planned", plan=["가설 A"])
+        jid = api.db.add_job(status=status, stage="planned", plan=["가설 A"], last_error="종합 실패")
         at_send = []
         send = api.celery.send_task
 
@@ -1012,14 +1039,9 @@ class TestWaitLine:
             return send(name, args, **kw)
 
         api.celery.send_task = _send
-        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+        assert api.client.post(f"/api/research/{jid}/{action}").status_code == 200
 
         assert at_send == [[("mark", jid)]]
-        assert api.line.calls == [("mark", jid)]
-
-    def test_retry_marks_the_job(self, api):
-        jid = api.db.add_job(status="failed", plan=["가"], stage="explored", last_error="종합 실패")
-        assert api.client.post(f"/api/research/{jid}/retry").status_code == 200
         assert api.line.calls == [("mark", jid)]
 
     @pytest.mark.parametrize("action, status", [("approve", "awaiting_approval"), ("retry", "failed")])
@@ -1317,6 +1339,38 @@ class TestQueueEvents:
         assert frames[0]["job"]["queue"] == {"ahead": 1, "eta_sec": None}
         assert frames[1] == {"kind": "queue", "ahead": 2, "eta_sec": None}
         assert frames[2] == {"kind": "queue", "ahead": 1, "eta_sec": None}
+
+    def test_heartbeat_reads_only_the_queue_columns(self, api, monkeypatch):
+        """대기 중 하트비트마다 행 전체(state_snapshot·report JSONB)를 읽지 않는다 — 순번이 쓰는 칼럼만."""
+        gets: list = []
+        api.db.after_get = gets.append
+
+        frames = self._stream(api, monkeypatch, status="queued", live=[None, None, _CANCELED])
+
+        assert [f["kind"] for f in frames] == ["snapshot", "canceled"]
+        assert len(gets) == 1                   # 연결 때 스냅샷 한 번 — 하트비트는 db.get 을 쓰지 않는다
+        narrow = [s for s in api.db.sql
+                  if s.startswith("SELECT research_jobs.id, research_jobs.status, research_jobs.created_at")]
+        assert len(narrow) == 2 and not any("state_snapshot" in s or "report" in s for s in narrow)
+
+    def test_job_back_in_line_gets_its_queue_again(self, api, monkeypatch):
+        """브로커 실패로 승인 대기로 되돌아갔다(화면은 순번을 비운다) 다시 승인됐다 — 다시 센 순번이 옛 값과
+        같아도 queue 이벤트를 보낸다. 안 보내면 다른 탭에는 순번 줄이 다시 보이지 않는다."""
+        def back(jid):
+            api.db.jobs[jid]["status"] = "awaiting_approval"
+
+        def again(jid):
+            api.db.jobs[jid]["status"] = "approved"
+
+        frames = self._stream(
+            api, monkeypatch, status="approved",
+            live=[back, {"kind": "status", "status": "awaiting_approval", "stage": "planned"},
+                  again, {"kind": "status", "status": "approved", "stage": "planned"}, None, _CANCELED],
+        )
+
+        assert [f["kind"] for f in frames] == ["snapshot", "status", "status", "queue", "canceled"]
+        assert frames[0]["job"]["queue"] == {"ahead": 0, "eta_sec": None}
+        assert frames[3] == {"kind": "queue", "ahead": 0, "eta_sec": None}
 
     def test_terminal_state_wins_over_the_queue(self, api, monkeypatch):
         def canceled(jid):
