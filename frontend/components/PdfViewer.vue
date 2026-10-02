@@ -9,9 +9,9 @@
           <!-- pdf.js 를 못 읽으면(문서를 받기 전·내부 API 변경) 쪽 표시만 숨기고 뷰어는 그대로 쓴다 -->
           <template v-if="total > 0">
             <div class="pdf-pager" role="group" aria-label="쪽 이동">
-              <button type="button" class="pdf-step" aria-label="이전 쪽" :aria-disabled="page <= 1" @click="stepPage(-1)">‹</button>
-              <span class="pdf-count">{{ page }} / {{ total }}쪽</span>
-              <button type="button" class="pdf-step" aria-label="다음 쪽" :aria-disabled="page >= total" @click="stepPage(1)">›</button>
+              <button type="button" class="pdf-step" aria-label="이전 쪽" :aria-disabled="currentPage <= 1" @click="stepPage(-1)">‹</button>
+              <span class="pdf-count">{{ currentPage }} / {{ total }}쪽</span>
+              <button type="button" class="pdf-step" aria-label="다음 쪽" :aria-disabled="currentPage >= total" @click="stepPage(1)">›</button>
             </div>
             <div v-if="cited.length" class="pdf-pager pdf-pager--cite" role="group" aria-label="인용 대목 이동">
               <span class="pdf-count" aria-live="polite">인용 대목 {{ passageIdx + 1 }}/{{ cited.length }} · {{ cited[passageIdx]?.label }}</span>
@@ -70,25 +70,28 @@ const dialogLabel = computed(() => (props.title ? `원문 보기: ${props.title}
 const frame = ref<HTMLIFrameElement | null>(null);
 const closeBtn = ref<HTMLButtonElement | null>(null);
 // pdf.js 가 알려 주는 지금 쪽·전체 쪽. 전체가 0 이면 아직 문서를 못 읽은 것이라 머리의 쪽 표시를 숨긴다
-const page = ref(props.page ?? 1);
+const currentPage = ref(props.page ?? 1);
 const total = ref(0);
 const cited = computed(() => props.passages ?? []);
 const passageIdx = ref(0);
 let app: PdfJsApp | null = null;
 
 function goPage(n: number): void {
-  if (!app || n === page.value) return;
+  if (!app || n === currentPage.value) return;
   app.page = n;
 }
 
 // stepChunk 는 0부터 세는 칸을 넘긴다 — 쪽은 1부터 세므로 하나 빼서 넘기고 되돌린다
 function stepPage(delta: number): void {
-  goPage(stepChunk(page.value - 1, delta, total.value) + 1);
+  goPage(stepChunk(currentPage.value - 1, delta, total.value) + 1);
 }
 
 function stepPassage(delta: number): void {
-  passageIdx.value = stepChunk(passageIdx.value, delta, cited.value.length);
-  const target = cited.value[passageIdx.value]?.page;
+  const next = stepChunk(passageIdx.value, delta, cited.value.length);
+  // 끝에서 흐려진 버튼은 아무것도 하지 않는다 — 다른 쪽을 보던 뷰어가 지금 대목의 쪽으로 되돌아가지 않게
+  if (next === passageIdx.value) return;
+  passageIdx.value = next;
+  const target = cited.value[next]?.page;
   if (target) goPage(target);
 }
 
@@ -104,11 +107,11 @@ async function onFrameLoad(): Promise<void> {
   app = found;
   const sync = () => {
     total.value = found.pagesCount;
-    page.value = found.page;
+    currentPage.value = found.page;
   };
   found.eventBus.on("pagesinit", sync);
   found.eventBus.on("pagechanging", (evt) => {
-    page.value = evt.pageNumber;
+    currentPage.value = evt.pageNumber;
   });
   // 듣기를 붙이기 전에 문서가 이미 열렸을 수 있다
   if (found.pagesCount > 0) sync();

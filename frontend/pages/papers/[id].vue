@@ -655,13 +655,20 @@ const pdfProblem = ref("");
 // 배너의 [인용 대목 보기]가 열지 못한 까닭 — 배너 안에 알린다
 const bannerPdfProblem = ref("");
 
+// 확인 중에는 어느 쪽 버튼이든 무시한다 — openPdf 가 null 을 돌려줘 안내 문구가 지워지는 일이 없게. 원문이 열리면 두 문구를 함께 지운다
 async function openOriginal() {
-  pdfProblem.value = (await openPdf({ cntsId: paperId, title: paper.value?.title ?? "" })) ?? "";
+  if (checkingPdf.value) return;
+  const problem = await openPdf({ cntsId: paperId, title: paper.value?.title ?? "" });
+  pdfProblem.value = problem ?? "";
+  if (!problem) bannerPdfProblem.value = "";
 }
 
 // 첫 인용 쪽에서 열고 머리의 "인용 대목 n/N" 으로 대목을 넘겨 본다
 async function openCitedPassages(chunks: readonly ReportChunk[]) {
-  bannerPdfProblem.value = (await openPdf(citedPdfTarget(paperId, paper.value?.title ?? "", chunks))) ?? "";
+  if (checkingPdf.value) return;
+  const problem = await openPdf(citedPdfTarget(paperId, paper.value?.title ?? "", chunks));
+  bannerPdfProblem.value = problem ?? "";
+  if (!problem) pdfProblem.value = "";
 }
 
 async function fetchPaper() {

@@ -15,10 +15,13 @@ export function usePdfOpener() {
     // 확인이 끝나기 전에 또 누르면 무시한다 — 뷰어가 두 번 열리거나 문구가 뒤섞이지 않게
     if (checking.value) return null;
     checking.value = true;
-    const problem = pdfCheckProblem(await pdfStatus(apiUrl(`/books/${encodeURIComponent(target.cntsId)}/pdf`), apiHeaders()));
-    checking.value = false;
-    if (!problem) pdf.value = target;
-    return problem;
+    try {
+      const problem = pdfCheckProblem(await pdfStatus(apiUrl(`/books/${encodeURIComponent(target.cntsId)}/pdf`), apiHeaders()));
+      if (!problem) pdf.value = target;
+      return problem;
+    } finally {
+      checking.value = false;
+    }
   }
 
   function closePdf(): void {
