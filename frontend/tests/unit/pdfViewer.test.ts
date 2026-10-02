@@ -1,6 +1,7 @@
 // frontend/tests/unit/pdfViewer.test.ts
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  PDF_CHECK_TIMEOUT_MS,
   citedPassages,
   citedPdfTarget,
   focusReturnTarget,
@@ -47,10 +48,13 @@ describe("viewerOwnsEscape", () => {
     expect(viewerOwnsEscape(app({ findBar: { opened: true } }))).toBe(true);
     expect(viewerOwnsEscape(app({ secondaryToolbar: { isOpen: true } }))).toBe(true);
     expect(viewerOwnsEscape(app({ overlayManager: { active: {} } }))).toBe(true);
+    expect(viewerOwnsEscape(app({ pdfViewer: { annotationEditorMode: 3 } }))).toBe(true);
   });
 
   it("아무것도 열려 있지 않거나 앱을 못 읽으면 뷰어를 닫는다", () => {
     expect(viewerOwnsEscape(app())).toBe(false);
+    expect(viewerOwnsEscape(app({ pdfViewer: { annotationEditorMode: 0 } }))).toBe(false);
+    expect(viewerOwnsEscape(app({ pdfViewer: { annotationEditorMode: -1 } }))).toBe(false);
     expect(viewerOwnsEscape(null)).toBe(false);
   });
 });
@@ -110,6 +114,10 @@ describe("focusReturnTarget", () => {
 });
 
 describe("pdfStatus", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("확인 요청의 상태를 돌려주고, 본문은 받지 않게 요청을 끊는다", async () => {
     let seen: RequestInit | undefined;
     const fake = (async (_url: string | URL | Request, init?: RequestInit) => {
@@ -126,5 +134,17 @@ describe("pdfStatus", () => {
       throw new TypeError("Failed to fetch");
     }) as typeof fetch;
     expect(await pdfStatus("/api/books/C1/pdf", {}, fake)).toBeNull();
+  });
+
+  it("응답이 오지 않으면 제한 시간 뒤에 요청을 끊고 null", async () => {
+    vi.useFakeTimers();
+    // 요청이 끊길 때만 끝나는 멈춘 요청
+    const hung = ((_url: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+      })) as typeof fetch;
+    const result = pdfStatus("/api/books/C1/pdf", {}, hung);
+    await vi.advanceTimersByTimeAsync(PDF_CHECK_TIMEOUT_MS);
+    expect(await result).toBeNull();
   });
 });
