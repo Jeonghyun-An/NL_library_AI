@@ -34,7 +34,7 @@ from services.research.state import (
     ResearchState, SubQuestion, merge_params, research_stats, restore_state, snapshot_state,
 )
 from services.research.synthesizer import SynthesisCanceled, synthesize
-from workers.celery_app import celery_app
+from workers.celery_app import CONTROL_SOFT_TIME_LIMIT, CONTROL_TIME_LIMIT, celery_app
 
 log = logging.getLogger(__name__)
 
@@ -707,7 +707,8 @@ async def _run_deep_research(job_id: str) -> dict:
         await engine.dispose()
 
 
-@celery_app.task(name="tasks.reap_stale_research", queue="q_control")
+@celery_app.task(name="tasks.reap_stale_research", queue="q_control",
+                 soft_time_limit=CONTROL_SOFT_TIME_LIMIT, time_limit=CONTROL_TIME_LIMIT)
 def reap_stale_research() -> dict:
     """멈춰버린 리서치를 실패로 떨어뜨린다.
 

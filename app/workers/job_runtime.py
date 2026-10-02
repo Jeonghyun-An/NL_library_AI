@@ -41,7 +41,7 @@ from services.ingestion.stages import (
     StageContext,
     StageError,
 )
-from workers.celery_app import celery_app
+from workers.celery_app import CONTROL_SOFT_TIME_LIMIT, CONTROL_TIME_LIMIT, celery_app
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -348,7 +348,13 @@ def build_item_chain(item_stage: str, item_id: int, run_token: str | None = None
 # ── 디스패처 (beat 30s) ───────────────────────────────────────
 
 
-@celery_app.task(name="tasks.dispatch_job_items")
+# 도중에 끊겨도 안전하다 — 보낸 메시지의 토큰은 루프 끝 commit 전이면 아이템에 없으므로 _skip_reason 이
+# 그 메시지를 멈추고, 아이템 상태도 그대로라 다음 틱이 새 토큰으로 다시 보낸다
+@celery_app.task(
+    name="tasks.dispatch_job_items",
+    soft_time_limit=CONTROL_SOFT_TIME_LIMIT,
+    time_limit=CONTROL_TIME_LIMIT,
+)
 def dispatch_job_items():
     db = SyncSessionLocal()
     summary = {"dispatched": 0, "stale_recovered": 0, "completed_jobs": 0}

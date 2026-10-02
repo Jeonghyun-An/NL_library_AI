@@ -3,6 +3,11 @@ from core.config import get_settings
 
 cfg = get_settings()
 
+# 제어 큐(q_control) 태스크(디스패처·딥리서치 회수)의 시간 제한(초). 제어 워커는 한 칸이라 하나가 붙잡으면
+# 그동안의 디스패치 틱(25초 뒤 만료)이 모두 버려진다 — DB 잠금 대기 같은 멈춤을 끊는다
+CONTROL_SOFT_TIME_LIMIT = 60
+CONTROL_TIME_LIMIT = 90
+
 celery_app = Celery(
     "nl-lib",
     broker=cfg.REDIS_URL,

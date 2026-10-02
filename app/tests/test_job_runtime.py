@@ -1009,10 +1009,10 @@ class TestManualRetryToken:
         assert env.item(1).status == "dispatched"
 
 
-# ── 정리 태스크: 제어 워커를 오래 붙잡지 않는다 ───────────────────────────
-class TestCleanupIsBounded:
-    """cleanup_temp_files 는 제어 워커(celery-control, concurrency 1)에서 디스패치 틱과 같은 큐를 쓴다.
-    틱은 25초 뒤 만료되므로(workers/celery_app.py beat options), Milvus flush 가 응답 없이 붙잡으면
+# ── 제어 큐 태스크(디스패처·정리): 제어 워커를 오래 붙잡지 않는다 ───────────────
+class TestControlTasksAreBounded:
+    """디스패처와 cleanup_temp_files 는 제어 워커(celery-control, concurrency 1)에서 같은 q_control 을 쓴다.
+    틱은 25초 뒤 만료되므로(workers/celery_app.py beat options), 하나가 붙잡으면(예: Milvus flush 가 응답 없이)
     그동안의 틱이 모두 만료돼 디스패치·stale 복구가 멈춘다."""
 
     def _load(self, monkeypatch, flush):
@@ -1023,6 +1023,13 @@ class TestCleanupIsBounded:
         # 다운로드 디렉터리(/app/data/downloads)는 건드리지 않는다 — 컨테이너 안에서 돌려도 지우지 않게
         monkeypatch.setattr(rt, "os", types.SimpleNamespace(path=types.SimpleNamespace(isdir=lambda p: False)))
         return rt
+
+    def test_dispatcher_has_soft_and_hard_time_limits(self, monkeypatch):
+        # 디스패처를 도중에 끊어도 안전하다 — 커밋되지 않은 토큰을 실은 메시지는 _skip_reason 이 멈추고 다음 틱이 다시 보낸다
+        rt = _load_runtime(monkeypatch, [])
+        options = rt.dispatch_job_items.options
+        assert options["name"] == "tasks.dispatch_job_items"
+        assert (options["soft_time_limit"], options["time_limit"]) == (60, 90)
 
     def test_task_has_soft_and_hard_time_limits(self, monkeypatch):
         rt = _load_runtime(monkeypatch, [])
