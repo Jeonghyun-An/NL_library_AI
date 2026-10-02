@@ -5,6 +5,7 @@
 INGEST_EXTRACT_DEADLINE 안에 든다(stale 판정 3600초 아래).
 """
 import asyncio
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import fitz
@@ -56,9 +57,12 @@ def _empty_extraction(**kwargs) -> ExtractionResult:
 def run_extract_with(monkeypatch):
     """extract_text 가 차례로 돌려줄 결과를 받아 run_extract 를 돌린다 → (meta, 호출 기록, 저장된 추출).
 
-    호출 기록은 (force_ocr_short_pages, deadline_s) 다. first_delay 초만큼 첫 추출이 걸린 것으로 한다.
+    호출 기록은 (force_ocr_short_pages, deadline_s) 다. first_delay 초만큼 첫 추출이 걸린 것으로 한다 — stages 의
+    시계를 가짜로 바꿔 그만큼만 흐르게 한다(Windows monotonic 은 15.6ms 단위라 실제 sleep 으로 재면 흔들린다).
     _run.meta_budgets 에 카탈로그 row 보장(PDF 메타 추출)에 넘긴 time_budget 을 쌓는다.
     """
+    clock = SimpleNamespace(now=1000.0)
+    monkeypatch.setattr(stages, "time", SimpleNamespace(monotonic=lambda: clock.now))
     calls: list[tuple[bool, float | None]] = []
     saved: list[ExtractionResult] = []
     meta_budgets: list[float | None] = []
@@ -74,8 +78,8 @@ def run_extract_with(monkeypatch):
             file_path, book_id, *, file_bytes=None, force_ocr_short_pages=False, deadline_s=None
         ):
             calls.append((force_ocr_short_pages, deadline_s))
-            if len(calls) == 1 and first_delay:
-                await asyncio.sleep(first_delay)
+            if len(calls) == 1:
+                clock.now += first_delay
             return queue.pop(0)
 
         def fake_split(pages):
@@ -242,7 +246,7 @@ def test_forced_reextract_gets_time_left_by_first_pass(run_extract_with, monkeyp
     run(_extraction("", short_kept=1), _extraction("VLM 본문"), first_delay=0.2)
     (_, first_deadline), (_, forced_deadline) = calls
     assert first_deadline is None  # 첫 추출은 설정값 그대로
-    assert 99.0 < forced_deadline <= 99.8
+    assert forced_deadline == pytest.approx(100 - 0.2)
 
 
 # ── PDF 메타 추출(카탈로그 row 가 없을 때) — ODL 을 한 번 더 돌리므로 추출 데드라인 안에서 ────────────
@@ -253,7 +257,7 @@ def test_meta_extraction_gets_the_time_left_by_the_extract_deadline(run_extract_
     monkeypatch.setattr(stages.cfg, "INGEST_EXTRACT_DEADLINE", 100)
     run(_extraction("본문"), first_delay=0.2)
     (budget,) = run.meta_budgets
-    assert 99.0 < budget <= 99.8
+    assert budget == pytest.approx(100 - 0.2)
 
 
 def test_meta_extraction_budget_has_the_odl_minimum_as_floor(run_extract_with, monkeypatch):
