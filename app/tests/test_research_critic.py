@@ -522,10 +522,13 @@ class TestCriticScope:
         assert old.partition(" 번호는 근거 목록")[2] == new.partition(" 번호는 근거 목록")[2]
         assert llm_params == current_params
 
-    def test_scope_one_without_a_question_uses_the_current_prompt(self, monkeypatch):
+    def test_scope_one_without_a_question_uses_the_current_prompt(self, monkeypatch, caplog):
         # 원 질문을 넘기지 않는 호출은 지금 기준으로 돈다 — 빈 '원 질문:' 줄을 보내지 않는다
-        _, system, user, llm_params = self._run(monkeypatch, question=None, critic_scope=1)
+        with caplog.at_level(logging.WARNING, logger=critic.log.name):
+            _, system, user, llm_params = self._run(monkeypatch, question=None, critic_scope=1)
         assert (system, user, llm_params) == self._current()
+        # 두 갈래 비교가 조용히 오염되지 않게 남긴다
+        assert any("critic_scope=1 인데 원 질문이 없어" in r.getMessage() for r in caplog.records)
 
     def test_scope_one_reply_goes_through_the_same_parser(self, monkeypatch):
         # 출력 형식이 같으니 무관 제외 규칙도 같다 — 보인 근거를 모두 무관이라 하면 충분이어도 부족으로 읽는다

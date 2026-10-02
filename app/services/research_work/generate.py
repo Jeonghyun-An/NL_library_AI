@@ -69,7 +69,9 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
             attempts.append({"model": model, "outcome": "ok"})
             return GenerationResult(output=output, model=model, attempts=attempts)
         outcome = "parse" if output is None else "check"
-        log.warning("[research_work] %s %s 실패 model=%s", executor.kind, outcome, model)
+        # 진단용 원문 앞부분과 끝난 이유(length 면 잘림)는 로그에만 남긴다 — attempts 는 공개 부록에 실린다
+        log.warning("[research_work] %s %s 실패 model=%s finish=%s 원문=%r", executor.kind, outcome, model,
+                    reply.finish_reason, (reply.content or "")[:200])
         attempts.append({"model": model, "outcome": outcome})
         if switched:
             break

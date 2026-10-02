@@ -549,6 +549,19 @@ def test_base_url_and_model_are_independent(cfg, server, sleeps):
     ]
 
 
+def test_empty_string_is_not_none(cfg, server, sleeps):
+    """설정을 쓰는 것은 None 일 때뿐이다 — `base_url or cfg…` 로 줄이면 VLM_BASE_URL·VLM_MODEL 이 빈 채로
+    배포됐을 때 Qwen 요청이 말없이 gemma 로 간다. 빈 값은 그대로 보내 요청이 드러나게 실패한다."""
+    server.queue.append(_ok())
+
+    asyncio.run(llm_client.chat_full(MESSAGES, model="", base_url="http://x/v1"))
+
+    url, body = server.calls[0]
+    assert url == "http://x/v1/chat/completions" and body["model"] == ""     # 설정값 gemma-test 가 아니다
+    assert llm_client._endpoint("", "") == ("", "")
+    assert llm_client._endpoint("", None) == ("", "gemma-test")
+
+
 def test_retries_stay_on_the_per_call_endpoint(cfg, server, sleeps, caplog):
     server.queue.extend([httpx.Response(503, text="busy"), httpx.ConnectError("연결 거부"), _ok("회복")])
 

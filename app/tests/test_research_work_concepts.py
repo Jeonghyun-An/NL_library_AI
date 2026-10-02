@@ -76,7 +76,7 @@ class TestPrompt:
             used |= meta.find_undeclared_variables(env.parse(body))
         assert used == {"question", "subquestions", "headings"}
         assert tpl.parser == "plain"
-        assert tpl.params == {"max_tokens": 200, "temperature": 0.2}
+        assert tpl.params == {"max_tokens": 400, "temperature": 0.2}
 
     def test_build_renders_the_real_template(self):
         messages, params = EXECUTOR.build(concepts_input(_job()))
@@ -87,7 +87,7 @@ class TestPrompt:
         assert "원 질문: 청소년 독서 격차 연구는 어디까지 왔나" in user
         assert "- 독서 격차의 정의\n- 독서 격차를 줄이는 프로그램" in user
         assert "- 독서 격차의 개념\n- 중재 프로그램의 효과" in user
-        assert params == {"max_tokens": 200, "temperature": 0.2}
+        assert params == {"max_tokens": 400, "temperature": 0.2}
 
     def test_empty_lists_render_as_none(self):
         _, user = (m["content"] for m in EXECUTOR.build(concepts_input(_job(plan=[], report=None)))[0])

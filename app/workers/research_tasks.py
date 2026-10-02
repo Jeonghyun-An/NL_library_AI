@@ -789,5 +789,8 @@ def reap_stale_research() -> dict:
     if reaped_ids:
         unmark_many_sync(list(reaped_ids))
     redispatched = bool(idle) and send_dispatch()
+    if n_gen or redispatched:
+        # 운영 신호 — 디스패치 워커가 죽었거나(회수) 줄이 멈췄다(다시 보냄). 반환값은 Celery 결과에만 남는다
+        log.warning("[research_work] 회수한 생성 n=%d, 디스패치 다시 보냄=%s", n_gen, redispatched)
     return {"jobs": n_jobs, "steps": n_job_steps + len(steps),
             "generations": n_gen, "redispatched": redispatched}

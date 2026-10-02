@@ -1986,9 +1986,9 @@ class TestReaper:
     def test_reaping_a_job_closes_its_running_steps(self, monkeypatch):
         rt = _load_tasks(monkeypatch)
         db = self._SyncSession()
-        monkeypatch.setattr(rt, "SyncSessionLocal", lambda: db)
 
-        out = rt.reap_stale_research()
+        # 대기 줄 빼기·디스패치 보내기도 대역으로 — 그냥 부르면 redis 가 깔린 환경에서 REDIS_URL 로 실제 ZREM 을 보낸다
+        out = self._reap(monkeypatch, rt, db)
 
         job_sql = next(s for s in db.sql if "UPDATE research_jobs" in s)
         # 회수한 잡의 running step 을 같은 문장에서 닫는다
@@ -2040,6 +2040,19 @@ class TestReaper:
         assert "DISPATCH" not in db.events
         assert out["redispatched"] is False
 
+    def test_reaped_generations_and_redispatch_are_logged(self, monkeypatch, caplog):
+        rt = _load_tasks(monkeypatch)
+
+        with caplog.at_level(logging.WARNING, logger=rt.log.name):
+            self._reap(monkeypatch, rt, self._SyncSession(gens=2, idle=True))
+        assert [r.getMessage() for r in caplog.records if "회수한 생성" in r.getMessage()] == [
+            "[research_work] 회수한 생성 n=2, 디스패치 다시 보냄=True"]
+
+        caplog.clear()
+        with caplog.at_level(logging.WARNING, logger=rt.log.name):
+            self._reap(monkeypatch, rt, self._SyncSession(gens=0, idle=False))
+        assert not any("회수한 생성" in r.getMessage() for r in caplog.records)    # 할 일이 없던 틱은 조용하다
+
     def test_broker_down_is_reported_in_the_result(self, monkeypatch):
         rt = _load_tasks(monkeypatch)
         db = self._SyncSession(idle=True)
@@ -2057,7 +2070,8 @@ class TestReaper:
 
         job_sql = db.events[self._at(db, "UPDATE research_jobs")]
         assert "RETURNING id" in job_sql and "array_agg(id::text)" in job_sql
-        assert "NOT IN" not in job_sql
+        # 회수한 id 만, 정확히 한 번 뺀다
+        assert [e for e in db.events if isinstance(e, tuple) and e[0] == "unmark"] == [("unmark", ["j1", "j2"])]
         assert db.events.index("COMMIT") < db.events.index(("unmark", ["j1", "j2"]))
         assert (out["jobs"], out["steps"]) == (2, 3)
 

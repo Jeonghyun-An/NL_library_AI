@@ -5,6 +5,7 @@ LLM 은 부르지 않는다. run_generation 에 넘기는 chat_fn 을 대본대�
 """
 import asyncio
 import json
+import logging
 
 import httpx
 import pytest
@@ -206,6 +207,35 @@ class TestRunGeneration:
         result = _run(chat, kind="outline")
 
         assert chat.models == ["gemma-test", "qwen-test"] and result.model == "qwen-test"
+
+    def test_two_content_failures_then_a_transport_failure_give_the_empty_result(self, cfg):
+        # 주 모델 해석 실패 두 번 → 넘긴 다른 모델이 전송 실패 — 더 묻지 않고 빈 결과로 끝낸다
+        chat = _ScriptedChat({"qwen-test": [NOT_JSON, NOT_JSON], "gemma-test": [httpx.ConnectError("거부")]})
+
+        result = _run(chat)
+
+        assert chat.models == ["qwen-test", "qwen-test", "gemma-test"]
+        assert _outcomes(result) == ["parse", "parse", "transport"]
+        assert result.output == {"empty": True, "q": "질문"} and result.model is None
+
+    def test_transport_error_text_is_capped_at_300(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [httpx.ConnectError("가" * 500)], "gemma-test": [OK]})
+
+        result = _run(chat)
+
+        error = result.attempts[0]["error"]
+        assert error.startswith("ConnectError: 가") and len(error) == 300
+
+    def test_content_failure_log_keeps_the_reply_but_attempts_do_not(self, cfg, caplog):
+        # 함정 15류 실패(개수 베끼기·잘림)를 진단하려면 원문과 끝난 이유가 필요하다 — 공개 부록(attempts)에는 넣지 않는다
+        chat = _ScriptedChat({"qwen-test": [NOT_JSON, OK]})
+
+        with caplog.at_level(logging.WARNING, logger="services.research_work.generate"):
+            result = _run(chat)
+
+        (warned,) = [r.getMessage() for r in caplog.records if "parse 실패" in r.getMessage()]
+        assert "model=qwen-test" in warned and "finish=stop" in warned and NOT_JSON in warned
+        assert result.attempts[0] == {"model": "qwen-test", "outcome": "parse"}
 
     def test_errors_outside_the_transport_propagate(self, cfg):
         """해석·검사·전송 밖의 오류(코드 결함)는 빈 결과로 덮지 않는다 — 디스패처가 failed 로 닫는다."""

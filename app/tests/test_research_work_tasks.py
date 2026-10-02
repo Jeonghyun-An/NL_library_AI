@@ -16,7 +16,6 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 import sqlalchemy as sa
-from sqlalchemy.orm import Session
 
 from history_sqlite import (
     AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
@@ -154,8 +153,8 @@ class TestSendDispatch:
 class _Session(AsyncSessionOverSync):
     """워커의 세션처럼(_job_engine: expire_on_commit=False) 커밋 뒤에도 읽은 값을 들고 있고, async with 로 연다."""
 
-    def __init__(self, engine):  # super().__init__ 은 기본 Session(expire_on_commit=True)을 만든다 — 그 자리만 바꾼다
-        self._session = Session(engine, expire_on_commit=False)
+    def __init__(self, engine):
+        super().__init__(engine, expire_on_commit=False)
 
     async def __aenter__(self):
         return self
@@ -363,6 +362,43 @@ class TestDispatch:
             "gen_id": gid, "gen_kind": "concepts", "target": None, "status": "failed",
             "model": None, "result": None,
         })]
+
+    def test_apply_failure_rolls_back_and_fails_the_generation(self, monkeypatch, wt):
+        """결과 반영(apply_result)이 터지면 반영을 되돌리고 생성을 failed 로 닫는다 — 연구의 칩은 그대로다."""
+        env = _Env(monkeypatch, wt, replies=[GOOD])
+        work_id = env.work(concepts=["사용자 개념"])
+        gid = env.gen(work_id)
+        other = env.gen(env.work())
+
+        async def _broken_apply(db, gen, output):
+            raise RuntimeError("반영 결함")
+
+        monkeypatch.setattr(wt, "apply_result", _broken_apply)
+
+        assert wt.dispatch_research_work() == {"gen_id": gid, "status": "failed"}
+
+        row = env.row(gid)
+        assert (row["status"], row["output"], row["model"]) == ("failed", None, None)
+        assert row["error"] == "RuntimeError: 반영 결함"
+        assert env.work_row(work_id)["concepts"] == ["사용자 개념"]
+        assert env.events == [(work_id, "generation", {
+            "gen_id": gid, "gen_kind": "concepts", "target": None, "status": "failed",
+            "model": None, "result": None,
+        })]
+        assert env.row(other)["status"] == "queued" and env.dispatched == 1
+
+    def test_soft_time_limit_before_picking_is_a_timeout(self, monkeypatch, wt):
+        """집기 전(pick_next 안)에 소프트 리밋이 걸리면 닫을 생성이 없다 — 상태만 알린다."""
+        env = _Env(monkeypatch, wt)
+        gid = env.gen(env.work())
+
+        async def _slow_pick(db):
+            raise _SoftTimeLimitExceeded()
+
+        monkeypatch.setattr(wt, "pick_next", _slow_pick)
+
+        assert wt.dispatch_research_work() == {"status": "timeout"}
+        assert env.row(gid)["status"] == "queued" and env.calls == [] and env.events == []
 
     def test_kind_without_an_executor_fails_without_calling_the_llm(self, monkeypatch, wt):
         env = _Env(monkeypatch, wt)

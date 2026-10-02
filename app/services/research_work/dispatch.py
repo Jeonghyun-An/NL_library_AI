@@ -32,6 +32,8 @@ async def pick_next(db) -> ResearchGeneration | None:
     if running:
         await db.rollback()
         return None
+    # 정렬 키 priority DESC → created_at → id — pick_next·queue_position·ix_research_generations_queued(모델·0007)가
+    # 함께 바뀐다. 한쪽만 바꾸면 화면 순번과 실제로 집는 순서가 어긋난다
     gen_id = (await db.execute(
         select(ResearchGeneration.id)
         .where(ResearchGeneration.status == "queued")
@@ -80,6 +82,8 @@ async def queue_position(db, gen: ResearchGeneration) -> int:
     if gen.status != "queued":
         return 0
     g = ResearchGeneration
+    # 정렬 키 priority DESC → created_at → id — pick_next·queue_position·ix_research_generations_queued(모델·0007)가
+    # 함께 바뀐다
     ahead = await db.scalar(
         select(func.count()).select_from(g).where(
             g.status == "queued",

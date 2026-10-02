@@ -204,11 +204,15 @@ async def critique(
         "min_evidence": params["min_evidence_per_subq"],
         "tried_queries": ", ".join(subq.queries) or "(없음)",
     }
-    if params.get("critic_scope", 0) == 1 and question:
+    # params 는 merge_params·restore_state 를 거친 값이라 키가 늘 있다 — 기본값을 여기서 다시 적지 않는다
+    # (DEFAULT_PARAMS 를 1 로 켜도 대체값이 0 으로 남아 갈래가 조용히 갈리지 않게)
+    if params["critic_scope"] == 1 and question:
         system, user, llm_params = get_prompt("research_critique_question").render(
             question=question, **variables,
         )
     else:
+        if params["critic_scope"] == 1:
+            log.warning("[critic] critic_scope=1 인데 원 질문이 없어 기준 0 으로 판정한다 subq=%s", subq.idx)
         system, user, llm_params = get_prompt("research_critique").render(**variables)
     try:
         raw = await chat(
