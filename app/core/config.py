@@ -8,7 +8,8 @@ from pydantic_settings import BaseSettings
 FORCED_REEXTRACT_FLOOR_SECONDS = 60
 # llm_client 의 호출 하나는 timeout + 연결(≤10초)까지 걸린다 — PDF 메타 LLM 몫에 더한다
 PDF_META_CONNECT_MARGIN_SECONDS = 10
-# ODL_JAVA_MAX_HEAP 의 하한(MB) — 1g 는 무거운 문서 61건 중 1건만 메모리 부족이었다(research/round07-odl-heap)
+# ODL_JAVA_MAX_HEAP 의 하한(MB) — 1g 는 무거운 문서 61건에서 상한 없을 때보다 1건 더 실패했고, 그 아래로는 무거운
+# 문서부터 메모리 부족이 는다(768m·512m 에서 가장 무거운 12건 중 2건, 384m 3건 — research/round07-odl-heap)
 ODL_JAVA_MIN_HEAP_MB = 1024
 
 
@@ -28,8 +29,9 @@ class Settings(BaseSettings):
     def _odl_heap_floor(cls, v: str) -> str:
         if v and int(v[:-1]) * (1024 if v[-1] in "gG" else 1) < ODL_JAVA_MIN_HEAP_MB:
             raise ValueError(
-                f"ODL_JAVA_MAX_HEAP={v} 가 1g({ODL_JAVA_MIN_HEAP_MB}m)보다 작다 — JVM 이 뜨지 않거나 문서 대부분이 "
-                "메모리 부족으로 fitz 텍스트가 된다. 1g 이상이나 빈 값(상한 없음)을 준다"
+                f"ODL_JAVA_MAX_HEAP={v} 가 1g({ODL_JAVA_MIN_HEAP_MB}m)보다 작다 — '3m' 같은 값이면 변환이 모두 실패하고, "
+                "1g 아래로는 무거운 문서부터 메모리 부족으로 fitz 텍스트가 된다. 1g 이상을 준다(상한을 풀려면 "
+                "64g 같은 큰 값 — 운영 compose 는 빈 값을 3g 로 채운다)"
             )
         return v
 
@@ -223,8 +225,8 @@ class Settings(BaseSettings):
     # (운영 서버 251GB 면 하나당 약 63GB) 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 실측(운영 이미지, 2026-10-02):
     # 무거운 문서 61건은 2·3g 에서 상한 없을 때와 추출 결과가 같았고(1g 은 1.6g 가 드는 1건 실패), 일반 688건은 2g 에서
     # 3건만 메모리 부족 — 그중 3g 로 살아나는 건 1건이다. 넘친 문서는 재저장본 재시도 뒤 fitz 텍스트로 간다.
-    # '2gb' 같은 형식 오타나 '3m' 같은 작은 값이면 JVM 이 뜨지 않거나 문서 대부분이 메모리 부족이라 모든 문서가
-    # fitz 텍스트가 된다 — 읽을 때 형식(pattern)과 하한(1g, _odl_heap_floor)을 막는다. 빈 값 = 상한 없음은 앱 설정에서만
+    # '2gb' 같은 형식 오타면 java 가 뜨지 않고 '3m'('3g' 오타)이면 java 는 떠도 변환이 모두 실패해(실측), 어느 쪽이든
+    # 모든 문서가 조용히 fitz 텍스트가 된다 — 읽을 때 형식(pattern)과 하한(1g, _odl_heap_floor)을 막는다. 빈 값 = 상한 없음은 앱 설정에서만
     # 된다: compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 는 빈 스택 env 를 3g 로 채우므로 운영에서 풀려면 64g 같은 큰 값을 준다
     ODL_JAVA_MAX_HEAP: str = Field("3g", pattern=r"^([1-9][0-9]*[mMgG])?$")
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도

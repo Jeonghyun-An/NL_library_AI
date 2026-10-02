@@ -98,8 +98,8 @@ def test_odl_java_max_heap_accepts_only_jvm_sizes(monkeypatch):
         monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
         with pytest.raises(ValidationError):
             Settings(_env_file=None)
-    # 형식은 맞아도 1g 보다 작으면 막는다 — '3m'('3g' 오타)는 JVM 이 뜨지 않고 '512m' 는 무거운 문서가 메모리 부족이라
-    # 형식 오타와 같은 결과(모든·많은 문서가 fitz 텍스트)다. 1g 는 무거운 문서 61건 중 1건만 실패했다(실측)
+    # 형식은 맞아도 1g 보다 작으면 막는다 — '3m'('3g' 오타)이면 java 는 떠도 변환이 모두 실패하고(실측), 1g 아래로는
+    # 무거운 문서부터 메모리 부족이 는다(768m·512m 에서 가장 무거운 12건 중 2건). 1g 는 상한 없을 때보다 61건 중 1건 더 실패
     for value in ("3m", "512m", "1023m"):
         monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
         with pytest.raises(ValidationError, match="1g"):
