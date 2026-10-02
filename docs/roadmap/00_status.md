@@ -1,6 +1,6 @@
 # 현재 상태 · 다음 할 일
 
-최종 갱신: 2026-10-02 (round05a `dev` 머지(`f293e0e`)·운영 배포(`nl-lib-nuxt`) — `main` 머지와 push 는 라운드 종료 승인 뒤 `/round-finish` 에서. round04b·round04c 종료, round07b `dev` 머지, round07 구현·리뷰 마무리·배포 대기, round06 기획 중단)
+최종 갱신: 2026-10-02 (round05a 종료 — `dev` 머지(`f293e0e`)·운영 배포(`nl-lib-nuxt`)·`dev→main` 머지와 `origin` push. 이 `main` 머지에 round07·round07b 도 함께 들어갔다. round04b·round04c 종료, round07b `dev` 머지, round07 구현·리뷰 마무리·배포 대기, round06 기획 중단)
 
 ## 현재 상태
 - NL-Lib 핵심 검색 파이프라인(BGE-M3 하이브리드 검색 · 메타데이터 이중 전략 · Contextual Chunking) 구현·운영 중.
@@ -16,7 +16,7 @@
   - 계기: round04b 운영 검증 잡 "컴퓨팅 자원에 대한 연구가 궁금해"(2026-09-29 10:20) — 6절 27편, 근거 60 중 HPC 32·자원관리 2, 엣지 절에 의료영상 Edge method 처럼 같은 단어·다른 뜻 논문. 같은 질문의 DBpia AI 답변과 비교해 착수했다.
   - **운영 배포 2026-09-30** — 워커 먼저 → fastapi → nuxt → `nginx -s reload`. 배포 뒤 첫 잡 `2a56f8b6-e841-4a3c-88e6-9ccc6e76908b`(같은 질문): 6절, papers 합 30(서로 다른 27), 검토 121·채택 48·제외 91건·재검색 16, started→finished 1분 42초. 수치는 합격선(spec §11-4)이지만 **질 문제가 남았다** — 다음 할 일.
   - 같은 날 사용자 요청 화면 수정 3가지 — 제외 캡션 문구(`a303325`), 딥리서치 배치 자동 전환(보고서 전 B·보고서가 나오면 A, localStorage 기억 폐지 — `2e3d87a`), 예시 질의는 입력창만 채움(`2d8320d`) — 와 로컬 화면을 운영 API 에 붙이는 미리보기 설정(`frontend-prod-api`, `9bba9c4`)도 이 브랜치에 커밋됐다.
-- **round05a — `dev` 머지·운영 배포, `main` 머지 대기** — 논문 상세 재구현(UI 고도화 기능 명세서 03·S6, 사용자 결정 "보던 곳의 위치로까지 그대로" — A안). 상세 주소에 출처(`from=search`·`research`)와 돌아갈 자리(`at`·`y`)를 싣고, [돌아가기]로 보고서의 그 인용칩·검색 결과의 그 카드까지 같은 화면 높이로 복원한다(맞춘 뒤 붙잡기, 자리를 그 기록의 `history.state` 에도 남김). 사이드바는 출처를 따라 강조한다. 03 화면(인용 맥락 배너·관련도는 검색에서만·DeepRead 이름 통일·원문 보기는 늘 원문 뷰어·AI 요약 기준 질문과 탭 캐시·키워드 검색·연관 논문 링크·탭 제목·이 논문으로 딥리서치 초안)과 원문 뷰어(Esc·초점·배경 고정·쪽 표시·인용 대목 넘기기·열기 전 확인 공용화·pdf.js 글꼴 eval 끄기 — CVE-2024-4367). 백엔드 변경 없음. 브랜치 `feat/round05a-paper-detail` 커밋 22개(2026-10-01~02), `dev` 머지 `f293e0e`(2026-10-02, round07b `5fa1a38` 위에 충돌 없이). 테스트: 프론트 vitest 21파일 406 → 28파일 495·typecheck 오류 0·빌드 완료, 백엔드 pytest 890(브랜치)·`dev` 머지 뒤 1369. 교본 `docs/guides/round05a/00-개요.md`. `main` 머지·push 는 라운드 종료 승인 뒤(`/round-finish`) 한다. 상세: `round05a-완료노트.md`.
+- **round05a 종료** — 논문 상세 재구현(UI 고도화 기능 명세서 03·S6, 사용자 결정 "보던 곳의 위치로까지 그대로" — A안). 상세 주소에 출처(`from=search`·`research`)와 돌아갈 자리(`at`·`y`)를 싣고, [돌아가기]로 보고서의 그 인용칩·검색 결과의 그 카드까지 같은 화면 높이로 복원한다(맞춘 뒤 붙잡기, 자리를 그 기록의 `history.state` 에도 남김). 사이드바는 출처를 따라 강조한다. 03 화면(인용 맥락 배너·관련도는 검색에서만·DeepRead 이름 통일·원문 보기는 늘 원문 뷰어·AI 요약 기준 질문과 탭 캐시·키워드 검색·연관 논문 링크·탭 제목·이 논문으로 딥리서치 초안)과 원문 뷰어(Esc·초점·배경 고정·쪽 표시·인용 대목 넘기기·열기 전 확인 공용화·pdf.js 글꼴 eval 끄기 — CVE-2024-4367). 백엔드 변경 없음. 브랜치 `feat/round05a-paper-detail` 커밋 22개(2026-10-01~02), `dev` 머지 `f293e0e`(2026-10-02, round07b `5fa1a38` 위에 충돌 없이). 테스트: 프론트 vitest 21파일 406 → 28파일 495·typecheck 오류 0·빌드 완료, 백엔드 pytest 890(브랜치)·`dev` 머지 뒤 1369. 교본 `docs/guides/round05a/00-개요.md`. `dev→main` 머지와 `origin` push 로 라운드를 닫았다(2026-10-02, 사용자 승인 — dev 에 먼저 들어간 round07·round07b 도 이 머지로 `main` 에 함께 들어갔다). 상세: `round05a-완료노트.md`.
   - **운영 배포 2026-10-02** — 사용자가 `nl-lib-nuxt` 만 Recreate(빌드는 `dev` `f293e0e` 내용, `frontend/public/pdfjs` 가 있는 폴더에서) → 게이트웨이 reload. 백엔드 변경이 없어 fastapi·워커는 대상이 아니다. 같은 이미지로 round07b 화면(`/search-classic`)도 함께 나갔다. 배포 직후 확인: 탭 제목·"검색으로"·DeepRead·이 논문으로 딥리서치 칸, `/search-classic` 200, 원문 뷰어 1/31쪽·Esc·초점·`isEvalSupported=false`·`externalLinkTarget=2`.
   - 보고서 인용칩 왕복(spec §7 ①~④·⑪)은 검증 브라우저에 딥리서치 기록이 없어 화면으로 보지 못했다 — 다음 할 일.
 - **round06 — 기획 중단** — 딥리서치를 논문 에이전트 플랫폼(질문 → 문헌 탐색 → 주제 후보·읽기 목록 → 연구계획서형 초안)으로 넓히는 브레인스토밍. 브랜치 `feat/round06-paper-agent`(dev `138a467` 에서 분기, worktree `.worktrees/round06`). 2026-10-01 기술 구조(설계 ③)와 검증 기준까지 승인된 상태에서 적재 수정(round07)을 먼저 하려고 멈췄다 — 일정(④)이 남았고, spec 은 아직 쓰지 않았다.
@@ -60,6 +60,6 @@
 | round04a | [논문 딥리서치 백엔드](round04a-완료노트.md) · [교본](../guides/round04a/00-개요.md) | 완료 (`main` 머지·push) |
 | round04b | [딥리서치 화면·기록 세션·보고서 작성 대기 화면·Word·PDF 내보내기](round04b-완료노트.md) · [교본](../guides/round04b/00-개요.md) | 완료 (`main` 머지·push) |
 | round04c | [딥리서치 보고서 품질(근거 예산·무관 제외·계획·문체)](round04c-완료노트.md) · [교본](../guides/round04c/00-개요.md) | 완료 (`main` 머지·push) |
-| round05a | [논문 상세 재구현(돌아가기·주소·보던 위치 복원·03 화면·원문 뷰어)](round05a-완료노트.md) · [교본](../guides/round05a/00-개요.md) | dev 머지·운영 배포 (main 머지 대기) |
+| round05a | [논문 상세 재구현(돌아가기·주소·보던 위치 복원·03 화면·원문 뷰어)](round05a-완료노트.md) · [교본](../guides/round05a/00-개요.md) | 완료 (`main` 머지·push) |
 | round06 | 논문 에이전트 플랫폼(딥리서치 → 주제 후보·읽기 목록·계획서 초안) | 기획 중단 (`feat/round06-paper-agent`, 브레인스토밍 ③까지 승인) |
 | round07 | 적재 파이프라인 보강(병목 두 곳·스캔본 라우팅·중복 체인 차단) | 구현·리뷰 마무리, 배포 대기 (`feat/round07-ingest-pipeline-fix`) |

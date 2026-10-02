@@ -6,7 +6,7 @@ spec: `docs/superpowers/specs/2026-10-01-round05a-paper-detail-design.md` (§0~1
 plan: `docs/superpowers/plans/2026-10-01-round05a-paper-detail.md` (Task 1~13)
 교본: `docs/guides/round05a/` ([00-개요](../guides/round05a/00-개요.md))
 
-> `dev` 머지(`f293e0e`)와 운영 배포 뒤에 썼다. `dev→main` 머지와 push 는 아직이다. 라운드 종료 승인 뒤 `/round-finish` 로 한다.
+> `dev` 머지(`f293e0e`)와 운영 배포 뒤에 썼다. 2026-10-02 사용자 승인으로 `/round-finish` 에서 `dev→main` 머지와 `origin` push 를 했다 — dev 에 먼저 들어간 round07·round07b 도 이 머지로 `main` 에 함께 들어갔다.
 > 한 줄 요약: 논문 상세 주소에 **출처와 돌아갈 자리**를 싣고, [돌아가기]를 누르면 **보고서의 그 인용칩·검색 결과의 그 카드가 같은 화면 높이로** 돌아온다. 같은 라운드에서 03 상세 화면 나머지와 원문 뷰어도 고쳤다. 백엔드는 바꾸지 않았다. 보고서 인용칩 왕복은 화면으로 확인하지 못했다(§9 ①).
 
 ---
@@ -161,7 +161,6 @@ spec §7 의 화면 ①~⑪ 가운데 확인한 것은 다음과 같다.
 ## 10. 다음 라운드 진입점
 - **round05a 후속 ①** — 운영에서 보고서 인용칩 왕복부터 확인한다. 어긋나면 `utils/restorePosition.ts`·`composables/useRestorePosition.ts` 와 `pages/research/[id].vue` 의 복원 조건을 본다.
 - **03-1 도서 상세(④)** — 같은 주소 규칙과 복원 도구를 도서 상세에 붙인다.
-- **라운드 종료** — 완료노트와 교본을 갖춘 뒤 `/round-finish` 로 `dev→main` 머지와 `origin` push 를 한다.
 - 다음 nuxt 배포 때는 `frontend/public/pdfjs` 가 있는 폴더에서 빌드한다. 컨테이너별로 Recreate 하고(함정 16번), 끝에 `nginx -s reload` 를 한다(함정 20번).
 
 ---
@@ -172,4 +171,4 @@ spec §7 의 화면 ①~⑪ 가운데 확인한 것은 다음과 같다.
 - [x] 수동 스모크 — 운영 API 에 붙인 로컬 화면 확인과 배포 직후 운영 확인(§4-2·§5). 보고서 인용칩 왕복은 보지 못했다(§9 ①)
 - [x] 문서 갱신 — 완료노트(이 문서)·교본 `docs/guides/round05a/`·`00_status`. 새 함정 없음(§7). spec 상태 줄은 `dev` 머지·운영 배포로 고쳤고, 계획 체크박스는 갱신하지 않았다(§9)
 - [x] `dev` 머지 승인 — 2026-10-02(`f293e0e`)
-- [ ] `dev→main` 머지 + push
+- [x] `dev→main` 머지 + push — 2026-10-02(round07·round07b 포함)
