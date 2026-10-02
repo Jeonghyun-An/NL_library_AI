@@ -163,6 +163,29 @@ def test_request_error_with_empty_message_keeps_exception_name(monkeypatch):
     assert "p.0 OCR(vlm): ReadTimeout" in result.errors
 
 
+def _status_error(code: int) -> httpx.HTTPStatusError:
+    request = httpx.Request("POST", "http://vlm.test/v1/chat/completions")
+    response = httpx.Response(code, request=request, text="rejected")
+    return httpx.HTTPStatusError(f"status {code}", request=request, response=response)
+
+
+@pytest.mark.parametrize("code, rejected", [
+    (400, True), (413, True), (422, True),            # 요청 자체를 받지 않았다 — 같은 쪽은 다시 보내도 같다
+    (408, False), (429, False), (500, False), (503, False),
+])
+def test_rejected_requests_are_counted_apart_from_ocr_errors(monkeypatch, code, rejected):
+    """VLM 이 거절한 요청(4xx, 408·429 제외 — 300 DPI 큰 쪽이 max-model-len 을 넘는 400 등)은 ocr_rejected 로 센다.
+    ocr_errors 에 넣으면 그런 쪽뿐인 섹션 0개 문서가 vlm_error 로 세 번 재시도된다."""
+    async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
+        raise _status_error(code)
+
+    _patch(monkeypatch, 1, fake_vlm)
+    result = _extract(1)
+    assert (result.ocr_rejected, result.ocr_errors) == ((1, 0) if rejected else (0, 1))
+    assert result.errors == [f"p.0 OCR(vlm): HTTPStatusError: status {code}"]
+    assert [p.text for p in result.pages] == ["ODL 대체 0"]
+
+
 def test_deadline_adopts_odl_for_pages_not_done(monkeypatch):
     async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
         if page.number > 0:

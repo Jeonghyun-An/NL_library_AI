@@ -327,7 +327,8 @@ def run_extract(ctx: StageContext) -> dict:
         forced_ocr = False
         if not sections:
             # 첫 추출에서 OCR 요청이 실패했거나 데드라인에 걸렸으면 지금 강제 OCR 을 해도 같은 장애·시간 부족을
-            # 되풀이한다 — 추출부터 재시도(백오프)하도록 넘긴다.
+            # 되풀이한다 — 추출부터 재시도(백오프)하도록 넘긴다. VLM 이 거절한 요청(ocr_rejected)은 다시 보내도
+            # 같으므로 여기서 세지 않는다.
             if extraction.ocr_errors or extraction.deadline_hit:
                 raise StageError(
                     "vlm_error",
@@ -413,6 +414,7 @@ def run_extract(ctx: StageContext) -> dict:
             "vlm_truncated": extraction.vlm_truncated,
             "extract_deadline_hit": extraction.deadline_hit,
             "ocr_errors": extraction.ocr_errors,
+            "ocr_rejected": extraction.ocr_rejected,
             "render_errors": extraction.render_errors,
             "odl_fallback": extraction.odl_fallback,
             "odl_seconds": round(extraction.odl_seconds, 1),

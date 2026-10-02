@@ -153,8 +153,12 @@ class ExtractionResult:
     table_fill_ratios: dict[int, float] = field(default_factory=dict)
     vlm_truncated: int = 0      # finish_reason=length 로 끝난 OCR 쪽 수(꼬리를 걷어 냈거나 퇴화로 버림)
     deadline_hit: bool = False  # 추출 데드라인에 걸려 OCR 을 끝내지 못한 쪽을 ODL 결과로 채택했다
-    # VLM 요청 실패 수(연결·타임아웃·HTTP 오류 등 다시 하면 달라질 수 있는 것) — 퇴화 출력·렌더링 실패는 세지 않는다
+    # VLM 요청 실패 수(연결·타임아웃·408·429·5xx 등 다시 하면 달라질 수 있는 것) — 퇴화 출력·렌더링 실패·
+    # 거절(ocr_rejected)은 세지 않는다
     ocr_errors: int = 0
+    # VLM 이 거절한 OCR 요청 수(HTTP 4xx, 408·429 제외 — 300 DPI 큰 쪽이 max-model-len 을 넘는 400 등).
+    # 같은 쪽은 다시 보내도 같아 ocr_errors(섹션 0개 재시도 판정)에 넣지 않는다
+    ocr_rejected: int = 0
     render_errors: int = 0      # 쪽 이미지 렌더링 실패 수(fitz get_pixmap 예외 — 다시 해도 같다)
     # ODL 본문이 짧은데 '원래 짧은 쪽'으로 ODL 결과를 채택한 쪽 수 — 강제 OCR(force_ocr_short_pages)이
     # 판정을 바꾸는 쪽은 이것뿐이라, 0 이면 섹션 0개 재추출을 해도 결과가 같다
@@ -387,6 +391,14 @@ async def _extract_with_surya(
     )
 
 
+def _is_rejected(e: Exception) -> bool:
+    """VLM 이 요청 자체를 받지 않았다(HTTP 4xx — 408 Request Timeout·429 과부하는 다시 하면 달라질 수 있어 뺀다)."""
+    if not isinstance(e, httpx.HTTPStatusError):
+        return False
+    code = e.response.status_code
+    return 400 <= code < 500 and code not in (408, 429)
+
+
 async def _ocr_pages(
     jobs: list[tuple[fitz.Page, PageResult | None, str]],
     result: ExtractionResult,
@@ -439,7 +451,10 @@ async def _ocr_pages(
                         detail = f"{type(e).__name__}: {e}" if str(e) else type(e).__name__
                         log.error(f"[{book_id}] p.{page_num} OCR({engine}) 실패: {detail}")
                         result.errors.append(f"p.{page_num} OCR({engine}): {detail}")
-                        result.ocr_errors += 1
+                        if _is_rejected(e):
+                            result.ocr_rejected += 1
+                        else:
+                            result.ocr_errors += 1
                     else:
                         if ocr_page.truncated:
                             result.vlm_truncated += 1

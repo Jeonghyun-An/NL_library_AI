@@ -25,6 +25,7 @@ def _extraction(
     render_errors: int = 0,
     odl_fallback: str | None = None,
     odl_seconds: float = 0.0,
+    ocr_rejected: int = 0,
 ):
     res = ExtractionResult(book_id="KCI_T", total_pages=3)
     res.pages = [PageResult(n, text, "opendataloader", 0.95) for n in range(3)]
@@ -35,6 +36,7 @@ def _extraction(
     res.render_errors = render_errors
     res.odl_fallback = odl_fallback
     res.odl_seconds = odl_seconds
+    res.ocr_rejected = ocr_rejected
     return res
 
 
@@ -105,6 +107,24 @@ def test_meta_odl_fields_come_from_the_forced_reextract(run_extract_with):
     meta = run(_extraction("", short_kept=1, odl_fallback="fitz", odl_seconds=40.0),
                _extraction("VLM 본문", odl_seconds=7.06))
     assert (meta["odl_fallback"], meta["odl_seconds"]) == (None, 7.1)
+
+
+def test_meta_reports_rejected_ocr_requests_next_to_ocr_errors(run_extract_with):
+    run, _, _ = run_extract_with
+    meta = run(_extraction("본문", ocr_errors=1, ocr_rejected=3))
+    assert (meta["ocr_errors"], meta["ocr_rejected"]) == (1, 3)
+
+
+@pytest.mark.parametrize("results", [
+    (_extraction("", ocr_rejected=4),),
+    (_extraction("", short_kept=1), _extraction("", ocr_rejected=2)),
+], ids=["first_pass", "forced_reextract"])
+def test_rejected_ocr_alone_ends_as_no_text(run_extract_with, results):
+    """VLM 이 거절한 쪽뿐이면(다시 보내도 같다) 섹션 0개는 vlm_error(재시도)가 아니라 no_text 규칙을 따른다."""
+    run, _, _ = run_extract_with
+    with pytest.raises(StageError) as exc:
+        run(*results)
+    assert exc.value.error_group == "no_text"
 
 
 def test_zero_sections_reextracts_with_forced_ocr(run_extract_with):
