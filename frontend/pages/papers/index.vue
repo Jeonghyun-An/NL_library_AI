@@ -143,7 +143,7 @@
                         <button
                           type="button"
                           class="skx-pai-ref__btn skx-pai-ref__btn--ai"
-                          aria-label="DeepSearch"
+                          aria-label="DeepRead"
                           @click="chatPaperId = ref.book_id"
                         >
                           <img src="/img/ico-chat.svg" alt="" />
@@ -185,7 +185,7 @@
             </div>
             <p v-if="aiText && !aiLoading" class="skx-ai-hint">
               <img src="/img/ico-chat.svg" alt="" />
-              더 깊이 알고 싶은 논문은 <strong>DeepSearch</strong>로 자유롭게
+              더 깊이 알고 싶은 논문은 <strong>DeepRead</strong>로 자유롭게
               질문하며 분석해보세요
             </p>
           </section>
@@ -455,7 +455,7 @@
                     @click.stop="goToDetail(paper, $event, { chat: '1' })"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
-                    DeepSearch
+                    DeepRead
                   </button>
                 </div>
               </article>
@@ -556,7 +556,7 @@
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
           <h2 class="skx-chat-title">
-            DeepSearch<template v-if="chatPaperTitle"
+            DeepRead<template v-if="chatPaperTitle"
               >: {{ chatPaperTitle }}</template
             >
           </h2>

@@ -579,9 +579,7 @@
                     @click="openDetailWithChat(item)"
                   >
                     <img src="/img/ico-chat.svg" alt="" />
-                    <span class="skx-btn-chat__label">{{
-                      mode === "paper" ? "DeepSearch" : "DeepRead"
-                    }}</span>
+                    <span class="skx-btn-chat__label">DeepRead</span>
                   </button>
                   <!-- <button
                     type="button"

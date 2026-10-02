@@ -7,11 +7,11 @@
 
     <div class="skx-result-card">
       <main class="skx-pdetail">
-        <!-- 뒤로가기 -->
-        <button type="button" class="skx-pdetail__back" @click="$router.back()">
+        <!-- 돌아가기 — 직전 화면이 출처면 브라우저 뒤로(그 화면 상태 그대로), 새 탭·연관 논문을 거쳐 왔으면 출처 주소로 간다 -->
+        <a :href="back.to" class="skx-pdetail__back pd-back" @click="onBack">
           <img src="/img/ico-arrow.svg" alt="" />
-          검색 목록 돌아가기
-        </button>
+          {{ back.label }}
+        </a>
 
         <div v-if="loading" style="padding: 40px; text-align: center">
           <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
@@ -128,7 +128,7 @@
                     src="/img/ico-chat.svg"
                     alt=""
                   />
-                  <span class="skx-btn-talk__label">DeepSearch</span>
+                  <span class="skx-btn-talk__label">DeepRead</span>
                 </button>
                 <a
                   v-if="paper.url"
@@ -228,14 +228,18 @@
                   aria-hidden="true"
                 />
               </button>
-              <div class="skx-paccord__body-outer">
+              <!-- 높이만 0 으로 접혀 보이지 않는 키워드 링크에 Tab 초점이 가지 않게 접힌 동안은 inert -->
+              <div class="skx-paccord__body-outer" :inert="!keywordOpen">
                 <div class="skx-paccord__body">
                   <div class="skx-keyword-list">
-                    <span
+                    <!-- 키워드를 누르면 그 키워드로 새 논문 검색을 연다 -->
+                    <NuxtLink
                       v-for="kw in keywords"
                       :key="kw"
-                      class="skx-keyword"
-                      >{{ kw }}</span
+                      :to="{ path: '/papers', query: { q: kw } }"
+                      class="skx-keyword pd-keyword"
+                      :aria-label="`${kw} — 이 키워드로 논문 검색`"
+                      >{{ kw }}</NuxtLink
                     >
                     <span
                       v-if="!keywords.length"
@@ -295,12 +299,11 @@
               >
                 불러오는 중...
               </div>
+              <!-- 카드 전체가 제목 링크다(pd-rel__link::after) — 키보드로도 넘어가고, 연관 논문으로 넘어가도 처음 출처를 잇는다 -->
               <article
                 v-for="rel in relatedItems"
                 :key="rel.book_id"
-                class="skx-prelate-card"
-                style="cursor: pointer"
-                @click="navigateTo(`/papers/${rel.book_id}`)"
+                class="skx-prelate-card pd-rel"
               >
                 <div class="skx-prelate-card__info">
                   <span class="skx-prelate-card__score"
@@ -308,7 +311,11 @@
                   >
                   <div class="skx-prelate-card__title-row">
                     <h3 class="skx-prelate-card__title">
-                      {{ rel.book_info?.title || rel.book_id }}
+                      <NuxtLink
+                        :to="relatedDetailUrl(rel.book_id, source, spot)"
+                        class="pd-rel__link"
+                        >{{ rel.book_info?.title || rel.book_id }}</NuxtLink
+                      >
                     </h3>
                     <p class="skx-prelate-card__author">
                       {{
@@ -366,7 +373,7 @@
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
           <h2 class="skx-chat-title">
-            DeepSearch<template v-if="paper?.title"
+            DeepRead<template v-if="paper?.title"
               >: {{ paper.title }}</template
             >
           </h2>
@@ -407,8 +414,11 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
+import { isPlainClick } from "~/utils/restorePosition";
 
 const route = useRoute();
+const router = useRouter();
 const config = useRuntimeConfig();
 const api = useApi();
 // 페이지를 떠나면 추천 이유·연관 이유 스트림을 끊는다 — 연관 논문마다 동시에 도는 생성이 끝까지 돈다
@@ -418,15 +428,33 @@ onBeforeUnmount(() => pageAbort.abort());
 const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
 const paperId = route.params.id as string;
+// 주소에 실린 출처 — 돌아갈 곳·관련도·AI 요약 기준·인용 배너가 모두 여기서 정해진다(새 탭·새로고침에도).
+// 다른 논문으로 넘어가면 페이지가 새로 마운트되므로 한 번만 읽는다
+const source = readDetailSource(route.query);
+const spot = readReturnSpot(route.query);
+const back = backTarget(source, spot);
 
+// 관련도는 검색 결과에서 온 상세에만 뜻이 있다
 const matchScore = computed(() => {
   const s = route.query.score;
-  return s ? Math.round(Number(s) * 100) : null;
+  return source.kind === "search" && s ? Math.round(Number(s) * 100) : null;
 });
+
+// vue-router 는 직전 기록의 경로를 history.state.back 에 둔다. 직전이 출처면 뒤로 가야 그 화면이 브라우저 기록의
+// 상태를 그대로 쓰고 기록도 한 칸 더 쌓이지 않는다. 새 탭으로 여는 클릭(보조키·가운데 버튼)은 링크에 맡긴다
+function onBack(e: MouseEvent): void {
+  if (!isPlainClick(e)) return;
+  e.preventDefault();
+  const prev = window.history.state?.back;
+  if (shouldGoBack(typeof prev === "string" ? prev : null, back.to)) router.back();
+  else void router.push(back.to);
+}
 
 // Data
 const paper = ref<any>(null);
 const loading = ref(false);
+
+useHead({ title: () => (paper.value?.title ? `${paper.value.title} — 논문` : "논문") });
 
 // Vertical tabs
 const vtabsRef = ref<HTMLElement | null>(null);
@@ -436,7 +464,7 @@ const vtabSliderStyle = ref<{ height: string; transform: string }>({
 });
 const curationTab = ref("ai-summary");
 const curationTabs = [
-  { key: "ai-summary", label: "AI가 분석한 연구 핵심" },
+  { key: "ai-summary", label: "AI 요약" },
   { key: "abstract", label: "초록" },
 ];
 
@@ -674,3 +702,53 @@ onMounted(async () => {
   nextTick(() => updateVtabSlider());
 });
 </script>
+
+<style scoped>
+/* 돌아가기는 링크지만 기존 버튼 모양을 그대로 쓴다 */
+.pd-back {
+  text-decoration: none;
+}
+.pd-back:focus-visible,
+.pd-keyword:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+.pd-keyword {
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.pd-keyword:hover {
+  background: rgba(79, 70, 229, 0.18);
+}
+/* 카드 전체를 제목 링크의 누르는 자리로 덮는다 — 카드에 click 을 걸면 키보드로 갈 수 없다 */
+.pd-rel {
+  position: relative;
+}
+.pd-rel__link {
+  color: inherit;
+  text-decoration: none;
+}
+.pd-rel__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--skx-radius-md);
+}
+.pd-rel__link:focus-visible {
+  outline: none;
+}
+.pd-rel__link:focus-visible::after {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+/* '유사한 점'은 카드에 마우스를 올려야 펼쳐진다(.skx-prelate-card:hover) — 키보드로 카드 링크에 초점이 가도 같이 펼친다 */
+.pd-rel:focus-within .skx-prelate-card__ai {
+  max-height: 12rem;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-keyword {
+    transition: none;
+  }
+}
+</style>
