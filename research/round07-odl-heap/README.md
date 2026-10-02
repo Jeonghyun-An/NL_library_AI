@@ -27,7 +27,8 @@ JVM 기본값(컨테이너가 보는 메모리의 1/4)까지 쓴다. 병리 문�
     xmx1g(`-Xmx1g`, KCI_FI002990049), exitoom(`-Xmx1g -XX:+ExitOnOutOfMemoryError`, KCI_FI002990049),
     typo(`-Xmx2gb`, KCI_FI002029401). BADPDF 는 side.py 가 만드는 깨진 PDF. 결과는 `out/side_<LABEL>.json`
     (`.out` 은 실행 로그 뒤에 같은 JSON 을 찍은 것).
-  - 요약은 `analyze.py`. G1 원본 로그(`gc/*.log`)는 커밋하지 않는다(.gitignore) — 요약은 각 jsonl 레코드에 있다.
+  - 요약은 `analyze.py`(두 실행 비교)와 `summarize_out.py`(아래 표·백분위). G1 원본 로그(`gc/*.log`)는 커밋하지 않는다
+    (.gitignore) — 요약은 각 jsonl 레코드에 있다. `out/tiny_heap.out` 은 `-Xmx3m`·`64m`·`256m` 로 가벼운 문서 하나를 돌린 것.
 
 ## 결과
 
@@ -41,7 +42,8 @@ JVM 기본값(컨테이너가 보는 메모리의 1/4)까지 쓴다. 병리 문�
   끝난다. 상한을 두면 같은 실패가 55초 → 17~21초로 빨리 끝난다.
 - 정상 문서 중 가장 무거운 `KCI_FI002990049`(38쪽)는 1536m 에서 실패, 1664m 에서 성공(`run_bisect.sh`) —
   2g 는 이 문서보다 약 25% 여유, 3g 는 약 85% 여유.
-- 688건(2g): 685 성공. 힙 최고치 중앙값 140MB, p95 586MB, p99 806MB. 메모리 부족 3건을 다시 돌렸다
+- 688건(2g): 685 성공. java RSS 최고치(VmHWM — 힙 사용량 `gc_used` 가 아니다) 중앙값 140MB, p95 586MB, p99 806MB
+  (`summarize_out.py`). 메모리 부족 3건을 다시 돌렸다
   (`out/recheck_*.out`):
 
   | 문서 | 상한 없음 | 3g | 2g |
@@ -59,7 +61,8 @@ JVM 기본값(컨테이너가 보는 메모리의 1/4)까지 쓴다. 병리 문�
 ## round07 에 반영
 
 - `ODL_JAVA_MAX_HEAP`(config·`docker-compose.yml` x-common-env) — `^([1-9][0-9]*[mMgG])?$` 형식이고 1g 이상만 받는다
-  (`3m` 같은 `3g` 오타·`512m` 같은 작은 값도 결과가 형식 오타와 같다 — 1g 는 61건 중 1건만 실패). 빈 값 = 상한
+  (`3m`(`3g` 오타)이면 java 는 떠도 변환이 모두 실패한다 — `out/tiny_heap.out`. 1g 아래로는 무거운 문서부터 메모리
+  부족이 는다 — 768m·512m 에서 가장 무거운 12건 중 2건, 384m 3건. 1g 는 상한 없을 때보다 61건 중 1건 더 실패). 빈 값 = 상한
   없음은 앱 설정에서만 된다 — compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 가 빈 스택 env 를 3g 로 채우므로 운영에서 풀려면
   `64g` 같은 큰 값(운영 서버의 JVM 기본값이 약 63GB)을 준다.
 - `extractor._odl_child_env()` 가 ODL 자식의 환경에만 `JAVA_TOOL_OPTIONS=… -Xmx<값>` 을 붙인다(워커 환경은 그대로).
@@ -68,4 +71,4 @@ JVM 기본값(컨테이너가 보는 메모리의 1/4)까지 쓴다. 병리 문�
 - 확인: `check_round07.py` 를 운영 이미지로 돌려 java 가 `-Xmx2g`/`-Xmx3g` 를 받고 워커 환경은 비어 있음,
   `KCI_FI002803488` 이 2g 에서 fitz·3g 에서 정상(최고 3.2GB)임을 봤다. 함께 돌린 5건 모두 본문에 `&lt;`·`&amp;` 가
   남지 않았다(`<표 1>` 등 — 2.5.9 markdown 이스케이프 되돌리기). `drun.sh` 는 `ODL_JAVA_MAX_HEAP` 을 비우므로 이 확인은
-  `docker run … -e ODL_JAVA_MAX_HEAP=2g … /w/check_round07.py KCI_FI002803488` 처럼 값을 직접 준다.
+  `docker run … -e ODL_JAVA_MAX_HEAP=2g … /w/check_round07.py KCI_FI002803488` 처럼 값을 직접 준다. 결과: `out/check_round07.out`.
