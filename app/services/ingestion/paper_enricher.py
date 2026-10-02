@@ -722,7 +722,8 @@ async def enrich_paper(
 
     sem: 키워드·참고문헌 LLM 폴백과 표 해석이 함께 쓰는 동시 호출 상한. 요약 단계가
     섹션 요약과 같은 세마포어를 넘긴다(단계 하나 = 프로세스 하나의 LLM 상한). 없으면
-    LLM_SECTION_CONCURRENCY 로 새로 만든다. 그림 설명(VLM)은 다른 서버라 세마포어 밖이다.
+    LLM_SECTION_CONCURRENCY 로 새로 만든다. 그림 설명(VLM)은 다른 서버라 이 세마포어 밖이고, 문서 하나에서
+    _FIGURE_VLM_CONCURRENCY(2)건까지만 동시에 보낸다.
     """
     if not full_text:
         return PaperEnrichment()
