@@ -13,8 +13,9 @@
           {{ back.label }}
         </a>
 
-        <!-- 인용 맥락 — 보고서의 인용칩에서 왔을 때 이 논문이 그 보고서에서 어떻게 쓰였는지 보인다 -->
-        <section v-if="cite" class="pd-cite" aria-label="인용 맥락">
+        <!-- 인용 맥락 — 보고서의 인용칩에서 왔을 때 이 논문이 그 보고서에서 어떻게 쓰였는지 보인다.
+             논문을 읽지 못했으면 그리지 않는다 — 빈 화면에 배너만 남아 제목 없는 원문 뷰어를 연다 -->
+        <section v-if="cite && paper" class="pd-cite" aria-label="인용 맥락">
           <div class="pd-cite__row">
             <p class="pd-cite__text">
               딥리서치 보고서 ‘{{ cite.question }}’에서
@@ -814,13 +815,18 @@ async function readSSE(resp: Response, onEvent: (json: any) => void): Promise<bo
 }
 
 onMounted(async () => {
-  // 보고서는 논문과 함께 읽는다 — 보고서에서 온 상세는 AI 요약의 기준 질문이 보고서 질문이다
+  // 보고서는 논문과 함께 읽는다 — 보고서에서 온 상세는 AI 요약의 기준 질문이 보고서 질문이다.
+  // 보고서를 받는 동안도 분석 중으로 둔다 — 큰 보고서를 기다리는 사이 "AI 분석 정보가 없습니다"가 먼저 뜨지 않게
   const research = loadResearch();
+  summaryLoading.value = source.kind === "research";
   await fetchPaper();
   if (route.query.chat === "1") chatOpen.value = true;
   fetchRelated();
   nextTick(() => updateVtabSlider());
-  streamPaperReason(summaryQuestion(source, await research));
+  // loadResearch 는 보고서를 못 읽어도 null 로 끝난다 — 그때는 소개글로 넘어간다. 질문이 정해지면 캐시·스트림·소개글이 바로 이어 받는다
+  const question = summaryQuestion(source, await research);
+  summaryLoading.value = false;
+  streamPaperReason(question);
 });
 </script>
 

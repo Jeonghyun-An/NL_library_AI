@@ -52,10 +52,25 @@ describe("readDetailSource", () => {
     expect(readDetailSource({ from: "research", job: "abc", e: "E3" })).toEqual({ kind: "none" });
   });
 
-  it("from 이 없거나 모르는 값, 기록·검색어가 모두 틀린 검색 출처는 출처 없음이다", () => {
-    expect(readDetailSource({ q: "딥러닝", h: ID1 })).toEqual({ kind: "none" });
+  it("from 이 모르는 값이거나, 기록·검색어가 모두 틀린 검색 출처는 출처 없음이다", () => {
     expect(readDetailSource({ from: "elsewhere", job: ID2 })).toEqual({ kind: "none" });
+    expect(readDetailSource({ from: "elsewhere", q: "딥러닝", h: ID1 })).toEqual({ kind: "none" });
     expect(readDetailSource({ from: "search", h: "../../admin", q: "  " })).toEqual({ kind: "none" });
+  });
+
+  it("from 이 없는 옛 상세 주소(?q=&h=)는 검색 출처로 같은 검사를 거쳐 읽는다", () => {
+    expect(readDetailSource({ q: " 딥러닝 ", h: MIXED })).toEqual({ kind: "search", h: MIXED.toLowerCase(), q: "딥러닝" });
+    expect(readDetailSource({ q: "딥러닝", chat: "1" })).toEqual({ kind: "search", h: null, q: "딥러닝" });
+    expect(readDetailSource({})).toEqual({ kind: "none" });
+    expect(readDetailSource({ chat: "1" })).toEqual({ kind: "none" });
+    expect(readDetailSource({ h: "../../admin", q: "  " })).toEqual({ kind: "none" });
+  });
+
+  it("옛 상세 주소의 [돌아가기]는 홈이 아니라 그 검색 결과로 간다", () => {
+    expect(backTarget(readDetailSource({ q: "nlp", h: ID1 }), NO_SPOT)).toEqual({
+      label: "검색 결과로",
+      to: `/papers?h=${ID1}&q=nlp`,
+    });
   });
 
   it("배열은 첫 값을 쓴다", () => {

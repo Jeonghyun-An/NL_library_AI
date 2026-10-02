@@ -59,7 +59,8 @@ function idOf(v: unknown): string | null {
 
 export function readDetailSource(query: Record<string, unknown>): DetailSource {
   const from = firstValue(query.from);
-  if (from === "search") {
+  // from 을 싣기 전의 상세 주소(?q=&h=)는 검색 결과에서만 만들었다 — 열린 탭·방문 기록·북마크에 남아 있어 검색 출처로 읽는다
+  if (from === "search" || from === undefined) {
     const h = idOf(query.h);
     const q = firstValue(query.q) ?? "";
     return h || q ? { kind: "search", h, q } : { kind: "none" };

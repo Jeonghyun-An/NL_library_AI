@@ -22,6 +22,29 @@ export function pdfJsApp(win: Window | null): PdfJsApp | null {
   return (win as (Window & { PDFViewerApplication?: PdfJsApp }) | null)?.PDFViewerApplication ?? null;
 }
 
+// 뷰어의 설정 객체(PDFViewerApplicationOptions = AppOptions) 중 실행 전에 값을 바꾸는 부분만 적는다
+export interface PdfJsOptions {
+  set(name: string, value: unknown): void;
+}
+
+export function pdfJsOptions(win: Window | null): PdfJsOptions | null {
+  return (win as (Window & { PDFViewerApplicationOptions?: PdfJsOptions }) | null)?.PDFViewerApplicationOptions ?? null;
+}
+
+// pdf.js LinkTarget.BLANK — 링크에 target="_blank"(rel 은 pdf.js 기본 noopener)를 단다
+const LINK_TARGET_BLANK = 2;
+
+// 뷰어가 SKOVIX 와 같은 출처라 PDF 가 스크립트를 돌리면 앱의 저장소·세션에 닿는다. pdf.js 4.2.67 전에는 글꼴 글리프를
+// eval 로 컴파일해 조작한 글꼴이 임의 스크립트를 돌린다(CVE-2024-4367) — eval 을 끄면 같은 글리프를 해석해 그린다.
+// 끼워 넣은 뷰어는 PDF 안의 외부 링크를 _top 으로 열어 SKOVIX 탭을 통째로 떠나므로 새 탭으로 연다.
+// 링크 대상은 사용자 설정(preferences) 항목이라 run() 이 설정의 값(기본 0 → 끼워 넣으면 _top)으로 덮어쓴다 — 설정 읽기를 꺼야 남는다.
+// 이 판의 뷰어는 설정을 쓰지 않고 설정 기본값도 앱 기본값과 같아, 끄더라도 다른 동작은 바뀌지 않는다
+export function hardenPdfViewerOptions(options: PdfJsOptions): void {
+  options.set("isEvalSupported", false);
+  options.set("externalLinkTarget", LINK_TARGET_BLANK);
+  options.set("disablePreferences", true);
+}
+
 // 찾기 막대·보조 도구 줄·pdf.js 대화상자가 열려 있으면 Esc 는 그것부터 닫는다(pdf.js 동작) —
 // 이때 뷰어까지 닫으면 한 번 눌러 둘이 닫힌다. 주석 도구(글상자·펜 등)를 켠 동안에도 Esc 는 편집을 끝내는 키라
 // pdf.js 에 맡긴다 — 그때 뷰어를 닫으려면 ✕ 를 누르거나 도구를 끈다. annotationEditorMode: -1 꺼짐(DISABLE), 0 도구 없음, 0 초과 도구 켜짐

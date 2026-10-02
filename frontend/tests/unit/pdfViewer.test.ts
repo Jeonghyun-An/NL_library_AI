@@ -5,10 +5,13 @@ import {
   citedPassages,
   citedPdfTarget,
   focusReturnTarget,
+  hardenPdfViewerOptions,
   pdfJsApp,
+  pdfJsOptions,
   pdfStatus,
   viewerOwnsEscape,
   type PdfJsApp,
+  type PdfJsOptions,
 } from "~/utils/pdfViewer";
 
 function app(over: Partial<PdfJsApp> = {}): PdfJsApp {
@@ -40,6 +43,37 @@ describe("pdfJsApp", () => {
     expect(pdfJsApp({ PDFViewerApplication: a } as unknown as Window)).toBe(a);
     expect(pdfJsApp({} as Window)).toBeNull();
     expect(pdfJsApp(null)).toBeNull();
+  });
+});
+
+describe("pdfJsOptions", () => {
+  it("iframe 창의 PDFViewerApplicationOptions 를 읽고, 없으면 null", () => {
+    const opts: PdfJsOptions = { set: () => {} };
+    expect(pdfJsOptions({ PDFViewerApplicationOptions: opts } as unknown as Window)).toBe(opts);
+    expect(pdfJsOptions({} as Window)).toBeNull();
+    expect(pdfJsOptions(null)).toBeNull();
+  });
+});
+
+describe("hardenPdfViewerOptions", () => {
+  // AppOptions 처럼 set 으로 받은 값을 이름별로 쥔다
+  function fakeOptions(): PdfJsOptions & { values: Map<string, unknown> } {
+    const values = new Map<string, unknown>();
+    return { values, set: (name, value) => void values.set(name, value) };
+  }
+
+  it("글꼴 eval 을 끄고 외부 링크를 새 탭(LinkTarget.BLANK = 2)으로 연다", () => {
+    const opts = fakeOptions();
+    hardenPdfViewerOptions(opts);
+    expect(opts.values.get("isEvalSupported")).toBe(false);
+    expect(opts.values.get("externalLinkTarget")).toBe(2);
+  });
+
+  it("저장된 설정이 링크 대상을 덮어쓰지 않게 설정 읽기를 끈다", () => {
+    const opts = fakeOptions();
+    hardenPdfViewerOptions(opts);
+    expect(opts.values.get("disablePreferences")).toBe(true);
+    expect([...opts.values.keys()].sort()).toEqual(["disablePreferences", "externalLinkTarget", "isEvalSupported"]);
   });
 });
 

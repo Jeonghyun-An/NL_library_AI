@@ -45,9 +45,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeMount, onBeforeUnmount, onMounted, ref } from "vue";
 import type { PdfPassage } from "~/types/research";
-import { focusReturnTarget, pdfJsApp, viewerOwnsEscape, type PdfJsApp } from "~/utils/pdfViewer";
+import {
+  focusReturnTarget,
+  hardenPdfViewerOptions,
+  pdfJsApp,
+  pdfJsOptions,
+  viewerOwnsEscape,
+  type PdfJsApp,
+} from "~/utils/pdfViewer";
 import { stepChunk } from "~/utils/researchReport";
 
 const props = defineProps<{
@@ -94,6 +101,21 @@ function stepPassage(delta: number): void {
   const target = cited.value[next]?.page;
   if (target) goPage(target);
 }
+
+// pdf.js 는 run() 바로 앞에서 부모 문서에 webviewerloaded 를 보낸다(detail.source = 뷰어 창). 이 듣기에서 바꾼 설정이
+// 그 실행에 쓰인다 — 글꼴 eval 을 끄고 외부 링크를 새 탭으로 연다(hardenPdfViewerOptions). 이벤트는 뷰어 창에서 만든 것이라
+// instanceof CustomEvent 로 가리지 않고 detail 만 읽는다. 이 뷰어의 iframe 이 보낸 것만 받는다
+function onViewerLoaded(e: Event): void {
+  const win = frame.value?.contentWindow ?? null;
+  if (!win || (e as CustomEvent<{ source?: unknown } | null>).detail?.source !== win) return;
+  const options = pdfJsOptions(win);
+  if (options) hardenPdfViewerOptions(options);
+}
+
+// iframe 이 뷰어를 읽기 시작하기 전에 듣는다 — iframe 은 마운트에서 문서에 붙으며 로드를 시작한다
+onBeforeMount(() => {
+  document.addEventListener("webviewerloaded", onViewerLoaded);
+});
 
 // iframe 은 로드마다 새 창이라 듣기도 매번 붙인다
 async function onFrameLoad(): Promise<void> {
@@ -149,6 +171,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener("webviewerloaded", onViewerLoaded);
   document.removeEventListener("keydown", onKeydown);
   lockPage(false);
   // 배경은 그대로 있으니 돌려준 초점 때문에 화면이 움직이지 않게 한다
