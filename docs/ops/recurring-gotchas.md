@@ -230,3 +230,19 @@
     - 퇴화 출력(같은 구절 되풀이 — `vlm_truncated` 로 센다), 쪽 이미지 렌더링 실패(`render_errors`), VLM 이 그 쪽 요청을 HTTP 400·413·422 로 거절한 것(`ocr_rejected` — 쪽 이미지가 `max-model-len` 을 넘는 등, 다시 보내지 않는다)은 `ocr_errors` 로 세지 않는다. 다시 해도 대개 같아서, 그것만으로는 `vlm_error` 로 재시도를 헛돌지 않고 `no_text` 로 간다. 거절 때문에 섹션이 0개이거나 본문이 빈 문서는 `last_error` 에 `거절` 과 그 수가 남는다 — 이것들만 VLM·`FITZ_DPI`·`max-model-len` 을 바꾼 뒤 `reset_stage: "pending"` 으로 다시 보낼 만하고(목록 SQL 은 `bulk_ingest_runbook.md` §9-9), 나머지 `no_text` 는 같은 코드로 다시 해도 같다. 401·403·404 같은 그 밖의 4xx 는 서버 전체 설정 문제라 `ocr_errors` 로 세어 `vlm_error` 로 재시도한다.
   - 옛 코드가 요약 단계에서 '섹션 없음'으로 실패시킨 아이템은 자동 재시도 때 체크포인트를 `pending` 으로 되돌려 추출부터 한다. 이미 시도 한도를 다 쓴 아이템은 배포 뒤 `reset_stage: "pending"` 으로 추출부터 다시 돌린다(`bulk_ingest_runbook.md` §9-8).
 - **재발 방지**: 서로 다른 추출기로 교차검증할 땐 둘이 같은 것을 세는지(머리말·꼬리말·스탬프를 누가 지우는지, 누가 아예 못 보는지)부터 맞춘다. 표지와 스캔 쪽처럼 쪽 하나로는 가를 수 없는 판정은 문서 단위 신호로 한다. 섹션 0개처럼 같은 입력에 같은 결과가 나오는 실패는 재시도할 그룹과 나눠, 재시도가 같은 일을 되풀이하며 한도를 태우지 않게 한다. 남은 pending 의 2005년 이전 발행분(표본 6.3%)에서 같은 제작 방식의 학술지가 또 나올 수 있다(수백 건 추정 — 회귀 하네스에서도 2004년 이전 200건 중 10건, 2005년 이후 200건 중 3건이 옛 규칙으로 OCR 0쪽인 스캔본이었다). 카나리의 `scan_no_sections` 범주와 `/failures` 의 `no_text` 로 본다.
+
+## 22. 개발 PC 의 opendataloader-pdf 와 운영 버전이 다르면 markdown 글자가 다르다 — 2.5.1 부터 `& < >` 를 HTML 이스케이프한다
+
+- **날짜**: 2026-10-02 (round07)
+- **증상**: round07 의 ODL 관찰·판정 근거는 개발 PC 의 2.5.0 으로 냈는데 운영이 적재해 온 버전은 2.5.9 였다(`docker exec nl-lib-celery-cpu pip show opendataloader-pdf`). 같은 문서 45건을 두 버전으로 돌리면 쪽 수·표 충전율·OCR 판정은 같았지만 본문이 같은 문서는 26건뿐이었다 — 차이의 대부분은 2.5.9 의 markdown 이 본문 `<표 1>`·`R&D` 를 `&lt;표 1&gt;`·`R&amp;D` 로 낸 것이다. 그 글자가 섹션·청크·임베딩·요약 입력에 그대로 들어가고, 이스케이프하지 않는 json 의 머리말 문자열과 markdown 줄이 어긋나 `&`·`<` 가 든 머리말이 지워지지 않았다.
+- **원인**: opendataloader-pdf 2.5.1(#637)이 `MarkdownGenerator.getCorrectMarkdownString` 에서 `&`·`<`·`>` 셋을 바꾸게 했다(2.5.9 jar 의 상수 `&amp;`·`&lt;`·`&gt;`, 2.5.0 에는 없음). json 출력은 바꾸지 않는다. 개발 PC 의 `.venv` 는 2.4.3, round07 관찰은 2.5.0 이라 개발 중에는 드러나지 않았다.
+- **해결 (round07)**: `requirements.txt` 를 `opendataloader-pdf==2.5.9` 로 고정하고(fe1be0c), 쪽 구분자로 나눈 뒤 쪽마다 이 셋만 한 번에 되돌린다(`extractor._unescape_odl_markdown` — ODL 이 `&` 를 모두 바꾸므로 정확한 역변환). 되돌리기는 조건 없이 돌아 이스케이프하지 않는 버전이면 원문 `&amp;` 를 잘못 풀므로, 고정값이 바뀌면 테스트(`test_restoring_assumes_the_pinned_odl_version`)가 깨져 이스케이프를 다시 확인하게 했다. 이미 적재된 분은 섞인 채 둔다. 근거: `research/round07-odl-259-recheck/README.md`(45건 비교 두 번, jar 상수, 원본 markdown 의 엔티티 수).
+- **재발 방지**: 파서·변환기 같은 외부 엔진은 운영 이미지의 버전(`pip show`)부터 확인하고 그 버전으로 관찰한다. 버전을 올릴 때는 같은 문서 표본을 두 버전으로 돌려 쪽 수·판정만이 아니라 본문 글자까지 비교한다.
+
+## 23. 컨테이너에 메모리 상한이 없으면 JVM 기본 힙은 호스트 메모리의 1/4 다 — 문서 하나가 수십 GB 를 쓸 수 있다
+
+- **날짜**: 2026-10-02 (round07)
+- **증상**: ODL(java) 로 변환하던 병리 문서 하나가 몇 초 만에 8GB 를 넘겼고, 개발 PC(42GB)에서는 10.5GB 에서 메모리 부족으로 끝났다. 운영 서버는 RAM 251GB 라 같은 문서가 java 하나로 약 63GB 까지 쓸 수 있고, `celery-cpu` 는 변환을 4칸 동시에 돌린다.
+- **원인**: compose 에 `mem_limit` 이 없으면 컨테이너는 호스트 메모리를 그대로 보고, Java 17 은 `-Xmx` 가 없으면 최대 힙을 그 1/4 로 잡는다. opendataloader-pdf 는 `java -jar` 를 `-Xmx` 없이 띄운다.
+- **해결 (round07)**: `ODL_JAVA_MAX_HEAP`(기본 `3g`, 1g 이상만) — ODL 자식의 환경에만 `JAVA_TOOL_OPTIONS=-Xmx<값>` 을 붙인다(`extractor._odl_child_env`). 운영 이미지 실측(`research/round07-odl-heap`): 무거운 문서 61건은 2·3g 에서 추출 결과가 상한 없을 때와 같았고, 일반 688건 가운데 3g 로도 넘치는 건 2건(fitz 텍스트로 간다). 형식이 틀리거나(`2gb`) 너무 작으면(`3m`) JVM 이 안 뜨거나 대부분 메모리 부족이라 모든 문서가 조용히 fitz 텍스트가 되므로 설정을 읽을 때 막는다. compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 는 빈 스택 env 도 3g 로 채운다 — 상한을 풀려면 `64g` 같은 큰 값을 준다.
+- **재발 방지**: 컨테이너 안에서 JVM·대형 모델 같은 메모리를 크게 쓰는 하위 프로세스를 띄우면 상한을 명시한다. 기본값은 "호스트 크기에 비례"라 개발 PC 에서 잰 값이 운영에서는 몇 배가 된다.

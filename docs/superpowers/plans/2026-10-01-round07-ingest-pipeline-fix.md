@@ -2558,7 +2558,7 @@ git commit -m "[Fix] round07 — stale 판정을 실행 중(meta.stage_running �
 
 #### 조각 D 머리말 (Task 공통 메모·근거)
 
-> **실행 메모(2026-10-02, opendataloader-pdf 버전):** 아래 실제 PDF 관찰과 Task 5 의 ODL 근거는 이 PC 의 opendataloader-pdf 2.5.0 으로 돌린 것이다. 운영이 적재해 온 버전은 2.5.9 라(사용자가 `docker exec nl-lib-celery-cpu pip show opendataloader-pdf` 로 확인) `app/requirements.txt` 를 2.5.9 로 고정했다(fe1be0c). round07 의 ODL 동작(`image_output=off`·json 의 그림 요소로 빈 쪽 남기기·`convert` 호출 방식)은 2.5.9 에서 다시 확인하는 중이다.
+> **실행 메모(2026-10-02, opendataloader-pdf 버전):** 아래 실제 PDF 관찰과 Task 5 의 ODL 근거는 이 PC 의 opendataloader-pdf 2.5.0 으로 돌린 것이다. 운영이 적재해 온 버전은 2.5.9 라(사용자가 `docker exec nl-lib-celery-cpu pip show opendataloader-pdf` 로 확인) `app/requirements.txt` 를 2.5.9 로 고정했다(fe1be0c). round07 의 ODL 동작(`image_output=off`·json 의 그림 요소로 빈 쪽 남기기·`convert` 호출 방식)은 2.5.9 에서 다시 확인했다(2026-10-02, `research/round07-odl-259-recheck`). 표본 45건(실패 블록·2005년 이전·앞쪽 짧은 쪽·디지털 본문·이름 붙은 사례·`<br>` 격자)을 이 PC 에서 두 버전으로 돌려 쪽 수·표 충전율·OCR 로 보낸 쪽·오류를 비교했다. 1차(1f4954b — 이스케이프 되돌리기 전)는 넷 모두 45건 같고 본문이 같은 문서는 26건이었다 — 본문 차이는 대부분 2.5.1+(#637)의 markdown HTML 이스케이프(`&lt; &gt; &amp;`, 123쪽)였다. 2차(405eaf5 — 되돌리기 399ee25·힙 상한 3g 뒤)는 쪽 수·충전율·OCR 판정 45건 같고 본문이 같은 문서가 35건(남은 차이는 목록 기호·공백 1~2글자), 오류가 다른 1건은 병리 문서가 시간 초과 대신 힙 상한으로 일찍 끝난 것이다(둘 다 fitz 텍스트). 운영 이미지(Linux, OpenJDK 17)로도 45건이 Windows 2.5.9 결과와 같았고 killpg·SIGALRM·tini 가 java 를 거뒀다.
 
 ##### 계획 조각 D — Task 3·4·5·11 (추출: 짧은 쪽 라우팅·`<br>`·VLM 잘림·페이지 병렬·추출 데드라인·섹션 0·ODL 타임아웃·이미지 끄기·실제 PDF 회귀)
 

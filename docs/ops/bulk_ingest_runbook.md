@@ -200,7 +200,7 @@ docker exec nl-lib-redis redis-cli LLEN q_llm      # 0 이면 q_llm 에 남은 �
 
 ## 9. round07 배포 — 적재 파이프라인 보강 (2026-10)
 
-round07(spec `docs/superpowers/specs/2026-10-01-round07-ingest-pipeline-fix-design.md`)은 앱 이미지와 compose 를 함께 바꾼다. `x-common-env` 에 새 설정 11개를 선언하고 추출 stale 판정 기본값을 14400 → 3600초로 줄이며, 제어 큐 `q_control` 은 새 워커 `celery-control`(동시 1, GPU 없음)이 받고 `celery-cpu` 는 `q_cpu` 만 받는다. `x-common-env` 를 물고 있는 앱 서비스가 전부 재생성되므로 적재를 비운 뒤 한 번에 한다(§8, 함정 16번). 아래 명령은 서버의 같은 셸에서 이어 쓴다 — `JOB` 은 본 잡 `kci-full-236k` 이고 `CANARY` 는 9-6 에서 정한다. 셸을 새로 열었으면 `JOB=1ca22f59-1e50-4dd1-81f5-2d3c79126825` 와 `CANARY=$(cat /data/nl-lib/data/round07/canary_job_id.txt)` 를 다시 넣는다.
+round07(spec `docs/superpowers/specs/2026-10-01-round07-ingest-pipeline-fix-design.md`)은 앱 이미지와 compose 를 함께 바꾼다. `x-common-env` 에 새 설정 12개를 선언하고 추출 stale 판정 기본값을 14400 → 3600초로 줄이며, 제어 큐 `q_control` 은 새 워커 `celery-control`(동시 1, GPU 없음)이 받고 `celery-cpu` 는 `q_cpu` 만 받는다. `x-common-env` 를 물고 있는 앱 서비스가 전부 재생성되므로 적재를 비운 뒤 한 번에 한다(§8, 함정 16번). 아래 명령은 서버의 같은 셸에서 이어 쓴다 — `JOB` 은 본 잡 `kci-full-236k` 이고 `CANARY` 는 9-6 에서 정한다. 셸을 새로 열었으면 `JOB=1ca22f59-1e50-4dd1-81f5-2d3c79126825` 와 `CANARY=$(cat /data/nl-lib/data/round07/canary_job_id.txt)` 를 다시 넣는다.
 
 **배포 규칙**
 
@@ -243,7 +243,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 
 운영 스택은 `:latest` 를 쓴다(함정 3번). Portainer 에 pull 을 맡기지 않는다(함정 12번) — pull 만으로는 아무것도 재시작되지 않는다. round07 은 화면을 고치지 않으므로 nuxt 이미지는 그대로다.
 
-> **opendataloader-pdf 2.5.9 비교 전에는 카나리(9-6)를 시작하지 않는다.** round07 의 ODL 관찰과 구현 근거는 개발 PC 의 2.5.0 으로 냈고, 이미지는 운영이 적재해 온 2.5.9 로 고정했다. 같은 문서를 2.5.9 로 돌린 비교(계획 `docs/superpowers/plans/2026-10-01-round07-ingest-pipeline-fix.md` 조각 D 머리말 실행 메모에 기록)가 2.5.0 과 같은 쪽·같은 OCR 판정을 보인 뒤에 간다.
+> **opendataloader-pdf 2.5.9 비교 — 끝났다(2026-10-02, 카나리를 시작해도 된다).** round07 의 ODL 관찰과 구현 근거는 개발 PC 의 2.5.0 으로 냈고, 이미지는 운영이 적재해 온 2.5.9 로 고정했다. 같은 문서 45건을 두 버전으로 돌린 비교에서 쪽 수·표 충전율·OCR 판정이 모두 같았다 — markdown HTML 이스케이프 되돌리기(399ee25)와 힙 상한 뒤 코드(405eaf5)로 다시 돌려도 같다. 기록: `research/round07-odl-259-recheck/README.md`, 계획 `docs/superpowers/plans/2026-10-01-round07-ingest-pipeline-fix.md` 조각 D 머리말 실행 메모. ODL 버전을 바꾸는 배포라면 같은 비교를 다시 하고 시작한다(함정 22번).
 
 ```bash
 # 개발 PC — 리뷰를 마친 round07 커밋에서(.worktrees/round07). 빌드한 커밋을 적어 둔다
@@ -284,7 +284,7 @@ mkdir -p /data/nl-lib/data/round07                                             #
   - 주석만 바뀐 곳(안 옮겨도 동작은 같다): `gemma` 의 `--max-num-seqs` 위, `celery-llm` 머리.
 - 스택 env(Environment variables)를 본다. `INGEST_STAGE_TIMEOUT_EXTRACT` 가 있으면 지운다 — 있으면 새 기본값 대신 그 값이 들어간다. `MILVUS_RECREATE_ON_MISMATCH` 는 없거나 `false` 여야 한다 — 재생성되는 fastapi 가 기동하며 바로 `ensure_collection()` 을 부른다(9-5).
 - **"Re-pull image" 토글을 끄고** Update the stack 을 누른다(함정 12번). 500 이 나면 다시 누르기 전에 `docker ps -a --format '{{.Names}}\t{{.CreatedAt}}'` 로 무엇이 바뀌었는지부터 본다.
-- 업데이트 뒤 앱 컨테이너가 재시작을 되풀이하면(`docker ps` 의 `Restarting`) 먼저 `docker logs --tail 50 nl-lib-celery-cpu` 에서 설정 검증 오류를 본다. 설정을 읽을 때 세 가지를 검사한다 — `ODL_IMAGE_OUTPUT` 은 `off`·`embedded`·`external` 만 받고(오타면 예전에는 문서가 모두 fitz 텍스트로 조용히 떨어졌다), `ODL_JAVA_MAX_HEAP` 은 `3g`·`1536m` 같은 `-Xmx` 크기나 빈 값(상한 없음)만 받으며(`2gb` 같은 오타면 java 가 뜨지 않아 문서가 모두 fitz 텍스트가 된다 — `research/round07-odl-heap`), `INGEST_EXTRACT_DEADLINE + 60 < INGEST_STAGE_TIMEOUT_EXTRACT` 여야 한다(위 배포 규칙). 어기면 앱이 뜨지 않는다.
+- 업데이트 뒤 앱 컨테이너가 재시작을 되풀이하면(`docker ps` 의 `Restarting`) 먼저 `docker logs --tail 50 nl-lib-celery-cpu` 에서 설정 검증 오류를 본다. 설정을 읽을 때 세 가지를 검사한다 — `ODL_IMAGE_OUTPUT` 은 `off`·`embedded`·`external` 만 받고(오타면 예전에는 문서가 모두 fitz 텍스트로 조용히 떨어졌다), `ODL_JAVA_MAX_HEAP` 은 `3g`·`1536m` 같은 1g 이상의 `-Xmx` 크기만 받으며(`2gb` 같은 오타면 java 가 뜨지 않고 `3m`·`512m` 같은 작은 값이면 문서 대부분이 메모리 부족이라, 어느 쪽이든 문서가 모두 fitz 텍스트가 된다 — `research/round07-odl-heap`. 빈 값 = 상한 없음은 앱 설정에서만 된다: compose 의 `:-` 가 빈 스택 env 를 `3g` 로 채우므로 운영에서 상한을 풀려면 `64g` 같은 큰 값을 준다), `INGEST_EXTRACT_DEADLINE + 60 < INGEST_STAGE_TIMEOUT_EXTRACT` 여야 한다(위 배포 규칙). 어기면 앱이 뜨지 않는다.
 
 ```bash
 docker ps --format '{{.Names}}\t{{.Status}}' | grep nl-lib-celery              # nl-lib-celery-control 이 Up
@@ -540,14 +540,17 @@ docker logs nl-lib-celery-cpu 2>&1 | grep -c 'fitz 재저장본으로 한 번 �
 docker logs nl-lib-celery-cpu 2>&1 | grep -cE 'ODL 실패\([0-9]+초 초과\)'      # 그중 타임아웃
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'ODL 실패 — fitz 텍스트'          # 재저장본도 실패해 fitz 텍스트로 대신한 문서
 docker logs nl-lib-celery-cpu 2>&1 | grep 'fitz 재저장본으로 한 번 더' | head  # 사유 — 'ODL 실패(…)' 괄호 안
-docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OutOfMemoryError'               # 힙 상한(ODL_JAVA_MAX_HEAP)에 걸린 시도 — 688건 실측으로 3g 면 문서 0.3% 안팎
+docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OutOfMemoryError'               # 힙 상한(ODL_JAVA_MAX_HEAP)에 걸린 문서 — 688건 실측으로 3g 면 0.3% 안팎
 docker exec nl-lib-celery-cpu printenv ODL_IMAGE_OUTPUT ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_JAVA_MAX_HEAP   # off / 10.0 / 1.5 / 3g
+docker exec -w /app nl-lib-celery-cpu python -c "from services.ingestion.extractor import _odl_child_env; print(_odl_child_env()['JAVA_TOOL_OPTIONS'])"   # -Xmx3g — java 가 실제로 받는 값
+docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT count(*) FILTER (WHERE s.full_text ~ '&(amp|lt|gt);') AS escaped, count(*) AS sections FROM book_sections s JOIN ingest_job_items i ON i.book_id = s.book_id WHERE i.job_id = '$CANARY' AND i.status = 'done'"   # escaped 는 0 이거나 아주 적다
 ```
 
 - 둘째 SQL 은 시도 한 번이 상한의 몇 배를 썼는지다(`meta.pages` 는 추출이 연 쪽수). 상한 식은 기본값(10·1.5)으로 썼다 — 스택 env 로 바꿨으면 SQL 의 두 수도 바꾼다. 시도의 상한은 추출 데드라인이 짧게 남았을 때(대개 강제 재추출) 이 식보다 작을 수 있다 — 실제로 쓴 상한은 `초 / 상한` 줄에 찍힌다. 재저장본까지 간 문서는 두 시도를 더한 시간이라 뺐다(그런 문서는 위 타임아웃 줄로 본다). 표 5개 이상(`tables_5plus`)은 카나리 실행이 센 표 수다.
 - 정상이면 `odl_fallback` 이 있는 문서는 0~1% 다(검토 때 개발 PC 186건 중 1건). 기본값을 10초·쪽당 1.5초로 올린 까닭(사용자 결정 2026-10-02): Task 5 리뷰가 개발 PC(24스레드)에서 재 보니 37쪽 표 많은 문서(KCI_FI001930485)가 혼자 12초, 4건 동시 28초, 8건 동시 47초가 걸렸다 — 쪽당 0.5초(상한 18.5초)면 `celery-cpu` 4칸이 함께 변환할 때 넘어 재저장본 재시도 뒤 fitz 텍스트로 떨어진다. 쪽당 1.5초(상한 55.5초)면 4건 동시 0.51, 8건 동시 0.84 다. 기본 10초는 JVM 기동 몫이다.
 - ODL 자식은 상한 + 5초에 SIGALRM 으로 java 까지 스스로 끈다 — 풀 자식이 먼저 끊겨도 ODL 이 끝없이 돌지 않고, 끈 java 는 `init: true`(tini)가 거둔다.
-- 멈춤: `odl_fallback` 이 `fitz` 인 문서가 과반이다 — ODL 자식 프로세스가 깨진 것이다. 위 사유를 본다. 표 많은 문서의 `ratio_max` 가 0.8 을 넘거나 타임아웃(`ODL 실패(N초 초과)`) 줄이 있으면, 본 잡을 재개하기 전에 스택 env 의 `ODL_TIMEOUT_PER_PAGE_SECONDS`(필요하면 `ODL_TIMEOUT_BASE_SECONDS` 도)를 올린다 — 둘 다 compose 에 선언돼 있다.
+- java 힙 상한(`ODL_JAVA_MAX_HEAP`, 기본 3g): `OutOfMemoryError` 줄은 상한에 걸린 문서다(원본에서 걸리면 재저장본도 대개 걸려 fitz 텍스트로 간다 — 사유 줄은 원본 실패 때만 찍혀 대개 문서마다 한 줄, 섹션 0개 강제 재추출이 돌면 한 줄 더). `printenv` 는 설정값만 보이므로 위 `_odl_child_env` 줄로 java 가 받는 `-Xmx` 를 본다. `escaped` 는 opendataloader-pdf 2.5.9 의 markdown 이스케이프(`&amp;`·`&lt;`·`&gt;`)가 되돌려졌는지다 — 새 이미지라면 0 이거나 원문에 그 글자가 그대로 있던 몇 섹션뿐이고, 많으면 옛 이미지가 돈 것이다.
+- 멈춤: `odl_fallback` 이 `fitz` 인 문서가 과반이다 — ODL 자식 프로세스가 깨진 것이다. 위 사유를 본다. 표 많은 문서의 `ratio_max` 가 0.8 을 넘거나 타임아웃(`ODL 실패(N초 초과)`) 줄이 있으면, 본 잡을 재개하기 전에 스택 env 의 `ODL_TIMEOUT_PER_PAGE_SECONDS`(필요하면 `ODL_TIMEOUT_BASE_SECONDS` 도)를 올린다 — 둘 다 compose 에 선언돼 있다. `OutOfMemoryError` 문서가 카나리 `done` 의 1% 를 넘으면, 본 잡을 재개하기 전에 스택 env 의 `ODL_JAVA_MAX_HEAP` 을 올린다(4g~6g — 4칸 × (값 + 0.3GB)가 서버 가용 메모리 안에 들게. 빈 값은 compose 가 3g 로 채우므로 상한을 풀려면 `64g`).
 
 ⑪ 논문 보강이 요약 단계에서 됐는가.
 
