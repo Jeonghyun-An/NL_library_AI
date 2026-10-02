@@ -247,7 +247,7 @@
 ### 6-3. 작업 큐·LLM
 
 - **큐:** 새 모듈 `app/workers/research_work_tasks.py` 를 `celery_app` 의 `include` 와 `task_routes` 둘 다에 등록한다. 큐는 설정값(`cfg.RESEARCH_PLAN_QUEUE`)이 아니라 **문자열 `"q_research_plan"` 으로 고정**한다(`task_routes` 와 `@celery_app.task(queue=…)` 둘 다). 회수기가 도는 celery-control·celery-beat 는 `RESEARCH_PLAN_QUEUE` env 를 받지 않아 설정값이면 `q_llm`(적재 워커)으로 떨어진다. `q_research_plan` 은 GPU 없음, 동시 2. compose 는 바꾸지 않는다.
-- **생성 디스패처 — 전체에서 한 번에 1건:** 생성 1건 = Celery 메시지 1개. `q_research_plan` 의 두 자리 중 하나는 늘 딥리서치 계획(`tasks.plan_deep_research`)에 남긴다 — 생성이 두 자리를 채우면 새 딥리서치의 '계획 세우는 중'이 생성 1건 길이(최대 약 5분)만큼 밀려 D15 를 깬다.
+- **생성 디스패처 — 전체에서 한 번에 1건:** 생성 1건 = Celery 메시지 1개. `q_research_plan` 의 두 자리 중 하나는 늘 딥리서치 계획(`tasks.plan_deep_research`)에 남긴다 — 생성이 두 자리를 채우면 새 딥리서치의 '계획 세우는 중'이 생성 1건 길이(최대 약 16~18분 — 호출 3회 × (300초 + 연결 10초) + 30초 = asyncio 데드라인 960초, Celery 하드 리밋 1080초)만큼 밀려 D15 를 깬다.
   - 생성을 넣는 API 는 늘 디스패치 태스크를 보낸다. 디스패치 태스크는 전역 advisory lock 안에서 running 생성 수를 세고, 1건 이상이면 아무것도 집지 않고 끝난다. 0건이면 모든 연구의 queued 생성 가운데 우선순위(사용자가 누른 생성 > 배경 특징 추출) → 오래된 순으로 1건을 `FOR UPDATE SKIP LOCKED` 로 집어 running 으로 바꾸고 실행한다. 부분 유니크 인덱스 `(work_id) WHERE status='running'` 은 이중 안전장치로 둔다.
   - 하나가 끝나면 queued 가 남았을 때(어느 연구든) 디스패치 태스크를 다시 보낸다. 생성 사이에 계획 요청은 남은 한 자리로 바로 돈다.
   - 처리량이 1건으로 묶이므로 동시에 여러 사람이 생성을 누르면 줄을 선다 — 대기 순번으로 보인다(아래).
@@ -255,7 +255,7 @@
 - **시간 한도:** 비스트리밍 호출은 timeout 300초를 명시한다. kind 별 asyncio 데드라인 = 최대 호출 수 × (호출 timeout + 연결 10초) + 여유, Celery soft/hard limit 은 그보다 크게 둔다(함정 19). 기존 회수 태스크 `tasks.reap_stale_research`(q_control, 기존 beat 일정)를 넓혀, running 이 hard limit + 60초를 넘은 생성을 failed 로 두고, queued 가 남았는데 running 이 없으면 디스패치 태스크를 `"q_research_plan"` 으로 다시 보낸다.
 - **입력 만드는 곳:** 임베딩·리랭커·Milvus 가 필요한 입력(개념 소속, 목차의 묶음 배정, 절의 원문 대목 고르기)은 생성을 넣는 FastAPI 가 만들어 `research_generations.input` 에 담는다. 워커는 DB 텍스트 조회와 LLM 호출만 한다.
 - **동시 실행 제한(딥리서치):** 기준은 잡의 `created_by`(브라우저 ID)다 — 요청 헤더에 기대지 않고, NULL 이면 제한하지 않는다. approve 와 retry 가 함께 쓰는 `_to_run_queue` 안에서, `created_by` 해시로 `pg_advisory_xact_lock` 을 늘 잡은 뒤 같은 브라우저의 approved·queued·running 잡을 센다(승인 안 하고 둔 계획은 세지 않는다). 있으면 429 `{code: "browser_active", job_id}`.
-- **대기 순번(딥리서치):** research_jobs 에 승인 시각 칼럼이 없으므로 Redis ZSET `research:run_queue`(member = job id, score = 넣은 시각)를 쓴다. approve·retry 가 큐에 넣을 때 더하고, 워커가 잡을 집을 때·취소·종료 때 뺀다. 순번 = running 잡 수 + ZSET 에서 내 앞 원소 수. ZSET 에 없으면(Redis 재기동) `created_at` 순으로 근사한다. 기다리는 잡의 스트림은 기존 15초 하트비트 때 순번을 다시 세어 바뀌었을 때만 `queue` 이벤트(ahead, eta_sec)를 보낸다. 예상 시간 = 최근 완료분 소요 시간 중앙값 × 순번.
+- **대기 순번(딥리서치):** research_jobs 에 승인 시각 칼럼이 없으므로 Redis ZSET `research:run_queue`(member = job id, score = 넣은 시각)를 쓴다. approve·retry 가 큐에 넣을 때 더하고, 워커가 잡을 집을 때·취소·종료 때 뺀다. 순번 = running 잡 수 + ZSET 에서 내 점수보다 앞선 원소 가운데 DB 상태가 지금 approved·queued 인 잡 수(빼기가 Redis 실패를 삼켜 끝난 잡이 줄에 남아도 순번이 밀리지 않게 읽을 때 거른다 — 지우지는 않는다). 다시 줄에 선 잡은 넣은 시각을 새로 쓴다(NX 아님). ZSET 에 없으면(Redis 재기동) `created_at` 순으로 근사한다. 기다리는 잡의 스트림은 기존 15초 하트비트 때 순번을 다시 세어 바뀌었을 때만 `queue` 이벤트(ahead, eta_sec)를 보낸다. 예상 시간 = 최근 완료분 소요 시간 중앙값 × 순번.
 - **대기 순번(생성):** 디스패처가 전역 한 줄이므로 DB 로 센다 — 내 앞의 queued 생성 수(우선순위 → 오래된 순) + running 1건. 예상 시간 = kind 별 최근 완료분 소요 시간 중앙값의 합. 다른 연구의 생성이 앞에 있으면 "다른 연구 작업 진행 중"을 함께 보인다.
 - **모델 라우팅(코드 상수 `WORK_MODEL_ROUTES`):** 핵심 개념·주제 카드·자식 카드·특징 추출 → Qwen(`VLM_BASE_URL`/`VLM_MODEL`, dev 의 config 에 이미 있다), 목차·절·문단 → gemma(`LLM_BASE_URL`/`LLM_MODEL`). 계획·critic·종합은 지금처럼 gemma. `llm_client` 의 `chat_full`(round07 — 재시도 포함)과 `chat_stream`(재시도 없음)에 호출별 `base_url`·`model` 을 더한다. 스트리밍 절의 연결 실패·5xx 넘김은 첫 델타 전에만 호출부가 한다.
 - **Qwen 자리:** round07 로 OCR 이 8석을 다 쓰게 맞춰졌다(celery-cpu 4 × VLM 페이지 동시 2 = max-num-seqs 8). 스캔본이 몰리는 적재 구간에는 Qwen 생성이 vLLM 대기열에서 기다리고, 300초 timeout 뒤 gemma 로 넘어간다. round06 쪽 상한(생성 전역 1건)은 자리를 보장하지 않는다.
@@ -263,6 +263,7 @@
 ### 6-4. 실시간 이벤트
 
 - `GET /api/research/{id}/work/stream` — 채널 `research:work:{id}`, 접속 직후 `snapshot`, 15초 `: ping`. 기존 `relay.py` 패턴을 따른다.
+  - **06b 넘김(06a 최종 리뷰):** 06a 의 연구 SSE 는 하트비트 때 DB 를 다시 읽지 않고, 회수기가 오래 running 인 생성을 failed 로 바꿀 때 연구 채널에 알리지 않는다. 하드 리밋으로 디스패치 자식 프로세스가 죽거나 `celery-research-plan` 이 Recreate 되면 그 생성은 이벤트 없이 failed 가 되고, snapshot 을 읽은 뒤 구독이 붙기 전에 나간 done 이벤트도 다시 받을 길이 없다 — 화면은 새로고침 전까지 '진행 중'에 멈춘다. 06b 의 연구 화면 Task 가 하트비트 재동기화를 더한다: `stream_research` 처럼 하트비트마다 짧은 세션(`AsyncSessionLocal` — 요청 세션은 핸들러가 반환하면 닫힌다)을 열어 열린 생성(queued·running)의 (id, status) 집합을 읽고, 화면이 마지막으로 받은 값과 다르면 snapshot 을 다시 보낸다. 회수된 행이 열린 집합에서 빠져 15초 안에 드러나고 구독 전에 놓친 이벤트도 함께 풀린다. 회수기 publish(RETURNING 결과를 커밋 뒤 동기 Redis 로, 실패는 삼킴)는 지연만 줄이는 선택 사항이다.
 - 이벤트: `generation`(kind·target·status·순번 — done 을 받으면 프론트가 해당 GET 을 다시 읽는다: concepts → `work`·`grid`, topic_card·refine → `topics`, facet → `reading`, outline·section·paragraph → `proposal`), `topic`(카드 도착), `facet`(논문 특징 도착), `grid`(칸 숫자), `section_delta`(문장 조각), `section_done`(검증 결과), `work`(phase·progress). 되살리기·넓히기·연관은 동기 응답으로 돌아오므로 SSE 가 필요 없다.
 - 프론트는 순수 리듀서 `utils/workEvents.ts` 로 상태를 만든다(Vitest 대상).
 - 탐색 중 근거 장부는 기존 연구 SSE 의 `critique` 이벤트(`adopted_papers`·`excluded_papers`)와 재접속 때 `steps[].result.rounds` 로 그린다. 대기 순번은 기존 연구 SSE 의 새 `queue` 이벤트다.
@@ -281,7 +282,7 @@
 | `services/llm_client.py` | `chat_full`·`chat_stream` 호출별 `base_url`·`model` | 06a |
 | `workers/celery_app.py` | 새 모듈 `include`·`task_routes`(큐 문자열 고정) | 06a |
 | `main.py` | 새 라우터 등록 한 줄, 새 모델 import | 06a |
-| `infra/backup/pg_backup.sh` | 별도 파일 `daily/research_<ts>.dump`(`-t 'research_*' -t history_items`). 셸 glob 은 그 호출만 `set -f … set +f` 로 막는다(prune 은 glob 이 필요하다). prune 보다 앞에 두고, 앞 덤프가 실패해도 돌게 `dump … \|\| rc=1` 로 모은 뒤 끝에서 rc 로 끝낸다. prune 에 `research_*.dump` 를 `KEEP_DAILY` 로 지우는 줄, 머리 주석 복원 예시에 `-t research_works` 한 줄. `paper_facets`(다시 만들 수 있는 캐시)는 주간 전체 덤프에 맡긴다 | 06a |
+| `infra/backup/pg_backup.sh` | 별도 파일 `daily/research_<ts>.dump`(`-t 'research_*' -t history_items`). `dump` 가 받을 파일을 첫 인자로, pg_dump 인자를 `"$@"` 로 받고 패턴은 따옴표째 넘겨 셸 glob 으로 풀리지 않게 한다(prune 은 glob 이 필요하다). prune 보다 앞에 두고, 앞 덤프가 실패해도 돌게 `dump … \|\| rc=1` 로 모은 뒤 끝에서 rc 로 끝낸다(그렇게 부르면 함수 안에서 `set -e` 가 꺼져 mv 실패도 직접 FAIL·return 1). prune 에 `research_*.dump` 를 `KEEP_DAILY` 로 지우는 줄. 머리 주석의 복원 예시: 연구만 되돌릴 때는 `history_items` 를 뺀 `pg_restore -L` 목록·`--single-transaction`(통째로 풀면 모든 브라우저의 사이드바 기록이 덤프 시점으로 돌아간다), 복원 뒤 approved·queued 잡을 failed 로 정리, 한 테이블은 빈 DB(`nl_lib_restore_check`)에 `-t research_works` 로 풀고 `dropdb`. `paper_facets`(다시 만들 수 있는 캐시)는 주간 전체 덤프에 맡긴다 | 06a |
 
 ### 6-6. 프론트 구조
 

@@ -33,7 +33,7 @@
 | 인용 | `build_citation` 의 학술지 = `series_title`(publisher 로 물러나지 않음) | 4 |
 | LLM 호출별 모델 | `chat_full`·`chat`·`chat_stream(…, base_url=None, model=None)` | 5 |
 | 실행 제한 | `_to_run_queue(db, jid, *, expect, created_by, **values)`, 429 detail `{code: "browser_active"\|"shared_queue", message, job_id?}` | 6 |
-| 대기 순번 | `app/services/research/run_queue.py`(`RUN_QUEUE_KEY="research:run_queue"`, `mark_waiting`·`unmark`·`rank_of`·`unmark_many_sync`·`waiting_ahead`·`eta_seconds`(= ahead × 중앙값)·`median_seconds`), GET·승인·재시도 응답과 snapshot 의 `queue: {ahead, eta_sec} \| null`, SSE `{kind: "queue", ahead, eta_sec}` | 7 |
+| 대기 순번 | `app/services/research/run_queue.py`(`RUN_QUEUE_KEY="research:run_queue"`, `mark_waiting`(NX 아님 — 다시 줄에 선 잡은 넣은 시각을 새로 쓴다)·`unmark`·`members_ahead`(내 점수 미만의 앞 원소 — API 가 그중 DB 상태가 approved·queued 인 잡만 센다. Task 7 리뷰 반영 `b401939` 가 `rank_of` 를 바꿨다)·`unmark_many_sync`·`waiting_ahead`·`eta_seconds`(= ahead × 중앙값)·`median_seconds`), GET·승인·재시도 응답과 snapshot 의 `queue: {ahead, eta_sec} \| null`, SSE `{kind: "queue", ahead, eta_sec}` | 7 |
 | 생성 서비스 | `app/services/research_work/`: `routing.WORK_MODEL_ROUTES`·`endpoint`·`other`, `generate.Executor`·`run_generation`(최대 3회·넘김 규칙)·`CALL_TIMEOUT=300`, `concepts.clean_concepts`·`concepts_input`·`EXECUTOR`, `executors.EXECUTORS`, 프롬프트 `research_concepts.yaml` | 8 |
 | 디스패처 | `dispatch.pick_next`·`finish`·`has_queued`·`queue_position`(`GEN_LOCK`), `apply.apply_result`, 워커 `tasks.dispatch_research_work`(큐 문자열 `q_research_plan` 고정, `send_dispatch()`), relay `work_channel`·`publish_work`·`subscribe_work`, 이벤트 `generation`: `{gen_id, gen_kind, target, status, model, result}` | 9 |
 | 회수 | `reap_stale_research` 가 오래 running 인 생성을 failed 로, 줄이 남았으면 디스패치 다시 보내기, 회수한 잡을 대기 줄에서 빼기 | 10 |
@@ -10389,7 +10389,7 @@ spec D14·§6-5 백업 줄, 계약 §14. 지금 `infra/backup/pg_backup.sh` 는 
 - **실패 모으기:** 지금은 `set -eu` 라 첫 덤프가 실패하면 그 자리에서 끝나 뒤 덤프·정리가 돌지 않는다. 덤프마다 `|| rc=1` 로 모으고 정리까지 돈 뒤 `exit "$rc"` 로 끝낸다.
 - **정리:** `research_*.dump` 도 `KEEP_DAILY`(기본 14)개만 남긴다. research 덤프는 정리보다 앞에서 받는다.
 - **복원 예시(머리 주석):** 연구 테이블은 외래 키로 묶여 있다(`research_steps`·`research_works` → `research_jobs`, 새 테이블 다섯 → `research_works`). 운영 DB 에 `pg_restore --clean -t research_works` 처럼 한 테이블만 되돌리면 그 테이블을 가리키는 다른 연구 테이블 때문에 `DROP TABLE` 이 막힌다. 그래서 예시는 연구 덤프를 통째로 되돌리는 줄과, 한 테이블(`-t research_works`)만 빈 DB 에 풀어 꺼내 보는 줄로 쓴다(spec 의 "`-t research_works` 한 줄"을 실제로 도는 형태로). 통째로 되돌리는 줄은 `research_*`·`history_items` 를 DROP 하고 다시 만들므로, 그 앞에 이 테이블들에 쓰는 컨테이너(`nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`·`nl-lib-celery-control` — 회수기가 `research_jobs`·`research_steps`·`research_generations` 에 쓴다)를 먼저 멈추고 끝나면 다시 올리라고 적는다.
-- **호스트 설치는 이 task 에서 하지 않는다** — Task 17 배포 절차 ⑤(`sudo install -m 755 infra/backup/pg_backup.sh /usr/local/bin/nl-lib-pg-backup` 뒤 1회 실행)다. 이 task 의 어떤 단계도 운영 DB 에 닿지 않는다(가짜 `docker` 로만 돈다).
+- **호스트 설치는 이 task 에서 하지 않는다** — Task 17 Step 10(root 셸에서 `install -m 755 … /usr/local/bin/nl-lib-pg-backup` 뒤 1회 실행 — 이 서버는 sudo 가 아니라 `su - root` 다)이다. 이 task 의 어떤 단계도 운영 DB 에 닿지 않는다(가짜 `docker` 로만 돈다).
 
 **Files:**
 - Modify: `infra/backup/pg_backup.sh` (124c481 기준 머리 주석 8-11·21-24행, `dump` 40-52행, 덤프 호출 54-59행, 정리 호출 74-75행)
@@ -12333,7 +12333,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add docs/roa
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 마지막 줄 `1728 passed, 1 skipped, 2 warnings, 3 errors` — 실패 0. Task 0 기준선 1369 에 task 마다 더한 백엔드 테스트 수(각 task 의 전체 검증 단계에 적힌 수와 리뷰 반영으로 더한 수)를 더한 값이다.
+Expected: 마지막 줄 `1755 passed, 1 skipped, 2 warnings, 3 errors` — 실패 0. Task 0 기준선 1369 에 task 마다 더한 백엔드 테스트 수(각 task 의 전체 검증 단계에 적힌 수와 리뷰 반영으로 더한 수)를 더한 값이다.
 
 | Task | 더한 백엔드 테스트 | 내역 |
 |---|---|---|
@@ -12350,9 +12350,10 @@ Expected: 마지막 줄 `1728 passed, 1 skipped, 2 warnings, 3 errors` — 실�
 | 11 | 76 | API 60 · 순수 함수 16 |
 | 12 | 10 | history repository·API |
 | 15 | 20 | `test_research_eval.py` |
+| 최종 리뷰 반영 | 27 | 딥리서치 API 3 · 연구 API 3 · 모델·테스트 DB 3 · llm_client 1 · generate 3 · 디스패치 태스크 2 · 회수기 1 · `test_research_eval.py` 11 |
 | 13·14·16·17 | 0 | 프론트·셸 스크립트·1회성 `research/`·문서 |
 
-합계 1369 + 359 = 1728. 계획 전체(Task 0~17)를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)에서는 리뷰 반영분 없이 `1717 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했고, 실행 브랜치에서는 Task 7 리뷰 반영 `b401939` 가 11개를 더해 `1728 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했다(2026-10-03). Task 2 의 state·critic 은 새 테스트 수로 8·8 이다(Task 2 의 '실패 이유' 9·7 은 고친 기존 테스트 하나와 이미 통과하는 가드 하나를 넣어 센 실패 수다). 다르면 어느 task 의 테스트가 빠졌거나 늘었는지 task 별 '통과 확인' 명령으로 다시 센다 — 위 표는 계획을 합칠 때 각 task 의 전체 검증 단계 수(`이 작업은 N개를 더한다`·`전체 수치 + N passed`)로 다시 맞춘다. `3 errors` 는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 실패하는 기존 파일 셋(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)이다.
+합계 1369 + 386 = 1755. 계획 전체(Task 0~17)를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)에서는 리뷰 반영분 없이 `1717 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했고, 실행 브랜치에서는 Task 7 리뷰 반영 `b401939` 가 11개를 더해 `1728 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했고(2026-10-03), 그 뒤 최종 리뷰 반영이 27개를 더해 `1755 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했다(2026-10-03). Task 2 의 state·critic 은 새 테스트 수로 8·8 이다(Task 2 의 '실패 이유' 9·7 은 고친 기존 테스트 하나와 이미 통과하는 가드 하나를 넣어 센 실패 수다). 다르면 어느 task 의 테스트가 빠졌거나 늘었는지 task 별 '통과 확인' 명령으로 다시 센다 — 위 표는 계획을 합칠 때 각 task 의 전체 검증 단계 수(`이 작업은 N개를 더한다`·`전체 수치 + N passed`)로 다시 맞춘다. `3 errors` 는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 실패하는 기존 파일 셋(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)이다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && python research/round06-qwen-check/smoke_check.py && sh -n infra/backup/pg_backup.sh && echo "pg_backup syntax ok"`
 
@@ -12360,7 +12361,7 @@ Expected: `smoke OK`, `pg_backup syntax ok`
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/frontend && npx nuxi typecheck && npx vitest run && npm run build`
 
-Expected: typecheck 오류 0. vitest 는 `Test Files  28 passed (28)` / `Tests  510 passed (510)` — 기준선 28 파일·495 에 Task 4 의 새 테스트 1(`reportDocument.test.ts`)과 Task 13 의 새 테스트 14(researchErrors 4·researchEvents 10)를 더한 값이다(새 테스트 파일 없음 — Task 4 의 `tests/fixtures/citation_reference.json` 은 테스트 파일이 아니다). build 는 오류 없이 끝나고 `.output/server/index.mjs` 가 생긴다.
+Expected: typecheck 오류 0. vitest 는 `Test Files  28 passed (28)` / `Tests  511 passed (511)` — 기준선 28 파일·495 에 Task 4 의 새 테스트 1(`reportDocument.test.ts`)과 Task 13 의 새 테스트 14(researchErrors 4·researchEvents 10), 최종 리뷰 반영의 researchEvents 1 을 더한 값이다(새 테스트 파일 없음 — Task 4 의 `tests/fixtures/citation_reference.json` 은 테스트 파일이 아니다). build 는 오류 없이 끝나고 `.output/server/index.mjs` 가 생긴다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git diff --stat feat/round06-paper-agent -- docker-compose.yml && git log feat/round06-paper-agent..HEAD --format=%B | grep -ciE "Co-Authored-By|Generated with Claude Code"`
 
@@ -12368,9 +12369,11 @@ Expected: `git diff --stat` 는 아무것도 찍지 않는다(compose 무변경 
 
 - [ ] **Step 4: 최종 리뷰·배포 요청**
 
-정적 리뷰(`.claude/agents/code-reviewer.md`)와 자가 점검을 마친 뒤, 사용자에게 아래 Step 5~15 로 배포·판정을 요청한다. 리뷰를 마친 커밋을 적어 둔다(`git rev-parse --short HEAD`). dev 머지는 배포·판정 뒤 사용자 승인으로 한다(GIT_WORKFLOW.md). 그때 `docs/roadmap/00_status.md` 충돌(덩어리 4개)은 Step 1 끝의 규칙대로 푼다 — 3행은 dev 쪽 줄에 06a 구절을 넣고, 나머지 셋은 round06 줄만 이 브랜치 쪽·나머지는 dev 쪽.
+정적 리뷰(`.claude/agents/code-reviewer.md`)와 자가 점검을 마친 뒤, 사용자에게 아래 Step 5~15 로 배포·판정을 요청한다. 리뷰를 마친 커밋을 적어 둔다(`git rev-parse --short HEAD`). dev 머지는 배포·판정 뒤 사용자 승인으로 한다(GIT_WORKFLOW.md). 그때 `docs/roadmap/00_status.md` 충돌(덩어리 4개)은 Step 1 끝의 규칙대로 푼다 — 3행은 dev 쪽 줄에 06a 구절을 넣고, 나머지 셋은 round06 줄만 이 브랜치 쪽·나머지는 dev 쪽. 이 규칙은 2026-10-03 한 번의 `merge-tree` 결과에 기댄다 — 그 사이 dev 에 다른 라운드가 들어왔을 수 있으니 머지 직전에 `git merge-tree --write-tree HEAD dev` 로 충돌 파일이 `docs/roadmap/00_status.md` 하나뿐인지 다시 본다(다른 파일이 나오면 머지를 멈추고 그 충돌을 사용자와 정한다).
 
 - [ ] **Step 5: (사용자, 서버) 전제 확인**
+
+**서버 명령은 처음부터 root 셸(`su - root`)에서 한다** — 이 서버는 `sudo` 가 아니라 `su - root` 로 root 셸을 열고, 일반 계정 셸에서는 `/data/nl-lib/data` 아래에 쓰다가 Permission denied 가 났다(round07 배포 2026-10-02, dev 의 `bulk_ingest_runbook.md` §9 머리말). 그래서 아래 명령에는 `sudo` 가 없다. 셸을 바꾸면 `pg`·`pgq`·`OLD`·`NEW`·`NEW_NUXT`·`API`·`SID` 를 다시 정의한다.
 
 06a 이미지는 dev(round07 포함) 위에서 빌드된다. round07 이 운영에 나가 있어야 `q_control` 을 받는 `celery-control` 이 따로 있고, 적재 워커를 건드리지 않고 회수기만 바꿀 수 있다. 서버의 같은 셸에서 이어 쓴다 — 아래에서 정한 셸 함수·변수(`pg`·`pgq`·`OLD`·`NEW`·`API`·`SID` 등)를 다음 단계가 쓴다.
 
@@ -12392,15 +12395,22 @@ done                                                                            
 
 운영 스택은 `:latest` 를 쓴다(함정 3번 — `build_dev_images.sh` 의 기본 태그는 `:dev` 라 이미지 이름을 넘긴다). nuxt 이미지는 `frontend/public/pdfjs`(gitignore — 새 worktree 에 없다)가 있는 폴더에서 빌드해야 원문 뷰어가 들어간다(round05a 완료노트 §7 ②).
 
+**빌드 전에 dev(= 운영에 나간 코드)에 06a 에 없는 코드 커밋이 있는지 본다.** 06a 브랜치 HEAD 로 `:latest` 를 빌드해 `nl-lib-celery-control`(적재 디스패처 `dispatch_job_items`·`job_runtime` 도 돈다)·`fastapi`·`celery-research`·`nuxt` 를 Recreate 하므로, 그 사이 병렬 세션(round07 운영 후속·06d 등)이 dev 에 머지·배포한 수정이 있으면 이 이미지가 그것을 말없이 되돌린다. 2026-10-03 에는 `HEAD..dev` 가 문서 커밋 셋(`ce8a404`·`4bee96e`·`acd372e`)뿐이었다.
+
 ```bash
 # 개발 PC — 리뷰를 마친 06a 커밋에서
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a
-git rev-parse --short HEAD
+git fetch origin 2>/dev/null
+git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh          # 비어 있어야 한다
+git log --oneline HEAD..origin/dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh   # 비어 있어야 한다
+git rev-parse HEAD                                                                    # 빌드한 커밋 — 완료노트에 적는다
 cp -r C:/Users/LANDSOFT/mygit/NL_library_AI/frontend/public/pdfjs frontend/public/
 ls frontend/public/pdfjs/web/viewer.html                                              # 있어야 한다
 NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
 NL_LIB_NUXT_IMAGE=landsoftdocker/nl-lib-nuxt:latest bash scripts/build_dev_images.sh nuxt
 ```
+
+두 `git log` 가운데 하나라도 비어 있지 않으면 빌드하지 않는다 — dev 를 06a 에 머지하고(`git merge dev` — `docs/roadmap/00_status.md` 충돌은 Step 1 끝의 규칙으로 푼다), Step 3 의 전체 검증을 다시 돌린 뒤 위 확인부터 다시 하고 빌드한다. 빌드한 커밋(`git rev-parse HEAD`)은 완료노트에 적는다.
 
 ```bash
 # 서버 — 지금 이미지를 되돌리기용 태그로 남기고 새 이미지를 받는다(Portainer 에 pull 을 맡기지 않는다 — 함정 12번)
@@ -12413,7 +12423,7 @@ NEW_NUXT=$(docker image inspect --format '{{.Id}}' landsoftdocker/nl-lib-nuxt:la
 mkdir -p /data/nl-lib/data/round06a /data/nl-lib/data/research_eval /data/nl-lib/data/round06-qwen-check
 ```
 
-개발 PC 의 `infra/backup/pg_backup.sh` 를 서버 `/data/nl-lib/data/round06a/`, `scripts/research_eval/` 의 파일(`questions.json`·`run_pair.py`·`make_labels.py`·`score.py`·`mark_example.py`)을 `/data/nl-lib/data/research_eval/`, `research/round06-qwen-check/` 의 `check.py`·`topic_card_draft.yaml` 을 `/data/nl-lib/data/round06-qwen-check/` 로 옮긴다(scp 등 평소 쓰는 방법 — `scripts/`·`research/`·`infra/` 는 앱 이미지에 없다, 함정 4번). 컨테이너 안에서는 `/app/data/…` 다.
+개발 PC 의 `infra/backup/pg_backup.sh` 를 서버 `/data/nl-lib/data/round06a/`, `scripts/research_eval/` 의 파일(`questions.json`·`run_pair.py`·`make_labels.py`·`score.py`·`mark_example.py`)을 `/data/nl-lib/data/research_eval/`, `research/round06-qwen-check/` 의 `check.py`·`topic_card_draft.yaml` 을 `/data/nl-lib/data/round06-qwen-check/` 로 옮긴다(scp 등 평소 쓰는 방법 — `scripts/`·`research/`·`infra/` 는 앱 이미지에 없다, 함정 4번). 위 `mkdir` 로 만든 폴더는 root 소유라 일반 계정 scp 는 Permission denied 다 — 일반 계정 홈으로 받은 뒤 root 셸에서 `cp` 로 옮긴다. 컨테이너 안에서는 `/app/data/…` 다.
 
 - [ ] **Step 7: (사용자, 서버) 비었는지 확인**
 
@@ -12444,12 +12454,12 @@ for c in nl-lib-celery-research nl-lib-celery-research-plan nl-lib-celery-contro
   [ "$(docker inspect --format '{{.Image}}' $c)" = "$NEW" ] && echo "$c 새 이미지" || echo "$c 옛 이미지"
 done                                                                                                     # 셋 다 '새 이미지'
 docker exec nl-lib-celery-research-plan sh -c 'celery -A workers.celery_app inspect registered -d "celery@$(hostname)" --timeout 5' | grep -c "tasks.dispatch_research_work"   # 1
-docker exec nl-lib-celery-research-plan sh -c 'celery -A workers.celery_app inspect active_queues -d "celery@$(hostname)" --timeout 5' | grep -o "'name': 'q_[a-z_]*'"      # 'name': 'q_research_plan' 한 줄
-docker exec nl-lib-celery-control sh -c 'celery -A workers.celery_app inspect active_queues -d "celery@$(hostname)" --timeout 5' | grep -o "'name': 'q_[a-z_]*'"            # 'name': 'q_control' 한 줄
+docker exec nl-lib-celery-research-plan sh -c 'celery -A workers.celery_app inspect active_queues -d "celery@$(hostname)" --timeout 5' | grep -o "\* {'name': 'q_[a-z_]*'"   # * {'name': 'q_research_plan' 한 줄
+docker exec nl-lib-celery-control sh -c 'celery -A workers.celery_app inspect active_queues -d "celery@$(hostname)" --timeout 5' | grep -o "\* {'name': 'q_[a-z_]*'"         # * {'name': 'q_control' 한 줄
 docker exec nl-lib-celery-control celery -A workers.celery_app inspect active_queues --timeout 5 | grep -c "'name': 'q_research_plan'"   # 1 — q_research_plan 을 받는 워커는 celery-research-plan 하나뿐
 ```
 
-`inspect` 는 `-d` 가 없으면 브로커의 모든 워커(적재 워커 `celery-worker`·`celery-cpu`·`celery-llm`·`celery-embed` 포함)에 묻는다 — 그래서 한 워커를 볼 때는 `-d "celery@$(hostname)"`(compose 가 노드 이름을 주지 않아 컨테이너 호스트 이름이 곧 노드 이름이다)로 좁히고, 큐를 받는 워커 수를 볼 때만 전체에 묻고 센다(`bulk_ingest_runbook.md` §9 의 `q_control` 세기와 같은 방식). 셋은 같은 새 이미지라 전체에 물으면 `tasks.dispatch_research_work` 가 세 번 나온다.
+`active_queues` 는 큐마다 `* {'name': …, 'exchange': {'name': …}, …}` 한 줄을 찍는데, `-Q` 로 자동 생성된 큐는 exchange 이름이 큐 이름과 같다 — 그래서 줄 머리의 `* {'name':` 만 맞춘다(`'name': 'q_…'` 로 찾으면 같은 이름이 한 줄에서 두 번 나와 큐가 둘 붙은 것처럼 보인다). `inspect` 는 `-d` 가 없으면 브로커의 모든 워커(적재 워커 `celery-worker`·`celery-cpu`·`celery-llm`·`celery-embed` 포함)에 묻는다 — 그래서 한 워커를 볼 때는 `-d "celery@$(hostname)"`(compose 가 노드 이름을 주지 않아 컨테이너 호스트 이름이 곧 노드 이름이다)로 좁히고, 큐를 받는 워커 수를 볼 때만 전체에 묻고 센다(`bulk_ingest_runbook.md` §9 의 `q_control` 세기와 같은 방식). 셋은 같은 새 이미지라 전체에 물으면 `tasks.dispatch_research_work` 가 세 번 나온다.
 
 워커를 Recreate 한 뒤 fastapi 가 뜰 때까지는 새 테이블이 아직 없다(`create_all` 은 fastapi lifespan 이 한다). 그 사이에 회수기 10분 틱(`reap_stale_research`)이 걸리면 `celery-control` 로그에 `relation "research_generations" does not exist` 실패가 한 번 남는다 — 정상이다(그 틱의 잡 회수도 같은 트랜잭션이라 함께 빠지고 다음 틱이 한다). 회수기 로그는 fastapi 기동 뒤의 틱만 본다(Step 11).
 
@@ -12490,7 +12500,7 @@ WHERE tablename IN ('research_works', 'research_generations', 'research_topics',
 SQL
 ```
 
-Expected: 버전 `0006_history_items`, 테이블 7행, 인덱스 7행 — `ix_research_gap_checks_work_cell`(work_id, cell_key) · `ix_research_generations_queued`(priority DESC, created_at, id) `WHERE ((status)::text = 'queued'::text)` · `ix_research_generations_work_id` · `ix_research_topics_work_id` · `ix_research_works_owner_created`(owner_sid, created_at DESC) `WHERE (deleted_at IS NULL)` · `ux_research_generations_running` UNIQUE (work_id) `WHERE ((status)::text = 'running'::text)` · `ux_research_topics_slot` UNIQUE (work_id, slot) `WHERE (slot IS NOT NULL)`. 하나라도 다르면 stamp 하지 않고 멈춘다.
+Expected: 버전 `0006_history_items`, 테이블 7행, 인덱스 8행 — `ix_research_gap_checks_work_cell`(work_id, cell_key) · `ix_research_generations_queued`(priority DESC, created_at, id) `WHERE ((status)::text = 'queued'::text)` · `ix_research_generations_work_id` · `ix_research_topics_parent_id` · `ix_research_topics_work_id` · `ix_research_works_owner_created`(owner_sid, created_at DESC) `WHERE (deleted_at IS NULL)` · `ux_research_generations_running` UNIQUE (work_id) `WHERE ((status)::text = 'running'::text)` · `ux_research_topics_slot` UNIQUE (work_id, slot) `WHERE (slot IS NOT NULL)`. 하나라도 다르면 stamp 하지 않고 멈춘다.
 
 ```bash
 docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic stamp 0007_research_work
@@ -12503,14 +12513,14 @@ echo "SELECT version_num FROM alembic_version" | pgq                            
 
 ```bash
 diff /usr/local/bin/nl-lib-pg-backup /data/nl-lib/data/round06a/pg_backup.sh           # Task 14 의 변경만 보여야 한다
-sudo cp /usr/local/bin/nl-lib-pg-backup /usr/local/bin/nl-lib-pg-backup.pre-round06a   # 되돌리기용
-sudo install -m 755 /data/nl-lib/data/round06a/pg_backup.sh /usr/local/bin/nl-lib-pg-backup
-sudo /usr/local/bin/nl-lib-pg-backup; echo "exit=$?"                                   # OK …library_catalog_<시각>.dump · OK …research_<시각>.dump, exit=0
-F=$(sudo sh -c 'ls -1t /data/nl-lib/backup/daily/research_*.dump | head -1'); echo "$F"
-sudo cat "$F" | docker exec -i nl-lib-postgres pg_restore -l | grep "TABLE DATA" | awk '{print $7}' | sort
+cp /usr/local/bin/nl-lib-pg-backup /usr/local/bin/nl-lib-pg-backup.pre-round06a        # 되돌리기용(root 셸 — Step 5)
+install -m 755 /data/nl-lib/data/round06a/pg_backup.sh /usr/local/bin/nl-lib-pg-backup
+/usr/local/bin/nl-lib-pg-backup; echo "exit=$?"                                        # OK …library_catalog_<시각>.dump · OK …research_<시각>.dump, exit=0
+F=$(ls -1t /data/nl-lib/backup/daily/research_*.dump | head -1); echo "$F"
+docker exec -i nl-lib-postgres pg_restore -l < "$F" | grep "TABLE DATA" | awk '{print $7}' | sort
 ```
 
-Expected: 마지막 명령이 9줄 — `history_items`·`research_gap_checks`·`research_generations`·`research_jobs`·`research_proposals`·`research_reading`·`research_steps`·`research_topics`·`research_works`. `paper_facets`(다시 만들 수 있는 캐시)는 없다 — 주간 전체 덤프에 맡긴다(spec §6-5). cron 줄(`30 4 * * * /usr/local/bin/nl-lib-pg-backup …`)은 그대로다.
+Expected: 마지막 명령이 9줄 — `history_items`·`research_gap_checks`·`research_generations`·`research_jobs`·`research_proposals`·`research_reading`·`research_steps`·`research_topics`·`research_works`. `paper_facets`(다시 만들 수 있는 캐시)는 없다 — 주간 전체 덤프에 맡긴다(spec §6-5). cron 줄(`30 4 * * * /usr/local/bin/nl-lib-pg-backup …`)은 그대로다. 연구 덤프의 복원 절차(연구만 되돌릴 때 `history_items` 를 빼는 `-L` 목록·`--single-transaction`·복원 뒤 approved·queued 잡 정리·확인용 DB `dropdb`)는 스크립트 머리 주석에 있다.
 
 - [ ] **Step 11: (사용자, 서버) 운영 기능 확인 — 429·대기 순번·이어가기 → 핵심 개념**
 
@@ -12557,6 +12567,8 @@ echo "SELECT count(*) FROM research_generations WHERE status IN ('queued', 'runn
 ```
 
 Expected: 생성 1행 `concepts | done | qwen3-vl-8b`(Qwen 이 실패했으면 `gemma-3-12b`, 둘 다 실패면 model 빈칸·concepts `[]`), `calls` 1~3, `research_works.concepts` 가 생성 출력과 같은 2~5개, `owner_sid` = `$SID`, `candidates` 는 A 의 채택 근거 수. 핵심 개념이 비었으면(둘 다 실패) 생성 출력의 `attempts` 와 `docker logs --since 15m nl-lib-celery-research-plan` 을 보고 사용자에게 알린다 — 배포를 되돌릴 일은 아니다(화면이 '핵심 개념 넣기'를 보인다, spec §5-2). 상태가 `failed` 면(데드라인·예외) `error` 칸과 같은 로그를 보고 사용자에게 알린다 — `G=$(echo "SELECT id FROM research_generations WHERE work_id = '$A' AND kind = 'concepts' ORDER BY id DESC LIMIT 1" | pgq); curl -s -X POST $API/research/$A/generations/$G/retry` 로 다시 넣을 수 있다(응답 `{"gen_id": …}`).
+
+429 `browser_active` 가 계속되는데 응답의 `job_id` 잡이 approved·queued 로 멈춰 있으면 함정 24번의 순서로 본다(브로커 메시지를 잃은 잡은 회수기도 건드리지 않는다 — 화면에서 그 잡을 취소하면 풀린다).
 
 회수기는 fastapi 기동 뒤의 다음 10분 틱 뒤에 본다(그보다 앞 틱의 `relation "research_generations" does not exist` 실패는 Step 8 의 설명대로 정상이다 — `succeeded` 줄만 본다).
 
@@ -12615,7 +12627,7 @@ Expected: 첫 질의 1행 — `before_run_sec` 는 계획·승인·줄 서기, `
 
 - [ ] **Step 13: (사용자·기획자) 라벨·채점·판정**
 
-기획자가 `/data/nl-lib/data/research_eval/labels/<질문키>.csv` 의 `label` 칸에 `관련`·`무관` 을 단다 — 기준은 원 질문이다(하위질문에서 벗어났어도 원 질문의 주제를 다루면 `관련`, 같은 단어를 다른 뜻으로 쓴 논문을 포함해 원 질문과 무관하면 `무관`). 컨테이너가 쓴 파일이라 root 소유일 수 있다 — 가져와 엑셀로 달고('CSV UTF-8' 로 저장) 같은 자리에 다시 올린다.
+기획자가 `/data/nl-lib/data/research_eval/labels/<질문키>.csv` 의 `label` 칸에 `관련`·`무관` 을 단다 — 기준은 원 질문이다(하위질문에서 벗어났어도 원 질문의 주제를 다루면 `관련`, 같은 단어를 다른 뜻으로 쓴 논문을 포함해 원 질문과 무관하면 `무관`). 컨테이너가 쓴 파일이라 root 소유다 — 가져와 엑셀로 달고('CSV UTF-8' 로 저장) 같은 자리에 다시 올린다. 올릴 때도 root 셸에서 옮기거나(일반 계정으로 받은 뒤 `su - root` 로 `cp`) root 로 복사한다 — 일반 계정 scp 는 Permission denied 다.
 
 ```bash
 docker exec nl-lib-fastapi python /app/data/research_eval/score.py \
@@ -12633,7 +12645,7 @@ Expected: 질문마다 `[<질문키>] <질문>` 과 `갈래 0`·`갈래 1` 두 �
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_state.py tests/test_research_critic.py tests/test_research_runner.py tests/test_research_tasks.py tests/test_research_api.py -q -p no:cacheprovider`
 
-Expected: 실패 0. 나온 `N passed` 를 적어 둔다 — 아래를 고친 뒤에도 같은 N 이어야 한다(실행 브랜치에서 `451 passed, 2 warnings` — 2026-10-03 실측. 계획만 글자 그대로 적용한 검증 사본은 444 였고, Task 7 리뷰 반영 `b401939` 가 `test_research_api.py` 에 7개를 더했다).
+Expected: 실패 0. 나온 `N passed` 를 적어 둔다 — 아래를 고친 뒤에도 같은 N 이어야 한다(실행 브랜치에서 `455 passed, 2 warnings` — 2026-10-03 최종 리뷰 반영 뒤 실측. 계획만 글자 그대로 적용한 검증 사본은 444 였고, Task 7 리뷰 반영 `b401939` 가 `test_research_api.py` 에 7개, 최종 리뷰 반영이 `test_research_api.py` 3개·`test_research_tasks.py` 1개를 더했다).
 
 `app/services/research/state.py` — 교체 전(`DEFAULT_PARAMS` 끝 — Task 2 가 넣은 주석의 마지막 줄과 값 줄):
 
@@ -12701,7 +12713,7 @@ Expected: `2 failed` — 이 둘뿐이다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_state.py tests/test_research_critic.py tests/test_research_runner.py tests/test_research_tasks.py tests/test_research_api.py -q -p no:cacheprovider`
 
-Expected: 실패 0, 바꾸기 전에 적어 둔 N 과 같은 `N passed`(실행 브랜치에서 `451 passed, 2 warnings`). 이어서 Step 3 의 백엔드 전체 명령도 실패 0 이고 수는 Step 3 과 같다(새 테스트 없음).
+Expected: 실패 0, 바꾸기 전에 적어 둔 N 과 같은 `N passed`(실행 브랜치에서 `455 passed, 2 warnings`). 이어서 Step 3 의 백엔드 전체 명령도 실패 0 이고 수는 Step 3 과 같다(새 테스트 없음).
 
 ```bash
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/services/research/state.py app/tests/test_research_state.py app/tests/test_research_critic.py && git status --short && git commit -m "[Feat] round06a — critic 기준 스위치를 켠다: DEFAULT_PARAMS critic_scope 0 → 1. 운영 고정 질문 5개를 두 갈래로 돌린 판정에서 갈래 1(원 질문 기준)이 다섯 질문 모두 합격선(절마다 무관 1편 이하·과잉 제외 10% 이하)을 넘었다(spec D11). 새 잡부터 원 질문 기준이고, 이미 만든 잡은 저장된 params 그대로다. 기본값을 고정한 state 테스트는 새 기본값으로 고치고, critic 의 0 갈래 테스트는 critic_scope 0 을 명시한 잡만 남긴 뒤 기본 파라미터가 원 질문 기준 프롬프트로 가는 테스트를 그 자리에 둔다"
@@ -12710,18 +12722,32 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/serv
 재배포(사용자) — 바뀐 것은 백엔드 기본값뿐이라 nuxt 는 그대로다. 새 기본값은 잡을 만드는 fastapi 가 `params` 에 싣지만, 워커와 같은 이미지로 맞추려고 넷 다 Recreate 한다.
 
 ```bash
-# 개발 PC
-cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
+# 개발 PC — Step 6 처럼 dev 에 06a 에 없는 코드 커밋이 없는지 먼저 본다(있으면 dev 를 머지하고 Step 3 을 다시 돌린 뒤 빌드)
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a
+git fetch origin 2>/dev/null
+git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh          # 비어 있어야 한다
+git log --oneline HEAD..origin/dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh   # 비어 있어야 한다
+git rev-parse HEAD                                                                    # 빌드한 커밋 — 완료노트에 적는다
+NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
 ```
 
 ```bash
-# 서버
+# 서버(root 셸 — Step 5)
 docker pull landsoftdocker/nl-lib-fastapi:latest
 NEW=$(docker image inspect --format '{{.Id}}' landsoftdocker/nl-lib-fastapi:latest)
 pg <<'SQL'
 SELECT id, status FROM research_jobs WHERE status IN ('created', 'planning', 'approved', 'queued', 'running');
+SELECT id, kind, status FROM research_generations WHERE status IN ('queued', 'running');
 SQL
-# 0행일 때 Portainer 에서 nl-lib-celery-research → nl-lib-celery-research-plan → nl-lib-celery-control → nl-lib-fastapi 차례로 Recreate("Re-pull image" 끔)
+# 두 질의 모두 0행 — 도는 생성이 있는 채 celery-research-plan 을 Recreate 하면 그 생성이 끊긴다(회수기가 1140초 뒤 failed 로 닫는다). 끝나기를 기다린다
+for c in nl-lib-celery-research nl-lib-celery-research-plan nl-lib-celery-control; do
+  echo "== $c"; docker exec $c sh -c 'celery -A workers.celery_app inspect active -d "celery@$(hostname)" --timeout 5'
+done   # 셋 다 '- empty -' (Step 7 과 같다)
+# 0행·empty 일 때 Portainer 에서 nl-lib-celery-research → nl-lib-celery-research-plan → nl-lib-celery-control 차례로 Recreate("Re-pull image" 끔)
+pg <<'SQL'
+SELECT pid, state, xact_start, left(query, 80) FROM pg_stat_activity WHERE state = 'idle in transaction';
+SQL
+# 0행(또는 xact_start 가 몇 초 전인 것뿐)이면 nl-lib-fastapi 를 Recreate 한다(함정 18번 — Step 8 ④)
 for c in nl-lib-celery-research nl-lib-celery-research-plan nl-lib-celery-control nl-lib-fastapi; do
   [ "$(docker inspect --format '{{.Image}}' $c)" = "$NEW" ] && echo "$c 새 이미지" || echo "$c 옛 이미지"
 done                                                                                      # 넷 다 '새 이미지'
@@ -12737,7 +12763,7 @@ curl -s -X POST http://localhost:92/api/research/$D/cancel | grep -o '"status":"
 
 서버의 `/data/nl-lib/data/research_eval/labels/*.csv` 를 06a worktree 의 `scripts/research_eval/labels/` 로, `/data/nl-lib/data/round06-qwen-check/out/*.md` 를 `research/round06-qwen-check/out/` 으로 가져온다. 사람이 `out/` 을 읽고 `research/round06-qwen-check/README.md` 의 결과 표와 결정 줄을 채운다. 그리고 함정 14번의 '현재 서버' 를 고친다.
 
-Qwen 결정 줄에 'gemma 로' 가 있으면(핵심 개념·주제 카드 중 하나라도) 이 라운드에서 라우팅을 바꾸지 않고 06b 로 넘긴다 — 06b 계획의 첫 task 가 `app/services/research_work/routing.py` 의 `WORK_MODEL_ROUTES` 그 줄(`"concepts": QWEN,` 이나 `"topic_card": QWEN,` 이 들어 있는 줄)의 `QWEN` 을 `GEMMA` 로 바꾸고, 라우팅을 고정한 Task 8·9 의 테스트(`test_research_work_generate.py` 의 `TestRouting`·기본 kind 가 `concepts` 인 `_run`, `test_research_work_concepts.py`, `test_research_work_tasks.py` 의 Qwen 엔드포인트 단언)를 함께 고친다. 까닭: 06a 화면에는 [이 연구 이어가기] 입구가 없어(06b 의 이어가기 카드 — spec §9) 06a 운영에서 생성을 부르는 것은 Step 11·12 의 확인뿐이고, 주제 카드 실행기는 06b 에 생긴다. 06a 를 다시 배포하면 딥리서치가 빈 때를 다시 기다려 워커 셋과 fastapi 를 Recreate 해야 하지만 사용자가 얻는 것은 없다. 넘김은 Step 1 이 적은 `00_status.md` 다음 할 일 줄과 README 결정 줄에 남는다.
+Qwen 결정 줄에 'gemma 로' 가 있으면(핵심 개념·주제 카드 중 하나라도) 이 라운드에서 라우팅을 바꾸지 않고 06b 로 넘긴다 — 06b 계획의 첫 task 가 `app/services/research_work/routing.py` 의 `WORK_MODEL_ROUTES` 에서 그 kind 의 값(`"concepts": QWEN` 이나 `"topic_card": QWEN`)만 `GEMMA` 로 바꾸고(한 줄에 `concepts`·`topic_card`·`refine`·`facet` 이 함께 있어 줄의 `QWEN` 을 모두 바꾸면 넷이 다 바뀐다), 라우팅을 고정한 Task 8·9 의 테스트(`test_research_work_generate.py` 의 `TestRouting`·기본 kind 가 `concepts` 인 `_run`, `test_research_work_concepts.py`, `test_research_work_tasks.py` 의 Qwen 엔드포인트 단언)를 함께 고친다. 까닭: 06a 화면에는 [이 연구 이어가기] 입구가 없어(06b 의 이어가기 카드 — spec §9) 06a 운영에서 생성을 부르는 것은 Step 11·12 의 확인뿐이고, 주제 카드 실행기는 06b 에 생긴다. 06a 를 다시 배포하면 딥리서치가 빈 때를 다시 기다려 워커 셋과 fastapi 를 Recreate 해야 하지만 사용자가 얻는 것은 없다. 넘김은 Step 1 이 적은 `00_status.md` 다음 할 일 줄과 README 결정 줄에 남는다.
 
 `docs/ops/recurring-gotchas.md` — 교체 전(126행):
 
@@ -12761,12 +12787,12 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add -f scrip
 
 배포 뒤 확인(Step 8~11)이 틀리거나 운영 오류가 나면 되돌린다. 새 테이블은 지우지 않는다 — 옛 코드는 쓰지 않고, 다시 배포하면 그대로 쓴다.
 
-1. 딥리서치가 빈 때 한다 — Step 7 의 `research_jobs` 질의가 0행. 새 fastapi 가 만든 잡은 `params` 에 `critic_scope` 가 있어 옛 워커가 거부한다 — `awaiting_approval` 로 남은 그런 잡은 되돌린 뒤 승인하면 실패하니 새로 만든다.
+1. 딥리서치·생성이 빈 때 한다 — Step 7 의 `research_jobs` 질의가 0행이고 `echo "SELECT count(*) FROM research_generations WHERE status IN ('queued', 'running')" | pgq` 가 0(옛 회수기는 `research_generations` 를 몰라, 끊긴 생성이 running·queued 로 영영 남는다). Step 7 처럼 세 워커의 `inspect active` 도 비었는지 본다. 새 fastapi 가 만든 잡은 `params` 에 `critic_scope` 가 있어 옛 워커가 거부한다 — 그런 잡은 `awaiting_approval` 이든 `failed` 든 되돌린 뒤 승인·retry 하지 말고 새로 만든다. 찾기: `echo "SELECT id, status FROM research_jobs WHERE params ? 'critic_scope' AND status IN ('awaiting_approval', 'failed')" | pgq`.
 2. 버전을 먼저 되돌린다(새 이미지의 fastapi 가 `0007` 을 안다): `docker exec -e PYTHONPATH=/app -w /app nl-lib-fastapi alembic stamp 0006_history_items` → `echo "SELECT version_num FROM alembic_version" | pgq` 가 `0006_history_items`.
 3. 이미지 태그를 되돌린다: `docker tag landsoftdocker/nl-lib-fastapi:pre-round06a landsoftdocker/nl-lib-fastapi:latest` · `docker tag landsoftdocker/nl-lib-nuxt:pre-round06a landsoftdocker/nl-lib-nuxt:latest`.
-4. Portainer 에서 `nl-lib-fastapi` → `nl-lib-nuxt` → `nl-lib-celery-research` → `nl-lib-celery-research-plan` → `nl-lib-celery-control` 차례로 Recreate("Re-pull image" 끔). fastapi 를 먼저 되돌리면 그 뒤 만든 잡에는 `critic_scope` 가 없어 새·옛 워커 모두 받는다.
+4. fastapi 를 Recreate 하기 전에 Step 8 ④ 의 `idle in transaction` 질의가 0행인지 본다(함정 18번). Portainer 에서 `nl-lib-fastapi` → `nl-lib-nuxt` → `nl-lib-celery-research` → `nl-lib-celery-research-plan` → `nl-lib-celery-control` 차례로 Recreate("Re-pull image" 끔). fastapi 를 먼저 되돌리면 그 뒤 만든 잡에는 `critic_scope` 가 없어 새·옛 워커 모두 받는다.
 5. 남은 것 치우기: `docker exec nl-lib-redis redis-cli DEL research:run_queue`(대기 순번 ZSET). `docker exec nl-lib-redis redis-cli LLEN q_research_plan` 이 0 이 아니면 남은 `tasks.dispatch_research_work` 메시지다 — 옛 `celery-research-plan` 이 '등록되지 않은 태스크' 오류 로그를 남기고 버린다.
 6. `docker exec nl-lib-gateway nginx -s reload` → `curl -s -o /dev/null -w '%{http_code}\n' http://localhost:92/health` 가 200. `docker exec nl-lib-celery-research-plan celery -A workers.celery_app inspect registered --timeout 5 | grep -c "tasks.dispatch_research_work"` 가 0 — `-d` 없이 모든 워커에 묻는다. 적재 워커는 06a 에서 Recreate 하지 않아 round07 이미지이고 되돌린 셋도 옛 이미지라, 0 이면 그 태스크를 아는 워커가 하나도 없다.
-7. 백업 스크립트는 새 것을 둬도 옛 스키마에서 돈다(`research_*` 는 `research_jobs`·`research_steps` 를 받는다). 되돌리려면 `sudo install -m 755 /usr/local/bin/nl-lib-pg-backup.pre-round06a /usr/local/bin/nl-lib-pg-backup`.
+7. 백업 스크립트는 새 것을 둬도 옛 스키마에서 돈다(`research_*` 는 `research_jobs`·`research_steps` 를 받는다). 되돌리려면 root 셸(Step 5)에서 `install -m 755 /usr/local/bin/nl-lib-pg-backup.pre-round06a /usr/local/bin/nl-lib-pg-backup`.
 8. critic 기준만 되돌릴 때(Step 14 뒤): Step 14 의 커밋을 `git revert <그 커밋>` 으로 되돌려(`state.py` 의 기본값·주석과 테스트 둘이 함께 돌아간다) Step 14 의 재배포 순서로 낸다. 급하면 새 잡을 만들 때 `params` 에 `{"critic_scope": 0}` 을 실어 그 잡만 지금 기준으로 돌린다.
 
