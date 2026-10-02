@@ -13,6 +13,17 @@
           {{ back.label }}
         </a>
 
+        <!-- 인용 맥락 — 보고서의 인용칩에서 왔을 때 이 논문이 그 보고서에서 어떻게 쓰였는지 보인다 -->
+        <section v-if="cite" class="pd-cite" aria-label="인용 맥락">
+          <div class="pd-cite__row">
+            <p class="pd-cite__text">
+              딥리서치 보고서 ‘{{ cite.question }}’에서
+              <strong>{{ withRo(cite.label) }}</strong> 인용됨
+              <span aria-hidden="true">·</span> 인용 대목 {{ cite.chunks.length }}곳
+            </p>
+          </div>
+        </section>
+
         <div v-if="loading" style="padding: 40px; text-align: center">
           <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
         </div>
@@ -414,7 +425,12 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { useResearchApi } from "~/composables/useResearch";
+import type { ResearchJob } from "~/types/research";
+import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
+import { safeSessionStorage } from "~/utils/browserId";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
+import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
 import { isPlainClick } from "~/utils/restorePosition";
 
 const route = useRoute();
@@ -582,6 +598,22 @@ const pdfModal = ref(false);
 const toast = ref("");
 const thumbnailUrl = ref(`${config.public.apiBase}/books/${paperId}/thumbnail`);
 
+// ── 인용 맥락(보고서에서 온 상세) ──────────────────────────
+const researchApi = useResearchApi();
+const cite = ref<CiteContext | null>(null);
+
+// 배너와 AI 요약 기준 질문을 그 보고서에서 읽는다. 못 읽으면 배너 없이 두고 요약은 소개글로 대신한다
+async function loadResearch(): Promise<Pick<ResearchJob, "question" | "report"> | null> {
+  if (source.kind !== "research") return null;
+  try {
+    const job = await researchApi.get(source.job);
+    cite.value = citeContext(job, source.e, paperId);
+    return job;
+  } catch {
+    return null;
+  }
+}
+
 function showToast(msg: string) {
   toast.value = msg;
   setTimeout(() => {
@@ -617,10 +649,16 @@ async function fetchRelated() {
   relatedItems.value.forEach((rel) => streamRelatedReason(rel.book_id));
 }
 
-async function streamPaperReason() {
-  const query = (route.query.q as string) || "";
+// 기준 질문이 없으면(출처 없음·보고서를 못 읽음) 만들지 않고 소개글을 보인다
+async function streamPaperReason(query: string) {
   if (!query) {
     summaryText.value = paper.value?.introduction || "";
+    return;
+  }
+  const key = summaryCacheKey(paperId, query);
+  const cached = readAiCache(safeSessionStorage(), key);
+  if (cached) {
+    summaryText.value = cached;
     return;
   }
   summaryText.value = "";
@@ -632,9 +670,10 @@ async function streamPaperReason() {
       body: JSON.stringify({ paper_id: paperId, query }),
       signal: pageAbort.signal,
     });
-    await readSSE(resp, (json) => {
+    const finished = await readSSE(resp, (json) => {
       if (json.text) summaryText.value += json.text;
     });
+    if (finished) writeAiCache(safeSessionStorage(), key, summaryText.value);
   } catch {
     /* silent */
   } finally {
@@ -643,6 +682,12 @@ async function streamPaperReason() {
 }
 
 async function streamRelatedReason(relatedId: string) {
+  const key = relatedCacheKey(paperId, relatedId);
+  const cached = readAiCache(safeSessionStorage(), key);
+  if (cached) {
+    relatedReasons.value = { ...relatedReasons.value, [relatedId]: cached };
+    return;
+  }
   relatedReasonLoading.value = new Set([
     ...relatedReasonLoading.value,
     relatedId,
@@ -654,7 +699,7 @@ async function streamRelatedReason(relatedId: string) {
       body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
       signal: pageAbort.signal,
     });
-    await readSSE(resp, (json) => {
+    const finished = await readSSE(resp, (json) => {
       if (json.text) {
         relatedReasons.value = {
           ...relatedReasons.value,
@@ -662,6 +707,7 @@ async function streamRelatedReason(relatedId: string) {
         };
       }
     });
+    if (finished) writeAiCache(safeSessionStorage(), key, relatedReasons.value[relatedId] ?? "");
   } catch {
     /* silent */
   } finally {
@@ -671,7 +717,8 @@ async function streamRelatedReason(relatedId: string) {
   }
 }
 
-async function readSSE(resp: Response, onEvent: (json: any) => void) {
+// [DONE] 까지 받았으면 true — 도중에 끊긴 글은 캐시에 담지 않는다
+async function readSSE(resp: Response, onEvent: (json: any) => void): Promise<boolean> {
   const reader = resp.body!.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -684,7 +731,7 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue;
       const raw = line.slice(6).trim();
-      if (raw === "[DONE]") return;
+      if (raw === "[DONE]") return true;
       try {
         onEvent(JSON.parse(raw));
       } catch {
@@ -692,14 +739,17 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
       }
     }
   }
+  return false;
 }
 
 onMounted(async () => {
+  // 보고서는 논문과 함께 읽는다 — 보고서에서 온 상세는 AI 요약의 기준 질문이 보고서 질문이다
+  const research = loadResearch();
   await fetchPaper();
   if (route.query.chat === "1") chatOpen.value = true;
-  streamPaperReason();
   fetchRelated();
   nextTick(() => updateVtabSlider());
+  streamPaperReason(summaryQuestion(source, await research));
 });
 </script>
 
@@ -745,6 +795,27 @@ onMounted(async () => {
 .pd-rel:focus-within .skx-prelate-card__ai {
   max-height: 12rem;
   opacity: 1;
+}
+/* 인용 맥락 배너 — 보고서의 인용칩에서 온 상세에만 뜬다. 글과 [인용 대목 보기] 버튼을 한 줄에 둔다 */
+.pd-cite {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  background: rgba(79, 70, 229, 0.05);
+  font-size: 0.75rem;
+  color: var(--skx-ink);
+}
+.pd-cite__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+}
+.pd-cite__text {
+  flex: 1;
+  min-width: 12rem;
+  margin: 0;
+  line-height: 1.5;
 }
 @media (prefers-reduced-motion: reduce) {
   .pd-keyword {
