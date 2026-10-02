@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from core.config import get_settings
+from core.config import FORCED_REEXTRACT_FLOOR_SECONDS, get_settings
 from db.postgres import SyncSessionLocal
 from models.book import Book
 from models.section import BookSection
@@ -43,9 +43,8 @@ SECTION_MAX_TOKENS = cfg.SECTION_MAX_TOKENS
 DOWNLOAD_DIR = cfg.DOWNLOAD_DIR
 
 # 섹션 0개 강제 OCR 재추출에 주는 데드라인의 하한(초) — 첫 추출이 INGEST_EXTRACT_DEADLINE 을 거의 다 썼어도
-# 이만큼은 OCR 할 시간을 준다. core.config.FORCED_REEXTRACT_FLOOR_SECONDS 와 같은 값이다(설정이 기동 때
-# 데드라인 + 이 하한 < INGEST_STAGE_TIMEOUT_EXTRACT 를 본다)
-FORCED_OCR_MIN_DEADLINE_SECONDS = 60
+# 이만큼은 OCR 할 시간을 준다. 설정이 기동 때 이 하한까지 넣어 stale 판정과의 관계를 보므로 config 의 값을 쓴다
+FORCED_OCR_MIN_DEADLINE_SECONDS = FORCED_REEXTRACT_FLOOR_SECONDS
 
 
 class StageError(Exception):

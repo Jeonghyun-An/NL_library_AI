@@ -104,9 +104,6 @@ def test_settings_refuse_an_extract_deadline_that_reaches_the_stale_timeout(monk
     import core.config as config_mod
     from pydantic import ValidationError
 
-    from services.ingestion import stages
-
-    assert config_mod.FORCED_REEXTRACT_FLOOR_SECONDS == stages.FORCED_OCR_MIN_DEADLINE_SECONDS
     _fresh_settings(monkeypatch)
     for key, value in env.items():
         monkeypatch.setenv(key, value)

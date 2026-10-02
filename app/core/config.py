@@ -4,8 +4,7 @@ from typing import Literal
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
-# 섹션 0개 강제 재추출에 주는 데드라인의 하한(초) — stages.FORCED_OCR_MIN_DEADLINE_SECONDS 와 같은 값이다
-# (config 는 stages 를 import 할 수 없다 — 순환. 같은지는 test_ingest_settings 가 본다)
+# 섹션 0개 강제 재추출에 주는 데드라인의 하한(초) — stages.FORCED_OCR_MIN_DEADLINE_SECONDS 가 이 값을 쓴다
 FORCED_REEXTRACT_FLOOR_SECONDS = 60
 # llm_client 의 호출 하나는 timeout + 연결(≤10초)까지 걸린다 — PDF 메타 LLM 몫에 더한다
 PDF_META_CONNECT_MARGIN_SECONDS = 10
