@@ -61,6 +61,8 @@ class ResearchGeneration(Base):
             postgresql_where=text("status = 'running'"),
             sqlite_where=text("status = 'running'"),
         ),
+        # 정렬 키 priority DESC → created_at → id — pick_next·queue_position(services/research_work/dispatch.py)·
+        # 0007 의 같은 인덱스가 함께 바뀐다
         Index(
             "ix_research_generations_queued", text("priority DESC"), "created_at", "id",
             postgresql_where=text("status = 'queued'"),
@@ -97,7 +99,8 @@ class ResearchTopic(Base):
     id              = Column(BigInteger, primary_key=True, autoincrement=True)
     work_id         = Column(UUID(as_uuid=True), ForeignKey("research_works.id", ondelete="CASCADE"),
                              nullable=False, index=True)
-    parent_id       = Column(BigInteger, ForeignKey("research_topics.id", ondelete="CASCADE"))
+    # 자기 참조 FK(ON DELETE CASCADE) — 부모를 지울 때 자식을 찾는 조회가 테이블을 훑지 않게 인덱스를 둔다
+    parent_id       = Column(BigInteger, ForeignKey("research_topics.id", ondelete="CASCADE"), index=True)
     slot            = Column(SmallInteger)
     origin          = Column(String(16), nullable=False)
     seed            = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))

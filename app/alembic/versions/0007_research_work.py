@@ -87,6 +87,7 @@ def upgrade() -> None:
         "ux_research_generations_running", "research_generations", ["work_id"],
         unique=True, postgresql_where=sa.text("status = 'running'"),
     )
+    # 정렬 키 priority DESC → created_at → id — 디스패처의 pick_next·queue_position 과 모델의 같은 인덱스가 함께 바뀐다
     op.create_index(
         "ix_research_generations_queued", "research_generations",
         [sa.text("priority DESC"), "created_at", "id"],
@@ -108,6 +109,7 @@ def upgrade() -> None:
         _updated_at(),
     )
     op.create_index("ix_research_topics_work_id", "research_topics", ["work_id"])
+    op.create_index("ix_research_topics_parent_id", "research_topics", ["parent_id"])
     # 처음 4장의 자리(1~4)는 연구마다 유일
     op.create_index(
         "ux_research_topics_slot", "research_topics", ["work_id", "slot"],

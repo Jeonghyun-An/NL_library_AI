@@ -9,7 +9,6 @@ import datetime as dt
 import pytest
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import Session
 
 from history_sqlite import (
     AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
@@ -29,8 +28,8 @@ class _Recording(AsyncSessionOverSync):
     """보낸 문장을 Postgres 로 컴파일해 순서대로 남기고 COMMIT·ROLLBACK 도 끼워 적는다.
     워커의 세션처럼(expire_on_commit=False) 커밋 뒤에도 읽은 값을 들고 있다."""
 
-    def __init__(self, engine):  # super().__init__ 은 기본 Session(expire_on_commit=True)을 만든다 — 그 자리만 바꾼다
-        self._session = Session(engine, expire_on_commit=False)
+    def __init__(self, engine):
+        super().__init__(engine, expire_on_commit=False)
         self.log: list[str] = []
 
     async def execute(self, stmt, params=None):

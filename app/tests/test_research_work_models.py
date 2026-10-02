@@ -18,6 +18,7 @@ from sqlalchemy.schema import CreateIndex
 from history_sqlite import (
     AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
 )
+from models.research import ResearchJob
 from models.research_work import (
     FACET_SCHEMA_VER, GEN_KINDS, GEN_OPEN_STATUSES, GEN_STATUSES, PRIORITY_BACKGROUND,
     PRIORITY_USER, READING_ORIGINS, READING_STATES, TOPIC_ORIGINS, TOPIC_STATES, WORK_PHASES,
@@ -194,6 +195,11 @@ class TestModelShape:
         assert _index_parts(ix.expressions) == ["priority DESC", "created_at", "id"]
         assert str(ix.dialect_options["postgresql"]["where"]) == "status = 'queued'"
 
+    def test_topic_parent_is_indexed(self):
+        # 자기 참조 FK(ON DELETE CASCADE) — 운영은 create_all + stamp 라 배포 뒤에는 인덱스를 더하기 어렵다(함정 14)
+        ix = _index(ResearchTopic.__table__, "ix_research_topics_parent_id")
+        assert not ix.unique and _index_parts(ix.expressions) == ["parent_id"]
+
     def test_owner_list_index_is_partial_and_newest_first(self):
         ix = _index(ResearchWork.__table__, "ix_research_works_owner_created")
         assert _index_parts(ix.expressions) == ["owner_sid", "created_at DESC"]
@@ -286,6 +292,22 @@ class TestSqliteHarness:
             n = conn.execute(sa.text(
                 "SELECT count(*) FROM research_generations WHERE status = 'running'")).scalar_one()
         assert n == 2
+
+    def test_foreign_keys_are_enforced(self, engine):
+        # SQLite 는 연결마다 PRAGMA foreign_keys 를 켜야 한다 — 꺼져 있으면 없는 잡의 연구 행도 들어간다
+        with pytest.raises(sa.exc.IntegrityError):
+            add_work(engine, uuid.uuid4())
+
+    def test_deleting_the_job_cascades_to_the_work_and_its_generations(self, engine):
+        work = add_research_job(engine, status="completed", stage="synthesized")
+        add_work(engine, work)
+        add_generation(engine, work)
+        with engine.begin() as conn:
+            conn.execute(sa.delete(ResearchJob.__table__).where(ResearchJob.__table__.c.id == work))
+        with engine.connect() as conn:
+            left = [conn.execute(sa.select(sa.func.count()).select_from(t)).scalar_one()
+                    for t in (ResearchWork.__table__, ResearchGeneration.__table__)]
+        assert left == [0, 0]
 
     def test_add_work_stores_contract_defaults(self, engine):
         work = add_research_job(engine, status="completed", stage="synthesized")

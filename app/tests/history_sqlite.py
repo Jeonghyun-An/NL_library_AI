@@ -9,7 +9,8 @@ SQLite 가 모르는 Postgres 표기 셋만 테스트 쪽에서 바꾼다 — JS
 그린다), '::jsonb' 가 붙은 서버 기본값(테스트 테이블에서만 뺀다. 저장소는 params 를
 늘 채워 넣는다), BIGINT 기본키(INTEGER 로 — SQLite 는 INTEGER PRIMARY KEY 만 자동으로
 번호를 매긴다). Postgres 함수 pg_advisory_xact_lock 은 아무 일도 하지 않는 SQLite 함수로
-둔다(잠금 순서는 문장 기록으로 확인한다). 운영 모델·마이그레이션은 그대로다.
+둔다(잠금 순서는 문장 기록으로 확인한다). 외래 키 검사는 연결마다 켠다(SQLite 기본은 꺼짐 — FK·CASCADE 가
+테스트에서도 돈다). 운영 모델·마이그레이션은 그대로다.
 """
 import uuid
 
@@ -21,7 +22,7 @@ from sqlalchemy.pool import StaticPool
 
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
-from models.research_work import ResearchGeneration, ResearchReading, ResearchWork
+from models.research_work import PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchWork
 
 SID_A = uuid.UUID("3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e")
 SID_B = uuid.UUID("7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d")
@@ -43,6 +44,8 @@ def make_engine() -> sa.Engine:
     def _pg_functions(dbapi_conn, _record):
         # Postgres 트랜잭션 잠금은 SQLite 에서 아무 일도 하지 않는 함수로 둔다 — 잠금 순서는 문장 기록으로 확인한다
         dbapi_conn.create_function("pg_advisory_xact_lock", 1, lambda _key: None)
+        # SQLite 는 연결마다 외래 키 검사를 켜야 한다 — 꺼 두면 research_* 의 FK·ON DELETE CASCADE 가 테스트에서 돌지 않는다
+        dbapi_conn.execute("PRAGMA foreign_keys=ON")
 
     metadata = sa.MetaData()
     for table in (HistoryItem.__table__, ResearchJob.__table__, ResearchStep.__table__,
@@ -60,10 +63,12 @@ def make_engine() -> sa.Engine:
 
 
 class AsyncSessionOverSync:
-    """저장소·라우터가 쓰는 AsyncSession 메서드만 동기 Session 으로 넘긴다."""
+    """저장소·라우터가 쓰는 AsyncSession 메서드만 동기 Session 으로 넘긴다.
 
-    def __init__(self, engine: sa.Engine):
-        self._session = Session(engine)
+    expire_on_commit=False 는 워커의 세션(_job_engine)처럼 커밋 뒤에도 읽은 값을 들고 있게 할 때 준다."""
+
+    def __init__(self, engine: sa.Engine, *, expire_on_commit: bool = True):
+        self._session = Session(engine, expire_on_commit=expire_on_commit)
 
     async def execute(self, stmt, params=None):
         return self._session.execute(stmt, params)
@@ -109,7 +114,7 @@ def add_work(engine: sa.Engine, job_id: uuid.UUID, *, owner_sid: str | None = No
 
 
 def add_generation(engine: sa.Engine, work_id: uuid.UUID, *, kind: str = "concepts",
-                   status: str = "queued", priority: int = 10, input: dict | None = None,
+                   status: str = "queued", priority: int = PRIORITY_USER, input: dict | None = None,
                    started_at=None) -> int:
     with engine.begin() as conn:
         res = conn.execute(sa.insert(ResearchGeneration.__table__).values(
