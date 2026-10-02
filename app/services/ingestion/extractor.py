@@ -922,14 +922,24 @@ async def extract_text_opendataloader(
         )
         odl_deadline = None if time_budget is None else time.monotonic() + time_budget
 
+        def _no_time_left() -> str | None:
+            # 추출 데드라인이 변환 한 번을 띄울 만큼도 남기지 않았으면 그 사유
+            if odl_deadline is None:
+                return None
+            left = odl_deadline - time.monotonic()
+            if left >= _ODL_MIN_ATTEMPT_SECONDS:
+                return None
+            return f"추출 데드라인까지 {max(left, 0.0):.0f}초 — 변환하지 않음"
+
         async def _convert(input_path: str, output_dir: str) -> Path:
             # 변환 한 번 — 실패해도 걸린 시간을 쌓고 상한과 함께 남긴다(상한을 정할 실측 자료).
             # 추출 데드라인 안이면 남은 시간까지만 쓴다 — 강제 재추출까지 합쳐도 추출이 stale 판정 안에 끝나게.
+            no_time = _no_time_left()
+            if no_time:
+                raise TimeoutError(no_time)
             timeout = odl_timeout
             if odl_deadline is not None:
                 timeout = min(timeout, odl_deadline - time.monotonic())
-                if timeout < _ODL_MIN_ATTEMPT_SECONDS:
-                    raise TimeoutError(f"추출 데드라인까지 {max(timeout, 0.0):.0f}초 — 변환하지 않음")
             t0 = time.monotonic()
             try:
                 return await _run_odl(input_path, output_dir, _PAGE_SEP, timeout)
@@ -948,7 +958,11 @@ async def extract_text_opendataloader(
             reason = str(e) or type(e).__name__
             log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
             result.errors.append(f"ODL 실패(원본): {reason}")
-            if page_count is not None:
+            no_time = _no_time_left() if page_count is not None else None
+            if no_time:
+                # 재저장본을 변환할 시간이 없으면 재저장(동기 save — 큰 문서는 오래 걸린다)도 하지 않는다
+                result.errors.append(f"ODL 실패(fitz 재저장본): {no_time}")
+            elif page_count is not None:
                 # xref 손상 문서에서 ODL(Java)이 브루트포스 복구로 수십 배 느려지는 문제 대응 — fitz 로 다시
                 # 저장하면 xref 를 새로 쓴다
                 try:

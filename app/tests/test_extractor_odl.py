@@ -252,12 +252,16 @@ def test_retry_gets_only_the_time_left_of_the_budget(monkeypatch, odl_clock, cap
 
 
 def test_no_attempt_when_the_budget_is_used_up(monkeypatch, odl_clock):
-    """남은 시간이 변환 한 번을 띄울 만큼도 없으면 재저장본 변환을 띄우지 않고 fitz 텍스트로 간다."""
+    """남은 시간이 변환 한 번을 띄울 만큼도 없으면 재저장(동기 save — 큰 문서는 오래 걸린다)도 재저장본 변환도
+    하지 않고 바로 fitz 텍스트로 간다."""
     calls = _patch_timed_convert(monkeypatch, odl_clock, [(14.5, TimeoutError())])
+    pdf = _pdf(["First page body"] * 30)  # tobytes 도 save 를 부르므로 save 를 바꾸기 전에 만든다
+    saves = []
+    monkeypatch.setattr(fitz.Document, "save", lambda self, *a, **kw: saves.append(a))
 
-    result = _run(_pdf(["First page body"] * 30), time_budget=15.0)
+    result = _run(pdf, time_budget=15.0)
 
-    assert len(calls) == 1
+    assert len(calls) == 1 and saves == []
     assert result.odl_fallback == "fitz"
     assert any("ODL 실패(fitz 재저장본): 추출 데드라인까지 0초 — 변환하지 않음" in e for e in result.errors)
 
