@@ -302,6 +302,21 @@ def test_extract_text_carries_odl_fallback_and_time(monkeypatch, pdf):
     assert len(result.pages) == 2
 
 
+def test_odl_pages_are_adopted_even_when_fitz_cannot_open_the_file(monkeypatch):
+    """fitz 로 열리지 않아 ODL 결과만 돌려줄 때도 다른 채택 경로처럼 _adopt_odl 을 거친다 — [그림] 표식이 본문에 남지 않는다."""
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
+        res = extractor.ExtractionResult(book_id=book_id, total_pages=1)
+        res.pages = [extractor.PageResult(0, "[그림]\n\n본문 첫 문단이다. [그림] 이어지는 문장.", "opendataloader", 0.95)]
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    result = asyncio.run(extractor.extract_text(None, "T_ODL", file_bytes=bytes(range(256)) * 40))
+
+    assert any(e.startswith("파일 열기 실패") for e in result.errors)
+    assert [p.text for p in result.pages] == ["본문 첫 문단이다. 이어지는 문장."]
+
+
 def test_nonzero_exit_raises_runtime_error(monkeypatch):
     monkeypatch.setattr(extractor, "_ODL_CHILD", "import sys; sys.stderr.write('boom'); sys.exit(3)")
     with pytest.raises(RuntimeError, match="exit 3"):

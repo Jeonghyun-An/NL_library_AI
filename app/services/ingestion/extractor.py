@@ -518,8 +518,8 @@ async def extract_text(
             doc = fitz.open(str(file_path))
     except Exception as e:
         result.errors.append(f"파일 열기 실패: {e}")
-        # OpenDataLoader 결과만이라도 반환
-        result.pages = list(odl_result.pages)
+        # OpenDataLoader 결과만이라도 반환 — 다른 채택 경로처럼 _adopt_odl 로 다듬는다
+        result.pages = [_adopt_odl(p) for p in odl_result.pages]
         result.total_pages = len(result.pages)
         return result
 
