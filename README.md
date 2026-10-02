@@ -650,6 +650,8 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 - **장바구니 (임시 도입, 2026-06-18)** — 관심 도서 담기/목록 (`composables/useCart.ts`). 현재 클라이언트 상태만 유지하는 임시 구현 — 영속화·세션 동기화는 후속 과제.
 - **도서 상세 페이지** — 현재 검색 결과에서 도서별 상세 뷰가 없음. 섹션 목차, 그림 갤러리, 인용 청크 미리보기 페이지 추가.
 - **논문 상세 페이지** — papers.vue도 동일하게 인용 정보(`kci_citations`, `wos_citations`) 강조 페이지 필요.
+- **[보안] 원문 뷰어 pdf.js 올리기** — `frontend/public/pdfjs` 고정본 4.0.379 는 CVE-2024-4367(글꼴로 임의 스크립트 실행, 4.2.67 에서 수정) 범위. round05a 는 끼운 뷰어(`PdfViewer.vue`)의 `webviewerloaded` 에서 `isEvalSupported=false` 로 막았지만, iframe 없이 `/pdfjs/web/viewer.html` 을 바로 열면 걸리지 않는다. 4.2.67 이상으로 올리는 것이 근본 해결. 상세: `docs/roadmap/round05a-완료노트.md` §9.
+- **제외 논문 앵커를 담는 곳별로** — 같은 제외 논문이 보고서 제외 목록과 탐색 타임라인(회차마다)에 함께 있으면 앵커 `x-<cnts>` 가 여럿이라, 상세에서 돌아올 때 보고서 쪽 항목으로 맞춘다(배치 A 타임라인은 자체 스크롤이라 못 맞춘다). 담는 곳별 앵커(`t-…`)로 나눈다.
 - **대용량 결과 가상화** — 300건 이상 결과 시 페이지 끊김. Virtual scrolling (`vue-virtual-scroller`) 도입.
 - **검색 히스토리 동기화** — 현재 sessionStorage 기반. session_id로 백엔드 동기화는 되어 있지만 다중 디바이스 미지원. 로그인 도입 시 정리.
 - **인덱싱 진행률 UI** — 관리 화면에서 Celery 태스크별 진행률 (페이지 X/Y) 표시.
