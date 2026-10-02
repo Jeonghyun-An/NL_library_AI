@@ -1027,6 +1027,50 @@ class TestManualRetryToken:
         assert env.item(1).status == "dispatched"
 
 
+# ── 수동 retry: 끝난 잡을 다시 running 으로 ────────────────────────────────
+class TestRetryReopensJob:
+    """retry 는 끝난 잡을 running 으로 되돌린다. 다른 잡이 이미 돌고 있으면(카나리 + 본 잡) 막지 않고 경고만 한다 —
+    디스패처는 잡마다 high_water 까지 보내므로 함께 돌면 동시에 도는 아이템이 그만큼 는다."""
+
+    def _add_job(self, env, name, status):
+        job_id = uuid.uuid4()
+        with env.Session() as s:
+            s.add(IngestJob(id=job_id, name=name, status=status, params={}, total_items=0))
+            s.commit()
+        return job_id
+
+    def _reopen(self, env, job_id):
+        from services.ingestion.job_manager import _reopen_finished_job
+
+        with env.Session() as s:
+            _reopen_finished_job(s, job_id)
+            s.commit()
+        with env.Session() as s:
+            return s.get(IngestJob, job_id)
+
+    def test_reopening_while_another_job_runs_warns_with_both_names(self, env, caplog):
+        canary = self._add_job(env, "kci-canary", "completed_with_errors")   # env 의 잡 'kci-test' 는 running
+
+        with caplog.at_level(logging.WARNING, logger="services.ingestion.job_manager"):
+            job = self._reopen(env, canary)
+
+        assert job.status == "running" and job.finished_at is None
+        warned = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+        assert len(warned) == 1 and "kci-canary" in warned[0] and "kci-test" in warned[0]
+
+    def test_reopening_alone_does_not_warn(self, env, caplog):
+        env.set_job(status="completed")
+        with caplog.at_level(logging.WARNING, logger="services.ingestion.job_manager"):
+            job = self._reopen(env, env.job_id)
+        assert job.status == "running"
+        assert [r for r in caplog.records if r.levelno == logging.WARNING] == []
+
+    @pytest.mark.parametrize("status", ["running", "paused", "canceled"])
+    def test_unfinished_job_keeps_its_status(self, env, status):
+        job_id = self._add_job(env, "other", status)
+        assert self._reopen(env, job_id).status == status
+
+
 # ── 제어 큐 태스크(디스패처·정리): 제어 워커를 오래 붙잡지 않는다 ───────────────
 class TestControlTasksAreBounded:
     """디스패처와 cleanup_temp_files 는 제어 워커(celery-control, concurrency 1)에서 같은 q_control 을 쓴다.

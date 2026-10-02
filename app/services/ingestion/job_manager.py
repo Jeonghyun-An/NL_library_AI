@@ -198,6 +198,31 @@ def create_job(name: str, manifest_key: str, params: dict, created_by: str | Non
 RETRY_RUN_TOKEN = "retry"
 
 
+def _reopen_finished_job(db, job_id) -> None:
+    """끝난 잡(completed·completed_with_errors)을 다시 running 으로 — 디스패처가 픽업하도록.
+
+    다른 잡이 이미 running 이면(카나리 + 본 잡) 막지 않고 경고만 한다. 디스패처는 잡마다 high_water 까지
+    보내므로 함께 돌면 동시에 도는 아이템이 그만큼 는다.
+    """
+    from models.ingest_job import IngestJob
+
+    job = db.query(IngestJob).filter(IngestJob.id == job_id).first()
+    if not job or job.status not in ("completed", "completed_with_errors"):
+        return
+    running = [
+        name for (name,) in db.query(IngestJob.name)
+        .filter(IngestJob.status == "running", IngestJob.id != job.id)
+        .order_by(IngestJob.name)
+    ]
+    if running:
+        log.warning(
+            f"잡 '{job.name}' 을 다시 running 으로 돌린다 — 이미 running 인 잡 {running} 과 함께 돈다"
+            f"(디스패처가 잡마다 high_water 까지 보내 동시에 도는 아이템이 는다)"
+        )
+    job.status = "running"
+    job.finished_at = None
+
+
 def retry_items(
     job_id: str,
     *,
@@ -215,7 +240,7 @@ def retry_items(
     """
     from sqlalchemy import func, text
     from db.postgres import SyncSessionLocal
-    from models.ingest_job import IngestJob, IngestJobItem
+    from models.ingest_job import IngestJobItem
 
     db = SyncSessionLocal()
     try:
@@ -251,11 +276,7 @@ def retry_items(
             update_vals["stage"] = reset_stage
         count = q.update(update_vals, synchronize_session=False)
 
-        # 잡이 완료 상태였으면 다시 running 으로 (디스패처가 픽업하도록)
-        job = db.query(IngestJob).filter(IngestJob.id == job_id).first()
-        if job and job.status in ("completed", "completed_with_errors"):
-            job.status = "running"
-            job.finished_at = None
+        _reopen_finished_job(db, job_id)
         db.commit()
         log.info(f"잡 {job_id} 재시도: {count}건 pending 리셋")
         return count
