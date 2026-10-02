@@ -45,6 +45,7 @@ router = APIRouter(tags=["research-work"])
 EXAMPLE_READ_ONLY = "예시 연구는 읽기 전용입니다"
 CONCEPTS_BUSY = "핵심 개념을 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
 RUNNING_NOT_CANCELABLE = "진행 중인 생성은 끝날 때까지 기다립니다"
+NEWER_GENERATION = "더 새 생성이 있습니다 — 최신 생성에서 다시 불러 주세요"
 MAX_MEMO = 2000
 RECENT_FINISHED = 10           # 연구 응답에 싣는 끝난 생성 수(열린 생성은 전부 싣는다)
 MAX_WORK_LIST = 50             # 이어간 연구 목록 상한 — [담기] 메뉴가 고르는 목록이다
@@ -312,7 +313,8 @@ async def cancel_generation(job_id: str, gen_id: int, db: AsyncSession = Depends
 @router.post("/api/research/{job_id}/generations/{gen_id}/retry")
 async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(get_db)):
     """failed·canceled 생성과 빈 결과로 끝난 핵심 개념(_retryable)을 같은 kind·target·input·priority 로 다시
-    줄 세운다(새 행). 같은 생성이 이미 열려 있으면(두 번 누름) 409 — 같은 일이 두 줄 서지 않게. 동시에 두 번
+    줄 세운다(새 행). 같은 생성이 이미 열려 있으면(두 번 누름) 409 — 같은 일이 두 줄 서지 않게. 같은
+    (연구·kind·target)에 더 새 행이 있어도 409 — 다시 부를 수 있는 것은 그 대상의 최신 행뿐이다. 동시에 두 번
     눌러도 (연구·kind·target) 잠금이 검사와 넣기를 한 줄로 세운다(잠금은 커밋·롤백까지 쥔다)."""
     jid = _job_uuid(job_id)
     _writable(await _get_work(db, jid))
@@ -328,6 +330,13 @@ async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(
     ) is not None:
         await db.rollback()
         raise HTTPException(status_code=409, detail="같은 생성이 이미 대기 중이거나 진행 중입니다")
+    # 같은 대상의 최신 행만 다시 부른다 — 옛 행(응답의 '최근 끝난 생성'에 남은 실패분)을 다시 부르면 그 뒤
+    # 성공한 생성과 사용자가 고친 칩을 새 결과가 덮고 개념 소속을 비운다(PATCH 409 규칙이 막으려던 손실)
+    if await db.scalar(
+        select(G.id).where(G.work_id == jid, G.kind == gen.kind, same_target, G.id > gen.id).limit(1)
+    ) is not None:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail=NEWER_GENERATION)
     new_id = await db.scalar(
         insert(G).values(work_id=jid, kind=gen.kind, target=gen.target, priority=gen.priority,
                          status="queued", input=gen.input)

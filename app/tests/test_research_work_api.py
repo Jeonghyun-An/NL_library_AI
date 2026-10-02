@@ -655,6 +655,40 @@ class TestRetryGeneration:
         assert api.client.post(f"/api/research/{jid}/generations/{gid}/retry").status_code == 409
         assert len(_rows(api.engine, ResearchGeneration)) == 2
 
+    def test_old_failure_after_a_newer_success_is_409_and_keeps_the_concepts(self, api):
+        # gen1 failed → retry 로 gen2 done(개념 채움) → 사용자가 칩을 고침. 오래된 탭이 gen1 을 다시 부르면
+        # gen3 의 결과가 고친 칩을 덮고 개념 소속을 비운다 — 같은 대상의 최신 행만 다시 부른다
+        jid = _work_job(api.engine, concepts=["사용자 개념", "청소년"])
+        old = add_generation(api.engine, jid, status="failed")
+        newer = add_generation(api.engine, jid, status="done")
+        _set(api.engine, ResearchGeneration, newer, output={"concepts": ["독서 격차", "청소년"]})
+
+        res = api.client.post(f"/api/research/{jid}/generations/{old}/retry")
+
+        assert res.status_code == 409 and res.json()["detail"] == api.router.NEWER_GENERATION
+        assert len(_rows(api.engine, ResearchGeneration)) == 2
+        assert _rows(api.engine, ResearchWork)[0]["concepts"] == ["사용자 개념", "청소년"]
+        assert api.dispatch.calls == 0 and api.events == []
+
+    def test_only_the_latest_failure_of_a_target_can_be_called_again(self, api):
+        jid = _work_job(api.engine)
+        first = add_generation(api.engine, jid, status="failed")
+        latest = add_generation(api.engine, jid, status="failed")
+
+        assert api.client.post(f"/api/research/{jid}/generations/{first}/retry").status_code == 409
+        assert len(_rows(api.engine, ResearchGeneration)) == 2
+        assert api.client.post(f"/api/research/{jid}/generations/{latest}/retry").status_code == 200
+        assert len(_rows(api.engine, ResearchGeneration)) == 3
+
+    def test_a_newer_generation_of_another_target_does_not_block(self, api):
+        jid = _work_job(api.engine)
+        gid = add_generation(api.engine, jid, status="failed")
+        _set(api.engine, ResearchGeneration, gid, target="t1")
+        other = add_generation(api.engine, jid, status="failed")
+        _set(api.engine, ResearchGeneration, other, target="t2")
+
+        assert api.client.post(f"/api/research/{jid}/generations/{gid}/retry").status_code == 200
+
     def test_an_open_generation_of_another_target_does_not_block(self, api):
         # 같은 kind 라도 대상(target)이 다르면 다른 일이다
         jid = _work_job(api.engine)
@@ -685,10 +719,12 @@ class TestRetryGeneration:
         lock = next(i for i, (s, _) in enumerate(seen) if "pg_advisory_xact_lock" in s)
         check = next(i for i, (s, _) in enumerate(seen)
                      if s.startswith("SELECT") and "research_generations.status IN" in s)
+        newer = next(i for i, (s, _) in enumerate(seen)
+                     if s.startswith("SELECT") and "research_generations.id >" in s)
         insert = next(i for i, (s, _) in enumerate(seen)
                       if s.startswith("INSERT INTO research_generations"))
         commit = next(i for i, (s, _) in enumerate(seen) if s == "COMMIT" and i > lock)
-        assert lock < check < insert < commit
+        assert lock < check < newer < insert < commit
         assert seen[lock][1] == (api.router._retry_lock_key(jid, "concepts", "t1"),)
         assert api.router._retry_lock_key(jid, "concepts", "t1") != api.router._retry_lock_key(
             jid, "concepts", "t2")
