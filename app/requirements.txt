@@ -41,7 +41,8 @@ httpx==0.27.2
 # ── OCR / PDF ───────────────────────────────────────────────
 PyMuPDF==1.24.10
 Pillow==10.4.0
-opendataloader-pdf==2.5.0  # 한컴·듀얼랩 PDF 하이브리드 추출 엔진 (Java 11+ 필요) — markdown+json 동시 산출용 저수준 패키지 직접 사용
+# 운영이 적재해 온 판(2026-10-02 nl-lib-celery-cpu 확인)으로 고정 — 다른 판이 들어오면 남은 코퍼스의 추출 결과가 달라진다
+opendataloader-pdf==2.5.9  # 한컴·듀얼랩 PDF 하이브리드 추출 엔진 (Java 11+ 필요) — markdown+json 동시 산출용 저수준 패키지 직접 사용
 
 # ── 한국어 처리 (kss는 assets 버그로 런타임에 lazy import) ───
 # kss[all]==6.0.0
