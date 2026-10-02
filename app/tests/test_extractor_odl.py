@@ -69,7 +69,7 @@ def test_convert_writes_markdown_and_json_with_page_scaled_timeout(monkeypatch):
     calls = _patch_convert(monkeypatch, [{1: "첫 쪽 본문", 2: "둘째 쪽 본문"}])
     result = _run(_pdf(["a"] * 30))
     assert calls[0]["format"] == ["markdown", "json"]
-    assert calls[0]["timeout"] == 15.0  # max(5, 30 × 0.5)
+    assert calls[0]["timeout"] == 45.0  # max(10, 30 × 1.5)
     assert [(p.page_num, p.text, p.method) for p in result.pages] == [
         (0, "첫 쪽 본문", "opendataloader"), (1, "둘째 쪽 본문", "opendataloader")]
     assert result.errors == []
@@ -78,7 +78,7 @@ def test_convert_writes_markdown_and_json_with_page_scaled_timeout(monkeypatch):
 def test_short_document_gets_base_timeout(monkeypatch):
     calls = _patch_convert(monkeypatch, [{1: "본문"}])
     _run(_pdf(["a"] * 4))
-    assert calls[0]["timeout"] == 5.0
+    assert calls[0]["timeout"] == 10.0  # max(10, 4 × 1.5)
 
 
 def test_timeout_retries_once_with_fitz_resaved_pdf(monkeypatch):
@@ -114,7 +114,7 @@ def test_unopenable_file_gets_no_resave_or_fitz_fallback(monkeypatch):
     calls = _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)")])
     result = _run(bytes(range(256)) * 40)
     assert len(calls) == 1
-    assert calls[0]["timeout"] == 5.0
+    assert calls[0]["timeout"] == 10.0  # 쪽수를 모르니 기본값
     assert result.pages == []
     assert any("ODL 실패(원본)" in e for e in result.errors)
 
@@ -226,11 +226,60 @@ def test_unopenable_file_has_no_fallback_but_records_time(monkeypatch, odl_clock
     assert _odl_time_logs(caplog) == ["[T_ODL] ODL 1.5초 / 상한 5초"]
 
 
+# ── 추출 데드라인 — 변환 상한을 남은 시간까지로 줄인다(강제 재추출까지 합쳐도 stale 판정 안) ──────
+
+
+def test_odl_attempt_is_capped_by_the_time_budget(monkeypatch, odl_clock):
+    calls = _patch_timed_convert(monkeypatch, odl_clock, [(3.0, {1: "본문"})])
+    _run(_pdf(["a"] * 30), time_budget=12.0)               # 쪽수 비례 상한 15초 > 남은 12초
+    assert calls[0]["timeout"] == 12.0
+
+
+def test_retry_gets_only_the_time_left_of_the_budget(monkeypatch, odl_clock, caplog):
+    calls = _patch_timed_convert(monkeypatch, odl_clock, [(14.0, TimeoutError()), (1.0, {1: "재저장본 본문"})])
+    caplog.set_level(logging.INFO, logger=extractor.log.name)
+
+    result = _run(_pdf(["a"] * 30), time_budget=20.0)
+
+    assert [c["timeout"] for c in calls] == [15.0, 6.0]     # 원본은 쪽수 비례 상한, 재저장본은 남은 20 − 14 초
+    assert result.odl_fallback == "resaved"
+    assert _odl_time_logs(caplog) == ["[T_ODL] ODL 14.0초 / 상한 15초", "[T_ODL] ODL 1.0초 / 상한 6초"]
+    assert any(e == "ODL 실패(원본): 15초 초과" for e in result.errors)
+
+
+def test_no_attempt_when_the_budget_is_used_up(monkeypatch, odl_clock):
+    """남은 시간이 변환 한 번을 띄울 만큼도 없으면 재저장본 변환을 띄우지 않고 fitz 텍스트로 간다."""
+    calls = _patch_timed_convert(monkeypatch, odl_clock, [(14.5, TimeoutError())])
+
+    result = _run(_pdf(["First page body"] * 30), time_budget=15.0)
+
+    assert len(calls) == 1
+    assert result.odl_fallback == "fitz"
+    assert any("ODL 실패(fitz 재저장본): 추출 데드라인까지 0초 — 변환하지 않음" in e for e in result.errors)
+
+
+def test_extract_text_gives_odl_the_rest_of_the_extract_deadline(monkeypatch, odl_clock):
+    body = "First page body has enough letters to keep."    # 본문 충분 — OCR 로 가는 쪽이 없다
+    budgets: list[float | None] = []
+
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
+        budgets.append(time_budget)
+        res = extractor.ExtractionResult(book_id=book_id, total_pages=1)
+        res.pages = [extractor.PageResult(0, body, "opendataloader", 0.95)]
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    asyncio.run(extractor.extract_text(None, "T_ODL", file_bytes=_pdf([body]), deadline_s=123.0))
+
+    assert budgets == [123.0]                                # 가짜 시계가 멈춰 있어 데드라인 전부
+
+
 @pytest.mark.parametrize("pdf", [_pdf(["First page body has enough letters to keep."] * 2), bytes(range(256)) * 40],
                          ids=["normal", "fitz_cannot_open"])
 def test_extract_text_carries_odl_fallback_and_time(monkeypatch, pdf):
     """extract_text 는 1티어 결과의 폴백·변환 시간을 그대로 싣는다 — fitz 로 안 열려 ODL 결과만 돌려줄 때도."""
-    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
         res = extractor.ExtractionResult(book_id=book_id, total_pages=2)
         res.pages = [extractor.PageResult(n, "First page body has enough letters to keep.", "fitz", 0.5)
                      for n in range(2)]

@@ -205,7 +205,7 @@ def _pdf(pages: list[list[str]]) -> bytes:
 
 
 def _route(monkeypatch, pdf: bytes, odl_texts: dict[int, str], **kwargs) -> tuple[list[int], ExtractionResult]:
-    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
         res = ExtractionResult(book_id=book_id, total_pages=len(odl_texts))
         res.pages = [PageResult(n, t, "opendataloader", 0.95) for n, t in sorted(odl_texts.items())]
         return res

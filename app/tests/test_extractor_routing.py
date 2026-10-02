@@ -44,7 +44,7 @@ def _run(
     fill_ratios: dict[int, float] | None = None,
     **kwargs,
 ) -> tuple[list[int], ExtractionResult]:
-    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
         res = ExtractionResult(book_id=book_id, total_pages=len(odl_texts))
         res.pages = [PageResult(n, t, "opendataloader", 0.95) for n, t in sorted(odl_texts.items())]
         res.table_fill_ratios = dict(fill_ratios or {})
@@ -266,7 +266,7 @@ def _patch_fakes(monkeypatch) -> dict:
     """extract_text 의 fitz 문서·ODL·VLM·httpx 를 목으로 바꾸고, 호출마다 채우는 상태 dict 를 돌려준다."""
     state: dict = {"pages": [], "odl": {}, "fill": {}, "ocr": []}
 
-    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
         res = ExtractionResult(book_id=book_id, total_pages=len(state["odl"]))
         res.pages = [PageResult(n, t, "opendataloader", 0.95) for n, t in sorted(state["odl"].items())]
         res.table_fill_ratios = dict(state["fill"])

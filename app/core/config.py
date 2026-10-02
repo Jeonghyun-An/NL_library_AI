@@ -176,9 +176,12 @@ class Settings(BaseSettings):
     # 짧은 쪽 비율이 이보다 크면 스캔본 (SCAN_MIN_PAGES 쪽 이상 문서만)
     SCAN_SHORT_PAGE_RATIO: float = 0.5
     SCAN_MIN_PAGES: int = 3
-    # ODL 타임아웃(초) = max(기본, 쪽수 × 쪽당)
-    ODL_TIMEOUT_BASE_SECONDS: float = 5.0
-    ODL_TIMEOUT_PER_PAGE_SECONDS: float = 0.5
+    # ODL 타임아웃(초) = max(기본, 쪽수 × 쪽당) — 추출 데드라인이 남긴 시간을 넘지 않는다.
+    # 변환은 추출 워커 4칸이 동시에 돈다: 표가 많은 37쪽 문서가 혼자 12초, 4건 동시 28초, 8건 동시 47초
+    # (24스레드 PC 실측). 쪽당 0.5초(상한 18.5초)면 4건 동시에 넘어 재저장본 재시도 뒤 fitz 텍스트로 떨어져
+    # 표·머리말 제거를 잃는다 — 1.5초면 4건 동시 상한의 0.51, 8건 동시 0.84. 기본 10초는 JVM 기동 몫.
+    ODL_TIMEOUT_BASE_SECONDS: float = 10.0
+    ODL_TIMEOUT_PER_PAGE_SECONDS: float = 1.5
     # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다.
     # opendataloader-pdf CLI 가 받는 값만 — 모르는 값이면 java 가 문서마다 exit 2 로 끝나 모두 fitz 텍스트가 된다
     ODL_IMAGE_OUTPUT: Literal["off", "embedded", "external"] = "off"

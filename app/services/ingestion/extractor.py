@@ -503,7 +503,7 @@ async def extract_text(
 
     # ── 1티어: OpenDataLoader 전체 추출 ──────────────────
     odl_result = await extract_text_opendataloader(
-        file_path, book_id, file_bytes=file_bytes
+        file_path, book_id, file_bytes=file_bytes, time_budget=deadline - (time.monotonic() - t_start)
     )
     result.odl_fallback, result.odl_seconds = odl_result.odl_fallback, odl_result.odl_seconds
     odl_pages_by_num: dict[int, PageResult] = {p.page_num: p for p in odl_result.pages}
@@ -759,6 +759,9 @@ _ODL_CHILD = (
 # 구획)을 먼저 찍고 CalledProcessError 추적을 끝에 찍는데, 맨 끝 줄은 CLI 인자 전부라 끝만 남기면 원인이 잘린다
 _ODL_ERROR_MARKERS = ("Exception", "Error", "Unsupported", "Caused by")
 
+# 추출 데드라인이 이만큼도 남기지 않으면 변환을 띄우지 않는다 — JVM 기동만으로 다 쓴다
+_ODL_MIN_ATTEMPT_SECONDS = 2.0
+
 
 def _odl_failure_summary(output: str, *, cause_chars: int = 300, last_chars: int = 300) -> str:
     """자식의 stderr 에서 실패 원인을 추린다 — 오류처럼 보이는 앞쪽 줄(합쳐 cause_chars 자까지)과 마지막 줄의 끝."""
@@ -863,6 +866,7 @@ async def extract_text_opendataloader(
     *,
     file_bytes: bytes | None = None,
     max_pages: int | None = None,
+    time_budget: float | None = None,
 ) -> ExtractionResult:
     """OpenDataLoader PDF를 이용한 추출 — extract_text()가 호출하는 실제 1티어 진입점.
 
@@ -877,6 +881,8 @@ async def extract_text_opendataloader(
     변환은 max(ODL_TIMEOUT_BASE_SECONDS, 쪽수 × ODL_TIMEOUT_PER_PAGE_SECONDS) 초 안에 끝나야 한다.
     넘거나 실패하면 fitz 로 다시 저장한 PDF 로 한 번 더, 그래도 안 되면 fitz 텍스트로 대신한다
     (쪽 method "fitz"). fitz 로도 열리지 않는 파일은 재저장·fitz 폴백 없이 오류만 남긴다.
+    time_budget(초)을 주면 변환 시도마다 상한을 남은 시간까지로 줄이고, 변환을 띄울 만큼도 남지 않으면
+    그 시도를 건너뛴다 — 추출 데드라인 안에서 부르는 extract_text 가 준다.
     """
     import json as _json
     from collections import defaultdict
@@ -914,23 +920,32 @@ async def extract_text_opendataloader(
         odl_timeout = max(
             cfg.ODL_TIMEOUT_BASE_SECONDS, (page_count or 0) * cfg.ODL_TIMEOUT_PER_PAGE_SECONDS
         )
+        odl_deadline = None if time_budget is None else time.monotonic() + time_budget
 
         async def _convert(input_path: str, output_dir: str) -> Path:
-            # 변환 한 번 — 실패해도 걸린 시간을 쌓고 상한과 함께 남긴다(상한을 정할 실측 자료)
+            # 변환 한 번 — 실패해도 걸린 시간을 쌓고 상한과 함께 남긴다(상한을 정할 실측 자료).
+            # 추출 데드라인 안이면 남은 시간까지만 쓴다 — 강제 재추출까지 합쳐도 추출이 stale 판정 안에 끝나게.
+            timeout = odl_timeout
+            if odl_deadline is not None:
+                timeout = min(timeout, odl_deadline - time.monotonic())
+                if timeout < _ODL_MIN_ATTEMPT_SECONDS:
+                    raise TimeoutError(f"추출 데드라인까지 {max(timeout, 0.0):.0f}초 — 변환하지 않음")
             t0 = time.monotonic()
             try:
-                return await _run_odl(input_path, output_dir, _PAGE_SEP, odl_timeout)
+                return await _run_odl(input_path, output_dir, _PAGE_SEP, timeout)
+            except TimeoutError:
+                raise TimeoutError(f"{timeout:.0f}초 초과") from None
             finally:
                 seconds = time.monotonic() - t0
                 result.odl_seconds += seconds
-                log.info(f"[{book_id}] ODL {seconds:.1f}초 / 상한 {odl_timeout:.0f}초")
+                log.info(f"[{book_id}] ODL {seconds:.1f}초 / 상한 {timeout:.0f}초")
 
         out_dir = tempfile.mkdtemp()
         md_file: Path | None = None
         try:
             md_file = await _convert(load_path, out_dir)
         except (TimeoutError, RuntimeError, ValueError, OSError) as e:
-            reason = f"{odl_timeout:.0f}초 초과" if isinstance(e, TimeoutError) else str(e)
+            reason = str(e) or type(e).__name__
             log.warning(f"[{book_id}] ODL 실패({reason}) — fitz 재저장본으로 한 번 더")
             result.errors.append(f"ODL 실패(원본): {reason}")
             if page_count is not None:
@@ -948,7 +963,7 @@ async def extract_text_opendataloader(
                 except (TimeoutError, RuntimeError, ValueError, OSError, fitz.mupdf.FzErrorBase) as e2:
                     # 손상 PDF 의 재저장은 mupdf FzErrorBase 로도 실패한다(RuntimeError 가 아니다 — PyMuPDF 1.24·1.28
                     # 모두 FzErrorArgument 'not a dict'). 그래도 아래 fitz 텍스트 폴백으로 간다.
-                    reason2 = f"{odl_timeout:.0f}초 초과" if isinstance(e2, TimeoutError) else str(e2)
+                    reason2 = str(e2) or type(e2).__name__
                     result.errors.append(f"ODL 실패(fitz 재저장본): {reason2}")
 
         if md_file is None:

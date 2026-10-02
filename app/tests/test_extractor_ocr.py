@@ -68,7 +68,7 @@ def _odl_default(n: int) -> str:
 
 def _patch(monkeypatch, n_pages: int, fake_vlm=None, *, concurrency: int = 2, odl_text=_odl_default) -> None:
     """ODL 은 목(쪽마다 odl_text(n)), fake_vlm 이 None 이면 실제 _extract_with_vlm 을 그대로 쓴다."""
-    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None):
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
         res = ExtractionResult(book_id=book_id, total_pages=n_pages)
         res.pages = [PageResult(n, odl_text(n), "opendataloader", 0.95) for n in range(n_pages)]
         return res

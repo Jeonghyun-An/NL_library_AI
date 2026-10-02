@@ -155,9 +155,9 @@ x-common-env: &common-env
   SCAN_REPEAT_LINE_RATIO: ${SCAN_REPEAT_LINE_RATIO:-0.6}
   SCAN_SHORT_PAGE_RATIO: ${SCAN_SHORT_PAGE_RATIO:-0.5}
   SCAN_MIN_PAGES: ${SCAN_MIN_PAGES:-3}
-  # ODL 타임아웃 = max(기본, 쪽수 × 쪽당) 초, 이미지 출력(off = 인코딩 안 함)
-  ODL_TIMEOUT_BASE_SECONDS: ${ODL_TIMEOUT_BASE_SECONDS:-5.0}
-  ODL_TIMEOUT_PER_PAGE_SECONDS: ${ODL_TIMEOUT_PER_PAGE_SECONDS:-0.5}
+  # ODL 타임아웃 = max(기본, 쪽수 × 쪽당) 초(추출 4칸 동시 변환 기준 — config.py 주석), 이미지 출력(off = 인코딩 안 함)
+  ODL_TIMEOUT_BASE_SECONDS: ${ODL_TIMEOUT_BASE_SECONDS:-10.0}
+  ODL_TIMEOUT_PER_PAGE_SECONDS: ${ODL_TIMEOUT_PER_PAGE_SECONDS:-1.5}
   ODL_IMAGE_OUTPUT: ${ODL_IMAGE_OUTPUT:-off}
 
   # PDF 메타 자동추출
