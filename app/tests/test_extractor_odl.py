@@ -135,7 +135,11 @@ def test_resave_error_of_any_type_still_falls_back_to_fitz_text(monkeypatch):
     assert any("ODL 실패(fitz 재저장본)" in e for e in result.errors)
 
 
-def test_fitz_fallback_skips_only_the_page_whose_text_fails(monkeypatch):
+@pytest.mark.parametrize("make_error", [
+    lambda: RuntimeError("too many nested graphics states"),
+    lambda: fitz.mupdf.FzErrorArgument("not a dict (null)"),   # mupdf 오류는 RuntimeError 가 아니다
+], ids=["runtime_error", "mupdf_error"])
+def test_fitz_fallback_skips_only_the_page_whose_text_fails(monkeypatch, make_error):
     """폴백에서 쪽 하나의 get_text 실패('too many nested graphics states' 등)가 다른 쪽 텍스트까지 버리지 않는다 —
     그 쪽만 빠져 extract_text 가 'ODL 누락'으로 OCR 한다."""
     _patch_convert(monkeypatch, [TimeoutError(), TimeoutError()])
@@ -143,7 +147,7 @@ def test_fitz_fallback_skips_only_the_page_whose_text_fails(monkeypatch):
 
     def flaky_get_text(self, *args, **kwargs):
         if self.number == 1:
-            raise RuntimeError("too many nested graphics states")
+            raise make_error()
         return real_get_text(self, *args, **kwargs)
 
     monkeypatch.setattr(fitz.Page, "get_text", flaky_get_text)

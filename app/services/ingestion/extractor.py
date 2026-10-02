@@ -851,9 +851,9 @@ def _fitz_text_pages(path: str, max_pages: int | None) -> list[PageResult]:
                 break
             try:
                 raw = page.get_text("text").strip()
-            except RuntimeError:  # 'too many nested graphics states' 등 — PyMuPDF 가 RuntimeError 로 올린다
+            except Exception:  # 'too many nested graphics states'(RuntimeError)·mupdf FzErrorBase 등
                 # 쪽 하나의 파싱 실패가 폴백 전체를 버리지 않게 그 쪽만 뺀다('ODL 누락' → OCR). 같은 쪽은
-                # extract_text 가 fitz 텍스트를 미리 받을 때도 실패해 거기서 오류로 남는다.
+                # extract_text 가 fitz 텍스트를 미리 받을 때도 실패해 거기서 오류로 남는다(그쪽도 Exception 을 받는다).
                 continue
             if raw:
                 pages.append(PageResult(page_num=page.number, text=_clean_text(raw), method="fitz", confidence=0.5))
