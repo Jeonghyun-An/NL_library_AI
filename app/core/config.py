@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings
 FORCED_REEXTRACT_FLOOR_SECONDS = 60
 # llm_client 의 호출 하나는 timeout + 연결(≤10초)까지 걸린다 — PDF 메타 LLM 몫에 더한다
 PDF_META_CONNECT_MARGIN_SECONDS = 10
+# ODL_JAVA_MAX_HEAP 의 하한(MB) — 1g 는 무거운 문서 61건 중 1건만 메모리 부족이었다(research/round07-odl-heap)
+ODL_JAVA_MIN_HEAP_MB = 1024
 
 
 class Settings(BaseSettings):
@@ -18,6 +20,17 @@ class Settings(BaseSettings):
     def _blank_think_is_none(cls, v):
         if isinstance(v, str) and not v.strip():
             return None
+        return v
+
+    # 형식은 Field pattern 이 먼저 본다 — 여기서는 크기만. 빈 값(상한 없음)은 그대로 둔다
+    @field_validator("ODL_JAVA_MAX_HEAP")
+    @classmethod
+    def _odl_heap_floor(cls, v: str) -> str:
+        if v and int(v[:-1]) * (1024 if v[-1] in "gG" else 1) < ODL_JAVA_MIN_HEAP_MB:
+            raise ValueError(
+                f"ODL_JAVA_MAX_HEAP={v} 가 1g({ODL_JAVA_MIN_HEAP_MB}m)보다 작다 — JVM 이 뜨지 않거나 문서 대부분이 "
+                "메모리 부족으로 fitz 텍스트가 된다. 1g 이상이나 빈 값(상한 없음)을 준다"
+            )
         return v
 
     APP_NAME: str = "NL-Lib Semantic Search"
@@ -206,11 +219,13 @@ class Settings(BaseSettings):
     # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다.
     # opendataloader-pdf CLI 가 받는 값만 — 모르는 값이면 java 가 문서마다 exit 2 로 끝나 모두 fitz 텍스트가 된다
     ODL_IMAGE_OUTPUT: Literal["off", "embedded", "external"] = "off"
-    # ODL java 의 힙 상한(-Xmx 뒤 크기, 빈 값 = 상한 없음). 상한이 없으면 JVM 이 메모리의 1/4 까지 써 병리 문서
-    # 하나가 10GB 를 넘겼고(운영 서버 251GB 면 하나당 약 63GB) 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 실측(운영 이미지, 2026-10-02): 무거운
-    # 문서 61건은 2·3g 에서 상한 없을 때와 추출 결과가 같았고(1g 은 1.6g 가 드는 1건 실패), 일반 688건은 2g 에서 3건만
-    # 메모리 부족 — 그중 3g 로 살아나는 건 1건이다. 넘친 문서는 재저장본 재시도 뒤 fitz 텍스트로 간다.
-    # '2gb' 처럼 java 가 못 읽는 값이면 JVM 이 뜨지 않아 모든 문서가 fitz 텍스트가 된다 — 읽을 때 형식을 막는다
+    # ODL java 의 힙 상한(-Xmx 뒤 크기). 상한이 없으면 JVM 이 메모리의 1/4 까지 써 병리 문서 하나가 10GB 를 넘겼고
+    # (운영 서버 251GB 면 하나당 약 63GB) 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 실측(운영 이미지, 2026-10-02):
+    # 무거운 문서 61건은 2·3g 에서 상한 없을 때와 추출 결과가 같았고(1g 은 1.6g 가 드는 1건 실패), 일반 688건은 2g 에서
+    # 3건만 메모리 부족 — 그중 3g 로 살아나는 건 1건이다. 넘친 문서는 재저장본 재시도 뒤 fitz 텍스트로 간다.
+    # '2gb' 같은 형식 오타나 '3m' 같은 작은 값이면 JVM 이 뜨지 않거나 문서 대부분이 메모리 부족이라 모든 문서가
+    # fitz 텍스트가 된다 — 읽을 때 형식(pattern)과 하한(1g, _odl_heap_floor)을 막는다. 빈 값 = 상한 없음은 앱 설정에서만
+    # 된다: compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 는 빈 스택 env 를 3g 로 채우므로 운영에서 풀려면 64g 같은 큰 값을 준다
     ODL_JAVA_MAX_HEAP: str = Field("3g", pattern=r"^([1-9][0-9]*[mMgG])?$")
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096

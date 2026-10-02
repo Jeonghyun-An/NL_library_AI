@@ -91,13 +91,23 @@ def test_odl_java_max_heap_accepts_only_jvm_sizes(monkeypatch):
 
     from core.config import Settings
 
-    for value in ("3g", "2G", "1536m", "4096M", ""):
+    for value in ("3g", "2G", "1g", "1024m", "1536m", "4096M", ""):
         monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
         assert Settings(_env_file=None).ODL_JAVA_MAX_HEAP == value
-    for value in ("2gb", "-Xmx2g", "0g", "3", "1.5g", " 3g", "3 g", "3k"):
+    for value in ("2gb", "-Xmx2g", "0g", "3", "1.5g", " 3g", "3g ", "3 g", "3k"):
         monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
         with pytest.raises(ValidationError):
             Settings(_env_file=None)
+    # 형식은 맞아도 1g 보다 작으면 막는다 — '3m'('3g' 오타)는 JVM 이 뜨지 않고 '512m' 는 무거운 문서가 메모리 부족이라
+    # 형식 오타와 같은 결과(모든·많은 문서가 fitz 텍스트)다. 1g 는 무거운 문서 61건 중 1건만 실패했다(실측)
+    for value in ("3m", "512m", "1023m"):
+        monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
+        with pytest.raises(ValidationError, match="1g"):
+            Settings(_env_file=None)
+    # 끝 줄바꿈은 정규식 엔진($ 앞 줄바꿈 허용 여부)에 따라 새어 들 수 있다 — 지금 엔진이 막는 것을 고정한다
+    monkeypatch.delenv("ODL_JAVA_MAX_HEAP")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, ODL_JAVA_MAX_HEAP="3g\n")
 
 
 def test_extract_deadline_ends_before_stale_timeout(monkeypatch):
