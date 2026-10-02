@@ -273,9 +273,9 @@ mkdir -p /data/nl-lib/data/round07                                             #
 
 - 고치기 전에 지금 스택 정의를 파일로 받아 둔다(되돌리기용 — 위 배포 규칙).
 - 스택 편집기에서 저장소 `docker-compose.yml` 과 견주어 **바뀐 곳만** 옮긴다. 바뀐 곳은 round07 분기점과의 차이다(`git diff 9798f46 -- docker-compose.yml`).
-  - `x-common-env` 에 새 키 11개. 모두 `${이름:-기본값}` 으로 선언한다 — 선언이 없으면 Portainer 가 그 이름의 스택 env 를 무시해 9-7 에서 값을 바꿀 수 없다.
+  - `x-common-env` 에 새 키 12개. 모두 `${이름:-기본값}` 으로 선언한다 — 선언이 없으면 Portainer 가 그 이름의 스택 env 를 무시해 9-7 에서 값을 바꿀 수 없다.
     - LLM 묶음(`LLM_SECTION_CONCURRENCY` 아래): `LLM_RETRY_ATTEMPTS`·`LLM_RETRY_BACKOFF_SECONDS`.
-    - 텍스트 추출 묶음(`VLM_TIMEOUT` 아래): `VLM_PAGE_CONCURRENCY`·`SCAN_REPEAT_LINE_RATIO`·`SCAN_SHORT_PAGE_RATIO`·`SCAN_MIN_PAGES`·`ODL_TIMEOUT_BASE_SECONDS`(기본 `10.0`)·`ODL_TIMEOUT_PER_PAGE_SECONDS`(기본 `1.5`)·`ODL_IMAGE_OUTPUT`.
+    - 텍스트 추출 묶음(`VLM_TIMEOUT` 아래): `VLM_PAGE_CONCURRENCY`·`SCAN_REPEAT_LINE_RATIO`·`SCAN_SHORT_PAGE_RATIO`·`SCAN_MIN_PAGES`·`ODL_TIMEOUT_BASE_SECONDS`(기본 `10.0`)·`ODL_TIMEOUT_PER_PAGE_SECONDS`(기본 `1.5`)·`ODL_IMAGE_OUTPUT`·`ODL_JAVA_MAX_HEAP`(기본 `3g`).
     - 대량 인덱싱 잡 묶음(`INGEST_MAX_ATTEMPTS` 아래): `INGEST_RETRY_BACKOFF_SECONDS`·`INGEST_EXTRACT_DEADLINE`.
   - 같은 묶음의 `INGEST_STAGE_TIMEOUT_EXTRACT` 기본값 `14400` → `3600`(바로 위 주석도 바뀌었다).
   - ODL 을 돌리는 `fastapi`(바로 위 주석 포함)·`celery-worker`·`celery-cpu` 에 `init: true` — ODL 이 시간을 넘겨 자식 프로세스를 끄면 고아가 된 java 를 PID 1(tini)이 거둔다(없으면 시간 초과마다 좀비가 남는다). SIGTERM 은 그대로 넘겨 celery warm shutdown 은 같다.
@@ -284,13 +284,13 @@ mkdir -p /data/nl-lib/data/round07                                             #
   - 주석만 바뀐 곳(안 옮겨도 동작은 같다): `gemma` 의 `--max-num-seqs` 위, `celery-llm` 머리.
 - 스택 env(Environment variables)를 본다. `INGEST_STAGE_TIMEOUT_EXTRACT` 가 있으면 지운다 — 있으면 새 기본값 대신 그 값이 들어간다. `MILVUS_RECREATE_ON_MISMATCH` 는 없거나 `false` 여야 한다 — 재생성되는 fastapi 가 기동하며 바로 `ensure_collection()` 을 부른다(9-5).
 - **"Re-pull image" 토글을 끄고** Update the stack 을 누른다(함정 12번). 500 이 나면 다시 누르기 전에 `docker ps -a --format '{{.Names}}\t{{.CreatedAt}}'` 로 무엇이 바뀌었는지부터 본다.
-- 업데이트 뒤 앱 컨테이너가 재시작을 되풀이하면(`docker ps` 의 `Restarting`) 먼저 `docker logs --tail 50 nl-lib-celery-cpu` 에서 설정 검증 오류를 본다. 설정을 읽을 때 두 가지를 검사한다 — `ODL_IMAGE_OUTPUT` 은 `off`·`embedded`·`external` 만 받고(오타면 예전에는 문서가 모두 fitz 텍스트로 조용히 떨어졌다), `INGEST_EXTRACT_DEADLINE + 60 < INGEST_STAGE_TIMEOUT_EXTRACT` 여야 한다(위 배포 규칙). 어기면 앱이 뜨지 않는다.
+- 업데이트 뒤 앱 컨테이너가 재시작을 되풀이하면(`docker ps` 의 `Restarting`) 먼저 `docker logs --tail 50 nl-lib-celery-cpu` 에서 설정 검증 오류를 본다. 설정을 읽을 때 세 가지를 검사한다 — `ODL_IMAGE_OUTPUT` 은 `off`·`embedded`·`external` 만 받고(오타면 예전에는 문서가 모두 fitz 텍스트로 조용히 떨어졌다), `ODL_JAVA_MAX_HEAP` 은 `3g`·`1536m` 같은 `-Xmx` 크기나 빈 값(상한 없음)만 받으며(`2gb` 같은 오타면 java 가 뜨지 않아 문서가 모두 fitz 텍스트가 된다 — `research/round07-odl-heap`), `INGEST_EXTRACT_DEADLINE + 60 < INGEST_STAGE_TIMEOUT_EXTRACT` 여야 한다(위 배포 규칙). 어기면 앱이 뜨지 않는다.
 
 ```bash
 docker ps --format '{{.Names}}\t{{.Status}}' | grep nl-lib-celery              # nl-lib-celery-control 이 Up
 docker inspect nl-lib-celery-cpu --format '{{join .Config.Cmd " "}}'         # … -Q q_cpu --max-tasks-per-child=50 (q_control 없음)
 for c in nl-lib-fastapi nl-lib-celery nl-lib-celery-cpu; do echo "$c init=$(docker inspect --format '{{.HostConfig.Init}}' $c)"; done   # 셋 다 true
-docker exec nl-lib-celery-cpu printenv INGEST_STAGE_TIMEOUT_EXTRACT INGEST_EXTRACT_DEADLINE VLM_PAGE_CONCURRENCY ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_IMAGE_OUTPUT   # 3600 / 2700 / 2 / 10.0 / 1.5 / off
+docker exec nl-lib-celery-cpu printenv INGEST_STAGE_TIMEOUT_EXTRACT INGEST_EXTRACT_DEADLINE VLM_PAGE_CONCURRENCY ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_IMAGE_OUTPUT ODL_JAVA_MAX_HEAP   # 3600 / 2700 / 2 / 10.0 / 1.5 / off / 3g
 docker logs --since 2m nl-lib-celery-control 2>&1 | grep -c dispatch_job_items   # 0 이 아니다 — 30초마다 디스패치 틱을 받는다
 docker exec nl-lib-celery-control celery -A workers.celery_app inspect active_queues --timeout 5 | grep -c "'name': 'q_control'"   # 1 — q_control 을 받는 워커는 celery-control 하나뿐
 NEW=$(docker image inspect --format '{{.Id}}' landsoftdocker/nl-lib-fastapi:latest)
@@ -540,7 +540,8 @@ docker logs nl-lib-celery-cpu 2>&1 | grep -c 'fitz 재저장본으로 한 번 �
 docker logs nl-lib-celery-cpu 2>&1 | grep -cE 'ODL 실패\([0-9]+초 초과\)'      # 그중 타임아웃
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'ODL 실패 — fitz 텍스트'          # 재저장본도 실패해 fitz 텍스트로 대신한 문서
 docker logs nl-lib-celery-cpu 2>&1 | grep 'fitz 재저장본으로 한 번 더' | head  # 사유 — 'ODL 실패(…)' 괄호 안
-docker exec nl-lib-celery-cpu printenv ODL_IMAGE_OUTPUT ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS   # off / 10.0 / 1.5
+docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OutOfMemoryError'               # 힙 상한(ODL_JAVA_MAX_HEAP)에 걸린 시도 — 688건 실측으로 3g 면 문서 0.3% 안팎
+docker exec nl-lib-celery-cpu printenv ODL_IMAGE_OUTPUT ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_JAVA_MAX_HEAP   # off / 10.0 / 1.5 / 3g
 ```
 
 - 둘째 SQL 은 시도 한 번이 상한의 몇 배를 썼는지다(`meta.pages` 는 추출이 연 쪽수). 상한 식은 기본값(10·1.5)으로 썼다 — 스택 env 로 바꿨으면 SQL 의 두 수도 바꾼다. 시도의 상한은 추출 데드라인이 짧게 남았을 때(대개 강제 재추출) 이 식보다 작을 수 있다 — 실제로 쓴 상한은 `초 / 상한` 줄에 찍힌다. 재저장본까지 간 문서는 두 시도를 더한 시간이라 뺐다(그런 문서는 위 타임아웃 줄로 본다). 표 5개 이상(`tables_5plus`)은 카나리 실행이 센 표 수다.
