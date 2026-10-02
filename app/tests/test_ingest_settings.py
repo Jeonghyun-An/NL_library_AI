@@ -89,6 +89,31 @@ def test_extract_deadline_ends_before_stale_timeout(monkeypatch):
     assert s.INGEST_EXTRACT_DEADLINE < s.INGEST_STAGE_TIMEOUT_EXTRACT
 
 
+@pytest.mark.parametrize("env, ok", [
+    ({"INGEST_EXTRACT_DEADLINE": "3539"}, True),                        # 3539 + 60 < 3600
+    ({"INGEST_EXTRACT_DEADLINE": "3540"}, False),                       # 3540 + 60 = 3600 — stale 판정에 닿는다
+    ({"INGEST_STAGE_TIMEOUT_EXTRACT": "1800"}, False),                  # 스택 env 로 stale 판정만 줄였다
+    ({"INGEST_EXTRACT_DEADLINE": "1000", "INGEST_STAGE_TIMEOUT_EXTRACT": "1800"}, True),
+])
+def test_settings_refuse_an_extract_deadline_that_reaches_the_stale_timeout(monkeypatch, env, ok):
+    """스택 env 가 이 관계를 깨면 ODL_IMAGE_OUTPUT 의 Literal 처럼 기동할 때 멈춘다 — 추출 데드라인 + 강제 재추출 하한
+    60초가 stale 판정(INGEST_STAGE_TIMEOUT_EXTRACT)에 닿으면 끝나기 전에 stale 복구가 결과를 버린다."""
+    import core.config as config_mod
+    from pydantic import ValidationError
+
+    from services.ingestion import stages
+
+    assert config_mod.FORCED_REEXTRACT_FLOOR_SECONDS == stages.FORCED_OCR_MIN_DEADLINE_SECONDS
+    _fresh_settings(monkeypatch)
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+    if ok:
+        config_mod.Settings(_env_file=None)
+    else:
+        with pytest.raises(ValidationError, match="INGEST_EXTRACT_DEADLINE"):
+            config_mod.Settings(_env_file=None)
+
+
 def _compose_default(env: dict, key: str, fallback: int) -> int:
     """compose 공통 env 에 ${KEY:-기본값} 으로 선언된 기본값 — 선언이 없으면 config 기본값이 쓰인다."""
     m = re.fullmatch(r"\$\{" + key + r":-(\d+)\}", str(env.get(key, "")))

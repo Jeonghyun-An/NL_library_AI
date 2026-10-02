@@ -43,7 +43,8 @@ SECTION_MAX_TOKENS = cfg.SECTION_MAX_TOKENS
 DOWNLOAD_DIR = cfg.DOWNLOAD_DIR
 
 # 섹션 0개 강제 OCR 재추출에 주는 데드라인의 하한(초) — 첫 추출이 INGEST_EXTRACT_DEADLINE 을 거의 다 썼어도
-# 이만큼은 OCR 할 시간을 준다
+# 이만큼은 OCR 할 시간을 준다. core.config.FORCED_REEXTRACT_FLOOR_SECONDS 와 같은 값이다(설정이 기동 때
+# 데드라인 + 이 하한 < INGEST_STAGE_TIMEOUT_EXTRACT 를 본다)
 FORCED_OCR_MIN_DEADLINE_SECONDS = 60
 
 

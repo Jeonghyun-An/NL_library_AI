@@ -4,6 +4,10 @@ from typing import Literal
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
+# 섹션 0개 강제 재추출에 주는 데드라인의 하한(초) — stages.FORCED_OCR_MIN_DEADLINE_SECONDS 와 같은 값이다
+# (config 는 stages 를 import 할 수 없다 — 순환. 같은지는 test_ingest_settings 가 본다)
+FORCED_REEXTRACT_FLOOR_SECONDS = 60
+
 
 class Settings(BaseSettings):
     # compose 가 `${VLM_THINK:-}` 처럼 미설정 변수를 빈 문자열로 넘기면 bool 파싱이
@@ -143,6 +147,18 @@ class Settings(BaseSettings):
     # 단계별 타임아웃(초) — 초과 시 stale 판정 후 재디스패치.
     # 추출은 데드라인(INGEST_EXTRACT_DEADLINE) 위, Celery visibility_timeout(7200) 아래.
     INGEST_STAGE_TIMEOUT_EXTRACT: int = 3600
+
+    @model_validator(mode="after")
+    def _extract_deadline_fits_inside_stale_timeout(self) -> "Settings":
+        # 추출은 데드라인에서 스스로 멈추고 섹션 0개 강제 재추출이 하한만큼 더 쓴다 — 그 합이 stale 판정에 닿으면
+        # 끝나기 전에 stale 복구가 토큰을 바꿔 결과를 버린다. 스택 env 가 이 관계를 깨면 기동할 때 멈춘다
+        if self.INGEST_EXTRACT_DEADLINE + FORCED_REEXTRACT_FLOOR_SECONDS >= self.INGEST_STAGE_TIMEOUT_EXTRACT:
+            raise ValueError(
+                f"INGEST_EXTRACT_DEADLINE({self.INGEST_EXTRACT_DEADLINE}) + 강제 재추출 하한"
+                f"({FORCED_REEXTRACT_FLOOR_SECONDS}) 이 INGEST_STAGE_TIMEOUT_EXTRACT"
+                f"({self.INGEST_STAGE_TIMEOUT_EXTRACT}) 보다 짧아야 한다"
+            )
+        return self
     INGEST_STAGE_TIMEOUT_SUMMARIZE: int = 1200
     INGEST_STAGE_TIMEOUT_EMBED: int = 1200
     INGEST_STAGE_TIMEOUT_FINALIZE: int = 900
