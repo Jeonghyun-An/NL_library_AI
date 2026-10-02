@@ -410,6 +410,38 @@ def test_child_gets_the_timeout_as_its_second_argument(monkeypatch, tmp_path):
     assert json.loads(seen.read_text()) == [json.dumps({"input_path": "x.pdf"}), "12.5"]
 
 
+def _child_java_tool_options(monkeypatch, tmp_path) -> str | None:
+    seen = tmp_path / "jto.json"
+    monkeypatch.setattr(
+        extractor, "_ODL_CHILD",
+        f"import json, os; open({str(seen)!r}, 'w').write(json.dumps(os.environ.get('JAVA_TOOL_OPTIONS')))",
+    )
+    asyncio.run(extractor._odl_convert({}, 30))
+    return json.loads(seen.read_text())
+
+
+def test_child_gets_the_heap_cap_as_java_tool_options(monkeypatch, tmp_path):
+    """ODL 자식(과 그 java)만 -Xmx 를 받는다 — 상한이 없으면 JVM 이 메모리의 1/4 까지 써 병리 문서 하나가 10GB 를
+    넘겼고, 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 워커 자신의 환경은 바꾸지 않는다."""
+    monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "3g")
+    monkeypatch.delenv("JAVA_TOOL_OPTIONS", raising=False)
+    assert _child_java_tool_options(monkeypatch, tmp_path) == "-Xmx3g"
+    assert "JAVA_TOOL_OPTIONS" not in os.environ
+
+
+def test_heap_cap_keeps_java_tool_options_already_set(monkeypatch, tmp_path):
+    monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "1536m")
+    monkeypatch.setenv("JAVA_TOOL_OPTIONS", "-Dfile.encoding=UTF-8")
+    assert _child_java_tool_options(monkeypatch, tmp_path) == "-Dfile.encoding=UTF-8 -Xmx1536m"
+    assert os.environ["JAVA_TOOL_OPTIONS"] == "-Dfile.encoding=UTF-8"
+
+
+def test_empty_heap_cap_leaves_java_options_alone(monkeypatch, tmp_path):
+    monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "")
+    monkeypatch.delenv("JAVA_TOOL_OPTIONS", raising=False)
+    assert _child_java_tool_options(monkeypatch, tmp_path) is None
+
+
 @pytest.mark.skipif(not hasattr(signal, "alarm"), reason="signal.alarm·killpg 가 없다(Windows 개발 PC)")
 def test_child_kills_its_own_group_when_nobody_else_does(tmp_path):
     """부모(Celery 풀 자식)가 죽으면(revoke(terminate=True) 등) 시간을 넘겨도 끌 사람이 없다 — ODL 자식은 스스로

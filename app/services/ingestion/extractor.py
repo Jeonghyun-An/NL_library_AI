@@ -797,6 +797,17 @@ def _odl_failure_summary(output: str, *, cause_chars: int = 300, last_chars: int
     return " | ".join([*causes, last[-last_chars:]])
 
 
+def _odl_child_env() -> dict[str, str] | None:
+    """ODL 자식의 환경 — java 가 읽는 JAVA_TOOL_OPTIONS 에 힙 상한(-Xmx)을 붙인다. 워커 자신의 환경은 그대로 둔다.
+    상한이 비면(None) 부모 환경을 그대로 물려준다."""
+    heap = cfg.ODL_JAVA_MAX_HEAP
+    if not heap:
+        return None
+    env = dict(os.environ)
+    env["JAVA_TOOL_OPTIONS"] = " ".join(filter(None, [env.get("JAVA_TOOL_OPTIONS", "").strip(), f"-Xmx{heap}"]))
+    return env
+
+
 def _kill_process_group(proc: asyncio.subprocess.Process) -> None:
     if proc.returncode is not None:
         return
@@ -818,6 +829,7 @@ async def _odl_convert(convert_kwargs: dict, timeout: float) -> None:
             stdout=asyncio.subprocess.DEVNULL,
             stderr=err_file.fileno(),
             start_new_session=True,
+            env=_odl_child_env(),
         )
         try:
             await asyncio.wait_for(proc.wait(), timeout)

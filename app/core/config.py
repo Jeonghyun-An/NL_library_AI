@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 # 섹션 0개 강제 재추출에 주는 데드라인의 하한(초) — stages.FORCED_OCR_MIN_DEADLINE_SECONDS 가 이 값을 쓴다
@@ -206,6 +206,12 @@ class Settings(BaseSettings):
     # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다.
     # opendataloader-pdf CLI 가 받는 값만 — 모르는 값이면 java 가 문서마다 exit 2 로 끝나 모두 fitz 텍스트가 된다
     ODL_IMAGE_OUTPUT: Literal["off", "embedded", "external"] = "off"
+    # ODL java 의 힙 상한(-Xmx 뒤 크기, 빈 값 = 상한 없음). 상한이 없으면 JVM 이 메모리의 1/4 까지 써 병리 문서
+    # 하나가 10GB 를 넘겼고(운영 서버 251GB 면 하나당 약 63GB) 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 실측(운영 이미지, 2026-10-02): 무거운
+    # 문서 61건은 2·3g 에서 상한 없을 때와 추출 결과가 같았고(1g 은 1.6g 가 드는 1건 실패), 일반 688건은 2g 에서 3건만
+    # 메모리 부족 — 그중 3g 로 살아나는 건 1건이다. 넘친 문서는 재저장본 재시도 뒤 fitz 텍스트로 간다.
+    # '2gb' 처럼 java 가 못 읽는 값이면 JVM 이 뜨지 않아 모든 문서가 fitz 텍스트가 된다 — 읽을 때 형식을 막는다
+    ODL_JAVA_MAX_HEAP: str = Field("3g", pattern=r"^([1-9][0-9]*[mMgG])?$")
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
     # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.

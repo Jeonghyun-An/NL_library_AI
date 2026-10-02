@@ -159,6 +159,8 @@ x-common-env: &common-env
   ODL_TIMEOUT_BASE_SECONDS: ${ODL_TIMEOUT_BASE_SECONDS:-10.0}
   ODL_TIMEOUT_PER_PAGE_SECONDS: ${ODL_TIMEOUT_PER_PAGE_SECONDS:-1.5}
   ODL_IMAGE_OUTPUT: ${ODL_IMAGE_OUTPUT:-off}
+  # ODL java 힙 상한(-Xmx 뒤 크기, 빈 값 = 상한 없음) — 추출 4칸 × 상한이 최악 합계. '2gb' 같은 오타는 앱이 뜨지 않는다
+  ODL_JAVA_MAX_HEAP: ${ODL_JAVA_MAX_HEAP:-3g}
 
   # PDF 메타 자동추출
   PDF_META_MAX_CHARS: ${PDF_META_MAX_CHARS:-3000}

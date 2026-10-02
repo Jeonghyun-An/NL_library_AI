@@ -25,6 +25,7 @@ ROUND07_DEFAULTS = {
     "ODL_TIMEOUT_BASE_SECONDS": 10.0,
     "ODL_TIMEOUT_PER_PAGE_SECONDS": 1.5,
     "ODL_IMAGE_OUTPUT": "off",
+    "ODL_JAVA_MAX_HEAP": "3g",
 }
 
 
@@ -79,6 +80,22 @@ def test_odl_image_output_accepts_only_cli_values(monkeypatch):
         assert Settings(_env_file=None).ODL_IMAGE_OUTPUT == value
     for value in ("bogus", "OFF", ""):
         monkeypatch.setenv("ODL_IMAGE_OUTPUT", value)
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None)
+
+
+def test_odl_java_max_heap_accepts_only_jvm_sizes(monkeypatch):
+    # -Xmx 뒤에 붙는 크기만 받는다. '2gb' 처럼 java 가 못 읽는 값이면 JVM 이 뜨지 않아 모든 문서가 조용히 fitz
+    # 텍스트가 된다(운영 이미지 실측) — 설정을 읽을 때 막는다. 빈 값은 상한 없음(JVM 기본 = 메모리의 1/4)
+    from pydantic import ValidationError
+
+    from core.config import Settings
+
+    for value in ("3g", "2G", "1536m", "4096M", ""):
+        monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
+        assert Settings(_env_file=None).ODL_JAVA_MAX_HEAP == value
+    for value in ("2gb", "-Xmx2g", "0g", "3", "1.5g", " 3g", "3 g", "3k"):
+        monkeypatch.setenv("ODL_JAVA_MAX_HEAP", value)
         with pytest.raises(ValidationError):
             Settings(_env_file=None)
 
