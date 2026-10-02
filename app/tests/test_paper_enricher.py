@@ -367,6 +367,19 @@ class TestTrimToLastSentence:
         """'평균 3.' 처럼 숫자 바로 뒤 마침표로 글이 끝나면 소수점 앞에서 잘린 것이다 — 문장 끝으로 보지 않는다."""
         assert trim_to_last_sentence(text) == "A 집단이 더 높다."
 
+    @pytest.mark.parametrize("text, expected", [
+        ("A 집단이 높았다. 자세한 값은 표 3. 그러나 B 집단은", "A 집단이 높았다."),       # 번호 뒤 마침표
+        ("조사를 마쳤다. 조사일은 2023. 3. 15. 이후", "조사를 마쳤다."),                 # 날짜
+        ("상관이 있었다. 상관계수는 r = .", "상관이 있었다."),                          # 앞 점 소수 '.45' 앞에서 잘림
+        ("차이가 유의했다. 유의수준은 p < .", "차이가 유의했다."),
+        ("결과는 그림과 같다(그림 1). 그러나 B", "결과는 그림과 같다(그림 1)."),          # 닫는 괄호 뒤 마침표는 끝
+        ("The effect was large. However the", "The effect was large."),
+    ], ids=["table_number", "date", "r_eq", "p_lt", "after_bracket", "latin"])
+    def test_period_ends_a_sentence_only_after_a_letter_or_a_closing_mark(self, text, expected):
+        """'.' 는 바로 앞이 글자(한글·라틴 등)나 닫는 부호일 때만 문장 끝이다 — 숫자·공백·'='·'<' 뒤의 마침표는
+        번호·날짜·앞 점 소수가 잘린 자리다. 글 끝뿐 아니라 앞쪽 후보에도 같은 규칙을 쓴다."""
+        assert trim_to_last_sentence(text) == expected
+
     def test_finished_text_is_kept(self):
         assert trim_to_last_sentence("두 집단의 차이는 유의했다.\n") == "두 집단의 차이는 유의했다."
 

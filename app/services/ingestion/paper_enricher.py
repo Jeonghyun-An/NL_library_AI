@@ -504,25 +504,29 @@ async def generate_references(text: str) -> list[str]:
     return refs[:200]
 
 
-# 문장 끝 — . ! ? 。 뒤에 (닫는 따옴표·괄호가 붙어도) 공백이나 글 끝이 오는 자리:
-# '…다.'·'…요.'·'…다.”'·'…다.)'. 소수점(3.5)은 뒤에 숫자가 와서 제외된다.
+# 문장 끝 후보 — . ! ? 。 뒤에 (닫는 따옴표·괄호가 붙어도) 공백이나 글 끝이 오는 자리:
+# '…다.'·'…요.'·'…다.”'·'…다.)'. 소수점(3.5)은 뒤에 숫자가 와서 후보가 아니다.
 _CLOSING_MARKS = "\"'”’)）]」』》〉】"
 _SENTENCE_END = re.compile(rf"[.!?。][{re.escape(_CLOSING_MARKS)}]*(?=\s|$)")
-# 줄머리 번호 목록 표식('2.')의 마침표 앞 — 이 마침표는 문장 끝이 아니다.
-_LIST_MARKER_BEFORE_PERIOD = re.compile(r"(?:^|\n)[ \t]*\d{1,3}$")
+
+
+def _period_ends_sentence(text: str, pos: int) -> bool:
+    """text[pos] 의 '.' 가 문장 끝인가 — 바로 앞이 글자(한글·라틴 등)나 닫는 부호일 때만이다. 숫자·공백·'='·'<'
+    뒤의 마침표는 번호 목록 표식('2.')·표 번호('표 3.')·날짜('2023. 3. 15.')이거나 소수('평균 3.5'·'p < .05')가
+    잘린 자리다."""
+    prev = text[pos - 1] if pos > 0 else ""
+    return prev.isalpha() or (prev != "" and prev in _CLOSING_MARKS)
 
 
 def trim_to_last_sentence(text: str) -> str:
     """마지막으로 끝난 문장까지만 남긴다 — max_tokens 에서 잘린 응답의 끊긴 꼬리를 걷어 낸다.
 
-    줄머리 번호 목록 표식('2.')은 문장 끝으로 보지 않는다 — 번호 목록이 항목 중간에서 잘려도
-    표식('2.')만 남지 않고 앞 항목까지 남는다. 글 맨 끝의 숫자 바로 뒤 마침표('평균 3.')도 문장 끝이 아니다 —
-    소수점 앞에서 잘린 것이다. 끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
+    '.' 는 바로 앞이 글자나 닫는 부호일 때만 문장 끝으로 본다(_period_ends_sentence) — 번호 목록이 항목
+    중간에서 잘려도 표식('2.')만 남지 않고, 숫자 뒤에서 잘린 꼬리('평균 3.')도 남지 않는다. ! ? 。 는 그대로
+    문장 끝이다. 끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
     """
     for end in reversed(list(_SENTENCE_END.finditer(text))):
-        if _LIST_MARKER_BEFORE_PERIOD.search(text[: end.start()]):
-            continue
-        if not text[end.end():].strip() and end.start() > 0 and text[end.start() - 1].isdigit():
+        if text[end.start()] == "." and not _period_ends_sentence(text, end.start()):
             continue
         return text[: end.end()].rstrip()
     return text
