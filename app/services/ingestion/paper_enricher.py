@@ -467,7 +467,7 @@ def _extract_tables(full_text: str) -> list[tuple[str, str]]:
     return results
 
 
-# ── 4. LLM 표 전체 서술 ──────────────────────────────────────
+# ── 4. LLM — 키워드·참고문헌 폴백, 표 해석(잘리면 끝난 문장까지) ──────────
 
 def _messages(system: str, user: str) -> list[dict]:
     return [

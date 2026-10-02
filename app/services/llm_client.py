@@ -14,12 +14,13 @@ Ollama 의 OpenAI 호환(/v1) 엔드포인트는 think 파라미터를 무시하
   타임아웃·응답 도중 끊김·429·5xx 를 LLM_RETRY_ATTEMPTS(첫 시도 포함)까지
   LLM_RETRY_BACKOFF_SECONDS("2,8" — 모자라면 마지막 값 반복, 칸마다 60초 상한) 간격으로
   다시 보낸다. 그 밖의 4xx 는 요청 자체 문제라 바로 올린다. chat_stream() 은 재시도하지 않는다.
-  재시도 전체는 호출자의 timeout 안에서만 한다 — 시도마다 httpx 의 읽기·쓰기·풀 timeout 은
-  남은 시간으로 줄고 연결 timeout 은 그중 10초까지이며, 남은 시간이 다음 백오프 + 1초 이하이면
-  마지막 예외를 그대로 올린다. 그래서 응답 없이 붙잡는 장애(ReadTimeout)는 예전처럼 timeout
-  한 번으로 끝나고, 빠른 실패(연결 거부·리셋·429·5xx)와 10초에서 끊기는 연결 대기(ConnectTimeout —
-  vLLM 재기동 중)는 남은 시간 안에서 재시도된다. 더 시도하지 않는 실패는 error 로, 시도 횟수를 다
-  썼는지 남은 시간이 모자랐는지를 함께 남긴다.
+  재시도는 호출자의 timeout 안에서만 한다 — 시도마다 httpx 의 읽기·쓰기·풀 timeout 은 남은 시간으로
+  줄고 연결 timeout 은 그중 10초까지이며, 남은 시간이 다음 백오프 + 1초 이하이면 마지막 예외를 그대로
+  올린다. 그래서 응답 없이 붙잡는 장애(ReadTimeout)는 예전처럼 timeout 한 번으로 끝나고, 빠른 실패(연결
+  거부·리셋·429·5xx)와 10초에서 끊기는 연결 대기(ConnectTimeout — vLLM 재기동 중)는 남은 시간 안에서
+  재시도된다. httpx 는 연결·읽기를 따로 재고 읽기 timeout 은 연결 전에 정하므로, 시도 하나는 남은 시간 +
+  연결(≤10초)까지 걸릴 수 있다 — 호출 전체의 최악은 timeout + 10초다. 더 시도하지 않는 실패는 error 로,
+  시도 횟수를 다 썼는지 남은 시간이 모자랐는지를 함께 남긴다.
 
   think 필드 처리:
     LLM_THINK is None  → think 필드 자체를 안 보냄 (gemma3 등 비-thinking 모델 안전)
@@ -166,7 +167,8 @@ async def _request_once(messages: list[dict], params: dict, timeout: float) -> L
     """한 번 보내고 응답을 LLMResult 로 바꾼다 (재시도는 chat_full 이 한다).
 
     timeout 은 이 시도에 남은 시간 — 읽기·쓰기·풀 timeout 으로 쓰고, 연결 timeout 은 그중
-    _CONNECT_TIMEOUT_SECONDS 까지만 준다.
+    _CONNECT_TIMEOUT_SECONDS 까지만 준다. httpx 는 단계마다 따로 재고 읽기 timeout 은 연결 전에 정해지므로
+    이 시도는 남은 시간 + 연결 시간(≤ _CONNECT_TIMEOUT_SECONDS)까지 걸릴 수 있다.
     """
     cfg = get_settings()
     client_timeout = httpx.Timeout(timeout, connect=min(_CONNECT_TIMEOUT_SECONDS, timeout))
@@ -204,10 +206,11 @@ async def chat_full(
 ) -> LLMResult:
     """비스트리밍 chat 완성 → LLMResult(content, finish_reason). 일시적 실패는 재시도한다.
 
-    재시도 전체가 호출자의 timeout 안에 들어간다 — 시작 시각 + timeout 이 deadline 이고,
-    시도마다 httpx 의 읽기·쓰기·풀 timeout 은 남은 시간, 연결 timeout 은 min(_CONNECT_TIMEOUT_SECONDS,
-    남은 시간)이다 (더 시도할지는 _retry_delay). 다시 보낼 실패는 경고, 여기서 끝나는 실패(재시도 불가
-    4xx, 다시 보낼 실패의 시도 횟수 소진·남은 시간 부족)만 error 로 남긴다.
+    재시도는 호출자의 timeout 안에서만 한다 — 시작 시각 + timeout 이 deadline 이고, 시도마다 httpx 의
+    읽기·쓰기·풀 timeout 은 남은 시간, 연결 timeout 은 min(_CONNECT_TIMEOUT_SECONDS, 남은 시간)이다
+    (더 시도할지는 _retry_delay). 읽기 timeout 은 연결 전에 정해지므로 시도 하나는 남은 시간 + 연결
+    (≤10초)까지 걸릴 수 있어, 이 호출의 최악은 timeout + 10초다. 다시 보낼 실패는 경고, 여기서 끝나는
+    실패(재시도 불가 4xx, 다시 보낼 실패의 시도 횟수 소진·남은 시간 부족)만 error 로 남긴다.
     """
     cfg = get_settings()
     params = params or {}

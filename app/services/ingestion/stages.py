@@ -556,7 +556,11 @@ def _build_enriched_chunks(enrichment: "PaperEnrichment", base_idx: int) -> "lis
 
 
 def run_summarize(ctx: StageContext) -> dict:
-    """섹션별 요약/테마 LLM 생성 → book_sections UPDATE."""
+    """섹션별 요약/테마 LLM 생성 → book_sections UPDATE.
+
+    논문이면 같은 루프·같은 세마포어로 보강(키워드·참고문헌 폴백·표 해석·그림 설명)도 돌려, 이 체인의
+    실행 토큰을 붙인 보강 아티팩트(embed 단계가 읽는다)와 카탈로그(초록·키워드·extra)에 남긴다.
+    """
     from services.ingestion.summarizer import summarize_section
 
     book_id = ctx.book_id
