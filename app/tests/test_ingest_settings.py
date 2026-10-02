@@ -89,6 +89,29 @@ def test_extract_deadline_ends_before_stale_timeout(monkeypatch):
     assert s.INGEST_EXTRACT_DEADLINE < s.INGEST_STAGE_TIMEOUT_EXTRACT
 
 
+def _compose_default(env: dict, key: str, fallback: int) -> int:
+    """compose 공통 env 에 ${KEY:-기본값} 으로 선언된 기본값 — 선언이 없으면 config 기본값이 쓰인다."""
+    m = re.fullmatch(r"\$\{" + key + r":-(\d+)\}", str(env.get(key, "")))
+    return int(m.group(1)) if m else fallback
+
+
+@pytest.mark.parametrize("compose_file, anchor", [
+    ("docker-compose.yml", "x-common-env"),
+    ("docker-compose.dev.yml", "x-common-env-dev"),
+])
+def test_both_compose_files_keep_the_extract_deadline_below_stale_timeout(monkeypatch, compose_file, anchor):
+    # 섹션 0개 강제 재추출이 하한(stages.FORCED_OCR_MIN_DEADLINE_SECONDS)을 더 쓴다 — 그것까지 stale 판정 아래여야
+    # 끝나기 전에 stale 복구가 토큰을 바꿔 결과를 버리지 않는다
+    from services.ingestion import stages
+
+    s = _fresh_settings(monkeypatch)
+    env = yaml.safe_load((COMPOSE.parent / compose_file).read_text(encoding="utf-8"))[anchor]
+    deadline = _compose_default(env, "INGEST_EXTRACT_DEADLINE", s.INGEST_EXTRACT_DEADLINE)
+    stale = _compose_default(env, "INGEST_STAGE_TIMEOUT_EXTRACT", s.INGEST_STAGE_TIMEOUT_EXTRACT)
+    assert deadline < stale
+    assert deadline + stages.FORCED_OCR_MIN_DEADLINE_SECONDS < stale
+
+
 def test_common_env_declares_round07_keys_with_config_defaults():
     env = _compose()["x-common-env"]
     for key, default in ROUND07_DEFAULTS.items():
