@@ -414,8 +414,15 @@ export interface ResearchView {
   source: RoundSource;
 }
 
+// 원문 뷰어 머리의 "인용 대목 n/N" 한 칸. page 는 pdf.js 쪽 번호(1부터), 쪽 정보가 없으면 null
+export interface PdfPassage {
+  page: number | null;
+  label: string;
+}
+
 export interface OpenPdfPayload {
   cntsId: string;
   title: string;
   page?: number;
+  passages?: PdfPassage[];
 }
