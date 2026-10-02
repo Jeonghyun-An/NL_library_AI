@@ -1,6 +1,6 @@
 # 논문 상세 재구현 설계 (round05a)
 
-> 상태: 설계 확정(2026-10-01, 사용자 승인 — A안) · 구현 완료(운영 배포 전)
+> 상태: 설계 확정(2026-10-01, 사용자 승인 — A안) · 구현 완료 · `dev` 머지(`f293e0e`)·운영 배포(2026-10-02, `nl-lib-nuxt`)
 > 선행: UI 고도화 기능 명세서(Claude 문서 "SKOVIX UI 고도화 기능 명세서" — https://claude.ai/code/artifact/adf36957-2a24-46a7-9709-be9e59322ecb)의 **03 논문 상세**·**S6 끊기지 않는 근거 동선**, round04b(기록 세션·주소 규칙 `utils/historyRoute.ts`)·round04c(보고서의 제외한 논문 목록)
 > 브랜치: `feat/round05a-paper-detail`(dev 3dfeb45 에서 분기)
 

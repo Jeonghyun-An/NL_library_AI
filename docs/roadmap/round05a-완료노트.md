@@ -71,11 +71,11 @@ plan: `docs/superpowers/plans/2026-10-01-round05a-paper-detail.md` (Task 1~13)
 |---|---|---|
 | 브랜치 시작 `3dfeb45` | 890 passed | 21파일 · 406 passed |
 | 브랜치 끝 `22f4c43` | 890 passed(백엔드 변경 없음) | **28파일 · 495 passed** |
-| `dev` 머지 `f293e0e`(round07·07b 포함) | **1369 passed** | — |
+| `dev` 머지 `f293e0e`(round07·07b 포함) | **1369 passed** | 28파일 · 495 passed |
 
 - 브랜치 끝에서 `nuxi typecheck` 오류 0, `npm run build` 완료.
 - 새 테스트 파일은 7개다. `detailSource`·`restorePosition`·`aiCache`·`paperDetail`·`pdfViewer`·`usePdfOpener`·`paperResearch` 이고, `historyRoute`·`historySnapshot`·`browserId` 테스트에는 조금 더했다.
-- `dev` 머지 뒤 프론트는 다시 돌리지 않았다. round07 은 프론트를 바꾸지 않았고, round07b 는 화면 파일만 되살렸다(테스트 파일 변경 없음).
+- `dev` 머지 뒤(push 전) 머지 트리에서 프론트 vitest·`nuxi typecheck`(오류 0)·`npm run build`(완료)와 백엔드 pytest 를 다시 돌렸다. round07 은 프론트를 바꾸지 않았고, round07b 는 화면 파일만 되살렸다(테스트 파일 변경 없음). 새 worktree 에서는 `.nuxt` 가 생기기 전 vitest 가 tsconfig 를 못 찾아 전부 실패하므로 typecheck·build 뒤에 돌렸다.
 - 백엔드 1369 는 round07 이 더한 테스트를 포함한 수다.
 
 ### 4-2. 화면 확인 (머지 전, 운영 API 에 붙인 로컬 화면)
@@ -153,7 +153,6 @@ spec §7 의 화면 ①~⑪ 가운데 확인한 것은 다음과 같다.
 - 메인 화면 논문 분기의 앵커·복원. 지금 실행될 수 없는 코드다.
 
 **운영·문서**
-- spec 머리 상태 줄이 아직 "구현 완료(운영 배포 전)"다. 2026-10-02 배포 사실로 고친다.
 - `frontend/public/pdfjs` 가 있는 폴더에서 nuxt 이미지를 빌드해야 한다는 것(§7 ②)을 `docs/ops/recurring-gotchas.md` 에 올릴지 정한다.
 - 계획 문서의 체크박스를 갱신하지 않았다(97개 모두 `- [ ]` — 코드 블록 밖 체크박스 줄을 셌다).
 
@@ -171,6 +170,6 @@ spec §7 의 화면 ①~⑪ 가운데 확인한 것은 다음과 같다.
 - [x] code-reviewer 정적 리뷰 통과 — 태스크별 spec 준수·품질 리뷰와 최종 3영역 리뷰를 반영했다(§3). 남긴 한계는 §3·§9
 - [x] 테스트 green — 프론트 vitest 28파일 · 495 passed, typecheck 오류 0, 빌드 완료. 백엔드는 변경 없음(브랜치 890, `dev` 머지 뒤 1369 passed)(§4-1)
 - [x] 수동 스모크 — 운영 API 에 붙인 로컬 화면 확인과 배포 직후 운영 확인(§4-2·§5). 보고서 인용칩 왕복은 보지 못했다(§9 ①)
-- [x] 문서 갱신 — 완료노트(이 문서)·교본 `docs/guides/round05a/`·`00_status`. 새 함정 없음(§7). spec 상태 줄과 계획 체크박스는 갱신하지 않았다(§9)
+- [x] 문서 갱신 — 완료노트(이 문서)·교본 `docs/guides/round05a/`·`00_status`. 새 함정 없음(§7). spec 상태 줄은 `dev` 머지·운영 배포로 고쳤고, 계획 체크박스는 갱신하지 않았다(§9)
 - [x] `dev` 머지 승인 — 2026-10-02(`f293e0e`)
 - [ ] `dev→main` 머지 + push
