@@ -30,6 +30,8 @@ async def lifespan(app: FastAPI):
     import models.search_history
     import models.ingest_job
     import models.history
+    import models.research          # research_works 의 FK 대상 — 라우터 import 부수효과에 기대지 않는다
+    import models.research_work
     from sqlalchemy import text
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
