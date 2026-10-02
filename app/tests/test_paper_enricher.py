@@ -504,6 +504,39 @@ class TestEnrichPaperSemaphore:
 
         assert gauge.peak == 2
 
+    def test_zero_section_concurrency_is_treated_as_one(self, monkeypatch):
+        # 0 이하 설정이면 Semaphore(0) 이 막혀 보강이 끝나지 않는다 — 마무리·계층 요약처럼 1 로 본다
+        gauge = _patch_enrich_llm(monkeypatch)
+        monkeypatch.setattr(paper_enricher.cfg, "LLM_SECTION_CONCURRENCY", 0)
+
+        async def run():
+            return await asyncio.wait_for(enrich_paper("B1", "제목", _paper_text(3), None), timeout=5)
+
+        result = asyncio.run(run())
+
+        assert gauge.peak == 1 and len(result.table_chunks) == 3
+
+    def test_figure_descriptions_are_capped_per_document(self, monkeypatch):
+        """그림 설명(VLM)은 문서 하나에서 _FIGURE_VLM_CONCURRENCY(2)건까지만 동시에 보낸다 — 보강이 celery-llm
+        4칸에서 돌아 문서마다 다 보내면 추출 OCR 이 쓰는 VLM 자리(8)와 다툰다."""
+        gauge = _patch_enrich_llm(monkeypatch)
+        keys = [f"figures/B1/p{i}_i0.jpg" for i in range(6)]
+        monkeypatch.setattr(paper_enricher, "_list_figure_keys", lambda book_id, client: keys)
+        monkeypatch.setattr(paper_enricher.cfg, "PAPER_MAX_FIGURES_PER_DOC", 8)
+        monkeypatch.setattr(paper_enricher, "_load_figure_bytes", lambda key, client: b"jpeg-bytes")
+
+        async def fake_describe(title, img_bytes, fmt):
+            await gauge.hold("figure")
+            return "그림 설명."
+
+        monkeypatch.setattr(paper_enricher, "describe_figure", fake_describe)
+
+        result = asyncio.run(enrich_paper("B1", "제목", _paper_text(0), None, sem=asyncio.Semaphore(8)))
+
+        assert paper_enricher._FIGURE_VLM_CONCURRENCY == 2
+        assert gauge.calls.count("figure") == 6 and len(result.figure_chunks) == 6
+        assert gauge.peak == 2     # 키워드·참고문헌 폴백은 차례로 먼저 끝나 겹치는 것은 그림 설명뿐이다
+
     def test_keyword_and_reference_fallbacks_wait_for_the_semaphore(self, monkeypatch):
         """섹션 요약이 자리를 모두 쥐고 있으면 키워드·참고문헌 LLM 폴백도 기다린다."""
         gauge = _patch_enrich_llm(monkeypatch)

@@ -698,6 +698,11 @@ def delete_enrichment_artifact(book_id: str, minio_client) -> None:
 
 # ── 8. 메인 엔트리 ─────────────────────────────────────────
 
+# 그림 설명(VLM) 동시 요청 수 — 문서 하나당. 보강은 celery-llm(4칸)에서 돌아 문서마다 그림을 한꺼번에 보내면
+# PAPER_MAX_FIGURES_PER_DOC(8) × 4 = 32건이 추출 OCR 이 쓰는 VLM 자리(max-num-seqs 8 = celery-cpu 4 ×
+# VLM_PAGE_CONCURRENCY 2)와 다툰다. 2 면 보강 쪽은 많아야 8건이다
+_FIGURE_VLM_CONCURRENCY = 2
+
 async def enrich_paper(
     book_id: str,
     title: str,
@@ -715,7 +720,7 @@ async def enrich_paper(
     if not full_text:
         return PaperEnrichment()
     if sem is None:
-        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
+        sem = asyncio.Semaphore(max(1, cfg.LLM_SECTION_CONCURRENCY))  # 0 이하 설정이면 끝나지 않는다
 
     # 짧은 텍스트(abstract 대용) 여부 — 패턴 추출은 스킵하고 LLM만 실행
     short_text = len(full_text) < 200
@@ -775,6 +780,8 @@ async def enrich_paper(
     figure_chunks: list[FigureChunk] = []
     fig_keys = _list_figure_keys(book_id, minio_client)[: cfg.PAPER_MAX_FIGURES_PER_DOC]
     if fig_keys:
+        fig_sem = asyncio.Semaphore(_FIGURE_VLM_CONCURRENCY)
+
         async def _describe(key: str) -> FigureChunk | None:
             img_bytes = await asyncio.get_event_loop().run_in_executor(
                 None, _load_figure_bytes, key, minio_client
@@ -784,7 +791,8 @@ async def enrich_paper(
             ext = key.rsplit(".", 1)[-1].lower()
             fmt = "png" if ext == "png" else "jpeg"
             try:
-                desc = await describe_figure(title, img_bytes, fmt)
+                async with fig_sem:
+                    desc = await describe_figure(title, img_bytes, fmt)
                 return FigureChunk(minio_key=key, description=desc)
             except Exception as e:
                 log.warning(f"[{book_id}] 그림 설명 실패 {key}: {e}")

@@ -9,6 +9,7 @@ import gzip
 import importlib
 import json
 import sys
+import threading
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -169,6 +170,23 @@ def test_retry_with_every_section_summarized_still_enriches_with_the_run_token(m
     assert rec.persisted == [("KCI_1", enrichment)]
     assert (result["sections_total"], result["sections_summarized"], result["sections_failed"]) == (3, 0, 0)
     assert result["enriched"] is True and result["enrich_error"] is None
+
+
+def test_zero_section_concurrency_still_finishes(monkeypatch):
+    """LLM_SECTION_CONCURRENCY 가 0 이하면 Semaphore(0) 에 막혀 요약 단계가 끝나지 않는다 — 1 로 본다."""
+    _patch_summarize(monkeypatch)
+    monkeypatch.setattr(stages.cfg, "LLM_SECTION_CONCURRENCY", 0)
+    out: dict = {}
+
+    def run():
+        out.update(stages.run_summarize(StageContext(book_id="KCI_1", item_meta={"run_token": "T1"})))
+
+    worker = threading.Thread(target=run, daemon=True)
+    worker.start()
+    worker.join(timeout=10)
+
+    assert not worker.is_alive(), "세마포어 0 에 막혀 요약 단계가 끝나지 않았다"
+    assert out["sections_summarized"] == 3 and out["enriched"] is True
 
 
 def test_summarize_without_run_token_saves_none(monkeypatch):

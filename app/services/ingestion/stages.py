@@ -646,7 +646,7 @@ def run_summarize(ctx: StageContext) -> dict:
         # 섹션 요약과 보강의 LLM 호출이 세마포어 하나를 나눠 쓴다 — celery-llm 은 프로세스당
         # 태스크 1개라 이것이 프로세스의 동시 LLM 상한이다. run_async 가 단계마다 새 루프를
         # 만들므로 세마포어도 이 루프 안에서 만든다(모듈 전역 금지).
-        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
+        sem = asyncio.Semaphore(max(1, cfg.LLM_SECTION_CONCURRENCY))  # 0 이하 설정이면 끝나지 않는다
         if enrich_text is None:
             return await _summarize_with_retry(sem), (None, None)
         summaries, enriched = await asyncio.gather(_summarize_with_retry(sem), _enrich(sem))
@@ -836,6 +836,9 @@ def run_embed_index(ctx: StageContext) -> dict:
             enrich_source = "artifact" if enrichment is not None else "inline"
             if enrichment is None:
                 log.info(f"[{book_id}] 이번 실행의 보강 아티팩트 없음 — embed 단계에서 보강을 돌린다")
+                # 드문 길(요약 단계가 보강하지 못한 아이템)이라 enrich_paper 가 자기 세마포어(LLM_SECTION_CONCURRENCY
+                # 4)를 만든다 — celery-llm 4 × 4 = 16 에 더해 gemma 동시 호출이 20 까지(자리 16 초과) 갈 수 있지만
+                # vLLM 이 줄 세우므로 오류는 아니다
                 enrichment = run_async(enrich_paper(book_id, title, full_text, client))
                 save_enrichment_artifact(book_id, enrichment, client, run_token=run_token)
                 _persist_enrichment(book_id, enrichment)
