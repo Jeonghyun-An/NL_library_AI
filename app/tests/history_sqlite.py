@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from models.history import HistoryItem
-from models.research import ResearchJob
-from models.research_work import ResearchGeneration, ResearchWork
+from models.research import ResearchJob, ResearchStep
+from models.research_work import ResearchGeneration, ResearchReading, ResearchWork
 
 SID_A = uuid.UUID("3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e")
 SID_B = uuid.UUID("7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d")
@@ -45,8 +45,8 @@ def make_engine() -> sa.Engine:
         dbapi_conn.create_function("pg_advisory_xact_lock", 1, lambda _key: None)
 
     metadata = sa.MetaData()
-    for table in (HistoryItem.__table__, ResearchJob.__table__,
-                  ResearchWork.__table__, ResearchGeneration.__table__):
+    for table in (HistoryItem.__table__, ResearchJob.__table__, ResearchStep.__table__,
+                  ResearchWork.__table__, ResearchGeneration.__table__, ResearchReading.__table__):
         copy = table.to_metadata(metadata)
         for col in copy.columns:
             default = col.server_default

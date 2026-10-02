@@ -12,6 +12,7 @@ from api.ingest_jobs import router as ingest_jobs_router
 from api.scenario import router as scenario_router
 from api.research import router as research_router
 from api.history import router as history_router
+from api.research_work import router as research_work_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -90,3 +91,4 @@ app.include_router(ingest_jobs_router)
 app.include_router(scenario_router)
 app.include_router(research_router)
 app.include_router(history_router)
+app.include_router(research_work_router)
