@@ -1,0 +1,5 @@
+# 2026-10-02 — 작은 힙 상한에서 가벼운 문서(KCI_FI002029401, 20쪽, 상한 없을 때 java RSS 97MB) 변환. one.py 를 운영 이미지에서
+# JAVA_TOOL_OPTIONS 로 직접 돌렸다(ODL_JAVA_MAX_HEAP 은 비움). java -Xmx3m -version 자체는 뜬다.
+-Xmx3m fitz:oom+oom hwm 34 wall 0.5 ['ODL 실패(원본): ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Error: A JNI error has occurred, please check your installation and try again |']
+-Xmx64m ok hwm 95 wall 0.69 []
+-Xmx256m ok hwm 97 wall 0.58 []

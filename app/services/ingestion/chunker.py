@@ -1,7 +1,7 @@
 """
 chunker.py — 시맨틱 청킹
 
-1) 문장 단위 분할
+1) 문장 단위 분할 (문장부호가 거의 없는 표·통계는 줄 단위 — 줄바꿈 폴백)
 2) 인접 문장 그룹의 임베딩 유사도 계산
 3) 유사도 급감 지점을 의미 경계로 판정
 4) 경계 기준 청크 생성 (min/max 토큰 제약)
@@ -72,6 +72,64 @@ def _split_sentences(text: str) -> list[str]:
         # fallback: 마침표/물음표/느낌표 + 공백 기준
         sentences = re.split(r'(?<=[.?!。])\s+', text)
     return [s.strip() for s in sentences if len(s.strip()) > 5]
+
+
+# 줄바꿈 폴백 기준 — 문장부호로 나눈 결과가 이 개수 이하이거나 평균 길이가 이보다 길면, 문장부호가
+# 거의 없는 본문(표·통계·양식)이 뭉친 것으로 본다. 실제 KCI 논문 631편에서 이 폴백으로 결과가 바뀐
+# 것은 텍스트 층이 깨진 문서뿐이었다.
+_LINE_FALLBACK_MAX_SENTENCES = 5
+_LINE_FALLBACK_AVG_CHARS = 500
+
+
+def _split_lines_with_offsets(text: str) -> list[dict]:
+    """정규화 **전** 원문을 줄 단위로 나눈다 — 표·통계의 행 경계(홑줄바꿈)를 살리는 줄바꿈 폴백.
+
+    _normalize_linebreaks 는 홑줄바꿈을 공백으로 바꾸므로, 정규화한 뒤에 줄로 나누면 표의
+    행이 아니라 빈 줄(쪽·단락) 단위로만 나뉜다. 그래서 원문에서 나누고 줄 안의 연속 공백만
+    줄인다. 5자 이하 줄(셀 하나·합계·쪽 번호)은 버리지 않고 다음 줄과 이어 한 단위로
+    묶는다 — 문장 분리는 5자 이하 조각을 버리지만, 표에서는 짧은 줄도 데이터다.
+    start/end 는 원문 기준 위치라 page_map(원문 글자 위치 → 쪽)과 그대로 맞는다.
+    """
+    units: list[dict] = []
+    buf: list[str] = []
+    buf_start = buf_end = 0
+    pos = 0
+    for raw_line in text.split("\n"):
+        line_start, pos = pos, pos + len(raw_line) + 1
+        line = re.sub(r"  +", " ", raw_line).strip()
+        if not line:
+            continue
+        if not buf:
+            buf_start = line_start
+        buf.append(line)
+        buf_end = line_start + len(raw_line)
+        joined = "\n".join(buf)
+        if len(joined) > 5:
+            units.append({"text": joined, "start": buf_start, "end": buf_end})
+            buf = []
+    if buf:  # 끝에 남은 짧은 줄 — 앞 단위에 붙인다(앞 단위가 없으면 그대로 한 단위)
+        tail = "\n".join(buf)
+        if units:
+            units[-1]["text"] += "\n" + tail
+            units[-1]["end"] = buf_end
+        else:
+            units.append({"text": tail, "start": buf_start, "end": buf_end})
+    return units
+
+
+def _needs_line_fallback(sentences: list[dict], text: str, max_tokens: int) -> bool:
+    """문장부호 분리가 사실상 실패했는가 — 줄바꿈 폴백을 검토할지 정한다.
+
+    본문이 max_tokens 안에 들면 폴백하지 않는다(짧은 초록·작은 표는 지금처럼 한 덩어리).
+    넘으면 문장이 5개 이하이거나 평균 문장 길이가 500자를 넘을 때 폴백을 검토한다.
+    마침표가 충분한 일반 본문(문장 수십~수백 개, 평균 수십~백여 자)은 어느 쪽에도 걸리지 않는다.
+    """
+    if _estimate_tokens(text) <= max_tokens:
+        return False
+    if len(sentences) <= _LINE_FALLBACK_MAX_SENTENCES:
+        return True
+    avg_len = sum(len(s["text"]) for s in sentences) / len(sentences)
+    return avg_len > _LINE_FALLBACK_AVG_CHARS
 
 
 def _compute_embeddings(sentences: list[str], embed_fn) -> np.ndarray:
@@ -193,29 +251,85 @@ def _split_by_bytes(chunk: Chunk, max_bytes: int = MAX_CHUNK_BYTES) -> list[Chun
     return parts
 
 
-def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[Chunk]:
-    """max_tokens 초과 청크를 문장 경계에서 분할"""
+def _split_by_chars(s: str, max_chars: int) -> list[str]:
+    """줄바꿈/문장부호/공백 경계를 우선해 글자 수 기준으로 강제 분할.
+
+    문장(또는 줄) 하나가 상한을 넘을 때의 최후 수단. 조각마다 뒤쪽 절반 안에서 경계를
+    찾고, 못 찾으면 max_chars 지점에서 자른다. 조각을 이어 붙이면 원문 그대로다(손실 없음)."""
+    parts = []
+    cursor = 0
+    n = len(s)
+    while cursor < n:
+        end = min(n, cursor + max_chars)
+        if end < n:  # 마지막 조각이면 경계 탐색 불필요
+            for break_char in ("\n", ". ", "。", "! ", "? ", " "):
+                idx = s.rfind(break_char, cursor + max_chars // 2, end)
+                if idx > cursor:
+                    end = idx + len(break_char)
+                    break
+        parts.append(s[cursor:end])
+        cursor = end
+    return parts
+
+
+def _split_oversized(
+    chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS, *, mode: str = "legacy",
+) -> list[Chunk]:
+    """max_tokens 초과 청크를 문장 경계(줄 모드면 줄 경계)에서 분할.
+
+    mode — 부르는 자리마다 자르는 규칙이 다르다.
+      "legacy"   의미 경계로 만든 청크. 지금까지의 규칙 그대로 — 상한을 넘는 문장은 글자 수
+                 지점에서 자르고, 문장별 추정치를 더해 묶는다. 이 자리를 바꾸면 그 뒤 문장들의
+                 묶음까지 밀려 마침표가 충분한 일반 본문의 청크 경계가 달라지므로 그대로 둔다.
+      "sentence" 문장 5개 이하 분기(크기 상한이 없던 곳 — 표·통계가 섹션 하나로 나갔다). 문장으로
+                 다시 나누지 않고 본문을 바로 _split_by_chars 로 줄바꿈·문장부호·공백 경계에서 자른다.
+                 문장 분리는 5자 이하 조각('2. 3. 4.' 같은 번호)을 버리지만 _split_by_chars 는 이어 붙이면
+                 원문 그대로다. 문장이 5개 이하라 문장 경계로 얻을 것이 거의 없고, _split_by_chars 도
+                 문장부호 경계를 먼저 찾는다. 끝 조각이 아니면 max_chars 의 절반 넘게 차므로 자투리는
+                 끝에만 생긴다.
+      "line"     줄바꿈 폴백. 정규화 전 줄 단위로 나눈 청크를 줄 단위로 다시 나누고 줄바꿈으로
+                 잇는다(표의 행 보존). 상한을 넘는 줄은 _split_by_chars 로 자르고, 이어 붙인 텍스트로 잰다.
+    """
     if chunk.token_count <= max_tokens:
         return [chunk]
 
+    legacy = mode == "legacy"
     # 표·OCR 덩어리처럼 문장 종결부호가 없는 텍스트는 '한 문장'이 max_tokens 를 넘길 수
     # 있고, 그러면 아래 루프가 쪼개지 못해 거대한 청크가 그대로 남는다(LLM 컨텍스트 초과).
-    # → 문장 자체가 상한을 넘으면 글자 단위로 강제 분할한다.
+    # → 문장 자체가 상한을 넘으면 강제 분할한다.
     max_chars = int(max_tokens * 1.5)
+    if mode == "sentence":
+        return [
+            Chunk(chunk_idx=0, text=part.strip(), page_start=chunk.page_start, page_end=chunk.page_end)
+            for part in _split_by_chars(chunk.text, max_chars) if part.strip()
+        ]
+    units = (
+        [u["text"] for u in _split_lines_with_offsets(chunk.text)] if mode == "line"
+        else _split_sentences(chunk.text)
+    )
     sentences: list[str] = []
-    for s in _split_sentences(chunk.text):
-        if _estimate_tokens(s) > max_tokens:
+    for s in units:
+        if _estimate_tokens(s) <= max_tokens:
+            sentences.append(s)
+        elif legacy:
             sentences.extend(s[i:i + max_chars] for i in range(0, len(s), max_chars))
         else:
-            sentences.append(s)
+            sentences.extend(_split_by_chars(s, max_chars))
 
+    sep = "\n" if mode == "line" else " "
     sub_chunks = []
     current_text = ""
     current_tokens = 0
 
     for sent in sentences:
         sent_tokens = _estimate_tokens(sent)
-        if current_tokens + sent_tokens > max_tokens and current_text:
+        if legacy:
+            over = bool(current_text) and current_tokens + sent_tokens > max_tokens
+        else:
+            # 짧은 조각을 많이 이을 때 조각마다 내림한 추정치를 더하면 구분자 몫과 내림 오차가
+            # 쌓여 상한을 넘는다 → 이어 붙인 텍스트로 잰다.
+            over = bool(current_text) and _estimate_tokens(current_text + sep + sent) > max_tokens
+        if over:
             sub_chunks.append(Chunk(
                 chunk_idx=0,  # 나중에 재번호
                 text=current_text.strip(),
@@ -225,7 +339,7 @@ def _split_oversized(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[C
             current_text = sent
             current_tokens = sent_tokens
         else:
-            current_text += " " + sent if current_text else sent
+            current_text = current_text + sep + sent if current_text else sent
             current_tokens += sent_tokens
 
     if current_text.strip():
@@ -306,17 +420,39 @@ def semantic_chunk(
         Chunk 리스트
     """
     # 1. 줄바꿈 정규화 후 문장 분리
-    text = _normalize_linebreaks(text)
+    raw_text = text
+    text = _normalize_linebreaks(raw_text)
     sentences = _split_sentences_with_offsets(text)
+
+    # 1-1. 줄바꿈 폴백 — 표·통계처럼 문장부호가 거의 없는 본문은 거대한 '문장' 몇 개로 뭉쳐
+    #      의미 경계 탐지가 비교할 단위를 못 받는다. 정규화가 홑줄바꿈(표의 행 경계)을 이미
+    #      공백으로 지웠으므로 정규화 전 원문을 줄 단위로 나눠 문장 대신 쓰고(줄 안만 정규화),
+    #      청크 안의 줄은 줄바꿈으로 이어 행을 보존한다. 줄로 나눈 쪽이 더 잘게 나뉠 때만 쓴다.
+    line_mode = False
+    if _needs_line_fallback(sentences, text, max_tokens):
+        lines = _split_lines_with_offsets(raw_text)
+        if len(lines) > len(sentences):
+            sentences, line_mode = lines, True
+    sep = "\n" if line_mode else " "
     if not sentences:
         return []
 
-    log.info(f"문장 {len(sentences)}개 분리 완료")
+    log.info(f"{'줄' if line_mode else '문장'} {len(sentences)}개 분리 완료")
 
-    # 문장 수가 적으면 그냥 하나로 (바이트 가드는 마지막에 일괄 적용)
+    # 문장 수가 적으면 의미 경계 탐지는 생략하지만 크기 상한(max_tokens)은 그대로 적용한다 —
+    # 문장부호가 적은 텍스트는 "문장" 5개 이하로 잡혀도 수만~십만 자일 수 있고, 상한 없이 한
+    # 덩어리로 나가면 섹션 요약 입력 상한(SUMMARIZER_MAX_SECTION_CHARS)에서 뒷부분이 통째로
+    # 잘린다. 바이트 가드는 그 뒤에 따로 건다.
     if len(sentences) <= 5:
-        single = Chunk(chunk_idx=0, text=text)
-        parts = _split_by_bytes(single) if apply_byte_guard else [single]
+        body = sep.join(s["text"] for s in sentences) if line_mode else text
+        parts = _split_oversized(
+            Chunk(chunk_idx=0, text=body), max_tokens=max_tokens,
+            mode="line" if line_mode else "sentence",
+        )
+        # 자르고 남은 min_tokens 미만 자투리는 본 경로처럼 이웃 조각에 붙인다 — 혼자 섹션·청크가 되지 않게
+        parts = _merge_small_chunks(parts, min_tokens=min_tokens)
+        if apply_byte_guard:
+            parts = [g for c in parts for g in _split_by_bytes(c)]
         for i, c in enumerate(parts):
             c.chunk_idx = i
         return parts
@@ -337,7 +473,7 @@ def semantic_chunk(
     for i, sent in enumerate(sentences):
         current_sentences.append(sent)
         if i in bp_set or i == len(sentences) - 1:
-            chunk_text = " ".join(s["text"] for s in current_sentences)
+            chunk_text = sep.join(s["text"] for s in current_sentences)
             page_start, page_end = _resolve_pages(current_sentences, page_map)
             chunks.append(Chunk(
                 chunk_idx=len(chunks),
@@ -354,7 +490,9 @@ def semantic_chunk(
     # 큰 청크 분할 (토큰 기준 의미 분할)
     final_chunks = []
     for chunk in chunks:
-        final_chunks.extend(_split_oversized(chunk, max_tokens=max_tokens))
+        final_chunks.extend(_split_oversized(
+            chunk, max_tokens=max_tokens, mode="line" if line_mode else "legacy",
+        ))
 
     # _split_oversized는 max_tokens만 신경 쓰고 min_tokens를 모른다 — 소제목처럼
     # 작은 청크 뒤에 그 청크 혼자 감당 못할 만큼 큰 본문이 이어지면, 그리디 누적이

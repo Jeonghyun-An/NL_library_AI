@@ -1,11 +1,24 @@
 // frontend/tests/unit/historySnapshot.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  PAPER_SNAPSHOT_MAX_BYTES,
   SNAPSHOT_MAX_ITEMS,
   SNAPSHOT_MAX_REFERENCES,
   slimBookResult,
   slimPaperResult,
 } from "~/utils/historySnapshot";
+
+function utf8Bytes(v: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(v)).length;
+}
+
+// 서버(app/api/history.py)는 파이썬 json.dumps 기본 구분자(", "·": ")로 잰다 — 구조 쉼표·콜론마다 1바이트씩 더 든다
+function separators(v: unknown): number {
+  if (typeof v !== "object" || v === null) return 0;
+  const children = Object.values(v);
+  const own = Array.isArray(v) ? children.length - 1 : children.length * 2 - 1;
+  return Math.max(own, 0) + children.reduce((n: number, c) => n + separators(c), 0);
+}
 
 function serverBook(i: number) {
   return {
@@ -140,5 +153,42 @@ describe("slimPaperResult", () => {
 
   it("모양이 틀리면 null", () => {
     expect(slimPaperResult(undefined)).toBeNull();
+  });
+
+  // 참고문헌 한 줄이 한글 100자(300바이트)라 서른 줄이면 한 편이 9KB 가까이 된다
+  function serverPaper(i: number, refCount: number) {
+    return {
+      book_id: `P${i}`,
+      best_score: 1 - i / 100,
+      chunks: [{ text: "본문" }],
+      book_info: {
+        cnts_id: `P${i}`,
+        title: `논문 ${i}`,
+        grade: "KCI 등재",
+        references: Array.from({ length: refCount }, () => "참고문헌".repeat(25)),
+      },
+    };
+  }
+
+  it(`검색이 돌려준 논문은 ${SNAPSHOT_MAX_ITEMS}편을 넘어도 모두 남긴다 — 둘째 쪽 이후 카드도 돌아와 찾는다`, () => {
+    const books = Array.from({ length: 60 }, (_, i) => serverPaper(i, 2));
+    const snap = slimPaperResult({ query: "q", books })!;
+    expect(snap.books.map((b) => b.book_id)).toEqual(books.map((b) => b.book_id));
+    expect(snap.books.every((b) => b.book_info!.references!.length === 2)).toBe(true);
+  });
+
+  it("서버 상한에 닿을 만큼이면 뒤쪽 논문부터 넘는 만큼만 참고문헌을 뺀다", () => {
+    const books = Array.from({ length: 60 }, (_, i) => serverPaper(i, 40));
+    const snap = slimPaperResult({ query: "q", books })!;
+    expect(snap.books).toHaveLength(60);
+    expect(utf8Bytes(snap) + separators(snap)).toBeLessThanOrEqual(200 * 1024);
+    // 앞쪽은 참고문헌을 그대로 두고 뒤쪽만 뺀다
+    const cut = snap.books.findIndex((b) => !b.book_info!.references);
+    expect(cut).toBeGreaterThan(0);
+    expect(snap.books.slice(0, cut).every((b) => b.book_info!.references!.length === SNAPSHOT_MAX_REFERENCES)).toBe(true);
+    expect(snap.books.slice(cut).every((b) => !b.book_info!.references)).toBe(true);
+    // 마지막으로 뺀 논문의 참고문헌을 되돌리면 상한을 넘는다 — 더 빼지 않았다
+    snap.books[cut]!.book_info!.references = snap.books[0]!.book_info!.references;
+    expect(utf8Bytes(snap)).toBeGreaterThan(PAPER_SNAPSHOT_MAX_BYTES);
   });
 });

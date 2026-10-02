@@ -1,0 +1,3 @@
+tag bis_1664m JAVA_TOOL_OPTIONS '-Xmx1664m' gc True docs 2
+KCI_FI002990049 ok wall 3.28 odl_s 3.26 hwm 1875 ru 1875 gc_used 1662 n_pages 38
+KCI_FI002990049 ok wall 3.52 odl_s 3.5 hwm 1888 ru 1888 gc_used 1662 n_pages 38

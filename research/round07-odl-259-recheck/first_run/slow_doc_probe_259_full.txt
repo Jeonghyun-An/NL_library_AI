@@ -1,0 +1,12 @@
+10�� 02, 2026 11:49:52 ���� org.opendataloader.pdf.processors.DocumentProcessor preprocessing
+INFO: File name: D:\SKOVIX\KCI\pdf\KCI_FI001238691.pdf
+Exception in thread "main" java.lang.OutOfMemoryError: Java heap space: failed reallocation of scalar replaced objects
+Error running opendataloader-pdf CLI.
+Return code: 1
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+  File "C:\Users\LANDSOFT\AppData\Local\Temp\claude\C--Users-LANDSOFT-mygit-NL-library-AI\ac2847f8-32b7-46ce-8254-e87152398b72\scratchpad\odl259\odl259\opendataloader_pdf\convert_generated.py", line 158, in convert
+    run_jar(args, quiet)
+  File "C:\Users\LANDSOFT\AppData\Local\Temp\claude\C--Users-LANDSOFT-mygit-NL-library-AI\ac2847f8-32b7-46ce-8254-e87152398b72\scratchpad\odl259\odl259\opendataloader_pdf\runner.py", line 78, in run_jar
+    raise subprocess.CalledProcessError(
+subprocess.CalledProcessError: Command '['java', '-Djava.awt.headless=true', '-Dapple.awt.UIElement=true', '-jar', 'C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\C--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\odl259\\opendataloader_pdf\\jar\\opendataloader-pdf-cli.jar', 'D:/SKOVIX/KCI/pdf/KCI_FI001238691.pdf', '--output-dir', 'probe_out259', '--format', 'markdown,json', '--table-method', 'cluster', '--markdown-page-separator', '\n<<<ODL_PAGE_BREAK_%page-number%>>>\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1.

@@ -1,7 +1,16 @@
 from functools import lru_cache
+from typing import Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
+
+# 섹션 0개 강제 재추출에 주는 데드라인의 하한(초) — stages.FORCED_OCR_MIN_DEADLINE_SECONDS 가 이 값을 쓴다
+FORCED_REEXTRACT_FLOOR_SECONDS = 60
+# llm_client 의 호출 하나는 timeout + 연결(≤10초)까지 걸린다 — PDF 메타 LLM 몫에 더한다
+PDF_META_CONNECT_MARGIN_SECONDS = 10
+# ODL_JAVA_MAX_HEAP 의 하한(MB) — 1g 는 무거운 문서 61건에서 상한 없을 때보다 1건 더 실패했고, 그 아래로는 무거운
+# 문서부터 메모리 부족이 는다(768m·512m 에서 가장 무거운 12건 중 2건, 384m 3건 — research/round07-odl-heap)
+ODL_JAVA_MIN_HEAP_MB = 1024
 
 
 class Settings(BaseSettings):
@@ -12,6 +21,18 @@ class Settings(BaseSettings):
     def _blank_think_is_none(cls, v):
         if isinstance(v, str) and not v.strip():
             return None
+        return v
+
+    # 형식은 Field pattern 이 먼저 본다 — 여기서는 크기만. 빈 값(상한 없음)은 그대로 둔다
+    @field_validator("ODL_JAVA_MAX_HEAP")
+    @classmethod
+    def _odl_heap_floor(cls, v: str) -> str:
+        if v and int(v[:-1]) * (1024 if v[-1] in "gG" else 1) < ODL_JAVA_MIN_HEAP_MB:
+            raise ValueError(
+                f"ODL_JAVA_MAX_HEAP={v} 가 1g({ODL_JAVA_MIN_HEAP_MB}m)보다 작다 — '3m' 같은 값이면 변환이 모두 실패하고, "
+                "1g 아래로는 무거운 문서부터 메모리 부족으로 fitz 텍스트가 된다. 1g 이상을 준다(상한을 풀려면 "
+                "64g 같은 큰 값 — 운영 compose 는 빈 값을 3g 로 채운다)"
+            )
         return v
 
     APP_NAME: str = "NL-Lib Semantic Search"
@@ -74,7 +95,11 @@ class Settings(BaseSettings):
     LLM_TIMEOUT: int = 120
     # 섹션 요약 등 태스크 내부 동시 LLM 호출 수
     # (글로벌 동시 LLM = celery-llm concurrency × 이 값 ≤ vLLM max-num-seqs)
+    # 요약 단계는 섹션 요약과 논문 보강(표 해석 등)의 LLM 호출이 이 세마포어 하나를 나눠 쓴다.
     LLM_SECTION_CONCURRENCY: int = 4
+    # llm_client 재시도 — 횟수는 첫 시도 포함, 간격은 쉼표로 이은 초(n번째 실패 뒤 n번째 값)
+    LLM_RETRY_ATTEMPTS: int = 3
+    LLM_RETRY_BACKOFF_SECONDS: str = "2,8"
 
     # ── LLM API 스타일 (OpenAI 호환 vLLM / Ollama 네이티브) ──
     # "openai" → {LLM_BASE_URL}/chat/completions (기본, 운영 vLLM — 무영향)
@@ -131,8 +156,29 @@ class Settings(BaseSettings):
     # ── 대량 인덱싱 잡 ───────────────────────────────
     INGEST_HIGH_WATER: int = 32          # 잡당 동시 in-flight 아이템 수
     INGEST_MAX_ATTEMPTS: int = 3         # 아이템당 자동 재시도 한도
-    # 단계별 타임아웃(초) — 초과 시 stale 판정 후 재디스패치
-    INGEST_STAGE_TIMEOUT_EXTRACT: int = 1800
+    # 자동 재시도 백오프(초, 쉼표로 이음) — attempt 1 이면 첫 값, 2 면 둘째 값만큼 지난 뒤 다시 집는다
+    INGEST_RETRY_BACKOFF_SECONDS: str = "120,600"
+    # 추출 전체 asyncio 데드라인(초) — 넘으면 남은 쪽은 ODL 결과로 채택한다
+    INGEST_EXTRACT_DEADLINE: int = 2700
+    # 단계별 타임아웃(초) — 초과 시 stale 판정 후 재디스패치.
+    # 추출은 데드라인(INGEST_EXTRACT_DEADLINE) 위, Celery visibility_timeout(7200) 아래.
+    INGEST_STAGE_TIMEOUT_EXTRACT: int = 3600
+
+    @model_validator(mode="after")
+    def _extract_deadline_fits_inside_stale_timeout(self) -> "Settings":
+        # 추출은 데드라인에서 스스로 멈추고, 섹션 0개 강제 재추출이 하한만큼, 카탈로그 row 가 없으면 PDF 메타 LLM 이
+        # PDF_META_TIMEOUT + 연결만큼 더 쓴다(메타의 ODL 은 데드라인 안이다) — 그 합이 stale 판정에 닿으면 끝나기
+        # 전에 stale 복구가 토큰을 바꿔 결과를 버린다. 스택 env 가 이 관계를 깨면 기동할 때 멈춘다
+        worst = (self.INGEST_EXTRACT_DEADLINE + FORCED_REEXTRACT_FLOOR_SECONDS
+                 + self.PDF_META_TIMEOUT + PDF_META_CONNECT_MARGIN_SECONDS)
+        if worst >= self.INGEST_STAGE_TIMEOUT_EXTRACT:
+            raise ValueError(
+                f"INGEST_EXTRACT_DEADLINE({self.INGEST_EXTRACT_DEADLINE}) + 강제 재추출 하한"
+                f"({FORCED_REEXTRACT_FLOOR_SECONDS}) + PDF_META_TIMEOUT({self.PDF_META_TIMEOUT}) + 연결 여유"
+                f"({PDF_META_CONNECT_MARGIN_SECONDS}) = {worst} 이 INGEST_STAGE_TIMEOUT_EXTRACT"
+                f"({self.INGEST_STAGE_TIMEOUT_EXTRACT}) 보다 짧아야 한다"
+            )
+        return self
     INGEST_STAGE_TIMEOUT_SUMMARIZE: int = 1200
     INGEST_STAGE_TIMEOUT_EMBED: int = 1200
     INGEST_STAGE_TIMEOUT_FINALIZE: int = 900
@@ -158,6 +204,31 @@ class Settings(BaseSettings):
     # 순차 VLM 호출을 유발해 잡 전체 처리량을 끌어내리는 것을 방지.
     # 초과분은 ODL 결과(비어있거나 부실해도)를 그대로 채택하고 VLM은 스킵한다.
     VLM_MAX_PAGES_PER_DOC: int = 60
+    # 문서 하나 안에서 동시에 보내는 OCR 요청 수 (추출 워커 4 × 2 = VLM max-num-seqs 8)
+    VLM_PAGE_CONCURRENCY: int = 2
+    # 스캔본 판정(문서 단위만 — 쪽 단위 규칙은 표지·간지를 다시 VLM 으로 보낸다).
+    # 머리말·꼬리말·스탬프 = 문서 쪽의 이 비율 이상에 되풀이되는 짧은 줄 — fitz 쪽 길이에서 뺀다
+    SCAN_REPEAT_LINE_RATIO: float = 0.6
+    # 짧은 쪽 비율이 이보다 크면 스캔본 (SCAN_MIN_PAGES 쪽 이상 문서만)
+    SCAN_SHORT_PAGE_RATIO: float = 0.5
+    SCAN_MIN_PAGES: int = 3
+    # ODL 타임아웃(초) = max(기본, 쪽수 × 쪽당) — 추출 데드라인이 남긴 시간을 넘지 않는다.
+    # 변환은 추출 워커 4칸이 동시에 돈다: 표가 많은 37쪽 문서가 혼자 12초, 4건 동시 28초, 8건 동시 47초
+    # (24스레드 PC 실측). 쪽당 0.5초(상한 18.5초)면 4건 동시에 넘어 재저장본 재시도 뒤 fitz 텍스트로 떨어져
+    # 표·머리말 제거를 잃는다 — 1.5초면 4건 동시 상한의 0.51, 8건 동시 0.84. 기본 10초는 JVM 기동 몫.
+    ODL_TIMEOUT_BASE_SECONDS: float = 10.0
+    ODL_TIMEOUT_PER_PAGE_SECONDS: float = 1.5
+    # ODL image_output — 운영 적재의 그림 저장이 0건이었다(2026-10-01 실측). 쓰이지 않는 인코딩을 끈다.
+    # opendataloader-pdf CLI 가 받는 값만 — 모르는 값이면 java 가 문서마다 exit 2 로 끝나 모두 fitz 텍스트가 된다
+    ODL_IMAGE_OUTPUT: Literal["off", "embedded", "external"] = "off"
+    # ODL java 의 힙 상한(-Xmx 뒤 크기). 상한이 없으면 JVM 이 메모리의 1/4 까지 써 병리 문서 하나가 10GB 를 넘겼고
+    # (운영 서버 251GB 면 하나당 약 63GB) 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 실측(운영 이미지, 2026-10-02):
+    # 무거운 문서 61건은 2·3g 에서 상한 없을 때와 추출 결과가 같았고(1g 은 1.6g 가 드는 1건 실패), 일반 688건은 2g 에서
+    # 3건만 메모리 부족 — 그중 3g 로 살아나는 건 1건이다. 넘친 문서는 재저장본 재시도 뒤 fitz 텍스트로 간다.
+    # '2gb' 같은 형식 오타면 java 가 뜨지 않고 '3m'('3g' 오타)이면 java 는 떠도 변환이 모두 실패해(실측), 어느 쪽이든
+    # 모든 문서가 조용히 fitz 텍스트가 된다 — 읽을 때 형식(pattern)과 하한(1g, _odl_heap_floor)을 막는다. 빈 값 = 상한 없음은 앱 설정에서만
+    # 된다: compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 는 빈 스택 env 를 3g 로 채우므로 운영에서 풀려면 64g 같은 큰 값을 준다
+    ODL_JAVA_MAX_HEAP: str = Field("3g", pattern=r"^([1-9][0-9]*[mMgG])?$")
     FITZ_DPI: int = 300                   # 페이지 렌더링 해상도
     VLM_MAX_TOKENS: int = 4096
     # 추론형 VLM(Qwen3.5 등)의 사고과정이 OCR 결과에 섞이는 것 방지.

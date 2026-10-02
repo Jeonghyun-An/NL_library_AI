@@ -1,0 +1,66 @@
+{
+ "KCI_FI002252358": {
+  "run": [
+   {
+    "rc": 0,
+    "stdout": 0,
+    "stderr": 0,
+    "stdout_head": "",
+    "stderr_head": "",
+    "s": 6.96
+   }
+  ],
+  "out_files": {
+   "KCI_FI002252358.json": 29000,
+   "KCI_FI002252358.md": 9916
+  }
+ },
+ "KCI_FI001930485": {
+  "run": [
+   {
+    "rc": 0,
+    "stdout": 0,
+    "stderr": 0,
+    "stdout_head": "",
+    "stderr_head": "",
+    "s": 8.82
+   }
+  ],
+  "out_files": {
+   "KCI_FI001930485.json": 35742801,
+   "KCI_FI001930485.md": 86054
+  }
+ },
+ "KCI_FI002990049": {
+  "run": [
+   {
+    "rc": 0,
+    "stdout": 0,
+    "stderr": 0,
+    "stdout_head": "",
+    "stderr_head": "",
+    "s": 3.12
+   }
+  ],
+  "out_files": {
+   "KCI_FI002990049.md": 78728,
+   "KCI_FI002990049.json": 495522
+  }
+ },
+ "KCI_FI000937498": {
+  "run": [
+   {
+    "rc": 0,
+    "stdout": 0,
+    "stderr": 0,
+    "stdout_head": "",
+    "stderr_head": "",
+    "s": 1.4
+   }
+  ],
+  "out_files": {
+   "KCI_FI000937498.md": 10305,
+   "KCI_FI000937498.json": 667064
+  }
+ }
+}

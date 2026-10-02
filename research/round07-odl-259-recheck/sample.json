@@ -1,0 +1,227 @@
+[
+ {
+  "id": "KCI_FI002029401",
+  "group": "fail_block",
+  "why": "named: 20 image-only pages, Nuri Media stamp only (old 0 OCR -> new 20) [pages=20, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002027714",
+  "group": "fail_block",
+  "why": "scanned journal pre-2002, text layer = Nuri Media stamp only (old 0 OCR -> all pages OCR) [pages=10, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002027613",
+  "group": "fail_block",
+  "why": "scanned journal pre-2002, text layer = Nuri Media stamp only (old 0 OCR -> all pages OCR) [pages=19, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002025273",
+  "group": "fail_block",
+  "why": "scanned journal pre-2002, text layer = Nuri Media stamp only (old 0 OCR -> all pages OCR) [pages=21, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002028807",
+  "group": "fail_block",
+  "why": "scanned journal pre-2002, text layer = Nuri Media stamp only (old 0 OCR -> all pages OCR) [pages=19, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002027685",
+  "group": "fail_block",
+  "why": "scanned journal pre-2002, text layer = Nuri Media stamp only (old 0 OCR -> all pages OCR) [pages=20, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002029313",
+  "group": "fail_block",
+  "why": "scanned journal pre-2002, text layer = Nuri Media stamp only (old 0 OCR -> all pages OCR) [pages=21, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI000870623",
+  "group": "pre2005",
+  "why": "scan, old 0 OCR -> new 7 (stamp-only text layer), 6 image pages [pages=7, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI000895213",
+  "group": "pre2005",
+  "why": "scan, old 0 OCR -> new 14, no image pages [pages=21, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI000885711",
+  "group": "pre2005",
+  "why": "scan, partial: old 23 -> new 38 OCR pages [pages=39, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI001112773",
+  "group": "pre2005",
+  "why": "scan, 19/20 short pages, 8 image pages, OCR unchanged [pages=20, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI000937498",
+  "group": "pre2005",
+  "why": "non-scan, 5 CMap-2x pages (ODL < fitz) [pages=10, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI000954729",
+  "group": "pre2005",
+  "why": "non-scan, 1 page held by raw fitz length (image body + header text) [pages=38, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001343434",
+  "group": "pre2005",
+  "why": "non-scan, 40 pages, 1 image page [pages=40, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001168821",
+  "group": "pre2005",
+  "why": "non-scan, random plain pre-2005 digital text [pages=20, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001314298",
+  "group": "digital",
+  "why": "scan after 2005, old 0 OCR -> new 31, 30 image pages [pages=33, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI001030932",
+  "group": "digital",
+  "why": "scan after 2005, old 0 OCR -> new 12 [pages=16, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI001107507",
+  "group": "digital",
+  "why": "scan after 2005, old 0 OCR -> new 16 [pages=22, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI001120928",
+  "group": "digital",
+  "why": "scan after 2005, old 18 -> new 22 OCR [pages=23, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002961735",
+  "group": "digital",
+  "why": "non-scan, 3 image pages kept as ODL (no OCR) [pages=30, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI002309766",
+  "group": "digital",
+  "why": "non-scan, 1 image page, 1 OCR page [pages=31, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001005886",
+  "group": "digital",
+  "why": "non-scan, 1 page held by raw fitz length [pages=36, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI002067020",
+  "group": "digital",
+  "why": "non-scan, 1 page held by raw fitz length [pages=37, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI002776016",
+  "group": "digital",
+  "why": "non-scan, random plain post-2005 digital paper [pages=12, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI002180861",
+  "group": "digital",
+  "why": "non-scan, random plain post-2005 digital paper [pages=20, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI003145254",
+  "group": "short_front",
+  "why": "8 short pages, 1 image page, 4 OCR [pages=40, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001618766",
+  "group": "short_front",
+  "why": "short front, 1 image cover page [pages=42, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI002675501",
+  "group": "short_front",
+  "why": "short front, 1 image cover page [pages=26, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001127976",
+  "group": "short_front",
+  "why": "8 short pages, none OCR'd [pages=21, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI003315691",
+  "group": "short_front",
+  "why": "54 pages, 3 short, 2 OCR [pages=54, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI003274665",
+  "group": "short_front",
+  "why": "42 pages, 3 short, 2 OCR [pages=42, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001827561",
+  "group": "short_front",
+  "why": "60 pages, short front, 1 OCR [pages=60, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001037448",
+  "group": "short_front",
+  "why": "2 short front pages, none OCR'd [pages=26, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001930485",
+  "group": "br_grid",
+  "why": "named: 37 pages, table-heavy, <br> empty grid under ODL embedded [pages=37, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI000897237",
+  "group": "br_grid",
+  "why": "named: scan with table grid (<br> grid under ODL embedded) [pages=17, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI000858284",
+  "group": "named_cases",
+  "why": "14 pages, many images [pages=14, doc_is_scan=?]"
+ },
+ {
+  "id": "KCI_FI002990049",
+  "group": "named_cases",
+  "why": "15 tables (table fill ratio path) [pages=38, doc_is_scan=?]"
+ },
+ {
+  "id": "KCI_FI003011274",
+  "group": "named_cases",
+  "why": "image-body pages with header text (held by raw fitz length) [pages=10, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI002252358",
+  "group": "named_cases",
+  "why": "316 pages, image cover (24 chars) must stay ODL [pages=316, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001343547",
+  "group": "named_cases",
+  "why": "<br> CMap case (pages 2 and 13 go OCR via CMap 2x after <br> removal) [pages=23, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001141801",
+  "group": "named_cases",
+  "why": "named case: short front, 1 image page, 1 held by raw [pages=18, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001238691",
+  "group": "named_cases",
+  "why": "named case: scan document [pages=26, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI002025246",
+  "group": "named_cases",
+  "why": "named case in docs.csv: scan, 14/14 image pages [pages=14, doc_is_scan=True]"
+ },
+ {
+  "id": "KCI_FI001667569",
+  "group": "named_cases",
+  "why": "named case in docs.csv: 1 CMap page, 3 held by raw [pages=24, doc_is_scan=False]"
+ },
+ {
+  "id": "KCI_FI001158431",
+  "group": "named_cases",
+  "why": "named case in docs.csv: short front, 3 held by raw [pages=44, doc_is_scan=False]"
+ }
+]

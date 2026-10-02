@@ -1,0 +1,753 @@
+﻿id,group,pages,short_pages,doc_is_scan,old_ocr,new_ocr,newly_ocr,no_longer_ocr,added_uncapped,removed_uncapped,changed_br,changed_other,len_diff_pages,cover_old,cover_new,img_cover_pages,img_cover_old_ocr,img_cover_new_ocr,cmap_pages,held_by_raw,capped,text_errors,repeated
+KCI_FI002029401,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029397,fail_block,34,34,True,0,34,34,0,34,0,0,34,0,0,1,34,0,34,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029404,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029403,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029400,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029402,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029383,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029384,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029385,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029393,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029395,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029391,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029382,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029387,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029388,fail_block,36,36,True,0,36,36,0,36,0,0,36,0,0,1,36,0,36,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029386,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029390,fail_block,54,54,True,0,54,54,0,54,0,0,54,0,0,1,54,0,54,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029389,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029392,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029394,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029349,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029347,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029352,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029344,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029339,fail_block,28,28,True,0,28,28,0,28,0,0,28,0,0,1,28,0,28,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029342,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029340,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029351,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029348,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029346,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029343,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029356,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029345,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029350,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029354,fail_block,66,66,True,0,60,60,0,66,0,0,66,0,0,1,66,0,66,0,0,1,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029325,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029334,fail_block,31,31,True,0,31,31,0,31,0,0,31,0,0,1,31,0,31,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029335,fail_block,33,33,True,0,33,33,0,33,0,0,33,0,0,1,33,0,33,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029327,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029333,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029328,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029329,fail_block,5,5,True,0,5,5,0,5,0,0,5,0,0,1,5,0,5,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029332,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029337,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029338,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029331,fail_block,9,9,True,0,9,9,0,9,0,0,9,0,0,1,9,0,9,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029330,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029326,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029359,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029336,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029324,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029310,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029314,fail_block,40,40,True,0,40,40,0,40,0,0,40,0,0,1,40,0,40,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029317,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029311,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029313,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029319,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029312,fail_block,28,28,True,0,28,28,0,28,0,0,28,0,0,1,28,0,28,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029318,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029321,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029323,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029315,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029320,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029208,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029206,fail_block,38,38,True,0,38,38,0,38,0,0,38,0,0,1,38,0,38,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029211,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029210,fail_block,31,31,True,0,31,31,0,31,0,0,31,0,0,1,31,0,31,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029218,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029205,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029217,fail_block,45,45,True,0,45,45,0,45,0,0,45,0,0,1,45,0,45,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029215,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029219,fail_block,9,9,True,0,9,9,0,9,0,0,9,0,0,1,9,0,9,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029212,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029216,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029207,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029209,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029213,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029214,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029202,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029201,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029203,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029196,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029198,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029199,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029194,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029195,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029197,fail_block,32,32,True,0,32,32,0,32,0,0,32,0,0,1,32,0,32,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029200,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002029204,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028879,fail_block,43,43,True,0,43,43,0,43,0,0,43,0,0,1,43,0,43,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028885,fail_block,36,36,True,0,36,36,0,36,0,0,36,0,0,1,36,0,36,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028880,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028904,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028868,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028890,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028884,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028893,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028888,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028878,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028899,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028896,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028851,fail_block,27,27,True,0,27,27,0,27,0,0,27,0,0,1,27,0,27,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028843,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028848,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028837,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028838,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028839,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028845,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028846,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028834,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028842,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028835,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028841,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028847,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028850,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028844,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028833,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028822,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028823,fail_block,11,11,True,0,11,11,0,11,0,0,11,0,0,1,11,0,11,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028829,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028820,fail_block,42,42,True,0,42,42,0,42,0,0,42,0,0,1,42,0,42,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028824,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028821,fail_block,36,36,True,0,36,36,0,36,0,0,36,0,0,1,36,0,36,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028826,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028828,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028825,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028773,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028747,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028817,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028806,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028815,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028808,fail_block,36,36,True,0,36,36,0,36,0,0,36,0,0,1,36,0,36,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028813,fail_block,11,11,True,0,11,11,0,11,0,0,11,0,0,1,11,0,11,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028816,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028804,fail_block,11,11,True,0,11,11,0,11,0,0,11,0,0,1,11,0,11,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028807,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028809,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028811,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028805,fail_block,33,33,True,0,33,33,0,33,0,0,33,0,0,1,33,0,33,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028802,fail_block,35,35,True,0,35,35,0,35,0,0,35,0,0,1,35,0,35,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028812,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028810,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028818,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028779,fail_block,30,30,True,0,30,30,0,30,0,0,30,0,0,1,30,0,30,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028750,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028758,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028763,fail_block,49,49,True,0,49,49,0,49,0,0,49,0,0,1,49,0,49,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028766,fail_block,27,27,True,0,27,27,0,27,0,0,27,0,0,1,27,0,27,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028756,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028775,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028777,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028768,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028760,fail_block,28,28,True,0,28,28,0,28,0,0,28,0,0,1,28,0,28,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028781,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028751,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028752,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002028753,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027884,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027886,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027885,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027881,fail_block,56,56,True,0,56,56,0,56,0,0,56,0,0,1,56,0,56,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027883,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027889,fail_block,27,27,True,0,27,27,0,27,0,0,27,0,0,1,27,0,27,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027891,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027887,fail_block,30,30,True,0,30,30,0,30,0,0,30,0,0,1,30,0,30,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027890,fail_block,27,27,True,0,27,27,0,27,0,0,27,0,0,1,27,0,27,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027893,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027895,fail_block,42,42,True,0,42,42,0,42,0,0,42,0,0,1,42,0,42,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027880,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027888,fail_block,27,27,True,0,27,27,0,27,0,0,27,0,0,1,27,0,27,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027882,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027874,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027870,fail_block,10,10,True,0,10,10,0,10,0,0,10,0,0,1,10,0,10,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027875,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027866,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027865,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027877,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027862,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027876,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027867,fail_block,49,49,True,0,49,49,0,49,0,0,49,0,0,1,49,0,49,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027871,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027869,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027878,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027860,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027868,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027872,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027873,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027879,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027864,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027696,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002038233,fail_block,20,19,True,0,19,19,0,19,0,0,19,0,0,0,19,0,19,0,0,0,0,
+KCI_FI002027698,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027717,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027697,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027694,fail_block,44,44,True,0,44,44,0,44,0,0,44,0,0,1,44,0,44,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002038228,fail_block,16,15,True,0,15,15,0,15,0,0,15,0,0,0,15,0,15,0,0,0,0,
+KCI_FI002027714,fail_block,10,10,True,0,10,10,0,10,0,0,10,0,0,1,10,0,10,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027715,fail_block,36,36,True,0,36,36,0,36,0,0,36,0,0,1,36,0,36,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027693,fail_block,47,47,True,0,47,47,0,47,0,0,47,0,0,1,47,0,47,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027726,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027692,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027716,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002038237,fail_block,15,14,True,0,14,14,0,14,0,0,14,0,0,0,14,0,14,0,0,0,0,
+KCI_FI002027683,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027679,fail_block,46,46,True,0,46,46,0,46,0,0,46,0,0,1,46,0,46,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027682,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027675,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027676,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027678,fail_block,28,28,True,0,28,28,0,28,0,0,28,0,0,1,28,0,28,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027681,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027684,fail_block,51,51,True,0,51,51,0,51,0,0,51,0,0,1,51,0,51,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027685,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027680,fail_block,28,28,True,0,28,28,0,28,0,0,28,0,0,1,28,0,28,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027656,fail_block,53,53,True,0,53,53,0,53,0,0,53,0,0,1,53,0,53,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027637,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027651,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027640,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027663,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027644,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027659,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027649,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027654,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027607,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027616,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027613,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027625,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027608,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027610,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027602,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027629,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027623,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027612,fail_block,32,32,True,0,32,32,0,32,0,0,32,0,0,1,32,0,32,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027615,fail_block,32,32,True,0,32,32,0,32,0,0,32,0,0,1,32,0,32,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027618,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002027620,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002038922,fail_block,30,29,True,0,29,29,0,29,0,0,29,0,0,0,29,0,29,0,0,0,0,
+KCI_FI002038920,fail_block,20,19,True,0,19,19,0,19,0,0,19,0,0,0,19,0,19,0,0,0,0,
+KCI_FI002038931,fail_block,18,17,True,0,17,17,0,17,0,0,17,0,0,0,17,0,17,0,0,0,0,
+KCI_FI002038929,fail_block,31,30,True,0,30,30,0,30,0,0,30,0,0,0,30,0,30,0,0,0,0,
+KCI_FI002038927,fail_block,28,27,True,0,27,27,0,27,0,0,27,0,0,0,27,0,27,0,0,0,0,
+KCI_FI002038930,fail_block,14,13,True,0,13,13,0,13,0,0,13,0,0,0,13,0,13,0,0,0,0,
+KCI_FI002038926,fail_block,19,18,True,0,18,18,0,18,0,0,18,0,0,0,18,0,18,0,0,0,0,
+KCI_FI002038935,fail_block,19,18,True,0,18,18,0,18,0,0,18,0,0,0,18,0,18,0,0,0,0,
+KCI_FI002038936,fail_block,23,22,True,0,22,22,0,22,0,0,22,0,0,0,22,0,22,0,0,0,0,
+KCI_FI002038923,fail_block,23,22,True,0,22,22,0,22,0,0,22,0,0,0,22,0,22,0,0,0,0,
+KCI_FI002038924,fail_block,13,12,True,0,12,12,0,12,0,0,12,0,0,0,12,0,12,0,0,0,0,
+KCI_FI002038928,fail_block,14,13,True,0,13,13,0,13,0,0,13,0,0,0,13,0,13,0,0,0,0,
+KCI_FI002038934,fail_block,35,34,True,0,34,34,0,34,0,0,34,0,0,0,34,0,34,0,0,0,0,
+KCI_FI002038921,fail_block,22,21,True,0,21,21,0,21,0,0,21,0,0,0,21,0,21,0,0,0,0,
+KCI_FI002038937,fail_block,28,27,True,0,27,27,0,27,0,0,27,0,0,0,27,0,27,0,0,0,0,
+KCI_FI002025428,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025424,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025398,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025445,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025392,fail_block,28,28,True,0,28,28,0,28,0,0,28,0,0,1,28,0,28,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025395,fail_block,32,32,True,0,32,32,0,32,0,0,32,0,0,1,32,0,32,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025400,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025404,fail_block,9,9,True,0,9,9,0,9,0,0,9,0,0,1,9,0,9,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025422,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025412,fail_block,10,10,True,0,10,10,0,10,0,0,10,0,0,1,10,0,10,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025418,fail_block,11,11,True,0,11,11,0,11,0,0,11,0,0,1,11,0,11,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025426,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025436,fail_block,11,11,True,0,11,11,0,11,0,0,11,0,0,1,11,0,11,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025321,fail_block,25,25,True,0,25,25,0,25,0,0,25,0,0,1,25,0,25,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025330,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025356,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025332,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025386,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025346,fail_block,6,6,True,0,6,6,0,6,0,0,6,0,0,1,6,0,6,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025363,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025323,fail_block,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025358,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025361,fail_block,30,30,True,0,30,30,0,30,0,0,30,0,0,1,30,0,30,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025372,fail_block,34,34,True,0,34,34,0,34,0,0,34,0,0,1,34,0,34,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025381,fail_block,32,32,True,0,32,32,0,32,0,0,32,0,0,1,32,0,32,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025385,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025336,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025344,fail_block,5,5,True,0,5,5,0,5,0,0,5,0,0,1,5,0,5,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025352,fail_block,8,8,True,0,8,8,0,8,0,0,8,0,0,1,8,0,8,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025374,fail_block,26,26,True,0,26,26,0,26,0,0,26,0,0,1,26,0,26,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002100544,fail_block,10,10,True,0,10,10,0,10,0,0,10,0,0,1,10,0,10,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098767,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025248,fail_block,4,4,True,0,4,4,0,4,0,0,4,0,0,1,4,0,4,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025283,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098759,fail_block,27,27,True,0,27,27,0,27,0,0,27,0,0,1,27,0,27,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098761,fail_block,5,5,True,0,5,5,0,5,0,0,5,0,0,1,5,0,5,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098766,fail_block,4,4,True,0,4,4,0,4,0,0,4,0,0,1,4,0,4,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098760,fail_block,7,7,True,0,7,7,0,7,0,0,7,0,0,1,7,0,7,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098764,fail_block,5,5,True,0,5,5,0,5,0,0,5,0,0,1,5,0,5,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098770,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098772,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025261,fail_block,34,34,True,0,34,34,0,34,0,0,34,0,0,1,34,0,34,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025290,fail_block,4,4,True,0,4,4,0,4,0,0,4,0,0,1,4,0,4,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002096807,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002096808,fail_block,29,29,True,0,29,29,0,29,0,0,29,0,0,1,29,0,29,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002097140,fail_block,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002097172,fail_block,39,39,True,0,39,39,0,39,0,0,39,0,0,1,39,0,39,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002097258,fail_block,42,42,True,0,42,42,0,42,0,0,42,0,0,1,42,0,42,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002097261,fail_block,30,30,True,0,30,30,0,30,0,0,30,0,0,1,30,0,30,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098762,fail_block,5,5,True,0,5,5,0,5,0,0,5,0,0,1,5,0,5,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002098769,fail_block,53,53,True,0,53,53,0,53,0,0,53,0,0,1,53,0,53,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002097257,fail_block,61,61,True,0,60,60,0,61,0,0,61,0,0,1,61,0,61,0,0,1,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002097260,fail_block,18,18,True,0,18,18,0,18,0,0,18,0,0,1,18,0,18,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025278,fail_block,22,22,True,0,22,22,0,22,0,0,22,0,0,1,22,0,22,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025275,fail_block,12,12,True,0,12,12,0,12,0,0,12,0,0,1,12,0,12,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025267,fail_block,13,13,True,0,13,13,0,13,0,0,13,0,0,1,13,0,13,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025270,fail_block,7,7,True,0,7,7,0,7,0,0,7,0,0,1,7,0,7,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025273,fail_block,21,21,True,0,21,21,0,21,0,0,21,0,0,1,21,0,21,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025276,fail_block,16,16,True,0,16,16,0,16,0,0,16,0,0,1,16,0,16,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025282,fail_block,5,5,True,0,5,5,0,5,0,0,5,0,0,1,5,0,5,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025296,fail_block,4,4,True,0,4,4,0,4,0,0,4,0,0,1,4,0,4,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025272,fail_block,19,19,True,0,19,19,0,19,0,0,19,0,0,1,19,0,19,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025280,fail_block,23,23,True,0,23,23,0,23,0,0,23,0,0,1,23,0,23,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025293,fail_block,20,20,True,0,20,20,0,20,0,0,20,0,0,1,20,0,20,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025297,fail_block,7,7,True,0,7,7,0,7,0,0,7,0,0,1,7,0,7,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025299,fail_block,46,46,True,0,46,46,0,46,0,0,46,0,0,1,46,0,46,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025279,fail_block,15,15,True,0,15,15,0,15,0,0,15,0,0,1,15,0,15,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI002025246,fail_block,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI000980517,pre2005,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001980244,pre2005,29,29,True,29,29,0,0,0,0,0,0,0,1,1,29,29,29,0,0,0,0,
+KCI_FI001116659,pre2005,2,2,False,2,2,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,
+KCI_FI000937498,pre2005,10,2,False,7,7,0,0,0,0,0,0,0,1,1,1,1,1,5,0,0,0,# / #.# / =
+KCI_FI000961986,pre2005,37,35,True,31,35,4,0,4,0,0,4,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002623278,pre2005,40,40,True,40,40,0,0,0,0,0,0,0,1,1,40,40,40,0,0,0,0,
+KCI_FI000927050,pre2005,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / Ng Chin Leong, Patrick / in"
+KCI_FI001164727,pre2005,17,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000893666,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / radix-#
+KCI_FI000884204,pre2005,5,5,True,5,5,0,0,0,0,0,0,0,1,1,5,5,5,0,0,0,0,
+KCI_FI001112773,pre2005,20,19,True,19,19,0,0,0,0,0,0,0,1,1,8,8,8,0,0,0,0,
+KCI_FI001171478,pre2005,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002713651,pre2005,34,34,True,34,34,0,0,0,0,0,0,0,1,1,34,34,34,0,0,0,0,
+KCI_FI000870623,pre2005,7,7,True,0,7,7,0,7,0,0,7,0,0,1,6,0,6,0,0,0,0,- # -
+KCI_FI000853541,pre2005,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000925471,pre2005,19,19,True,19,19,0,0,0,0,0,0,0,1,1,15,15,15,0,0,0,0,
+KCI_FI001360316,pre2005,27,27,True,27,27,0,0,0,0,0,0,0,1,1,27,27,27,0,0,0,0,
+KCI_FI000895213,pre2005,21,14,True,0,14,14,0,14,0,0,14,0,0,1,0,0,0,0,0,0,0,
+KCI_FI001168821,pre2005,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000953245,pre2005,9,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000899340,pre2005,10,0,False,2,2,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,# / #.#±#.# / (#)
+KCI_FI001105974,pre2005,22,20,True,17,20,3,0,3,0,0,3,0,1,1,0,0,0,0,0,0,0,
+KCI_FI000855970,pre2005,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / Korean J Otolaryngol #;#:#-#
+KCI_FI000865575,pre2005,9,6,True,3,6,3,0,3,0,0,3,0,1,1,2,1,2,0,0,0,0,
+KCI_FI000998092,pre2005,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / #% / (
+KCI_FI000991942,pre2005,16,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000949550,pre2005,12,11,True,11,11,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001642023,pre2005,24,24,True,24,24,0,0,0,0,0,0,0,1,1,24,24,24,0,0,0,0,
+KCI_FI001343434,pre2005,40,4,False,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+KCI_FI003008235,pre2005,43,43,True,43,43,0,0,0,0,0,0,0,1,1,43,43,43,0,0,0,0,
+KCI_FI001632046,pre2005,22,22,True,22,22,0,0,0,0,0,0,0,1,1,22,22,22,0,0,0,0,
+KCI_FI000872530,pre2005,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 조정점 최적탐색에 의한 Form Parameter 방법에 관한 연구
+KCI_FI000998777,pre2005,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI000945459,pre2005,6,4,True,1,4,3,0,3,0,0,3,0,0,1,1,0,1,0,0,0,0,Table #
+KCI_FI000954729,pre2005,38,15,False,6,6,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,с
+KCI_FI001979108,pre2005,14,14,True,14,14,0,0,0,0,0,0,0,1,1,14,14,14,0,0,0,0,
+KCI_FI000911467,pre2005,31,31,True,27,31,4,0,4,0,0,4,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001111599,pre2005,5,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / Korean J Otolaryngol #;#:#-#
+KCI_FI002623289,pre2005,36,36,True,36,36,0,0,0,0,0,0,0,1,1,36,36,36,0,0,0,0,
+KCI_FI000883167,pre2005,34,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / ( / )
+KCI_FI000885711,pre2005,39,38,True,23,38,15,0,15,0,0,15,0,0,0,2,1,2,0,0,0,0,
+KCI_FI001897213,pre2005,9,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,a / and / at
+KCI_FI000997353,pre2005,4,4,True,0,4,4,0,4,0,0,4,0,0,1,0,0,0,0,0,0,0,、 / 。
+KCI_FI000897445,pre2005,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI000942438,pre2005,24,24,True,24,24,0,0,0,0,0,0,0,1,1,24,24,24,0,0,0,0,
+KCI_FI001359314,pre2005,27,27,True,27,27,0,0,0,0,0,0,0,1,1,27,27,27,0,0,0,0,
+KCI_FI000909453,pre2005,27,27,True,27,27,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001110262,pre2005,7,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001348362,pre2005,8,8,True,8,8,0,0,0,0,0,0,0,1,1,8,8,8,0,0,0,0,
+KCI_FI000944252,pre2005,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002067041,pre2005,13,13,True,13,13,0,0,0,0,0,0,0,1,1,13,13,13,0,0,0,0,
+KCI_FI000950942,pre2005,16,16,True,16,16,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI000950107,pre2005,13,11,True,11,11,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI002055859,pre2005,17,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001152027,pre2005,42,37,True,34,37,3,0,3,0,0,3,0,0,1,0,0,0,0,0,0,0,
+KCI_FI001099811,pre2005,6,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001979266,pre2005,12,12,True,12,12,0,0,0,0,0,0,0,1,1,12,12,12,0,0,0,0,
+KCI_FI000878022,pre2005,14,13,True,12,13,1,0,1,0,0,1,0,0,0,2,2,2,0,0,0,0,
+KCI_FI002095199,pre2005,26,26,True,26,26,0,0,0,0,0,0,0,1,1,26,26,26,0,0,0,0,
+KCI_FI001367578,pre2005,32,32,True,32,32,0,0,0,0,0,0,0,1,1,32,32,32,0,0,0,0,
+KCI_FI000939688,pre2005,21,21,True,7,21,14,0,14,0,0,14,0,0,1,0,0,0,0,0,0,0,・
+KCI_FI002635507,pre2005,7,7,True,7,7,0,0,0,0,0,0,0,1,1,7,7,7,0,0,0,0,
+KCI_FI001367474,pre2005,26,26,True,26,26,0,0,0,0,0,0,0,1,1,26,26,26,0,0,0,0,
+KCI_FI001681656,pre2005,25,25,True,25,25,0,0,0,0,0,0,0,1,1,25,25,25,0,0,0,0,
+KCI_FI000984865,pre2005,2,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000902385,pre2005,27,27,True,27,27,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI000896623,pre2005,17,17,True,0,17,17,0,17,0,0,17,0,0,1,17,0,17,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI001151911,pre2005,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002171098,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / Book Centre / 교보문고 KYOBO
+KCI_FI001198443,pre2005,8,4,False,2,2,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI000978996,pre2005,54,54,True,53,54,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,
+KCI_FI000872667,pre2005,36,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001197192,pre2005,3,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / Korean J Otolaryngol #;#:#-#
+KCI_FI002059154,pre2005,20,20,True,20,20,0,0,0,0,0,0,0,1,1,20,20,20,0,0,0,0,
+KCI_FI000916480,pre2005,9,9,True,9,9,0,0,0,0,0,0,0,1,1,9,9,9,0,0,0,0,
+KCI_FI000985760,pre2005,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000864981,pre2005,6,6,True,6,6,0,0,0,0,0,0,0,1,1,2,2,2,0,0,0,0,
+KCI_FI000868072,pre2005,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000874767,pre2005,37,6,False,5,5,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,", / ."
+KCI_FI001006634,pre2005,34,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001154916,pre2005,27,1,False,3,3,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,# / #.# / #.#%
+KCI_FI002654371,pre2005,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0," , /  . / 가지"
+KCI_FI001644029,pre2005,7,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000987157,pre2005,32,32,True,32,32,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001001955,pre2005,29,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001116179,pre2005,29,19,True,5,19,14,0,14,0,0,14,0,0,1,0,0,0,0,0,0,0,胡適
+KCI_FI000897204,pre2005,8,6,True,5,6,1,0,1,0,0,1,0,0,1,4,3,4,0,0,0,0,
+KCI_FI000871174,pre2005,35,20,True,7,20,13,0,13,0,0,13,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000898664,pre2005,9,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000855652,pre2005,4,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002079068,pre2005,20,20,True,20,20,0,0,0,0,0,0,0,1,1,20,20,20,0,0,0,0,
+KCI_FI001001548,pre2005,4,4,True,4,4,0,0,0,0,0,0,0,1,1,2,2,2,0,0,0,0,
+KCI_FI000943205,pre2005,2,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001109918,pre2005,16,16,True,13,16,3,0,3,0,0,3,0,1,1,6,5,6,0,0,0,0,
+KCI_FI002685041,pre2005,15,15,True,15,15,0,0,0,0,0,0,0,1,1,15,15,15,0,0,0,0,
+KCI_FI000902436,pre2005,9,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000886386,pre2005,8,2,False,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,#
+KCI_FI001068605,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001154638,pre2005,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI002987200,pre2005,24,24,True,0,24,24,0,24,0,0,24,0,0,1,24,0,24,0,0,0,0,www.dbpia.co.kr
+KCI_FI000918532,pre2005,8,8,True,0,8,8,0,8,0,0,8,0,0,1,3,0,3,0,0,0,0,- # -
+KCI_FI000930139,pre2005,7,2,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000862851,pre2005,15,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# # # / 한국NGO의공공재추구행위와민주화# # # / 한국과국제정치
+KCI_FI001100729,pre2005,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002969644,pre2005,22,22,True,22,22,0,0,0,0,0,0,0,1,1,22,22,22,0,0,0,0,
+KCI_FI000852249,pre2005,22,5,False,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,", / ."
+KCI_FI001343141,pre2005,26,14,True,13,14,1,0,1,0,0,1,0,0,0,14,13,14,0,0,0,0,
+KCI_FI000902368,pre2005,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 대한조선학회논문집 제# 권 제# 호 # 년 # 월 / 선내 탑재 마운팅 장비의 동특성에 관한 실험적 연구
+KCI_FI001169951,pre2005,22,16,True,12,16,4,0,4,0,0,4,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001634299,pre2005,13,13,True,13,13,0,0,0,0,0,0,0,1,1,13,13,13,0,0,0,0,
+KCI_FI000858125,pre2005,13,13,True,13,13,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001058750,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001195226,pre2005,6,4,True,0,4,4,0,4,0,0,4,0,0,1,2,0,2,0,0,0,0,- # -
+KCI_FI002055958,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000878865,pre2005,24,16,True,6,16,10,0,10,0,0,10,0,0,0,2,0,2,0,0,0,0,
+KCI_FI000868381,pre2005,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI000992044,pre2005,4,4,True,2,4,2,0,2,0,0,2,0,0,1,1,1,1,0,0,0,0,
+KCI_FI000851314,pre2005,4,2,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,","
+KCI_FI001360213,pre2005,90,90,True,60,60,0,0,0,0,0,0,0,1,1,90,90,90,0,0,1,0,
+KCI_FI001407512,pre2005,24,24,True,24,24,0,0,0,0,0,0,0,1,1,24,24,24,0,0,0,0,
+KCI_FI000898558,pre2005,15,12,True,3,12,9,0,9,0,0,9,0,0,0,5,3,5,0,0,0,0,# / #) / (
+KCI_FI000874630,pre2005,16,2,False,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI001167159,pre2005,16,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / The / and
+KCI_FI000856379,pre2005,6,4,True,5,5,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,#
+KCI_FI000861861,pre2005,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,in / of / the
+KCI_FI000880259,pre2005,18,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / （ / ）
+KCI_FI002766872,pre2005,7,7,True,7,7,0,0,0,0,0,0,0,1,1,7,7,7,0,0,0,0,
+KCI_FI000870585,pre2005,7,7,True,6,7,1,0,1,0,0,1,0,0,1,7,6,7,0,0,0,0,
+KCI_FI002201224,pre2005,14,14,True,14,14,0,0,0,0,0,0,0,1,1,14,14,14,0,0,0,0,
+KCI_FI001321294,pre2005,3,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 전기손상에의한척수병증#례
+KCI_FI000961540,pre2005,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / ( / )
+KCI_FI000869633,pre2005,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001122348,pre2005,18,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001000080,pre2005,5,3,True,3,3,0,0,0,0,0,0,0,1,1,2,2,2,0,0,0,0,
+KCI_FI000961274,pre2005,20,20,True,20,20,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001158073,pre2005,56,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000886559,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 생물학가설의검증에서연역적과학지식의구조와생성과정
+KCI_FI000923116,pre2005,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / ( / (#)
+KCI_FI001947231,pre2005,5,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000991010,pre2005,5,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,— # — / 비구골절의수술후발생한외상성골관절염 / 황득수·이원석·곽상구·홍창화
+KCI_FI000894196,pre2005,37,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001155370,pre2005,2,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002256282,pre2005,19,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001523557,pre2005,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003008111,pre2005,13,13,True,13,13,0,0,0,0,0,0,0,1,1,13,13,13,0,0,0,0,
+KCI_FI001343315,pre2005,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI002078998,pre2005,32,32,True,32,32,0,0,0,0,0,0,0,1,1,32,32,32,0,0,0,0,
+KCI_FI002623277,pre2005,32,32,True,32,32,0,0,0,0,0,0,0,1,1,32,32,32,0,0,0,0,
+KCI_FI001156209,pre2005,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001210783,pre2005,3,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,Young-Tak Han et al. #
+KCI_FI000994709,pre2005,5,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /       / 
+KCI_FI000862753,pre2005,55,55,True,55,55,0,0,0,0,0,0,0,1,1,55,55,55,0,0,0,0,
+KCI_FI001467697,pre2005,6,6,True,6,6,0,0,0,0,0,0,0,1,1,6,6,6,0,0,0,0,
+KCI_FI000987164,pre2005,31,31,True,30,31,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,
+KCI_FI000885714,pre2005,12,10,True,3,10,7,0,7,0,0,7,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000888312,pre2005,26,26,True,26,26,0,0,0,0,0,0,0,1,1,26,26,26,0,0,0,0,
+KCI_FI002622320,pre2005,41,41,True,41,41,0,0,0,0,0,0,0,1,1,41,41,41,0,0,0,0,
+KCI_FI000883959,pre2005,48,48,True,41,48,7,0,7,0,0,7,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001143183,pre2005,22,20,True,5,20,15,0,15,0,0,15,0,0,1,0,0,0,0,0,0,0,
+KCI_FI001210970,pre2005,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000913676,pre2005,31,28,True,0,28,28,0,28,0,0,28,0,0,1,1,0,1,0,0,0,0,#
+KCI_FI001980174,pre2005,9,9,True,9,9,0,0,0,0,0,0,0,1,1,9,9,9,0,0,0,0,
+KCI_FI000946915,pre2005,18,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / ( / )
+KCI_FI000891502,pre2005,22,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,。 / ㆍ / ｢
+KCI_FI001465828,pre2005,11,11,True,11,11,0,0,0,0,0,0,0,1,1,11,11,11,0,0,0,0,
+KCI_FI000942557,pre2005,33,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000977242,pre2005,22,22,True,0,22,22,0,22,0,0,22,0,0,1,0,0,0,0,0,0,0,- # -
+KCI_FI000931126,pre2005,29,29,True,26,29,3,0,3,0,0,3,0,0,1,0,0,0,0,0,0,0,
+KCI_FI000955646,pre2005,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 韓國農村建築學會論文集 第#卷 #號 通卷 #號 #年 #月
+KCI_FI000982367,pre2005,25,9,False,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000890282,pre2005,29,28,True,0,28,28,0,28,0,0,28,0,0,1,1,0,1,0,0,0,0,- # -
+KCI_FI001211152,pre2005,2,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000980646,pre2005,3,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000962854,pre2005,20,20,True,17,20,3,0,3,0,0,3,0,1,1,0,0,0,0,0,0,0,
+KCI_FI002828671,pre2005,20,20,True,20,20,0,0,0,0,0,0,0,1,1,20,20,20,0,0,0,0,
+KCI_FI001407166,pre2005,22,22,True,22,22,0,0,0,0,0,0,0,1,1,22,22,22,0,0,0,0,
+KCI_FI001170206,pre2005,30,30,True,30,30,0,0,0,0,0,0,0,1,1,30,30,30,0,0,0,0,
+KCI_FI000902083,pre2005,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000870509,pre2005,4,4,True,3,4,1,0,1,0,0,1,0,0,1,4,3,4,0,0,0,0,
+KCI_FI002078920,pre2005,16,16,True,16,16,0,0,0,0,0,0,0,1,1,16,16,16,0,0,0,0,
+KCI_FI000945148,pre2005,6,6,True,6,6,0,0,0,0,0,0,0,1,1,6,6,6,0,0,0,0,
+KCI_FI001168356,pre2005,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000857766,pre2005,19,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001407241,pre2005,28,28,True,28,28,0,0,0,0,0,0,0,1,1,28,28,28,0,0,0,0,
+KCI_FI001343610,pre2005,26,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,- # -
+KCI_FI002056202,pre2005,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002967263,pre2005,41,41,True,41,41,0,0,0,0,0,0,0,1,1,41,41,41,0,0,0,0,
+KCI_FI003297807,pre2005,23,23,True,23,23,0,0,0,0,0,0,0,1,1,23,23,23,0,0,0,0,
+KCI_FI001316284,pre2005,3,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 사르코이드증에동반된다발신경병증 / 안석원·김동욱·홍윤호·이광우
+KCI_FI000933994,pre2005,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI001450959,pre2005,7,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002802012,pre2005,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # /  # # /  -
+KCI_FI001895799,pre2005,11,11,True,11,11,0,0,0,0,0,0,0,1,1,11,11,11,0,0,0,0,
+KCI_FI000882735,pre2005,15,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000869628,pre2005,11,2,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002621047,pre2005,52,52,True,52,52,0,0,0,0,0,0,0,1,1,52,52,52,0,0,0,0,
+KCI_FI001089426,pre2005,42,42,True,18,42,24,0,24,0,0,24,0,0,1,0,0,0,0,0,0,0,
+KCI_FI001947229,pre2005,7,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001641595,pre2005,46,46,True,46,46,0,0,0,0,0,0,0,1,1,46,46,46,0,0,0,0,
+KCI_FI001000239,pre2005,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI002278040,digital,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001122124,digital,26,26,True,25,26,1,0,1,0,0,1,0,1,1,1,1,1,0,0,0,0,
+KCI_FI000966261,digital,32,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003257101,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001120928,digital,23,22,True,18,22,4,0,4,0,0,4,0,1,1,0,0,0,0,0,0,0,
+KCI_FI003214027,digital,31,31,True,31,31,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001485845,digital,33,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,－# －
+KCI_FI003224193,digital,30,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003088163,digital,23,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001314745,digital,32,21,True,19,21,2,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001518767,digital,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,–#–
+KCI_FI002385243,digital,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001032721,digital,24,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001832909,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003125364,digital,18,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001511003,digital,22,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000964203,digital,43,43,True,39,43,4,0,4,0,0,4,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001378779,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001805327,digital,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"#∣임진희 / 제인정트렌카의입양의몸:언어,피의소리,그리고음악∣#"
+KCI_FI001154026,digital,38,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003224767,digital,16,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002961735,digital,30,4,False,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,
+KCI_FI002891958,digital,19,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002282972,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001201718,digital,35,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001128862,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001510798,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001618381,digital,46,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001232398,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001300239,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001165586,digital,9,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002903654,digital,35,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003152670,digital,5,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 논문 #-#-#-# / 한국IT정책경영학회 논문지 ‘#-# Vol.# No.#
+KCI_FI002285641,digital,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / Copyright ⓒ# HSST
+KCI_FI002427390,digital,31,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001060287,digital,27,2,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002309766,digital,31,2,False,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+KCI_FI002184244,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001151934,digital,17,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001108346,digital,22,22,True,21,22,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001506093,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002416117,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001520679,digital,31,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002648808,digital,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003336215,digital,38,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001228837,digital,35,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001691951,digital,38,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001480623,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001724497,digital,38,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001288589,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001167808,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001410737,digital,15,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / of / the
+KCI_FI002900959,digital,26,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001597668,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / － －
+KCI_FI001516429,digital,43,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001269706,digital,30,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001219606,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001816517,digital,29,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002417787,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002410033,digital,40,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003118437,digital,43,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002396502,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001164174,digital,15,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002923600,digital,24,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001821888,digital,17,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001397827,digital,24,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001829731,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001306309,digital,23,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001831489,digital,19,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002186558,digital,17,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / ( / )
+KCI_FI003039475,digital,32,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001014923,digital,15,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001544812,digital,16,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002277927,digital,53,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001016856,digital,2,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002909979,digital,18,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001841751,digital,28,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001305964,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001080110,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / - # -
+KCI_FI002275561,digital,34,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002992902,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003042872,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002664859,digital,38,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001620696,digital,23,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI002040915,digital,35,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002979495,digital,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001484284,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002550210,digital,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002149323,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002654463,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,여가관광연구 제 # 호 관광종합연구소 #. #
+KCI_FI001594437,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002068818,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001807954,digital,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI001004616,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002037078,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003283846,digital,19,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI002402416,digital,50,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002776016,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001304614,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001942373,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001005886,digital,36,3,False,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,#
+KCI_FI003308835,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003008309,digital,28,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003265232,digital,42,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002068735,digital,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,국내 노인 대상 우울 중재프로그램에 대한 체계적 고찰
+KCI_FI001305924,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002298010,digital,38,38,True,38,38,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI002783552,digital,28,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003164552,digital,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003111849,digital,44,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001072758,digital,22,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001820863,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003160867,digital,41,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001812204,digital,32,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003153893,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003243963,digital,36,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001216212,digital,18,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001603097,digital,34,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001314298,digital,33,31,True,0,31,31,0,31,0,0,31,0,0,0,30,0,30,0,0,0,0,# / 󰡔 / 󰡕
+KCI_FI002549001,digital,30,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002784539,digital,32,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002753399,digital,7,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003125074,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002803488,digital,41,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001721621,digital,33,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002674563,digital,26,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,－# －
+KCI_FI001491599,digital,50,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001082688,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002408398,digital,37,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001030932,digital,16,12,True,0,12,12,0,12,0,0,12,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI002537240,digital,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / 웹소설의미감과장르교섭양상⦁김예니 / 한국문예비평연구제#집#. #.
+KCI_FI002769621,digital,13,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003005326,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001714597,digital,11,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002898476,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002900010,digital,24,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,https://doi.org/#.#/JKSARM.#.#.#.# / https://jksarm.koar.kr
+KCI_FI002053355,digital,23,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001721854,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001370356,digital,23,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001729749,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002964190,digital,28,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003320054,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001289392,digital,32,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001176036,digital,4,4,True,3,4,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,
+KCI_FI002768655,digital,32,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002677615,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002419764,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001833747,digital,37,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001598375,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002524285,digital,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001107507,digital,22,16,True,0,16,16,0,16,0,0,16,0,0,1,0,0,0,0,0,0,0,－
+KCI_FI001939829,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,도자공방운영의 활성화 연구
+KCI_FI002276880,digital,24,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003031643,digital,28,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003159041,digital,28,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001294416,digital,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003309925,digital,46,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002148130,digital,12,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002036321,digital,9,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / Tourism Research 제#권 제#호(통권 #호) / 항공관련학과전공학생들의신체적매력지각과자아탄력성이취업스트레스에미치는영향
+KCI_FI001625272,digital,31,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002898828,digital,30,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003093273,digital,21,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003258954,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002293627,digital,52,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002418443,digital,24,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001946193,digital,18,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001015822,digital,48,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI002067020,digital,37,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,#
+KCI_FI002805735,digital,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI000974406,digital,16,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,図
+KCI_FI001548451,digital,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001277819,digital,6,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002396522,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002796574,digital,34,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002065984,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,# / ( / )
+KCI_FI001506850,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003031888,digital,33,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002396257,digital,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001484464,digital,27,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002992815,digital,34,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001691316,digital,22,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001944447,digital,29,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001616971,digital,46,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001168951,digital,14,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002767359,digital,10,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001093846,digital,24,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI003313445,digital,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002180861,digital,20,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI002859003,digital,17,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI001103635,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI001617817,digital,26,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002178885,digital,8,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001823737,digital,13,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,한국심리학회지: 임상
+KCI_FI001033371,digital,17,17,True,17,17,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI002792748,digital,22,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001401832,digital,31,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001519480,digital,30,1,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000964871,digital,24,14,True,14,14,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,
+KCI_FI002795714,digital,25,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI002272602,digital,30,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001428194,short_front,224,3,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001274293,short_front,35,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001160724,short_front,268,6,False,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001483251,short_front,29,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003236304,short_front,19,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001372673,short_front,35,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001372507,short_front,280,12,False,5,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001667569,short_front,24,9,False,6,6,0,0,0,0,0,0,0,0,0,0,0,0,1,3,0,0,~yhil{a/
+KCI_FI001037448,short_front,26,2,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"# / , / ."
+KCI_FI003223016,short_front,47,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003011274,short_front,10,4,False,4,4,0,0,0,0,0,0,0,0,0,3,3,3,0,4,0,0,# / #년#월스마트미디어저널
+KCI_FI003145254,short_front,40,8,False,4,4,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,#
+KCI_FI003315691,short_front,54,3,False,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI003274665,short_front,42,3,False,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001618766,short_front,42,2,False,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,#
+KCI_FI001924411,short_front,36,1,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001127976,short_front,21,8,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,#
+KCI_FI001158431,short_front,44,6,False,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,#) / ( / )
+KCI_FI002675501,short_front,26,2,False,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+KCI_FI002065123,short_front,31,2,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001141801,short_front,18,7,False,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,#
+KCI_FI000960090,short_front,24,3,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,", / ."
+KCI_FI001827561,short_front,60,2,False,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001401892,short_front,393,17,False,13,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI001930485,br_grid,37,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+KCI_FI000897237,br_grid,17,17,True,16,17,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,
+KCI_FI003011274,named_cases,10,4,False,4,4,0,0,0,0,0,0,0,0,0,3,3,3,0,4,0,0,# / #년#월스마트미디어저널
+KCI_FI001141801,named_cases,18,7,False,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,#
+KCI_FI002252358,named_cases,316,12,False,11,11,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+KCI_FI002025246,named_cases,14,14,True,0,14,14,0,14,0,0,14,0,0,1,14,0,14,0,0,0,0,"Copyright (C) # Nuri Media Co., Ltd."
+KCI_FI001238691,named_cases,26,26,True,25,26,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,0,
+KCI_FI001343547,named_cases,23,0,False,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,- # -
+KCI_FI001667569,named_cases,24,9,False,6,6,0,0,0,0,0,0,0,0,0,0,0,0,1,3,0,0,~yhil{a/
+KCI_FI001158431,named_cases,44,6,False,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,#) / ( / )
