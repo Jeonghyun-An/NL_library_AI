@@ -21,7 +21,23 @@
               <strong>{{ withRo(cite.label) }}</strong> 인용됨
               <span aria-hidden="true">·</span> 인용 대목 {{ cite.chunks.length }}곳
             </p>
+            <!-- 첫 인용 쪽에서 원문 뷰어를 열고 인용 대목을 넘겨 본다 -->
+            <button
+              type="button"
+              class="pd-cite__btn"
+              :aria-busy="checkingPdf"
+              :aria-describedby="bannerPdfProblem ? 'pdetail-cite-problem' : undefined"
+              @click="openCitedPassages(cite.chunks)"
+            >
+              인용 대목 보기
+            </button>
           </div>
+          <p v-if="bannerPdfProblem" id="pdetail-cite-problem" class="pd-pdf-note" role="alert">
+            {{ bannerPdfProblem }}
+            <a v-if="paper?.url" :href="paper.url" target="_blank" rel="noopener"
+              >KCI에서 원문 페이지 열기<span class="skx-sr-only"> (새 창)</span></a
+            >
+          </p>
         </section>
 
         <div v-if="loading" style="padding: 40px; text-align: center">
@@ -141,19 +157,13 @@
                   />
                   <span class="skx-btn-talk__label">DeepRead</span>
                 </button>
-                <a
-                  v-if="paper.url"
-                  :href="paper.url"
-                  target="_blank"
-                  rel="noopener"
-                  class="skx-btn-pview-sm"
-                  >원문 보기</a
-                >
+                <!-- 원문 보기는 늘 이 화면의 원문 뷰어로 연다 — 외부(KCI) 페이지는 보조 링크로 따로 둔다 -->
                 <button
-                  v-else
                   type="button"
                   class="skx-btn-pview-sm"
-                  @click="pdfModal = true"
+                  :aria-busy="checkingPdf"
+                  :aria-describedby="pdfProblem ? 'pdetail-pdf-problem' : undefined"
+                  @click="openOriginal"
                 >
                   원문 보기
                 </button>
@@ -165,7 +175,22 @@
                 >
                   <img src="/img/ico-paper-bookmark.svg" alt="" />
                 </button>
+                <a
+                  v-if="paper.url"
+                  :href="paper.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="pd-kci"
+                  >KCI에서 보기<span class="skx-sr-only"> (새 창)</span></a
+                >
               </div>
+              <!-- 원문이 없으면 뷰어 대신 누른 자리 아래에 알리고 KCI 페이지를 건넨다 -->
+              <p v-if="pdfProblem" id="pdetail-pdf-problem" class="pd-pdf-note" role="alert">
+                {{ pdfProblem }}
+                <a v-if="paper.url" :href="paper.url" target="_blank" rel="noopener"
+                  >KCI에서 원문 페이지 열기<span class="skx-sr-only"> (새 창)</span></a
+                >
+              </p>
             </div>
           </section>
 
@@ -407,10 +432,12 @@
 
     <!-- PDF 뷰어 모달 -->
     <PdfViewer
-      v-if="pdfModal"
-      :cnts-id="paperId"
-      :title="paper?.title"
-      @close="pdfModal = false"
+      v-if="pdf"
+      :cnts-id="pdf.cntsId"
+      :title="pdf.title"
+      :page="pdf.page"
+      :passages="pdf.passages"
+      @close="closePdf"
     />
 
     <Teleport to="body">
@@ -425,12 +452,14 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useResearchApi } from "~/composables/useResearch";
-import type { ResearchJob } from "~/types/research";
+import type { ReportChunk, ResearchJob } from "~/types/research";
 import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
 import { safeSessionStorage } from "~/utils/browserId";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
+import { citedPdfTarget } from "~/utils/pdfViewer";
 import { isPlainClick } from "~/utils/restorePosition";
 
 const route = useRoute();
@@ -594,7 +623,6 @@ function relatedScore(score: number): number {
 // UI
 const chatOpen = ref(false);
 const citationModal = ref(false);
-const pdfModal = ref(false);
 const toast = ref("");
 const thumbnailUrl = ref(`${config.public.apiBase}/books/${paperId}/thumbnail`);
 
@@ -619,6 +647,21 @@ function showToast(msg: string) {
   setTimeout(() => {
     toast.value = "";
   }, 2500);
+}
+
+// 원문 보기 — 파일이 있는지 먼저 확인하고 연다. 없으면 누른 버튼 아래에 알리고 KCI 페이지 링크를 건넨다
+const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
+const pdfProblem = ref("");
+// 배너의 [인용 대목 보기]가 열지 못한 까닭 — 배너 안에 알린다
+const bannerPdfProblem = ref("");
+
+async function openOriginal() {
+  pdfProblem.value = (await openPdf({ cntsId: paperId, title: paper.value?.title ?? "" })) ?? "";
+}
+
+// 첫 인용 쪽에서 열고 머리의 "인용 대목 n/N" 으로 대목을 넘겨 본다
+async function openCitedPassages(chunks: readonly ReportChunk[]) {
+  bannerPdfProblem.value = (await openPdf(citedPdfTarget(paperId, paper.value?.title ?? "", chunks))) ?? "";
 }
 
 async function fetchPaper() {
@@ -816,6 +859,56 @@ onMounted(async () => {
   min-width: 12rem;
   margin: 0;
   line-height: 1.5;
+}
+/* KCI 보조 링크가 붙어 좁은 화면에서 버튼 줄이 넘치지 않게 줄을 바꾼다 */
+.skx-pdetail__btns {
+  flex-wrap: wrap;
+}
+/* 원문 파일을 확인하는 동안 — 눌린 것이 보이게 한다(초점을 잃지 않게 disabled 는 쓰지 않는다) */
+.skx-btn-pview-sm[aria-busy="true"],
+.pd-cite__btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.6;
+}
+.pd-cite__btn {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-sm);
+  background: var(--skx-white);
+  color: var(--skx-primary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pd-cite__btn:hover {
+  background: rgba(79, 70, 229, 0.08);
+}
+/* 원문 보기 옆 보조 링크 — 버튼보다 한 단계 낮춰 글자 링크로 둔다 */
+.pd-kci {
+  font-size: 0.7rem;
+  color: var(--skx-gray-1);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  white-space: nowrap;
+}
+.pd-kci:hover {
+  color: var(--skx-primary);
+}
+.pd-cite__btn:focus-visible,
+.pd-kci:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+/* 원문을 열지 못한 까닭 — 누른 자리 아래에 둔다 */
+.pd-pdf-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.7rem;
+  color: #c0392b;
+}
+.pd-pdf-note a {
+  margin-left: 0.3rem;
+  color: var(--skx-primary);
+  text-decoration: underline;
 }
 @media (prefers-reduced-motion: reduce) {
   .pd-keyword {

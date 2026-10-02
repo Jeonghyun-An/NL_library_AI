@@ -141,7 +141,7 @@
       </template>
     </main>
 
-    <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" @close="pdf = null" />
+    <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" :passages="pdf.passages" @close="closePdf" />
     <ReportPrint v-if="printDoc" :doc="printDoc" />
 
     <Teleport to="body">
@@ -162,15 +162,15 @@ import ReportPrint from "~/components/research/ReportPrint.vue";
 import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
 import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
-import { apiHeaders, apiUrl } from "~/composables/useApi";
 import { useNow } from "~/composables/useNow";
+import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { researchPhase } from "~/utils/researchEvents";
-import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
+import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   buildReportDocument,
   docInputFromDraft,
@@ -187,7 +187,6 @@ const route = useRoute();
 const { view, notFound, loadError, actionError, busy, syncFailed, syncing, load, resync, approve, retry, cancel } =
   useResearchJob(() => String(route.params.id ?? ""));
 const { startResearch } = useResearchStarter();
-const pdfBase = apiUrl("/books");
 
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
 const reportState = computed(() => reportSlot(phase.value, !!view.value?.report, syncFailed.value));
@@ -328,26 +327,12 @@ async function copyLink(): Promise<void> {
 }
 
 // ── 원문 보기 ─────────────────────────────────────────────
-const pdf = ref<OpenPdfPayload | null>(null);
-
-// 확인 요청의 HTTP 상태. 요청 자체가 실패하면 null
-async function pdfStatus(cntsId: string): Promise<number | null> {
-  const ctrl = new AbortController();
-  try {
-    const res = await fetch(`${pdfBase}/${encodeURIComponent(cntsId)}/pdf`, { headers: apiHeaders(), signal: ctrl.signal });
-    return res.status;
-  } catch {
-    return null;
-  } finally {
-    // 본문은 필요 없다 — 뷰어가 다시 받는다. 끊지 않으면 PDF 전체를 두 번 내려받는다
-    ctrl.abort();
-  }
-}
+const pdfOpener = usePdfOpener();
+const { pdf, closePdf } = pdfOpener;
 
 async function openPdf(target: OpenPdfPayload): Promise<void> {
-  const problem = pdfCheckProblem(await pdfStatus(target.cntsId));
+  const problem = await pdfOpener.openPdf(target);
   if (problem) showToast(problem);
-  else pdf.value = target;
 }
 
 // ── 내려받기(Word·PDF) ────────────────────────────────────
