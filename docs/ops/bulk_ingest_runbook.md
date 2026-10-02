@@ -256,7 +256,7 @@ mkdir -p /data/nl-lib/data/round07                                             #
 - 스택 편집기에서 저장소 `docker-compose.yml` 과 견주어 **바뀐 곳만** 옮긴다. 바뀐 곳은 round07 분기점과의 차이다(`git diff 9798f46 -- docker-compose.yml`).
   - `x-common-env` 에 새 키 11개. 모두 `${이름:-기본값}` 으로 선언한다 — 선언이 없으면 Portainer 가 그 이름의 스택 env 를 무시해 9-7 에서 값을 바꿀 수 없다.
     - LLM 묶음(`LLM_SECTION_CONCURRENCY` 아래): `LLM_RETRY_ATTEMPTS`·`LLM_RETRY_BACKOFF_SECONDS`.
-    - 텍스트 추출 묶음(`VLM_TIMEOUT` 아래): `VLM_PAGE_CONCURRENCY`·`SCAN_REPEAT_LINE_RATIO`·`SCAN_SHORT_PAGE_RATIO`·`SCAN_MIN_PAGES`·`ODL_TIMEOUT_BASE_SECONDS`·`ODL_TIMEOUT_PER_PAGE_SECONDS`·`ODL_IMAGE_OUTPUT`.
+    - 텍스트 추출 묶음(`VLM_TIMEOUT` 아래): `VLM_PAGE_CONCURRENCY`·`SCAN_REPEAT_LINE_RATIO`·`SCAN_SHORT_PAGE_RATIO`·`SCAN_MIN_PAGES`·`ODL_TIMEOUT_BASE_SECONDS`(기본 `10.0`)·`ODL_TIMEOUT_PER_PAGE_SECONDS`(기본 `1.5`)·`ODL_IMAGE_OUTPUT`.
     - 대량 인덱싱 잡 묶음(`INGEST_MAX_ATTEMPTS` 아래): `INGEST_RETRY_BACKOFF_SECONDS`·`INGEST_EXTRACT_DEADLINE`.
   - 같은 묶음의 `INGEST_STAGE_TIMEOUT_EXTRACT` 기본값 `14400` → `3600`(바로 위 주석도 바뀌었다).
   - ODL 을 돌리는 `fastapi`(바로 위 주석 포함)·`celery-worker`·`celery-cpu` 에 `init: true` — ODL 이 시간을 넘겨 자식 프로세스를 끄면 고아가 된 java 를 PID 1(tini)이 거둔다(없으면 시간 초과마다 좀비가 남는다). SIGTERM 은 그대로 넘겨 celery warm shutdown 은 같다.
@@ -271,7 +271,7 @@ mkdir -p /data/nl-lib/data/round07                                             #
 docker ps --format '{{.Names}}\t{{.Status}}' | grep nl-lib-celery              # nl-lib-celery-control 이 Up
 docker inspect nl-lib-celery-cpu --format '{{join .Config.Cmd " "}}'         # … -Q q_cpu --max-tasks-per-child=50 (q_control 없음)
 for c in nl-lib-fastapi nl-lib-celery nl-lib-celery-cpu; do echo "$c init=$(docker inspect --format '{{.HostConfig.Init}}' $c)"; done   # 셋 다 true
-docker exec nl-lib-celery-cpu printenv INGEST_STAGE_TIMEOUT_EXTRACT INGEST_EXTRACT_DEADLINE VLM_PAGE_CONCURRENCY ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_IMAGE_OUTPUT   # 3600 / 2700 / 2 / 5.0 / 0.5 / off
+docker exec nl-lib-celery-cpu printenv INGEST_STAGE_TIMEOUT_EXTRACT INGEST_EXTRACT_DEADLINE VLM_PAGE_CONCURRENCY ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_IMAGE_OUTPUT   # 3600 / 2700 / 2 / 10.0 / 1.5 / off
 docker logs --since 2m nl-lib-celery-control 2>&1 | grep -c dispatch_job_items   # 0 이 아니다 — 30초마다 디스패치 틱을 받는다
 NEW=$(docker image inspect --format '{{.Id}}' landsoftdocker/nl-lib-fastapi:latest)
 for c in nl-lib-fastapi nl-lib-celery nl-lib-celery-cpu nl-lib-celery-control nl-lib-celery-llm nl-lib-celery-embed nl-lib-celery-beat nl-lib-celery-research nl-lib-celery-research-plan; do
@@ -329,7 +329,7 @@ echo "$CANARY" | tee /data/nl-lib/data/round07/canary_job_id.txt   # 비었으�
 docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$CANARY/start
 ```
 
-- 시작하고 몇 분 안에 `docker logs nl-lib-celery-cpu 2>&1 | grep -E '초 / 상한|ODL 실패' | head -20` 으로 첫 문서들의 ODL 이 실제로 변환되는지 본다 — ODL 자식 프로세스가 Celery 풀 자식 안에서 도는 첫 확인이다(9-7 ⑩). 시도마다 `ODL 3.2초 / 상한 10초` 같은 줄이 남고(20쪽이면 상한 max(5, 20 × 0.5) = 10초), 실패하면 바로 뒤에 `ODL 실패(…) — fitz 재저장본으로 한 번 더` 가 붙는다. 실패가 대부분이면 카나리를 멈추고(`docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$CANARY/pause`) 괄호 안의 사유를 본다.
+- 시작하고 몇 분 안에 `docker logs nl-lib-celery-cpu 2>&1 | grep -E '초 / 상한|ODL 실패' | head -20` 으로 첫 문서들의 ODL 이 실제로 변환되는지 본다 — ODL 자식 프로세스가 Celery 풀 자식 안에서 도는 첫 확인이다(9-7 ⑩). 시도마다 `ODL 3.2초 / 상한 30초` 같은 줄이 남고(20쪽이면 상한 max(10, 20 × 1.5) = 30초), 실패하면 바로 뒤에 `ODL 실패(…) — fitz 재저장본으로 한 번 더` 가 붙는다. 실패가 대부분이면 카나리를 멈추고(`docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$CANARY/pause`) 괄호 안의 사유를 본다.
 - `docker exec nl-lib-fastapi curl -s localhost:8000/api/admin/ingest-jobs/$CANARY` 의 `status` 가 `completed`·`completed_with_errors` 가 될 때까지 기다린다. 도는 동안 9-7 ④ 를 몇 번 본다. `status_counts` 의 `dispatched`·`running` 이 한 시간 넘게 줄지 않으면 9-7 ⑦ 의 로그부터 본다.
 - 9-7 에서 멈추고 고친 뒤 다시 돌릴 때는 앞 카나리가 `completed`·`completed_with_errors` 인지 보고 이 절을 처음부터 한다. 같은 이름이면 매니페스트를 덮어쓰고 잡은 새 id 로 생긴다.
 
@@ -447,7 +447,8 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT max((stage_timings
 ```
 
 - round07 전 측정(본 잡 14,579건): 추출 최대 2,036초(spec 16 의 표본 27,000건에서는 2,785초), 요약 438초, embed 90초, 마무리 35초. round07 은 요약 단계가 논문 보강을 맡아 요약이 길어지고 embed 는 짧아지며, 마무리는 섹션이 많은 문서에서 계층 요약만큼 길어진다(논문의 계층 요약 시간 예산은 900 − 최종 호출 120 − 여유 60 = 720초, ⑫).
-- 멈춤: 추출 최대가 3,000초(데드라인 2,700초 + ODL·섹션 분할 몫)를 넘는다 · 요약·embed 최대가 900초(타임아웃 1,200초의 3/4)를 넘는다 · 마무리 최대가 840초(마감 900초에서 여유 60초 안쪽 — 계층 요약이 예산을 다 쓴 문서다)를 넘는다. 추출이면 `INGEST_EXTRACT_DEADLINE` 을 낮추고, 요약·embed·마무리면 그 단계 타임아웃(`INGEST_STAGE_TIMEOUT_SUMMARIZE`·`_EMBED`·`_FINALIZE` — 마무리는 계층 요약 예산도 같이 는다)을 올린다. 모두 compose 에 선언돼 있고, 올릴 때는 Celery `visibility_timeout`(7,200초) 아래로 둔다 — 넘으면 도는 메시지가 재전달된다.
+- 추출은 ODL 변환까지 데드라인(2,700초) 안에서 한다 — 시도마다 ODL 상한을 남은 시간으로 줄이고 2초도 안 남으면 변환을 띄우지 않는다. 섹션 0개 강제 재추출도 첫 추출이 남긴 시간(하한 60초) 안에서 ODL 부터 다시 하므로, 추출 단계 전체가 stale 판정 3,600초 아래에 든다.
+- 멈춤: 추출 최대가 3,000초(데드라인 2,700초 + 섹션 분할·강제 재추출 하한 60초 몫)를 넘는다 · 요약·embed 최대가 900초(타임아웃 1,200초의 3/4)를 넘는다 · 마무리 최대가 840초(마감 900초에서 여유 60초 안쪽 — 계층 요약이 예산을 다 쓴 문서다)를 넘는다. 추출이면 `INGEST_EXTRACT_DEADLINE` 을 낮추고, 요약·embed·마무리면 그 단계 타임아웃(`INGEST_STAGE_TIMEOUT_SUMMARIZE`·`_EMBED`·`_FINALIZE` — 마무리는 계층 요약 예산도 같이 는다)을 올린다. 모두 compose 에 선언돼 있고, 올릴 때는 Celery `visibility_timeout`(7,200초) 아래로 둔다 — 넘으면 도는 메시지가 재전달된다.
 
 ⑨ 늦은 기록이 남긴 중복 — ⑦ 에서 stale 복구나 늦은 기록이 0 이 아닐 때만 본다. 늦은 기록은 stale 복구가 토큰을 바꾼 뒤에만 나므로(카나리에서는 수동 retry 를 하지 않는다) stale 복구를 거친 아이템을 본다. 같은 `(book_id, section_idx)` 가 `book_sections` 에 두 줄 이상이거나, Milvus 의 그 문서 청크 수(`count(*)`)가 서로 다른 `chunk_id` 수나 기록된 `indexed` 와 다르면 두 시도가 겹쳐 썼다.
 
@@ -491,21 +492,21 @@ docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/
   -H 'Content-Type: application/json' -d "{\"item_ids\": $IDS, \"reset_stage\": \"pending\"}"
 ```
 
-⑩ ODL 타임아웃·fitz 폴백. ODL 변환 상한은 max(`ODL_TIMEOUT_BASE_SECONDS` 5초, 쪽수 × `ODL_TIMEOUT_PER_PAGE_SECONDS` 0.5초)다. 넘거나 실패하면 fitz 로 다시 저장한 PDF 로 한 번 더(`meta.odl_fallback` = `resaved`), 그래도 안 되면 fitz 텍스트로 대신한다(`fitz` — json 이 없어 머리말·꼬리말 제거와 표 구조를 잃는다, 쪽 방법도 `fitz`). 정상이면 `odl_fallback` 은 null 이다. `meta.odl_seconds` 는 그 문서의 ODL 시도를 모두 더한 시간(0.1초 단위)이다. 카나리의 첫 문서들이 ODL 자식 프로세스가 Celery 풀 자식 안에서 실제로 도는지 보는 첫 확인이다 — 개발 PC 의 확인은 풀 밖에서 했다.
+⑩ ODL 타임아웃·fitz 폴백. ODL 변환 상한은 max(`ODL_TIMEOUT_BASE_SECONDS` 10초, 쪽수 × `ODL_TIMEOUT_PER_PAGE_SECONDS` 1.5초)이고, 시도마다 추출 데드라인까지 남은 시간을 넘지 않는다(2초도 안 남으면 그 시도를 띄우지 않고 `ODL 실패(추출 데드라인까지 N초 — 변환하지 않음)` 을 남긴다). 넘거나 실패하면 fitz 로 다시 저장한 PDF 로 한 번 더(`meta.odl_fallback` = `resaved`), 그래도 안 되면 fitz 텍스트로 대신한다(`fitz` — json 이 없어 머리말·꼬리말 제거와 표 구조를 잃는다, 쪽 방법도 `fitz`). 정상이면 `odl_fallback` 은 null 이다. `meta.odl_seconds` 는 그 문서의 ODL 시도를 모두 더한 시간(0.1초 단위)이다. 카나리의 첫 문서들이 ODL 자식 프로세스가 Celery 풀 자식 안에서 실제로 도는지 보는 첫 확인이다 — 개발 PC 의 확인은 풀 밖에서 했다.
 
 ```bash
 docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT meta->>'odl_fallback' AS odl_fallback, count(*) AS n FROM ingest_job_items WHERE job_id = '$CANARY' AND status = 'done' GROUP BY 1 ORDER BY 2 DESC"
-docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT coalesce((meta->>'n_tables')::int, 0) >= 5 AS tables_5plus, count(*) AS n, round(percentile_cont(0.5) WITHIN GROUP (ORDER BY (meta->>'odl_seconds')::float / greatest(5, (meta->>'pages')::float * 0.5))::numeric, 2) AS ratio_median, round(max((meta->>'odl_seconds')::float / greatest(5, (meta->>'pages')::float * 0.5))::numeric, 2) AS ratio_max FROM ingest_job_items WHERE job_id = '$CANARY' AND status = 'done' AND meta->>'odl_fallback' IS NULL GROUP BY 1 ORDER BY 1"
+docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT coalesce((meta->>'n_tables')::int, 0) >= 5 AS tables_5plus, count(*) AS n, round(percentile_cont(0.5) WITHIN GROUP (ORDER BY (meta->>'odl_seconds')::float / greatest(10, (meta->>'pages')::float * 1.5))::numeric, 2) AS ratio_median, round(max((meta->>'odl_seconds')::float / greatest(10, (meta->>'pages')::float * 1.5))::numeric, 2) AS ratio_max FROM ingest_job_items WHERE job_id = '$CANARY' AND status = 'done' AND meta->>'odl_fallback' IS NULL GROUP BY 1 ORDER BY 1"
 docker logs nl-lib-celery-cpu 2>&1 | grep -c '초 / 상한'                       # ODL 변환 시도 수(실패한 시도 포함)
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'fitz 재저장본으로 한 번 더'      # 원본 ODL 이 실패한 문서(타임아웃 포함)
 docker logs nl-lib-celery-cpu 2>&1 | grep -cE 'ODL 실패\([0-9]+초 초과\)'      # 그중 타임아웃
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'ODL 실패 — fitz 텍스트'          # 재저장본도 실패해 fitz 텍스트로 대신한 문서
 docker logs nl-lib-celery-cpu 2>&1 | grep 'fitz 재저장본으로 한 번 더' | head  # 사유 — 'ODL 실패(…)' 괄호 안
-docker exec nl-lib-celery-cpu printenv ODL_IMAGE_OUTPUT ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS   # off / 5.0 / 0.5
+docker exec nl-lib-celery-cpu printenv ODL_IMAGE_OUTPUT ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS   # off / 10.0 / 1.5
 ```
 
-- 둘째 SQL 은 시도 한 번이 상한의 몇 배를 썼는지다(`meta.pages` 는 추출이 연 쪽수). 상한 식은 기본값(5·0.5)으로 썼다 — 스택 env 로 바꿨으면 SQL 의 두 수도 바꾼다. 재저장본까지 간 문서는 두 시도를 더한 시간이라 뺐다(그런 문서는 위 타임아웃 줄로 본다). 표 5개 이상(`tables_5plus`)은 카나리 실행이 센 표 수다.
-- 정상이면 `odl_fallback` 이 있는 문서는 0~1% 다(검토 때 개발 PC 186건 중 1건). 다만 Task 5 리뷰가 개발 PC 에서 재 보니 37쪽 표 많은 문서(KCI_FI001930485, 상한 18.5초)가 혼자 12초, 4건 동시 28초, 8건 동시 47초가 걸렸다 — `celery-cpu` 4칸이 함께 변환하면 지금 기본값의 상한을 넘을 수 있다. 기본값을 올릴지는 사용자 결정을 기다리는 중이라 카나리로 운영 값을 본다.
+- 둘째 SQL 은 시도 한 번이 상한의 몇 배를 썼는지다(`meta.pages` 는 추출이 연 쪽수). 상한 식은 기본값(10·1.5)으로 썼다 — 스택 env 로 바꿨으면 SQL 의 두 수도 바꾼다. 시도의 상한은 추출 데드라인이 짧게 남았을 때(대개 강제 재추출) 이 식보다 작을 수 있다 — 실제로 쓴 상한은 `초 / 상한` 줄에 찍힌다. 재저장본까지 간 문서는 두 시도를 더한 시간이라 뺐다(그런 문서는 위 타임아웃 줄로 본다). 표 5개 이상(`tables_5plus`)은 카나리 실행이 센 표 수다.
+- 정상이면 `odl_fallback` 이 있는 문서는 0~1% 다(검토 때 개발 PC 186건 중 1건). 기본값을 10초·쪽당 1.5초로 올린 까닭(사용자 결정 2026-10-02): Task 5 리뷰가 개발 PC(24스레드)에서 재 보니 37쪽 표 많은 문서(KCI_FI001930485)가 혼자 12초, 4건 동시 28초, 8건 동시 47초가 걸렸다 — 쪽당 0.5초(상한 18.5초)면 `celery-cpu` 4칸이 함께 변환할 때 넘어 재저장본 재시도 뒤 fitz 텍스트로 떨어진다. 쪽당 1.5초(상한 55.5초)면 4건 동시 0.51, 8건 동시 0.84 다. 기본 10초는 JVM 기동 몫이다.
 - ODL 자식은 상한 + 5초에 SIGALRM 으로 java 까지 스스로 끈다 — 풀 자식이 먼저 끊겨도 ODL 이 끝없이 돌지 않고, 끈 java 는 `init: true`(tini)가 거둔다.
 - 멈춤: `odl_fallback` 이 `fitz` 인 문서가 과반이다 — ODL 자식 프로세스가 깨진 것이다. 위 사유를 본다. 표 많은 문서의 `ratio_max` 가 0.8 을 넘거나 타임아웃(`ODL 실패(N초 초과)`) 줄이 있으면, 본 잡을 재개하기 전에 스택 env 의 `ODL_TIMEOUT_PER_PAGE_SECONDS`(필요하면 `ODL_TIMEOUT_BASE_SECONDS` 도)를 올린다 — 둘 다 compose 에 선언돼 있다.
 
