@@ -121,6 +121,109 @@ class TestChannel:
         assert relay.channel(jid) == relay.channel(str(jid)) == f"research:{jid}"
 
 
+class _FakePubSub:
+    def __init__(self, messages):
+        self.messages = list(messages)
+        self.subscribed: list[str] = []
+        self.unsubscribed: list[str] = []
+        self.timeouts: list[float] = []
+        self.closed = False
+
+    async def subscribe(self, name):
+        self.subscribed.append(name)
+
+    async def get_message(self, *, ignore_subscribe_messages, timeout):
+        self.timeouts.append(timeout)
+        return self.messages.pop(0) if self.messages else None
+
+    async def unsubscribe(self, name):
+        self.unsubscribed.append(name)
+
+    async def aclose(self):
+        self.closed = True
+
+
+class _FakeSubscriber:
+    def __init__(self, pubsub: _FakePubSub):
+        self._pubsub = pubsub
+        self.closed = False
+
+    def pubsub(self):
+        return self._pubsub
+
+    async def aclose(self):
+        self.closed = True
+
+
+class TestWorkChannel:
+    """이어간 연구(research_works)의 생성 이벤트 채널 — 딥리서치 잡 채널과 따로 둔다(spec §6-4)."""
+
+    def test_work_channel_is_its_own_channel(self, monkeypatch):
+        relay = _load_relay(monkeypatch)
+        wid = uuid.uuid4()
+        assert relay.work_channel(wid) == relay.work_channel(str(wid)) == f"research:work:{wid}"
+        assert relay.work_channel(wid) != relay.channel(wid)
+
+    def test_publish_work_sends_kind_and_payload_on_the_work_channel(self, monkeypatch):
+        relay = _load_relay(monkeypatch)
+        client = _FakeRedis()
+        monkeypatch.setattr(relay.aioredis, "from_url", lambda url: client)
+        wid = uuid.uuid4()
+
+        asyncio.run(relay.publish_work(wid, "generation", {"gen_id": 3, "result": {"concepts": ["독서 격차"]}}))
+
+        ((channel, data),) = client.published
+        assert channel == f"research:work:{wid}"
+        assert json.loads(data) == {"kind": "generation", "gen_id": 3, "result": {"concepts": ["독서 격차"]}}
+        assert "독서 격차" in data                    # 한글을 \\u 로 풀지 않는다(publish 와 같다)
+
+    def test_publish_work_connects_with_socket_timeouts(self, monkeypatch):
+        relay = _load_relay(monkeypatch)
+        seen = {}
+
+        def _from_url(url):
+            seen["url"] = url
+            return _FakeRedis()
+
+        monkeypatch.setattr(relay.aioredis, "from_url", _from_url)
+        asyncio.run(relay.publish_work(uuid.uuid4(), "work", {}))
+
+        query = parse_qs(urlsplit(seen["url"]).query)
+        assert float(query["socket_timeout"][0]) > 0
+        assert float(query["socket_connect_timeout"][0]) > 0
+
+    def test_publish_work_swallows_redis_errors(self, monkeypatch, caplog):
+        relay = _load_relay(monkeypatch)
+
+        def _down(url):
+            raise ConnectionError("redis down")
+
+        monkeypatch.setattr(relay.aioredis, "from_url", _down)
+        asyncio.run(relay.publish_work(uuid.uuid4(), "generation", {"gen_id": 1}))
+
+        assert any("publish_work 실패" in r.getMessage() for r in caplog.records)
+
+    def test_subscribe_work_yields_events_and_idle_beats(self, monkeypatch):
+        relay = _load_relay(monkeypatch)
+        pubsub = _FakePubSub([{"data": json.dumps({"kind": "generation", "gen_id": 7})}, None])
+        client = _FakeSubscriber(pubsub)
+        monkeypatch.setattr(relay.aioredis, "from_url", lambda url: client)
+        wid = uuid.uuid4()
+
+        async def _take_two():
+            stream = relay.subscribe_work(wid)
+            got = [await stream.__anext__(), await stream.__anext__()]
+            await stream.aclose()
+            return got
+
+        got = asyncio.run(_take_two())
+
+        assert got == [{"kind": "generation", "gen_id": 7}, None]
+        assert pubsub.subscribed == pubsub.unsubscribed == [f"research:work:{wid}"]
+        assert pubsub.timeouts == [15.0, 15.0]
+        assert pubsub.closed and client.closed
+
+
 class TestLoaderIsolation:
     """_load_relay 가 끝나면 sys.modules·부모 패키지 속성이 import 전 그대로여야 한다.
 

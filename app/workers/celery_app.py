@@ -12,7 +12,7 @@ celery_app = Celery(
     "nl-lib",
     broker=cfg.REDIS_URL,
     backend=cfg.REDIS_URL,
-    include=["workers.tasks", "workers.research_tasks"],
+    include=["workers.tasks", "workers.research_tasks", "workers.research_work_tasks"],
 )
 celery_app.conf.update(
     task_serializer="json",
@@ -41,6 +41,9 @@ celery_app.conf.update(
         "tasks.plan_deep_research":  {"queue": cfg.RESEARCH_PLAN_QUEUE},
         "tasks.run_deep_research":   {"queue": cfg.RESEARCH_QUEUE},
         "tasks.reap_stale_research": {"queue": "q_control"},
+        # 연구 어시스턴트 생성 디스패치 — 설정값이 아니라 문자열로 고정한다. 회수기가 도는 celery-control·
+        # celery-beat 에는 RESEARCH_PLAN_QUEUE env 가 없어 설정값이면 q_llm 으로 떨어진다(research_work_tasks)
+        "tasks.dispatch_research_work": {"queue": "q_research_plan"},
     },
     # expires: 제어 워커가 늦게 받은 옛 틱은 버린다. 밀린 디스패치 틱이 한꺼번에 돌면 in-flight 를
     # 같이 읽고 상한을 넘겨 보낸다 — 그래서 각 주기보다 짧게 둔다.

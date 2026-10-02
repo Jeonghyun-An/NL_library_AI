@@ -1,0 +1,43 @@
+# round06a — Qwen 한국어 품질 표본 확인 (1회성)
+
+연구 어시스턴트는 짧고 정형적인 생성(핵심 개념·주제 카드·자식 카드·특징 추출)을 Qwen(`qwen3-vl-8b`, 같은 스택 `nl-lib-vllm`)으로 돌린다(spec `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` D10·§6-3 `WORK_MODEL_ROUTES`). 대회 전에 Qwen 의 한국어 출력이 쓸 만한지 사람이 본다(spec §8 'Qwen 한국어 품질'). 미달이면 그 작업을 gemma 로 돌린다 — `app/services/research_work/routing.py` 의 `WORK_MODEL_ROUTES` 에서 그 kind 의 값만 `GEMMA` 로(한 줄에 여러 kind 가 함께 있어 줄을 통째로 바꾸면 다른 kind 까지 바뀐다). 특징 추출 표본은 06c 를 시작할 때 따로 본다.
+
+## 방법
+
+- 입력: 고정 질문 5개(`scripts/research_eval/questions.json`)의 **갈래 0** 잡 — 06a 배포 당일 `scripts/research_eval/run_pair.py` 가 만든 JSON 의 `"0"`. DB 를 읽지도 쓰지도 않는다(잡은 `GET /api/research/{id}` 로 읽는다).
+- 프롬프트 두 개를 Qwen 과 gemma 에 똑같이 보낸다(재시도 없음, 호출마다 300초 상한 — 생성 호출과 같다).
+  - **핵심 개념** — 연구 어시스턴트가 실제로 보내는 요청 그대로: `services.research_work.concepts` 의 `concepts_input` → `EXECUTOR.build`(`research_concepts.yaml` 렌더와 LLM 파라미터). 응답은 `EXECUTOR.parse`·`check`(2개 이상)로 읽는다.
+  - **주제 카드 초안** — 이 폴더의 `topic_card_draft.yaml`(06b 가 정식 프롬프트로 옮긴다). 보고서 절의 첫 향후 과제(`sections[].future`)를 씨앗으로, 그 절의 논문 앞 5편을 로컬 [E#] 로, 코드가 센 수치(그 하위질문의 채택 수·근거 중 최신 연도·적재분 N)를 [F#] 로 준다. 서로 다른 절에서 앞에서부터 3장이고, 절 논문이 3편 미만인 절은 건너뛴다(근거 3개 이상 규칙을 어느 모델도 지킬 수 없어 비교가 되지 않는다). 형식 검사는 근거가 문자열인지·3개 이상·목록 안 번호·연구 질문이 물음표로 끝나는지·제목이 '~다' 로 끝나는 문장형인지·[F#] 사용·[F#] 밖 숫자(근거 표기 [E#] 는 빼고 보지만 5G·COVID-19 같은 분야 용어의 숫자도 걸리므로 '확인 필요' 다)·단정 표현(전무·최초 등)이다. 프롬프트의 JSON 형식에는 근거 자리를 하나만 둔다 — 자리를 셋 두면 모델이 그 개수를 베낀다(함정 15번). 3개 이상은 규칙 줄로만 적는다.
+- 출력: `out/<질문키>.md` — 개념·카드마다 Qwen·gemma 를 한 표에 나란히, 원문은 접어 둔다.
+
+| 파일 | 역할 |
+|---|---|
+| `check.py` | 위 확인을 돌려 `out/` 에 쓴다 |
+| `topic_card_draft.yaml` | 주제 카드 프롬프트 초안 — 개수·분야 예시를 넣지 않는다(함정 15번) |
+| `smoke_check.py` | 가짜 API·가짜 vLLM 으로 `check.py` 를 끝까지 돌려 본다(개발 PC, 네트워크 없음) — `python research/round06-qwen-check/smoke_check.py` → `smoke OK` |
+| `out/<질문키>.md` | 운영 실행 결과 |
+
+실행(서버 — `research/` 는 앱 이미지에 없다. 이 폴더를 `/data/nl-lib/data/round06-qwen-check/` 로 옮긴다):
+
+```bash
+docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round06-qwen-check/check.py \
+  --api http://localhost:8000/api --pairs /app/data/research_eval/$RUN.json
+```
+
+`RUN` 은 `scripts/research_eval/README.md` 흐름 3 에서 정한 이름이다. `--qwen-url`·`--qwen-model`·`--gemma-url`·`--gemma-model` 을 주지 않으면 운영 생성이 부르는 곳(`services.research_work.routing.endpoint` — `VLM_*`·`LLM_*` 설정)을 쓴다. 한 질문의 잡 조회가 실패하면 그 질문만 건너뛴다. 적재가 도는 동안의 '시간·끝난 이유' 칸은 참고만 한다 — Qwen 은 OCR 과 자리를 나눠 써 기다린 시간이 함께 잡힌다. 끝나면 서버의 `out/` 을 이 폴더로 가져와 커밋하고 아래 표를 채운다.
+
+## 결과
+
+운영에서 돌린 뒤 사람이 `out/` 을 읽고 채운다. 판정은 '좋음·쓸 만함·미달' 셋 중 하나이고, 미달이면 메모에 까닭을 적는다.
+
+| 질문키 | 핵심 개념 Qwen | 핵심 개념 gemma | 주제 카드 Qwen | 주제 카드 gemma | 메모 |
+|---|---|---|---|---|---|
+| computing | | | | | |
+| library | | | | | |
+| elderly | | | | | |
+| nursing | | | | | |
+| sensor | | | | | |
+
+결정(사람): 핵심 개념 → Qwen 유지 / gemma 로 · 주제 카드 → Qwen 유지 / gemma 로.
+
+'gemma 로' 가 하나라도 있으면 06b 계획의 첫 task 에서 `WORK_MODEL_ROUTES` 의 그 kind 의 값을 `GEMMA` 로 바꾸고 라우팅을 고정한 테스트를 함께 고친다. 06a 화면에는 [이 연구 이어가기] 입구가 없어(06b 의 이어가기 카드) 06a 운영에서 생성을 부르는 것은 배포 확인뿐이라 06a 를 다시 배포하지 않는다.

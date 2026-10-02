@@ -37,7 +37,12 @@
           @retry="retry"
           @restart="onRestart"
         />
-        <p v-if="actionError || pageError" class="rs-alert" role="alert">{{ actionError || pageError }}</p>
+        <p v-if="actionError || pageError" class="rs-alert" role="alert">
+          {{ actionError || pageError }}
+          <template v-if="activeJobId">
+            <NuxtLink :to="`/research/${encodeURIComponent(activeJobId)}`">진행 중인 연구 보기</NuxtLink>
+          </template>
+        </p>
 
         <div class="rs-body" :class="`rs-body--${layout}`">
           <div class="rs-col-main">
@@ -57,6 +62,7 @@
               />
               <div v-else-if="phase === 'queued'" class="rs-card rs-card--wait">
                 <p>앞선 연구가 끝나면 시작합니다</p>
+                <p v-if="queueText" class="rs-muted">{{ queueText }}</p>
               </div>
               <PlanCard v-else-if="phase === 'exploring'" :plan="view.plan" :max="maxSubquestions" :subqs="view.subqs" />
               <SynthProgressCard
@@ -135,7 +141,7 @@
           </div>
 
           <aside class="rs-col-side">
-            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" />
+            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
           </aside>
         </div>
       </template>
@@ -169,7 +175,7 @@ import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
-import { researchPhase } from "~/utils/researchEvents";
+import { queueLine, researchPhase } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   buildReportDocument,
@@ -185,11 +191,14 @@ import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 
 const route = useRoute();
-const { view, notFound, loadError, actionError, busy, syncFailed, syncing, load, resync, approve, retry, cancel } =
-  useResearchJob(() => String(route.params.id ?? ""));
+const {
+  view, notFound, loadError, actionError, activeJobId, busy, syncFailed, syncing, load, resync, approve, retry, cancel,
+} = useResearchJob(() => String(route.params.id ?? ""));
 const { startResearch } = useResearchStarter();
 
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
+// 대기 카드·진행 패널의 대기열 문구 뒤에 덧붙이는 순번 — 대기 중이 아니거나 순번을 모르면 null
+const queueText = computed(() => (view.value ? queueLine(view.value.queue) : null));
 const reportState = computed(() => reportSlot(phase.value, !!view.value?.report, syncFailed.value));
 const maxSubquestions = computed(() => Number(view.value?.params.max_subquestions) || DEFAULT_MAX_SUBQUESTIONS);
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다

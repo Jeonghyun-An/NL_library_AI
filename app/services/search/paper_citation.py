@@ -54,7 +54,8 @@ def build_citation(book: BookOut) -> dict[str, str]:
     year        = _extract_year(book.pub_date or "")
     title_ko    = (book.title or "").rstrip(".")
     title_en    = (book.title_remainder or book.title or "").rstrip(".")
-    journal     = (book.publisher or "").strip()
+    # 학술지 = series_title (KCI 논문의 publisher 는 학회 이름이다). 없으면 비운다 — publisher 로 물러나지 않는다
+    journal     = (book.series_title or "").strip()
     vol_issue   = (book.vol_issue or "").strip()
     uci         = (book.uci or "").strip()
     url         = (book.url or "").strip()

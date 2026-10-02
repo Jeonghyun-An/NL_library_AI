@@ -13,12 +13,16 @@
 그 사이 커밋된 취소를 덮어, 사용자가 취소한 잡이 승인·실행된다.
 
 실행을 적재 워커와 나눠 쓰는 동안(RESEARCH_QUEUE 가 적재 큐)은 approve·retry 가 실행
-슬롯이 비었을 때만 전이하고 아니면 429 다 — _to_run_queue.
+슬롯이 비었을 때만 전이하고 아니면 429 다 — _to_run_queue. 큐와 상관없이 한 브라우저
+(잡의 created_by)는 실행 큐에 한 잡만 둔다 — 같은 브라우저의 다른 잡이 approved·queued·
+running 이면 429. 두 429 는 detail.code(shared_queue·browser_active)로 가른다.
 """
+import hashlib
 import json
 import logging
 import uuid
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from datetime import datetime
 from typing import Annotated
 
@@ -27,6 +31,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import load_only
 
 from core.config import get_settings
 from core.deps import get_browser_id_optional, get_db
@@ -38,6 +43,9 @@ from models.research import (
 from services.research.planner import query_key
 from services.research.relay import (
     TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
+)
+from services.research.run_queue import (
+    eta_seconds, mark_waiting, median_seconds, members_ahead, unmark, waiting_ahead,
 )
 from services.research.state import merge_params
 
@@ -66,6 +74,13 @@ SHARED_QUEUE_MAX_RUNS = 1
 RUN_SLOT_STATUSES = (*RUNNABLE_STATUSES, "running")
 # 동시에 온 승인·재시도를 한 줄로 세우는 트랜잭션 잠금 키("RESEARCH" 의 ASCII)
 _RUN_SLOT_LOCK = 0x5245534541524348
+_SHARED_QUEUE_MESSAGE = (
+    "다른 딥리서치가 실행 중이거나 실행을 기다리고 있다 — 끝나거나 취소된 뒤 "
+    "다시 요청한다(적재와 워커를 나눠 쓰는 동안은 한 번에 한 건만 실행한다)"
+)
+_BROWSER_ACTIVE_MESSAGE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
+# 예상 대기 시간의 기준 — 최근 완료분 몇 건의 소요 시간 중앙값을 쓰는가
+RECENT_RUNS = 20
 
 # 하위질문 한 줄. 빈 항목은 빈 쿼리 검색으로, 초장문은 LLM 컨텍스트 초과로 이어진다.
 PlanItem = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=300)]
@@ -112,15 +127,34 @@ async def _transition(
     return res.rowcount == 1
 
 
+def _browser_lock_key(created_by: str) -> int:
+    """브라우저 ID 별 트랜잭션 잠금 키 — 같은 브라우저의 동시 승인·재시도를 한 줄로 세운다."""
+    return int.from_bytes(hashlib.sha256(created_by.encode()).digest()[:8], "big", signed=True)
+
+
+def _limit_detail(code: str, message: str, job_id: uuid.UUID | None = None) -> dict:
+    detail = {"code": code, "message": message}
+    if job_id is not None:
+        detail["job_id"] = str(job_id)
+    return detail
+
+
 async def _to_run_queue(
-    db: AsyncSession, jid: uuid.UUID, *, expect: tuple[str, ...], **values: object,
+    db: AsyncSession, jid: uuid.UUID, *, expect: tuple[str, ...], created_by: str | None,
+    **values: object,
 ) -> bool:
-    """실행 큐로 보내는 전이(approve·retry). 적재와 큐를 나눠 쓰는 동안은 실행 슬롯이
-    비어 있을 때만 전이하고, 차 있으면 아무것도 쓰지 않고 429 다.
+    """실행 큐로 보내는 전이(approve·retry). 두 제한을 통과해야 전이하고, 걸리면 아무것도
+    쓰지 않고 429 다.
+
+    - 적재와 큐를 나눠 쓰는 동안(shared_queue): 실행 슬롯이 비어 있을 때만.
+    - 같은 브라우저(browser_active): 잡을 만든 브라우저(created_by)의 다른 잡이 실행 큐
+      (approved·queued·running)에 있으면 막는다. 기준은 요청 헤더가 아니라 잡이고,
+      created_by 가 없으면(헤더 없는 curl·평가 스크립트) 검사하지 않는다.
 
     센 뒤에 전이하는 사이에 다른 요청이 끼면 둘 다 빈 슬롯을 보고 통과한다. 그래서
-    트랜잭션 잠금을 잡고 세며, 잠금은 _transition 의 커밋이 푼다 — READ COMMITTED 라
-    잠금을 얻은 뒤의 조회는 먼저 들어온 쪽이 커밋한 상태를 본다.
+    트랜잭션 잠금을 잡고 세며, 잠금은 _transition 의 커밋(또는 거절 때의 롤백)이 푼다 —
+    READ COMMITTED 라 잠금을 얻은 뒤의 조회는 먼저 들어온 쪽이 커밋한 상태를 본다.
+    두 잠금은 늘 공유 큐 → 브라우저 순서로 잡는다(순서가 갈리면 서로를 기다린다).
     """
     if get_settings().RESEARCH_QUEUE in INGEST_QUEUES:
         await db.execute(select(func.pg_advisory_xact_lock(_RUN_SLOT_LOCK)))
@@ -131,9 +165,22 @@ async def _to_run_queue(
         if active >= SHARED_QUEUE_MAX_RUNS:
             await db.rollback()
             raise HTTPException(
+                status_code=429, detail=_limit_detail("shared_queue", _SHARED_QUEUE_MESSAGE),
+            )
+    if created_by:
+        await db.execute(select(func.pg_advisory_xact_lock(_browser_lock_key(created_by))))
+        other = (await db.execute(
+            select(ResearchJob.id)
+            .where(ResearchJob.created_by == created_by,
+                   ResearchJob.status.in_(RUN_SLOT_STATUSES),
+                   ResearchJob.id != jid)
+            .limit(1)
+        )).scalar()
+        if other is not None:
+            await db.rollback()
+            raise HTTPException(
                 status_code=429,
-                detail="다른 딥리서치가 실행 중이거나 실행을 기다리고 있다 — 끝나거나 취소된 뒤 "
-                       "다시 요청한다(적재와 워커를 나눠 쓰는 동안은 한 번에 한 건만 실행한다)",
+                detail=_limit_detail("browser_active", _BROWSER_ACTIVE_MESSAGE, other),
             )
     return await _transition(db, jid, expect=expect, **values)
 
@@ -218,25 +265,32 @@ async def approve_plan(
     if job.status != "awaiting_approval":
         raise HTTPException(status_code=409, detail=f"승인할 수 없는 상태다: {job.status}")
 
-    old_plan = job.plan
+    old_plan, stage = job.plan, job.stage
     plan = old_plan
     if req is not None and req.plan is not None:
         limit = merge_params(job.params or {})["max_subquestions"]
         plan = _validated_plan(req.plan, limit=limit)
 
     if not await _to_run_queue(db, jid, expect=("awaiting_approval",),
-                               status=STATUS_APPROVED, plan=plan):
+                               created_by=job.created_by, status=STATUS_APPROVED, plan=plan):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
     # 큐에 넣기 전에 알린다. 넣은 뒤에 알리면 워커가 먼저 집어 낸 running 뒤에
-    # approved 가 도착해 화면이 한 단계 뒤로 간다.
-    await _announce(jid, STATUS_APPROVED, job.stage)
+    # approved 가 도착해 화면이 한 단계 뒤로 간다. 대기 줄도 같은 까닭으로 먼저 넣는다 —
+    # 넣은 뒤면 바로 집은 워커가 먼저 빼고 그 뒤에 들어가 줄에 영영 남는다.
+    await _announce(jid, STATUS_APPROVED, stage)
+    await mark_waiting(jid)
+    # 응답에 실을 순번도 넣기 전에 센다 — 넣은 뒤면 바로 집은 워커의 running 이 자기 앞으로
+    # 세어진다. job 은 전이 전에 읽은 객체라 상태를 인자로 넘긴다(대입하면 autoflush 가 쓴다).
+    # 이 뒤로는 job 의 속성을 읽지 않는다 — _response_queue 가 롤백하면 만료된다.
+    queue = await _response_queue(db, job, status=STATUS_APPROVED)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_APPROVED,),
                           status="awaiting_approval", plan=old_plan)
-        await _announce(jid, "awaiting_approval", job.stage)
+        await unmark(jid)
+        await _announce(jid, "awaiting_approval", stage)
         raise _broker_unavailable()
-    return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan}
+    return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan, "queue": queue}
 
 
 @router.post("/{job_id}/retry")
@@ -265,20 +319,24 @@ async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
             status_code=409, detail="계획이 없는 잡은 재시도할 수 없다 — 새 잡을 만든다",
         )
 
-    old_error, old_finished = job.last_error, job.finished_at
+    old_error, old_finished, stage = job.last_error, job.finished_at, job.stage
     # 큐에 들어간 잡이 종료시각을 들고 있으면 안 된다
-    if not await _to_run_queue(db, jid, expect=("failed",), status=STATUS_QUEUED,
-                               last_error=None, finished_at=None):
+    if not await _to_run_queue(db, jid, expect=("failed",), created_by=job.created_by,
+                               status=STATUS_QUEUED, last_error=None, finished_at=None):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
-    # 큐에 넣기 전에 알리는 이유는 approve 와 같다
-    await _announce(jid, STATUS_QUEUED, job.stage)
+    # 큐에 넣기 전에 알리고 대기 줄에 넣고 순번을 세는 이유, 이 뒤로 job 을 읽지 않는
+    # 이유는 approve 와 같다
+    await _announce(jid, STATUS_QUEUED, stage)
+    await mark_waiting(jid)
+    queue = await _response_queue(db, job, status=STATUS_QUEUED)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_QUEUED,), status="failed",
                           last_error=old_error, finished_at=old_finished)
+        await unmark(jid)
         await publish_terminal(jid, "failed", old_error)
         raise _broker_unavailable()
-    return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": job.stage}
+    return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": stage, "queue": queue}
 
 
 @router.post("/{job_id}/cancel")
@@ -294,6 +352,9 @@ async def cancel_research(job_id: str, db: AsyncSession = Depends(get_db)):
                              status=STATUS_CANCELED, finished_at=func.now()):
         await _get_job(db, jid)
         raise HTTPException(status_code=409, detail="취소할 수 없는 상태입니다")
+    # approved·queued 에서 취소한 잡은 워커가 집지 않는다 — 여기서 빼지 않으면 줄에 남아
+    # 뒤 잡의 순번을 하나씩 민다. 다른 상태면 줄에 없어 아무 일도 없다.
+    await unmark(jid)
     # 워커가 없는 상태(승인 대기 등)에서 취소하면 종료 이벤트를 낼 주체가 없다 —
     # 여기서 내지 않으면 스트림이 다음 하트비트까지 열려 있다.
     await publish_terminal(jid, STATUS_CANCELED)
@@ -330,6 +391,90 @@ def _live_counters(steps: list[dict], report: dict | None) -> dict | None:
     return None
 
 
+async def _recent_run_seconds(db: AsyncSession) -> list[float]:
+    """최근 완료분 RECENT_RUNS 건의 실행 소요 시간(finished_at - started_at, 초)."""
+    rows = (await db.execute(
+        select(ResearchJob.started_at, ResearchJob.finished_at)
+        .where(ResearchJob.status == "completed",
+               ResearchJob.started_at.is_not(None),
+               ResearchJob.finished_at.is_not(None))
+        .order_by(ResearchJob.finished_at.desc())
+        .limit(RECENT_RUNS)
+    )).all()
+    return [(finished - started).total_seconds() for started, finished in rows]
+
+
+async def _waiting_in_line(db: AsyncSession, members: list[str]) -> int:
+    """대기 줄의 원소 중 지금 기다리는(approved·queued) 잡 수.
+
+    빼기(unmark)는 Redis 실패를 삼켜 끝난 잡이 줄에 남을 수 있다. 순위를 그대로 쓰면 남은
+    원소마다 뒤 잡의 순번이 영영 하나씩 밀리고, 집은 뒤 남은 running 잡은 running 수와
+    줄 양쪽에서 두 번 세어진다. 그래서 DB 상태로 거른다 — 지우지는 않는다(run_queue 참고).
+    """
+    ids = []
+    for member in members:
+        try:
+            ids.append(uuid.UUID(member))
+        except ValueError:
+            continue        # 잡 id 가 아닌 원소 — Postgres 의 uuid 캐스팅 오류로 번지지 않게
+    if not ids:
+        return 0
+    return (await db.execute(
+        select(func.count()).select_from(ResearchJob)
+        .where(ResearchJob.id.in_(ids), ResearchJob.status.in_(RUNNABLE_STATUSES))
+    )).scalar_one()
+
+
+async def _queue_info(db: AsyncSession, job, *, status: str | None = None) -> dict | None:
+    """기다리는 잡(approved·queued)의 대기 순번과 예상 시간. 그 밖의 상태면 None.
+
+    ahead = running 잡 수 + 대기 줄(ZSET)에서 내 앞에 선 잡 중 지금 기다리는 잡 수. 줄에
+    없으면(Redis 재기동) 같은 대기 상태 중 먼저 만든 잡 수로 근사한다. eta_sec = 시작까지
+    기다리는 시간 = ahead × 최근 완료분 소요 시간 중앙값 — 완료분이 없으면 None.
+
+    status 는 approve·retry 가 넘긴다 — 그 job 은 전이 전에 읽은 객체라 상태가 옛 값인데,
+    ORM 객체에 대입하면 다음 조회의 autoflush 가 그 값을 조건 없이 써 버린다.
+    """
+    if (job.status if status is None else status) not in RUNNABLE_STATUSES:
+        return None
+    running = (await db.execute(
+        select(func.count()).select_from(ResearchJob).where(ResearchJob.status == "running")
+    )).scalar_one()
+    members = await members_ahead(job.id)
+    in_line = None if members is None else await _waiting_in_line(db, members)
+    fallback = 0
+    if in_line is None and job.created_at is not None:
+        fallback = (await db.execute(
+            select(func.count()).select_from(ResearchJob)
+            .where(ResearchJob.status.in_(RUNNABLE_STATUSES),
+                   ResearchJob.created_at < job.created_at)
+        )).scalar_one()
+    ahead = waiting_ahead(running, in_line, fallback)
+    median = median_seconds(await _recent_run_seconds(db))
+    return {"ahead": ahead, "eta_sec": eta_seconds(ahead, median)}
+
+
+async def _response_queue(db: AsyncSession, job, *, status: str) -> dict | None:
+    """approve·retry 응답에 실을 순번. 실패하면 None — 순번은 안내일 뿐이다.
+
+    전이를 커밋한 뒤·브로커에 넣기 전에 돈다. 여기서 예외가 나가면 잡이 approved·queued
+    로 줄에 선 채 브로커에는 들어가지 않고(500), 회수기는 그 상태를 회수하지 않아 영영
+    묶인다 — 같은 브라우저의 다른 승인까지 browser_active 로 막힌다.
+
+    실패한 조회가 트랜잭션을 깨 두면(aborted transaction) 브로커 실패 때의 되돌리기
+    _transition 까지 실패하므로 롤백해 둔다. 롤백은 세션의 ORM 객체를 만료시킨다 —
+    비동기 세션에서 만료된 속성을 읽으면 MissingGreenlet 이라, 호출부는 필요한 값을 미리
+    꺼내 두고 이 뒤로 job 을 읽지 않는다.
+    """
+    try:
+        return await _queue_info(db, job, status=status)
+    except Exception:
+        log.exception("[research] 응답에 실을 대기 순번을 세지 못했다 job=%s", job.id)
+        with suppress(Exception):       # 연결이 끊겼으면 롤백도 실패한다 — 그래도 브로커에는 넣는다
+            await db.rollback()
+        return None
+
+
 @router.get("/{job_id}")
 async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
     job = await _get_job(db, _job_uuid(job_id))
@@ -342,6 +487,7 @@ async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
         "created_at": _iso(job.created_at), "started_at": _iso(job.started_at),
         "finished_at": _iso(job.finished_at),
         "steps": await _steps(db, job.id),
+        "queue": await _queue_info(db, job),
     }
 
 
@@ -357,6 +503,9 @@ async def _snapshot(db: AsyncSession, job: ResearchJob) -> dict:
     counters = _live_counters(steps, job.report)
     if counters is not None:
         job_state["counters"] = counters
+    queue = await _queue_info(db, job)
+    if queue is not None:
+        job_state["queue"] = queue
     return {"kind": "snapshot", "steps": steps, "job": job_state}
 
 
@@ -393,6 +542,8 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
             return
         # 화면이 지금 아는 상태와 계획 유무 — 하트비트가 DB 와 견줄 기준이다
         last, plan_sent = (job_status, job_stage), _plan_known(snapshot)
+        # 화면이 지금 아는 대기 순번 — 하트비트가 다시 세어 바뀌었을 때만 queue 를 보낸다
+        last_queue = snapshot["job"].get("queue")
         async for event in subscribe(str(jid)):
             if event is None:
                 # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 DB 와 맞춰 본다 —
@@ -410,6 +561,11 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                 if status in TERMINAL_STATUSES:
                     yield _sse(terminal_event(status, error))
                     return
+                if status in RUNNABLE_STATUSES:
+                    queue = await _queue_now(jid)
+                    if queue is not None and queue != last_queue:
+                        last_queue = queue
+                        yield _sse({"kind": "queue", **queue})
                 if (status, stage) == last and (plan_sent or not has_plan):
                     continue
                 fresh = await _fresh_snapshot(jid)
@@ -423,10 +579,15 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                     yield _sse(terminal_event(status, error))
                     return
                 last, plan_sent = (status, stage), _plan_known(snap)
+                last_queue = snap["job"].get("queue")
                 yield _sse(snap)
                 continue
             if event.get("kind") == "status":
                 last = (event.get("status"), event.get("stage"))
+                if event.get("status") not in RUNNABLE_STATUSES:
+                    # 대기를 벗어났다(브로커 실패로 승인 대기로 되돌아감 등) — 화면도 순번을 비운다.
+                    # 다시 줄에 서면 다시 센 값이 옛 값과 같아도 queue 이벤트를 다시 보내야 한다
+                    last_queue = None
             elif _carries_plan(event):
                 plan_sent = True
             yield _sse(event)
@@ -465,3 +626,18 @@ async def _fresh_snapshot(jid: uuid.UUID) -> tuple[dict, str | None] | None:
         if job is None:
             return None
         return await _snapshot(db, job), job.last_error
+
+
+async def _queue_now(jid: uuid.UUID) -> dict | None:
+    """하트비트 때 다시 센 대기 순번. 짧은 세션을 새로 여는 이유는 _job_status 와 같다.
+
+    순번 계산(_queue_info)이 읽는 칼럼(id·status·created_at)만 읽는다 — 행 전체를 읽으면 재시도로 줄에 선
+    잡(stage=explored)의 탐색 스냅숏(state_snapshot)·report JSONB 를 열린 탭마다 15초마다 읽고 버린다.
+    """
+    async with AsyncSessionLocal() as db:
+        job = (await db.execute(
+            select(ResearchJob)
+            .options(load_only(ResearchJob.id, ResearchJob.status, ResearchJob.created_at))
+            .where(ResearchJob.id == jid)
+        )).scalar_one_or_none()
+        return None if job is None else await _queue_info(db, job)

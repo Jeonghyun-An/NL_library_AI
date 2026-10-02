@@ -1,11 +1,15 @@
 // frontend/utils/researchEvents.ts
 import type {
+  AdoptedPaper,
+  AdoptedPaperView,
   CountersPayload,
   CountersView,
   CritiqueEvent,
   ExcludedPaper,
   ExcludedPaperView,
   HighlightView,
+  QueueInfo,
+  QueueView,
   ReportEvidence,
   ResearchEvent,
   ResearchJob,
@@ -53,6 +57,8 @@ export type StopPoint =
 type OpenedSubq = SubqView & { seq: number };
 
 export const TERMINAL_STATUSES: readonly ResearchStatus[] = ["completed", "failed", "canceled"];
+// 대기 순번을 보이는 상태 — 승인 직후(approved)와 재시도로 다시 큐에 든 상태(queued). 화면 단계로는 둘 다 '대기열'이다
+const WAITING_STATUSES: readonly ResearchStatus[] = ["approved", "queued"];
 
 const EMPTY_COUNTERS: CountersView = { papersReviewed: null, evidenceAdopted: null, rechecks: null, excluded: null };
 const EMPTY_SYNTH: SynthView = {
@@ -85,6 +91,31 @@ export function isTerminalStatus(status: ResearchStatus): boolean {
 
 export function isTerminalEvent(event: { kind: string }): boolean {
   return event.kind === "done" || event.kind === "failed" || event.kind === "canceled";
+}
+
+function isWaiting(status: ResearchStatus): boolean {
+  return WAITING_STATUSES.includes(status);
+}
+
+// 서버는 대기 중인 잡에만 순번을 싣는다(GET 응답·snapshot.job). 대기 중이 아니거나 싣지 않은 옛 서버면 null
+function queueFor(status: ResearchStatus, q: QueueInfo | null | undefined): QueueView | null {
+  return q && isWaiting(status) ? { ahead: q.ahead, etaSec: q.eta_sec ?? null } : null;
+}
+
+// 대기 카드·진행 패널의 queued 문구 뒤에 덧붙이는 순번. 순번을 모르면(옛 서버·대기 아님) 덧붙이지 않는다
+export function queueLine(q: QueueView | null): string | null {
+  if (!q) return null;
+  if (q.ahead === 0) return "바로 다음 차례입니다";
+  const eta = q.etaSec !== null ? ` · 약 ${Math.max(1, Math.ceil(q.etaSec / 60))}분` : "";
+  return `앞에 ${q.ahead}건${eta}`;
+}
+
+// 승인·재시도 응답이 실은 순번(api/research.py approve·retry) — 첫 하트비트(15초)를 기다리지 않고 바로 보인다.
+// 응답보다 스트림이 먼저 대기를 벗어났으면(워커가 바로 집음 — applyApproval 이 status 를 되돌리지 않는 경우)
+// 늦은 순번은 싣지 않고, 순번 키가 없는 옛 서버 응답(undefined)이면 화면 값을 그대로 둔다
+export function applyQueue(view: ResearchView, q: QueueInfo | null | undefined): ResearchView {
+  if (q === undefined || !isWaiting(view.status)) return view;
+  return { ...view, queue: queueFor(view.status, q) };
 }
 
 export function researchPhase(view: ResearchView): ResearchPhase {
@@ -231,6 +262,7 @@ export function initialResearchView(job: ResearchJob): ResearchView {
     // 단계는 모두 이전 시도의 것이다
     synth: job.status === "queued" ? retiredSynth(steps) : { ...EMPTY_SYNTH },
     source: "none",
+    queue: queueFor(job.status, job.queue),
   });
   return view.status === "running" ? { ...view, highlight: latestHighlight(view.subqs) } : view;
 }
@@ -274,6 +306,8 @@ export function applyResearchEvent(view: ResearchView, event: ResearchEvent): Re
         status: event.status,
         stage: event.stage ?? view.stage,
         lastError: isTerminalStatus(event.status) ? view.lastError : null,
+        // 대기를 벗어나면(워커가 집음·취소) 순번을 지운다 — 대기 안에서 바뀌면 다음 순번이 올 때까지 둔다
+        queue: isWaiting(event.status) ? view.queue : null,
       };
       return isRetry(view.status, event.status) ? { ...next, synth: retiredSynth(view.steps) } : next;
     }
@@ -288,11 +322,14 @@ export function applyResearchEvent(view: ResearchView, event: ResearchEvent): Re
     case "synth":
       return { ...view, synth: applySynth(view.synth, event) };
     case "done":
-      return { ...view, status: "completed", highlight: null };
+      return { ...view, status: "completed", highlight: null, queue: null };
     case "failed":
-      return { ...view, status: "failed", lastError: event.error ?? view.lastError, highlight: null };
+      return { ...view, status: "failed", lastError: event.error ?? view.lastError, highlight: null, queue: null };
     case "canceled":
-      return { ...view, status: "canceled", highlight: null };
+      return { ...view, status: "canceled", highlight: null, queue: null };
+    case "queue":
+      // 서버는 대기 중인 잡에만 보낸다 — 대기를 벗어난 화면에 늦게 온 순번은 싣지 않는다
+      return isWaiting(view.status) ? { ...view, queue: { ahead: event.ahead, etaSec: event.eta_sec ?? null } } : view;
     default:
       return view;
   }
@@ -303,6 +340,8 @@ function applySnapshot(view: ResearchView, event: SnapshotEvent): ResearchView {
   if (event.job) {
     next.status = event.job.status;
     next.stage = event.job.stage;
+    // 서버는 대기 중일 때만 순번을 싣는다 — 빠졌으면 대기를 벗어났거나 옛 서버다
+    next.queue = queueFor(event.job.status, event.job.queue);
     if (event.job.plan?.length) next.plan = event.job.plan;
     if (event.job.counters) {
       const stored = countersFromPayload(event.job.counters);
@@ -367,6 +406,7 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
       // 점검 이벤트의 값으로 바로 채운다. 목록을 보내지 않는 옛 워커는 빈 목록·null
       excludedPapers: (event.excluded_papers ?? []).map(toExcludedPaperView),
       flagged: event.flagged ?? null,
+      adoptedPapers: (event.adopted_papers ?? []).map(toAdoptedPaperView),
     };
     return {
       ...sq,
@@ -535,6 +575,7 @@ function roundsFromQueries(queries: string[], verdict: Verdict | null, note: str
     excluded: null,
     excludedPapers: [],
     flagged: null,
+    adoptedPapers: [],
   }));
 }
 
@@ -545,6 +586,19 @@ export function toExcludedPaperView(p: ExcludedPaper): ExcludedPaperView {
     title: p.title?.trim() ?? "",
     personalAuthor: p.personal_author ?? null,
     pubDate: p.pub_date ?? null,
+  };
+}
+
+// 회차 끝 채택 근거 — 점검 이벤트와 진행 저장본의 회차 기록이 같은 모양으로 싣는다. 서지는 그 회차에
+// 새로 채택된 논문에만 있다(앞 회차에서 채택된 논문은 cnts_id·rank 뿐)
+export function toAdoptedPaperView(p: AdoptedPaper): AdoptedPaperView {
+  return {
+    cntsId: p.cnts_id,
+    rank: p.rank,
+    title: p.title?.trim() || null,
+    personalAuthor: p.personal_author ?? null,
+    pubDate: p.pub_date ?? null,
+    isNew: p.new === true,
   };
 }
 
@@ -560,13 +614,14 @@ function toRoundView(r: SearchRoundResult): RoundView {
     excluded: r.excluded ?? null,
     excludedPapers: (r.excluded_papers ?? []).map(toExcludedPaperView),
     flagged: r.flagged ?? null,
+    adoptedPapers: (r.adopted_papers ?? []).map(toAdoptedPaperView),
   };
 }
 
 function blankRound(round: number): RoundView {
   return {
     round, query: "", foundChunks: null, newPapers: null, verdict: null, note: "", nextQuery: null,
-    excluded: null, excludedPapers: [], flagged: null,
+    excluded: null, excludedPapers: [], flagged: null, adoptedPapers: [],
   };
 }
 

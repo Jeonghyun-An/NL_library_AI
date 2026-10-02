@@ -89,6 +89,19 @@ def _paper_brief(ev: Evidence) -> dict:
             "personal_author": ev.meta.get("personal_author"), "pub_date": ev.meta.get("pub_date")}
 
 
+def _adopted_papers(state: ResearchState, subq: SubQuestion, fresh: list[str]) -> list[dict]:
+    """회차 끝 이 하위질문의 채택 근거(순위순). 이 회차에 새로 채택된 것은 서지를 함께 싣는다
+    — 도는 잡의 장부를 rounds 만으로 다시 그리기 위해서다(state_snapshot 은 탐색 끝에 한 번만 저장된다)."""
+    out = []
+    for rank, eid in enumerate(subq.evidence_ids, start=1):
+        ev = state.evidence[eid]
+        item = {"cnts_id": ev.cnts_id, "rank": rank}
+        if eid in fresh:
+            item = {**_paper_brief(ev), "rank": rank, "new": True}
+        out.append(item)
+    return out
+
+
 def _exclude_off_topic(state: ResearchState, subq: SubQuestion, numbers: list[int]) -> list[dict]:
     """자기점검이 무관하다고 가리킨 근거(목록 번호, 1부터)를 이 하위질문에서 빼고, 뺀 논문의 서지 요약
     (_paper_brief)을 뺀 순서대로 돌려준다.
@@ -250,9 +263,10 @@ async def explore_subquestion(
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
         await emit("counters", research_stats(state))
 
+        # 원 질문은 늘 넘긴다 — 쓸지는 critic 이 잡 파라미터 critic_scope 로 정한다
         verdict = await critique_fn(
             subq, [_as_seen_by(state.evidence[e], subq) for e in subq.evidence_ids],
-            params=params,
+            params=params, question=state.question,
         )
         subq.verdict = verdict.verdict
         subq.note = verdict.note
@@ -280,11 +294,14 @@ async def explore_subquestion(
         subq.budget_capped = len(budget_capped) if own >= budget else 0
         subq.capped = len(capped) if len(state.evidence) >= params["max_evidence"] else 0
         next_query = _recheck_query(state, subq, verdict, recheck=recheck, own=own)
+        # 회차 기록과 이벤트에 같은 값을 싣는다 — 라이브로 본 장부와 재접속 때 rounds 로 다시 그린 장부가 같아야 한다
+        adopted_papers = _adopted_papers(state, subq, fresh)
         subq.rounds.append({
             "round": round_no, "query": query, "found_chunks": len(hits),
             "new_papers": new_papers, "verdict": verdict.verdict,
             "note": verdict.note, "next_query": next_query, "excluded": excluded,
             "excluded_papers": excluded_papers, "flagged": flagged, "flagged_papers": flagged_papers,
+            "adopted_papers": adopted_papers,
         })
         await emit("critique", {
             "subq_idx": subq.idx, "verdict": verdict.verdict,
@@ -292,6 +309,7 @@ async def explore_subquestion(
             "parse_failed": verdict.parse_failed, "capped": subq.capped,
             "round": round_no, "next_query": next_query, "excluded": excluded,
             "excluded_papers": excluded_papers, "flagged": flagged, "flagged_papers": flagged_papers,
+            "adopted_papers": adopted_papers,
             "will_recheck": next_query is not None,
         })
 

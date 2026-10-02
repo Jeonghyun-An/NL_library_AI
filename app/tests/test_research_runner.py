@@ -33,7 +33,7 @@ class _FakeCritic:
         self.calls = 0
         self.seen: list[list] = []
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.calls += 1
         self.seen.append(evidence)
         return Verdict("insufficient", note="부족", new_queries=[f"다른 검색어 {self.calls}"])
@@ -46,7 +46,7 @@ class _SuggestingCritic:
         self.calls = 0
         self._suggestions = suggestions
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.calls += 1
         return Verdict("insufficient", note="부족", new_queries=list(self._suggestions))
 
@@ -67,7 +67,7 @@ class _ParseFailedCritic:
     def __init__(self):
         self.calls = 0
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.calls += 1
         return Verdict("sufficient", note="자동 점검을 완료하지 못했다", parse_failed=True)
 
@@ -353,6 +353,12 @@ class TestRoundEvents:
         ]
 
 
+def _new_adopted(cnts_id, rank):
+    """그 회차에 새로 채택된 논문의 adopted_papers 항목 — _hits 의 서지(저자 없음)에 순위·new 를 붙인다."""
+    return {"cnts_id": cnts_id, "title": f"논문 {cnts_id}", "personal_author": None,
+            "pub_date": "2008-06", "rank": rank, "new": True}
+
+
 class TestRoundHistory:
     """이벤트로 흘린 장면은 subq.rounds 에도 남는다 — 워커가 그걸 search 단계 result 에 쓴다."""
 
@@ -368,10 +374,14 @@ class TestRoundHistory:
         assert sq.rounds == [
             {"round": 1, "query": "가", "found_chunks": 2, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": "다른 검색어 1",
-             "excluded": 0, "excluded_papers": [], "flagged": 0, "flagged_papers": []},
+             "excluded": 0, "excluded_papers": [], "flagged": 0, "flagged_papers": [],
+             "adopted_papers": [_new_adopted("A", 1), _new_adopted("B", 2)]},
             {"round": 2, "query": "다른 검색어 1", "found_chunks": 3, "new_papers": 2,
              "verdict": "insufficient", "note": "부족", "next_query": None, "excluded": 0,
-             "excluded_papers": [], "flagged": 0, "flagged_papers": []},
+             "excluded_papers": [], "flagged": 0, "flagged_papers": [],
+             # 2회차가 새로 보탠 C·D 중 1위 C 가 앞자리를 받는다(_rank_order). 앞 회차 것은 id·순위만
+             "adopted_papers": [{"cnts_id": "A", "rank": 1}, _new_adopted("C", 2),
+                                {"cnts_id": "B", "rank": 3}, _new_adopted("D", 4)]},
         ]
 
     def test_history_matches_what_was_streamed(self):
@@ -387,7 +397,7 @@ class TestRoundHistory:
              "new_papers": s["new_papers"], "verdict": c["verdict"], "note": c["note"],
              "next_query": c["next_query"], "excluded": c["excluded"],
              "excluded_papers": c["excluded_papers"], "flagged": c["flagged"],
-             "flagged_papers": c["flagged_papers"]}
+             "flagged_papers": c["flagged_papers"], "adopted_papers": c["adopted_papers"]}
             for s, c in zip(_of(events, "search"), _of(events, "critique"))
         ]
         assert sq.rounds == streamed
@@ -400,7 +410,7 @@ class TestReadTransaction:
         db = _FakeDb()
         commits_at_critic = []
 
-        async def _critic(subq, evidence, *, params):
+        async def _critic(subq, evidence, *, params, question=None):
             commits_at_critic.append(db.commits)
             return Verdict("sufficient", note="충분")
 
@@ -410,6 +420,42 @@ class TestReadTransaction:
             critique_fn=_critic, emit=None,
         ))
         assert commits_at_critic == [1]
+
+
+class TestOriginalQuestion:
+    """러너는 critic 에 원 질문(state.question)을 늘 넘긴다 — 쓸지는 critic 이 잡 파라미터 critic_scope 로 정한다."""
+
+    QUESTION = "독서 격차 연구는 어디까지 왔나"
+
+    def test_critic_receives_the_original_question(self):
+        seen = []
+
+        async def _critic(subq, evidence, *, params, question=None):
+            seen.append(question)
+            return Verdict("sufficient", note="충분")
+
+        st = ResearchState(job_id="j", question=self.QUESTION, params=merge_params({"max_recheck": 0}))
+        asyncio.run(explore_subquestion(st, SubQuestion(idx=0, text="가"), db=None,
+                                        explore_fn=_fake_explore, critique_fn=_critic, emit=None))
+        assert seen == [self.QUESTION]
+
+    @pytest.mark.parametrize(("scope", "first_line"), [
+        (0, "하위질문: 가"), (1, f"원 질문: {QUESTION}"),
+    ], ids=["scope0", "scope1"])
+    def test_job_param_picks_the_prompt(self, monkeypatch, scope, first_line):
+        # 실제 critique 를 거친다 — 러너가 넘긴 원 질문은 critic_scope=1 잡의 프롬프트에만 실린다
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages[1]["content"])
+            return '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []}'
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        st = ResearchState(job_id="j", question=self.QUESTION,
+                           params=merge_params({"max_recheck": 0, "critic_scope": scope}))
+        asyncio.run(explore_subquestion(st, SubQuestion(idx=0, text="가"), db=None,
+                                        explore_fn=_fake_explore, emit=None))
+        assert seen[0].splitlines()[0] == first_line
 
 
 class TestRequery:
@@ -447,7 +493,7 @@ class TestEvidenceOrder:
             def __init__(self):
                 self.calls = 0
 
-            async def __call__(self, subq, evidence, *, params):
+            async def __call__(self, subq, evidence, *, params, question=None):
                 self.calls += 1
                 return Verdict("insufficient", note="시기 편중",
                                new_queries=[f"r{self.calls + 1}"])
@@ -518,7 +564,7 @@ class _CriticWithQueries:
         self._inner = inner
         self._queries = list(queries)
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         await self._inner(subq, evidence, params=params)
         q = self._queries.pop(0) if self._queries else "다른 검색어"
         return Verdict("insufficient", note="부족", new_queries=[q])
@@ -721,7 +767,7 @@ class _ScriptedCritic:
         self._turns = list(turns)
         self.seen: list[list] = []
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.seen.append(evidence)
         verdict, off_topic, queries = self._turns.pop(0)
         return Verdict(verdict, note="점검", new_queries=list(queries), off_topic=list(off_topic))
@@ -1021,7 +1067,7 @@ class TestOffTopicExclusionOff:
             def __init__(self, *turns):
                 self._turns = list(turns)
 
-            async def __call__(self, subq, evidence, *, params):
+            async def __call__(self, subq, evidence, *, params, question=None):
                 verdict, off, queries = self._turns.pop(0)
                 ids = [e.cnts_id for e in evidence]
                 return Verdict(verdict, note="점검", new_queries=list(queries),
@@ -1059,6 +1105,74 @@ class TestOffTopicExclusionOff:
         assert sq.queries == ["엣지 컴퓨팅 자원"]
         assert (sq.verdict, sq.note) == ("sufficient", "충분하다")
         assert len(sq.evidence_ids) == 2 and sq.rounds[0]["flagged"] == 2
+
+
+class TestAdoptedPapers:
+    """회차 끝 채택 목록(adopted_papers) — 회차 기록과 critique 이벤트에 같은 값을 싣는다. state_snapshot 은
+    탐색이 끝날 때 한 번만 저장되므로, 도는 잡의 근거 장부는 search 단계 result.rounds 만으로 다시 그린다."""
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def _run(self, st, sq, table, critic, emit=None):
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_explore_table(table),
+                                        critique_fn=critic, emit=emit))
+
+    def test_round_end_lists_the_subquestion_evidence_after_exclusion(self):
+        # 무관하다고 뺀 B 는 들지 않는다 — 판정 전이 아니라 회차 끝(제외 반영 뒤)의 evidence_ids 순서다
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        self._run(st, sq, {"가": ["A", "B", "C"]}, _ScriptedCritic(("sufficient", [2], [])))
+        assert sq.rounds[0]["adopted_papers"] == [_new_adopted("A", 1), _new_adopted("C", 2)]
+
+    def test_only_papers_new_in_the_round_carry_their_bibliography(self):
+        # 앞 회차에 서지를 실은 논문은 id·순위만 싣는다 — 회차가 쌓여도 기록이 불어나지 않는다
+        st = self._state("가", max_recheck=1)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("insufficient", [2], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B", "C"], "보완": ["D"]}, critic)
+        # 2회차 1위 D 는 앞자리를 받는다(_rank_order) — 순위는 회차 끝 순서 그대로다
+        assert sq.rounds[1]["adopted_papers"] == [
+            {"cnts_id": "A", "rank": 1}, _new_adopted("D", 2), {"cnts_id": "C", "rank": 3}]
+
+    def test_critique_event_carries_the_same_list_as_the_round(self):
+        events, emit = _recorder()
+        st = self._state("가", max_recheck=1)
+        (sq,) = st.subquestions
+        critic = _ScriptedCritic(("insufficient", [2], ["보완"]), ("sufficient", [], []))
+        self._run(st, sq, {"가": ["A", "B", "C"], "보완": ["D"]}, critic, emit=emit)
+        assert [c["adopted_papers"] for c in _of(events, "critique")] == [
+            r["adopted_papers"] for r in sq.rounds]
+        # 정수 adopted(채택 수)는 그대로다 — 이름이 다른 키다
+        assert [c["adopted"] for c in _of(events, "critique")] == [2, 3]
+
+    def test_paper_another_subquestion_adopted_first_is_new_here(self):
+        """근거 장부는 하위질문(search 단계)마다 그린다 — 다른 하위질문이 먼저 채택한 근거를 재사용해도 이
+        하위질문의 회차 기록만으로 서지를 알 수 있어야 한다."""
+        st = self._state("가", "나", max_recheck=0)
+        sq1, sq2 = st.subquestions
+        table = {"가": ["A"], "나": ["A", "B"]}
+        self._run(st, sq1, table, _ScriptedCritic(("sufficient", [], [])))
+        self._run(st, sq2, table, _ScriptedCritic(("sufficient", [], [])))
+        assert sq2.rounds[0]["adopted_papers"] == [_new_adopted("A", 1), _new_adopted("B", 2)]
+
+    def test_flagged_paper_stays_listed_when_exclusion_is_off(self):
+        # 끈 잡은 빼지 않는다 — 장부에도 남는다(무관 표시는 flagged_papers 가 따로 싣는다)
+        st = self._state("가", max_recheck=0, exclude_off_topic=0)
+        (sq,) = st.subquestions
+        self._run(st, sq, {"가": ["A", "B", "C"]}, _ScriptedCritic(("sufficient", [2], [])))
+        assert [p["cnts_id"] for p in sq.rounds[0]["adopted_papers"]] == ["A", "B", "C"]
+        assert [p["cnts_id"] for p in sq.rounds[0]["flagged_papers"]] == ["B"]
+
+    def test_round_without_evidence_lists_nothing(self):
+        # 키는 늘 있다 — 키가 없는 회차는 06a 전 워커가 남긴 것이다
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=_empty_explore,
+                                        critique_fn=_ScriptedCritic(("sufficient", [], [])), emit=None))
+        assert sq.rounds[0]["adopted_papers"] == []
 
 
 _RELAY = "services.research.relay"
@@ -1181,7 +1295,7 @@ class TestSharedChunkScore:
                 self.calls = 0
                 self._new = new_queries
 
-            async def __call__(self, subq, evidence, *, params):
+            async def __call__(self, subq, evidence, *, params, question=None):
                 self.calls += 1
                 if self.calls == 1 and self._new:
                     return Verdict("insufficient", note="부족", new_queries=self._new)

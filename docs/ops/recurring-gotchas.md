@@ -246,3 +246,16 @@
 - **원인**: compose 에 `mem_limit` 이 없으면 컨테이너는 호스트 메모리를 그대로 보고, Java 17 은 `-Xmx` 가 없으면 최대 힙을 그 1/4 로 잡는다. opendataloader-pdf 는 `java -jar` 를 `-Xmx` 없이 띄운다.
 - **해결 (round07)**: `ODL_JAVA_MAX_HEAP`(기본 `3g`, 1g 이상만) — ODL 자식의 환경에만 `JAVA_TOOL_OPTIONS=-Xmx<값>` 을 붙인다(`extractor._odl_child_env`). 운영 이미지 실측(`research/round07-odl-heap`): 무거운 문서 61건은 2·3g 에서 추출 결과가 상한 없을 때와 같았고, 일반 688건 가운데 3g 로도 넘치는 건 2건(fitz 텍스트로 간다). 형식이 틀리면(`2gb`) java 가 뜨지 않고 너무 작으면(`3m`) 떠도 변환이 모두 실패해 모든 문서가 조용히 fitz 텍스트가 되므로, 설정을 읽을 때 형식과 하한 1g 를 막는다(1g 아래로는 무거운 문서부터 메모리 부족이 는다). compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 는 빈 스택 env 도 3g 로 채운다 — 상한을 풀려면 `64g` 같은 큰 값을 준다.
 - **재발 방지**: 컨테이너 안에서 JVM·대형 모델 같은 메모리를 크게 쓰는 하위 프로세스를 띄우면 상한을 명시한다. 기본값은 "호스트 크기에 비례"라 개발 PC 에서 잰 값이 운영에서는 몇 배가 된다.
+
+## 24. 브로커 메시지를 잃은 approved·queued 딥리서치 잡이 그 브라우저의 승인·재시도를 계속 429 로 막는다
+
+- **날짜**: 2026-10-03 (round06a — 머지 전 리뷰에서 찾았다. 라이브에서는 아직 안 터졌다)
+- **증상**: 한 브라우저에서 딥리서치를 승인·다시 시도하면 계속 429 `browser_active`("진행 중인 딥리서치가 있습니다 …")와 [진행 중인 연구 보기] 링크가 나오는데, 링크의 잡은 '대기열'(approved·queued)에서 움직이지 않는다. 사용자에게는 '진행 중' 으로 보여 취소할 까닭을 알기 어렵다.
+- **원인**: round06a 의 브라우저당 실행 제한(`app/api/research.py` 의 `_to_run_queue`)은 같은 `created_by` 의 approved·queued·running 잡을 센다. 그런데 회수기(`tasks.reap_stale_research`)는 approved·queued 를 회수하지 않는다 — 아직 워커가 집지 않은 정상 대기 상태라서다. 그래서 브로커 메시지를 잃어 워커가 끝내 집지 못한 잡(Redis 컨테이너가 AOF 없이 죽어 `q_research` 목록이 사라짐, 연구 테이블을 덤프에서 복원 — `infra/backup/pg_backup.sh` 머리 주석)은 approved·queued 로 영원히 남고, 06a 전에는 그 잡 하나만 멈췄지만 이제는 같은 브라우저의 모든 승인·재시도가 막힌다.
+- **확인 순서**:
+  1. 429 응답의 `job_id`(또는 링크의 잡)가 approved·queued 인지 본다 — `echo "SELECT id, status, created_at FROM research_jobs WHERE id = '<job_id>'" | pgq`(계획 Task 17 Step 5 의 셸 함수).
+  2. 실행 큐가 비었는지 본다 — `docker exec nl-lib-redis redis-cli LLEN q_research` 가 0 이고 running 딥리서치 잡이 없다(`SELECT count(*) FROM research_jobs WHERE status = 'running'`).
+  3. 대기 순번 줄에 남았는지 본다 — `docker exec nl-lib-redis redis-cli ZSCORE research:run_queue <job_id>`(값이 있으면 줄에는 섰지만 메시지가 없다).
+  4. 1~3 이 맞으면 메시지를 잃은 잡이다 — 화면(링크의 잡)에서 취소하면 브라우저 제한이 풀리고, 다시 시작한다.
+- **해결**: 지금은 위 순서로 사람이 푼다(코드 수정 없음). 덤프에서 연구 테이블을 복원했다면 복원 직후 approved·queued 를 failed 로 돌린다(`pg_backup.sh` 머리 주석의 UPDATE).
+- **재발 방지(후속 과제 — 06a 범위 밖)**: 코드로 막으려면 `created_at` 같은 시간 기준을 쓰지 않는다(정상 대기가 길 수 있다). 회수기 두 틱 연속으로 `q_research` LLEN 0 · running 딥리서치 0 · 대기 ZSET 에 없음이 함께 성립할 때만 failed('브로커 메시지 유실')로 둔다.

@@ -5,9 +5,12 @@ AsyncSession 모양으로 감싸, 저장소가 내는 SQL(upsert·커서·소프
 엔진이 실행하게 한다. 대역이 SQL 을 흉내 내면 그 조건을 대역이 대신 판정하게 되어
 저장소의 버그를 못 잡는다.
 
-SQLite 가 모르는 Postgres 표기 둘만 테스트 쪽에서 바꾼다 — JSONB 타입 이름(JSON 으로
-그린다)과 '::jsonb' 가 붙은 서버 기본값(테스트 테이블에서만 뺀다. 저장소는 params 를
-늘 채워 넣는다). 운영 모델·마이그레이션은 그대로다.
+SQLite 가 모르는 Postgres 표기 셋만 테스트 쪽에서 바꾼다 — JSONB 타입 이름(JSON 으로
+그린다), '::jsonb' 가 붙은 서버 기본값(테스트 테이블에서만 뺀다. 저장소는 params 를
+늘 채워 넣는다), BIGINT 기본키(INTEGER 로 — SQLite 는 INTEGER PRIMARY KEY 만 자동으로
+번호를 매긴다). Postgres 함수 pg_advisory_xact_lock 은 아무 일도 하지 않는 SQLite 함수로
+둔다(잠금 순서는 문장 기록으로 확인한다). 외래 키 검사는 연결마다 켠다(SQLite 기본은 꺼짐 — FK·CASCADE 가
+테스트에서도 돈다). 운영 모델·마이그레이션은 그대로다.
 """
 import uuid
 
@@ -18,7 +21,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from models.history import HistoryItem
-from models.research import ResearchJob
+from models.research import ResearchJob, ResearchStep
+from models.research_work import PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchWork
 
 SID_A = uuid.UUID("3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e")
 SID_B = uuid.UUID("7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d")
@@ -35,22 +39,36 @@ def make_engine() -> sa.Engine:
     engine = sa.create_engine(
         "sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False},
     )
+
+    @sa.event.listens_for(engine, "connect")
+    def _pg_functions(dbapi_conn, _record):
+        # Postgres 트랜잭션 잠금은 SQLite 에서 아무 일도 하지 않는 함수로 둔다 — 잠금 순서는 문장 기록으로 확인한다
+        dbapi_conn.create_function("pg_advisory_xact_lock", 1, lambda _key: None)
+        # SQLite 는 연결마다 외래 키 검사를 켜야 한다 — 꺼 두면 research_* 의 FK·ON DELETE CASCADE 가 테스트에서 돌지 않는다
+        dbapi_conn.execute("PRAGMA foreign_keys=ON")
+
     metadata = sa.MetaData()
-    for table in (HistoryItem.__table__, ResearchJob.__table__):
+    for table in (HistoryItem.__table__, ResearchJob.__table__, ResearchStep.__table__,
+                  ResearchWork.__table__, ResearchGeneration.__table__, ResearchReading.__table__):
         copy = table.to_metadata(metadata)
         for col in copy.columns:
             default = col.server_default
             if default is not None and "::" in str(getattr(default, "arg", "")):
                 col.server_default = None
+            # SQLite 는 INTEGER PRIMARY KEY 만 자동으로 번호를 매긴다 — BIGINT 기본키는 테스트 사본에서만 INTEGER 로
+            if col.primary_key and isinstance(col.type, sa.BigInteger):
+                col.type = sa.Integer()
     metadata.create_all(engine)
     return engine
 
 
 class AsyncSessionOverSync:
-    """저장소·라우터가 쓰는 AsyncSession 메서드만 동기 Session 으로 넘긴다."""
+    """저장소·라우터가 쓰는 AsyncSession 메서드만 동기 Session 으로 넘긴다.
 
-    def __init__(self, engine: sa.Engine):
-        self._session = Session(engine)
+    expire_on_commit=False 는 워커의 세션(_job_engine)처럼 커밋 뒤에도 읽은 값을 들고 있게 할 때 준다."""
+
+    def __init__(self, engine: sa.Engine, *, expire_on_commit: bool = True):
+        self._session = Session(engine, expire_on_commit=expire_on_commit)
 
     async def execute(self, stmt, params=None):
         return self._session.execute(stmt, params)
@@ -64,6 +82,18 @@ class AsyncSessionOverSync:
     async def close(self):
         self._session.close()
 
+    async def get(self, model, pk):
+        return self._session.get(model, pk)
+
+    def add(self, obj):
+        self._session.add(obj)
+
+    async def flush(self):
+        self._session.flush()
+
+    async def scalar(self, stmt, params=None):
+        return self._session.scalar(stmt, params)
+
 
 def add_research_job(engine: sa.Engine, *, status: str, stage: str) -> uuid.UUID:
     job_id = uuid.uuid4()
@@ -72,6 +102,26 @@ def add_research_job(engine: sa.Engine, *, status: str, stage: str) -> uuid.UUID
             id=job_id, question="독서 격차 연구", status=status, stage=stage, params={},
         ))
     return job_id
+
+
+def add_work(engine: sa.Engine, job_id: uuid.UUID, *, owner_sid: str | None = None,
+             phase: str = "topics", concepts: list | None = None, is_example: bool = False) -> None:
+    with engine.begin() as conn:
+        conn.execute(sa.insert(ResearchWork.__table__).values(
+            id=job_id, owner_sid=owner_sid, phase=phase, concepts=concepts or [],
+            concept_members={}, progress={}, is_example=is_example,
+        ))
+
+
+def add_generation(engine: sa.Engine, work_id: uuid.UUID, *, kind: str = "concepts",
+                   status: str = "queued", priority: int = PRIORITY_USER, input: dict | None = None,
+                   started_at=None) -> int:
+    with engine.begin() as conn:
+        res = conn.execute(sa.insert(ResearchGeneration.__table__).values(
+            work_id=work_id, kind=kind, status=status, priority=priority,
+            input=input or {}, started_at=started_at,
+        ).returning(ResearchGeneration.__table__.c.id))
+        return res.scalar_one()
 
 
 def raw_row(engine: sa.Engine, item_id: uuid.UUID):

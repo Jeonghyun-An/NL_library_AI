@@ -16,7 +16,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from history_sqlite import SID_A, SID_B, AsyncSessionOverSync, add_research_job, make_engine, raw_row
+from history_sqlite import (
+    SID_A, SID_B, AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
+    raw_row,
+)
 
 A = {"x-session-id": str(SID_A)}
 B = {"x-session-id": str(SID_B)}
@@ -343,13 +346,32 @@ class TestImport:
 
 
 class TestResearchStatus:
+    _NOT_CONTINUED = {"phase": None, "progress": None, "generating": False}
+
     def test_list_and_detail_carry_job_status(self, api):
         job_id = add_research_job(api.engine, status="awaiting_approval", stage="planned")
         res = api.put(job_id, kind="research", title="독서 격차 연구", ref_id=str(job_id))
-        assert res.json()["research"] == {"status": "awaiting_approval", "stage": "planned"}
+        assert res.json()["research"] == {
+            "status": "awaiting_approval", "stage": "planned", **self._NOT_CONTINUED,
+        }
         (item,) = api.client.get("/api/history?kind=research", headers=A).json()["items"]
-        assert item["research"] == {"status": "awaiting_approval", "stage": "planned"}
+        assert item["research"] == {
+            "status": "awaiting_approval", "stage": "planned", **self._NOT_CONTINUED,
+        }
         assert item["ref_id"] == str(job_id)
+
+    def test_continued_research_carries_phase_and_open_generation(self, api):
+        job_id = add_research_job(api.engine, status="completed", stage="synthesized")
+        add_work(api.engine, job_id, owner_sid=str(SID_A))
+        add_generation(api.engine, job_id, status="running")
+        api.put(job_id, kind="research", title="독서 격차 연구", ref_id=str(job_id))
+
+        (item,) = api.client.get("/api/history?kind=research", headers=A).json()["items"]
+
+        assert item["research"] == {
+            "status": "completed", "stage": "synthesized",
+            "phase": "topics", "progress": {}, "generating": True,
+        }
 
 
 class TestAppWiring:

@@ -12,6 +12,7 @@ import type {
 } from "~/types/research";
 import {
   applyApproval,
+  applyQueue,
   applyResearchEvent,
   initialResearchView,
   isTerminalEvent,
@@ -20,7 +21,7 @@ import {
   sectionGapToRecover,
   synthClosePending,
 } from "~/utils/researchEvents";
-import { httpStatus, researchErrorMessage } from "~/utils/researchErrors";
+import { activeResearchId, httpStatus, researchErrorMessage } from "~/utils/researchErrors";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";
 
@@ -77,6 +78,9 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   const notFound = ref(false);
   const loadError = ref("");
   const actionError = ref("");
+  // 같은 브라우저의 다른 딥리서치에 막힌 승인·재시도(429 browser_active)면 그 연구 id — 화면이 링크를 단다.
+  // actionError 와 함께 바뀐다(setActionError 가 비우고, 막힌 동작의 catch 만 채운다)
+  const activeJobId = ref<string | null>(null);
   const busy = ref(false);
   const connected = ref(false);
   // 마지막 GET 재동기화가 실패했는지(다시 시도 대기 중) — 완료 뒤 보고서를 못 받은 화면이
@@ -102,6 +106,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
 
   function setActionError(message: string): void {
     actionError.value = message;
+    activeJobId.value = null;
     syncError = "";
   }
 
@@ -154,6 +159,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       if (gen !== generation || token !== syncToken) return false;
       const message = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
       actionError.value = message;
+      activeJobId.value = null;
       syncError = message;
       syncFailed.value = true;
       scheduleReconnect();
@@ -284,6 +290,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
         if (synced) setActionError("그 사이 상태가 바뀌어 최신 상태로 맞췄습니다");
       } else {
         setActionError(researchErrorMessage(e, fallback));
+        activeJobId.value = activeResearchId(e);
       }
       return false;
     } finally {
@@ -296,8 +303,9 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       () => research.approve(toValue(jobId), plan),
       (res) => {
         if (!view.value) return;
-        // 스트림이 응답보다 먼저 running 을 알렸으면 status 는 그대로 둔다(applyApproval)
-        view.value = applyApproval(view.value, res.status, res.plan);
+        // 스트림이 응답보다 먼저 running 을 알렸으면 status 는 그대로 둔다(applyApproval) — 그때는 응답의
+        // 순번도 싣지 않는다(applyQueue). 대기 중이면 첫 하트비트(15초)를 기다리지 않고 순번을 보인다
+        view.value = applyQueue(applyApproval(view.value, res.status, res.plan), res.queue);
         connect();
       },
       "계획을 승인하지 못했습니다",
@@ -308,7 +316,10 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       () => research.retry(toValue(jobId)),
       (res) => {
         if (!view.value) return;
-        view.value = applyResearchEvent(view.value, { kind: "status", status: res.status, stage: res.stage });
+        view.value = applyQueue(
+          applyResearchEvent(view.value, { kind: "status", status: res.status, stage: res.stage }),
+          res.queue,
+        );
         connect();
       },
       "다시 시도하지 못했습니다",
@@ -344,7 +355,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   );
 
   return {
-    view, loading, notFound, loadError, actionError, busy, connected, syncFailed, syncing,
+    view, loading, notFound, loadError, actionError, activeJobId, busy, connected, syncFailed, syncing,
     load, refresh, resync, connect, disconnect, approve, retry, cancel,
   };
 }

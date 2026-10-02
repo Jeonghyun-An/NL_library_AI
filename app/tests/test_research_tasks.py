@@ -29,7 +29,8 @@ from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, snapshot_state,
 )
 
-_CACHED = ("workers.research_tasks", "workers.celery_app", "services.research.relay")
+_CACHED = ("workers.research_tasks", "workers.celery_app", "services.research.relay",
+           "workers.research_work_tasks")
 
 
 class _SoftTimeLimitExceeded(Exception):
@@ -247,6 +248,8 @@ class _Harness:
         self.announced: list[tuple] = []
         # (단계, 그때까지 나간 종료 이벤트) — 이전 시도의 초안 정리
         self.drops: list[tuple] = []
+        # 대기 순번 ZSET 에서 뺀 잡
+        self.unmarked: list = []
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
@@ -297,6 +300,9 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
     async def _drop_stale_previews(db, step):
         h.drops.append((step, _terminals(h)))
 
+    async def _unmark(job_id):
+        h.unmarked.append(job_id)
+
     async def _synthesize(state, *, should_stop=None, on_section=None):
         assert not session.in_txn, "종합(LLM) 직전에 읽기 트랜잭션이 열려 있다"
         synthesized.append(state)
@@ -311,6 +317,7 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
         ("publish_terminal", _publish_terminal),
         ("explore_subquestion", _explore), ("synthesize", _synthesize),
         ("_save_progress", _save_progress), ("_drop_stale_previews", _drop_stale_previews),
+        ("unmark", _unmark),
     ):
         monkeypatch.setattr(rt, name, fn)
     return h
@@ -464,6 +471,37 @@ class TestClaim:
         assert STATUS_APPROVED in seen["allowed"]
         assert STATUS_QUEUED in seen["allowed"]
         assert seen["to"] == "running"
+
+    def test_claimed_job_leaves_the_wait_line_right_after_the_claim(self, monkeypatch):
+        """집은 잡은 더 이상 기다리는 잡이 아니다 — 뒤 잡의 순번에서 빠져야 한다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"])
+        explored = []
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=[])
+        order = []
+        claim = rt._claim
+
+        async def _claim(db, job_id, *, allowed, to):
+            order.append(("claim", list(h.unmarked)))
+            return await claim(db, job_id, allowed=allowed, to=to)
+
+        monkeypatch.setattr(rt, "_claim", _claim)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert order == [("claim", [])]          # 집기 전에는 빼지 않는다
+        assert h.unmarked == [job.id]
+        assert explored == ["계획 하위1"]
+
+    def test_unclaimed_job_also_leaves_the_wait_line(self, monkeypatch):
+        """재배달·취소로 못 집은 잡도 줄에 남기지 않는다 — 남으면 뒤 잡의 순번이 하나씩 밀린다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"], status="canceled")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        out = asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert out["status"] == "skipped"
+        assert h.unmarked == [job.id]
 
 
 class TestConditionalTransition:
@@ -1882,24 +1920,57 @@ class TestDropStalePreviews:
 
 class TestReaper:
     class _SyncSession:
-        def __init__(self):
+        """문장마다 회수 결과를 돌려준다. events 에 문장·COMMIT·ROLLBACK 을 순서대로 남긴다(테스트가
+        대기 줄 빼기·디스패치 보내기를 같은 목록에 적어 커밋과의 순서를 본다)."""
+
+        def __init__(self, *, reaped=("j1",), gens=0, idle=False, fail_on=None):
             self.sql: list[str] = []
+            self.params: list = []
+            self.events: list = []
+            self._reaped, self._gens, self._idle, self._fail_on = list(reaped), gens, idle, fail_on
 
         def execute(self, stmt, params=None):
-            self.sql.append(str(stmt))
+            sql = str(stmt)
+            if self._fail_on and self._fail_on in sql:
+                raise RuntimeError("DB 오류")
+            self.sql.append(sql)
+            self.params.append(params)
+            self.events.append(sql)
             result = MagicMock()
-            result.one.return_value = (1, 2)
-            result.fetchall.return_value = [("s",)]
+            if "UPDATE research_jobs" in sql:
+                result.one.return_value = (len(self._reaped), 2, list(self._reaped))
+            elif "UPDATE research_generations" in sql:
+                result.rowcount = self._gens
+            elif "EXISTS" in sql:
+                result.scalar_one.return_value = self._idle
+            else:
+                result.fetchall.return_value = [("s",)]
             return result
 
         def commit(self):
-            return None
+            self.events.append("COMMIT")
 
         def rollback(self):
-            return None
+            self.events.append("ROLLBACK")
 
         def close(self):
-            return None
+            self.events.append("CLOSE")
+
+    @staticmethod
+    def _reap(monkeypatch, rt, db, *, sent: bool = True) -> dict:
+        monkeypatch.setattr(rt, "SyncSessionLocal", lambda: db)
+        monkeypatch.setattr(rt, "unmark_many_sync", lambda ids: db.events.append(("unmark", list(ids))))
+
+        def _send() -> bool:
+            db.events.append("DISPATCH")
+            return sent
+
+        monkeypatch.setattr(rt, "send_dispatch", _send)
+        return rt.reap_stale_research()
+
+    @staticmethod
+    def _at(db, needle: str) -> int:
+        return next(i for i, e in enumerate(db.events) if isinstance(e, str) and needle in e)
 
     def test_reaper_has_soft_and_hard_time_limits(self, monkeypatch):
         """회수기는 제어 워커(한 칸)에서 디스패치 틱과 같은 q_control 을 쓴다 — 오래 붙잡지 않게 끊는다."""
@@ -1915,14 +1986,139 @@ class TestReaper:
     def test_reaping_a_job_closes_its_running_steps(self, monkeypatch):
         rt = _load_tasks(monkeypatch)
         db = self._SyncSession()
-        monkeypatch.setattr(rt, "SyncSessionLocal", lambda: db)
 
-        out = rt.reap_stale_research()
+        # 대기 줄 빼기·디스패치 보내기도 대역으로 — 그냥 부르면 redis 가 깔린 환경에서 REDIS_URL 로 실제 ZREM 을 보낸다
+        out = self._reap(monkeypatch, rt, db)
 
         job_sql = next(s for s in db.sql if "UPDATE research_jobs" in s)
         # 회수한 잡의 running step 을 같은 문장에서 닫는다
         assert "UPDATE research_steps" in job_sql and "reaped" in job_sql
         assert out["jobs"] == 1
+
+    def test_stale_running_generations_fail_in_the_same_transaction(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(gens=2)
+
+        out = self._reap(monkeypatch, rt, db)
+
+        i = self._at(db, "UPDATE research_generations")
+        gen_sql = db.events[i]
+        assert "SET status = 'failed'" in gen_sql and "WHERE status = 'running'" in gen_sql
+        assert "coalesce(started_at, created_at) < now() - make_interval(secs => :s)" in gen_sql
+        assert db.params[db.sql.index(gen_sql)] == {"s": rt.GEN_STALE_SECONDS}
+        assert self._at(db, "UPDATE research_jobs") < i < db.events.index("COMMIT")
+        assert out["generations"] == 2
+
+    def test_generation_threshold_is_past_the_dispatch_hard_limit(self, monkeypatch):
+        """회수 임계가 디스패치 태스크의 하드 리밋보다 짧으면 아직 도는 생성을 회수한다."""
+        rt = _load_tasks(monkeypatch)
+        work_tasks = sys.modules["workers.research_work_tasks"]
+        assert rt.GEN_STALE_SECONDS == work_tasks.GEN_HARD_LIMIT + 60 == 1140
+
+    def test_queued_work_with_nothing_running_is_dispatched_after_commit(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(gens=1, idle=True)
+
+        out = self._reap(monkeypatch, rt, db)
+
+        check = self._at(db, "EXISTS")
+        check_sql = db.events[check]
+        assert "status = 'queued'" in check_sql and "NOT EXISTS" in check_sql
+        assert "status = 'running'" in check_sql
+        # 방금 회수한 running 이 빠진 뒤에 세고, 커밋한 뒤에 보낸다 — 커밋 전에 보내면 디스패처가 아직
+        # running 인 회수 대상을 보고 그냥 끝난다
+        assert self._at(db, "UPDATE research_generations") < check < db.events.index("COMMIT")
+        assert db.events.index("COMMIT") < db.events.index("DISPATCH")
+        assert out["redispatched"] is True
+
+    def test_no_dispatch_while_one_runs_or_nothing_waits(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(idle=False)
+
+        out = self._reap(monkeypatch, rt, db)
+
+        assert "DISPATCH" not in db.events
+        assert out["redispatched"] is False
+
+    def test_reaped_generations_and_redispatch_are_logged(self, monkeypatch, caplog):
+        rt = _load_tasks(monkeypatch)
+
+        with caplog.at_level(logging.WARNING, logger=rt.log.name):
+            self._reap(monkeypatch, rt, self._SyncSession(gens=2, idle=True))
+        assert [r.getMessage() for r in caplog.records if "회수한 생성" in r.getMessage()] == [
+            "[research_work] 회수한 생성 n=2, 디스패치 다시 보냄=True"]
+
+        caplog.clear()
+        with caplog.at_level(logging.WARNING, logger=rt.log.name):
+            self._reap(monkeypatch, rt, self._SyncSession(gens=0, idle=False))
+        assert not any("회수한 생성" in r.getMessage() for r in caplog.records)    # 할 일이 없던 틱은 조용하다
+
+    def test_broker_down_is_reported_in_the_result(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(idle=True)
+
+        out = self._reap(monkeypatch, rt, db, sent=False)
+
+        assert "DISPATCH" in db.events and out["redispatched"] is False
+
+    def test_reaped_jobs_leave_the_wait_line_after_commit(self, monkeypatch):
+        """회수로 failed 가 된 잡만 대기 줄에서 뺀다 — 상태로 거른 잡 전체를 빼지 않는다."""
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(reaped=("j1", "j2"))
+
+        out = self._reap(monkeypatch, rt, db)
+
+        job_sql = db.events[self._at(db, "UPDATE research_jobs")]
+        assert "RETURNING id" in job_sql and "array_agg(id::text)" in job_sql
+        # 회수한 id 만, 정확히 한 번 뺀다
+        assert [e for e in db.events if isinstance(e, tuple) and e[0] == "unmark"] == [("unmark", ["j1", "j2"])]
+        assert db.events.index("COMMIT") < db.events.index(("unmark", ["j1", "j2"]))
+        assert (out["jobs"], out["steps"]) == (2, 3)
+
+    def test_nothing_reaped_leaves_redis_alone(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(reaped=())
+
+        out = self._reap(monkeypatch, rt, db)
+
+        assert not any(isinstance(e, tuple) for e in db.events)
+        assert out == {"jobs": 0, "steps": 3, "generations": 0, "redispatched": False}
+
+    def test_db_error_rolls_back_and_sends_nothing(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = self._SyncSession(reaped=("j1",), idle=True, fail_on="UPDATE research_generations")
+
+        with pytest.raises(RuntimeError):
+            self._reap(monkeypatch, rt, db)
+
+        assert "ROLLBACK" in db.events and "COMMIT" not in db.events
+        assert "DISPATCH" not in db.events and not any(isinstance(e, tuple) for e in db.events)
+
+    def test_redispatch_goes_to_q_research_plan_even_when_the_setting_is_blank(self, monkeypatch):
+        """회수기가 도는 celery-control 에는 RESEARCH_PLAN_QUEUE 가 없다 — 그래도 q_research_plan 으로 간다."""
+        from core.config import get_settings
+        monkeypatch.setenv("RESEARCH_QUEUE", "q_llm")
+        monkeypatch.setenv("RESEARCH_PLAN_QUEUE", "")
+        get_settings.cache_clear()
+        try:
+            rt = _load_tasks(monkeypatch)
+            kombu_exc = types.ModuleType("kombu.exceptions")
+            kombu_exc.OperationalError = type("OperationalError", (Exception,), {})
+            _stub_missing(monkeypatch, "kombu", types.ModuleType("kombu"))
+            _stub_missing(monkeypatch, "kombu.exceptions", kombu_exc)
+            sent = []
+            sender = types.SimpleNamespace(send_task=lambda name, args=None, **kw: sent.append((name, kw)))
+            monkeypatch.setattr(sys.modules["workers.research_work_tasks"], "celery_app", sender)
+            db = self._SyncSession(idle=True)
+            monkeypatch.setattr(rt, "SyncSessionLocal", lambda: db)
+            monkeypatch.setattr(rt, "unmark_many_sync", lambda ids: None)
+
+            out = rt.reap_stale_research()
+
+            assert sent == [("tasks.dispatch_research_work", {"queue": "q_research_plan"})]
+            assert out["redispatched"] is True
+        finally:
+            get_settings.cache_clear()
 
 
 class TestQueue:

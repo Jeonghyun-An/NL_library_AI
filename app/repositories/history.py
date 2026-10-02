@@ -2,12 +2,13 @@ import uuid
 from collections.abc import Iterable, Sequence
 from datetime import datetime, timezone
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, exists, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.history import HistoryItem
 from models.research import ResearchJob
+from models.research_work import GEN_OPEN_STATUSES, ResearchGeneration, ResearchWork
 from schemas.history import (
     HistoryImportItem, HistoryImportOut, HistoryItemDetail, HistoryItemIn,
     HistoryItemOut, HistoryItemPatch, HistoryKind, ResearchStatus,
@@ -211,14 +212,28 @@ class HistoryRepository:
         # ref_id = research_jobs.id::text 로 조인하면 PK 인덱스를 못 쓰고, ref_id 를 uuid 로
         # 캐스팅해 조인하면 형식이 틀린 값 하나에 조회 전체가 실패한다. 한 쪽(최대 100건)의
         # job id 만 모아 PK 로 한 번 더 읽는다.
+        # 이어간 연구의 단계·진행 요약은 같은 PK 조회에 research_works 를 id 로 붙여 읽는다
+        # (연구 id = 잡 id). 진행 중 생성은 행을 늘리지 않게 EXISTS 로 센다.
         job_ids = {jid for jid in map(_as_uuid, refs) if jid is not None}
         if not job_ids:
             return {}
+        generating = exists().where(
+            ResearchGeneration.work_id == ResearchJob.id,
+            ResearchGeneration.status.in_(GEN_OPEN_STATUSES),
+        )
         rows = (await self.db.execute(
-            select(ResearchJob.id, ResearchJob.status, ResearchJob.stage)
+            select(ResearchJob.id, ResearchJob.status, ResearchJob.stage,
+                   ResearchWork.phase, ResearchWork.progress,
+                   generating.label("generating"))
+            .select_from(ResearchJob)
+            .outerjoin(ResearchWork, ResearchWork.id == ResearchJob.id)
             .where(ResearchJob.id.in_(job_ids))
         )).all()
-        return {r.id: ResearchStatus(status=r.status, stage=r.stage) for r in rows}
+        return {
+            r.id: ResearchStatus(status=r.status, stage=r.stage, phase=r.phase,
+                                 progress=r.progress, generating=bool(r.generating))
+            for r in rows
+        }
 
     @staticmethod
     def _research_of(row, statuses: dict[uuid.UUID, ResearchStatus]) -> ResearchStatus | None:

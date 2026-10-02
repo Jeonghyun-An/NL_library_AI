@@ -22,6 +22,11 @@ Ollama 의 OpenAI 호환(/v1) 엔드포인트는 think 파라미터를 무시하
   연결(≤10초)까지 걸릴 수 있다 — 호출 전체의 최악은 timeout + 10초다. 더 시도하지 않는 실패는 error 로,
   시도 횟수를 다 썼는지 남은 시간이 모자랐는지를 함께 남긴다.
 
+  호출별 엔드포인트: chat_full()·chat()·chat_stream() 은 base_url·model 을 받는다. 주지 않으면(None)
+  LLM_BASE_URL·LLM_MODEL 이다 — 연구 어시스턴트(round06)가 생성마다 Qwen(VLM_BASE_URL·VLM_MODEL)과
+  gemma 를 고를 때 쓴다. 재시도는 같은 엔드포인트로만 한다(다른 모델로 넘기는 일은 호출부가 한다).
+  API 스타일(LLM_API_STYLE)·think·num_ctx 는 호출별로 바꾸지 않는다.
+
   think 필드 처리:
     LLM_THINK is None  → think 필드 자체를 안 보냄 (gemma3 등 비-thinking 모델 안전)
     LLM_THINK True/False → 그 값 전송 (gemma4 요약은 false 로 추론 비용 제거)
@@ -145,7 +150,16 @@ def _ollama_root(base_url: str) -> str:
     return b
 
 
-def _ollama_body(messages: list[dict], params: dict, stream: bool) -> dict:
+def _endpoint(base_url: str | None, model: str | None) -> tuple[str, str]:
+    """호출별 (base_url, model) — None 인 쪽은 설정(LLM_BASE_URL·LLM_MODEL)으로 채운다."""
+    cfg = get_settings()
+    return (
+        cfg.LLM_BASE_URL if base_url is None else base_url,
+        cfg.LLM_MODEL if model is None else model,
+    )
+
+
+def _ollama_body(messages: list[dict], params: dict, stream: bool, *, model: str) -> dict:
     cfg = get_settings()
     opts: dict = {"num_ctx": cfg.OLLAMA_NUM_CTX}
     if "temperature" in params:
@@ -153,7 +167,7 @@ def _ollama_body(messages: list[dict], params: dict, stream: bool) -> dict:
     if "max_tokens" in params:
         opts["num_predict"] = params["max_tokens"]   # ollama 는 num_predict
     body: dict = {
-        "model": cfg.LLM_MODEL,
+        "model": model,
         "messages": messages,
         "stream": stream,
         "options": opts,
@@ -163,18 +177,21 @@ def _ollama_body(messages: list[dict], params: dict, stream: bool) -> dict:
     return body
 
 
-async def _request_once(messages: list[dict], params: dict, timeout: float) -> LLMResult:
+async def _request_once(
+    messages: list[dict], params: dict, timeout: float, *, base_url: str, model: str,
+) -> LLMResult:
     """한 번 보내고 응답을 LLMResult 로 바꾼다 (재시도는 chat_full 이 한다).
 
     timeout 은 이 시도에 남은 시간 — 읽기·쓰기·풀 timeout 으로 쓰고, 연결 timeout 은 그중
     _CONNECT_TIMEOUT_SECONDS 까지만 준다. httpx 는 단계마다 따로 재고 읽기 timeout 은 연결 전에 정해지므로
     이 시도는 남은 시간 + 연결 시간(≤ _CONNECT_TIMEOUT_SECONDS)까지 걸릴 수 있다.
+    base_url·model 은 _endpoint 로 채운 값이다.
     """
     cfg = get_settings()
     client_timeout = httpx.Timeout(timeout, connect=min(_CONNECT_TIMEOUT_SECONDS, timeout))
     if cfg.LLM_API_STYLE == "ollama":
-        url = f"{_ollama_root(cfg.LLM_BASE_URL)}/api/chat"
-        body = _ollama_body(messages, params, stream=False)
+        url = f"{_ollama_root(base_url)}/api/chat"
+        body = _ollama_body(messages, params, stream=False, model=model)
         async with httpx.AsyncClient(timeout=client_timeout) as client:
             resp = await client.post(url, json=body)
             resp.raise_for_status()
@@ -185,8 +202,8 @@ async def _request_once(messages: list[dict], params: dict, timeout: float) -> L
         )
 
     # openai 호환 (vLLM 등)
-    url = f"{cfg.LLM_BASE_URL}/chat/completions"
-    body = {"model": cfg.LLM_MODEL, "messages": messages, **params}
+    url = f"{base_url}/chat/completions"
+    body = {"model": model, "messages": messages, **params}
     async with httpx.AsyncClient(timeout=client_timeout) as client:
         resp = await client.post(url, json=body)
         resp.raise_for_status()
@@ -203,6 +220,8 @@ async def chat_full(
     *,
     params: dict | None = None,
     timeout: float = 120.0,
+    base_url: str | None = None,
+    model: str | None = None,
 ) -> LLMResult:
     """비스트리밍 chat 완성 → LLMResult(content, finish_reason). 일시적 실패는 재시도한다.
 
@@ -211,16 +230,20 @@ async def chat_full(
     (더 시도할지는 _retry_delay). 읽기 timeout 은 연결 전에 정해지므로 시도 하나는 남은 시간 + 연결
     (≤10초)까지 걸릴 수 있어, 이 호출의 최악은 timeout + 10초다. 다시 보낼 실패는 경고, 여기서 끝나는
     실패(재시도 불가 4xx, 다시 보낼 실패의 시도 횟수 소진·남은 시간 부족)만 error 로 남긴다.
+    base_url·model 을 주면 그 엔드포인트로 보낸다(None 이면 LLM_BASE_URL·LLM_MODEL) — 재시도도 같은 곳이다.
     """
     cfg = get_settings()
     params = params or {}
+    base_url, model = _endpoint(base_url, model)
     attempts = max(1, int(cfg.LLM_RETRY_ATTEMPTS))
     schedule = cfg.LLM_RETRY_BACKOFF_SECONDS
     deadline = _monotonic() + timeout
     attempt = 1
     while True:
         try:
-            result = await _request_once(messages, params, min(timeout, deadline - _monotonic()))
+            result = await _request_once(
+                messages, params, min(timeout, deadline - _monotonic()), base_url=base_url, model=model,
+            )
         except httpx.HTTPStatusError as e:
             code = e.response.status_code
             retryable = _is_retryable_status(code)
@@ -228,7 +251,7 @@ async def chat_full(
             why = f", {_give_up_reason(attempt, attempts)}" if retryable and delay is None else ""
             log.log(
                 logging.ERROR if delay is None else logging.WARNING,
-                f"[llm_client:{cfg.LLM_API_STYLE}] {code} ({attempt}/{attempts}회차{why}) — "
+                f"[llm_client:{cfg.LLM_API_STYLE}] {code} model={model} ({attempt}/{attempts}회차{why}) — "
                 f"{e.response.text[:400]}",
             )
             if delay is None:
@@ -238,7 +261,8 @@ async def chat_full(
             why = f", {_give_up_reason(attempt, attempts)}" if delay is None else ""
             log.log(
                 logging.ERROR if delay is None else logging.WARNING,
-                f"[llm_client:{cfg.LLM_API_STYLE}] {type(e).__name__} ({attempt}/{attempts}회차{why}) — {e}",
+                f"[llm_client:{cfg.LLM_API_STYLE}] {type(e).__name__} model={model} "
+                f"({attempt}/{attempts}회차{why}) — {e}",
             )
             if delay is None:
                 raise
@@ -246,7 +270,7 @@ async def chat_full(
             if result.finish_reason == "length":
                 log.warning(
                     f"[llm_client:{cfg.LLM_API_STYLE}] 응답이 max_tokens 에서 잘렸다 — "
-                    f"model={cfg.LLM_MODEL} max_tokens={params.get('max_tokens')}"
+                    f"model={model} max_tokens={params.get('max_tokens')}"
                 )
             return result
         await asyncio.sleep(delay)          # 여기까지 온 것은 다시 보낼 실패뿐 (delay 는 위 except 에서 정해졌다)
@@ -258,9 +282,13 @@ async def chat(
     *,
     params: dict | None = None,
     timeout: float = 120.0,
+    base_url: str | None = None,
+    model: str | None = None,
 ) -> str:
     """비스트리밍 chat 완성 → 최종 content 문자열 (= chat_full 의 content)."""
-    return (await chat_full(messages, params=params, timeout=timeout)).content
+    return (await chat_full(
+        messages, params=params, timeout=timeout, base_url=base_url, model=model,
+    )).content
 
 
 async def chat_stream(
@@ -268,18 +296,21 @@ async def chat_stream(
     *,
     params: dict | None = None,
     timeout: float = 120.0,
+    base_url: str | None = None,
+    model: str | None = None,
 ) -> AsyncGenerator[str, None]:
-    """스트리밍 chat → content 델타 순차 yield.
+    """스트리밍 chat → content 델타 순차 yield. 재시도하지 않는다.
 
     검색/대화 SSE 기능용. 국회 1차(요약→DB) 스코프에는 불필요하지만
-    스타일 겸용을 위해 함께 제공한다.
+    스타일 겸용을 위해 함께 제공한다. base_url·model 은 chat_full 과 같다(None 이면 설정).
     """
     cfg = get_settings()
     params = params or {}
+    base_url, model = _endpoint(base_url, model)
 
     if cfg.LLM_API_STYLE == "ollama":
-        url = f"{_ollama_root(cfg.LLM_BASE_URL)}/api/chat"
-        body = _ollama_body(messages, params, stream=True)
+        url = f"{_ollama_root(base_url)}/api/chat"
+        body = _ollama_body(messages, params, stream=True, model=model)
         async with httpx.AsyncClient(timeout=timeout) as client:
             async with client.stream("POST", url, json=body) as resp:
                 resp.raise_for_status()
@@ -298,8 +329,8 @@ async def chat_stream(
         return
 
     # openai 호환 (SSE)
-    url = f"{cfg.LLM_BASE_URL}/chat/completions"
-    body = {"model": cfg.LLM_MODEL, "messages": messages, "stream": True, **params}
+    url = f"{base_url}/chat/completions"
+    body = {"model": model, "messages": messages, "stream": True, **params}
     async with httpx.AsyncClient(timeout=timeout) as client:
         async with client.stream("POST", url, json=body) as resp:
             resp.raise_for_status()
