@@ -129,7 +129,7 @@ def _run_stage(
     첫 읽기의 토큰 대조는 그 순간의 판단이다. 단계가 도는 동안 새 체인이 토큰을 바꿀 수 있어
     (디스패처의 재디스패치·stale 복구) 시작·성공·실패 기록마다 _update_item 이 토큰을 다시 대조한다.
     달라졌으면 아무것도 쓰지 않고, 시작 기록이면 실행 안 함, 성공 기록이면 체인 정지(Ignore),
-    실패 기록이면 예외만 그대로 올린다. 토큰 없는 옛 메시지(run_token=None)는 대조 없이 쓴다.
+    실패 기록이면 예외만 그대로 올린다. 토큰 없는 옛 메시지(run_token=None)는 아이템에도 토큰이 없을 때만 쓴다.
     """
     from workers.tasks import _set_ingest_state
 
@@ -253,8 +253,10 @@ def _update_item(
 ) -> bool:
     """아이템 상태를 기록한다. 기록해도 되는 아이템이면 True, 아니면 False(아무것도 쓰지 않았다).
 
-    expect_token 이 주어지면 FOR UPDATE 로 읽은 아이템의 meta.run_token 과 같을 때만 쓴다. 단계가 도는
-    동안 디스패처의 재디스패치나 stale 복구가 토큰을 바꿨으면 이 체인은 옛 체인이라 쓰면 안 된다.
+    expect_token 은 이 체인 메시지의 토큰이다. FOR UPDATE 로 읽은 아이템의 meta.run_token 과 같을 때만 쓴다 —
+    단계가 도는 동안 디스패처의 재디스패치나 stale 복구가 토큰을 바꿨으면 이 체인은 옛 체인이라 쓰면 안 된다.
+    None(배포 전에 보낸 토큰 없는 메시지)이면 아이템에도 토큰이 없을 때만 쓴다 — 재전달된 옛 메시지가 stale
+    복구 뒤 토큰을 받은 새 체인의 상태를 덮지 않게.
     False 는 아이템이 없거나 토큰이 다른 경우뿐이다. DB 오류는 예전처럼 삼키고 경고만 남기며
     True 를 돌려준다 — 토큰 때문에 안 쓴 것이 아니라서 단계 흐름은 그대로다.
     """
@@ -263,7 +265,7 @@ def _update_item(
         item = db.query(IngestJobItem).filter_by(id=item_id).with_for_update().first()
         if not item:
             return False
-        if expect_token is not None and (item.meta or {}).get("run_token") != expect_token:
+        if ((item.meta or {}).get("run_token") or None) != expect_token:
             return False   # 읽기만 했다 — finally 의 db.close() 가 행 잠금을 푼다
         if stage is not None:
             item.stage = stage

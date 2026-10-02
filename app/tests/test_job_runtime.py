@@ -541,11 +541,25 @@ class TestLateRecords:
         assert env.locks[0].released
         assert "늦은 실패 기록 버림" in caplog.text
 
-    def test_message_without_token_is_not_compared(self, env):
-        # 배포 전 메시지(토큰 없음)는 지금처럼 대조 없이 쓴다 — 아이템에도 토큰이 없을 때만 여기까지 온다
+    def test_message_without_token_stops_writing_once_the_item_gets_one(self, env, caplog):
+        # 배포 전 메시지(토큰 없음)는 아이템에도 토큰이 없을 때만 쓴다. 도는 사이 stale 복구·재디스패치가 토큰을
+        # 적었으면 새 체인이 있다 — 재전달된 옛 메시지의 늦은 성공이 새 체인의 상태를 덮지 않는다
         env.add_item(1, stage="extracted", status="dispatched", meta={})
         env.results["summarize"] = {"sections_total": 3}
-        env.during["summarize"] = self._swap(env)   # 어떤 토큰이 생겨도 대조 대상이 아니다
+        env.during["summarize"] = self._swap(env)
+
+        with caplog.at_level(logging.WARNING, logger=env.rt.log.name):
+            with pytest.raises(env.rt.Ignore):
+                env.rt._run_stage("summarize", 1, "celery-legacy", None)
+
+        row = env.item(1)
+        assert row.stage == "extracted" and "sections_total" not in row.meta
+        assert row.meta["run_token"] == "new"
+        assert "늦은 성공 기록 버림" in caplog.text
+
+    def test_message_without_token_still_writes_on_an_item_without_token(self, env):
+        env.add_item(1, stage="extracted", status="dispatched", meta={})
+        env.results["summarize"] = {"sections_total": 3}
 
         out = env.rt._run_stage("summarize", 1, "celery-legacy", None)
 
@@ -579,11 +593,14 @@ class TestUpdateItemToken:
         row = env.item(1)
         assert row.stage == "summarized" and row.meta == {"run_token": "t", "x": 1}
 
-    def test_without_expect_token_writes_whatever_the_token_is(self, env):
+    def test_without_expect_token_writes_only_on_an_item_without_token(self, env):
         env.add_item(1, stage="extracted", status="running", meta={"run_token": "new"})
+        env.add_item(2, stage="extracted", status="running", meta={})
 
-        assert env.rt._update_item(1, stage="summarized") is True
-        assert env.item(1).stage == "summarized"
+        assert env.rt._update_item(1, stage="summarized") is False
+        assert env.item(1).stage == "extracted"
+        assert env.rt._update_item(2, stage="summarized") is True
+        assert env.item(2).stage == "summarized"
 
     def test_missing_item_returns_false(self, env):
         assert env.rt._update_item(999, status="running", expect_token="t") is False
@@ -976,14 +993,15 @@ class TestManualRetryToken:
 
         assert env.calls == [] and _snapshot(env.item(1)) == before
 
-    def test_old_running_chain_cannot_record_on_a_retried_item(self, env):
-        # 옛 체인이 단계를 도는 중에 retry 됐다 — 그 체인의 기록(토큰 대조)은 버려진다
+    @pytest.mark.parametrize("old_token", ["old-token", None], ids=["old_chain", "tokenless_old_message"])
+    def test_old_running_chain_cannot_record_on_a_retried_item(self, env, old_token):
+        # 옛 체인이 단계를 도는 중에 retry 됐다 — 그 체인의 기록(토큰 대조)은 버려진다(토큰 없는 메시지도)
         from services.ingestion.job_manager import RETRY_RUN_TOKEN
 
         env.add_item(1, stage="extracted", status="pending", meta={"run_token": RETRY_RUN_TOKEN})
         before = _snapshot(env.item(1))
 
-        assert env.rt._update_item(1, status="running", expect_token="old-token") is False
+        assert env.rt._update_item(1, status="running", expect_token=old_token) is False
         assert _snapshot(env.item(1)) == before
 
     def test_dispatcher_token_takes_over_from_the_retry_token(self, env):
