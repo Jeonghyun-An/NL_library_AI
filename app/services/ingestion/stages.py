@@ -1,12 +1,15 @@
 """
 단계(체크포인트) 단위로 분리되어 실패 시 해당 단계부터 재개 가능:
 
-  run_extract     : 다운로드 → 텍스트 추출 → 그림 저장 → 섹션 분할 → PG 저장
-                    + MinIO artifacts/{book_id}/extraction.json.gz (재개용 중간 산출물)
+  run_extract     : 다운로드 → 텍스트 추출 → 섹션 분할(0개면 강제 OCR 재추출 → no_text/vlm_error)
+                    → 그림 저장 → PG 저장 + MinIO artifacts/{book_id}/extraction.json.gz (재개용 중간 산출물)
   run_summarize   : 섹션 요약/테마 LLM → book_sections UPDATE (doc_type 판별·영속화 포함)
+                    + [paper] 보강 LLM(섹션 요약과 같은 세마포어) → enrichment.json.gz·카탈로그
   run_embed_index : 아티팩트 + 섹션 요약 로드 → 청킹 → 임베딩 → Milvus delete+insert
-  run_finalize    : 문서 요약/소개글 LLM → library_catalog UPDATE
-                    (skip_cover 파라미터로 FLUX 생략 — 썸네일은 API가 온디맨드 생성)
+                    ([paper] 보강 아티팩트로 보강 청크 — 없거나 다른 실행의 것이면 여기서 보강 LLM)
+  run_finalize    : 계층 요약 입력 1회 → 문서 요약/소개글(도서류는 줄거리·독후 효과도) LLM 동시 호출
+                    → library_catalog UPDATE (skip_cover 파라미터 또는 논문이면 FLUX 표지 생략 —
+                    썸네일은 API가 온디맨드 생성)
 
 잡 레이어(workers/job_runtime.py)는 이 함수들의 시그니처(StageContext → dict)만 의존한다.
 ingest_state 전이·락·타이밍 기록은 호출자(태스크 래퍼) 책임.
@@ -16,13 +19,20 @@ import gzip
 import io
 import json
 import logging
+import math
 import os
+import time
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from core.config import get_settings
+from core.config import FORCED_REEXTRACT_FLOOR_SECONDS, get_settings
 from db.postgres import SyncSessionLocal
 from models.book import Book
 from models.section import BookSection
+
+if TYPE_CHECKING:   # 실행 시에는 함수 안에서 import 한다 (기존 관례)
+    from services.ingestion.chunker import Chunk
+    from services.ingestion.paper_enricher import PaperEnrichment
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -31,6 +41,10 @@ SECTION_MIN_TOKENS = cfg.SECTION_MIN_TOKENS
 SECTION_MAX_TOKENS = cfg.SECTION_MAX_TOKENS
 
 DOWNLOAD_DIR = cfg.DOWNLOAD_DIR
+
+# 섹션 0개 강제 OCR 재추출에 주는 데드라인의 하한(초) — 첫 추출이 INGEST_EXTRACT_DEADLINE 을 거의 다 썼어도
+# 이만큼은 OCR 할 시간을 준다. 설정이 기동 때 이 하한까지 넣어 stale 판정과의 관계를 보므로 config 의 값을 쓴다
+FORCED_OCR_MIN_DEADLINE_SECONDS = FORCED_REEXTRACT_FLOOR_SECONDS
 
 
 class StageError(Exception):
@@ -49,6 +63,8 @@ class StageContext:
     file_path: str | None = None     # 로컬 파일 경로 (단건 흐름에서 전달)
     job_item_id: int | None = None   # 잡 아이템 (단건 흐름이면 None)
     params: dict = field(default_factory=dict)  # {"skip_cover": true, "doc_type": "paper", ...}
+    # 잡 아이템 meta 사본 — 앞 단계가 남긴 값(예: 추출의 pages). 단건 흐름이면 빈 dict
+    item_meta: dict = field(default_factory=dict)
 
 
 # ── 공통 헬퍼 ────────────────────────────────────────────────
@@ -221,8 +237,8 @@ def save_extraction_artifact(book_id: str, extraction, client) -> str:
     return key
 
 
-def load_extraction_artifact(book_id: str, client) -> tuple[str, dict[int, int]]:
-    """아티팩트 로드 → (full_text, page_map) 재구성 (extractor와 동일 로직)."""
+def _read_extraction_artifact(book_id: str, client) -> dict:
+    """아티팩트(JSON) 원본을 읽는다. 읽지 못하면 artifact_missing."""
     try:
         resp = client.get_object(cfg.MINIO_BUCKET, artifact_key(book_id))
         raw = resp.read()
@@ -233,7 +249,22 @@ def load_extraction_artifact(book_id: str, client) -> tuple[str, dict[int, int]]
             "artifact_missing",
             f"추출 아티팩트 없음 ({artifact_key(book_id)}) — extract 단계부터 재실행 필요: {e}",
         ) from e
-    data = json.loads(gzip.decompress(raw).decode("utf-8"))
+    return json.loads(gzip.decompress(raw).decode("utf-8"))
+
+
+def load_extraction_text(book_id: str, client) -> str:
+    """아티팩트에서 본문(full_text)만 읽는다 — 쪽 위치(page_map)가 필요 없는 호출용.
+
+    page_map 은 글자마다 항목을 만드는 큰 dict 라, 본문만 쓰는 호출(요약 단계의 논문 보강)이
+    load_extraction_artifact 를 부르면 쓰지 않을 것을 만든다.
+    """
+    data = _read_extraction_artifact(book_id, client)
+    return "\n\n".join(p["text"] for p in data["pages"] if p["text"])
+
+
+def load_extraction_artifact(book_id: str, client) -> tuple[str, dict[int, int]]:
+    """아티팩트 로드 → (full_text, page_map) 재구성 (extractor와 동일 로직)."""
+    data = _read_extraction_artifact(book_id, client)
 
     texts = [p["text"] for p in data["pages"] if p["text"]]
     full_text = "\n\n".join(texts)
@@ -260,9 +291,31 @@ def delete_artifact(book_id: str, client) -> None:
 # ── 단계 ① 추출 ──────────────────────────────────────────────
 
 
+def _deterministic_ocr_cause(extraction) -> str:
+    """no_text 메시지에 붙일 사유 — 다시 해도 같은 OCR 실패(VLM 거절·렌더링 실패)가 있었으면
+    ' · VLM 거절 N쪽·렌더링 실패 M쪽: [오류 앞 3개]'(0 인 칸은 뺀다), 없으면 빈 문자열.
+
+    실패한 아이템은 meta 가 남지 않아 사유가 last_error 에만 남는다 — VLM·DPI·max-model-len 을 바꾼 뒤
+    last_error 에 '거절' 이 든 no_text 를 골라 다시 보낸다.
+    """
+    parts = []
+    if extraction.ocr_rejected:
+        parts.append(f"VLM 거절 {extraction.ocr_rejected}쪽")
+    if extraction.render_errors:
+        parts.append(f"렌더링 실패 {extraction.render_errors}쪽")
+    return f" · {'·'.join(parts)}: {extraction.errors[:3]}" if parts else ""
+
+
 def run_extract(ctx: StageContext) -> dict:
-    """다운로드 → 추출 → 그림 저장 → 메타 보장/doc_type 판별 → 섹션 PG 저장 → 아티팩트."""
-    from services.ingestion.extractor import extract_text
+    """다운로드 → 추출 → 섹션 분할 → 그림 저장 → 메타 보장/doc_type 판별 → 섹션 PG 저장 → 아티팩트.
+
+    섹션 0개는 추출 성공으로 넘기지 않는다. 첫 추출에 OCR 요청 실패·데드라인이 있었으면 vlm_error(추출부터
+    재시도), '원래 짧은 쪽'으로 ODL 채택한 쪽이 없으면 no_text(재시도 안 함), 있으면 그 쪽까지 OCR 하는 강제
+    재추출을 첫 추출이 남긴 시간 안에서 한 번 더 하고, 그래도 0개면 같은 기준으로 vlm_error/no_text.
+    쪽이 하나도 없으면 extract_empty(재시도)인데, OCR 실패가 다시 해도 같은 것(VLM 거절·렌더링 실패)뿐이면 no_text 다.
+    no_text 메시지에는 거절·렌더링 실패 수와 오류 앞 3개를 붙인다(_deterministic_ocr_cause).
+    """
+    from services.ingestion.extractor import _ODL_MIN_ATTEMPT_SECONDS, extract_text
 
     book_id = ctx.book_id
     client = minio_client()
@@ -281,19 +334,74 @@ def run_extract(ctx: StageContext) -> dict:
             raise StageError("minio_error", f"MinIO 다운로드 실패 ({ctx.source_key}): {e}") from e
 
     try:
+        t_first = time.monotonic()
         extraction = run_async(extract_text(local_path, book_id))
         if not extraction.pages:
+            # OCR 실패가 다시 해도 같은 것(거절·렌더링 실패)뿐이면 재시도해도 같다 — no_text 로 끝내고 사유를 남긴다
+            cause = _deterministic_ocr_cause(extraction)
+            if cause and not extraction.ocr_errors and not extraction.deadline_hit:
+                raise StageError("no_text", f"텍스트 추출 실패 — 본문 없음({extraction.total_pages}쪽){cause}")
             raise StageError("extract_empty", f"텍스트 추출 실패: {extraction.errors}")
         log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
+
+        sections = split_into_sections(extraction.pages)
+        forced_ocr = False
+        if not sections:
+            # 첫 추출에서 OCR 요청이 실패했거나 데드라인에 걸렸으면 지금 강제 OCR 을 해도 같은 장애·시간 부족을
+            # 되풀이한다 — 추출부터 재시도(백오프)하도록 넘긴다. VLM 이 거절한 요청(ocr_rejected)은 다시 보내도
+            # 같으므로 여기서 세지 않는다.
+            if extraction.ocr_errors or extraction.deadline_hit:
+                raise StageError(
+                    "vlm_error",
+                    f"섹션 0개 — OCR 오류 {extraction.ocr_errors}건·데드라인 {extraction.deadline_hit}: "
+                    f"{extraction.errors[:3]}",
+                )
+            # 강제 OCR 이 판정을 바꾸는 것은 '원래 짧은 쪽'으로 ODL 결과를 채택한 쪽뿐이다 — 그런 쪽이 없으면
+            # (스캔본처럼 짧은 쪽을 이미 다 OCR 했으면) 다시 추출해도 같으므로 바로 no_text.
+            if not extraction.short_kept:
+                raise StageError(
+                    "no_text",
+                    f"섹션 0개 — 본문 없음({extraction.total_pages}쪽, 강제 OCR 로 바뀔 쪽 없음)"
+                    f"{_deterministic_ocr_cause(extraction)}",
+                )
+            # 첫 추출이 남긴 시간만 준다 — 두 번째 추출은 ODL 변환까지 그 시간 안에서 한다(extract_text 가 ODL 상한을
+            # 남은 시간으로 줄인다). 하한 60초만큼 두 추출을 합치면 INGEST_EXTRACT_DEADLINE 을 조금 넘을 수 있지만
+            # stale 판정(INGEST_STAGE_TIMEOUT_EXTRACT 3600초) 아래다.
+            deadline_s = max(
+                cfg.INGEST_EXTRACT_DEADLINE - (time.monotonic() - t_first), FORCED_OCR_MIN_DEADLINE_SECONDS
+            )
+            log.warning(
+                f"[{book_id}] 섹션 0개 — 원래 짧은 쪽 {extraction.short_kept}쪽까지 OCR 로 보내 다시 추출"
+                f"(데드라인 {deadline_s:.0f}초)"
+            )
+            forced_ocr = True
+            extraction = run_async(
+                extract_text(local_path, book_id, force_ocr_short_pages=True, deadline_s=deadline_s)
+            )
+            log.info(f"[{book_id}] 강제 OCR 재추출 완료: {extraction.stats}")
+            sections = split_into_sections(extraction.pages) if extraction.pages else []
+            if not sections:
+                if extraction.ocr_errors or extraction.deadline_hit:
+                    raise StageError(
+                        "vlm_error",
+                        f"섹션 0개(강제 OCR) — OCR 오류 {extraction.ocr_errors}건·데드라인 "
+                        f"{extraction.deadline_hit}: {extraction.errors[:3]}",
+                    )
+                raise StageError(
+                    "no_text",
+                    f"섹션 0개 — 강제 OCR 재추출로도 본문 없음({extraction.total_pages}쪽)"
+                    f"{_deterministic_ocr_cause(extraction)}",
+                )
+        log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
 
         if extraction.figures:
             n_figs = save_figures(book_id, extraction.figures, client)
             log.info(f"[{book_id}] 그림 {n_figs}개 저장 완료")
 
-        sections = split_into_sections(extraction.pages)
-        log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
-
-        doc_type = _ensure_book_and_doc_type(ctx, local_path)
+        # 카탈로그 row 가 없으면 PDF 메타 추출이 ODL 을 한 번 더 돌린다(max_pages=2 여도 문서 전체를 변환한다) —
+        # 추출 데드라인이 남긴 시간 안에서만. 남은 시간이 없으면(하한) 변환하지 않고 fitz 텍스트로 메타를 뽑는다
+        meta_budget = max(cfg.INGEST_EXTRACT_DEADLINE - (time.monotonic() - t_first), _ODL_MIN_ATTEMPT_SECONDS)
+        doc_type = _ensure_book_and_doc_type(ctx, local_path, time_budget=meta_budget)
 
         db = SyncSessionLocal()
         try:
@@ -325,6 +433,14 @@ def run_extract(ctx: StageContext) -> dict:
             "extract_method": max(method_counts, key=method_counts.get) if method_counts else "",
             "doc_type": doc_type,
             "vlm_capped": extraction.vlm_capped,
+            "forced_ocr": forced_ocr,
+            "vlm_truncated": extraction.vlm_truncated,
+            "extract_deadline_hit": extraction.deadline_hit,
+            "ocr_errors": extraction.ocr_errors,
+            "ocr_rejected": extraction.ocr_rejected,
+            "render_errors": extraction.render_errors,
+            "odl_fallback": extraction.odl_fallback,
+            "odl_seconds": round(extraction.odl_seconds, 1),
         }
     finally:
         if downloaded:
@@ -334,8 +450,11 @@ def run_extract(ctx: StageContext) -> dict:
                 pass
 
 
-def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
-    """카탈로그 row 보장 (없으면 PDF 메타 자동 추출) + doc_type 판별·영속화."""
+def _ensure_book_and_doc_type(ctx: StageContext, local_path: str, *, time_budget: float | None = None) -> str:
+    """카탈로그 row 보장 (없으면 PDF 메타 자동 추출) + doc_type 판별·영속화.
+
+    time_budget: PDF 메타 추출의 ODL 변환에 쓸 시간(초) — extract_pdf_metadata 로 넘긴다.
+    """
     from domains import get_active_profile
 
     book_id = ctx.book_id
@@ -345,7 +464,7 @@ def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
         if not book:
             log.info(f"[{book_id}] 메타데이터 없음 → PDF 자동 추출 시도")
             from services.ingestion.pdf_meta_extractor import extract_pdf_metadata
-            meta = run_async(extract_pdf_metadata(local_path))
+            meta = run_async(extract_pdf_metadata(local_path, time_budget=time_budget))
             book = Book(
                 cnts_id=book_id,
                 title=meta.get("title") or book_id,
@@ -380,11 +499,92 @@ def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
         db.close()
 
 
+# ── [paper] 보강 — 요약 단계가 만들고 embed 단계가 청크로 쓴다 ──────
+
+
+def _enrichment_coverage(enrichment: "PaperEnrichment") -> dict:
+    """보강 커버리지 — item.meta 로 노출 (전부 0이면 PDF 추출 품질 의심).
+
+    enrich_error 는 None 으로 싣는다 — 단계 결과는 item.meta 에 병합되고 None 값도 기록되므로,
+    요약 단계의 보강이 실패해 남은 사유를 이어서 보강에 성공한 단계(embed 의 인라인 보강)가 지운다.
+    """
+    return {
+        "enriched": True,
+        "enrich_error": None,
+        "has_abstract": bool(enrichment.abstract),
+        "n_keywords": len(enrichment.keywords),
+        "n_references": len(enrichment.references),
+        "n_tables": len(enrichment.table_chunks),
+        "n_figures": len(enrichment.figure_chunks),
+        "n_toc": len(enrichment.toc),
+    }
+
+
+def _persist_enrichment(book_id: str, enrichment: "PaperEnrichment") -> None:
+    """보강 결과를 카탈로그에 반영 — 초록·키워드는 비어 있을 때만 채우고 extra 에 참고문헌·목차·키워드.
+
+    LLM 을 다 기다린 뒤에 세션을 연다(함정 18). 실패해도 경고만 — 보강이 색인을 막지 않는다.
+    """
+    if not (enrichment.abstract or enrichment.references or enrichment.keywords or enrichment.toc):
+        return
+    from sqlalchemy.orm.attributes import flag_modified
+
+    db = SyncSessionLocal()
+    try:
+        book_row = db.query(Book).filter_by(cnts_id=book_id).first()
+        if book_row:
+            if enrichment.abstract and not book_row.abstract:
+                book_row.abstract = enrichment.abstract
+            if enrichment.keywords and not book_row.keyword:
+                book_row.keyword = ", ".join(enrichment.keywords)
+            extra = dict(book_row.extra or {})
+            extra["references"] = enrichment.references
+            if enrichment.toc:
+                extra["toc"] = enrichment.toc
+            if enrichment.keywords:
+                extra["keywords"] = enrichment.keywords
+            book_row.extra = extra
+            flag_modified(book_row, "extra")
+            db.commit()
+    except Exception as e:
+        log.warning(f"[{book_id}] enrichment DB 저장 실패: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def _build_enriched_chunks(enrichment: "PaperEnrichment", base_idx: int) -> "list[Chunk]":
+    """보강 결과 → 색인 청크(초록·키워드·표 원본·표 설명·그림 설명). chunk_idx 는 base_idx 부터 잇는다.
+
+    표 원본은 수치 질문용, 표 설명은 해석·의미 검색용이다(설명이 비면 생략).
+    """
+    from services.ingestion.chunker import Chunk
+
+    texts: list[str] = []
+    if enrichment.abstract:
+        texts.append(f"[초록] {enrichment.abstract}")
+    if enrichment.keywords:
+        texts.append(f"[키워드] {', '.join(enrichment.keywords)}")
+    for tc in enrichment.table_chunks:
+        table_text = f"[표]\n{tc.context}\n\n{tc.table_md}" if tc.context else f"[표]\n{tc.table_md}"
+        texts.append(table_text.encode("utf-8")[: cfg.MAX_CHUNK_BYTES].decode("utf-8", errors="ignore"))
+        if tc.description:
+            texts.append(f"[표 설명] {tc.description}")
+    for fc in enrichment.figure_chunks:
+        texts.append(f"[그림 설명] {fc.description}")
+    return [Chunk(chunk_idx=base_idx + i, text=t, section_idx=None) for i, t in enumerate(texts)]
+
+
 # ── 단계 ② 섹션 요약 ─────────────────────────────────────────
 
 
 def run_summarize(ctx: StageContext) -> dict:
-    """섹션별 요약/테마 LLM 생성 → book_sections UPDATE."""
+    """섹션별 요약/테마 LLM 생성 → book_sections UPDATE.
+
+    논문이면 같은 루프에서 보강도 돌린다 — 키워드·참고문헌 폴백·표 해석은 섹션 요약과 같은 세마포어를 쓰고,
+    그림 설명(VLM)은 문서마다 따로 상한(paper_enricher._FIGURE_VLM_CONCURRENCY)을 둔다. 결과는 이 체인의 실행
+    토큰을 붙인 보강 아티팩트(embed 단계가 읽는다)와 카탈로그(초록·키워드·extra)에 남긴다.
+    """
     from services.ingestion.summarizer import summarize_section
 
     book_id = ctx.book_id
@@ -415,9 +615,29 @@ def run_summarize(ctx: StageContext) -> dict:
     resume = ctx.params.get("resume_summaries", True)
     targets = [s for s in section_data if not (resume and s["summary"])]
 
-    async def _summarize_batch(items: list[dict]) -> list[tuple[str, list[str]] | None]:
-        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
+    # [paper] 보강(키워드·참고문헌 폴백·표 해석·그림 설명)을 섹션 요약과 같은 루프에서 돌린다 —
+    # embed 단계(celery-embed 1칸)가 LLM 을 기다리지 않게 결과를 아티팩트로 넘긴다.
+    # 아티팩트에는 이 체인의 run_token 을 붙이고, 시작 전에 옛 아티팩트를 지운다 — 재처리
+    # 문서에는 이전 실행이 남긴 보강이 있고(마무리는 지우지 않는다) 배포 전 것은 토큰이 없어,
+    # 이번 보강이 실패하면 embed 가 그것을 읽게 되기 때문이다.
+    run_token = (ctx.item_meta or {}).get("run_token")
+    client = None
+    enrich_text: str | None = None
+    if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
+        from services.ingestion.paper_enricher import delete_enrichment_artifact
 
+        client = minio_client()
+        delete_enrichment_artifact(book_id, client)
+        try:
+            enrich_text = load_extraction_text(book_id, client)
+        except StageError as e:
+            if e.error_group != "artifact_missing":
+                raise
+            log.warning(f"[{book_id}] 추출 아티팩트 없음 — 보강은 embed 단계가 맡는다")
+        if enrich_text is not None and not enrich_text.strip():
+            enrich_text = None
+
+    async def _summarize_batch(items: list[dict], sem: asyncio.Semaphore) -> list[tuple[str, list[str]] | None]:
         async def _one(text: str):
             async with sem:
                 try:
@@ -428,20 +648,42 @@ def run_summarize(ctx: StageContext) -> dict:
 
         return await asyncio.gather(*[_one(s["text"]) for s in items])
 
-    async def _summarize_with_retry() -> list[tuple[str, list[str]] | None]:
-        results = await _summarize_batch(targets)
+    async def _summarize_with_retry(sem: asyncio.Semaphore) -> list[tuple[str, list[str]] | None]:
+        results = await _summarize_batch(targets, sem)
         # 일부만 실패해도 stage 전체는 성공 처리되어 그 섹션 summary가 영구 NULL로
         # 남는 문제 방지 — 실패분만 한 번 더 재시도 (타임아웃/부하로 인한 일시적
         # 실패가 대부분이라 재시도로 대부분 복구됨).
         failed_idx = [i for i, r in enumerate(results) if r is None]
         if failed_idx:
             log.warning(f"[{book_id}] 섹션 요약 실패 {len(failed_idx)}건 재시도")
-            retry_results = await _summarize_batch([targets[i] for i in failed_idx])
+            retry_results = await _summarize_batch([targets[i] for i in failed_idx], sem)
             for i, r in zip(failed_idx, retry_results):
                 results[i] = r
         return results
 
-    results = run_async(_summarize_with_retry()) if targets else []
+    async def _enrich(sem: asyncio.Semaphore):
+        from services.ingestion.paper_enricher import enrich_paper
+
+        try:
+            return await enrich_paper(book_id, title, enrich_text, client, sem=sem), None
+        except Exception as e:
+            log.warning(f"[{book_id}] paper enrichment 실패 — 섹션 요약은 계속: {e}")
+            return None, e
+
+    async def _run_llm():
+        # 섹션 요약과 보강의 LLM 호출이 세마포어 하나를 나눠 쓴다 — celery-llm 은 프로세스당
+        # 태스크 1개라 이것이 프로세스의 동시 LLM 상한이다. run_async 가 단계마다 새 루프를
+        # 만들므로 세마포어도 이 루프 안에서 만든다(모듈 전역 금지).
+        sem = asyncio.Semaphore(max(1, cfg.LLM_SECTION_CONCURRENCY))  # 0 이하 설정이면 끝나지 않는다
+        if enrich_text is None:
+            return await _summarize_with_retry(sem), (None, None)
+        summaries, enriched = await asyncio.gather(_summarize_with_retry(sem), _enrich(sem))
+        return summaries, enriched
+
+    if targets or enrich_text is not None:
+        results, (enrichment, enrich_error) = run_async(_run_llm())
+    else:
+        results, enrichment, enrich_error = [], None, None
     ok = sum(1 for r in results if r)
     log.info(f"[{book_id}] 섹션 요약 {ok}/{len(targets)}개 생성 완료 (스킵 {len(section_data) - len(targets)})")
 
@@ -467,10 +709,21 @@ def run_summarize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
+    # 보강 결과 저장 — 아티팩트(embed 단계가 읽는다) + 카탈로그(초록·키워드·extra)
+    enrich_meta: dict = {}
+    if enrichment is not None:
+        from services.ingestion.paper_enricher import save_enrichment_artifact
+
+        save_enrichment_artifact(book_id, enrichment, client, run_token=run_token)
+        _persist_enrichment(book_id, enrichment)
+        enrich_meta = _enrichment_coverage(enrichment)
+    elif enrich_error is not None:
+        enrich_meta = {"enriched": False, "enrich_error": str(enrich_error)[:500]}
+
     failed_section_idxs = [sec["section_idx"] for sec, r in zip(targets, results) if not r]
     return {"sections_total": len(section_data), "sections_summarized": ok,
             "sections_failed": len(targets) - ok,
-            "failed_section_idxs": failed_section_idxs}
+            "failed_section_idxs": failed_section_idxs, **enrich_meta}
 
 
 # ── 단계 ③ 청킹 + 임베딩 + Milvus 인덱싱 ─────────────────────
@@ -492,6 +745,15 @@ def run_embed_index(ctx: StageContext) -> dict:
     except StageError as _se:
         if _se.error_group != "artifact_missing":
             raise
+        # 추출이 쪽수를 남긴 문서는 PDF 가 있었다. 아티팩트가 없는 것은 마무리가 이미 지웠거나
+        # (옛 체인의 재실행 — 함정 16) 읽지 못한 것이다. 초록으로 진행하면 index_chunks 가 본문
+        # 청크를 지우고 초록 청크로 덮으므로 인덱스를 건드리기 전에 멈춘다
+        pages = ctx.item_meta.get("pages")
+        if isinstance(pages, (int, float)) and pages > 0:
+            raise StageError(
+                "artifact_missing",
+                f"PDF 가 있던 문서(pages={pages})라 초록으로 대체하지 않는다 — {_se}",
+            ) from _se
         # PDF 없는 메타데이터 전용 논문 — abstract를 임베딩 텍스트로 사용
         full_text = ""
         page_map = {}
@@ -580,77 +842,38 @@ def run_embed_index(ctx: StageContext) -> dict:
         contextual_texts.append("\n".join(parts))
 
     # ── [paper] 보강 청크 ────────────────────────────────────
+    # 보강 LLM 은 요약 단계가 돌려 아티팩트로 남겼다 — 여기서는 청크만 만든다. 아티팩트가
+    # 없거나 다른 실행(run_token)의 것이면(요약 단계가 보강을 못 한 아이템, 배포 전
+    # 체크포인트, embed 부터 다시 도는 체인) 예전처럼 여기서 돌린다.
     enriched_chunks: list[ChunkType] = []
     enrich_meta: dict = {}   # enrichment 커버리지 — 검증/모니터링용 (item.meta 로 노출)
+    # 보강 출처 — "artifact"(요약 단계가 만든 것을 읽음) | "inline"(여기서 보강 LLM 을 다시 기다림,
+    # 실패해도 inline) | "none"(논문이 아니거나 보강이 꺼져 있음). 카나리에서 embed 칸이 보강을
+    # 다시 돌린 비율을 센다.
+    enrich_source = "none"
     if doc_type == "paper" and cfg.PAPER_ENRICH_ENABLED:
         try:
-            from services.ingestion.paper_enricher import enrich_paper, save_enrichment_artifact
-            from sqlalchemy.orm.attributes import flag_modified as _flag_modified
+            from services.ingestion.paper_enricher import (
+                enrich_paper,
+                load_enrichment_artifact,
+                save_enrichment_artifact,
+            )
 
-            enrichment = run_async(enrich_paper(book_id, title, full_text, client))
-            save_enrichment_artifact(book_id, enrichment, client)
+            run_token = (ctx.item_meta or {}).get("run_token")
+            enrichment = load_enrichment_artifact(book_id, client, run_token=run_token)
+            enrich_source = "artifact" if enrichment is not None else "inline"
+            if enrichment is None:
+                log.info(f"[{book_id}] 이번 실행의 보강 아티팩트 없음 — embed 단계에서 보강을 돌린다")
+                # 드문 길(요약 단계가 보강하지 못한 아이템)이라 enrich_paper 가 자기 세마포어(LLM_SECTION_CONCURRENCY
+                # 4)를 만든다 — celery-llm 4 × 4 = 16 에 더해 gemma 동시 호출이 20 까지(자리 16 초과) 갈 수 있지만
+                # vLLM 이 줄 세우므로 오류는 아니다
+                enrichment = run_async(enrich_paper(book_id, title, full_text, client))
+                save_enrichment_artifact(book_id, enrichment, client, run_token=run_token)
+                _persist_enrichment(book_id, enrichment)
 
             # 추출이 조용히 실패해도 보이도록 커버리지 기록 (전부 0이면 PDF 추출 품질 의심)
-            enrich_meta = {
-                "enriched": True,
-                "has_abstract": bool(enrichment.abstract),
-                "n_keywords": len(enrichment.keywords),
-                "n_references": len(enrichment.references),
-                "n_tables": len(enrichment.table_chunks),
-                "n_figures": len(enrichment.figure_chunks),
-                "n_toc": len(enrichment.toc),
-            }
-
-            if enrichment.abstract or enrichment.references or enrichment.keywords or enrichment.toc:
-                db2 = SyncSessionLocal()
-                try:
-                    book_row = db2.query(Book).filter_by(cnts_id=book_id).first()
-                    if book_row:
-                        if enrichment.abstract and not book_row.abstract:
-                            book_row.abstract = enrichment.abstract
-                        if enrichment.keywords and not book_row.keyword:
-                            book_row.keyword = ", ".join(enrichment.keywords)
-                        extra = dict(book_row.extra or {})
-                        extra["references"] = enrichment.references
-                        if enrichment.toc:
-                            extra["toc"] = enrichment.toc
-                        if enrichment.keywords:
-                            extra["keywords"] = enrichment.keywords
-                        book_row.extra = extra
-                        _flag_modified(book_row, "extra")
-                        db2.commit()
-                except Exception as _e:
-                    log.warning(f"[{book_id}] enrichment DB 저장 실패: {_e}")
-                    db2.rollback()
-                finally:
-                    db2.close()
-
-            base_idx = len(chunks)
-            if enrichment.abstract:
-                enriched_chunks.append(ChunkType(
-                    chunk_idx=base_idx, text=f"[초록] {enrichment.abstract}", section_idx=None,
-                ))
-                base_idx += 1
-            if enrichment.keywords:
-                kw_text = f"[키워드] {', '.join(enrichment.keywords)}"
-                enriched_chunks.append(ChunkType(chunk_idx=base_idx, text=kw_text, section_idx=None))
-                base_idx += 1
-            for tc in enrichment.table_chunks:
-                # ① 원본 마크다운 청크 — 수치 질문용
-                table_text = f"[표]\n{tc.context}\n\n{tc.table_md}" if tc.context else f"[표]\n{tc.table_md}"
-                table_text = table_text.encode("utf-8")[: cfg.MAX_CHUNK_BYTES].decode("utf-8", errors="ignore")
-                enriched_chunks.append(ChunkType(chunk_idx=base_idx, text=table_text, section_idx=None))
-                base_idx += 1
-                # ② LLM 서술 청크 — 해석·의미 검색용 (실패 시 생략)
-                if tc.description:
-                    enriched_chunks.append(ChunkType(
-                        chunk_idx=base_idx, text=f"[표 설명] {tc.description}", section_idx=None,
-                    ))
-                    base_idx += 1
-            for i, fc in enumerate(enrichment.figure_chunks):
-                enriched_chunks.append(ChunkType(
-                    chunk_idx=base_idx + i, text=f"[그림 설명] {fc.description}", section_idx=None,
-                ))
+            enrich_meta = _enrichment_coverage(enrichment)
+            enriched_chunks = _build_enriched_chunks(enrichment, base_idx=len(chunks))
         except Exception as _e:
             import traceback
             log.warning(f"[{book_id}] paper enrichment 실패, 계속 진행: {_e}\n{traceback.format_exc()}")
@@ -677,16 +900,45 @@ def run_embed_index(ctx: StageContext) -> dict:
         raise StageError("milvus_error", f"Milvus 인덱싱 실패: {idx_result.errors}")
     log.info(f"[{book_id}] 인덱싱 완료: {idx_result.chunks_indexed}개")
 
-    return {"chunks": len(chunks), "indexed": idx_result.chunks_indexed, **enrich_meta}
+    return {"chunks": len(chunks), "indexed": idx_result.chunks_indexed, **enrich_meta,
+            "enrich_source": enrich_source}
 
 
 # ── 단계 ④ 문서 요약/소개글 + (선택) 표지 ─────────────────────
 
+# 계층 요약의 시간 예산. INGEST_STAGE_TIMEOUT_FINALIZE 는 시도별 하드 마감이다 — 넘으면 stale 복구가 토큰을
+# 바꿔 늦게 끝난 성공은 버려지고(job_runtime._run_stage) 같은 일이 처음부터 되풀이된다. 그래서 계층 요약이
+# 그 마감 안에서 끝나도록, 뒤따르는 최종 호출과 표지가 쓸 시간과 여유를 뺀 만큼만 쓰게 하고 못 끝내면 끊어서
+# 균등 샘플링 입력으로 이어 간다.
+_FINALIZE_MARGIN_SECONDS = 60       # 마감 앞 여유 (DB 저장·아티팩트 정리·큐 지연)
+_REDUCE_MIN_BUDGET_SECONDS = 60     # 몫을 빼고 남는 시간이 이보다 적어도 이만큼은 준다
+
+
+def _reduce_budget_seconds(final_timeouts: list[float], make_cover: bool) -> float:
+    """계층 요약이 쓸 수 있는 최대 시간(초).
+
+    INGEST_STAGE_TIMEOUT_FINALIZE − 최종 호출 몫 − 여유 (표지를 만들면 표지 프롬프트 LLM·FLUX 타임아웃도
+    뺀다), 하한 _REDUCE_MIN_BUDGET_SECONDS. final_timeouts 는 계층 요약 뒤에 나가는 최종 호출(요약·소개글,
+    도서류는 줄거리·독후 효과까지)의 타임아웃이다. 이 호출들은 LLM_SECTION_CONCURRENCY 개씩(0 이하는 1)
+    동시에 나가므로 몫은 ceil(호출 수 / 동시 한도) 차례 × 가장 긴 타임아웃이다 — 차례마다 가장 긴 것만큼
+    걸린다고 보면 어떤 순서로 끝나도 그 안에 든다.
+    """
+    waves = math.ceil(len(final_timeouts) / max(1, cfg.LLM_SECTION_CONCURRENCY))
+    reserve = waves * max(final_timeouts) + _FINALIZE_MARGIN_SECONDS
+    if make_cover:
+        reserve += cfg.COVER_PROMPT_TIMEOUT + cfg.FLUX_TIMEOUT
+    return max(_REDUCE_MIN_BUDGET_SECONDS, cfg.INGEST_STAGE_TIMEOUT_FINALIZE - reserve)
+
 
 def run_finalize(ctx: StageContext) -> dict:
-    """문서 요약·테마·소개글 (+선택적 FLUX 표지) → library_catalog UPDATE + 아티팩트 정리."""
+    """문서 요약·테마·소개글 (+선택적 FLUX 표지) → library_catalog UPDATE + 아티팩트 정리.
+
+    계층 요약 실행 기록(reduce_levels·reduce_groups·reduce_fallback)을 반환 meta 에 남긴다.
+    """
     from sqlalchemy.orm.attributes import flag_modified
     from services.ingestion.summarizer import (
+        ReduceStats,
+        reduce_section_summaries,
         summarize_book_from_sections,
         generate_book_introduction,
         generate_book_plot,
@@ -719,45 +971,89 @@ def run_finalize(ctx: StageContext) -> dict:
     finally:
         db.close()
 
+    # 표지 생성 여부 — skip_cover=true 이거나 논문이면 생략한다(썸네일 폴백 사용).
+    # 논문은 표지를 만들지 않는다(사용자 결정 2026-10-01): 잡 params 에 skip_cover 가 빠져도
+    # 논문마다 표지 프롬프트 LLM(+FLUX)을 부르지 않도록 doc_type 으로도 막는다.
+    # 계층 요약 시간 예산이 표지 몫을 남겨 둘지 가르는 데도 쓰므로 먼저 정한다.
+    make_cover = not ctx.params.get("skip_cover") and doc_type != "paper"
+
+    reduce_stats = ReduceStats()
+
+    async def _generate_texts() -> dict:
+        # 계층 요약 입력을 한 번 만들어 넷이 같이 쓴다. 시간 예산 안에 못 끝내거나 실패하면 None — 각 생성
+        # 함수가 지금처럼 _combine_sections(균등 샘플링)로 합친다. 어느 쪽이든 마무리는 이어서 끝난다.
+        final_timeouts = [cfg.SUMMARIZER_BOOK_TIMEOUT, cfg.SUMMARIZER_INTRO_TIMEOUT]
+        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
+            final_timeouts += [cfg.SUMMARIZER_PLOT_TIMEOUT, cfg.SUMMARIZER_READ_EFFECT_TIMEOUT]
+        budget = _reduce_budget_seconds(final_timeouts, make_cover)
+        try:
+            combined = await asyncio.wait_for(
+                reduce_section_summaries(title, author, valid_summaries, doc_type, stats=reduce_stats),
+                timeout=budget,
+            )
+        except asyncio.TimeoutError:
+            log.warning(f"[{book_id}] 계층 요약이 시간 예산 {budget:g}초 안에 끝나지 않아 중단 — "
+                        f"균등 샘플링 입력으로 진행 (단계 {reduce_stats.levels}, 묶음 {reduce_stats.groups})")
+            reduce_stats.fallback = True
+            combined = None
+        except Exception as e:
+            log.warning(f"[{book_id}] 계층 요약 실패 — 균등 샘플링 입력으로 진행: "
+                        f"{str(e) or type(e).__name__}")
+            reduce_stats.fallback = True
+            combined = None
+        calls = {
+            "summary": summarize_book_from_sections(
+                title=title, author=author, section_summaries=valid_summaries,
+                doc_type=doc_type, combined_text=combined,
+            ),
+            "introduction": generate_book_introduction(
+                title=title, author=author, publisher=publisher, pub_date=pub_date,
+                section_summaries=valid_summaries, doc_type=doc_type, combined_text=combined,
+            ),
+        }
+        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
+            calls["plot"] = generate_book_plot(
+                title=title, author=author, section_summaries=valid_summaries,
+                doc_type=doc_type, combined_text=combined,
+            )
+            calls["read_effect"] = generate_read_effect(
+                title=title, author=author, section_summaries=valid_summaries,
+                doc_type=doc_type, combined_text=combined,
+            )
+        # 서로 기다릴 이유가 없는 호출들이라 한 이벤트 루프에서 동시에 보낸다(프로세스당 LLM 동시
+        # 호출은 요약 단계와 같은 LLM_SECTION_CONCURRENCY 까지). 하나가 실패해도 나머지는 그대로
+        # 받는다(return_exceptions) — 실패한 것만 아래에서 경고 후 None.
+        sem = asyncio.Semaphore(max(1, cfg.LLM_SECTION_CONCURRENCY))
+
+        async def _bounded(coro):
+            async with sem:
+                return await coro
+
+        results = await asyncio.gather(*(_bounded(c) for c in calls.values()), return_exceptions=True)
+        return dict(zip(calls, results))
+
+    _FAILURE_LABELS = {
+        "summary": "도서 요약", "introduction": "도서 소개글",
+        "plot": "도서 줄거리", "read_effect": "독후 효과",
+    }
     book_summary = book_themes = book_introduction = book_plot = book_read_effect = None
     if valid_summaries:
-        try:
-            book_summary, themes_list = run_async(summarize_book_from_sections(
-                title=title, author=author,
-                section_summaries=valid_summaries, doc_type=doc_type,
-            ))
+        texts = run_async(_generate_texts())
+        for key, value in texts.items():
+            if isinstance(value, BaseException):
+                log.warning(f"[{book_id}] {_FAILURE_LABELS[key]} 생성 실패: "
+                            f"{str(value) or type(value).__name__}")
+                texts[key] = None
+        if texts["summary"] is not None:
+            book_summary, themes_list = texts["summary"]
             book_themes = ", ".join(themes_list) if themes_list else None
-        except Exception as e:
-            log.warning(f"[{book_id}] 도서 요약 생성 실패: {e}")
+        book_introduction = texts["introduction"]
+        book_plot = texts.get("plot")
+        book_read_effect = texts.get("read_effect")
 
-        try:
-            book_introduction = run_async(generate_book_introduction(
-                title=title, author=author, publisher=publisher,
-                pub_date=pub_date, section_summaries=valid_summaries, doc_type=doc_type,
-            ))
-        except Exception as e:
-            log.warning(f"[{book_id}] 도서 소개글 생성 실패: {e}")
-
-        if doc_type in _GENERATE_EXTRA_DOC_TYPES:
-            try:
-                book_plot = run_async(generate_book_plot(
-                    title=title, author=author,
-                    section_summaries=valid_summaries, doc_type=doc_type,
-                ))
-            except Exception as e:
-                log.warning(f"[{book_id}] 도서 줄거리 생성 실패: {e}")
-
-            try:
-                book_read_effect = run_async(generate_read_effect(
-                    title=title, author=author,
-                    section_summaries=valid_summaries, doc_type=doc_type,
-                ))
-            except Exception as e:
-                log.warning(f"[{book_id}] 독후 효과 생성 실패: {e}")
-
-    # 표지 생성 — 대량 논문 인덱싱에서는 skip_cover=true 로 생략 (썸네일 폴백 사용)
+    # 표지 생성 — make_cover(위에서 정한다)인 문서만
     cover_key = cover_prompt = None
-    if not ctx.params.get("skip_cover"):
+    if make_cover:
         try:
             from services.ingestion.cover_generator import generate_and_store_cover
 
@@ -819,6 +1115,13 @@ def run_finalize(ctx: StageContext) -> dict:
         "read_effect": bool(book_read_effect),
         "introduction": bool(book_introduction),
         "cover": bool(cover_key),
+        # 계층 요약 실행 기록 — 카나리에서 섹션이 많은 문서가 계층 요약을 탔는지 meta 로 센다. 섹션 요약이 없어
+        # 계층 요약을 안 불러도 0·0·False 로 늘 싣는다(재처리 때 이전 실행의 값이 남지 않게).
+        # reduce_levels: 시작한 중간 요약 단계 수(0 = 상한 이하라 합치기만), reduce_groups: 묶음 수(단계 합),
+        # reduce_fallback: 실패·시간 예산 초과로 균등 샘플링 입력을 썼는가
+        "reduce_levels": reduce_stats.levels,
+        "reduce_groups": reduce_stats.groups,
+        "reduce_fallback": reduce_stats.fallback,
     }
 
 

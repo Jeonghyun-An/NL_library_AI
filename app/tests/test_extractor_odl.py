@@ -1,0 +1,553 @@
+"""extract_text_opendataloader — 쪽수 비례 타임아웃 → fitz 재저장본 재시도 → fitz 텍스트 폴백, 이미지 끄기.
+
+ODL 변환(_odl_convert)은 목으로 바꾸고 산출물(markdown·json)을 직접 써 넣는다. 자식 프로세스를
+끄는 동작만 실제 하위 프로세스로 확인한다.
+"""
+import asyncio
+import json
+import logging
+import os
+import signal
+import subprocess
+import sys
+import time
+import types
+from pathlib import Path
+
+import fitz
+import pytest
+
+from services.ingestion import extractor
+
+SEP = "\n<<<ODL_PAGE_BREAK_%page-number%>>>\n"
+
+
+@pytest.fixture(autouse=True)
+def _odl_package(monkeypatch):
+    """설치 확인용 import 만 통과시킨다 — 변환은 _odl_convert 목이 하므로 패키지가 없어도 된다."""
+    monkeypatch.setitem(sys.modules, "opendataloader_pdf", types.ModuleType("opendataloader_pdf"))
+
+
+def _pdf(texts: list[str]) -> bytes:
+    doc = fitz.open()
+    for text in texts:
+        page = doc.new_page(width=300, height=400)
+        if text:
+            page.insert_text((36, 60), text, fontsize=9)
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def _write_outputs(out_dir: str, pages: dict[int, str], json_kids: list[dict] | None = None) -> None:
+    md = "".join(SEP.replace("%page-number%", str(n)) + text for n, text in sorted(pages.items()))
+    Path(out_dir, "doc.md").write_text(md, encoding="utf-8")
+    Path(out_dir, "doc.json").write_text(json.dumps({"kids": json_kids or []}), encoding="utf-8")
+
+
+def _patch_convert(monkeypatch, behaviours: list) -> list[dict]:
+    """behaviours[i] — i 번째 변환에서 던질 예외, 또는 써 넣을 {쪽: 텍스트} / ({쪽: 텍스트}, json kids)."""
+    calls: list[dict] = []
+
+    async def fake_convert(kwargs, timeout):
+        calls.append({**kwargs, "timeout": timeout, "input_exists": os.path.exists(kwargs["input_path"])})
+        b = behaviours[len(calls) - 1]
+        if isinstance(b, BaseException):
+            raise b
+        pages, kids = b if isinstance(b, tuple) else (b, None)
+        _write_outputs(kwargs["output_dir"], pages, kids)
+
+    monkeypatch.setattr(extractor, "_odl_convert", fake_convert)
+    return calls
+
+
+def _run(pdf: bytes, **kwargs):
+    return asyncio.run(extractor.extract_text_opendataloader(None, "T_ODL", file_bytes=pdf, **kwargs))
+
+
+def test_convert_writes_markdown_and_json_with_page_scaled_timeout(monkeypatch):
+    calls = _patch_convert(monkeypatch, [{1: "첫 쪽 본문", 2: "둘째 쪽 본문"}])
+    result = _run(_pdf(["a"] * 30))
+    assert calls[0]["format"] == ["markdown", "json"]
+    assert calls[0]["timeout"] == 45.0  # max(10, 30 × 1.5)
+    assert [(p.page_num, p.text, p.method) for p in result.pages] == [
+        (0, "첫 쪽 본문", "opendataloader"), (1, "둘째 쪽 본문", "opendataloader")]
+    assert result.errors == []
+
+
+def test_short_document_gets_base_timeout(monkeypatch):
+    calls = _patch_convert(monkeypatch, [{1: "본문"}])
+    _run(_pdf(["a"] * 4))
+    assert calls[0]["timeout"] == 10.0  # max(10, 4 × 1.5)
+
+
+def test_timeout_retries_once_with_fitz_resaved_pdf(monkeypatch):
+    calls = _patch_convert(monkeypatch, [TimeoutError(), {1: "재저장본 본문"}])
+    result = _run(_pdf(["a", "b"]))
+    assert len(calls) == 2
+    assert calls[1]["input_path"] != calls[0]["input_path"]
+    assert calls[1]["input_exists"]
+    assert not os.path.exists(calls[1]["input_path"])  # 재저장 임시 파일은 지운다
+    assert [p.text for p in result.pages] == ["재저장본 본문"]
+    assert any("ODL 실패(원본)" in e for e in result.errors)
+
+
+def test_value_error_on_the_original_also_retries_with_resaved_pdf(monkeypatch):
+    """원본 변환의 ValueError(자식 실행 인자의 NUL 문자 등)도 재저장본 재시도·fitz 폴백으로 간다 — 재저장 갈래와
+    같은 예외를 받는다. 바깥 except 로 새면 폴백 없이 빈 결과가 된다."""
+    calls = _patch_convert(monkeypatch, [ValueError("embedded null byte"), {1: "재저장본 본문"}])
+    result = _run(_pdf(["a", "b"]))
+    assert len(calls) == 2
+    assert [p.text for p in result.pages] == ["재저장본 본문"]
+    assert any("ODL 실패(원본): embedded null byte" in e for e in result.errors)
+
+
+def test_both_attempts_fail_falls_back_to_fitz_text(monkeypatch):
+    _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)"), TimeoutError()])
+    result = _run(_pdf(["First page body", "", "Third page body"]))
+    assert [(p.page_num, p.text, p.method) for p in result.pages] == [
+        (0, "First page body", "fitz"), (2, "Third page body", "fitz")]
+    assert "ODL 실패 — fitz 텍스트로 대체" in result.errors
+
+
+def test_unopenable_file_gets_no_resave_or_fitz_fallback(monkeypatch):
+    calls = _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)")])
+    result = _run(bytes(range(256)) * 40)
+    assert len(calls) == 1
+    assert calls[0]["timeout"] == 10.0  # 쪽수를 모르니 기본값
+    assert result.pages == []
+    assert any("ODL 실패(원본)" in e for e in result.errors)
+
+
+def test_resave_error_of_any_type_still_falls_back_to_fitz_text(monkeypatch):
+    """손상 PDF 의 fitz 재저장은 mupdf FzErrorBase 로 실패한다(PyMuPDF 1.24·1.28 — RuntimeError·ValueError·
+    OSError 가 아니다). 그래도 fitz 텍스트 폴백으로 간다."""
+    calls = _patch_convert(monkeypatch, [RuntimeError("ODL 변환 실패(exit 1)")])
+    pdf = _pdf(["First page body"])  # tobytes 도 save 를 부르므로 save 를 바꾸기 전에 만든다
+
+    def broken_save(self, *args, **kwargs):
+        raise fitz.mupdf.FzErrorArgument("not a dict (null)")
+
+    monkeypatch.setattr(fitz.Document, "save", broken_save)
+    result = _run(pdf)
+    assert len(calls) == 1
+    assert [(p.page_num, p.text, p.method) for p in result.pages] == [(0, "First page body", "fitz")]
+    assert any("ODL 실패(fitz 재저장본)" in e for e in result.errors)
+
+
+@pytest.mark.parametrize("make_error", [
+    lambda: RuntimeError("too many nested graphics states"),
+    lambda: fitz.mupdf.FzErrorArgument("not a dict (null)"),   # mupdf 오류는 RuntimeError 가 아니다
+], ids=["runtime_error", "mupdf_error"])
+def test_fitz_fallback_skips_only_the_page_whose_text_fails(monkeypatch, make_error):
+    """폴백에서 쪽 하나의 get_text 실패('too many nested graphics states' 등)가 다른 쪽 텍스트까지 버리지 않는다 —
+    그 쪽만 빠져 extract_text 가 'ODL 누락'으로 OCR 한다."""
+    _patch_convert(monkeypatch, [TimeoutError(), TimeoutError()])
+    real_get_text = fitz.Page.get_text
+
+    def flaky_get_text(self, *args, **kwargs):
+        if self.number == 1:
+            raise make_error()
+        return real_get_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(fitz.Page, "get_text", flaky_get_text)
+    result = _run(_pdf(["First page body", "Second page body", "Third page body"]))
+    assert [(p.page_num, p.method) for p in result.pages] == [(0, "fitz"), (2, "fitz")]
+    assert "ODL 실패 — fitz 텍스트로 대체" in result.errors
+
+
+# ── 폴백·변환 시간 기록 — 아이템 meta 에서 어느 문서가 ODL 폴백을 탔는지 센다 ─────────────
+
+
+@pytest.fixture
+def odl_clock(monkeypatch):
+    """extractor 의 시계를 가짜로 바꾼다 — 변환 대역이 쓴 시간만큼만 흘러 odl_seconds 를 정확히 본다.
+    쪽수 비례 상한은 기본값에 기대지 않게 5 + 쪽당 0.5 초로 둔다."""
+    clock = types.SimpleNamespace(now=100.0)
+    monkeypatch.setattr(extractor, "time", types.SimpleNamespace(monotonic=lambda: clock.now))
+    monkeypatch.setattr(extractor.cfg, "ODL_TIMEOUT_BASE_SECONDS", 5.0)
+    monkeypatch.setattr(extractor.cfg, "ODL_TIMEOUT_PER_PAGE_SECONDS", 0.5)
+    return clock
+
+
+def _patch_timed_convert(monkeypatch, clock, steps: list[tuple[float, object]]) -> list[dict]:
+    """steps[i] = (걸린 초, _patch_convert 의 behaviour) — 가짜 시계를 그만큼 흘린 뒤 behaviour 대로 한다."""
+    calls = _patch_convert(monkeypatch, [behaviour for _, behaviour in steps])
+    convert = extractor._odl_convert
+
+    async def timed_convert(kwargs, timeout):
+        clock.now += steps[len(calls)][0]
+        await convert(kwargs, timeout)
+
+    monkeypatch.setattr(extractor, "_odl_convert", timed_convert)
+    return calls
+
+
+def _odl_time_logs(caplog) -> list[str]:
+    return [r.getMessage() for r in caplog.records
+            if r.levelno == logging.INFO and "초 / 상한 " in r.getMessage()]
+
+
+@pytest.mark.parametrize("steps, fallback, method", [
+    ([(12.5, {1: "본문"})], None, "opendataloader"),
+    ([(15.0, TimeoutError()), (3.0, {1: "재저장본 본문"})], "resaved", "opendataloader"),
+    ([(4.0, RuntimeError("ODL 변환 실패(exit 1)")), (15.0, TimeoutError())], "fitz", "fitz"),
+], ids=["original", "resaved", "fitz"])
+def test_odl_fallback_and_time_are_recorded(monkeypatch, odl_clock, caplog, steps, fallback, method):
+    _patch_timed_convert(monkeypatch, odl_clock, steps)
+    caplog.set_level(logging.INFO, logger=extractor.log.name)
+
+    result = _run(_pdf(["First page body"] * 30))         # 상한 max(5, 30 × 0.5) = 15초
+
+    assert result.odl_fallback == fallback
+    assert result.odl_seconds == sum(seconds for seconds, _ in steps)
+    assert {p.method for p in result.pages} == {method}
+    # 변환 시도마다 한 줄 — 실패한 시도도 남긴다
+    assert _odl_time_logs(caplog) == [f"[T_ODL] ODL {seconds:.1f}초 / 상한 15초" for seconds, _ in steps]
+
+
+def test_failed_resave_still_reports_fitz_fallback(monkeypatch, odl_clock):
+    _patch_timed_convert(monkeypatch, odl_clock, [(2.0, RuntimeError("ODL 변환 실패(exit 1)"))])
+    pdf = _pdf(["First page body"])  # tobytes 도 save 를 부르므로 save 를 바꾸기 전에 만든다
+
+    def broken_save(self, *args, **kwargs):
+        raise fitz.mupdf.FzErrorArgument("not a dict (null)")
+
+    monkeypatch.setattr(fitz.Document, "save", broken_save)
+    result = _run(pdf)
+
+    assert (result.odl_fallback, result.odl_seconds) == ("fitz", 2.0)
+
+
+def test_unopenable_file_has_no_fallback_but_records_time(monkeypatch, odl_clock, caplog):
+    """fitz 로도 안 열리는 파일은 재저장·fitz 폴백이 없다 — 폴백 None, 시도 한 번의 시간만 남는다."""
+    _patch_timed_convert(monkeypatch, odl_clock, [(1.5, RuntimeError("ODL 변환 실패(exit 1)"))])
+    caplog.set_level(logging.INFO, logger=extractor.log.name)
+
+    result = _run(bytes(range(256)) * 40)
+
+    assert (result.pages, result.odl_fallback, result.odl_seconds) == ([], None, 1.5)
+    assert _odl_time_logs(caplog) == ["[T_ODL] ODL 1.5초 / 상한 5초"]
+
+
+# ── 추출 데드라인 — 변환 상한을 남은 시간까지로 줄인다(강제 재추출까지 합쳐도 stale 판정 안) ──────
+
+
+def test_odl_attempt_is_capped_by_the_time_budget(monkeypatch, odl_clock):
+    calls = _patch_timed_convert(monkeypatch, odl_clock, [(3.0, {1: "본문"})])
+    _run(_pdf(["a"] * 30), time_budget=12.0)               # 쪽수 비례 상한 15초 > 남은 12초
+    assert calls[0]["timeout"] == 12.0
+
+
+def test_retry_gets_only_the_time_left_of_the_budget(monkeypatch, odl_clock, caplog):
+    calls = _patch_timed_convert(monkeypatch, odl_clock, [(14.0, TimeoutError()), (1.0, {1: "재저장본 본문"})])
+    caplog.set_level(logging.INFO, logger=extractor.log.name)
+
+    result = _run(_pdf(["a"] * 30), time_budget=20.0)
+
+    assert [c["timeout"] for c in calls] == [15.0, 6.0]     # 원본은 쪽수 비례 상한, 재저장본은 남은 20 − 14 초
+    assert result.odl_fallback == "resaved"
+    assert _odl_time_logs(caplog) == ["[T_ODL] ODL 14.0초 / 상한 15초", "[T_ODL] ODL 1.0초 / 상한 6초"]
+    assert any(e == "ODL 실패(원본): 15초 초과" for e in result.errors)
+
+
+def test_no_attempt_when_the_budget_is_used_up(monkeypatch, odl_clock):
+    """남은 시간이 변환 한 번을 띄울 만큼도 없으면 재저장(동기 save — 큰 문서는 오래 걸린다)도 재저장본 변환도
+    하지 않고 바로 fitz 텍스트로 간다."""
+    calls = _patch_timed_convert(monkeypatch, odl_clock, [(14.5, TimeoutError())])
+    pdf = _pdf(["First page body"] * 30)  # tobytes 도 save 를 부르므로 save 를 바꾸기 전에 만든다
+    saves = []
+    monkeypatch.setattr(fitz.Document, "save", lambda self, *a, **kw: saves.append(a))
+
+    result = _run(pdf, time_budget=15.0)
+
+    assert len(calls) == 1 and saves == []
+    assert result.odl_fallback == "fitz"
+    assert any("ODL 실패(fitz 재저장본): 추출 데드라인까지 0초 — 변환하지 않음" in e for e in result.errors)
+
+
+def test_extract_text_gives_odl_the_rest_of_the_extract_deadline(monkeypatch, odl_clock):
+    body = "First page body has enough letters to keep."    # 본문 충분 — OCR 로 가는 쪽이 없다
+    budgets: list[float | None] = []
+
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
+        budgets.append(time_budget)
+        res = extractor.ExtractionResult(book_id=book_id, total_pages=1)
+        res.pages = [extractor.PageResult(0, body, "opendataloader", 0.95)]
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    asyncio.run(extractor.extract_text(None, "T_ODL", file_bytes=_pdf([body]), deadline_s=123.0))
+
+    assert budgets == [123.0]                                # 가짜 시계가 멈춰 있어 데드라인 전부
+
+
+@pytest.mark.parametrize("pdf", [_pdf(["First page body has enough letters to keep."] * 2), bytes(range(256)) * 40],
+                         ids=["normal", "fitz_cannot_open"])
+def test_extract_text_carries_odl_fallback_and_time(monkeypatch, pdf):
+    """extract_text 는 1티어 결과의 폴백·변환 시간을 그대로 싣는다 — fitz 로 안 열려 ODL 결과만 돌려줄 때도."""
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
+        res = extractor.ExtractionResult(book_id=book_id, total_pages=2)
+        res.pages = [extractor.PageResult(n, "First page body has enough letters to keep.", "fitz", 0.5)
+                     for n in range(2)]
+        res.odl_fallback, res.odl_seconds = "fitz", 31.25
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    result = asyncio.run(extractor.extract_text(None, "T_ODL", file_bytes=pdf))
+
+    assert (result.odl_fallback, result.odl_seconds) == ("fitz", 31.25)
+    assert len(result.pages) == 2
+
+
+def test_odl_pages_are_adopted_even_when_fitz_cannot_open_the_file(monkeypatch):
+    """fitz 로 열리지 않아 ODL 결과만 돌려줄 때도 다른 채택 경로처럼 _adopt_odl 을 거친다 — [그림] 표식이 본문에 남지 않는다."""
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
+        res = extractor.ExtractionResult(book_id=book_id, total_pages=1)
+        res.pages = [extractor.PageResult(0, "[그림]\n\n본문 첫 문단이다. [그림] 이어지는 문장.", "opendataloader", 0.95)]
+        return res
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    result = asyncio.run(extractor.extract_text(None, "T_ODL", file_bytes=bytes(range(256)) * 40))
+
+    assert any(e.startswith("파일 열기 실패") for e in result.errors)
+    assert [p.text for p in result.pages] == ["본문 첫 문단이다. 이어지는 문장."]
+
+
+def test_nonzero_exit_raises_runtime_error(monkeypatch):
+    monkeypatch.setattr(extractor, "_ODL_CHILD", "import sys; sys.stderr.write('boom'); sys.exit(3)")
+    with pytest.raises(RuntimeError, match="exit 3"):
+        asyncio.run(extractor._odl_convert({}, 30))
+
+
+def test_failure_message_keeps_the_cause_and_the_last_line(monkeypatch):
+    """opendataloader 의 run_jar 는 실패하면 java 출력(Output:·Stderr:·Stdout: 구획)을 먼저 찍고 끝에
+    CalledProcessError 추적(맨 끝 줄에 CLI 인자 전부)을 찍는다 — 끝 300자만 남기면 원인 줄이 잘린다."""
+    script = r'''
+import sys
+w = sys.stderr.write
+w("Error running opendataloader-pdf CLI.\nReturn code: 2\n")
+w("Stdout: " + "".join("INFO processing element %d of the document tree\n" % i for i in range(200)))
+w("SEVERE: Unsupported image output mode 'bogus'\n")
+w("".join("INFO cleanup step %d\n" % i for i in range(200)))
+w('Traceback (most recent call last):\n  File "<string>", line 3, in <module>\n')
+args = ", ".join("'--option-%d'" % i for i in range(80))
+w("subprocess.CalledProcessError: Command '['java', '-jar', 'opendataloader-pdf-cli.jar', " + args
+  + "]' returned non-zero exit status 2.\n")
+sys.exit(1)
+'''
+    monkeypatch.setattr(extractor, "_ODL_CHILD", script)
+
+    with pytest.raises(RuntimeError) as exc:
+        asyncio.run(extractor._odl_convert({}, 30))
+
+    message = str(exc.value)
+    assert message.startswith("ODL 변환 실패(exit 1): ")
+    assert "Unsupported image output mode 'bogus'" in message
+    assert message.endswith("returned non-zero exit status 2.")
+    assert "INFO" not in message and len(message) <= 650
+
+
+def _sleeping_grandchild_script(pid_file: Path) -> str:
+    """잠자는 손자(java 자리)를 띄워 pid 를 남기고 자기도 잠드는 자식 — pid 는 다 쓴 뒤 이름을 바꿔 반쯤 쓴 파일이 없다."""
+    tmp = str(pid_file) + ".tmp"
+    return (
+        "import os, subprocess, sys, time\n"
+        "p = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
+        f"open({tmp!r}, 'w').write(str(p.pid))\n"
+        f"os.replace({tmp!r}, {str(pid_file)!r})\n"
+        "time.sleep(20)\n"
+    )
+
+
+def _wait_for_pid_file(pid_file: Path, seconds: float = 5.0) -> int:
+    for _ in range(int(seconds / 0.05)):
+        if pid_file.exists():
+            return int(pid_file.read_text())
+        time.sleep(0.05)
+    pytest.fail(f"{seconds:g}초 안에 손자 pid 를 받지 못했다")
+
+
+def _gone(pid: int) -> bool:
+    """프로세스가 끝났는가 — 없거나, 회수 전 좀비(Z)이거나, 확인하는 사이 /proc 에서 사라졌다(리눅스)."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().rsplit(")", 1)[1].split()[0] == "Z"
+    except FileNotFoundError:
+        return True
+
+
+def test_timeout_kills_child_process_group(monkeypatch, tmp_path):
+    """시간을 넘기면 자식(파이썬)과 그 자식(java 자리)을 함께 끈다. 손자 확인은 killpg 가 있는 리눅스에서만."""
+    pid_file = tmp_path / "grandchild.pid"
+    monkeypatch.setattr(extractor, "_ODL_CHILD", _sleeping_grandchild_script(pid_file))
+    t0 = time.monotonic()
+    with pytest.raises(TimeoutError):
+        asyncio.run(extractor._odl_convert({}, 3.0))
+    assert time.monotonic() - t0 < 10
+    if sys.platform == "win32":
+        return
+    grandchild = _wait_for_pid_file(pid_file)
+    for _ in range(50):
+        if _gone(grandchild):
+            break
+        time.sleep(0.1)
+    else:
+        pytest.fail("timeout 뒤에도 손자 프로세스가 살아 있다")
+
+
+def test_child_gets_the_timeout_as_its_second_argument(monkeypatch, tmp_path):
+    seen = tmp_path / "argv.json"
+    monkeypatch.setattr(extractor, "_ODL_CHILD", f"import json, sys; open({str(seen)!r}, 'w').write(json.dumps(sys.argv[1:]))")
+    asyncio.run(extractor._odl_convert({"input_path": "x.pdf"}, 12.5))
+    assert json.loads(seen.read_text()) == [json.dumps({"input_path": "x.pdf"}), "12.5"]
+
+
+def _child_java_tool_options(monkeypatch, tmp_path) -> str | None:
+    seen = tmp_path / "jto.json"
+    monkeypatch.setattr(
+        extractor, "_ODL_CHILD",
+        f"import json, os; open({str(seen)!r}, 'w').write(json.dumps(os.environ.get('JAVA_TOOL_OPTIONS')))",
+    )
+    asyncio.run(extractor._odl_convert({}, 30))
+    return json.loads(seen.read_text())
+
+
+def test_child_gets_the_heap_cap_as_java_tool_options(monkeypatch, tmp_path):
+    """ODL 자식(과 그 java)만 -Xmx 를 받는다 — 상한이 없으면 JVM 이 메모리의 1/4 까지 써 병리 문서 하나가 10GB 를
+    넘겼고, 추출 4칸이 겹치면 서버 메모리를 다 쓸 수 있다. 워커 자신의 환경은 바꾸지 않는다."""
+    monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "3g")
+    monkeypatch.delenv("JAVA_TOOL_OPTIONS", raising=False)
+    assert _child_java_tool_options(monkeypatch, tmp_path) == "-Xmx3g"
+    assert "JAVA_TOOL_OPTIONS" not in os.environ
+
+
+def test_heap_cap_keeps_java_tool_options_already_set(monkeypatch, tmp_path):
+    monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "1536m")
+    monkeypatch.setenv("JAVA_TOOL_OPTIONS", "-Dfile.encoding=UTF-8")
+    assert _child_java_tool_options(monkeypatch, tmp_path) == "-Dfile.encoding=UTF-8 -Xmx1536m"
+    assert os.environ["JAVA_TOOL_OPTIONS"] == "-Dfile.encoding=UTF-8"
+
+
+def test_empty_heap_cap_leaves_java_options_alone(monkeypatch, tmp_path):
+    monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "")
+    monkeypatch.delenv("JAVA_TOOL_OPTIONS", raising=False)
+    assert _child_java_tool_options(monkeypatch, tmp_path) is None
+    monkeypatch.setenv("JAVA_TOOL_OPTIONS", "-Dfile.encoding=UTF-8")
+    assert _child_java_tool_options(monkeypatch, tmp_path) == "-Dfile.encoding=UTF-8"
+
+
+@pytest.mark.skipif(not hasattr(signal, "alarm"), reason="signal.alarm·killpg 가 없다(Windows 개발 PC)")
+def test_child_kills_its_own_group_when_nobody_else_does(tmp_path):
+    """부모(Celery 풀 자식)가 죽으면(revoke(terminate=True) 등) 시간을 넘겨도 끌 사람이 없다 — ODL 자식은 스스로
+    int(timeout) + 5 초 뒤 자기 프로세스 그룹을 끈다. 진짜 _ODL_CHILD 를 가짜 opendataloader_pdf(잠자는 손자를
+    띄우고 잠든다)로 직접 돌려 자식과 손자가 모두 끝나는지 본다."""
+    pid_file = tmp_path / "grandchild.pid"
+    fake_pkg = tmp_path / "fake_odl"
+    fake_pkg.mkdir()
+    body = "\n".join("    " + line for line in _sleeping_grandchild_script(pid_file).splitlines())
+    (fake_pkg / "opendataloader_pdf.py").write_text(f"def convert(**kwargs):\n{body}\n", encoding="utf-8")
+
+    t0 = time.monotonic()
+    child = subprocess.Popen(
+        [sys.executable, "-c", extractor._ODL_CHILD, "{}", "1"],   # 부모가 하듯 새 세션 — killpg(0) 이 자기 그룹만 끈다
+        env={**os.environ, "PYTHONPATH": str(fake_pkg)}, start_new_session=True,
+    )
+    try:
+        grandchild = _wait_for_pid_file(pid_file)
+        assert child.wait(timeout=20) == -signal.SIGKILL
+        assert 5 <= time.monotonic() - t0 < 20                     # int(1) + 5 = 6초 뒤
+        for _ in range(50):
+            if _gone(grandchild):
+                break
+            time.sleep(0.1)
+        else:
+            pytest.fail("자식이 스스로 끝난 뒤에도 손자 프로세스가 살아 있다")
+    finally:
+        if child.poll() is None:
+            os.killpg(child.pid, signal.SIGKILL)
+
+
+# ── 이미지 끄기(ODL_IMAGE_OUTPUT) ──────────────────────────────────
+
+
+@pytest.mark.parametrize("mode", ["off", "embedded"])
+def test_convert_uses_image_output_setting(monkeypatch, mode):
+    calls = _patch_convert(monkeypatch, [{1: "본문"}])
+    monkeypatch.setattr(extractor.cfg, "ODL_IMAGE_OUTPUT", mode)
+    _run(_pdf(["a"]))
+    assert calls[0]["image_output"] == mode
+
+
+def test_image_only_page_stays_as_empty_odl_page(monkeypatch):
+    """image_output=off 면 그림만 있는 쪽이 markdown 에서 빠진다 — json 의 그림 요소로 빈 쪽을 남긴다."""
+    kids = [{"type": "paragraph", "page number": 1, "content": "첫 쪽"},
+            {"type": "image", "page number": 2},
+            {"type": "paragraph", "page number": 3, "content": "셋째 쪽"}]
+    _patch_convert(monkeypatch, [({1: "첫 쪽", 3: "셋째 쪽"}, kids)])
+    result = _run(_pdf(["a", "b", "c"]))
+    assert [(p.page_num, p.text) for p in result.pages] == [(0, "첫 쪽"), (1, ""), (2, "셋째 쪽")]
+
+
+# ── markdown 의 HTML 이스케이프 되돌리기(opendataloader-pdf 2.5.1+ #637) ──────
+
+
+def test_odl_markdown_entities_are_restored(monkeypatch):
+    """2.5.9 의 markdown 은 본문의 & < > 를 &amp; &lt; &gt; 로 내보낸다 — 색인·임베딩·요약이 원래 글자를 보게
+    되돌린다(round07 을 검증한 2.5.0 과 같은 글자)."""
+    _patch_convert(monkeypatch, [{1: "&lt;표 1&gt; 의 A &amp; B 비교", 2: "p &lt; .05"}])
+    result = _run(_pdf(["a", "b"]))
+    assert [p.text for p in result.pages] == ["<표 1> 의 A & B 비교", "p < .05"]
+
+
+def test_restoring_is_the_exact_inverse_of_odl_escaping(monkeypatch):
+    # 원문에 글자 그대로 있던 '&lt;' 는 ODL 이 '&amp;lt;' 로 내보낸다 — 한 번만 되돌려 원문 '&lt;' 로 남긴다.
+    # ODL 이 만들지 않는 엔티티(&quot; 등)는 건드리지 않는다
+    _patch_convert(monkeypatch, [{1: "원문 표기 &amp;lt;b&amp;gt; 와 &quot;인용&quot;"}])
+    result = _run(_pdf(["a"]))
+    assert result.pages[0].text == "원문 표기 &lt;b&gt; 와 &quot;인용&quot;"
+
+
+def test_header_from_json_is_stripped_once_entities_are_restored(monkeypatch):
+    """json 은 이스케이프하지 않는다 — markdown 을 되돌려야 json 의 머리말 문자열과 줄이 맞아 머리말이 지워진다."""
+    kids = [{"type": "header", "page number": 1, "content": "R&D <정책> 연구"},
+            {"type": "paragraph", "page number": 1, "content": "본문 첫 줄"}]
+    _patch_convert(monkeypatch, [({1: "R&amp;D &lt;정책&gt; 연구\n본문 첫 줄"}, kids)])
+    result = _run(_pdf(["a"]))
+    assert result.pages[0].text == "본문 첫 줄"
+
+
+def test_entities_are_restored_after_splitting_pages(monkeypatch):
+    # 본문에 이스케이프된 채 있는 구분자 모양 글자는 쪽을 나누지 않는다 — 나눈 뒤에 되돌린다
+    _patch_convert(monkeypatch, [{1: "앞\n&lt;&lt;&lt;ODL_PAGE_BREAK_9&gt;&gt;&gt;\n뒤"}])
+    result = _run(_pdf(["a"]))
+    assert [p.page_num for p in result.pages] == [0]
+    assert result.pages[0].text == "앞\n<<<ODL_PAGE_BREAK_9>>>\n뒤"
+
+
+def test_text_before_the_first_separator_is_restored_too(monkeypatch):
+    """첫 구분자 앞 글(parts[0], 1쪽으로 본다)도 같은 되돌리기를 탄다."""
+    async def fake_convert(kwargs, timeout):
+        md = "첫 쪽 A &amp; B" + SEP.replace("%page-number%", "2") + "둘째 &lt;쪽&gt;"
+        Path(kwargs["output_dir"], "doc.md").write_text(md, encoding="utf-8")
+        Path(kwargs["output_dir"], "doc.json").write_text(json.dumps({"kids": []}), encoding="utf-8")
+
+    monkeypatch.setattr(extractor, "_odl_convert", fake_convert)
+    result = _run(_pdf(["a", "b"]))
+    assert [(p.page_num, p.text) for p in result.pages] == [(0, "첫 쪽 A & B"), (1, "둘째 <쪽>")]
+
+
+def test_restoring_assumes_the_pinned_odl_version():
+    """되돌리기는 조건 없이 돈다 — 이스케이프하지 않는 버전(2.5.0 이하)이면 원문에 글자 그대로 있던 '&amp;' 를 잘못
+    푼다. 버전을 바꾸면 markdown 이스케이프(#637, MarkdownGenerator)가 그대로인지 확인하고 이 테스트를 고친다."""
+    requirements = Path(extractor.__file__).resolve().parents[2] / "requirements.txt"
+    pins = [line.split("#")[0].strip() for line in requirements.read_text(encoding="utf-8").splitlines()
+            if line.strip().lower().startswith("opendataloader-pdf")]
+    assert pins == ["opendataloader-pdf==2.5.9"]

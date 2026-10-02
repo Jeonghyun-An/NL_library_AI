@@ -471,8 +471,9 @@ nl-lib/
 | flux | landsoftdocker/nl-lib-flux:latest | 18090 | FLUX.1-dev 표지 생성 |
 | fastapi | landsoftdocker/nl-lib-fastapi:latest | 18002 | API |
 | celery-worker | landsoftdocker/nl-lib-fastapi:latest | - | 단건 수집 워커 `-Q ingestion,default` (concurrency=2, GPU) |
-| celery-cpu | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 추출 `-Q q_cpu,q_control` (concurrency=4) |
-| celery-llm | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 요약·마무리 `-Q q_llm` (concurrency=4, GPU·모델 마운트 없음 — 외부 vLLM HTTP). 딥리서치도 `RESEARCH_QUEUE` 기본값(`q_llm`)이면 여기서 돈다 — 이때 실행은 한 번에 한 잡(approve·retry 429)이고, 적재가 running 인 동안에는 운영 딥리서치를 돌리지 않는다(`docs/ops/bulk_ingest_runbook.md` §8) |
+| celery-cpu | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 추출 `-Q q_cpu` (concurrency=4 — 스캔본은 문서마다 OCR 을 `VLM_PAGE_CONCURRENCY`(2)건씩 동시에 보낸다) |
+| celery-control | landsoftdocker/nl-lib-fastapi:latest | - | 제어 큐 `-Q q_control` (concurrency=1, GPU 없음) — 배치 디스패처 30s·임시파일 정리 1h·딥리서치 정체 회수 10분. 추출 워커와 떼어 두어 디스패처가 한 번에 하나만 돈다 |
+| celery-llm | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 요약(섹션 요약·논문 보강)·마무리 `-Q q_llm` (concurrency=4, GPU·모델 마운트 없음 — 외부 vLLM HTTP). 딥리서치도 `RESEARCH_QUEUE` 기본값(`q_llm`)이면 여기서 돈다 — 이때 실행은 한 번에 한 잡(approve·retry 429)이고, 적재가 running 인 동안에는 운영 딥리서치를 돌리지 않는다(`docs/ops/bulk_ingest_runbook.md` §8) |
 | celery-research | landsoftdocker/nl-lib-fastapi:latest | - | 딥리서치 실행 전용 `-Q q_research` (concurrency=1 — 실행은 한 번에 한 잡, GPU·모델 캐시). fastapi 의 `RESEARCH_QUEUE: q_research` 와 함께 올린다 — 인덱싱이 끝난 뒤, 또는 적재를 pause 해 in-flight 를 비운 뒤 스택 업데이트로 전환(`docs/ops/bulk_ingest_runbook.md` §8, `docs/ops/recurring-gotchas.md` 16번) |
 | celery-research-plan | landsoftdocker/nl-lib-fastapi:latest | - | 딥리서치 계획 전용 `-Q q_research_plan` (concurrency=2, GPU 없음). 계획이 실행 슬롯 뒤에 서지 않게 나눴다. fastapi 의 `RESEARCH_PLAN_QUEUE` 와 함께 올린다 |
 | celery-embed | landsoftdocker/nl-lib-fastapi:latest | - | 배치 잡 청킹·임베딩·Milvus `-Q q_embed` (concurrency=1, GPU) |
@@ -680,7 +681,7 @@ docker exec nl-lib-postgres psql -U admin -d nl_lib -c "
 - **round04b 프론트** — 슬래시 진입·계획 승인·진행 패널·보고서 렌더·인용칩 호버·재시도 버튼. 착수 전에 백엔드 보강 여부를 정한다: SSE 가 단계 전이·계획 완료·하위질문 실패를 중계하지 않음(지금은 GET 폴링), 진행 카운터(검토 논문·채택 근거) 데이터 없음, 자기점검 강조 장면(다음 검색어·중간 판정) 데이터 없음, 잡 목록 API 없음.
 - **전용 워커 전환 — 완료(2026-09-23 18:23 KST)** — `celery-research`(`q_research`)·`celery-research-plan`(`q_research_plan`)이 운영에서 돈다. 적재 pause·in-flight 0 안에서 스택 업데이트로 fastapi 의 `RESEARCH_QUEUE`·`RESEARCH_PLAN_QUEUE` 와 함께 올렸고, 워밍업 잡이 30초에 끝났다(리랭커 `cuda`). 상세: `docs/roadmap/round04a-완료노트.md` §2-1.
 - **전환 뒤에는 동시 실행 상한 없음(전환 전 규칙은 기록으로 남김)** — 전환 전(`q_llm`)에는 실행이 적재 요약·마무리 슬롯을 쥐어 적재 아이템을 stale 복구로 밀 수 있어(논문 본문 청크가 초록으로 덮이는 중복 체인, `docs/ops/recurring-gotchas.md` 16번) approve·retry 가 실행 슬롯 1개를 넘으면 429 다. 그래도 적재가 running 인 동안에는 운영 딥리서치를 돌리지 않는다 — pause 하고 in-flight 0 을 본 뒤 돌린다. 전환 뒤에는 실행이 직렬이라 두 번째 잡이 `approved` 로 최대 25분 기다린다. 상한·429·큐 순번 표시는 화면과 함께 정한다.
-- **[적재] 복구 경로 이중 실행** — 적재 워커를 재생성하면 stale 복구와 브로커 재전달이 둘 다 돌아 논문 본문 청크가 초록 청크로 덮일 수 있다(`docs/ops/recurring-gotchas.md` 16번). 인덱싱이 끝난 뒤 적재 코드에서 고친다 — 그 전까지는 적재를 pause 해 in-flight 를 비운 뒤에만 재생성한다.
+- **[적재] 복구 경로 이중 실행 — round07 에서 고침(배포 대기)** — 적재 워커를 재생성하면 stale 복구와 브로커 재전달이 둘 다 돌아 논문 본문 청크가 초록 청크로 덮일 수 있었다(`docs/ops/recurring-gotchas.md` 16번). round07 이 실행 토큰·체크포인트 확인·stale 판정 분리로 옛 체인을 멈춘다(16번 근본 수정, 배포는 `docs/ops/bulk_ingest_runbook.md` §9). 재생성은 여전히 도는 태스크를 끊으므로 적재를 pause 해 in-flight 를 비운 뒤에만 재생성하는 규칙은 그대로다.
 - **대표 논문 요약의 구조적 인용** — 지금은 절의 논문 5편을 한 호출에 넣고 번호별 요약을 받는다. 논문별 호출 또는 발췌 경계 표시, 오배정 비율 실측.
 - **본문 심층 읽기**(spec 의 `deep_read_top_n`) 미구현 — 근거는 청크 발췌뿐.
 - **탐색 중 시간 초과의 부분 체크포인트**, **재시도 시도 구분(attempt)**, **라우터의 서비스·응답 스키마 분리**(표준 반례).

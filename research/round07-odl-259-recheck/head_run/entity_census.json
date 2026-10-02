@@ -1,0 +1,20 @@
+{
+ "2.5.0": {
+  "entities": {},
+  "docs_with_entity": {},
+  "docs": 45
+ },
+ "2.5.9": {
+  "entities": {
+   "&lt;": 433,
+   "&gt;": 248,
+   "&amp;": 82
+  },
+  "docs_with_entity": {
+   "&lt;": 14,
+   "&gt;": 14,
+   "&amp;": 11
+  },
+  "docs": 45
+ }
+}

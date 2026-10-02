@@ -1,0 +1,4 @@
+tag recheck_nocap JAVA_TOOL_OPTIONS None gc False docs 3
+KCI_FI000902436 ok wall 7.47 odl_s 7.46 hwm 9625 ru 9625 gc_used - n_pages 9
+KCI_FI002186558 fitz:timeout+timeout wall 54.94 odl_s 51.04 hwm 10600 ru 84 gc_used - n_pages 17
+KCI_FI002803488 ok wall 3.3 odl_s 3.28 hwm 3876 ru 3877 gc_used - n_pages 41

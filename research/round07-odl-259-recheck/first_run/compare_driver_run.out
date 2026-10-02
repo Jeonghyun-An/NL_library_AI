@@ -1,0 +1,325 @@
+child version proof: {'2.5.0': '2.5.0', '2.5.9': '2.5.9'}
+[1/45] KCI_FI002029401 2.5.0 off ok=True child=2.5.0 odl=2.079s pages=20 vlm=20 fb=None err=[]
+[1/45] KCI_FI002029401 2.5.9 off ok=True child=2.5.9 odl=1.375s pages=20 vlm=20 fb=None err=[]
+[2/45] KCI_FI002027714 2.5.0 off ok=True child=2.5.0 odl=1.313s pages=10 vlm=10 fb=None err=[]
+[2/45] KCI_FI002027714 2.5.9 off ok=True child=2.5.9 odl=1.281s pages=10 vlm=10 fb=None err=[]
+[3/45] KCI_FI002027613 2.5.0 off ok=True child=2.5.0 odl=0.813s pages=19 vlm=19 fb=None err=[]
+[3/45] KCI_FI002027613 2.5.9 off ok=True child=2.5.9 odl=0.797s pages=19 vlm=19 fb=None err=[]
+[4/45] KCI_FI002025273 2.5.0 off ok=True child=2.5.0 odl=0.782s pages=21 vlm=21 fb=None err=[]
+[4/45] KCI_FI002025273 2.5.9 off ok=True child=2.5.9 odl=0.797s pages=21 vlm=21 fb=None err=[]
+[5/45] KCI_FI002028807 2.5.0 off ok=True child=2.5.0 odl=0.797s pages=19 vlm=19 fb=None err=[]
+[5/45] KCI_FI002028807 2.5.9 off ok=True child=2.5.9 odl=0.813s pages=19 vlm=19 fb=None err=[]
+[6/45] KCI_FI002027685 2.5.0 off ok=True child=2.5.0 odl=0.844s pages=20 vlm=20 fb=None err=[]
+[6/45] KCI_FI002027685 2.5.9 off ok=True child=2.5.9 odl=0.843s pages=20 vlm=20 fb=None err=[]
+[7/45] KCI_FI002029313 2.5.0 off ok=True child=2.5.0 odl=0.781s pages=21 vlm=21 fb=None err=[]
+[7/45] KCI_FI002029313 2.5.9 off ok=True child=2.5.9 odl=0.782s pages=21 vlm=21 fb=None err=[]
+[8/45] KCI_FI000870623 2.5.0 off ok=True child=2.5.0 odl=1.156s pages=7 vlm=7 fb=None err=[]
+[8/45] KCI_FI000870623 2.5.9 off ok=True child=2.5.9 odl=1.203s pages=7 vlm=7 fb=None err=[]
+[9/45] KCI_FI000895213 2.5.0 off ok=True child=2.5.0 odl=1.172s pages=21 vlm=14 fb=None err=[]
+[9/45] KCI_FI000895213 2.5.9 off ok=True child=2.5.9 odl=1.359s pages=21 vlm=14 fb=None err=[]
+[10/45] KCI_FI000885711 2.5.0 off ok=True child=2.5.0 odl=1.266s pages=39 vlm=38 fb=None err=[]
+[10/45] KCI_FI000885711 2.5.9 off ok=True child=2.5.9 odl=1.485s pages=39 vlm=38 fb=None err=[]
+[11/45] KCI_FI001112773 2.5.0 off ok=True child=2.5.0 odl=1.313s pages=20 vlm=19 fb=None err=[]
+[11/45] KCI_FI001112773 2.5.9 off ok=True child=2.5.9 odl=1.234s pages=20 vlm=19 fb=None err=[]
+[12/45] KCI_FI000937498 2.5.0 off ok=True child=2.5.0 odl=1.672s pages=10 vlm=3 fb=None err=[]
+[12/45] KCI_FI000937498 2.5.9 off ok=True child=2.5.9 odl=1.703s pages=10 vlm=3 fb=None err=[]
+[13/45] KCI_FI000954729 2.5.0 off ok=True child=2.5.0 odl=2.328s pages=38 vlm=5 fb=None err=[]
+[13/45] KCI_FI000954729 2.5.9 off ok=True child=2.5.9 odl=2.062s pages=38 vlm=5 fb=None err=[]
+[14/45] KCI_FI001343434 2.5.0 off ok=True child=2.5.0 odl=1.594s pages=40 vlm=36 fb=None err=[]
+[14/45] KCI_FI001343434 2.5.9 off ok=True child=2.5.9 odl=1.5s pages=40 vlm=36 fb=None err=[]
+[15/45] KCI_FI001168821 2.5.0 off ok=True child=2.5.0 odl=1.563s pages=20 vlm=0 fb=None err=[]
+[15/45] KCI_FI001168821 2.5.9 off ok=True child=2.5.9 odl=1.532s pages=20 vlm=0 fb=None err=[]
+[16/45] KCI_FI001314298 2.5.0 off ok=True child=2.5.0 odl=1.406s pages=33 vlm=31 fb=None err=[]
+[16/45] KCI_FI001314298 2.5.9 off ok=True child=2.5.9 odl=1.532s pages=33 vlm=31 fb=None err=[]
+[17/45] KCI_FI001030932 2.5.0 off ok=True child=2.5.0 odl=1.985s pages=16 vlm=12 fb=None err=[]
+[17/45] KCI_FI001030932 2.5.9 off ok=True child=2.5.9 odl=1.672s pages=16 vlm=12 fb=None err=[]
+[18/45] KCI_FI001107507 2.5.0 off ok=True child=2.5.0 odl=1.64s pages=22 vlm=19 fb=None err=[]
+[18/45] KCI_FI001107507 2.5.9 off ok=True child=2.5.9 odl=1.422s pages=22 vlm=19 fb=None err=[]
+[19/45] KCI_FI001120928 2.5.0 off ok=True child=2.5.0 odl=1.281s pages=23 vlm=22 fb=None err=[]
+[19/45] KCI_FI001120928 2.5.9 off ok=True child=2.5.9 odl=1.344s pages=23 vlm=22 fb=None err=[]
+[20/45] KCI_FI002961735 2.5.0 off ok=True child=2.5.0 odl=1.954s pages=30 vlm=0 fb=None err=[]
+[20/45] KCI_FI002961735 2.5.9 off ok=True child=2.5.9 odl=1.984s pages=30 vlm=0 fb=None err=[]
+[21/45] KCI_FI002309766 2.5.0 off ok=True child=2.5.0 odl=1.719s pages=30 vlm=1 fb=None err=[]
+[21/45] KCI_FI002309766 2.5.9 off ok=True child=2.5.9 odl=1.89s pages=30 vlm=1 fb=None err=[]
+[22/45] KCI_FI001005886 2.5.0 off ok=True child=2.5.0 odl=1.969s pages=36 vlm=2 fb=None err=[]
+[22/45] KCI_FI001005886 2.5.9 off ok=True child=2.5.9 odl=1.765s pages=36 vlm=2 fb=None err=[]
+[23/45] KCI_FI002067020 2.5.0 off ok=True child=2.5.0 odl=1.797s pages=37 vlm=1 fb=None err=[]
+[23/45] KCI_FI002067020 2.5.9 off ok=True child=2.5.9 odl=2.125s pages=37 vlm=1 fb=None err=[]
+[24/45] KCI_FI002776016 2.5.0 off ok=True child=2.5.0 odl=1.39s pages=12 vlm=0 fb=None err=[]
+[24/45] KCI_FI002776016 2.5.9 off ok=True child=2.5.9 odl=1.344s pages=12 vlm=0 fb=None err=[]
+[25/45] KCI_FI002180861 2.5.0 off ok=True child=2.5.0 odl=1.844s pages=20 vlm=0 fb=None err=[]
+[25/45] KCI_FI002180861 2.5.9 off ok=True child=2.5.9 odl=1.594s pages=20 vlm=0 fb=None err=[]
+[26/45] KCI_FI003145254 2.5.0 off ok=True child=2.5.0 odl=2.25s pages=37 vlm=5 fb=None err=[]
+[26/45] KCI_FI003145254 2.5.9 off ok=True child=2.5.9 odl=2.984s pages=37 vlm=5 fb=None err=[]
+[27/45] KCI_FI001618766 2.5.0 off ok=True child=2.5.0 odl=1.984s pages=41 vlm=1 fb=None err=[]
+[27/45] KCI_FI001618766 2.5.9 off ok=True child=2.5.9 odl=2.312s pages=41 vlm=1 fb=None err=[]
+[28/45] KCI_FI002675501 2.5.0 off ok=True child=2.5.0 odl=2.265s pages=26 vlm=1 fb=None err=[]
+[28/45] KCI_FI002675501 2.5.9 off ok=True child=2.5.9 odl=1.735s pages=26 vlm=1 fb=None err=[]
+[29/45] KCI_FI001127976 2.5.0 off ok=True child=2.5.0 odl=1.437s pages=21 vlm=8 fb=None err=[]
+[29/45] KCI_FI001127976 2.5.9 off ok=True child=2.5.9 odl=1.406s pages=21 vlm=8 fb=None err=[]
+[30/45] KCI_FI003315691 2.5.0 off ok=True child=2.5.0 odl=2.297s pages=53 vlm=2 fb=None err=[]
+[30/45] KCI_FI003315691 2.5.9 off ok=True child=2.5.9 odl=2.328s pages=53 vlm=2 fb=None err=[]
+[31/45] KCI_FI003274665 2.5.0 off ok=True child=2.5.0 odl=1.797s pages=41 vlm=2 fb=None err=[]
+[31/45] KCI_FI003274665 2.5.9 off ok=True child=2.5.9 odl=1.766s pages=41 vlm=2 fb=None err=[]
+[32/45] KCI_FI001827561 2.5.0 off ok=True child=2.5.0 odl=2.766s pages=59 vlm=1 fb=None err=[]
+[32/45] KCI_FI001827561 2.5.9 off ok=True child=2.5.9 odl=2.625s pages=59 vlm=1 fb=None err=[]
+[33/45] KCI_FI001037448 2.5.0 off ok=True child=2.5.0 odl=1.735s pages=26 vlm=0 fb=None err=[]
+[33/45] KCI_FI001037448 2.5.9 off ok=True child=2.5.9 odl=1.485s pages=26 vlm=0 fb=None err=[]
+[34/45] KCI_FI001930485 2.5.0 off ok=True child=2.5.0 odl=13.109s pages=37 vlm=0 fb=None err=[]
+[34/45] KCI_FI001930485 2.5.9 off ok=True child=2.5.9 odl=15.5s pages=37 vlm=0 fb=None err=[]
+[35/45] KCI_FI000897237 2.5.0 off ok=True child=2.5.0 odl=1.406s pages=17 vlm=17 fb=None err=[]
+[35/45] KCI_FI000897237 2.5.9 off ok=True child=2.5.9 odl=1.422s pages=17 vlm=17 fb=None err=[]
+[36/45] KCI_FI000858284 2.5.0 off ok=True child=2.5.0 odl=1.641s pages=14 vlm=0 fb=None err=[]
+[36/45] KCI_FI000858284 2.5.9 off ok=True child=2.5.9 odl=1.625s pages=14 vlm=0 fb=None err=[]
+[37/45] KCI_FI002990049 2.5.0 off ok=True child=2.5.0 odl=2.437s pages=38 vlm=0 fb=None err=[]
+[37/45] KCI_FI002990049 2.5.9 off ok=True child=2.5.9 odl=3.781s pages=38 vlm=0 fb=None err=[]
+[38/45] KCI_FI003011274 2.5.0 off ok=True child=2.5.0 odl=1.36s pages=10 vlm=6 fb=None err=[]
+[38/45] KCI_FI003011274 2.5.9 off ok=True child=2.5.9 odl=1.515s pages=10 vlm=6 fb=None err=[]
+[39/45] KCI_FI002252358 2.5.0 off ok=True child=2.5.0 odl=4.516s pages=30 vlm=60 fb=None err=[]
+[39/45] KCI_FI002252358 2.5.9 off ok=True child=2.5.9 odl=3.203s pages=30 vlm=60 fb=None err=[]
+[40/45] KCI_FI001343547 2.5.0 off ok=True child=2.5.0 odl=1.735s pages=23 vlm=21 fb=None err=[]
+[40/45] KCI_FI001343547 2.5.9 off ok=True child=2.5.9 odl=1.562s pages=23 vlm=21 fb=None err=[]
+[41/45] KCI_FI001141801 2.5.0 off ok=True child=2.5.0 odl=1.328s pages=18 vlm=2 fb=None err=[]
+[41/45] KCI_FI001141801 2.5.9 off ok=True child=2.5.9 odl=1.36s pages=18 vlm=2 fb=None err=[]
+[42/45] KCI_FI001238691 2.5.0 off ok=True child=2.5.0 odl=78.062s pages=1 vlm=26 fb=fitz err=['ODL 실패(원본): 39초 초과', 'ODL 실패(fitz 재저장본): 39초 초과', 'ODL 실패 — fitz 텍스트로 대체']
+[42/45] KCI_FI001238691 2.5.9 off ok=True child=2.5.9 odl=78.265s pages=1 vlm=26 fb=fitz err=['ODL 실패(원본): 39초 초과', 'ODL 실패(fitz 재저장본): 39초 초과', 'ODL 실패 — fitz 텍스트로 대체']
+[43/45] KCI_FI002025246 2.5.0 off ok=True child=2.5.0 odl=2.468s pages=14 vlm=14 fb=None err=[]
+[43/45] KCI_FI002025246 2.5.9 off ok=True child=2.5.9 odl=1.344s pages=14 vlm=14 fb=None err=[]
+[44/45] KCI_FI001667569 2.5.0 off ok=True child=2.5.0 odl=4.312s pages=20 vlm=5 fb=None err=[]
+[44/45] KCI_FI001667569 2.5.9 off ok=True child=2.5.9 odl=1.953s pages=20 vlm=5 fb=None err=[]
+[45/45] KCI_FI001158431 2.5.0 off ok=True child=2.5.0 odl=2.422s pages=44 vlm=1 fb=None err=[]
+[45/45] KCI_FI001158431 2.5.9 off ok=True child=2.5.9 odl=1.718s pages=44 vlm=1 fb=None err=[]
+[emb] KCI_FI001930485 2.5.9 embedded ok=True odl=17.469s pages=37 vlm=0 figs=170936
+[emb] KCI_FI000858284 2.5.9 embedded ok=True odl=10.547s pages=14 vlm=0 figs=902
+[emb] KCI_FI002990049 2.5.9 embedded ok=True odl=3.766s pages=38 vlm=0 figs=35
+[emb] KCI_FI003011274 2.5.9 embedded ok=True odl=5.484s pages=10 vlm=6 figs=20
+[emb] KCI_FI002029401 2.5.9 embedded ok=True odl=1.875s pages=20 vlm=20 figs=40
+[emb] KCI_FI000897237 2.5.9 embedded ok=True odl=2.782s pages=17 vlm=17 figs=2011
+[emb] KCI_FI001314298 2.5.9 embedded ok=True odl=3.782s pages=33 vlm=31 figs=2500
+[emb] KCI_FI002961735 2.5.9 embedded ok=True odl=4.61s pages=30 vlm=0 figs=1438
+[emb] KCI_FI001343547 2.5.9 embedded ok=True odl=1.859s pages=23 vlm=21 figs=24
+{
+ "commit_tested": "1f4954b7a9b12eba4afc20ba6081d50d707e16a7 (exported code/app)",
+ "child_version_proof": {
+  "2.5.0": {
+   "pythonpath": "C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\odl250;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\code\\app;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\pydeps",
+   "stdout": "2.5.0",
+   "stderr": "",
+   "returncode": 0
+  },
+  "2.5.9": {
+   "pythonpath": "C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\odl259;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\code\\app;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\pydeps",
+   "stdout": "2.5.9",
+   "stderr": "",
+   "returncode": 0
+  }
+ },
+ "child_versions_seen": [
+  "2.5.0->2.5.0",
+  "2.5.9->2.5.9"
+ ],
+ "child_version_mismatch": [],
+ "docs_in_sample": 45,
+ "docs_compared": 45,
+ "docs_missing_or_failed": [],
+ "docs_identical_text": 26,
+ "docs_pages_equal": 45,
+ "docs_fill_equal": 45,
+ "docs_ocr_set_equal": 45,
+ "docs_errors_equal": 45,
+ "docs_with_text_diff": [
+  {
+   "id": "KCI_FI000937498",
+   "diff_pages": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "natures": [
+    "content differs (1749->1753 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (682->686 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (809->817 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (932->1008 struct chars, 7 lines only in 2.5.0, 7 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 682,
+     "2.5.9": 686
+    },
+    "3": {
+     "2.5.0": 932,
+     "2.5.9": 1008
+    },
+    "4": {
+     "2.5.0": 1749,
+     "2.5.9": 1753
+    },
+    "5": {
+     "2.5.0": 809,
+     "2.5.9": 817
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 6219,
+    "2.5.9": 6311
+   }
+  },
+  {
+   "id": "KCI_FI001168821",
+   "diff_pages": [
+    0
+   ],
+   "natures": [
+    "content differs (582->580 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 582,
+     "2.5.9": 580
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 20964,
+    "2.5.9": 20962
+   }
+  },
+  {
+   "id": "KCI_FI001030932",
+   "diff_pages": [
+    0,
+    12
+   ],
+   "natures": [
+    "content differs (123->127 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (350->356 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 350,
+     "2.5.9": 356
+    },
+    "12": {
+     "2.5.0": 123,
+     "2.5.9": 127
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 920,
+    "2.5.9": 930
+   }
+  },
+  {
+   "id": "KCI_FI002961735",
+   "diff_pages": [
+    0,
+    1,
+    6,
+    7,
+    8,
+    10,
+    17,
+    18,
+    19,
+    20,
+    24,
+    28
+   ],
+   "natures": [
+    "content differs (1051->1067 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (1105->1168 struct chars, 7 lines only in 2.5.0, 7 only in 2.5.9)",
+    "content differs (1170->1224 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (1208->1212 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1358->1362 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1473->1489 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (616->628 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (632->662 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (695->707 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (878->876 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (887->902 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (989->1011 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 878,
+     "2.5.9": 876
+    },
+    "1": {
+     "2.5.0": 1358,
+     "2.5.9": 1362
+    },
+    "6": {
+     "2.5.0": 1051,
+     "2.5.9": 1067
+    },
+    "7": {
+     "2.5.0": 616,
+     "2.5.9": 628
+    },
+    "8": {
+     "2.5.0": 695,
+     "2.5.9": 707
+    },
+    "10": {
+     "2.5.0": 989,
+     "2.5.9": 1011
+    },
+    "17": {
+     "2.5.0": 632,
+     "2.5.9": 662
+    },
+    "18": {
+     "2.5.0": 1170,
+     "2.5.9": 1224
+    },
+    "19": {
+     "2.5.0": 1105,
+     "2.5.9": 1168
+    },
+    "20": {
+     "2.5.0": 887,
+     "2.5.9": 902
+    },
+    "24": {
+     "2.5.0": 1208,
+     "2.5.9": 1212
+    },
+    "28": {
+     "2.5.0": 1473,
+     "2.5.9": 1489
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 27765,
+    "2.5.9": 28011
+   }
+  },
+  {
+   "id": "KCI_FI002309766",
+   "diff_pages": [
+    0,
+    2,
+    6,
+    8,
+    10,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    29
+   ],
+   "natures": [
+    "content differs (1143->1239 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (1147->1155 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1156->1168 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1506->1680 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (189->193 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (442->448 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (592->590 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)

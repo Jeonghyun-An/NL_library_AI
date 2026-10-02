@@ -187,7 +187,9 @@ x-common-env-dev: &common-env-dev
   # 대량 인덱싱 잡 / 배치 / 락
   INGEST_HIGH_WATER: ${INGEST_HIGH_WATER:-32}
   INGEST_MAX_ATTEMPTS: ${INGEST_MAX_ATTEMPTS:-3}
-  INGEST_STAGE_TIMEOUT_EXTRACT: ${INGEST_STAGE_TIMEOUT_EXTRACT:-1800}
+  # dev compose 는 round07 워커 배치(celery-control 분리)를 따라가지 않는다 — celery-cpu-dev 가 q_control 도 받아 dev 디스패처는 그대로 돈다.
+  # 추출 stale 판정은 운영과 같게: 추출 데드라인(config 2700) + 강제 재추출 하한 60 보다 길어야 한다
+  INGEST_STAGE_TIMEOUT_EXTRACT: ${INGEST_STAGE_TIMEOUT_EXTRACT:-3600}
   INGEST_STAGE_TIMEOUT_SUMMARIZE: ${INGEST_STAGE_TIMEOUT_SUMMARIZE:-1200}
   INGEST_STAGE_TIMEOUT_EMBED: ${INGEST_STAGE_TIMEOUT_EMBED:-1200}
   INGEST_STAGE_TIMEOUT_FINALIZE: ${INGEST_STAGE_TIMEOUT_FINALIZE:-900}

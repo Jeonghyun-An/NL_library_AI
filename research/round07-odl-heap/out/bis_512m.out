@@ -1,0 +1,13 @@
+tag bis_512m JAVA_TOOL_OPTIONS '-Xmx512m' gc True docs 12
+KCI_FI002990049 fitz:oom+oom wall 3.82 odl_s 3.34 hwm 664 ru 664 gc_used 510 n_pages 38
+KCI_FI003315691 fitz:oom+oom wall 4.2 odl_s 3.55 hwm 669 ru 669 gc_used 510 n_pages 52
+KCI_FI001372507 ok wall 4.55 odl_s 4.51 hwm 710 ru 710 gc_used 509 n_pages 275
+KCI_FI002298010 ok wall 4.74 odl_s 4.73 hwm 696 ru 696 gc_used 442 n_pages 7
+KCI_FI001160724 ok wall 3.84 odl_s 3.8 hwm 707 ru 707 gc_used 455 n_pages 268
+KCI_FI001401892 ok wall 4.51 odl_s 4.46 hwm 718 ru 718 gc_used 456 n_pages 379
+KCI_FI001428194 ok wall 4.23 odl_s 4.19 hwm 643 ru 643 gc_used 456 n_pages 223
+KCI_FI001930485 ok wall 5.1 odl_s 4.51 hwm 561 ru 561 gc_used 410 n_pages 37
+KCI_FI002252358 ok wall 3.14 odl_s 3.12 hwm 667 ru 668 gc_used 398 n_pages 30
+KCI_FI001827561 ok wall 2.41 odl_s 2.39 hwm 588 ru 589 gc_used 417 n_pages 59
+KCI_FI003214027 ok wall 4.23 odl_s 4.22 hwm 587 ru 587 gc_used 438 n_pages 4
+KCI_FI001667569 ok wall 2.17 odl_s 2.15 hwm 537 ru 538 gc_used 374 n_pages 20

@@ -1,0 +1,5506 @@
+{
+ "commit_tested": "1f4954b7a9b12eba4afc20ba6081d50d707e16a7 (exported code/app)",
+ "child_version_proof": {
+  "2.5.0": {
+   "pythonpath": "C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\odl250;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\code\\app;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\pydeps",
+   "stdout": "2.5.0",
+   "stderr": "",
+   "returncode": 0
+  },
+  "2.5.9": {
+   "pythonpath": "C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\odl259;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\code\\app;C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\c--Users-LANDSOFT-mygit-NL-library-AI\\ac2847f8-32b7-46ce-8254-e87152398b72\\scratchpad\\odl259\\pydeps",
+   "stdout": "2.5.9",
+   "stderr": "",
+   "returncode": 0
+  }
+ },
+ "child_versions_seen": [
+  "2.5.0->2.5.0",
+  "2.5.9->2.5.9"
+ ],
+ "child_version_mismatch": [],
+ "docs_in_sample": 45,
+ "docs_compared": 45,
+ "docs_missing_or_failed": [],
+ "docs_identical_text": 26,
+ "docs_pages_equal": 45,
+ "docs_fill_equal": 45,
+ "docs_ocr_set_equal": 45,
+ "docs_errors_equal": 45,
+ "docs_with_text_diff": [
+  {
+   "id": "KCI_FI000937498",
+   "diff_pages": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "natures": [
+    "content differs (1749->1753 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (682->686 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (809->817 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (932->1008 struct chars, 7 lines only in 2.5.0, 7 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 682,
+     "2.5.9": 686
+    },
+    "3": {
+     "2.5.0": 932,
+     "2.5.9": 1008
+    },
+    "4": {
+     "2.5.0": 1749,
+     "2.5.9": 1753
+    },
+    "5": {
+     "2.5.0": 809,
+     "2.5.9": 817
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 6219,
+    "2.5.9": 6311
+   }
+  },
+  {
+   "id": "KCI_FI001168821",
+   "diff_pages": [
+    0
+   ],
+   "natures": [
+    "content differs (582->580 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 582,
+     "2.5.9": 580
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 20964,
+    "2.5.9": 20962
+   }
+  },
+  {
+   "id": "KCI_FI001030932",
+   "diff_pages": [
+    0,
+    12
+   ],
+   "natures": [
+    "content differs (123->127 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (350->356 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 350,
+     "2.5.9": 356
+    },
+    "12": {
+     "2.5.0": 123,
+     "2.5.9": 127
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 920,
+    "2.5.9": 930
+   }
+  },
+  {
+   "id": "KCI_FI002961735",
+   "diff_pages": [
+    0,
+    1,
+    6,
+    7,
+    8,
+    10,
+    17,
+    18,
+    19,
+    20,
+    24,
+    28
+   ],
+   "natures": [
+    "content differs (1051->1067 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (1105->1168 struct chars, 7 lines only in 2.5.0, 7 only in 2.5.9)",
+    "content differs (1170->1224 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (1208->1212 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1358->1362 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1473->1489 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (616->628 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (632->662 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (695->707 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (878->876 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (887->902 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (989->1011 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 878,
+     "2.5.9": 876
+    },
+    "1": {
+     "2.5.0": 1358,
+     "2.5.9": 1362
+    },
+    "6": {
+     "2.5.0": 1051,
+     "2.5.9": 1067
+    },
+    "7": {
+     "2.5.0": 616,
+     "2.5.9": 628
+    },
+    "8": {
+     "2.5.0": 695,
+     "2.5.9": 707
+    },
+    "10": {
+     "2.5.0": 989,
+     "2.5.9": 1011
+    },
+    "17": {
+     "2.5.0": 632,
+     "2.5.9": 662
+    },
+    "18": {
+     "2.5.0": 1170,
+     "2.5.9": 1224
+    },
+    "19": {
+     "2.5.0": 1105,
+     "2.5.9": 1168
+    },
+    "20": {
+     "2.5.0": 887,
+     "2.5.9": 902
+    },
+    "24": {
+     "2.5.0": 1208,
+     "2.5.9": 1212
+    },
+    "28": {
+     "2.5.0": 1473,
+     "2.5.9": 1489
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 27765,
+    "2.5.9": 28011
+   }
+  },
+  {
+   "id": "KCI_FI002309766",
+   "diff_pages": [
+    0,
+    2,
+    6,
+    8,
+    10,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    29
+   ],
+   "natures": [
+    "content differs (1143->1239 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (1147->1155 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1156->1168 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1506->1680 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (189->193 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (442->448 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (592->590 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (666->699 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (711->744 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (725->729 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (735->774 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (762->792 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (775->808 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (816->858 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (900->942 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (927->972 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (988->992 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 189,
+     "2.5.9": 193
+    },
+    "2": {
+     "2.5.0": 592,
+     "2.5.9": 590
+    },
+    "6": {
+     "2.5.0": 1147,
+     "2.5.9": 1155
+    },
+    "8": {
+     "2.5.0": 442,
+     "2.5.9": 448
+    },
+    "10": {
+     "2.5.0": 1143,
+     "2.5.9": 1239
+    },
+    "11": {
+     "2.5.0": 1506,
+     "2.5.9": 1680
+    },
+    "13": {
+     "2.5.0": 927,
+     "2.5.9": 972
+    },
+    "14": {
+     "2.5.0": 666,
+     "2.5.9": 699
+    },
+    "15": {
+     "2.5.0": 816,
+     "2.5.9": 858
+    },
+    "16": {
+     "2.5.0": 711,
+     "2.5.9": 744
+    },
+    "17": {
+     "2.5.0": 735,
+     "2.5.9": 774
+    },
+    "18": {
+     "2.5.0": 775,
+     "2.5.9": 808
+    },
+    "19": {
+     "2.5.0": 762,
+     "2.5.9": 792
+    },
+    "20": {
+     "2.5.0": 900,
+     "2.5.9": 942
+    },
+    "21": {
+     "2.5.0": 988,
+     "2.5.9": 992
+    },
+    "23": {
+     "2.5.0": 1156,
+     "2.5.9": 1168
+    },
+    "29": {
+     "2.5.0": 725,
+     "2.5.9": 729
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 26815,
+    "2.5.9": 27418
+   }
+  },
+  {
+   "id": "KCI_FI001005886",
+   "diff_pages": [
+    13,
+    33
+   ],
+   "natures": [
+    "content differs (1153->1157 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (965->971 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "13": {
+     "2.5.0": 965,
+     "2.5.9": 971
+    },
+    "33": {
+     "2.5.0": 1153,
+     "2.5.9": 1157
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 33296,
+    "2.5.9": 33306
+   }
+  },
+  {
+   "id": "KCI_FI002067020",
+   "diff_pages": [
+    0,
+    3,
+    16
+   ],
+   "natures": [
+    "content differs (470->480 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (606->612 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (841->847 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 470,
+     "2.5.9": 480
+    },
+    "3": {
+     "2.5.0": 841,
+     "2.5.9": 847
+    },
+    "16": {
+     "2.5.0": 606,
+     "2.5.9": 612
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 23828,
+    "2.5.9": 23850
+   }
+  },
+  {
+   "id": "KCI_FI002776016",
+   "diff_pages": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    11
+   ],
+   "natures": [
+    "content differs (1603->1727 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (1649->1655 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1673->1801 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (1684->1808 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (1880->1886 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1887->1899 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (1899->1925 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "3": {
+     "2.5.0": 1899,
+     "2.5.9": 1925
+    },
+    "4": {
+     "2.5.0": 1684,
+     "2.5.9": 1808
+    },
+    "5": {
+     "2.5.0": 1673,
+     "2.5.9": 1801
+    },
+    "6": {
+     "2.5.0": 1603,
+     "2.5.9": 1727
+    },
+    "7": {
+     "2.5.0": 1649,
+     "2.5.9": 1655
+    },
+    "8": {
+     "2.5.0": 1880,
+     "2.5.9": 1886
+    },
+    "11": {
+     "2.5.0": 1887,
+     "2.5.9": 1899
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 20684,
+    "2.5.9": 21110
+   }
+  },
+  {
+   "id": "KCI_FI002180861",
+   "diff_pages": [
+    16
+   ],
+   "natures": [
+    "content differs (1571->1577 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "16": {
+     "2.5.0": 1571,
+     "2.5.9": 1577
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 31595,
+    "2.5.9": 31601
+   }
+  },
+  {
+   "id": "KCI_FI001618766",
+   "diff_pages": [
+    14,
+    24,
+    29,
+    36
+   ],
+   "natures": [
+    "content differs (645->663 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (724->730 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (765->771 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (847->853 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "14": {
+     "2.5.0": 724,
+     "2.5.9": 730
+    },
+    "24": {
+     "2.5.0": 847,
+     "2.5.9": 853
+    },
+    "29": {
+     "2.5.0": 765,
+     "2.5.9": 771
+    },
+    "36": {
+     "2.5.0": 645,
+     "2.5.9": 663
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 33764,
+    "2.5.9": 33800
+   }
+  },
+  {
+   "id": "KCI_FI002675501",
+   "diff_pages": [
+    2,
+    12,
+    13
+   ],
+   "natures": [
+    "content differs (675->681 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (881->884 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (955->958 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 675,
+     "2.5.9": 681
+    },
+    "12": {
+     "2.5.0": 955,
+     "2.5.9": 958
+    },
+    "13": {
+     "2.5.0": 881,
+     "2.5.9": 884
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 21249,
+    "2.5.9": 21261
+   }
+  },
+  {
+   "id": "KCI_FI003274665",
+   "diff_pages": [
+    6,
+    11,
+    13,
+    14,
+    37,
+    38
+   ],
+   "natures": [
+    "content differs (1293->1297 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1366->1378 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (1374->1386 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (1576->1580 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1614->1618 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1670->1678 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "6": {
+     "2.5.0": 1293,
+     "2.5.9": 1297
+    },
+    "11": {
+     "2.5.0": 1576,
+     "2.5.9": 1580
+    },
+    "13": {
+     "2.5.0": 1366,
+     "2.5.9": 1378
+    },
+    "14": {
+     "2.5.0": 1374,
+     "2.5.9": 1386
+    },
+    "37": {
+     "2.5.0": 1614,
+     "2.5.9": 1618
+    },
+    "38": {
+     "2.5.0": 1670,
+     "2.5.9": 1678
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 46330,
+    "2.5.9": 46374
+   }
+  },
+  {
+   "id": "KCI_FI001827561",
+   "diff_pages": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    17,
+    19,
+    20,
+    22,
+    33,
+    34,
+    41,
+    45,
+    46
+   ],
+   "natures": [
+    "content differs (699->705 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (743->755 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (767->773 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (788->794 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (793->805 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (803->815 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (806->812 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (818->824 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (825->831 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (831->837 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (832->838 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (841->865 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (878->890 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (989->1001 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "9": {
+     "2.5.0": 825,
+     "2.5.9": 831
+    },
+    "10": {
+     "2.5.0": 803,
+     "2.5.9": 815
+    },
+    "11": {
+     "2.5.0": 878,
+     "2.5.9": 890
+    },
+    "12": {
+     "2.5.0": 841,
+     "2.5.9": 865
+    },
+    "13": {
+     "2.5.0": 743,
+     "2.5.9": 755
+    },
+    "17": {
+     "2.5.0": 989,
+     "2.5.9": 1001
+    },
+    "19": {
+     "2.5.0": 793,
+     "2.5.9": 805
+    },
+    "20": {
+     "2.5.0": 818,
+     "2.5.9": 824
+    },
+    "22": {
+     "2.5.0": 831,
+     "2.5.9": 837
+    },
+    "33": {
+     "2.5.0": 806,
+     "2.5.9": 812
+    },
+    "34": {
+     "2.5.0": 699,
+     "2.5.9": 705
+    },
+    "41": {
+     "2.5.0": 767,
+     "2.5.9": 773
+    },
+    "45": {
+     "2.5.0": 832,
+     "2.5.9": 838
+    },
+    "46": {
+     "2.5.0": 788,
+     "2.5.9": 794
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 46864,
+    "2.5.9": 46996
+   }
+  },
+  {
+   "id": "KCI_FI001037448",
+   "diff_pages": [
+    3,
+    6,
+    16,
+    25
+   ],
+   "natures": [
+    "content differs (1297->1299 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (149->167 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (230->242 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (545->557 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "3": {
+     "2.5.0": 1297,
+     "2.5.9": 1299
+    },
+    "6": {
+     "2.5.0": 149,
+     "2.5.9": 167
+    },
+    "16": {
+     "2.5.0": 230,
+     "2.5.9": 242
+    },
+    "25": {
+     "2.5.0": 545,
+     "2.5.9": 557
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 8856,
+    "2.5.9": 8900
+   }
+  },
+  {
+   "id": "KCI_FI001930485",
+   "diff_pages": [
+    0,
+    1,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    35
+   ],
+   "natures": [
+    "content differs (1051->1075 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (1053->1065 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (1092->1096 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1215->1231 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (214->232 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (216->234 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (386->413 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (513->543 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (560->572 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (591->615 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (611->641 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (671->701 struct chars, 6 lines only in 2.5.0, 6 only in 2.5.9)",
+    "content differs (700->716 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (735->759 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (750->768 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (774->780 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (784->796 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (793->811 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (797->821 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (798->810 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (812->848 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (829->853 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "content differs (855->879 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "content differs (945->957 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (992->1004 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (996->994 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 996,
+     "2.5.9": 994
+    },
+    "1": {
+     "2.5.0": 1092,
+     "2.5.9": 1096
+    },
+    "5": {
+     "2.5.0": 700,
+     "2.5.9": 716
+    },
+    "6": {
+     "2.5.0": 784,
+     "2.5.9": 796
+    },
+    "7": {
+     "2.5.0": 560,
+     "2.5.9": 572
+    },
+    "8": {
+     "2.5.0": 513,
+     "2.5.9": 543
+    },
+    "9": {
+     "2.5.0": 214,
+     "2.5.9": 232
+    },
+    "10": {
+     "2.5.0": 798,
+     "2.5.9": 810
+    },
+    "11": {
+     "2.5.0": 774,
+     "2.5.9": 780
+    },
+    "12": {
+     "2.5.0": 735,
+     "2.5.9": 759
+    },
+    "13": {
+     "2.5.0": 611,
+     "2.5.9": 641
+    },
+    "16": {
+     "2.5.0": 855,
+     "2.5.9": 879
+    },
+    "17": {
+     "2.5.0": 992,
+     "2.5.9": 1004
+    },
+    "18": {
+     "2.5.0": 812,
+     "2.5.9": 848
+    },
+    "19": {
+     "2.5.0": 945,
+     "2.5.9": 957
+    },
+    "20": {
+     "2.5.0": 671,
+     "2.5.9": 701
+    },
+    "21": {
+     "2.5.0": 750,
+     "2.5.9": 768
+    },
+    "22": {
+     "2.5.0": 216,
+     "2.5.9": 234
+    },
+    "23": {
+     "2.5.0": 1051,
+     "2.5.9": 1075
+    },
+    "24": {
+     "2.5.0": 829,
+     "2.5.9": 853
+    },
+    "25": {
+     "2.5.0": 386,
+     "2.5.9": 413
+    },
+    "26": {
+     "2.5.0": 797,
+     "2.5.9": 821
+    },
+    "27": {
+     "2.5.0": 1053,
+     "2.5.9": 1065
+    },
+    "28": {
+     "2.5.0": 793,
+     "2.5.9": 811
+    },
+    "29": {
+     "2.5.0": 591,
+     "2.5.9": 615
+    },
+    "35": {
+     "2.5.0": 1215,
+     "2.5.9": 1231
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 31053,
+    "2.5.9": 31534
+   }
+  },
+  {
+   "id": "KCI_FI000858284",
+   "diff_pages": [
+    0,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "natures": [
+    "content differs (139->145 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1460->1464 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1471->1477 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (159->171 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1802->1808 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (1962->1968 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (219->231 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (295->307 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (322->328 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (337->343 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (735->741 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (940->950 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 1460,
+     "2.5.9": 1464
+    },
+    "2": {
+     "2.5.0": 219,
+     "2.5.9": 231
+    },
+    "3": {
+     "2.5.0": 940,
+     "2.5.9": 950
+    },
+    "4": {
+     "2.5.0": 337,
+     "2.5.9": 343
+    },
+    "5": {
+     "2.5.0": 1471,
+     "2.5.9": 1477
+    },
+    "6": {
+     "2.5.0": 1962,
+     "2.5.9": 1968
+    },
+    "7": {
+     "2.5.0": 322,
+     "2.5.9": 328
+    },
+    "8": {
+     "2.5.0": 1802,
+     "2.5.9": 1808
+    },
+    "9": {
+     "2.5.0": 735,
+     "2.5.9": 741
+    },
+    "10": {
+     "2.5.0": 139,
+     "2.5.9": 145
+    },
+    "11": {
+     "2.5.0": 295,
+     "2.5.9": 307
+    },
+    "12": {
+     "2.5.0": 159,
+     "2.5.9": 171
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 10112,
+    "2.5.9": 10204
+   }
+  },
+  {
+   "id": "KCI_FI002990049",
+   "diff_pages": [
+    2,
+    3,
+    4,
+    8,
+    19,
+    20,
+    24,
+    25,
+    31,
+    34,
+    35,
+    36
+   ],
+   "natures": [
+    "content differs (1788->1792 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (807->819 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (934->942 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (974->978 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "whitespace"
+   ],
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 807,
+     "2.5.9": 819
+    },
+    "3": {
+     "2.5.0": 974,
+     "2.5.9": 978
+    },
+    "24": {
+     "2.5.0": 934,
+     "2.5.9": 942
+    },
+    "36": {
+     "2.5.0": 1788,
+     "2.5.9": 1792
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 28370,
+    "2.5.9": 28398
+   }
+  },
+  {
+   "id": "KCI_FI001343547",
+   "diff_pages": [
+    8,
+    9
+   ],
+   "natures": [
+    "content differs (443->442 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (632->631 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "8": {
+     "2.5.0": 632,
+     "2.5.9": 631
+    },
+    "9": {
+     "2.5.0": 443,
+     "2.5.9": 442
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 11883,
+    "2.5.9": 11881
+   }
+  },
+  {
+   "id": "KCI_FI001667569",
+   "diff_pages": [
+    0,
+    1,
+    6,
+    7,
+    8,
+    9,
+    10,
+    14,
+    16,
+    17,
+    21
+   ],
+   "natures": [
+    "content differs (101->107 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (111->112 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (123->126 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (136->142 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (143->146 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (148->154 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (169->184 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (180->192 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "content differs (333->355 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "content differs (43->46 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "content differs (86->87 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   ],
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 86,
+     "2.5.9": 87
+    },
+    "1": {
+     "2.5.0": 43,
+     "2.5.9": 46
+    },
+    "6": {
+     "2.5.0": 101,
+     "2.5.9": 107
+    },
+    "7": {
+     "2.5.0": 180,
+     "2.5.9": 192
+    },
+    "8": {
+     "2.5.0": 333,
+     "2.5.9": 355
+    },
+    "9": {
+     "2.5.0": 123,
+     "2.5.9": 126
+    },
+    "10": {
+     "2.5.0": 169,
+     "2.5.9": 184
+    },
+    "14": {
+     "2.5.0": 136,
+     "2.5.9": 142
+    },
+    "16": {
+     "2.5.0": 143,
+     "2.5.9": 146
+    },
+    "17": {
+     "2.5.0": 111,
+     "2.5.9": 112
+    },
+    "21": {
+     "2.5.0": 148,
+     "2.5.9": 154
+    }
+   },
+   "total_body_len": {
+    "2.5.0": 2262,
+    "2.5.9": 2340
+   }
+  }
+ ],
+ "fill_ratio_diffs": {},
+ "ocr_decision_diffs": {},
+ "ocr_reason_text_diffs": {
+  "KCI_FI001343547": [
+   {
+    "page": 8,
+    "2.5.0": "ODL 글자 유실 의심(ODL 632자 vs 원본 추정 1455자)",
+    "2.5.9": "ODL 글자 유실 의심(ODL 631자 vs 원본 추정 1455자)"
+   },
+   {
+    "page": 9,
+    "2.5.0": "ODL 글자 유실 의심(ODL 443자 vs 원본 추정 1118자)",
+    "2.5.9": "ODL 글자 유실 의심(ODL 442자 vs 원본 추정 1118자)"
+   }
+  ]
+ },
+ "count_diffs": {},
+ "failures": [
+  {
+   "id": "KCI_FI001238691",
+   "ver": "2.5.0",
+   "mode": "off",
+   "ok": true,
+   "exception": null,
+   "odl_fallback": "fitz",
+   "odl_errors": [
+    "ODL 실패(원본): 39초 초과",
+    "ODL 실패(fitz 재저장본): 39초 초과",
+    "ODL 실패 — fitz 텍스트로 대체"
+   ],
+   "odl_seconds": 78.062
+  },
+  {
+   "id": "KCI_FI001238691",
+   "ver": "2.5.9",
+   "mode": "off",
+   "ok": true,
+   "exception": null,
+   "odl_fallback": "fitz",
+   "odl_errors": [
+    "ODL 실패(원본): 39초 초과",
+    "ODL 실패(fitz 재저장본): 39초 초과",
+    "ODL 실패 — fitz 텍스트로 대체"
+   ],
+   "odl_seconds": 78.265
+  }
+ ],
+ "timing": {
+  "odl_seconds_median": {
+   "2.5.0": 1.719,
+   "2.5.9": 1.532
+  },
+  "odl_seconds_max": {
+   "2.5.0": 78.062,
+   "2.5.9": 78.265
+  },
+  "odl_seconds_total": {
+   "2.5.0": 167.8,
+   "2.5.9": 165.3
+  },
+  "ratio_259_over_250_median": 0.99,
+  "ratio_259_over_250_max": 1.551,
+  "ratio_259_over_250_min": 0.453,
+  "ratio_max_doc": "KCI_FI002990049"
+ },
+ "embedded_vs_off_259": [
+  {
+   "id": "KCI_FI001930485",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    9
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "9": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 9,
+   "first_diff_sample": [
+    "--- off p9",
+    "+++ embedded p9",
+    "@@ -2,59 +2,59 @@",
+    " ",
+    "-| |",
+    "+|<br>|",
+    " |---|",
+    " ",
+    "-| | |",
+    "+|<br>| |",
+    " |---|---|",
+    "-| | |",
+    "+|<br>|<br>|",
+    " ",
+    "-| |",
+    "+|<br>|",
+    " |---|",
+    " ",
+    "-| |",
+    "+|<br>|",
+    " |---|",
+    " ",
+    "-| |",
+    "+|<br>|",
+    " |---|",
+    " ",
+    "-| | |",
+    "+|<br>| |",
+    " |---|---|",
+    "-| | |",
+    "+|<br>|<br>|",
+    " ",
+    "-| |",
+    "+|<br>|",
+    " |---|",
+    " ",
+    "-| |",
+    "+|<br>|",
+    " |---|",
+    " "
+   ],
+   "total_body_len": {
+    "off": 31534,
+    "embedded": 31534
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 0,
+    "embedded": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 15.5,
+    "embedded": 17.469
+   },
+   "time_ratio": 1.127,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 170936
+  },
+  {
+   "id": "KCI_FI000858284",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    12
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "2": "markers only (<br>/[그림]/table chars)",
+    "3": "markers only (<br>/[그림]/table chars)",
+    "4": "markers only (<br>/[그림]/table chars)",
+    "5": "markers only (<br>/[그림]/table chars)",
+    "6": "markers only (<br>/[그림]/table chars)",
+    "7": "markers only (<br>/[그림]/table chars)",
+    "8": "markers only (<br>/[그림]/table chars)",
+    "9": "markers only (<br>/[그림]/table chars)",
+    "11": "markers only (<br>/[그림]/table chars)",
+    "12": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 2,
+   "first_diff_sample": [
+    "--- off p2",
+    "+++ embedded p2",
+    "@@ -26,5 +26,5 @@",
+    " ",
+    "-|50 86|.|",
+    "+|50 86|<br><br>.|",
+    " |---|---|",
+    "-|20|3.81cm, 30|",
+    "+|<br><br>20|3.81cm, 30|",
+    " "
+   ],
+   "total_body_len": {
+    "off": 10204,
+    "embedded": 10204
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 0,
+    "embedded": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.625,
+    "embedded": 10.547
+   },
+   "time_ratio": 6.49,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 902
+  },
+  {
+   "id": "KCI_FI002990049",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    7
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "7": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 7,
+   "first_diff_sample": [
+    "--- off p7",
+    "+++ embedded p7",
+    "@@ -8,2 +8,2 @@",
+    " |정규직 근로자 전환 세액공제 (§30의2) * 삭제 2022. 12. 31.|2017년<br>2018년<br>2019년<br>2020년<br>2021년<br>|203 289 432 370 436|2,540<br><br>5,359<br>6,978<br>4,856<br>5,764<br>|192 262 331 357 330|2,034 8,033<br><br>",
+    "-|고용유지중소기업 등에 대한 과세특례 (§30의3)|2017년<br>2018년<br>2019년<br>2020년<br>2021년<br>| | |－ － － 20 16|－ － －<br><br>103 77|－ － － －<br><br>1|－ － － － 60|",
+    "+|고용유지중소기업 등에 대한 과세특례 (§30의3)|2017년<br>2018년<br>2019년<br>2020년<br>2021년<br>|| |－ － － 20 16|－ － －<br><br>103 77|－ － － －<br><br>1|－ － － － 60|"
+   ],
+   "total_body_len": {
+    "off": 28398,
+    "embedded": 28398
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 0,
+    "embedded": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 3.781,
+    "embedded": 3.766
+   },
+   "time_ratio": 0.996,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 35
+  },
+  {
+   "id": "KCI_FI003011274",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    1,
+    2,
+    4,
+    7,
+    8,
+    9
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "0": "markers only (<br>/[그림]/table chars)",
+    "1": "markers only (<br>/[그림]/table chars)",
+    "2": "markers only (<br>/[그림]/table chars)",
+    "4": "markers only (<br>/[그림]/table chars)",
+    "7": "markers only (<br>/[그림]/table chars)",
+    "8": "markers only (<br>/[그림]/table chars)",
+    "9": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- off p0",
+    "+++ embedded p0",
+    "@@ -2,2 +2,206 @@",
+    " ",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+"
+   ],
+   "total_body_len": {
+    "off": 793,
+    "embedded": 793
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 6,
+    "embedded": 6
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.515,
+    "embedded": 5.484
+   },
+   "time_ratio": 3.62,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 20
+  },
+  {
+   "id": "KCI_FI002029401",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "0": "markers only (<br>/[그림]/table chars)",
+    "1": "markers only (<br>/[그림]/table chars)",
+    "2": "markers only (<br>/[그림]/table chars)",
+    "3": "markers only (<br>/[그림]/table chars)",
+    "4": "markers only (<br>/[그림]/table chars)",
+    "5": "markers only (<br>/[그림]/table chars)",
+    "6": "markers only (<br>/[그림]/table chars)",
+    "7": "markers only (<br>/[그림]/table chars)",
+    "8": "markers only (<br>/[그림]/table chars)",
+    "9": "markers only (<br>/[그림]/table chars)",
+    "10": "markers only (<br>/[그림]/table chars)",
+    "11": "markers only (<br>/[그림]/table chars)",
+    "12": "markers only (<br>/[그림]/table chars)",
+    "13": "markers only (<br>/[그림]/table chars)",
+    "14": "markers only (<br>/[그림]/table chars)",
+    "15": "markers only (<br>/[그림]/table chars)",
+    "16": "markers only (<br>/[그림]/table chars)",
+    "17": "markers only (<br>/[그림]/table chars)",
+    "18": "markers only (<br>/[그림]/table chars)",
+    "19": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- off p0",
+    "+++ embedded p0",
+    "@@ -1 +1,3 @@",
+    "+[그림]",
+    " ",
+    "+[그림]"
+   ],
+   "total_body_len": {
+    "off": 0,
+    "embedded": 0
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 20,
+    "embedded": 20
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.375,
+    "embedded": 1.875
+   },
+   "time_ratio": 1.364,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 40
+  },
+  {
+   "id": "KCI_FI000897237",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "0": "markers only (<br>/[그림]/table chars)",
+    "1": "markers only (<br>/[그림]/table chars)",
+    "2": "markers only (<br>/[그림]/table chars)",
+    "3": "markers only (<br>/[그림]/table chars)",
+    "4": "markers only (<br>/[그림]/table chars)",
+    "5": "markers only (<br>/[그림]/table chars)",
+    "6": "markers only (<br>/[그림]/table chars)",
+    "7": "markers only (<br>/[그림]/table chars)",
+    "8": "markers only (<br>/[그림]/table chars)",
+    "9": "markers only (<br>/[그림]/table chars)",
+    "10": "markers only (<br>/[그림]/table chars)",
+    "11": "markers only (<br>/[그림]/table chars)",
+    "12": "markers only (<br>/[그림]/table chars)",
+    "13": "markers only (<br>/[그림]/table chars)",
+    "14": "markers only (<br>/[그림]/table chars)",
+    "15": "markers only (<br>/[그림]/table chars)",
+    "16": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- off p0",
+    "+++ embedded p0",
+    "@@ -1 +1 @@",
+    "-",
+    "+[그림]"
+   ],
+   "total_body_len": {
+    "off": 7,
+    "embedded": 7
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 17,
+    "embedded": 17
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.422,
+    "embedded": 2.782
+   },
+   "time_ratio": 1.956,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 2011
+  },
+  {
+   "id": "KCI_FI001314298",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "1": "markers only (<br>/[그림]/table chars)",
+    "2": "markers only (<br>/[그림]/table chars)",
+    "3": "markers only (<br>/[그림]/table chars)",
+    "4": "markers only (<br>/[그림]/table chars)",
+    "5": "markers only (<br>/[그림]/table chars)",
+    "6": "markers only (<br>/[그림]/table chars)",
+    "7": "markers only (<br>/[그림]/table chars)",
+    "8": "markers only (<br>/[그림]/table chars)",
+    "9": "markers only (<br>/[그림]/table chars)",
+    "10": "markers only (<br>/[그림]/table chars)",
+    "11": "markers only (<br>/[그림]/table chars)",
+    "12": "markers only (<br>/[그림]/table chars)",
+    "13": "markers only (<br>/[그림]/table chars)",
+    "14": "markers only (<br>/[그림]/table chars)",
+    "15": "markers only (<br>/[그림]/table chars)",
+    "16": "markers only (<br>/[그림]/table chars)",
+    "17": "markers only (<br>/[그림]/table chars)",
+    "18": "markers only (<br>/[그림]/table chars)",
+    "19": "markers only (<br>/[그림]/table chars)",
+    "20": "markers only (<br>/[그림]/table chars)",
+    "21": "markers only (<br>/[그림]/table chars)",
+    "22": "markers only (<br>/[그림]/table chars)",
+    "23": "markers only (<br>/[그림]/table chars)",
+    "24": "markers only (<br>/[그림]/table chars)",
+    "25": "markers only (<br>/[그림]/table chars)",
+    "26": "markers only (<br>/[그림]/table chars)",
+    "27": "markers only (<br>/[그림]/table chars)",
+    "28": "markers only (<br>/[그림]/table chars)",
+    "29": "markers only (<br>/[그림]/table chars)",
+    "30": "markers only (<br>/[그림]/table chars)",
+    "31": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 1,
+   "first_diff_sample": [
+    "--- off p1",
+    "+++ embedded p1",
+    "@@ -1,2 +1,124 @@",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]",
+    "+",
+    "+[그림]"
+   ],
+   "total_body_len": {
+    "off": 1793,
+    "embedded": 1793
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 31,
+    "embedded": 31
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.532,
+    "embedded": 3.782
+   },
+   "time_ratio": 2.469,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 2500
+  },
+  {
+   "id": "KCI_FI002961735",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "0": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- off p0",
+    "+++ embedded p0",
+    "@@ -1,2 +1,2 @@",
+    "-|TheJournalofYeolinEducation<br><br>2023. Vol. 31, No. 3 pp 121~150 DOI : http://dx.doi.org/ 10.18 230 / tjye .2023. 31.3.121|",
+    "+|<br><br>TheJournalofYeolinEducation<br><br>2023. Vol. 31, No. 3 pp 121~150 DOI : http://dx.doi.org/ 10.18 230 / tjye .2023. 31.3.121|",
+    " |---|"
+   ],
+   "total_body_len": {
+    "off": 28011,
+    "embedded": 28011
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 0,
+    "embedded": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.984,
+    "embedded": 4.61
+   },
+   "time_ratio": 2.324,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 1438
+  },
+  {
+   "id": "KCI_FI001343547",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    19,
+    20,
+    21,
+    22
+   ],
+   "body_len_by_diff_page": {},
+   "body_len_changed_pages": {},
+   "nature_by_page": {
+    "1": "markers only (<br>/[그림]/table chars)",
+    "2": "markers only (<br>/[그림]/table chars)",
+    "3": "markers only (<br>/[그림]/table chars)",
+    "4": "markers only (<br>/[그림]/table chars)",
+    "5": "markers only (<br>/[그림]/table chars)",
+    "6": "markers only (<br>/[그림]/table chars)",
+    "7": "markers only (<br>/[그림]/table chars)",
+    "8": "markers only (<br>/[그림]/table chars)",
+    "9": "markers only (<br>/[그림]/table chars)",
+    "10": "markers only (<br>/[그림]/table chars)",
+    "11": "markers only (<br>/[그림]/table chars)",
+    "12": "markers only (<br>/[그림]/table chars)",
+    "13": "markers only (<br>/[그림]/table chars)",
+    "14": "markers only (<br>/[그림]/table chars)",
+    "15": "markers only (<br>/[그림]/table chars)",
+    "16": "markers only (<br>/[그림]/table chars)",
+    "17": "markers only (<br>/[그림]/table chars)",
+    "19": "markers only (<br>/[그림]/table chars)",
+    "20": "markers only (<br>/[그림]/table chars)",
+    "21": "markers only (<br>/[그림]/table chars)",
+    "22": "markers only (<br>/[그림]/table chars)"
+   },
+   "first_diff_page": 1,
+   "first_diff_sample": [
+    "--- off p1",
+    "+++ embedded p1",
+    "@@ -7,2 +7,4 @@",
+    " 行政 을 始作 한 은 년 年代初 할 동 은 전 發展 을 特 최근 最近 문 文化財保護法 을 전문 全文改 正 문 관 文化財管理 各種 制度 를 改善 운 관 管理體制 를 률 能率的 合理的 再整備 현 現行制度 는 改善 할 분 部分 持續的 인 연 硏究 ․ 修正 ․ 완 補完 필 므 外國 制度",
+    "+",
+    "+[그림]",
+    " "
+   ],
+   "total_body_len": {
+    "off": 11881,
+    "embedded": 11881
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "off": 21,
+    "embedded": 21
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "off": null,
+    "embedded": null
+   },
+   "odl_errors": {
+    "off": [],
+    "embedded": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "off": 1.562,
+    "embedded": 1.859
+   },
+   "time_ratio": 1.19,
+   "body_len_per_page_equal": true,
+   "body_len_per_page_diffs": {},
+   "figures_embedded": 24
+  }
+ ],
+ "side_checks": {
+  "classify_diffs.json": {
+   "pages": {
+    "KCI_FI000937498 p2": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000937498 p3": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000937498 p4": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000937498 p5": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001168821 p0": "list-item leading */※ marker dropped",
+    "KCI_FI001030932 p0": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001030932 p12": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p0": "list-item leading */※ marker dropped",
+    "KCI_FI002961735 p1": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p7": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p8": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p10": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p17": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p18": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p19": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p20": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p24": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002961735 p28": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p0": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p2": "list-item leading */※ marker dropped",
+    "KCI_FI002309766 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p8": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p10": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p11": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p13": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p14": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p15": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p16": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p17": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p18": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p19": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p20": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p21": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p23": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002309766 p29": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001005886 p13": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001005886 p33": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002067020 p0": "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped",
+    "KCI_FI002067020 p3": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002067020 p16": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p3": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p4": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p5": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p7": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p8": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002776016 p11": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002180861 p16": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001618766 p14": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001618766 p24": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001618766 p29": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001618766 p36": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002675501 p2": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002675501 p12": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002675501 p13": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI003274665 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI003274665 p11": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI003274665 p13": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI003274665 p14": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI003274665 p37": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI003274665 p38": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p9": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p10": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p11": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p12": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p13": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p17": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p19": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p20": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p22": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p33": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p34": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p41": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p45": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001827561 p46": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001037448 p3": "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped",
+    "KCI_FI001037448 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001037448 p16": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001037448 p25": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p0": "list-item leading */※ marker dropped",
+    "KCI_FI001930485 p1": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p5": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p7": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p8": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p9": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p10": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p11": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p12": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p13": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p16": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p17": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p18": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p19": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p20": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p21": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p22": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p23": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p24": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p25": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p26": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p27": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p28": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p29": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001930485 p35": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p0": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p2": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p3": "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped",
+    "KCI_FI000858284 p4": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p5": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p7": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p8": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p9": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p10": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p11": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI000858284 p12": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002990049 p2": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002990049 p3": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002990049 p4": "space before , or ( dropped",
+    "KCI_FI002990049 p8": "space before , or ( dropped",
+    "KCI_FI002990049 p19": "space before , or ( dropped",
+    "KCI_FI002990049 p20": "space before , or ( dropped",
+    "KCI_FI002990049 p24": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI002990049 p25": "space before , or ( dropped",
+    "KCI_FI002990049 p31": "space before , or ( dropped",
+    "KCI_FI002990049 p34": "space before , or ( dropped",
+    "KCI_FI002990049 p35": "space before , or ( dropped",
+    "KCI_FI002990049 p36": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001343547 p8": "list-item leading */※ marker dropped",
+    "KCI_FI001343547 p9": "list-item leading */※ marker dropped",
+    "KCI_FI001667569 p0": "other: insert ''->'i'",
+    "KCI_FI001667569 p1": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p6": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p7": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p8": "html-escape(&lt; &gt; &amp;) + other: insert ''->\"'\"",
+    "KCI_FI001667569 p9": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p10": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p14": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p16": "html-escape(&lt; &gt; &amp;)",
+    "KCI_FI001667569 p17": "other: insert ''->'('",
+    "KCI_FI001667569 p21": "html-escape(&lt; &gt; &amp;)"
+   },
+   "counts": {
+    "html-escape(&lt; &gt; &amp;)": 123,
+    "list-item leading */※ marker dropped": 6,
+    "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped": 3,
+    "space before , or ( dropped": 8,
+    "includes other": 3
+   },
+   "docs": {
+    "KCI_FI000937498": {
+     "html-escape(&lt; &gt; &amp;)": 4
+    },
+    "KCI_FI001168821": {
+     "list-item leading */※ marker dropped": 1
+    },
+    "KCI_FI001030932": {
+     "html-escape(&lt; &gt; &amp;)": 2
+    },
+    "KCI_FI002961735": {
+     "list-item leading */※ marker dropped": 1,
+     "html-escape(&lt; &gt; &amp;)": 11
+    },
+    "KCI_FI002309766": {
+     "html-escape(&lt; &gt; &amp;)": 16,
+     "list-item leading */※ marker dropped": 1
+    },
+    "KCI_FI001005886": {
+     "html-escape(&lt; &gt; &amp;)": 2
+    },
+    "KCI_FI002067020": {
+     "html-escape(&lt; &gt; &amp;)": 3,
+     "list-item leading */※ marker dropped": 1
+    },
+    "KCI_FI002776016": {
+     "html-escape(&lt; &gt; &amp;)": 7
+    },
+    "KCI_FI002180861": {
+     "html-escape(&lt; &gt; &amp;)": 1
+    },
+    "KCI_FI001618766": {
+     "html-escape(&lt; &gt; &amp;)": 4
+    },
+    "KCI_FI002675501": {
+     "html-escape(&lt; &gt; &amp;)": 3
+    },
+    "KCI_FI003274665": {
+     "html-escape(&lt; &gt; &amp;)": 6
+    },
+    "KCI_FI001827561": {
+     "html-escape(&lt; &gt; &amp;)": 14
+    },
+    "KCI_FI001037448": {
+     "html-escape(&lt; &gt; &amp;)": 4,
+     "list-item leading */※ marker dropped": 1
+    },
+    "KCI_FI001930485": {
+     "list-item leading */※ marker dropped": 1,
+     "html-escape(&lt; &gt; &amp;)": 25
+    },
+    "KCI_FI000858284": {
+     "html-escape(&lt; &gt; &amp;)": 12,
+     "list-item leading */※ marker dropped": 1
+    },
+    "KCI_FI002990049": {
+     "html-escape(&lt; &gt; &amp;)": 4,
+     "space before , or ( dropped": 8
+    },
+    "KCI_FI001343547": {
+     "list-item leading */※ marker dropped": 2
+    },
+    "KCI_FI001667569": {
+     "other: insert ''->'i'": 1,
+     "html-escape(&lt; &gt; &amp;)": 9,
+     "other: insert ''->\"'\"": 1,
+     "other: insert ''->'('": 1
+    }
+   }
+  },
+  "timing_repeat.json": {
+   "KCI_FI002990049": {
+    "2.5.0": [
+     2.391,
+     2.39,
+     2.422
+    ],
+    "2.5.9": [
+     3.078,
+     2.875,
+     3.0
+    ]
+   },
+   "KCI_FI003145254": {
+    "2.5.0": [
+     2.219,
+     2.187,
+     2.187
+    ],
+    "2.5.9": [
+     2.125,
+     2.172,
+     2.11
+    ]
+   },
+   "KCI_FI001930485": {
+    "2.5.0": [
+     14.515,
+     14.484,
+     14.719
+    ],
+    "2.5.9": [
+     14.563,
+     14.453,
+     13.265
+    ]
+   },
+   "KCI_FI001667569": {
+    "2.5.0": [
+     1.891,
+     1.875,
+     2.047
+    ],
+    "2.5.9": [
+     1.828,
+     1.844,
+     1.969
+    ]
+   },
+   "KCI_FI002025246": {
+    "2.5.0": [
+     0.796,
+     0.782,
+     0.781
+    ],
+    "2.5.9": [
+     0.781,
+     0.75,
+     0.797
+    ]
+   }
+  },
+  "slow_doc_probe_KCI_FI001238691.json": {
+   "2.5.0": {
+    "status": "timeout",
+    "seconds": 600.2,
+    "files": [],
+    "md_page_breaks": null,
+    "stderr_tail": ""
+   },
+   "2.5.9": {
+    "status": "exit 1",
+    "seconds": 51.6,
+    "files": [],
+    "md_page_breaks": null,
+    "stderr_tail": "ss=true', '-Dapple.awt.UIElement=true', '-jar', 'C:\\\\Users\\\\LANDSOFT\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-LANDSOFT-mygit-NL-library-AI\\\\ac2847f8-32b7-46ce-8254-e87152398b72\\\\scratchpad\\\\odl259\\\\odl259\\\\opendataloader_pdf\\\\jar\\\\opendataloader-pdf-cli.jar', 'D:/SKOVIX/KCI/pdf/KCI_FI001238691.pdf', '--output-dir', 'C:\\\\Users\\\\LANDSOFT\\\\AppData\\\\Local\\\\Temp\\\\tmp22g9drnv', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1.\r\n"
+   }
+  },
+  "slow_doc_probe_259_full.txt": [
+   "Exception in thread \"main\" java.lang.OutOfMemoryError: Java heap space: failed reallocation of scalar replaced objects",
+   "Error running opendataloader-pdf CLI.",
+   "    raise subprocess.CalledProcessError(",
+   "subprocess.CalledProcessError: Command '['java', '-Djava.awt.headless=true', '-Dapple.awt.UIElement=true', '-jar', 'C:\\\\Users\\\\LANDSOFT\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-LANDSOFT-mygit-NL-library-AI\\\\ac2847f8-32b7-46ce-8254-e87152398b72\\\\scratchpad\\\\odl259\\\\odl259\\\\opendataloader_pdf\\\\jar\\\\opendataloader-pdf-cli.jar', 'D:/SKOVIX/KCI/pdf/KCI_FI001238691.pdf', '--output-dir', 'probe_out259', '--format', 'markdown,json', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1."
+  ]
+ },
+ "notes": [
+  "Exported code = 1f4954b. The round07 worktree HEAD has since moved to 741219f; extractor.py, page_routing.py and requirements.txt are byte-identical (CRLF-normalised) between the two, config.py only gains a deadline model_validator, so the extraction path tested is the current one.",
+  "The shared venv (draft_D/venv124) lost the .py files of httpcore/h11/sniffio/colorama at 11:20 (outside this experiment); httpx failed to import. httpcore 1.0.9, h11 0.16.0, sniffio 1.3.1 were pip --target installed into odl259/pydeps and appended LAST to PYTHONPATH. The venv was not touched.",
+  "Windows caveat confirmed: on a round07 ODL timeout _kill_process_group only kills the child python; the java grandchild keeps running. KCI_FI001238691 (2.5.0) left a java on the fitz-resaved temp copy running from 11:31 to 11:38 (~394 CPU-s, 8.4 GB) until it was killed by hand; the orphan filter matched only java whose command line had the doc id, so it missed the resaved temp path. Timings of KCI_FI001238691 2.5.9 onward (docs 42-45 and the embedded runs) ran next to that orphan; timing_repeat.json re-measures the outliers without it.",
+  "No ODL json in the sample (either version) had header/footer elements, so the header/footer strip path (_clean_text strip_lines) was not exercised by real data."
+ ],
+ "per_doc": [
+  {
+   "id": "KCI_FI002029401",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 20,
+    "2.5.9": 20
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.079,
+    "2.5.9": 1.375
+   },
+   "time_ratio": 0.661,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI002027714",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 10,
+    "2.5.9": 10
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.313,
+    "2.5.9": 1.281
+   },
+   "time_ratio": 0.976,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI002027613",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 19,
+    "2.5.9": 19
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 0.813,
+    "2.5.9": 0.797
+   },
+   "time_ratio": 0.98,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI002025273",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 21,
+    "2.5.9": 21
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 0.782,
+    "2.5.9": 0.797
+   },
+   "time_ratio": 1.019,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI002028807",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 19,
+    "2.5.9": 19
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 0.797,
+    "2.5.9": 0.813
+   },
+   "time_ratio": 1.02,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI002027685",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 20,
+    "2.5.9": 20
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 0.844,
+    "2.5.9": 0.843
+   },
+   "time_ratio": 0.999,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI002029313",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 21,
+    "2.5.9": 21
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 0.781,
+    "2.5.9": 0.782
+   },
+   "time_ratio": 1.001,
+   "group": "fail_block"
+  },
+  {
+   "id": "KCI_FI000870623",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 7,
+    "2.5.9": 7
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.156,
+    "2.5.9": 1.203
+   },
+   "time_ratio": 1.041,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI000895213",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 14,
+    "2.5.9": 14
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.172,
+    "2.5.9": 1.359
+   },
+   "time_ratio": 1.16,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI000885711",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 38,
+    "2.5.9": 38
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.266,
+    "2.5.9": 1.485
+   },
+   "time_ratio": 1.173,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI001112773",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 19,
+    "2.5.9": 19
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.313,
+    "2.5.9": 1.234
+   },
+   "time_ratio": 0.94,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI000937498",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "body_len_by_diff_page": {
+    "2": {
+     "2.5.0": 682,
+     "2.5.9": 686
+    },
+    "3": {
+     "2.5.0": 932,
+     "2.5.9": 1008
+    },
+    "4": {
+     "2.5.0": 1749,
+     "2.5.9": 1753
+    },
+    "5": {
+     "2.5.0": 809,
+     "2.5.9": 817
+    }
+   },
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 682,
+     "2.5.9": 686
+    },
+    "3": {
+     "2.5.0": 932,
+     "2.5.9": 1008
+    },
+    "4": {
+     "2.5.0": 1749,
+     "2.5.9": 1753
+    },
+    "5": {
+     "2.5.0": 809,
+     "2.5.9": 817
+    }
+   },
+   "nature_by_page": {
+    "2": "content differs (682->686 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "3": "content differs (932->1008 struct chars, 7 lines only in 2.5.0, 7 only in 2.5.9)",
+    "4": "content differs (1749->1753 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "5": "content differs (809->817 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   },
+   "first_diff_page": 2,
+   "first_diff_sample": [
+    "--- 2.5.0 p2",
+    "+++ 2.5.9 p2",
+    "@@ -42,3 +42,3 @@",
+    " ",
+    "-= + » &",
+    "+= + » &amp;",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 6219,
+    "2.5.9": 6311
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 3,
+    "2.5.9": 3
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.672,
+    "2.5.9": 1.703
+   },
+   "time_ratio": 1.019,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI000954729",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 5,
+    "2.5.9": 5
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.328,
+    "2.5.9": 2.062
+   },
+   "time_ratio": 0.886,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI001343434",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 36,
+    "2.5.9": 36
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.594,
+    "2.5.9": 1.5
+   },
+   "time_ratio": 0.941,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI001168821",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 582,
+     "2.5.9": 580
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 582,
+     "2.5.9": 580
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (582->580 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -18,3 +18,3 @@",
+    " ",
+    "-- * 통일연구원 프로젝트연구위원",
+    "-- ** 이 논문은 한국학술진흥재단의 지원에 의한 연구(KRF-2002-072-BM1021)로 작성되었음.",
+    "+- 통일연구원 프로젝트연구위원",
+    "+- * 이 논문은 한국학술진흥재단의 지원에 의한 연구(KRF-2002-072-BM1021)로 작성되었음."
+   ],
+   "total_body_len": {
+    "2.5.0": 20964,
+    "2.5.9": 20962
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.563,
+    "2.5.9": 1.532
+   },
+   "time_ratio": 0.98,
+   "group": "pre2005"
+  },
+  {
+   "id": "KCI_FI001314298",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 31,
+    "2.5.9": 31
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.406,
+    "2.5.9": 1.532
+   },
+   "time_ratio": 1.09,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI001030932",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    12
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 350,
+     "2.5.9": 356
+    },
+    "12": {
+     "2.5.0": 123,
+     "2.5.9": 127
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 350,
+     "2.5.9": 356
+    },
+    "12": {
+     "2.5.0": 123,
+     "2.5.9": 127
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (350->356 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "12": "content differs (123->127 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -1,2 +1,2 @@",
+    "-# < 요 약 >",
+    "+# &lt; 요 약 &gt;",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 920,
+    "2.5.9": 930
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 12,
+    "2.5.9": 12
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.985,
+    "2.5.9": 1.672
+   },
+   "time_ratio": 0.842,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI001107507",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 19,
+    "2.5.9": 19
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.64,
+    "2.5.9": 1.422
+   },
+   "time_ratio": 0.867,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI001120928",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 22,
+    "2.5.9": 22
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.281,
+    "2.5.9": 1.344
+   },
+   "time_ratio": 1.049,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI002961735",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    1,
+    6,
+    7,
+    8,
+    10,
+    17,
+    18,
+    19,
+    20,
+    24,
+    28
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 878,
+     "2.5.9": 876
+    },
+    "1": {
+     "2.5.0": 1358,
+     "2.5.9": 1362
+    },
+    "6": {
+     "2.5.0": 1051,
+     "2.5.9": 1067
+    },
+    "7": {
+     "2.5.0": 616,
+     "2.5.9": 628
+    },
+    "8": {
+     "2.5.0": 695,
+     "2.5.9": 707
+    },
+    "10": {
+     "2.5.0": 989,
+     "2.5.9": 1011
+    },
+    "17": {
+     "2.5.0": 632,
+     "2.5.9": 662
+    },
+    "18": {
+     "2.5.0": 1170,
+     "2.5.9": 1224
+    },
+    "19": {
+     "2.5.0": 1105,
+     "2.5.9": 1168
+    },
+    "20": {
+     "2.5.0": 887,
+     "2.5.9": 902
+    },
+    "24": {
+     "2.5.0": 1208,
+     "2.5.9": 1212
+    },
+    "28": {
+     "2.5.0": 1473,
+     "2.5.9": 1489
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 878,
+     "2.5.9": 876
+    },
+    "1": {
+     "2.5.0": 1358,
+     "2.5.9": 1362
+    },
+    "6": {
+     "2.5.0": 1051,
+     "2.5.9": 1067
+    },
+    "7": {
+     "2.5.0": 616,
+     "2.5.9": 628
+    },
+    "8": {
+     "2.5.0": 695,
+     "2.5.9": 707
+    },
+    "10": {
+     "2.5.0": 989,
+     "2.5.9": 1011
+    },
+    "17": {
+     "2.5.0": 632,
+     "2.5.9": 662
+    },
+    "18": {
+     "2.5.0": 1170,
+     "2.5.9": 1224
+    },
+    "19": {
+     "2.5.0": 1105,
+     "2.5.9": 1168
+    },
+    "20": {
+     "2.5.0": 887,
+     "2.5.9": 902
+    },
+    "24": {
+     "2.5.0": 1208,
+     "2.5.9": 1212
+    },
+    "28": {
+     "2.5.0": 1473,
+     "2.5.9": 1489
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (878->876 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "1": "content differs (1358->1362 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "6": "content differs (1051->1067 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "7": "content differs (616->628 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "8": "content differs (695->707 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "10": "content differs (989->1011 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "17": "content differs (632->662 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "18": "content differs (1170->1224 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "19": "content differs (1105->1168 struct chars, 7 lines only in 2.5.0, 7 only in 2.5.9)",
+    "20": "content differs (887->902 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "24": "content differs (1208->1212 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "28": "content differs (1473->1489 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -21,4 +21,4 @@",
+    " ",
+    "+- 인하대학교 교육학과 박사과정",
+    " - * 인하대학교 교육학과 박사과정",
+    "-- ** 인하대학교 교육학과 박사과정",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 27765,
+    "2.5.9": 28011
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.954,
+    "2.5.9": 1.984
+   },
+   "time_ratio": 1.015,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI002309766",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    2,
+    6,
+    8,
+    10,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    29
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 189,
+     "2.5.9": 193
+    },
+    "2": {
+     "2.5.0": 592,
+     "2.5.9": 590
+    },
+    "6": {
+     "2.5.0": 1147,
+     "2.5.9": 1155
+    },
+    "8": {
+     "2.5.0": 442,
+     "2.5.9": 448
+    },
+    "10": {
+     "2.5.0": 1143,
+     "2.5.9": 1239
+    },
+    "11": {
+     "2.5.0": 1506,
+     "2.5.9": 1680
+    },
+    "13": {
+     "2.5.0": 927,
+     "2.5.9": 972
+    },
+    "14": {
+     "2.5.0": 666,
+     "2.5.9": 699
+    },
+    "15": {
+     "2.5.0": 816,
+     "2.5.9": 858
+    },
+    "16": {
+     "2.5.0": 711,
+     "2.5.9": 744
+    },
+    "17": {
+     "2.5.0": 735,
+     "2.5.9": 774
+    },
+    "18": {
+     "2.5.0": 775,
+     "2.5.9": 808
+    },
+    "19": {
+     "2.5.0": 762,
+     "2.5.9": 792
+    },
+    "20": {
+     "2.5.0": 900,
+     "2.5.9": 942
+    },
+    "21": {
+     "2.5.0": 988,
+     "2.5.9": 992
+    },
+    "23": {
+     "2.5.0": 1156,
+     "2.5.9": 1168
+    },
+    "29": {
+     "2.5.0": 725,
+     "2.5.9": 729
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 189,
+     "2.5.9": 193
+    },
+    "2": {
+     "2.5.0": 592,
+     "2.5.9": 590
+    },
+    "6": {
+     "2.5.0": 1147,
+     "2.5.9": 1155
+    },
+    "8": {
+     "2.5.0": 442,
+     "2.5.9": 448
+    },
+    "10": {
+     "2.5.0": 1143,
+     "2.5.9": 1239
+    },
+    "11": {
+     "2.5.0": 1506,
+     "2.5.9": 1680
+    },
+    "13": {
+     "2.5.0": 927,
+     "2.5.9": 972
+    },
+    "14": {
+     "2.5.0": 666,
+     "2.5.9": 699
+    },
+    "15": {
+     "2.5.0": 816,
+     "2.5.9": 858
+    },
+    "16": {
+     "2.5.0": 711,
+     "2.5.9": 744
+    },
+    "17": {
+     "2.5.0": 735,
+     "2.5.9": 774
+    },
+    "18": {
+     "2.5.0": 775,
+     "2.5.9": 808
+    },
+    "19": {
+     "2.5.0": 762,
+     "2.5.9": 792
+    },
+    "20": {
+     "2.5.0": 900,
+     "2.5.9": 942
+    },
+    "21": {
+     "2.5.0": 988,
+     "2.5.9": 992
+    },
+    "23": {
+     "2.5.0": 1156,
+     "2.5.9": 1168
+    },
+    "29": {
+     "2.5.0": 725,
+     "2.5.9": 729
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (189->193 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "2": "content differs (592->590 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "6": "content differs (1147->1155 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "8": "content differs (442->448 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "10": "content differs (1143->1239 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "11": "content differs (1506->1680 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "13": "content differs (927->972 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "14": "content differs (666->699 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "15": "content differs (816->858 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "16": "content differs (711->744 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "17": "content differs (735->774 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "18": "content differs (775->808 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "19": "content differs (762->792 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "20": "content differs (900->942 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "21": "content differs (988->992 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "23": "content differs (1156->1168 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "29": "content differs (725->729 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -1,2 +1,2 @@",
+    "-幼兒敎育ㆍ保育福祉硏究 Journal of Early Childhood Education & Educare Welfare 2017, Vol. 21, No. 4. pp. 219-249",
+    "+幼兒敎育ㆍ保育福祉硏究 Journal of Early Childhood Education &amp; Educare Welfare 2017, Vol. 21, No. 4. pp. 219-249",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 26815,
+    "2.5.9": 27418
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 1,
+    "2.5.9": 1
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.719,
+    "2.5.9": 1.89
+   },
+   "time_ratio": 1.099,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI001005886",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    13,
+    33
+   ],
+   "body_len_by_diff_page": {
+    "13": {
+     "2.5.0": 965,
+     "2.5.9": 971
+    },
+    "33": {
+     "2.5.0": 1153,
+     "2.5.9": 1157
+    }
+   },
+   "body_len_changed_pages": {
+    "13": {
+     "2.5.0": 965,
+     "2.5.9": 971
+    },
+    "33": {
+     "2.5.0": 1153,
+     "2.5.9": 1157
+    }
+   },
+   "nature_by_page": {
+    "13": "content differs (965->971 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "33": "content differs (1153->1157 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 13,
+   "first_diff_sample": [
+    "--- 2.5.0 p13",
+    "+++ 2.5.9 p13",
+    "@@ -14,3 +14,3 @@",
+    " ",
+    "-- 34) 황태자 나카노오오에(中大兄, 후에 덴치 <天智>천황이 됨) 등이 소가(蘇我)씨를 타도하고 천황중심의 정치체제를 이룬 개혁.",
+    "+- 34) 황태자 나카노오오에(中大兄, 후에 덴치 &lt;天智&gt;천황이 됨) 등이 소가(蘇我)씨를 타도하고 천황중심의 정치체제를 이룬 개혁.",
+    " - 35) 日本書紀 , 崇神記."
+   ],
+   "total_body_len": {
+    "2.5.0": 33296,
+    "2.5.9": 33306
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 2,
+    "2.5.9": 2
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.969,
+    "2.5.9": 1.765
+   },
+   "time_ratio": 0.896,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI002067020",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    3,
+    16
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 470,
+     "2.5.9": 480
+    },
+    "3": {
+     "2.5.0": 841,
+     "2.5.9": 847
+    },
+    "16": {
+     "2.5.0": 606,
+     "2.5.9": 612
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 470,
+     "2.5.9": 480
+    },
+    "3": {
+     "2.5.0": 841,
+     "2.5.9": 847
+    },
+    "16": {
+     "2.5.0": 606,
+     "2.5.9": 612
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (470->480 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "3": "content differs (841->847 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "16": "content differs (606->612 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -4,3 +4,3 @@",
+    " ",
+    "-<차례>",
+    "+&lt;차례&gt;",
+    " ",
+    "@@ -12,3 +12,3 @@",
+    " ",
+    "-<국문요약>",
+    "+&lt;국문요약&gt;",
+    " ",
+    "@@ -20,3 +20,3 @@",
+    " ",
+    "-- * 본고는 2011년 한국한문학회 동계학술대회 발표원고 조선후기 ‘와유록’ 자료 개관",
+    "+- 본고는 2011년 한국한문학회 동계학술대회 발표원고 조선후기 ‘와유록’ 자료 개관",
+    " ",
+    "@@ -24,2 +24,2 @@",
+    " ",
+    "-- ** 성균관대학교 한문학과 부교수",
+    "+- * 성균관대학교 한문학과 부교수"
+   ],
+   "total_body_len": {
+    "2.5.0": 23828,
+    "2.5.9": 23850
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 1,
+    "2.5.9": 1
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.797,
+    "2.5.9": 2.125
+   },
+   "time_ratio": 1.183,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI002776016",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    11
+   ],
+   "body_len_by_diff_page": {
+    "3": {
+     "2.5.0": 1899,
+     "2.5.9": 1925
+    },
+    "4": {
+     "2.5.0": 1684,
+     "2.5.9": 1808
+    },
+    "5": {
+     "2.5.0": 1673,
+     "2.5.9": 1801
+    },
+    "6": {
+     "2.5.0": 1603,
+     "2.5.9": 1727
+    },
+    "7": {
+     "2.5.0": 1649,
+     "2.5.9": 1655
+    },
+    "8": {
+     "2.5.0": 1880,
+     "2.5.9": 1886
+    },
+    "11": {
+     "2.5.0": 1887,
+     "2.5.9": 1899
+    }
+   },
+   "body_len_changed_pages": {
+    "3": {
+     "2.5.0": 1899,
+     "2.5.9": 1925
+    },
+    "4": {
+     "2.5.0": 1684,
+     "2.5.9": 1808
+    },
+    "5": {
+     "2.5.0": 1673,
+     "2.5.9": 1801
+    },
+    "6": {
+     "2.5.0": 1603,
+     "2.5.9": 1727
+    },
+    "7": {
+     "2.5.0": 1649,
+     "2.5.9": 1655
+    },
+    "8": {
+     "2.5.0": 1880,
+     "2.5.9": 1886
+    },
+    "11": {
+     "2.5.0": 1887,
+     "2.5.9": 1899
+    }
+   },
+   "nature_by_page": {
+    "3": "content differs (1899->1925 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "4": "content differs (1684->1808 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "5": "content differs (1673->1801 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "6": "content differs (1603->1727 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "7": "content differs (1649->1655 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "8": "content differs (1880->1886 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "11": "content differs (1887->1899 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   },
+   "first_diff_page": 3,
+   "first_diff_sample": [
+    "--- 2.5.0 p3",
+    "+++ 2.5.9 p3",
+    "@@ -2,3 +2,3 @@",
+    " ",
+    "-- <Table 1> VR Component (William & Alan, 2019)",
+    "+- &lt;Table 1&gt; VR Component (William &amp; Alan, 2019)",
+    " ",
+    "@@ -12,3 +12,3 @@",
+    " ",
+    "-- 2.2. 가상현실 기술 COVID-19 이후, 언택트 문화의 확산과 함께 DX의 핵심 기술 중 가상현실 기술에 대한 관심과 사례가 급증하고 있다. 가상현실이란 컴퓨터 기술을 통해 사람이 주변 환경과 상호작용을 하고 있는 것처럼 느끼게 해주는 인터페이스나 기술, 혹은 그 환경 자체나 환경을 창조하는 활동을 의미한다(Kim, S., Chang, K., 2",
+    "+- 2.2. 가상현실 기술 COVID-19 이후, 언택트 문화의 확산과 함께 DX의 핵심 기술 중 가상현실 기술에 대한 관심과 사례가 급증하고 있다. 가상현실이란 컴퓨터 기술을 통해 사람이 주변 환경과 상호작용을 하고 있는 것처럼 느끼게 해주는 인터페이스나 기술, 혹은 그 환경 자체나 환경을 창조하는 활동을 의미한다(Kim, S., Chang, K., 2",
+    " ",
+    "@@ -16,2 +16,2 @@",
+    " ",
+    "-- 3. 가상현실 기술 기반 패션의 유형 본 연구는 가상현실 기술에 기반한 패션 사례를 분석하는 것이므로, 앞의 가상현실 기술의 개념 고찰을 바탕으로 가상현실 기술에 기반하는 VR, AR, MR 사례들을 연구 대상에 포함하였다. 최근 5년간의 가상현실에 기반한 사례를 분석한 결과, VR 기술을 활용한 영역에 따라 가상 패션 프리젠테이션, 가상 패션 플랫폼",
+    "+- 3. 가상현실 기술 기반 패션의 유형 본 연구는 가상현실 기술에 기반한 패션 사례를 분석하는 것이므로, 앞의 가상현실 기술의 개념 고찰을 바탕으로 가상현실 기술에 기반하는 VR, AR, MR 사례들을 연구 대상에 포함하였다. 최근 5년간의 가상현실에 기반한 사례를 분석한 결과, VR 기술을 활용한 영역에 따라 가상 패션 프리젠테이션, 가상 패션 플랫폼"
+   ],
+   "total_body_len": {
+    "2.5.0": 20684,
+    "2.5.9": 21110
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.39,
+    "2.5.9": 1.344
+   },
+   "time_ratio": 0.967,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI002180861",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    16
+   ],
+   "body_len_by_diff_page": {
+    "16": {
+     "2.5.0": 1571,
+     "2.5.9": 1577
+    }
+   },
+   "body_len_changed_pages": {
+    "16": {
+     "2.5.0": 1571,
+     "2.5.9": 1577
+    }
+   },
+   "nature_by_page": {
+    "16": "content differs (1571->1577 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 16,
+   "first_diff_sample": [
+    "--- 2.5.0 p16",
+    "+++ 2.5.9 p16",
+    "@@ -2,2 +2,2 @@",
+    " ",
+    "-<Pusan National University>",
+    "+&lt;Pusan National University&gt;"
+   ],
+   "total_body_len": {
+    "2.5.0": 31595,
+    "2.5.9": 31601
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.844,
+    "2.5.9": 1.594
+   },
+   "time_ratio": 0.864,
+   "group": "digital"
+  },
+  {
+   "id": "KCI_FI003145254",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 5,
+    "2.5.9": 5
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.25,
+    "2.5.9": 2.984
+   },
+   "time_ratio": 1.326,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI001618766",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    14,
+    24,
+    29,
+    36
+   ],
+   "body_len_by_diff_page": {
+    "14": {
+     "2.5.0": 724,
+     "2.5.9": 730
+    },
+    "24": {
+     "2.5.0": 847,
+     "2.5.9": 853
+    },
+    "29": {
+     "2.5.0": 765,
+     "2.5.9": 771
+    },
+    "36": {
+     "2.5.0": 645,
+     "2.5.9": 663
+    }
+   },
+   "body_len_changed_pages": {
+    "14": {
+     "2.5.0": 724,
+     "2.5.9": 730
+    },
+    "24": {
+     "2.5.0": 847,
+     "2.5.9": 853
+    },
+    "29": {
+     "2.5.0": 765,
+     "2.5.9": 771
+    },
+    "36": {
+     "2.5.0": 645,
+     "2.5.9": 663
+    }
+   },
+   "nature_by_page": {
+    "14": "content differs (724->730 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "24": "content differs (847->853 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "29": "content differs (765->771 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "36": "content differs (645->663 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)"
+   },
+   "first_diff_page": 14,
+   "first_diff_sample": [
+    "--- 2.5.0 p14",
+    "+++ 2.5.9 p14",
+    "@@ -9,3 +9,3 @@",
+    " ",
+    "-<단군신화와 해모수-해부루 신화>",
+    "+&lt;단군신화와 해모수-해부루 신화&gt;",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 33764,
+    "2.5.9": 33800
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 1,
+    "2.5.9": 1
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.984,
+    "2.5.9": 2.312
+   },
+   "time_ratio": 1.165,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI002675501",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    2,
+    12,
+    13
+   ],
+   "body_len_by_diff_page": {
+    "2": {
+     "2.5.0": 675,
+     "2.5.9": 681
+    },
+    "12": {
+     "2.5.0": 955,
+     "2.5.9": 958
+    },
+    "13": {
+     "2.5.0": 881,
+     "2.5.9": 884
+    }
+   },
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 675,
+     "2.5.9": 681
+    },
+    "12": {
+     "2.5.0": 955,
+     "2.5.9": 958
+    },
+    "13": {
+     "2.5.0": 881,
+     "2.5.9": 884
+    }
+   },
+   "nature_by_page": {
+    "2": "content differs (675->681 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "12": "content differs (955->958 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "13": "content differs (881->884 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 2,
+   "first_diff_sample": [
+    "--- 2.5.0 p2",
+    "+++ 2.5.9 p2",
+    "@@ -6,3 +6,3 @@",
+    " ",
+    "-###### <차 례>",
+    "+###### &lt;차 례&gt;",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 21249,
+    "2.5.9": 21261
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 1,
+    "2.5.9": 1
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.265,
+    "2.5.9": 1.735
+   },
+   "time_ratio": 0.766,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI001127976",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 8,
+    "2.5.9": 8
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.437,
+    "2.5.9": 1.406
+   },
+   "time_ratio": 0.978,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI003315691",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 2,
+    "2.5.9": 2
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.297,
+    "2.5.9": 2.328
+   },
+   "time_ratio": 1.013,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI003274665",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    6,
+    11,
+    13,
+    14,
+    37,
+    38
+   ],
+   "body_len_by_diff_page": {
+    "6": {
+     "2.5.0": 1293,
+     "2.5.9": 1297
+    },
+    "11": {
+     "2.5.0": 1576,
+     "2.5.9": 1580
+    },
+    "13": {
+     "2.5.0": 1366,
+     "2.5.9": 1378
+    },
+    "14": {
+     "2.5.0": 1374,
+     "2.5.9": 1386
+    },
+    "37": {
+     "2.5.0": 1614,
+     "2.5.9": 1618
+    },
+    "38": {
+     "2.5.0": 1670,
+     "2.5.9": 1678
+    }
+   },
+   "body_len_changed_pages": {
+    "6": {
+     "2.5.0": 1293,
+     "2.5.9": 1297
+    },
+    "11": {
+     "2.5.0": 1576,
+     "2.5.9": 1580
+    },
+    "13": {
+     "2.5.0": 1366,
+     "2.5.9": 1378
+    },
+    "14": {
+     "2.5.0": 1374,
+     "2.5.9": 1386
+    },
+    "37": {
+     "2.5.0": 1614,
+     "2.5.9": 1618
+    },
+    "38": {
+     "2.5.0": 1670,
+     "2.5.9": 1678
+    }
+   },
+   "nature_by_page": {
+    "6": "content differs (1293->1297 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "11": "content differs (1576->1580 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "13": "content differs (1366->1378 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "14": "content differs (1374->1386 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "37": "content differs (1614->1618 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "38": "content differs (1670->1678 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   },
+   "first_diff_page": 6,
+   "first_diff_sample": [
+    "--- 2.5.0 p6",
+    "+++ 2.5.9 p6",
+    "@@ -2,3 +2,3 @@",
+    " ",
+    "-이 시기 미국 정부는 추가로 여러 창업 지원 정책을 시행하여 분위기를 뒷받침했다. 1982년 제정된 Small Business Innovation Research (SBIR) 프로그램은 연방 연구기 관들이 예산의 일부를 초기 기업에 R&D 자금으로 지원하도록 의무화한 것으로, 대학 발명 으로 창업한 스타트업들이 사업화 자금을 확보하는 데 크게 기여하였다.",
+    "+이 시기 미국 정부는 추가로 여러 창업 지원 정책을 시행하여 분위기를 뒷받침했다. 1982년 제정된 Small Business Innovation Research (SBIR) 프로그램은 연방 연구기 관들이 예산의 일부를 초기 기업에 R&amp;D 자금으로 지원하도록 의무화한 것으로, 대학 발명 으로 창업한 스타트업들이 사업화 자금을 확보하는 데 크게 기여",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 46330,
+    "2.5.9": 46374
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 2,
+    "2.5.9": 2
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.797,
+    "2.5.9": 1.766
+   },
+   "time_ratio": 0.983,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI001827561",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    17,
+    19,
+    20,
+    22,
+    33,
+    34,
+    41,
+    45,
+    46
+   ],
+   "body_len_by_diff_page": {
+    "9": {
+     "2.5.0": 825,
+     "2.5.9": 831
+    },
+    "10": {
+     "2.5.0": 803,
+     "2.5.9": 815
+    },
+    "11": {
+     "2.5.0": 878,
+     "2.5.9": 890
+    },
+    "12": {
+     "2.5.0": 841,
+     "2.5.9": 865
+    },
+    "13": {
+     "2.5.0": 743,
+     "2.5.9": 755
+    },
+    "17": {
+     "2.5.0": 989,
+     "2.5.9": 1001
+    },
+    "19": {
+     "2.5.0": 793,
+     "2.5.9": 805
+    },
+    "20": {
+     "2.5.0": 818,
+     "2.5.9": 824
+    },
+    "22": {
+     "2.5.0": 831,
+     "2.5.9": 837
+    },
+    "33": {
+     "2.5.0": 806,
+     "2.5.9": 812
+    },
+    "34": {
+     "2.5.0": 699,
+     "2.5.9": 705
+    },
+    "41": {
+     "2.5.0": 767,
+     "2.5.9": 773
+    },
+    "45": {
+     "2.5.0": 832,
+     "2.5.9": 838
+    },
+    "46": {
+     "2.5.0": 788,
+     "2.5.9": 794
+    }
+   },
+   "body_len_changed_pages": {
+    "9": {
+     "2.5.0": 825,
+     "2.5.9": 831
+    },
+    "10": {
+     "2.5.0": 803,
+     "2.5.9": 815
+    },
+    "11": {
+     "2.5.0": 878,
+     "2.5.9": 890
+    },
+    "12": {
+     "2.5.0": 841,
+     "2.5.9": 865
+    },
+    "13": {
+     "2.5.0": 743,
+     "2.5.9": 755
+    },
+    "17": {
+     "2.5.0": 989,
+     "2.5.9": 1001
+    },
+    "19": {
+     "2.5.0": 793,
+     "2.5.9": 805
+    },
+    "20": {
+     "2.5.0": 818,
+     "2.5.9": 824
+    },
+    "22": {
+     "2.5.0": 831,
+     "2.5.9": 837
+    },
+    "33": {
+     "2.5.0": 806,
+     "2.5.9": 812
+    },
+    "34": {
+     "2.5.0": 699,
+     "2.5.9": 705
+    },
+    "41": {
+     "2.5.0": 767,
+     "2.5.9": 773
+    },
+    "45": {
+     "2.5.0": 832,
+     "2.5.9": 838
+    },
+    "46": {
+     "2.5.0": 788,
+     "2.5.9": 794
+    }
+   },
+   "nature_by_page": {
+    "9": "content differs (825->831 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "10": "content differs (803->815 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "11": "content differs (878->890 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "12": "content differs (841->865 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "13": "content differs (743->755 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "17": "content differs (989->1001 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "19": "content differs (793->805 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "20": "content differs (818->824 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "22": "content differs (831->837 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "33": "content differs (806->812 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "34": "content differs (699->705 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "41": "content differs (767->773 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "45": "content differs (832->838 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "46": "content differs (788->794 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 9,
+   "first_diff_sample": [
+    "--- 2.5.0 p9",
+    "+++ 2.5.9 p9",
+    "@@ -10,3 +10,3 @@",
+    " ",
+    "-진하특사는 ‘진하겸사은행’이라는 정식 명칭 그대로 황제의 칠순에 대 한 진하 외에 사은의 임무까지 겸하였다. 이에 따라 그들이 제출한 외교 문서는 진하 표문[1건]과 사은 표문[4건], 그리고 몇 건의 부속문서로 이 루어졌다. 동문휘고 에서 진하특사가 청에 제출한 표문을 모아 정리하 면 <표 1>과 같다.",
+    "+진하특사는 ‘진하겸사은행’이라는 정식 명칭 그대로 황제의 칠순에 대 한 진하 외에 사은의 임무까지 겸하였다. 이에 따라 그들이 제출한 외교 문서는 진하 표문[1건]과 사은 표문[4건], 그리고 몇 건의 부속문서로 이 루어졌다. 동문휘고 에서 진하특사가 청에 제출한 표문을 모아 정리하 면 &lt;표 1&gt;과 같다.",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 46864,
+    "2.5.9": 46996
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 1,
+    "2.5.9": 1
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.766,
+    "2.5.9": 2.625
+   },
+   "time_ratio": 0.949,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI001037448",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    3,
+    6,
+    16,
+    25
+   ],
+   "body_len_by_diff_page": {
+    "3": {
+     "2.5.0": 1297,
+     "2.5.9": 1299
+    },
+    "6": {
+     "2.5.0": 149,
+     "2.5.9": 167
+    },
+    "16": {
+     "2.5.0": 230,
+     "2.5.9": 242
+    },
+    "25": {
+     "2.5.0": 545,
+     "2.5.9": 557
+    }
+   },
+   "body_len_changed_pages": {
+    "3": {
+     "2.5.0": 1297,
+     "2.5.9": 1299
+    },
+    "6": {
+     "2.5.0": 149,
+     "2.5.9": 167
+    },
+    "16": {
+     "2.5.0": 230,
+     "2.5.9": 242
+    },
+    "25": {
+     "2.5.0": 545,
+     "2.5.9": 557
+    }
+   },
+   "nature_by_page": {
+    "3": "content differs (1297->1299 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "6": "content differs (149->167 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "16": "content differs (230->242 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "25": "content differs (545->557 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)"
+   },
+   "first_diff_page": 3,
+   "first_diff_sample": [
+    "--- 2.5.0 p3",
+    "+++ 2.5.9 p3",
+    "@@ -6,3 +6,3 @@",
+    " ",
+    "-Kim, Hyeon-Kyun & Yim, Ho-Joon(2006), Últimas tendencias y perspectivas de la liquidación del pasado en España, Revista Iberoamericana, 17, pp. 23-45.",
+    "+Kim, Hyeon-Kyun &amp; Yim, Ho-Joon(2006), Últimas tendencias y perspectivas de la liquidación del pasado en España, Revista Iberoamericana, 17, pp. 23-45.",
+    " ",
+    "@@ -12,3 +12,3 @@",
+    " ",
+    "-- * 이 논문은 2003년도 한국학술진흥재단의 지원에 의하여 연구되었음. (RF-2003-072-AL2001)",
+    "-- ** 연구책임자: 김현균(서울대학교) 공동연구원: 임호준(한국예술종합학교)",
+    "+- 이 논문은 2003년도 한국학술진흥재단의 지원에 의하여 연구되었음. (RF-2003-072-AL2001)",
+    "+- * 연구책임자: 김현균(서울대학교) 공동연구원: 임호준(한국예술종합학교)"
+   ],
+   "total_body_len": {
+    "2.5.0": 8856,
+    "2.5.9": 8900
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.735,
+    "2.5.9": 1.485
+   },
+   "time_ratio": 0.856,
+   "group": "short_front"
+  },
+  {
+   "id": "KCI_FI001930485",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    1,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    35
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 996,
+     "2.5.9": 994
+    },
+    "1": {
+     "2.5.0": 1092,
+     "2.5.9": 1096
+    },
+    "5": {
+     "2.5.0": 700,
+     "2.5.9": 716
+    },
+    "6": {
+     "2.5.0": 784,
+     "2.5.9": 796
+    },
+    "7": {
+     "2.5.0": 560,
+     "2.5.9": 572
+    },
+    "8": {
+     "2.5.0": 513,
+     "2.5.9": 543
+    },
+    "9": {
+     "2.5.0": 214,
+     "2.5.9": 232
+    },
+    "10": {
+     "2.5.0": 798,
+     "2.5.9": 810
+    },
+    "11": {
+     "2.5.0": 774,
+     "2.5.9": 780
+    },
+    "12": {
+     "2.5.0": 735,
+     "2.5.9": 759
+    },
+    "13": {
+     "2.5.0": 611,
+     "2.5.9": 641
+    },
+    "16": {
+     "2.5.0": 855,
+     "2.5.9": 879
+    },
+    "17": {
+     "2.5.0": 992,
+     "2.5.9": 1004
+    },
+    "18": {
+     "2.5.0": 812,
+     "2.5.9": 848
+    },
+    "19": {
+     "2.5.0": 945,
+     "2.5.9": 957
+    },
+    "20": {
+     "2.5.0": 671,
+     "2.5.9": 701
+    },
+    "21": {
+     "2.5.0": 750,
+     "2.5.9": 768
+    },
+    "22": {
+     "2.5.0": 216,
+     "2.5.9": 234
+    },
+    "23": {
+     "2.5.0": 1051,
+     "2.5.9": 1075
+    },
+    "24": {
+     "2.5.0": 829,
+     "2.5.9": 853
+    },
+    "25": {
+     "2.5.0": 386,
+     "2.5.9": 413
+    },
+    "26": {
+     "2.5.0": 797,
+     "2.5.9": 821
+    },
+    "27": {
+     "2.5.0": 1053,
+     "2.5.9": 1065
+    },
+    "28": {
+     "2.5.0": 793,
+     "2.5.9": 811
+    },
+    "29": {
+     "2.5.0": 591,
+     "2.5.9": 615
+    },
+    "35": {
+     "2.5.0": 1215,
+     "2.5.9": 1231
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 996,
+     "2.5.9": 994
+    },
+    "1": {
+     "2.5.0": 1092,
+     "2.5.9": 1096
+    },
+    "5": {
+     "2.5.0": 700,
+     "2.5.9": 716
+    },
+    "6": {
+     "2.5.0": 784,
+     "2.5.9": 796
+    },
+    "7": {
+     "2.5.0": 560,
+     "2.5.9": 572
+    },
+    "8": {
+     "2.5.0": 513,
+     "2.5.9": 543
+    },
+    "9": {
+     "2.5.0": 214,
+     "2.5.9": 232
+    },
+    "10": {
+     "2.5.0": 798,
+     "2.5.9": 810
+    },
+    "11": {
+     "2.5.0": 774,
+     "2.5.9": 780
+    },
+    "12": {
+     "2.5.0": 735,
+     "2.5.9": 759
+    },
+    "13": {
+     "2.5.0": 611,
+     "2.5.9": 641
+    },
+    "16": {
+     "2.5.0": 855,
+     "2.5.9": 879
+    },
+    "17": {
+     "2.5.0": 992,
+     "2.5.9": 1004
+    },
+    "18": {
+     "2.5.0": 812,
+     "2.5.9": 848
+    },
+    "19": {
+     "2.5.0": 945,
+     "2.5.9": 957
+    },
+    "20": {
+     "2.5.0": 671,
+     "2.5.9": 701
+    },
+    "21": {
+     "2.5.0": 750,
+     "2.5.9": 768
+    },
+    "22": {
+     "2.5.0": 216,
+     "2.5.9": 234
+    },
+    "23": {
+     "2.5.0": 1051,
+     "2.5.9": 1075
+    },
+    "24": {
+     "2.5.0": 829,
+     "2.5.9": 853
+    },
+    "25": {
+     "2.5.0": 386,
+     "2.5.9": 413
+    },
+    "26": {
+     "2.5.0": 797,
+     "2.5.9": 821
+    },
+    "27": {
+     "2.5.0": 1053,
+     "2.5.9": 1065
+    },
+    "28": {
+     "2.5.0": 793,
+     "2.5.9": 811
+    },
+    "29": {
+     "2.5.0": 591,
+     "2.5.9": 615
+    },
+    "35": {
+     "2.5.0": 1215,
+     "2.5.9": 1231
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (996->994 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "1": "content differs (1092->1096 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "5": "content differs (700->716 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "6": "content differs (784->796 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "7": "content differs (560->572 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "8": "content differs (513->543 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "9": "content differs (214->232 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "10": "content differs (798->810 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "11": "content differs (774->780 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "12": "content differs (735->759 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "13": "content differs (611->641 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "16": "content differs (855->879 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "17": "content differs (992->1004 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "18": "content differs (812->848 struct chars, 5 lines only in 2.5.0, 5 only in 2.5.9)",
+    "19": "content differs (945->957 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "20": "content differs (671->701 struct chars, 6 lines only in 2.5.0, 6 only in 2.5.9)",
+    "21": "content differs (750->768 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "22": "content differs (216->234 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "23": "content differs (1051->1075 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "24": "content differs (829->853 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "25": "content differs (386->413 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "26": "content differs (797->821 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "27": "content differs (1053->1065 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "28": "content differs (793->811 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "29": "content differs (591->615 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "35": "content differs (1215->1231 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -20,4 +20,4 @@",
+    " ",
+    "-- * 이 논문은 이진복(2013). 조형도예표현력 측정도구 개발연구. 국민대학교 박사학위 논문을 수정, 보완한 연구임.",
+    "-- ** 본 학회 회원. jimbogi@hanmail.net, 주저자",
+    "+- 이 논문은 이진복(2013). 조형도예표현력 측정도구 개발연구. 국민대학교 박사학위 논문을 수정, 보완한 연구임.",
+    "+- * 본 학회 회원. jimbogi@hanmail.net, 주저자",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 31053,
+    "2.5.9": 31534
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 13.109,
+    "2.5.9": 15.5
+   },
+   "time_ratio": 1.182,
+   "group": "br_grid"
+  },
+  {
+   "id": "KCI_FI000897237",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 17,
+    "2.5.9": 17
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.406,
+    "2.5.9": 1.422
+   },
+   "time_ratio": 1.011,
+   "group": "br_grid"
+  },
+  {
+   "id": "KCI_FI000858284",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 1460,
+     "2.5.9": 1464
+    },
+    "2": {
+     "2.5.0": 219,
+     "2.5.9": 231
+    },
+    "3": {
+     "2.5.0": 940,
+     "2.5.9": 950
+    },
+    "4": {
+     "2.5.0": 337,
+     "2.5.9": 343
+    },
+    "5": {
+     "2.5.0": 1471,
+     "2.5.9": 1477
+    },
+    "6": {
+     "2.5.0": 1962,
+     "2.5.9": 1968
+    },
+    "7": {
+     "2.5.0": 322,
+     "2.5.9": 328
+    },
+    "8": {
+     "2.5.0": 1802,
+     "2.5.9": 1808
+    },
+    "9": {
+     "2.5.0": 735,
+     "2.5.9": 741
+    },
+    "10": {
+     "2.5.0": 139,
+     "2.5.9": 145
+    },
+    "11": {
+     "2.5.0": 295,
+     "2.5.9": 307
+    },
+    "12": {
+     "2.5.0": 159,
+     "2.5.9": 171
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 1460,
+     "2.5.9": 1464
+    },
+    "2": {
+     "2.5.0": 219,
+     "2.5.9": 231
+    },
+    "3": {
+     "2.5.0": 940,
+     "2.5.9": 950
+    },
+    "4": {
+     "2.5.0": 337,
+     "2.5.9": 343
+    },
+    "5": {
+     "2.5.0": 1471,
+     "2.5.9": 1477
+    },
+    "6": {
+     "2.5.0": 1962,
+     "2.5.9": 1968
+    },
+    "7": {
+     "2.5.0": 322,
+     "2.5.9": 328
+    },
+    "8": {
+     "2.5.0": 1802,
+     "2.5.9": 1808
+    },
+    "9": {
+     "2.5.0": 735,
+     "2.5.9": 741
+    },
+    "10": {
+     "2.5.0": 139,
+     "2.5.9": 145
+    },
+    "11": {
+     "2.5.0": 295,
+     "2.5.9": 307
+    },
+    "12": {
+     "2.5.0": 159,
+     "2.5.9": 171
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (1460->1464 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "2": "content differs (219->231 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "3": "content differs (940->950 struct chars, 4 lines only in 2.5.0, 4 only in 2.5.9)",
+    "4": "content differs (337->343 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "5": "content differs (1471->1477 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "6": "content differs (1962->1968 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "7": "content differs (322->328 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "8": "content differs (1802->1808 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "9": "content differs (735->741 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "10": "content differs (139->145 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "11": "content differs (295->307 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "12": "content differs (159->171 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -18,3 +18,3 @@",
+    " ",
+    "-For the questionnaire, 91 women's wear brands, which were in higher ranking of sales, were selected, and the age groups were separated into 3: 20's, 30's, and 40's & 50's, according to their customer",
+    "+For the questionnaire, 91 women's wear brands, which were in higher ranking of sales, were selected, and the age groups were separated into 3: 20's, 30's, and 40's &amp; 50's, according to their cust",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 10112,
+    "2.5.9": 10204
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.641,
+    "2.5.9": 1.625
+   },
+   "time_ratio": 0.99,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI002990049",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    2,
+    3,
+    4,
+    8,
+    19,
+    20,
+    24,
+    25,
+    31,
+    34,
+    35,
+    36
+   ],
+   "body_len_by_diff_page": {
+    "2": {
+     "2.5.0": 807,
+     "2.5.9": 819
+    },
+    "3": {
+     "2.5.0": 974,
+     "2.5.9": 978
+    },
+    "4": {
+     "2.5.0": 649,
+     "2.5.9": 649
+    },
+    "8": {
+     "2.5.0": 744,
+     "2.5.9": 744
+    },
+    "19": {
+     "2.5.0": 719,
+     "2.5.9": 719
+    },
+    "20": {
+     "2.5.0": 830,
+     "2.5.9": 830
+    },
+    "24": {
+     "2.5.0": 934,
+     "2.5.9": 942
+    },
+    "25": {
+     "2.5.0": 853,
+     "2.5.9": 853
+    },
+    "31": {
+     "2.5.0": 865,
+     "2.5.9": 865
+    },
+    "34": {
+     "2.5.0": 748,
+     "2.5.9": 748
+    },
+    "35": {
+     "2.5.0": 435,
+     "2.5.9": 435
+    },
+    "36": {
+     "2.5.0": 1788,
+     "2.5.9": 1792
+    }
+   },
+   "body_len_changed_pages": {
+    "2": {
+     "2.5.0": 807,
+     "2.5.9": 819
+    },
+    "3": {
+     "2.5.0": 974,
+     "2.5.9": 978
+    },
+    "24": {
+     "2.5.0": 934,
+     "2.5.9": 942
+    },
+    "36": {
+     "2.5.0": 1788,
+     "2.5.9": 1792
+    }
+   },
+   "nature_by_page": {
+    "2": "content differs (807->819 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "3": "content differs (974->978 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "4": "whitespace",
+    "8": "whitespace",
+    "19": "whitespace",
+    "20": "whitespace",
+    "24": "content differs (934->942 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "25": "whitespace",
+    "31": "whitespace",
+    "34": "whitespace",
+    "35": "whitespace",
+    "36": "content differs (1788->1792 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 2,
+   "first_diff_sample": [
+    "--- 2.5.0 p2",
+    "+++ 2.5.9 p2",
+    "@@ -18,3 +18,3 @@",
+    " ",
+    "-2022. 7., 5면, https://www.kbiz.or.kr/ko/contents/bbs/view.do?seq=152621&pg=30& pgSz=12&mnSeq=207(검색일：2023. 7. 25.).",
+    "+2022. 7., 5면, https://www.kbiz.or.kr/ko/contents/bbs/view.do?seq=152621&amp;pg=30&amp; pgSz=12&amp;mnSeq=207(검색일：2023. 7. 25.).",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 28370,
+    "2.5.9": 28398
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 0,
+    "2.5.9": 0
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.437,
+    "2.5.9": 3.781
+   },
+   "time_ratio": 1.551,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI003011274",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 6,
+    "2.5.9": 6
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.36,
+    "2.5.9": 1.515
+   },
+   "time_ratio": 1.114,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI002252358",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 60,
+    "2.5.9": 60
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 4.516,
+    "2.5.9": 3.203
+   },
+   "time_ratio": 0.709,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI001343547",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    8,
+    9
+   ],
+   "body_len_by_diff_page": {
+    "8": {
+     "2.5.0": 632,
+     "2.5.9": 631
+    },
+    "9": {
+     "2.5.0": 443,
+     "2.5.9": 442
+    }
+   },
+   "body_len_changed_pages": {
+    "8": {
+     "2.5.0": 632,
+     "2.5.9": 631
+    },
+    "9": {
+     "2.5.0": 443,
+     "2.5.9": 442
+    }
+   },
+   "nature_by_page": {
+    "8": "content differs (632->631 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "9": "content differs (443->442 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 8,
+   "first_diff_sample": [
+    "--- 2.5.0 p8",
+    "+++ 2.5.9 p8",
+    "@@ -38,3 +38,3 @@",
+    " ",
+    "-- ※중 문 건 重要文化財件數 는 國寶 건 件數 되 는 國寶 건 件 寶物 건 件 指定 되",
+    "+- 중 문 건 重要文化財件數 는 國寶 건 件數 되 는 國寶 건 件 寶物 건 件 指定 되",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 11883,
+    "2.5.9": 11881
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 21,
+    "2.5.9": 21
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [
+    {
+     "page": 8,
+     "2.5.0": "ODL 글자 유실 의심(ODL 632자 vs 원본 추정 1455자)",
+     "2.5.9": "ODL 글자 유실 의심(ODL 631자 vs 원본 추정 1455자)"
+    },
+    {
+     "page": 9,
+     "2.5.0": "ODL 글자 유실 의심(ODL 443자 vs 원본 추정 1118자)",
+     "2.5.9": "ODL 글자 유실 의심(ODL 442자 vs 원본 추정 1118자)"
+    }
+   ],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.735,
+    "2.5.9": 1.562
+   },
+   "time_ratio": 0.9,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI001141801",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 2,
+    "2.5.9": 2
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 1.328,
+    "2.5.9": 1.36
+   },
+   "time_ratio": 1.024,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI001238691",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 26,
+    "2.5.9": 26
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": "fitz",
+    "2.5.9": "fitz"
+   },
+   "odl_errors": {
+    "2.5.0": [
+     "ODL 실패(원본): 39초 초과",
+     "ODL 실패(fitz 재저장본): 39초 초과",
+     "ODL 실패 — fitz 텍스트로 대체"
+    ],
+    "2.5.9": [
+     "ODL 실패(원본): 39초 초과",
+     "ODL 실패(fitz 재저장본): 39초 초과",
+     "ODL 실패 — fitz 텍스트로 대체"
+    ]
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 78.062,
+    "2.5.9": 78.265
+   },
+   "time_ratio": 1.003,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI002025246",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 14,
+    "2.5.9": 14
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.468,
+    "2.5.9": 1.344
+   },
+   "time_ratio": 0.545,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI001667569",
+   "pages_equal": true,
+   "text_identical": false,
+   "diff_pages": [
+    0,
+    1,
+    6,
+    7,
+    8,
+    9,
+    10,
+    14,
+    16,
+    17,
+    21
+   ],
+   "body_len_by_diff_page": {
+    "0": {
+     "2.5.0": 86,
+     "2.5.9": 87
+    },
+    "1": {
+     "2.5.0": 43,
+     "2.5.9": 46
+    },
+    "6": {
+     "2.5.0": 101,
+     "2.5.9": 107
+    },
+    "7": {
+     "2.5.0": 180,
+     "2.5.9": 192
+    },
+    "8": {
+     "2.5.0": 333,
+     "2.5.9": 355
+    },
+    "9": {
+     "2.5.0": 123,
+     "2.5.9": 126
+    },
+    "10": {
+     "2.5.0": 169,
+     "2.5.9": 184
+    },
+    "14": {
+     "2.5.0": 136,
+     "2.5.9": 142
+    },
+    "16": {
+     "2.5.0": 143,
+     "2.5.9": 146
+    },
+    "17": {
+     "2.5.0": 111,
+     "2.5.9": 112
+    },
+    "21": {
+     "2.5.0": 148,
+     "2.5.9": 154
+    }
+   },
+   "body_len_changed_pages": {
+    "0": {
+     "2.5.0": 86,
+     "2.5.9": 87
+    },
+    "1": {
+     "2.5.0": 43,
+     "2.5.9": 46
+    },
+    "6": {
+     "2.5.0": 101,
+     "2.5.9": 107
+    },
+    "7": {
+     "2.5.0": 180,
+     "2.5.9": 192
+    },
+    "8": {
+     "2.5.0": 333,
+     "2.5.9": 355
+    },
+    "9": {
+     "2.5.0": 123,
+     "2.5.9": 126
+    },
+    "10": {
+     "2.5.0": 169,
+     "2.5.9": 184
+    },
+    "14": {
+     "2.5.0": 136,
+     "2.5.9": 142
+    },
+    "16": {
+     "2.5.0": 143,
+     "2.5.9": 146
+    },
+    "17": {
+     "2.5.0": 111,
+     "2.5.9": 112
+    },
+    "21": {
+     "2.5.0": 148,
+     "2.5.9": 154
+    }
+   },
+   "nature_by_page": {
+    "0": "content differs (86->87 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "1": "content differs (43->46 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "6": "content differs (101->107 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "7": "content differs (180->192 struct chars, 2 lines only in 2.5.0, 2 only in 2.5.9)",
+    "8": "content differs (333->355 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "9": "content differs (123->126 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "10": "content differs (169->184 struct chars, 3 lines only in 2.5.0, 3 only in 2.5.9)",
+    "14": "content differs (136->142 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "16": "content differs (143->146 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "17": "content differs (111->112 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)",
+    "21": "content differs (148->154 struct chars, 1 lines only in 2.5.0, 1 only in 2.5.9)"
+   },
+   "first_diff_page": 0,
+   "first_diff_sample": [
+    "--- 2.5.0 p0",
+    "+++ 2.5.9 p0",
+    "@@ -2,3 +2,3 @@",
+    " ",
+    "-### d[,w\" ~l'A[ ~yhil{a/ ^a]s.Ki",
+    "+### d[,w\" ~l'A[ ~yhil{a/ ^a]s.Kii",
+    " "
+   ],
+   "total_body_len": {
+    "2.5.0": 2262,
+    "2.5.9": 2340
+   },
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 5,
+    "2.5.9": 5
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 4.312,
+    "2.5.9": 1.953
+   },
+   "time_ratio": 0.453,
+   "group": "named_cases"
+  },
+  {
+   "id": "KCI_FI001158431",
+   "pages_equal": true,
+   "text_identical": true,
+   "diff_pages": [],
+   "fill_ratio_keys_equal": true,
+   "fill_ratio_diffs": {},
+   "fill_ratio_max_absdiff": 0.0,
+   "ocr_set_equal": true,
+   "ocr_count": {
+    "2.5.0": 1,
+    "2.5.9": 1
+   },
+   "ocr_decision_diffs": [],
+   "ocr_reason_text_diffs": [],
+   "odl_fallback": {
+    "2.5.0": null,
+    "2.5.9": null
+   },
+   "odl_errors": {
+    "2.5.0": [],
+    "2.5.9": []
+   },
+   "errors_equal": true,
+   "odl_seconds": {
+    "2.5.0": 2.422,
+    "2.5.9": 1.718
+   },
+   "time_ratio": 0.709,
+   "group": "named_cases"
+  }
+ ]
+}

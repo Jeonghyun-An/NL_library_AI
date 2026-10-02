@@ -41,16 +41,19 @@ Required fields (use empty string "" if unknown):
 """
 
 
-async def extract_pdf_metadata(file_path: str) -> dict:
+async def extract_pdf_metadata(file_path: str, *, time_budget: float | None = None) -> dict:
     """
     PDF 파일의 1-2페이지를 OpenDataLoader로 추출 후 LLM으로 메타데이터 dict 반환.
     실패 시 빈 dict 반환 (호출부에서 title fallback 처리).
+
+    time_budget: ODL 변환에 쓸 시간(초) — max_pages=2 여도 변환은 문서 전체라, 적재 추출 단계는 데드라인이
+    남긴 시간을 준다. None 이면 쪽수 비례 상한 그대로다.
     """
     cfg = get_settings()
 
     # ── 1. OpenDataLoader로 페이지 1-2 텍스트 추출 ──────────────
     from services.ingestion.extractor import extract_text_opendataloader
-    odl = await extract_text_opendataloader(file_path, book_id="__meta__", max_pages=2)
+    odl = await extract_text_opendataloader(file_path, book_id="__meta__", max_pages=2, time_budget=time_budget)
     raw_text = "\n\n".join(p.text for p in odl.pages if p.text).strip()
 
     if not raw_text:

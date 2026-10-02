@@ -1,0 +1,441 @@
+{
+ "meta": {
+  "head": "24ce0539c95f6cf67ab08d8a731d9a185ea86613",
+  "app_dirty": [
+   "M app/services/ingestion/extractor.py",
+   " M app/services/ingestion/stages.py",
+   "?? app/tests/test_run_extract_sections.py"
+  ],
+  "page_routing_sha256": "03bef22073ec",
+  "pymupdf": "1.28.0",
+  "python": "3.11.15",
+  "seed": 20261001,
+  "per_group": 200,
+  "workers": 8,
+  "elapsed_sec": 59,
+  "settings_defaults_match": true,
+  "settings_defaults": {
+   "EXTRACT_MIN_CHARS_PER_PAGE": 50,
+   "VLM_MAX_PAGES_PER_DOC": 60,
+   "SCAN_REPEAT_LINE_RATIO": 0.6,
+   "SCAN_SHORT_PAGE_RATIO": 0.5,
+   "SCAN_MIN_PAGES": 3
+  },
+  "skipped": [],
+  "pages_csv_rows": 9639,
+  "pages_csv_omitted_enough_rows": 7954
+ },
+ "groups": {
+  "fail_block": {
+   "docs": 318,
+   "pages": 6862,
+   "old_ocr_pages": 0,
+   "new_ocr_pages": 6837,
+   "removed_uncapped_pages": 0,
+   "added_uncapped_pages": 6844,
+   "capped_docs": 2,
+   "cmap_pages": 0,
+   "len_diff_pages": 0,
+   "scan_docs": 318,
+   "scan_pages": 6862,
+   "scan_old_ocr_pages": 0,
+   "scan_new_ocr_pages": 6837,
+   "scan_docs_old_zero": 318,
+   "scan_docs_gained": 318,
+   "scan_cover_old_ocr": 0,
+   "scan_cover_new_ocr": 300,
+   "nonscan_docs": 0,
+   "nonscan_pages": 0,
+   "nonscan_old_ocr_pages": 0,
+   "nonscan_new_ocr_pages": 0,
+   "nonscan_newly_ocr_pages": 0,
+   "nonscan_no_longer_ocr_pages": 0,
+   "nonscan_changed_br_pages": 0,
+   "nonscan_changed_other_pages": 0,
+   "nonscan_held_by_raw_pages": 0,
+   "nonscan_held_by_raw_docs": 0,
+   "nonscan_cover_old_ocr": 0,
+   "nonscan_cover_new_ocr": 0,
+   "nonscan_img_cover_pages": 0,
+   "nonscan_img_cover_old_ocr": 0,
+   "nonscan_img_cover_new_ocr": 0
+  },
+  "pre2005": {
+   "docs": 200,
+   "pages": 3673,
+   "old_ocr_pages": 1870,
+   "new_ocr_pages": 2196,
+   "removed_uncapped_pages": 0,
+   "added_uncapped_pages": 326,
+   "capped_docs": 1,
+   "cmap_pages": 11,
+   "len_diff_pages": 0,
+   "scan_docs": 102,
+   "scan_pages": 2286,
+   "scan_old_ocr_pages": 1834,
+   "scan_new_ocr_pages": 2160,
+   "scan_docs_old_zero": 10,
+   "scan_docs_gained": 38,
+   "scan_cover_old_ocr": 73,
+   "scan_cover_new_ocr": 94,
+   "nonscan_docs": 98,
+   "nonscan_pages": 1387,
+   "nonscan_old_ocr_pages": 36,
+   "nonscan_new_ocr_pages": 36,
+   "nonscan_newly_ocr_pages": 0,
+   "nonscan_no_longer_ocr_pages": 0,
+   "nonscan_changed_br_pages": 0,
+   "nonscan_changed_other_pages": 0,
+   "nonscan_held_by_raw_pages": 2,
+   "nonscan_held_by_raw_docs": 2,
+   "nonscan_cover_old_ocr": 4,
+   "nonscan_cover_new_ocr": 4,
+   "nonscan_img_cover_pages": 7,
+   "nonscan_img_cover_old_ocr": 3,
+   "nonscan_img_cover_new_ocr": 3
+  },
+  "digital": {
+   "docs": 200,
+   "pages": 4701,
+   "old_ocr_pages": 248,
+   "new_ocr_pages": 320,
+   "removed_uncapped_pages": 0,
+   "added_uncapped_pages": 72,
+   "capped_docs": 0,
+   "cmap_pages": 0,
+   "len_diff_pages": 0,
+   "scan_docs": 13,
+   "scan_pages": 331,
+   "scan_old_ocr_pages": 225,
+   "scan_new_ocr_pages": 297,
+   "scan_docs_old_zero": 3,
+   "scan_docs_gained": 9,
+   "scan_cover_old_ocr": 9,
+   "scan_cover_new_ocr": 10,
+   "nonscan_docs": 187,
+   "nonscan_pages": 4370,
+   "nonscan_old_ocr_pages": 23,
+   "nonscan_new_ocr_pages": 23,
+   "nonscan_newly_ocr_pages": 0,
+   "nonscan_no_longer_ocr_pages": 0,
+   "nonscan_changed_br_pages": 0,
+   "nonscan_changed_other_pages": 0,
+   "nonscan_held_by_raw_pages": 2,
+   "nonscan_held_by_raw_docs": 2,
+   "nonscan_cover_old_ocr": 0,
+   "nonscan_cover_new_ocr": 0,
+   "nonscan_img_cover_pages": 4,
+   "nonscan_img_cover_old_ocr": 0,
+   "nonscan_img_cover_new_ocr": 0
+  },
+  "short_front": {
+   "docs": 24,
+   "pages": 1828,
+   "old_ocr_pages": 49,
+   "new_ocr_pages": 49,
+   "removed_uncapped_pages": 0,
+   "added_uncapped_pages": 0,
+   "capped_docs": 0,
+   "cmap_pages": 1,
+   "len_diff_pages": 0,
+   "scan_docs": 0,
+   "scan_pages": 0,
+   "scan_old_ocr_pages": 0,
+   "scan_new_ocr_pages": 0,
+   "scan_docs_old_zero": 0,
+   "scan_docs_gained": 0,
+   "scan_cover_old_ocr": 0,
+   "scan_cover_new_ocr": 0,
+   "nonscan_docs": 24,
+   "nonscan_pages": 1828,
+   "nonscan_old_ocr_pages": 49,
+   "nonscan_new_ocr_pages": 49,
+   "nonscan_newly_ocr_pages": 0,
+   "nonscan_no_longer_ocr_pages": 0,
+   "nonscan_changed_br_pages": 0,
+   "nonscan_changed_other_pages": 0,
+   "nonscan_held_by_raw_pages": 11,
+   "nonscan_held_by_raw_docs": 4,
+   "nonscan_cover_old_ocr": 0,
+   "nonscan_cover_new_ocr": 0,
+   "nonscan_img_cover_pages": 7,
+   "nonscan_img_cover_old_ocr": 4,
+   "nonscan_img_cover_new_ocr": 4
+  },
+  "br_grid": {
+   "docs": 2,
+   "pages": 54,
+   "old_ocr_pages": 16,
+   "new_ocr_pages": 17,
+   "removed_uncapped_pages": 0,
+   "added_uncapped_pages": 1,
+   "capped_docs": 0,
+   "cmap_pages": 0,
+   "len_diff_pages": 0,
+   "scan_docs": 1,
+   "scan_pages": 17,
+   "scan_old_ocr_pages": 16,
+   "scan_new_ocr_pages": 17,
+   "scan_docs_old_zero": 0,
+   "scan_docs_gained": 1,
+   "scan_cover_old_ocr": 1,
+   "scan_cover_new_ocr": 1,
+   "nonscan_docs": 1,
+   "nonscan_pages": 37,
+   "nonscan_old_ocr_pages": 0,
+   "nonscan_new_ocr_pages": 0,
+   "nonscan_newly_ocr_pages": 0,
+   "nonscan_no_longer_ocr_pages": 0,
+   "nonscan_changed_br_pages": 0,
+   "nonscan_changed_other_pages": 0,
+   "nonscan_held_by_raw_pages": 0,
+   "nonscan_held_by_raw_docs": 0,
+   "nonscan_cover_old_ocr": 0,
+   "nonscan_cover_new_ocr": 0,
+   "nonscan_img_cover_pages": 0,
+   "nonscan_img_cover_old_ocr": 0,
+   "nonscan_img_cover_new_ocr": 0
+  },
+  "named_cases": {
+   "docs": 8,
+   "pages": 475,
+   "old_ocr_pages": 51,
+   "new_ocr_pages": 66,
+   "removed_uncapped_pages": 0,
+   "added_uncapped_pages": 15,
+   "capped_docs": 0,
+   "cmap_pages": 1,
+   "len_diff_pages": 0,
+   "scan_docs": 2,
+   "scan_pages": 40,
+   "scan_old_ocr_pages": 25,
+   "scan_new_ocr_pages": 40,
+   "scan_docs_old_zero": 1,
+   "scan_docs_gained": 2,
+   "scan_cover_old_ocr": 1,
+   "scan_cover_new_ocr": 2,
+   "nonscan_docs": 6,
+   "nonscan_pages": 435,
+   "nonscan_old_ocr_pages": 26,
+   "nonscan_new_ocr_pages": 26,
+   "nonscan_newly_ocr_pages": 0,
+   "nonscan_no_longer_ocr_pages": 0,
+   "nonscan_changed_br_pages": 0,
+   "nonscan_changed_other_pages": 0,
+   "nonscan_held_by_raw_pages": 11,
+   "nonscan_held_by_raw_docs": 4,
+   "nonscan_cover_old_ocr": 0,
+   "nonscan_cover_new_ocr": 0,
+   "nonscan_img_cover_pages": 5,
+   "nonscan_img_cover_old_ocr": 3,
+   "nonscan_img_cover_new_ocr": 3
+  }
+ },
+ "checks": [
+  {
+   "name": "fail_block: OCR 에서 빠진 쪽 0 (VLM 상한 전, 모든 문서)",
+   "ok": true,
+   "detail": "removed_uncapped_pages=0"
+  },
+  {
+   "name": "fail_block: 비스캔 문서 OCR 에서 빠진 쪽 0 (VLM 상한 후)",
+   "ok": true,
+   "detail": "no_longer_ocr=0 newly_ocr=0"
+  },
+  {
+   "name": "fail_block: 비스캔 문서는 <br> 길이 말고는 옛 규칙과 같다",
+   "ok": true,
+   "detail": "changed_other=0 changed_br=0"
+  },
+  {
+   "name": "fail_block: 비스캔 문서 표지 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "old=0 new=0"
+  },
+  {
+   "name": "fail_block: 비스캔 문서 이미지 쪽 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "pages=0 old=0 new=0"
+  },
+  {
+   "name": "fail_block: 스캔본 문서 OCR 쪽 새 >= 옛",
+   "ok": true,
+   "detail": "old=0 new=6837"
+  },
+  {
+   "name": "pre2005: OCR 에서 빠진 쪽 0 (VLM 상한 전, 모든 문서)",
+   "ok": true,
+   "detail": "removed_uncapped_pages=0"
+  },
+  {
+   "name": "pre2005: 비스캔 문서 OCR 에서 빠진 쪽 0 (VLM 상한 후)",
+   "ok": true,
+   "detail": "no_longer_ocr=0 newly_ocr=0"
+  },
+  {
+   "name": "pre2005: 비스캔 문서는 <br> 길이 말고는 옛 규칙과 같다",
+   "ok": true,
+   "detail": "changed_other=0 changed_br=0"
+  },
+  {
+   "name": "pre2005: 비스캔 문서 표지 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "old=4 new=4"
+  },
+  {
+   "name": "pre2005: 비스캔 문서 이미지 쪽 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "pages=7 old=3 new=3"
+  },
+  {
+   "name": "pre2005: 스캔본 문서 OCR 쪽 새 >= 옛",
+   "ok": true,
+   "detail": "old=1834 new=2160"
+  },
+  {
+   "name": "digital: OCR 에서 빠진 쪽 0 (VLM 상한 전, 모든 문서)",
+   "ok": true,
+   "detail": "removed_uncapped_pages=0"
+  },
+  {
+   "name": "digital: 비스캔 문서 OCR 에서 빠진 쪽 0 (VLM 상한 후)",
+   "ok": true,
+   "detail": "no_longer_ocr=0 newly_ocr=0"
+  },
+  {
+   "name": "digital: 비스캔 문서는 <br> 길이 말고는 옛 규칙과 같다",
+   "ok": true,
+   "detail": "changed_other=0 changed_br=0"
+  },
+  {
+   "name": "digital: 비스캔 문서 표지 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "old=0 new=0"
+  },
+  {
+   "name": "digital: 비스캔 문서 이미지 쪽 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "pages=4 old=0 new=0"
+  },
+  {
+   "name": "digital: 스캔본 문서 OCR 쪽 새 >= 옛",
+   "ok": true,
+   "detail": "old=225 new=297"
+  },
+  {
+   "name": "short_front: OCR 에서 빠진 쪽 0 (VLM 상한 전, 모든 문서)",
+   "ok": true,
+   "detail": "removed_uncapped_pages=0"
+  },
+  {
+   "name": "short_front: 비스캔 문서 OCR 에서 빠진 쪽 0 (VLM 상한 후)",
+   "ok": true,
+   "detail": "no_longer_ocr=0 newly_ocr=0"
+  },
+  {
+   "name": "short_front: 비스캔 문서는 <br> 길이 말고는 옛 규칙과 같다",
+   "ok": true,
+   "detail": "changed_other=0 changed_br=0"
+  },
+  {
+   "name": "short_front: 비스캔 문서 표지 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "old=0 new=0"
+  },
+  {
+   "name": "short_front: 비스캔 문서 이미지 쪽 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "pages=7 old=4 new=4"
+  },
+  {
+   "name": "short_front: 스캔본 문서 OCR 쪽 새 >= 옛",
+   "ok": true,
+   "detail": "old=0 new=0"
+  },
+  {
+   "name": "br_grid: OCR 에서 빠진 쪽 0 (VLM 상한 전, 모든 문서)",
+   "ok": true,
+   "detail": "removed_uncapped_pages=0"
+  },
+  {
+   "name": "br_grid: 비스캔 문서 OCR 에서 빠진 쪽 0 (VLM 상한 후)",
+   "ok": true,
+   "detail": "no_longer_ocr=0 newly_ocr=0"
+  },
+  {
+   "name": "br_grid: 비스캔 문서는 <br> 길이 말고는 옛 규칙과 같다",
+   "ok": true,
+   "detail": "changed_other=0 changed_br=0"
+  },
+  {
+   "name": "br_grid: 비스캔 문서 표지 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "old=0 new=0"
+  },
+  {
+   "name": "br_grid: 비스캔 문서 이미지 쪽 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "pages=0 old=0 new=0"
+  },
+  {
+   "name": "br_grid: 스캔본 문서 OCR 쪽 새 >= 옛",
+   "ok": true,
+   "detail": "old=16 new=17"
+  },
+  {
+   "name": "named_cases: OCR 에서 빠진 쪽 0 (VLM 상한 전, 모든 문서)",
+   "ok": true,
+   "detail": "removed_uncapped_pages=0"
+  },
+  {
+   "name": "named_cases: 비스캔 문서 OCR 에서 빠진 쪽 0 (VLM 상한 후)",
+   "ok": true,
+   "detail": "no_longer_ocr=0 newly_ocr=0"
+  },
+  {
+   "name": "named_cases: 비스캔 문서는 <br> 길이 말고는 옛 규칙과 같다",
+   "ok": true,
+   "detail": "changed_other=0 changed_br=0"
+  },
+  {
+   "name": "named_cases: 비스캔 문서 표지 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "old=0 new=0"
+  },
+  {
+   "name": "named_cases: 비스캔 문서 이미지 쪽 OCR 새 <= 옛",
+   "ok": true,
+   "detail": "pages=5 old=3 new=3"
+  },
+  {
+   "name": "named_cases: 스캔본 문서 OCR 쪽 새 >= 옛",
+   "ok": true,
+   "detail": "old=25 new=40"
+  },
+  {
+   "name": "fail_block: 모두 스캔본, 옛 규칙으로는 OCR 0쪽, 새 규칙은 문서마다 OCR 가 늘어난다",
+   "ok": true,
+   "detail": "docs=318 scan=318 old_zero=318 gained=318"
+  },
+  {
+   "name": "KCI_FI002252358: 이미지 표지(0쪽)는 옛·새 모두 ODL 채택",
+   "ok": true,
+   "detail": "scan=False old_ocr=11 new_ocr=11 pages=316 cover=0->0"
+  },
+  {
+   "name": "KCI_FI003011274: 본문이 이미지인 4쪽은 옛·새 모두 OCR (비스캔, 쪽 수 같음)",
+   "ok": true,
+   "detail": "scan=False old_ocr=4 new_ocr=4 pages=10 cover=0->0"
+  },
+  {
+   "name": "KCI_FI001141801: 비스캔, 옛·새 OCR 쪽 같음",
+   "ok": true,
+   "detail": "scan=False old_ocr=1 new_ocr=1 pages=18 cover=0->0"
+  },
+  {
+   "name": "KCI_FI002025246: 스탬프 스캔본: 옛 OCR 0쪽 -> 새 전 쪽",
+   "ok": true,
+   "detail": "scan=True old_ocr=0 new_ocr=14 pages=14 cover=0->1"
+  }
+ ]
+}
