@@ -15,14 +15,15 @@ from services.research import run_queue
 
 
 class _FakeAsyncRedis:
-    def __init__(self, *, fail: Exception | None = None, rank=None):
+    def __init__(self, *, fail: Exception | None = None, score=None, members=()):
         self.calls: list[tuple] = []
         self.closed = 0
         self.fail = fail
-        self.rank = rank
+        self.score = score
+        self.members = list(members)
 
-    async def zadd(self, key, mapping, nx=False):
-        self.calls.append(("zadd", key, mapping, nx))
+    async def zadd(self, key, mapping, **options):
+        self.calls.append(("zadd", key, mapping, options))
         if self.fail:
             raise self.fail
 
@@ -31,14 +32,51 @@ class _FakeAsyncRedis:
         if self.fail:
             raise self.fail
 
-    async def zrank(self, key, member):
-        self.calls.append(("zrank", key, member))
+    async def zscore(self, key, member):
+        self.calls.append(("zscore", key, member))
         if self.fail:
             raise self.fail
-        return self.rank
+        return self.score
+
+    async def zrangebyscore(self, key, low, high):
+        self.calls.append(("zrangebyscore", key, low, high))
+        return self.members
 
     async def aclose(self):
         self.closed += 1
+
+
+class _ZSetRedis:
+    """ZADD·ZREM·ZSCORE·ZRANGEBYSCORE 를 실제 뜻대로 흉내 내는 대역 — 줄의 순서를 본다.
+    redis-py 처럼(decode_responses 없이) 원소를 bytes 로 돌려준다."""
+
+    def __init__(self):
+        self.scores: dict[str, float] = {}
+        self.after_zscore = None        # 두 명령 사이에 끼어드는 빼기를 흉내 낸다
+
+    async def zadd(self, key, mapping, nx=False):
+        for member, score in mapping.items():
+            if not (nx and member in self.scores):
+                self.scores[member] = score
+
+    async def zrem(self, key, *members):
+        for member in members:
+            self.scores.pop(member, None)
+
+    async def zscore(self, key, member):
+        score = self.scores.get(member)
+        if self.after_zscore is not None:
+            self.after_zscore()
+        return score
+
+    async def zrangebyscore(self, key, low, high):
+        assert low == "-inf" and high.startswith("(")       # 내 점수 미만(배타)
+        bound = float(high[1:])
+        ordered = sorted(self.scores.items(), key=lambda kv: (kv[1], kv[0]))
+        return [member.encode() for member, score in ordered if score < bound]
+
+    async def aclose(self):
+        pass
 
 
 class _FakeSyncRedis:
@@ -69,8 +107,8 @@ class TestMarkWaiting:
 
         asyncio.run(run_queue.mark_waiting(jid))
 
-        # NX — 재전송된 승인이 자리를 뒤로 미루지 않는다
-        assert client.calls == [("zadd", "research:run_queue", {str(jid): 1_790_000_000.5}, True)]
+        # NX 가 아니다 — 빼기에 실패해 남은 옛 원소가 있어도 다시 줄에 선 잡은 지금 시각이다
+        assert client.calls == [("zadd", "research:run_queue", {str(jid): 1_790_000_000.5}, {})]
         assert client.closed == 1
 
     def test_redis_failure_is_swallowed_and_the_client_closed(self, monkeypatch, caplog):
@@ -110,24 +148,85 @@ class TestUnmark:
         assert client.closed == 1
 
 
-class TestRankOf:
-    def test_returns_the_number_of_jobs_ahead_in_the_line(self, monkeypatch):
-        client = _FakeAsyncRedis(rank=2)
+class TestMembersAhead:
+    def test_returns_the_members_put_in_before_me(self, monkeypatch):
+        a, b = uuid.uuid4(), uuid.uuid4()
+        client = _FakeAsyncRedis(score=1_790_000_000.5, members=[str(a).encode(), str(b).encode()])
         _use(monkeypatch, client)
         jid = uuid.uuid4()
 
-        assert asyncio.run(run_queue.rank_of(jid)) == 2
-        assert client.calls == [("zrank", "research:run_queue", str(jid))]
+        assert asyncio.run(run_queue.members_ahead(jid)) == [str(a), str(b)]
+        # 순위가 아니라 내 점수 미만(배타)으로 자른다
+        assert client.calls == [
+            ("zscore", "research:run_queue", str(jid)),
+            ("zrangebyscore", "research:run_queue", "-inf", "(1790000000.5"),
+        ]
         assert client.closed == 1
 
+    def test_first_in_line_has_nobody_ahead(self, monkeypatch):
+        _use(monkeypatch, _FakeAsyncRedis(score=1.0, members=[]))
+        assert asyncio.run(run_queue.members_ahead(uuid.uuid4())) == []
+
     def test_job_not_in_the_line_is_none(self, monkeypatch):
-        _use(monkeypatch, _FakeAsyncRedis(rank=None))
-        assert asyncio.run(run_queue.rank_of(uuid.uuid4())) is None
+        client = _FakeAsyncRedis(score=None)
+        _use(monkeypatch, client)
+        jid = uuid.uuid4()
+
+        assert asyncio.run(run_queue.members_ahead(jid)) is None
+        assert client.calls == [("zscore", "research:run_queue", str(jid))]
+        assert client.closed == 1
 
     def test_redis_failure_is_none(self, monkeypatch):
         """Redis 가 죽어도 잡 조회는 돈다 — 순번만 created_at 순 근사로 물러난다."""
-        _use(monkeypatch, _FakeAsyncRedis(fail=ConnectionError("redis down")))
-        assert asyncio.run(run_queue.rank_of(uuid.uuid4())) is None
+        client = _FakeAsyncRedis(fail=ConnectionError("redis down"))
+        _use(monkeypatch, client)
+        assert asyncio.run(run_queue.members_ahead(uuid.uuid4())) is None
+        assert client.closed == 1
+
+
+class TestLineOrder:
+    """넣고 빼고 읽기를 이어서 — 줄의 순서가 실제 Redis 에서처럼 나오는가."""
+
+    def _line(self, monkeypatch) -> _ZSetRedis:
+        redis = _ZSetRedis()
+        _use(monkeypatch, redis)
+        clock = iter(float(t) for t in range(1, 100))
+        monkeypatch.setattr(run_queue, "_now", lambda: next(clock))
+        return redis
+
+    def test_members_ahead_follow_the_order_they_entered(self, monkeypatch):
+        self._line(monkeypatch)
+        a, b, c = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        for jid in (a, b, c):
+            asyncio.run(run_queue.mark_waiting(jid))
+
+        assert asyncio.run(run_queue.members_ahead(a)) == []
+        assert asyncio.run(run_queue.members_ahead(c)) == [str(a), str(b)]
+        asyncio.run(run_queue.unmark(a))
+        assert asyncio.run(run_queue.members_ahead(c)) == [str(b)]
+
+    def test_job_back_in_the_line_goes_to_the_end(self, monkeypatch):
+        """빼기에 실패해 남은 옛 원소의 시각을 이어받으면, 실패 뒤 재시도로 다시 줄에 선
+        잡이 먼저 기다리던 잡들 앞으로 끼어든다."""
+        self._line(monkeypatch)
+        left, waiting = uuid.uuid4(), uuid.uuid4()
+        asyncio.run(run_queue.mark_waiting(left))       # 집은 뒤 빼기에 실패해 남았다
+        asyncio.run(run_queue.mark_waiting(waiting))
+        asyncio.run(run_queue.mark_waiting(left))       # 실패한 뒤 재시도로 다시 줄에 선다
+
+        assert asyncio.run(run_queue.members_ahead(left)) == [str(waiting)]
+        assert asyncio.run(run_queue.members_ahead(waiting)) == []
+
+    def test_a_member_leaving_between_the_two_reads_pulls_nothing_in(self, monkeypatch):
+        """순위로 자르면(ZRANK 뒤 ZRANGE 0 rank-1) 그 사이 앞 원소가 빠질 때 범위가 한 칸
+        밀려 나 자신이 섞인다. 점수로 자르면 그렇지 않다."""
+        redis = self._line(monkeypatch)
+        a, me, b = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        for jid in (a, me, b):
+            asyncio.run(run_queue.mark_waiting(jid))
+        redis.after_zscore = lambda: redis.scores.pop(str(a), None)     # 워커가 a 를 집었다
+
+        assert asyncio.run(run_queue.members_ahead(me)) == []
 
 
 class TestUnmarkManySync:

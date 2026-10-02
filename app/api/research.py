@@ -22,6 +22,7 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from datetime import datetime
 from typing import Annotated
 
@@ -43,7 +44,7 @@ from services.research.relay import (
     TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
 )
 from services.research.run_queue import (
-    eta_seconds, mark_waiting, median_seconds, rank_of, unmark, waiting_ahead,
+    eta_seconds, mark_waiting, median_seconds, members_ahead, unmark, waiting_ahead,
 )
 from services.research.state import merge_params
 
@@ -263,7 +264,7 @@ async def approve_plan(
     if job.status != "awaiting_approval":
         raise HTTPException(status_code=409, detail=f"승인할 수 없는 상태다: {job.status}")
 
-    old_plan = job.plan
+    old_plan, stage = job.plan, job.stage
     plan = old_plan
     if req is not None and req.plan is not None:
         limit = merge_params(job.params or {})["max_subquestions"]
@@ -276,16 +277,17 @@ async def approve_plan(
     # 큐에 넣기 전에 알린다. 넣은 뒤에 알리면 워커가 먼저 집어 낸 running 뒤에
     # approved 가 도착해 화면이 한 단계 뒤로 간다. 대기 줄도 같은 까닭으로 먼저 넣는다 —
     # 넣은 뒤면 바로 집은 워커가 먼저 빼고 그 뒤에 들어가 줄에 영영 남는다.
-    await _announce(jid, STATUS_APPROVED, job.stage)
+    await _announce(jid, STATUS_APPROVED, stage)
     await mark_waiting(jid)
     # 응답에 실을 순번도 넣기 전에 센다 — 넣은 뒤면 바로 집은 워커의 running 이 자기 앞으로
     # 세어진다. job 은 전이 전에 읽은 객체라 상태를 인자로 넘긴다(대입하면 autoflush 가 쓴다).
-    queue = await _queue_info(db, job, status=STATUS_APPROVED)
+    # 이 뒤로는 job 의 속성을 읽지 않는다 — _response_queue 가 롤백하면 만료된다.
+    queue = await _response_queue(db, job, status=STATUS_APPROVED)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_APPROVED,),
                           status="awaiting_approval", plan=old_plan)
         await unmark(jid)
-        await _announce(jid, "awaiting_approval", job.stage)
+        await _announce(jid, "awaiting_approval", stage)
         raise _broker_unavailable()
     return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan, "queue": queue}
 
@@ -316,23 +318,24 @@ async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
             status_code=409, detail="계획이 없는 잡은 재시도할 수 없다 — 새 잡을 만든다",
         )
 
-    old_error, old_finished = job.last_error, job.finished_at
+    old_error, old_finished, stage = job.last_error, job.finished_at, job.stage
     # 큐에 들어간 잡이 종료시각을 들고 있으면 안 된다
     if not await _to_run_queue(db, jid, expect=("failed",), created_by=job.created_by,
                                status=STATUS_QUEUED, last_error=None, finished_at=None):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
-    # 큐에 넣기 전에 알리고 대기 줄에 넣고 순번을 세는 이유는 approve 와 같다
-    await _announce(jid, STATUS_QUEUED, job.stage)
+    # 큐에 넣기 전에 알리고 대기 줄에 넣고 순번을 세는 이유, 이 뒤로 job 을 읽지 않는
+    # 이유는 approve 와 같다
+    await _announce(jid, STATUS_QUEUED, stage)
     await mark_waiting(jid)
-    queue = await _queue_info(db, job, status=STATUS_QUEUED)
+    queue = await _response_queue(db, job, status=STATUS_QUEUED)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_QUEUED,), status="failed",
                           last_error=old_error, finished_at=old_finished)
         await unmark(jid)
         await publish_terminal(jid, "failed", old_error)
         raise _broker_unavailable()
-    return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": job.stage, "queue": queue}
+    return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": stage, "queue": queue}
 
 
 @router.post("/{job_id}/cancel")
@@ -400,12 +403,33 @@ async def _recent_run_seconds(db: AsyncSession) -> list[float]:
     return [(finished - started).total_seconds() for started, finished in rows]
 
 
+async def _waiting_in_line(db: AsyncSession, members: list[str]) -> int:
+    """대기 줄의 원소 중 지금 기다리는(approved·queued) 잡 수.
+
+    빼기(unmark)는 Redis 실패를 삼켜 끝난 잡이 줄에 남을 수 있다. 순위를 그대로 쓰면 남은
+    원소마다 뒤 잡의 순번이 영영 하나씩 밀리고, 집은 뒤 남은 running 잡은 running 수와
+    줄 양쪽에서 두 번 세어진다. 그래서 DB 상태로 거른다 — 지우지는 않는다(run_queue 참고).
+    """
+    ids = []
+    for member in members:
+        try:
+            ids.append(uuid.UUID(member))
+        except ValueError:
+            continue        # 잡 id 가 아닌 원소 — Postgres 의 uuid 캐스팅 오류로 번지지 않게
+    if not ids:
+        return 0
+    return (await db.execute(
+        select(func.count()).select_from(ResearchJob)
+        .where(ResearchJob.id.in_(ids), ResearchJob.status.in_(RUNNABLE_STATUSES))
+    )).scalar_one()
+
+
 async def _queue_info(db: AsyncSession, job, *, status: str | None = None) -> dict | None:
     """기다리는 잡(approved·queued)의 대기 순번과 예상 시간. 그 밖의 상태면 None.
 
-    ahead = running 잡 수 + 대기 줄(ZSET)에서 내 앞 원소 수. 줄에 없으면(Redis 재기동)
-    같은 대기 상태 중 먼저 만든 잡 수로 근사한다. eta_sec = 시작까지 기다리는 시간 =
-    ahead × 최근 완료분 소요 시간 중앙값 — 완료분이 없으면 None.
+    ahead = running 잡 수 + 대기 줄(ZSET)에서 내 앞에 선 잡 중 지금 기다리는 잡 수. 줄에
+    없으면(Redis 재기동) 같은 대기 상태 중 먼저 만든 잡 수로 근사한다. eta_sec = 시작까지
+    기다리는 시간 = ahead × 최근 완료분 소요 시간 중앙값 — 완료분이 없으면 None.
 
     status 는 approve·retry 가 넘긴다 — 그 job 은 전이 전에 읽은 객체라 상태가 옛 값인데,
     ORM 객체에 대입하면 다음 조회의 autoflush 가 그 값을 조건 없이 써 버린다.
@@ -415,17 +439,39 @@ async def _queue_info(db: AsyncSession, job, *, status: str | None = None) -> di
     running = (await db.execute(
         select(func.count()).select_from(ResearchJob).where(ResearchJob.status == "running")
     )).scalar_one()
-    rank = await rank_of(job.id)
+    members = await members_ahead(job.id)
+    in_line = None if members is None else await _waiting_in_line(db, members)
     fallback = 0
-    if rank is None and job.created_at is not None:
+    if in_line is None and job.created_at is not None:
         fallback = (await db.execute(
             select(func.count()).select_from(ResearchJob)
             .where(ResearchJob.status.in_(RUNNABLE_STATUSES),
                    ResearchJob.created_at < job.created_at)
         )).scalar_one()
-    ahead = waiting_ahead(running, rank, fallback)
+    ahead = waiting_ahead(running, in_line, fallback)
     median = median_seconds(await _recent_run_seconds(db))
     return {"ahead": ahead, "eta_sec": eta_seconds(ahead, median)}
+
+
+async def _response_queue(db: AsyncSession, job, *, status: str) -> dict | None:
+    """approve·retry 응답에 실을 순번. 실패하면 None — 순번은 안내일 뿐이다.
+
+    전이를 커밋한 뒤·브로커에 넣기 전에 돈다. 여기서 예외가 나가면 잡이 approved·queued
+    로 줄에 선 채 브로커에는 들어가지 않고(500), 회수기는 그 상태를 회수하지 않아 영영
+    묶인다 — 같은 브라우저의 다른 승인까지 browser_active 로 막힌다.
+
+    실패한 조회가 트랜잭션을 깨 두면(aborted transaction) 브로커 실패 때의 되돌리기
+    _transition 까지 실패하므로 롤백해 둔다. 롤백은 세션의 ORM 객체를 만료시킨다 —
+    비동기 세션에서 만료된 속성을 읽으면 MissingGreenlet 이라, 호출부는 필요한 값을 미리
+    꺼내 두고 이 뒤로 job 을 읽지 않는다.
+    """
+    try:
+        return await _queue_info(db, job, status=status)
+    except Exception:
+        log.exception("[research] 응답에 실을 대기 순번을 세지 못했다 job=%s", job.id)
+        with suppress(Exception):       # 연결이 끊겼으면 롤백도 실패한다 — 그래도 브로커에는 넣는다
+            await db.rollback()
+        return None
 
 
 @router.get("/{job_id}")
