@@ -42,6 +42,9 @@ from services.research.planner import query_key
 from services.research.relay import (
     TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
 )
+from services.research.run_queue import (
+    eta_seconds, mark_waiting, median_seconds, rank_of, unmark, waiting_ahead,
+)
 from services.research.state import merge_params
 
 log = logging.getLogger(__name__)
@@ -74,6 +77,8 @@ _SHARED_QUEUE_MESSAGE = (
     "다시 요청한다(적재와 워커를 나눠 쓰는 동안은 한 번에 한 건만 실행한다)"
 )
 _BROWSER_ACTIVE_MESSAGE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
+# 예상 대기 시간의 기준 — 최근 완료분 몇 건의 소요 시간 중앙값을 쓰는가
+RECENT_RUNS = 20
 
 # 하위질문 한 줄. 빈 항목은 빈 쿼리 검색으로, 초장문은 LLM 컨텍스트 초과로 이어진다.
 PlanItem = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=300)]
@@ -269,14 +274,20 @@ async def approve_plan(
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
     # 큐에 넣기 전에 알린다. 넣은 뒤에 알리면 워커가 먼저 집어 낸 running 뒤에
-    # approved 가 도착해 화면이 한 단계 뒤로 간다.
+    # approved 가 도착해 화면이 한 단계 뒤로 간다. 대기 줄도 같은 까닭으로 먼저 넣는다 —
+    # 넣은 뒤면 바로 집은 워커가 먼저 빼고 그 뒤에 들어가 줄에 영영 남는다.
     await _announce(jid, STATUS_APPROVED, job.stage)
+    await mark_waiting(jid)
+    # 응답에 실을 순번도 넣기 전에 센다 — 넣은 뒤면 바로 집은 워커의 running 이 자기 앞으로
+    # 세어진다. job 은 전이 전에 읽은 객체라 상태를 인자로 넘긴다(대입하면 autoflush 가 쓴다).
+    queue = await _queue_info(db, job, status=STATUS_APPROVED)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_APPROVED,),
                           status="awaiting_approval", plan=old_plan)
+        await unmark(jid)
         await _announce(jid, "awaiting_approval", job.stage)
         raise _broker_unavailable()
-    return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan}
+    return {"job_id": str(jid), "status": STATUS_APPROVED, "plan": plan, "queue": queue}
 
 
 @router.post("/{job_id}/retry")
@@ -311,14 +322,17 @@ async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
                                status=STATUS_QUEUED, last_error=None, finished_at=None):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
-    # 큐에 넣기 전에 알리는 이유는 approve 와 같다
+    # 큐에 넣기 전에 알리고 대기 줄에 넣고 순번을 세는 이유는 approve 와 같다
     await _announce(jid, STATUS_QUEUED, job.stage)
+    await mark_waiting(jid)
+    queue = await _queue_info(db, job, status=STATUS_QUEUED)
     if not _enqueue("tasks.run_deep_research", jid):
         await _transition(db, jid, expect=(STATUS_QUEUED,), status="failed",
                           last_error=old_error, finished_at=old_finished)
+        await unmark(jid)
         await publish_terminal(jid, "failed", old_error)
         raise _broker_unavailable()
-    return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": job.stage}
+    return {"job_id": str(jid), "status": STATUS_QUEUED, "stage": job.stage, "queue": queue}
 
 
 @router.post("/{job_id}/cancel")
@@ -334,6 +348,9 @@ async def cancel_research(job_id: str, db: AsyncSession = Depends(get_db)):
                              status=STATUS_CANCELED, finished_at=func.now()):
         await _get_job(db, jid)
         raise HTTPException(status_code=409, detail="취소할 수 없는 상태입니다")
+    # approved·queued 에서 취소한 잡은 워커가 집지 않는다 — 여기서 빼지 않으면 줄에 남아
+    # 뒤 잡의 순번을 하나씩 민다. 다른 상태면 줄에 없어 아무 일도 없다.
+    await unmark(jid)
     # 워커가 없는 상태(승인 대기 등)에서 취소하면 종료 이벤트를 낼 주체가 없다 —
     # 여기서 내지 않으면 스트림이 다음 하트비트까지 열려 있다.
     await publish_terminal(jid, STATUS_CANCELED)
@@ -370,6 +387,47 @@ def _live_counters(steps: list[dict], report: dict | None) -> dict | None:
     return None
 
 
+async def _recent_run_seconds(db: AsyncSession) -> list[float]:
+    """최근 완료분 RECENT_RUNS 건의 실행 소요 시간(finished_at - started_at, 초)."""
+    rows = (await db.execute(
+        select(ResearchJob.started_at, ResearchJob.finished_at)
+        .where(ResearchJob.status == "completed",
+               ResearchJob.started_at.is_not(None),
+               ResearchJob.finished_at.is_not(None))
+        .order_by(ResearchJob.finished_at.desc())
+        .limit(RECENT_RUNS)
+    )).all()
+    return [(finished - started).total_seconds() for started, finished in rows]
+
+
+async def _queue_info(db: AsyncSession, job, *, status: str | None = None) -> dict | None:
+    """기다리는 잡(approved·queued)의 대기 순번과 예상 시간. 그 밖의 상태면 None.
+
+    ahead = running 잡 수 + 대기 줄(ZSET)에서 내 앞 원소 수. 줄에 없으면(Redis 재기동)
+    같은 대기 상태 중 먼저 만든 잡 수로 근사한다. eta_sec = 시작까지 기다리는 시간 =
+    ahead × 최근 완료분 소요 시간 중앙값 — 완료분이 없으면 None.
+
+    status 는 approve·retry 가 넘긴다 — 그 job 은 전이 전에 읽은 객체라 상태가 옛 값인데,
+    ORM 객체에 대입하면 다음 조회의 autoflush 가 그 값을 조건 없이 써 버린다.
+    """
+    if (job.status if status is None else status) not in RUNNABLE_STATUSES:
+        return None
+    running = (await db.execute(
+        select(func.count()).select_from(ResearchJob).where(ResearchJob.status == "running")
+    )).scalar_one()
+    rank = await rank_of(job.id)
+    fallback = 0
+    if rank is None and job.created_at is not None:
+        fallback = (await db.execute(
+            select(func.count()).select_from(ResearchJob)
+            .where(ResearchJob.status.in_(RUNNABLE_STATUSES),
+                   ResearchJob.created_at < job.created_at)
+        )).scalar_one()
+    ahead = waiting_ahead(running, rank, fallback)
+    median = median_seconds(await _recent_run_seconds(db))
+    return {"ahead": ahead, "eta_sec": eta_seconds(ahead, median)}
+
+
 @router.get("/{job_id}")
 async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
     job = await _get_job(db, _job_uuid(job_id))
@@ -382,6 +440,7 @@ async def get_research(job_id: str, db: AsyncSession = Depends(get_db)):
         "created_at": _iso(job.created_at), "started_at": _iso(job.started_at),
         "finished_at": _iso(job.finished_at),
         "steps": await _steps(db, job.id),
+        "queue": await _queue_info(db, job),
     }
 
 
@@ -397,6 +456,9 @@ async def _snapshot(db: AsyncSession, job: ResearchJob) -> dict:
     counters = _live_counters(steps, job.report)
     if counters is not None:
         job_state["counters"] = counters
+    queue = await _queue_info(db, job)
+    if queue is not None:
+        job_state["queue"] = queue
     return {"kind": "snapshot", "steps": steps, "job": job_state}
 
 
@@ -433,6 +495,8 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
             return
         # 화면이 지금 아는 상태와 계획 유무 — 하트비트가 DB 와 견줄 기준이다
         last, plan_sent = (job_status, job_stage), _plan_known(snapshot)
+        # 화면이 지금 아는 대기 순번 — 하트비트가 다시 세어 바뀌었을 때만 queue 를 보낸다
+        last_queue = snapshot["job"].get("queue")
         async for event in subscribe(str(jid)):
             if event is None:
                 # 하트비트. 끊긴 소켓은 여기서 드러난다. 그리고 DB 와 맞춰 본다 —
@@ -450,6 +514,11 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                 if status in TERMINAL_STATUSES:
                     yield _sse(terminal_event(status, error))
                     return
+                if status in RUNNABLE_STATUSES:
+                    queue = await _queue_now(jid)
+                    if queue is not None and queue != last_queue:
+                        last_queue = queue
+                        yield _sse({"kind": "queue", **queue})
                 if (status, stage) == last and (plan_sent or not has_plan):
                     continue
                 fresh = await _fresh_snapshot(jid)
@@ -463,6 +532,7 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                     yield _sse(terminal_event(status, error))
                     return
                 last, plan_sent = (status, stage), _plan_known(snap)
+                last_queue = snap["job"].get("queue")
                 yield _sse(snap)
                 continue
             if event.get("kind") == "status":
@@ -505,3 +575,10 @@ async def _fresh_snapshot(jid: uuid.UUID) -> tuple[dict, str | None] | None:
         if job is None:
             return None
         return await _snapshot(db, job), job.last_error
+
+
+async def _queue_now(jid: uuid.UUID) -> dict | None:
+    """하트비트 때 다시 센 대기 순번. 짧은 세션을 새로 여는 이유는 _job_status 와 같다."""
+    async with AsyncSessionLocal() as db:
+        job = await db.get(ResearchJob, jid)
+        return None if job is None else await _queue_info(db, job)

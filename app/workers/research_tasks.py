@@ -29,6 +29,7 @@ from models.research import (
     ResearchJob, ResearchStep,
 )
 from services.research.relay import publish, publish_terminal
+from services.research.run_queue import unmark
 from services.research.runner import explore_subquestion
 from services.research.state import (
     ResearchState, SubQuestion, merge_params, research_stats, restore_state, snapshot_state,
@@ -573,7 +574,10 @@ async def _run_deep_research(job_id: str) -> dict:
     try:
         async with Session() as db:
             # 재개 가능한 상태만 받는다. running 인 잡을 다시 받으면 재배달이다.
-            if not await _claim(db, jid, allowed=RUNNABLE_STATUSES, to="running"):
+            claimed = await _claim(db, jid, allowed=RUNNABLE_STATUSES, to="running")
+            # 집었든 못 집었든 이제 기다리는 잡이 아니다 — 대기 줄에 남으면 뒤 잡의 순번이 밀린다
+            await unmark(jid)
+            if not claimed:
                 log.warning("[research] 이미 처리 중이거나 처리된 잡 — 건너뛴다 job=%s", job_id)
                 return {"job_id": job_id, "status": "skipped"}
 

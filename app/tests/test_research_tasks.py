@@ -247,6 +247,8 @@ class _Harness:
         self.announced: list[tuple] = []
         # (단계, 그때까지 나간 종료 이벤트) — 이전 시도의 초안 정리
         self.drops: list[tuple] = []
+        # 대기 순번 ZSET 에서 뺀 잡
+        self.unmarked: list = []
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
@@ -297,6 +299,9 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
     async def _drop_stale_previews(db, step):
         h.drops.append((step, _terminals(h)))
 
+    async def _unmark(job_id):
+        h.unmarked.append(job_id)
+
     async def _synthesize(state, *, should_stop=None, on_section=None):
         assert not session.in_txn, "종합(LLM) 직전에 읽기 트랜잭션이 열려 있다"
         synthesized.append(state)
@@ -311,6 +316,7 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
         ("publish_terminal", _publish_terminal),
         ("explore_subquestion", _explore), ("synthesize", _synthesize),
         ("_save_progress", _save_progress), ("_drop_stale_previews", _drop_stale_previews),
+        ("unmark", _unmark),
     ):
         monkeypatch.setattr(rt, name, fn)
     return h
@@ -464,6 +470,37 @@ class TestClaim:
         assert STATUS_APPROVED in seen["allowed"]
         assert STATUS_QUEUED in seen["allowed"]
         assert seen["to"] == "running"
+
+    def test_claimed_job_leaves_the_wait_line_right_after_the_claim(self, monkeypatch):
+        """집은 잡은 더 이상 기다리는 잡이 아니다 — 뒤 잡의 순번에서 빠져야 한다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"])
+        explored = []
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=explored, synthesized=[])
+        order = []
+        claim = rt._claim
+
+        async def _claim(db, job_id, *, allowed, to):
+            order.append(("claim", list(h.unmarked)))
+            return await claim(db, job_id, allowed=allowed, to=to)
+
+        monkeypatch.setattr(rt, "_claim", _claim)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert order == [("claim", [])]          # 집기 전에는 빼지 않는다
+        assert h.unmarked == [job.id]
+        assert explored == ["계획 하위1"]
+
+    def test_unclaimed_job_also_leaves_the_wait_line(self, monkeypatch):
+        """재배달·취소로 못 집은 잡도 줄에 남기지 않는다 — 남으면 뒤 잡의 순번이 하나씩 밀린다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["계획 하위1"], status="canceled")
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
+
+        out = asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert out["status"] == "skipped"
+        assert h.unmarked == [job.id]
 
 
 class TestConditionalTransition:
