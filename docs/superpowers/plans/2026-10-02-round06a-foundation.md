@@ -15,7 +15,7 @@
 - **작업 위치:** `git -C C:/Users/LANDSOFT/mygit/NL_library_AI worktree add .worktrees/round06a -b feat/round06a-foundation feat/round06-paper-agent` 로 만든 `C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a`(Task 0). 저장소 루트 폴더와 다른 worktree 는 건드리지 않는다(여러 세션이 함께 쓴다). 이 브랜치는 spec·이 계획 문서를 담은 `feat/round06-paper-agent` 에서 따므로, 06a 를 dev 에 머지하면 spec·계획도 함께 들어간다.
 - **백엔드 테스트:** `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/<파일> -q -p no:cacheprovider`. 전체는 `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors` — 기준선 **1369 passed, 1 skipped, 수집 오류 3**(test_book_chat·test_build_manifest·test_loaders — 로컬에 FlagEmbedding·openpyxl 없음, 원래 상태). pytest-asyncio 가 없어 async 는 `asyncio.run` 으로 돈다. 로컬에 redis·celery·kombu·aiosqlite 가 없어 테스트는 기존 `_stub_missing`·`_load_*` 패턴으로 대역을 쓴다. torch·FlagEmbedding 을 끌어오는 모듈은 함수 안에서 import 한다(함정 13).
 - **프론트 테스트:** `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/frontend && npm ci && npx nuxi typecheck` 를 먼저 한다(`.nuxt` 가 없으면 vitest 가 전부 실패한다). 기준선 vitest 28 files / 495 passed, typecheck 오류 0, `npm run build` 완료.
-- **테스트 수 읽는 법:** 각 task 의 기대 수치는 실측값이다. 어떤 수치는 "앞 task 뒤 수 + N" 으로 적혀 있다 — 순서대로 실행하면 상대값(+N)을 따른다. pytest 출력 끝의 기존 경고(`core/config.py` 의 `PydanticDeprecatedSince20` 등 `, 1 warning`·`, 2 warnings`)는 기대값에 적혀 있지 않아도 같은 결과다. 계획 전체를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)의 백엔드 전체 수치: Task 1 뒤 1406 → 2: 1427 → 3: 1433 → 4: 1439 → 5: 1450 → 6: 1468 → 7: 1515 → 8: 1558 → 9: 1602 → 10: 1611 → 11: 1687 → 12: 1697 → 15·16: 1717(모두 `1 skipped`·수집 오류 3). 프론트 vitest: 495 → Task 4: 496 → Task 13: 510(28 files). 이 통합 검증에서 코드 수정은 하나도 필요하지 않았다.
+- **테스트 수 읽는 법:** 각 task 의 기대 수치는 실측값이다. 어떤 수치는 "앞 task 뒤 수 + N" 으로 적혀 있다 — 순서대로 실행하면 상대값(+N)을 따른다. pytest 출력 끝의 기존 경고(`core/config.py` 의 `PydanticDeprecatedSince20` 등 `, 1 warning`·`, 2 warnings`)는 기대값에 적혀 있지 않아도 같은 결과다. 계획 전체를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)의 백엔드 전체 수치: Task 1 뒤 1406 → 2: 1427 → 3: 1433 → 4: 1439 → 5: 1450 → 6: 1468 → 7: 1515 → 8: 1558 → 9: 1602 → 10: 1611 → 11: 1687 → 12: 1697 → 15·16: 1717(모두 `1 skipped`·수집 오류 3). 실행 브랜치(`feat/round06a-foundation`)는 Task 7 리뷰 반영(`b401939` — `test_research_api.py` 7·`test_research_run_queue.py` 4)이 테스트 11개를 더해 Task 7 뒤부터 이 수치보다 11 많다(15·16 뒤 1728 — Task 17 Step 3). 프론트 vitest: 495 → Task 4: 496 → Task 13: 510(28 files). 이 통합 검증에서 코드 수정은 하나도 필요하지 않았다.
 - **셸:** 명령마다 `cd <절대 경로> &&` 로 시작한다(에이전트 셸은 호출 사이에 cwd 가 초기화된다). 저장소는 `core.autocrlf=true` 라 작업 트리 파일이 CRLF 다 — 교체할 원문을 찾을 때 줄바꿈을 맞춘다.
 - **커밋:** `[Feat]`·`[Fix]`·`[Refactor]`·`[Test]`·`[Chore]`·`[Docs]` 접두어와 한국어 본문. **`Co-Authored-By`·"Generated with Claude Code" 는 넣지 않는다.** task 마다 커밋한다.
 - **운영 금지:** Task 0~16 의 어떤 단계도 운영 서버·운영 DB·운영 Redis 에 쓰지 않는다. 배포와 운영 확인은 Task 17 의 절차대로 **사용자가** 한다(dev 머지도 사용자 승인 뒤).
@@ -12285,7 +12285,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add research
 최종 갱신: 2026-10-09 (round06a — 연구 어시스턴트 기반·딥리서치 품질 보강 구현 완료, 운영 배포·critic 두 갈래 판정 대기. round05a `dev` 머지(`f293e0e`)·운영 배포(`nl-lib-nuxt`) — `main` 머지와 push 는 라운드 종료 승인 뒤 `/round-finish` 에서. round04b·round04c 종료, round07b `dev` 머지, round07 구현·리뷰 마무리·배포 대기)
 ```
 
-3행은 모든 라운드가 함께 고치는 줄이라 위 '교체 후' 의 round06a 밖 구절은 이 브랜치가 갈라질 때(`124c481`)의 글이다. dev 는 그 뒤 이 줄을 이미 고쳤다(예: `ce8a404` 의 'round05a 종료 — … `dev→main` 머지와 `origin` push …'). 그래서 dev 머지 때 3행이 충돌하면 어느 한쪽을 통째로 고르지 않는다 — **dev 쪽 줄을 바탕으로** 날짜를 머지하는 날로 바꾸고, 괄호 안 맨 앞에 `round06a — 연구 어시스턴트 기반·딥리서치 품질 보강 구현 완료, 운영 배포·critic 두 갈래 판정 대기. ` 를 넣고(배포·판정을 마쳤으면 그 결과로), 끝의 `, round06 기획 중단` 만 지운다. 이 브랜치를 dev 위로 다시 얹은 뒤 이 단계를 하면 교체 전 블록이 맞지 않는다 — 그때도 같은 방법으로 지금 3행에서 고친다. 22·39·64행은 round06 만의 줄이라 dev 와 같은 동안 충돌하지 않는다.
+3행은 모든 라운드가 함께 고치는 줄이라 위 '교체 후' 의 round06a 밖 구절은 이 브랜치가 갈라질 때(`124c481`)의 글이다. dev 는 그 뒤 이 줄을 이미 고쳤다(예: `ce8a404` 의 'round05a 종료 — … `dev→main` 머지와 `origin` push …'). 그래서 dev 머지 때 3행이 충돌하면 어느 한쪽을 통째로 고르지 않는다 — **dev 쪽 줄을 바탕으로** 날짜를 머지하는 날로 바꾸고, 괄호 안 맨 앞에 `round06a — 연구 어시스턴트 기반·딥리서치 품질 보강 구현 완료, 운영 배포·critic 두 갈래 판정 대기. ` 를 넣고(배포·판정을 마쳤으면 그 결과로), 끝의 `, round06 기획 중단` 만 지운다. 이 브랜치를 dev 위로 다시 얹은 뒤 이 단계를 하면 교체 전 블록이 맞지 않는다 — 그때도 같은 방법으로 지금 3행에서 고친다. 22·39·64행도 dev 머지 때 충돌한다 — round06 줄은 이 브랜치만 고치지만 dev 가 바로 옆 줄을 고쳐(`ce8a404` round05a 종료, `4bee96e` round07 종료·운영 후속) git 이 한 덩어리로 묶는다(2026-10-03 에 `git merge-tree --write-tree HEAD dev` 로 작업 트리를 건드리지 않고 미리 본 결과 — 충돌은 `00_status.md` 하나에 덩어리 4개(3행 포함)이고, dev 쪽 다른 차이는 문서뿐이라 충돌하지 않는다). 이 셋도 어느 한쪽을 통째로 고르지 않는다 — 덩어리마다 **round06 줄만 이 브랜치 쪽, 나머지 줄은 모두 dev 쪽**을 남긴다(통째로 고르면 round05a·round07 종료 기록이나 06a 기록이 사라진다). ① '현재 상태'(22행 근처): 이 브랜치의 `round06 — 06a 구현 완료·운영 배포 대기` 줄 + dev 의 `round07 종료` 블록(하위 줄 `운영 배포 2026-10-02`·`본 잡 재개 2026-10-02` 포함) — 이 브랜치의 옛 `round07 — 구현·리뷰 마무리, 배포 대기` 줄과 dev 의 `round06 — 기획 중단` 줄은 버린다. ② '다음 할 일'(39행 근처): dev 의 `round07 운영 후속` 블록(①~⑤) + 이 브랜치의 `round06a 배포·판정` 줄(dev 의 `round06 재개` 자리) — 이 브랜치의 `round07 배포` 줄과 dev 의 `round06 재개` 줄은 버린다. ③ 라운드 이력(64행 근처): round05a·round07 행은 dev 쪽(완료 — `main` 머지·push), round06 행만 이 브랜치 쪽. 다 풀고 나면 `grep -cE '^(<<<<<<<|=======|>>>>>>>)|기획 중단|round06 재개|round07 배포' docs/roadmap/00_status.md` 가 `0` 이다(3행에서 `, round06 기획 중단` 을 지웠으면 — 06a 줄의 'round07 운영 배포' 는 걸리지 않는다).
 
 `docs/roadmap/00_status.md` — 교체 전(22행):
 
@@ -12333,17 +12333,17 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add docs/roa
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 마지막 줄 `1717 passed, 1 skipped, 2 warnings, 3 errors` — 실패 0. Task 0 기준선 1369 에 task 마다 더한 백엔드 테스트 수(각 task 의 전체 검증 단계에 적힌 수)를 더한 값이다.
+Expected: 마지막 줄 `1728 passed, 1 skipped, 2 warnings, 3 errors` — 실패 0. Task 0 기준선 1369 에 task 마다 더한 백엔드 테스트 수(각 task 의 전체 검증 단계에 적힌 수와 리뷰 반영으로 더한 수)를 더한 값이다.
 
 | Task | 더한 백엔드 테스트 | 내역 |
 |---|---|---|
 | 1 | 37 | `test_research_work_models.py` |
-| 2 | 21 | state 9 · critic 7 · runner 3 · API 2 |
+| 2 | 21 | state 8 · critic 8 · runner 3 · API 2 |
 | 3 | 6 | `test_research_runner.py` |
 | 4 | 6 | `test_paper_citation.py` |
 | 5 | 11 | `test_llm_client.py` |
 | 6 | 18 | `test_research_api.py` |
-| 7 | 47 | run_queue 23 · API 22 · 워커 2 |
+| 7 | 58 | run_queue 27 · API 29 · 워커 2 — 리뷰 반영 `b401939` 의 11개(run_queue 4 · API 7) 포함 |
 | 8 | 43 | generate 17 · concepts 26 |
 | 9 | 44 | dispatch 22 · tasks 17 · relay 5 |
 | 10 | 9 | `test_research_tasks.py` |
@@ -12352,7 +12352,7 @@ Expected: 마지막 줄 `1717 passed, 1 skipped, 2 warnings, 3 errors` — 실�
 | 15 | 20 | `test_research_eval.py` |
 | 13·14·16·17 | 0 | 프론트·셸 스크립트·1회성 `research/`·문서 |
 
-합계 1369 + 348 = 1717. 계획 전체(Task 0~17)를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)에서 이 값 `1717 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했다. 다르면 어느 task 의 테스트가 빠졌거나 늘었는지 task 별 '통과 확인' 명령으로 다시 센다 — 위 표는 계획을 합칠 때 각 task 의 전체 검증 단계 수(`이 작업은 N개를 더한다`·`전체 수치 + N passed`)로 다시 맞춘다. `3 errors` 는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 실패하는 기존 파일 셋(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)이다.
+합계 1369 + 359 = 1728. 계획 전체(Task 0~17)를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)에서는 리뷰 반영분 없이 `1717 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했고, 실행 브랜치에서는 Task 7 리뷰 반영 `b401939` 가 11개를 더해 `1728 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했다(2026-10-03). Task 2 의 state·critic 은 새 테스트 수로 8·8 이다(Task 2 의 '실패 이유' 9·7 은 고친 기존 테스트 하나와 이미 통과하는 가드 하나를 넣어 센 실패 수다). 다르면 어느 task 의 테스트가 빠졌거나 늘었는지 task 별 '통과 확인' 명령으로 다시 센다 — 위 표는 계획을 합칠 때 각 task 의 전체 검증 단계 수(`이 작업은 N개를 더한다`·`전체 수치 + N passed`)로 다시 맞춘다. `3 errors` 는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 실패하는 기존 파일 셋(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)이다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && python research/round06-qwen-check/smoke_check.py && sh -n infra/backup/pg_backup.sh && echo "pg_backup syntax ok"`
 
@@ -12368,7 +12368,7 @@ Expected: `git diff --stat` 는 아무것도 찍지 않는다(compose 무변경 
 
 - [ ] **Step 4: 최종 리뷰·배포 요청**
 
-정적 리뷰(`.claude/agents/code-reviewer.md`)와 자가 점검을 마친 뒤, 사용자에게 아래 Step 5~15 로 배포·판정을 요청한다. 리뷰를 마친 커밋을 적어 둔다(`git rev-parse --short HEAD`). dev 머지는 배포·판정 뒤 사용자 승인으로 한다(GIT_WORKFLOW.md).
+정적 리뷰(`.claude/agents/code-reviewer.md`)와 자가 점검을 마친 뒤, 사용자에게 아래 Step 5~15 로 배포·판정을 요청한다. 리뷰를 마친 커밋을 적어 둔다(`git rev-parse --short HEAD`). dev 머지는 배포·판정 뒤 사용자 승인으로 한다(GIT_WORKFLOW.md). 그때 `docs/roadmap/00_status.md` 충돌(덩어리 4개)은 Step 1 끝의 규칙대로 푼다 — 3행은 dev 쪽 줄에 06a 구절을 넣고, 나머지 셋은 round06 줄만 이 브랜치 쪽·나머지는 dev 쪽.
 
 - [ ] **Step 5: (사용자, 서버) 전제 확인**
 
@@ -12633,7 +12633,7 @@ Expected: 질문마다 `[<질문키>] <질문>` 과 `갈래 0`·`갈래 1` 두 �
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_state.py tests/test_research_critic.py tests/test_research_runner.py tests/test_research_tasks.py tests/test_research_api.py -q -p no:cacheprovider`
 
-Expected: 실패 0. 나온 `N passed` 를 적어 둔다 — 아래를 고친 뒤에도 같은 N 이어야 한다(Task 1~10 을 적용한 검증 사본에서 `444 passed, 2 warnings`).
+Expected: 실패 0. 나온 `N passed` 를 적어 둔다 — 아래를 고친 뒤에도 같은 N 이어야 한다(실행 브랜치에서 `451 passed, 2 warnings` — 2026-10-03 실측. 계획만 글자 그대로 적용한 검증 사본은 444 였고, Task 7 리뷰 반영 `b401939` 가 `test_research_api.py` 에 7개를 더했다).
 
 `app/services/research/state.py` — 교체 전(`DEFAULT_PARAMS` 끝 — Task 2 가 넣은 주석의 마지막 줄과 값 줄):
 
@@ -12701,7 +12701,7 @@ Expected: `2 failed` — 이 둘뿐이다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_state.py tests/test_research_critic.py tests/test_research_runner.py tests/test_research_tasks.py tests/test_research_api.py -q -p no:cacheprovider`
 
-Expected: 실패 0, 바꾸기 전에 적어 둔 N 과 같은 `N passed`(검증 사본에서 `444 passed, 2 warnings`). 이어서 Step 3 의 백엔드 전체 명령도 실패 0 이고 수는 Step 3 과 같다(새 테스트 없음).
+Expected: 실패 0, 바꾸기 전에 적어 둔 N 과 같은 `N passed`(실행 브랜치에서 `451 passed, 2 warnings`). 이어서 Step 3 의 백엔드 전체 명령도 실패 0 이고 수는 Step 3 과 같다(새 테스트 없음).
 
 ```bash
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/services/research/state.py app/tests/test_research_state.py app/tests/test_research_critic.py && git status --short && git commit -m "[Feat] round06a — critic 기준 스위치를 켠다: DEFAULT_PARAMS critic_scope 0 → 1. 운영 고정 질문 5개를 두 갈래로 돌린 판정에서 갈래 1(원 질문 기준)이 다섯 질문 모두 합격선(절마다 무관 1편 이하·과잉 제외 10% 이하)을 넘었다(spec D11). 새 잡부터 원 질문 기준이고, 이미 만든 잡은 저장된 params 그대로다. 기본값을 고정한 state 테스트는 새 기본값으로 고치고, critic 의 0 갈래 테스트는 critic_scope 0 을 명시한 잡만 남긴 뒤 기본 파라미터가 원 질문 기준 프롬프트로 가는 테스트를 그 자리에 둔다"
