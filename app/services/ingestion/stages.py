@@ -298,7 +298,7 @@ def run_extract(ctx: StageContext) -> dict:
     재시도), '원래 짧은 쪽'으로 ODL 채택한 쪽이 없으면 no_text(재시도 안 함), 있으면 그 쪽까지 OCR 하는 강제
     재추출을 첫 추출이 남긴 시간 안에서 한 번 더 하고, 그래도 0개면 같은 기준으로 vlm_error/no_text.
     """
-    from services.ingestion.extractor import extract_text
+    from services.ingestion.extractor import _ODL_MIN_ATTEMPT_SECONDS, extract_text
 
     book_id = ctx.book_id
     client = minio_client()
@@ -374,7 +374,10 @@ def run_extract(ctx: StageContext) -> dict:
             n_figs = save_figures(book_id, extraction.figures, client)
             log.info(f"[{book_id}] 그림 {n_figs}개 저장 완료")
 
-        doc_type = _ensure_book_and_doc_type(ctx, local_path)
+        # 카탈로그 row 가 없으면 PDF 메타 추출이 ODL 을 한 번 더 돌린다(max_pages=2 여도 문서 전체를 변환한다) —
+        # 추출 데드라인이 남긴 시간 안에서만. 남은 시간이 없으면(하한) 변환하지 않고 fitz 텍스트로 메타를 뽑는다
+        meta_budget = max(cfg.INGEST_EXTRACT_DEADLINE - (time.monotonic() - t_first), _ODL_MIN_ATTEMPT_SECONDS)
+        doc_type = _ensure_book_and_doc_type(ctx, local_path, time_budget=meta_budget)
 
         db = SyncSessionLocal()
         try:
@@ -422,8 +425,11 @@ def run_extract(ctx: StageContext) -> dict:
                 pass
 
 
-def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
-    """카탈로그 row 보장 (없으면 PDF 메타 자동 추출) + doc_type 판별·영속화."""
+def _ensure_book_and_doc_type(ctx: StageContext, local_path: str, *, time_budget: float | None = None) -> str:
+    """카탈로그 row 보장 (없으면 PDF 메타 자동 추출) + doc_type 판별·영속화.
+
+    time_budget: PDF 메타 추출의 ODL 변환에 쓸 시간(초) — extract_pdf_metadata 로 넘긴다.
+    """
     from domains import get_active_profile
 
     book_id = ctx.book_id
@@ -433,7 +439,7 @@ def _ensure_book_and_doc_type(ctx: StageContext, local_path: str) -> str:
         if not book:
             log.info(f"[{book_id}] 메타데이터 없음 → PDF 자동 추출 시도")
             from services.ingestion.pdf_meta_extractor import extract_pdf_metadata
-            meta = run_async(extract_pdf_metadata(local_path))
+            meta = run_async(extract_pdf_metadata(local_path, time_budget=time_budget))
             book = Book(
                 cnts_id=book_id,
                 title=meta.get("title") or book_id,

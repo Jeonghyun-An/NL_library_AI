@@ -43,9 +43,15 @@ def run_extract_with(monkeypatch):
     """extract_text 가 차례로 돌려줄 결과를 받아 run_extract 를 돌린다 → (meta, 호출 기록, 저장된 추출).
 
     호출 기록은 (force_ocr_short_pages, deadline_s) 다. first_delay 초만큼 첫 추출이 걸린 것으로 한다.
+    _run.meta_budgets 에 카탈로그 row 보장(PDF 메타 추출)에 넘긴 time_budget 을 쌓는다.
     """
     calls: list[tuple[bool, float | None]] = []
     saved: list[ExtractionResult] = []
+    meta_budgets: list[float | None] = []
+
+    def fake_ensure_book(ctx, path, *, time_budget=None):
+        meta_budgets.append(time_budget)
+        return "paper"
 
     def _run(*results: ExtractionResult, first_delay: float = 0.0) -> dict:
         queue = list(results)
@@ -66,11 +72,12 @@ def run_extract_with(monkeypatch):
         monkeypatch.setattr(extractor, "extract_text", fake_extract_text)
         monkeypatch.setattr(stages, "minio_client", lambda: MagicMock())
         monkeypatch.setattr(stages, "split_into_sections", fake_split)
-        monkeypatch.setattr(stages, "_ensure_book_and_doc_type", lambda ctx, path: "paper")
+        monkeypatch.setattr(stages, "_ensure_book_and_doc_type", fake_ensure_book)
         monkeypatch.setattr(stages, "SyncSessionLocal", lambda: MagicMock())
         monkeypatch.setattr(stages, "save_extraction_artifact", lambda book_id, ext, client: saved.append(ext))
         return stages.run_extract(StageContext(book_id="KCI_T", file_path="C:/nowhere/KCI_T.pdf"))
 
+    _run.meta_budgets = meta_budgets
     return _run, calls, saved
 
 
@@ -173,6 +180,61 @@ def test_forced_reextract_gets_time_left_by_first_pass(run_extract_with, monkeyp
     (_, first_deadline), (_, forced_deadline) = calls
     assert first_deadline is None  # 첫 추출은 설정값 그대로
     assert 99.0 < forced_deadline <= 99.8
+
+
+# ── PDF 메타 추출(카탈로그 row 가 없을 때) — ODL 을 한 번 더 돌리므로 추출 데드라인 안에서 ────────────
+
+
+def test_meta_extraction_gets_the_time_left_by_the_extract_deadline(run_extract_with, monkeypatch):
+    run, _, _ = run_extract_with
+    monkeypatch.setattr(stages.cfg, "INGEST_EXTRACT_DEADLINE", 100)
+    run(_extraction("본문"), first_delay=0.2)
+    (budget,) = run.meta_budgets
+    assert 99.0 < budget <= 99.8
+
+
+def test_meta_extraction_budget_has_the_odl_minimum_as_floor(run_extract_with, monkeypatch):
+    run, _, _ = run_extract_with
+    monkeypatch.setattr(stages.cfg, "INGEST_EXTRACT_DEADLINE", 0.1)
+    run(_extraction("본문"), first_delay=0.2)
+    assert run.meta_budgets == [extractor._ODL_MIN_ATTEMPT_SECONDS]
+
+
+def test_ensure_book_passes_the_budget_to_pdf_meta_extraction(monkeypatch):
+    from services.ingestion import pdf_meta_extractor
+
+    seen = []
+
+    async def fake_meta(file_path, *, time_budget=None):
+        seen.append((file_path, time_budget))
+        return {"title": "자동 제목"}
+
+    session = MagicMock()
+    session.query.return_value.filter_by.return_value.first.return_value = None   # 카탈로그 row 없음
+    monkeypatch.setattr(stages, "SyncSessionLocal", lambda: session)
+    monkeypatch.setattr(pdf_meta_extractor, "extract_pdf_metadata", fake_meta)
+
+    doc_type = stages._ensure_book_and_doc_type(
+        StageContext(book_id="KCI_T", params={"doc_type": "paper"}), "C:/nowhere/KCI_T.pdf", time_budget=42.0)
+
+    assert doc_type == "paper"
+    assert seen == [("C:/nowhere/KCI_T.pdf", 42.0)]
+
+
+@pytest.mark.parametrize("kwargs, budget", [({"time_budget": 7.5}, 7.5), ({}, None)], ids=["budget", "other_callers"])
+def test_pdf_meta_extraction_bounds_its_odl_conversion(monkeypatch, kwargs, budget):
+    from services.ingestion import pdf_meta_extractor
+
+    seen = []
+
+    async def fake_odl(file_path, book_id, *, file_bytes=None, max_pages=None, time_budget=None):
+        seen.append((max_pages, time_budget))
+        return ExtractionResult(book_id=book_id, total_pages=0)                 # 본문 없음 → LLM 없이 {}
+
+    monkeypatch.setattr(extractor, "extract_text_opendataloader", fake_odl)
+
+    assert asyncio.run(pdf_meta_extractor.extract_pdf_metadata("C:/nowhere/x.pdf", **kwargs)) == {}
+    assert seen == [(2, budget)]
 
 
 def test_forced_reextract_deadline_has_a_floor(run_extract_with, monkeypatch):
