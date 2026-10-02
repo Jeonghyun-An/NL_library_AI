@@ -1,0 +1,223 @@
+{
+ "pages": {
+  "KCI_FI000937498 p2": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000937498 p3": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000937498 p4": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000937498 p5": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001168821 p0": "list-item leading */※ marker dropped",
+  "KCI_FI001030932 p0": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001030932 p12": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p0": "list-item leading */※ marker dropped",
+  "KCI_FI002961735 p1": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p7": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p8": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p10": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p17": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p18": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p19": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p20": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p24": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002961735 p28": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p0": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p2": "list-item leading */※ marker dropped",
+  "KCI_FI002309766 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p8": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p10": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p11": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p13": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p14": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p15": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p16": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p17": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p18": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p19": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p20": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p21": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p23": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002309766 p29": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001005886 p13": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001005886 p33": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002067020 p0": "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped",
+  "KCI_FI002067020 p3": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002067020 p16": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p3": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p4": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p5": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p7": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p8": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002776016 p11": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002180861 p16": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001618766 p14": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001618766 p24": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001618766 p29": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001618766 p36": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002675501 p2": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002675501 p12": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002675501 p13": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI003274665 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI003274665 p11": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI003274665 p13": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI003274665 p14": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI003274665 p37": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI003274665 p38": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p9": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p10": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p11": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p12": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p13": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p17": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p19": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p20": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p22": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p33": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p34": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p41": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p45": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001827561 p46": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001037448 p3": "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped",
+  "KCI_FI001037448 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001037448 p16": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001037448 p25": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p0": "list-item leading */※ marker dropped",
+  "KCI_FI001930485 p1": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p5": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p7": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p8": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p9": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p10": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p11": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p12": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p13": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p16": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p17": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p18": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p19": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p20": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p21": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p22": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p23": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p24": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p25": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p26": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p27": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p28": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p29": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001930485 p35": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p0": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p2": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p3": "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped",
+  "KCI_FI000858284 p4": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p5": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p7": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p8": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p9": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p10": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p11": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI000858284 p12": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002990049 p2": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002990049 p3": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002990049 p4": "space before , or ( dropped",
+  "KCI_FI002990049 p8": "space before , or ( dropped",
+  "KCI_FI002990049 p19": "space before , or ( dropped",
+  "KCI_FI002990049 p20": "space before , or ( dropped",
+  "KCI_FI002990049 p24": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI002990049 p25": "space before , or ( dropped",
+  "KCI_FI002990049 p31": "space before , or ( dropped",
+  "KCI_FI002990049 p34": "space before , or ( dropped",
+  "KCI_FI002990049 p35": "space before , or ( dropped",
+  "KCI_FI002990049 p36": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001343547 p8": "list-item leading */※ marker dropped",
+  "KCI_FI001343547 p9": "list-item leading */※ marker dropped",
+  "KCI_FI001667569 p0": "other: insert ''->'i'",
+  "KCI_FI001667569 p1": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p6": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p7": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p8": "html-escape(&lt; &gt; &amp;) + other: insert ''->\"'\"",
+  "KCI_FI001667569 p9": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p10": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p14": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p16": "html-escape(&lt; &gt; &amp;)",
+  "KCI_FI001667569 p17": "other: insert ''->'('",
+  "KCI_FI001667569 p21": "html-escape(&lt; &gt; &amp;)"
+ },
+ "counts": {
+  "html-escape(&lt; &gt; &amp;)": 123,
+  "list-item leading */※ marker dropped": 6,
+  "html-escape(&lt; &gt; &amp;) + list-item leading */※ marker dropped": 3,
+  "space before , or ( dropped": 8,
+  "includes other": 3
+ },
+ "docs": {
+  "KCI_FI000937498": {
+   "html-escape(&lt; &gt; &amp;)": 4
+  },
+  "KCI_FI001168821": {
+   "list-item leading */※ marker dropped": 1
+  },
+  "KCI_FI001030932": {
+   "html-escape(&lt; &gt; &amp;)": 2
+  },
+  "KCI_FI002961735": {
+   "list-item leading */※ marker dropped": 1,
+   "html-escape(&lt; &gt; &amp;)": 11
+  },
+  "KCI_FI002309766": {
+   "html-escape(&lt; &gt; &amp;)": 16,
+   "list-item leading */※ marker dropped": 1
+  },
+  "KCI_FI001005886": {
+   "html-escape(&lt; &gt; &amp;)": 2
+  },
+  "KCI_FI002067020": {
+   "html-escape(&lt; &gt; &amp;)": 3,
+   "list-item leading */※ marker dropped": 1
+  },
+  "KCI_FI002776016": {
+   "html-escape(&lt; &gt; &amp;)": 7
+  },
+  "KCI_FI002180861": {
+   "html-escape(&lt; &gt; &amp;)": 1
+  },
+  "KCI_FI001618766": {
+   "html-escape(&lt; &gt; &amp;)": 4
+  },
+  "KCI_FI002675501": {
+   "html-escape(&lt; &gt; &amp;)": 3
+  },
+  "KCI_FI003274665": {
+   "html-escape(&lt; &gt; &amp;)": 6
+  },
+  "KCI_FI001827561": {
+   "html-escape(&lt; &gt; &amp;)": 14
+  },
+  "KCI_FI001037448": {
+   "html-escape(&lt; &gt; &amp;)": 4,
+   "list-item leading */※ marker dropped": 1
+  },
+  "KCI_FI001930485": {
+   "list-item leading */※ marker dropped": 1,
+   "html-escape(&lt; &gt; &amp;)": 25
+  },
+  "KCI_FI000858284": {
+   "html-escape(&lt; &gt; &amp;)": 12,
+   "list-item leading */※ marker dropped": 1
+  },
+  "KCI_FI002990049": {
+   "html-escape(&lt; &gt; &amp;)": 4,
+   "space before , or ( dropped": 8
+  },
+  "KCI_FI001343547": {
+   "list-item leading */※ marker dropped": 2
+  },
+  "KCI_FI001667569": {
+   "other: insert ''->'i'": 1,
+   "html-escape(&lt; &gt; &amp;)": 9,
+   "other: insert ''->\"'\"": 1,
+   "other: insert ''->'('": 1
+  }
+ }
+}

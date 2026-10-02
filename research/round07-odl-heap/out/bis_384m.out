@@ -1,0 +1,13 @@
+tag bis_384m JAVA_TOOL_OPTIONS '-Xmx384m' gc True docs 12
+KCI_FI002990049 fitz:oom+oom wall 3.35 odl_s 2.87 hwm 527 ru 527 gc_used 382 n_pages 38
+KCI_FI003315691 fitz:oom+oom wall 3.04 odl_s 2.34 hwm 515 ru 515 gc_used 382 n_pages 52
+KCI_FI001372507 fitz:oom+oom wall 9.58 odl_s 7.91 hwm 549 ru 549 gc_used 382 n_pages 275
+KCI_FI002298010 ok wall 5.02 odl_s 5.0 hwm 579 ru 580 gc_used 338 n_pages 7
+KCI_FI001160724 ok wall 3.95 odl_s 3.9 hwm 568 ru 568 gc_used 342 n_pages 268
+KCI_FI001401892 ok wall 4.92 odl_s 4.87 hwm 577 ru 577 gc_used 342 n_pages 379
+KCI_FI001428194 ok wall 4.34 odl_s 4.3 hwm 577 ru 577 gc_used 342 n_pages 223
+KCI_FI001930485 ok wall 5.3 odl_s 4.71 hwm 551 ru 551 gc_used 319 n_pages 37
+KCI_FI002252358 ok wall 3.15 odl_s 3.13 hwm 570 ru 570 gc_used 316 n_pages 30
+KCI_FI001827561 ok wall 2.48 odl_s 2.46 hwm 492 ru 493 gc_used 323 n_pages 59
+KCI_FI003214027 ok wall 4.19 odl_s 4.18 hwm 455 ru 455 gc_used 329 n_pages 4
+KCI_FI001667569 ok wall 2.08 odl_s 2.07 hwm 445 ru 446 gc_used 308 n_pages 20

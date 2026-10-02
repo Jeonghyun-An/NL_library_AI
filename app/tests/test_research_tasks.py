@@ -1901,6 +1901,12 @@ class TestReaper:
         def close(self):
             return None
 
+    def test_reaper_has_soft_and_hard_time_limits(self, monkeypatch):
+        """회수기는 제어 워커(한 칸)에서 디스패치 틱과 같은 q_control 을 쓴다 — 오래 붙잡지 않게 끊는다."""
+        rt = _load_tasks(monkeypatch, fake_celery=True)
+        assert (rt.reap_stale_research.soft_time_limit, rt.reap_stale_research.time_limit) == (60, 90)
+        assert rt.reap_stale_research.queue == "q_control"
+
     def test_stale_threshold_exceeds_hard_limit(self, monkeypatch):
         """회수 임계가 하드 리밋보다 짧으면 아직 살아 있는 워커의 잡을 회수한다."""
         rt = _load_tasks(monkeypatch)

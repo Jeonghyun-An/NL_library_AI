@@ -1,0 +1,3 @@
+tag bis_1408m JAVA_TOOL_OPTIONS '-Xmx1408m' gc True docs 2
+KCI_FI002990049 fitz:oom+oom wall 7.82 odl_s 7.35 hwm 1614 ru 1615 gc_used 1406 n_pages 38
+KCI_FI002990049 fitz:oom+oom wall 8.49 odl_s 7.99 hwm 1624 ru 1624 gc_used 1406 n_pages 38

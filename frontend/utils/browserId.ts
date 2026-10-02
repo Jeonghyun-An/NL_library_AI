@@ -47,3 +47,12 @@ export function safeLocalStorage(): Storage | null {
     return null;
   }
 }
+
+// 탭 하나에서만 쓰는 캐시용(논문 상세의 AI 글) — 서버 렌더·막힌 저장소에서는 null
+export function safeSessionStorage(): Storage | null {
+  try {
+    return typeof window === "undefined" ? null : window.sessionStorage;
+  } catch {
+    return null;
+  }
+}

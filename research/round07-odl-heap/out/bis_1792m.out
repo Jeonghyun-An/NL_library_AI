@@ -1,0 +1,3 @@
+tag bis_1792m JAVA_TOOL_OPTIONS '-Xmx1792m' gc True docs 2
+KCI_FI002990049 ok wall 3.28 odl_s 3.26 hwm 1977 ru 1977 gc_used 1728 n_pages 38
+KCI_FI002990049 ok wall 3.5 odl_s 3.48 hwm 1982 ru 1982 gc_used 1737 n_pages 38

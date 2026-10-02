@@ -6,6 +6,7 @@ celery·redis 는 로컬 환경에 미설치라 workers.tasks import 자체가 �
 """
 import importlib
 import sys
+import types
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,7 +35,17 @@ def _make_fake_celery_module():
     return mod
 
 
+def _make_fake_celery_exceptions_module():
+    # workers.job_runtime 이 `from celery.exceptions import Ignore` 를 한다. 위 더미 celery 는
+    # 패키지가 아니라 하위 모듈을 찾지 못하므로 따로 꽂는다. except 절·raise 에 쓰이니 진짜 예외 클래스다
+    mod = types.ModuleType("celery.exceptions")
+    mod.Ignore = type("Ignore", (Exception,), {})
+    mod.SoftTimeLimitExceeded = type("SoftTimeLimitExceeded", (Exception,), {})
+    return mod
+
+
 _stub_missing_module("celery", _make_fake_celery_module)
+_stub_missing_module("celery.exceptions", _make_fake_celery_exceptions_module)
 _stub_missing_module("redis", MagicMock)
 
 import workers.tasks as tasks  # noqa: E402

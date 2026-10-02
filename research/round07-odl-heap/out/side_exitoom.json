@@ -1,0 +1,62 @@
+{
+ "label": "exitoom",
+ "jto": "-Xmx1g -XX:+ExitOnOutOfMemoryError",
+ "docs": [
+  {
+   "id": "KCI_FI002990049",
+   "fallback": "fitz",
+   "errors": [
+    "ODL 실패(원본): ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError | raise CalledProcessError(retcode, process.args, | f-cli.jar', '/pdf/KCI_FI002990049.pdf', '--output-dir', '/tmp/tmpor52gopf', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3.",
+    "ODL 실패(fitz 재저장본): ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError | raise CalledProcessError(retcode, process.args, | r-pdf-cli.jar', '/tmp/tmpunkf94tv.pdf', '--output-dir', '/tmp/tmppox8owjc', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3.",
+    "ODL 실패 — fitz 텍스트로 대체"
+   ],
+   "n_pages": 38,
+   "attempts": [
+    {
+     "exc": "RuntimeError: ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError | raise CalledProcessError(retcode, process.args, | f-cli.jar', '/pdf/KCI_FI002990049.pdf', '--output-dir', '/tmp/tmpor52gopf', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3.",
+     "child_returncode": 1,
+     "stderr_file_bytes": 1175,
+     "stderr_file_lines": [
+      "Error running opendataloader-pdf CLI.",
+      "Return code: 3",
+      "Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space",
+      "",
+      "Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError",
+      "",
+      "Traceback (most recent call last):",
+      "  File \"<string>\", line 6, in <module>",
+      "  File \"/usr/local/lib/python3.11/dist-packages/opendataloader_pdf/convert_generated.py\", line 158, in convert",
+      "    run_jar(args, quiet)",
+      "  File \"/usr/local/lib/python3.11/dist-packages/opendataloader_pdf/runner.py\", line 37, in run_jar",
+      "    result = subprocess.run("
+     ],
+     "stderr_has_picked_up": true,
+     "summary_now": "Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError | raise CalledProcessError(retcode, process.args, | f-cli.jar', '/pdf/KCI_FI002990049.pdf', '--output-dir', '/tmp/tmpor52gopf', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3.",
+     "summary_without_picked_up_line": "Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | raise CalledProcessError(retcode, process.args, | f-cli.jar', '/pdf/KCI_FI002990049.pdf', '--output-dir', '/tmp/tmpor52gopf', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3."
+    },
+    {
+     "exc": "RuntimeError: ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError | raise CalledProcessError(retcode, process.args, | r-pdf-cli.jar', '/tmp/tmpunkf94tv.pdf', '--output-dir', '/tmp/tmppox8owjc', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3.",
+     "child_returncode": 1,
+     "stderr_file_bytes": 1171,
+     "stderr_file_lines": [
+      "Error running opendataloader-pdf CLI.",
+      "Return code: 3",
+      "Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space",
+      "",
+      "Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError",
+      "",
+      "Traceback (most recent call last):",
+      "  File \"<string>\", line 6, in <module>",
+      "  File \"/usr/local/lib/python3.11/dist-packages/opendataloader_pdf/convert_generated.py\", line 158, in convert",
+      "    run_jar(args, quiet)",
+      "  File \"/usr/local/lib/python3.11/dist-packages/opendataloader_pdf/runner.py\", line 37, in run_jar",
+      "    result = subprocess.run("
+     ],
+     "stderr_has_picked_up": true,
+     "summary_now": "Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | Stderr: Picked up JAVA_TOOL_OPTIONS: -Xmx1g -XX:+ExitOnOutOfMemoryError | raise CalledProcessError(retcode, process.args, | r-pdf-cli.jar', '/tmp/tmpunkf94tv.pdf', '--output-dir', '/tmp/tmppox8owjc', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3.",
+     "summary_without_picked_up_line": "Error running opendataloader-pdf CLI. | Stdout: Terminating due to java.lang.OutOfMemoryError: Java heap space | raise CalledProcessError(retcode, process.args, | r-pdf-cli.jar', '/tmp/tmpunkf94tv.pdf', '--output-dir', '/tmp/tmppox8owjc', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 3."
+    }
+   ]
+  }
+ ]
+}

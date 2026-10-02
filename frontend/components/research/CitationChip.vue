@@ -16,6 +16,7 @@
       :aria-expanded="open"
       :aria-controls="popId"
       :aria-label="`근거 ${eid}: ${title}`"
+      :data-anchor="anchor"
       @click="togglePin"
     >
       {{ label }}
@@ -47,19 +48,30 @@
       <span v-else class="rs-cite__quote rs-muted">이 절에서 매칭된 대목이 없습니다</span>
       <span v-if="evidence" class="rs-cite__actions">
         <button type="button" class="rs-btn rs-btn--small" @click="openPdf">원문 보기</button>
-        <NuxtLink :to="`/papers/${evidence.cnts_id}`" class="rs-btn rs-btn--small rs-btn--ghost">논문 상세</NuxtLink>
+        <!-- 누르는 순간의 칩 높이를 주소에 실어야 해서 NuxtLink 대신 직접 옮긴다 -->
+        <a
+          :href="detailHref(evidence.cnts_id, null)"
+          class="rs-btn rs-btn--small rs-btn--ghost"
+          @click="goDetail($event, evidence.cnts_id)"
+          @auxclick="goDetail($event, evidence.cnts_id)"
+          @contextmenu="goDetail($event, evidence.cnts_id)"
+        >논문 상세</a>
       </span>
     </span>
   </span>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
+import { computed, inject, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
+import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload, ReportChunk, ReportEvidence } from "~/types/research";
 import { chunkListKey, citeLabel, metaLine, pageLabel, pdfPage } from "~/utils/citations";
+import { REPORT_JOB, detailUrl } from "~/utils/detailSource";
 import { hideOnPointerLeave, stepChunk } from "~/utils/researchReport";
+import { isPlainClick, spotOf } from "~/utils/restorePosition";
 
-const props = defineProps<{ eid: string; evidence?: ReportEvidence; chunks: ReportChunk[] }>();
+// anchor: 돌아왔을 때 이 칩을 다시 찾는 열쇠(같은 절의 같은 근거는 순번으로 가른다)
+const props = defineProps<{ eid: string; anchor: string; evidence?: ReportEvidence; chunks: ReportChunk[] }>();
 const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload] }>();
 
 // 포인터가 칩에서 팝오버로 옮겨 가는 사이에 닫히지 않게 조금 기다린다
@@ -77,6 +89,8 @@ const index = ref(0);
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 // 포인터가 칩·팝오버 위에 있는지 — 초점이 어디로도 옮겨 가지 않고 빠질 때 닫을지 가른다
 let hovering = false;
+const reportJob = inject(REPORT_JOB)!;
+const { leave } = useDetailLeave();
 
 const label = computed(() => citeLabel(props.evidence?.meta, props.eid));
 const title = computed(() => props.evidence?.meta.title || "근거 정보를 찾을 수 없습니다");
@@ -181,6 +195,24 @@ function openPdf(): void {
     title: title.value,
     page: current.value ? pdfPage(current.value) : undefined,
   });
+}
+
+function detailHref(cnts: string, y: number | null): string {
+  return detailUrl(cnts, { kind: "research", job: reportJob.value, e: props.eid }, { at: props.anchor, y });
+}
+
+// 누르는 순간의 칩 높이를 싣는다 — [딥리서치 보고서로]·뒤로 가기로 돌아오면 이 칩을 같은 화면 높이에 맞추고
+// 초점을 돌려 팝오버를 다시 연다. 새 창·새 탭으로 여는 클릭과 오른쪽 클릭 메뉴는 브라우저에 맡기되 주소에는 같은
+// 자리를 싣는다 — 메뉴는 auxclick 보다 먼저 뜨는 브라우저가 있고, 메뉴 키로 열면 왼쪽 클릭 모양이라 종류로 가린다
+function goDetail(e: MouseEvent, cnts: string): void {
+  const spot = spotOf(chip.value!, props.anchor);
+  const url = detailHref(cnts, spot.y);
+  if (e.type === "contextmenu" || !isPlainClick(e)) {
+    (e.currentTarget as HTMLAnchorElement).href = url;
+    return;
+  }
+  e.preventDefault();
+  void leave(url, spot);
 }
 
 onBeforeUnmount(() => {

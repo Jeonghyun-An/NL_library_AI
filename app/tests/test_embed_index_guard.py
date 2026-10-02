@@ -160,3 +160,66 @@ def test_paper_falls_back_to_abstract_when_extracted_text_is_whitespace_only(mon
 
     assert called == [True], "abstract 폴백 텍스트가 있으면 인덱싱까지 진행해야 한다"
     assert result["indexed"] == 1
+
+
+def _stub_indexing(monkeypatch) -> tuple[list, list]:
+    """청킹·임베딩·인덱싱을 대역으로 바꾸고 (청킹에 들어간 텍스트, index_chunks 호출) 기록을 돌려준다.
+
+    test_paper_falls_back_to_abstract_… 와 같은 이유로 모듈을 직접 import 해 patch 한다.
+    보강(PAPER_ENRICH_ENABLED)은 끈다 — 켜 두면 LLM 에 접속을 시도한다.
+    """
+    import services.ingestion.chunker as chunker_mod
+    import services.ingestion.embedder as embedder_mod
+    import services.ingestion.indexer as indexer_mod
+
+    chunked: list = []
+    indexed: list = []
+    monkeypatch.setattr(stages.cfg, "PAPER_ENRICH_ENABLED", False)
+    monkeypatch.setattr(
+        chunker_mod, "semantic_chunk",
+        lambda text, embed_fn, **kw: chunked.append(text)
+        or [chunker_mod.Chunk(chunk_idx=0, text=text, section_idx=None)],
+    )
+    monkeypatch.setattr(
+        embedder_mod, "embed_texts",
+        lambda texts, *a, **kw: ([[0.0] for _ in texts], [{} for _ in texts]),
+    )
+    fake_result = MagicMock(errors=[], chunks_indexed=1)
+    monkeypatch.setattr(
+        indexer_mod, "index_chunks",
+        lambda *a, **kw: indexed.append(True) or fake_result,
+    )
+    return chunked, indexed
+
+
+def test_paper_with_pdf_and_missing_artifact_is_not_indexed_from_abstract(monkeypatch):
+    """추출이 쪽수를 남긴 문서(PDF 가 있었다)인데 아티팩트가 없다 — 마무리가 아티팩트를 지운 뒤
+    옛 체인의 embed_index 가 돌면 여기로 온다(함정 16). 초록으로 진행하면 index_chunks 가 본문
+    청크를 지우고 초록 청크로 덮으므로, 인덱스를 건드리기 전에 artifact_missing 으로 멈춘다."""
+    book = MagicMock(doc_type="paper", abstract="이 논문은 강화학습 보상 설계를 다룬다.",
+                     title="논문 제목", personal_author=None, corporate_author=None,
+                     series_title=None, subject=None, keyword=None)
+    _patch_common(monkeypatch, book)   # 기본 로더 = 아티팩트 없음
+    chunked, indexed = _stub_indexing(monkeypatch)
+
+    with pytest.raises(StageError) as exc:
+        stages.run_embed_index(StageContext(book_id="KCI_FI000000003", item_meta={"pages": 12}))
+
+    assert exc.value.error_group == "artifact_missing"
+    assert chunked == [] and indexed == [], "초록으로 본문 청크를 덮으면 안 된다"
+
+
+def test_metadata_only_paper_without_pages_still_uses_abstract(monkeypatch):
+    """PDF 없는 메타데이터 전용 논문(meta.pages 가 없거나 0)은 지금처럼 초록으로 색인한다."""
+    book = MagicMock(doc_type="paper", abstract="이 논문은 강화학습 보상 설계를 다룬다.",
+                     title="논문 제목", personal_author=None, corporate_author=None,
+                     series_title=None, subject=None, keyword=None)
+    _patch_common(monkeypatch, book)   # 기본 로더 = 아티팩트 없음
+    chunked, indexed = _stub_indexing(monkeypatch)
+
+    for meta in ({}, {"pages": 0}):
+        chunked.clear()
+        result = stages.run_embed_index(StageContext(book_id="KCI_FI000000004", item_meta=meta))
+        assert result["indexed"] == 1
+        assert chunked == ["이 논문은 강화학습 보상 설계를 다룬다."], meta
+    assert indexed == [True, True]

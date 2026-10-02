@@ -1,7 +1,8 @@
 """
 paper_enricher.py — 논문 전용 보강 파이프라인
 
-run_embed_index 에서 paper doc_type 시 호출:
+run_summarize 가 paper doc_type 일 때 섹션 요약과 같은 루프·같은 세마포어로 호출하고,
+결과 아티팩트를 run_embed_index 가 읽는다(아티팩트가 없을 때만 run_embed_index 가 직접 호출):
   1. 초록(abstract)   — 헤더 패턴 매칭으로 추출
   2. 참고문헌(references) — 항목 패턴 기반 추출 (연속 비매칭 N줄 → stop)
   3. 키워드(keywords)  — 헤더 파싱 추출, 없으면 LLM 생성
@@ -21,6 +22,7 @@ import io
 import json
 import logging
 import re
+import zlib
 from dataclasses import dataclass, field
 
 import httpx
@@ -465,16 +467,19 @@ def _extract_tables(full_text: str) -> list[tuple[str, str]]:
     return results
 
 
-# ── 4. LLM 표 전체 서술 ──────────────────────────────────────
+# ── 4. LLM — 키워드·참고문헌 폴백, 표 해석(잘리면 끝난 문장까지) ──────────
+
+def _messages(system: str, user: str) -> list[dict]:
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
 
 async def _llm_chat(system: str, user: str, params: dict, timeout: float) -> str:
     # LLM 호출은 llm_client 어댑터로 통일 (OpenAI vLLM / Ollama 네이티브 겸용).
     from services.llm_client import chat
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
-    ]
-    return await chat(messages, params=params, timeout=timeout)
+    return await chat(_messages(system, user), params=params, timeout=timeout)
 
 
 async def generate_keywords(title: str, text: str) -> list[str]:
@@ -499,11 +504,44 @@ async def generate_references(text: str) -> list[str]:
     return refs[:200]
 
 
+# 문장 끝 후보 — . ! ? 。 뒤에 (닫는 따옴표·괄호가 붙어도) 공백이나 글 끝이 오는 자리:
+# '…다.'·'…요.'·'…다.”'·'…다.)'. 소수점(3.5)은 뒤에 숫자가 와서 후보가 아니다.
+_CLOSING_MARKS = "\"'”’)）]」』》〉】"
+_SENTENCE_END = re.compile(rf"[.!?。][{re.escape(_CLOSING_MARKS)}]*(?=\s|$)")
+
+
+def _period_ends_sentence(text: str, pos: int) -> bool:
+    """text[pos] 의 '.' 가 문장 끝인가 — 바로 앞이 글자(한글·라틴 등)나 닫는 부호일 때만이다. 숫자·공백·'='·'<'
+    뒤의 마침표는 번호 목록 표식('2.')·표 번호('표 3.')·날짜('2023. 3. 15.')이거나 소수('평균 3.5'·'p < .05')가
+    잘린 자리다."""
+    prev = text[pos - 1] if pos > 0 else ""
+    return prev.isalpha() or (prev != "" and prev in _CLOSING_MARKS)
+
+
+def trim_to_last_sentence(text: str) -> str:
+    """마지막으로 끝난 문장까지만 남긴다 — max_tokens 에서 잘린 응답의 끊긴 꼬리를 걷어 낸다.
+
+    '.' 는 바로 앞이 글자나 닫는 부호일 때만 문장 끝으로 본다(_period_ends_sentence) — 번호 목록이 항목
+    중간에서 잘려도 표식('2.')만 남지 않고, 숫자 뒤에서 잘린 꼬리('평균 3.')도 남지 않는다. ! ? 。 는 그대로
+    문장 끝이다. 끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
+    """
+    for end in reversed(list(_SENTENCE_END.finditer(text))):
+        if text[end.start()] == "." and not _period_ends_sentence(text, end.start()):
+            continue
+        return text[: end.end()].rstrip()
+    return text
+
+
 async def interpret_table(title: str, context: str, table_md: str) -> str:
+    """표 해석 LLM — 상한(600토큰)에서 잘리면 마지막으로 끝난 문장까지만 쓴다."""
+    from services.llm_client import chat_full
     from services.prompts import get_prompt
     tpl = get_prompt("paper_table_interp")
     system, user, params = tpl.render(title=title, context=context, table_markdown=table_md)
-    return await _llm_chat(system, user, params, timeout=cfg.PAPER_TABLE_INTERP_TIMEOUT)
+    result = await chat_full(_messages(system, user), params=params, timeout=cfg.PAPER_TABLE_INTERP_TIMEOUT)
+    if result.finish_reason == "length":
+        return trim_to_last_sentence(result.content)
+    return result.content
 
 
 # ── 5. VLM 그림 설명 ─────────────────────────────────────────
@@ -564,10 +602,22 @@ def _load_figure_bytes(key: str, minio_client) -> bytes | None:
         return None
 
 
-# ── 7. MinIO 아티팩트 저장 ──────────────────────────────────
+# ── 7. MinIO 아티팩트 저장·로드 ─────────────────────────────
 
-def save_enrichment_artifact(book_id: str, enrichment: PaperEnrichment, minio_client) -> None:
+def _enrichment_key(book_id: str) -> str:
+    return f"artifacts/{book_id}/enrichment.json.gz"
+
+
+def save_enrichment_artifact(
+    book_id: str, enrichment: PaperEnrichment, minio_client, *, run_token: str | None = None,
+) -> None:
+    """보강 결과 → MinIO artifacts/{book_id}/enrichment.json.gz.
+
+    run_token: 이 보강을 만든 체인의 실행 토큰(ingest_job_items.meta.run_token — 디스패처가 체인마다
+    새로 적는다). embed 단계가 같은 실행의 아티팩트인지 가린다. 단건 흐름은 None.
+    """
     payload = {
+        "run_token": run_token,
         "abstract": enrichment.abstract,
         "keywords": enrichment.keywords,
         "toc": enrichment.toc,
@@ -585,7 +635,7 @@ def save_enrichment_artifact(book_id: str, enrichment: PaperEnrichment, minio_cl
     try:
         minio_client.put_object(
             cfg.MINIO_BUCKET,
-            f"artifacts/{book_id}/enrichment.json.gz",
+            _enrichment_key(book_id),
             io.BytesIO(data),
             length=len(data),
             content_type="application/gzip",
@@ -594,17 +644,91 @@ def save_enrichment_artifact(book_id: str, enrichment: PaperEnrichment, minio_cl
         log.warning(f"[{book_id}] enrichment 아티팩트 MinIO 저장 실패: {e}")
 
 
+def load_enrichment_artifact(
+    book_id: str, minio_client, *, run_token: str | None = None,
+) -> PaperEnrichment | None:
+    """save_enrichment_artifact 의 역 — 요약 단계가 남긴 보강 결과를 embed 단계가 읽는다.
+
+    없으면 None(embed 가 보강을 직접 돌린다). 읽기·해석에 실패해도 None 과 경고 —
+    보강은 다시 만들 수 있으니 색인을 막지 않는다.
+    run_token 을 주면 저장된 토큰과 다를 때 None — 다른 실행이 남긴 옛 보강으로 본다.
+    토큰 없이 저장된 배포 전 아티팩트와 토큰 없는 호출(단건 흐름)은 그대로 읽는다.
+    """
+    try:
+        resp = minio_client.get_object(cfg.MINIO_BUCKET, _enrichment_key(book_id))
+        try:
+            raw = resp.read()
+        finally:
+            resp.close()
+            resp.release_conn()
+    except Exception as e:
+        if getattr(e, "code", None) != "NoSuchKey":   # minio S3Error — 없는 객체는 조용히 None
+            log.warning(f"[{book_id}] enrichment 아티팩트 읽기 실패 — 보강을 다시 만든다: {e}")
+        return None
+    try:
+        data = json.loads(gzip.decompress(raw).decode("utf-8"))
+        stored_token = data.get("run_token")
+        if run_token is not None and stored_token is not None and stored_token != run_token:
+            log.info(f"[{book_id}] enrichment 아티팩트가 다른 실행({stored_token})의 것 — 쓰지 않는다")
+            return None
+        return PaperEnrichment(
+            abstract=data.get("abstract"),
+            keywords=list(data.get("keywords") or []),
+            toc=list(data.get("toc") or []),
+            references=list(data.get("references") or []),
+            table_chunks=[
+                TableChunk(context=t["context"], table_md=t["table_md"], description=t.get("description") or "")
+                for t in data.get("table_chunks") or []
+            ],
+            figure_chunks=[
+                FigureChunk(minio_key=f["minio_key"], description=f["description"])
+                for f in data.get("figure_chunks") or []
+            ],
+        )
+    # zlib.error: 압축 본문이 한 바이트만 깨져도 OSError·ValueError 가 아니라 이것으로 올라온다
+    except (OSError, EOFError, zlib.error, ValueError, KeyError, TypeError, AttributeError) as e:
+        log.warning(f"[{book_id}] enrichment 아티팩트가 깨졌다 — 보강을 다시 만든다: {e}")
+        return None
+
+
+def delete_enrichment_artifact(book_id: str, minio_client) -> None:
+    """옛 보강 아티팩트를 지운다(best-effort) — 요약 단계가 보강을 새로 만들기 전에 부른다.
+
+    없는 객체를 지우는 것은 S3 에서 성공이다. 실패해도 경고만 남긴다 — 남은 아티팩트가
+    토큰이 붙은 것이면 embed 의 run_token 비교가 한 번 더 거른다.
+    """
+    try:
+        minio_client.remove_object(cfg.MINIO_BUCKET, _enrichment_key(book_id))
+    except Exception as e:
+        log.warning(f"[{book_id}] 옛 enrichment 아티팩트 삭제 실패: {e}")
+
+
 # ── 8. 메인 엔트리 ─────────────────────────────────────────
+
+# 그림 설명(VLM) 동시 요청 수 — 문서 하나당. 보강은 celery-llm(4칸)에서 돌아 문서마다 그림을 한꺼번에 보내면
+# PAPER_MAX_FIGURES_PER_DOC(8) × 4 = 32건이 추출 OCR 이 쓰는 VLM 자리(max-num-seqs 8 = celery-cpu 4 ×
+# VLM_PAGE_CONCURRENCY 2)와 다툰다. 2 면 보강 쪽은 많아야 8건이다
+_FIGURE_VLM_CONCURRENCY = 2
 
 async def enrich_paper(
     book_id: str,
     title: str,
     full_text: str,
     minio_client,
+    *,
+    sem: asyncio.Semaphore | None = None,
 ) -> PaperEnrichment:
-    """논문 보강 파이프라인 — 초록·참고문헌·표·그림 처리."""
+    """논문 보강 파이프라인 — 초록·참고문헌·표·그림 처리.
+
+    sem: 키워드·참고문헌 LLM 폴백과 표 해석이 함께 쓰는 동시 호출 상한. 요약 단계가
+    섹션 요약과 같은 세마포어를 넘긴다(단계 하나 = 프로세스 하나의 LLM 상한). 없으면
+    LLM_SECTION_CONCURRENCY 로 새로 만든다. 그림 설명(VLM)은 다른 서버라 이 세마포어 밖이고, 문서 하나에서
+    _FIGURE_VLM_CONCURRENCY(2)건까지만 동시에 보낸다.
+    """
     if not full_text:
         return PaperEnrichment()
+    if sem is None:
+        sem = asyncio.Semaphore(max(1, cfg.LLM_SECTION_CONCURRENCY))  # 0 이하 설정이면 끝나지 않는다
 
     # 짧은 텍스트(abstract 대용) 여부 — 패턴 추출은 스킵하고 LLM만 실행
     short_text = len(full_text) < 200
@@ -620,7 +744,8 @@ async def enrich_paper(
         kw_source = "LLM"
         try:
             seed_text = abstract or full_text[:800]
-            keywords = await generate_keywords(title, seed_text)
+            async with sem:
+                keywords = await generate_keywords(title, seed_text)
         except Exception as e:
             log.warning(f"[{book_id}] 키워드 LLM 생성 실패: {e}")
             keywords = []
@@ -630,7 +755,8 @@ async def enrich_paper(
     if not short_text and (len(references) < 3 or len(references) > 50):
         ref_source = "LLM"
         try:
-            references = await generate_references(full_text)
+            async with sem:
+                references = await generate_references(full_text)
             log.info(f"[{book_id}] 참고문헌 LLM 추출: {len(references)}건")
         except Exception as e:
             log.warning(f"[{book_id}] 참고문헌 LLM 추출 실패: {e}")
@@ -645,8 +771,6 @@ async def enrich_paper(
     tables = _extract_tables(full_text)[: cfg.PAPER_MAX_TABLES_PER_DOC]
     table_chunks: list[TableChunk] = []
     if tables:
-        sem = asyncio.Semaphore(cfg.LLM_SECTION_CONCURRENCY)
-
         async def _build_table_chunk(ctx: str, md: str) -> TableChunk:
             async with sem:
                 try:
@@ -664,6 +788,8 @@ async def enrich_paper(
     figure_chunks: list[FigureChunk] = []
     fig_keys = _list_figure_keys(book_id, minio_client)[: cfg.PAPER_MAX_FIGURES_PER_DOC]
     if fig_keys:
+        fig_sem = asyncio.Semaphore(_FIGURE_VLM_CONCURRENCY)
+
         async def _describe(key: str) -> FigureChunk | None:
             img_bytes = await asyncio.get_event_loop().run_in_executor(
                 None, _load_figure_bytes, key, minio_client
@@ -673,7 +799,8 @@ async def enrich_paper(
             ext = key.rsplit(".", 1)[-1].lower()
             fmt = "png" if ext == "png" else "jpeg"
             try:
-                desc = await describe_figure(title, img_bytes, fmt)
+                async with fig_sem:
+                    desc = await describe_figure(title, img_bytes, fmt)
                 return FigureChunk(minio_key=key, description=desc)
             except Exception as e:
                 log.warning(f"[{book_id}] 그림 설명 실패 {key}: {e}")

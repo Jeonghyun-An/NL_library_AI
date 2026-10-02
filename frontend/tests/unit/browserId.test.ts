@@ -7,6 +7,7 @@ import {
   isUuidV4,
   readOrCreateBrowserId,
   safeLocalStorage,
+  safeSessionStorage,
 } from "~/utils/browserId";
 import { MemoryStorage } from "./helpers/memoryStorage";
 
@@ -95,5 +96,11 @@ describe("generateUuidV4", () => {
 describe("safeLocalStorage", () => {
   it("window 가 없는 서버 렌더에서는 null", () => {
     expect(safeLocalStorage()).toBeNull();
+  });
+});
+
+describe("safeSessionStorage", () => {
+  it("window 가 없는 서버 렌더에서는 null", () => {
+    expect(safeSessionStorage()).toBeNull();
   });
 });
