@@ -45,6 +45,8 @@ def _matches(clause, row: dict) -> bool:
     op = clause.operator
     if op is operators.eq:
         return left == right
+    if op is operators.ne:
+        return left != right
     if op is operators.in_op:
         return left in right
     if op is operators.is_not:
@@ -67,6 +69,9 @@ class _Result:
     def scalar_one(self):
         return self._scalar
 
+    def scalar(self):
+        return self._scalar
+
 
 class _FakeDB:
     """research_jobs 를 dict 로 들고 get·조건부 UPDATE·개수 조회·step 조회를 흉내 낸다.
@@ -79,6 +84,7 @@ class _FakeDB:
         self.jobs: dict[uuid.UUID, dict] = {}
         self.steps: list[SimpleNamespace] = []
         self.sql: list[str] = []
+        self.locks: list[int] = []  # pg_advisory_xact_lock 에 넘긴 키, 잡은 순서대로
         self.after_get = None       # 읽은 직후에 끼어드는 경쟁 요청을 흉내 낸다
 
     def add_job(self, **fields) -> uuid.UUID:
@@ -113,7 +119,11 @@ class _FakeDB:
         self.sql.append(sql)
         table = getattr(getattr(stmt, "table", None), "name", None)
         if sql.startswith("SELECT pg_advisory_xact_lock"):
+            self.locks.extend(stmt.compile().params.values())
             return _Result()
+        if sql.startswith("SELECT research_jobs.id \nFROM research_jobs") and "LIMIT" in sql:
+            ids = [row["id"] for row in self.jobs.values() if _matches(stmt.whereclause, row)]
+            return _Result(scalar=ids[0] if ids else None)
         if sql.startswith("SELECT count(*)") and "FROM research_jobs" in sql:
             n = sum(1 for row in self.jobs.values() if _matches(stmt.whereclause, row))
             return _Result(scalar=n)
@@ -473,6 +483,144 @@ class TestSharedQueueRunSlot:
 
         assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
         assert not any("pg_advisory_xact_lock" in s for s in api.db.sql)
+
+    def test_shared_queue_429_carries_its_code(self, api, monkeypatch):
+        """화면이 429 두 가지(공유 큐·같은 브라우저)를 문구가 아니라 code 로 가른다."""
+        _queue(api, monkeypatch, "q_llm")
+        api.db.add_job(status="running", plan=["가"])
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"])
+
+        res = api.client.post(f"/api/research/{jid}/approve")
+
+        assert res.status_code == 429
+        detail = res.json()["detail"]
+        assert detail["code"] == "shared_queue"
+        assert "한 번에 한 건만 실행한다" in detail["message"]
+        assert "job_id" not in detail
+
+
+_SID = "3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e"
+_OTHER_SID = "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
+_BROWSER_ACTIVE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
+
+
+class TestBrowserRunLimit:
+    """한 브라우저(잡의 created_by)는 딥리서치를 한 번에 하나만 실행 큐에 둔다.
+
+    기준은 요청 헤더가 아니라 잡을 만든 브라우저다. 운영 큐(q_research)에서 확인한다 —
+    적재 큐(q_llm)면 공유 큐 검사가 먼저 걸려 이 검사까지 오지 않는다.
+    """
+
+    @pytest.mark.parametrize("busy", ["running", "approved", "queued"])
+    def test_approve_is_429_while_the_same_browser_has_a_run(self, api, monkeypatch, busy):
+        _queue(api, monkeypatch, "q_research")
+        other = api.db.add_job(status=busy, plan=["가"], created_by=_SID)
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        res = api.client.post(f"/api/research/{jid}/approve")
+
+        assert res.status_code == 429
+        assert res.json()["detail"] == {
+            "code": "browser_active", "message": _BROWSER_ACTIVE, "job_id": str(other),
+        }
+        # 앞 잡이 끝나면 다시 승인할 수 있어야 한다
+        assert api.db.jobs[jid]["status"] == "awaiting_approval"
+        assert api.celery.sent == [] and api.events == []
+
+    def test_retry_is_429_while_the_same_browser_has_a_run(self, api, monkeypatch):
+        _queue(api, monkeypatch, "q_research")
+        other = api.db.add_job(status="running", plan=["가"], created_by=_SID)
+        jid = api.db.add_job(status="failed", plan=["가"], stage="explored",
+                             last_error="종합 실패", created_by=_SID)
+
+        res = api.client.post(f"/api/research/{jid}/retry")
+
+        assert res.status_code == 429
+        assert res.json()["detail"]["job_id"] == str(other)
+        row = api.db.jobs[jid]
+        assert row["status"] == "failed" and row["last_error"] == "종합 실패"
+        assert api.celery.sent == [] and api.published == []
+
+    def test_other_browsers_and_anonymous_runs_do_not_block(self, api, monkeypatch):
+        _queue(api, monkeypatch, "q_research")
+        api.db.add_job(status="running", plan=["가"], created_by=_OTHER_SID)
+        api.db.add_job(status="queued", plan=["가"], created_by=None)
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+
+    @pytest.mark.parametrize("idle", [
+        "created", "planning", "awaiting_approval", "completed", "failed", "canceled",
+    ])
+    def test_jobs_not_in_the_run_queue_do_not_count(self, api, monkeypatch, idle):
+        """승인하지 않고 둔 계획은 세지 않는다 — 계획을 여러 개 띄워 두고 하나씩 승인할 수 있다."""
+        _queue(api, monkeypatch, "q_research")
+        api.db.add_job(status=idle, plan=["가"], created_by=_SID)
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+
+    def test_job_without_a_browser_is_not_limited(self, api, monkeypatch):
+        """created_by 가 없는 잡(헤더 없는 curl·평가 스크립트)은 검사도 잠금도 하지 않는다."""
+        _queue(api, monkeypatch, "q_research")
+        api.db.add_job(status="running", plan=["가"], created_by=None)
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=None)
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+        assert api.db.locks == []
+
+    def test_state_errors_come_before_the_browser_check(self, api, monkeypatch):
+        _queue(api, monkeypatch, "q_research")
+        api.db.add_job(status="running", plan=["가"], created_by=_SID)
+        jid = api.db.add_job(status="completed", plan=["가"], created_by=_SID)
+
+        assert api.client.post(f"/api/research/{jid}/retry").status_code == 409
+
+    def test_browser_is_checked_under_its_lock_in_the_transition_transaction(
+        self, api, monkeypatch,
+    ):
+        """같은 브라우저의 두 승인이 동시에 오면 둘 다 빈 줄을 보고 통과한다. 브라우저 잠금을
+        잡은 뒤 세고, 같은 트랜잭션에서 전이해 그 커밋이 잠금을 푼다."""
+        _queue(api, monkeypatch, "q_research")
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+
+        sql = api.db.sql
+        lock = next(i for i, s in enumerate(sql) if "pg_advisory_xact_lock" in s)
+        check = next(i for i, s in enumerate(sql) if s.startswith("SELECT research_jobs.id"))
+        upd = next(i for i, s in enumerate(sql) if s.startswith("UPDATE research_jobs"))
+        assert lock < check < upd
+        assert not {"COMMIT", "ROLLBACK"} & set(sql[lock:upd])
+        assert api.db.locks == [api.research._browser_lock_key(_SID)]
+
+    def test_rejection_rolls_back_without_writing(self, api, monkeypatch):
+        _queue(api, monkeypatch, "q_research")
+        api.db.add_job(status="running", plan=["가"], created_by=_SID)
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 429
+
+        sql = api.db.sql
+        check = next(i for i, s in enumerate(sql) if s.startswith("SELECT research_jobs.id"))
+        assert sql[check + 1:] == ["ROLLBACK"]
+
+    def test_shared_queue_lock_comes_first(self, api, monkeypatch):
+        """두 잠금을 늘 같은 순서로 잡는다 — 순서가 갈리면 두 요청이 서로를 기다린다."""
+        _queue(api, monkeypatch, "q_llm")
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"], created_by=_SID)
+
+        assert api.client.post(f"/api/research/{jid}/approve").status_code == 200
+        assert api.db.locks == [api.research._RUN_SLOT_LOCK,
+                                api.research._browser_lock_key(_SID)]
+
+    def test_lock_key_is_a_stable_signed_bigint_per_browser(self, api):
+        key = api.research._browser_lock_key
+        assert key(_SID) == key(_SID)
+        assert key(_SID) != key(_OTHER_SID)
+        for sid in (_SID, _OTHER_SID):
+            assert -(2 ** 63) <= key(sid) < 2 ** 63
+            assert key(sid) != api.research._RUN_SLOT_LOCK
 
 
 class TestCancel:

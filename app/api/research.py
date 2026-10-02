@@ -13,8 +13,11 @@
 그 사이 커밋된 취소를 덮어, 사용자가 취소한 잡이 승인·실행된다.
 
 실행을 적재 워커와 나눠 쓰는 동안(RESEARCH_QUEUE 가 적재 큐)은 approve·retry 가 실행
-슬롯이 비었을 때만 전이하고 아니면 429 다 — _to_run_queue.
+슬롯이 비었을 때만 전이하고 아니면 429 다 — _to_run_queue. 큐와 상관없이 한 브라우저
+(잡의 created_by)는 실행 큐에 한 잡만 둔다 — 같은 브라우저의 다른 잡이 approved·queued·
+running 이면 429. 두 429 는 detail.code(shared_queue·browser_active)로 가른다.
 """
+import hashlib
 import json
 import logging
 import uuid
@@ -66,6 +69,11 @@ SHARED_QUEUE_MAX_RUNS = 1
 RUN_SLOT_STATUSES = (*RUNNABLE_STATUSES, "running")
 # 동시에 온 승인·재시도를 한 줄로 세우는 트랜잭션 잠금 키("RESEARCH" 의 ASCII)
 _RUN_SLOT_LOCK = 0x5245534541524348
+_SHARED_QUEUE_MESSAGE = (
+    "다른 딥리서치가 실행 중이거나 실행을 기다리고 있다 — 끝나거나 취소된 뒤 "
+    "다시 요청한다(적재와 워커를 나눠 쓰는 동안은 한 번에 한 건만 실행한다)"
+)
+_BROWSER_ACTIVE_MESSAGE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
 
 # 하위질문 한 줄. 빈 항목은 빈 쿼리 검색으로, 초장문은 LLM 컨텍스트 초과로 이어진다.
 PlanItem = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=300)]
@@ -112,15 +120,34 @@ async def _transition(
     return res.rowcount == 1
 
 
+def _browser_lock_key(created_by: str) -> int:
+    """브라우저 ID 별 트랜잭션 잠금 키 — 같은 브라우저의 동시 승인·재시도를 한 줄로 세운다."""
+    return int.from_bytes(hashlib.sha256(created_by.encode()).digest()[:8], "big", signed=True)
+
+
+def _limit_detail(code: str, message: str, job_id: uuid.UUID | None = None) -> dict:
+    detail = {"code": code, "message": message}
+    if job_id is not None:
+        detail["job_id"] = str(job_id)
+    return detail
+
+
 async def _to_run_queue(
-    db: AsyncSession, jid: uuid.UUID, *, expect: tuple[str, ...], **values: object,
+    db: AsyncSession, jid: uuid.UUID, *, expect: tuple[str, ...], created_by: str | None,
+    **values: object,
 ) -> bool:
-    """실행 큐로 보내는 전이(approve·retry). 적재와 큐를 나눠 쓰는 동안은 실행 슬롯이
-    비어 있을 때만 전이하고, 차 있으면 아무것도 쓰지 않고 429 다.
+    """실행 큐로 보내는 전이(approve·retry). 두 제한을 통과해야 전이하고, 걸리면 아무것도
+    쓰지 않고 429 다.
+
+    - 적재와 큐를 나눠 쓰는 동안(shared_queue): 실행 슬롯이 비어 있을 때만.
+    - 같은 브라우저(browser_active): 잡을 만든 브라우저(created_by)의 다른 잡이 실행 큐
+      (approved·queued·running)에 있으면 막는다. 기준은 요청 헤더가 아니라 잡이고,
+      created_by 가 없으면(헤더 없는 curl·평가 스크립트) 검사하지 않는다.
 
     센 뒤에 전이하는 사이에 다른 요청이 끼면 둘 다 빈 슬롯을 보고 통과한다. 그래서
-    트랜잭션 잠금을 잡고 세며, 잠금은 _transition 의 커밋이 푼다 — READ COMMITTED 라
-    잠금을 얻은 뒤의 조회는 먼저 들어온 쪽이 커밋한 상태를 본다.
+    트랜잭션 잠금을 잡고 세며, 잠금은 _transition 의 커밋(또는 거절 때의 롤백)이 푼다 —
+    READ COMMITTED 라 잠금을 얻은 뒤의 조회는 먼저 들어온 쪽이 커밋한 상태를 본다.
+    두 잠금은 늘 공유 큐 → 브라우저 순서로 잡는다(순서가 갈리면 서로를 기다린다).
     """
     if get_settings().RESEARCH_QUEUE in INGEST_QUEUES:
         await db.execute(select(func.pg_advisory_xact_lock(_RUN_SLOT_LOCK)))
@@ -131,9 +158,22 @@ async def _to_run_queue(
         if active >= SHARED_QUEUE_MAX_RUNS:
             await db.rollback()
             raise HTTPException(
+                status_code=429, detail=_limit_detail("shared_queue", _SHARED_QUEUE_MESSAGE),
+            )
+    if created_by:
+        await db.execute(select(func.pg_advisory_xact_lock(_browser_lock_key(created_by))))
+        other = (await db.execute(
+            select(ResearchJob.id)
+            .where(ResearchJob.created_by == created_by,
+                   ResearchJob.status.in_(RUN_SLOT_STATUSES),
+                   ResearchJob.id != jid)
+            .limit(1)
+        )).scalar()
+        if other is not None:
+            await db.rollback()
+            raise HTTPException(
                 status_code=429,
-                detail="다른 딥리서치가 실행 중이거나 실행을 기다리고 있다 — 끝나거나 취소된 뒤 "
-                       "다시 요청한다(적재와 워커를 나눠 쓰는 동안은 한 번에 한 건만 실행한다)",
+                detail=_limit_detail("browser_active", _BROWSER_ACTIVE_MESSAGE, other),
             )
     return await _transition(db, jid, expect=expect, **values)
 
@@ -225,7 +265,7 @@ async def approve_plan(
         plan = _validated_plan(req.plan, limit=limit)
 
     if not await _to_run_queue(db, jid, expect=("awaiting_approval",),
-                               status=STATUS_APPROVED, plan=plan):
+                               created_by=job.created_by, status=STATUS_APPROVED, plan=plan):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
     # 큐에 넣기 전에 알린다. 넣은 뒤에 알리면 워커가 먼저 집어 낸 running 뒤에
@@ -267,8 +307,8 @@ async def retry_research(job_id: str, db: AsyncSession = Depends(get_db)):
 
     old_error, old_finished = job.last_error, job.finished_at
     # 큐에 들어간 잡이 종료시각을 들고 있으면 안 된다
-    if not await _to_run_queue(db, jid, expect=("failed",), status=STATUS_QUEUED,
-                               last_error=None, finished_at=None):
+    if not await _to_run_queue(db, jid, expect=("failed",), created_by=job.created_by,
+                               status=STATUS_QUEUED, last_error=None, finished_at=None):
         raise HTTPException(status_code=409, detail="그 사이 잡 상태가 바뀌었다")
 
     # 큐에 넣기 전에 알리는 이유는 approve 와 같다
