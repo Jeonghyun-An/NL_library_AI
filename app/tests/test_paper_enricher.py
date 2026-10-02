@@ -362,6 +362,11 @@ class TestTrimToLastSentence:
     def test_decimal_point_is_not_a_sentence_end(self):
         assert trim_to_last_sentence("평균은 3.5점이다. 표준편차는 1.2") == "평균은 3.5점이다."
 
+    @pytest.mark.parametrize("text", ["A 집단이 더 높다. 평균은 3.", "A 집단이 더 높다. 평균은 3.\n", "A 집단이 더 높다. 평균 12.)"])
+    def test_number_and_period_at_the_very_end_is_a_cut_not_a_sentence_end(self, text):
+        """'평균 3.' 처럼 숫자 바로 뒤 마침표로 글이 끝나면 소수점 앞에서 잘린 것이다 — 문장 끝으로 보지 않는다."""
+        assert trim_to_last_sentence(text) == "A 집단이 더 높다."
+
     def test_finished_text_is_kept(self):
         assert trim_to_last_sentence("두 집단의 차이는 유의했다.\n") == "두 집단의 차이는 유의했다."
 

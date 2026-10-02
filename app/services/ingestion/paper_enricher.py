@@ -516,10 +516,13 @@ def trim_to_last_sentence(text: str) -> str:
     """마지막으로 끝난 문장까지만 남긴다 — max_tokens 에서 잘린 응답의 끊긴 꼬리를 걷어 낸다.
 
     줄머리 번호 목록 표식('2.')은 문장 끝으로 보지 않는다 — 번호 목록이 항목 중간에서 잘려도
-    표식('2.')만 남지 않고 앞 항목까지 남는다. 끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
+    표식('2.')만 남지 않고 앞 항목까지 남는다. 글 맨 끝의 숫자 바로 뒤 마침표('평균 3.')도 문장 끝이 아니다 —
+    소수점 앞에서 잘린 것이다. 끝난 문장이 하나도 없으면 원문을 그대로 돌려준다.
     """
     for end in reversed(list(_SENTENCE_END.finditer(text))):
         if _LIST_MARKER_BEFORE_PERIOD.search(text[: end.start()]):
+            continue
+        if not text[end.end():].strip() and end.start() > 0 and text[end.start() - 1].isdigit():
             continue
         return text[: end.end()].rstrip()
     return text
