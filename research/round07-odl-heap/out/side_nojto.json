@@ -1,0 +1,55 @@
+{
+ "label": "nojto",
+ "jto": null,
+ "docs": [
+  {
+   "id": "KCI_FI002029401",
+   "fallback": null,
+   "errors": [],
+   "n_pages": 20,
+   "attempts": [
+    {
+     "exc": null,
+     "child_returncode": 0,
+     "stderr_file_bytes": 0,
+     "stderr_file_lines": [],
+     "stderr_has_picked_up": false,
+     "summary_now": "",
+     "summary_without_picked_up_line": ""
+    }
+   ]
+  },
+  {
+   "id": "BADPDF",
+   "fallback": null,
+   "errors": [
+    "ODL 실패(원본): ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Stdout: Error: 'bad.pdf' is not a valid PDF file (corrupted or truncated content). | raise CalledProcessError(retcode, process.args, | ataloader-pdf-cli.jar', '/tmp/bad.pdf', '--output-dir', '/tmp/tmp1zym08gy', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1."
+   ],
+   "n_pages": 0,
+   "attempts": [
+    {
+     "exc": "RuntimeError: ODL 변환 실패(exit 1): Error running opendataloader-pdf CLI. | Stdout: Error: 'bad.pdf' is not a valid PDF file (corrupted or truncated content). | raise CalledProcessError(retcode, process.args, | ataloader-pdf-cli.jar', '/tmp/bad.pdf', '--output-dir', '/tmp/tmp1zym08gy', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1.",
+     "child_returncode": 1,
+     "stderr_file_bytes": 1102,
+     "stderr_file_lines": [
+      "Error running opendataloader-pdf CLI.",
+      "Return code: 1",
+      "Stdout: Error: 'bad.pdf' is not a valid PDF file (corrupted or truncated content).",
+      "",
+      "Traceback (most recent call last):",
+      "  File \"<string>\", line 6, in <module>",
+      "  File \"/usr/local/lib/python3.11/dist-packages/opendataloader_pdf/convert_generated.py\", line 158, in convert",
+      "    run_jar(args, quiet)",
+      "  File \"/usr/local/lib/python3.11/dist-packages/opendataloader_pdf/runner.py\", line 37, in run_jar",
+      "    result = subprocess.run(",
+      "             ^^^^^^^^^^^^^^^",
+      "  File \"/usr/lib/python3.11/subprocess.py\", line 569, in run"
+     ],
+     "stderr_has_picked_up": false,
+     "summary_now": "Error running opendataloader-pdf CLI. | Stdout: Error: 'bad.pdf' is not a valid PDF file (corrupted or truncated content). | raise CalledProcessError(retcode, process.args, | ataloader-pdf-cli.jar', '/tmp/bad.pdf', '--output-dir', '/tmp/tmp1zym08gy', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1.",
+     "summary_without_picked_up_line": "Error running opendataloader-pdf CLI. | Stdout: Error: 'bad.pdf' is not a valid PDF file (corrupted or truncated content). | raise CalledProcessError(retcode, process.args, | ataloader-pdf-cli.jar', '/tmp/bad.pdf', '--output-dir', '/tmp/tmp1zym08gy', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1."
+    }
+   ]
+  }
+ ]
+}

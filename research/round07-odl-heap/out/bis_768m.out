@@ -1,0 +1,13 @@
+tag bis_768m JAVA_TOOL_OPTIONS '-Xmx768m' gc True docs 12
+KCI_FI002990049 fitz:oom+oom wall 5.08 odl_s 4.6 hwm 927 ru 928 gc_used 766 n_pages 38
+KCI_FI003315691 fitz:oom+oom wall 10.32 odl_s 9.67 hwm 926 ru 926 gc_used 766 n_pages 52
+KCI_FI001372507 ok wall 4.25 odl_s 4.21 hwm 988 ru 988 gc_used 683 n_pages 275
+KCI_FI002298010 ok wall 4.69 odl_s 4.67 hwm 878 ru 878 gc_used 574 n_pages 7
+KCI_FI001160724 ok wall 3.86 odl_s 3.81 hwm 801 ru 801 gc_used 548 n_pages 268
+KCI_FI001401892 ok wall 4.68 odl_s 4.63 hwm 812 ru 812 gc_used 562 n_pages 379
+KCI_FI001428194 ok wall 4.26 odl_s 4.22 hwm 794 ru 794 gc_used 545 n_pages 223
+KCI_FI001930485 ok wall 5.25 odl_s 4.65 hwm 682 ru 682 gc_used 522 n_pages 37
+KCI_FI002252358 ok wall 3.22 odl_s 3.2 hwm 783 ru 783 gc_used 473 n_pages 30
+KCI_FI001827561 ok wall 2.45 odl_s 2.43 hwm 678 ru 678 gc_used 489 n_pages 59
+KCI_FI003214027 ok wall 4.27 odl_s 4.25 hwm 696 ru 696 gc_used 546 n_pages 4
+KCI_FI001667569 ok wall 2.17 odl_s 2.16 hwm 586 ru 586 gc_used 437 n_pages 20
