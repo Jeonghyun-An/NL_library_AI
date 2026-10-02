@@ -492,3 +492,31 @@ def test_image_only_page_stays_as_empty_odl_page(monkeypatch):
     _patch_convert(monkeypatch, [({1: "첫 쪽", 3: "셋째 쪽"}, kids)])
     result = _run(_pdf(["a", "b", "c"]))
     assert [(p.page_num, p.text) for p in result.pages] == [(0, "첫 쪽"), (1, ""), (2, "셋째 쪽")]
+
+
+# ── markdown 의 HTML 이스케이프 되돌리기(opendataloader-pdf 2.5.1+ #637) ──────
+
+
+def test_odl_markdown_entities_are_restored(monkeypatch):
+    """2.5.9 의 markdown 은 본문의 & < > 를 &amp; &lt; &gt; 로 내보낸다 — 색인·임베딩·요약이 원래 글자를 보게
+    되돌린다(round07 을 검증한 2.5.0 과 같은 글자)."""
+    _patch_convert(monkeypatch, [{1: "&lt;표 1&gt; 의 A &amp; B 비교", 2: "p &lt; .05"}])
+    result = _run(_pdf(["a", "b"]))
+    assert [p.text for p in result.pages] == ["<표 1> 의 A & B 비교", "p < .05"]
+
+
+def test_restoring_is_the_exact_inverse_of_odl_escaping(monkeypatch):
+    # 원문에 글자 그대로 있던 '&lt;' 는 ODL 이 '&amp;lt;' 로 내보낸다 — 한 번만 되돌려 원문 '&lt;' 로 남긴다.
+    # ODL 이 만들지 않는 엔티티(&quot; 등)는 건드리지 않는다
+    _patch_convert(monkeypatch, [{1: "원문 표기 &amp;lt;b&amp;gt; 와 &quot;인용&quot;"}])
+    result = _run(_pdf(["a"]))
+    assert result.pages[0].text == "원문 표기 &lt;b&gt; 와 &quot;인용&quot;"
+
+
+def test_header_from_json_is_stripped_once_entities_are_restored(monkeypatch):
+    """json 은 이스케이프하지 않는다 — markdown 을 되돌려야 json 의 머리말 문자열과 줄이 맞아 머리말이 지워진다."""
+    kids = [{"type": "header", "page number": 1, "content": "R&D <정책> 연구"},
+            {"type": "paragraph", "page number": 1, "content": "본문 첫 줄"}]
+    _patch_convert(monkeypatch, [({1: "R&amp;D &lt;정책&gt; 연구\n본문 첫 줄"}, kids)])
+    result = _run(_pdf(["a"]))
+    assert result.pages[0].text == "본문 첫 줄"

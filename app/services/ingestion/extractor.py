@@ -27,6 +27,7 @@ import io
 import json
 import logging
 import os
+import re
 import shutil
 import signal
 import sys
@@ -779,6 +780,16 @@ _ODL_ERROR_MARKERS = ("Exception", "Error", "Unsupported", "Caused by")
 # 추출 데드라인이 이만큼도 남기지 않으면 변환을 띄우지 않는다 — JVM 기동만으로 다 쓴다
 _ODL_MIN_ATTEMPT_SECONDS = 2.0
 
+# opendataloader-pdf 2.5.1+(#637)의 markdown 은 본문의 & < > 를 &amp; &lt; &gt; 로 내보낸다(json 은 그대로).
+# 이 셋만 한 번에 되돌린다 — ODL 이 & 를 모두 바꾸므로 정확한 역변환이고(원문 '&lt;' → '&amp;lt;' → '&lt;'),
+# html.unescape 와 달리 ODL 이 만들지 않는 엔티티는 건드리지 않는다
+_ODL_ENTITY = re.compile(r"&(amp|lt|gt);")
+_ODL_ENTITY_CHARS = {"amp": "&", "lt": "<", "gt": ">"}
+
+
+def _unescape_odl_markdown(text: str) -> str:
+    return _ODL_ENTITY.sub(lambda m: _ODL_ENTITY_CHARS[m.group(1)], text)
+
 
 def _odl_failure_summary(output: str, *, cause_chars: int = 300, last_chars: int = 300) -> str:
     """자식의 stderr 에서 실패 원인을 추린다 — 오류처럼 보이는 앞쪽 줄(합쳐 cause_chars 자까지)과 마지막 줄의 끝."""
@@ -1066,12 +1077,14 @@ async def extract_text_opendataloader(
         sep_pattern = re.escape(_PAGE_SEP).replace(re.escape("%page-number%"), r"(\d+)")
         parts = re.split(sep_pattern, content)
 
+        # 쪽 구분자로 나눈 뒤에 엔티티를 되돌린다 — 본문의 '&lt;&lt;&lt;ODL_PAGE_BREAK…' 가 구분자가 되지 않게.
+        # 그림 앞뒤 문맥·머리말 비교(json 은 이스케이프하지 않는다)가 모두 되돌린 글자를 본다
         documents: list[tuple[int, str]] = []  # (page_num 1-based, text)
         if parts[0].strip():
-            documents.append((1, parts[0].strip()))
+            documents.append((1, _unescape_odl_markdown(parts[0].strip())))
         for i in range(1, len(parts), 2):
             if i + 1 < len(parts) and parts[i + 1].strip():
-                documents.append((int(parts[i]), parts[i + 1].strip()))
+                documents.append((int(parts[i]), _unescape_odl_markdown(parts[i + 1].strip())))
 
         # image_output=off 면 그림만 있는 쪽이 markdown 에서 통째로 빠진다. embedded 일 때처럼
         # 'ODL 이 본 빈 쪽'으로 남겨야 extract_text 가 'ODL 누락'(판정 없이 OCR) 대신 fitz 교차검증을 탄다.
