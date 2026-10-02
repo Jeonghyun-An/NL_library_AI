@@ -12,7 +12,7 @@
         <h1 class="skx-hero">논문 의미 기반 검색</h1>
         <div class="skx-search">
           <div class="skx-search__box">
-            <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" :disabled="loading" />
+            <ResearchSearchPlusMenu ref="plusMenu" v-model="currentQuery" kind="paper" :disabled="loading" />
             <label class="skx-search__field">
               <span class="skx-sr-only">논문 검색어</span>
               <textarea
@@ -589,6 +589,8 @@ import { slimPaperResult } from "~/utils/historySnapshot";
 import { pageOfItem, spotOf } from "~/utils/restorePosition";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
+import { readResearchDraft } from "~/utils/paperResearch";
+import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
 
@@ -886,6 +888,19 @@ function goLanding() {
   chatPaperId.value = null;
 }
 
+// 논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안(?draft=) — 검색하지 않고 랜딩 입력창에 딥리서치 칩을
+// 켠 채 채운다. 주소에서는 지운다: 남겨 두면 새로고침·뒤로 가기로 올 때마다 고쳐 쓰던 글을 초안이 다시 덮는다
+const plusMenu = ref<{ activateMode: (id: SearchModeId) => void } | null>(null);
+
+function fillResearchDraft() {
+  const draft = readResearchDraft(route.query);
+  if (!draft) return;
+  router.replace({ query: {} });
+  currentQuery.value = draft;
+  // 입력창 값이 바뀐 뒤에 켜야 초점이 글 끝에 간다
+  nextTick(() => plusMenu.value?.activateMode("deep-research"));
+}
+
 // ── 기록 복원 ─────────────────────────────────────────────────
 // 주소(?h=)가 복원의 정본이다 — 사이드바·뒤로가기·새로고침이 모두 이 한 길로 들어온다
 async function restoreFromQuery() {
@@ -909,6 +924,7 @@ async function restoreFromQuery() {
       // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤
       // 뒤로가기 등) 결과 화면과 진행 중인 요청을 직접 걷는다. 안 걷으면 주소는 '/papers' 인데 결과가 남는다
       goLanding();
+      fillResearchDraft();
       return;
     }
     // 검색바가 아니라 화면 결과의 검색어와 비교한다 — 검색바를 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.

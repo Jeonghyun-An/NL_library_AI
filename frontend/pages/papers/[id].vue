@@ -393,6 +393,21 @@
               </article>
             </div>
           </section>
+
+          <!-- 이 논문으로 딥리서치: 바로 시작하지 않고 초안을 논문 검색 입력창에 채워 고쳐 보내게 한다 -->
+          <section
+            v-if="researchQuestion"
+            class="pd-research"
+            aria-labelledby="pdetail-research-title"
+          >
+            <h2 id="pdetail-research-title" class="skx-prelate__heading">
+              이 논문으로 딥리서치
+            </h2>
+            <p class="pd-research__draft">{{ researchQuestion }}</p>
+            <NuxtLink :to="paperResearchUrl(researchQuestion)" class="skx-btn-pview-sm">
+              입력창에서 고쳐 쓰고 시작하기
+            </NuxtLink>
+          </section>
         </template>
       </main>
     </div>
@@ -459,6 +474,7 @@ import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/u
 import { safeSessionStorage } from "~/utils/browserId";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
+import { paperResearchQuestion, paperResearchUrl } from "~/utils/paperResearch";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 import { isPlainClick } from "~/utils/restorePosition";
 
@@ -598,6 +614,11 @@ const keywords = computed<string[]>(() => {
   }
   return [];
 });
+
+// 이 논문으로 딥리서치 — 제목·키워드로 만든 질문 초안(제목이 없으면 빈 글이라 칸을 숨긴다)
+const researchQuestion = computed(() =>
+  paperResearchQuestion(paper.value?.title ?? "", keywords.value),
+);
 
 // AI summary
 const summaryText = ref("");
@@ -916,6 +937,23 @@ onMounted(async () => {
   margin-left: 0.3rem;
   color: var(--skx-primary);
   text-decoration: underline;
+}
+.pd-research {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding-bottom: 2.4rem;
+}
+.pd-research__draft {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--skx-border-c2);
+  background: rgba(79, 70, 229, 0.05);
+  border-radius: var(--skx-radius-sm);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
 }
 @media (prefers-reduced-motion: reduce) {
   .pd-keyword {
