@@ -29,13 +29,14 @@ from models.research import (
     ResearchJob, ResearchStep,
 )
 from services.research.relay import publish, publish_terminal
-from services.research.run_queue import unmark
+from services.research.run_queue import unmark, unmark_many_sync
 from services.research.runner import explore_subquestion
 from services.research.state import (
     ResearchState, SubQuestion, merge_params, research_stats, restore_state, snapshot_state,
 )
 from services.research.synthesizer import SynthesisCanceled, synthesize
 from workers.celery_app import CONTROL_SOFT_TIME_LIMIT, CONTROL_TIME_LIMIT, celery_app
+from workers.research_work_tasks import GEN_HARD_LIMIT, send_dispatch
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +54,9 @@ JOB_DEADLINE = SOFT_LIMIT - 300
 # 하드 리밋보다 길어야 한다. 짧으면 아직 살아서 쓰고 있는 워커의 잡을 회수하고,
 # 그 뒤 retry 한 새 실행과 옛 실행이 같은 잡에서 부딪힌다.
 STALE_MINUTES = 45
+
+# 연구 어시스턴트 생성(research_generations)의 회수 임계(초) — 같은 까닭으로 디스패치 태스크의 하드 리밋보다 길다
+GEN_STALE_SECONDS = GEN_HARD_LIMIT + 60
 
 TIMEOUT_ERROR = "시간 상한 초과 — 워커를 회수했다"
 EMPTY_PLAN_ERROR = "계획에 하위질문이 없어 탐색하지 않았다 — 새 잡을 만든다"
@@ -720,6 +724,12 @@ def reap_stale_research() -> dict:
     남은 잡은 워커 프로세스가 죽은 것이다.
 
     approved·queued 는 회수하지 않는다 — 아직 워커가 집지 않은 정상 대기 상태다.
+
+    연구 어시스턴트 생성(research_generations)도 같은 트랜잭션에서 회수한다 — running 이
+    GEN_STALE_SECONDS 를 넘었으면 디스패치 워커가 죽은 것이다. 그 뒤 queued 가 남았는데 running 이
+    없으면 커밋하고 디스패치 태스크를 다시 보낸다(API 의 send_dispatch 가 브로커에 못 넣었거나 디스패처가
+    죽어 줄이 멈춘 경우 — 생성은 running 1건이 끝나야 다음이 돈다). beat 일정은 그대로다(10분).
+    회수로 failed 가 된 잡은 대기 순번 ZSET 에서도 뺀다(Redis·브로커는 커밋 뒤).
     """
     db = SyncSessionLocal()
     try:
@@ -727,7 +737,7 @@ def reap_stale_research() -> dict:
         # 일 수 있고, NULL 비교는 NULL 이라 조건이 참이 되지 않아 영원히 회수되지 않는다.
         # 회수한 잡의 running step 도 같은 문장에서 닫는다 — 따로 두면 잡은 failed 인데
         # 마지막 step 은 자기 updated_at 기준으로 한참 더 running 으로 보인다.
-        n_jobs, n_job_steps = db.execute(sa_text(
+        n_jobs, n_job_steps, reaped_ids = db.execute(sa_text(
             "WITH reaped AS ("
             "  UPDATE research_jobs SET status = 'failed', "
             "         last_error = 'stale — 워커 응답 없음', finished_at = now() "
@@ -740,7 +750,8 @@ def reap_stale_research() -> dict:
             "         finished_at = now() "
             "  WHERE status = 'running' AND job_id IN (SELECT id FROM reaped) "
             "  RETURNING id"
-            ") SELECT (SELECT count(*) FROM reaped), (SELECT count(*) FROM closed)"
+            ") SELECT (SELECT count(*) FROM reaped), (SELECT count(*) FROM closed), "
+            "         (SELECT coalesce(array_agg(id::text), '{}'::text[]) FROM reaped)"
         ), {"m": STALE_MINUTES}).one()
 
         steps = db.execute(sa_text(
@@ -752,10 +763,31 @@ def reap_stale_research() -> dict:
             "RETURNING job_id"
         ), {"m": STALE_MINUTES}).fetchall()
 
+        # started_at 은 디스패처가 running 으로 바꾸는 문장에서 함께 쓴다. 비어 있는 running 행이 생겨도
+        # 영원히 남아 디스패치 줄 전체를 막지 않게 잡과 같이 created_at 으로 물러난다
+        n_gen = db.execute(sa_text(
+            "UPDATE research_generations SET status = 'failed', "
+            "       error = 'stale — 워커 응답 없음', finished_at = now(), updated_at = now() "
+            "WHERE status = 'running' "
+            "  AND coalesce(started_at, created_at) < now() - make_interval(secs => :s)"
+        ), {"s": GEN_STALE_SECONDS}).rowcount
+
+        # 방금 회수한 running 이 빠진 뒤에 센다
+        idle = db.execute(sa_text(
+            "SELECT EXISTS (SELECT 1 FROM research_generations WHERE status = 'queued') "
+            "   AND NOT EXISTS (SELECT 1 FROM research_generations WHERE status = 'running')"
+        )).scalar_one()
+
         db.commit()
-        return {"jobs": n_jobs, "steps": n_job_steps + len(steps)}
     except Exception:
         db.rollback()
         raise
     finally:
         db.close()
+
+    # 커밋 뒤에 보낸다 — 커밋 전에 보내면 디스패처가 아직 running 인 회수 대상을 보고 그냥 끝난다
+    if reaped_ids:
+        unmark_many_sync(list(reaped_ids))
+    redispatched = bool(idle) and send_dispatch()
+    return {"jobs": n_jobs, "steps": n_job_steps + len(steps),
+            "generations": n_gen, "redispatched": redispatched}
