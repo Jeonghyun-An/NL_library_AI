@@ -149,10 +149,12 @@ class SubQuestion:
     # 점수로 돈다(0.95 로 찾은 대목이 남의 0.2 로 비교돼 밀려난다).
     chunk_scores: dict[str, float] = field(default_factory=dict)
     # 회차 이력 — [{round, query, found_chunks, new_papers, verdict, note, next_query, excluded,
-    # excluded_papers, flagged, flagged_papers}]. verdict·note 는 마지막 회차 값만 남으므로, 이게 없으면 끝난 잡을
-    # 다시 열었을 때 "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다. excluded(그 회차에 무관하다고 뺀 수)·
+    # excluded_papers, flagged, flagged_papers, adopted_papers}]. verdict·note 는 마지막 회차 값만 남으므로, 이게
+    # 없으면 끝난 잡을 다시 열었을 때 "근거 부족 → 재검색" 장면을 보여 줄 원천이 없다. excluded(그 회차에 무관하다고 뺀 수)·
     # excluded_papers(뺀 논문의 서지 요약 — 풀에서 지운 뒤에도 무엇을 뺐는지 남는다)·flagged·flagged_papers(무관
     # 제외를 끈 잡에서 이 하위질문이 그 회차에 처음 무관하다고 본 수와 서지, 켠 잡은 0·빈 목록)는 보강 전 잡의
+    # 회차에는 없다. adopted_papers(회차 끝 이 하위질문의 채택 근거 [{cnts_id, rank}] 순위순, 그 회차에 새로
+    # 채택된 것은 서지 요약과 new: True 를 함께 — 도는 잡의 근거 장부를 rounds 만으로 다시 그린다)는 06a 전 잡의
     # 회차에는 없다.
     rounds: list[dict] = field(default_factory=list)
     # 자기점검이 무관하다고 뺀 논문(cnts_id). 같은 하위질문의 다음 회차 검색에 다시 걸려도 넣지
