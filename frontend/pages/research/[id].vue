@@ -37,9 +37,11 @@
           @retry="retry"
           @restart="onRestart"
         />
-        <p v-if="actionError || pageError" class="rs-alert" role="alert">{{ actionError || pageError }}</p>
-        <p v-if="activeJobId" class="rs-muted">
-          <NuxtLink :to="`/research/${activeJobId}`">진행 중인 연구 보기</NuxtLink>
+        <p v-if="actionError || pageError" class="rs-alert" role="alert">
+          {{ actionError || pageError }}
+          <template v-if="activeJobId">
+            <NuxtLink :to="`/research/${encodeURIComponent(activeJobId)}`">진행 중인 연구 보기</NuxtLink>
+          </template>
         </p>
 
         <div class="rs-body" :class="`rs-body--${layout}`">
@@ -139,7 +141,7 @@
           </div>
 
           <aside class="rs-col-side">
-            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-line="queueText" />
+            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
           </aside>
         </div>
       </template>

@@ -1327,6 +1327,18 @@ describe("대기 순번 — queue", () => {
     expect(applyResearchEvent(approved, { kind: "status", status: "running", stage: "planned" }).queue).toBeNull();
     expect(applyResearchEvent(approved, { kind: "canceled", status: "canceled" }).queue).toBeNull();
     expect(applyResearchEvent(approved, { kind: "failed", status: "failed", error: "x" }).queue).toBeNull();
+    expect(applyResearchEvent(approved, { kind: "done", status: "completed" }).queue).toBeNull();
+  });
+
+  it("대기를 벗어난 snapshot 이 순번을 실어 와도 버린다 — 순번은 approved·queued 에서만 보인다", () => {
+    const start = initialResearchView(job({ status: "queued", queue: WAITING }));
+    const running = applyResearchEvent(start, {
+      kind: "snapshot",
+      steps: [],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"], queue: { ahead: 1, eta_sec: 600 } },
+    });
+    expect(running.status).toBe("running");
+    expect(running.queue).toBeNull();
   });
 
   it("GET 재동기화(refreshView)는 새로 읽은 순번을 쓴다", () => {
