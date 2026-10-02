@@ -24,16 +24,29 @@
 # 복원 (반드시 한 번은 연습할 것 — 복원해 본 적 없는 백업은 백업이 아니다):
 #   docker exec -i nl-lib-postgres pg_restore -U admin -d nl_lib --clean --if-exists \
 #     -t library_catalog < /data/nl-lib/backup/daily/library_catalog_<타임스탬프>.dump
-# 연구 덤프는 테이블끼리 외래 키로 묶여 있어 통째로 되돌린다 — 한 테이블만 -t 로 --clean 하면 그 테이블을
+# 연구 테이블(research_*)은 서로 외래 키로 묶여 있어 함께 되돌린다 — 한 테이블만 -t 로 --clean 하면 그 테이블을
 # 가리키는 다른 연구 테이블 때문에 DROP 이 막힌다. 되돌리는 동안 이 테이블들에 쓰는 컨테이너를 먼저 멈추고
 # 끝나면 다시 올린다(nl-lib-fastapi·nl-lib-celery-research·nl-lib-celery-research-plan·nl-lib-celery-control — 돌고 있으면 잠금에
-# 걸리거나 도중에 쓴 행을 잃는다):
-#   docker exec -i nl-lib-postgres pg_restore -U admin -d nl_lib --clean --if-exists \
-#     < /data/nl-lib/backup/daily/research_<타임스탬프>.dump
-# 한 테이블만 꺼내 볼 때는 운영 DB 를 건드리지 않고 빈 DB 에 푼다:
+# 걸리거나 도중에 쓴 행을 잃는다).
+# 이 덤프에는 history_items 도 들어 있다. history_items 는 연구만이 아니라 모든 브라우저의 도서·논문·연구 사이드바
+# 기록이고 연구 테이블과 외래 키가 없다 — 연구만 되돌릴 때는 목록에서 빼고 풀어 덤프 이후의 기록을 지킨다:
+#   docker exec -i nl-lib-postgres pg_restore -l < /data/nl-lib/backup/daily/research_<타임스탬프>.dump \
+#     | grep -v history_items > /tmp/research_restore.list
+#   docker cp /tmp/research_restore.list nl-lib-postgres:/tmp/research_restore.list
+#   docker exec -i nl-lib-postgres pg_restore -U admin -d nl_lib --clean --if-exists --single-transaction \
+#     -L /tmp/research_restore.list < /data/nl-lib/backup/daily/research_<타임스탬프>.dump
+# -L 없이 통째로 풀면 덤프 시점 이후의 도서·논문·연구 사이드바 기록(history_items)도 모든 브라우저에서 함께 사라진다.
+# --single-transaction 이 없으면 도중에 실패했을 때 지워진 테이블이 반쯤만 복원된 채 남는다.
+# 복원한 뒤 approved·queued 로 남은 딥리서치 잡에는 브로커 메시지가 없어 영영 시작되지 않는다 — 회수기도 그 상태는
+# 건드리지 않고, 그 브라우저의 다른 승인·재시도까지 429 browser_active 로 막힌다. 복원 직후 실패로 돌려 둔다:
+#   echo "UPDATE research_jobs SET status = 'failed', last_error = 'restored — 재시도 필요', finished_at = now() \
+#     WHERE status IN ('approved', 'queued')" | docker exec -i nl-lib-postgres psql -U admin -d nl_lib
+# 한 테이블만 꺼내 볼 때는 운영 DB 를 건드리지 않고 빈 DB 에 풀고, 다 본 뒤 지운다(남기면 다음 연습의 createdb 가
+# 실패하고 공유 서버에 사본이 남는다):
 #   docker exec nl-lib-postgres createdb -U admin nl_lib_restore_check
 #   docker exec -i nl-lib-postgres pg_restore -U admin -d nl_lib_restore_check \
 #     -t research_works < /data/nl-lib/backup/daily/research_<타임스탬프>.dump
+#   docker exec nl-lib-postgres dropdb -U admin nl_lib_restore_check
 set -eu
 
 # 공유 서버라 로컬 계정 누구나 접근 가능 — weekly 전체 덤프에는
@@ -53,12 +66,14 @@ mkdir -p "$BACKUP_DIR/daily" "$BACKUP_DIR/weekly"
 # 임시 파일에 받고 성공했을 때만 제자리로 옮긴다 — 중단된 덤프가 백업인 척하면 안 된다.
 # 첫 인자는 받을 파일, 나머지는 pg_dump 에 그대로 넘긴다("$@" — 'research_*' 같은 패턴이 셸 glob 으로
 # 풀리지 않고 pg_dump 의 -t 패턴으로 간다).
+# 이 함수 안에서는 set -e 에 기대지 않는다 — 아래처럼 `dump … || rc=1` 로 부르면 POSIX 규칙상 함수 본문 전체에서
+# set -e 가 꺼져, 실패를 직접 return 1 로 알려야 OK 줄과 종료 코드 0 이 남지 않는다.
 dump() {
   target="$1"
   shift
   tmp="$target.part"
   if docker exec "$CONTAINER" pg_dump -U "$DB_USER" -d "$DB" --format=custom "$@" > "$tmp"; then
-    mv "$tmp" "$target"
+    mv "$tmp" "$target" || { rm -f "$tmp"; echo "$(date -Is) FAIL $target (mv)"; return 1; }
     echo "$(date -Is) OK   $target ($(du -h "$target" | cut -f1))"
   else
     rm -f "$tmp"
