@@ -292,12 +292,29 @@ def delete_artifact(book_id: str, client) -> None:
 # ── 단계 ① 추출 ──────────────────────────────────────────────
 
 
+def _deterministic_ocr_cause(extraction) -> str:
+    """no_text 메시지에 붙일 사유 — 다시 해도 같은 OCR 실패(VLM 거절·렌더링 실패)가 있었으면
+    ' · VLM 거절 N쪽·렌더링 실패 M쪽: [오류 앞 3개]'(0 인 칸은 뺀다), 없으면 빈 문자열.
+
+    실패한 아이템은 meta 가 남지 않아 사유가 last_error 에만 남는다 — VLM·DPI·max-model-len 을 바꾼 뒤
+    last_error 에 '거절' 이 든 no_text 를 골라 다시 보낸다.
+    """
+    parts = []
+    if extraction.ocr_rejected:
+        parts.append(f"VLM 거절 {extraction.ocr_rejected}쪽")
+    if extraction.render_errors:
+        parts.append(f"렌더링 실패 {extraction.render_errors}쪽")
+    return f" · {'·'.join(parts)}: {extraction.errors[:3]}" if parts else ""
+
+
 def run_extract(ctx: StageContext) -> dict:
     """다운로드 → 추출 → 섹션 분할 → 그림 저장 → 메타 보장/doc_type 판별 → 섹션 PG 저장 → 아티팩트.
 
     섹션 0개는 추출 성공으로 넘기지 않는다. 첫 추출에 OCR 요청 실패·데드라인이 있었으면 vlm_error(추출부터
     재시도), '원래 짧은 쪽'으로 ODL 채택한 쪽이 없으면 no_text(재시도 안 함), 있으면 그 쪽까지 OCR 하는 강제
     재추출을 첫 추출이 남긴 시간 안에서 한 번 더 하고, 그래도 0개면 같은 기준으로 vlm_error/no_text.
+    쪽이 하나도 없으면 extract_empty(재시도)인데, OCR 실패가 다시 해도 같은 것(VLM 거절·렌더링 실패)뿐이면 no_text 다.
+    no_text 메시지에는 거절·렌더링 실패 수와 오류 앞 3개를 붙인다(_deterministic_ocr_cause).
     """
     from services.ingestion.extractor import _ODL_MIN_ATTEMPT_SECONDS, extract_text
 
@@ -321,6 +338,10 @@ def run_extract(ctx: StageContext) -> dict:
         t_first = time.monotonic()
         extraction = run_async(extract_text(local_path, book_id))
         if not extraction.pages:
+            # OCR 실패가 다시 해도 같은 것(거절·렌더링 실패)뿐이면 재시도해도 같다 — no_text 로 끝내고 사유를 남긴다
+            cause = _deterministic_ocr_cause(extraction)
+            if cause and not extraction.ocr_errors and not extraction.deadline_hit:
+                raise StageError("no_text", f"텍스트 추출 실패 — 본문 없음({extraction.total_pages}쪽){cause}")
             raise StageError("extract_empty", f"텍스트 추출 실패: {extraction.errors}")
         log.info(f"[{book_id}] 추출 완료: {extraction.stats}")
 
@@ -341,7 +362,8 @@ def run_extract(ctx: StageContext) -> dict:
             if not extraction.short_kept:
                 raise StageError(
                     "no_text",
-                    f"섹션 0개 — 본문 없음({extraction.total_pages}쪽, 강제 OCR 로 바뀔 쪽 없음)",
+                    f"섹션 0개 — 본문 없음({extraction.total_pages}쪽, 강제 OCR 로 바뀔 쪽 없음)"
+                    f"{_deterministic_ocr_cause(extraction)}",
                 )
             # 첫 추출이 남긴 시간만 준다 — 두 번째 추출은 ODL 변환까지 그 시간 안에서 한다(extract_text 가 ODL 상한을
             # 남은 시간으로 줄인다). 하한 60초만큼 두 추출을 합치면 INGEST_EXTRACT_DEADLINE 을 조금 넘을 수 있지만
@@ -368,7 +390,8 @@ def run_extract(ctx: StageContext) -> dict:
                     )
                 raise StageError(
                     "no_text",
-                    f"섹션 0개 — 강제 OCR 재추출로도 본문 없음({extraction.total_pages}쪽)",
+                    f"섹션 0개 — 강제 OCR 재추출로도 본문 없음({extraction.total_pages}쪽)"
+                    f"{_deterministic_ocr_cause(extraction)}",
                 )
         log.info(f"[{book_id}] 섹션 {len(sections)}개 분할 완료")
 

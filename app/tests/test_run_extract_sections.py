@@ -26,6 +26,7 @@ def _extraction(
     odl_fallback: str | None = None,
     odl_seconds: float = 0.0,
     ocr_rejected: int = 0,
+    errors: list[str] | None = None,
 ):
     res = ExtractionResult(book_id="KCI_T", total_pages=3)
     res.pages = [PageResult(n, text, "opendataloader", 0.95) for n in range(3)]
@@ -37,6 +38,17 @@ def _extraction(
     res.odl_fallback = odl_fallback
     res.odl_seconds = odl_seconds
     res.ocr_rejected = ocr_rejected
+    res.errors = list(errors or [])
+    return res
+
+
+REJECTED = "p.0 OCR(vlm): HTTPStatusError: Client error '400 Bad Request'"
+
+
+def _empty_extraction(**kwargs) -> ExtractionResult:
+    """쪽이 하나도 남지 않은 추출 — ODL 이 아무 쪽도 내지 않았고 OCR 결과도 없다."""
+    res = _extraction("", **kwargs)
+    res.pages = []
     return res
 
 
@@ -115,16 +127,45 @@ def test_meta_reports_rejected_ocr_requests_next_to_ocr_errors(run_extract_with)
     assert (meta["ocr_errors"], meta["ocr_rejected"]) == (1, 3)
 
 
-@pytest.mark.parametrize("results", [
-    (_extraction("", ocr_rejected=4),),
-    (_extraction("", short_kept=1), _extraction("", ocr_rejected=2)),
+@pytest.mark.parametrize("results, cause", [
+    ((_extraction("", ocr_rejected=4, errors=[REJECTED]),), "VLM 거절 4쪽"),
+    ((_extraction("", short_kept=1), _extraction("", ocr_rejected=2, errors=[REJECTED])), "VLM 거절 2쪽"),
 ], ids=["first_pass", "forced_reextract"])
-def test_rejected_ocr_alone_ends_as_no_text(run_extract_with, results):
-    """VLM 이 거절한 쪽뿐이면(다시 보내도 같다) 섹션 0개는 vlm_error(재시도)가 아니라 no_text 규칙을 따른다."""
+def test_rejected_ocr_alone_ends_as_no_text(run_extract_with, results, cause):
+    """VLM 이 거절한 쪽뿐이면(다시 보내도 같다) 섹션 0개는 vlm_error(재시도)가 아니라 no_text 규칙을 따른다. 실패한
+    아이템은 meta 가 없어 사유가 last_error 에만 남는다 — 거절 수와 오류를 싣는다(VLM·DPI·max-model-len 을 바꾼 뒤
+    last_error 에 '거절' 이 든 no_text 를 다시 보낸다)."""
     run, _, _ = run_extract_with
     with pytest.raises(StageError) as exc:
         run(*results)
     assert exc.value.error_group == "no_text"
+    assert f" · {cause}: " in str(exc.value) and REJECTED in str(exc.value) and "거절" in str(exc.value)
+
+
+def test_no_text_message_carries_rejection_and_render_failure_together(run_extract_with):
+    run, _, _ = run_extract_with
+    with pytest.raises(StageError) as exc:
+        run(_extraction("", ocr_rejected=1, render_errors=2, errors=["e1", "e2", "e3", "e4"]))
+    assert str(exc.value) == (
+        "섹션 0개 — 본문 없음(3쪽, 강제 OCR 로 바뀔 쪽 없음) · VLM 거절 1쪽·렌더링 실패 2쪽: ['e1', 'e2', 'e3']"
+    )
+
+
+@pytest.mark.parametrize("kwargs, group", [
+    ({"ocr_rejected": 3, "errors": [REJECTED]}, "no_text"),           # 거절뿐 — 다시 해도 같다
+    ({"render_errors": 2}, "no_text"),
+    ({"ocr_rejected": 3, "ocr_errors": 1}, "extract_empty"),          # 다시 하면 달라질 수 있는 실패가 섞였다
+    ({"ocr_rejected": 3, "deadline_hit": True}, "extract_empty"),
+    ({}, "extract_empty"),
+], ids=["rejected", "render", "with_ocr_error", "with_deadline", "nothing"])
+def test_no_pages_at_all_with_only_deterministic_ocr_failures_is_no_text(run_extract_with, kwargs, group):
+    run, calls, _ = run_extract_with
+    with pytest.raises(StageError) as exc:
+        run(_empty_extraction(**kwargs))
+    assert exc.value.error_group == group
+    assert calls == [(False, None)]
+    if group == "no_text":
+        assert str(exc.value).startswith("텍스트 추출 실패 — 본문 없음(3쪽) · ")
 
 
 def test_zero_sections_reextracts_with_forced_ocr(run_extract_with):
@@ -173,6 +214,7 @@ def test_zero_sections_without_kept_short_pages_is_no_text_at_once(run_extract_w
     with pytest.raises(StageError) as exc:
         run(_extraction("", vlm_truncated=4))
     assert exc.value.error_group == "no_text"
+    assert str(exc.value) == "섹션 0개 — 본문 없음(3쪽, 강제 OCR 로 바뀔 쪽 없음)"   # 거절·렌더링 실패가 없으면 사유를 붙이지 않는다
     assert calls == [(False, None)]
     assert saved == []
 
@@ -190,6 +232,7 @@ def test_render_errors_alone_end_as_no_text(run_extract_with, results):
     with pytest.raises(StageError) as exc:
         run(*results)
     assert exc.value.error_group == "no_text"
+    assert f" · 렌더링 실패 {results[-1].render_errors}쪽: " in str(exc.value)
 
 
 def test_forced_reextract_gets_time_left_by_first_pass(run_extract_with, monkeypatch):
