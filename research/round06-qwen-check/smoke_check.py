@@ -51,7 +51,7 @@ JOB = {
 GOOD_CARD = {"title": "그리드 자원의 동적 배분 실증 연구", "question": "동적 배분은 작업 대기 시간을 줄이는가?",
              "evidence": ["E1", "E2", "E3"],
              "figure_sentence": "채택 논문 [F1] 가운데 가장 최근 연구는 [F2] 에 나왔다."}
-BAD_CARD = {"title": "자원 관리", "question": "자원 관리 연구", "evidence": ["E1", "E9", {"id": "E2"}],
+BAD_CARD = {"title": "자원 관리를 실증한다", "question": "자원 관리 연구", "evidence": ["E1", "E9", {"id": "E2"}],
             "figure_sentence": "2013년까지 관련 연구가 전무하다."}
 
 
@@ -107,8 +107,14 @@ def main() -> None:
            "향후 과제가 있고 절 논문이 3편 이상인 절 둘만 카드")
     expect("| 형식 검사 | 통과 |" in md, "Qwen 카드 형식 통과")
     for problem in ("유효 근거 1개(3개 미만)", "없는 근거 번호 E9", "문자열이 아닌 근거 1개", "[F#] 없음",
-                    "[F#] 밖의 숫자", "단정 표현"):
+                    "[F#] 밖의 숫자(확인 필요)", "단정 표현", "물음표 없음", "제목이 문장형"):
         expect(problem in md, f"gemma 카드 문제 '{problem}'")
+    # 근거 표기 [E#] 는 숫자로 세지 않는다
+    seed = {"papers": [{"id": f"E{n}"} for n in (1, 2, 3)], "figures": [{"id": "F1"}]}
+    ok_card = {"title": "주제", "question": "무엇이 다른가?", "evidence": ["E1", "E2", "E3"],
+               "figure_sentence": "채택 논문 [F1] 가운데 [E2] 가 가장 최근이다."}
+    if check.card_problems(ok_card, seed):
+        raise SystemExit(f"smoke FAIL: [E#] 를 숫자로 셌다 {check.card_problems(ok_card, seed)}")
     print("smoke OK")
 
 

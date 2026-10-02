@@ -9,12 +9,13 @@ Qwen 의 한국어 출력이 쓸 만한지 사람이 본다(spec §8 'Qwen 한�
       (sections[].future)를 씨앗으로, 그 절의 논문을 로컬 [E#] 로, 코드가 센 수치를 [F#] 로 준다. 서로 다른 절에서
       앞에서부터 --cards 장(절 논문이 3편 미만인 절은 건너뛴다 — 근거 3개 이상 규칙을 지킬 수 없다).
 vLLM 을 HTTP 로 직접 부른다(scripts/eval_answer_quality.py 의 _chat 방식, 재시도 없음 — 실패는 표에 남긴다).
-DB 를 읽지도 쓰지도 않는다. 미달이면 그 작업을 gemma 로 돌린다(라우팅 상수 한 줄 — spec §8).
+DB 를 읽지도 쓰지도 않는다. 미달이면 그 작업을 gemma 로 돌린다(WORK_MODEL_ROUTES 의 그 kind 값 — spec §8).
 
 실행 (서버 — research/ 는 앱 이미지에 없다. 이 폴더를 /data/nl-lib/data/round06-qwen-check/ 로 옮긴다):
   docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round06-qwen-check/check.py \
-    --api http://localhost:8000/api --pairs /app/data/research_eval/pairs.json
-  --qwen-url·--qwen-model·--gemma-url·--gemma-model 을 주지 않으면 앱 설정(VLM_BASE_URL·VLM_MODEL·LLM_BASE_URL·LLM_MODEL)을 쓴다.
+    --api http://localhost:8000/api --pairs /app/data/research_eval/$RUN.json
+  RUN 은 scripts/research_eval/README.md 흐름 3 의 이름이다. --qwen-url·--qwen-model·--gemma-url·--gemma-model 을
+  주지 않으면 운영 생성과 같은 곳(services.research_work.routing.endpoint — VLM_*·LLM_* 설정)을 쓴다.
 """
 import argparse
 import json
@@ -33,20 +34,22 @@ PAPERS_PER_CARD = 5
 MIN_CARD_EVIDENCE = 3
 _YEAR = re.compile(r"(?:19|20)\d{2}")
 _FIGURE = re.compile(r"\[F(\d+)\]")
+_MARKER = re.compile(r"\[[EF]\d+\]")
 _ABSOLUTE = re.compile(r"전무|최초|연구가 없|연구되지 않")
 
 
 def endpoints(args: argparse.Namespace) -> dict[str, tuple[str, str]]:
-    """{"Qwen": (base_url, model), "gemma": (base_url, model)} — 인자가 없으면 앱 설정."""
+    """{"Qwen": (base_url, model), "gemma": (base_url, model)} — 인자가 없으면 운영 생성이 부르는 곳
+    (routing.endpoint)을 쓴다. 엔드포인트를 따로 다시 구현하지 않는다 — 라우팅이 바뀌면 이 확인도 따라간다."""
     given = (args.qwen_url, args.qwen_model, args.gemma_url, args.gemma_model)
     if all(given):
         qwen_url, qwen_model, gemma_url, gemma_model = given
     else:
-        from core.config import get_settings
+        from services.research_work.routing import GEMMA, QWEN, endpoint
 
-        cfg = get_settings()
-        qwen_url, qwen_model = args.qwen_url or cfg.VLM_BASE_URL, args.qwen_model or cfg.VLM_MODEL
-        gemma_url, gemma_model = args.gemma_url or cfg.LLM_BASE_URL, args.gemma_model or cfg.LLM_MODEL
+        (cfg_qwen_url, cfg_qwen_model), (cfg_gemma_url, cfg_gemma_model) = endpoint(QWEN), endpoint(GEMMA)
+        qwen_url, qwen_model = args.qwen_url or cfg_qwen_url, args.qwen_model or cfg_qwen_model
+        gemma_url, gemma_model = args.gemma_url or cfg_gemma_url, args.gemma_model or cfg_gemma_model
     return {"Qwen": (qwen_url.rstrip("/"), qwen_model), "gemma": (gemma_url.rstrip("/"), gemma_model)}
 
 
@@ -61,7 +64,9 @@ def call(client: httpx.Client, base_url: str, model: str, messages: list[dict], 
         res.raise_for_status()
         choice = res.json()["choices"][0]
         content, finish, error = (choice["message"]["content"] or "").strip(), choice.get("finish_reason"), None
-    except (httpx.HTTPError, KeyError, IndexError, ValueError) as e:
+    except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError, AttributeError) as e:
+        # TypeError·AttributeError — 본문이 dict 가 아니거나 content 가 문자열이 아닌 응답. 한 호출의 이상한 응답이
+        # 전체 실행을 멈추지 않게 표에 오류로 남긴다
         content, finish, error = "", None, f"{type(e).__name__}: {e}"
     return {"content": content, "finish": finish, "seconds": time.monotonic() - started, "error": error}
 
@@ -145,11 +150,17 @@ def card_request(seed: dict) -> tuple[list[dict], dict]:
 
 
 def card_problems(card: dict | None, seed: dict) -> list[str]:
-    """형식 검사 — 근거는 문자열·3개 이상·목록 안 번호, [F#] 사용·[F#] 밖 숫자·단정 표현."""
+    """형식 검사 — 근거는 문자열·3개 이상·목록 안 번호, question 은 물음표로 끝냄, title 은 '~다' 로 끝내지 않음
+    (topic_card_draft.yaml 규칙), [F#] 사용·[F#] 밖 숫자(확인 필요)·단정 표현."""
     if card is None:
         return ["JSON 아님"]
     problems = [f"{key} 없음" for key in ("title", "question", "figure_sentence")
                 if not isinstance(card.get(key), str) or not card[key].strip()]
+    question, title = card.get("question"), card.get("title")
+    if isinstance(question, str) and question.strip() and not question.rstrip().endswith("?"):
+        problems.append("물음표 없음")
+    if isinstance(title, str) and title.strip() and title.rstrip(" .").endswith("다"):
+        problems.append("제목이 문장형")
     local = {p["id"] for p in seed["papers"]}
     raw = card.get("evidence") if isinstance(card.get("evidence"), list) else []
     # 모델이 [{"id": "E1"}] 처럼 문자열이 아닌 항목을 내면 집합에 넣을 수 없다 — 빼고 문제로 남긴다
@@ -169,8 +180,9 @@ def card_problems(card: dict | None, seed: dict) -> list[str]:
     unknown = used - {f["id"] for f in seed["figures"]}
     if unknown:
         problems.append(f"없는 수치 번호 {', '.join(sorted(unknown))}")
-    if re.search(r"\d", _FIGURE.sub("", sentence)):
-        problems.append("[F#] 밖의 숫자")
+    # [E2] 같은 근거 표기는 빼고 본다. 5G·COVID-19 같은 분야 용어의 숫자도 걸리므로 사람이 확인한다
+    if re.search(r"\d", _MARKER.sub("", sentence)):
+        problems.append("[F#] 밖의 숫자(확인 필요)")
     texts = " ".join(str(card.get(k) or "") for k in ("title", "question", "figure_sentence"))
     if _ABSOLUTE.search(texts):
         problems.append("단정 표현")
@@ -265,9 +277,14 @@ def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -
     client = client or httpx.Client(timeout=30.0)
     try:
         for key, arms in pairs.items():
-            res = client.get(f"{api}/research/{arms['0']}")
-            res.raise_for_status()
-            job = res.json()
+            try:
+                res = client.get(f"{api}/research/{arms['0']}")
+                res.raise_for_status()
+                job = res.json()
+            except httpx.HTTPError as e:
+                # 한 질문의 조회 실패로 남은 질문을 버리지 않는다
+                print(f"[{key}] 잡 {arms['0']} 을 읽지 못했다({type(e).__name__}: {e}) - 건너뛴다")
+                continue
             if job.get("status") != "completed" or not job.get("report"):
                 print(f"[{key}] 잡 {arms['0']} 이 완료되지 않았다({job.get('status')}) - 건너뛴다")
                 continue
