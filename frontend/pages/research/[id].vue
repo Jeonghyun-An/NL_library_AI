@@ -181,6 +181,7 @@ import {
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
+import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 
 const route = useRoute();
@@ -216,10 +217,10 @@ const draftMode = computed(() => {
 const shownReport = computed(() => (reportState.value === "ready" ? view.value?.report : draft.value?.report) ?? null);
 
 // ── 상세에서 돌아온 자리 ──────────────────────────────────
-// 보고서는 비동기로 다시 그려 브라우저·Nuxt 의 스크롤 복원이 내용보다 먼저 끝난다 — 돌아온 주소(at)면 Nuxt 는
-// 맞추지 않고, 누른 칩·항목을 내용이 그려진 뒤 직접 맞춘다. 완료된 연구는 최종본을 받은 뒤에 맞춘다 —
-// 초안 위에서 맞추면 서론·한계가 붙는 순간 자리가 밀린다
-definePageMeta({ scrollToTop: (to) => !to.query.at });
+// 보고서는 비동기로 다시 그려 브라우저·Nuxt 의 스크롤 복원이 내용보다 먼저 끝난다 — 맞출 자리(주소의 at·y, 없으면
+// 그 기록의 state)가 있으면 Nuxt 는 맞추지 않고, 누른 칩·항목을 내용이 그려진 뒤 직접 맞춘다. 완료된 연구는 최종본을
+// 받은 뒤에 맞춘다 — 초안 위에서 맞추면 서론·한계가 붙는 순간 자리가 밀린다
+definePageMeta({ scrollToTop: (to) => !holdsReturnSpot(to.query, import.meta.client ? window.history.state : null) });
 const restoreReady = computed(() => !!view.value && !!phase.value && reportState.value !== "loading");
 const restore = useRestorePosition(restoreReady);
 // 맞추는 동안만 알린다 — 다 맞춘 뒤 사용자가 접은 목록을 다시 펼치지 않게

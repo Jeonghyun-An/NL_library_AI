@@ -89,6 +89,7 @@
                 rel="noopener"
                 @click="stampExcludedLink($event, jobId, p.cntsId)"
                 @auxclick="stampExcludedLink($event, jobId, p.cntsId)"
+                @contextmenu="stampExcludedLink($event, jobId, p.cntsId)"
               >
                 {{ excludedPaperLine(p) }}<span class="rs-sr-only"> (새 창)</span>
               </a>

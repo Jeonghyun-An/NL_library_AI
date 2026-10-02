@@ -586,7 +586,7 @@ import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosi
 import { safeLocalStorage } from "~/utils/browserId";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { slimPaperResult } from "~/utils/historySnapshot";
-import { pageOfItem, spotOf } from "~/utils/restorePosition";
+import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
@@ -619,9 +619,9 @@ const error = ref<string | null>(null);
 const paperResult = ref<BookSearchResponse | null>(null);
 
 // ── 상세에서 돌아온 자리 ──────────────────────────────────────
-// 결과는 기록에서 비동기로 복원해 브라우저·Nuxt 의 스크롤 복원이 목록보다 먼저 끝난다 — 돌아온 주소(at)면
-// Nuxt 는 맞추지 않고, 누른 카드를 목록이 그려진 뒤 직접 맞춘다
-definePageMeta({ scrollToTop: (to) => !to.query.at });
+// 결과는 기록에서 비동기로 복원해 브라우저·Nuxt 의 스크롤 복원이 목록보다 먼저 끝난다 — 맞출 자리(주소의 at·y,
+// 없으면 그 기록의 state)가 있으면 Nuxt 는 맞추지 않고, 누른 카드를 목록이 그려진 뒤 직접 맞춘다
+definePageMeta({ scrollToTop: (to) => !holdsReturnSpot(to.query, import.meta.client ? window.history.state : null) });
 // 목록은 복원하는 순간 한 번에 그려져 늦게 붙는 카드가 없다 — 첫 프레임에 그 카드가 없으면(결과가 바뀜) 기다리지 않는다
 const restore = useRestorePosition(
   computed(() => paperResult.value !== null && !loading.value),

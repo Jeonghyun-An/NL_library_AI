@@ -54,6 +54,7 @@
           class="rs-btn rs-btn--small rs-btn--ghost"
           @click="goDetail($event, evidence.cnts_id)"
           @auxclick="goDetail($event, evidence.cnts_id)"
+          @contextmenu="goDetail($event, evidence.cnts_id)"
         >논문 상세</a>
       </span>
     </span>
@@ -201,11 +202,12 @@ function detailHref(cnts: string, y: number | null): string {
 }
 
 // 누르는 순간의 칩 높이를 싣는다 — [딥리서치 보고서로]·뒤로 가기로 돌아오면 이 칩을 같은 화면 높이에 맞추고
-// 초점을 돌려 팝오버를 다시 연다. 새 창·새 탭으로 여는 클릭은 브라우저에 맡기되 주소에는 같은 자리를 싣는다
+// 초점을 돌려 팝오버를 다시 연다. 새 창·새 탭으로 여는 클릭과 오른쪽 클릭 메뉴는 브라우저에 맡기되 주소에는 같은
+// 자리를 싣는다 — 메뉴는 auxclick 보다 먼저 뜨는 브라우저가 있고, 메뉴 키로 열면 왼쪽 클릭 모양이라 종류로 가린다
 function goDetail(e: MouseEvent, cnts: string): void {
   const spot = spotOf(chip.value!, props.anchor);
   const url = detailHref(cnts, spot.y);
-  if (!isPlainClick(e)) {
+  if (e.type === "contextmenu" || !isPlainClick(e)) {
     (e.currentTarget as HTMLAnchorElement).href = url;
     return;
   }
