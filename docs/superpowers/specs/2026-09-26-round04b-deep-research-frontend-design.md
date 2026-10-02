@@ -136,7 +136,7 @@
 
 ### 4-5. 프론트 저장소
 - **타입 v2**(`types/history.ts`): `kind` 로 구분하는 유니온. 공통 `{id, kind, title, createdAt, updatedAt?}`, 도서 `{params, snapshot?, ai?:{intro, items}}`, 논문 `{params:{grade?}, snapshot?, ai?:{text, refs}}`, 딥리서치 `{refId, research?:{status, stage}}`.
-- **snapshot 은 허용 필드 목록 방식**으로 만든다(지금은 빼는 필드를 나열해서 서버 필드가 늘면 저장량도 는다). 도서·논문 모두 목록 카드에 쓰는 필드만, 최대 20건.
+- **snapshot 은 허용 필드 목록 방식**으로 만든다(지금은 빼는 필드를 나열해서 서버 필드가 늘면 저장량도 는다). 도서·논문 모두 목록 카드에 쓰는 필드만, 최대 20건. (round05a 에서 논문은 건수로 자르지 않게 바꿨다 — 검색이 top_k 의 몇 배(지금 최대 60편)를 쪽으로 나눠 보이므로, 상세에서 돌아와 둘째 쪽 이후 카드 자리를 찾으려면 전부 있어야 한다. 대신 서버 상한 안에 들도록 관련도가 낮은 뒤쪽 논문부터 참고문헌을 뺀다)
 - **저장소 인터페이스** `HistoryStore { list, get, put, patch, remove, clear, importLegacy }` — 모두 Promise.
   - `ServerHistoryStore` 가 정본이다.
   - `LocalHistoryStore` 는 캐시와 **보낼 편지함(outbox)** 이다. 서버가 실패하면(네트워크·5xx) 브라우저에 먼저 저장하고 다음 로드·온라인 복귀 때 다시 보낸다. 쿼터 초과(`QuotaExceededError` 만)는 캐시의 snapshot 부터 비우고 목록은 남긴다.

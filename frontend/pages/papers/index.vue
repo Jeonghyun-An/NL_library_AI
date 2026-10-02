@@ -620,7 +620,11 @@ const paperResult = ref<BookSearchResponse | null>(null);
 // 결과는 기록에서 비동기로 복원해 브라우저·Nuxt 의 스크롤 복원이 목록보다 먼저 끝난다 — 돌아온 주소(at)면
 // Nuxt 는 맞추지 않고, 누른 카드를 목록이 그려진 뒤 직접 맞춘다
 definePageMeta({ scrollToTop: (to) => !to.query.at });
-const restore = useRestorePosition(computed(() => paperResult.value !== null && !loading.value));
+// 목록은 복원하는 순간 한 번에 그려져 늦게 붙는 카드가 없다 — 첫 프레임에 그 카드가 없으면(결과가 바뀜) 기다리지 않는다
+const restore = useRestorePosition(
+  computed(() => paperResult.value !== null && !loading.value),
+  { maxWaitMs: 0 },
+);
 const { leave } = useDetailLeave();
 
 // ── 인라인 채팅 ──────────────────────────────────────────────
@@ -972,8 +976,8 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);
 }
 
-// 상세에서 돌아왔으면 그 카드가 있는 쪽을 연다 — 첫 쪽만 열면 다음 쪽에서 누른 카드의 자리를 찾지 못한다.
-// 쪽 크기·정렬은 기록에 없어 기본값으로 찾는다
+// 상세에서 돌아왔으면 그 카드가 있는 쪽을 연다 — 기록은 화면이 쪽으로 나눠 보인 결과를 모두 담아(slimPaperResult)
+// 둘째 쪽 이후의 카드도 찾는다. 쪽 크기·정렬은 기록에 없어 기본값으로 찾는다
 function returnPage(): number {
   const anchor = restore.pending.value ? restore.anchor : null;
   if (anchor?.kind !== "result") return 1;
