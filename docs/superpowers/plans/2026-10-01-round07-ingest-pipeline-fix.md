@@ -49,7 +49,8 @@
 | `vlm_truncated` | int | 추출: length 로 끝난 OCR 쪽 수 — 되풀이 꼬리를 걷어 내고 채택했거나 퇴화 출력이라 버리고 ODL 결과를 쓴 쪽 |
 | `extract_deadline_hit` | bool | 추출 데드라인에 걸림 |
 | `forced_ocr` | bool | 섹션 0개로 강제 OCR 재추출을 했음 |
-| `ocr_errors` | int | VLM 요청 실패 수(연결·타임아웃·HTTP 오류 — 다시 하면 달라질 수 있는 것). 퇴화 출력(`vlm_truncated`)·렌더링 실패(`render_errors`)는 세지 않는다 |
+| `ocr_errors` | int | VLM 요청 실패 수(연결·타임아웃·408·429·5xx — 다시 하면 달라질 수 있는 것). 퇴화 출력(`vlm_truncated`)·렌더링 실패(`render_errors`)·결정적 거절(`ocr_rejected`)은 세지 않는다 |
+| `ocr_rejected` | int | VLM 이 결정적인 HTTP 4xx(408·429 말고)로 거절한 쪽 수 — 다시 보내지 않고, 섹션 0개 판정에서 `vlm_error` 로 보내지 않는다 (최종 리뷰 반영) |
 | `render_errors` | int | 쪽 이미지 렌더링 실패 수(fitz `get_pixmap` 예외 — 다시 해도 같다) |
 | `odl_fallback` | str 또는 null | 추출: `resaved`(원본 ODL 실패, fitz 재저장본으로 변환)·`fitz`(둘 다 실패, fitz 텍스트) — 정상이면 null (Task 5 실행 메모) |
 | `odl_seconds` | float | 추출: ODL 시도를 모두 더한 시간(0.1초) |

@@ -8,10 +8,10 @@ Phase 0~5 구현 완료 후, 컨테이너 환경에서 적용·검증하는 순�
 
 ```bash
 docker compose build fastapi
-# 워커 4종(celery-worker/cpu/llm/embed/beat)은 같은 이미지(nl-lib-fastapi)를 공유
+# 워커(celery-worker/cpu/control/llm/embed/research/research-plan)와 celery-beat 는 같은 이미지(nl-lib-fastapi)를 공유
 ```
 
-> **대량 인덱싱이 도는 중이면 스택을 업데이트하지 않는다.** 앱 서비스가 전부 같은 `:latest` 라 스택 업데이트 한 번이 도는 적재 워커를 모두 재생성하고, 진행 중이던 아이템이 끊긴다. 볼륨의 데이터는 지워지지 않지만, 끊긴 아이템은 stale 복구로 다시 끝난 뒤 약 2시간 뒤 브로커가 옛 태스크를 재전달해 단계가 한 번 더 돈다 — 논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다(`docs/ops/recurring-gotchas.md` 16번). 꼭 재생성해야 하면 **§8 대로 적재를 pause 하고 in-flight 가 0 이 된 뒤** 한다. 딥리서치 전용 워커(`celery-research`·`celery-research-plan`) 전환도 인덱싱이 끝난 뒤, 또는 §8 절차 안에서 한다.
+> **대량 인덱싱이 도는 중이면 스택을 업데이트하지 않는다.** 앱 서비스가 전부 같은 `:latest` 라 스택 업데이트 한 번이 도는 적재 워커를 모두 재생성하고, 진행 중이던 아이템이 끊긴다. 볼륨의 데이터는 지워지지 않지만, 끊긴 아이템은 다시 해야 한다. round07 전 코드는 끊긴 아이템을 stale 복구로 다시 끝낸 뒤 약 2시간 뒤 브로커가 옛 태스크를 재전달해 단계가 한 번 더 돌았다 — 논문은 PDF 본문 청크가 초록 청크로 덮일 수 있었다(`docs/ops/recurring-gotchas.md` 16번). round07 부터는 실행 토큰이 그 옛 체인을 멈추지만(16번 근본 수정), 끊긴 일은 그대로 다시 해야 한다. 꼭 재생성해야 하면 **§8 대로 적재를 pause 하고 in-flight 가 0 이 된 뒤** 한다. 딥리서치 전용 워커(`celery-research`·`celery-research-plan`) 전환도 인덱싱이 끝난 뒤, 또는 §8 절차 안에서 한다.
 
 ## 1. DB 마이그레이션 (additive — 무중단)
 
@@ -157,7 +157,7 @@ curl -s http://<host>/api/admin/ingest-jobs/<job_id>
 세 경우에 쓴다.
 
 - **과도기 구성에서 운영 딥리서치를 돌릴 때 — 시연·리허설, 시연 후보 미리 돌리기, 기본 파라미터 실측, 워밍업 전부.** 전용 워커로 넘기기 전(`RESEARCH_QUEUE` 기본값 `q_llm`)에는 딥리서치 계획·실행이 적재의 요약·마무리와 같은 `q_llm` FIFO 에서, GPU·모델 캐시가 없는 `celery-llm`(슬롯 4개)으로 돈다. 문제는 대기만이 아니다.
-  - **적재 데이터가 손상될 수 있다.** 실행 잡 하나가 슬롯 하나를 최대 25분(`JOB_DEADLINE`) 쥔다. 여럿이 겹쳐 슬롯이 모자라면, 요약·마무리를 기다리는 적재 아이템이 단계 타임아웃(요약 1200초·마무리 900초)을 넘긴다 — 타임아웃은 `updated_at` 부터 재고, 큐에서 기다리는 동안에는 갱신되지 않는다. 그러면 디스패처가 stale 복구로 새 체인을 띄우고 큐에 남은 옛 메시지도 그대로 돌아 함정 16번의 중복 체인이 된다 — **논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다.**
+  - **적재 데이터가 손상될 수 있다.** 실행 잡 하나가 슬롯 하나를 최대 25분(`JOB_DEADLINE`) 쥔다. 여럿이 겹쳐 슬롯이 모자라면, 요약·마무리를 기다리는 적재 아이템이 단계 타임아웃(요약 1200초·마무리 900초)을 넘긴다 — round07 전 코드는 타임아웃을 `updated_at` 부터 재고, 큐에서 기다리는 동안에는 갱신하지 않는다. 그러면 디스패처가 stale 복구로 새 체인을 띄우고 큐에 남은 옛 메시지도 그대로 돌아 함정 16번의 중복 체인이 된다 — **논문은 PDF 본문 청크가 초록 청크로 덮일 수 있다.** (round07 은 큐 대기를 `DISPATCH_STALE_SECONDS` 로 따로 재고 옛 체인을 실행 토큰으로 멈춘다 — 16번 근본 수정. 딥리서치는 지금 전용 워커로 넘어가 있다.)
   - 그래서 **적재 잡이 `running` 인 동안에는 운영 딥리서치를 돌리지 않는다. 먼저 pause 하고 in-flight(`dispatched`·`running`)가 0 이 된 것을 본 뒤 돌린다**(아래 절차). pause 만 하고 in-flight 가 남은 채 돌리면 안 된다 — `paused` 동안은 stale 판정이 멈출 뿐이고, `resume` 뒤 첫 디스패처 틱이 슬롯을 기다리다 타임아웃을 넘긴 아이템을 그때 복구한다.
   - API 는 이 구성에서 실행을 한 번에 한 잡으로 묶는다 — 실행 중·대기 중(`approved`·`queued`·`running`) 잡이 있으면 approve·retry 가 429 다(`api/research.py` `_to_run_queue`, round04a 머지 전 리뷰 반영분부터 — 그 전 코드가 도는 운영에는 상한이 없다). 몰아서 승인하는 사고를 막는 안전장치이지, 적재 중 실행을 허락한다는 뜻이 아니다. 429 가 풀리지 않으면 막고 있는 잡을 찾아 취소한다 — 회수기는 `running` 만 45분 뒤에 거두고, 브로커 메시지를 잃은 `approved`·`queued` 잡은 건드리지 않는다.
 
@@ -167,7 +167,7 @@ curl -s http://<host>/api/admin/ingest-jobs/<job_id>
     docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/research/<research_job_id>/cancel
     ```
   - 적재가 돌면 계획(0.6초)도 요약 수십 건 뒤에 서서 화면이 `created` 로 멈춘다. spec 추정으로 `kci-full-236k` 는 11월 초에 끝나고 대회는 10월 초라, 인덱싱이 끝나길 기다리면 시연은 이 구성으로 치른다.
-- **적재 워커를 재생성하는 배포 전**(스택 업데이트, `nl-lib-celery-llm` 컨테이너 Recreate 등). 도는 적재 태스크를 끊으면 stale 복구와 브로커 재전달이 둘 다 일어나 끝난 아이템의 단계가 다시 돈다(`recurring-gotchas.md` 16번). **in-flight 가 0 일 때 재생성하면 끊기는 태스크가 없다.** 전용 워커 전환(완료노트 §5 2단계)을 시연 전에 하려면 이 절차 안에서 한다.
+- **적재 워커를 재생성하는 배포 전**(스택 업데이트, `nl-lib-celery-llm` 컨테이너 Recreate 등). 도는 적재 태스크를 끊으면 stale 복구와 브로커 재전달이 둘 다 일어나, round07 전 코드에서는 끝난 아이템의 단계가 다시 돈다(`recurring-gotchas.md` 16번 — round07 은 옛 체인을 멈추지만 끊긴 일은 다시 해야 한다). **in-flight 가 0 일 때 재생성하면 끊기는 태스크가 없다.** 전용 워커 전환(완료노트 §5 2단계)을 시연 전에 하려면 이 절차 안에서 한다.
 
 **pause 는 적재된 데이터도, 진행 중인 아이템도 버리지 않는다.** `pause` 는 잡 상태만 `paused` 로 바꾼다. 디스패처는 `running` 잡에만 새 아이템을 넣으므로 신규 디스패치가 멈추고, 이미 디스패치된 체인은 끝까지 돈다 — 그래서 pause 직후에도 요약·마무리가 한동안 `q_llm` 으로 들어온다. `paused` 동안은 stale 복구도 돌지 않고, `resume` 하면 멈춘 자리부터 이어간다. 다만 `resume` 뒤 첫 틱에서 stale 판정을 다시 하므로, 딥리서치·재생성은 **in-flight 0 을 본 뒤에** 한다 — 비운 채로 멈춰 두면 resume 때 복구될 아이템이 없다.
 
@@ -207,7 +207,14 @@ round07(spec `docs/superpowers/specs/2026-10-01-round07-ingest-pipeline-fix-desi
 - **이미지와 compose 를 스택 업데이트 한 번으로 같이 낸다.** compose 만(추출 stale 판정 3600초) 먼저 내지 않는다 — 3600초는 추출 stale 판정이자 추출 단계 문서 락(`BookLock`)의 TTL 이고, 추출이 그 안에 끝난다는 보장(추출 데드라인 2700초)과 넘겼을 때 옛 체인을 멈추는 실행 토큰은 새 코드에만 있다. 새 이미지만 내고 compose 를 그대로 두지도 않는다 — `celery-control` 이 없고, 새 설정을 스택 env 로 바꿀 수 없다(선언이 없다).
 - **적재 워커가 모두 새 이미지인 것을 본 뒤 카나리를 시작한다(9-3).** 새 디스패처는 단계 메시지에 인자 둘(`item_id`, `run_token`)을 싣는다 — 옛 코드 워커가 받으면 `TypeError` 로 실패한다. `celery-llm` 과 `celery-embed` 는 특히 함께 새 코드여야 한다 — 요약 단계가 옛 보강 아티팩트를 지우고 이번 실행의 것을 만들면 embed 가 그것을 읽는 짝이라, 한쪽만 옛 코드면 옛 요약은 아티팩트를 지우지 않고 새 embed 는 이전 실행의 보강을 색인할 수 있다.
 - **카나리 잡과 본 잡을 동시에 `running` 으로 두지 않는다.** 카나리 문서는 본 잡에도 같은 `book_id` 로 있다. 두 잡이 같은 문서를 함께 돌리면 한쪽이 문서 락 경합으로 체인을 멈추는데, round07 은 그 아이템을 `pending` 으로 되돌리지 않는다 — 잡의 진행 상한 한 칸을 쥔 채 stale 복구(`DISPATCH_STALE_SECONDS`, 4시간)까지 멈춰 있다(함정 16번 근본 수정).
-- **되돌리기도 in-flight 0 에서만 한다.** 9-1 처럼 비운 뒤, 9-2 에서 남긴 이미지를 `:latest` 로 다시 붙이고(`docker tag landsoftdocker/nl-lib-fastapi:pre-round07 landsoftdocker/nl-lib-fastapi:latest`) 9-3 에서 받아 둔 옛 스택 정의(`celery-cpu` 가 `-Q q_cpu,q_control`, `celery-control` 없음, 추출 stale 14400)로 9-3 처럼 업데이트한다. 큐에 새 형식 메시지가 남은 채 되돌리면 옛 워커가 `TypeError` 로 실패한다.
+- **스택 env 로 추출 시간을 바꿀 때는 `INGEST_EXTRACT_DEADLINE + 60 < INGEST_STAGE_TIMEOUT_EXTRACT` 를 지킨다.** 설정을 읽을 때 검사해(60초는 섹션 0개 강제 재추출의 하한) 어기면 앱 컨테이너가 뜨지 않는다 — `ODL_IMAGE_OUTPUT` 오타와 같다. 업데이트 뒤 재시작을 되풀이하면 먼저 `docker logs` 를 본다(9-3).
+- **되돌리기도 in-flight 0 에서만 한다.** 큐에 새 형식 메시지가 남은 채 되돌리면 옛 워커가 `TypeError` 로 실패한다. 순서:
+  1. 9-1 처럼 비운다(본 잡·카나리 잡 모두 `running` 이 아니고 in-flight 0, 큐와 `unacked` 0).
+  2. 9-2 에서 남긴 이미지를 `:latest` 로 다시 붙인다 — `docker tag landsoftdocker/nl-lib-fastapi:pre-round07 landsoftdocker/nl-lib-fastapi:latest`.
+  3. 9-3 에서 받아 둔 옛 스택 정의(`celery-cpu` 가 `-Q q_cpu,q_control`, `celery-control` 없음, 추출 stale 14400)로 9-3 처럼 업데이트한다("Re-pull image" 끔).
+  4. `celery-control` 을 지운다. 옛 정의에는 그 서비스가 없는데 compose·Portainer 는 정의에서 빠진 컨테이너를 지우지 않는다 — 남은 `nl-lib-celery-control` 은 새 이미지로 계속 돌며 새 디스패처가 두 인자 메시지를 옛 `celery-cpu` 로 보내 `TypeError` 가 난다. `docker ps -a --filter name=nl-lib-celery-control` 이 비어 있어야 하고, 남았으면 `docker rm -f nl-lib-celery-control`(또는 업데이트 때 Portainer 의 prune 선택을 켠다).
+  5. `docker exec nl-lib-celery-cpu celery -A workers.celery_app inspect active_queues --timeout 5 | grep -c "'name': 'q_control'"` 이 1 이다 — q_control 을 받는 워커가 하나(옛 구성에서는 `celery-cpu`)뿐이다.
+  6. fastapi 가 재생성됐으므로 9-4 처럼 게이트웨이를 reload 한다.
 
 > **FLUX 를 켜지 않는다.** 저장소 compose 에는 `flux` 서비스가 살아 있지만 운영 스택은 주석 처리해 두었다(스택 정의와 저장소 compose 가 다르다 — `round04a-완료노트.md` §8). 스택 편집기에 저장소 compose 를 통째로 붙이면 FLUX.1-dev 가 GPU 0 에 올라와 VLM·gemma·임베딩과 GPU 를 나눠 쓴다. round07 전 코드는 논문마다 마무리 단계에서 표지를 만들려 한다(FLUX 가 꺼져 있어 지금은 즉시 실패한다). round07 은 논문 표지를 건너뛰지만, 적재가 도는 동안 FLUX 를 켤 이유는 없다. 그래서 9-3 은 바뀐 곳만 옮긴다.
 
@@ -228,7 +235,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
   "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'ingest_job_items' AND column_name IN ('meta', 'stage_timings')"   # 둘 다 jsonb
 ```
 
-- `unacked` 는 워커가 받고 아직 ack 하지 않은 메시지다(`task_acks_late`). 남은 채 배포하면 `visibility_timeout`(7200초) 뒤 새 워커로 재전달된다. 디스패처 틱(30초마다 잠깐 돈다)이면 1 이 보일 수 있다 — `docker exec nl-lib-redis redis-cli HVALS unacked | grep -o 'tasks\.[a-z_]*' | sort | uniq -c` 로 보고 `tasks.dispatch_job_items` 뿐이면 몇 초 뒤 다시 센다. `tasks.stage_*` 가 있으면 배포를 멈추고 원인부터 본다(함정 16번 ② 브로커 재전달).
+- `unacked` 는 워커가 받고 아직 ack 하지 않은 메시지다(`task_acks_late`). 남은 채 배포하면 `visibility_timeout`(7200초) 뒤 새 워커로 재전달된다. 제어 큐 태스크가 도는 중이면 0 이 아닐 수 있다 — `docker exec nl-lib-redis redis-cli HVALS unacked | grep -o 'tasks\.[a-z_]*' | sort | uniq -c` 로 보고 `tasks.dispatch_job_items`(30초마다)·`tasks.reap_stale_research`(10분마다)·`tasks.cleanup_temp_files`(1시간마다)뿐이면 끝날 때까지 기다렸다 다시 센다. round07 은 이 셋에 시간 제한을 둔다(소프트/하드 — 디스패치·회수 60/90초, 정리 120/150초). `tasks.stage_*` 가 있으면 배포를 멈추고 원인부터 본다(함정 16번 ② 브로커 재전달).
 - 문서 락(`book_lock:<book_id>`)이 남아 있으면 그 문서의 카나리 단계가 락 경합으로 멈춘다(위 배포 규칙). 남은 키는 TTL(옛 코드는 그 단계 타임아웃 — 추출 14400초)이 지나면 스스로 사라진다 — 사라진 뒤 배포한다.
 - `meta` 가 jsonb 여야 한다 — round07 의 수동 retry 가 jsonb 연산(`||`)으로 `meta.run_token` 을 덮고, 재처리·카나리 스크립트가 `jsonb_typeof` 를 쓴다. 모델과 마이그레이션 0004 는 jsonb 로 만든다. 읽기만 하는 확인이다.
 
@@ -240,6 +247,16 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 # 개발 PC — 리뷰를 마친 round07 커밋에서(.worktrees/round07). 빌드한 커밋을 적어 둔다
 git rev-parse --short HEAD
 NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
+# 서버가 받기 전에, 빌드한 이미지의 패키지 버전을 본다 — opendataloader-pdf 2.5.0 · PyMuPDF 1.24.10(app/requirements.txt 고정값)
+docker run --rm --entrypoint pip landsoftdocker/nl-lib-fastapi:latest show opendataloader-pdf PyMuPDF | grep -E '^(Name|Version):'
+```
+
+권장: 이미지 안에서 추출 테스트를 한 번 돌린다. Windows 개발 PC 에서는 리눅스에서만 끝까지 도는 ODL 테스트 둘이 제 일을 하지 않는다 — 시간 초과 때 java 자리의 손자까지 꺼지는지 보는 테스트는 손자 확인 앞에서 끝나고, ODL 자식이 SIGALRM 으로 스스로 꺼지는지 보는 테스트는 skip 된다(이 PC 에서는 1 skipped). 테스트 폴더는 이미지에 없으므로(`app/.dockerignore` 가 `tests` 를 뺀다) 체크아웃의 `app/tests` 를 이미지의 작업 폴더 `/app`(`app/Dockerfile` 의 `WORKDIR`) 아래에 읽기 전용으로 붙인다 — `tests/conftest.py` 가 `/app` 을 import 경로에 넣는다. Git Bash 기준이다(`pwd -W` 는 Windows 경로, `MSYS_NO_PATHCONV=1` 은 `/app/...` 인자를 바꾸지 않게).
+
+```bash
+# 개발 PC — 체크아웃 루트(.worktrees/round07)에서. GPU 는 필요 없다. 실패 0·skip 0 이어야 한다
+MSYS_NO_PATHCONV=1 docker run --rm --mount type=bind,source="$(pwd -W)/app/tests",target=/app/tests,readonly \
+  --entrypoint sh landsoftdocker/nl-lib-fastapi:latest -c "pip install -q pytest && cd /app && python -m pytest -q -p no:cacheprovider tests/test_extractor_odl.py tests/test_extractor_ocr.py tests/test_extractor_routing.py tests/test_page_routing.py tests/test_run_extract_sections.py"
 ```
 
 ```bash
@@ -265,7 +282,7 @@ mkdir -p /data/nl-lib/data/round07                                             #
   - 주석만 바뀐 곳(안 옮겨도 동작은 같다): `gemma` 의 `--max-num-seqs` 위, `celery-llm` 머리.
 - 스택 env(Environment variables)를 본다. `INGEST_STAGE_TIMEOUT_EXTRACT` 가 있으면 지운다 — 있으면 새 기본값 대신 그 값이 들어간다. `MILVUS_RECREATE_ON_MISMATCH` 는 없거나 `false` 여야 한다 — 재생성되는 fastapi 가 기동하며 바로 `ensure_collection()` 을 부른다(9-5).
 - **"Re-pull image" 토글을 끄고** Update the stack 을 누른다(함정 12번). 500 이 나면 다시 누르기 전에 `docker ps -a --format '{{.Names}}\t{{.CreatedAt}}'` 로 무엇이 바뀌었는지부터 본다.
-- 업데이트 뒤 앱 컨테이너가 재시작을 되풀이하면(`docker ps` 의 `Restarting`) 먼저 `docker logs --tail 50 nl-lib-celery-cpu` 에서 설정 검증 오류를 본다. `ODL_IMAGE_OUTPUT` 은 `off`·`embedded`·`external` 만 받는다 — 오타면 앱이 뜨지 않는다(예전에는 문서가 모두 fitz 텍스트로 조용히 떨어졌다).
+- 업데이트 뒤 앱 컨테이너가 재시작을 되풀이하면(`docker ps` 의 `Restarting`) 먼저 `docker logs --tail 50 nl-lib-celery-cpu` 에서 설정 검증 오류를 본다. 설정을 읽을 때 두 가지를 검사한다 — `ODL_IMAGE_OUTPUT` 은 `off`·`embedded`·`external` 만 받고(오타면 예전에는 문서가 모두 fitz 텍스트로 조용히 떨어졌다), `INGEST_EXTRACT_DEADLINE + 60 < INGEST_STAGE_TIMEOUT_EXTRACT` 여야 한다(위 배포 규칙). 어기면 앱이 뜨지 않는다.
 
 ```bash
 docker ps --format '{{.Names}}\t{{.Status}}' | grep nl-lib-celery              # nl-lib-celery-control 이 Up
@@ -273,6 +290,7 @@ docker inspect nl-lib-celery-cpu --format '{{join .Config.Cmd " "}}'         # �
 for c in nl-lib-fastapi nl-lib-celery nl-lib-celery-cpu; do echo "$c init=$(docker inspect --format '{{.HostConfig.Init}}' $c)"; done   # 셋 다 true
 docker exec nl-lib-celery-cpu printenv INGEST_STAGE_TIMEOUT_EXTRACT INGEST_EXTRACT_DEADLINE VLM_PAGE_CONCURRENCY ODL_TIMEOUT_BASE_SECONDS ODL_TIMEOUT_PER_PAGE_SECONDS ODL_IMAGE_OUTPUT   # 3600 / 2700 / 2 / 10.0 / 1.5 / off
 docker logs --since 2m nl-lib-celery-control 2>&1 | grep -c dispatch_job_items   # 0 이 아니다 — 30초마다 디스패치 틱을 받는다
+docker exec nl-lib-celery-control celery -A workers.celery_app inspect active_queues --timeout 5 | grep -c "'name': 'q_control'"   # 1 — q_control 을 받는 워커는 celery-control 하나뿐
 NEW=$(docker image inspect --format '{{.Id}}' landsoftdocker/nl-lib-fastapi:latest)
 for c in nl-lib-fastapi nl-lib-celery nl-lib-celery-cpu nl-lib-celery-control nl-lib-celery-llm nl-lib-celery-embed nl-lib-celery-beat nl-lib-celery-research nl-lib-celery-research-plan; do
   [ "$(docker inspect --format '{{.Image}}' $c)" = "$NEW" ] && echo "$c 새 이미지" || echo "$c 옛 이미지"
@@ -309,7 +327,7 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round07/build_can
 ```
 
 - 범주별 몫·고른 수(`scan_no_sections` 20 · `many_tables` 10 · `dense_chunks` 5 · `many_sections` 5 · `normal` 10)와 다음 명령 셋(MinIO 업로드 → 잡 생성 → 시작)을 출력한다. 모자란 범주가 있으면 그대로 써도 된다. 아래는 출력되는 명령과 같고, 잡 생성 응답의 `job_id` 를 `CANARY` 로 받는 것만 더했다.
-- `--out` 은 `/app/data/` 아래 절대 경로로 준다 — 업로드 명령이 컨테이너 안의 그 경로를 읽고, 호스트에서는 `/data/nl-lib/data/round07/canary/` 다(9-7 ⑥ 도 이 매니페스트를 읽는다).
+- `--out` 은 `/app/data/` 아래 절대 경로로 준다 — 업로드 명령이 컨테이너 안의 그 경로를 읽고, 호스트에서는 `/data/nl-lib/data/round07/canary/` 다(범주 칸이 있어 사람이 볼 기록이기도 하다).
 - `scan_no_sections` 는 본 잡의 '섹션 없음' 실패에서 고른다 — 9-8(실패분 retry 가 `last_error` 를 지운다) 전에 만든다.
 
 ```bash
@@ -353,11 +371,11 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 ② 스캔본이 VLM 으로 가고 섹션이 생겼는가 — 본 잡에서 '섹션 없음'으로 실패한 문서(`scan_no_sections`)만 본다.
 
 ```bash
-docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT c.status, c.error_group, c.meta->>'extract_method' AS method, count(*) AS n, count(*) FILTER (WHERE (c.meta->>'sections')::int > 0) AS with_sections, count(*) FILTER (WHERE (c.meta->>'forced_ocr')::boolean) AS forced_ocr, sum((c.meta->>'vlm_truncated')::int) AS vlm_truncated, sum((c.meta->>'ocr_errors')::int) AS ocr_errors, sum((c.meta->>'render_errors')::int) AS render_errors, count(*) FILTER (WHERE (c.meta->>'extract_deadline_hit')::boolean) AS deadline_hit FROM ingest_job_items c JOIN ingest_job_items m ON m.book_id = c.book_id AND m.job_id = '$JOB' WHERE c.job_id = '$CANARY' AND m.status = 'failed' AND m.last_error LIKE '섹션 없음%' GROUP BY 1, 2, 3 ORDER BY 4 DESC"
+docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT c.status, c.error_group, c.meta->>'extract_method' AS method, count(*) AS n, count(*) FILTER (WHERE (c.meta->>'sections')::int > 0) AS with_sections, count(*) FILTER (WHERE (c.meta->>'forced_ocr')::boolean) AS forced_ocr, sum((c.meta->>'vlm_truncated')::int) AS vlm_truncated, sum((c.meta->>'ocr_errors')::int) AS ocr_errors, sum((c.meta->>'ocr_rejected')::int) AS ocr_rejected, sum((c.meta->>'render_errors')::int) AS render_errors, count(*) FILTER (WHERE (c.meta->>'extract_deadline_hit')::boolean) AS deadline_hit FROM ingest_job_items c JOIN ingest_job_items m ON m.book_id = c.book_id AND m.job_id = '$JOB' WHERE c.job_id = '$CANARY' AND m.status = 'failed' AND m.last_error LIKE '섹션 없음%' GROUP BY 1, 2, 3 ORDER BY 4 DESC"
 ```
 
 - 이 묶음의 9할 이상이 `done`·`vlm`·`with_sections` 여야 한다 — 회귀 하네스에서 같은 블록 318건이 모두 스캔본으로 잡혔다(`research/round07-ingest-regression/README.md`).
-- 칸: `forced_ocr` = 섹션 0개라 짧은 쪽을 모두 OCR 로 보내 다시 추출했다 — 스캔본으로 잡힌 문서는 짧은 쪽을 처음부터 OCR 하므로 0 이어야 하고, 0 이 아니면 스캔본 판정이 놓친 문서다. `vlm_truncated` = max_tokens 에서 끝난 OCR 쪽(되풀이 꼬리를 걷어 냈거나 퇴화 출력이라 버렸다). `ocr_errors` = VLM 요청 실패(연결·타임아웃·HTTP 오류)만. `render_errors` = 쪽 이미지 렌더링 실패. `deadline_hit` = 추출 데드라인(2,700초)에 걸렸다. 추출이 실패한 아이템은 이 칸들이 비어 있다(추출이 성공했을 때만 meta 에 남는다).
+- 칸: `forced_ocr` = 섹션 0개라 짧은 쪽을 모두 OCR 로 보내 다시 추출했다 — 스캔본으로 잡힌 문서는 짧은 쪽을 처음부터 OCR 하므로 0 이어야 하고, 0 이 아니면 스캔본 판정이 놓친 문서다. `vlm_truncated` = max_tokens 에서 끝난 OCR 쪽(되풀이 꼬리를 걷어 냈거나 퇴화 출력이라 버렸다). `ocr_errors` = 다시 하면 달라질 수 있는 VLM 요청 실패(연결·타임아웃·408·429·5xx)만. `ocr_rejected` = VLM 이 그 쪽을 결정적인 HTTP 4xx(408·429 말고)로 거절했다 — 다시 보내지 않고 `ocr_errors` 에도 세지 않는다. `render_errors` = 쪽 이미지 렌더링 실패. `deadline_hit` = 추출 데드라인(2,700초)에 걸렸다. 추출이 실패한 아이템은 이 칸들이 비어 있다(추출이 성공했을 때만 meta 에 남는다).
 - 멈춤: `done`·`vlm` 이 9할 미만이거나 `forced_ocr` 이 0 이 아니다. `vlm_error` 가 있으면 ④ 로 VLM 부터 본다.
 
 ③ embed 단계가 GPU 일만 남아 줄었는가 — 같은 문서의 본 잡(옛 코드) 시간과 견준다. 표 5개 이상 문서의 `embed_after` 가 크게 줄고(진단 때 표 9개 이상 문서의 embed 중앙 24.6초) 그만큼 `summarize_after` 가 는다.
@@ -379,13 +397,14 @@ docker exec nl-lib-fastapi curl -s vllm:8000/metrics | grep -E '^vllm:(num_reque
 
 ```bash
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR 보완 ('                   # OCR 로 보낸 쪽
-docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR(vlm) 실패'                # 그중 VLM 요청 실패(줄에 예외 이름이 붙는다)
+docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR(vlm) 실패'                # 그중 VLM 요청 실패(줄에 예외 이름이 붙는다 — 거절도 여기 든다)
 docker logs nl-lib-celery-cpu 2>&1 | grep -c 'OCR(vlm) 실패: ReadTimeout'   # 그중 읽기 타임아웃
-docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT count(*) AS done, count(*) FILTER (WHERE (meta->>'ocr_errors')::int > 0) AS docs_ocr_errors, coalesce(sum((meta->>'ocr_errors')::int), 0) AS ocr_errors, count(*) FILTER (WHERE (meta->>'render_errors')::int > 0) AS docs_render_errors, count(*) FILTER (WHERE (meta->>'extract_deadline_hit')::boolean) AS docs_deadline_hit FROM ingest_job_items WHERE job_id = '$CANARY' AND status = 'done'"
+docker logs nl-lib-celery-cpu 2>&1 | grep -c "OCR(vlm) 실패: HTTPStatusError: Client error '4"   # 그중 4xx(대부분 결정적 거절 ocr_rejected — 408·429 는 OCR 오류)
+docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT count(*) AS done, count(*) FILTER (WHERE (meta->>'ocr_errors')::int > 0) AS docs_ocr_errors, coalesce(sum((meta->>'ocr_errors')::int), 0) AS ocr_errors, count(*) FILTER (WHERE (meta->>'ocr_rejected')::int > 0) AS docs_ocr_rejected, coalesce(sum((meta->>'ocr_rejected')::int), 0) AS ocr_rejected, count(*) FILTER (WHERE (meta->>'render_errors')::int > 0) AS docs_render_errors, count(*) FILTER (WHERE (meta->>'extract_deadline_hit')::boolean) AS docs_deadline_hit FROM ingest_job_items WHERE job_id = '$CANARY' AND status = 'done'"
 ```
 
-- `ocr_errors > 0` 인 완료 문서는 OCR 하지 못한 쪽을 ODL 결과(대개 빈 쪽)로 채웠다 — ⑬ 의 다시 돌릴 목록에 오른다. `render_errors`·`deadline_hit` 은 다시 해도 대개 같다.
-- 멈춤: VLM 요청 실패가 OCR 로 보낸 쪽의 1% 를 넘는다(대개 `ReadTimeout` — `num_requests_waiting` 이 오래 0 보다 크고 선점이 늘었으면 대기열 때문이다). 스택 env 에 `VLM_PAGE_CONCURRENCY=1`(문서 안 병렬을 끈다 — 옛 코드처럼 동시 4건) 또는 `VLM_TIMEOUT=180`~`240` 을 넣는다. 둘 다 compose 에 선언돼 있다.
+- `ocr_errors > 0` 인 완료 문서는 OCR 하지 못한 쪽을 ODL 결과(대개 빈 쪽)로 채웠다 — ⑬ 의 다시 돌릴 목록에 오른다. `ocr_rejected`(결정적 4xx 거절)·`render_errors`·`deadline_hit` 은 다시 해도 대개 같아 그 목록에 넣지 않는다. `ocr_rejected` 가 여럿이면 VLM 로그(`docker logs nl-lib-vllm`)에서 거절 사유(입력 길이 초과 등)를 본다.
+- 멈춤: 다시 하면 달라질 VLM 요청 실패(위 SQL 의 `ocr_errors` 합 — 결정적 거절 `ocr_rejected` 는 뺀다)가 OCR 로 보낸 쪽의 1% 를 넘는다(대개 `ReadTimeout` — `num_requests_waiting` 이 오래 0 보다 크고 선점이 늘었으면 대기열 때문이다). 스택 env 에 `VLM_PAGE_CONCURRENCY=1`(문서 안 병렬을 끈다 — 옛 코드처럼 동시 4건) 또는 `VLM_TIMEOUT=180`~`240` 을 넣는다. 둘 다 compose 에 선언돼 있다.
 
 ⑤ gemma 잘림 비율 — 9-6 에서 적은 값과의 차이로 (length 증가분) ÷ (stop 증가분 + length 증가분) 을 구한다. 진단 때 5.3%(대부분 표 해석)보다 낮아야 한다.
 
@@ -395,17 +414,26 @@ docker exec nl-lib-fastapi curl -s gemma:8000/metrics | grep -E '^vllm:request_s
 
 - 낮지 않으면 표 해석 프롬프트(`paper_table_interp.yaml`)가 듣지 않는 것이다. 저장 텍스트·생성 시간의 문제라 이것만으로 멈추지는 않는다 — ⑥ 과 함께 본다.
 
-⑥ 표 설명이 문장으로 끝나는가 — 카나리 문서의 보강 아티팩트(`artifacts/{book_id}/enrichment.json.gz`, 마무리 단계는 지우지 않는다)를 본다. 잘린 해석은 마지막으로 끝난 문장까지만 남기므로 `그 밖` 이 0 에 가까워야 한다. `python -`(stdin)은 `/app` 에서 돌아 앱 모듈이 보인다(함정 4번).
+⑥ 표 설명이 문장으로 끝나는가 — 카나리 문서의 보강 아티팩트(`artifacts/{book_id}/enrichment.json.gz`, 마무리 단계는 지우지 않는다)를 본다. 잘린 해석은 마지막으로 끝난 문장까지만 남기므로 `그 밖` 이 0 에 가까워야 한다. 아티팩트가 이번 카나리 실행의 것인지는 아티팩트의 `run_token` 과 그 아이템의 `meta.run_token` 이 같은지로 가린다 — 옛 코드가 남긴 아티팩트(토큰 없음)나 다른 실행의 것은 세지 않는다. `python -`(stdin)은 `/app` 에서 돌아 앱 모듈이 보인다(함정 4번).
 
 ```bash
-docker exec -i nl-lib-fastapi python - <<'PY'
-import gzip, json
+docker exec -i -e CANARY=$CANARY nl-lib-fastapi python - <<'PY'
+import gzip, json, os
+from sqlalchemy import text
 from core.config import get_settings
+from db.postgres import SyncSessionLocal
 from services.ingestion.stages import minio_client
 cfg, client = get_settings(), minio_client()
-ends = {"문장": 0, "그 밖": 0}
-for line in open("/app/data/round07/canary/manifest.jsonl", encoding="utf-8"):
-    book_id = json.loads(line)["book_id"]
+db = SyncSessionLocal()
+try:
+    items = db.execute(text(
+        "SELECT book_id, meta->>'run_token' FROM ingest_job_items WHERE job_id = :job AND status = 'done'"
+    ), {"job": os.environ["CANARY"]}).all()
+finally:
+    db.rollback()
+    db.close()
+ends = {"문장": 0, "그 밖": 0, "다른 실행의 아티팩트(안 셈)": 0}
+for book_id, token in items:
     try:
         resp = client.get_object(cfg.MINIO_BUCKET, f"artifacts/{book_id}/enrichment.json.gz")
         data = json.loads(gzip.decompress(resp.read()))
@@ -413,13 +441,18 @@ for line in open("/app/data/round07/canary/manifest.jsonl", encoding="utf-8"):
         resp.release_conn()
     except Exception:
         continue
-    for table in data["table_chunks"]:
-        desc = (table["description"] or "").rstrip().rstrip("\"'”’)）]」』》〉】")
+    if not token or data.get("run_token") != token:
+        ends["다른 실행의 아티팩트(안 셈)"] += 1
+        continue
+    for table in data.get("table_chunks") or []:
+        desc = (table.get("description") or "").rstrip().rstrip("\"'”’)）]」』》〉】")
         if desc:
             ends["문장" if desc.endswith((".", "!", "?", "。", "다")) else "그 밖"] += 1
 print(ends)
 PY
 ```
+
+- `다른 실행의 아티팩트` 는 0 이어야 한다 — 0 이 아니면 그 논문은 이번 실행의 보강을 남기지 못했다(⑪ 의 `enrich_source` 와 같이 본다).
 
 - 멈춤: `그 밖` 이 표 설명의 1할을 넘는다 — 몇 개를 열어 끝이 잘렸는지 본다(잘린 해석 다듬기 `trim_to_last_sentence` 가 듣지 않는 것이다).
 
@@ -483,9 +516,11 @@ print(f"stale 복구를 거친 아이템 {len(items)}건")
 PY
 ```
 
-- 어긋난 아이템은 추출부터 다시 돌리면 고쳐진다 — 추출이 그 문서의 `book_sections` 를, embed 가 Milvus 청크를 `book_id` 로 모두 지우고 다시 쓴다. ⑧ 의 원인을 고친 뒤, 본 잡은 paused 인 채로 카나리 잡에서 다시 돌리고(retry 는 끝난 카나리 잡을 `running` 으로 되돌린다) 끝나면 ① 부터 다시 본다.
+- 어긋난 아이템은 추출부터 다시 돌리면 고쳐진다 — 추출이 그 문서의 `book_sections` 를, embed 가 Milvus 청크를 `book_id` 로 모두 지우고 다시 쓴다. ⑧ 의 원인을 고친 뒤, 본 잡은 paused 인 채로 카나리 잡에서 다시 돌리고(retry 는 끝난 카나리 잡을 `running` 으로 되돌린다) 끝나면 ① 부터 다시 본다. 워커는 재생성되지 않으므로 다시 볼 때 ⑦ 의 로그 수에 앞 실행이 섞인다 — 아래처럼 보내기 직전 시각을 적어 두고 ⑦ 의 `docker logs` 에 `--since "$SINCE"` 를 붙인다(워커를 재생성했으면 필요 없다 — 9-7 머리말).
+- **본 잡을 재개한 뒤(9-9)에는 카나리 잡을 retry 하지 않는다.** retry 는 끝난 잡을 `running` 으로 되돌려 두 잡이 같은 문서를 함께 돌게 된다(위 배포 규칙 — 락 경합으로 멈춘 아이템이 4시간 묶인다). 그런 retry 가 들어오면 코드가 경고 로그를 남긴다. 그 뒤에 다시 돌릴 문서는 본 잡 아이템으로 보낸다(⑬ 과 같은 방법).
 
 ```bash
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 IDS=$(docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
   "SELECT coalesce(json_agg(id ORDER BY id), '[]') FROM ingest_job_items WHERE job_id = '$CANARY' AND last_error LIKE '%stale 복구%'")
 docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$CANARY/retry \
@@ -533,14 +568,15 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT meta->>'reduce_lev
 ⑬ 나중에 다시 돌릴 목록 — OCR 요청 실패가 있던 완료 문서. 지금 돌리지 않는다 — VLM 설정을 바꿨으면(④) 그 뒤에, 아니면 본 잡이 끝날 무렵 한 번 돌린다(본 잡이 도는 동안 해도 된다). 본 잡 아이템으로 보낸다 — 카나리 문서도 같은 `book_id` 로 본 잡에 있고, 카나리 잡을 다시 돌리면 본 잡과 동시에 돈다. 지금 `done` 인 아이템만 넣는다 — 도는 아이템을 retry 하면 그 체인의 기록이 버려지고, 다시 나간 체인은 옛 체인이 쥔 문서 락에 막혀 멈춘다.
 
 ```bash
-docker exec nl-lib-postgres psql -U <user> -d <db> -At -c "SELECT json_build_object('item_ids', coalesce(json_agg(m.id ORDER BY m.id), '[]'::json), 'reset_stage', 'pending') FROM ingest_job_items m WHERE m.job_id = '$JOB' AND m.status = 'done' AND ((m.meta->>'ocr_errors')::int > 0 OR (NOT (m.meta ? 'ocr_errors') AND EXISTS (SELECT 1 FROM ingest_job_items c WHERE c.job_id = '$CANARY' AND c.book_id = m.book_id AND c.status = 'done' AND (c.meta->>'ocr_errors')::int > 0)))" \
+docker exec nl-lib-postgres psql -U <user> -d <db> -At -c "SELECT json_build_object('item_ids', coalesce(json_agg(m.id ORDER BY m.id), '[]'::json), 'reset_stage', 'pending') FROM ingest_job_items m WHERE m.job_id = '$JOB' AND m.status = 'done' AND ((m.meta->>'ocr_errors')::int > 0 OR (m.meta->'ocr_errors' IS NULL AND EXISTS (SELECT 1 FROM ingest_job_items c WHERE c.job_id = '$CANARY' AND c.book_id = m.book_id AND c.status = 'done' AND (c.meta->>'ocr_errors')::int > 0)))" \
   > /data/nl-lib/data/round07/ocr_errors_retry.json
 cat /data/nl-lib/data/round07/ocr_errors_retry.json
 docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$JOB/retry \
   -H 'Content-Type: application/json' -d @/app/data/round07/ocr_errors_retry.json
 ```
 
-- 본 잡 아이템에 `ocr_errors` 키가 없으면 옛 코드로 끝난 것이다 — 그런 문서는 카나리(새 코드) 결과로 고른다.
+- 본 잡 아이템에 `ocr_errors` 가 없으면(`meta->'ocr_errors' IS NULL` — jsonb `?` 는 쓰지 않는다, 함정 10번) 옛 코드로 끝난 것이다 — 그런 문서는 카나리(새 코드) 결과로 고른다. `ocr_rejected`(결정적 4xx 거절)는 다시 해도 같아 이 목록에 넣지 않는다.
+- **보낼 순서**: 9-10 의 빈 본문 목록을 먼저 보내고 이 목록은 그 뒤에 만들어 보낸다. retry 의 `item_ids` 는 상태를 거르지 않아, 두 목록에 같은 아이템이 있으면 먼저 보낸 쪽으로 이미 도는 아이템을 다시 `pending` 으로 돌린다 — 도는 체인의 기록은 버려지고 새 체인은 그 체인이 쥔 문서 락에 막혀 멈춘다(진행 상한 한 칸을 쥔 채 4시간). 이 SQL 은 만들 때 `done` 만 고르므로 보내기 직전에 만든다. 미리 만들어 둔 목록은 9-10 의 다시 거르기로 `done` 만 남긴다.
 
 ### 9-8. 본 잡 실패분 재시도
 
@@ -574,7 +610,7 @@ done
 
 ### 9-9. 본 잡 재개
 
-카나리 잡이 끝났는지 먼저 본다 — 두 잡을 동시에 `running` 으로 두지 않는다(위 배포 규칙).
+카나리 잡이 끝났는지 먼저 본다 — 두 잡을 동시에 `running` 으로 두지 않는다(위 배포 규칙). 재개한 뒤로는 카나리 잡을 retry 하지 않는다(9-7 ⑨ — retry 가 끝난 잡을 `running` 으로 되돌린다).
 
 ```bash
 docker exec nl-lib-fastapi curl -s localhost:8000/api/admin/ingest-jobs/$CANARY | grep -o '"status":"[a-z_]*"' | head -1   # completed 또는 completed_with_errors
@@ -618,16 +654,25 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round07/select_ne
 
 - 서버의 `/data/nl-lib/data/round07/near_empty_items.csv`(기준을 올렸으면 `cpp300/` 아래)를 사람이 본다. 뺄 문서가 있으면 같은 폴더 `near_empty_retry.json` 의 `item_ids` 에서도 뺀다. `vlm_capped` 가 true 인 문서는 VLM 60쪽 상한에 걸린 것이라 다시 돌려도 결과가 같다.
 - 재처리는 대부분 VLM 으로 가서 약 1만 쪽·약 10시간(추정)이 든다. id 가 앞이라 본 잡의 새 아이템보다 먼저 돈다.
+- 보내기 직전에 목록을 지금 `done` 인 아이템으로 다시 거른다. retry 의 `item_ids` 는 상태를 거르지 않아, 그 사이 다른 retry(9-7 ⑬ 등)로 이미 도는 아이템이 섞이면 다시 `pending` 이 된다 — 도는 체인의 기록은 버려지고 새 체인은 문서 락에 막혀 진행 상한 한 칸을 쥔 채 4시간 멈춘다. 기준을 올려 고른 목록을 쓰면 아래 두 경로를 `cpp300/near_empty_retry.json` 으로 바꾼다.
 
 ```bash
+docker exec -i nl-lib-postgres psql -U <user> -d <db> -At -v ids="$(cat /data/nl-lib/data/round07/near_empty_retry.json)" -v job="$JOB" \
+  > /data/nl-lib/data/round07/near_empty_retry_done.json <<'SQL'
+SELECT json_build_object('item_ids', coalesce(json_agg(id ORDER BY id), '[]'::json), 'reset_stage', 'pending')
+FROM ingest_job_items
+WHERE job_id = :'job' AND status = 'done'
+  AND id IN (SELECT jsonb_array_elements_text(:'ids'::jsonb -> 'item_ids')::bigint);
+SQL
+cat /data/nl-lib/data/round07/near_empty_retry_done.json            # 원래 목록보다 줄었으면 빠진 아이템은 이미 다시 돌고 있다
 docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/$JOB/retry \
-  -H 'Content-Type: application/json' -d @/app/data/round07/near_empty_retry.json
+  -H 'Content-Type: application/json' -d @/app/data/round07/near_empty_retry_done.json
 ```
 
-기준을 올려 고른 목록을 쓰면 `-d @/app/data/round07/cpp300/near_empty_retry.json` 으로 보낸다. 9-7 ⑬ 의 OCR 요청 실패 목록도 이때 같이 보낼 수 있다.
+9-7 ⑬ 의 OCR 요청 실패 목록은 이것을 보낸 뒤에 만들어 보낸다(⑬ 의 SQL 은 만들 때 `done` 만 고른다 — 순서를 지키면 두 목록이 겹치지 않는다).
 
 ## 롤백
 
-- 코드: 이전 이미지 태그로 `docker compose up -d`
+- 코드: 운영 스택은 §9 머리말의 **되돌리기** 순서로만 한다 — 9-1 비움 확인(in-flight 0) → `pre-round07` 이미지를 `:latest` 로 다시 붙이기 → 9-3 에서 받아 둔 옛 스택 정의로 Portainer 업데이트("Re-pull image" 끔) → 남은 `nl-lib-celery-control` 지우기와 q_control 소비자 하나 확인 → 게이트웨이 reload. 서버에서 저장소 compose 로 `docker compose up -d` 를 하지 않는다 — 운영 스택 정의와 달라 FLUX 가 켜지고(§9 머리말), Portainer 스택이 만든 같은 `container_name` 과 부딪친다. 도는 적재 태스크가 있는 채 되돌리면 새 형식 메시지를 옛 워커가 받아 `TypeError` 로 실패한다.
 - DB: `alembic downgrade 0003_widen_varchar_fields` (doc_type/extra/잡 테이블 제거 — additive라 안전)
 - Milvus: 인덱스 파라미터 env를 되돌리고 재생성하면 IVF_FLAT로 복귀
