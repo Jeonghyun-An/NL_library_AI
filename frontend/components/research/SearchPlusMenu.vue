@@ -206,6 +206,19 @@ function clear(): void {
   field?.focus();
 }
 
+// 페이지가 칩을 켠 채 입력창을 채울 때 쓴다(논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안).
+// 초안은 고쳐 쓰라고 주는 것이라 초점을 글 끝에 둔다
+function activateMode(id: SearchModeId): void {
+  const mode = modeFor(id);
+  if (!mode) return;
+  activate(mode);
+  if (!field) return;
+  field.focus();
+  field.setSelectionRange(field.value.length, field.value.length);
+}
+
+defineExpose({ activateMode });
+
 // ── 슬래시 명령 목록(WAI-ARIA 콤보박스 관례: 초점은 입력창, 강조는 aria-activedescendant) ──
 const paletteId = useId();
 // document.activeElement 는 반응형이 아니라 입력창의 focus·blur 로 따로 쥔다

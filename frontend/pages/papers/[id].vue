@@ -7,11 +7,39 @@
 
     <div class="skx-result-card">
       <main class="skx-pdetail">
-        <!-- 뒤로가기 -->
-        <button type="button" class="skx-pdetail__back" @click="$router.back()">
+        <!-- 돌아가기 — 직전 화면이 출처면 브라우저 뒤로(그 화면 상태 그대로), 새 탭·연관 논문을 거쳐 왔으면 출처 주소로 간다 -->
+        <a :href="back.to" class="skx-pdetail__back pd-back" @click="onBack">
           <img src="/img/ico-arrow.svg" alt="" />
-          검색 목록 돌아가기
-        </button>
+          {{ back.label }}
+        </a>
+
+        <!-- 인용 맥락 — 보고서의 인용칩에서 왔을 때 이 논문이 그 보고서에서 어떻게 쓰였는지 보인다.
+             논문을 읽지 못했으면 그리지 않는다 — 빈 화면에 배너만 남아 제목 없는 원문 뷰어를 연다 -->
+        <section v-if="cite && paper" class="pd-cite" aria-label="인용 맥락">
+          <div class="pd-cite__row">
+            <p class="pd-cite__text">
+              딥리서치 보고서 ‘{{ cite.question }}’에서
+              <strong>{{ withRo(cite.label) }}</strong> 인용됨
+              <span aria-hidden="true">·</span> 인용 대목 {{ cite.chunks.length }}곳
+            </p>
+            <!-- 첫 인용 쪽에서 원문 뷰어를 열고 인용 대목을 넘겨 본다 -->
+            <button
+              type="button"
+              class="pd-cite__btn"
+              :aria-busy="checkingPdf"
+              :aria-describedby="bannerPdfProblem ? 'pdetail-cite-problem' : undefined"
+              @click="openCitedPassages(cite.chunks)"
+            >
+              인용 대목 보기
+            </button>
+          </div>
+          <p v-if="bannerPdfProblem" id="pdetail-cite-problem" class="pd-pdf-note" role="alert">
+            {{ bannerPdfProblem }}
+            <a v-if="paper?.url" :href="paper.url" target="_blank" rel="noopener"
+              >KCI에서 원문 페이지 열기<span class="skx-sr-only"> (새 창)</span></a
+            >
+          </p>
+        </section>
 
         <div v-if="loading" style="padding: 40px; text-align: center">
           <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
@@ -128,21 +156,15 @@
                     src="/img/ico-chat.svg"
                     alt=""
                   />
-                  <span class="skx-btn-talk__label">DeepSearch</span>
+                  <span class="skx-btn-talk__label">DeepRead</span>
                 </button>
-                <a
-                  v-if="paper.url"
-                  :href="paper.url"
-                  target="_blank"
-                  rel="noopener"
-                  class="skx-btn-pview-sm"
-                  >원문 보기</a
-                >
+                <!-- 원문 보기는 늘 이 화면의 원문 뷰어로 연다 — 외부(KCI) 페이지는 보조 링크로 따로 둔다 -->
                 <button
-                  v-else
                   type="button"
                   class="skx-btn-pview-sm"
-                  @click="pdfModal = true"
+                  :aria-busy="checkingPdf"
+                  :aria-describedby="pdfProblem ? 'pdetail-pdf-problem' : undefined"
+                  @click="openOriginal"
                 >
                   원문 보기
                 </button>
@@ -154,7 +176,22 @@
                 >
                   <img src="/img/ico-paper-bookmark.svg" alt="" />
                 </button>
+                <a
+                  v-if="paper.url"
+                  :href="paper.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="pd-kci"
+                  >KCI에서 보기<span class="skx-sr-only"> (새 창)</span></a
+                >
               </div>
+              <!-- 원문이 없으면 뷰어 대신 누른 자리 아래에 알리고 KCI 페이지를 건넨다 -->
+              <p v-if="pdfProblem" id="pdetail-pdf-problem" class="pd-pdf-note" role="alert">
+                {{ pdfProblem }}
+                <a v-if="paper.url" :href="paper.url" target="_blank" rel="noopener"
+                  >KCI에서 원문 페이지 열기<span class="skx-sr-only"> (새 창)</span></a
+                >
+              </p>
             </div>
           </section>
 
@@ -228,14 +265,18 @@
                   aria-hidden="true"
                 />
               </button>
-              <div class="skx-paccord__body-outer">
+              <!-- 높이만 0 으로 접혀 보이지 않는 키워드 링크에 Tab 초점이 가지 않게 접힌 동안은 inert -->
+              <div class="skx-paccord__body-outer" :inert="!keywordOpen">
                 <div class="skx-paccord__body">
                   <div class="skx-keyword-list">
-                    <span
+                    <!-- 키워드를 누르면 그 키워드로 새 논문 검색을 연다 -->
+                    <NuxtLink
                       v-for="kw in keywords"
                       :key="kw"
-                      class="skx-keyword"
-                      >{{ kw }}</span
+                      :to="{ path: '/papers', query: { q: kw } }"
+                      class="skx-keyword pd-keyword"
+                      :aria-label="`${kw} — 이 키워드로 논문 검색`"
+                      >{{ kw }}</NuxtLink
                     >
                     <span
                       v-if="!keywords.length"
@@ -295,12 +336,11 @@
               >
                 불러오는 중...
               </div>
+              <!-- 카드 전체가 제목 링크다(pd-rel__link::after) — 키보드로도 넘어가고, 연관 논문으로 넘어가도 처음 출처를 잇는다 -->
               <article
                 v-for="rel in relatedItems"
                 :key="rel.book_id"
-                class="skx-prelate-card"
-                style="cursor: pointer"
-                @click="navigateTo(`/papers/${rel.book_id}`)"
+                class="skx-prelate-card pd-rel"
               >
                 <div class="skx-prelate-card__info">
                   <span class="skx-prelate-card__score"
@@ -308,7 +348,11 @@
                   >
                   <div class="skx-prelate-card__title-row">
                     <h3 class="skx-prelate-card__title">
-                      {{ rel.book_info?.title || rel.book_id }}
+                      <NuxtLink
+                        :to="relatedDetailUrl(rel.book_id, source, spot)"
+                        class="pd-rel__link"
+                        >{{ rel.book_info?.title || rel.book_id }}</NuxtLink
+                      >
                     </h3>
                     <p class="skx-prelate-card__author">
                       {{
@@ -350,6 +394,21 @@
               </article>
             </div>
           </section>
+
+          <!-- 이 논문으로 딥리서치: 바로 시작하지 않고 초안을 논문 검색 입력창에 채워 고쳐 보내게 한다 -->
+          <section
+            v-if="researchQuestion"
+            class="pd-research"
+            aria-labelledby="pdetail-research-title"
+          >
+            <h2 id="pdetail-research-title" class="skx-prelate__heading">
+              이 논문으로 딥리서치
+            </h2>
+            <p class="pd-research__draft">{{ researchQuestion }}</p>
+            <NuxtLink :to="paperResearchUrl(researchQuestion)" class="skx-btn-pview-sm">
+              <span class="skx-sr-only">딥리서치 질문을 </span>입력창에서 고쳐 쓰고 시작하기
+            </NuxtLink>
+          </section>
         </template>
       </main>
     </div>
@@ -366,7 +425,7 @@
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
           <h2 class="skx-chat-title">
-            DeepSearch<template v-if="paper?.title"
+            DeepRead<template v-if="paper?.title"
               >: {{ paper.title }}</template
             >
           </h2>
@@ -389,10 +448,12 @@
 
     <!-- PDF 뷰어 모달 -->
     <PdfViewer
-      v-if="pdfModal"
-      :cnts-id="paperId"
-      :title="paper?.title"
-      @close="pdfModal = false"
+      v-if="pdf"
+      :cnts-id="pdf.cntsId"
+      :title="pdf.title"
+      :page="pdf.page"
+      :passages="pdf.passages"
+      @close="closePdf"
     />
 
     <Teleport to="body">
@@ -407,8 +468,19 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { usePdfOpener } from "~/composables/usePdfOpener";
+import { useResearchApi } from "~/composables/useResearch";
+import type { ReportChunk, ResearchJob } from "~/types/research";
+import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
+import { safeSessionStorage } from "~/utils/browserId";
+import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
+import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
+import { paperResearchQuestion, paperResearchUrl } from "~/utils/paperResearch";
+import { citedPdfTarget } from "~/utils/pdfViewer";
+import { isPlainClick } from "~/utils/restorePosition";
 
 const route = useRoute();
+const router = useRouter();
 const config = useRuntimeConfig();
 const api = useApi();
 // 페이지를 떠나면 추천 이유·연관 이유 스트림을 끊는다 — 연관 논문마다 동시에 도는 생성이 끝까지 돈다
@@ -418,15 +490,33 @@ onBeforeUnmount(() => pageAbort.abort());
 const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
 const paperId = route.params.id as string;
+// 주소에 실린 출처 — 돌아갈 곳·관련도·AI 요약 기준·인용 배너가 모두 여기서 정해진다(새 탭·새로고침에도).
+// 다른 논문으로 넘어가면 페이지가 새로 마운트되므로 한 번만 읽는다
+const source = readDetailSource(route.query);
+const spot = readReturnSpot(route.query);
+const back = backTarget(source, spot);
 
+// 관련도는 검색 결과에서 온 상세에만 뜻이 있다
 const matchScore = computed(() => {
   const s = route.query.score;
-  return s ? Math.round(Number(s) * 100) : null;
+  return source.kind === "search" && s ? Math.round(Number(s) * 100) : null;
 });
+
+// vue-router 는 직전 기록의 경로를 history.state.back 에 둔다. 직전이 출처면 뒤로 가야 그 화면이 브라우저 기록의
+// 상태를 그대로 쓰고 기록도 한 칸 더 쌓이지 않는다. 새 탭으로 여는 클릭(보조키·가운데 버튼)은 링크에 맡긴다
+function onBack(e: MouseEvent): void {
+  if (!isPlainClick(e)) return;
+  e.preventDefault();
+  const prev = window.history.state?.back;
+  if (shouldGoBack(typeof prev === "string" ? prev : null, back.to)) router.back();
+  else void router.push(back.to);
+}
 
 // Data
 const paper = ref<any>(null);
 const loading = ref(false);
+
+useHead({ title: () => (paper.value?.title ? `${paper.value.title} — 논문` : "논문") });
 
 // Vertical tabs
 const vtabsRef = ref<HTMLElement | null>(null);
@@ -436,7 +526,7 @@ const vtabSliderStyle = ref<{ height: string; transform: string }>({
 });
 const curationTab = ref("ai-summary");
 const curationTabs = [
-  { key: "ai-summary", label: "AI가 분석한 연구 핵심" },
+  { key: "ai-summary", label: "AI 요약" },
   { key: "abstract", label: "초록" },
 ];
 
@@ -526,6 +616,11 @@ const keywords = computed<string[]>(() => {
   return [];
 });
 
+// 이 논문으로 딥리서치 — 제목·키워드로 만든 질문 초안(제목이 없으면 빈 글이라 칸을 숨긴다)
+const researchQuestion = computed(() =>
+  paperResearchQuestion(paper.value?.title ?? "", keywords.value),
+);
+
 // AI summary
 const summaryText = ref("");
 const summaryLoading = ref(false);
@@ -550,15 +645,52 @@ function relatedScore(score: number): number {
 // UI
 const chatOpen = ref(false);
 const citationModal = ref(false);
-const pdfModal = ref(false);
 const toast = ref("");
 const thumbnailUrl = ref(`${config.public.apiBase}/books/${paperId}/thumbnail`);
+
+// ── 인용 맥락(보고서에서 온 상세) ──────────────────────────
+const researchApi = useResearchApi();
+const cite = ref<CiteContext | null>(null);
+
+// 배너와 AI 요약 기준 질문을 그 보고서에서 읽는다. 못 읽으면 배너 없이 두고 요약은 소개글로 대신한다
+async function loadResearch(): Promise<Pick<ResearchJob, "question" | "report"> | null> {
+  if (source.kind !== "research") return null;
+  try {
+    const job = await researchApi.get(source.job);
+    cite.value = citeContext(job, source.e, paperId);
+    return job;
+  } catch {
+    return null;
+  }
+}
 
 function showToast(msg: string) {
   toast.value = msg;
   setTimeout(() => {
     toast.value = "";
   }, 2500);
+}
+
+// 원문 보기 — 파일이 있는지 먼저 확인하고 연다. 없으면 누른 버튼 아래에 알리고 KCI 페이지 링크를 건넨다
+const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
+const pdfProblem = ref("");
+// 배너의 [인용 대목 보기]가 열지 못한 까닭 — 배너 안에 알린다
+const bannerPdfProblem = ref("");
+
+// 확인 중에는 어느 쪽 버튼이든 무시한다 — openPdf 가 null 을 돌려줘 안내 문구가 지워지는 일이 없게. 원문이 열리면 두 문구를 함께 지운다
+async function openOriginal() {
+  if (checkingPdf.value) return;
+  const problem = await openPdf({ cntsId: paperId, title: paper.value?.title ?? "" });
+  pdfProblem.value = problem ?? "";
+  if (!problem) bannerPdfProblem.value = "";
+}
+
+// 첫 인용 쪽에서 열고 머리의 "인용 대목 n/N" 으로 대목을 넘겨 본다
+async function openCitedPassages(chunks: readonly ReportChunk[]) {
+  if (checkingPdf.value) return;
+  const problem = await openPdf(citedPdfTarget(paperId, paper.value?.title ?? "", chunks));
+  bannerPdfProblem.value = problem ?? "";
+  if (!problem) pdfProblem.value = "";
 }
 
 async function fetchPaper() {
@@ -589,10 +721,16 @@ async function fetchRelated() {
   relatedItems.value.forEach((rel) => streamRelatedReason(rel.book_id));
 }
 
-async function streamPaperReason() {
-  const query = (route.query.q as string) || "";
+// 기준 질문이 없으면(출처 없음·보고서를 못 읽음) 만들지 않고 소개글을 보인다
+async function streamPaperReason(query: string) {
   if (!query) {
     summaryText.value = paper.value?.introduction || "";
+    return;
+  }
+  const key = summaryCacheKey(paperId, query);
+  const cached = readAiCache(safeSessionStorage(), key);
+  if (cached) {
+    summaryText.value = cached;
     return;
   }
   summaryText.value = "";
@@ -604,9 +742,10 @@ async function streamPaperReason() {
       body: JSON.stringify({ paper_id: paperId, query }),
       signal: pageAbort.signal,
     });
-    await readSSE(resp, (json) => {
+    const finished = await readSSE(resp, (json) => {
       if (json.text) summaryText.value += json.text;
     });
+    if (finished) writeAiCache(safeSessionStorage(), key, summaryText.value);
   } catch {
     /* silent */
   } finally {
@@ -615,6 +754,12 @@ async function streamPaperReason() {
 }
 
 async function streamRelatedReason(relatedId: string) {
+  const key = relatedCacheKey(paperId, relatedId);
+  const cached = readAiCache(safeSessionStorage(), key);
+  if (cached) {
+    relatedReasons.value = { ...relatedReasons.value, [relatedId]: cached };
+    return;
+  }
   relatedReasonLoading.value = new Set([
     ...relatedReasonLoading.value,
     relatedId,
@@ -626,7 +771,7 @@ async function streamRelatedReason(relatedId: string) {
       body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
       signal: pageAbort.signal,
     });
-    await readSSE(resp, (json) => {
+    const finished = await readSSE(resp, (json) => {
       if (json.text) {
         relatedReasons.value = {
           ...relatedReasons.value,
@@ -634,6 +779,7 @@ async function streamRelatedReason(relatedId: string) {
         };
       }
     });
+    if (finished) writeAiCache(safeSessionStorage(), key, relatedReasons.value[relatedId] ?? "");
   } catch {
     /* silent */
   } finally {
@@ -643,7 +789,8 @@ async function streamRelatedReason(relatedId: string) {
   }
 }
 
-async function readSSE(resp: Response, onEvent: (json: any) => void) {
+// [DONE] 까지 받았으면 true — 도중에 끊긴 글은 캐시에 담지 않는다
+async function readSSE(resp: Response, onEvent: (json: any) => void): Promise<boolean> {
   const reader = resp.body!.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -656,7 +803,7 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
     for (const line of lines) {
       if (!line.startsWith("data: ")) continue;
       const raw = line.slice(6).trim();
-      if (raw === "[DONE]") return;
+      if (raw === "[DONE]") return true;
       try {
         onEvent(JSON.parse(raw));
       } catch {
@@ -664,13 +811,159 @@ async function readSSE(resp: Response, onEvent: (json: any) => void) {
       }
     }
   }
+  return false;
 }
 
 onMounted(async () => {
+  // 보고서는 논문과 함께 읽는다 — 보고서에서 온 상세는 AI 요약의 기준 질문이 보고서 질문이다.
+  // 보고서를 받는 동안도 분석 중으로 둔다 — 큰 보고서를 기다리는 사이 "AI 분석 정보가 없습니다"가 먼저 뜨지 않게
+  const research = loadResearch();
+  summaryLoading.value = source.kind === "research";
   await fetchPaper();
   if (route.query.chat === "1") chatOpen.value = true;
-  streamPaperReason();
   fetchRelated();
   nextTick(() => updateVtabSlider());
+  // loadResearch 는 보고서를 못 읽어도 null 로 끝난다 — 그때는 소개글로 넘어간다. 질문이 정해지면 캐시·스트림·소개글이 바로 이어 받는다
+  const question = summaryQuestion(source, await research);
+  summaryLoading.value = false;
+  streamPaperReason(question);
 });
 </script>
+
+<style scoped>
+/* 돌아가기는 링크지만 기존 버튼 모양을 그대로 쓴다 */
+.pd-back {
+  text-decoration: none;
+}
+.pd-back:focus-visible,
+.pd-keyword:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+.pd-keyword {
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.pd-keyword:hover {
+  background: rgba(79, 70, 229, 0.18);
+}
+/* 카드 전체를 제목 링크의 누르는 자리로 덮는다 — 카드에 click 을 걸면 키보드로 갈 수 없다 */
+.pd-rel {
+  position: relative;
+}
+.pd-rel__link {
+  color: inherit;
+  text-decoration: none;
+}
+.pd-rel__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--skx-radius-md);
+}
+.pd-rel__link:focus-visible {
+  outline: none;
+}
+.pd-rel__link:focus-visible::after {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+/* '유사한 점'은 카드에 마우스를 올려야 펼쳐진다(.skx-prelate-card:hover) — 키보드로 카드 링크에 초점이 가도 같이 펼친다 */
+.pd-rel:focus-within .skx-prelate-card__ai {
+  max-height: 12rem;
+  opacity: 1;
+}
+/* 인용 맥락 배너 — 보고서의 인용칩에서 온 상세에만 뜬다. 글과 [인용 대목 보기] 버튼을 한 줄에 둔다 */
+.pd-cite {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  background: rgba(79, 70, 229, 0.05);
+  font-size: 0.75rem;
+  color: var(--skx-ink);
+}
+.pd-cite__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+}
+.pd-cite__text {
+  flex: 1;
+  min-width: 12rem;
+  margin: 0;
+  line-height: 1.5;
+}
+/* KCI 보조 링크가 붙어 좁은 화면에서 버튼 줄이 넘치지 않게 줄을 바꾼다 */
+.skx-pdetail__btns {
+  flex-wrap: wrap;
+}
+/* 원문 파일을 확인하는 동안 — 눌린 것이 보이게 한다(초점을 잃지 않게 disabled 는 쓰지 않는다) */
+.skx-btn-pview-sm[aria-busy="true"],
+.pd-cite__btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.6;
+}
+.pd-cite__btn {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-sm);
+  background: var(--skx-white);
+  color: var(--skx-primary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pd-cite__btn:hover {
+  background: rgba(79, 70, 229, 0.08);
+}
+/* 원문 보기 옆 보조 링크 — 버튼보다 한 단계 낮춰 글자 링크로 둔다 */
+.pd-kci {
+  font-size: 0.7rem;
+  color: var(--skx-gray-1);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  white-space: nowrap;
+}
+.pd-kci:hover {
+  color: var(--skx-primary);
+}
+.pd-cite__btn:focus-visible,
+.pd-kci:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+/* 원문을 열지 못한 까닭 — 누른 자리 아래에 둔다 */
+.pd-pdf-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.7rem;
+  color: #c0392b;
+}
+.pd-pdf-note a {
+  margin-left: 0.3rem;
+  color: var(--skx-primary);
+  text-decoration: underline;
+}
+.pd-research {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding-bottom: 2.4rem;
+}
+.pd-research__draft {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--skx-border-c2);
+  background: rgba(79, 70, 229, 0.05);
+  border-radius: var(--skx-radius-sm);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-keyword {
+    transition: none;
+  }
+}
+</style>

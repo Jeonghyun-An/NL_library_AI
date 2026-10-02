@@ -100,9 +100,11 @@
                 </div>
                 <ReportView
                   :report="shownReport"
+                  :job-id="view.jobId"
                   :generated-at="reportState === 'ready' ? view.finishedAt : null"
                   :draft="draftMode"
                   :highlight-idx="linkedIdx"
+                  :reveal-excluded="revealExcluded"
                   @open-pdf="openPdf"
                   @copy-link="copyLink"
                 >
@@ -133,13 +135,13 @@
           </div>
 
           <aside class="rs-col-side">
-            <ProgressPanel :view="view" :phase="phase" />
+            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" />
           </aside>
         </div>
       </template>
     </main>
 
-    <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" @close="pdf = null" />
+    <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" :passages="pdf.passages" @close="closePdf" />
     <ReportPrint v-if="printDoc" :doc="printDoc" />
 
     <Teleport to="body">
@@ -160,14 +162,15 @@ import ReportPrint from "~/components/research/ReportPrint.vue";
 import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
 import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
-import { apiHeaders, apiUrl } from "~/composables/useApi";
 import { useNow } from "~/composables/useNow";
+import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
+import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { researchPhase } from "~/utils/researchEvents";
-import { pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
+import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   buildReportDocument,
   docInputFromDraft,
@@ -178,13 +181,13 @@ import {
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
+import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 
 const route = useRoute();
 const { view, notFound, loadError, actionError, busy, syncFailed, syncing, load, resync, approve, retry, cancel } =
   useResearchJob(() => String(route.params.id ?? ""));
 const { startResearch } = useResearchStarter();
-const pdfBase = apiUrl("/books");
 
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
 const reportState = computed(() => reportSlot(phase.value, !!view.value?.report, syncFailed.value));
@@ -212,6 +215,18 @@ const draftMode = computed(() => {
 // 최종본이 오면 초안을 그리던 같은 ReportView 에 넘긴다 — 갈아 끼우면 초안 안의 초점·열린 인용 팝오버가
 // 사라지고, 스크롤 기준이던 노드도 없어져 읽던 자리가 튄다
 const shownReport = computed(() => (reportState.value === "ready" ? view.value?.report : draft.value?.report) ?? null);
+
+// ── 상세에서 돌아온 자리 ──────────────────────────────────
+// 보고서는 비동기로 다시 그려 브라우저·Nuxt 의 스크롤 복원이 내용보다 먼저 끝난다 — 맞출 자리(주소의 at·y, 없으면
+// 그 기록의 state)가 있으면 Nuxt 는 맞추지 않고, 누른 칩·항목을 내용이 그려진 뒤 직접 맞춘다. 완료된 연구는 최종본을
+// 받은 뒤에 맞춘다 — 초안 위에서 맞추면 서론·한계가 붙는 순간 자리가 밀린다
+definePageMeta({ scrollToTop: (to) => !holdsReturnSpot(to.query, import.meta.client ? window.history.state : null) });
+const restoreReady = computed(() => !!view.value && !!phase.value && reportState.value !== "loading");
+const restore = useRestorePosition(restoreReady);
+// 맞추는 동안만 알린다 — 다 맞춘 뒤 사용자가 접은 목록을 다시 펼치지 않게
+const revealExcluded = computed(() =>
+  restore.pending.value && restore.anchor?.kind === "excluded" ? restore.anchor.cnts : null,
+);
 
 // ── 배치 A·B ──────────────────────────────────────────────
 // 보고서 자리가 생기면(초안의 첫 절이 나오거나 완료) 2단으로 바뀐다 — 보고서 섹션을 그리는 조건과 같다
@@ -313,26 +328,12 @@ async function copyLink(): Promise<void> {
 }
 
 // ── 원문 보기 ─────────────────────────────────────────────
-const pdf = ref<OpenPdfPayload | null>(null);
-
-// 확인 요청의 HTTP 상태. 요청 자체가 실패하면 null
-async function pdfStatus(cntsId: string): Promise<number | null> {
-  const ctrl = new AbortController();
-  try {
-    const res = await fetch(`${pdfBase}/${encodeURIComponent(cntsId)}/pdf`, { headers: apiHeaders(), signal: ctrl.signal });
-    return res.status;
-  } catch {
-    return null;
-  } finally {
-    // 본문은 필요 없다 — 뷰어가 다시 받는다. 끊지 않으면 PDF 전체를 두 번 내려받는다
-    ctrl.abort();
-  }
-}
+const pdfOpener = usePdfOpener();
+const { pdf, closePdf } = pdfOpener;
 
 async function openPdf(target: OpenPdfPayload): Promise<void> {
-  const problem = pdfCheckProblem(await pdfStatus(target.cntsId));
+  const problem = await pdfOpener.openPdf(target);
   if (problem) showToast(problem);
-  else pdf.value = target;
 }
 
 // ── 내려받기(Word·PDF) ────────────────────────────────────
