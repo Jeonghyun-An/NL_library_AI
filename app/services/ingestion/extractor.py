@@ -153,10 +153,10 @@ class ExtractionResult:
     table_fill_ratios: dict[int, float] = field(default_factory=dict)
     vlm_truncated: int = 0      # finish_reason=length 로 끝난 OCR 쪽 수(꼬리를 걷어 냈거나 퇴화로 버림)
     deadline_hit: bool = False  # 추출 데드라인에 걸려 OCR 을 끝내지 못한 쪽을 ODL 결과로 채택했다
-    # VLM 요청 실패 수(연결·타임아웃·408·429·5xx 등 다시 하면 달라질 수 있는 것) — 퇴화 출력·렌더링 실패·
-    # 거절(ocr_rejected)은 세지 않는다
+    # VLM 요청 실패 수(연결·타임아웃·5xx·400·413·422 밖의 4xx 등 다시 하면 달라질 수 있거나 서버 설정 장애인 것) —
+    # 퇴화 출력·렌더링 실패·거절(ocr_rejected)은 세지 않는다
     ocr_errors: int = 0
-    # VLM 이 거절한 OCR 요청 수(HTTP 4xx, 408·429 제외 — 300 DPI 큰 쪽이 max-model-len 을 넘는 400 등).
+    # VLM 이 이 쪽의 요청을 거절한 수(HTTP 400·413·422 — 300 DPI 큰 쪽이 max-model-len 을 넘는 400 등).
     # 같은 쪽은 다시 보내도 같아 ocr_errors(섹션 0개 재시도 판정)에 넣지 않는다
     ocr_rejected: int = 0
     render_errors: int = 0      # 쪽 이미지 렌더링 실패 수(fitz get_pixmap 예외 — 다시 해도 같다)
@@ -391,12 +391,14 @@ async def _extract_with_surya(
     )
 
 
+# VLM 이 이 쪽의 요청을 받지 않은 상태 코드 — 같은 쪽은 다시 보내도 같다. 401·403·404(모델 이름·경로·키가 틀림)는
+# 서버 전체의 설정 장애라 넣지 않는다 — 넣으면 모든 스캔본이 조용히 no_text 가 된다. 408·429 는 다시 하면 달라진다
+_REJECTED_STATUS = frozenset({400, 413, 422})
+
+
 def _is_rejected(e: Exception) -> bool:
-    """VLM 이 요청 자체를 받지 않았다(HTTP 4xx — 408 Request Timeout·429 과부하는 다시 하면 달라질 수 있어 뺀다)."""
-    if not isinstance(e, httpx.HTTPStatusError):
-        return False
-    code = e.response.status_code
-    return 400 <= code < 500 and code not in (408, 429)
+    """VLM 이 이 쪽의 요청을 거절했다(_REJECTED_STATUS)."""
+    return isinstance(e, httpx.HTTPStatusError) and e.response.status_code in _REJECTED_STATUS
 
 
 async def _ocr_pages(

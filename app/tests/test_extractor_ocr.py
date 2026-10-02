@@ -170,12 +170,14 @@ def _status_error(code: int) -> httpx.HTTPStatusError:
 
 
 @pytest.mark.parametrize("code, rejected", [
-    (400, True), (413, True), (422, True),            # 요청 자체를 받지 않았다 — 같은 쪽은 다시 보내도 같다
+    (400, True), (413, True), (422, True),            # 이 쪽의 요청을 받지 않았다 — 같은 쪽은 다시 보내도 같다
+    # 401·403·404 는 모델 이름·경로·키가 틀린 서버 전체의 설정 장애다 — 거절로 세면 모든 스캔본이 조용히 no_text 가 된다
+    (401, False), (403, False), (404, False),
     (408, False), (429, False), (500, False), (503, False),
 ])
 def test_rejected_requests_are_counted_apart_from_ocr_errors(monkeypatch, code, rejected):
-    """VLM 이 거절한 요청(4xx, 408·429 제외 — 300 DPI 큰 쪽이 max-model-len 을 넘는 400 등)은 ocr_rejected 로 센다.
-    ocr_errors 에 넣으면 그런 쪽뿐인 섹션 0개 문서가 vlm_error 로 세 번 재시도된다."""
+    """VLM 이 이 쪽의 요청을 거절한 것(400·413·422 — 300 DPI 큰 쪽이 max-model-len 을 넘는 400 등)은 ocr_rejected 로
+    센다. ocr_errors 에 넣으면 그런 쪽뿐인 섹션 0개 문서가 vlm_error 로 세 번 재시도된다."""
     async def fake_vlm(page, client, *, prompt_type="ocr", render_lock=None):
         raise _status_error(code)
 
