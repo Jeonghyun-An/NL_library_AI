@@ -27,6 +27,10 @@ DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     # 자기점검이 무관하다고 본 근거를 뺄지(1) 세기만 할지(0). 운영에서 결과가 줄면 재배포 없이 잡 파라미터로
     # 끄고, 끈 잡의 회차 기록 flagged 로 켠 잡과 나란히 비교한다
     "exclude_off_topic": 1,
+    # 자기점검이 무관(off_topic)을 가르는 기준. 0 = 하위질문의 핵심 개념(지금 기준 — 프롬프트·입력 글자 그대로),
+    # 1 = 원 질문의 주제(하위질문에서 벗어났을 뿐 원 질문을 다루는 논문은 빼지 않는다, research_critique_question).
+    # 충분·부족은 두 갈래 모두 하위질문 기준이다. 운영에서 고정 질문을 두 갈래로 돌려 합격하면 기본값을 1 로 바꾼다
+    "critic_scope": 0,
 })
 
 # (타입, 하한, 상한). ResearchCreate.params: dict 가 값 타입을 검증하지
@@ -42,6 +46,7 @@ _PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
     "citation_weight": (float, 0.0, 1.0),
     "min_evidence_per_subq": (int, 0, 50),
     "exclude_off_topic": (int, 0, 1),
+    "critic_scope": (int, 0, 1),
 }
 
 

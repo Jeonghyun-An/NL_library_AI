@@ -271,6 +271,21 @@ class TestCreate:
                                                       "params": {"exclude_off_topic": 2}})
         assert res.status_code == 422
 
+    def test_operator_can_pick_the_critic_criterion_per_job(self, api):
+        # 평가 도구(scripts/research_eval)가 같은 질문을 critic_scope 0·1 두 갈래 잡으로 만든다
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구",
+                                                      "params": {"critic_scope": 1}})
+        assert res.status_code == 200
+        (row,) = api.db.jobs.values()
+        assert row["params"]["critic_scope"] == 1
+        assert row["params"]["exclude_off_topic"] == 1
+
+    def test_critic_scope_other_than_zero_or_one_is_422(self, api):
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구",
+                                                      "params": {"critic_scope": 2}})
+        assert res.status_code == 422
+        assert "허용 범위" in res.json()["detail"]      # 모르는 키가 아니라 값 검사에서 거부
+
 
 class TestApprove:
     def test_approve_sets_status_the_worker_claims(self, api):

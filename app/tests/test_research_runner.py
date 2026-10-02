@@ -33,7 +33,7 @@ class _FakeCritic:
         self.calls = 0
         self.seen: list[list] = []
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.calls += 1
         self.seen.append(evidence)
         return Verdict("insufficient", note="부족", new_queries=[f"다른 검색어 {self.calls}"])
@@ -46,7 +46,7 @@ class _SuggestingCritic:
         self.calls = 0
         self._suggestions = suggestions
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.calls += 1
         return Verdict("insufficient", note="부족", new_queries=list(self._suggestions))
 
@@ -67,7 +67,7 @@ class _ParseFailedCritic:
     def __init__(self):
         self.calls = 0
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.calls += 1
         return Verdict("sufficient", note="자동 점검을 완료하지 못했다", parse_failed=True)
 
@@ -400,7 +400,7 @@ class TestReadTransaction:
         db = _FakeDb()
         commits_at_critic = []
 
-        async def _critic(subq, evidence, *, params):
+        async def _critic(subq, evidence, *, params, question=None):
             commits_at_critic.append(db.commits)
             return Verdict("sufficient", note="충분")
 
@@ -410,6 +410,42 @@ class TestReadTransaction:
             critique_fn=_critic, emit=None,
         ))
         assert commits_at_critic == [1]
+
+
+class TestOriginalQuestion:
+    """러너는 critic 에 원 질문(state.question)을 늘 넘긴다 — 쓸지는 critic 이 잡 파라미터 critic_scope 로 정한다."""
+
+    QUESTION = "독서 격차 연구는 어디까지 왔나"
+
+    def test_critic_receives_the_original_question(self):
+        seen = []
+
+        async def _critic(subq, evidence, *, params, question=None):
+            seen.append(question)
+            return Verdict("sufficient", note="충분")
+
+        st = ResearchState(job_id="j", question=self.QUESTION, params=merge_params({"max_recheck": 0}))
+        asyncio.run(explore_subquestion(st, SubQuestion(idx=0, text="가"), db=None,
+                                        explore_fn=_fake_explore, critique_fn=_critic, emit=None))
+        assert seen == [self.QUESTION]
+
+    @pytest.mark.parametrize(("scope", "first_line"), [
+        (0, "하위질문: 가"), (1, f"원 질문: {QUESTION}"),
+    ], ids=["scope0", "scope1"])
+    def test_job_param_picks_the_prompt(self, monkeypatch, scope, first_line):
+        # 실제 critique 를 거친다 — 러너가 넘긴 원 질문은 critic_scope=1 잡의 프롬프트에만 실린다
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages[1]["content"])
+            return '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []}'
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        st = ResearchState(job_id="j", question=self.QUESTION,
+                           params=merge_params({"max_recheck": 0, "critic_scope": scope}))
+        asyncio.run(explore_subquestion(st, SubQuestion(idx=0, text="가"), db=None,
+                                        explore_fn=_fake_explore, emit=None))
+        assert seen[0].splitlines()[0] == first_line
 
 
 class TestRequery:
@@ -447,7 +483,7 @@ class TestEvidenceOrder:
             def __init__(self):
                 self.calls = 0
 
-            async def __call__(self, subq, evidence, *, params):
+            async def __call__(self, subq, evidence, *, params, question=None):
                 self.calls += 1
                 return Verdict("insufficient", note="시기 편중",
                                new_queries=[f"r{self.calls + 1}"])
@@ -518,7 +554,7 @@ class _CriticWithQueries:
         self._inner = inner
         self._queries = list(queries)
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         await self._inner(subq, evidence, params=params)
         q = self._queries.pop(0) if self._queries else "다른 검색어"
         return Verdict("insufficient", note="부족", new_queries=[q])
@@ -721,7 +757,7 @@ class _ScriptedCritic:
         self._turns = list(turns)
         self.seen: list[list] = []
 
-    async def __call__(self, subq, evidence, *, params):
+    async def __call__(self, subq, evidence, *, params, question=None):
         self.seen.append(evidence)
         verdict, off_topic, queries = self._turns.pop(0)
         return Verdict(verdict, note="점검", new_queries=list(queries), off_topic=list(off_topic))
@@ -1021,7 +1057,7 @@ class TestOffTopicExclusionOff:
             def __init__(self, *turns):
                 self._turns = list(turns)
 
-            async def __call__(self, subq, evidence, *, params):
+            async def __call__(self, subq, evidence, *, params, question=None):
                 verdict, off, queries = self._turns.pop(0)
                 ids = [e.cnts_id for e in evidence]
                 return Verdict(verdict, note="점검", new_queries=list(queries),
@@ -1181,7 +1217,7 @@ class TestSharedChunkScore:
                 self.calls = 0
                 self._new = new_queries
 
-            async def __call__(self, subq, evidence, *, params):
+            async def __call__(self, subq, evidence, *, params, question=None):
                 self.calls += 1
                 if self.calls == 1 and self._new:
                     return Verdict("insufficient", note="부족", new_queries=self._new)

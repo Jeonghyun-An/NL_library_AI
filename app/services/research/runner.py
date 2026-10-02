@@ -250,9 +250,10 @@ async def explore_subquestion(
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
         await emit("counters", research_stats(state))
 
+        # 원 질문은 늘 넘긴다 — 쓸지는 critic 이 잡 파라미터 critic_scope 로 정한다
         verdict = await critique_fn(
             subq, [_as_seen_by(state.evidence[e], subq) for e in subq.evidence_ids],
-            params=params,
+            params=params, question=state.question,
         )
         subq.verdict = verdict.verdict
         subq.note = verdict.note
