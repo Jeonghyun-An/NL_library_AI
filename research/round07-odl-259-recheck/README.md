@@ -14,7 +14,7 @@ fe1be0c). 같은 문서를 두 버전으로 돌려 round07 의 판정이 같은�
   그 버전의 패키지 폴더를 둬 round07 의 `extract_text` 를 그대로 부른다(VLM 은 "OCR_STUB" 로 막는다 — 네트워크
   없음). 자식이 실제로 어느 버전을 import 했는지 워커마다 확인한다(`child_versions_seen`). 쪽 수·쪽 본문·표 충전율·
   OCR 판정과 사유·오류·ODL 시간을 비교해 `compare_summary.json` 에 쓴다. `classify_diffs.py` 가 본문 차이를 종류별로
-  나눈다(`norm.py` 는 비교용 공백 정규화).
+  나눈다(`norm.py` 는 두 판의 CLI `--help` 출력 `first_run/help250.txt`·`help259.txt` 에서 옵션 이름·인자·설명을 뽑아 정렬해 찍는다 — 판 사이 옵션 비교용).
 - 1차는 `compare_driver.py`(코드 = 그때 내보낸 1f4954b 의 app), 2차는 `head_run/compare_driver_head.py` 다 — 1차 드라이버에
   `OLD`(1차 폴더의 두 버전 패키지·pydeps·sample.json) 상수를 더하고 `APP` 을 405eaf5 의 `git archive` 로 바꾼 것뿐이다.
   그래서 `head_run/compare_summary.json` 의 `commit_tested`(1f4954b)와 `notes` 는 1차 드라이버의 상수를 그대로 찍은 것이고,

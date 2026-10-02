@@ -202,6 +202,11 @@ docker exec nl-lib-redis redis-cli LLEN q_llm      # 0 이면 q_llm 에 남은 �
 
 round07(spec `docs/superpowers/specs/2026-10-01-round07-ingest-pipeline-fix-design.md`)은 앱 이미지와 compose 를 함께 바꾼다. `x-common-env` 에 새 설정 12개를 선언하고 추출 stale 판정 기본값을 14400 → 3600초로 줄이며, 제어 큐 `q_control` 은 새 워커 `celery-control`(동시 1, GPU 없음)이 받고 `celery-cpu` 는 `q_cpu` 만 받는다. `x-common-env` 를 물고 있는 앱 서비스가 전부 재생성되므로 적재를 비운 뒤 한 번에 한다(§8, 함정 16번). 아래 명령은 서버의 같은 셸에서 이어 쓴다 — `JOB` 은 본 잡 `kci-full-236k` 이고 `CANARY` 는 9-6 에서 정한다. 셸을 새로 열었으면 `JOB=1ca22f59-1e50-4dd1-81f5-2d3c79126825` 와 `CANARY=$(cat /data/nl-lib/data/round07/canary_job_id.txt)` 를 다시 넣는다.
 
+- **psql 의 `<user>`·`<db>`** 는 postgres 컨테이너 env 에서 읽어 넣는다 — `PGU=$(docker exec nl-lib-postgres printenv POSTGRES_USER); PGD=$(docker exec nl-lib-postgres printenv POSTGRES_DB)` 뒤 `-U "$PGU" -d "$PGD"`. `-U`·`-d` 를 빼면 psql 이 컨테이너 안의 OS 사용자(`docker exec` 기본값 root)로 붙어 `role "root" does not exist` 로 끝난다 — 호스트 셸이 누구든 같다.
+- **root 셸에서 한다.** 파일 자리 `/data/nl-lib/data/round07/` 를 root 로 만들었으면(9-2) 그 아래에 쓰는 명령(`tee`·`>`)도 root 여야 한다 — 2026-10-02 에 `landsoft` 셸에서 `Permission denied` 가 났다. 이 서버는 `sudo` 가 아니라 `su - root` 로 root 셸을 연다. 셸을 바꾸면 `JOB`·`CANARY`·`PGU`·`PGD` 를 다시 넣는다.
+
+> **2026-10-02 에 이 절차로 배포했다** — 카나리 멈춤 0, 실패분 1,084건·빈 본문 832건을 다시 보내고 본 잡을 재개했다. 결과와 겪은 것은 `docs/roadmap/round07-완료노트.md` §5. 남은 확인은 9-9 의 하루 확인, 9-10 의 다음 날 확인, 9-7 ⑬(본 잡이 끝날 무렵)이다.
+
 **배포 규칙**
 
 - **이미지와 compose 를 스택 업데이트 한 번으로 같이 낸다.** compose 만(추출 stale 판정 3600초) 먼저 내지 않는다 — 3600초는 추출 stale 판정이자 추출 단계 문서 락(`BookLock`)의 TTL 이고, 추출이 그 안에 끝난다는 보장(추출 데드라인 2700초)과 넘겼을 때 옛 체인을 멈추는 실행 토큰은 새 코드에만 있다. 새 이미지만 내고 compose 를 그대로 두지도 않는다 — `celery-control` 이 없고, 새 설정을 스택 env 로 바꿀 수 없다(선언이 없다).
@@ -247,7 +252,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -c \
 
 ```bash
 # 개발 PC — 리뷰를 마친 round07 커밋에서(.worktrees/round07). 빌드한 커밋을 적어 둔다
-git rev-parse --short HEAD
+git rev-parse HEAD   # 전체 sha — 9-6 에서 스크립트를 GitHub raw 로 받을 때도 쓴다
 NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
 # 서버가 받기 전에, 빌드한 이미지의 패키지 버전을 본다 — opendataloader-pdf 2.5.9(운영이 적재해 온 버전) · PyMuPDF 1.24.10(app/requirements.txt 고정값)
 docker run --rm --entrypoint pip landsoftdocker/nl-lib-fastapi:latest show opendataloader-pdf PyMuPDF | grep -E '^(Name|Version):'
@@ -308,8 +313,11 @@ fastapi 가 재생성됐다(함정 20번).
 
 ```bash
 docker exec nl-lib-gateway nginx -s reload
+docker inspect --format '{{.State.Health.Status}}' nl-lib-fastapi        # healthy — starting 이면 기동 중이니 기다린다
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:92/health     # 200
 ```
+
+- 재생성 직후에는 fastapi 가 기동 중이라 health 가 502 다(healthcheck `start_period` 120초). 2026-10-02 에는 스택 업데이트 1분 안의 reload 직후 502 였고 healthy 뒤 200 이었다. `healthy` 인데도 502 면 nginx 가 옛 IP 를 물고 있는 것이다 — reload 를 한 번 더 하고, 그래도 502 면 `docker logs --tail 30 nl-lib-fastapi` 를 본다.
 
 ### 9-5. `MILVUS_RECREATE_ON_MISMATCH` 확인
 
@@ -321,7 +329,15 @@ docker exec nl-lib-celery-control printenv MILVUS_RECREATE_ON_MISMATCH     # fal
 
 ### 9-6. 카나리 잡
 
-본 잡은 paused 로 둔다(위 배포 규칙). 개발 PC 의 `scripts/bulk_ingest/` 에서 `build_canary_manifest.py`·`select_near_empty_items.py` 를 서버의 `/data/nl-lib/data/round07/` 로 옮긴다(scp 등 평소 쓰는 방법 — `scripts/` 는 앱 이미지에 없다, 함정 4번).
+본 잡은 paused 로 둔다(위 배포 규칙). 개발 PC 의 `scripts/bulk_ingest/` 에서 `build_canary_manifest.py`·`select_near_empty_items.py` 를 서버의 `/data/nl-lib/data/round07/` 로 옮긴다(scp 등 평소 쓰는 방법 — `scripts/` 는 앱 이미지에 없다, 함정 4번). 옮길 방법이 마땅치 않으면 서버에서 GitHub 의 원본을 **9-2 에서 빌드한 커밋으로 고정해** 받고 해시를 견준다(2026-10-02 에 이렇게 했다). 그 커밋이 GitHub(`origin`)에 push 돼 있어야 받을 수 있다. 브랜치 이름(`dev`)으로 받지 않는다 — 그 뒤에 들어온 커밋의 판이 섞인다.
+
+```bash
+cd /data/nl-lib/data/round07
+B=https://raw.githubusercontent.com/Jeonghyun-An/NL_library_AI/<빌드한 커밋의 전체 sha>/scripts/bulk_ingest
+curl -fsSLO $B/build_canary_manifest.py
+curl -fsSLO $B/select_near_empty_items.py
+sha256sum build_canary_manifest.py select_near_empty_items.py   # 개발 PC 의 git show <커밋>:scripts/bulk_ingest/<파일> | sha256sum 과 같아야 한다
+```
 
 ```bash
 docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round07/build_canary_manifest.py \
@@ -694,6 +710,30 @@ docker exec nl-lib-fastapi curl -s -X POST localhost:8000/api/admin/ingest-jobs/
 ```
 
 9-7 ⑬ 의 OCR 요청 실패 목록은 이것을 보낸 뒤에 만들어 보낸다(⑬ 의 SQL 은 만들 때 `done` 만 고른다 — 순서를 지키면 두 목록이 겹치지 않는다).
+
+다음 날 — 다시 끝난 문서가 본문을 얻었는지 본다(보내기 전에는 모두 쪽당 150자 미만이었다). `dep` 는 배포 시각이라, 그 뒤에 `done` 이 된 것이 다시 끝난 것이다.
+
+```bash
+docker exec -i nl-lib-postgres psql -U <user> -d <db> -v ids="$(cat /data/nl-lib/data/round07/near_empty_retry_done.json)" -v dep="$(cat /data/nl-lib/data/round07/deployed_at.txt)" <<'SQL'
+WITH ids AS (SELECT jsonb_array_elements_text(:'ids'::jsonb -> 'item_ids')::bigint AS id),
+cur AS (
+  SELECT i.status, i.error_group, i.finished_at, i.meta ->> 'extract_method' AS method,
+         CASE WHEN jsonb_typeof(i.meta -> 'pages') = 'number' THEN (i.meta ->> 'pages')::numeric END AS pages,
+         (SELECT coalesce(sum(length(s.full_text)), 0) FROM book_sections s WHERE s.book_id = i.book_id) AS chars
+  FROM ids JOIN ingest_job_items i ON i.id = ids.id
+), redone AS (SELECT * FROM cur WHERE status = 'done' AND finished_at > CAST(:'dep' AS timestamptz))
+SELECT (SELECT count(*) FROM cur) AS total,
+       (SELECT count(*) FROM redone) AS redone,
+       (SELECT count(*) FROM cur WHERE status = 'failed') AS failed,
+       (SELECT count(*) FROM cur WHERE status IN ('pending','dispatched','running')) AS waiting,
+       (SELECT count(*) FROM redone WHERE chars / greatest(pages, 1) >= 150) AS now_150cpp_plus,
+       (SELECT round((percentile_cont(0.5) WITHIN GROUP (ORDER BY chars / greatest(pages, 1)))::numeric, 1) FROM redone) AS cpp_median_after,
+       (SELECT string_agg(m || ' ' || n, ', ') FROM (SELECT coalesce(method, '-') AS m, count(*) AS n FROM redone GROUP BY 1) t) AS methods_after;
+SQL
+```
+
+- `redone` 가운데 `now_150cpp_plus` 가 대부분이고 `methods_after` 가 대개 `vlm` 이면 재처리가 효과를 냈다. `failed` 는 `no_text`(정말 빈 문서)면 괜찮다 — 다른 그룹이면 9-8 처럼 그룹을 본다.
+- `redone` 인데 쪽당 150자 미만으로 남은 문서는 새 코드로도 본문이 적은 문서다 — 다시 보내지 않는다. 선정을 다시 돌려도 `--finished-before` 가 배포 시각이라 이 문서들은 다시 고르지 않는다.
 
 ## 롤백
 
