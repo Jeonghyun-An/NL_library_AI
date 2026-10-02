@@ -7,6 +7,8 @@ from pydantic_settings import BaseSettings
 # 섹션 0개 강제 재추출에 주는 데드라인의 하한(초) — stages.FORCED_OCR_MIN_DEADLINE_SECONDS 와 같은 값이다
 # (config 는 stages 를 import 할 수 없다 — 순환. 같은지는 test_ingest_settings 가 본다)
 FORCED_REEXTRACT_FLOOR_SECONDS = 60
+# llm_client 의 호출 하나는 timeout + 연결(≤10초)까지 걸린다 — PDF 메타 LLM 몫에 더한다
+PDF_META_CONNECT_MARGIN_SECONDS = 10
 
 
 class Settings(BaseSettings):
@@ -150,12 +152,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _extract_deadline_fits_inside_stale_timeout(self) -> "Settings":
-        # 추출은 데드라인에서 스스로 멈추고 섹션 0개 강제 재추출이 하한만큼 더 쓴다 — 그 합이 stale 판정에 닿으면
-        # 끝나기 전에 stale 복구가 토큰을 바꿔 결과를 버린다. 스택 env 가 이 관계를 깨면 기동할 때 멈춘다
-        if self.INGEST_EXTRACT_DEADLINE + FORCED_REEXTRACT_FLOOR_SECONDS >= self.INGEST_STAGE_TIMEOUT_EXTRACT:
+        # 추출은 데드라인에서 스스로 멈추고, 섹션 0개 강제 재추출이 하한만큼, 카탈로그 row 가 없으면 PDF 메타 LLM 이
+        # PDF_META_TIMEOUT + 연결만큼 더 쓴다(메타의 ODL 은 데드라인 안이다) — 그 합이 stale 판정에 닿으면 끝나기
+        # 전에 stale 복구가 토큰을 바꿔 결과를 버린다. 스택 env 가 이 관계를 깨면 기동할 때 멈춘다
+        worst = (self.INGEST_EXTRACT_DEADLINE + FORCED_REEXTRACT_FLOOR_SECONDS
+                 + self.PDF_META_TIMEOUT + PDF_META_CONNECT_MARGIN_SECONDS)
+        if worst >= self.INGEST_STAGE_TIMEOUT_EXTRACT:
             raise ValueError(
                 f"INGEST_EXTRACT_DEADLINE({self.INGEST_EXTRACT_DEADLINE}) + 강제 재추출 하한"
-                f"({FORCED_REEXTRACT_FLOOR_SECONDS}) 이 INGEST_STAGE_TIMEOUT_EXTRACT"
+                f"({FORCED_REEXTRACT_FLOOR_SECONDS}) + PDF_META_TIMEOUT({self.PDF_META_TIMEOUT}) + 연결 여유"
+                f"({PDF_META_CONNECT_MARGIN_SECONDS}) = {worst} 이 INGEST_STAGE_TIMEOUT_EXTRACT"
                 f"({self.INGEST_STAGE_TIMEOUT_EXTRACT}) 보다 짧아야 한다"
             )
         return self

@@ -90,14 +90,17 @@ def test_extract_deadline_ends_before_stale_timeout(monkeypatch):
 
 
 @pytest.mark.parametrize("env, ok", [
-    ({"INGEST_EXTRACT_DEADLINE": "3539"}, True),                        # 3539 + 60 < 3600
-    ({"INGEST_EXTRACT_DEADLINE": "3540"}, False),                       # 3540 + 60 = 3600 — stale 판정에 닿는다
+    ({}, True),                                                         # 기본값 2700 + 60 + 60 + 10 = 2830 < 3600
+    ({"INGEST_EXTRACT_DEADLINE": "3469"}, True),                        # 3469 + 130 < 3600
+    ({"INGEST_EXTRACT_DEADLINE": "3470"}, False),                       # 3470 + 130 = 3600 — stale 판정에 닿는다
     ({"INGEST_STAGE_TIMEOUT_EXTRACT": "1800"}, False),                  # 스택 env 로 stale 판정만 줄였다
+    ({"PDF_META_TIMEOUT": "900"}, False),                               # 메타 LLM 몫이 커졌다 — 2700 + 60 + 900 + 10
     ({"INGEST_EXTRACT_DEADLINE": "1000", "INGEST_STAGE_TIMEOUT_EXTRACT": "1800"}, True),
 ])
 def test_settings_refuse_an_extract_deadline_that_reaches_the_stale_timeout(monkeypatch, env, ok):
     """스택 env 가 이 관계를 깨면 ODL_IMAGE_OUTPUT 의 Literal 처럼 기동할 때 멈춘다 — 추출 데드라인 + 강제 재추출 하한
-    60초가 stale 판정(INGEST_STAGE_TIMEOUT_EXTRACT)에 닿으면 끝나기 전에 stale 복구가 결과를 버린다."""
+    60초 + 카탈로그 row 가 없을 때의 PDF 메타 LLM(PDF_META_TIMEOUT + 연결 10초)이 stale 판정
+    (INGEST_STAGE_TIMEOUT_EXTRACT)에 닿으면 끝나기 전에 stale 복구가 결과를 버린다."""
     import core.config as config_mod
     from pydantic import ValidationError
 
@@ -125,16 +128,17 @@ def _compose_default(env: dict, key: str, fallback: int) -> int:
     ("docker-compose.dev.yml", "x-common-env-dev"),
 ])
 def test_both_compose_files_keep_the_extract_deadline_below_stale_timeout(monkeypatch, compose_file, anchor):
-    # 섹션 0개 강제 재추출이 하한(stages.FORCED_OCR_MIN_DEADLINE_SECONDS)을 더 쓴다 — 그것까지 stale 판정 아래여야
-    # 끝나기 전에 stale 복구가 토큰을 바꿔 결과를 버리지 않는다
+    # 섹션 0개 강제 재추출이 하한(stages.FORCED_OCR_MIN_DEADLINE_SECONDS)을, PDF 메타 LLM 이 PDF_META_TIMEOUT + 연결
+    # 10초를 더 쓴다 — 그것까지 stale 판정 아래여야 끝나기 전에 stale 복구가 토큰을 바꿔 결과를 버리지 않는다
     from services.ingestion import stages
 
     s = _fresh_settings(monkeypatch)
     env = yaml.safe_load((COMPOSE.parent / compose_file).read_text(encoding="utf-8"))[anchor]
     deadline = _compose_default(env, "INGEST_EXTRACT_DEADLINE", s.INGEST_EXTRACT_DEADLINE)
     stale = _compose_default(env, "INGEST_STAGE_TIMEOUT_EXTRACT", s.INGEST_STAGE_TIMEOUT_EXTRACT)
+    meta = _compose_default(env, "PDF_META_TIMEOUT", s.PDF_META_TIMEOUT)
     assert deadline < stale
-    assert deadline + stages.FORCED_OCR_MIN_DEADLINE_SECONDS < stale
+    assert deadline + stages.FORCED_OCR_MIN_DEADLINE_SECONDS + meta + 10 < stale
 
 
 def test_common_env_declares_round07_keys_with_config_defaults():
