@@ -28,7 +28,8 @@ import uuid
 
 from celery import chain
 from celery.exceptions import Ignore
-from sqlalchemy import and_, or_, true
+from sqlalchemy import ColumnElement, and_, or_, true
+from sqlalchemy.orm import Session
 
 from core.config import get_settings
 from core.lock import BookLock
@@ -99,7 +100,9 @@ def classify_error(exc: BaseException) -> str:
 # ── 단계 태스크 공통 래퍼 ─────────────────────────────────────
 
 
-def _skip_reason(stage_name: str, item, job, run_token: str | None) -> str | None:
+def _skip_reason(
+    stage_name: str, item: IngestJobItem | None, job: IngestJob | None, run_token: str | None,
+) -> str | None:
     """이 단계 메시지를 실행하지 않을 이유. 이유가 있으면 _run_stage 가 체인을 멈춘다."""
     if item is None:
         return "아이템 없음"
@@ -336,7 +339,7 @@ _STAGE_TASKS = {
 }
 
 
-def build_item_chain(item_stage: str, item_id: int, run_token: str | None = None):
+def build_item_chain(item_stage: str, item_id: int, run_token: str | None = None) -> "chain | None":
     """체크포인트 기준 남은 단계 체인 구성. 남은 단계 없으면 None.
 
     모든 단계에 같은 실행 토큰을 싣는다 — 단계 래퍼가 아이템의 현재 토큰과 대조해 옛 체인을 멈춘다.
@@ -381,7 +384,7 @@ def _parse_iso(value) -> _dt.datetime | None:
         return None
 
 
-def _stale_window(item) -> tuple[int, _dt.datetime | None, str]:
+def _stale_window(item: IngestJobItem) -> tuple[int, _dt.datetime | None, str]:
     """(타임아웃 초, 재기 시작한 시각, 설명) — 실행 중인 단계와 큐 대기를 나눠 잰다."""
     meta = item.meta or {}
     running = meta.get("stage_running") if item.status == "running" else None
@@ -392,7 +395,7 @@ def _stale_window(item) -> tuple[int, _dt.datetime | None, str]:
     return DISPATCH_STALE_SECONDS, item.updated_at or item.dispatched_at or item.created_at, what
 
 
-def _recover_stale(db, job) -> int:
+def _recover_stale(db: Session, job: IngestJob) -> int:
     """워커 사망 등으로 멈춘 아이템 → failed(stale) 전이 (자동 재시도 대상이 됨).
 
     실행 중인 단계(meta.stage_running)는 그 단계 타임아웃을 단계 시작 시각부터 잰다. 디스패치된
@@ -469,7 +472,7 @@ def _retry_backoff_steps() -> list[int]:
     return list(_parse_retry_backoff(str(cfg.INGEST_RETRY_BACKOFF_SECONDS or "")))
 
 
-def _retry_ready(now: _dt.datetime):
+def _retry_ready(now: _dt.datetime) -> ColumnElement[bool]:
     """failed 아이템 가운데 백오프가 지난 것 — attempt 번째 실패 뒤 steps[attempt-1] 초를
     updated_at(실패를 기록한 시각)부터 기다린다. 값이 모자라면 마지막 값을 되풀이한다."""
     steps = _retry_backoff_steps()
@@ -482,7 +485,7 @@ def _retry_ready(now: _dt.datetime):
     return or_(*conds)
 
 
-def _needs_reextract(item) -> bool:
+def _needs_reextract(item: IngestJobItem) -> bool:
     """자동 재시도를 추출부터 다시 해야 하는 실패인가.
 
     vlm_error: OCR 이 VLM 장애로 실패했다 — 추출을 다시 해야 본문이 생긴다.
@@ -494,7 +497,7 @@ def _needs_reextract(item) -> bool:
     return item.error_group == "not_found" and "섹션 없음" in (item.last_error or "")
 
 
-def _dispatch_for_job(db, job) -> int:
+def _dispatch_for_job(db: Session, job: IngestJob) -> int:
     params = dict(job.params or {})
     high_water = int(params.get("high_water") or cfg.INGEST_HIGH_WATER)
     max_attempts = int(params.get("max_attempts") or cfg.INGEST_MAX_ATTEMPTS)

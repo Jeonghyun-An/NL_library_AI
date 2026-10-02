@@ -15,7 +15,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
-from sqlalchemy import func, literal_column, select, update
+from sqlalchemy import Select, func, literal_column, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import get_settings
@@ -107,7 +107,7 @@ def compute_eta(remaining: int, done_last_24h: int, status: str) -> float | None
     return round(remaining * 24 / done_last_24h, 1)
 
 
-def _done_counts(job_id: str, since_1h: _dt.datetime, since_24h: _dt.datetime):
+def _done_counts(job_id: str, since_1h: _dt.datetime, since_24h: _dt.datetime) -> Select:
     """최근 1시간·24시간에 끝난 done 건수 — done 행을 한 번만 훑어 두 칸(1h, 24h)으로 센다."""
     return select(
         func.count().filter(IngestJobItem.finished_at >= since_1h).label("done_1h"),
@@ -118,7 +118,7 @@ def _done_counts(job_id: str, since_1h: _dt.datetime, since_24h: _dt.datetime):
     )
 
 
-def _permanently_failed(job_id: str, max_attempts: int):
+def _permanently_failed(job_id: str, max_attempts: int) -> Select:
     """자동 재시도 한도에 닿은 failed — 디스패처가 다시 집지 않는다(수동 retry 전까지)."""
     return select(func.count()).where(
         IngestJobItem.job_id == job_id,
@@ -297,7 +297,7 @@ async def list_items(
 
 
 # ── 실패 그룹 집계 ────────────────────────────────────────────
-def _failure_groups(job_id: str):
+def _failure_groups(job_id: str) -> Select:
     # 대표 메시지는 그룹 안에서 가장 흔한 것(mode). max() 는 사전순 최댓값이라
     # not_found 545건('섹션 없음')이 15건뿐인 '카탈로그 row 없음'으로 보였다.
     return (

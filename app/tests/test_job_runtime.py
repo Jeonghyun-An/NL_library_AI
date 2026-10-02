@@ -636,6 +636,12 @@ class TestTasksAndChain:
         assert all(s.args == (9, "tok") for s in sig.sigs)
         assert rt.build_item_chain("finalized", 9, "tok") is None
 
+    def test_stage_tasks_ack_late(self, monkeypatch):
+        # 워커가 받은 채 죽으면 메시지가 재전달돼야 한다(visibility_timeout 뒤) — stale 복구·토큰이 그 재전달을 전제로 한다
+        rt = _load_runtime(monkeypatch, [])
+        for name in ("stage_extract", "stage_summarize", "stage_embed_index", "stage_finalize"):
+            assert getattr(rt, name).options.get("acks_late") is True, name
+
     def test_stage_tasks_pass_token_and_accept_old_messages(self, monkeypatch):
         rt = _load_runtime(monkeypatch, [])
         seen = []
