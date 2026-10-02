@@ -1,6 +1,6 @@
 # round07 — 적재 파이프라인 보강 (설계)
 
-- 상태: 설계 승인(2026-10-01, 사용자 "일단 pause 해둘테니깐 전수 바꾸자") · 구현·리뷰 마무리(2026-10-02), 배포 대기 — 사용자가 `docs/ops/bulk_ingest_runbook.md` §9 로 배포
+- 상태: 설계 승인(2026-10-01, 사용자 "일단 pause 해둘테니깐 전수 바꾸자") · 구현·리뷰 마무리(2026-10-02) · `dev` 머지 `18e2c58`·운영 배포·카나리 통과·본 잡 재개(2026-10-02, `docs/ops/bulk_ingest_runbook.md` §9) — 기록은 `docs/roadmap/round07-완료노트.md`
 - 브랜치: `feat/round07-ingest-pipeline-fix` (dev 9798f46 에서 분기, worktree `.worktrees/round07`)
 - 결정: 재처리 = 실패분 + 빈 본문 완료분만 배포 직후 / 배포 = 한 번에 + 문제 유형별 카나리 잡 → 본 잡 재개
 - 대상 잡: `kci-full-236k` (id `1ca22f59-1e50-4dd1-81f5-2d3c79126825`, params `{"reembed": true}`)
