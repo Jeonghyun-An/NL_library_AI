@@ -102,3 +102,45 @@ async def subscribe(
         await pubsub.unsubscribe(channel(job_id))
         await pubsub.aclose()
         await client.aclose()
+
+
+# ── 이어간 연구(research_works)의 채널 ─────────────────────────────────────
+# 연구 id 는 출발 딥리서치 잡 id 와 같다. 잡 채널과 섞이면 딥리서치 화면이 생성 이벤트를 받으므로
+# 이름을 따로 둔다. 보내는 방식(호출마다 클라이언트·소켓 타임아웃·실패 삼킴)과 받는 방식(유휴 None)은
+# 위 publish·subscribe 와 같다.
+def work_channel(work_id: uuid.UUID | str) -> str:
+    return f"research:work:{work_id}"
+
+
+async def publish_work(work_id: uuid.UUID | str, kind: str, payload: dict) -> None:
+    cfg = get_settings()
+    try:
+        client = aioredis.from_url(_with_timeouts(cfg.REDIS_URL))
+        try:
+            await client.publish(
+                work_channel(work_id), json.dumps({"kind": kind, **payload}, ensure_ascii=False)
+            )
+        finally:
+            await client.aclose()
+    except Exception as e:
+        log.warning("[research:relay] publish_work 실패 work=%s kind=%s: %s", work_id, kind, e)
+
+
+async def subscribe_work(
+    work_id: uuid.UUID | str, *, idle_timeout: float = 15.0,
+) -> AsyncIterator[dict | None]:
+    """이벤트 dict 를 yield 하고, 유휴 구간에서는 None 을 yield 한다(subscribe 와 같다)."""
+    cfg = get_settings()
+    client = aioredis.from_url(cfg.REDIS_URL)
+    pubsub = client.pubsub()
+    await pubsub.subscribe(work_channel(work_id))
+    try:
+        while True:
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True, timeout=idle_timeout,
+            )
+            yield json.loads(message["data"]) if message else None
+    finally:
+        await pubsub.unsubscribe(work_channel(work_id))
+        await pubsub.aclose()
+        await client.aclose()
