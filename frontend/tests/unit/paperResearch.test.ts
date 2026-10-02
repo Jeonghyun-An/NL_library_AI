@@ -1,5 +1,6 @@
 // frontend/tests/unit/paperResearch.test.ts
 import { describe, expect, it } from "vitest";
+import { parseQuery } from "vue-router";
 import { paperResearchQuestion, paperResearchUrl, readResearchDraft } from "~/utils/paperResearch";
 import { questionProblem } from "~/utils/researchInput";
 
@@ -16,6 +17,12 @@ describe("paperResearchQuestion", () => {
     );
   });
 
+  it("키워드 안의 줄바꿈·겹친 공백도 제목처럼 한 칸으로 줄인다", () => {
+    const q = paperResearchQuestion("제목", ["SNS\n 이용", "  우울 \t척도 "]);
+    expect(q).toContain("SNS 이용·우울 척도 관련");
+    expect(q).not.toMatch(/[\n\t]/);
+  });
+
   it("제목이 없으면 초안을 만들지 않는다", () => {
     expect(paperResearchQuestion("  ", ["키워드"])).toBe("");
   });
@@ -26,6 +33,18 @@ describe("paperResearchQuestion", () => {
     expect(q).toContain(`${"나".repeat(30)}…·`);
     expect(questionProblem(q)).toBeNull();
   });
+
+  it("정확히 한도인 제목·키워드는 자르지 않는다", () => {
+    const q = paperResearchQuestion("가".repeat(120), ["나".repeat(30)]);
+    expect(q).toContain(`「${"가".repeat(120)}」`);
+    expect(q).toContain(`${"나".repeat(30)} 관련`);
+    expect(q).not.toContain("…");
+  });
+
+  it("코드포인트로 세어 자르므로 이모지가 반쪽으로 잘리지 않는다", () => {
+    const q = paperResearchQuestion("😀".repeat(121), []);
+    expect(q.match(/「(.*)」/u)?.[1]).toBe(`${"😀".repeat(120)}…`);
+  });
 });
 
 describe("paperResearchUrl · readResearchDraft", () => {
@@ -34,6 +53,12 @@ describe("paperResearchUrl · readResearchDraft", () => {
     const url = new URL(paperResearchUrl(q), "http://x");
     expect(url.pathname).toBe("/papers");
     expect(readResearchDraft(Object.fromEntries(url.searchParams))).toBe(q);
+  });
+
+  it("라우터의 쿼리 해석을 거쳐도 특수문자·이모지가 그대로 돌아온다", () => {
+    const q = paperResearchQuestion("C++ A+B 50% #1 & 😀", ["키워드"]);
+    const url = paperResearchUrl(q);
+    expect(readResearchDraft(parseQuery(url.split("?")[1] ?? ""))).toBe(q);
   });
 
   it("없거나 빈 값이면 null, 배열이면 첫 값", () => {

@@ -1,6 +1,6 @@
 // frontend/utils/historyRoute.ts
 import type { HistoryEntry, HistoryKind } from "~/types/history";
-import { isUuid, readDetailSource } from "~/utils/detailSource";
+import { firstValue, isUuid, readDetailSource } from "~/utils/detailSource";
 
 export interface HistoryRoute {
   path: string;
@@ -14,11 +14,6 @@ export interface HistoryQuery {
 }
 
 const V1_ID = /^\d{10,16}$/;
-
-function first(v: unknown): string | undefined {
-  const s = Array.isArray(v) ? v[0] : v;
-  return typeof s === "string" && s.trim() ? s.trim() : undefined;
-}
 
 export function routeFor(entry: HistoryEntry): HistoryRoute {
   if (entry.kind === "research") return { path: `/research/${entry.refId || entry.id}` };
@@ -34,19 +29,19 @@ export function readHistoryQuery(
   v1Map: Record<string, string> = {},
 ): HistoryQuery {
   const out: HistoryQuery = {};
-  const raw = first(query.h) ?? first(query.restore);
+  const raw = firstValue(query.h) ?? firstValue(query.restore);
   if (raw && isUuid(raw)) out.h = raw.toLowerCase();
   else if (raw && V1_ID.test(raw) && v1Map[raw]) out.h = v1Map[raw];
-  const q = first(query.q);
+  const q = firstValue(query.q);
   if (q) out.q = q;
-  const grade = first(query.grade);
+  const grade = firstValue(query.grade);
   if (grade) out.grade = grade;
   return out;
 }
 
 // 업그레이드 뒤 첫 로드에서는 v1 이전이 서버 응답을 받아야 대응표가 생긴다 — 그 전에 푼 옛 주소는 랜딩으로 빠진다
 export function awaitsV1Map(query: Record<string, unknown>, v1Map: Record<string, string> = {}): boolean {
-  const raw = first(query.h) ?? first(query.restore);
+  const raw = firstValue(query.h) ?? firstValue(query.restore);
   return !!raw && V1_ID.test(raw) && !v1Map[raw];
 }
 

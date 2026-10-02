@@ -1,12 +1,13 @@
 // frontend/utils/paperResearch.ts
 // 논문 상세의 [이 논문으로 딥리서치] — 제목·키워드로 질문 초안을 만들어 논문 검색 입력창으로 넘긴다
+import { firstValue } from "~/utils/detailSource";
 
 // 부제까지 붙은 긴 제목이나 문장형 키워드가 질문을 다 차지하지 않게 자른다(서버 한도 QUESTION_MAX 500자 안쪽)
 const TITLE_MAX = 120;
 const KEYWORD_MAX = 30;
 const KEYWORDS = 3;
 
-// 파이썬 len 과 같게 코드포인트로 센다(researchInput 과 같은 이유)
+// 코드포인트로 센다 — UTF-16 단위로 자르면 이모지 같은 보충 문자가 반쪽으로 잘린다
 function clip(text: string, max: number): string {
   const chars = [...text];
   return chars.length > max ? `${chars.slice(0, max).join("")}…` : text;
@@ -17,7 +18,7 @@ export function paperResearchQuestion(title: string, keywords: readonly string[]
   const name = title.trim().replace(/\s+/g, " ");
   if (!name) return "";
   const picked = keywords
-    .map((k) => k.trim())
+    .map((k) => k.trim().replace(/\s+/g, " "))
     .filter(Boolean)
     .slice(0, KEYWORDS)
     .map((k) => clip(k, KEYWORD_MAX));
@@ -31,6 +32,5 @@ export function paperResearchUrl(question: string): string {
 
 // /papers 가 받는 질문 초안(?draft=). 없거나 빈 값이면 null
 export function readResearchDraft(query: Record<string, unknown>): string | null {
-  const raw = Array.isArray(query.draft) ? query.draft[0] : query.draft;
-  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  return firstValue(query.draft) ?? null;
 }

@@ -889,13 +889,14 @@ function goLanding() {
 }
 
 // 논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안(?draft=) — 검색하지 않고 랜딩 입력창에 딥리서치 칩을
-// 켠 채 채운다. 주소에서는 지운다: 남겨 두면 새로고침·뒤로 가기로 올 때마다 고쳐 쓰던 글을 초안이 다시 덮는다
+// 켠 채 채운다. 주소에서는 draft 만 지운다: 남겨 두면 새로고침·뒤로 가기로 올 때마다 고쳐 쓰던 글을 초안이 다시 덮는다
 const plusMenu = ref<{ activateMode: (id: SearchModeId) => void } | null>(null);
 
 function fillResearchDraft() {
   const draft = readResearchDraft(route.query);
   if (!draft) return;
-  router.replace({ query: {} });
+  const { draft: _draft, ...rest } = route.query;
+  router.replace({ query: rest });
   currentQuery.value = draft;
   // 입력창 값이 바뀐 뒤에 켜야 초점이 글 끝에 간다
   nextTick(() => plusMenu.value?.activateMode("deep-research"));

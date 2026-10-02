@@ -405,7 +405,7 @@
             </h2>
             <p class="pd-research__draft">{{ researchQuestion }}</p>
             <NuxtLink :to="paperResearchUrl(researchQuestion)" class="skx-btn-pview-sm">
-              입력창에서 고쳐 쓰고 시작하기
+              <span class="skx-sr-only">딥리서치 질문을 </span>입력창에서 고쳐 쓰고 시작하기
             </NuxtLink>
           </section>
         </template>

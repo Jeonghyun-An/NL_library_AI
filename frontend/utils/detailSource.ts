@@ -43,7 +43,7 @@ const ITEM_ANCHOR = /^([xp])-([A-Za-z0-9_.-]{1,64})$/;
 // 주소 비교용 기준 — 경로와 쿼리만 본다
 const BASE = "http://local";
 
-function firstValue(v: unknown): string | undefined {
+export function firstValue(v: unknown): string | undefined {
   const s = Array.isArray(v) ? v[0] : v;
   return typeof s === "string" && s.trim() ? s.trim() : undefined;
 }
