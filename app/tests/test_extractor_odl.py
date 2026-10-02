@@ -440,6 +440,8 @@ def test_empty_heap_cap_leaves_java_options_alone(monkeypatch, tmp_path):
     monkeypatch.setattr(extractor.cfg, "ODL_JAVA_MAX_HEAP", "")
     monkeypatch.delenv("JAVA_TOOL_OPTIONS", raising=False)
     assert _child_java_tool_options(monkeypatch, tmp_path) is None
+    monkeypatch.setenv("JAVA_TOOL_OPTIONS", "-Dfile.encoding=UTF-8")
+    assert _child_java_tool_options(monkeypatch, tmp_path) == "-Dfile.encoding=UTF-8"
 
 
 @pytest.mark.skipif(not hasattr(signal, "alarm"), reason="signal.alarm·killpg 가 없다(Windows 개발 PC)")
@@ -520,3 +522,32 @@ def test_header_from_json_is_stripped_once_entities_are_restored(monkeypatch):
     _patch_convert(monkeypatch, [({1: "R&amp;D &lt;정책&gt; 연구\n본문 첫 줄"}, kids)])
     result = _run(_pdf(["a"]))
     assert result.pages[0].text == "본문 첫 줄"
+
+
+def test_entities_are_restored_after_splitting_pages(monkeypatch):
+    # 본문에 이스케이프된 채 있는 구분자 모양 글자는 쪽을 나누지 않는다 — 나눈 뒤에 되돌린다
+    _patch_convert(monkeypatch, [{1: "앞\n&lt;&lt;&lt;ODL_PAGE_BREAK_9&gt;&gt;&gt;\n뒤"}])
+    result = _run(_pdf(["a"]))
+    assert [p.page_num for p in result.pages] == [0]
+    assert result.pages[0].text == "앞\n<<<ODL_PAGE_BREAK_9>>>\n뒤"
+
+
+def test_text_before_the_first_separator_is_restored_too(monkeypatch):
+    """첫 구분자 앞 글(parts[0], 1쪽으로 본다)도 같은 되돌리기를 탄다."""
+    async def fake_convert(kwargs, timeout):
+        md = "첫 쪽 A &amp; B" + SEP.replace("%page-number%", "2") + "둘째 &lt;쪽&gt;"
+        Path(kwargs["output_dir"], "doc.md").write_text(md, encoding="utf-8")
+        Path(kwargs["output_dir"], "doc.json").write_text(json.dumps({"kids": []}), encoding="utf-8")
+
+    monkeypatch.setattr(extractor, "_odl_convert", fake_convert)
+    result = _run(_pdf(["a", "b"]))
+    assert [(p.page_num, p.text) for p in result.pages] == [(0, "첫 쪽 A & B"), (1, "둘째 <쪽>")]
+
+
+def test_restoring_assumes_the_pinned_odl_version():
+    """되돌리기는 조건 없이 돈다 — 이스케이프하지 않는 버전(2.5.0 이하)이면 원문에 글자 그대로 있던 '&amp;' 를 잘못
+    푼다. 버전을 바꾸면 markdown 이스케이프(#637, MarkdownGenerator)가 그대로인지 확인하고 이 테스트를 고친다."""
+    requirements = Path(extractor.__file__).resolve().parents[2] / "requirements.txt"
+    pins = [line.split("#")[0].strip() for line in requirements.read_text(encoding="utf-8").splitlines()
+            if line.strip().lower().startswith("opendataloader-pdf")]
+    assert pins == ["opendataloader-pdf==2.5.9"]
