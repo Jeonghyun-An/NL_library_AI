@@ -12258,13 +12258,15 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add research
 **Files:**
 - Modify: `docs/roadmap/00_status.md` (3행 최종 갱신, 22행 round06 상태 줄, 39행 다음 할 일 round06 줄, 64행 라운드 이력 round06 줄)
 - Modify(배포 뒤, Step 15): `docs/ops/recurring-gotchas.md` (126행 — 14번 '현재 서버')
-- Modify(판정 합격 때만, Step 14): `app/services/research/state.py` (`DEFAULT_PARAMS` 의 `critic_scope` 줄과 그 위 주석 한 줄 — Task 2 가 넣은 줄)
-- Modify(판정 합격 때만, Step 14): `app/tests/test_research_state.py` (`TestMergeParams.test_critic_scope_is_the_current_criterion_by_default` — Task 2), `app/tests/test_research_critic.py` (`TestCriticScope.test_scope_zero_sends_the_current_prompt_verbatim` 의 매개변수 — Task 2)
-- Create(배포 뒤, Step 15): `scripts/research_eval/labels/<질문키>.csv` 5개, `research/round06-qwen-check/out/<질문키>.md` 5개
+- Modify(판정 합격 때만, Step 14 — dev 에서 분기한 작은 브랜치 `fix/round06a-critic-scope-on`): `app/services/research/state.py` (`DEFAULT_PARAMS` 의 `critic_scope` 줄과 그 위 주석 한 줄 — Task 2 가 넣은 줄)
+- Modify(판정 합격 때만, Step 14 — 같은 브랜치): `app/tests/test_research_state.py` (`TestMergeParams.test_critic_scope_is_the_current_criterion_by_default` — Task 2), `app/tests/test_research_critic.py` (`TestCriticScope.test_scope_zero_sends_the_current_prompt_verbatim` 의 매개변수 — Task 2)
+- Create(배포 뒤, Step 15 — dev 에서 분기한 기록 브랜치): `scripts/research_eval/labels/<질문키>.csv` 5개, `research/round06-qwen-check/out/<질문키>.md` 5개
 - Modify(배포 뒤, Step 15): `research/round06-qwen-check/README.md` (결과 표·결정 줄)
+- Modify(Step 12 앞에서 고정 질문을 바꿨을 때만, Step 15): `scripts/research_eval/questions.json`
 
 **알아 둘 것:**
 - 기존 문서는 **Edit 도구로** 고친다. 이 worktree 의 문서는 CRLF 다(`core.autocrlf=true`) — Edit 도구는 원래 줄바꿈을 지킨다.
+- **순서(사용자 결정 2026-10-03):** 최종 리뷰 → dev 머지(사용자 승인) → dev 코드로 빌드·배포 → 운영 확인 → critic 두 갈래 판정 → (합격 때만) `critic_scope` 기본값을 1 로 바꾸는 작은 브랜치(dev 에서 분기)·dev 머지(사용자 승인)·재배포. 처음 계획(06a 브랜치로 배포 → 판정 → dev 머지)을 바꾼 까닭은 Step 4.
 - `00_status.md` 는 round06 에 관한 줄만 고친다. round07 등 다른 라운드 줄은 다른 세션이 고친다(dev 머지 때 충돌을 줄인다).
 - 배포 순서의 까닭: ① 워커가 먼저다 — 새 fastapi 는 새 잡의 `params` 에 `critic_scope` 를 합쳐 저장하는데 옛 워커의 `merge_params` 는 모르는 키를 거부해 그 잡이 계획 단계에서 실패한다(round04c `exclude_off_topic` 때와 같다, 교본 round04c 3-4). 새 API 가 보내는 `tasks.dispatch_research_work` 도 새 `celery-research-plan` 만 안다. ② 회수기(`reap_stale_research`)가 바뀌었으므로 `celery-control` 도 Recreate 한다(spec §9 — 06a 필수). ③ 적재 워커(`celery-worker`·`celery-cpu`·`celery-llm`·`celery-embed`)와 `celery-beat` 는 Recreate 하지 않는다 — 스택 업데이트를 하지 않는다(함정 16번, beat 일정은 그대로). ④ fastapi·nuxt 를 Recreate 했으니 마지막에 게이트웨이 reload(함정 20번).
 - 스키마는 lifespan 의 `create_all` 이 새 테이블 7개를 만들고 `alembic stamp 0007_research_work` 로 버전만 맞춘다(함정 14번 ③ — `upgrade` 하지 않는다). 기존 테이블에 ALTER 가 없다.
@@ -12285,7 +12287,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add research
 최종 갱신: 2026-10-09 (round06a — 연구 어시스턴트 기반·딥리서치 품질 보강 구현 완료, 운영 배포·critic 두 갈래 판정 대기. round05a `dev` 머지(`f293e0e`)·운영 배포(`nl-lib-nuxt`) — `main` 머지와 push 는 라운드 종료 승인 뒤 `/round-finish` 에서. round04b·round04c 종료, round07b `dev` 머지, round07 구현·리뷰 마무리·배포 대기)
 ```
 
-3행은 모든 라운드가 함께 고치는 줄이라 위 '교체 후' 의 round06a 밖 구절은 이 브랜치가 갈라질 때(`124c481`)의 글이다. dev 는 그 뒤 이 줄을 이미 고쳤다(예: `ce8a404` 의 'round05a 종료 — … `dev→main` 머지와 `origin` push …'). 그래서 dev 머지 때 3행이 충돌하면 어느 한쪽을 통째로 고르지 않는다 — **dev 쪽 줄을 바탕으로** 날짜를 머지하는 날로 바꾸고, 괄호 안 맨 앞에 `round06a — 연구 어시스턴트 기반·딥리서치 품질 보강 구현 완료, 운영 배포·critic 두 갈래 판정 대기. ` 를 넣고(배포·판정을 마쳤으면 그 결과로), 끝의 `, round06 기획 중단` 만 지운다. 이 브랜치를 dev 위로 다시 얹은 뒤 이 단계를 하면 교체 전 블록이 맞지 않는다 — 그때도 같은 방법으로 지금 3행에서 고친다. 22·39·64행도 dev 머지 때 충돌한다 — round06 줄은 이 브랜치만 고치지만 dev 가 바로 옆 줄을 고쳐(`ce8a404` round05a 종료, `4bee96e` round07 종료·운영 후속) git 이 한 덩어리로 묶는다(2026-10-03 에 `git merge-tree --write-tree HEAD dev` 로 작업 트리를 건드리지 않고 미리 본 결과 — 충돌은 `00_status.md` 하나에 덩어리 4개(3행 포함)이고, dev 쪽 다른 차이는 문서뿐이라 충돌하지 않는다). 이 셋도 어느 한쪽을 통째로 고르지 않는다 — 덩어리마다 **round06 줄만 이 브랜치 쪽, 나머지 줄은 모두 dev 쪽**을 남긴다(통째로 고르면 round05a·round07 종료 기록이나 06a 기록이 사라진다). ① '현재 상태'(22행 근처): 이 브랜치의 `round06 — 06a 구현 완료·운영 배포 대기` 줄 + dev 의 `round07 종료` 블록(하위 줄 `운영 배포 2026-10-02`·`본 잡 재개 2026-10-02` 포함) — 이 브랜치의 옛 `round07 — 구현·리뷰 마무리, 배포 대기` 줄과 dev 의 `round06 — 기획 중단` 줄은 버린다. ② '다음 할 일'(39행 근처): dev 의 `round07 운영 후속` 블록(①~⑤) + 이 브랜치의 `round06a 배포·판정` 줄(dev 의 `round06 재개` 자리) — 이 브랜치의 `round07 배포` 줄과 dev 의 `round06 재개` 줄은 버린다. ③ 라운드 이력(64행 근처): round05a·round07 행은 dev 쪽(완료 — `main` 머지·push), round06 행만 이 브랜치 쪽. 다 풀고 나면 `grep -cE '^(<<<<<<<|=======|>>>>>>>)|기획 중단|round06 재개|round07 배포' docs/roadmap/00_status.md` 가 `0` 이다(3행에서 `, round06 기획 중단` 을 지웠으면 — 06a 줄의 'round07 운영 배포' 는 걸리지 않는다).
+3행은 모든 라운드가 함께 고치는 줄이라 위 '교체 후' 의 round06a 밖 구절은 이 브랜치가 갈라질 때(`124c481`)의 글이다. dev 는 그 뒤 이 줄을 이미 고쳤다(예: `ce8a404` 의 'round05a 종료 — … `dev→main` 머지와 `origin` push …'). 그래서 dev 머지 때 3행이 충돌하면 어느 한쪽을 통째로 고르지 않는다 — **dev 쪽 줄을 바탕으로** 날짜를 머지하는 날로 바꾸고, 괄호 안 맨 앞에 `round06a — 연구 어시스턴트 기반·딥리서치 품질 보강 구현 완료, 운영 배포·critic 두 갈래 판정 대기. ` 를 넣고(dev 머지가 배포보다 먼저라 — 2026-10-03 결정, Step 4 — 이 구절 그대로다. 배포·판정 결과는 Step 15 의 기록 브랜치에서 고친다), 끝의 `, round06 기획 중단` 만 지운다. 이 브랜치를 dev 위로 다시 얹은 뒤 이 단계를 하면 교체 전 블록이 맞지 않는다 — 그때도 같은 방법으로 지금 3행에서 고친다. 22·39·64행도 dev 머지 때 충돌한다 — round06 줄은 이 브랜치만 고치지만 dev 가 바로 옆 줄을 고쳐(`ce8a404` round05a 종료, `4bee96e` round07 종료·운영 후속) git 이 한 덩어리로 묶는다(2026-10-03 에 `git merge-tree --write-tree HEAD dev` 로 작업 트리를 건드리지 않고 미리 본 결과 — 충돌은 `00_status.md` 하나에 덩어리 4개(3행 포함)이고, dev 쪽 다른 차이는 문서뿐이라 충돌하지 않는다). 이 셋도 어느 한쪽을 통째로 고르지 않는다 — 덩어리마다 **round06 줄만 이 브랜치 쪽, 나머지 줄은 모두 dev 쪽**을 남긴다(통째로 고르면 round05a·round07 종료 기록이나 06a 기록이 사라진다). ① '현재 상태'(22행 근처): 이 브랜치의 `round06 — 06a 구현 완료·운영 배포 대기` 줄 + dev 의 `round07 종료` 블록(하위 줄 `운영 배포 2026-10-02`·`본 잡 재개 2026-10-02` 포함) — 이 브랜치의 옛 `round07 — 구현·리뷰 마무리, 배포 대기` 줄과 dev 의 `round06 — 기획 중단` 줄은 버린다. ② '다음 할 일'(39행 근처): dev 의 `round07 운영 후속` 블록(①~⑤) + 이 브랜치의 `round06a 배포·판정` 줄(dev 의 `round06 재개` 자리) — 이 브랜치의 `round07 배포` 줄과 dev 의 `round06 재개` 줄은 버린다. ③ 라운드 이력(64행 근처): round05a·round07 행은 dev 쪽(완료 — `main` 머지·push), round06 행만 이 브랜치 쪽. 다 풀고 나면 `grep -cE '^(<<<<<<<|=======|>>>>>>>)|기획 중단|round06 재개|round07 배포' docs/roadmap/00_status.md` 가 `0` 이다(3행에서 `, round06 기획 중단` 을 지웠으면 — 06a 줄의 'round07 운영 배포' 는 걸리지 않는다).
 
 `docs/roadmap/00_status.md` — 교체 전(22행):
 
@@ -12367,9 +12369,13 @@ Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git diff -
 
 Expected: `git diff --stat` 는 아무것도 찍지 않는다(compose 무변경 — spec §6-3, 스택 업데이트가 필요 없다). `grep -ciE` 는 `0`(종료 코드 1 은 맞는 줄이 없을 때의 정상 값이다). Git Bash 의 grep 은 `-i` 와 `-e` 여럿을 함께 주면 `Aborted` 로 죽으므로 `-E` 한 패턴으로 쓴다.
 
-- [ ] **Step 4: 최종 리뷰·배포 요청**
+- [ ] **Step 4: 최종 리뷰·dev 머지·배포 요청**
 
-정적 리뷰(`.claude/agents/code-reviewer.md`)와 자가 점검을 마친 뒤, 사용자에게 아래 Step 5~15 로 배포·판정을 요청한다. 리뷰를 마친 커밋을 적어 둔다(`git rev-parse --short HEAD`). dev 머지는 배포·판정 뒤 사용자 승인으로 한다(GIT_WORKFLOW.md). 그때 `docs/roadmap/00_status.md` 충돌(덩어리 4개)은 Step 1 끝의 규칙대로 푼다 — 3행은 dev 쪽 줄에 06a 구절을 넣고, 나머지 셋은 round06 줄만 이 브랜치 쪽·나머지는 dev 쪽. 이 규칙은 2026-10-03 한 번의 `merge-tree` 결과에 기댄다 — 그 사이 dev 에 다른 라운드가 들어왔을 수 있으니 머지 직전에 `git merge-tree --write-tree HEAD dev` 로 충돌 파일이 `docs/roadmap/00_status.md` 하나뿐인지 다시 본다(다른 파일이 나오면 머지를 멈추고 그 충돌을 사용자와 정한다).
+정적 리뷰(`.claude/agents/code-reviewer.md`)와 자가 점검을 마친 뒤 리뷰를 마친 커밋을 적어 둔다(`git rev-parse --short HEAD`). 그다음 순서는 **최종 리뷰 → dev 머지(사용자 승인, 2026-10-03 결정 — 배포 창 동안 dev 로 빌드한 이미지가 06a 를 되돌리는 반쪽 롤백을 막는다) → dev 코드로 빌드·배포(Step 5~10) → 운영 확인(Step 11) → critic 두 갈래 판정(Step 12·13) → (합격 때만) `critic_scope` 기본값을 1 로 바꾸는 작은 브랜치(예: `fix/round06a-critic-scope-on`, dev 에서 분기)·dev 머지(사용자 승인)·재배포(Step 14)** 다. 처음 계획은 06a 브랜치로 배포 → 판정 → dev 머지였다. 그러면 06a 가 운영에 나가 있고 dev 에는 없는 동안 다른 세션이 dev 로 `:latest` 이미지(fastapi·nuxt·celery-research* 등)를 빌드·Recreate 하면 06a 가 말없이 되돌려진다 — 그래서 dev 에 먼저 넣는다.
+
+dev 머지는 사용자 승인을 받아(GIT_WORKFLOW.md) 본 작업 폴더가 아니라 임시 worktree 에서 하고(`git worktree add .worktrees/dev-merge dev` → 머지 → dev push → `git worktree remove .worktrees/dev-merge`), 머지가 끝나면 그 worktree 를 바로 지운다 — dev 를 잡은 worktree 가 남아 있으면 Step 6 의 `git fetch origin dev:dev` 가 거부된다. 그때 `docs/roadmap/00_status.md` 충돌(덩어리 4개)은 Step 1 끝의 규칙대로 푼다 — 3행은 dev 쪽 줄에 06a 구절을 넣고, 나머지 셋은 round06 줄만 이 브랜치 쪽·나머지는 dev 쪽. 이 규칙은 2026-10-03 한 번의 `merge-tree` 결과에 기댄다 — 그 사이 dev 에 다른 라운드가 들어왔을 수 있으니 머지 직전에 `git merge-tree --write-tree HEAD dev` 로 충돌 파일이 `docs/roadmap/00_status.md` 하나뿐인지 다시 본다(다른 파일이 나오면 머지를 멈추고 그 충돌을 사용자와 정한다).
+
+머지 뒤 06a 배포(Step 5~11)를 미루지 않고 이어 한다. dev 머지부터 06a 배포를 마칠 때까지 다른 세션이 dev 로 빌드한 이미지로 `fastapi`·`celery-research`·`celery-research-plan`·`celery-control` 가운데 일부만 Recreate 하면 06a 가 이 Task 의 순서(워커 먼저 → fastapi → stamp) 없이 반쯤 나간다 — 새 fastapi 와 옛 워커면 새 잡이 `critic_scope` 로 계획 단계에서 실패하고(위 '배포 순서의 까닭' ①), 새 `celery-control` 만이면 새 테이블이 생기기 전까지 회수기 틱이 통째로 실패한다(Step 8). 그 사이 다른 배포는 06a 배포 뒤로 미루거나 06a 배포와 함께 한다.
 
 - [ ] **Step 5: (사용자, 서버) 전제 확인**
 
@@ -12395,22 +12401,36 @@ done                                                                            
 
 운영 스택은 `:latest` 를 쓴다(함정 3번 — `build_dev_images.sh` 의 기본 태그는 `:dev` 라 이미지 이름을 넘긴다). nuxt 이미지는 `frontend/public/pdfjs`(gitignore — 새 worktree 에 없다)가 있는 폴더에서 빌드해야 원문 뷰어가 들어간다(round05a 완료노트 §7 ②).
 
-**빌드 전에 dev(= 운영에 나간 코드)에 06a 에 없는 코드 커밋이 있는지 본다.** 06a 브랜치 HEAD 로 `:latest` 를 빌드해 `nl-lib-celery-control`(적재 디스패처 `dispatch_job_items`·`job_runtime` 도 돈다)·`fastapi`·`celery-research`·`nuxt` 를 Recreate 하므로, 그 사이 병렬 세션(round07 운영 후속·06d 등)이 dev 에 머지·배포한 수정이 있으면 이 이미지가 그것을 말없이 되돌린다. 2026-10-03 에는 `HEAD..dev` 가 문서 커밋 셋(`ce8a404`·`4bee96e`·`acd372e`)뿐이었다.
+**빌드는 dev 코드로 한다 — 빌드하는 커밋의 코드가 dev 와 같아야 한다.** 06a 는 Step 4 에서 dev 에 들어갔다. `:latest` 로 `nl-lib-celery-control`(적재 디스패처 `dispatch_job_items`·`job_runtime` 도 돈다)·`fastapi`·`celery-research`·`nuxt` 를 Recreate 하므로, 빌드한 코드가 dev 와 다르면 어느 쪽이든 무언가 되돌려진다 — dev 에 있고 빌드에 없는 코드(병렬 세션 — round07 운영 후속·06d 등 — 이 dev 에 머지·배포한 수정)는 이 이미지가 말없이 되돌리고, 빌드에 있고 dev 에 없는 코드는 다음에 dev 로 빌드하는 세션이 되돌린다(반쪽 롤백). 그래서 둘을 본다: ① 빌드할 HEAD 가 dev 의 조상이거나 dev 와 같다(`git merge-base --is-ancestor HEAD dev`) ② `git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh` 가 비어 있다. dev 머지 직후의 06a worktree(`feat/round06a-foundation`)는 dev 의 조상이고(머지 커밋은 dev 에만 있다), 그 뒤 dev 에 들어온 것이 문서뿐이면 ② 도 비어 있다 — 그 브랜치 그대로 빌드한다. 머지 전인 2026-10-03 에는 `HEAD..dev` 가 문서 커밋 셋(`ce8a404`·`4bee96e`·`acd372e`)뿐이었다.
+
+`git fetch origin dev:dev` 는 로컬 dev 를 origin/dev 로 빨리 감고(origin/dev 도 함께 갱신한다), 실패하면 멈춘다 — 확인하지 못한 채 빌드하지 않는다. fetch 가 성공하면 로컬 dev 가 origin/dev 와 같아 `HEAD..dev` 하나로 둘 다 본다. 확인은 `( … )` 서브셸로 묶었다 — 붙여 넣은 셸에서 `exit 1` 이 셸 창을 닫지 않고 그 묶음만 끝낸다.
 
 ```bash
-# 개발 PC — 리뷰를 마친 06a 커밋에서
+# 개발 PC — dev 머지(Step 4) 뒤, 06a worktree 에서
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a
-git fetch origin 2>/dev/null
-git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh          # 비어 있어야 한다
-git log --oneline HEAD..origin/dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh   # 비어 있어야 한다
-git rev-parse HEAD                                                                    # 빌드한 커밋 — 완료노트에 적는다
+(
+  git fetch origin dev:dev || { echo "fetch 실패 — origin/dev 를 확인하지 못했다, 멈춘다"; exit 1; }
+  git merge-base --is-ancestor HEAD dev || { echo "HEAD 에 dev 에 없는 커밋이 있다 — 멈춘다"; exit 1; }
+  C=$(git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh)
+  [ -z "$C" ] || { printf 'dev 에 HEAD 에 없는 코드 커밋이 있다 — 멈춘다\n%s\n' "$C"; exit 1; }
+  echo "빌드해도 된다: $(git rev-parse HEAD)"                                       # 빌드한 커밋 — 완료노트에 적는다
+)
+```
+
+마지막 줄이 `빌드해도 된다: <커밋>` 일 때만 아래를 한다. 멈췄으면:
+- `fetch 실패` — 위에 찍힌 git 메시지를 본다. `refusing to fetch into branch 'refs/heads/dev' checked out at …` 이면 Step 4 의 임시 worktree 가 남아 있다 — 지운 뒤 다시. `[rejected] … (non-fast-forward)` 면 로컬 dev 에 origin 에 없는 커밋이 있다 — 머지 뒤 dev push 를 빠뜨렸으면 push 한 뒤, 둘이 갈라졌으면 임시 worktree 에서 origin/dev 를 dev 에 머지·push 한 뒤 다시. 네트워크·인증 오류면 고친 뒤 다시.
+- `HEAD 에 dev 에 없는 커밋` — 그 커밋을 먼저 dev 에 머지하거나(사용자 승인) dev 자체에서 빌드한다.
+- `dev 에 HEAD 에 없는 코드 커밋` — 빌드 브랜치에 dev 를 받거나(`git merge --ff-only dev` — ① 을 지났으니 빨리 감기로 dev 와 같아진다) dev 자체에서 빌드한다(그때는 그 폴더에도 `frontend/public/pdfjs` 를 복사한다). 어느 쪽이든 새로 들어온 코드로 Step 3 의 전체 검증을 다시 돌린 뒤 위 확인부터 다시 하고 빌드한다.
+
+```bash
+# 개발 PC — 위 확인이 '빌드해도 된다' 로 끝난 같은 폴더에서
 cp -r C:/Users/LANDSOFT/mygit/NL_library_AI/frontend/public/pdfjs frontend/public/
 ls frontend/public/pdfjs/web/viewer.html                                              # 있어야 한다
 NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
 NL_LIB_NUXT_IMAGE=landsoftdocker/nl-lib-nuxt:latest bash scripts/build_dev_images.sh nuxt
 ```
 
-두 `git log` 가운데 하나라도 비어 있지 않으면 빌드하지 않는다 — dev 를 06a 에 머지하고(`git merge dev` — `docs/roadmap/00_status.md` 충돌은 Step 1 끝의 규칙으로 푼다), Step 3 의 전체 검증을 다시 돌린 뒤 위 확인부터 다시 하고 빌드한다. 빌드한 커밋(`git rev-parse HEAD`)은 완료노트에 적는다.
+빌드한 커밋(위 확인의 `빌드해도 된다:` 뒤 값)은 완료노트에 적는다.
 
 ```bash
 # 서버 — 지금 이미지를 되돌리기용 태그로 남기고 새 이미지를 받는다(Portainer 에 pull 을 맡기지 않는다 — 함정 12번)
@@ -12578,6 +12598,8 @@ docker logs --since 15m nl-lib-celery-control 2>&1 | grep "reap_stale_research" 
 
 - [ ] **Step 12: (사용자, 서버) critic 두 갈래 실행·Qwen 표본 확인·고정 질문 운영 기록**
 
+**먼저 고정 질문을 확정한다 — 새 질문 4개는 아직 확정 전이다(사용자 2026-10-03).** `scripts/research_eval/questions.json` 의 `library`·`elderly`·`nursing`·`sensor` 는 사용자 확인을 받지 않았다. 이 Step 을 시작하기 전에 사용자에게 그대로 쓸지 바꿀지 묻는다 — `computing`(운영 잡 `2a56f8b6` 의 질문)은 그대로 둔다. 바꾸면 서버 `/data/nl-lib/data/research_eval/questions.json` 을 고친 파일로 다시 옮기고(도구는 서버 사본을 읽는다 — root 셸, Step 6), 저장소 파일은 Step 15 의 기록 브랜치에서 함께 고친다. 결정(그대로 썼는지, 바꾼 질문과 까닭)은 완료노트에 적는다.
+
 `scripts/research_eval/README.md` 흐름 3~6 이다. 잡 10개가 차례로 돌아 25분 안팎 걸린다 — 셸이 끊겨도 돌게 nohup 으로 띄운다. Step 11 의 셸(`pg`·`pgq`·`API`·`SID`)에서 이어 한다. 첫 질문의 갈래 1(`params` 의 `critic_scope` 가 1 인 도구 잡 — `created_by` 가 비어 있다)은 갈래 0 이 도는 동안 줄을 선다(실행 워커 1석) — 그때 대기 순번 표시를 본다(spec §8 운영 확인).
 
 ```bash
@@ -12635,13 +12657,21 @@ docker exec nl-lib-fastapi python /app/data/research_eval/score.py \
   --labels-dir /app/data/research_eval/labels
 ```
 
-Expected: 질문마다 `[<질문키>] <질문>` 과 `갈래 0`·`갈래 1` 두 줄(`절별 무관 …  과잉 제외 …  라벨 없음 N편  -> 합격|불합격|판정 보류`), 그 뒤 `합격 질문: 갈래 0 a/5 · 갈래 1 b/5`(분모는 늘 질문 수 5 — 채점하지 못한 질문도 든다). `판정 보류`·`라벨 칸이 빈 논문이 …` 가 있으면 라벨을 마저 달고 다시 센다. `채점하지 못한 질문 …` 이 있으면 그 질문의 라벨 파일(Step 12 의 make_labels)이나 잡(run_pair `--only`)부터 다시 한다. 판정은 이 둘이 모두 없는 출력으로만 한다. 출력 전체를 판정 기록으로 남긴다.
+Expected: 질문마다 `[<질문키>] <질문>` 과 `갈래 0`·`갈래 1` 두 줄(`절별 무관 …  과잉 제외 …  라벨 없음 N편  -> 합격|불합격|판정 보류`), 그 뒤 `합격 질문: 갈래 0 a/5 · 갈래 1 b/5`(분모는 늘 질문 수 5 — 채점하지 못한 질문도 든다). `판정 보류`·`라벨 칸이 빈 논문이 …` 가 있으면 라벨을 마저 달고 다시 센다. `채점하지 못한 질문 …` 이 있으면 그 질문의 라벨 파일(Step 12 의 make_labels)이나 잡(run_pair `--only`)부터 다시 한다. 판정은 이 둘이 모두 없는 출력으로만 한다. 출력 전체를 판정 기록으로 남긴다. 판정 기록(완료노트)에는 Step 12 앞에서 사용자가 정한 고정 질문 결정(새 질문 4개를 그대로 썼는지, 바꾼 질문)도 함께 적는다.
 
 판정(D11): **갈래 1 이 다섯 질문 모두 합격**이면 Step 14 로 켠다. 하나라도 미달이면 `critic_scope` 기본값을 0 으로 둔 채 06b 를 그대로 진행하고, 계획 프롬프트(`research_plan.yaml`) 수정 여부를 사용자에게 묻는다(spec §7·§10) — Step 14 는 건너뛴다.
 
-- [ ] **Step 14: (합격 때만) critic 기준 스위치를 켠다 — 커밋·재배포**
+- [ ] **Step 14: (합격 때만) critic 기준 스위치를 켠다 — dev 에서 분기한 작은 브랜치·dev 머지·재배포**
 
-개발 PC, 06a worktree. 기본값을 바꾸면 Task 2 의 테스트 둘이 깨진다 — 기본값 0 을 고정한 state 테스트와, 기본 파라미터(`{}`)를 0 갈래로 보던 critic 테스트의 매개변수 하나다. 그 밖의 critic·러너·API 테스트는 갈래를 `{"critic_scope": 0}`·`{"critic_scope": 1}` 로 명시해 그대로다. 먼저 바꾸기 전 수를 센다.
+06a 는 Step 4 에서 dev 에 들어갔으므로 이 변경은 dev 에서 분기한 작은 브랜치(예: `fix/round06a-critic-scope-on`)에서 하고, dev 머지(사용자 승인) 뒤 dev 코드로 재배포한다. 개발 PC, 06a worktree 에서 브랜치를 만든다(이 worktree 의 `feat/round06a-foundation` 은 이미 dev 에 들어가 있어 바꿔도 된다 — 본 작업 폴더에서는 브랜치를 바꾸지 않는다):
+
+```bash
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a
+git status --short                                                                    # 비어 있어야 한다
+git fetch origin dev:dev && git switch -c fix/round06a-critic-scope-on dev            # fetch 가 실패하면 Step 6 의 안내대로 푼 뒤 다시
+```
+
+기본값을 바꾸면 Task 2 의 테스트 둘이 깨진다 — 기본값 0 을 고정한 state 테스트와, 기본 파라미터(`{}`)를 0 갈래로 보던 critic 테스트의 매개변수 하나다. 그 밖의 critic·러너·API 테스트는 갈래를 `{"critic_scope": 0}`·`{"critic_scope": 1}` 로 명시해 그대로다. 먼저 바꾸기 전 수를 센다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_state.py tests/test_research_critic.py tests/test_research_runner.py tests/test_research_tasks.py tests/test_research_api.py -q -p no:cacheprovider`
 
@@ -12713,21 +12743,32 @@ Expected: `2 failed` — 이 둘뿐이다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_state.py tests/test_research_critic.py tests/test_research_runner.py tests/test_research_tasks.py tests/test_research_api.py -q -p no:cacheprovider`
 
-Expected: 실패 0, 바꾸기 전에 적어 둔 N 과 같은 `N passed`(실행 브랜치에서 `455 passed, 2 warnings`). 이어서 Step 3 의 백엔드 전체 명령도 실패 0 이고 수는 Step 3 과 같다(새 테스트 없음).
+Expected: 실패 0, 바꾸기 전에 적어 둔 N 과 같은 `N passed`(실행 브랜치에서 `455 passed, 2 warnings`). 이어서 Step 3 의 백엔드 전체 명령도 실패 0 이고 수는 Step 3 과 같다(새 테스트 없음 — 06a 머지 뒤 dev 에 다른 라운드의 테스트가 들어왔으면 그만큼 다르다).
 
 ```bash
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/services/research/state.py app/tests/test_research_state.py app/tests/test_research_critic.py && git status --short && git commit -m "[Feat] round06a — critic 기준 스위치를 켠다: DEFAULT_PARAMS critic_scope 0 → 1. 운영 고정 질문 5개를 두 갈래로 돌린 판정에서 갈래 1(원 질문 기준)이 다섯 질문 모두 합격선(절마다 무관 1편 이하·과잉 제외 10% 이하)을 넘었다(spec D11). 새 잡부터 원 질문 기준이고, 이미 만든 잡은 저장된 params 그대로다. 기본값을 고정한 state 테스트는 새 기본값으로 고치고, critic 의 0 갈래 테스트는 critic_scope 0 을 명시한 잡만 남긴 뒤 기본 파라미터가 원 질문 기준 프롬프트로 가는 테스트를 그 자리에 둔다"
 ```
 
-재배포(사용자) — 바뀐 것은 백엔드 기본값뿐이라 nuxt 는 그대로다. 새 기본값은 잡을 만드는 fastapi 가 `params` 에 싣지만, 워커와 같은 이미지로 맞추려고 넷 다 Recreate 한다.
+dev 머지(사용자 승인) — Step 4 처럼 임시 worktree 에서 이 브랜치를 dev 에 머지하고 dev 를 push 한 뒤 그 worktree 를 바로 지운다. dev 에서 갈라진 브랜치라 충돌이 없다(그 사이 dev 가 `state.py`·두 테스트 파일을 고쳤으면 그 충돌은 사용자와 정한다).
+
+재배포(사용자) — dev 머지 뒤 dev 코드로 빌드한다. 바뀐 것은 백엔드 기본값뿐이라 nuxt 는 그대로다. 새 기본값은 잡을 만드는 fastapi 가 `params` 에 싣지만, 워커와 같은 이미지로 맞추려고 넷 다 Recreate 한다.
 
 ```bash
-# 개발 PC — Step 6 처럼 dev 에 06a 에 없는 코드 커밋이 없는지 먼저 본다(있으면 dev 를 머지하고 Step 3 을 다시 돌린 뒤 빌드)
+# 개발 PC — dev 머지 뒤, 06a worktree(지금 fix/round06a-critic-scope-on)에서. Step 6 과 같은 확인이다
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a
-git fetch origin 2>/dev/null
-git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh          # 비어 있어야 한다
-git log --oneline HEAD..origin/dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh   # 비어 있어야 한다
-git rev-parse HEAD                                                                    # 빌드한 커밋 — 완료노트에 적는다
+(
+  git fetch origin dev:dev || { echo "fetch 실패 — origin/dev 를 확인하지 못했다, 멈춘다"; exit 1; }
+  git merge-base --is-ancestor HEAD dev || { echo "HEAD 에 dev 에 없는 커밋이 있다 — 멈춘다(이 브랜치를 dev 에 머지했는지 본다)"; exit 1; }
+  C=$(git log --oneline HEAD..dev -- app frontend infra docker-compose.yml scripts/build_dev_images.sh)
+  [ -z "$C" ] || { printf 'dev 에 HEAD 에 없는 코드 커밋이 있다 — 멈춘다\n%s\n' "$C"; exit 1; }
+  echo "빌드해도 된다: $(git rev-parse HEAD)"                                       # 빌드한 커밋 — 완료노트에 적는다
+)
+```
+
+마지막 줄이 `빌드해도 된다: <커밋>` 일 때만 빌드한다. 멈췄으면 Step 6 의 안내대로 푼다(dev 를 받았으면 Step 3 의 전체 검증을 다시 돌린 뒤 위 확인부터 다시).
+
+```bash
+# 개발 PC — 위 확인이 '빌드해도 된다' 로 끝난 같은 폴더에서
 NL_LIB_FASTAPI_IMAGE=landsoftdocker/nl-lib-fastapi:latest bash scripts/build_dev_images.sh fastapi
 ```
 
@@ -12761,6 +12802,8 @@ curl -s -X POST http://localhost:92/api/research/$D/cancel | grep -o '"status":"
 
 - [ ] **Step 15: 배포 기록 커밋**
 
+06a 는 이미 dev 에 있으므로 이 기록 커밋도 dev 에서 분기한 브랜치에서 하고 dev 머지(사용자 승인)로 올린다 — 06a worktree 에서 `git fetch origin dev:dev && git switch -c docs/round06a-deploy-record dev`(Step 14 를 했으면 그 브랜치가 dev 에 머지된 뒤에). Step 12 앞에서 고정 질문을 바꿨으면 `scripts/research_eval/questions.json` 도 이 브랜치에서 고쳐 아래 커밋에 넣는다.
+
 서버의 `/data/nl-lib/data/research_eval/labels/*.csv` 를 06a worktree 의 `scripts/research_eval/labels/` 로, `/data/nl-lib/data/round06-qwen-check/out/*.md` 를 `research/round06-qwen-check/out/` 으로 가져온다. 사람이 `out/` 을 읽고 `research/round06-qwen-check/README.md` 의 결과 표와 결정 줄을 채운다. 그리고 함정 14번의 '현재 서버' 를 고친다.
 
 Qwen 결정 줄에 'gemma 로' 가 있으면(핵심 개념·주제 카드 중 하나라도) 이 라운드에서 라우팅을 바꾸지 않고 06b 로 넘긴다 — 06b 계획의 첫 task 가 `app/services/research_work/routing.py` 의 `WORK_MODEL_ROUTES` 에서 그 kind 의 값(`"concepts": QWEN` 이나 `"topic_card": QWEN`)만 `GEMMA` 로 바꾸고(한 줄에 `concepts`·`topic_card`·`refine`·`facet` 이 함께 있어 줄의 `QWEN` 을 모두 바꾸면 넷이 다 바뀐다), 라우팅을 고정한 Task 8·9 의 테스트(`test_research_work_generate.py` 의 `TestRouting`·기본 kind 가 `concepts` 인 `_run`, `test_research_work_concepts.py`, `test_research_work_tasks.py` 의 Qwen 엔드포인트 단언)를 함께 고친다. 까닭: 06a 화면에는 [이 연구 이어가기] 입구가 없어(06b 의 이어가기 카드 — spec §9) 06a 운영에서 생성을 부르는 것은 Step 11·12 의 확인뿐이고, 주제 카드 실행기는 06b 에 생긴다. 06a 를 다시 배포하면 딥리서치가 빈 때를 다시 기다려 워커 셋과 fastapi 를 Recreate 해야 하지만 사용자가 얻는 것은 없다. 넘김은 Step 1 이 적은 `00_status.md` 다음 할 일 줄과 README 결정 줄에 남는다.
@@ -12781,7 +12824,7 @@ Qwen 결정 줄에 'gemma 로' 가 있으면(핵심 개념·주제 카드 중 �
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add -f scripts/research_eval/labels/*.csv && git add research/round06-qwen-check/out/*.md research/round06-qwen-check/README.md docs/ops/recurring-gotchas.md && git status --short && git commit -m "[Docs] round06a 운영 배포 기록 — critic 두 갈래 판정 라벨(질문 단위 CSV 5개, 리허설에서 다시 쓴다)과 Qwen 표본 확인 결과(out/ 5개·결과 표), 함정 14번 현재 서버를 alembic_version 0007_research_work 로(테이블 7개·인덱스 확인 뒤 stamp)"
 ```
 
-판정 출력·잡 id·배포 시각은 라운드 완료노트(`docs/roadmap/round06a-완료노트.md`)에 적는다 — 라운드를 닫을 때(dev 머지 승인 뒤) 쓴다.
+판정 출력·잡 id·배포 시각은 라운드 완료노트(`docs/roadmap/round06a-완료노트.md`)에 적는다 — 판정(Step 13)과 Step 14·15 를 마친 뒤 이 기록 브랜치에서 쓰고 함께 dev 머지(사용자 승인)로 올린다. 빌드한 커밋(Step 6·14), 배포 순서를 dev 머지 먼저로 바꾼 결정(2026-10-03 — Step 4)과 고정 질문 결정(Step 12 앞)도 적는다.
 
 #### 롤백 (사용자, 서버)
 
@@ -12794,5 +12837,6 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add -f scrip
 5. 남은 것 치우기: `docker exec nl-lib-redis redis-cli DEL research:run_queue`(대기 순번 ZSET). `docker exec nl-lib-redis redis-cli LLEN q_research_plan` 이 0 이 아니면 남은 `tasks.dispatch_research_work` 메시지다 — 옛 `celery-research-plan` 이 '등록되지 않은 태스크' 오류 로그를 남기고 버린다.
 6. `docker exec nl-lib-gateway nginx -s reload` → `curl -s -o /dev/null -w '%{http_code}\n' http://localhost:92/health` 가 200. `docker exec nl-lib-celery-research-plan celery -A workers.celery_app inspect registered --timeout 5 | grep -c "tasks.dispatch_research_work"` 가 0 — `-d` 없이 모든 워커에 묻는다. 적재 워커는 06a 에서 Recreate 하지 않아 round07 이미지이고 되돌린 셋도 옛 이미지라, 0 이면 그 태스크를 아는 워커가 하나도 없다.
 7. 백업 스크립트는 새 것을 둬도 옛 스키마에서 돈다(`research_*` 는 `research_jobs`·`research_steps` 를 받는다). 되돌리려면 root 셸(Step 5)에서 `install -m 755 /usr/local/bin/nl-lib-pg-backup.pre-round06a /usr/local/bin/nl-lib-pg-backup`.
-8. critic 기준만 되돌릴 때(Step 14 뒤): Step 14 의 커밋을 `git revert <그 커밋>` 으로 되돌려(`state.py` 의 기본값·주석과 테스트 둘이 함께 돌아간다) Step 14 의 재배포 순서로 낸다. 급하면 새 잡을 만들 때 `params` 에 `{"critic_scope": 0}` 을 실어 그 잡만 지금 기준으로 돌린다.
+8. critic 기준만 되돌릴 때(Step 14 뒤): dev 에서 분기한 브랜치에서 Step 14 의 커밋을 `git revert <그 커밋>` 으로 되돌려(`state.py` 의 기본값·주석과 테스트 둘이 함께 돌아간다) dev 머지(사용자 승인) 뒤 Step 14 의 재배포 순서로 낸다. 급하면 새 잡을 만들 때 `params` 에 `{"critic_scope": 0}` 을 실어 그 잡만 지금 기준으로 돌린다.
+9. 1~7 로 되돌린 뒤에도 dev 에는 06a 가 있다(dev 머지가 배포보다 먼저다 — Step 4). 그대로 두면 다음에 dev 로 이미지를 빌드·Recreate 하는 세션이 06a 를 이 Task 의 순서 없이 다시 낸다 — 고쳐서 다시 배포할지, dev 에서 06a 를 되돌릴지(revert, 사용자 승인) 정하기 전까지 dev 로 `fastapi`·`nuxt`·`celery-research`·`celery-research-plan`·`celery-control` 이미지를 빌드·Recreate 하지 않는다.
 
