@@ -16,12 +16,14 @@ import type {
 } from "~/types/research";
 import {
   applyApproval,
+  applyQueue,
   applyResearchEvent,
   excludedLabel,
   flaggedLabel,
   initialResearchView,
   isTerminalEvent,
   mergeEvidence,
+  queueLine,
   refreshView,
   researchPhase,
   sectionGapToRecover,
@@ -167,8 +169,8 @@ describe("applyResearchEvent — 탐색", () => {
     const sq = v.subqs[0]!;
     expect(sq.status).toBe("running");
     expect(sq.rounds).toEqual([
-      { round: 1, query: "효과 측정", foundChunks: 12, newPapers: 5, verdict: "insufficient", note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과", excluded: null, excludedPapers: [], flagged: null },
-      { round: 2, query: "초등 AI 윤리 교육 효과", foundChunks: 9, newPapers: 4, verdict: null, note: "", nextQuery: null, excluded: null, excludedPapers: [], flagged: null },
+      { round: 1, query: "효과 측정", foundChunks: 12, newPapers: 5, verdict: "insufficient", note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과", excluded: null, excludedPapers: [], flagged: null, adoptedPapers: [] },
+      { round: 2, query: "초등 AI 윤리 교육 효과", foundChunks: 9, newPapers: 4, verdict: null, note: "", nextQuery: null, excluded: null, excludedPapers: [], flagged: null, adoptedPapers: [] },
     ]);
     expect(v.highlight).toEqual({ subqIdx: 0, round: 1, note: "초등 대상 연구가 없다", nextQuery: "초등 AI 윤리 교육 효과" });
     expect(researchPhase(v)).toBe("exploring");
@@ -872,8 +874,8 @@ describe("보강 전 잡", () => {
     }));
     expect(v.source).toBe("trail");
     expect(v.subqs[0]!.rounds).toEqual([
-      { round: 1, query: "효과 측정", foundChunks: null, newPapers: null, verdict: "insufficient", note: "", nextQuery: "초등 효과", excluded: null, excludedPapers: [], flagged: null },
-      { round: 2, query: "초등 효과", foundChunks: null, newPapers: null, verdict: "sufficient", note: "충분하다", nextQuery: null, excluded: null, excludedPapers: [], flagged: null },
+      { round: 1, query: "효과 측정", foundChunks: null, newPapers: null, verdict: "insufficient", note: "", nextQuery: "초등 효과", excluded: null, excludedPapers: [], flagged: null, adoptedPapers: [] },
+      { round: 2, query: "초등 효과", foundChunks: null, newPapers: null, verdict: "sufficient", note: "충분하다", nextQuery: null, excluded: null, excludedPapers: [], flagged: null, adoptedPapers: [] },
     ]);
     expect(v.counters).toEqual({ papersReviewed: null, evidenceAdopted: 1, rechecks: 1, excluded: null });
     expect(v.highlight).toBeNull();
@@ -1228,5 +1230,140 @@ describe("stopPoint — 멈춘 지점", () => {
       status: "completed", stage: "synthesized",
       steps: [planRow, PARTIAL, searchRow(1, "done"), searchRow(2, "done")],
     })).toBeNull();
+  });
+});
+
+describe("근거 장부 데이터 — adopted_papers", () => {
+  // 회차 끝 이 하위질문의 채택 근거(순위순) — 그 회차에 새로 채택된 논문만 서지를 싣는다(runner._adopted_papers)
+  const ADOPTED = [
+    { cnts_id: "C1", rank: 1 },
+    { cnts_id: "C2", title: " 초등 AI 윤리 수업의 효과 ", personal_author: "김철수; 이영희", pub_date: "2019-03", rank: 2, new: true },
+  ];
+  const ADOPTED_VIEW = [
+    { cntsId: "C1", rank: 1, title: null, personalAuthor: null, pubDate: null, isNew: false },
+    { cntsId: "C2", rank: 2, title: "초등 AI 윤리 수업의 효과", personalAuthor: "김철수; 이영희", pubDate: "2019-03", isNew: true },
+  ];
+  const SEARCHED: ResearchEvent[] = [
+    SEARCH_STARTED,
+    { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 },
+  ];
+  const CRITIQUE: CritiqueEvent = {
+    kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 2,
+    parse_failed: false, capped: 0, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+  };
+
+  it("점검 이벤트의 채택 목록을 그 회차에 싣고, 보내지 않는 옛 워커는 빈 목록으로 둔다", () => {
+    const live = run([...SEARCHED, { ...CRITIQUE, adopted_papers: ADOPTED }]);
+    expect(live.subqs[0]!.rounds[0]!.adoptedPapers).toEqual(ADOPTED_VIEW);
+    // 검색 이벤트는 채택을 모른다 — 다음 회차는 그 회차의 점검이 올 때까지 빈 목록이다
+    const next = applyResearchEvent(live, {
+      kind: "search", subq_idx: 0, query: "초등 AI 윤리 교육 효과", found: 9, round: 2, new_papers: 4,
+    });
+    expect(next.subqs[0]!.rounds.map((r) => r.adoptedPapers.length)).toEqual([2, 0]);
+    expect(run([...SEARCHED, CRITIQUE]).subqs[0]!.rounds[0]!.adoptedPapers).toEqual([]);
+  });
+
+  it("진행 저장본 회차로 다시 연 화면(GET)·재접속 snapshot 이 라이브와 같은 장부를 받고, 필드가 없는 옛 회차는 빈 목록이다", () => {
+    const saved = step({
+      ...SAVED_SEARCH_ROW,
+      result: { rounds: [{ ...ROUND1, adopted_papers: ADOPTED }, ROUND2], counters: LIVE },
+    });
+    const opened = initialResearchView(job({ steps: [PLAN_ROW, saved] }));
+    expect(opened.subqs[0]!.rounds.map((r) => r.adoptedPapers)).toEqual([ADOPTED_VIEW, []]);
+    const resumed = applyResearchEvent(initialResearchView(job({ steps: [PLAN_ROW] })), {
+      kind: "snapshot",
+      steps: [PLAN_ROW, saved],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"] },
+    });
+    expect(resumed.subqs[0]!.rounds.map((r) => r.adoptedPapers)).toEqual([ADOPTED_VIEW, []]);
+    // 뒤따르는 진행 저장 step 이벤트가 같은 회차 기록을 실어도 라이브로 받은 장부 그대로다
+    const live = run([...SEARCHED, { ...CRITIQUE, adopted_papers: ADOPTED }]);
+    const stepped = applyResearchEvent(live, {
+      ...SEARCH_STARTED,
+      result: { rounds: [{ ...ROUND1, adopted_papers: ADOPTED }], counters: SAVED },
+    });
+    expect(stepped.subqs[0]!.rounds[0]!.adoptedPapers).toEqual(ADOPTED_VIEW);
+  });
+});
+
+describe("대기 순번 — queue", () => {
+  const WAITING = { ahead: 2, eta_sec: 1500 };
+
+  it("GET 응답의 순번을 받고, 대기 중이 아니거나 순번을 싣지 않은 옛 서버면 null 이다", () => {
+    expect(initialResearchView(job({ status: "queued", queue: WAITING })).queue).toEqual({ ahead: 2, etaSec: 1500 });
+    expect(initialResearchView(job({ status: "approved", queue: { ahead: 0, eta_sec: null } })).queue)
+      .toEqual({ ahead: 0, etaSec: null });
+    expect(initialResearchView(job({ status: "running", queue: WAITING })).queue).toBeNull();
+    expect(initialResearchView(job({ status: "queued" })).queue).toBeNull();
+  });
+
+  it("snapshot 의 job.queue 로 맞추고, 싣지 않았으면(대기를 벗어남·옛 서버) 비운다", () => {
+    const start = initialResearchView(job({ status: "queued", queue: WAITING }));
+    const moved = applyResearchEvent(start, {
+      kind: "snapshot",
+      steps: [],
+      job: { status: "queued", stage: "planned", plan: ["효과 측정", "교사 인식"], queue: { ahead: 1, eta_sec: 600 } },
+    });
+    expect(moved.queue).toEqual({ ahead: 1, etaSec: 600 });
+    const picked = applyResearchEvent(moved, {
+      kind: "snapshot",
+      steps: [],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"] },
+    });
+    expect(picked.queue).toBeNull();
+  });
+
+  it("queue 이벤트가 순번을 바꾸고, 대기를 벗어난 화면에 늦게 온 이벤트는 싣지 않는다", () => {
+    const start = initialResearchView(job({ status: "queued", queue: WAITING }));
+    expect(applyResearchEvent(start, { kind: "queue", ahead: 0, eta_sec: 300 }).queue).toEqual({ ahead: 0, etaSec: 300 });
+    const running = initialResearchView(job({ status: "running" }));
+    expect(applyResearchEvent(running, { kind: "queue", ahead: 1, eta_sec: null })).toBe(running);
+  });
+
+  it("status 가 대기 안에서 바뀌면 순번을 남기고, 대기를 벗어나거나 잡이 끝나면 비운다", () => {
+    const approved = initialResearchView(job({ status: "approved", queue: WAITING }));
+    expect(applyResearchEvent(approved, { kind: "status", status: "queued", stage: "planned" }).queue)
+      .toEqual({ ahead: 2, etaSec: 1500 });
+    expect(applyResearchEvent(approved, { kind: "status", status: "running", stage: "planned" }).queue).toBeNull();
+    expect(applyResearchEvent(approved, { kind: "canceled", status: "canceled" }).queue).toBeNull();
+    expect(applyResearchEvent(approved, { kind: "failed", status: "failed", error: "x" }).queue).toBeNull();
+  });
+
+  it("GET 재동기화(refreshView)는 새로 읽은 순번을 쓴다", () => {
+    const prev = initialResearchView(job({ status: "queued", queue: { ahead: 3, eta_sec: 2400 } }));
+    expect(refreshView(prev, job({ status: "queued", queue: { ahead: 1, eta_sec: 900 } })).queue)
+      .toEqual({ ahead: 1, etaSec: 900 });
+    expect(refreshView(prev, job({ status: "running", queue: null })).queue).toBeNull();
+  });
+
+  it("승인·재시도 응답의 순번을 바로 싣고, 스트림이 먼저 대기를 벗어났거나 순번 키가 없는 옛 서버면 그대로 둔다", () => {
+    // 승인 응답(applyApproval 로 approved) — 첫 하트비트(15초)를 기다리지 않고 순번이 보인다
+    const approved = applyApproval(initialResearchView(job({ status: "awaiting_approval", started_at: null })), "approved", null);
+    expect(applyQueue(approved, WAITING).queue).toEqual({ ahead: 2, etaSec: 1500 });
+    // 재시도 응답(status 이벤트로 queued)
+    const retried = applyResearchEvent(initialResearchView(job({ status: "failed" })), {
+      kind: "status", status: "queued", stage: "planned",
+    });
+    expect(applyQueue(retried, { ahead: 0, eta_sec: null }).queue).toEqual({ ahead: 0, etaSec: null });
+    // 응답보다 스트림이 먼저 running 을 알렸다 — applyApproval 이 status 를 되돌리지 않는 경우와 같다
+    const running = initialResearchView(job({ status: "running" }));
+    expect(applyQueue(running, WAITING)).toBe(running);
+    const waiting = initialResearchView(job({ status: "queued", queue: { ahead: 3, eta_sec: 2400 } }));
+    expect(applyQueue(waiting, undefined)).toBe(waiting);
+    expect(applyQueue(waiting, null).queue).toBeNull();
+  });
+});
+
+describe("queueLine — queued 문구 뒤에 덧붙이는 순번", () => {
+  it("순번을 모르면 덧붙이지 않는다", () => {
+    expect(queueLine(null)).toBeNull();
+  });
+
+  it("앞에 없으면 다음 차례라고, 있으면 건수와 분 단위 어림(올림·최소 1분)을 쓴다", () => {
+    expect(queueLine({ ahead: 0, etaSec: 300 })).toBe("바로 다음 차례입니다");
+    expect(queueLine({ ahead: 2, etaSec: null })).toBe("앞에 2건");
+    expect(queueLine({ ahead: 2, etaSec: 1500 })).toBe("앞에 2건 · 약 25분");
+    expect(queueLine({ ahead: 1, etaSec: 61 })).toBe("앞에 1건 · 약 2분");
+    expect(queueLine({ ahead: 1, etaSec: 0 })).toBe("앞에 1건 · 약 1분");
   });
 });

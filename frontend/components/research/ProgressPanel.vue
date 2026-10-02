@@ -7,7 +7,7 @@
     <p v-else-if="phase === 'awaiting'" class="rs-muted">
       계획을 승인하면 하위질문마다 논문을 찾고, 근거가 부족하다고 판단하면 검색어를 바꿔 다시 찾습니다.
     </p>
-    <p v-else-if="phase === 'queued'" class="rs-muted">대기열에 들어갔습니다. 앞선 연구가 끝나면 시작합니다.</p>
+    <p v-else-if="phase === 'queued'" class="rs-muted">대기열에 들어갔습니다. 앞선 연구가 끝나면 시작합니다.<span v-if="queueLine">{{ " " + queueLine }}</span></p>
 
     <template v-else>
       <dl class="rs-counters">
@@ -134,7 +134,14 @@ import {
 import { EXCLUDED_WHY, excludedPaperLine } from "~/utils/researchReport";
 
 // revealExcluded: 새 창으로 연 제외 논문에서 돌아와 맞출 논문 — 그 논문을 뺀 회차를 펼쳐 둬야 자리가 생긴다
-const props = defineProps<{ view: ResearchView; phase: ResearchPhase; revealExcluded?: string | null }>();
+// queueLine: 대기열 문구 뒤에 덧붙이는 순번(queueLine()) — 순번을 모르면 지금 문구만 둔다. 템플릿의 " " + 는
+// 일부러다 — <span> 첫머리의 공백 글자는 Vue 컴파일러(whitespace: condense)가 지운다
+const props = defineProps<{
+  view: ResearchView;
+  phase: ResearchPhase;
+  revealExcluded?: string | null;
+  queueLine?: string | null;
+}>();
 
 const TITLES: Partial<Record<ResearchPhase, string>> = {
   synthesizing: "탐색 완료 요약",
