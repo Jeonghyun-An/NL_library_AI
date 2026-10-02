@@ -3,7 +3,8 @@
 One-off experiment (odl_heap). Runs inside landsoftdocker/nl-lib-fastapi:latest with round07 /app mounted.
 usage: python /w/one.py DOC_ID TAG
 JAVA_TOOL_OPTIONS is whatever this process inherited (docker -e or the driver); the conversion's child python and java
-inherit it exactly as in production (create_subprocess_exec with env=None).
+inherit it as in production. (Measured on 5ca8b68, before ODL_JAVA_MAX_HEAP: from 8608473 on, the extractor
+adds -Xmx<ODL_JAVA_MAX_HEAP> to the child's JAVA_TOOL_OPTIONS — drun.sh blanks that setting so JTO alone decides.)
 Prints one JSON line on stdout.
 """
 import asyncio

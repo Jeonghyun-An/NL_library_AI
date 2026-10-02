@@ -1,0 +1,16 @@
+{
+ "2.5.0": {
+  "status": "timeout",
+  "seconds": 600.2,
+  "files": [],
+  "md_page_breaks": null,
+  "stderr_tail": ""
+ },
+ "2.5.9": {
+  "status": "exit 1",
+  "seconds": 51.6,
+  "files": [],
+  "md_page_breaks": null,
+  "stderr_tail": "ss=true', '-Dapple.awt.UIElement=true', '-jar', 'C:\\\\Users\\\\LANDSOFT\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-LANDSOFT-mygit-NL-library-AI\\\\ac2847f8-32b7-46ce-8254-e87152398b72\\\\scratchpad\\\\odl259\\\\odl259\\\\opendataloader_pdf\\\\jar\\\\opendataloader-pdf-cli.jar', 'D:/SKOVIX/KCI/pdf/KCI_FI001238691.pdf', '--output-dir', 'C:\\\\Users\\\\LANDSOFT\\\\AppData\\\\Local\\\\Temp\\\\tmp22g9drnv', '--format', 'markdown,json', '--quiet', '--table-method', 'cluster', '--markdown-page-separator', '\\n<<<ODL_PAGE_BREAK_%page-number%>>>\\n', '--image-output', 'off', '--image-format', 'jpeg']' returned non-zero exit status 1.\r\n"
+ }
+}

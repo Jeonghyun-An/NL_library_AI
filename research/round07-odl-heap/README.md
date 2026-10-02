@@ -7,18 +7,27 @@ JVM 기본값(컨테이너가 보는 메모리의 1/4)까지 쓴다. 병리 문�
 
 ## 방법
 
-- 운영 이미지 `landsoftdocker/nl-lib-fastapi:latest`(Java 17, opendataloader-pdf 2.5.9)를 네트워크 없이 띄우고
-  round07 코드(측정 때 5ca8b68)를 `/app` 에 올려 `extract_text_opendataloader` 를 그대로 부른다(`drun.sh`).
-  PDF 는 이 PC 의 `D:/SKOVIX/KCI/pdf`.
+- 운영 이미지 `landsoftdocker/nl-lib-fastapi:latest`(Java 17, opendataloader-pdf 2.5.9 — 이 PC 캐시 이미지
+  `sha256:d6d47828421e…`, 2026-09-30 받은 것)를 네트워크 없이 띄우고 round07 코드(측정 때 5ca8b68)를 `/app` 에 올려
+  `extract_text_opendataloader` 를 그대로 부른다(`drun.sh`). PDF 는 `PDF_DIR`(기본 이 PC 의 `D:/SKOVIX/KCI/pdf`).
 - `one.py` 가 문서 하나를 변환하며 컨테이너의 java 프로세스마다 VmHWM·VmRSS 를 20ms 간격으로 잰다.
   쪽 텍스트 sha1 로 상한 아래 추출 결과가 상한 없을 때와 같은지 본다. `driver.py` 가 문서 목록을 차례로 돈다.
 - 문서 두 묶음
-  - `docs.json` 61건 — 무거운 문서·실패 블록·2005년 이전·표 많은 문서 등 일부러 고른 표본
-  - `screen_ids.json` 688건 — `research/round07-ingest-regression/docs.csv`(이 PC 의 KCI PDF 752건)에서 61건을 뺀 전부
-- 실행: `run_all.sh`(61건 × 상한 없음·3g·2g·1g, 상한 없음 G1 로그), `run_bisect.sh`(가장 무거운 정상 문서의 최소 힙),
-  `./drun.sh -Xmx2g /w/driver.py screen_xmx2g --ids-file /w/screen_ids.json`(688건),
-  `side.py`(JAVA_TOOL_OPTIONS 부작용 — 오타·ExitOnOutOfMemoryError·실패 메시지). 요약은 `analyze.py`.
-  G1 원본 로그(`gc/*.log`)는 커밋하지 않는다(.gitignore) — 요약은 각 jsonl 레코드에 있다.
+  - `docs.json` 61건 — 무거운 문서·실패 블록·2005년 이전·표 많은 문서 등 일부러 고른 표본(59건은 아래 docs.csv 에 있다)
+  - `screen_ids.json` 688건 — `research/round07-ingest-regression/docs.csv`(이 PC 의 KCI PDF 752행, 고유 747건)에서
+    61건 표본에 든 59건을 뺀 나머지 전부
+- 실행(모두 `drun.sh` 로, 산출물은 `out/<TAG>.jsonl` 레코드와 `out/<TAG>.out` 한 줄 요약)
+  - `run_all.sh` — 61건 × 상한 없음·3g·2g·1g, 상한 없음에 G1 로그
+  - `run_bisect.sh` — 가장 무거운 정상 문서의 최소 힙과 무거운 문서 묶음의 384m~3g
+  - `./drun.sh -Xmx2g /w/driver.py screen_xmx2g --gc --ids-file /w/screen_ids.json` — 688건
+  - `./drun.sh - /w/driver.py recheck_nocap --ids KCI_FI000902436 KCI_FI002186558 KCI_FI002803488`와
+    `./drun.sh -Xmx3g /w/driver.py recheck_xmx3g --ids …`(같은 3건) — 2g 화면 검사의 메모리 부족 3건 재측정
+  - `side.py` — JAVA_TOOL_OPTIONS 부작용. `./drun.sh <JTO> /w/side.py <LABEL> <ID…>` 를 다섯 번:
+    nojto(`-`, KCI_FI002029401·BADPDF), xmx2g(`-Xmx2g`, KCI_FI002029401·BADPDF·KCI_FI002990049),
+    xmx1g(`-Xmx1g`, KCI_FI002990049), exitoom(`-Xmx1g -XX:+ExitOnOutOfMemoryError`, KCI_FI002990049),
+    typo(`-Xmx2gb`, KCI_FI002029401). BADPDF 는 side.py 가 만드는 깨진 PDF. 결과는 `out/side_<LABEL>.json`
+    (`.out` 은 실행 로그 뒤에 같은 JSON 을 찍은 것).
+  - 요약은 `analyze.py`. G1 원본 로그(`gc/*.log`)는 커밋하지 않는다(.gitignore) — 요약은 각 jsonl 레코드에 있다.
 
 ## 결과
 
@@ -49,8 +58,13 @@ JVM 기본값(컨테이너가 보는 메모리의 1/4)까지 쓴다. 병리 문�
 
 ## round07 에 반영
 
-- `ODL_JAVA_MAX_HEAP`(config·`docker-compose.yml` x-common-env, 빈 값 = 상한 없음) — `^([1-9][0-9]*[mMgG])?$` 만 받는다.
+- `ODL_JAVA_MAX_HEAP`(config·`docker-compose.yml` x-common-env) — `^([1-9][0-9]*[mMgG])?$` 형식이고 1g 이상만 받는다
+  (`3m` 같은 `3g` 오타·`512m` 같은 작은 값도 결과가 형식 오타와 같다 — 1g 는 61건 중 1건만 실패). 빈 값 = 상한
+  없음은 앱 설정에서만 된다 — compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 가 빈 스택 env 를 3g 로 채우므로 운영에서 풀려면
+  `64g` 같은 큰 값(운영 서버의 JVM 기본값이 약 63GB)을 준다.
 - `extractor._odl_child_env()` 가 ODL 자식의 환경에만 `JAVA_TOOL_OPTIONS=… -Xmx<값>` 을 붙인다(워커 환경은 그대로).
+  java 의 RSS 는 힙 상한보다 0.2~0.3GB 크다(3g 에서 최고 3.29~3.38GB) — `celery-cpu` 4칸 최악 약 13GB. ODL 은
+  `celery-worker`(동시 2)·`fastapi`(업로드)에서도 돈다.
 - 확인: `check_round07.py` 를 운영 이미지로 돌려 java 가 `-Xmx2g`/`-Xmx3g` 를 받고 워커 환경은 비어 있음,
   `KCI_FI002803488` 이 2g 에서 fitz·3g 에서 정상(최고 3.2GB)임을 봤다. 함께 돌린 5건 모두 본문에 `&lt;`·`&amp;` 가
   남지 않았다(`<표 1>` 등 — 2.5.9 markdown 이스케이프 되돌리기). `drun.sh` 는 `ODL_JAVA_MAX_HEAP` 을 비우므로 이 확인은

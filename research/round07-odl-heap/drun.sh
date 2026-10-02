@@ -5,10 +5,11 @@
 # that setting (default 3g) — ODL_JAVA_MAX_HEAP is blanked here so JTO alone sets the heap, as in the measurement.
 B="$(cd "$(dirname "$0")" && pwd)"
 APP="$(cd "$B/../../app" && pwd)"
+PDF_DIR="${PDF_DIR:-D:/SKOVIX/KCI/pdf}"   # KCI PDF 폴더(이 PC) — 다른 곳이면 PDF_DIR 로 준다
 JTO="$1"; shift
 EA=()
 if [ "$JTO" != "-" ]; then EA=(-e "JAVA_TOOL_OPTIONS=$JTO"); fi
 MSYS_NO_PATHCONV=1 exec docker run --rm --pull never --network none --init -w /app "${EA[@]}" \
   -e ODL_JAVA_MAX_HEAP= -e IS_DOCKER=true -e PYTHONUNBUFFERED=1 -e PYTHONPATH=/app \
-  -v "$APP:/app:ro" -v "D:/SKOVIX/KCI/pdf:/pdf:ro" -v "$B:/w" \
+  -v "$APP:/app:ro" -v "$PDF_DIR:/pdf:ro" -v "$B:/w" \
   --entrypoint python landsoftdocker/nl-lib-fastapi:latest "$@"
