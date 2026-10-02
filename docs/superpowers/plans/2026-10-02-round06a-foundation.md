@@ -15,7 +15,7 @@
 - **작업 위치:** `git -C C:/Users/LANDSOFT/mygit/NL_library_AI worktree add .worktrees/round06a -b feat/round06a-foundation feat/round06-paper-agent` 로 만든 `C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a`(Task 0). 저장소 루트 폴더와 다른 worktree 는 건드리지 않는다(여러 세션이 함께 쓴다). 이 브랜치는 spec·이 계획 문서를 담은 `feat/round06-paper-agent` 에서 따므로, 06a 를 dev 에 머지하면 spec·계획도 함께 들어간다.
 - **백엔드 테스트:** `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/<파일> -q -p no:cacheprovider`. 전체는 `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors` — 기준선 **1369 passed, 1 skipped, 수집 오류 3**(test_book_chat·test_build_manifest·test_loaders — 로컬에 FlagEmbedding·openpyxl 없음, 원래 상태). pytest-asyncio 가 없어 async 는 `asyncio.run` 으로 돈다. 로컬에 redis·celery·kombu·aiosqlite 가 없어 테스트는 기존 `_stub_missing`·`_load_*` 패턴으로 대역을 쓴다. torch·FlagEmbedding 을 끌어오는 모듈은 함수 안에서 import 한다(함정 13).
 - **프론트 테스트:** `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/frontend && npm ci && npx nuxi typecheck` 를 먼저 한다(`.nuxt` 가 없으면 vitest 가 전부 실패한다). 기준선 vitest 28 files / 495 passed, typecheck 오류 0, `npm run build` 완료.
-- **테스트 수 읽는 법:** 각 task 의 기대 수치는 작성할 때 검증 사본에서 실측했다. 앞 task 들이 다른 묶음에서 쓰였으므로 어떤 수치는 "앞 task 뒤 수 + N" 으로 적혀 있다 — 이 계획을 순서대로 실행하면 상대값(+N)을 따른다. 최종 합계는 Task 17 Step 3 에 있다.
+- **테스트 수 읽는 법:** 각 task 의 기대 수치는 실측값이다. 어떤 수치는 "앞 task 뒤 수 + N" 으로 적혀 있다 — 순서대로 실행하면 상대값(+N)을 따른다. pytest 출력 끝의 기존 경고(`core/config.py` 의 `PydanticDeprecatedSince20` 등 `, 1 warning`·`, 2 warnings`)는 기대값에 적혀 있지 않아도 같은 결과다. 계획 전체를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)의 백엔드 전체 수치: Task 1 뒤 1406 → 2: 1427 → 3: 1433 → 4: 1439 → 5: 1450 → 6: 1468 → 7: 1515 → 8: 1558 → 9: 1602 → 10: 1611 → 11: 1687 → 12: 1697 → 15·16: 1717(모두 `1 skipped`·수집 오류 3). 프론트 vitest: 495 → Task 4: 496 → Task 13: 510(28 files). 이 통합 검증에서 코드 수정은 하나도 필요하지 않았다.
 - **셸:** 명령마다 `cd <절대 경로> &&` 로 시작한다(에이전트 셸은 호출 사이에 cwd 가 초기화된다). 저장소는 `core.autocrlf=true` 라 작업 트리 파일이 CRLF 다 — 교체할 원문을 찾을 때 줄바꿈을 맞춘다.
 - **커밋:** `[Feat]`·`[Fix]`·`[Refactor]`·`[Test]`·`[Chore]`·`[Docs]` 접두어와 한국어 본문. **`Co-Authored-By`·"Generated with Claude Code" 는 넣지 않는다.** task 마다 커밋한다.
 - **운영 금지:** Task 0~16 의 어떤 단계도 운영 서버·운영 DB·운영 Redis 에 쓰지 않는다. 배포와 운영 확인은 Task 17 의 절차대로 **사용자가** 한다(dev 머지도 사용자 승인 뒤).
@@ -1077,7 +1077,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/mode
 - Modify: `app/services/research/critic.py` (`critique` 190–200행)
 - Modify: `app/services/research/runner.py` (critic 호출 253–256행)
 - Test: `app/tests/test_research_state.py` (34–41행 키 집합, 107–111행 `test_off_topic_exclusion_rejects_anything_else` 뒤에 3개 추가)
-- Test: `app/tests/test_research_critic.py` (1–12행 import, 파일 끝 433–437행 뒤에 `TestCriticScope` 추가)
+- Test: `app/tests/test_research_critic.py` (1–12행 import, 파일 끝 435–437행 뒤에 `TestCriticScope` 추가)
 - Test: `app/tests/test_research_runner.py` (critic 대역 9곳 — 36·49·70·403·450·521·724·1024·1184행, 412행 `TestReadTransaction` 뒤에 `TestOriginalQuestion` 추가)
 - Test: `app/tests/test_research_api.py` (`TestCreate` 269–272행 뒤에 2개 추가)
 
@@ -1990,7 +1990,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/serv
 **Files:**
 - Modify: `app/services/search/paper_citation.py` (`build_citation` 의 `journal` 한 줄, 57행)
 - Create: `frontend/tests/fixtures/citation_reference.json` (두 쪽 테스트가 함께 읽는 서지와 기대 글자)
-- Modify: `frontend/tests/unit/reportDocument.test.ts` (import 끝 23행, `describe("buildReportDocument — 참고문헌")` 끝 344-346행)
+- Modify: `frontend/tests/unit/reportDocument.test.ts` (import 끝 23행, `describe("buildReportDocument — 참고문헌")` 끝 343-346행)
 - Test: `app/tests/test_paper_citation.py` (새 파일 — 이 모듈의 첫 테스트)
 
 **알아 둘 것:**
@@ -2248,7 +2248,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/serv
 **왜:** spec §6-3 모델 라우팅. 연구 어시스턴트 생성은 kind 마다 Qwen(`VLM_BASE_URL`·`VLM_MODEL`)과 gemma(`LLM_BASE_URL`·`LLM_MODEL`)를 고르고(Task 8 의 `WORK_MODEL_ROUTES`), 해석·검사 실패나 전송 실패 때 다른 모델로 넘긴다. 지금 `llm_client` 는 설정의 한 엔드포인트만 부른다. `chat_full`·`chat`·`chat_stream` 에 호출별 `base_url`·`model` 을 더한다.
 
 **Files:**
-- Modify: `app/services/llm_client.py` (모듈 docstring 22-23행 뒤, `_ollama_body` 148-158행, `_request_once` 166-189행, `chat_full` 201-223행·231행·241행·249행, `chat` 256-263행, `chat_stream` 266-282행·301-302행)
+- Modify: `app/services/llm_client.py` (모듈 docstring 22-23행 뒤, `_ollama_body` 148-157행, `_request_once` 166-190행, `chat_full` 201-223행·231행·241행·249행, `chat` 256-263행, `chat_stream` 266-282행·300-302행)
 - Test: `app/tests/test_llm_client.py` (파일 끝에 11개)
 
 **알아 둘 것:**
@@ -3199,12 +3199,12 @@ Expected: `88 passed` (기존 70 + 새 18)
 
 관련 묶음:
 
-Run: `python -m pytest tests/test_research_api.py tests/test_research_tasks.py tests/test_research_relay.py tests/test_research_models.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_api.py tests/test_research_tasks.py tests/test_research_relay.py tests/test_research_models.py -q -p no:cacheprovider`
 Expected: 실패 0 (검증 사본 — Task 1 의 모델·history_sqlite 와 Task 2 의 critic_scope 파라미터·API 테스트 2개를 먼저 넣은 상태 — 에서 `209 passed`. Task 3~5 가 이 파일들에 테스트를 더했으면 그만큼 많다)
 
 전체:
 
-Run: `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 Expected: 실패 0, `3 errors`(test_book_chat·test_build_manifest·test_loaders 수집 오류 — 기준선과 같음). Task 5 뒤 전체 수치 + 18 passed. 검증 사본(넣기 전 `1371 passed, 1 skipped` — 기준선 1369 + Task 2 의 API 테스트 2)에서 `1389 passed, 1 skipped`.
 
 - [ ] **Step 5: 커밋한다**
@@ -3962,10 +3962,10 @@ new:
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_run_queue.py -q -p no:cacheprovider`
 Expected: `1 error` — 수집 단계 `ImportError: cannot import name 'run_queue' from 'services.research'`
 
-Run: `python -m pytest tests/test_research_api.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_api.py -q -p no:cacheprovider`
 Expected: `108 errors, 2 passed` — 픽스처의 `AttributeError: <module 'api.research' ...> has no attribute 'mark_waiting'`(Task 6 뒤 88 + 새 22 중 픽스처를 쓰지 않는 `TestLoaderIsolation` 2건만 통과)
 
-Run: `python -m pytest tests/test_research_tasks.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_tasks.py -q -p no:cacheprovider`
 Expected: `_patch_pipeline` 을 쓰는 테스트가 모두 `AttributeError: <module 'workers.research_tasks' ...> has no attribute 'unmark'` 로 실패 — 검증 사본에서 `59 failed, 37 passed`(기준선 94 + 새 2 — Task 2·3 은 이 파일의 테스트 수를 바꾸지 않는다)
 
 - [ ] **Step 3: 구현한다**
@@ -4450,20 +4450,20 @@ new:
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_run_queue.py -q -p no:cacheprovider`
 Expected: `23 passed`
 
-Run: `python -m pytest tests/test_research_api.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_api.py -q -p no:cacheprovider`
 Expected: `110 passed` (Task 6 뒤 88 + 새 22)
 
-Run: `python -m pytest tests/test_research_tasks.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_tasks.py -q -p no:cacheprovider`
 Expected: 실패 0 — 검증 사본에서 `96 passed`(기준선 94 + 새 2)
 
 관련 묶음:
 
-Run: `python -m pytest tests/test_research_run_queue.py tests/test_research_api.py tests/test_research_tasks.py tests/test_research_relay.py tests/test_research_models.py tests/test_celery_schedule.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_run_queue.py tests/test_research_api.py tests/test_research_tasks.py tests/test_research_relay.py tests/test_research_models.py tests/test_celery_schedule.py -q -p no:cacheprovider`
 Expected: 실패 0 (검증 사본에서 `258 passed`)
 
 전체:
 
-Run: `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 Expected: 실패 0, 수집 오류 3(기준선과 같음). Task 6 뒤 전체 수치 + 47 passed(run_queue 23 + API 22 + 워커 2). 검증 사본에서 `1436 passed, 1 skipped`.
 
 - [ ] **Step 5: 커밋한다**
@@ -5162,13 +5162,13 @@ Expected: `43 passed` (generate 17 + concepts 26)
 
 프롬프트 로더·llm_client·모델·critic(같은 프롬프트 디렉터리) 기존 테스트:
 
-Run: `python -m pytest tests/test_prompts.py tests/test_llm_client.py tests/test_research_work_models.py tests/test_research_critic.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_prompts.py tests/test_llm_client.py tests/test_research_work_models.py tests/test_research_critic.py -q -p no:cacheprovider`
 
 Expected: 실패 0 — Task 1~7 을 적용한 검증 사본에서 `183 passed`(8 + 68 + 37 + 70 — critic 70 은 Task 2 뒤 수)
 
 전체:
 
-Run: `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
 Expected: 실패 0, `3 errors`(Task 0 의 수집 오류 셋) 그대로. 이 작업은 43개를 더한다(Task 7 뒤 수 + 43) — Task 1~7 을 적용한 검증 사본(test_research_api.py 110개)에서 `1515 passed` → `1558 passed, 1 skipped, 2 warnings, 3 errors`.
 
@@ -6078,11 +6078,11 @@ Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python
 
 Expected: `Interrupted: 1 error during collection` — `ModuleNotFoundError: No module named 'services.research_work.apply'`
 
-Run: `python -m pytest tests/test_research_work_tasks.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_work_tasks.py -q -p no:cacheprovider`
 
 Expected: `1 failed, 16 errors` — 모두 `ModuleNotFoundError: No module named 'workers.research_work_tasks'`(16개는 `wt` 픽스처에서, 1개는 테스트 안에서 직접 불러서)
 
-Run: `python -m pytest tests/test_research_relay.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_relay.py -q -p no:cacheprovider`
 
 Expected: `5 failed, 9 passed` — `AttributeError: module 'services.research.relay' has no attribute 'publish_work'`(3)·`'work_channel'`(1)·`'subscribe_work'`(1)
 
@@ -6504,19 +6504,19 @@ Expected: `53 passed` (dispatch 22 + tasks 17 + relay 14 — relay 는 기존 9 
 
 같은 모듈·celery_app 을 쓰는 기존 테스트와 Task 8:
 
-Run: `python -m pytest tests/test_research_work_generate.py tests/test_research_work_concepts.py tests/test_celery_schedule.py tests/test_research_tasks.py tests/test_research_api.py tests/test_research_run_queue.py tests/test_research_work_models.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_work_generate.py tests/test_research_work_concepts.py tests/test_celery_schedule.py tests/test_research_tasks.py tests/test_research_api.py tests/test_research_run_queue.py tests/test_research_work_models.py -q -p no:cacheprovider`
 
 Expected: 실패 0 — Task 1~8 을 적용한 검증 사본에서 `311 passed`(17 + 26 + 2 + 96 + 110 + 23 + 37 — research_tasks 96·research_api 110 은 Task 7 뒤 수)
 
 더미 celery·redis 에 묶인 모듈이 다음 파일로 새지 않는지(순서를 바꿔):
 
-Run: `python -m pytest tests/test_research_work_tasks.py tests/test_research_relay.py tests/test_research_tasks.py tests/test_research_api.py tests/test_celery_schedule.py tests/test_research_work_dispatch.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_work_tasks.py tests/test_research_relay.py tests/test_research_tasks.py tests/test_research_api.py tests/test_celery_schedule.py tests/test_research_work_dispatch.py -q -p no:cacheprovider`
 
 Expected: `261 passed` (17 + 14 + 96 + 110 + 2 + 22)
 
 전체:
 
-Run: `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
 Expected: 실패 0, `3 errors` 그대로. 이 작업은 44개를 더한다(Task 8 뒤 수 + 44 — dispatch 22 + tasks 17 + relay 새 5) — 검증 사본에서 `1558 passed` → `1602 passed, 1 skipped, 2 warnings, 3 errors`.
 
@@ -6535,7 +6535,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add app/serv
 
 **Files:**
 - Modify: `app/workers/research_tasks.py` (Task 7 뒤 기준: import 32행·38행, `STALE_MINUTES` 55행, `reap_stale_research` 의 docstring 끝 722행 ~ 함수 끝 761행)
-- Modify: `app/tests/test_research_tasks.py` (Task 7 뒤 기준: `_CACHED` 32행, `TestReaper._SyncSession` 1921-1939행, `test_reaping_a_job_closes_its_running_steps` 끝 1959-1962행 뒤에 더한다)
+- Modify: `app/tests/test_research_tasks.py` (Task 7 뒤 기준: `_CACHED` 32행, `TestReaper` 머리와 `_SyncSession` 1920-1939행, `test_reaping_a_job_closes_its_running_steps` 끝 1959-1962행 뒤에 더한다)
 - Test: `app/tests/test_research_tasks.py`
 
 **알아 둘 것:**
@@ -6952,19 +6952,19 @@ Expected: `105 passed` (Task 7 뒤 96 + 새 9)
 
 회수기가 부르는 모듈과 디스패처 쪽:
 
-Run: `python -m pytest tests/test_research_tasks.py tests/test_research_work_tasks.py tests/test_research_run_queue.py tests/test_celery_schedule.py tests/test_research_relay.py tests/test_research_work_dispatch.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_tasks.py tests/test_research_work_tasks.py tests/test_research_run_queue.py tests/test_celery_schedule.py tests/test_research_relay.py tests/test_research_work_dispatch.py -q -p no:cacheprovider`
 
 Expected: `183 passed` (105 + 17 + 23 + 2 + 14 + 22)
 
 두 태스크 모듈을 한 세션에서 차례로 불러도 서로의 더미를 물려받지 않는지:
 
-Run: `python -m pytest tests/test_research_work_tasks.py tests/test_research_tasks.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_work_tasks.py tests/test_research_tasks.py -q -p no:cacheprovider`
 
 Expected: `122 passed` (17 + 105)
 
 전체:
 
-Run: `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
 Expected: 실패 0, `3 errors` 그대로. 이 작업은 9개를 더한다(Task 9 뒤 수 + 9) — 검증 사본에서 `1602 passed` → `1611 passed, 1 skipped, 2 warnings, 3 errors`.
 
@@ -8737,7 +8737,7 @@ app.include_router(research_work_router)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_work_api.py tests/test_research_work_views.py -q -p no:cacheprovider`
 
-Expected: `76 passed, 1 warning` (API 60 + 순수 함수 16. 경고는 `TestEndToEnd` 가 설정을 읽으며 나는 `core/config.py` 의 `PydanticDeprecatedSince20` — 기존 전체 실행의 경고와 같은 것)
+Expected: `76 passed, 1 warning` (API 60 + 순수 함수 16. 경고는 api 픽스처가 라우터를 import 하며 `core/config.py` 를 읽을 때 나는 `PydanticDeprecatedSince20` — 기존 전체 실행의 경고와 같은 것)
 
 - [ ] **Step 11: 관련 기존 테스트와 전체를 돌린다**
 
@@ -8755,11 +8755,11 @@ Expected: 실패 0, `3 errors`(test_book_chat·test_build_manifest·test_loaders
 
 더미 redis·가짜 워커 모듈이 이웃 파일로 새지 않는지(순서를 바꿔 두 번):
 
-Run: `python -m pytest tests/test_research_work_api.py tests/test_research_work_views.py tests/test_research_api.py tests/test_research_relay.py tests/test_research_tasks.py tests/test_history_api.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_work_api.py tests/test_research_work_views.py tests/test_research_api.py tests/test_research_relay.py tests/test_research_tasks.py tests/test_history_api.py -q -p no:cacheprovider`
 
-Run: `python -m pytest tests/test_research_api.py tests/test_research_relay.py tests/test_history_api.py tests/test_research_tasks.py tests/test_research_work_views.py tests/test_research_work_api.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_research_api.py tests/test_research_relay.py tests/test_history_api.py tests/test_research_tasks.py tests/test_research_work_views.py tests/test_research_work_api.py -q -p no:cacheprovider`
 
-Expected: 둘 다 실패 0 — 검증 사본에서 `291 passed`(76 + 68 + 9 + 94 + 44. Task 2·3·6·7·9·10 이 앞의 네 파일에 더한 테스트만큼 많다).
+Expected: 둘 다 실패 0 — 순서대로 실행하면 `349 passed`(76 + test_research_api 110 + test_research_relay 14 + test_research_tasks 105 + test_history_api 44 — Task 2·6·7·9·10 이 앞의 세 파일에 테스트를 더했다).
 
 - [ ] **Step 12: 커밋한다**
 
@@ -8994,7 +8994,7 @@ Expected: `10 failed, 48 passed` (기존 49 중 48 + 새 9 중 0)
 - `test_status_comes_from_research_jobs`·`test_phase_and_progress_come_from_research_works`: dict 비교 실패(`Right contains 3 more items`)
 - `test_status_query_joins_works_by_job_id_not_history`: `ValueError: not enough values to unpack (expected 1, got 0)` (research_works 를 읽는 문장이 없다)
 
-Run: `python -m pytest tests/test_history_api.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_history_api.py -q -p no:cacheprovider`
 Expected: `2 failed, 43 passed` — 둘 다 dict 비교 실패(`Right contains 3 more items`)
 
 - [ ] **Step 3: 구현한다**
@@ -9092,13 +9092,13 @@ Expected: `103 passed` (저장소 58 = 기존 49 + 새 9, API 45 = 기존 44 + �
 
 관련 묶음(history_sqlite 를 쓰는 파일과 모델 테스트):
 
-Run: `python -m pytest tests/test_history_repository.py tests/test_history_api.py tests/test_history_models.py tests/test_job_runtime.py -q -p no:cacheprovider`
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests/test_history_repository.py tests/test_history_api.py tests/test_history_models.py tests/test_job_runtime.py -q -p no:cacheprovider`
 Expected: 실패 0 (검증 사본에서 `191 passed`. Task 1 이 test_history_models 에 테스트를 더했으면 그만큼 많다)
 
 전체:
 
-Run: `python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
-Expected: 실패 0, 수집 오류 3(기준선과 같음). Task 7 뒤 전체 수치 + 10 passed. 검증 사본(앞의 의존물과 Task 6·7 뒤)에서 `1446 passed, 1 skipped`.
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
+Expected: 실패 0, 수집 오류 3(기준선과 같음). Task 11 뒤 전체 수치 + 10 passed(순서대로 실행하면 1687 → 1697).
 
 - [ ] **Step 5: 커밋한다**
 
@@ -10388,7 +10388,7 @@ spec D14·§6-5 백업 줄, 계약 §14. 지금 `infra/backup/pg_backup.sh` 는 
 - **`dump` 인자:** 지금은 `dump "-t library_catalog" <파일>` 처럼 pg_dump 인자를 한 문자열로 받아 따옴표 없이 펼친다(`$1`). 여기에 `-t 'research_*'` 를 넣으면 셸이 현재 폴더에서 glob 을 풀 수 있다. 계약대로 첫 인자를 받을 파일로, 나머지를 `"$@"` 로 받게 바꾸고 패턴은 따옴표째 넘긴다 — spec §6-5 의 `set -f … set +f` 는 필요 없어진다(prune 의 glob 은 그대로 동작한다).
 - **실패 모으기:** 지금은 `set -eu` 라 첫 덤프가 실패하면 그 자리에서 끝나 뒤 덤프·정리가 돌지 않는다. 덤프마다 `|| rc=1` 로 모으고 정리까지 돈 뒤 `exit "$rc"` 로 끝낸다.
 - **정리:** `research_*.dump` 도 `KEEP_DAILY`(기본 14)개만 남긴다. research 덤프는 정리보다 앞에서 받는다.
-- **복원 예시(머리 주석):** 연구 테이블은 외래 키로 묶여 있다(`research_steps`·`research_works` → `research_jobs`, 새 테이블 다섯 → `research_works`). 운영 DB 에 `pg_restore --clean -t research_works` 처럼 한 테이블만 되돌리면 그 테이블을 가리키는 다른 연구 테이블 때문에 `DROP TABLE` 이 막힌다. 그래서 예시는 연구 덤프를 통째로 되돌리는 줄과, 한 테이블(`-t research_works`)만 빈 DB 에 풀어 꺼내 보는 줄로 쓴다(spec 의 "`-t research_works` 한 줄"을 실제로 도는 형태로). 통째로 되돌리는 줄은 `research_*`·`history_items` 를 DROP 하고 다시 만들므로, 그 앞에 이 테이블들에 쓰는 컨테이너(`nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`)를 먼저 멈추고 끝나면 다시 올리라고 적는다.
+- **복원 예시(머리 주석):** 연구 테이블은 외래 키로 묶여 있다(`research_steps`·`research_works` → `research_jobs`, 새 테이블 다섯 → `research_works`). 운영 DB 에 `pg_restore --clean -t research_works` 처럼 한 테이블만 되돌리면 그 테이블을 가리키는 다른 연구 테이블 때문에 `DROP TABLE` 이 막힌다. 그래서 예시는 연구 덤프를 통째로 되돌리는 줄과, 한 테이블(`-t research_works`)만 빈 DB 에 풀어 꺼내 보는 줄로 쓴다(spec 의 "`-t research_works` 한 줄"을 실제로 도는 형태로). 통째로 되돌리는 줄은 `research_*`·`history_items` 를 DROP 하고 다시 만들므로, 그 앞에 이 테이블들에 쓰는 컨테이너(`nl-lib-fastapi`·`nl-lib-celery-research`·`nl-lib-celery-research-plan`·`nl-lib-celery-control` — 회수기가 `research_jobs`·`research_steps`·`research_generations` 에 쓴다)를 먼저 멈추고 끝나면 다시 올리라고 적는다.
 - **호스트 설치는 이 task 에서 하지 않는다** — Task 17 배포 절차 ⑤(`sudo install -m 755 infra/backup/pg_backup.sh /usr/local/bin/nl-lib-pg-backup` 뒤 1회 실행)다. 이 task 의 어떤 단계도 운영 DB 에 닿지 않는다(가짜 `docker` 로만 돈다).
 
 **Files:**
@@ -10564,7 +10564,7 @@ new:
 #     -t library_catalog < /data/nl-lib/backup/daily/library_catalog_<타임스탬프>.dump
 # 연구 덤프는 테이블끼리 외래 키로 묶여 있어 통째로 되돌린다 — 한 테이블만 -t 로 --clean 하면 그 테이블을
 # 가리키는 다른 연구 테이블 때문에 DROP 이 막힌다. 되돌리는 동안 이 테이블들에 쓰는 컨테이너를 먼저 멈추고
-# 끝나면 다시 올린다(nl-lib-fastapi·nl-lib-celery-research·nl-lib-celery-research-plan — 돌고 있으면 잠금에
+# 끝나면 다시 올린다(nl-lib-fastapi·nl-lib-celery-research·nl-lib-celery-research-plan·nl-lib-celery-control — 돌고 있으면 잠금에
 # 걸리거나 도중에 쓴 행을 잃는다):
 #   docker exec -i nl-lib-postgres pg_restore -U admin -d nl_lib --clean --if-exists \
 #     < /data/nl-lib/backup/daily/research_<타임스탬프>.dump
@@ -12333,7 +12333,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && git add docs/roa
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 마지막 줄 `1703 passed, 1 skipped, 2 warnings, 3 errors` — 실패 0. Task 0 기준선 1369 에 task 마다 더한 백엔드 테스트 수(각 task 의 전체 검증 단계에 적힌 수)를 더한 값이다.
+Expected: 마지막 줄 `1717 passed, 1 skipped, 2 warnings, 3 errors` — 실패 0. Task 0 기준선 1369 에 task 마다 더한 백엔드 테스트 수(각 task 의 전체 검증 단계에 적힌 수)를 더한 값이다.
 
 | Task | 더한 백엔드 테스트 | 내역 |
 |---|---|---|
@@ -12344,15 +12344,15 @@ Expected: 마지막 줄 `1703 passed, 1 skipped, 2 warnings, 3 errors` — 실�
 | 5 | 11 | `test_llm_client.py` |
 | 6 | 18 | `test_research_api.py` |
 | 7 | 47 | run_queue 23 · API 22 · 워커 2 |
-| 8 | 42 | generate 17 · concepts 25 |
-| 9 | 42 | dispatch 21 · tasks 16 · relay 5 |
+| 8 | 43 | generate 17 · concepts 26 |
+| 9 | 44 | dispatch 22 · tasks 17 · relay 5 |
 | 10 | 9 | `test_research_tasks.py` |
-| 11 | 65 | API 50 · 순수 함수 15 |
+| 11 | 76 | API 60 · 순수 함수 16 |
 | 12 | 10 | history repository·API |
 | 15 | 20 | `test_research_eval.py` |
 | 13·14·16·17 | 0 | 프론트·셸 스크립트·1회성 `research/`·문서 |
 
-합계 1369 + 334 = 1703. 이 묶음(Task 15·16)만 넣은 검증 사본에서는 `1389 passed, 1 skipped, 2 warnings, 3 errors`(1369 + 20), 그 사본에 Task 1~10 계획의 코드를 차례로 더 넣은 사본에서는 `1628 passed, 1 skipped, 2 warnings, 3 errors`(1369 + 259 — 여기에 Task 11 의 65 와 Task 12 의 10 을 더하면 1703)였다. 다르면 어느 task 의 테스트가 빠졌거나 늘었는지 task 별 '통과 확인' 명령으로 다시 센다 — 위 표는 계획을 합칠 때 각 task 의 전체 검증 단계 수(`이 작업은 N개를 더한다`·`전체 수치 + N passed`)로 다시 맞춘다. `3 errors` 는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 실패하는 기존 파일 셋(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)이다.
+합계 1369 + 348 = 1717. 계획 전체(Task 0~17)를 새 사본에 순서대로 글자 그대로 적용한 통합 검증(2026-10-02)에서 이 값 `1717 passed, 1 skipped, 2 warnings, 3 errors` 를 실측했다. 다르면 어느 task 의 테스트가 빠졌거나 늘었는지 task 별 '통과 확인' 명령으로 다시 센다 — 위 표는 계획을 합칠 때 각 task 의 전체 검증 단계 수(`이 작업은 N개를 더한다`·`전체 수치 + N passed`)로 다시 맞춘다. `3 errors` 는 로컬에 `FlagEmbedding`·`openpyxl` 이 없어 수집 단계에서 실패하는 기존 파일 셋(`test_book_chat.py`·`test_build_manifest.py`·`test_loaders.py`)이다.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06a && python research/round06-qwen-check/smoke_check.py && sh -n infra/backup/pg_backup.sh && echo "pg_backup syntax ok"`
 
