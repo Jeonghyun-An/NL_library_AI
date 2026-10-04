@@ -35,8 +35,8 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round06-qwen-chec
 | computing | | | | | |
 | library | | | | | |
 | elderly | | | | | |
-| nursing | | | | | |
-| sensor | | | | | |
+| multicultural | | | | | |
+| csr | | | | | |
 
 결정(사람): 핵심 개념 → Qwen 유지 / gemma 로 · 주제 카드 → Qwen 유지 / gemma 로.
 
