@@ -2,6 +2,6 @@
   {"key": "computing", "question": "컴퓨팅 자원에 대한 연구가 궁금해"},
   {"key": "library", "question": "공공도서관 서비스 품질 평가 연구가 궁금해"},
   {"key": "elderly", "question": "노인의 우울과 사회적 지지에 관한 연구가 궁금해"},
-  {"key": "nursing", "question": "간호사의 직무 스트레스와 이직 의도에 관한 연구가 궁금해"},
-  {"key": "sensor", "question": "무선 센서 네트워크 라우팅 프로토콜 연구가 궁금해"}
+  {"key": "multicultural", "question": "다문화가정 아동의 언어 발달에 관한 연구가 궁금해"},
+  {"key": "csr", "question": "기업의 사회적 책임과 재무성과에 관한 연구가 궁금해"}
 ]

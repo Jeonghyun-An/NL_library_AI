@@ -12226,8 +12226,8 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round06-qwen-chec
 | computing | | | | | |
 | library | | | | | |
 | elderly | | | | | |
-| nursing | | | | | |
-| sensor | | | | | |
+| multicultural | | | | | |
+| csr | | | | | |
 
 결정(사람): 핵심 개념 → Qwen 유지 / gemma 로 · 주제 카드 → Qwen 유지 / gemma 로.
 
@@ -12598,7 +12598,7 @@ docker logs --since 15m nl-lib-celery-control 2>&1 | grep "reap_stale_research" 
 
 - [ ] **Step 12: (사용자, 서버) critic 두 갈래 실행·Qwen 표본 확인·고정 질문 운영 기록**
 
-**먼저 고정 질문을 확정한다 — 새 질문 4개는 아직 확정 전이다(사용자 2026-10-03).** `scripts/research_eval/questions.json` 의 `library`·`elderly`·`nursing`·`sensor` 는 사용자 확인을 받지 않았다. 이 Step 을 시작하기 전에 사용자에게 그대로 쓸지 바꿀지 묻는다 — `computing`(운영 잡 `2a56f8b6` 의 질문)은 그대로 둔다. 바꾸면 서버 `/data/nl-lib/data/research_eval/questions.json` 을 고친 파일로 다시 옮기고(도구는 서버 사본을 읽는다 — root 셸, Step 6), 저장소 파일은 Step 15 의 기록 브랜치에서 함께 고친다. 결정(그대로 썼는지, 바꾼 질문과 까닭)은 완료노트에 적는다.
+**고정 질문은 확정됐다(2026-10-04).** 사용자가 "문서 유형을 파악하고 알아서" 정하라고 맡겨, 운영 논문 검색으로 후보마다 적재분 근거를 재서 분야가 겹치지 않게 골랐다 — `computing`(고정)·`library`·`elderly`·`multicultural`·`csr`(처음 후보 `nursing`·`sensor` 는 분야가 `elderly`·`computing` 과 겹쳐 뺐다). 선정 표와 까닭은 `scripts/research_eval/README.md` '고정 질문 선정'. 서버에는 이 `questions.json` 을 옮긴다(Step 6). 완료노트에 이 결정을 적는다.
 
 `scripts/research_eval/README.md` 흐름 3~6 이다. 잡 10개가 차례로 돌아 25분 안팎 걸린다 — 셸이 끊겨도 돌게 nohup 으로 띄운다. Step 11 의 셸(`pg`·`pgq`·`API`·`SID`)에서 이어 한다. 첫 질문의 갈래 1(`params` 의 `critic_scope` 가 1 인 도구 잡 — `created_by` 가 비어 있다)은 갈래 0 이 도는 동안 줄을 선다(실행 워커 1석) — 그때 대기 순번 표시를 본다(spec §8 운영 확인).
 
