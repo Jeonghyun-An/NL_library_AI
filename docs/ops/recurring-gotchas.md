@@ -123,7 +123,7 @@
 - **파생 함정**: 새 모델이 포함된 이미지가 뜨면 `create_all` 이 그 테이블을 **먼저** 만든다. 그 뒤에 해당 마이그레이션을 돌리면 이번엔 `DuplicateTable` 로 죽는다. 그리고 `create_all` 이 만든 테이블에는 모델의 `server_default` 만 반영되고 `default=`(파이썬 측)는 DB 기본값이 되지 않아, 마이그레이션이 만들었을 테이블과 미묘하게 다르다.
 - **해결**: ① 객체가 전부 실재함을 확인한 뒤 `alembic stamp <리비전>` 으로 현실과 스탬프를 맞춘다. ② **`stamp` 는 DDL 뿐 아니라 마이그레이션 안의 데이터 백필(`op.execute(UPDATE …)`)도 건너뛴다** — 스탬프 전에 그 UPDATE 가 필요한 행이 남아 있는지 따로 세고, 남았으면 손으로 돌린다. ③ 새 테이블은 `create_all` 이 만들게 두고 `stamp` 로 맞추거나, 이미지 배포 전에 마이그레이션을 먼저 돌린다 — 둘 중 하나로 정하고 섞지 않는다.
 - **재발 방지**: 배포 전에 `select version_num from alembic_version` 과 실제 객체 존재를 **따로** 확인한다. 버전 테이블은 현실을 반영하지 않는다. 그리고 **스키마를 만드는 경로가 셋(`create_all` · lifespan 의 ad-hoc `ALTER` · Alembic)인 구조 자체가 원인**이므로, 대회 이후 정본 하나만 남긴다. `create_all` 만 지우고 lifespan `ALTER` 블록을 남기면 앱이 뜰 때마다 Alembic 밖에서 DDL 이 계속 돌아 같은 사고가 다음 컬럼에서 재발한다. 그 `ALTER` 는 컬럼이 이미 있어도 테이블 배타 잠금을 요구한다는 부작용도 있다(18번).
-- **현재 서버**: `alembic_version = 0006_history_items` — round04b 운영 배포(2026-09-28) 때 `stamp` 로 맞췄다(`history_items` 는 lifespan 이 `models.history` 를 import 해 `create_all` 이 만드는 새 테이블이다 — 위 ③ 의 `create_all` + `stamp` 경로). 그 전 `0005_research_jobs` 는 2026-09-23 확인.
+- **현재 서버**: `alembic_version = 0007_research_work` — round06a 운영 배포(2026-10-06) 때 테이블 7개(`research_works`·`research_generations`·`research_topics`·`research_gap_checks`·`research_reading`·`paper_facets`·`research_proposals`)와 인덱스 8개를 확인한 뒤 `stamp` 로 맞췄다(lifespan 이 `models.research_work` 를 import 해 `create_all` 이 만드는 새 테이블이다 — 위 ③ 의 `create_all` + `stamp` 경로, `0007` 에는 데이터 백필이 없다). 그 전 `0006_history_items` 는 round04b 운영 배포(2026-09-28), `0005_research_jobs` 는 2026-09-23 확인.
 
 
 ## 15. LLM 은 프롬프트 JSON 예시의 개수를 베낀다 — 구성은 코드가 정한다
