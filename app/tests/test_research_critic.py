@@ -1,10 +1,13 @@
 import asyncio
+import hashlib
 import json
 import logging
+from pathlib import Path
 
 import httpx
 import pytest
 
+from services.prompts import get_prompt
 from services.research import critic
 from services.research.critic import (
     _EXCERPT_LEN, _MAX_LISTED, _PARSE_FAILED_NOTE, Verdict, format_evidence_list,
@@ -435,3 +438,102 @@ class TestCritique:
         evs = self._titled("자원 할당 기법에 관한 연구", "엣지 컴퓨팅 스케줄링", "MPEG-7")
         v, _ = self._note_run(monkeypatch, note, evs)
         assert v.note == expected
+
+
+# critic_scope=0 갈래의 프롬프트 파일 sha256(줄바꿈을 LF 로 맞춰 잰다 — Windows 체크아웃은 CRLF 다).
+# 두 갈래를 나란히 비교하는 기준이라 한 글자도 바뀌면 안 된다. 기준을 바꾸려면 새 갈래 파일을 만든다
+_CRITIQUE_SHA256 = "5b161222d7f47a330c05b9de942dd231200b478ec5af92bba44bdcf714cc9972"
+
+
+class TestCriticScope:
+    """잡 파라미터 critic_scope — 0 은 지금 기준(프롬프트·입력 글자 그대로), 1 은 원 질문 기준(무관 판정만
+    원 질문의 주제로 좁히고, 충분·부족은 하위질문 기준 그대로). chat 만 대역으로 바꿔 실제 템플릿을 거친다."""
+
+    QUESTION = "엣지 컴퓨팅의 자원 할당 연구는 어디까지 왔나"
+    # 1 갈래가 판단 기준 끝에 붙이는 한 줄 — 원 질문은 off_topic 에만 쓰고 충분·부족은 하위질문 기준(spec §5-1)
+    SCOPE_RULE = "- 원 질문은 무관한 근거(off_topic)를 가를 때만 씁니다. 충분·부족은 위 기준대로 하위질문을 두고 판단하세요."
+
+    def _evidence(self):
+        return [Evidence(id="E1", cnts_id="A", meta={"title": "논문 가", "pub_date": "2008"},
+                         chunks=[Chunk("c1", "본문 발췌", 1, 1, 0.9)])]
+
+    def _run(self, monkeypatch, *, question, reply=None, **job_params):
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append((messages, params))
+            return reply or '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []}'
+
+        monkeypatch.setattr(critic, "chat", fake_chat)
+        v = asyncio.run(critic.critique(
+            SubQuestion(idx=0, text="하위질문", queries=["첫 검색어"]), self._evidence(),
+            params=merge_params(job_params), question=question,
+        ))
+        ((messages, llm_params),) = seen
+        return v, messages[0]["content"], messages[1]["content"], llm_params
+
+    def _current(self, **job_params):
+        # 0 갈래가 보내야 하는 것 — 지금 템플릿을 지금 다섯 변수로 렌더한 결과
+        return get_prompt("research_critique").render(
+            subquestion="하위질문", evidence_count=1,
+            evidence_list=format_evidence_list(self._evidence()),
+            min_evidence=merge_params(job_params)["min_evidence_per_subq"], tried_queries="첫 검색어",
+        )
+
+    def test_current_prompt_file_is_unchanged(self):
+        path = Path(__file__).resolve().parents[1] / "domains" / "nl_library" / "prompts" / "research_critique.yaml"
+        raw = path.read_bytes().replace(b"\r\n", b"\n")
+        assert hashlib.sha256(raw).hexdigest() == _CRITIQUE_SHA256
+
+    @pytest.mark.parametrize("job_params", [{}, {"critic_scope": 0}])
+    def test_scope_zero_sends_the_current_prompt_verbatim(self, monkeypatch, job_params):
+        # 러너는 원 질문을 늘 넘긴다 — 0 갈래는 받아도 쓰지 않는다
+        _, system, user, llm_params = self._run(monkeypatch, question=self.QUESTION, **job_params)
+        assert (system, user, llm_params) == self._current(**job_params)
+        assert self.QUESTION not in system + user
+
+    def test_scope_one_puts_the_original_question_first(self, monkeypatch):
+        _, _, user, _ = self._run(monkeypatch, question=self.QUESTION, critic_scope=1)
+        _, current_user, _ = self._current()
+        assert user == f"원 질문: {self.QUESTION}\n{current_user}"
+
+    def test_scope_one_judges_off_topic_against_the_original_question(self, monkeypatch):
+        _, system, _, _ = self._run(monkeypatch, question=self.QUESTION, critic_scope=1)
+        assert ("off_topic 에는 발췌가 원 질문의 주제와 무관한 근거(같은 단어를 다른 뜻으로 쓴 논문 포함)의 "
+                "번호를 정수로 씁니다. 하위질문에서 벗어났더라도 원 질문의 주제를 다루는 논문은 넣지 않습니다.") in system
+        assert "off_topic 에는 발췌가 하위질문의 핵심 개념을 다루지 않는 근거" not in system
+
+    def test_scope_one_changes_only_the_off_topic_rule(self, monkeypatch):
+        """충분·부족 기준·출력 JSON 형식·문체 규칙·LLM 파라미터는 그대로다. 달라지는 것은 판단 기준 끝에 붙는
+        원 질문의 쓰임 한 줄과 off_topic 문장 하나뿐이다. 다른 줄이 바뀌거나 예시가 붙으면 두 갈래의 차이가
+        off_topic 기준 하나가 아니게 된다(예시는 개수를 베낀다 — 함정 15)."""
+        _, system, _, llm_params = self._run(monkeypatch, question=self.QUESTION, critic_scope=1)
+        current_system, _, current_params = self._current()
+        old_lines, new_lines = current_system.splitlines(), system.splitlines()
+        end = old_lines.index("판단 기준:") + 1
+        while old_lines[end].startswith("- "):
+            end += 1                                     # 판단 기준 마지막 줄 바로 뒤
+        assert new_lines[end] == self.SCOPE_RULE
+        rest = new_lines[:end] + new_lines[end + 1:]
+        assert len(rest) == len(old_lines)
+        ((old, new),) = [(a, b) for a, b in zip(old_lines, rest) if a != b]
+        assert old.startswith("off_topic 에는 발췌가 하위질문의 핵심 개념을 다루지 않는 근거")
+        assert new.startswith("off_topic 에는 발췌가 원 질문의 주제와 무관한 근거")
+        assert old.partition(" 번호는 근거 목록")[2] == new.partition(" 번호는 근거 목록")[2]
+        assert llm_params == current_params
+
+    def test_scope_one_without_a_question_uses_the_current_prompt(self, monkeypatch, caplog):
+        # 원 질문을 넘기지 않는 호출은 지금 기준으로 돈다 — 빈 '원 질문:' 줄을 보내지 않는다
+        with caplog.at_level(logging.WARNING, logger=critic.log.name):
+            _, system, user, llm_params = self._run(monkeypatch, question=None, critic_scope=1)
+        assert (system, user, llm_params) == self._current()
+        # 두 갈래 비교가 조용히 오염되지 않게 남긴다
+        assert any("critic_scope=1 인데 원 질문이 없어" in r.getMessage() for r in caplog.records)
+
+    def test_scope_one_reply_goes_through_the_same_parser(self, monkeypatch):
+        # 출력 형식이 같으니 무관 제외 규칙도 같다 — 보인 근거를 모두 무관이라 하면 충분이어도 부족으로 읽는다
+        v, *_ = self._run(
+            monkeypatch, question=self.QUESTION, critic_scope=1,
+            reply='{"verdict": "sufficient", "note": "충분하다", "new_queries": ["보완"], "off_topic": [1]}',
+        )
+        assert (v.verdict, v.off_topic, v.new_queries) == ("insufficient", [1], ["보완"])

@@ -207,7 +207,7 @@ const C9: ExcludedPaperView = { cntsId: "C9", title: "CMOS 에지 검출 회로"
 function round(n: number, papers: ExcludedPaperView[]): RoundView {
   return {
     round: n, query: `검색 ${n}`, foundChunks: 3, newPapers: 1, verdict: "insufficient", note: "", nextQuery: null,
-    excluded: papers.length, excludedPapers: papers, flagged: 0,
+    excluded: papers.length, excludedPapers: papers, flagged: 0, adoptedPapers: [],
   };
 }
 

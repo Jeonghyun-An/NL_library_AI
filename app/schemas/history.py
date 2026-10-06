@@ -47,6 +47,11 @@ class HistoryItemPatch(BaseModel):
 class ResearchStatus(BaseModel):
     status: str
     stage: str
+    # 아래 셋은 [이 연구 이어가기] 로 연구 행(research_works)이 생긴 잡에만 값이 있다
+    phase: str | None = None
+    progress: dict | None = None
+    # 진행 중 생성(queued·running)이 있는가 — 사이드바가 폴링을 이어갈지 정한다(06d)
+    generating: bool = False
 
 
 class HistoryItemOut(BaseModel):

@@ -11,8 +11,12 @@ import pytest
 import sqlalchemy as sa
 from pydantic import ValidationError
 
-from history_sqlite import SID_A, SID_B, AsyncSessionOverSync, add_research_job, make_engine, raw_row
+from history_sqlite import (
+    SID_A, SID_B, AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
+    raw_row,
+)
 from models.history import HistoryItem
+from models.research_work import ResearchWork
 from repositories.history import (
     HistoryRepository, InvalidCursor, decode_cursor, encode_cursor, legacy_history_id,
 )
@@ -230,7 +234,11 @@ class TestResearchStatus:
         job_id = add_research_job(engine, status="running", stage="planned")
         _put(engine, SID_A, job_id, kind="research", title="독서 격차 연구", ref_id=str(job_id))
         (item,), _ = _list(engine, SID_A)
-        assert item.research.model_dump() == {"status": "running", "stage": "planned"}
+        # 이어가지 않은 딥리서치 — 연구 칸은 비어 있다
+        assert item.research.model_dump() == {
+            "status": "running", "stage": "planned",
+            "phase": None, "progress": None, "generating": False,
+        }
         detail = _call(engine, lambda r: r.get(SID_A, job_id))
         assert detail.research.status == "running"
 
@@ -250,6 +258,87 @@ class TestResearchStatus:
         _put(engine, SID_A, uuid.uuid4(), kind="book", ref_id=str(job_id))
         (item,), _ = _list(engine, SID_A)
         assert item.research is None
+
+
+def _continued(engine, *, phase: str = "topics", progress: dict | None = None) -> uuid.UUID:
+    """[이 연구 이어가기] 를 누른 딥리서치 — 완료 잡 + 연구 행 + 기록 한 줄."""
+    job_id = add_research_job(engine, status="completed", stage="synthesized")
+    add_work(engine, job_id, owner_sid=str(SID_A), phase=phase)
+    if progress is not None:
+        with engine.begin() as conn:
+            conn.execute(sa.update(ResearchWork.__table__)
+                         .where(ResearchWork.__table__.c.id == job_id).values(progress=progress))
+    _put(engine, SID_A, job_id, kind="research", title="독서 격차 연구", ref_id=str(job_id))
+    return job_id
+
+
+class TestContinuedResearch:
+    """이어간 연구는 기록 줄에 단계·진행 요약·진행 중 생성 여부를 함께 싣는다(사이드바용)."""
+
+    def test_phase_and_progress_come_from_research_works(self, engine):
+        job_id = _continued(engine, phase="reading", progress={"topics": 4, "picked": 1})
+
+        (item,), _ = _list(engine, SID_A)
+
+        assert item.research.model_dump() == {
+            "status": "completed", "stage": "synthesized",
+            "phase": "reading", "progress": {"topics": 4, "picked": 1}, "generating": False,
+        }
+        detail = _call(engine, lambda r: r.get(SID_A, job_id))
+        assert detail.research.phase == "reading"
+
+    @pytest.mark.parametrize("status", ["queued", "running"])
+    def test_open_generation_marks_generating(self, engine, status):
+        job_id = _continued(engine)
+        add_generation(engine, job_id, status=status)
+
+        (item,), _ = _list(engine, SID_A)
+
+        assert item.research.generating is True
+
+    @pytest.mark.parametrize("status", ["done", "failed", "canceled"])
+    def test_finished_generations_do_not_count(self, engine, status):
+        job_id = _continued(engine)
+        add_generation(engine, job_id, status=status)
+
+        (item,), _ = _list(engine, SID_A)
+
+        assert item.research.generating is False
+
+    def test_many_generations_still_give_one_status_per_job(self, engine):
+        job_id = _continued(engine)
+        for status in ("queued", "queued", "done"):
+            add_generation(engine, job_id, status=status)
+
+        items, _ = _list(engine, SID_A)
+
+        assert len(items) == 1 and items[0].research.generating is True
+
+    def test_generations_of_another_research_do_not_leak(self, engine):
+        quiet = _continued(engine)
+        busy = _continued(engine)
+        add_generation(engine, busy, status="running")
+
+        items, _ = _list(engine, SID_A)
+
+        generating = {uuid.UUID(i.ref_id): i.research.generating for i in items}
+        assert generating == {quiet: False, busy: True}
+
+    def test_status_query_joins_works_by_job_id_not_history(self, engine):
+        """history_items.ref_id(문자열)로 조인하면 PK 인덱스를 못 쓰고, 캐스팅하면 형식이 틀린
+        ref_id 하나에 목록 전체가 실패한다 — 연구 칸은 research_jobs PK 조회에 붙인다."""
+        _continued(engine)
+        statements: list[str] = []
+
+        @sa.event.listens_for(engine, "before_cursor_execute")
+        def _record(conn, cursor, statement, parameters, context, executemany):
+            statements.append(statement)
+
+        _list(engine, SID_A)
+
+        (status_sql,) = [s for s in statements if "research_works" in s]
+        assert "LEFT OUTER JOIN research_works ON research_works.id = research_jobs.id" in status_sql
+        assert "history_items" not in status_sql
 
 
 class TestPatch:

@@ -123,7 +123,7 @@
 - **파생 함정**: 새 모델이 포함된 이미지가 뜨면 `create_all` 이 그 테이블을 **먼저** 만든다. 그 뒤에 해당 마이그레이션을 돌리면 이번엔 `DuplicateTable` 로 죽는다. 그리고 `create_all` 이 만든 테이블에는 모델의 `server_default` 만 반영되고 `default=`(파이썬 측)는 DB 기본값이 되지 않아, 마이그레이션이 만들었을 테이블과 미묘하게 다르다.
 - **해결**: ① 객체가 전부 실재함을 확인한 뒤 `alembic stamp <리비전>` 으로 현실과 스탬프를 맞춘다. ② **`stamp` 는 DDL 뿐 아니라 마이그레이션 안의 데이터 백필(`op.execute(UPDATE …)`)도 건너뛴다** — 스탬프 전에 그 UPDATE 가 필요한 행이 남아 있는지 따로 세고, 남았으면 손으로 돌린다. ③ 새 테이블은 `create_all` 이 만들게 두고 `stamp` 로 맞추거나, 이미지 배포 전에 마이그레이션을 먼저 돌린다 — 둘 중 하나로 정하고 섞지 않는다.
 - **재발 방지**: 배포 전에 `select version_num from alembic_version` 과 실제 객체 존재를 **따로** 확인한다. 버전 테이블은 현실을 반영하지 않는다. 그리고 **스키마를 만드는 경로가 셋(`create_all` · lifespan 의 ad-hoc `ALTER` · Alembic)인 구조 자체가 원인**이므로, 대회 이후 정본 하나만 남긴다. `create_all` 만 지우고 lifespan `ALTER` 블록을 남기면 앱이 뜰 때마다 Alembic 밖에서 DDL 이 계속 돌아 같은 사고가 다음 컬럼에서 재발한다. 그 `ALTER` 는 컬럼이 이미 있어도 테이블 배타 잠금을 요구한다는 부작용도 있다(18번).
-- **현재 서버**: `alembic_version = 0006_history_items` — round04b 운영 배포(2026-09-28) 때 `stamp` 로 맞췄다(`history_items` 는 lifespan 이 `models.history` 를 import 해 `create_all` 이 만드는 새 테이블이다 — 위 ③ 의 `create_all` + `stamp` 경로). 그 전 `0005_research_jobs` 는 2026-09-23 확인.
+- **현재 서버**: `alembic_version = 0007_research_work` — round06a 운영 배포(2026-10-06) 때 테이블 7개(`research_works`·`research_generations`·`research_topics`·`research_gap_checks`·`research_reading`·`paper_facets`·`research_proposals`)와 인덱스 8개를 확인한 뒤 `stamp` 로 맞췄다(lifespan 이 `models.research_work` 를 import 해 `create_all` 이 만드는 새 테이블이다 — 위 ③ 의 `create_all` + `stamp` 경로, `0007` 에는 데이터 백필이 없다). 그 전 `0006_history_items` 는 round04b 운영 배포(2026-09-28), `0005_research_jobs` 는 2026-09-23 확인.
 
 
 ## 15. LLM 은 프롬프트 JSON 예시의 개수를 베낀다 — 구성은 코드가 정한다
@@ -246,3 +246,16 @@
 - **원인**: compose 에 `mem_limit` 이 없으면 컨테이너는 호스트 메모리를 그대로 보고, Java 17 은 `-Xmx` 가 없으면 최대 힙을 그 1/4 로 잡는다. opendataloader-pdf 는 `java -jar` 를 `-Xmx` 없이 띄운다.
 - **해결 (round07)**: `ODL_JAVA_MAX_HEAP`(기본 `3g`, 1g 이상만) — ODL 자식의 환경에만 `JAVA_TOOL_OPTIONS=-Xmx<값>` 을 붙인다(`extractor._odl_child_env`). 운영 이미지 실측(`research/round07-odl-heap`): 무거운 문서 61건은 2·3g 에서 추출 결과가 상한 없을 때와 같았고, 일반 688건 가운데 3g 로도 넘치는 건 2건(fitz 텍스트로 간다). 형식이 틀리면(`2gb`) java 가 뜨지 않고 너무 작으면(`3m`) 떠도 변환이 모두 실패해 모든 문서가 조용히 fitz 텍스트가 되므로, 설정을 읽을 때 형식과 하한 1g 를 막는다(1g 아래로는 무거운 문서부터 메모리 부족이 는다). compose 의 `${ODL_JAVA_MAX_HEAP:-3g}` 는 빈 스택 env 도 3g 로 채운다 — 상한을 풀려면 `64g` 같은 큰 값을 준다.
 - **재발 방지**: 컨테이너 안에서 JVM·대형 모델 같은 메모리를 크게 쓰는 하위 프로세스를 띄우면 상한을 명시한다. 기본값은 "호스트 크기에 비례"라 개발 PC 에서 잰 값이 운영에서는 몇 배가 된다.
+
+## 24. 브로커 메시지를 잃은 approved·queued 딥리서치 잡이 그 브라우저의 승인·재시도를 계속 429 로 막는다
+
+- **날짜**: 2026-10-03 (round06a — 머지 전 리뷰에서 찾았다. 라이브에서는 아직 안 터졌다)
+- **증상**: 한 브라우저에서 딥리서치를 승인·다시 시도하면 계속 429 `browser_active`("진행 중인 딥리서치가 있습니다 …")와 [진행 중인 연구 보기] 링크가 나오는데, 링크의 잡은 '대기열'(approved·queued)에서 움직이지 않는다. 사용자에게는 '진행 중' 으로 보여 취소할 까닭을 알기 어렵다.
+- **원인**: round06a 의 브라우저당 실행 제한(`app/api/research.py` 의 `_to_run_queue`)은 같은 `created_by` 의 approved·queued·running 잡을 센다. 그런데 회수기(`tasks.reap_stale_research`)는 approved·queued 를 회수하지 않는다 — 아직 워커가 집지 않은 정상 대기 상태라서다. 그래서 브로커 메시지를 잃어 워커가 끝내 집지 못한 잡(Redis 컨테이너가 AOF 없이 죽어 `q_research` 목록이 사라짐, 연구 테이블을 덤프에서 복원 — `infra/backup/pg_backup.sh` 머리 주석)은 approved·queued 로 영원히 남고, 06a 전에는 그 잡 하나만 멈췄지만 이제는 같은 브라우저의 모든 승인·재시도가 막힌다.
+- **확인 순서**:
+  1. 429 응답의 `job_id`(또는 링크의 잡)가 approved·queued 인지 본다 — `echo "SELECT id, status, created_at FROM research_jobs WHERE id = '<job_id>'" | pgq`(계획 Task 17 Step 5 의 셸 함수).
+  2. 실행 큐가 비었는지 본다 — `docker exec nl-lib-redis redis-cli LLEN q_research` 가 0 이고 running 딥리서치 잡이 없다(`SELECT count(*) FROM research_jobs WHERE status = 'running'`).
+  3. 대기 순번 줄에 남았는지 본다 — `docker exec nl-lib-redis redis-cli ZSCORE research:run_queue <job_id>`(값이 있으면 줄에는 섰지만 메시지가 없다).
+  4. 1~3 이 맞으면 메시지를 잃은 잡이다 — 화면(링크의 잡)에서 취소하면 브라우저 제한이 풀리고, 다시 시작한다.
+- **해결**: 지금은 위 순서로 사람이 푼다(코드 수정 없음). 덤프에서 연구 테이블을 복원했다면 복원 직후 approved·queued 를 failed 로 돌린다(`pg_backup.sh` 머리 주석의 UPDATE).
+- **재발 방지(후속 과제 — 06a 범위 밖)**: 코드로 막으려면 `created_at` 같은 시간 기준을 쓰지 않는다(정상 대기가 길 수 있다). 회수기 두 틱 연속으로 `q_research` LLEN 0 · running 딥리서치 0 · 대기 ZSET 에 없음이 함께 성립할 때만 failed('브로커 메시지 유실')로 둔다.

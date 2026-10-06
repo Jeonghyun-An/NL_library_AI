@@ -34,6 +34,19 @@ export interface SearchRoundResult {
   // 무관 제외를 끈 잡(exclude_off_topic=0)이 빼지 않고 무관하다고만 본 수. 그 하위질문에서 처음 본 논문만
   // 센다(빼지 않은 논문은 다음 회차 목록에 남아 또 가리켜진다). 켠 잡은 0, 그 전 잡에는 없다
   flagged?: number | null;
+  // 회차 끝 이 하위질문의 채택 근거(순위순) — 근거 장부(06b)가 rounds 만으로 다시 그린다. 기록하기 전 잡에는 없다
+  adopted_papers?: AdoptedPaper[] | null;
+}
+
+// 회차 끝 채택 근거 한 편(runner._adopted_papers). rank 는 1부터. 그 회차에 새로 채택된 논문(new)만
+// 서지를 싣는다 — 나머지는 앞 회차의 같은 cnts_id 에 서지가 있다
+export interface AdoptedPaper {
+  cnts_id: string;
+  rank: number;
+  title?: string | null;
+  personal_author?: string | null;
+  pub_date?: string | null;
+  new?: boolean;
 }
 
 // 자기점검이 무관하다고 보고 뺀 논문의 서지 요약(회차 기록·보고서 trail)
@@ -175,6 +188,13 @@ export interface ResearchReport {
 }
 
 // ── API 응답 ───────────────────────────────────────────────
+// 대기 순번(api/research.py _queue_info) — ahead 는 앞에 있는 잡 수(도는 잡 포함), eta_sec 는 최근 완료 잡의
+// 걸린 시간 중앙값으로 어림한 초(완료 잡이 없으면 null). 대기 중(approved·queued)인 잡에만 온다
+export interface QueueInfo {
+  ahead: number;
+  eta_sec: number | null;
+}
+
 export interface ResearchJob {
   job_id: string;
   question: string;
@@ -188,6 +208,8 @@ export interface ResearchJob {
   created_at?: string | null;
   started_at?: string | null;
   finished_at?: string | null;
+  // 대기 중이 아니면 null, 순번을 싣기 전 서버에는 키가 없다
+  queue?: QueueInfo | null;
 }
 
 export interface ResearchCreateResponse {
@@ -199,12 +221,15 @@ export interface ResearchApproveResponse {
   job_id: string;
   status: "approved";
   plan: string[] | null;
+  // 승인 직후의 대기 순번 — 첫 하트비트를 기다리지 않게 응답에 싣는다. 싣기 전 서버에는 키가 없다
+  queue?: QueueInfo | null;
 }
 
 export interface ResearchRetryResponse {
   job_id: string;
   status: "queued";
   stage: ResearchStage;
+  queue?: QueueInfo | null;
 }
 
 export interface ResearchCancelResponse {
@@ -221,6 +246,8 @@ export interface SnapshotEvent {
     stage: ResearchStage;
     plan: string[] | null;
     counters?: CountersPayload;
+    // 대기 중일 때만 싣는다
+    queue?: QueueInfo | null;
   };
 }
 
@@ -264,6 +291,8 @@ export interface CritiqueEvent {
   // 같은 값이다. 점검 직후 진행 저장이 실패해도 타임라인이 목록을 펼칠 수 있게 이벤트에도 싣는다
   excluded_papers?: ExcludedPaper[] | null;
   flagged?: number | null;
+  // 회차 끝 채택 근거 — 회차 기록의 adopted_papers 와 같은 값이다. 보내지 않는 옛 워커는 빈 목록으로 받는다
+  adopted_papers?: AdoptedPaper[] | null;
   round?: number;
   next_query?: string | null;
   will_recheck?: boolean;
@@ -305,6 +334,13 @@ export interface CanceledEvent {
   status: "canceled";
 }
 
+// 스트림 하트비트가 대기 중인 잡의 순번을 다시 세어 바뀌었을 때만 보낸다
+export interface QueueEvent {
+  kind: "queue";
+  ahead: number;
+  eta_sec: number | null;
+}
+
 export type ResearchEvent =
   | SnapshotEvent
   | StatusEvent
@@ -315,7 +351,8 @@ export type ResearchEvent =
   | SynthEvent
   | DoneEvent
   | FailedEvent
-  | CanceledEvent;
+  | CanceledEvent
+  | QueueEvent;
 
 // ── 화면 상태 ─────────────────────────────────────────────
 export type RoundSource = "rounds" | "trail" | "queries" | "none";
@@ -332,6 +369,18 @@ export interface RoundView {
   // 뺀 논문 목록이 있는 회차만 타임라인에서 펼칠 수 있다 — 목록을 기록하기 전 회차는 빈 목록
   excludedPapers: ExcludedPaperView[];
   flagged: number | null;
+  // 회차 끝 채택 근거(순위순) — 점검 전 회차·기록하기 전 잡은 빈 목록
+  adoptedPapers: AdoptedPaperView[];
+}
+
+export interface AdoptedPaperView {
+  cntsId: string;
+  rank: number;
+  // 그 회차에 새로 채택된 논문(isNew)만 서지가 있고, 나머지는 null — 앞 회차의 같은 논문에서 찾는다
+  title: string | null;
+  personalAuthor: string | null;
+  pubDate: string | null;
+  isNew: boolean;
 }
 
 export interface ExcludedPaperView {
@@ -394,6 +443,11 @@ export interface SynthView {
   retiredSeq: number | null;
 }
 
+export interface QueueView {
+  ahead: number;
+  etaSec: number | null;
+}
+
 export interface ResearchView {
   jobId: string;
   question: string;
@@ -412,6 +466,8 @@ export interface ResearchView {
   highlight: HighlightView | null;
   synth: SynthView;
   source: RoundSource;
+  // 대기 순번 — 대기 중(approved·queued)이고 서버가 순번을 실었을 때만 있다
+  queue: QueueView | null;
 }
 
 // 원문 뷰어 머리의 "인용 대목 n/N" 한 칸. page 는 pdf.js 쪽 번호(1부터), 쪽 정보가 없으면 null

@@ -1,0 +1,31 @@
+{
+  "about": "같은 서지로 두 화면의 인용 글자를 맞춘다. 논문 상세 인용(app/services/search/paper_citation.py build_citation)의 국문 앞부분과 보고서 내보내기 참고문헌(frontend/utils/reportDocument.ts referenceText)이 reference 와 같아야 한다. app/tests/test_paper_citation.py 와 frontend/tests/unit/reportDocument.test.ts 가 함께 읽는다 — 한쪽 글자를 바꾸려면 이 파일을 고쳐야 하고, 그러면 다른 쪽 테스트가 깨진다.",
+  "cases": [
+    {
+      "name": "3-authors",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 57(3)."
+    },
+    {
+      "name": "2-authors",
+      "meta": {
+        "personal_author": "김철수; 이영희",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001"
+      },
+      "reference": "김철수, 이영희 (2019). AI 윤리 교육. 교육학연구, 57(3)."
+    }
+  ]
+}

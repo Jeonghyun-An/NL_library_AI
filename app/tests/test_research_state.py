@@ -37,7 +37,7 @@ class TestMergeParams:
         assert set(DEFAULT_PARAMS) == {
             "max_subquestions", "max_recheck", "max_evidence", "per_subq_top_k",
             "chunks_per_evidence", "citation_weight", "min_evidence_per_subq",
-            "exclude_off_topic",
+            "exclude_off_topic", "critic_scope",
         }
 
     def test_bounds_cover_exactly_the_default_keys(self):
@@ -109,6 +109,20 @@ class TestMergeParams:
         # True 는 int 의 서브클래스라 막지 않으면 1 로 통과한다
         with pytest.raises(ValueError, match="exclude_off_topic"):
             merge_params({"exclude_off_topic": value})
+
+    def test_critic_scope_is_the_current_criterion_by_default(self):
+        # 원 질문 기준(1)은 운영에서 두 갈래 판정에 합격한 뒤에 기본값을 바꿔 켠다(spec D11)
+        assert DEFAULT_PARAMS["critic_scope"] == 0
+
+    @pytest.mark.parametrize("value", [0, 1])
+    def test_critic_scope_takes_zero_or_one(self, value):
+        assert merge_params({"critic_scope": value})["critic_scope"] == value
+
+    @pytest.mark.parametrize("value", [2, -1, True, "1", 1.0])
+    def test_critic_scope_rejects_anything_else(self, value):
+        # '알 수 없는 파라미터: critic_scope' 가 아니라 값 검사에서 거부돼야 한다 — 그래서 콜론 없는 문구로 맞춘다
+        with pytest.raises(ValueError, match="파라미터 critic_scope"):
+            merge_params({"critic_scope": value})
 
 
 class TestState:

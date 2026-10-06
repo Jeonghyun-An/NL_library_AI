@@ -21,6 +21,7 @@ import {
   type ReportDocInput,
 } from "~/utils/reportDocument";
 import { reportIntro } from "~/utils/researchReport";
+import citationReference from "../fixtures/citation_reference.json";
 
 // 한국 시각 2026-09-28 15:05
 const NOW = new Date("2026-09-28T06:05:00Z");
@@ -343,6 +344,17 @@ describe("buildReportDocument — 참고문헌", () => {
     // z(31쪽)는 어느 절도 인용하지 않았고, 0 은 첫 쪽과 쪽 정보 없음이 겹쳐 뺀다
     expect(doc.references.map((r) => r.text)).toEqual(["가. 인용 쪽: 12–13, 20", "나."]);
   });
+
+  it("논문 상세 인용(build_citation)과 같은 서지는 같은 글자로 쓴다 — 백엔드 test_paper_citation.py 가 같은 파일을 읽는다", () => {
+    const evidence: Record<string, ReportEvidence> = {};
+    citationReference.cases.forEach((c, i) => {
+      evidence[`E${i + 1}`] = ev(`C${i + 1}`, c.meta);
+    });
+    const intro = citationReference.cases.map((_, i) => `[E${i + 1}]`).join("");
+    const doc = buildReportDocument(input({ sections: [section({ intro })], evidence }), NOW);
+    // 대목이 없어 인용 쪽이 붙지 않는다 — 백엔드 국문 인용의 "저자 (연도). 제목. 학술지, 권호." 와 같은 범위다
+    expect(doc.references.map((r) => r.text)).toEqual(citationReference.cases.map((c) => c.reference));
+  });
 });
 
 describe("buildReportDocument — 초안", () => {
@@ -415,7 +427,7 @@ describe("docInputFromReport", () => {
 function round(n: number, query: string): RoundView {
   return {
     round: n, query, foundChunks: 3, newPapers: 1, verdict: null, note: "", nextQuery: null,
-    excluded: null, excludedPapers: [], flagged: null,
+    excluded: null, excludedPapers: [], flagged: null, adoptedPapers: [],
   };
 }
 
@@ -454,6 +466,7 @@ function view(subqs: SubqView[]): ResearchView {
     highlight: null,
     synth: { seq: 9, status: "running", total: 3, sections: [], headings: [], evidence: {}, retiredSeq: null },
     source: "rounds",
+    queue: null,
   };
 }
 

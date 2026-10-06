@@ -485,3 +485,167 @@ def test_backoff_valid_schedules_log_nothing(fresh_schedule_cache, caplog, sched
         llm_client._backoff_delay(schedule, 1)
 
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
+
+
+# ── 호출별 엔드포인트(round06a) — 연구 어시스턴트가 생성마다 Qwen·gemma 를 고른다 ─────────────────
+# base_url·model 을 주지 않으면(None) 지금처럼 LLM_BASE_URL·LLM_MODEL 이다. 기존 호출부는 넘기지 않는다.
+
+QWEN_URL, QWEN_MODEL = "http://qwen.test/v1", "qwen-test"
+
+
+def _sse(*deltas: str) -> httpx.Response:
+    """openai 호환 스트리밍 응답(SSE) — 델타마다 data 줄 하나, 끝에 [DONE]."""
+    lines = [
+        "data: " + json.dumps({"choices": [{"delta": {"content": d}}]}, ensure_ascii=False)
+        for d in deltas
+    ]
+    return httpx.Response(200, content=("\n\n".join([*lines, "data: [DONE]"]) + "\n\n").encode())
+
+
+def _ndjson(*deltas: str) -> httpx.Response:
+    """ollama 스트리밍 응답(NDJSON) — 델타마다 한 줄, 끝에 done."""
+    lines = [json.dumps({"message": {"content": d}, "done": False}, ensure_ascii=False) for d in deltas]
+    lines.append(json.dumps({"message": {"content": ""}, "done": True}))
+    return httpx.Response(200, content=("\n".join(lines) + "\n").encode())
+
+
+def _collect(gen) -> list[str]:
+    async def _go():
+        return [d async for d in gen]
+    return asyncio.run(_go())
+
+
+def test_chat_full_uses_the_per_call_endpoint(cfg, server, sleeps):
+    server.queue.append(_ok("큐웬 응답"))
+
+    result = asyncio.run(llm_client.chat_full(
+        MESSAGES, params={"max_tokens": 200}, base_url=QWEN_URL, model=QWEN_MODEL,
+    ))
+
+    assert result.content == "큐웬 응답"
+    url, body = server.calls[0]
+    assert url == "http://qwen.test/v1/chat/completions"
+    assert body["model"] == QWEN_MODEL and body["max_tokens"] == 200
+
+
+def test_explicit_none_keeps_the_configured_endpoint(cfg, server, sleeps):
+    server.queue.append(_ok())
+
+    asyncio.run(llm_client.chat_full(MESSAGES, base_url=None, model=None))
+
+    url, body = server.calls[0]
+    assert url == "http://llm.test/v1/chat/completions" and body["model"] == "gemma-test"
+
+
+def test_base_url_and_model_are_independent(cfg, server, sleeps):
+    server.queue.extend([_ok(), _ok()])
+
+    asyncio.run(llm_client.chat_full(MESSAGES, base_url=QWEN_URL))
+    asyncio.run(llm_client.chat_full(MESSAGES, model=QWEN_MODEL))
+
+    assert [(url, body["model"]) for url, body in server.calls] == [
+        ("http://qwen.test/v1/chat/completions", "gemma-test"),
+        ("http://llm.test/v1/chat/completions", QWEN_MODEL),
+    ]
+
+
+def test_empty_string_is_not_none(cfg, server, sleeps):
+    """설정을 쓰는 것은 None 일 때뿐이다 — `base_url or cfg…` 로 줄이면 VLM_BASE_URL·VLM_MODEL 이 빈 채로
+    배포됐을 때 Qwen 요청이 말없이 gemma 로 간다. 빈 값은 그대로 보내 요청이 드러나게 실패한다."""
+    server.queue.append(_ok())
+
+    asyncio.run(llm_client.chat_full(MESSAGES, model="", base_url="http://x/v1"))
+
+    url, body = server.calls[0]
+    assert url == "http://x/v1/chat/completions" and body["model"] == ""     # 설정값 gemma-test 가 아니다
+    assert llm_client._endpoint("", "") == ("", "")
+    assert llm_client._endpoint("", None) == ("", "gemma-test")
+
+
+def test_retries_stay_on_the_per_call_endpoint(cfg, server, sleeps, caplog):
+    server.queue.extend([httpx.Response(503, text="busy"), httpx.ConnectError("연결 거부"), _ok("회복")])
+
+    with caplog.at_level(logging.WARNING, logger=llm_client.log.name):
+        result = asyncio.run(llm_client.chat_full(MESSAGES, base_url=QWEN_URL, model=QWEN_MODEL))
+
+    assert result.content == "회복" and sleeps == [2.0, 8.0]
+    assert {(url, body["model"]) for url, body in server.calls} == {
+        ("http://qwen.test/v1/chat/completions", QWEN_MODEL),
+    }
+    # 재시도 경고(상태 코드·전송 실패)도 부른 모델을 남긴다 — Qwen·gemma 넘김을 워커 로그로 가른다
+    warned = [r.getMessage() for r in caplog.records if r.name == llm_client.log.name]
+    assert len(warned) == 2
+    assert all(f"model={QWEN_MODEL}" in m and "gemma-test" not in m for m in warned)
+
+
+def test_length_warning_names_the_model_that_was_called(cfg, server, sleeps, caplog):
+    server.queue.append(_ok("잘린 응답", "length"))
+
+    with caplog.at_level(logging.WARNING, logger=llm_client.log.name):
+        asyncio.run(llm_client.chat_full(
+            MESSAGES, params={"max_tokens": 200}, base_url=QWEN_URL, model=QWEN_MODEL,
+        ))
+
+    warned = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warned) == 1
+    assert f"model={QWEN_MODEL}" in warned[0] and "gemma-test" not in warned[0]
+
+
+def test_ollama_path_uses_the_per_call_endpoint(cfg, server, sleeps, monkeypatch):
+    monkeypatch.setattr(cfg, "LLM_API_STYLE", "ollama")
+    server.queue.append(httpx.Response(200, json={"message": {"content": "응답"}, "done": True}))
+
+    asyncio.run(llm_client.chat_full(MESSAGES, base_url="http://ollama2.test:11434/v1", model="qwen3:8b"))
+
+    url, body = server.calls[0]
+    assert url == "http://ollama2.test:11434/api/chat" and body["model"] == "qwen3:8b"
+
+
+def test_chat_passes_the_endpoint_through(cfg, server, sleeps):
+    server.queue.append(_ok("본문"))
+
+    assert asyncio.run(llm_client.chat(MESSAGES, base_url=QWEN_URL, model=QWEN_MODEL)) == "본문"
+    url, body = server.calls[0]
+    assert url == "http://qwen.test/v1/chat/completions" and body["model"] == QWEN_MODEL
+
+
+def test_chat_stream_defaults_to_the_configured_endpoint(cfg, server):
+    server.queue.append(_sse("가", "나"))
+
+    assert _collect(llm_client.chat_stream(MESSAGES, params={"max_tokens": 50})) == ["가", "나"]
+    url, body = server.calls[0]
+    assert url == "http://llm.test/v1/chat/completions"
+    assert body["model"] == "gemma-test" and body["stream"] is True and body["max_tokens"] == 50
+
+
+def test_chat_stream_uses_the_per_call_endpoint(cfg, server):
+    server.queue.append(_sse("절의 ", "첫 문장"))
+
+    deltas = _collect(llm_client.chat_stream(MESSAGES, base_url=QWEN_URL, model=QWEN_MODEL))
+
+    assert deltas == ["절의 ", "첫 문장"]
+    url, body = server.calls[0]
+    assert url == "http://qwen.test/v1/chat/completions" and body["model"] == QWEN_MODEL
+
+
+def test_chat_stream_ollama_uses_the_per_call_endpoint(cfg, server, monkeypatch):
+    monkeypatch.setattr(cfg, "LLM_API_STYLE", "ollama")
+    server.queue.append(_ndjson("가", "나"))
+
+    deltas = _collect(llm_client.chat_stream(
+        MESSAGES, base_url="http://ollama2.test:11434/v1", model="qwen3:8b",
+    ))
+
+    assert deltas == ["가", "나"]
+    url, body = server.calls[0]
+    assert url == "http://ollama2.test:11434/api/chat"
+    assert body["model"] == "qwen3:8b" and body["stream"] is True
+
+
+def test_chat_stream_still_does_not_retry(cfg, server, sleeps):
+    server.queue.append(httpx.Response(503, text="busy"))
+
+    with pytest.raises(httpx.HTTPStatusError):
+        _collect(llm_client.chat_stream(MESSAGES, base_url=QWEN_URL, model=QWEN_MODEL))
+
+    assert len(server.calls) == 1 and sleeps == []

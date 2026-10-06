@@ -612,6 +612,7 @@ docker exec nl-lib-fastapi curl -s localhost:8000/api/admin/ingest-jobs/$JOB/fai
 - 본 잡의 실패는 모두 옛 코드가 낸 것이다(10-01 pause 뒤 in-flight 0 — 9-1). 진단 때는 `not_found` 560(그중 '섹션 없음' 545 · '카탈로그 row 없음' 15) · `extract_empty` 275 · `llm_error` 264, 합 1,099건이었다.
 - `not_found` 는 '섹션 없음'만 `item_ids` 로 보낸다. '카탈로그 row 없음'은 카탈로그 문제라 재시도하지 않고 목록만 남긴다 — 행이 지금도 없으면 추출 단계가 PDF 메타 자동추출로 카탈로그 행을 새로 만들고 `doc_type` 이 어긋날 수 있다(§5-b).
 - 나머지는 `error_group` 별로 보낸다. 아래 `for` 는 다시 돌려 볼 만한 그룹을 모두 담았다 — `/failures` 에 없는 그룹은 `retried` 가 0 이다. `unknown` 은 대표 메시지(`sample_error`)를 본 뒤 정하고, `no_text` 는 보내지 않는다(같은 코드로 다시 해도 같다 — 옛 코드는 이 그룹을 내지 않으므로 본 잡에는 아직 없다). 재개 뒤 생긴 `no_text` 가운데 `last_error` 에 `거절` 이 있는 것만 VLM 설정을 고친 뒤 다시 보낼 만하다(9-9).
+- `/failures` 의 `sample_error` 는 그룹 안에서 가장 흔한 `last_error` 문장이다. `extract_empty` 처럼 메시지에 파일 이름·임시 경로가 들어가는 그룹은 문장이 모두 달라 대표가 사실상 아무 문장 하나다 — 원인별로 세려면 `last_error` 를 `LIKE` 로 나눠 센다(2026-10-04: `extract_empty` 275건 = 'not a valid PDF' 11 + 그 밖의 ODL 변환 실패 264).
 
 ```bash
 docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
@@ -655,6 +656,7 @@ docker exec nl-lib-postgres psql -U <user> -d <db> -At -c \
 docker exec nl-lib-postgres psql -U <user> -d <db> -c "SELECT count(*) FILTER (WHERE status = 'done') AS done, count(*) FILTER (WHERE error_group = 'no_text') AS no_text, count(*) FILTER (WHERE error_group = 'no_text' AND last_error LIKE '%거절%') AS no_text_rejected, count(*) FILTER (WHERE status = 'done' AND (meta->>'ocr_rejected')::int > 0) AS done_with_rejected FROM ingest_job_items WHERE job_id = '$JOB' AND updated_at > now() - interval '24 hours'"
 ```
 
+- 재처리분(9-8·9-10)이 앞 id 라 먼저 도는 동안에는 원래 문제가 있던 문서가 몰려 `no_text` 비율이 높게 나온다 — 1% 기준은 재처리분이 빠진 뒤(위의 '다시 돌린 아이템' 수가 진행 상한 안팎까지 줄어든 뒤) 새 아이템으로 본다. 2026-10-02~04: 재처리 구간에서 `no_text` 78건이 났고, 빠진 뒤 24시간은 `done` 8,717 · `no_text` 0 · 거절 0 이었다.
 - 도는 동안 생기는 `no_text` 는 자동 재시도하지 않는다 — 가끔 목록을 뽑아 둔다(강제 OCR 까지 해도 글자가 없거나 강제 OCR 로 바뀔 쪽이 없는 문서).
 
 ```bash

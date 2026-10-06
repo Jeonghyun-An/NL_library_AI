@@ -188,15 +188,32 @@ def _titled_note(note: str, evidence: list[Evidence]) -> str:
 
 
 async def critique(
-    subq: SubQuestion, evidence: list[Evidence], *, params: dict,
+    subq: SubQuestion, evidence: list[Evidence], *, params: dict, question: str | None = None,
 ) -> Verdict:
-    system, user, llm_params = get_prompt("research_critique").render(
-        subquestion=subq.text,
-        evidence_count=len(evidence),
-        evidence_list=format_evidence_list(evidence),
-        min_evidence=params["min_evidence_per_subq"],
-        tried_queries=", ".join(subq.queries) or "(없음)",
-    )
+    """하위질문 하나의 근거를 판정한다. question 은 원 질문이다(러너가 늘 넘긴다).
+
+    잡 파라미터 critic_scope 가 1 이고 원 질문이 있으면 원 질문 기준 프롬프트(research_critique_question)로
+    무관 근거를 원 질문의 주제로만 가른다 — 하위질문에서 벗어났을 뿐 원 질문을 다루는 논문까지 빼면 과잉
+    제외가 된다. 그 밖에는 지금 프롬프트를 지금 다섯 변수로 렌더한다(원 질문을 넘기지 않는다). 0 갈래의
+    프롬프트·입력은 글자 하나 바뀌지 않는다 — 운영에서 두 갈래를 나란히 비교하는 기준이다.
+    """
+    variables = {
+        "subquestion": subq.text,
+        "evidence_count": len(evidence),
+        "evidence_list": format_evidence_list(evidence),
+        "min_evidence": params["min_evidence_per_subq"],
+        "tried_queries": ", ".join(subq.queries) or "(없음)",
+    }
+    # params 는 merge_params·restore_state 를 거친 값이라 키가 늘 있다 — 기본값을 여기서 다시 적지 않는다
+    # (DEFAULT_PARAMS 를 1 로 켜도 대체값이 0 으로 남아 갈래가 조용히 갈리지 않게)
+    if params["critic_scope"] == 1 and question:
+        system, user, llm_params = get_prompt("research_critique_question").render(
+            question=question, **variables,
+        )
+    else:
+        if params["critic_scope"] == 1:
+            log.warning("[critic] critic_scope=1 인데 원 질문이 없어 기준 0 으로 판정한다 subq=%s", subq.idx)
+        system, user, llm_params = get_prompt("research_critique").render(**variables)
     try:
         raw = await chat(
             [{"role": "system", "content": system}, {"role": "user", "content": user}],
