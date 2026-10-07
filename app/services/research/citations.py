@@ -32,9 +32,15 @@ _BRACKET = re.compile(r"([ \t]*)[\[［【]([^\[\]［］【】\n]*)[\]］】]")
 # 숫자·소수점 뒤의 e 는 지수 표기다("[1.2e3, 4.5e3]"·"[n=2E5]") — 인용으로 보면
 # 괄호째 지워 수치가 사라진다.
 _CITATION_LIKE = re.compile(r"(?<![A-Za-z0-9.])[Ee]\s*\d")
-_ID = r"[Ee]\s*(\d+)"
 _RANGE_SEP = r"\s*[-~–—～]\s*"
-_ITEM = re.compile(rf"{_ID}(?:{_RANGE_SEP}[Ee]?\s*(\d+))?")
+# 같은 괄호 문법을 마커 글자마다 쓴다 — E 는 근거 인용, F 는 계획서의 코드가 센 수치
+# (services/research_work/markers.check_figures). 글자만 다르고 묶음·범위·전각·소문자·0패딩을
+# 똑같이 읽어야 두 마커의 검증 수준이 같다.
+_LIKE = {"E": _CITATION_LIKE, "F": re.compile(r"(?<![A-Za-z0-9.])[Ff]\s*\d")}
+_ITEMS = {
+    letter: re.compile(rf"[{letter}{letter.lower()}]\s*(\d+)(?:{_RANGE_SEP}[{letter}{letter.lower()}]?\s*(\d+))?")
+    for letter in _LIKE
+}
 _LIST_SEP = re.compile(r"\s*[,，;；]\s*")
 _SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
 # 마침표 뒤에 붙는 마커 묶음("문장이다. [E1] [E2]")을 셀 때만 통째로 문장
@@ -152,18 +158,27 @@ class MarkerResult(NamedTuple):
     unparsed: list[str] = []
 
 
-def _parse_ids(inner: str) -> list[tuple[int, int | None]] | None:
+class NormalizedMarkers(NamedTuple):
+    text: str
+    used: list[str]          # 등장 순서, 중복 제거
+    dropped: list[str]       # 없는 번호(나올 때마다)
+    unparsed: list[str]      # 마커처럼 생겼지만 번호를 읽을 수 없는 괄호("[E1 참조]")
+
+
+def _parse_ids(inner: str, letter: str = "E") -> list[tuple[int, int | None]] | None:
     """괄호 안을 (번호, 범위 끝) 목록으로 읽는다. 문법을 벗어나면 None."""
+    item = _ITEMS[letter]
     items = []
     for part in _LIST_SEP.split(inner.strip()):
-        m = _ITEM.fullmatch(part)
+        m = item.fullmatch(part)
         if m is None:
             return None
         items.append((int(m.group(1)), int(m.group(2)) if m.group(2) else None))
     return items
 
 
-def _resolve(items: list[tuple[int, int | None]], valid_ids: set[str]) -> tuple[list[str], list[str]]:
+def _resolve(items: list[tuple[int, int | None]], valid_ids: set[str],
+             letter: str = "E") -> tuple[list[str], list[str]]:
     """(유효 번호, 없는 번호). 0패딩은 정수로 읽어 E01 → E1 로 맞춘다.
 
     범위는 끝점만 모델이 쓴 번호다. 사이 번호는 주어진 것만 싣고 없는 것은
@@ -179,7 +194,7 @@ def _resolve(items: list[tuple[int, int | None]], valid_ids: set[str]) -> tuple[
             nums = [start, *(n for n in valid_nums if start < n < end), end]
             ends = {start, end}
         for n in nums:
-            eid = f"E{n}"
+            eid = f"{letter}{n}"
             if eid in valid_ids:
                 if eid not in ok:
                     ok.append(eid)
@@ -188,35 +203,46 @@ def _resolve(items: list[tuple[int, int | None]], valid_ids: set[str]) -> tuple[
     return ok, bad
 
 
-def bind_markers(text: str, valid_ids: set[str]) -> MarkerResult:
-    """인용 마커를 검증한다.
+def normalize_markers(text: str, valid_ids: set[str], letter: str = "E") -> NormalizedMarkers:
+    """`letter` 마커(E 인용·F 수치)를 괄호 단위로 검증한다.
 
-    인식한 표기는 유효한 번호만 표준형 `[E#]` 으로 다시 쓰고, 없는 번호와
-    해석 못 한 표기는 (그 앞 공백과 함께) 지운다. 나머지는 바이트 단위로
+    인식한 표기(묶음·범위·전각·소문자·0패딩)는 유효한 번호만 표준형 `[E#]`(`[F#]`)으로 다시 쓰고, 없는
+    번호와 해석 못 한 표기는 (그 앞 공백과 함께) 지운다. 다른 글자의 괄호와 나머지 글은 바이트 단위로
     보존한다 — "p < .05" 같은 논문 통계 표기를 건드리지 않는다.
     """
+    like = _LIKE[letter]
     dropped: list[str] = []
     unparsed: list[str] = []
     used: list[str] = []
 
     def _check(m: re.Match) -> str:
         inner = m.group(2)
-        if not _CITATION_LIKE.search(inner):
+        if not like.search(inner):
             return m.group(0)
-        items = _parse_ids(inner)
+        items = _parse_ids(inner, letter)
         if items is None:
             unparsed.append(m.group(0).strip())
             return ""
-        ok, bad = _resolve(items, valid_ids)
+        ok, bad = _resolve(items, valid_ids, letter)
         dropped.extend(bad)
-        for eid in ok:
-            if eid not in used:
-                used.append(eid)
+        for mid in ok:
+            if mid not in used:
+                used.append(mid)
         if not ok:
             return ""
-        return m.group(1) + " ".join(f"[{eid}]" for eid in ok)
+        return m.group(1) + " ".join(f"[{mid}]" for mid in ok)
 
-    cleaned = _BRACKET.sub(_check, text).strip()
+    return NormalizedMarkers(_BRACKET.sub(_check, text).strip(), used, dropped, unparsed)
+
+
+def bind_markers(text: str, valid_ids: set[str]) -> MarkerResult:
+    """인용 마커를 검증한다(normalize_markers 의 E).
+
+    인식한 표기는 유효한 번호만 표준형 `[E#]` 으로 다시 쓰고, 없는 번호와
+    해석 못 한 표기는 (그 앞 공백과 함께) 지운다. 나머지는 바이트 단위로
+    보존한다 — "p < .05" 같은 논문 통계 표기를 건드리지 않는다.
+    """
+    cleaned, used, dropped, unparsed = normalize_markers(text, valid_ids, "E")
 
     count_text = _TRAILING_MARKER.sub(r"\3\1\2", cleaned)
     sentences = [s for s in _SENT_SPLIT.split(count_text) if s.strip()]

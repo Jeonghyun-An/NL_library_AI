@@ -36,6 +36,8 @@ class TestSharedCases:
         assert any(re.search(r"[.!?]\s+\[E\d+\]", c["text"]) for c in SHARED_CASES)
         assert any(_ids("F", c["text"]) and not _ids("E", c["text"]) and c["unmarked"] == 1
                    for c in SHARED_CASES)
+        # 표준형이 아닌 [F#](묶음·전각·소문자) — 그 안의 번호는 두 쪽 모두 숫자로 세지 않는다
+        assert re.search(r"\[F\d+,\s*F\d+\]", texts) and "［F" in texts and "[f" in texts
         assert all(set(c) == {"text", "numbers", "unmarked", "note"} for c in SHARED_CASES)
 
     @pytest.mark.parametrize("case", SHARED_CASES, ids=[c["note"] for c in SHARED_CASES])
@@ -64,6 +66,23 @@ class TestFigures:
 
     def test_citation_markers_are_left_alone(self):
         assert check_figures("가족 지지 [E1] [F1].", {"F1"}).text == "가족 지지 [E1] [F1]."
+
+    @pytest.mark.parametrize("text, expected", [
+        ("연구는 [F1, F9]편이다.", FigureResult("연구는 [F1]편이다.", ["F1"], ["F9"])),
+        ("범위는 [F1-F2] 이다.", FigureResult("범위는 [F1] [F2] 이다.", ["F1", "F2"], [])),
+        ("전각 ［F2］ 와 【f1】.", FigureResult("전각 [F2] 와 [F1].", ["F2", "F1"], [])),
+        ("소문자 [f1] 과 [F 02].", FigureResult("소문자 [F1] 과 [F2].", ["F1", "F2"], [])),
+        ("없는 번호뿐인 묶음 [F7, F9] 은 지운다.", FigureResult("없는 번호뿐인 묶음 은 지운다.", [], ["F7", "F9"])),
+    ])
+    def test_bundles_ranges_full_width_and_lower_case_follow_the_citation_grammar(self, text, expected):
+        # [E#] 의 bind_markers 와 같은 괄호 문법 — 단일 [F#] 만 보면 묶음 속 없는 번호가 검사 없이 저장 글에 남는다
+        assert check_figures(text, {"F1", "F2"}) == expected
+
+    def test_unreadable_figure_brackets_are_removed_and_other_brackets_kept(self):
+        result = check_figures("범위는 [F1 참조] 이다. 통계는 [F(2, 98) = 4.2] 이고 [표 1] 을 본다.", {"F1"})
+
+        assert result == FigureResult("범위는 이다. 통계는 [F(2, 98) = 4.2] 이고 [표 1] 을 본다.", [], [],
+                                      ["[F1 참조]"])
 
 
 class TestSoftenClaims:
@@ -116,6 +135,12 @@ class TestCheckParagraph:
         assert text == "지지가 크다 [E1]. 범위는 이다. 논문 [F2] 편 [E2]."
         assert cites == ["KCI_A", "KCI_B"]
         assert (checks["dropped"], checks["dropped_f"], checks["unmarked"]) == (2, 1, 1)
+
+    def test_non_standard_figure_markers_are_rewritten_and_counted(self):
+        text, _, checks = self._check("연구는 [F1, F9]편이다 [E1]. 범위는 ［f2］이고 [F1 참조] 를 본다 [E2].")
+
+        assert text == "연구는 [F1]편이다 [E1]. 범위는 [F2]이고 를 본다 [E2]."
+        assert (checks["dropped"], checks["dropped_f"]) == (0, 2)       # 없는 F9 + 못 읽은 [F1 참조]
 
     def test_claims_are_softened_and_numbers_counted_on_the_final_text(self):
         text, _, checks = self._check("2017년 이후 연구가 없다 [E1].")
