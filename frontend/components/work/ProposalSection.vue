@@ -82,7 +82,7 @@
           <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 두세요 — 지우면 인용·수치가 빠집니다.</p>
           <p v-if="editProblem" class="rs-muted" role="status">{{ editProblem }}</p>
           <div class="rs-card__actions">
-            <button type="button" class="rs-btn rs-btn--small" :disabled="busy || !!editProblem" @click="saveEdit(p.id)">저장</button>
+            <button type="button" class="rs-btn rs-btn--small" :disabled="locked || !!editProblem" @click="saveEdit(p.id)">저장</button>
             <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="editingId = null">그만두기</button>
           </div>
         </div>
@@ -151,7 +151,7 @@
         </label>
         <p v-if="addText && addProblem" class="rs-muted" role="status">{{ addProblem }}</p>
         <div class="rs-card__actions">
-          <button type="button" class="rs-btn rs-btn--small" :disabled="busy || !!addProblem" @click="saveAdd">더하기</button>
+          <button type="button" class="rs-btn rs-btn--small" :disabled="locked || !!addProblem" @click="saveAdd">더하기</button>
           <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="adding = false">그만두기</button>
         </div>
       </template>
@@ -250,7 +250,8 @@ function paragraphQueue(pid: string): string | null {
   return g ? genQueueLine(g) : null;
 }
 
-// 절이나 그 절의 문단을 쓰는 동안 서버는 그 절의 쓰기(PUT·다시 쓰기)를 409 로 막는다 — 미리 잠근다
+// 절이나 그 절의 문단을 쓰는 동안 서버는 그 절의 쓰기(PUT·다시 쓰기)를 409 로 막는다 — 미리 잠근다.
+// 열어 둔 고치기·직접 쓰기 칸의 [저장]·[더하기]도 이것으로 잠근다(busy 를 품는다)
 const locked = computed(
   () =>
     props.busy ||
@@ -336,6 +337,20 @@ const addProblem = computed(() => paragraphProblem(addText.value));
 // 저장을 보낸 뒤 결과가 화면에 올 때까지 고치던 글을 쥐고 있다 — 실패(버전 충돌 등)하면 그대로 남아 다시 보낼 수 있다
 type Pending = { kind: "edit"; id: string; before: string } | { kind: "add"; count: number };
 let pending: Pending | null = null;
+
+// 절을 새 생성으로 다시 쓰면 서버가 문단 id 를 p1 부터 다시 매기고 근거 지도도 바뀔 수 있다 — 열어 둔 칸을
+// 그대로 두면 옛 글이 같은 id 의 새 문단에 다시 열려 [저장] 하면 새 문단을 덮고 [E#] 가 다른 논문에 붙는다.
+// 다시 쓰기가 실패·취소되면 gen_id 가 그대로라 고치던 글을 지킨다(옛 문단이 그대로 남아 있다)
+watch(
+  () => section.value?.gen_id,
+  () => {
+    editingId.value = null;
+    editText.value = "";
+    adding.value = false;
+    addText.value = "";
+    pending = null;
+  },
+);
 
 function startEdit(pid: string, text: string): void {
   editingId.value = pid;
