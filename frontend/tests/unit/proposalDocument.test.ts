@@ -254,6 +254,29 @@ describe("disclosureLines", () => {
     );
   });
 
+  it("실은 문단 수는 문서가 그리는 절에서만 센다 — 목차에서 빠진 옛 절의 검토 전 문단은 워터마크처럼 세지 않는다", () => {
+    // (a) 옛 절(prior.g3)에 검토 전 문단이 남아 있어도 실은 수는 목차 묶음·연구 공백의 2문단이다
+    const p = proposal();
+    const withOrphan = {
+      ...p,
+      sections: { ...p.sections, "prior.g3": section("prior.g3", { E1: "KCI_C" }, [para("p1", "proposed", "옛 절 [E1].")]) },
+    };
+    expect(disclosureLines(withOrphan, true)).toContain(
+      "이 문서에 실은 문단: 수락·수정·직접 쓴 문단과 검토 전 AI 제안 2문단(쪽마다 '미검토 AI 초안' 표시)",
+    );
+
+    // (b) 검토 전 문단이 옛 절에만 있으면 문서에 싣지 않으므로 워터마크도, 실었다는 줄도 없다
+    const printed = Object.fromEntries(
+      Object.entries(withOrphan.sections).map(([k, s]) => [
+        k,
+        k === "prior.g3" ? s : { ...s, paragraphs: s.paragraphs.filter((x) => x.state !== "proposed") },
+      ]),
+    );
+    const orphanOnly = { ...withOrphan, sections: printed };
+    expect(disclosureLines(orphanOnly, true)).toContain("이 문서에 실은 문단: 수락·수정·직접 쓴 문단(검토 전 AI 제안은 싣지 않음)");
+    expect("watermark" in buildProposalDocument(input({ includeProposed: true, proposal: orphanOnly }), NOW)).toBe(false);
+  });
+
   it("고른 주제의 출처를 문단 상태 다음 줄에 적는다 — 출처를 모르면 적지 않는다", () => {
     const second = (source: ProposalView["topic_source"]) => disclosureLines(proposal({ topic_source: source }), false)[1];
     expect(second({ origin: "user", edited: false })).toBe("주제: 사용자가 직접 쓴 주제");

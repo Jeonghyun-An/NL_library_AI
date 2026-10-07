@@ -158,6 +158,11 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
 // 시도는 모델·결과만 싣는다 — 실패 사유(error)에는 내부 주소가 들어 있어 문서에 내보내지 않는다
 export function disclosureLines(p: ProposalView, includeProposed: boolean): string[] {
   const f = footprint(p);
+  // 실은 검토 전 문단은 문서가 그리는 절(목차 묶음·연구 공백)에서만 센다 — 워터마크·파일 이름 꼬리(shownProposed)와 같은 범위다
+  const included = printedKeys(p).reduce(
+    (n, k) => n + (p.sections[k]?.paragraphs.filter((x) => x.state === "proposed").length ?? 0),
+    0,
+  );
   const out = [`문단 상태: ${footprintLine(f)}`];
   if (p.topic_source) out.push(topicSourceLine(p.topic_source));
   for (const key of sectionKeys(p)) {
@@ -165,8 +170,8 @@ export function disclosureLines(p: ProposalView, includeProposed: boolean): stri
     if (section) out.push(`${sectionLabel(key, p.outline)}: ${stateMix(section)}`);
   }
   out.push(
-    includeProposed && f.proposed
-      ? `이 문서에 실은 문단: 수락·수정·직접 쓴 문단과 검토 전 AI 제안 ${f.proposed}문단(쪽마다 '${UNREVIEWED_WATERMARK}' 표시)`
+    includeProposed && included
+      ? `이 문서에 실은 문단: 수락·수정·직접 쓴 문단과 검토 전 AI 제안 ${included}문단(쪽마다 '${UNREVIEWED_WATERMARK}' 표시)`
       : "이 문서에 실은 문단: 수락·수정·직접 쓴 문단(검토 전 AI 제안은 싣지 않음)",
   );
   for (const step of p.disclosure.steps) out.push(stepLine(step, p.outline));
@@ -210,9 +215,14 @@ function metaBlocks(input: ProposalDocInput, now: Date): DocBlock[] {
     .map((text): DocBlock => ({ type: "meta", text: xmlSafe(text) }));
 }
 
+// 문서가 그리는 절 — 목차 순서(선행연구 묶음 → 연구 공백)
+function printedKeys(p: ProposalView): string[] {
+  return [...(p.outline?.groups.map((g) => g.key) ?? []), "gap"];
+}
+
 // 목차 순서(선행연구 묶음 → 연구 공백) 뒤에, 목차에서 빠진 옛 절이 남아 있으면 그것도 센다
 function sectionKeys(p: ProposalView): string[] {
-  const ordered = [...(p.outline?.groups.map((g) => g.key) ?? []), "gap"];
+  const ordered = printedKeys(p);
   return [...ordered, ...Object.keys(p.sections).filter((k) => !ordered.includes(k)).sort()];
 }
 
