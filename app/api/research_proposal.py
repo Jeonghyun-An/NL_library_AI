@@ -181,6 +181,14 @@ async def create_outline(job_id: str, db: AsyncSession = Depends(get_db)):
     groups = assign_groups(papers, affinity, group_count(len(papers)), keys=keys)
     gen_input = outline_input(question, topic_view, concepts, basis, groups, metas)
 
+    # 잠금 순서는 다른 계획서 쓰기(워커의 절·목차 반영, PUT 목차·절)와 같은 계획서 행 → 연구 행이다. 계획서 행
+    # INSERT 를 맨 앞에 둔다 — 행이 있으면 ON CONFLICT 검사가 그 행을 고치는 중인 트랜잭션을 기다리는데, 그쪽은
+    # refresh_progress 에서 연구 행을 FOR UPDATE 로 기다린다. 생성 행 INSERT(enqueue_generation)도 외래 키 검사로
+    # 연구 행에 FOR KEY SHARE 를 쥐므로(FOR UPDATE 와 겹친다) 그보다도 앞이어야 교착이 없다.
+    await db.execute(
+        insert(ResearchProposal).values(work_id=jid, version=1, outline={}, sections={})
+        .on_conflict_do_nothing()
+    )
     gen_id = await enqueue_generation(db, jid, kind="outline", target=OUTLINE_TARGET, input=gen_input)
     if gen_id is None:
         await db.rollback()
@@ -190,10 +198,6 @@ async def create_outline(job_id: str, db: AsyncSession = Depends(get_db)):
             update(ResearchWork).where(ResearchWork.id == jid)
             .values(concept_members=members_from_affinity(affinity, concepts, MEMBER_THRESHOLD))
         )
-    await db.execute(
-        insert(ResearchProposal).values(work_id=jid, version=1, outline={}, sections={})
-        .on_conflict_do_nothing()
-    )
     before = PHASE_ORDER[:PHASE_ORDER.index("proposal")]
     advanced = (await db.execute(
         update(ResearchWork).where(ResearchWork.id == jid, ResearchWork.phase.in_(before))

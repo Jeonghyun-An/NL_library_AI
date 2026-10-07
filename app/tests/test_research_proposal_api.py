@@ -445,6 +445,23 @@ class TestCreateOutline:
         assert any(s.startswith("SELECT") for s, _ in api.seen[:at])
         assert any(s.startswith("INSERT INTO research_generations") for s, _ in api.seen[at:])
 
+    def test_the_proposal_row_is_locked_before_the_work_row(self, api):
+        """잠금 순서 계획서 행 → 연구 행(워커의 절·목차 반영과 같다). 목차가 있을 때 [목차 다시 만들기]의 ON CONFLICT
+        검사는 계획서 행을 고치는 중인 워커를 기다리고, 워커는 refresh_progress 에서 연구 행을 기다린다 — 연구 행을
+        먼저 쥐면(concept_members UPDATE, 생성 행 INSERT 의 외래 키 FOR KEY SHARE) 교착이다."""
+        jid = _work_job(api.engine, concepts=["노인의 우울", "사회적 지지"])
+        add_proposal(api.engine, jid, version=7, outline=OUTLINE)
+        api.affinity.result = AFFINITY
+        api.seen.clear()
+
+        assert api.client.post(f"/api/research/{jid}/outline").status_code == 200
+
+        writes = [s.split("(")[0].split(" SET")[0].strip() for s, _ in api.seen[api.seen.index(("AFFINITY", None)):]
+                  if s.startswith(("INSERT", "UPDATE"))]
+        assert writes[:2] == ["INSERT INTO research_proposals", "INSERT INTO research_generations"]
+        assert writes.count("UPDATE research_works") >= 2          # concept_members·phase(그 뒤 진행 요약)
+        assert _proposal(api.engine, jid)["version"] == 7
+
     def test_falls_back_to_subquestions_when_the_affinity_fails(self, api):
         jid = _work_job(api.engine, concepts=["노인의 우울", "사회적 지지"],
                         picked=("C1", "C2", "C3", "C4", "C5", "C7", "C8", "C9"))
