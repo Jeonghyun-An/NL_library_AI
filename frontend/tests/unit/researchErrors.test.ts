@@ -148,6 +148,12 @@ describe("workErrorMessage", () => {
     expect(workErrorMessage(fetchError(409, "카드가 아직 없습니다"), "실패")).toBe("카드가 아직 없습니다");
     expect(workErrorMessage(fetchError(500), "실패")).toBe("실패");
   });
+
+  it("절 PUT 의 422(검사 뒤 글이 상한을 넘음)는 서버 문구를 그대로 보인다 — 화면 검사는 보낸 글만 보아 통과시킨다", () => {
+    // 서버 api/research_proposal.PARAGRAPH_TOO_LONG — 이유(단정 표현 바꾸기로 늘어남)가 보여야 사용자가 줄일 곳을 안다
+    const tooLong = "검사 뒤 글이 3000자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. 조금 줄여 주세요";
+    expect(workErrorMessage(fetchError(422, tooLong), "문단을 저장하지 못했습니다")).toBe(tooLong);
+  });
 });
 
 describe("pdfCheckProblem", () => {

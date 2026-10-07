@@ -289,7 +289,11 @@ SECTION_BUSY = "이 절을 쓰는 중입니다"
 NO_SECTION = "절이 없습니다"
 NO_SECTION_PAPERS = "이 절에 넣을 논문이 없습니다"
 DUPLICATE_PARAGRAPH = "같은 문단 id 가 두 번 있습니다"
-PARAGRAPH_TOO_LONG = f"문단은 {MAX_PARAGRAPH_CHARS}자 이하로 써 주세요"
+# 화면 검사(paragraphProblem '문단은 3000자까지입니다')는 보낸 글만 보아 통과시키는데, 서버는 검사(soften_claims 가
+# '최초로' 를 '소장 코퍼스에서 확인한 범위에서 처음으로' 로 늘린다) 뒤 글로 상한을 본다 — 화면이 이 문구를 그대로
+# 보이므로(workErrorMessage) 사용자가 3,000자 안으로 쓰고도 막힌 이유가 문구에 보여야 한다
+PARAGRAPH_TOO_LONG = (f"검사 뒤 글이 {MAX_PARAGRAPH_CHARS}자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. "
+                      "조금 줄여 주세요")
 
 # 문단 글자 상한(MAX_PARAGRAPH_CHARS)은 본문이 아니라 put_section 이 고친·새 문단의 검사 뒤 글에서 본다 — 화면은 늘 절
 # 전체를 보내는데, 생성 결과(문단 길이 상한이 없다)나 단정 표현 바꾸기(soften_claims 가 글을 늘린다)로 상한을 넘은

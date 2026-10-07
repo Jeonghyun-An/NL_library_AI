@@ -1075,7 +1075,9 @@ class TestPutSection:
         res = _put(api, jid, [paragraph])
 
         assert (res.status_code, res.json()["detail"]) == (422, api.router.PARAGRAPH_TOO_LONG)
-        assert api.router.PARAGRAPH_TOO_LONG == f"문단은 {MAX_PARAGRAPH_CHARS}자 이하로 써 주세요"
+        # 화면 검사(paragraphProblem)는 보낸 글만 보아 통과시킨다 — 검사 뒤 글이 늘어 넘은 이유가 문구에 보여야 한다
+        assert api.router.PARAGRAPH_TOO_LONG == (
+            f"검사 뒤 글이 {MAX_PARAGRAPH_CHARS}자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. 조금 줄여 주세요")
         assert _sec_proposal(api.engine, jid)["sections"]["prior.g1"] == SEC_STORED
         assert _sec_proposal(api.engine, jid)["version"] == 3
 
