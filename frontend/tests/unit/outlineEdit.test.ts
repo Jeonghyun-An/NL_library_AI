@@ -8,6 +8,7 @@ import {
   draftFrom,
   isFallbackOutline,
   movePaper,
+  moveTarget,
   outlineProblems,
   renameGroup,
   toOutlinePut,
@@ -82,6 +83,22 @@ describe("movePaper", () => {
     d = movePaper(d, "KCI_E", "prior.g1");
     expect(d.groups[1]!.papers).toEqual([]);
     expect(outlineProblems(d, false)).toEqual(["「사회적 지지」 묶음이 비었습니다 — 논문을 하나 이상 옮겨 두세요"]);
+  });
+});
+
+describe("moveTarget", () => {
+  it("고른 묶음이 그 논문의 지금 묶음이 아니고 목차에 있으면 그대로 돌려준다", () => {
+    expect(moveTarget(draft(), "KCI_B", "prior.g2")).toBe("prior.g2");
+  });
+
+  it("고르지 않았거나·이미 그 묶음에 들었거나·없는 묶음·없는 논문이면 '' 다 — [옮기기]가 꺼진다", () => {
+    const d = draft();
+    expect(moveTarget(d, "KCI_B", "")).toBe("");
+    expect(moveTarget(d, "KCI_B", "prior.g1")).toBe("");
+    expect(moveTarget(d, "KCI_B", "prior.g9")).toBe("");
+    expect(moveTarget(d, "KCI_X", "prior.g2")).toBe("");
+    // 고른 뒤 그 논문을 끌어 그 묶음에 넣었으면 고른 값은 더 쓸 수 없다
+    expect(moveTarget(movePaper(d, "KCI_B", "prior.g2"), "KCI_B", "prior.g2")).toBe("");
   });
 });
 

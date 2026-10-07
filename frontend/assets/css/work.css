@@ -913,8 +913,17 @@ button.wk-stepper__step {
   white-space: nowrap;
 }
 .wk-outline__move {
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+.wk-outline__move select {
   max-width: 6rem;
+  font-size: 0.55rem;
+}
+.wk-outline__move .rs-btn--small {
+  padding: 0.2rem 0.45rem;
   font-size: 0.55rem;
 }
 .wk-outline__choices {

@@ -44,6 +44,14 @@ export function movePaper(d: OutlineDraft, cnts: string, toKey: string): Outline
   };
 }
 
+// 키보드로 옮기기에서 고른 묶음이 지금도 옮길 수 있는 곳인가 — 끌어 옮기기나 목차 다시 읽기로 그 논문이 이미 그 묶음에
+// 들었거나 묶음이 없어졌으면 '' 다(메뉴는 빈 칸을 보이고 [옮기기]는 꺼진다)
+export function moveTarget(d: OutlineDraft, cnts: string, chosen: string): string {
+  if (!chosen) return "";
+  const from = d.groups.find((g) => g.papers.includes(cnts));
+  return from && from.key !== chosen && d.groups.some((g) => g.key === chosen) ? chosen : "";
+}
+
 export function renameGroup(d: OutlineDraft, key: string, name: string): OutlineDraft {
   if (!d.groups.some((g) => g.key === key)) return d;
   return { ...d, groups: d.groups.map((g) => (g.key === key ? { ...g, name } : g)) };

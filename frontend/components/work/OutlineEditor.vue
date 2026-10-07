@@ -57,16 +57,28 @@
                   <strong v-if="paperWho(cnts)">{{ paperWho(cnts) }}</strong>
                   {{ paperTitle(cnts) }}
                 </span>
-                <select
-                  v-if="editing && draft.groups.length > 1"
-                  class="wk-outline__move"
-                  :aria-label="`「${paperTitle(cnts)}」 다른 묶음으로 옮기기`"
-                  :disabled="busy"
-                  @change="onMoveSelect(cnts, $event)"
-                >
-                  <option value="">옮기기…</option>
-                  <option v-for="o in otherGroups(g.key)" :key="o.key" :value="o.key">{{ groupName(o) }}</option>
-                </select>
+                <!-- 메뉴는 옮길 묶음만 고르고 [옮기기]를 눌러야 옮긴다 — 닫힌 select 에서 방향키로 훑기만 해도 change 가
+                     나는 브라우저(Windows Chrome·Edge)에서 고르는 순간 옮겨지지 않게(WCAG 3.2.2) -->
+                <span v-if="editing && draft.groups.length > 1" class="wk-outline__move">
+                  <select
+                    :aria-label="`「${paperTitle(cnts)}」을 옮길 묶음`"
+                    :value="targetOf(cnts)"
+                    :disabled="busy"
+                    @change="chooseTarget(cnts, $event)"
+                  >
+                    <option value="">옮길 묶음…</option>
+                    <option v-for="o in otherGroups(g.key)" :key="o.key" :value="o.key">{{ groupName(o) }}</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="rs-btn rs-btn--ghost rs-btn--small"
+                    :aria-label="`「${paperTitle(cnts)}」을 고른 묶음으로 옮기기`"
+                    :disabled="busy || !targetOf(cnts)"
+                    @click="moveToChosen(cnts)"
+                  >
+                    옮기기
+                  </button>
+                </span>
               </li>
             </ul>
             <p v-if="!g.papers.length" class="rs-muted">빈 묶음 — 논문을 끌어 오거나 [옮기기]로 넣으세요</p>
@@ -140,6 +152,7 @@ import {
   draftFrom,
   isFallbackOutline,
   movePaper,
+  moveTarget,
   outlineProblems,
   renameGroup,
   toOutlinePut,
@@ -168,6 +181,7 @@ watch(
   () => JSON.stringify([base.value, outline.value?.state]),
   () => {
     draft.value = base.value;
+    chosen.value = {};
     editing.value = !approved.value && !props.readOnly;
   },
 );
@@ -255,21 +269,32 @@ function onDragEnd(): void {
   dropKey.value = null;
 }
 
-// ── 키보드로 옮기기(옮기기 메뉴) ──────────────────────────
+// ── 키보드로 옮기기(옮길 묶음 메뉴 + [옮기기]) ─────────────
 const moveNote = ref("");
+// 논문마다 메뉴에서 고른 묶음 — 고르기만 하고 [옮기기]를 누를 때 옮긴다
+const chosen = ref<Record<string, string>>({});
 
-function onMoveSelect(cnts: string, e: Event): void {
-  const select = e.target as HTMLSelectElement;
-  const to = select.value;
-  select.value = "";
+function targetOf(cnts: string): string {
+  return moveTarget(draft.value, cnts, chosen.value[cnts] ?? "");
+}
+
+function chooseTarget(cnts: string, e: Event): void {
+  chosen.value = { ...chosen.value, [cnts]: (e.target as HTMLSelectElement).value };
+}
+
+function moveToChosen(cnts: string): void {
+  const to = targetOf(cnts);
   if (to) move(cnts, to, true);
 }
 
-// 메뉴로 옮긴 논문은 새 묶음에서 다시 그려져 초점이 사라진다 — 그 논문의 메뉴로 초점을 돌려 이어서 옮기게 한다
+// [옮기기]로 옮긴 논문은 새 묶음에서 다시 그려져 초점이 사라진다 — 그 논문의 메뉴로 초점을 돌려 이어서 옮기게 한다
+// (고른 값은 비워 [옮기기]가 꺼지므로 버튼이 아니라 메뉴로 돌린다)
 function move(cnts: string, to: string, refocus: boolean): void {
   const next = movePaper(draft.value, cnts, to);
   if (next === draft.value) return;
   draft.value = next;
+  const { [cnts]: _done, ...rest } = chosen.value;
+  chosen.value = rest;
   const target = next.groups.find((g) => g.key === to);
   moveNote.value = `「${paperTitle(cnts)}」을 「${target ? groupName(target) : to}」 묶음으로 옮겼습니다`;
   if (!refocus) return;
@@ -284,6 +309,7 @@ function submit(approve: boolean): void {
 
 function stopEditing(): void {
   draft.value = base.value;
+  chosen.value = {};
   editing.value = false;
 }
 </script>
