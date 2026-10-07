@@ -215,31 +215,46 @@ def _gen(id, status, **kw):
                            status=status, model=kw.get("model"), error=kw.get("error"))
 
 
+CORPUS = {"n_papers": 144748, "from": "1980", "to": "2017", "at": "2026-10-06T09:30:00"}
+
+
 class TestWorkView:
     def test_shape(self):
         work = SimpleNamespace(
-            id="0b9f6c3e-1d2a-4f5b-8c7d-6e5f4a3b2c1d", phase="topics",
-            concepts=["독서 격차", "청소년"], memo="메모", is_example=False, progress={"topics": 0},
+            id="0b9f6c3e-1d2a-4f5b-8c7d-6e5f4a3b2c1d", phase="reading",
+            concepts=["독서 격차", "청소년"], memo="메모", is_example=False, progress={"topics": 4},
+            topic_id=12, corpus_snapshot=CORPUS,
         )
-        gens = [_gen(7, "queued"), _gen(3, "done", model="qwen3-vl-8b"),
+        gens = [_gen(7, "queued", kind="topic_card", target="12"), _gen(3, "done", model="qwen3-vl-8b"),
                 _gen(5, "failed", error="시간 초과")]
-        assert work_view(work, gens, {7: 2}) == {
-            "id": "0b9f6c3e-1d2a-4f5b-8c7d-6e5f4a3b2c1d", "phase": "topics",
+        queue = {7: {"position": 2, "eta_sec": 120, "others_ahead": True}}
+        assert work_view(work, gens, queue) == {
+            "id": "0b9f6c3e-1d2a-4f5b-8c7d-6e5f4a3b2c1d", "phase": "reading",
             "concepts": ["독서 격차", "청소년"], "memo": "메모", "is_example": False,
-            "progress": {"topics": 0},
+            "progress": {"topics": 4}, "topic_id": 12, "corpus": CORPUS,
             "generations": [
                 {"id": 3, "kind": "concepts", "target": None, "status": "done",
-                 "model": "qwen3-vl-8b", "error": None, "position": None},
+                 "model": "qwen3-vl-8b", "error": None,
+                 "position": None, "eta_sec": None, "others_ahead": False},
                 {"id": 5, "kind": "concepts", "target": None, "status": "failed",
-                 "model": None, "error": "시간 초과", "position": None},
-                {"id": 7, "kind": "concepts", "target": None, "status": "queued",
-                 "model": None, "error": None, "position": 2},
+                 "model": None, "error": "시간 초과",
+                 "position": None, "eta_sec": None, "others_ahead": False},
+                {"id": 7, "kind": "topic_card", "target": "12", "status": "queued",
+                 "model": None, "error": None,
+                 "position": 2, "eta_sec": 120, "others_ahead": True},
             ],
         }
 
     def test_id_is_a_string(self):
         wid = uuid.uuid4()
         work = SimpleNamespace(id=wid, phase="topics", concepts=[], memo=None, is_example=True,
-                               progress={})
+                               progress={}, topic_id=None, corpus_snapshot=None)
         view = work_view(work, [], {})
         assert view["id"] == str(wid) and view["is_example"] is True and view["generations"] == []
+        assert view["topic_id"] is None and view["corpus"] is None
+
+    def test_the_view_survives_a_json_round_trip(self):
+        work = SimpleNamespace(id=uuid.uuid4(), phase="topics", concepts=[], memo=None, is_example=False,
+                               progress={}, topic_id=None, corpus_snapshot=CORPUS)
+        view = work_view(work, [_gen(1, "queued")], {1: {"position": 0, "eta_sec": None, "others_ahead": False}})
+        assert json.loads(json.dumps(view, ensure_ascii=False)) == view

@@ -2,6 +2,8 @@
 
 딥리서치 보고서 끝 [이 연구 이어가기] 를 누르면 그 잡이 연구 한 건(research_works, id = 잡 id)이 된다.
 06a 는 이어가기·조회·핵심 개념/메모 고치기·근거 풀·이어간 연구 목록·생성 취소/다시·연구 SSE 를 둔다.
+06b 는 이어가기에 보고서 씨앗 주제 카드·코퍼스 스냅숏을, 연구 고치기에 단계(phase)를, 연구 응답에 생성 대기 정보를
+더한다(주제·읽기 목록·계획서 API 는 옆 라우터 research_topics·research_reading·research_proposal).
 
 동기 엔드포인트에는 LLM 을 넣지 않는다(게이트웨이 proxy_read_timeout·llm_client 기본 timeout 이 120초).
 LLM 작업은 research_generations 에 행을 넣고 디스패치 태스크를 보낸다 — 워커가 전체에서 한 번에 1건씩
@@ -17,7 +19,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import AsyncIterator
+from typing import AsyncIterator, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -30,12 +32,16 @@ from core.deps import get_browser_id, get_browser_id_optional, get_db
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
 from models.research_work import (
-    GEN_OPEN_STATUSES, PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchWork,
+    GEN_OPEN_STATUSES, PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchTopic, ResearchWork,
 )
 from services.research.relay import publish_work, subscribe_work
 from services.research_work.concepts import MAX_CONCEPTS, clean_concepts, concepts_input
-from services.research_work.dispatch import queue_position
+from services.research_work.dispatch import queue_info
 from services.research_work.enqueue import lock_key
+from services.research_work.executors import EXECUTORS
+from services.research_work.progress import refresh_progress
+from services.research_work.seeds import corpus_of, pick_seeds, topic_input
+from services.research_work.shapes import PHASE_ORDER, TOPIC_SEED_SLOTS
 from services.research_work.views import candidates_from_snapshot, pool_from_job, work_view
 
 log = logging.getLogger(__name__)
@@ -50,12 +56,15 @@ MAX_MEMO = 2000
 RECENT_FINISHED = 10           # 연구 응답에 싣는 끝난 생성 수(열린 생성은 전부 싣는다)
 MAX_WORK_LIST = 50             # 이어간 연구 목록 상한 — [담기] 메뉴가 고르는 목록이다
 RETRYABLE_STATUSES = ("failed", "canceled")
+PHASE_BACKWARD = "단계를 되돌릴 수 없습니다"
 
 
 class WorkPatch(BaseModel):
     # 사용자가 고친 핵심 개념은 1~5개(LLM 결과의 '2개 이상' 검사는 생성 쪽 규칙이다)
     concepts: list[str] | None = Field(None, min_length=1, max_length=MAX_CONCEPTS)
     memo: str | None = Field(None, max_length=MAX_MEMO)
+    # 도달한 단계 — 앞으로만 간다(shapes.PHASE_ORDER). 화면이 Word 내려받기에 성공하면 done 을 보낸다
+    phase: Literal["topics", "reading", "proposal", "done"] | None = None
 
 
 def _job_uuid(job_id: str) -> uuid.UUID:
@@ -94,11 +103,14 @@ async def _get_generation(db: AsyncSession, jid: uuid.UUID, gen_id: int) -> Rese
 
 
 def _retryable(gen: ResearchGeneration) -> bool:
-    """다시 부를 수 있는 생성 — failed·canceled, 그리고 빈 결과로 끝난 핵심 개념(spec §5-2: 끝내 못 얻으면
-    비운 채 done 이고 다시 부르기는 retry 다). 개념이 채워진 done 은 다시 부르지 않는다."""
+    """다시 부를 수 있는 생성 — failed·canceled, 그리고 빈 결과로 끝난 done(spec §5-2·§6-3: 끝내 못 얻으면
+    빈 결과로 done 이고 다시 부르기는 retry 다 — 개념 비움, 카드 '근거 부족'). 빈 결과인지는 그 kind 의
+    실행기가 판정한다(Executor.is_empty). 내용이 채워진 done 은 다시 부르지 않는다."""
     if gen.status in RETRYABLE_STATUSES:
         return True
-    return gen.kind == "concepts" and gen.status == "done" and not (gen.output or {}).get("concepts")
+    executor = EXECUTORS.get(gen.kind)
+    return (gen.status == "done" and executor is not None and executor.is_empty is not None
+            and executor.is_empty(gen.output or {}))
 
 
 def _retry_lock_key(jid: uuid.UUID, kind: str, target: str | None) -> int:
@@ -131,8 +143,8 @@ async def _generations(db: AsyncSession, jid: uuid.UUID) -> list[ResearchGenerat
 
 async def _view(db: AsyncSession, work: ResearchWork) -> dict:
     gens = await _generations(db, work.id)
-    positions = {g.id: await queue_position(db, g) for g in gens if g.status == "queued"}
-    return work_view(work, gens, positions)
+    queue = {g.id: await queue_info(db, g) for g in gens if g.status == "queued"}
+    return work_view(work, gens, queue)
 
 
 def _send_dispatch() -> bool:
@@ -164,16 +176,19 @@ async def continue_research(
     job_id: str, db: AsyncSession = Depends(get_db),
     browser_id: uuid.UUID | None = Depends(get_browser_id_optional),
 ):
-    """[이 연구 이어가기]. 완료된 잡만, 멱등 — 연구 행을 새로 만든 요청만 후보·핵심 개념 생성을 넣는다.
-    동시에 두 번 눌러도 ON CONFLICT DO NOTHING 이 한쪽만 행을 만들게 한다."""
+    """[이 연구 이어가기]. 완료된 잡만, 멱등 — 연구 행을 새로 만든 요청만 후보·핵심 개념 생성·보고서 씨앗
+    주제 카드(최대 TOPIC_SEED_SLOTS 장, 카드 1장 = 생성 1건)를 넣는다. 동시에 두 번 눌러도 ON CONFLICT DO NOTHING
+    이 한쪽만 행을 만들게 하고, 넣는 것은 모두 그 요청의 커밋 하나에 묶인다. 이미 이어간 연구(06a 에서 이어간
+    것 포함)에는 아무것도 더 넣지 않는다 — 그 연구는 주제 화면의 [다른 방향] 으로 카드를 받는다(정함 15)."""
     jid = _job_uuid(job_id)
     job = await _get_job(db, jid)
     if job.status != "completed":
         raise HTTPException(status_code=409, detail="완료된 딥리서치만 이어갈 수 있습니다")
+    corpus = corpus_of(job)
     created = await db.scalar(
         insert(ResearchWork)
         .values(id=jid, owner_sid=str(browser_id) if browser_id else None,
-                concepts=[], concept_members={}, progress={})
+                concepts=[], concept_members={}, progress={}, corpus_snapshot=corpus)
         .on_conflict_do_nothing()
         .returning(ResearchWork.id)
     )
@@ -193,6 +208,20 @@ async def continue_research(
         work_id=jid, kind="concepts", priority=PRIORITY_USER, status="queued",
         input=concepts_input(job),
     ))
+    report = job.report if isinstance(job.report, dict) else {}
+    for slot, seed in enumerate(pick_seeds(report, limit=TOPIC_SEED_SLOTS), start=1):
+        # 주제 행 id 가 생성의 target 이다 — 행을 먼저 넣고 RETURNING 으로 id 를 받는다
+        topic_id = await db.scalar(
+            insert(ResearchTopic)
+            .values(work_id=jid, slot=slot, origin="report_seed", seed=seed, card={},
+                    state="candidate", corpus_snapshot=corpus)
+            .returning(ResearchTopic.id)
+        )
+        await db.execute(insert(ResearchGeneration).values(
+            work_id=jid, kind="topic_card", target=str(topic_id), priority=PRIORITY_USER, status="queued",
+            input=topic_input(job.question, seed, report, topic_id),
+        ))
+    await refresh_progress(db, jid)
     await db.commit()
     _send_dispatch()
     work = await _get_work(db, jid)
@@ -207,10 +236,15 @@ async def get_work(job_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/api/research/{job_id}/work")
 async def patch_work(job_id: str, req: WorkPatch, db: AsyncSession = Depends(get_db)):
-    """핵심 개념 칩·메모. 개념이 바뀌면 개념 소속을 비운다(다시 계산은 06c 의 FastAPI 몫).
-    핵심 개념 생성이 열려 있으면 개념은 바꾸지 않는다(409) — 워커의 결과 적용이 끝나며 칩을 덮어쓴다."""
+    """핵심 개념 칩·메모·단계. 개념이 바뀌면 개념 소속을 비운다(다시 계산은 목차 요청 때 FastAPI 몫).
+    핵심 개념 생성이 열려 있으면 개념은 바꾸지 않는다(409) — 워커의 결과 적용이 끝나며 칩을 덮어쓴다.
+    단계(phase)는 도달한 단계라 앞으로만 간다 — 뒤로 가는 요청은 409(보는 단계는 주소 ?s= 가 정한다).
+    단계가 바뀌면 커밋 뒤 work 이벤트를 보낸다(다른 탭·사이드바)."""
     work = await _get_work(db, _job_uuid(job_id))
     _writable(work)
+    moved = req.phase is not None and req.phase != work.phase
+    if moved and PHASE_ORDER.index(req.phase) < PHASE_ORDER.index(work.phase):
+        raise HTTPException(status_code=409, detail=PHASE_BACKWARD)
     if req.concepts is not None:
         concepts = clean_concepts(req.concepts)
         if not concepts:
@@ -222,7 +256,11 @@ async def patch_work(job_id: str, req: WorkPatch, db: AsyncSession = Depends(get
             work.concept_members = {}
     if "memo" in req.model_fields_set:
         work.memo = req.memo or None
+    if moved:
+        work.phase = req.phase
     await db.commit()
+    if moved:
+        await publish_work(work.id, "work", {"phase": work.phase, "progress": dict(work.progress or {})})
     return await _view(db, work)
 
 
@@ -311,7 +349,7 @@ async def cancel_generation(job_id: str, gen_id: int, db: AsyncSession = Depends
 
 @router.post("/api/research/{job_id}/generations/{gen_id}/retry")
 async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(get_db)):
-    """failed·canceled 생성과 빈 결과로 끝난 핵심 개념(_retryable)을 같은 kind·target·input·priority 로 다시
+    """failed·canceled 생성과 빈 결과로 끝난 done(_retryable — 개념 비움·카드 근거 부족)을 같은 kind·target·input·priority 로 다시
     줄 세운다(새 행). 같은 생성이 이미 열려 있으면(두 번 누름) 409 — 같은 일이 두 줄 서지 않게. 같은
     (연구·kind·target)에 더 새 행이 있어도 409 — 다시 부를 수 있는 것은 그 대상의 최신 행뿐이다. 동시에 두 번
     눌러도 (연구·kind·target) 잠금이 검사와 넣기를 한 줄로 세운다(잠금은 커밋·롤백까지 쥔다)."""

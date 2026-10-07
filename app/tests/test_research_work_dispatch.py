@@ -15,8 +15,9 @@ from history_sqlite import (
 )
 from models.research_work import ResearchGeneration, ResearchWork
 from services.research_work.apply import apply_result
+from services.research_work import dispatch
 from services.research_work.dispatch import (
-    GEN_LOCK, finish, has_queued, pick_next, queue_position,
+    ETA_SAMPLE, GEN_LOCK, finish, has_queued, pick_next, queue_info, queue_position,
 )
 
 GEN = ResearchGeneration.__table__
@@ -269,6 +270,90 @@ class TestQueueState:
             return [await queue_position(db, await db.get(ResearchGeneration, g)) for g in (running, done)]
 
         assert _call(engine, _positions)[0] == [0, 0]
+
+
+def _took(engine, work_id, *, kind: str, seconds: int, minute: int, start_minute: int = 0) -> int:
+    """소요 시간 표본 — started_at 부터 seconds 초 뒤에 끝난 done 생성."""
+    gid = _gen(engine, work_id, minute=minute, kind=kind, status="done",
+               started_at=T0 + dt.timedelta(minutes=start_minute))
+    with engine.begin() as conn:
+        conn.execute(sa.update(GEN).where(GEN.c.id == gid).values(
+            finished_at=T0 + dt.timedelta(minutes=start_minute, seconds=seconds)))
+    return gid
+
+
+def _info(engine, gid: int) -> dict:
+    async def _go(db):
+        return await queue_info(db, await db.get(ResearchGeneration, gid))
+
+    return _call(engine, _go)[0]
+
+
+class TestQueueInfo:
+    def test_position_is_the_queue_position(self, engine):
+        w1, w2 = _work(engine), _work(engine)
+        _gen(engine, w2, minute=0, status="running", started_at=T0)
+        mine = [_gen(engine, w1, minute=1), _gen(engine, w2, minute=2), _gen(engine, w1, minute=3)]
+
+        async def _both(db):
+            rows = [await db.get(ResearchGeneration, g) for g in mine]
+            return [((await queue_info(db, r))["position"], await queue_position(db, r)) for r in rows]
+
+        assert _call(engine, _both)[0] == [(1, 1), (2, 2), (3, 3)]
+
+    def test_eta_adds_the_median_time_of_each_generation_ahead(self, engine):
+        w1 = _work(engine)
+        for n, seconds in enumerate((40, 60, 100)):              # concepts 중앙값 60초
+            _took(engine, w1, kind="concepts", seconds=seconds, minute=n)
+        for n, seconds in enumerate((20, 30)):                   # topic_card 중앙값 25초
+            _took(engine, w1, kind="topic_card", seconds=seconds, minute=10 + n)
+        _gen(engine, w1, minute=20, kind="concepts", status="running", started_at=T0)
+        _gen(engine, w1, minute=21, kind="topic_card")
+        _gen(engine, w1, minute=22, kind="topic_card")
+        mine = _gen(engine, w1, minute=23, kind="topic_card")
+
+        assert _info(engine, mine) == {"position": 3, "eta_sec": 60 + 25 + 25, "others_ahead": False}
+
+    def test_nothing_ahead_waits_for_nothing(self, engine):
+        mine = _gen(engine, _work(engine), minute=0)
+        assert _info(engine, mine) == {"position": 0, "eta_sec": 0, "others_ahead": False}
+
+    def test_a_kind_ahead_without_samples_leaves_the_eta_unknown(self, engine):
+        w1 = _work(engine)
+        _took(engine, w1, kind="concepts", seconds=60, minute=0)
+        _gen(engine, w1, minute=1, kind="outline", status="running", started_at=T0)
+        mine = _gen(engine, w1, minute=2, kind="concepts")
+
+        assert _info(engine, mine) == {"position": 1, "eta_sec": None, "others_ahead": False}
+
+    def test_another_works_generation_ahead_is_flagged(self, engine):
+        w1, w2 = _work(engine), _work(engine)
+        theirs = _gen(engine, w2, minute=0)
+        mine = _gen(engine, w1, minute=1)
+
+        assert _info(engine, mine)["others_ahead"] is True
+        assert _info(engine, theirs)["others_ahead"] is False
+
+    def test_samples_are_the_latest_done_only(self, engine, monkeypatch):
+        monkeypatch.setattr(dispatch, "ETA_SAMPLE", 2)
+        w1 = _work(engine)
+        _took(engine, w1, kind="concepts", seconds=1000, minute=0, start_minute=0)     # 오래된 표본은 빠진다
+        _took(engine, w1, kind="concepts", seconds=10, minute=1, start_minute=60)
+        _took(engine, w1, kind="concepts", seconds=20, minute=2, start_minute=70)
+        failed = _gen(engine, w1, minute=3, kind="concepts", status="failed", started_at=T0)
+        with engine.begin() as conn:
+            conn.execute(sa.update(GEN).where(GEN.c.id == failed).values(
+                finished_at=T0 + dt.timedelta(hours=5)))
+        _gen(engine, w1, minute=4, kind="concepts", status="running", started_at=T0)
+        mine = _gen(engine, w1, minute=5, kind="concepts")
+
+        assert ETA_SAMPLE == 20
+        assert _info(engine, mine)["eta_sec"] == 15
+
+    @pytest.mark.parametrize("status", ["running", "done", "failed", "canceled"])
+    def test_generations_that_are_not_waiting(self, engine, status):
+        gid = _gen(engine, _work(engine), minute=0, status=status, started_at=T0)
+        assert _info(engine, gid) == {"position": 0, "eta_sec": None, "others_ahead": False}
 
 
 class TestApplyResult:
