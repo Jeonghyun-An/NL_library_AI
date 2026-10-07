@@ -72,4 +72,92 @@
   }
 }
 
+/* ── 근거 장부(EvidenceLedger) ─────────────────────────── */
+.wk-ledger__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wk-ledger__count {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-ledger__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 14rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.wk-ledger__paper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-ledger__title {
+  overflow: hidden;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wk-ledger__meta {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+}
+.wk-ledger__pile-title {
+  margin: 0.2rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+}
+/* 뺀 논문은 바랜 더미로 내려간다 */
+.wk-ledger__list--dropped .wk-ledger__paper {
+  opacity: 0.55;
+  border-style: dashed;
+  border-color: var(--skx-line);
+}
+.wk-ledger__paper.is-fresh {
+  animation: wk-drop 0.9s ease-out;
+}
+.wk-ledger__list--dropped .wk-ledger__paper.is-fresh {
+  animation: wk-sink 0.9s ease-out;
+}
+@keyframes wk-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes wk-sink {
+  from {
+    opacity: 1;
+    transform: translateY(-0.6rem);
+  }
+  to {
+    opacity: 0.55;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-ledger__paper.is-fresh,
+  .wk-ledger__list--dropped .wk-ledger__paper.is-fresh {
+    animation: none;
+  }
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
