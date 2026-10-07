@@ -2,7 +2,8 @@
 <template>
   <section class="wk-screen" aria-labelledby="wk-topics-title">
     <header class="wk-screen__head">
-      <h2 id="wk-topics-title" class="wk-screen__title">주제 고르기</h2>
+      <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
+      <h2 id="wk-topics-title" class="wk-screen__title" tabindex="-1">주제 고르기</h2>
       <p class="rs-muted">
         「{{ question }}」 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 읽기 목록과 계획서를 만듭니다.
       </p>

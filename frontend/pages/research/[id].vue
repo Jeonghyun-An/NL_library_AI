@@ -194,7 +194,7 @@
 
     <PdfViewer v-if="pdf" :cnts-id="pdf.cntsId" :title="pdf.title" :page="pdf.page" :passages="pdf.passages" @close="closePdf" />
     <ReportPrint v-if="printDoc" :doc="printDoc" />
-    <OnboardingModal :open="onboardingOpen" @close="onboardingOpen = false" />
+    <OnboardingModal :open="onboardingOpen" @close="closeOnboarding" />
 
     <Teleport to="body">
       <Transition name="skx-toast">
@@ -205,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import PdfViewer from "~/components/PdfViewer.vue";
 import PlanCard from "~/components/research/PlanCard.vue";
 import ProgressPanel from "~/components/research/ProgressPanel.vue";
@@ -422,11 +422,44 @@ const continuing = ref(false);
 const continueError = ref<string | null>(null);
 const onboardingOpen = ref(false);
 
-// 같은 경로에서 쿼리만 바꾸는 이동에는 Nuxt 가 스크롤을 건드리지 않는다(기본 scrollBehavior 의 같은 path 분기가
-// false). 보고서 끝의 카드에서 단계로 넘어가면 그 높이에 머물러 빈 곳을 보게 되므로 단계를 바꾸는 동작에서만 맨 위로 올린다
 async function goStep(s: WorkStep | null): Promise<void> {
   await router.push({ query: withStep(route.query, s) });
+}
+
+// 단계(?s=)가 바뀌는 모든 이동 — 단계 화면의 버튼·진행 막대·사이드바 기록·브라우저 뒤로·앞으로 — 에서 맨 위로 올리고
+// 새 화면의 제목으로 초점을 옮긴다. 같은 경로에서 쿼리만 바뀌면 Nuxt 기본 scrollBehavior 가 스크롤을 건드리지 않아(같은
+// path 분기가 false — savedPosition 도 쓰지 않는다) 앞 화면의 높이에 머물러 빈 곳을 보게 되고, 누른 버튼은 앞 화면과 함께
+// 사라져 초점이 body 로 떨어진다(키보드·스크린리더 사용자는 문서 처음부터 다시 Tab 하고 새 화면이 열린 것도 듣지 못한다).
+// 첫 마운트(immediate 아님)와 상세에서 돌아와 자리를 맞추는 동안(restore.pending — 맞춘 뒤 주소의 at·y 를 떼는 replace 는
+// s 를 바꾸지 않는다)은 건드리지 않는다
+let focusAfterOnboarding = false;
+
+watch(step, (now, before) => {
+  if (now === before || restore.pending.value) return;
   window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  // 처음 이어가며 띄운 안내가 배경을 inert 로 막고 있다 — 안내를 닫은 뒤 옮긴다
+  if (onboardingOpen.value) focusAfterOnboarding = true;
+  else void nextTick(focusScreenTitle);
+});
+
+// 새 화면의 제목 — 단계 화면은 그 단계의 h2, 보고서는 보고서 제목, 아직 그려지지 않았으면(연구를 읽는 중) 연구 머리의 질문
+function focusScreenTitle(): void {
+  const el =
+    document.querySelector<HTMLElement>(stepMode.value ? ".wk-body h2" : ".rs-report__question") ??
+    document.querySelector<HTMLElement>(".rs-head__question");
+  if (!el) return;
+  // 보고서·머리의 제목은 tabindex 가 없는 부품(D15 — 고치지 않는다)이라 초점을 받게 여기서 단다
+  if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+  el.focus({ preventScroll: true });
+}
+
+// 안내는 닫힐 때 연 순간의 초점 요소로 돌려주는데 [이 연구 이어가기]는 보고서와 함께 사라졌다 — 그 뒤(nextTick) 새 화면의
+// 제목으로 옮긴다. 진행 막대의 [?]로 연 안내는 그 버튼으로 돌아간다
+function closeOnboarding(): void {
+  onboardingOpen.value = false;
+  if (!focusAfterOnboarding) return;
+  focusAfterOnboarding = false;
+  void nextTick(focusScreenTitle);
 }
 
 function openWork(): void {

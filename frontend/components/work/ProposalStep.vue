@@ -2,7 +2,8 @@
 <template>
   <section class="wk-proposal" aria-labelledby="wk-proposal-title">
     <header class="wk-proposal__head">
-      <h2 id="wk-proposal-title" class="wk-proposal__title">연구계획서</h2>
+      <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
+      <h2 id="wk-proposal-title" class="wk-proposal__title" tabindex="-1">연구계획서</h2>
       <CorpusScopeNote :corpus="corpus" />
     </header>
     <p v-if="notice" class="rs-alert" :role="noticeIsError ? 'alert' : 'status'">{{ notice }}</p>

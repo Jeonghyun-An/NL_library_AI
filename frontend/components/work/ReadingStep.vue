@@ -2,7 +2,8 @@
 <template>
   <section class="wk-screen" aria-labelledby="wk-reading-title">
     <header class="wk-screen__head">
-      <h2 id="wk-reading-title" class="wk-screen__title">읽기 목록</h2>
+      <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
+      <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">읽기 목록</h2>
       <p class="rs-muted">
         「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 읽을 논문을 담고, 담은 논문으로 계획서의 선행연구
         목차를 만듭니다.
