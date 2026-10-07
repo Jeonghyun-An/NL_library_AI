@@ -122,6 +122,9 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   let attempts = 0;
   // 주소의 잡이 바뀌거나 페이지를 떠난 뒤 도착한 이전 요청의 응답을 버린다
   let generation = 0;
+  // 화면을 떠났다(unmount) — 그 뒤 도착한 쓰기 응답(setWork)이나 connect() 가 닫을 주체가 없는
+  // EventSource 를 열지 않게 한다(연구 스트림은 끝이 없어 출처당 연결 한 칸을 영구히 차지한다)
+  let disposed = false;
   // 조회마다 마지막으로 보낸 요청 — 앞서 보낸 요청이 늦게 와 새 값을 덮지 않게
   const tokens: Record<WorkResource, number> = { work: 0, topics: 0, reading: 0, proposal: 0 };
   // 이 화면이 한 번이라도 읽은 조회 — 생성이 끝났을 때 이것만 다시 읽는다(보지 않는 단계는 열 때 읽는다)
@@ -200,8 +203,12 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     return loaded.has(kind) ? Promise.resolve() : reload(kind);
   }
 
-  // [이 연구 이어가기]·PATCH 응답처럼 쓰기 응답이 준 연구로 맞춘다. 처음 이어간 화면은 여기서 스트림을 연다
+  // [이 연구 이어가기]·PATCH 응답처럼 쓰기 응답이 준 연구로 맞춘다. 처음 이어간 화면은 여기서 스트림을 연다.
+  // 호출처는 응답을 기다린 뒤 세대 확인 없이 부르므로 여기서 거른다 — 화면을 떠났거나 주소의 잡이 바뀐 뒤의
+  // 응답은 버린다(다른 잡의 연구가 이 상태에 들어가거나 떠난 화면이 스트림을 열지 않게). 서버 id 는 소문자
+  // uuid 이고 주소의 id 는 대문자일 수 있어 대소문자를 무시하고 견준다
   function setWork(view: WorkView): void {
+    if (disposed || view.id.toLowerCase() !== toValue(jobId).toLowerCase()) return;
     tokens.work += 1;
     state.value = withWork(state.value, view);
     exists.value = true;
@@ -220,6 +227,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   }
 
   function connect(): void {
+    if (disposed) return;
     if (!import.meta.client || source || exists.value !== true) return;
     clearReconnect();
     const gen = generation;
@@ -276,6 +284,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       if (opts.enabled.value) void load();
     });
     onBeforeUnmount(() => {
+      disposed = true;
       generation += 1;
       disconnect();
     });
