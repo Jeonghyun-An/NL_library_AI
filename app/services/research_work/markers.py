@@ -5,6 +5,7 @@
   문장도 '근거 표시 없음'이다.
 - [F#] 수치: 코드가 센 값(figure)만 쓴다. [E#] 와 같은 괄호 문법(citations.normalize_markers — 묶음·범위·전각·
   소문자·0패딩)으로 읽어 입력에 있는 번호만 표준형 [F#] 로 남기고, 없는 번호·못 읽은 표기는 지운다(check_figures).
+  괄호 안이 마커 문법으로만 된 것만 [F#] 로 본다 — '[F1-score]'·'[F1 점수 0.92]' 는 글로 남는다.
 - [E#]·[F#] 밖에 쓴 숫자는 '확인 필요'로 센다(numbers_outside). 이름에 붙은 숫자(COVID-19·B2B·5G·WHO-5)는
   세지 않는다. 같은 규칙을 프론트 utils/figureMarkers.ts 가 쓰고, 두 쪽 테스트가 공용 고정 예제
   frontend/tests/fixtures/marker_checks.json 을 함께 읽는다.
@@ -42,7 +43,7 @@ class FigureResult(NamedTuple):
     text: str
     used: list[str]          # 등장 순서·중복 제거한 유효 번호
     dropped: list[str]       # 입력에 없는 번호(나올 때마다)
-    unparsed: list[str] = []  # [F#] 처럼 생겼지만 번호를 읽을 수 없는 괄호("[F1 참조]")
+    unparsed: list[str] = []  # 마커 문법으로만 됐지만 번호를 읽을 수 없는 괄호("[F1 F2]")
 
 
 def figure(id: str, label: str, value) -> dict:
@@ -52,8 +53,9 @@ def figure(id: str, label: str, value) -> dict:
 
 def check_figures(text: str, valid_ids: set[str]) -> FigureResult:
     """[F#] 를 검사한다 — bind_markers 의 [E#] 와 같은 괄호 문법이다. 묶음 [F1, F2]·범위 [F1-F2]·전각 ［F1］·
-    소문자 [f1]·0패딩 [F01] 은 유효한 번호만 표준형 [F1] [F2] 로 다시 쓰고, 입력에 없는 번호와 읽지 못한 표기는
-    앞 공백과 함께 지운다. [E#]·[표 1] 같은 다른 괄호는 그대로 둔다."""
+    소문자 [f1]·0패딩 [F01] 은 유효한 번호만 표준형 [F1] [F2] 로 다시 쓰고, 입력에 없는 번호와 읽지 못한 표기([F1 F2])는
+    앞 공백과 함께 지운다. [E#]·[표 1] 같은 다른 괄호와 마커 문법 밖의 글이 섞인 괄호([F1-score]·[F2 세대])는 그대로
+    둔다(세지 않는다)."""
     cleaned, used, dropped, unparsed = normalize_markers(text, valid_ids, "F")
     return FigureResult(cleaned, used, dropped, unparsed)
 

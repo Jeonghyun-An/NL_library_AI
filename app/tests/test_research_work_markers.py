@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from services.research.citations import normalize_markers
 from services.research_work.markers import (
     CLAIM_REWRITES, FIGURE_MARKER, FigureResult, check_figures, check_paragraph, figure,
     numbers_outside, soften_claims,
@@ -38,18 +39,23 @@ class TestSharedCases:
                    for c in SHARED_CASES)
         # 표준형이 아닌 [F#](묶음·전각·소문자) — 그 안의 번호는 두 쪽 모두 숫자로 세지 않는다
         assert re.search(r"\[F\d+,\s*F\d+\]", texts) and "［F" in texts and "[f" in texts
-        assert all(set(c) == {"text", "numbers", "unmarked", "note"} for c in SHARED_CASES)
+        # F+숫자로 시작하지만 마커가 아닌 괄호 글 — 서버 검사 뒤에도 남고, 화면은 칩이 아닌 글자로 그린다
+        assert any("[F1-score]" in c.get("kept", []) for c in SHARED_CASES)
+        keys = {"text", "numbers", "unmarked", "note"}
+        assert all(keys <= set(c) <= keys | {"kept"} for c in SHARED_CASES)
 
     @pytest.mark.parametrize("case", SHARED_CASES, ids=[c["note"] for c in SHARED_CASES])
     def test_numbers_and_unmarked_match_the_shared_fixture(self, case):
         text = case["text"]
         e_ids = _ids("E", text)
 
-        _, _, checks = check_paragraph(text, valid_e=e_ids, valid_f=_ids("F", text),
-                                       evidence={e: f"C-{e}" for e in e_ids})
+        checked, _, checks = check_paragraph(text, valid_e=e_ids, valid_f=_ids("F", text),
+                                             evidence={e: f"C-{e}" for e in e_ids})
 
         assert numbers_outside(text) == case["numbers"]
         assert (checks["numbers"], checks["unmarked"]) == (case["numbers"], case["unmarked"])
+        for kept in case.get("kept", []):
+            assert kept in text and kept in checked
 
 
 class TestFigures:
@@ -79,10 +85,28 @@ class TestFigures:
         assert check_figures(text, {"F1", "F2"}) == expected
 
     def test_unreadable_figure_brackets_are_removed_and_other_brackets_kept(self):
-        result = check_figures("범위는 [F1 참조] 이다. 통계는 [F(2, 98) = 4.2] 이고 [표 1] 을 본다.", {"F1"})
+        # 마커 문법(F 번호·쉼표·범위·공백)으로만 된 괄호인데 번호를 읽지 못하면 지우고 센다
+        result = check_figures("범위는 [F1 F2] 이고 [F1,] 이다. 통계는 [F(2, 98) = 4.2] 이고 [표 1] 을 본다.",
+                               {"F1", "F2"})
 
-        assert result == FigureResult("범위는 이다. 통계는 [F(2, 98) = 4.2] 이고 [표 1] 을 본다.", [], [],
-                                      ["[F1 참조]"])
+        assert result == FigureResult("범위는 이고 이다. 통계는 [F(2, 98) = 4.2] 이고 [표 1] 을 본다.", [], [],
+                                      ["[F1 F2]", "[F1,]"])
+
+    @pytest.mark.parametrize("text", [
+        "분류 성능은 [F1-score] 로 견주었다.",
+        "모형의 [F1 점수 0.92] 는 기준보다 높았다.",
+        "[F2 세대] 품종을 다룬 연구가 늘었다.",
+        "범위는 [F1 참조] 이다.",
+        "전각 ［F1－score］ 도 글이다.",
+    ])
+    def test_brackets_that_only_start_like_a_figure_are_text(self, text):
+        # 괄호 안이 F+숫자로 시작해도 마커 문법 밖의 글이 섞이면 마커가 아니다 — 괄호째 남기고 세지 않는다
+        assert check_figures(text, {"F1", "F2"}) == FigureResult(text, [], [], [])
+
+    def test_the_figure_shape_rule_does_not_touch_citation_markers(self):
+        # [E#](딥리서치 bind_markers)는 그대로 — 인용처럼 생긴 괄호는 읽지 못하면 지우고 센다
+        assert normalize_markers("근거 [E1-score] 다.", {"E1"}, "E") == ("근거 다.", [], [], ["[E1-score]"])
+        assert normalize_markers("근거 [F1-score] 다.", {"F1"}, "F") == ("근거 [F1-score] 다.", [], [], [])
 
 
 class TestSoftenClaims:
@@ -137,10 +161,16 @@ class TestCheckParagraph:
         assert (checks["dropped"], checks["dropped_f"], checks["unmarked"]) == (2, 1, 1)
 
     def test_non_standard_figure_markers_are_rewritten_and_counted(self):
-        text, _, checks = self._check("연구는 [F1, F9]편이다 [E1]. 범위는 ［f2］이고 [F1 참조] 를 본다 [E2].")
+        text, _, checks = self._check("연구는 [F1, F9]편이다 [E1]. 범위는 ［f2］이고 [F1 F2] 를 본다 [E2].")
 
         assert text == "연구는 [F1]편이다 [E1]. 범위는 [F2]이고 를 본다 [E2]."
-        assert (checks["dropped"], checks["dropped_f"]) == (0, 2)       # 없는 F9 + 못 읽은 [F1 참조]
+        assert (checks["dropped"], checks["dropped_f"]) == (0, 2)       # 없는 F9 + 못 읽은 [F1 F2]
+
+    def test_a_bracket_that_is_not_a_figure_marker_stays_and_is_not_counted(self):
+        text, _, checks = self._check("분류 성능 [F1-score] 와 [F1 점수 0.92] 를 견주었다 [E1].")
+
+        assert text == "분류 성능 [F1-score] 와 [F1 점수 0.92] 를 견주었다 [E1]."
+        assert (checks["dropped_f"], checks["numbers"]) == (0, ["0.92"])
 
     def test_claims_are_softened_and_numbers_counted_on_the_final_text(self):
         text, _, checks = self._check("2017년 이후 연구가 없다 [E1].")

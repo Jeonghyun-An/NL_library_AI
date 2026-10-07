@@ -42,6 +42,12 @@ _ITEMS = {
     for letter in _LIKE
 }
 _LIST_SEP = re.compile(r"\s*[,，;；]\s*")
+# F 는 괄호 안이 마커 문법(F 번호·쉼표·세미콜론·범위·공백 — 전각 변형 포함)으로만 이루어졌을 때만 마커로 본다.
+# 계획서 글에는 'F+숫자'로 시작하는 보통 괄호('[F1-score]'·'[F1 점수 0.92]'·'[F2 세대]')가 흔해, E 처럼 인용처럼
+# 생기기만 하면 마커로 보면 글을 지우고 dropped_f 에 잘못 센다. 이 모양 안에서 번호를 읽지 못한 것('[F1 F2]'·
+# '[F1,]')만 못 읽은 표기다. E(딥리서치 bind_markers)는 그대로 — 인용처럼 생기면 마커다('[E1 참조]' 는 지우고 센다)
+_RANGE_CHARS = "\\-~–—～"
+_SHAPE = {"F": re.compile(rf"(?:[Ff]\s*\d+|[{_RANGE_CHARS}]\s*\d+|[\s,，;；{_RANGE_CHARS}])+")}
 _SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
 # 마침표 뒤에 붙는 마커 묶음("문장이다. [E1] [E2]")을 셀 때만 통째로 문장
 # 앞으로 당긴다 — LLM 이 마커를 문장 끝 마침표 뒤에 다는 게 흔해서, 그대로
@@ -208,16 +214,18 @@ def normalize_markers(text: str, valid_ids: set[str], letter: str = "E") -> Norm
 
     인식한 표기(묶음·범위·전각·소문자·0패딩)는 유효한 번호만 표준형 `[E#]`(`[F#]`)으로 다시 쓰고, 없는
     번호와 해석 못 한 표기는 (그 앞 공백과 함께) 지운다. 다른 글자의 괄호와 나머지 글은 바이트 단위로
-    보존한다 — "p < .05" 같은 논문 통계 표기를 건드리지 않는다.
+    보존한다 — "p < .05" 같은 논문 통계 표기를 건드리지 않는다. F 는 괄호 안이 마커 문법으로만 된 것만
+    마커로 본다(_SHAPE — '[F1-score]' 는 글이다).
     """
     like = _LIKE[letter]
+    shape = _SHAPE.get(letter)
     dropped: list[str] = []
     unparsed: list[str] = []
     used: list[str] = []
 
     def _check(m: re.Match) -> str:
         inner = m.group(2)
-        if not like.search(inner):
+        if not like.search(inner) or (shape is not None and not shape.fullmatch(inner)):
             return m.group(0)
         items = _parse_ids(inner, letter)
         if items is None:

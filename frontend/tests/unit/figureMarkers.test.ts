@@ -9,6 +9,8 @@ interface MarkerCase {
   text: string;
   numbers: string[];
   unmarked: number;
+  // 서버 검사(check_paragraph) 뒤에도 남는 괄호 글 — 화면도 칩이 아닌 글자로 그려야 한다
+  kept?: string[];
   note: string;
 }
 const CASES: MarkerCase[] = markerChecks;
@@ -24,6 +26,14 @@ describe("marker_checks.json — 백엔드와 같은 결과", () => {
     expect(flags.map((f) => f.text).join("")).toBe(c.text);
     expect(flags.filter((f) => f.unmarked).length).toBe(c.unmarked);
     expect(flags.flatMap((f) => f.numbers)).toEqual(c.numbers);
+    for (const kept of c.kept ?? []) {
+      expect(c.text).toContain(kept);
+      expect(splitMarkers(kept)).toEqual([{ type: "text", text: kept }]);
+    }
+  });
+
+  it("마커가 아닌 '[F1-score]' 가 남는 예제가 있다", () => {
+    expect(CASES.some((c) => c.kept?.includes("[F1-score]"))).toBe(true);
   });
 });
 
