@@ -23,7 +23,10 @@ log = logging.getLogger(__name__)
 
 CLIP_WINDOW = 100      # 자를 자리(문장 끝·공백)를 찾는 끝 구간(글자)
 MAX_PASSAGES = 500     # Milvus 에서 한 편당 읽는 청크 상한 — 리랭크가 동기 요청(게이트웨이 120초) 안에 끝나게
-_SENTENCE_END = ".!?。"
+# 문장 끝 — . ! ? 는 원문에서 바로 뒤가 공백일 때만(소수점 3.14·p<.05 에서 자르지 않게, chunker._split_sentences 의
+# `(?<=[.?!。])\s+` 와 같은 규칙), 。 는 뒤에 공백 없이도 문장 끝이다
+_SENTENCE_END = ".!?"
+_FULL_STOP = "。"
 # Milvus 표현식에 넣는 cnts_id — 따옴표·역슬래시가 든 값은 표현식을 깨므로 읽지 않는다
 _SAFE_ID = re.compile(r"[A-Za-z0-9_.\-]{1,64}")
 
@@ -31,15 +34,18 @@ _SAFE_ID = re.compile(r"[A-Za-z0-9_.\-]{1,64}")
 def clip(text: str, limit: int = EXCERPT_CHARS) -> str:
     """limit 자 안으로 자른다. 말줄임표를 붙이지 않는다 — 대목은 원문 그대로의 글자여야 한다.
 
-    끝 CLIP_WINDOW 자 안에 문장 끝(. ! ? 。)이 있으면 그 뒤에서, 없으면 그 구간의 마지막 공백 앞에서,
-    그것도 없으면 limit 자에서 자른다.
+    끝 CLIP_WINDOW 자 안에 문장 끝(바로 뒤가 공백인 . ! ?, 또는 。)이 있으면 그 뒤에서, 없으면 그 구간의 마지막
+    공백 앞에서, 그것도 없으면 limit 자에서 자른다. 소수점(3.14·p<.05)은 문장 끝이 아니다 — 숫자 가운데서
+    끊기면 근거의 값이 바뀐다.
     """
     text = (text or "").strip()
     if len(text) <= limit:
         return text
     head = text[:limit]
     window = range(max(0, limit - CLIP_WINDOW), limit)
-    ends = [i for i in window if head[i] in _SENTENCE_END]
+    # len(text) > limit 이라 text[i + 1] 은 늘 있다 — limit 바로 앞 마침표도 원문의 다음 글자로 판단한다
+    ends = [i for i in window
+            if head[i] == _FULL_STOP or (head[i] in _SENTENCE_END and text[i + 1].isspace())]
     if ends:
         return head[: ends[-1] + 1]
     spaces = [i for i in window if head[i].isspace()]

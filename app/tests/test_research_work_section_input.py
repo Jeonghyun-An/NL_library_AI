@@ -81,6 +81,14 @@ class TestClip:
         text = "가" * 1150 + " " + "나" * 30 + " " + "다" * 200
         assert clip(text) == "가" * 1150 + " " + "나" * 30
 
+    def test_decimal_points_are_not_sentence_ends(self):
+        # 소수점(3.14·p<.05·β=.32)에서 자르면 근거의 값이 바뀐다 — 바로 뒤가 공백인 마침표만 문장 끝이다
+        text = "가" * 1120 + "다. 평균은 3.14점이었고 p<.05 로 유의하였" + "나" * 200
+        assert clip(text) == "가" * 1120 + "다."
+        # 창 안에 진짜 문장 끝이 없으면 소수점이 아니라 마지막 공백 앞에서 자른다('3.' 으로 끝나지 않는다)
+        text = "가" * 1160 + " β=.32 평균은 3.14" + "나" * 200
+        assert clip(text) == "가" * 1160 + " β=.32 평균은"
+
     def test_hard_cut_when_the_window_has_no_boundary(self):
         text = "가" * 1050 + ". " + "나" * 400       # 문장 끝이 끝 100자 구간보다 앞에 있다
         assert clip(text) == ("가" * 1050 + ". " + "나" * 400)[:EXCERPT_CHARS]
