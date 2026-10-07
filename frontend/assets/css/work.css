@@ -1,0 +1,75 @@
+/* frontend/assets/css/work.css */
+/* 연구 어시스턴트(이어간 연구) 화면 전용 — 접두사 wk-. 색·모서리·그림자는 --skx-* 토큰만 읽는다(1rem = 20px,
+   style_skovix.css). research.css 는 고치지 않는다(06d 가 연구 화면 스타일을 다시 입힌다). 버튼·카드·배지는
+   research.css 의 rs- 부품을 그대로 쓴다. 화면 task 는 맨 끝 표시 줄 바로 위에 한 묶음씩 이어 붙인다 */
+
+/* ── 단계 화면 골격 ──────────────────────────────────────── */
+.wk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+
+/* ── 범위 띠(CorpusScopeNote) ───────────────────────────── */
+.wk-scope {
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-md);
+}
+
+/* ── 수치 칩(FigureChip) ────────────────────────────────── */
+.wk-fig {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.1rem;
+  padding: 0 0.3rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+  cursor: help;
+}
+.wk-fig:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 1px;
+}
+.wk-fig__tip {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 12rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.55rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--skx-white);
+  background: var(--skx-ink);
+  border-radius: var(--skx-radius-sm);
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.wk-fig:hover .wk-fig__tip,
+.wk-fig:focus .wk-fig__tip {
+  opacity: 1;
+  visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-fig__tip {
+    transition: none;
+  }
+}
+
+/* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
