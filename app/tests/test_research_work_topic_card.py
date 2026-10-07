@@ -119,9 +119,20 @@ class TestEvidenceIds:
         (["E1·E3"], ["E1", "E3"]),
         (["［E01］；【e3】"], ["E1", "E3"]),
         (["E2, E9"], ["E2"]),
+        (["E1 및 E3"], ["E1", "E3"]),
+        (["E3 and E1"], ["E3", "E1"]),
+        (["(E2, E1)"], ["E2", "E1"]),
     ])
     def test_numbers(self, raw, ids):
         assert evidence_ids(raw, PAPERS) == (ids, 0)
+
+    def test_a_number_inside_a_title_is_not_read_as_evidence(self):
+        # 번호 표기로만 된 원소만 번호로 읽는다 — 제목 속 '비타민 E 2 mg' 을 E2 로 읽으면 다른 논문이 근거가 된다
+        papers = [{"eid": "E1", "cnts_id": "A", "title": "비타민 E 2 mg 보충과 노인 우울", "year": 2019},
+                  {"eid": "E2", "cnts_id": "B", "title": "노인 우울의 종단 연구", "year": 2018},
+                  {"eid": "E3", "cnts_id": "C", "title": "사회적 지지와 우울", "year": 2017}]
+        assert evidence_ids(["비타민 E 2 mg 보충과 노인 우울"], papers) == (["E1"], 1)
+        assert evidence_ids(["비타민 E 3 보충 연구 E2"], papers) == ([], 0)
 
     def test_one_string_with_several_numbers_passes_the_two_chip_rule(self):
         # _parse 는 문자열 하나를 [문자열] 로 감싼다 — 그 안의 번호를 모두 되돌려야 근거 2개 검사를 넘는다

@@ -38,9 +38,13 @@ _SENTENCES = {
     FIG_CORPUS: "수치는 소장 KCI 적재분 [{id}]편 기준이다.",
 }
 
-# 근거 표기 — [E3]·［E03］·【e3】·E3. 한 원소에 여럿("E1, E3"·"[E1, E3]"·"E1·E3"·"E1; E3")이어도 모두 읽는다.
-# 영문자·숫자에 붙은 E 와 뒤에 글이 붙은 E# 는 번호가 아니다('E2E 암호화'·'Type 2')
-_EID = re.compile(r"(?<![A-Za-z0-9])[Ee]\s*0*(\d+)(?![0-9A-Za-z가-힣])")
+# 근거 표기 — [E3]·［E03］·【e3】·E3. 원소가 번호 표기로만 이루어졌으면(괄호·쉼표·가운데점·세미콜론·공백·'및'·
+# 'and' 로 묶은 "E1, E3"·"[E1, E3]"·"E1·E3"·"E1 및 E3") 번호를 모두 읽는다(_EID_ONLY). 글이 섞인 원소는 맨 앞에
+# 떨어져 선 번호 하나("E1 독거노인의 사회적 관계망")만 읽고(_EID_LEAD), 그것도 없으면 제목 비교로 간다 — 글 안
+# 아무 데서나 번호를 찾으면 제목 속 '비타민 E 2 mg' 을 E2 로 읽는다. 뒤에 글이 붙은 E# 는 번호가 아니다('E2E 암호화')
+_EID_NUM = re.compile(r"[Ee]\s*(\d+)")
+_EID_ONLY = re.compile(r"(?:[Ee]\s*\d+|[\s\[\]［］【】()（）,，、;；·・]|및|(?i:and))+")
+_EID_LEAD = re.compile(r"^\s*(?:[\[［【]\s*[Ee]\s*(\d+)\s*[\]］】]|[Ee]\s*(\d+)(?![0-9A-Za-z가-힣]))")
 _YEAR_TAIL = re.compile(r"\s*[(（]\s*(?:19|20)\d{2}[^)）]*[)）]\s*$")
 _NOT_WORD = re.compile(r"[\W_]+")
 _CONTAIN_MIN = 8          # 제목 일부만 낸 출력 — 짧은 쪽이 이 글자 수 이상일 때만 품는 관계로 본다
@@ -102,15 +106,20 @@ def _by_title(text: str, papers: list[dict]) -> str | None:
 
 def evidence_ids(raw: list[str], papers: list[dict]) -> tuple[list[str], int]:
     """모델이 낸 근거 표기 → 입력의 근거 번호(등장 순, 중복 없이)와 제목에서 되돌린 수(정함 5).
-    원소에 번호(E#)가 있으면 그 번호들로(한 문자열에 여럿을 묶어 내도 모두 — "E1, E3"·"[E1, E3]"), 하나도 없으면
-    제목 비교로 찾는다. 목록에 없는 번호·찾지 못한 제목은 버린다."""
+    원소가 번호 표기로만 이루어졌으면 그 번호들로(한 문자열에 여럿을 묶어 내도 모두 — "E1, E3"·"[E1, E3]"), 글이
+    섞였으면 맨 앞의 번호 하나로, 번호가 없으면 제목 비교로 찾는다. 목록에 없는 번호·찾지 못한 제목은 버린다."""
     valid = {p["eid"] for p in papers}
     out: list[str] = []
     recovered = 0
     for item in raw:
         if not isinstance(item, str):
             continue
-        numbers = _EID.findall(item)
+        if _EID_ONLY.fullmatch(item) and _EID_NUM.search(item):
+            numbers = _EID_NUM.findall(item)
+        elif (lead := _EID_LEAD.match(item)) is not None:
+            numbers = [lead.group(1) or lead.group(2)]
+        else:
+            numbers = []
         if numbers:
             for n in numbers:
                 eid = f"E{int(n)}"
