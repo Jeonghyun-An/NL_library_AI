@@ -1177,4 +1177,25 @@ button.wk-stepper__step {
   color: var(--skx-ink);
 }
 
+/* ── 연구 화면의 단계 본문([id].vue) — .wk-body 는 Task 25 가 정했다 ── */
+/* 이어간 연구에서 보고서가 접힌 자리 — 질문·절 수·채택·제외 한 줄과 [보고서 보기] */
+.wk-summary {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wk-summary__line {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--skx-ink);
+}
+/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다 */
+.wk-side-ledger {
+  margin-top: 1.2rem;
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
