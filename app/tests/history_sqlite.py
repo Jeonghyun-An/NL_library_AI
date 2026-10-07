@@ -20,6 +20,7 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+from models.book import Book
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
 from models.research_work import (
@@ -50,7 +51,7 @@ def make_engine() -> sa.Engine:
         dbapi_conn.execute("PRAGMA foreign_keys=ON")
 
     metadata = sa.MetaData()
-    for table in (HistoryItem.__table__, ResearchJob.__table__, ResearchStep.__table__,
+    for table in (Book.__table__, HistoryItem.__table__, ResearchJob.__table__, ResearchStep.__table__,
                   ResearchWork.__table__, ResearchGeneration.__table__, ResearchReading.__table__,
                   ResearchTopic.__table__, ResearchProposal.__table__):
         copy = table.to_metadata(metadata)
@@ -96,6 +97,14 @@ class AsyncSessionOverSync:
 
     async def scalar(self, stmt, params=None):
         return self._session.scalar(stmt, params)
+
+
+def add_book(engine: sa.Engine, cnts_id: str, **fields) -> None:
+    """소장 목록(library_catalog) 한 행 — 서지 조회(BookRepository)·담기 검사가 읽는다. extra 는 NOT NULL 이고
+    '::jsonb' 기본값이 사본에서 빠지므로 늘 넣는다."""
+    values = {"title": f"{cnts_id} 제목", "doc_type": "paper", "extra": {}, **fields}
+    with engine.begin() as conn:
+        conn.execute(sa.insert(Book.__table__).values(cnts_id=cnts_id, **values))
 
 
 def add_research_job(engine: sa.Engine, *, status: str, stage: str) -> uuid.UUID:
