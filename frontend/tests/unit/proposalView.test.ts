@@ -19,8 +19,10 @@ import {
   editParagraph,
   footprint,
   footprintLine,
+  openParagraphGens,
   paragraphParts,
   paragraphProblem,
+  paragraphViews,
   removeParagraph,
   sectionLabel,
   sectionStatus,
@@ -181,6 +183,44 @@ describe("paragraphParts", () => {
       { type: "cite", eid: "E1" },
       { type: "text", text: " 나 [E" },
     ]);
+  });
+});
+
+describe("paragraphViews · openParagraphGens", () => {
+  it("문단마다 문장·문장의 칩 조각·검사 한 줄을 한 번에 나눈다", () => {
+    const checks = { ...NO_CHECKS, numbers: ["9"] };
+    const sec = section([{ ...para("p1", "proposed", "가 [E1]. 9편이다 [E9]."), checks }, para("p2", "accepted")]);
+    const [first, second] = paragraphViews(sec);
+    expect(first!.p.id).toBe("p1");
+    expect(first!.sentences.map((s) => [s.text, s.unmarked, s.numbers])).toEqual([
+      ["가 [E1]. ", false, []],
+      ["9편이다 [E9].", false, ["9"]],
+    ]);
+    expect(first!.sentences[1]!.parts).toEqual([
+      { type: "text", text: "9편이다 " },
+      { type: "badcite", eid: "E9" },
+      { type: "text", text: "." },
+    ]);
+    expect(first!.check).toBe("확인 필요한 숫자 1개");
+    expect(second!.check).toBeNull();
+  });
+
+  it("이 절의 문단마다 열린 다시 쓰기 생성만 고른다 — 끝난 생성·다른 절·목록에 없는 문단은 빼고 같은 문단은 가장 새 것", () => {
+    const pgen = (id: number, status: WorkGeneration["status"], target: string): WorkGeneration => ({
+      ...gen(id, status, target),
+      kind: "paragraph",
+    });
+    const work = state([
+      pgen(60, "queued", "prior.g1#p1"),
+      pgen(61, "running", "prior.g1#p1"),
+      pgen(62, "done", "prior.g1#p2"),
+      pgen(63, "queued", "gap#p2"),
+      pgen(64, "queued", "prior.g1#p9"),
+      gen(65, "running", "prior.g1"),
+    ]).work;
+    const open = openParagraphGens(work, "prior.g1", ["p1", "p2"]);
+    expect([...open.entries()].map(([pid, g]) => [pid, g.id])).toEqual([["p1", 61]]);
+    expect(openParagraphGens(null, "prior.g1", ["p1"]).size).toBe(0);
   });
 });
 

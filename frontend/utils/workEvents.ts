@@ -83,17 +83,25 @@ function newest(gens: WorkGeneration[]): WorkGeneration | null {
 }
 
 // target 을 주지 않으면(undefined) 대상을 가리지 않는다. null 은 대상 없는 생성(핵심 개념)만 고른다
-function matching(state: WorkState, kind: GenKind, target: string | null | undefined): WorkGeneration[] {
+function matching(state: Pick<WorkState, "work">, kind: GenKind, target: string | null | undefined): WorkGeneration[] {
   return (state.work?.generations ?? []).filter(
     (g) => g.kind === kind && (target === undefined || g.target === target),
   );
 }
 
-export function latestGeneration(state: WorkState, kind: GenKind, target?: string | null): WorkGeneration | null {
+export function latestGeneration(
+  state: Pick<WorkState, "work">,
+  kind: GenKind,
+  target?: string | null,
+): WorkGeneration | null {
   return newest(matching(state, kind, target));
 }
 
-export function openGeneration(state: WorkState, kind: GenKind, target?: string | null): WorkGeneration | null {
+export function openGeneration(
+  state: Pick<WorkState, "work">,
+  kind: GenKind,
+  target?: string | null,
+): WorkGeneration | null {
   return newest(matching(state, kind, target).filter((g) => isOpen(g.status)));
 }
 

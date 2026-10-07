@@ -73,7 +73,7 @@
 
     <ol v-if="section && status !== 'writing'" class="wk-psec__paras">
       <li
-        v-for="p in section.paragraphs"
+        v-for="{ p, sentences, check } in paraViews"
         :key="p.id"
         class="wk-psec__item"
         :class="`is-${p.state}`"
@@ -94,9 +94,9 @@
         </div>
         <template v-else>
           <p class="wk-psec__para">
-            <template v-for="(s, si) in sentenceFlags(p.text)" :key="si">
+            <template v-for="(s, si) in sentences" :key="si">
               <span :class="{ 'wk-psec__unmarked': s.unmarked }" :title="s.unmarked ? '근거 표시가 없는 문장' : undefined">
-                <template v-for="(part, ti) in paragraphParts(s.text, section.evidence)" :key="ti">
+                <template v-for="(part, ti) in s.parts" :key="ti">
                   <template v-if="part.type === 'text'">{{ part.text }}</template>
                   <a
                     v-else-if="part.type === 'cite'"
@@ -117,8 +117,8 @@
               </span>
             </template>
           </p>
-          <p v-if="checkLine(p.checks)" class="rs-muted">{{ checkLine(p.checks) }}</p>
-          <p v-if="paragraphGen(p.id)" class="rs-muted" role="status">
+          <p v-if="check" class="rs-muted">{{ check }}</p>
+          <p v-if="paragraphGens.has(p.id)" class="rs-muted" role="status">
             이 문단을 다시 쓰는 중입니다{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
           </p>
           <div v-else-if="!readOnly" class="wk-psec__para-actions">
@@ -184,16 +184,17 @@ import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
 import { citeLabel } from "~/utils/citations";
 import { detailUrl, paraAnchor } from "~/utils/detailSource";
-import { figureById, sentenceFlags, splitMarkers } from "~/utils/figureMarkers";
+import { figureById, splitMarkers } from "~/utils/figureMarkers";
 import {
   GAP_NOTE,
   MAX_PARAGRAPHS_PUT,
   acceptParagraph,
   addParagraph,
-  checkLine,
   editParagraph,
+  openParagraphGens,
   paragraphParts,
   paragraphProblem,
+  paragraphViews,
   removeParagraph,
   sectionStatus,
   type ParaPart,
@@ -260,23 +261,24 @@ const failedText = computed(() => {
     : `${head}. 다시 시도하거나 잠시 뒤 다시 쓰세요.`;
 });
 
-function paragraphGen(pid: string) {
-  return openGeneration(props.state, "paragraph", `${props.sectionKey}#${pid}`);
-}
+// 절 글이 흐르는 동안 조각(section_delta)마다 state 는 새 객체가 되어 모든 절이 다시 그려진다. 그때 문단을 다시
+// 나누거나 생성 목록을 다시 훑지 않게, 무거운 계산은 그것이 기대는 값에만 묶는다 — 문단 조각은 절(계획서를 다시 읽을
+// 때만 바뀐다)에, 문단 다시 쓰기 생성은 생성 목록(work — 조각으로는 바뀌지 않는다)에
+const paraViews = computed(() => (section.value ? paragraphViews(section.value) : []));
+const workView = computed(() => props.state.work);
+const paragraphGens = computed(() =>
+  openParagraphGens(workView.value, props.sectionKey, section.value?.paragraphs.map((p) => p.id) ?? []),
+);
 
 function paragraphQueue(pid: string): string | null {
-  const g = paragraphGen(pid);
+  const g = paragraphGens.value.get(pid);
   return g ? genQueueLine(g) : null;
 }
 
 // 절이나 그 절의 문단을 쓰는 동안 서버는 그 절의 쓰기(PUT·다시 쓰기)를 409 로 막는다 — 미리 잠근다.
 // 열어 둔 고치기·직접 쓰기 칸의 [저장]·[더하기]도 이것으로 잠근다(busy 를 품는다)
 const locked = computed(
-  () =>
-    props.busy ||
-    status.value === "queued" ||
-    status.value === "writing" ||
-    (section.value?.paragraphs.some((p) => !!paragraphGen(p.id)) ?? false),
+  () => props.busy || status.value === "queued" || status.value === "writing" || paragraphGens.value.size > 0,
 );
 
 // ── 스트리밍 중인 글 ─────────────────────────────────────

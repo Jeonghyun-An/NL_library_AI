@@ -1,13 +1,16 @@
 // frontend/utils/proposalView.ts
 import type {
   Outline,
+  Paragraph,
   ParagraphChecks,
   ProposalSection,
   ProposalView,
   SectionPut,
+  WorkGeneration,
   WorkState,
+  WorkView,
 } from "~/types/work";
-import { splitMarkers, type MarkerPart } from "~/utils/figureMarkers";
+import { sentenceFlags, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
 
 // 고정 6절 — 키 순서가 곧 문서 순서다. 선행연구 검토의 묶음(prior.g1~g4)은 목차의 묶음 이름으로 부른다(sectionLabel)
@@ -66,6 +69,41 @@ export function sectionStatus(key: string, state: WorkState): SectionStatus {
 // 인용 표기를 칩으로 그릴 조각. 이 절의 근거 지도에 없는 번호는 badcite(취소선) — 저장할 때 서버가 버리는 번호다
 export function paragraphParts(text: string, evidence: Record<string, string>): ParaPart[] {
   return splitMarkers(text).map((p): ParaPart => (p.type === "cite" && !evidence[p.eid] ? { type: "badcite", eid: p.eid } : p));
+}
+
+// 화면이 그리는 문단 — 문장(근거 표시 없는 문장·[F#] 밖 숫자)과 문장마다의 칩 조각, 검사 한 줄을 미리 나눠 둔다
+export interface SentenceView extends SentenceFlag {
+  parts: ParaPart[];
+}
+
+export interface ParagraphView {
+  p: Paragraph;
+  sentences: SentenceView[];
+  check: string | null;
+}
+
+// 절 하나의 문단을 한 번에 나눈다. 화면은 절이 바뀔 때(계획서를 다시 읽을 때)만 이것을 다시 부른다 — 절 글이
+// 흐르는 동안 조각(section_delta)마다 모든 절이 다시 그려지는데, 그때마다 문단을 다시 나누지 않게
+export function paragraphViews(section: ProposalSection): ParagraphView[] {
+  return section.paragraphs.map((p) => ({
+    p,
+    sentences: sentenceFlags(p.text).map((s) => ({ ...s, parts: paragraphParts(s.text, section.evidence) })),
+    check: checkLine(p.checks),
+  }));
+}
+
+// 이 절의 문단마다 열린 다시 쓰기 생성(문단 id → 가장 새 생성). 생성 목록(work)에만 기댄다
+export function openParagraphGens(
+  work: WorkView | null,
+  key: string,
+  pids: readonly string[],
+): Map<string, WorkGeneration> {
+  const out = new Map<string, WorkGeneration>();
+  for (const pid of pids) {
+    const g = openGeneration({ work }, "paragraph", `${key}#${pid}`);
+    if (g) out.set(pid, g);
+  }
+  return out;
 }
 
 // 문단 상태로 센 기여 — 수락만 한 문단도 AI 작성으로 센다(spec §3)
