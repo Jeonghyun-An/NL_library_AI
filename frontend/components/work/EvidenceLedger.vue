@@ -1,8 +1,8 @@
 <!-- frontend/components/work/EvidenceLedger.vue -->
 <template>
   <!-- 이 컴포넌트는 탐색 시작 전부터(장부가 비어 있을 때부터) 마운트돼 있어야 첫 회차의 채택이 '새로 든 것'으로
-       떨어진다 — 바깥에서 hasLedger 로 감싸지 말 것. 장부를 그릴지는 안에서 정한다(회차 끝 채택 목록을 기록하기 전
-       잡(06a 전)은 장부가 없어 카드를 그리지 않는다) -->
+       떨어진다 — 바깥에서 hasLedger(장부 유무)로 감싸지 말 것(간격용 감싸개도 늘 그린다). 장부를 그릴지는 안에서
+       정한다(회차 끝 채택 목록을 기록하기 전 잡(06a 전)은 장부가 없어 카드를 그리지 않는다) -->
   <section v-if="shown" class="rs-card wk-ledger" aria-labelledby="wk-ledger-title">
     <header class="wk-ledger__head">
       <h2 id="wk-ledger-title" class="rs-card__title">근거 장부</h2>
@@ -38,12 +38,15 @@
   </section>
 
   <!-- 점검이 끝날 때만 읽힌다. 다시 연 화면에서 장부 전체를 몰아 읽지 않는다. 알림 영역은 카드 밖에 늘 있어 장부
-       내용보다 먼저 생긴다 — 카드와 함께 생기면 첫 알림을 놓친다(SynthProgressCard 와 같은 방식) -->
-  <p class="rs-sr-only" role="status" aria-live="polite">{{ announcement }}</p>
+       내용보다 먼저 생긴다 — 카드와 함께 생기면 첫 알림을 놓친다(SynthProgressCard 와 같은 방식).
+       문장은 알릴 때마다 새 노드(:key)로 갈아 넣는다 — 같은 문장이 연달아 오면(두 점검이 모두 '근거 2편 채택') 글자만
+       바꿔서는 브라우저가 프레임마다 접근성 트리를 견줄 때 바뀐 것이 없어 두 번째를 읽지 않는다(비운 뒤 다음 틱에 다시
+       넣어도 한 프레임 안에서 끝나 같다). 새로 더해진 노드는 같은 글자여도 읽힌다 -->
+  <p class="rs-sr-only" role="status" aria-live="polite"><span :key="announceSeq">{{ announcement }}</span></p>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import type { SubqView } from "~/types/research";
 import { hasLedger, ledgerFrom, ledgerLine, newlyAdded, type LedgerPaper } from "~/utils/evidenceLedger";
 import { paperByline } from "~/utils/researchReport";
@@ -60,6 +63,8 @@ const line = computed(() => ledgerLine(ledger.value));
 
 const fresh = ref<{ adopted: string[]; dropped: string[] }>({ adopted: [], dropped: [] });
 const announcement = ref("");
+// 알림 문장을 담는 노드의 key — 알릴 때마다 올려 새 노드로 넣는다(템플릿의 알림 영역 주석)
+const announceSeq = ref(0);
 let prevAdopted: Set<string> | null = null;
 let prevDropped: Set<string> | null = null;
 let freshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -76,18 +81,14 @@ watch(
     prevDropped = new Set(l.dropped.map((p) => p.cntsId));
     if (!adopted.length && !dropped.length) return;
     fresh.value = { adopted, dropped };
-    const message = [
+    announcement.value = [
       adopted.length ? `근거 ${adopted.length}편 채택` : "",
       dropped.length ? `${dropped.length}편 뺌` : "",
     ]
       .filter(Boolean)
       .join(", ");
-    // 같은 문장이 연달아 오면(두 점검이 모두 '근거 2편 채택') ref 가 바뀌지 않아 DOM 도 그대로고 화면 읽기 프로그램이
-    // 두 번째를 읽지 않는다 — 먼저 비워 그리게 한 뒤 다음 틱에 새 문장을 넣는다
-    announcement.value = "";
-    nextTick(() => {
-      announcement.value = message;
-    });
+    // 같은 문장이 연달아 와도 읽히게 새 노드로 넣는다(템플릿의 알림 영역 주석)
+    announceSeq.value += 1;
     if (freshTimer) clearTimeout(freshTimer);
     freshTimer = setTimeout(() => {
       fresh.value = { adopted: [], dropped: [] };
