@@ -154,6 +154,10 @@ class _MilvusException(Exception):
     """pymilvus 미설치 환경용 대역 — 진짜 pymilvus.exceptions.MilvusException 도 Exception 을 잇는다."""
 
 
+class _RpcError(Exception):
+    """grpc 미설치 환경용 대역 — 진짜 grpc.RpcError 도 Exception 을 잇는다."""
+
+
 class _Collection:
     def __init__(self, rows=None, error=None):
         self.rows = rows or []
@@ -174,6 +178,7 @@ class _Heavy:
         self.embed_error: Exception | None = None
         self.collection = _Collection()
         self.milvus_exception = _MilvusException
+        self.rpc_error = _RpcError
 
     def embed_texts(self, texts, is_query=False):
         self.texts.append(list(texts))
@@ -193,6 +198,12 @@ def heavy(monkeypatch):
         exceptions.MilvusException = _MilvusException
         monkeypatch.setitem(sys.modules, "pymilvus", MagicMock())
         monkeypatch.setitem(sys.modules, "pymilvus.exceptions", exceptions)
+    try:
+        fake.rpc_error = importlib.import_module("grpc").RpcError
+    except ModuleNotFoundError:
+        grpc = types.ModuleType("grpc")
+        grpc.RpcError = _RpcError
+        monkeypatch.setitem(sys.modules, "grpc", grpc)
     embedder = types.ModuleType("services.ingestion.embedder")
     embedder.embed_texts = fake.embed_texts
     indexer = types.ModuleType("services.ingestion.indexer")
@@ -218,11 +229,12 @@ class TestConceptAffinity:
                        "C2": {"우울": pytest.approx(0.0), "지지": pytest.approx(1.0)}}
         assert json.loads(json.dumps(out)) == out          # numpy 값이 남지 않는다
         assert heavy.texts == [["우울", "지지"]]
-        # ANN 검색이 아니라 메타청크 행을 그대로 꺼낸다
+        # ANN 검색이 아니라 메타청크 행을 그대로 꺼낸다. 상한은 정수 — pymilvus 는 int 일 때만 재시도 루프도 끊는다
         assert heavy.collection.calls == [{
             "expr": 'book_id in ["C1", "C2", "C3"] && chunk_idx == -1',
-            "output_fields": ["book_id", "embedding"], "limit": 3,
+            "output_fields": ["book_id", "embedding"], "limit": 3, "timeout": 10,
         }]
+        assert type(heavy.collection.calls[0]["timeout"]) is int
 
     def test_nothing_to_compare_is_empty_without_calling_the_models(self, heavy):
         assert concept_affinity([], ["C1"]) == {}
@@ -236,6 +248,13 @@ class TestConceptAffinity:
     def test_milvus_failure_is_none(self, heavy):
         heavy.dense = [[1.0, 0.0]]
         heavy.collection.error = heavy.milvus_exception("collection not loaded")
+        assert concept_affinity(["우울"], ["C1"]) is None
+
+    def test_milvus_deadline_is_none(self, heavy):
+        # 기한을 넘기면(DEADLINE_EXCEEDED 등 IGNORE_RETRY_CODES) pymilvus 는 MilvusException 이 아니라 날
+        # grpc.RpcError 를 다시 던진다
+        heavy.dense = [[1.0, 0.0]]
+        heavy.collection.error = heavy.rpc_error("Deadline Exceeded")
         assert concept_affinity(["우울"], ["C1"]) is None
 
     def test_a_code_defect_is_not_swallowed(self, heavy):
@@ -252,5 +271,5 @@ class TestNoHeavyImportAtModuleLevel:
         top = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
         names = [alias.name for node in top if isinstance(node, ast.Import) for alias in node.names]
         names += [node.module for node in top if isinstance(node, ast.ImportFrom)]
-        heavy_prefixes = ("services.ingestion", "services.search", "pymilvus", "torch", "FlagEmbedding")
+        heavy_prefixes = ("services.ingestion", "services.search", "pymilvus", "grpc", "torch", "FlagEmbedding")
         assert not [n for n in names if n.startswith(heavy_prefixes)]

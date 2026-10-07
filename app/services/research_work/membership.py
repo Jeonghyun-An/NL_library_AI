@@ -23,8 +23,14 @@ log = logging.getLogger(__name__)
 
 MEMBER_THRESHOLD = 0.45
 # 임베딩·Milvus 가 실제로 내는 실패(리랭커의 pipeline._RERANK_FAILURES 와 같은 묶음) — Milvus 는 함수 안에서
-# import 한 MilvusException 을 더한다
+# import 한 MilvusException 과 grpc.RpcError 를 더한다
 _FAILURES = (RuntimeError, OSError, ValueError, ImportError)
+# Milvus query 상한. 정수로 준다 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다
+# (아니면 75번 재시도로만 끊겨 UNAVAILABLE 이면 약 3.5분, 응답이 없으면 gRPC 기한이 없어 무한정 기다린다 —
+# 게이트웨이 proxy_read_timeout 120s 를 넘겨 폴백이 사용자에게 닿지 않는다. workers/job_runtime.py 의
+# _CLEANUP_FLUSH_TIMEOUT_SECONDS 와 같은 교훈). 기한을 넘기면 pymilvus 는 DEADLINE_EXCEEDED 를
+# MilvusException 이 아니라 날 grpc.RpcError 로 다시 던진다(IGNORE_RETRY_CODES)
+_MILVUS_TIMEOUT_SECONDS = 10
 
 
 def cosine(a, b) -> float:
@@ -133,6 +139,7 @@ def concept_affinity(concepts: list[str], cnts_ids: list[str]) -> dict[str, dict
     if not concepts or not ids:
         return {}
     try:
+        import grpc
         from pymilvus.exceptions import MilvusException
         from services.ingestion.embedder import embed_texts
         from services.ingestion.indexer import ensure_collection
@@ -143,9 +150,9 @@ def concept_affinity(concepts: list[str], cnts_ids: list[str]) -> dict[str, dict
         dense, _ = embed_texts(list(concepts))
         rows = ensure_collection().query(
             expr=f"book_id in [{_ids_expr(ids)}] && chunk_idx == -1",
-            output_fields=["book_id", "embedding"], limit=len(ids),
+            output_fields=["book_id", "embedding"], limit=len(ids), timeout=_MILVUS_TIMEOUT_SECONDS,
         )
-    except (*_FAILURES, MilvusException) as e:
+    except (*_FAILURES, MilvusException, grpc.RpcError) as e:
         log.warning("[membership] 개념 친밀도 계산 실패 — 하위질문 소속으로 바꾼다: %s: %s",
                     type(e).__name__, e)
         return None
