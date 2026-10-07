@@ -195,10 +195,6 @@
 button.wk-stepper__step {
   cursor: pointer;
 }
-button.wk-stepper__step:hover,
-button.wk-stepper__step:focus-visible {
-  border-color: var(--skx-border-c2);
-}
 .wk-stepper__item.is-done .wk-stepper__step {
   color: var(--skx-ink-2);
   border-color: var(--skx-border-c1);
@@ -207,8 +203,15 @@ button.wk-stepper__step:focus-visible {
   color: var(--skx-primary);
   border-color: var(--skx-border-c2);
 }
+/* 누를 수 있는 칸의 hover·focus 와 보고 있는 칸 강조는 위 상태 규칙(.wk-stepper__item.is-* — 0,3,0)보다 세야 한다.
+   둘 다 .wk-stepper__item 을 앞에 붙여 맞서고 뒤에 둔다 — 빠지면 끝난 칸은 hover 가 안 보이고, 보고 있는 칸은
+   글자색이 배경(primary)과 같아져 사라진다 */
+.wk-stepper__item button.wk-stepper__step:hover,
+.wk-stepper__item button.wk-stepper__step:focus-visible {
+  border-color: var(--skx-border-c2);
+}
 /* 지금 보고 있는 단계 */
-.wk-stepper__step[aria-current="step"] {
+.wk-stepper__item .wk-stepper__step[aria-current="step"] {
   color: var(--skx-white);
   background: var(--skx-primary);
   border-color: var(--skx-primary);
