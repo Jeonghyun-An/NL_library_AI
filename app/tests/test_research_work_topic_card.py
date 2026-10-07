@@ -113,9 +113,21 @@ class TestEvidenceIds:
         (["E1 독거노인의 사회적 관계망"], ["E1"]),
         (["E2", "E2", "[E2]"], ["E2"]),
         (["E9", "E0"], []),
+        # 여러 번호를 문자열 하나로 묶어 내도 모두 읽는다 — 첫 번호만 남기면 2개 검사에서 떨어진다
+        (["E1, E3"], ["E1", "E3"]),
+        (["[E1, E3]"], ["E1", "E3"]),
+        (["E1·E3"], ["E1", "E3"]),
+        (["［E01］；【e3】"], ["E1", "E3"]),
+        (["E2, E9"], ["E2"]),
     ])
     def test_numbers(self, raw, ids):
         assert evidence_ids(raw, PAPERS) == (ids, 0)
+
+    def test_one_string_with_several_numbers_passes_the_two_chip_rule(self):
+        # _parse 는 문자열 하나를 [문자열] 로 감싼다 — 그 안의 번호를 모두 되돌려야 근거 2개 검사를 넘는다
+        bound = _bound({**GOOD, "evidence": "E1, E3"})
+        assert bound["card"]["evidence"] == ["P2", "P3"] and bound["card"]["checks"]["recovered"] == 0
+        assert EXECUTOR.check(bound) is True
 
     def test_titles_are_turned_back_into_numbers(self):
         # gemma 표본의 같은 실수 — 근거 칸에 번호 대신 논문 제목(연도 괄호가 붙기도 한다)

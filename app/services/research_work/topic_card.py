@@ -38,8 +38,9 @@ _SENTENCES = {
     FIG_CORPUS: "수치는 소장 KCI 적재분 [{id}]편 기준이다.",
 }
 
-# 근거 표기 — [E3]·［E03］·【e3】·E3 (뒤에 글이 붙으면 공백으로 떨어져 있어야 한다 — 'E2E 암호화' 는 번호가 아니다)
-_EID = re.compile(r"^\s*(?:[\[［【]\s*[Ee]\s*(\d+)\s*[\]］】]|[Ee]\s*(\d+)(?![0-9A-Za-z가-힣]))")
+# 근거 표기 — [E3]·［E03］·【e3】·E3. 한 원소에 여럿("E1, E3"·"[E1, E3]"·"E1·E3"·"E1; E3")이어도 모두 읽는다.
+# 영문자·숫자에 붙은 E 와 뒤에 글이 붙은 E# 는 번호가 아니다('E2E 암호화'·'Type 2')
+_EID = re.compile(r"(?<![A-Za-z0-9])[Ee]\s*0*(\d+)(?![0-9A-Za-z가-힣])")
 _YEAR_TAIL = re.compile(r"\s*[(（]\s*(?:19|20)\d{2}[^)）]*[)）]\s*$")
 _NOT_WORD = re.compile(r"[\W_]+")
 _CONTAIN_MIN = 8          # 제목 일부만 낸 출력 — 짧은 쪽이 이 글자 수 이상일 때만 품는 관계로 본다
@@ -101,18 +102,20 @@ def _by_title(text: str, papers: list[dict]) -> str | None:
 
 def evidence_ids(raw: list[str], papers: list[dict]) -> tuple[list[str], int]:
     """모델이 낸 근거 표기 → 입력의 근거 번호(등장 순, 중복 없이)와 제목에서 되돌린 수(정함 5).
-    표기가 번호(E#)면 그 번호로, 아니면 제목 비교로 찾는다. 목록에 없는 번호·찾지 못한 제목은 버린다."""
+    원소에 번호(E#)가 있으면 그 번호들로(한 문자열에 여럿을 묶어 내도 모두 — "E1, E3"·"[E1, E3]"), 하나도 없으면
+    제목 비교로 찾는다. 목록에 없는 번호·찾지 못한 제목은 버린다."""
     valid = {p["eid"] for p in papers}
     out: list[str] = []
     recovered = 0
     for item in raw:
         if not isinstance(item, str):
             continue
-        m = _EID.match(item)
-        if m:
-            eid = f"E{int(m.group(1) or m.group(2))}"
-            if eid in valid and eid not in out:
-                out.append(eid)
+        numbers = _EID.findall(item)
+        if numbers:
+            for n in numbers:
+                eid = f"E{int(n)}"
+                if eid in valid and eid not in out:
+                    out.append(eid)
             continue
         eid = _by_title(item, papers)
         if eid is not None and eid not in out:
