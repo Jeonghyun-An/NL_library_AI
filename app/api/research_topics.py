@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, StringConstraints, model_validator
-from sqlalchemy import func, select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,7 +26,7 @@ from services.research_work.markers import numbers_outside, soften_claims
 from services.research_work.progress import refresh_progress
 from services.research_work.seeds import corpus_of, pick_seeds, topic_input, used_seed_keys
 from services.research_work.shapes import (
-    OTHER_DIRECTION_CARDS, PHASE_ORDER, TOPIC_QUESTION_MAX, TOPIC_TITLE_MAX,
+    OTHER_DIRECTION_CARDS, TOPIC_QUESTION_MAX, TOPIC_TITLE_MAX,
 )
 from services.research_work.topic_views import topic_item, topics_view
 
@@ -39,6 +39,8 @@ NO_CARD_YET = "카드가 아직 없습니다"
 EMPTY_CARD_NEEDS_BOTH = "빈 카드는 제목과 연구 질문을 함께 보내 주세요"
 # [다른 방향] 의 연구별 잠금 대상 — 주제 카드 생성의 target(주제 id 숫자 문자열)과 겹치지 않는 이름
 OTHER_LOCK_TARGET = "other-direction"
+# [고르기] 의 연구별 잠금 kind — 생성 kind 가 아니라 생성 넣기·[다른 방향]의 잠금과 겹치지 않는다
+PICK_LOCK_KIND = "topic_pick"
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=TOPIC_TITLE_MAX)]
 Question = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=TOPIC_QUESTION_MAX)]
@@ -217,17 +219,27 @@ async def pick_topic(job_id: str, tid: int, db: AsyncSession = Depends(get_db)):
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)
     _writable(work)
+    # 같은 연구의 고르기를 한 줄로 세운다 — 두 탭이 다른 주제를 거의 같이 고르면 뒤 트랜잭션의 'picked → candidate'
+    # 가 문장 스냅숏에서 앞이 막 고른 행을 candidate 로 보고 건너뛰어 picked 가 둘 남는다. 연구 행 FOR UPDATE 는 쓰지
+    # 않는다 — 워커 topic_card.apply 의 '주제 행 → 연구 행' 잠금 순서와 뒤집힌다
+    await db.execute(select(func.pg_advisory_xact_lock(lock_key(jid, PICK_LOCK_KIND, None))))
     topic = await _get_topic(db, jid, tid)
     if not topic.card:
         raise HTTPException(status_code=409, detail=NO_CARD_YET)
-    phase = work.phase if PHASE_ORDER.index(work.phase) >= PHASE_ORDER.index("reading") else "reading"
     await db.execute(
         update(ResearchTopic)
         .where(ResearchTopic.work_id == jid, ResearchTopic.state == "picked", ResearchTopic.id != tid)
         .values(state="candidate")
     )
     await db.execute(update(ResearchTopic).where(ResearchTopic.id == tid).values(state="picked"))
-    await db.execute(update(ResearchWork).where(ResearchWork.id == jid).values(topic_id=tid, phase=phase))
+    # 단계는 앞으로만(정함 14) — 요청 처음에 읽은 work.phase 로 정해 덮으면, 그사이 다른 탭의 목차 만들기가 올린
+    # proposal 을 reading 으로 되돌린다. 한 문장 안에서 지금 값을 보고 topics 일 때만 reading 으로 올린다
+    phase = await db.scalar(
+        update(ResearchWork).where(ResearchWork.id == jid)
+        .values(topic_id=tid,
+                phase=case((ResearchWork.phase == "topics", "reading"), else_=ResearchWork.phase))
+        .returning(ResearchWork.phase)
+    )
     progress = await refresh_progress(db, jid)
     await db.commit()
     await publish_work(jid, "work", {"phase": phase, "progress": progress})

@@ -497,6 +497,47 @@ class TestPick:
             "topic_id": tid, "phase": "proposal"}
         assert _rows(api.engine, ResearchWork)[0]["phase"] == "proposal"
 
+    def test_the_phase_is_decided_in_the_update_not_from_the_first_read(self, api, monkeypatch):
+        """단계는 앞으로만 — 요청 처음에 읽은 phase(topics)로 정해 덮으면, 그사이 다른 탭의 목차 만들기가 올리고 커밋한
+        proposal 을 reading 으로 되돌린다. UPDATE 한 문장이 지금 값을 보고 topics 일 때만 reading 으로 올린다."""
+        jid = _work_job(api.engine)
+        tid = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+        real = api.router._get_work
+
+        async def _read_then_another_tab_advances(db, job):
+            work = await real(db, job)
+            table = ResearchWork.__table__                  # 세션의 work 객체는 읽은 값(topics) 그대로 둔다
+            await db.execute(sa.update(table).where(table.c.id == job).values(phase="proposal"))
+            return work
+
+        monkeypatch.setattr(api.router, "_get_work", _read_then_another_tab_advances)
+
+        res = api.client.post(f"/api/research/{jid}/topics/{tid}/pick")
+
+        assert res.json() == {"topic_id": tid, "phase": "proposal"}
+        (work,) = _rows(api.engine, ResearchWork)
+        assert (work["topic_id"], work["phase"]) == (tid, "proposal")
+        assert api.events == [(str(jid), "work", {"phase": "proposal", "progress": work["progress"]})]
+
+    def test_picks_of_one_work_wait_in_one_line_before_the_topic_rows_change(self, api):
+        # 두 탭이 다른 주제를 거의 같이 고르면 뒤 트랜잭션의 'picked → candidate' 가 앞이 막 고른 행을 건너뛰어
+        # picked 가 둘 남는다 — 같은 연구의 고르기는 주제 행을 읽고 바꾸기 전에 연구별 잠금으로 한 줄로 선다
+        jid = _work_job(api.engine)
+        tid = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+        seen: list[tuple] = []
+        sa.event.listen(api.engine, "before_cursor_execute",
+                        lambda conn, cur, stmt, params, ctx, many: seen.append((stmt, params)))
+
+        assert api.client.post(f"/api/research/{jid}/topics/{tid}/pick").status_code == 200
+
+        lock = next(i for i, (s, p) in enumerate(seen) if "pg_advisory_xact_lock" in s
+                    and p == (lock_key(jid, api.router.PICK_LOCK_KIND, None),))
+        read = next(i for i, (s, _) in enumerate(seen) if s.startswith("SELECT research_topics."))
+        first_write = next(i for i, (s, _) in enumerate(seen) if s.startswith("UPDATE "))
+        assert lock < read < first_write
+        assert lock_key(jid, api.router.PICK_LOCK_KIND, None) not in {
+            lock_key(jid, "topic_card", str(tid)), lock_key(jid, "topic_card", "other-direction")}
+
     @pytest.mark.parametrize("state", ["candidate", "insufficient"])
     def test_a_topic_without_a_card_cannot_be_picked(self, api, state):
         jid = _work_job(api.engine)
