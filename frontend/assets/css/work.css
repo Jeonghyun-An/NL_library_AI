@@ -342,4 +342,238 @@ button.wk-stepper__step {
   border-color: var(--skx-border-c2);
 }
 
+/* ── 단계 화면 공통·편집 칸(Task 28 — 주제·읽기 목록·계획서 단계 화면이 함께 쓴다) ── */
+.wk-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.wk-screen__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-screen__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-screen__picked {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--skx-ink-2);
+  overflow-wrap: anywhere;
+}
+.wk-screen__next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--skx-border-c1);
+}
+.wk-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.wk-edit__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.wk-edit__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+}
+.wk-edit__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  resize: vertical;
+}
+.wk-edit__input:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 1px;
+}
+.wk-edit__input:disabled {
+  color: var(--skx-gray-1);
+  cursor: not-allowed;
+}
+.wk-edit__problem {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
+/* ── 핵심 개념 칩(Task 28) ── */
+.wk-concepts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.2rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-lg);
+}
+.wk-concepts__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+}
+.wk-concepts__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-concepts__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-concept {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-concept__remove {
+  padding: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--skx-gray-1);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.wk-concept__remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.wk-concepts__edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wk-concepts__input {
+  flex: 1 1 10rem;
+  width: auto;
+}
+
+/* ── 주제 카드(Task 28) ── */
+.wk-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-lg);
+}
+.wk-topic--picked {
+  border-color: var(--skx-border-c2);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.wk-topic--insufficient,
+.wk-topic--failed {
+  border-style: dashed;
+  border-color: var(--skx-line);
+}
+.wk-topic__origin {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  overflow-wrap: anywhere;
+}
+.wk-topic__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+}
+.wk-topic__question {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+}
+.wk-topic__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-topic__chip {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-topic__figures {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.7;
+  color: var(--skx-ink-2);
+}
+.wk-topic__seed {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-gray-1);
+}
+.wk-topic__note {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+/* 카드는 기다리던 슬롯에 실제로 도착했을 때만 한 번 뒤집힌다(cardArrived). 움직임 줄이기를 켠 브라우저에는 효과가 없다 */
+@media (prefers-reduced-motion: no-preference) {
+  .wk-topic--arrived {
+    animation: wk-topic-flip 0.5s ease-out;
+  }
+}
+@keyframes wk-topic-flip {
+  from {
+    opacity: 0.3;
+    transform: perspective(40rem) rotateY(80deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
