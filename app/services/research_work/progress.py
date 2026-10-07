@@ -2,8 +2,12 @@
 
 {"topics": 카드가 있는 후보 수, "reading": 담음 수, "sections": 채운 절 수, "sections_total": 6}.
 06d 사이드바('후보 4'·'읽기 목록 12편'·'계획서 3/6절')의 재료다. 카드 반영·고르기·읽기 목록·목차·절을
-쓸 때마다 refresh_progress 가 DB 에서 다시 세어 저장한다(더하고 빼며 고쳐 쓰지 않는다 — 동시 쓰기에도
-마지막 값이 사실이다). 커밋은 부르는 쪽이 한다(워커의 결과 반영은 finish 가, API 는 핸들러가).
+쓸 때마다 refresh_progress 가 DB 에서 다시 세어 저장한다(더하고 빼며 고쳐 쓰지 않는다). 세기 전에 연구 행을
+FOR UPDATE 로 잠근다 — 잠금을 마지막 UPDATE 에서야 잡으면, 같은 연구의 쓰기 둘이 겹칠 때 뒤에 커밋하는 쪽이
+앞 커밋 전에 센 낡은 값을 쓴다(READ COMMITTED). 잠금을 얻은 뒤의 SELECT 는 새 스냅샷이라 앞서 커밋한 쓰기를
+보므로 마지막에 커밋한 값이 사실이다. 부르는 쪽은 자기 행을 바꾼 뒤에 부르므로 잠금 순서는 늘 자기 행 →
+연구 행이다(마지막 UPDATE 가 잡던 것과 같은 순서). 커밋은 부르는 쪽이 한다(워커의 결과 반영은 finish 가,
+API 는 핸들러가).
 세션에서는 execute·scalar 만 쓴다(tests/history_sqlite 대역이 흉내 내는 것).
 """
 from sqlalchemy import func, select, update
@@ -46,8 +50,10 @@ def sections_filled(outline: dict, sections: dict) -> int:
 
 
 async def refresh_progress(db, work_id) -> dict:
-    """이 연구의 진행 요약을 세어 research_works.progress 에 쓰고 그 dict 를 돌려준다. 커밋하지 않는다."""
+    """이 연구의 진행 요약을 세어 research_works.progress 에 쓰고 그 dict 를 돌려준다. 커밋하지 않는다.
+    연구 행을 먼저 잠그고 센다(머리 주석 — 겹친 쓰기에서 낡은 셈을 쓰지 않게). 잠금은 커밋·롤백까지 쥔다."""
     T, R, P = ResearchTopic, ResearchReading, ResearchProposal
+    await db.execute(select(ResearchWork.id).where(ResearchWork.id == work_id).with_for_update())
     topics = (await db.execute(select(T.state, T.card).where(T.work_id == work_id))).all()
     reading = await db.scalar(
         select(func.count()).select_from(R).where(R.work_id == work_id, R.state == "in")

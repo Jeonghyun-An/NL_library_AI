@@ -293,6 +293,11 @@ class TestRefreshProgress:
 
         assert progress == {"topics": 2, "reading": 2, "sections": 4, "sections_total": 6}
         assert any(s.startswith("UPDATE research_works") for s in db.log) and "COMMIT" not in db.log
+        # 연구 행을 먼저 잠그고 센다 — 겹친 쓰기에서 뒤에 커밋하는 쪽이 앞 커밋 전에 센 값을 쓰지 않게
+        lock = next(i for i, s in enumerate(db.log) if "FOR UPDATE" in s)
+        counts = [i for i, s in enumerate(db.log) if s.startswith("SELECT") and i != lock]
+        write = next(i for i, s in enumerate(db.log) if s.startswith("UPDATE research_works"))
+        assert db.log[lock].startswith("SELECT research_works.id") and lock < min(counts) <= max(counts) < write
         assert _stored_progress(engine, w) == {}                      # 닫으면서 되돌렸다
 
         async def _commit(db):
