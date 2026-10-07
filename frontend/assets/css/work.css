@@ -749,4 +749,61 @@ button.wk-stepper__step {
   }
 }
 
+/* ── 깔때기·critic 이 뺀 논문 서랍(Task 31) ── */
+.wk-funnel {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+.wk-drawer {
+  padding: 0.8rem 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-drawer__summary {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  cursor: pointer;
+}
+.wk-drawer[open] .wk-drawer__summary {
+  margin-bottom: 0.5rem;
+}
+.wk-drawer__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+.wk-drawer__subq {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.wk-drawer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-drawer__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  font-size: 0.62rem;
+}
+.wk-drawer__line {
+  flex: 1 1 14rem;
+  min-width: 0;
+  color: var(--skx-ink-2);
+  overflow-wrap: anywhere;
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
