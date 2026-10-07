@@ -107,10 +107,10 @@ import { useReportExport } from "~/composables/useReportExport";
 import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWork";
 import type { OutlinePut, SectionPut, WorkStep } from "~/types/work";
 import { isFallbackOutline } from "~/utils/outlineEdit";
-import { buildProposalDocument } from "~/utils/proposalDocument";
+import { buildProposalDocument, printedKeys, printedProposedCount } from "~/utils/proposalDocument";
 import { sectionLabel } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
-import { versionConflict, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { openGeneration } from "~/utils/workEvents";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
@@ -133,18 +133,10 @@ const corpus = computed(() => proposal.value?.corpus ?? workView.value?.corpus ?
 // 목차 생성의 target 은 연구마다 하나("outline" — 서버 OUTLINE_TARGET)
 const outlineGen = computed(() => openGeneration(state.value, "outline", "outline"));
 const approved = computed(() => proposal.value?.outline?.state === "approved");
-// 06b 가 쓰는 절 — 선행연구 묶음(목차 순서) → 연구 공백
-const writableKeys = computed(() => [...(proposal.value?.outline?.groups.map((g) => g.key) ?? []), "gap"]);
-// 문서에 실릴 검토 전 문단 — 문서가 그리는 절(목차 묶음 → 연구 공백)만 센다. 목차를 다시 만들며 빠진 옛 절은
-// 문서에 실리지 않는다(proposalDocument printedKeys 와 같은 범위)
-const printedProposed = computed(() => {
-  const p = proposal.value;
-  if (!p) return 0;
-  return writableKeys.value.reduce(
-    (n, k) => n + (p.sections[k]?.paragraphs.filter((x) => x.state === "proposed").length ?? 0),
-    0,
-  );
-});
+// 06b 가 쓰는 절 — 문서가 그리는 절과 같다(선행연구 묶음(목차 순서) → 연구 공백, proposalDocument printedKeys)
+const writableKeys = computed(() => (proposal.value ? printedKeys(proposal.value) : []));
+// 문서에 실릴 검토 전 문단 — 목차를 다시 만들며 빠진 옛 절은 문서에 실리지 않아 세지 않는다(공개 부록·워터마크와 같은 수)
+const printedProposed = computed(() => (proposal.value ? printedProposedCount(proposal.value) : 0));
 const canRemake = computed(() => {
   const p = proposal.value;
   return !readOnly.value && !!p?.outline && (p.stale.outline || isFallbackOutline(p.outline));
@@ -184,6 +176,13 @@ async function act(run: () => Promise<void>, fallback: string): Promise<void> {
       await props.work.reload("proposal");
       say(CONFLICT, true);
     } else {
+      // 그 밖의 409(다른 곳에서 고쳐 저장해 승인이 풀린 목차의 절 쓰기·다시 쓸 수 없는 문단 등)와 404(다른 곳에서 지우거나
+      // 다시 만든 문단·묶음)도 그 사이 서버 상태가 바뀐 것이다 — 계획서·생성 목록을 다시 읽어 눌러도 막히는 버튼을 걷은 뒤
+      // 서버 문구를 보인다(단계 화면 관례, 계약 보강 8). work 이벤트는 계획서를 다시 읽지 않아 기다려도 풀리지 않는다
+      const status = httpStatus(e);
+      if (status === 409 || status === 404) {
+        await Promise.allSettled([props.work.reload("proposal"), props.work.reload("work")]);
+      }
       say(workErrorMessage(e, fallback), true);
     }
   } finally {

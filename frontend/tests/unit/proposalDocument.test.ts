@@ -7,6 +7,8 @@ import {
   UNREVIEWED_WATERMARK,
   buildProposalDocument,
   disclosureLines,
+  printedKeys,
+  printedProposedCount,
   proposalFileName,
   type ProposalDocInput,
 } from "~/utils/proposalDocument";
@@ -283,6 +285,51 @@ describe("disclosureLines", () => {
     expect(second({ origin: "report_seed", edited: true })).toBe("주제: AI 주제 카드(사용자가 고침)");
     expect(second({ origin: "other", edited: false })).toBe("주제: AI 주제 카드");
     expect(second(null)).toBe("선행연구 검토 · 노인의 우울: 문단 2개 — 수락 1·검토 전 1");
+  });
+});
+
+describe("printedKeys·printedProposedCount — 계획서 화면의 절 목록·토글 수와 문서가 같은 범위", () => {
+  // 목차를 다시 만들며 빠진 옛 절(prior.g3) — 문서에 실리지 않고 화면에서 수락할 수도 없다
+  function withOrphan(p: ProposalView): ProposalView {
+    const orphan = section("prior.g3", { E1: "KCI_C" }, [para("p1", "proposed", "옛 절 [E1]."), para("p2", "proposed", "옛 절 둘.")]);
+    return { ...p, sections: { ...p.sections, "prior.g3": orphan } };
+  }
+
+  function withoutPrintedProposed(p: ProposalView): ProposalView {
+    const keys = printedKeys(p);
+    const sections = Object.fromEntries(
+      Object.entries(p.sections).map(([k, s]) => [
+        k,
+        keys.includes(k) ? { ...s, paragraphs: s.paragraphs.filter((x) => x.state !== "proposed") } : s,
+      ]),
+    );
+    return { ...p, sections };
+  }
+
+  it("문서가 그리는 절은 목차 묶음 순서 → 연구 공백이다 — 목차에서 빠진 옛 절은 넣지 않고, 목차가 없으면 연구 공백만", () => {
+    expect(printedKeys(proposal())).toEqual(["prior.g1", "prior.g2", "gap"]);
+    expect(printedKeys(withOrphan(proposal()))).toEqual(["prior.g1", "prior.g2", "gap"]);
+    expect(printedKeys(proposal({ outline: null }))).toEqual(["gap"]);
+  });
+
+  it("검토 전 문단은 문서가 그리는 절에서만 센다 — 옛 절에만 남은 검토 전 문단은 0 이고 워터마크도 없다", () => {
+    expect(printedProposedCount(proposal())).toBe(2);
+    expect(printedProposedCount(withOrphan(proposal()))).toBe(2);
+
+    const orphanOnly = withoutPrintedProposed(withOrphan(proposal()));
+    expect(printedProposedCount(orphanOnly)).toBe(0);
+    expect("watermark" in buildProposalDocument(input({ includeProposed: true, proposal: orphanOnly }), NOW)).toBe(false);
+    expect(printedProposedCount(proposal({ outline: null, sections: {} }))).toBe(0);
+  });
+
+  it("미수락 문단을 켰을 때 워터마크·파일 이름 꼬리·공개 부록의 실은 수가 이 수와 맞는다", () => {
+    for (const p of [proposal(), withOrphan(proposal()), withoutPrintedProposed(withOrphan(proposal()))]) {
+      const n = printedProposedCount(p);
+      const doc = buildProposalDocument(input({ includeProposed: true, proposal: p }), NOW);
+      expect("watermark" in doc).toBe(n > 0);
+      expect(doc.fileName.endsWith("_미검토포함.docx")).toBe(n > 0);
+      expect(disclosureLines(p, true).some((l) => l.includes(`검토 전 AI 제안 ${n}문단(`))).toBe(n > 0);
+    }
   });
 });
 

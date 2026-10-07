@@ -159,10 +159,7 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
 export function disclosureLines(p: ProposalView, includeProposed: boolean): string[] {
   const f = footprint(p);
   // 실은 검토 전 문단은 문서가 그리는 절(목차 묶음·연구 공백)에서만 센다 — 워터마크·파일 이름 꼬리(shownProposed)와 같은 범위다
-  const included = printedKeys(p).reduce(
-    (n, k) => n + (p.sections[k]?.paragraphs.filter((x) => x.state === "proposed").length ?? 0),
-    0,
-  );
+  const included = printedProposedCount(p);
   const out = [`문단 상태: ${footprintLine(f)}`];
   if (p.topic_source) out.push(topicSourceLine(p.topic_source));
   for (const key of sectionKeys(p)) {
@@ -215,9 +212,19 @@ function metaBlocks(input: ProposalDocInput, now: Date): DocBlock[] {
     .map((text): DocBlock => ({ type: "meta", text: xmlSafe(text) }));
 }
 
-// 문서가 그리는 절 — 목차 순서(선행연구 묶음 → 연구 공백)
-function printedKeys(p: ProposalView): string[] {
+// 문서가 그리는 절 — 목차 순서(선행연구 묶음 → 연구 공백). 계획서 화면의 절 목록(ProposalStep)도 이 범위를 쓴다 —
+// 절을 더하면(06c 연구 배경 등) 화면과 문서가 함께 바뀐다
+export function printedKeys(p: ProposalView): string[] {
   return [...(p.outline?.groups.map((g) => g.key) ?? []), "gap"];
+}
+
+// 문서에 실릴 수 있는 검토 전 AI 제안 수 — 문서가 그리는 절에서만 센다. 목차를 다시 만들며 빠진 옛 절(prior.g3 등)은
+// 문서에 실리지 않는다. 공개 부록의 '실은 문단' 줄과 화면의 '미수락 문단도 넣기(워터마크)' 토글이 이 수를 쓴다
+export function printedProposedCount(p: ProposalView): number {
+  return printedKeys(p).reduce(
+    (n, k) => n + (p.sections[k]?.paragraphs.filter((x) => x.state === "proposed").length ?? 0),
+    0,
+  );
 }
 
 // 목차 순서(선행연구 묶음 → 연구 공백) 뒤에, 목차에서 빠진 옛 절이 남아 있으면 그것도 센다
