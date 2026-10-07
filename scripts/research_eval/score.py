@@ -10,6 +10,10 @@ spec §8 의 합격선(D11)을 질문·갈래마다 센다.
 실패해 기록하지 않은 질문)과 라벨 파일·보고서가 없거나 조회에 실패해 채점하지 못한 질문도 분모에 들고 따로 이름을
 찍는다(D11 은 다섯 질문 모두 합격이어야 한다). 질문 목록에 없는 pairs 의 키는 경고만 하고 채점하지 않는다.
 라벨 파일은 make_labels.py 가 만든 labels/<질문키>.csv 이고 label 칸은 '관련'·'무관' 만 받는다.
+갈래마다 '보고서 정밀도'(보고서 절에 실린 서로 다른 논문 중 '관련' 비율 — 라벨 칸이 빈 논문은 분모에서 뺀다)를 한 줄
+더 찍고, 끝에 채점한 질문의 합계(보고서 정밀도·제외 판정의 관련 수)를 찍는다. 06a 완료노트 §5-5 가 손으로 센 표
+(갈래 0 관련 62·무관 36·63%, 갈래 1 55·43·56%, 제외 판정의 관련 52/118·0/3)와 같은 셈이라 D18 재판정을 06a 와
+견줄 수 있다. 합격 판정에는 쓰지 않는다.
 
 실행 (서버):
   docker exec nl-lib-fastapi python /app/data/research_eval/score.py \
@@ -31,6 +35,8 @@ RELEVANT, IRRELEVANT = "관련", "무관"
 LABELS = (RELEVANT, IRRELEVANT)
 MAX_IRRELEVANT_PER_SECTION = 1
 MAX_OVER_EXCLUSION = 0.10
+ARMS = ("0", "1")
+TOTAL_KEYS = ("relevant", "irrelevant", "unlabeled", "excluded", "excluded_labeled", "excluded_relevant")
 
 
 def load_labels(path: Path) -> dict[str, str]:
@@ -71,6 +77,25 @@ def over_exclusion(report: dict, labels: dict[str, str]) -> float | None:
     return sum(labels[c] == RELEVANT for c in labeled) / len(labeled)
 
 
+def report_papers(report: dict) -> list[str]:
+    """보고서 절에 실린 서로 다른 논문(절 순서) — 두 절에 실린 논문은 한 번만."""
+    return list(dict.fromkeys(c for ids in _section_ids(report) for c in ids))
+
+
+def report_precision(report: dict, labels: dict[str, str]) -> dict:
+    """보고서 정밀도의 셈 — 보고서 절 논문(서로 다른 편) 중 '관련'·'무관' 라벨 수와 라벨 칸이 빈 수."""
+    papers = report_papers(report)
+    relevant = sum(labels.get(c) == RELEVANT for c in papers)
+    irrelevant = sum(labels.get(c) == IRRELEVANT for c in papers)
+    return {"relevant": relevant, "irrelevant": irrelevant, "unlabeled": len(papers) - relevant - irrelevant}
+
+
+def precision(relevant: int, irrelevant: int) -> float | None:
+    """관련 / (관련 + 무관). 라벨 단 논문이 없으면 None."""
+    labeled = relevant + irrelevant
+    return relevant / labeled if labeled else None
+
+
 def score_arm(report: dict, labels: dict[str, str]) -> dict:
     excluded = _excluded_ids(report)
     labeled = [c for c in excluded if c in labels]
@@ -82,6 +107,7 @@ def score_arm(report: dict, labels: dict[str, str]) -> dict:
         "excluded_labeled": len(labeled),
         "excluded_relevant": sum(labels[c] == RELEVANT for c in labeled),
         "unlabeled": len(papers - set(labels)),
+        "report": report_precision(report, labels),
     }
 
 
@@ -115,6 +141,35 @@ def format_arm(arm_key: str, arm: dict) -> str:
     return f"  갈래 {arm_key}  절별 무관 {per_section}  {over}  라벨 없음 {arm['unlabeled']}편  -> {verdict(arm)}"
 
 
+def _precision_text(counts: dict) -> str:
+    rate = precision(counts["relevant"], counts["irrelevant"])
+    shown = "-" if rate is None else f"{rate * 100:.1f}%"
+    return f"{shown} (관련 {counts['relevant']} · 무관 {counts['irrelevant']}, 라벨 없음 {counts['unlabeled']}편)"
+
+
+def format_precision(arm_key: str, counts: dict) -> str:
+    return f"  갈래 {arm_key}  보고서 정밀도 {_precision_text(counts)}"
+
+
+def add_totals(total: dict, arm: dict) -> None:
+    """갈래 결과 하나를 그 갈래의 합계에 더한다(보고서 정밀도의 셈 + 제외 판정의 셈)."""
+    for key in ("relevant", "irrelevant", "unlabeled"):
+        total[key] += arm["report"][key]
+    for key in ("excluded", "excluded_labeled", "excluded_relevant"):
+        total[key] += arm[key]
+
+
+def format_totals(totals: dict[str, dict], scored: int) -> list[str]:
+    """채점한 질문의 합계 두 줄 — 06a 완료노트 §5-5 표의 '보고서 관련·무관·정밀도'·'제외 판정의 관련' 칸과 같은 셈."""
+    return [
+        f"보고서 정밀도 합계(채점한 {scored}개 질문): "
+        + " · ".join(f"갈래 {arm} {_precision_text(totals[arm])}" for arm in ARMS),
+        "제외 판정의 관련 합계: "
+        + " · ".join(f"갈래 {arm} 관련 {totals[arm]['excluded_relevant']}/라벨 {totals[arm]['excluded_labeled']}"
+                     f" (제외 {totals[arm]['excluded']}편)" for arm in ARMS),
+    ]
+
+
 def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -> int:
     ap = argparse.ArgumentParser(description="critic 두 갈래 채점 (HTTP 만)")
     ap.add_argument("--api", required=True, help="API 루트. fastapi 컨테이너 안이면 http://localhost:8000/api")
@@ -132,6 +187,8 @@ def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -
     own = client is None
     client = client or httpx.Client(timeout=30.0)
     passed = {"0": 0, "1": 0}
+    totals = {arm: dict.fromkeys(TOTAL_KEYS, 0) for arm in ARMS}
+    scored = 0
     skipped: list[str] = []
     unlabeled = 0
     try:
@@ -162,16 +219,22 @@ def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -
                 skipped.append(key)
                 continue
             print(f"[{key}] {reports['0'].get('question', '')}")
-            for arm in ("0", "1"):
+            scored += 1
+            for arm in ARMS:
                 result = score_arm(reports[arm], labels)
                 passed[arm] += verdict(result) == "합격"
                 unlabeled += result["unlabeled"]
+                add_totals(totals[arm], result)
                 print(format_arm(arm, result))
+                print(format_precision(arm, result["report"]))
     finally:
         if own:
             client.close()
     total = len(keys)
     print(f"합격 질문: 갈래 0 {passed['0']}/{total} · 갈래 1 {passed['1']}/{total}")
+    if scored:
+        for line in format_totals(totals, scored):
+            print(line)
     if skipped:
         print(f"채점하지 못한 질문 {len(skipped)}개: {', '.join(skipped)} - 합격으로 세지 않았다")
     if unlabeled:

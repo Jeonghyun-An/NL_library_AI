@@ -337,8 +337,27 @@ class TestContinuedResearch:
         _list(engine, SID_A)
 
         (status_sql,) = [s for s in statements if "research_works" in s]
-        assert "LEFT OUTER JOIN research_works ON research_works.id = research_jobs.id" in status_sql
+        assert ("LEFT OUTER JOIN research_works ON research_works.id = research_jobs.id "
+                "AND research_works.deleted_at IS NULL") in status_sql
         assert "history_items" not in status_sql
+
+    def test_deleted_research_reads_as_not_continued(self, engine):
+        """연구 삭제는 기록 삭제를 따르고 research_works.deleted_at 은 자리만이다(spec §6-1). 값이 찬 연구는
+        이어가지 않은 딥리서치로 보인다 — 단계·진행이 비고, 남은 열린 생성이 있어도 생성 중이 아니다(06a 넘김 18)."""
+        job_id = _continued(engine, phase="reading", progress={"topics": 4, "reading": 6})
+        add_generation(engine, job_id, status="queued")
+        with engine.begin() as conn:
+            conn.execute(sa.update(ResearchWork.__table__)
+                         .where(ResearchWork.__table__.c.id == job_id).values(deleted_at=T0))
+
+        (item,), _ = _list(engine, SID_A)
+
+        assert item.research.model_dump() == {
+            "status": "completed", "stage": "synthesized",
+            "phase": None, "progress": None, "generating": False,
+        }
+        detail = _call(engine, lambda r: r.get(SID_A, job_id))
+        assert detail.research.phase is None and detail.research.generating is False
 
 
 class TestPatch:

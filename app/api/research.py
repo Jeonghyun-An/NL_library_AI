@@ -425,7 +425,12 @@ async def _waiting_in_line(db: AsyncSession, members: list[str]) -> int:
     )).scalar_one()
 
 
-async def _queue_info(db: AsyncSession, job, *, status: str | None = None) -> dict | None:
+# _queue_info 가 대기 줄(Redis)을 직접 읽으라는 표시 — members_ahead 의 None(줄 없음)과 가른다
+_READ_LINE = object()
+
+
+async def _queue_info(db: AsyncSession, job, *, status: str | None = None,
+                      members=_READ_LINE) -> dict | None:
     """기다리는 잡(approved·queued)의 대기 순번과 예상 시간. 그 밖의 상태면 None.
 
     ahead = running 잡 수 + 대기 줄(ZSET)에서 내 앞에 선 잡 중 지금 기다리는 잡 수. 줄에
@@ -434,13 +439,15 @@ async def _queue_info(db: AsyncSession, job, *, status: str | None = None) -> di
 
     status 는 approve·retry 가 넘긴다 — 그 job 은 전이 전에 읽은 객체라 상태가 옛 값인데,
     ORM 객체에 대입하면 다음 조회의 autoflush 가 그 값을 조건 없이 써 버린다.
+    members 는 하트비트(_queue_now)가 세션 밖에서 미리 읽어 온 대기 줄이다(members_ahead 의 결과 그대로).
     """
     if (job.status if status is None else status) not in RUNNABLE_STATUSES:
         return None
     running = (await db.execute(
         select(func.count()).select_from(ResearchJob).where(ResearchJob.status == "running")
     )).scalar_one()
-    members = await members_ahead(job.id)
+    if members is _READ_LINE:
+        members = await members_ahead(job.id)
     in_line = None if members is None else await _waiting_in_line(db, members)
     fallback = 0
     if in_line is None and job.created_at is not None:
@@ -633,6 +640,8 @@ async def _queue_now(jid: uuid.UUID) -> dict | None:
 
     순번 계산(_queue_info)이 읽는 칼럼(id·status·created_at)만 읽는다 — 행 전체를 읽으면 재시도로 줄에 선
     잡(stage=explored)의 탐색 스냅숏(state_snapshot)·report JSONB 를 열린 탭마다 15초마다 읽고 버린다.
+    대기 줄(Redis)은 두 짧은 세션 사이에서 읽는다 — 읽기 세션을 쥔 채 Redis(소켓 타임아웃 2초)를 기다리면
+    기다리는 잡의 열린 탭마다 15초마다 idle in transaction 이 생긴다(함정 18).
     """
     async with AsyncSessionLocal() as db:
         job = (await db.execute(
@@ -640,4 +649,9 @@ async def _queue_now(jid: uuid.UUID) -> dict | None:
             .options(load_only(ResearchJob.id, ResearchJob.status, ResearchJob.created_at))
             .where(ResearchJob.id == jid)
         )).scalar_one_or_none()
-        return None if job is None else await _queue_info(db, job)
+    if job is None or job.status not in RUNNABLE_STATUSES:
+        return None
+    # 세션이 닫혀도 읽어 둔 칼럼(id·status·created_at)은 그대로 읽힌다 — 커밋하지 않아 만료되지 않는다
+    members = await members_ahead(job.id)
+    async with AsyncSessionLocal() as db:
+        return await _queue_info(db, job, members=members)

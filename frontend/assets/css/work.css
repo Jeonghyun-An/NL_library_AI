@@ -1,0 +1,1231 @@
+/* frontend/assets/css/work.css */
+/* 연구 어시스턴트(이어간 연구) 화면 전용 — 접두사 wk-. 색·모서리·그림자는 --skx-* 토큰만 읽는다(1rem = 20px,
+   style_skovix.css). research.css 는 고치지 않는다(06d 가 연구 화면 스타일을 다시 입힌다). 버튼·카드·배지는
+   research.css 의 rs- 부품을 그대로 쓴다. 화면 task 는 맨 끝 표시 줄 바로 위에 한 묶음씩 이어 붙인다 */
+
+/* ── 단계 화면 골격 ──────────────────────────────────────── */
+.wk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+
+/* ── 범위 띠(CorpusScopeNote) ───────────────────────────── */
+.wk-scope {
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-md);
+}
+
+/* ── 수치 칩(FigureChip) ────────────────────────────────── */
+.wk-fig {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.1rem;
+  padding: 0 0.3rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+  cursor: help;
+}
+.wk-fig:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 1px;
+}
+.wk-fig__tip {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 12rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.55rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--skx-white);
+  background: var(--skx-ink);
+  border-radius: var(--skx-radius-sm);
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.wk-fig:hover .wk-fig__tip,
+.wk-fig:focus .wk-fig__tip {
+  opacity: 1;
+  visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-fig__tip {
+    transition: none;
+  }
+}
+
+/* ── 근거 장부(EvidenceLedger) ─────────────────────────── */
+.wk-ledger__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wk-ledger__count {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+/* 새 줄이 들면 EvidenceLedger 가 목록만 그 줄 쪽으로 옮긴다 — 줄 자리(offsetTop)를 목록에서 재게 relative,
+   scrollTop 이 사용자·장부의 옮김으로만 바뀌게(굴려 읽는 중인지 가린다) 스크롤 앵커링은 끈다 */
+.wk-ledger__list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 14rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overflow-anchor: none;
+  list-style: none;
+}
+.wk-ledger__paper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-ledger__title {
+  overflow: hidden;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wk-ledger__meta {
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+}
+.wk-ledger__pile-title {
+  margin: 0.2rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+}
+/* 뺀 논문은 바랜 더미로 내려간다 */
+.wk-ledger__list--dropped .wk-ledger__paper {
+  opacity: 0.55;
+  border-style: dashed;
+  border-color: var(--skx-line);
+}
+.wk-ledger__paper.is-fresh {
+  animation: wk-drop 0.9s ease-out;
+}
+.wk-ledger__list--dropped .wk-ledger__paper.is-fresh {
+  animation: wk-sink 0.9s ease-out;
+}
+@keyframes wk-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes wk-sink {
+  from {
+    opacity: 1;
+    transform: translateY(-0.6rem);
+  }
+  to {
+    opacity: 0.55;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-ledger__paper.is-fresh,
+  .wk-ledger__list--dropped .wk-ledger__paper.is-fresh {
+    animation: none;
+  }
+}
+
+/* ── 진행 막대(WorkStepper) ─────────────────────────────── */
+.wk-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-lg);
+}
+.wk-stepper__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-stepper__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+button.wk-stepper__step {
+  cursor: pointer;
+}
+.wk-stepper__item.is-done .wk-stepper__step {
+  color: var(--skx-ink-2);
+  border-color: var(--skx-border-c1);
+}
+.wk-stepper__item.is-current .wk-stepper__step {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+/* 누를 수 있는 칸의 hover·focus 와 보고 있는 칸 강조는 위 상태 규칙(.wk-stepper__item.is-* — 0,3,0)보다 세야 한다.
+   둘 다 .wk-stepper__item 을 앞에 붙여 맞서고 뒤에 둔다 — 빠지면 끝난 칸은 hover 가 안 보이고, 보고 있는 칸은
+   글자색이 배경(primary)과 같아져 사라진다 */
+.wk-stepper__item button.wk-stepper__step:hover,
+.wk-stepper__item button.wk-stepper__step:focus-visible {
+  border-color: var(--skx-border-c2);
+}
+/* 지금 보고 있는 단계 */
+.wk-stepper__item .wk-stepper__step[aria-current="step"] {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.wk-stepper__no {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.wk-stepper__line {
+  flex: 1;
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+
+/* ── 온보딩(OnboardingModal) ─────────────────────────────── */
+.wk-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: color-mix(in srgb, var(--skx-ink) 45%, transparent);
+}
+.wk-modal__dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: min(28rem, 100%);
+  max-height: calc(100vh - 2.4rem);
+  padding: 1.2rem;
+  overflow-y: auto;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-banner);
+}
+.wk-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wk-modal__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.wk-modal__lead {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.wk-modal__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-modal__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-modal__step-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-modal__decide {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink-2);
+}
+.wk-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── 이어가기 카드(ContinueResearchCard) ─────────────────── */
+.wk-continue {
+  border: 1px solid var(--skx-border-c2);
+}
+.wk-continue__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-continue__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-continue__step.is-done {
+  color: var(--skx-ink-2);
+  border-style: solid;
+  border-color: var(--skx-border-c1);
+}
+.wk-continue__step.is-current {
+  color: var(--skx-primary);
+  border-style: solid;
+  border-color: var(--skx-border-c2);
+}
+
+/* ── 단계 화면 공통·편집 칸(Task 28 — 주제·읽기 목록·계획서 단계 화면이 함께 쓴다) ── */
+.wk-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.wk-screen__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-screen__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-screen__picked {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--skx-ink-2);
+  overflow-wrap: anywhere;
+}
+.wk-screen__next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--skx-border-c1);
+}
+.wk-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.wk-edit__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.wk-edit__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+}
+.wk-edit__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  resize: vertical;
+}
+.wk-edit__input:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 1px;
+}
+.wk-edit__input:disabled {
+  color: var(--skx-gray-1);
+  cursor: not-allowed;
+}
+.wk-edit__problem {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
+/* ── 핵심 개념 칩(Task 28) ── */
+.wk-concepts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.2rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-lg);
+}
+.wk-concepts__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+}
+.wk-concepts__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-concepts__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-concept {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-concept__remove {
+  padding: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--skx-gray-1);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.wk-concept__remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.wk-concepts__edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wk-concepts__input {
+  flex: 1 1 10rem;
+  width: auto;
+}
+
+/* ── 주제 카드(Task 28) ── */
+.wk-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-lg);
+}
+.wk-topic--picked {
+  border-color: var(--skx-border-c2);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.wk-topic--insufficient,
+.wk-topic--failed {
+  border-style: dashed;
+  border-color: var(--skx-line);
+}
+.wk-topic__origin {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  overflow-wrap: anywhere;
+}
+.wk-topic__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+}
+.wk-topic__question {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+}
+.wk-topic__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-topic__chip {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-topic__figures {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.7;
+  color: var(--skx-ink-2);
+}
+/* 제목·질문의 [F#] 밖 숫자 — 계획서 문단의 '확인 필요'(wk-psec__check)와 같은 표시, 줄 머리에 붙인다 */
+.wk-topic__check {
+  margin: 0;
+}
+.wk-topic__check .wk-psec__check {
+  margin-left: 0;
+}
+.wk-topic__seed {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-gray-1);
+}
+.wk-topic__note {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+/* 카드는 기다리던 슬롯에 실제로 도착했을 때만 한 번 뒤집힌다(cardArrived). 움직임 줄이기를 켠 브라우저에는 효과가 없다 */
+@media (prefers-reduced-motion: no-preference) {
+  .wk-topic--arrived {
+    animation: wk-topic-flip 0.5s ease-out;
+  }
+}
+@keyframes wk-topic-flip {
+  from {
+    opacity: 0.3;
+    transform: perspective(40rem) rotateY(80deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── 주제 덱(Task 29) ── */
+.wk-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.wk-deck__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 0.8rem;
+}
+.wk-deck__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wk-deck__write {
+  padding: 1rem;
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-border-c2);
+  border-radius: var(--skx-radius-lg);
+}
+/* 화면 밖에서 카드가 도착했을 때만 뜨는 알약 — 단계 화면이 보이는 동안 위·아래 어디서든 화면 안에 붙어 있다.
+   누를 때만 그 카드로 간다(자동 스크롤 없음) */
+.wk-pill {
+  position: sticky;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 1;
+  align-self: center;
+  box-shadow: var(--skx-shadow-lnb);
+}
+
+/* ── 읽기 목록 표·들어온 경로(Task 30) ── */
+.wk-reading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-reading__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.5rem 0.8rem;
+  align-items: start;
+  padding: 0.8rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-reading__row--in {
+  border-color: var(--skx-border-c2);
+}
+.wk-reading__row--out {
+  opacity: 0.55;
+}
+.wk-reading__row--saving {
+  cursor: progress;
+}
+.wk-reading__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+  cursor: pointer;
+}
+.wk-reading__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.wk-reading__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--skx-ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.wk-reading__title:hover,
+.wk-reading__title:focus-visible {
+  color: var(--skx-primary);
+  text-decoration: underline;
+}
+.wk-reading__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.wk-reading__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.5rem;
+}
+.wk-reading__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-path {
+  grid-column: 1 / -1;
+  padding: 0.6rem 0.8rem;
+  border-top: 1px dashed var(--skx-line);
+}
+.wk-path__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-path__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+.wk-path__label {
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-path__detail {
+  color: var(--skx-gray-1);
+  overflow-wrap: anywhere;
+}
+.wk-path__quote {
+  flex-basis: 100%;
+  padding: 0.3rem 0.6rem;
+  color: var(--skx-ink-2);
+  border-left: 2px solid var(--skx-border-c2);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .wk-reading__row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .wk-reading__actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .wk-reading__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* 되살리기·담기 응답 뒤 다시 읽은 목록에 처음 나온 행만 잠깐 밝힌다(freshIds). 움직임 줄이기면 효과가 없다 */
+@media (prefers-reduced-motion: no-preference) {
+  .wk-reading__row--fresh {
+    animation: wk-row-fresh 1.6s ease-out;
+  }
+}
+@keyframes wk-row-fresh {
+  from {
+    background: var(--skx-border-c1);
+  }
+  to {
+    background: var(--skx-white);
+  }
+}
+
+/* ── 깔때기·critic 이 뺀 논문 서랍(Task 31) ── */
+.wk-funnel {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+.wk-drawer {
+  padding: 0.8rem 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-drawer__summary {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  cursor: pointer;
+}
+.wk-drawer[open] .wk-drawer__summary {
+  margin-bottom: 0.5rem;
+}
+.wk-drawer__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+.wk-drawer__subq {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.wk-drawer__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-drawer__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  font-size: 0.62rem;
+}
+.wk-drawer__line {
+  flex: 1 1 14rem;
+  min-width: 0;
+  color: var(--skx-ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* ── 목차 편집(OutlineEditor) ────────────────────────────── */
+.wk-outline__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wk-outline__stale {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.wk-outline__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-outline__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.wk-outline__label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-outline__text {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+}
+.wk-outline__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.6rem;
+}
+.wk-outline__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-md);
+}
+.wk-outline__group.is-drop {
+  background: var(--skx-border-c1);
+  border-color: var(--skx-border-c2);
+}
+.wk-outline__name {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-outline__name input,
+.wk-outline__field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  font: inherit;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-outline__papers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-outline__paper {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.6rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-outline__paper[draggable="true"] {
+  cursor: grab;
+}
+.wk-outline__paper.is-dragging {
+  opacity: 0.5;
+}
+.wk-outline__paper-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wk-outline__move {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+.wk-outline__move select {
+  max-width: 6rem;
+  font-size: 0.55rem;
+}
+.wk-outline__move .rs-btn--small {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.55rem;
+}
+.wk-outline__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.wk-outline__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+.wk-outline__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.wk-outline__problems {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
+/* ── 계획서 절(ProposalSection) ───────────────────────────── */
+.wk-psec__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wk-psec__write {
+  margin-left: auto;
+}
+.wk-psec__stale {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.wk-psec__paras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* 'AI 작성' 띠 — 문단 왼쪽 선과 머리 글. 수락해도 남는다 */
+.wk-psec__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--skx-border-c2);
+}
+.wk-psec__item.is-proposed {
+  border-left-style: dashed;
+}
+.wk-psec__item.is-authored {
+  border-left-color: var(--skx-line);
+}
+.wk-psec__band {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-psec__item.is-authored .wk-psec__band {
+  color: var(--skx-gray-1);
+}
+.wk-psec__para {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.75;
+  color: var(--skx-ink);
+}
+.wk-psec__para.is-live {
+  color: var(--skx-ink-2);
+}
+.wk-psec__live {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.wk-psec__cite {
+  display: inline-block;
+  margin: 0 0.1rem;
+  padding: 0 0.3rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--skx-primary);
+  text-decoration: none;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-psec__cite.is-pending {
+  color: var(--skx-gray-1);
+  background: none;
+  border: 1px solid var(--skx-line);
+}
+.wk-psec__badcite {
+  font-size: 0.55rem;
+  color: var(--skx-gray-2);
+}
+/* 근거 표시 없는 문장 — 점선 밑줄 */
+.wk-psec__unmarked {
+  text-decoration: underline dotted var(--skx-gray-2);
+  text-underline-offset: 0.2em;
+}
+.wk-psec__check {
+  margin: 0 0.2rem;
+  padding: 0 0.3rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+  border: 1px dashed var(--skx-ink);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-psec__para-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.wk-psec__edit,
+.wk-psec__add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-psec__edit textarea,
+.wk-psec__add textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-psec__failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── AI 기여 막대(AiFootprintMeter) ───────────────────────── */
+.wk-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.wk-meter__line {
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+}
+.wk-meter__title {
+  font-weight: 700;
+}
+.wk-meter__bar {
+  display: flex;
+  height: 0.4rem;
+  overflow: hidden;
+  background: var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-meter__seg {
+  flex-basis: 0;
+}
+.wk-meter__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  list-style: none;
+}
+.wk-meter__dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.2rem;
+  border-radius: 50%;
+}
+.wk-meter__seg.is-accepted,
+.wk-meter__dot.is-accepted {
+  background: var(--skx-primary);
+}
+.wk-meter__seg.is-edited,
+.wk-meter__dot.is-edited {
+  background: var(--skx-ink-2);
+}
+.wk-meter__seg.is-proposed,
+.wk-meter__dot.is-proposed {
+  background: var(--skx-border-c1);
+}
+.wk-meter__seg.is-authored,
+.wk-meter__dot.is-authored {
+  background: var(--skx-gray-2);
+}
+
+/* ── 계획서 인쇄의 워터마크(ReportPrint) ──────────────────── */
+/* 인쇄에서 position: fixed 는 쪽마다 되풀이된다. 글 위에 옅게 겹쳐도 본문이 읽히게 투명도를 낮춘다 */
+.wk-print-watermark {
+  display: none;
+}
+@media print {
+  .wk-print-watermark {
+    position: fixed;
+    top: 45%;
+    right: 0;
+    left: 0;
+    display: block;
+    margin: 0;
+    font-size: 40pt;
+    font-weight: 700;
+    text-align: center;
+    color: var(--skx-gray-2);
+    opacity: 0.18;
+    transform: rotate(-24deg);
+    pointer-events: none;
+  }
+}
+
+/* ── 계획서 화면(ProposalStep) ────────────────────────────── */
+.wk-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.wk-proposal__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-proposal__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-proposal__remake {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wk-proposal__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+}
+
+/* ── 연구 화면의 단계 본문([id].vue) — .wk-body 는 Task 25 가 정했다 ── */
+/* 이어간 연구에서 보고서가 접힌 자리 — 질문·절 수·채택·제외 한 줄과 [보고서 보기] */
+.wk-summary {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wk-summary__line {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--skx-ink);
+}
+/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터 떠 있어야
+   첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
+.wk-side-ledger .wk-ledger {
+  margin-top: 1.2rem;
+}
+/* 화면을 그대로 인쇄(Ctrl+P)하면 research.css 의 @media print 가 머리·옆 칸·버튼을 뺀다. 보고서 끝 이어가기 카드와
+   이어간 연구의 진행 막대는 그 규칙에 걸리지 않아(카드는 본문 article 안, 막대의 칸은 rs-btn 이 아니다) 여기서 뺀다 —
+   이어가지 않은 연구의 인쇄물은 지금과 같다. [PDF로 저장](ReportPrint)은 앱 전체를 숨겨 영향이 없다 */
+@media print {
+  .rs-page .wk-continue,
+  .rs-page .wk-stepper {
+    display: none !important;
+  }
+}
+
+/* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

@@ -54,7 +54,8 @@ def test_journal_is_series_title_not_publisher():
 @pytest.mark.parametrize("name, authors", [
     ("3-authors", "김철수; 이영희; 박민수"),     # 고정 예제 그대로
     ("2-authors", "김철수; 이영희"),
-], ids=["3-authors", "2-authors"])
+    ("pipe-authors", "윤기찬 | 이순철"),        # 원본 personal_author 의 세로줄 구분(06a 이월)
+], ids=["3-authors", "2-authors", "pipe-authors"])
 def test_korean_prefix_matches_report_reference(name, authors):
     # 프론트 테스트가 같은 파일의 같은 서지로 referenceText 의 글자를 고정한다. 공유 파일의 서지가
     # 고정 예제에서 저자만 다른지 먼저 본다 — 서지를 바꿔 이 대조를 약하게 만들지 못하게
@@ -93,3 +94,27 @@ def test_other_parts_are_unchanged():
     assert citation["english"] == (
         "Kim et al. (n.d.). AI 윤리 교육. 교육학연구, 57(3). https://www.kci.go.kr/x"
     )
+
+
+@pytest.mark.parametrize("raw", ["윤기찬 | 이순철", "윤기찬|이순철", "윤기찬·이순철", "윤기찬; 이순철", "윤기찬, 이순철"],
+                         ids=["pipe-spaced", "pipe", "middle-dot", "semicolon", "comma"])
+def test_author_separators_match_the_report_reference(raw):
+    # 프론트 splitAuthors(frontend/utils/citations.ts)처럼 ;·|·· 를 먼저 나눈다 — 계획서 참고문헌(정함 8)과
+    # 보고서 참고문헌이 같은 저자 글자를 쓴다. 쉼표는 지금처럼 나눈다
+    citation = build_citation(_paper(personal_author=raw))
+
+    assert citation["korean"].startswith("윤기찬, 이순철 (2019). ")
+    assert citation["english"].startswith("윤기찬, 이순철 (2019). ")
+
+
+def test_four_pipe_separated_authors_get_et_al_in_english():
+    citation = build_citation(_paper(personal_author="Kim | Lee | Park | Choi"))
+
+    assert citation["korean"].startswith("Kim, Lee, Park, Choi (2019). ")
+    assert citation["english"].startswith("Kim et al. (2019). ")
+
+
+def test_one_author_without_a_separator_is_kept_whole():
+    citation = build_citation(_paper(personal_author="  홍길동  "))
+
+    assert citation["korean"].startswith("홍길동 (2019). ")

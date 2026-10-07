@@ -2,6 +2,48 @@
 
 딥리서치를 [이 연구 이어가기] 로 이어간 연구 한 건과 그 산출물. 연구 id = 출발 딥리서치 잡 id.
 기존 테이블은 건드리지 않는다. create_all 이 만들고 alembic 은 0007 로 stamp 한다(함정 14).
+create_all 은 있는 테이블에 칼럼·인덱스를 더하지 못한다 — 바뀌는 모양은 아래 JSONB 안에 둔다.
+
+JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 만드는 곳은 그 모듈들):
+
+  research_works.concepts         [str]                                             (06a)
+  research_works.concept_members  {개념: [cnts_id …]}  — 코사인 ≥ MEMBER_THRESHOLD, 높은 순. 개념이 바뀌면 {}(06a 규칙)
+  research_works.progress         {"topics": int, "reading": int, "sections": int, "sections_total": 6}
+  research_works.corpus_snapshot  {"n_papers": int, "from": str, "to": str, "at": iso} | null
+                                  — 출발 잡 report.range + 잡 finished_at(이어가기 때)
+  research_works.topic_id         고른 주제(research_topics.id) | null
+  research_topics.seed            {"key": "future:2:0"|"insufficient:3", "kind": "future"|"insufficient",
+                                   "section_idx": int|null, "subq_idx": int|null, "heading": str, "text": str,
+                                   "papers": [cnts_id], "adopted": int|null}         — user 카드는 {}
+  research_topics.card            Card | {}
+  research_topics.corpus_snapshot research_works.corpus_snapshot 과 같은 모양
+  research_reading.origin_ref     evidence: {"subq_idx": [int], "rank": {"0": int}, "chunks": {"0": [chunk_id]},
+                                             "chunk_scores": {"0": {chunk_id: float}}, "verdict": {"0": str},
+                                             "first_round": {"0": int}}  (06a)
+                                  revived:  {"subq_idx": int, "round": int|null, "note": str}
+                                  user:     {}
+  research_proposals.outline      Outline | {}
+  research_proposals.sections     {절 키: Section}  — 06b 키는 prior.g1~g4·gap
+
+  Figure    = {"id": "F1", "label": str, "value": str}
+  Card      = {"title": str, "question": str, "evidence": [cnts_id], "figure_sentence": str|null,
+               "figures": [Figure], "latest_year": int|null, "edited": bool,
+               "checks": {"numbers": [str], "softened": int, "recovered": int}, "gen_id": int|null}
+  Outline   = {"topic": {"id": int, "title": str, "question": str}, "basis": "concept"|"subq",
+               "concepts": [str],                                    — 목차를 만들 때의 핵심 개념
+               "groups": [{"key": "prior.g1", "name": str, "hint": str, "papers": [cnts_id]}],
+               "questions": [str], "question": str|null, "method": str,
+               "state": "draft"|"approved", "gen_id": int|null, "approved_at": iso|null}
+  Section   = {"key": str, "gen_id": int, "evidence": {"E1": cnts_id}, "figures": [Figure],
+               "basis": {"topic_id": int|null, "papers": [cnts_id]}, "note": str|null,
+               "paragraphs": [Paragraph], "model": str|null, "updated_at": iso}
+  Paragraph = {"id": "p1", "text": str, "state": "proposed"|"accepted"|"edited"|"authored",
+               "cites": [cnts_id], "checks": ParagraphChecks, "gen_id": int|null}
+  ParagraphChecks = {"dropped": int, "dropped_f": int, "unmarked": int, "numbers": [str], "softened": int}
+
+  사용자 카드(직접 쓰기)는 evidence·figures 가 비고 figure_sentence·latest_year·gen_id 가 null 이다.
+  '다시 맞춤 필요'(stale)는 저장하지 않고 조회 때 계산한다(services/research_work/proposal_views.stale_flags).
+  research_generations.input·output 의 모양은 kind 별 실행기 모듈(services/research_work/<kind>.py)에 있다.
 """
 from sqlalchemy import (
     BigInteger, Boolean, Column, DateTime, ForeignKey, Index, Integer, SmallInteger, String,

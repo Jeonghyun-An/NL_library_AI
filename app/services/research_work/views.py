@@ -12,9 +12,13 @@
 """
 
 
-def work_view(work, generations, positions: dict[int, int]) -> dict:
+_NOT_WAITING = {"position": None, "eta_sec": None, "others_ahead": False}
+
+
+def work_view(work, generations, queue: dict[int, dict]) -> dict:
     """연구 한 건. generations 는 호출부가 고른 생성(열린 것 전부 + 최근 끝난 것)이고 id 순으로 싣는다.
-    positions 는 대기 중(queued) 생성의 대기 순번 — 없는 생성은 None."""
+    queue 는 대기 중(queued) 생성마다 dispatch.queue_info 의 결과(position·eta_sec·others_ahead) — 없는 생성은
+    기다리지 않는다(position·eta_sec 는 None). corpus 는 이어가기 때 담은 코퍼스 스냅숏이다."""
     return {
         "id": str(work.id),
         "phase": work.phase,
@@ -22,12 +26,21 @@ def work_view(work, generations, positions: dict[int, int]) -> dict:
         "memo": work.memo,
         "is_example": bool(work.is_example),
         "progress": dict(work.progress or {}),
+        "topic_id": work.topic_id,
+        "corpus": dict(work.corpus_snapshot) if work.corpus_snapshot else None,
         "generations": [
             {"id": g.id, "kind": g.kind, "target": g.target, "status": g.status,
-             "model": g.model, "error": g.error, "position": positions.get(g.id)}
+             "model": g.model, "error": g.error, **_waiting(queue.get(g.id))}
             for g in sorted(generations, key=lambda g: g.id)
         ],
     }
+
+
+def _waiting(info: dict | None) -> dict:
+    if info is None:
+        return dict(_NOT_WAITING)
+    return {"position": info.get("position"), "eta_sec": info.get("eta_sec"),
+            "others_ahead": bool(info.get("others_ahead"))}
 
 
 def _empty_path() -> dict:

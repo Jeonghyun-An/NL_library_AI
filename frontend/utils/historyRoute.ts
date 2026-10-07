@@ -1,6 +1,7 @@
 // frontend/utils/historyRoute.ts
 import type { HistoryEntry, HistoryKind } from "~/types/history";
 import { firstValue, isUuid, readDetailSource } from "~/utils/detailSource";
+import { stepForPhase } from "~/utils/workPhase";
 
 export interface HistoryRoute {
   path: string;
@@ -15,8 +16,13 @@ export interface HistoryQuery {
 
 const V1_ID = /^\d{10,16}$/;
 
+// 이어간 연구는 그 연구의 지금 단계(?s=)로 간다 — 완료(done)는 계획서 화면. 이어가지 않은 딥리서치는 지금처럼 쿼리가 없다
 export function routeFor(entry: HistoryEntry): HistoryRoute {
-  if (entry.kind === "research") return { path: `/research/${entry.refId || entry.id}` };
+  if (entry.kind === "research") {
+    const path = `/research/${entry.refId || entry.id}`;
+    const phase = entry.research?.phase;
+    return phase ? { path, query: { s: stepForPhase(phase) } } : { path };
+  }
   const query: Record<string, string> = { h: entry.id, q: entry.title };
   if (entry.kind === "book") return { path: "/", query };
   const grade = entry.params?.grade;

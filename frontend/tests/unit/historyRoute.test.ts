@@ -21,6 +21,23 @@ describe("routeFor", () => {
   it("딥리서치는 잡 주소로 간다", () => {
     expect(routeFor(researchEntry(ID2))).toEqual({ path: `/research/${ID2}` });
   });
+
+  it("이어간 연구는 지금 단계의 ?s= 로 가고 완료는 계획서 화면이다", () => {
+    const at = (phase: "topics" | "reading" | "proposal" | "done") =>
+      routeFor(researchEntry(ID2, { research: { status: "completed", stage: "synthesized", phase } }));
+    expect(at("topics")).toEqual({ path: `/research/${ID2}`, query: { s: "topics" } });
+    expect(at("reading")).toEqual({ path: `/research/${ID2}`, query: { s: "reading" } });
+    expect(at("proposal")).toEqual({ path: `/research/${ID2}`, query: { s: "proposal" } });
+    expect(at("done")).toEqual({ path: `/research/${ID2}`, query: { s: "proposal" } });
+  });
+
+  it("이어가지 않은 딥리서치(phase 없음·null — 06a 전 서버 포함)는 지금처럼 쿼리가 없다", () => {
+    expect(routeFor(researchEntry(ID2, { research: { status: "running", stage: "planned" } }))).toEqual({
+      path: `/research/${ID2}`,
+    });
+    const plain = { status: "completed", stage: "synthesized", phase: null, progress: null, generating: false };
+    expect(routeFor(researchEntry(ID2, { research: plain }))).toEqual({ path: `/research/${ID2}` });
+  });
 });
 
 describe("readHistoryQuery", () => {
