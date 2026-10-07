@@ -25072,16 +25072,16 @@ spec §4 S2·S2′·S3~S7 공통("단계는 주소 `?s=` 에 싣는다 … `?s=`
   - `ResearchHeader` 바로 뒤 `WorkStepper` — 이어간 연구(`work.state.work` 가 있다)에만. `current` 는 단계 화면이면 그 단계, 보고서면 `null`(① 탐색). `go` → `goStep`, `help` → 온보딩 다시 보기.
   - 본문: `stepMode`(= `?s=` 가 맞는 값 && 딥리서치 completed && `work.exists !== false`)면 형제 분기 `<div class="wk-body">` — 요약 띠(`summaryLine(summaryBand(view))` + [보고서 보기]) + 단계 화면(`TopicsStep`·`ReadingStep`·`ProposalStep`, 이어간 연구를 읽는 동안은 스피너, 읽기 실패면 [다시 불러오기]). 아니면 지금의 `rs-body` 를 **그대로** 그린다 — 바뀌는 것은 그 여는 태그에 `v-else` 하나뿐이다. 이어가지 않은 연구로 확인되면(GET work 404 → `exists false`) `?s=` 가 붙어 와도 지금 화면이다.
   - 읽기 목록 단계의 원문 보기: `ReadingStep` 의 `open-pdf` → 이미 있는 `openPdf`(`async function openPdf(target: OpenPdfPayload)` — 계약 보강 8·Task 30/31 의 `ReadingTable`·`ReadingStep` emits). `PdfViewer` 는 `rs-body` 밖(`</main>` 뒤)에 그려지므로 단계 화면에서도 뜬다. 처리하지 않는 emit 은 typecheck·vitest·build 가 잡지 못한다 — Step 6 ⑩ 에서 손으로 본다.
-  - `aside.rs-col-side` 의 `ProgressPanel` 뒤 `EvidenceLedger`(`hasLedger(view.subqs)` 일 때만 — 06a 전 잡은 장부 데이터가 없다, `live` 는 탐색 중). 옆 칸에는 간격 규칙이 없어 `.wk-side-ledger` 로 감싼다(`research.css` 는 고치지 않는다).
+  - `aside.rs-col-side` 의 `ProgressPanel` 뒤 `EvidenceLedger`(**바깥 `v-if` 없이 늘 그린다** — 장부를 그릴지는 컴포넌트 안 `shown`(= `hasLedger`)이 정하고 06a 전 잡은 카드가 없다. 장부가 비어 있을 때부터 마운트돼 있어야 첫 회차의 채택이 떨어지고 '근거 N편 채택' 이 읽힌다 — `hasLedger` 로 감싸면 첫 critique 때 찬 장부로 처음 마운트돼 그 장부가 기준선이 되어 첫 묶음이 효과·알림 없이 나타난다(Task 26 리뷰 고침). `live` 는 탐색 중). 옆 칸에는 간격 규칙이 없어 `.wk-side-ledger` 로 감싸고, 간격은 카드가 있을 때만 생기게 `.wk-side-ledger .wk-ledger` 에 준다 — 06a 전 잡에 빈 간격이 남지 않게(감싸개 안에는 위치가 빠진 알림 영역만 남아 높이가 없다, `research.css` 는 고치지 않는다).
   - `ReportView` 의 새 `footer` 슬롯에 `ContinueResearchCard`(`reportState === 'ready'` — 최종본 완료일 때만. continue API 는 completed 가 아니면 409). [이 연구 이어가기] → `continueWork` → `setWork` → `connect()` → `afterAction()` → 처음이면 온보딩(`ONBOARDING_KEY`, `safeLocalStorage` + try/catch — 막힌 저장소면 매번 띄운다) → `goStep('topics')`. 이미 이어간 연구의 [이어간 연구 열기](`open`)는 `stepForPhase(phase)` 로.
   - 위치 복원: `useRestorePosition` 은 지금처럼 한 번만 부르고 `ready` 만 합친다 — 단계 화면이면 그 단계의 조회(`state.topics`·`reading`·`proposal`)가 끝났을 때, 아니면 지금 조건.
   - `ReportView.vue` 는 제외 논문 접이 뒤·`</article>` 앞에 `<slot name="footer" />` 하나만.
 - **Nuxt 스크롤(확인함):** 같은 경로에서 쿼리만 바꾸는 이동에서 Nuxt 4.4.2 의 기본 `scrollBehavior` 는 스크롤하지 않는다 — `node_modules/nuxt/dist/pages/runtime/router.options.js` 9행 `if (to.path.replace(/\/$/, "") === from.path.replace(/\/$/, "")) {` 가 hash 가 없으면 16행 `return false;` 로 끝나고, `definePageMeta` 의 `scrollToTop` 은 그 뒤(19행 줄기)라 이 이동에서는 불리지도 않는다. 계획 작성 때 가짜 API 로 띄운 화면에서 `?s=proposal` 로 400px 내려간 뒤 `router.push({query: {s: 'proposal', probe: '1'}})` → 스크롤 400 그대로였다. 그래서 보고서 끝 카드에서 단계로 넘어가면 그 높이에 남아 빈 곳을 보게 된다 — `goStep` 이 push 뒤 `window.scrollTo({top: 0, behavior: "instant"})` 로 맨 위로 올린다(사용자가 단계를 바꾼 때만 — 내용 도착에 따른 자동 스크롤은 여전히 없다, spec §4). 뒤로·앞으로(popstate)로 단계를 오갈 때는 Nuxt 가 그 자리를 그대로 둔다.
-- **앞 task 에 기댄다:** `useResearchWork`·`useWorkApi`(24), `workPhase` 의 `parseWorkStep`·`withStep`·`stepForPhase`·`summaryBand`·`summaryLine`·`ONBOARDING_KEY`(23), `evidenceLedger.hasLedger`·`EvidenceLedger.vue`(26), `WorkStepper`·`OnboardingModal`·`ContinueResearchCard`(27), `TopicsStep`(29), `ReadingStep`(31), `ProposalStep`(35), `browserId.safeLocalStorage`(기존). `work.css` 는 `nuxt.config.ts` 의 `css` 배열 끝에 Task 25 가 이미 넣었고 `.wk-body` 규칙도 Task 25 가 정했다(이 task 는 `.wk-summary*`·`.wk-side-ledger` 만 더한다 — 계약 보강 6 선택자 소유).
+- **앞 task 에 기댄다:** `useResearchWork`·`useWorkApi`(24), `workPhase` 의 `parseWorkStep`·`withStep`·`stepForPhase`·`summaryBand`·`summaryLine`·`ONBOARDING_KEY`(23), `EvidenceLedger.vue`(26 — `hasLedger` 는 컴포넌트 안에서만 쓴다, `[id].vue` 는 import 하지 않는다), `WorkStepper`·`OnboardingModal`·`ContinueResearchCard`(27), `TopicsStep`(29), `ReadingStep`(31), `ProposalStep`(35), `browserId.safeLocalStorage`(기존). `work.css` 는 `nuxt.config.ts` 의 `css` 배열 끝에 Task 25 가 이미 넣었고 `.wk-body` 규칙도 Task 25 가 정했다(이 task 는 `.wk-summary*`·`.wk-side-ledger` 만 더한다 — 계약 보강 6 선택자 소유).
 - **`withStep` 은 캐스트 없이 넘긴다:** Task 23 의 `withStep` 은 `Record<string, QueryValue>`(`utils/restorePosition.ts`)를 돌려준다(계약 보강 8) — 06a `withSpot` 과 같은 타입이라 `router.push({ query: withStep(route.query, s) })` 에 그대로 들어간다. `vue-router` 의 `LocationQueryRaw` 를 import 하지 않는다(통합 사본 typecheck 오류 0·build 완료 실측).
 - **계약과 다르게 한 곳(실측 근거):**
   - `setWork` 는 이미 스트림을 연다(계약 보강 8 — `connect` 는 이미 열려 있으면 아무것도 하지 않는다). 이어가기 뒤의 `work.connect()` 는 겹쳐 불러도 해가 없어 그대로 둔다.
-  - 근거 장부를 `.wk-side-ledger` 로 감싼다(계약은 `ProgressPanel` 뒤에 둔다고만 한다).
+  - 근거 장부를 `.wk-side-ledger` 로 감싼다(계약은 `ProgressPanel` 뒤에 둔다고만 한다 — 감싸개도 바깥 `v-if` 없이 늘 그리고 간격은 `.wk-side-ledger .wk-ledger` 에, 계약 보강).
 - **06d 와 같은 파일:** `[id].vue`·`ReportView.vue` 는 06b 가 먼저 dev 에 머지한다. 머리(`ResearchHeader`)·`research.css` 는 06d 몫이라 건드리지 않는다.
 - **CRLF:** `[id].vue`·`ReportView.vue` 는 CRLF 다 — Edit 도구로 고친다(대괄호 경로는 따옴표로).
 
@@ -25216,8 +25216,9 @@ new:
 
 ```vue
             <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
-            <!-- 근거 장부 — 회차마다 채택 논문이 쌓이고 critic 이 뺀 논문은 '뺌'으로 내려간다. 06a 전 잡은 데이터가 없어 그리지 않는다 -->
-            <div v-if="hasLedger(view.subqs)" class="wk-side-ledger">
+            <!-- 근거 장부 — 회차마다 채택 논문이 쌓이고 critic 이 뺀 논문은 '뺌'으로 내려간다. 바깥 v-if 없이 늘 그린다:
+                 장부가 빈 때부터 떠 있어야 첫 회차의 채택이 떨어진다. 06a 전 잡은 컴포넌트가 카드를 그리지 않는다 -->
+            <div class="wk-side-ledger">
               <EvidenceLedger :subqs="view.subqs" :live="phase === 'exploring'" />
             </div>
           </aside>
@@ -25274,7 +25275,6 @@ import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { WorkStep } from "~/types/work";
 import { safeLocalStorage } from "~/utils/browserId";
-import { hasLedger } from "~/utils/evidenceLedger";
 ```
 
 바꾸기 ⑧: old:
@@ -25428,8 +25428,9 @@ new:
   font-size: 0.7rem;
   color: var(--skx-ink);
 }
-/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다 */
-.wk-side-ledger {
+/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터 떠 있어야
+   첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
+.wk-side-ledger .wk-ledger {
   margin-top: 1.2rem;
 }
 
@@ -25764,7 +25765,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06b/frontend && NUXT_DE
 
 `nuxi dev` 로그에 `Local: http://localhost:3999/` 가 나오면 브라우저 창(`navigate`)으로 `http://localhost:3999/research/11111111-1111-4111-8111-111111111111` 를 연다. 확인할 것(계획 작성 때 Task 22~31 대역 사본으로 ①②③⑤⑥⑦ 을 이렇게 확인했다 — 실제 부품은 문구가 다를 수 있다):
 
-① **이어가지 않은 완료 연구**(가짜 API 를 `--continued` 없이): 머리·계획·진행 패널·보고서가 지금과 같고, 진행 막대가 없고, 보고서 끝(제외 논문 접이 뒤)에 이어가기 카드만 더해진다. 근거 장부는 이 가짜 잡에 회차 채택 기록이 없어(`steps: []`) 그리지 않는다.
+① **이어가지 않은 완료 연구**(가짜 API 를 `--continued` 없이): 머리·계획·진행 패널·보고서가 지금과 같고, 진행 막대가 없고, 보고서 끝(제외 논문 접이 뒤)에 이어가기 카드만 더해진다. 근거 장부는 이 가짜 잡에 회차 채택 기록이 없어(`steps: []`) 그리지 않는다 — `.wk-side-ledger` 감싸개는 있지만 카드가 없어 진행 패널 아래 빈 간격이 생기지 않는다.
 ② 같은 주소에 `?s=topics` 를 붙여 열어도(GET work 404) 지금 화면 그대로 — `.wk-body` 가 없다(`document.querySelector('.wk-body') === null`).
 ③ 카드를 보고서 끝까지 내려가서 [이 연구 이어가기] → 주소 `?s=topics`, `window.scrollY === 0`, 온보딩이 뜬다. 창을 새로 열어 다시 이어가면(가짜 API 재시작) 온보딩은 뜨지 않는다 — `localStorage.removeItem("skx_work_onboarded")` 뒤에는 다시 뜬다.
 ④ 머리에 진행 막대가 생기고 [보고서 보기]·막대의 ① 탐색은 `?s=` 를 지운 보고서로, 막대의 단계는 그 단계로 간다(맨 위에서 시작).

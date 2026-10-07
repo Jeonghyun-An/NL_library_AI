@@ -182,8 +182,9 @@
 
           <aside class="rs-col-side">
             <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
-            <!-- 근거 장부 — 회차마다 채택 논문이 쌓이고 critic 이 뺀 논문은 '뺌'으로 내려간다. 06a 전 잡은 데이터가 없어 그리지 않는다 -->
-            <div v-if="hasLedger(view.subqs)" class="wk-side-ledger">
+            <!-- 근거 장부 — 회차마다 채택 논문이 쌓이고 critic 이 뺀 논문은 '뺌'으로 내려간다. 바깥 v-if 없이 늘 그린다:
+                 장부가 빈 때부터 떠 있어야 첫 회차의 채택이 떨어진다. 06a 전 잡은 컴포넌트가 카드를 그리지 않는다 -->
+            <div class="wk-side-ledger">
               <EvidenceLedger :subqs="view.subqs" :live="phase === 'exploring'" />
             </div>
           </aside>
@@ -229,7 +230,6 @@ import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { WorkStep } from "~/types/work";
 import { safeLocalStorage } from "~/utils/browserId";
-import { hasLedger } from "~/utils/evidenceLedger";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { queueLine, researchPhase } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
