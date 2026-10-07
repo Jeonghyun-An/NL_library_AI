@@ -289,9 +289,14 @@ SECTION_BUSY = "이 절을 쓰는 중입니다"
 NO_SECTION = "절이 없습니다"
 NO_SECTION_PAPERS = "이 절에 넣을 논문이 없습니다"
 DUPLICATE_PARAGRAPH = "같은 문단 id 가 두 번 있습니다"
+PARAGRAPH_TOO_LONG = f"문단은 {MAX_PARAGRAPH_CHARS}자 이하로 써 주세요"
 
+# 문단 글자 상한(MAX_PARAGRAPH_CHARS)은 본문이 아니라 put_section 이 고친·새 문단의 검사 뒤 글에서 본다 — 화면은 늘 절
+# 전체를 보내는데, 생성 결과(문단 길이 상한이 없다)나 단정 표현 바꾸기(soften_claims 가 글을 늘린다)로 상한을 넘은
+# 저장 문단이 있으면 손대지 않은 그 문단 때문에 그 절의 [수락]·[고치기]·[지우기]가 모두 422 가 됐다. 본문 검사는
+# 크기 방어만 한다
 ParagraphText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1,
-                                                 max_length=MAX_PARAGRAPH_CHARS)]
+                                                 max_length=MAX_PARAGRAPH_CHARS * 2)]
 
 
 class ParagraphIn(BaseModel):
@@ -448,7 +453,12 @@ async def put_section(job_id: str, key: str, req: SectionPut, response: Response
                                   [p.model_dump() for p in req.paragraphs])
     except ValueError:
         raise HTTPException(status_code=422, detail=DUPLICATE_PARAGRAPH)
-    updated = {**section, "paragraphs": revalidate(section, merged),
+    paragraphs = revalidate(section, merged)
+    # 글자 상한은 고친·새 문단의 검사 뒤 글에만 — 손대지 않은 저장 문단은 길이와 상관없이 통과한다
+    stored_text = {p.get("id"): p.get("text") for p in section.get("paragraphs") or []}
+    if any(len(p["text"]) > MAX_PARAGRAPH_CHARS for p in paragraphs if stored_text.get(p["id"]) != p["text"]):
+        raise HTTPException(status_code=422, detail=PARAGRAPH_TOO_LONG)
+    updated = {**section, "paragraphs": paragraphs,
                "updated_at": datetime.now(timezone.utc).isoformat()}
     await db.execute(
         update(P).where(P.work_id == jid, P.version == expected)

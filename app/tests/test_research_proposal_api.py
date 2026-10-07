@@ -34,7 +34,7 @@ from services.research_work.proposal_views import (
     cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, stale_flags,
 )
 from services.research_work.seeds import corpus_of
-from services.research_work.shapes import MAX_PARAGRAPHS_PUT, OUTLINE_TARGET
+from services.research_work.shapes import MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, OUTLINE_TARGET
 from services.search.paper_citation import build_citation
 
 PLAN = ["노인 우울의 요인", "사회적 지지의 효과"]
@@ -1038,7 +1038,8 @@ class TestPutSection:
         [{"id": "p1", "text": "   ", "state": "proposed"}],
         [{"id": "p1", "text": "가 [E1].", "state": "deleted"}],
         [{"id": None, "text": "가 [E1].", "state": "proposed"}] * (MAX_PARAGRAPHS_PUT + 1),
-    ], ids=["blank-text", "unknown-state", "too-many"])
+        [{"id": "p1", "text": "가" * (MAX_PARAGRAPH_CHARS * 2 + 1), "state": "proposed"}],
+    ], ids=["blank-text", "unknown-state", "too-many", "body-too-big"])
     def test_body_is_validated(self, api, paragraphs):
         jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
         assert _put(api, jid, paragraphs).status_code == 422
@@ -1046,6 +1047,37 @@ class TestPutSection:
     def test_example_work_is_read_only(self, api):
         jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED}, is_example=True)
         assert _put(api, jid, []).status_code == 409
+
+    def test_an_untouched_long_paragraph_does_not_block_the_other_paragraphs(self, api):
+        """글자 상한은 고친·새 문단에만 — 생성 결과(문단 길이 상한 없음)로 3,000자를 넘은 AI 문단이 있어도 손대지 않으면
+        같은 절의 다른 문단 [수락]이 막히지 않는다(화면은 늘 절 전체를 보낸다)."""
+        long_text = "가" * (MAX_PARAGRAPH_CHARS + 100 - len(" [E1].")) + " [E1]."
+        stored = {**SEC_STORED, "paragraphs": [_para("p1", long_text, "proposed"),
+                                               _para("p2", "척도가 정리되었다 [E2].", "proposed")]}
+        jid = _sec_work(api.engine, sections={"prior.g1": stored})
+
+        res = _put(api, jid, [{"id": "p1", "text": long_text, "state": "proposed"},
+                              {"id": "p2", "text": "척도가 정리되었다 [E2].", "state": "accepted"}])
+
+        assert res.status_code == 200
+        written = _sec_proposal(api.engine, jid)["sections"]["prior.g1"]["paragraphs"]
+        assert [(p["id"], p["state"], len(p["text"])) for p in written] == [
+            ("p1", "proposed", MAX_PARAGRAPH_CHARS + 100), ("p2", "accepted", len("척도가 정리되었다 [E2]."))]
+
+    @pytest.mark.parametrize("paragraph", [
+        # 2,990자로 고쳤지만 '최초로' 가 '소장 코퍼스에서 확인한 범위에서 처음으로' 로 바뀌어 3,009자가 된다
+        {"id": "p1", "text": "가" * (2990 - len(" 최초로 다룬다 [E1].")) + " 최초로 다룬다 [E1].", "state": "proposed"},
+        {"id": None, "text": "나" * MAX_PARAGRAPH_CHARS + "다", "state": "proposed"},
+    ], ids=["edited-grows-past-the-limit", "new-paragraph"])
+    def test_an_edited_or_new_paragraph_over_the_limit_after_the_check_is_422(self, api, paragraph):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+
+        res = _put(api, jid, [paragraph])
+
+        assert (res.status_code, res.json()["detail"]) == (422, api.router.PARAGRAPH_TOO_LONG)
+        assert api.router.PARAGRAPH_TOO_LONG == f"문단은 {MAX_PARAGRAPH_CHARS}자 이하로 써 주세요"
+        assert _sec_proposal(api.engine, jid)["sections"]["prior.g1"] == SEC_STORED
+        assert _sec_proposal(api.engine, jid)["version"] == 3
 
 
 # ── 문단 다시 쓰기 (Task 20) ─────────────────────────────────────────────
