@@ -11,9 +11,18 @@ chat_full 안의 일시적 실패 재시도는 이 횟수에 세지 않는다. �
 
 해석한 결과는 실행기의 bind(06b)가 있으면 검사 전에 입력으로 맞춘다 — 모델이 낸 근거 번호를 cnts_id 로
 바꾸고 문단을 마커 검사하는 일처럼 입력이 있어야 하는 정리다. 끝내 못 얻은 빈 결과(empty)에는 하지 않는다.
+
+스트리밍(run_stream_generation, 06b 절 쓰기 — 06b 계획 정함 11)도 같은 '최대 3회·넘김' 규칙이다. 다만
+chat_stream 은 첫 조각 전에만 연결 실패·4xx·5xx 를 올리므로, 다른 모델로 곧바로 넘기는 전송 실패는 첫 조각
+전의 실패뿐이다. 첫 조각 뒤에 끊기거나 호출 상한을 넘기면 그 시도는 broken — 해석·내용 미달처럼 센다(화면에
+흘린 글을 on_reset 으로 지우고 다시 부른다). 호출마다 asyncio.timeout(CALL_TIMEOUT) 을 걸어(httpx timeout 은
+조각 사이 간격이라 스트림 전체를 막지 못한다) 최악이 비스트리밍과 같은 MAX_CALLS × (CALL_TIMEOUT + 10)초다.
+chat_stream 은 끝난 이유(finish_reason)를 주지 않는다 — 잘린 글은 parse·check 로만 잡는다.
 """
+import asyncio
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import aclosing
 from dataclasses import dataclass
 from typing import Any
 
@@ -48,10 +57,11 @@ class Executor:
 class GenerationResult:
     output: dict
     model: str | None          # 결과를 낸 모델 이름(빈 결과면 None)
-    attempts: list[dict]       # [{"model": str, "outcome": "ok"|"parse"|"check"|"transport", "error"?: str}]
+    attempts: list[dict]       # [{"model": str, "outcome": "ok"|"parse"|"check"|"transport"|"broken", "error"?: str}]
 
 
 ChatFn = Callable[..., Awaitable[LLMResult]]   # chat_full 과 같은 시그니처
+StreamFn = Callable[..., AsyncIterator[str]]   # chat_stream 과 같은 시그니처
 
 
 async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) -> GenerationResult:
@@ -84,6 +94,75 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
         log.warning("[research_work] %s %s 실패 model=%s finish=%s 원문=%r", executor.kind, outcome, model,
                     reply.finish_reason, (reply.content or "")[:200])
         attempts.append({"model": model, "outcome": outcome})
+        if switched:
+            break
+        content_failures += 1
+        if content_failures >= 2:
+            route, switched = other(route), True
+    return GenerationResult(output=executor.empty(input), model=None, attempts=attempts)
+
+
+async def run_stream_generation(executor: Executor, input: dict, *, stream_fn: StreamFn,
+                                on_delta: Callable[[str], Awaitable[None]],
+                                on_reset: Callable[[], Awaitable[None]]) -> GenerationResult:
+    """스트리밍 생성 1건. 조각마다 on_delta, 흘린 글을 버리고 다시 부르기 직전에 on_reset 을 부른다.
+
+    attempts 의 outcome 은 "ok"|"parse"|"check"|"transport"|"broken". 바깥 데드라인(워커의 GEN_DEADLINE)이
+    끊으면 CancelledError 가 그대로 올라간다 — 여기서 잡지 않는다.
+    """
+    messages, params = executor.build(input)
+    route = WORK_MODEL_ROUTES[executor.kind]
+    switched = False
+    content_failures = 0
+    streamed = False                 # 앞 시도가 화면에 글을 흘렸다 — 다시 부르기 전에 지운다
+    attempts: list[dict] = []
+    for _ in range(MAX_CALLS):
+        if streamed:
+            await on_reset()
+            streamed = False
+        base_url, model = endpoint(route)
+        parts: list[str] = []
+        error: str | None = None
+        call_deadline = asyncio.timeout(CALL_TIMEOUT)
+        try:
+            # 끊긴 스트림은 다음 호출 전에 닫는다 — 열어 두면 vLLM 이 버린 답을 계속 만든다
+            async with call_deadline, aclosing(stream_fn(
+                    messages, params=params, timeout=CALL_TIMEOUT, base_url=base_url, model=model,
+            )) as stream:
+                async for piece in stream:
+                    parts.append(piece)
+                    streamed = True
+                    await on_delta(piece)
+        except httpx.HTTPError as e:
+            error = f"{type(e).__name__}: {e}"[:300]
+        except TimeoutError:
+            if not call_deadline.expired():
+                raise
+            error = f"호출 상한 {CALL_TIMEOUT:.0f}초 초과"
+        if error is not None and not parts:
+            # 첫 조각 전 — 연결 실패·4xx·5xx·대기열에서 상한 초과. 비스트리밍처럼 곧바로 다른 모델로
+            log.warning("[research_work] %s 전송 실패 model=%s — %s", executor.kind, model, error)
+            attempts.append({"model": model, "outcome": "transport", "error": error})
+            if switched:
+                break
+            route, switched = other(route), True
+            continue
+        raw = "".join(parts)
+        if error is not None:
+            log.warning("[research_work] %s 스트림 끊김 model=%s %d자 — %s", executor.kind, model,
+                        len(raw), error)
+            attempts.append({"model": model, "outcome": "broken", "error": error})
+        else:
+            output = executor.parse(raw)
+            if output is not None and executor.bind is not None:
+                output = executor.bind(output, input)
+            if output is not None and executor.check(output):
+                attempts.append({"model": model, "outcome": "ok"})
+                return GenerationResult(output=output, model=model, attempts=attempts)
+            outcome = "parse" if output is None else "check"
+            log.warning("[research_work] %s %s 실패 model=%s 원문=%r", executor.kind, outcome, model,
+                        raw[:200])
+            attempts.append({"model": model, "outcome": outcome})
         if switched:
             break
         content_failures += 1

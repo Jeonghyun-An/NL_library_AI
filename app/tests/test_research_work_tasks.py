@@ -441,3 +441,184 @@ class TestDispatch:
         assert env.events[0][:2] == (work_id, "generation") and env.events[0][2]["status"] == "failed"
         assert env.row(other)["status"] == "queued" and env.dispatched == 1
         assert env.disposed == 2              # 잡 엔진 둘(본문·정리) 모두 닫는다
+
+
+# ── 스트리밍 생성(06b) ────────────────────────────────────────────────
+
+
+def _stream_executor():
+    """원문을 {"text"} 로 읽고 [E1] 이 있어야 통과하는 스트리밍 실행기(절 실행기 자리)."""
+    from services.research_work.generate import Executor
+
+    return Executor(
+        kind="section", build=lambda inp: ([{"role": "user", "content": "절을 써라"}], {}),
+        parse=lambda raw: {"text": raw} if raw.strip() else None,
+        check=lambda out: "[E1]" in out["text"],
+        empty=lambda inp: {"text": ""},
+        stream=True,
+    )
+
+
+class _StreamEnv(_Env):
+    """_Env 에 chat_stream 대본을 더한다. 대본 한 줄 = 조각 문자열·예외·잠들 초(float)의 목록."""
+
+    def __init__(self, monkeypatch, wt, streams=()):
+        super().__init__(monkeypatch, wt)
+        self.streams = list(streams)
+        monkeypatch.setattr(wt, "chat_stream", self._stream)
+        monkeypatch.setitem(wt.EXECUTORS, "section", _stream_executor())
+
+    async def _stream(self, messages, *, params=None, timeout=120.0, base_url=None, model=None):
+        self.calls.append((base_url, model, timeout))
+        for item in self.streams.pop(0):
+            if isinstance(item, BaseException):
+                raise item
+            if isinstance(item, float):
+                await asyncio.sleep(item)
+                continue
+            yield item
+
+    def section(self, work_id, target: str = "prior.g1") -> int:
+        gid = self.gen(work_id, kind="section", input={"key": target})
+        with self.engine.begin() as conn:
+            conn.execute(sa.update(GEN).where(GEN.c.id == gid).values(target=target))
+        return gid
+
+    def deltas(self) -> list[dict]:
+        return [payload for _, kind, payload in self.events if kind == "section_delta"]
+
+
+class TestStreaming:
+    def test_streaming_executor_relays_grouped_deltas_then_closes(self, monkeypatch, wt):
+        monkeypatch.setattr(wt, "DELTA_FLUSH_SEC", 60.0)        # 글자 수로만 묶는다
+        env = _StreamEnv(monkeypatch, wt, streams=[["가" * 50, "나" * 50, " 끝 [E1]."]])
+        work_id = env.work()
+        gid = env.section(work_id)
+
+        assert wt.dispatch_research_work() == {"gen_id": gid, "status": "done"}
+
+        assert env.calls == [("http://gemma.test/v1", "gemma-test", 300.0)]   # chat_full 은 부르지 않는다
+        assert env.deltas() == [
+            {"gen_id": gid, "target": "prior.g1", "seq": 0, "offset": 0, "text": "가" * 50 + "나" * 50},
+            {"gen_id": gid, "target": "prior.g1", "seq": 1, "offset": 100, "text": " 끝 [E1]."},
+        ]
+        assert env.events[-1] == (work_id, "generation", {
+            "gen_id": gid, "gen_kind": "section", "target": "prior.g1", "status": "done",
+            "model": "gemma-test", "result": {},
+        })
+        assert env.row(gid)["output"] == {"text": "가" * 50 + "나" * 50 + " 끝 [E1].",
+                                          "attempts": [{"model": "gemma-test", "outcome": "ok"}]}
+
+    def test_a_broken_stream_resets_the_screen_and_asks_again(self, monkeypatch, wt):
+        monkeypatch.setattr(wt, "DELTA_FLUSH_CHARS", 1)         # 조각마다 보낸다
+        env = _StreamEnv(monkeypatch, wt, streams=[["앞부분", httpx.ReadError("끊김")], ["다시 [E1]."]])
+        gid = env.section(env.work(), target="gap")
+
+        assert wt.dispatch_research_work() == {"gen_id": gid, "status": "done"}
+
+        assert env.deltas() == [
+            {"gen_id": gid, "target": "gap", "seq": 0, "offset": 0, "text": "앞부분"},
+            {"gen_id": gid, "target": "gap", "seq": 1, "offset": 0, "text": "", "reset": True},
+            {"gen_id": gid, "target": "gap", "seq": 2, "offset": 0, "text": "다시 [E1]."},
+        ]
+        assert env.row(gid)["output"]["attempts"] == [
+            {"model": "gemma-test", "outcome": "broken", "error": "ReadError: 끊김"},
+            {"model": "gemma-test", "outcome": "ok"},
+        ]
+
+    def test_failure_before_the_first_piece_hands_over_to_qwen(self, monkeypatch, wt):
+        env = _StreamEnv(monkeypatch, wt, streams=[[httpx.ConnectError("거부")], ["본문 [E1]."]])
+        gid = env.section(env.work())
+
+        wt.dispatch_research_work()
+
+        assert [c[0] for c in env.calls] == ["http://gemma.test/v1", "http://qwen.test/v1"]
+        assert [d.get("reset") for d in env.deltas()] == [None]
+        assert (env.row(gid)["status"], env.row(gid)["model"]) == ("done", "qwen-test")
+
+    def test_the_deadline_fails_a_streaming_generation(self, monkeypatch, wt):
+        env = _StreamEnv(monkeypatch, wt, streams=[["앞", 5.0]])
+        gid = env.section(env.work())
+        monkeypatch.setattr(wt, "GEN_DEADLINE", 0.05)
+
+        assert wt.dispatch_research_work() == {"gen_id": gid, "status": "failed"}
+        assert (env.row(gid)["status"], env.row(gid)["error"]) == ("failed", wt.TIMEOUT_ERROR)
+        assert env.events[-1][2]["status"] == "failed"
+
+    def test_relay_groups_by_size_and_time(self, monkeypatch, wt):
+        events: list[tuple] = []
+
+        async def _publish(work_id, kind, payload):
+            events.append((work_id, kind, payload))
+
+        monkeypatch.setattr(wt, "publish_work", _publish)
+        now = [100.0]
+        gen = wt._Picked(id=7, work_id="w-1", kind="section", target="gap", input={})
+        relay = wt.DeltaRelay(gen, clock=lambda: now[0])
+
+        async def _go():
+            await relay.push("가" * 30)          # 30자·0초 — 묶어 둔다
+            now[0] += 0.6
+            await relay.push("나")               # 0.5초가 지났다 — 보낸다
+            await relay.push("다" * 80)          # 80자 — 보낸다
+            await relay.push("")
+            await relay.reset()
+            await relay.push("라")
+            await relay.flush()                  # 끝 — 남은 조각
+            await relay.flush()                  # 보낼 것이 없다
+
+        asyncio.run(_go())
+
+        assert [(w, k) for w, k, _ in events] == [("w-1", "section_delta")] * 4
+        assert [p for _, _, p in events] == [
+            {"gen_id": 7, "target": "gap", "seq": 0, "offset": 0, "text": "가" * 30 + "나"},
+            {"gen_id": 7, "target": "gap", "seq": 1, "offset": 31, "text": "다" * 80},
+            {"gen_id": 7, "target": "gap", "seq": 2, "offset": 0, "text": "", "reset": True},
+            {"gen_id": 7, "target": "gap", "seq": 3, "offset": 0, "text": "라"},
+        ]
+
+
+class TestDeadline:
+    def test_one_deadline_covers_every_executor(self, wt):
+        from services.research_work.generate import CALL_TIMEOUT, MAX_CALLS
+        # 스트리밍도 호출마다 CALL_TIMEOUT 이라(run_stream_generation) 생성 1건의 최악은 kind 와 상관없이
+        # MAX_CALLS × (CALL_TIMEOUT + 연결 10초) — 데드라인·리밋을 kind 별로 나누지 않는다(06b 계획 정함 11)
+        assert wt.GEN_DEADLINE >= MAX_CALLS * (CALL_TIMEOUT + 10)
+        assert all(ex.kind == kind for kind, ex in wt.EXECUTORS.items())
+
+    def test_streaming_calls_are_bounded_one_by_one(self, monkeypatch, wt):
+        # 세 호출이 모두 첫 조각 뒤 멈춰도 호출마다 상한에서 끊겨 데드라인 전에 빈 결과로 done 이다
+        from services.research_work import generate
+        monkeypatch.setattr(generate, "CALL_TIMEOUT", 0.05)
+        env = _StreamEnv(monkeypatch, wt, streams=[["앞", 5.0], ["앞", 5.0], ["앞", 5.0]])
+        gid = env.section(env.work())
+
+        assert wt.dispatch_research_work() == {"gen_id": gid, "status": "done"}
+
+        row = env.row(gid)
+        assert [c[1] for c in env.calls] == ["gemma-test", "gemma-test", "qwen-test"]
+        assert row["model"] is None
+        assert [a["outcome"] for a in row["output"]["attempts"]] == ["broken", "broken", "broken"]
+
+
+class TestCloseFallback:
+    def test_a_db_error_while_failing_leaves_the_generation_to_the_reaper(self, monkeypatch, wt, caplog):
+        env = _Env(monkeypatch, wt)
+        gid = env.gen(env.work(), kind="refine", input={})      # 실행기 없는 kind — failed 로 닫으려 한다
+        other = env.gen(env.work())
+        real_finish = wt.finish
+
+        async def _finish(db, gen_id, *, status, **kw):
+            if status == "failed":
+                raise sa.exc.OperationalError("UPDATE research_generations", {}, Exception("연결 끊김"))
+            return await real_finish(db, gen_id, status=status, **kw)
+
+        monkeypatch.setattr(wt, "finish", _finish)
+
+        with caplog.at_level(logging.ERROR):
+            assert wt.dispatch_research_work() == {"gen_id": gid, "status": "dropped"}
+
+        assert env.row(gid)["status"] == "running"              # 회수기(hard limit + 60초)가 거둔다
+        assert env.events == []
+        assert env.row(other)["status"] == "queued" and env.dispatched == 1
+        assert any("회수기가 거둔다" in r.getMessage() for r in caplog.records)

@@ -13,25 +13,32 @@ q_llm(적재 워커)으로 떨어진다.
 데드라인으로 감싸고, Celery soft/hard limit 은 그보다 크게 둔다. 소프트 리밋이 asyncio.run 밖으로 튀면
 새 루프·새 엔진으로 생성을 failed 로 닫는다(research_tasks._run_job 과 같은 방식).
 생성 상태는 조건부 UPDATE(dispatch.finish)로만 닫는다 — 도는 사이 사용자가 취소했으면 결과를 버린다.
+
+스트리밍 실행기(executor.stream — 06b 절 쓰기)는 chat_stream 으로 돌리고 조각을 DeltaRelay 가 묶어
+section_delta 로 연구 채널에 흘린다. 스트리밍도 호출마다 CALL_TIMEOUT 을 걸어(generate.run_stream_generation)
+최대 시간이 같은 공식이라 데드라인·리밋을 kind 별로 나누지 않는다(06b 계획 정함 11).
 """
 import asyncio
 import logging
+import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from celery.exceptions import SoftTimeLimitExceeded
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine,
 )
 
 from core.config import get_settings
-from services.llm_client import chat_full
+from services.llm_client import chat_full, chat_stream
 from services.research.relay import publish_work
 from services.research_work.apply import apply_result
 from services.research_work.dispatch import finish, has_queued, pick_next
 from services.research_work.executors import EXECUTORS
 from services.research_work.generate import (
-    CALL_TIMEOUT, MAX_CALLS, GenerationResult, run_generation,
+    CALL_TIMEOUT, MAX_CALLS, GenerationResult, run_generation, run_stream_generation,
 )
 from workers.celery_app import celery_app
 
@@ -44,6 +51,11 @@ GEN_SOFT_LIMIT = GEN_DEADLINE + 60
 GEN_HARD_LIMIT = GEN_SOFT_LIMIT + 60
 
 TIMEOUT_ERROR = "시간 상한 초과 — 생성을 끝내지 못했다"
+
+# section_delta 묶음 — 조각(토큰 몇 개)마다 Redis 에 보내면 생성 1건에 수천 번 연결을 연다(publish_work 는
+# 호출마다 클라이언트를 만든다). 80자 또는 0.5초마다 한 번으로 묶는다
+DELTA_FLUSH_CHARS = 80
+DELTA_FLUSH_SEC = 0.5
 
 
 @dataclass(frozen=True)
@@ -81,6 +93,55 @@ def send_dispatch() -> bool:
 
 def _error_text(e: BaseException) -> str:
     return f"{type(e).__name__}: {e}"[:500]
+
+
+class DeltaRelay:
+    """스트리밍 생성의 조각을 묶어 연구 채널에 section_delta 로 보낸다(spec §6-4, 06b 계획 정함 10).
+
+    이벤트 {gen_id, target, seq, offset, text} — seq 는 0 부터 하나씩, offset 은 이 조각 앞까지 보낸 글자 수다
+    (화면은 offset 이 지금 글자 수와 다르면 놓친 조각이 있다고 본다). 다시 부르기 전의 reset 은
+    {…, offset: 0, text: "", reset: true}. 페이로드에 "kind" 를 두지 않는다 — relay 가 이벤트 종류를 거기에 싣는다.
+    DB 트랜잭션 밖에서만 부른다(pick_next 가 커밋한 뒤 LLM 을 기다리는 동안) — publish_work 는 Redis 만 쓰고
+    실패를 삼킨다. 묶음 기준(DELTA_FLUSH_CHARS·DELTA_FLUSH_SEC)은 조각이 올 때 본다.
+    """
+
+    def __init__(self, gen: _Picked, *, clock: Callable[[], float] = time.monotonic):
+        self._gen = gen
+        self._clock = clock
+        self._buffer: list[str] = []
+        self._buffered = 0
+        self._seq = 0
+        self._offset = 0
+        self._last = clock()
+
+    async def push(self, piece: str) -> None:
+        if not piece:
+            return
+        self._buffer.append(piece)
+        self._buffered += len(piece)
+        if self._buffered >= DELTA_FLUSH_CHARS or self._clock() - self._last >= DELTA_FLUSH_SEC:
+            await self.flush()
+
+    async def flush(self) -> None:
+        """묶어 둔 조각을 보낸다. 끝날 때 남은 조각도 이것으로 보낸다."""
+        if not self._buffer:
+            return
+        text = "".join(self._buffer)
+        self._buffer, self._buffered = [], 0
+        await self._send({"offset": self._offset, "text": text})
+        self._offset += len(text)
+
+    async def reset(self) -> None:
+        """다시 부르기 전 — 화면에 흘린 글을 지우게 한다. 묶어 둔 조각은 버린다."""
+        self._buffer, self._buffered = [], 0
+        self._offset = 0
+        await self._send({"offset": 0, "text": "", "reset": True})
+
+    async def _send(self, fields: dict) -> None:
+        payload = {"gen_id": self._gen.id, "target": self._gen.target, "seq": self._seq, **fields}
+        self._seq += 1
+        self._last = self._clock()
+        await publish_work(self._gen.work_id, "section_delta", payload)
 
 
 @celery_app.task(name=DISPATCH_TASK, queue=WORK_QUEUE,
@@ -123,6 +184,13 @@ async def _generate(gen: _Picked) -> tuple[GenerationResult | None, str | None]:
     deadline = asyncio.timeout(GEN_DEADLINE)
     try:
         async with deadline:
+            if executor.stream:
+                relay = DeltaRelay(gen)
+                result = await run_stream_generation(
+                    executor, gen.input, stream_fn=chat_stream, on_delta=relay.push, on_reset=relay.reset,
+                )
+                await relay.flush()
+                return result, None
             return await run_generation(executor, gen.input, chat_fn=chat_full), None
     except SoftTimeLimitExceeded:
         raise
@@ -153,7 +221,14 @@ async def _close(db: AsyncSession, gen: _Picked, result: GenerationResult | None
             log.exception("[research_work] 결과 반영 실패 gen=%s kind=%s", gen.id, gen.kind)
             result, payload, error = None, None, _error_text(e)
     if result is None:
-        closed = await finish(db, gen.id, status="failed", output=None, model=None, error=error)
+        try:
+            closed = await finish(db, gen.id, status="failed", output=None, model=None, error=error)
+        except SQLAlchemyError:
+            # DB 가 닫기를 받지 못했다 — 생성은 running 으로 남고 회수기(hard limit + 60초)가 failed 로 거둔다.
+            # 여기서 터뜨리면 줄에 남은 생성의 다음 디스패치도 보내지 못한다
+            await db.rollback()
+            log.exception("[research_work] 생성을 failed 로 닫지 못했다 — 회수기가 거둔다 gen=%s", gen.id)
+            closed = False
     status = "done" if result is not None else "failed"
     if closed:
         # 생성 종류는 gen_kind — relay 가 이벤트 종류를 "kind" 에 싣는다(페이로드의 kind 는 그것을 덮어쓴다)
