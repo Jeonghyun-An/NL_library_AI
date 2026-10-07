@@ -402,14 +402,15 @@ class TestDispatch:
         assert env.row(gid)["status"] == "queued" and env.calls == [] and env.events == []
 
     def test_kind_without_an_executor_fails_without_calling_the_llm(self, monkeypatch, wt):
+        # facet 은 06c 까지 실행기가 없다 — outline 은 06b 에서 실행기가 생겼다
         env = _Env(monkeypatch, wt)
-        gid = env.gen(env.work(), kind="outline", input={})
+        gid = env.gen(env.work(), kind="facet", input={})
 
         wt.dispatch_research_work()
 
         row = env.row(gid)
         assert env.calls == []
-        assert (row["status"], row["error"]) == ("failed", "실행기가 없는 생성 종류: outline")
+        assert (row["status"], row["error"]) == ("failed", "실행기가 없는 생성 종류: facet")
 
     def test_deadline_fails_the_generation(self, monkeypatch, wt):
         env = _Env(monkeypatch, wt, replies=[GOOD])

@@ -394,12 +394,13 @@ class TestApplyResult:
         assert payload == {"concepts": []} and log == []
         assert (row["concepts"], row["concept_members"]) == (["사용자 개념"], {"사용자 개념": ["C1"]})
 
-    def test_kinds_without_an_06a_effect_change_nothing(self, engine):
+    def test_kinds_without_an_executor_change_nothing(self, engine):
+        # facet 은 06c 까지 실행기가 없다 — outline 은 06b 에서 실행기와 반영이 생겼다
         w1 = _work(engine, concepts=["독서 격차"])
-        gid = _gen(engine, w1, minute=0, kind="outline", status="running", started_at=T0)
+        gid = _gen(engine, w1, minute=0, kind="facet", status="running", started_at=T0)
 
         async def _apply(db):
-            return await apply_result(db, await db.get(ResearchGeneration, gid), {"outline": {}})
+            return await apply_result(db, await db.get(ResearchGeneration, gid), {"facets": {}})
 
         payload, log = _call(engine, _apply)
 
