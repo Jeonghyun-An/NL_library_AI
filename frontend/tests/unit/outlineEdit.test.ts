@@ -1,5 +1,8 @@
 // frontend/tests/unit/outlineEdit.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { parse } from "vue/compiler-sfc";
 import type { Outline } from "~/types/work";
 import { GROUP_LABEL_MAX } from "~/utils/readingList";
 import {
@@ -165,5 +168,60 @@ describe("isFallbackOutline", () => {
   it("연구 질문 후보가 둘 미만이면 기본값으로 끝난 목차다", () => {
     expect(isFallbackOutline(outline({ questions: ["세대 간 지지는 노인 우울을 낮추는가?"] }))).toBe(true);
     expect(isFallbackOutline(outline())).toBe(false);
+  });
+});
+
+// 컴포넌트를 띄우지 않는 단위 테스트 환경이라 템플릿을 읽어 [옮기기] 버튼의 이름이 어떻게 정해지는지 본다
+interface TplNode {
+  type: number;
+  tag?: string;
+  content?: string | { content?: string };
+  props?: { type: number; name: string; value?: { content: string }; arg?: { content?: string } }[];
+  children?: TplNode[];
+}
+const ELEMENT = 1;
+const TEXT = 2;
+const INTERPOLATION = 5;
+const DIRECTIVE = 7;
+
+function elements(nodes: TplNode[], out: TplNode[] = []): TplNode[] {
+  for (const n of nodes) {
+    if (n.type === ELEMENT) out.push(n);
+    if (n.children) elements(n.children, out);
+  }
+  return out;
+}
+
+function isSrOnly(n: TplNode): boolean {
+  return (n.props ?? []).some((p) => p.name === "class" && /\brs-sr-only\b/.test(p.value?.content ?? ""));
+}
+
+// 내용으로 정해지는 이름 — 글자는 그대로, 끼워 넣은 값은 {{식}} 으로. hidden 이면 숨김 글자만
+function nameText(n: TplNode, hidden: boolean): string {
+  return (n.children ?? [])
+    .map((c) => {
+      if (c.type === TEXT) return hidden ? "" : String(c.content ?? "");
+      if (c.type === INTERPOLATION) return hidden ? "" : `{{${typeof c.content === "object" ? c.content?.content : ""}}}`;
+      if (c.type === ELEMENT) return isSrOnly(c) === hidden ? nameText(c, false) : "";
+      return "";
+    })
+    .join("");
+}
+
+describe("OutlineEditor [옮기기] 버튼의 접근 가능한 이름", () => {
+  it("보이는 글자 '옮기기'로 시작하고 뒤에 숨김 대상(논문 제목)을 붙인다 — aria-label 로 이름을 덮지 않는다", () => {
+    const source = readFileSync(fileURLToPath(new URL("../../components/work/OutlineEditor.vue", import.meta.url)), "utf8");
+    const ast = parse(source).descriptor.template?.ast as unknown as TplNode;
+    const buttons = elements(ast.children ?? []).filter(
+      (n) => n.tag === "button" && nameText(n, false).trim() === "옮기기",
+    );
+
+    expect(buttons).toHaveLength(1);
+    const button = buttons[0]!;
+    const labelled = (button.props ?? []).some(
+      (p) => p.name === "aria-label" || (p.type === DIRECTIVE && p.arg?.content === "aria-label"),
+    );
+    expect(labelled).toBe(false);
+    expect(nameText(button, true)).toBe(" 「{{paperTitle(cnts)}}」");
   });
 });

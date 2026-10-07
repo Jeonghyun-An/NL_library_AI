@@ -69,14 +69,15 @@
                     <option value="">옮길 묶음…</option>
                     <option v-for="o in otherGroups(g.key)" :key="o.key" :value="o.key">{{ groupName(o) }}</option>
                   </select>
+                  <!-- 이름은 보이는 글자로 시작하고 뒤에 숨김 대상을 붙인다(음성 명령·Tab 목록이 '옮기기'로 찾는다 — 읽기 목록·
+                       주제 카드·계획서 문단의 버튼과 같은 관례) -->
                   <button
                     type="button"
                     class="rs-btn rs-btn--ghost rs-btn--small"
-                    :aria-label="`「${paperTitle(cnts)}」을 고른 묶음으로 옮기기`"
                     :disabled="busy || !targetOf(cnts)"
                     @click="moveToChosen(cnts)"
                   >
-                    옮기기
+                    옮기기<span class="rs-sr-only"> 「{{ paperTitle(cnts) }}」</span>
                   </button>
                 </span>
               </li>
