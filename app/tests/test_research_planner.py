@@ -1,7 +1,9 @@
 import asyncio
 
 import pytest
+from jinja2 import Environment, meta
 
+from services.prompts import get_prompt
 from services.research import planner
 from services.research.planner import parse_plan, query_key
 from services.research.state import merge_params
@@ -101,3 +103,37 @@ class TestMakePlan:
         assert "원 질문의 핵심어를 그대로 넣습니다" in system
         assert "최대 6개" in system and "더 적어도 됩니다" in system
         assert "예:" not in system and "예시" not in system
+
+    def test_prompt_keeps_the_target_and_context_of_the_question_in_every_subquestion(self, monkeypatch):
+        """D18 — 06a critic 판정에서 무관이 몰린 절은 핵심어 하나는 넣고 원 질문의 대상·관계 축을 떨어뜨린
+        하위질문이었다(「사회적 지지 개념 및 측정 도구」는 노인을, 「CSR 측정 방법」은 재무성과를 잃었고,
+        「… 적용 분야」는 괄호에 대상을 늘어놓았다). 규칙 줄만 더하고 예시는 넣지 않는다(함정 15)."""
+        seen = []
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            seen.append(messages)
+            return "1. 가"
+
+        monkeypatch.setattr(planner, "chat", fake_chat)
+        asyncio.run(planner.make_plan("노인의 우울과 사회적 지지에 관한 연구가 궁금해", params=merge_params({})))
+        system = seen[0][0]["content"]
+        assert ("원 질문이 정한 대상·맥락(연구 대상 집단·기관·장소, 함께 묻는 다른 개념)을 "
+                "모든 하위질문에 그대로 씁니다") in system
+        assert "측면으로 나눌 때도 그 대상·맥락을 떼어 낸 일반론(정의·측정만 묻는 하위질문)으로 만들지 마세요" in system
+        assert "원 질문이 두 개념의 관계를 물으면 모든 하위질문이 두 개념을 함께 다룹니다" in system
+        assert "하위질문 안에 괄호로 예를 늘어놓지 마세요" in system
+        assert "예:" not in system and "예시" not in system
+
+    def test_plan_prompt_inputs_params_and_output_format_stay(self, monkeypatch):
+        """D18 은 규칙 줄만 바꾼다 — 변수(question·limit)·LLM 파라미터·번호 목록 출력이 그대로여야
+        parse_plan·job.plan(list[str])·PlanCard·승인 요청 본문이 그대로다."""
+        tpl = get_prompt("research_plan")
+        env = Environment()
+        used = set()
+        for body in (tpl.system, tpl.user):
+            used |= meta.find_undeclared_variables(env.parse(body))
+        assert used == {"question", "limit"}
+        assert tpl.parser == "plain"
+        assert tpl.params == {"max_tokens": 800, "temperature": 0.3}
+        assert "번호 목록으로만 출력합니다" in tpl.system
+        assert tpl.user == "질문: {{ question }}"
