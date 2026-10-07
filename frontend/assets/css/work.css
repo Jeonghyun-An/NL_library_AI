@@ -940,4 +940,186 @@ button.wk-stepper__step {
   color: var(--skx-ink);
 }
 
+/* ── 계획서 절(ProposalSection) ───────────────────────────── */
+.wk-psec__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wk-psec__write {
+  margin-left: auto;
+}
+.wk-psec__stale {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.wk-psec__paras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* 'AI 작성' 띠 — 문단 왼쪽 선과 머리 글. 수락해도 남는다 */
+.wk-psec__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--skx-border-c2);
+}
+.wk-psec__item.is-proposed {
+  border-left-style: dashed;
+}
+.wk-psec__item.is-authored {
+  border-left-color: var(--skx-line);
+}
+.wk-psec__band {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-psec__item.is-authored .wk-psec__band {
+  color: var(--skx-gray-1);
+}
+.wk-psec__para {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.75;
+  color: var(--skx-ink);
+}
+.wk-psec__para.is-live {
+  color: var(--skx-ink-2);
+}
+.wk-psec__live {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.wk-psec__cite {
+  display: inline-block;
+  margin: 0 0.1rem;
+  padding: 0 0.3rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--skx-primary);
+  text-decoration: none;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-psec__cite.is-pending {
+  color: var(--skx-gray-1);
+  background: none;
+  border: 1px solid var(--skx-line);
+}
+.wk-psec__badcite {
+  font-size: 0.55rem;
+  color: var(--skx-gray-2);
+}
+/* 근거 표시 없는 문장 — 점선 밑줄 */
+.wk-psec__unmarked {
+  text-decoration: underline dotted var(--skx-gray-2);
+  text-underline-offset: 0.2em;
+}
+.wk-psec__check {
+  margin: 0 0.2rem;
+  padding: 0 0.3rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+  border: 1px dashed var(--skx-ink);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-psec__para-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.wk-psec__edit,
+.wk-psec__add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-psec__edit textarea,
+.wk-psec__add textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-psec__failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── AI 기여 막대(AiFootprintMeter) ───────────────────────── */
+.wk-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.wk-meter__line {
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+}
+.wk-meter__title {
+  font-weight: 700;
+}
+.wk-meter__bar {
+  display: flex;
+  height: 0.4rem;
+  overflow: hidden;
+  background: var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-meter__seg {
+  flex-basis: 0;
+}
+.wk-meter__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  list-style: none;
+}
+.wk-meter__dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.2rem;
+  border-radius: 50%;
+}
+.wk-meter__seg.is-accepted,
+.wk-meter__dot.is-accepted {
+  background: var(--skx-primary);
+}
+.wk-meter__seg.is-edited,
+.wk-meter__dot.is-edited {
+  background: var(--skx-ink-2);
+}
+.wk-meter__seg.is-proposed,
+.wk-meter__dot.is-proposed {
+  background: var(--skx-border-c1);
+}
+.wk-meter__seg.is-authored,
+.wk-meter__dot.is-authored {
+  background: var(--skx-gray-2);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

@@ -145,19 +145,13 @@ import {
   toOutlinePut,
   type OutlineDraft,
 } from "~/utils/outlineEdit";
+import { GAP_NOTE, SECTION_LABELS } from "~/utils/proposalView";
 
 const props = defineProps<{ proposal: ProposalView; readOnly: boolean; busy: boolean }>();
 const emit = defineEmits<{ save: [body: OutlinePut] }>();
 
-const LABELS = {
-  topic: "주제",
-  background: "연구 배경",
-  prior: "선행연구 검토",
-  gap: "연구 공백",
-  question: "연구 질문",
-  method: "방법 제안",
-} as const;
-const gapNote = "소장 코퍼스에서 확인하지 않은 공백 후보";
+const LABELS = SECTION_LABELS;
+const gapNote = GAP_NOTE;
 const EMPTY: OutlineDraft = { groups: [], question: "", method: "" };
 
 const outline = computed(() => props.proposal.outline);
