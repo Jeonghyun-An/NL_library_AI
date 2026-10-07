@@ -74,6 +74,8 @@ export interface ReportDoc {
   fileName: string;
   blocks: DocBlock[];
   references: DocReference[];
+  // 쪽마다 찍는 경고 글(계획서에 검토 전 AI 문단을 실었을 때). 보고서는 이 필드를 만들지 않는다 — 보고서 출력은 그대로다
+  watermark?: string;
 }
 
 const DRAFT_LIMITS = "작성 중에 저장한 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.";
@@ -97,16 +99,20 @@ export function docRunText(run: DocRun): string {
   return "text" in run ? run.text : `[${run.cite}]`;
 }
 
-export function reportFileName(question: string, date: Date, draft: boolean): string {
-  const cleaned = question
+// 파일 이름 머리 — 공백은 _ 로, 파일 이름에 못 쓰는 글자는 빼고 앞 20자만. 남는 글자가 없으면 "" (계획서 파일 이름도 쓴다)
+export function fileHead(text: string): string {
+  const cleaned = text
     .trim()
     .replace(/\s+/g, "_")
     .replace(FILE_FORBIDDEN, "")
     .replace(/_+/g, "_")
     .replace(/^_+/, "");
   // 코드 포인트 단위로 자른다 — 서로게이트 쌍 한가운데서 끊으면 깨진 글자가 남는다
-  const head = Array.from(cleaned).slice(0, FILE_HEAD_CHARS).join("").replace(/[_.]+$/, "");
-  return `딥리서치_${head || "보고서"}_${kstYmd(date)}${draft ? "_초안" : ""}.docx`;
+  return Array.from(cleaned).slice(0, FILE_HEAD_CHARS).join("").replace(/[_.]+$/, "");
+}
+
+export function reportFileName(question: string, date: Date, draft: boolean): string {
+  return `딥리서치_${fileHead(question) || "보고서"}_${kstYmd(date)}${draft ? "_초안" : ""}.docx`;
 }
 
 export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc {
@@ -367,12 +373,12 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function kstDateTime(date: Date): string {
+export function kstDateTime(date: Date): string {
   const p = kstParts(date);
   return `${p.y}년 ${p.m}월 ${p.d}일 ${pad2(p.hh)}:${pad2(p.mm)}`;
 }
 
-function kstYmd(date: Date): string {
+export function kstYmd(date: Date): string {
   const p = kstParts(date);
   return `${p.y}${pad2(p.m)}${pad2(p.d)}`;
 }

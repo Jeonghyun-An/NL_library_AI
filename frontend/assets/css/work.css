@@ -1122,4 +1122,27 @@ button.wk-stepper__step {
   background: var(--skx-gray-2);
 }
 
+/* ── 계획서 인쇄의 워터마크(ReportPrint) ──────────────────── */
+/* 인쇄에서 position: fixed 는 쪽마다 되풀이된다. 글 위에 옅게 겹쳐도 본문이 읽히게 투명도를 낮춘다 */
+.wk-print-watermark {
+  display: none;
+}
+@media print {
+  .wk-print-watermark {
+    position: fixed;
+    top: 45%;
+    right: 0;
+    left: 0;
+    display: block;
+    margin: 0;
+    font-size: 40pt;
+    font-weight: 700;
+    text-align: center;
+    color: var(--skx-gray-2);
+    opacity: 0.18;
+    transform: rotate(-24deg);
+    pointer-events: none;
+  }
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

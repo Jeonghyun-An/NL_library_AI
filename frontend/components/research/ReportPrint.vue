@@ -3,6 +3,8 @@
   <!-- body 바로 아래에 붙인다 — 인쇄 CSS 가 body 의 다른 자식(앱 전체)을 한 번에 숨기고 이것만 찍는다 -->
   <Teleport to="body">
     <article class="rs-print">
+      <!-- 인쇄에서 position: fixed 는 쪽마다 되풀이된다 — 검토 전 AI 문단을 실은 계획서의 경고 글(work.css) -->
+      <p v-if="doc.watermark" class="wk-print-watermark">{{ doc.watermark }}</p>
       <template v-for="(block, bi) in doc.blocks" :key="bi">
         <h1 v-if="block.type === 'title'" class="rs-print__title">{{ block.text }}</h1>
         <p v-else-if="block.type === 'meta'" class="rs-print__meta">{{ block.text }}</p>
