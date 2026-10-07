@@ -104,15 +104,18 @@ def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
 def milvus_passages(cnts_id: str) -> list[dict]:
     """Milvus 에서 그 논문 한 편의 원문 청크(청크 순서, 점수 없음). FastAPI 전용·동기.
 
-    읽지 못하면(연결 실패·컬렉션 문제·기한 초과) 빈 목록 — 그 논문은 대목 없이 초록만으로 쓴다."""
+    읽지 못하면(모듈이 없음·연결 실패·컬렉션 문제·기한 초과) 빈 목록 — 그 논문은 대목 없이 초록만으로 쓴다."""
     if not _SAFE_ID.fullmatch(cnts_id or ""):
         log.warning("[passages] Milvus 표현식에 넣을 수 없는 cnts_id — 대목 없이 쓴다 %r", cnts_id)
         return []
-    import grpc
-    from pymilvus.exceptions import MilvusException
-    from services.ingestion.indexer import ensure_collection
-    from services.search.pipeline import _RERANK_FAILURES
-
+    try:
+        import grpc
+        from pymilvus.exceptions import MilvusException
+        from services.ingestion.indexer import ensure_collection
+        from services.search.pipeline import _RERANK_FAILURES
+    except ImportError as e:   # membership.concept_affinity 와 같다 — 모듈이 없으면 그 논문만 대목 없이
+        log.warning("[passages] Milvus 모듈을 불러오지 못했다 — 대목 없이 쓴다 cnts=%s: %s", cnts_id, e)
+        return []
     try:
         rows = ensure_collection().query(
             expr=f'book_id == "{cnts_id}" && chunk_idx >= 0',

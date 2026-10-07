@@ -193,6 +193,15 @@ class TestMilvusPassages:
         monkeypatch.setattr(search.indexer, "ensure_collection", lambda: _Collection(error=error))
         assert passages.milvus_passages("KCI_A") == []
 
+    def test_missing_grpc_module_gives_no_passages(self, search, monkeypatch):
+        # membership.concept_affinity 와 같다 — grpc(또는 pymilvus)를 불러오지 못하면 500 이 아니라 그 논문만
+        # 대목 없이 간다. sys.modules 의 None 은 import 를 ModuleNotFoundError(ImportError) 로 막는다
+        col = _Collection()
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
+        monkeypatch.setitem(sys.modules, "grpc", None)
+        assert passages.milvus_passages("KCI_A") == []
+        assert col.calls == []
+
     def test_other_errors_are_not_swallowed(self, search, monkeypatch):
         # 함정 19 — 실제로 나는 실패 타입만 받는다. 코드 결함은 그대로 올라간다
         monkeypatch.setattr(search.indexer, "ensure_collection", lambda: _Collection(error=KeyError("x")))
