@@ -1297,10 +1297,13 @@ class TestQueueEvents:
             return row["status"], row["stage"], row["last_error"], bool(row["plan"])
 
         class _Session:
+            # 짧은 세션의 시작·끝을 문장 기록에 남긴다 — Redis 를 세션 안에서 기다리는지 순서로 본다
             async def __aenter__(self):
+                api.db.sql.append("SESSION OPEN")
                 return api.db
 
             async def __aexit__(self, *exc):
+                api.db.sql.append("SESSION CLOSE")
                 return False
 
         monkeypatch.setattr(api.research, "subscribe", _subscribe)
@@ -1352,6 +1355,29 @@ class TestQueueEvents:
         narrow = [s for s in api.db.sql
                   if s.startswith("SELECT research_jobs.id, research_jobs.status, research_jobs.created_at")]
         assert len(narrow) == 2 and not any("state_snapshot" in s or "report" in s for s in narrow)
+
+    def test_heartbeat_waits_on_the_line_outside_the_read_session(self, api, monkeypatch):
+        """하트비트의 대기 순번은 대기 줄(Redis)을 읽기 세션 밖에서 읽는다 — 세션을 쥔 채 Redis(소켓 타임아웃
+        2초)를 기다리면 기다리는 잡의 열린 탭마다 15초마다 idle in transaction 이 생긴다(함정 18, 06a 넘김 5)."""
+        async def _members_ahead(job_id):
+            api.db.sql.append("REDIS")
+            return api.line.ahead.get(job_id)
+
+        monkeypatch.setattr(api.research, "members_ahead", _members_ahead)
+        api.db.add_job(status="running", plan=["가"])
+
+        frames = self._stream(api, monkeypatch, status="queued", live=[None, None, _CANCELED])
+
+        assert [f["kind"] for f in frames] == ["snapshot", "canceled"]
+        assert frames[0]["job"]["queue"] == {"ahead": 1, "eta_sec": None}
+        depth, waited = 0, []
+        for line in api.db.sql:
+            depth += (line == "SESSION OPEN") - (line == "SESSION CLOSE")
+            if line == "REDIS":
+                waited.append(depth)
+        # 접속 때 스냅숏 한 번(요청 세션) + 하트비트 두 번 — 하트비트의 짧은 세션 안에서는 한 번도 기다리지 않는다
+        assert waited == [0, 0, 0]
+        assert depth == 0
 
     def test_job_back_in_line_gets_its_queue_again(self, api, monkeypatch):
         """브로커 실패로 승인 대기로 되돌아갔다(화면은 순번을 비운다) 다시 승인됐다 — 다시 센 순번이 옛 값과
