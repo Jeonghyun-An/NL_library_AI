@@ -15,6 +15,7 @@ from api.history import router as history_router
 from api.research_work import router as research_work_router
 from api.research_topics import router as research_topics_router
 from api.research_reading import router as research_reading_router
+from api.research_proposal import router as research_proposal_router
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -96,3 +97,4 @@ app.include_router(history_router)
 app.include_router(research_work_router)
 app.include_router(research_topics_router)
 app.include_router(research_reading_router)
+app.include_router(research_proposal_router)
