@@ -1197,5 +1197,14 @@ button.wk-stepper__step {
 .wk-side-ledger {
   margin-top: 1.2rem;
 }
+/* 화면을 그대로 인쇄(Ctrl+P)하면 research.css 의 @media print 가 머리·옆 칸·버튼을 뺀다. 보고서 끝 이어가기 카드와
+   이어간 연구의 진행 막대는 그 규칙에 걸리지 않아(카드는 본문 article 안, 막대의 칸은 rs-btn 이 아니다) 여기서 뺀다 —
+   이어가지 않은 연구의 인쇄물은 지금과 같다. [PDF로 저장](ReportPrint)은 앱 전체를 숨겨 영향이 없다 */
+@media print {
+  .rs-page .wk-continue,
+  .rs-page .wk-stepper {
+    display: none !important;
+  }
+}
 
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
