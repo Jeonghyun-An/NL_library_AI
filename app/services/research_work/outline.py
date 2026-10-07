@@ -16,6 +16,7 @@ from sqlalchemy import update
 
 from models.research_work import ResearchProposal
 from services.prompts import get_prompt
+from services.research.citations import strip_markers
 from services.research.llm_json import extract_json
 from services.research_work.generate import Executor
 from services.research_work.progress import refresh_progress
@@ -81,16 +82,23 @@ def _key(text: str) -> str:
     return "".join(text.split()).casefold()
 
 
+def _tidy(raw: str) -> str:
+    """[E#] 마커를 걷고 공백을 정리한다. 이름·질문은 bind_markers 검증을 거치지 않는데, user 메시지가 논문을
+    [E1] 제목 꼴로 줘서 모델이 시키지 않은 [E#] 를 단다(함정 15). 남기면 목차 화면에 나가고, 절 프롬프트는
+    [E#] 를 절마다 새로 매겨 그 번호가 다른 논문을 가리킨다."""
+    return " ".join(strip_markers(raw).split())
+
+
 def _clean_name(raw) -> str | None:
     if not isinstance(raw, str):
         return None
-    text = " ".join(raw.split())
+    text = _tidy(raw)
     return text if 1 <= len(text) <= GROUP_LABEL_MAX else None
 
 
 def clean_questions(raw) -> list[str]:
-    """연구 질문 후보 — 문자열만, 공백 정리, 물음표로 끝나는 것만(전각 ？ 는 ? 로), 2~300자, 대소문자·공백
-    무시 중복 제거, 앞에서 3개. 물음표가 없는 평서문은 질문이 아니라 버린다."""
+    """연구 질문 후보 — 문자열만, [E#] 마커 제거·공백 정리, 물음표로 끝나는 것만(전각 ？ 는 ? 로), 2~300자,
+    대소문자·공백 무시 중복 제거, 앞에서 3개. 물음표가 없는 평서문은 질문이 아니라 버린다."""
     if not isinstance(raw, list):
         return []
     out: list[str] = []
@@ -98,7 +106,7 @@ def clean_questions(raw) -> list[str]:
     for item in raw:
         if not isinstance(item, str):
             continue
-        text = " ".join(item.split()).replace("？", "?")
+        text = _tidy(item).replace("？", "?")
         if not text.endswith("?") or not 2 <= len(text) <= OUTLINE_QUESTION_MAX:
             continue
         if _key(text) in seen:

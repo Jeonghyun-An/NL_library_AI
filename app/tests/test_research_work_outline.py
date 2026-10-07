@@ -84,6 +84,11 @@ class TestCleanQuestions:
         long = "가" * OUTLINE_QUESTION_MAX + "?"
         assert clean_questions([long, "짧은가?"]) == ["짧은가?"]
 
+    def test_citation_markers_are_stripped_before_the_question_mark_check(self):
+        # 모델은 시키지 않은 [E#] 를 단다(함정 15) — 끝에 붙어도 질문을 잃지 않고, 가운데 것도 남기지 않는다
+        raw = ["독거는 조절하는가? [E2]", "사회적 지지[E1]는 우울을 낮추는가?", "노년은 외로운가？［E3］"]
+        assert clean_questions(raw) == ["독거는 조절하는가?", "사회적 지지는 우울을 낮추는가?", "노년은 외로운가?"]
+
 
 class TestPrompt:
     def test_template_reads_exactly_these_inputs(self):
@@ -136,6 +141,12 @@ class TestExecutor:
         assert EXECUTOR.bind(parsed, INPUT) == {
             "group_names": {"prior.g1": "노년기 우울", "prior.g2": None},
             "questions": ["지지는 우울을 낮추는가?"], "fallback": False}
+
+    def test_citation_markers_are_stripped_from_group_names(self):
+        # 이름은 인용 검증을 거치지 않는다 — 남기면 목차 화면과 절 입력에 다른 논문을 가리키는 번호가 실린다
+        raw = json.dumps({"group_names": {"prior.g1": "노년기 우울 [E1, E2]", "prior.g2": "[E3]"},
+                          "research_questions": []}, ensure_ascii=False)
+        assert EXECUTOR.parse(raw)["group_names"] == {"prior.g1": "노년기 우울"}
 
     @pytest.mark.parametrize("raw", ["목차를 만들지 못했다", '{"group_names": [], "research_questions": []}',
                                      '{"group_names": {"prior.g1": "가"}}'])
