@@ -28,7 +28,7 @@ plan: `docs/superpowers/plans/2026-10-06-round06b-vertical-slice.md` (Task 0~37,
 | 읽기 목록 | 읽기 목록 API — 조회(들어온 경로·깔때기·critic 이 뺀 논문)·PUT(담음·메모·묶음·순서·되살리기·담기) |
 | 계획서 | 개념 소속·묶음 배정(`membership.py` — FastAPI 에서 BGE-M3·Milvus, argmax 배정), 목차 실행기·API(If-Match·승인), 원문 대목·절 입력(`passages.py`·`section_input.py`), 절 실행기 둘(선행연구·연구 공백, 평문 스트리밍), 절 고치기(문단 상태 병합·다시 검증), 문단 다시 쓰기, [F#]·숫자 검사·단정 표현(`markers.py`) |
 | 화면 | 근거 장부, 이어가기 카드·온보딩·4단계 진행 막대·`?s=` 단계 화면·요약 띠·범위 띠, 핵심 개념 칩, 주제 덱·카드, 읽기 목록 표·들어온 경로 팝오버·후보 서랍·깔때기, 목차 편집, 절 화면·AI 흔적 미터, Word 내보내기(수락 문단 기본·'미검토 AI 초안' 워터마크·AI 사용 공개 부록), 생성 대기 문구, 연구 상태 composable(SSE·늦은 응답 버림) |
-| 06a 넘김 | 22건 중 15건(정함 18 — 계획의 '06a 넘김 배정' 표) — JSONB 모양 주석, 참고문헌 저자 구분자, PDF 자동 메타 논문의 학술지 빈칸(06a 규칙 유지 결정), 공개 부록의 시도 기록 거르기, NFKC, `_close` 대체 경로, kind 별 데드라인, SSE 하트비트 재동기화, PATCH work 의 phase, 프론트 타입(progress·generating), `queueLine` 분리, history 의 `deleted_at`, 하트비트 큐 계산의 Redis 호출을 읽기 트랜잭션 밖으로, `.worktrees/` 를 `.gitignore` 에 |
+| 06a 넘김 | 22건 중 15건(정함 18 — 계획의 '06a 넘김 배정' 표) — JSONB 모양 주석, 참고문헌 저자 구분자, PDF 자동 메타 논문의 학술지 빈칸(06a 규칙 유지 결정), 공개 부록의 시도 기록 거르기, NFKC, `_close` 대체 경로, kind 별 데드라인, SSE 하트비트 재동기화, PATCH work 의 phase, 프론트 타입 2건(progress·generating), `queueLine` 분리, history 의 `deleted_at`, 하트비트 큐 계산의 Redis 호출을 읽기 트랜잭션 밖으로, `.worktrees/` 를 `.gitignore` 에 |
 
 스키마 변경 없음 — 바뀐 모양은 모두 JSONB 안이다(`models/research_work.py` 머리 주석). compose·인프라·마이그레이션·critic/종합 프롬프트·고치지 않는 부품(PlanCard·SynthProgressCard·ResearchHeader·CitationChip·PdfViewer·ReportDownloadMenu·researchLayout·ProgressPanel)·`research.css` 는 그대로다.
 
@@ -50,7 +50,7 @@ plan: `docs/superpowers/plans/2026-10-06-round06b-vertical-slice.md` (Task 0~37,
 
 ## 4. 검증
 
-- 백엔드 pytest `5 failed, 2319 passed, 1 skipped, 2 warnings, 1 error` — 실패 5·오류 1 은 Task 0 기준선과 같은 로컬 의존성 파일(test_build_manifest 2·test_loaders 3 — `pymarc` 없음·test_book_chat 수집). 기준선 1758, 계획 조립 실측 2273 에서 리뷰 반영 테스트만큼 늘었다.
+- 백엔드 pytest `5 failed, 2319 passed, 1 skipped, 2 warnings, 1 error` — 실패 5·오류 1 은 Task 0 기준선과 같은 파일(test_build_manifest 2 — Windows 경로 구분자 · test_loaders 3 — `pymarc` 없음 · test_book_chat 수집 — `FlagEmbedding` 없음). 기준선 1758, 계획 조립 실측 2273 에서 리뷰 반영 테스트만큼 늘었다.
 - 딥리서치 묶음(state·critic·runner·tasks·api) 456 passed.
 - 프론트 vitest 40파일 731 · `nuxi typecheck` 오류 0 · `npm run build` 완료(3.93 MB, gzip 942 kB) (2026-10-08, dev 머지 전). 계획 조립 실측 38파일 697 에서 리뷰 반영 테스트만큼 늘었다. typecheck·build 의 `WARN Duplicated imports "queueLine"` 은 §7-5.
 - 표본 도구 둘 `smoke OK`(06a `round06-qwen-check`, 06b `round06b-topic-card-check` — 실행 중 `[library]` 줄의 404 는 도구가 일부러 넣은 경로를 건너뛰는 사례다).
