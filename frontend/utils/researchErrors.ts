@@ -14,8 +14,13 @@ export function httpStatus(err: unknown): number | undefined {
 
 // FastAPI 는 HTTPException 이면 detail 을 문자열로, pydantic 검증 실패면
 // [{loc, msg, type}] 배열로 준다. 한 모양만 읽으면 다른 쪽은 "[object Object]" 가 된다.
+// 구조화한 detail({code, message, …} — 429 browser_active·409 version_conflict)은 message 를 읽는다
 export function detailMessage(detail: unknown): string | null {
   if (typeof detail === "string") return detail.trim() || null;
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const message = (detail as { message?: unknown }).message;
+    return typeof message === "string" ? message.trim() || null : null;
+  }
   if (!Array.isArray(detail)) return null;
   const msgs = detail
     .map((d) => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : ""))
@@ -56,6 +61,17 @@ export function activeResearchId(err: unknown): string | null {
   return limit?.code === "browser_active" && typeof limit.job_id === "string" && limit.job_id ? limit.job_id : null;
 }
 
+// 계획서 고치기(PUT outline·sections, If-Match)가 다른 곳에서 바뀐 version 에 막혔다 — 409 detail
+// {code: "version_conflict", version, message}. 서버의 지금 version 을 준다(화면은 다시 불러온 뒤 고친다). 그 밖은 null
+export function versionConflict(err: unknown): number | null {
+  if (httpStatus(err) !== 409) return null;
+  const data = (err as FetchLikeError | null)?.data;
+  const detail = data && typeof data === "object" && "detail" in data ? (data as { detail: unknown }).detail : null;
+  if (!detail || typeof detail !== "object" || Array.isArray(detail)) return null;
+  const { code, version } = detail as { code?: unknown; version?: unknown };
+  return code === "version_conflict" && typeof version === "number" && Number.isInteger(version) ? version : null;
+}
+
 export function researchErrorMessage(err: unknown, fallback: string): string {
   const status = httpStatus(err);
   const limit = limitDetail(err);
@@ -72,4 +88,18 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
   if (status === 409 || status === 422) return detail ?? fallback;
   if (status === undefined) return `${fallback} — 네트워크 연결을 확인하세요`;
   return fallback;
+}
+
+// 이어간 연구 단계 화면(주제·읽기 목록·계획서)의 쓰기 오류 문구. 404 는 서버 문구('주제가 없습니다'·'논문이
+// 없습니다'·'문단이 없습니다' 등)를 그대로 보인다 — researchErrorMessage 는 딥리서치 화면 그대로 모든 404 를
+// '찾을 수 없는 연구입니다' 로 바꾼다. 문구가 없는 404 와 그 밖의 상태는 researchErrorMessage 와 같다
+export function workErrorMessage(err: unknown, fallback: string): string {
+  if (httpStatus(err) === 404) {
+    const data = (err as FetchLikeError | null)?.data;
+    const detail = data && typeof data === "object" && "detail" in data
+      ? detailMessage((data as { detail: unknown }).detail)
+      : null;
+    if (detail) return detail;
+  }
+  return researchErrorMessage(err, fallback);
 }
