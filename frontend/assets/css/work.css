@@ -806,4 +806,138 @@ button.wk-stepper__step {
   overflow-wrap: anywhere;
 }
 
+/* ── 목차 편집(OutlineEditor) ────────────────────────────── */
+.wk-outline__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.wk-outline__stale {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.wk-outline__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-outline__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.wk-outline__label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-outline__text {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+}
+.wk-outline__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.6rem;
+}
+.wk-outline__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-md);
+}
+.wk-outline__group.is-drop {
+  background: var(--skx-border-c1);
+  border-color: var(--skx-border-c2);
+}
+.wk-outline__name {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-outline__name input,
+.wk-outline__field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.3rem 0.45rem;
+  font: inherit;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-outline__papers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-outline__paper {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.6rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-outline__paper[draggable="true"] {
+  cursor: grab;
+}
+.wk-outline__paper.is-dragging {
+  opacity: 0.5;
+}
+.wk-outline__paper-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wk-outline__move {
+  flex-shrink: 0;
+  max-width: 6rem;
+  font-size: 0.55rem;
+}
+.wk-outline__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.wk-outline__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+.wk-outline__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.wk-outline__problems {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.6rem;
+  color: var(--skx-ink);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
