@@ -610,4 +610,143 @@ button.wk-stepper__step {
   box-shadow: var(--skx-shadow-lnb);
 }
 
+/* ── 읽기 목록 표·들어온 경로(Task 30) ── */
+.wk-reading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-reading__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.5rem 0.8rem;
+  align-items: start;
+  padding: 0.8rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-reading__row--in {
+  border-color: var(--skx-border-c2);
+}
+.wk-reading__row--out {
+  opacity: 0.55;
+}
+.wk-reading__row--saving {
+  cursor: progress;
+}
+.wk-reading__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+  cursor: pointer;
+}
+.wk-reading__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.wk-reading__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--skx-ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.wk-reading__title:hover,
+.wk-reading__title:focus-visible {
+  color: var(--skx-primary);
+  text-decoration: underline;
+}
+.wk-reading__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.wk-reading__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.5rem;
+}
+.wk-reading__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-path {
+  grid-column: 1 / -1;
+  padding: 0.6rem 0.8rem;
+  border-top: 1px dashed var(--skx-line);
+}
+.wk-path__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-path__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+.wk-path__label {
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-path__detail {
+  color: var(--skx-gray-1);
+  overflow-wrap: anywhere;
+}
+.wk-path__quote {
+  flex-basis: 100%;
+  padding: 0.3rem 0.6rem;
+  color: var(--skx-ink-2);
+  border-left: 2px solid var(--skx-border-c2);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .wk-reading__row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .wk-reading__actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .wk-reading__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* 되살리기·담기 응답 뒤 다시 읽은 목록에 처음 나온 행만 잠깐 밝힌다(freshIds). 움직임 줄이기면 효과가 없다 */
+@media (prefers-reduced-motion: no-preference) {
+  .wk-reading__row--fresh {
+    animation: wk-row-fresh 1.6s ease-out;
+  }
+}
+@keyframes wk-row-fresh {
+  from {
+    background: var(--skx-border-c1);
+  }
+  to {
+    background: var(--skx-white);
+  }
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
