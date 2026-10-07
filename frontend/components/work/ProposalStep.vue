@@ -74,12 +74,12 @@
         <div class="rs-card wk-proposal__export">
           <p class="rs-card__title">내려받기</p>
           <label class="wk-proposal__toggle">
-            <input v-model="includeProposed" type="checkbox" :disabled="!counts.proposed" />
-            미수락 문단도 넣기(워터마크) — 검토 전 AI 제안 {{ counts.proposed }}문단
+            <input v-model="includeProposed" type="checkbox" :disabled="!printedProposed" />
+            미수락 문단도 넣기(워터마크) — 검토 전 AI 제안 {{ printedProposed }}문단
           </label>
           <p class="rs-muted">
             {{
-              includeProposed && counts.proposed
+              includeProposed && printedProposed
                 ? "문서 쪽마다 '미검토 AI 초안' 워터마크가 붙습니다."
                 : "기본은 수락·수정·직접 쓴 문단만 싣습니다."
             }}
@@ -108,7 +108,7 @@ import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWo
 import type { OutlinePut, SectionPut, WorkStep } from "~/types/work";
 import { isFallbackOutline } from "~/utils/outlineEdit";
 import { buildProposalDocument } from "~/utils/proposalDocument";
-import { footprint, sectionLabel, type Footprint } from "~/utils/proposalView";
+import { sectionLabel } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
 import { versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { openGeneration } from "~/utils/workEvents";
@@ -120,7 +120,6 @@ const CONFLICT = "다른 곳에서 계획서가 바뀌어 다시 불러왔습니
 // 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다
 const REMAKE_CONFIRM =
   "목차를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다. 쓴 절은 남지만 '다시 맞춤 필요'가 붙습니다. 계속할까요?";
-const NO_COUNTS: Footprint = { proposed: 0, accepted: 0, edited: 0, authored: 0 };
 
 const api = useWorkApi();
 const { exporting, exportDocx } = useReportExport();
@@ -136,7 +135,16 @@ const outlineGen = computed(() => openGeneration(state.value, "outline", "outlin
 const approved = computed(() => proposal.value?.outline?.state === "approved");
 // 06b 가 쓰는 절 — 선행연구 묶음(목차 순서) → 연구 공백
 const writableKeys = computed(() => [...(proposal.value?.outline?.groups.map((g) => g.key) ?? []), "gap"]);
-const counts = computed(() => (proposal.value ? footprint(proposal.value) : NO_COUNTS));
+// 문서에 실릴 검토 전 문단 — 문서가 그리는 절(목차 묶음 → 연구 공백)만 센다. 목차를 다시 만들며 빠진 옛 절은
+// 문서에 실리지 않는다(proposalDocument printedKeys 와 같은 범위)
+const printedProposed = computed(() => {
+  const p = proposal.value;
+  if (!p) return 0;
+  return writableKeys.value.reduce(
+    (n, k) => n + (p.sections[k]?.paragraphs.filter((x) => x.state === "proposed").length ?? 0),
+    0,
+  );
+});
 const canRemake = computed(() => {
   const p = proposal.value;
   return !readOnly.value && !!p?.outline && (p.stale.outline || isFallbackOutline(p.outline));
