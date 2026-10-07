@@ -255,16 +255,17 @@ class TestDispatch:
 
         row = env.row(gid)
         assert out == {"gen_id": gid, "status": "done"}
-        assert env.calls == [("http://qwen.test/v1", "qwen-test", 300.0)]
-        assert (row["status"], row["model"], row["error"]) == ("done", "qwen-test", None)
+        # 핵심 개념의 주 모델은 gemma 다(06a Qwen 표본 결정)
+        assert env.calls == [("http://gemma.test/v1", "gemma-test", 300.0)]
+        assert (row["status"], row["model"], row["error"]) == ("done", "gemma-test", None)
         assert row["output"] == {"concepts": ["독서 격차", "청소년"],
-                                 "attempts": [{"model": "qwen-test", "outcome": "ok"}]}
+                                 "attempts": [{"model": "gemma-test", "outcome": "ok"}]}
         assert row["started_at"] is not None and row["finished_at"] is not None
         work = env.work_row(work_id)
         assert (work["concepts"], work["concept_members"]) == (["독서 격차", "청소년"], {})
         assert env.events == [(work_id, "generation", {
             "gen_id": gid, "gen_kind": "concepts", "target": None, "status": "done",
-            "model": "qwen-test", "result": {"concepts": ["독서 격차", "청소년"]},
+            "model": "gemma-test", "result": {"concepts": ["독서 격차", "청소년"]},
         })]
         assert env.dispatched == 0 and env.disposed == 1
 
@@ -303,21 +304,21 @@ class TestDispatch:
         assert wt.dispatch_research_work() == {"gen_id": gid, "status": "done"}
 
         row = env.row(gid)
-        assert [c[1] for c in env.calls] == ["qwen-test", "qwen-test", "gemma-test"]
+        assert [c[1] for c in env.calls] == ["gemma-test", "gemma-test", "qwen-test"]
         assert (row["status"], row["model"]) == ("done", None)
         assert row["output"]["concepts"] == []
         assert [a["outcome"] for a in row["output"]["attempts"]] == ["parse", "check", "parse"]
         assert env.events[0][2]["result"] == {"concepts": []}
 
-    def test_transport_failure_hands_over_to_gemma(self, monkeypatch, wt):
+    def test_transport_failure_hands_over_to_qwen(self, monkeypatch, wt):
         env = _Env(monkeypatch, wt, replies=[httpx.ConnectError("거부"), GOOD])
         gid = env.gen(env.work())
 
         wt.dispatch_research_work()
 
         row = env.row(gid)
-        assert [c[0] for c in env.calls] == ["http://qwen.test/v1", "http://gemma.test/v1"]
-        assert (row["status"], row["model"]) == ("done", "gemma-test")
+        assert [c[0] for c in env.calls] == ["http://gemma.test/v1", "http://qwen.test/v1"]
+        assert (row["status"], row["model"]) == ("done", "qwen-test")
 
     def test_next_generation_is_sent_when_more_are_queued(self, monkeypatch, wt):
         env = _Env(monkeypatch, wt, replies=[GOOD])
