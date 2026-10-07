@@ -233,6 +233,61 @@ def test_score_skips_a_question_whose_job_cannot_be_read(tmp_path, capsys):
     assert "합격 질문: 갈래 0 1/2 · 갈래 1 1/2" in out and "채점하지 못한 질문 1개: library" in out
 
 
+def test_report_precision_counts_distinct_section_papers_and_skips_blank_labels():
+    """06a 완료노트 §5-5 의 손 계산과 같은 셈 — 보고서 절에 실린 서로 다른 논문의 관련·무관(라벨 빈 칸은 뺀다)."""
+    from score import format_precision, precision, report_precision
+
+    # A 는 두 절에 실렸다 — 한 번만 센다. E 는 라벨이 없어 분모에서 빠진다. 제외 논문 X 는 보고서에 없어 세지 않는다
+    report = _report([["A", "B", "C"], ["A", "D", "E"]], [["X"]])
+    labels = {"A": "관련", "B": "무관", "C": "관련", "D": "관련", "X": "관련"}
+
+    counts = report_precision(report, labels)
+
+    assert counts == {"relevant": 3, "irrelevant": 1, "unlabeled": 1}
+    assert precision(3, 1) == pytest.approx(0.75) and precision(0, 0) is None
+    assert format_precision("1", counts) == "  갈래 1  보고서 정밀도 75.0% (관련 3 · 무관 1, 라벨 없음 1편)"
+    assert format_precision("0", {"relevant": 0, "irrelevant": 0, "unlabeled": 2}) == (
+        "  갈래 0  보고서 정밀도 - (관련 0 · 무관 0, 라벨 없음 2편)")
+
+
+def test_score_prints_report_precision_per_arm_and_totals_without_changing_the_verdict(tmp_path, capsys):
+    """D18 재판정은 06a(보고서 정밀도 63%·56%)와 견준다 — 갈래마다 정밀도 줄과 질문 합계 줄을 찍는다.
+    합격 판정(절마다 무관 1편 이하·과잉 제외 10% 이하)은 그대로다."""
+    from score import main
+
+    reports = {
+        "job-1": _report([["A", "B"], ["C"]], [["X"]]), "job-2": _report([["A", "B", "D"]], []),
+        "job-3": _report([["P"]], []), "job-4": _report([["P", "Q"]], [["R"]]),
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        jid = request.url.path.rsplit("/", 1)[1]
+        return httpx.Response(200, json={"job_id": jid, "status": "completed", "report": reports[jid]})
+
+    pairs = tmp_path / "pairs.json"
+    pairs.write_text(json.dumps({"computing": {"0": "job-1", "1": "job-2"},
+                                 "library": {"0": "job-3", "1": "job-4"}}), encoding="utf-8")
+    labels = tmp_path / "labels"
+    labels.mkdir()
+    _write_labels(labels / "computing.csv", [("A", "관련"), ("B", "무관"), ("C", "관련"), ("D", "무관"), ("X", "관련")])
+    _write_labels(labels / "library.csv", [("P", "관련"), ("Q", "무관"), ("R", "무관")])
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--pairs", str(pairs), "--labels-dir", str(labels),
+                   "--questions", str(_questions(tmp_path, "computing", "library"))], client=client)
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    out.encode("cp949")
+    assert "갈래 0  보고서 정밀도 66.7% (관련 2 · 무관 1, 라벨 없음 0편)" in out
+    assert "갈래 1  보고서 정밀도 33.3% (관련 1 · 무관 2, 라벨 없음 0편)" in out
+    assert ("보고서 정밀도 합계(채점한 2개 질문): 갈래 0 75.0% (관련 3 · 무관 1, 라벨 없음 0편)"
+            " · 갈래 1 40.0% (관련 2 · 무관 3, 라벨 없음 0편)") in out
+    assert "제외 판정의 관련 합계: 갈래 0 관련 1/라벨 1 (제외 1편) · 갈래 1 관련 0/라벨 1 (제외 1편)" in out
+    # 판정은 그대로 — computing 갈래 0 은 뺀 X 가 '관련'(과잉 제외 100%), 갈래 1 은 한 절에 무관 2편
+    assert "합격 질문: 갈래 0 1/2 · 갈래 1 1/2" in out
+
+
 # ── make_labels.py ──────────────────────────────────────────────────────
 
 
