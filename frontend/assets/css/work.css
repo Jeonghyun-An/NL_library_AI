@@ -576,4 +576,38 @@ button.wk-stepper__step {
   }
 }
 
+/* ── 주제 덱(Task 29) ── */
+.wk-deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.wk-deck__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 0.8rem;
+}
+.wk-deck__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wk-deck__write {
+  padding: 1rem;
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-border-c2);
+  border-radius: var(--skx-radius-lg);
+}
+/* 화면 밖에서 카드가 도착했을 때만 뜨는 알약 — 단계 화면이 보이는 동안 위·아래 어디서든 화면 안에 붙어 있다.
+   누를 때만 그 카드로 간다(자동 스크롤 없음) */
+.wk-pill {
+  position: sticky;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 1;
+  align-self: center;
+  box-shadow: var(--skx-shadow-lnb);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
