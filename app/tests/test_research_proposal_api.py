@@ -990,3 +990,97 @@ class TestPutSection:
     def test_example_work_is_read_only(self, api):
         jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED}, is_example=True)
         assert _put(api, jid, []).status_code == 409
+
+
+# ── 문단 다시 쓰기 (Task 20) ─────────────────────────────────────────────
+
+PARA_SOURCE_INPUT = {
+    "key": "prior.g1", "kind": "prior", "question": SEC_QUESTION,
+    "topic": {"id": 1, "title": SEC_TOPIC["title"]}, "research_question": "가족 지지는 우울을 낮추는가?",
+    "group": {"name": "가족 지지와 우울"}, "seeds": [],
+    "papers": [{"eid": "E1", "cnts_id": "KCI_A", "title": "노인 우울과 가족 지지", "year": 2013,
+                "abstract": "초록", "excerpt": None},
+               {"eid": "E2", "cnts_id": "KCI_B", "title": "사회적 지지 척도", "year": 2015,
+                "abstract": "초록", "excerpt": None}],
+    "figures": [{"id": "F1", "label": "이 절에 준 논문 수", "value": "2"}],
+    "basis": {"topic_id": 1, "papers": ["KCI_A", "KCI_B"]},
+}
+
+
+def _para_work(engine, *, source_status: str = "done", source_kind: str = "section", is_example: bool = False,
+               states: tuple[str, ...] = ("proposed", "accepted", "edited")) -> tuple[uuid.UUID, int]:
+    """절 하나(prior.g1)가 써진 연구 — 그 절을 쓴 section 생성 행과 문단 셋."""
+    jid = _sec_work(engine, is_example=is_example, proposal=False)
+    source = add_generation(engine, jid, kind=source_kind, status=source_status, target="prior.g1",
+                            input=PARA_SOURCE_INPUT, output={"paragraphs": []})
+    stored = {**SEC_STORED, "gen_id": source,
+              "paragraphs": [_para(f"p{i}", f"{i}번 문단 [E1].", s) for i, s in enumerate(states, start=1)]}
+    with engine.connect() as conn:
+        topic_id = conn.execute(sa.select(ResearchWork.__table__.c.topic_id)
+                                .where(ResearchWork.__table__.c.id == jid)).scalar_one()
+    add_proposal(engine, jid, version=3, outline=_sec_outline(topic_id), sections={"prior.g1": stored})
+    return jid, source
+
+
+class TestRegenerateParagraph:
+    def test_ai_paragraph_is_queued_with_the_section_input(self, api):
+        jid, source = _para_work(api.engine)
+
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate")
+
+        assert res.status_code == 200
+        gen = _sec_gens(api.engine, jid)[-1]
+        assert res.json() == {"gen_id": gen["id"]} and gen["id"] != source
+        assert (gen["kind"], gen["target"], gen["status"], gen["priority"]) == (
+            "paragraph", "prior.g1#p2", "queued", PRIORITY_USER)
+        assert gen["input"] == {**PARA_SOURCE_INPUT, "pid": "p2", "before": "1번 문단 [E1].",
+                                "current": "2번 문단 [E1].", "after": "3번 문단 [E1]."}
+        assert api.dispatch.calls == 1
+        assert api.events == [(str(jid), "generation", queued_event(gen["id"], "paragraph", "prior.g1#p2"))]
+
+    def test_proposed_paragraph_can_be_called_again_too(self, api):
+        jid, _ = _para_work(api.engine)
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p1/regenerate").status_code == 200
+
+    @pytest.mark.parametrize("states", [("edited",), ("authored",)])
+    def test_user_paragraph_is_409(self, api, states):
+        jid, _ = _para_work(api.engine, states=states)
+
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p1/regenerate")
+
+        assert (res.status_code, res.json()["detail"]) == (409, "다시 쓸 수 없는 문단입니다")
+
+    @pytest.mark.parametrize("key, pid", [("prior.g1", "p9"), ("gap", "p1"), ("prior.g1", "x" * 80)])
+    def test_unknown_paragraph_is_404(self, api, key, pid):
+        jid, _ = _para_work(api.engine)
+        res = api.client.post(f"/api/research/{jid}/sections/{key}/paragraphs/{pid}/regenerate")
+        assert (res.status_code, res.json()["detail"]) == (404, "문단이 없습니다")
+
+    @pytest.mark.parametrize("kind, target", [("section", "prior.g1"), ("paragraph", "prior.g1#p1"),
+                                              ("paragraph", "prior.g1#p2")])
+    def test_section_being_written_is_409(self, api, kind, target):
+        jid, _ = _para_work(api.engine)
+        add_generation(api.engine, jid, kind=kind, status="running", target=target)
+
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate")
+
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중입니다")
+
+    def test_other_sections_being_written_do_not_block(self, api):
+        jid, _ = _para_work(api.engine)
+        add_generation(api.engine, jid, kind="paragraph", status="queued", target="prior.g2#p2")
+        add_generation(api.engine, jid, kind="section", status="queued", target="gap")
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate").status_code == 200
+
+    @pytest.mark.parametrize("status, kind", [("failed", "section"), ("done", "outline")])
+    def test_section_without_its_done_generation_is_409(self, api, status, kind):
+        jid, _ = _para_work(api.engine, source_status=status, source_kind=kind)
+
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate")
+
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓴 생성 기록이 없어 문단을 다시 쓸 수 없습니다")
+
+    def test_example_work_is_read_only(self, api):
+        jid, _ = _para_work(api.engine, is_example=True)
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate").status_code == 409

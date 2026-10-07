@@ -34,6 +34,7 @@ from services.research_work.membership import (
     ordered_papers, subq_affinity,
 )
 from services.research_work.outline import outline_input
+from services.research_work.paragraph import paragraph_input
 from services.research_work.paragraph_edit import merge_paragraphs, revalidate
 from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
@@ -442,3 +443,45 @@ async def put_section(job_id: str, key: str, req: SectionPut, response: Response
     await db.commit()
     await publish_work(jid, "work", {"phase": phase, "progress": progress})
     return await _proposal_response(db, work, response)
+
+
+# ── 문단 다시 쓰기 (Task 20) ─────────────────────────────────────────────
+
+NO_PARAGRAPH = "문단이 없습니다"
+NOT_REGENERABLE = "다시 쓸 수 없는 문단입니다"
+NO_SECTION_SOURCE = "이 절을 쓴 생성 기록이 없어 문단을 다시 쓸 수 없습니다"
+
+
+@router.post("/api/research/{job_id}/sections/{key}/paragraphs/{pid}/regenerate")
+async def regenerate_paragraph(job_id: str, key: str, pid: str, db: AsyncSession = Depends(get_db)):
+    """문단 [다시] — 그 절을 쓴 section 생성의 input(같은 [E#] 번호·수치)으로 그 문단만 다시 쓰는 생성 1건을 넣는다.
+    AI 문단(proposed·accepted)만 — 사용자가 고친·쓴 문단(edited·authored)은 409. 그 절의 생성이 열려 있으면 409
+    (절 잠금 아래에서 본다 — PUT·절 쓰기와 한 줄로 선다). target 은 '<절 키>#<문단 id>'(64자 안)."""
+    jid = _job_uuid(job_id)
+    work = await _get_work(db, jid)
+    _writable(work)
+    await _lock_section(db, jid, key)
+    proposal = await db.get(ResearchProposal, jid)
+    section = dict((proposal.sections or {}).get(key) or {}) if proposal is not None else {}
+    paragraphs = list(section.get("paragraphs") or [])
+    paragraph = next((p for p in paragraphs if p.get("id") == pid), None)
+    if paragraph is None:
+        raise HTTPException(status_code=404, detail=NO_PARAGRAPH)
+    if paragraph.get("state") not in ("proposed", "accepted"):
+        raise HTTPException(status_code=409, detail=NOT_REGENERABLE)
+    if await _section_busy(db, jid, key):
+        raise HTTPException(status_code=409, detail=SECTION_BUSY)
+    source_id = section.get("gen_id")
+    source = await db.get(ResearchGeneration, source_id) if source_id is not None else None
+    if source is None or source.work_id != jid or source.kind != "section" or source.status != "done":
+        raise HTTPException(status_code=409, detail=NO_SECTION_SOURCE)
+    target = f"{key}#{pid}"
+    gen_id = await enqueue_generation(db, jid, kind="paragraph", target=target,
+                                      input=paragraph_input(dict(source.input or {}), paragraphs, pid))
+    if gen_id is None:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail=SECTION_BUSY)
+    await db.commit()
+    _send_dispatch()
+    await publish_work(jid, "generation", queued_event(gen_id, "paragraph", target))
+    return {"gen_id": gen_id}
