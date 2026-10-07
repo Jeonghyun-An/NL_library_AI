@@ -9,12 +9,14 @@ gemma). 배정의 재료인 개념 소속은 여기(FastAPI)에서 계산한다 
 끝난 뒤의 옛 화면 PUT 은 409 가 된다. 성공 응답은 ProposalView 와 ETag: <새 version>.
 LLM 을 부르는 엔드포인트는 없다(게이트웨이 proxy_read_timeout 120초) — 생성은 행을 넣고 디스패치를 보낸다.
 """
+import uuid
 from datetime import datetime, timezone
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
-from pydantic import BaseModel, Field
-from sqlalchemy import select, update
+from pydantic import BaseModel, Field, StringConstraints
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,18 +28,22 @@ from models.research_work import (
 )
 from repositories.book import BookRepository
 from services.research.relay import publish_work
-from services.research_work.enqueue import enqueue_generation, queued_event
+from services.research_work.enqueue import enqueue_generation, lock_key, queued_event
 from services.research_work.membership import (
     MEMBER_THRESHOLD, assign_groups, concept_affinity, group_count, members_from_affinity,
     ordered_papers, subq_affinity,
 )
 from services.research_work.outline import outline_input
+from services.research_work.paragraph_edit import merge_paragraphs, revalidate
+from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
 from services.research_work.proposal_views import paper_ids, proposal_view
 from services.research_work.reading_views import book_meta, subquestions_of
+from services.research_work.section_input import gap_input, gap_seeds, prior_input, section_papers
+from services.research_work.seeds import corpus_of
 from services.research_work.shapes import (
-    GROUP_LABEL_MAX, MAX_GROUPS, MIN_READING_FOR_OUTLINE, OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX,
-    OUTLINE_TARGET, PHASE_ORDER,
+    GAP_KEY, GROUP_LABEL_MAX, MAX_GROUPS, MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, MIN_READING_FOR_OUTLINE,
+    OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET, PHASE_ORDER, WRITABLE_SECTION_KEYS,
 )
 
 router = APIRouter(tags=["research-work"])
@@ -264,6 +270,173 @@ async def put_outline(job_id: str, req: OutlinePut, response: Response,
         raise _version_conflict(current)
     progress = await refresh_progress(db, jid)
     phase = work.phase
+    await db.commit()
+    await publish_work(jid, "work", {"phase": phase, "progress": progress})
+    return await _proposal_response(db, work, response)
+
+
+# ── 절 쓰기·고치기 (Task 19) ─────────────────────────────────────────────
+
+SECTION_NOT_WRITABLE = "이 절은 아직 쓸 수 없습니다"
+OUTLINE_NOT_APPROVED = "목차를 먼저 승인하세요"
+NO_GROUP = "묶음이 없습니다"
+SECTION_BUSY = "이 절을 쓰는 중입니다"
+NO_SECTION = "절이 없습니다"
+NO_SECTION_PAPERS = "이 절에 넣을 논문이 없습니다"
+DUPLICATE_PARAGRAPH = "같은 문단 id 가 두 번 있습니다"
+
+ParagraphText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1,
+                                                 max_length=MAX_PARAGRAPH_CHARS)]
+
+
+class ParagraphIn(BaseModel):
+    id: str | None = Field(None, max_length=16)
+    text: ParagraphText
+    state: Literal["proposed", "accepted", "edited", "authored"]
+
+
+class SectionPut(BaseModel):
+    paragraphs: list[ParagraphIn] = Field(max_length=MAX_PARAGRAPHS_PUT)
+
+
+async def _lock_section(db: AsyncSession, jid: uuid.UUID, key: str) -> None:
+    """절 하나의 쓰기(생성 넣기·PUT·문단 다시 쓰기)를 한 줄로 세운다 — 트랜잭션이 끝날 때까지 쥔다. 키는 section
+    생성을 넣는 enqueue_generation 의 잠금 키와 같다(같은 세션이 다시 잡아도 막히지 않는다)."""
+    await db.execute(select(func.pg_advisory_xact_lock(lock_key(jid, "section", key))))
+
+
+async def _section_busy(db: AsyncSession, jid: uuid.UUID, key: str) -> bool:
+    """그 절의 section 생성이나 그 절 문단의 paragraph 생성(target '<key>#<pid>')이 대기 중이거나 도는 중인가.
+    도는 사이 사용자가 고친 글은 생성 결과가 덮거나(section) 번호 지도가 어긋난다(paragraph)."""
+    G = ResearchGeneration
+    return await db.scalar(
+        select(G.id).where(
+            G.work_id == jid, G.status.in_(GEN_OPEN_STATUSES),
+            or_(and_(G.kind == "section", G.target == key),
+                and_(G.kind == "paragraph", G.target.startswith(f"{key}#", autoescape=True))),
+        ).limit(1)
+    ) is not None
+
+
+def _excerpt_query(*, group_name: str | None, research_question: str, seeds: list[dict]) -> str:
+    """원문 대목을 고를 질의 — 선행연구는 묶음 이름 + 연구 질문, 연구 공백은 연구 질문 + 첫 씨앗 문장."""
+    parts = [group_name or "", research_question]
+    if not group_name and seeds:
+        parts.append(seeds[0].get("text") or "")
+    return " ".join(p.strip() for p in parts if p and p.strip())
+
+
+def _excerpts(query: str, snapshot: dict | None, cnts_ids: list[str]) -> dict[str, dict | None]:
+    """논문마다 원문 대목 하나 — 스냅숏 청크가 먼저, 없으면 Milvus 한 편 청크(passages). 리랭커·Milvus 를 부르는
+    동기 함수라 run_in_threadpool 로 부른다(읽기 트랜잭션을 닫은 뒤 — 함정 18)."""
+    return {
+        cnts: pick_excerpt(query, snapshot_passages(snapshot, cnts) or milvus_passages(cnts))
+        for cnts in cnts_ids
+    }
+
+
+@router.post("/api/research/{job_id}/sections/{key}/generate")
+async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get_db)):
+    """[이 절 쓰기] — 선행연구 묶음(prior.g1~g4) 하나나 연구 공백(gap) 절의 생성(스트리밍) 1건을 넣는다.
+
+    입력(계약 §3 section)은 여기서 다 만든다 — 서지·초록·원문 대목(리랭커)은 FastAPI 에만 있다(함정 17).
+    ① 목차·서지·스냅숏을 읽고 커밋해 읽기 트랜잭션을 닫는다 ② 대목 고르기(동기 리랭커·Milvus)를 스레드에서 돌린다
+    ③ 절 잠금 아래에서 '쓰는 중' 을 다시 보고 생성을 넣는다 — ①과 ③ 사이에 들어온 같은 절의 쓰기를 막는다."""
+    if key not in WRITABLE_SECTION_KEYS:
+        raise HTTPException(status_code=422, detail=SECTION_NOT_WRITABLE)
+    jid = _job_uuid(job_id)
+    work = await _get_work(db, jid)
+    _writable(work)
+    job = await _get_job(db, jid)
+    proposal = await db.get(ResearchProposal, jid)
+    outline = dict(proposal.outline or {}) if proposal is not None else {}
+    if outline.get("state") != "approved":
+        raise HTTPException(status_code=409, detail=OUTLINE_NOT_APPROVED)
+    group = None
+    if key != GAP_KEY:
+        group = next((dict(g) for g in outline.get("groups") or [] if g.get("key") == key), None)
+        if group is None:
+            raise HTTPException(status_code=404, detail=NO_GROUP)
+    if await _section_busy(db, jid, key):
+        raise HTTPException(status_code=409, detail=SECTION_BUSY)
+
+    seeds: list[dict] = []
+    if group is not None:
+        cnts_ids = section_papers(group.get("papers") or [])
+    else:
+        topic = await db.get(ResearchTopic, work.topic_id) if work.topic_id is not None else None
+        seeds = gap_seeds(dict(topic.seed or {}) if topic is not None else {}, job.report or {})
+        cnts_ids = section_papers([c for s in seeds for c in s.get("papers") or []])
+    if not cnts_ids:
+        raise HTTPException(status_code=409, detail=NO_SECTION_PAPERS)
+    books = await BookRepository(db).get_by_cnts_ids(cnts_ids)
+    question = job.question
+    snapshot = job.state_snapshot
+    corpus = work.corpus_snapshot or corpus_of(job)
+    topic_of_outline = dict(outline.get("topic") or {})
+    research_question = outline.get("question") or topic_of_outline.get("question") or ""
+    await db.commit()
+
+    query = _excerpt_query(group_name=(group or {}).get("name"), research_question=research_question,
+                           seeds=seeds)
+    excerpts = await run_in_threadpool(_excerpts, query, snapshot, cnts_ids)
+    if group is not None:
+        inp = prior_input(question=question, topic=topic_of_outline, research_question=research_question,
+                          group=group, books=books, excerpts=excerpts, corpus=corpus)
+    else:
+        inp = gap_input(question=question, topic=topic_of_outline, research_question=research_question,
+                        seeds=seeds, books=books, excerpts=excerpts, corpus=corpus)
+
+    await _lock_section(db, jid, key)
+    if await _section_busy(db, jid, key):
+        await db.rollback()
+        raise HTTPException(status_code=409, detail=SECTION_BUSY)
+    gen_id = await enqueue_generation(db, jid, kind="section", target=key, input=inp)
+    if gen_id is None:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail=SECTION_BUSY)
+    await db.commit()
+    _send_dispatch()
+    await publish_work(jid, "generation", queued_event(gen_id, "section", key))
+    return {"gen_id": gen_id}
+
+
+@router.put("/api/research/{job_id}/sections/{key}")
+async def put_section(job_id: str, key: str, req: SectionPut, response: Response,
+                      if_match: str | None = Header(None, alias="If-Match"),
+                      db: AsyncSession = Depends(get_db)):
+    """절 고치기 — 문단 고치기·수락·지우기·더하기. 상태 전이는 서버가 정하고(paragraph_edit.merge_paragraphs, 정함
+    17) 글은 그 절의 evidence 지도·수치로 다시 검사한다(revalidate). If-Match 로 version 을 맞추고(다르면 409
+    version_conflict), 그 절의 생성이 열려 있으면 409 — 도는 생성의 결과가 사용자가 고친 글을 덮지 않게."""
+    expected = _if_match(if_match)
+    jid = _job_uuid(job_id)
+    work = await _get_work(db, jid)
+    _writable(work)
+    phase = work.phase
+    await _lock_section(db, jid, key)
+    P = ResearchProposal
+    row = (await db.execute(
+        select(P.version, P.sections).where(P.work_id == jid).with_for_update()
+    )).first()
+    section = (row.sections or {}).get(key) if row is not None else None
+    if section is None:
+        raise HTTPException(status_code=404, detail=NO_SECTION)
+    if row.version != expected:
+        raise _version_conflict(row.version)
+    if await _section_busy(db, jid, key):
+        raise HTTPException(status_code=409, detail=SECTION_BUSY)
+    try:
+        merged = merge_paragraphs(list(section.get("paragraphs") or []),
+                                  [p.model_dump() for p in req.paragraphs])
+    except ValueError:
+        raise HTTPException(status_code=422, detail=DUPLICATE_PARAGRAPH)
+    updated = {**section, "paragraphs": revalidate(section, merged),
+               "updated_at": datetime.now(timezone.utc).isoformat()}
+    await db.execute(
+        update(P).where(P.work_id == jid, P.version == expected)
+        .values(sections={**row.sections, key: updated}, version=expected + 1)
+    )
+    progress = await refresh_progress(db, jid)
     await db.commit()
     await publish_work(jid, "work", {"phase": phase, "progress": progress})
     return await _proposal_response(db, work, response)

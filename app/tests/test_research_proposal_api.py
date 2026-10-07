@@ -26,12 +26,15 @@ from history_sqlite import (
     add_topic, add_work, make_engine,
 )
 from models.research import ResearchJob
-from models.research_work import ResearchGeneration, ResearchProposal, ResearchWork
+from models.research_work import PRIORITY_USER, ResearchGeneration, ResearchProposal, ResearchWork
+from schemas.book import BookOut
+from services.research_work import section_input
+from services.research_work.enqueue import queued_event
 from services.research_work.proposal_views import (
     cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, stale_flags,
 )
 from services.research_work.seeds import corpus_of
-from services.research_work.shapes import OUTLINE_TARGET
+from services.research_work.shapes import MAX_PARAGRAPHS_PUT, OUTLINE_TARGET
 from services.search.paper_citation import build_citation
 
 PLAN = ["노인 우울의 요인", "사회적 지지의 효과"]
@@ -638,3 +641,334 @@ class TestAppWiring:
         ]
         assert ("api.research_proposal", "router", "research_proposal_router") in imported
         assert included.index("research_reading_router") < included.index("research_proposal_router")
+
+
+# ── 절 쓰기·고치기 (Task 19) ─────────────────────────────────────────────
+
+SEC_QUESTION = "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
+SEC_TOPIC = {"id": None, "title": "농촌 독거노인의 사회적 지지와 우울", "question": "어떤 지지가 우울을 낮추는가?"}
+SEC_SNAPSHOT = {"evidence": {"E3": {"cnts_id": "KCI_A", "meta": {}, "chunks": [
+    {"chunk_id": "KCI_A__0004", "text": "스냅숏 대목", "page_start": 4, "page_end": 4, "score": 0.8}]}}}
+SEC_REPORT = {"question": SEC_QUESTION, "range": {"from": "1980", "to": "2017", "n_papers": 144748},
+              "sections": [], "evidence": {}, "trail": []}
+SEC_SEED = {"key": "future:1:0", "kind": "future", "section_idx": 1, "subq_idx": 1, "heading": "노인의 사회적 지지",
+            "text": "농촌 노인 표본이 부족하다", "papers": ["KCI_A", "KCI_D"], "adopted": 9}
+SEC_BOOKS = {
+    cnts: BookOut(id=uuid.uuid4(), cnts_id=cnts, created_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
+                  title=title, pub_date=year, abstract=f"{title} 초록")
+    for cnts, title, year in (("KCI_A", "노인 우울과 가족 지지", "2013"), ("KCI_B", "사회적 지지 척도", "2015"),
+                              ("KCI_C", "독거 노인", "2016"), ("KCI_D", "농촌 노인", "2011"))
+}
+
+
+class _SecBooks:
+    """BookRepository 대역 — 서지는 라우터의 BookRepository 를 대역으로 고정한다(Task 12 의 add_book 도 있지만 BookOut 필드를
+    그대로 두려고 — 계약 보강 6)."""
+
+    def __init__(self, db):
+        pass
+
+    async def get_by_cnts_ids(self, cnts_ids):
+        return {c: SEC_BOOKS[c] for c in cnts_ids if c in SEC_BOOKS}
+
+
+def _sec_outline(topic_id: int, *, state: str = "approved") -> dict:
+    return {"topic": {**SEC_TOPIC, "id": topic_id}, "basis": "concept",
+            "groups": [{"key": "prior.g1", "name": "가족 지지와 우울", "hint": "노인의 우울",
+                        "papers": ["KCI_A", "KCI_B", "KCI_C"]}],
+            "questions": ["가족 지지는 우울을 낮추는가?"], "question": "가족 지지는 농촌 독거노인의 우울을 낮추는가?",
+            "method": "", "state": state, "gen_id": 1, "approved_at": None}
+
+
+def _sec_work(engine, *, state: str = "approved", seed: dict | None = None, sections: dict | None = None,
+              version: int = 3, is_example: bool = False, proposal: bool = True) -> uuid.UUID:
+    """목차까지 온 연구 — 완료 잡(질문·보고서·스냅숏) + 연구(phase proposal·고른 주제·코퍼스) + 주제 + 계획서."""
+    jid = add_research_job(engine, status="completed", stage="synthesized")
+    with engine.begin() as conn:
+        conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == jid).values(
+            question=SEC_QUESTION, report=SEC_REPORT, state_snapshot=SEC_SNAPSHOT))
+    add_work(engine, jid, phase="proposal", is_example=is_example)
+    tid = add_topic(engine, jid, slot=1, seed=SEC_SEED if seed is None else seed,
+                    card={"title": SEC_TOPIC["title"]}, state="picked")
+    with engine.begin() as conn:
+        conn.execute(sa.update(ResearchWork.__table__).where(ResearchWork.__table__.c.id == jid).values(
+            topic_id=tid, corpus_snapshot={"n_papers": 144748, "from": "1980", "to": "2017", "at": None}))
+    if proposal:
+        add_proposal(engine, jid, version=version, outline=_sec_outline(tid, state=state), sections=sections)
+    return jid
+
+
+def _sec_gens(engine, jid) -> list:
+    with engine.connect() as conn:
+        return conn.execute(sa.select(ResearchGeneration.__table__)
+                            .where(ResearchGeneration.__table__.c.work_id == jid)
+                            .order_by(ResearchGeneration.__table__.c.id)).mappings().all()
+
+
+def _sec_proposal(engine, jid):
+    with engine.connect() as conn:
+        return conn.execute(sa.select(ResearchProposal.__table__)
+                            .where(ResearchProposal.__table__.c.work_id == jid)).mappings().one()
+
+
+@pytest.fixture
+def sec_books(api, monkeypatch):
+    """서지 조회를 라우터 모듈에서 바꾼다(절 쓰기·계획서 조회가 읽는다) — 서지는 라우터의 BookRepository 를 대역으로 고정한다
+    (Task 12 의 add_book 도 있지만 BookOut 필드를 그대로 두려고 — 계약 보강 6)."""
+    monkeypatch.setattr(api.router, "BookRepository", _SecBooks, raising=False)
+
+
+@pytest.fixture
+def heavy(api, sec_books, monkeypatch):
+    """대목 고르기의 무거운 함수(리랭커·Milvus)를 라우터 모듈에서 바꾼다 — 부른 순서를 남긴다."""
+    calls = []
+
+    def _milvus(cnts_id):
+        calls.append(("milvus", cnts_id))
+        return [{"chunk_id": f"{cnts_id}__0001", "text": f"{cnts_id} 대목", "page_start": 1, "page_end": 1,
+                 "score": None}]
+
+    def _pick(query, passages):
+        calls.append(("pick", query, [p["chunk_id"] for p in passages]))
+        best = passages[0]
+        return {"chunk_id": best["chunk_id"], "page_start": best["page_start"], "page_end": best["page_end"],
+                "text": best["text"]}
+
+    monkeypatch.setattr(api.router, "milvus_passages", _milvus)
+    monkeypatch.setattr(api.router, "pick_excerpt", _pick)
+    return calls
+
+
+class TestGenerateSection:
+    def test_prior_group_is_queued_with_the_built_input(self, api, heavy):
+        jid = _sec_work(api.engine)
+
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/generate")
+
+        assert res.status_code == 200
+        (gen,) = _sec_gens(api.engine, jid)
+        assert res.json() == {"gen_id": gen["id"]}
+        assert (gen["kind"], gen["target"], gen["status"], gen["priority"]) == (
+            "section", "prior.g1", "queued", PRIORITY_USER)
+        inp = gen["input"]
+        assert (inp["key"], inp["kind"], inp["question"]) == ("prior.g1", "prior", SEC_QUESTION)
+        assert inp["research_question"] == "가족 지지는 농촌 독거노인의 우울을 낮추는가?"
+        assert inp["group"] == {"name": "가족 지지와 우울"}
+        assert [(p["eid"], p["cnts_id"], p["year"]) for p in inp["papers"]] == [
+            ("E1", "KCI_A", 2013), ("E2", "KCI_B", 2015), ("E3", "KCI_C", 2016)]
+        # 스냅숏에 있는 논문은 스냅숏 대목, 없는 논문만 Milvus 에서 읽는다
+        assert inp["papers"][0]["excerpt"]["chunk_id"] == "KCI_A__0004"
+        assert inp["papers"][1]["excerpt"]["chunk_id"] == "KCI_B__0001"
+        assert [c[1] for c in heavy if c[0] == "milvus"] == ["KCI_B", "KCI_C"]
+        assert {c[1] for c in heavy if c[0] == "pick"} == {"가족 지지와 우울 가족 지지는 농촌 독거노인의 우울을 낮추는가?"}
+        assert [f["value"] for f in inp["figures"]] == ["3", "2013~2016", "144,748"]
+        assert inp["basis"]["papers"] == ["KCI_A", "KCI_B", "KCI_C"]
+        assert api.dispatch.calls == 1
+        assert api.events == [(str(jid), "generation", queued_event(gen["id"], "section", "prior.g1"))]
+
+    def test_gap_uses_the_picked_card_seed_and_its_papers(self, api, heavy, monkeypatch):
+        monkeypatch.setattr(section_input, "pick_seeds", lambda report, *, limit, exclude=(): [])
+        jid = _sec_work(api.engine)
+
+        assert api.client.post(f"/api/research/{jid}/sections/gap/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert (inp["key"], inp["kind"], inp["group"]) == ("gap", "gap", None)
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다"}]
+        assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_D"]
+        assert {c[1] for c in heavy if c[0] == "pick"} == {
+            "가족 지지는 농촌 독거노인의 우울을 낮추는가? 농촌 노인 표본이 부족하다"}
+
+    def test_gap_of_a_user_card_takes_seeds_from_the_report(self, api, heavy, monkeypatch):
+        asked = []
+
+        def _pick(report, *, limit, exclude=()):
+            asked.append((report["question"], limit))
+            return [{**SEC_SEED, "key": "future:0:0", "papers": ["KCI_C"]}]
+
+        monkeypatch.setattr(section_input, "pick_seeds", _pick)
+        jid = _sec_work(api.engine, seed={})
+
+        assert api.client.post(f"/api/research/{jid}/sections/gap/generate").status_code == 200
+
+        assert asked == [(SEC_QUESTION, 3)]
+        assert [p["cnts_id"] for p in _sec_gens(api.engine, jid)[0]["input"]["papers"]] == ["KCI_C"]
+
+    def test_gap_without_any_seed_paper_is_409(self, api, heavy, monkeypatch):
+        monkeypatch.setattr(section_input, "pick_seeds", lambda report, *, limit, exclude=(): [])
+        jid = _sec_work(api.engine, seed={})
+
+        res = api.client.post(f"/api/research/{jid}/sections/gap/generate")
+
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절에 넣을 논문이 없습니다")
+        assert _sec_gens(api.engine, jid) == []
+
+    @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])
+    def test_sections_06b_does_not_write_are_422(self, api, heavy, key):
+        jid = _sec_work(api.engine)
+        res = api.client.post(f"/api/research/{jid}/sections/{key}/generate")
+        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없습니다")
+
+    @pytest.mark.parametrize("state, proposal", [("draft", True), ("approved", False)])
+    def test_outline_must_be_approved(self, api, heavy, state, proposal):
+        jid = _sec_work(api.engine, state=state, proposal=proposal)
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/generate")
+        assert (res.status_code, res.json()["detail"]) == (409, "목차를 먼저 승인하세요")
+
+    def test_group_missing_from_the_outline_is_404(self, api, heavy):
+        jid = _sec_work(api.engine)
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g2/generate")
+        assert (res.status_code, res.json()["detail"]) == (404, "묶음이 없습니다")
+
+    @pytest.mark.parametrize("kind, target, status", [
+        ("section", "prior.g1", "queued"), ("section", "prior.g1", "running"),
+        ("paragraph", "prior.g1#p2", "queued"), ("paragraph", "prior.g1#p1", "running"),
+    ])
+    def test_section_being_written_is_409(self, api, heavy, kind, target, status):
+        jid = _sec_work(api.engine)
+        add_generation(api.engine, jid, kind=kind, status=status, target=target)
+
+        res = api.client.post(f"/api/research/{jid}/sections/prior.g1/generate")
+
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중입니다")
+        assert len(_sec_gens(api.engine, jid)) == 1 and heavy == []
+
+    def test_other_sections_being_written_do_not_block(self, api, heavy):
+        jid = _sec_work(api.engine)
+        add_generation(api.engine, jid, kind="section", status="running", target="prior.g2")
+        add_generation(api.engine, jid, kind="paragraph", status="queued", target="gap#p1")
+        add_generation(api.engine, jid, kind="section", status="done", target="prior.g1")
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 200
+
+    def test_reads_are_committed_before_the_reranker_runs(self, api, heavy, monkeypatch):
+        """서지·스냅숏을 읽은 트랜잭션을 쥔 채 리랭커·Milvus(수 초)를 기다리지 않는다(함정 18) — 읽기 커밋 →
+        대목 고르기 → 생성 넣기 → 커밋 순서."""
+        jid = _sec_work(api.engine)
+        order = []
+        sa.event.listen(api.engine, "commit", lambda conn: order.append("COMMIT"))
+        sa.event.listen(api.engine, "before_cursor_execute",
+                        lambda conn, cur, stmt, params, ctx, many:
+                        order.append("INSERT") if stmt.startswith("INSERT INTO research_generations") else None)
+        pick = api.router.pick_excerpt
+
+        def _pick(query, passages):
+            order.append("PICK")
+            return pick(query, passages)
+
+        monkeypatch.setattr(api.router, "pick_excerpt", _pick)
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 200
+
+        first_pick = order.index("PICK")
+        assert "COMMIT" in order[:first_pick]
+        assert order[first_pick:].index("INSERT") < order[first_pick:].index("COMMIT")
+
+    def test_example_work_is_read_only(self, api, heavy):
+        jid = _sec_work(api.engine, is_example=True)
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 409
+
+
+def _para(pid: str, text: str, state: str) -> dict:
+    return {"id": pid, "text": text, "state": state, "cites": [], "checks": {}, "gen_id": 41}
+
+
+SEC_STORED = {
+    "key": "prior.g1", "gen_id": 41, "evidence": {"E1": "KCI_A", "E2": "KCI_B"},
+    "figures": [{"id": "F1", "label": "이 절에 준 논문 수", "value": "2"}],
+    "basis": {"topic_id": 1, "papers": ["KCI_A", "KCI_B"]}, "note": None,
+    "paragraphs": [_para("p1", "가족 지지가 우울을 낮춘다 [E1].", "proposed"),
+                   _para("p2", "척도가 정리되었다 [E2].", "accepted"),
+                   _para("p3", "사용자가 고친 문단 [E1].", "edited")],
+    "model": None, "updated_at": "2026-10-12T01:00:00+00:00",
+}
+
+
+def _put(api, jid, paragraphs, *, version: int | str | None = 3, key: str = "prior.g1"):
+    headers = {} if version is None else {"If-Match": str(version)}
+    return api.client.put(f"/api/research/{jid}/sections/{key}", json={"paragraphs": paragraphs},
+                          headers=headers)
+
+
+@pytest.mark.usefixtures("sec_books")
+class TestPutSection:
+    def test_states_are_decided_by_the_server_and_text_is_checked_again(self, api):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+
+        res = _put(api, jid, [
+            {"id": "p2", "text": "척도가 정리되었다 [E2].", "state": "proposed"},          # 수락 취소
+            {"id": "p1", "text": "가족 지지가 우울을 낮춘다고 보고되었다 [E1].", "state": "accepted"},  # 글이 바뀜
+            {"id": None, "text": "  사용자 문단이다 [E2] [E9]. 표본은 300명이다.  ", "state": "proposed"},
+        ])
+
+        assert res.status_code == 200
+        assert res.headers["etag"] == "4" and res.json()["version"] == 4
+        written = _sec_proposal(api.engine, jid)["sections"]["prior.g1"]
+        assert [(p["id"], p["state"]) for p in written["paragraphs"]] == [
+            ("p2", "proposed"), ("p1", "edited"), ("p4", "authored")]
+        new = written["paragraphs"][2]
+        assert new["text"] == "사용자 문단이다 [E2]. 표본은 300명이다."      # 입력에 없는 [E9] 는 지운다
+        assert new["cites"] == ["KCI_B"] and new["checks"]["dropped"] == 1
+        assert new["checks"]["numbers"] == ["300"] and new["gen_id"] is None
+        assert written["paragraphs"][1]["cites"] == ["KCI_A"] and written["paragraphs"][1]["gen_id"] == 41
+        assert written["evidence"] == SEC_STORED["evidence"] and written["updated_at"] != SEC_STORED["updated_at"]
+        assert _sec_proposal(api.engine, jid)["version"] == 4
+        (event,) = [e for e in api.events if e[1] == "work"]
+        assert event[2]["phase"] == "proposal" and event[2]["progress"]["sections_total"] == 6
+
+    def test_user_written_paragraph_stays_user_written(self, api):
+        stored = {**SEC_STORED, "paragraphs": [_para("p1", "내가 쓴 문단 [E1].", "authored")]}
+        jid = _sec_work(api.engine, sections={"prior.g1": stored})
+
+        _put(api, jid, [{"id": "p1", "text": "내가 다시 쓴 문단 [E1].", "state": "accepted"}])
+
+        (p,) = _sec_proposal(api.engine, jid)["sections"]["prior.g1"]["paragraphs"]
+        assert (p["state"], p["text"]) == ("authored", "내가 다시 쓴 문단 [E1].")
+
+    def test_if_match_is_required(self, api):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+        res = _put(api, jid, [], version=None)
+        assert res.status_code == 428
+        assert _sec_proposal(api.engine, jid)["version"] == 3
+
+    def test_old_version_is_409_with_the_current_version(self, api):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED}, version=5)
+
+        res = _put(api, jid, [{"id": "p1", "text": "고친다 [E1].", "state": "proposed"}], version=4)
+
+        assert res.status_code == 409
+        assert res.json()["detail"]["code"] == "version_conflict" and res.json()["detail"]["version"] == 5
+        assert _sec_proposal(api.engine, jid)["sections"]["prior.g1"] == SEC_STORED
+
+    @pytest.mark.parametrize("kind, target", [("section", "prior.g1"), ("paragraph", "prior.g1#p2")])
+    def test_section_being_written_is_409(self, api, kind, target):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+        add_generation(api.engine, jid, kind=kind, status="queued", target=target)
+
+        res = _put(api, jid, [{"id": "p1", "text": "고친다 [E1].", "state": "proposed"}])
+
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중입니다")
+
+    def test_section_not_written_yet_is_404(self, api):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+        res = _put(api, jid, [], key="gap")
+        assert (res.status_code, res.json()["detail"]) == (404, "절이 없습니다")
+
+    def test_same_paragraph_twice_is_422(self, api):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+        res = _put(api, jid, [{"id": "p1", "text": "가 [E1].", "state": "proposed"},
+                              {"id": "p1", "text": "나 [E1].", "state": "proposed"}])
+        assert (res.status_code, res.json()["detail"]) == (422, "같은 문단 id 가 두 번 있습니다")
+
+    @pytest.mark.parametrize("paragraphs", [
+        [{"id": "p1", "text": "   ", "state": "proposed"}],
+        [{"id": "p1", "text": "가 [E1].", "state": "deleted"}],
+        [{"id": None, "text": "가 [E1].", "state": "proposed"}] * (MAX_PARAGRAPHS_PUT + 1),
+    ], ids=["blank-text", "unknown-state", "too-many"])
+    def test_body_is_validated(self, api, paragraphs):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
+        assert _put(api, jid, paragraphs).status_code == 422
+
+    def test_example_work_is_read_only(self, api):
+        jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED}, is_example=True)
+        assert _put(api, jid, []).status_code == 409
