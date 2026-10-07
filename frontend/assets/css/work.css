@@ -1145,4 +1145,36 @@ button.wk-stepper__step {
   }
 }
 
+/* ── 계획서 화면(ProposalStep) ────────────────────────────── */
+.wk-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.wk-proposal__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-proposal__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-proposal__remake {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wk-proposal__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
