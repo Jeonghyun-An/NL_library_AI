@@ -925,6 +925,24 @@ class TestPutSection:
         (p,) = _sec_proposal(api.engine, jid)["sections"]["prior.g1"]["paragraphs"]
         assert (p["state"], p["text"]) == ("authored", "내가 다시 쓴 문단 [E1].")
 
+    def test_state_only_put_keeps_the_stored_checks_of_other_paragraphs(self, api):
+        """화면은 늘 절 전체를 PUT 한다 — p2 하나만 수락해도 손대지 않은 '검토 전' p1 은 다시 검사하지 않고 생성 때 센
+        checks('인용 1개 버림·수치 표기 1개 버림·단정 표현 1곳 고침')를 그대로 지킨다. 이미 정리된 글을 다시 검사하면
+        0 으로 덮여 사용자가 수락하기 전에 볼 근거가 사라진다."""
+        generated = {"dropped": 1, "dropped_f": 1, "unmarked": 0, "numbers": [], "softened": 1}
+        p1 = {**_para("p1", "관련 연구를 소장 코퍼스에서 확인하지 못했다 [E1].", "proposed"),
+              "cites": ["KCI_A"], "checks": generated}
+        p2 = {**_para("p2", "척도가 정리되었다 [E2].", "proposed"), "cites": ["KCI_B"],
+              "checks": {**generated, "dropped_f": 0, "softened": 0}}
+        jid = _sec_work(api.engine, sections={"prior.g1": {**SEC_STORED, "paragraphs": [p1, p2]}})
+
+        res = _put(api, jid, [{"id": "p1", "text": p1["text"], "state": "proposed"},
+                              {"id": "p2", "text": p2["text"], "state": "accepted"}])
+
+        assert res.status_code == 200
+        written = _sec_proposal(api.engine, jid)["sections"]["prior.g1"]["paragraphs"]
+        assert written == [p1, {**p2, "state": "accepted"}]
+
     def test_if_match_is_required(self, api):
         jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
         res = _put(api, jid, [], version=None)

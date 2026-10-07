@@ -6,8 +6,11 @@ AI 제안 ↔ 수락(proposed ↔ accepted) 사이만 믿는다 — 수락만 �
   글이 바뀐 문단                      → 저장된 상태가 authored 면 그대로, 아니면 edited(사용자가 고침)
   글이 같은 문단                      → proposed·accepted 사이만 요청대로, edited·authored 는 그대로
   목록에 없는 저장 문단               → 지운다
-순서는 요청 순서다. 그 뒤 revalidate 가 절의 evidence 지도·수치로 생성 때와 같은 검사(markers.check_paragraph)를
-다시 거친다 — 사용자가 쓴 글도 틀린 [E#]·[F#] 는 지워지고 [F#] 밖 숫자는 '확인 필요'로 센다(정함 9).
+순서는 요청 순서다. 그 뒤 revalidate 가 글이 바뀐 문단·새 문단을 절의 evidence 지도·수치로 생성 때와 같은
+검사(markers.check_paragraph)에 다시 거친다 — 사용자가 쓴 글도 틀린 [E#]·[F#] 는 지워지고 [F#] 밖 숫자는
+'확인 필요'로 센다(정함 9). 글이 저장된 것과 같은 문단은 다시 검사하지 않고 저장된 text·cites·checks 를 그대로
+둔다 — 화면은 늘 절 전체를 보내므로, 다시 검사하면 이미 정리된 글이라 생성 때 센 dropped·dropped_f·softened 가
+0 으로 덮이고 사용자가 검토하기 전에 검사 줄이 사라진다.
 """
 import re
 
@@ -43,12 +46,17 @@ def merge_paragraphs(stored: list[dict], incoming: list[dict]) -> list[dict]:
 
 
 def revalidate(section: dict, paragraphs: list[dict]) -> list[dict]:
-    """절의 evidence 지도·수치로 문단마다 check_paragraph 를 다시 — text·cites·checks 를 새로 쓴다. 검사 뒤 글이
-    비는 문단(근거 번호만 있던 문단)은 뺀다."""
+    """저장된 절(section)의 evidence 지도·수치로 글이 바뀐 문단·새 문단만 check_paragraph 를 다시 — text·cites·
+    checks 를 새로 쓰고, 검사 뒤 글이 비는 문단(근거 번호만 있던 문단)은 뺀다. section.paragraphs 에 같은 id·같은
+    글로 있는 문단(상태만 바뀌었거나 손대지 않은 문단)은 그대로 둔다 — 생성(또는 앞 PUT) 때 센 checks 를 지킨다."""
     evidence = dict(section.get("evidence") or {})
     valid_f = {f["id"] for f in section.get("figures") or []}
+    stored_text = {p["id"]: p.get("text") for p in section.get("paragraphs") or [] if p.get("id")}
     out: list[dict] = []
     for p in paragraphs:
+        if p.get("id") in stored_text and stored_text[p["id"]] == p["text"]:
+            out.append(p)
+            continue
         text, cites, checks = check_paragraph(p["text"], valid_e=set(evidence), valid_f=valid_f,
                                               evidence=evidence)
         if not text.strip():

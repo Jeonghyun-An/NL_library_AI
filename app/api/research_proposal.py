@@ -406,8 +406,10 @@ async def put_section(job_id: str, key: str, req: SectionPut, response: Response
                       if_match: str | None = Header(None, alias="If-Match"),
                       db: AsyncSession = Depends(get_db)):
     """절 고치기 — 문단 고치기·수락·지우기·더하기. 상태 전이는 서버가 정하고(paragraph_edit.merge_paragraphs, 정함
-    17) 글은 그 절의 evidence 지도·수치로 다시 검사한다(revalidate). If-Match 로 version 을 맞추고(다르면 409
-    version_conflict), 그 절의 생성이 열려 있으면 409 — 도는 생성의 결과가 사용자가 고친 글을 덮지 않게."""
+    17) 글이 바뀐 문단·새 문단은 그 절의 evidence 지도·수치로 다시 검사한다(revalidate — 글이 같은 문단은 저장된
+    checks 를 지킨다: 화면은 늘 절 전체를 보내므로 수락만 해도 다른 문단의 검사 줄이 지워지면 안 된다). If-Match 로
+    version 을 맞추고(다르면 409 version_conflict), 그 절의 생성이 열려 있으면 409 — 도는 생성의 결과가 사용자가 고친
+    글을 덮지 않게."""
     expected = _if_match(if_match)
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)

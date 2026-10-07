@@ -67,3 +67,20 @@ class TestRevalidate:
 
     def test_paragraph_left_empty_is_removed(self):
         assert revalidate(SECTION, [_p("p1", "[E9]", "authored")]) == []
+
+    def test_paragraph_with_the_stored_text_keeps_its_stored_checks(self):
+        """화면은 늘 절 전체를 보낸다 — 글이 저장된 것과 같은 문단(손대지 않음·상태만 바뀜)은 다시 검사하지 않는다.
+        이미 정리된 글을 다시 검사하면 생성 때 센 dropped·dropped_f·softened 가 0 으로 덮인다."""
+        generated = {"dropped": 1, "dropped_f": 1, "unmarked": 0, "numbers": [], "softened": 1}
+        stored = [{**_p("p1", "첫 문단 [E1].", "proposed"), "checks": generated},
+                  {**_p("p2", "둘째 문단 [E1].", "proposed"), "checks": generated},
+                  {**_p("p3", "셋째 문단 [E1].", "proposed"), "checks": generated}]
+        merged = merge_paragraphs(stored, [_req("p1", "첫 문단 [E1]."), _req("p2", "둘째 문단 [E1].", "accepted"),
+                                           _req("p3", "셋째 문단을 고쳤다 [E2] [E7].")])
+
+        out = revalidate({**SECTION, "paragraphs": stored}, merged)
+
+        assert out[0] == stored[0]
+        assert out[1] == {**stored[1], "state": "accepted"}
+        assert (out[2]["text"], out[2]["state"], out[2]["cites"]) == ("셋째 문단을 고쳤다 [E2].", "edited", ["KCI_B"])
+        assert (out[2]["checks"]["dropped"], out[2]["checks"]["dropped_f"], out[2]["checks"]["softened"]) == (1, 0, 0)
