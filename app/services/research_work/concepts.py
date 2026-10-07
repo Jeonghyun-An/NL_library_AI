@@ -78,4 +78,6 @@ EXECUTOR = Executor(
     parse=_parse,
     check=lambda output: len(output["concepts"]) >= MIN_CONCEPTS,
     empty=lambda input: {"concepts": []},
+    # 빈 결과로 끝난 done 은 다시 부를 수 있다(api/research_work._retryable — 06a 의 concepts 특례를 옮긴 것)
+    is_empty=lambda output: not (output or {}).get("concepts"),
 )

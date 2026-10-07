@@ -8,10 +8,14 @@
   → 그래도 안 되면 executor.empty(input) — 빈 결과로 done(개념 비움 등). 그때 model 은 None.
 chat_full 안의 일시적 실패 재시도는 이 횟수에 세지 않는다. 시도마다 attempts 에 남긴다(공개 부록).
 그 밖의 예외(코드 결함)는 그대로 올린다 — 디스패처가 생성을 failed 로 닫는다.
+
+해석한 결과는 실행기의 bind(06b)가 있으면 검사 전에 입력으로 맞춘다 — 모델이 낸 근거 번호를 cnts_id 로
+바꾸고 문단을 마커 검사하는 일처럼 입력이 있어야 하는 정리다. 끝내 못 얻은 빈 결과(empty)에는 하지 않는다.
 """
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 
@@ -33,6 +37,11 @@ class Executor:
     parse: Callable[[str], dict | None]                # 원문 → output, 못 읽으면 None
     check: Callable[[dict], bool]                      # 내용 검사(예: 개념 2개 이상)
     empty: Callable[[dict], dict]                      # 끝내 못 얻었을 때의 빈 결과(input → output)
+    # 06b 의 선택 필드 — 기본값이 06a 동작이다(핵심 개념 실행기는 is_empty 만 쓴다)
+    bind: Callable[[dict, dict], dict] | None = None   # (output, input) → output: 해석 뒤·검사 전에 입력으로 맞춘다
+    stream: bool = False                               # True 면 워커가 run_stream_generation 으로 돌린다
+    apply: Callable[[Any, Any, dict], Awaitable[dict]] | None = None   # (db, gen, output) → 이벤트 result. 커밋 금지
+    is_empty: Callable[[dict], bool] | None = None     # done 인데 빈 결과인가 — 다시 부르기(retry)를 허용한다
 
 
 @dataclass
@@ -65,6 +74,8 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
             route, switched = other(route), True
             continue
         output = executor.parse(reply.content)
+        if output is not None and executor.bind is not None:
+            output = executor.bind(output, input)
         if output is not None and executor.check(output):
             attempts.append({"model": model, "outcome": "ok"})
             return GenerationResult(output=output, model=model, attempts=attempts)
