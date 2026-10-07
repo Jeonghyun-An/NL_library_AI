@@ -129,6 +129,21 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   const tokens: Record<WorkResource, number> = { work: 0, topics: 0, reading: 0, proposal: 0 };
   // 이 화면이 한 번이라도 읽은 조회 — 생성이 끝났을 때 이것만 다시 읽는다(보지 않는 단계는 열 때 읽는다)
   const loaded = new Set<WorkResource>();
+  // error 를 세운 조회('load' = 첫 GET work). 같은 조회를 다시 읽기 시작하거나 성공할 때만 error 를 비운다 —
+  // 다른 조회의 성공이 지우면 실패해 비어 있는 단계 화면이 요청 없이 '불러오는 중'에 멈추고, 아무도 지우지
+  // 않으면 다른 단계를 처음 열 때 옛 오류 카드가 '불러오는 중' 대신 보인다(useResearch 의 syncError 와 같은 관례)
+  let errorKind: WorkResource | "load" | null = null;
+
+  function setError(kind: WorkResource | "load", message: string): void {
+    error.value = message;
+    errorKind = kind;
+  }
+
+  function clearErrorOf(...kinds: (WorkResource | "load")[]): void {
+    if (errorKind === null || !kinds.includes(errorKind)) return;
+    error.value = null;
+    errorKind = null;
+  }
 
   async function fetchResource(kind: WorkResource, id: string): Promise<(s: WorkState) => WorkState> {
     switch (kind) {
@@ -157,6 +172,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     state.value = initialWorkState();
     exists.value = null;
     error.value = null;
+    errorKind = null;
     loaded.clear();
     if (!opts.enabled.value) {
       loading.value = false;
@@ -177,7 +193,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       const status = httpStatus(e);
       // 404 = 이어가지 않은 딥리서치(D15 — 화면은 지금 그대로). 스트림을 열지 않는다
       if (status === 404 || status === 422) exists.value = false;
-      else error.value = researchErrorMessage(e, "이어간 연구를 불러오지 못했습니다");
+      else setError("load", researchErrorMessage(e, "이어간 연구를 불러오지 못했습니다"));
     } finally {
       if (gen === generation) loading.value = false;
     }
@@ -188,13 +204,16 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     const gen = generation;
     const token = ++tokens[kind];
     loaded.add(kind);
+    // 이 조회가 낸 오류는 다시 읽는 동안 비운다 — [다시 불러오기] 뒤 응답을 기다리는 동안 '불러오는 중'이 보이게
+    clearErrorOf(kind);
     try {
       const apply = await fetchResource(kind, toValue(jobId));
       if (gen !== generation || token !== tokens[kind]) return;
       state.value = apply(state.value);
+      clearErrorOf(kind);
     } catch (e) {
       if (gen !== generation || token !== tokens[kind]) return;
-      error.value = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
+      setError(kind, researchErrorMessage(e, "최신 상태를 불러오지 못했습니다"));
     }
   }
 
@@ -213,6 +232,8 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     state.value = withWork(state.value, view);
     exists.value = true;
     loaded.add("work");
+    // 연구를 맞췄으니 첫 GET work·reload('work') 의 오류는 풀렸다(다른 조회의 오류는 그 조회가 비운다)
+    clearErrorOf("load", "work");
     connect();
   }
 
