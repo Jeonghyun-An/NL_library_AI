@@ -1,10 +1,12 @@
 // frontend/tests/unit/workPhase.test.ts
 import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
+import type { WorkView } from "~/types/work";
 import {
   ONBOARDING_KEY,
   ONBOARDING_STEPS,
   WORK_STEPS,
+  continueCard,
   parseWorkStep,
   scopeLine,
   stepForPhase,
@@ -177,6 +179,52 @@ describe("scopeLine", () => {
     expect(scopeLine(null)).toBeNull();
     expect(scopeLine(undefined)).toBeNull();
     expect(scopeLine({ n_papers: 0, from: null, to: null })).toBeNull();
+  });
+});
+
+describe("continueCard", () => {
+  const work = (over: Partial<WorkView> = {}): WorkView => ({
+    id: "11111111-1111-4111-8111-111111111111",
+    phase: "reading",
+    concepts: [],
+    memo: null,
+    is_example: false,
+    progress: {},
+    generations: [],
+    ...over,
+  });
+
+  it("이어가지 않았으면 4단계 미리보기(탐색 끝 · 주제 · 읽기 목록 · 계획서)와 [이 연구 이어가기]", () => {
+    const card = continueCard(false, null);
+    expect(card).toMatchObject({ title: "이 연구 이어가기", label: "이 연구 이어가기", action: "continue", note: null });
+    expect(card.preview).toEqual([
+      { label: "탐색 끝", state: "done" },
+      { label: "주제", state: "todo" },
+      { label: "읽기 목록", state: "todo" },
+      { label: "계획서", state: "todo" },
+    ]);
+  });
+
+  it("이어갔는지 아직 모르면(확인 중·조회 실패)도 이어가기다 — POST continue 는 멱등이라 이어간 연구면 그것을 연다", () => {
+    expect(continueCard(null, null)).toMatchObject({ label: "이 연구 이어가기", action: "continue" });
+  });
+
+  it("이어간 연구면 지금 단계와 [이어간 연구 열기]", () => {
+    const card = continueCard(true, work());
+    expect(card).toMatchObject({
+      title: "이어간 연구",
+      body: "3/4 단계 · 읽기 목록 만드는 중",
+      label: "이어간 연구 열기",
+      action: "open",
+      note: null,
+    });
+    expect(card.preview.map((s) => s.state)).toEqual(["done", "done", "current", "todo"]);
+  });
+
+  it("예시 연구는 읽기 전용이라고 알린다", () => {
+    expect(continueCard(true, work({ is_example: true })).note).toBe(
+      "예시 연구는 읽기 전용입니다 — 둘러볼 수 있고 바꿀 수는 없습니다.",
+    );
   });
 });
 

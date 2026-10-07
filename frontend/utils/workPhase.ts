@@ -2,7 +2,7 @@
 // 연구 어시스턴트의 단계 — 주소 ?s= 는 지금 보는 단계, research_works.phase 는 도달한 단계다(06b 정함 14).
 // 진행 막대·요약 띠·범위 띠·온보딩의 문구도 여기서 만든다(.vue 는 그리기만 한다)
 import type { ResearchView } from "~/types/research";
-import type { Corpus, WorkPhase, WorkStep } from "~/types/work";
+import type { Corpus, WorkPhase, WorkStep, WorkView } from "~/types/work";
 import { pubYear } from "~/utils/citations";
 import type { QueryValue } from "~/utils/restorePosition";
 
@@ -129,3 +129,44 @@ export const ONBOARDING_STEPS: readonly { title: string; body: string; decide: s
     decide: "목차를 승인하고 문단을 수락하거나 고친 뒤 Word 로 내려받습니다.",
   },
 ];
+
+// 보고서 끝 [이 연구 이어가기] 카드(spec §4 S2) — 4단계 미리보기와 버튼. exists 는 useResearchWork 의 값이다
+// (null = 아직 모름, false = 이어가지 않음, true = 이어간 연구). 모르는 동안(확인 중·조회 실패)에도 이어가기를
+// 누를 수 있다 — POST continue 는 멱등이라 이미 이어간 연구면 그 연구를 돌려준다
+export interface ContinueCardView {
+  title: string;
+  body: string;
+  preview: { label: string; state: StepperItem["state"] }[];
+  label: string;
+  action: "continue" | "open";
+  note: string | null;
+}
+
+function continuePreview(phase: WorkPhase | null): ContinueCardView["preview"] {
+  return stepperItems(phase ?? "topics", null).map((item) => ({
+    label: item.key === "explore" ? "탐색 끝" : item.label,
+    state: phase === null && item.key !== "explore" ? "todo" : item.state,
+  }));
+}
+
+export function continueCard(exists: boolean | null, work: WorkView | null): ContinueCardView {
+  if (exists === true) {
+    return {
+      title: "이어간 연구",
+      body: work ? stepLine(work.phase) : "이어간 연구가 있습니다.",
+      preview: continuePreview(work?.phase ?? null),
+      label: "이어간 연구 열기",
+      action: "open",
+      // 예시 연구(is_example)는 쓰기 API 가 409 다 — 둘러보기만 한다는 것을 누르기 전에 알린다
+      note: work?.is_example ? "예시 연구는 읽기 전용입니다 — 둘러볼 수 있고 바꿀 수는 없습니다." : null,
+    };
+  }
+  return {
+    title: "이 연구 이어가기",
+    body: "탐색이 끝났습니다. 주제 → 읽기 목록 → 계획서를 거쳐 연구계획서 초안까지 이어 갈 수 있습니다.",
+    preview: continuePreview(null),
+    label: "이 연구 이어가기",
+    action: "continue",
+    note: null,
+  };
+}

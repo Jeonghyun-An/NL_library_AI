@@ -160,4 +160,183 @@
   }
 }
 
+/* ── 진행 막대(WorkStepper) ─────────────────────────────── */
+.wk-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-lg);
+}
+.wk-stepper__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-stepper__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+button.wk-stepper__step {
+  cursor: pointer;
+}
+button.wk-stepper__step:hover,
+button.wk-stepper__step:focus-visible {
+  border-color: var(--skx-border-c2);
+}
+.wk-stepper__item.is-done .wk-stepper__step {
+  color: var(--skx-ink-2);
+  border-color: var(--skx-border-c1);
+}
+.wk-stepper__item.is-current .wk-stepper__step {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+/* 지금 보고 있는 단계 */
+.wk-stepper__step[aria-current="step"] {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.wk-stepper__no {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+.wk-stepper__line {
+  flex: 1;
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+
+/* ── 온보딩(OnboardingModal) ─────────────────────────────── */
+.wk-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  background: color-mix(in srgb, var(--skx-ink) 45%, transparent);
+}
+.wk-modal__dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: min(28rem, 100%);
+  max-height: calc(100vh - 2.4rem);
+  padding: 1.2rem;
+  overflow-y: auto;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-banner);
+}
+.wk-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.wk-modal__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.wk-modal__lead {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.wk-modal__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-modal__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-modal__step-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-modal__decide {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-ink-2);
+}
+.wk-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── 이어가기 카드(ContinueResearchCard) ─────────────────── */
+.wk-continue {
+  border: 1px solid var(--skx-border-c2);
+}
+.wk-continue__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-continue__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-continue__step.is-done {
+  color: var(--skx-ink-2);
+  border-style: solid;
+  border-color: var(--skx-border-c1);
+}
+.wk-continue__step.is-current {
+  color: var(--skx-primary);
+  border-style: solid;
+  border-color: var(--skx-border-c2);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
