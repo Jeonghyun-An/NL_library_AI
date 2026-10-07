@@ -551,6 +551,13 @@ button.wk-stepper__step {
   line-height: 1.7;
   color: var(--skx-ink-2);
 }
+/* 제목·질문의 [F#] 밖 숫자 — 계획서 문단의 '확인 필요'(wk-psec__check)와 같은 표시, 줄 머리에 붙인다 */
+.wk-topic__check {
+  margin: 0;
+}
+.wk-topic__check .wk-psec__check {
+  margin-left: 0;
+}
 .wk-topic__seed {
   margin: 0;
   font-size: 0.65rem;

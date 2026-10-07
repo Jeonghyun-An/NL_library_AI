@@ -6,6 +6,7 @@ import {
   addConcept,
   canPick,
   cardArrived,
+  cardNumbersLine,
   cardNote,
   cardStatus,
   cleanConcept,
@@ -176,6 +177,15 @@ describe("evidenceChips", () => {
       { cntsId: "KCI_C", label: "지지망 분석", title: "지지망 분석" },
       { cntsId: "KCI_Z", label: "KCI_Z", title: "KCI_Z" },
     ]);
+  });
+});
+
+describe("cardNumbersLine — [F#] 밖 숫자", () => {
+  it("서버가 센 숫자가 있으면 계획서 문단과 같은 '확인 필요' 줄, 없으면 null 이다", () => {
+    expect(cardNumbersLine({ ...CARD, checks: { numbers: ["2015", "9"], softened: 0, recovered: 0 } })).toBe(
+      "확인 필요 2015, 9",
+    );
+    expect(cardNumbersLine(CARD)).toBeNull();
   });
 });
 

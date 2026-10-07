@@ -43,6 +43,9 @@
         </template>
       </p>
       <p v-if="card.latest_year !== null" class="rs-muted">근거 중 최신 {{ card.latest_year }}년</p>
+      <p v-if="numbersLine" class="wk-topic__check">
+        <span class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요">{{ numbersLine }}</span>
+      </p>
     </template>
 
     <template v-else>
@@ -93,6 +96,7 @@ import {
   canPick,
   cardArrived,
   cardNote,
+  cardNumbersLine,
   cardStatus,
   evidenceChips,
   seedLine,
@@ -115,6 +119,8 @@ const card = computed(() => (status.value === "ready" ? props.item.card : null))
 const note = computed(() => cardNote(status.value));
 const pickable = computed(() => canPick(props.item));
 const chips = computed(() => (card.value ? evidenceChips(card.value, props.papers) : []));
+// 제목·질문에 [F#] 밖 숫자가 있으면 '확인 필요' — 서버가 센 값(card.checks.numbers)을 계획서 문단과 같은 모양으로 보인다
+const numbersLine = computed(() => (card.value ? cardNumbersLine(card.value) : null));
 // 머리 줄은 보고서 씨앗 카드의 계보뿐이다 — 사용자 카드(seed 가 {} → null)·고친 카드에는 출처 표시를 달지 않는다(D7·D9)
 const origin = computed(() => seedLine(props.item.seed));
 const seedText = computed(() => props.item.seed?.text.trim() || null);

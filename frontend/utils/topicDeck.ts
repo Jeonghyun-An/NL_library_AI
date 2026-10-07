@@ -117,6 +117,13 @@ export function evidenceChips(
   });
 }
 
+// 카드 제목·질문에서 [F#] 밖에 쓴 숫자(서버가 card.checks.numbers 에 센다) — 계획서 문단과 같은 '확인 필요' 줄.
+// 수치는 [F#] 로만 들어간다(spec §5-2·§5-5·§7) — 모델이나 사용자가 직접 쓴 숫자는 원문과 맞는지 확인하게 알린다
+export function cardNumbersLine(card: TopicCard): string | null {
+  const numbers = card.checks?.numbers ?? [];
+  return numbers.length ? `확인 필요 ${numbers.join(", ")}` : null;
+}
+
 // 카드가 어디서 왔는지 — 보고서 씨앗(향후 과제·근거가 모자랐던 하위질문)과 그 절 소제목
 export function seedLine(seed: TopicSeed | null): string | null {
   if (!seed) return null;
