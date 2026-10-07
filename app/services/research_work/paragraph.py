@@ -2,9 +2,9 @@
 
 같은 절 입력(그 절을 쓴 section 생성의 input — 같은 [E#] 번호·같은 수치)으로 그 문단만 다시 쓴다(정함 9).
 앞뒤 문단을 함께 보여 이어지게 한다. 결과 검사는 절과 같다(section.make_paragraph → markers.check_paragraph).
-반영은 그 문단이 아직 있고 AI 상태(proposed·accepted)일 때만 한다. 그 사이 사용자가 고쳤거나 지웠거나, 절을
-다시 써서 번호 지도(evidence)가 바뀌었으면 그대로 두고 missing 으로 알린다 — 옛 번호로 쓴 글이 다른 논문을
-가리키지 않게.
+반영은 그 문단이 아직 있고 AI 상태(proposed·accepted)이고 글이 입력 때(current)와 같을 때만 한다. 그 사이
+사용자가 고쳤거나 지웠거나, 절을 다시 써서 번호 지도(evidence)나 그 문단의 글이 바뀌었으면 그대로 두고 missing
+으로 알린다 — 옛 번호로 쓴 글이 다른 논문을 가리키거나, 옛 문단을 보고 쓴 글이 새 문단을 덮지 않게.
 """
 from datetime import datetime, timezone
 
@@ -66,7 +66,8 @@ def _bind(output: dict, input: dict) -> dict:
 
 
 async def apply(db, gen, output: dict) -> dict:
-    """그 문단이 아직 있고 AI 상태면 새 문단으로 바꾸고 version + 1. 아니면 그대로 두고 missing.
+    """그 문단이 아직 있고 AI 상태이고 글이 input 의 current 와 같고 절의 번호 지도가 input 과 같으면 새 문단으로
+    바꾸고 version + 1. 아니면(고침·지움·절을 다시 써서 지도나 글이 바뀜) 그대로 두고 missing.
     빈 결과(세 번 다 못 얻음)는 문단을 건드리지 않는다. 행은 FOR UPDATE 로 읽는다(section.apply 와 같은 까닭)."""
     inp = gen.input
     key, pid = inp["key"], inp["pid"]
@@ -83,7 +84,11 @@ async def apply(db, gen, output: dict) -> dict:
         return {**result, "missing": True}
     paragraphs = list(section.get("paragraphs") or [])
     at = next((i for i, p in enumerate(paragraphs) if p.get("id") == pid), None)
-    if at is None or paragraphs[at].get("state") not in _REPLACEABLE:
+    # 글이 input 의 current 와 다르면 그 사이 절을 다시 쓴 것이다 — 같은 묶음이면 번호 지도는 같아도 같은 id 가
+    # 다른 문단이다(옛 생성을 다시 시도했거나, 엔드포인트가 읽은 뒤 절 결과가 커밋됨). 생성이 열린 동안은
+    # PUT·절 쓰기·같은 절 문단 다시 쓰기가 모두 409 라 정상 흐름에서는 글이 바뀌지 않는다
+    if (at is None or paragraphs[at].get("state") not in _REPLACEABLE
+            or paragraphs[at].get("text") != inp.get("current")):
         return {**result, "missing": True}
     paragraphs[at] = {**new, "id": pid, "gen_id": gen.id}
     updated = {**section, "paragraphs": paragraphs, "updated_at": datetime.now(timezone.utc).isoformat()}

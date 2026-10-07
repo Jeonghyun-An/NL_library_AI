@@ -204,6 +204,16 @@ class TestApply:
         assert _apply(engine, jid, NEW)["missing"] is True
         assert _section(engine, jid)[1] == 7
 
+    def test_section_written_again_with_the_same_numbers_is_left_alone(self, engine):
+        # 같은 묶음으로 절을 다시 쓰면 번호 지도는 같아도 p2 가 다른 글이다 — 옛 앞뒤·고칠 문단을 보고 쓴 결과로 덮지 않는다
+        paragraphs = [PARAGRAPHS[0], _p("p2", "새 둘째 문단 — 다른 내용 [E1].", "accepted"), PARAGRAPHS[2]]
+        jid = _work(engine, paragraphs)
+
+        assert _apply(engine, jid, NEW) == {"key": "prior.g1", "pid": "p2", "missing": True}
+
+        section, version = _section(engine, jid)
+        assert version == 7 and section["paragraphs"] == paragraphs
+
     def test_empty_result_changes_nothing(self, engine):
         jid = _work(engine, PARAGRAPHS)
 
