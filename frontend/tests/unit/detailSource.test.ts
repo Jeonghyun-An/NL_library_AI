@@ -10,9 +10,11 @@ import {
   excludedAnchor,
   excludedDetailUrl,
   isUuid,
+  paraAnchor,
   parseAnchor,
   readDetailSource,
   readReturnSpot,
+  readingAnchor,
   relatedDetailUrl,
   resultAnchor,
   shouldGoBack,
@@ -50,6 +52,23 @@ describe("readDetailSource", () => {
     expect(readDetailSource({ from: "research", job: ID2, e: "E3" })).toEqual({ kind: "research", job: ID2, e: "E3" });
     expect(readDetailSource({ from: "research", job: ID2, e: "<b>" })).toEqual({ kind: "research", job: ID2, e: null });
     expect(readDetailSource({ from: "research", job: "abc", e: "E3" })).toEqual({ kind: "none" });
+  });
+
+  it("연구 단계 화면에서 온 상세는 단계(s)를 읽고, 틀린 단계는 버린다(없으면 키 자체가 없다)", () => {
+    expect(readDetailSource({ from: "research", job: ID2, s: "reading" })).toEqual({
+      kind: "research",
+      job: ID2,
+      e: null,
+      s: "reading",
+    });
+    expect(readDetailSource({ from: "research", job: ID2, e: "E2", s: "proposal" })).toEqual({
+      kind: "research",
+      job: ID2,
+      e: "E2",
+      s: "proposal",
+    });
+    expect(readDetailSource({ from: "research", job: ID2, s: "done" })).toEqual({ kind: "research", job: ID2, e: null });
+    expect(readDetailSource({ from: "search", q: "nlp", s: "reading" })).toEqual({ kind: "search", h: null, q: "nlp" });
   });
 
   it("from 이 모르는 값이거나, 기록·검색어가 모두 틀린 검색 출처는 출처 없음이다", () => {
@@ -147,6 +166,18 @@ describe("detailUrl·relatedDetailUrl·excludedDetailUrl", () => {
     expect(excludedDetailUrl(ID2, "C1")).toBe(`/papers/C1?from=research&job=${ID2}&at=x-C1`);
     expect(excludedDetailUrl(ID2, "C1", 88)).toBe(`/papers/C1?from=research&job=${ID2}&at=x-C1&y=88`);
   });
+
+  it("연구 단계(s)를 근거 번호 뒤에 싣고 다시 읽으면 같은 출처다 — 연관 논문으로 넘어가도 단계는 잇는다", () => {
+    const fromReading = { kind: "research", job: ID2, e: null, s: "reading" } as const;
+    const url = detailUrl("C1", fromReading, { at: readingAnchor("C1"), y: 40 });
+    expect(url).toBe(`/papers/C1?from=research&job=${ID2}&s=reading&at=r-C1&y=40`);
+    const query = Object.fromEntries(new URL(url, "http://local").searchParams);
+    expect(readDetailSource(query)).toEqual(fromReading);
+    expect(readReturnSpot(query)).toEqual({ at: "r-C1", y: 40 });
+    expect(relatedDetailUrl("C9", { ...fromReading, e: "E1" }, { at: "r-C1", y: 40 })).toBe(
+      `/papers/C9?from=research&job=${ID2}&s=reading&at=r-C1&y=40`,
+    );
+  });
 });
 
 describe("backTarget", () => {
@@ -167,6 +198,21 @@ describe("backTarget", () => {
       to: `/research/${ID2}?at=c-0-E3&y=120`,
     });
     expect(backTarget({ kind: "research", job: ID2, e: null }, NO_SPOT)).toEqual({
+      label: "딥리서치 보고서로",
+      to: `/research/${ID2}`,
+    });
+  });
+
+  it("연구 단계 화면에서 왔으면 그 단계로 돌아가고 버튼 문구가 바뀐다", () => {
+    expect(backTarget({ kind: "research", job: ID2, e: null, s: "reading" }, { at: "r-C1", y: 40 })).toEqual({
+      label: "연구 화면으로",
+      to: `/research/${ID2}?s=reading&at=r-C1&y=40`,
+    });
+    expect(backTarget({ kind: "research", job: ID2, e: "E1", s: "proposal" }, NO_SPOT)).toEqual({
+      label: "연구 화면으로",
+      to: `/research/${ID2}?s=proposal`,
+    });
+    expect(backTarget({ kind: "research", job: ID2, e: null, s: null }, NO_SPOT)).toEqual({
       label: "딥리서치 보고서로",
       to: `/research/${ID2}`,
     });
@@ -209,6 +255,17 @@ describe("앵커", () => {
     expect(parseAnchor(citeAnchor(3, "E1"))).toEqual({ kind: "cite", section: 3, eid: "E1", n: 0 });
     expect(parseAnchor(excludedAnchor("C1"))).toEqual({ kind: "excluded", cnts: "C1" });
     expect(parseAnchor(resultAnchor("CNTS-1"))).toEqual({ kind: "result", cnts: "CNTS-1" });
+  });
+
+  it("읽기 목록 행·계획서 문단 앵커를 만들고 다시 읽는다", () => {
+    expect(readingAnchor("KCI_FI001484593")).toBe("r-KCI_FI001484593");
+    expect(paraAnchor("prior.g1", "p2")).toBe("g-prior.g1-p2");
+    expect(parseAnchor(readingAnchor("KCI_FI001484593"))).toEqual({ kind: "reading", cnts: "KCI_FI001484593" });
+    expect(parseAnchor(paraAnchor("prior.g1", "p2"))).toEqual({ kind: "para", ref: "prior.g1-p2" });
+    expect(parseAnchor(paraAnchor("gap", "p10"))).toEqual({ kind: "para", ref: "gap-p10" });
+    expect(anchorSelector("g-gap-p1")).toBe('[data-anchor="g-gap-p1"]');
+    expect(readReturnSpot({ at: "r-C1", y: "40" })).toEqual({ at: "r-C1", y: 40 });
+    for (const bad of ["r-", "g-", "r-a b", 'g-gap"]']) expect(parseAnchor(bad)).toBeNull();
   });
 
   it("문법 밖의 값은 null — 선택자에 따옴표·괄호·공백이 끼지 않는다", () => {
