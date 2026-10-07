@@ -32,9 +32,14 @@ class _MilvusException(Exception):
         super().__init__(message)
 
 
+class _RpcError(Exception):
+    """grpc 미설치 환경용 대역 — 진짜 grpc.RpcError 도 Exception 을 잇는다."""
+
+
 @pytest.fixture
 def search(monkeypatch):
-    """무거운 모듈을 대역으로 채우고 (indexer, reranker, MilvusException) 을 준다. 끝나면 import 전 그대로 되돌린다."""
+    """무거운 모듈을 대역으로 채우고 (indexer, reranker, MilvusException, RpcError) 를 준다. 끝나면 import 전 그대로
+    되돌린다."""
     for name in _HEAVY:
         try:
             importlib.import_module(name)
@@ -46,6 +51,12 @@ def search(monkeypatch):
         exc = types.ModuleType("pymilvus.exceptions")
         exc.MilvusException = _MilvusException
         monkeypatch.setitem(sys.modules, "pymilvus.exceptions", exc)
+    try:
+        importlib.import_module("grpc")
+    except ModuleNotFoundError:
+        grpc = types.ModuleType("grpc")
+        grpc.RpcError = _RpcError
+        monkeypatch.setitem(sys.modules, "grpc", grpc)
     for name in _CACHED:
         parent, _, child = name.rpartition(".")
         if hasattr(sys.modules.get(parent), child):
@@ -56,6 +67,7 @@ def search(monkeypatch):
         indexer=sys.modules["services.ingestion.indexer"],
         reranker=sys.modules["services.search.reranker"],
         MilvusException=sys.modules["pymilvus.exceptions"].MilvusException,
+        RpcError=sys.modules["grpc"].RpcError,
     )
     for name in _CACHED:
         module = sys.modules.pop(name, None)
@@ -161,6 +173,8 @@ class TestMilvusPassages:
         (call,) = col.calls
         assert call["expr"] == 'book_id == "KCI_A" && chunk_idx >= 0'
         assert set(call["output_fields"]) == {"chunk_id", "chunk_idx", "text", "page_start", "page_end"}
+        # 상한은 정수 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다(membership 과 같다)
+        assert call["timeout"] == 10 and type(call["timeout"]) is int
 
     @pytest.mark.parametrize("error", [RuntimeError("스키마 불일치"), OSError("연결 끊김")])
     def test_known_failures_give_no_passages(self, search, monkeypatch, error):
@@ -169,6 +183,13 @@ class TestMilvusPassages:
 
     def test_milvus_exception_gives_no_passages(self, search, monkeypatch):
         error = search.MilvusException(message="milvus down")
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: _Collection(error=error))
+        assert passages.milvus_passages("KCI_A") == []
+
+    def test_milvus_deadline_gives_no_passages(self, search, monkeypatch):
+        # 기한을 넘기면(DEADLINE_EXCEEDED 등 IGNORE_RETRY_CODES) pymilvus 는 MilvusException 이 아니라 날
+        # grpc.RpcError 를 다시 던진다 — 절 쓰기가 500 이 아니라 그 논문만 대목 없이 간다
+        error = search.RpcError("Deadline Exceeded")
         monkeypatch.setattr(search.indexer, "ensure_collection", lambda: _Collection(error=error))
         assert passages.milvus_passages("KCI_A") == []
 

@@ -9,8 +9,8 @@
 
 리랭커(compute_scores)·Milvus(ensure_collection)·검색 파이프라인(_RERANK_FAILURES)은 torch·FlagEmbedding·
 pymilvus 를 끌어오므로 함수 안에서 import 한다(함정 13). 실패는 실제로 나는 타입만 받는다(함정 19) — 리랭커는
-pipeline._RERANK_FAILURES, Milvus 는 거기에 MilvusException 을 더한다. 동기 함수다 — 엔드포인트가 읽기
-트랜잭션을 닫은 뒤 run_in_threadpool 로 부른다(함정 18).
+pipeline._RERANK_FAILURES, Milvus 는 거기에 MilvusException 과 grpc.RpcError(기한 초과)를 더한다. 동기 함수다 —
+엔드포인트가 읽기 트랜잭션을 닫은 뒤 run_in_threadpool 로 부른다(함정 18).
 """
 import logging
 import re
@@ -29,6 +29,11 @@ _SENTENCE_END = ".!?"
 _FULL_STOP = "。"
 # Milvus 표현식에 넣는 cnts_id — 따옴표·역슬래시가 든 값은 표현식을 깨므로 읽지 않는다
 _SAFE_ID = re.compile(r"[A-Za-z0-9_.\-]{1,64}")
+# Milvus query 상한(초). 정수로 준다 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다
+# (아니면 75번 재시도로만 끊겨 UNAVAILABLE 이면 한 편에 약 3.5분, 응답이 없으면 gRPC 기한이 없어 무한정 기다린다).
+# [이 절 쓰기]는 스냅숏에 없는 논문(되살림·담기)마다 최대 6번 차례로 부르므로 한 편이 묶이면 게이트웨이
+# proxy_read_timeout 120s 를 넘겨 504 가 나고 스레드풀 스레드도 묶인다 — membership._MILVUS_TIMEOUT_SECONDS 와 같은 값·교훈
+_MILVUS_TIMEOUT_SECONDS = 10
 
 
 def clip(text: str, limit: int = EXCERPT_CHARS) -> str:
@@ -99,10 +104,11 @@ def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
 def milvus_passages(cnts_id: str) -> list[dict]:
     """Milvus 에서 그 논문 한 편의 원문 청크(청크 순서, 점수 없음). FastAPI 전용·동기.
 
-    읽지 못하면(연결 실패·컬렉션 문제) 빈 목록 — 그 논문은 대목 없이 초록만으로 쓴다."""
+    읽지 못하면(연결 실패·컬렉션 문제·기한 초과) 빈 목록 — 그 논문은 대목 없이 초록만으로 쓴다."""
     if not _SAFE_ID.fullmatch(cnts_id or ""):
         log.warning("[passages] Milvus 표현식에 넣을 수 없는 cnts_id — 대목 없이 쓴다 %r", cnts_id)
         return []
+    import grpc
     from pymilvus.exceptions import MilvusException
     from services.ingestion.indexer import ensure_collection
     from services.search.pipeline import _RERANK_FAILURES
@@ -111,9 +117,10 @@ def milvus_passages(cnts_id: str) -> list[dict]:
         rows = ensure_collection().query(
             expr=f'book_id == "{cnts_id}" && chunk_idx >= 0',
             output_fields=["chunk_id", "chunk_idx", "text", "page_start", "page_end"],
-            limit=MAX_PASSAGES,
+            limit=MAX_PASSAGES, timeout=_MILVUS_TIMEOUT_SECONDS,
         )
-    except (MilvusException, *_RERANK_FAILURES) as e:
+    # 기한을 넘기면 pymilvus 는 DEADLINE_EXCEEDED 를 MilvusException 이 아니라 날 grpc.RpcError 로 다시 던진다
+    except (MilvusException, grpc.RpcError, *_RERANK_FAILURES) as e:
         log.warning("[passages] Milvus 청크를 읽지 못했다 — 대목 없이 쓴다 cnts=%s: %s", cnts_id, e)
         return []
     out: list[dict] = []
