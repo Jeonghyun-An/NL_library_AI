@@ -214,11 +214,13 @@ class HistoryRepository:
         # job id 만 모아 PK 로 한 번 더 읽는다.
         # 이어간 연구의 단계·진행 요약은 같은 PK 조회에 research_works 를 id 로 붙여 읽는다
         # (연구 id = 잡 id). 진행 중 생성은 행을 늘리지 않게 EXISTS 로 센다.
+        # deleted_at 이 찬 연구는 붙이지 않는다 — 이어가지 않은 딥리서치로 보인다(spec §6-1: 연구 삭제는 기록
+        # 삭제를 따르고 deleted_at 은 자리만). 생성 여부도 붙은 연구 행으로 세어 함께 빠진다.
         job_ids = {jid for jid in map(_as_uuid, refs) if jid is not None}
         if not job_ids:
             return {}
         generating = exists().where(
-            ResearchGeneration.work_id == ResearchJob.id,
+            ResearchGeneration.work_id == ResearchWork.id,
             ResearchGeneration.status.in_(GEN_OPEN_STATUSES),
         )
         rows = (await self.db.execute(
@@ -226,7 +228,8 @@ class HistoryRepository:
                    ResearchWork.phase, ResearchWork.progress,
                    generating.label("generating"))
             .select_from(ResearchJob)
-            .outerjoin(ResearchWork, ResearchWork.id == ResearchJob.id)
+            .outerjoin(ResearchWork, and_(ResearchWork.id == ResearchJob.id,
+                                          ResearchWork.deleted_at.is_(None)))
             .where(ResearchJob.id.in_(job_ids))
         )).all()
         return {
