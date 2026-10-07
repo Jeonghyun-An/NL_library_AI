@@ -15,6 +15,7 @@ import {
   pathPdfTarget,
   reorderPuts,
   sortedItems,
+  withPositions,
 } from "~/utils/readingList";
 
 const META: PaperMeta = {
@@ -129,6 +130,38 @@ describe("reorderPuts — [위로]·[아래로]", () => {
       { cnts: "KCI_C", position: 10 },
       { cnts: "KCI_B", position: 20 },
     ]);
+  });
+});
+
+describe("withPositions — 저장이 끝나기 전 옮긴 순서", () => {
+  const ids = (items: ReadingItem[]) => sortedItems(items).map((i) => i.cnts_id);
+  // 아직 순서를 매기지 않은 목록 — 표 순서는 순위대로 A·B·C·D·E
+  const fresh = ["KCI_A", "KCI_B", "KCI_C", "KCI_D", "KCI_E"].map((cnts_id, i) =>
+    row({ cnts_id, path: { subqs: [subq({ rank: i + 1 })], revived: null, user: false } }),
+  );
+
+  it("보낸 번호를 덮으면 PUT 이 끝나기 전에도 옮긴 순서로 그린다 — 덮을 번호가 없으면 같은 목록", () => {
+    const puts = reorderPuts(fresh, "KCI_E", -1);
+    expect(puts).toHaveLength(5);
+    expect(ids(withPositions(fresh, puts))).toEqual(["KCI_A", "KCI_B", "KCI_C", "KCI_E", "KCI_D"]);
+    expect(withPositions(fresh, [])).toBe(fresh);
+    expect(fresh.every((i) => i.position === null)).toBe(true);
+  });
+
+  it("앞 옮김이 다 저장된 순서로 계산한 다음 옮김은 앞 옮김을 지키고, 중간 목록으로 계산하면 앞 옮김이 사라진다", () => {
+    const first = reorderPuts(fresh, "KCI_E", -1);
+    const saved = withPositions(fresh, first);
+    expect(ids(withPositions(saved, reorderPuts(saved, "KCI_B", -1)))).toEqual([
+      "KCI_B",
+      "KCI_A",
+      "KCI_C",
+      "KCI_E",
+      "KCI_D",
+    ]);
+    // 첫 PUT(A=0) 하나만 반영된 중간 목록으로 B 를 올리면 E·D 의 번호를 옛 자리로 다시 보내 E 를 올린 것이 지워진다
+    const partial = withPositions(fresh, first.slice(0, 1));
+    const late = [...first, ...reorderPuts(partial, "KCI_B", -1)];
+    expect(ids(withPositions(fresh, late))).toEqual(["KCI_B", "KCI_A", "KCI_C", "KCI_D", "KCI_E"]);
   });
 });
 

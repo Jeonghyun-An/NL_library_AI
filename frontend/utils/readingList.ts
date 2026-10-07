@@ -79,6 +79,17 @@ export function reorderPuts(items: ReadingItem[], cnts: string, dir: -1 | 1): { 
   });
 }
 
+// [위로]·[아래로] 로 보낸 새 번호(reorderPuts 결과)를 덮은 목록 — 저장 묶음이 끝나 다시 읽기 전까지 표가 옮긴 순서를 바로
+// 그린다(처음 옮기면 PUT 이 행 수만큼 나가 그것을 다 기다리면 옮긴 행이 한참 뒤에야 움직인다). 덮을 번호가 없으면 그대로
+export function withPositions(items: ReadingItem[], puts: readonly { cnts: string; position: number }[]): ReadingItem[] {
+  if (!puts.length) return items;
+  const next = new Map(puts.map((p) => [p.cnts, p.position]));
+  return items.map((item) => {
+    const position = next.get(item.cnts_id);
+    return position === undefined ? item : { ...item, position };
+  });
+}
+
 export function originLabel(origin: ReadingItem["origin"]): string {
   return ORIGIN_LABEL[origin];
 }

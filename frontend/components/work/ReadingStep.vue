@@ -29,6 +29,7 @@
         :items="reading.items"
         :read-only="readOnly"
         :busy="busy"
+        :reordering="saves.reordering.value"
         :job-id="jobId"
         @update="update"
         @open-pdf="(payload) => emit('open-pdf', payload)"
@@ -76,6 +77,7 @@ import CandidateDrawer from "~/components/work/CandidateDrawer.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
 import FunnelCounter from "~/components/work/FunnelCounter.vue";
 import ReadingTable from "~/components/work/ReadingTable.vue";
+import { useReadingSaves } from "~/composables/useReadingSaves";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
 import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
@@ -94,7 +96,6 @@ const REMAKE_CONFIRM =
 const api = useWorkApi();
 const busy = ref(false);
 const error = ref<string | null>(null);
-let saving: Promise<void> = Promise.resolve();
 
 const state = computed(() => props.work.state.value);
 const view = computed(() => state.value.work);
@@ -123,23 +124,18 @@ async function reloadAll(kinds: WorkResource[]): Promise<void> {
   await Promise.allSettled(kinds.map((kind) => props.work.reload(kind)));
 }
 
-// 행 고침(담음·뺌·메모·묶음·순서·되살리기)은 차례로 보낸다 — 앞 저장이 도는 동안 누른 것도 버리지 않고, 같은 행의 두 고침이
-// 거꾸로 도착하지 않는다. 실패해도 다시 읽어 표를 서버 값으로 맞춘다(쓰던 메모는 표가 지킨다)
+// 행 고침(담음·뺌·메모·묶음·순서·되살리기)은 차례로 보내고, 사슬이 빌 때 한 번만 다시 읽어 표를 서버 값으로 맞춘다
+// (useReadingSaves — 실패해도 다시 읽는다, 쓰던 메모는 표가 지킨다). 순서 저장이 남은 동안 표는 [위로]·[아래로] 를 끈다
+const saves = useReadingSaves({
+  put: (cnts, body) => api.putReading(props.jobId, cnts, body),
+  reload: reloadAll,
+  afterAction: () => props.work.afterAction(),
+  error,
+});
+
 function update(cnts: string, body: ReadingPut): void {
   if (readOnly.value) return;
-  saving = saving.then(() => saveRow(cnts, body));
-}
-
-async function saveRow(cnts: string, body: ReadingPut): Promise<void> {
-  error.value = null;
-  try {
-    await api.putReading(props.jobId, cnts, body);
-    await reloadAll(body.state === undefined ? ["reading"] : ["reading", "work"]);
-    props.work.afterAction();
-  } catch (err) {
-    error.value = workErrorMessage(err, "읽기 목록을 고치지 못했습니다");
-    await reloadAll(httpStatus(err) === 409 ? ["reading", "work"] : ["reading"]);
-  }
+  saves.enqueue(cnts, body);
 }
 
 async function makeOutline(again: boolean): Promise<void> {
@@ -149,7 +145,7 @@ async function makeOutline(again: boolean): Promise<void> {
   error.value = null;
   try {
     // 앞서 보낸 담음 고침이 반영된 뒤에 목차를 만든다 — 서버는 그때의 담음으로 묶음을 배정한다
-    await saving;
+    await saves.idle();
     await api.createOutline(props.jobId);
     await reloadAll(["work"]);
     props.work.afterAction();

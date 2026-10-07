@@ -70,7 +70,7 @@
         <button
           type="button"
           class="rs-btn rs-btn--small rs-btn--ghost"
-          :disabled="readOnly || busy || index === 0"
+          :disabled="readOnly || busy || reordering || index === 0"
           @click="move(item.cnts_id, -1)"
         >
           위로
@@ -78,7 +78,7 @@
         <button
           type="button"
           class="rs-btn rs-btn--small rs-btn--ghost"
-          :disabled="readOnly || busy || index === rows.length - 1"
+          :disabled="readOnly || busy || reordering || index === rows.length - 1"
           @click="move(item.cnts_id, 1)"
         >
           아래로
@@ -129,16 +129,21 @@ import {
   originLabel,
   reorderPuts,
   sortedItems,
+  withPositions,
 } from "~/utils/readingList";
 import { paperByline } from "~/utils/researchReport";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 
-// 읽기 목록 표(spec §4 S4·§5-4) — 행마다 담음/뺌·메모·묶음 이름·순서([위로]·[아래로])·[경로]. 고침은 update 로 emit 만 하고 PUT 은 ReadingStep 이 한다
-const props = defineProps<{ items: ReadingItem[]; readOnly: boolean; busy: boolean; jobId: string }>();
+// 읽기 목록 표(spec §4 S4·§5-4) — 행마다 담음/뺌·메모·묶음 이름·순서([위로]·[아래로])·[경로]. 고침은 update 로 emit 만 하고 PUT 은 ReadingStep 이 한다.
+// reordering 은 ReadingStep 에 순서 저장이 남아 있는 동안(그 묶음을 다시 읽기까지) 참이다
+const props = defineProps<{ items: ReadingItem[]; readOnly: boolean; busy: boolean; reordering: boolean; jobId: string }>();
 const emit = defineEmits<{ update: [cnts: string, body: ReadingPut]; "open-pdf": [payload: OpenPdfPayload] }>();
 
 const { leave } = useDetailLeave();
-const rows = computed(() => sortedItems(props.items));
+// [위로]·[아래로] 로 보낸 새 번호 — 순서 저장 묶음이 끝날 때까지(reordering) 표를 이 순서로 그려 옮긴 행이 바로 움직인다.
+// 묶음이 끝나면 버리고 다시 읽은 서버 순서를 그린다(저장에 실패한 행은 그때 서버 자리로 돌아간다)
+const moved = ref<{ cnts: string; position: number }[]>([]);
+const rows = computed(() => sortedItems(withPositions(props.items, moved.value)));
 const openPath = ref<string | null>(null);
 // 서버에 보내고 다시 읽기를 기다리는 행. 체크 상자는 서버 값으로만 바뀐다 — 실패하면 그대로 남는다
 const saving = ref(new Set<string>());
@@ -170,6 +175,13 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () => props.reordering,
+  (on) => {
+    if (!on) moved.value = [];
+  },
+);
+
 function fieldText(e: Event): string {
   return (e.target as HTMLInputElement | HTMLTextAreaElement).value;
 }
@@ -192,9 +204,14 @@ function toggleOut(item: ReadingItem): void {
   send(item.cnts_id, { state: item.state === "out" ? "candidate" : "out" });
 }
 
-// [위로]·[아래로] — 바뀐 순서를 행마다 position 으로 보낸다(서버 PUT 은 한 행씩). ReadingStep 이 차례로 보내고 다시 읽는다
+// [위로]·[아래로] — 바뀐 순서를 행마다 position 으로 보낸다(서버 PUT 은 한 행씩). ReadingStep 이 차례로 보내고 묶음이 끝나면
+// 한 번 다시 읽는다. 앞 옮김의 저장이 남은 동안에는 누르지 못한다 — 다음 옮김은 늘 저장이 끝난 순서로 계산한다
 function move(cnts: string, dir: -1 | 1): void {
-  for (const put of reorderPuts(props.items, cnts, dir)) send(put.cnts, { position: put.position });
+  if (props.readOnly || props.busy || props.reordering) return;
+  const puts = reorderPuts(props.items, cnts, dir);
+  if (!puts.length) return;
+  moved.value = puts;
+  for (const put of puts) send(put.cnts, { position: put.position });
 }
 
 function saveNote(item: ReadingItem): void {
