@@ -466,14 +466,26 @@ function openWork(): void {
   void goStep(workView.value ? stepForPhase(workView.value.phase) : "topics");
 }
 
+// 화면을 떠났다 — 그 뒤 도착한 응답이 이 화면의 일(안내·단계 이동)을 하지 않게
+let left = false;
+onBeforeUnmount(() => {
+  left = true;
+});
+
 async function onContinue(): Promise<void> {
   if (!view.value || continuing.value) return;
+  const jobId = view.value.jobId;
   continuing.value = true;
   continueError.value = null;
   try {
-    work.setWork(await workApi.continueWork(view.value.jobId));
-    work.connect();
+    const continued = await workApi.continueWork(jobId);
+    // 떠났거나 잡이 바뀐 뒤의 응답은 setWork 가 안에서 버린다. 서버는 이미 바뀌었으니 사이드바는 맞춘다
+    work.setWork(continued);
     work.afterAction();
+    // 응답을 기다리는 동안 사이드바로 다른 화면에 갔으면 여기서 멈춘다 — 경로 없는 router.push 는 지금 위치(그 화면)의
+    // 경로에 붙어, 예컨대 /papers?h=…&q=… 를 ?s=topics 로 바꿔 검색 복원을 깨뜨린다
+    if (left || view.value?.jobId !== jobId) return;
+    work.connect();
     if (firstContinue()) onboardingOpen.value = true;
     await goStep("topics");
   } catch (e) {
