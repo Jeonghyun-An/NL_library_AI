@@ -29,6 +29,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_browser_id, get_browser_id_optional, get_db
+from db.postgres import AsyncSessionLocal
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
 from models.research_work import (
@@ -389,15 +390,29 @@ async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(
 @router.get("/api/research/{job_id}/work/stream")
 async def stream_work(job_id: str, db: AsyncSession = Depends(get_db)):
     """연구 SSE — 접속 직후 snapshot 한 번, 그 뒤 연구 채널 이벤트를 그대로, 조용하면 ': ping'.
-    하트비트 때 DB 를 다시 읽지 않는다(06a). 이벤트를 받은 화면이 해당 GET 을 다시 읽는다(spec §6-4)."""
+    이벤트를 받은 화면이 해당 GET 을 다시 읽는다(spec §6-4).
+
+    하트비트마다 열린 생성(queued·running)의 (id, status) 집합을 짧은 세션으로 다시 읽어, 마지막으로 보낸
+    snapshot 의 집합과 다르면 snapshot 을 새로 보낸다(spec §6-4 06b 넘김). 회수기는 오래 running 인 생성을
+    연구 채널에 알리지 않고 failed 로 닫고, snapshot 을 읽은 뒤 구독이 붙기 전에 나간 done 이벤트는 다시 오지
+    않는다 — 둘 다 다음 하트비트(15초) 안에 풀린다. 기준은 마지막으로 보낸 snapshot 이라, 중계 이벤트로 끝을
+    알린 생성도 다음 하트비트에 snapshot 이 한 번 더 간다(같은 값으로 덮을 뿐이다)."""
     jid = _job_uuid(job_id)
     snapshot = {"kind": "snapshot", "work": await _view(db, await _get_work(db, jid))}
 
     async def _gen() -> AsyncIterator[str]:
         yield _sse(snapshot)
+        last_open = _open_set(snapshot["work"])
         async for event in subscribe_work(str(jid)):
             if event is None:
                 yield ": ping\n\n"
+                if await _open_generations(jid) == last_open:
+                    continue
+                fresh = await _fresh_work_view(jid)
+                if fresh is None:
+                    continue
+                last_open = _open_set(fresh)
+                yield _sse({"kind": "snapshot", "work": fresh})
                 continue
             yield _sse(event)
 
@@ -405,3 +420,28 @@ async def stream_work(job_id: str, db: AsyncSession = Depends(get_db)):
         _gen(), media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+def _open_set(view: dict) -> frozenset[tuple[int, str]]:
+    """WorkView 에 실린 열린 생성의 (id, status) — 하트비트가 DB 와 견줄 기준."""
+    return frozenset((g["id"], g["status"]) for g in view["generations"]
+                     if g["status"] in GEN_OPEN_STATUSES)
+
+
+async def _open_generations(jid: uuid.UUID) -> frozenset[tuple[int, str]]:
+    """지금 열린 생성의 (id, status). 하트비트마다 짧은 세션을 새로 연다 — 요청 세션(Depends(get_db))은 핸들러가
+    반환하면 닫히고 제너레이터는 그 뒤에 돈다(api/research.py 의 _job_status 와 같은 까닭). id·status 만 읽는다."""
+    G = ResearchGeneration
+    async with AsyncSessionLocal() as db:
+        rows = (await db.execute(
+            select(G.id, G.status).where(G.work_id == jid, G.status.in_(GEN_OPEN_STATUSES))
+        )).all()
+    return frozenset((r.id, r.status) for r in rows)
+
+
+async def _fresh_work_view(jid: uuid.UUID) -> dict | None:
+    """어긋났을 때 다시 보낼 WorkView. 접속 때의 snapshot 과 같은 _view 로 만든다 — 두 경로의 모양이 갈리지 않게.
+    짧은 세션을 새로 여는 까닭은 _open_generations 와 같다."""
+    async with AsyncSessionLocal() as db:
+        work = await db.get(ResearchWork, jid)
+        return None if work is None else await _view(db, work)

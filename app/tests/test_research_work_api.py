@@ -960,6 +960,38 @@ class TestRetryGeneration:
 
 
 class TestWorkStream:
+    @staticmethod
+    def _short_sessions(api, monkeypatch) -> list[str]:
+        """하트비트가 여는 짧은 세션(AsyncSessionLocal) 대역 — 같은 SQLite 위의 새 세션. 열고 닫은 기록을 준다."""
+        opened: list[str] = []
+
+        class _Session:
+            async def __aenter__(self):
+                opened.append("open")
+                self.db = AsyncSessionOverSync(api.engine)
+                return self.db
+
+            async def __aexit__(self, *exc):
+                opened.append("close")
+                await self.db.close()
+                return False
+
+        monkeypatch.setattr(api.router, "AsyncSessionLocal", _Session)
+        return opened
+
+    @staticmethod
+    def _stream(api, monkeypatch, jid, live: list) -> list[dict]:
+        """live 를 차례로 흘린다 — None 은 하트비트, dict 는 중계 이벤트, 함수는 그 사이에 DB 를 바꾸는 일."""
+        async def _subscribe_work(work_id, *, idle_timeout=15.0):
+            for item in live:
+                if callable(item):
+                    item()
+                    continue
+                yield item
+
+        monkeypatch.setattr(api.router, "subscribe_work", _subscribe_work)
+        return _frames(api.client.get(f"/api/research/{jid}/work/stream").text)
+
     def test_snapshot_then_relayed_events_and_pings(self, api, monkeypatch):
         jid = _work_job(api.engine, concepts=["독서 격차"])
         gid = add_generation(api.engine, jid)
@@ -974,6 +1006,7 @@ class TestWorkStream:
             yield {"kind": "work", "phase": "topics", "progress": {}}
 
         monkeypatch.setattr(api.router, "subscribe_work", _subscribe_work)
+        self._short_sessions(api, monkeypatch)
 
         res = api.client.get(f"/api/research/{str(jid).upper()}/work/stream")
 
@@ -989,6 +1022,58 @@ class TestWorkStream:
     def test_404_until_continued(self, api):
         jid = _job(api.engine)
         assert api.client.get(f"/api/research/{jid}/work/stream").status_code == 404
+
+    def test_heartbeat_resends_the_snapshot_when_open_generations_change(self, api, monkeypatch):
+        """회수기는 연구 채널에 알리지 않고 running 생성을 failed 로 닫는다 — 하트비트가 열린 생성 (id, status)
+        집합을 다시 읽어 마지막 snapshot 과 다르면 snapshot 을 다시 보낸다(spec §6-4 06b, 정함 13)."""
+        jid = _work_job(api.engine)
+        gid = add_generation(api.engine, jid)
+        opened = self._short_sessions(api, monkeypatch)
+        running = lambda: _set(api.engine, ResearchGeneration, gid, status="running")
+        reaped = lambda: _set(api.engine, ResearchGeneration, gid, status="failed",
+                              error="stale — 워커 응답 없음")
+
+        frames = self._stream(api, monkeypatch, jid, [None, running, None, None, reaped, None])
+
+        assert [f["kind"] for f in frames] == ["snapshot", "snapshot", "snapshot"]
+        assert [[(g["id"], g["status"]) for g in f["work"]["generations"]] for f in frames] == [
+            [(gid, "queued")], [(gid, "running")], [(gid, "failed")]]
+        assert frames[-1]["work"] == api.client.get(f"/api/research/{jid}/work").json()
+        # 하트비트마다 짧은 세션 하나, 어긋난 두 번은 snapshot 을 읽는 세션 하나씩 더 — 모두 닫는다
+        assert opened == ["open", "close"] * 6
+
+    def test_event_missed_before_subscribing_is_recovered(self, api, monkeypatch):
+        """snapshot 을 읽은 뒤 구독이 붙기 전에 끝난 생성의 done 이벤트는 다시 오지 않는다 — 첫 하트비트가 푼다."""
+        jid = _work_job(api.engine)
+        gid = add_generation(api.engine, jid)
+        self._short_sessions(api, monkeypatch)
+        done = lambda: _set(api.engine, ResearchGeneration, gid, status="done",
+                            output={"concepts": ["독서 격차", "청소년"]})
+        concepts = lambda: _set(api.engine, ResearchWork, jid, concepts=["독서 격차", "청소년"])
+
+        frames = self._stream(api, monkeypatch, jid, [done, concepts, None])
+
+        assert [f["kind"] for f in frames] == ["snapshot", "snapshot"]
+        assert frames[1]["work"]["concepts"] == ["독서 격차", "청소년"]
+        assert [(g["id"], g["status"]) for g in frames[1]["work"]["generations"]] == [(gid, "done")]
+
+    def test_quiet_heartbeat_reads_only_the_open_generations(self, api, monkeypatch):
+        jid = _work_job(api.engine)
+        add_generation(api.engine, jid)
+        add_generation(api.engine, jid, status="done")
+        opened = self._short_sessions(api, monkeypatch)
+        statements: list[str] = []
+        listen = lambda conn, cur, stmt, params, ctx, many: statements.append(stmt)
+        frames = self._stream(api, monkeypatch, jid, [
+            lambda: sa.event.listen(api.engine, "before_cursor_execute", listen), None, None])
+
+        assert [f["kind"] for f in frames] == ["snapshot"]
+        assert opened == ["open", "close"] * 2
+        # 하트비트는 열린 생성의 id·status 만 읽는다 — 연구 행·서지·대기 순번은 어긋났을 때만
+        assert len(statements) == 2
+        assert all(s.startswith("SELECT research_generations.id, research_generations.status")
+                   for s in statements)
+        sa.event.remove(api.engine, "before_cursor_execute", listen)
 
 
 # ── 끝까지 한 번 ──────────────────────────────────────────────────────
