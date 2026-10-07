@@ -156,8 +156,10 @@ class TestExecutor:
 
 
 class TestExecutors:
-    def test_registry_holds_the_06a_executor(self):
-        assert EXECUTORS == {"concepts": EXECUTOR}
+    def test_concepts_executor_is_registered(self):
+        assert EXECUTORS["concepts"] is EXECUTOR
 
     def test_keys_are_generation_kinds(self):
-        assert all(kind in GEN_KINDS and ex.kind == kind for kind, ex in EXECUTORS.items())
+        # 06b·06c 가 실행기를 더해도 지키는 규칙 — 키는 생성 종류이고 실행기의 kind 가 키와 같다
+        assert set(EXECUTORS) <= set(GEN_KINDS)
+        assert all(ex.kind == kind for kind, ex in EXECUTORS.items())
