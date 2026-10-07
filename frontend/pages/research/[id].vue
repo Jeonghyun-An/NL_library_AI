@@ -59,8 +59,8 @@
             <p class="wk-summary__line">{{ band ? summaryLine(band) : view.question }}</p>
             <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">보고서 보기</button>
           </div>
-          <div v-if="!workView && work.error.value" class="rs-card rs-card--error">
-            <p>{{ work.error.value }}</p>
+          <div v-if="!workView && work.errorOf('load')" class="rs-card rs-card--error">
+            <p>{{ work.errorOf("load") }}</p>
             <div class="rs-card__actions">
               <button type="button" class="rs-btn" @click="work.load()">다시 불러오기</button>
             </div>

@@ -7,8 +7,8 @@
     </header>
     <p v-if="notice" class="rs-alert" :role="noticeIsError ? 'alert' : 'status'">{{ notice }}</p>
 
-    <div v-if="!proposal && work.error.value" class="rs-card rs-card--error">
-      <p>{{ work.error.value }}</p>
+    <div v-if="!proposal && work.errorOf('proposal')" class="rs-card rs-card--error">
+      <p>{{ work.errorOf("proposal") }}</p>
       <div class="rs-card__actions">
         <button type="button" class="rs-btn" @click="work.reload('proposal')">다시 불러오기</button>
       </div>

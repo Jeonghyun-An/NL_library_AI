@@ -85,7 +85,8 @@ const offscreen = shallowRef<HTMLElement[]>([]);
 const state = computed(() => props.work.state.value);
 const view = computed(() => state.value.work);
 const readOnly = computed(() => view.value?.is_example ?? true);
-const loadError = computed(() => props.work.error.value);
+// 주제 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
+const loadError = computed(() => props.work.errorOf("topics"));
 // 카드 생성의 대기 → 쓰는 중은 연구 SSE 가 work.generations 로 알린다 — 주제 목록을 다시 읽지 않아도 슬롯에 보인다
 const topics = computed(() => {
   const t = state.value.topics;

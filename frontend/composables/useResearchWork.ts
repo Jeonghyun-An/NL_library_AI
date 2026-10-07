@@ -3,6 +3,7 @@
 // 여기서는 요청·스트림·세대 번호만 다룬다 — useResearchJob 과 같은 관례(shallowRef, 늦은 응답 버리기,
 // EventSource 는 브라우저에서만, CLOSED 일 때만 백오프 재연결, 떠날 때 끊기)
 import {
+  computed,
   getCurrentInstance,
   onBeforeUnmount,
   onMounted,
@@ -89,12 +90,18 @@ export function useWorkApi() {
   };
 }
 
+// 오류를 낸 조회 — 'load' 는 첫 GET work
+export type WorkErrorKind = WorkResource | "load";
+
 export interface ResearchWorkHandle {
   state: Readonly<ShallowRef<WorkState>>;
   // null = 아직 모름(읽는 중·완료 전 딥리서치), false = 이어가지 않음(GET work 404), true = 이어간 연구
   exists: Readonly<Ref<boolean | null>>;
   loading: Readonly<Ref<boolean>>;
-  error: Ref<string | null>;
+  // 남아 있는 오류 가운데 가장 늦게 난 것(호환용). 단계 화면은 errorOf 로 자기 조회의 오류만 읽는다
+  error: Readonly<Ref<string | null>>;
+  // 그 조회가 낸 오류 — 다른 조회의 실패·성공과 섞이지 않는다
+  errorOf(kind: WorkErrorKind): string | null;
   load(): Promise<void>;
   reload(kind: WorkResource): Promise<void>;
   ensure(kind: WorkResource): Promise<void>;
@@ -114,7 +121,11 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   const state = shallowRef<WorkState>(initialWorkState());
   const exists = ref<boolean | null>(null);
   const loading = ref(false);
-  const error = ref<string | null>(null);
+  // 조회마다 따로 둔 오류 칸. 같은 조회를 다시 읽기 시작하거나 성공할 때만 그 칸을 비운다 — 칸이 하나면 다른 조회의
+  // 오류가 처음 여는 단계에 '불러오는 중' 대신 보이고, 다른 조회의 성공이 지우면 실패해 비어 있는 단계가 요청 없이
+  // '불러오는 중'에 멈춘다. 새로 쓸 때 맨 뒤로 옮겨 error 가 가장 늦게 난 오류를 보이게 한다
+  const errors = shallowRef<Partial<Record<WorkErrorKind, string>>>({});
+  const error = computed(() => Object.values(errors.value).at(-1) ?? null);
 
   let source: EventSource | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -127,22 +138,23 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   let disposed = false;
   // 조회마다 마지막으로 보낸 요청 — 앞서 보낸 요청이 늦게 와 새 값을 덮지 않게
   const tokens: Record<WorkResource, number> = { work: 0, topics: 0, reading: 0, proposal: 0 };
-  // 이 화면이 한 번이라도 읽은 조회 — 생성이 끝났을 때 이것만 다시 읽는다(보지 않는 단계는 열 때 읽는다)
+  // 이 화면이 한 번이라도 읽으려 한 조회 — 생성이 끝났을 때 이것만 다시 읽는다(보지 않는 단계는 열 때 읽는다)
   const loaded = new Set<WorkResource>();
-  // error 를 세운 조회('load' = 첫 GET work). 같은 조회를 다시 읽기 시작하거나 성공할 때만 error 를 비운다 —
-  // 다른 조회의 성공이 지우면 실패해 비어 있는 단계 화면이 요청 없이 '불러오는 중'에 멈추고, 아무도 지우지
-  // 않으면 다른 단계를 처음 열 때 옛 오류 카드가 '불러오는 중' 대신 보인다(useResearch 의 syncError 와 같은 관례)
-  let errorKind: WorkResource | "load" | null = null;
 
-  function setError(kind: WorkResource | "load", message: string): void {
-    error.value = message;
-    errorKind = kind;
+  function errorOf(kind: WorkErrorKind): string | null {
+    return errors.value[kind] ?? null;
   }
 
-  function clearErrorOf(...kinds: (WorkResource | "load")[]): void {
-    if (errorKind === null || !kinds.includes(errorKind)) return;
-    error.value = null;
-    errorKind = null;
+  function setError(kind: WorkErrorKind, message: string): void {
+    const { [kind]: _old, ...rest } = errors.value;
+    errors.value = { ...rest, [kind]: message };
+  }
+
+  function clearErrorOf(...kinds: WorkErrorKind[]): void {
+    if (!kinds.some((kind) => kind in errors.value)) return;
+    const next = { ...errors.value };
+    for (const kind of kinds) delete next[kind];
+    errors.value = next;
   }
 
   async function fetchResource(kind: WorkResource, id: string): Promise<(s: WorkState) => WorkState> {
@@ -171,8 +183,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     disconnect();
     state.value = initialWorkState();
     exists.value = null;
-    error.value = null;
-    errorKind = null;
+    errors.value = {};
     loaded.clear();
     if (!opts.enabled.value) {
       loading.value = false;
@@ -217,9 +228,11 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     }
   }
 
-  // 단계 화면이 열릴 때 — 이미 읽은 조회는 다시 읽지 않는다(갱신은 이벤트가 맡는다)
+  // 단계 화면이 열릴 때 — 이미 읽은 조회는 다시 읽지 않는다(갱신은 이벤트가 맡는다). 마지막 읽기가 실패한 조회는
+  // 다시 읽는다 — 실패한 채 다른 단계로 갔다 돌아왔을 때 요청 없이 멈추지 않게. loaded 에서는 빼지 않는다: 읽어 둔 값이
+  // 있는 조회가 한 번 실패했다고 빼면 그 뒤 이벤트가 다시 읽지 않아 화면이 옛 값에 머문다
   function ensure(kind: WorkResource): Promise<void> {
-    return loaded.has(kind) ? Promise.resolve() : reload(kind);
+    return loaded.has(kind) && errorOf(kind) === null ? Promise.resolve() : reload(kind);
   }
 
   // [이 연구 이어가기]·PATCH 응답처럼 쓰기 응답이 준 연구로 맞춘다. 처음 이어간 화면은 여기서 스트림을 연다.
@@ -319,5 +332,5 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     },
   );
 
-  return { state, exists, loading, error, load, reload, ensure, setWork, afterAction, connect, disconnect };
+  return { state, exists, loading, error, errorOf, load, reload, ensure, setWork, afterAction, connect, disconnect };
 }

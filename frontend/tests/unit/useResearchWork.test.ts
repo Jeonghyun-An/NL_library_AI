@@ -112,6 +112,46 @@ describe("useResearchWork — 오류는 그것을 낸 조회만 비운다", () =
     expect(w.state.value.work?.phase).toBe("reading");
   });
 
+  it("다른 조회의 오류는 그 조회 칸에만 있다 — 처음 여는 단계는 응답을 기다리는 동안 '불러오는 중'이다", async () => {
+    let respond: (v: ReadingView) => void = () => {};
+    route({ topics: [httpError(500)], reading: [new Promise<ReadingView>((resolve) => (respond = resolve))] });
+    const w = setup();
+    w.setWork(work());
+    await w.reload("topics");
+    expect(w.errorOf("topics")).toBe(RELOAD_FAILED);
+
+    const opening = w.reload("reading");
+    expect(w.errorOf("reading")).toBeNull();
+    respond(READING);
+    await opening;
+    expect(w.errorOf("reading")).toBeNull();
+    expect(w.errorOf("topics")).toBe(RELOAD_FAILED);
+  });
+
+  it("실패한 조회는 다른 조회가 실패했다 성공해도 남고, 다음 ensure 가 다시 요청한다", async () => {
+    route({ topics: [httpError(500), TOPICS], work: [httpError(503), work({ phase: "reading" })] });
+    const w = setup();
+    w.setWork(work());
+    await w.ensure("topics");
+    await w.reload("work");
+    await w.reload("work");
+    expect(w.state.value.topics).toBeNull();
+    expect(w.errorOf("topics")).toBe(RELOAD_FAILED);
+    expect(w.errorOf("work")).toBeNull();
+
+    api.mockClear();
+    await w.ensure("topics");
+    expect(api).toHaveBeenCalledTimes(1);
+    expect(api.mock.calls[0]?.[0]).toBe(`/research/${ID}/topics`);
+    expect(w.state.value.topics).toEqual(TOPICS);
+    expect(w.errorOf("topics")).toBeNull();
+
+    // 읽어 둔 조회는 다시 들어와도 요청하지 않는다(갱신은 이벤트가 맡는다)
+    api.mockClear();
+    await w.ensure("topics");
+    expect(api).not.toHaveBeenCalled();
+  });
+
   it("처음부터 다시 읽으면(load) 어느 조회가 낸 오류든 비운다", async () => {
     route({ work: [work()], topics: [httpError(500)] });
     const w = setup();

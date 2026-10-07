@@ -101,7 +101,8 @@ const state = computed(() => props.work.state.value);
 const view = computed(() => state.value.work);
 const reading = computed(() => state.value.reading);
 const readOnly = computed(() => view.value?.is_example ?? true);
-const loadError = computed(() => props.work.error.value);
+// 읽기 목록 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
+const loadError = computed(() => props.work.errorOf("reading"));
 const hint = computed(() => (reading.value ? outlineHint(reading.value) : null));
 const canOutline = computed(() => !!reading.value && canMakeOutline(reading.value));
 const outlineMade = computed(() => view.value?.phase === "proposal" || view.value?.phase === "done");
