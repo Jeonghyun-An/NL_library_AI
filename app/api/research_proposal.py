@@ -369,7 +369,13 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
     if group is not None:
         cnts_ids = section_papers(group.get("papers") or [])
     else:
-        topic = await db.get(ResearchTopic, work.topic_id) if work.topic_id is not None else None
+        # 씨앗은 목차의 주제에서 읽는다 — 프롬프트의 주제 제목·연구 질문과 basis.topic_id 도 목차에서 오므로(선행연구
+        # 절과 같은 기준), 목차 뒤에 주제를 바꿔도 새 주제의 씨앗이 옛 주제의 제목·질문과 섞이지 않는다. 주제가
+        # 바뀐 것은 목차의 '다시 맞춤 필요'가 알린다
+        topic_id = (outline.get("topic") or {}).get("id")
+        topic = await db.get(ResearchTopic, topic_id) if topic_id is not None else None
+        if topic is not None and topic.work_id != jid:
+            topic = None
         seeds = gap_seeds(dict(topic.seed or {}) if topic is not None else {}, job.report or {})
         cnts_ids = section_papers([c for s in seeds for c in s.get("papers") or []])
     if not cnts_ids:

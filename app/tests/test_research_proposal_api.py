@@ -796,6 +796,25 @@ class TestGenerateSection:
         assert {c[1] for c in heavy if c[0] == "pick"} == {
             "가족 지지는 농촌 독거노인의 우울을 낮추는가? 농촌 노인 표본이 부족하다"}
 
+    def test_gap_seeds_come_from_the_outline_topic_after_the_topic_changes(self, api, heavy, monkeypatch):
+        """목차를 승인한 뒤 주제를 바꿔도 씨앗·주제 제목·연구 질문·basis 가 모두 목차의 주제 기준이다 — 새 주제의 씨앗과
+        옛 주제의 제목·질문이 섞인 절을 쓰지 않는다(바뀐 것은 목차의 '다시 맞춤 필요'가 알린다)."""
+        monkeypatch.setattr(section_input, "pick_seeds", lambda report, *, limit, exclude=(): [])
+        jid = _sec_work(api.engine)
+        outline_topic = _work_row(api.engine, jid)["topic_id"]
+        other_seed = {**SEC_SEED, "key": "future:2:0", "heading": "다른 절", "text": "도시 노인을 따로 볼 필요가 있다",
+                      "papers": ["KCI_B", "KCI_C"]}
+        other = add_topic(api.engine, jid, slot=2, seed=other_seed, card={"title": "도시 노인의 지지"}, state="picked")
+        _set_work(api.engine, jid, topic_id=other)
+
+        assert api.client.post(f"/api/research/{jid}/sections/gap/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다"}]
+        assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_D"]
+        assert inp["topic"] == {"id": outline_topic, "title": SEC_TOPIC["title"]}
+        assert inp["basis"]["topic_id"] == outline_topic
+
     def test_gap_of_a_user_card_takes_seeds_from_the_report(self, api, heavy, monkeypatch):
         asked = []
 
