@@ -367,7 +367,12 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
 
     seeds: list[dict] = []
     if group is not None:
-        cnts_ids = section_papers(group.get("papers") or [])
+        # spec §5-5 — 6편을 넘는 묶음은 하위질문 안 순위 → 담은 순서로 앞 6편을 넣는다. 목차 편집에서 옮긴 논문은 묶음
+        # 끝에 붙어 저장되므로 저장 순서가 아니라 이 규칙(ordered_papers)으로 다시 세운다. 지금 담음에 없는 논문은
+        # 뒤로 가되 저장된 상대 순서를 지킨다(안정 정렬). basis.papers 는 집합으로만 견주므로 순서가 바뀌어도 같다
+        order = {c: i for i, c in enumerate(ordered_papers(await _picked_rows(db, jid)))}
+        group["papers"] = sorted(group.get("papers") or [], key=lambda c: (c not in order, order.get(c, 0)))
+        cnts_ids = section_papers(group["papers"])
     else:
         # 씨앗은 목차의 주제에서 읽는다 — 프롬프트의 주제 제목·연구 질문과 basis.topic_id 도 목차에서 오므로(선행연구
         # 절과 같은 기준), 목차 뒤에 주제를 바꿔도 새 주제의 씨앗이 옛 주제의 제목·질문과 섞이지 않는다. 주제가

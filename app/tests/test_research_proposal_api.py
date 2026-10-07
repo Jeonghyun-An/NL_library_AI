@@ -783,6 +783,26 @@ class TestGenerateSection:
         assert api.dispatch.calls == 1
         assert api.events == [(str(jid), "generation", queued_event(gen["id"], "section", "prior.g1"))]
 
+    def test_a_big_group_puts_its_six_best_ranked_papers_in_the_input(self, api, heavy):
+        """spec §5-5 — 6편을 넘는 묶음은 하위질문 안 순위 → 담은 순서로 6편. 목차 편집으로 7편 묶음 끝에 옮겨 붙은 순위
+        1위 논문도 입력에 들어가고, 담음에서 빠진 논문은 뒤로 간다(저장 순서의 앞 6편이 아니다)."""
+        jid = _sec_work(api.engine)
+        for rank, cnts in enumerate(("P1", "P2", "P3", "P4", "P5", "P6", "P7"), start=1):
+            add_reading(api.engine, jid, cnts, state="in", origin_ref={"subq_idx": [0], "rank": {"0": rank}})
+        outline = _sec_outline(_work_row(api.engine, jid)["topic_id"])
+        outline["groups"][0]["papers"] = ["OUT", "P2", "P3", "P4", "P5", "P6", "P7", "P1"]   # OUT 은 담음에 없다
+        with api.engine.begin() as conn:
+            conn.execute(sa.update(ResearchProposal.__table__)
+                         .where(ResearchProposal.__table__.c.work_id == jid).values(outline=outline))
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert [p["cnts_id"] for p in inp["papers"]] == ["P1", "P2", "P3", "P4", "P5", "P6"]
+        assert set(inp["basis"]["papers"]) == set(outline["groups"][0]["papers"])
+        stored = _sec_proposal(api.engine, jid)["outline"]["groups"][0]["papers"]
+        assert stored == outline["groups"][0]["papers"]                          # 저장된 목차는 그대로
+
     def test_gap_uses_the_picked_card_seed_and_its_papers(self, api, heavy, monkeypatch):
         monkeypatch.setattr(section_input, "pick_seeds", lambda report, *, limit, exclude=(): [])
         jid = _sec_work(api.engine)

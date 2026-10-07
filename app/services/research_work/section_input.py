@@ -48,7 +48,8 @@ def gap_seeds(topic_seed: dict, report: dict) -> list[dict]:
 
 
 def section_papers(cnts_ids: list[str], limit: int = SECTION_PAPERS_MAX) -> list[str]:
-    """절에 넣을 논문 — 받은 순서 그대로(목차 묶음은 하위질문 안 순위 → 담은 순서로 이미 섰다), 같은 논문은 한 번,
+    """절에 넣을 논문 — 받은 순서 그대로(선행연구 묶음은 절 쓰기 API 가 하위질문 안 순위 → 담은 순서로 다시 세워
+    넘긴다 — 목차 편집으로 옮긴 논문은 저장된 묶음 끝에 붙어 있다), 같은 논문은 한 번,
     앞에서 limit 편. 나머지는 참고문헌 후보로만 남는다(spec §5-5)."""
     return list(dict.fromkeys(c for c in cnts_ids if c))[:limit]
 
