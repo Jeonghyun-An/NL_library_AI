@@ -18,7 +18,7 @@
             :disabled="readOnly || busy || reviving.has(c.cnts_id)"
             @click="revive(c.cnts_id)"
           >
-            되살리기
+            되살리기<span class="rs-sr-only"> {{ candidateLine(c) }}</span>
           </button>
         </li>
       </ul>
@@ -31,7 +31,8 @@ import { computed, ref, watch } from "vue";
 import type { ExcludedCandidate } from "~/types/work";
 import { candidateGroups, candidateLine, candidateNote } from "~/utils/readingList";
 
-// 후보 서랍의 'critic 이 뺀 논문' 묶음(spec §5-4 ②). [되살리기] 는 의도만 emit 하고 PUT(새 행, origin revived)은 ReadingStep 이 한다
+// 후보 서랍의 'critic 이 뺀 논문' 묶음(spec §5-4 ②). [되살리기] 는 의도만 emit 하고 PUT(새 행, origin revived)은 ReadingStep 이 한다.
+// [되살리기]의 이름에는 그 논문 줄을 화면에 보이지 않게 붙인다 — 스크린리더의 컨트롤 목록에서 어느 논문인지 구별되게
 const props = defineProps<{ excluded: ExcludedCandidate[]; readOnly: boolean; busy: boolean }>();
 const emit = defineEmits<{ revive: [cnts: string] }>();
 

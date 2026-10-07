@@ -73,16 +73,16 @@
 
     <ol v-if="section && status !== 'writing'" class="wk-psec__paras">
       <li
-        v-for="{ p, sentences, check } in paraViews"
+        v-for="({ p, sentences, check }, pi) in paraViews"
         :key="p.id"
         class="wk-psec__item"
         :class="`is-${p.state}`"
         :data-anchor="paraAnchor(sectionKey, p.id)"
       >
-        <span class="wk-psec__band">{{ STATE_LABELS[p.state] }}</span>
+        <span :id="bandId(p.id)" class="wk-psec__band">{{ STATE_LABELS[p.state] }}</span>
         <div v-if="editingId === p.id" class="wk-psec__edit">
           <label>
-            <span class="rs-sr-only">문단 고치기</span>
+            <span class="rs-sr-only">{{ paraName(pi) }} 고치기</span>
             <textarea v-model="editText" rows="6" :disabled="busy" />
           </label>
           <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 두세요 — 지우면 인용·수치가 빠집니다.</p>
@@ -127,23 +127,39 @@
               type="button"
               class="rs-btn rs-btn--small"
               :disabled="locked"
+              :aria-describedby="bandId(p.id)"
               @click="emit('save', acceptParagraph(section, p.id))"
             >
-              수락
+              수락<span class="rs-sr-only"> {{ paraName(pi) }}</span>
             </button>
             <button
               v-if="p.state === 'proposed' || p.state === 'accepted'"
               type="button"
               class="rs-btn rs-btn--small rs-btn--ghost"
               :disabled="locked"
+              :aria-describedby="bandId(p.id)"
               @click="emit('regenerate', p.id)"
             >
-              다시
+              다시<span class="rs-sr-only"> {{ paraName(pi) }}</span>
             </button>
-            <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="locked" @click="startEdit(p.id, p.text)">
-              고치기
+            <button
+              type="button"
+              class="rs-btn rs-btn--small rs-btn--ghost"
+              :disabled="locked"
+              :aria-describedby="bandId(p.id)"
+              @click="startEdit(p.id, p.text)"
+            >
+              고치기<span class="rs-sr-only"> {{ paraName(pi) }}</span>
             </button>
-            <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="locked" @click="remove(p.id)">지우기</button>
+            <button
+              type="button"
+              class="rs-btn rs-btn--small rs-btn--ghost"
+              :disabled="locked"
+              :aria-describedby="bandId(p.id)"
+              @click="remove(p.id)"
+            >
+              지우기<span class="rs-sr-only"> {{ paraName(pi) }}</span>
+            </button>
           </div>
         </template>
       </li>
@@ -269,6 +285,16 @@ const workView = computed(() => props.state.work);
 const paragraphGens = computed(() =>
   openParagraphGens(workView.value, props.sectionKey, section.value?.paragraphs.map((p) => p.id) ?? []),
 );
+
+// 문단마다 되풀이되는 버튼([수락]·[다시]·[고치기]·[지우기])의 이름에 붙이는 대상(화면에는 보이지 않는다)과, 설명으로
+// 잇는 그 문단의 띠(AI 제안 · 검토 전 등) — 스크린리더의 컨트롤 목록에서 어느 절의 몇째 문단인지 구별되게
+function paraName(index: number): string {
+  return `${props.label} ${index + 1}번째 문단`;
+}
+
+function bandId(pid: string): string {
+  return `wk-band-${props.sectionKey}-${pid}`;
+}
 
 function paragraphQueue(pid: string): string | null {
   const g = paragraphGens.value.get(pid);

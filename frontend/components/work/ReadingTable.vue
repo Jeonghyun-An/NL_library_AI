@@ -23,6 +23,7 @@
           @change="toggleIn(item, $event)"
         />
         <span>담음</span>
+        <span class="rs-sr-only"> {{ rowName(item) }}</span>
       </label>
 
       <div class="wk-reading__main">
@@ -33,14 +34,14 @@
           @click="goDetail($event, item.cnts_id)"
           @auxclick="goDetail($event, item.cnts_id)"
           @contextmenu="goDetail($event, item.cnts_id)"
-        >{{ item.meta.title || item.cnts_id }}</a>
+        >{{ rowTitle(item) }}</a>
         <p class="wk-reading__meta">
           <span>{{ paperByline(item.meta) }}</span>
           <span class="rs-badge">{{ originLabel(item.origin) }}</span>
         </p>
         <div class="wk-reading__fields">
           <label class="wk-edit__field">
-            <span class="wk-edit__label">메모</span>
+            <span class="wk-edit__label">메모<span class="rs-sr-only"> {{ rowName(item) }}</span></span>
             <textarea
               class="wk-edit__input"
               rows="2"
@@ -52,7 +53,7 @@
             />
           </label>
           <label class="wk-edit__field">
-            <span class="wk-edit__label">묶음 이름</span>
+            <span class="wk-edit__label">묶음 이름<span class="rs-sr-only"> {{ rowName(item) }}</span></span>
             <input
               class="wk-edit__input"
               type="text"
@@ -73,7 +74,7 @@
           :disabled="readOnly || busy || reordering || index === 0"
           @click="move(item.cnts_id, -1)"
         >
-          위로
+          위로<span class="rs-sr-only"> {{ rowName(item) }}</span>
         </button>
         <button
           type="button"
@@ -81,7 +82,7 @@
           :disabled="readOnly || busy || reordering || index === rows.length - 1"
           @click="move(item.cnts_id, 1)"
         >
-          아래로
+          아래로<span class="rs-sr-only"> {{ rowName(item) }}</span>
         </button>
         <button
           type="button"
@@ -90,7 +91,7 @@
           :aria-controls="openPath === item.cnts_id ? pathId(item.cnts_id) : undefined"
           @click="togglePath(item.cnts_id)"
         >
-          경로
+          경로<span class="rs-sr-only"> {{ rowName(item) }}</span>
         </button>
         <button
           type="button"
@@ -98,7 +99,7 @@
           :disabled="readOnly || busy"
           @click="toggleOut(item)"
         >
-          {{ item.state === "out" ? "되돌리기" : "빼기" }}
+          {{ item.state === "out" ? "되돌리기" : "빼기" }}<span class="rs-sr-only"> {{ rowName(item) }}</span>
         </button>
       </div>
 
@@ -234,6 +235,16 @@ function saveGroup(item: ReadingItem): void {
     return;
   }
   send(item.cnts_id, { group_label: next });
+}
+
+function rowTitle(item: ReadingItem): string {
+  return item.meta.title?.trim() || item.cnts_id;
+}
+
+// 행마다 되풀이되는 컨트롤(담음·위로·아래로·경로·빼기·메모·묶음 이름)의 이름에 붙이는 대상 — 화면에는 보이지 않는다.
+// 스크린리더의 컨트롤 목록·Tab 에서 수십 개의 '담음 체크박스'가 어느 논문인지 구별되게(OutlineEditor·ConceptChips 와 같은 관례)
+function rowName(item: ReadingItem): string {
+  return `「${rowTitle(item)}」`;
 }
 
 function pathId(cnts: string): string {

@@ -5,6 +5,7 @@
     class="wk-topic"
     :class="[`wk-topic--${status}`, { 'wk-topic--picked': picked, 'wk-topic--arrived': arrived }]"
     :aria-busy="pending"
+    :aria-labelledby="card && !editing ? titleId : undefined"
     @animationend.self="arrived = false"
   >
     <p v-if="origin" class="wk-topic__origin">{{ origin }}</p>
@@ -28,7 +29,7 @@
     </form>
 
     <template v-else-if="card">
-      <h3 class="wk-topic__title">{{ card.title }}</h3>
+      <h3 :id="titleId" class="wk-topic__title">{{ card.title }}</h3>
       <p class="wk-topic__question">{{ card.question }}</p>
       <ul v-if="chips.length" class="wk-topic__chips" aria-label="근거 논문">
         <li v-for="chip in chips" :key="chip.cntsId">
@@ -63,7 +64,7 @@
         :disabled="readOnly || busy || !pickable"
         @click="emit('pick')"
       >
-        고르기
+        고르기<span v-if="cardName" class="rs-sr-only"> {{ cardName }}</span>
       </button>
       <button
         v-if="retryId !== null"
@@ -72,10 +73,10 @@
         :disabled="readOnly || busy"
         @click="onRetry"
       >
-        다시
+        다시<span v-if="cardName" class="rs-sr-only"> {{ cardName }}</span>
       </button>
       <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="readOnly || busy" @click="startEdit">
-        직접 고치기
+        직접 고치기<span v-if="cardName" class="rs-sr-only"> {{ cardName }}</span>
       </button>
     </div>
   </article>
@@ -117,6 +118,13 @@ const chips = computed(() => (card.value ? evidenceChips(card.value, props.paper
 // 머리 줄은 보고서 씨앗 카드의 계보뿐이다 — 사용자 카드(seed 가 {} → null)·고친 카드에는 출처 표시를 달지 않는다(D7·D9)
 const origin = computed(() => seedLine(props.item.seed));
 const seedText = computed(() => props.item.seed?.text.trim() || null);
+const titleId = computed(() => `wk-topic-title-${props.item.id}`);
+// 카드마다 되풀이되는 버튼([고르기]·[다시]·[직접 고치기])의 이름에 붙이는 대상 — 화면에는 보이지 않는다. 카드 제목,
+// 카드가 없는 슬롯(근거 부족·실패)은 씨앗 글. 스크린리더의 컨트롤 목록에서 어느 카드의 버튼인지 구별되게
+const cardName = computed(() => {
+  const name = card.value?.title.trim() || seedText.value;
+  return name ? `「${name}」` : null;
+});
 // 근거 부족·실패 슬롯의 [다시] — 그 주제의 마지막 카드 생성을 다시 부른다(서버 _retryable 의 범위)
 const retryId = computed(() =>
   (status.value === "insufficient" || status.value === "failed") && props.item.generation
