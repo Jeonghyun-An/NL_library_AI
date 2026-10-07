@@ -325,7 +325,9 @@ const wide = ref(true);
 // 손으로 고른 보기는 이번 방문의 지금 단계에서만 따른다. 저장해 두면 한 번 고른 사람은 보고서가 나와도 바뀌지 않는다
 const layoutOverride = ref<ResearchLayout | null>(null);
 const layout = computed(() => effectiveLayout(layoutOverride.value, wide.value, hasReport.value));
-const canToggle = computed(() => SHOW_LAYOUT_TOGGLE && wide.value);
+// 단계 화면(stepMode)은 탐색·보고서 배치(rs-body)를 그리지 않는다 — 머리에서 보기 전환을 걷는다(눌러도 바뀌지 않다가
+// [보고서 보기]로 돌아가는 순간 그때 고른 배치가 갑자기 적용된다). 이어가지 않은 딥리서치·보고서 화면은 그대로다(D15)
+const canToggle = computed(() => SHOW_LAYOUT_TOGGLE && wide.value && !stepMode.value);
 let media: MediaQueryList | null = null;
 
 // 보고서가 나오는(또는 재시도로 사라지는) 순간 자동 보기로 돌아간다
