@@ -160,15 +160,17 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       return;
     }
     loading.value = true;
+    // 읽는 사이 [이 연구 이어가기] 응답(setWork)이 먼저 맞췄으면 이 응답(그 전의 404 등)은 버린다
+    const token = ++tokens.work;
     try {
       const view = await workApi.getWork(toValue(jobId));
-      if (gen !== generation) return;
+      if (gen !== generation || token !== tokens.work) return;
       state.value = withWork(state.value, view);
       exists.value = true;
       loaded.add("work");
       connect();
     } catch (e) {
-      if (gen !== generation) return;
+      if (gen !== generation || token !== tokens.work) return;
       const status = httpStatus(e);
       // 404 = 이어가지 않은 딥리서치(D15 — 화면은 지금 그대로). 스트림을 열지 않는다
       if (status === 404 || status === 422) exists.value = false;
