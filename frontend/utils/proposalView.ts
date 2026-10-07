@@ -44,7 +44,11 @@ export function sectionLabel(key: string, outline: Outline | null): string {
 }
 
 // 절 하나의 상태. 다시 쓰기가 실패해도 앞서 쓴 절은 남는다 — 그 절보다 나중의 실패만 알린다.
-// 취소는 실패가 아니다 — 앞서 쓴 절이 있으면 그것, 없으면 아직 쓰지 않은 절이다
+// 취소는 실패가 아니다 — 앞서 쓴 절이 있으면 그것, 없으면 아직 쓰지 않은 절이다.
+// 끝났지만 아직 절에 반영되지 않은 done(그 절보다 나중의 생성)은 둘로 가른다. 세 번 다 검사를 못 넘은 빈 결과
+// (model 없음 — 서버는 절을 건드리지 않고 retry 를 받는다)는 실패다. 결과가 있으면 계획서를 다시 읽기 전까지
+// 쓰는 중이다 — done 이벤트에 흐르던 글은 지워지므로, 그대로 두면 '쓰기 전'·옛 문단이 잠깐 비치고 처음 쓰는 절은
+// [이 절 쓰기]가 다시 눌린다(topicDeck.liveTopics 와 같은 규칙)
 export function sectionStatus(key: string, state: WorkState): SectionStatus {
   const open = openGeneration(state, "section", key);
   // 워커는 running 을 이벤트로 알리지 않고(계약 §7) 조각이 흐르는 동안은 하트비트·snapshot 도 없다 —
@@ -52,7 +56,10 @@ export function sectionStatus(key: string, state: WorkState): SectionStatus {
   if (open) return open.status === "running" || state.live[key]?.genId === open.id ? "writing" : "queued";
   const section = state.proposal?.sections[key] ?? null;
   const last = latestGeneration(state, "section", key);
-  if (last?.status === "failed" && (!section || last.id > section.gen_id)) return "failed";
+  if (last && (!section || last.id > section.gen_id)) {
+    if (last.status === "failed") return "failed";
+    if (last.status === "done") return last.model === null ? "failed" : "writing";
+  }
   return section && section.paragraphs.length ? "done" : "empty";
 }
 

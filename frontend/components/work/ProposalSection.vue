@@ -25,7 +25,7 @@
       쓸 차례를 기다리는 중입니다{{ queueText ? ` · ${queueText}` : "" }}
     </p>
     <div v-else-if="status === 'writing'" class="wk-psec__live">
-      <template v-if="live && !live.broken && live.text">
+      <template v-if="!finishing && live && !live.broken && live.text">
         <p v-for="(parts, li) in liveBlocks" :key="li" class="wk-psec__para is-live">
           <template v-for="(part, ti) in parts" :key="ti">
             <template v-if="part.type === 'text'">{{ part.text }}</template>
@@ -43,7 +43,13 @@
       </template>
       <template v-else>
         <p class="rs-muted" role="status">
-          {{ live?.broken ? "글을 받는 중입니다 — 다 쓰면 한 번에 보입니다" : "쓰기 시작하는 중입니다" }}
+          {{
+            finishing
+              ? "다 썼습니다 — 문단을 불러오는 중입니다"
+              : live?.broken
+                ? "글을 받는 중입니다 — 다 쓰면 한 번에 보입니다"
+                : "쓰기 시작하는 중입니다"
+          }}
         </p>
         <div class="rs-skeleton" aria-hidden="true">
           <span class="rs-skeleton__line" />
@@ -53,13 +59,13 @@
       </template>
     </div>
     <div v-else-if="status === 'failed'" class="wk-psec__failed" role="alert">
-      <p class="rs-muted">이 절을 쓰지 못했습니다. 다시 시도하거나 잠시 뒤 다시 쓰세요.</p>
+      <p class="rs-muted">{{ failedText }}</p>
       <button
         v-if="failedGen && !readOnly"
         type="button"
         class="rs-btn rs-btn--small rs-btn--ghost"
         :disabled="locked"
-        @click="emit('retry', failedGen.id)"
+        @click="onRetry(failedGen.id)"
       >
         다시 시도
       </button>
@@ -236,9 +242,22 @@ const stale = computed(() => !!section.value && props.proposal.stale.sections[pr
 const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 씁니다` : null));
 const openSection = computed(() => openGeneration(props.state, "section", props.sectionKey));
 const queueText = computed(() => (openSection.value ? genQueueLine(openSection.value) : null));
-const failedGen = computed(() => {
-  const last = latestGeneration(props.state, "section", props.sectionKey);
-  return last?.status === "failed" ? last : null;
+// 끝났지만 계획서를 다시 읽기 전이라 아직 절에 오지 않은 결과(sectionStatus 의 쓰는 중) — 흐르던 글은 이미 지워졌다
+const finishing = computed(() => status.value === "writing" && !openSection.value);
+// 실패로 보이는 생성 — failed, 또는 빈 결과로 끝난 done(세 번 다 검사를 못 넘음 — 서버 retry 가 받는다)
+const failedGen = computed(() =>
+  status.value === "failed" ? latestGeneration(props.state, "section", props.sectionKey) : null,
+);
+const failedText = computed(() => {
+  const head =
+    failedGen.value?.status === "done"
+      ? "근거 표시가 있는 문단을 얻지 못했습니다"
+      : section.value
+        ? "이 절을 다시 쓰지 못했습니다"
+        : "이 절을 쓰지 못했습니다";
+  return section.value?.paragraphs.length
+    ? `${head} — 앞서 쓴 문단은 그대로 두었습니다.`
+    : `${head}. 다시 시도하거나 잠시 뒤 다시 쓰세요.`;
 });
 
 function paragraphGen(pid: string) {
@@ -321,6 +340,17 @@ function onWrite(): void {
     return;
   }
   emit("write");
+}
+
+// [다시 시도] — 앞서 쓴 절이 있으면 [이 절 다시 쓰기]와 같다(지금 목차·담은 논문으로 새로 쓰고, 수락·고친·직접 쓴
+// 문단이 있으면 확인을 묻는다). 실패한 생성을 그대로 다시 부르면(retry) 옛 입력을 다시 넣어 그 사이 바뀐 목차를
+// 놓치고, 결과가 그 뒤 수락·고친 문단을 확인 없이 통째로 덮는다. 쓴 절이 없으면 덮을 문단이 없어 같은 생성을 다시 부른다
+function onRetry(genId: number): void {
+  if (section.value) {
+    onWrite();
+    return;
+  }
+  emit("retry", genId);
 }
 
 function remove(pid: string): void {

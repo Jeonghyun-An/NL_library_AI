@@ -138,6 +138,23 @@ describe("sectionStatus", () => {
     expect(sectionStatus("prior.g1", state([gen(52, "failed")]))).toBe("failed");
   });
 
+  it("끝났지만 절에 아직 반영되지 않은 생성 — 빈 결과(model 없음)는 실패, 결과가 있으면 다시 읽기 전까지 쓰는 중", () => {
+    const done = (id: number, model: string | null): WorkGeneration => ({ ...gen(id, "done"), model });
+    // 처음 쓰는 절: 세 번 다 검사를 못 넘어 빈 결과로 끝났다 — 서버는 절을 만들지 않고 retry 를 받는다
+    expect(sectionStatus("prior.g1", state([done(51, null)]))).toBe("failed");
+    // 결과가 있는 done — 계획서를 다시 읽기 전까지 '쓰기 전' 으로 돌아가지 않는다
+    expect(sectionStatus("prior.g1", state([done(51, "gemma-3-12b")]))).toBe("writing");
+    // 다시 쓰던 절: 빈 결과는 옛 문단을 남긴 채 실패, 결과가 있으면 옛 문단 대신 쓰는 중
+    const sections = { "prior.g1": section([para("p1", "accepted")]) };
+    expect(sectionStatus("prior.g1", state([done(50, "gemma-3-12b"), done(52, null)], sections))).toBe("failed");
+    expect(sectionStatus("prior.g1", state([done(50, "gemma-3-12b"), done(52, "gemma-3-12b")], sections))).toBe(
+      "writing",
+    );
+    // 다시 읽어 절이 그 생성의 것이 되면 씀
+    const reread = { "prior.g1": section([para("p1", "proposed")], { gen_id: 52 }) };
+    expect(sectionStatus("prior.g1", state([done(50, "gemma-3-12b"), done(52, "gemma-3-12b")], reread))).toBe("done");
+  });
+
   it("취소는 실패로 보이지 않는다", () => {
     expect(sectionStatus("prior.g1", state([gen(52, "canceled")]))).toBe("empty");
     const sections = { "prior.g1": section([para("p1", "accepted")]) };
