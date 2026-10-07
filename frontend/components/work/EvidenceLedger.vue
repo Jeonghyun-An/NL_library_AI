@@ -9,7 +9,7 @@
       <p class="wk-ledger__count">{{ line }}</p>
     </header>
 
-    <ol class="wk-ledger__list" aria-label="채택한 논문">
+    <ol ref="adoptedList" class="wk-ledger__list" aria-label="채택한 논문">
       <li
         v-for="p in ledger.adopted"
         :key="p.cntsId"
@@ -23,7 +23,7 @@
 
     <template v-if="ledger.dropped.length">
       <h3 class="wk-ledger__pile-title">뺌 {{ ledger.dropped.length }}</h3>
-      <ol class="wk-ledger__list wk-ledger__list--dropped" aria-label="자기점검이 뺀 논문">
+      <ol ref="droppedList" class="wk-ledger__list wk-ledger__list--dropped" aria-label="자기점검이 뺀 논문">
         <li
           v-for="p in ledger.dropped"
           :key="p.cntsId"
@@ -46,9 +46,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch, type Ref } from "vue";
 import type { SubqView } from "~/types/research";
-import { hasLedger, ledgerFrom, ledgerLine, newlyAdded, type LedgerPaper } from "~/utils/evidenceLedger";
+import {
+  hasLedger,
+  ledgerFollowing,
+  ledgerFrom,
+  ledgerLine,
+  ledgerRevealTop,
+  newlyAdded,
+  type LedgerPaper,
+  type LedgerRowSpan,
+  type LedgerScroll,
+} from "~/utils/evidenceLedger";
 import { paperByline } from "~/utils/researchReport";
 
 // live: 탐색 중(점검 이벤트가 오는 화면)일 때만 참 — 끝난 잡·다시 연 화면은 움직이지 않는다
@@ -69,6 +79,11 @@ let prevAdopted: Set<string> | null = null;
 let prevDropped: Set<string> | null = null;
 let freshTimer: ReturnType<typeof setTimeout> | null = null;
 
+const adoptedList = ref<HTMLOListElement | null>(null);
+const droppedList = ref<HTMLOListElement | null>(null);
+// 목록마다 마지막으로 둔 scrollTop — 사용자가 굴려 옮겼는지 가린다(목록이 새로 생기면 새 요소라 0 에서 시작한다)
+const placed = new WeakMap<HTMLElement, number>();
+
 watch(
   ledger,
   (l) => {
@@ -79,6 +94,10 @@ watch(
     const dropped = props.live ? newlyAdded(prevDropped, l.dropped) : [];
     prevAdopted = new Set(l.adopted.map((p) => p.cntsId));
     prevDropped = new Set(l.dropped.map((p) => p.cntsId));
+    if (props.live) {
+      follow(adoptedList, adopted.length > 0);
+      follow(droppedList, dropped.length > 0);
+    }
     if (!adopted.length && !dropped.length) return;
     fresh.value = { adopted, dropped };
     announcement.value = [
@@ -96,6 +115,32 @@ watch(
   },
   { immediate: true },
 );
+
+// 새 채택은 지금 도는 하위질문 묶음(목록 끝)에 들고 뺌도 끝에 붙는다 — 목록(높이 14rem)을 그대로 두면 떨어지는 효과가
+// 화면 밖에서 일어난다. 렌더 전(이 watch 는 렌더보다 먼저 돈다)에 사용자가 목록을 굴려 읽고 있는지 보고, 렌더 뒤 새 줄이
+// 보이게 그 목록의 scrollTop 만 옮긴다(페이지는 굴리지 않는다). 부드럽게 굴리지 않고 한 번에 옮긴다 — 굴리는 동안
+// 0.9초 효과의 앞부분(위에서 떨어짐)이 목록의 움직임에 묻힌다. 새 줄이 없는 바뀜에도 둔 자리를 다시 적어 둔다
+function follow(list: Ref<HTMLOListElement | null>, hasFresh: boolean): void {
+  const before = list.value;
+  if (before && !ledgerFollowing(scrollOf(before), placed.get(before) ?? 0)) return;
+  void nextTick(() => {
+    const el = list.value;
+    if (!el) return;
+    const rows = hasFresh ? Array.from(el.querySelectorAll<HTMLElement>(".is-fresh"), rowSpan) : [];
+    const top = ledgerRevealTop(scrollOf(el), rows);
+    if (top !== null) el.scrollTop = top;
+    placed.set(el, el.scrollTop);
+  });
+}
+
+function scrollOf(el: HTMLElement): LedgerScroll {
+  return { scrollTop: el.scrollTop, clientHeight: el.clientHeight, scrollHeight: el.scrollHeight };
+}
+
+// 줄의 offsetTop 은 목록(position: relative) 내용의 맨 위에서 잰다 — 스크롤과 떨어지는 효과의 transform 에 흔들리지 않는다
+function rowSpan(row: HTMLElement): LedgerRowSpan {
+  return { top: row.offsetTop, bottom: row.offsetTop + row.offsetHeight };
+}
 
 function byline(p: LedgerPaper): string {
   return paperByline({ personal_author: p.personalAuthor, pub_date: p.pubDate });

@@ -85,7 +85,10 @@
   font-weight: 700;
   color: var(--skx-primary);
 }
+/* 새 줄이 들면 EvidenceLedger 가 목록만 그 줄 쪽으로 옮긴다 — 줄 자리(offsetTop)를 목록에서 재게 relative,
+   scrollTop 이 사용자·장부의 옮김으로만 바뀌게(굴려 읽는 중인지 가린다) 스크롤 앵커링은 끈다 */
 .wk-ledger__list {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -93,6 +96,7 @@
   margin: 0;
   padding: 0;
   overflow-y: auto;
+  overflow-anchor: none;
   list-style: none;
 }
 .wk-ledger__paper {

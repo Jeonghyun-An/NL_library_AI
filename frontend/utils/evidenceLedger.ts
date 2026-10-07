@@ -136,3 +136,39 @@ export function newlyAdded(prev: ReadonlySet<string> | null, papers: readonly Le
   if (!prev) return [];
   return papers.filter((p) => !prev.has(p.cntsId)).map((p) => p.cntsId);
 }
+
+// 장부 목록(높이 14rem 안에서 굴린다)의 스크롤 상태. 새 채택은 지금 도는 하위질문 묶음, 곧 목록 끝에 들고 뺌도 끝에
+// 붙어서 목록을 그대로 두면 떨어지는 효과가 화면 밖에서 일어난다 — 목록만 새 줄 쪽으로 옮긴다(페이지는 굴리지 않는다)
+export interface LedgerScroll {
+  scrollTop: number;
+  clientHeight: number;
+  scrollHeight: number;
+}
+
+// 목록 안의 한 줄 자리(목록 내용 맨 위에서 잰 위·아래 끝, 스크롤과 무관)
+export interface LedgerRowSpan {
+  top: number;
+  bottom: number;
+}
+
+const FOLLOW_SLACK_PX = 8;
+
+// 이 목록을 따라가도 되는가 — 마지막으로 둔 자리 그대로이거나 바닥 근처일 때만이다. 사용자가 목록을 굴려 위쪽을 읽고
+// 있으면 끌고 가지 않는다(다시 바닥까지 내리면 다시 따라간다)
+export function ledgerFollowing(s: LedgerScroll, placedTop: number): boolean {
+  return (
+    Math.abs(s.scrollTop - placedTop) <= FOLLOW_SLACK_PX ||
+    s.scrollTop + s.clientHeight >= s.scrollHeight - FOLLOW_SLACK_PX
+  );
+}
+
+// 새로 든 줄(목록 순서)이 보이게 옮길 scrollTop — 첫 새 줄을 위 끝에 두되 목록 끝을 넘지 않는다. 새 줄이 모두
+// 보이거나 옮길 자리가 지금 자리와 같으면 null(옮기지 않는다)
+export function ledgerRevealTop(s: LedgerScroll, rows: readonly LedgerRowSpan[]): number | null {
+  if (!rows.length) return null;
+  const first = rows[0]!.top;
+  const last = rows[rows.length - 1]!.bottom;
+  if (first >= s.scrollTop - 1 && last <= s.scrollTop + s.clientHeight + 1) return null;
+  const top = Math.max(0, Math.min(first, s.scrollHeight - s.clientHeight));
+  return Math.abs(top - s.scrollTop) < 1 ? null : top;
+}

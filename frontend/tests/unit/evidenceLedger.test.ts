@@ -1,7 +1,7 @@
 // frontend/tests/unit/evidenceLedger.test.ts
 import { describe, expect, it } from "vitest";
 import type { AdoptedPaperView, ExcludedPaperView, RoundView, SubqView } from "~/types/research";
-import { hasLedger, ledgerFrom, ledgerLine, newlyAdded } from "~/utils/evidenceLedger";
+import { hasLedger, ledgerFollowing, ledgerFrom, ledgerLine, ledgerRevealTop, newlyAdded } from "~/utils/evidenceLedger";
 
 function adopted(cntsId: string, rank: number, bib?: { title: string; author?: string; date?: string }): AdoptedPaperView {
   return bib
@@ -137,5 +137,35 @@ describe("ledgerLine·newlyAdded", () => {
     expect(newlyAdded(null, l.adopted)).toEqual([]);
     expect(newlyAdded(new Set(["C1"]), l.adopted)).toEqual(["C2"]);
     expect(newlyAdded(new Set(["C1", "C2"]), l.adopted)).toEqual([]);
+  });
+});
+
+describe("ledgerFollowing·ledgerRevealTop — 새 줄이 목록 화면 밖에 들 때", () => {
+  // 목록 한 칸 높이 100, 줄 높이 20(간격 없음) — 5줄이 보인다
+  const view = (scrollTop: number, rows: number) => ({ scrollTop, clientHeight: 100, scrollHeight: Math.max(100, rows * 20) });
+  const rowsAt = (...idx: number[]) => idx.map((i) => ({ top: i * 20, bottom: i * 20 + 20 }));
+
+  it("마지막으로 둔 자리 그대로이거나 바닥 근처면 따라가고, 사용자가 굴려 옮겼으면 따라가지 않는다", () => {
+    expect(ledgerFollowing(view(0, 3), 0)).toBe(true);
+    expect(ledgerFollowing(view(60, 10), 60)).toBe(true);
+    expect(ledgerFollowing(view(40, 20), 200)).toBe(false);
+    expect(ledgerFollowing(view(300, 20), 120)).toBe(true);
+  });
+
+  it("새 줄이 모두 보이면 옮기지 않는다", () => {
+    expect(ledgerRevealTop(view(0, 5), rowsAt(3, 4))).toBeNull();
+    expect(ledgerRevealTop(view(0, 8), [])).toBeNull();
+  });
+
+  it("화면 밖의 새 줄은 첫 새 줄을 위 끝에 두되 목록 끝을 넘지 않게 옮긴다", () => {
+    expect(ledgerRevealTop(view(0, 12), rowsAt(6, 7))).toBe(120);
+    expect(ledgerRevealTop(view(0, 8), rowsAt(6, 7))).toBe(60);
+    expect(ledgerRevealTop(view(0, 20), rowsAt(4, 5, 6, 7, 8, 9))).toBe(80);
+    expect(ledgerRevealTop(view(100, 10), rowsAt(2, 3))).toBe(40);
+  });
+
+  it("옮길 자리가 지금 자리와 같으면 옮기지 않는다", () => {
+    expect(ledgerRevealTop(view(100, 12), rowsAt(5, 6, 7, 8, 9, 10))).toBeNull();
+    expect(ledgerRevealTop(view(0, 10), rowsAt(0, 1, 2, 3, 4, 5, 6))).toBeNull();
   });
 });
