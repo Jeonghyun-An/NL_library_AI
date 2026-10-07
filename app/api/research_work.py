@@ -13,7 +13,6 @@ LLM 작업은 research_generations 에 행을 넣고 디스패치 태스크를 �
 도는(running) 생성은 취소하지 않는다 — 취소해도 워커의 LLM 호출은 계속 q_research_plan 한 자리를 쓰는데
 디스패처의 전역 한 자리는 비어, 다음 생성이 남은 자리까지 쓰게 된다(D15).
 """
-import hashlib
 import json
 import logging
 import uuid
@@ -36,6 +35,7 @@ from models.research_work import (
 from services.research.relay import publish_work, subscribe_work
 from services.research_work.concepts import MAX_CONCEPTS, clean_concepts, concepts_input
 from services.research_work.dispatch import queue_position
+from services.research_work.enqueue import lock_key
 from services.research_work.views import candidates_from_snapshot, pool_from_job, work_view
 
 log = logging.getLogger(__name__)
@@ -102,10 +102,9 @@ def _retryable(gen: ResearchGeneration) -> bool:
 
 
 def _retry_lock_key(jid: uuid.UUID, kind: str, target: str | None) -> int:
-    """(연구·kind·target) 별 트랜잭션 잠금 키 — 같은 생성의 동시 '다시' 를 한 줄로 세운다
-    (api/research.py 의 _browser_lock_key 와 같은 방식)."""
-    raw = f"research_work_retry:{jid}:{kind}:{target or ''}".encode()
-    return int.from_bytes(hashlib.sha256(raw).digest()[:8], "big", signed=True)
+    """(연구·kind·target) 별 트랜잭션 잠금 키 — 같은 생성의 동시 '다시' 를 한 줄로 세운다. 새 생성 넣기
+    (enqueue.enqueue_generation)와 같은 키라 '다시' 와 새 생성도 서로를 기다린다."""
+    return lock_key(jid, kind, target)
 
 
 async def _concepts_open(db: AsyncSession, jid: uuid.UUID) -> bool:

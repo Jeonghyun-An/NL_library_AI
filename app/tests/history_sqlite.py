@@ -22,7 +22,9 @@ from sqlalchemy.pool import StaticPool
 
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
-from models.research_work import PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchWork
+from models.research_work import (
+    PRIORITY_USER, ResearchGeneration, ResearchProposal, ResearchReading, ResearchTopic, ResearchWork,
+)
 
 SID_A = uuid.UUID("3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e")
 SID_B = uuid.UUID("7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d")
@@ -49,7 +51,8 @@ def make_engine() -> sa.Engine:
 
     metadata = sa.MetaData()
     for table in (HistoryItem.__table__, ResearchJob.__table__, ResearchStep.__table__,
-                  ResearchWork.__table__, ResearchGeneration.__table__, ResearchReading.__table__):
+                  ResearchWork.__table__, ResearchGeneration.__table__, ResearchReading.__table__,
+                  ResearchTopic.__table__, ResearchProposal.__table__):
         copy = table.to_metadata(metadata)
         for col in copy.columns:
             default = col.server_default
@@ -115,13 +118,43 @@ def add_work(engine: sa.Engine, job_id: uuid.UUID, *, owner_sid: str | None = No
 
 def add_generation(engine: sa.Engine, work_id: uuid.UUID, *, kind: str = "concepts",
                    status: str = "queued", priority: int = PRIORITY_USER, input: dict | None = None,
-                   started_at=None) -> int:
+                   started_at=None, target: str | None = None, output: dict | None = None) -> int:
     with engine.begin() as conn:
         res = conn.execute(sa.insert(ResearchGeneration.__table__).values(
             work_id=work_id, kind=kind, status=status, priority=priority,
-            input=input or {}, started_at=started_at,
+            input=input or {}, started_at=started_at, target=target, output=output,
         ).returning(ResearchGeneration.__table__.c.id))
         return res.scalar_one()
+
+
+# 아래 도우미는 JSONB 칼럼을 늘 채워 넣는다 — '::jsonb' 서버 기본값은 테스트 사본에서 지워져(make_engine)
+# 빼면 NOT NULL 위반이다
+def add_topic(engine: sa.Engine, work_id: uuid.UUID, *, slot: int | None = None,
+              origin: str = "report_seed", seed: dict | None = None, card: dict | None = None,
+              state: str = "candidate") -> int:
+    with engine.begin() as conn:
+        res = conn.execute(sa.insert(ResearchTopic.__table__).values(
+            work_id=work_id, slot=slot, origin=origin, seed=seed or {}, card=card or {}, state=state,
+        ).returning(ResearchTopic.__table__.c.id))
+        return res.scalar_one()
+
+
+def add_proposal(engine: sa.Engine, work_id: uuid.UUID, *, version: int = 1,
+                 outline: dict | None = None, sections: dict | None = None) -> None:
+    with engine.begin() as conn:
+        conn.execute(sa.insert(ResearchProposal.__table__).values(
+            work_id=work_id, version=version, outline=outline or {}, sections=sections or {},
+        ))
+
+
+def add_reading(engine: sa.Engine, work_id: uuid.UUID, cnts_id: str, *, state: str = "candidate",
+                origin: str = "evidence", origin_ref: dict | None = None, position: int | None = None,
+                note: str | None = None, group_label: str | None = None) -> None:
+    with engine.begin() as conn:
+        conn.execute(sa.insert(ResearchReading.__table__).values(
+            work_id=work_id, cnts_id=cnts_id, state=state, origin=origin, origin_ref=origin_ref or {},
+            position=position, note=note, group_label=group_label,
+        ))
 
 
 def raw_row(engine: sa.Engine, item_id: uuid.UUID):
