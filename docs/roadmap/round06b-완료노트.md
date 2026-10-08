@@ -373,4 +373,4 @@ plan: `docs/superpowers/plans/2026-10-06-round06b-vertical-slice.md` (Task 0~37,
 - [x] 수동 스모크 확인 — 운영 처음부터 끝까지 1회(§5-3, 2026-10-08 — 이어가기 → 주제 → 읽기 목록 → 목차·2절 → Word 두 파일·phase done) · 409 두 탭 확인은 하지 않음
 - [x] 문서 갱신 — `00_status` · spec · `scripts/research_eval/README.md` 재판정 · 주제 카드 재비교 결과(2026-10-08, 배포 기록 `docs/round06b-deploy-record`) (교본은 대회 뒤 round06 한 권 — D13)
 - [x] `dev` 머지 승인 — 코드 2026-10-08(`02d98f8`)·운영 확인 수정(`3aa6d79`·`0813e6a`)·결정(`1a13a33`) — 사용자가 "응 전부 자동으로 진행해"(2026-10-07)로 맡김 · 이 기록(`docs/round06b-deploy-record`)도 같은 위임으로 머지한다
-- [ ] `dev→main` 머지 + push 완료
+- [x] `dev→main` 머지 + push 완료 — 2026-10-08(사용자 "main 머지하고 push해")
