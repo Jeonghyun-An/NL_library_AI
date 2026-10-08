@@ -106,6 +106,24 @@ export function openParagraphGens(
   return out;
 }
 
+// 이 절에서 다시 쓰기가 글을 얻지 못하고 끝난 문단(id). 그 문단을 쓴 생성보다 나중인 가장 새 다시 쓰기가 실패했거나
+// 세 번 다 검사를 못 넘은 빈 결과(done 인데 model 없음 — 입력을 옮긴 답 등)일 때다. 서버는 그 문단을 그대로 두므로
+// 알리지 않으면 [다시]가 듣지 않은 듯 보인다. 사용자가 고친·쓴 문단은 알리지 않는다 — 그 글은 이미 사용자 것이다
+export function failedParagraphGens(
+  work: WorkView | null,
+  key: string,
+  paragraphs: readonly Paragraph[],
+): Set<string> {
+  const out = new Set<string>();
+  for (const p of paragraphs) {
+    if (p.state !== "proposed" && p.state !== "accepted") continue;
+    const g = latestGeneration({ work }, "paragraph", `${key}#${p.id}`);
+    if (!g || (p.gen_id !== null && g.id <= p.gen_id)) continue;
+    if (g.status === "failed" || (g.status === "done" && g.model === null)) out.add(p.id);
+  }
+  return out;
+}
+
 // 문단 상태로 센 기여 — 수락만 한 문단도 AI 작성으로 센다(spec §3)
 export function footprint(p: ProposalView): Footprint {
   const f: Footprint = { proposed: 0, accepted: 0, edited: 0, authored: 0 };

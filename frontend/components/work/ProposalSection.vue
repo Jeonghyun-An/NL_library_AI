@@ -118,6 +118,9 @@
             </template>
           </p>
           <p v-if="check" class="rs-muted">{{ check }}</p>
+          <p v-if="failedParas.has(p.id)" class="rs-muted" role="status">
+            이 문단을 다시 쓰지 못했습니다 — 앞의 글을 그대로 두었습니다.
+          </p>
           <p v-if="paragraphGens.has(p.id)" class="rs-muted" role="status">
             이 문단을 다시 쓰는 중입니다{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
           </p>
@@ -207,6 +210,7 @@ import {
   acceptParagraph,
   addParagraph,
   editParagraph,
+  failedParagraphGens,
   openParagraphGens,
   paragraphParts,
   paragraphProblem,
@@ -284,6 +288,9 @@ const paraViews = computed(() => (section.value ? paragraphViews(section.value) 
 const workView = computed(() => props.state.work);
 const paragraphGens = computed(() =>
   openParagraphGens(workView.value, props.sectionKey, section.value?.paragraphs.map((p) => p.id) ?? []),
+);
+const failedParas = computed(() =>
+  failedParagraphGens(workView.value, props.sectionKey, section.value?.paragraphs ?? []),
 );
 
 // 문단마다 되풀이되는 버튼([수락]·[다시]·[고치기]·[지우기])의 이름에 붙이는 대상(화면에는 보이지 않는다)과, 설명으로

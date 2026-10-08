@@ -69,7 +69,7 @@ class TestPrompt:
         assert used == {"question", "topic_title", "research_question", "section_label", "evidence_block",
                         "figure_list", "before", "current", "after"}
         assert tpl.parser == "plain"
-        assert tpl.params == {"max_tokens": 600, "temperature": 0.3}
+        assert tpl.params == {"max_tokens": 600, "temperature": 0.5}
 
     def test_one_plain_paragraph_with_markers_and_no_examples(self):
         system = get_prompt(PROMPT).system
@@ -78,16 +78,24 @@ class TestPrompt:
         assert "[E#]" in system and "[F#]" in system and "숫자를 직접 쓰지 마세요" in system
         assert "문단 하나만" in system and GAP_NOTE in system
 
+    def test_asks_for_new_sentences_not_a_copy_of_the_inputs(self):
+        # 운영(2026-10-08): gemma 가 '고칠 문단'을 그대로 내거나 '앞 문단:' 블록을 이름표째 옮겼다
+        system = get_prompt(PROMPT).system
+        assert "다른 문장으로" in system
+        assert "그대로 옮기지 마세요" in system and "이름표를 붙이지 마세요" in system
+
     def test_build_renders_the_section_label_and_neighbours(self):
         messages, params = EXECUTOR.build(paragraph_input(SECTION_INPUT, PARAGRAPHS, "p1"))
 
         user = messages[1]["content"]
         assert "절: 선행연구 검토 — 가족 지지와 우울" in user
-        assert "앞 문단:\n(없음)" in user
-        assert "고칠 문단:\n첫 문단 [E1]." in user and "뒤 문단:\n둘째 문단 [E2]." in user
+        assert "앞 문단(참고 — 옮겨 쓰지 않습니다):\n(없음)" in user
+        assert "고칠 문단:\n첫 문단 [E1]." in user
+        assert "뒤 문단(참고 — 옮겨 쓰지 않습니다):\n둘째 문단 [E2]." in user
+        assert user.rstrip().endswith("위 '고칠 문단'을 다른 문장으로 다시 쓴 문단 하나만 쓰세요.")
         assert "[E2] 사회적 지지 척도 (2015)\n초록: 초록 둘" in user
         assert "[F1] 이 절에 준 논문 수: 2" in user
-        assert params == {"max_tokens": 600, "temperature": 0.3}
+        assert params == {"max_tokens": 600, "temperature": 0.5}
 
     def test_gap_section_label(self):
         gap = {**SECTION_INPUT, "key": "gap", "kind": "gap", "group": None}
@@ -111,6 +119,23 @@ class TestExecutor:
 
     def test_unreadable_answer_parses_to_none(self):
         assert EXECUTOR.parse("# 다시 쓴 문단") is None
+
+    def test_echoed_input_blocks_are_skipped_and_own_label_is_removed(self):
+        # 운영(2026-10-08): 답이 '앞 문단: <앞 문단 글>' 로 시작해 그 글이 둘째 문단 자리에 들어갔다
+        raw = ("앞 문단: 첫 문단 [E1].\n\n고칠 문단(원문): 둘째 문단 [E2].\n\n뒤 문단(참고 — 옮겨 쓰지 않습니다): 셋째 [E1]."
+               "\n\n다시 쓴 문단: 척도를 새로 정리했다 [E2].")
+        assert EXECUTOR.parse(raw) == {"text": "척도를 새로 정리했다 [E2]."}
+        assert EXECUTOR.parse("앞 문단: 첫 문단 [E1].") is None
+
+    def test_copy_of_the_paragraph_or_its_neighbours_fails_the_check(self):
+        # 인용 표기·공백만 다른 글은 옮긴 글이다 — 검사에서 떨어져 다시 부른다(세 번 다 떨어지면 빈 결과 — 문단은 그대로)
+        for text in ("둘째 문단 [E2].", "둘째  문단 [E1].", "첫 문단 [E1].", "셋째 문단 [E2] [E1]."):
+            assert EXECUTOR.check(EXECUTOR.bind({"text": text}, INPUT)) is False, text
+        assert EXECUTOR.check(EXECUTOR.bind({"text": "둘째 문단의 척도를 다른 말로 정리했다 [E2]."}, INPUT)) is True
+
+    def test_first_or_last_paragraph_has_no_neighbour_to_compare(self):
+        first = paragraph_input(SECTION_INPUT, PARAGRAPHS, "p1")
+        assert EXECUTOR.check(EXECUTOR.bind({"text": "가족 지지를 새로 정리했다 [E1]."}, first)) is True
 
     def test_check_needs_a_valid_citation(self):
         assert EXECUTOR.check(EXECUTOR.bind({"text": "근거가 있다 [E1]."}, INPUT)) is True

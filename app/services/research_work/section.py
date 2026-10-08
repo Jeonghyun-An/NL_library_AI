@@ -23,8 +23,8 @@ PROMPTS = {"prior": "research_section_prior", "gap": "research_section_gap"}
 _BLANK_LINE = re.compile(r"\n[ \t]*\n")
 
 
-def split_paragraphs(raw: str) -> list[str]:
-    """빈 줄로 나눈 문단, 앞에서 MAX_SECTION_PARAGRAPHS 개. 문단 안 줄바꿈은 공백 하나로 잇는다.
+def split_paragraphs(raw: str, limit: int | None = MAX_SECTION_PARAGRAPHS) -> list[str]:
+    """빈 줄로 나눈 문단, 앞에서 limit 개(None 이면 모두). 문단 안 줄바꿈은 공백 하나로 잇는다.
     한 줄짜리 머리줄('#' 로 시작하거나 ':' 로 끝나는 줄 — 모델이 붙인 제목·안내)은 버린다."""
     out: list[str] = []
     for block in _BLANK_LINE.split((raw or "").replace("\r\n", "\n")):
@@ -34,7 +34,7 @@ def split_paragraphs(raw: str) -> list[str]:
         if len(lines) == 1 and (lines[0].startswith("#") or lines[0].endswith((":", "："))):
             continue
         out.append(" ".join(lines))
-    return out[:MAX_SECTION_PARAGRAPHS]
+    return out if limit is None else out[:limit]
 
 
 def evidence_map(input: dict) -> dict[str, str]:
