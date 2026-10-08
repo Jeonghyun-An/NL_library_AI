@@ -40,14 +40,15 @@ docker exec -e PYTHONPATH=/app nl-lib-fastapi python /app/data/round06b-topic-ca
 
 ## 결과
 
-운영에서 돌린 뒤 채운다(계획 Task 37).
+2026-10-08 운영 `nl-lib-fastapi` 에서 `RUN=pairs_20261008_d18` 의 갈래 0 잡 다섯으로 돌렸다(`out/`). Qwen 은 운영 VLM `Qwen3-VL-30B-A3B-Instruct-FP8`(이름 `qwen3-vl-8b` — 06a 표본 때는 Qwen3-VL-8B 였다), gemma 는 `gemma-3-12b` 다. Qwen 의 미달 4장은 모두 '근거 1개(2개 미만)' 이고 끝난 이유는 stop 이다(전송 오류 없음). 제목에서 되돌린 근거·확인 필요 숫자·바꾼 단정 표현은 두 모델 모두 0 이다. 카드당 시간은 Qwen 약 0.3~0.6초 · gemma 약 0.7~1.0초다. 형식 통과 차이가 4장이라 내용 판정(규칙 2)은 하지 않았다.
 
 | 질문키 | Qwen 형식 통과 | gemma 형식 통과 | Qwen 근거 3개 이상 | gemma 근거 3개 이상 | 내용 판정(나은 쪽) | 메모 |
 |---|---|---|---|---|---|---|
-| computing | | | | | | |
-| library | | | | | | |
-| elderly | | | | | | |
-| multicultural | | | | | | |
-| csr | | | | | | |
+| computing | 3/4 | 4/4 | 2/4 | 2/4 | 하지 않음 | Qwen 카드 4 근거 1개 · 평균 Qwen 0.5초 · gemma 0.9초 |
+| library | 4/4 | 4/4 | 4/4 | 4/4 | 하지 않음 | 평균 Qwen 0.4초 · gemma 0.9초 |
+| elderly | 4/4 | 4/4 | 3/4 | 3/4 | 하지 않음 | 평균 Qwen 0.4초 · gemma 0.9초 |
+| multicultural | 3/4 | 4/4 | 2/4 | 3/4 | 하지 않음 | Qwen 카드 4 근거 1개 · 평균 Qwen 0.5초 · gemma 0.9초 |
+| csr | 2/4 | 4/4 | 1/4 | 2/4 | 하지 않음 | Qwen 카드 2·4 근거 1개 · 평균 Qwen 0.4초 · gemma 0.8초 |
+| 합계 | 16/20 | 20/20 | 12/20 | 14/20 | — | 차이 4장 → 규칙 1 |
 
-결정(사용자 확인): 주제 카드 → Qwen 유지 / gemma 로 · `MIN_TOPIC_EVIDENCE` → 2 유지 / 3 으로.
+결정(2026-10-08, 판정 규칙 1 그대로): 주제 카드 → **gemma 로**(`8c55c8f` — `WORK_MODEL_ROUTES["topic_card"]` 한 칸, `docs/roadmap/round06b-완료노트.md` §5-5·§5-6) · `MIN_TOPIC_EVIDENCE` → 바꾸지 않았다(2 — 3개 이상 충족률 Qwen 12/20 · gemma 14/20, 3개째 근거의 관련성은 보지 않아 판단은 완료노트 §7-4 로 넘김).
