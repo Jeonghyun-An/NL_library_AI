@@ -259,3 +259,11 @@
   4. 1~3 이 맞으면 메시지를 잃은 잡이다 — 화면(링크의 잡)에서 취소하면 브라우저 제한이 풀리고, 다시 시작한다.
 - **해결**: 지금은 위 순서로 사람이 푼다(코드 수정 없음). 덤프에서 연구 테이블을 복원했다면 복원 직후 approved·queued 를 failed 로 돌린다(`pg_backup.sh` 머리 주석의 UPDATE).
 - **재발 방지(후속 과제 — 06a 범위 밖)**: 코드로 막으려면 `created_at` 같은 시간 기준을 쓰지 않는다(정상 대기가 길 수 있다). 회수기 두 틱 연속으로 `q_research` LLEN 0 · running 딥리서치 0 · 대기 ZSET 에 없음이 함께 성립할 때만 failed('브로커 메시지 유실')로 둔다.
+
+## 25. vLLM 은 없어진 요청 필드를 400 없이 받아 버린다 — `guided_json` 제약이 한 달 넘게 걸리지 않았다
+
+- **날짜**: 2026-10-08 (`fix/metadata-filter-response-format`)
+- **증상**: 메타데이터 필터 프롬프트(`metadata_filter.yaml`)가 params 에 `guided_json` 스키마를 실어 보냈는데(6d4e8f1, 2026-09-03) 운영 gemma 는 그 제약을 걸지 않았다. 응답은 200 이고 대개 JSON 이라(프롬프트가 JSON 을 시키고 파서가 코드펜스를 걷어 낸다) 드러나지 않았다. 서버 A/B(2026-10-08, `docker exec nl-lib-gemma curl … /v1/chat/completions`): "JSON 쓰지 말고 한국어 한 문장으로 인사해 줘" 에 `guided_json` 을 붙이면 "안녕하세요! …" 평문, 같은 스키마를 `response_format` 으로 붙이면 스키마대로의 JSON 이 나왔다.
+- **원인**: vLLM 은 v0.12.0 에서 `guided_*` 요청 필드를 뺐다(`docs/features/structured_outputs.md`). 운영 이미지 `vllm/vllm-openai:latest-cu130`(v0.20.0)의 요청 모델은 `extra="allow"` 라 모르는 필드를 거부하지 않고 "fields were present in the request but ignored" 를 **debug** 로그로만 남긴다(`vllm/entrypoints/openai/engine/protocol.py` 의 `OpenAIBaseModel`). 기본 로그 레벨이 INFO 라 `docker logs` 에도 남지 않는다.
+- **해결**: 제약을 OpenAI 표준 `response_format: {type: json_schema, json_schema: {name, schema}}` 로 옮겼다(1747e68 — v0.20.0 은 `to_sampling_params` 에서 이것을 `structured_outputs.json` 으로 바꿔 건다). 스키마는 그대로이고, 테스트가 요청 본문 모양과 프롬프트 YAML 에 `guided_*` 가 남지 않음을 지킨다. 운영 반영은 `nl-lib-fastapi` 이미지를 `:latest` 태그로 다시 빌드·배포한 뒤다(3번 함정 — 프롬프트 YAML 은 바인드 마운트가 아니라 이미지에 들어 있다).
+- **재발 방지**: vLLM 전용 확장 필드를 보낼 때는 운영 이미지 버전의 `ChatCompletionRequest` 원문에 그 필드가 있는지부터 본다 — 이름이 틀리거나 빠진 필드는 오류가 아니라 무시다. 적용 여부는 로그가 아니라 제약을 어기게 시키는 A/B 요청으로 확인한다. 제약은 되도록 OpenAI 표준 필드(`response_format`)로 싣는다.
