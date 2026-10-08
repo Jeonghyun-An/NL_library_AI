@@ -523,7 +523,7 @@
 - **바꾸지 않는 것:** 검색 호출(`explorer.py:111-115`, `use_rewrite=False`)·임베딩·리랭크(`services/search/pipeline.py:128`·`:196-198` — 같은 문자열). 절 소제목·절 프롬프트·critic 의 하위질문·핵심 개념 입력은 `subq.text` 그대로다 — 검색어만 바뀐다.
 
 **탐색 후보 목록 이벤트(Q9 — 10-08 사용자 동의, 06c 는 백엔드만)**
-- **자리:** `runner.py` 회차 루프에서 이번 검색의 후보를 근거에 이은 직후(`linked` 확정 뒤 `emit("counters")` `:264` 옆), 자기점검(`critique_fn`) 전에 이벤트 하나를 낸다 — 이름 예 `candidates`, 모양 `{subq_id, round, papers: [_paper_brief(ev)…]}`(`_paper_brief` `runner.py:85-89` 재사용, 이번 회차에 점검할 근거 = `linked` 순서).
+- **자리:** `runner.py` 회차 루프에서 이번 검색의 후보를 근거에 이은 직후(`linked` 확정 뒤 `emit("counters")` `:264` 옆), 자기점검(`critique_fn`) 전에 이벤트 하나를 낸다 — 이름 `candidates`, 모양 `{subq_idx, round, papers: [_paper_brief(ev)…]}`(하위질문 키는 runner 의 `search`·`critique` 이벤트와 같은 `subq_idx`. 이은 근거가 없어도 `papers: []` 로 낸다)(`_paper_brief` `runner.py:85-89` 재사용, 이번 회차에 점검할 근거 = `linked` 순서).
 - **복원하지 않는다:** 스냅숏·`rounds` 에 넣지 않는다. 지나간 '검토 중'은 판정 뒤 채택·뺌(기존 `critique` 이벤트·`adopted_papers`·`excluded_papers`)으로 이미 보이므로 재접속하면 더미 없이 지금처럼 그린다.
 - **스위치와 무관:** 화면 이벤트일 뿐 검색·판정을 바꾸지 않으므로 늘 낸다. 옛 화면은 모르는 이벤트를 무시한다(`researchEvents.ts:329` `default: return view`).
 - 06c 워커 배포(10/13~14)에 실리고, 화면(이벤트 타입·리듀서·장부 더미)은 06d 다(§12-3).
