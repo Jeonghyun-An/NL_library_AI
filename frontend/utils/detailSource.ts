@@ -1,12 +1,15 @@
 // frontend/utils/detailSource.ts
 import type { ComputedRef, InjectionKey } from "vue";
 import type { ReportPaper, ReportSection } from "~/types/research";
+import type { WorkStep } from "~/types/work";
 import { splitCitations } from "~/utils/citations";
+import { parseWorkStep } from "~/utils/workPhase";
 
-// 논문 상세의 출처. 주소만으로 돌아갈 곳·사이드바 강조·배너·AI 요약 기준이 정해진다(새 탭·새로고침에도)
+// 논문 상세의 출처. 주소만으로 돌아갈 곳·사이드바 강조·배너·AI 요약 기준이 정해진다(새 탭·새로고침에도).
+// research 의 s 는 연구 어시스턴트 단계 화면(?s=)에서 왔을 때만 있다 — 돌아갈 때 그 단계로 간다
 export type DetailSource =
   | { kind: "search"; h: string | null; q: string }
-  | { kind: "research"; job: string; e: string | null }
+  | { kind: "research"; job: string; e: string | null; s?: WorkStep | null }
   | { kind: "none" };
 
 // 돌아가서 맞출 요소의 앵커와, 떠날 때 그 요소의 화면 높이(px). 픽셀 좌표가 아니라 요소 기준이라
@@ -16,11 +19,14 @@ export interface ReturnSpot {
   y: number | null;
 }
 
-// n 은 같은 절에서 같은 근거 칩의 순번(0 부터, 0 은 앵커에 적지 않는다)
+// n 은 같은 절에서 같은 근거 칩의 순번(0 부터, 0 은 앵커에 적지 않는다). reading 은 읽기 목록의 논문 행,
+// para 는 계획서 문단(ref = "<절 키>-<문단 id>")이다
 export type Anchor =
   | { kind: "cite"; section: number; eid: string; n: number }
   | { kind: "excluded"; cnts: string }
-  | { kind: "result"; cnts: string };
+  | { kind: "result"; cnts: string }
+  | { kind: "reading"; cnts: string }
+  | { kind: "para"; ref: string };
 
 export type AnchoredPart = { type: "text"; text: string } | { type: "cite"; eid: string; anchor: string };
 
@@ -39,7 +45,7 @@ const EID = /^E\d+$/;
 const PIXELS = /^\d{1,6}$/;
 // 앵커는 [data-anchor="…"] 선택자에 그대로 들어간다 — 따옴표·괄호·공백이 낄 수 없는 모양만 받는다
 const CITE_ANCHOR = /^c-(0|[1-9]\d*)-(E\d+)(?:-([1-9]\d*))?$/;
-const ITEM_ANCHOR = /^([xp])-([A-Za-z0-9_.-]{1,64})$/;
+const ITEM_ANCHOR = /^([xprg])-([A-Za-z0-9_.-]{1,64})$/;
 // 주소 비교용 기준 — 경로와 쿼리만 본다
 const BASE = "http://local";
 
@@ -68,7 +74,9 @@ export function readDetailSource(query: Record<string, unknown>): DetailSource {
   if (from === "research") {
     const job = idOf(query.job);
     const e = firstValue(query.e);
-    return job ? { kind: "research", job, e: e && EID.test(e) ? e : null } : { kind: "none" };
+    const s = parseWorkStep(query);
+    if (!job) return { kind: "none" };
+    return { kind: "research", job, e: e && EID.test(e) ? e : null, ...(s ? { s } : {}) };
   }
   return { kind: "none" };
 }
@@ -107,6 +115,7 @@ export function detailUrl(
     params.set("from", "research");
     params.set("job", source.job);
     if (source.e) params.set("e", source.e);
+    if (source.s) params.set("s", source.s);
   }
   if (spot) appendSpot(params, spot);
   for (const [key, value] of Object.entries(extra)) params.set(key, value);
@@ -133,8 +142,9 @@ export function backTarget(source: DetailSource, spot: ReturnSpot): { label: str
       appendSpot(params, spot);
       return { label: "검색 결과로", to: withQuery("/papers", params) };
     case "research":
+      if (source.s) params.set("s", source.s);
       appendSpot(params, spot);
-      return { label: "딥리서치 보고서로", to: withQuery(`/research/${source.job}`, params) };
+      return { label: source.s ? "연구 화면으로" : "딥리서치 보고서로", to: withQuery(`/research/${source.job}`, params) };
     case "none":
       return { label: "검색으로", to: "/" };
   }
@@ -164,12 +174,31 @@ export function resultAnchor(cnts: string): string {
   return `p-${cnts}`;
 }
 
+export function readingAnchor(cnts: string): string {
+  return `r-${cnts}`;
+}
+
+// 절 키(prior.g1·gap)와 문단 id(p2)를 잇는다 — 둘 다 앵커 문법 안의 글자다
+export function paraAnchor(key: string, pid: string): string {
+  return `g-${key}-${pid}`;
+}
+
 export function parseAnchor(at: string): Anchor | null {
   const cite = CITE_ANCHOR.exec(at);
   if (cite) return { kind: "cite", section: Number(cite[1]), eid: cite[2]!, n: Number(cite[3] ?? 0) };
   const item = ITEM_ANCHOR.exec(at);
   if (!item) return null;
-  return item[1] === "x" ? { kind: "excluded", cnts: item[2]! } : { kind: "result", cnts: item[2]! };
+  const value = item[2]!;
+  switch (item[1]) {
+    case "x":
+      return { kind: "excluded", cnts: value };
+    case "p":
+      return { kind: "result", cnts: value };
+    case "r":
+      return { kind: "reading", cnts: value };
+    default:
+      return { kind: "para", ref: value };
+  }
 }
 
 export function anchorSelector(at: string): string | null {

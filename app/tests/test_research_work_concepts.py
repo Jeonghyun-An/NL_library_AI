@@ -49,32 +49,42 @@ class TestCleanConcepts:
         raw = ["가", "나", "다", "라", "마", "바", "사"]
         assert clean_concepts(raw) == ["가", "나", "다", "라", "마"]
 
+    def test_full_width_and_compatibility_forms_are_normalized(self):
+        # 전각 영숫자·전각 공백·전각 하이픈은 NFKC 로 보통 글자가 된다 — 같은 개념이 두 칩이 되지 않는다
+        assert clean_concepts(["ＡＩ　윤리", "AI 윤리", "ｅ－러닝"]) == ["AI 윤리", "e-러닝"]
+
+    def test_length_is_counted_after_normalization(self):
+        # '㈜' 한 글자는 NFKC 로 '(주)' 세 글자다 — 14개는 42자라 40자 상한을 넘는다
+        assert clean_concepts(["㈜" * 14, "㈜" * 13]) == ["(주)" * 13]
+
 
 class TestConceptsInput:
-    def test_question_plan_and_section_headings(self):
+    def test_question_and_plan_only(self):
+        # 보고서 절 제목은 하위질문 글 그대로라 넣지 않는다 — _job 의 report 에 절이 있어도 읽지 않는다
         assert concepts_input(_job()) == {
             "question": "청소년 독서 격차 연구는 어디까지 왔나",
             "subquestions": ["독서 격차의 정의", "독서 격차를 줄이는 프로그램"],
-            "headings": ["독서 격차의 개념", "중재 프로그램의 효과"],
         }
 
-    def test_blank_headings_are_skipped(self):
-        job = _job(report={"sections": [{"heading": "  "}, {"intro": "제목 없는 절"}, {"heading": "효과"}]})
-        assert concepts_input(job)["headings"] == ["효과"]
+    def test_non_string_plan_items_are_skipped(self):
+        assert concepts_input(_job(plan=["독서 격차의 정의", 3, None, "효과"]))["subquestions"] == [
+            "독서 격차의 정의", "효과",
+        ]
 
     def test_missing_plan_and_report(self):
-        out = concepts_input(_job(plan=None, report=None))
-        assert out["subquestions"] == [] and out["headings"] == []
+        assert concepts_input(_job(plan=None, report=None)) == {
+            "question": "청소년 독서 격차 연구는 어디까지 왔나", "subquestions": [],
+        }
 
 
 class TestPrompt:
-    def test_template_reads_only_the_three_inputs(self):
+    def test_template_reads_only_the_question_and_subquestions(self):
         tpl = get_prompt("research_concepts")
         env = Environment()
         used = set()
         for body in (tpl.system, tpl.user):
             used |= meta.find_undeclared_variables(env.parse(body))
-        assert used == {"question", "subquestions", "headings"}
+        assert used == {"question", "subquestions"}
         assert tpl.parser == "plain"
         assert tpl.params == {"max_tokens": 400, "temperature": 0.2}
 
@@ -86,12 +96,19 @@ class TestPrompt:
         assert "2개 이상 5개 이하" in system and '"concepts"' in system
         assert "원 질문: 청소년 독서 격차 연구는 어디까지 왔나" in user
         assert "- 독서 격차의 정의\n- 독서 격차를 줄이는 프로그램" in user
-        assert "- 독서 격차의 개념\n- 중재 프로그램의 효과" in user
+        assert "독서 격차의 개념" not in user and "절 제목" not in system + user
         assert params == {"max_tokens": 400, "temperature": 0.2}
 
     def test_empty_lists_render_as_none(self):
         _, user = (m["content"] for m in EXECUTOR.build(concepts_input(_job(plan=[], report=None)))[0])
-        assert user.count("(없음)") == 2
+        assert user.count("(없음)") == 1
+
+    def test_old_rows_with_headings_still_build(self):
+        """06a 에 만든 생성 행의 input 에는 headings 키가 있다 — 다시 부르기(retry)로 그 input 을 그대로 써도
+        절 제목은 프롬프트에 들어가지 않는다."""
+        old = {"question": "청소년 독서 격차", "subquestions": ["독서 격차의 정의"], "headings": ["옛 절 제목"]}
+        _, user = (m["content"] for m in EXECUTOR.build(old)[0])
+        assert "- 독서 격차의 정의" in user and "옛 절 제목" not in user
 
     def test_format_is_described_without_a_sample_list(self):
         """원소가 든 배열 견본({"concepts": ["<핵심 개념>"]})을 두면 모델이 그 개수를 따라 개념 1개만 내
@@ -121,9 +138,10 @@ class TestExecutor:
         assert EXECUTOR.empty(concepts_input(_job())) == {"concepts": []}
 
     def test_one_concept_is_asked_again_through_the_common_rule(self, monkeypatch):
+        # 핵심 개념의 주 모델은 gemma(LLM_*)다 — 06a Qwen 표본 결정
         cfg = routing.get_settings()
-        monkeypatch.setattr(cfg, "VLM_BASE_URL", "http://qwen.test/v1")
-        monkeypatch.setattr(cfg, "VLM_MODEL", "qwen-test")
+        monkeypatch.setattr(cfg, "LLM_BASE_URL", "http://gemma.test/v1")
+        monkeypatch.setattr(cfg, "LLM_MODEL", "gemma-test")
         answers = ['{"concepts": ["독서 격차"]}', '{"concepts": ["독서 격차", "청소년", "독서 격차"]}']
         seen = []
 
@@ -133,13 +151,15 @@ class TestExecutor:
 
         result = asyncio.run(run_generation(EXECUTOR, concepts_input(_job()), chat_fn=fake_chat))
 
-        assert seen == ["qwen-test", "qwen-test"]
-        assert result.output == {"concepts": ["독서 격차", "청소년"]} and result.model == "qwen-test"
+        assert seen == ["gemma-test", "gemma-test"]
+        assert result.output == {"concepts": ["독서 격차", "청소년"]} and result.model == "gemma-test"
 
 
 class TestExecutors:
-    def test_registry_holds_the_06a_executor(self):
-        assert EXECUTORS == {"concepts": EXECUTOR}
+    def test_concepts_executor_is_registered(self):
+        assert EXECUTORS["concepts"] is EXECUTOR
 
     def test_keys_are_generation_kinds(self):
-        assert all(kind in GEN_KINDS and ex.kind == kind for kind, ex in EXECUTORS.items())
+        # 06b·06c 가 실행기를 더해도 지키는 규칙 — 키는 생성 종류이고 실행기의 kind 가 키와 같다
+        assert set(EXECUTORS) <= set(GEN_KINDS)
+        assert all(ex.kind == kind for kind, ex in EXECUTORS.items())

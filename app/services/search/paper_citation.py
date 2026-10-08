@@ -16,16 +16,23 @@ def _extract_year(pub_date: str) -> str:
     return m.group(0) if m else "n.d."
 
 
+# 저자 구분자 — 세미콜론·세로줄·가운데점을 쉼표보다 먼저 나눈다. 원본 personal_author 에 '윤기찬 | 이순철' 처럼
+# 세로줄로 적힌 논문이 있고, 보고서 참고문헌(frontend/utils/citations.ts splitAuthors)도 같은 셋을 먼저 나눈다
+_AUTHOR_SEPARATORS = re.compile(r"[;|·]")
+
+
+def _split_authors(raw: str) -> list[str]:
+    """'A;B' · 'A | B' · 'A·B' · 'A, B' → ['A', 'B']. 세미콜론·세로줄·가운데점이 있으면 그것으로, 없으면 쉼표로."""
+    pattern = _AUTHOR_SEPARATORS if _AUTHOR_SEPARATORS.search(raw) else ","
+    return [n.strip() for n in re.split(pattern, raw) if n.strip()]
+
+
 def _format_authors(raw: str) -> str:
     """
-    'A;B;C'  또는  'A, B, C'  →  'A, B, C'
+    'A;B;C' · 'A | B | C' · 'A·B·C' · 'A, B, C'  →  'A, B, C'
     3인 초과 시 한국어: '외', 영문: 'et al.'
     """
-    # 세미콜론 분리 우선, 없으면 쉼표 분리
-    if ";" in raw:
-        names = [n.strip() for n in raw.split(";") if n.strip()]
-    else:
-        names = [n.strip() for n in raw.split(",") if n.strip()]
+    names = _split_authors(raw)
 
     if not names:
         return raw.strip() or "저자 미상"
@@ -33,10 +40,7 @@ def _format_authors(raw: str) -> str:
 
 
 def _format_authors_en(raw: str) -> str:
-    if ";" in raw:
-        names = [n.strip() for n in raw.split(";") if n.strip()]
-    else:
-        names = [n.strip() for n in raw.split(",") if n.strip()]
+    names = _split_authors(raw)
 
     if not names:
         return raw.strip() or "Unknown Author"

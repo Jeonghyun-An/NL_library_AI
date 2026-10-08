@@ -259,3 +259,62 @@
   4. 1~3 이 맞으면 메시지를 잃은 잡이다 — 화면(링크의 잡)에서 취소하면 브라우저 제한이 풀리고, 다시 시작한다.
 - **해결**: 지금은 위 순서로 사람이 푼다(코드 수정 없음). 덤프에서 연구 테이블을 복원했다면 복원 직후 approved·queued 를 failed 로 돌린다(`pg_backup.sh` 머리 주석의 UPDATE).
 - **재발 방지(후속 과제 — 06a 범위 밖)**: 코드로 막으려면 `created_at` 같은 시간 기준을 쓰지 않는다(정상 대기가 길 수 있다). 회수기 두 틱 연속으로 `q_research` LLEN 0 · running 딥리서치 0 · 대기 ZSET 에 없음이 함께 성립할 때만 failed('브로커 메시지 유실')로 둔다.
+
+## 25. vLLM 은 없어진 요청 필드를 400 없이 받아 버린다 — `guided_json` 제약이 한 달 넘게 걸리지 않았다
+
+- **날짜**: 2026-10-08 (`fix/metadata-filter-response-format`)
+- **증상**: 메타데이터 필터 프롬프트(`metadata_filter.yaml`)가 params 에 `guided_json` 스키마를 실어 보냈는데(6d4e8f1, 2026-09-03) 운영 gemma 는 그 제약을 걸지 않았다. 응답은 200 이고 대개 JSON 이라(프롬프트가 JSON 을 시키고 파서가 코드펜스를 걷어 낸다) 드러나지 않았다. 서버 A/B(2026-10-08, `docker exec nl-lib-gemma curl … /v1/chat/completions`): "JSON 쓰지 말고 한국어 한 문장으로 인사해 줘" 에 `guided_json` 을 붙이면 "안녕하세요! …" 평문, 같은 스키마를 `response_format` 으로 붙이면 스키마대로의 JSON 이 나왔다.
+- **원인**: vLLM 은 v0.12.0 에서 `guided_*` 요청 필드를 뺐다(`docs/features/structured_outputs.md`). 운영 이미지 `vllm/vllm-openai:latest-cu130`(v0.20.0)의 요청 모델은 `extra="allow"` 라 모르는 필드를 거부하지 않고 "fields were present in the request but ignored" 를 **debug** 로그로만 남긴다(`vllm/entrypoints/openai/engine/protocol.py` 의 `OpenAIBaseModel`). 기본 로그 레벨이 INFO 라 `docker logs` 에도 남지 않는다.
+- **해결**: 제약을 OpenAI 표준 `response_format: {type: json_schema, json_schema: {name, schema}}` 로 옮겼다(1747e68 — v0.20.0 은 `to_sampling_params` 에서 이것을 `structured_outputs.json` 으로 바꿔 건다). 스키마는 그대로이고, 테스트가 요청 본문 모양과 프롬프트 YAML 에 `guided_*` 가 남지 않음을 지킨다. 운영 반영은 `nl-lib-fastapi` 이미지를 `:latest` 태그로 다시 빌드·배포한 뒤다(3번 함정 — 프롬프트 YAML 은 바인드 마운트가 아니라 이미지에 들어 있다).
+- **재발 방지**: vLLM 전용 확장 필드를 보낼 때는 운영 이미지 버전의 `ChatCompletionRequest` 원문에 그 필드가 있는지부터 본다 — 이름이 틀리거나 빠진 필드는 오류가 아니라 무시다. 적용 여부는 로그가 아니라 제약을 어기게 시키는 A/B 요청으로 확인한다. 제약은 되도록 OpenAI 표준 필드(`response_format`)로 싣는다.
+
+## 26. LLM '다시 쓰기' 가 입력을 옮긴다 — 문단 [다시]가 고칠 문단을 그대로 내거나 앞 문단을 그 자리에 복사했다
+
+- **날짜**: 2026-10-08 (round06b 운영 확인)
+- **증상**: 운영 연구 어시스턴트(computing D18 잡 `d8348de8`)의 연구 공백 절에서 문단 [다시]를 눌렀더니, 3번째 문단은 gemma 가 고칠 문단을 글자 그대로 내 아무것도 바뀌지 않았고(생성 13), 2번째 문단은 입력의 '앞 문단: …' 블록을 이름표째 옮겨 1번째 문단의 글이 2번째 자리에 들어갔다(생성 14). 두 생성 모두 done 이었고 옮긴 글에도 유효한 `[E#]` 가 있어 인용 검사를 통과했으므로 화면은 아무것도 알리지 않았다 — [다시]가 듣지 않은 듯 보이거나 같은 글이 두 문단에 보일 뿐이다. 단위 테스트는 가짜 LLM 응답을 쓰므로 라이브 모델에서만 드러난다(15번과 같다).
+- **원인**:
+  - 프롬프트(`app/domains/nl_library/prompts/research_paragraph.yaml`)는 '고칠 문단이 다루던 내용을 같은 근거로 다시 쓰고 앞뒤 문단과 자연스럽게 잇게' 하라고만 했고 고칠 문단과 달라야 한다는 말이 없었다. 출력 형식에 '앞뒤 문단을 옮겨 쓰지 마세요' 한 줄이 있었지만 사용자 메시지는 앞·고칠·뒤 세 문단을 `앞 문단:`·`고칠 문단:`·`뒤 문단:` 이름표만 붙여 나란히 줘 어느 블록이 참고인지가 흐렸다. temperature 0.3 의 gemma-3-12b 는 가장 쉬운 답 — 입력을 옮겨 적기 — 을 냈다.
+  - 파서(`app/services/research_work/paragraph.py` 의 `_parse`)는 한 줄짜리 머리줄만 버리고 첫 문단을 썼다. 이름표와 글이 한 블록에 붙어 오면 머리줄로 걸러지지 않아 '앞 문단: <1번째 문단>' 이 그대로 답이 됐다.
+  - 출력을 입력과 견주는 검사가 없었다. 검사는 인용 표기의 유효성만 봐서 입력을 옮긴 글도 통과했다.
+- **해결 (82323fd — dev 머지 3aa6d79)**:
+  - 프롬프트: 첫머리를 '고칠 문단과 다른 문장으로 새로 씁니다. 앞 문단·뒤 문단은 흐름을 보라고 주는 참고이고, 옮겨 쓸 글이 아닙니다' 로 바꾸고, 규칙 '고칠 문단·앞 문단·뒤 문단의 문장을 그대로 옮기지 마세요'·'… 같은 이름표를 붙이지 마세요' 를 더했다. 앞·뒤 문단 이름표에 `(참고 — 옮겨 쓰지 않습니다)` 를 붙이고(`앞 문단(참고 — 옮겨 쓰지 않습니다):`), 끝에 할 일 한 줄(`위 '고칠 문단'을 다른 문장으로 다시 쓴 문단 하나만 쓰세요.`)을 붙였다. temperature 0.3 → 0.5(절 쓰기는 0.3 그대로).
+  - 파서: 입력 이름표(`앞|뒤|고칠 문단(…):`)로 시작하는 문단은 건너뛰고 제 이름표(`다시 쓴 문단:`·`새 문단:`)는 뗀다(`_ECHO_LABEL`·`_OWN_LABEL`). 옮긴 블록이 앞에 여럿 와도 제 문단이 잘리지 않게 문단 수 상한을 두지 않는다(`section.split_paragraphs(limit=None)`).
+  - 검사: `[E#]`·`[F#]` 와 공백을 뺀 글이 고칠·앞·뒤 문단 가운데 하나와 `SequenceMatcher` 비율 0.9 이상이면 빈 문단으로 묶어 검사에서 떨어뜨린다(`copied`·`COPY_RATIO`). `run_generation` 이 다시 부르고(두 번 떨어지면 Qwen 으로 넘김, 최대 3회) 끝내 못 얻으면 빈 결과로 닫아 문단은 그대로 둔다.
+  - 화면: 그 문단을 쓴 생성보다 나중인 가장 새 다시 쓰기가 failed 이거나 빈 결과(done 인데 model 없음)면 '이 문단을 다시 쓰지 못했습니다 — 앞의 글을 그대로 두었습니다' 를 띄운다(`frontend/utils/proposalView.ts` 의 `failedParagraphGens`, `ProposalSection.vue`). 사용자가 고친·쓴 문단은 알리지 않는다.
+  - 배포·확인: 같은 날 워커 셋·fastapi·nuxt 를 새 이미지로 재배포했다(서버 되돌리기 태그 `:pre-r06b-fix1`, 컨테이너 안 프롬프트에서 `옮겨 쓰지 않습니다` grep = 2). 운영에서 다시 눌러 연구 공백 3번째(생성 15)·선행연구 3번째(생성 16) 모두 새 글·이름표 없음·인용 유효를 봤다. 이미 망가진 연구 공백 2번째 문단은 코드가 되돌리지 않는다 — [고치기]로 원래 글을 넣었다(상태 '수정').
+- **재발 방지**: '이것을 다시 써라' 류 실행기는 출력을 입력과 견주는 검사를 둔다 — 입력과 같거나 문맥 블록을 옮긴 답은 형식·인용이 맞아도 실패다. 문맥으로 주는 블록은 이름표에 참고임을 적고('참고 — 옮겨 쓰지 않습니다') 할 일을 프롬프트 끝에 한 번 더 쓴다. 파서는 입력 이름표로 시작하는 문단을 답으로 받지 않는다. 가짜 응답 단위 테스트로는 모델이 입력을 베끼는지 알 수 없으므로 새 생성 종류는 배포 뒤 운영 모델로 한 번 눌러 본다.
+
+## 27. vLLM 도구 호출 파서가 모델이 내는 형식과 다르면 조용히 실패한다 — 그리고 `latest-cu130` 태그는 v0.20.0 에 멈췄다
+
+- **날짜**: 2026-10-08 (round06b 13495ee — 운영 compose 를 배포 상태에 맞추며 조사하다 찾았다. 앱이 tools 를 보내지 않아 라이브에서는 아직 안 터졌다)
+- **증상**: 사용자가 10-08 운영 스택의 `nl-lib-vllm`(Qwen/Qwen3-VL-30B-A3B-Instruct-FP8, 이름 `qwen3-vl-8b`)에 `--enable-auto-tool-choice --tool-call-parser qwen3_coder` 를 더했다. 서버는 오류 없이 뜨고 tools 없는 요청(OCR·그림 설명·연구 어시스턴트의 Qwen 호출)은 그대로라 이상이 보이지 않는다. 그러나 tools 를 실은 요청에서 모델이 도구를 부르면, 운영 v0.20.0 의 비스트리밍 응답은 `tool_calls` 가 비고 `finish_reason` 이 `stop` 이며 `<tool_call>\n{"name": …, "arguments": …}\n</tool_call>` 원문이 `content` 에 남는다. 스트리밍은 `<tool_call>` 뒤를 삼켜 호출이 content 에도 tool_calls 에도 나오지 않는다. 클라이언트에는 '모델이 도구를 부르지 않았다' 로 보인다.
+- **원인**:
+  - 도구 호출 파서는 모델이 호출을 **어떤 글로 내는가**에 맞춰 골라야 한다. Qwen3-VL 채팅 템플릿(HF `chat_template.json` — Instruct 와 FP8 이 글자까지 같다)은 `<tool_call>` 안에 `{"name", "arguments"}` JSON 을 내는 Hermes 형식이다. `qwen3_coder`·`qwen3_xml` 은 Qwen3-Coder 계열의 `<tool_call><function=…><parameter=…>` XML 형식용이다. 이름에 같은 'qwen3' 이 들어 있어 맞는 파서처럼 보인다.
+  - v0.20.0 의 `Qwen3CoderToolParser`(`vllm/tool_parsers/qwen3coder_tool_parser.py`)는 출력에 `<function=` 이 없으면 `tools_called=False` 로 원문을 content 로 돌려준다. 스트리밍은 `<tool_call>` 을 보고 호출 시작으로 표시한 뒤 `<function=` 이 끝내 오지 않아 남은 조각마다 None 을 낸다. 파서 이름이 등록돼 있고 토크나이저에 `<tool_call>` 토큰이 있어 기동 검사도 통과한다 — 25번처럼 잘못된 설정이 오류가 아니라 무시로 나타난다.
+  - 이미지를 올려도 풀리지 않는다. v0.24 부터(latest·v0.31.0 포함) 두 이름은 같은 엔진 파서(`vllm/parser/qwen3.py`)를 가리키는데 역시 XML 만 읽어 JSON 본문을 버린다(tool_calls 빈 채 `stop`).
+  - **이미지 태그도 멈춰 있다.** `vllm`·`gemma` 두 서비스가 쓰는 `vllm/vllm-openai:latest-cu130` 은 Docker Hub 에서 2026-04-28 에 갱신이 멈췄다(digest `sha256:04563c30…` = `v0.20.0`·`v0.20.0-cu130`). 기본 태그(`latest`·`vX`)가 CUDA 13 빌드로 바뀌면서 `-cu130` 접미 태그를 더 올리지 않는다. 그래서 다시 받아도(Pull & Redeploy) v0.20.0 에 머물고(그 전에 받았으면 더 옛 버전일 수 있다), 더 새것은 `latest`·`v0.31.0` 이다. 25번(`guided_json` 무시)도 같은 멈춘 이미지 위에서 일어났다 — vLLM 동작을 원문으로 확인할 때는 최신 소스가 아니라 운영 버전의 소스를 본다.
+- **해결**:
+  - 저장소 `docker-compose.yml` 의 vllm 서비스는 `--tool-call-parser hermes` 로 적었다(13495ee, command 주석에 까닭). 운영 스택은 사용자가 Portainer 에서 `qwen3_coder` → `hermes` 로 바꾼다(2026-10-08 대기). `--enable-auto-tool-choice` 는 그대로 두고 `--reasoning-parser` 는 붙이지 않는다(Instruct 모델). `--enable-auto-tool-choice` 만 두고 `--tool-call-parser` 를 빼면 기동이 실패한다. 도구 호출을 당장 쓰지 않으면 두 플래그를 모두 빼도 된다.
+  - 바꾸는 동안 지금 앱 호출은 영향이 없다 — `app/` 에 `tools`·`tool_choice` 를 싣는 곳이 없고(grep), tools 가 없으면 `tool_choice` 기본값이 `none` 이라 v0.20.0 의 비스트리밍 응답은 파서를 거치지 않고 content 를 그대로 낸다. 스트리밍(절 쓰기가 Qwen 으로 넘어갈 때)은 tools 가 없어도 조각마다 도구 파서를 거치지만(`vllm/parser/abstract_parser.py` 의 `parse_delta`) 평문은 그대로 지나간다 — 출력에 `<tool_call>` 이 나오면 그 뒤를 삼키고, hermes 는 `<tool_call>` 의 앞부분처럼 보이는 끝 글자(`<`·`<tool_` 등)를 다음 조각까지 잡아 두어 글이 그런 글자로 끝날 때만 그 몇 글자가 빠진다. 다만 vllm 컨테이너를 다시 만드는 동안은 OCR(`celery-cpu`)·그림 설명·연구 어시스턴트의 Qwen 호출이 멈추거나 넘김 경로로 간다.
+  - 확인 — 같은 요청을 파서를 바꾸기 전·후에 보낸다(서버 셸. 이미지에 curl 이 있다 — healthcheck 가 쓴다. 호스트에서는 `http://localhost:18081`):
+
+    ```sh
+    docker exec nl-lib-vllm curl -s http://127.0.0.1:8000/version          # 운영 vLLM 버전
+    docker inspect nl-lib-vllm --format '{{json .Config.Cmd}}'              # 실제 --tool-call-parser 값
+    docker exec nl-lib-vllm curl -s http://127.0.0.1:8000/v1/chat/completions \
+      -H 'Content-Type: application/json' -d '{
+      "model": "qwen3-vl-8b",
+      "messages": [{"role": "user", "content": "What is the weather in Seoul right now? Use the get_weather tool."}],
+      "tools": [{"type": "function", "function": {
+        "name": "get_weather", "description": "Get the current weather for a city",
+        "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}}],
+      "tool_choice": "auto", "temperature": 0, "max_tokens": 200
+    }'
+    ```
+
+    맞는 파서(`hermes`)면 `"finish_reason":"tool_calls"`·`tool_calls[0].function.name` 이 `get_weather`·arguments `{"city": "Seoul"}`·content null(호출 앞에 글이 있으면 그 글)이다. `qwen3_coder`·`qwen3_xml` 이면 `"tool_calls":[]`·`"finish_reason":"stop"` 이고 content 에 `<tool_call>…</tool_call>` 원문이 남는다. 기동 로그(`docker logs nl-lib-vllm 2>&1 | grep -i 'tool choice has been enabled'`)는 플래그가 켜졌다는 것만 알려 주고 파서가 맞는지는 알려 주지 않는다.
+- **재발 방지**:
+  - 도구 호출 파서는 모델 이름이 아니라 그 모델의 채팅 템플릿이 도구 호출을 쓰는 글을 보고 고른다 — `<tool_call>` 안이 JSON 이면 `hermes`, `<function=…>` XML 이면 `qwen3_coder`·`qwen3_xml`. 같은 Qwen3 이라도 VL·Instruct 와 Coder 의 형식이 다르다.
+  - 서빙 플래그를 바꾸면 서버가 뜨는 것만 보지 말고 그 기능을 쓰는 요청 하나(위 curl)로 결과 필드를 본다.
+  - 앱이 tools 를 보내기 시작하는 변경 전에 이 확인을 다시 한다. 도구를 부르면 `content` 가 null 이 되므로 `["content"].strip()` 처럼 읽는 곳(`app/services/ingestion/paper_enricher.py` 의 `describe_figure`)을 함께 고친다(`llm_client` 는 `or ""` 로 받는다).
+  - vLLM 버전은 태그 이름이 아니라 `/version` 으로 본다. 버전을 올릴 때는 `latest-cu130` 같은 떠다니는 태그 대신 `vX.Y.Z` 로 고정하고, 올리기 전에 25번·이 항목처럼 요청 필드·파서 동작이 바뀌었는지 그 버전의 소스로 확인한다.

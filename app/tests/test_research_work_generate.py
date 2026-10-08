@@ -43,7 +43,9 @@ def _parse(raw: str) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
-def _executor(kind: str = "concepts", built: list | None = None) -> Executor:
+# 기본 kind 는 Qwen 이 주 모델인 특징 추출이다 — TestRunGeneration 의 대본은 qwen 먼저로 쓴다
+# (핵심 개념은 06b 에, 주제 카드는 06b 배포 뒤 재비교로 gemma 로 옮겼다)
+def _executor(kind: str = "facet", built: list | None = None) -> Executor:
     def _build(inp: dict) -> tuple[list[dict], dict]:
         if built is not None:
             built.append(inp)
@@ -76,7 +78,7 @@ class _ScriptedChat:
         return [c["model"] for c in self.calls]
 
 
-def _run(chat: _ScriptedChat, *, kind: str = "concepts", built: list | None = None) -> GenerationResult:
+def _run(chat: _ScriptedChat, *, kind: str = "facet", built: list | None = None) -> GenerationResult:
     return asyncio.run(run_generation(_executor(kind, built), {"q": "질문"}, chat_fn=chat))
 
 
@@ -93,12 +95,13 @@ class TestRouting:
     def test_every_generation_kind_has_a_route(self):
         assert set(WORK_MODEL_ROUTES) == set(GEN_KINDS)
 
-    def test_reading_side_goes_to_qwen_and_writing_side_to_gemma(self):
+    def test_concepts_and_writing_side_go_to_gemma_and_the_rest_to_qwen(self):
+        # 핵심 개념은 06a Qwen 표본 결정(2026-10-06), 주제 카드는 06b 배포 뒤 재비교로 gemma 다 — 같은 줄의 자식 카드·특징 추출은 Qwen 그대로
         assert {k for k, v in WORK_MODEL_ROUTES.items() if v == QWEN} == {
-            "concepts", "topic_card", "refine", "facet",
+            "refine", "facet",
         }
         assert {k for k, v in WORK_MODEL_ROUTES.items() if v == GEMMA} == {
-            "outline", "section", "paragraph",
+            "concepts", "topic_card", "outline", "section", "paragraph",
         }
 
     def test_endpoint_reads_settings_at_call_time(self, cfg):

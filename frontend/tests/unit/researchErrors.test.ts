@@ -1,6 +1,14 @@
 // frontend/tests/unit/researchErrors.test.ts
 import { describe, expect, it } from "vitest";
-import { activeResearchId, detailMessage, httpStatus, pdfCheckProblem, researchErrorMessage } from "~/utils/researchErrors";
+import {
+  activeResearchId,
+  detailMessage,
+  httpStatus,
+  pdfCheckProblem,
+  researchErrorMessage,
+  versionConflict,
+  workErrorMessage,
+} from "~/utils/researchErrors";
 
 function fetchError(status: number, detail?: unknown) {
   return Object.assign(new Error(`HTTP ${status}`), { status, statusCode: status, data: detail === undefined ? undefined : { detail } });
@@ -88,6 +96,63 @@ describe("activeResearchId", () => {
     expect(activeResearchId(fetchError(409, BROWSER_ACTIVE))).toBeNull();
     expect(activeResearchId(new Error("Failed to fetch"))).toBeNull();
     expect(activeResearchId(null)).toBeNull();
+  });
+});
+
+// 계획서 고치기(PUT outline·sections)가 다른 곳에서 바뀐 version 에 막히면 detail 이 {code, version, message} 다
+const CONFLICT = {
+  code: "version_conflict",
+  version: 4,
+  message: "다른 곳에서 계획서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요",
+};
+
+describe("detailMessage·researchErrorMessage — 객체 detail", () => {
+  it("{message} 객체 detail 의 문구를 읽고, 문구가 없거나 비었으면 null", () => {
+    expect(detailMessage(CONFLICT)).toBe("다른 곳에서 계획서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요");
+    expect(detailMessage({ code: "x", message: "  " })).toBeNull();
+    expect(detailMessage({ code: "x", message: 3 })).toBeNull();
+  });
+
+  it("409·422 의 객체 detail 은 서버 문구를 보인다", () => {
+    expect(researchErrorMessage(fetchError(409, CONFLICT), "계획서를 저장하지 못했습니다"))
+      .toBe("다른 곳에서 계획서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요");
+    expect(researchErrorMessage(fetchError(422, { message: "묶음 키가 다릅니다" }), "실패")).toBe("묶음 키가 다릅니다");
+    expect(researchErrorMessage(fetchError(409, { code: "x" }), "실패")).toBe("실패");
+  });
+});
+
+describe("versionConflict", () => {
+  it("409 version_conflict 면 서버의 지금 version 을 준다", () => {
+    expect(versionConflict(fetchError(409, CONFLICT))).toBe(4);
+    expect(versionConflict(fetchError(409, { ...CONFLICT, version: 0 }))).toBe(0);
+  });
+
+  it("다른 409·다른 상태·version 이 정수가 아닌 detail·네트워크 오류는 null", () => {
+    expect(versionConflict(fetchError(409, "목차를 만드는 중입니다"))).toBeNull();
+    expect(versionConflict(fetchError(409, { code: "other", version: 4 }))).toBeNull();
+    expect(versionConflict(fetchError(409, { ...CONFLICT, version: "4" }))).toBeNull();
+    expect(versionConflict(fetchError(409, { ...CONFLICT, version: 1.5 }))).toBeNull();
+    expect(versionConflict(fetchError(428, CONFLICT))).toBeNull();
+    expect(versionConflict(new Error("Failed to fetch"))).toBeNull();
+    expect(versionConflict(null)).toBeNull();
+  });
+});
+
+describe("workErrorMessage", () => {
+  it("404 는 서버 문구(주제·논문·문단이 없음)를 그대로 보이고, 문구가 없으면 연구 화면과 같은 문구", () => {
+    expect(workErrorMessage(fetchError(404, "문단이 없습니다"), "실패")).toBe("문단이 없습니다");
+    expect(workErrorMessage(fetchError(404), "실패")).toBe("찾을 수 없는 연구입니다");
+  });
+
+  it("404 밖은 researchErrorMessage 와 같다", () => {
+    expect(workErrorMessage(fetchError(409, "카드가 아직 없습니다"), "실패")).toBe("카드가 아직 없습니다");
+    expect(workErrorMessage(fetchError(500), "실패")).toBe("실패");
+  });
+
+  it("절 PUT 의 422(검사 뒤 글이 상한을 넘음)는 서버 문구를 그대로 보인다 — 화면 검사는 보낸 글만 보아 통과시킨다", () => {
+    // 서버 api/research_proposal.PARAGRAPH_TOO_LONG — 이유(단정 표현 바꾸기로 늘어남)가 보여야 사용자가 줄일 곳을 안다
+    const tooLong = "검사 뒤 글이 3000자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. 조금 줄여 주세요";
+    expect(workErrorMessage(fetchError(422, tooLong), "문단을 저장하지 못했습니다")).toBe(tooLong);
   });
 });
 

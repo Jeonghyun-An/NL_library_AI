@@ -1,3 +1,5 @@
+import type { WorkPhase, WorkProgress } from "~/types/work";
+
 export type HistoryKind = "book" | "paper" | "research";
 
 // 유니온에 그냥 Omit 을 쓰면 공통 키만 남아 snapshot·refId 같은 종류별 필드가 사라진다
@@ -52,6 +54,12 @@ export interface PaperAi {
 export interface HistoryResearchStatus {
   status: string;
   stage: string;
+  // 아래 셋은 [이 연구 이어가기] 로 연구 행이 생긴 잡에만 값이 있다(app/schemas/history.py ResearchStatus).
+  // 06a 전 서버에는 키가 없다
+  phase?: WorkPhase | null;
+  progress?: Partial<WorkProgress> | null;
+  // 진행 중 생성(queued·running)이 있는가 — 사이드바 폴링 조건(06d)
+  generating?: boolean;
 }
 
 export interface HistoryBase {

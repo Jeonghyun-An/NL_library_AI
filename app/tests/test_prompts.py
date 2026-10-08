@@ -4,6 +4,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 from services.prompts import PromptLibrary
 
@@ -140,6 +141,19 @@ def test_nl_library_prompts_exist_and_render():
         evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
     assert '"summaries"' in rs_s and "E1, E3" in rs_s
     assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
+
+
+def test_nl_library_prompts_do_not_send_removed_vllm_guided_params():
+    """vLLM 은 v0.12.0 에서 guided_json·guided_regex 등 guided_* 요청 필드를 뺐다. 운영 이미지
+    (v0.20.0)는 이 필드를 400 없이 받아 debug 로그만 남기고 버리므로, params 에 남아 있으면
+    출력 제약이 조용히 빠진다. 제약은 response_format(json_schema)으로 싣는다."""
+    real_dir = Path(__file__).resolve().parents[1] / "domains" / "nl_library" / "prompts"
+    offenders = {}
+    for path in sorted(real_dir.glob("*.yaml")):
+        params = yaml.safe_load(path.read_text(encoding="utf-8")).get("params") or {}
+        if guided := [k for k in params if k.startswith("guided_")]:
+            offenders[path.name] = guided
+    assert offenders == {}
 
 
 def test_paper_table_interp_asks_for_key_findings_not_every_row():

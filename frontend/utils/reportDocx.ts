@@ -8,6 +8,7 @@ type DocxModule = typeof import("docx");
 
 const FONT = "맑은 고딕";
 const MUTED = "666666";
+const WATERMARK = "999999";
 // A4(210×297mm)와 여백 2cm — 단위는 twip(1/1440인치)
 const A4 = { width: 11906, height: 16838 };
 const MARGIN = 1134;
@@ -18,11 +19,11 @@ function pt(n: number): number {
 }
 
 function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
-  const { AlignmentType, Document, Footer, HeadingLevel, PageNumber, Paragraph, TextRun } = docx;
+  const { AlignmentType, Document, Footer, Header, HeadingLevel, PageNumber, Paragraph, TextRun } = docx;
 
   // docx 는 &<>"' 만 이스케이프하고 제어문자는 <w:t> 에 그대로 쓴다. 모델이 이미 거르지만
   // 손으로 만든 ReportDoc 도 열리는 파일이 되도록 XML 에 쓰는 자리에서 한 번 더 막는다
-  const run = (text: string, opts: { size?: number; color?: string } = {}) =>
+  const run = (text: string, opts: { size?: number; color?: string; bold?: boolean } = {}) =>
     new TextRun({ ...opts, text: xmlSafe(text) });
 
   const runsOf = (runs: DocRun[], muted = false) =>
@@ -63,6 +64,22 @@ function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
       ]
     : [];
 
+  // 워터마크는 쪽마다 머리글에 싣는다. 없으면 머리글 자체를 만들지 않는다 — 보고서 문서는 지금과 같은 구성이다
+  const headers = doc.watermark
+    ? {
+        headers: {
+          default: new Header({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [run(doc.watermark, { size: pt(11), color: WATERMARK, bold: true })],
+              }),
+            ],
+          }),
+        },
+      }
+    : {};
+
   return new Document({
     creator: "NL-Lib 딥리서치",
     title: xmlSafe(doc.fileName.replace(/\.docx$/i, "")),
@@ -83,6 +100,7 @@ function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
     sections: [
       {
         properties: { page: { size: A4, margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN } } },
+        ...headers,
         footers: {
           default: new Footer({
             children: [

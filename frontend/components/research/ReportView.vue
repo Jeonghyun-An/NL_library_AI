@@ -98,6 +98,9 @@
         </div>
       </div>
     </section>
+
+    <!-- 보고서 끝 — 완료된 연구 화면이 [이 연구 이어가기] 카드를 단다 -->
+    <slot name="footer" />
   </article>
 </template>
 

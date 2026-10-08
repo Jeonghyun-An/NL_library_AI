@@ -30,12 +30,13 @@ x-common-env: &common-env
   # 스키마 불일치 시 컬렉션 재생성 (기본 false=가드). 재생성 필요 시 Portainer 스택 env로
   # MILVUS_RECREATE_ON_MISMATCH=true 한 번 설정→재배포→기동 후 다시 false 로.
   MILVUS_RECREATE_ON_MISMATCH: ${MILVUS_RECREATE_ON_MISMATCH:-false}
-  # 인덱스 파라미터 — 파일럿은 기본(IVF_FLAT/256), 30만건 직전 IVF_SQ8/16384/64 로.
+  # 인덱스 파라미터 — 운영은 IVF_FLAT/4096/100(스택 env 도 같다, 2026-10-08 확인), 30만건 대량은 IVF_SQ8/16384/64 로.
+  # NLIST 는 인덱스를 만들 때만 쓰인다 — 이미 만든 인덱스의 값은 컬렉션 인덱스 params 로 본다
   MILVUS_INDEX_TYPE: ${MILVUS_INDEX_TYPE:-IVF_FLAT}
-  MILVUS_NLIST: ${MILVUS_NLIST:-256}
-  MILVUS_NPROBE: ${MILVUS_NPROBE:-32}
+  MILVUS_NLIST: ${MILVUS_NLIST:-4096}
+  MILVUS_NPROBE: ${MILVUS_NPROBE:-100}
 
-  # VLM (멀티모달 OCR — 같은 스택 vllm 컨테이너 / Qwen2.5-VL)
+  # VLM (멀티모달 — 같은 스택 vllm 컨테이너 / Qwen3-VL-30B-A3B-Instruct-FP8. 이름은 qwen3-vl-8b 그대로 — vllm 서비스 주석)
   VLM_BASE_URL: ${VLM_BASE_URL:-http://vllm:8000/v1}
   VLM_MODEL: ${VLM_MODEL:-qwen3-vl-8b}
 
@@ -357,7 +358,7 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # ── vLLM (Gemma 4 E4B) ──────────────────────
+  # ── vLLM VLM (Qwen3-VL-30B-A3B-Instruct-FP8 — OCR·그림 설명·연구 어시스턴트 Qwen 경로) ──
   vllm:
     # image: landsoftdocker/nl-lib-vllm:latest
     image: vllm/vllm-openai:latest-cu130
@@ -382,20 +383,21 @@ services:
     volumes:
       - /data/models/.hf-cache:/models:rw
     command:
-      - Qwen/Qwen3-VL-8B-Instruct
+      # 2026-10-07 8B → 30B-A3B-FP8 로 바꿨다. served-model-name 은 앱의 VLM_MODEL(qwen3-vl-8b)과 맞추려 그대로
+      # 둔다 — 로그·생성 기록의 모델 이름이 실제 모델과 다르다
+      - Qwen/Qwen3-VL-30B-A3B-Instruct-FP8
       - --served-model-name
       - qwen3-vl-8b
       - --download-dir
       - /models
-      # OCR 전용이라 긴 컨텍스트가 필요 없다.
-      # 페이지 이미지 토큰(수천) + VLM_MAX_TOKENS(4096) 출력 → 16K 로 충분.
-      # max-model-len 을 줄이면 KV 캐시가 그만큼 줄어 util 0.2 로도 여유가 생긴다.
+      # 페이지 이미지 토큰(수천) + VLM_MAX_TOKENS(4096) 출력 → 16K 로 충분하다(OCR 기준)
       - --max-model-len
       - "${VLM_MAX_MODEL_LEN:-16384}"
       - --dtype
       - bfloat16
+      # 30B-A3B-FP8 은 가중치만 약 31GB 라 예전 기본값 0.2(약 28.7GB)로는 뜨지 않는다 — 운영 값 0.3
       - --gpu-memory-utilization
-      - "${VLM_GPU_UTIL:-0.2}"
+      - "${VLM_GPU_UTIL:-0.3}"
       - --max-num-seqs
       - "${VLM_MAX_NUM_SEQS:-8}"
       # - --enforce-eager
@@ -403,6 +405,13 @@ services:
       - "0.0.0.0"
       - --port
       - "8000"
+      # 도구 호출 파싱 — 요청에 tools 를 실을 때만 돈다(2026-10-08 지금 앱은 tools 를 보내지 않는다).
+      # Qwen3-VL 채팅 템플릿은 <tool_call>{"name", "arguments"}</tool_call> JSON(Hermes) 형식이라 hermes 다.
+      # qwen3_coder·qwen3_xml 은 <function=…><parameter=…> XML 형식(Qwen3-Coder 등)용이라 이 모델의 호출을
+      # 읽지 못한다 — 서버는 뜨지만 tool_calls 가 비고 호출 글이 content 에 남거나(스트리밍은) 사라진다
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - hermes
     ports:
       - "18081:8000"
     healthcheck:
@@ -468,48 +477,49 @@ services:
     restart: unless-stopped
 
   # ── FLUX.1-dev (표지 자동 생성) ──────────────
-  flux:
-    image: landsoftdocker/nl-lib-flux:latest
-    container_name: nl-lib-flux
-    <<: *nl-lib-net
-    shm_size: "8g"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    environment:
-      HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_TOKEN}
-      HF_TOKEN: ${HUGGINGFACE_TOKEN}
-      HF_HOME: "/models"
-      CUDA_VISIBLE_DEVICES: "0"
-      NVIDIA_VISIBLE_DEVICES: "0"
-      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
-      FLUX_MODEL_ID: ${FLUX_MODEL_ID:-black-forest-labs/FLUX.1-dev}
-      FLUX_DTYPE: "bfloat16"
-      FLUX_CPU_OFFLOAD: "false"
-      FLUX_LORA_ID: ${FLUX_LORA_ID:-prithivMLmods/EBook-Creative-Cover-Flux-LoRA}
-      FLUX_LORA_SCALE: ${FLUX_LORA_SCALE:-0.85}
-      FLUX_LORA_TRIGGER: ${FLUX_LORA_TRIGGER:-BOOK}
-    volumes:
-      - /data/models/.hf-cache:/models:rw
-    ports:
-      - "18090:8000"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python3",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 40
-      start_period: 600s
-    restart: unless-stopped
+  # 운영 스택은 꺼 두었다(2026-10-08 운영 compose 기준) — 표지 생성을 쓸 때 주석을 푼다
+  # flux:
+  #   image: landsoftdocker/nl-lib-flux:latest
+  #   container_name: nl-lib-flux
+  #   <<: *nl-lib-net
+  #   shm_size: "8g"
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   environment:
+  #     HUGGINGFACE_HUB_TOKEN: ${HUGGINGFACE_TOKEN}
+  #     HF_TOKEN: ${HUGGINGFACE_TOKEN}
+  #     HF_HOME: "/models"
+  #     CUDA_VISIBLE_DEVICES: "0"
+  #     NVIDIA_VISIBLE_DEVICES: "0"
+  #     NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+  #     FLUX_MODEL_ID: ${FLUX_MODEL_ID:-black-forest-labs/FLUX.1-dev}
+  #     FLUX_DTYPE: "bfloat16"
+  #     FLUX_CPU_OFFLOAD: "false"
+  #     FLUX_LORA_ID: ${FLUX_LORA_ID:-prithivMLmods/EBook-Creative-Cover-Flux-LoRA}
+  #     FLUX_LORA_SCALE: ${FLUX_LORA_SCALE:-0.85}
+  #     FLUX_LORA_TRIGGER: ${FLUX_LORA_TRIGGER:-BOOK}
+  #   volumes:
+  #     - /data/models/.hf-cache:/models:rw
+  #   ports:
+  #     - "18090:8000"
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD",
+  #         "python3",
+  #         "-c",
+  #         "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)",
+  #       ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 40
+  #     start_period: 600s
+  #   restart: unless-stopped
 
   # ── PaddleOCR (GPU) ──────────────────────────
   # paddleocr:
