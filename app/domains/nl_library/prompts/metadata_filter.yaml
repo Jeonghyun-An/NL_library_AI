@@ -3,8 +3,8 @@ params:
   max_tokens: 128
   temperature: 0.0
   # 구조화 출력 — 이 스키마를 벗어난 토큰은 아예 샘플링되지 않는다.
-  # 제약이 없으면 LLM이 설명을 덧붙이거나 코드펜스를 빼먹을 때 파싱 실패 → 조용히 필터
-  # 없음으로 폴백한다(metadata_filter.py 참고).
+  # 제약이 없으면 LLM이 설명을 덧붙이거나 코드펜스를 빼먹을 때 파싱 실패 → 경고 로그만
+  # 남기고 필터 없음으로 폴백한다(metadata_filter.py 참고).
   # OpenAI 표준 response_format 으로 싣는다 — vLLM 은 이것을 structured_outputs.json 으로
   # 바꿔 건다(v0.20.0 ChatCompletionRequest.to_sampling_params). 예전의 guided_json 은
   # v0.12.0 에서 빠졌고, 그 뒤 버전은 400 없이 받아 debug 로그만 남기고 버려서 제약이
