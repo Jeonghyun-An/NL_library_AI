@@ -1,6 +1,6 @@
 <!-- frontend/components/work/ProposalSection.vue -->
 <template>
-  <section :id="`wk-sec-${sectionKey}`" class="rs-card wk-psec" :aria-labelledby="`wk-sec-title-${sectionKey}`">
+  <section :id="`wk-sec-${sectionKey}`" ref="rootEl" class="rs-card wk-psec" :aria-labelledby="`wk-sec-title-${sectionKey}`">
     <header class="wk-psec__head">
       <h3 :id="`wk-sec-title-${sectionKey}`" class="rs-card__title">{{ label }}</h3>
       <span class="rs-badge" :class="STATUS_BADGES[status]">{{ STATUS_LABELS[status] }}</span>
@@ -83,7 +83,7 @@
         <div v-if="editingId === p.id" class="wk-psec__edit">
           <label>
             <span class="rs-sr-only">{{ paraName(pi) }} 고치기</span>
-            <textarea v-model="editText" rows="6" :disabled="busy" />
+            <textarea v-model="editText" data-edit-box rows="6" :disabled="busy" />
           </label>
           <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 두세요 — 지우면 인용·수치가 빠집니다.</p>
           <p v-if="editProblem" class="rs-muted" role="status">{{ editProblem }}</p>
@@ -150,6 +150,7 @@
               class="rs-btn rs-btn--small rs-btn--ghost"
               :disabled="locked"
               :aria-describedby="bandId(p.id)"
+              :data-edit-for="p.id"
               @click="startEdit(p.id, p.text)"
             >
               고치기<span class="rs-sr-only"> {{ paraName(pi) }}</span>
@@ -172,7 +173,7 @@
       <template v-if="adding">
         <label>
           <span class="rs-sr-only">더할 문단</span>
-          <textarea v-model="addText" rows="4" :disabled="busy" placeholder="직접 쓸 문단 — 인용하려면 이 절의 [E1] 표기를 그대로 쓰세요" />
+          <textarea v-model="addText" data-add-box rows="4" :disabled="busy" placeholder="직접 쓸 문단 — 인용하려면 이 절의 [E1] 표기를 그대로 쓰세요" />
         </label>
         <p v-if="addText && addProblem" class="rs-muted" role="status">{{ addProblem }}</p>
         <div class="rs-card__actions">
@@ -185,6 +186,7 @@
         type="button"
         class="rs-btn rs-btn--small rs-btn--ghost"
         :disabled="locked || section.paragraphs.length >= MAX_PARAGRAPHS_PUT"
+        data-add-open
         @click="adding = true"
       >
         문단 직접 쓰기
@@ -197,7 +199,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
@@ -416,6 +418,20 @@ watch(
     pending = null;
   },
 );
+
+// 칸을 여는 버튼은 칸이 열리면 사라지고(v-if) 칸은 닫히면 사라진다 — 포커스를 옮기지 않으면 body 로 떨어져 키보드·
+// 스크린리더 사용자가 페이지 맨 앞에서 다시 찾아와야 한다(운영 확인 2026-10-08). 열면 칸으로, 닫으면 그 칸을 연 버튼으로
+const rootEl = ref<HTMLElement | null>(null);
+
+function focusLater(selector: string): void {
+  void nextTick(() => rootEl.value?.querySelector<HTMLElement>(selector)?.focus());
+}
+
+watch(editingId, (now, was) => {
+  if (now) focusLater("[data-edit-box]");
+  else if (was) focusLater(`[data-edit-for="${CSS.escape(was)}"]`);
+});
+watch(adding, (now) => focusLater(now ? "[data-add-box]" : "[data-add-open]"));
 
 function startEdit(pid: string, text: string): void {
   editingId.value = pid;

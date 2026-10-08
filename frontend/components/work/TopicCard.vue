@@ -13,7 +13,7 @@
     <form v-if="editing" class="wk-edit" @submit.prevent="submitEdit">
       <label class="wk-edit__field">
         <span class="wk-edit__label">제목</span>
-        <input v-model="draftTitle" class="wk-edit__input" type="text" :maxlength="TOPIC_TITLE_MAX" />
+        <input v-model="draftTitle" data-edit-box class="wk-edit__input" type="text" :maxlength="TOPIC_TITLE_MAX" />
       </label>
       <label class="wk-edit__field">
         <span class="wk-edit__label">연구 질문</span>
@@ -78,7 +78,13 @@
       >
         다시<span v-if="cardName" class="rs-sr-only"> {{ cardName }}</span>
       </button>
-      <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="readOnly || busy" @click="startEdit">
+      <button
+        type="button"
+        class="rs-btn rs-btn--small rs-btn--ghost"
+        :disabled="readOnly || busy"
+        data-edit-open
+        @click="startEdit"
+      >
         직접 고치기<span v-if="cardName" class="rs-sr-only"> {{ cardName }}</span>
       </button>
     </div>
@@ -86,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
 import type { Figure, PaperMeta, TopicItem, TopicPatch } from "~/types/work";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
@@ -164,6 +170,12 @@ const editing = ref(false);
 const draftTitle = ref("");
 const draftQuestion = ref("");
 const problem = ref<string | null>(null);
+
+// 열면 제목 칸으로, 닫으면 [직접 고치기]로 포커스를 옮긴다 — 여는 버튼과 칸이 v-if 로 번갈아 사라져 그대로 두면
+// 포커스가 body 로 떨어진다(운영 확인 2026-10-08)
+watch(editing, (now) => {
+  void nextTick(() => rootEl.value?.querySelector<HTMLElement>(now ? "[data-edit-box]" : "[data-edit-open]")?.focus());
+});
 
 function startEdit(): void {
   draftTitle.value = props.item.card?.title ?? "";
