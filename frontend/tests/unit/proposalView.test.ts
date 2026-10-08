@@ -17,6 +17,7 @@ import {
   addParagraph,
   checkLine,
   editParagraph,
+  failedParagraphGens,
   footprint,
   footprintLine,
   openParagraphGens,
@@ -221,6 +222,34 @@ describe("paragraphViews · openParagraphGens", () => {
     const open = openParagraphGens(work, "prior.g1", ["p1", "p2"]);
     expect([...open.entries()].map(([pid, g]) => [pid, g.id])).toEqual([["p1", 61]]);
     expect(openParagraphGens(null, "prior.g1", ["p1"]).size).toBe(0);
+  });
+
+  it("글을 얻지 못하고 끝난 다시 쓰기의 문단만 고른다 — 그 문단을 쓴 생성보다 나중이고, 실패나 빈 결과(model 없음)인 것", () => {
+    // 서버는 끝내 검사를 못 넘은 다시 쓰기(입력을 옮긴 답 등)의 문단을 그대로 둔다 — 화면이 알리지 않으면 [다시]가 듣지 않은 듯 보인다
+    const pgen = (id: number, status: WorkGeneration["status"], pid: string, model: string | null = null) => ({
+      ...gen(id, status, `prior.g1#${pid}`),
+      kind: "paragraph" as const,
+      model,
+    });
+    const sec = section([
+      para("p1", "proposed"), // 빈 결과로 끝남 → 고른다
+      para("p2", "accepted"), // 실패 → 고른다
+      para("p3", "proposed"), // 결과가 있다(반영 전) → 빼기
+      para("p4", "proposed"), // 그 문단보다 옛 생성 → 빼기
+      para("p5", "edited"), // 사용자가 고친 문단 → 빼기
+      para("p6", "proposed"), // 실패 뒤 다시 눌러 열린 생성이 가장 새 것 → 빼기
+    ]);
+    const work = state([
+      pgen(60, "done", "p1"),
+      pgen(61, "failed", "p2"),
+      pgen(62, "done", "p3", "gemma-3-12b"),
+      pgen(40, "done", "p4"),
+      pgen(63, "done", "p5"),
+      pgen(64, "failed", "p6"),
+      pgen(65, "queued", "p6"),
+    ]).work;
+    expect([...failedParagraphGens(work, "prior.g1", sec.paragraphs)]).toEqual(["p1", "p2"]);
+    expect(failedParagraphGens(null, "prior.g1", sec.paragraphs).size).toBe(0);
   });
 });
 
