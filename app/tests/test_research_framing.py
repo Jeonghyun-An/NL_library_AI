@@ -18,6 +18,12 @@ from services.research.framing import (
 
 ELDERLY = "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
 COMPUTING = "컴퓨팅 자원에 대한 연구가 궁금해"
+# API min_length=2 를 통과하지만 content_words 가 [] 다 — 낱말 검사가 아무것도 거르지 않는다
+NO_CONTENT = "연구가 궁금해"
+
+# parse_frame 이 물러날 때 남기는 [framing] 줄 머리 — 어느 검사가 걸렀는지 가른다
+BLANK_OR_LONG = f"[framing] 넓힌 질문이 비었거나 {framing.FRAMED_QUESTION_MAX}자를 넘어"
+NOT_A_STRING = "[framing] 응답의 question 이 없거나 문자열이 아니어서"
 
 
 def _reply(question, terms=()) -> str:
@@ -76,16 +82,22 @@ class TestParseFrame:
         (line,) = _framing_lines(caplog)
         assert line.startswith("[framing] 넓힌 질문이 원 질문 낱말") and "우울" in line
 
-    @pytest.mark.parametrize("raw", [
-        _reply("   "),
-        json.dumps({"question": 3, "terms": ["노인"]}),
-        json.dumps({"terms": ["노인 우울"]}, ensure_ascii=False),
-        _reply("노인의 우울과 사회적 지지 " + "가" * 500),
-    ], ids=["blank", "not-a-string", "missing", "too-long"])
-    def test_empty_non_string_or_too_long_question_is_refused(self, raw, caplog):
+    @pytest.mark.parametrize(("raw", "question", "head"), [
+        (_reply("   "), ELDERLY, BLANK_OR_LONG),
+        # 내용어가 없는 질문은 낱말 검사가 아무것도 거르지 않는다 — 빈 문장은 이 검사만 막는다(빠지면 make_plan('')·
+        # question_used '' 가 된다). 이름표만 옮겨 낸 답도 이름표를 떼면 빈 문장이다
+        (_reply("   "), NO_CONTENT, BLANK_OR_LONG),
+        (_reply("질문: "), NO_CONTENT, BLANK_OR_LONG),
+        (json.dumps({"question": 3, "terms": ["노인"]}), ELDERLY, NOT_A_STRING),
+        (json.dumps({"terms": ["노인 우울"]}, ensure_ascii=False), ELDERLY, NOT_A_STRING),
+        (_reply("노인의 우울과 사회적 지지 " + "가" * 500), ELDERLY, BLANK_OR_LONG),
+    ], ids=["blank", "blank-no-content-words", "label-only-no-content-words", "not-a-string", "missing", "too-long"])
+    def test_empty_non_string_or_too_long_question_is_refused(self, raw, question, head, caplog):
         with caplog.at_level(logging.WARNING, logger="services.research.framing"):
-            assert parse_frame(raw, ELDERLY) is None
-        assert len(_framing_lines(caplog)) == 1
+            assert parse_frame(raw, question) is None
+        # 줄 머리까지 본다 — 어느 검사가 걸렀는지 고정한다(뒤의 낱말 검사가 대신 걸러도 통과하지 않게)
+        (line,) = _framing_lines(caplog)
+        assert line.startswith(head)
 
     def test_specific_question_returned_as_it_is_is_kept(self):
         # 함정 26 — 모델이 입력을 그대로 베껴도 정상이다(이미 구체적인 질문은 그대로 두라고 했다)
