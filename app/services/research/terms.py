@@ -42,11 +42,19 @@ def _strip_particle(token: str) -> str:
     return token
 
 
+def tokens(text: str) -> list[str]:
+    """어절 나누기 — NFKC·casefold 뒤 문장부호를 공백으로 바꿔 공백으로 나눈다(조사는 떼지 않는다).
+
+    content_words 와 넓히기의 한 글자 어절 검사(framing)가 같은 나누기를 쓴다 — 규칙을 한 곳에 둔다.
+    """
+    return _PUNCT.sub(" ", _normalize(text or "")).split()
+
+
 def content_words(text: str) -> list[str]:
-    """내용어 — NFKC·casefold, 문장부호는 공백, 어절 끝 조사 하나를 떼고, 2자 이상·질문 꼴 낱말 아님·
+    """내용어 — NFKC·casefold, 문장부호는 공백(tokens), 어절 끝 조사 하나를 떼고, 2자 이상·질문 꼴 낱말 아님·
     조사만 남은 어절 아님. 처음 나온 순서대로 중복 없이."""
     out: list[str] = []
-    for token in _PUNCT.sub(" ", _normalize(text or "")).split():
+    for token in tokens(text):
         word = _strip_particle(token)
         if len(word) < 2 or word in QUESTION_WORDS or word in PARTICLES or word in out:
             continue

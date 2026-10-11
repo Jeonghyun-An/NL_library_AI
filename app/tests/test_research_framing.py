@@ -12,6 +12,7 @@ from jinja2 import Environment, meta
 
 from services.prompts import get_prompt
 from services.research import framing
+from services.research import terms as terms_module
 from services.research.framing import (
     BROADEN_TIMEOUT, Framing, clean_terms, frame_question, parse_frame, unframed,
 )
@@ -150,6 +151,12 @@ class TestParseFrame:
     ], ids=["bare", "one-char-particle", "two-char-particle", "punctuation", "nfkc"])
     def test_one_char_word_is_matched_as_a_whole_word(self, question, framed):
         assert parse_frame(_reply(framed), question) == Framing(framed, [])
+
+    def test_one_char_check_splits_words_the_way_content_words_does(self):
+        # 한 글자 어절 검사는 terms 의 어절 나누기를 그대로 쓴다 — 복사본을 두면 terms 의 문장부호·정규화 규칙을
+        # 바꿨을 때 내용어 검사와 한 글자 검사가 서로 다르게 나눈다
+        assert framing.tokens is terms_module.tokens
+        assert not hasattr(framing, "_tokens") and not hasattr(framing, "_PUNCT")
 
     @pytest.mark.parametrize(("question", "framed"), [
         ("노인 및 장애인 복지 정책 연구가 궁금해", "노인과 장애인을 위한 복지 정책의 효과와 과제에 관한 국내 연구 동향"),

@@ -25,7 +25,7 @@ import httpx
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.llm_json import extract_json
-from services.research.terms import PARTICLES, QUESTION_WORDS, contains, content_words
+from services.research.terms import PARTICLES, QUESTION_WORDS, contains, content_words, tokens
 
 log = logging.getLogger(__name__)
 
@@ -51,8 +51,6 @@ _ECHO_LABEL = re.compile(r"^\s*질문\s*[:：]\s*")
 ONE_CHAR_FUNCTION_WORDS: tuple[str, ...] = (
     "및", "등", "왜", "또", "즉", "더", "좀", "그", "각", "수", "것", "때", "중", "할", "한", "될", "된",
 )
-# terms.content_words 와 같은 어절 나누기 — 문장부호를 공백으로
-_PUNCT = re.compile(r"[^\w\s]")
 
 
 @dataclass(frozen=True)
@@ -70,20 +68,15 @@ def _squash(text: str) -> str:
     return " ".join(text.split())
 
 
-def _tokens(text: str) -> list[str]:
-    """terms.content_words 와 같은 어절 나누기 — NFKC·casefold 뒤 문장부호를 공백으로 바꿔 나눈다(조사는 떼지 않는다)."""
-    return _PUNCT.sub(" ", unicodedata.normalize("NFKC", text or "").casefold()).split()
-
-
 def _one_char_words(question: str) -> list[str]:
-    """원 질문의 한 글자 어절 — _tokens 로 나눈 어절 가운데 한 글자인 것. 조사·질문 꼴 낱말·ONE_CHAR_FUNCTION_WORDS 는
-    빼고, 처음 나온 순서대로 중복 없이.
+    """원 질문의 한 글자 어절 — terms.tokens(content_words 와 같은 어절 나누기)로 나눈 어절 가운데 한 글자인 것.
+    조사·질문 꼴 낱말·ONE_CHAR_FUNCTION_WORDS 는 빼고, 처음 나온 순서대로 중복 없이.
 
     조사 떼기는 하지 않는다 — terms 는 떼고 남는 것이 2자 미만이면 떼지 않으므로('암이' 는 그대로 내용어다) 한 글자
     낱말은 늘 한 글자 어절 그대로다.
     """
     out: list[str] = []
-    for token in _tokens(question):
+    for token in tokens(question):
         if len(token) != 1 or token in PARTICLES or token in QUESTION_WORDS or token in ONE_CHAR_FUNCTION_WORDS:
             continue
         if token not in out:
@@ -92,7 +85,7 @@ def _one_char_words(question: str) -> list[str]:
 
 
 def _has_one_char_word(framed_tokens: list[str], char: str) -> bool:
-    """넓힌 문장의 어절(_tokens) 가운데 char 그대로이거나 char + 조사 하나(PARTICLES — 암의·뇌를·암에서)인 것이 있는가.
+    """넓힌 문장의 어절(terms.tokens) 가운데 char 그대로이거나 char + 조사 하나(PARTICLES — 암의·뇌를·암에서)인 것이 있는가.
 
     contains(공백 지운 부분 문자열)로 보면 다른 낱말 안에 낀 글자에도 맞는다 — '방법'·'기법'의 '법', '암호화'의 '암',
     '뇌물'의 '뇌' 때문에 지어낸 주제가 지나간다(특히 '법'은 넓힌 문장에 흔히 붙는 '방법'에 늘 들어 있다). 붙여 쓴
@@ -148,7 +141,7 @@ def parse_frame(raw: str | None, question: str) -> Framing | None:
         # make_plan 입력·question_used 가 되고 terms 가 모든 검색어에 붙는다. 검사할 수 없으니 넓히지 않는다
         log.warning("[framing] 원 질문에 대조할 낱말이 없어 원 질문을 쓴다 — %r", framed[:120])
         return None
-    framed_tokens = _tokens(framed)
+    framed_tokens = tokens(framed)
     missing = [word for word in words if not contains(framed, word)]
     missing += [char for char in chars if not _has_one_char_word(framed_tokens, char)]
     if missing:

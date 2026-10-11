@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from services.research.terms import (
-    PARTICLES, QUERY_FILLERS, QUESTION_WORDS, compose_query, contains, content_words,
+    PARTICLES, QUERY_FILLERS, QUESTION_WORDS, compose_query, contains, content_words, tokens,
 )
 
 SHARED_FIXTURE = (
@@ -50,6 +50,13 @@ class TestSharedFixture:
     @pytest.mark.parametrize("case", SHARED["contains"], ids=[c["note"] for c in SHARED["contains"]])
     def test_contains_matches_the_shared_fixture(self, case):
         assert contains(case["text"], case["word"]) is case["expected"]
+
+
+class TestTokens:
+    def test_words_are_split_on_spaces_and_punctuation_after_normalizing(self):
+        # content_words 와 넓히기의 한 글자 어절 검사(framing)가 함께 쓰는 어절 나누기 — 조사는 떼지 않는다
+        assert tokens("「ＣＳＲ·공시」에서, 노인의  우울?") == ["csr", "공시", "에서", "노인의", "우울"]
+        assert tokens("") == [] and tokens(None) == []
 
 
 class TestContentWords:
