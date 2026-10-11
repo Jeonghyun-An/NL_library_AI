@@ -32,6 +32,7 @@ class TestSharedFixture:
         assert any("제도" in c["words"] for c in SHARED["content_words"])
         assert any("으로" in t for t in texts)
         assert any(t.startswith("「") and "」에서 출발해," in t for t in texts)
+        assert any("알려주세요" in t for t in texts)          # 요청 꼴 — 처음 값의 활용 꼴도 질문 꼴 낱말이다
         pairs = {(c["text"], c["word"]): c["expected"] for c in SHARED["contains"]}
         assert pairs[("노인의 우울과 사회적 지지", "노인 우울")] is True
         assert pairs[("노인의 우울", "우울 노인")] is False
@@ -61,11 +62,15 @@ class TestTokens:
 
 class TestContentWords:
     def test_constants_start_from_the_spec_values(self):
-        # spec §12-2 의 처음 값 — 운영 질문을 보고 늘릴 수는 있어도 조용히 줄면 넓히기 검사가 느슨해진다
+        # spec §12-2 의 처음 값 — 운영 질문을 보고 늘릴 수는 있어도 조용히 바뀌면 넓히기 검사가 달라진다.
+        # QUESTION_WORDS 끝 여덟은 처음 값의 활용 꼴(관한→관해·관하여, 대한→대해·대하여, 궁금해→궁금해요,
+        # 알려줘→알려주세요, 찾아줘→찾아주세요, 연구→연구들)이다 — 없으면 '노인 우울에 대해 알려주세요' 를 넓힌 답이
+        # 요청 말까지 글자 그대로 옮겨야만 낱말 검사를 지나간다(06c 최종 리뷰)
         assert PARTICLES == ("에서", "에게", "으로", "로", "의", "은", "는", "이", "가", "을", "를",
                              "와", "과", "에", "도", "만")
         assert QUESTION_WORDS == ("연구", "관한", "대한", "관련", "궁금해", "궁금합니다", "알려줘", "찾아줘",
-                                  "무엇", "어떻게")
+                                  "무엇", "어떻게",
+                                  "관해", "관하여", "대해", "대하여", "궁금해요", "알려주세요", "찾아주세요", "연구들")
         assert QUERY_FILLERS == ("국내 학술논문에서",)
 
     def test_one_trailing_particle_is_stripped_longest_first(self):

@@ -100,6 +100,12 @@ class TestParseFrame:
         framed = parse_frame(raw, ELDERLY)
         assert framed is not None and framed.question.startswith("노인이 겪는 우울")
 
+    def test_request_words_need_not_be_copied(self):
+        # 요청 꼴('대해 알려주세요')은 묻는 말이지 주제가 아니다 — 넓힌 문장이 옮기지 않아도 받아들인다. 내용어로 남으면
+        # 실사용 질문 대부분이 로그 한 줄만 남기고 원문으로 물러난다(고정 5문항은 모두 '…연구가 궁금해'라 판정에 안 보인다)
+        framed = "노인 우울에 관한 국내 연구 동향과 사회적 지지"
+        assert parse_frame(_reply(framed), "노인 우울에 대해 알려주세요") == Framing(framed, [])
+
     def test_question_that_drops_a_word_is_refused(self, caplog):
         raw = _reply("노인의 사회적 지지와 삶의 만족에 관한 연구 동향", ["사회적 지지"])
         with caplog.at_level(logging.WARNING, logger="services.research.framing"):
