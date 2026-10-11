@@ -326,8 +326,9 @@ class TestRoundEvents:
         st = self._state("가", max_recheck=1)
         events = self._run(st, explore=_explore_table(
             {"가": ["A", "B"], "다른 검색어 1": ["B", "C"]}))
+        # 탐색 후보(candidates)는 counters 뒤·자기점검 전에 회차마다 한 번 — 스위치와 무관하게 늘 낸다(06c)
         assert [k for k, _ in events] == [
-            "search", "counters", "critique", "search", "counters", "critique"]
+            "search", "counters", "candidates", "critique", "search", "counters", "candidates", "critique"]
         assert _of(events, "counters") == [
             {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0, "excluded": 0},
             {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1, "excluded": 0},
@@ -1427,3 +1428,95 @@ class TestSharedChunkScore:
         assert b.evidence_chunks == {"E1": ["P-c1"]}
         assert b.chunk_scores == {"P-c1": 0.95}
         assert a.chunk_scores == {"P-c1": 0.2}
+
+
+def _brief(cnts_id):
+    """_hits 서지(저자 없음)의 _paper_brief — candidates 이벤트의 papers 항목."""
+    return {"cnts_id": cnts_id, "title": f"논문 {cnts_id}", "personal_author": None, "pub_date": "2008-06"}
+
+
+class TestCandidatesEvent:
+    """탐색 후보 목록(06c, Q9) — 회차마다 이번 검색이 이은 후보를 자기점검 전에 낸다. 06d 장부가 '검토 중' 더미를
+    세웠다가 critique 의 채택·뺌으로 옮긴다. 화면 이벤트일 뿐이라 회차 기록·스냅숏에는 없다."""
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def _run(self, st, sq, explore, critic):
+        events, emit = _recorder()
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=explore, critique_fn=critic, emit=emit))
+        return events
+
+    def test_each_round_streams_its_candidates_before_the_critique(self):
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, st.subquestions[0],
+                           _explore_table({"가": ["A", "B"], "보완": ["C"]}),
+                           _ScriptedCritic(("insufficient", [], ["보완"]), ("sufficient", [], [])))
+        assert [k for k, _ in events] == [
+            "search", "counters", "candidates", "critique", "search", "counters", "candidates", "critique"]
+        assert [(c["subq_idx"], c["round"]) for c in _of(events, "candidates")] == [(0, 1), (0, 2)]
+
+    def test_candidates_follow_the_order_they_were_linked(self):
+        # 이은 순서(검색 결과 순서)다 — 순위순(evidence_ids)이 아니다. 다른 하위질문이 먼저 만든 근거(A)도 든다
+        st = self._state("가", "나", max_recheck=0)
+        first, second = st.subquestions
+        scores = {"가": [0.9], "나": [0.3, 0.5, 0.9]}
+        table = {"가": ["A"], "나": ["B", "C", "A"]}
+
+        async def _explore(query, *, params, db):
+            return _hits(table[query], query=query, scores=scores[query])
+
+        self._run(st, first, _explore, _ScriptedCritic(("sufficient", [], [])))
+        events = self._run(st, second, _explore, _ScriptedCritic(("sufficient", [], [])))
+        (candidates,) = _of(events, "candidates")
+        assert [p["cnts_id"] for p in candidates["papers"]] == ["B", "C", "A"]
+        # 순위는 회차 1위 B 가 앞자리, 나머지는 점수순 — 후보 순서와 다르다
+        assert [st.evidence[e].cnts_id for e in second.evidence_ids] == ["B", "A", "C"]
+
+    def test_candidates_carry_paper_briefs(self):
+        st = self._state("가", max_recheck=0)
+        events = self._run(st, st.subquestions[0], _explore_table({"가": ["A", "B"]}),
+                           _ScriptedCritic(("sufficient", [], [])))
+        assert _of(events, "candidates") == [
+            {"subq_idx": 0, "round": 1, "papers": [_brief("A"), _brief("B")]}]
+
+    def test_round_without_new_links_streams_an_empty_list(self):
+        # 빈 목록도 낸다 — 06d 는 다음 회차 후보로 앞 더미를 갈음한다
+        st = self._state("가", max_recheck=0)
+        events = self._run(st, st.subquestions[0], _empty_explore, _ScriptedCritic(("sufficient", [], [])))
+        assert _of(events, "candidates") == [{"subq_idx": 0, "round": 1, "papers": []}]
+
+    def test_excluded_or_budget_blocked_papers_are_not_candidates(self):
+        # 앞 회차에 무관하다고 뺀 B 는 다시 걸려도 잇지 않는다 — 후보도 아니다
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, st.subquestions[0],
+                           _explore_table({"가": ["A", "B"], "보완": ["B", "C"]}),
+                           _ScriptedCritic(("insufficient", [2], ["보완"]), ("sufficient", [], [])))
+        assert [[p["cnts_id"] for p in c["papers"]] for c in _of(events, "candidates")] == [["A", "B"], ["C"]]
+        # 몫(하위질문 둘·전체 2편 → 1편)에 막힌 B 도 잇지 않는다
+        st = self._state("가", "나", max_recheck=0, max_evidence=2, min_evidence_per_subq=1)
+        events = self._run(st, st.subquestions[0], _explore_table({"가": ["A", "B"]}),
+                           _ScriptedCritic(("sufficient", [], [])))
+        assert [p["cnts_id"] for p in _of(events, "candidates")[0]["papers"]] == ["A"]
+        assert st.subquestions[0].budget_capped == 1
+
+    def test_candidates_are_not_kept_in_the_round_history(self):
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        self._run(st, sq, _explore_table({"가": ["A"]}), _ScriptedCritic(("sufficient", [], [])))
+        assert set(sq.rounds[0]) == {
+            "round", "query", "found_chunks", "new_papers", "verdict", "note", "next_query", "excluded",
+            "excluded_papers", "flagged", "flagged_papers", "adopted_papers"}
+        from services.research.state import snapshot_state
+        assert "candidates" not in json.dumps(snapshot_state(st), ensure_ascii=False)
+
+    @pytest.mark.parametrize("switch", [0, 1])
+    def test_candidates_are_streamed_whatever_the_switches(self, switch):
+        st = ResearchState(job_id="j", question="q", params=merge_params(
+            {"broaden": switch, "query_context": switch, "max_recheck": 0}))
+        sq = SubQuestion(idx=0, text="가")
+        st.subquestions = [sq]
+        events = self._run(st, sq, _fake_explore, _ScriptedCritic(("sufficient", [], [])))
+        assert [k for k, _ in events].count("candidates") == 1

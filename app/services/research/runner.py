@@ -280,6 +280,14 @@ async def explore_subquestion(
             leaders.append(fresh[0])
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
         await emit("counters", research_stats(state))
+        # 이번 검색이 이 하위질문에 이은 후보(이은 순서) — 자기점검이 판정하기 전에 화면이 '검토 중'으로 세운다(06d).
+        # 화면 이벤트일 뿐이라 회차 기록(rounds)·스냅숏·단계 result 에 넣지 않는다 — 지나간 '검토 중'은 critique 의
+        # 채택·뺌으로 이미 보인다. 검색·판정을 바꾸지 않으므로 스위치(broaden·query_context)와 무관하게 늘 내고,
+        # 이은 근거가 없어도 빈 목록으로 낸다(다음 회차 후보가 앞 더미를 갈음한다)
+        await emit("candidates", {
+            "subq_idx": subq.idx, "round": round_no,
+            "papers": [_paper_brief(state.evidence[e]) for e in linked],
+        })
 
         # 원 질문은 늘 넘긴다 — 쓸지는 critic 이 잡 파라미터 critic_scope 로 정한다
         verdict = await critique_fn(

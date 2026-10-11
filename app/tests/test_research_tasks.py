@@ -1590,6 +1590,43 @@ class TestLiveProgress:
         assert [res["counters"]["excluded"] for _, res in h.progress] == [2]
         assert h.finished[0][2]["counters"]["excluded"] == 2
 
+    def test_candidates_are_streamed_but_not_saved(self, monkeypatch):
+        """탐색 후보(06c)는 화면 이벤트일 뿐이다 — 진짜 러너를 돌려 흘린 candidates 가 그대로 나가고, 진행 저장은
+        자기점검(critique)에서만 한다. 단계 result 에 싣지 않으므로 재접속한 화면에는 '검토 중' 더미가 없다."""
+        from services.research.critic import Verdict
+        from services.research.runner import explore_subquestion
+
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        h = None
+        saved_at = []
+
+        async def _hits_for(query, *, params, db):
+            hit = {"book_id": "A", "chunk_id": "A-c1", "text": "대목", "page_start": 1, "page_end": 1,
+                   "score": 0.9, "rank_score": 0.9}
+            return [hit], {"A": {"title": "논문 A", "pub_date": "2008-06"}}
+
+        async def _critic(subq, evidence, *, params, question=None):
+            saved_at.append(len(h.progress))
+            return Verdict("sufficient", note="충분")
+
+        async def _real_round(state, subq):
+            await explore_subquestion(state, subq, db=None, explore_fn=_hits_for, critique_fn=_critic,
+                                      emit=h.emit)
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[], explore=_real_round)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [e[0] for e in h.events if e[0] in ("search", "counters", "candidates", "critique")] == [
+            "search", "counters", "candidates", "critique"]
+        (candidates,) = [e[1] for e in h.events if e[0] == "candidates"]
+        assert candidates == {"subq_idx": 0, "round": 1, "papers": [
+            {"cnts_id": "A", "title": "논문 A", "personal_author": None, "pub_date": "2008-06"}]}
+        # 판정 전까지 저장 0번, 회차를 닫는 critique 에서 한 번 — 저장한 result 에 후보가 없다
+        assert saved_at == [0] and len(h.progress) == 1
+        assert set(h.progress[0][1]) == {"rounds", "counters"}
+        assert "candidates" not in json.dumps(h.progress[0][1], ensure_ascii=False)
+
     def test_section_progress_is_saved_on_the_synthesis_step(self, monkeypatch):
         rt = _load_tasks(monkeypatch)
         job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=_explored_snapshot(),
