@@ -672,13 +672,14 @@ def test_make_labels_reports_a_question_whose_job_cannot_be_read(tmp_path, capsy
 # ── run_pair.py ─────────────────────────────────────────────────────────
 
 
-def _fake_research_api(fail: str | None = None):
+def _fake_research_api(fail: str | None = None, reject: dict | None = None):
     """POST /research·GET /research/{id}·POST approve 를 흉내 낸다.
 
     조회할 때마다 한 걸음씩 나아간다 — created → planning → awaiting_approval, approved → running → completed.
-    fail 로 준 잡은 planning 다음에 failed 가 된다.
+    fail 로 준 잡은 planning 다음에 failed 가 된다. reject 와 같은 params 로 잡을 만들면 API(merge_params)처럼 422 다.
+    승인할 때마다 그 순간 모든 잡의 상태를 state["at_approve"][잡 id] 에 남긴다.
     """
-    state = {"jobs": {}, "requests": []}
+    state = {"jobs": {}, "requests": [], "at_approve": {}}
     steps = {"created": "planning", "planning": "awaiting_approval", "approved": "running", "running": "completed"}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -686,6 +687,8 @@ def _fake_research_api(fail: str | None = None):
         path = request.url.path
         if request.method == "POST" and path == "/api/research":
             body = json.loads(request.content)
+            if reject is not None and body["params"] == reject:
+                return httpx.Response(422, json={"detail": "알 수 없는 파라미터: query_contxt"})
             jid = f"job-{len(state['jobs']) + 1}"
             state["jobs"][jid] = {"job_id": jid, "question": body["question"], "params": body["params"],
                                   "status": "created", "plan": None, "last_error": None, "approved_with": "없음"}
@@ -693,6 +696,7 @@ def _fake_research_api(fail: str | None = None):
         m = re.fullmatch(r"/api/research/([^/]+)(/approve)?", path)
         job = state["jobs"][m.group(1)]
         if m.group(2):
+            state["at_approve"][job["job_id"]] = {k: j["status"] for k, j in state["jobs"].items()}
             job["approved_with"] = json.loads(request.content) if request.content else None
             job["status"] = "approved"
             return httpx.Response(200, json={"job_id": job["job_id"], "status": "approved"})
@@ -706,6 +710,12 @@ def _fake_research_api(fail: str | None = None):
                                                              "plan", "last_error")})
 
     return state, handler
+
+
+def _posts(state) -> list[str]:
+    """보낸 POST 를 차례로 — 잡 만들기는 'create', 승인은 'approve <잡 id>'."""
+    return ["create" if r.url.path == "/api/research" else f"approve {r.url.path.split('/')[-2]}"
+            for r in state["requests"] if r.method == "POST"]
 
 
 def test_run_question_approves_arm1_with_arm0_plan_and_no_browser_id():
@@ -855,6 +865,74 @@ def test_run_question_with_own_plan_approves_arm1_with_its_own_plan():
     # 두 갈래 모두 본문 없이 — 저마다 제가 세운 계획으로 돈다
     assert jobs["job-1"]["approved_with"] is None and jobs["job-2"]["approved_with"] is None
     assert [j["status"] for j in jobs.values()] == ["completed", "completed"]
+
+
+def test_run_question_with_own_plan_plans_both_arms_before_either_runs():
+    """--plan own 은 두 계획을 모두 실행이 없을 때 세운다. 갈래 0 을 먼저 승인하면 갈래 1 의 계획(넓히기 gemma + 계획 —
+    elapsed_ms)이 갈래 0 실행(핵심 개념·자기점검도 같은 gemma)과 겹쳐, 계획 시간(§12-7 갈래 1 p50 5초)을 갈래 1 만
+    부하 아래에서 잰다. 갈래 0 은 늘 빈 때 계획한다 — 앞 질문의 두 갈래가 끝난 뒤 다음 질문으로 간다."""
+    from run_pair import run_question
+
+    state, handler = _fake_research_api()
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        run_question(client, API, "컴퓨팅 자원에 대한 연구가 궁금해", poll=0, timeout=60.0,
+                     params0=P0_06C, params1=P1_06C, plan="own", sleep=lambda _: None)
+
+    assert _posts(state) == ["create", "create", "approve job-1", "approve job-2"]
+    # 갈래 0 을 승인하는 순간 두 갈래 모두 계획을 마치고 기다리고 있다 — 아무것도 돌지 않을 때 둘 다 계획했다
+    assert state["at_approve"]["job-1"] == {"job-1": "awaiting_approval", "job-2": "awaiting_approval"}
+
+
+def test_run_pair_main_defaults_keep_the_06b_behaviour(tmp_path, capsys):
+    """정함 16 — 플래그 없이 돌리면 06a·06b 판정과 같은 동작이다: 갈래 0 critic_scope 0·갈래 1 critic_scope 1, 갈래 1 은
+    갈래 0 의 계획으로 승인하고, 갈래 0 을 승인한 뒤에 갈래 1 을 만든다(shared 는 순서를 바꾸지 않았다). 실행 기록
+    머리 줄만 는다."""
+    from run_pair import main
+
+    questions = tmp_path / "questions.json"
+    questions.write_text(json.dumps([{"key": "computing", "question": "컴퓨팅 자원에 대한 연구가 궁금해"}],
+                                    ensure_ascii=False), encoding="utf-8")
+    state, handler = _fake_research_api()
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--out", str(tmp_path / "pairs.json"), "--questions", str(questions),
+                   "--poll", "0"], client=client)
+
+    assert rc == 0
+    jobs = state["jobs"]
+    assert [j["params"] for j in jobs.values()] == [{"critic_scope": 0}, {"critic_scope": 1}]
+    assert jobs["job-1"]["approved_with"] is None
+    assert jobs["job-2"]["approved_with"] == {"plan": ["job-1 계획 1", "job-1 계획 2"]}
+    assert _posts(state) == ["create", "approve job-1", "create", "approve job-2"]
+    assert state["at_approve"]["job-1"] == {"job-1": "awaiting_approval"}
+    assert '갈래 0 {"critic_scope": 0} · 갈래 1 {"critic_scope": 1} · 계획 shared' in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("plan", ["shared", "own"])
+def test_run_pair_stops_when_the_api_rejects_the_params(tmp_path, capsys, plan):
+    """키 오타·범위 밖 값은 API(merge_params)가 잡 만들기에서 422 로 거절한다 — 모든 질문이 같은 까닭으로 떨어지므로
+    다음 질문으로 넘어가지 않고 2 로 끝난다(쓰지 못할 갈래 0 잡이 질문마다 운영 실행 워커를 차지하지 않게). own 은
+    갈래 0 을 승인하기 전에 걸린다."""
+    from run_pair import main
+
+    questions = tmp_path / "questions.json"
+    questions.write_text(json.dumps([{"key": "computing", "question": "컴퓨팅 자원에 대한 연구가 궁금해"},
+                                     {"key": "library", "question": "공공도서관 서비스 품질 평가 연구가 궁금해"}],
+                                    ensure_ascii=False), encoding="utf-8")
+    typo = {"critic_scope": 0, "broaden": 1, "query_contxt": 1}
+    state, handler = _fake_research_api(reject=typo)
+    out = tmp_path / "pairs.json"
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--out", str(out), "--questions", str(questions), "--poll", "0",
+                   "--param0", json.dumps(P0_06C), "--param", json.dumps(typo), "--plan", plan], client=client)
+
+    assert rc == 2
+    # 첫 질문의 갈래 1 에서 멈춘다 — 둘째 질문의 잡을 만들지 않는다
+    assert list(state["jobs"]) == ["job-1"]
+    assert _posts(state) == (["create", "approve job-1", "create"] if plan == "shared" else ["create", "create"])
+    assert not out.exists()
+    text = capsys.readouterr().out
+    text.encode("cp949")
+    assert "HTTP 422" in text and "알 수 없는 파라미터: query_contxt" in text
 
 
 def test_run_pair_main_passes_params_and_plan_mode(tmp_path, capsys):
