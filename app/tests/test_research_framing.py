@@ -97,8 +97,13 @@ class TestParseFrame:
         ("뇌·인지 연구", "인지 기능과 학습 전략에 관한 국내 연구 동향", "뇌"),
         # NFKC·casefold 도 content_words 와 같다 — 전각 'Ｃ' 는 'c' 다
         ("Ｃ 언어 교육 연구가 궁금해", "파이썬 언어 교육의 방법과 효과에 관한 국내 연구 동향", "c"),
+        # 한 글자 어절은 어절 경계로 본다 — 부분 문자열(contains)로 보면 다른 낱말 안에 낀 글자에도 맞아 지어낸 주제가
+        # 지나간다. '법'은 넓힌 문장에 흔히 붙는 '방법'·'기법'·'방법론'에 늘 들어 있다
+        ("법 관련 연구 알려줘", "인공지능 교육의 효과와 방법에 관한 국내 연구 동향", "법"),
+        (CANCER, "암호화 알고리즘의 보안성에 관한 국내 연구 동향", "암"),
+        ("뇌 연구", "공무원 뇌물 수수의 원인에 관한 국내 연구 동향", "뇌"),
     ], ids=["no-content-words-made-up-topic", "no-content-words-replaced", "replaced-beside-content-words",
-            "brain", "punctuation", "nfkc"])
+            "brain", "punctuation", "nfkc", "law-inside-method", "cancer-inside-cipher", "brain-inside-bribe"])
     def test_question_that_drops_a_one_char_word_is_refused(self, question, framed, dropped, caplog):
         with caplog.at_level(logging.WARNING, logger="services.research.framing"):
             assert parse_frame(_reply(framed, ["교육 플랫폼"]), question) is None
@@ -110,6 +115,20 @@ class TestParseFrame:
         raw = _reply("암의 발생 요인과 치료, 환자의 삶의 질에 관한 국내 연구 동향", ["암 치료", "암 환자 삶의 질"])
         assert parse_frame(raw, CANCER) == Framing(
             "암의 발생 요인과 치료, 환자의 삶의 질에 관한 국내 연구 동향", ["암 치료", "암 환자 삶의 질"])
+
+    @pytest.mark.parametrize(("question", "framed"), [
+        # 어절이 그 글자 하나다 — 곁에 '기법'(법이 낀 다른 낱말)이 있어도 상관없다
+        ("뇌 연구", "뇌 영상 기법으로 본 인지 기능에 관한 국내 연구 동향"),
+        # 그 글자 + 조사 하나 — 한 글자 조사('과')와 두 글자 조사('에서')
+        ("법 관련 연구 알려줘", "법과 제도가 교육 방법에 미치는 영향에 관한 국내 연구 동향"),
+        (CANCER, "암에서 나타나는 유전자 변이와 치료 효과에 관한 국내 연구 동향"),
+        # 넓힌 문장도 원 질문처럼 문장부호를 공백으로 나눈다 — '뇌·인지' 의 '뇌' 는 어절이다
+        ("뇌·인지 연구", "뇌·인지 기능과 학습 전략에 관한 국내 연구 동향"),
+        # 넓힌 문장도 NFKC·casefold 한다 — 전각 'Ｃ' 는 'c' 다
+        ("c 언어 교육 연구가 궁금해", "Ｃ 언어 교육의 방법과 효과에 관한 국내 연구 동향"),
+    ], ids=["bare", "one-char-particle", "two-char-particle", "punctuation", "nfkc"])
+    def test_one_char_word_is_matched_as_a_whole_word(self, question, framed):
+        assert parse_frame(_reply(framed), question) == Framing(framed, [])
 
     @pytest.mark.parametrize(("question", "framed"), [
         ("노인 및 장애인 복지 정책 연구가 궁금해", "노인과 장애인을 위한 복지 정책의 효과와 과제에 관한 국내 연구 동향"),
