@@ -511,6 +511,17 @@ class TestQueryComposition:
         assert sent == [self.TEXT, "국내 학술논문에서 가상화 기반 자원 스케줄링"]
         assert sq.queries == sent
 
+    def test_switch_off_keeps_the_spacing_too(self):
+        # spec §12-7 '글자 그대로' 는 공백도다 — 겹친 공백·앞뒤 공백을 정리하면 스위치 0 의 검색어가 06c 전과 달라진다
+        sent, explore = self._searched()
+        text = "국내 학술논문에서  컴퓨팅 자원 할당 방법 "
+        suggestion = " 국내 학술논문에서 가상화  기반 자원 스케줄링"
+        sq = SubQuestion(idx=0, text=text)
+        asyncio.run(explore_subquestion(self._state(0, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic([suggestion]), emit=None))
+        assert sent == [text, suggestion]
+        assert sq.queries == sent
+
     def test_first_search_drops_fillers_and_adds_missing_terms(self):
         sent, explore = self._searched()
         asyncio.run(explore_subquestion(self._state(1), SubQuestion(idx=0, text=self.TEXT), db=None,

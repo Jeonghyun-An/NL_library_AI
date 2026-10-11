@@ -122,6 +122,13 @@ class TestComposeQuery:
         assert compose_query("컴퓨팅 자원 할당 방법", ["컴퓨팅 자원", "클라우드", "엣지 컴퓨팅"]) == (
             "컴퓨팅 자원 할당 방법 클라우드 엣지 컴퓨팅")
 
+    def test_terms_are_tidied_and_empty_ones_skipped(self):
+        # 06e·score.py 가 옮겨 쓰는 순수 함수라 입력을 믿지 않는다(정함 12) — 빈 용어를 붙이면 끝 공백이 남아 두 번
+        # 거친 값이 달라진다(멱등이 깨진다)
+        once = compose_query("자원 할당", ["", "   ", "클라우드  컴퓨팅"])
+        assert once == "자원 할당 클라우드 컴퓨팅"
+        assert compose_query(once, ["", "   ", "클라우드  컴퓨팅"]) == once
+
     def test_term_contained_in_an_added_term_is_not_added_again(self):
         # 이어 붙인 용어도 다음 비교에 든다 — '클라우드 컴퓨팅' 을 붙인 뒤 '클라우드' 는 이미 있다
         assert compose_query("자원 할당", ["클라우드 컴퓨팅", "클라우드"]) == "자원 할당 클라우드 컴퓨팅"

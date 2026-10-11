@@ -953,6 +953,25 @@ class TestPlan:
         assert isinstance(result["elapsed_ms"], int) and result["elapsed_ms"] >= 0
         assert job.plan == ["하위1", "하위2"]
 
+    def test_switch_off_keeps_the_question_byte_for_byte(self, monkeypatch):
+        """spec §12-7 '스위치 0 이면 계획 입력이 지금과 글자 그대로' — 공백도 정리하지 않는다. job.question 은 어디서도
+        정규화되지 않아(ResearchCreate 에 strip 이 없다) 겹친 공백·끝 공백이 실제로 들어온다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 0}
+        job.question = "독서  격차 연구는 어디까지 왔나 "
+        asked = []
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert asked == ["독서  격차 연구는 어디까지 왔나 "]
+        assert h.finished[-1][2]["question_used"] == "독서  격차 연구는 어디까지 왔나 "
+
     def test_switch_on_plans_the_broadened_question_and_announces_it_first(self, monkeypatch):
         rt = _load_tasks(monkeypatch)
         job = _FakeJob(stage="created", plan=None, status="created")
@@ -982,6 +1001,29 @@ class TestPlan:
         # 원 질문은 그대로 남는다(보고서 머리·기록·critic_scope 1·핵심 개념이 읽는다). 계획은 make_plan 결과 그대로
         assert job.question == "독서 격차 연구는 어디까지 왔나"
         assert job.plan == ["하위1"]
+
+    def test_plan_time_covers_broadening_and_planning(self, monkeypatch):
+        """정함 5 — elapsed_ms 는 단계를 연 뒤 넓히기 + 계획의 시간이다(§12-7 계획 p50 5초, Q4 판정 기준). 넓히기를 빼고
+        재면 판정이 켜는 쪽으로 기운다. 계획 태스크가 쓰는 time 은 monotonic 하나뿐이라 모듈 속성만 가짜 시계로
+        바꾼다 — 전역 time.monotonic 은 asyncio 루프가 쓴다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        now = [100.0]
+        monkeypatch.setattr(rt, "time", types.SimpleNamespace(monotonic=lambda: now[0]))
+
+        async def _frame(question):
+            now[0] += 3.0
+            return self.BROAD
+
+        async def _plan(question, params):
+            now[0] += 0.5
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_frame)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert h.finished[-1][2]["elapsed_ms"] == 3500
 
     def test_broadening_waits_with_no_read_transaction_open(self, monkeypatch):
         # 함정 18 — 넓히기도 LLM 을 기다린다. 읽기 트랜잭션을 쥔 채 기다리면 FastAPI 기동 DDL 을 막는다
@@ -1073,7 +1115,7 @@ class TestPlanTerms:
 
     @pytest.mark.parametrize("result", [{"subquestions": ["하위1"]}, None],
                              ids=["before-06c", "no-plan-step"])
-    def test_plan_step_without_terms_gives_none(self, monkeypatch, result):
+    def test_plan_step_without_terms_gives_no_terms(self, monkeypatch, result):
         rt = _load_tasks(monkeypatch)
         assert asyncio.run(rt._plan_terms(_FakeSession(scalar=result), uuid.uuid4())) == []
 
