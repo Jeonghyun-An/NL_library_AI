@@ -1401,6 +1401,12 @@ describe("questionUsedFromSteps — 이렇게 이해했어요(06c)", () => {
     expect(questionUsedFromSteps([off], ASKED)).toBeNull();
     expect(questionUsedFromSteps([step({ result: { question_used: " 컴퓨팅  자원에 대한 연구가 궁금해" } })], ASKED)).toBeNull();
     expect(questionUsedFromSteps([step({ result: { question_used: "ＡＩ 윤리 교육의 효과" } })], "AI 윤리 교육의 효과")).toBeNull();
+    // 원 질문 쪽도 접는다 — job.question 은 서버·화면 어디서도 정규화되지 않는다(ResearchCreate 에 strip 이 없고
+    // planSlashSubmit 은 trim 만, paperResearchQuestion 은 공백만 접고 NFKC 는 안 한다). 스위치 0·넓히기 실패면
+    // 서버가 unframed(question) 으로 question_used 를 job.question 과 바이트까지 같게 둔다
+    const raw = "컴퓨팅  자원에 대한\n연구가 궁금해";
+    expect(questionUsedFromSteps([step({ result: { question_used: raw } })], raw)).toBeNull();
+    expect(questionUsedFromSteps([step({ result: { question_used: "AI 윤리 교육의 효과" } })], "ＡＩ 윤리 교육의 효과")).toBeNull();
   });
 
   it("question_used 가 없으면 null — 06c 전 잡·계획 단계 전", () => {
