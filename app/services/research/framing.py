@@ -8,7 +8,8 @@
 넓힌 문장은 코드가 검사한다 — 원 질문의 내용어(terms.content_words)가 하나라도 넓힌 문장에 들어 있지 않거나
 (terms.contains), 한 글자 어절(암·뇌·법 — content_words 의 2자 바닥에 걸린다, ONE_CHAR_FUNCTION_WORDS 는 빼고)이
 하나라도 넓힌 문장에 어절로 있지 않으면(그 글자이거나 그 글자 + 조사 하나 — '방법'의 '법'은 아니다) 원 질문을
-쓴다. 모델이 원 질문을 그대로 내도(함정 26) 정상이다 — 이미 구체적인 질문은 그대로 두라고 했다. 입력
+쓴다. 원 질문에 대조할 낱말이 하나도 없으면('연구가 궁금해') 검사할 수 없으니 넓히지 않는다. 모델이 원 질문을 그대로
+내도(함정 26) 정상이다 — 이미 구체적인 질문은 그대로 두라고 했다. 입력
 이름표('질문:')째 옮겨 낸 답은 이름표를 떼고 본다(함정 26). 원 질문으로 물러나는 것은
 FRAME_FAILURES(chat 의 전송·상태·JSON·응답 모양 오류)·빈 응답·검사 실패뿐이고, 그 밖의 예외는 올린다 — 코드 결함·
 태스크 제어 예외(SoftTimeLimitExceeded)를 '원문'으로 숨기면 스위치를 켠 판정이 넓히기 없이 나온다(함정 19). 계획
@@ -124,8 +125,9 @@ def parse_frame(raw: str | None, question: str) -> Framing | None:
     """넓히기 응답 → Framing. 쓸 수 없으면 None(호출 쪽이 원 질문으로 물러난다).
 
     JSON 객체를 읽지 못하거나, "question" 이 문자열이 아니거나, 입력 이름표를 떼고 공백 정리한 뒤 비었거나
-    FRAMED_QUESTION_MAX 를 넘거나, 원 질문의 내용어가 하나라도 넓힌 문장에 contains 가 아니거나, 한 글자
-    어절(_one_char_words)이 하나라도 넓힌 문장의 어절로 있지 않으면(_has_one_char_word) None 이다. 물러나는 까닭마다
+    FRAMED_QUESTION_MAX 를 넘거나, 원 질문에 대조할 낱말(내용어·한 글자 어절)이 하나도 없거나, 원 질문의 내용어가
+    하나라도 넓힌 문장에 contains 가 아니거나, 한 글자 어절(_one_char_words)이 하나라도 넓힌 문장의 어절로 있지
+    않으면(_has_one_char_word) None 이다. 물러나는 까닭마다
     그 자리에서 [framing] 경고를 한 줄 남긴다(frame_question 은 다시 찍지 않는다) — 판정 뒤 낱말 검사에서 떨어진 수를 '[framing] 넓힌 질문이 원 질문 낱말' 줄 수로 센다(한 글자 어절도 같은 줄이다).
     """
     data = extract_json(raw or "")
@@ -140,9 +142,15 @@ def parse_frame(raw: str | None, question: str) -> Framing | None:
     if not framed or len(framed) > FRAMED_QUESTION_MAX:
         log.warning("[framing] 넓힌 질문이 비었거나 %d자를 넘어 원 질문을 쓴다", FRAMED_QUESTION_MAX)
         return None
+    words, chars = content_words(question), _one_char_words(question)
+    if not words and not chars:
+        # '연구가 궁금해'·'관련 연구 알려줘' — 대조할 낱말이 없으면 아래 검사가 아무것도 거르지 못해 지어낸 주제가
+        # make_plan 입력·question_used 가 되고 terms 가 모든 검색어에 붙는다. 검사할 수 없으니 넓히지 않는다
+        log.warning("[framing] 원 질문에 대조할 낱말이 없어 원 질문을 쓴다 — %r", framed[:120])
+        return None
     framed_tokens = _tokens(framed)
-    missing = [word for word in content_words(question) if not contains(framed, word)]
-    missing += [char for char in _one_char_words(question) if not _has_one_char_word(framed_tokens, char)]
+    missing = [word for word in words if not contains(framed, word)]
+    missing += [char for char in chars if not _has_one_char_word(framed_tokens, char)]
     if missing:
         log.warning("[framing] 넓힌 질문이 원 질문 낱말 %s 를 빠뜨려 원 질문을 쓴다 — %r", missing, framed[:120])
         return None

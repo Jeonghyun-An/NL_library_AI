@@ -18,7 +18,7 @@ from services.research.framing import (
 
 ELDERLY = "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
 COMPUTING = "컴퓨팅 자원에 대한 연구가 궁금해"
-# API min_length=2 를 통과하지만 content_words 가 [] 다 — 낱말 검사가 아무것도 거르지 않는다
+# API min_length=2 를 통과하지만 content_words 가 [] 이고 한 글자 어절도 없다 — 대조할 낱말이 없어 넓히지 않는다
 NO_CONTENT = "연구가 궁금해"
 # 한 글자 명사 — content_words 의 2자 바닥에 걸려 내용어가 [] 다. 넓히기 검사는 한 글자 어절을 따로 본다
 CANCER = "암 연구가 궁금해"
@@ -27,6 +27,10 @@ WORD_DROPPED = "[framing] 넓힌 질문이 원 질문 낱말"
 # parse_frame 이 물러날 때 남기는 [framing] 줄 머리 — 어느 검사가 걸렀는지 가른다
 BLANK_OR_LONG = f"[framing] 넓힌 질문이 비었거나 {framing.FRAMED_QUESTION_MAX}자를 넘어"
 NOT_A_STRING = "[framing] 응답의 question 이 없거나 문자열이 아니어서"
+NO_ANCHOR = "[framing] 원 질문에 대조할 낱말이 없어"
+# 정리 전 용어(전각·대소문자 중복·겹친 공백·문자열 아님·30자 초과·5개 넘음)와 clean_terms 를 거친 값
+RAW_TERMS = ["ＧＰＵ", "gpu", "  자원   할당 ", 3, "가" * 31, "클라우드 컴퓨팅", "엣지 컴퓨팅", "가상화"]
+CLEAN_TERMS = ["GPU", "자원 할당", "클라우드 컴퓨팅", "엣지 컴퓨팅"]
 
 
 def _reply(question, terms=()) -> str:
@@ -71,6 +75,23 @@ class TestParseFrame:
         assert parse_frame(raw, COMPUTING) == Framing(
             "클라우드·엣지 환경에서 컴퓨팅 자원을 할당하고 관리하는 방법에 대한 연구 동향은 어떠한가",
             ["컴퓨팅 자원 할당", "클라우드 컴퓨팅"])
+
+    def test_terms_in_the_reply_are_cleaned(self):
+        # 정함 9 — 응답의 terms 는 clean_terms 를 거쳐 실린다. 빠지면 LLM 이 낸 용어(5개 넘게·30자 넘게·중복·전각)가 plan
+        # step result 에 그대로 실리고, query_context 1 이면 compose_query 가 모든 검색어에 붙인다
+        framed = "클라우드·엣지 환경에서 컴퓨팅 자원을 할당하는 방법에 대한 국내 연구 동향"
+        assert parse_frame(_reply(framed, RAW_TERMS), COMPUTING) == Framing(framed, CLEAN_TERMS)
+
+    @pytest.mark.parametrize("question", [NO_CONTENT, "관련 연구 알려줘"], ids=["no-content", "only-question-words"])
+    def test_question_with_no_word_to_check_keeps_the_original(self, question, caplog):
+        # 원 질문에 내용어도 한 글자 어절도 없으면 낱말 검사가 아무것도 거르지 못한다 — 지어낸 주제가 make_plan 입력·
+        # question_used('이렇게 이해했어요')가 되고 terms 가 모든 검색어에 붙는다. 검사할 수 없으니 넓히지 않는다
+        raw = _reply("인공지능 기반 교육 플랫폼의 효과에 관한 국내 연구 동향", ["교육 플랫폼"])
+        with caplog.at_level(logging.WARNING, logger="services.research.framing"):
+            assert parse_frame(raw, question) is None
+        # 물러날 때마다 [framing] 한 줄 — 낱말 검사 줄('넓힌 질문이 원 질문 낱말')과 갈라 센다
+        (line,) = _framing_lines(caplog)
+        assert line.startswith(NO_ANCHOR)
 
     def test_particle_change_still_keeps_the_word(self):
         # '노인의' → '노인이' — 어절째 대조하면 떨어지지만 내용어(노인)는 그대로 있다
@@ -133,15 +154,17 @@ class TestParseFrame:
     @pytest.mark.parametrize(("question", "framed"), [
         ("노인 및 장애인 복지 정책 연구가 궁금해", "노인과 장애인을 위한 복지 정책의 효과와 과제에 관한 국내 연구 동향"),
         ("더 효과적인 독서 교육 방법 연구가 궁금해", "효과적인 독서 교육 방법과 그 효과를 다룬 국내 연구 동향"),
-    ], ids=["and", "more"])
+        # 띄어 쓴 조사('노인 의')는 한 글자 낱말이 아니다(PARTICLES 제외) — 보면 넓히기가 쓸데없이 원문으로 물러난다
+        ("노인 의 우울 연구가 궁금해", "노인이 겪는 우울과 사회적 지지에 관한 국내 연구 동향"),
+    ], ids=["and", "more", "spaced-particle"])
     def test_one_char_function_words_may_be_rephrased(self, question, framed):
         # 및·더 는 주제가 아니라 잇는 말이다 — 넓힌 문장이 다른 말로 바꾸거나 빼도 받아들인다
         assert parse_frame(_reply(framed), question) == Framing(framed, [])
 
     @pytest.mark.parametrize(("raw", "question", "head"), [
         (_reply("   "), ELDERLY, BLANK_OR_LONG),
-        # 내용어가 없는 질문은 낱말 검사가 아무것도 거르지 않는다 — 빈 문장은 이 검사만 막는다(빠지면 make_plan('')·
-        # question_used '' 가 된다). 이름표만 옮겨 낸 답도 이름표를 떼면 빈 문장이다
+        # 내용어가 없는 질문에 빈 답 — 빈 문장 검사가 대조할 낱말 검사보다 먼저 거른다(줄 머리로 고정한다. 둘 다
+        # 빠지면 make_plan('')·question_used '' 가 된다). 이름표만 옮겨 낸 답도 이름표를 떼면 빈 문장이다
         (_reply("   "), NO_CONTENT, BLANK_OR_LONG),
         (_reply("질문: "), NO_CONTENT, BLANK_OR_LONG),
         (json.dumps({"question": 3, "terms": ["노인"]}), ELDERLY, NOT_A_STRING),
@@ -210,6 +233,16 @@ class TestFrameQuestion:
         assert BROADEN_TIMEOUT == 20
         assert [m["role"] for m in messages] == ["system", "user"]
         assert messages[1]["content"] == f"질문: {ELDERLY}"
+
+    def test_terms_reach_the_planner_cleaned(self, monkeypatch):
+        # 계획 태스크가 받는 Framing 의 terms 도 정리된 값이다 — plan step result·ResearchState.terms 가 이것이다
+        framed = "노인이 겪는 우울과 사회적 지지의 관계에 관한 국내 연구 동향"
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            return _reply(framed, RAW_TERMS)
+
+        monkeypatch.setattr(framing, "chat", fake_chat)
+        assert asyncio.run(frame_question(ELDERLY)) == Framing(framed, CLEAN_TERMS)
 
     @pytest.mark.parametrize("error", [
         httpx.ReadTimeout("응답 없음"), httpx.ConnectError("연결 거부"), _status_error(),
