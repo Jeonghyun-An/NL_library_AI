@@ -20,11 +20,13 @@ import types
 import uuid
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from sqlalchemy.sql import operators
 from sqlalchemy.sql.elements import BinaryExpression, BindParameter, BooleanClauseList, Grouping
 from sqlalchemy.sql.selectable import Exists
 
+from services.research import framing
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, snapshot_state,
 )
@@ -250,6 +252,8 @@ class _Harness:
         self.drops: list[tuple] = []
         # 대기 순번 ZSET 에서 뺀 잡
         self.unmarked: list = []
+        # 넓히기(frame_question) 대역이 받은 질문 — TestPlan._patch 가 채운다
+        self.framed: list[str] = []
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
@@ -847,7 +851,7 @@ class TestTimeout:
 
 
 class TestPlan:
-    def _patch(self, monkeypatch, rt, job, make_plan):
+    def _patch(self, monkeypatch, rt, job, make_plan, *, frame=None):
         h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
         planner = types.ModuleType("services.research.planner")
 
@@ -857,6 +861,16 @@ class TestPlan:
 
         planner.make_plan = _make_plan
         monkeypatch.setitem(sys.modules, "services.research.planner", planner)
+
+        # 넓히기는 늘 대역으로 바꾼다 — broaden 기본값이 1 로 바뀌어도(06c 판정) 계획 태스크를 도는 테스트가 진짜
+        # chat(HTTP·재시도, BROADEN_TIMEOUT 까지)을 부르지 않는다. 태스크는 함수 안에서 import 하므로 부를 때의 모듈
+        # 속성(이 대역)을 읽는다. 기본 대역은 받은 질문을 남기고 원 질문 그대로 둔다. 진짜 넓히기를 거치는 테스트는
+        # frame=framing.frame_question 을 넘기고 framing.chat 만 바꾼다
+        async def _unframed(question):
+            h.framed.append(question)
+            return framing.unframed(question)
+
+        monkeypatch.setattr(framing, "frame_question", frame or _unframed)
         return h
 
     def test_plan_success_awaits_approval(self, monkeypatch):
@@ -902,6 +916,134 @@ class TestPlan:
 
         assert out["status"] == "canceled"
         assert job.status == "canceled" and job.plan is None
+
+    BROAD = framing.Framing(
+        "청소년의 독서 격차가 생기는 원인과 격차를 줄이는 중재에 관한 국내 연구는 어디까지 왔나",
+        ["청소년 독서", "독서 격차 중재"],
+    )
+
+    def test_switch_off_plans_the_original_question_and_records_it(self, monkeypatch):
+        """broaden 0 이면 계획 입력이 지금과 글자 그대로다 — 넓히기를 부르지 않고 중간 알림도 없다. 완료 result 에는
+        계획에 넘긴 질문(원문)·빈 용어·계획 시간이 더 실린다. 기본값이 바뀌어도 뜻이 같게 값을 적는다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 0}
+        asked = []
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1", "하위2"]
+
+        h = self._patch(monkeypatch, rt, job, _plan)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "awaiting_approval"
+        assert asked == [job.question] == ["독서 격차 연구는 어디까지 왔나"]
+        assert h.framed == [] and h.progress == []
+        _, status, result, _ = h.finished[-1]
+        assert status == "done"
+        assert set(result) == {"subquestions", "question_used", "terms", "elapsed_ms"}
+        assert (result["subquestions"], result["question_used"], result["terms"]) == (
+            ["하위1", "하위2"], job.question, [])
+        assert isinstance(result["elapsed_ms"], int) and result["elapsed_ms"] >= 0
+        assert job.plan == ["하위1", "하위2"]
+
+    def test_switch_on_plans_the_broadened_question_and_announces_it_first(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        order = []
+        h = None
+
+        async def _frame(question):
+            order.append(("frame", question))
+            return self.BROAD
+
+        async def _plan(question, params):
+            order.append(("plan", question, len(h.progress)))
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_frame)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "awaiting_approval"
+        # 넓힌 질문을 계획보다 먼저 알린다(단계는 running 그대로) — 계획은 넓힌 문장으로 세운다
+        assert order == [("frame", "독서 격차 연구는 어디까지 왔나"), ("plan", self.BROAD.question, 1)]
+        assert [r for _, r in h.progress] == [{"question_used": self.BROAD.question, "terms": self.BROAD.terms}]
+        assert [a[1] for a in h.announced] == ["running", "done"]
+        result = h.finished[-1][2]
+        assert {k: result[k] for k in ("subquestions", "question_used", "terms")} == {
+            "subquestions": ["하위1"], "question_used": self.BROAD.question, "terms": self.BROAD.terms}
+        # 원 질문은 그대로 남는다(보고서 머리·기록·critic_scope 1·핵심 개념이 읽는다). 계획은 make_plan 결과 그대로
+        assert job.question == "독서 격차 연구는 어디까지 왔나"
+        assert job.plan == ["하위1"]
+
+    def test_broadening_waits_with_no_read_transaction_open(self, monkeypatch):
+        # 함정 18 — 넓히기도 LLM 을 기다린다. 읽기 트랜잭션을 쥔 채 기다리면 FastAPI 기동 DDL 을 막는다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        open_at_frame = []
+        h = None
+
+        async def _frame(question):
+            open_at_frame.append(h.session.in_txn)
+            return framing.unframed(question)
+
+        async def _plan(question, params):
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_frame)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert open_at_frame == [False]
+
+    def test_failed_broadening_still_plans_the_original_question(self, monkeypatch):
+        """진짜 frame_question 을 거친다 — 넓히기 LLM 이 시간을 넘겨도 잡은 원 질문으로 계획해 승인 대기로 간다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        asked = []
+
+        async def _timeout(messages, *, params=None, timeout=None):
+            raise httpx.ReadTimeout("넓히기 응답 없음")
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=framing.frame_question)
+        monkeypatch.setattr(framing, "chat", _timeout)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "awaiting_approval" and job.status == "awaiting_approval"
+        assert asked == [job.question]
+        # 실패여도 중간 알림은 한 번 — 원 질문 그대로라 화면은 '이렇게 이해했어요'를 숨긴다
+        assert [r for _, r in h.progress] == [{"question_used": job.question, "terms": []}]
+        result = h.finished[-1][2]
+        assert (result["question_used"], result["terms"]) == (job.question, [])
+
+    def test_unexpected_broadening_error_fails_the_plan(self, monkeypatch):
+        """넓히기 밖 예외(코드 결함)는 원문으로 숨기지 않고 계획 실패로 닫는다(정함 10 — 함정 19)."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        asked = []
+
+        async def _broken(question):
+            raise RuntimeError("넓히기 코드 결함")
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_broken)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "failed" and job.status == "failed"
+        assert asked == [] and h.progress == []
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed" and "넓히기 코드 결함" in result["error"]
 
 
 class _RecordingSession(_FakeSession):

@@ -523,6 +523,7 @@ def plan_deep_research(job_id: str) -> dict:
 
 
 async def _plan_deep_research(job_id: str) -> dict:
+    from services.research.framing import frame_question, unframed
     from services.research.planner import make_plan
 
     jid = _job_uuid(job_id)
@@ -541,8 +542,20 @@ async def _plan_deep_research(job_id: str) -> dict:
 
             step = await _step(db, jid, seq, "plan", "연구 계획 수립",
                                detail="질문을 하위질문으로 분해하는 중입니다")
+            # 계획 시간(넓히기 + 계획) — 06c 판정의 계획 시간 지표가 plan step 결과의 elapsed_ms 를 읽는다
+            started = time.monotonic()
             try:
-                plan = await make_plan(question, params=params)
+                # 넓히기(06c, 잡 파라미터 broaden)는 계획 프롬프트를 그대로 두고 make_plan 에 넘기는 질문만 바꾼다.
+                # 원 질문으로 물러나는 실패(FRAME_FAILURES·빈 응답·낱말 검사)는 frame_question 이 삼키고, 그 밖의
+                # 예외는 아래에서 계획 실패로 닫는다(함정 19). job.question 은 원문 그대로다
+                if params["broaden"]:
+                    framing = await frame_question(question)
+                    # 단계는 running 그대로 넓힌 질문을 먼저 알린다 — 계획 중 화면이 '이렇게 이해했어요'를 먼저 보인다.
+                    # subquestions 가 없어 API 는 이 행을 '계획을 안다'로 세지 않는다
+                    await _save_progress(db, step, {"question_used": framing.question, "terms": framing.terms})
+                else:
+                    framing = unframed(question)
+                plan = await make_plan(framing.question, params=params)
             except SoftTimeLimitExceeded:
                 raise
             except Exception as e:
@@ -550,7 +563,10 @@ async def _plan_deep_research(job_id: str) -> dict:
                 await _finish(db, step, "failed", {"error": str(e)[:500]})
                 return await _end_failed(db, jid, str(e), expect=("planning",))
 
-            await _finish(db, step, "done", {"subquestions": plan})
+            await _finish(db, step, "done", {
+                "subquestions": plan, "question_used": framing.question, "terms": framing.terms,
+                "elapsed_ms": int((time.monotonic() - started) * 1000),
+            })
             if not await _transition(db, jid, expect=("planning",), status="awaiting_approval",
                                      plan=plan, stage=_stage("planned")):
                 return await _stopped(db, jid)
