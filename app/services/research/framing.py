@@ -5,9 +5,10 @@
 합성 query_context 의 재료)를 뽑는다. 계획 프롬프트(research_plan.yaml)·parse_plan 은 그대로다 — make_plan 에 넘기는
 질문만 바뀐다. planner.py 가 아니라 이 모듈에 두는 까닭: 계획 태스크 테스트가 planner 모듈을 통째로 바꿔치기한다.
 
-넓힌 문장은 코드가 검사한다 — 원 질문의 내용어(terms.content_words)가 하나라도 넓힌 문장에 들어 있지 않으면
-(terms.contains) 원 질문을 쓴다. 모델이 원 질문을 그대로 내도(함정 26) 정상이다 — 이미 구체적인 질문은 그대로
-두라고 했다. 입력 이름표('질문:')째 옮겨 낸 답은 이름표를 떼고 본다(함정 26). 원 질문으로 물러나는 것은
+넓힌 문장은 코드가 검사한다 — 원 질문의 내용어(terms.content_words)나 한 글자 어절(암·뇌·법 — content_words 의
+2자 바닥에 걸린다, ONE_CHAR_FUNCTION_WORDS 는 빼고)이 하나라도 넓힌 문장에 들어 있지 않으면(terms.contains) 원 질문을
+쓴다. 모델이 원 질문을 그대로 내도(함정 26) 정상이다 — 이미 구체적인 질문은 그대로 두라고 했다. 입력
+이름표('질문:')째 옮겨 낸 답은 이름표를 떼고 본다(함정 26). 원 질문으로 물러나는 것은
 FRAME_FAILURES(chat 의 전송·상태·JSON·응답 모양 오류)·빈 응답·검사 실패뿐이고, 그 밖의 예외는 올린다 — 코드 결함·
 태스크 제어 예외(SoftTimeLimitExceeded)를 '원문'으로 숨기면 스위치를 켠 판정이 넓히기 없이 나온다(함정 19). 계획
 태스크가 그 예외를 계획 실패로 닫는다. 물러날 때마다 [framing] 경고가 정확히 한 줄 남는다 — 판정 뒤 그 줄 수로 센다.
@@ -22,7 +23,7 @@ import httpx
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.llm_json import extract_json
-from services.research.terms import contains, content_words
+from services.research.terms import PARTICLES, QUESTION_WORDS, contains, content_words
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +40,16 @@ FRAME_FAILURES = (httpx.HTTPError, ValueError, KeyError, IndexError)
 # 넓히기 user 메시지의 이름표(research_frame.yaml '질문: {{ question }}') — 모델이 이름표째 옮겨 내면 낱말 검사를
 # 통과하므로 떼고 본다(함정 26). 그대로 두면 계획 입력이 '질문: 질문: …' 이 되고 question_used 에도 실린다
 _ECHO_LABEL = re.compile(r"^\s*질문\s*[:：]\s*")
+# 한 글자 명사(암·뇌·법·꿈·물·돈)는 terms.content_words 의 2자 바닥에 걸려 내용어가 아니다 — 그대로 두면 '암 연구가
+# 궁금해'(내용어 [])에 지어낸 주제를 내도, '암'을 '종양'으로 바꿔도 낱말 검사를 지나간다. 그래서 넓히기 검사만 한 글자
+# 어절도 본다(content_words·contains 는 06e·score.py 복사본과 묶인 계약이라 그대로 둔다). 아래는 주제가 아니라 문장을
+# 잇는 한 글자 말이다 — 넓힌 문장이 다른 말로 바꾸거나('및' → '와') 빼도 주제가 바뀌지 않는다. 목록에 없는 한 글자 말이
+# 빠져 원 질문으로 물러나는 것은 안전한 쪽이다(넓히지 않을 뿐이다)
+ONE_CHAR_FUNCTION_WORDS: tuple[str, ...] = (
+    "및", "등", "왜", "또", "즉", "더", "좀", "그", "각", "수", "것", "때", "중", "할", "한", "될", "된",
+)
+# terms.content_words 와 같은 어절 나누기 — 문장부호를 공백으로
+_PUNCT = re.compile(r"[^\w\s]")
 
 
 @dataclass(frozen=True)
@@ -54,6 +65,22 @@ def unframed(question: str) -> Framing:
 
 def _squash(text: str) -> str:
     return " ".join(text.split())
+
+
+def _one_char_words(question: str) -> list[str]:
+    """원 질문의 한 글자 어절 — content_words 처럼 NFKC·casefold 뒤 문장부호를 공백으로 바꿔 나눈다. 조사·질문 꼴
+    낱말·ONE_CHAR_FUNCTION_WORDS 는 빼고, 처음 나온 순서대로 중복 없이.
+
+    조사 떼기는 하지 않는다 — terms 는 떼고 남는 것이 2자 미만이면 떼지 않으므로('암이' 는 그대로 내용어다) 한 글자
+    낱말은 늘 한 글자 어절 그대로다.
+    """
+    out: list[str] = []
+    for token in _PUNCT.sub(" ", unicodedata.normalize("NFKC", question or "").casefold()).split():
+        if len(token) != 1 or token in PARTICLES or token in QUESTION_WORDS or token in ONE_CHAR_FUNCTION_WORDS:
+            continue
+        if token not in out:
+            out.append(token)
+    return out
 
 
 def clean_terms(raw: object) -> list[str]:
@@ -80,9 +107,9 @@ def parse_frame(raw: str | None, question: str) -> Framing | None:
     """넓히기 응답 → Framing. 쓸 수 없으면 None(호출 쪽이 원 질문으로 물러난다).
 
     JSON 객체를 읽지 못하거나, "question" 이 문자열이 아니거나, 입력 이름표를 떼고 공백 정리한 뒤 비었거나
-    FRAMED_QUESTION_MAX 를 넘거나, 원 질문의 내용어가 하나라도 넓힌 문장에 들어 있지 않으면 None 이다. 물러나는
-    까닭마다 그 자리에서 [framing] 경고를 한 줄 남긴다(frame_question 은 다시 찍지 않는다) — 판정 뒤 낱말 검사에서
-    떨어진 수를 '[framing] 넓힌 질문이 원 질문 낱말' 줄 수로 센다.
+    FRAMED_QUESTION_MAX 를 넘거나, 원 질문의 내용어나 한 글자 어절(_one_char_words)이 하나라도 넓힌 문장에 들어 있지
+    않으면 None 이다. 물러나는 까닭마다 그 자리에서 [framing] 경고를 한 줄 남긴다(frame_question 은 다시 찍지 않는다)
+    — 판정 뒤 낱말 검사에서 떨어진 수를 '[framing] 넓힌 질문이 원 질문 낱말' 줄 수로 센다(한 글자 어절도 같은 줄이다).
     """
     data = extract_json(raw or "")
     if data is None:
@@ -96,7 +123,8 @@ def parse_frame(raw: str | None, question: str) -> Framing | None:
     if not framed or len(framed) > FRAMED_QUESTION_MAX:
         log.warning("[framing] 넓힌 질문이 비었거나 %d자를 넘어 원 질문을 쓴다", FRAMED_QUESTION_MAX)
         return None
-    missing = [word for word in content_words(question) if not contains(framed, word)]
+    required = content_words(question) + _one_char_words(question)
+    missing = [word for word in required if not contains(framed, word)]
     if missing:
         log.warning("[framing] 넓힌 질문이 원 질문 낱말 %s 를 빠뜨려 원 질문을 쓴다 — %r", missing, framed[:120])
         return None

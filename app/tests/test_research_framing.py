@@ -20,6 +20,9 @@ ELDERLY = "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
 COMPUTING = "컴퓨팅 자원에 대한 연구가 궁금해"
 # API min_length=2 를 통과하지만 content_words 가 [] 다 — 낱말 검사가 아무것도 거르지 않는다
 NO_CONTENT = "연구가 궁금해"
+# 한 글자 명사 — content_words 의 2자 바닥에 걸려 내용어가 [] 다. 넓히기 검사는 한 글자 어절을 따로 본다
+CANCER = "암 연구가 궁금해"
+WORD_DROPPED = "[framing] 넓힌 질문이 원 질문 낱말"
 
 # parse_frame 이 물러날 때 남기는 [framing] 줄 머리 — 어느 검사가 걸렀는지 가른다
 BLANK_OR_LONG = f"[framing] 넓힌 질문이 비었거나 {framing.FRAMED_QUESTION_MAX}자를 넘어"
@@ -81,6 +84,40 @@ class TestParseFrame:
             assert parse_frame(raw, ELDERLY) is None
         (line,) = _framing_lines(caplog)
         assert line.startswith("[framing] 넓힌 질문이 원 질문 낱말") and "우울" in line
+
+    @pytest.mark.parametrize(("question", "framed", "dropped"), [
+        # 내용어가 [] 인 질문에 지어낸 주제 — 한 글자 어절을 보지 않으면 그대로 받아들여 make_plan·question_used 가 된다
+        (CANCER, "인공지능 기반 교육 플랫폼의 효과에 관한 국내 연구 동향", "암"),
+        # '암'을 '종양'으로 바꿨다
+        (CANCER, "종양의 발생 요인과 치료 효과에 관한 국내 연구 동향", "암"),
+        # 내용어(환자·우울)는 모두 있고 '암'만 바뀌었다
+        ("암 환자의 우울에 관한 연구", "종양 환자의 우울과 사회적 지지에 관한 국내 연구 동향", "암"),
+        ("뇌 연구", "인지 기능과 학습에 관한 국내 연구 동향", "뇌"),
+        # 문장부호는 content_words 처럼 공백이다 — '뇌·인지'를 한 어절로 보면 '뇌'가 빠져도 지나간다
+        ("뇌·인지 연구", "인지 기능과 학습 전략에 관한 국내 연구 동향", "뇌"),
+        # NFKC·casefold 도 content_words 와 같다 — 전각 'Ｃ' 는 'c' 다
+        ("Ｃ 언어 교육 연구가 궁금해", "파이썬 언어 교육의 방법과 효과에 관한 국내 연구 동향", "c"),
+    ], ids=["no-content-words-made-up-topic", "no-content-words-replaced", "replaced-beside-content-words",
+            "brain", "punctuation", "nfkc"])
+    def test_question_that_drops_a_one_char_word_is_refused(self, question, framed, dropped, caplog):
+        with caplog.at_level(logging.WARNING, logger="services.research.framing"):
+            assert parse_frame(_reply(framed, ["교육 플랫폼"]), question) is None
+        # 같은 낱말 검사 줄이다 — 판정 뒤 '[framing] 넓힌 질문이 원 질문 낱말' 줄 수에 함께 세진다
+        (line,) = _framing_lines(caplog)
+        assert line.startswith(WORD_DROPPED) and f"['{dropped}']" in line
+
+    def test_broadened_question_that_keeps_a_one_char_word_is_used(self):
+        raw = _reply("암의 발생 요인과 치료, 환자의 삶의 질에 관한 국내 연구 동향", ["암 치료", "암 환자 삶의 질"])
+        assert parse_frame(raw, CANCER) == Framing(
+            "암의 발생 요인과 치료, 환자의 삶의 질에 관한 국내 연구 동향", ["암 치료", "암 환자 삶의 질"])
+
+    @pytest.mark.parametrize(("question", "framed"), [
+        ("노인 및 장애인 복지 정책 연구가 궁금해", "노인과 장애인을 위한 복지 정책의 효과와 과제에 관한 국내 연구 동향"),
+        ("더 효과적인 독서 교육 방법 연구가 궁금해", "효과적인 독서 교육 방법과 그 효과를 다룬 국내 연구 동향"),
+    ], ids=["and", "more"])
+    def test_one_char_function_words_may_be_rephrased(self, question, framed):
+        # 및·더 는 주제가 아니라 잇는 말이다 — 넓힌 문장이 다른 말로 바꾸거나 빼도 받아들인다
+        assert parse_frame(_reply(framed), question) == Framing(framed, [])
 
     @pytest.mark.parametrize(("raw", "question", "head"), [
         (_reply("   "), ELDERLY, BLANK_OR_LONG),
