@@ -36,6 +36,8 @@ class TestSharedFixture:
         assert pairs[("노인의 우울과 사회적 지지", "노인 우울")] is True
         assert pairs[("노인의 우울", "우울 노인")] is False
         assert pairs[("다문화 가정 아동", "다문화가정")] is True
+        # 낱말을 공백 지운 글에서 차례로 찾는다 — 공백 있는 글에서 찾는 구현은 '다문화가정' 을 못 찾아 거짓이 된다
+        assert pairs[("다문화 가정 아동의 언어 발달", "다문화가정 언어")] is True
         assert pairs[("ＣＳＲ과 재무성과", "csr")] is True
         assert any(c["word"] == "" and c["expected"] is False for c in SHARED["contains"])
         assert all(set(c) == {"text", "words", "note"} for c in SHARED["content_words"])

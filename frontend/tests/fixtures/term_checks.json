@@ -50,6 +50,7 @@
     {"text": "노인의 우울과 사회적 지지", "word": "노인 우울", "expected": true, "note": "낱말이 순서대로 — 사이에 조사가 끼어도 된다"},
     {"text": "노인의 우울", "word": "우울 노인", "expected": false, "note": "순서가 바뀌면 맞지 않는다"},
     {"text": "다문화 가정 아동", "word": "다문화가정", "expected": true, "note": "공백을 지우고 본다"},
+    {"text": "다문화 가정 아동의 언어 발달", "word": "다문화가정 언어", "expected": true, "note": "낱말을 공백 지운 글에서 차례로 찾는다 — 공백을 건넌 낱말도 맞는다"},
     {"text": "기업의 사회적 책임과 재무 성과", "word": "재무성과", "expected": true, "note": "띄어 쓴 글에 붙여 쓴 낱말"},
     {"text": "ＣＳＲ과 재무성과", "word": "csr", "expected": true, "note": "NFKC(전각)·casefold(대소문자)"},
     {"text": "공공도서관 서비스", "word": "도서관", "expected": true, "note": "부분 문자열"},
