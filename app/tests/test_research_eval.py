@@ -64,6 +64,23 @@ def test_questions_file_lists_five_fixed_questions():
     assert items[0] == {"key": "computing", "question": "컴퓨팅 자원에 대한 연구가 궁금해"}
 
 
+def test_control_questions_are_rich_and_kept_apart_from_the_fixed_five():
+    """06c 대조군 — 논문 상세 [이 논문으로 딥리서치] 꼴(utils/paperResearch.ts paperResearchQuestion)의 풍부한 질문.
+    넓히기가 이미 구체적인 질문을 그대로 두는지 본다. 고정 5문항 파일에 섞으면 합격 질문의 분모가 바뀌므로
+    따로 두고 키도 겹치지 않는다(spec §12-7)."""
+    from run_pair import CONTROL_QUESTIONS, QUESTIONS, load_questions
+
+    items = load_questions(CONTROL_QUESTIONS)
+    keys = [q["key"] for q in items]
+    assert 1 <= len(items) <= 2 and len(set(keys)) == len(items)
+    assert not set(keys) & {q["key"] for q in load_questions(QUESTIONS)}
+    assert all(re.fullmatch(r"[a-z][a-z0-9_]*", k) for k in keys)    # pairs 키·라벨 파일 이름과 같은 규칙
+    assert all(set(q) == {"key", "question"} and 2 <= len(q["question"]) <= 500 for q in items)
+    for q in items:
+        text = q["question"]
+        assert text.startswith("「") and "」에서 출발해," in text and text.endswith("무엇인가?")
+
+
 # ── score.py ────────────────────────────────────────────────────────────
 
 
@@ -551,6 +568,85 @@ def test_run_pair_main_reports_a_failed_question_and_keeps_the_others(tmp_path, 
     text = capsys.readouterr().out
     text.encode("cp949")
     assert "--only computing" in text
+
+
+P0_06C = {"critic_scope": 0, "broaden": 0, "query_context": 0}
+P1_06C = {"critic_scope": 0, "broaden": 1, "query_context": 1}
+
+
+def test_run_question_gives_each_arm_the_params_it_was_given():
+    """06c 판정은 critic 이 아니라 넓히기·검색어 합성 스위치를 가른다 — 갈래마다 잡 파라미터를 통째로 준다.
+    계획 모드는 기본(shared) 그대로 — 갈래 1 은 갈래 0 의 계획으로 승인한다."""
+    from run_pair import run_question
+
+    state, handler = _fake_research_api()
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        pair = run_question(client, API, "컴퓨팅 자원에 대한 연구가 궁금해", poll=0, timeout=60.0,
+                            params0=P0_06C, params1=P1_06C, sleep=lambda _: None)
+
+    assert pair == {"0": "job-1", "1": "job-2"}
+    jobs = state["jobs"]
+    assert [j["params"] for j in jobs.values()] == [P0_06C, P1_06C]
+    assert jobs["job-1"]["approved_with"] is None
+    assert jobs["job-2"]["approved_with"] == {"plan": ["job-1 계획 1", "job-1 계획 2"]}
+
+
+def test_run_question_with_own_plan_approves_arm1_with_its_own_plan():
+    """넓히기(broaden)는 계획을 바꾼다 — 갈래 1 을 갈래 0 의 계획으로 승인하면 효과가 0 이다(spec §12-7 --plan own)."""
+    from run_pair import run_question
+
+    state, handler = _fake_research_api()
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        pair = run_question(client, API, "컴퓨팅 자원에 대한 연구가 궁금해", poll=0, timeout=60.0,
+                            plan="own", sleep=lambda _: None)
+
+    assert pair == {"0": "job-1", "1": "job-2"}
+    jobs = state["jobs"]
+    assert [j["params"] for j in jobs.values()] == [{"critic_scope": 0}, {"critic_scope": 1}]
+    # 두 갈래 모두 본문 없이 — 저마다 제가 세운 계획으로 돈다
+    assert jobs["job-1"]["approved_with"] is None and jobs["job-2"]["approved_with"] is None
+    assert [j["status"] for j in jobs.values()] == ["completed", "completed"]
+
+
+def test_run_pair_main_passes_params_and_plan_mode(tmp_path, capsys):
+    from run_pair import main
+
+    questions = tmp_path / "questions.json"
+    questions.write_text(json.dumps([{"key": "computing", "question": "컴퓨팅 자원에 대한 연구가 궁금해"}],
+                                    ensure_ascii=False), encoding="utf-8")
+    out = tmp_path / "pairs.json"
+    state, handler = _fake_research_api()
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--out", str(out), "--questions", str(questions), "--poll", "0",
+                   "--param0", json.dumps(P0_06C), "--param", json.dumps(P1_06C), "--plan", "own"],
+                  client=client)
+
+    assert rc == 0
+    jobs = state["jobs"]
+    assert [j["params"] for j in jobs.values()] == [P0_06C, P1_06C]
+    assert jobs["job-2"]["approved_with"] is None
+    assert json.loads(out.read_text(encoding="utf-8")) == {"computing": {"0": "job-1", "1": "job-2"}}
+    text = capsys.readouterr().out
+    text.encode("cp949")
+    # 어느 파라미터·계획 모드로 돌렸는지 실행 기록 머리에 남는다
+    assert (f"갈래 0 {json.dumps(P0_06C)} · 갈래 1 {json.dumps(P1_06C)} · 계획 own") in text
+
+
+@pytest.mark.parametrize("flag, value", [("--param", "[1]"), ("--param0", "{"), ("--param", '"x"')])
+def test_run_pair_refuses_params_that_are_not_a_json_object(tmp_path, capsys, flag, value):
+    """잘못 쓴 파라미터로 잡 10개를 만들기 시작하지 않는다 — HTTP·출력 폴더보다 먼저 본다."""
+    from run_pair import main
+
+    state, handler = _fake_research_api()
+    out = tmp_path / "새 폴더" / "pairs.json"
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--out", str(out), flag, value], client=client)
+
+    assert rc == 2
+    text = capsys.readouterr().out
+    text.encode("cp949")
+    assert f"잡 파라미터는 JSON 객체여야 한다: {value!r}" in text
+    assert state["requests"] == [] and not out.parent.exists()
 
 
 # ── mark_example.py ─────────────────────────────────────────────────────
