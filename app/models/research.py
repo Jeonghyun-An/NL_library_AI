@@ -104,6 +104,9 @@ class ResearchStep(Base):
     #             elapsed_ms 는 넓히기 + 계획에 걸린 시간.
     #             도는 중(broaden 1, 넓히기가 끝난 뒤)에는 {"question_used", "terms"} 로 먼저 알린다 — subquestions 가
     #             없어 API 는 이 행을 '계획을 안다'로 세지 않는다. 06c 전 잡은 {"subquestions": [...]} 뿐이다.
+    #             실패로 닫히면 닫는 길에 따라 칸이 다르다 — 시간 상한·회수로 닫히면(_close_orphan_steps·
+    #             reap_stale_research 는 result 에 error 를 더한다) 도는 중에 쓴 {question_used, terms} 에 error 가
+    #             더해지고, 계획 실패(_finish)로 닫히면 {"error"} 뿐이다.
     # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
     #              "parse_failed": bool, "capped": n,
     #              "rounds": [{"round", "query", "found_chunks", "new_papers",
