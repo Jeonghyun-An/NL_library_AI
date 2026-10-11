@@ -4,6 +4,7 @@
 HTTP 는 httpx.MockTransport 로, DB 는 db.postgres 대역으로 바꿔 운영에 닿지 않는다.
 """
 import csv
+import io
 import json
 import re
 import sys
@@ -303,6 +304,254 @@ def test_score_prints_report_precision_per_arm_and_totals_without_changing_the_v
     assert "제외 판정의 관련 합계: 갈래 0 관련 1/라벨 1 (제외 1편) · 갈래 1 관련 0/라벨 1 (제외 1편)" in out
     # 판정은 그대로 — computing 갈래 0 은 뺀 X 가 '관련'(과잉 제외 100%), 갈래 1 은 한 절에 무관 2편
     assert "합격 질문: 갈래 0 1/2 · 갈래 1 1/2" in out
+
+
+TERM_CHECKS = Path(__file__).resolve().parents[2] / "frontend" / "tests" / "fixtures" / "term_checks.json"
+
+
+def test_contains_copy_matches_the_shared_fixture():
+    """score.py 는 app 을 import 하지 않는다(서버의 /app/data/research_eval/ 에서 HTTP 만으로 돈다) — terms.contains 의
+    복사본을 두고 06c test_research_terms.py 와 같은 공용 고정 예제로 묶는다. 예제 밖의 갈림(공백을 건너 이어진 낱말·
+    공백뿐인 word 등)에서도 원본과 같은 답을 내는지 함께 본다."""
+    from score import contains
+    from services.research.terms import contains as original
+
+    cases = json.loads(TERM_CHECKS.read_text(encoding="utf-8"))["contains"]
+    assert cases                                   # 예제가 비면 복사본을 묶지 못한다
+    for case in cases:
+        assert contains(case["text"], case["word"]) is case["expected"], case["note"]
+    probes = [
+        ("다문화 가정 아동의 언어 발달", "다문화가정 언어"),
+        ("공공도서관 다문화 서비스", "공공 도서관"),
+        ("ＡＩ 윤리 교육", "AI 윤리"),
+        ("Digital Library Use", "digital library"),
+        ("노인 복지와 우울", "우울 노인"),
+        ("노인의 우울", "   "),
+        ("성과", "재무 성과"),
+        ("", "성과"),
+    ]
+    for text, word in probes + [(c["text"], c["word"]) for c in cases]:
+        assert contains(text, word) is original(text, word), (text, word)
+
+
+def test_generic_frames_skip_aspect_words_inside_the_question():
+    """일반 틀 = 측면 낱말 사전과 맞는 하위질문. 원 질문에 이미 든 측면 낱말은 세지 않는다(spec §12-7)."""
+    from score import ASPECT_WORDS, generic_frames
+
+    assert ASPECT_WORDS == ("개념", "정의", "방법", "기법", "적용 분야", "성과", "한계", "과제", "동향", "발전 방향")
+    csr = "기업의 사회적 책임과 재무성과에 관한 연구가 궁금해"
+    assert generic_frames(csr, [
+        "기업의 사회적 책임 활동이 재무성과에 미치는 영향",    # '성과' 는 원 질문의 '재무성과' 안에 있다 — 세지 않는다
+        "기업의 사회적 책임 측정 방법",                       # 방법
+        "업종별 기업의 사회적 책임과 재무 성과의 관계",         # 띄어 쓴 '재무 성과' 도 원 질문의 말이다
+    ]) == 1
+    computing = "컴퓨팅 자원에 대한 연구가 궁금해"
+    assert generic_frames(computing, [
+        "컴퓨팅 자원의 정의 및 개념",                         # 06a 에서 무관이 몰린 절
+        "컴퓨팅 자원 관리 기법",
+        "컴퓨팅 자원 할당의 적용 분야와 성과",
+        "클라우드 환경의 컴퓨팅 자원 스케줄링",
+    ]) == 3
+    assert generic_frames(computing, []) == 0
+
+
+def _plan_job(question, plan, *, used=None, elapsed_ms=None, trail=(), sections=()):
+    """GET /research/{id} 가운데 계획 지표가 읽는 키 — 질문·승인된 계획·계획 단계 result·보고서(trail·절).
+    used 가 None 이면 06c 전 잡처럼 계획 단계 result 에 subquestions 만 둔다."""
+    result = {"subquestions": list(plan)}
+    if used is not None:
+        result |= {"question_used": used, "terms": [], "elapsed_ms": elapsed_ms}
+    return {
+        "question": question, "status": "completed", "plan": list(plan),
+        "steps": [{"seq": 0, "kind": "plan", "subq_idx": None, "title": "연구 계획 수립", "detail": None,
+                   "status": "done", "result": result}],
+        "report": {
+            "question": question,
+            "sections": [{"heading": h, "papers": [{"cnts_id": c} for c in ids]} for h, ids in sections],
+            "evidence": {},
+            "trail": [{"subquestion": s, "evidence_count": n, "verdict": v, "excluded_papers": []}
+                      for s, n, v in trail],
+        },
+    }
+
+
+def test_plan_metrics_read_the_plan_the_trail_and_the_last_plan_step():
+    from score import format_plan, format_question_used, plan_metrics
+
+    question = "컴퓨팅 자원에 대한 연구가 궁금해"
+    broadened = "클라우드·그리드 환경의 컴퓨팅 자원 관리에 대한 연구가 궁금해"
+    plan = ["컴퓨팅 자원의 정의", "클라우드 컴퓨팅 자원 할당", "그리드 컴퓨팅 자원 관리 기법"]
+    job = _plan_job(question, plan, used=broadened, elapsed_ms=3400, trail=[
+        (plan[0], 0, "insufficient"), (plan[1], 4, "sufficient"), (plan[2], 2, "insufficient")])
+    # 재시도로 계획 단계가 둘 — seq 가 큰 행이 지금 계획이다. 앞 시도의 넓힌 질문은 읽지 않는다
+    job["steps"] = [{"seq": 0, "kind": "plan", "subq_idx": None, "title": "연구 계획 수립", "detail": None,
+                     "status": "failed", "result": {"question_used": "앞 시도의 질문", "terms": []}},
+                    {**job["steps"][0], "seq": 1},
+                    {"seq": 2, "kind": "search", "subq_idx": 0, "title": plan[0], "detail": None,
+                     "status": "done", "result": {}}]
+    job["report"]["question"] = "보고서 머리 질문은 job.question 이 있으면 쓰지 않는다"
+
+    m = plan_metrics(job)
+
+    assert m == {"question": question, "question_used": broadened, "subquestions": 3, "generic": 2,
+                 "zero_evidence": 1, "insufficient": 2, "plan_ms": 3400}
+    assert format_question_used("1", m) == f"  갈래 1  넓힌 질문: {broadened}"
+    assert format_plan("1", m) == "  갈래 1  계획 지표  일반 틀 2/3 · 근거 0편 1 · insufficient 2 · 계획 3.4초"
+    # 넓히기를 껐거나 원문으로 물러난 잡 — 공백 차이만 있어도 원 질문 그대로다
+    same = plan_metrics(_plan_job(question, plan, used=" 컴퓨팅  자원에 대한 연구가 궁금해", elapsed_ms=700))
+    assert format_question_used("0", same) == "  갈래 0  넓힌 질문: (원 질문 그대로)"
+
+
+def test_plan_metrics_of_a_job_before_06c_have_no_question_used_or_time():
+    """06b 잡(pairs_20261008_d18)은 계획 단계 result 에 subquestions 만 있다 — 넓힌 질문·계획 시간은 '기록 없음'·'-' 이고
+    일반 틀·근거 0편·insufficient 는 그대로 센다(spec §12-7 '계획에서 06b 잡으로 센다')."""
+    from score import format_plan, format_question_used, plan_metrics
+
+    question = "공공도서관 서비스 품질 평가 연구가 궁금해"
+    plan = ["공공도서관 서비스 품질 평가의 개념과 정의", "공공도서관 서비스 품질 평가 방법",
+            "공공도서관 이용자 만족도와 서비스 품질", "공공도서관 서비스 품질 평가의 한계와 과제"]
+    trail = [(plan[0], 3, "sufficient"), (plan[1], 0, "insufficient"), (plan[2], 5, "sufficient"),
+             (plan[3], 2, "sufficient")]
+
+    m = plan_metrics(_plan_job(question, plan, trail=trail))
+
+    assert m["question_used"] is None and m["plan_ms"] is None
+    assert format_question_used("0", m) == "  갈래 0  넓힌 질문: (기록 없음)"
+    assert format_plan("0", m) == "  갈래 0  계획 지표  일반 틀 3/4 · 근거 0편 1 · insufficient 1 · 계획 -"
+    # 질문·계획·단계가 없는 잡(보고서만)은 보고서의 질문과 trail 의 하위질문으로 센다
+    bare = plan_metrics({"report": _plan_job(question, plan, trail=trail)["report"]})
+    assert (bare["question"], bare["subquestions"], bare["generic"]) == (question, 4, 3)
+
+
+def test_score_prints_plan_metrics_per_arm_and_their_totals(tmp_path, capsys):
+    """06c 판정 — 갈래마다 넓힌 질문·계획 지표 두 줄과 끝의 합계 한 줄. 합격 판정·기존 줄의 글자는 그대로다."""
+    from score import main
+
+    comp, lib = "컴퓨팅 자원에 대한 연구가 궁금해", "공공도서관 서비스 품질 평가 연구가 궁금해"
+    comp0 = ["컴퓨팅 자원의 정의 및 개념", "컴퓨팅 자원 관리 기법", "클라우드 컴퓨팅 자원 할당"]
+    comp1 = ["클라우드 환경의 컴퓨팅 자원 할당", "그리드 컴퓨팅 자원 스케줄링", "가상화 기반 컴퓨팅 자원 관리"]
+    lib0 = ["공공도서관 서비스 품질 평가의 개념", "공공도서관 서비스 품질 평가 방법"]
+    lib1 = ["공공도서관 이용자 만족도와 서비스 품질 평가", "SERVQUAL 을 이용한 공공도서관 서비스 품질 평가 방법"]
+    jobs = {
+        "job-1": _plan_job(comp, comp0, used=comp, elapsed_ms=800, sections=[(comp0[0], ["A", "B"])],
+                           trail=[(comp0[0], 3, "sufficient"), (comp0[1], 0, "insufficient"),
+                                  (comp0[2], 4, "sufficient")]),
+        "job-2": _plan_job(comp, comp1, used="클라우드·그리드 환경의 컴퓨팅 자원 관리에 대한 연구가 궁금해",
+                           elapsed_ms=3400, sections=[(comp1[0], ["A", "C"])],
+                           trail=[(s, 3, "sufficient") for s in comp1]),
+        "job-3": _plan_job(lib, lib0, used=lib, elapsed_ms=1200, sections=[(lib0[0], ["P"])],
+                           trail=[(s, 4, "sufficient") for s in lib0]),
+        "job-4": _plan_job(lib, lib1, used="공공도서관 이용자 관점의 서비스 품질 평가 연구가 궁금해",
+                           elapsed_ms=4600, sections=[(lib1[0], ["P", "Q"])],
+                           trail=[(lib1[0], 3, "sufficient"), (lib1[1], 0, "insufficient")]),
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=jobs[request.url.path.rsplit("/", 1)[1]])
+
+    pairs = tmp_path / "pairs.json"
+    pairs.write_text(json.dumps({"computing": {"0": "job-1", "1": "job-2"},
+                                 "library": {"0": "job-3", "1": "job-4"}}), encoding="utf-8")
+    labels = tmp_path / "labels"
+    labels.mkdir()
+    _write_labels(labels / "computing.csv", [("A", "관련"), ("B", "무관"), ("C", "관련")])
+    _write_labels(labels / "library.csv", [("P", "관련"), ("Q", "관련")])
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--pairs", str(pairs), "--labels-dir", str(labels),
+                   "--questions", str(_questions(tmp_path, "computing", "library"))], client=client)
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    out.encode("cp949")
+    assert "  갈래 0  넓힌 질문: (원 질문 그대로)" in out
+    assert "  갈래 1  넓힌 질문: 클라우드·그리드 환경의 컴퓨팅 자원 관리에 대한 연구가 궁금해" in out
+    assert "  갈래 0  계획 지표  일반 틀 2/3 · 근거 0편 1 · insufficient 1 · 계획 0.8초" in out
+    assert "  갈래 1  계획 지표  일반 틀 1/2 · 근거 0편 1 · insufficient 1 · 계획 4.6초" in out
+    # 갈래 줄 → 정밀도 줄 → 계획 두 줄 순서
+    assert out.index("갈래 1  보고서 정밀도") < out.index("  갈래 1  넓힌 질문: 클라우드") < out.index(
+        "  갈래 1  계획 지표  일반 틀 0/3")
+    totals = ("계획 지표 합계(채점한 2개 질문): 갈래 0 일반 틀 4/5 (80.0%) · 근거 0편 1 · insufficient 1 · 계획 p50 1.0초"
+              " · 갈래 1 일반 틀 1/5 (20.0%) · 근거 0편 1 · insufficient 1 · 계획 p50 4.0초")
+    assert totals in out
+    # 기존 줄은 글자 그대로 — 합격 x/5 와 제외 판정의 관련 합계도 함께 찍고(판정에 쓰지 않는다) 계획 합계는 그 뒤다
+    assert "합격 질문: 갈래 0 2/2 · 갈래 1 2/2" in out
+    assert out.index("제외 판정의 관련 합계: ") < out.index(totals)
+
+
+def test_score_plan_only_needs_no_labels(tmp_path, capsys):
+    """대조군(questions_control.json)은 라벨 없이 계획 지표만 본다 — 넓히기가 이미 구체적인 질문을 그대로 두는가."""
+    from run_pair import CONTROL_QUESTIONS, load_questions
+    from score import main
+
+    control = {q["key"]: q["question"] for q in load_questions(CONTROL_QUESTIONS)}
+    question = control["ctl_library"]
+    plan0 = ["공공도서관 서비스 고객만족도 평가체계의 전개", "공공도서관 고객만족도 평가체계의 주요 쟁점",
+             "공공도서관 서비스 고객만족도 평가체계의 남은 과제"]
+    plan1 = plan0[:2] + ["공공도서관 고객만족도 평가체계 연구 동향"]
+    jobs = {
+        "job-1": _plan_job(question, plan0, used=question, elapsed_ms=900,
+                           trail=[(s, 3, "sufficient") for s in plan0]),
+        "job-2": _plan_job(question, plan1, used=question + " ", elapsed_ms=4100,
+                           trail=[(plan1[0], 3, "sufficient"), (plan1[1], 0, "insufficient"),
+                                  (plan1[2], 2, "sufficient")]),
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=jobs[request.url.path.rsplit("/", 1)[1]])
+
+    pairs = tmp_path / "pairs_control.json"
+    pairs.write_text(json.dumps({"ctl_library": {"0": "job-1", "1": "job-2"}}), encoding="utf-8")
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--pairs", str(pairs), "--plan-only", "--labels-dir", str(tmp_path / "없는 폴더"),
+                   "--questions", str(CONTROL_QUESTIONS)], client=client)
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    out.encode("cp949")
+    assert f"[ctl_library] {question}" in out
+    assert "[ctl_elderly] pairs 에 없다 - run_pair.py --only ctl_elderly 로 돌린다" in out
+    # 원 질문의 '과제' 는 측면 낱말로 세지 않는다 — 갈래 1 의 '동향' 만 일반 틀이다
+    assert "  갈래 0  넓힌 질문: (원 질문 그대로)" in out and "  갈래 1  넓힌 질문: (원 질문 그대로)" in out
+    assert "  갈래 0  계획 지표  일반 틀 0/3 · 근거 0편 0 · insufficient 0 · 계획 0.9초" in out
+    assert "  갈래 1  계획 지표  일반 틀 1/3 · 근거 0편 1 · insufficient 1 · 계획 4.1초" in out
+    assert ("계획 지표 합계(채점한 1개 질문): 갈래 0 일반 틀 0/3 (0.0%) · 근거 0편 0 · insufficient 0 · 계획 p50 0.9초"
+            " · 갈래 1 일반 틀 1/3 (33.3%) · 근거 0편 1 · insufficient 1 · 계획 p50 4.1초") in out
+    # 라벨을 읽지 않으니 합격 판정·보고서 정밀도·라벨 안내 줄이 없다
+    for absent in ("합격 질문:", "보고서 정밀도", "절별 무관", "라벨 파일이 없다", "제외 판정의 관련 합계"):
+        assert absent not in out
+
+
+def test_score_keeps_going_when_the_broadened_question_has_a_letter_cp949_lacks(tmp_path, monkeypatch):
+    """넓힌 질문은 LLM 글이다 — cp949 에 없는 글자(—)가 들어 있어도, PYTHONIOENCODING 없이 돌린 Git Bash(표준 출력
+    cp949)에서 채점이 멈추지 않는다. 그 글자만 ? 로 찍히고 뒤 줄(합계)까지 나온다."""
+    from score import main
+
+    question = "컴퓨팅 자원에 대한 연구가 궁금해"
+    used = "클라우드 환경의 컴퓨팅 자원 — 관리에 대한 연구가 궁금해"
+    plan = ["클라우드 환경의 컴퓨팅 자원 할당", "클라우드 환경의 컴퓨팅 자원 스케줄링"]
+    jobs = {job_id: _plan_job(question, plan, used=used, elapsed_ms=2000,
+                              trail=[(s, 3, "sufficient") for s in plan])
+            for job_id in ("job-1", "job-2")}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=jobs[request.url.path.rsplit("/", 1)[1]])
+
+    pairs = tmp_path / "pairs.json"
+    pairs.write_text(json.dumps({"computing": {"0": "job-1", "1": "job-2"}}), encoding="utf-8")
+    console = io.TextIOWrapper(io.BytesIO(), encoding="cp949")
+    monkeypatch.setattr(sys, "stdout", console)
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        rc = main(["--api", API, "--pairs", str(pairs), "--plan-only",
+                   "--questions", str(_questions(tmp_path, "computing"))], client=client)
+
+    assert rc == 0
+    console.flush()
+    out = console.buffer.getvalue().decode("cp949")
+    assert "  갈래 1  넓힌 질문: 클라우드 환경의 컴퓨팅 자원 ? 관리에 대한 연구가 궁금해" in out
+    assert ("계획 지표 합계(채점한 1개 질문): 갈래 0 일반 틀 0/2 (0.0%) · 근거 0편 0 · insufficient 0 · 계획 p50 2.0초"
+            " · 갈래 1 일반 틀 0/2 (0.0%) · 근거 0편 0 · insufficient 0 · 계획 p50 2.0초") in out
 
 
 # ── make_labels.py ──────────────────────────────────────────────────────
