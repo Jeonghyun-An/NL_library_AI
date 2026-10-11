@@ -375,6 +375,24 @@ async def _corpus_range(db: AsyncSession) -> dict:
     return {"from": row[0], "to": row[1], "n_papers": row[2]}
 
 
+async def _plan_terms(db: AsyncSession, job_id: uuid.UUID) -> list[str]:
+    """마지막 계획 단계가 뽑은 범위 용어(06c 넓히기) — 검색어 합성(query_context 1)의 재료.
+
+    계획 단계가 여럿이면(다시 계획하기 — spec §12-9) seq 가 가장 큰 행을 읽는다. 행이나 terms 칸이 없거나(06c 전 잡)
+    모양이 다르면 빈 목록이다 — 비지 않은 문자열만 남긴다.
+    """
+    result = (await db.execute(
+        select(ResearchStep.result)
+        .where(ResearchStep.job_id == job_id, ResearchStep.kind == "plan")
+        .order_by(ResearchStep.seq.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+    terms = result.get("terms") if isinstance(result, dict) else None
+    if not isinstance(terms, list):
+        return []
+    return [t for t in terms if isinstance(t, str) and t.strip()]
+
+
 async def _transition(
     db: AsyncSession, job_id: uuid.UUID, *, expect: tuple[str, ...], **values: object,
 ) -> bool:
@@ -604,6 +622,8 @@ async def _run_deep_research(job_id: str) -> dict:
             job = await db.get(ResearchJob, jid)
             stage, snapshot = job.stage, job.state_snapshot
             question, params, plan = job.question, job.params, job.plan
+            # 같은 읽기 트랜잭션에서 읽는다 — 아래 commit 이 LLM(탐색) 전에 닫는다. 스냅숏에서 되살린 잡은 스냅숏의 용어를 쓴다
+            terms = await _plan_terms(db, jid)
             seq = await _next_seq(db, jid)
             await db.commit()
             await _announce(jid, "running", stage)
@@ -620,6 +640,7 @@ async def _run_deep_research(job_id: str) -> dict:
             else:
                 state = ResearchState(
                     job_id=str(jid), question=question, params=merge_params(params or {}),
+                    terms=terms,
                 )
                 state.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(plan or [])]
                 if not state.subquestions:

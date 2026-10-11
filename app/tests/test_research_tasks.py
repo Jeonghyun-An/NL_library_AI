@@ -257,11 +257,13 @@ class _Harness:
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
-                    explore=None, synthesize=None, session=None) -> _Harness:
+                    explore=None, synthesize=None, session=None,
+                    terms: list[str] | None = None) -> _Harness:
     """DB·Redis·LLM 을 대역으로 바꾸고 호출만 기록한다.
 
     explore·synthesize 로 하위 동작을 끼워 넣는다(취소를 찍거나 예외를 던지는 식).
     session 을 주면 그 대역을 쓴다(research_steps 행까지 흉내 내야 할 때).
+    terms 는 마지막 계획 단계의 범위 용어(_plan_terms 대역이 돌려준다 — 진짜 _plan_terms 는 TestPlanTerms 가 본다).
     """
     if session is None:
         session = _FakeSession(job=job, scalar=0)
@@ -282,6 +284,9 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
 
     async def _corpus_range(db):
         return {"from": "2002", "to": "2026", "n_papers": 7}
+
+    async def _plan_terms(db, job_id):
+        return list(terms or [])
 
     async def _publish(job_id, kind, payload):
         h.events.append((kind, payload))
@@ -317,7 +322,7 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
 
     for name, fn in (
         ("_next_seq", _next_seq), ("_step", _step), ("_finish", _finish),
-        ("_corpus_range", _corpus_range), ("publish", _publish),
+        ("_corpus_range", _corpus_range), ("_plan_terms", _plan_terms), ("publish", _publish),
         ("publish_terminal", _publish_terminal),
         ("explore_subquestion", _explore), ("synthesize", _synthesize),
         ("_save_progress", _save_progress), ("_drop_stale_previews", _drop_stale_previews),
@@ -1044,6 +1049,73 @@ class TestPlan:
         assert asked == [] and h.progress == []
         _, status, result, _ = h.finished[-1]
         assert status == "failed" and "넓히기 코드 결함" in result["error"]
+
+
+class TestPlanTerms:
+    """실행 태스크는 마지막 계획 단계가 뽑은 범위 용어를 ResearchState 와 체크포인트에 싣는다(06c)."""
+
+    PLAN_RESULT = {"subquestions": ["하위1"], "question_used": "넓힌 질문",
+                   "terms": ["컴퓨팅 자원", "클라우드"], "elapsed_ms": 1200}
+
+    def test_reads_the_terms_of_the_latest_plan_step(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = _RecordingSession(scalar=self.PLAN_RESULT)
+        jid = uuid.uuid4()
+
+        assert asyncio.run(rt._plan_terms(db, jid)) == ["컴퓨팅 자원", "클라우드"]
+        # 이 잡의 계획 단계 중 마지막 것 — job_id·kind 로 거르고 seq 내림차순 첫 행(다시 계획하기 — spec §12-9).
+        # 바인드 값까지 본다 — job_id 조건이 빠지면 다른 잡의 용어를 붙이고, kind 글자가 틀리면 늘 빈 목록이다
+        (stmt,) = db.stmts
+        sql = str(stmt)
+        assert "FROM research_steps" in sql and "ORDER BY research_steps.seq DESC" in sql and "LIMIT" in sql
+        params = stmt.compile().params
+        assert params["job_id_1"] == jid and params["kind_1"] == "plan"
+
+    @pytest.mark.parametrize("result", [{"subquestions": ["하위1"]}, None],
+                             ids=["before-06c", "no-plan-step"])
+    def test_plan_step_without_terms_gives_none(self, monkeypatch, result):
+        rt = _load_tasks(monkeypatch)
+        assert asyncio.run(rt._plan_terms(_FakeSession(scalar=result), uuid.uuid4())) == []
+
+    def test_values_that_are_not_strings_are_dropped(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        mixed = {"terms": ["클라우드", 3, None, "", "  ", ["엣지"], "엣지 컴퓨팅"]}
+        assert asyncio.run(rt._plan_terms(_FakeSession(scalar=mixed), uuid.uuid4())) == ["클라우드", "엣지 컴퓨팅"]
+        for odd in ({"terms": "클라우드"}, ["클라우드"], "클라우드"):
+            assert asyncio.run(rt._plan_terms(_FakeSession(scalar=odd), uuid.uuid4())) == []
+
+    def test_fresh_run_carries_the_terms_into_the_state_and_checkpoint(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1", "하위2"])
+        seen = []
+
+        async def _record(state, subq):
+            seen.append(list(state.terms))
+
+        _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[], explore=_record,
+                        terms=["컴퓨팅 자원", "클라우드"])
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert seen == [["컴퓨팅 자원", "클라우드"], ["컴퓨팅 자원", "클라우드"]]
+        assert job.state_snapshot["terms"] == ["컴퓨팅 자원", "클라우드"]
+
+    def test_resumed_run_keeps_the_terms_of_its_snapshot(self, monkeypatch):
+        # 종합만 다시 하는 재개 — 그 탐색이 쓴 용어가 남는다(그 사이 계획 단계를 다시 읽어 덮지 않는다)
+        rt = _load_tasks(monkeypatch)
+        snap = _explored_snapshot()
+        snap["terms"] = ["스냅숏 용어"]
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=snap, status="queued")
+        seen = []
+
+        async def _record(state, should_stop):
+            seen.append(list(state.terms))
+            return {"sections": []}
+
+        _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[], synthesize=_record,
+                        terms=["다른 용어"])
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert seen == [["스냅숏 용어"]]
 
 
 class _RecordingSession(_FakeSession):
