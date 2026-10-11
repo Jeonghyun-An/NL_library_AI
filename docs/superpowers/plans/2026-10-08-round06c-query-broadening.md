@@ -84,7 +84,7 @@
 | 06e | `app/services/research/terms.py` 의 `contains(text, word) -> bool`·`content_words(text) -> list[str]`·`PARTICLES`·`QUESTION_WORDS` | 제목 키워드 일치는 06c 의 `dev` 머지 뒤 dev 를 받아 `from services.research.terms import contains` 로 쓴다. 06c 전에 같은 함수를 따로 두지 않는다 |
 | 06e | 공용 고정 예제 `frontend/tests/fixtures/term_checks.json` 의 `contains` 칸 | 화면 `keywordSpans` 의 일치 규칙 테스트가 이 칸을 읽을 수 있다. 사례를 더하면 06c 의 두 테스트(`test_research_terms.py`·`test_research_eval.py`)도 통과해야 한다 |
 | 06d | `questionUsedFromSteps(steps, question)`·`understoodLine(questionUsed)`(`frontend/utils/researchEvents.ts`), PlanCard 선택 prop `questionUsed` | `[id].vue` 의 계획 중 대기 카드(`:80-83`)와 승인 대기 PlanCard(`:84-92`)에 `questionUsedFromSteps(view.steps, view.question)` 를 잇는다. 탐색 중 PlanCard(`:97`)는 06d 판단 |
-| 06d | SSE 이벤트 `candidates` — `{"kind": "candidates", "subq_idx", "round", "papers": [{cnts_id, title, personal_author, pub_date}]}`, 회차마다 `search`·`counters` 뒤·`critique` 앞 한 번, 빈 목록도 냄, 스냅숏·rounds 에 없음 | 이벤트 타입·`ResearchEvent` 합집합·리듀서·`evidenceLedger.ts` '검토 중' 더미 |
+| 06d | SSE 이벤트 `candidates` — `{"kind": "candidates", "subq_idx", "round", "papers": [{cnts_id, title, personal_author, pub_date}]}`, 회차마다 `search`·`counters` 뒤·`critique` 앞 한 번, 빈 목록도 냄, 스냅숏·rounds 에 없음. `papers` 는 이번 검색이 그 하위질문에 이은 근거 전부(`linked` 순서)다 — 처음 이은 것만이 아니어서, **이 하위질문이 앞 회차에 이미 채택한 논문이 다시 걸리면 후보에 다시 든다**(같은 회차 `critique` 의 `adopted_papers` 에는 그 논문이 `new` 없이 있다 — `test_already_adopted_paper_found_again_is_a_candidate_again`) | 이벤트 타입·`ResearchEvent` 합집합·리듀서·`evidenceLedger.ts` '검토 중' 더미. 이미 채택 더미에 있는 논문이 후보로 다시 오면 `cnts_id` 로 기존 채택과의 겹침을 처리한다(06c 가 처음 이은 것만 내도록 바꾸는 것은 이 계약을 바꾸는 일이라 사용자 결정 없이 하지 않는다). Task Z2 가 이 겹침을 완료노트·spec §12-2 에 옮긴다 |
 | 06d | plan step 결과의 `question_used`·`terms`·`elapsed_ms`(06c 는 `StepResult` 에 선택 칸만 더한다) | 06d 는 이 세 칸을 다시 정의하지 않는다 |
 
 **같은 파일을 두 줄이 고치는 곳**
@@ -2331,7 +2331,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06c && git add app/serv
 **알아 둘 것:**
 - 모양(계획 머리 「다른 줄과의 경계」의 06d `candidates` 행 — 정함 3): `{"subq_idx": int, "round": int, "papers": [{"cnts_id", "title", "personal_author", "pub_date"}]}` — `papers` 는 `_paper_brief`(`runner.py:85-89`) 그대로다(`excluded_papers` 와 같은 서지 요약 — 06d 가 같은 그리기 함수를 쓸 수 있다). `emit(kind, payload)` 의 kind 가 SSE 이벤트의 `kind` 가 된다(`_round_emitter` → `relay.publish`).
 - 자리: 이번 검색의 `linked`(:222-258 — 이 하위질문에 이은 근거 id, 이은 순서)가 확정되고 `subq.evidence_ids` 순위를 다시 매긴(:260-263) 뒤, `counters`(:264) 바로 다음, `critique_fn`(:267) 앞. 순서는 회차마다 `search` → `counters` → `candidates` → (자기점검 LLM) → `critique` 다.
-- `papers` 순서는 `linked` 순서 = 이번 검색 결과가 이 하위질문에 이은 순서다(`build_evidence` 가 돌려준 순서, 다른 하위질문이 먼저 만든 근거의 재사용 링크 포함). 순위순(`evidence_ids` — 회차 1위가 앞자리, 나머지 점수순)이 아니다. 앞 회차에 무관하다고 뺀 논문(`subq.excluded_cnts` — :226)과 몫·전체 상한에 막힌 후보(:236-241)는 `linked` 에 들지 않으므로 후보도 아니다. `linked` 의 id 는 이 시점에 모두 `state.evidence` 에 있다(무관 제외는 critique 뒤에 지운다).
+- `papers` 순서는 `linked` 순서 = 이번 검색 결과가 이 하위질문에 이은 순서다(`build_evidence` 가 돌려준 순서, 다른 하위질문이 먼저 만든 근거의 재사용 링크 포함). 순위순(`evidence_ids` — 회차 1위가 앞자리, 나머지 점수순)이 아니다. 앞 회차에 무관하다고 뺀 논문(`subq.excluded_cnts` — :226)과 몫·전체 상한에 막힌 후보(:236-241)는 `linked` 에 들지 않으므로 후보도 아니다. `linked` 의 id 는 이 시점에 모두 `state.evidence` 에 있다(무관 제외는 critique 뒤에 지운다). 이 하위질문이 앞 회차에 이미 채택한 논문이 이번 검색에 다시 걸리면 `linked` 에 다시 들어(`fresh` 는 아니다) 후보에 다시 선다 — 같은 회차 `critique` 의 `adopted_papers` 에는 `new` 없이 있다. 06d 리듀서가 `cnts_id` 로 그 겹침을 처리한다(머리 「다른 줄과의 경계」의 06d `candidates` 행 — 리뷰 반영 테스트 `test_already_adopted_paper_found_again_is_a_candidate_again` 가 `linked` 결정을 고정한다).
 - **저장하지 않는다:** 화면 이벤트일 뿐이라 회차 기록(`subq.rounds`)·`state_snapshot`·단계 result 에 넣지 않는다. `_round_emitter` 는 `critique` 때만 진행을 저장하므로 `candidates` 는 흘리기만 한다 — 재접속한 화면에는 '검토 중' 더미가 없고, 지나간 후보는 `critique` 의 채택·뺌으로 이미 보인다(spec '복원하지 않는다').
 - **스위치와 무관하게 늘 낸다**(정함 4) — 검색·판정을 바꾸지 않는다. 그래서 스위치 0 이어도 회차마다 이벤트가 하나 는다. 이벤트 종류의 전체 순서를 글자 그대로 단언하는 기존 테스트는 `TestRoundEvents.test_counters_follow_each_search`(:329-330) 하나뿐이라 그 기대 순서를 고친다(테스트 수는 늘지 않는다). 다른 테스트는 그대로 통과한다 — `TestExploreSubquestion.test_emit_is_called_for_progress`(:198-216)는 `in` 으로 보고, `TestRoundHistory.test_history_matches_what_was_streamed`(:387-403)는 `_of` 로 kind 를 골라 보며, `test_research_tasks.py` `TestLiveProgress.test_each_critique_saves_rounds_and_counters`(:1342-1343)는 `search`·`critique` 만 걸러 본다. 실제 runner 를 도는 테스트 파일은 이 둘(`test_research_runner.py`·`test_research_tasks.py`)뿐이다.
 - 옛 화면(06c 배포 때 nuxt 는 재생성하지 않는다)은 모르는 이벤트를 무시한다(`frontend/utils/researchEvents.ts:329` `default: return view`). 타입·리듀서·'검토 중' 더미는 06d 몫이다.
@@ -4248,7 +4248,7 @@ Expected: 커밋 해시 한 줄 — '리뷰를 마친 커밋'으로 적어 둔�
 **Files:**
 - Create: `docs/roadmap/round06c-완료노트.md`
 - Modify: `docs/roadmap/00_status.md`(3행 최종 갱신·22행 round06 머리·26행 뒤 06c 하위 줄·53행 다음 할 일의 06c 줄·82행 라운드 이력 — round06 줄만)
-- Modify: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`(3행 머리 상태 줄, 47행 D25, §12-2 491·497·501·502·506·507·512·518·520행, §12-7 723·724·733·738행)
+- Modify: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`(3행 머리 상태 줄, 47행 D25, §12-2 491·497·501·502·506·507·512·518·520·526행, §12-7 723·724·733·738행)
 - `docs/ops/recurring-gotchas.md` — 이 Task 에서는 고치지 않는다(운영 전이라 라이브에서만 드러난 것이 아직 없다. Task Z8 이 다시 판단한다)
 
 **알아 둘 것:**
@@ -4288,7 +4288,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06c-query-broadening.md` (Task 0 �
 | 낱말 맞추기 | `app/services/research/terms.py` — `content_words`(NFKC·casefold·문장부호·조사 하나 떼기·질문 꼴 낱말과 조사만 남은 어절 제외)·`contains`(공백 무시 부분 문자열, 아니면 낱말이 순서대로)·`compose_query`, 상수 `PARTICLES`·`QUESTION_WORDS`·`QUERY_FILLERS`. 공용 고정 예제 `frontend/tests/fixtures/term_checks.json`(score.py 복사본·06e 가 같은 규칙) |
 | 넓히기 | `research_frame.yaml`(예시 없음)·`framing.py` — gemma 1회·20초, 원 질문 낱말 보존 검사, 범위 용어 정리(30자·4개), `FRAME_FAILURES`·빈 응답·검사 실패면 원 질문. 계획 태스크가 `broaden` 1 이면 계획 전에 넓히고 `{question_used, terms}` 를 먼저 알린다. plan step 결과 `{subquestions, question_used, terms, elapsed_ms}` |
 | 검색어 합성 | 실행 태스크가 마지막 plan step 의 `terms` 를 `ResearchState.terms`·체크포인트에 싣는다. runner `_search_query` 가 `query_context` 1 이면 첫 검색어·재검색 제안에 없는 범위 용어를 붙이고 '국내 학술논문에서' 를 뗀다 — `subq.queries`·critic `tried_queries`·회차 기록이 모두 실제로 보낸 글 |
-| 탐색 후보 이벤트 | `candidates {subq_idx, round, papers}` — 회차마다 `counters` 뒤·자기점검 전에 한 번(빈 목록도), 스위치와 무관, 저장하지 않음 |
+| 탐색 후보 이벤트 | `candidates {subq_idx, round, papers}` — 회차마다 `counters` 뒤·자기점검 전에 한 번(빈 목록도), 스위치와 무관, 저장하지 않음. `papers` 는 이번에 이은 근거 전부(`linked` 순서)라 이 하위질문이 이미 채택한 논문이 다시 걸리면 후보에 다시 든다 — 06d 가 `cnts_id` 로 기존 채택과의 겹침을 처리한다 |
 | 스위치 | 잡 파라미터 `broaden`·`query_context`(int 0~1, 기본 0 — `critic_scope` 와 같은 검증 경로) |
 | 판정 도구 | `run_pair.py --param0·--param·--plan own`, 대조군 `questions_control.json`, `score.py` 계획 지표(넓힌 질문·일반 틀·근거 0편·insufficient·계획 시간)·`--plan-only`·`contains` 복사본, README '06c 재판정' 절차 |
 | 화면 한 줄 | `StepResult` 선택 칸 셋, `questionUsedFromSteps`·`understoodLine`, PlanCard 선택 prop `questionUsed`(`[id].vue` 바인딩은 06d — 10/17~18 nuxt 배포) |
@@ -4592,6 +4592,18 @@ new:
 
 ```markdown
   - 군더더기를 지워 남는 것이 없으면 하위질문의 공백만 정리한 글로 물러난다. 그 글에 `terms` 를 차례로 보며, 지금까지의 글(앞에서 이어 붙인 용어 포함)에 `contains` 가 아닌 용어만 공백 하나로 이어 붙인다 — 용어도 공백을 정리하고 빈 용어는 건너뛴다. `terms` 가 비면 군더더기만 뗀다. 합성한 글을 다시 넣어도 같은 글이 나온다(재검색 제안이 앞 검색어를 고쳐 써도 용어가 두 번 붙지 않는다) — 군더더기만으로 된 글이 물러난 경우는 빼고(06c 계획 정함 12).
+```
+
+⑪-3 526행 탐색 후보 — 이미 채택한 논문이 다시 걸릴 때(계획 머리 「다른 줄과의 경계」의 06d `candidates` 행). old:
+
+```markdown
+이번 회차에 점검할 근거 = `linked` 순서).
+```
+
+new:
+
+```markdown
+이번 회차에 점검할 근거 = `linked` 순서 — 이번 검색이 이 하위질문에 이은 근거 전부라, 이 하위질문이 앞 회차에 이미 채택한 논문이 다시 걸리면 후보에 다시 든다. 같은 회차 `critique` 의 `adopted_papers` 에는 그 논문이 `new` 없이 있으므로 06d 리듀서가 `cnts_id` 로 기존 채택과의 겹침을 처리한다).
 ```
 
 ⑫ 723행 `--param`. old:

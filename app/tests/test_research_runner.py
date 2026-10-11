@@ -1460,6 +1460,8 @@ class TestCandidatesEvent:
 
     def test_candidates_follow_the_order_they_were_linked(self):
         # 이은 순서(검색 결과 순서)다 — 순위순(evidence_ids)이 아니다. 다른 하위질문이 먼저 만든 근거(A)도 든다
+        # (A 는 이 하위질문에는 처음 잇는 것이다 — 이은 것 전부와 처음 이은 것이 갈리는 경우는 아래
+        # test_already_adopted_paper_found_again_is_a_candidate_again)
         st = self._state("가", "나", max_recheck=0)
         first, second = st.subquestions
         scores = {"가": [0.9], "나": [0.3, 0.5, 0.9]}
@@ -1474,6 +1476,18 @@ class TestCandidatesEvent:
         assert [p["cnts_id"] for p in candidates["papers"]] == ["B", "C", "A"]
         # 순위는 회차 1위 B 가 앞자리, 나머지는 점수순 — 후보 순서와 다르다
         assert [st.evidence[e].cnts_id for e in second.evidence_ids] == ["B", "A", "C"]
+
+    def test_already_adopted_paper_found_again_is_a_candidate_again(self):
+        # 후보는 이번 검색이 이 하위질문에 이은 근거 전부(linked)다 — 처음 이은 것(fresh)만이 아니다. 1회차에 채택한
+        # A 가 2회차 검색에 다시 걸리면 후보에 다시 들고, 같은 회차 critique 의 adopted_papers 에는 new 없이 있다.
+        # 06d 리듀서가 cnts_id 로 기존 채택과의 겹침을 처리한다(계획 머리 「다른 줄과의 경계」의 06d candidates 행)
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, st.subquestions[0],
+                           _explore_table({"가": ["A", "B"], "보완": ["A", "C"]}),
+                           _ScriptedCritic(("insufficient", [], ["보완"]), ("sufficient", [], [])))
+        assert [[p["cnts_id"] for p in c["papers"]] for c in _of(events, "candidates")] == [["A", "B"], ["A", "C"]]
+        adopted = {p["cnts_id"]: p for p in _of(events, "critique")[1]["adopted_papers"]}
+        assert "new" not in adopted["A"] and adopted["C"]["new"] is True
 
     def test_candidates_carry_paper_briefs(self):
         st = self._state("가", max_recheck=0)
