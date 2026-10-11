@@ -481,6 +481,120 @@ class TestRequery:
         assert critic.calls == 1
 
 
+class TestQueryComposition:
+    """검색어 합성(06c, 잡 파라미터 query_context) — 첫 검색어와 재검색 제안에서 '국내 학술논문에서' 를 떼고
+    계획 단계의 범위 용어 중 없는 것을 붙인다. 하위질문 글(절 소제목·critic 의 하위질문)은 그대로다.
+    스위치 값은 기본값에 기대지 않고 적는다(기본값은 06c 판정 뒤 바뀔 수 있다)."""
+
+    TEXT = "국내 학술논문에서 컴퓨팅 자원 할당 방법"
+    TERMS = ["컴퓨팅 자원", "클라우드"]
+
+    def _state(self, switch, *, terms=TERMS, max_recheck=0):
+        return ResearchState(job_id="j", question="컴퓨팅 자원에 대한 연구가 궁금해",
+                             params=merge_params({"query_context": switch, "max_recheck": max_recheck}),
+                             terms=list(terms))
+
+    def _searched(self):
+        sent = []
+
+        async def _explore(query, *, params, db):
+            sent.append(query)
+            return _hits(["A"], query=query)
+        return sent, _explore
+
+    def test_switch_off_searches_the_subquestion_word_for_word(self):
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(0, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic(["국내 학술논문에서 가상화 기반 자원 스케줄링"]), emit=None))
+        assert sent == [self.TEXT, "국내 학술논문에서 가상화 기반 자원 스케줄링"]
+        assert sq.queries == sent
+
+    def test_first_search_drops_fillers_and_adds_missing_terms(self):
+        sent, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1), SubQuestion(idx=0, text=self.TEXT), db=None,
+                                        explore_fn=explore, critique_fn=_FakeCritic(), emit=None))
+        assert sent == ["컴퓨팅 자원 할당 방법 클라우드"]
+
+    def test_terms_already_in_the_subquestion_are_not_repeated(self):
+        sent, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1), SubQuestion(idx=0, text="클라우드 컴퓨팅 자원 할당"),
+                                        db=None, explore_fn=explore, critique_fn=_FakeCritic(), emit=None))
+        assert sent == ["클라우드 컴퓨팅 자원 할당"]
+
+    def test_recheck_searches_the_composed_suggestion(self):
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic(["국내 학술논문에서 가상화 기반 자원 스케줄링"]), emit=None))
+        # 재검색 제안은 critic_scope 0 이면 원 질문을 모르고 하위질문만 보고 만든다 — 동음이의가 들어오는 자리다
+        assert sent == ["컴퓨팅 자원 할당 방법 클라우드", "가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드"]
+        assert sq.queries == sent
+
+    def test_suggestion_whose_composed_form_was_tried_is_skipped(self):
+        # 제안 '컴퓨팅 자원 할당 방법' 은 글자로는 처음이지만 합성하면 첫 검색어와 같다 — 합성한 꼴끼리 비교해 건너뛴다
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        critic = _SuggestingCritic(["컴퓨팅 자원 할당 방법", "엣지 컴퓨팅 자원"])
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=critic, emit=None))
+        assert sq.queries == ["컴퓨팅 자원 할당 방법 클라우드", "엣지 컴퓨팅 자원 클라우드"]
+
+    def test_critic_sees_the_composed_queries_it_tried(self, monkeypatch):
+        # spec §12-5 — critic 은 고치지 않고 tried_queries 가 합성본을 받는지만 본다. 진짜 critique 를 거쳐
+        # 프롬프트의 '이미 시도한 검색어' 줄을 읽는다(critic.py 가 subq.queries 를 잇는 방식이 바뀌어도 잡힌다).
+        # 합성한 꼴이어야 critic 이 같은 제안을 되풀이하지 않는다
+        prompts = []
+        replies = iter([
+            '{"verdict": "insufficient", "note": "부족", "new_queries": ["가상화 기반 자원 스케줄링"], "off_topic": []}',
+            '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []}',
+        ])
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            prompts.append(messages[1]["content"])
+            return next(replies)
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        _, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), SubQuestion(idx=0, text=self.TEXT),
+                                        db=None, explore_fn=explore, emit=None))
+        tried = [line for p in prompts for line in p.splitlines() if line.startswith("이미 시도한 검색어:")]
+        assert tried == ["이미 시도한 검색어: 컴퓨팅 자원 할당 방법 클라우드",
+                         "이미 시도한 검색어: 컴퓨팅 자원 할당 방법 클라우드, 가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드"]
+
+    def test_round_history_and_events_carry_the_query_actually_sent(self):
+        events, emit = _recorder()
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic(["가상화 기반 자원 스케줄링"]), emit=emit))
+        assert [r["query"] for r in sq.rounds] == sent
+        assert [r["next_query"] for r in sq.rounds] == ["가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드", None]
+        assert [s["query"] for s in _of(events, "search")] == sent
+        assert [c["next_query"] for c in _of(events, "critique")] == ["가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드", None]
+
+    def test_critic_keeps_the_subquestion_text(self):
+        # 검색어만 바뀐다 — critic 의 하위질문(과 절 소제목)은 하위질문 글 그대로다
+        texts = []
+
+        async def _critic(subq, evidence, *, params, question=None):
+            texts.append(subq.text)
+            return Verdict("sufficient", note="충분")
+
+        _, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_critic, emit=None))
+        assert texts == [self.TEXT] and sq.text == self.TEXT
+
+    def test_empty_terms_only_remove_fillers(self):
+        # 넓히지 않은 잡(broaden 0)은 용어가 없다 — 군더더기만 뗀다
+        sent, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1, terms=[]), SubQuestion(idx=0, text=self.TEXT), db=None,
+                                        explore_fn=explore, critique_fn=_FakeCritic(), emit=None))
+        assert sent == ["컴퓨팅 자원 할당 방법"]
+
+
 class TestEvidenceOrder:
     """evidence_ids 는 critic(20편)과 절(5편)이 앞에서 자른다 — 순서가 곧 선택이다."""
 

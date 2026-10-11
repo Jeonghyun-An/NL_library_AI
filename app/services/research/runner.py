@@ -7,6 +7,10 @@
 여기서 import 하면 relay 가 물고 있는 `redis` 가 이 모듈을 여는 모든 곳에
 필요해지고, 미설치 환경에서는 테스트 수집 단계가 통째로 죽는다
 (`docs/ops/recurring-gotchas.md` 13번의 torch 와 같은 함정).
+
+검색어는 _search_query 한 곳에서 만든다(06c, 잡 파라미터 query_context) — 첫 검색어와 재검색 제안이 같은 합성을
+거치므로 subq.queries·회차 기록·search 이벤트·critic 의 tried_queries 가 모두 실제로 보낸 글이다. 절 소제목·critic 의
+하위질문은 subq.text 그대로다.
 """
 import logging
 from collections.abc import Awaitable, Callable
@@ -22,6 +26,7 @@ from services.research.planner import query_key
 from services.research.state import (
     Evidence, HitRow, ResearchState, SubQuestion, research_stats,
 )
+from services.research.terms import compose_query
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +70,18 @@ def _next_query(suggestions: list[str], tried: list[str]) -> str | None:
         if query_key(q) not in seen:
             return q
     return None
+
+
+def _search_query(state: ResearchState, text: str) -> str:
+    """실제로 보낼 검색어. 잡 파라미터 query_context 가 1 이면 군더더기를 떼고 계획 단계의 범위 용어를 붙인다
+    (terms.compose_query), 0 이면 text 글자 그대로다.
+
+    첫 검색어(하위질문)와 재검색 제안이 같은 함수를 거친다 — 그래야 _next_query 의 중복 비교가 합성한 꼴끼리
+    맞고, subq.queries(critic 의 tried_queries)·회차 기록·search 이벤트가 실제로 보낸 글이 된다(explorer 원칙).
+    """
+    if state.params["query_context"]:
+        return compose_query(text, state.terms)
+    return text
 
 
 def _as_seen_by(ev: Evidence, subq: SubQuestion) -> Evidence:
@@ -166,7 +183,8 @@ def _recheck_query(
     # 전체 상한이나 이 하위질문의 몫에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
     if len(state.evidence) >= params["max_evidence"] or own >= subq_budget(state):
         return None
-    return _next_query(verdict.new_queries, subq.queries)
+    # 제안을 합성한 꼴로 바꿔 비교한다 — subq.queries 는 이미 합성한 검색어다
+    return _next_query([_search_query(state, q) for q in verdict.new_queries], subq.queries)
 
 
 async def explore_subquestion(
@@ -185,7 +203,7 @@ async def explore_subquestion(
     """
     emit = emit or _noop_emit
     params = state.params
-    query = subq.text
+    query = _search_query(state, subq.text)
     recheck = 0
     relevance: dict[str, float] = {}
     leaders: list[str] = []
