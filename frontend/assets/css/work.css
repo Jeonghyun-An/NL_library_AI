@@ -1230,10 +1230,10 @@ button.wk-stepper__step {
   font-size: 0.7rem;
   color: var(--skx-ink);
 }
-/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터 떠 있어야
-   첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
+/* 옆 칸 맨 위 근거 장부(진행 패널 위) — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터
+   떠 있어야 첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
 .wk-side-ledger .wk-ledger {
-  margin-top: 1.2rem;
+  margin-bottom: 1.2rem;
 }
 /* 화면을 그대로 인쇄(Ctrl+P)하면 research.css 의 @media print 가 머리·옆 칸·버튼을 뺀다. 보고서 끝 이어가기 카드와
    이어간 연구의 진행 막대는 그 규칙에 걸리지 않아(카드는 본문 article 안, 막대의 칸은 rs-btn 이 아니다) 여기서 뺀다 —

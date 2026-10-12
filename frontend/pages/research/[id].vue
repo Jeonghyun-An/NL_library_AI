@@ -189,12 +189,13 @@
           </div>
 
           <aside class="rs-col-side">
-            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
-            <!-- 근거 장부 — 회차마다 채택 논문이 쌓이고 critic 이 뺀 논문은 '뺌'으로 내려간다. 바깥 v-if 없이 늘 그린다:
+            <!-- 근거 장부 — 옆 칸 맨 위. 회차마다 '검토 중' 후보가 섰다가 점검 뒤 채택 논문은 떨어져 쌓이고 critic 이 뺀 논문은
+                 '뺌'으로 내려간다 — 긴 탐색 타임라인 아래 화면 밖에서 일어나지 않게 진행 패널 위에 둔다. 바깥 v-if 없이 늘 그린다:
                  장부가 빈 때부터 떠 있어야 첫 회차의 채택이 떨어진다. 06a 전 잡은 컴포넌트가 카드를 그리지 않는다 -->
             <div class="wk-side-ledger">
               <EvidenceLedger :subqs="view.subqs" :live="phase === 'exploring'" />
             </div>
+            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
           </aside>
         </div>
         <!-- 따라가기를 멈춘 동안만 뜬다 — 누르면 지금 쓰는(찾는) 곳으로 옮기고 다시 따라간다. 화면 아래 가운데에 붙는다 -->
