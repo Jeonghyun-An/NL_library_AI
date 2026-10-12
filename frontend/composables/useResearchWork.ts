@@ -22,6 +22,7 @@ import type {
   ReadingPut,
   ReadingView,
   SectionPut,
+  SectionSources,
   TopicCreate,
   TopicItem,
   TopicPatch,
@@ -87,6 +88,9 @@ export function useWorkApi() {
       api<unknown>(`${job(jobId)}/generations/${gid}/cancel`, { method: "POST" }),
     retryGeneration: (jobId: string, gid: number) =>
       api<{ gen_id: number }>(`${job(jobId)}/generations/${gid}/retry`, { method: "POST" }),
+    // 인용 근거 — 문단의 절 gen_id 로 그 생성이 모델에 넘긴 초록·원문 대목을 읽는다(읽기라 예시 연구도 된다)
+    getSectionSources: (jobId: string, key: string, gen: number) =>
+      api<SectionSources>(`${job(jobId)}/sections/${encodeURIComponent(key)}/sources`, { query: { gen } }),
   };
 }
 

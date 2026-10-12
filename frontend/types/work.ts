@@ -267,6 +267,35 @@ export interface ProposalView {
   section_gens?: Record<string, SectionGen>;
 }
 
+// 인용 근거(GET …/sections/{key}/sources) — 그 절을 쓸 때 모델에 넘긴 근거 논문의 초록·원문 대목. 쪽은 0부터 센 저장값
+export interface SectionSourceExcerpt {
+  chunk_id: string;
+  page_start: number | null;
+  page_end: number | null;
+  text: string;
+}
+
+export interface SectionSource {
+  cnts_id: string;
+  abstract: string;
+  // 대목을 읽지 못한 논문(Milvus 실패)은 null — 초록만 보인다
+  excerpt: SectionSourceExcerpt | null;
+}
+
+// [E#] → 그 번호의 근거
+export type SectionSources = Record<string, SectionSource>;
+
+// 보고서 문단에서 누른 인용 칩 — 절 키·문단 id·문장 번호(sentenceFlags 순서)·근거 번호·논문·그 절의 생성·그 문장 글
+export interface CitePick {
+  key: string;
+  pid: string;
+  si: number;
+  eid: string;
+  cntsId: string;
+  genId: number;
+  sentence: string;
+}
+
 // ── 요청 본문 ──────────────────────────────────────────────
 export interface WorkPatch {
   concepts?: string[];
