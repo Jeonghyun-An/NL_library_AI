@@ -56,8 +56,8 @@ body {
   margin: 0;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
   -webkit-font-smoothing: antialiased;
-  color: var(--ink);
-  background: var(--bg);
+  color: var(--skx-ink);
+  background: var(--skx-page-bg);
 }
 
 button {

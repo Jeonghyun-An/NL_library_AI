@@ -164,7 +164,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-weight: 400;
   line-height: 130%;
-  color: #111;
+  color: var(--skx-ink);
   letter-spacing: -1px;
 }
 a,
@@ -182,36 +182,77 @@ a:hover {
 
 /* [S] 디자인 토큰 */
 /* 단위 기준: 1rem = 20px */
+/* round08 — 다크 글래스 테마. 색은 모두 이 변수로만 쓴다(research.css·work.css 도 변수만 쓴다).
+   --skx-white 는 이름이 남은 "불투명 면" 자리다: 진한 청록(#16302a)이라 본문색(--skx-ink) 글자가 읽히고,
+   --skx-primary(산호) 바탕 위에 얹는 글자(color: var(--skx-white))도 그대로 읽힌다. */
 :root {
-  --skx-primary: #4f46e5;
-  --skx-ink: #333333;
-  --skx-ink-2: #454545;
-  --skx-gray-1: #666666;
-  --skx-gray-2: #999999;
-  --skx-line: #cccccc;
-  --skx-white: #ffffff;
+  /* 포인트 */
+  --skx-primary: #f8c4b7;
+  --skx-accent: #f8c4b7;
+  --skx-accent-strong: #f4b19e;
+  --skx-accent-grad: linear-gradient(135deg, #f8c4b7 0%, #fff5ed 100%);
+  --skx-on-accent: #0f2822;
+  /* 글자 */
+  --skx-ink-strong: #ffffff;
+  --skx-ink: #cccccc;
+  --skx-ink-2: #c2c9c7;
+  --skx-gray-1: #b7bfbd;
+  --skx-gray-2: #879491;
+  --skx-teal-ink: #80aba1;
+  /* 선·면 */
+  --skx-line: rgba(255, 255, 255, 0.2);
+  --skx-white: #16302a;
+  --skx-glass: rgba(255, 255, 255, 0.1);
+  --skx-glass-2: rgba(255, 255, 255, 0.05);
+  --skx-glass-teal: rgba(128, 171, 161, 0.1);
+  --skx-glass-border: rgba(255, 255, 255, 0.16);
+  --skx-blur: blur(4px);
   --skx-radius-sm: 0.4rem;
   --skx-radius-md: 0.6rem;
-  --skx-radius-lg: 1.2rem;
-  --skx-radius-pill: 2.8rem;
-  --skx-search-grad: linear-gradient(134deg, #4f46e5 13%, #e0e7ff 89%);
-  --skx-page-bg:
-    radial-gradient(
-      90% 80% at 82% 112%,
-      rgba(79, 70, 229, 0.1) 0%,
-      rgba(79, 70, 229, 0) 50%
-    ),
-    radial-gradient(
-      80% 60% at 8% -12%,
-      rgba(129, 140, 248, 0.08) 0%,
-      rgba(129, 140, 248, 0) 48%
-    ),
-    linear-gradient(135deg, #f3f4fe 0%, #edeffc 52%, #f4f5fe 100%);
-  --skx-shadow-lnb: 2px 2px 36px 0 rgba(79, 70, 229, 0.05);
+  --skx-radius-lg: 0.8rem;
+  --skx-radius-pill: 2.2rem;
+  --skx-search-grad: linear-gradient(134deg, #5f8f85 13%, #16302a 89%);
+  --skx-page-bg: url("/img/bg-glass.webp") center / cover no-repeat fixed #0f2822;
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(0, 0, 0, 0.18);
   --skx-shadow-banner:
-    0 4px 12px 0 rgba(0, 0, 0, 0.05), 0 4px 24px 0 rgba(79, 70, 229, 0.08);
-  --skx-border-c1: #e0e7ff;
-  --skx-border-c2: #4f46e5;
+    0 4px 12px 0 rgba(0, 0, 0, 0.16), 0 4px 24px 0 rgba(0, 0, 0, 0.22);
+  --skx-border-c1: rgba(255, 255, 255, 0.16);
+  --skx-border-c2: #f8c4b7;
+  --skx-scrollbar: rgba(255, 255, 255, 0.25);
+  --skx-scrollbar-hover: rgba(255, 255, 255, 0.45);
+}
+/* 밝은 읽는 면 — 안에서 색 변수를 밝은 값으로 다시 정의해, 안쪽 부품이 그대로 밝게 그려진다.
+   상세 화면의 본문 카드·딥리서치 보고서처럼 오래 읽는 면에 감싼다. */
+.skx-paper {
+  --skx-primary: #c9604a;
+  --skx-accent: #c9604a;
+  --skx-accent-strong: #b5503b;
+  --skx-accent-grad: linear-gradient(135deg, #c9604a 0%, #d9806a 100%);
+  --skx-on-accent: #ffffff;
+  --skx-ink-strong: #1d211f;
+  --skx-ink: #1d211f;
+  --skx-ink-2: #454545;
+  --skx-gray-1: #666666;
+  --skx-gray-2: #767676;
+  --skx-teal-ink: #3f7468;
+  --skx-line: #e3e1dc;
+  --skx-white: #ffffff;
+  --skx-glass: #ffffff;
+  --skx-glass-2: #faf9f6;
+  --skx-glass-teal: #eef4f2;
+  --skx-glass-border: #e3e1dc;
+  --skx-blur: none;
+  --skx-search-grad: linear-gradient(134deg, #c9604a 13%, #f6f5f2 89%);
+  --skx-page-bg: #f6f5f2;
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(29, 33, 31, 0.06);
+  --skx-shadow-banner:
+    0 4px 12px 0 rgba(29, 33, 31, 0.06), 0 4px 24px 0 rgba(29, 33, 31, 0.08);
+  --skx-border-c1: #e3e1dc;
+  --skx-border-c2: #c9604a;
+  --skx-scrollbar: rgba(29, 33, 31, 0.28);
+  --skx-scrollbar-hover: rgba(29, 33, 31, 0.5);
+  color: var(--skx-ink);
+  background: var(--skx-page-bg);
 }
 /* [E] 디자인 토큰 */
 
@@ -5018,7 +5059,7 @@ a:hover {
 .skx-footer {
   padding: 0 1.2rem 1.2rem;
   text-align: center;
-  background: #f4f5fe; /* --skx-page-bg 그라데이션 끝색과 동일 */
+  background: var(--skx-page-bg);
 }
 .skx-footer__copy {
   margin: 0;
