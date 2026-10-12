@@ -112,8 +112,8 @@ describe("테마 토큰 대비 4.5:1 이상", () => {
 describe("하드코딩 색 회귀 가드", () => {
   // :root·.skx-reading·.skx-holo 블록 밖에 색 리터럴(#hex·rgb()·rgba()·hsl()·색 이름·currentColor)이 다시 늘지 않게 센다.
   // 새 색은 --skx-* 토큰으로 쓰고, 정말 고정이어야 하면 이 숫자를 올리며 이유를 남긴다.
-  // 의도적 잔존: 그림자·모달 막(scrim)·광택/글로우 하이라이트·/recommend 파스텔 카드·색조 틴트·건드리지 않은 chat-side 블록(옛 흰색 폴백).
-  const MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS = 65;
+  // 의도적 잔존: 그림자·모달 막(scrim)·광택/글로우 하이라이트·/recommend 파스텔 카드·색조 틴트·색조 틴트.
+  const MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS = 60;
 
   const rawCss = readFileSync(cssPath, "utf-8");
   const outside = rawCss
@@ -135,5 +135,45 @@ describe("하드코딩 색 회귀 가드", () => {
     expect(literals.length).toBeLessThanOrEqual(
       MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS,
     );
+  });
+});
+
+describe("아이콘 필터 규칙 특이도", () => {
+  // 색 파일(<img src="/img/ico-*.svg">)에 거는 일반 규칙은 :where() 로 감싸 특이도 0 이어야 한다.
+  // 그냥 img[src...] 로 쓰면 (0,1,1) 이라 단일 클래스 규칙(.skx-btn-talk__ico 등)의 filter 를 이겨
+  // 산호 버튼 위 아이콘이 일반 색(#ccc)으로 덮인다.
+  /** 괄호 밖의 쉼표로만 선택자 목록을 나눈다(:where(a, b) 안의 쉼표는 그대로) */
+  function splitSelectors(list: string): string[] {
+    const out: string[] = [];
+    let depth = 0;
+    let cur = "";
+    for (const ch of list) {
+      if (ch === "(" || ch === "[") depth++;
+      if (ch === ")" || ch === "]") depth--;
+      if (ch === "," && depth === 0) {
+        out.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    out.push(cur.trim());
+    return out.filter(Boolean);
+  }
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
+    selectors: splitSelectors(m[1] ?? ""),
+    body: m[2] ?? "",
+  }));
+
+  it("filter 를 거는 img[...] 규칙은 :where() 로 감싼다", () => {
+    const bare = rules
+      .filter((r) => /(?:^|[;\s])filter\s*:/.test(r.body))
+      .flatMap((r) => r.selectors)
+      .filter((s) => /^img\[/.test(s));
+    expect(bare).toEqual([]);
+  });
+
+  it("일반 아이콘 규칙(:where)이 있다", () => {
+    expect(css).toMatch(/:where\(img\[src\*="\/img\/ico-"\]/);
   });
 });
