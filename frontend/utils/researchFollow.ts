@@ -119,9 +119,35 @@ export function followTarget(input: {
   return null;
 }
 
-// 옮기지 않는 때 — 돌아온 자리를 맞추는 중, 원문 뷰어를 연 동안, 인용 팝오버를 읽는 동안(고정·hover 를 가리지 않는다)
-export function followBlocked(c: { restoring: boolean; pdfOpen: boolean; popoverOpen: boolean }): boolean {
-  return c.restoring || c.pdfOpen || c.popoverOpen;
+// 옮기지 않는 때 — 돌아온 자리를 맞추는 중, 원문 뷰어를 연 동안, 사용자가 연 인용 팝오버를 읽는 동안(고정·hover — userOpenedPopover)
+export function followBlocked(c: { restoring: boolean; pdfOpen: boolean; userPopover: boolean }): boolean {
+  return c.restoring || c.pdfOpen || c.userPopover;
+}
+
+// 사용자가 연 인용 팝오버인가 — 열린 팝오버를 품은 칩 묶음(.rs-cite) 안에 초점(focused)·마지막으로 포인터를 움직인 곳(pointed)·
+// 마지막으로 누른 곳(pressed)이 있다. 인용 칩은 mouseenter 에 곧바로 팝오버를 열고 브라우저는 가만히 있는 포인터 밑의 내용이 스크롤·
+// 배치 변화로 바뀌어도 hover 를 다시 재어 mouseenter 를 보낸다 — 따라가기가 굴리거나 끝난 절의 본문이 나타나 칩이 손을 뗀 포인터
+// 밑으로 오면 사용자가 열지 않은 팝오버가 선다. 그것을 막힘으로 보면 포인터가 움직이지 않는 한 닫히지 않아(mouseleave 가 없다)
+// 따라가기가 켜진 채 멈추고 알약도 뜨지 않는다. 눌러 고정한 것은 포인터를 치워도 누른 곳으로 남는다(macOS 의 Safari·Firefox 는
+// 누른 버튼에 초점을 주지 않는다)
+export function userOpenedPopover(p: { open: boolean; focused: boolean; pointed: boolean; pressed: boolean }): boolean {
+  return p.open && (p.focused || p.pointed || p.pressed);
+}
+
+// 사용자가 마지막으로 포인터를 움직인 곳(moved — pointermove 의 대상)과 누른 곳(pressed — pointerdown 의 대상), 그 화면 좌표(at)
+export type PointerTrail = { at: { x: number; y: number } | null; moved: EventTarget | null; pressed: EventTarget | null };
+export const NO_POINTER: PointerTrail = { at: null, moved: null, pressed: null };
+
+// 포인터 입력을 적는다. 화면 좌표가 그대로인 pointermove 는 움직임이 아니다 — 스크롤·배치 변화로 포인터 밑 내용이 바뀌면 브라우저가
+// hover 를 다시 재며 낼 수 있고, 그 대상은 포인터 밑으로 온 칩이라 사용자가 연 팝오버로 잘못 읽힌다
+export function notePointer(
+  trail: PointerTrail,
+  e: { type: "pointermove" | "pointerdown"; x: number; y: number; target: EventTarget | null },
+): PointerTrail {
+  const at = { x: e.x, y: e.y };
+  if (e.type === "pointerdown") return { ...trail, at, pressed: e.target };
+  if (trail.at && trail.at.x === at.x && trail.at.y === at.y) return trail;
+  return { ...trail, at, moved: e.target };
 }
 
 // 사용자 입력이 따라가기를 멈추는 단계 — 따라갈 것이 생기는 탐색·작성뿐이다. 그 앞(계획·승인 대기·대기열)에 계획을 굴려 읽거나

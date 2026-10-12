@@ -261,7 +261,7 @@ import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
 import { planSlots, showsPlanSlots } from "~/utils/planSlots";
 import { activeRoundKey, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
-import { followBlocked, followTarget } from "~/utils/researchFollow";
+import { followBlocked, followTarget, userOpenedPopover, type PointerTrail } from "~/utils/researchFollow";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 import { ONBOARDING_KEY, parseWorkStep, stepForPhase, summaryBand, summaryLine, withStep } from "~/utils/workPhase";
@@ -577,7 +577,7 @@ async function openPdf(target: OpenPdfPayload): Promise<void> {
 
 // ── 지금 진행하는 절 따라가기 ─────────────────────────────
 // 종합 중에는 쓰는 절(초안 전에는 그 절이 될 하위질문 자리), 탐색 중에는 도는 하위질문 자리로 스크롤이 따라간다(spec D22).
-// 사용자가 직접 굴리면 멈추고 알약으로 다시 켠다. 돌아온 자리를 맞추는 중·원문 뷰어·열린 인용 팝오버 동안은 옮기지 않고,
+// 사용자가 직접 굴리면 멈추고 알약으로 다시 켠다. 돌아온 자리를 맞추는 중·원문 뷰어·사용자가 연 인용 팝오버 동안은 옮기지 않고,
 // 상세에서 돌아온 화면은 멈춘 채 시작한다(고른 자리를 빼앗지 않게). 최종본 뒤에는 대상이 없어 멈춘다
 const followTargetId = computed(() =>
   followTarget({
@@ -588,14 +588,28 @@ const followTargetId = computed(() =>
     subqs: view.value?.subqs ?? [],
   }),
 );
+// 사용자가 연 인용 팝오버가 있는가 — 열린 팝오버(.rs-cite__pop)를 품은 칩 묶음(.rs-cite) 안에 초점·마지막으로 포인터를 움직인 곳·
+// 누른 곳이 있다. 따라가기가 굴리거나 끝난 절의 본문이 나타나 손을 뗀 포인터 밑으로 칩이 와서 hover 로 열린 팝오버는 막힘이
+// 아니다(CitationChip.vue 는 고치지 않는다 — 고정 여부를 밖에 알리지 않으므로 DOM 과 포인터 자취로 본다)
+function userCitePopover(pointer: PointerTrail): boolean {
+  const cites = Array.from(document.querySelectorAll(".rs-page .rs-cite__pop"), (pop) => pop.closest(".rs-cite"));
+  const within = (t: EventTarget | null): boolean => t instanceof Node && cites.some((c) => !!c?.contains(t));
+  return userOpenedPopover({
+    open: cites.length > 0,
+    focused: within(document.activeElement),
+    pointed: within(pointer.moved),
+    pressed: within(pointer.pressed),
+  });
+}
+
 const follow = useSectionFollow({
   phase,
   target: followTargetId,
-  isBlocked: () =>
+  isBlocked: (pointer) =>
     followBlocked({
       restoring: restore.pending.value,
       pdfOpen: !!pdf.value,
-      popoverOpen: !!document.querySelector(".rs-page .rs-cite__pop"),
+      userPopover: userCitePopover(pointer),
     }),
   startPaused: restore.anchor !== null,
 });

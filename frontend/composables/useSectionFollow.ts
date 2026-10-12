@@ -12,20 +12,25 @@ import {
 } from "vue";
 import type { ResearchPhase } from "~/utils/researchEvents";
 import {
+  NO_POINTER,
   breaksFollow,
   followBehavior,
   followKeyDirection,
   followPill,
   inFollowPhase,
+  notePointer,
   scrollsInner,
   shouldFollowMove,
   type FollowInput,
   type FollowScroller,
+  type PointerTrail,
 } from "~/utils/researchFollow";
 
 // 따라가기를 멈추는 사용자 입력(keydown 은 스크롤 키와 Tab). scroll 은 넣지 않는다 — 화면이 부른 이동·스크롤 앵커링도 scroll 을
 // 낸다(utils/researchFollow.ts 머리)
 const USER_INPUTS = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
+// 포인터를 움직인 곳·누른 곳을 적는 입력 — 따라가기를 멈추지 않는다. 열린 인용 팝오버를 사용자가 열었는지 가르는 데만 쓴다(isBlocked)
+const POINTER_INPUTS = ["pointermove", "pointerdown"] as const;
 // 키를 스스로 쓰는 자리 — 안에서 누른 방향키·Space 는 페이지를 굴리지 않는다(입력칸·메뉴·목록 상자·대화상자)
 const KEY_OWNERS = "input, textarea, select, [contenteditable], [role='menu'], [role='listbox'], [role='dialog']";
 // Space 를 누름으로 받는 자리 — 초점이 간 버튼(인용칩·현황 카드의 절)·펼침 머리 위의 Space 는 페이지를 굴리지 않는다
@@ -97,13 +102,15 @@ function inputOf(e: Event, touchDir: number): FollowInput | null {
  * 절과 절 사이(하위질문과 하위질문 사이)처럼 대상이 잠깐 없는 동안에도 알약은 마지막으로 진행한 자리를 가리키며 남는다.
  * 처음 본 대상은 기준으로만 삼는다 — 들어온 화면을 곧바로 끌고 내려가지 않고 다음 바뀜부터 옮긴다. 막힌 동안(isBlocked) 바뀐
  * 대상은 지나간 것으로 두고 다음 바뀜에 옮긴다. 모달이 페이지를 묶은 동안의 입력은 멈춤으로 보지 않는다 — 원문 뷰어를 닫으면
- * 따라가던 대로 다음 바뀜에 옮긴다. 안쪽 스크롤 칸(옆 칸·근거 장부·인용문)이 받는 입력도 페이지를 굴리지 않아 멈춤이 아니다
+ * 따라가던 대로 다음 바뀜에 옮긴다. 안쪽 스크롤 칸(옆 칸·근거 장부·인용문)이 받는 입력도 페이지를 굴리지 않아 멈춤이 아니다.
+ * 막힘에는 마지막으로 포인터를 움직인 곳·누른 곳(PointerTrail)을 넘긴다 — 손을 뗀 포인터 밑으로 칩이 와서 hover 로 열린 팝오버를
+ * 사용자가 연 것과 가른다(userOpenedPopover)
  */
 export function useSectionFollow(opts: {
   phase: ComputedRef<ResearchPhase | null>;
   target: ComputedRef<string | null>;
-  // 옮기려는 순간에 부른다(DOM 을 본다)
-  isBlocked: () => boolean;
+  // 옮기려는 순간에 부른다(DOM 을 본다). pointer 는 마지막으로 포인터를 움직인 곳·누른 곳 — 창 리스너가 없으면(컴포넌트 밖) 비어 있다
+  isBlocked: (pointer: PointerTrail) => boolean;
   // 상세에서 돌아온 화면(restore.anchor !== null) — 사용자가 고른 자리를 빼앗지 않게 멈춘 채 시작한다
   startPaused: boolean;
 }): SectionFollow {
@@ -118,6 +125,15 @@ export function useSectionFollow(opts: {
   let frame = 0;
   // 터치 이동의 방향을 재는 손가락의 앞 높이 — touchstart 는 높이만 적고 따라가기를 멈추지 않는다(탭은 굴림이 아니다)
   let touchY: number | null = null;
+  // 마지막으로 포인터를 움직인 곳·누른 곳 — 막힘(isBlocked)이 열린 인용 팝오버를 사용자가 열었는지 가르는 데 쓴다
+  let pointer: PointerTrail = NO_POINTER;
+
+  // 멈춘 동안에도 적는다 — 알약으로 다시 켠 뒤의 막힘도 같은 기준으로 본다
+  function onPointer(e: Event): void {
+    const p = e as PointerEvent;
+    const type = p.type === "pointerdown" ? "pointerdown" : "pointermove";
+    pointer = notePointer(pointer, { type, x: p.clientX, y: p.clientY, target: p.target });
+  }
 
   function onTouchStart(e: TouchEvent): void {
     touchY = e.touches[0]?.clientY ?? null;
@@ -150,7 +166,7 @@ export function useSectionFollow(opts: {
       if (frame) cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         frame = 0;
-        if (!following.value || (!force && opts.isBlocked())) return;
+        if (!following.value || (!force && opts.isBlocked(pointer))) return;
         const el = document.getElementById(id);
         if (!el) return;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -188,7 +204,7 @@ export function useSectionFollow(opts: {
         last.value = t;
         return;
       }
-      if (t !== null && shouldFollowMove({ following: following.value, blocked: opts.isBlocked(), target: t, last: last.value })) {
+      if (t !== null && shouldFollowMove({ following: following.value, blocked: opts.isBlocked(pointer), target: t, last: last.value })) {
         move(t, false);
       }
       if (t !== null) last.value = t;
@@ -200,11 +216,13 @@ export function useSectionFollow(opts: {
   if (getCurrentInstance()) {
     onMounted(() => {
       for (const type of USER_INPUTS) window.addEventListener(type, onInput, { capture: true, passive: true });
+      for (const type of POINTER_INPUTS) window.addEventListener(type, onPointer, { capture: true, passive: true });
       window.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
     });
 
     onBeforeUnmount(() => {
       for (const type of USER_INPUTS) window.removeEventListener(type, onInput, true);
+      for (const type of POINTER_INPUTS) window.removeEventListener(type, onPointer, true);
       window.removeEventListener("touchstart", onTouchStart, true);
       if (frame) cancelAnimationFrame(frame);
       frame = 0;

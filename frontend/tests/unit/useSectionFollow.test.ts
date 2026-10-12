@@ -3,7 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { computed, effectScope, nextTick, ref, type EffectScope } from "vue";
 import { useSectionFollow } from "~/composables/useSectionFollow";
 import type { ResearchPhase } from "~/utils/researchEvents";
-import { FOLLOW_PILL_EXPLORE, FOLLOW_PILL_WRITE } from "~/utils/researchFollow";
+import {
+  FOLLOW_PILL_EXPLORE,
+  FOLLOW_PILL_WRITE,
+  NO_POINTER,
+  followBlocked,
+  userOpenedPopover,
+  type PointerTrail,
+} from "~/utils/researchFollow";
 
 // 컴포넌트 밖에서 부른다 — 창 입력 리스너(onMounted)는 걸리지 않고, 옮기기(nextTick → 다음 프레임 → scrollIntoView)와 알약만 본다.
 // 자리 요소(rs-sec-N·rs-slot-N — 둘 다 tabindex=-1)는 scrollIntoView·focus 만 흉내 낸다
@@ -51,14 +58,16 @@ async function settle(): Promise<void> {
   for (const cb of due) cb(0);
 }
 
-function setup(o: { phase?: ResearchPhase; target?: string | null; startPaused?: boolean } = {}) {
+function setup(
+  o: { phase?: ResearchPhase; target?: string | null; startPaused?: boolean; isBlocked?: (pointer: PointerTrail) => boolean } = {},
+) {
   const phase = ref<ResearchPhase | null>(o.phase ?? "synthesizing");
   const target = ref<string | null>(o.target === undefined ? null : o.target);
   const follow = scope.run(() =>
     useSectionFollow({
       phase: computed(() => phase.value),
       target: computed(() => target.value),
-      isBlocked: () => false,
+      isBlocked: o.isBlocked ?? (() => false),
       startPaused: o.startPaused ?? false,
     }),
   )!;
@@ -154,6 +163,25 @@ describe("useSectionFollow — 알약", () => {
     done.phase.value = "completed";
     await settle();
     expect(done.follow.pill.value).toBeNull();
+  });
+
+  it("열린 인용 팝오버라도 사용자가 열지 않았으면 옮긴다 — 막힘은 마지막으로 포인터를 움직인 곳·누른 곳을 받아 가른다", async () => {
+    // 연구 화면이 하는 대로 — 칩 묶음 안을 가리키는 것이 있으면 사용자가 연 팝오버다(창 리스너가 없는 여기서는 늘 비어 있다)
+    const isBlocked = vi.fn((pointer: PointerTrail) =>
+      followBlocked({
+        restoring: false,
+        pdfOpen: false,
+        userPopover: userOpenedPopover({ open: true, focused: false, pointed: pointer.moved !== null, pressed: pointer.pressed !== null }),
+      }),
+    );
+    const { target, follow } = setup({ target: "rs-sec-1", isBlocked });
+    await settle();
+    target.value = "rs-sec-2";
+    await settle();
+    // 따라가기가 굴려 칩을 가만히 있는 포인터 밑으로 데려와 hover 로 열린 팝오버 — 다음 절로 옮기고 따라가기는 그대로다
+    expect(isBlocked).toHaveBeenCalledWith(NO_POINTER);
+    expect(spots["rs-sec-2"].scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(follow.following.value).toBe(true);
   });
 
   it("갈 자리가 아직 그려지지 않았으면 옮기지 않고 따라가기만 켠다", async () => {

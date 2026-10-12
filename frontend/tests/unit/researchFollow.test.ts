@@ -7,6 +7,7 @@ import {
   FOLLOW_KEYS,
   FOLLOW_PILL_EXPLORE,
   FOLLOW_PILL_WRITE,
+  NO_POINTER,
   breaksFollow,
   followBehavior,
   followBlocked,
@@ -14,9 +15,11 @@ import {
   followPill,
   followTarget,
   inFollowPhase,
+  notePointer,
   scrollsInner,
   sectionElementId,
   shouldFollowMove,
+  userOpenedPopover,
   type FollowInput,
   type FollowScroller,
 } from "~/utils/researchFollow";
@@ -246,12 +249,59 @@ describe("shouldFollowMove", () => {
 });
 
 describe("followBlocked", () => {
-  it("위치 복원 중·원문 뷰어·열린 인용 팝오버면 막는다", () => {
-    const none = { restoring: false, pdfOpen: false, popoverOpen: false };
+  it("위치 복원 중·원문 뷰어·사용자가 연 인용 팝오버면 막는다", () => {
+    const none = { restoring: false, pdfOpen: false, userPopover: false };
     expect(followBlocked(none)).toBe(false);
     expect(followBlocked({ ...none, restoring: true })).toBe(true);
     expect(followBlocked({ ...none, pdfOpen: true })).toBe(true);
-    expect(followBlocked({ ...none, popoverOpen: true })).toBe(true);
+    expect(followBlocked({ ...none, userPopover: true })).toBe(true);
+  });
+});
+
+describe("userOpenedPopover", () => {
+  it("열린 인용 팝오버를 품은 칩 묶음 안에 초점·마지막 포인터 움직임·마지막 누름이 있으면 사용자가 연 것이다", () => {
+    const none = { open: true, focused: false, pointed: false, pressed: false };
+    // 포인터를 칩에 올려(hover) 연 것 — 읽는 동안 끌고 가지 않는다(정함 5)
+    expect(userOpenedPopover({ ...none, pointed: true })).toBe(true);
+    // 눌러 고정한 것 — 포인터를 치운 뒤에도 막는다(macOS 의 Safari·Firefox 는 누른 버튼에 초점을 주지 않는다)
+    expect(userOpenedPopover({ ...none, pressed: true })).toBe(true);
+    // 초점으로 연 것 — Esc 로 닫아 초점이 남은 칩에서 Enter 로 다시 고정한 것 등
+    expect(userOpenedPopover({ ...none, focused: true })).toBe(true);
+  });
+
+  it("따라가기 스크롤·절 본문이 가만히 있는 포인터 밑으로 칩을 데려와 hover 로 열린 팝오버는 사용자가 연 것이 아니다 — 막으면 따라가기가 멈춘 채 알약도 뜨지 않는다", () => {
+    expect(userOpenedPopover({ open: true, focused: false, pointed: false, pressed: false })).toBe(false);
+    // 열린 팝오버가 없으면 막을 것이 없다
+    expect(userOpenedPopover({ open: false, focused: true, pointed: true, pressed: true })).toBe(false);
+  });
+});
+
+describe("notePointer", () => {
+  it("마지막으로 포인터를 움직인 곳과 누른 곳을 따로 적는다", () => {
+    const para = new EventTarget();
+    const chip = new EventTarget();
+    let trail = notePointer(NO_POINTER, { type: "pointermove", x: 10, y: 20, target: para });
+    expect(trail.moved).toBe(para);
+    expect(trail.pressed).toBeNull();
+    trail = notePointer(trail, { type: "pointermove", x: 12, y: 20, target: chip });
+    expect(trail.moved).toBe(chip);
+    // 눌러 고정한 칩은 포인터를 치워도 누른 곳으로 남는다
+    trail = notePointer(trail, { type: "pointerdown", x: 12, y: 20, target: chip });
+    trail = notePointer(trail, { type: "pointermove", x: 300, y: 20, target: para });
+    expect(trail.moved).toBe(para);
+    expect(trail.pressed).toBe(chip);
+  });
+
+  it("같은 자리의 pointermove 는 움직임이 아니다 — 스크롤·배치 변화로 포인터 밑 내용이 바뀌면 브라우저가 hover 를 다시 재며 낼 수 있다", () => {
+    const approve = new EventTarget();
+    const chip = new EventTarget();
+    // [승인] 을 누른 포인터가 그 자리에 가만히 있다
+    const pressed = notePointer(NO_POINTER, { type: "pointerdown", x: 10, y: 20, target: approve });
+    const still = notePointer(pressed, { type: "pointermove", x: 10, y: 20, target: chip });
+    expect(still.moved).toBeNull();
+    expect(still.pressed).toBe(approve);
+    // 그 뒤 실제로 움직이면 적는다
+    expect(notePointer(still, { type: "pointermove", x: 11, y: 20, target: chip }).moved).toBe(chip);
   });
 });
 
