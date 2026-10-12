@@ -77,10 +77,10 @@
               type="button"
               class="rs-btn rs-btn--small rs-btn--ghost"
               :aria-expanded="outlineOpen"
-              :aria-controls="outlineOpen ? 'wk-outline-editor' : undefined"
-              @click="outlineOpen = !outlineOpen"
+              aria-controls="wk-outline-editor"
+              @click="toggleOutline"
             >
-              {{ readOnly ? "목차 자세히 보기" : "목차 고치기" }}
+              {{ outlineToggleLabel(outlineOpen, readOnly) }}
             </button>
           </div>
           <ol class="wk-doc__toc-list">
@@ -94,9 +94,16 @@
           </ol>
         </nav>
       </template>
-      <!-- [목차 고치기] — 승인 목차는 접어 두고, 초안 목차(06b·질문이 없어 자동 승인하지 못한 목차)는 승인하러 늘 편다 -->
-      <div v-if="editorShown" id="wk-outline-editor">
-        <OutlineEditor :proposal="proposal" :read-only="readOnly" :busy="busy || !!outlineGen" @save="saveOutline" />
+      <!-- [목차 고치기] — 승인 목차는 접어 두고, 초안 목차(06b·질문이 없어 자동 승인하지 못한 목차)는 승인하러 늘 편다.
+           v-show 라 접어도 편집기가 붙어 있어 고치던 목차(draft·편집 모드)가 남는다 — 다시 펴면 이어서 고친다 -->
+      <div v-show="editorShown" id="wk-outline-editor">
+        <OutlineEditor
+          ref="outlineEditor"
+          :proposal="proposal"
+          :read-only="readOnly"
+          :busy="busy || !!outlineGen"
+          @save="saveOutline"
+        />
       </div>
 
       <template v-if="approved">
@@ -194,6 +201,7 @@ import {
   autoTargets,
   docToc,
   outlineBackground,
+  outlineToggleLabel,
   reportBar,
   sectionLabel,
   type TocItem,
@@ -285,6 +293,14 @@ const background = computed(() => (proposal.value?.outline ? outlineBackground(p
 // 승인하면 saveOutline 이 outlineOpen 을 참으로 둬 편 채로 남는다
 const outlineOpen = ref(false);
 const editorShown = computed(() => !approved.value || outlineOpen.value);
+const outlineEditor = ref<InstanceType<typeof OutlineEditor> | null>(null);
+
+// 머리 목차의 토글 — 접혀 있으면 [목차 고치기]로 펴며 편집 모드로 바로 열고(예시 연구는 읽기), 펴 있으면 [목차 접기]로
+// 접는다. 접어도 편집기는 v-show 로 붙어 있어 고치던 것을 잃지 않는다(outlineToggleLabel)
+function toggleOutline(): void {
+  outlineOpen.value = !outlineOpen.value;
+  if (outlineOpen.value) outlineEditor.value?.startEditing();
+}
 
 // 절 자리 제목 — 머리 목차의 번호를 붙인다(3.1 선행연구 검토 · 묶음 이름, 4. 연구 공백 — Word 의 절 번호와 같다)
 function partLabel(key: string): string {
@@ -359,7 +375,7 @@ function saveOutline(body: OutlinePut): void {
   const p = proposal.value;
   if (!p) return;
   // 초안 목차를 승인해도 편집기를 접지 않는다(editorShown) — 고치던 목차가 통째로 사라지지 않고 그 자리에서 '승인함'으로
-  // 바뀐다(06b 와 같다). 접기는 머리 목차의 [목차 고치기] 토글로
+  // 바뀐다(06b 와 같다). 접기는 머리 목차의 토글([목차 접기])로
   if (body.approve) outlineOpen.value = true;
   void act(async () => {
     await api.putOutline(props.jobId, p.version, body);

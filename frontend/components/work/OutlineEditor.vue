@@ -140,7 +140,7 @@
           그만두기
         </button>
       </template>
-      <button v-else type="button" class="rs-btn rs-btn--ghost" :disabled="busy" @click="editing = true">목차 고치기</button>
+      <button v-else type="button" class="rs-btn rs-btn--ghost" :disabled="busy" @click="editing = true">{{ OUTLINE_EDIT }}</button>
     </div>
   </section>
 </template>
@@ -159,7 +159,7 @@ import {
   toOutlinePut,
   type OutlineDraft,
 } from "~/utils/outlineEdit";
-import { GAP_NOTE, SECTION_LABELS } from "~/utils/proposalView";
+import { GAP_NOTE, OUTLINE_EDIT, SECTION_LABELS } from "~/utils/proposalView";
 
 const props = defineProps<{ proposal: ProposalView; readOnly: boolean; busy: boolean }>();
 const emit = defineEmits<{ save: [body: OutlinePut] }>();
@@ -313,4 +313,14 @@ function stopEditing(): void {
   chosen.value = {};
   editing.value = false;
 }
+
+// 머리 목차의 [목차 고치기] 토글(ProposalStep)이 편집기를 펼 때 편집 모드로 바로 연다 — 펴고 또 [목차 고치기]를 누르는
+// 두 단계를 하나로. 안의 [목차 고치기]처럼 예시 연구·바쁜 동안(목차를 다시 만드는 중 등)은 열지 않고 읽기로 둔다.
+// 이미 고치던 중이면 그대로다(접어도 v-show 라 고치던 것이 남는다)
+function startEditing(): void {
+  if (props.readOnly || props.busy) return;
+  editing.value = true;
+}
+
+defineExpose({ startEditing });
 </script>

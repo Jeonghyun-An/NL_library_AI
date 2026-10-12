@@ -13,6 +13,7 @@ import type {
 import {
   GAP_NOTE,
   MAX_PARAGRAPH_CHARS,
+  OUTLINE_EDIT,
   SECTION_LABELS,
   acceptParagraph,
   addParagraph,
@@ -28,6 +29,7 @@ import {
   nextAutoSection,
   openParagraphGens,
   outlineBackground,
+  outlineToggleLabel,
   paragraphParts,
   paragraphProblem,
   paragraphViews,
@@ -634,5 +636,20 @@ describe("reportBar — 보고서 작성 중 큰 진행 막대", () => {
     const label = reportBar(p, autoState(p), new Set())!.label;
     expect(label.startsWith(`${FINAL_STEP_NAME} 작성 중 · `)).toBe(true);
     expect(label).not.toMatch(new RegExp(`${FINAL_STEP_NAME}[을를이가은는의로]`));
+  });
+});
+
+describe("outlineToggleLabel — 머리 목차의 편집기 토글 이름", () => {
+  it("접혀 있으면 편집기를 여는 이름 — 고칠 수 있으면 [목차 고치기](편집 모드로 바로 연다), 예시 연구는 '목차 자세히 보기'", () => {
+    expect(OUTLINE_EDIT).toBe("목차 고치기");
+    expect(outlineToggleLabel(false, false)).toBe(OUTLINE_EDIT);
+    expect(outlineToggleLabel(false, true)).toBe("목차 자세히 보기");
+  });
+
+  it("펴 있으면 '목차 접기' — 편집기 안의 [목차 고치기]와 같은 이름의 버튼이 한 화면에 둘 서지 않는다", () => {
+    for (const readOnly of [false, true]) {
+      expect(outlineToggleLabel(true, readOnly)).toBe("목차 접기");
+      expect(outlineToggleLabel(true, readOnly)).not.toBe(OUTLINE_EDIT);
+    }
   });
 });

@@ -290,6 +290,17 @@ export function docToc(p: ProposalView, state: WorkState, skipped: ReadonlySet<s
   ];
 }
 
+// 목차 편집기의 편집 버튼 이름 — 머리 목차의 토글도 접혀 있을 때 이 이름으로 편집기를 편집 모드로 바로 연다
+export const OUTLINE_EDIT = "목차 고치기";
+
+// 머리 목차의 편집기 토글 이름(06e) — 접혀 있으면 여는 이름(고칠 수 있으면 [목차 고치기], 예시 연구는 읽기만), 펴 있으면
+// '목차 접기'. 편 동안 편집기 안의 [목차 고치기](그만두기·다시 승인 뒤 읽기 모드에서 서는 버튼)와 같은 이름의 버튼이 한
+// 화면에 둘 서지 않는다 — 접으면 편집기는 v-show 로 숨어 컨트롤 목록에서 빠진다
+export function outlineToggleLabel(open: boolean, readOnly: boolean): string {
+  if (open) return "목차 접기";
+  return readOnly ? "목차 자세히 보기" : OUTLINE_EDIT;
+}
+
 // 보고서 화면 머리의 큰 진행 막대(06e 정함 28 — 사용자 Q1 답 '현재 절 작성 중에 보이는 커다란 프로그레스바'를 자동 보고서에도)
 export interface ReportBar {
   label: string;
