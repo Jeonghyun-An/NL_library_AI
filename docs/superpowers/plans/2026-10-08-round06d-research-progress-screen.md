@@ -5005,7 +5005,7 @@ spec §12-2 '화면 한 줄 — 06d 가 잇는 것'(`[id].vue` 계획 중 대기
 - (merge) dev — 06c 의 `frontend/types/research.ts`·`frontend/utils/researchEvents.ts`·`frontend/components/research/PlanCard.vue`·`frontend/tests/unit/researchEvents.test.ts`·`frontend/tests/fixtures/term_checks.json`·백엔드·문서(06e 가 먼저 들어왔으면 06e 의 파일도)
 - Modify: `frontend/pages/research/[id].vue`(researchEvents import · 앵커 `const queueText = computed(` 아래 computed 하나 · 계획 중 카드 · 승인 대기 PlanCard prop)
 
-기준선: 앞 Task(N6, Task N7 을 했으면 N7) 뒤 수.
+기준선: 앞 Task(N9 — 전역 실행 순서에서 이 Task 바로 앞) 뒤 수.
 
 - [ ] **Step 1: 선행 조건을 확인한다**
 
@@ -7663,14 +7663,14 @@ spec D28(06c 판정 뒤 2026-10-12 사용자 결정 — 사용자 "응 넣자. �
 - **기억(사용자 편의일 뿐):** localStorage `skx_research_mode`(`"broad"`·`"precise"`). `readResearchMode`·`saveResearchMode` 가 try/catch 로 감싸고, 저장소가 없거나(`safeLocalStorage()` 가 null — 서버 렌더·막힌 저장소) 던지거나 모르는 값이면 기본 '정밀하게' 다. 서버 렌더와 첫 그림이 같게 기본으로 시작하고 `onMounted` 에서 읽는다. round04c 가 지운 레이아웃 기억(`skx_research_layout`, `2e3d87a`)과 다른 키다 — Task D1 의 '배치 기억 없음' 을 되살리는 것이 아니다.
 - **다시 시작(`[id].vue` 의 `onRestart`):** `restartParams(view.params)` — 원래 잡의 두 칸을 그대로(1 이면 1, 아니면 0) 싣는다. 두 칸이 모두 없는 잡(06c 전 잡)은 기본 '정밀하게'. 다른 칸(`max_recheck` 등)은 지금처럼 싣지 않는다(서버 기본값).
 - **머리 표시:** `researchModeLine(view.params)` — 두 칸이 모두 1 이면 `탐색 방식 · 정밀하게`, 모두 0 이면 `탐색 방식 · 폭넓게`(06c 배포 뒤·06d 전에 만든 잡, 선택을 거치지 않고 만든 잡 — 판정 도구의 기본 갈래 등), 두 칸이 모두 없으면(06c 전 잡·params 를 싣지 않은 응답 — `initialResearchView` 의 `params: job.params ?? {}`, `utils/researchEvents.ts:247`) 그리지 않는다. 두 칸이 갈리면(판정 도구로 나눠 돌린 잡 같은 경우) 어느 방식도 아니라 그리지 않는다. 자리는 상태 배지 옆 — `ResearchHeader.vue` 의 상태 배지(`:7`)를 `.rs-head__meta` 한 줄로 묶고 옆에 `.rs-head__mode`(상태 배지와 같은 크기의 점선 알약)를 둔다. Task D8 은 이 파일의 마크업을 고치지 않았다 — `ResearchHeader.vue` 를 고치는 Task 는 이것 하나다.
-- **round08(UI 다크 테마 — 브랜치 `feat/round08-ui-dark-theme`)이 먼저 dev 에 들어오면** `SearchPlusMenu.vue` 의 script(`clear`·`activateMode`·`update:mode` emit)가 바뀐다. 이 Task 의 앵커는 그 바뀐 곳을 피해 골랐다 — 2026-10-12 그 브랜치의 `SearchPlusMenu.vue` 에 Step 7 의 Edit 여섯을 얹어 모두 맞는 것을 확인했다(`patch --dry-run` — 줄만 밀림). 그래도 맞지 않으면 같은 자리를 지금 글자로 잡는다.
+- **round08(UI 다크 테마 — 브랜치 `feat/round08-ui-dark-theme`)이 먼저 dev 에 들어오면** `SearchPlusMenu.vue` 의 script(`clear`·`activateMode`·`update:mode` emit, `brand` import)가 바뀐다. 이 Task 의 앵커는 그 바뀐 곳을 피해 골랐다. 처음 확인한 `6fd1769` 뒤에 그 브랜치에 들어온 `c1e8221`(2026-10-12 15:34 — 딥리서치 표기를 `DEEP_RESEARCH` 상수로)이 `useResearch`·`menuNav` 두 import 줄 사이에 `import { DEEP_RESEARCH } from "~/utils/brand";` 를 넣어 처음의 네 줄 import 앵커가 맞지 않았다(0번) — 그래서 Step 7 ② 를 한 줄 앵커 셋으로 나눴다. 나눈 뒤 dev `ef202fb`·round08 `6fd1769`·`c1e8221` 세 판의 `SearchPlusMenu.vue` 에 Step 7 의 Edit 여덟(①·②-1~3·③~⑥)을 얹어 모두 한 번씩 맞는 것을, `c1e8221` 의 `ResearchHeader.vue`(Step 9 ①②)·`[id].vue`(Step 9 ③~⑥)·`useResearch.ts`(Step 5)·`research.css`(Step 10)에도 이 Task 의 Edit 가 모두 한 번씩 맞는 것을 확인했다(2026-10-12, 계획서 블록을 그대로 뽑아 얹는 스크립트). 그래도 맞지 않으면 같은 자리를 지금 글자로 잡는다. **round08 이 06d worktree 를 딴 뒤에 dev 에 들어오면**(이 Task 를 마친 뒤 Task L6·N8 의 `git merge dev` 가 데려온다) `SearchPlusMenu.vue` 의 import 한 곳이 부딪힌다 — 이 Task 가 `useResearch`·`menuNav` 사이에 넣은 `import { safeLocalStorage } from "~/utils/browserId";` 와 round08 이 같은 자리에 넣은 `import { DEEP_RESEARCH } from "~/utils/brand";` 다. 두 줄을 모두 남기고 `brand` → `browserId` 순서로 둔다(dev `ef202fb` 를 바탕, 이 Task 를 얹은 글을 ours, `c1e8221` 을 theirs 로 `git merge-file` 해 본 결과 충돌은 이 한 곳이고 `ResearchHeader.vue`·`[id].vue` 의 이 Task 자리는 저절로 합쳐졌다 — 파트 D·L 의 다른 hunk 는 이 흉내에 들지 않았다).
 - 판단은 `utils/researchMode.ts` 순수 함수다(vitest 13). `.vue` 는 typecheck·build 와 손 확인, 운영 확인은 Task Z6.
 
 **Files:**
 - Create: `frontend/utils/researchMode.ts`
 - Create: `frontend/components/research/ResearchModePicker.vue`
 - Modify: `frontend/composables/useResearch.ts`(`useResearchStarter().startResearch` :57-58)
-- Modify: `frontend/components/research/SearchPlusMenu.vue`(칩 뒤 :41-43, import :79-82, 상태 :110-111, `activate` 뒤 :132-136, `submit` :347, `onMounted` :390-391 — 앞 Task 가 고치지 않는 파일이라 da80f23 줄 번호 그대로)
+- Modify: `frontend/components/research/SearchPlusMenu.vue`(칩 뒤 :41-43, import 한 줄 앵커 셋 :79·:81·:82, 상태 :110-111, `activate` 뒤 :132-136, `submit` :347, `onMounted` :390-391 — 앞 Task 가 고치지 않는 파일이라 da80f23 줄 번호 그대로)
 - Modify: `frontend/pages/research/index.vue`(Task N5 를 했을 때만 — 새 연구 카드·import·상태·`start`·`onMounted`)
 - Modify: `frontend/components/research/ResearchHeader.vue`(상태 배지 :7, props :32-39)
 - Modify: `frontend/pages/research/[id].vue`(머리 props — da80f23 :33, import — :235 아래, `retryLabel` — :264 아래, `onRestart` — :401. 앞 Task 들이 이 파일을 고쳤으므로 앵커 글자로 잡는다)
@@ -8044,13 +8044,12 @@ new:
     <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
 ```
 
-② import(:79-82). old:
+② import — 한 줄 앵커 셋(:79·:81·:82). 네 줄을 한 번에 잡지 않는다 — round08 의 `c1e8221` 이 `useResearch`·`menuNav` 두 줄 사이에 `import { DEEP_RESEARCH } from "~/utils/brand";` 를 넣어 네 줄 앵커가 맞지 않는다(아래 '알아 둘 것' 의 round08 줄). 셋 모두 Edit 를 따로 한다.
+
+②-1 old:
 
 ```ts
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
-import { useResearchStarter } from "~/composables/useResearch";
-import { menuStep } from "~/utils/menuNav";
-import { researchErrorMessage } from "~/utils/researchErrors";
 ```
 
 new:
@@ -8058,9 +8057,30 @@ new:
 ```ts
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 import ResearchModePicker from "~/components/research/ResearchModePicker.vue";
-import { useResearchStarter } from "~/composables/useResearch";
+```
+
+②-2 old:
+
+```ts
+import { menuStep } from "~/utils/menuNav";
+```
+
+new:
+
+```ts
 import { safeLocalStorage } from "~/utils/browserId";
 import { menuStep } from "~/utils/menuNav";
+```
+
+②-3 old:
+
+```ts
+import { researchErrorMessage } from "~/utils/researchErrors";
+```
+
+new:
+
+```ts
 import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   DEFAULT_RESEARCH_MODE,
@@ -8070,6 +8090,8 @@ import {
   type ResearchMode,
 } from "~/utils/researchMode";
 ```
+
+(세 Edit 뒤의 import 블록은 dev 에서 네 줄 앵커로 한 번에 고친 것과 글자 그대로 같다. round08 이 먼저 들어왔으면 `brand` 줄이 `useResearch` 와 `browserId` 사이에 남는다 — 경로 이름 순서 그대로다.)
 
 ③ 상태(:110-111). old:
 
@@ -8497,7 +8519,7 @@ N5 를 잘랐으면 `git add` 에서 `frontend/pages/research/index.vue` 를 빼
 
 Expected: `A` 셋(`researchMode.ts`·`researchMode.test.ts`·`ResearchModePicker.vue`)·`M` 여섯(`useResearch.ts`·`SearchPlusMenu.vue`·`pages/research/index.vue`·`ResearchHeader.vue`·`[id].vue`·`research.css` — N5 를 잘랐으면 다섯), 커밋 1개.
 
-**작성 때 확인(2026-10-12):** 이 Task 의 코드를 dev `ef202fb`(06c 머지까지 든 코드 — 파트 D·L·N 없이)의 `frontend` 사본에 얹어 쟀다 — Step 2 의 실패 메시지, Step 4 의 `13 passed`, 전체 vitest `40 files / 739` → `41 files / 752`, typecheck `error TS` 0(처음 `ModeParams` 를 interface 로 두었을 때 위 `TS2345` 두 줄이 나와 type 으로 고쳤다), `Duplicated imports` 는 그 사본의 기준선 `queueLine` 둘 그대로(새 이름은 겹치지 않는다 — Task D2 뒤에는 `0`), `npm run build` `└  ✨ Build complete!`, 빌드 산출물의 entry CSS 에 `rs-mode__opt`, JS 청크 하나에 `탐색 방식`. Step 8(`/research` 홈)은 그 사본에 N5 페이지가 없어 재지 않았다 — 실행 때 Step 11 의 typecheck·build 가 본다. 손 확인(화면)은 하지 않았다.
+**작성 때 확인(2026-10-12):** 이 Task 의 코드를 dev `ef202fb`(06c 머지까지 든 코드 — 파트 D·L·N 없이)의 `frontend` 사본에 얹어 쟀다 — Step 2 의 실패 메시지, Step 4 의 `13 passed`, 전체 vitest `40 files / 739` → `41 files / 752`, typecheck `error TS` 0(처음 `ModeParams` 를 interface 로 두었을 때 위 `TS2345` 두 줄이 나와 type 으로 고쳤다), `Duplicated imports` 는 그 사본의 기준선 `queueLine` 둘 그대로(새 이름은 겹치지 않는다 — Task D2 뒤에는 `0`), `npm run build` `└  ✨ Build complete!`, 빌드 산출물의 entry CSS 에 `rs-mode__opt`, JS 청크 하나에 `탐색 방식`. 검증 때 다시 쟀다(같은 날, Step 7 ② 를 한 줄 앵커 셋으로 나눈 뒤) — 계획서의 블록을 그대로 뽑아 같은 사본에 얹는 스크립트로 Step 2 의 실패 메시지(`Cannot find module '~/utils/researchMode'`·`Test Files  1 failed (1)`·`Tests  no tests`), Step 4 의 `13 passed (13)`, 전체 `41 files / 752`, typecheck `error TS` 0·`Duplicated imports` 2(기준선 `queueLine`), Step 5·7·9·10 의 Edit 열여섯(1·8·6·1)이 모두 한 번씩 맞음, 나눈 ② 로 얹은 결과가 처음 글로 얹은 결과와 파일마다 바이트까지 같음을 봤다. Step 8(`/research` 홈)은 Task N5 Step 6 의 페이지 글을 사본에 두고(N3·N5 의 새 파일 `sidebarResearch.ts`·`researchHome.ts`·`useResearchWorks.ts` 도 계획서 블록 그대로) Edit 일곱이 모두 한 번씩 맞았고, typecheck `error TS` 는 N2 를 얹지 않아 생기는 `composables/useResearchWorks.ts(21,20): error TS2339: Property 'total' does not exist on type 'ListResult'.` 한 줄뿐(이 Task 의 줄에는 없음), build 완료다 — 실행 때 Step 11 의 typecheck·build 가 다시 본다. 손 확인(화면)은 하지 않았다.
 
 ---
 
