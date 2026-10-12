@@ -404,6 +404,42 @@ h4,
   --skx-border-c2: #f8c4b7;
   --skx-scrollbar: rgba(255, 255, 255, 0.25);
   --skx-scrollbar-hover: rgba(255, 255, 255, 0.45);
+  /* 포인트색 바탕 위 글자(--skx-on-accent)와 갈라 쓰는 역할 — 다크에서는 같은 짙은 청록이라 값이 같지만, 포인트가 검정인 핑크 테마에서는 갈린다 */
+  /* 밝은 면(AI 말풍선·답변 안 출처 칩) 위의 짙은 글·점 */
+  --skx-ink-on-light: #0f2822;
+  /* 전환 알약의 켜진 칸 채움과 그 위 글 */
+  --skx-seg-thumb: #0f2822;
+  --skx-seg-thumb-ink: #ffffff;
+  /* 입력창 테두리(평소·초점) */
+  --skx-input-ring: var(--skx-accent);
+  --skx-input-ring-focus: var(--skx-accent);
+  /* 화면 테마 견본 색 — 현재 테마와 상관없이 늘 그 테마의 색으로 보여야 해서 테마마다 갈아 끼우지 않는 토큰이다 */
+  --skx-swatch-dark-green: linear-gradient(135deg, #0f2822 0%, #5f8f85 100%);
+  --skx-swatch-pink: linear-gradient(135deg, #f0ddd6 0%, #eaa9cb 100%);
+  /* 흐림을 더 거는 면(예시 질문 칸·결과 AI 패널)과 예시 칸 그림자 — 다크는 none 이라 지금 모습 그대로이고, 비치는 흰 유리인 핑크만 쓴다 */
+  --skx-chip-blur: none;
+  --skx-aip-blur: none;
+  --skx-chip-shadow: none;
+  /* 움직이는 홀로그램 배경(.skx-holo)의 색 — 모양·움직임은 아래 [S] 홀로그램 구간이 정하고, 색만 테마마다 이 토큰으로 갈아 끼운다.
+     wash 는 페이지 바탕(--skx-page-bg) 위에 깔리는 옅은 번짐, band-1 은 폭 넓은 포일 띠, band-2·3 은 가는 빛줄기, veil 은 사이드바 폭 구간의 막이다(none 이면 막 없음).
+     themeContrast.test.ts 가 테마마다 이 값을 읽어 띠가 가장 밝게 겹친 최악의 합성 위에서 글자 대비를 검사한다 */
+  --skx-holo-wash:
+    radial-gradient(60% 50% at 14% 6%, rgba(128, 171, 161, 0.03) 0%, rgba(128, 171, 161, 0) 70%),
+    radial-gradient(55% 50% at 88% 94%, rgba(128, 171, 161, 0.03) 0%, rgba(128, 171, 161, 0) 70%);
+  --skx-holo-band-1: linear-gradient(
+    180deg,
+    rgba(139, 127, 224, 0) 0%,
+    rgba(139, 127, 224, 0.32) 22%,
+    rgba(244, 177, 158, 0.26) 44%,
+    rgba(128, 171, 161, 0.3) 66%,
+    rgba(223, 243, 255, 0.16) 84%,
+    rgba(223, 243, 255, 0) 100%
+  );
+  --skx-holo-band-2: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-band-3: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-veil: linear-gradient(90deg, rgba(15, 40, 34, 0.4) 0, rgba(15, 40, 34, 0.4) 17.2rem, rgba(15, 40, 34, 0) 22.2rem);
+  /* 화면 아래 15% 는 띠를 걷는다 — 푸터 글자가 띠 위에 놓이지 않게(none 이면 걷지 않는다: 띠가 흰색이라 어두운 글자가 더 잘 읽히는 핑크) */
+  --skx-holo-mask: linear-gradient(180deg, #000 0%, #000 72%, transparent 85%);
 }
 /* 밝은 읽는 면 — 안에서 색 변수를 밝은 값으로 다시 정의해, 안쪽 부품이 그대로 밝게 그려진다.
    상세 화면의 본문 카드·딥리서치 보고서처럼 오래 읽는 면에 감싼다. */
@@ -501,8 +537,165 @@ h4,
   --skx-border-c2: #b5503b;
   --skx-scrollbar: rgba(29, 33, 31, 0.28);
   --skx-scrollbar-hover: rgba(29, 33, 31, 0.5);
+  --skx-ink-on-light: #1d211f;
+  --skx-seg-thumb: #1d211f;
+  --skx-seg-thumb-ink: #ffffff;
+  --skx-input-ring: var(--skx-accent);
+  --skx-input-ring-focus: var(--skx-accent);
+  --skx-chip-blur: none;
+  --skx-aip-blur: none;
+  --skx-chip-shadow: none;
   color: var(--skx-ink);
   background: var(--skx-page-bg);
+}
+/* ───────── 핑크 테마 — html[data-theme="pink"] ─────────
+   기준 시안: Figma main_시안D(2065:15102) — 연한 분홍·크림 그라데이션 바탕, 흰 유리 입력창·예시 카드, 검정 탭·보내기 버튼. 라이트 계열이다.
+   포인트는 시안의 검정(#1a1115)이고 산호는 쓰지 않는다. 다크 :root 와 같은 토큰 이름을 모두 다시 선언한다(themeTokens.test.ts 가 빠짐없는지 본다).
+   색 리터럴은 이 테마 블록 안에서만 쓴다 — 블록 밖 규칙은 var(--skx-*) 로만 읽는다.
+   글자 대비(본문·보조·안내 글 4.5:1)는 themeContrast.test.ts 가 이 테마도 똑같이 검사한다.
+   시안과 다른 점: 꺼진 탭 글(시안 #879491)·입력창 안내 글(#666)은 흰 유리 위 4.5:1 에 맞춰 조금 더 짙게 잡았다. */
+html[data-theme="pink"] {
+  color-scheme: light;
+  /* 포인트 — 시안의 검정 */
+  --skx-primary: #1a1115;
+  --skx-accent: #1a1115;
+  --skx-accent-strong: #3a2a32;
+  --skx-accent-grad: linear-gradient(135deg, #1a1115 0%, #3a2a32 100%);
+  --skx-on-accent: #f2f2f0;
+  /* 글자 */
+  --skx-ink-strong: #1a1115;
+  --skx-ink: #2b2025;
+  --skx-ink-2: #4a3f45;
+  --skx-gray-1: #574c53;
+  --skx-gray-2: #5c5158;
+  --skx-teal-ink: #7a3f5c;
+  /* 상태 */
+  --skx-success: #166534;
+  --skx-success-bg: rgba(22, 101, 52, 0.1);
+  --skx-danger: #b3261e;
+  --skx-danger-bg: rgba(179, 38, 30, 0.1);
+  /* 아이콘 색 — 일반은 거의 검정, 포인트(검정) 바탕 위는 흰색 */
+  --skx-ico-filter: brightness(0) invert(0.12);
+  --skx-ico-on-accent-filter: brightness(0) invert(0.95);
+  --skx-ico-accent-filter: brightness(0) invert(0.1);
+  /* 선·면 */
+  --skx-line: rgba(26, 17, 21, 0.14);
+  --skx-white: #ffffff;
+  /* 유리 면 — 다크는 짙은 반투명이지만 핑크는 흰 반투명이다. 본문색이 어두워 띠가 흰색으로 겹쳐도 대비가 높다 */
+  --skx-glass: rgba(255, 255, 255, 0.5);
+  --skx-glass-2: rgba(255, 255, 255, 0.38);
+  --skx-glass-teal: rgba(234, 169, 203, 0.22);
+  --skx-glass-border: rgba(26, 17, 21, 0.1);
+  --skx-frost-bg: rgba(255, 255, 255, 0.34);
+  --skx-frost-tint: rgba(255, 255, 255, 0.1);
+  --skx-frost-milk: rgba(255, 255, 255, 0.22);
+  --skx-frost-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0) 62%);
+  --skx-frost-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-milk), var(--skx-frost-milk)), var(--skx-frost-tint);
+  --skx-seg-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-tint);
+  --skx-frost-bg-hover: rgba(255, 255, 255, 0.6);
+  --skx-frost-bg-soft: rgba(255, 255, 255, 0.2);
+  --skx-frost-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.4));
+  --skx-frost-line: rgba(255, 255, 255, 0.7);
+  --skx-frost-hilite: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 0 rgba(255, 255, 255, 0.35), 0 10px 30px -10px rgba(150, 70, 110, 0.16);
+  --skx-frost-blur: blur(22px) saturate(1.4);
+  --skx-frost-side-bg: rgba(255, 255, 255, 0.3);
+  --skx-frame-bg: rgba(255, 255, 255, 0.28);
+  --skx-frame-line: rgba(255, 255, 255, 0.8);
+  --skx-side-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.3));
+  --skx-chat-bg: rgba(255, 255, 255, 0.34);
+  --skx-chat-ai-bg: rgba(255, 255, 255, 0.85);
+  --skx-chat-user-tint: rgba(234, 169, 203, 0.34);
+  --skx-chat-user-milk: rgba(255, 255, 255, 0.22);
+  --skx-chat-user-bg: linear-gradient(var(--skx-chat-user-milk), var(--skx-chat-user-milk)), var(--skx-chat-user-tint);
+  --skx-chat-input-tint: rgba(255, 255, 255, 0.1);
+  --skx-chat-input-milk: rgba(255, 255, 255, 0.4);
+  --skx-chat-input-bg: linear-gradient(var(--skx-chat-input-milk), var(--skx-chat-input-milk)), var(--skx-chat-input-tint);
+  --skx-aip-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35));
+  --skx-aip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 10px 30px -10px rgba(150, 70, 110, 0.16);
+  --skx-rule: rgba(26, 17, 21, 0.1);
+  --skx-frost-panel: rgba(255, 255, 255, 0.3);
+  --skx-read-surface: rgba(255, 255, 255, 0.55);
+  --skx-read-ink: #1a1115;
+  --skx-read-ink-2: #3a2f35;
+  --skx-read-gray-1: #574c53;
+  --skx-frost-blur-side: blur(28px) saturate(1.4);
+  --skx-frost-side-under: rgba(255, 255, 255, 0.12);
+  --skx-side-ink: #1a1115;
+  --skx-side-ink-2: #3a2f35;
+  --skx-side-gray-1: #574c53;
+  --skx-side-gray-2: #5c5158;
+  --skx-side-teal-ink: #7a3f5c;
+  --skx-side-ico-filter: brightness(0) invert(0.12);
+  --skx-research-ink: #2b2025;
+  --skx-research-ink-2: #3a2f35;
+  --skx-research-gray-1: #574c53;
+  --skx-research-gray-2: #5c5158;
+  --skx-research-teal-ink: #7a3f5c;
+  --skx-research-ico-filter: brightness(0) invert(0.12);
+  --skx-frost-side-btn: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-side-under);
+  --skx-frost-side-card: linear-gradient(var(--skx-frost-bg-soft), var(--skx-frost-bg-soft)), var(--skx-frost-side-under);
+  /* 예시 질문 칸 — 시안: 흰 칸 + #ccc 선 */
+  --skx-chip-tint: rgba(255, 255, 255, 0.12);
+  --skx-chip-milk: rgba(255, 255, 255, 0.28);
+  --skx-chip-milk-hover: rgba(255, 255, 255, 0.5);
+  --skx-chip-fill: linear-gradient(var(--skx-chip-milk), var(--skx-chip-milk)), var(--skx-chip-tint);
+  --skx-chip-fill-hover: linear-gradient(var(--skx-chip-milk-hover), var(--skx-chip-milk-hover)), var(--skx-chip-tint);
+  --skx-chip-line: rgba(255, 255, 255, 0.85);
+  --skx-frost-menu-bg: rgba(255, 255, 255, 0.9);
+  --skx-frost-menu-line: rgba(26, 17, 21, 0.1);
+  --skx-frost-solid: #ffffff;
+  --skx-frost-over: #fbf1f5;
+  --skx-blur: blur(12px);
+  --skx-search-grad: linear-gradient(134deg, #eaa9cb 13%, #fff5f9 89%);
+  --skx-page-bg: #f0ddd6;
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(26, 17, 21, 0.06);
+  --skx-shadow-banner: 0 4px 12px 0 rgba(26, 17, 21, 0.08), 0 4px 24px 0 rgba(26, 17, 21, 0.1);
+  --skx-border-c1: rgba(214, 140, 178, 0.32);
+  --skx-border-c2: #1a1115;
+  --skx-scrollbar: rgba(26, 17, 21, 0.25);
+  --skx-scrollbar-hover: rgba(26, 17, 21, 0.45);
+  /* 포인트 바탕 밖에서 갈라 쓰는 역할 */
+  --skx-ink-on-light: #1a1115;
+  --skx-seg-thumb: #1a1115;
+  --skx-seg-thumb-ink: #f2f2f0;
+  --skx-input-ring: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.45));
+  --skx-input-ring-focus: #1a1115;
+  --skx-chip-blur: blur(18px) saturate(1.3);
+  --skx-aip-blur: blur(22px) saturate(1.3);
+  --skx-chip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 8px 24px -10px rgba(150, 70, 110, 0.14);
+  /* 움직이는 배경 — 시안의 분홍·크림 번짐 위로 흰 진주빛 띠가 천천히 지난다. 띠가 흰색이라 본문(검정 계열)이 더 잘 읽힌다 */
+  --skx-holo-wash:
+    radial-gradient(48% 58% at 48% 42%, rgba(232, 166, 194, 0.7) 0%, rgba(232, 166, 194, 0) 100%),
+    radial-gradient(40% 50% at 92% 14%, rgba(240, 228, 205, 0.85) 0%, rgba(240, 228, 205, 0) 100%),
+    radial-gradient(50% 45% at 10% 92%, rgba(255, 250, 247, 0.7) 0%, rgba(255, 250, 247, 0) 100%),
+    radial-gradient(40% 40% at 96% 88%, rgba(247, 233, 232, 0.8) 0%, rgba(247, 233, 232, 0) 100%);
+  --skx-holo-band-1: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 250, 244, 0.3) 28%,
+    rgba(255, 255, 255, 0.34) 52%,
+    rgba(255, 238, 247, 0.24) 76%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --skx-holo-band-2: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-band-3: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-veil: none;
+  --skx-holo-mask: none;
+}
+/* 핑크 테마의 밝은 읽는 면 — 중립 흰 면은 .skx-reading 그대로 두고, 포인트(산호)만 검정 계열로 바꾼다 */
+html[data-theme="pink"] .skx-reading {
+  --skx-primary: #1a1115;
+  --skx-accent: #1a1115;
+  --skx-accent-strong: #3a2a32;
+  --skx-accent-grad: linear-gradient(135deg, #1a1115 0%, #3a2a32 100%);
+  --skx-on-accent: #ffffff;
+  --skx-ico-on-accent-filter: brightness(0) invert(1);
+  --skx-ico-accent-filter: brightness(0) invert(0.1);
+  --skx-teal-ink: #7a3f5c;
+  --skx-side-teal-ink: #7a3f5c;
+  --skx-research-teal-ink: #7a3f5c;
+  --skx-search-grad: linear-gradient(134deg, #eaa9cb 13%, #f6f5f2 89%);
+  --skx-border-c2: #1a1115;
 }
 /* [E] 디자인 토큰 */
 
@@ -522,25 +715,9 @@ h4,
   pointer-events: none;
   isolation: isolate;
   /* 화면 아래 15% 는 띠를 걷는다 — 푸터 글자가 띠 위에 놓이지 않게 */
-  -webkit-mask-image: linear-gradient(
-    180deg,
-    #000 0%,
-    #000 72%,
-    transparent 85%
-  );
-  mask-image: linear-gradient(180deg, #000 0%, #000 72%, transparent 85%);
-  background:
-    radial-gradient(
-      60% 50% at 14% 6%,
-      rgba(128, 171, 161, 0.03) 0%,
-      rgba(128, 171, 161, 0) 70%
-    ),
-    radial-gradient(
-      55% 50% at 88% 94%,
-      rgba(128, 171, 161, 0.03) 0%,
-      rgba(128, 171, 161, 0) 70%
-    ),
-    var(--skx-page-bg);
+  -webkit-mask-image: var(--skx-holo-mask);
+  mask-image: var(--skx-holo-mask);
+  background: var(--skx-holo-wash), var(--skx-page-bg);
 }
 .skx-holo__band {
   position: absolute;
@@ -554,15 +731,7 @@ h4,
   width: 150vmax;
   height: 26vmax;
   margin: -13vmax 0 0 -75vmax;
-  background: linear-gradient(
-    180deg,
-    rgba(139, 127, 224, 0) 0%,
-    rgba(139, 127, 224, 0.32) 22%,
-    rgba(244, 177, 158, 0.26) 44%,
-    rgba(128, 171, 161, 0.3) 66%,
-    rgba(223, 243, 255, 0.16) 84%,
-    rgba(223, 243, 255, 0) 100%
-  );
+  background: var(--skx-holo-band-1);
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0%,
@@ -604,12 +773,7 @@ h4,
   width: 5vmax;
   height: 70vh;
   margin-left: -2.5vmax;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.18) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: var(--skx-holo-band-2);
   transform: rotate(12deg);
   animation: skx-holo-b 24s ease-in-out -7s infinite alternate;
 }
@@ -619,12 +783,7 @@ h4,
   width: 3.5vmax;
   height: 55vh;
   margin-left: -1.75vmax;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: var(--skx-holo-band-3);
   transform: rotate(-8deg);
   animation: skx-holo-c 31s ease-in-out -19s infinite alternate;
 }
@@ -667,12 +826,7 @@ h4,
   bottom: 0;
   left: 0;
   width: 22.2rem;
-  background: linear-gradient(
-    90deg,
-    rgba(15, 40, 34, 0.4) 0,
-    rgba(15, 40, 34, 0.4) 17.2rem,
-    rgba(15, 40, 34, 0) 22.2rem
-  );
+  background: var(--skx-holo-veil);
 }
 /* [E] 움직이는 홀로그램 배경 */
 
@@ -1289,7 +1443,7 @@ h4,
   bottom: 0.1rem;
   left: 0.1rem;
   width: calc((100% - 0.2rem) / var(--seg-n, 2));
-  background: var(--skx-on-accent);
+  background: var(--skx-seg-thumb);
   border-radius: var(--skx-radius-pill);
   transform: translateX(calc(var(--seg-i, 0) * 100%));
   transition: transform 0.38s cubic-bezier(0.34, 1.32, 0.42, 1);
@@ -1316,7 +1470,7 @@ h4,
   color: var(--skx-ink);
 }
 .skx-seg__btn.is-active {
-  color: var(--skx-ink-strong);
+  color: var(--skx-seg-thumb-ink);
 }
 .skx-seg__btn:focus-visible {
   outline: 2px solid var(--skx-accent);
@@ -1402,12 +1556,15 @@ h4,
   mask-composite: exclude;
   pointer-events: none;
 }
-/* 입력창(랜딩 입력 상자·결과 위 검색바)의 테두리는 흰 그라데이션이 아니라 늘 보이는 산호 포인트색 1px — 사용자 결정(2026-10-12).
-   초점 때는 예전처럼 같은 포인트색이다(--skx-accent). 다른 유리 면(전환·예시·카드)의 흰 테두리는 그대로 */
+/* 입력창(랜딩 입력 상자·결과 위 검색바)의 테두리는 흰 그라데이션이 아니라 늘 보이는 포인트색 1px — 사용자 결정(2026-10-12, 다크는 산호).
+   초점 때는 예전처럼 같은 포인트색이다. 다른 유리 면(전환·예시·카드)의 흰 테두리는 그대로. 색은 테마 토큰(--skx-input-ring·-focus)이다 —
+   핑크는 시안에 테두리가 없어 평소에는 옅은 선, 초점 때만 검정 포인트로 짚는다 */
 .skx-search__box::before,
-.skx-rsearch::before,
+.skx-rsearch::before {
+  background: var(--skx-input-ring);
+}
 .skx-search__box:focus-within::before {
-  background: var(--skx-accent);
+  background: var(--skx-input-ring-focus);
 }
 .skx-search__field {
   grid-area: field;
@@ -1538,6 +1695,9 @@ h4,
   background: var(--skx-chip-fill);
   border: 1px solid var(--skx-chip-line);
   border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-chip-shadow);
+  backdrop-filter: var(--skx-chip-blur);
+  -webkit-backdrop-filter: var(--skx-chip-blur);
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 400;
@@ -1723,12 +1883,14 @@ h4,
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  /* 큰 틀·AI 패널·읽는 칸은 흐림이 없어 투명도만 거둔다 */
+  /* 큰 틀·읽는 칸은 흐림이 없어 투명도만 거둔다(AI 패널은 핑크에서만 흐림이 있어 같이 끈다) */
   .skx-rframe {
     background: var(--skx-white);
   }
   .skx-aip {
     background: var(--skx-frost-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .skx-pai-main,
   .skx-pai-refs,
@@ -1920,6 +2082,51 @@ h4,
   font-weight: 500;
 }
 /* [E] 히스토리 아이템 활성 상태 */
+
+/* [S] 화면 테마 견본 — 사이드바 맨 아래(components/ThemeSwitcher.vue, SHOW_THEME_SWITCH) */
+.skx-theme {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem 1rem;
+}
+.skx-theme__label {
+  margin-right: auto;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--skx-side-gray-2);
+}
+.skx-theme__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 50%;
+}
+.skx-theme__btn.is-active {
+  border-color: var(--skx-accent);
+}
+.skx-theme__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-theme__dot {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--skx-frost-line);
+  border-radius: 50%;
+}
+.skx-theme__btn--dark-green .skx-theme__dot {
+  background: var(--skx-swatch-dark-green);
+}
+.skx-theme__btn--pink .skx-theme__dot {
+  background: var(--skx-swatch-pink);
+}
+/* [E] 화면 테마 견본 */
 
 /* [S] 검색결과 페이지 레이아웃 */
 .skx-result {
@@ -2167,6 +2374,8 @@ h4,
   padding: 0.8rem;
   background: var(--skx-frost-panel);
   box-shadow: var(--skx-aip-shadow);
+  backdrop-filter: var(--skx-aip-blur);
+  -webkit-backdrop-filter: var(--skx-aip-blur);
   border-radius: 16px;
   container-type: inline-size;
 }
@@ -2971,7 +3180,7 @@ h4,
 .skx-chat-msg--ai {
   align-self: flex-start;
   background: var(--skx-chat-ai-bg);
-  color: var(--skx-on-accent);
+  color: var(--skx-ink-on-light);
 }
 .skx-chat-typing {
   display: flex;
@@ -2986,7 +3195,7 @@ h4,
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 50%;
-  background: var(--skx-on-accent);
+  background: var(--skx-ink-on-light);
   opacity: 0.55;
   animation: skx-dot-bounce 1.2s ease-in-out infinite both;
 }
@@ -3074,7 +3283,7 @@ h4,
   border-radius: 99px;
   background: none;
   border: 1px solid var(--skx-rule);
-  color: var(--skx-on-accent);
+  color: var(--skx-ink-on-light);
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -3096,7 +3305,7 @@ h4,
   border-radius: 4px;
   font-size: 11.5px;
   line-height: 1.6;
-  color: var(--skx-on-accent);
+  color: var(--skx-ink-on-light);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 120px;

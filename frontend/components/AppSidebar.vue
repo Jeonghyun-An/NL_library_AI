@@ -266,6 +266,9 @@
         <img src="/img/ico-settings.svg" alt="" />
       </button>
     </div>
+
+    <!-- 화면 테마 견본(기본 숨김) -->
+    <ThemeSwitcher v-if="SHOW_THEME_SWITCH" />
   </aside>
 </template>
 
@@ -273,7 +276,7 @@
 import type { HistoryEntry } from "~/types/history";
 import { useHistory } from "~/composables/useHistory";
 import { safeLocalStorage } from "~/utils/browserId";
-import { SHOW_MOCKS } from "~/utils/featureFlags";
+import { SHOW_MOCKS, SHOW_THEME_SWITCH } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
 import { DEEP_RESEARCH } from "~/utils/brand";
