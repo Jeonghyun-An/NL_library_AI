@@ -99,7 +99,7 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | 파일 | 바뀜 | Task |
 |---|---|---|
 | `utils/researchLayout.ts` | `LAYOUT_BEFORE_REPORT`·`LAYOUT_WITH_REPORT` 삭제, `WIDE_LAYOUT: ResearchLayout = "A"` 새로, `effectiveLayout(override, wide)`(세 번째 인자 삭제) | D1 |
-| `utils/researchEvents.ts` | `export { queueLine } from "~/utils/queueLine"`(:105-107) 삭제(D2), `roundStatusLabel(sq, r)` 새로(L3), `applyResearchEvent` 의 `case "candidates"`·비공개 `applyCandidates`(L4) | D2·L3·L4 |
+| `utils/researchEvents.ts` | `export { queueLine } from "~/utils/queueLine"`(:105-107) 삭제(D2), `roundStatusLabel(sq, r, phase?: ResearchPhase)` 새로(L3 — 셋째 인자는 L3 spec 검토 반영: 넘기면 `"exploring"` 일 때만 단다. 진행 패널은 늘 넘긴다), `applyResearchEvent` 의 `case "candidates"`·비공개 `applyCandidates`(L4) | D2·L3·L4 |
 | `utils/synthCard.ts` | `RUNNING_CAP`(:6) 을 `export const` 로 | D3 |
 | `utils/restorePosition.ts` · `composables/useRestorePosition.ts` | `insetTargetTop(y, viewportHeight, inset)` 새로 · opts `{ maxWaitMs?: number; topInset?: () => number }` | D5 |
 | `utils/restorePosition.ts` | 타입 `ScrollAncestor`·`ScrollHolder`, 함수 `scrollHolder(chain)`·`boxScrollDelta(el, box, viewportHeight, targetY)` 새로 — 위치 복원이 안쪽 스크롤 칸(A 의 옆 칸)·고정 칸 안의 요소를 칸을 굴려 맞추고 창으로 끌지 않는다(`useRestorePosition` 의 비공개 `holderOf`·`alignInBox`) | D1 품질 검토 반영 |
@@ -205,7 +205,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 - `components/AppSidebar.vue` — N1 → N3 → N7(조건부). `pages/papers/index.vue` — N4 → N6. `composables/useResearchWorks.ts`·`utils/researchHome.ts` — N5 → N6(또는 N7).
 - 한 Task 만 고치는 파일: `types/research.ts`(L4), `utils/synthCard.ts`(D3), `SynthProgressCard.vue`(D4), `evidenceLedger.ts`·`EvidenceLedger.vue`·`work.css`·`evidenceLedger.test.ts`(L5), `ProgressPanel.vue`(L3), 기록 네 파일·두 테스트(N2), `restorePosition.ts`·`useRestorePosition.ts`·`restorePosition.test.ts`(D5), `pages/index.vue`(N1 — Task Z2 는 바꿀 것이 있을 때만), `SearchPlusMenu.vue`·`composables/useResearch.ts`·`ResearchHeader.vue`(N9 — 줄 번호가 da80f23 그대로).
 
-**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`). 실행 중 더한 것: D1 품질 검토 반영 +6(`restorePosition.test.ts` 의 `scrollHolder`·`boxScrollDelta` — Task D5 '알아 둘 것'), D3 품질 검토 반영 +3(`researchProgress.test.ts` 의 재시도 모양), D4 품질 검토 반영 +2(`researchProgress.test.ts` 의 research.css 문서 스크롤 여백 — Task D5 '알아 둘 것'), D6 품질 검토 반영 +4(`researchFollow.test.ts` 12 → 15 — 수식 키 조합 둘·재시도의 갈 곳, `planSlots.test.ts` 13 → 14 — 재시도 모양 — Task D6·L1 '알아 둘 것'), D6 품질 검토 반영 2 +5(`researchFollow.test.ts` 15 → 20 — 안쪽 스크롤 칸이 받는 입력·칸 끝에서 창으로 넘어가는 휠, `scrollsInner` 둘, `followKeyDirection` — Task D6·D7 '알아 둘 것'), D7 품질 검토 반영 파일 1·+6(새 `useSectionFollow.test.ts` — 알약을 누른 이동의 초점·따라가며 옮길 때는 초점을 두는 것·사이의 알약·사이에 누른 알약·알약이 없는 때·그려지지 않은 자리 — Task D7 '알아 둘 것'), D7 품질 검토 반영 2 +3(`researchFollow.test.ts` 20 → 22 — Tab·Shift+Tab 으로 초점 옮기기·`inFollowPhase`, `useSectionFollow.test.ts` 6 → 7 — 따라가며 옮길 때 가장 가까운 끝(nearest)·알약은 start — Task D7 '알아 둘 것'), D7 품질 검토 반영 3 +5(`researchFollow.test.ts` 22 → 26 — `userOpenedPopover` 둘·`notePointer` 둘, `useSectionFollow.test.ts` 7 → 8 — 사용자가 열지 않은 인용 팝오버면 옮긴다 — Task D7 '알아 둘 것'). 뒤 Task 의 'da80f23 기준' 절대값은 이 수만큼 크다 — 상대값으로 읽는다.
+**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`). 실행 중 더한 것: D1 품질 검토 반영 +6(`restorePosition.test.ts` 의 `scrollHolder`·`boxScrollDelta` — Task D5 '알아 둘 것'), D3 품질 검토 반영 +3(`researchProgress.test.ts` 의 재시도 모양), D4 품질 검토 반영 +2(`researchProgress.test.ts` 의 research.css 문서 스크롤 여백 — Task D5 '알아 둘 것'), D6 품질 검토 반영 +4(`researchFollow.test.ts` 12 → 15 — 수식 키 조합 둘·재시도의 갈 곳, `planSlots.test.ts` 13 → 14 — 재시도 모양 — Task D6·L1 '알아 둘 것'), D6 품질 검토 반영 2 +5(`researchFollow.test.ts` 15 → 20 — 안쪽 스크롤 칸이 받는 입력·칸 끝에서 창으로 넘어가는 휠, `scrollsInner` 둘, `followKeyDirection` — Task D6·D7 '알아 둘 것'), D7 품질 검토 반영 파일 1·+6(새 `useSectionFollow.test.ts` — 알약을 누른 이동의 초점·따라가며 옮길 때는 초점을 두는 것·사이의 알약·사이에 누른 알약·알약이 없는 때·그려지지 않은 자리 — Task D7 '알아 둘 것'), D7 품질 검토 반영 2 +3(`researchFollow.test.ts` 20 → 22 — Tab·Shift+Tab 으로 초점 옮기기·`inFollowPhase`, `useSectionFollow.test.ts` 6 → 7 — 따라가며 옮길 때 가장 가까운 끝(nearest)·알약은 start — Task D7 '알아 둘 것'), D7 품질 검토 반영 3 +5(`researchFollow.test.ts` 22 → 26 — `userOpenedPopover` 둘·`notePointer` 둘, `useSectionFollow.test.ts` 7 → 8 — 사용자가 열지 않은 인용 팝오버면 옮긴다 — Task D7 '알아 둘 것'), L3 spec 검토 반영 +1(`researchEvents.test.ts` — 단계를 넘기면 탐색 중일 때만 단다, 멈춘 잡(취소·실패)의 running 하위질문 — Task L3 '알아 둘 것'. 같은 반영에서 기존 it '끝난 하위질문…' 에 단언을 더했다 — it 수 그대로). 뒤 Task 의 'da80f23 기준' 절대값은 이 수만큼 크다 — 상대값으로 읽는다.
 
 ---
 
@@ -3781,6 +3781,8 @@ spec §12-3 '근거가 떨어져 들어옴·근거 수집 단계' 행의 회차 
 - 회차는 `search` 이벤트에서 생기고(`applySearch` da80f23 `:376-388` — 검색어·대목 수, 판정 `null`) `critique` 가 판정·다음 검색어를 채운다(`applyCritique` `:390-420`). 그래서 마지막 회차가 '검색어 있음·판정 없음'이면 자기점검을 기다리는 중이고, 판정이 다음 검색어를 냈는데 다음 회차의 검색이 아직 안 왔으면 다시 찾는 중이다. 다음 검색이 오면 새 회차가 마지막이 되어 앞 회차의 '재검색 중'은 사라진다.
 - 마지막 회차는 `rounds` 의 끝이다(`upsertRound`·`mergeRounds` 가 회차 번호 순으로 둔다 — `:624-631`). 견주기는 객체가 아니라 회차 번호로 한다 — 템플릿이 넘기는 `r` 은 같은 배열의 원소지만 테스트·다른 호출처가 따로 만든 회차를 넘겨도 맞게.
 - **`subqStatusLabel` 은 그대로다(정함 12)** — 06c 파일 PlanCard(`PlanCard.vue:35`)도 읽고 기존 테스트(`researchEvents.test.ts:177` `'탐색 중 · 2회차'`)가 고정한다. 회차 줄에만 새 함수를 단다.
+- **멈춘 잡에는 달지 않는다 — 셋째 인자 `phase`(L3 spec 검토 반영).** 하위질문 상태만 보면 안 된다: 잡은 canceled·failed 인데 하위질문은 `running` 으로 남는 경우가 있다. `canceled`·`failed` 이벤트 리듀서는 `view.status` 만 바꾸고(`applyResearchEvent` 의 끝난 잡 분기) 하위질문은 그대로 둔다. 다시 연 취소 잡도 저장본의 돌던 행이 `running` 이다. 이 두 경우는 `stopPoint` 가 `s.status === "running"` 갈래로 '여기서 멈췄습니다'를 짚는 자리이고 기존 테스트 '탐색 중 취소 — … 돌던 하위질문을 짚는다'·'탐색 중 취소 이벤트를 받은 직후에도…' 가 고정한다. 하위질문만 보면 같은 줄에 '자기점검 중'(깜빡임)이나 '재검색 중'이 함께 선다. 그래서 `roundStatusLabel(sq, r, phase?)` 는 `phase` 를 넘기면 `"exploring"` 일 때만 단다. 진행 패널은 prop `phase` 를 늘 넘기는데, 강조 카드(`phase === 'exploring' && view.highlight`)와 같은 규칙이다. 템플릿의 `v-if` 로 막지 않고 순수 함수에 둔 것은 vitest 로 고정하려는 것이다. 인자를 선택으로 둔 까닭은 둘이다. 하위질문만 보는 두 인자 호출(기존 단언·Task L4 의 앵커)이 그대로 맞는다. 계약 이름도 그대로다.
+- **끝난 하위질문을 막는 `sq.status !== "running"` 가드는 마지막 회차가 다음 검색어를 낸 채 끝난 하위질문으로 고정한다(L3 spec 검토 반영).** 시간 상한으로 failed 가 된 하위질문이 그런 예다. 저장본 `[ROUND1, ROUND2]` 의 마지막은 충분 판정(`next_query` null)이라 가드가 없어도 null 이 된다. 그래서 `rounds: [ROUND1]` 인 `done`·`failed` 하위질문을 따로 단언한다. 가드를 지운 변형에서 이 단언이 떨어지는 것을 확인했다.
 - '자기점검 중'만 점이 깜빡인다 — 템플릿이 `is-checking`(`r.verdict === null` — `roundStatusLabel` 이 '자기점검 중'을 주는 조건과 같은 칸)을 단다. 깜빡임은 기존 `rs-blink` keyframes(`.rs-badge--live::before` 선례, `research.css:976-983`)이고 reduced-motion 이면 멈춘다. 새 keyframes 없음.
 - 타임라인은 live 영역이 아니다(진행 패널에서 읽히는 것은 강조 카드 `.rs-highlight` 하나 — `ProgressPanel.vue:33`). 새 칩도 `aria-live="off"` 로 두어 회차마다 읽지 않는다.
 - `researchEvents.ts`·`researchEvents.test.ts` 는 D2 가 먼저 고쳤다(다시 내보내기 지움·`queueLine` import 를 `~/utils/queueLine` 으로). 아래 old 는 D2 가 바꾸지 않는 글자다. 새 describe 는 `queueLine` describe 의 끝(앵커) 바로 뒤에 넣는다 — 06c 가 Task 0 전에 dev 에 들어와 그 뒤에 06c 의 describe 가 있어도 그 앞에 끼어들 뿐 결과는 같다.
@@ -3845,6 +3847,35 @@ describe("roundStatusLabel — 회차 줄 미세 상태", () => {
     expect(roundStatusLabel(sq, sq.rounds[0]!)).toBe("재검색 중");
   });
 
+  it("단계를 넘기면 탐색 중일 때만 단다 — 멈춘 잡(취소·실패)은 돌던 하위질문이 running 으로 남아도 null", () => {
+    // 취소·실패 이벤트는 잡 상태만 바꾸고 돌던 하위질문은 running 으로 둔다 — stopPoint 가 '여기서 멈췄습니다'로 짚는 자리다
+    const STOPS: ResearchEvent[] = [
+      { kind: "canceled", status: "canceled" },
+      { kind: "failed", status: "failed", error: "모든 하위질문 탐색이 오류로 실패했다" },
+    ];
+    for (const live of [run([SEARCH_STARTED, FIRST_SEARCH]), run([SEARCH_STARTED, FIRST_SEARCH, RECHECK])]) {
+      const sq = live.subqs[0]!;
+      expect(roundStatusLabel(sq, sq.rounds[0]!, researchPhase(live))).not.toBeNull();
+      for (const stop of STOPS) {
+        const stopped = applyResearchEvent(live, stop);
+        const sqStopped = stopped.subqs[0]!;
+        expect(sqStopped.status).toBe("running");
+        expect(stopPoint(stopped)).toEqual({ kind: "subq", idx: 0, started: true, error: null });
+        expect(roundStatusLabel(sqStopped, sqStopped.rounds[0]!, researchPhase(stopped))).toBeNull();
+      }
+    }
+    // 멈춘 잡을 다시 연 화면 — 저장본의 돌던 행(running)에 다음 검색어를 낸 회차가 남아 있다
+    const reopen = (status: ResearchJob["status"]) => initialResearchView(job({ status, steps: [PLAN_ROW, SAVED_SEARCH_ROW] }));
+    const running = reopen("running");
+    expect(roundStatusLabel(running.subqs[0]!, running.subqs[0]!.rounds[0]!, researchPhase(running))).toBe("재검색 중");
+    for (const status of ["canceled", "failed"] as const) {
+      const v = reopen(status);
+      const sq = v.subqs[0]!;
+      expect(sq.status).toBe("running");
+      expect(roundStatusLabel(sq, sq.rounds[0]!, researchPhase(v))).toBeNull();
+    }
+  });
+
   it("끝난 하위질문·앞 회차·판정이 난 마지막 회차(충분)는 null", () => {
     const enough = run([
       SEARCH_STARTED,
@@ -3857,6 +3888,15 @@ describe("roundStatusLabel — 회차 줄 미세 상태", () => {
       steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done", result: { rounds: [ROUND1, ROUND2] } })],
     })).subqs[0]!;
     expect(done.rounds.map((r) => roundStatusLabel(done, r))).toEqual([null, null]);
+    // 마지막 회차가 다음 검색어를 낸 채 끝난 하위질문(시간 상한으로 오류가 난 것 등)도 — 하위질문 상태를 보지 않으면
+    // 이 회차가 마지막이라 '재검색 중'이 영구히 붙는다
+    for (const status of ["done", "failed"] as const) {
+      const closed = initialResearchView(job({
+        steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status, result: { rounds: [ROUND1] } })],
+      })).subqs[0]!;
+      expect(closed.status).toBe(status);
+      expect(roundStatusLabel(closed, closed.rounds[0]!)).toBeNull();
+    }
     // 앞 회차 — 재검색을 낸 1회차는 2회차가 시작되면 적지 않는다
     const second = run(AWAITING_ROUND2_CRITIQUE).subqs[0]!;
     expect(roundStatusLabel(second, second.rounds[0]!)).toBeNull();
@@ -3864,12 +3904,12 @@ describe("roundStatusLabel — 회차 줄 미세 상태", () => {
 });
 ```
 
-(`SEARCH_STARTED`·`ROUND1`·`ROUND2`·`AWAITING_ROUND2_CRITIQUE`·`PLAN_ROW`·`run`·`job`·`step` 은 이 파일 머리의 기존 픽스처다 — da80f23 `:38-114`.)
+(`SEARCH_STARTED`·`ROUND1`·`ROUND2`·`AWAITING_ROUND2_CRITIQUE`·`PLAN_ROW`·`SAVED_SEARCH_ROW`·`run`·`job`·`step` 은 이 파일 머리의 기존 픽스처다 — da80f23 `:38-114`. 셋째 it 과 넷째 it 의 `done`·`failed` 단언은 L3 spec 검토 반영으로 더했다 — '알아 둘 것'의 멈춘 잡·끝난 하위질문 두 항목.)
 
 - [ ] **Step 2: 실패를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchEvents.test.ts`
-Expected: `Test Files  1 failed (1)` / `Tests  3 failed | 102 passed (105)` — 새 it 셋이 모두 `TypeError: (0 , roundStatusLabel) is not a function`. 기존 102 는 통과한다(06c 가 먼저 들어와 있었으면 `3 failed | 109 passed (112)`).
+Expected: `Test Files  1 failed (1)` / `Tests  4 failed | 102 passed (106)` — 새 it 넷이 모두 `TypeError: (0 , roundStatusLabel) is not a function`. 기존 102 는 통과한다(06c 가 먼저 들어와 있었으면 `4 failed | 109 passed (113)`). (L3 spec 검토 반영은 함수가 있는 상태에서 셋째 it 만 더해 `1 failed | 112 passed (113)` — `expected '자기점검 중' to be null` 로 떨어지는 것을 보았다.)
 
 - [ ] **Step 3: 구현한다**
 
@@ -3895,8 +3935,11 @@ new:
 // 회차 줄의 미세 상태 — 도는 하위질문의 마지막 회차에만 단다. 검색어가 있고 판정이 아직 없으면 자기점검(LLM)을
 // 기다리는 중이고, 판정이 다음 검색어를 냈으면 그 검색어로 다시 찾는 중이다(다음 회차의 검색이 오면 그 회차가 마지막이
 // 된다). 끝난 하위질문·앞 회차·재검색 없이 판정이 난 회차는 적지 않는다. 하위질문 줄의 상태(subqStatusLabel)는
-// PlanCard 도 읽으므로 그대로 두고 회차 줄에만 단다
-export function roundStatusLabel(sq: SubqView, r: RoundView): string | null {
+// PlanCard 도 읽으므로 그대로 두고 회차 줄에만 단다. 단계(phase)를 넘기면 탐색 중일 때만 단다 — 취소·실패 이벤트는
+// 잡 상태만 바꾸고 돌던 하위질문을 running 으로 두므로(stopPoint 가 '여기서 멈췄습니다'로 짚는 자리) 하위질문만 보면
+// 멈춘 잡에 '자기점검 중'·'재검색 중'이 남는다. 진행 패널의 강조 카드(phase === 'exploring')와 같은 규칙이다
+export function roundStatusLabel(sq: SubqView, r: RoundView, phase?: ResearchPhase): string | null {
+  if (phase !== undefined && phase !== "exploring") return null;
   if (sq.status !== "running") return null;
   const last = sq.rounds[sq.rounds.length - 1];
   if (!last || last.round !== r.round) return null;
@@ -3908,7 +3951,7 @@ export function roundStatusLabel(sq: SubqView, r: RoundView): string | null {
 export function synthProgress(
 ```
 
-(`SubqView`·`RoundView` 는 이 파일 머리 import(da80f23 `:2-37`)에 이미 있다.)
+(`SubqView`·`RoundView` 는 이 파일 머리 import(da80f23 `:2-37`)에 이미 있고 `ResearchPhase` 는 이 파일이 정의한다.)
 
 `frontend/components/research/ProgressPanel.vue` — 회차 줄의 검색어 span(`:63`) 뒤. old:
 
@@ -3920,13 +3963,14 @@ new:
 
 ```html
                 <span class="rs-round__query">‘{{ r.query }}’</span>
-                <!-- 도는 하위질문의 마지막 회차에만 — 점검을 기다리는 중(점이 깜빡인다)·다음 검색어로 다시 찾는 중 -->
+                <!-- 탐색 중 도는 하위질문의 마지막 회차에만 — 점검을 기다리는 중(점이 깜빡인다)·다음 검색어로 다시 찾는 중.
+                     단계를 넘겨 멈춘 잡(취소·실패 — 돌던 하위질문이 running 으로 남는다)에는 달지 않는다 -->
                 <span
-                  v-if="roundStatusLabel(sq, r)"
+                  v-if="roundStatusLabel(sq, r, phase)"
                   class="rs-round__state"
                   :class="{ 'is-checking': r.verdict === null }"
                   aria-live="off"
-                >{{ roundStatusLabel(sq, r) }}</span>
+                >{{ roundStatusLabel(sq, r, phase) }}</span>
 ```
 
 같은 파일 import(`:124-133`). old:
@@ -3988,10 +4032,10 @@ new:
 - [ ] **Step 4: 통과를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchEvents.test.ts`
-Expected: `Test Files  1 passed (1)` / `Tests  105 passed (105)`(06c 가 먼저 들어와 있었으면 `112`)
+Expected: `Test Files  1 passed (1)` / `Tests  106 passed (106)`(06c 가 먼저 들어와 있었으면 `113`)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run`
-Expected: 실패 0 — `Test Files` 는 Task D7 뒤와 같고 `Tests` 는 Task D7 뒤 수 + 3
+Expected: 실패 0 — `Test Files` 는 Task D7 뒤와 같고 `Tests` 는 Task D7 뒤 수 + 4(L3 spec 검토 반영 +1 포함 — 실측 `44 files / 823`)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx nuxi typecheck 2>&1 | grep -c "error TS"`
 Expected: `0`
@@ -4029,7 +4073,7 @@ spec §12-3 '탐색 후보 검토 중 더미(Q9)' 행의 타입·리듀서 부�
 - Modify: `frontend/utils/researchEvents.ts`(import 두 이름 · `refreshView` 끝 · `applyResearchEvent` 의 switch(`case "candidates"`·끝난 잡 셋) · `applySnapshot` · `applyCritique` 갱신 함수 · `applyCritique` 뒤 새 `applyCandidates` · `buildSubq` · `emptySubq` 앞 새 `withoutReviewing`·`clearReviewing`)
 - Test: `frontend/tests/unit/researchEvents.test.ts`(type import 한 이름, L3 의 describe 뒤에 새 describe)
 
-기준선: Task L3 뒤 수. `researchEvents.test.ts` 는 `105`(06c 가 먼저 들어와 있었으면 `112`).
+기준선: Task L3 뒤 수. `researchEvents.test.ts` 는 `106`(06c 가 먼저 들어와 있었으면 `113` — L3 spec 검토 반영 +1 포함).
 
 - [ ] **Step 0: 06c 계획의 이벤트 모양을 다시 본다(안전망)**
 
@@ -4216,7 +4260,7 @@ describe("탐색 후보 — candidates 이벤트", () => {
 - [ ] **Step 2: 실패를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchEvents.test.ts`
-Expected: `Test Files  1 failed (1)` / `Tests  10 failed | 106 passed (116)` — 아직 `case "candidates"` 가 없어 `default` 가 view 를 그대로 돌려준다. 실패 열의 첫 메시지: `expected undefined to deeply equal { Object (round, papers) }`·`Target cannot be null or undefined.`·`expected undefined to deeply equal { round: 2, papers: [ { …(4) } ] }`·`expected undefined to be 1`(둘)·`expected undefined to deeply equal { Object (round, papers) }`·`expected undefined to be defined`(셋 — snapshot·끝난 잡·refreshView)·`expected false to be true`. 통과하는 새 it 하나는 `처음 연 화면(initialResearchView)에는 검토 중이 없고, …` — 지금도 맞아야 하는 것을 지키는 테스트다. 06c 가 먼저 들어와 있었으면 `10 failed | 113 passed (123)`. (refreshView it 은 Step 3 에서 `refreshView` 고침만 빼고 넣으면 `expected true to be false` 로 떨어지는 것을 사본에서 확인했다 — 앞 화면의 검토 중을 잇는 길을 실제로 지킨다.)
+Expected: `Test Files  1 failed (1)` / `Tests  10 failed | 107 passed (117)` — 아직 `case "candidates"` 가 없어 `default` 가 view 를 그대로 돌려준다. 실패 열의 첫 메시지: `expected undefined to deeply equal { Object (round, papers) }`·`Target cannot be null or undefined.`·`expected undefined to deeply equal { round: 2, papers: [ { …(4) } ] }`·`expected undefined to be 1`(둘)·`expected undefined to deeply equal { Object (round, papers) }`·`expected undefined to be defined`(셋 — snapshot·끝난 잡·refreshView)·`expected false to be true`. 통과하는 새 it 하나는 `처음 연 화면(initialResearchView)에는 검토 중이 없고, …` — 지금도 맞아야 하는 것을 지키는 테스트다. 06c 가 먼저 들어와 있었으면 `10 failed | 114 passed (124)`. (refreshView it 은 Step 3 에서 `refreshView` 고침만 빼고 넣으면 `expected true to be false` 로 떨어지는 것을 사본에서 확인했다 — 앞 화면의 검토 중을 잇는 길을 실제로 지킨다.)
 
 - [ ] **Step 3: 타입과 리듀서를 구현한다**
 
@@ -4512,7 +4556,7 @@ function emptySubq(idx: number, title: string): SubqView {
 - [ ] **Step 4: 통과를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchEvents.test.ts`
-Expected: `Test Files  1 passed (1)` / `Tests  116 passed (116)`(06c 가 먼저 들어와 있었으면 `123`) — 기존 `toEqual` 테스트가 모두 그대로 통과한다(키를 늘 싣고 있으면 여기서 깨진다)
+Expected: `Test Files  1 passed (1)` / `Tests  117 passed (117)`(06c 가 먼저 들어와 있었으면 `124` — L3 spec 검토 반영 +1 포함) — 기존 `toEqual` 테스트가 모두 그대로 통과한다(키를 늘 싣고 있으면 여기서 깨진다)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run`
 Expected: 실패 0 — `Tests` 는 Task L3 뒤 수 + 11(`researchDraft.test.ts`·`evidenceLedger.test.ts` 등 `SubqView` 를 쓰는 다른 파일도 그대로 통과)
@@ -5330,7 +5374,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add "fronten
 2. **후보 이벤트의 하위질문 키는 `subq_idx` 다.** 이 파트를 만든 지시문은 `{subq_id, round, papers}` 라고 적었지만 06c 계획의 탐색 후보 Task(`emit("candidates", {"subq_idx": subq.idx, …})`)·06c 계획 정함 3·이 줄 뼈대·spec 커밋 `c5d05b0` 이 모두 `subq_idx` 다 — 지시문의 단서('06c 뼈대와 다르면 06c 쪽을 따른다')대로 06c 를 따랐다. Task L4 Step 0·Task L6 Step 4 가 실제 06c 글·코드로 다시 본다.
 3. **Task L1 — `PlanSlot.round` 는 회차가 아직 없으면 `null`.** 뼈대는 'collecting 일 때 지금 회차(rounds.length)' 라고 했다. 하위질문 단계가 막 열려 검색 전이면 `rounds.length` 가 0 이라 '근거 수집 중 · 0회차'가 된다 — `subqStatusLabel` 처럼 회차가 있을 때만 적는다(테스트가 고정).
 4. **Task L1 — `planSlots` 가 `sectionOfSubq` 에 넘기는 `titles` 는 `view.subqs` 를 하위질문 번호 자리에 놓은 배열이다**(빈 자리는 빈 글). 뼈대는 `titles` 의 출처를 적지 않았다. `view.plan` 이 아니라 화면의 하위질문 글을 쓴다 — 계획을 모르는 옛 잡도 하위질문 글은 있다.
-5. **Task L3 — '자기점검 중'만 깜빡이게 템플릿이 `is-checking`(`r.verdict === null`)을 단다.** 뼈대는 '자기점검 중은 rs-blink 깜빡임'까지만 적었다. 라벨 글자로 가르지 않고 `roundStatusLabel` 의 조건과 같은 칸을 본다. `aria-live="off"` 는 뼈대 그대로 둔다(타임라인은 live 영역이 아니라 없어도 같다).
+5. **Task L3 — '자기점검 중'만 깜빡이게 템플릿이 `is-checking`(`r.verdict === null`)을 단다.** 뼈대는 '자기점검 중은 rs-blink 깜빡임'까지만 적었다. 라벨 글자로 가르지 않고 `roundStatusLabel` 의 조건과 같은 칸을 본다. `aria-live="off"` 는 뼈대 그대로 둔다(타임라인은 live 영역이 아니라 없어도 같다). **spec 검토 반영:** `roundStatusLabel` 에 선택 인자 `phase` 를 더했다. 진행 패널은 이 인자를 늘 넘기고, 그러면 탐색 중(`"exploring"`)일 때만 단다. 뼈대의 `roundStatusLabel(sq, r)` 는 하위질문 상태만 보았다. 그래서 취소·실패 이벤트 직후와 다시 연 멈춘 잡에서 running 으로 남은 하위질문의 회차 줄에 '여기서 멈췄습니다' 옆으로 '자기점검 중'(깜빡임)·'재검색 중'이 섰다. 이 규칙은 강조 카드와 같다. 템플릿에서 막지 않고 순수 함수에 둔 것은 vitest 로 고정하려는 것이다. 테스트는 +1 이다. 끝난 하위질문 가드는 기존 it 에 `rounds: [ROUND1]` 인 `done`·`failed` 단언을 더해 고정한다. Task L3 '알아 둘 것' 에 적었다.
 6. **Task L5 — 커밋을 둘로 나눴다**(뼈대 '1~2'). `work.css` 의 두 hunk 를 `git add -p` 없이 나누려고 ① 을 커밋한 뒤 ② 의 간격 규칙을 고친다. 그 밖에 뼈대가 정하지 않은 것: 검토 중 목록 `max-height: 9rem`(채택 목록 14rem 보다 낮게), 검토 중 서지는 후보가 실은 것을 먼저·없으면 장부가 모은 서지, 후보만 선 바뀜은 채택·뺌의 `fresh` 를 끊지 않는다, 알림은 `후보 n편 검토 중` 을 채택·뺌 앞에 둔다. **뼈대와 글이 다른 것 둘(검토 반영):** ① 검토 중 묶음 자리 — 뼈대 §4 L5 는 '채택 목록(:12-22) 위' 라고 적었지만 spec §12-3 Q9 행 '오른쪽 장부의 그 하위질문 자리에' 에 맞춰 채택 목록 끝(지금 도는 하위질문의 묶음) 바로 아래·뺌 묶음 앞에 둔다. 장부에는 하위질문별 칸이 없어 '그 하위질문 자리' 를 '도는 하위질문의 채택이 떨어질 목록 끝 바로 아래 + 카드마다 하위질문 N' 으로 읽었다(Claude 해석 — 완료노트로 넘긴다). 클래스·DOM 이름은 그대로다. ② `EvidenceLedger.vue` 의 `shown` 이 `hasLedger(…) || (live && seenLive)` — 탐색 중 한 번 선 카드는 탐색이 끝날 때까지 둔다(`hasLedger` 는 뼈대 그대로).
 7. **Task L6 — `.rs-plan__understood` 에 CSS 규칙을 더하지 않는다(뼈대 L6·06c 정함 22 와 같다 — 06c 계획의 화면 한 줄 Task 도 규칙 없는 고리로 적었다).**
 8. **Task L6 — merge 충돌은 `researchEvents.ts`·`types/research.ts` 가 아니라 `researchEvents.test.ts` 에서 난다.** 뼈대는 '충돌이 나면 `researchEvents.ts`·`types/research.ts` 는 서로 다른 함수·블록이라 두 쪽을 모두 남긴다' 고 했다. 사본 merge 로 재 보니 그 둘은 저절로 합쳐지고, 테스트 파일이 import 목록과 파일 끝 두 곳에서 충돌한다(파일 끝은 diff 가 두 쪽의 마지막 `  });`·`});` 를 공통으로 잡아 표시만 지우면 문법이 깨진다). 그래서 Step 3 을 '06d 쪽 파일 + 06c 의 import 두 이름 + 06c 의 `const ASKED` 이하 묶음' 으로 적었다 — `queueLine,` 을 되살리지 않는 것이 핵심이다.
@@ -9264,7 +9308,7 @@ round06d(딥리서치 진행 화면·입구 — nuxt 만) 브랜치의 한 영�
 ```text
 [A 2단·큰 진행 막대·오프셋·스타일] diff: C:/Users/LANDSOFT/round06d-eval/review/a-layout-bar.diff. 파일: frontend/utils/researchLayout.ts, researchProgress.ts, synthCard.ts, components/research/ResearchProgressBar.vue, SynthProgressCard.vue, ResearchHeader.vue, utils/restorePosition.ts, composables/useRestorePosition.ts, pages/research/[id].vue(배치·barView·roundKey·useNow·progressInset), assets/css/research.css(토큰·.rs-pbar*·옛 .rs-synth__bar 지움·문서 scroll-padding-top·옆 칸 top·머리·옆 칸 카드 머리·인쇄). 특히: 넓은 화면은 처음부터 A 이고 override 를 푸는 watch·localStorage 기억이 없는지(2e3d87a 를 revert 하지 않고 앞으로 고쳤는지), progressBarView 의 글줄이 계획의 표(planning·awaiting·queued·exploring·synthesizing)와 글자 그대로인지, 퍼센트가 두 구간 가중(111:91)으로 작성 시작 때 뒤로 가지 않고 RUNNING_CAP 0.9 를 넘지 않는지, 막대가 completed·failed·canceled·stepMode 에서 서지 않는지(WorkStepper 와도, 06e 보고서 단계 화면의 자기 막대 .wk-rbar — 10-11 사용자 확인·06e 계획 정함 28 — 와도 한 화면에 함께 서지 않음. 06d 가 .wk-rbar·--wk-bar-thick·reportBar 를 만들거나 고치지 않았고, Q1 치수 값 1rem·0.75rem·1rem·1.25rem 이 --rs-bar-thick 쪽에 그대로인지), 막대 높이 하나(:root 의 --rs-bar-area-h → .rs-page 의 --rs-bar-h)를 옆 칸 top·문서 scroll-padding-top(html:has(.rs-page.has-progressbar) — 키보드 초점 이동이 막대 뒤에 가린 요소로 가지 않게, WCAG 2.2 2.4.11)·위치 복원 inset 이 함께 읽고, 막대 높이가 .rs-section scroll-margin-top(1.2rem 그대로)에 두 번 더해지지 않았는지, useNow 가 exploring 에도 켜지는지, 인쇄에서 .rs-pbar 가 숨는지, 현황 카드에 작은 막대가 남지 않고 절 목록·[초안 저장]은 그대로인지, 공용 .rs-card__title 규칙은 그대로이고 옆 칸만 .rs-col-side .rs-card__title 로 바꿨는지.
 [B 따라가기] diff: C:/Users/LANDSOFT/round06d-eval/review/b-follow.diff. 파일: frontend/utils/researchFollow.ts, composables/useSectionFollow.ts, pages/research/[id].vue(followTargetId·follow·jumpToSection·알약), assets/css/research.css(.rs-follow-pill). 특히: 멈추는 것이 사용자 입력뿐인지(세로 휠·touchmove·FOLLOW_KEYS 입력칸 밖 — 수식 키 조합은 굴리는 Ctrl+Home/End·Cmd+↑/↓·Option+↑/↓ 만·스크롤바 pointerdown — scroll 이벤트로 가르지 않음, 정함 4), 가로 휠·Ctrl+휠·입력칸 안 키·굴리지 않는 수식 키 조합(Ctrl+PageUp/PageDown·Alt+Home·Ctrl/Cmd+Space)은 멈추지 않는지, 안쪽 스크롤 칸(A 의 옆 칸·근거 장부 목록·인용문)이 받는 휠·터치 이동·키는 멈추지 않고 칸 끝에서 창으로 넘어가면 멈추는지(innerOf 의 조상 사슬·방향 — 휠 deltaY·키 followKeyDirection·터치 앞 높이, touchstart 는 적기만 하고 언마운트 때 푸는지 — D6 품질 검토 반영 2), 막힘(restore.pending·pdf·사용자가 연 인용 팝오버 — 열린 .rs-page .rs-cite__pop 을 품은 .rs-cite 안에 초점·마지막 pointermove(화면 좌표가 바뀐 것만)·pointerdown 의 대상이 있을 때만, 손을 뗀 포인터 밑으로 칩이 와서 hover 로 열린 것은 아님 — D7 품질 검토 반영 3)이면 옮기지 않고 다음 바뀜에 옮기는지(정함 5), 상세에서 돌아온 화면은 멈춘 채 시작하는지(정함 6), 대상이 바뀔 때만 옮기는지(같은 대상으로 되풀이 스크롤 없음), reduced-motion 이면 behavior auto 인지, 창 리스너를 언마운트 때 모두 푸는지(passive·capture 옵션이 걸 때와 풀 때 같은지), nextTick·requestAnimationFrame 뒤 getElementById 가 null 이면 조용히 넘어가는지, 알약 문구(작성 '↓ 지금 쓰는 곳으로'·탐색 '↓ 지금 찾는 곳으로')와 누르면 곧바로 옮기는지, 알약을 누른 이동만 초점을 그 자리로 옮기고(따라가며 옮길 때는 두지 않음) 멈춘 동안 사이(대상이 잠깐 null)에도 알약이 마지막으로 진행한 자리를 가리키며 남는지(D7 품질 검토 반영), 따라가며 옮길 때는 block nearest(방금 끝난 절이 위에 남음)·알약을 누른 이동만 block start 인지, Tab·Shift+Tab(Ctrl·Cmd·Alt 없이)으로 초점을 옮기면 멈추고 창 입력이 탐색·작성 중(inFollowPhase)에만 따라가기를 멈추는지 — 승인 대기에 계획을 굴리거나 Tab 으로 [승인] 에 가도 탐색부터 따라가는지(D7 품질 검토 반영 2), work.css 의 .wk-pill 을 고치지 않았는지.
-[C 탐색 중 움직임] diff: C:/Users/LANDSOFT/round06d-eval/review/c-explore.diff. 파일: frontend/utils/planSlots.ts, components/research/ReportSkeleton.vue, utils/researchEvents.ts(roundStatusLabel·applyCandidates·applyCritique·applySnapshot·buildSubq), types/research.ts, components/research/ProgressPanel.vue, utils/evidenceLedger.ts, components/work/EvidenceLedger.vue, assets/css/work.css(근거 장부 블록), pages/research/[id].vue(planSlotList·slotsShown·ReportSkeleton 분기·탐색 중 PlanCard 지움·옆 칸 순서·questionUsed). 특히: 절 자리의 key·id 가 하위질문 번호이고 절 번호 대응이 synth 이벤트의 subq_idx 를 먼저, 없으면 headings 와 하위질문 글을 NFC·공백 정리 뒤 맞추는지, '종합 시작'과 '대응을 앎'을 나눠 근거를 모은 자리(adopted > 0)는 접지 않는지, draftReport·draftSlots 를 건드리지 않는지, ReportSkeleton 이 completed 의 보고서·실패·로딩 분기와 겹치지 않는지, candidates 리듀서가 subq_idx 로 하위질문을 찾고 빈 papers 는 reviewing 키를 지우되 모르는 번호·reviewing 없는 하위질문이면 같은 view 를 돌려주는지(유령 하위질문 없음), critique·snapshot·판정이 실린 step 과 잡 종료(done·failed·canceled 이벤트, 끝난 잡으로 다시 맞추는 refreshView)가 reviewing 을 지우는지, reviewing 키를 값이 있을 때만 싣는지, 장부의 검토 중이 채택 더미와 겹치지 않고 뺌 더미에 두지 않는지, 알림이 announceSeq 방식으로 한 번만 나는지, wk-review 가 reduced-motion 에서 멈추는지, 장부가 옆 칸 맨 위인지, "이렇게 이해했어요" 가 06c 의 questionUsedFromSteps·understoodLine 을 쓰고 같은 이름을 06d 가 따로 만들지 않았는지(접두를 템플릿에 다시 쓰지 않음), roundStatusLabel 이 subqStatusLabel 을 바꾸지 않았는지.
+[C 탐색 중 움직임] diff: C:/Users/LANDSOFT/round06d-eval/review/c-explore.diff. 파일: frontend/utils/planSlots.ts, components/research/ReportSkeleton.vue, utils/researchEvents.ts(roundStatusLabel·applyCandidates·applyCritique·applySnapshot·buildSubq), types/research.ts, components/research/ProgressPanel.vue, utils/evidenceLedger.ts, components/work/EvidenceLedger.vue, assets/css/work.css(근거 장부 블록), pages/research/[id].vue(planSlotList·slotsShown·ReportSkeleton 분기·탐색 중 PlanCard 지움·옆 칸 순서·questionUsed). 특히: 절 자리의 key·id 가 하위질문 번호이고 절 번호 대응이 synth 이벤트의 subq_idx 를 먼저, 없으면 headings 와 하위질문 글을 NFC·공백 정리 뒤 맞추는지, '종합 시작'과 '대응을 앎'을 나눠 근거를 모은 자리(adopted > 0)는 접지 않는지, draftReport·draftSlots 를 건드리지 않는지, ReportSkeleton 이 completed 의 보고서·실패·로딩 분기와 겹치지 않는지, candidates 리듀서가 subq_idx 로 하위질문을 찾고 빈 papers 는 reviewing 키를 지우되 모르는 번호·reviewing 없는 하위질문이면 같은 view 를 돌려주는지(유령 하위질문 없음), critique·snapshot·판정이 실린 step 과 잡 종료(done·failed·canceled 이벤트, 끝난 잡으로 다시 맞추는 refreshView)가 reviewing 을 지우는지, reviewing 키를 값이 있을 때만 싣는지, 장부의 검토 중이 채택 더미와 겹치지 않고 뺌 더미에 두지 않는지, 알림이 announceSeq 방식으로 한 번만 나는지, wk-review 가 reduced-motion 에서 멈추는지, 장부가 옆 칸 맨 위인지, "이렇게 이해했어요" 가 06c 의 questionUsedFromSteps·understoodLine 을 쓰고 같은 이름을 06d 가 따로 만들지 않았는지(접두를 템플릿에 다시 쓰지 않음), roundStatusLabel 이 subqStatusLabel 을 바꾸지 않았는지, roundStatusLabel 이 멈춘 잡(취소·실패 — 돌던 하위질문이 running 으로 남는다)에는 달지 않는지(진행 패널이 phase 를 넘기고 exploring 일 때만 — L3 spec 검토 반영).
 [D 입구] diff: C:/Users/LANDSOFT/round06d-eval/review/d-entry.diff. 파일: frontend/pages/index.vue, components/AppSidebar.vue, types/history.ts, utils/historyStore.ts, utils/historyState.ts, composables/useHistory.ts, utils/sidebarResearch.ts, utils/researchHome.ts, composables/useResearchWorks.ts, pages/research/index.vue, utils/paperResearch.ts, pages/papers/index.vue, utils/addToWork.ts, components/research/AddToWorkMenu.vue. 특히: 문구가 '소장자료검색'·'소장자료'로 맞고 kind(book)·주소·/search-classic 은 그대로인지, total 이 없는 응답(06e 전 서버)에서 null 로 받아 '모두 보기' 만 그리는지, 로컬로 물러난 목록이 알던 total 을 지우지 않는지, remove·clear 의 total 조정, 모두 보기가 기록이 없어도(빈 문구 아래) 서는지, 사이드바 단계 줄이 workPhase.stepLine 을 쓰고 단계 이름 문자열을 새로 쓰지 않는지, 폴링 조건(isLiveResearch)이 진행 중 생성을 포함하는지, /research 홈이 history 를 50건씩 읽고 [더 보기]가 before 커서를 쓰는지, 예시 연구의 실행 시각(corpus.at KST)·범위(scopeLine)·읽기 전용 표시, 새 연구 시작의 429 browser_active 링크(방어 — 지금 서버는 만들기에서 429 를 내지 않고 승인·재시도에서 낸다), [딥리서치로 더 깊게]가 바로 시작하지 않고 ?draft= 로 입력창만 채우는지(길이 검사 questionProblem), [담기]가 PUT reading {"state":"in"} 이고 이어간 연구가 없으면 D17 문구 그대로인지, 담은 뒤 useHistory().refresh("research") 를 기다리지 않고 부르는지, 메뉴의 Esc·바깥 클릭·초점 복귀, 결과 카드 버튼 줄의 기존 버튼과 BookChat(:564-569) 자리를 건드리지 않았는지. 탐색 방식(Task N9 — 정함 19, 파일: utils/researchMode.ts, components/research/ResearchModePicker.vue·SearchPlusMenu.vue·ResearchHeader.vue, composables/useResearch.ts, pages/research/index.vue 의 새 연구, pages/research/[id].vue 의 modeLine·onRestart, research.css 의 .rs-mode*·.rs-head__meta·.rs-head__mode): 딥리서치를 시작하는 곳(startResearch 를 부르는 곳 모두)이 두 칸(broaden·query_context)을 함께 싣는지 — 폭넓게 {0,0}·정밀하게 {1,1}, 기본 정밀하게, query_context 만 싣는 길이 없는지, 다시 시작이 원래 잡의 두 칸을 잇고 두 칸이 없는 잡은 기본인지, 머리 표시가 두 칸 다 0 이면 폭넓게·두 칸이 없거나 갈리면 그리지 않는지, radiogroup 접근성(role·aria-checked·aria-labelledby·aria-describedby·roving tabindex·방향키·Home·End·선택이 초점을 따름)과 칸의 키가 SearchPlusMenu 의 캡처 리스너(입력창 엔터·.skx-send)에 걸리지 않는지, localStorage(skx_research_mode)를 try/catch 로 읽고 쓰며 서버 렌더와 첫 그림이 같은지(마운트 뒤 읽음)·레이아웃 기억(skx_research_layout)을 되살리지 않았는지, 고르기·기억이 서버에 쓰지 않는지(쓰는 요청은 보내기 클릭의 startResearch 뿐), ModeParams 가 ResearchParams 로 넘어가는지.
 [E 테스트] diff: C:/Users/LANDSOFT/round06d-eval/review/e-tests.diff. 파일: frontend/tests/unit/ 의 새 일곱 파일(researchProgress·planSlots·researchFollow·sidebarResearch·researchHome·addToWork·researchMode)·D7 품질 검토 반영의 useSectionFollow 와 고친 파일(researchLayout·queueLine·researchEvents·restorePosition·evidenceLedger·historyStore·historyState·paperResearch). 특히: 새 판단마다 실패 테스트가 먼저 있는지(TDD — 커밋 순서), spec §12-7 06d vitest 목록(배치·그리는 조건·진행 비율·따라가기 켜고 끄기·절 자리와 headings 대응·회차 미세 상태·후보 더미·큰 막대 글줄)이 모두 덮였는지, 기대값을 06e 함수(stepLine·stepForPhase·scopeLine)의 출력으로 만들어 06e 의 문구 바꾸기에 깨지지 않는지, 기존 toEqual 픽스처를 고친 곳이 evidenceLedger 의 reviewing 두 곳과 queueLine 다시 내보내기 테스트뿐인지, 대역(fakeFetcher·helpers/fakeHistory·memoryStorage)을 새로 만들지 않고 썼는지, DOM·타이머에 기대는 테스트가 없는지(node 환경 — useSectionFollow.test.ts 는 getElementById·matchMedia·requestAnimationFrame 을 vi.stubGlobal 로 흉내 내고 진짜 DOM 은 쓰지 않는다), researchDraft.test.ts 를 고치지 않았는지.
 ```
@@ -9397,7 +9441,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md` (
 | 큰 진행 막대 | 새 `ResearchProgressBar.vue`·`utils/researchProgress.ts` — 단계 표시(계획·근거 수집·보고서 작성·완료), 큰 글줄('근거 수집 중 · 하위질문 k/n — 「…」'·'보고서 작성 중 · i/n절 — 「…」'), 퍼센트(탐색 111 : 작성 91 가중, 상한 0.9), 끝나지 않은 잡에만·단계 화면과 인쇄에서는 없음. 현황 카드의 작은 막대는 걷었다. 토큰 `--rs-bar-thick`·`--rs-bar-h`, 옆 칸·절 이동·돌아온 자리를 막대 높이만큼 내림 |
 | 절 따라가기 | `utils/researchFollow.ts`·`useSectionFollow` — 종합 중 쓰는 절, 탐색 중 도는 하위질문의 절 자리를 따라간다(가장 가까운 끝에 맞춰 방금 끝난 절이 위에 남는다). 탐색·작성 중의 세로 휠·터치·스크롤 키·Tab 으로 초점 옮기기·스크롤바 누르기면 멈추고 '↓ 지금 쓰는 곳으로'(탐색 중 '↓ 지금 찾는 곳으로') 알약. 위치 복원 중·원문 뷰어·사용자가 연 인용 팝오버면 옮기지 않음(손을 뗀 포인터 밑으로 칩이 와서 열린 hover 팝오버는 아님), 움직임 줄이기면 즉시 |
 | 탐색 중 절 자리 | `utils/planSlots.ts`·`ReportSkeleton.vue` — 하위질문마다 자리('대기'·'근거 수집 중 · n회차'·'근거 N편 ✓'·'이 절을 쓰는 중'·'근거 없음'·'오류'), 절 번호 대응은 synth 이벤트의 하위질문 번호를 먼저·없으면 절 제목과 하위질문 글. 탐색 중 읽기 전용 PlanCard 를 대신한다 |
-| 근거 수집 단계 | 진행 패널 회차 줄의 '자기점검 중'·'재검색 중'(`roundStatusLabel`) |
+| 근거 수집 단계 | 진행 패널 회차 줄의 '자기점검 중'·'재검색 중'(`roundStatusLabel` — 탐색 중에만, 취소·실패한 잡의 멈춘 하위질문에는 달지 않음) |
 | 검토 중 후보(Q9) | SSE `candidates` → `SubqView.reviewing?` → 근거 장부 세 번째 묶음 '검토 중'(흐린 카드·반짝임), 점검이 오면 채택은 떨어지고 뺀 것은 가라앉음, 다음 회차 후보·빈 후보가 갈음, 재접속·스냅숏이면 없음. 장부를 옆 칸 맨 위로 |
 | 06c 바인딩 | 계획 중 카드와 승인 대기 PlanCard 에 "이렇게 이해했어요" 한 줄(06c 의 `questionUsedFromSteps`·`understoodLine` — 06c 머지 `<Task L6 이 받은 dev 커밋 7자리>`) |
 | 입구 | <(가) '/research 홈(새 연구 시작·진행 중·내 연구·[더 보기]·예시 연구 — 읽기 전용·실행 시각·코퍼스 범위), 사이드바 이어간 연구 줄 단계(workPhase.stepLine + 수 + 생성 중)·진행 중 생성 폴링·모두 보기 (N)(N = 06e 의 total, 없으면 N 없이), 논문 빠른검색 답 끝 [딥리서치로 더 깊게](?draft= → 입력창에 딥리서치 칩과 함께), 결과 카드 [담기 ▾](이어간 연구 고르기 → PUT reading {"state":"in"})' (나) (가)에서 [담기 ▾] 를 뺀 글 + '[담기] 는 자름(§7)' (다) '사이드바 이어간 연구 줄 단계·진행 중 생성 폴링·딥리서치 탭 맨 아래 예시 연구 묶음(모두 보기는 그리지 않음), [딥리서치로 더 깊게], /research 홈·[담기] 는 자름(§7)'> |
@@ -10026,7 +10070,7 @@ Expected: 다섯 모두 위와 같다. 5 의 명령은 두 줄 — `broaden` 과
 
 1. 막대 — 단계 '근거 수집' 강조, 글줄 `근거 수집 중 · 하위질문 k/n — 「…」`, 퍼센트가 이벤트마다 늘고 뒤로 가지 않으며 탐색이 끝날 무렵 55% 안팎(111/202)에서 작성으로 넘어간다. 채움 끝의 빛 흐름이 돈다.
 2. 본문 — 읽기 전용 PlanCard 는 없고 '보고서 자리' 카드에 하위질문마다 자리(머리 '하위질문 N'·제목·skeleton·상태 '대기'·'근거 수집 중 · n회차'·'근거 N편 ✓').
-3. 옆 칸 — 근거 장부가 맨 위, 그 아래 진행 패널. 진행 패널 회차 줄에 `자기점검 중`(깜빡임)·`재검색 중`.
+3. 옆 칸 — 근거 장부가 맨 위, 그 아래 진행 패널. 진행 패널 회차 줄에 `자기점검 중`(깜빡임)·`재검색 중`. 탐색 중에 [취소] 한 잡에서는 회차 줄의 두 표시가 사라지고 '여기서 멈췄습니다'만 남는다. 다시 열어도 같다(Task L3 spec 검토 반영). 이 잡은 끝까지 돌리므로 Step 2 항목 4 처럼 다른 잡에서 본다.
 4. 장부 '검토 중' — 회차마다 '검토 중 n' 묶음에 흐린 후보 카드(제목·저자·연도)가 섰다가, 점검 뒤 채택은 위 '채택' 으로 떨어져 박히고 뺀 것은 '뺌' 으로 가라앉는다. 이때 새로고침하면 더미 없이 지금 장부만 그려진다. 탐색 중에 [취소] 한 잡의 장부에는 '검토 중' 묶음이 남지 않는다(이 잡은 끝까지 돌리므로 다른 잡 — 예 Step 4 에서 새로 돌린 잡 — 이 탐색 중일 때 본다. 재연결 사이에 끝난 잡도 같은 규칙 — Task L4).
 5. 따라가기 — 승인 대기에 계획을 휠로 굴려 읽거나 Tab 으로 [승인] 까지 갔어도 탐색이 시작되면 알약 없이 따라간다(탐색 전 입력은 멈춤이 아니다 — D7 품질 검토 반영 2). 첫 하위질문이 도는 순간에는 옮기지 않고(처음 본 대상은 기준 — 정함 6), 다음 하위질문부터 스크롤이 도는 하위질문의 자리를 화면 안으로 옮기고 그 자리 머리가 막대 밑에 숨지 않는다 — 자리가 이미 보이면 굴리지 않고, 아래에 있으면 그 자리가 화면 아래 끝에 서서 바로 위 하위질문의 '근거 N편 ✓' 가 화면에 남는다(가장 가까운 끝 — D7 품질 검토 반영 2). 마우스 휠을 굴리면 멈추고 `↓ 지금 찾는 곳으로` 알약이 뜬다 → 누르면 지금 자리로 옮겨 다시 따라간다. 가로 스크롤·Ctrl+휠(확대)은 멈추지 않는다. 옆 칸의 회차 타임라인·근거 장부 목록 위에서 휠을 굴려 그 칸만 읽는 동안은 멈추지 않는다(알약이 뜨지 않는다) — 칸 끝을 넘어 페이지가 구르면 멈춘다(안쪽 스크롤 칸 — D6 품질 검토 반영 2).
 

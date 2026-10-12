@@ -1403,6 +1403,35 @@ describe("roundStatusLabel — 회차 줄 미세 상태", () => {
     expect(roundStatusLabel(sq, sq.rounds[0]!)).toBe("재검색 중");
   });
 
+  it("단계를 넘기면 탐색 중일 때만 단다 — 멈춘 잡(취소·실패)은 돌던 하위질문이 running 으로 남아도 null", () => {
+    // 취소·실패 이벤트는 잡 상태만 바꾸고 돌던 하위질문은 running 으로 둔다 — stopPoint 가 '여기서 멈췄습니다'로 짚는 자리다
+    const STOPS: ResearchEvent[] = [
+      { kind: "canceled", status: "canceled" },
+      { kind: "failed", status: "failed", error: "모든 하위질문 탐색이 오류로 실패했다" },
+    ];
+    for (const live of [run([SEARCH_STARTED, FIRST_SEARCH]), run([SEARCH_STARTED, FIRST_SEARCH, RECHECK])]) {
+      const sq = live.subqs[0]!;
+      expect(roundStatusLabel(sq, sq.rounds[0]!, researchPhase(live))).not.toBeNull();
+      for (const stop of STOPS) {
+        const stopped = applyResearchEvent(live, stop);
+        const sqStopped = stopped.subqs[0]!;
+        expect(sqStopped.status).toBe("running");
+        expect(stopPoint(stopped)).toEqual({ kind: "subq", idx: 0, started: true, error: null });
+        expect(roundStatusLabel(sqStopped, sqStopped.rounds[0]!, researchPhase(stopped))).toBeNull();
+      }
+    }
+    // 멈춘 잡을 다시 연 화면 — 저장본의 돌던 행(running)에 다음 검색어를 낸 회차가 남아 있다
+    const reopen = (status: ResearchJob["status"]) => initialResearchView(job({ status, steps: [PLAN_ROW, SAVED_SEARCH_ROW] }));
+    const running = reopen("running");
+    expect(roundStatusLabel(running.subqs[0]!, running.subqs[0]!.rounds[0]!, researchPhase(running))).toBe("재검색 중");
+    for (const status of ["canceled", "failed"] as const) {
+      const v = reopen(status);
+      const sq = v.subqs[0]!;
+      expect(sq.status).toBe("running");
+      expect(roundStatusLabel(sq, sq.rounds[0]!, researchPhase(v))).toBeNull();
+    }
+  });
+
   it("끝난 하위질문·앞 회차·판정이 난 마지막 회차(충분)는 null", () => {
     const enough = run([
       SEARCH_STARTED,
@@ -1415,6 +1444,15 @@ describe("roundStatusLabel — 회차 줄 미세 상태", () => {
       steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done", result: { rounds: [ROUND1, ROUND2] } })],
     })).subqs[0]!;
     expect(done.rounds.map((r) => roundStatusLabel(done, r))).toEqual([null, null]);
+    // 마지막 회차가 다음 검색어를 낸 채 끝난 하위질문(시간 상한으로 오류가 난 것 등)도 — 하위질문 상태를 보지 않으면
+    // 이 회차가 마지막이라 '재검색 중'이 영구히 붙는다
+    for (const status of ["done", "failed"] as const) {
+      const closed = initialResearchView(job({
+        steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status, result: { rounds: [ROUND1] } })],
+      })).subqs[0]!;
+      expect(closed.status).toBe(status);
+      expect(roundStatusLabel(closed, closed.rounds[0]!)).toBeNull();
+    }
     // 앞 회차 — 재검색을 낸 1회차는 2회차가 시작되면 적지 않는다
     const second = run(AWAITING_ROUND2_CRITIQUE).subqs[0]!;
     expect(roundStatusLabel(second, second.rounds[0]!)).toBeNull();

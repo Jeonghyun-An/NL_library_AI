@@ -171,8 +171,11 @@ export function subqStatusLabel(sq: SubqView): string {
 // 회차 줄의 미세 상태 — 도는 하위질문의 마지막 회차에만 단다. 검색어가 있고 판정이 아직 없으면 자기점검(LLM)을
 // 기다리는 중이고, 판정이 다음 검색어를 냈으면 그 검색어로 다시 찾는 중이다(다음 회차의 검색이 오면 그 회차가 마지막이
 // 된다). 끝난 하위질문·앞 회차·재검색 없이 판정이 난 회차는 적지 않는다. 하위질문 줄의 상태(subqStatusLabel)는
-// PlanCard 도 읽으므로 그대로 두고 회차 줄에만 단다
-export function roundStatusLabel(sq: SubqView, r: RoundView): string | null {
+// PlanCard 도 읽으므로 그대로 두고 회차 줄에만 단다. 단계(phase)를 넘기면 탐색 중일 때만 단다 — 취소·실패 이벤트는
+// 잡 상태만 바꾸고 돌던 하위질문을 running 으로 두므로(stopPoint 가 '여기서 멈췄습니다'로 짚는 자리) 하위질문만 보면
+// 멈춘 잡에 '자기점검 중'·'재검색 중'이 남는다. 진행 패널의 강조 카드(phase === 'exploring')와 같은 규칙이다
+export function roundStatusLabel(sq: SubqView, r: RoundView, phase?: ResearchPhase): string | null {
+  if (phase !== undefined && phase !== "exploring") return null;
   if (sq.status !== "running") return null;
   const last = sq.rounds[sq.rounds.length - 1];
   if (!last || last.round !== r.round) return null;
