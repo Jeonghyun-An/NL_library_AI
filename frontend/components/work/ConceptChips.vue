@@ -2,7 +2,7 @@
 <template>
   <section class="wk-concepts" aria-labelledby="wk-concepts-title" :aria-busy="status === 'making'">
     <div class="wk-concepts__head">
-      <h3 id="wk-concepts-title" class="wk-concepts__title">핵심 개념</h3>
+      <h3 id="wk-concepts-title" class="wk-concepts__title">키워드</h3>
       <p v-if="note" class="rs-muted" aria-live="polite">{{ note }}</p>
     </div>
 
@@ -13,7 +13,7 @@
           v-if="editable"
           type="button"
           class="wk-concept__remove"
-          :aria-label="`핵심 개념 ${concept} 빼기`"
+          :aria-label="`키워드 ${concept} 빼기`"
           :disabled="busy"
           @click="remove(i)"
         >
@@ -28,8 +28,8 @@
         class="wk-edit__input wk-concepts__input"
         type="text"
         :maxlength="CONCEPT_LEN_MAX"
-        :placeholder="full ? `핵심 개념은 ${CONCEPTS_MAX}개까지입니다` : '핵심 개념 넣기 — Enter 로 더합니다'"
-        aria-label="핵심 개념 넣기"
+        :placeholder="full ? `키워드는 ${CONCEPTS_MAX}개까지입니다` : '키워드 넣기 — Enter 로 더합니다'"
+        aria-label="키워드 넣기"
         :disabled="busy || full"
         @keydown.enter="onEnter"
       />

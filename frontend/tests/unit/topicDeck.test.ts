@@ -191,11 +191,11 @@ describe("cardNumbersLine — [F#] 밖 숫자", () => {
 
 describe("seedLine", () => {
   it("씨앗 종류와 절 소제목을 잇고, 씨앗이 없으면 null 이다", () => {
-    expect(seedLine(SEED)).toBe("보고서의 향후 과제 · 노인 우울과 사회적 지지의 관계");
+    expect(seedLine(SEED)).toBe("딥리서치 보고서의 향후 과제 · 노인 우울과 사회적 지지의 관계");
     expect(seedLine({ ...SEED, kind: "insufficient", key: "insufficient:3" })).toBe(
       "근거가 모자랐던 하위질문 · 노인 우울과 사회적 지지의 관계",
     );
-    expect(seedLine({ ...SEED, heading: "  " })).toBe("보고서의 향후 과제");
+    expect(seedLine({ ...SEED, heading: "  " })).toBe("딥리서치 보고서의 향후 과제");
     expect(seedLine(null)).toBeNull();
   });
 });
@@ -302,14 +302,14 @@ describe("핵심 개념 칩", () => {
 
   it("conceptsNote — 뽑는 중이면 대기 문구를 잇고, 비었으면 넣기·다시를 안내한다", () => {
     const running = gen({ kind: "concepts", target: null, status: "running" });
-    expect(conceptsNote([], running)).toBe(`핵심 개념을 뽑는 중입니다 · ${genQueueLine(running)}`);
+    expect(conceptsNote([], running)).toBe(`키워드를 뽑는 중입니다 · ${genQueueLine(running)}`);
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "failed" }))).toBe(
-      "핵심 개념을 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요",
+      "키워드를 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요",
     );
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "done" }))).toBe(
-      "뽑힌 핵심 개념이 없습니다 — 직접 넣거나 [다시] 를 누르세요",
+      "뽑힌 키워드가 없습니다 — 직접 넣거나 [다시] 를 누르세요",
     );
-    expect(conceptsNote([], null)).toBe("핵심 개념 넣기 — 원 질문의 핵심 개념을 칩으로 더하세요");
+    expect(conceptsNote([], null)).toBe("키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요");
     expect(conceptsNote(["노인 우울"], null)).toBeNull();
   });
 });

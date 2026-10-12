@@ -1,6 +1,7 @@
 <!-- frontend/components/work/WorkStepper.vue -->
 <template>
-  <!-- 이어간 연구에만 그린다(spec §4) — ① 탐색 ② 주제 ③ 읽기 목록 ④ 계획서. 끝난 단계와 지금 단계는 눌러 다시 연다 -->
+  <!-- 이어간 연구에만 그린다(spec §4) — ① 탐색 ② 제목 고르기 ③ 참고문헌 선택하기 ④ 보고서(이름은 workPhase.STEP_NAMES).
+       끝난 단계와 지금 단계는 눌러 다시 연다 -->
   <nav class="wk-stepper" aria-label="연구 단계">
     <ol class="wk-stepper__list">
       <li v-for="(item, i) in items" :key="item.key" class="wk-stepper__item" :class="`is-${item.state}`">

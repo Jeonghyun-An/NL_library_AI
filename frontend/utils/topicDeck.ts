@@ -31,7 +31,7 @@ const OPEN: readonly GenStatus[] = ["queued", "running"];
 // 저자를 모르는 근거 칩은 제목 앞부분으로 가른다
 const CHIP_TITLE_CHARS = 12;
 const SEED_KIND_LABEL: Record<TopicSeed["kind"], string> = {
-  future: "보고서의 향후 과제",
+  future: "딥리서치 보고서의 향후 과제",
   insufficient: "근거가 모자랐던 하위질문",
 };
 
@@ -220,14 +220,14 @@ export function conceptsNote(concepts: string[], generation: WorkGeneration | nu
   switch (conceptsStatus(concepts, generation)) {
     case "making": {
       const line = generation ? genQueueLine(generation) : null;
-      return line ? `핵심 개념을 뽑는 중입니다 · ${line}` : "핵심 개념을 뽑는 중입니다";
+      return line ? `키워드를 뽑는 중입니다 · ${line}` : "키워드를 뽑는 중입니다";
     }
     case "failed":
-      return "핵심 개념을 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요";
+      return "키워드를 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요";
     case "empty":
       return generation
-        ? "뽑힌 핵심 개념이 없습니다 — 직접 넣거나 [다시] 를 누르세요"
-        : "핵심 개념 넣기 — 원 질문의 핵심 개념을 칩으로 더하세요";
+        ? "뽑힌 키워드가 없습니다 — 직접 넣거나 [다시] 를 누르세요"
+        : "키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요";
     case "ready":
       return null;
   }

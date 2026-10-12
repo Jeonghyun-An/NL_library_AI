@@ -144,10 +144,10 @@ function pickedCount(view: ReadingView): number {
 
 // [목차 만들기] 를 못 누르는 까닭 — 서버 POST .../outline 의 409 두 가지(주제 없음·담음 5편 미만)를 먼저 알린다
 export function outlineHint(view: ReadingView): string | null {
-  if (view.topic_id === null) return "주제를 먼저 고르세요 — 고른 주제로 목차를 만듭니다";
+  if (view.topic_id === null) return "주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다";
   const n = pickedCount(view);
   if (n < MIN_READING_FOR_OUTLINE) {
-    return `담은 논문이 ${n}편입니다 — ${MIN_READING_FOR_OUTLINE}편 이상 담으면 목차를 만들 수 있습니다`;
+    return `담은 논문이 ${n}편입니다 — ${MIN_READING_FOR_OUTLINE}편 이상 담으면 보고서를 만들 수 있습니다`;
   }
   return null;
 }

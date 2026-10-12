@@ -3,9 +3,9 @@
   <section class="wk-screen" aria-labelledby="wk-topics-title">
     <header class="wk-screen__head">
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
-      <h2 id="wk-topics-title" class="wk-screen__title" tabindex="-1">주제 고르기</h2>
+      <h2 id="wk-topics-title" class="wk-screen__title" tabindex="-1">제목 고르기</h2>
       <p class="rs-muted">
-        「{{ question }}」 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 읽기 목록과 계획서를 만듭니다.
+        「{{ question }}」 딥리서치 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 참고문헌을 고르고 보고서를 만듭니다.
       </p>
       <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
     </header>
@@ -55,7 +55,7 @@
       />
       <div v-if="pickedTitle" class="wk-screen__next">
         <p class="wk-screen__picked">고른 주제 <strong>{{ pickedTitle }}</strong></p>
-        <button type="button" class="rs-btn" @click="emit('go', 'reading')">읽기 목록으로</button>
+        <button type="button" class="rs-btn" @click="emit('go', 'reading')">참고문헌 선택하기로</button>
       </div>
     </template>
   </section>
@@ -148,12 +148,12 @@ function saveConcepts(concepts: string[]): void {
   void act(
     async () => props.work.setWork(await api.patchWork(props.jobId, { concepts })),
     [],
-    "핵심 개념을 저장하지 못했습니다",
+    "키워드를 저장하지 못했습니다",
   );
 }
 
 function retryConcepts(genId: number): void {
-  void act(() => api.retryGeneration(props.jobId, genId), ["work"], "핵심 개념을 다시 부르지 못했습니다");
+  void act(() => api.retryGeneration(props.jobId, genId), ["work"], "키워드를 다시 부르지 못했습니다");
 }
 
 function retryCard(genId: number): void {

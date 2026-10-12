@@ -3,7 +3,7 @@
   <section class="wk-proposal" aria-labelledby="wk-proposal-title">
     <header class="wk-proposal__head">
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
-      <h2 id="wk-proposal-title" class="wk-proposal__title" tabindex="-1">연구계획서</h2>
+      <h2 id="wk-proposal-title" class="wk-proposal__title" tabindex="-1">{{ FINAL_STEP_NAME }}</h2>
       <CorpusScopeNote :corpus="corpus" />
     </header>
     <p v-if="notice" class="rs-alert" :role="noticeIsError ? 'alert' : 'status'">{{ notice }}</p>
@@ -16,7 +16,7 @@
     </div>
     <div v-else-if="!proposal" class="rs-card rs-card--wait" role="status">
       <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
-      <p>계획서를 불러오는 중입니다</p>
+      <p>보고서를 불러오는 중입니다</p>
     </div>
 
     <div v-else-if="!proposal.outline" class="rs-card">
@@ -27,12 +27,12 @@
       <template v-else>
         <p class="rs-card__title">아직 목차가 없습니다</p>
         <p class="rs-muted">
-          읽기 목록에 논문을 5편 이상 담으면 목차를 만들 수 있습니다. 선행연구 묶음의 수와 배정은 담은 논문의 핵심 개념
+          참고문헌에 논문을 5편 이상 담으면 보고서를 만들 수 있습니다. 선행연구 묶음의 수와 배정은 담은 논문의 키워드
           소속으로 서버가 정합니다.
         </p>
         <div v-if="!readOnly" class="rs-card__actions">
           <button type="button" class="rs-btn" :disabled="busy" @click="makeOutline">{{ MAKE_REPORT }}</button>
-          <button type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'reading')">읽기 목록으로</button>
+          <button type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'reading')">참고문헌 선택하기로</button>
         </div>
       </template>
     </div>
@@ -230,12 +230,12 @@ import {
 import { genQueueLine } from "~/utils/queueLine";
 import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { openGeneration } from "~/utils/workEvents";
-import { MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
+import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep] }>();
 
-const CONFLICT = "다른 곳에서 계획서가 바뀌어 다시 불러왔습니다 — 바뀐 내용을 확인한 뒤 다시 해 주세요";
+const CONFLICT = "다른 곳에서 보고서가 바뀌어 다시 불러왔습니다 — 바뀐 내용을 확인한 뒤 다시 해 주세요";
 // 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다. 새 반영은 다시
 // 자동 승인하지만 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
 const REMAKE_CONFIRM =
@@ -263,7 +263,7 @@ const canRemake = computed(() => {
 });
 const remakeWhy = computed(() =>
   proposal.value?.stale.outline
-    ? "주제나 읽기 목록이 바뀌었습니다 — 목차를 다시 만들면 지금 담은 논문으로 묶음을 새로 나눕니다(지금 목차를 바꿉니다)."
+    ? "주제나 참고문헌이 바뀌었습니다 — 목차를 다시 만들면 지금 담은 논문으로 묶음을 새로 나눕니다(지금 목차를 바꿉니다)."
     : "모델이 목차 초안을 만들지 못했습니다 — 다시 만들어 볼 수 있습니다.",
 );
 

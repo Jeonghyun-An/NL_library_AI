@@ -3,13 +3,12 @@
   <section class="wk-screen" aria-labelledby="wk-reading-title">
     <header class="wk-screen__head">
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
-      <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">읽기 목록</h2>
+      <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">참고문헌 선택하기</h2>
       <p class="rs-muted">
-        「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 읽을 논문을 담고, 담은 논문으로 계획서의 선행연구
-        목차를 만듭니다.
+        「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다.
       </p>
       <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
-      <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [목차 다시 만들기]로 맞추세요.</p>
+      <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
       <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
     </header>
 
@@ -22,7 +21,7 @@
     </div>
     <div v-else-if="!reading" class="rs-card rs-card--wait">
       <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
-      <p>읽기 목록을 불러오는 중입니다</p>
+      <p>참고문헌 후보를 불러오는 중입니다</p>
     </div>
     <template v-else>
       <FunnelCounter :funnel="reading.funnel" />
@@ -45,10 +44,10 @@
       <div class="wk-screen__next">
         <p v-if="hint" class="rs-muted">{{ hint }}</p>
         <button v-if="reading.topic_id === null" type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'topics')">
-          주제 고르기
+          제목 고르기
         </button>
         <template v-else-if="outlineMade">
-          <button type="button" class="rs-btn" @click="emit('go', 'proposal')">계획서로</button>
+          <button type="button" class="rs-btn" @click="emit('go', 'proposal')">{{ FINAL_STEP_NAME }} 단계로</button>
           <button
             type="button"
             class="rs-btn rs-btn--ghost"
@@ -84,7 +83,7 @@ import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
 import { canMakeOutline, outlineHint } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
-import { MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
+import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
 // 담음 5편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로

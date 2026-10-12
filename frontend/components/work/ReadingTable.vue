@@ -1,6 +1,6 @@
 <!-- frontend/components/work/ReadingTable.vue -->
 <template>
-  <ol v-if="rows.length" class="wk-reading" aria-label="읽기 후보">
+  <ol v-if="rows.length" class="wk-reading" aria-label="참고문헌 후보">
     <li
       v-for="(item, index) in rows"
       :key="item.cnts_id"

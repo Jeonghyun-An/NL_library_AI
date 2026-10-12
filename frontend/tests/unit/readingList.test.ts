@@ -241,9 +241,9 @@ describe("canMakeOutline·outlineHint", () => {
   it("담음이 모자라면 몇 편인지, 주제가 없으면 주제를 먼저 고르라고 알린다", () => {
     const four = [...five.slice(0, 4), row({ cnts_id: "KCI_9", state: "candidate" })];
     expect(canMakeOutline(view(four))).toBe(false);
-    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 목차를 만들 수 있습니다");
+    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 보고서를 만들 수 있습니다");
     expect(canMakeOutline(view(five, { topic_id: null }))).toBe(false);
-    expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 목차를 만듭니다");
+    expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다");
   });
 });
 

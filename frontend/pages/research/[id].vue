@@ -57,7 +57,7 @@
         <div v-if="stepMode" class="wk-body">
           <div class="rs-card wk-summary">
             <p class="wk-summary__line">{{ band ? summaryLine(band) : view.question }}</p>
-            <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">보고서 보기</button>
+            <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">딥리서치 보고서 보기</button>
           </div>
           <div v-if="!workView && work.errorOf('load')" class="rs-card rs-card--error">
             <p>{{ work.errorOf("load") }}</p>
