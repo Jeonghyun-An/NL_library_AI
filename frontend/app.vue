@@ -1,5 +1,11 @@
 <template>
   <div>
+    <!-- 움직이는 홀로그램 배경(style_skovix.css 의 .skx-holo) — 화면 뒤에 고정, 장식이라 보조기기에서 숨긴다 -->
+    <div class="skx-holo" aria-hidden="true">
+      <span class="skx-holo__band skx-holo__band--1"></span>
+      <span class="skx-holo__band skx-holo__band--2"></span>
+      <span class="skx-holo__band skx-holo__band--3"></span>
+    </div>
     <NuxtPage />
     <footer class="skx-footer">
       <p class="skx-footer__copy">

@@ -213,7 +213,7 @@ a:hover {
   --skx-radius-lg: 0.8rem;
   --skx-radius-pill: 2.2rem;
   --skx-search-grad: linear-gradient(134deg, #5f8f85 13%, #152e28 89%);
-  --skx-page-bg: url("/img/bg-glass.webp") center / cover no-repeat fixed #0f2822;
+  --skx-page-bg: #0f2822;
   --skx-shadow-lnb: 2px 2px 36px 0 rgba(0, 0, 0, 0.18);
   --skx-shadow-banner:
     0 4px 12px 0 rgba(0, 0, 0, 0.16), 0 4px 24px 0 rgba(0, 0, 0, 0.22);
@@ -257,6 +257,125 @@ a:hover {
   background: var(--skx-page-bg);
 }
 /* [E] 디자인 토큰 */
+
+/* [S] 움직이는 홀로그램 배경 */
+/* app.vue 맨 앞의 .skx-holo — 짙은 초록 바탕 위로 보라·산호·민트 빛띠가 천천히 흐른다. 사진·흐림 없이 CSS 만 쓴다.
+   .skx-app·.skx-footer 는 투명이라 이 층이 비쳐 보인다.
+   글자 가독성: 띠가 최대 알파로 모두 겹쳐도 본문색(--skx-ink)이 유리 카드(--skx-glass) 위에서 4.5:1 이상이도록
+   띠마다 정지점 알파를 묶었다(tests/unit/themeHolo.test.ts 가 이 값을 읽어 최악의 겹침을 검사한다). 알파를 올리면 그 테스트가 먼저 막는다. */
+.skx-holo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+  background:
+    radial-gradient(
+      60% 50% at 14% 6%,
+      rgba(128, 171, 161, 0.03) 0%,
+      rgba(128, 171, 161, 0) 70%
+    ),
+    radial-gradient(
+      55% 50% at 88% 94%,
+      rgba(128, 171, 161, 0.03) 0%,
+      rgba(128, 171, 161, 0) 70%
+    ),
+    var(--skx-page-bg);
+}
+.skx-holo__band {
+  position: absolute;
+  left: 50%;
+  width: 130vmax;
+  height: 34vmax;
+  margin-left: -65vmax;
+  mix-blend-mode: screen;
+  will-change: transform;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 20%,
+    #000 80%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 20%,
+    #000 80%,
+    transparent 100%
+  );
+}
+.skx-holo__band--1 {
+  top: 2vh;
+  background: linear-gradient(
+    180deg,
+    rgba(139, 127, 224, 0) 0%,
+    rgba(139, 127, 224, 0.095) 24%,
+    rgba(244, 177, 158, 0.06) 42%,
+    rgba(128, 171, 161, 0.08) 60%,
+    rgba(223, 243, 255, 0.04) 78%,
+    rgba(223, 243, 255, 0) 100%
+  );
+  transform: translate3d(0, 0, 0) rotate(-18deg);
+  animation: skx-holo-a 38s ease-in-out -9s infinite alternate;
+}
+.skx-holo__band--2 {
+  top: 46vh;
+  background: linear-gradient(
+    180deg,
+    rgba(128, 171, 161, 0) 0%,
+    rgba(128, 171, 161, 0.08) 28%,
+    rgba(139, 127, 224, 0.095) 50%,
+    rgba(248, 196, 183, 0.055) 72%,
+    rgba(248, 196, 183, 0) 100%
+  );
+  transform: translate3d(0, 0, 0) rotate(22deg);
+  animation: skx-holo-b 26s ease-in-out -14s infinite alternate;
+}
+.skx-holo__band--3 {
+  top: 26vh;
+  height: 12vmax;
+  background: linear-gradient(
+    180deg,
+    rgba(223, 243, 255, 0) 0%,
+    rgba(223, 243, 255, 0.025) 50%,
+    rgba(223, 243, 255, 0) 100%
+  );
+  transform: translate3d(0, 0, 0) rotate(-6deg);
+  animation: skx-holo-c 19s ease-in-out -4s infinite alternate;
+}
+/* transform(이동·회전·확대)만 움직인다 — background-position·filter 는 매 프레임 바꾸지 않는다 */
+@keyframes skx-holo-a {
+  from {
+    transform: translate3d(-6vw, -4vh, 0) rotate(-22deg) scale(1);
+  }
+  to {
+    transform: translate3d(7vw, 6vh, 0) rotate(-13deg) scale(1.1);
+  }
+}
+@keyframes skx-holo-b {
+  from {
+    transform: translate3d(7vw, 5vh, 0) rotate(18deg) scale(1.08);
+  }
+  to {
+    transform: translate3d(-8vw, -6vh, 0) rotate(27deg) scale(1);
+  }
+}
+@keyframes skx-holo-c {
+  from {
+    transform: translate3d(-9vw, 4vh, 0) rotate(-9deg) scale(1);
+  }
+  to {
+    transform: translate3d(9vw, -5vh, 0) rotate(-2deg) scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-holo__band {
+    animation: none;
+  }
+}
+/* [E] 움직이는 홀로그램 배경 */
 
 /* [S] 공통 리셋 */
 .skx-app *,
@@ -362,7 +481,6 @@ a:hover {
   align-items: stretch;
   min-height: 100vh;
   padding: 1.2rem;
-  background: var(--skx-page-bg);
 }
 /* [E] 도서검색 메인 레이아웃 */
 
@@ -5061,7 +5179,6 @@ a:hover {
 .skx-footer {
   padding: 0 1.2rem 1.2rem;
   text-align: center;
-  background: var(--skx-page-bg);
 }
 .skx-footer__copy {
   margin: 0;

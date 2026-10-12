@@ -17,7 +17,7 @@
 
 | 쓰임 | 값 |
 |---|---|
-| 바탕 | `#0f2822` + 배경 그림 `public/img/bg-glass.webp`(Figma 2282:13342, 1920×1080 → WebP 8KB, scratchpad `r08/bg-glass.webp`) cover·fixed |
+| 바탕 | `#0f2822` 단색 + 움직이는 홀로그램(`.skx-holo` — app.vue 맨 앞 고정 층, 보라·산호·민트 빛띠를 낮은 알파·`screen` 혼합으로 얹고 `transform` 키프레임만 18~40초 주기로 움직임. 사진·흐림 없음, 시안의 홀로그램 포일 사진+흐림을 CSS 로 대신함, 알파는 최악의 겹침에서도 본문 글자 4.5:1 을 지키도록 묶음 — `themeHolo.test.ts`) |
 | 유리 카드 | `rgba(255,255,255,.10)`·옅은 것 `.05`·청록 유리 `rgba(128,171,161,.10)`, `backdrop-filter: blur(4px)`, 테두리 `rgba(255,255,255,.12~.20)` |
 | 불투명 면(딥리서치 등 `--skx-white` 자리) | `#16302a` 안팎 — 글자 대비 4.5:1 이상 |
 | 글자 | 제목 `#ffffff` · 본문 `#cccccc` · 보조 `#b7bfbd` · 흐림 `#879491` · 청록 강조 `#80aba1` |
@@ -30,14 +30,15 @@
 
 ### Task 1: 다크 토큰과 바탕
 
-**Files:** Modify `frontend/assets/css/style_skovix.css`(:root 185-215·html/body 156-169·`.skx-app` 317-323·`.skx-footer` 5020 부근), `frontend/app.vue`(:root 23-47, body 55-61), `frontend/assets/css/tailwind.css`(스크롤바 색); Create `frontend/public/img/bg-glass.webp`(scratchpad 에서 복사); Test `frontend/tests/unit/themeTokens.test.ts`
+**Files:** Modify `frontend/assets/css/style_skovix.css`(:root 185-215·html/body 156-169·`.skx-app` 317-323·`.skx-footer` 5020 부근), `frontend/app.vue`(:root 23-47, body 55-61), `frontend/assets/css/tailwind.css`(스크롤바 색); Test `frontend/tests/unit/themeTokens.test.ts`·`themeHolo.test.ts`
 
 - [ ] 실패하는 테스트: `style_skovix.css` 의 `:root` 블록을 읽어 `--skx-ink` 대 `--skx-white` 대비 4.5:1 이상, `--skx-gray-1` 대 `--skx-white` 4.5:1 이상, `.skx-reading` 블록의 같은 쌍도 4.5:1 이상을 검사한다(대비 계산은 테스트 안 작은 함수 — WCAG 상대 휘도).
-- [ ] `--skx-*` 값을 위 표대로 바꾸고 새 토큰을 더한다: `--skx-glass`·`--skx-glass-2`·`--skx-glass-teal`·`--skx-glass-border`·`--skx-blur`·`--skx-accent`·`--skx-accent-strong`·`--skx-accent-grad`·`--skx-on-accent`·`--skx-ink-strong`·`--skx-teal-ink`. `--skx-primary` 는 산호로, `--skx-search-grad`·`--skx-page-bg` 는 다크로(바탕 그림 + `#0f2822`).
+- [ ] `--skx-*` 값을 위 표대로 바꾸고 새 토큰을 더한다: `--skx-glass`·`--skx-glass-2`·`--skx-glass-teal`·`--skx-glass-border`·`--skx-blur`·`--skx-accent`·`--skx-accent-strong`·`--skx-accent-grad`·`--skx-on-accent`·`--skx-ink-strong`·`--skx-teal-ink`. `--skx-primary` 는 산호로, `--skx-search-grad` 는 다크로, `--skx-page-bg` 는 단색 `#0f2822`(배경 그림은 쓰지 않고 `.skx-holo` 가 그린다 — body 는 단색, `.skx-app`·`.skx-footer` 는 투명).
 - [ ] html/body 글자색·`.skx-footer` 바탕 하드코딩을 토큰으로. app.vue 의 `--bg`·`--surface`·`--ink*`·`--line*` 은 **그대로 둔다**(search-classic·TopResult·CitationModal 이 쓰는 밝은 체계 — Task 7 에서 `.skx-reading` 로 감싼다). body 바탕은 `var(--skx-page-bg)`.
 - [ ] `.skx-reading` 범위 클래스: 안에서 `--skx-*` 를 표의 밝은 값으로 다시 정의하고 `color: var(--skx-ink)`.
 - [ ] 테스트 통과·vitest 전체·커밋 `[Style] round08 — 다크 글래스 토큰·바탕·.skx-reading`.
-- **기준:** 미리보기에서 바탕이 다크 그림, 딥리서치 화면(`/research/<아무 잡>`)도 다크 면으로 깨지지 않고 읽힌다(남는 어긋남은 기록만 — 06d·06e 머지 뒤 맞춤).
+- [ ] 홀로그램 배경: app.vue 템플릿 맨 앞 `.skx-holo`(띠 span 2~3개) + style_skovix.css 규칙(`position: fixed; inset: 0; z-index: -1`, 띠는 `mix-blend-mode: screen`·`will-change: transform`, `prefers-reduced-motion: reduce` 에서 멈춤).
+- **기준:** 미리보기에서 바탕이 다크 단색 위로 홀로그램 빛띠가 천천히 흐르고, 딥리서치 화면(`/research/<아무 잡>`)도 다크 면으로 깨지지 않고 읽힌다(남는 어긋남은 기록만 — 06d·06e 머지 뒤 맞춤).
 
 ### Task 2: style_skovix.css 하드코딩 색 → 토큰
 
