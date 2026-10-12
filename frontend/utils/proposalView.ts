@@ -202,8 +202,8 @@ export function sectionKeysOf(p: ProposalView): string[] {
 }
 
 // 절 연쇄가 도는 조건 — [보고서 만들기]의 반영이 자동 승인한 목차(state approved·auto)이고, 예시 연구가 아니고(쓰기가 409),
-// 목차를 다시 만드는 중이 아닐 때. 06b 때 승인한 목차(auto 없음)·[목차 고치기]에서 승인을 푼 목차는 돌지 않는다.
-// 조건은 늘 서버 값으로 다시 계산한다 — 탭을 닫았다 와도 같은 조건으로 이어 넣는다(spec §12-4)
+// 목차를 다시 만드는 중이 아니고, 끝난 목차 생성이 계획서에 다 반영됐을 때. 06b 때 승인한 목차(auto 없음)·[목차 고치기]에서
+// 승인을 푼 목차는 돌지 않는다. 조건은 늘 서버 값으로 다시 계산한다 — 탭을 닫았다 와도 같은 조건으로 이어 넣는다(spec §12-4)
 export function autoChainOn(p: ProposalView | null, work: WorkView | null): boolean {
   const outline = p?.outline;
   if (!outline || !work) return false;
@@ -211,7 +211,19 @@ export function autoChainOn(p: ProposalView | null, work: WorkView | null): bool
     outline.state === "approved" &&
     outline.auto === true &&
     !work.is_example &&
-    !openGeneration({ work }, "outline", "outline")
+    !openGeneration({ work }, "outline", "outline") &&
+    !unappliedOutline(outline, work)
+  );
+}
+
+// 끝났지만 이 계획서에 아직 없는 목차 생성 — done 이벤트는 생성 목록에 바로 오고 계획서는 비동기로 다시 읽는다. 그 틈에
+// 옛 목차의 묶음 키를 넣으면 서버(새 목차)가 404·409 로 거절해 연쇄가 멈춘다. 목차 반영(outline.apply)은 빈 결과여도 늘
+// gen_id 를 그 생성으로 쓰므로 목차의 gen_id 보다 나중의 done 이면 다시 읽기 전이다. failed·canceled 는 목차를 바꾸지 않는다.
+// 가장 새 생성만 보지 않는다 — done 뒤에 또 다시 만들기가 실패해도 계획서는 그 done 의 목차여야 한다(sectionStatus 와 같은 규칙)
+function unappliedOutline(outline: Outline, work: WorkView): boolean {
+  const applied = outline.gen_id ?? 0;
+  return work.generations.some(
+    (g) => g.kind === "outline" && g.target === "outline" && g.status === "done" && g.id > applied,
   );
 }
 

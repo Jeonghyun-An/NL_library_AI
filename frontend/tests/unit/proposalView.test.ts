@@ -401,6 +401,25 @@ describe("autoChainOn — 자동 산출이 도는 조건", () => {
     expect(autoChainOn(p, autoState(p, [outlineGen(40, "running")]).work)).toBe(false);
   });
 
+  it("끝났지만 계획서에 아직 반영되지 않은 목차 생성이 있으면 돌지 않는다 — done 은 생성 목록에 바로 오고 계획서는 다시 읽어야 바뀐다", () => {
+    // 목차 gen_id 41 — [보고서 다시 만들기]의 목차 생성 80 이 끝났는데 계획서는 아직 옛 목차다. 옛 목차의 묶음 키를 넣으면
+    // 서버(새 목차)가 404 NO_GROUP·409 승인 전으로 거절해 연쇄가 멈춘다
+    const p = autoProposal();
+    expect(autoChainOn(p, autoState(p, [outlineGen(80, "done")]).work)).toBe(false);
+    // 그 뒤 다시 만들기가 또 실패해도 계획서는 80 의 목차여야 한다 — 다시 읽기 전이다
+    expect(autoChainOn(p, autoState(p, [outlineGen(80, "done"), outlineGen(81, "failed")]).work)).toBe(false);
+    // 다시 읽어 목차가 그 생성(gen_id 80)이 되면 돈다
+    const reread = autoProposal({ outline: autoOutline({ gen_id: 80 }) });
+    expect(autoChainOn(reread, autoState(reread, [outlineGen(80, "done")]).work)).toBe(true);
+  });
+
+  it("실패·취소로 끝난 다시 만들기와 이 목차를 만든 생성은 막지 않는다 — 목차가 그대로다", () => {
+    const p = autoProposal();
+    expect(autoChainOn(p, autoState(p, [outlineGen(80, "failed")]).work)).toBe(true);
+    expect(autoChainOn(p, autoState(p, [outlineGen(80, "canceled")]).work)).toBe(true);
+    expect(autoChainOn(p, autoState(p, [outlineGen(41, "done")]).work)).toBe(true);
+  });
+
   it("조회 전(null)·목차 없음은 돌지 않는다", () => {
     const p = autoProposal();
     expect(autoChainOn(null, autoState(p).work)).toBe(false);
@@ -599,6 +618,15 @@ describe("reportBar — 보고서 작성 중 큰 진행 막대", () => {
     expect(reportBar(p, autoState(p), new Set(), true)).toBeNull();
     const none = autoProposal({ outline: null });
     expect(reportBar(none, autoState(none), new Set())).toBeNull();
+  });
+
+  it("다시 만든 목차를 계획서에 반영하기 전에는 옛 목차의 남은 절 이름을 보이지 않는다", () => {
+    const p = autoProposal();
+    expect(reportBar(p, autoState(p, [outlineGen(80, "done")]), new Set())).toBeNull();
+    const reread = autoProposal({ outline: autoOutline({ gen_id: 80 }) });
+    expect(reportBar(reread, autoState(reread, [outlineGen(80, "done")]), new Set())!.label).toBe(
+      "보고서 작성 중 · 0/3절 — 「선행연구 검토 · 노인의 우울」",
+    );
   });
 
   it("조사를 붙이지 않는다 — FINAL_STEP_NAME 뒤가 ' 작성 중'", () => {
