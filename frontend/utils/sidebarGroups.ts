@@ -35,6 +35,11 @@ export function countLiveResearch(items: readonly HistoryEntry[]): number {
   return items.filter(isLiveResearch).length;
 }
 
+/** 접힌 사이드바의 현미경 점 — 진행 중이거나 사용자의 승인을 기다리는(눈에 띄어야 하는) 딥리서치가 하나라도 있는가 */
+export function hasActiveResearch(items: readonly HistoryEntry[]): boolean {
+  return items.some((e) => e.kind === "research" && !!e.research && TOP_STATUSES.has(e.research.status));
+}
+
 /** 목록에 보일 시각 — updatedAt 이 비어 있으면(빈 문자열 포함) createdAt */
 export function entryTime(entry: HistoryEntry): string {
   return entry.updatedAt || entry.createdAt;

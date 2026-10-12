@@ -7,6 +7,7 @@ import {
   entryTime,
   formatHistoryTime,
   groupSidebarHistory,
+  hasActiveResearch,
   isLiveResearch,
 } from "~/utils/sidebarGroups";
 import { ID1, ID2, ID3, bookEntry, paperEntry, researchEntry } from "./helpers/fakeHistory";
@@ -149,6 +150,29 @@ describe("진행 중 판정", () => {
       bookEntry("55555555-5555-4555-8555-555555555555"),
     ];
     expect(countLiveResearch(list)).toBe(2);
+  });
+});
+
+describe("hasActiveResearch — 접힌 사이드바 현미경 점", () => {
+  it("진행 중이면 참이다", () => {
+    expect(hasActiveResearch([researchEntry(ID1, status("running"))])).toBe(true);
+  });
+
+  it("승인 대기도 참이다 — 사용자가 움직여야 하는 상태라 눈에 띄어야 한다", () => {
+    expect(hasActiveResearch([researchEntry(ID1, status("awaiting_approval"))])).toBe(true);
+  });
+
+  it("끝났거나(완료·실패·취소) 상태를 모르거나 딥리서치가 아니면 거짓이다", () => {
+    expect(
+      hasActiveResearch([
+        researchEntry(ID1, status("completed")),
+        researchEntry(ID2, status("failed")),
+        researchEntry(ID3, status("canceled")),
+        researchEntry("66666666-6666-4666-8666-666666666666"),
+        bookEntry("55555555-5555-4555-8555-555555555555"),
+      ]),
+    ).toBe(false);
+    expect(hasActiveResearch([])).toBe(false);
   });
 });
 

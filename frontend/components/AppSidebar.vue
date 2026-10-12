@@ -1,15 +1,60 @@
 <!-- frontend/components/AppSidebar.vue -->
 <template>
   <aside :class="['skx-lnb', isCollapsed && 'is-lnb-collapsed', foldInstant && 'is-lnb-instant']">
-    <!-- 접힌 상태에서 펼치기 버튼 -->
-    <button
-      type="button"
-      class="skx-lnb__expand"
-      aria-label="사이드바 열기"
-      @click="open = true"
-    >
-      <img src="/img/ico-arrow.svg" alt="" />
-    </button>
+    <!-- 접힌 띠(데스크톱) — 위에서부터 [사이드바 열기](접기 버튼과 같은 아이콘) · [새 검색] · [DeepResearch].
+         휴대폰(≤480px)은 열기 버튼(화살표)만 둔다. 이름표는 마우스를 올리거나 키보드 초점이 갈 때 오른쪽에 뜨고 Esc 로 닫힌다.
+         06e R6(사이드바 접기)는 이 띠 위에 붙인다 — 접힘 상태·자동 접힘은 아래 open·lnbAutoFolded 가 정한다 -->
+    <div class="skx-lnb__rail">
+      <div class="skx-rail__item">
+        <button
+          type="button"
+          class="skx-rail__btn skx-rail__btn--open"
+          :aria-label="RAIL_TIPS.open"
+          @click="expandFromRail"
+          @pointerenter="showTip('open', $event)"
+          @pointerleave="hideTip('open')"
+          @focus="showTip('open', $event)"
+          @blur="hideTip('open')"
+        >
+          <img class="skx-rail__ico skx-rail__ico--panel" src="/img/ico-collapse.svg" alt="" />
+          <img class="skx-rail__ico skx-rail__ico--arrow" src="/img/ico-arrow.svg" alt="" />
+        </button>
+        <span v-if="railTip === 'open'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.open }}</span>
+      </div>
+      <div class="skx-rail__item skx-rail__item--extra">
+        <button
+          type="button"
+          class="skx-rail__btn"
+          :aria-label="RAIL_TIPS.new"
+          @click="newSearch"
+          @pointerenter="showTip('new', $event)"
+          @pointerleave="hideTip('new')"
+          @focus="showTip('new', $event)"
+          @blur="hideTip('new')"
+        >
+          <img class="skx-rail__ico" src="/img/ico-newchat.svg" alt="" />
+        </button>
+        <span v-if="railTip === 'new'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.new }}</span>
+      </div>
+      <div class="skx-rail__item skx-rail__item--extra">
+        <button
+          type="button"
+          class="skx-rail__btn"
+          :aria-label="RAIL_TIPS.research"
+          :aria-describedby="researchActive ? 'skx-rail-live' : undefined"
+          @click="openResearchFromRail"
+          @pointerenter="showTip('research', $event)"
+          @pointerleave="hideTip('research')"
+          @focus="showTip('research', $event)"
+          @blur="hideTip('research')"
+        >
+          <img class="skx-rail__ico" src="/img/ico-microscope.svg" alt="" />
+          <span v-if="researchActive" class="skx-rail__dot" aria-hidden="true"></span>
+        </button>
+        <span v-if="researchActive" id="skx-rail-live" class="skx-sr-only">진행 중이거나 승인을 기다리는 연구가 있어요</span>
+        <span v-if="railTip === 'research'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.research }}</span>
+      </div>
+    </div>
 
     <!-- 로고 + 접기 버튼 -->
     <div class="skx-lnb__logo">
@@ -233,7 +278,13 @@ import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { deepResearchStartRoute } from "~/utils/landingStart";
-import { countLiveResearch, entryTime, formatHistoryTime, groupSidebarHistory } from "~/utils/sidebarGroups";
+import {
+  countLiveResearch,
+  entryTime,
+  formatHistoryTime,
+  groupSidebarHistory,
+  hasActiveResearch,
+} from "~/utils/sidebarGroups";
 
 const props = defineProps<{ collapsed?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
@@ -284,6 +335,8 @@ const recentRows = computed(() => groups.value.recent);
 // 진행 중 수·폴링은 자르기 전 전체에서 센다 — 접힌 줄 밖의 진행 중 건도 놓치지 않는다
 const liveCount = computed(() => countLiveResearch(history.entries.value));
 const hasLiveResearch = computed(() => liveCount.value > 0);
+// 접힌 띠의 현미경 점 — 진행 중이거나 승인을 기다리는 연구가 있다는 신호(펼친 묶음의 '진행 중 N' 자리)
+const researchActive = computed(() => hasActiveResearch(history.entries.value));
 const activeId = computed(() => activeIdFor(route.path, route.query, v1Map.value));
 
 // 기록이 하나씩 지워져 묶음이 비면 열려 있던 확인창을 닫고, 5줄 이하로 줄면 펼침도 푼다 —
@@ -340,6 +393,47 @@ function removeRow(id: string, ev: Event) {
   });
 }
 
+// ── 접힌 띠(데스크톱) ─────────────────────────────────────
+// 이름표 문구가 곧 버튼의 aria-label 이다 — 이름표는 눈으로만 보는 보조라 스크린리더에는 숨긴다
+const RAIL_TIPS = { open: "사이드바 열기", new: "새 검색", research: DEEP_RESEARCH } as const;
+type RailKey = keyof typeof RAIL_TIPS;
+const railTip = ref<RailKey | null>(null);
+
+// 마우스는 올리면, 키보드는 초점이 갈 때만 보인다 — 터치나 마우스 클릭으로 간 초점은 이름표를 남기지 않는다
+function showTip(key: RailKey, e: Event) {
+  if (e instanceof PointerEvent && e.pointerType === "touch") return;
+  if (e.type === "focus" && !(e.target as HTMLElement).matches(":focus-visible")) return;
+  railTip.value = key;
+}
+
+function hideTip(key: RailKey) {
+  if (railTip.value === key) railTip.value = null;
+}
+
+// 이름표가 떠 있는 동안 어디서든 Esc 로 닫는다(마우스만 올린 때도) — 다시 올려야 또 뜬다
+function onTipEsc(e: KeyboardEvent) {
+  if (e.key === "Escape") railTip.value = null;
+}
+watch(railTip, (now, before) => {
+  if (now && !before) document.addEventListener("keydown", onTipEsc);
+  if (!now && before) document.removeEventListener("keydown", onTipEsc);
+});
+
+function expandFromRail() {
+  railTip.value = null;
+  open.value = true;
+}
+
+// 현미경 — 사이드바를 펼치고 DeepResearch 묶음 머리로 초점을 옮긴다(펼침 폭 전환이 끝나기 전에도 머리는 이미 그려져 있다)
+async function openResearchFromRail() {
+  railTip.value = null;
+  open.value = true;
+  await nextTick();
+  const head = document.getElementById("skx-history-research");
+  head?.focus({ preventScroll: true });
+  head?.scrollIntoView({ block: "nearest" });
+}
+
 // 랜딩의 첫 화면으로 간다. '/' 에서 결과(?q=·?h=)를 보던 중이면 쿼리가 사라지는 이동이라,
 // pages/index.vue 의 route.query watch 가 같은 페이지에서 goLanding 으로 결과를 걷는다 — 이쪽에서 따로 비울 상태는 없다
 function newSearch() {
@@ -378,8 +472,9 @@ function badgeOf(h: HistoryEntry): { label: string; tone: string } {
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
+// 접혀 있어도 읽는다 — 접힌 띠의 현미경 점이 낡지 않게(숨은 탭에서만 건너뛴다)
 function pollOnce() {
-  if (document.hidden || isCollapsed.value) return;
+  if (document.hidden) return;
   void history.refresh("research");
 }
 
@@ -396,7 +491,7 @@ function onVisibility() {
 }
 
 watch(hasLiveResearch, syncPolling);
-// 접혀 있는 동안은 폴링이 건너뛴다(pollOnce) — 진행 중 배지가 낡았을 수 있으니 펼치는 순간 바로 한 번 새로 읽는다
+// 펼치는 순간 바로 한 번 새로 읽는다 — 진행 중 배지가 낡았을 수 있다
 watch(isCollapsed, (collapsed, wasCollapsed) => {
   if (wasCollapsed && !collapsed && hasLiveResearch.value) pollOnce();
 });
@@ -422,6 +517,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener("keydown", onTipEsc);
   if (pollTimer) clearInterval(pollTimer);
   document.removeEventListener("visibilitychange", onVisibility);
 });

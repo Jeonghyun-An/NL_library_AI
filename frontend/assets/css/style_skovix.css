@@ -983,27 +983,105 @@ h4,
   color: var(--skx-ink);
   line-height: 1.5;
 }
-/* LNB 접힌 상태: 60px(3rem) 흰 바 + 펼치기(>) 버튼만 노출 */
-.skx-lnb__expand {
+/* LNB 접힌 상태 — 펼친 사이드바와 같은 유리 면의 세로 띠. 데스크톱은 위에서부터 [사이드바 열기](접기 버튼과 같은 아이콘·같은 높이)
+   · [새 검색] · [DeepResearch](진행 중·승인 대기가 있으면 산호 점), 맨 아래는 프로필 자리(목업이라 지금은 없다).
+   아이콘 칸은 40px 히트 영역이다. 휴대폰(≤480px)은 예전처럼 열기(화살표) 버튼만 둔다 */
+.skx-lnb__rail {
   display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.skx-rail__item {
+  position: relative;
+  display: flex;
+}
+.skx-rail__btn {
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   background: none;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--skx-radius-md);
+  cursor: pointer;
   transition: background-color 0.15s;
-  padding: 0;
 }
-.skx-lnb__expand:hover {
-  background: var(--skx-glass-teal);
+.skx-rail__btn:hover {
+  background: var(--skx-frost-bg);
 }
-.skx-lnb__expand img {
+.skx-rail__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-rail__ico {
+  width: 1.6rem;
+  height: 1.6rem;
+  display: block;
+}
+.skx-rail__ico--arrow {
+  display: none;
   width: 0.4rem;
   height: auto;
   object-fit: contain;
-  display: block;
+}
+/* 진행 중·승인 대기 연구가 있다는 작은 산호 점 */
+.skx-rail__dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--skx-primary);
+  box-shadow: 0 0 0 2px var(--skx-frost-menu-bg);
+}
+/* 이름표 — 띠 오른쪽으로 뜨는 작은 말풍선 */
+.skx-rail__tip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.6rem);
+  z-index: 6;
+  padding: 0.25rem 0.6rem;
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-shadow-banner);
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  animation: skx-rail-tip 0.12s ease-out both;
+}
+.skx-rail__tip::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -0.25rem;
+  border: 0.25rem solid transparent;
+  border-right-color: var(--skx-frost-menu-bg);
+}
+@keyframes skx-rail-tip {
+  from {
+    opacity: 0;
+    transform: translate(-0.2rem, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-rail__tip {
+    animation: none;
+  }
 }
 .skx-app.is-lnb-collapsed .skx-lnb,
 .skx-lnb.is-lnb-collapsed {
@@ -1012,16 +1090,49 @@ h4,
   min-height: 0;
   background: var(--skx-frost-side-bg);
   padding: 1.2rem 0.6rem;
+  /* 이름표가 띠 밖으로 나가 본문 위에 뜬다 */
+  overflow: visible;
+  z-index: 5;
 }
-.skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__expand),
-.skx-lnb.is-lnb-collapsed > :not(.skx-lnb__expand) {
+.skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__rail):not(.skx-profile),
+.skx-lnb.is-lnb-collapsed > :not(.skx-lnb__rail):not(.skx-profile) {
   display: none;
 }
-.skx-app.is-lnb-collapsed .skx-lnb__expand,
-.skx-lnb.is-lnb-collapsed .skx-lnb__expand {
+.skx-app.is-lnb-collapsed .skx-lnb__rail,
+.skx-lnb.is-lnb-collapsed .skx-lnb__rail {
   display: flex;
-  align-items: center;
+}
+.skx-lnb.is-lnb-collapsed .skx-profile {
+  margin-top: auto;
   justify-content: center;
+  padding: 0;
+}
+.skx-lnb.is-lnb-collapsed .skx-profile > :not(.skx-profile__avatar) {
+  display: none;
+}
+@media (min-width: 481px) {
+  .skx-app.is-lnb-collapsed .skx-lnb,
+  .skx-lnb.is-lnb-collapsed {
+    width: calc(40px + 1.2rem);
+    min-width: calc(40px + 1.2rem);
+  }
+}
+@media (max-width: 480px) {
+  .skx-rail__item--extra,
+  .skx-rail__ico--panel {
+    display: none;
+  }
+  .skx-rail__ico--arrow {
+    display: block;
+  }
+  .skx-rail__btn {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+  }
+  .skx-rail__tip {
+    display: none;
+  }
 }
 /* [E] LNB */
 
