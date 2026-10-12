@@ -2,8 +2,9 @@
 import type { DraftSlot, DraftSlotStatus, SynthEta } from "./researchDraft";
 import { formatClock, formatRemaining } from "./researchDraft";
 
-// 쓰는 중인 절이 끝나기 전에 막대가 다 차 보이면 멈춘 것처럼 읽힌다 — 끝날 때까지 이 비율 아래에 둔다
-const RUNNING_CAP = 0.9;
+// 쓰는 중인 절이 끝나기 전에 막대가 다 차 보이면 멈춘 것처럼 읽힌다 — 끝날 때까지 이 비율 아래에 둔다.
+// 큰 진행 막대(utils/researchProgress.ts)의 탐색 구간 추정도 같은 상한을 쓴다 — 이 이름은 이 파일만 내보낸다(Nuxt 자동 import)
+export const RUNNING_CAP = 0.9;
 // 첫 절은 평균이 없어 예상 소요를 모른다 — 30초마다 남은 거리의 절반씩 다가간다
 const FIRST_HALF_LIFE_MS = 30_000;
 
