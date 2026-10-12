@@ -153,6 +153,35 @@ describe("planSlots", () => {
     expect(planSlots(viewWith([]))).toEqual([]);
   });
 
+  it("탐색부터 다시 도는 재시도에서 이번 시도가 아직 닿지 않은 자리는 이전 시도의 행이 남아도 대기다", () => {
+    // 재시도는 idx 0 부터 새 seq 로 행을 쌓는다 — 1차 시도(seq 1~3)는 [근거 4편·근거 2편·실패]로 끝났고, 이번 시도는
+    // 하위질문 0 을 seq 4 로 다시 열었다. 하위질문 1·2 에 남은 1차 시도의 행을 이번 시도의 것으로 읽지 않는다
+    // (stopPoint·researchProgress 와 같은 규칙 — 진행 막대가 대기로 보는 자리를 절 자리도 대기로 본다)
+    const first = [subq(1, { adopted: 2 }), subq(2, { status: "failed", adopted: null, error: "시간 상한" })];
+    const opened = viewWith([
+      subq(0, { seq: 4, status: "running", rounds: [round(1, { verdict: null })], verdict: null, adopted: null }),
+      ...first,
+    ]);
+    const slots = planSlots(opened);
+    expect(slots.map((s) => [s.state, s.adopted, s.round])).toEqual([
+      ["collecting", null, 1],
+      ["waiting", null, null],
+      ["waiting", null, null],
+    ]);
+    expect(slots.map(planSlotLabel)).toEqual(["근거 수집 중 · 1회차", "대기", "대기"]);
+    // 이번 시도가 연 행은 그대로 읽는다 — 하위질문 0 을 마치고 1 을 seq 5 로 열었다
+    const next = viewWith([
+      subq(0, { seq: 4, adopted: 5 }),
+      subq(1, { seq: 5, status: "running", rounds: [round(1, { verdict: null })], verdict: null, adopted: null }),
+      first[1]!,
+    ]);
+    expect(planSlots(next).map((s) => [s.state, s.adopted])).toEqual([
+      ["collected", 5],
+      ["collecting", null],
+      ["waiting", null],
+    ]);
+  });
+
   it("받은 화면 상태(view)를 고치지 않는다", () => {
     const v = viewWith(
       [subq(0), subq(1, { status: "running", rounds: [round(1)] }), subq(2, { adopted: 0 })],

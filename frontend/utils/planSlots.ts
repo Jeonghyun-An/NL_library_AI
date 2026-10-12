@@ -4,7 +4,7 @@
 // 있는 하위질문). 그래서 자리는 하위질문 번호로 세우고, 절 번호는 종합 이벤트(절의 subq_idx, 없으면 절 제목 = 하위질문 글)로
 // 맞춘다. 화면 상태(view)만 읽는다 — 초안(draftReport·draftSlots)은 건드리지 않는다
 import type { ResearchView, StepStatus, SynthView } from "~/types/research";
-import type { ResearchPhase } from "~/utils/researchEvents";
+import { exploreAttemptStart, fromEarlierAttempt, type ResearchPhase } from "~/utils/researchEvents";
 
 export type PlanSlotState = "waiting" | "collecting" | "collected" | "writing" | "empty" | "failed";
 
@@ -62,15 +62,22 @@ export function planSlots(view: ResearchView): PlanSlot[] {
   const size = view.subqs.reduce((n, sq) => Math.max(n, sq.idx + 1), 0);
   const titles = Array.from({ length: size }, (_, i) => view.subqs.find((sq) => sq.idx === i)?.title ?? "");
   const sectionOf = sectionOfSubq(synth, titles);
+  // 탐색부터 다시 도는 재시도는 idx 0 부터 새 seq 로 행을 쌓고, 이번 시도가 아직 닿지 않은 하위질문에는 이전 시도의 행(done·
+  // failed 와 그 근거 수·오류)이 남는다 — 그 자리는 대기로 본다(stopPoint·researchProgress 와 같은 규칙 — 진행 막대와 절
+  // 자리가 같은 말을 한다)
+  const since = exploreAttemptStart(view.subqs);
   return view.subqs.map((sq) => {
+    const earlier = fromEarlierAttempt(sq, since);
+    const status: StepStatus = earlier ? "pending" : sq.status;
+    const adopted = earlier ? null : sq.adopted;
     const sectionIdx = sectionOf.get(sq.idx) ?? null;
     const writing = sectionIdx !== null && synth.sections.some((s) => s.idx === sectionIdx && s.status === "running");
     return {
       subqIdx: sq.idx,
       title: sq.title,
-      state: slotState(sq.status, sq.adopted, sectionIdx, writing, started, mapped),
-      adopted: sq.adopted,
-      round: sq.status === "running" && sq.rounds.length ? sq.rounds.length : null,
+      state: slotState(status, adopted, sectionIdx, writing, started, mapped),
+      adopted,
+      round: status === "running" && sq.rounds.length ? sq.rounds.length : null,
       sectionIdx,
     };
   });

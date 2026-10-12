@@ -55,16 +55,37 @@ describe("breaksFollow", () => {
     expect(breaksFollow({ type: "touchmove" })).toBe(true);
   });
 
-  it("스크롤 키는 멈추되 입력칸 안의 키·수식 키를 함께 누른 키는 멈추지 않는다", () => {
+  it("스크롤 키는 멈추되 입력칸 안의 키는 멈추지 않는다", () => {
     expect(FOLLOW_KEYS).toEqual(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
     for (const k of FOLLOW_KEYS) expect(breaksFollow(key(k))).toBe(true);
     expect(breaksFollow(key("Tab"))).toBe(false);
     expect(breaksFollow(key("a"))).toBe(false);
     expect(breaksFollow(key(" ", { editable: true }))).toBe(false);
     expect(breaksFollow(key("ArrowDown", { editable: true }))).toBe(false);
-    expect(breaksFollow(key("ArrowLeft", { altKey: true }))).toBe(false);
-    expect(breaksFollow(key("End", { ctrlKey: true }))).toBe(false);
-    expect(breaksFollow(key("ArrowDown", { metaKey: true }))).toBe(false);
+  });
+
+  it("수식 키와 함께 눌러도 페이지를 굴리는 조합은 멈춘다 — Ctrl+Home/End·Cmd+↑/↓·Option+↑/↓", () => {
+    // Windows·Linux 의 Ctrl+Home/End 는 문서 처음·끝, macOS 의 Cmd+↑/↓ 는 문서 처음·끝, Option+↑/↓ 는 PageUp/PageDown 이다
+    for (const k of ["Home", "End"]) expect(breaksFollow(key(k, { ctrlKey: true }))).toBe(true);
+    for (const k of ["ArrowUp", "ArrowDown"]) {
+      expect(breaksFollow(key(k, { metaKey: true }))).toBe(true);
+      expect(breaksFollow(key(k, { altKey: true }))).toBe(true);
+    }
+    // 입력칸 안에서는 수식 키 조합도 글자 사이 이동이다
+    expect(breaksFollow(key("End", { ctrlKey: true, editable: true }))).toBe(false);
+    expect(breaksFollow(key("ArrowDown", { metaKey: true, editable: true }))).toBe(false);
+  });
+
+  it("페이지를 굴리지 않는 수식 키 조합은 멈추지 않는다 — 탭 전환·브라우저 홈·입력기 전환·Ctrl+방향키", () => {
+    expect(breaksFollow(key("PageDown", { ctrlKey: true }))).toBe(false);
+    expect(breaksFollow(key("PageUp", { ctrlKey: true }))).toBe(false);
+    expect(breaksFollow(key("Home", { altKey: true }))).toBe(false);
+    expect(breaksFollow(key(" ", { ctrlKey: true }))).toBe(false);
+    expect(breaksFollow(key(" ", { metaKey: true }))).toBe(false);
+    expect(breaksFollow(key("ArrowDown", { ctrlKey: true }))).toBe(false);
+    // 수식 키를 둘 이상 함께 누른 조합(Ctrl+Alt+↓·Ctrl+Cmd+End)도 굴리지 않는다
+    expect(breaksFollow(key("ArrowDown", { ctrlKey: true, altKey: true }))).toBe(false);
+    expect(breaksFollow(key("End", { ctrlKey: true, metaKey: true }))).toBe(false);
   });
 
   it("페이지 스크롤바를 누르면 멈추고 본문을 누르면 멈추지 않는다", () => {
@@ -96,6 +117,14 @@ describe("followTarget", () => {
 
   it("탐색 중에는 도는 하위질문의 자리로 간다", () => {
     expect(target({ phase: "exploring", subqs: [subq(0, "done"), subq(1, "running"), subq(2, "pending")] })).toBe("rs-slot-1");
+  });
+
+  it("탐색부터 다시 도는 재시도에서 이전 시도에 running 으로 남은 행은 도는 하위질문이 아니다", () => {
+    // 1차 시도의 행은 seq 1~3, 이번 시도는 하위질문 0 을 seq 4 로 다시 열었다(stopPoint·researchProgress 와 같은 규칙)
+    const again = (sq: SubqView, seq: number): SubqView => ({ ...sq, seq });
+    expect(target({ phase: "exploring", subqs: [again(subq(0, "done"), 4), subq(1, "running"), subq(2, "pending")] })).toBeNull();
+    expect(target({ phase: "exploring", subqs: [again(subq(0, "done"), 4), again(subq(1, "running"), 5), subq(2, "done")] }))
+      .toBe("rs-slot-1");
   });
 
   it("도는 것이 없거나 계획·대기·끝난 단계면 null", () => {

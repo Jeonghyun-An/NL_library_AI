@@ -6,7 +6,7 @@
 import type { SubqView } from "~/types/research";
 import { slotElementId, type PlanSlot } from "~/utils/planSlots";
 import type { SynthEta } from "~/utils/researchDraft";
-import type { ResearchPhase } from "~/utils/researchEvents";
+import { exploreAttemptStart, fromEarlierAttempt, type ResearchPhase } from "~/utils/researchEvents";
 
 // 창에서 받은 입력 — 이벤트마다 판단에 쓰는 값만 옮긴다(viewportWidth = document.documentElement.clientWidth)
 export type FollowInput =
@@ -31,12 +31,26 @@ export function breaksFollow(e: FollowInput): boolean {
     case "touchmove":
       return true;
     case "keydown":
-      // 입력칸 안의 키(글자 사이 이동·공백)와 수식 키를 함께 누른 키(뒤로 가기·탭 이동 등)는 페이지를 굴리지 않는다
-      return !e.editable && !e.ctrlKey && !e.metaKey && !e.altKey && FOLLOW_KEYS.includes(e.key);
+      // 입력칸 안의 키(글자 사이 이동·공백)는 페이지를 굴리지 않는다
+      if (e.editable || !FOLLOW_KEYS.includes(e.key)) return false;
+      return modifiedScrolls(e);
     case "pointerdown":
       // 페이지 스크롤바는 문서 폭(clientWidth) 바깥 띠다 — 그 띠를 누르거나 끄는 것은 사용자가 굴리는 것이다
       return e.clientX >= e.viewportWidth;
   }
+}
+
+// 스크롤 키에 수식 키를 함께 누른 조합이 페이지를 굴리는가(수식 키가 없으면 굴린다). 굴리는 조합은 셋뿐이다 — Ctrl+Home/End
+// (Windows·Linux 의 문서 처음·끝 — Chromium 은 Firefox 에 맞춰 Ctrl 조합 가운데 이 둘만 굴린다), Cmd+↑/↓(macOS 의 문서
+// 처음·끝), Option+↑/↓(macOS 의 PageUp/PageDown). 그 밖의 조합 — Ctrl+PageUp/PageDown(탭 전환)·Alt+Home(브라우저 홈)·
+// Ctrl/Cmd+Space(입력기 전환)·Ctrl+방향키, 수식 키를 둘 이상 함께 누른 것 — 은 굴리지 않는다. 플랫폼은 가르지 않는다: Windows 의
+// Alt+↑/↓ 처럼 굴리지 않는 곳에서 멈춰도 알약으로 다시 켤 수 있지만, 굴렸는데 놓치면 화면을 도로 끌고 간다
+function modifiedScrolls(e: Extract<FollowInput, { type: "keydown" }>): boolean {
+  const mods = Number(e.ctrlKey) + Number(e.metaKey) + Number(e.altKey);
+  if (mods === 0) return true;
+  if (mods > 1) return false;
+  if (e.ctrlKey) return e.key === "Home" || e.key === "End";
+  return e.key === "ArrowUp" || e.key === "ArrowDown";
 }
 
 // 보고서 절의 자리 id — ReportView 의 절 <section> 과 현황 카드의 jumpToSection 이 같은 글자를 쓴다
@@ -61,7 +75,9 @@ export function followTarget(input: {
     return slot ? slotElementId(slot.subqIdx) : null;
   }
   if (input.phase === "exploring") {
-    const running = input.subqs.find((s) => s.status === "running");
+    // 이번 시도의 행만 — 탐색부터 다시 도는 재시도에서 이전 시도에 남은 행은 도는 하위질문이 아니다(stopPoint 와 같은 규칙)
+    const since = exploreAttemptStart(input.subqs);
+    const running = input.subqs.find((s) => s.status === "running" && !fromEarlierAttempt(s, since));
     return running ? slotElementId(running.idx) : null;
   }
   return null;
