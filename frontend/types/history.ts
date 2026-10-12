@@ -19,6 +19,8 @@ export interface SnapshotBookInfo {
   grade?: string;
   kci_citations?: number;
   references?: string[];
+  // 1위 도서만 담는다(slimBookResult) — 복원 때 '이 책에서 얻을 수 있는 것'을 다시 받지 않고 그린다
+  read_effect?: string;
 }
 
 export interface SnapshotItem {
@@ -41,10 +43,19 @@ export interface PaperSnapshot {
   books: SnapshotItem[];
 }
 
-export interface BookAi {
+/** 소장자료 AI 영역 — 1위 도서의 추천 이유(round08, SKOVIX 추천 1권) */
+export interface BookAiPick {
+  book_id: string;
+  reason: string;
+}
+
+/** 옛 AI 컬렉션 기록(round08 이전)과 v1 가져오기가 남긴 모양 — 화면은 쓰지 않는다(utils/bookAiPick.readSavedReason) */
+export interface LegacyBookAi {
   intro: string;
   items: unknown[];
 }
+
+export type BookAi = BookAiPick | LegacyBookAi;
 
 export interface PaperAi {
   text: string;

@@ -74,10 +74,27 @@ describe("slimBookResult", () => {
             publisher: "출판사",
             pub_date: "20200101",
             themes: "경제,무역",
+            // 1위 도서만 싣는다 — 복원 때 '이 책에서 얻을 수 있는 것'을 그리려고
+            read_effect: "효과",
           },
         },
       ],
     });
+  });
+
+  it("read_effect 는 1위 도서에만 싣는다(나머지는 목록 카드가 안 그려 저장량만 는다)", () => {
+    const snap = slimBookResult({ query: "q", books: [serverBook(1), serverBook(2), serverBook(3)] })!;
+    expect(snap.books[0]!.book_info?.read_effect).toBe("효과");
+    expect(snap.books[1]!.book_info).not.toHaveProperty("read_effect");
+    expect(snap.books[2]!.book_info).not.toHaveProperty("read_effect");
+  });
+
+  it("1위 도서의 read_effect 가 비었거나 없으면 싣지 않는다", () => {
+    const b = serverBook(1);
+    for (const read_effect of ["  ", null, undefined]) {
+      const snap = slimBookResult({ query: "q", books: [{ ...b, book_info: { ...b.book_info, read_effect } }] })!;
+      expect(snap.books[0]!.book_info).not.toHaveProperty("read_effect");
+    }
   });
 
   it("서버가 새 필드를 보내도 저장하지 않는다", () => {

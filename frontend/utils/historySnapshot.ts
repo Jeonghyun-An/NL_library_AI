@@ -82,6 +82,13 @@ export function slimBookResult(result: unknown): BookSnapshot | null {
   const books = slimItems(result, BOOK_INFO_FIELDS, true, SNAPSHOT_MAX_ITEMS);
   if (!books) return null;
   const r = result as Loose;
+  // 1위 도서의 '이 책에서 얻을 수 있는 것'(read_effect)만 싣는다 — 소장자료 AI 영역이 복원 때 다시 받지 않고 그린다.
+  // 목록 카드는 그리지 않는 필드라 나머지 도서에는 싣지 않는다(수백 자씩 곱해 저장량만 는다)
+  const top = (r.books as unknown[]).filter(isObject).find((b) => typeof b.book_id === "string");
+  const effect = isObject(top?.book_info) ? top.book_info.read_effect : undefined;
+  if (books[0] && typeof effect === "string" && effect.trim()) {
+    books[0].book_info = { ...books[0].book_info, read_effect: effect };
+  }
   const snap: BookSnapshot = { query: typeof r.query === "string" ? r.query : "", books };
   if (typeof r.rewritten_query === "string" && r.rewritten_query) snap.rewritten_query = r.rewritten_query;
   return snap;

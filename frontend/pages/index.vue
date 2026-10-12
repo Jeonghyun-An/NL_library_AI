@@ -272,95 +272,121 @@
 
       <template v-else>
         <div class="skx-result-card">
-          <!-- AI 섹션 (도서) -->
-          <section
-            v-if="mode === 'book' && books.length"
-            class="skx-ai-section"
-          >
+          <!-- AI 섹션 (도서) — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것(와이어 02-2) -->
+          <section v-if="mode === 'book' && topBook" class="skx-ai-section">
             <header class="skx-ai-header">
               <h2 class="skx-ai-header__title">AI 검색 결과</h2>
               <p v-if="keywordChips.length" class="skx-ai-header__keywords">
                 키워드: {{ keywordChips.join(", ") }}
               </p>
             </header>
-            <div class="skx-ai-panel">
-              <div class="skx-ai-panel__top">
-                <div class="skx-ai-panel__logo-row">
-                  <img
-                    class="skx-ai-panel__logo"
-                    :src="
-                      curationLoading || curationTyping
-                        ? '/ic_ing.gif'
-                        : '/ic_done.png'
-                    "
-                    alt="SKOVIX AI"
-                  />
-                  <Transition name="skx-stage-fade" mode="out-in">
-                    <span
-                      :key="aiPanelTitle"
-                      class="skx-ai-panel__title-text"
-                      >{{ aiPanelTitle }}</span
-                    >
-                  </Transition>
-                  <span v-if="curationLoading" class="skx-ai-panel__loading"
-                    >●</span
+            <div class="skx-pick">
+              <div class="skx-pick__main">
+                <section
+                  class="skx-pick__block"
+                  aria-labelledby="skx-pick-why"
+                  :aria-busy="reasonPending"
+                >
+                  <h3 id="skx-pick-why" class="skx-pick__heading">
+                    <span class="skx-ai-dot" aria-hidden="true"></span>
+                    왜 이 책인가
+                  </h3>
+                  <p v-if="reasonText" class="skx-pick__text">
+                    {{ reasonText
+                    }}<span
+                      v-if="reasonPending"
+                      class="skx-ai-answer__cursor"
+                      aria-hidden="true"
+                    ></span>
+                  </p>
+                  <p
+                    v-else-if="reasonPending"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                </div>
-                <div class="skx-ai-panel__fb">
-                  <span class="skx-ai-panel__fb-label"
-                    >찾으시는 도서가 맞나요?</span
+                    AI 사서가 추천 이유를 정리하고 있어요…
+                  </p>
+                  <p
+                    v-else-if="reasonStatus === 'error'"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                </div>
+                    추천 이유를 불러오지 못했어요.
+                  </p>
+                </section>
+                <section
+                  v-if="topReadEffect"
+                  class="skx-pick__block"
+                  aria-labelledby="skx-pick-effect"
+                >
+                  <h3 id="skx-pick-effect" class="skx-pick__heading">
+                    이 책에서 얻을 수 있는 것
+                  </h3>
+                  <p class="skx-pick__text">{{ topReadEffect }}</p>
+                </section>
               </div>
-              <div :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']">
-                <div class="skx-ai-answer">
-                  <p class="skx-ai-answer__text">{{ curationIntro }}</p>
-                  <ul v-if="curationItems.length" class="skx-ai-answer__list">
-                    <li v-for="ci in curationItems" :key="ci.book_id">
-                      {{ ci.reason }}
-                    </li>
-                  </ul>
-                  <!-- <div
-                    v-if="curationItems.length && !curationLoading"
-                    class="skx-deepread-cta"
-                  >
-                    <span class="skx-deepread-cta__text">컬렉션에서 책과 직접 대화해보세요</span>
+              <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
+                <span class="skx-pick__label">SKOVIX 추천 1권</span>
+                <article class="skx-pick__card" @click="openDetail(topBook)">
+                  <div class="skx-pick__card-head">
+                    <div class="skx-book-card__thumb">
+                      <BookCover :book-id="topBook.book_id" />
+                    </div>
+                    <div class="skx-book-card__body">
+                      <div class="skx-book-card__tags">
+                        <template
+                          v-if="
+                            topBook.title_score !== undefined &&
+                            topBook.content_score !== undefined
+                          "
+                        >
+                          <ScoreRing
+                            :pct="topBook.title_score * 100"
+                            label="제목 일치율"
+                          />
+                          <ScoreRing
+                            :pct="topBook.content_score * 100"
+                            label="내용 일치율"
+                            variant="content"
+                          />
+                        </template>
+                        <span class="skx-tag skx-tag--score"
+                          >관련도
+                          {{ Math.floor((topBook.best_score || 0) * 100) }}%</span
+                        >
+                      </div>
+                      <h3 class="skx-book-card__title">
+                        {{ topBook.book_info?.title || topBook.book_id }}
+                      </h3>
+                      <div class="skx-book-card__info-row">
+                        <template v-for="(part, pi) in topMeta" :key="pi">
+                          <span v-if="pi > 0" class="skx-dot"></span>
+                          <span class="skx-meta-text">{{ part }}</span>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="skx-book-card__actions" @click.stop>
                     <button
                       type="button"
-                      class="skx-deepread-cta__btn"
-                      @click="navigateTo(`/books/${curationItems[0].book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
+                      class="skx-btn-chat"
+                      @click="openDetailWithChat(topBook)"
                     >
-                      DeepRead 시작하기
-                      <img src="/img/ico-arrow.svg" alt="" />
+                      <img src="/img/ico-chat.svg" alt="" />
+                      <span class="skx-btn-chat__label">DeepRead</span>
                     </button>
-                  </div> -->
-                </div>
-                <button
-                  type="button"
-                  class="skx-ai-expand-bar"
-                  :aria-expanded="aiExpanded"
-                  @click="aiExpanded = !aiExpanded"
-                >
-                  <span class="skx-ai-expand-bar__label">{{
-                    aiExpanded ? "접기" : "펼치기"
-                  }}</span>
-                  <img
-                    class="skx-ai-expand-bar__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-              </div>
-              <p
-                v-if="curationItems.length && !curationLoading"
-                class="skx-ai-hint"
-              >
-                <img src="/img/ico-chat.svg" alt="" />
-                마음에 드는 책을 찾으셨다면
-                <strong>DeepRead</strong>로 책과 직접 대화하며 더 깊이
-                읽어보세요
-              </p>
+                    <button
+                      type="button"
+                      class="skx-btn-read"
+                      @click="viewPdf(topBook)"
+                    >
+                      원문 보기
+                    </button>
+                  </div>
+                </article>
+              </aside>
             </div>
+            <!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 — 그때까지 DOM 을 만들지 않는다 -->
           </section>
 
           <!-- AI 섹션 (논문) -->
@@ -428,11 +454,6 @@
               <div class="skx-book-card__body">
                 <div class="skx-book-card__top">
                   <div class="skx-book-card__tags">
-                    <span
-                      v-if="collectionIds.has(item.book_id)"
-                      class="skx-tag skx-tag--collection"
-                      >AI 컬렉션</span
-                    >
                     <template
                       v-if="
                         item.title_score !== undefined &&
@@ -551,7 +572,7 @@
             </article>
           </div>
 
-          <!-- 더보기 버튼 (컬렉션 외 도서가 있을 때만) -->
+          <!-- 더보기 버튼 (처음 보이는 개수보다 결과가 많을 때만) -->
           <button
             v-if="displayBooks.length > visibleCount"
             type="button"
@@ -596,15 +617,21 @@
 </template>
 
 <script setup lang="ts">
-import type { Ref } from "vue";
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
-import { useApi } from "~/composables/useApi";
+import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
-import { useCuration } from "~/composables/useCuration";
 import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { slimBookResult } from "~/utils/historySnapshot";
+import {
+  buildBookAi,
+  buildReasonBody,
+  pickTopBook,
+  readEffectOf,
+  readReasonStream,
+  readSavedReason,
+} from "~/utils/bookAiPick";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
@@ -653,17 +680,19 @@ const books = ref<BookChunkGroup[]>([]);
 const papers = ref<BookChunkGroup[]>([]);
 const keywordChips = ref<string[]>([]);
 
-// ── 큐레이션 (도서) ────────────────────────────────────────
-const curation = ref<any>(null);
-const curationOpen = ref(true);
-const curationLoading = ref(false);
+// ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
+// 1위 도서 한 권과, 그 책이 이 검색어에 왜 맞는지(/books/reason/stream 스트리밍)·읽으면 얻는 것(검색 응답의 read_effect).
+// 옛 AI 컬렉션(/books/curate)을 대신한다. 이유 스트림은 검색·복원·랜딩 복귀·페이지 이탈이 공유하는 묶음 signal 로 끊는다
+const reasonRaw = ref("");
+const reasonStatus = ref<"idle" | "loading" | "done" | "error">("idle");
+// 스트림 첫 글자는 줄바꿈이라 앞뒤 공백을 뗀다
+const reasonText = computed(() => reasonRaw.value.trim());
+// 결과가 뜬 뒤 스트림이 시작되기 전(기록 저장 중)에도 빈 칸 대신 기다리는 중으로 보인다
+const reasonPending = computed(() => reasonStatus.value === "idle" || reasonStatus.value === "loading");
 
 // ── 결과 펼치기/접기 ──────────────────────────────────────
 const bookListExpanded = ref(false);
 const aiExpanded = ref(false);
-// SSE 스트리밍용 분리 ref
-const curationIntro = ref("");
-const curationItems = ref<Array<{ book_id: string; reason: string }>>([]);
 
 // ── 논문 핵심 요약 SSE ─────────────────────────────────────
 const paperSummaryText = ref("");
@@ -678,9 +707,6 @@ const renderedPaperSummary = computed(() =>
 
 // ── 상세 ──────────────────────────────────────────────────
 const selectedItem = ref<BookChunkGroup | null>(null);
-const detailTab = ref("reason");
-const reasonText = ref("");
-const reasonLoading = ref(false);
 const showChat = ref(false);
 const pdfOpen = ref(false);
 const refsOpen = ref(true);
@@ -699,10 +725,6 @@ const detailTabs = computed(() =>
       ],
 );
 
-const renderedReason = computed(() =>
-  reasonText.value ? (marked.parse(reasonText.value) as string) : "",
-);
-
 // ── 연관 추천 ──────────────────────────────────────────────
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
@@ -718,10 +740,9 @@ const toast = ref("");
 // ── 검색 기록 ─────────────────────────────────────────────
 const historyApi = useHistory();
 const currentHistoryId = ref<string | null>(null);
-// 검색·복원·큐레이션을 한 묶음으로 끊는다 — 새 검색이나 복원이 시작되면 이전 묶음의
-// 응답·타이핑·저장이 새 화면과 새 기록을 덮지 못하게 한다. 큐레이션은 화면 갱신만 끊고 요청·저장은 끝까지 간다
+// 검색·복원·추천 이유 스트림을 한 묶음으로 끊는다 — 새 검색이나 복원·랜딩 복귀·페이지 이탈이 오면 이전 묶음의
+// 응답·스트림·저장이 새 화면과 새 기록을 덮지 못하게 한다(이유 스트림은 연결째 끊겨 서버 생성도 멈춘다)
 let runCtrl: AbortController | null = null;
-const curationRequests = useCuration();
 function beginRun(): AbortSignal {
   runCtrl?.abort();
   runCtrl = new AbortController();
@@ -833,11 +854,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // 떠난 화면에 늦게 온 응답·타이핑 타이머가 상태를 고치지 않게 묶음을 끊는다.
-  // 큐레이션 요청은 끊지 않는다 — 끝까지 받아 기록에 저장해야 돌아왔을 때 다시 만들지 않는다(fetchCuration)
+  // 떠난 화면에 늦게 온 응답이 상태를 고치지 않게, 진행 중인 검색·추천 이유 스트림을 끊는다
   runCtrl?.abort();
   document.removeEventListener("click", onDocClick);
-  if (aiStageTimer) clearTimeout(aiStageTimer);
 });
 
 // ── 유틸 ──────────────────────────────────────────────────
@@ -896,12 +915,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   searchError.value = "";
   books.value = [];
   papers.value = [];
-  curation.value = null;
-  curationIntro.value = "";
-  curationItems.value = [];
-  curationLoading.value = false;
-  curationTyping.value = false;
-  curationOpen.value = true;
+  resetReason();
   bookListExpanded.value = false;
   aiExpanded.value = false;
   paperSummaryText.value = "";
@@ -914,8 +928,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       body: {
         query,
         mode: "book",
-        // 컬렉션 크기 + 더보기 목록용 여유분 확보 (백엔드 상한 20)
-        top_k: Math.min(20, Math.max(CURATION_SIZE + 5, 10)),
+        top_k: 10,
         use_rewrite: true,
         use_rerank: true,
       },
@@ -928,7 +941,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
     }
     loading.value = false;
 
-    // 기록 id 를 먼저 확정해 큐레이션에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
+    // 기록 id 를 먼저 확정해 추천 이유 스트림에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
     const snapshot = slimBookResult(data) ?? undefined;
     const entry = reuse
       ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
@@ -936,7 +949,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
     router.replace({ query: { q: query.trim(), h: entry.id } });
-    if (books.value.length) fetchCuration(entry.id, query.trim(), rewrittenQuery.value, signal);
+    void streamTopReason(entry.id, query.trim(), signal);
   } catch (e: any) {
     if (signal.aborted) return;
     searchError.value =
@@ -969,7 +982,7 @@ function fillChip(chip: string, input: HTMLTextAreaElement | null) {
   });
 }
 
-// 랜딩으로 되돌린다 — 진행 중인 검색·복원·큐레이션 묶음을 끊고 결과 화면 상태를 비운다
+// 랜딩으로 되돌린다 — 진행 중인 검색·복원·추천 이유 스트림 묶음을 끊고 결과 화면 상태를 비운다
 function goLanding() {
   runCtrl?.abort();
   runCtrl = null;
@@ -983,11 +996,7 @@ function goLanding() {
   books.value = [];
   papers.value = [];
   keywordChips.value = [];
-  curation.value = null;
-  curationIntro.value = "";
-  curationItems.value = [];
-  curationLoading.value = false;
-  curationTyping.value = false;
+  resetReason();
   selectedItem.value = null;
   pdfOpen.value = false;
   citationModal.value = false;
@@ -1066,20 +1075,20 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   books.value = snap.books as unknown as BookChunkGroup[];
   papers.value = [];
   keywordChips.value = [];
-  curation.value = null;
-  curationLoading.value = false;
-  curationTyping.value = false;
-  curationIntro.value = entry.ai?.intro ?? "";
-  curationItems.value = (entry.ai?.items ?? []) as Array<{ book_id: string; reason: string }>;
-  curationOpen.value = true;
+  resetReason();
   bookListExpanded.value = false;
   aiExpanded.value = false;
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
-  // 요약이 비어 있으면 큐레이션이 아직 도는 중이거나 실패한 기록이다 — 도는 중이면 그 요청을 이어받고, 실패했으면 다시 만든다
-  if (!entry.ai && books.value.length) {
-    fetchCuration(entry.id, entry.title, rewrittenQuery.value, signal);
+  // 저장된 추천 이유가 있으면 그대로 보이고 다시 받지 않는다. 없으면(끝나기 전에 떠났거나 실패한 기록, 옛 AI 컬렉션
+  // {intro, items} 기록) 한 번 다시 받고, 끝나면 새 모양으로 덮어 다음부터는 저장분을 쓴다
+  const saved = readSavedReason(entry.ai, topBook.value?.book_id ?? null);
+  if (saved) {
+    reasonRaw.value = saved;
+    reasonStatus.value = "done";
+  } else {
+    void streamTopReason(entry.id, entry.title, signal);
   }
 }
 
@@ -1092,28 +1101,10 @@ watch(
   },
 );
 
-// ── 큐레이션 도서 수 ──────────────────────────────────────────
-// 랜딩의 컬렉션 N권 고르기는 없앴다(메인은 세 갈래 전환). 큐레이션(AI 컬렉션) 자체는 결과 화면을 바꾸는
-// Task 7 에서 1위 도서 한 권 + 추천 이유로 대체되며 함께 사라진다 — 그때까지 예전 기본값을 그대로 쓴다
-const CURATION_SIZE = 3;
-// 컬렉션 포함 최소 연관도 (임계값 미달 도서는 LLM 답변에서 제외)
-const COLLECTION_SCORE_THRESHOLD = 0.4;
+// ── 결과 목록 ─────────────────────────────────────────────
+// 도서는 검색이 준 순서 그대로다(AI 영역의 1위 도서도 이 목록의 첫 카드). 처음에는 3건만 보이고 나머지는 더보기로 연다
+const visibleCount = 3;
 
-// 컬렉션 소속 도서 id — 큐레이션 완료 후엔 실제 답변에 사용된 도서,
-// 생성 전엔 동일한 선정 규칙(임계값+크기)으로 미리 계산
-const collectionIds = computed(() => {
-  if (curationItems.value.length) {
-    return new Set(curationItems.value.map((ci) => ci.book_id));
-  }
-  return new Set(
-    books.value
-      .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
-      .slice(0, CURATION_SIZE)
-      .map((b) => b.book_id),
-  );
-});
-
-// 컬렉션 도서를 상위로 정렬한 표시용 목록
 const displayBooks = computed(() => {
   if (mode.value === "paper") {
     if (!activeFilters.value.length) return papers.value;
@@ -1124,106 +1115,65 @@ const displayBooks = computed(() => {
       );
     });
   }
-  const ids = collectionIds.value;
-  const inCollection = books.value.filter((b) => ids.has(b.book_id));
-  const rest = books.value.filter((b) => !ids.has(b.book_id));
-  return [...inCollection, ...rest];
+  return books.value;
 });
 
-// 항상 보이는 개수: 컬렉션 전체 (없으면 기본 3권)
-const visibleCount = computed(() => {
-  if (mode.value === "paper") return 3;
-  const n = collectionIds.value.size;
-  return n > 0 ? n : 3;
+// ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
+const topBook = computed(() => pickTopBook(books.value));
+const topReadEffect = computed(() => readEffectOf(topBook.value));
+// 저자 · 출판사 · 발행년 — 있는 것만
+const topMeta = computed(() => {
+  const info = topBook.value?.book_info;
+  if (!info) return [];
+  const year = info.pub_date ? `${info.pub_date.slice(0, 4)}년` : "";
+  return [info.personal_author || info.corporate_author, info.publisher, year].filter(
+    (v): v is string => !!v,
+  );
 });
 
-// ── AI 패널 단계별 로딩 메시지 ─────────────────────────────
-const AI_STAGES = [
-  "AI가 질문을 이해했어요",
-  "AI 사서가 모든 도서 본문을 탐색하고 있어요",
-];
-const aiStage = ref(0);
-let aiStageTimer: ReturnType<typeof setTimeout> | null = null;
-
-const aiPanelTitle = computed(() =>
-  curationLoading.value
-    ? AI_STAGES[Math.min(aiStage.value, AI_STAGES.length - 1)]
-    : "AI가 가장 적합한 도서를 찾았어요!",
-);
-
-function startAiStages() {
-  aiStage.value = 0;
-  if (aiStageTimer) clearTimeout(aiStageTimer);
-  aiStageTimer = setTimeout(() => {
-    aiStage.value = 1;
-  }, 900);
+function resetReason() {
+  reasonRaw.value = "";
+  reasonStatus.value = "idle";
 }
 
-// 타이프라이터 출력 중 여부 (아이콘은 타이핑 종료까지 ing 유지)
-const curationTyping = ref(false);
-
-function typeInto(target: Ref<string>, text: string, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    let i = 0;
-    const step = () => {
-      if (signal.aborted || i >= text.length) {
-        resolve();
-        return;
-      }
-      target.value += text.charAt(i++);
-      setTimeout(step, 18);
-    };
-    step();
-  });
-}
-
-// ── 큐레이션 (도서) ── 타이프라이터 출력 ──────────────────────
-// 기록 id 와 함께 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가 고치는 중일 수 있어,
-// 지금 값을 읽으면 다른 검색어로 만든 요약이 이 기록에 저장된다
-async function fetchCuration(
+// 1위 도서의 추천 이유를 받는다. 기록 id 와 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가
+// 고치는 중일 수 있어, 지금 값을 읽으면 다른 검색어로 만든 이유가 이 기록에 저장된다.
+// signal 이 끊기면(새 검색·복원·랜딩·이탈) 연결째 끊고 화면·기록 어디도 건드리지 않는다. 끝까지 받은 이유만 저장한다
+async function streamTopReason(
   historyId: string,
   query: string,
-  rewritten: string,
   signal: AbortSignal,
 ) {
-  // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
-  const topBooks = books.value
-    .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
-    .slice(0, CURATION_SIZE);
-  if (!topBooks.length) return;
-  startAiStages();
-  curationLoading.value = true;
-  curationTyping.value = true;
-  curationIntro.value = "";
-  curationItems.value = [];
+  const book = pickTopBook(books.value);
+  if (!book) return;
+  reasonRaw.value = "";
+  reasonStatus.value = "loading";
+  let complete = false;
   try {
-    // 요청은 묶음의 signal 로 끊지 않는다 — 단발 POST 라 끊어도 서버 생성은 끝까지 돌고 결과만 버려져, 돌아오면 다시 만든다.
-    // 응답이 오면 시작 때 붙잡은 id 로 저장되고(떠난 뒤에 와도), 같은 기록의 요청이 도는 중이면 새로 부르지 않고 이어받는다.
-    // 타이핑은 화면 연출로만 둔다 — 떠났거나 다른 묶음이 시작됐으면 화면만 건너뛴다
-    const result = await curationRequests.run(historyId, {
-      query,
-      book_ids: topBooks.map((b) => b.book_id),
-      scores: topBooks.map((b) => b.best_score || 0),
-      rewritten_query: rewritten,
+    const resp = await fetch(apiUrl("/books/reason/stream"), {
+      method: "POST",
+      headers: apiHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(buildReasonBody(query, book)),
+      signal,
     });
-    if (signal.aborted || !result) return;
-    curation.value = result.data;
-    curationLoading.value = false;
-    const { intro, items } = result;
-    if (intro) {
-      curationOpen.value = true;
-      await typeInto(curationIntro, intro, signal);
-      if (signal.aborted) return;
-    }
-    curationItems.value = items;
-    curationTyping.value = false;
+    if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+    complete = await readReasonStream(resp.body, (delta) => {
+      if (!signal.aborted) reasonRaw.value += delta;
+    });
   } catch {
-    /* 큐레이션 실패 시 조용히 무시 */
-  } finally {
-    if (!signal.aborted) {
-      curationLoading.value = false;
-      curationTyping.value = false;
-    }
+    /* 실패·중단 — 아래에서 가린다 */
+  }
+  if (signal.aborted) return;
+  const reason = reasonRaw.value.trim();
+  if (!reason) {
+    reasonStatus.value = "error";
+    return;
+  }
+  reasonStatus.value = "done";
+  if (complete) {
+    void historyApi
+      .patch(historyId, { ai: buildBookAi(book.book_id, reason) })
+      .catch(() => undefined);
   }
 }
 
@@ -1308,40 +1258,6 @@ function openRelatedDetail(rel: any) {
     chunks: [],
   };
   openDetail(fakeGroup);
-}
-
-function switchDetailTab(key: string) {
-  detailTab.value = key;
-  if (key === "reason" && !reasonText.value && selectedItem.value) {
-    fetchReason(selectedItem.value);
-  }
-}
-
-// ── 추천 이유 SSE ──────────────────────────────────────────
-async function fetchReason(item: BookChunkGroup) {
-  reasonLoading.value = true;
-  reasonText.value = "";
-  try {
-    const resp = await fetch(`${apiBase}/books/reason/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: currentQuery.value,
-        book_id: item.book_id,
-        chunk_texts: item.chunks?.map((c) => c.text) ?? [],
-        rewritten_query: rewrittenQuery.value,
-      }),
-    });
-    await readSSE(resp, (json) => {
-      if (json.text) reasonText.value += json.text;
-      if (json.keywords?.length && !keywordChips.value.length)
-        keywordChips.value = json.keywords;
-    });
-  } catch {
-    /* 추천 이유 실패 */
-  } finally {
-    reasonLoading.value = false;
-  }
 }
 
 // ── 연관 추천 ──────────────────────────────────────────────
