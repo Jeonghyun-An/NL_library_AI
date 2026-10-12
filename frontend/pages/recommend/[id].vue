@@ -253,6 +253,7 @@
             <img src="/img/ico-arrow.svg" alt="" />상세 보기
           </button>
           <button
+            v-if="SHOW_MOCKS"
             type="button"
             class="skx-rcd-modal__btn skx-rcd-modal__btn--dark"
             @click="showToast('준비 중입니다.')"
@@ -273,6 +274,7 @@
 
 <script setup lang="ts">
 import { useApi } from "~/composables/useApi";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 
 const route = useRoute();
 const api = useApi();

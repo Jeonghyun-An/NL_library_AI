@@ -4,6 +4,8 @@ import type { HistoryEntry } from "~/types/history";
 import {
   LIVE_STATUSES,
   countLiveResearch,
+  entryTime,
+  formatHistoryTime,
   groupSidebarHistory,
   isLiveResearch,
 } from "~/utils/sidebarGroups";
@@ -15,7 +17,7 @@ const ids = (list: Array<{ id: string }>) => list.map((e) => e.id);
 
 describe("groupSidebarHistory", () => {
   it("빈 입력은 두 묶음 모두 비어 있다", () => {
-    expect(groupSidebarHistory([])).toEqual({ research: [], recent: [] });
+    expect(groupSidebarHistory([])).toEqual({ research: [], researchTotal: 0, recent: [] });
   });
 
   it("딥리서치는 research 로, 도서·논문은 한 목록(recent)으로 섞여 최신순으로 간다", () => {
@@ -63,6 +65,47 @@ describe("groupSidebarHistory", () => {
     expect(ids(groupSidebarHistory([r2, r1]).research)).toEqual([ID2, ID1]);
   });
 
+  it("researchLimit 을 주면 research 를 앞에서 그만큼만 돌려주고 researchTotal 은 자르기 전 수다", () => {
+    const rows = [1, 2, 3, 4, 5, 6, 7].map((h) =>
+      researchEntry(`${h}${h}${h}${h}${h}${h}${h}${h}-0000-4000-8000-000000000000`, {
+        createdAt: T(h),
+        ...status("completed"),
+      }),
+    );
+    const { research, researchTotal } = groupSidebarHistory(rows, { researchLimit: 5 });
+    expect(researchTotal).toBe(7);
+    expect(research).toHaveLength(5);
+    expect(research.map((e) => e.createdAt)).toEqual([T(7), T(6), T(5), T(4), T(3)]);
+  });
+
+  it("자를 때도 진행 중인 것이 오래돼도 먼저 남는다", () => {
+    const old = researchEntry(ID1, { createdAt: T(1), ...status("running") });
+    const fresh = [2, 3, 4].map((h) => researchEntry(`${h}${h}${h}${h}${h}${h}${h}${h}-0000-4000-8000-000000000000`, { createdAt: T(h), ...status("completed") }));
+    const { research } = groupSidebarHistory([...fresh, old], { researchLimit: 2 });
+    expect(ids(research)).toEqual([ID1, fresh[2]!.id]);
+  });
+
+  it("researchLimit 이 총수 이상이거나 없으면 자르지 않고, 0 이면 비운다", () => {
+    const rows = [researchEntry(ID1, { createdAt: T(1) }), researchEntry(ID2, { createdAt: T(2) })];
+    expect(groupSidebarHistory(rows, { researchLimit: 5 }).research).toHaveLength(2);
+    expect(groupSidebarHistory(rows, { researchLimit: 2 }).research).toHaveLength(2);
+    expect(groupSidebarHistory(rows).research).toHaveLength(2);
+    const none = groupSidebarHistory(rows, { researchLimit: 0 });
+    expect(none.research).toEqual([]);
+    expect(none.researchTotal).toBe(2);
+  });
+
+  it("researchLimit 은 recent 를 자르지 않는다", () => {
+    const rows = [bookEntry(ID1, { createdAt: T(1) }), paperEntry(ID2, { createdAt: T(2) })];
+    expect(groupSidebarHistory(rows, { researchLimit: 0 }).recent).toHaveLength(2);
+  });
+
+  it("updatedAt 이 빈 문자열이면 createdAt 으로 정렬한다", () => {
+    const blank = bookEntry(ID1, { createdAt: T(9), updatedAt: "" });
+    const mid = paperEntry(ID2, { createdAt: T(5) });
+    expect(groupSidebarHistory([mid, blank]).recent.map((x) => x.entry.id)).toEqual([ID1, ID2]);
+  });
+
   it("모르는 종류는 어느 묶음에도 넣지 않는다", () => {
     const alien = { id: ID3, kind: "video", title: "?", createdAt: T(9), params: {} } as unknown as HistoryEntry;
     const { research, recent } = groupSidebarHistory([alien, bookEntry(ID1)]);
@@ -106,5 +149,37 @@ describe("진행 중 판정", () => {
       bookEntry("55555555-5555-4555-8555-555555555555"),
     ];
     expect(countLiveResearch(list)).toBe(2);
+  });
+});
+
+describe("entryTime", () => {
+  it("updatedAt 을 먼저, 비었거나 없으면 createdAt 을 쓴다", () => {
+    expect(entryTime(bookEntry(ID1, { createdAt: T(1), updatedAt: T(2) }))).toBe(T(2));
+    expect(entryTime(bookEntry(ID1, { createdAt: T(1), updatedAt: "" }))).toBe(T(1));
+    expect(entryTime(bookEntry(ID1, { createdAt: T(1) }))).toBe(T(1));
+  });
+});
+
+describe("formatHistoryTime", () => {
+  const NOW = Date.parse("2026-09-26T12:00:00.000Z");
+  const ago = (sec: number) => new Date(NOW - sec * 1000).toISOString();
+
+  it("1분 미만은 방금, 1시간 미만은 N분 전, 하루 미만은 N시간 전", () => {
+    expect(formatHistoryTime(ago(30), NOW)).toBe("방금");
+    expect(formatHistoryTime(ago(5 * 60), NOW)).toBe("5분 전");
+    expect(formatHistoryTime(ago(3 * 3600), NOW)).toBe("3시간 전");
+  });
+
+  it("하루 이상은 월/일 날짜다", () => {
+    expect(formatHistoryTime(ago(3 * 86400), NOW)).toMatch(/\d+\.\s*\d+\./);
+  });
+
+  it("빈 문자열·읽을 수 없는 시각은 빈 문자열이다 — Invalid Date 를 내보내지 않는다", () => {
+    expect(formatHistoryTime("", NOW)).toBe("");
+    expect(formatHistoryTime("not-a-date", NOW)).toBe("");
+  });
+
+  it("미래 시각(시계 어긋남)은 방금으로 본다", () => {
+    expect(formatHistoryTime(ago(-120), NOW)).toBe("방금");
   });
 });

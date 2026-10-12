@@ -83,6 +83,7 @@ describe("테마 토큰 대비 4.5:1 이상", () => {
     ["다크", "--skx-ink", "--skx-white"],
     ["다크", "--skx-gray-1", "--skx-white"],
     ["다크", "--skx-gray-2", "--skx-white"],
+    ["다크", "--skx-teal-ink", "--skx-white"],
     ["다크", "--skx-on-accent", "--skx-accent"],
     // 딥리서치가 포인트색 배경 위에 color: var(--skx-white) 로 얹는 글자
     ["다크", "--skx-white", "--skx-primary"],
@@ -102,7 +103,7 @@ describe("테마 토큰 대비 4.5:1 이상", () => {
     ["밝은 읽는 면(.skx-reading)", "--skx-danger", "--skx-danger-bg"],
     ["밝은 읽는 면(.skx-reading)", "--skx-on-accent", "--skx-danger"],
     // 옅은 청록 틴트(--skx-glass-teal) 위에 얹는 포인트색·청록 글자(키워드 칩·선택된 메뉴 항목·KCI 배지).
-    // 다크의 틴트는 rgba 라 여기서 못 읽는다 — 다크는 짙은 면 위 7:1 이상(수동 계산)
+    // 다크의 틴트는 rgba 라 여기서 못 읽는다 — 다크는 틴트 아래 불투명 면(--skx-white) 위에서 잰다(위 다크 쌍, teal-ink 는 ≈5.7:1)
     ["밝은 읽는 면(.skx-reading)", "--skx-primary", "--skx-glass-teal"],
     ["밝은 읽는 면(.skx-reading)", "--skx-teal-ink", "--skx-glass-teal"],
   ];

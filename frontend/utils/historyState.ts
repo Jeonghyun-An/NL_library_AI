@@ -20,6 +20,10 @@ export interface HistoryStateOptions {
 
 export interface HistoryState {
   entries: Ref<HistoryEntry[]>;
+  /** 전체(종류를 안 준) refresh 가 한 번이라도 끝났는가 — 첫 로드 전의 빈 목록과 진짜 빈 목록을 가른다 */
+  loaded: Ref<boolean>;
+  /** 마지막으로 읽으려던 종류 중 목록을 못 읽은 것이 있는가(서버·캐시 모두 실패) */
+  listFailed: Ref<boolean>;
   byKind(kind: HistoryKind): ComputedRef<HistoryEntry[]>;
   refresh(kind?: HistoryKind): Promise<void>;
   add(input: HistoryEntryInput): Promise<HistoryEntry>;
@@ -44,6 +48,9 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
   const warn = opts.warn ?? ((message: string, err: unknown) => console.warn(`[history] ${message}`, err));
   const changed = () => opts.onChange?.();
   const entries = ref<HistoryEntry[]>([]);
+  const loaded = ref(false);
+  const listFailed = ref(false);
+  const failedKinds = new Set<HistoryKind>();
   const kindViews = new Map<HistoryKind, ComputedRef<HistoryEntry[]>>();
 
   function place(entry: HistoryEntry, toTop: boolean): void {
@@ -102,7 +109,9 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
           if ((clearedAt.get(k) ?? 0) > since) return;
           const kept = items.filter((e) => (removedAt.get(e.id) ?? 0) <= since);
           entries.value = [...entries.value.filter((e) => e.kind !== k), ...kept.map(toListItem)];
+          failedKinds.delete(k);
         } catch (e) {
+          failedKinds.add(k);
           warn("목록을 읽지 못했다", e);
         } finally {
           listing -= 1;
@@ -110,6 +119,9 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
         }
       }),
     );
+    listFailed.value = failedKinds.size > 0;
+    // 한 종류만 읽는 refresh(폴링·페이지의 부분 갱신)는 첫 로드가 끝났다는 뜻이 아니다. 실패해도 시도는 끝났다
+    if (!kind) loaded.value = true;
   }
 
   async function add(input: HistoryEntryInput): Promise<HistoryEntry> {
@@ -224,5 +236,5 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     }
   }
 
-  return { entries, byKind, refresh, add, patch, remove, clear, get, upsertResearch };
+  return { entries, loaded, listFailed, byKind, refresh, add, patch, remove, clear, get, upsertResearch };
 }

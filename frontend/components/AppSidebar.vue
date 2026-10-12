@@ -29,7 +29,7 @@
 
     <!-- 새 검색 — 랜딩 첫 화면으로 -->
     <div class="skx-lnb__new">
-      <button type="button" class="skx-newchat" @click="newSearch">
+      <button ref="newSearchBtn" type="button" class="skx-newchat" @click="newSearch">
         <span class="skx-newchat__icon"><img src="/img/ico-newchat.svg" alt="" /></span>
         <span class="skx-newchat__label">새 검색</span>
       </button>
@@ -54,89 +54,156 @@
     <!-- 검색기록 — 딥리서치 묶음 · 최근 검색(소장자료·논문 섞어 최신순) -->
     <div class="skx-history">
       <div class="skx-history__body">
+        <!-- 첫 로드가 끝나기 전의 빈 목록을 '기록 없음'으로 보이지 않게 loaded 를 기다린다 -->
         <ClientOnly>
-          <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty">
-            아직 검색 기록이 없어요.
-          </p>
+          <template v-if="loaded">
+            <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
+              {{ listFailed ? "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : "아직 검색 기록이 없어요." }}
+            </p>
 
-          <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순 -->
-          <section v-if="researchRows.length" class="skx-history__group" aria-labelledby="skx-history-research">
-            <div class="skx-history__head">
-              <p id="skx-history-research" class="skx-history__title">딥리서치</p>
-              <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
-            </div>
-            <ul class="skx-history__list">
-              <li v-for="h in researchRows" :key="h.id" class="skx-history__row">
+            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순 -->
+            <section v-if="researchRows.length" class="skx-history__group" aria-labelledby="skx-history-research">
+              <div class="skx-history__head">
+                <div class="skx-history__head-main">
+                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">딥리서치</h2>
+                  <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
+                </div>
                 <button
+                  ref="researchClearBtn"
                   type="button"
-                  :class="['skx-history-item', h.id === activeId && 'is-active']"
-                  :aria-current="h.id === activeId ? 'page' : undefined"
-                  @click="go(h)"
+                  class="skx-history__clear"
+                  @click="openConfirm('research')"
                 >
-                  <span class="skx-history-item__query">{{ h.title }}</span>
-                  <span class="skx-history-item__meta">
-                    <span :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
-                    <!-- 06d: 단계 문구(stage text)는 이 배지 옆에 붙인다 -->
-                    <span class="skx-history-item__time">{{ formatTime(h.updatedAt ?? h.createdAt) }}</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  class="skx-history-item__del"
-                  :aria-label="`'${h.title}' 기록 삭제`"
-                  @click="remove(h.id)"
-                >
-                  <img src="/img/ico-delete.svg" alt="" />
-                </button>
-              </li>
-            </ul>
-            <!-- 06d: 5개를 넘으면 여기에 '모두 보기 (N)' 줄 — N 은 groups.research.length -->
-          </section>
-
-          <!-- 최근 검색: 소장자료·논문 -->
-          <section v-if="recentRows.length" class="skx-history__group" aria-labelledby="skx-history-recent">
-            <div class="skx-history__head">
-              <p id="skx-history-recent" class="skx-history__title">최근 검색</p>
-              <button type="button" class="skx-history__clear" @click="confirmOpen = true">전체 삭제</button>
-            </div>
-
-            <div v-if="confirmOpen" class="skx-history__confirm" role="alertdialog" aria-live="assertive">
-              <p class="skx-history__confirm-text">{{ CLEAR_TEXT }}</p>
-              <div class="skx-history__confirm-actions">
-                <button type="button" class="skx-history__confirm-btn is-danger" @click="clearRecent">
-                  지우기
-                </button>
-                <button type="button" class="skx-history__confirm-btn" @click="confirmOpen = false">
-                  취소
+                  전체 삭제
                 </button>
               </div>
-            </div>
 
-            <ul class="skx-history__list">
-              <li v-for="r in recentRows" :key="r.entry.id" class="skx-history__row">
+              <div
+                v-if="confirming === 'research'"
+                class="skx-history__confirm"
+                role="alertdialog"
+                aria-label="딥리서치 기록 전체 삭제 확인"
+                aria-describedby="skx-history-research-confirm"
+                @keydown.esc.stop="closeConfirm('research')"
+              >
+                <p id="skx-history-research-confirm" class="skx-history__confirm-text">{{ CLEAR_TEXT.research }}</p>
+                <div class="skx-history__confirm-actions">
+                  <button
+                    ref="researchConfirmBtn"
+                    type="button"
+                    class="skx-history__confirm-btn is-danger"
+                    @click="clearGroup('research')"
+                  >
+                    지우기
+                  </button>
+                  <button type="button" class="skx-history__confirm-btn" @click="closeConfirm('research')">
+                    취소
+                  </button>
+                </div>
+              </div>
+
+              <ul class="skx-history__list">
+                <li v-for="h in researchRows" :key="h.id" class="skx-history__row">
+                  <button
+                    type="button"
+                    :class="['skx-history-item', h.id === activeId && 'is-active']"
+                    :aria-current="h.id === activeId ? 'page' : undefined"
+                    @click="go(h)"
+                  >
+                    <span class="skx-history-item__query">{{ h.title }}</span>
+                    <span class="skx-history-item__meta">
+                      <span :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
+                      <!-- 06d: 단계 문구(stage text)는 이 배지 옆에 붙인다 -->
+                      <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(h)) }}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    class="skx-history-item__del"
+                    :aria-label="`'${h.title}' 기록 삭제`"
+                    @click="removeRow(h.id, $event)"
+                  >
+                    <img src="/img/ico-delete.svg" alt="" />
+                  </button>
+                </li>
+              </ul>
+              <!-- 5줄을 넘는 딥리서치는 '더 보기'로 이 자리에서 펼친다.
+                   06d: 전용 화면으로 가는 '모두 보기 (N)' 줄은 이 아래에 둔다 — N 은 groups.researchTotal -->
+              <button
+                v-if="researchHiddenCount > 0 || researchExpanded"
+                type="button"
+                class="skx-history__more"
+                :aria-expanded="researchExpanded"
+                @click="researchExpanded = !researchExpanded"
+              >
+                {{ researchExpanded ? "접기" : `더 보기 (${researchHiddenCount})` }}
+              </button>
+            </section>
+
+            <!-- 최근 검색: 소장자료·논문 -->
+            <section v-if="recentRows.length" class="skx-history__group" aria-labelledby="skx-history-recent">
+              <div class="skx-history__head">
+                <h2 id="skx-history-recent" class="skx-history__title" tabindex="-1">최근 검색</h2>
                 <button
+                  ref="recentClearBtn"
                   type="button"
-                  :class="['skx-history-item', r.entry.id === activeId && 'is-active']"
-                  :aria-current="r.entry.id === activeId ? 'page' : undefined"
-                  @click="go(r.entry)"
+                  class="skx-history__clear"
+                  @click="openConfirm('recent')"
                 >
-                  <span class="skx-history-item__query">{{ r.entry.title }}</span>
-                  <span class="skx-history-item__meta">
-                    <span class="skx-history-chip">{{ r.label }}</span>
-                    <span class="skx-history-item__time">{{ formatTime(r.entry.updatedAt ?? r.entry.createdAt) }}</span>
-                  </span>
+                  전체 삭제
                 </button>
-                <button
-                  type="button"
-                  class="skx-history-item__del"
-                  :aria-label="`'${r.entry.title}' 기록 삭제`"
-                  @click="remove(r.entry.id)"
-                >
-                  <img src="/img/ico-delete.svg" alt="" />
-                </button>
-              </li>
-            </ul>
-          </section>
+              </div>
+
+              <div
+                v-if="confirming === 'recent'"
+                class="skx-history__confirm"
+                role="alertdialog"
+                aria-label="최근 검색 기록 전체 삭제 확인"
+                aria-describedby="skx-history-recent-confirm"
+                @keydown.esc.stop="closeConfirm('recent')"
+              >
+                <p id="skx-history-recent-confirm" class="skx-history__confirm-text">{{ CLEAR_TEXT.recent }}</p>
+                <div class="skx-history__confirm-actions">
+                  <button
+                    ref="recentConfirmBtn"
+                    type="button"
+                    class="skx-history__confirm-btn is-danger"
+                    @click="clearGroup('recent')"
+                  >
+                    지우기
+                  </button>
+                  <button type="button" class="skx-history__confirm-btn" @click="closeConfirm('recent')">
+                    취소
+                  </button>
+                </div>
+              </div>
+
+              <ul class="skx-history__list">
+                <li v-for="r in recentRows" :key="r.entry.id" class="skx-history__row">
+                  <button
+                    type="button"
+                    :class="['skx-history-item', r.entry.id === activeId && 'is-active']"
+                    :aria-current="r.entry.id === activeId ? 'page' : undefined"
+                    @click="go(r.entry)"
+                  >
+                    <span class="skx-history-item__query">{{ r.entry.title }}</span>
+                    <span class="skx-history-item__meta">
+                      <span class="skx-history-chip">{{ r.label }}</span>
+                      <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(r.entry)) }}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    class="skx-history-item__del"
+                    :aria-label="`'${r.entry.title}' 기록 삭제`"
+                    @click="removeRow(r.entry.id, $event)"
+                  >
+                    <img src="/img/ico-delete.svg" alt="" />
+                  </button>
+                </li>
+              </ul>
+            </section>
+          </template>
         </ClientOnly>
       </div>
     </div>
@@ -159,15 +226,19 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
-import { countLiveResearch, groupSidebarHistory } from "~/utils/sidebarGroups";
+import { countLiveResearch, entryTime, formatHistoryTime, groupSidebarHistory } from "~/utils/sidebarGroups";
 
 const props = defineProps<{ collapsed?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
 
-// 딥리서치 묶음에 보이는 행 수 — 넘치는 만큼은 06d 의 '모두 보기 (N)' 가 맡는다
+// 딥리서치 묶음이 처음 보이는 행 수 — 넘치는 만큼은 '더 보기 (N)' 로 이 자리에서 펼친다(전용 화면은 06d '모두 보기')
 const RESEARCH_ROW_LIMIT = 5;
-// 최근 검색(도서·논문) 전체 삭제 확인 문구 — 딥리서치는 이 삭제에 들지 않는다
-const CLEAR_TEXT = "최근 검색 기록을 모두 지울까요? 딥리서치 기록은 지워지지 않습니다.";
+type ClearGroup = "research" | "recent";
+// 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다
+const CLEAR_TEXT: Record<ClearGroup, string> = {
+  research: "딥리서치 기록을 모두 지울까요? 보고서 자체는 지워지지 않습니다.",
+  recent: "최근 검색 기록(소장자료·논문)을 모두 지울까요? 딥리서치 기록은 지워지지 않습니다.",
+};
 const POLL_MS = 30_000;
 
 const route = useRoute();
@@ -178,43 +249,94 @@ const history = useHistory();
 // 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다
 const open = useState<boolean>("skx:lnb-open", () => true);
 const isCollapsed = computed(() => !open.value || !!props.collapsed);
-const confirmOpen = ref(false);
 const v1Map = ref<Record<string, string>>({});
+// 첫 목록을 읽기 전·읽지 못한 때에 '기록 없음'을 띄우지 않으려고 쓴다(최상위 ref 라 템플릿에서 풀린다)
+const { loaded, listFailed } = history;
 
-const groups = computed(() => groupSidebarHistory(history.entries.value));
-const researchRows = computed(() => groups.value.research.slice(0, RESEARCH_ROW_LIMIT));
+const researchExpanded = ref(false);
+const confirming = ref<ClearGroup | null>(null);
+const newSearchBtn = ref<HTMLButtonElement | null>(null);
+const researchClearBtn = ref<HTMLButtonElement | null>(null);
+const recentClearBtn = ref<HTMLButtonElement | null>(null);
+const researchConfirmBtn = ref<HTMLButtonElement | null>(null);
+const recentConfirmBtn = ref<HTMLButtonElement | null>(null);
+
+const groups = computed(() =>
+  groupSidebarHistory(history.entries.value, {
+    researchLimit: researchExpanded.value ? undefined : RESEARCH_ROW_LIMIT,
+  }),
+);
+const researchRows = computed(() => groups.value.research);
+const researchHiddenCount = computed(() => groups.value.researchTotal - groups.value.research.length);
 const recentRows = computed(() => groups.value.recent);
-const liveCount = computed(() => countLiveResearch(groups.value.research));
+// 진행 중 수·폴링은 자르기 전 전체에서 센다 — 접힌 줄 밖의 진행 중 건도 놓치지 않는다
+const liveCount = computed(() => countLiveResearch(history.entries.value));
 const hasLiveResearch = computed(() => liveCount.value > 0);
 const activeId = computed(() => activeIdFor(route.path, route.query, v1Map.value));
 
-// 기록이 하나씩 지워져 비면 열려 있던 확인창도 함께 닫는다 — 안 닫으면 다음 기록이 생길 때 되살아난다
+// 기록이 하나씩 지워져 묶음이 비면 열려 있던 확인창을 닫고, 5줄 이하로 줄면 펼침도 푼다 —
+// 안 풀면 다음에 기록이 늘 때 처음부터 펼쳐진 채 나타난다
 watch(
-  () => recentRows.value.length,
-  (n) => {
-    if (!n) confirmOpen.value = false;
+  () => [groups.value.researchTotal, recentRows.value.length] as const,
+  ([researchTotal, recentCount]) => {
+    if ((confirming.value === "research" && !researchTotal) || (confirming.value === "recent" && !recentCount)) {
+      confirming.value = null;
+    }
+    if (researchTotal <= RESEARCH_ROW_LIMIT) researchExpanded.value = false;
   },
 );
+
+const OPENER = { research: researchClearBtn, recent: recentClearBtn } as const;
+const CONFIRM = { research: researchConfirmBtn, recent: recentConfirmBtn } as const;
+
+// 확인창이 열리면 확인 버튼으로, 닫히면 연 버튼으로 초점을 옮긴다 — 키보드 사용자가 자리를 잃지 않게
+async function openConfirm(group: ClearGroup) {
+  confirming.value = group;
+  await nextTick();
+  CONFIRM[group].value?.focus();
+}
+
+async function closeConfirm(group: ClearGroup) {
+  confirming.value = null;
+  await nextTick();
+  OPENER[group].value?.focus();
+}
+
+// 지운 묶음은 화면에서 사라져 되돌아갈 버튼이 없다 — 맨 위 새 검색 버튼으로 초점을 옮긴다
+async function clearGroup(group: ClearGroup) {
+  confirming.value = null;
+  // 목록은 바로 비고(상태가 먼저 지운다) 서버 응답은 기다리지 않는다. 최근 검색은 도서·논문 둘이라 하이브리드 저장소가 줄 세워 보낸다
+  const done =
+    group === "research"
+      ? history.clear("research")
+      : Promise.all([history.clear("book"), history.clear("paper")]);
+  await nextTick();
+  const opener = OPENER[group].value;
+  (opener?.isConnected ? opener : newSearchBtn.value)?.focus();
+  await done;
+}
+
+// 행을 지우면 초점을 다음 행으로, 마지막 행이었으면 그 묶음 제목으로, 묶음이 사라지면 새 검색 버튼으로 옮긴다
+function removeRow(id: string, ev: Event) {
+  const li = (ev.currentTarget as HTMLElement).closest("li");
+  const nextRow = li?.nextElementSibling?.querySelector<HTMLElement>(".skx-history-item") ?? null;
+  const title = li?.closest("section")?.querySelector<HTMLElement>(".skx-history__title") ?? null;
+  void history.remove(id);
+  void nextTick(() => {
+    const target = nextRow?.isConnected ? nextRow : title?.isConnected ? title : newSearchBtn.value;
+    target?.focus();
+  });
+}
 
 // 랜딩의 첫 화면으로 간다. '/' 에서 결과(?q=·?h=)를 보던 중이면 쿼리가 사라지는 이동이라,
 // pages/index.vue 의 route.query watch 가 같은 페이지에서 goLanding 으로 결과를 걷는다 — 이쪽에서 따로 비울 상태는 없다
 function newSearch() {
-  confirmOpen.value = false;
+  confirming.value = null;
   void router.push({ path: "/" });
 }
 
 function go(h: HistoryEntry) {
   router.push(routeFor(h));
-}
-
-function remove(id: string) {
-  void history.remove(id);
-}
-
-async function clearRecent() {
-  confirmOpen.value = false;
-  await history.clear("book");
-  await history.clear("paper");
 }
 
 function badgeOf(h: HistoryEntry): { label: string; tone: string } {
@@ -233,16 +355,6 @@ function badgeOf(h: HistoryEntry): { label: string; tone: string } {
     default:
       return { label: "진행 중", tone: "running" };
   }
-}
-
-function formatTime(ts: string): string {
-  if (!ts) return "";
-  const d = new Date(ts);
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return "방금";
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-  return d.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" });
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -308,6 +420,12 @@ onBeforeUnmount(() => {
   gap: 0.4rem;
   min-height: 1.2rem;
 }
+.skx-history__head-main {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
 .skx-history__group .skx-history__title {
   color: var(--skx-teal-ink);
 }
@@ -318,9 +436,9 @@ onBeforeUnmount(() => {
   border-radius: var(--skx-radius-pill);
   background: var(--skx-primary);
   color: var(--skx-on-accent);
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 .skx-history__clear {
   padding: 0.1rem 0.4rem;
@@ -332,6 +450,21 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .skx-history__clear:hover {
+  color: var(--skx-primary);
+  background: var(--skx-glass-teal);
+}
+/* 더 보기 / 접기 — 묶음 맨 아래의 조용한 글자 버튼 */
+.skx-history__more {
+  align-self: flex-start;
+  padding: 0.2rem 0.4rem;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  background: none;
+  font-size: 0.6rem;
+  color: var(--skx-teal-ink);
+  cursor: pointer;
+}
+.skx-history__more:hover {
   color: var(--skx-primary);
   background: var(--skx-glass-teal);
 }
@@ -393,18 +526,18 @@ onBeforeUnmount(() => {
   border-radius: var(--skx-radius-pill);
   background: var(--skx-glass-teal);
   color: var(--skx-teal-ink);
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   font-weight: 600;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 /* 상태 배지 — 진행 중은 산호 면, 승인 대기는 산호 테두리(사용자가 움직여야 하는 상태) */
 .skx-history-badge {
   flex: none;
   padding: 0 0.3rem;
   border-radius: var(--skx-radius-pill);
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   font-weight: 600;
-  line-height: 1.6;
+  line-height: 1.5;
   background: var(--skx-primary);
   color: var(--skx-on-accent);
 }

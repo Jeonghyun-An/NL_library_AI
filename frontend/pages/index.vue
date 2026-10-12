@@ -848,17 +848,19 @@ onMounted(async () => {
   nextTick(() => updateTabSlider());
   window.addEventListener("resize", updateTabSlider);
 
-  // Newbooks countup
-  const duration = 1600;
-  const startTime = performance.now();
-  const tick = (now: number) => {
-    const p = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - p, 3);
-    newbooksCount.value = Math.round(NEW_BOOKS_TARGET * eased);
-    if (p < 1) requestAnimationFrame(tick);
-    else newbooksCount.value = NEW_BOOKS_TARGET;
-  };
-  requestAnimationFrame(tick);
+  // Newbooks countup — 신작도서 블록이 숨겨져 있으면(SHOW_MOCKS=false) 보이지 않는 숫자를 돌리지 않는다
+  if (SHOW_MOCKS) {
+    const duration = 1600;
+    const startTime = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      newbooksCount.value = Math.round(NEW_BOOKS_TARGET * eased);
+      if (p < 1) requestAnimationFrame(tick);
+      else newbooksCount.value = NEW_BOOKS_TARGET;
+    };
+    requestAnimationFrame(tick);
+  }
 
   document.addEventListener("click", onDocClick);
 });

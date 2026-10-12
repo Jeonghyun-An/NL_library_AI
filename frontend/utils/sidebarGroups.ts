@@ -13,8 +13,15 @@ export interface RecentItem {
   label: RecentLabel;
 }
 
+export interface SidebarGroupOptions {
+  /** research 를 앞에서 이만큼만 돌려준다(진행 중·최신순으로 정렬한 뒤 자른다). 없으면 자르지 않는다 */
+  researchLimit?: number;
+}
+
 export interface SidebarGroups {
   research: ResearchEntry[];
+  /** 자르기 전 딥리서치 수 — '더 보기 (N)' 의 N 은 researchTotal - research.length */
+  researchTotal: number;
   recent: RecentItem[];
 }
 
@@ -28,10 +35,27 @@ export function countLiveResearch(items: readonly HistoryEntry[]): number {
   return items.filter(isLiveResearch).length;
 }
 
+/** 목록에 보일 시각 — updatedAt 이 비어 있으면(빈 문자열 포함) createdAt */
+export function entryTime(entry: HistoryEntry): string {
+  return entry.updatedAt || entry.createdAt;
+}
+
 // 읽을 수 없는 시각은 가장 오래된 것으로 쳐 맨 아래로 보낸다
 function timeOf(entry: HistoryEntry): number {
-  const ms = Date.parse(entry.updatedAt ?? entry.createdAt);
+  const ms = Date.parse(entryTime(entry));
   return Number.isNaN(ms) ? Number.NEGATIVE_INFINITY : ms;
+}
+
+/** 목록 시각 문구 — 방금 · N분 전 · N시간 전 · 월/일. 읽을 수 없는 시각은 빈 문자열(Invalid Date 를 내보내지 않는다) */
+export function formatHistoryTime(ts: string, now: number = Date.now()): string {
+  if (!ts) return "";
+  const ms = Date.parse(ts);
+  if (Number.isNaN(ms)) return "";
+  const diff = (now - ms) / 1000;
+  if (diff < 60) return "방금";
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  return new Date(ms).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" });
 }
 
 // 최신순. 같은 시각이면 들어온 순서를 지킨다(정렬이 안정적이라고 믿지 않고 순번을 함께 비교한다)
@@ -44,23 +68,27 @@ function newestFirst<T>(list: T[], entryOf: (item: T) => HistoryEntry, rank: (it
 
 /**
  * 사이드바 기록을 두 묶음으로 가른다.
- * - research: 딥리서치만. 진행 중·승인 대기가 먼저, 그다음 최신순
+ * - research: 딥리서치만. 진행 중·승인 대기가 먼저, 그다음 최신순. researchLimit 이 있으면 정렬한 뒤 앞에서 자른다
+ * - researchTotal: 자르기 전 딥리서치 수
  * - recent: 도서·논문을 섞어 최신순, 종류 라벨('소장자료'·'논문')을 붙인다
  * 모르는 종류는 어느 쪽에도 넣지 않는다. 입력 배열은 바꾸지 않는다.
  */
-export function groupSidebarHistory(items: readonly HistoryEntry[]): SidebarGroups {
+export function groupSidebarHistory(items: readonly HistoryEntry[], opts: SidebarGroupOptions = {}): SidebarGroups {
   const research: ResearchEntry[] = [];
   const recent: RecentItem[] = [];
   for (const entry of items) {
     if (entry.kind === "research") research.push(entry);
     else if (entry.kind === "book" || entry.kind === "paper") recent.push({ entry, label: RECENT_LABEL[entry.kind] });
   }
+  const sorted = newestFirst(
+    research,
+    (e) => e,
+    (e) => (e.research && TOP_STATUSES.has(e.research.status) ? 0 : 1),
+  );
+  const limit = opts.researchLimit;
   return {
-    research: newestFirst(
-      research,
-      (e) => e,
-      (e) => (e.research && TOP_STATUSES.has(e.research.status) ? 0 : 1),
-    ),
+    research: limit === undefined ? sorted : sorted.slice(0, Math.max(0, limit)),
+    researchTotal: sorted.length,
     recent: newestFirst(recent, (r) => r.entry),
   };
 }
