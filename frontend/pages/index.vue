@@ -13,12 +13,12 @@
           <SkovixWordmark class="skx-brand__logo" />
         </h1>
 
-        <!-- 세 갈래 전환: 소장자료 검색 · 논문 검색 · 딥리서치(논문 패널 + 딥리서치 모드) -->
+        <!-- 두 갈래 전환: 자료 검색 · 논문 검색. 딥리서치는 갈래가 아니라 논문 패널의 + 메뉴·슬래시 명령 모드다 -->
         <div
           class="skx-seg"
           role="tablist"
           aria-label="검색 유형"
-          :style="{ '--seg-i': String(tabIndex) }"
+          :style="{ '--seg-i': String(tabIndex), '--seg-n': String(LANDING_TABS.length) }"
           @keydown="onTabsKeydown"
         >
           <span class="skx-seg__thumb" aria-hidden="true"></span>
@@ -27,11 +27,11 @@
             :id="`skx-tab-${t.id}`"
             :key="t.id"
             type="button"
-            :class="['skx-seg__btn', tab === t.id && 'is-active']"
+            :class="['skx-seg__btn', mode === t.id && 'is-active']"
             role="tab"
-            :aria-selected="tab === t.id"
+            :aria-selected="mode === t.id"
             :aria-controls="t.id === 'book' ? 'skx-panel-book' : 'skx-panel-paper'"
-            :tabindex="tab === t.id ? 0 : -1"
+            :tabindex="mode === t.id ? 0 : -1"
             @click="selectTab(t.id)"
           >
             <span class="skx-seg__full">{{ t.label }}</span>
@@ -89,12 +89,12 @@
           </div>
         </div>
 
-        <!-- 논문·딥리서치 패널 — 두 갈래가 입력창을 같이 쓴다. 딥리서치는 + 메뉴의 딥리서치 모드가 켜진 상태 -->
+        <!-- 논문 패널 — 딥리서치는 이 입력창에서 + 메뉴의 딥리서치 모드를 켠 상태(켜져 있어도 전환은 '논문 검색') -->
         <div
           id="skx-panel-paper"
           class="skx-panel"
           role="tabpanel"
-          :aria-labelledby="tab === 'deep' ? 'skx-tab-deep' : 'skx-tab-paper'"
+          aria-labelledby="skx-tab-paper"
           :hidden="mode !== 'paper'"
         >
           <div class="skx-search">
@@ -139,8 +139,8 @@
                 </button>
               </li>
             </ul>
-            <!-- 논문 필터 드롭다운 -->
-            <div class="skx-filters">
+            <!-- 논문 필터 드롭다운 — 딥리서치 모드에서는 쓰지 않아 숨긴다(고른 값은 그대로 두어 논문 검색으로 돌아오면 보인다) -->
+            <div v-if="!deepResearch" class="skx-filters">
               <div :class="['skx-select', filterOpen && 'is-open']">
                 <button
                   type="button"
@@ -612,7 +612,8 @@ import {
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
-import { LANDING_TABS, landingTabOf, landingTabStep, planLandingSelect, type LandingTab } from "~/utils/landingTabs";
+import { LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
+import { queryWithoutStart, readStart } from "~/utils/landingStart";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
@@ -727,16 +728,15 @@ function beginRun(): AbortSignal {
 }
 
 // ── Publishing additions ──────────────────────────────────────
-// 세 갈래 전환 — 데이터 모드(mode)는 도서/논문 둘뿐이고, 딥리서치는 논문 패널에서 + 메뉴의 딥리서치 모드가 켜진 상태다.
-// 켜짐 여부의 정본은 + 메뉴(SearchPlusMenu)다 — 전환·메뉴·슬래시 명령 어디서 켜고 꺼도 메뉴가 update:mode 로 알려
-// deepResearch 가 따라오고, 전환의 선택 표시는 거기서 계산한다
+// 두 갈래 전환 — 갈래는 데이터 모드(mode)와 같다(도서/논문). 딥리서치는 논문 패널에서 + 메뉴·슬래시 명령으로 켜는 모드라
+// 켜져 있어도 전환은 '논문 검색'이다. 켜짐 여부의 정본은 + 메뉴(SearchPlusMenu)다 — 어디서 켜고 꺼도 메뉴가 update:mode 로
+// 알려 deepResearch 가 따라온다. 이 값은 KCI 등재 필터를 숨기는 데 쓴다
 const deepResearch = ref(false);
 const plusMenu = ref<{
   activateMode: (id: SearchModeId, options?: { focus?: boolean }) => void;
   clearMode: () => void;
 } | null>(null);
-const tab = computed<LandingTab>(() => landingTabOf(mode.value, deepResearch.value));
-const tabIndex = computed(() => LANDING_TABS.findIndex((t) => t.id === tab.value));
+const tabIndex = computed(() => LANDING_TABS.findIndex((t) => t.id === mode.value));
 
 function onPlusMode(id: SearchModeId | null) {
   deepResearch.value = id === "deep-research";
@@ -755,40 +755,46 @@ const NEW_BOOKS_TARGET = 1245;
 // Bookmark
 const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
-// 갈래를 고른다. 딥리서치는 논문 패널을 보인 뒤 메뉴의 딥리서치 모드를 켜고, 다른 갈래로 가면 끈다.
-// 초점은 옮기지 않는다 — 방향키로 갈래를 옮기는 중이거나 모바일에서 갈래만 바꿀 때 입력창·키보드가 끼어들지 않게
-async function selectTab(next: LandingTab) {
-  if (next === tab.value) return;
-  const plan = planLandingSelect(next, deepResearch.value);
-  mode.value = plan.mode;
-  if (plan.clearDeep) dropDeepResearch();
-  if (plan.activateDeep) {
-    // 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창은 초점·커서가 가지 않는다
-    await nextTick();
-    plusMenu.value?.activateMode("deep-research", { focus: false });
-  }
+// 갈래를 고른다. 초점은 옮기지 않는다 — 방향키로 갈래를 옮기는 중이거나 모바일에서 갈래만 바꿀 때 입력창·키보드가 끼어들지 않게.
+// 자료 검색으로 가면 논문 패널에 켜 둔 딥리서치 모드는 끈다(숨은 패널에 칩이 남지 않게)
+function selectTab(next: LandingTab) {
+  if (next === mode.value) return;
+  mode.value = next;
+  if (next === "book" && deepResearch.value) dropDeepResearch();
 }
 
-// 딥리서치 모드를 끈다. 화면 상태(deepResearch)도 바로 내린다 — 같은 틱에 랜딩이 걷히면(소장자료 기록 복원)
-// 메뉴가 unmount 돼 update:mode 가 오지 않을 수 있고, 그러면 돌아온 랜딩의 '논문 검색'이 딥리서치로 표시된다
+// 딥리서치 모드를 끈다. 화면 상태(deepResearch)도 바로 내린다 — 같은 틱에 랜딩이 걷히면(자료 검색 기록 복원)
+// 메뉴가 unmount 돼 update:mode 가 오지 않을 수 있고, 그러면 돌아온 논문 패널에 딥리서치 상태가 남는다
 function dropDeepResearch() {
   deepResearch.value = false;
   plusMenu.value?.clearMode();
 }
 
-// 기록 복원처럼 코드가 소장자료 화면으로 돌릴 때 — 딥리서치 모드도 함께 끈다
+// 기록 복원처럼 코드가 자료 검색 화면으로 돌릴 때 — 딥리서치 모드도 함께 끈다
 function showBookMode() {
-  const plan = planLandingSelect("book", deepResearch.value);
-  mode.value = plan.mode;
-  if (plan.clearDeep) dropDeepResearch();
+  mode.value = "book";
+  if (deepResearch.value) dropDeepResearch();
+}
+
+// 사이드바 [+ 연구 시작하기](?start=deep-research) — 랜딩의 논문 패널에 딥리서치 모드를 켜고 입력창에 초점을 준다.
+// 결과 화면이었다면 랜딩으로 걷는다. 처리한 뒤 주소에서 start 만 지운다(남기면 새로고침마다 다시 켜진다).
+// 이미 '/' 에 있어도 쿼리가 바뀌므로 watch 가 같은 길로 받는다
+async function startFromQuery() {
+  if (route.path !== "/" || !readStart(route.query)) return;
+  void router.replace({ query: queryWithoutStart(route.query) });
+  if (view.value !== "landing") goLanding();
+  mode.value = "paper";
+  // 논문 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창에는 초점이 가지 않는다
+  await nextTick();
+  plusMenu.value?.activateMode("deep-research");
 }
 
 // tablist 키보드: 좌우·Home·End 로 갈래를 옮기고(자동 선택) 초점도 그 갈래로 따라간다
 function onTabsKeydown(e: KeyboardEvent) {
-  const next = landingTabStep(tab.value, e.key, e);
+  const next = landingTabStep(mode.value, e.key, e);
   if (!next) return;
   e.preventDefault();
-  void selectTab(next);
+  selectTab(next);
   document.getElementById(`skx-tab-${next}`)?.focus();
 }
 
@@ -812,6 +818,7 @@ onMounted(async () => {
   if (!process.client) return;
   // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
   restoreFromQuery();
+  void startFromQuery();
 
   // Newbooks countup — 신작도서 블록이 숨겨져 있으면(SHOW_MOCKS=false) 보이지 않는 숫자를 돌리지 않는다
   if (SHOW_MOCKS) {
@@ -1075,6 +1082,13 @@ watch(
   [() => route.query.h ?? route.query.restore, () => route.query.q],
   () => {
     restoreFromQuery();
+  },
+);
+// 사이드바 [+ 연구 시작하기] 는 '/' 에 이미 있어도 ?start= 만 바뀌는 이동이다
+watch(
+  () => route.query.start,
+  () => {
+    void startFromQuery();
   },
 );
 

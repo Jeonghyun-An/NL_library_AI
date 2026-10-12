@@ -56,25 +56,27 @@
         <!-- 첫 로드가 끝나기 전의 빈 목록을 '기록 없음'으로 보이지 않게 loaded 를 기다린다 -->
         <ClientOnly>
           <template v-if="loaded">
-            <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
-              {{ listFailed ? "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : "아직 검색 기록이 없어요." }}
-            </p>
-
-            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순 -->
-            <section v-if="researchRows.length" class="skx-history__group" aria-labelledby="skx-history-research">
+            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [+ 연구 시작하기]는 보인다 -->
+            <section class="skx-history__group" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
                 <div class="skx-history__head-main">
                   <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">딥리서치</h2>
                   <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
                 </div>
-                <button
-                  ref="researchClearBtn"
-                  type="button"
-                  class="skx-history__clear"
-                  @click="openConfirm('research')"
-                >
-                  전체 삭제
-                </button>
+                <div class="skx-history__head-actions">
+                  <button type="button" class="skx-history__start" @click="startDeepResearch">
+                    <span aria-hidden="true">+</span> 연구 시작하기
+                  </button>
+                  <button
+                    v-if="researchRows.length"
+                    ref="researchClearBtn"
+                    type="button"
+                    class="skx-history__clear"
+                    @click="openConfirm('research')"
+                  >
+                    전체 삭제
+                  </button>
+                </div>
               </div>
 
               <div
@@ -101,7 +103,7 @@
                 </div>
               </div>
 
-              <ul class="skx-history__list">
+              <ul v-if="researchRows.length" class="skx-history__list">
                 <li v-for="h in researchRows" :key="h.id" class="skx-history__row">
                   <button
                     type="button"
@@ -138,6 +140,10 @@
                 {{ researchExpanded ? "접기" : `더 보기 (${researchHiddenCount})` }}
               </button>
             </section>
+
+            <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
+              {{ listFailed ? "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : "아직 검색 기록이 없어요." }}
+            </p>
 
             <!-- 최근 검색: 소장자료·논문 -->
             <section v-if="recentRows.length" class="skx-history__group" aria-labelledby="skx-history-recent">
@@ -225,6 +231,7 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
+import { deepResearchStartRoute } from "~/utils/landingStart";
 import { countLiveResearch, entryTime, formatHistoryTime, groupSidebarHistory } from "~/utils/sidebarGroups";
 
 const props = defineProps<{ collapsed?: boolean }>();
@@ -339,6 +346,13 @@ function newSearch() {
   void router.push({ path: "/" });
 }
 
+// 딥리서치 묶음의 [+ 연구 시작하기] — 랜딩에서 논문 패널 + 딥리서치 모드를 켠다(pages/index.vue 가 ?start= 를 받는다).
+// '/' 에 이미 있어도 쿼리가 바뀌는 이동이라 같은 길로 받는다
+function startDeepResearch() {
+  confirming.value = null;
+  void router.push(deepResearchStartRoute());
+}
+
 function go(h: HistoryEntry) {
   router.push(routeFor(h));
 }
@@ -436,6 +450,36 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 0.4rem;
   min-height: 1.2rem;
+}
+.skx-history__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: none;
+}
+/* [+ 연구 시작하기] — 묶음 머리의 작은 산호 테두리 알약. 눌러 랜딩에서 딥리서치를 시작한다 */
+.skx-history__start {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-pill);
+  background: none;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--skx-primary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.skx-history__start:hover {
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
+}
+.skx-history__start:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
 }
 .skx-history__head-main {
   display: flex;

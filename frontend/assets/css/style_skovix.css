@@ -892,11 +892,11 @@ a:hover {
 /* [E] 타이틀 */
 
 /* [S] 검색 갈래 전환 */
-/* 소장자료 · 논문 · 딥리서치 세 갈래 알약. 칸 폭이 같아(grid 1fr) 선택 표시(thumb)가 칸 수만큼만 옮겨 간다 — 위치는 --seg-i(0·1·2) */
+/* 자료 검색 · 논문 검색 두 갈래 알약. 칸 폭이 같아(grid 1fr) 선택 표시(thumb)가 칸 폭만큼만 옮겨 간다 — 위치는 --seg-i(0부터), 칸 수는 --seg-n */
 .skx-seg {
   position: relative;
   display: inline-grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--seg-n, 2), 1fr);
   max-width: 100%;
   padding: 0.2rem;
   background: var(--skx-glass);
@@ -908,7 +908,7 @@ a:hover {
   top: 0.2rem;
   bottom: 0.2rem;
   left: 0.2rem;
-  width: calc((100% - 0.4rem) / 3);
+  width: calc((100% - 0.4rem) / var(--seg-n, 2));
   background: var(--skx-primary);
   border-radius: var(--skx-radius-pill);
   transform: translateX(calc(var(--seg-i, 0) * 100%));
@@ -5350,6 +5350,39 @@ a:hover {
   .skx-rel-pop-leave-active {
     transition: none;
   }
+}
+
+/* ── 논문 결과: AI 분석 아래 [딥리서치로 이어서 조사하기] ── */
+.skx-deeper {
+  display: flex;
+  justify-content: flex-start;
+  /* 결과 카드의 칸 사이(2rem)를 절반으로 — AI 분석 패널에 붙은 줄로 보이게 */
+  margin-top: -1rem;
+}
+.skx-deeper__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-pill);
+  background: var(--skx-glass-teal);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.skx-deeper__btn:hover {
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
+}
+.skx-deeper__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
 }
 
 /* ── 푸터 ─────────────────────────────── */

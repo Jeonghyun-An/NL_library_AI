@@ -98,7 +98,7 @@ const props = withDefaults(
   { kind: "paper", disabled: false },
 );
 // update:mode — 켜진 모드가 바뀔 때마다(+ 메뉴·슬래시 명령·× 해제·페이지의 activateMode/clearMode) 새 모드 id 를 알린다.
-// 끈 상태는 null. 메인 랜딩의 세 갈래 전환이 이 값으로 선택 표시를 맞춘다
+// 끈 상태는 null. 메인 랜딩이 이 값으로 딥리서치 모드 여부(KCI 등재 필터 숨김 등)를 맞춘다
 const emit = defineEmits<{ "update:modelValue": [value: string]; "update:mode": [id: SearchModeId | null] }>();
 
 const { startResearch } = useResearchStarter();
@@ -224,14 +224,14 @@ function activateMode(id: SearchModeId, options: { focus?: boolean } = {}): void
   field.setSelectionRange(field.value.length, field.value.length);
 }
 
-// 페이지가 칩을 끈다(메인 랜딩에서 딥리서치 갈래를 떠날 때). × 버튼과 달리 초점을 옮기지 않는다
+// 페이지가 칩을 끈다(메인 랜딩에서 자료 검색 갈래로 갈 때). × 버튼과 달리 초점을 옮기지 않는다
 function clearMode(): void {
   deactivate();
 }
 
 defineExpose({ activateMode, clearMode });
 
-// sync — 같은 틱에 메뉴가 unmount 되는 경로(딥리서치 갈래에서 소장자료 기록을 열어 랜딩이 걷힘)에서도 알림이 가게,
+// sync — 같은 틱에 메뉴가 unmount 되는 경로(딥리서치 모드가 켜진 채 자료 검색 기록을 열어 랜딩이 걷힘)에서도 알림이 가게,
 // 기본(pre) 플러시는 unmount 로 감시자가 멈추면 한 번도 돌지 못한다
 watch(active, (mode) => emit("update:mode", mode?.id ?? null), { flush: "sync" });
 

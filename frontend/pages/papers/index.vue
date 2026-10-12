@@ -43,7 +43,7 @@
 
       <!-- 검색바 -->
       <div class="skx-rsearch">
-        <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" />
+        <ResearchSearchPlusMenu ref="plusMenu" v-model="currentQuery" kind="paper" />
         <input
           type="text"
           class="skx-rsearch__input"
@@ -189,6 +189,13 @@
               질문하며 분석해보세요
             </p>
           </section>
+
+          <!-- 이 결과에서 이어서 딥리서치로(06d N4 를 round08 이 대신한다). 바로 시작하지 않고 위 검색바에 질문을 채워 고쳐 보내게 한다 -->
+          <div v-if="paperResult?.books.length" class="skx-deeper">
+            <button type="button" class="skx-deeper__btn" @click="continueAsDeepResearch">
+              <span aria-hidden="true">+</span> 딥리서치로 이어서 조사하기
+            </button>
+          </div>
 
           <!-- 논문 목록 -->
           <section class="skx-paper-section" aria-label="논문 검색 결과 목록">
@@ -893,6 +900,14 @@ function goLanding() {
 // 논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안(?draft=) — 검색하지 않고 랜딩 입력창에 딥리서치 칩을
 // 켠 채 채운다. 주소에서는 draft 만 지운다: 남겨 두면 새로고침·뒤로 가기로 올 때마다 고쳐 쓰던 글을 초안이 다시 덮는다
 const plusMenu = ref<{ activateMode: (id: SearchModeId) => void } | null>(null);
+
+// 결과 화면의 [딥리서치로 이어서 조사하기] — 지금 결과의 질의를 상단 검색바에 채우고 딥리서치 모드를 켜 초점을 둔다.
+// 연구 잡은 만들지 않는다: 사용자가 보내기를 누르면 기존 흐름(계획 카드)으로 간다
+function continueAsDeepResearch() {
+  if (resultQuery.value) currentQuery.value = resultQuery.value;
+  // 입력창 값이 바뀐 뒤에 켜야 초점이 글 끝에 간다
+  nextTick(() => plusMenu.value?.activateMode("deep-research"));
+}
 
 function fillResearchDraft() {
   const draft = readResearchDraft(route.query);
