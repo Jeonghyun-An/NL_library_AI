@@ -16,13 +16,15 @@ import {
   followBehavior,
   followKeyDirection,
   followPill,
+  inFollowPhase,
   scrollsInner,
   shouldFollowMove,
   type FollowInput,
   type FollowScroller,
 } from "~/utils/researchFollow";
 
-// 따라가기를 멈추는 사용자 입력. scroll 은 넣지 않는다 — 화면이 부른 이동·스크롤 앵커링도 scroll 을 낸다(utils/researchFollow.ts 머리)
+// 따라가기를 멈추는 사용자 입력(keydown 은 스크롤 키와 Tab). scroll 은 넣지 않는다 — 화면이 부른 이동·스크롤 앵커링도 scroll 을
+// 낸다(utils/researchFollow.ts 머리)
 const USER_INPUTS = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
 // 키를 스스로 쓰는 자리 — 안에서 누른 방향키·Space 는 페이지를 굴리지 않는다(입력칸·메뉴·목록 상자·대화상자)
 const KEY_OWNERS = "input, textarea, select, [contenteditable], [role='menu'], [role='listbox'], [role='dialog']";
@@ -89,7 +91,8 @@ function inputOf(e: Event, touchDir: number): FollowInput | null {
 }
 
 /**
- * 지금 진행하는 절을 스크롤이 따라가게 한다(spec D22). 대상(자리 id)이 바뀌면 그 자리로 옮기고, 사용자가 직접 굴리면 멈춘다 —
+ * 지금 진행하는 절을 스크롤이 따라가게 한다(spec D22). 대상(자리 id)이 바뀌면 그 자리를 화면 안으로 옮기고(가장 가까운 끝 — 방금
+ * 끝난 절이 위에 남는다), 탐색·작성 중에 사용자가 직접 굴리거나 Tab 으로 초점을 옮기면 멈춘다 —
  * 멈춘 동안은 알약 글(pill)을 내고, 알약을 누르면(resume) 다시 따라가며 지금 대상으로 곧바로 옮기고 초점도 그 자리로 옮긴다.
  * 절과 절 사이(하위질문과 하위질문 사이)처럼 대상이 잠깐 없는 동안에도 알약은 마지막으로 진행한 자리를 가리키며 남는다.
  * 처음 본 대상은 기준으로만 삼는다 — 들어온 화면을 곧바로 끌고 내려가지 않고 다음 바뀜부터 옮긴다. 막힌 동안(isBlocked) 바뀐
@@ -131,7 +134,8 @@ export function useSectionFollow(opts: {
 
   function onInput(e: Event): void {
     const touchDir = touchDirOf(e);
-    if (!following.value) return;
+    // 따라갈 것이 생기기 전(계획·승인 대기·대기열)의 입력은 멈추지 않는다 — 계획을 굴려 읽고 [승인] 해도 탐색부터 따라간다
+    if (!following.value || !inFollowPhase(opts.phase.value)) return;
     const input = inputOf(e, touchDir);
     if (!input || !breaksFollow(input)) return;
     // 모달이 페이지를 묶은 동안은 굴려도 페이지가 움직이지 않는다 — 멈추면 닫은 뒤에도 꺼진 채 알약만 남는다
@@ -150,7 +154,12 @@ export function useSectionFollow(opts: {
         const el = document.getElementById(id);
         if (!el) return;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        el.scrollIntoView({ behavior: followBehavior(reduce), block: "start" });
+        // 따라가며 옮길 때는 가장 가까운 끝에 맞춘다 — 이미 보이면 굴리지 않고, 아래에 있으면 그 자리 끝을 화면 아래에 맞춰 바로
+        // 위의 방금 끝난 절(하위질문 자리)이 화면에 남는다. 종합기는 절 i 의 done 을 보내자마자 i+1 의 running 을 보내므로
+        // (app/services/research/synthesizer.py 의 절 루프) 머리를 위에 맞추면(start) 절 i 의 본문이 나타나는 순간 화면 위로
+        // 밀려난다. 위에 있으면(탐색 → 작성의 첫 자리) 머리를 막대 아래에 맞춘다(문서 scroll-padding-top). 알약을 누른 이동은
+        // 사용자가 고른 자리라 머리를 위에 둔다
+        el.scrollIntoView({ behavior: followBehavior(reduce), block: force ? "start" : "nearest" });
         // 알약을 누른 이동은 초점도 그 자리로 옮긴다(자리 rs-sec-N·rs-slot-N 은 tabindex=-1, jumpToSection 과 같은 꼴). 누른 알약은
         // 따라가기가 켜지며 사라져 초점이 body 로 떨어지고, 다음 Tab 이 옮겨 간 절이 아니라 알약이 있던 자리(.rs-page 끝)에서
         // 이어진다. 따라가며 옮길 때는 읽거나 고르던 초점을 빼앗지 않는다

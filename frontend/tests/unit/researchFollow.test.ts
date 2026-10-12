@@ -13,6 +13,7 @@ import {
   followKeyDirection,
   followPill,
   followTarget,
+  inFollowPhase,
   scrollsInner,
   sectionElementId,
   shouldFollowMove,
@@ -108,8 +109,8 @@ describe("breaksFollow", () => {
   it("스크롤 키는 멈추되 입력칸 안의 키는 멈추지 않는다", () => {
     expect(FOLLOW_KEYS).toEqual(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
     for (const k of FOLLOW_KEYS) expect(breaksFollow(key(k))).toBe(true);
-    expect(breaksFollow(key("Tab"))).toBe(false);
     expect(breaksFollow(key("a"))).toBe(false);
+    expect(breaksFollow(key("Enter"))).toBe(false);
     expect(breaksFollow(key(" ", { editable: true }))).toBe(false);
     expect(breaksFollow(key("ArrowDown", { editable: true }))).toBe(false);
   });
@@ -136,6 +137,17 @@ describe("breaksFollow", () => {
     // 수식 키를 둘 이상 함께 누른 조합(Ctrl+Alt+↓·Ctrl+Cmd+End)도 굴리지 않는다
     expect(breaksFollow(key("ArrowDown", { ctrlKey: true, altKey: true }))).toBe(false);
     expect(breaksFollow(key("End", { ctrlKey: true, metaKey: true }))).toBe(false);
+  });
+
+  it("Tab·Shift+Tab 으로 초점을 옮기면 멈춘다 — 브라우저가 초점 받은 요소로 창을 굴리고, 따라가면 그 초점이 화면 밖에 남는다", () => {
+    // Shift+Tab 도 key 는 "Tab" 이다(Shift 는 FollowInput 에 싣지 않는다)
+    expect(breaksFollow(key("Tab"))).toBe(true);
+    // 입력칸·인용 팝오버(role=dialog)·메뉴를 떠나는 Tab 도 초점을 페이지의 다른 요소로 옮긴다 — 키를 스스로 쓰는 자리여도 Tab 은 넘긴다
+    expect(breaksFollow(key("Tab", { editable: true }))).toBe(true);
+    // Ctrl+Tab(탭 전환)·Cmd+Tab·Alt+Tab(앱·창 전환)은 페이지의 초점을 옮기지 않는다
+    expect(breaksFollow(key("Tab", { ctrlKey: true }))).toBe(false);
+    expect(breaksFollow(key("Tab", { metaKey: true }))).toBe(false);
+    expect(breaksFollow(key("Tab", { altKey: true }))).toBe(false);
   });
 
   it("페이지 스크롤바를 누르면 멈추고 본문을 누르면 멈추지 않는다", () => {
@@ -240,6 +252,16 @@ describe("followBlocked", () => {
     expect(followBlocked({ ...none, restoring: true })).toBe(true);
     expect(followBlocked({ ...none, pdfOpen: true })).toBe(true);
     expect(followBlocked({ ...none, popoverOpen: true })).toBe(true);
+  });
+});
+
+describe("inFollowPhase", () => {
+  it("따라갈 것이 생기는 단계(탐색·작성)에서만 참 — 그 앞(계획·승인 대기·대기열)과 끝난 잡의 입력은 따라가기를 멈추지 않는다", () => {
+    // 승인 대기에 계획을 굴려 읽거나 Tab 으로 [승인] 까지 가도 탐색이 시작되면 따라간다(기본 켬)
+    for (const phase of ["exploring", "synthesizing"] as const) expect(inFollowPhase(phase)).toBe(true);
+    for (const phase of ["planning", "awaiting", "queued", "completed", "failed", "canceled", null] as const) {
+      expect(inFollowPhase(phase)).toBe(false);
+    }
   });
 });
 

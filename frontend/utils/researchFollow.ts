@@ -1,8 +1,8 @@
 // frontend/utils/researchFollow.ts
 // 지금 진행하는 절 따라가기(spec §12-3, D22)의 켜고 끄는 판단. 창 이벤트·스크롤은 composables/useSectionFollow.ts 가 한다.
-// 따라가기를 멈추는 것은 사용자 입력뿐이다(정함 4) — scroll 이벤트로 가르지 않는다. 브라우저의 스크롤 앵커링·절이 펼쳐지며 밀린
-// 자리·돌아온 자리 붙잡기(useRestorePosition)가 내는 scroll 을 플래그로 다 거를 수 없고, 화면이 부른 scrollIntoView 는 입력
-// 이벤트를 내지 않아 저절로 걸러진다(spec 의 '프로그램 스크롤은 플래그로 거른다'를 이것으로 갈음한다)
+// 따라가기를 멈추는 것은 사용자 입력(굴림·Tab 으로 초점 옮기기)뿐이다(정함 4) — scroll 이벤트로 가르지 않는다. 브라우저의
+// 스크롤 앵커링·절이 펼쳐지며 밀린 자리·돌아온 자리 붙잡기(useRestorePosition)가 내는 scroll 을 플래그로 다 거를 수 없고, 화면이
+// 부른 scrollIntoView 는 입력 이벤트를 내지 않아 저절로 걸러진다(spec 의 '프로그램 스크롤은 플래그로 거른다'를 이것으로 갈음한다)
 import type { SubqView } from "~/types/research";
 import { slotElementId, type PlanSlot } from "~/utils/planSlots";
 import type { SynthEta } from "~/utils/researchDraft";
@@ -41,6 +41,10 @@ export function breaksFollow(e: FollowInput): boolean {
     case "touchmove":
       return !e.inner;
     case "keydown":
+      // Tab·Shift+Tab 은 초점을 옮기고 브라우저는 초점 받은 요소가 보이게 창을 굴린다 — 따라가면 그 초점이 화면 밖에 남는다.
+      // 입력칸·인용 팝오버(role=dialog)·메뉴를 떠나는 Tab 도 같다(키를 스스로 쓰는 자리도 Tab 은 넘긴다). Ctrl+Tab(탭 전환)·
+      // Cmd/Alt+Tab(앱·창 전환)은 페이지의 초점을 옮기지 않는다. 모달이 초점을 가둔 동안은 composable 이 거른다
+      if (e.key === "Tab") return !e.ctrlKey && !e.metaKey && !e.altKey;
       // 입력칸 안의 키(글자 사이 이동·공백)와 안쪽 칸이 받는 키(옆 칸 안 초점의 방향키)는 페이지를 굴리지 않는다
       if (e.editable || e.inner || !FOLLOW_KEYS.includes(e.key)) return false;
       return modifiedScrolls(e);
@@ -118,6 +122,13 @@ export function followTarget(input: {
 // 옮기지 않는 때 — 돌아온 자리를 맞추는 중, 원문 뷰어를 연 동안, 인용 팝오버를 읽는 동안(고정·hover 를 가리지 않는다)
 export function followBlocked(c: { restoring: boolean; pdfOpen: boolean; popoverOpen: boolean }): boolean {
   return c.restoring || c.pdfOpen || c.popoverOpen;
+}
+
+// 사용자 입력이 따라가기를 멈추는 단계 — 따라갈 것이 생기는 탐색·작성뿐이다. 그 앞(계획·승인 대기·대기열)에 계획을 굴려 읽거나
+// Tab 으로 [승인] 까지 간 입력이 멈추면 탐색이 시작될 때 이미 꺼져 있어 기본 켬이 지켜지지 않는다. 끝난 잡도 멈추지 않는다 —
+// 다시 시도하면 처음처럼 따라간다
+export function inFollowPhase(phase: ResearchPhase | null): boolean {
+  return phase === "exploring" || phase === "synthesizing";
 }
 
 export function shouldFollowMove(s: { following: boolean; blocked: boolean; target: string | null; last: string | null }): boolean {

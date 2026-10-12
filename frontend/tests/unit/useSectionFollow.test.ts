@@ -89,6 +89,29 @@ describe("useSectionFollow — 알약", () => {
     expect(spots["rs-sec-2"].focus).not.toHaveBeenCalled();
   });
 
+  it("따라가며 옮길 때는 가장 가까운 끝에 맞춘다(nearest) — 방금 끝난 절·하위질문이 화면 위로 밀려나지 않는다. 알약을 누른 이동만 머리를 위에 맞춘다(start)", async () => {
+    // 종합기는 절 i 의 done 을 보내자마자 i+1 의 running 을 보낸다 — 사이(null)를 거쳐 다음 절로 바뀐다
+    const write = setup({ target: "rs-sec-1" });
+    await settle();
+    write.target.value = null;
+    write.target.value = "rs-sec-2";
+    await settle();
+    expect(spots["rs-sec-2"].scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "nearest" });
+
+    // 탐색 중 하위질문 자리도 같다 — '근거 N편 ✓' 가 튀어 오르는 자리가 다음 자리에 가려지지 않는다
+    const explore = setup({ phase: "exploring", target: "rs-slot-0" });
+    await settle();
+    explore.target.value = "rs-slot-1";
+    await settle();
+    expect(spots["rs-slot-1"].scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "nearest" });
+
+    // 알약은 사용자가 고른 이동이라 그 자리 머리를 막대 바로 아래에 둔다
+    explore.follow.pause();
+    explore.follow.resume();
+    await settle();
+    expect(spots["rs-slot-1"].scrollIntoView).toHaveBeenLastCalledWith({ behavior: "smooth", block: "start" });
+  });
+
   it("멈춘 동안 절과 절 사이(쓰는·도는 것이 잠깐 없음)에도 알약이 남는다 — 사라졌다 다시 서면 알약에 가 있던 초점이 body 로 떨어진다", async () => {
     const write = setup({ target: "rs-sec-1", startPaused: true });
     write.target.value = null;
