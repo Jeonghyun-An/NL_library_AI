@@ -258,13 +258,14 @@
       </div>
     </div>
 
-    <!-- 프로필 -->
+    <!-- 프로필(목업, 숨김) — 설정(톱니)은 목업이 아니라 진짜라 늘 보인다. 접힌 띠에서는 숨는다(.skx-settings 는 접히면 통째로 숨고, 프로필 줄은 아바타만 남는다) -->
     <div v-if="SHOW_MOCKS" class="skx-profile">
       <img class="skx-profile__avatar" src="/img/ico-avatar.svg" alt="" />
       <span class="skx-profile__name">김랜드</span>
-      <button type="button" class="skx-icon-btn" aria-label="설정">
-        <img src="/img/ico-settings.svg" alt="" />
-      </button>
+      <SettingsMenu />
+    </div>
+    <div v-else class="skx-settings">
+      <SettingsMenu />
     </div>
   </aside>
 </template>

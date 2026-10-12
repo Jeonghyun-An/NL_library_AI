@@ -1,169 +1,109 @@
 // frontend/tests/unit/themeHolo.test.ts
-// round08 — 움직이는 홀로그램 배경(.skx-holo)이 글자 가독성을 해치지 않는지 지킨다.
-// style_skovix.css 의 띠(.skx-holo__band--N) 정지점 알파를 읽어 띠가 모두 가장 밝게 겹친 최악의 합성을 만들고,
-//  ① 그 위에 유리 색(--skx-glass·--skx-glass-2)을 알파 합성한 카드 위에서 본문색(--skx-ink)이 4.5:1 이상,
-//  ② 카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 3:1 이상인지 계산한다.
-// 유리·본문색은 :root 토큰에서 읽는다(사본 없음). 읽지 못하는 색 표기가 있으면 조용히 통과하지 않고 실패한다.
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+// round08 — 움직이는 홀로그램 배경(.skx-holo)이 글자 가독성을 해치지 않는지 지킨다. 테마마다 같은 검사를 돌린다.
+// 띠 색·바탕 번짐·사이드바 막은 테마 토큰(--skx-holo-*)이다. 이 테스트는 그 정지점 알파를 읽어 띠가 모두 가장 밝게 겹친 최악의 합성을 만들고,
+//  ① 그 위에 유리 면(입력창·사이드바·큰 틀·읽는 칸 …)을 알파 합성한 자리에서 글자색이 4.5:1 이상,
+//  ② 카드 없이 페이지 위에 놓이는 큰 제목이 3:1(다크)·4.5:1(핑크) 이상인지 계산한다.
+// 색은 style_skovix.css 에서 읽는다(사본 없음). 읽지 못하는 색 표기가 있으면 조용히 통과하지 않고 실패한다.
 import { describe, expect, it } from "vitest";
+import {
+  DEFAULT_THEME,
+  THEMES,
+  composites,
+  contrast,
+  css,
+  hexToRgb,
+  holoModel,
+  over,
+  parseColor,
+  peakStop,
+  rawCss,
+  rgbaStops,
+  themeTokens,
+  type Rgb,
+  type ThemeName,
+} from "./helpers/themeCss";
 
-const rawCss = readFileSync(
-  fileURLToPath(new URL("../../assets/css/style_skovix.css", import.meta.url)),
-  "utf-8",
-);
-const css = rawCss.replace(/\/\*[\s\S]*?\*\//g, "");
 const holoSection = (() => {
-  const m = rawCss.match(
-    /\[S\] 움직이는 홀로그램 배경 \*\/([\s\S]*?)\/\* \[E\] 움직이는 홀로그램 배경/,
-  );
+  const m = rawCss.match(/\[S\] 움직이는 홀로그램 배경 \*\/([\s\S]*?)\/\* \[E\] 움직이는 홀로그램 배경/);
   if (!m?.[1]) throw new Error("홀로그램 구간을 찾지 못함");
   return m[1].replace(/\/\*[\s\S]*?\*\//g, "");
 })();
 
-type Rgb = [number, number, number];
-type Stop = { rgb: Rgb; a: number };
-
-const RGBA = /rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/g;
-
-function rgbaStops(text: string): Stop[] {
-  return [...text.matchAll(RGBA)]
-    .map((m) => ({
-      rgb: [Number(m[1]), Number(m[2]), Number(m[3])] as Rgb,
-      a: Number(m[4]),
-    }))
-    .filter((s) => s.a > 0);
-}
-
-/** 이 테스트가 읽을 수 없는 색 표기 — transparent·마스크용 #000·rgba 콤마식만 허용한다 */
-function unreadableColors(block: string): string[] {
-  const found: string[] = [];
-  const anyRgb = block.match(/\brgba?\(/g)?.length ?? 0;
-  const comma = [...block.matchAll(RGBA)].length;
-  if (anyRgb !== comma) found.push("콤마식이 아닌 rgb()/rgba()");
-  for (const h of block.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) {
-    if (h !== "#000") found.push(`hex ${h}`);
-  }
-  for (const f of block.match(
-    /\b(?:hsla?|hwb|lab|lch|oklab|oklch|color-mix|color)\(/g,
-  ) ?? []) {
-    found.push(f);
-  }
-  for (const n of block.match(
-    /\b(?:white|black|red|green|blue|gray|grey|silver|purple|pink|orange|yellow|teal|aqua|cyan|magenta|coral|violet|currentcolor)\b/gi,
-  ) ?? []) {
-    found.push(`색 이름 ${n}`);
-  }
-  return found;
-}
-
-function rootToken(name: string): string {
-  const root = css.match(/(?:^|\n):root\s*\{([^}]*)\}/)?.[1] ?? "";
-  const m = root.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
-  if (!m?.[1]) throw new Error(`${name} 을 :root 에서 찾지 못함`);
-  return m[1].trim();
-}
-
-function rootStop(name: string): Stop {
-  const stop = rgbaStops(rootToken(name))[0];
-  if (!stop) throw new Error(`${name} 을 rgba(r, g, b, a) 로 읽지 못함`);
-  return stop;
-}
-
-function hexToRgb(hex: string): Rgb {
-  const n = parseInt(hex.replace("#", ""), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-/** 보통(normal) 알파 혼합 */
-function over(backdrop: Rgb, src: Rgb, a: number): Rgb {
-  return backdrop.map((b, i) => (1 - a) * b + a * src[i]!) as Rgb;
-}
-
-/** mix-blend-mode: screen + 알파 */
-function screen(backdrop: Rgb, src: Rgb, a: number): Rgb {
-  return backdrop.map((b, i) => {
-    const bb = b / 255;
-    const ss = src[i]! / 255;
-    const sc = 1 - (1 - bb) * (1 - ss);
-    return 255 * ((1 - a) * bb + a * sc);
-  }) as Rgb;
-}
-
-function luminance([r, g, b]: Rgb): number {
-  const lin = (c: number) => {
-    const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-function contrast(a: Rgb, b: Rgb): number {
-  const la = luminance(a);
-  const lb = luminance(b);
-  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-}
-
 function blockOf(selector: RegExp): string {
-  const m = holoSection.match(
-    new RegExp(`${selector.source}\\s*\\{([^}]*)\\}`),
-  );
+  const m = holoSection.match(new RegExp(`${selector.source}\\s*\\{([^}]*)\\}`));
   if (!m?.[1]) throw new Error(`블록을 찾지 못함: ${selector}`);
   return m[1];
 }
 
-/** `.skx-holo` 바탕: 단색 위에 옅은 방사 그라데이션 — 두 겹이 가장 짙게 겹친 자리 */
-function worstBase(): Rgb {
-  let base = hexToRgb(rootToken("--skx-page-bg"));
-  for (const s of rgbaStops(blockOf(/\.skx-holo(?![\w-])/))) {
-    base = over(base, s.rgb, s.a);
-  }
-  return base;
-}
+// 띠 둘이 같이 쓰는 마스크 규칙(.skx-holo__band--2, .skx-holo__band--3)은 배경이 없어 띠로 세지 않는다
+const bandBlocks = [...holoSection.matchAll(/\.skx-holo__band--\d+[^{}]*\{([^}]*)\}/g)]
+  .map((m) => m[1] ?? "")
+  .filter((block) => /(?<![-\w])background:/.test(block));
+const veilBlock = holoSection.match(/\.skx-holo__veil\s*\{([^}]*)\}/)?.[1] ?? "";
 
-const bandBlocks = [
-  ...holoSection.matchAll(/\.skx-holo__band--\d+[^{}]*\{([^}]*)\}/g),
-].map((m) => m[1] ?? "");
-
-function bands(): Stop[][] {
-  return bandBlocks.map(rgbaStops).filter((stops) => stops.length > 0);
-}
-
-/**
- * 띠마다 정지점 하나(또는 비어 있음)를 골라 만들 수 있는 모든 합성 — 가장 밝은 자리들이 포함된다.
- * maxBands 는 한 자리에 동시에 겹칠 수 있는 띠 수의 상한(기본: 모두) — 시안 색 글자처럼 최악 전부로는 못 지키는 것을 '띠 하나가 지나는 자리'로 따로 본다
- */
-function composites(maxBands: number = Infinity): Rgb[] {
-  const all = bands();
-  const out: Rgb[] = [];
-  const walk = (i: number, backdrop: Rgb, used: number) => {
-    if (i === all.length) {
-      out.push(backdrop);
-      return;
-    }
-    walk(i + 1, backdrop, used); // 이 띠가 그 자리를 지나지 않는 경우
-    if (used >= maxBands) return;
-    for (const s of all[i]!) walk(i + 1, screen(backdrop, s.rgb, s.a), used + 1);
-  };
-  walk(0, worstBase(), 0);
-  return out;
-}
-
-describe("홀로그램 배경 — 가독성", () => {
-  it("띠가 2~3개이고 정지점이 읽힌다", () => {
-    const all = bands();
-    expect(all.length).toBeGreaterThanOrEqual(2);
-    expect(all.length).toBeLessThanOrEqual(3);
-    for (const stops of all) expect(stops.length).toBeGreaterThanOrEqual(1);
+// ───────── 구조(테마와 무관) ─────────
+describe("홀로그램 배경 — 구조", () => {
+  it("띠가 2~3개이고 색은 모두 테마 토큰이다", () => {
+    expect(bandBlocks.length).toBeGreaterThanOrEqual(2);
+    expect(bandBlocks.length).toBeLessThanOrEqual(3);
+    for (const block of bandBlocks) expect(block).toMatch(/background:\s*var\(--skx-holo-band-\d\);/);
+    expect(blockOf(/\.skx-holo(?![\w-])/)).toMatch(/background:\s*var\(--skx-holo-wash\),\s*var\(--skx-page-bg\);/);
+    expect(veilBlock).toMatch(/background:\s*var\(--skx-holo-veil\);/);
   });
 
-  it("띠·바탕 블록에 읽을 수 없는 색 표기(hex·rgb 슬래시·hsl·색 이름 등)가 없다", () => {
-    const blocks = [blockOf(/\.skx-holo(?![\w-])/), ...bandBlocks];
-    expect(blocks.flatMap(unreadableColors)).toEqual([]);
+  it("홀로그램 구간에 색 리터럴이 없다(마스크용 #000 만) — 색은 테마 블록에서만 정한다", () => {
+    const found = [
+      ...(holoSection.match(/\brgba?\(|\bhsla?\(/g) ?? []),
+      ...(holoSection.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).filter((h) => h !== "#000"),
+      ...(holoSection.match(/(?<![\w-])(?:white|black|red|green|blue|gray|grey|pink|currentcolor)(?![\w-])/gi) ?? []),
+    ];
+    expect(found).toEqual([]);
+  });
+
+  it("마스크는 테마 토큰(--skx-holo-mask)이다", () => {
+    expect(blockOf(/\.skx-holo(?![\w-])/)).toMatch(/(?<![-\w])mask-image:\s*var\(--skx-holo-mask\);/);
+  });
+
+  it("푸터 글자색은 --skx-gray-1 이다", () => {
+    for (const sel of [".skx-footer__copy", ".skx-footer__credit"]) {
+      const block = css.match(new RegExp(`\\n${sel}\\s*\\{([^}]*)\\}`))?.[1];
+      expect(block, sel).toMatch(/color:\s*var\(--skx-gray-1\)/);
+    }
+  });
+
+  it("사이드바 막(.skx-holo__veil)의 짙은 구간이 사이드바 오른쪽 끝(앱 여백 + 사이드바 폭)까지 덮는다(다크 토큰 기준)", () => {
+    const veilToken = themeTokens(DEFAULT_THEME)["--skx-holo-veil"]!;
+    const solidEnd = Number(veilToken.match(/rgba\([^)]*\)\s+(\d+(?:\.\d+)?)rem\s*,\s*rgba\([^)]*,\s*0\)/)?.[1]);
+    const lnbWidth = Number(css.match(/\n\.skx-lnb\s*\{[^}]*?\bwidth:\s*(\d+(?:\.\d+)?)rem/)?.[1]);
+    const appPad = Number(css.match(/\n\.skx-app\s*\{[^}]*?\bpadding:\s*(\d+(?:\.\d+)?)rem/)?.[1]);
+    expect(solidEnd).toBeGreaterThanOrEqual(appPad + lnbWidth);
+  });
+});
+
+// ───────── 테마마다: 띠·바탕 토큰이 읽히고, 글자가 최악의 합성 위에서 읽힌다 ─────────
+describe.each(THEMES)("홀로그램 배경 — 가독성 [%s]", (theme: ThemeName) => {
+  const t = themeTokens(theme);
+  const model = holoModel(theme);
+  const dark = theme === DEFAULT_THEME;
+
+  it("띠가 2~3개이고 정지점이 읽힌다", () => {
+    expect(model.bands.length).toBeGreaterThanOrEqual(2);
+    expect(model.bands.length).toBeLessThanOrEqual(3);
+    for (const stops of model.bands) expect(stops.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("바탕 번짐·띠·막의 색 표기가 모두 읽힌다(콤마식 rgb/rgba·#hex·none)", () => {
+    for (const name of ["--skx-holo-wash", "--skx-holo-band-1", "--skx-holo-band-2", "--skx-holo-band-3", "--skx-holo-veil"]) {
+      const value = t[name]!;
+      const anyRgb = value.match(/\brgba?\(/g)?.length ?? 0;
+      expect(rgbaStops(value).length, `${name} 의 rgb()/rgba() 를 모두 읽어야 한다`).toBe(anyRgb);
+      expect(value, name).not.toMatch(/hsla?\(|hwb\(|lab\(|lch\(|oklab\(|oklch\(|color-mix\(|color\(/);
+    }
+    expect(parseColor(t["--skx-page-bg"]!).a).toBe(1);
   });
 
   it("띠 정지점 알파가 .35 를 넘지 않는다", () => {
-    for (const band of bands()) {
+    for (const band of model.bands) {
       for (const s of band) expect(s.a).toBeLessThanOrEqual(0.35);
     }
   });
@@ -171,36 +111,27 @@ describe("홀로그램 배경 — 가독성", () => {
   it.each(["--skx-glass", "--skx-glass-2"])(
     "띠가 모두 가장 밝게 겹쳐도 %s 카드 위에서 본문색(--skx-ink)이 4.5:1 이상이다",
     (token) => {
-      const ink = hexToRgb(rootToken("--skx-ink"));
-      const glass = rootStop(token);
-      const worst = Math.min(
-        ...composites().map((c) => contrast(ink, over(c, glass.rgb, glass.a))),
-      );
+      const ink = parseColor(t["--skx-ink"]!).rgb;
+      const glass = parseColor(t[token]!);
+      const worst = Math.min(...composites(model).map((c) => contrast(ink, over(c, glass.rgb, glass.a))));
       expect(worst).toBeGreaterThanOrEqual(4.5);
     },
   );
 
-  // 뿌연 유리(frost) 면 — 밑에서부터 겹치는 층(짙은 밑칠 → 흰 반투명 …)을 최악의 합성 위에 얹은 면에서 글자가 읽혀야 한다.
-  // 흐림은 최악을 덜어 주지만 믿지 않는다. 흰 10% 만으로는 이 최악에서 본문색이 2:1 이라 밑칠이 필요하다(토큰 주석).
-  // 그라데이션 토큰(반사광)은 가장 센 정지점의 알파로 면 전체에 깔아 본다 — 글자가 어디에 놓여도 지켜지게
-  const peakStop = (token: string): Stop =>
-    rgbaStops(rootToken(token)).reduce((m, s) => (s.a > m.a ? s : m));
-  // 사이드바 폭 구간에는 .skx-holo__veil(바탕과 같은 짙은 초록 막)이 띠 위에 덮인다 — 사이드바 면은 그 막을 거친 자리 위에서 본다
-  const veilBlock = holoSection.match(/\.skx-holo__veil\s*\{([^}]*)\}/)?.[1] ?? "";
-  const veilStop = rgbaStops(veilBlock)[0];
-  if (!veilStop) throw new Error(".skx-holo__veil 의 막 색을 rgba(r, g, b, a) 로 읽지 못함");
+  // 뿌연 유리(frost) 면 — 밑에서부터 겹치는 층(밑칠 → 막 → 반사광 …)을 최악의 합성 위에 얹은 면에서 글자가 읽혀야 한다.
+  // 흐림은 최악을 덜어 주지만 믿지 않는다. 그라데이션 토큰(반사광)은 가장 센 정지점의 알파로 면 전체에 깔아 본다 — 글자가 어디에 놓여도 지켜지게
   const faceWorst = (layers: string[], text: string, tintDelta = 0, behindVeil = false): number => {
-    const fg = hexToRgb(rootToken(text));
+    const fg = parseColor(t[text]!).rgb;
     return Math.min(
-      ...composites().map((c) =>
+      ...composites(model).map((c) =>
         contrast(
           fg,
           layers.reduce<Rgb>(
             (acc, token, i) => {
-              const l = peakStop(token);
+              const l = peakStop(t[token]!);
               return over(acc, l.rgb, i === 0 ? l.a + tintDelta : l.a);
             },
-            behindVeil ? over(c, veilStop.rgb, veilStop.a) : c,
+            behindVeil && model.veil ? over(c, model.veil.rgb, model.veil.a) : c,
           ),
         ),
       ),
@@ -211,7 +142,6 @@ describe("홀로그램 배경 — 가독성", () => {
   const CHIP_FACE = ["--skx-chip-tint", "--skx-chip-milk"];
   const SEG_FACE = ["--skx-frost-tint", "--skx-frost-bg", "--skx-frost-reflect"];
   // 결과 화면: 큰 틀(--skx-frame-bg) → AI 패널(--skx-frost-panel) → 읽는 칸(--skx-read-surface). 틀 위의 목록 글은 틀만, 읽는 칸의 글은 세 겹 위에 얹힌다.
-  // 읽는 칸 안의 글 톤은 .skx-pai-main 등이 --skx-ink 등을 --skx-read-* 로 다시 정의한 값이다
   const FRAME_FACE = ["--skx-frame-bg"];
   const READ_FACE = ["--skx-frame-bg", "--skx-frost-panel", "--skx-read-surface"];
   const READ_TEXTS = ["--skx-read-ink", "--skx-read-ink-2", "--skx-read-gray-1"];
@@ -225,33 +155,90 @@ describe("홀로그램 배경 — 가독성", () => {
     ["사이드바(--skx-frost-side-bg)", SIDE_FACE, SIDE_TEXTS, true],
     ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg"], ["--skx-side-ink"], true],
     // 묶음 카드 안의 글 톤은 사이드바 글 톤을 올리기 전 값(--skx-research-*)이다
-    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], ["--skx-research-ink", "--skx-research-gray-1"], true],
+    [
+      "사이드바 DeepResearch 묶음 카드",
+      ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"],
+      ["--skx-research-ink", "--skx-research-gray-1"],
+      true,
+    ],
     ["결과 큰 틀(--skx-frame-bg)", FRAME_FACE, ["--skx-ink", "--skx-gray-1"], false],
-    // DeepRead 채팅 패널: 머리 글은 패널 위에 바로, AI 말풍선은 옅은 회색 면 + 짙은 글, 사용자 말풍선·입력창은 짙은 밑칠 + 흰 막 + 밝은 글
+    // DeepRead 채팅 패널: 머리 글은 패널 위에 바로, AI 말풍선은 옅은 면 + 짙은 글, 사용자 말풍선·입력창은 밑칠 + 막 + 글
     ["DeepRead 패널(--skx-chat-bg)", ["--skx-chat-bg"], ["--skx-ink-strong"], false],
-    ["DeepRead AI 말풍선(--skx-chat-ai-bg)", ["--skx-chat-bg", "--skx-chat-ai-bg"], ["--skx-on-accent"], false],
+    ["DeepRead AI 말풍선(--skx-chat-ai-bg)", ["--skx-chat-bg", "--skx-chat-ai-bg"], ["--skx-ink-on-light"], false],
     ["DeepRead 사용자 말풍선", ["--skx-chat-bg", "--skx-chat-user-tint", "--skx-chat-user-milk"], ["--skx-ink-strong"], false],
-    ["DeepRead 입력창(--skx-chat-input-bg)", ["--skx-chat-bg", "--skx-chat-input-tint", "--skx-chat-input-milk"], ["--skx-ink-strong", "--skx-ink-2"], false],
+    [
+      "DeepRead 입력창(--skx-chat-input-bg)",
+      ["--skx-chat-bg", "--skx-chat-input-tint", "--skx-chat-input-milk"],
+      ["--skx-ink-strong", "--skx-ink-2"],
+      false,
+    ],
     ["결과 읽는 칸(--skx-read-surface)", READ_FACE, READ_TEXTS, false],
     ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"], false],
+    // 설정 팝오버(사이드바 하단 톱니) — 메뉴 바탕 위, 제목·항목 이름은 사이드바 글 톤(.skx-lnb 안에서 --skx-ink·--skx-gray-1 이 --skx-side-* 로 바뀐다)
+    ["설정 팝오버(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-side-ink", "--skx-side-gray-1"], true],
   ];
   const faceCases = faces.flatMap(([name, layers, texts, veil]) =>
-    texts.map((text) => [name, layers, text, veil] as const),
+    texts.map((text) => ({ name, layers, text, veil })),
   );
 
-  it.each(faceCases.map(([name, layers, text, veil]) => ({ name, layers, text, veil })))(
+  it.each(faceCases)(
     "띠가 모두 가장 밝게 겹쳐도 $name 위에서 $text 글자가 4.5:1 이상이다",
     ({ layers, text, veil }) => {
       expect(faceWorst([...layers], text, 0, veil)).toBeGreaterThanOrEqual(4.5);
     },
   );
 
-  it("사이드바 막(.skx-holo__veil)의 짙은 구간이 사이드바 오른쪽 끝(앱 여백 + 사이드바 폭)까지 덮는다", () => {
-    const solidEnd = Number(veilBlock.match(/rgba\([^)]*\)\s+(\d+(?:\.\d+)?)rem\s*,\s*rgba\([^)]*,\s*0\)/)?.[1]);
-    const lnbWidth = Number(css.match(/\n\.skx-lnb\s*\{[^}]*?\bwidth:\s*(\d+(?:\.\d+)?)rem/)?.[1]);
-    const appPad = Number(css.match(/\n\.skx-app\s*\{[^}]*?\bpadding:\s*(\d+(?:\.\d+)?)rem/)?.[1]);
-    expect(solidEnd).toBeGreaterThanOrEqual(appPad + lnbWidth);
+  it("카드 없이 페이지 위에 놓이는 큰 제목(--skx-ink-strong)이 가장 밝은·어두운 합성 위에서 기준 이상이다(다크 3:1, 핑크 4.5:1)", () => {
+    const fg = parseColor(t["--skx-ink-strong"]!).rgb;
+    const worst = Math.min(...composites(model).map((c) => contrast(fg, c)));
+    expect(worst).toBeGreaterThanOrEqual(dark ? 3 : 4.5);
   });
+
+  it("화면 아래 15% 는 마스크로 띠를 걷거나(다크), 띠가 겹쳐도 푸터 글자가 읽힌다(핑크)", () => {
+    const mask = t["--skx-holo-mask"]!;
+    const fg = parseColor(t["--skx-gray-1"]!).rgb;
+    if (mask === "none") {
+      // 띠를 걷지 않는 테마 — 푸터 글자(--skx-gray-1)가 띠가 모두 겹친 최악의 합성 위에서도 4.5:1 이상이어야 한다
+      expect(Math.min(...composites(model).map((c) => contrast(fg, c)))).toBeGreaterThanOrEqual(4.5);
+    } else {
+      const m = mask.match(/^linear-gradient\(180deg[^)]*transparent (\d+)%\)$/);
+      expect(m, `마스크를 읽지 못함: ${mask}`).not.toBeNull();
+      expect(Number(m![1])).toBeLessThanOrEqual(85);
+      // 걷은 자리는 띠 없이 바탕만 — 그 위에서 푸터 글자가 4.5:1 이상
+      expect(Math.min(...model.bases.map((b) => contrast(fg, b)))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("전환 알약: 켜진 칸의 글(--skx-seg-thumb-ink)이 채움(--skx-seg-thumb) 위에서 4.5:1 이상이다", () => {
+    expect(
+      contrast(parseColor(t["--skx-seg-thumb-ink"]!).rgb, parseColor(t["--skx-seg-thumb"]!).rgb),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// ───────── 다크 그린 전용: 시안 값을 지키는 상한·하한 ─────────
+describe("홀로그램 배경 — 다크 그린 시안 값", () => {
+  const theme = DEFAULT_THEME;
+  const t = themeTokens(theme);
+  const model = holoModel(theme);
+  const faceWorst = (layers: string[], text: string, tintDelta = 0): number => {
+    const fg = parseColor(t[text]!).rgb;
+    return Math.min(
+      ...composites(model).map((c) =>
+        contrast(
+          fg,
+          layers.reduce<Rgb>((acc, token, i) => {
+            const l = peakStop(t[token]!);
+            return over(acc, l.rgb, i === 0 ? l.a + tintDelta : l.a);
+          }, c),
+        ),
+      ),
+    );
+  };
+  const INPUT_FACE = ["--skx-frost-tint", "--skx-frost-milk", "--skx-frost-reflect"];
+  const CHIP_FACE = ["--skx-chip-tint", "--skx-chip-milk"];
+  const SIDE_FACE = ["--skx-frost-side-bg"];
+  const SEG_FACE = ["--skx-frost-tint", "--skx-frost-bg", "--skx-frost-reflect"];
 
   // 불투명도로 글자를 지키되 필요 이상으로 짙게 두지 않는다 — 밑칠 알파를 0.06 만 낮춰도 4.5:1 을 못 넘는 값이어야 한다
   // (사용자 피드백 10-12: 밑칠 80%+흰 10% 는 유리 같은 투명감이 사라진다). 더 짙게 고쳐 쓰려면 이 테스트가 막는다.
@@ -264,31 +251,26 @@ describe("홀로그램 배경 — 가독성", () => {
   });
 
   it("입력창·전환·결과 검색바의 합계 불투명도(밑칠+흰 막)는 0.62 이하이고, 사이드바 바탕 알파는 시안대로 0.30~0.40 이다", () => {
-    const alpha = (tokens: string[]) =>
-      1 - tokens.reduce((rest, t) => rest * (1 - peakStop(t).a), 1);
+    const alpha = (tokens: string[]) => 1 - tokens.reduce((rest, tok) => rest * (1 - peakStop(t[tok]!).a), 1);
     expect(alpha(["--skx-frost-tint", "--skx-frost-milk"])).toBeLessThanOrEqual(0.62);
     expect(alpha(SIDE_FACE)).toBeGreaterThanOrEqual(0.3);
     expect(alpha(SIDE_FACE)).toBeLessThanOrEqual(0.4);
   });
 
-  // 전환 알약(시안 색, 사용자 결정): 켜진 칸은 짙은 초록 채움(--skx-on-accent) 위 흰 글, 꺼진 칸은 회녹색(--skx-gray-2).
+  // 전환 알약(시안 색, 사용자 결정): 켜진 칸은 짙은 초록 채움 위 흰 글, 꺼진 칸은 회녹색(--skx-gray-2).
   // 꺼진 칸 글은 시안 색이고 바깥 면도 시안의 흰 10%(SEG_FACE)라 모든 띠가 가장 밝게 겹친 최악에는 4.5:1 이 안 된다 —
   // 평온한 자리(띠 없음)에서 3:1, 띠 하나가 지나는 자리에서 2.5:1 이상으로 지킨다(AA 4.5:1 미달은 시안 색 그대로 둔 값이다)
-  it("전환 알약: 켜진 칸의 흰 글이 짙은 초록 채움 위에서 4.5:1 이상이다", () => {
-    expect(contrast(hexToRgb(rootToken("--skx-ink-strong")), hexToRgb(rootToken("--skx-on-accent")))).toBeGreaterThanOrEqual(4.5);
-  });
-
   it.each([
     { bands: 0, min: 3 },
     { bands: 1, min: 2.5 },
   ])("전환 알약: 꺼진 칸의 회녹색 글(--skx-gray-2)이 띠 $bands 개가 겹치는 자리까지 $min:1 이상이다", ({ bands: n, min }) => {
-    const fg = hexToRgb(rootToken("--skx-gray-2"));
+    const fg = parseColor(t["--skx-gray-2"]!).rgb;
     const worst = Math.min(
-      ...composites(n).map((c) =>
+      ...composites(model, n).map((c) =>
         contrast(
           fg,
           SEG_FACE.reduce<Rgb>((acc, token) => {
-            const l = peakStop(token);
+            const l = peakStop(t[token]!);
             return over(acc, l.rgb, l.a);
           }, c),
         ),
@@ -296,33 +278,45 @@ describe("홀로그램 배경 — 가독성", () => {
     );
     expect(worst).toBeGreaterThanOrEqual(min);
   });
+});
 
-  it("카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 가장 밝은 합성 위에서 3:1 이상이다", () => {
+// ───────── 핑크 전용: 시안 값 ─────────
+describe("홀로그램 배경 — 핑크 시안 값", () => {
+  const t = themeTokens("pink");
+  const model = holoModel("pink");
+
+  it("전환 알약: 꺼진 칸의 글(--skx-gray-2)은 흰 유리 위에서 띠가 모두 겹쳐도 4.5:1 이상이다(시안 #879491 보다 짙게 잡았다)", () => {
+    const fg = parseColor(t["--skx-gray-2"]!).rgb;
     const worst = Math.min(
-      ...composites().map((c) => contrast([255, 255, 255], c)),
+      ...composites(model).map((c) =>
+        contrast(
+          fg,
+          ["--skx-frost-tint", "--skx-frost-bg", "--skx-frost-reflect"].reduce<Rgb>((acc, token) => {
+            const l = peakStop(t[token]!);
+            return over(acc, l.rgb, l.a);
+          }, c),
+        ),
+      ),
     );
-    expect(worst).toBeGreaterThanOrEqual(3);
+    expect(worst).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("화면 아래 15% 는 마스크로 띠를 걷는다(푸터 글자가 띠 위에 놓이지 않게)", () => {
-    const m = blockOf(/\.skx-holo(?![\w-])/).match(
-      /(?<![-\w])mask-image:\s*linear-gradient\(\s*180deg[^)]*transparent\s+(\d+)%/,
-    );
-    expect(m).not.toBeNull();
-    expect(Number(m![1])).toBeLessThanOrEqual(85);
-  });
-
-  it("푸터 글자색은 --skx-gray-1 이다", () => {
-    for (const sel of [".skx-footer__copy", ".skx-footer__credit"]) {
-      const block = css.match(new RegExp(`\\n${sel}\\s*\\{([^}]*)\\}`))?.[1];
-      expect(block, sel).toMatch(/color:\s*var\(--skx-gray-1\)/);
+  it("띠는 흰색 계열이다(밝기를 올려 시안의 진주빛을 낸다) — 띠 색의 세 채널이 모두 230 이상", () => {
+    for (const band of model.bands) {
+      for (const s of band) expect(Math.min(...s.rgb)).toBeGreaterThanOrEqual(230);
     }
+  });
+
+  it("검정 포인트(#1a1115)·시안 글색을 그대로 쓴다", () => {
+    expect(hexToRgb(t["--skx-primary"]!)).toEqual(hexToRgb("#1a1115"));
+    expect(hexToRgb(t["--skx-ink-strong"]!)).toEqual(hexToRgb("#1a1115"));
   });
 });
 
+// ───────── 성능·움직임(테마와 무관) ─────────
 describe("홀로그램 배경 — 유리·성능", () => {
   it("--skx-blur 는 순수 흐림이고 backdrop brightness 계수는 없다", () => {
-    expect(rootToken("--skx-blur")).toMatch(/^blur\(\d+px\)$/);
+    for (const theme of THEMES) expect(themeTokens(theme)["--skx-blur"]).toMatch(/^blur\(\d+px\)$/);
     expect(css).not.toContain("--skx-glass-dim");
   });
 });
@@ -342,25 +336,17 @@ describe("홀로그램 배경 — 움직임", () => {
   });
 
   it("움직임 줄이기 설정에서는 띠 애니메이션이 멈춘다", () => {
-    expect(holoSection).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.skx-holo__band\s*\{\s*animation:\s*none;/,
-    );
+    expect(holoSection).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.skx-holo__band\s*\{\s*animation:\s*none;/);
   });
 
   it("움직임 줄이기 규칙이 띠 규칙보다 뒤에 있다(같은 특이도라 순서가 이긴다)", () => {
     const reduced = holoSection.indexOf("prefers-reduced-motion");
-    const lastBandRule = Math.max(
-      ...[...holoSection.matchAll(/\.skx-holo__band--\d+[^{}]*\{/g)].map(
-        (m) => m.index!,
-      ),
-    );
+    const lastBandRule = Math.max(...[...holoSection.matchAll(/\.skx-holo__band--\d+[^{}]*\{/g)].map((m) => m.index!));
     expect(reduced).toBeGreaterThan(lastBandRule);
   });
 
   it("띠 애니메이션 주기가 18~40초이고 서로 다르다", () => {
-    const secs = [...holoSection.matchAll(/animation:\s*skx-holo-\w+\s+(\d+)s/g)].map(
-      (m) => Number(m[1]),
-    );
+    const secs = [...holoSection.matchAll(/animation:\s*skx-holo-\w+\s+(\d+)s/g)].map((m) => Number(m[1]));
     expect(secs.length).toBeGreaterThanOrEqual(2);
     for (const s of secs) {
       expect(s).toBeGreaterThanOrEqual(18);
