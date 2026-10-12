@@ -33,6 +33,7 @@ import {
   paragraphParts,
   paragraphProblem,
   paragraphViews,
+  proposalReread,
   putOnceMore,
   removeParagraph,
   reportBar,
@@ -447,6 +448,38 @@ describe("putOnceMore — 버전 충돌 한 번 재전송", () => {
       await expect(putOnceMore(put, { version: 7, outline: saved() }, reread)).rejects.toBe(err);
       expect(seen.map((s) => s.version)).toEqual([7]);
       expect(reads).toBe(0);
+    }
+  });
+
+  // 화면의 work.reload('proposal') 는 같은 조회를 새로 읽기 시작하면 제 응답을 버린다 — 충돌은 절이 반영된 바로 그때 나고
+  // 그 절의 generation 이벤트가 reload('proposal') 를 불러, 다시 읽기를 reload 로 하면 화면은 옛 version 에 머문다
+  it("다시 읽기(proposalReread)는 화면 상태가 아니라 GET 응답 하나에서 version·목차를 함께 꺼낸다 — 화면이 옛 version 에 머물러도 절 반영만이면 다시 보낸다", async () => {
+    const { seen, put } = recorder([conflict(9)]);
+    // 화면 상태 — 새 reload 에 밀려 다시 읽기의 응답이 버려진 채 보낼 때의 version 에 머문다
+    const screen: ProposalView = { ...proposal({}), version: 7, outline: saved() };
+    const fresh: ProposalView = { ...screen, version: 9, outline: saved() };
+    let gets = 0;
+    const get = async () => {
+      gets += 1;
+      return fresh;
+    };
+    await expect(
+      putOnceMore(put, { version: screen.version, outline: screen.outline! }, proposalReread(get)),
+    ).resolves.toBe("저장");
+    expect(gets).toBe(1);
+    expect(seen.map((s) => s.version)).toEqual([7, 9]);
+    expect(seen[1]?.outline).toBe(fresh.outline);
+  });
+
+  it("다시 읽기(proposalReread)의 GET 이 실패하면 다시 보내지 않고 GET 오류가 아니라 첫 충돌을 던진다 — act 가 다시 읽고 CONFLICT 를 알린다", async () => {
+    for (const err of [{ status: 500 }, new TypeError("fetch failed")]) {
+      const first = conflict(9);
+      const { seen, put } = recorder([first]);
+      const get = async (): Promise<ProposalView> => {
+        throw err;
+      };
+      await expect(putOnceMore(put, { version: 7, outline: saved() }, proposalReread(get))).rejects.toBe(first);
+      expect(seen.map((s) => s.version)).toEqual([7]);
     }
   });
 });

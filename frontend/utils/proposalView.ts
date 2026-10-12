@@ -207,8 +207,9 @@ function outlineWrites(o: Outline): string {
 
 // 연구 배경·방법 저장(PUT /outline) — 보고서를 자동으로 쓰는 동안 절이 반영될 때마다 version 이 올라 409 version_conflict
 // 를 받는다. 본문(fieldPut)은 보낼 때의 목차로 묶음·연구 질문·방법·승인을 다시 싣고 서버는 그 값을 그대로 덮어쓰므로,
-// 충돌이 절 반영 때문일 때만 다시 보낸다: 계획서를 다시 읽어(reread) 목차의 그 값(outlineWrites)이 그대로면 다시 읽은
-// version·목차로 한 번만 보낸다(spec §12-4 — 절 반영은 목차를 바꾸지 않아 덮어쓸 것이 없다). 목차가 바뀐 충돌(다른 탭의
+// 충돌이 절 반영 때문일 때만 다시 보낸다: 계획서를 다시 읽어(reread — ProposalStep 은 proposalReread) 목차의 그 값
+// (outlineWrites)이 그대로면 다시 읽은 version·목차로 한 번만 보낸다(spec §12-4 — 절 반영은 목차를 바꾸지 않아 덮어쓸
+// 것이 없다). 목차가 바뀐 충돌(다른 탭의
 // [목차 고치기]·초안 저장, [보고서 다시 만들기] 반영 뒤 다시 읽기 전)이면 옛 본문이 그 변경을 되돌리고 초안을 다시 승인하므로
 // 보내지 않고 첫 충돌을 던진다 — 다시 읽기가 실패해 version 이 그대로일 때도 같다. 두 번째 409 와 그 밖의 오류도 그대로
 // 던진다 — 부르는 쪽(ProposalStep act)이 다시 읽고 알린다(칸은 열린 채 글이 남는다)
@@ -227,6 +228,21 @@ export async function putOnceMore<T>(
     }
     return put(fresh.version, fresh.outline);
   }
+}
+
+// putOnceMore 의 다시 읽기 — 화면 상태를 거치지 않고 GET /proposal 응답 하나에서 version·목차를 함께 꺼낸다. 화면의
+// work.reload('proposal') 는 같은 조회를 새로 읽기 시작하면 제 응답을 버린다(늦은 응답 버리기). 충돌은 절이 반영된 바로
+// 그때 나고 그 절의 generation 이벤트가 reload('proposal') 를 부르므로, reload 로 다시 읽으면 화면이 옛 version 에 머물러
+// 절 반영만 있었는데도 첫 충돌을 던졌다. 읽기가 실패하면 null — putOnceMore 가 다시 보내지 않고 첫 충돌을 던진다.
+// 화면 갱신은 부르는 쪽이 그대로 맡는다(저장 뒤·act 의 충돌 처리에서 reload)
+export function proposalReread(get: () => Promise<ProposalView>): () => Promise<ProposalView | null> {
+  return async () => {
+    try {
+      return await get();
+    } catch {
+      return null;
+    }
+  };
 }
 
 // ── 보고서 자동 산출(06e D20) — [보고서 만들기] 한 번으로 목차를 자동 확정하고 절을 문서 순서대로 넣는다 ──
