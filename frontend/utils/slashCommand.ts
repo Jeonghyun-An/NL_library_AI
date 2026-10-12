@@ -11,6 +11,8 @@ export interface SearchMode {
   description: string;
   icon: string;
   slash: string;
+  /** 슬래시 목록을 거를 때만 쓰는 보이지 않는 별칭(한글 입력 등) — 화면에는 label 만 보인다 */
+  aliases?: readonly string[];
   placeholder: string;
   available: (kind: SearchInputKind) => boolean;
 }
@@ -23,6 +25,7 @@ export const SEARCH_MODES: readonly SearchMode[] = [
     description: "질문을 하위질문으로 나눠 논문을 찾고, 스스로 점검한 뒤 인용이 달린 보고서를 씁니다",
     icon: "/img/ico-ai-related.svg",
     slash: "/deep-research",
+    aliases: ["딥리서치", "리서치"],
     placeholder: "연구 질문을 입력하세요",
     available: (kind) => kind === "paper",
   },
@@ -57,7 +60,11 @@ export function slashSuggestions(input: string, modes: readonly SearchMode[]): S
   const token = input.trimStart().toLowerCase();
   if (!token.startsWith("/") || /\s/.test(token)) return [];
   const name = token.slice(1);
-  return modes.filter((m) => m.slash.startsWith(token) || (name !== "" && m.label.toLowerCase().startsWith(name)));
+  return modes.filter(
+    (m) =>
+      m.slash.startsWith(token) ||
+      (name !== "" && [m.label, ...(m.aliases ?? [])].some((word) => word.toLowerCase().startsWith(name))),
+  );
 }
 
 export type PaletteKeyAction = "next" | "prev" | "select" | "close" | "block";

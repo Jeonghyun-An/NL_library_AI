@@ -87,7 +87,7 @@
               <ClampedPanel
                 v-model:expanded="aiExpanded"
                 class="skx-pai-main"
-                :collapsed-rem="22.6"
+                :collapsed-rem="20"
                 more-label="전체보기"
                 scroll-anchor=".skx-pai"
               >

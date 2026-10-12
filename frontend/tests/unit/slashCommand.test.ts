@@ -1,6 +1,7 @@
 // frontend/tests/unit/slashCommand.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  SEARCH_MODES,
   createEchoGuard,
   modesFor,
   paletteKeyAction,
@@ -107,7 +108,7 @@ describe("slashSuggestions", () => {
   const paper = modesFor("paper");
   const deep = paper[0]!;
   // 모드가 여럿일 때 접두로 걸러지는지 보려고 가짜 모드를 하나 더한다
-  const summary: SearchMode = { ...deep, label: "요약", slash: "/summary" };
+  const summary: SearchMode = { ...deep, label: "요약", slash: "/summary", aliases: [] };
   const two = [deep, summary];
   const slashes = (input: string, modes: readonly SearchMode[] = two) => slashSuggestions(input, modes).map((m) => m.slash);
 
@@ -126,6 +127,21 @@ describe("slashSuggestions", () => {
     // 라벨은 DeepResearch(붙여 씀) — 명령 이름(/deep-research)에는 하이픈이 있어 이 입력은 라벨로만 걸린다
     expect(slashes("/deepre")).toEqual(["/deep-research"]);
     expect(slashes("/요")).toEqual(["/summary"]);
+  });
+
+  it("화면에 보이지 않는 검색 별칭(딥리서치·리서치)으로도 DeepResearch 가 걸린다", () => {
+    expect(slashes("/딥")).toEqual(["/deep-research"]);
+    expect(slashes("/딥리")).toEqual(["/deep-research"]);
+    expect(slashes("/리서치")).toEqual(["/deep-research"]);
+    expect(slashes("/리")).toEqual(["/deep-research"]);
+    // 별칭이 없는 모드는 이 글로 걸리지 않는다
+    expect(slashes("/딥")).not.toContain("/summary");
+    expect(slashes("/없는말")).toEqual([]);
+  });
+
+  it("별칭은 목록에 보이는 라벨을 바꾸지 않는다", () => {
+    expect(SEARCH_MODES[0]!.label).toBe("DeepResearch");
+    expect(SEARCH_MODES[0]!.aliases).toEqual(["딥리서치", "리서치"]);
   });
 
   it("앞 공백은 무시하고 명령을 끝까지 쳐도 목록에 남는다", () => {

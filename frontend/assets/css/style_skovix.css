@@ -1760,7 +1760,8 @@ a:hover {
 /* [E] AI 검색 결과 섹션 */
 
 /* [S] 길어질 수 있는 AI 글 패널(ClampedPanel) */
-/* collapsedRem 높이까지만 보이고, 실제로 넘칠 때만(.is-clamped) 아래 3.6rem 이 흐려지며 [더보기]/[접기] 가 그 위에 얹힌다.
+/* collapsedRem 은 보이는 글 높이다. 넘칠 때만(.is-clamped) 그 영역의 아래 3rem 이 완전히 투명해질 때까지 흐려지고,
+   [더보기]/[접기] 는 그 아래 따로 놓인 띠(.skx-clamp__foot)에 있다 — 글이 버튼 뒤로 비치지 않는다.
    흐림은 배경색을 덮는 그라데이션이 아니라 mask(알파만 쓰므로 불투명 토큰 하나면 된다)라 유리·불투명 어느 면 위에서도 같다 */
 .skx-clamp {
   position: relative;
@@ -1772,12 +1773,12 @@ a:hover {
 .skx-clamp.is-clamped .skx-clamp__clip {
   -webkit-mask-image: linear-gradient(
     to bottom,
-    var(--skx-ink-strong) calc(100% - 3.6rem),
+    var(--skx-ink-strong) calc(100% - 3rem),
     transparent
   );
   mask-image: linear-gradient(
     to bottom,
-    var(--skx-ink-strong) calc(100% - 3.6rem),
+    var(--skx-ink-strong) calc(100% - 3rem),
     transparent
   );
 }
@@ -1785,13 +1786,6 @@ a:hover {
   display: flex;
   justify-content: center;
   padding: 0.2rem 0 0.8rem;
-}
-.skx-clamp.is-clamped .skx-clamp__foot {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 0 0 0.8rem;
 }
 .skx-clamp__btn {
   display: inline-flex;
