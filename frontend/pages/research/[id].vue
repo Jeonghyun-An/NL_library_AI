@@ -230,8 +230,9 @@ import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { WorkStep } from "~/types/work";
 import { safeLocalStorage } from "~/utils/browserId";
+import { queueLine } from "~/utils/queueLine";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
-import { queueLine, researchPhase } from "~/utils/researchEvents";
+import { researchPhase } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import {
   buildReportDocument,

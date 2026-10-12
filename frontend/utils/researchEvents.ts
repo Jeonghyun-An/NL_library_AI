@@ -102,10 +102,6 @@ function queueFor(status: ResearchStatus, q: QueueInfo | null | undefined): Queu
   return q && isWaiting(status) ? { ahead: q.ahead, etaSec: q.eta_sec ?? null } : null;
 }
 
-// 대기 순번 문구는 utils/queueLine.ts 로 옮겼다(연구 어시스턴트의 생성 대기 문구와 한곳에) — 호출처·기존 테스트가
-// 그대로 쓰게 여기서 다시 내보낸다
-export { queueLine } from "~/utils/queueLine";
-
 // 승인·재시도 응답이 실은 순번(api/research.py approve·retry) — 첫 하트비트(15초)를 기다리지 않고 바로 보인다.
 // 응답보다 스트림이 먼저 대기를 벗어났으면(워커가 바로 집음 — applyApproval 이 status 를 되돌리지 않는 경우)
 // 늦은 순번은 싣지 않고, 순번 키가 없는 옛 서버 응답(undefined)이면 화면 값을 그대로 둔다

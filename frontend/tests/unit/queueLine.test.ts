@@ -1,11 +1,12 @@
 // frontend/tests/unit/queueLine.test.ts
 import { describe, expect, it } from "vitest";
 import { genQueueLine, queueLine } from "~/utils/queueLine";
-import { queueLine as queueLineFromEvents } from "~/utils/researchEvents";
+import * as events from "~/utils/researchEvents";
 
 describe("queueLine — 옮긴 자리", () => {
-  it("researchEvents 가 같은 함수를 다시 내보낸다(호출처·기존 테스트가 그대로다)", () => {
-    expect(queueLineFromEvents).toBe(queueLine);
+  it("queueLine 은 utils/queueLine 한 곳에서만 내보낸다 — researchEvents 는 다시 내보내지 않는다", () => {
+    // 같은 이름을 두 파일이 내보내면 Nuxt 자동 import 가 'Duplicated imports' 경고를 내고 한쪽을 버린다(06b 이월 §7-5)
+    expect("queueLine" in events).toBe(false);
     expect(queueLine({ ahead: 2, etaSec: 1500 })).toBe("앞에 2건 · 약 25분");
     expect(queueLine({ ahead: 0, etaSec: null })).toBe("바로 다음 차례입니다");
     expect(queueLine(null)).toBeNull();

@@ -14,6 +14,7 @@ import type {
   StepResult,
   SynthEvent,
 } from "~/types/research";
+import { queueLine } from "~/utils/queueLine";
 import {
   applyApproval,
   applyQueue,
@@ -24,7 +25,6 @@ import {
   isTerminalEvent,
   mergeEvidence,
   questionUsedFromSteps,
-  queueLine,
   refreshView,
   researchPhase,
   sectionGapToRecover,
