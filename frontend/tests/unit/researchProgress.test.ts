@@ -1,4 +1,6 @@
 // frontend/tests/unit/researchProgress.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ResearchEvent, ResearchStepRow, ResearchView, RoundView, StepStatus, SubqView, Verdict } from "~/types/research";
 import type { DraftSlot, DraftSlotStatus, SynthEta } from "~/utils/researchDraft";
@@ -352,5 +354,60 @@ describe("activeRoundKey", () => {
     const next = activeRoundKey([subq(0, "done"), subq(1, "running", [rechecked(1), round(2)])]);
     expect(next).not.toBe(judged);
     expect(next).not.toBe(searched);
+  });
+});
+
+// research.css 의 규칙 — 선택자(쉼표로 나눔)·감싼 @규칙(@media 등)·선언. 이 파일은 CSS 중첩·중괄호가 든 글자를 쓰지 않는다
+interface CssRule {
+  at: string;
+  selectors: string[];
+  decls: Map<string, string>;
+}
+
+function cssRules(css: string): CssRule[] {
+  const src = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const squash = (s: string) => s.replace(/\s+/g, " ").trim();
+  const rules: CssRule[] = [];
+  const heads: string[] = [];
+  let buf = "";
+  for (const ch of src) {
+    if (ch === "{") {
+      heads.push(squash(buf));
+      buf = "";
+    } else if (ch === "}") {
+      const head = heads.pop() ?? "";
+      if (!head.startsWith("@") && buf.trim()) {
+        const decls = new Map<string, string>();
+        for (const d of buf.split(";")) {
+          const colon = d.indexOf(":");
+          if (colon > 0) decls.set(d.slice(0, colon).trim(), squash(d.slice(colon + 1)));
+        }
+        rules.push({ at: heads.filter((h) => h.startsWith("@")).join(" "), selectors: head.split(",").map(squash), decls });
+      }
+      buf = "";
+    } else {
+      buf += ch;
+    }
+  }
+  return rules;
+}
+
+// 고정 진행 막대는 문서(창) 스크롤 위에 sticky 로 붙는다 — 브라우저는 초점 이동·scrollIntoView·#조각 이동에서 sticky 막대를 모르므로
+// 막대 높이를 문서 스크롤 칸(html)의 scroll-padding-top 으로 알려야 막대 밑에 가린 채 초점을 받는 요소가 없다(WCAG 2.2 2.4.11)
+describe("고정 진행 영역의 문서 스크롤 여백(research.css)", () => {
+  const rules = cssRules(readFileSync(fileURLToPath(new URL("../../assets/css/research.css", import.meta.url)), "utf8"));
+  const declsOf = (selector: string, prop: string) =>
+    rules.filter((r) => r.selectors.includes(selector) && r.decls.has(prop)).map((r) => ({ at: r.at, value: r.decls.get(prop) }));
+
+  it("막대가 서 있으면 html 이 막대 영역 높이만큼 scroll-padding-top 을 둔다 — 화면 폭 조건마다 막대 높이와 같은 값", () => {
+    const bar = declsOf(".rs-page.has-progressbar", "--rs-bar-h");
+    expect(bar.length).toBeGreaterThan(0);
+    expect(declsOf("html:has(.rs-page.has-progressbar)", "scroll-padding-top")).toEqual(bar);
+  });
+
+  it("막대 높이는 그 한 곳에만 — 절의 scroll-margin-top 에 다시 더하지 않는다(두 번 더하면 절 이동 오프셋이 두 배가 된다)", () => {
+    const margins = rules.flatMap((r) => r.decls.get("scroll-margin-top") ?? []);
+    expect(margins.length).toBeGreaterThan(0);
+    for (const m of margins) expect(m).not.toMatch(/--rs-bar/);
   });
 });

@@ -4,8 +4,12 @@
    색·모서리·그림자는 --skx-* 토큰만 읽는다. 1rem = 20px(style_skovix.css). */
 
 /* ── 페이지 골격 ─────────────────────────────────────────── */
-/* --rs-bar-thick: 큰 진행 막대의 두께(Q1). --rs-bar-h: 화면 위에 고정한 진행 영역 전체 높이 — 막대가 없으면 0px.
-   옆 칸 top·절 scroll-margin-top·돌아온 자리 맞추기가 이 값을 읽는다(정함 3 — 높이를 재지 않고 토큰으로 고정한다) */
+/* --rs-bar-thick: 큰 진행 막대의 두께(Q1). --rs-bar-area-h: 화면 위에 고정한 진행 영역 전체 높이 — 값은 이 :root 한 곳에만 둔다
+   (문서 스크롤 칸 html 은 .rs-page 에 둔 값을 읽지 못한다). --rs-bar-h: 지금 막대가 가리는 높이 — 막대가 서 있으면
+   --rs-bar-area-h, 없으면 0px. 막대 높이·옆 칸 top·돌아온 자리 맞추기가 읽는다(정함 3 — 높이를 재지 않고 토큰으로 고정한다) */
+:root {
+  --rs-bar-area-h: 5.6rem;
+}
 .rs-page {
   --rs-side-width: 17rem;
   --rs-bar-thick: 1rem;
@@ -18,14 +22,21 @@
   color: var(--skx-ink);
 }
 .rs-page.has-progressbar {
-  --rs-bar-h: 5.6rem;
+  --rs-bar-h: var(--rs-bar-area-h);
+}
+/* 막대가 서 있는 동안 문서 스크롤(창)의 위쪽 여백 — 브라우저는 초점 이동·scrollIntoView·#조각 이동에서 sticky 막대를 모르므로
+   막대 밑에 놓인 요소(초안의 인용 칩·PlanCard 편집 칸 등)가 가린 채 초점을 받지 않게 그 높이를 알린다(WCAG 2.2 2.4.11).
+   절 이동(scrollIntoView)도 이 여백을 따르므로 .rs-section 의 scroll-margin-top 에는 막대 높이를 다시 더하지 않는다.
+   scrollBy·scrollTo 에는 걸리지 않는다 — 그것으로 굴리는 돌아온 자리 맞추기는 막대 높이를 따로 받아야 한다 */
+html:has(.rs-page.has-progressbar) {
+  scroll-padding-top: var(--rs-bar-area-h);
 }
 @media (max-width: 768px) {
+  :root {
+    --rs-bar-area-h: 5.2rem;
+  }
   .rs-page {
     --rs-bar-thick: 0.75rem;
-  }
-  .rs-page.has-progressbar {
-    --rs-bar-h: 5.2rem;
   }
 }
 .rs-body {
@@ -974,7 +985,8 @@ button.rs-synth__item:focus-visible,
   border-radius: 50%;
   animation: rs-blink 1.2s ease-in-out infinite;
 }
-/* 카드 목록에서 눌러 옮겨 오는 자리 — 화면 맨 위에 딱 붙지 않게 조금 띄우고, 강조는 바깥 테두리로 한다 */
+/* 카드 목록에서 눌러 옮겨 오는 자리 — 화면 맨 위(고정 진행 막대가 서 있으면 html 의 scroll-padding-top 이 막대 아래로 내린
+   자리)에 딱 붙지 않게 조금 띄우고, 강조는 바깥 테두리로 한다. 막대 높이를 여기에 다시 더하지 않는다(두 번 내려간다) */
 .rs-section {
   scroll-margin-top: 1.2rem;
   border-radius: var(--skx-radius-sm);
