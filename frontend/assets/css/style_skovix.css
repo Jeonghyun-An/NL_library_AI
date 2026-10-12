@@ -2712,11 +2712,6 @@ h4,
 
 /* 1위가 추천할 만큼 맞지 않을 때 — 안내 한 줄만 */
 
-.skx-pick__body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
 .skx-pick__block {
   display: flex;
   flex-direction: column;
