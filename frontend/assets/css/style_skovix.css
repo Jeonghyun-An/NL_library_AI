@@ -163,9 +163,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-weight: 400;
-  line-height: 130%;
+  line-height: 1.6;
   color: var(--skx-ink);
-  letter-spacing: -1px;
+  letter-spacing: -0.01em;
 }
 a,
 a:visited,
@@ -179,6 +179,131 @@ a:hover {
     font-size: 0.9rem;
   }
 }
+
+/* [S] 글 리듬 — 글꼴은 Pretendard 그대로, 자간·줄간격만 바로잡는다.
+   예전 html,body 는 letter-spacing -1px(20px 에서 -0.05em, 휴대폰 14.4px 에서 -7%)·line-height 130%(20px 기준 26px 로 계산돼 모든 자손이
+   글자 크기와 상관없이 26px 를 물려받음 — 큰 제목은 답답하고 작은 라벨은 헐렁했다)였다.
+   - 본문: 자간 -0.01em, 줄간격 1.6(긴 글 — AI 요약·추천 이유·초록·카드 서지)
+   - UI(버튼·입력·칩·태그·한 줄 라벨): 줄간격 1.4. 줄 높이로 높이가 정해지던 큰 버튼은 줄간격을 줄여도 높이가 그대로이도록 최소 높이를 둔다
+   - 제목류: 자간 -0.02em, 줄간격 1.3(이미 줄간격을 정해 둔 제목은 그 값 그대로)
+   대문자 라벨의 0.04em 같은 자간은 각 클래스가 정한 대로 둔다 */
+button,
+input,
+select,
+textarea {
+  line-height: 1.4;
+}
+.skx-rel__label,
+.skx-score-ring__tip,
+.skx-footer__copy,
+.skx-avail__label,
+.skx-prelate-card__score,
+.skx-reco-item__score,
+.skx-reco-type,
+.skx-page-num,
+.skx-paper-count__label,
+.skx-ai-expand-bar__label,
+.skx-btn-chat__label,
+.skx-btn-loan,
+.skx-btn-ptalk,
+.skx-btn-pview,
+.skx-btn-pview-sm,
+.skx-btn-read,
+.skx-btn-talk,
+.skx-cite-box__badge,
+.skx-deeper__btn,
+.skx-filter-chip,
+.skx-meta-role,
+.skx-meta-text,
+.skx-modal__book-meta span,
+.skx-paper-meta-text,
+.skx-pick__label,
+.skx-pick__heading,
+.skx-rcd-modal__author,
+.skx-rcd-modal__author-role,
+.skx-rcd-modal__badge,
+.skx-rcd-modal__meta-text,
+.skx-ai-header__keywords,
+.skx-modal__btn-cancel,
+.skx-modal__btn-confirm,
+.skx-modal__sub,
+.skx-newbooks__label,
+.skx-rcd-modal__btn,
+.skx-keyword,
+.skx-rsearch__input,
+.skx-chat-source-chip,
+.skx-toast,
+.skx-pcuration__tab-btn,
+.skx-vtab,
+.skx-rcd-ai__label,
+.skx-rcd-hero__sub {
+  line-height: 1.4;
+}
+.skx-btn-chat,
+.skx-btn-read,
+.skx-btn-pview,
+.skx-btn-ptalk {
+  min-height: 2.5rem;
+}
+.skx-deeper__btn {
+  min-height: 2.4rem;
+}
+@media (max-width: 768px) {
+  .skx-btn-chat,
+  .skx-btn-read,
+  .skx-btn-pview,
+  .skx-btn-ptalk {
+    min-height: 2.37rem;
+  }
+}
+/* 자간을 -1px 에서 되돌리면 글이 조금 넓어져 좁은 카드에서 '원문 보기' 가 글자 단위로 꺾였다 — 한 줄로 둔다 */
+.skx-btn-read {
+  white-space: nowrap;
+}
+h1,
+h2,
+h3,
+h4,
+.skx-ai-header__title,
+.skx-ai-panel__title-text,
+.skx-book-card__title,
+.skx-chat-title,
+.skx-modal__title,
+.skx-modal__book-title,
+.skx-pai__hd-text,
+.skx-rcd-modal__title,
+.skx-rcd-modal__book-title,
+.skx-rcd-select__tit,
+.skx-reco-empty__text,
+.skx-reco-title,
+.skx-recommend-main__txt,
+.skx-section-title {
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.skx-brand__line,
+.skx-hero,
+.skx-history__title,
+.skx-pai-section__title,
+.skx-pick__title-btn,
+.skx-paper-title,
+.skx-pdetail__title,
+.skx-pdetail__title-en,
+.skx-pcuration__heading,
+.skx-paccord__title,
+.skx-prelate__heading,
+.skx-prelate-card__title,
+.skx-cite-modal__title,
+.skx-newbooks__title,
+.skx-pai-ref__title,
+.skx-rcd-book-card__name,
+.skx-rcd-hero__tit,
+.skx-recommend-item__txt,
+.skx-recommend-main__tit,
+.skx-reco-item__name {
+  letter-spacing: -0.02em;
+}
+/* [E] 글 리듬 */
 
 /* [S] 디자인 토큰 */
 /* 단위 기준: 1rem = 20px */
