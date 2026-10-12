@@ -21,6 +21,19 @@
       </li>
     </ol>
 
+    <!-- 검토 중 — 후보 이벤트(candidates)로 세운 이번 회차의 후보. 채택 목록 끝(지금 도는 하위질문의 묶음) 바로 아래에
+         선다 — 점검이 끝나면 리듀서가 지우고, 채택은 바로 위 목록 끝에 떨어져 박히고(wk-drop) 뺀 것은 아래 뺌 더미로
+         가라앉는다(wk-sink). 저장되지 않는 값이라 다시 연 화면·끝난 잡에는 없다 -->
+    <template v-if="ledger.reviewing.length">
+      <h3 class="wk-ledger__pile-title">검토 중 {{ ledger.reviewing.length }}</h3>
+      <ol class="wk-ledger__list wk-ledger__list--reviewing" aria-label="자기점검을 기다리는 후보">
+        <li v-for="p in ledger.reviewing" :key="p.cntsId" class="wk-ledger__paper is-reviewing">
+          <span class="wk-ledger__title">{{ p.title || p.cntsId }}</span>
+          <span class="wk-ledger__meta">{{ byline(p) }} · 하위질문 {{ subqLabel(p) }}</span>
+        </li>
+      </ol>
+    </template>
+
     <template v-if="ledger.dropped.length">
       <h3 class="wk-ledger__pile-title">뺌 {{ ledger.dropped.length }}</h3>
       <ol ref="droppedList" class="wk-ledger__list wk-ledger__list--dropped" aria-label="자기점검이 뺀 논문">
@@ -67,7 +80,17 @@ const props = defineProps<{ subqs: SubqView[]; live: boolean }>();
 // 떨어지는 효과의 길이(work.css 의 wk-drop·wk-sink 와 맞춘다)
 const FRESH_MS = 900;
 
-const shown = computed(() => hasLedger(props.subqs));
+// 탐색 중 한 번 선 장부는 탐색이 끝날 때까지 둔다 — 첫 점검이 채택 0편(후보 전부 무관 제외)이면 검토 중이 지워지는
+// 순간 채택 목록이 어디에도 없어 카드째 사라졌다가 다음 회차 후보에 다시 선다(뺌 더미가 가라앉는 것도 보이지 않는다)
+const seenLive = ref(false);
+const shown = computed(() => hasLedger(props.subqs) || (props.live && seenLive.value));
+watch(
+  [shown, () => props.live],
+  ([s, live]) => {
+    if (s && live) seenLive.value = true;
+  },
+  { immediate: true },
+);
 const ledger = computed(() => ledgerFrom(props.subqs));
 const line = computed(() => ledgerLine(ledger.value));
 
@@ -77,6 +100,7 @@ const announcement = ref("");
 const announceSeq = ref(0);
 let prevAdopted: Set<string> | null = null;
 let prevDropped: Set<string> | null = null;
+let prevReviewing: Set<string> | null = null;
 let freshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const adoptedList = ref<HTMLOListElement | null>(null);
@@ -92,15 +116,18 @@ watch(
     // 떨어지고, 장부가 찬 채로 다시 연 화면은 그 장부가 기준선이라 움직이지 않는다
     const adopted = props.live ? newlyAdded(prevAdopted, l.adopted) : [];
     const dropped = props.live ? newlyAdded(prevDropped, l.dropped) : [];
+    // 검토 중은 떨어지지 않고 흐린 카드로 선다(반짝임은 CSS) — 새로 선 후보 수만 알린다
+    const reviewing = props.live ? newlyAdded(prevReviewing, l.reviewing) : [];
     prevAdopted = new Set(l.adopted.map((p) => p.cntsId));
     prevDropped = new Set(l.dropped.map((p) => p.cntsId));
+    prevReviewing = new Set(l.reviewing.map((p) => p.cntsId));
     if (props.live) {
       follow(adoptedList, adopted.length > 0);
       follow(droppedList, dropped.length > 0);
     }
-    if (!adopted.length && !dropped.length) return;
-    fresh.value = { adopted, dropped };
+    if (!adopted.length && !dropped.length && !reviewing.length) return;
     announcement.value = [
+      reviewing.length ? `후보 ${reviewing.length}편 검토 중` : "",
       adopted.length ? `근거 ${adopted.length}편 채택` : "",
       dropped.length ? `${dropped.length}편 뺌` : "",
     ]
@@ -108,6 +135,9 @@ watch(
       .join(", ");
     // 같은 문장이 연달아 와도 읽히게 새 노드로 넣는다(템플릿의 알림 영역 주석)
     announceSeq.value += 1;
+    // 후보만 선 바뀜은 앞서 떨어지던 채택·뺌의 효과를 끊지 않는다
+    if (!adopted.length && !dropped.length) return;
+    fresh.value = { adopted, dropped };
     if (freshTimer) clearTimeout(freshTimer);
     freshTimer = setTimeout(() => {
       fresh.value = { adopted: [], dropped: [] };
