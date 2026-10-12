@@ -413,9 +413,6 @@ h4,
   /* 입력창 테두리(평소·초점) */
   --skx-input-ring: var(--skx-accent);
   --skx-input-ring-focus: var(--skx-accent);
-  /* 화면 테마 견본 색 — 현재 테마와 상관없이 늘 그 테마의 색으로 보여야 해서 테마마다 갈아 끼우지 않는 토큰이다 */
-  --skx-swatch-dark-green: linear-gradient(135deg, #0f2822 0%, #5f8f85 100%);
-  --skx-swatch-pink: linear-gradient(135deg, #f0ddd6 0%, #eaa9cb 100%);
   /* 흐림을 더 거는 면(예시 질문 칸·결과 AI 패널)과 예시 칸 그림자 — 다크는 none 이라 지금 모습 그대로이고, 비치는 흰 유리인 핑크만 쓴다 */
   --skx-chip-blur: none;
   --skx-aip-blur: none;
@@ -2083,50 +2080,83 @@ html[data-theme="pink"] .skx-reading {
 }
 /* [E] 히스토리 아이템 활성 상태 */
 
-/* [S] 화면 테마 견본 — 사이드바 맨 아래(components/ThemeSwitcher.vue, SHOW_THEME_SWITCH) */
-.skx-theme {
+/* [S] 설정(톱니)과 팝오버 — 사이드바 맨 아래(components/SettingsMenu.vue). 팝오버는 톱니 위쪽, 사이드바 폭 안에 열린다(사이드바가 overflow: hidden 이라 폭 안이어야 잘리지 않는다).
+   색은 모두 토큰이다 — 켜진 칸은 포인트색(다크는 산호, 핑크는 검정) 채움 + 그 위 글(--skx-on-accent) */
+.skx-settings {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem 1rem;
+  justify-content: flex-end;
+  padding: 0.4rem 1.2rem 1rem;
 }
-.skx-theme__label {
-  margin-right: auto;
+.skx-set {
+  position: relative;
+  display: inline-flex;
+}
+.skx-set__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  z-index: 20;
+  width: 13.6rem;
+  padding: 0.8rem;
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+.skx-set__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--skx-ink);
+  line-height: 1.5;
+}
+.skx-set__label {
+  margin: 0 0 0.3rem;
   font-size: 0.65rem;
   font-weight: 500;
-  color: var(--skx-side-gray-2);
+  color: var(--skx-gray-1);
+  line-height: 1.5;
 }
-.skx-theme__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
+.skx-set__seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.1rem;
+  padding: 0.1rem;
+  background: var(--skx-frost-bg-soft);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-pill);
+}
+.skx-set__opt {
+  padding: 0.35rem 0;
   background: none;
-  border: 2px solid transparent;
-  border-radius: 50%;
+  border: none;
+  border-radius: var(--skx-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
-.skx-theme__btn.is-active {
-  border-color: var(--skx-accent);
+.skx-set__opt:hover:not(.is-active) {
+  background: var(--skx-frost-bg);
+  color: var(--skx-ink);
 }
-.skx-theme__btn:focus-visible {
+.skx-set__opt.is-active {
+  background: var(--skx-accent);
+  color: var(--skx-on-accent);
+}
+.skx-set__opt:focus-visible {
   outline: 2px solid var(--skx-accent);
   outline-offset: 2px;
 }
-.skx-theme__dot {
-  width: 1rem;
-  height: 1rem;
-  border: 1px solid var(--skx-frost-line);
-  border-radius: 50%;
+@media (prefers-reduced-motion: reduce) {
+  .skx-set__opt {
+    transition: none;
+  }
 }
-.skx-theme__btn--dark-green .skx-theme__dot {
-  background: var(--skx-swatch-dark-green);
-}
-.skx-theme__btn--pink .skx-theme__dot {
-  background: var(--skx-swatch-pink);
-}
-/* [E] 화면 테마 견본 */
+/* [E] 설정(톱니)과 팝오버 */
 
 /* [S] 검색결과 페이지 레이아웃 */
 .skx-result {

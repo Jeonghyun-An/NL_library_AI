@@ -25,8 +25,6 @@ const otherThemes = THEMES.filter((t) => t !== DEFAULT_THEME);
 
 /** 홀로그램 배경 토큰은 화면 전체에 하나뿐이라 밝은 읽는 면이 다시 선언하지 않는다 */
 const isHoloToken = (name: string) => name.startsWith("--skx-holo-");
-/** 테마 견본 색은 현재 테마와 상관없이 늘 그 테마의 색이라 테마 블록이 다시 선언하지 않는다 */
-const isSwatchToken = (name: string) => name.startsWith("--skx-swatch-");
 
 describe("테마 구조 — 토큰 묶음", () => {
   it("테마는 dark-green(기본)과 pink 를 포함하고 기본은 dark-green 이다", () => {
@@ -36,7 +34,7 @@ describe("테마 구조 — 토큰 묶음", () => {
 
   it("밝은 읽는 면이 :root 의 --skx-* (반경·홀로그램 제외)를 빠짐없이 다시 선언한다", () => {
     const missing = Object.keys(rootDecls).filter(
-      (name) => !name.startsWith("--skx-radius-") && !isHoloToken(name) && !isSwatchToken(name) && !(name in readingBaseDecls),
+      (name) => !name.startsWith("--skx-radius-") && !isHoloToken(name) && !(name in readingBaseDecls),
     );
     expect(missing).toEqual([]);
   });
@@ -45,9 +43,7 @@ describe("테마 구조 — 토큰 묶음", () => {
     const body = findBlock(themeSelector(theme));
     expect(body, `${themeSelector(theme)} 블록이 있어야 한다`).not.toBeNull();
     const own = declarations(body!);
-    const missing = Object.keys(rootDecls).filter(
-      (name) => !name.startsWith("--skx-radius-") && !isSwatchToken(name) && !(name in own),
-    );
+    const missing = Object.keys(rootDecls).filter((name) => !name.startsWith("--skx-radius-") && !(name in own));
     expect(missing).toEqual([]);
   });
 

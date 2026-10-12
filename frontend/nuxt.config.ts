@@ -9,7 +9,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      // 화면 테마(html[data-theme]) 를 첫 그림 전에 붙인다 — 고른 테마로 처음부터 그려져 깜빡이지 않는다(utils/theme.ts)
+      // 화면 테마(html[data-theme]) 를 첫 그림 전에 붙인다 — 저장된 테마로 처음부터 그려져 깜빡이지 않는다(utils/theme.ts)
       script: [{ innerHTML: themeInitScript(), tagPosition: "head", tagPriority: "critical" }],
     },
   },

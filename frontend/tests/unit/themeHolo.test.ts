@@ -174,6 +174,8 @@ describe.each(THEMES)("홀로그램 배경 — 가독성 [%s]", (theme: ThemeNam
     ],
     ["결과 읽는 칸(--skx-read-surface)", READ_FACE, READ_TEXTS, false],
     ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"], false],
+    // 설정 팝오버(사이드바 하단 톱니) — 메뉴 바탕 위, 제목·항목 이름은 사이드바 글 톤(.skx-lnb 안에서 --skx-ink·--skx-gray-1 이 --skx-side-* 로 바뀐다)
+    ["설정 팝오버(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-side-ink", "--skx-side-gray-1"], true],
   ];
   const faceCases = faces.flatMap(([name, layers, texts, veil]) =>
     texts.map((text) => ({ name, layers, text, veil })),
