@@ -78,14 +78,17 @@ html:has(.rs-page.has-progressbar) {
 }
 
 /* ── 공통 부품 ───────────────────────────────────────────── */
+/* 카드는 불투명 면(--skx-white — 다크 테마에서 짙은 청록)이라 움직이는 배경 위에서도 글자가 읽힌다. 다크에서는 옅은 그림자가 거의
+   보이지 않아 가장자리를 흰 8% 선(--skx-frame-line — 결과 화면 큰 틀과 같은 선)과 위 하이라이트(--skx-frost-hilite)로 세운다 */
 .rs-card {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   padding: 1.2rem;
   background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
   border-radius: var(--skx-radius-lg);
-  box-shadow: var(--skx-shadow-lnb);
+  box-shadow: var(--skx-frost-hilite), var(--skx-shadow-lnb);
 }
 .rs-card__head {
   display: flex;
@@ -153,7 +156,7 @@ html:has(.rs-page.has-progressbar) {
   padding: 0.45rem 0.9rem;
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   white-space: nowrap;
   text-decoration: none;
   background: var(--skx-primary);
@@ -214,6 +217,9 @@ html:has(.rs-page.has-progressbar) {
 }
 
 /* ── 머리 ────────────────────────────────────────────────── */
+/* 머리 — 카드와 같은 불투명 면·가장자리(.rs-card 주석). 'DeepResearch' kicker 는 사이드바 묶음 이름과 같은 청록 칩, 질문은 화면의
+   주인이라 제목 글자색(--skx-ink-strong)으로 바로 아래 큰 진행 막대의 글줄(1rem)보다 한 단계 크게 둔다. kicker·상태 배지·버튼 줄
+   간격은 큰 진행 막대의 단계 칩(.rs-pbar__stage — 0.55rem·0.1rem 0.45rem·알약)과 같은 크기 체계 */
 .rs-head {
   display: flex;
   flex-wrap: wrap;
@@ -222,45 +228,54 @@ html:has(.rs-page.has-progressbar) {
   gap: 0.8rem;
   padding: 1.2rem;
   background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
   border-radius: var(--skx-radius-lg);
-  box-shadow: var(--skx-shadow-lnb);
+  box-shadow: var(--skx-frost-hilite), var(--skx-shadow-lnb);
 }
 .rs-head__main {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 .rs-head__kicker {
+  align-self: flex-start;
   margin: 0;
-  font-size: 0.6rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  color: var(--skx-primary);
+  line-height: 1.4;
+  color: var(--skx-teal-ink);
+  background: var(--skx-glass-teal);
+  border-radius: var(--skx-radius-pill);
 }
 .rs-head__question {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.4;
+  color: var(--skx-ink-strong);
   word-break: keep-all;
 }
 .rs-head__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.3rem;
 }
 .rs-status {
   align-self: flex-start;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.6rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--skx-primary);
   background: var(--skx-white);
   border: 1px solid var(--skx-border-c1);
   border-radius: var(--skx-radius-pill);
 }
 .rs-status--completed {
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
   border-color: var(--skx-primary);
 }
@@ -462,6 +477,21 @@ html:has(.rs-page.has-progressbar) {
 /* ── 보고서 ──────────────────────────────────────────────── */
 .rs-report {
   gap: 1.2rem;
+}
+/* 보고서(초안·최종본 — ReportView)와 탐색 중 절 자리(ReportSkeleton)는 오래 읽는 면이라 결과 화면의 읽는 칸(.skx-pick__main 등 —
+   round08)과 같은 '읽기용 짙은 유리'다: 바탕 --skx-read-surface, 글 톤은 이 면 안에서만 --skx-read-*(본문 거의 흰색)로 다시 정의,
+   줄간격 1.6, 흐림·반사광·위 하이라이트 없음. 읽는 칸은 큰 틀 위에 겹쳐 짙어지지만 연구 화면의 카드는 움직이는 배경 위에 바로 서므로
+   불투명 면(--skx-white) 위에 깐다 — 띠가 밝게 지나가도 글자가 흐려지지 않는다. 두 부품 모두 뿌리가 .rs-card.rs-report 라 부품 파일을
+   고치지 않고, 첫 절이 오면 같은 자리에 초안이 서도 면이 그대로다. 밝은 읽는 면(.skx-reading)은 쓰지 않는다(사용자 결정 2026-10-13) */
+.rs-card.rs-report {
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: linear-gradient(var(--skx-read-surface), var(--skx-read-surface)), var(--skx-white);
+  border-color: var(--skx-frost-menu-line);
+  box-shadow: none;
+  --skx-ink: var(--skx-read-ink);
+  --skx-ink-2: var(--skx-read-ink-2);
+  --skx-gray-1: var(--skx-read-gray-1);
 }
 .rs-report__head {
   display: flex;
@@ -759,7 +789,7 @@ html:has(.rs-page.has-progressbar) {
   padding: 0.15rem 0.3rem 0.15rem 0.55rem;
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
   border-radius: var(--skx-radius-pill);
 }
@@ -767,7 +797,7 @@ html:has(.rs-page.has-progressbar) {
   padding: 0 0.2rem;
   font-size: 0.7rem;
   line-height: 1;
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: none;
   border: none;
   cursor: pointer;
@@ -862,7 +892,7 @@ button.rs-synth__item:focus-visible,
   border-radius: 50%;
 }
 .rs-synth__item.is-done .rs-synth__icon {
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
 }
 .rs-synth__item.is-running .rs-synth__icon {
@@ -1271,8 +1301,10 @@ button.rs-synth__item:focus-visible,
   padding: 0 1.2rem;
   overflow: hidden;
   background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
   border-radius: var(--skx-radius-md);
-  box-shadow: var(--skx-shadow-lnb);
+  /* 다크에서는 옅은 그림자가 보이지 않아 아래로 지나가는 본문에 막대가 붙어 보인다 — 메뉴와 같은 짙은 그림자로 띄운다 */
+  box-shadow: var(--skx-frost-hilite), var(--skx-shadow-banner);
 }
 .rs-pbar__stages {
   display: flex;
@@ -1296,7 +1328,7 @@ button.rs-synth__item:focus-visible,
   border-color: var(--skx-border-c1);
 }
 .rs-pbar__stage.is-current {
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
   border-color: var(--skx-primary);
 }
@@ -1352,7 +1384,9 @@ button.rs-synth__item:focus-visible,
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--skx-white) 45%, transparent), transparent);
+  /* 빛은 밝은 유리 선(--skx-frost-line — 두 테마 모두 흰색 계열)이다. 짙은 면 색(--skx-white)을 섞으면 다크의 산호 막대 위로 어두운
+     띠가 흐르고, 제목 글자색(--skx-ink-strong)을 섞으면 라이트(핑크)의 짙은 막대 위에서 보이지 않는다 */
+  background: linear-gradient(90deg, transparent, var(--skx-frost-line), transparent);
   transform: translateX(-100%);
   animation: rs-sheen 1.8s ease-in-out infinite;
 }
@@ -1471,6 +1505,26 @@ button.rs-synth__item:focus-visible,
   }
 }
 
+/* ── 옆 칸 카드 머리 ─────────────────────────────────────── */
+/* 옆 칸의 진행 패널·근거 장부 머리를 같은 높이·글자로 맞추고 앞에 청록 세로 막대(사이드바 DeepResearch 묶음 이름과 같은 색)를
+   단다. 공용 .rs-card__title 은 본문 카드(보고서 작성 현황·실패·취소·보고서 오류)와 연구 어시스턴트 부품도 쓰므로 고치지 않고
+   옆 칸 안으로 좁힌다(좁은 화면 B 의 옆 칸도 같은 .rs-col-side). 앞 막대는 인라인 블록 — 장부 머리(.wk-ledger__head, baseline
+   정렬)의 글자 기준선을 바꾸지 않는다 */
+.rs-col-side .rs-card__title {
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.rs-col-side .rs-card__title::before {
+  content: "";
+  display: inline-block;
+  width: 0.25rem;
+  height: 0.75rem;
+  margin-right: 0.4rem;
+  vertical-align: -0.1rem;
+  background: var(--skx-teal-ink);
+  border-radius: var(--skx-radius-pill);
+}
+
 /* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
 /* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
 .rs-print {
@@ -1507,8 +1561,16 @@ button.rs-synth__item:focus-visible,
   .rs-page .rs-body {
     display: block;
   }
+  /* 화면 인쇄(Ctrl+P)의 보고서는 화면의 읽기용 짙은 유리를 그대로 찍는다 — 브라우저가 바탕을 빼고 찍으면 다크 테마의 밝은 글자만
+     흰 종이에 남는다. 흰 종이에 짙은 글자는 [PDF로 저장]의 인쇄 전용 문서(.rs-print)가 맡는다 */
+  .rs-page .rs-report {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* 인쇄 전용 문서는 밝은 읽는 면(.skx-reading — ReportPrint.vue)이라 두 테마 모두 흰 종이에 짙은 글자다. 그 면의 옅은 바탕은 찍지 않는다 */
   .rs-print {
     display: block;
+    background: none;
     font-family: "맑은 고딕", "Malgun Gothic", "Pretendard", sans-serif;
     font-size: 10.5pt;
     line-height: 1.6;
