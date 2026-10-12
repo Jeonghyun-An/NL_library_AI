@@ -55,7 +55,7 @@ describe("paperMetaRows — 논문 서지 표", () => {
   it("저자정보 · 저널정보(발행처 › 분야 › 권호) · 발행년도 · 수록면 · 인용수 · 등재 정보 순", () => {
     expect(flat(paperMetaRows(paper))).toEqual([
       "저자정보: 김수영, 조성배",
-      "저널정보: 한국인지과학회 › 인지과학 › 13(4)",
+      "저널정보: 한국인지과학회 › 인지과학 › 13권 4호",
       "발행년도: 2002년 12월",
       "수록면: 1~8",
       "인용수: 10",
@@ -64,12 +64,12 @@ describe("paperMetaRows — 논문 서지 표", () => {
   });
 
   it("발행처(publisher)가 있으면 기관 저자보다 먼저 쓴다", () => {
-    expect(flat(paperMetaRows({ ...paper, publisher: "한국방송학회" }))[1]).toBe("저널정보: 한국방송학회 › 인지과학 › 13(4)");
+    expect(flat(paperMetaRows({ ...paper, publisher: "한국방송학회" }))[1]).toBe("저널정보: 한국방송학회 › 인지과학 › 13권 4호");
   });
 
   it("개인 저자가 없어 기관이 저자 줄에 오르면 저널정보에서 같은 기관을 빼고 화살표도 앞에 두지 않는다", () => {
     const rows = paperMetaRows({ ...paper, personal_author: null });
-    expect(flat(rows).slice(0, 2)).toEqual(["저자정보: 한국인지과학회", "저널정보: 인지과학 › 13(4)"]);
+    expect(flat(rows).slice(0, 2)).toEqual(["저자정보: 한국인지과학회", "저널정보: 인지과학 › 13권 4호"]);
     expect(rows[1]!.parts[0]!.arrow).toBe(false);
   });
 

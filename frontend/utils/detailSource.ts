@@ -141,7 +141,7 @@ export function backTarget(source: DetailSource, spot: ReturnSpot): { label: str
       if (source.h) params.set("h", source.h);
       if (source.q) params.set("q", source.q);
       appendSpot(params, spot);
-      return { label: "검색 결과로", to: withQuery("/papers", params) };
+      return { label: "검색 목록 돌아가기", to: withQuery("/papers", params) };
     case "research":
       if (source.s) params.set("s", source.s);
       appendSpot(params, spot);

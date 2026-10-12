@@ -1,6 +1,13 @@
 // frontend/tests/unit/resultCard.test.ts
 import { describe, expect, it } from "vitest";
-import { CARD_KEYWORD_LIMIT, cardKeywords, cardMeta, formatPubLabel, normalizeName } from "~/utils/resultCard";
+import {
+  CARD_KEYWORD_LIMIT,
+  cardKeywords,
+  cardMeta,
+  formatPubLabel,
+  formatVolIssue,
+  normalizeName,
+} from "~/utils/resultCard";
 
 describe("cardKeywords — 카드 키워드 칩", () => {
   it("저자 키워드(extracted_keywords) 배열이 가장 먼저이고, 최대 3개에서 자른다(칩이 많아 정신없다는 의견)", () => {
@@ -78,6 +85,39 @@ describe("formatPubLabel — 발행일 표기", () => {
     expect(formatPubLabel(undefined, "book")).toBe("");
     expect(formatPubLabel("미상", "paper")).toBe("");
     expect(formatPubLabel("12", "paper")).toBe("");
+  });
+});
+
+describe("formatVolIssue — 권호", () => {
+  it("'V(N)' 은 'V권 N호'", () => {
+    expect(formatVolIssue("11(3)")).toBe("11권 3호");
+    expect(formatVolIssue("4(2)")).toBe("4권 2호");
+    expect(formatVolIssue("24(10)")).toBe("24권 10호");
+    expect(formatVolIssue(" 13 ( 4 ) ")).toBe("13권 4호");
+  });
+
+  it("권 없이 호만('-N')이면 'N호', 권만('V')이면 'V권'", () => {
+    expect(formatVolIssue("-33")).toBe("33호");
+    expect(formatVolIssue("-42")).toBe("42호");
+    expect(formatVolIssue("- 5")).toBe("5호");
+    expect(formatVolIssue("7")).toBe("7권");
+  });
+
+  it("비었거나 기호뿐이면 빈 문자열(생략)", () => {
+    expect(formatVolIssue("")).toBe("");
+    expect(formatVolIssue("  ")).toBe("");
+    expect(formatVolIssue("-")).toBe("");
+    expect(formatVolIssue(" - ")).toBe("");
+    expect(formatVolIssue("—")).toBe("");
+    expect(formatVolIssue(null)).toBe("");
+    expect(formatVolIssue(undefined)).toBe("");
+  });
+
+  it("그 밖의 모양은 원문 그대로", () => {
+    expect(formatVolIssue("특별호")).toBe("특별호");
+    expect(formatVolIssue("11-3")).toBe("11-3");
+    expect(formatVolIssue("제3권 2호")).toBe("제3권 2호");
+    expect(formatVolIssue("11(특집)")).toBe("11(특집)");
   });
 });
 

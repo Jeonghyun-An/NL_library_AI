@@ -70,6 +70,23 @@ export function formatPubLabel(pubDate: string | null | undefined, kind: ResultK
   return `${year}년`;
 }
 
+/**
+ * 논문 권호(vol_issue)를 읽기 좋게. 운영 값: '11(3)'·'4(2)'·'24(10)'(권(호)), '-33'·'-42'(권 없이 호만), 숫자 하나(권만).
+ *  - 'V(N)' → 'V권 N호', '-N' → 'N호', 'V' → 'V권'
+ *  - 비었거나 '-' 같은 기호뿐이면 빈 문자열(생략), 그 밖의 모양은 원문 그대로(예: '특별호', '11-3')
+ */
+export function formatVolIssue(value: string | null | undefined): string {
+  const raw = (value ?? "").trim();
+  if (!raw || /^[-–—\s/.,]+$/.test(raw)) return "";
+  const both = raw.match(/^(\d+)\s*\(\s*(\d+)\s*\)$/);
+  if (both) return `${both[1]}권 ${both[2]}호`;
+  const issueOnly = raw.match(/^-\s*(\d+)$/);
+  if (issueOnly) return `${issueOnly[1]}호`;
+  const volOnly = raw.match(/^(\d+)$/);
+  if (volOnly) return `${volOnly[1]}권`;
+  return raw;
+}
+
 /** 이름 비교용 정리 — 공백·괄호·가운뎃점 같은 겉모양 차이와 대소문자를 지운다('한국 도서관 협회' = '한국도서관협회' = '(한국도서관협회)') */
 export function normalizeName(name: string | null | undefined): string {
   return (name ?? "")

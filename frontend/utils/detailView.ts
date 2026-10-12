@@ -4,7 +4,7 @@
 import { splitAuthors } from "~/utils/citations";
 import { kdcChip } from "~/utils/kdc";
 import { queryScorePct } from "~/utils/relevance";
-import { formatPubLabel, normalizeName, type CardInfo, type ResultKind } from "~/utils/resultCard";
+import { formatPubLabel, formatVolIssue, normalizeName, type CardInfo, type ResultKind } from "~/utils/resultCard";
 
 export interface DetailInfo extends CardInfo {
   title?: string | null;
@@ -75,7 +75,7 @@ export function paperMetaRows(info: DetailInfo | null | undefined): MetaRow[] {
   if (publisher) journal.push({ text: publisher });
   const field = clean(info.series_title);
   if (field) journal.push({ text: field, arrow: journal.length > 0 });
-  const volIssue = clean(info.vol_issue);
+  const volIssue = formatVolIssue(info.vol_issue);
   if (volIssue) journal.push({ text: volIssue, arrow: journal.length > 0 });
   if (journal.length) rows.push({ label: "저널정보", parts: journal });
 

@@ -914,7 +914,7 @@ async function streamTopReason(
 
 // ── 상세 열기 ──────────────────────────────────────────────
 // 논문 상세의 출처는 결과의 검색어로 싣는다(입력창 글자가 아니다). 이 화면의 기록은 도서 기록이라 h 로 싣지 않는다 —
-// [검색 결과로]가 논문 검색에서 같은 검색어로 다시 찾는다
+// [검색 목록 돌아가기]가 논문 검색에서 같은 검색어로 다시 찾는다
 function paperDetailUrl(bookId: string, extra: Record<string, string> = {}): string {
   return detailUrl(bookId, { kind: "search", h: null, q: resultQuery.value }, undefined, extra);
 }

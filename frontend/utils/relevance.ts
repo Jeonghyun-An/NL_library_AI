@@ -30,6 +30,22 @@ function hasScore(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
 }
 
+/**
+ * 결과 카드에서 상세 화면 주소로 싣는 점수(?score=·title_score=·content_score=) — 있는(유한한 숫자인) 것만.
+ * 상세 머리의 관련도 알약과 일치율 팝오버가 이 값을 읽는다(queryScorePct). 소장자료·논문 결과가 같은 함수로 싣는다
+ */
+export function detailScoreParams(item: {
+  best_score?: unknown;
+  title_score?: unknown;
+  content_score?: unknown;
+} | null | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (hasScore(item?.best_score)) out.score = String(item.best_score);
+  if (hasScore(item?.title_score)) out.title_score = String(item.title_score);
+  if (hasScore(item?.content_score)) out.content_score = String(item.content_score);
+  return out;
+}
+
 /** 팝오버의 링 — 제목 일치율 → 내용 일치율 순, 있는 점수만. 둘 다 없으면 빈 목록(알약만 보인다) */
 export function relevanceRings(titleScore: unknown, contentScore: unknown): RelevanceRing[] {
   const rings: RelevanceRing[] = [];

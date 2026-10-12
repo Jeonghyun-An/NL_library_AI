@@ -432,6 +432,7 @@ import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosi
 import { safeLocalStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
+import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";
 import { readV1Map } from "~/utils/historyStore";
@@ -628,19 +629,21 @@ function openRefCitation(ref: { book_id: string }) {
   citeModalOpen.value = true;
 }
 
-// 상세로 갈 때 출처(이 검색 기록)를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, [검색 결과로]가 재검색 없이
-// 복원된다. q 는 검색바가 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색). 관련도는 상세 머리 카드가 보인다
+// 상세로 갈 때 출처(이 검색 기록)를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, [검색 목록 돌아가기]가 재검색 없이
+// 복원된다. q 는 검색바가 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색).
+// 관련도(종합·제목·내용 점수)도 함께 싣는다 — 상세 머리의 관련도 알약과 일치율 팝오버가 읽는다. 점수는 이 화면 결과(paperResult)의
+// 그 논문에서 찾는다 — 결과 카드·참고 목록·AI 답변 인용이 모두 같은 결과에서 온 논문이라 어느 길로 가도 같은 값이 실린다
 function paperDetailUrl(bookId: string, spot?: ReturnSpot, extra: Record<string, string> = {}): string {
-  const score = aiRefPaperMap.value.get(bookId)?.best_score;
+  const hit = paperResult.value?.books.find((b) => b.book_id === bookId);
   return detailUrl(
     bookId,
     { kind: "search", h: currentHistoryId.value, q: resultQuery.value },
     spot,
-    score === undefined ? extra : { score: String(score), ...extra },
+    { ...detailScoreParams(hit), ...extra },
   );
 }
 
-// 누른 카드의 지금 화면 높이를 싣고 떠난다 — [검색 결과로]·뒤로 가기로 돌아오면 이 카드를 같은 높이에 맞춘다
+// 누른 카드의 지금 화면 높이를 싣고 떠난다 — [검색 목록 돌아가기]·뒤로 가기로 돌아오면 이 카드를 같은 높이에 맞춘다
 function goToDetail(paper: BookChunkGroup, e: MouseEvent, extra: Record<string, string> = {}) {
   const card = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]")!;
   const spot = spotOf(card, resultAnchor(paper.book_id));

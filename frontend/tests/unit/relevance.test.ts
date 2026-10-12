@@ -1,6 +1,6 @@
 // frontend/tests/unit/relevance.test.ts
 import { describe, expect, it } from "vitest";
-import { popoverPlacement, queryScorePct, relevancePct, relevanceRings } from "~/utils/relevance";
+import { detailScoreParams, popoverPlacement, queryScorePct, relevancePct, relevanceRings } from "~/utils/relevance";
 
 describe("relevancePct — 점수(0~1)를 정수 퍼센트로", () => {
   it("내림한다 — 99.6% 가 100% 로 올림 표기되지 않게(결과 카드·상세와 같은 규칙)", () => {
@@ -102,5 +102,35 @@ describe("queryScorePct — 상세 화면 주소의 점수(?score= 등)", () => 
     expect(queryScorePct("abc")).toBeNull();
     expect(queryScorePct("NaN")).toBeNull();
     expect(queryScorePct([])).toBeNull();
+  });
+});
+
+describe("detailScoreParams — 결과 카드에서 상세 주소로 싣는 점수", () => {
+  it("종합·제목·내용 점수를 모두 싣는다(상세의 관련도 알약과 일치율 팝오버가 읽는다)", () => {
+    expect(detailScoreParams({ best_score: 0.73, title_score: 0.8, content_score: 0.65 })).toEqual({
+      score: "0.73",
+      title_score: "0.8",
+      content_score: "0.65",
+    });
+  });
+
+  it("없는 점수는 싣지 않는다 — 옛 기록은 제목·내용 점수가 없을 수 있다", () => {
+    expect(detailScoreParams({ best_score: 0.5 })).toEqual({ score: "0.5" });
+    expect(detailScoreParams({ best_score: 0.5, title_score: undefined, content_score: null })).toEqual({ score: "0.5" });
+    expect(detailScoreParams({})).toEqual({});
+    expect(detailScoreParams(null)).toEqual({});
+    expect(detailScoreParams(undefined)).toEqual({});
+  });
+
+  it("0 점은 싣고, 숫자가 아니거나 유한하지 않은 값은 뗀다", () => {
+    expect(detailScoreParams({ best_score: 0, title_score: 0 })).toEqual({ score: "0", title_score: "0" });
+    expect(detailScoreParams({ best_score: Number.NaN, title_score: "0.4", content_score: Infinity })).toEqual({});
+  });
+
+  it("실린 값은 상세가 읽는 queryScorePct 로 같은 퍼센트가 된다", () => {
+    const params = detailScoreParams({ best_score: 0.7351, title_score: 0.29 });
+    expect(queryScorePct(params.score)).toBe(relevancePct(0.7351));
+    expect(queryScorePct(params.title_score)).toBe(29);
+    expect(queryScorePct(params.content_score)).toBeNull();
   });
 });
