@@ -252,7 +252,7 @@
         </div>
 
         <!-- 신작도서 카운트업 -->
-        <section class="skx-newbooks">
+        <section v-if="SHOW_MOCKS" class="skx-newbooks">
           <h2 class="skx-newbooks__title">
             지금도 새로운 책이 업데이트 되고 있어요!
           </h2>
@@ -523,6 +523,7 @@
                     >
                   </div>
                   <button
+                    v-if="SHOW_MOCKS"
                     type="button"
                     class="skx-book-card__bookmark"
                     :aria-label="
@@ -660,6 +661,7 @@ import { useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useCuration } from "~/composables/useCuration";
 import { safeLocalStorage } from "~/utils/browserId";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { slimBookResult } from "~/utils/historySnapshot";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";

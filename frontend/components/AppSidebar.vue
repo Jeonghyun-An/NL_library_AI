@@ -36,7 +36,7 @@
     </div> -->
 
     <!-- 메뉴 -->
-    <nav class="skx-lnb__menu" aria-label="주요 메뉴">
+    <nav v-if="SHOW_MOCKS" class="skx-lnb__menu" aria-label="주요 메뉴">
       <!-- <button type="button" class="skx-menu-item" @click="emit('cart')">
         <span class="skx-menu-item__icon"
           ><img src="/img/ico-cart-menu.svg" alt=""
@@ -126,7 +126,7 @@
     </div>
 
     <!-- 프로필 -->
-    <div class="skx-profile">
+    <div v-if="SHOW_MOCKS" class="skx-profile">
       <img class="skx-profile__avatar" src="/img/ico-avatar.svg" alt="" />
       <span class="skx-profile__name">김랜드</span>
       <button type="button" class="skx-icon-btn" aria-label="설정">
@@ -140,6 +140,7 @@
 import type { HistoryEntry, HistoryKind } from "~/types/history";
 import { useHistory } from "~/composables/useHistory";
 import { safeLocalStorage } from "~/utils/browserId";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, activeKindForPath, routeFor } from "~/utils/historyRoute";
 

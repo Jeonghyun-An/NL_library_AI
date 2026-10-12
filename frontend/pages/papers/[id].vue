@@ -65,7 +65,7 @@
                     >관련도 {{ matchScore }}%</span
                   >
                 </div>
-                <div class="skx-pdetail__share-group">
+                <div v-if="SHOW_MOCKS" class="skx-pdetail__share-group">
                   <button
                     type="button"
                     class="skx-btn-icon-sm"
@@ -467,6 +467,7 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useResearchApi } from "~/composables/useResearch";

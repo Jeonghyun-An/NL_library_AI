@@ -75,6 +75,7 @@
                   >
                 </div>
                 <button
+                  v-if="SHOW_MOCKS"
                   type="button"
                   class="skx-book-card__bookmark"
                   :aria-label="isBookmarked(cnts_id) ? '북마크 해제' : '북마크'"
@@ -518,6 +519,7 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import type { BookInfo } from "~/types/search";
 
