@@ -353,8 +353,10 @@ h4,
      밑칠 알파는 themeHolo.test.ts 의 최악 합성(띠가 모두 가장 밝게 겹친 자리, 반사광은 가장 센 알파로 깔아 본다)에서 본문색이 4.5:1 을
      넘는 가장 낮은 값(0.60)이다 — 불투명도로 글자를 지키는 대신 투명감은 배경 흐림·반사광·윗선이 맡는다.
      밑칠 색은 페이지 바탕보다 어두운 청록이라 어두운 자리에서는 바탕과 거의 같고, 밝은 띠 위에서 글자를 지킨다.
-     사이드바 바탕은 밑칠 없이 0.58(gray-1 4.5:1 이 최저). 사이드바 안의 [새 검색]·DeepResearch 묶음 카드는 예전 0.70 과 같은 모양을
-     내도록 밑칠(--skx-frost-side-under)을 한 겹 더 깐다 */
+     사이드바 바탕은 시안대로 짙은 초록 30%(밑칠 없음) + 강한 흐림(28px) + 아주 옅은 그림자다. 글자는 불투명도가 아니라 ① 흐림 ② 사이드바
+     폭 구간에서 띠를 덜어내는 .skx-holo__veil(짙은 초록 40% → 띠 알파 60%) ③ 사이드바 안의 한 단계 밝은 글색(--skx-side-*) 순으로 지킨다 —
+     themeHolo.test.ts 가 모든 띠가 가장 밝게 겹쳐도 veil 을 거친 자리에서 본문 4.5:1 을 확인한다.
+     사이드바 안의 [새 검색]·DeepResearch 묶음 카드는 예전 0.70 과 같은 모양(합계)을 내도록 밑칠(--skx-frost-side-under)을 한 겹 더 깐다 */
   --skx-frost-bg: rgba(255, 255, 255, 0.1);
   --skx-frost-tint: rgba(8, 22, 19, 0.6);
   --skx-frost-milk: rgba(255, 255, 255, 0.04);
@@ -369,8 +371,16 @@ h4,
   --skx-frost-hilite: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
   --skx-frost-blur: blur(22px) saturate(1.4);
   /* 사이드바 바탕(짙은 초록 반투명)·+ 메뉴 바탕(거의 불투명)·메뉴 테두리 */
-  --skx-frost-side-bg: rgba(15, 40, 34, 0.58);
-  --skx-frost-side-under: rgba(15, 40, 34, 0.286);
+  --skx-frost-side-bg: rgba(15, 40, 34, 0.3);
+  --skx-frost-blur-side: blur(28px) saturate(1.4);
+  --skx-frost-side-under: rgba(15, 40, 34, 0.571);
+  /* 사이드바 안에서만 쓰는 한 단계 밝은 글 톤(.skx-lnb 가 --skx-ink 등을 이 값으로 다시 정의한다 — 딥리서치 화면·랜딩에는 번지지 않는다) */
+  --skx-side-ink: #f0f3f2;
+  --skx-side-ink-2: #e1e7e5;
+  --skx-side-gray-1: #d3dad8;
+  --skx-side-gray-2: #bac4c1;
+  --skx-side-teal-ink: #b4d6cd;
+  --skx-side-ico-filter: brightness(0) invert(0.94);
   --skx-frost-side-btn: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-side-under);
   --skx-frost-side-card: linear-gradient(var(--skx-frost-bg-soft), var(--skx-frost-bg-soft)), var(--skx-frost-side-under);
   /* 예시 질문 칸 — 입력창보다 한 단계 낮은 면: 흐림·윗선·반사광 없이 옅은 흰 막과 선만. 밑칠은 이 칸의 글자(14px)를 지키는 최저값 */
@@ -394,7 +404,7 @@ h4,
   --skx-radius-pill: 2.2rem;
   --skx-search-grad: linear-gradient(134deg, #5f8f85 13%, #152e28 89%);
   --skx-page-bg: #0f2822;
-  --skx-shadow-lnb: 2px 2px 36px 0 rgba(0, 0, 0, 0.18);
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(0, 0, 0, 0.12);
   --skx-shadow-banner:
     0 4px 12px 0 rgba(0, 0, 0, 0.16), 0 4px 24px 0 rgba(0, 0, 0, 0.22);
   --skx-border-c1: rgba(255, 255, 255, 0.16);
@@ -443,7 +453,14 @@ h4,
   --skx-frost-hilite: none;
   --skx-frost-blur: none;
   --skx-frost-side-bg: #ffffff;
+  --skx-frost-blur-side: none;
   --skx-frost-side-under: #ffffff;
+  --skx-side-ink: #1d211f;
+  --skx-side-ink-2: #454545;
+  --skx-side-gray-1: #666666;
+  --skx-side-gray-2: #767676;
+  --skx-side-teal-ink: #3f7468;
+  --skx-side-ico-filter: none;
   --skx-frost-side-btn: linear-gradient(#f4f3ef, #f4f3ef);
   --skx-frost-side-card: linear-gradient(#faf9f6, #faf9f6);
   --skx-chip-tint: #ffffff;
@@ -624,6 +641,21 @@ h4,
     animation: none;
   }
 }
+/* 사이드바 폭 구간(왼쪽 17.2rem)에서 띠를 덜어내는 막 — 바탕과 같은 짙은 초록 40% 를 띠 위에 덮어 그 구간의 띠 알파를 60% 로 줄이고,
+   그 오른쪽 5rem 에서 부드럽게 걷는다(본문 위에 이음매가 보이지 않게). 사이드바 바탕을 30~40% 로 투명하게 두고도 글자를 지키는 두 번째 수단이다 */
+.skx-holo__veil {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 22.2rem;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 40, 34, 0.4) 0,
+    rgba(15, 40, 34, 0.4) 17.2rem,
+    rgba(15, 40, 34, 0) 22.2rem
+  );
+}
 /* [E] 움직이는 홀로그램 배경 */
 
 /* [S] 공통 리셋 */
@@ -775,8 +807,15 @@ h4,
   background: var(--skx-frost-side-bg);
   border-radius: var(--skx-radius-lg);
   box-shadow: var(--skx-shadow-lnb);
-  backdrop-filter: var(--skx-frost-blur);
-  -webkit-backdrop-filter: var(--skx-frost-blur);
+  backdrop-filter: var(--skx-frost-blur-side);
+  -webkit-backdrop-filter: var(--skx-frost-blur-side);
+  /* 사이드바 안의 글·아이콘은 한 단계 밝게 — 이 범위에서만 토큰을 다시 정의한다(밖으로 번지지 않는다) */
+  --skx-ink: var(--skx-side-ink);
+  --skx-ink-2: var(--skx-side-ink-2);
+  --skx-gray-1: var(--skx-side-gray-1);
+  --skx-gray-2: var(--skx-side-gray-2);
+  --skx-teal-ink: var(--skx-side-teal-ink);
+  --skx-ico-filter: var(--skx-side-ico-filter);
   overflow: hidden;
   position: sticky;
   top: 1.2rem;

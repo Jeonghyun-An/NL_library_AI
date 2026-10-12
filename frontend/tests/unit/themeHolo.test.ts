@@ -185,16 +185,23 @@ describe("홀로그램 배경 — 가독성", () => {
   // 그라데이션 토큰(반사광)은 가장 센 정지점의 알파로 면 전체에 깔아 본다 — 글자가 어디에 놓여도 지켜지게
   const peakStop = (token: string): Stop =>
     rgbaStops(rootToken(token)).reduce((m, s) => (s.a > m.a ? s : m));
-  const faceWorst = (layers: string[], text: string, tintDelta = 0): number => {
+  // 사이드바 폭 구간에는 .skx-holo__veil(바탕과 같은 짙은 초록 막)이 띠 위에 덮인다 — 사이드바 면은 그 막을 거친 자리 위에서 본다
+  const veilBlock = holoSection.match(/\.skx-holo__veil\s*\{([^}]*)\}/)?.[1] ?? "";
+  const veilStop = rgbaStops(veilBlock)[0];
+  if (!veilStop) throw new Error(".skx-holo__veil 의 막 색을 rgba(r, g, b, a) 로 읽지 못함");
+  const faceWorst = (layers: string[], text: string, tintDelta = 0, behindVeil = false): number => {
     const fg = hexToRgb(rootToken(text));
     return Math.min(
       ...composites().map((c) =>
         contrast(
           fg,
-          layers.reduce<Rgb>((acc, token, i) => {
-            const l = peakStop(token);
-            return over(acc, l.rgb, i === 0 ? l.a + tintDelta : l.a);
-          }, c),
+          layers.reduce<Rgb>(
+            (acc, token, i) => {
+              const l = peakStop(token);
+              return over(acc, l.rgb, i === 0 ? l.a + tintDelta : l.a);
+            },
+            behindVeil ? over(c, veilStop.rgb, veilStop.a) : c,
+          ),
         ),
       ),
     );
@@ -203,42 +210,52 @@ describe("홀로그램 배경 — 가독성", () => {
   const SIDE_FACE = ["--skx-frost-side-bg"];
   const CHIP_FACE = ["--skx-chip-tint", "--skx-chip-milk"];
   const SEG_FACE = ["--skx-frost-tint", "--skx-frost-bg", "--skx-frost-reflect"];
-  const faces: [string, string[], string[]][] = [
-    // [이름, 층 토큰(아래→위), 이 면에 놓이는 글자색 토큰] — 입력창의 안내 글(placeholder)은 --skx-ink-2
-    ["입력창·전환·결과 검색바(--skx-frost-fill)", INPUT_FACE, ["--skx-ink", "--skx-ink-2"]],
-    ["예시 질문 칸(--skx-chip-fill)", CHIP_FACE, ["--skx-ink"]],
-    ["예시 질문 칸 올림(--skx-chip-fill-hover)", ["--skx-chip-tint", "--skx-chip-milk-hover"], ["--skx-ink"]],
-    ["사이드바(--skx-frost-side-bg)", SIDE_FACE, ["--skx-ink", "--skx-gray-1"]],
-    ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg"], ["--skx-ink"]],
-    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], ["--skx-ink", "--skx-gray-1"]],
-    ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"]],
+  // 사이드바 글 톤은 .skx-lnb 안에서 --skx-ink 등을 --skx-side-* 로 다시 정의한 값이다
+  const SIDE_TEXTS = ["--skx-side-ink", "--skx-side-gray-1", "--skx-side-teal-ink", "--skx-side-gray-2"];
+  const faces: [string, string[], string[], boolean][] = [
+    // [이름, 층 토큰(아래→위), 이 면에 놓이는 글자색 토큰, 사이드바 막(veil) 뒤인가] — 입력창의 안내 글(placeholder)은 --skx-ink-2
+    ["입력창·전환·결과 검색바(--skx-frost-fill)", INPUT_FACE, ["--skx-ink", "--skx-ink-2"], false],
+    ["예시 질문 칸(--skx-chip-fill)", CHIP_FACE, ["--skx-ink"], false],
+    ["예시 질문 칸 올림(--skx-chip-fill-hover)", ["--skx-chip-tint", "--skx-chip-milk-hover"], ["--skx-ink"], false],
+    ["사이드바(--skx-frost-side-bg)", SIDE_FACE, SIDE_TEXTS, true],
+    ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg"], ["--skx-side-ink"], true],
+    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], SIDE_TEXTS, true],
+    ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"], false],
   ];
-  const faceCases = faces.flatMap(([name, layers, texts]) =>
-    texts.map((text) => [name, layers, text] as const),
+  const faceCases = faces.flatMap(([name, layers, texts, veil]) =>
+    texts.map((text) => [name, layers, text, veil] as const),
   );
 
-  it.each(faceCases.map(([name, layers, text]) => ({ name, layers, text })))(
+  it.each(faceCases.map(([name, layers, text, veil]) => ({ name, layers, text, veil })))(
     "띠가 모두 가장 밝게 겹쳐도 $name 위에서 $text 글자가 4.5:1 이상이다",
-    ({ layers, text }) => {
-      expect(faceWorst([...layers], text)).toBeGreaterThanOrEqual(4.5);
+    ({ layers, text, veil }) => {
+      expect(faceWorst([...layers], text, 0, veil)).toBeGreaterThanOrEqual(4.5);
     },
   );
 
+  it("사이드바 막(.skx-holo__veil)의 짙은 구간이 사이드바 오른쪽 끝(앱 여백 + 사이드바 폭)까지 덮는다", () => {
+    const solidEnd = Number(veilBlock.match(/rgba\([^)]*\)\s+(\d+(?:\.\d+)?)rem\s*,\s*rgba\([^)]*,\s*0\)/)?.[1]);
+    const lnbWidth = Number(css.match(/\n\.skx-lnb\s*\{[^}]*?\bwidth:\s*(\d+(?:\.\d+)?)rem/)?.[1]);
+    const appPad = Number(css.match(/\n\.skx-app\s*\{[^}]*?\bpadding:\s*(\d+(?:\.\d+)?)rem/)?.[1]);
+    expect(solidEnd).toBeGreaterThanOrEqual(appPad + lnbWidth);
+  });
+
   // 불투명도로 글자를 지키되 필요 이상으로 짙게 두지 않는다 — 밑칠 알파를 0.06 만 낮춰도 4.5:1 을 못 넘는 값이어야 한다
-  // (사용자 피드백 10-12: 밑칠 80%+흰 10% 는 유리 같은 투명감이 사라진다). 더 짙게 고쳐 쓰려면 이 테스트가 막는다
+  // (사용자 피드백 10-12: 밑칠 80%+흰 10% 는 유리 같은 투명감이 사라진다). 더 짙게 고쳐 쓰려면 이 테스트가 막는다.
+  // 사이드바는 해당 없음 — 바탕 알파(30%)는 시안 값이고, 글자는 막(veil)·밝은 글색이 지킨다
   it.each([
     { name: "입력창·전환·결과 검색바", layers: INPUT_FACE, text: "--skx-ink-2" },
-    { name: "사이드바", layers: SIDE_FACE, text: "--skx-gray-1" },
     { name: "예시 질문 칸", layers: CHIP_FACE, text: "--skx-ink" },
   ])("$name 의 밑칠은 가장 낮은 쪽이다(알파를 0.06 낮추면 4.5:1 미만)", ({ layers, text }) => {
     expect(faceWorst(layers, text, -0.06)).toBeLessThan(4.5);
   });
 
-  it("입력창·전환·결과 검색바와 사이드바의 합계 불투명도(밑칠+흰 막)는 0.62 이하다", () => {
+  it("입력창·전환·결과 검색바의 합계 불투명도(밑칠+흰 막)는 0.62 이하이고, 사이드바 바탕 알파는 시안대로 0.30~0.40 이다", () => {
     const alpha = (tokens: string[]) =>
       1 - tokens.reduce((rest, t) => rest * (1 - peakStop(t).a), 1);
     expect(alpha(["--skx-frost-tint", "--skx-frost-milk"])).toBeLessThanOrEqual(0.62);
-    expect(alpha(SIDE_FACE)).toBeLessThanOrEqual(0.62);
+    expect(alpha(SIDE_FACE)).toBeGreaterThanOrEqual(0.3);
+    expect(alpha(SIDE_FACE)).toBeLessThanOrEqual(0.4);
   });
 
   // 전환 알약(시안 색, 사용자 결정): 켜진 칸은 짙은 초록 채움(--skx-on-accent) 위 흰 글, 꺼진 칸은 회녹색(--skx-gray-2).

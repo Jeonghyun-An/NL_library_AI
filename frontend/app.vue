@@ -5,6 +5,7 @@
       <span class="skx-holo__band skx-holo__band--1"></span>
       <span class="skx-holo__band skx-holo__band--2"></span>
       <span class="skx-holo__band skx-holo__band--3"></span>
+      <span class="skx-holo__veil"></span>
     </div>
     <NuxtPage />
     <footer class="skx-footer">
