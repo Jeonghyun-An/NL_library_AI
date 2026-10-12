@@ -1,6 +1,9 @@
 // frontend/utils/deepRead.ts
-// 딥리드(BookChat)의 문서 종류별 문구·출처 칩 표기·원문 열기 입력. 연구 화면의 오른쪽 패널(06e)과 기존 네 화면이 함께 쓴다
+// 딥리드(BookChat)의 문서 종류별 문구·출처 칩 표기·원문 열기 입력, 단계 화면 오른쪽 패널(DeepReadPanel)의 배치·머리·탭.
+// 연구 화면의 오른쪽 패널(06e)과 기존 네 화면이 함께 쓴다
 import type { OpenPdfPayload } from "~/types/research";
+import type { PaperMeta } from "~/types/work";
+import { pubYear, splitAuthors } from "~/utils/citations";
 import type { DeepReadSource } from "~/utils/deepReadSse";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 
@@ -42,4 +45,41 @@ export function sourceLabel(src: DeepReadSource): string {
 // 출처 대목으로 원문을 연다 — 0부터 센 저장값을 뷰어 쪽(+1)으로(pdfViewer.citedPdfTarget). 쪽 정보가 0 이면 쪽 없이 연다
 export function sourcePdfTarget(cntsId: string, title: string, src: DeepReadSource): OpenPdfPayload {
   return citedPdfTarget(cntsId, title, [src]);
+}
+
+// ── 단계 화면 오른쪽 패널(spec §12-4 D24) ─────────────────────────
+// 탭 — 인용 근거(보고서 인용 칩이 연다)·딥리드(BookChat)
+export type PanelTab = "sources" | "chat";
+
+// 배치 경계(px) — 이 폭 이상은 단계 본문 옆 2단(sticky), 그 미만은 오른쪽 서랍, PANEL_FULL_MAX_PX 이하는 전체 폭 서랍.
+// work.css 의 @media (max-width: 1199px)·(max-width: 768px) 와 같은 값이다
+export const PANEL_SIDE_MIN_PX = 1200;
+export const PANEL_FULL_MAX_PX = 768;
+
+export type PanelMode = "side" | "drawer" | "full";
+
+// 서랍·전체 폭이면 패널이 화면을 덮어 Tab 초점을 패널 안에 가둔다(DeepReadPanel)
+export function panelMode(width: number): PanelMode {
+  if (width >= PANEL_SIDE_MIN_PX) return "side";
+  return width > PANEL_FULL_MAX_PX ? "drawer" : "full";
+}
+
+// 패널이 여는 논문 — 머리는 행 데이터(서지)만으로 그린다
+export interface PanelPaper {
+  cntsId: string;
+  meta: PaperMeta;
+}
+
+// 머리 — 제목(없으면 cnts_id)과 '저자 · 연도 · 학술지' 가운데 있는 것. 저자는 splitAuthors 로 나눠 쉼표로 잇는다
+export function panelHead(p: PanelPaper): { title: string; byline: string } {
+  const byline = [splitAuthors(p.meta.personal_author).join(", "), pubYear(p.meta.pub_date), p.meta.series_title]
+    .map((s) => (s ?? "").trim())
+    .filter(Boolean)
+    .join(" · ");
+  return { title: p.meta.title?.trim() || p.cntsId, byline };
+}
+
+// 단계마다 쓰는 탭 — 참고문헌 선택하기는 누른 문장이 없어 딥리드만, 보고서는 인용 근거·딥리드
+export function panelTabs(step: "reading" | "proposal"): PanelTab[] {
+  return step === "reading" ? ["chat"] : ["sources", "chat"];
 }

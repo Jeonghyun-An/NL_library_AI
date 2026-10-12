@@ -1,6 +1,16 @@
 // frontend/tests/unit/deepRead.test.ts
 import { describe, expect, it } from "vitest";
-import { chatCopy, sourceLabel, sourcePdfTarget } from "~/utils/deepRead";
+import type { PaperMeta } from "~/types/work";
+import {
+  PANEL_FULL_MAX_PX,
+  PANEL_SIDE_MIN_PX,
+  chatCopy,
+  panelHead,
+  panelMode,
+  panelTabs,
+  sourceLabel,
+  sourcePdfTarget,
+} from "~/utils/deepRead";
 
 describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
   it("책은 지금 문구 그대로, 논문은 '논문' 문구 — 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
@@ -42,5 +52,42 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
       page: undefined,
       passages: [{ page: null, label: "쪽 정보 없음" }],
     });
+  });
+});
+
+describe("panelMode·panelHead·panelTabs", () => {
+  it("1200px 이상은 본문 옆 2단, 769~1199px 는 오른쪽 서랍, 768px 이하는 전체 폭", () => {
+    expect([PANEL_SIDE_MIN_PX, PANEL_FULL_MAX_PX]).toEqual([1200, 768]);
+    expect(panelMode(1440)).toBe("side");
+    expect(panelMode(1200)).toBe("side");
+    expect(panelMode(1199)).toBe("drawer");
+    expect(panelMode(769)).toBe("drawer");
+    expect(panelMode(768)).toBe("full");
+    expect(panelMode(375)).toBe("full");
+  });
+
+  it("머리는 행의 서지만으로 — 저자·연도·학술지 가운데 있는 것만 잇고, 제목이 없으면 cnts_id", () => {
+    const meta: PaperMeta = {
+      title: " 노인의 우울과 사회적 지지 ",
+      personal_author: "김철수; 이영희",
+      pub_date: "2015-03",
+      series_title: "노인복지연구",
+    };
+    expect(panelHead({ cntsId: "KCI_A", meta })).toEqual({
+      title: "노인의 우울과 사회적 지지",
+      byline: "김철수, 이영희 · 2015 · 노인복지연구",
+    });
+    expect(panelHead({ cntsId: "KCI_B", meta: { ...meta, personal_author: null, series_title: " " } })).toEqual({
+      title: "노인의 우울과 사회적 지지",
+      byline: "2015",
+    });
+    expect(
+      panelHead({ cntsId: "KCI_C", meta: { title: "", personal_author: null, pub_date: null, series_title: null } }),
+    ).toEqual({ title: "KCI_C", byline: "" });
+  });
+
+  it("참고문헌 선택하기는 딥리드 탭만, 보고서는 인용 근거·딥리드 두 탭", () => {
+    expect(panelTabs("reading")).toEqual(["chat"]);
+    expect(panelTabs("proposal")).toEqual(["sources", "chat"]);
   });
 });
