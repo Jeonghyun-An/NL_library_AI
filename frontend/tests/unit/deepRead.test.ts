@@ -136,12 +136,24 @@ describe("panelTrapTarget·panelFocusLost — 서랍·전체 폭의 초점 가�
   it("서랍·전체 폭에서 초점이 body(또는 없음)로 떨어진 것만 잃은 것으로 본다 — 패널 밖 다른 요소(원문 뷰어 닫기 등)로 간 것은 아니다", () => {
     const body = { id: "body" };
     const viewerClose = { id: "viewer-close" };
-    expect(panelFocusLost("drawer", body, body)).toBe(true);
-    expect(panelFocusLost("full", body, body)).toBe(true);
-    expect(panelFocusLost("drawer", null, body)).toBe(true);
-    expect(panelFocusLost("drawer", viewerClose, body)).toBe(false);
-    expect(panelFocusLost("full", close, body)).toBe(false);
+    // 옮겨 갈 요소 없이(relatedTarget null — disabled 가 되어 잃음·초점을 받지 않는 곳 클릭) 빠진 초점
+    expect(panelFocusLost("drawer", { related: null, active: body, body })).toBe(true);
+    expect(panelFocusLost("full", { related: null, active: body, body })).toBe(true);
+    expect(panelFocusLost("drawer", { related: null, active: null, body })).toBe(true);
+    // 창 전환처럼 activeElement 가 그대로 남은 것, 다른 부품이 일부러 옮긴 초점은 잃은 것이 아니다
+    expect(panelFocusLost("drawer", { related: null, active: viewerClose, body })).toBe(false);
+    expect(panelFocusLost("full", { related: null, active: close, body })).toBe(false);
     // 2단(side)은 화면을 덮지 않아 가두지 않는다 — 초점이 떨어져도 되돌리지 않는다
-    expect(panelFocusLost("side", body, body)).toBe(false);
+    expect(panelFocusLost("side", { related: null, active: body, body })).toBe(false);
+  });
+
+  it("다른 요소로 옮겨 가는 초점(relatedTarget 있음)은 잃은 것이 아니다 — 사용자의 클릭·Tab 은 focusout 바로 뒤에 activeElement 가 아직 body 다", () => {
+    // 제목에서 입력 칸을 클릭하거나, 상세 링크에서 Tab 으로 닫기 단추로 갈 때 — 새 요소가 초점을 받기 전이라 active 는 body 다.
+    // 이것을 잃은 것으로 보면 제목으로 되돌려 원래 가려던 이동을 막는다(서랍·모바일에서 질문을 입력할 수 없었다)
+    const body = { id: "body" };
+    const input = { id: "input" };
+    expect(panelFocusLost("drawer", { related: input, active: body, body })).toBe(false);
+    expect(panelFocusLost("full", { related: close, active: body, body })).toBe(false);
+    expect(panelFocusLost("drawer", { related: chip, active: null, body })).toBe(false);
   });
 });

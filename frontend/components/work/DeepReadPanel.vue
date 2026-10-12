@@ -147,13 +147,17 @@ function onKeydown(e: KeyboardEvent): void {
 // 서랍·전체 폭에서 패널 안 초점이 body 로 떨어지면(질문을 보내 답을 받는 동안 BookChat 의 입력 칸·보내기 단추가 disabled 가
 // 된다) aside 의 keydown 이 불리지 않아 Esc 로 닫히지 않고 Tab 이 배경으로 나간다. 그때 제목으로 되돌린다 — BookChat 은 네
 // 화면이 함께 써서 패널 쪽에서 막는다. 패널을 닫아 내려가는 중이면(root 가 없거나 문서에서 빠짐) 여는 쪽이 초점을 돌려주므로 두고,
-// 패널 밖 다른 요소로 옮겨 간 초점(원문 뷰어의 닫기 단추 등)은 그대로 둔다(panelFocusLost)
-async function onFocusOut(): Promise<void> {
-  await nextTick();
-  if (!root.value?.isConnected) return;
-  if (panelFocusLost(panelMode(window.innerWidth), document.activeElement, document.body)) {
-    titleEl.value?.focus({ preventScroll: true });
-  }
+// 패널 안이든 밖이든 다른 요소로 옮겨 가는 초점(relatedTarget 있음 — 입력 칸 클릭·Tab·원문 뷰어의 닫기 단추 등)은 그대로 둔다
+// (panelFocusLost). 판정은 다음 매크로태스크(setTimeout 0)에서 한다 — 사용자가 일으킨 초점 이동은 focusout 이 끝난 뒤에 새 요소가
+// 초점을 받아, nextTick(마이크로태스크)에서는 activeElement 가 아직 body 다. 그때 제목으로 되돌리면 Chrome 은 가려던 이동을 막는다
+function onFocusOut(e: FocusEvent): void {
+  const related = e.relatedTarget;
+  window.setTimeout(() => {
+    if (!root.value?.isConnected) return;
+    if (panelFocusLost(panelMode(window.innerWidth), { related, active: document.activeElement, body: document.body })) {
+      titleEl.value?.focus({ preventScroll: true });
+    }
+  }, 0);
 }
 
 // 탭 목록의 방향키(WAI-ARIA 탭 관례) — 옆 탭을 고르고 그 탭에 초점

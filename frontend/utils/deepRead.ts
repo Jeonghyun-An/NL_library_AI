@@ -77,12 +77,20 @@ export function panelTrapTarget<T>(items: readonly T[], active: unknown, shift: 
   return i === -1 || i === items.length - 1 ? first : null;
 }
 
-// 패널 안 초점이 갈 곳 없이 사라졌는가(focusout 뒤 지금 초점 active, 문서의 body) — 서랍·전체 폭에서 답을 받는 동안 입력 칸·
-// 보내기 단추가 disabled 가 되면 초점이 body 로 떨어져 aside 의 keydown(Esc·Tab 가두기)이 듣지 못한다. 그때만 제목으로 되돌린다.
-// 패널 밖 다른 요소로 옮겨 간 초점(원문 뷰어의 닫기 단추 등)은 잃은 것이 아니라 그대로 둔다 — 서랍에서는 Tab 가두기와 배경(누르면
+// 패널 안 초점이 갈 곳 없이 사라졌는가 — related 는 focusout 의 relatedTarget(초점이 옮겨 가는 요소), active 는 그 뒤의
+// document.activeElement, body 는 문서의 body. 서랍·전체 폭에서 답을 받는 동안 입력 칸·보내기 단추가 disabled 가 되면 초점이
+// body 로 떨어져 aside 의 keydown(Esc·Tab 가두기)이 듣지 못한다. 그때만 제목으로 되돌린다.
+// relatedTarget 이 있으면 초점이 다른 요소로 옮겨 가는 중이라 잃은 것이 아니다 — 사용자의 클릭·Tab 은 focusout 이 끝난 뒤에야 새
+// 요소가 초점을 받아, 그 사이(마이크로태스크)에 읽은 activeElement 는 아직 body 다. active 만 보면 패널 안 이동까지 잃은 것으로 보고
+// 제목으로 되돌려 원래 가려던 이동을 막는다(입력 칸 클릭·Tab 순회가 막혔다).
+// 패널 밖 다른 요소로 옮겨 간 초점(원문 뷰어의 닫기 단추 등)도 잃은 것이 아니라 그대로 둔다 — 서랍에서는 Tab 가두기와 배경(누르면
 // 닫힘) 때문에 사용자가 패널 밖으로 초점을 옮길 길이 없어, 밖으로 간 초점은 다른 부품이 일부러 옮긴 것이다. 2단은 가두지 않는다
-export function panelFocusLost(mode: PanelMode, active: unknown, body: unknown): boolean {
-  return mode !== "side" && (active === null || active === body);
+export function panelFocusLost(
+  mode: PanelMode,
+  focus: { related: unknown; active: unknown; body: unknown },
+): boolean {
+  if (mode === "side" || focus.related) return false;
+  return focus.active === null || focus.active === focus.body;
 }
 
 // 패널이 여는 논문 — 머리는 행 데이터(서지)만으로 그린다
