@@ -33,7 +33,9 @@ JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 
                "concepts": [str],                                    — 목차를 만들 때의 핵심 개념
                "groups": [{"key": "prior.g1", "name": str, "hint": str, "papers": [cnts_id]}],
                "questions": [str], "question": str|null, "method": str,
-               "state": "draft"|"approved", "gen_id": int|null, "approved_at": iso|null}
+               "state": "draft"|"approved", "gen_id": int|null, "approved_at": iso|null,
+               "auto": bool}                                         — 06e 반영이 자동 승인한 목차만 true
+                                                                       (06b 목차엔 키 없음 — 화면 절 연쇄가 읽는다)
   Section   = {"key": str, "gen_id": int, "evidence": {"E1": cnts_id}, "figures": [Figure],
                "basis": {"topic_id": int|null, "papers": [cnts_id]}, "note": str|null,
                "paragraphs": [Paragraph], "model": str|null, "updated_at": iso}

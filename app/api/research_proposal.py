@@ -50,7 +50,7 @@ from services.research_work.shapes import (
 router = APIRouter(tags=["research-work"])
 
 PICK_TOPIC_FIRST = "주제를 먼저 고르세요"
-NEED_READING = f"담은 논문이 {MIN_READING_FOR_OUTLINE}편 이상이어야 목차를 만듭니다"
+NEED_READING = f"담은 논문이 {MIN_READING_FOR_OUTLINE}편 이상이어야 보고서를 만듭니다"
 OUTLINE_BUSY = "목차를 만드는 중입니다"
 NO_OUTLINE = "목차가 없습니다"
 IF_MATCH_REQUIRED = "If-Match 가 필요합니다"

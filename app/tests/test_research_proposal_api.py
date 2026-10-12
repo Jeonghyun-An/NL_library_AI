@@ -505,7 +505,7 @@ class TestCreateOutline:
     def test_five_picked_papers_are_needed(self, api):
         jid = _work_job(api.engine, picked=("C1", "C2", "C3", "C4"))
         res = api.client.post(f"/api/research/{jid}/outline")
-        assert res.status_code == 409 and res.json()["detail"] == "담은 논문이 5편 이상이어야 목차를 만듭니다"
+        assert res.status_code == 409 and res.json()["detail"] == "담은 논문이 5편 이상이어야 보고서를 만듭니다"
         assert api.affinity.calls == []
 
     def test_second_request_while_one_is_open_is_409(self, api):
@@ -565,6 +565,25 @@ class TestPutOutline:
         out = res.json()["outline"]
         assert (out["state"], out["question"], out["approved_at"]) == ("draft", None, None)
         assert res.headers["etag"] == "4"
+
+    def test_saving_keeps_the_auto_mark(self, api):
+        # 06e — 자동 확정한 목차(auto)를 [목차 고치기]·방법 저장으로 PUT 해도 auto 는 그대로다(절 연쇄가 읽는다).
+        # 승인을 풀면(approve false) 연쇄는 state 로 멈춘다 — auto 를 지우지 않는다
+        jid = _work_job(api.engine)
+        outline = {**OUTLINE, "topic": {**OUTLINE["topic"], "id": _topic_id(api.engine, jid)},
+                   "question": OUTLINE["questions"][0], "state": "approved",
+                   "approved_at": "2026-10-17T01:02:03+00:00", "auto": True}
+        add_proposal(api.engine, jid, version=2, outline=outline)
+
+        first = api.client.put(f"/api/research/{jid}/outline", json=_put_body(approve=True),
+                               headers={"If-Match": "2"})
+        second = api.client.put(f"/api/research/{jid}/outline", json=_put_body(approve=False),
+                                headers={"If-Match": "3"})
+
+        assert first.status_code == 200 and second.status_code == 200
+        assert (first.json()["outline"]["state"], first.json()["outline"]["auto"]) == ("approved", True)
+        assert (second.json()["outline"]["state"], second.json()["outline"]["auto"]) == ("draft", True)
+        assert _proposal(api.engine, jid)["outline"]["auto"] is True
 
     def test_weak_etag_is_read(self, api):
         jid = _with_outline(api)
