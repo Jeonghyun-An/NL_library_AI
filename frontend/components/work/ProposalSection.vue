@@ -18,8 +18,8 @@
     </header>
     <p v-if="note" class="rs-muted">{{ note }}</p>
     <p v-if="stale" class="rs-muted">
-      이 절을 쓴 뒤 주제나 목차의 묶음이 바뀌었습니다. 쓴 문단은 그대로 두었습니다 — 바뀐 목차로 맞추려면 이 절을 다시
-      쓰세요.
+      이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었습니다. 쓴 문단은 그대로 두었습니다 — 바뀐 목차로 맞추려면 이
+      절을 다시 쓰세요.
     </p>
 
     <p v-if="status === 'queued'" class="rs-muted" role="status">

@@ -11,7 +11,7 @@ import type {
   WorkView,
 } from "~/types/work";
 import { sentenceFlags, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
-import { httpStatus } from "~/utils/researchErrors";
+import { httpStatus, versionConflict } from "~/utils/researchErrors";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
 import { FINAL_STEP_NAME } from "~/utils/workPhase";
 
@@ -191,6 +191,19 @@ export function removeParagraph(section: ProposalSection, pid: string): SectionP
 
 export function addParagraph(section: ProposalSection, text: string): SectionPut {
   return { paragraphs: [...section.paragraphs.map(entry), { id: null, text, state: "authored" }] };
+}
+
+// 연구 배경·방법 저장(PUT /outline) — 보고서를 자동으로 쓰는 동안 절이 반영될 때마다 version 이 올라 409 version_conflict
+// 를 받는다. 절 반영은 목차를 바꾸지 않아 덮어쓸 것이 없으므로 응답의 지금 version 으로 한 번만 다시 보낸다(spec §12-4).
+// 두 번째 409 와 그 밖의 오류는 그대로 던진다 — 부르는 쪽(ProposalStep act)이 다시 읽고 알린다
+export async function putOnceMore<T>(put: (version: number) => Promise<T>, version: number): Promise<T> {
+  try {
+    return await put(version);
+  } catch (e) {
+    const current = versionConflict(e);
+    if (current === null) throw e;
+    return put(current);
+  }
 }
 
 // ── 보고서 자동 산출(06e D20) — [보고서 만들기] 한 번으로 목차를 자동 확정하고 절을 문서 순서대로 넣는다 ──

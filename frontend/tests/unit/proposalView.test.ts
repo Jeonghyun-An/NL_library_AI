@@ -33,6 +33,7 @@ import {
   paragraphParts,
   paragraphProblem,
   paragraphViews,
+  putOnceMore,
   removeParagraph,
   reportBar,
   sectionKeysOf,
@@ -330,6 +331,47 @@ describe("절 PUT 본문", () => {
     expect(removeParagraph(sec, "p2").paragraphs.map((p) => p.id)).toEqual(["p1", "p3"]);
     expect(addParagraph(sec, "더한 글.").paragraphs.at(-1)).toEqual({ id: null, text: "더한 글.", state: "authored" });
     expect(addParagraph(sec, "더한 글.").paragraphs).toHaveLength(4);
+  });
+});
+
+describe("putOnceMore — 버전 충돌 한 번 재전송", () => {
+  const conflict = (version: number) => ({
+    status: 409,
+    data: { detail: { code: "version_conflict", version, message: "다른 곳에서 보고서가 바뀌었습니다" } },
+  });
+
+  it("첫 409 version_conflict 는 응답의 version 으로 한 번 더 보낸다", async () => {
+    const seen: number[] = [];
+    const put = async (v: number): Promise<string> => {
+      seen.push(v);
+      if (seen.length === 1) throw conflict(9);
+      return "저장";
+    };
+    await expect(putOnceMore(put, 7)).resolves.toBe("저장");
+    expect(seen).toEqual([7, 9]);
+  });
+
+  it("두 번째도 409 면 그 오류를 던진다 — 부르는 쪽(act)이 다시 읽고 알린다", async () => {
+    const seen: number[] = [];
+    const second = conflict(10);
+    const put = async (v: number): Promise<string> => {
+      seen.push(v);
+      throw seen.length === 1 ? conflict(9) : second;
+    };
+    await expect(putOnceMore(put, 7)).rejects.toBe(second);
+    expect(seen).toEqual([7, 9]);
+  });
+
+  it("버전 충돌이 아닌 오류는 다시 보내지 않고 곧바로 던진다", async () => {
+    for (const err of [{ status: 500 }, { status: 409, data: { detail: "목차를 만드는 중입니다" } }, new TypeError("fetch failed")]) {
+      const seen: number[] = [];
+      const put = async (v: number): Promise<string> => {
+        seen.push(v);
+        throw err;
+      };
+      await expect(putOnceMore(put, 7)).rejects.toBe(err);
+      expect(seen).toEqual([7]);
+    }
   });
 });
 

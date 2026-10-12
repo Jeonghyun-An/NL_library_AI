@@ -1415,4 +1415,40 @@ button.wk-stepper__step {
   scroll-margin-top: 6rem;
 }
 
+/* ── 보고서 문서의 사용자 칸(DocField — 2 연구 배경·6 방법, round06e) ── */
+.wk-docfield {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.wk-docfield__line {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.75;
+  color: var(--skx-ink);
+}
+.wk-docfield__text {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  resize: vertical;
+}
+.wk-docfield__count {
+  margin: 0;
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  text-align: right;
+}
+.wk-docfield__count.is-over {
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

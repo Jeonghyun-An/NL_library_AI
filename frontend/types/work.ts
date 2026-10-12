@@ -192,6 +192,8 @@ export interface Outline {
   approved_at: string | null;
   // 목차를 만들 때의 핵심 개념
   concepts?: string[];
+  // 연구 배경 — 사용자가 문서 2절 자리에 적는 자유 글(06e). 키가 없으면 아직 적지 않았다
+  background?: string;
   // [보고서 만들기]의 반영이 자동 승인한 목차만 true — 화면의 절 연쇄가 읽는다(06e D20. 06b 목차엔 키가 없다)
   auto?: boolean;
 }
@@ -220,7 +222,8 @@ export interface ProposalSection {
   gen_id: number;
   evidence: Record<string, string>;
   figures: Figure[];
-  basis: { topic_id: number | null; papers: string[] };
+  // question — 이 절을 쓸 때의 연구 질문(06e 부터. 06b 절엔 없다 — 바뀌면 서버가 다시 맞춤 필요를 붙인다)
+  basis: { topic_id: number | null; papers: string[]; question?: string };
   note: string | null;
   paragraphs: Paragraph[];
   model: string | null;
@@ -293,6 +296,8 @@ export interface OutlinePut {
   question: string;
   method: string;
   approve: boolean;
+  // 실을 때만 바뀐다 — 싣지 않으면 서버가 저장된 연구 배경을 지킨다
+  background?: string;
 }
 
 export interface SectionPut {

@@ -125,8 +125,16 @@
           </section>
           <section id="wk-doc-background" class="rs-card wk-doc__part" aria-labelledby="wk-doc-background-title">
             <h3 id="wk-doc-background-title" class="wk-doc__part-title" tabindex="-1">2. {{ SECTION_LABELS.background }}</h3>
-            <p v-if="background.trim()" class="wk-doc__text">{{ background }}</p>
-            <p v-else class="rs-muted">연구 배경을 아직 적지 않았습니다.</p>
+            <DocField
+              field-id="wk-docfield-background"
+              label="연구 배경"
+              :value="background"
+              :max="OUTLINE_BACKGROUND_MAX"
+              placeholder="이 연구가 왜 필요한지 — 연구 대상과 문제 상황, 이 주제를 보게 된 맥락을 적습니다. AI 는 이 칸을 쓰지 않습니다."
+              :read-only="readOnly"
+              :busy="busy || !!outlineGen"
+              @save="saveField('background', $event)"
+            />
           </section>
           <ProposalSection
             v-for="key in writableKeys"
@@ -152,8 +160,16 @@
           </section>
           <section id="wk-doc-method" class="rs-card wk-doc__part" aria-labelledby="wk-doc-method-title">
             <h3 id="wk-doc-method-title" class="wk-doc__part-title" tabindex="-1">6. {{ SECTION_LABELS.method }}</h3>
-            <p v-if="proposal.outline.method.trim()" class="wk-doc__text">{{ proposal.outline.method }}</p>
-            <p v-else class="rs-muted">방법을 아직 적지 않았습니다.</p>
+            <DocField
+              field-id="wk-docfield-method"
+              label="방법"
+              :value="proposal.outline?.method ?? ''"
+              :max="OUTLINE_METHOD_MAX"
+              placeholder="연구 설계·대상·자료 수집과 분석 방법을 적습니다. AI 는 이 칸을 쓰지 않습니다."
+              :read-only="readOnly"
+              :busy="busy || !!outlineGen"
+              @save="saveField('method', $event)"
+            />
           </section>
         </div>
 
@@ -187,13 +203,14 @@
 import { computed, onMounted, ref } from "vue";
 import AiFootprintMeter from "~/components/work/AiFootprintMeter.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
+import DocField from "~/components/work/DocField.vue";
 import OutlineEditor from "~/components/work/OutlineEditor.vue";
 import ProposalSection from "~/components/work/ProposalSection.vue";
 import { useAutoReport } from "~/composables/useAutoReport";
 import { useReportExport } from "~/composables/useReportExport";
 import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWork";
 import type { OutlinePut, SectionPut, WorkStep } from "~/types/work";
-import { isFallbackOutline } from "~/utils/outlineEdit";
+import { OUTLINE_BACKGROUND_MAX, OUTLINE_METHOD_MAX, fieldPut, isFallbackOutline } from "~/utils/outlineEdit";
 import { buildProposalDocument, printedKeys, printedProposedCount } from "~/utils/proposalDocument";
 import {
   SECTION_LABELS,
@@ -202,6 +219,7 @@ import {
   docToc,
   outlineBackground,
   outlineToggleLabel,
+  putOnceMore,
   reportBar,
   sectionLabel,
   type TocItem,
@@ -218,7 +236,7 @@ const CONFLICT = "다른 곳에서 계획서가 바뀌어 다시 불러왔습니
 // 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다. 새 반영은 다시
 // 자동 승인하지만 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
 const REMAKE_CONFIRM =
-  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다. 이미 쓴 절은 지우지 않고(주제나 묶음이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
+  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다 — 연구 배경은 그대로 둡니다. 이미 쓴 절은 지우지 않고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
 
 const api = useWorkApi();
 const { exporting, exportDocx } = useReportExport();
@@ -382,6 +400,24 @@ function saveOutline(body: OutlinePut): void {
     await props.work.reload("proposal");
     say(body.approve ? "목차를 승인했습니다 — 이제 절을 쓸 수 있습니다" : "목차를 저장했습니다");
   }, "목차를 저장하지 못했습니다");
+}
+
+// 문서의 연구 배경(2절)·방법(6절) 칸 — 승인 상태를 지킨 채(fieldPut) PUT /outline. 보고서를 자동으로 쓰는 동안에는 절이
+// 반영될 때마다 version 이 올라 409 version_conflict 가 난다 — 응답의 version 으로 한 번만 다시 보낸다(putOnceMore). 두 번째도
+// 409 면 act 가 보고서를 다시 읽고 CONFLICT 를 알린다(칸은 열린 채 글이 남아 다시 저장할 수 있다)
+function saveField(field: "background" | "method", text: string): void {
+  const p = proposal.value;
+  const outline = p?.outline;
+  if (!p || !outline) return;
+  const patch = field === "background" ? { background: text } : { method: text };
+  void act(
+    async () => {
+      await putOnceMore((v) => api.putOutline(props.jobId, v, fieldPut(outline, patch)), p.version);
+      await props.work.reload("proposal");
+      say(field === "background" ? "연구 배경을 저장했습니다" : "방법을 저장했습니다");
+    },
+    field === "background" ? "연구 배경을 저장하지 못했습니다" : "방법을 저장하지 못했습니다",
+  );
 }
 
 function write(key: string): void {
