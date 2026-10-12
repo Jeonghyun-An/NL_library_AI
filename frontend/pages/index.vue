@@ -635,7 +635,7 @@ import {
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
-import { LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
+import { DEFAULT_LANDING_TAB, LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
 import { queryWithoutStart, readStart } from "~/utils/landingStart";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
@@ -667,7 +667,8 @@ const router = useRouter();
 
 // ── 뷰 상태 ───────────────────────────────────────────────
 const view = ref<"landing" | "results" | "detail">("landing");
-const mode = ref<"book" | "paper">("book");
+// 처음 열 때의 갈래는 전환의 첫 칸(논문 검색)이다
+const mode = ref<"book" | "paper">(DEFAULT_LANDING_TAB);
 
 // ── 검색 ──────────────────────────────────────────────────
 const currentQuery = ref("");

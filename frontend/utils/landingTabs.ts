@@ -1,5 +1,5 @@
 // frontend/utils/landingTabs.ts
-// 메인 랜딩의 두 갈래 전환(자료 검색 · 논문 검색).
+// 메인 랜딩의 두 갈래 전환(논문 검색 · 자료 검색 — 논문이 첫 칸이고 처음 열 때의 기본 갈래다).
 // 갈래는 화면의 데이터 모드(도서/논문)와 같다. 딥리서치는 갈래가 아니라 논문 패널에서 + 메뉴·슬래시 명령으로 켜는
 // 모드라, 켜져 있어도 전환은 '논문 검색'이 선택된 상태다.
 export type LandingMode = "book" | "paper";
@@ -13,9 +13,12 @@ export interface LandingTabDef {
 }
 
 export const LANDING_TABS: readonly LandingTabDef[] = [
-  { id: "book", label: "자료 검색", shortLabel: "자료" },
   { id: "paper", label: "논문 검색", shortLabel: "논문" },
+  { id: "book", label: "자료 검색", shortLabel: "자료" },
 ];
+
+/** 처음 열 때 선택된 갈래 — 첫 칸 */
+export const DEFAULT_LANDING_TAB: LandingTab = LANDING_TABS[0]!.id;
 
 export interface KeyModifiers {
   altKey?: boolean;
