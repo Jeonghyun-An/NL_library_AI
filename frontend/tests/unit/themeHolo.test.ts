@@ -177,14 +177,35 @@ describe("홀로그램 배경 — 가독성", () => {
   );
 
   // 뿌연 유리(frost) 면 — 밑에서부터 겹치는 층(짙은 밑칠 → 흰 반투명 …)을 최악의 합성 위에 얹은 면에서 글자가 읽혀야 한다.
-  // 흐림은 최악을 덜어 주지만 믿지 않는다. 흰 10% 만으로는 이 최악에서 본문색이 2:1 이라 밑칠이 필요하다(토큰 주석)
+  // 흐림은 최악을 덜어 주지만 믿지 않는다. 흰 10% 만으로는 이 최악에서 본문색이 2:1 이라 밑칠이 필요하다(토큰 주석).
+  // 그라데이션 토큰(반사광)은 가장 센 정지점의 알파로 면 전체에 깔아 본다 — 글자가 어디에 놓여도 지켜지게
+  const peakStop = (token: string): Stop =>
+    rgbaStops(rootToken(token)).reduce((m, s) => (s.a > m.a ? s : m));
+  const faceWorst = (layers: string[], text: string, tintDelta = 0): number => {
+    const fg = hexToRgb(rootToken(text));
+    return Math.min(
+      ...composites().map((c) =>
+        contrast(
+          fg,
+          layers.reduce<Rgb>((acc, token, i) => {
+            const l = peakStop(token);
+            return over(acc, l.rgb, i === 0 ? l.a + tintDelta : l.a);
+          }, c),
+        ),
+      ),
+    );
+  };
+  const INPUT_FACE = ["--skx-frost-tint", "--skx-frost-milk", "--skx-frost-reflect"];
+  const SIDE_FACE = ["--skx-frost-side-bg"];
+  const CHIP_FACE = ["--skx-chip-tint", "--skx-chip-milk"];
   const faces: [string, string[], string[]][] = [
-    // [이름, 층 토큰(아래→위), 이 면에 놓이는 글자색 토큰]
-    ["입력창·전환·예시 카드(--skx-frost-fill)", ["--skx-frost-tint", "--skx-frost-bg"], ["--skx-ink", "--skx-gray-1"]],
-    ["예시 카드 올림(--skx-frost-fill-hover)", ["--skx-frost-tint", "--skx-frost-bg-hover"], ["--skx-ink"]],
-    ["사이드바(--skx-frost-side-bg)", ["--skx-frost-side-bg"], ["--skx-ink", "--skx-gray-1"]],
-    ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-bg"], ["--skx-ink"]],
-    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-bg-soft"], ["--skx-ink", "--skx-gray-1"]],
+    // [이름, 층 토큰(아래→위), 이 면에 놓이는 글자색 토큰] — 입력창의 안내 글(placeholder)은 --skx-ink-2
+    ["입력창·전환·결과 검색바(--skx-frost-fill)", INPUT_FACE, ["--skx-ink", "--skx-ink-2"]],
+    ["예시 질문 칸(--skx-chip-fill)", CHIP_FACE, ["--skx-ink"]],
+    ["예시 질문 칸 올림(--skx-chip-fill-hover)", ["--skx-chip-tint", "--skx-chip-milk-hover"], ["--skx-ink"]],
+    ["사이드바(--skx-frost-side-bg)", SIDE_FACE, ["--skx-ink", "--skx-gray-1"]],
+    ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg"], ["--skx-ink"]],
+    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], ["--skx-ink", "--skx-gray-1"]],
     ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"]],
   ];
   const faceCases = faces.flatMap(([name, layers, texts]) =>
@@ -194,21 +215,26 @@ describe("홀로그램 배경 — 가독성", () => {
   it.each(faceCases.map(([name, layers, text]) => ({ name, layers, text })))(
     "띠가 모두 가장 밝게 겹쳐도 $name 위에서 $text 글자가 4.5:1 이상이다",
     ({ layers, text }) => {
-      const fg = hexToRgb(rootToken(text));
-      const worst = Math.min(
-        ...composites().map((c) =>
-          contrast(
-            fg,
-            layers.reduce<Rgb>((acc, token) => {
-              const l = rootStop(token);
-              return over(acc, l.rgb, l.a);
-            }, c),
-          ),
-        ),
-      );
-      expect(worst).toBeGreaterThanOrEqual(4.5);
+      expect(faceWorst([...layers], text)).toBeGreaterThanOrEqual(4.5);
     },
   );
+
+  // 불투명도로 글자를 지키되 필요 이상으로 짙게 두지 않는다 — 밑칠 알파를 0.06 만 낮춰도 4.5:1 을 못 넘는 값이어야 한다
+  // (사용자 피드백 10-12: 밑칠 80%+흰 10% 는 유리 같은 투명감이 사라진다). 더 짙게 고쳐 쓰려면 이 테스트가 막는다
+  it.each([
+    { name: "입력창·전환·결과 검색바", layers: INPUT_FACE, text: "--skx-ink-2" },
+    { name: "사이드바", layers: SIDE_FACE, text: "--skx-gray-1" },
+    { name: "예시 질문 칸", layers: CHIP_FACE, text: "--skx-ink" },
+  ])("$name 의 밑칠은 가장 낮은 쪽이다(알파를 0.06 낮추면 4.5:1 미만)", ({ layers, text }) => {
+    expect(faceWorst(layers, text, -0.06)).toBeLessThan(4.5);
+  });
+
+  it("입력창·전환·결과 검색바와 사이드바의 합계 불투명도(밑칠+흰 막)는 0.62 이하다", () => {
+    const alpha = (tokens: string[]) =>
+      1 - tokens.reduce((rest, t) => rest * (1 - peakStop(t).a), 1);
+    expect(alpha(["--skx-frost-tint", "--skx-frost-milk"])).toBeLessThanOrEqual(0.62);
+    expect(alpha(SIDE_FACE)).toBeLessThanOrEqual(0.62);
+  });
 
   it("카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 가장 밝은 합성 위에서 3:1 이상이다", () => {
     const worst = Math.min(

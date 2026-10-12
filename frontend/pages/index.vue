@@ -78,7 +78,6 @@
                   class="skx-chip"
                   @click="fillChip(chip, bookInputRef)"
                 >
-                  <img class="skx-chip__icon" src="/img/ico-bubbles.svg" alt="" />
                   <span>{{ chip }}</span>
                 </button>
               </li>
@@ -136,7 +135,6 @@
                   class="skx-chip"
                   @click="fillChip(chip, paperInputRef)"
                 >
-                  <img class="skx-chip__icon" src="/img/ico-bubbles.svg" alt="" />
                   <span>{{ chip }}</span>
                 </button>
               </li>

@@ -42,15 +42,21 @@ describe("뿌연 유리 — 범위", () => {
   it("흰 반투명 바탕은 10% 다(시안)", () => {
     expect(rootToken("--skx-frost-bg")).toBe("rgba(255, 255, 255, 0.1)");
   });
+
+  it("투명감은 불투명도가 아니라 흐림·반사광·윗선이 맡는다 — 흐림 20px 대, 반사광은 135도 기울기, 윗선이 있다", () => {
+    expect(rootToken("--skx-frost-blur")).toMatch(/^blur\(2\dpx\) saturate\(1\.\d+\)$/);
+    expect(rootToken("--skx-frost-reflect")).toMatch(/^linear-gradient\(135deg,/);
+    expect(rootToken("--skx-frost-fill")).toContain("var(--skx-frost-reflect)");
+    expect(rootToken("--skx-frost-hilite")).toContain("inset 0 1px 0 0");
+  });
 });
 
 describe("뿌연 유리 — 성능(backdrop-filter 개수 제한)", () => {
-  it("흐림을 거는 면은 입력창·전환·예시 카드·사이드바·결과 검색바·메뉴·목록뿐이다", () => {
+  it("흐림을 거는 면은 입력창·전환·사이드바·결과 검색바·메뉴·목록뿐이다", () => {
     const allowed = new Set([
       ".skx-lnb",
       ".skx-seg",
       ".skx-search__box",
-      ".skx-chip",
       ".skx-rsearch",
       ".rs-plus__anchor .rs-plus__menu",
       ".skx-search__box .rs-plus__palette, .skx-rsearch .rs-plus__palette",
@@ -58,6 +64,10 @@ describe("뿌연 유리 — 성능(backdrop-filter 개수 제한)", () => {
     ]);
     const unexpected = blurredSelectors().filter((sel) => !allowed.has(sel));
     expect(unexpected).toEqual([]);
+  });
+
+  it("예시 질문 칸은 입력창보다 한 단계 낮은 면이라 흐림을 걸지 않는다", () => {
+    expect(blurredSelectors()).not.toContain(".skx-chip");
   });
 
   it("목록 카드·결과 카드·AI 패널에는 흐림을 걸지 않는다", () => {

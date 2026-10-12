@@ -448,7 +448,7 @@ onBeforeUnmount(() => {
 /* DeepResearch 묶음 카드(시안): 흰 5% 유리 — 사이드바가 이미 흐려져 있어 이 카드는 흐림 없이 바탕만 얹는다 */
 .skx-history__group--research {
   padding: 0.6rem;
-  background: var(--skx-frost-bg-soft);
+  background: var(--skx-frost-side-card);
   border-radius: var(--skx-radius-md);
   box-shadow: var(--skx-frost-hilite);
 }

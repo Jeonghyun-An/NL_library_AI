@@ -223,21 +223,36 @@ a:hover {
   /* 뿌연 유리(frost) — 흰 반투명 바탕 + 배경 흐림 + 밝은 위 테두리(그라데이션) + 안쪽 위 하이라이트(Figma GLASS 효과).
      메인 입력창·전환·예시 카드·사이드바·+ 메뉴·결과 AI 패널처럼 우리 클래스에만 쓴다 — --skx-glass 는 딥리서치 화면(research.css·work.css)도
      쓰므로 값을 바꾸지 않는다. 글자 대비는 themeHolo.test.ts 가 띠가 가장 밝게 겹친 최악의 합성 위에서 검사한다 —
-     흰 10% 만으로는 그 자리에서 본문색이 2:1 이라, 움직이는 배경 위의 면은 페이지 바탕색의 밑칠(--skx-frost-tint, 80%) 위에 흰 10% 를 얹은
-     --skx-frost-fill 을 쓴다(밑칠이 바탕과 같은 색이라 어두운 자리에서는 시안의 흰 10% 면과 똑같고, 밝은 띠 위에서는 글자를 지킨다).
-     사이드바 바탕도 시안의 30% 로는 모자라 70% 로 둔다 */
+     흰 10% 만으로는 그 자리에서 본문색이 2:1 이라, 움직이는 배경 위의 큰 면(입력창·전환·결과 검색바)은 아래에서부터
+     짙은 밑칠(--skx-frost-tint) → 옅은 흰 막(--skx-frost-milk) → 비스듬한 반사광(--skx-frost-reflect) 을 쌓은 --skx-frost-fill 을 쓴다.
+     밑칠 알파는 themeHolo.test.ts 의 최악 합성(띠가 모두 가장 밝게 겹친 자리, 반사광은 가장 센 알파로 깔아 본다)에서 본문색이 4.5:1 을
+     넘는 가장 낮은 값(0.60)이다 — 불투명도로 글자를 지키는 대신 투명감은 배경 흐림·반사광·윗선이 맡는다.
+     밑칠 색은 페이지 바탕보다 어두운 청록이라 어두운 자리에서는 바탕과 거의 같고, 밝은 띠 위에서 글자를 지킨다.
+     사이드바 바탕은 밑칠 없이 0.58(gray-1 4.5:1 이 최저). 사이드바 안의 [새 검색]·DeepResearch 묶음 카드는 예전 0.70 과 같은 모양을
+     내도록 밑칠(--skx-frost-side-under)을 한 겹 더 깐다 */
   --skx-frost-bg: rgba(255, 255, 255, 0.1);
-  --skx-frost-tint: rgba(15, 40, 34, 0.8);
-  --skx-frost-fill: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-tint);
-  --skx-frost-fill-hover: linear-gradient(var(--skx-frost-bg-hover), var(--skx-frost-bg-hover)), var(--skx-frost-tint);
+  --skx-frost-tint: rgba(8, 22, 19, 0.6);
+  --skx-frost-milk: rgba(255, 255, 255, 0.04);
+  --skx-frost-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 40%, rgba(255, 255, 255, 0) 60%);
+  --skx-frost-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-milk), var(--skx-frost-milk)), var(--skx-frost-tint);
   --skx-frost-bg-hover: rgba(255, 255, 255, 0.15);
   --skx-frost-bg-soft: rgba(255, 255, 255, 0.05);
   --skx-frost-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
   --skx-frost-line: rgba(255, 255, 255, 0.24);
   --skx-frost-hilite: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
-  --skx-frost-blur: blur(14px) saturate(1.25);
+  --skx-frost-blur: blur(22px) saturate(1.4);
   /* 사이드바 바탕(짙은 초록 반투명)·+ 메뉴 바탕(거의 불투명)·메뉴 테두리 */
-  --skx-frost-side-bg: rgba(15, 40, 34, 0.7);
+  --skx-frost-side-bg: rgba(15, 40, 34, 0.58);
+  --skx-frost-side-under: rgba(15, 40, 34, 0.286);
+  --skx-frost-side-btn: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-side-under);
+  --skx-frost-side-card: linear-gradient(var(--skx-frost-bg-soft), var(--skx-frost-bg-soft)), var(--skx-frost-side-under);
+  /* 예시 질문 칸 — 입력창보다 한 단계 낮은 면: 흐림·윗선·반사광 없이 옅은 흰 막과 선만. 밑칠은 이 칸의 글자(14px)를 지키는 최저값 */
+  --skx-chip-tint: rgba(8, 22, 19, 0.54);
+  --skx-chip-milk: rgba(255, 255, 255, 0.05);
+  --skx-chip-milk-hover: rgba(255, 255, 255, 0.07);
+  --skx-chip-fill: linear-gradient(var(--skx-chip-milk), var(--skx-chip-milk)), var(--skx-chip-tint);
+  --skx-chip-fill-hover: linear-gradient(var(--skx-chip-milk-hover), var(--skx-chip-milk-hover)), var(--skx-chip-tint);
+  --skx-chip-line: rgba(255, 255, 255, 0.12);
   --skx-frost-menu-bg: rgba(21, 46, 40, 0.95);
   --skx-frost-menu-line: rgba(255, 255, 255, 0.1);
   /* 불투명 대체(backdrop-filter 를 못 쓰거나 투명도 줄이기 설정일 때) · 결과 AI 패널 위 흐려지는 끝 색(흰 10% 를 얹은 면과 같은 색) */
@@ -290,8 +305,9 @@ a:hover {
   --skx-glass-border: #e3e1dc;
   --skx-frost-bg: #ffffff;
   --skx-frost-tint: #ffffff;
+  --skx-frost-milk: #ffffff;
+  --skx-frost-reflect: linear-gradient(#ffffff, #ffffff);
   --skx-frost-fill: linear-gradient(#ffffff, #ffffff);
-  --skx-frost-fill-hover: linear-gradient(#f4f3ef, #f4f3ef);
   --skx-frost-bg-hover: #f4f3ef;
   --skx-frost-bg-soft: #faf9f6;
   --skx-frost-edge: linear-gradient(180deg, #e3e1dc, #e3e1dc);
@@ -299,6 +315,15 @@ a:hover {
   --skx-frost-hilite: none;
   --skx-frost-blur: none;
   --skx-frost-side-bg: #ffffff;
+  --skx-frost-side-under: #ffffff;
+  --skx-frost-side-btn: linear-gradient(#f4f3ef, #f4f3ef);
+  --skx-frost-side-card: linear-gradient(#faf9f6, #faf9f6);
+  --skx-chip-tint: #ffffff;
+  --skx-chip-milk: #ffffff;
+  --skx-chip-milk-hover: #f4f3ef;
+  --skx-chip-fill: linear-gradient(#ffffff, #ffffff);
+  --skx-chip-fill-hover: linear-gradient(#f4f3ef, #f4f3ef);
+  --skx-chip-line: #e3e1dc;
   --skx-frost-menu-bg: #ffffff;
   --skx-frost-menu-line: #e3e1dc;
   --skx-frost-solid: #ffffff;
@@ -687,14 +712,15 @@ a:hover {
   gap: 0.4rem;
   width: 100%;
   padding: 0.4rem 1.2rem 0.4rem 0.4rem;
-  background: var(--skx-frost-bg);
+  background: var(--skx-frost-side-btn);
   border: none;
   border-radius: var(--skx-radius-sm);
   box-shadow: var(--skx-frost-hilite);
   transition: background-color 0.15s;
 }
+/* 올림은 면을 더 희게(글자 대비가 모자란다) 하지 않고 선을 밝힌다 */
 .skx-newchat:hover {
-  background: var(--skx-frost-bg-hover);
+  box-shadow: inset 0 0 0 1px var(--skx-frost-line);
 }
 .skx-newchat__icon {
   display: inline-flex;
@@ -1035,10 +1061,10 @@ a:hover {
     "field field"
     "plus send";
   align-items: center;
-  row-gap: 0.4rem;
+  row-gap: 0.6rem;
   width: 100%;
   min-height: 6.8rem;
-  padding: 0.8rem 1.2rem;
+  padding: 1rem 1.3rem 0.75rem;
   background: var(--skx-frost-fill);
   box-shadow: var(--skx-frost-hilite);
   border-radius: 1rem;
@@ -1053,13 +1079,13 @@ a:hover {
 }
 @media (max-width: 480px) {
   .skx-search__box {
-    padding: 0.8rem;
+    padding: 1.1rem 1.1rem 0.8rem;
+    row-gap: 0.5rem;
   }
 }
 /* 밝은 위 가장자리(빛을 받는 테두리) — 위 흰 60% → 아래 20% 그라데이션 1px. 배경에 mask 로 테두리 띠만 남긴다 */
 .skx-search__box::before,
 .skx-seg::before,
-.skx-chip::before,
 .skx-rsearch::before,
 .skx-pick::before {
   content: "";
@@ -1098,8 +1124,9 @@ a:hover {
   color: var(--skx-ink);
   line-height: 1.4;
 }
+/* 글자 대비는 themeHolo.test.ts 가 밑칠(--skx-frost-tint) 알파를 정할 때 --skx-ink-2 기준으로 지킨다 */
 .skx-search__input::placeholder {
-  color: var(--skx-gray-1);
+  color: var(--skx-ink-2);
 }
 .skx-search__actions {
   grid-area: send;
@@ -1129,18 +1156,35 @@ a:hover {
   display: block;
   filter: var(--skx-ico-on-accent-filter);
 }
-/* 시안: 입력창 폭에 맞춘 4열, 칸 사이 16(0.8rem). 예시 질문은 패널마다 3개라 있는 칸이 폭을 나눠 채운다 */
+/* 랜딩 입력 상자의 보내기 — 입력창이 주인공이라 한 단계 작게(34 → 1.7rem), 아이콘도 비례. 휴대폰은 rem 이 줄어 2rem(약 29px)을 그대로 둔다 */
+.skx-search__box .skx-send {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+.skx-search__box .skx-send img {
+  width: 0.85rem;
+}
+@media (max-width: 768px) {
+  .skx-search__box .skx-send {
+    width: 2rem;
+    height: 2rem;
+  }
+  .skx-search__box .skx-send img {
+    width: 1rem;
+  }
+}
+/* 예시 질문 — 입력창 아래의 작은 칸. 입력창이 주인공이라 한 단계 낮춘다: 3칸이 폭을 나눠 갖고 칸 사이 9(0.45rem),
+   글 14px 안팎 1~2줄, 안쪽 여백 11/15(0.55/0.75rem), 높이는 글에 맞춘다. 아이콘·흐림·윗선·반사광 없이 옅은 흰 막과 선만 */
 .skx-chips {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11.4rem, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
   width: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .skx-chips > li {
-  flex: 1 1 0;
   min-width: 0;
   animation: skx-chip-rise 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
@@ -1156,7 +1200,7 @@ a:hover {
 @keyframes skx-chip-rise {
   from {
     opacity: 0;
-    transform: translateY(1.2rem);
+    transform: translateY(0.8rem);
   }
   to {
     opacity: 1;
@@ -1170,51 +1214,34 @@ a:hover {
 }
 @media (max-width: 480px) {
   .skx-chips {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.4rem;
   }
 }
-/* 예시 카드 — 시안 228×136(11.4×6.8rem 이상)·r8·안쪽 여백 24: 위 말풍선 아이콘 + 글 2줄 */
 .skx-chip {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 0.8rem;
+  display: block;
   width: 100%;
   height: 100%;
-  min-height: 6.8rem;
-  padding: 1.2rem;
-  background: var(--skx-frost-fill);
-  border: none;
+  padding: 0.55rem 0.75rem;
+  background: var(--skx-chip-fill);
+  border: 1px solid var(--skx-chip-line);
   border-radius: var(--skx-radius-sm);
-  box-shadow: var(--skx-frost-hilite);
-  backdrop-filter: var(--skx-frost-blur);
-  -webkit-backdrop-filter: var(--skx-frost-blur);
   font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 400;
   color: var(--skx-ink);
   text-align: left;
-  line-height: 1.5;
+  line-height: 1.4;
   transition: background-color 0.15s;
 }
 .skx-chip:hover {
-  background: var(--skx-frost-fill-hover);
+  background: var(--skx-chip-fill-hover);
 }
-.skx-chip__icon {
-  width: 1.45rem;
-  height: 1.2rem;
-  flex-shrink: 0;
-  display: block;
-}
-@media (max-width: 480px) {
+/* 휴대폰·태블릿은 rem 이 줄어(0.9rem) 0.7rem 이 10px 로 작아진다 — 13px 로 키운다 */
+@media (max-width: 768px) {
   .skx-chip {
-    min-height: 0;
-    padding: 0.8rem;
-    gap: 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
   }
 }
 .skx-chip:focus-visible {
@@ -1301,10 +1328,12 @@ a:hover {
   line-height: 1.4;
   color: var(--skx-gray-1);
 }
-/* 랜딩 입력 상자의 아래 줄 — [+] 는 원 없이 글자만, 켜진 모드 칩은 시안 크기(높이 30 → 1.5rem) */
+/* 랜딩 입력 상자의 아래 줄 — [+] 는 원 없이 글자만, 켜진 모드 칩은 시안 크기(높이 30 → 1.5rem).
+   + 글자는 버튼 칸 안쪽으로 들어앉아 있어 입력 글의 시작선과 어긋난다 — 칸을 왼쪽으로 내어 + 의 왼쪽 선을 입력 글에 맞춘다 */
 .skx-search__box .rs-plus__btn {
   width: 1.6rem;
   height: 1.6rem;
+  margin-left: -0.5rem;
   background: none;
   border: none;
   font-size: 1.3rem;
@@ -1326,7 +1355,6 @@ a:hover {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .skx-search__box,
   .skx-seg,
-  .skx-chip,
   .skx-rsearch,
   .skx-newchat,
   .skx-pick,
