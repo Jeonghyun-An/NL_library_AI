@@ -72,6 +72,12 @@ describe("테마 토큰 대비 — 다크(:root)", () => {
     ).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("흐린 글자(--skx-gray-2)가 불투명 면(--skx-white) 위에서 4.5:1 이상이다", () => {
+    expect(
+      contrast(need(dark, "--skx-gray-2"), need(dark, "--skx-white")),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("포인트색 위 글자(--skx-on-accent)가 포인트색(--skx-accent) 위에서 4.5:1 이상이다", () => {
     expect(
       contrast(need(dark, "--skx-on-accent"), need(dark, "--skx-accent")),
@@ -95,6 +101,24 @@ describe("테마 토큰 대비 — 밝은 읽는 면(.skx-paper)", () => {
   it("보조 글자(--skx-gray-1)가 카드(--skx-white) 위에서 4.5:1 이상이다", () => {
     expect(
       contrast(need(paper, "--skx-gray-1"), need(paper, "--skx-white")),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("포인트색 글자(--skx-primary)가 카드(--skx-white) 위에서 4.5:1 이상이다", () => {
+    expect(
+      contrast(need(paper, "--skx-primary"), need(paper, "--skx-white")),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("포인트색(--skx-primary) 바탕 위 흰 글자(--skx-white)도 4.5:1 이상이다", () => {
+    expect(
+      contrast(need(paper, "--skx-white"), need(paper, "--skx-primary")),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("진한 포인트색(--skx-accent-strong)도 카드(--skx-white) 위에서 4.5:1 이상이다", () => {
+    expect(
+      contrast(need(paper, "--skx-accent-strong"), need(paper, "--skx-white")),
     ).toBeGreaterThanOrEqual(4.5);
   });
 });
