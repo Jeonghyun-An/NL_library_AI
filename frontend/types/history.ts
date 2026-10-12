@@ -14,11 +14,17 @@ export interface SnapshotBookInfo {
   pub_date?: string;
   themes?: string;
   keyword?: string;
+  /** 저자 키워드(논문은 보통 5~8개) — 카드 키워드 칩의 첫 출처 */
+  extracted_keywords?: string[];
   subject?: string;
+  /** 도서관 분류(KDC) — 키워드가 없는 소장자료 카드의 분류 칩 */
+  kdc?: string;
   series_title?: string;
   grade?: string;
   kci_citations?: number;
   references?: string[];
+  // 1위 도서만 담는다(slimBookResult) — 복원 때 '이 책에서 얻을 수 있는 것'을 다시 받지 않고 그린다
+  read_effect?: string;
 }
 
 export interface SnapshotItem {
@@ -41,10 +47,20 @@ export interface PaperSnapshot {
   books: SnapshotItem[];
 }
 
-export interface BookAi {
+/** 소장자료 AI 영역 — 1위 도서의 추천 이유(SKOVIX 추천 1권). keywords 는 서버가 이유 스트림 첫 이벤트로 준 도서 키워드 */
+export interface BookAiPick {
+  book_id: string;
+  reason: string;
+  keywords?: string[];
+}
+
+/** 옛 AI 컬렉션 기록과 v1 가져오기가 남긴 모양 — 화면은 쓰지 않는다(utils/bookAiPick.readSavedReason) */
+export interface LegacyBookAi {
   intro: string;
   items: unknown[];
 }
+
+export type BookAi = BookAiPick | LegacyBookAi;
 
 export interface PaperAi {
   text: string;

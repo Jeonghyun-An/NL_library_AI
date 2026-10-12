@@ -4,7 +4,7 @@
       'skx-score-ring',
       variant === 'content' && 'skx-score-ring--content',
     ]"
-    tabindex="0"
+    :tabindex="tip ? 0 : undefined"
   >
     <svg class="skx-score-ring__svg" viewBox="0 0 36 36" aria-hidden="true">
       <circle class="skx-score-ring__bg" cx="18" cy="18" r="15.5" />
@@ -20,18 +20,23 @@
       />
     </svg>
     <span class="skx-score-ring__pct">{{ clamped }}</span>
-    <span class="skx-score-ring__tip" role="tooltip"
+    <span v-if="tip" class="skx-score-ring__tip" role="tooltip"
       >{{ label }} {{ clamped }}%</span
     >
   </span>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
-  pct: number;
-  label: string;
-  variant?: "title" | "content";
-}>();
+const props = withDefaults(
+  defineProps<{
+    pct: number;
+    label: string;
+    variant?: "title" | "content";
+    // 호버 말풍선. 라벨을 따로 보이는 자리(관련도 팝오버)에서는 끈다
+    tip?: boolean;
+  }>(),
+  { tip: true },
+);
 
 const CIRC = 2 * Math.PI * 15.5;
 // 내림 처리: 99.6% 같은 값이 100%로 올림 표기되는 것 방지 (정확히 100일 때만 100)

@@ -1,4 +1,5 @@
 // frontend/utils/slashCommand.ts
+import { DEEP_RESEARCH } from "./brand";
 import { questionProblem } from "./researchInput";
 
 export type SearchModeId = "deep-research";
@@ -10,6 +11,8 @@ export interface SearchMode {
   description: string;
   icon: string;
   slash: string;
+  /** 슬래시 목록을 거를 때만 쓰는 보이지 않는 별칭(한글 입력 등) — 화면에는 label 만 보인다 */
+  aliases?: readonly string[];
   placeholder: string;
   available: (kind: SearchInputKind) => boolean;
 }
@@ -18,10 +21,12 @@ export interface SearchMode {
 export const SEARCH_MODES: readonly SearchMode[] = [
   {
     id: "deep-research",
-    label: "딥리서치",
-    description: "질문을 하위질문으로 나눠 논문을 찾고, 스스로 점검한 뒤 인용이 달린 보고서를 씁니다",
+    label: DEEP_RESEARCH,
+    // 소요 시간 표기는 뺐다 — 기본 파라미터(하위질문 6·재탐색 3)의 실측이 없다(round04a 완료노트 §8: 축소 파라미터 34~89초뿐). 실측하면 되살린다
+    description: "여러 논문을 반복 탐색해 근거가 달린 보고서를 만듭니다",
     icon: "/img/ico-ai-related.svg",
     slash: "/deep-research",
+    aliases: ["딥리서치", "리서치"],
     placeholder: "연구 질문을 입력하세요",
     available: (kind) => kind === "paper",
   },
@@ -56,7 +61,11 @@ export function slashSuggestions(input: string, modes: readonly SearchMode[]): S
   const token = input.trimStart().toLowerCase();
   if (!token.startsWith("/") || /\s/.test(token)) return [];
   const name = token.slice(1);
-  return modes.filter((m) => m.slash.startsWith(token) || (name !== "" && m.label.toLowerCase().startsWith(name)));
+  return modes.filter(
+    (m) =>
+      m.slash.startsWith(token) ||
+      (name !== "" && [m.label, ...(m.aliases ?? [])].some((word) => word.toLowerCase().startsWith(name))),
+  );
 }
 
 export type PaletteKeyAction = "next" | "prev" | "select" | "close" | "block";

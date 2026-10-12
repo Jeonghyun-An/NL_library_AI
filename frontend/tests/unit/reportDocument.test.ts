@@ -123,7 +123,7 @@ describe("buildReportDocument — 구성", () => {
       "heading2: 1. 규제 논의의 흐름",
       "bullets: 검색어: ‘AI 규제’ → ‘AI 규제 샌드박스’ (재검색 1회) / 판정: 근거 충분 / 채택한 근거: 1편",
     ]);
-    expect(doc.fileName).toBe("딥리서치_국내_AI_규제_연구_동향_20260928.docx");
+    expect(doc.fileName).toBe("DeepResearch_국내_AI_규제_연구_동향_20260928.docx");
   });
 
   it("생성 시각을 모르면 지금 시각을 쓰고, 범위·주소가 없으면 그 줄을 뺀다", () => {
@@ -365,7 +365,7 @@ describe("buildReportDocument — 초안", () => {
     expect(all[all.indexOf("heading1: 이 보고서의 한계") + 1]).toBe(
       "para: 작성 중에 저장한 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.",
     );
-    expect(doc.fileName).toBe("딥리서치_국내_AI_규제_연구_동향_20260928_초안.docx");
+    expect(doc.fileName).toBe("DeepResearch_국내_AI_규제_연구_동향_20260928_초안.docx");
   });
 });
 
@@ -526,30 +526,30 @@ describe("docInputFromDraft", () => {
   it("초안 문서는 제목·파일 이름에 초안임을 밝힌다", () => {
     const doc = buildReportDocument(docInputFromDraft(draft, v, ""), NOW);
     expect(doc.blocks[0]).toEqual({ type: "title", text: "초안 질문 (초안 · 3개 절 중 1개 작성)" });
-    expect(doc.fileName).toBe("딥리서치_초안_질문_20260928_초안.docx");
+    expect(doc.fileName).toBe("DeepResearch_초안_질문_20260928_초안.docx");
   });
 });
 
 describe("reportFileName", () => {
   it("파일 이름에 못 쓰는 글자와 제어문자는 빼고 공백은 _ 로 바꾼다", () => {
-    expect(reportFileName('AI 규제: "무엇이" 바뀌었나?', NOW, false)).toBe("딥리서치_AI_규제_무엇이_바뀌었나_20260928.docx");
-    expect(reportFileName("a\\b/c*d<e>f|g\u0001h", NOW, false)).toBe("딥리서치_abcdefgh_20260928.docx");
+    expect(reportFileName('AI 규제: "무엇이" 바뀌었나?', NOW, false)).toBe("DeepResearch_AI_규제_무엇이_바뀌었나_20260928.docx");
+    expect(reportFileName("a\\b/c*d<e>f|g\u0001h", NOW, false)).toBe("DeepResearch_abcdefgh_20260928.docx");
   });
 
   it("질문은 앞 20자만 쓰고, 잘린 끝에 남은 _ 는 뗀다", () => {
     expect(reportFileName("국내 인공지능 규제 연구 동향은 지난 10년간 어떻게 변해 왔는가", NOW, false)).toBe(
-      "딥리서치_국내_인공지능_규제_연구_동향은_지난_20260928.docx",
+      "DeepResearch_국내_인공지능_규제_연구_동향은_지난_20260928.docx",
     );
     expect(reportFileName("가나다라마바사아자차카타파하가나다라마 바사", NOW, false)).toBe(
-      "딥리서치_가나다라마바사아자차카타파하가나다라마_20260928.docx",
+      "DeepResearch_가나다라마바사아자차카타파하가나다라마_20260928.docx",
     );
   });
 
   it("초안은 _초안 을 붙이고, 날짜는 한국 시각으로 적는다", () => {
-    expect(reportFileName("질문", new Date("2026-09-28T15:30:00Z"), true)).toBe("딥리서치_질문_20260929_초안.docx");
+    expect(reportFileName("질문", new Date("2026-09-28T15:30:00Z"), true)).toBe("DeepResearch_질문_20260929_초안.docx");
   });
 
   it("쓸 글자가 남지 않으면 보고서 로 대신한다", () => {
-    expect(reportFileName(' ?*" ', NOW, false)).toBe("딥리서치_보고서_20260928.docx");
+    expect(reportFileName(' ?*" ', NOW, false)).toBe("DeepResearch_보고서_20260928.docx");
   });
 });

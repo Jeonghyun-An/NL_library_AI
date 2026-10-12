@@ -73,6 +73,30 @@ describe("createHistoryState", () => {
     expect(state.byKind("research").value[0]).toMatchObject({ research: { status: "running" } });
   });
 
+  it("loaded 는 전체 refresh 가 끝나야 참이다 — 한 종류만 읽는 refresh 로는 바뀌지 않는다", async () => {
+    const { state } = setup();
+    expect(state.loaded.value).toBe(false);
+    await state.refresh("book");
+    expect(state.loaded.value).toBe(false);
+    await state.refresh();
+    expect(state.loaded.value).toBe(true);
+  });
+
+  it("목록을 읽지 못한 종류가 있으면 listFailed 가 참이고, 다시 읽히면 거짓으로 돌아온다", async () => {
+    const { store, state } = setup();
+    expect(state.listFailed.value).toBe(false);
+    store.fail(httpError(500));
+    await state.refresh();
+    expect(state.listFailed.value).toBe(true);
+    // 읽지 못해도 읽으려던 시도는 끝났다 — 화면이 '불러오는 중'에 머물지 않는다
+    expect(state.loaded.value).toBe(true);
+    store.recover();
+    await state.refresh("book");
+    expect(state.listFailed.value).toBe(true);
+    await state.refresh();
+    expect(state.listFailed.value).toBe(false);
+  });
+
   it("add 는 새 id 로 맨 위에 넣고 서버에 저장한다", async () => {
     const { store, state, changes } = setup();
     store.rows.set(ID3, bookEntry(ID3, { title: "다른 검색", createdAt: minutesAgo(1) }));
