@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   css: [
     resolve(__dirname, "assets/css/tailwind.css"),
     resolve(__dirname, "assets/css/style_skovix.css"),
+    resolve(__dirname, "assets/css/detail.css"),
     resolve(__dirname, "assets/css/research.css"),
     resolve(__dirname, "assets/css/work.css"),
   ],

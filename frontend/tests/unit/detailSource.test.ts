@@ -85,9 +85,9 @@ describe("readDetailSource", () => {
     expect(readDetailSource({ h: "../../admin", q: "  " })).toEqual({ kind: "none" });
   });
 
-  it("옛 상세 주소의 [돌아가기]는 홈이 아니라 그 검색 결과로 간다", () => {
+  it("옛 상세 주소의 [검색 목록 돌아가기]는 홈이 아니라 그 검색 결과로 간다", () => {
     expect(backTarget(readDetailSource({ q: "nlp", h: ID1 }), NO_SPOT)).toEqual({
-      label: "검색 결과로",
+      label: "검색 목록 돌아가기",
       to: `/papers?h=${ID1}&q=nlp`,
     });
   });
@@ -183,22 +183,22 @@ describe("detailUrl·relatedDetailUrl·excludedDetailUrl", () => {
 describe("backTarget", () => {
   it("검색 출처는 검색 결과 주소로, 자리를 함께 넘긴다", () => {
     expect(backTarget({ kind: "search", h: ID1, q: "nlp" }, { at: "p-CNTS-1", y: 300 })).toEqual({
-      label: "검색 결과로",
+      label: "검색 목록 돌아가기",
       to: `/papers?h=${ID1}&q=nlp&at=p-CNTS-1&y=300`,
     });
     expect(backTarget({ kind: "search", h: null, q: "nlp" }, NO_SPOT)).toEqual({
-      label: "검색 결과로",
+      label: "검색 목록 돌아가기",
       to: "/papers?q=nlp",
     });
   });
 
   it("딥리서치 출처는 보고서 주소로 간다", () => {
     expect(backTarget({ kind: "research", job: ID2, e: "E3" }, { at: "c-0-E3", y: 120 })).toEqual({
-      label: "딥리서치 보고서로",
+      label: "DeepResearch 보고서로",
       to: `/research/${ID2}?at=c-0-E3&y=120`,
     });
     expect(backTarget({ kind: "research", job: ID2, e: null }, NO_SPOT)).toEqual({
-      label: "딥리서치 보고서로",
+      label: "DeepResearch 보고서로",
       to: `/research/${ID2}`,
     });
   });
@@ -213,7 +213,7 @@ describe("backTarget", () => {
       to: `/research/${ID2}?s=proposal`,
     });
     expect(backTarget({ kind: "research", job: ID2, e: null, s: null }, NO_SPOT)).toEqual({
-      label: "딥리서치 보고서로",
+      label: "DeepResearch 보고서로",
       to: `/research/${ID2}`,
     });
   });

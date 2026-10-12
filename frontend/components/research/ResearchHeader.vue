@@ -2,7 +2,7 @@
 <template>
   <header class="rs-head">
     <div class="rs-head__main">
-      <p class="rs-head__kicker">딥리서치</p>
+      <p class="rs-head__kicker">{{ DEEP_RESEARCH }}</p>
       <h1 class="rs-head__question">{{ question }}</h1>
       <span class="rs-status" :class="`rs-status--${phase}`">{{ phaseLabel(phase) }}</span>
     </div>
@@ -26,6 +26,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { phaseLabel, type ResearchPhase } from "~/utils/researchEvents";
 import type { ResearchLayout } from "~/utils/researchLayout";
 

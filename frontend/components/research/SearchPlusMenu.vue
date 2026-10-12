@@ -33,6 +33,7 @@
               <span class="rs-plus__desc">{{ m.description }}</span>
             </span>
           </button>
+          <p class="rs-plus__hint">키보드로는 {{ m.slash }}</p>
         </li>
       </ul>
     </span>
@@ -78,6 +79,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 import { useResearchStarter } from "~/composables/useResearch";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { menuStep } from "~/utils/menuNav";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import {
@@ -97,7 +99,9 @@ const props = withDefaults(
   defineProps<{ modelValue: string; kind?: SearchInputKind; disabled?: boolean }>(),
   { kind: "paper", disabled: false },
 );
-const emit = defineEmits<{ "update:modelValue": [value: string] }>();
+// update:mode — 켜진 모드가 바뀔 때마다(+ 메뉴·슬래시 명령·× 해제·페이지의 activateMode/clearMode) 새 모드 id 를 알린다.
+// 끈 상태는 null. 메인 랜딩이 이 값으로 딥리서치 모드 여부(KCI 등재 필터 숨김 등)를 맞춘다
+const emit = defineEmits<{ "update:modelValue": [value: string]; "update:mode": [id: SearchModeId | null] }>();
 
 const { startResearch } = useResearchStarter();
 const modes = computed(() => modesFor(props.kind));
@@ -199,25 +203,39 @@ function choose(mode: SearchMode): void {
   field?.focus();
 }
 
-function clear(): void {
+function deactivate(): void {
   active.value = null;
   error.value = "";
   if (field) field.placeholder = basePlaceholder;
+}
+
+function clear(): void {
+  deactivate();
   field?.focus();
 }
 
 // 페이지가 칩을 켠 채 입력창을 채울 때 쓴다(논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안).
-// 초안은 고쳐 쓰라고 주는 것이라 초점을 글 끝에 둔다
-function activateMode(id: SearchModeId): void {
+// 초안은 고쳐 쓰라고 주는 것이라 초점을 글 끝에 둔다. 초점을 다른 곳(예: 방향키로 옮기는 중인 전환 탭)에
+// 두고 싶으면 { focus: false }
+function activateMode(id: SearchModeId, options: { focus?: boolean } = {}): void {
   const mode = modeFor(id);
   if (!mode) return;
   activate(mode);
-  if (!field) return;
+  if (!field || options.focus === false) return;
   field.focus();
   field.setSelectionRange(field.value.length, field.value.length);
 }
 
-defineExpose({ activateMode });
+// 페이지가 칩을 끈다(메인 랜딩에서 자료 검색 갈래로 갈 때). × 버튼과 달리 초점을 옮기지 않는다
+function clearMode(): void {
+  deactivate();
+}
+
+defineExpose({ activateMode, clearMode });
+
+// sync — 같은 틱에 메뉴가 unmount 되는 경로(딥리서치 모드가 켜진 채 자료 검색 기록을 열어 랜딩이 걷힘)에서도 알림이 가게,
+// 기본(pre) 플러시는 unmount 로 감시자가 멈추면 한 번도 돌지 못한다
+watch(active, (mode) => emit("update:mode", mode?.id ?? null), { flush: "sync" });
 
 // ── 슬래시 명령 목록(WAI-ARIA 콤보박스 관례: 초점은 입력창, 강조는 aria-activedescendant) ──
 const paletteId = useId();
@@ -348,7 +366,7 @@ async function submit(): Promise<void> {
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     // 입력은 지우지 않는다 — 사용자가 고쳐서 다시 보낼 수 있어야 한다
-    error.value = researchErrorMessage(e, "딥리서치를 시작하지 못했습니다");
+    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 시작하지 못했습니다`);
   } finally {
     busy.value = false;
   }

@@ -51,8 +51,8 @@ describe("researchErrorMessage", () => {
   });
 
   it("상태가 없으면 네트워크 문제로, 그 밖의 상태는 대체 문구로 둔다", () => {
-    expect(researchErrorMessage(new Error("Failed to fetch"), "딥리서치를 시작하지 못했습니다"))
-      .toBe("딥리서치를 시작하지 못했습니다 — 네트워크 연결을 확인하세요");
+    expect(researchErrorMessage(new Error("Failed to fetch"), "DeepResearch를 시작하지 못했습니다"))
+      .toBe("DeepResearch를 시작하지 못했습니다 — 네트워크 연결을 확인하세요");
     expect(researchErrorMessage(fetchError(500, "Internal"), "실패")).toBe("실패");
   });
 });
@@ -62,18 +62,18 @@ describe("researchErrorMessage", () => {
 const ACTIVE_JOB = "22222222-2222-4222-8222-222222222222";
 const BROWSER_ACTIVE = {
   code: "browser_active",
-  message: "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요",
+  message: "진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요",
   job_id: ACTIVE_JOB,
 };
 
 describe("researchErrorMessage — 429 code", () => {
   it("browser_active 면 서버 문구를, 문구가 비었으면 같은 기본 문구를 쓴다", () => {
     expect(researchErrorMessage(fetchError(429, BROWSER_ACTIVE), "계획을 승인하지 못했습니다"))
-      .toBe("진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요");
+      .toBe("진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요");
     expect(researchErrorMessage(fetchError(429, { ...BROWSER_ACTIVE, message: " 다른 탭의 연구가 돌고 있습니다 " }), "실패"))
       .toBe("다른 탭의 연구가 돌고 있습니다");
     expect(researchErrorMessage(fetchError(429, { code: "browser_active", message: "", job_id: ACTIVE_JOB }), "실패"))
-      .toBe("진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요");
+      .toBe("진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요");
   });
 
   it("공유 큐(shared_queue)·code 가 없는 429 는 지금 문구 그대로다", () => {

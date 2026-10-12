@@ -230,6 +230,7 @@ import { useRestorePosition } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { WorkStep } from "~/types/work";
 import { safeLocalStorage } from "~/utils/browserId";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { queueLine, researchPhase } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
@@ -263,7 +264,7 @@ const maxSubquestions = computed(() => Number(view.value?.params.max_subquestion
 const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);
 const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
 
-useHead({ title: () => (view.value ? `${view.value.question} — 딥리서치` : "딥리서치") });
+useHead({ title: () => (view.value ? `${view.value.question} — ${DEEP_RESEARCH}` : DEEP_RESEARCH) });
 
 // ── 보고서 작성 현황·초안 ─────────────────────────────────
 const EMPTY_ETA: SynthEta = { done: 0, total: 0, runningIdx: null, runningElapsedMs: null, remainingMs: null };

@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useReportExport } from "~/composables/useReportExport";
 import type { ReportDoc } from "~/utils/reportDocument";
 
-const doc: ReportDoc = { fileName: "딥리서치_질문_20260928.docx", blocks: [], references: [] };
+const doc: ReportDoc = { fileName: "DeepResearch_질문_20260928.docx", blocks: [], references: [] };
 
 // Node 에는 인쇄 창이 없다 — print() 는 불린 순간만 흉내 내고 afterprint 는 쏘지 않는다
 // (정책으로 인쇄를 막았거나 인앱 브라우저처럼 창 없이 곧바로 돌아오는 곳과 같다)
 function stubPage(print: () => void): void {
-  vi.stubGlobal("document", { title: "딥리서치" });
+  vi.stubGlobal("document", { title: "DeepResearch" });
   vi.stubGlobal("window", { print });
 }
 
@@ -24,8 +24,8 @@ describe("printPdf", () => {
       during = { title: document.title, printDoc: printDoc.value, exporting: exporting.value };
     });
     await printPdf(doc);
-    expect(during).toEqual({ title: "딥리서치_질문_20260928", printDoc: doc, exporting: true });
-    expect(document.title).toBe("딥리서치");
+    expect(during).toEqual({ title: "DeepResearch_질문_20260928", printDoc: doc, exporting: true });
+    expect(document.title).toBe("DeepResearch");
     expect(printDoc.value).toBeNull();
     expect(exporting.value).toBe(false);
   });
@@ -36,7 +36,7 @@ describe("printPdf", () => {
       throw new Error("인쇄 막힘");
     });
     await expect(printPdf(doc)).rejects.toThrow("인쇄 막힘");
-    expect(document.title).toBe("딥리서치");
+    expect(document.title).toBe("DeepResearch");
     expect(printDoc.value).toBeNull();
     expect(exporting.value).toBe(false);
   });

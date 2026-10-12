@@ -6,7 +6,7 @@ import type { ReportDoc } from "~/utils/reportDocument";
 import { toDocxBlob } from "~/utils/reportDocx";
 
 const doc: ReportDoc = {
-  fileName: "딥리서치_국내_AI_규제_연구_동향_20260928.docx",
+  fileName: "DeepResearch_국내_AI_규제_연구_동향_20260928.docx",
   blocks: [
     { type: "title", text: "국내 AI 규제 연구 동향" },
     { type: "meta", text: "생성 일시 2026년 9월 28일 15:05" },
@@ -64,6 +64,11 @@ describe("toDocxBlob", () => {
     const footer = Object.keys(zip.files).find((name) => /^word\/footer\d+\.xml$/.test(name));
     expect(footer).toBeDefined();
     expect(await read(zip, footer ?? "")).toContain("PAGE");
+  });
+
+  it("문서 속성의 작성자는 SKOVIX DeepResearch 다", async () => {
+    const core = await read(await unzip(doc), "docProps/core.xml");
+    expect(core).toContain("SKOVIX DeepResearch");
   });
 
   it("인용한 근거가 없으면 참고문헌 제목을 싣지 않는다", async () => {

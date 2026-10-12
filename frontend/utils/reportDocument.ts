@@ -10,6 +10,7 @@ import type {
   TrailItem,
   Verdict,
 } from "../types/research";
+import { DEEP_RESEARCH } from "./brand";
 import { citeChunks, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
 import type { DraftReport } from "./researchDraft";
 import { excludedLabel, verdictLabel } from "./researchEvents";
@@ -112,7 +113,7 @@ export function fileHead(text: string): string {
 }
 
 export function reportFileName(question: string, date: Date, draft: boolean): string {
-  return `딥리서치_${fileHead(question) || "보고서"}_${kstYmd(date)}${draft ? "_초안" : ""}.docx`;
+  return `${DEEP_RESEARCH}_${fileHead(question) || "보고서"}_${kstYmd(date)}${draft ? "_초안" : ""}.docx`;
 }
 
 export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc {

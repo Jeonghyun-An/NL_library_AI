@@ -1,15 +1,16 @@
-# critic 두 갈래 판정 도구 (research_eval)
+# 두 갈래 판정 도구 (research_eval)
 
-딥리서치 critic 의 기준 스위치(잡 파라미터 `critic_scope` — 0 = 지금 기준, 1 = 원 질문 기준)를 켤지 정하는 도구다. 고정 질문 5개를 운영에서 두 갈래로 돌리고, 사람이 단 라벨로 합격선을 센다(spec `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` D11·§8). 06a 배포 당일, 06b 배포 뒤 D18 재판정(아래 'D18 재판정'), 리허설(10/23~25)에 다시 돈다. LLM 심판은 쓰지 않는다 — 단 2026-10-06 첫 판정은 사용자 위임으로 Claude 가 라벨을 달았다(아래 '첫 판정').
+딥리서치 잡 파라미터 스위치(`critic_scope` — 0 = 지금 기준, 1 = 원 질문 기준, 06c 의 `broaden`·`query_context`)를 켤지 정하는 도구다. 고정 질문 5개를 운영에서 두 갈래로 돌리고, 사람이 단 라벨로 합격선을 센다(spec `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` D11·§8). 06a 배포 당일, 06b 배포 뒤 D18 재판정(아래 'D18 재판정'), 06c 배포 당일 넓히기·검색어 합성 재판정(아래 '06c 재판정' — critic 기준이 아니라 `broaden`·`query_context` 를 가른다), 리허설(10/23~25)에 다시 돈다. LLM 심판은 쓰지 않는다 — 단 2026-10-06 첫 판정은 사용자 위임으로 Claude 가 라벨을 달았다(아래 '첫 판정').
 
 **합격선(질문·갈래마다):** ① 보고서 절(`sections[].papers`)마다 '무관' 라벨 1편 이하 ② 과잉 제외 10% 이하 — 제외된 서로 다른 논문(`trail[].excluded_papers`) 중 '관련' 라벨 비율(라벨 칸이 빈 논문은 분모에서 뺀다). 라벨 칸이 빈 논문이 남은 갈래는 '판정 보류'로 합격에 세지 않고(① 을 이미 넘겼으면 '불합격'), '합격 질문' 의 분모는 채점하지 못한 질문까지 넣은 질문 수 전체다. 갈래 1 이 다섯 질문 모두 합격하면 `DEFAULT_PARAMS["critic_scope"]` 기본값을 1 로 바꾸는 작은 커밋을 하고, 하나라도 미달이면 0 으로 둔다(06a 첫 판정 뒤 계획 프롬프트 수정은 06b 에 넣었다 — spec D18, 아래 'D18 재판정').
 
 | 파일 | 하는 일 | DB |
 |---|---|---|
 | `questions.json` | 고정 질문 5개 `[{key, question}]` — `key` 가 라벨 파일 이름이 된다 | — |
-| `run_pair.py` | 질문마다 갈래 0·1 잡을 만들고(갈래 1 은 갈래 0 의 계획으로 승인) 완료까지 기다려 `{key: {"0": 잡 id, "1": 잡 id}}` 를 쓴다 | 안 씀(HTTP) |
+| `questions_control.json` | 06c 대조군 — 논문 상세 [이 논문으로 딥리서치] 꼴(`frontend/utils/paperResearch.ts` `paperResearchQuestion`)의 풍부한 질문 2개(소장 논문 `KCI_FI001933966`·`KCI_FI001023392` 의 제목). `--questions` 로만 쓰고 고정 5문항에 섞지 않는다(합격 질문의 분모가 바뀐다) | — |
+| `run_pair.py` | 질문마다 갈래 0·1 잡을 만들고 완료까지 기다려 `{key: {"0": 잡 id, "1": 잡 id}}` 를 쓴다. 갈래 잡 파라미터는 `--param0`(기본 `{"critic_scope": 0}`)·`--param`(기본 `{"critic_scope": 1}`) JSON 객체이고, 승인은 `--plan shared`(기본 — 갈래 1 을 갈래 0 의 계획으로)·`--plan own`(갈래마다 제 계획으로)이다. own 은 두 갈래의 계획을 먼저 모두 세운 뒤 둘을 승인한다 — 두 계획 시간을 모두 실행이 없을 때 잰다(shared 는 06c 전 순서 그대로). 시작할 때 `갈래 0 {…} · 갈래 1 {…} · 계획 …` 한 줄을 찍는다. 잡 만들기가 422(잡 파라미터 키·값 거절)면 남은 질문을 돌리지 않고 종료 코드 2 로 끝난다 | 안 씀(HTTP) |
 | `make_labels.py` | 두 갈래 보고서의 절 논문·제외 논문을 합쳐 `labels/<key>.csv`(`cnts_id,title,authors,label` — 첫 판정 파일에는 `메모` 칸이 더 있다)를 쓴다. 새 줄은 제목 순으로 섞는다(어느 줄이 critic 이 뺀 논문인지 드러나지 않게 — 맹검). 이미 단 라벨과 엑셀에서 더한 칸은 남긴다 | 안 씀(HTTP) |
-| `score.py` | 라벨과 보고서를 맞대어 갈래마다 절별 무관 수·과잉 제외 비율·판정(합격·불합격·판정 보류)을 찍는다. 합격 질문의 분모는 `questions.json` 의 질문 수다(pairs 에 빠진 질문도 '채점하지 못한 질문'). 갈래마다 보고서 정밀도(보고서 절에 실린 서로 다른 논문 중 '관련' 비율, 라벨 칸이 빈 논문은 뺀다) 줄과, 끝에 채점한 질문의 합계 두 줄(보고서 정밀도·제외 판정의 관련 수)도 찍는다 — 06a 완료노트 §5-5 의 손 계산과 같은 셈이고 판정에는 쓰지 않는다 | 안 씀(HTTP) |
+| `score.py` | 라벨과 보고서를 맞대어 갈래마다 절별 무관 수·과잉 제외 비율·판정(합격·불합격·판정 보류)을 찍는다. 합격 질문의 분모는 `questions.json` 의 질문 수다(pairs 에 빠진 질문도 '채점하지 못한 질문'). 갈래마다 보고서 정밀도(보고서 절에 실린 서로 다른 논문 중 '관련' 비율, 라벨 칸이 빈 논문은 뺀다) 줄과, 끝에 채점한 질문의 합계 두 줄(보고서 정밀도·제외 판정의 관련 수)도 찍는다 — 06a 완료노트 §5-5 의 손 계산과 같은 셈이고 판정에는 쓰지 않는다. 06c 부터 갈래마다 계획 지표 두 줄(`넓힌 질문:` — 그 잡의 계획 단계가 넓힌 질문, `계획 지표` — 일반 틀·근거 0편·insufficient 하위질문 수·계획 시간)과 끝에 `계획 지표 합계 …` 한 줄(일반 틀 비율·계획 시간 p50)도 찍는다. `--plan shared` 의 갈래 1 은 승인된 계획이 갈래 0 의 것이라, 그 갈래의 `넓힌 질문:` 으로 세운 계획이 아니다(일반 틀은 승인된 계획의 하위질문으로 센다). `--plan-only` 는 라벨 없이 계획 지표만 찍는다(대조군). 낱말 맞추기 `contains` 는 `app/services/research/terms.py` 의 복사본이다(공용 고정 예제 `frontend/tests/fixtures/term_checks.json` 으로 묶는다) | 안 씀(HTTP) |
 | `mark_example.py` | 연구를 예시 연구로 지정·해제(`research_works.is_example`) — `--yes` 없으면 할 일만 찍는다 | 씀(`--yes` 일 때만) |
 | `labels/<key>.csv` | 사람이 단 라벨(첫 판정은 예외 — Claude 판정, 아래 '첫 판정')(질문 단위 — 두 갈래에 함께 나온 논문은 한 줄). `*.csv` 는 `.gitignore` 대상이라 `git add -f` 로 올린다 | — |
 
@@ -97,3 +98,42 @@
 - **실행:** `RUN=pairs_20261008_d18` — 잡 10개 모두 완료. 서버 `docker exec` 대신 개발 PC 에서 운영 API 로 돌렸다(`run_pair.py --api http://192.168.12.57:92/api`, 10:32 시작 · 10:53 무렵 끝, 약 20분). 잡 id 는 `docs/roadmap/round06b-완료노트.md` §5-4.
 - **라벨:** 새 줄 116편(computing 80 · library 3 · elderly 10 · multicultural 6 · csr 17) — 06a 와 같은 위임 방식(Claude 판정자 셋 + 표가 갈린 4줄은 최종 판정), 사람이 고친 줄 0. 06a 202줄의 라벨·`메모` 는 그대로이고, 덧붙인 뒤 318줄(관련 128)이다.
 - **채점:** 06a 다시 세기는 첫 판정과 같다(합격 0/5·0/5, 보고서 정밀도 63.3%·56.1%). 06b 는 합격 질문 **갈래 0 0/5 · 갈래 1 2/5**(elderly·multicultural), 보고서 정밀도 갈래 0 63.3% → 73.0% · 갈래 1 56.1% → 61.3%. 결정: 갈래 1 이 다섯 질문 모두 합격하지 못해 `critic_scope` 는 0 그대로(06b 계획 정함 12). 출력 전체·비교 표·다음 경로는 완료노트 §5-4.
+
+## 06c 재판정 (넓히기·검색어 합성)
+
+06c 는 잡 파라미터 스위치 둘을 더했다 — `broaden`(계획 전에 gemma 1회로 질문을 한 문장으로 넓히고 범위 용어를 뽑는다)·`query_context`(검색어에 범위 용어를 붙이고 `국내 학술논문에서` 를 뗀다), 둘 다 기본 0(spec D25·§12-2). 06c 운영 배포 당일, 같은 코퍼스 시점에 고정 질문 5개를 두 갈래로 돌려 기본값을 정한다(spec §12-7, 열린 질문 Q4). 갈래 0 = 지금 방식(두 스위치 0), 갈래 1 = 둘 다 켬, 두 갈래 모두 `critic_scope` 0. 넓히기는 계획을 바꾸므로 `--plan own`(갈래마다 제 계획)으로 돌린다 — shared 로 돌리면 갈래 1 이 갈래 0 의 계획으로 승인돼 넓히기 효과가 0 이다. 기준은 같은 날 돌린 갈래 0 이고(D11 의 같은 시점 상대 비교), 06b 값은 참고로만 본다 — 적재가 계속돼 같은 질문도 결과가 달라진다.
+
+1. **라벨·스크립트 맞추기.** 서버 `labels/` 가 저장소의 라벨 파일(`labels/<질문키>.csv` 5개, D18 재판정 뒤 318줄, `메모` 칸 포함)과 같아야 한다. 다르거나 없으면 서버 파일을 `labels.pre-06c/` 로 옮겨 두고 저장소 파일을 올린다. 스크립트(`run_pair.py`·`score.py`)와 `questions_control.json` 도 06c 판으로 서버 폴더에 올린다(흐름 2 — 앱 이미지에 없다).
+2. **06b 참고값.** 06b RUN(`pairs_20261008_d18.json`)에 새 `score.py` 를 먼저 돌린다(흐름 6 의 명령에서 `$RUN` 만 그 이름). 합격 질문·정밀도 줄은 D18 재판정 결과(위)와 같아야 하고, 새 계획 지표 줄이 06b 참고값이다 — 06b 잡에는 넓힌 질문·계획 시간 기록이 없어 `넓힌 질문: (기록 없음)`·`계획 -` 로 나오고, 일반 틀·근거 0편·insufficient 는 센다(spec §12-7 표의 '계획에서 06b 잡으로 센다'). 06b RUN 은 개발 PC 에서 돌려(위 'D18 재판정' 결과) 서버 폴더에 없을 수 있다 — 그대로 돌리면 `score.py` 가 파일을 찾지 못해 멈춘다. 없으면 06b 완료노트(`docs/roadmap/round06b-완료노트.md`) §5-4 의 잡 id 표로 `pairs_20261008_d18.json` 을 다시 써서 올리거나, 개발 PC 의 저장소 루트에서 `PYTHONIOENCODING=utf-8 python scripts/research_eval/score.py --api http://192.168.12.57:92/api --pairs <06b 판정 폴더>/pairs_20261008_d18.json --labels-dir scripts/research_eval/labels` 로 센다.
+3. **두 갈래 실행.** 전제는 흐름 3 과 같다(`RESEARCH_QUEUE=q_research`). 06b RUN 과 섞이지 않게 새 이름을 쓴다.
+   ```bash
+   RUN=pairs_$(date +%Y%m%d)_06c
+   docker exec nl-lib-fastapi python /app/data/research_eval/run_pair.py \
+     --api http://localhost:8000/api --out /app/data/research_eval/$RUN.json --plan own \
+     --param0 '{"critic_scope": 0, "broaden": 0, "query_context": 0}' \
+     --param '{"critic_scope": 0, "broaden": 1, "query_context": 1}'
+   ```
+   첫 줄 `갈래 0 {"critic_scope": 0, "broaden": 0, "query_context": 0} · 갈래 1 {"critic_scope": 0, "broaden": 1, "query_context": 1} · 계획 own` 을 기록에 남긴다. 개발 PC(Git Bash)에서 운영 API 로 돌려도 된다(06b 선례) — `cd scripts/research_eval && PYTHONIOENCODING=utf-8 python run_pair.py --api http://192.168.12.57:92/api --out <폴더>/$RUN.json` 에 같은 `--plan`·`--param0`·`--param` 을 붙인다. 개발 PC 에서 돌렸으면 4·5·6 도 개발 PC 에서 같은 `--api`, 로컬 `--pairs`, 저장소 라벨의 로컬 사본(`labels/*.csv` 를 저장소 밖 폴더로 복사해 `--out-dir`·`--labels-dir` 에 준다 — 저장소 파일에 바로 덧붙이지 않게)으로 돈다(06c 계획의 판정 Task 와 같은 길 — 서버 `labels/` 를 맞출 일이 없다). 4·5·6 의 `make_labels.py`·`score.py` 명령에도 앞에 `PYTHONIOENCODING=utf-8` 을 붙인다 — 없으면 Git Bash 에서 한글이 깨지고, 넓힌 질문에 든 cp949 에 없는 글자(—)는 `?` 로 찍힌다(채점은 멈추지 않는다). JSON 객체가 아니면 잡을 만들지 않고 `잡 파라미터는 JSON 객체여야 한다: …` 를 찍고 끝난다(종료 코드 2). 키 오타·범위 밖 값은 첫 잡 만들기에서 API 가 422 로 거절한다 — `잡 만들기 거절(HTTP 422): …` 를 찍고 남은 질문을 돌리지 않은 채 끝난다(종료 코드 2. own 은 갈래 0 을 승인하기 전이라 만든 갈래 0 잡은 승인 대기로 남는다). own 은 질문마다 두 갈래의 계획을 먼저 세운 뒤 둘을 승인하므로 갈래 1 의 계획 시간도 실행이 없을 때 잰다(7 의 '갈래 1 계획 p50 5초 이하'를 갈래 0 과 같은 조건에서 본다).
+4. **라벨 덧붙이기.** 흐름 4 의 명령(`$RUN` 만 새 이름). 새 줄은 D18 재판정 5 와 같은 위임 방식(Claude 판정자 셋 + 표가 갈린 줄은 최종 판정 — 사용자 이견이 없으면)으로 단다. 이미 단 318줄은 다시 달지 않는다.
+5. **채점.** 흐름 6 의 명령(`$RUN` 만 새 이름). `판정 보류`·`라벨 칸이 빈 논문이 …` 가 없는 출력으로만 판정한다. 판정에 쓰는 줄은 `보고서 정밀도 합계 …`(정밀도·관련 편수)·`계획 지표 합계 …`(일반 틀 비율·근거 0편·insufficient·계획 p50)와 질문별 `넓힌 질문:` 줄이다. `합격 질문:`·`제외 판정의 관련 합계 …` 는 함께 적되 판정에 쓰지 않는다 — 06b 갈래 0 의 0/5 는 주로 과잉 제외 때문이라 계획이 좋아져도 움직이지 않을 수 있고, 넓히기가 하위질문을 좁히면 하위질문 기준 제외가 늘 수 있다.
+6. **대조군.** 논문 버튼 꼴 질문 2개(`questions_control.json`)를 같은 두 갈래로 돌리고 라벨 없이 계획 지표만 센다.
+   ```bash
+   docker exec nl-lib-fastapi python /app/data/research_eval/run_pair.py \
+     --api http://localhost:8000/api --out /app/data/research_eval/${RUN}_control.json --plan own \
+     --questions /app/data/research_eval/questions_control.json \
+     --param0 '{"critic_scope": 0, "broaden": 0, "query_context": 0}' \
+     --param '{"critic_scope": 0, "broaden": 1, "query_context": 1}'
+   docker exec nl-lib-fastapi python /app/data/research_eval/score.py --plan-only \
+     --api http://localhost:8000/api --pairs /app/data/research_eval/${RUN}_control.json \
+     --questions /app/data/research_eval/questions_control.json
+   ```
+   갈래 1 의 `넓힌 질문:` 이 `(원 질문 그대로)` 이거나 원 질문의 낱말을 모두 품고 주제를 바꾸지 않았는지, 갈래 1 의 일반 틀 비율·근거 0편이 갈래 0 보다 늘지 않았는지 본다.
+7. **판단(Q4).** 같은 날 갈래 0 이 기준이다. **모두 좋아짐** — 보고서 정밀도·관련 편수가 기준 이상이고, 일반 틀 비율이 줄고, 근거 0편·insufficient 가 늘지 않고, 갈래 1 의 계획 p50 이 5초 이하이고, 대조군이 그대로 → 두 스위치 모두 1. **엇갈림** — 모두 좋아지지는 않았지만 ① 일반 틀 비율이 줄었거나 ② 보고서 정밀도 합계가 높아졌거나 관련 편수가 늘었다 → 스위치를 나눠 다시 판정한다(3 처럼 새 RUN 이름, 라벨은 4 처럼 새 논문만). 기준은 각 RUN 안의 갈래 0 이다. `query_context` 는 `--plan shared --param0 '{"critic_scope": 0, "broaden": 0, "query_context": 0}' --param '{"critic_scope": 0, "broaden": 1, "query_context": 1}'` RUN(갈래 1 의 계획 단계가 범위 용어를 내지만 승인은 갈래 0 의 계획 — 검색어만 다르다)에서 보고서 정밀도·관련 편수가 같거나 높고 근거 0편·insufficient 가 같거나 적으면 1 이다. 이 RUN 은 두 갈래의 계획이 같아(`score.py` 는 하위질문을 승인된 계획에서 센다) 일반 틀로 가르지 않는다. 이 RUN 의 갈래 1 `넓힌 질문:` 은 범위 용어를 뽑은 문장일 뿐, 계획은 갈래 0 의 것이다. `broaden` 은 `--plan own --param0 '{"critic_scope": 0, "broaden": 0, "query_context": 0}' --param '{"critic_scope": 0, "broaden": 1, "query_context": 0}'` RUN(계획만 다르다)에서 일반 틀 비율이 낮고, 정밀도·관련 편수가 같거나 높고, 근거 0편·insufficient 가 같거나 적고, 계획 p50 이 5초 이하이고, 대조군이 그대로이면 1 이다. `broaden` 0 이면 범위 용어가 비어 `query_context` 만 켠 갈래는 군더더기만 떼므로 이렇게 나눈다. **그 밖**(①② 모두 아님) → 둘 다 0.
+8. **기본값 커밋.** 켜는 스위치가 있으면 `app/services/research/state.py` `DEFAULT_PARAMS` 의 그 칸을 1 로 바꾸고, 기본값을 단언하는 테스트 둘(`app/tests/test_research_state.py` `TestMergeParams`·`app/tests/test_research_api.py` `TestCreate` 의 기본값 테스트 — 06c 판 이름은 `test_query_switches_are_off_by_default`·`test_query_switches_are_saved_off_unless_asked`, 기본값 커밋 뒤 이름은 `test_query_switch_defaults_follow_the_06c_verdict`·`test_query_switches_are_saved_with_their_defaults_unless_asked`)을 맞춘 작은 커밋을 dev 에 한다 — 10/17~18 배포에 싣는다(spec §12-6). 기본값을 켠 뒤에는 `run_pair.py` 의 기본 갈래 0(`{"critic_scope": 0}`)이 켠 스위치를 따라가므로, 이후 재판정은 늘 `--param0` 에 두 칸을 적는다(3 의 명령처럼).
+9. **기록.** 흐름 7 과 같다 — 덧붙인 라벨 파일을 저장소로 가져와 `git add -f`, RUN 의 잡 id·채점 출력·대조군 출력·비교 표는 `docs/roadmap/round06c-완료노트.md` 에, 결과 요약은 이 절 끝에 적는다. 켠 뒤(10/17~18 배포 뒤) 랜딩 논문 예시 셋(판정 질문과 같은 문장)의 보고서를 다시 본다 — 바꿀 것은 06d 가 고친다.
+
+결과(2026-10-12):
+
+- **실행:** `RUN=pairs_20261012_06c`(`--plan own`, 갈래 0 `{"critic_scope": 0, "broaden": 0, "query_context": 0}` · 갈래 1 `{"critic_scope": 0, "broaden": 1, "query_context": 1}`) — 잡 10개 모두 완료. 서버 `docker exec` 대신 개발 PC 에서 운영 API 로 돌렸다(`--api http://192.168.12.57:92/api`, 실행 JSON 의 마지막 기록 10:51 — 파일 시각). 대조군 `pairs_20261012_06c_control`(잡 4개, 11:00 끝). 7 의 판단이 엇갈려 검색어 합성 단독 `pairs_20261012_06c_q`(`--plan shared`, 같은 두 갈래 파라미터, 잡 10개)를 더 돌렸고, 넓히기 단독은 본 실행에서 넓히기 효과가 보이지 않아 사용자와 줄이기로 해 돌리지 않았다. 잡 id 는 `docs/roadmap/round06c-완료노트.md` §5-4.
+- **라벨:** 새 줄 202편 — 본 실행 150(만장일치 148 · 최종 판정 2) · 단독 실행 52(만장일치 50 · 최종 판정 2), 06a·06b 와 같은 위임 방식(Claude 판정자 셋 + 표가 갈린 줄은 최종 판정), 사람이 고친 줄 0. D18 재판정 뒤 318줄의 라벨·`메모` 는 그대로이고, 덧붙인 뒤 520줄(관련 192)이다.
+- **채점·결정:** 06b 참고값 재채점은 D18 재판정 출력과 같다(보고서 정밀도 73.0%·61.3%, 일반 틀 25/30). 본 실행 갈래 0 → 갈래 1: 일반 틀 24/30 (80.0%) → 23/30 (76.7%), 보고서 정밀도 68.7% → 77.6%(관련 68 → 66), 근거 0편 0 → 0, insufficient 16 → 23, 계획 p50 3.0 → 4.3초, 대조군 미달(같은 계획 입력인데 일반 틀 7/12 → 10/12). 단독 실행: 보고서 정밀도 73.9% → 79.5%(관련 68 → 62), 근거 0편 1 → 0, insufficient 15 → 18. 7 의 규칙으로는 두 스위치 모두 0 이라 8 의 기본값 커밋은 하지 않았다. 사용자 결정(2026-10-12)으로 서버 기본값은 0 그대로 두고, 06d 에 '탐색 방식' 선택지(폭넓게 = 둘 다 0 · 정밀하게 = 둘 다 1, 기본 정밀하게)를 넣는다(spec D28 — 규칙에서 벗어난 결정). 기본값이 0 이라 이후 재판정의 기본 갈래 0 도 지금 방식 그대로다. 출력 전체·판정 표는 완료노트 §5-4.

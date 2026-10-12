@@ -7,6 +7,10 @@
 여기서 import 하면 relay 가 물고 있는 `redis` 가 이 모듈을 여는 모든 곳에
 필요해지고, 미설치 환경에서는 테스트 수집 단계가 통째로 죽는다
 (`docs/ops/recurring-gotchas.md` 13번의 torch 와 같은 함정).
+
+검색어는 _search_query 한 곳에서 만든다(06c, 잡 파라미터 query_context) — 첫 검색어와 재검색 제안이 같은 합성을
+거치므로 subq.queries·회차 기록·search 이벤트·critic 의 tried_queries 가 모두 실제로 보낸 글이다. 절 소제목·critic 의
+하위질문은 subq.text 그대로다.
 """
 import logging
 from collections.abc import Awaitable, Callable
@@ -22,6 +26,7 @@ from services.research.planner import query_key
 from services.research.state import (
     Evidence, HitRow, ResearchState, SubQuestion, research_stats,
 )
+from services.research.terms import compose_query
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +70,18 @@ def _next_query(suggestions: list[str], tried: list[str]) -> str | None:
         if query_key(q) not in seen:
             return q
     return None
+
+
+def _search_query(state: ResearchState, text: str) -> str:
+    """실제로 보낼 검색어. 잡 파라미터 query_context 가 1 이면 군더더기를 떼고 계획 단계의 범위 용어를 붙인다
+    (terms.compose_query), 0 이면 text 글자 그대로다.
+
+    첫 검색어(하위질문)와 재검색 제안이 같은 함수를 거친다 — 그래야 _next_query 의 중복 비교가 합성한 꼴끼리
+    맞고, subq.queries(critic 의 tried_queries)·회차 기록·search 이벤트가 실제로 보낸 글이 된다(explorer 원칙).
+    """
+    if state.params["query_context"]:
+        return compose_query(text, state.terms)
+    return text
 
 
 def _as_seen_by(ev: Evidence, subq: SubQuestion) -> Evidence:
@@ -166,7 +183,8 @@ def _recheck_query(
     # 전체 상한이나 이 하위질문의 몫에 닿으면 새 근거가 생길 수 없다 — 재검색은 검색·LLM 호출만 태운다.
     if len(state.evidence) >= params["max_evidence"] or own >= subq_budget(state):
         return None
-    return _next_query(verdict.new_queries, subq.queries)
+    # 제안을 합성한 꼴로 바꿔 비교한다 — subq.queries 는 이미 합성한 검색어다
+    return _next_query([_search_query(state, q) for q in verdict.new_queries], subq.queries)
 
 
 async def explore_subquestion(
@@ -185,7 +203,7 @@ async def explore_subquestion(
     """
     emit = emit or _noop_emit
     params = state.params
-    query = subq.text
+    query = _search_query(state, subq.text)
     recheck = 0
     relevance: dict[str, float] = {}
     leaders: list[str] = []
@@ -262,6 +280,14 @@ async def explore_subquestion(
             leaders.append(fresh[0])
         subq.evidence_ids = _rank_order(subq.evidence_ids + fresh, relevance, leaders)
         await emit("counters", research_stats(state))
+        # 이번 검색이 이 하위질문에 이은 후보(이은 순서) — 자기점검이 판정하기 전에 화면이 '검토 중'으로 세운다(06d).
+        # 화면 이벤트일 뿐이라 회차 기록(rounds)·스냅숏·단계 result 에 넣지 않는다 — 지나간 '검토 중'은 critique 의
+        # 채택·뺌으로 이미 보인다. 검색·판정을 바꾸지 않으므로 스위치(broaden·query_context)와 무관하게 늘 내고,
+        # 이은 근거가 없어도 빈 목록으로 낸다(다음 회차 후보가 앞 더미를 갈음한다)
+        await emit("candidates", {
+            "subq_idx": subq.idx, "round": round_no,
+            "papers": [_paper_brief(state.evidence[e]) for e in linked],
+        })
 
         # 원 질문은 늘 넘긴다 — 쓸지는 critic 이 잡 파라미터 critic_scope 로 정한다
         verdict = await critique_fn(

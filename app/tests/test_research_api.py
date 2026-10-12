@@ -329,6 +329,24 @@ class TestCreate:
         assert res.status_code == 422
         assert "허용 범위" in res.json()["detail"]      # 모르는 키가 아니라 값 검사에서 거부
 
+    def test_query_switches_are_saved_off_unless_asked(self, api):
+        # 06c 넓히기·검색어 합성 — 지정하지 않으면 기본값을 채워 저장하고(워커가 같은 merge_params 로 읽는다),
+        # 판정 도구(run_pair --param)는 갈래 1 에 1 을 준다
+        plain = api.client.post("/api/research", json={"question": "독서 격차 연구"})
+        asked = api.client.post("/api/research", json={"question": "독서 격차 연구",
+                                                        "params": {"broaden": 1, "query_context": 1}})
+        assert (plain.status_code, asked.status_code) == (200, 200)
+        first, second = api.db.jobs.values()
+        assert (first["params"]["broaden"], first["params"]["query_context"]) == (0, 0)
+        assert (second["params"]["broaden"], second["params"]["query_context"]) == (1, 1)
+
+    @pytest.mark.parametrize("key", ["broaden", "query_context"])
+    def test_query_switch_other_than_zero_or_one_is_422(self, api, key):
+        res = api.client.post("/api/research", json={"question": "독서 격차 연구", "params": {key: 2}})
+        assert res.status_code == 422
+        assert "허용 범위" in res.json()["detail"]      # 모르는 키가 아니라 값 검사에서 거부
+        assert api.db.jobs == {}
+
 
 class TestApprove:
     def test_approve_sets_status_the_worker_claims(self, api):

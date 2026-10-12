@@ -3,6 +3,7 @@
   <section class="rs-card rs-plan" :aria-busy="busy">
     <header class="rs-card__head">
       <h2 class="rs-card__title">{{ editable ? "연구 계획 확인" : "연구 계획" }}</h2>
+      <p v-if="questionUsed" class="rs-muted rs-plan__understood">{{ understoodLine(questionUsed) }}</p>
       <p v-if="editable" class="rs-muted">하위질문을 고치거나 지우고 더할 수 있습니다. 최대 {{ max }}개까지입니다.</p>
     </header>
 
@@ -52,12 +53,20 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import type { SubqView } from "~/types/research";
-import { subqStatusLabel } from "~/utils/researchEvents";
+import { subqStatusLabel, understoodLine } from "~/utils/researchEvents";
 import { PLAN_ITEM_MAX, planProblem } from "~/utils/researchInput";
 
+// questionUsed — 계획이 쓴 넓힌 질문(06c). 원 질문과 같으면 null 로 받는다(판단은 questionUsedFromSteps)
 const props = withDefaults(
-  defineProps<{ plan: string[]; max: number; editable?: boolean; busy?: boolean; subqs?: SubqView[] }>(),
-  { editable: false, busy: false, subqs: () => [] },
+  defineProps<{
+    plan: string[];
+    max: number;
+    editable?: boolean;
+    busy?: boolean;
+    subqs?: SubqView[];
+    questionUsed?: string | null;
+  }>(),
+  { editable: false, busy: false, subqs: () => [], questionUsed: null },
 );
 const emit = defineEmits<{ approve: [plan: string[]]; cancel: [] }>();
 

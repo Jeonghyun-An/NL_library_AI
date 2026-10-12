@@ -1,9 +1,15 @@
-r"""run_pair.py — critic 기준 스위치 두 갈래 실행 (HTTP 만, DB 를 읽지도 쓰지도 않는다)
+r"""run_pair.py — 잡 파라미터 두 갈래 실행 (HTTP 만, DB 를 읽지도 쓰지도 않는다)
 
 고정 질문(questions.json)마다 딥리서치 잡 두 개를 만든다.
-  갈래 0 — params {"critic_scope": 0}(지금 기준). 계획이 나오면 그 계획 그대로 승인한다.
-  갈래 1 — params {"critic_scope": 1}(원 질문 기준). 같은 질문으로 만들고 승인 본문 plan 에 갈래 0 의
-           계획을 넘긴다 — 같은 하위질문으로 돌려 두 갈래의 차이가 critic 하나뿐이게 한다.
+  갈래 0 — params --param0(기본 {"critic_scope": 0} — 지금 기준). 계획이 나오면 그 계획 그대로 승인한다.
+  갈래 1 — params --param(기본 {"critic_scope": 1} — 원 질문 기준). 같은 질문으로 만든다.
+           --plan shared(기본)면 승인 본문 plan 에 갈래 0 의 계획을 넘긴다 — 같은 하위질문으로 돌려 두 갈래의 차이가
+           파라미터(critic 기준 등)뿐이게 한다. --plan own 이면 갈래 1 도 제가 세운 계획 그대로 승인한다 — 계획을
+           바꾸는 스위치(06c broaden)는 shared 로 재면 효과가 0 이다. own 은 두 갈래의 계획을 먼저 모두 세운 뒤 둘을
+           승인한다 — 두 계획 시간(elapsed_ms)을 모두 실행이 없을 때 잰다.
+--param0·--param 은 JSON 객체 하나이고 잡 만들기 본문의 params 에 그대로 실린다(검증은 API 의 merge_params — 키 오타·
+범위 밖 값으로 잡 만들기가 422 면 남은 질문을 돌리지 않고 종료 코드 2). 기본값만 주면 06a·06b 판정과 같은 동작이다.
+질문 파일은 --questions 로 바꾼다 — 대조군 questions_control.json 은 고정 5문항에 섞지 않는다(합격 질문의 분모가 바뀐다).
 두 잡 모두 x-session-id 를 보내지 않는다(created_by NULL — 브라우저당 실행 제한 밖). 실행 워커가 하나라
 잡은 줄을 서서 차례로 돈다. 둘 다 completed 가 될 때까지 기다리고 {질문키: {"0": 잡 id, "1": 잡 id}} 를
 --out JSON 에 질문마다 덧쓴다. 이미 있는 다른 질문의 기록은 남긴다 — 실패한 질문만 --only 로 다시 돌린다.
@@ -14,6 +20,11 @@ r"""run_pair.py — critic 기준 스위치 두 갈래 실행 (HTTP 만, DB 를 
 실행 (서버 — scripts/ 는 앱 이미지에 없어 데이터 바인드 마운트로 넣는다. 함정 4번):
   docker exec nl-lib-fastapi python /app/data/research_eval/run_pair.py \
     --api http://localhost:8000/api --out /app/data/research_eval/pairs.json
+06c 재판정(README '06c 재판정') — 두 갈래 모두 critic_scope 0, 갈래마다 제 계획:
+  docker exec nl-lib-fastapi python /app/data/research_eval/run_pair.py \
+    --api http://localhost:8000/api --out /app/data/research_eval/pairs_06c.json --plan own \
+    --param0 '{"critic_scope": 0, "broaden": 0, "query_context": 0}' \
+    --param '{"critic_scope": 0, "broaden": 1, "query_context": 1}'
 """
 import argparse
 import json
@@ -25,17 +36,43 @@ import httpx
 
 HERE = Path(__file__).resolve().parent
 QUESTIONS = HERE / "questions.json"
+CONTROL_QUESTIONS = HERE / "questions_control.json"
 TERMINAL = ("completed", "failed", "canceled")
 TRANSIENT_RETRIES = 3
+DEFAULT_PARAMS0 = {"critic_scope": 0}
+DEFAULT_PARAMS1 = {"critic_scope": 1}
+PLAN_MODES = ("shared", "own")
 
 
 def load_questions(path: Path = QUESTIONS) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def create_job(client: httpx.Client, api: str, question: str, critic_scope: int) -> str:
-    res = client.post(f"{api}/research",
-                      json={"question": question, "params": {"critic_scope": critic_scope}})
+def parse_params(text: str) -> dict:
+    """--param0·--param 의 값. JSON 객체만 받는다 — 키·값 범위는 잡을 만들 때 API(merge_params)가 본다."""
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"잡 파라미터는 JSON 객체여야 한다: {text!r}") from e
+    if not isinstance(value, dict):
+        raise ValueError(f"잡 파라미터는 JSON 객체여야 한다: {text!r}")
+    return value
+
+
+class ParamsRejected(Exception):
+    """잡 만들기가 422 — API(merge_params)가 잡 파라미터의 키·값을 거절했다. 다음 질문도 같은 까닭으로 떨어진다."""
+
+
+def create_job(client: httpx.Client, api: str, question: str, params: dict) -> str:
+    res = client.post(f"{api}/research", json={"question": question, "params": params})
+    if res.status_code == 422:
+        # parse_params 는 JSON 객체 모양만 본다 — 키 오타·범위 밖 값은 잡을 만들 때에야 422 로 드러난다
+        try:
+            body = res.json()
+        except ValueError:
+            body = None
+        detail = body.get("detail") if isinstance(body, dict) else None
+        raise ParamsRejected(f"잡 만들기 거절(HTTP 422): {detail if detail is not None else res.text[:300]}")
     res.raise_for_status()
     return res.json()["job_id"]
 
@@ -89,18 +126,33 @@ def wait_for(client: httpx.Client, api: str, job_id: str, status: str, *, poll: 
 
 
 def run_question(client: httpx.Client, api: str, question: str, *, poll: float, timeout: float,
+                 params0: dict | None = None, params1: dict | None = None, plan: str = "shared",
                  sleep=time.sleep, clock=time.monotonic) -> dict[str, str]:
-    """한 질문의 두 갈래를 만들어 승인하고 둘 다 completed 가 될 때까지 기다린다."""
+    """한 질문의 두 갈래를 만들어 승인하고 둘 다 completed 가 될 때까지 기다린다.
+
+    params0·params1 이 None 이면 DEFAULT_PARAMS0·DEFAULT_PARAMS1. plan 이 "own" 이면 갈래 1 도 본문 없이(제 계획으로)
+    승인한다 — "shared" 면 갈래 0 의 계획을 넘긴다.
+
+    순서: shared 는 갈래 0 계획 → 갈래 0 승인 → 갈래 1 만들기·계획 → 갈래 1 승인(06c 전 그대로). own 은 두 갈래의
+    계획을 먼저 모두 세운 뒤 둘을 승인한다 — 갈래 0 을 먼저 승인하면 갈래 1 의 계획(넓히기 gemma + 계획, elapsed_ms)이
+    갈래 0 실행(핵심 개념·자기점검도 같은 gemma)과 겹쳐 계획 시간(§12-7 갈래 1 p50 5초)을 갈래 1 만 부하 아래에서
+    잰다. 잡 파라미터 거절(ParamsRejected)도 갈래 0 을 돌리기 전에 드러난다.
+    """
     wait = {"poll": poll, "timeout": timeout, "sleep": sleep, "clock": clock}
-    arm0 = create_job(client, api, question, 0)
+    arm0 = create_job(client, api, question, dict(DEFAULT_PARAMS0 if params0 is None else params0))
     # 만들자마자 찍는다 — 이 뒤에 실패해도 어느 잡이 남았는지 안다
     print(f"  갈래 0 {arm0}", flush=True)
-    plan = wait_for(client, api, arm0, "awaiting_approval", **wait)["plan"]
-    approve(client, api, arm0)
-    arm1 = create_job(client, api, question, 1)
+    plan0 = wait_for(client, api, arm0, "awaiting_approval", **wait)["plan"]
+    if plan != "own":
+        approve(client, api, arm0)
+    arm1 = create_job(client, api, question, dict(DEFAULT_PARAMS1 if params1 is None else params1))
     print(f"  갈래 1 {arm1}", flush=True)
     wait_for(client, api, arm1, "awaiting_approval", **wait)
-    approve(client, api, arm1, plan)
+    if plan == "own":
+        approve(client, api, arm0)
+        approve(client, api, arm1)
+    else:
+        approve(client, api, arm1, plan0)
     for job_id in (arm0, arm1):
         wait_for(client, api, job_id, "completed", **wait)
     return {"0": arm0, "1": arm1}
@@ -124,15 +176,26 @@ def _reason(e: Exception) -> str:
 
 
 def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -> int:
-    ap = argparse.ArgumentParser(description="critic 기준 스위치 두 갈래 실행 (HTTP 만)")
+    ap = argparse.ArgumentParser(description="잡 파라미터 두 갈래 실행 (HTTP 만)")
     ap.add_argument("--api", required=True, help="API 루트. fastapi 컨테이너 안이면 http://localhost:8000/api")
     ap.add_argument("--out", required=True, type=Path, help="{질문키: {\"0\": 잡 id, \"1\": 잡 id}} 를 덧쓸 JSON")
-    ap.add_argument("--questions", type=Path, default=QUESTIONS)
+    ap.add_argument("--questions", type=Path, default=QUESTIONS,
+                    help=f"질문 파일. 대조군은 {CONTROL_QUESTIONS.name}")
     ap.add_argument("--only", default="", help="이 질문키만(쉼표로 이음). 실패한 질문을 다시 돌릴 때")
     ap.add_argument("--poll", type=float, default=5.0, help="상태 조회 간격(초)")
     ap.add_argument("--timeout", type=float, default=3600.0, help="잡 하나가 한 상태에 이르기까지 기다릴 초")
+    ap.add_argument("--param0", default=json.dumps(DEFAULT_PARAMS0), help="갈래 0 잡 파라미터(JSON 객체)")
+    ap.add_argument("--param", default=json.dumps(DEFAULT_PARAMS1), help="갈래 1 잡 파라미터(JSON 객체)")
+    ap.add_argument("--plan", choices=PLAN_MODES, default="shared",
+                    help="shared = 갈래 1 을 갈래 0 의 계획으로 승인, own = 갈래마다 제 계획으로 승인")
     args = ap.parse_args(argv)
 
+    # 잘못 쓴 파라미터로 잡을 만들기 시작하지 않게 — HTTP·파일 쓰기보다 먼저 본다
+    try:
+        params0, params1 = parse_params(args.param0), parse_params(args.param)
+    except ValueError as e:
+        print(e)
+        return 2
     api = args.api.rstrip("/")
     # 첫 질문(약 4분)을 다 돌린 뒤에야 FileNotFoundError 가 나지 않게 시작할 때 만든다
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -145,6 +208,9 @@ def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -
     if only:
         questions = [q for q in questions if q["key"] in only]
 
+    # 실행 기록(완료노트)에 어느 파라미터로 돌렸는지 남긴다
+    print(f"갈래 0 {json.dumps(params0, ensure_ascii=False)} · 갈래 1 {json.dumps(params1, ensure_ascii=False)}"
+          f" · 계획 {args.plan}", flush=True)
     own = client is None
     client = client or httpx.Client(timeout=30.0)
     failed: list[str] = []
@@ -152,7 +218,13 @@ def main(argv: list[str] | None = None, *, client: httpx.Client | None = None) -
         for q in questions:
             print(f"[{q['key']}] {q['question']}", flush=True)
             try:
-                pair = run_question(client, api, q["question"], poll=args.poll, timeout=args.timeout)
+                pair = run_question(client, api, q["question"], poll=args.poll, timeout=args.timeout,
+                                    params0=params0, params1=params1, plan=args.plan)
+            except ParamsRejected as e:
+                # 다음 질문도 같은 파라미터라 같은 까닭으로 떨어진다 — 넘어가면 쓰지 못할 갈래 0 잡이 질문마다 운영
+                # 실행 워커를 차지한다(shared 는 이미 승인한 이 질문의 갈래 0 하나가 끝까지 돈다)
+                print(f"  {e} - 남은 질문을 돌리지 않는다. --param0·--param 을 고쳐 다시 돌린다", flush=True)
+                return 2
             except (httpx.HTTPError, RuntimeError, TimeoutError) as e:
                 failed.append(q["key"])
                 print(f"  실패: {_reason(e)}", flush=True)

@@ -31,6 +31,12 @@ DEFAULT_PARAMS: MappingProxyType[str, int | float] = MappingProxyType({
     # 1 = 원 질문의 주제(하위질문에서 벗어났을 뿐 원 질문을 다루는 논문은 빼지 않는다, research_critique_question).
     # 충분·부족은 두 갈래 모두 하위질문 기준이다. 운영에서 고정 질문을 두 갈래로 돌려 합격하면 기본값을 1 로 바꾼다
     "critic_scope": 0,
+    # 계획 전 gemma 1회로 질문을 한 문장으로 넓히고 범위 용어를 뽑을지(1). 0 = 원 질문 그대로 계획(06c, spec §12-2).
+    # 계획 프롬프트는 그대로이고 make_plan 에 넘기는 질문만 바뀐다. 운영에서 두 갈래로 판정해 켠다(§12-7)
+    "broaden": 0,
+    # 검색어에 범위 용어를 합성하고 군더더기('국내 학술논문에서')를 뗄지(1). 0 = 하위질문·재검색 제안 글자 그대로.
+    # 범위 용어는 계획 단계(broaden 1)가 뽑는다 — broaden 0 이면 용어가 없어 군더더기만 뗀다
+    "query_context": 0,
 })
 
 # (타입, 하한, 상한). ResearchCreate.params: dict 가 값 타입을 검증하지
@@ -47,6 +53,8 @@ _PARAM_BOUNDS: dict[str, tuple[type, int | float, int | float | None]] = {
     "min_evidence_per_subq": (int, 0, 50),
     "exclude_off_topic": (int, 0, 1),
     "critic_scope": (int, 0, 1),
+    "broaden": (int, 0, 1),
+    "query_context": (int, 0, 1),
 }
 
 
@@ -178,6 +186,10 @@ class ResearchState:
     # 실행 시점의 수록 범위 — 코퍼스가 계속 자라므로 보고서에 고정 문구로
     # 박지 않고 매번 질의해 넣는다. {"from": "2002", "to": "2026", "n_papers": 72054}
     corpus_range: dict | None = None
+    # 계획 단계(넓히기, 잡 파라미터 broaden)가 뽑은 범위 용어 — 검색어 합성(query_context 1)의 재료. 실행 태스크가
+    # 마지막 plan step 결과에서 읽어 담는다(스위치와 무관하게 늘 — 검색어에 쓰는 것은 query_context 1 일 때뿐).
+    # 넓히지 않았거나 06c 전 잡이면 빈 목록이다
+    terms: list[str] = field(default_factory=list)
     # 보고서는 여기에 두지 않는다. synthesize() 가 반환값으로 넘기고 Celery
     # 태스크가 research_jobs.report 에 바로 쓴다. 항상 None 인 report 필드를
     # 남겨두면 화면을 붙이는 쪽이 그걸 집어들고 조용히 빈 보고서를 그린다.
@@ -194,6 +206,7 @@ def snapshot_state(state: ResearchState) -> dict:
         "question": state.question,
         "params": state.params,
         "corpus_range": state.corpus_range,
+        "terms": list(state.terms),
         "subquestions": [asdict(s) for s in state.subquestions],
         "evidence": {
             eid: {
@@ -240,6 +253,8 @@ def restore_state(job_id: str, snap: dict) -> ResearchState:
         job_id=job_id, question=snap["question"],
         params=merge_params({k: v for k, v in raw_params.items() if k in DEFAULT_PARAMS}),
         corpus_range=snap.get("corpus_range"),
+        # 06c 전 스냅숏에는 없다 — 그 잡은 넓히지 않았으니 빈 목록이다
+        terms=list(snap.get("terms") or []),
     )
     st.subquestions = [
         SubQuestion(**_known_fields(SubQuestion, sq, "subquestion"))
