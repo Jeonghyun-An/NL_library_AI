@@ -847,27 +847,27 @@ h4,
 .skx-logo__word {
   width: 4.6rem;
 }
+/* 사이드바의 아이콘 버튼 — 접힌 띠의 아이콘 칸(.skx-rail__btn)과 같은 40px 살짝 둥근 네모(--skx-radius-md), 올리면 같은 흰 10% 면.
+   아이콘은 칸 정중앙(위로 올려 두던 보정은 걷었다 — 칸과 아이콘 중심이 2px 어긋났다) */
 .skx-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 40px;
+  height: 40px;
   padding: 0;
   background: none;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--skx-radius-md);
   transition: background-color 0.15s;
 }
 .skx-icon-btn:hover {
-  background: var(--skx-glass-teal);
+  background: var(--skx-frost-bg);
 }
 .skx-icon-btn img {
   width: 1.6rem;
   height: 1.6rem;
   display: block;
-  position: relative;
-  top: -0.1rem;
 }
 .skx-lnb__new {
   padding: 0.8rem 1.2rem;
@@ -987,7 +987,7 @@ h4,
   transition: background-color 0.15s;
 }
 .skx-history-item:hover {
-  background: var(--skx-glass-teal);
+  background: var(--skx-frost-bg);
 }
 .skx-history-item__query {
   width: 100%;

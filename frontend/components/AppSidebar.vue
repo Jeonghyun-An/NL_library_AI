@@ -616,7 +616,7 @@ onBeforeUnmount(() => {
 }
 .skx-history__clear:hover {
   color: var(--skx-primary);
-  background: var(--skx-glass-teal);
+  background: var(--skx-frost-bg);
 }
 /* 더 보기 / 접기 — 묶음 맨 아래의 조용한 글자 버튼 */
 .skx-history__more {
@@ -631,7 +631,7 @@ onBeforeUnmount(() => {
 }
 .skx-history__more:hover {
   color: var(--skx-primary);
-  background: var(--skx-glass-teal);
+  background: var(--skx-frost-bg);
 }
 .skx-history__empty {
   margin: 0;
@@ -674,6 +674,10 @@ onBeforeUnmount(() => {
 .skx-history__row:hover .skx-history-item__del,
 .skx-history-item__del:focus-visible {
   opacity: 1;
+}
+/* 아이콘 버튼 올림은 모두 같은 모양(살짝 둥근 네모 + 흰 10% 면) */
+.skx-history-item__del:hover {
+  background: var(--skx-frost-bg);
 }
 @media (hover: none) {
   .skx-history-item__del {
