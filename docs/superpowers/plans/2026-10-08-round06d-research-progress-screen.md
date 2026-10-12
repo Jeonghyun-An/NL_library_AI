@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** round06 세 줄 병렬(06c 질의 ∥ 06d 진행 화면·입구 ∥ 06e 연구 어시스턴트) 가운데 06d 줄 — spec `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` §12-3·D22·D26. 회의 뒤 결정 "인터랙티브·다이내믹, 진행이 뿅뿅 보이게"를 딥리서치 진행 화면에 넣는다: 넓은 화면은 처음부터 2단(A), 화면 위에 고정한 **크게 보이는 진행 막대 하나**(Q1 — 작은 단계 표시·막대 위 큰 글줄·오른쪽 퍼센트, 탐색 중에도 같은 막대), 지금 진행하는 절을 스크롤이 따라가고 사용자가 스크롤하면 멈추고 '↓ 지금 쓰는 곳으로' 알약, 탐색 중 본문의 하위질문별 절 자리('근거 N편 ✓'), 진행 패널 회차 줄의 '자기점검 중'·'재검색 중', 06c 탐색 후보 이벤트로 근거 장부에 '검토 중' 더미(Q9). 입구(D26)는 `/research` 홈(새 연구·진행 중·내 연구·예시 연구), 사이드바 이어간 연구 줄의 단계와 '모두 보기 (N)', 논문 빠른검색 [딥리서치로 더 깊게]·[담기 ▾], '도서검색' → '소장자료검색' 문구다. 06b 이월 §7-1(대기 카드 가로 배치)·§7-5(`queueLine` 다시 내보내기)와 06c 의 "이렇게 이해했어요" 바인딩 두 곳을 함께 한다. **nuxt 만이다** — 백엔드·스키마 변경 없음. 06c 운영 배포(10/13~14) 뒤에만 `dev` 에 머지하고 10/17~18 에 nuxt 로 배포한다.
+**Goal:** round06 세 줄 병렬(06c 질의 ∥ 06d 진행 화면·입구 ∥ 06e 연구 어시스턴트) 가운데 06d 줄 — spec `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` §12-3·D22·D26. 회의 뒤 결정 "인터랙티브·다이내믹, 진행이 뿅뿅 보이게"를 딥리서치 진행 화면에 넣는다: 넓은 화면은 처음부터 2단(A), 화면 위에 고정한 **크게 보이는 진행 막대 하나**(Q1 — 작은 단계 표시·막대 위 큰 글줄·오른쪽 퍼센트, 탐색 중에도 같은 막대), 지금 진행하는 절을 스크롤이 따라가고 사용자가 스크롤하면 멈추고 '↓ 지금 쓰는 곳으로' 알약, 탐색 중 본문의 하위질문별 절 자리('근거 N편 ✓'), 진행 패널 회차 줄의 '자기점검 중'·'재검색 중', 06c 탐색 후보 이벤트로 근거 장부에 '검토 중' 더미(Q9). 입구(D26)는 `/research` 홈(새 연구·진행 중·내 연구·예시 연구), 사이드바 이어간 연구 줄의 단계와 '모두 보기 (N)', 논문 빠른검색 [딥리서치로 더 깊게]·[담기 ▾], '도서검색' → '소장자료검색' 문구다. 06b 이월 §7-1(대기 카드 가로 배치)·§7-5(`queueLine` 다시 내보내기)와 06c 의 "이렇게 이해했어요" 바인딩 두 곳을 함께 한다. 06c 판정 뒤 사용자 결정(2026-10-12, spec D28)으로 딥리서치를 시작할 때 고르는 '탐색 방식'(폭넓게 · 정밀하게, 기본 정밀하게 — 고른 방식을 잡 params `broaden`·`query_context` 두 칸으로 싣는다)도 넣는다(Task N9). **nuxt 만이다** — 백엔드·스키마 변경 없음. 06c 운영 배포(10/13~14) 뒤에만 `dev` 에 머지하고 10/17~18 에 nuxt 로 배포한다.
 
-**Architecture:** 판단은 모두 `utils/*.ts` 순수 함수(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`)에 두고 vitest 로 잰다 — `.vue` 는 그 결과를 그리기만 한다(프론트 vitest 는 node 환경이라 컴포넌트를 그리지 못한다). 연구 화면 `pages/research/[id].vue` 한 곳이 진행 막대 보기(`barView`)·절 자리(`planSlotList`)·따라가기(`useSectionFollow`)를 만든다. 고정 진행 영역은 `ResearchHeader` 아래 `position: sticky; top: 0` 의 새 `ResearchProgressBar.vue` 하나이고, 높이를 CSS 토큰 `--rs-bar-h` 로 고정해 A 옆 칸 `top`·`.rs-section` 의 `scroll-margin-top`·위치 복원 inset 이 같은 값을 읽는다(막대가 없으면 `0px`). 퍼센트는 탐색 111 : 작성 91(round06a 실측) 가중 전체 진행이라 작성이 시작돼도 뒤로 가지 않고, 탐색 비율은 하위질문 몫 + 열린 회차의 다가감(반감기 6초, 상한 `RUNNING_CAP` 0.9)이다. 따라가기는 사용자 입력 이벤트(세로 휠·터치 이동·스크롤 키·페이지 스크롤바 누르기)로만 멈추고 `scroll` 이벤트로 가르지 않는다. 탐색 후보는 06c 의 SSE `candidates` 를 리듀서가 `SubqView.reviewing?` 으로 받아 `ledgerFrom` 의 세 번째 묶음 '검토 중'으로 그리고, 같은 하위질문의 점검(`critique`)·스냅숏과 잡 종료(종료 이벤트·끝난 잡으로 다시 맞추는 `refreshView`)가 지운다. 입구는 history 목록 응답의 `total?`(06e fastapi — 없으면 N 없이)을 `useHistory().totalOf(kind)` 로 받고, `/research` 홈은 history 를 50건씩 직접 읽으며 예시 연구는 `GET /api/research-works?example=1` + `GET /api/research/{id}/work` 의 `corpus` 로 실행 시각·범위를 보인다. [담기] 는 `PUT /api/research/{job}/reading/{cnts_id}` 본문 `{"state": "in"}` 이다. 06e 파일(`WorkStepper.vue`·`workPhase.ts`·`researchErrors.ts`·`useResearchWork.ts`·`BookChat.vue`·`[id].vue:57-75`)은 읽기만 한다.
+**Architecture:** 판단은 모두 `utils/*.ts` 순수 함수(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`)에 두고 vitest 로 잰다 — `.vue` 는 그 결과를 그리기만 한다(프론트 vitest 는 node 환경이라 컴포넌트를 그리지 못한다). 연구 화면 `pages/research/[id].vue` 한 곳이 진행 막대 보기(`barView`)·절 자리(`planSlotList`)·따라가기(`useSectionFollow`)를 만든다. 고정 진행 영역은 `ResearchHeader` 아래 `position: sticky; top: 0` 의 새 `ResearchProgressBar.vue` 하나이고, 높이를 CSS 토큰 `--rs-bar-h` 로 고정해 A 옆 칸 `top`·`.rs-section` 의 `scroll-margin-top`·위치 복원 inset 이 같은 값을 읽는다(막대가 없으면 `0px`). 퍼센트는 탐색 111 : 작성 91(round06a 실측) 가중 전체 진행이라 작성이 시작돼도 뒤로 가지 않고, 탐색 비율은 하위질문 몫 + 열린 회차의 다가감(반감기 6초, 상한 `RUNNING_CAP` 0.9)이다. 따라가기는 사용자 입력 이벤트(세로 휠·터치 이동·스크롤 키·페이지 스크롤바 누르기)로만 멈추고 `scroll` 이벤트로 가르지 않는다. 탐색 후보는 06c 의 SSE `candidates` 를 리듀서가 `SubqView.reviewing?` 으로 받아 `ledgerFrom` 의 세 번째 묶음 '검토 중'으로 그리고, 같은 하위질문의 점검(`critique`)·스냅숏과 잡 종료(종료 이벤트·끝난 잡으로 다시 맞추는 `refreshView`)가 지운다. 입구는 history 목록 응답의 `total?`(06e fastapi — 없으면 N 없이)을 `useHistory().totalOf(kind)` 로 받고, `/research` 홈은 history 를 50건씩 직접 읽으며 예시 연구는 `GET /api/research-works?example=1` + `GET /api/research/{id}/work` 의 `corpus` 로 실행 시각·범위를 보인다. [담기] 는 `PUT /api/research/{job}/reading/{cnts_id}` 본문 `{"state": "in"}` 이다. 탐색 방식은 `utils/researchMode.ts` 가 고른 방식 → 잡 params 두 칸을 정하고 새 `ResearchModePicker.vue`(radiogroup)를 + 메뉴(`SearchPlusMenu.vue`)와 `/research` 홈이 쓴다 — 서버 기본값이 0 이라 화면이 늘 두 칸을 함께 싣고(`useResearchStarter().startResearch(question, params)`), 연구 화면 머리가 그 잡의 방식을 보인다. 06e 파일(`WorkStepper.vue`·`workPhase.ts`·`researchErrors.ts`·`useResearchWork.ts`·`BookChat.vue`·`[id].vue:57-75`)은 읽기만 한다.
 
 **Tech Stack:** Nuxt 4(4.4)·Vue 3.5·TypeScript, vitest 3.2(node 환경 — DOM 없음), `nuxi typecheck`(vue-tsc), CSS(`assets/css/research.css` 와 `work.css` 의 근거 장부 블록 — `--skx-*` 토큰만), SSE(`/api/research/{id}/stream`). 백엔드(Python 3.11·FastAPI·pytest)는 고치지 않고 회귀로만 돌린다.
 
@@ -14,9 +14,10 @@
 
 - **설계 정본:** `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` — §12-3(06d 진행 화면·입구 — 이 줄의 절), §12-5(파일 경계·같은 파일 순서), §12-6(일정·머지 문·자르는 순서·배포), §12-7(06d vitest 목록·운영 확인), §12-8(장면 1 '근거가 떨어지며 보고서가 자란다'), 결정 D22(진행 화면)·D26(입구)·D17([담기] 는 이어간 연구에만), §12-10 Q1(큰 진행 막대 — 해결)·Q8(spec 의 판단 모두 동의 — 해결)·Q9(탐색 후보 목록 이벤트 — 넣음). 형식·관례 정본은 06b 계획 `docs/superpowers/plans/2026-10-06-round06b-vertical-slice.md`(머리 규칙·Task 형식·보강 6 의 같은 파일 사슬 규칙·Task 37 배포 절차)다.
 - **이 계획서:** `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md`. 완료노트·00_status 가 이 경로를 적는다.
-- **열린 질문의 상태(2026-10-08):** Q1·Q7·Q8·Q9 는 해결됐다. Q1 은 이 줄의 몫이다 — 막대 두께 `--rs-bar-thick: 1rem`(768px 이하 `0.75rem`), 막대 위 큰 글줄 1rem 굵게('보고서 작성 중 · 3/6절 — 「절 제목」' / '근거 수집 중 · 하위질문 3/6 — 「하위질문」'), 오른쪽 퍼센트 1.25rem 굵게, 그 위 작은 단계 표시(계획 · 근거 수집 · 보고서 작성 · 완료), 탐색 중에도 같은 막대. Q2(마지막 단계 이름 — 답이 없으면 '보고서')·Q3(근거 칩 — 답이 없으면 주제 카드만 S)은 06e 몫이고, 06d 사이드바는 단계 이름을 `utils/workPhase.ts` 에서 읽어 06e 의 이름 바꾸기를 따라간다(정함 13). Q4 는 06c 판정 몫이고 06d 는 그 결과로 랜딩 논문 예시 셋만 다시 본다(Task Z2·Z6). Q5·Q6 은 시연·리허설.
+- **열린 질문의 상태(2026-10-08):** Q1·Q7·Q8·Q9 는 해결됐다. Q1 은 이 줄의 몫이다 — 막대 두께 `--rs-bar-thick: 1rem`(768px 이하 `0.75rem`), 막대 위 큰 글줄 1rem 굵게('보고서 작성 중 · 3/6절 — 「절 제목」' / '근거 수집 중 · 하위질문 3/6 — 「하위질문」'), 오른쪽 퍼센트 1.25rem 굵게, 그 위 작은 단계 표시(계획 · 근거 수집 · 보고서 작성 · 완료), 탐색 중에도 같은 막대. Q2(마지막 단계 이름 — 답이 없으면 '보고서')·Q3(근거 칩 — 답이 없으면 주제 카드만 S)은 06e 몫이고, 06d 사이드바는 단계 이름을 `utils/workPhase.ts` 에서 읽어 06e 의 이름 바꾸기를 따라간다(정함 13). Q4 는 06c 판정 몫이었고 2026-10-12 에 해결됐다 — 서버 기본값 0 그대로, 사용자가 고르는 탐색 방식(D28)을 06d 가 넣는다(Task N9 — 아래 '10-12 사용자 결정' 줄). 06d 는 그 결과로 랜딩 논문 예시 셋도 다시 본다(Task Z2·Z6). Q5·Q6 은 시연·리허설.
 - **10-11 사용자 확인 — Q1 막대는 보고서 화면에도:** 사용자 "보고서 화면에도 넣으라고 한 것이 맞아". 큰 진행 막대는 06d 딥리서치 진행 화면만이 아니라 06e 자동 보고서 화면(이어간 연구의 보고서 단계 `?s=proposal` — `ProposalStep.vue`, 절을 차례로 쓰는 중)에도 선다. **그 막대는 06e 몫이다**(06e 계획 정함 28 — `ProposalStep.vue` 의 `.wk-rbar`, `work.css` 토큰 `--wk-bar-thick`, 계산 `reportBar`). 06d 의 고정 막대(`.rs-pbar`)는 단계 화면에서 서지 않으므로(`showsProgressBar(phase, stepMode)` — Task D3 테스트) 한 화면에 큰 막대 둘이 서지 않는다. 두 막대는 Q1 치수(두께 1rem·768px 이하 0.75rem, 큰 글줄 1rem 굵게, 퍼센트 1.25rem 굵게)를 **값으로만** 맞춘다 — 06d 는 `.wk-rbar`·`--wk-bar-thick` 를 정의하지 않고(Task Z1 Step 2 가 확인), 06e 는 `--rs-bar-thick` 를 import 하지 않는다. 06d 의 Task·테스트 수는 이 확인으로 바뀌지 않는다.
 - **§12-11 '계획에서 정할 것' 중 이 줄에 걸린 것 — 권고대로 정했다(정함(권고)):** '탐색 중 읽기 전용 PlanCard 를 절 자리가 대신할지·옆 칸 폭' → 대신한다(지운다), 옆 칸 폭 17rem 그대로(정함 9 · Task L2). ''소장자료검색'으로 맞출 다른 문구' → 입력창 안내(`pages/index.vue:82`)와 사이드바 기록 탭(`AppSidebar.vue:150` '도서')·그 탭의 빈/지우기 문구까지 맞춘다(정함 18 · Task N1). 선택 항목 '연구 맥락을 반영한 딥리드 첫 화면'은 **하지 않는다**(06e 범위이기도 하다). 나머지 §12-11 항목은 06e 몫이다.
+- **10-12 사용자 결정 — 탐색 방식(spec D28):** 06c 두 갈래 판정 뒤 사용자 "응 넣자. 정확하게로 가자. 탐색 방식: 폭넓게 · 정밀하게 로 가자"(06c 완료노트 §5-4). 서버 기본값(`DEFAULT_PARAMS` `broaden` 0 · `query_context` 0)은 그대로 두고(기본값 커밋 없음), 딥리서치를 시작하는 자리에 '탐색 방식' 선택지(폭넓게 = 두 칸 0 · 정밀하게 = 두 칸 1, 기본 정밀하게)를 06d 가 넣는다 — spec §12-3 이 '자리·모양은 06d 계획이 정한다' 로 넘겼고, 이 계획이 정함 19 와 Task N9 로 정했다. 백엔드 변경은 없다. 이 줄과 Task N9 는 06c 배포 기록 브랜치(`docs/round06c-deploy-record`)에서 더했다.
 
 ---
 
@@ -44,7 +45,7 @@
 
 ## 06d 에서 정한 것 (spec 이 '예'·'제안'으로 둔 것과 이 계획의 보강 — 결정과 근거)
 
-spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫은 것(정함 9·18)은 **Task Z3 가 spec 을 이 결정에 맞춘다**(CLAUDE.md §3 — 코드가 실제다). 완료노트 §6 에 그대로 옮긴다.
+spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫은 것(정함 9·18), spec 이 06d 계획에 넘긴 탐색 방식의 자리·모양(정함 19)은 **Task Z3 가 spec 을 이 결정에 맞춘다**(CLAUDE.md §3 — 코드가 실제다). 완료노트 §6 에 그대로 옮긴다.
 
 | # | 결정 | 근거 |
 |---|---|---|
@@ -66,6 +67,7 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | 정함 16 | **[딥리서치로 더 깊게] = `/papers?draft=<검색어>` 로 옮긴다** — 기존 `restoreFromQuery` → `goLanding` → `fillResearchDraft`(`pages/papers/index.vue:895-903`)가 랜딩 입력창에 딥리서치 칩을 켠 채 채운다. 바로 시작하지 않는다 | spec 'fillResearchDraft 재사용'. 결과 화면 검색바의 + 메뉴에는 ref 가 없다 |
 | 정함 17 | **[담기] = `PUT /api/research/{job}/reading/{cnts_id}` 본문 `{"state": "in"}`(담음)** | '담기' 는 그 연구의 목록에 넣는 것 — 후보로 넣으면 다시 담아야 한다. 백엔드는 행이 없으면 origin `user` 로 만든다(`app/api/research_reading.py:79-116`) |
 | 정함 18 | **§12-11 ''소장자료검색'으로 맞출 다른 문구' — 정함(권고).** 입력창 안내(`pages/index.vue:82`)와 사이드바 탭(`AppSidebar.vue:150` '도서')·그 탭의 빈/지우기 문구(`:155`·`:160`)도 '소장자료' 로 맞춘다. 랜딩 머리 문구(`:12-15`)·결과 화면 문구는 그대로 | 탭 이름은 '소장자료검색' 인데 기록 탭이 '도서' 면 같은 기록을 두 이름으로 부른다. 기능·kind(`book`)·주소는 그대로 |
+| 정함 19 | **탐색 방식 — 폭넓게 · 정밀하게, 기본 정밀하게(spec D28 — 06c 판정 뒤 2026-10-12 사용자 결정).** 딥리서치를 시작하는 자리(+ 메뉴의 딥리서치 칩 옆 — 랜딩 두 곳·결과 검색바, `/research` 홈의 새 연구)에 라벨 '탐색 방식' 의 두 칸 선택(radiogroup)을 두고, 고른 방식을 잡 params 두 칸으로 **늘 함께** 싣는다 — 폭넓게 `{broaden: 0, query_context: 0}`(지금 방식) · 정밀하게 `{broaden: 1, query_context: 1}`. 고른 값은 localStorage `skx_research_mode` 에 기억한다(편의 — 읽지 못하면 정밀하게). [같은 질문으로 다시 시작]은 고르지 않고 원래 잡의 두 칸을 이어 쓴다(두 칸이 없는 06c 전 잡은 정밀하게). 연구 화면 머리의 상태 배지 옆에 그 잡의 방식을 작게 보인다(두 칸 다 0 → 폭넓게, 두 칸이 없음·갈림 → 표시 없음). 백엔드는 그대로 — Task N9 | 사용자 "응 넣자. 정확하게로 가자. 탐색 방식: 폭넓게 · 정밀하게 로 가자"(06c 완료노트 §5-4). 미리 정한 판정 규칙으로는 두 스위치 모두 0 이라 서버 기본값(`DEFAULT_PARAMS`)은 0 그대로다 — 그래서 화면이 두 칸을 실어야 켜진다. `query_context` 만 1 이면 범위 용어가 비어(용어는 `broaden` 1 의 계획 단계가 뽑는다) '국내 학술논문에서' 떼기만 한다(06c 계획 정함 20). 서버 `merge_params` 가 두 칸을 정수 0~1 로 검증한다(`app/services/research/state.py:56-57`). 다시 시작이 고르는 칸 없이 원래 방식을 잇는 것·머리 표시·기억은 이 계획의 보강이다 |
 
 ---
 
@@ -89,6 +91,8 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | `pages/research/index.vue` | 페이지 `/research` | N5 |
 | `utils/addToWork.ts` | 상수 `ADD_TO_WORK_EMPTY`·`ADD_TO_WORK_BODY`, 함수 `workChoiceLabel`·`addedLine` | N6 |
 | `components/research/AddToWorkMenu.vue` | props `{ cntsId: string; works: WorkListItem[] \| null; loading: boolean; busy: boolean }`, emits `open: []`·`pick: [jobId: string]` | N6 |
+| `utils/researchMode.ts` | 타입 `ResearchMode`(`"broad" \| "precise"`)·`ResearchModeOption`·`ModeParams`(type — `{ broaden: number; query_context: number }`), 상수 `RESEARCH_MODE_LABEL`·`DEFAULT_RESEARCH_MODE`(`"precise"`)·`RESEARCH_MODE_KEY`(`"skx_research_mode"`)·`RESEARCH_MODES`, 함수 `modeParams`·`modeOfParams`·`researchModeLabel`·`researchModeLine`·`restartParams`·`modeStep`·`readResearchMode`·`saveResearchMode` | N9 |
+| `components/research/ResearchModePicker.vue` | props `{ modelValue: ResearchMode; disabled?: boolean }`, emits `update:modelValue: [mode: ResearchMode]` | N9 |
 
 **고치는 파일의 새·바뀐 공개 이름**
 
@@ -102,6 +106,8 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | `utils/evidenceLedger.ts` | `Ledger.reviewing: LedgerPaper[]`(필수), `hasLedger`·`ledgerFrom`·`ledgerLine` 규칙 확장 | L5 |
 | `types/history.ts` · `utils/historyStore.ts` · `utils/historyState.ts` · `composables/useHistory.ts` | `HistoryListOut.total?` · `ListResult.total?`(`list` 가 `total: res.total ?? null`) · `HistoryState.totalOf(kind)` · `UseHistory.totalOf(kind)` | N2 |
 | `utils/paperResearch.ts` | `deeperResearchUrl(query): string \| null` | N4 |
+| `composables/useResearch.ts` | `useResearchStarter().startResearch(question, params?: ResearchParams)`(두 번째 인자 새로 — 없으면 서버 기본값) | N9 |
+| `components/research/ResearchHeader.vue` | 선택 prop `modeLine?: string \| null`(`researchModeLine` 의 글 — 없으면 그리지 않는다) | N9 |
 
 **DOM id·클래스·CSS 토큰**
 
@@ -120,6 +126,9 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | `.wk-ledger__list--reviewing`·`.wk-ledger__paper.is-reviewing`·`@keyframes wk-review` | 장부 '검토 중' 더미(`work.css` 근거 장부 블록 안) | L5 |
 | `.rs-deeper`·`.rs-home*`·`.rs-basket*` | 빠른검색 카드·`/research` 홈·담기 메뉴 | N4·N5·N6 |
 | `.skx-history-item__step`·`.skx-history__all` | 사이드바 단계 줄·모두 보기(`AppSidebar.vue` scoped) | N3 |
+| `.rs-mode`(`__label`·`__group`·`__opt`·`__hint`) | 탐색 방식 두 칸 선택(`ResearchModePicker.vue`) | N9 |
+| `.rs-head__meta`·`.rs-head__mode` | 연구 화면 머리의 상태 배지 줄·그 잡의 탐색 방식 알약 | N9 |
+| localStorage `skx_research_mode` | 고른 탐색 방식의 기억(`"broad"`·`"precise"` — 편의일 뿐, 읽지 못하면 정밀하게) | N9 |
 
 **API·이벤트(06d 는 백엔드를 바꾸지 않는다 — 읽기만)**
 
@@ -130,6 +139,7 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | `GET /api/research-works` · `?example=1` | `{"items": [{"id", "question", "phase", "created_at"}]}`(상한 50) | N5·N6 |
 | `GET /api/research/{id}/work` | WorkView — `corpus: {n_papers, from, to, at}` | N5 |
 | `PUT /api/research/{id}/reading/{cnts_id}` | 본문 `{"state": "in"}` → ReadingItem. 404 `논문이 없습니다`, 409 예시 연구 | N6 |
+| `POST /api/research` · `GET /api/research/{id}` | 만들기 본문 `{"question", "params": {"broaden": 0\|1, "query_context": 0\|1}}`(`merge_params` 가 정수 0~1 로 검증, 모르는 키·범위 밖은 422) → 잡은 기본값을 채운 params 를 저장하고 GET 의 `params` 로 돌려준다(06c fastapi 부터 두 칸이 있다) | N9 |
 
 ---
 
@@ -144,6 +154,7 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | `PlanCard.vue` | 06c 만 고친다 | 06d 는 prop 만 넘긴다 | — |
 | `researchEvents.ts`·`types/research.ts` | 06c 는 함수 둘(`planFromSteps` 옆)과 `StepResult` 칸 셋만 | 06d 는 다시 내보내기 지우기(D2)·`roundStatusLabel`(L3)·후보 이벤트(L4) | 서로 다른 블록 — 늦게 머지하는 06d 가 L6 에서 dev 를 받아 맞춘다 |
 | 랜딩 논문 예시 셋 | 06c 판정 질문(library·elderly·multicultural)과 같은 문장(`pages/index.vue:681-685`, `89cede3`) | 06d 파일 | 06c 판정 뒤 Task Z2 가 판단하고, 바꿀 것이 있을 때만 06d 가 고친다 |
+| 탐색 방식(spec D28) | 06c 의 두 스위치 `broaden`·`query_context` — 서버 `DEFAULT_PARAMS` 0 그대로(판정 결과 기본값 커밋 없음), `merge_params` 가 정수 0~1 로 검증(`app/services/research/state.py:56-57`). 06c 계획의 '10/17~18 배포 뒤 06c 확인'(06c 쪽 Task Z9)이 06d 의 탐색 방식이 새 잡 params 로 실리는지 본다 | Task N9(`utils/researchMode.ts` 의 `modeParams`·`restartParams`, `SearchPlusMenu.vue`·`useResearch.ts`·`/research` 홈·`[id].vue` 다시 시작) | 06c 를 따른다 — 키 이름·값 범위가 바뀌면 `modeParams`·`restartParams` 와 그 테스트를 고친다. 06c 는 화면 파일을 더 고치지 않는다 |
 
 **06e(연구 어시스턴트 — `feat/round06e-assistant-auto-report`)와의 경계**
 
@@ -157,11 +168,12 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | history total | 06e 가 `app/api/history.py`·`app/repositories/history.py`·`app/schemas/history.py` 에 kind 별 `total` 을 싣는다. 프론트 타입·나르기·그리기는 06d(N2·N3) — 06e 는 프론트 기록 파일을 건드리지 않는다. 06e 가 늦게 배포돼도 06d 는 N 없이 그린다 |
 | `work.css` | 06d 는 근거 장부 블록(`:75-166`·`:1216-1220`)만, 나머지는 06e. `EvidenceLedger.vue`·`utils/evidenceLedger.ts` 는 `components/work/` 에 있지만 06d 몫 |
 | `pages/papers/index.vue` | 06d 파일. 06e 는 `:564-569` BookChat 에 `doc-kind="paper"` 한 속성만 넣는다 — 06d(N4·N6)와 다른 자리 |
+| 딥리서치 시작 자리·잡 params(탐색 방식) | `components/research/SearchPlusMenu.vue`·`composables/useResearch.ts`(`useResearchStarter`)·`components/research/ResearchHeader.vue` 는 06d 파일이다(Task N9). 06e 계획은 세 파일을 고치지 않고 딥리서치 잡을 새로 만들지도 않는다([이 연구 이어가기]·생성은 끝난 잡에 붙는다) — 탐색 방식과 겹치는 자리가 없다. `useResearch.ts` 가 import 하는 `researchErrors.ts`(06e)는 그대로 읽기만 한다 |
 
 **머지·배포 문(§12-6)**
 - **06d 는 06c 운영 배포(10/13~14)가 끝난 뒤에만 `dev` 에 머지한다.** 06c 배포 이미지는 그때의 dev 로 만들므로 그 전에 들어가면 06c 배포 판정이 흐려진다. 06c 의 화면 한 줄(PlanCard prop·리듀서)은 dev 에 들어간 뒤 06d 가 `[id].vue` 에 이어(Task L6) 10/17~18 nuxt 배포에 함께 나간다.
 - **06e 와의 순서는 묶이지 않는다** — 기본은 06e → 06d(그러면 06d 가 Task N8 을 하고 머지). 06e 가 10/17 까지 들어오지 못하면 06d 가 먼저 머지·배포(nuxt 만 — 06c 기본값 커밋이 아직 운영에 없으면 함께, Task Z5 경우 C)하고 N8 은 건너뛴다(06e 가 단다).
-- **06c 기본값 커밋(Q4 — 판정 결과)** 은 10/17~18 배포에 실린다. 그 배포를 06d 가 하게 되면(06e 가 늦을 때) 워커 셋 → fastapi → nuxt 순서를 따른다(Task Z5 경우 C).
+- **06c 기본값 커밋(Q4 — 판정 결과)** 은 10/17~18 배포에 실린다. 그 배포를 06d 가 하게 되면(06e 가 늦을 때) 워커 셋 → fastapi → nuxt 순서를 따른다(Task Z5 경우 C). → **2026-10-12 판정 결과 기본값 커밋은 없다**(서버 기본값 0 그대로 — 06c 완료노트 §5-5). 켜는 길은 06d 의 탐색 방식(Task N9)이 잡 params 로 싣는 것이다. dev 기본값이 운영과 같으므로 Task Z5 의 경우 C 는 생기지 않을 것이다 — 경우 표는 그대로 두고 Step 1 의 출력으로 가른다. 06d nuxt 는 06c fastapi(두 칸을 아는 `merge_params`)가 운영에 있어야 한다 — 2026-10-12 에 나갔다.
 - **자르는 순서(spec §12-6 — 06d 몫):** 뒤처지면 Task N6([담기]) → Task N5(`/research` 홈) 순으로 하지 않는다. N5 를 자르면 Task N7 을 한다. **자르지 않는 것:** 파트 D·L 전부(진행 화면의 움직임 — 따라가기·탐색 중 절 자리·근거 수집 단계, 'A 로만 되돌리면 같은 평' 09-28).
 
 ---
@@ -175,21 +187,22 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | — | Task 0 | worktree·기준선 확인 |
 | D 진행 화면 뼈대 | D1 → D8 | D1 처음부터 2단 · D2 06b 이월(`queueLine`·대기 카드) · D3 진행 막대 순수 함수 · D4 큰 진행 막대 부품·고정 영역·현황 카드 막대 옮기기 · D5 오프셋 · D6 따라가기 판단 순수 함수 · D7 따라가기 연결·알약 · D8 머리·옆 칸 skx 토큰 |
 | L 탐색 중 움직임 | L1 → L6 | L1 절 자리 순수 함수 · L2 `ReportSkeleton.vue`·연결 · L3 회차 미세 상태 · L4 후보 이벤트 타입·리듀서 · L5 장부 '검토 중' 더미·장부 배치 · L6 (선행 조건 — 06c dev 머지 뒤) dev 받기·"이렇게 이해했어요" 바인딩 |
-| N 입구 | N1 → N8 | N1 문구 '소장자료검색' · N2 기록 목록 total · N3 사이드바 단계·폴링·모두 보기 (N) · N4 [딥리서치로 더 깊게] · N5 `/research` 홈(자르는 순서 2) · N6 [담기 ▾](자르는 순서 1) · N7 (조건부 — N5 를 잘랐을 때만) 사이드바 예시 묶음 · N8 (조건부 — 06e 가 먼저 dev 에 머지됐을 때만) LNB 접기 연결 |
+| N 입구 | N1 → N9 | N1 문구 '소장자료검색' · N2 기록 목록 total · N3 사이드바 단계·폴링·모두 보기 (N) · N4 [딥리서치로 더 깊게] · N5 `/research` 홈(자르는 순서 2) · N6 [담기 ▾](자르는 순서 1) · N7 (조건부 — N5 를 잘랐을 때만) 사이드바 예시 묶음 · N8 (조건부 — 06e 가 먼저 dev 에 머지됐을 때만) LNB 접기 연결 · N9 탐색 방식(폭넓게 · 정밀하게 — 10-12 사용자 결정 D28, 실행은 N6(또는 N7) 뒤·L6 앞 — 번호를 다시 매기지 않으려고 N9) |
 | Z 마무리 | Z1 → Z7 | Z1 전체 회귀·경계 확인·정적 리뷰·반영 · Z2 06c 판정 연계(랜딩 논문 예시 셋) · Z3 문서(완료노트·00_status·spec) · Z4 dev 머지(사용자 승인) · Z5 운영 배포(사용자) · Z6 운영 처음부터 끝까지 1회(사용자) · Z7 배포 기록 |
 
-**전역 실행 순서(파트가 서로의 파일·이름을 쓴다 — 이 순서로 한다):** Task 0 → D1 → D2 → D3 → D4 → D5 → L1 → L2 → D6 → D7 → L3 → L4 → L5 → D8 → N1 → N2 → N3 → N4 → N5 → N6 → N7(조건부) → L6(선행 조건) → N8(조건부) → Z1 → Z2 → Z3 → Z4 → Z5 → Z6 → Z7.
+**전역 실행 순서(파트가 서로의 파일·이름을 쓴다 — 이 순서로 한다):** Task 0 → D1 → D2 → D3 → D4 → D5 → L1 → L2 → D6 → D7 → L3 → L4 → L5 → D8 → N1 → N2 → N3 → N4 → N5 → N6 → N7(조건부) → N9 → L6(선행 조건) → N8(조건부) → Z1 → Z2 → Z3 → Z4 → Z5 → Z6 → Z7.
 
-**의존:** D3 ← D2 · D4 ← D3 · D5 ← D4 · L2 ← L1·D5 · D6 ← L1 · D7 ← D6·L2·D5 · L3 ← D2 · L4 ← L3 · L5 ← L4 · D8 ← D4·L5 · N3 ← N1·N2 · N5 ← N3 · N6 ← N5·N4 · N7 ← N3 · L6 ← L5·D2·06c dev 머지 · N8 ← L6·06e dev 머지 · Z ← 전부. L6 은 06c 가 dev 에 들어오지 않았으면 기다린다 — 나머지 Task 와 Z1 의 회귀·리뷰는 먼저 끝내 둘 수 있다(06d dev 머지는 어차피 06c 운영 배포 뒤다). 그때는 L6 뒤 Z1 Step 1~2 를 다시 돌린다.
+**의존:** D3 ← D2 · D4 ← D3 · D5 ← D4 · L2 ← L1·D5 · D6 ← L1 · D7 ← D6·L2·D5 · L3 ← D2 · L4 ← L3 · L5 ← L4 · D8 ← D4·L5 · N3 ← N1·N2 · N5 ← N3 · N6 ← N5·N4 · N7 ← N3 · N9 ← D8(머리 `.rs-status` 크기)·N6(또는 N7 — `research.css` 블록 순서, N5 를 했으면 홈 페이지) · L6 ← L5·D2·06c dev 머지 · N8 ← L6·06e dev 머지 · Z ← 전부. L6 은 06c 가 dev 에 들어오지 않았으면 기다린다 — 나머지 Task 와 Z1 의 회귀·리뷰는 먼저 끝내 둘 수 있다(06d dev 머지는 어차피 06c 운영 배포 뒤다). 그때는 L6 뒤 Z1 Step 1~2 를 다시 돌린다.
 
 **같은 파일 사슬(뒤 Task 의 Edit old 는 앞 Task 뒤 글자다):**
-- `pages/research/[id].vue` — D1 → D2 → D4 → D5 → L2 → D7 → L5 → L6 → N8(조건부). `:57-75` 는 어느 Task 도 손대지 않는다.
-- `assets/css/research.css` — D2 → D4 → D5 → L2 → D7 → L3 → D8 → N4 → N5 → N6.
+- `pages/research/[id].vue` — D1 → D2 → D4 → D5 → L2 → D7 → L5 → N9 → L6 → N8(조건부). `:57-75` 는 어느 Task 도 손대지 않는다. N9 의 앵커(머리 `:busy`·`@toggle-layout` 두 줄, `researchErrors` import, `retryLabel`, `onRestart` 의 `startResearch`)는 앞 Task 들이 바꾸지 않고, L6·N8 의 앵커와도 겹치지 않는다.
+- `assets/css/research.css` — D2 → D4 → D5 → L2 → D7 → L3 → D8 → N4 → N5 → N6 → N9.
+- `pages/research/index.vue` — N5 → N9(N5 를 했을 때만).
 - `utils/researchEvents.ts` — D2 → L3 → L4 → (L6 merge — 06c 함수 둘이 들어온다, 06d 는 고치지 않음). `tests/unit/researchEvents.test.ts` — D2 → L3 → L4.
 - `components/AppSidebar.vue` — N1 → N3 → N7(조건부). `pages/papers/index.vue` — N4 → N6. `composables/useResearchWorks.ts`·`utils/researchHome.ts` — N5 → N6(또는 N7).
-- 한 Task 만 고치는 파일: `types/research.ts`(L4), `utils/synthCard.ts`(D3), `SynthProgressCard.vue`(D4), `evidenceLedger.ts`·`EvidenceLedger.vue`·`work.css`·`evidenceLedger.test.ts`(L5), `ProgressPanel.vue`(L3), 기록 네 파일·두 테스트(N2), `restorePosition.ts`·`useRestorePosition.ts`·`restorePosition.test.ts`(D5), `pages/index.vue`(N1 — Task Z2 는 바꿀 것이 있을 때만).
+- 한 Task 만 고치는 파일: `types/research.ts`(L4), `utils/synthCard.ts`(D3), `SynthProgressCard.vue`(D4), `evidenceLedger.ts`·`EvidenceLedger.vue`·`work.css`·`evidenceLedger.test.ts`(L5), `ProgressPanel.vue`(L3), 기록 네 파일·두 테스트(N2), `restorePosition.ts`·`useRestorePosition.ts`·`restorePosition.test.ts`(D5), `pages/index.vue`(N1 — Task Z2 는 바꿀 것이 있을 때만), `SearchPlusMenu.vue`·`composables/useResearch.ts`·`ResearchHeader.vue`(N9 — 줄 번호가 da80f23 그대로).
 
-**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 ≈ **+87**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +87 − 4 − 4 + 3 = **+82**), 새 테스트 파일 6개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`).
+**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`).
 
 ---
 
@@ -208,20 +221,22 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `utils/sidebarResearch.ts` | 사이드바 연구 줄의 진행 중 판단·단계 줄(`workPhase.stepLine` + 수 + '생성 중')·잡 상태 배지(사이드바·/research 홈 공용)·'모두 보기 (N)' 라벨(순수) | N3 |
 | `utils/researchHome.ts` | `/research` 홈의 진행 중·내 연구 묶음, 예시 연구의 실행 시각·범위, 예시 연구 주소(순수) | N5(자르면 N7 이 `WorkListItem`·`WorkListOut`·`exampleMeta`·`exampleRoute` 만) |
 | `composables/useResearchWorks.ts` | 이어간 연구 목록·기록 목록 50건 읽기(`useResearchWorksApi`), [담기] 목록·담기 상태(`useAddToWork`) | N5·N6(N7 은 `listWorks` 만) |
-| `pages/research/index.vue` | `/research` 홈 — 새 연구 시작·진행 중·내 연구·[더 보기]·예시 연구(읽기 전용·실행 시각·코퍼스 범위) | N5 |
+| `pages/research/index.vue` | `/research` 홈 — 새 연구 시작·진행 중·내 연구·[더 보기]·예시 연구(읽기 전용·실행 시각·코퍼스 범위). 새 연구에 탐색 방식(N9) | N5·N9 |
 | `utils/addToWork.ts` | [담기] 의 빈 목록 문구(D17)·담기 본문·고르는 줄·담은 뒤 알림(순수) | N6 |
 | `components/research/AddToWorkMenu.vue` | 논문 결과 카드의 [담기 ▾] 메뉴(열기·고르기·Esc·바깥 클릭·초점 복귀) | N6 |
-| `tests/unit/researchProgress.test.ts`·`planSlots.test.ts`·`researchFollow.test.ts`·`sidebarResearch.test.ts`·`researchHome.test.ts`·`addToWork.test.ts` | 위 순수 함수의 vitest | D3·L1·D6·N3·N5(N7)·N6 |
+| `utils/researchMode.ts` | 탐색 방식(폭넓게 · 정밀하게) — 선택지·기본값, 방식 → 잡 params 두 칸, 잡 params → 방식·머리 글, 다시 시작의 두 칸, radiogroup 키, 기억 읽기·쓰기(try/catch)(순수) | N9 |
+| `components/research/ResearchModePicker.vue` | 탐색 방식 두 칸 선택(`role="radiogroup"`·`aria-checked`·roving tabindex·방향키·Home·End, 고른 칸의 설명) — v-model 만 주고받는다 | N9 |
+| `tests/unit/researchProgress.test.ts`·`planSlots.test.ts`·`researchFollow.test.ts`·`sidebarResearch.test.ts`·`researchHome.test.ts`·`addToWork.test.ts`·`researchMode.test.ts` | 위 순수 함수의 vitest | D3·L1·D6·N3·N5(N7)·N6·N9 |
 
 **프론트 — 고칠 파일**
 
 | 파일 | 고치는 것 | Task |
 |---|---|---|
-| `pages/research/[id].vue` | 배치 계산(D1), 대기 카드·`queueLine` import(D2), 막대 자리·`barView`·`useNow` exploring(D4), 위치 복원 inset(D5), 절 자리 연결·탐색 중 PlanCard 지움(L2), 따라가기·알약·`jumpToSection` 멈춤(D7), 옆 칸 장부를 맨 위로(L5), "이렇게 이해했어요" 두 곳(L6), LNB 두 곳(N8 — 조건부) | D1·D2·D4·D5·L2·D7·L5·L6·N8 |
+| `pages/research/[id].vue` | 배치 계산(D1), 대기 카드·`queueLine` import(D2), 막대 자리·`barView`·`useNow` exploring(D4), 위치 복원 inset(D5), 절 자리 연결·탐색 중 PlanCard 지움(L2), 따라가기·알약·`jumpToSection` 멈춤(D7), 옆 칸 장부를 맨 위로(L5), "이렇게 이해했어요" 두 곳(L6), LNB 두 곳(N8 — 조건부), 머리의 탐색 방식·다시 시작의 잡 params(N9) | D1·D2·D4·D5·L2·D7·L5·N9·L6·N8 |
 | `utils/researchLayout.ts` · `tests/unit/researchLayout.test.ts` | 넓은 화면 처음부터 A, `effectiveLayout` 두 인자 | D1 |
 | `utils/researchEvents.ts` | `queueLine` 다시 내보내기 지움(D2), `roundStatusLabel`(L3), `candidates` 리듀서·`reviewing` 지우기(L4) | D2·L3·L4 |
 | `tests/unit/queueLine.test.ts` · `tests/unit/researchEvents.test.ts` | 다시 내보내기 테스트 뒤집기·import(D2), 회차 미세 상태·후보 이벤트 describe(L3·L4) | D2·L3·L4 |
-| `assets/css/research.css` | `.rs-card__text`(D2), 토큰·`.rs-pbar*`·옛 `.rs-synth__bar` 지움·인쇄(D4), 옆 칸 top·`scroll-margin-top`(D5), `.rs-slot*`(L2), `.rs-follow-pill`(D7), `.rs-round__state`(L3), 머리·상태·옆 칸 카드 머리(D8), `.rs-deeper`(N4), `.rs-home*`(N5), `.rs-basket*`(N6) | D2~N6 |
+| `assets/css/research.css` | `.rs-card__text`(D2), 토큰·`.rs-pbar*`·옛 `.rs-synth__bar` 지움·인쇄(D4), 옆 칸 top·`scroll-margin-top`(D5), `.rs-slot*`(L2), `.rs-follow-pill`(D7), `.rs-round__state`(L3), 머리·상태·옆 칸 카드 머리(D8), `.rs-deeper`(N4), `.rs-home*`(N5), `.rs-basket*`(N6), `.rs-mode*`·`.rs-head__meta`·`.rs-head__mode`(N9) | D2~N9 |
 | `utils/synthCard.ts` | `RUNNING_CAP` export | D3 |
 | `components/research/SynthProgressCard.vue` | 작은 막대 걷기(절 목록·[초안 저장]·요약은 그대로) | D4 |
 | `utils/restorePosition.ts` · `composables/useRestorePosition.ts` · `tests/unit/restorePosition.test.ts` | `insetTargetTop`·`topInset` | D5 |
@@ -232,12 +247,15 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `components/AppSidebar.vue` | 기록 탭 '소장자료'(N1), 연구 줄 단계·폴링 조건·모두 보기(N3), 예시 묶음(N7 — 조건부) | N1·N3·N7 |
 | `types/history.ts` · `utils/historyStore.ts` · `utils/historyState.ts` · `composables/useHistory.ts` · `tests/unit/historyStore.test.ts` · `tests/unit/historyState.test.ts` | 기록 목록 `total` 받기·`totalOf` | N2 |
 | `utils/paperResearch.ts` · `tests/unit/paperResearch.test.ts` · `pages/papers/index.vue` | `deeperResearchUrl`·답 끝 카드(N4), 결과 카드 [담기 ▾](N6) | N4·N6 |
+| `components/research/SearchPlusMenu.vue` | 딥리서치 칩 옆 탐색 방식 두 칸·기억 읽기·`submit` 이 잡 params 를 싣는다 — 06d 파일(06e·06c 는 고치지 않는다) | N9 |
+| `composables/useResearch.ts` | `useResearchStarter().startResearch(question, params?)` — 잡 params 를 `create` 에 넘긴다(나머지는 그대로) | N9 |
+| `components/research/ResearchHeader.vue` | 상태 배지를 `.rs-head__meta` 한 줄로 묶고 옆에 그 잡의 탐색 방식(선택 prop `modeLine`) — Task D8 은 이 파일을 고치지 않는다 | N9 |
 
 **문서**(Task Z3·Z7): `docs/roadmap/round06d-완료노트.md`(새), `docs/roadmap/00_status.md`(round06 줄만), spec(머리 상태 줄·D22·D26·§12-3 두 행·§12-11 두 항목), 필요하면 `docs/ops/recurring-gotchas.md`.
 
 ## 하지 않는 것
 
-사이드바 시안 묶음(탭 대신 묶음·'● 진행 중 1' 배지·줄마다 진행 막대 — 대회 뒤, Q8), 메인 [빠른검색|딥리서치] 모드 토글·도서 숨김(대회 뒤, D26), 연구 화면 머리 위 skx 검색바(대회 뒤, Q8), 글자 스트리밍·타자 효과(절이 끝나면 나타나는 `rs-reveal` 그대로), 다른 브라우저 이어가기 목록(대회 뒤 — D4 소유·보안과 함께, [담기] 는 같은 브라우저의 이어간 연구만), ETA 표본 섞임(리허설 전 — 06b 이월 §7-1), 탐색 남은 시간(대회 뒤 — 백엔드 단계 시각 필요, §12-9), 원문 뷰어 안 하이라이트·외부 확인 링크·[주제로 넓히기](대회 뒤 / 06e), 연구 맥락을 반영한 딥리드 첫 화면(§12-11 선택 — 하지 않는다), 06e 자동 보고서 화면의 큰 진행 막대(10-11 사용자 확인 — 06e 계획 정함 28, 06e 몫), 백엔드·스키마 변경 전부.
+사이드바 시안 묶음(탭 대신 묶음·'● 진행 중 1' 배지·줄마다 진행 막대 — 대회 뒤, Q8), 메인 [빠른검색|딥리서치] 모드 토글·도서 숨김(대회 뒤, D26), 연구 화면 머리 위 skx 검색바(대회 뒤, Q8), 글자 스트리밍·타자 효과(절이 끝나면 나타나는 `rs-reveal` 그대로), 다른 브라우저 이어가기 목록(대회 뒤 — D4 소유·보안과 함께, [담기] 는 같은 브라우저의 이어간 연구만), ETA 표본 섞임(리허설 전 — 06b 이월 §7-1), 탐색 남은 시간(대회 뒤 — 백엔드 단계 시각 필요, §12-9), 원문 뷰어 안 하이라이트·외부 확인 링크·[주제로 넓히기](대회 뒤 / 06e), 연구 맥락을 반영한 딥리드 첫 화면(§12-11 선택 — 하지 않는다), 06e 자동 보고서 화면의 큰 진행 막대(10-11 사용자 확인 — 06e 계획 정함 28, 06e 몫), 탐색 방식의 서버 기본값 바꾸기(D28 — `DEFAULT_PARAMS` 0 그대로)·두 스위치를 따로 고르는 칸·다른 잡 파라미터(`max_recheck` 등) 고르기, 백엔드·스키마 변경 전부.
 
 ---
 
@@ -308,7 +326,7 @@ git -C C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d cat-file -e HEA
 `계획서 있음` 이면 이 Step 은 끝이다. `계획서 없음` 이면 이 계획서를 연 파일 경로를 `PLAN_SRC` 에 넣고 브랜치의 첫 커밋으로 넣는다:
 
 ```bash
-cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && cp "$PLAN_SRC" docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md && git add docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md && git commit -m "[Docs] round06d 계획 — 진행 화면·입구(Task 0 · D1~D8 · L1~L6 · N1~N8 · Z1~Z7, 정함 1~18). 넓은 화면 처음부터 2단, 위에 고정한 큰 진행 막대 하나(Q1 — 단계 표시·큰 글줄·퍼센트, 탐색 중에도 같은 막대), 지금 진행하는 절 따라가기·알약, 탐색 중 하위질문별 절 자리, 회차 미세 상태, 06c 후보 이벤트로 근거 장부 '검토 중' 더미(Q9), /research 홈·사이드바 단계·모두 보기 (N)·빠른검색 [딥리서치로 더 깊게]·[담기]·'소장자료검색' 문구. nuxt 만, 06c 운영 배포 뒤 dev 머지, 10/17~18 배포"
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && cp "$PLAN_SRC" docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md && git add docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md && git commit -m "[Docs] round06d 계획 — 진행 화면·입구(Task 0 · D1~D8 · L1~L6 · N1~N9 · Z1~Z7, 정함 1~19). 넓은 화면 처음부터 2단, 위에 고정한 큰 진행 막대 하나(Q1 — 단계 표시·큰 글줄·퍼센트, 탐색 중에도 같은 막대), 지금 진행하는 절 따라가기·알약, 탐색 중 하위질문별 절 자리, 회차 미세 상태, 06c 후보 이벤트로 근거 장부 '검토 중' 더미(Q9), /research 홈·사이드바 단계·모두 보기 (N)·빠른검색 [딥리서치로 더 깊게]·[담기]·'소장자료검색' 문구, 딥리서치를 시작할 때 고르는 탐색 방식(폭넓게 · 정밀하게, 기본 정밀하게 — D28). nuxt 만, 06c 운영 배포 뒤 dev 머지, 10/17~18 배포"
 ```
 
 Expected: 커밋 1개, `git status --short` 빈 출력.
@@ -356,7 +374,7 @@ Expected (2026-10-08 같은 코드에서 실측):
   | `researchEvents.test.ts` | 102 | D2(import)·L3·L4 | `paperResearch.test.ts` | 10 | N4 |
   | `synthCard.test.ts` | 24 | (그대로 — D3 은 `RUNNING_CAP` export 만) | `researchDraft.test.ts` | 23 | (그대로 — spec §12-7) |
   | `restorePosition.test.ts` | 18 | D5 | `workPhase.test.ts` | 20 | (그대로 — 06e 파일, 사이드바가 읽기만) |
-  | `evidenceLedger.test.ts` | 15 | L5 | 새 여섯 파일 | 없음 | D3·L1·D6·N3·N5(N7)·N6 이 만든다 |
+  | `evidenceLedger.test.ts` | 15 | L5 | 새 일곱 파일 | 없음 | D3·L1·D6·N3·N5(N7)·N6·N9 가 만든다 |
 
 - build — 30초 남짓, `└  ✨ Build complete!`(로그의 `error` 낱말은 `error-404`·`error-500` 청크 이름뿐이다)
 - `git status --short` — 빈 출력(`node_modules`·`.nuxt`·`.output` 은 `.gitignore` 에 있다)
@@ -4987,7 +5005,7 @@ spec §12-2 '화면 한 줄 — 06d 가 잇는 것'(`[id].vue` 계획 중 대기
 - (merge) dev — 06c 의 `frontend/types/research.ts`·`frontend/utils/researchEvents.ts`·`frontend/components/research/PlanCard.vue`·`frontend/tests/unit/researchEvents.test.ts`·`frontend/tests/fixtures/term_checks.json`·백엔드·문서(06e 가 먼저 들어왔으면 06e 의 파일도)
 - Modify: `frontend/pages/research/[id].vue`(researchEvents import · 앵커 `const queueText = computed(` 아래 computed 하나 · 계획 중 카드 · 승인 대기 PlanCard prop)
 
-기준선: 앞 Task(N6, Task N7 을 했으면 N7) 뒤 수.
+기준선: 앞 Task(N9 — 전역 실행 순서에서 이 Task 바로 앞) 뒤 수.
 
 - [ ] **Step 1: 선행 조건을 확인한다**
 
@@ -5217,15 +5235,15 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add "fronten
 
 ## 파트 N — 입구 — /research 홈·사이드바·빠른검색·문구
 
-spec §12-3 '입구(D26)' 와 D17 을 덮는다: **문구**(랜딩 '도서검색' → '소장자료검색'·낭독 문구, §12-11 의 입력창 안내·사이드바 기록 탭 이름까지 — 정함 18, Task N1) · **사이드바 단계 표시**(이어간 연구 줄의 단계 — 정함 13, 폴링 조건에 진행 중 생성, 목록 끝 '모두 보기 (N)' — 정함 14, Task N2·N3) · **빠른검색 [딥리서치로 더 깊게]**(정함 16, Task N4) · **예시 연구 노출 = `/research` 홈**(새 연구 시작·진행 중·내 연구·예시 연구 — 정함 15, Task N5) · **빠른검색 [담기 ▾]**(D17·정함 17, Task N6). 조건부 둘: N5 를 잘랐을 때의 사이드바 '예시 연구' 묶음(Task N7), 06e 가 먼저 dev 에 머지됐을 때의 딥리드 패널 LNB 접기 연결(Task N8 — 실행은 Task L6 뒤). 랜딩 논문 예시 셋(06c 판정 뒤 다시 확인)은 이 파트에 Task 가 없다 — Task Z2 가 판정 결과로 보고 바꿀 것이 있을 때만 고친다. 대회 뒤(하지 않음): 메인 [빠른검색|딥리서치] 모드 토글·도서 숨김·사이드바 시안 묶음(탭 대신 묶음·'● 진행 중 1' 배지·줄마다 진행 막대)·연구 화면 머리 위 skx 검색바.
+spec §12-3 '입구(D26)' 와 D17 을 덮는다: **문구**(랜딩 '도서검색' → '소장자료검색'·낭독 문구, §12-11 의 입력창 안내·사이드바 기록 탭 이름까지 — 정함 18, Task N1) · **사이드바 단계 표시**(이어간 연구 줄의 단계 — 정함 13, 폴링 조건에 진행 중 생성, 목록 끝 '모두 보기 (N)' — 정함 14, Task N2·N3) · **빠른검색 [딥리서치로 더 깊게]**(정함 16, Task N4) · **예시 연구 노출 = `/research` 홈**(새 연구 시작·진행 중·내 연구·예시 연구 — 정함 15, Task N5) · **빠른검색 [담기 ▾]**(D17·정함 17, Task N6) · **탐색 방식**(06c 판정 뒤 2026-10-12 사용자 결정 D28 — 딥리서치를 시작하는 자리의 폭넓게 · 정밀하게 선택, 정함 19, Task N9). 조건부 둘: N5 를 잘랐을 때의 사이드바 '예시 연구' 묶음(Task N7), 06e 가 먼저 dev 에 머지됐을 때의 딥리드 패널 LNB 접기 연결(Task N8 — 실행은 Task L6 뒤). 랜딩 논문 예시 셋(06c 판정 뒤 다시 확인)은 이 파트에 Task 가 없다 — Task Z2 가 판정 결과로 보고 바꿀 것이 있을 때만 고친다. 대회 뒤(하지 않음): 메인 [빠른검색|딥리서치] 모드 토글·도서 숨김·사이드바 시안 묶음(탭 대신 묶음·'● 진행 중 1' 배지·줄마다 진행 막대)·연구 화면 머리 위 skx 검색바.
 
 이 파트는 nuxt 만이고 쓰는 백엔드는 이미 있다(`GET /api/research-works`·`GET /api/research/{id}/work`·`PUT /api/research/{id}/reading/{cnts_id}`·`GET /api/history`). 기록 목록의 `total` 은 06e fastapi 가 싣는다 — 없는 응답(06e 전 서버)에서는 '모두 보기' 만 그린다. 06e 파일(`utils/workPhase.ts`·`utils/researchErrors.ts`·`composables/useResearchWork.ts`·`types/work.ts`)은 읽기만 하고, 사이드바·홈의 단계 글은 `workPhase.stepLine` 출력 그대로라 06e 의 이름 바꾸기(제목 고르기·참고문헌 선택하기·보고서)가 따라온다.
 
-**실행 순서:** Task D8 → N1 → N2 → N3 → N4 → N5 → N6 → N7(조건부) → (Task L6) → N8(조건부). **자르는 순서(spec §12-6):** 뒤처지면 N6 → N5 순으로 하지 않는다. N5 를 자르면 N7 을 한다(그때는 N6 도 하지 않는다 — N6 은 N5 가 만든 `useResearchWorks.ts`·`WorkListItem` 을 쓴다).
+**실행 순서:** Task D8 → N1 → N2 → N3 → N4 → N5 → N6 → N7(조건부) → N9 → (Task L6) → N8(조건부). N9 는 번호를 다시 매기지 않으려고 N6 바로 뒤에 적었다 — N5·N6 을 잘랐으면 N7 뒤에 한다. **자르는 순서(spec §12-6):** 뒤처지면 N6 → N5 순으로 하지 않는다. N5 를 자르면 N7 을 한다(그때는 N6 도 하지 않는다 — N6 은 N5 가 만든 `useResearchWorks.ts`·`WorkListItem` 을 쓴다). N9 는 자르는 순서에 들지 않는다(사용자 결정 D28 — N5 를 잘랐으면 홈 Step 만 건너뛴다).
 
-**같은 파일 사슬:** `components/AppSidebar.vue` N1 → N3 → N7 · `pages/papers/index.vue` N4 → N6 · `assets/css/research.css`(파트 D·L 뒤) N4 → N5 → N6 — 셋 모두 인쇄 앵커 `/* ── 인쇄(PDF로 저장) ────────────────────────────────────── */` 바로 위에 넣으므로 N5 블록은 N4 블록 뒤, N6 블록은 N5 블록 뒤에 선다 · `composables/useResearchWorks.ts`·`utils/researchHome.ts` N5 → N6(또는 N7). 기록 네 파일·두 테스트(N2), `pages/index.vue`(N1)는 이 파트만 고친다 — 줄 번호가 da80f23 그대로다.
+**같은 파일 사슬:** `components/AppSidebar.vue` N1 → N3 → N7 · `pages/papers/index.vue` N4 → N6 · `assets/css/research.css`(파트 D·L 뒤) N4 → N5 → N6 → N9 — 넷 모두 인쇄 앵커 `/* ── 인쇄(PDF로 저장) ────────────────────────────────────── */` 바로 위에 넣으므로 N5 블록은 N4 블록 뒤, N6 블록은 N5 블록 뒤, N9 블록은 N6 블록 뒤에 선다 · `composables/useResearchWorks.ts`·`utils/researchHome.ts` N5 → N6(또는 N7) · `pages/research/index.vue` N5 → N9. 기록 네 파일·두 테스트(N2), `pages/index.vue`(N1)는 이 파트만 고친다 — 줄 번호가 da80f23 그대로다.
 
-**작성 때 실측(검증 근거):** da80f23 코드 위에 파트 N 만 얹어 이 계획의 코드 그대로 잰 값 — vitest `40 files / 732` → N1 732 → N2 736 → N3 744(41 files) → N4 746 → N5 750(42) → N6 754(43), 각 단계 typecheck `error TS` 0, N6 뒤 build `└  ✨ Build complete!`. N7 경로(N4 → N7)는 `42 files / 749`·typecheck 0·build 완료(검토 반영 뒤 다시 잼). N8 은 06e 의 `const workPanelOpen = ref(false);` 를 흉내 내어 typecheck 0. 실제 실행에서는 파트 D·L 의 테스트가 앞에 있으므로 전체 수는 'Task 앞 수 + N' 으로 읽고, 파일 하나씩 돌리는 수(이 파트만 고치는 파일)는 아래 값 그대로다.
+**작성 때 실측(검증 근거):** da80f23 코드 위에 파트 N 만 얹어 이 계획의 코드 그대로 잰 값 — vitest `40 files / 732` → N1 732 → N2 736 → N3 744(41 files) → N4 746 → N5 750(42) → N6 754(43), 각 단계 typecheck `error TS` 0, N6 뒤 build `└  ✨ Build complete!`. N7 경로(N4 → N7)는 `42 files / 749`·typecheck 0·build 완료(검토 반영 뒤 다시 잼). N8 은 06e 의 `const workPanelOpen = ref(false);` 를 흉내 내어 typecheck 0. N9 는 2026-10-12 에 따로 쟀다 — dev `ef202fb`(06c 머지까지, 파트 D·L·N 없이) 위에 N9 만 얹어 `40 files / 739` → `41 files / 752`, typecheck `error TS` 0, build 완료(홈 Step 8 은 N5 페이지가 없어 빼고 — Task N9 끝 '작성 때 확인'). 실제 실행에서는 파트 D·L 의 테스트가 앞에 있으므로 전체 수는 'Task 앞 수 + N' 으로 읽고, 파일 하나씩 돌리는 수(이 파트만 고치는 파일)는 아래 값 그대로다.
 
 ---
 
@@ -7628,6 +7646,883 @@ Expected: `A` 셋(`addToWork.ts`·`addToWork.test.ts`·`AddToWorkMenu.vue`)·`M`
 
 ---
 
+### Task N9: 탐색 방식 — 폭넓게 · 정밀하게
+
+spec D28(06c 판정 뒤 2026-10-12 사용자 결정 — 사용자 "응 넣자. 정확하게로 가자. 탐색 방식: 폭넓게 · 정밀하게 로 가자")·§12-3 입구 '탐색 방식' 줄("자리·모양은 06d 계획이 정한다"). 정함 19. **실행 순서: Task N6 뒤**(N5·N6 을 잘랐으면 Task N7 뒤) · Task L6·N8 앞 — 파트 N 의 번호를 다시 매기지 않으려고 N9 로 두고 N6 바로 뒤에 적었다. N5 를 자른 경로에서 N7 뒤로 미루는 까닭: N7 은 일부 커밋한 N5 를 `git revert` 로 되돌리는데, 그 전에 이 Task 가 인쇄 앵커 위(`.rs-home*` 블록 바로 뒤)에 블록을 넣으면 되돌리기가 이웃 줄에서 부딪힌다.
+
+이 Task 는 06c 배포 기록 브랜치(`docs/round06c-deploy-record`)에서 계획에 더했다 — 06d worktree 의 계획서에 이 Task 가 없으면(그 브랜치가 dev 에 머지되기 전에 땄다) `git -C C:/Users/LANDSOFT/mygit/NL_library_AI show dev:docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md` 의 계획서를 정본으로 읽는다.
+
+**알아 둘 것:**
+- **선택지(정함 19):** 라벨 `탐색 방식`, 칸 `폭넓게`(잡 params `{broaden: 0, query_context: 0}` — 지금 방식, 많이 찾지만 엉뚱한 논문이 섞일 수 있다) · `정밀하게`(`{broaden: 1, query_context: 1}` — 넓히기가 뽑은 범위 용어를 검색어에 붙여 엉뚱한 논문을 줄인다, 관련 논문 몇 편을 놓칠 수 있다), **기본 선택 `정밀하게`**. 근거는 06c 두 갈래 판정(06c 완료노트 §5-4 — 둘 다 켠 갈래: 보고서 정밀도 68.7% → 77.6%·무관 31 → 19, 관련 68 → 66·insufficient 16 → 23·대조군 미달)과 그 뒤 사용자 결정이다. 칸의 설명 문구는 `RESEARCH_MODES[].hint` 한 곳에 둔다.
+- **화면이 늘 두 칸을 함께 싣는다:** 서버 `DEFAULT_PARAMS` 는 `broaden` 0·`query_context` 0 그대로다(`app/services/research/state.py:36`·`:39`, 기본값 커밋 없음 — 06c 완료노트 §5-5). 그래서 정밀하게는 화면이 실어야만 켜지고, 폭넓게도 `{broaden: 0, query_context: 0}` 를 실어 서버 기본값이 나중에 바뀌어도 고른 방식 그대로 돈다. `query_context` 만 1 이면 범위 용어(`broaden` 1 의 계획 단계가 뽑는다)가 비어 '국내 학술논문에서' 떼기만 한다(06c 계획 정함 20) — 두 칸을 따로 고르게 하지 않는다.
+- **백엔드는 그대로다:** `POST /api/research` 가 본문 `{question, params}` 를 받고(`app/api/research.py:89-91` `ResearchCreate.params: dict`) `merge_params` 가 모르는 키·타입·범위를 거부해 422 를 낸다(`:234-237`, `state.py:56-57`(`broaden`·`query_context` 정수 0~1)·`:61-66`). 만든 잡은 기본값을 채운 params 를 저장하고(`research.py:235`·`:241`) `GET /api/research/{id}` 가 그대로 돌려준다(`:493` `"params": job.params`). 화면의 `useResearchApi().create(question, params = {})`(`composables/useResearch.ts:38-39`)도 이미 params 를 싣는다 — 바꾸는 것은 `useResearchStarter().startResearch` 가 params 를 넘겨받는 것뿐이다. `types/research.ts` 의 `ResearchParams`(`Record<string, number>`)·`ResearchJob.params?` 는 그대로 쓴다.
+- **06c fastapi 가 운영에 있어야 한다:** 06c 전 fastapi 의 `merge_params` 는 `broaden` 을 모르는 키로 거부한다(422 `알 수 없는 파라미터: broaden`) — 06d nuxt 가 06c 전 fastapi 와 만나면 딥리서치 시작이 모두 막힌다. 06c 워커·fastapi 는 2026-10-12 운영에 나갔다(06c 완료노트 §5). Task Z5 Step 1 의 서버 확인이 `None None` 이면 멈추고, 롤백으로 fastapi 를 06c 전 이미지로 되돌릴 때는 nuxt 도 함께 되돌린다.
+- **자리:** `SearchPlusMenu.vue` 는 랜딩 두 곳(`pages/index.vue:166` 논문 패널·`pages/papers/index.vue:15`)과 결과 검색바(`pages/papers/index.vue:46`)가 같이 쓰는 부품이다 — 딥리서치 칩이 켜지면(`active?.id === "deep-research"` — + 메뉴·슬래시 명령·`activateMode` 모두) 칩 바로 뒤에 두 칸 선택이 서고, 칩을 끄면(×) 함께 사라진다. 상세의 [이 논문으로 딥리서치]와 [딥리서치로 더 깊게](Task N4)는 `?draft=` → `fillResearchDraft` → `activateMode` 로 칩을 켜므로 같은 자리에 선다(따로 고칠 것 없음). `/research` 홈(Task N5)의 새 연구에도 같은 부품을 둔다(Step 8 — N5 를 잘랐으면 건너뛴다). [같은 질문으로 다시 시작]은 고르는 칸 없이 원래 잡의 방식을 잇는다(Step 9).
+- **부품 `ResearchModePicker.vue`(radiogroup):** `role="radiogroup"` — 이름은 보이는 라벨 '탐색 방식'(`aria-labelledby`), 설명은 고른 칸의 hint(`aria-describedby`). 칸은 `<button role="radio" :aria-checked>` 이고 고른 칸만 `tabindex="0"`(roving — Tab 한 번에 묶음을 지난다). ←→↑↓ 는 옆 칸을 고르고 그 칸으로 초점을 옮기며(선택이 초점을 따른다 — WAI-ARIA radio group 관례, 끝에서 돈다) Home·End 는 처음·끝이다. Space·Enter 는 button 의 기본 클릭으로 고른다. 키 판단은 순수 함수 `modeStep`(기존 `utils/menuNav.ts` 의 `menuStep` 을 쓴다). 부품은 v-model 만 주고받고, 기억과 잡 params 싣기는 부르는 쪽이 한다.
+- **키가 SearchPlusMenu 의 가로채기에 걸리지 않는다:** 부모 상자의 캡처 리스너 `onHostKeydown`(`SearchPlusMenu.vue:360-371`)은 `e.target === field`(입력창)일 때만 키를 쓰고 `onHostClick`(`:373-379`)은 `.skx-send` 만 본다 — 칸의 키·클릭은 부품까지 그대로 간다. 방향키는 부품이 `preventDefault` 해 페이지가 구르지 않는다. 페이지의 엔터 검색(`@keydown.enter`)은 입력창에만 달려 있어 칸 위의 엔터와 섞이지 않는다.
+- **기억(사용자 편의일 뿐):** localStorage `skx_research_mode`(`"broad"`·`"precise"`). `readResearchMode`·`saveResearchMode` 가 try/catch 로 감싸고, 저장소가 없거나(`safeLocalStorage()` 가 null — 서버 렌더·막힌 저장소) 던지거나 모르는 값이면 기본 '정밀하게' 다. 서버 렌더와 첫 그림이 같게 기본으로 시작하고 `onMounted` 에서 읽는다. round04c 가 지운 레이아웃 기억(`skx_research_layout`, `2e3d87a`)과 다른 키다 — Task D1 의 '배치 기억 없음' 을 되살리는 것이 아니다.
+- **다시 시작(`[id].vue` 의 `onRestart`):** `restartParams(view.params)` — 원래 잡의 두 칸을 그대로(1 이면 1, 아니면 0) 싣는다. 두 칸이 모두 없는 잡(06c 전 잡)은 기본 '정밀하게'. 다른 칸(`max_recheck` 등)은 지금처럼 싣지 않는다(서버 기본값).
+- **머리 표시:** `researchModeLine(view.params)` — 두 칸이 모두 1 이면 `탐색 방식 · 정밀하게`, 모두 0 이면 `탐색 방식 · 폭넓게`(06c 배포 뒤·06d 전에 만든 잡, 선택을 거치지 않고 만든 잡 — 판정 도구의 기본 갈래 등), 두 칸이 모두 없으면(06c 전 잡·params 를 싣지 않은 응답 — `initialResearchView` 의 `params: job.params ?? {}`, `utils/researchEvents.ts:247`) 그리지 않는다. 두 칸이 갈리면(판정 도구로 나눠 돌린 잡 같은 경우) 어느 방식도 아니라 그리지 않는다. 자리는 상태 배지 옆 — `ResearchHeader.vue` 의 상태 배지(`:7`)를 `.rs-head__meta` 한 줄로 묶고 옆에 `.rs-head__mode`(상태 배지와 같은 크기의 점선 알약)를 둔다. Task D8 은 이 파일의 마크업을 고치지 않았다 — `ResearchHeader.vue` 를 고치는 Task 는 이것 하나다.
+- **round08(UI 다크 테마 — 브랜치 `feat/round08-ui-dark-theme`)이 먼저 dev 에 들어오면** `SearchPlusMenu.vue` 의 script(`clear`·`activateMode`·`update:mode` emit, `brand` import)가 바뀐다. 이 Task 의 앵커는 그 바뀐 곳을 피해 골랐다. 처음 확인한 `6fd1769` 뒤에 그 브랜치에 들어온 `c1e8221`(2026-10-12 15:34 — 딥리서치 표기를 `DEEP_RESEARCH` 상수로)이 `useResearch`·`menuNav` 두 import 줄 사이에 `import { DEEP_RESEARCH } from "~/utils/brand";` 를 넣어 처음의 네 줄 import 앵커가 맞지 않았다(0번) — 그래서 Step 7 ② 를 한 줄 앵커 셋으로 나눴다. 나눈 뒤 dev `ef202fb`·round08 `6fd1769`·`c1e8221` 세 판의 `SearchPlusMenu.vue` 에 Step 7 의 Edit 여덟(①·②-1~3·③~⑥)을 얹어 모두 한 번씩 맞는 것을, `c1e8221` 의 `ResearchHeader.vue`(Step 9 ①②)·`[id].vue`(Step 9 ③~⑥)·`useResearch.ts`(Step 5)·`research.css`(Step 10)에도 이 Task 의 Edit 가 모두 한 번씩 맞는 것을 확인했다(2026-10-12, 계획서 블록을 그대로 뽑아 얹는 스크립트). 그래도 맞지 않으면 같은 자리를 지금 글자로 잡는다. **round08 이 06d worktree 를 딴 뒤에 dev 에 들어오면**(이 Task 를 마친 뒤 Task L6·N8 의 `git merge dev` 가 데려온다) `SearchPlusMenu.vue` 의 import 한 곳이 부딪힌다 — 이 Task 가 `useResearch`·`menuNav` 사이에 넣은 `import { safeLocalStorage } from "~/utils/browserId";` 와 round08 이 같은 자리에 넣은 `import { DEEP_RESEARCH } from "~/utils/brand";` 다. 두 줄을 모두 남기고 `brand` → `browserId` 순서로 둔다(dev `ef202fb` 를 바탕, 이 Task 를 얹은 글을 ours, `c1e8221` 을 theirs 로 `git merge-file` 해 본 결과 충돌은 이 한 곳이고 `ResearchHeader.vue`·`[id].vue` 의 이 Task 자리는 저절로 합쳐졌다 — 파트 D·L 의 다른 hunk 는 이 흉내에 들지 않았다).
+- 판단은 `utils/researchMode.ts` 순수 함수다(vitest 13). `.vue` 는 typecheck·build 와 손 확인, 운영 확인은 Task Z6.
+
+**Files:**
+- Create: `frontend/utils/researchMode.ts`
+- Create: `frontend/components/research/ResearchModePicker.vue`
+- Modify: `frontend/composables/useResearch.ts`(`useResearchStarter().startResearch` :57-58)
+- Modify: `frontend/components/research/SearchPlusMenu.vue`(칩 뒤 :41-43, import 한 줄 앵커 셋 :79·:81·:82, 상태 :110-111, `activate` 뒤 :132-136, `submit` :347, `onMounted` :390-391 — 앞 Task 가 고치지 않는 파일이라 da80f23 줄 번호 그대로)
+- Modify: `frontend/pages/research/index.vue`(Task N5 를 했을 때만 — 새 연구 카드·import·상태·`start`·`onMounted`)
+- Modify: `frontend/components/research/ResearchHeader.vue`(상태 배지 :7, props :32-39)
+- Modify: `frontend/pages/research/[id].vue`(머리 props — da80f23 :33, import — :235 아래, `retryLabel` — :264 아래, `onRestart` — :401. 앞 Task 들이 이 파일을 고쳤으므로 앵커 글자로 잡는다)
+- Modify: `frontend/assets/css/research.css`(인쇄 앵커 위 `.rs-mode*`·`.rs-head__meta`·`.rs-head__mode`)
+- Test: `frontend/tests/unit/researchMode.test.ts`(새 파일 — 13)
+
+기준선(Task N6 뒤): 전체 Task N5 뒤 + 4. N5·N6 을 잘랐으면 Task N7 뒤(Task N4 뒤 + 3).
+
+- [ ] **Step 1: 실패하는 테스트를 쓴다**
+
+`frontend/tests/unit/researchMode.test.ts` (새 파일, 전체):
+
+```ts
+// frontend/tests/unit/researchMode.test.ts
+import { describe, expect, it } from "vitest";
+import {
+  DEFAULT_RESEARCH_MODE,
+  RESEARCH_MODES,
+  RESEARCH_MODE_KEY,
+  modeOfParams,
+  modeParams,
+  modeStep,
+  readResearchMode,
+  researchModeLabel,
+  researchModeLine,
+  restartParams,
+  saveResearchMode,
+} from "~/utils/researchMode";
+import { MemoryStorage } from "./helpers/memoryStorage";
+
+// 06c 배포 뒤 서버가 만든 잡의 params 모양 — 서버가 기본값을 채워 저장한다(app/api/research.py create_research)
+const SERVER_DEFAULTS = { max_subquestions: 6, max_recheck: 3, exclude_off_topic: 1, critic_scope: 0 };
+
+describe("modeParams · 선택지", () => {
+  it("폭넓게는 두 칸 모두 0, 정밀하게는 두 칸 모두 1 — 늘 두 칸을 함께 싣는다", () => {
+    expect(modeParams("broad")).toEqual({ broaden: 0, query_context: 0 });
+    expect(modeParams("precise")).toEqual({ broaden: 1, query_context: 1 });
+  });
+
+  it("기본 선택은 정밀하게, 선택지는 폭넓게 · 정밀하게 순서", () => {
+    expect(DEFAULT_RESEARCH_MODE).toBe("precise");
+    expect(RESEARCH_MODES.map((m) => m.id)).toEqual(["broad", "precise"]);
+    expect(RESEARCH_MODES.map((m) => researchModeLabel(m.id))).toEqual(["폭넓게", "정밀하게"]);
+  });
+});
+
+describe("modeOfParams · researchModeLine", () => {
+  it("두 칸이 모두 1 이면 정밀하게, 모두 0 이면 폭넓게(06c 배포 뒤·06d 전 잡)", () => {
+    expect(modeOfParams({ ...SERVER_DEFAULTS, broaden: 1, query_context: 1 })).toBe("precise");
+    expect(modeOfParams({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 })).toBe("broad");
+    expect(researchModeLine({ ...SERVER_DEFAULTS, broaden: 1, query_context: 1 })).toBe("탐색 방식 · 정밀하게");
+    expect(researchModeLine({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 })).toBe("탐색 방식 · 폭넓게");
+  });
+
+  it("두 칸이 모두 없으면(06c 전 잡·params 없음) null — 머리에 그리지 않는다", () => {
+    expect(modeOfParams({})).toBeNull();
+    expect(modeOfParams(SERVER_DEFAULTS)).toBeNull();
+    expect(modeOfParams(null)).toBeNull();
+    expect(modeOfParams(undefined)).toBeNull();
+    expect(researchModeLine({})).toBeNull();
+  });
+
+  it("두 칸이 갈리면 어느 방식도 아니라 null, 한 칸만 있으면 없는 칸을 서버 기본값 0 으로 읽는다", () => {
+    expect(modeOfParams({ broaden: 1, query_context: 0 })).toBeNull();
+    expect(modeOfParams({ broaden: 0, query_context: 1 })).toBeNull();
+    expect(modeOfParams({ broaden: 0 })).toBe("broad");
+    expect(modeOfParams({ broaden: 1 })).toBeNull();
+  });
+});
+
+describe("restartParams", () => {
+  it("같은 질문으로 다시 시작할 때 원래 잡의 두 칸을 그대로 이어 쓴다(다른 칸은 싣지 않는다)", () => {
+    expect(restartParams({ ...SERVER_DEFAULTS, broaden: 1, query_context: 1 })).toEqual({ broaden: 1, query_context: 1 });
+    expect(restartParams({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 })).toEqual({ broaden: 0, query_context: 0 });
+    expect(restartParams({ broaden: 1, query_context: 0 })).toEqual({ broaden: 1, query_context: 0 });
+  });
+
+  it("두 칸이 모두 없는 잡(06c 전 잡)은 기본 탐색 방식", () => {
+    expect(restartParams(SERVER_DEFAULTS)).toEqual(modeParams(DEFAULT_RESEARCH_MODE));
+    expect(restartParams({})).toEqual({ broaden: 1, query_context: 1 });
+  });
+
+  it("받은 params 를 고치지 않는다", () => {
+    const params = { ...SERVER_DEFAULTS, broaden: 0, query_context: 0 };
+    restartParams(params);
+    modeOfParams(params);
+    expect(params).toEqual({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 });
+  });
+});
+
+describe("modeStep", () => {
+  it("방향키로 옆 칸을 고르고 끝에서 돈다(radiogroup 관례), Home·End 는 처음·끝", () => {
+    expect(modeStep("broad", "ArrowRight")).toBe("precise");
+    expect(modeStep("broad", "ArrowDown")).toBe("precise");
+    expect(modeStep("precise", "ArrowRight")).toBe("broad");
+    expect(modeStep("precise", "ArrowLeft")).toBe("broad");
+    expect(modeStep("broad", "ArrowUp")).toBe("precise");
+    expect(modeStep("precise", "Home")).toBe("broad");
+    expect(modeStep("broad", "End")).toBe("precise");
+  });
+
+  it("움직일 키가 아니면 null — 부품은 그 키를 막지 않는다(Tab·Space·Enter)", () => {
+    expect(modeStep("broad", "Tab")).toBeNull();
+    expect(modeStep("broad", " ")).toBeNull();
+    expect(modeStep("broad", "Enter")).toBeNull();
+  });
+});
+
+describe("readResearchMode · saveResearchMode", () => {
+  it("고른 방식을 기억하고 다시 읽는다", () => {
+    const storage = new MemoryStorage();
+    saveResearchMode(storage, "broad");
+    expect(storage.getItem(RESEARCH_MODE_KEY)).toBe("broad");
+    expect(readResearchMode(storage)).toBe("broad");
+  });
+
+  it("저장소가 없거나 비었거나 모르는 값이면 기본 정밀하게", () => {
+    expect(readResearchMode(null)).toBe("precise");
+    expect(readResearchMode(new MemoryStorage())).toBe("precise");
+    const storage = new MemoryStorage();
+    storage.setItem(RESEARCH_MODE_KEY, "deep");
+    expect(readResearchMode(storage)).toBe("precise");
+  });
+
+  it("막힌 저장소(읽기·쓰기가 던짐)에서도 던지지 않는다", () => {
+    const blocked = {
+      getItem: () => {
+        throw new DOMException("막힘", "SecurityError");
+      },
+    } as unknown as Storage;
+    expect(readResearchMode(blocked)).toBe("precise");
+    const full = new MemoryStorage();
+    full.failWith = new DOMException("쿼터 초과", "QuotaExceededError");
+    expect(() => saveResearchMode(full, "broad")).not.toThrow();
+    expect(() => saveResearchMode(null, "broad")).not.toThrow();
+  });
+});
+```
+
+- [ ] **Step 2: 실패를 확인한다**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchMode.test.ts`
+Expected: `FAIL tests/unit/researchMode.test.ts` — `Error: Cannot find module '~/utils/researchMode' imported from '…/frontend/tests/unit/researchMode.test.ts'.` / `Test Files  1 failed (1)` / `Tests  no tests`
+
+- [ ] **Step 3: 구현한다 — 순수 함수**
+
+`frontend/utils/researchMode.ts` (새 파일, 전체):
+
+```ts
+// frontend/utils/researchMode.ts
+// 딥리서치 '탐색 방식'(spec D28 — 06c 판정 뒤 2026-10-12 사용자 결정). 06c 의 두 스위치를 서버 기본값으로 켜지 않고
+// (app/services/research/state.py DEFAULT_PARAMS 는 0 그대로) 사용자가 딥리서치를 시작할 때 고른다. 서버 기본값이 0 이라
+// 화면이 고른 방식의 두 칸(broaden·query_context)을 늘 함께 싣는다 — query_context 만 1 이면 범위 용어(broaden 1 의
+// 계획 단계가 뽑는다)가 비어 '국내 학술논문에서' 떼기만 한다
+import type { ResearchParams } from "~/types/research";
+import { menuStep } from "~/utils/menuNav";
+
+export type ResearchMode = "broad" | "precise";
+
+export interface ResearchModeOption {
+  id: ResearchMode;
+  label: string;
+  hint: string;
+}
+
+// 잡 params 에 싣는 두 칸 — 서버 merge_params 가 정수 0~1 로 검증한다. interface 가 아니라 type 이어야
+// ResearchParams(Record<string, number>)로 그대로 넘어간다(interface 에는 암묵 색인 서명이 없다)
+export type ModeParams = { broaden: number; query_context: number };
+
+export const RESEARCH_MODE_LABEL = "탐색 방식";
+export const DEFAULT_RESEARCH_MODE: ResearchMode = "precise";
+// 고른 방식의 기억 — 같은 브라우저의 편의일 뿐이다(없거나 읽지 못하면 기본 방식)
+export const RESEARCH_MODE_KEY = "skx_research_mode";
+// 화면의 칸 순서(폭넓게 · 정밀하게)
+export const RESEARCH_MODES: readonly ResearchModeOption[] = [
+  { id: "broad", label: "폭넓게", hint: "많이 찾지만 엉뚱한 논문이 섞일 수 있습니다" },
+  {
+    id: "precise",
+    label: "정밀하게",
+    hint: "질문의 범위를 검색어에 함께 넣어 엉뚱한 논문을 줄입니다. 관련 논문 몇 편을 놓칠 수 있습니다",
+  },
+];
+
+const MODE_IDS: readonly ResearchMode[] = RESEARCH_MODES.map((m) => m.id);
+
+function isResearchMode(value: unknown): value is ResearchMode {
+  return value === "broad" || value === "precise";
+}
+
+// 서버가 검증한 값(0·1)만 온다 — 1 이 아니면 꺼짐으로 읽는다(없는 칸은 서버 기본값 0)
+function switchOf(value: number | undefined): number {
+  return value === 1 ? 1 : 0;
+}
+
+// 두 칸이 모두 없으면 06c 전 잡이거나 params 를 싣지 않은 응답이다(ResearchView.params 는 job.params ?? {})
+function hasModeKeys(params: ResearchParams | null | undefined): params is ResearchParams {
+  return !!params && ("broaden" in params || "query_context" in params);
+}
+
+export function modeParams(mode: ResearchMode): ModeParams {
+  const on = mode === "precise" ? 1 : 0;
+  return { broaden: on, query_context: on };
+}
+
+// 잡이 어느 방식으로 돌았나 — 두 칸이 갈리면(판정 도구로 나눠 돌린 잡 같은 경우) 어느 방식도 아니라 null
+export function modeOfParams(params: ResearchParams | null | undefined): ResearchMode | null {
+  if (!hasModeKeys(params)) return null;
+  const broaden = switchOf(params.broaden);
+  if (broaden !== switchOf(params.query_context)) return null;
+  return broaden === 1 ? "precise" : "broad";
+}
+
+export function researchModeLabel(mode: ResearchMode): string {
+  return RESEARCH_MODES.find((m) => m.id === mode)?.label ?? "";
+}
+
+// 연구 화면 머리의 작은 표시 — 방식을 모르면 null(그리지 않는다)
+export function researchModeLine(params: ResearchParams | null | undefined): string | null {
+  const mode = modeOfParams(params);
+  return mode ? `${RESEARCH_MODE_LABEL} · ${researchModeLabel(mode)}` : null;
+}
+
+// 같은 질문으로 다시 시작할 때 실을 두 칸 — 원래 잡의 값을 그대로 이어 쓴다. 두 칸이 모두 없는 잡(06c 전)은 기본 방식
+export function restartParams(params: ResearchParams | null | undefined): ModeParams {
+  if (!hasModeKeys(params)) return modeParams(DEFAULT_RESEARCH_MODE);
+  return { broaden: switchOf(params.broaden), query_context: switchOf(params.query_context) };
+}
+
+// radiogroup 의 키보드 관례 — 방향키로 옆 칸을 고르고(끝에서 돈다) Home·End 로 처음·끝. 움직일 키가 아니면 null
+export function modeStep(current: ResearchMode, key: string): ResearchMode | null {
+  const nav = key === "ArrowRight" ? "ArrowDown" : key === "ArrowLeft" ? "ArrowUp" : key;
+  const next = menuStep(MODE_IDS.indexOf(current), nav, MODE_IDS.length);
+  return next === null ? null : (MODE_IDS[next] ?? null);
+}
+
+export function readResearchMode(storage: Storage | null): ResearchMode {
+  try {
+    const stored = storage?.getItem(RESEARCH_MODE_KEY);
+    return isResearchMode(stored) ? stored : DEFAULT_RESEARCH_MODE;
+  } catch {
+    return DEFAULT_RESEARCH_MODE;
+  }
+}
+
+export function saveResearchMode(storage: Storage | null, mode: ResearchMode): void {
+  try {
+    storage?.setItem(RESEARCH_MODE_KEY, mode);
+  } catch {
+    // 막힌 저장소·쿼터 초과 — 이 화면에서 고른 값만 쓴다
+  }
+}
+```
+
+(`ModeParams` 를 `interface` 로 두면 부르는 두 곳에서 `TS2345: Argument of type 'ModeParams' is not assignable to parameter of type 'ResearchParams'` 가 난다 — 작성 때 실측. 공개 이름은 모두 새 이름이다 — 2026-10-12 `frontend` 의 utils·composables·components 와 06d·06e 계획 전수로 확인했다. `isResearchMode`·`switchOf`·`hasModeKeys`·`MODE_IDS` 는 내보내지 않는다.)
+
+- [ ] **Step 4: 통과를 확인한다**
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchMode.test.ts`
+Expected: `Test Files  1 passed (1)` / `Tests  13 passed (13)`
+
+- [ ] **Step 5: `startResearch` 가 잡 params 를 받는다**
+
+`frontend/composables/useResearch.ts` :57-58 — old:
+
+```ts
+  async function startResearch(question: string): Promise<string> {
+    const { job_id } = await research.create(question);
+```
+
+new:
+
+```ts
+  // params 는 잡 파라미터(서버 merge_params 가 검증) — 탐색 방식의 두 칸(broaden·query_context)을 싣는다. 없으면 서버 기본값
+  async function startResearch(question: string, params?: ResearchParams): Promise<string> {
+    const { job_id } = await research.create(question, params);
+```
+
+(`ResearchParams` 는 이 파일이 이미 import 한다(:9). 부르는 곳 — SearchPlusMenu·`/research` 홈·`[id].vue` 다시 시작 — 은 아래 Step 에서 모두 두 번째 인자를 싣는다. 인자를 빼면 서버 기본값(= 폭넓게)으로 돈다.)
+
+- [ ] **Step 6: 탐색 방식 부품을 만든다**
+
+`frontend/components/research/ResearchModePicker.vue` (새 파일, 전체):
+
+```vue
+<!-- frontend/components/research/ResearchModePicker.vue -->
+<!-- 딥리서치 '탐색 방식'(spec D28) — 폭넓게 · 정밀하게 두 칸 선택(radiogroup). 고른 값은 v-model 로 주고받고,
+     기억(localStorage)과 잡 params 싣기는 부르는 쪽이 한다 -->
+<template>
+  <div class="rs-mode">
+    <span :id="labelId" class="rs-mode__label">{{ RESEARCH_MODE_LABEL }}</span>
+    <div
+      ref="group"
+      class="rs-mode__group"
+      role="radiogroup"
+      :aria-labelledby="labelId"
+      :aria-describedby="hintId"
+      @keydown="onKeydown"
+    >
+      <!-- 고른 칸만 Tab 으로 들어온다(roving tabindex). 칸 사이는 방향키로 옮기며 고른다 -->
+      <button
+        v-for="m in RESEARCH_MODES"
+        :key="m.id"
+        type="button"
+        role="radio"
+        class="rs-mode__opt"
+        :data-mode="m.id"
+        :aria-checked="m.id === modelValue"
+        :tabindex="m.id === modelValue ? 0 : -1"
+        :title="m.hint"
+        :disabled="disabled"
+        @click="pick(m.id)"
+      >
+        {{ m.label }}
+      </button>
+    </div>
+    <span :id="hintId" class="rs-mode__hint">{{ hint }}</span>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, nextTick, ref, useId } from "vue";
+import { RESEARCH_MODES, RESEARCH_MODE_LABEL, modeStep, type ResearchMode } from "~/utils/researchMode";
+
+const props = withDefaults(defineProps<{ modelValue: ResearchMode; disabled?: boolean }>(), { disabled: false });
+const emit = defineEmits<{ "update:modelValue": [mode: ResearchMode] }>();
+
+const group = ref<HTMLElement | null>(null);
+const labelId = useId();
+const hintId = useId();
+const hint = computed(() => RESEARCH_MODES.find((m) => m.id === props.modelValue)?.hint ?? "");
+
+function pick(mode: ResearchMode): void {
+  if (props.disabled || mode === props.modelValue) return;
+  emit("update:modelValue", mode);
+}
+
+// 선택이 초점을 따른다(radiogroup 관례) — 옮긴 칸을 고르고 그 칸에 초점을 둔다. 방향키가 페이지를 굴리지 않게 막는다
+function onKeydown(e: KeyboardEvent): void {
+  if (props.disabled) return;
+  const next = modeStep(props.modelValue, e.key);
+  if (!next) return;
+  e.preventDefault();
+  pick(next);
+  void nextTick(() => group.value?.querySelector<HTMLButtonElement>(`[data-mode="${next}"]`)?.focus());
+}
+</script>
+```
+
+- [ ] **Step 7: + 메뉴의 딥리서치 칩 옆에 단다 — `SearchPlusMenu.vue`**
+
+`frontend/components/research/SearchPlusMenu.vue` ① 칩 바로 뒤(:41-43). old:
+
+```vue
+      <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">×</button>
+    </span>
+    <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
+```
+
+new:
+
+```vue
+      <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">×</button>
+    </span>
+    <!-- 딥리서치를 고르면 칩 옆에 탐색 방식(spec D28) — 고른 값을 잡 params 두 칸(broaden·query_context)으로 싣는다 -->
+    <ResearchModePicker
+      v-if="active?.id === 'deep-research'"
+      :model-value="researchMode"
+      :disabled="disabled || busy"
+      @update:model-value="pickMode"
+    />
+    <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
+```
+
+② import — 한 줄 앵커 셋(:79·:81·:82). 네 줄을 한 번에 잡지 않는다 — round08 의 `c1e8221` 이 `useResearch`·`menuNav` 두 줄 사이에 `import { DEEP_RESEARCH } from "~/utils/brand";` 를 넣어 네 줄 앵커가 맞지 않는다(아래 '알아 둘 것' 의 round08 줄). 셋 모두 Edit 를 따로 한다.
+
+②-1 old:
+
+```ts
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
+```
+
+new:
+
+```ts
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
+import ResearchModePicker from "~/components/research/ResearchModePicker.vue";
+```
+
+②-2 old:
+
+```ts
+import { menuStep } from "~/utils/menuNav";
+```
+
+new:
+
+```ts
+import { safeLocalStorage } from "~/utils/browserId";
+import { menuStep } from "~/utils/menuNav";
+```
+
+②-3 old:
+
+```ts
+import { researchErrorMessage } from "~/utils/researchErrors";
+```
+
+new:
+
+```ts
+import { researchErrorMessage } from "~/utils/researchErrors";
+import {
+  DEFAULT_RESEARCH_MODE,
+  modeParams,
+  readResearchMode,
+  saveResearchMode,
+  type ResearchMode,
+} from "~/utils/researchMode";
+```
+
+(세 Edit 뒤의 import 블록은 dev 에서 네 줄 앵커로 한 번에 고친 것과 글자 그대로 같다. round08 이 먼저 들어왔으면 `brand` 줄이 `useResearch` 와 `browserId` 사이에 남는다 — 경로 이름 순서 그대로다.)
+
+③ 상태(:110-111). old:
+
+```ts
+const busy = ref(false);
+const error = ref("");
+
+let host: HTMLElement | null = null;
+```
+
+new:
+
+```ts
+const busy = ref(false);
+const error = ref("");
+// 탐색 방식 — 서버 렌더와 첫 그림이 같게 기본(정밀하게)으로 시작하고 마운트 뒤 기억한 값을 읽는다
+const researchMode = ref<ResearchMode>(DEFAULT_RESEARCH_MODE);
+
+let host: HTMLElement | null = null;
+```
+
+④ `activate` 바로 뒤(:132-136 — round08 이 바꾸는 `clear`·`activateMode` 를 피한 자리). old:
+
+```ts
+function activate(mode: SearchMode): void {
+  active.value = mode;
+  error.value = "";
+  if (field) field.placeholder = mode.placeholder;
+}
+```
+
+new:
+
+```ts
+function activate(mode: SearchMode): void {
+  active.value = mode;
+  error.value = "";
+  if (field) field.placeholder = mode.placeholder;
+}
+
+// 고른 탐색 방식은 같은 브라우저에 기억한다 — 편의일 뿐이라 저장이 막혀도 이 화면에서는 고른 값을 쓴다
+function pickMode(mode: ResearchMode): void {
+  researchMode.value = mode;
+  saveResearchMode(safeLocalStorage(), mode);
+}
+```
+
+⑤ `submit`(:347). old:
+
+```ts
+    const jobId = await startResearch(plan.question);
+```
+
+new:
+
+```ts
+    const jobId = await startResearch(plan.question, modeParams(researchMode.value));
+```
+
+⑥ `onMounted`(:390-391). old:
+
+```ts
+  basePlaceholder = field?.placeholder ?? "";
+  focused.value = !!field && document.activeElement === field;
+```
+
+new:
+
+```ts
+  basePlaceholder = field?.placeholder ?? "";
+  researchMode.value = readResearchMode(safeLocalStorage());
+  focused.value = !!field && document.activeElement === field;
+```
+
+(슬래시 명령으로 칩 없이 바로 보낸 경우에도 `submit` 은 그때의 `researchMode`(기억한 값 또는 기본 정밀하게)를 싣는다. 메인 랜딩은 숨은 논문 패널의 이 부품도 마운트돼 있지만 두 칸은 칩이 켜졌을 때만 선다.)
+
+- [ ] **Step 8: (Task N5 를 했을 때만) `/research` 홈의 새 연구에도 단다 — `pages/research/index.vue`**
+
+N5 를 잘랐으면(N7 을 했으면) 이 Step 은 건너뛰고 체크박스 옆에 '건너뜀 — N5 를 자름' 으로 적는다. 앵커는 Task N5 Step 6 의 글 그대로다(N6 은 이 파일을 고치지 않는다).
+
+① 새 연구 카드 — 입력창과 아래 줄 사이. old:
+
+```vue
+            :disabled="starting"
+            @keydown.enter.exact="onEnter"
+          ></textarea>
+        </label>
+        <div class="rs-home__new-foot">
+```
+
+new:
+
+```vue
+            :disabled="starting"
+            @keydown.enter.exact="onEnter"
+          ></textarea>
+        </label>
+        <!-- 탐색 방식(spec D28) — + 메뉴의 딥리서치와 같은 부품·같은 기억 -->
+        <ResearchModePicker :model-value="researchMode" :disabled="starting" @update:model-value="pickMode" />
+        <div class="rs-home__new-foot">
+```
+
+② import 셋. old:
+
+```ts
+import { computed, onMounted, ref } from "vue";
+import { useResearchStarter } from "~/composables/useResearch";
+```
+
+new:
+
+```ts
+import { computed, onMounted, ref } from "vue";
+import ResearchModePicker from "~/components/research/ResearchModePicker.vue";
+import { useResearchStarter } from "~/composables/useResearch";
+```
+
+old:
+
+```ts
+import { routeFor, type HistoryRoute } from "~/utils/historyRoute";
+```
+
+new:
+
+```ts
+import { safeLocalStorage } from "~/utils/browserId";
+import { routeFor, type HistoryRoute } from "~/utils/historyRoute";
+```
+
+old:
+
+```ts
+import { QUESTION_MAX, questionProblem } from "~/utils/researchInput";
+```
+
+new:
+
+```ts
+import { QUESTION_MAX, questionProblem } from "~/utils/researchInput";
+import {
+  DEFAULT_RESEARCH_MODE,
+  modeParams,
+  readResearchMode,
+  saveResearchMode,
+  type ResearchMode,
+} from "~/utils/researchMode";
+```
+
+③ 상태. old:
+
+```ts
+const problem = computed(() => questionProblem(question.value));
+```
+
+new:
+
+```ts
+const problem = computed(() => questionProblem(question.value));
+// 탐색 방식 — + 메뉴의 딥리서치와 같은 기억(skx_research_mode). 서버 렌더와 같게 기본으로 시작해 마운트 뒤 읽는다
+const researchMode = ref<ResearchMode>(DEFAULT_RESEARCH_MODE);
+
+function pickMode(mode: ResearchMode): void {
+  researchMode.value = mode;
+  saveResearchMode(safeLocalStorage(), mode);
+}
+```
+
+④ `start`. old:
+
+```ts
+    const jobId = await startResearch(q);
+```
+
+new:
+
+```ts
+    const jobId = await startResearch(q, modeParams(researchMode.value));
+```
+
+⑤ `onMounted`. old:
+
+```ts
+onMounted(() => {
+  void loadFirst();
+  void loadExamples();
+});
+```
+
+new:
+
+```ts
+onMounted(() => {
+  researchMode.value = readResearchMode(safeLocalStorage());
+  void loadFirst();
+  void loadExamples();
+});
+```
+
+(새 연구 카드는 `.rs-card` 의 세로 flex·gap 0.8rem 이라 따로 간격을 주지 않는다. 고른 칸의 설명은 칸 옆, 좁으면 다음 줄로 내려간다 — Step 10 의 `.rs-mode__hint`.)
+
+- [ ] **Step 9: 다시 시작은 원래 잡의 방식을 잇고, 머리에 그 잡의 방식을 보인다**
+
+`frontend/components/research/ResearchHeader.vue` ① 상태 배지(:7). old:
+
+```vue
+      <span class="rs-status" :class="`rs-status--${phase}`">{{ phaseLabel(phase) }}</span>
+    </div>
+```
+
+new:
+
+```vue
+      <div class="rs-head__meta">
+        <span class="rs-status" :class="`rs-status--${phase}`">{{ phaseLabel(phase) }}</span>
+        <!-- 그 잡의 탐색 방식(spec D28) — 방식을 모르는 잡(06c 전 잡·params 없음)은 그리지 않는다 -->
+        <span v-if="modeLine" class="rs-head__mode">{{ modeLine }}</span>
+      </div>
+    </div>
+```
+
+② props(:32-39). old:
+
+```ts
+  canRetry: boolean;
+  busy: boolean;
+}>();
+```
+
+new:
+
+```ts
+  canRetry: boolean;
+  busy: boolean;
+  // '탐색 방식 · 정밀하게' 꼴(researchModeLine) — 없거나 null 이면 그리지 않는다
+  modeLine?: string | null;
+}>();
+```
+
+`frontend/pages/research/[id].vue` ③ 머리 props(da80f23 :33 — 앞 Task 들이 바꾸지 않는 두 줄). old:
+
+```html
+          :busy="busy || restarting"
+          @toggle-layout="toggleLayout"
+```
+
+new:
+
+```html
+          :busy="busy || restarting"
+          :mode-line="modeLine"
+          @toggle-layout="toggleLayout"
+```
+
+④ import(da80f23 :235 — 앞 Task 들이 바꾸지 않는 줄. Task L6 의 앵커 `import { researchPhase } from "~/utils/researchEvents";` 는 건드리지 않는다). old:
+
+```ts
+import { researchErrorMessage } from "~/utils/researchErrors";
+```
+
+new:
+
+```ts
+import { researchErrorMessage } from "~/utils/researchErrors";
+import { researchModeLine, restartParams } from "~/utils/researchMode";
+```
+
+⑤ `retryLabel`(da80f23 :264) 바로 뒤. old:
+
+```ts
+const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
+```
+
+new:
+
+```ts
+const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
+// 머리의 탐색 방식 — 두 칸이 다 0 이면 폭넓게, 두 칸이 없는 잡(06c 전)은 null(그리지 않는다)
+const modeLine = computed(() => (view.value ? researchModeLine(view.value.params) : null));
+```
+
+⑥ `onRestart`(da80f23 :401). old:
+
+```ts
+    const jobId = await startResearch(view.value.question);
+```
+
+new:
+
+```ts
+    // 원래 잡의 탐색 방식(broaden·query_context 두 칸)을 그대로 이어 쓴다 — 고르는 칸은 없다
+    const jobId = await startResearch(view.value.question, restartParams(view.value.params));
+```
+
+(`[id].vue` 의 다른 두 [같은 질문으로 다시 시작] 버튼(실패·취소 카드, da80f23 :115·:121)도 같은 `onRestart` 를 부른다 — 따로 고칠 것이 없다.)
+
+- [ ] **Step 10: 스타일**
+
+`frontend/assets/css/research.css` — 인쇄 앵커 한 줄을 old 로 잡는다(Task N6 의 `.rs-basket*` 블록 뒤에 선다 — N5·N6 을 잘랐으면 Task N4 의 `.rs-deeper` 블록 뒤). old:
+
+```css
+/* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
+```
+
+new:
+
+```css
+/* ── 딥리서치 탐색 방식(폭넓게 · 정밀하게 — spec D28) ──────── */
+/* + 메뉴에서 딥리서치를 고르면 칩 옆에, /research 홈은 새 연구 입력창 아래에 선다. 고른 칸은 옅은 남색 홈 위에 흰 바탕·
+   남색 글자로 올라온다 — 칩(남색 바탕·흰 글자)과 다른 모양이라 '켠 모드'와 '고른 방식'이 한 덩어리로 보이지 않는다 */
+.rs-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
+  min-width: 0;
+}
+.rs-mode__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  white-space: nowrap;
+}
+.rs-mode__group {
+  display: inline-flex;
+  gap: 0.1rem;
+  padding: 0.1rem;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-mode__opt {
+  padding: 0.15rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+  white-space: nowrap;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.rs-mode__opt[aria-checked="true"] {
+  color: var(--skx-primary);
+  background: var(--skx-white);
+}
+.rs-mode__opt:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 1px;
+}
+.rs-mode__opt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* 고른 방식의 설명 — 자리가 있으면 칸 옆, 좁으면 다음 줄로 내려간다 */
+.rs-mode__hint {
+  flex: 1 1 12rem;
+  font-size: 0.55rem;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+}
+/* 결과 검색바(한 줄 4.4rem)는 입력칸 자리가 좁다 — 설명은 칸의 title·aria-describedby 로만 두고, 좁은 화면은 라벨도
+   숨긴다(radiogroup 의 이름은 aria-labelledby 가 숨은 라벨에서도 읽는다) */
+.skx-rsearch .rs-mode__hint {
+  display: none;
+}
+@media (max-width: 768px) {
+  .skx-rsearch .rs-mode__label {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-mode__opt {
+    transition: none;
+  }
+}
+/* 연구 화면 머리 — 상태 배지 옆에 그 잡의 탐색 방식(상태 배지와 같은 크기의 옅은 점선 알약) */
+.rs-head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+.rs-head__mode {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+
+/* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
+```
+
+(`.rs-head__mode` 의 크기는 Task D8 이 맞춘 `.rs-status`(0.55rem·`0.1rem 0.45rem`·줄높이 1.4)와 같다 — `.rs-head__meta` 의 `align-items: flex-start` 와 `.rs-status` 의 `align-self: flex-start` 가 같아 두 알약이 한 줄에 나란히 선다. 머리는 인쇄에서 숨는다(`.rs-page .rs-head` — 인쇄 블록). 새 색값·새 `@keyframes` 없이 `--skx-*` 토큰만, 새 움직임(칸 바뀜의 transition)은 움직임 줄이기에서 멈춘다.)
+
+- [ ] **Step 11: 전체 확인**
+
+```bash
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx nuxi typecheck 2>&1 | grep -c "error TS"
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx nuxi typecheck 2>&1 | grep -c "Duplicated imports"
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npm run build 2>&1 | tail -1
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && grep -rn "startResearch(" frontend/components frontend/pages
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git diff -- frontend/assets/css/research.css | grep '^+' | grep -cE "#[0-9a-fA-F]{3,6}\b|rgba?\(|@keyframes"
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git diff --stat -- app
+```
+
+Expected: vitest 실패 0, `Test Files` 는 이 Task 앞 + 1, `Tests` 는 이 Task 앞 수 + 13 · `0` · `0`(새 이름이 겹치지 않는다) · `└  ✨ Build complete!` · 세 줄 — `SearchPlusMenu.vue` 의 `startResearch(plan.question, modeParams(researchMode.value))`, `pages/research/[id].vue` 의 `startResearch(view.value.question, restartParams(view.value.params))`, `pages/research/index.vue` 의 `startResearch(q, modeParams(researchMode.value))`(N5 를 잘랐으면 앞의 둘 — 두 번째 인자 없이 부르는 곳이 남지 않았다) · `0` · 빈 출력(백엔드 그대로).
+
+확인(손 — 로컬 화면을 운영 API 에 붙여 GET 으로만, Task Z1 Step 3 과 같은 명령): `/papers` 에서 + → 딥리서치를 고르면 칩 옆에 `탐색 방식` 두 칸이 서고 `정밀하게` 가 골라져 있다(처음 쓰는 브라우저) → ←→ 로 고른 칸이 바뀌고 초점이 따라간다, Tab 한 번에 두 칸을 지난다 → 새로고침 뒤 다시 딥리서치를 켜면 고른 값이 남아 있다 → 칩 × 로 끄면 두 칸도 사라진다. 375px 에서 랜딩 상자 안 설명이 다음 줄로 내려가고 가로 스크롤이 없다, 결과 검색바에는 설명이 없다. **보내지 않는다** — 보내면 운영에 잡이 생긴다(잡 params 는 운영 배포 뒤 Task Z6 이 본다).
+
+- [ ] **Step 12: 커밋한다**
+
+```bash
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add frontend/utils/researchMode.ts frontend/tests/unit/researchMode.test.ts frontend/components/research/ResearchModePicker.vue frontend/composables/useResearch.ts frontend/components/research/SearchPlusMenu.vue frontend/pages/research/index.vue frontend/components/research/ResearchHeader.vue "frontend/pages/research/[id].vue" frontend/assets/css/research.css && git status --short && git commit -m "[Feat] round06d — 딥리서치를 시작할 때 고르는 '탐색 방식'(폭넓게 · 정밀하게, 기본 정밀하게 — spec D28)을 단다. + 메뉴에서 딥리서치를 고르면 칩 옆에 두 칸 선택(radiogroup — 방향키·Home·End, 고른 칸만 Tab)이 서고, 고른 방식을 잡 params 두 칸(폭넓게 broaden 0·query_context 0, 정밀하게 둘 다 1)으로 늘 함께 싣는다 — 서버 기본값은 0 그대로라 화면이 실어야 켜지고, query_context 만 켜면 범위 용어가 비어 효과가 없다. 고른 값은 이 브라우저에 기억한다(skx_research_mode — 읽지 못하면 정밀하게). /research 홈의 새 연구도 같은 부품을 쓰고, [같은 질문으로 다시 시작] 은 원래 잡의 두 칸을 이어 쓰며, 연구 화면 머리의 상태 배지 옆에 그 잡의 방식을 작게 보인다(두 칸 다 0 이면 폭넓게, 두 칸이 없는 06c 전 잡은 표시 없음). 판단은 utils/researchMode.ts 순수 함수(vitest 13), 백엔드 변경 없음"
+```
+
+N5 를 잘랐으면 `git add` 에서 `frontend/pages/research/index.vue` 를 빼고 메시지의 `/research 홈의 새 연구도 같은 부품을 쓰고, ` 를 지운다.
+
+Expected: `A` 셋(`researchMode.ts`·`researchMode.test.ts`·`ResearchModePicker.vue`)·`M` 여섯(`useResearch.ts`·`SearchPlusMenu.vue`·`pages/research/index.vue`·`ResearchHeader.vue`·`[id].vue`·`research.css` — N5 를 잘랐으면 다섯), 커밋 1개.
+
+**작성 때 확인(2026-10-12):** 이 Task 의 코드를 dev `ef202fb`(06c 머지까지 든 코드 — 파트 D·L·N 없이)의 `frontend` 사본에 얹어 쟀다 — Step 2 의 실패 메시지, Step 4 의 `13 passed`, 전체 vitest `40 files / 739` → `41 files / 752`, typecheck `error TS` 0(처음 `ModeParams` 를 interface 로 두었을 때 위 `TS2345` 두 줄이 나와 type 으로 고쳤다), `Duplicated imports` 는 그 사본의 기준선 `queueLine` 둘 그대로(새 이름은 겹치지 않는다 — Task D2 뒤에는 `0`), `npm run build` `└  ✨ Build complete!`, 빌드 산출물의 entry CSS 에 `rs-mode__opt`, JS 청크 하나에 `탐색 방식`. 검증 때 다시 쟀다(같은 날, Step 7 ② 를 한 줄 앵커 셋으로 나눈 뒤) — 계획서의 블록을 그대로 뽑아 같은 사본에 얹는 스크립트로 Step 2 의 실패 메시지(`Cannot find module '~/utils/researchMode'`·`Test Files  1 failed (1)`·`Tests  no tests`), Step 4 의 `13 passed (13)`, 전체 `41 files / 752`, typecheck `error TS` 0·`Duplicated imports` 2(기준선 `queueLine`), Step 5·7·9·10 의 Edit 열여섯(1·8·6·1)이 모두 한 번씩 맞음, 나눈 ② 로 얹은 결과가 처음 글로 얹은 결과와 파일마다 바이트까지 같음을 봤다. Step 8(`/research` 홈)은 Task N5 Step 6 의 페이지 글을 사본에 두고(N3·N5 의 새 파일 `sidebarResearch.ts`·`researchHome.ts`·`useResearchWorks.ts` 도 계획서 블록 그대로) Edit 일곱이 모두 한 번씩 맞았고, typecheck `error TS` 는 N2 를 얹지 않아 생기는 `composables/useResearchWorks.ts(21,20): error TS2339: Property 'total' does not exist on type 'ListResult'.` 한 줄뿐(이 Task 의 줄에는 없음), build 완료다 — 실행 때 Step 11 의 typecheck·build 가 다시 본다. 손 확인(화면)은 하지 않았다.
+
+---
+
 ### Task N7: (조건부 — Task N5 를 잘랐을 때만) 사이드바 '예시 연구' 묶음·'모두 보기' 걷기
 
 **조건:** 10/16 까지 Task N5 를 끝내지 못해 자르기로 했을 때만 한다(자르는 순서 2 — 그때는 Task N6 도 하지 않는다). **N5 를 했으면 이 Task 는 건너뛴다** — 계획의 Step 체크박스 옆에 '건너뜀 — N5 를 함' 으로 적는다. 자르기로 한 것은 완료노트(Task Z3)에 적는다.
@@ -8100,7 +8995,7 @@ Expected: `M  frontend/pages/research/[id].vue`(git 은 대괄호 경로를 따�
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx nuxi typecheck 2>&1 | grep -c "error TS"
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx nuxi typecheck 2>&1 | grep -c "Duplicated imports"
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run
-cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchLayout.test.ts tests/unit/queueLine.test.ts tests/unit/researchEvents.test.ts tests/unit/synthCard.test.ts tests/unit/restorePosition.test.ts tests/unit/evidenceLedger.test.ts tests/unit/historyStore.test.ts tests/unit/historyState.test.ts tests/unit/paperResearch.test.ts tests/unit/researchDraft.test.ts tests/unit/workPhase.test.ts tests/unit/researchProgress.test.ts tests/unit/planSlots.test.ts tests/unit/researchFollow.test.ts tests/unit/sidebarResearch.test.ts tests/unit/researchHome.test.ts tests/unit/addToWork.test.ts
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchLayout.test.ts tests/unit/queueLine.test.ts tests/unit/researchEvents.test.ts tests/unit/synthCard.test.ts tests/unit/restorePosition.test.ts tests/unit/evidenceLedger.test.ts tests/unit/historyStore.test.ts tests/unit/historyState.test.ts tests/unit/paperResearch.test.ts tests/unit/researchDraft.test.ts tests/unit/workPhase.test.ts tests/unit/researchProgress.test.ts tests/unit/planSlots.test.ts tests/unit/researchFollow.test.ts tests/unit/sidebarResearch.test.ts tests/unit/researchHome.test.ts tests/unit/addToWork.test.ts tests/unit/researchMode.test.ts
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/researchDraft.test.ts
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npm run build 2>&1 | grep -c "Duplicated imports"
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npm run build 2>&1 | tail -1
@@ -8108,8 +9003,8 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npm run
 
 Expected:
 - typecheck 오류 `0` · `Duplicated imports` `0`(D2 가 지운 경고가 되살아나지 않았다 — 한 이름 한 파일)
-- vitest 전체 — 실패 0. `Test Files` 는 기준선 파일 수 + 6(N6 을 잘랐으면 + 5 — `addToWork.test.ts` 가 없다), `Tests` 는 계획 순서상 마지막으로 끝낸 프론트 Task(N8 을 했으면 N8, 아니면 L6)의 '통과 확인' 수와 같다(= Task 0 의 기준선 + 파트 D·L·N 이 더한 수 + L6·N8 이 dev 에서 받은 06c·06e 테스트 수 — 이 Step 은 테스트를 더하지 않는다). 다르면 Task 별 '통과 확인' 명령으로 어느 파일의 수가 다른지 센다
-- 06d 묶음 열일곱 파일 — 실패 0. N6 을 잘랐으면 명령에서 `tests/unit/addToWork.test.ts` 를 빼고 열여섯 파일. 나온 수를 적어 둔다(완료노트 §4)
+- vitest 전체 — 실패 0. `Test Files` 는 기준선 파일 수 + 7(N6 을 잘랐으면 + 6 — `addToWork.test.ts` 가 없다), `Tests` 는 계획 순서상 마지막으로 끝낸 프론트 Task(N8 을 했으면 N8, 아니면 L6)의 '통과 확인' 수와 같다(= Task 0 의 기준선 + 파트 D·L·N 이 더한 수 + L6·N8 이 dev 에서 받은 06c·06e 테스트 수 — 이 Step 은 테스트를 더하지 않는다). 다르면 Task 별 '통과 확인' 명령으로 어느 파일의 수가 다른지 센다
+- 06d 묶음 열여덟 파일(Task N9 의 `researchMode.test.ts` 포함) — 실패 0. N6 을 잘랐으면 명령에서 `tests/unit/addToWork.test.ts` 를 빼고 열일곱 파일. 나온 수를 적어 둔다(완료노트 §4)
 - `researchDraft.test.ts` — `Tests  23 passed (23)`(Task 0 과 같다 — spec §12-7 '기존 테스트 그대로')
 - build 의 `Duplicated imports` `0`, 마지막 줄 `└  ✨ Build complete!`
 
@@ -8140,7 +9035,7 @@ git status --short
 
 Expected:
 - `BASE` — Task 0 Step 2 의 dev 커밋, 또는 L6·N8 이 받은 dev 커밋
-- 고친 파일 목록 — 정확히 다음 줄들(이 계획서를 브랜치에 커밋했으면 `docs/` 라 이 목록에 들지 않는다). **N6 을 잘랐으면** `frontend/components/research/AddToWorkMenu.vue`·`frontend/tests/unit/addToWork.test.ts`·`frontend/utils/addToWork.ts` 셋이 없다. **N5 를 잘랐으면** `frontend/pages/research/index.vue` 가 없다(N7 이 `researchHome.ts`·`useResearchWorks.ts`·`researchHome.test.ts` 를 만든다). `frontend/components/research/ResearchHeader.vue` 는 목록에 없다 — Task D8 은 클래스만으로 입혀 마크업을 고치지 않는다. 리뷰 반영으로 더한 파일이 있으면 그 파일과 까닭을 완료노트 §3 에 적는다
+- 고친 파일 목록 — 정확히 다음 줄들(이 계획서를 브랜치에 커밋했으면 `docs/` 라 이 목록에 들지 않는다). **N6 을 잘랐으면** `frontend/components/research/AddToWorkMenu.vue`·`frontend/tests/unit/addToWork.test.ts`·`frontend/utils/addToWork.ts` 셋이 없다. **N5 를 잘랐으면** `frontend/pages/research/index.vue` 가 없다(N7 이 `researchHome.ts`·`useResearchWorks.ts`·`researchHome.test.ts` 를 만든다). `frontend/components/research/ResearchHeader.vue` 는 Task N9 만 고친다(머리의 탐색 방식 — Task D8 은 클래스만으로 입혀 마크업을 고치지 않는다). Task N9 가 더한 여섯 줄 — `ResearchHeader.vue`·`ResearchModePicker.vue`·`SearchPlusMenu.vue`·`composables/useResearch.ts`·`tests/unit/researchMode.test.ts`·`utils/researchMode.ts` — 은 N5·N6 을 잘라도 남는다. 리뷰 반영으로 더한 파일이 있으면 그 파일과 까닭을 완료노트 §3 에 적는다
 
 ```text
 frontend/assets/css/research.css
@@ -8149,10 +9044,14 @@ frontend/components/AppSidebar.vue
 frontend/components/research/AddToWorkMenu.vue
 frontend/components/research/ProgressPanel.vue
 frontend/components/research/ReportSkeleton.vue
+frontend/components/research/ResearchHeader.vue
+frontend/components/research/ResearchModePicker.vue
 frontend/components/research/ResearchProgressBar.vue
+frontend/components/research/SearchPlusMenu.vue
 frontend/components/research/SynthProgressCard.vue
 frontend/components/work/EvidenceLedger.vue
 frontend/composables/useHistory.ts
+frontend/composables/useResearch.ts
 frontend/composables/useResearchWorks.ts
 frontend/composables/useRestorePosition.ts
 frontend/composables/useSectionFollow.ts
@@ -8171,6 +9070,7 @@ frontend/tests/unit/researchEvents.test.ts
 frontend/tests/unit/researchFollow.test.ts
 frontend/tests/unit/researchHome.test.ts
 frontend/tests/unit/researchLayout.test.ts
+frontend/tests/unit/researchMode.test.ts
 frontend/tests/unit/researchProgress.test.ts
 frontend/tests/unit/restorePosition.test.ts
 frontend/tests/unit/sidebarResearch.test.ts
@@ -8186,6 +9086,7 @@ frontend/utils/researchEvents.ts
 frontend/utils/researchFollow.ts
 frontend/utils/researchHome.ts
 frontend/utils/researchLayout.ts
+frontend/utils/researchMode.ts
 frontend/utils/researchProgress.ts
 frontend/utils/restorePosition.ts
 frontend/utils/sidebarResearch.ts
@@ -8204,7 +9105,7 @@ frontend/utils/synthCard.ts
 
 - [ ] **Step 3: (선택) 로컬 화면을 운영 API 에 붙여 GET 으로만 본다**
 
-리뷰 전에 화면이 SSR·하이드레이션에서 깨지지 않는지 한 번 본다. 운영에 쓰지 않는다 — 아래에서 누르면 쓰는 버튼(승인·취소·[이 연구 이어가기]·[담기]·[계획 세우기])은 누르지 않는다. 포트는 다른 세션의 미리보기(3000)와 겹치지 않게 3016 을 쓴다.
+리뷰 전에 화면이 SSR·하이드레이션에서 깨지지 않는지 한 번 본다. 운영에 쓰지 않는다 — 아래에서 누르면 쓰는 버튼(승인·취소·[이 연구 이어가기]·[담기]·[계획 세우기]·딥리서치 칩을 켠 입력창의 보내기·[같은 질문으로 다시 시작])은 누르지 않는다. 포트는 다른 세션의 미리보기(3000)와 겹치지 않게 3016 을 쓴다.
 
 ```bash
 cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && NUXT_DEV_API_TARGET=https://skovix.landsoft.co.kr/api npx nuxi dev --port 3016
@@ -8213,10 +9114,11 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && NUXT_DE
 (이 명령은 백그라운드로 띄우고, 다 보면 그 프로세스를 끈다.) 브라우저로 본다:
 - `http://localhost:3016/` — 랜딩 탭 '소장자료검색', 입력창 안내 '찾고싶은 소장자료를 문장으로 검색해보세요!'
 - `http://localhost:3016/research` — `/research` 홈이 서고(N5 를 했으면) 기록이 없는 브라우저라 '연구 기록이 없습니다. …' 문구, 사이드바 딥리서치 탭의 빈 문구 아래 '모두 보기'(06e fastapi 배포 전이면 N 없이)
-- `http://localhost:3016/research/d8348de8-ee7f-48f9-8ceb-20924ed6a383` — 06b 운영 확인 잡(completed·이어간 연구): 고정 진행 막대 **없음**, 넓은 화면 2단, 옆 칸 맨 위 근거 장부, 머리에 WorkStepper(06e 파일 그대로)
+- `http://localhost:3016/research/d8348de8-ee7f-48f9-8ceb-20924ed6a383` — 06b 운영 확인 잡(completed·이어간 연구): 고정 진행 막대 **없음**, 넓은 화면 2단, 옆 칸 맨 위 근거 장부, 머리에 WorkStepper(06e 파일 그대로), 상태 배지 옆 탐색 방식 표시 **없음**(06c 전 잡 — params 에 `broaden`·`query_context` 가 없다)
+- `http://localhost:3016/papers` — + 메뉴에서 딥리서치를 고르면 칩 옆에 `탐색 방식` 두 칸이 서고 `정밀하게` 가 골라져 있다, ←→ 로 고른 칸이 바뀐다(Task N9 — 보내지 않는다)
 - 콘솔 오류 없음
 
-Expected: 위 넷. 깨지는 화면이 있으면 그 Task 로 돌아가 고친 뒤 Step 1·2 를 다시 돈다.
+Expected: 위 다섯. 깨지는 화면이 있으면 그 Task 로 돌아가 고친 뒤 Step 1·2 를 다시 돈다.
 
 - [ ] **Step 4: 영역별 정적 리뷰 — code-reviewer 다섯을 병렬로**
 
@@ -8229,7 +9131,7 @@ BASE=$(git merge-base HEAD dev)
 git diff $BASE HEAD -- frontend/utils/researchLayout.ts frontend/utils/researchProgress.ts frontend/utils/synthCard.ts frontend/components/research/ResearchProgressBar.vue frontend/components/research/SynthProgressCard.vue frontend/components/research/ResearchHeader.vue frontend/utils/restorePosition.ts frontend/composables/useRestorePosition.ts "frontend/pages/research/[id].vue" frontend/assets/css/research.css > C:/Users/LANDSOFT/round06d-eval/review/a-layout-bar.diff
 git diff $BASE HEAD -- frontend/utils/researchFollow.ts frontend/composables/useSectionFollow.ts "frontend/pages/research/[id].vue" > C:/Users/LANDSOFT/round06d-eval/review/b-follow.diff
 git diff $BASE HEAD -- frontend/utils/planSlots.ts frontend/components/research/ReportSkeleton.vue frontend/utils/researchEvents.ts frontend/types/research.ts frontend/components/research/ProgressPanel.vue frontend/utils/evidenceLedger.ts frontend/components/work/EvidenceLedger.vue frontend/assets/css/work.css "frontend/pages/research/[id].vue" > C:/Users/LANDSOFT/round06d-eval/review/c-explore.diff
-git diff $BASE HEAD -- frontend/pages/index.vue frontend/components/AppSidebar.vue frontend/types/history.ts frontend/utils/historyStore.ts frontend/utils/historyState.ts frontend/composables/useHistory.ts frontend/utils/sidebarResearch.ts frontend/utils/researchHome.ts frontend/composables/useResearchWorks.ts frontend/pages/research/index.vue frontend/utils/paperResearch.ts frontend/pages/papers/index.vue frontend/utils/addToWork.ts frontend/components/research/AddToWorkMenu.vue > C:/Users/LANDSOFT/round06d-eval/review/d-entry.diff
+git diff $BASE HEAD -- frontend/pages/index.vue frontend/components/AppSidebar.vue frontend/types/history.ts frontend/utils/historyStore.ts frontend/utils/historyState.ts frontend/composables/useHistory.ts frontend/utils/sidebarResearch.ts frontend/utils/researchHome.ts frontend/composables/useResearchWorks.ts frontend/pages/research/index.vue frontend/utils/paperResearch.ts frontend/pages/papers/index.vue frontend/utils/addToWork.ts frontend/components/research/AddToWorkMenu.vue frontend/utils/researchMode.ts frontend/components/research/ResearchModePicker.vue frontend/components/research/SearchPlusMenu.vue frontend/composables/useResearch.ts frontend/components/research/ResearchHeader.vue "frontend/pages/research/[id].vue" frontend/assets/css/research.css > C:/Users/LANDSOFT/round06d-eval/review/d-entry.diff
 git diff $BASE HEAD -- frontend/tests > C:/Users/LANDSOFT/round06d-eval/review/e-tests.diff
 wc -l C:/Users/LANDSOFT/round06d-eval/review/*.diff
 ```
@@ -8241,7 +9143,7 @@ Expected: 다섯 파일 모두 0 줄이 아니다(N5·N6 를 잘랐어도 d 는 
 공통 머리(그대로):
 
 ```text
-round06d(딥리서치 진행 화면·입구 — nuxt 만) 브랜치의 한 영역을 정적 리뷰한다. 저장소 C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d 의 파일과 아래 diff 파일을 읽는다. 설계 정본은 docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md §12-3·§12-5·§12-6·§12-7 과 D22·D26·D17·Q1·Q9, 이 줄의 결정은 docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md 의 '06d 에서 정한 것'(정함 1~18 — 정함 4·7 은 spec 과 일부러 다르게 읽었다, spec 문서는 이 리뷰 뒤 계획 Task Z3 가 맞춘다)과 '공통 계약'. 코딩 표준 docs/standards/coding-standard.md, 반복 함정 docs/ops/recurring-gotchas.md 와 대조한다. 공통으로 본다: ① app/·compose·infra·package.json 을 바꾸지 않았고 06e 파일(WorkStepper.vue·workPhase.ts·researchErrors.ts·useResearchWork.ts·types/work.ts·BookChat.vue·citations.ts)과 PlanCard.vue·CitationChip.vue·ReportView.vue·researchDraft.ts 는 읽기만 한다 ② Nuxt 자동 import — 한 이름은 한 파일만 export 한다(같은 이름을 두 utils·composables 가 내보내지 않는다), utils 는 쓰는 것을 모두 명시해 import 한다 ③ 06a·06b 타입에 더한 필드는 선택(?)이고 새 키는 값이 있을 때만 싣는다(기존 toEqual 픽스처 그대로) ④ 새 움직임(transition·animation·scrollIntoView smooth)은 prefers-reduced-motion 에서 멈추거나 즉시다 ⑤ CSS 는 --skx-* 토큰만 쓰고 새 색값이 없으며 research.css 의 새 블록은 인쇄 앵커 위에, work.css 는 근거 장부 블록 안에만 ⑥ 접근성 — 버튼은 button, 메뉴·진행 막대의 role·aria(aria-valuenow·aria-valuetext·aria-current·aria-haspopup·aria-expanded), 초점 복귀, aria-live 를 남발하지 않는다 ⑦ 화면을 그리는 경로·computed·watch 가 쓰는 요청(POST·PUT·DELETE)을 하지 않는다 — 쓰는 요청은 사용자 클릭 처리기에서만 ⑧ 순수 함수가 받은 객체를 고치지 않는다. 보고는 code-reviewer 형식(severity·location·issue·suggestion), 읽은 근거만.
+round06d(딥리서치 진행 화면·입구 — nuxt 만) 브랜치의 한 영역을 정적 리뷰한다. 저장소 C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d 의 파일과 아래 diff 파일을 읽는다. 설계 정본은 docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md §12-3·§12-5·§12-6·§12-7 과 D22·D26·D17·Q1·Q9, 이 줄의 결정은 docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md 의 '06d 에서 정한 것'(정함 1~19 — 정함 4·7 은 spec 과 일부러 다르게 읽었다, 정함 19 는 06c 판정 뒤 사용자 결정 spec D28 의 자리·모양, spec 문서는 이 리뷰 뒤 계획 Task Z3 가 맞춘다)과 '공통 계약'. 코딩 표준 docs/standards/coding-standard.md, 반복 함정 docs/ops/recurring-gotchas.md 와 대조한다. 공통으로 본다: ① app/·compose·infra·package.json 을 바꾸지 않았고 06e 파일(WorkStepper.vue·workPhase.ts·researchErrors.ts·useResearchWork.ts·types/work.ts·BookChat.vue·citations.ts)과 PlanCard.vue·CitationChip.vue·ReportView.vue·researchDraft.ts 는 읽기만 한다 ② Nuxt 자동 import — 한 이름은 한 파일만 export 한다(같은 이름을 두 utils·composables 가 내보내지 않는다), utils 는 쓰는 것을 모두 명시해 import 한다 ③ 06a·06b 타입에 더한 필드는 선택(?)이고 새 키는 값이 있을 때만 싣는다(기존 toEqual 픽스처 그대로) ④ 새 움직임(transition·animation·scrollIntoView smooth)은 prefers-reduced-motion 에서 멈추거나 즉시다 ⑤ CSS 는 --skx-* 토큰만 쓰고 새 색값이 없으며 research.css 의 새 블록은 인쇄 앵커 위에, work.css 는 근거 장부 블록 안에만 ⑥ 접근성 — 버튼은 button, 메뉴·진행 막대의 role·aria(aria-valuenow·aria-valuetext·aria-current·aria-haspopup·aria-expanded), 초점 복귀, aria-live 를 남발하지 않는다 ⑦ 화면을 그리는 경로·computed·watch 가 쓰는 요청(POST·PUT·DELETE)을 하지 않는다 — 쓰는 요청은 사용자 클릭 처리기에서만 ⑧ 순수 함수가 받은 객체를 고치지 않는다. 보고는 code-reviewer 형식(severity·location·issue·suggestion), 읽은 근거만.
 ```
 
 영역 줄(공통 머리 뒤에 하나씩):
@@ -8250,15 +9152,15 @@ round06d(딥리서치 진행 화면·입구 — nuxt 만) 브랜치의 한 영�
 [A 2단·큰 진행 막대·오프셋·스타일] diff: C:/Users/LANDSOFT/round06d-eval/review/a-layout-bar.diff. 파일: frontend/utils/researchLayout.ts, researchProgress.ts, synthCard.ts, components/research/ResearchProgressBar.vue, SynthProgressCard.vue, ResearchHeader.vue, utils/restorePosition.ts, composables/useRestorePosition.ts, pages/research/[id].vue(배치·barView·roundKey·useNow·progressInset), assets/css/research.css(토큰·.rs-pbar*·옛 .rs-synth__bar 지움·옆 칸 top·scroll-margin-top·머리·옆 칸 카드 머리·인쇄). 특히: 넓은 화면은 처음부터 A 이고 override 를 푸는 watch·localStorage 기억이 없는지(2e3d87a 를 revert 하지 않고 앞으로 고쳤는지), progressBarView 의 글줄이 계획의 표(planning·awaiting·queued·exploring·synthesizing)와 글자 그대로인지, 퍼센트가 두 구간 가중(111:91)으로 작성 시작 때 뒤로 가지 않고 RUNNING_CAP 0.9 를 넘지 않는지, 막대가 completed·failed·canceled·stepMode 에서 서지 않는지(WorkStepper 와도, 06e 보고서 단계 화면의 자기 막대 .wk-rbar — 10-11 사용자 확인·06e 계획 정함 28 — 와도 한 화면에 함께 서지 않음. 06d 가 .wk-rbar·--wk-bar-thick·reportBar 를 만들거나 고치지 않았고, Q1 치수 값 1rem·0.75rem·1rem·1.25rem 이 --rs-bar-thick 쪽에 그대로인지), --rs-bar-h 하나를 옆 칸 top·.rs-section scroll-margin-top·위치 복원 inset 이 함께 읽는지(.rs-section 두 규칙 중 :985 쪽만 바꿨는지), useNow 가 exploring 에도 켜지는지, 인쇄에서 .rs-pbar 가 숨는지, 현황 카드에 작은 막대가 남지 않고 절 목록·[초안 저장]은 그대로인지, 공용 .rs-card__title 규칙은 그대로이고 옆 칸만 .rs-col-side .rs-card__title 로 바꿨는지.
 [B 따라가기] diff: C:/Users/LANDSOFT/round06d-eval/review/b-follow.diff. 파일: frontend/utils/researchFollow.ts, composables/useSectionFollow.ts, pages/research/[id].vue(followTargetId·follow·jumpToSection·알약), assets/css/research.css(.rs-follow-pill). 특히: 멈추는 것이 사용자 입력뿐인지(세로 휠·touchmove·FOLLOW_KEYS 입력칸 밖·수식 키 없음·스크롤바 pointerdown — scroll 이벤트로 가르지 않음, 정함 4), 가로 휠·Ctrl+휠·입력칸 안 키는 멈추지 않는지, 막힘(restore.pending·pdf·.rs-page .rs-cite__pop)이면 옮기지 않고 다음 바뀜에 옮기는지(정함 5), 상세에서 돌아온 화면은 멈춘 채 시작하는지(정함 6), 대상이 바뀔 때만 옮기는지(같은 대상으로 되풀이 스크롤 없음), reduced-motion 이면 behavior auto 인지, 창 리스너를 언마운트 때 모두 푸는지(passive·capture 옵션이 걸 때와 풀 때 같은지), nextTick·requestAnimationFrame 뒤 getElementById 가 null 이면 조용히 넘어가는지, 알약 문구(작성 '↓ 지금 쓰는 곳으로'·탐색 '↓ 지금 찾는 곳으로')와 누르면 곧바로 옮기는지, work.css 의 .wk-pill 을 고치지 않았는지.
 [C 탐색 중 움직임] diff: C:/Users/LANDSOFT/round06d-eval/review/c-explore.diff. 파일: frontend/utils/planSlots.ts, components/research/ReportSkeleton.vue, utils/researchEvents.ts(roundStatusLabel·applyCandidates·applyCritique·applySnapshot·buildSubq), types/research.ts, components/research/ProgressPanel.vue, utils/evidenceLedger.ts, components/work/EvidenceLedger.vue, assets/css/work.css(근거 장부 블록), pages/research/[id].vue(planSlotList·slotsShown·ReportSkeleton 분기·탐색 중 PlanCard 지움·옆 칸 순서·questionUsed). 특히: 절 자리의 key·id 가 하위질문 번호이고 절 번호 대응이 synth 이벤트의 subq_idx 를 먼저, 없으면 headings 와 하위질문 글을 NFC·공백 정리 뒤 맞추는지, '종합 시작'과 '대응을 앎'을 나눠 근거를 모은 자리(adopted > 0)는 접지 않는지, draftReport·draftSlots 를 건드리지 않는지, ReportSkeleton 이 completed 의 보고서·실패·로딩 분기와 겹치지 않는지, candidates 리듀서가 subq_idx 로 하위질문을 찾고 빈 papers 는 reviewing 키를 지우되 모르는 번호·reviewing 없는 하위질문이면 같은 view 를 돌려주는지(유령 하위질문 없음), critique·snapshot·판정이 실린 step 과 잡 종료(done·failed·canceled 이벤트, 끝난 잡으로 다시 맞추는 refreshView)가 reviewing 을 지우는지, reviewing 키를 값이 있을 때만 싣는지, 장부의 검토 중이 채택 더미와 겹치지 않고 뺌 더미에 두지 않는지, 알림이 announceSeq 방식으로 한 번만 나는지, wk-review 가 reduced-motion 에서 멈추는지, 장부가 옆 칸 맨 위인지, "이렇게 이해했어요" 가 06c 의 questionUsedFromSteps·understoodLine 을 쓰고 같은 이름을 06d 가 따로 만들지 않았는지(접두를 템플릿에 다시 쓰지 않음), roundStatusLabel 이 subqStatusLabel 을 바꾸지 않았는지.
-[D 입구] diff: C:/Users/LANDSOFT/round06d-eval/review/d-entry.diff. 파일: frontend/pages/index.vue, components/AppSidebar.vue, types/history.ts, utils/historyStore.ts, utils/historyState.ts, composables/useHistory.ts, utils/sidebarResearch.ts, utils/researchHome.ts, composables/useResearchWorks.ts, pages/research/index.vue, utils/paperResearch.ts, pages/papers/index.vue, utils/addToWork.ts, components/research/AddToWorkMenu.vue. 특히: 문구가 '소장자료검색'·'소장자료'로 맞고 kind(book)·주소·/search-classic 은 그대로인지, total 이 없는 응답(06e 전 서버)에서 null 로 받아 '모두 보기' 만 그리는지, 로컬로 물러난 목록이 알던 total 을 지우지 않는지, remove·clear 의 total 조정, 모두 보기가 기록이 없어도(빈 문구 아래) 서는지, 사이드바 단계 줄이 workPhase.stepLine 을 쓰고 단계 이름 문자열을 새로 쓰지 않는지, 폴링 조건(isLiveResearch)이 진행 중 생성을 포함하는지, /research 홈이 history 를 50건씩 읽고 [더 보기]가 before 커서를 쓰는지, 예시 연구의 실행 시각(corpus.at KST)·범위(scopeLine)·읽기 전용 표시, 새 연구 시작의 429 browser_active 링크(방어 — 지금 서버는 만들기에서 429 를 내지 않고 승인·재시도에서 낸다), [딥리서치로 더 깊게]가 바로 시작하지 않고 ?draft= 로 입력창만 채우는지(길이 검사 questionProblem), [담기]가 PUT reading {"state":"in"} 이고 이어간 연구가 없으면 D17 문구 그대로인지, 담은 뒤 useHistory().refresh("research") 를 기다리지 않고 부르는지, 메뉴의 Esc·바깥 클릭·초점 복귀, 결과 카드 버튼 줄의 기존 버튼과 BookChat(:564-569) 자리를 건드리지 않았는지.
-[E 테스트] diff: C:/Users/LANDSOFT/round06d-eval/review/e-tests.diff. 파일: frontend/tests/unit/ 의 새 여섯 파일(researchProgress·planSlots·researchFollow·sidebarResearch·researchHome·addToWork)과 고친 파일(researchLayout·queueLine·researchEvents·restorePosition·evidenceLedger·historyStore·historyState·paperResearch). 특히: 새 판단마다 실패 테스트가 먼저 있는지(TDD — 커밋 순서), spec §12-7 06d vitest 목록(배치·그리는 조건·진행 비율·따라가기 켜고 끄기·절 자리와 headings 대응·회차 미세 상태·후보 더미·큰 막대 글줄)이 모두 덮였는지, 기대값을 06e 함수(stepLine·stepForPhase·scopeLine)의 출력으로 만들어 06e 의 문구 바꾸기에 깨지지 않는지, 기존 toEqual 픽스처를 고친 곳이 evidenceLedger 의 reviewing 두 곳과 queueLine 다시 내보내기 테스트뿐인지, 대역(fakeFetcher·helpers/fakeHistory·memoryStorage)을 새로 만들지 않고 썼는지, DOM·타이머에 기대는 테스트가 없는지(node 환경), researchDraft.test.ts 를 고치지 않았는지.
+[D 입구] diff: C:/Users/LANDSOFT/round06d-eval/review/d-entry.diff. 파일: frontend/pages/index.vue, components/AppSidebar.vue, types/history.ts, utils/historyStore.ts, utils/historyState.ts, composables/useHistory.ts, utils/sidebarResearch.ts, utils/researchHome.ts, composables/useResearchWorks.ts, pages/research/index.vue, utils/paperResearch.ts, pages/papers/index.vue, utils/addToWork.ts, components/research/AddToWorkMenu.vue. 특히: 문구가 '소장자료검색'·'소장자료'로 맞고 kind(book)·주소·/search-classic 은 그대로인지, total 이 없는 응답(06e 전 서버)에서 null 로 받아 '모두 보기' 만 그리는지, 로컬로 물러난 목록이 알던 total 을 지우지 않는지, remove·clear 의 total 조정, 모두 보기가 기록이 없어도(빈 문구 아래) 서는지, 사이드바 단계 줄이 workPhase.stepLine 을 쓰고 단계 이름 문자열을 새로 쓰지 않는지, 폴링 조건(isLiveResearch)이 진행 중 생성을 포함하는지, /research 홈이 history 를 50건씩 읽고 [더 보기]가 before 커서를 쓰는지, 예시 연구의 실행 시각(corpus.at KST)·범위(scopeLine)·읽기 전용 표시, 새 연구 시작의 429 browser_active 링크(방어 — 지금 서버는 만들기에서 429 를 내지 않고 승인·재시도에서 낸다), [딥리서치로 더 깊게]가 바로 시작하지 않고 ?draft= 로 입력창만 채우는지(길이 검사 questionProblem), [담기]가 PUT reading {"state":"in"} 이고 이어간 연구가 없으면 D17 문구 그대로인지, 담은 뒤 useHistory().refresh("research") 를 기다리지 않고 부르는지, 메뉴의 Esc·바깥 클릭·초점 복귀, 결과 카드 버튼 줄의 기존 버튼과 BookChat(:564-569) 자리를 건드리지 않았는지. 탐색 방식(Task N9 — 정함 19, 파일: utils/researchMode.ts, components/research/ResearchModePicker.vue·SearchPlusMenu.vue·ResearchHeader.vue, composables/useResearch.ts, pages/research/index.vue 의 새 연구, pages/research/[id].vue 의 modeLine·onRestart, research.css 의 .rs-mode*·.rs-head__meta·.rs-head__mode): 딥리서치를 시작하는 곳(startResearch 를 부르는 곳 모두)이 두 칸(broaden·query_context)을 함께 싣는지 — 폭넓게 {0,0}·정밀하게 {1,1}, 기본 정밀하게, query_context 만 싣는 길이 없는지, 다시 시작이 원래 잡의 두 칸을 잇고 두 칸이 없는 잡은 기본인지, 머리 표시가 두 칸 다 0 이면 폭넓게·두 칸이 없거나 갈리면 그리지 않는지, radiogroup 접근성(role·aria-checked·aria-labelledby·aria-describedby·roving tabindex·방향키·Home·End·선택이 초점을 따름)과 칸의 키가 SearchPlusMenu 의 캡처 리스너(입력창 엔터·.skx-send)에 걸리지 않는지, localStorage(skx_research_mode)를 try/catch 로 읽고 쓰며 서버 렌더와 첫 그림이 같은지(마운트 뒤 읽음)·레이아웃 기억(skx_research_layout)을 되살리지 않았는지, 고르기·기억이 서버에 쓰지 않는지(쓰는 요청은 보내기 클릭의 startResearch 뿐), ModeParams 가 ResearchParams 로 넘어가는지.
+[E 테스트] diff: C:/Users/LANDSOFT/round06d-eval/review/e-tests.diff. 파일: frontend/tests/unit/ 의 새 일곱 파일(researchProgress·planSlots·researchFollow·sidebarResearch·researchHome·addToWork·researchMode)과 고친 파일(researchLayout·queueLine·researchEvents·restorePosition·evidenceLedger·historyStore·historyState·paperResearch). 특히: 새 판단마다 실패 테스트가 먼저 있는지(TDD — 커밋 순서), spec §12-7 06d vitest 목록(배치·그리는 조건·진행 비율·따라가기 켜고 끄기·절 자리와 headings 대응·회차 미세 상태·후보 더미·큰 막대 글줄)이 모두 덮였는지, 기대값을 06e 함수(stepLine·stepForPhase·scopeLine)의 출력으로 만들어 06e 의 문구 바꾸기에 깨지지 않는지, 기존 toEqual 픽스처를 고친 곳이 evidenceLedger 의 reviewing 두 곳과 queueLine 다시 내보내기 테스트뿐인지, 대역(fakeFetcher·helpers/fakeHistory·memoryStorage)을 새로 만들지 않고 썼는지, DOM·타이머에 기대는 테스트가 없는지(node 환경), researchDraft.test.ts 를 고치지 않았는지.
 ```
 
 Expected: 리뷰어마다 요약 1~2문장 + 결함 목록(없으면 "없음"). 다섯 보고를 영역·severity 별로 한 표로 모은다(완료노트 §3 의 재료).
 
 - [ ] **Step 5: 발견을 반영하고 리뷰를 마친 커밋을 적는다**
 
-- severity high·medium 은 모두 고친다. low 는 고칠지 판단하고, 고치지 않으면 까닭을 적는다(완료노트 §3). 리뷰어끼리 엇갈리거나 계획의 결정(정함 1~18)과 다른 제안은 고치기 전에 그 결정의 근거와 견주고, 결정을 바꿔야 하면 사용자에게 묻는다.
+- severity high·medium 은 모두 고친다. low 는 고칠지 판단하고, 고치지 않으면 까닭을 적는다(완료노트 §3). 리뷰어끼리 엇갈리거나 계획의 결정(정함 1~19)과 다른 제안은 고치기 전에 그 결정의 근거와 견주고, 결정을 바꿔야 하면 사용자에게 묻는다.
 - 판단을 바꾸는 수정은 그 순수 함수의 실패 테스트를 먼저 쓰고(실행해 실패 확인) 고친 뒤 통과를 본다. `.vue`·`.css` 만의 수정은 typecheck `0`·build 완료로 확인한다. 커밋은 발견 묶음마다 `[Fix] round06d — <무엇을 왜>` 로, `git add` 는 파일을 하나씩 적는다.
 - 다 고친 뒤 Step 1·Step 2 를 그대로 다시 돌린다. Expected: Step 1 의 vitest 수는 리뷰 반영으로 더한 테스트만큼 크고 나머지는 같다, Step 2 의 출력은 같다(고친 파일 목록에 새 파일이 들었으면 그 까닭이 적혀 있다).
 - 그 뒤 고친 것만 해당 영역 리뷰어에게 다시 보인다(같은 공통 머리 + "앞 리뷰의 발견을 고친 diff 다 — 회귀가 없는지 본다", diff 는 `git diff <반영 전 커밋> HEAD`). 새 발견이 없을 때까지 되풀이한다(최대 3회 — 넘으면 남은 발견을 사용자에게 보인다).
@@ -8280,6 +9182,7 @@ Expected: 커밋 해시 한 줄 — '리뷰를 마친 커밋'으로 적어 둔�
 
 **알아 둘 것:**
 - 판단 규칙: 06c 가 켠 기본값의 갈래(둘 다 0 이면 갈래 0 — 랜딩 예시의 결과는 06b 때와 같은 방식이라 바꿀 까닭이 없다)에서 그 질문의 보고서 정밀도가 **같은 날 갈래 0 보다 낮으면** '떨어짐'이다. 떨어진 질문이 없으면 고치지 않는다. 
+- **2026-10-12 판정 결과 — 어느 갈래로 볼지 먼저 사용자에게 묻는다:** 서버 기본값은 둘 다 0(갈래 0)이지만 화면의 기본 선택은 탐색 방식 '정밀하게'(= 갈래 1 — Task N9·정함 19)라, 랜딩 예시를 누른 사람은 기본 선택을 바꾸지 않으면 갈래 1 의 결과를 본다. 06c 완료노트 §5-5 가 이 판단을 06d 에 넘겼다 — 갈래 1 로 보면 본 실행에서 `library` 가 같은 날 갈래 0 보다 낮다(93.3% → 84.6%, `elderly`·`multicultural` 은 낮지 않다), 단독 실행은 셋 모두 낮다(06c 완료노트 §7-10). Step 3 에 들기 전에 이 두 갈래의 값을 보이고 어느 쪽으로 판단할지 묻는다. 
 - 바꿀 문장은 사용자가 정한다. 후보는 2026-10-08 랜딩 예시를 고른 방식(운영 검색 API 로 상위 결과를 보고 판정자 둘 이상이 따로 확인 — `89cede3` 커밋 설명)으로 확인한 문장만 낸다 — 06c 판정·대조군에서 정밀도가 높았던 문장이 먼저다. 이 Task 는 새 후보를 찾는 조사를 하지 않는다(필요하면 사용자에게 그 조사를 따로 제안한다).
 
 - [ ] **Step 1: 06c 판정 기록이 dev 에 있는가**
@@ -8337,7 +9240,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add frontend
 **Files:**
 - Create: `docs/roadmap/round06d-완료노트.md`
 - Modify: `docs/roadmap/00_status.md`(3행 최종 갱신·round06 머리·round06 하위 줄 끝·다음 할 일의 06d 줄·라운드 이력의 round06 칸 — round06 줄만)
-- Modify: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`(머리 상태 줄, D22·D26 행, §12-3 '지금 진행하는 절 따라가기'·'탐색 중 절 자리' 행, §12-11 두 항목)
+- Modify: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`(머리 상태 줄, D22·D26 행, §12-3 '지금 진행하는 절 따라가기'·'탐색 중 절 자리' 행과 입구의 '탐색 방식' 줄, §12-11 두 항목)
 - `docs/ops/recurring-gotchas.md` — 이 Task 에서는 고치지 않는다(운영 전이라 라이브에서만 드러난 것이 아직 없다. Task Z7 이 다시 판단한다)
 
 **알아 둘 것:**
@@ -8355,11 +9258,11 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add frontend
 
 날짜: <이 Step 을 하는 날, 예: 2026-10-16> (계획 2026-10-08 · 구현·리뷰 <구현을 시작한 날>~<Task Z1 을 마친 날> · `dev` 머지·운영 배포·처음부터 끝까지 1회는 §5)
 브랜치: `feat/round06d-research-progress-screen` (worktree `.worktrees/round06d`, dev `<Task 0 Step 2 의 dev 커밋 7자리>` 에서 분기 · 커밋 <git rev-list --count 그 커밋..HEAD 의 수>개 · 리뷰를 마친 커밋 `<Task Z1 Step 5 의 커밋>`)
-spec: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` (D22·D26·D17, §12-3·§12-5·§12-6·§12-7, Q1·Q8·Q9)
-plan: `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md` (Task 0 · D1~D8 · L1~L6 · N1~N8 · Z1~Z7, 정함 1~18)
+spec: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md` (D22·D26·D17·D28, §12-3·§12-5·§12-6·§12-7, Q1·Q8·Q9)
+plan: `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md` (Task 0 · D1~D8 · L1~L6 · N1~N9 · Z1~Z7, 정함 1~19)
 교본: 대회 뒤 round06 한 권(D13) — 06d 는 그 책의 한 장이 된다
 
-> 한 줄 요약: 딥리서치 진행 화면을 움직이게 했다 — 넓은 화면은 처음부터 2단, 위에 고정한 큰 진행 막대 하나(단계 표시·큰 글줄·퍼센트, 탐색 중에도 같은 막대), 지금 진행하는 절을 스크롤이 따라가고 사용자가 스크롤하면 멈추고 알약을 띄운다. 탐색 중에는 본문에 하위질문별 절 자리가 서고, 진행 패널 회차 줄에 '자기점검 중'·'재검색 중'이 붙고, 06c 후보 이벤트로 근거 장부에 '검토 중' 후보가 섰다가 점검 뒤 채택·뺌으로 옮겨 간다. 입구는 <입구 한 구절 — (가) '/research 홈(새 연구·진행 중·내 연구·예시 연구)·사이드바 단계와 모두 보기 (N)·빠른검색 [딥리서치로 더 깊게]·[담기 ▾]·소장자료검색 문구' (나) '/research 홈·사이드바 단계와 모두 보기 (N)·빠른검색 [딥리서치로 더 깊게]·소장자료검색 문구([담기]는 미룸)' (다) '사이드바 단계와 예시 연구 묶음·빠른검색 [딥리서치로 더 깊게]·소장자료검색 문구(/research 홈·[담기]는 미룸)'>. nuxt 만 — 백엔드·스키마 변경은 없다.
+> 한 줄 요약: 딥리서치 진행 화면을 움직이게 했다 — 넓은 화면은 처음부터 2단, 위에 고정한 큰 진행 막대 하나(단계 표시·큰 글줄·퍼센트, 탐색 중에도 같은 막대), 지금 진행하는 절을 스크롤이 따라가고 사용자가 스크롤하면 멈추고 알약을 띄운다. 탐색 중에는 본문에 하위질문별 절 자리가 서고, 진행 패널 회차 줄에 '자기점검 중'·'재검색 중'이 붙고, 06c 후보 이벤트로 근거 장부에 '검토 중' 후보가 섰다가 점검 뒤 채택·뺌으로 옮겨 간다. 입구는 <입구 한 구절 — (가) '/research 홈(새 연구·진행 중·내 연구·예시 연구)·사이드바 단계와 모두 보기 (N)·빠른검색 [딥리서치로 더 깊게]·[담기 ▾]·소장자료검색 문구' (나) '/research 홈·사이드바 단계와 모두 보기 (N)·빠른검색 [딥리서치로 더 깊게]·소장자료검색 문구([담기]는 미룸)' (다) '사이드바 단계와 예시 연구 묶음·빠른검색 [딥리서치로 더 깊게]·소장자료검색 문구(/research 홈·[담기]는 미룸)'>. 딥리서치를 시작하는 자리에는 '탐색 방식'(폭넓게 · 정밀하게, 기본 정밀하게 — 06c 판정 뒤 사용자 결정 D28)을 두어 고른 방식을 잡 params 두 칸으로 싣는다. nuxt 만 — 백엔드·스키마 변경은 없다.
 
 ---
 
@@ -8369,6 +9272,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md` (
 - **큰 진행 막대(Q1)** — 사용자 "현재 절 작성 중에 보여지는 커다란 프로그레스바 필요, 시안의 막대는 너무 작음"(10-08). 탐색 중에도 같은 막대를 쓰는 것은 Claude 해석이다. 10-11 사용자 확인("보고서 화면에도 넣으라고 한 것이 맞아")으로 06e 자동 보고서 화면에도 같은 치수의 막대가 선다 — 그 막대는 06e 가 만들었고(06e 계획 정함 28), 06d 막대는 단계 화면에 서지 않아 겹치지 않는다.
 - **입구(D26)** — 대회에서 직접 써 볼 전문가가 예시 연구에 닿는 길, 사이드바에서 이어간 연구의 단계를 보는 것, 빠른검색에서 딥리서치로 넘어가는 길(D17), '도서검색' → '소장자료검색'.
 - **06b 이월** — §7-1 대기 카드 `.rs-card--wait` 가로 배치, §7-5 `queueLine` 다시 내보내기 경고. 06c 의 "이렇게 이해했어요" 바인딩 두 곳(spec §12-5).
+- **탐색 방식(D28)** — 06c 두 갈래 판정은 미리 정한 규칙으로 두 스위치 모두 0 이었고(보고서 정밀도는 올랐지만 관련 편수·insufficient·대조군 미달), 사용자가 "응 넣자. 정확하게로 가자. 탐색 방식: 폭넓게 · 정밀하게 로 가자" 로 정했다(2026-10-12). 서버 기본값은 0 그대로라 화면이 고른 방식을 잡 params 로 실어야 켜진다.
 
 ---
 
@@ -8385,6 +9289,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md` (
 | 06c 바인딩 | 계획 중 카드와 승인 대기 PlanCard 에 "이렇게 이해했어요" 한 줄(06c 의 `questionUsedFromSteps`·`understoodLine` — 06c 머지 `<Task L6 이 받은 dev 커밋 7자리>`) |
 | 입구 | <(가) '/research 홈(새 연구 시작·진행 중·내 연구·[더 보기]·예시 연구 — 읽기 전용·실행 시각·코퍼스 범위), 사이드바 이어간 연구 줄 단계(workPhase.stepLine + 수 + 생성 중)·진행 중 생성 폴링·모두 보기 (N)(N = 06e 의 total, 없으면 N 없이), 논문 빠른검색 답 끝 [딥리서치로 더 깊게](?draft= → 입력창에 딥리서치 칩과 함께), 결과 카드 [담기 ▾](이어간 연구 고르기 → PUT reading {"state":"in"})' (나) (가)에서 [담기 ▾] 를 뺀 글 + '[담기] 는 자름(§7)' (다) '사이드바 이어간 연구 줄 단계·진행 중 생성 폴링·딥리서치 탭 맨 아래 예시 연구 묶음(모두 보기는 그리지 않음), [딥리서치로 더 깊게], /research 홈·[담기] 는 자름(§7)'> |
 | 문구 | 랜딩 '도서검색' → '소장자료검색'·낭독·입력창 안내, 사이드바 기록 탭 '도서' → '소장자료'(빈·지우기 문구 포함). kind·주소·`/search-classic` 그대로 |
+| 탐색 방식(D28) | `utils/researchMode.ts`·새 `ResearchModePicker.vue`(radiogroup — 방향키·Home·End, 고른 칸만 Tab) — + 메뉴의 딥리서치 칩 옆과 `/research` 홈의 새 연구(N5 를 잘랐으면 '과 `/research` 홈의 새 연구' 를 지운다)에 '탐색 방식' 두 칸(폭넓게 `broaden` 0·`query_context` 0 · 정밀하게 둘 다 1, 기본 정밀하게), 고른 방식을 잡 params 두 칸으로 늘 함께 싣는다(`startResearch(question, params)`), 기억은 localStorage `skx_research_mode`(편의 — 읽지 못하면 정밀하게), [같은 질문으로 다시 시작]은 원래 잡의 두 칸을 잇고, 연구 화면 머리의 상태 배지 옆에 그 잡의 방식(두 칸 다 0 → 폭넓게, 두 칸이 없는 06c 전 잡은 표시 없음). 백엔드 그대로 |
 | 06b 이월 | `queueLine` 다시 내보내기 지움(`WARN Duplicated imports` 0), 대기 카드 글 세로 배치 |
 | LNB 접기 | <N8 을 했으면 '06e 가 먼저 머지돼 딥리드 패널이 열리면 연구 화면 사이드바를 접는다(`[id].vue` 두 곳 — 06e 의 workPanelOpen 을 읽기만)', 건너뛰었으면 '06d 가 먼저 머지 — 06e 가 늦게 머지하며 단다(§7)'> |
 
@@ -8400,7 +9305,7 @@ nuxt 만 — `app/`·compose·인프라·패키지는 그대로다. 고치지 �
 
 ## 4. 검증
 
-- 프론트 vitest <Task Z1 Step 5 의 파일 수>파일 <수> · `nuxi typecheck` 오류 0 · `Duplicated imports` 0 · `npm run build` 완료(<이 Step 을 하는 날>, dev 머지 전 — 기준선 40파일 732). 06d 묶음 <열일곱|열여섯> 파일 <수>(기준선 열한 파일 299), `researchDraft.test.ts` 23 그대로.
+- 프론트 vitest <Task Z1 Step 5 의 파일 수>파일 <수> · `nuxi typecheck` 오류 0 · `Duplicated imports` 0 · `npm run build` 완료(<이 Step 을 하는 날>, dev 머지 전 — 기준선 40파일 732). 06d 묶음 <열여덟|열일곱> 파일 <수>(기준선 열한 파일 299), `researchDraft.test.ts` 23 그대로.
 - 백엔드 pytest `5 failed, <Task Z1 Step 5 의 N> passed, 1 skipped, 2 warnings, 1 error` — 06d 는 `app/` 을 바꾸지 않았다(받은 dev 의 수). 실패 5·오류 1 은 Task 0 기준선과 같은 로컬 의존성 파일.
 - 경계: 고친 파일은 `frontend/` 의 <수>개뿐, 고치지 않을 파일(백엔드·compose·인프라·패키지·06e 파일·PlanCard·CitationChip·ReportView·researchDraft·search-classic) diff 없음, `[id].vue` 의 06e 단계 본문 그대로, `work.css` 는 근거 장부 블록 안만, 새 색값 0, 커밋 트레일러 0.
 
@@ -8434,6 +9339,7 @@ nuxt 만 — `app/`·compose·인프라·패키지는 그대로다. 고치지 �
 | 정함 16 | [딥리서치로 더 깊게] = `/papers?draft=` — 입력창에 딥리서치 칩과 함께 채우고 시작하지 않는다 |
 | 정함 17 | [담기] = `PUT reading` 본문 `{"state": "in"}` |
 | 정함 18 | §12-11 — 입력창 안내와 사이드바 기록 탭도 '소장자료'로 맞춘다, 랜딩 머리·결과 화면 문구는 그대로(정함(권고)) |
+| 정함 19 | 탐색 방식(spec D28 — 06c 판정 뒤 2026-10-12 사용자 결정) — 폭넓게 `{broaden 0, query_context 0}` · 정밀하게 `{broaden 1, query_context 1}`, 기본 정밀하게, 화면이 늘 두 칸을 함께 싣는다(서버 기본값 0 그대로). 다시 시작은 원래 잡의 두 칸을 잇고, 머리에 그 잡의 방식을 보인다(두 칸이 없거나 갈리면 표시 없음), 고른 값은 이 브라우저에 기억한다 |
 
 조건부 Task: N5 <했음|자름 — N7 을 했다> · N6 <했음|자름> · N8 <했음 — 06e 머지 `<커밋>` 뒤|건너뜀 — 06d 가 먼저 머지>. 06e 의 history `total`: <06d 배포 때 운영에 있었음 — '모두 보기 (N)'|아직 없음 — '모두 보기' 만, 06e 배포 뒤 N 이 선다>. 06c 판정 연계(Task Z2): <'랜딩 논문 예시 셋 — 확인함, 그대로(…)' 또는 '「…」 → 「…」 로 바꿈(커밋 …, 까닭 …)'>. §12-11 의 '연구 맥락을 반영한 딥리드 첫 화면'(선택)은 하지 않았다. 열린 질문(§12-10)에 06d 가 바꾼 것은 없다.
 
@@ -8513,7 +9419,7 @@ new:
 new — (가)(나)(다) 중 하나의 입구 구절로:
 
 ```markdown
-  - **06d 진행 화면·입구 — 구현 완료** — 브랜치 `feat/round06d-research-progress-screen`(worktree `.worktrees/round06d`, dev 에서 분기), 계획 `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md`(Task 0 · D1~D8 · L1~L6 · N1~N8 · Z1~Z7). 들어간 것: 넓은 화면 처음부터 2단(round04c `2e3d87a` 를 앞으로 고침), 연구 화면 위에 고정한 큰 진행 막대 하나(Q1 — 단계 표시·큰 글줄·퍼센트, 탐색 111 : 작성 91 가중 전체 진행, 탐색 중에도 같은 막대 — 현황 카드의 작은 막대는 걷음), 지금 진행하는 절 따라가기(사용자 입력이면 멈추고 '↓ 지금 쓰는 곳으로'·'↓ 지금 찾는 곳으로' 알약), 탐색 중 하위질문별 절 자리('근거 N편 ✓' — 탐색 중 읽기 전용 PlanCard 대신), 회차 미세 상태('자기점검 중'·'재검색 중'), 06c 후보 이벤트로 근거 장부 '검토 중' 더미(Q9 — 장부는 옆 칸 맨 위로), "이렇게 이해했어요" 바인딩 두 곳(06c), 입구(<(가) '`/research` 홈 — 새 연구·진행 중·내 연구·예시 연구, 사이드바 이어간 연구 줄 단계·모두 보기 (N), 빠른검색 [딥리서치로 더 깊게]·[담기 ▾]' (나) '`/research` 홈 — 새 연구·진행 중·내 연구·예시 연구, 사이드바 이어간 연구 줄 단계·모두 보기 (N), 빠른검색 [딥리서치로 더 깊게] — [담기] 는 자름' (다) '사이드바 이어간 연구 줄 단계·딥리서치 탭 예시 연구 묶음, 빠른검색 [딥리서치로 더 깊게] — `/research` 홈·[담기] 는 자름'>), '소장자료검색'·사이드바 '소장자료' 문구, 06b 이월 §7-1(대기 카드 세로)·§7-5(`queueLine` 다시 내보내기). nuxt 만 — 백엔드·스키마 변경 없음. 배포 절차는 계획 Task Z4~Z6. 상세: `round06d-완료노트.md`.
+  - **06d 진행 화면·입구 — 구현 완료** — 브랜치 `feat/round06d-research-progress-screen`(worktree `.worktrees/round06d`, dev 에서 분기), 계획 `docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md`(Task 0 · D1~D8 · L1~L6 · N1~N9 · Z1~Z7). 들어간 것: 넓은 화면 처음부터 2단(round04c `2e3d87a` 를 앞으로 고침), 연구 화면 위에 고정한 큰 진행 막대 하나(Q1 — 단계 표시·큰 글줄·퍼센트, 탐색 111 : 작성 91 가중 전체 진행, 탐색 중에도 같은 막대 — 현황 카드의 작은 막대는 걷음), 지금 진행하는 절 따라가기(사용자 입력이면 멈추고 '↓ 지금 쓰는 곳으로'·'↓ 지금 찾는 곳으로' 알약), 탐색 중 하위질문별 절 자리('근거 N편 ✓' — 탐색 중 읽기 전용 PlanCard 대신), 회차 미세 상태('자기점검 중'·'재검색 중'), 06c 후보 이벤트로 근거 장부 '검토 중' 더미(Q9 — 장부는 옆 칸 맨 위로), "이렇게 이해했어요" 바인딩 두 곳(06c), 딥리서치를 시작하는 자리의 탐색 방식(폭넓게 · 정밀하게, 기본 정밀하게 — D28, 고른 방식을 잡 params `broaden`·`query_context` 두 칸으로), 입구(<(가) '`/research` 홈 — 새 연구·진행 중·내 연구·예시 연구, 사이드바 이어간 연구 줄 단계·모두 보기 (N), 빠른검색 [딥리서치로 더 깊게]·[담기 ▾]' (나) '`/research` 홈 — 새 연구·진행 중·내 연구·예시 연구, 사이드바 이어간 연구 줄 단계·모두 보기 (N), 빠른검색 [딥리서치로 더 깊게] — [담기] 는 자름' (다) '사이드바 이어간 연구 줄 단계·딥리서치 탭 예시 연구 묶음, 빠른검색 [딥리서치로 더 깊게] — `/research` 홈·[담기] 는 자름'>), '소장자료검색'·사이드바 '소장자료' 문구, 06b 이월 §7-1(대기 카드 세로)·§7-5(`queueLine` 다시 내보내기). nuxt 만 — 백엔드·스키마 변경 없음. 배포 절차는 계획 Task Z4~Z6. 상세: `round06d-완료노트.md`.
 - **round07 종료** — 적재 파이프라인 보강(
 ```
 
@@ -8657,11 +9563,25 @@ new:
 - ~~**'소장자료검색'으로 맞출 다른 문구** — 입력창 안내(`pages/index.vue:82`), 사이드바 묶음 이름(`AppSidebar.vue:150`).~~ — 정함(권고 — 06d 계획 정함 18): 둘 다 맞췄다 — 입력창 안내 '찾고싶은 소장자료를 문장으로 검색해보세요!', 사이드바 기록 탭 '소장자료'(그 탭의 빈·지우기 문구 포함). 랜딩 머리 문구·결과 화면 문구는 그대로.
 ```
 
-⑦ §12-10 은 고치지 않는다 — 06d 가 바꾼 열린 질문은 없다(Q1·Q8·Q9 는 이미 해결로 적혀 있다).
+⑦ §12-10 은 고치지 않는다 — 06d 가 바꾼 열린 질문은 없다(Q1·Q8·Q9 는 이미 해결로 적혀 있고, Q4 는 06c 기록이 D28 과 함께 해결로 적었다).
 
-Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && grep -c "06d 계획 정함" docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && grep -cE "프로그램이 일으킨 스크롤은 플래그로 거른다|ReportView 자리 모드 또는|고정한 인용 팝오버" docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && grep -c "06d 구현 완료(" docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`
+⑧ §12-3 입구의 '탐색 방식' 줄 — 자리·모양(정함 19). old:
 
-Expected: 첫 수 `6`(D22·D26·§12-3 따라가기 행·§12-3 절 자리 행·§12-11 두 항목 — 줄마다 한 번 세므로 여섯 줄. 따라가기 행은 세 군데를 고쳤지만 한 줄이다), 둘째 `0`(옛 문구가 남지 않았다), 셋째 `1`.
+```markdown
+— 자리·모양은 06d 계획이 정한다.
+```
+
+new:
+
+```markdown
+— **06d 구현:** + 메뉴에서 딥리서치를 고르면 칩 옆에 '탐색 방식' 두 칸 선택(`ResearchModePicker.vue` — radiogroup, 고른 칸만 Tab·방향키로 고름)이 서고 `/research` 홈의 새 연구도 같은 부품을 쓴다. 고른 값은 이 브라우저에 기억하고(localStorage `skx_research_mode` — 읽지 못하면 정밀하게), [같은 질문으로 다시 시작]은 고르는 칸 없이 원래 잡의 두 칸을 잇는다(두 칸이 없는 06c 전 잡은 정밀하게). 연구 화면 머리의 상태 배지 옆에 그 잡의 방식을 작게 보인다(두 칸 다 0 → 폭넓게, 두 칸이 없거나 갈리면 표시 없음). 판단은 `utils/researchMode.ts`(06d 계획 정함 19).
+```
+
+(N5 를 잘랐으면 new 의 첫 문장을 `+ 메뉴에서 딥리서치를 고르면 칩 옆에 '탐색 방식' 두 칸 선택(`ResearchModePicker.vue` — radiogroup, 고른 칸만 Tab·방향키로 고름)이 선다.` 로 쓴다 — `/research` 홈 구절을 뺀다.)
+
+Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && grep -c "06d 계획 정함" docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && grep -cE "프로그램이 일으킨 스크롤은 플래그로 거른다|ReportView 자리 모드 또는|고정한 인용 팝오버|자리·모양은 06d 계획이 정한다" docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && grep -c "06d 구현 완료(" docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`
+
+Expected: 첫 수 `7`(D22·D26·§12-3 따라가기 행·§12-3 절 자리 행·§12-3 탐색 방식 줄·§12-11 두 항목 — 줄마다 한 번 세므로 일곱 줄. 따라가기 행은 세 군데를 고쳤지만 한 줄이다), 둘째 `0`(옛 문구가 남지 않았다), 셋째 `1`.
 
 - [ ] **Step 4: 반복 함정 — 이번에는 더하지 않는다는 판단을 적는다**
 
@@ -8672,7 +9592,7 @@ Expected: 첫 수 `6`(D22·D26·§12-3 따라가기 행·§12-3 절 자리 행·
 `.claude/agents/code-reviewer.md` 서브에이전트(subagent_type `code-reviewer`)에게 문서 일관성 리뷰를 맡긴다. 프롬프트:
 
 ```text
-round06d 문서 리뷰(일관성). 저장소 C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d 에서 docs/roadmap/round06d-완료노트.md(새), docs/roadmap/00_status.md 의 round06 줄, docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md 의 머리 상태 줄·D22·D26·§12-3(지금 진행하는 절 따라가기·탐색 중 절 자리 행)·§12-11 을 읽고, 코드(frontend/utils/researchProgress.ts·researchFollow.ts·planSlots.ts·researchLayout.ts·evidenceLedger.ts·sidebarResearch.ts·researchHome.ts·addToWork.ts·paperResearch.ts, composables/useSectionFollow.ts, components/research/ResearchProgressBar.vue·ReportSkeleton.vue, pages/research/[id].vue, pages/research/index.vue(있으면), components/AppSidebar.vue, pages/index.vue)와 계획 docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md 의 정함 1~18 에 맞는지 본다. 특히 상수·문구(EXPLORE_WEIGHT 111·SYNTH_WEIGHT 91·RUNNING_CAP 0.9·ROUND_HALF_LIFE_MS 6000·HOME_PAGE_SIZE 50·'↓ 지금 쓰는 곳으로'·'↓ 지금 찾는 곳으로'·D17 문구·'소장자료')가 문서마다 같은지, 완료노트 §2·§6 과 입구 구절이 실제로 한 Task(N5·N6·N7·N8 을 했는지)와 맞는지, spec 의 따라가기 행이 정함 4~7 과 같은지, stale 서술('플래그로 거른다'·'ReportView 자리 모드 또는')이 남았는지. 보고는 code-reviewer 형식.
+round06d 문서 리뷰(일관성). 저장소 C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d 에서 docs/roadmap/round06d-완료노트.md(새), docs/roadmap/00_status.md 의 round06 줄, docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md 의 머리 상태 줄·D22·D26·§12-3(지금 진행하는 절 따라가기·탐색 중 절 자리 행)·§12-11 을 읽고, 코드(frontend/utils/researchProgress.ts·researchFollow.ts·planSlots.ts·researchLayout.ts·evidenceLedger.ts·sidebarResearch.ts·researchHome.ts·addToWork.ts·paperResearch.ts, composables/useSectionFollow.ts, components/research/ResearchProgressBar.vue·ReportSkeleton.vue, pages/research/[id].vue, pages/research/index.vue(있으면), components/AppSidebar.vue, pages/index.vue, utils/researchMode.ts, components/research/ResearchModePicker.vue·SearchPlusMenu.vue·ResearchHeader.vue)와 계획 docs/superpowers/plans/2026-10-08-round06d-research-progress-screen.md 의 정함 1~19 에 맞는지 본다. 탐색 방식(D28·정함 19)은 문서마다 폭넓게 {broaden 0, query_context 0} · 정밀하게 {1, 1} · 기본 정밀하게 · 서버 기본값 0 그대로 · 다시 시작은 원래 잡의 두 칸 · 머리 표시(두 칸이 없거나 갈리면 없음)가 같은지도 본다. 특히 상수·문구(EXPLORE_WEIGHT 111·SYNTH_WEIGHT 91·RUNNING_CAP 0.9·ROUND_HALF_LIFE_MS 6000·HOME_PAGE_SIZE 50·'↓ 지금 쓰는 곳으로'·'↓ 지금 찾는 곳으로'·D17 문구·'소장자료')가 문서마다 같은지, 완료노트 §2·§6 과 입구 구절이 실제로 한 Task(N5·N6·N7·N8 을 했는지)와 맞는지, spec 의 따라가기 행이 정함 4~7 과 같은지, stale 서술('플래그로 거른다'·'ReportView 자리 모드 또는')이 남았는지. 보고는 code-reviewer 형식.
 ```
 
 Expected: 결함 목록(없으면 "없음"). 발견은 Edit 로 고친다(같은 커밋에 넣는다).
@@ -8680,7 +9600,7 @@ Expected: 결함 목록(없으면 "없음"). 발견은 Edit 로 고친다(같은
 - [ ] **Step 6: 커밋한다**
 
 ```bash
-cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && ! grep -n '<[^>]*>' "docs/roadmap/round06d-완료노트.md" && git add "docs/roadmap/round06d-완료노트.md" && git add docs/roadmap/00_status.md && git add docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && git status --short && git commit -m "[Docs] round06d — 완료노트(왜·한 일·리뷰·검증·결정 정함 1~18·조건부 Task 판정·이월, 배포 전)와 현재 상태(round06 줄 — 06d 구현 완료·nuxt 배포 대기, 다음 할 일은 계획 Task Z4~Z7 의 머지·배포·운영 확인 순서), spec 을 코드에 맞춘다: 머리 상태 줄, D22·D26 구현 방식(ResearchProgressBar·researchProgress·researchFollow·ReportSkeleton·planSlots·reviewing, 입구), §12-3 따라가기 — 멈추는 것은 사용자 입력뿐(플래그 문구를 갈음 — 정함 4)·인용 팝오버는 고정·hover 를 가리지 않음·돌아온 화면은 멈춘 채 시작·탐색 중 알약 문구, 탐색 중 절 자리는 ReportSkeleton, §12-11 의 탐색 중 PlanCard·소장자료 문구를 정함(권고)으로 닫음"
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && ! grep -n '<[^>]*>' "docs/roadmap/round06d-완료노트.md" && git add "docs/roadmap/round06d-완료노트.md" && git add docs/roadmap/00_status.md && git add docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && git status --short && git commit -m "[Docs] round06d — 완료노트(왜·한 일·리뷰·검증·결정 정함 1~19·조건부 Task 판정·이월, 배포 전)와 현재 상태(round06 줄 — 06d 구현 완료·nuxt 배포 대기, 다음 할 일은 계획 Task Z4~Z7 의 머지·배포·운영 확인 순서), spec 을 코드에 맞춘다: 머리 상태 줄, D22·D26 구현 방식(ResearchProgressBar·researchProgress·researchFollow·ReportSkeleton·planSlots·reviewing, 입구), §12-3 따라가기 — 멈추는 것은 사용자 입력뿐(플래그 문구를 갈음 — 정함 4)·인용 팝오버는 고정·hover 를 가리지 않음·돌아온 화면은 멈춘 채 시작·탐색 중 알약 문구, 탐색 중 절 자리는 ReportSkeleton, §12-3 탐색 방식의 자리·모양(정함 19 — + 메뉴 칩 옆 두 칸·홈·다시 시작·머리 표시), §12-11 의 탐색 중 PlanCard·소장자료 문구를 정함(권고)으로 닫음"
 ```
 
 Expected: `grep` 이 찍는 줄 없이 커밋 1개(`git status --short` 의 세 줄 `A `·`M `·`M ` 과 커밋 요약만 나온다). 완료노트에 꺾쇠 자리가 남았으면 그 줄을 행 번호와 함께 찍고 커밋하지 않은 채 멈춘다 — Step 1 의 규칙대로 채운 뒤 같은 명령을 다시 돌린다.
@@ -8785,7 +9705,7 @@ curl -s "$API/history?kind=research&limit=1" -H "x-session-id: $SID"; echo
 docker exec -w /app nl-lib-fastapi python -c "from services.research.state import DEFAULT_PARAMS as P; print(P.get('broaden'), P.get('query_context'))"
 ```
 
-Expected: 첫 줄 `{"items":[],"next_cursor":null}`(06e fastapi 가 운영에 없다) 또는 `{"items":[],"next_cursor":null,"total":0}`(있다 — 새 브라우저 ID 라 0), 둘째 줄 운영 기본값(예: `0 0`).
+Expected: 첫 줄 `{"items":[],"next_cursor":null}`(06e fastapi 가 운영에 없다) 또는 `{"items":[],"next_cursor":null,"total":0}`(있다 — 새 브라우저 ID 라 0), 둘째 줄 운영 기본값(예: `0 0`). 둘째 줄이 `None None` 이면 운영 fastapi 가 06c 전 이미지다 — 06d nuxt 는 딥리서치를 시작할 때 `broaden`·`query_context` 를 싣고(Task N9) 06c 전 `merge_params` 는 그 키를 422 로 거부하므로, **여기서 멈추고** 06c 세션(사용자)과 정한다.
 
 | 06e dev 머지 | 운영 history 에 `total` | dev 기본값 = 운영 기본값 | 경우 |
 |---|---|---|---|
@@ -8936,6 +9856,8 @@ docker exec nl-lib-nuxt sh -c 'grep -l "rs-pbar" /app/.output/public/_nuxt/entry
 docker exec nl-lib-nuxt sh -c 'grep -l "rs-synth__bar" /app/.output/public/_nuxt/*.css | wc -l'
 docker exec nl-lib-nuxt sh -c 'grep -l "지금 쓰는 곳으로" /app/.output/public/_nuxt/*.js | wc -l'
 docker exec nl-lib-nuxt sh -c 'grep -l "소장자료검색" /app/.output/public/_nuxt/*.js | wc -l'
+docker exec nl-lib-nuxt sh -c 'grep -l "탐색 방식" /app/.output/public/_nuxt/*.js | wc -l'
+docker exec nl-lib-nuxt sh -c 'grep -l "rs-mode__opt" /app/.output/public/_nuxt/entry.*.css | wc -l'
 curl -s "$API/research-works?example=1" -H "x-session-id: $SID"; echo
 ```
 
@@ -8943,6 +9865,7 @@ Expected:
 - `/research` → `200`(N5 를 했다). N5 를 잘랐으면 `404` 그대로가 맞다
 - `rs-pbar` 가 든 entry CSS → `1`, 옛 `rs-synth__bar` → `0`(작은 막대를 걷었다)
 - `지금 쓰는 곳으로`·`소장자료검색` 이 든 JS 청크 → 각각 `1` 이상
+- `탐색 방식` 이 든 JS 청크 → `1` 이상, `rs-mode__opt` 가 든 entry CSS → `1`(Task N9 — 작성 때 로컬 빌드에서 각각 `1`)
 - 예시 연구 목록 — `{"items":[]}`(리허설 10/23~25 에 `mark_example.py` 로 지정하기 전) 또는 지정한 예시들
 
 배포가 끝났다. 경우 C 였으면 06c 세션(사용자)에게 "06c 기본값 커밋이 이 배포(워커 셋 → fastapi)로 운영에 나갔다 — 06c 계획의 '10/17~18 배포 뒤 06c 확인'을 하면 된다" 고 알린다. 경우 B 로 06d 가 먼저 나갔으면 06e 세션에 "06d 가 운영에 있다 — 06e 배포는 nuxt 를 dev(06d 포함)로 만들고 LNB 연결은 06e 가 단다" 고 알린다. 그리고 Task Z6 이 끝날 때까지 다른 nuxt 배포를 하지 않는다.
@@ -8962,12 +9885,17 @@ Expected:
 
 - [ ] **Step 1: (브라우저, 1440px) 랜딩에서 시작 — 계획·승인 대기**
 
-1. `/` — 탭 '소장자료검색'(옛 '도서검색' 없음), 입력창 안내 '찾고싶은 소장자료를 문장으로 검색해보세요!'. 논문 탭에서 예시 칩 `공공도서관 서비스 품질 평가 연구가 궁금해` 를 누르면 입력창에만 채워진다 → + 메뉴에서 딥리서치를 골라 보낸다 → `/research/<잡 id>` 로 옮긴다. 잡 id 를 적는다.
+1. `/` — 탭 '소장자료검색'(옛 '도서검색' 없음), 입력창 안내 '찾고싶은 소장자료를 문장으로 검색해보세요!'. 논문 탭에서 예시 칩 `공공도서관 서비스 품질 평가 연구가 궁금해` 를 누르면 입력창에만 채워진다 → + 메뉴에서 딥리서치를 고르면 칩 옆에 `탐색 방식` 두 칸(폭넓게 · 정밀하게)이 서고 이 브라우저에서 처음 고르는 것이면 `정밀하게` 가 골라져 있다(Task N9 — 다른 값이 골라져 있으면 이 브라우저에 기억된 값이다, `정밀하게` 로 고른다) → 그대로 보낸다 → `/research/<잡 id>` 로 옮긴다. 잡 id 를 적는다(아래 5 의 `J1`).
 2. 계획 중 — 넓은 화면은 처음부터 2단(옆 칸 진행 패널), 위 고정 막대에 작은 단계 표시('계획' 강조)와 큰 글줄 `연구 계획을 세우는 중`, 퍼센트 없음. 계획 중 카드는 스피너와 글이 세로로 놓인다(06b 이월 §7-1). 06c `broaden` 이 켜져 있고 넓힌 질문이 원 질문과 다르면 카드에 `이렇게 이해했어요: …` 한 줄.
 3. 승인 대기 — 막대 글줄 `계획 확인 대기 · 승인하면 근거 수집을 시작합니다`, PlanCard 머리에 `이렇게 이해했어요: …`(위와 같은 조건). 승인한다.
 4. 대기열에 서면 막대 글줄 `대기열 · …`(순번 문구)와 대기 카드(스피너·글 세로).
+5. 탐색 방식(Task N9) — 머리의 상태 배지 옆에 `탐색 방식 · 정밀하게`. 서버의 잡 params 두 칸이 `1`·`1` 이다 — 서버(Task Z5 의 root 셸, `API=http://localhost:92/api`)에서 1 의 잡 id 를 `J1` 에 넣고 아래 명령을 친다.
 
-Expected: 넷 모두 위와 같다.
+```bash
+curl -s "$API/research/$J1" | grep -oE '"(broaden|query_context)": ?[0-9]+'
+```
+
+Expected: 다섯 모두 위와 같다. 5 의 명령은 두 줄 — `broaden` 과 `query_context` 가 모두 `1`(서버 기본값은 0 이므로 화면이 두 칸을 실었다는 뜻이다. JSON 의 콜론 뒤 공백은 서버 직렬화에 따라 있거나 없다). 빈 출력이면 잡 응답에 두 칸이 없다 — 운영 fastapi 가 06c 전 이미지인지 Task Z5 Step 1 의 기본값 확인부터 다시 본다. `0`·`0` 이면 화면이 정밀하게를 싣지 않은 것이다 — Step 7 에서 정한다.
 
 - [ ] **Step 2: (브라우저, 1440px) 탐색 — 막대·절 자리·회차 상태·장부 더미·따라가기**
 
@@ -9002,7 +9930,7 @@ Expected: 아홉 모두 위와 같다.
 
 - [ ] **Step 4: (브라우저, 768px·375px) 좁은 화면**
 
-같은 잡(끝났으면 새 질문 하나를 승인해 탐색 중에)을 768px·375px 로 본다 — B 배치(문서형), 막대 두께가 얇아지고(0.75rem) 큰 글줄은 한 줄 말줄임, 퍼센트·단계 칩이 겹치지 않는다, 가로 스크롤이 생기지 않는다, 알약이 화면 안에 선다, 절 자리 머리가 막대 밑에 숨지 않는다.
+같은 잡(끝났으면 새 질문 하나를 승인해 탐색 중에 — 새 질문은 + 메뉴의 탐색 방식에서 `폭넓게` 를 골라 시작하고 그 잡 id 를 적는다, Step 5 의 7 이 `J2` 로 쓴다)을 768px·375px 로 본다 — B 배치(문서형), 막대 두께가 얇아지고(0.75rem) 큰 글줄은 한 줄 말줄임, 퍼센트·단계 칩이 겹치지 않는다, 가로 스크롤이 생기지 않는다, 알약이 화면 안에 선다, 절 자리 머리가 막대 밑에 숨지 않는다.
 
 Expected: 위와 같다.
 
@@ -9014,12 +9942,17 @@ Expected: 위와 같다.
 4. 논문 빠른검색 — `/papers` 에서 검색해 AI 답이 끝나면 답 끝 [딥리서치로 더 깊게] 카드(버튼에 마우스를 올려도, 한 번 누른 뒤 같은 검색으로 돌아와 visited 가 돼도 버튼 글자가 흰색) → 누르면 주소가 `/papers?draft=…` 를 거쳐 `/papers` 로 바뀌고 랜딩 입력창에 그 질문과 딥리서치 칩이 켜진다(시작하지 않는다).
 5. [담기 ▾](N6) — 결과 카드의 [담기 ▾] → Step 3 에서 이어간 연구가 목록에 나온다 → 고르면 `「…」 연구에 담았습니다` 토스트 → 그 연구의 참고문헌 선택하기(`?s=reading`)에 그 논문이 담음으로 들어와 있다(들어온 경로 '사용자'). 사이드바 그 연구 줄의 `n편 담음` 이 새로고침 없이 바로 는다. 이어간 연구가 없는 새 시크릿 창에서는 `보고서 끝 [이 연구 이어가기] 뒤에 담을 수 있습니다`. 키보드 — [담기 ▾] 에 초점을 두고 ↓ 로 열고, ↑↓ 로 옮기고, Esc 로 닫으면 초점이 [담기 ▾] 버튼으로 돌아온다.
 6. LNB(N8 을 했으면) — 참고문헌 선택하기에서 딥리드 패널을 열면 연구 화면의 사이드바가 접히고, 닫거나 단계를 옮기면 펼쳐진다.
+7. 탐색 방식(Task N9) — ① Step 4 에서 새 질문을 돌리지 않았으면 여기서 `/papers` + 메뉴로 딥리서치를 켜고 `폭넓게` 를 골라 질문 하나를 보낸 뒤, 계획이 서면 [취소] 한다(브라우저당 1건 — 앞 잡이 끝난 뒤). 그 잡 id 를 `J2` 에 넣는다. ② 그 잡 머리에 `탐색 방식 · 폭넓게`, 아래 명령의 둘째 잡이 `0`·`0`(첫째 `J1` 은 `1`·`1` 그대로). ③ 같은 브라우저에서 `/papers` + 메뉴로 딥리서치를 다시 켜면 `폭넓게` 가 골라져 있다(기억) — `정밀하게` 로 되돌려 둔다. 새 시크릿 창에서는 `정밀하게`. ④ 키보드 — 고른 칸에 Tab 한 번으로 들어오고 ←→ 로 고른 칸이 바뀐다, 칩 × 로 딥리서치를 끄면 두 칸도 사라진다, `/research` 홈(N5 를 했으면)의 새 연구에도 같은 두 칸. ⑤ `J2` 를 취소했으면(① 또는 Step 2 의 4) 그 화면의 [같은 질문으로 다시 시작] → 새 잡(`J3`)의 두 칸이 `0`·`0`(원래 잡의 방식 그대로) → 확인 뒤 `J3` 은 [취소] 한다. `J2` 가 끝까지 돌았으면(완료된 잡에는 이 버튼이 없다) ⑤ 는 '해당 없음' 이고 아래 명령에서 `"$J3"` 을 뺀다. ⑥ 06c 배포(2026-10-12) 전에 만든 잡(사이드바·기록에 있으면 — 예 Task Z1 Step 3 의 06b 운영 확인 잡 `d8348de8-ee7f-48f9-8ceb-20924ed6a383`)의 머리에는 탐색 방식 표시가 없다.
 
-Expected: 여섯 모두 위와 같다(자른 Task 의 항목은 '해당 없음').
+```bash
+for J in "$J1" "$J2" "$J3"; do echo "$J $(curl -s "$API/research/$J" | grep -oE '"(broaden|query_context)": ?[0-9]+' | tr '\n' ' ')"; done
+```
+
+Expected: 일곱 모두 위와 같다(자른 Task 의 항목은 '해당 없음'). 7 의 명령은 잡마다 한 줄(⑤ 가 해당 없으면 두 줄) — `J1` 은 두 칸 `1`, `J2`·`J3` 은 두 칸 `0`.
 
 - [ ] **Step 6: (브라우저) 06c 판정 연계 — 랜딩 논문 예시 셋의 보고서**
 
-§12-7 "켠 뒤 랜딩 논문 예시 셋의 보고서도 다시 본다". `library` 는 Step 1~3 의 잡이다. 나머지 둘은 06c 계획의 '10/17~18 배포 뒤 06c 확인' 이 이미 돌렸으면(06c 완료노트 §5-6 의 잡 id) 그 보고서를 열어 보고, 아니면 랜딩 예시 칩으로 `노인의 우울과 사회적 지지에 관한 연구가 궁금해`·`다문화가정 아동의 언어 발달에 관한 연구가 궁금해` 를 차례로 돌린다(브라우저당 1건 — 앞 잡이 끝난 뒤 다음). 세 보고서에서 무관 논문이 몰린 절·동음이의 논문이 없는지 본다(06c 판정의 같은 질문 갈래 보고서와 견준다).
+§12-7 "켠 뒤 랜딩 논문 예시 셋의 보고서도 다시 본다". `library` 는 Step 1~3 의 잡이다. 나머지 둘은 06c 계획의 '10/17~18 배포 뒤 06c 확인' 이 이미 돌렸으면(06c 완료노트 §5-6 의 잡 id) 그 보고서를 열어 보고, 아니면 랜딩 예시 칩으로 `노인의 우울과 사회적 지지에 관한 연구가 궁금해`·`다문화가정 아동의 언어 발달에 관한 연구가 궁금해` 를 차례로 돌린다(브라우저당 1건 — 앞 잡이 끝난 뒤 다음. 탐색 방식은 화면 기본 `정밀하게` 그대로 — 사람들이 기본으로 보는 결과다, Task Z2 에서 사용자가 다른 갈래로 보기로 했으면 그 방식으로). 세 보고서에서 무관 논문이 몰린 절·동음이의 논문이 없는지 본다(06c 판정의 같은 질문·같은 갈래(정밀하게 = 갈래 1) 보고서와 견준다).
 
 Expected: 세 보고서 모두 무관이 몰린 절이 없다. 몰린 절이 있으면 잡 id·절·논문을 적고 Step 7 에서 사용자와 정한다.
 
@@ -9055,7 +9988,7 @@ Expected: `git status --short` 빈 출력, `Switched to a new branch 'docs/round
 
 - **5-1. 머지와 이미지** — dev 머지 커밋(Task Z4), 머지 문 네 가지의 값(06c 머지·배포 기록, L6 커밋, 06e 머지 여부와 N8), 배포 경우(A·B·C 와 까닭 — Task Z5 Step 1 의 표 값), 빌드한 커밋(`빌드해도 된다:` 뒤 값), `--ff-only` 로 받았으면 그 사실과 다시 돈 테스트 수, 이미지 ID 앞 19자(`NEW_NUXT`, 경우 C 는 `NEW` 도), 서버 되돌리기 태그 `:pre-round06d`.
 - **5-2. 서버 배포** — Task Z5 Step 2~6 의 확인 결과(`0007_research_work`, 경우 C 의 비었는지·워커 셋 새 이미지·기본값·fastapi, nuxt 새 이미지, reload, `/health`·`/` 200, `/research` 404 → 200, CSS·JS 청크 확인 수, 예시 연구 목록). 경우 A 면 '06e 계획의 배포 Task 로 함께 — 06e 완료노트 §5' 와 이 Task 의 Step 6 값.
-- **5-3. 운영 처음부터 끝까지 1회** — 잡 id, Task Z6 Step 1~5 에서 단계마다 본 것(통과 / 다름), 장부 더미를 진단했으면 그 출력, Step 7 에서 고친 것(브랜치·커밋·재배포) 또는 '고칠 것 없음'.
+- **5-3. 운영 처음부터 끝까지 1회** — 잡 id, Task Z6 Step 1~5 에서 단계마다 본 것(통과 / 다름), 탐색 방식의 잡 params 확인(Step 1 의 5·Step 5 의 7 — `J1`·`J2`·`J3` 과 두 칸 값, 출력을 붙이지 않았으면 '사용자 실행, 출력 미첨부'), 장부 더미를 진단했으면 그 출력, Step 7 에서 고친 것(브랜치·커밋·재배포) 또는 '고칠 것 없음'.
 - **5-4. 06c 판정 연계** — Task Z2 의 판단(06c 판정 표의 세 질문 값·결정), Task Z6 Step 6 의 세 보고서 잡 id 와 본 것, 바꾼 예시가 있으면 그 커밋.
 
 §7 이월에 운영 확인에서 미룬 것을 더한다. '상태' 의 수동 스모크·문서 갱신·`dev` 머지 승인을 `[x]` 로(승인 문장과 날짜를 함께).
@@ -9082,7 +10015,7 @@ Expected: `0`(더한 줄에 꺾쇠 자리가 남지 않았다 — 원래 있던 
 - [ ] **Step 4: 커밋하고 dev 머지(사용자 승인)**
 
 ```bash
-cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add "docs/roadmap/round06d-완료노트.md" && git add docs/roadmap/00_status.md && git add docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && git status --short && git commit -m "[Docs] round06d 운영 배포 기록 — dev 머지·운영 배포(nuxt — 배포 경우와 순서, 스키마 단계 없음), 랜딩 예시 질문으로 처음부터 끝까지 1회(처음부터 2단·큰 진행 막대·탐색 중 절 자리·회차 미세 상태·장부 '검토 중' 후보·절 따라가기와 알약·막힘·인쇄·돌아온 자리·좁은 화면, 입구 — 사이드바 단계·모두 보기·/research 홈·빠른검색), 06c 판정 연계(랜딩 논문 예시 셋)"
+cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add "docs/roadmap/round06d-완료노트.md" && git add docs/roadmap/00_status.md && git add docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md && git status --short && git commit -m "[Docs] round06d 운영 배포 기록 — dev 머지·운영 배포(nuxt — 배포 경우와 순서, 스키마 단계 없음), 랜딩 예시 질문으로 처음부터 끝까지 1회(처음부터 2단·큰 진행 막대·탐색 중 절 자리·회차 미세 상태·장부 '검토 중' 후보·절 따라가기와 알약·막힘·인쇄·돌아온 자리·좁은 화면, 입구 — 사이드바 단계·모두 보기·/research 홈·빠른검색, 탐색 방식 — 정밀하게로 시작한 잡 params 두 칸 1 · 폭넓게 0·다시 시작은 원래 방식), 06c 판정 연계(랜딩 논문 예시 셋)"
 ```
 
 `docs/ops/recurring-gotchas.md` 를 고쳤으면 `git add docs/ops/recurring-gotchas.md` 를 `git status --short` 앞에 더한다.
@@ -9110,5 +10043,5 @@ Expected: 머지 커밋 한 줄, push 성공, 마지막 줄 `0`. 그 사이 06c�
 Task Z5·Z6 의 확인이 틀리거나 운영 오류(화면이 깨짐·연구 화면 500·막대가 내용을 가림 등)가 나면 되돌린다. 06d 는 서버에 아무것도 쓰지 않으므로 되돌릴 데이터가 없다 — [담기] 로 담은 논문·이어간 연구는 06b 의 읽기 목록 그대로라 옛 화면에서도 보인다.
 
 1. **nuxt(경우 A·B·C 모두):** `docker tag landsoftdocker/nl-lib-nuxt:pre-round06d landsoftdocker/nl-lib-nuxt:latest` → Portainer 에서 `nl-lib-nuxt` Recreate("Re-pull image" 끔) → `docker exec nl-lib-gateway nginx -s reload` → `curl -s -o /dev/null -w '%{http_code}\n' http://localhost:92/` 가 `200`, `curl -s -o /dev/null -w '%{http_code}\n' http://localhost:92/research` 가 `404`(옛 화면). 경우 A 에서 06e 까지 되돌릴 때는 06e 계획의 롤백을 따른다 — 그때의 nuxt 되돌리기 태그는 06e 의 것을 쓴다(06e 와 함께 만든 한 이미지다).
-2. **경우 C 에서 06c 기본값까지 되돌릴 때:** 딥리서치·생성이 빈 때 한다(Task Z5 Step 4 의 두 질의 0행·세 워커 `- empty -`). `docker tag landsoftdocker/nl-lib-fastapi:pre-round06d landsoftdocker/nl-lib-fastapi:latest` → **fastapi 를 먼저**(`idle in transaction` 0 을 본 뒤) Recreate → `nl-lib-celery-research` → `nl-lib-celery-research-plan` → `nl-lib-celery-control` Recreate("Re-pull image" 끔) → reload. 06c 는 이미 운영에 있었으므로 새 fastapi 가 만든 잡의 params 키(`broaden`·`query_context`)를 옛 워커도 안다 — 끝나지 않은 잡이 실패하지 않는다. 기본값만 되돌리려면 06c 계획의 롤백(기본값 커밋 revert)을 따른다.
+2. **경우 C 에서 06c 기본값까지 되돌릴 때:** 딥리서치·생성이 빈 때 한다(Task Z5 Step 4 의 두 질의 0행·세 워커 `- empty -`). `docker tag landsoftdocker/nl-lib-fastapi:pre-round06d landsoftdocker/nl-lib-fastapi:latest` → **fastapi 를 먼저**(`idle in transaction` 0 을 본 뒤) Recreate → `nl-lib-celery-research` → `nl-lib-celery-research-plan` → `nl-lib-celery-control` Recreate("Re-pull image" 끔) → reload. 06c 는 이미 운영에 있었으므로 새 fastapi 가 만든 잡의 params 키(`broaden`·`query_context`)를 옛 워커도 안다 — 끝나지 않은 잡이 실패하지 않는다. 기본값만 되돌리려면 06c 계획의 롤백(기본값 커밋 revert)을 따른다. fastapi 를 `:pre-round06d` 보다 더 옛(06c 전) 이미지로 되돌리면 06d nuxt 가 싣는 탐색 방식 두 칸을 `merge_params` 가 422 로 거부해 딥리서치 시작이 모두 막힌다(Task N9) — 그때는 nuxt 도 함께 되돌린다.
 3. 되돌린 뒤에도 dev 에는 06d 가 있다(dev 머지가 배포보다 먼저다 — Task Z4). 고쳐서 다시 배포할지(Task Z6 Step 7 의 `fix/round06d-live-check` 길), dev 에서 06d 를 되돌릴지(revert, 사용자 승인) 정하기 전까지 dev 로 `nuxt` 이미지를 빌드·Recreate 하지 않는다. 06e 세션에도 알린다(06e 배포가 dev 로 nuxt 를 만들면 06d 가 다시 나간다).
