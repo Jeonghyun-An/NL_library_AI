@@ -91,12 +91,49 @@ describe("테마 토큰 대비 4.5:1 이상", () => {
     ["밝은 읽는 면(.skx-reading)", "--skx-primary", "--skx-white"],
     ["밝은 읽는 면(.skx-reading)", "--skx-white", "--skx-primary"],
     ["밝은 읽는 면(.skx-reading)", "--skx-accent-strong", "--skx-white"],
+    // 상태색(성공) — 초록 점·글자·일치율 링
+    ["다크", "--skx-success", "--skx-white"],
+    ["밝은 읽는 면(.skx-reading)", "--skx-success", "--skx-white"],
+    ["밝은 읽는 면(.skx-reading)", "--skx-success", "--skx-success-bg"],
+    // 옅은 청록 틴트(--skx-glass-teal) 위에 얹는 포인트색·청록 글자(키워드 칩·선택된 메뉴 항목·KCI 배지).
+    // 다크의 틴트는 rgba 라 여기서 못 읽는다 — 다크는 짙은 면 위 7:1 이상(수동 계산)
+    ["밝은 읽는 면(.skx-reading)", "--skx-primary", "--skx-glass-teal"],
+    ["밝은 읽는 면(.skx-reading)", "--skx-teal-ink", "--skx-glass-teal"],
   ];
 
   it.each(pairs)("%s: %s 글자가 %s 바탕 위에서 읽힌다", (scope, fg, bg) => {
     const tokens = scopes[scope];
     expect(contrast(hex(tokens, fg), hex(tokens, bg))).toBeGreaterThanOrEqual(
       4.5,
+    );
+  });
+});
+
+describe("하드코딩 색 회귀 가드", () => {
+  // :root·.skx-reading·.skx-holo 블록 밖에 색 리터럴(#hex·rgb()·rgba()·hsl()·색 이름·currentColor)이 다시 늘지 않게 센다.
+  // 새 색은 --skx-* 토큰으로 쓰고, 정말 고정이어야 하면 이 숫자를 올리며 이유를 남긴다.
+  // 의도적 잔존: 그림자·모달 막(scrim)·광택/글로우 하이라이트·/recommend 파스텔 카드·색조 틴트·건드리지 않은 chat-side 블록(옛 흰색 폴백).
+  const MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS = 65;
+
+  const rawCss = readFileSync(cssPath, "utf-8");
+  const outside = rawCss
+    // 홀로그램 구간은 themeHolo.test.ts 가 따로 지킨다
+    .replace(
+      /\/\* \[S\] 움직이는 홀로그램 배경 \*\/[\s\S]*?\/\* \[E\] 움직이는 홀로그램 배경 \*\//,
+      "",
+    )
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/url\([^)]*\)/g, "")
+    .replace(/(?:^|\n):root\s*\{[^}]*\}/, "")
+    .replace(/(?:^|\n)\.skx-reading\s*\{[^}]*\}/, "");
+
+  it("토큰 블록 밖 색 리터럴 수가 기준 이하다", () => {
+    const literals =
+      outside.match(
+        /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|(?<![\w-])(?:white|black|red|green|blue|gray|grey|currentcolor)(?![\w-])/gi,
+      ) ?? [];
+    expect(literals.length).toBeLessThanOrEqual(
+      MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS,
     );
   });
 });

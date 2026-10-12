@@ -806,7 +806,7 @@ a:hover {
   width: 3.2rem;
   min-width: 3.2rem;
   min-height: 0;
-  background: var(--skx-white);
+  background: var(--skx-glass);
   padding: 1.2rem 0.6rem;
 }
 .skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__expand),
@@ -1965,7 +1965,8 @@ a:hover {
   color: var(--skx-primary);
 }
 .skx-btn-loan.is-loaning:hover {
-  background: var(--skx-border-c1);
+  background: var(--skx-glass-teal);
+  border-color: var(--skx-primary);
 }
 .skx-btn-read {
   display: inline-flex;
@@ -2731,7 +2732,7 @@ a:hover {
   height: 2rem;
   background: linear-gradient(
     180deg,
-    var(--skx-glass) 0%,
+    var(--skx-white) 0%,
     transparent 100%
   );
   position: absolute;
@@ -5175,7 +5176,7 @@ a:hover {
   color: var(--skx-success);
   line-height: 1;
 }
-/* 내용 일치율 변형 (보라 톤) */
+/* 내용 일치율 변형 (포인트색 톤) */
 .skx-score-ring--content .skx-score-ring__bg {
   stroke: var(--skx-border-c1);
 }
