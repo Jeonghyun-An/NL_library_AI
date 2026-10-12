@@ -154,7 +154,11 @@ class TestGapClaims:
          f"소장 논문을 검토한 결과 실증 연구가 부족한 것으로 보인다{TAIL}."),
         ("소장 자료를 조사한 결과 연구가 드문 것으로 확인됐다.", f"소장 자료를 조사한 결과 연구가 드문 것으로 보인다{TAIL}."),
         ("코퍼스를 살펴본 결과 이 공백이 확인되었다.", f"코퍼스를 살펴본 결과 이 공백이 보인다{TAIL}."),
-    ], ids=["않음을 확인했다(06b 실제 문장)", "없음을 확인할 수 있었다", "함을 확인하였다", "것으로 확인됐다", "확인되었다"])
+        ("소장 코퍼스에서 농촌 노인 연구는 거의 없는 것으로 확인되었다 [E1].",
+         f"소장 코퍼스에서 농촌 노인 연구는 거의 없는 것으로 보인다{TAIL} [E1]."),
+        ("소장 논문에서 종단 연구의 미흡함이 확인됐다.", f"소장 논문에서 종단 연구의 미흡함이 보인다{TAIL}."),
+    ], ids=["않음을 확인했다(06b 실제 문장)", "없음을 확인할 수 있었다", "함을 확인하였다", "것으로 확인됐다", "확인되었다",
+            "없는 것으로 확인되었다", "미흡함이 확인됐다"])
     def test_corpus_sentences_become_gap_candidates(self, text, expected):
         softened, n = soften_claims(text)
 
@@ -170,6 +174,19 @@ class TestGapClaims:
         "소장 코퍼스에서 확인되었다는 점은 한계다.",
     ])
     def test_cited_findings_in_prior_sections_are_left_alone(self, text):
+        assert soften_claims(text) == (text, 0)
+
+    # 코퍼스 문장이라도 결핍을 말하지 않는 단정(있는 것·유의한 것)은 그대로 — ③~⑤ 는 단정 바로 앞이 결핍 말일 때만
+    # 바꾼다. 연구 공백 절은 '있는 것 vs 빠진 것' 대조를 자주 써서, 문장 어디에 결핍 말이 있는지로 가르면 대조 문장의
+    # 긍정 단정('도시 노인 연구가 주로 확인되었다')까지 공백 후보로 뒤집힌다
+    @pytest.mark.parametrize("text", [
+        "소장 코퍼스에서 도시 노인을 다룬 연구는 다수 확인되었다 [E1].",
+        "소장 논문을 분석한 결과 사회적 지지의 효과가 유의함을 확인하였다.",
+        "소장 코퍼스에서 관련 논문 12편이 확인되었다.",
+        "소장 코퍼스에서 사회적 지지가 우울을 낮추는 것으로 확인되었다.",
+        "소장 코퍼스에서 농촌 노인 연구는 드물고 도시 노인 연구가 주로 확인되었다.",
+    ], ids=["다수 확인되었다", "유의함을 확인하였다", "12편이 확인되었다", "낮추는 것으로 확인되었다", "대조 문장"])
+    def test_positive_corpus_statements_are_left_alone(self, text):
         assert soften_claims(text) == (text, 0)
 
     def test_only_the_corpus_sentence_of_a_paragraph_changes(self):
