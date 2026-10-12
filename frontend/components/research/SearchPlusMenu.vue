@@ -231,7 +231,9 @@ function clearMode(): void {
 
 defineExpose({ activateMode, clearMode });
 
-watch(active, (mode) => emit("update:mode", mode?.id ?? null));
+// sync — 같은 틱에 메뉴가 unmount 되는 경로(딥리서치 갈래에서 소장자료 기록을 열어 랜딩이 걷힘)에서도 알림이 가게,
+// 기본(pre) 플러시는 unmount 로 감시자가 멈추면 한 번도 돌지 못한다
+watch(active, (mode) => emit("update:mode", mode?.id ?? null), { flush: "sync" });
 
 // ── 슬래시 명령 목록(WAI-ARIA 콤보박스 관례: 초점은 입력창, 강조는 aria-activedescendant) ──
 const paletteId = useId();

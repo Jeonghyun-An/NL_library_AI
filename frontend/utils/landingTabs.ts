@@ -24,9 +24,33 @@ export function landingTabOf(mode: LandingMode, deepResearch: boolean): LandingT
   return deepResearch ? "deep" : "paper";
 }
 
+export interface LandingSelectPlan {
+  mode: LandingMode;
+  // 켜져 있는 딥리서치 모드를 끈다 — 메뉴(clearMode)와 화면 상태(deepResearch) 둘 다.
+  // 메뉴가 같은 틱에 unmount 되면(소장자료 기록 복원) update:mode 가 오지 않을 수 있어 화면 상태는 호출하는 쪽이 직접 내린다
+  clearDeep: boolean;
+  // 논문 패널이 보인 뒤에 딥리서치 모드를 켠다
+  activateDeep: boolean;
+}
+
+// 갈래를 고를 때 할 일. 소장자료·논문으로 갈 때 딥리서치가 켜져 있었다면 반드시 끈다
+export function planLandingSelect(next: LandingTab, deepResearch: boolean): LandingSelectPlan {
+  if (next === "deep") return { mode: "paper", clearDeep: false, activateDeep: true };
+  return { mode: next === "book" ? "book" : "paper", clearDeep: deepResearch, activateDeep: false };
+}
+
+export interface KeyModifiers {
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+}
+
 // 탭 목록의 키보드 관례(WAI-ARIA tablist): 좌우 방향키로 돌고 Home·End 로 끝으로 간다.
 // 움직일 키가 아니면 null — 화면은 그 키의 기본 동작을 막지 않는다. 가로 목록이라 위아래 방향키는 쓰지 않는다.
-export function landingTabStep(current: LandingTab, key: string): LandingTab | null {
+// Alt·Ctrl·Meta·Shift 가 함께 눌렸으면 브라우저·OS 단축키(Alt+← 뒤로 가기 등)이므로 움직이지 않는다.
+export function landingTabStep(current: LandingTab, key: string, mods: KeyModifiers = {}): LandingTab | null {
+  if (mods.altKey || mods.ctrlKey || mods.metaKey || mods.shiftKey) return null;
   const count = LANDING_TABS.length;
   const at = LANDING_TABS.findIndex((t) => t.id === current);
   let next: number;

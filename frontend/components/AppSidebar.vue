@@ -1,6 +1,6 @@
 <!-- frontend/components/AppSidebar.vue -->
 <template>
-  <aside :class="['skx-lnb', isCollapsed && 'is-lnb-collapsed']">
+  <aside :class="['skx-lnb', isCollapsed && 'is-lnb-collapsed', foldInstant && 'is-lnb-instant']">
     <!-- 접힌 상태에서 펼치기 버튼 -->
     <button
       type="button"
@@ -250,6 +250,8 @@ const open = useState<boolean>("skx:lnb-open", () => true);
 // 휴대폰 폭(≤480px)에서는 펼친 사이드바(16rem)가 본문을 거의 다 가린다 — 앱을 처음 열 때 한 번만 접어 둔다.
 // 이미 한 번 정했으면(페이지를 옮겨 다시 마운트돼도) 사용자가 펼친 상태를 되접지 않는다
 const lnbAutoFolded = useState<boolean>("skx:lnb-auto-folded", () => false);
+// 처음 자동으로 접는 순간만 폭 전환(.3s)을 끈다 — 열려 있던 16rem 이 3.2rem 으로 줄어드는 모습이 보이면 레이아웃이 튄다
+const foldInstant = ref(false);
 const isCollapsed = computed(() => !open.value || !!props.collapsed);
 const v1Map = ref<Record<string, string>>({});
 // 첫 목록을 읽기 전·읽지 못한 때에 '기록 없음'을 띄우지 않으려고 쓴다(최상위 ref 라 템플릿에서 풀린다)
@@ -379,11 +381,20 @@ function onVisibility() {
 }
 
 watch(hasLiveResearch, syncPolling);
+// 접혀 있는 동안은 폴링이 건너뛴다(pollOnce) — 진행 중 배지가 낡았을 수 있으니 펼치는 순간 바로 한 번 새로 읽는다
+watch(isCollapsed, (collapsed, wasCollapsed) => {
+  if (wasCollapsed && !collapsed && hasLiveResearch.value) pollOnce();
+});
 
 onMounted(() => {
   if (!lnbAutoFolded.value) {
     lnbAutoFolded.value = true;
-    if (window.matchMedia("(max-width: 480px)").matches) open.value = false;
+    if (window.matchMedia("(max-width: 480px)").matches) {
+      foldInstant.value = true;
+      open.value = false;
+      // 접힌 모양이 그려진 뒤(두 프레임) 전환을 되살린다 — 이후 사용자가 펼치고 접는 동작은 그대로 움직인다
+      requestAnimationFrame(() => requestAnimationFrame(() => (foldInstant.value = false)));
+    }
   }
   v1Map.value = readV1Map(safeLocalStorage());
   void history.load();

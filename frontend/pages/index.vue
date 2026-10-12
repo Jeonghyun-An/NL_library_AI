@@ -57,7 +57,7 @@
                   v-model="currentQuery"
                   placeholder="찾고싶은 도서를 문장으로 검색해보세요!"
                   :disabled="loading"
-                  @keydown.enter.exact.prevent="handleSearch(currentQuery)"
+                  @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
@@ -114,7 +114,7 @@
                   v-model="currentQuery"
                   placeholder="찾고싶은 논문을 문장으로 검색해보세요!"
                   :disabled="loading"
-                  @keydown.enter.exact.prevent="handleSearch(currentQuery)"
+                  @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
@@ -238,7 +238,7 @@
           v-model="currentQuery"
           aria-label="검색어 입력"
           :disabled="loading"
-          @keydown.enter.prevent="handleSearch(currentQuery)"
+          @keydown.enter="onSearchEnter"
         />
         <button
           type="button"
@@ -608,7 +608,7 @@ import { slimBookResult } from "~/utils/historySnapshot";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
-import { LANDING_TABS, landingTabOf, landingTabStep, type LandingTab } from "~/utils/landingTabs";
+import { LANDING_TABS, landingTabOf, landingTabStep, planLandingSelect, type LandingTab } from "~/utils/landingTabs";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
@@ -761,25 +761,33 @@ const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 // 초점은 옮기지 않는다 — 방향키로 갈래를 옮기는 중이거나 모바일에서 갈래만 바꿀 때 입력창·키보드가 끼어들지 않게
 async function selectTab(next: LandingTab) {
   if (next === tab.value) return;
-  mode.value = next === "book" ? "book" : "paper";
-  if (next === "deep") {
+  const plan = planLandingSelect(next, deepResearch.value);
+  mode.value = plan.mode;
+  if (plan.clearDeep) dropDeepResearch();
+  if (plan.activateDeep) {
     // 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창은 초점·커서가 가지 않는다
     await nextTick();
     plusMenu.value?.activateMode("deep-research", { focus: false });
-  } else if (deepResearch.value) {
-    plusMenu.value?.clearMode();
   }
+}
+
+// 딥리서치 모드를 끈다. 화면 상태(deepResearch)도 바로 내린다 — 같은 틱에 랜딩이 걷히면(소장자료 기록 복원)
+// 메뉴가 unmount 돼 update:mode 가 오지 않을 수 있고, 그러면 돌아온 랜딩의 '논문 검색'이 딥리서치로 표시된다
+function dropDeepResearch() {
+  deepResearch.value = false;
+  plusMenu.value?.clearMode();
 }
 
 // 기록 복원처럼 코드가 소장자료 화면으로 돌릴 때 — 딥리서치 모드도 함께 끈다
 function showBookMode() {
-  mode.value = "book";
-  if (deepResearch.value) plusMenu.value?.clearMode();
+  const plan = planLandingSelect("book", deepResearch.value);
+  mode.value = plan.mode;
+  if (plan.clearDeep) dropDeepResearch();
 }
 
 // tablist 키보드: 좌우·Home·End 로 갈래를 옮기고(자동 선택) 초점도 그 갈래로 따라간다
 function onTabsKeydown(e: KeyboardEvent) {
-  const next = landingTabStep(tab.value, e.key);
+  const next = landingTabStep(tab.value, e.key, e);
   if (!next) return;
   e.preventDefault();
   void selectTab(next);
@@ -936,6 +944,14 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   } finally {
     if (!signal.aborted) loading.value = false;
   }
+}
+
+// 입력창의 엔터는 검색이다. 한글 조합 중의 엔터는 글자 확정용이라 검색하지 않는다(SearchPlusMenu 와 같은 관례) —
+// 안 막으면 마지막 글자가 빠진 채 검색이 나가거나 두 번 나간다
+function onSearchEnter(e: KeyboardEvent) {
+  e.preventDefault();
+  if (e.isComposing) return;
+  void handleSearch(currentQuery.value);
 }
 
 // 예시 질의는 입력창에만 채운다 — 바로 검색하지 않아 고쳐 쓰거나(논문은 + 메뉴로 딥리서치를 골라) 보낼 수 있다.

@@ -60,7 +60,7 @@
             <span class="skx-rcd-ai__label">{{ meta.aiLabel }}</span>
             <span
               v-if="loading"
-              style="font-size: 12px; color: var(--skx-violet)"
+              style="font-size: 12px; color: var(--skx-accent-strong)"
               >●</span
             >
           </div>
