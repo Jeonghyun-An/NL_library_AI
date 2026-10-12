@@ -64,6 +64,27 @@ export function panelMode(width: number): PanelMode {
   return width > PANEL_FULL_MAX_PX ? "drawer" : "full";
 }
 
+// 서랍·전체 폭의 Tab 가두기 — 패널 안 Tab 순서(items — 숨긴 탭 본문·disabled 는 이미 뺀 목록)에서 지금 초점(active)의
+// 자리를 보고 옮길 곳을 고른다. null 이면 브라우저 기본 이동에 맡긴다. 정방향은 끝이거나 목록 밖이면 처음으로, 역방향은 처음이거나
+// 목록 밖이면 끝으로 돌린다 — 목록 밖은 패널 안이지만 Tab 순서에 없는 요소(제목 h2 tabindex=-1, 답을 받는 동안 disabled 가 된
+// 입력 칸)다. '끝과 같은가'로만 보면 disabled 입력 칸에서 누른 Tab 이 패널 밖으로 나간다(보내기 단추도 disabled 라 그 뒤가 없다)
+export function panelTrapTarget<T>(items: readonly T[], active: unknown, shift: boolean): T | null {
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (first === undefined || last === undefined) return null;
+  const i = items.indexOf(active as T);
+  if (shift) return i <= 0 ? last : null;
+  return i === -1 || i === items.length - 1 ? first : null;
+}
+
+// 패널 안 초점이 갈 곳 없이 사라졌는가(focusout 뒤 지금 초점 active, 문서의 body) — 서랍·전체 폭에서 답을 받는 동안 입력 칸·
+// 보내기 단추가 disabled 가 되면 초점이 body 로 떨어져 aside 의 keydown(Esc·Tab 가두기)이 듣지 못한다. 그때만 제목으로 되돌린다.
+// 패널 밖 다른 요소로 옮겨 간 초점(원문 뷰어의 닫기 단추 등)은 잃은 것이 아니라 그대로 둔다 — 서랍에서는 Tab 가두기와 배경(누르면
+// 닫힘) 때문에 사용자가 패널 밖으로 초점을 옮길 길이 없어, 밖으로 간 초점은 다른 부품이 일부러 옮긴 것이다. 2단은 가두지 않는다
+export function panelFocusLost(mode: PanelMode, active: unknown, body: unknown): boolean {
+  return mode !== "side" && (active === null || active === body);
+}
+
 // 패널이 여는 논문 — 머리는 행 데이터(서지)만으로 그린다
 export interface PanelPaper {
   cntsId: string;

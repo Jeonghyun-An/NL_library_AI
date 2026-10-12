@@ -1676,5 +1676,17 @@ button.wk-stepper__step {
     opacity: 1;
   }
 }
+/* 화면을 그대로 인쇄(Ctrl+P)하면 미디어 쿼리 폭이 용지 폭(A4 @page rs-report — 약 670px)이라 위 서랍·전체 폭 규칙이 걸려
+   fixed 패널·배경이 쪽마다 다시 찍혀 본문을 덮는다. 화면 전용 부품이라 인쇄에서는 빼고 본문이 용지 폭을 다 쓰게 한다 —
+   패널을 열지 않은 인쇄물은 지금과 같다. [PDF로 저장](ReportPrint)은 앱 전체를 숨겨 영향이 없다 */
+@media print {
+  .rs-page .wk-panel,
+  .rs-page .wk-panel-backdrop {
+    display: none !important;
+  }
+  .rs-page .wk-split.is-panel-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

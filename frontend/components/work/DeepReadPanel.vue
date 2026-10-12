@@ -10,6 +10,7 @@
       role="complementary"
       :aria-labelledby="`${panelId}-title`"
       @keydown="onKeydown"
+      @focusout="onFocusOut"
     >
       <header class="wk-panel__head">
         <div class="wk-panel__heading">
@@ -71,7 +72,14 @@
 import { computed, nextTick, ref, watch } from "vue";
 import BookChat from "~/components/BookChat.vue";
 import type { OpenPdfPayload } from "~/types/research";
-import { type PanelPaper, type PanelTab, panelHead, panelMode } from "~/utils/deepRead";
+import {
+  type PanelPaper,
+  type PanelTab,
+  panelFocusLost,
+  panelHead,
+  panelMode,
+  panelTrapTarget,
+} from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 
 // 단계 화면 오른쪽 패널(spec §12-4 D24) — 머리(논문 제목·서지·[논문 상세 ↗]·닫기)와 탭 [인용 근거 | 딥리드].
@@ -118,25 +126,33 @@ watch(
 );
 
 // Esc 는 어느 배치에서나 닫는다 — 초점이 패널 안에 있을 때만(문서가 아니라 패널에서 들어 원문 뷰어 등 위에 뜬 창의 Esc 와
-// 겹치지 않는다). 서랍·전체 폭(1200px 미만)은 화면을 덮으므로 Tab 이 패널 밖으로 나가지 않게 처음·끝에서 돌린다
+// 겹치지 않는다). 서랍·전체 폭(1200px 미만)은 화면을 덮으므로 Tab 이 패널 밖으로 나가지 않게 처음·끝에서 돌린다 — 어디로 돌릴지는
+// panelTrapTarget 이 지금 초점의 자리로 고른다(제목·답을 받는 동안 disabled 가 된 입력 칸처럼 Tab 순서 밖에 있어도 가둔다)
 function onKeydown(e: KeyboardEvent): void {
   if (e.key === "Escape") {
     emit("close");
     return;
   }
   if (e.key !== "Tab" || !root.value || panelMode(window.innerWidth) === "side") return;
-  // 숨긴 탭 본문(v-show)의 요소는 뺀다
-  const items = [...root.value.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.offsetParent !== null);
-  const first = items[0];
-  const last = items[items.length - 1];
-  if (!first || !last) return;
-  const active = document.activeElement;
-  if (e.shiftKey && (active === first || active === titleEl.value)) {
-    e.preventDefault();
-    last.focus();
-  } else if (!e.shiftKey && active === last) {
-    e.preventDefault();
-    first.focus();
+  // 숨긴 탭 본문(v-show)의 요소와 Tab 순서에 없는 요소(고르지 않은 탭 단추 tabindex=-1)는 뺀다
+  const items = [...root.value.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (el) => el.offsetParent !== null && el.tabIndex >= 0,
+  );
+  const target = panelTrapTarget(items, document.activeElement, e.shiftKey);
+  if (!target) return;
+  e.preventDefault();
+  target.focus();
+}
+
+// 서랍·전체 폭에서 패널 안 초점이 body 로 떨어지면(질문을 보내 답을 받는 동안 BookChat 의 입력 칸·보내기 단추가 disabled 가
+// 된다) aside 의 keydown 이 불리지 않아 Esc 로 닫히지 않고 Tab 이 배경으로 나간다. 그때 제목으로 되돌린다 — BookChat 은 네
+// 화면이 함께 써서 패널 쪽에서 막는다. 패널을 닫아 내려가는 중이면(root 가 없거나 문서에서 빠짐) 여는 쪽이 초점을 돌려주므로 두고,
+// 패널 밖 다른 요소로 옮겨 간 초점(원문 뷰어의 닫기 단추 등)은 그대로 둔다(panelFocusLost)
+async function onFocusOut(): Promise<void> {
+  await nextTick();
+  if (!root.value?.isConnected) return;
+  if (panelFocusLost(panelMode(window.innerWidth), document.activeElement, document.body)) {
+    titleEl.value?.focus({ preventScroll: true });
   }
 }
 

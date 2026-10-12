@@ -5,9 +5,11 @@ import {
   PANEL_FULL_MAX_PX,
   PANEL_SIDE_MIN_PX,
   chatCopy,
+  panelFocusLost,
   panelHead,
   panelMode,
   panelTabs,
+  panelTrapTarget,
   sourceLabel,
   sourcePdfTarget,
 } from "~/utils/deepRead";
@@ -89,5 +91,57 @@ describe("panelMode·panelHead·panelTabs", () => {
   it("참고문헌 선택하기는 딥리드 탭만, 보고서는 인용 근거·딥리드 두 탭", () => {
     expect(panelTabs("reading")).toEqual(["chat"]);
     expect(panelTabs("proposal")).toEqual(["sources", "chat"]);
+  });
+});
+
+describe("panelTrapTarget·panelFocusLost — 서랍·전체 폭의 초점 가두기", () => {
+  // 패널 안 Tab 순서(숨긴 탭 본문·disabled 는 이미 빠진 목록). 제목 h2(tabindex=-1)와 답을 받는 동안 disabled 가 된
+  // 입력 칸은 패널 안에 있지만 목록 밖이다
+  const detail = { id: "detail" };
+  const close = { id: "close" };
+  const chip = { id: "chip" };
+  const send = { id: "send" };
+  const items = [detail, close, chip, send];
+  const title = { id: "title" };
+  const disabledInput = { id: "input(disabled)" };
+
+  it("정방향 Tab — 끝에서 처음으로, 가운데는 브라우저 기본(null)", () => {
+    expect(panelTrapTarget(items, send, false)).toBe(detail);
+    expect(panelTrapTarget(items, detail, false)).toBeNull();
+    expect(panelTrapTarget(items, chip, false)).toBeNull();
+  });
+
+  it("역방향 Tab — 처음에서 끝으로, 가운데는 브라우저 기본(null)", () => {
+    expect(panelTrapTarget(items, detail, true)).toBe(send);
+    expect(panelTrapTarget(items, send, true)).toBeNull();
+    expect(panelTrapTarget(items, close, true)).toBeNull();
+  });
+
+  it("초점이 목록 밖(제목·답을 받는 동안 disabled 가 된 입력 칸)이면 정방향은 처음, 역방향은 끝 — 패널 밖으로 새지 않는다", () => {
+    // 보내기 단추도 disabled 라 목록의 끝은 출처 칩이다 — 입력 칸이 끝이 아니어도 밖으로 나가지 않아야 한다
+    const streaming = [detail, close, chip];
+    expect(panelTrapTarget(streaming, disabledInput, false)).toBe(detail);
+    expect(panelTrapTarget(streaming, disabledInput, true)).toBe(chip);
+    expect(panelTrapTarget(items, title, false)).toBe(detail);
+    expect(panelTrapTarget(items, title, true)).toBe(send);
+  });
+
+  it("하나뿐이면 그 하나에 머물고, 비어 있으면 기본(null)", () => {
+    expect(panelTrapTarget([close], close, false)).toBe(close);
+    expect(panelTrapTarget([close], close, true)).toBe(close);
+    expect(panelTrapTarget([], title, false)).toBeNull();
+    expect(panelTrapTarget([], title, true)).toBeNull();
+  });
+
+  it("서랍·전체 폭에서 초점이 body(또는 없음)로 떨어진 것만 잃은 것으로 본다 — 패널 밖 다른 요소(원문 뷰어 닫기 등)로 간 것은 아니다", () => {
+    const body = { id: "body" };
+    const viewerClose = { id: "viewer-close" };
+    expect(panelFocusLost("drawer", body, body)).toBe(true);
+    expect(panelFocusLost("full", body, body)).toBe(true);
+    expect(panelFocusLost("drawer", null, body)).toBe(true);
+    expect(panelFocusLost("drawer", viewerClose, body)).toBe(false);
+    expect(panelFocusLost("full", close, body)).toBe(false);
+    // 2단(side)은 화면을 덮지 않아 가두지 않는다 — 초점이 떨어져도 되돌리지 않는다
+    expect(panelFocusLost("side", body, body)).toBe(false);
   });
 });
