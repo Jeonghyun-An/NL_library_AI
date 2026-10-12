@@ -72,30 +72,25 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
-import { apiHeaders, apiUrl } from "~/composables/useApi";
+import { nextTick, ref, watch } from "vue";
+import { useDeepReadChat } from "~/composables/useDeepReadChat";
+import type { DeepReadMessage } from "~/utils/deepReadSse";
 
+// 딥리드 대화 칸 — 논문 상세·논문 검색 결과 채팅·도서 상세·TopResult 와 연구 화면의 오른쪽 패널(06e)이 함께 쓴다.
+// 대화 흐름(보내기·스트림 읽기·끊기·논문별 대화)은 useDeepReadChat 이 맡고 여기서는 그리기·입력·스크롤만 한다.
+// store 를 넘기면(연구 화면 패널) 논문을 오갈 때 대화가 이어지고, 없으면 논문이 바뀔 때 비운다
 const props = defineProps<{
   cntsId: string;
   bookTitle?: string;
+  store?: Map<string, DeepReadMessage[]>;
 }>();
 defineEmits<{ (e: "close"): void }>();
 
-interface Source {
-  page_start: number;
-  page_end: number;
-  text: string;
-}
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
-  pinnedChip?: number;
-}
-
-const messages = ref<Message[]>([]);
+const { messages, streamingText, isStreaming, send: sendChat } = useDeepReadChat({
+  cntsId: () => props.cntsId,
+  store: () => props.store,
+});
 const inputText = ref("");
-const isStreaming = ref(false);
-const streamingText = ref("");
 const messagesEl = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
 
@@ -111,70 +106,16 @@ function scrollBottom() {
   });
 }
 
+// 질문·답이 쌓이거나 글이 흐르거나 다른 논문의 대화로 바뀌면 맨 아래로
+watch([messages, () => messages.value.length, streamingText], scrollBottom);
+
 async function send() {
   const text = inputText.value.trim();
   if (!text || isStreaming.value) return;
-
-  messages.value.push({ role: "user", content: text });
   inputText.value = "";
-  isStreaming.value = true;
-  streamingText.value = "";
-  scrollBottom();
-
-  const history = messages.value
-    .slice(0, -1)
-    .map((m) => ({ role: m.role, content: m.content }));
-
-  let pendingSources: Source[] | undefined;
-
-  try {
-    const resp = await fetch(apiUrl(`/books/chat/${props.cntsId}`), {
-      method: "POST",
-      headers: apiHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ message: text, history }),
-    });
-
-    if (!resp.ok || !resp.body) throw new Error("응답 오류");
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-
-      const lines = buf.split("\n");
-      buf = lines.pop() ?? "";
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") break;
-        try {
-          const evt = JSON.parse(payload);
-          if (evt.text) {
-            streamingText.value += evt.text;
-            scrollBottom();
-          } else if (evt.sources) {
-            pendingSources = evt.sources;
-          }
-        } catch {}
-      }
-    }
-  } catch {
-    streamingText.value = "오류가 발생했습니다. 다시 시도해주세요.";
-  }
-
-  messages.value.push({
-    role: "assistant",
-    content: streamingText.value,
-    sources: pendingSources,
-  });
-  streamingText.value = "";
-  isStreaming.value = false;
-  scrollBottom();
-  nextTick(() => inputEl.value?.focus());
+  const sentFor = props.cntsId;
+  await sendChat(text);
+  // 답을 다 받았을 때만 입력 칸으로 돌아간다 — 논문을 바꿔 끊긴 경우 초점은 사용자가 누른 곳에 둔다
+  if (props.cntsId === sentFor) nextTick(() => inputEl.value?.focus());
 }
 </script>
