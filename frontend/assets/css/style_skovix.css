@@ -1381,6 +1381,10 @@ h4,
   mask-composite: exclude;
   pointer-events: none;
 }
+/* 입력창(랜딩 입력 상자·결과 위 검색바)의 테두리는 흰 그라데이션이 아니라 늘 보이는 산호 포인트색 1px — 사용자 결정(2026-10-12).
+   초점 때는 예전처럼 같은 포인트색이다(--skx-accent). 다른 유리 면(전환·예시·카드)의 흰 테두리는 그대로 */
+.skx-search__box::before,
+.skx-rsearch::before,
 .skx-search__box:focus-within::before {
   background: var(--skx-accent);
 }
