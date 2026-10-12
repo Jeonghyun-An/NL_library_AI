@@ -5,415 +5,178 @@
       @save="showToast('저장목록 기능은 준비 중입니다.')"
     />
 
-    <main class="skx-result">
-      <!-- 로딩 -->
-      <div
-        v-if="pageLoading"
-        class="skx-result-card"
-        style="padding: 40px; text-align: center"
-      >
-        <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
-        <p style="margin-top: 12px">도서 정보를 불러오는 중...</p>
-      </div>
-      <div v-else-if="pageError" class="skx-result-card" style="padding: 20px">
-        <p style="color: #c00">{{ pageError }}</p>
-        <button
-          class="skx-btn-loan"
-          style="margin-top: 12px"
-          @click="navigateTo('/')"
-        >
-          홈으로
+    <!-- 상세 틀(Figma 2536:16714, 논문 상세와 같은 틀) — 위 알약 검색바 → 큰 틀(돌아가기 · 머리 · AI 큐레이션 · 관련 자료 추천 · 상세 서지 정보).
+         모양은 assets/css/detail.css -->
+    <main class="skx-result dt-page">
+      <DetailSearchBar
+        :initial="searchQuery"
+        label="소장자료 검색어"
+        placeholder="찾고 싶은 자료를 자연어로 검색해보세요"
+        @submit="onSearch"
+      />
+
+      <div class="dt-frame">
+        <!-- 뒤로가기 -->
+        <button type="button" class="dt-back" @click="$router.back()">
+          <img src="/img/ico-arrow.svg" alt="" />
+          <span>검색 목록 돌아가기</span>
         </button>
-      </div>
 
-      <template v-else-if="book">
-        <div class="skx-result-card">
-          <!-- 뒤로가기 -->
-          <button type="button" class="skx-detail-back" @click="$router.back()">
-            <img
-              class="skx-detail-back__icon"
-              src="/img/ico-arrow.svg"
-              alt=""
-            />
-            <span class="skx-detail-back__label">검색 목록 돌아가기</span>
-          </button>
+        <!-- 로딩 -->
+        <div v-if="pageLoading" class="dt-loading">
+          <img src="/img/ico-spinner.svg" alt="" />
+          <p>도서 정보를 불러오는 중...</p>
+        </div>
+        <div v-else-if="pageError" class="dt-error">
+          <p>{{ pageError }}</p>
+          <button type="button" class="dt-btn dt-btn--ghost" @click="navigateTo('/')">홈으로</button>
+        </div>
 
-          <!-- 도서 헤더 카드 -->
-          <article class="skx-book-card skx-book-card--hd">
-            <div class="skx-book-card__thumb-col">
-              <div class="skx-book-card__thumb">
+        <template v-else-if="book">
+          <!-- 머리(서지) — 표지 · 칩 줄(관련도 · #키워드, 키워드가 없으면 분류 칩) · 제목 · 서지 표 · 오른쪽 버튼 열 -->
+          <section class="dt-hero" aria-label="서지 정보">
+            <div class="dt-hero__cover">
+              <div class="dt-cover">
                 <BookCover :book-id="cnts_id" />
               </div>
-              <p class="skx-cover-ai-note">
+              <p class="dt-cover-note">
                 <span class="skx-ai-dot" aria-hidden="true"></span>
                 AI가 도서 내용을 분석해 그려낸 표지입니다
               </p>
             </div>
-            <div class="skx-book-card__body">
-              <div class="skx-book-card__top">
-                <div class="skx-book-card__tags">
-                  <template
-                    v-if="
-                      titleScore !== undefined && contentScore !== undefined
-                    "
-                  >
-                    <ScoreRing :pct="titleScore" label="제목 일치율" />
-                    <ScoreRing
-                      :pct="contentScore"
-                      label="내용 일치율"
-                      variant="content"
-                    />
-                  </template>
-                  <span v-if="matchScore !== null" class="skx-tag skx-tag--score"
-                    >관련도 {{ matchScore }}%</span
-                  >
-                  <span
-                    v-for="tag in themes"
-                    :key="tag"
-                    class="skx-tag skx-tag--keyword"
-                    >#{{ tag }}</span
-                  >
-                </div>
+            <div class="dt-hero__head">
+              <div v-if="matchScore !== null || keywords.length || kdc" class="dt-chips">
+                <RelevanceBadge
+                  v-if="matchScore !== null"
+                  :score="matchScore"
+                  :title-score="titleScore"
+                  :content-score="contentScore"
+                />
+                <span v-for="kw in keywords" :key="kw" class="skx-tag skx-tag--keyword">#{{ kw }}</span>
+                <!-- 키워드가 하나도 없을 때만 — 도서관 분류(KDC) 이름 칩(결과 카드와 같은 규칙) -->
+                <span v-if="kdc" class="skx-rc__kdc" :title="kdc.title">
+                  <span class="skx-sr-only">{{ kdc.title }}: </span>{{ kdc.name }}
+                </span>
+              </div>
+              <h1 class="dt-title">{{ book.title }}</h1>
+            </div>
+            <div class="dt-hero__meta">
+              <DetailMeta :rows="metaRows" />
+            </div>
+            <div class="dt-hero__actions">
+              <div class="dt-hero__row">
+                <button type="button" class="dt-btn dt-btn--ghost" @click="viewPdf(cnts_id, book.title)">
+                  원문 보기
+                </button>
                 <button
                   v-if="SHOW_MOCKS"
                   type="button"
-                  class="skx-book-card__bookmark"
+                  class="dt-btn dt-btn--icon"
                   :aria-label="isBookmarked(cnts_id) ? '북마크 해제' : '북마크'"
                   @click="toggleBookmark(cnts_id)"
                 >
                   <img :src="bookmarkIcon(cnts_id)" alt="" />
                 </button>
               </div>
-              <div class="skx-book-card__meta">
-                <div class="skx-book-card__title-row">
-                  <h2 class="skx-book-card__title">{{ book.title }}</h2>
-                </div>
-                <div class="skx-book-card__info-row">
-                  <!-- <span v-if="book.material_type" class="skx-meta-text">{{
-                    book.material_type
-                  }}</span> -->
-                  <template
-                    v-if="book.personal_author || book.corporate_author"
-                  >
-                    <!-- <span class="skx-dot"></span> -->
-                    <span class="skx-meta-text">{{
-                      book.personal_author || book.corporate_author
-                    }}</span>
-                  </template>
-                  <template v-if="book.pub_date">
-                    <span class="skx-dot"></span>
-                    <span class="skx-meta-text"
-                      >{{ book.pub_date.slice(0, 4) }}년</span
-                    >
-                  </template>
-                  <template v-if="book.publisher">
-                    <span class="skx-dot"></span>
-                    <span class="skx-meta-text">{{ book.publisher }}</span>
-                  </template>
-                </div>
-              </div>
-              <div class="skx-book-card__actions">
-                <button
-                  type="button"
-                  :class="[
-                    'skx-btn-talk skx-btn-talk--book',
-                    chatPanelOpen && 'is-active',
-                  ]"
-                  @click="chatPanelOpen = !chatPanelOpen"
-                >
-                  <span class="skx-btn-talk__glow" aria-hidden="true"></span>
-                  <span class="skx-btn-talk__panel" aria-hidden="true"></span>
-                  <img
-                    class="skx-btn-talk__ico"
-                    src="/img/ico-chat.svg"
-                    alt=""
-                  />
-                  <span class="skx-btn-talk__label">DeepRead</span>
-                </button>
-                <!-- <button
-                  type="button"
-                  :class="['skx-btn-loan', isLoaning && 'is-loaning']"
-                  @click="
-                    isLoaning
-                      ? (loanCancelModalOpen = true)
-                      : (loanModalOpen = true)
-                  "
-                >
-                  {{ isLoaning ? "대출신청중" : "대출신청" }}
-                </button> -->
-                <button type="button" class="skx-btn-read" @click="viewPdf">
-                  원문 보기
-                </button>
-              </div>
-            </div>
-          </article>
-
-          <!-- AI 큐레이션 (수직탭) -->
-          <section class="skx-curation" aria-label="AI 큐레이션">
-            <h2 class="skx-section-title">AI 큐레이션</h2>
-            <div class="skx-curation-panel">
-              <div class="skx-vtabs-col">
-                <div class="skx-vtabs" role="tablist" ref="vtabsRef">
-                  <span
-                    class="skx-vtabs__slider"
-                    :style="vtabSliderStyle"
-                    aria-hidden="true"
-                  ></span>
-                  <button
-                    v-for="tab in detailTabs"
-                    :key="tab.key"
-                    type="button"
-                    :class="['skx-vtab', detailTab === tab.key && 'is-active']"
-                    role="tab"
-                    :aria-selected="detailTab === tab.key"
-                    @click="switchVtab(tab.key)"
-                  >
-                    {{ tab.label }}
-                  </button>
-                </div>
-              </div>
-              <div class="skx-curation-content">
-                <div class="skx-curation-card">
-                  <div v-if="detailTab === 'reason'">
-                    <!-- 스트리밍 중: raw 텍스트 + 깜빡이는 커서 -->
-                    <p
-                      v-if="reasonLoading && reasonText"
-                      class="skx-curation-text skx-curation-text--stream"
-                    >
-                      {{ reasonText }}<span class="skx-stream-cursor" />
-                    </p>
-                    <p
-                      v-else-if="reasonLoading"
-                      class="skx-curation-text skx-curation-loading"
-                    >
-                      추천 이유를 생성하고 있습니다<span
-                        class="skx-stream-cursor"
-                      />
-                    </p>
-                    <!-- 완료 후: 마크다운 렌더링 -->
-                    <div
-                      v-else-if="reasonText"
-                      class="skx-curation-text"
-                      v-html="renderedReason"
-                    />
-                    <p v-else class="skx-curation-text">
-                      추천 이유 정보가 없습니다.
-                    </p>
-                  </div>
-                  <p v-else-if="detailTab === 'plot'" class="skx-curation-text">
-                    {{ book.plot || book.summary || "줄거리 정보가 없습니다." }}
-                  </p>
-                  <p
-                    v-else-if="detailTab === 'intro'"
-                    class="skx-curation-text"
-                  >
-                    {{ book.introduction || "소개 정보가 없습니다." }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- 상세 정보 -->
-          <section class="skx-detail-info" aria-label="상세 정보">
-            <h2 class="skx-section-title">상세 정보</h2>
-            <div class="skx-detail-info__grid">
-              <div class="skx-info-row">
-                <span class="skx-info-label">표제/저자사항</span
-                ><span class="skx-info-value">{{
-                  book.title_responsibility || book.title || "-"
-                }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">발행사항</span
-                ><span class="skx-info-value">{{
-                  [book.pub_place, book.publisher, book.pub_date]
-                    .filter(Boolean)
-                    .join(", ") || "-"
-                }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">형태사항</span
-                ><span class="skx-info-value">{{ book.extent || "-" }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">총서사항</span
-                ><span class="skx-info-value">{{
-                  book.series_title || "-"
-                }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">표준번호</span
-                ><span class="skx-info-value">{{
-                  book.isbn || book.uci || "-"
-                }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">분류기호</span
-                ><span class="skx-info-value">{{
-                  [book.kdc, book.ddc].filter(Boolean).join(" → ") || "-"
-                }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">주제명</span
-                ><span class="skx-info-value">{{
-                  book.subject || book.keyword || "-"
-                }}</span>
-              </div>
-              <div class="skx-info-row">
-                <span class="skx-info-label">언어</span
-                ><span class="skx-info-value">{{
-                  book.language || "Korean"
-                }}</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- AI 연관 도서 추천 -->
-          <section class="skx-reco" aria-label="AI 연관 도서 추천">
-            <h2 class="skx-section-title">AI 연관 도서 추천</h2>
-            <div class="skx-reco-panel">
-              <div class="skx-reco-list" role="list">
-                <div
-                  v-if="relatedLoading"
-                  style="padding: 16px; color: #bbb; font-size: 12px"
-                >
-                  불러오는 중...
-                </div>
-                <div
-                  v-else-if="!relatedItems.length"
-                  style="padding: 16px; color: #bbb; font-size: 12px"
-                >
-                  연관 추천 항목이 없습니다.
-                </div>
-                <button
-                  v-for="rel in relatedItems"
-                  :key="rel.book_id"
-                  type="button"
-                  :class="[
-                    'skx-reco-item',
-                    selectedRelated?.book_id === rel.book_id && 'is-active',
-                  ]"
-                  @click="selectedRelated = rel"
-                >
-                  <img
-                    class="skx-reco-item__thumb"
-                    src="/img/ico-book-thumb.svg"
-                    alt=""
-                  />
-                  <div class="skx-reco-item__inner">
-                    <span class="skx-reco-item__name">{{
-                      rel.book_info?.title || rel.book_id
-                    }}</span>
-                    <span class="skx-reco-item__score"
-                      >관련도
-                      {{
-                        Math.round((rel.score || rel.best_score || 0) * 100)
-                      }}%</span
-                    >
-                  </div>
-                </button>
-              </div>
-              <div v-if="!selectedRelated" class="skx-reco-empty">
-                <SkovixWordmark class="skx-reco-empty__logo" decorative />
-                <p class="skx-reco-empty__text">추천도서를 클릭해주세요</p>
-              </div>
-              <div
-                v-else
-                :key="selectedRelated.book_id"
-                class="skx-reco-detail"
-                style="cursor: pointer"
-                @click="
-                  navigateTo(
-                    `/books/${selectedRelated.book_id}?q=${encodeURIComponent(searchQuery)}`,
-                  )
-                "
+              <button
+                type="button"
+                class="dt-btn dt-btn--accent"
+                :aria-expanded="chatPanelOpen"
+                aria-controls="dt-chat"
+                @click="chatPanelOpen = !chatPanelOpen"
               >
-                <!-- 표지 -->
-                <div class="skx-reco-cover skx-anim skx-anim--1">
-                  <img
-                    :src="`/api/books/${selectedRelated.book_id}/thumbnail`"
-                    :alt="selectedRelated.book_info?.title || ''"
-                    @error="
-                      (e: Event) =>
-                        ((e.target as HTMLImageElement).src =
-                          '/img/ico-book-thumb.svg')
-                    "
-                  />
-                </div>
-                <!-- 정보 -->
-                <div class="skx-reco-info">
-                  <!-- 키워드 태그 -->
-                  <div class="skx-reco-info__top skx-anim skx-anim--2">
-                    <div class="skx-reco-info__tags">
-                      <span
-                        v-for="tag in recoTags(selectedRelated)"
-                        :key="tag"
-                        class="skx-tag skx-tag--keyword"
-                        >#{{ tag }}</span
-                      >
-                    </div>
-                  </div>
-                  <!-- 메타 -->
-                  <div class="skx-reco-meta skx-anim skx-anim--3">
-                    <div class="skx-reco-type-row">
-                      <span
-                        v-if="selectedRelated.book_info?.material_type"
-                        class="skx-reco-type"
-                      >
-                        {{ selectedRelated.book_info.material_type }}
-                      </span>
-                    </div>
-                    <h3 class="skx-reco-title">
-                      {{ selectedRelated.book_info?.title }}
-                    </h3>
-                    <div class="skx-reco-author">
-                      <template
-                        v-if="
-                          selectedRelated.book_info?.personal_author ||
-                          selectedRelated.book_info?.corporate_author
-                        "
-                      >
-                        <span class="skx-meta-text">{{
-                          selectedRelated.book_info.personal_author ||
-                          selectedRelated.book_info.corporate_author
-                        }}</span>
-                      </template>
-                      <template v-if="selectedRelated.book_info?.pub_date">
-                        <span class="skx-dot"></span>
-                        <span class="skx-meta-text"
-                          >{{
-                            selectedRelated.book_info.pub_date.slice(0, 4)
-                          }}년</span
-                        >
-                      </template>
-                      <template v-if="selectedRelated.book_info?.publisher">
-                        <span class="skx-dot"></span>
-                        <span class="skx-meta-text">{{
-                          selectedRelated.book_info.publisher
-                        }}</span>
-                      </template>
-                    </div>
-                  </div>
-                  <!-- 설명 -->
-                  <div
-                    v-if="recoDesc(selectedRelated)"
-                    class="skx-reco-desc skx-anim skx-anim--4"
-                  >
-                    <p class="skx-reco-desc__text">
-                      {{ recoDesc(selectedRelated) }}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                <DetailSparkIcon />DeepRead
+              </button>
             </div>
           </section>
-        </div>
-      </template>
+
+          <!-- AI 큐레이션 — 가로 밑줄 탭 [추천 이유][줄거리][소개](글이 없는 탭은 뺀다) -->
+          <section class="dt-section" aria-labelledby="bdetail-curation-title">
+            <h2 id="bdetail-curation-title" class="dt-section__title">AI 큐레이션</h2>
+            <DetailTabs
+              v-if="curationTabs.length"
+              :tabs="curationTabs"
+              :model-value="activeCuration"
+              label="AI 큐레이션"
+              @update:model-value="detailTab = $event"
+            >
+              <template #default="{ active }">
+                <template v-if="active === 'reason'">
+                  <!-- 스트리밍 중: raw 텍스트 + 깜빡이는 커서, 완료 후: 마크다운 -->
+                  <p v-if="reasonLoading && reasonText" class="dt-prose dt-stream">
+                    {{ reasonText }}<span class="skx-stream-cursor" />
+                  </p>
+                  <p v-else-if="reasonLoading" class="dt-muted">
+                    추천 이유를 생성하고 있습니다<span class="skx-stream-cursor" />
+                  </p>
+                  <div v-else-if="reasonText" class="dt-prose" v-html="renderedReason" />
+                  <p v-else class="dt-muted">추천 이유 정보가 없습니다.</p>
+                </template>
+                <p v-else-if="active === 'plot'" class="dt-prose">{{ plotText }}</p>
+                <p v-else-if="active === 'intro'" class="dt-prose">{{ book.introduction }}</p>
+              </template>
+            </DetailTabs>
+            <p v-else class="dt-empty">AI 큐레이션 정보가 없습니다.</p>
+          </section>
+
+          <!-- 관련 자료 추천 — 제목으로 찾은 소장자료 4권. 카드를 누르면 그 자료 상세로, [자세히 보기]는 요약 전문과 버튼 -->
+          <section class="dt-section" aria-labelledby="bdetail-related-title">
+            <h2 id="bdetail-related-title" class="dt-section__title">관련 자료 추천</h2>
+            <p v-if="relatedLoading" class="dt-empty">불러오는 중...</p>
+            <p v-else-if="!relatedItems.length" class="dt-empty">연관 추천 항목이 없습니다.</p>
+            <div v-else class="dt-related__grid">
+              <DetailRelatedCard
+                v-for="rel in relatedItems"
+                :key="rel.book_id"
+                :to="relatedBookUrl(rel.book_id)"
+                :title="rel.book_info?.title || rel.book_id"
+                :author="formatAuthors(rel.book_info?.personal_author, rel.book_info?.corporate_author)"
+                :meta="relatedMetaLine(rel.book_info, 'book')"
+                :keywords="cardKeywords(rel.book_info)"
+                :kdc="cardKeywords(rel.book_info).length ? null : kdcChip(rel.book_info?.kdc)"
+                reason-label="AI 요약"
+                pop-title="AI 요약"
+                :reason="recoDesc(rel)"
+                empty-text="요약 정보가 없습니다."
+                :expanded="openRelated === rel.book_id"
+                @update:expanded="(open: boolean) => (openRelated = open ? rel.book_id : null)"
+              >
+                <template #cover>
+                  <BookCover :book-id="rel.book_id" />
+                </template>
+                <template #badge>
+                  <RelevanceBadge
+                    :score="rel.best_score ?? rel.score"
+                    :title-score="rel.title_score"
+                    :content-score="rel.content_score"
+                  />
+                </template>
+                <template #actions>
+                  <NuxtLink :to="withChat(relatedBookUrl(rel.book_id))" class="dt-btn dt-btn--accent">
+                    <DetailSparkIcon />DeepRead<span class="skx-sr-only">: {{ rel.book_info?.title || rel.book_id }}</span>
+                  </NuxtLink>
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--ghost"
+                    @click="viewPdf(rel.book_id, rel.book_info?.title ?? '')"
+                  >
+                    원문 보기
+                  </button>
+                </template>
+              </DetailRelatedCard>
+            </div>
+          </section>
+
+          <!-- 상세 서지 정보 — 예전 '상세 정보' 표(값이 있는 행만) -->
+          <DetailCollapse v-if="detailRows.length" v-model:open="detailOpen" title="상세 서지 정보">
+            <DetailMeta :rows="detailRows" wide />
+          </DetailCollapse>
+        </template>
+      </div>
     </main>
 
     <!-- 채팅 사이드 패널 -->
-    <aside :class="['skx-chat-panel', chatPanelOpen && 'is-open']">
+    <aside id="dt-chat" :class="['skx-chat-panel', chatPanelOpen && 'is-open']">
       <div class="skx-chat-panel__inner" v-if="book">
         <div class="skx-chat-header">
           <button
@@ -496,12 +259,12 @@
       </div>
     </div>
 
-    <!-- PDF 뷰어 -->
+    <!-- PDF 뷰어 — 이 자료·관련 자료가 같이 쓴다 -->
     <PdfViewer
-      v-if="pdfOpen"
-      :cnts-id="cnts_id"
-      :title="book?.title"
-      @close="pdfOpen = false"
+      v-if="pdfTarget"
+      :cnts-id="pdfTarget.id"
+      :title="pdfTarget.title"
+      @close="pdfTarget = null"
     />
 
     <Teleport to="body">
@@ -518,12 +281,27 @@ import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import type { BookInfo } from "~/types/search";
-import { queryScorePct } from "~/utils/relevance";
+import { firstValue, shouldGoBack } from "~/utils/detailSource";
+import {
+  activeTabKey,
+  bookDetailRows,
+  bookMetaRows,
+  detailSearchUrl,
+  formatAuthors,
+  queryScore,
+  relatedMetaLine,
+  visibleTabs,
+  withChat,
+} from "~/utils/detailView";
+import { kdcChip } from "~/utils/kdc";
+import { cardKeywords } from "~/utils/resultCard";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
+const router = useRouter();
 const cnts_id = route.params.cnts_id as string;
 const searchQuery = (route.query.q as string) || "";
+const historyId = firstValue(route.query.h) ?? "";
 
 const api = useApi();
 // 페이지를 떠나면 추천 이유 스트림을 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
@@ -535,60 +313,68 @@ const book = ref<BookInfo | null>(null);
 const pageLoading = ref(true);
 const pageError = ref("");
 
-// 점수 표시는 결과 카드와 같은 relevancePct(내림 + 부동소수 보정) 한 규칙이다
-const matchScore = computed(() => queryScorePct(route.query.score));
-const titleScore = computed(() => queryScorePct(route.query.title_score) ?? undefined);
-const contentScore = computed(() => queryScorePct(route.query.content_score) ?? undefined);
+useHead({ title: () => (book.value?.title ? `${book.value.title} — 소장자료` : "소장자료") });
 
-const themes = computed(() =>
-  parseThemes(book.value?.themes || book.value?.keyword || book.value?.subject),
-);
+// 관련도 알약은 결과 카드와 같은 RelevanceBadge — 퍼센트는 같은 relevancePct(내림 + 부동소수 보정) 한 규칙이고,
+// 제목·내용 일치율은 알약을 올리거나 누르면 뜨는 팝오버에 링으로 보인다
+const matchScore = computed(() => queryScore(route.query.score));
+const titleScore = computed(() => queryScore(route.query.title_score));
+const contentScore = computed(() => queryScore(route.query.content_score));
+
+// 칩 — 결과 카드와 같은 규칙(키워드 최대 CARD_KEYWORD_LIMIT 개, 하나도 없으면 KDC 분류 칩)
+const keywords = computed(() => cardKeywords(book.value));
+const kdc = computed(() => (keywords.value.length ? null : kdcChip(book.value?.kdc)));
+const metaRows = computed(() => bookMetaRows(book.value));
+const detailRows = computed(() => bookDetailRows(book.value));
+const detailOpen = ref(true);
+
+// 위 검색바 — 들어온 검색과 같은 검색어면 그 결과로 돌아가고(기록 복원), 다르면 새 소장자료 검색
+function onSearch(input: string): void {
+  const params = new URLSearchParams({ q: searchQuery });
+  if (historyId) params.set("h", historyId);
+  const sameTo = `/?${params}`;
+  const url = detailSearchUrl("book", input, searchQuery ? { q: searchQuery, to: sameTo } : null);
+  if (!url) return;
+  const prev = window.history.state?.back;
+  if (url === sameTo && shouldGoBack(typeof prev === "string" ? prev : null, sameTo)) router.back();
+  else void navigateTo(url);
+}
 
 // ── AI 큐레이션 ────────────────────────────────────────────
 const reasonText = ref("");
 const reasonLoading = ref(false);
+// 추천 이유를 다 받았는지 — 받기 전에는 비어 있어도 [추천 이유] 탭을 둔다(곧 채워진다)
+const reasonDone = ref(false);
 const renderedReason = computed(() =>
   reasonText.value ? (marked.parse(reasonText.value) as string) : "",
 );
+const plotText = computed(() => book.value?.plot || book.value?.summary || "");
+
+// 글이 없는 탭은 뺀다 — 추천 이유는 검색어가 있을 때만 만든다. 고른 탭이 빠지면 첫 탭
+const detailTab = ref<string | null>("reason");
+const curationTabs = computed(() =>
+  visibleTabs([
+    { key: "reason", label: "추천 이유", available: !!searchQuery && (!reasonDone.value || !!reasonText.value) },
+    { key: "plot", label: "줄거리", available: !!plotText.value },
+    { key: "intro", label: "소개", available: !!book.value?.introduction },
+  ]),
+);
+const activeCuration = computed(() => activeTabKey(detailTab.value, curationTabs.value));
 
 // ── 연관 도서 ──────────────────────────────────────────────
+// 시안의 4열 카드에 맞춰 4권
+const RELATED_LIMIT = 4;
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
-const selectedRelated = ref<any>(null);
+// [자세히 보기]로 연 카드 — 한 번에 하나
+const openRelated = ref<string | null>(null);
+
+function relatedBookUrl(id: string): string {
+  return `/books/${id}?q=${encodeURIComponent(searchQuery)}`;
+}
 
 // ── UI 상태 ────────────────────────────────────────────────
 const toast = ref("");
-
-// ── Publishing additions ──────────────────────────────────────
-// Vertical tabs
-const vtabsRef = ref<HTMLElement | null>(null);
-const vtabSliderStyle = ref<{ height: string; transform: string }>({
-  height: "0px",
-  transform: "translateY(0px)",
-});
-const detailTab = ref("reason");
-const detailTabs = [
-  { key: "reason", label: "추천 이유" },
-  { key: "plot", label: "줄거리" },
-  { key: "intro", label: "소개" },
-];
-
-function updateVtabSlider() {
-  if (!vtabsRef.value) return;
-  const active = vtabsRef.value.querySelector(
-    ".skx-vtab.is-active",
-  ) as HTMLElement | null;
-  if (!active) return;
-  vtabSliderStyle.value = {
-    height: active.offsetHeight + "px",
-    transform: `translateY(${active.offsetTop}px)`,
-  };
-}
-
-function switchVtab(key: string) {
-  detailTab.value = key;
-  nextTick(() => updateVtabSlider());
-}
 
 // Chat panel
 const chatPanelOpen = ref(false);
@@ -619,12 +405,11 @@ function showToast(msg: string) {
   }, 2500);
 }
 
-// PDF viewer
-const pdfOpen = ref(false);
-function viewPdf() {
-  pdfOpen.value = true;
+// PDF viewer — 이 자료·관련 자료
+const pdfTarget = ref<{ id: string; title: string } | null>(null);
+function viewPdf(id: string, title: string) {
+  pdfTarget.value = { id, title };
 }
-// ── End publishing additions ──────────────────────────────────
 
 // ── 초기화 ─────────────────────────────────────────────────
 onMounted(async () => {
@@ -637,7 +422,6 @@ onMounted(async () => {
     streamReason();
     fetchRelatedBooks();
   }
-  nextTick(() => updateVtabSlider());
 });
 
 // ── 도서 fetch ─────────────────────────────────────────────
@@ -656,7 +440,10 @@ async function fetchBook() {
 
 // ── 추천 이유 SSE ──────────────────────────────────────────
 async function streamReason() {
-  if (!searchQuery) return;
+  if (!searchQuery) {
+    reasonDone.value = true;
+    return;
+  }
   reasonLoading.value = true;
   reasonText.value = "";
   try {
@@ -678,6 +465,7 @@ async function streamReason() {
     /* ignore */
   } finally {
     reasonLoading.value = false;
+    reasonDone.value = true;
   }
 }
 
@@ -701,7 +489,7 @@ async function fetchRelatedBooks() {
     if (data?.books) {
       relatedItems.value = (data.books as any[])
         .filter((b) => b.book_id !== cnts_id)
-        .slice(0, 5);
+        .slice(0, RELATED_LIMIT);
     }
   } catch {
     /* ignore */
@@ -711,24 +499,6 @@ async function fetchRelatedBooks() {
 }
 
 // ── 유틸 ──────────────────────────────────────────────────
-function parseThemes(themes?: string | null): string[] {
-  if (!themes) return [];
-  return themes
-    .split(/[,;]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-}
-
-function recoTags(rel: any): string[] {
-  const raw =
-    rel.book_info?.themes ||
-    rel.book_info?.keyword ||
-    rel.book_info?.subject ||
-    "";
-  return parseThemes(raw).slice(0, 3);
-}
-
 function recoDesc(rel: any): string {
   return rel.book_info?.summary || rel.book_info?.introduction || "";
 }
