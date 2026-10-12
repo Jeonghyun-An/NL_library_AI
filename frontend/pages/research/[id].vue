@@ -197,6 +197,10 @@
             </div>
           </aside>
         </div>
+        <!-- 따라가기를 멈춘 동안만 뜬다 — 누르면 지금 쓰는(찾는) 곳으로 옮기고 다시 따라간다. 화면 아래 가운데에 붙는다 -->
+        <button v-if="follow.pill.value" type="button" class="rs-btn rs-btn--small rs-follow-pill" @click="follow.resume()">
+          {{ follow.pill.value }}
+        </button>
       </template>
     </main>
 
@@ -237,6 +241,7 @@ import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { useResearchWork, useWorkApi } from "~/composables/useResearchWork";
 import { useRestorePosition } from "~/composables/useRestorePosition";
+import { useSectionFollow } from "~/composables/useSectionFollow";
 import type { OpenPdfPayload } from "~/types/research";
 import type { WorkStep } from "~/types/work";
 import { safeLocalStorage } from "~/utils/browserId";
@@ -256,6 +261,7 @@ import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
 import { planSlots, showsPlanSlots } from "~/utils/planSlots";
 import { activeRoundKey, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
+import { followBlocked, followTarget } from "~/utils/researchFollow";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 import { ONBOARDING_KEY, parseWorkStep, stepForPhase, summaryBand, summaryLine, withStep } from "~/utils/workPhase";
@@ -408,10 +414,13 @@ const flashIdx = ref<number | null>(null);
 const linkedIdx = computed(() => linkedSlot(flashIdx.value, hover.value));
 let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
-// 사용자가 누를 때만 옮긴다 — 절이 완성될 때마다 끌고 가면 초안을 읽던 자리를 잃는다
+// 현황 카드에서 절을 누르면 그 절로 옮기고 따라가기를 멈춘다 — 고른 절을 읽는 동안 다음 절이 시작돼도 끌고 가지 않는다(알약으로
+// 다시 켠다). 절이 시작될 때마다 옮기는 것은 아래 따라가기(useSectionFollow)가 맡는다(spec D22 가 round04b §7-4 를 덮음)
 function jumpToSection(idx: number): void {
   const el = document.getElementById(`rs-sec-${idx}`);
   if (!el) return;
+  // follow 는 아래 '지금 진행하는 절 따라가기' 절에서 만든다 — 이 함수는 누를 때만 돌아 그때는 이미 있다
+  follow.pause();
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   // 키보드로 누른 사람이 그 절부터 이어 읽게 초점도 옮긴다(스크롤은 위에서 했다). 이때 카드 항목의
@@ -565,6 +574,31 @@ async function openPdf(target: OpenPdfPayload): Promise<void> {
   const problem = await pdfOpener.openPdf(target);
   if (problem) showToast(problem);
 }
+
+// ── 지금 진행하는 절 따라가기 ─────────────────────────────
+// 종합 중에는 쓰는 절(초안 전에는 그 절이 될 하위질문 자리), 탐색 중에는 도는 하위질문 자리로 스크롤이 따라간다(spec D22).
+// 사용자가 직접 굴리면 멈추고 알약으로 다시 켠다. 돌아온 자리를 맞추는 중·원문 뷰어·열린 인용 팝오버 동안은 옮기지 않고,
+// 상세에서 돌아온 화면은 멈춘 채 시작한다(고른 자리를 빼앗지 않게). 최종본 뒤에는 대상이 없어 멈춘다
+const followTargetId = computed(() =>
+  followTarget({
+    phase: phase.value,
+    eta: eta.value,
+    hasDraft: !!draft.value,
+    slots: planSlotList.value,
+    subqs: view.value?.subqs ?? [],
+  }),
+);
+const follow = useSectionFollow({
+  phase,
+  target: followTargetId,
+  isBlocked: () =>
+    followBlocked({
+      restoring: restore.pending.value,
+      pdfOpen: !!pdf.value,
+      popoverOpen: !!document.querySelector(".rs-page .rs-cite__pop"),
+    }),
+  startPaused: restore.anchor !== null,
+});
 
 // ── 내려받기(Word·PDF) ────────────────────────────────────
 const { exporting, printDoc, exportDocx, printPdf } = useReportExport();

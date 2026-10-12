@@ -1433,6 +1433,17 @@ button.rs-synth__item:focus-visible,
   }
 }
 
+/* ── 따라가기 알약 ───────────────────────────────────────── */
+/* 사용자가 굴려 따라가기를 멈춘 동안만 뜬다 — 화면 아래 가운데에 붙어 있다가 누르면 지금 쓰는(찾는) 곳으로 옮긴다.
+   work.css 의 .wk-pill 패턴(sticky·가운데·그림자)을 옮겨 쓴다(work.css 는 고치지 않는다). 인쇄에서는 .rs-btn 규칙이 뺀다 */
+.rs-follow-pill {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 4;
+  align-self: center;
+  box-shadow: var(--skx-shadow-lnb);
+}
+
 /* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
 /* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
 .rs-print {
