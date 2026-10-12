@@ -79,6 +79,7 @@
         class="wk-psec__item"
         :class="`is-${p.state}`"
         :data-anchor="paraAnchor(sectionKey, p.id)"
+        tabindex="-1"
       >
         <span :id="bandId(p.id)" class="wk-psec__band">{{ STATE_LABELS[p.state] }}</span>
         <div v-if="editingId === p.id" class="wk-psec__edit">
@@ -112,6 +113,7 @@
                   <FigureChip v-else-if="figureOf(section.figures, part.fid)" :figure="figureOf(section.figures, part.fid)!" />
                   <span v-else class="wk-psec__cite is-pending">[{{ part.fid }}]</span>
                 </template>
+                <span v-if="s.unmarked" class="rs-sr-only">(근거 표시 없음)</span>
               </span>
               <span v-if="s.numbers.length" class="wk-psec__check" :title="`[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요`">
                 확인 필요 {{ s.numbers.join(", ") }}

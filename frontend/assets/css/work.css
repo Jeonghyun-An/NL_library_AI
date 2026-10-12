@@ -1451,4 +1451,33 @@ button.wk-stepper__step {
   color: var(--skx-ink);
 }
 
+/* ── 검토할 곳(보고서 머리 한 줄, round06e) — 문단의 '확인 필요' 표시(.wk-psec__check)와 같은 점선 ── */
+.wk-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.6rem;
+}
+.wk-review__jump {
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-ink);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.wk-review__jump:hover {
+  background: var(--skx-border-c1);
+}
+.wk-review__jump:focus-visible,
+.wk-psec__item:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 2px;
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

@@ -93,6 +93,12 @@
             </li>
           </ol>
         </nav>
+        <p v-if="reviewText" class="wk-review">
+          <button type="button" class="wk-review__jump" @click="jumpToReview">
+            {{ reviewText }}<span class="rs-sr-only"> — 첫 자리로 가기</span>
+          </button>
+          <span class="rs-muted">코드 검사가 표시한 곳입니다. 원문과 맞는지 확인하세요.</span>
+        </p>
       </template>
       <!-- [목차 고치기] — 승인 목차는 접어 두고, 초안 목차(06b·질문이 없어 자동 승인하지 못한 목차)는 승인하러 늘 편다.
            v-show 라 접어도 편집기가 붙어 있어 고치던 목차(draft·편집 모드)가 남는다 — 다시 펴면 이어서 고친다 -->
@@ -210,6 +216,7 @@ import { useAutoReport } from "~/composables/useAutoReport";
 import { useReportExport } from "~/composables/useReportExport";
 import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWork";
 import type { OutlinePut, SectionPut, WorkStep } from "~/types/work";
+import { paraAnchor } from "~/utils/detailSource";
 import { OUTLINE_BACKGROUND_MAX, OUTLINE_METHOD_MAX, fieldPut, isFallbackOutline } from "~/utils/outlineEdit";
 import { buildProposalDocument, printedKeys, printedProposedCount } from "~/utils/proposalDocument";
 import {
@@ -222,6 +229,8 @@ import {
   proposalReread,
   putOnceMore,
   reportBar,
+  reviewLine,
+  reviewSpots,
   sectionLabel,
   type TocItem,
 } from "~/utils/proposalView";
@@ -336,6 +345,23 @@ function goPart(anchor: string): void {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   el.querySelector<HTMLElement>("h3")?.focus({ preventScroll: true });
+}
+
+// 검토할 곳(06e) — 머리 한 줄. 누르면 첫 자리로 간다
+const review = computed(() => (proposal.value ? reviewSpots(proposal.value) : null));
+const reviewText = computed(() => (review.value ? reviewLine(review.value) : null));
+
+// 첫 자리 문단(li — ProposalSection 이 tabindex="-1" 를 단다)으로 스크롤하고 초점을 옮긴다. 그 절을 다시 쓰는 중이라 문단이
+// 그려지지 않았으면 그 절의 제목으로 간다
+function jumpToReview(): void {
+  const first = review.value?.first;
+  if (!first) return;
+  const el =
+    document.querySelector<HTMLElement>(`[data-anchor="${paraAnchor(first.key, first.pid)}"]`) ??
+    document.getElementById(`wk-sec-title-${first.key}`);
+  if (!el) return;
+  el.scrollIntoView({ block: "center" });
+  el.focus({ preventScroll: true });
 }
 
 onMounted(() => {

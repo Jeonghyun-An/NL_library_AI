@@ -37,6 +37,8 @@ import {
   putOnceMore,
   removeParagraph,
   reportBar,
+  reviewLine,
+  reviewSpots,
   sectionKeysOf,
   sectionLabel,
   sectionStatus,
@@ -481,6 +483,41 @@ describe("putOnceMore — 버전 충돌 한 번 재전송", () => {
       await expect(putOnceMore(put, { version: 7, outline: saved() }, proposalReread(get))).rejects.toBe(first);
       expect(seen.map((s) => s.version)).toEqual([7]);
     }
+  });
+});
+
+describe("reviewSpots·reviewLine", () => {
+  const checked = (unmarked: number, numbers: string[]) => ({ ...NO_CHECKS, unmarked, numbers });
+
+  it("문서 순서(목차 묶음 → 연구 공백)로 세고 첫 자리를 준다", () => {
+    const base = proposal({
+      gap: section([{ ...para("p1", "proposed"), checks: checked(1, ["2017"]) }], { key: "gap" }),
+      "prior.g2": section([para("p1", "accepted"), { ...para("p2", "proposed"), checks: checked(0, ["9", "30"]) }], {
+        key: "prior.g2",
+      }),
+      "prior.g1": section([para("p1", "proposed"), para("p2", "edited")]),
+    });
+    const groups = [...base.outline!.groups, { key: "prior.g2", name: "사회적 지지", hint: "사회적 지지", papers: ["KCI_B"] }];
+    const p = { ...base, outline: { ...base.outline!, groups } };
+    expect(reviewSpots(p)).toEqual({ unmarked: 1, numbers: 3, first: { key: "prior.g2", pid: "p2" } });
+    expect(reviewLine(reviewSpots(p))).toBe("검토할 곳: 근거 없는 문장 1 · 확인 필요 숫자 3");
+  });
+
+  it("0 인 칸은 줄에서 뺀다", () => {
+    expect(reviewLine({ unmarked: 2, numbers: 0, first: { key: "gap", pid: "p1" } })).toBe("검토할 곳: 근거 없는 문장 2");
+    expect(reviewLine({ unmarked: 0, numbers: 1, first: { key: "gap", pid: "p1" } })).toBe("검토할 곳: 확인 필요 숫자 1");
+  });
+
+  it("검토할 곳이 없으면 null", () => {
+    const p = proposal({ "prior.g1": section([para("p1", "accepted")]) });
+    expect(reviewSpots(p)).toEqual({ unmarked: 0, numbers: 0, first: null });
+    expect(reviewLine(reviewSpots(p))).toBeNull();
+    expect(reviewLine(reviewSpots(proposal({})))).toBeNull();
+  });
+
+  it("목차에서 빠진 옛 절은 세지 않는다 — 문서에 실리지 않고 화면에도 없다", () => {
+    const orphan = section([{ ...para("p1", "proposed"), checks: checked(2, ["5"]) }], { key: "prior.g3" });
+    expect(reviewSpots(proposal({ "prior.g3": orphan }))).toEqual({ unmarked: 0, numbers: 0, first: null });
   });
 });
 

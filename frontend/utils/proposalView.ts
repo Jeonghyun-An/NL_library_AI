@@ -245,6 +245,39 @@ export function proposalReread(get: () => Promise<ProposalView>): () => Promise<
   };
 }
 
+// 검토할 곳(06e, §12-11 권고) — 수락 관문이 빠진 자동 보고서에서 코드 검사 표시(근거 표시 없는 문장·[F#] 밖 숫자)가 사실상
+// 유일한 검토 단서다. 문서가 그리는 절(목차 묶음 → 연구 공백)의 저장된 문단만 센다 — 목차에서 빠진 옛 절은 화면·문서에 없다.
+// first 는 둘 중 하나라도 있는 첫 문단(머리 줄을 누르면 그 자리로 간다)
+export interface ReviewSpots {
+  unmarked: number;
+  numbers: number;
+  first: { key: string; pid: string } | null;
+}
+
+export function reviewSpots(p: ProposalView): ReviewSpots {
+  const out: ReviewSpots = { unmarked: 0, numbers: 0, first: null };
+  for (const key of sectionKeysOf(p)) {
+    for (const para of p.sections[key]?.paragraphs ?? []) {
+      // 직접 쓴 문단은 저장 전 checks 가 {} 일 수 있다(서버가 다시 검사해 채운다) — 없는 칸은 0 으로 센다
+      const unmarked = para.checks?.unmarked ?? 0;
+      const numbers = para.checks?.numbers?.length ?? 0;
+      out.unmarked += unmarked;
+      out.numbers += numbers;
+      if (!out.first && (unmarked || numbers)) out.first = { key, pid: para.id };
+    }
+  }
+  return out;
+}
+
+// 머리 한 줄 '검토할 곳: 근거 없는 문장 n · 확인 필요 숫자 m' — 0 인 칸은 빼고, 둘 다 0 이면 null(줄을 그리지 않는다).
+// 공개 부록에도 같은 줄을 싣는다(proposalDocument.disclosureLines)
+export function reviewLine(r: ReviewSpots): string | null {
+  const parts = [r.unmarked ? `근거 없는 문장 ${r.unmarked}` : "", r.numbers ? `확인 필요 숫자 ${r.numbers}` : ""].filter(
+    Boolean,
+  );
+  return parts.length ? `검토할 곳: ${parts.join(" · ")}` : null;
+}
+
 // ── 보고서 자동 산출(06e D20) — [보고서 만들기] 한 번으로 목차를 자동 확정하고 절을 문서 순서대로 넣는다 ──
 
 // 화면이 쓰는 절의 차례 — 목차 묶음 순서(prior.g1~g4) → 연구 공백. 계획서 화면의 절 목록·문서(proposalDocument.printedKeys)·
