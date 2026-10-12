@@ -7,6 +7,7 @@ import {
   candidateNote,
   canMakeOutline,
   fieldValue,
+  firstPathChunk,
   freshIds,
   funnelLine,
   originLabel,
@@ -209,6 +210,36 @@ describe("pathLines", () => {
       { label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" },
     ]);
     expect(pathLines(row())).toEqual([{ label: "들어온 경로", detail: "저장된 경로가 없습니다" }]);
+  });
+});
+
+describe("firstPathChunk — 패널의 첫 대목", () => {
+  it("[경로] 와 같은 순서의 첫 매칭 대목 — 대목이 없는 하위질문은 건너뛴다", () => {
+    const second: PathChunk = { ...CHUNK, chunk_id: "KCI_A#9", page_start: 9, page_end: 10 };
+    const item = row({
+      path: { subqs: [subq({ chunks: [CHUNK, second] }), subq({ idx: 1, chunks: [second] })], revived: null, user: false },
+    });
+    expect(firstPathChunk(item)).toEqual({ label: "하위질문 1 · 대목 p.4", chunk: CHUNK });
+    const later = row({ path: { subqs: [subq(), subq({ idx: 1, chunks: [second] })], revived: null, user: false } });
+    expect(firstPathChunk(later)).toEqual({ label: "하위질문 2 · 대목 p.10–11", chunk: second });
+  });
+
+  it("매칭 대목이 하나도 없으면 null — 쪽을 모르는 대목은 '쪽 정보 없음'으로 적는다", () => {
+    expect(firstPathChunk(row({ path: { subqs: [subq()], revived: null, user: false } }))).toBeNull();
+    const bare: PathChunk = { chunk_id: "KCI_A#0", page_start: null, page_end: null, score: null, text: "초록" };
+    expect(firstPathChunk(row({ path: { subqs: [subq({ chunks: [bare] })], revived: null, user: false } }))).toEqual({
+      label: "하위질문 1 · 대목 쪽 정보 없음",
+      chunk: bare,
+    });
+  });
+
+  it("되살림·직접 담음만 있는 논문은 null", () => {
+    const revived = row({
+      origin: "revived",
+      path: { subqs: [], revived: { subq_idx: 1, subquestion: "사회적 지지 측정 도구", round: 2, note: "" }, user: false },
+    });
+    expect(firstPathChunk(revived)).toBeNull();
+    expect(firstPathChunk(row({ origin: "user", path: { subqs: [], revived: null, user: true } }))).toBeNull();
   });
 });
 

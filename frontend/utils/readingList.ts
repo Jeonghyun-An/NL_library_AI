@@ -133,6 +133,16 @@ export function pathLines(item: ReadingItem): PathLine[] {
   return lines;
 }
 
+// 오른쪽 딥리드 패널의 '들어온 경로' 첫 대목(spec §12-4 D24 — 접어 둔다). [경로](pathLines)와 같은 순서의 첫 매칭 대목이고,
+// 매칭 대목이 없으면(되살림·직접 담음만이거나 대목이 저장되지 않음) null
+export function firstPathChunk(item: ReadingItem): { label: string; chunk: PathChunk } | null {
+  for (const sq of item.path.subqs) {
+    const chunk = sq.chunks[0];
+    if (chunk) return { label: `하위질문 ${sq.idx + 1} · 대목 ${pageLabel(chunkPages(chunk))}`, chunk };
+  }
+  return null;
+}
+
 // 경로의 대목 하나로 원문을 연다 — 그 대목의 쪽에서(쪽 정보가 없으면 첫 쪽)
 export function pathPdfTarget(item: ReadingItem, chunk: PathChunk): OpenPdfPayload {
   return citedPdfTarget(item.cnts_id, item.meta.title.trim() || item.cnts_id, [chunkPages(chunk)]);

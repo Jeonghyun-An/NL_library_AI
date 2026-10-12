@@ -1,95 +1,143 @@
 <!-- frontend/components/work/ReadingStep.vue -->
 <template>
-  <section class="wk-screen" aria-labelledby="wk-reading-title">
-    <header class="wk-screen__head">
-      <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
-      <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">참고문헌 선택하기</h2>
-      <p class="rs-muted">
-        「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다.
-      </p>
-      <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
-      <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
-      <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
-    </header>
+  <!-- 제목을 누르면 오른쪽에 그 논문의 딥리드 패널이 열린다(spec §12-4 D24) — 넓은 화면은 본문 옆 2단, 좁으면 서랍 -->
+  <div class="wk-split" :class="{ 'is-panel-open': panelPaper !== null }">
+    <section class="wk-screen wk-split__main" aria-labelledby="wk-reading-title">
+      <header class="wk-screen__head">
+        <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
+        <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">참고문헌 선택하기</h2>
+        <p class="rs-muted">
+          「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. 제목을 누르면 오른쪽에서
+          그 논문과 대화할 수 있습니다.
+        </p>
+        <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
+        <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
+        <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+      </header>
 
-    <CorpusScopeNote :corpus="corpus" />
-    <p v-if="error" class="rs-alert" role="alert">{{ error }}</p>
+      <CorpusScopeNote :corpus="corpus" />
+      <p v-if="error" class="rs-alert" role="alert">{{ error }}</p>
 
-    <div v-if="!reading && loadError" class="rs-card rs-state">
-      <p>{{ loadError }}</p>
-      <button type="button" class="rs-btn" @click="reloadAll(['reading'])">다시 불러오기</button>
-    </div>
-    <div v-else-if="!reading" class="rs-card rs-card--wait">
-      <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
-      <p>참고문헌 후보를 불러오는 중입니다</p>
-    </div>
-    <template v-else>
-      <FunnelCounter :funnel="reading.funnel" />
-      <ReadingTable
-        :items="reading.items"
-        :read-only="readOnly"
-        :busy="busy"
-        :reordering="saves.reordering.value"
-        :job-id="jobId"
-        @update="update"
-        @open-pdf="(payload) => emit('open-pdf', payload)"
-      />
-      <CandidateDrawer
-        v-if="reading.excluded.length"
-        :excluded="reading.excluded"
-        :read-only="readOnly"
-        :busy="busy"
-        @revive="(cnts) => update(cnts, { state: 'candidate' })"
-      />
-      <div class="wk-screen__next">
-        <p v-if="hint" class="rs-muted">{{ hint }}</p>
-        <button v-if="reading.topic_id === null" type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'topics')">
-          제목 고르기
-        </button>
-        <template v-else-if="outlineMade">
-          <button type="button" class="rs-btn" @click="emit('go', 'proposal')">{{ FINAL_STEP_NAME }} 단계로</button>
+      <div v-if="!reading && loadError" class="rs-card rs-state">
+        <p>{{ loadError }}</p>
+        <button type="button" class="rs-btn" @click="reloadAll(['reading'])">다시 불러오기</button>
+      </div>
+      <div v-else-if="!reading" class="rs-card rs-card--wait">
+        <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+        <p>참고문헌 후보를 불러오는 중입니다</p>
+      </div>
+      <template v-else>
+        <FunnelCounter :funnel="reading.funnel" />
+        <ReadingTable
+          :items="reading.items"
+          :read-only="readOnly"
+          :busy="busy"
+          :reordering="saves.reordering.value"
+          :job-id="jobId"
+          :active-id="panelPaper?.cntsId ?? null"
+          :panel-id="PANEL_ID"
+          @update="update"
+          @open="openPanel"
+          @open-pdf="(payload) => emit('open-pdf', payload)"
+        />
+        <CandidateDrawer
+          v-if="reading.excluded.length"
+          :excluded="reading.excluded"
+          :read-only="readOnly"
+          :busy="busy"
+          @revive="(cnts) => update(cnts, { state: 'candidate' })"
+        />
+        <div class="wk-screen__next">
+          <p v-if="hint" class="rs-muted">{{ hint }}</p>
+          <button v-if="reading.topic_id === null" type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'topics')">
+            제목 고르기
+          </button>
+          <template v-else-if="outlineMade">
+            <button type="button" class="rs-btn" @click="emit('go', 'proposal')">{{ FINAL_STEP_NAME }} 단계로</button>
+            <button
+              type="button"
+              class="rs-btn rs-btn--ghost"
+              :disabled="readOnly || busy || !canOutline"
+              @click="makeOutline(true)"
+            >
+              {{ REMAKE_REPORT }}
+            </button>
+          </template>
+          <button
+            v-else
+            type="button"
+            class="rs-btn"
+            :disabled="readOnly || busy || !canOutline"
+            @click="makeOutline(false)"
+          >
+            {{ MAKE_REPORT }}
+          </button>
+        </div>
+      </template>
+    </section>
+
+    <DeepReadPanel
+      :panel-id="PANEL_ID"
+      :paper="panelPaper"
+      :tabs="PANEL_TABS"
+      tab="chat"
+      :detail-href="panelDetailHref"
+      :store="chatStore"
+      @close="closePanel"
+      @open-pdf="(payload) => emit('open-pdf', payload)"
+      @detail="onDetail"
+    >
+      <template #extra>
+        <div v-if="panelItem" class="wk-panel__save">
+          <!-- 표의 [담음] 과 같은 저장(update) — 누른 상태(aria-pressed)가 담음이다 -->
           <button
             type="button"
-            class="rs-btn rs-btn--ghost"
-            :disabled="readOnly || busy || !canOutline"
-            @click="makeOutline(true)"
+            class="rs-btn rs-btn--small"
+            :class="{ 'rs-btn--ghost': panelItem.state !== 'in' }"
+            :aria-pressed="panelItem.state === 'in'"
+            :disabled="readOnly || busy || panelItem.state === 'out'"
+            @click="togglePanelSave"
           >
-            {{ REMAKE_REPORT }}
+            담음
           </button>
-        </template>
-        <button
-          v-else
-          type="button"
-          class="rs-btn"
-          :disabled="readOnly || busy || !canOutline"
-          @click="makeOutline(false)"
-        >
-          {{ MAKE_REPORT }}
-        </button>
-      </div>
-    </template>
-  </section>
+          <span v-if="readOnly" class="rs-muted">예시 연구는 담을 수 없습니다 — 대화는 할 수 있습니다.</span>
+          <span v-else-if="panelItem.state === 'out'" class="rs-muted">뺀 논문입니다 — 표에서 [되돌리기]를 누르면 담을 수 있습니다.</span>
+        </div>
+        <details v-if="panelPath" class="wk-panel__path">
+          <summary>들어온 경로 — {{ panelPath.label }}</summary>
+          <p class="wk-path__quote">{{ panelPath.chunk.text }}</p>
+          <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" @click="openPathChunk">원문 보기</button>
+        </details>
+      </template>
+    </DeepReadPanel>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import CandidateDrawer from "~/components/work/CandidateDrawer.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
+import DeepReadPanel from "~/components/work/DeepReadPanel.vue";
 import FunnelCounter from "~/components/work/FunnelCounter.vue";
 import ReadingTable from "~/components/work/ReadingTable.vue";
 import { useReadingSaves } from "~/composables/useReadingSaves";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
+import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
-import { canMakeOutline, outlineHint } from "~/utils/readingList";
+import { type PanelPaper, panelTabs } from "~/utils/deepRead";
+import type { DeepReadMessage } from "~/utils/deepReadSse";
+import { detailUrl, readingAnchor } from "~/utils/detailSource";
+import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { isPlainClick } from "~/utils/restorePosition";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
 // 담음 5편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
 // 넣는다 — 06e D20)
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
-const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload] }>();
+const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload]; panel: [open: boolean] }>();
 
 // 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 바꾼다 — 다시 만들기 전에 묻는다. 새 반영은 다시 자동 승인하지만
 // 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
@@ -141,6 +189,82 @@ function update(cnts: string, body: ReadingPut): void {
   if (readOnly.value) return;
   saves.enqueue(cnts, body);
 }
+
+// ── 오른쪽 딥리드 패널(spec §12-4 D24) ─────────────────────────
+// 이 단계는 딥리드 탭만 둔다. [담음] 은 표와 같은 저장 사슬(update → useReadingSaves)을 탄다. 논문별 대화는 이 방문 동안만
+// 이 화면이 쥔다 — 단계를 옮기거나 새로고침하면 비운다(서버는 대화를 저장하지 않는다, 06e 정함 20)
+const PANEL_ID = "wk-panel-reading";
+const PANEL_TABS = panelTabs("reading");
+const chatStore = new Map<string, DeepReadMessage[]>();
+const { leave } = useDetailLeave();
+// opener — 패널을 연 행 제목 버튼. 닫으면 그리로 초점을 돌린다
+const panel = shallowRef<{ cntsId: string; opener: HTMLElement | null } | null>(null);
+// 패널의 논문은 지금 표의 행에서 읽는다 — [담음] 을 누른 뒤 다시 읽은 상태가 패널에도 그대로 보인다
+const panelItem = computed(() => {
+  const id = panel.value?.cntsId;
+  return id ? (reading.value?.items.find((i) => i.cnts_id === id) ?? null) : null;
+});
+const panelPaper = computed<PanelPaper | null>(() =>
+  panelItem.value ? { cntsId: panelItem.value.cnts_id, meta: panelItem.value.meta } : null,
+);
+const panelPath = computed(() => (panelItem.value ? firstPathChunk(panelItem.value) : null));
+const panelDetailHref = computed(() => (panelItem.value ? readingDetailUrl(panelItem.value.cnts_id) : null));
+
+// 상세에서 [연구 화면으로]·뒤로 가기로 돌아오면 이 단계(s=reading)의 그 행(r-<cnts>)으로 돌아온다 — 표의 [논문 상세 ↗] 와 같은 출처
+function readingDetailUrl(cnts: string): string {
+  return detailUrl(cnts, { kind: "research", job: props.jobId, e: null, s: "reading" }, { at: readingAnchor(cnts), y: null });
+}
+
+// 같은 제목을 다시 누르면 닫는다(제목 버튼의 aria-expanded 와 같은 뜻)
+function openPanel(cnts: string, el: HTMLElement): void {
+  if (panel.value?.cntsId === cnts) {
+    closePanel();
+    return;
+  }
+  panel.value = { cntsId: cnts, opener: el };
+}
+
+// 닫으면 누른 행 제목으로 초점을 돌린다 — 그 사이 표를 다시 그려 요소가 바뀌었으면 같은 행의 제목 버튼을 찾는다
+function closePanel(): void {
+  const was = panel.value;
+  panel.value = null;
+  if (!was) return;
+  void nextTick(() => {
+    const back = was.opener?.isConnected
+      ? was.opener
+      : document.querySelector<HTMLElement>(`[data-anchor="${readingAnchor(was.cntsId)}"] .wk-reading__open`);
+    back?.focus();
+  });
+}
+
+// [담음] 토글 — 예시 연구·뺀 논문은 버튼이 꺼져 있다(update 도 예시 연구를 막는다)
+function togglePanelSave(): void {
+  const item = panelItem.value;
+  if (!item || item.state === "out") return;
+  update(item.cnts_id, { state: item.state === "in" ? "candidate" : "in" });
+}
+
+function openPathChunk(): void {
+  const item = panelItem.value;
+  const path = panelPath.value;
+  if (item && path) emit("open-pdf", pathPdfTarget(item, path.chunk));
+}
+
+// [논문 상세 ↗] — 새 창·새 탭은 브라우저에 맡기고(주소에 돌아올 자리가 이미 있다), 그냥 누르면 지금 주소에 자리를 남기고 떠난다
+function onDetail(e: MouseEvent): void {
+  const item = panelItem.value;
+  if (!item || !isPlainClick(e)) return;
+  e.preventDefault();
+  void leave(readingDetailUrl(item.cnts_id), { at: readingAnchor(item.cnts_id), y: null });
+}
+
+// 패널이 열리고 닫히는 것을 연구 화면에 알린다 — 넓은 화면에서 왼쪽 메뉴(LNB)를 접는다(06e 정함 30). 단계를 옮기면 이 화면이
+// 내려가며 닫힘을 알리므로 연구 화면은 단계를 따로 보지 않는다
+watch(
+  () => panelPaper.value !== null,
+  (open) => emit("panel", open),
+);
+onBeforeUnmount(() => emit("panel", false));
 
 async function makeOutline(again: boolean): Promise<void> {
   if (busy.value || readOnly.value || !canOutline.value) return;

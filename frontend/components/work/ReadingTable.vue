@@ -10,6 +10,7 @@
         'wk-reading__row--out': item.state === 'out',
         'wk-reading__row--saving': saving.has(item.cnts_id),
         'wk-reading__row--fresh': fresh.has(item.cnts_id),
+        'wk-reading__row--active': activeId === item.cnts_id,
       }"
       :data-anchor="readingAnchor(item.cnts_id)"
       :aria-busy="saving.has(item.cnts_id)"
@@ -27,17 +28,25 @@
       </label>
 
       <div class="wk-reading__main">
-        <!-- 누르는 순간의 행 높이를 주소에 실어야 해서 NuxtLink 대신 직접 옮긴다(CitationChip 과 같다) -->
-        <a
-          :href="detailHref(item.cnts_id, null)"
-          class="wk-reading__title"
-          @click="goDetail($event, item.cnts_id)"
-          @auxclick="goDetail($event, item.cnts_id)"
-          @contextmenu="goDetail($event, item.cnts_id)"
-        >{{ rowTitle(item) }}</a>
+        <!-- 제목을 누르면 화면을 떠나지 않고 오른쪽 패널에 이 논문의 딥리드가 열린다(spec §12-4 D24) -->
+        <button
+          type="button"
+          class="wk-reading__title wk-reading__open"
+          :aria-expanded="activeId === item.cnts_id"
+          :aria-controls="activeId === item.cnts_id ? panelId : undefined"
+          @click="openRow(item.cnts_id, $event)"
+        >{{ rowTitle(item) }}</button>
         <p class="wk-reading__meta">
           <span>{{ paperByline(item.meta) }}</span>
           <span class="rs-badge">{{ originLabel(item.origin) }}</span>
+          <!-- 상세로 떠나는 링크. 누르는 순간의 행 높이를 주소에 실어야 해서 NuxtLink 대신 직접 옮긴다(CitationChip 과 같다) -->
+          <a
+            :href="detailHref(item.cnts_id, null)"
+            class="wk-reading__detail"
+            @click="goDetail($event, item.cnts_id)"
+            @auxclick="goDetail($event, item.cnts_id)"
+            @contextmenu="goDetail($event, item.cnts_id)"
+          >논문 상세 ↗<span class="rs-sr-only"> {{ rowName(item) }}</span></a>
         </p>
         <div class="wk-reading__fields">
           <label class="wk-edit__field">
@@ -136,9 +145,23 @@ import { paperByline } from "~/utils/researchReport";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 
 // 읽기 목록 표(spec §4 S4·§5-4) — 행마다 담음/뺌·메모·묶음 이름·순서([위로]·[아래로])·[경로]. 고침은 update 로 emit 만 하고 PUT 은 ReadingStep 이 한다.
-// reordering 은 ReadingStep 에 순서 저장이 남아 있는 동안(그 묶음을 다시 읽기까지) 참이다
-const props = defineProps<{ items: ReadingItem[]; readOnly: boolean; busy: boolean; reordering: boolean; jobId: string }>();
-const emit = defineEmits<{ update: [cnts: string, body: ReadingPut]; "open-pdf": [payload: OpenPdfPayload] }>();
+// reordering 은 ReadingStep 에 순서 저장이 남아 있는 동안(그 묶음을 다시 읽기까지) 참이다.
+// 제목은 오른쪽 딥리드 패널을 여는 버튼이다(open 으로 emit — 패널은 ReadingStep 이 쥔다). activeId 는 패널에 열린 논문,
+// panelId 는 그 패널의 id(aria-controls)
+const props = defineProps<{
+  items: ReadingItem[];
+  readOnly: boolean;
+  busy: boolean;
+  reordering: boolean;
+  jobId: string;
+  activeId?: string | null;
+  panelId?: string;
+}>();
+const emit = defineEmits<{
+  update: [cnts: string, body: ReadingPut];
+  "open-pdf": [payload: OpenPdfPayload];
+  open: [cnts: string, el: HTMLElement];
+}>();
 
 const { leave } = useDetailLeave();
 // [위로]·[아래로] 로 보낸 새 번호 — 순서 저장 묶음이 끝날 때까지(reordering) 표를 이 순서로 그려 옮긴 행이 바로 움직인다.
@@ -253,6 +276,11 @@ function pathId(cnts: string): string {
 
 function togglePath(cnts: string): void {
   openPath.value = openPath.value === cnts ? null : cnts;
+}
+
+// 누른 제목 버튼을 함께 넘긴다 — 패널을 닫으면 ReadingStep 이 그리로 초점을 돌린다
+function openRow(cnts: string, e: MouseEvent): void {
+  emit("open", cnts, e.currentTarget as HTMLElement);
 }
 
 // 상세에서 [연구 화면으로]·뒤로 가기로 돌아오면 읽기 목록 단계(s=reading)의 이 행(r-<cnts>)으로 돌아온다

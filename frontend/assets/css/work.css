@@ -1689,4 +1689,56 @@ button.wk-stepper__step {
   }
 }
 
+/* ── 참고문헌 선택하기 — 제목을 누르면 오른쪽 딥리드(06e R5). 제목은 링크 모양을 지킨 버튼, 상세는 서지 줄 끝의 작은 링크 ── */
+/* 버튼 기본 모양만 지운다 — 글자 크기·굵기는 같은 요소의 .wk-reading__title 이 맡는다. 브라우저 기본이 버튼의 자간을 normal 로
+   되돌려 링크였을 때(본문 자간 상속)와 달라지지 않게 자간만 물려받는다 */
+.wk-reading__open {
+  padding: 0;
+  text-align: left;
+  letter-spacing: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.wk-reading__open[aria-expanded="true"] {
+  color: var(--skx-primary);
+}
+.wk-reading__detail,
+.wk-reading__detail:visited {
+  font-weight: 700;
+  color: var(--skx-primary);
+  white-space: nowrap;
+}
+.wk-reading__detail:hover,
+.wk-reading__detail:focus-visible {
+  text-decoration: underline;
+}
+.wk-reading__row--active {
+  border-color: var(--skx-primary);
+  box-shadow: inset 0 0 0 1px var(--skx-primary);
+}
+.wk-panel__save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.6rem;
+}
+.wk-panel__path {
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+.wk-panel__path > summary {
+  font-weight: 700;
+  color: var(--skx-ink);
+  cursor: pointer;
+}
+.wk-panel__path[open] > summary {
+  margin-bottom: 0.4rem;
+}
+.wk-panel__path .wk-path__quote {
+  display: block;
+  margin: 0 0 0.4rem;
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

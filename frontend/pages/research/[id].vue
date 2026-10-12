@@ -70,7 +70,7 @@
             <p>이어간 연구를 불러오는 중입니다</p>
           </div>
           <TopicsStep v-else-if="step === 'topics'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
-          <ReadingStep v-else-if="step === 'reading'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" />
+          <ReadingStep v-else-if="step === 'reading'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
           <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
         </div>
 
@@ -512,6 +512,8 @@ function firstContinue(): boolean {
 // ── 원문 보기 ─────────────────────────────────────────────
 const pdfOpener = usePdfOpener();
 const { pdf, closePdf } = pdfOpener;
+// 단계 화면(ReadingStep·ProposalStep)의 오른쪽 딥리드 패널이 열려 있는지 — 왼쪽 메뉴(LNB) 접기가 읽는다(06e 정함 30)
+const workPanelOpen = ref(false);
 
 async function openPdf(target: OpenPdfPayload): Promise<void> {
   const problem = await pdfOpener.openPdf(target);
