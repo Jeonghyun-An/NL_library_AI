@@ -1298,8 +1298,9 @@ h4,
     width: 1rem;
   }
 }
-/* 예시 질문 — 입력창 아래의 작은 칸. 입력창이 주인공이라 한 단계 낮춘다: 3칸이 폭을 나눠 갖고 칸 사이 9(0.45rem),
-   글 14px 안팎 1~2줄, 안쪽 여백 11/15(0.55/0.75rem), 높이는 글에 맞춘다. 아이콘·흐림·윗선·반사광 없이 옅은 흰 막과 선만 */
+/* 예시 질문 — 입력창 아래의 중간 칸(시안 136 보다 작게, 입력창보다 낮게). 3칸이 폭을 나눠 갖고 칸 사이 9(0.45rem),
+   위에 작은 말풍선 아이콘(글보다 옅게) · 아래 글 15px 가운데 정렬 최대 2줄, 안쪽 여백 위아래 18 · 좌우 16, 높이 96 이상.
+   흐림·윗선·반사광 없이 옅은 흰 막과 선만이고, 올릴 때만 살짝 밝아진다. 휴대폰은 가로 한 줄씩 */
 .skx-chips {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1344,29 +1345,58 @@ h4,
   }
 }
 .skx-chip {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   width: 100%;
   height: 100%;
-  padding: 0.55rem 0.75rem;
+  min-height: 4.8rem;
+  padding: 0.9rem 0.8rem;
   background: var(--skx-chip-fill);
   border: 1px solid var(--skx-chip-line);
   border-radius: var(--skx-radius-sm);
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--skx-ink);
-  text-align: left;
+  text-align: center;
   line-height: 1.4;
-  transition: background-color 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
 }
 .skx-chip:hover {
   background: var(--skx-chip-fill-hover);
+  border-color: var(--skx-frost-line);
 }
-/* 휴대폰·태블릿은 rem 이 줄어(0.9rem) 0.7rem 이 10px 로 작아진다 — 13px 로 키운다 */
+.skx-chip__icon {
+  width: auto;
+  height: 0.95rem;
+  flex-shrink: 0;
+  display: block;
+  filter: var(--skx-ico-filter);
+  opacity: 0.55;
+}
+/* 휴대폰·태블릿은 rem 이 줄어(0.9rem) 0.75rem 이 11px 로 작아진다 — 13px 로 키운다 */
 @media (max-width: 768px) {
   .skx-chip {
-    padding: 0.6rem 0.8rem;
     font-size: 0.9rem;
+  }
+}
+/* 휴대폰은 칸이 세로로 쌓이므로 아이콘을 글 왼쪽에 두고 높이를 줄인다 */
+@media (max-width: 480px) {
+  .skx-chip {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: 0;
+    padding: 0.6rem 0.8rem;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  .skx-chip__icon {
+    height: 1.1rem;
   }
 }
 .skx-chip:focus-visible {
