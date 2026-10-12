@@ -56,11 +56,7 @@
         <!-- AI 텍스트 (타이핑 애니메이션) -->
         <div class="skx-rcd-ai">
           <div class="skx-rcd-ai__top">
-            <img
-              class="skx-rcd-ai__logo"
-              src="/img/logo-mark.svg"
-              alt="SKOVIX AI"
-            />
+            <span class="skx-ai-dot skx-rcd-ai__logo" aria-hidden="true"></span>
             <span class="skx-rcd-ai__label">{{ meta.aiLabel }}</span>
             <span
               v-if="loading"

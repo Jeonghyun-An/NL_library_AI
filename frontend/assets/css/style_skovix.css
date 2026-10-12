@@ -2375,9 +2375,9 @@ a:hover {
   display: none;
 }
 .skx-reco-empty__logo {
-  width: 5.2rem;
-  height: 5.1rem;
+  width: 8rem;
   display: block;
+  color: var(--skx-gray-2);
 }
 .skx-reco-empty__text {
   margin: 0;
@@ -3272,8 +3272,8 @@ a:hover {
   padding: 0.8rem;
 }
 .skx-rcd-ai__logo {
-  width: 1.65rem;
-  height: 1.6rem;
+  width: 0.7rem;
+  height: 0.7rem;
   display: block;
   flex-shrink: 0;
   animation: skx-pop-up 0.6s ease-out both;
@@ -5309,4 +5309,17 @@ a:hover {
 }
 .skx-book-card__thumb-col .skx-cover-ai-note {
   width: 100%;
+}
+
+/* [S] AI 표시 점 — 확정 로고의 i 위 점을 딴 작은 표시(옛 보라 심볼 logo-mark 자리) */
+.skx-ai-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--skx-accent-strong);
+  flex-shrink: 0;
+}
+.skx-ptag--ai-cited .skx-ai-dot {
+  background: var(--skx-on-accent);
 }

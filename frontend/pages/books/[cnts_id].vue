@@ -45,7 +45,7 @@
                 <BookCover :book-id="cnts_id" />
               </div>
               <p class="skx-cover-ai-note">
-                <img src="/img/logo-mark.svg" alt="" />
+                <span class="skx-ai-dot" aria-hidden="true"></span>
                 AI가 도서 내용을 분석해 그려낸 표지입니다
               </p>
             </div>
@@ -315,11 +315,7 @@
                 </button>
               </div>
               <div v-if="!selectedRelated" class="skx-reco-empty">
-                <img
-                  class="skx-reco-empty__logo"
-                  src="/img/logo-mark.svg"
-                  alt="SKOVIX"
-                />
+                <SkovixWordmark class="skx-reco-empty__logo" />
                 <p class="skx-reco-empty__text">추천도서를 클릭해주세요</p>
               </div>
               <div

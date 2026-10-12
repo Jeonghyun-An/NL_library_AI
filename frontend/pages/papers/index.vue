@@ -365,7 +365,7 @@
                       v-if="aiRefNumMap.has(paper.book_id)"
                       class="skx-ptag skx-ptag--ai-cited"
                     >
-                      <img src="/img/logo-mark.svg" alt="" />
+                      <span class="skx-ai-dot" aria-hidden="true"></span>
                       AI 답변 인용 {{ aiRefNumMap.get(paper.book_id) }}
                     </span>
                     <span
