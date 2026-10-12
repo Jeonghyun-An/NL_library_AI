@@ -6,7 +6,7 @@
       @save="showToast('저장목록 기능은 준비 중입니다.')"
     />
 
-    <main class="rs-page">
+    <main class="rs-page" :class="{ 'has-progressbar': !!barView }">
       <div v-if="notFound" class="rs-card rs-state">
         <h1 class="rs-state__title">찾을 수 없는 연구입니다</h1>
         <p class="rs-muted">주소가 잘못됐거나 지워진 연구입니다.</p>
@@ -37,6 +37,8 @@
           @retry="retry"
           @restart="onRestart"
         />
+        <!-- 고정 진행 영역 — 끝나지 않은 잡에만 선다. 끝난 잡의 이어간 연구에 서는 아래 WorkStepper 와 함께 서지 않는다 -->
+        <ResearchProgressBar v-if="barView" :view="barView" />
         <!-- 이어간 연구에만 단다 — 이어가지 않은 딥리서치의 머리는 지금과 같다 -->
         <WorkStepper
           v-if="workView"
@@ -218,6 +220,7 @@ import ReportDownloadMenu from "~/components/research/ReportDownloadMenu.vue";
 import ReportPrint from "~/components/research/ReportPrint.vue";
 import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
+import ResearchProgressBar from "~/components/research/ResearchProgressBar.vue";
 import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
 import ContinueResearchCard from "~/components/work/ContinueResearchCard.vue";
 import EvidenceLedger from "~/components/work/EvidenceLedger.vue";
@@ -249,6 +252,7 @@ import {
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
+import { activeRoundKey, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 import { ONBOARDING_KEY, parseWorkStep, stepForPhase, summaryBand, summaryLine, withStep } from "~/utils/workPhase";
@@ -273,8 +277,9 @@ useHead({ title: () => (view.value ? `${view.value.question} — 딥리서치` :
 
 // ── 보고서 작성 현황·초안 ─────────────────────────────────
 const EMPTY_ETA: SynthEta = { done: 0, total: 0, runningIdx: null, runningElapsedMs: null, remainingMs: null };
-// 절이 쌓이는 동안만 1초마다 시계를 읽는다 — 쓰는 중인 절의 경과·남은 시간·막대가 따라 움직인다
-const now = useNow(computed(() => phase.value === "synthesizing"));
+// 근거를 모으는 동안·절이 쌓이는 동안만 1초마다 시계를 읽는다 — 쓰는 중인 절의 경과·남은 시간과 큰 진행 막대(탐색 중에는
+// 열린 회차의 다가감)가 따라 움직인다
+const now = useNow(computed(() => phase.value === "synthesizing" || phase.value === "exploring"));
 const slots = computed(() => (view.value ? draftSlots(view.value) : []));
 const eta = computed<SynthEta>(() => (view.value ? synthEta(view.value, now.value) : EMPTY_ETA));
 // 초안은 쓰는 동안·멈춘 뒤·완료 직후 최종본을 받기 전까지만 보인다 — 최종본이 오면 그것으로 바꾼다
@@ -298,6 +303,36 @@ const work = useResearchWork(() => String(route.params.id ?? ""), {
 const workView = computed(() => work.state.value.work);
 // 이어가지 않은 연구로 확인되면(exists false) ?s= 가 붙어 와도 지금의 탐색·보고서 화면을 그린다
 const stepMode = computed(() => step.value !== null && phase.value === "completed" && work.exists.value !== false);
+
+// ── 큰 진행 막대(고정 진행 영역) ──────────────────────────
+// 열린 회차(검색·자기점검을 기다리는 회차)는 화면이 그 회차를 처음 본 때부터 잰 경과로 다가간다 — 서버는 회차 시각을 주지
+// 않는다. 회차가 늘거나 판정이 나면 열쇠가 바뀌어 0 부터 다시 센다(그때 점검이 끝난 회차 한 칸이 늘어 막대는 뒤로 가지 않는다)
+const roundKey = computed(() => (view.value ? activeRoundKey(view.value.subqs) : null));
+const roundSeenAt = ref<number | null>(null);
+watch(
+  roundKey,
+  (k) => {
+    roundSeenAt.value = k ? Date.now() : null;
+  },
+  { immediate: true },
+);
+// 시계는 1초마다만 바뀐다 — 열쇠가 바뀐 직후에는 시계가 그 시각보다 앞일 수 있어 0 에서 자른다
+const roundElapsedMs = computed(() => (roundSeenAt.value === null ? null : Math.max(0, now.value - roundSeenAt.value)));
+// 끝나지 않은 잡에만 선다 — 끝나면 머리 상태 배지만 남고, 끝난 잡의 단계 화면(stepMode)에는 WorkStepper 가 선다(한 화면에
+// 큰 막대와 단계 막대가 함께 서지 않는다). 이어간 연구의 보고서 단계(?s=proposal)의 큰 막대는 06e 몫이다
+const barView = computed(() =>
+  view.value && phase.value && showsProgressBar(phase.value, stepMode.value)
+    ? progressBarView({
+        phase: phase.value,
+        subqs: view.value.subqs,
+        maxRounds: maxRoundsOf(view.value.params),
+        roundElapsedMs: roundElapsedMs.value,
+        eta: eta.value,
+        slots: slots.value,
+        queueNote: queueText.value,
+      })
+    : null,
+);
 const band = computed(() => (view.value ? summaryBand(view.value) : null));
 // 단계 화면이 읽는 조회가 끝났는가 — 상세에서 돌아온 자리를 그 뒤에 맞춘다
 const stepLoaded = computed(() => {
