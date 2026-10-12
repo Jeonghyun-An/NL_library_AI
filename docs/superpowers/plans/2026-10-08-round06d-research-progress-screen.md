@@ -102,6 +102,7 @@ spec 과 다르게 읽은 것(정함 4·7 — Claude 해석)과 §12-11 을 닫�
 | `utils/researchEvents.ts` | `export { queueLine } from "~/utils/queueLine"`(:105-107) 삭제(D2), `roundStatusLabel(sq, r)` 새로(L3), `applyResearchEvent` 의 `case "candidates"`·비공개 `applyCandidates`(L4) | D2·L3·L4 |
 | `utils/synthCard.ts` | `RUNNING_CAP`(:6) 을 `export const` 로 | D3 |
 | `utils/restorePosition.ts` · `composables/useRestorePosition.ts` | `insetTargetTop(y, viewportHeight, inset)` 새로 · opts `{ maxWaitMs?: number; topInset?: () => number }` | D5 |
+| `utils/restorePosition.ts` | 타입 `ScrollAncestor`·`ScrollHolder`, 함수 `scrollHolder(chain)`·`boxScrollDelta(el, box, viewportHeight, targetY)` 새로 — 위치 복원이 안쪽 스크롤 칸(A 의 옆 칸)·고정 칸 안의 요소를 칸을 굴려 맞추고 창으로 끌지 않는다(`useRestorePosition` 의 비공개 `holderOf`·`alignInBox`) | D1 품질 검토 반영 |
 | `types/research.ts` | `CandidatesEvent`·`ReviewingView` 새로, `SubqView.reviewing?`, `ResearchEvent` 에 `CandidatesEvent` | L4 |
 | `utils/evidenceLedger.ts` | `Ledger.reviewing: LedgerPaper[]`(필수), `hasLedger`·`ledgerFrom`·`ledgerLine` 규칙 확장 | L5 |
 | `types/history.ts` · `utils/historyStore.ts` · `utils/historyState.ts` · `composables/useHistory.ts` | `HistoryListOut.total?` · `ListResult.total?`(`list` 가 `total: res.total ?? null`) · `HistoryState.totalOf(kind)` · `UseHistory.totalOf(kind)` | N2 |
@@ -202,7 +203,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 - `components/AppSidebar.vue` — N1 → N3 → N7(조건부). `pages/papers/index.vue` — N4 → N6. `composables/useResearchWorks.ts`·`utils/researchHome.ts` — N5 → N6(또는 N7).
 - 한 Task 만 고치는 파일: `types/research.ts`(L4), `utils/synthCard.ts`(D3), `SynthProgressCard.vue`(D4), `evidenceLedger.ts`·`EvidenceLedger.vue`·`work.css`·`evidenceLedger.test.ts`(L5), `ProgressPanel.vue`(L3), 기록 네 파일·두 테스트(N2), `restorePosition.ts`·`useRestorePosition.ts`·`restorePosition.test.ts`(D5), `pages/index.vue`(N1 — Task Z2 는 바꿀 것이 있을 때만), `SearchPlusMenu.vue`·`composables/useResearch.ts`·`ResearchHeader.vue`(N9 — 줄 번호가 da80f23 그대로).
 
-**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`).
+**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`). 실행 중 더한 것: D1 품질 검토 반영 +6(`restorePosition.test.ts` 의 `scrollHolder`·`boxScrollDelta` — Task D5 '알아 둘 것'). 뒤 Task 의 'da80f23 기준' 절대값은 이 수만큼 크다 — 상대값으로 읽는다.
 
 ---
 
@@ -1857,13 +1858,14 @@ spec §12-3 '오프셋' 행(고정 진행 영역의 높이만큼 A 의 옆 칸 `
 - **inset 은 막대의 '높이'다(위치 bottom 이 아니다 — 파트 D 끝 '파트 메모' 2).** 돌아온 화면은 맞추기 전에 맨 위로 올라가 있다(`useRestorePosition.ts:200`) — 그때 막대는 머리 아래 제자리라 `getBoundingClientRect().bottom` 은 머리 높이까지 더한 값이다. 맞춘 뒤(요소로 굴린 뒤)에는 막대가 화면 맨 위(top 0)에 붙어 가리는 것은 막대 높이만큼이다. `topInset` 은 맞추는 순간에 부르는 함수라 그때의 막대 유무를 본다(완료된 연구로 돌아오면 막대가 없어 0).
 - `progressInset` 은 함수 선언이라 `const restore = …` 바로 위에 두어도 되고 호이스팅된다. `useRestorePosition` 의 import 에서 `targetTop` 은 더 쓰지 않으므로 뺀다(`insetTargetTop` 이 안에서 부른다).
 - `restorePosition.test.ts` 는 기존 18 + 3. 기존 describe(`scrollDelta·targetTop` :28-40) 바로 뒤에 둔다.
+- **D1 품질 검토 반영(이 Task 앞에 들어왔다):** D1 로 탐색 중·탐색 도중 실패·취소처럼 보고서·초안이 없는 잡도 A 로 그려져, 제외 논문 앵커(`x-…` — 이 단계들에서는 진행 패널 회차 타임라인에만 있다)가 sticky·`overflow-y: auto` 옆 칸 안에 들어간다. 그 상태에서 상세에서 돌아오면 `window.scrollBy` 만으로는 칸 안쪽에 잘린 앵커가 보이지 않고, `hold` 가 15초 동안 매 프레임 창을 바닥까지 끌었다. 그래서 `utils/restorePosition.ts` 에 `scrollHolder`(조상 모양 → 창·안쪽 스크롤 칸·고정 칸)·`boxScrollDelta`(칸이 보이는 범위 안에서 목표 높이에 가장 가깝게)를 더하고, `useRestorePosition` 이 맞출 때 칸 → 창 한 번 → 칸 순서로 맞추며, 붙잡을 때는 칸을 굴리고 고정 칸 안이면 창을 굴리지 않게 했다(+6 테스트). **이 Task 의 앵커는 모두 그대로 한 번씩 맞는다**(import 두 곳·머리 주석·opts·`const top = targetTop(…)` 한 줄·`targetTop` 블록·테스트 import·`scrollDelta·targetTop` describe 끝). 그래서 `restorePosition.test.ts` 는 이 Task 앞 **24** → 뒤 **27** 이다(Step 2·4 의 수). `top` 은 `alignInBox`·`hold` 도 그대로 쓰므로 Step 5 의 `const top = insetTargetTop(…)` 한 줄이 칸 맞추기에도 막대 높이를 넣는다. 옆 칸은 Step 6 뒤 막대 아래(`--rs-bar-h` + 1.2rem)부터 시작해 칸이 보이는 범위가 막대 밑으로 들어가지 않는다.
 
 **Files:**
 - Modify: `frontend/utils/restorePosition.ts`(:44-48 `targetTop` 바로 아래)
 - Modify: `frontend/composables/useRestorePosition.ts`(:12-29 import, :45-54 머리 주석·opts, :150)
 - Modify: `frontend/pages/research/[id].vue`(앵커 `const restore = useRestorePosition(restoreReady);` — da80f23 :314)
 - Modify: `frontend/assets/css/research.css`(`.rs-body--A .rs-col-side` da80f23 :33-38, 앵커 주석 + `.rs-section {` + `scroll-margin-top: 1.2rem;` da80f23 :984-986)
-- Test: `frontend/tests/unit/restorePosition.test.ts`(import :4-22, `describe("scrollDelta·targetTop"` 뒤 — 18 → 21)
+- Test: `frontend/tests/unit/restorePosition.test.ts`(import :4-22, `describe("scrollDelta·targetTop"` 뒤 — 18 → 21, D1 품질 검토 반영 뒤라 24 → 27)
 
 기준선: Task D4 뒤 수(da80f23 이면 `41 files / 750`).
 
@@ -1926,7 +1928,7 @@ describe("restoreStep", () => {
 - [ ] **Step 2: 실패를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/restorePosition.test.ts`
-Expected: `Test Files 1 failed (1)` / `Tests 3 failed | 18 passed (21)` — `insetTargetTop` 의 세 `it` 이 모두 `TypeError: (0 , insetTargetTop) is not a function`
+Expected: `Test Files 1 failed (1)` / `Tests 3 failed | 24 passed (27)`(D1 품질 검토 반영의 +6 — 그 전 계획 값은 `18 passed (21)`) — `insetTargetTop` 의 세 `it` 이 모두 `TypeError: (0 , insetTargetTop) is not a function`
 
 - [ ] **Step 3: `insetTargetTop` 을 만든다**
 
@@ -1958,7 +1960,7 @@ export function insetTargetTop(y: number | null, viewportHeight: number, inset: 
 - [ ] **Step 4: 통과를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d/frontend && npx vitest run tests/unit/restorePosition.test.ts`
-Expected: `Test Files 1 passed (1)` / `Tests 21 passed (21)`
+Expected: `Test Files 1 passed (1)` / `Tests 27 passed (27)`(D1 품질 검토 반영 뒤 — 그 전 계획 값은 `21 passed (21)`)
 
 - [ ] **Step 5: 위치 복원이 막대 높이만큼 내려 맞추게 한다**
 

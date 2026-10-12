@@ -13,11 +13,13 @@ import {
   RESTORE_HOLD_MS,
   RESTORE_MAX_WAIT_MS,
   RESTORE_RETRY_MS,
+  boxScrollDelta,
   hasSpot,
   holdDelta,
   isUserMove,
   restoreStep,
   scrollDelta,
+  scrollHolder,
   spotFromState,
   spotOf,
   spotState,
@@ -37,9 +39,42 @@ function entryState(): unknown {
   return import.meta.client ? window.history.state : null;
 }
 
-// 접힌 목록 안의 사본(display:none)은 높이가 없다
+// 접힌 목록 안의 사본(display:none)은 높이가 없다. overflow 로 잘린 요소는 높이가 있어 보인다고 나온다 — 그래서 안쪽
+// 스크롤 칸 안의 요소는 칸을 굴려 보이는 범위에 들인다(holderOf·alignInBox)
 function isShown(el: HTMLElement): boolean {
   return el.isConnected && el.getClientRects().length > 0;
+}
+
+// 맞춘 요소를 무엇으로 붙잡는지(scrollHolder). box 는 요소를 품은 안쪽 스크롤 칸, byWindow 는 창을 굴려 붙잡아도 되는지
+// (창을 굴리면 요소가 따라 움직인다 — 고정 칸 안이면 false)
+type Holder = { box: HTMLElement | null; byWindow: boolean };
+
+function holderOf(el: HTMLElement): Holder {
+  const chain: HTMLElement[] = [];
+  for (let a = el.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+    chain.push(a);
+  }
+  const holder = scrollHolder(
+    chain.map((a) => {
+      const style = window.getComputedStyle(a);
+      return { overflowY: style.overflowY, position: style.position, scrollHeight: a.scrollHeight, clientHeight: a.clientHeight };
+    }),
+  );
+  if (holder.kind === "box") return { box: chain[holder.index]!, byWindow: !holder.pinned };
+  return { box: null, byWindow: holder.kind === "window" };
+}
+
+// 안쪽 스크롤 칸을 굴려 요소를 칸이 보이는 범위 안의 목표 높이(가장 가까운 곳)에 둔다 — 칸의 보이는 범위는 테두리 안쪽
+function alignInBox(box: HTMLElement, el: HTMLElement, top: number): void {
+  const r = el.getBoundingClientRect();
+  const boxTop = box.getBoundingClientRect().top + box.clientTop;
+  const delta = boxScrollDelta(
+    { top: r.top, height: r.height },
+    { top: boxTop, bottom: boxTop + box.clientHeight },
+    window.innerHeight,
+    top,
+  );
+  if (delta !== 0) box.scrollBy({ top: delta, behavior: "instant" });
 }
 
 /**
@@ -148,11 +183,16 @@ export function useRestorePosition(
         return;
       case "align": {
         const top = targetTop(spot.y, window.innerHeight);
+        // 안쪽 스크롤 칸(넓은 연구 화면의 옆 칸 — 진행 패널의 제외 논문) 안이면 칸을 먼저 굴려 잘린 요소를 칸이 보이는
+        // 범위로 들이고, 남은 차이만 창을 한 번 굴린 뒤(옆 칸이 머리 아래 제자리에서 화면 위로 붙는 만큼) 다시 칸을 맞춘다
+        const holder = holderOf(el!);
+        if (holder.box) alignInBox(holder.box, el!, top);
         window.scrollBy({ top: scrollDelta(el!.getBoundingClientRect().top, top), behavior: "instant" });
+        if (holder.box) alignInBox(holder.box, el!, top);
         // 인용칩은 초점을 돌려 주면 칩의 초점 열림으로 팝오버가 다시 열린다
         if (anchor?.kind === "cite") el!.focus({ preventScroll: true });
         finish(el);
-        hold(el!, top);
+        hold(el!, top, holder);
         return;
       }
       case "give-up":
@@ -163,14 +203,20 @@ export function useRestorePosition(
   }
 
   // 맞춘 뒤 사용자가 움직이기 전까지 그 요소를 같은 화면 높이에 붙잡는다 — 위쪽의 AI 요약을 다시 받아 펼치거나 인용 논문을
-  // 맨 위로 올릴 때, 초안 절이 올라오며 나타날 때 밀린 만큼 즉시 되돌린다. 목표 높이는 맞출 때 한 번 정한 것을 쓴다
-  function hold(el: HTMLElement, top: number): void {
+  // 맨 위로 올릴 때, 초안 절이 올라오며 나타날 때 밀린 만큼 즉시 되돌린다. 목표 높이는 맞출 때 한 번 정한 것을 쓴다.
+  // 안쪽 스크롤 칸 안의 요소는 그 칸을 먼저 굴린다. 고정 칸(넓은 연구 화면의 옆 칸) 안이면 창은 굴리지 않는다 — 칸이 더
+  // 굴러가지 못해 남는 차이를 창으로 메우려 하면 칸은 따라오지 않고 창만 매 프레임 바닥까지 끌려간다
+  function hold(el: HTMLElement, top: number, holder: Holder): void {
+    if (!holder.box && !holder.byWindow) return;
     const until = Date.now() + RESTORE_HOLD_MS;
     const step = (): void => {
       frame = 0;
       if (Date.now() >= until || !isShown(el)) return;
-      const delta = holdDelta(el.getBoundingClientRect().top, top);
-      if (delta !== 0) window.scrollBy({ top: delta, behavior: "instant" });
+      if (holder.box) alignInBox(holder.box, el, top);
+      if (holder.byWindow) {
+        const delta = holdDelta(el.getBoundingClientRect().top, top);
+        if (delta !== 0) window.scrollBy({ top: delta, behavior: "instant" });
+      }
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);

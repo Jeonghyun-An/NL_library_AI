@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { readReturnSpot } from "~/utils/detailSource";
 import {
   SPOT_STATE_KEY,
+  boxScrollDelta,
   hasSpot,
   holdDelta,
   holdsReturnSpot,
@@ -11,6 +12,7 @@ import {
   pageOfItem,
   restoreStep,
   scrollDelta,
+  scrollHolder,
   spotFromState,
   spotOf,
   spotState,
@@ -54,6 +56,69 @@ describe("holdDelta", () => {
     expect(holdDelta(241, 240)).toBe(1);
     expect(holdDelta(240.9, 240)).toBe(0);
     expect(holdDelta(239.2, 240)).toBe(0);
+  });
+});
+
+// 요소에서 위로 올라가며 본 조상의 모양(가까운 것부터) — 기본은 넘치지 않는 보통 칸이고 다른 값만 바꿔 준다
+function ancestor(over: Partial<{ overflowY: string; position: string; scrollHeight: number; clientHeight: number }> = {}) {
+  return { overflowY: "visible", position: "static", scrollHeight: 400, clientHeight: 400, ...over };
+}
+
+describe("scrollHolder", () => {
+  it("특별한 조상이 없으면 창이 붙잡는다 — 가로로만 굴러가는 표 감싸개(세로 overflow 는 auto 로 계산되지만 넘치지 않음)도 건너뛴다", () => {
+    expect(scrollHolder([])).toEqual({ kind: "window" });
+    expect(scrollHolder([ancestor(), ancestor({ overflowY: "auto" }), ancestor()])).toEqual({ kind: "window" });
+    expect(scrollHolder([ancestor({ overflowY: "hidden", scrollHeight: 900 })])).toEqual({ kind: "window" });
+  });
+
+  it("세로로 넘치는 안쪽 스크롤 칸, 또는 안에서 굴러가는 고정 칸(A 의 옆 칸 — 아직 넘치지 않아도)이 붙잡는다", () => {
+    expect(scrollHolder([ancestor(), ancestor({ overflowY: "auto", scrollHeight: 1800, clientHeight: 852 })])).toEqual({
+      kind: "box",
+      index: 1,
+      pinned: false,
+    });
+    expect(scrollHolder([ancestor({ overflowY: "scroll", scrollHeight: 401 })])).toEqual({ kind: "box", index: 0, pinned: false });
+    expect(scrollHolder([ancestor(), ancestor({ overflowY: "auto", position: "sticky" })])).toEqual({
+      kind: "box",
+      index: 1,
+      pinned: true,
+    });
+  });
+
+  it("안에서 굴러가지 않는 sticky·fixed 칸 안이면 창으로 붙잡지 않는다(pinned) — 가까운 조상이 먼저다", () => {
+    expect(scrollHolder([ancestor(), ancestor({ position: "sticky" })])).toEqual({ kind: "pinned", index: 1 });
+    expect(scrollHolder([ancestor({ position: "fixed" }), ancestor({ overflowY: "auto", scrollHeight: 900 })])).toEqual({
+      kind: "pinned",
+      index: 0,
+    });
+    // 넘치는 칸이 고정 칸 안에 있으면 그 칸이 붙잡되, 창을 굴려도 칸이 따라오지 않는다(pinned)
+    expect(scrollHolder([ancestor({ overflowY: "auto", scrollHeight: 900 }), ancestor(), ancestor({ position: "sticky" })])).toEqual({
+      kind: "box",
+      index: 0,
+      pinned: true,
+    });
+  });
+});
+
+describe("boxScrollDelta", () => {
+  // A 의 옆 칸 — 화면 높이 900 에서 칸이 140 부터 992 까지(아래 92 는 화면 밖)
+  const box = { top: 140, bottom: 992 };
+
+  it("칸 안쪽 깊이 잘린 요소를 칸을 굴려 목표 높이에 둔다 — 위로도 아래로도", () => {
+    expect(boxScrollDelta({ top: 1500, height: 40 }, box, 900, 300)).toBe(1200);
+    expect(boxScrollDelta({ top: 150, height: 40 }, box, 900, 600)).toBe(-450);
+    expect(boxScrollDelta({ top: 300.4, height: 40 }, box, 900, 300)).toBe(0);
+  });
+
+  it("목표 높이가 칸이 보이는 범위 밖이면 범위 안의 가장 가까운 곳에 둔다 — 넘쳐 잘린 곳으로 보내지 않는다", () => {
+    expect(boxScrollDelta({ top: 1500, height: 40 }, box, 900, 60)).toBe(1360);
+    expect(boxScrollDelta({ top: 1500, height: 40 }, box, 900, 880)).toBe(640);
+    expect(boxScrollDelta({ top: 500, height: 40 }, { top: -200, bottom: 250 }, 900, 300)).toBe(290);
+  });
+
+  it("요소가 보이는 범위보다 크면 위를 범위 맨 위에 맞춘다", () => {
+    expect(boxScrollDelta({ top: 1500, height: 2000 }, box, 900, 300)).toBe(1360);
+    expect(boxScrollDelta({ top: 1500, height: 2000 }, { top: -200, bottom: 600 }, 900, 300)).toBe(1500);
   });
 });
 
