@@ -7,6 +7,7 @@ import {
   hasSpot,
   holdDelta,
   holdsReturnSpot,
+  insetTargetTop,
   isPlainClick,
   isUserMove,
   pageOfItem,
@@ -38,6 +39,25 @@ describe("scrollDelta·targetTop", () => {
     expect(targetTop(240, 800)).toBe(240);
     expect(targetTop(900, 600)).toBe(552);
     expect(targetTop(null, 900)).toBe(300);
+  });
+});
+
+describe("insetTargetTop", () => {
+  it("고정 막대가 가리는 높이면 막대 바로 아래로 내린다", () => {
+    expect(insetTargetTop(40, 800, 112)).toBe(112);
+    expect(insetTargetTop(40, 800, 111.2)).toBe(112);
+    expect(insetTargetTop(240, 800, 112)).toBe(240);
+  });
+
+  it("막대가 없으면(0) targetTop 과 같다", () => {
+    expect(insetTargetTop(240, 800, 0)).toBe(targetTop(240, 800));
+    expect(insetTargetTop(900, 600, 0)).toBe(targetTop(900, 600));
+    expect(insetTargetTop(240, 800, -5)).toBe(240);
+  });
+
+  it("떠날 때 높이를 모르면 화면 1/3 과 막대 아래 중 더 아래", () => {
+    expect(insetTargetTop(null, 900, 112)).toBe(300);
+    expect(insetTargetTop(null, 300, 112)).toBe(112);
   });
 });
 

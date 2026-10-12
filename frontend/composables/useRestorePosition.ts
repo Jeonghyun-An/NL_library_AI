@@ -16,6 +16,7 @@ import {
   boxScrollDelta,
   hasSpot,
   holdDelta,
+  insetTargetTop,
   isUserMove,
   restoreStep,
   scrollDelta,
@@ -25,7 +26,6 @@ import {
   spotState,
   stateWithSpot,
   stateWithoutSpot,
-  targetTop,
   withSpot,
   withoutSpot,
 } from "~/utils/restorePosition";
@@ -81,11 +81,12 @@ function alignInBox(box: HTMLElement, el: HTMLElement, top: number): void {
  * 상세에서 돌아온 화면에서, 떠날 때 누른 요소를 같은 화면 높이에 즉시 맞추고 사용자가 움직이기 전까지 붙잡아 둔다.
  * 자리는 주소의 at·y 에서, 없으면 그 기록의 history.state 에 남긴 자리(한 번 맞춰 주소를 비운 뒤 앞으로 갔다 다시
  * 돌아온 경우)에서 읽는다. ready 는 그 요소가 든 내용(보고서·복원한 결과 목록)이 그려질 준비가 됐는지 — 화면이 정한다.
- * 쓰는 화면은 definePageMeta({ scrollToTop: (to) => !holdsReturnSpot(to.query, history.state) }) 로 Nuxt 의 스크롤을 끈다
+ * 쓰는 화면은 definePageMeta({ scrollToTop: (to) => !holdsReturnSpot(to.query, history.state) }) 로 Nuxt 의 스크롤을 끈다.
+ * topInset 은 화면 위에 고정된 영역(연구 화면의 큰 진행 막대)이 가리는 높이 — 맞추는 순간에 불러 그 아래로 맞춘다(없으면 0)
  */
 export function useRestorePosition(
   ready: Ref<boolean> | ComputedRef<boolean>,
-  opts: { maxWaitMs?: number } = {},
+  opts: { maxWaitMs?: number; topInset?: () => number } = {},
 ): { pending: Readonly<Ref<boolean>>; anchor: Anchor | null } {
   const route = useRoute();
   const router = useRouter();
@@ -182,7 +183,7 @@ export function useRestorePosition(
         timer = setTimeout(tryAlign, RESTORE_RETRY_MS);
         return;
       case "align": {
-        const top = targetTop(spot.y, window.innerHeight);
+        const top = insetTargetTop(spot.y, window.innerHeight, opts.topInset?.() ?? 0);
         // 안쪽 스크롤 칸(넓은 연구 화면의 옆 칸 — 진행 패널의 제외 논문) 안이면 칸을 먼저 굴려 잘린 요소를 칸이 보이는
         // 범위로 들이고, 남은 차이만 창을 한 번 굴린 뒤(옆 칸이 머리 아래 제자리에서 화면 위로 붙는 만큼) 다시 칸을 맞춘다
         const holder = holderOf(el!);

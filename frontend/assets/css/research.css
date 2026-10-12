@@ -56,10 +56,11 @@ html:has(.rs-page.has-progressbar) {
   grid-template-columns: minmax(0, 1fr) var(--rs-side-width);
   align-items: start;
 }
+/* 고정 진행 막대(--rs-bar-h — 막대가 없으면 0px) 바로 아래에 붙는다 */
 .rs-body--A .rs-col-side {
   position: sticky;
-  top: 1.2rem;
-  max-height: calc(100vh - 2.4rem);
+  top: calc(var(--rs-bar-h) + 1.2rem);
+  max-height: calc(100vh - 2.4rem - var(--rs-bar-h));
   overflow-y: auto;
 }
 /* B: 계획 → 탐색 과정 → 보고서가 한 줄로 쌓인다. 본문 묶음을 풀어 진행 패널을 가운데 끼운다 */

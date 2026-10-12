@@ -90,6 +90,11 @@ export function targetTop(y: number | null, viewportHeight: number): number {
   return Math.min(y, Math.max(0, viewportHeight - KEEP_VISIBLE_PX));
 }
 
+// 고정 진행 막대가 화면 위를 가리면 그 아래로 내린다 — inset 은 막대가 화면 위에 붙었을 때 가리는 높이(막대가 없으면 0)
+export function insetTargetTop(y: number | null, viewportHeight: number, inset: number): number {
+  return Math.max(targetTop(y, viewportHeight), Math.ceil(Math.max(0, inset)));
+}
+
 export function restoreStep(found: boolean, now: number, deadline: number): RestoreStep {
   if (found) return "align";
   return now < deadline ? "retry" : "give-up";

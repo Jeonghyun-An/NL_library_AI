@@ -352,7 +352,12 @@ const restoreReady = computed(() => {
   if (!view.value || !phase.value) return false;
   return stepMode.value ? stepLoaded.value : reportState.value !== "loading";
 });
-const restore = useRestorePosition(restoreReady);
+// 고정 진행 막대가 화면 위에 붙어 가리는 높이 — 돌아온 자리를 그 아래로 맞춘다. 맞추는 순간에는 화면이 맨 위라 막대가 머리
+// 아래 제자리에 있으므로 위치(bottom)가 아니라 높이를 쓴다(맞춘 뒤에는 막대가 화면 맨 위에 붙는다). 막대가 없으면 0
+function progressInset(): number {
+  return document.querySelector<HTMLElement>(".rs-page .rs-pbar")?.getBoundingClientRect().height ?? 0;
+}
+const restore = useRestorePosition(restoreReady, { topInset: progressInset });
 // 맞추는 동안만 알린다 — 다 맞춘 뒤 사용자가 접은 목록을 다시 펼치지 않게
 const revealExcluded = computed(() =>
   restore.pending.value && restore.anchor?.kind === "excluded" ? restore.anchor.cnts : null,
