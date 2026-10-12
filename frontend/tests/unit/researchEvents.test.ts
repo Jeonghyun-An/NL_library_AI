@@ -27,6 +27,7 @@ import {
   questionUsedFromSteps,
   refreshView,
   researchPhase,
+  roundStatusLabel,
   sectionGapToRecover,
   showsExcludedCounter,
   stopPoint,
@@ -1379,6 +1380,44 @@ describe("queueLine — queued 문구 뒤에 덧붙이는 순번", () => {
     expect(queueLine({ ahead: 2, etaSec: 1500 })).toBe("앞에 2건 · 약 25분");
     expect(queueLine({ ahead: 1, etaSec: 61 })).toBe("앞에 1건 · 약 2분");
     expect(queueLine({ ahead: 1, etaSec: 0 })).toBe("앞에 1건 · 약 1분");
+  });
+});
+
+describe("roundStatusLabel — 회차 줄 미세 상태", () => {
+  const FIRST_SEARCH: ResearchEvent = { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 };
+  const RECHECK: ResearchEvent = {
+    kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 5,
+    parse_failed: false, capped: 0, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+  };
+
+  it("도는 하위질문의 마지막 회차가 검색어만 있고 판정이 없으면 '자기점검 중'", () => {
+    const first = run([SEARCH_STARTED, FIRST_SEARCH]).subqs[0]!;
+    expect(roundStatusLabel(first, first.rounds[0]!)).toBe("자기점검 중");
+    // 2회차 검색 뒤 점검을 기다리는 장면 — 마지막 회차(2회차)에만 단다
+    const second = run(AWAITING_ROUND2_CRITIQUE).subqs[0]!;
+    expect(second.rounds.map((r) => roundStatusLabel(second, r))).toEqual([null, "자기점검 중"]);
+  });
+
+  it("마지막 회차에 다음 검색어가 있으면 '재검색 중'", () => {
+    const sq = run([SEARCH_STARTED, FIRST_SEARCH, RECHECK]).subqs[0]!;
+    expect(roundStatusLabel(sq, sq.rounds[0]!)).toBe("재검색 중");
+  });
+
+  it("끝난 하위질문·앞 회차·판정이 난 마지막 회차(충분)는 null", () => {
+    const enough = run([
+      SEARCH_STARTED,
+      FIRST_SEARCH,
+      { ...RECHECK, verdict: "sufficient", note: "충분", next_query: null, will_recheck: false },
+    ]).subqs[0]!;
+    expect(roundStatusLabel(enough, enough.rounds[0]!)).toBeNull();
+    // 끝난 하위질문 — 저장본 회차에 다음 검색어가 남아 있어도 적지 않는다
+    const done = initialResearchView(job({
+      steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "done", result: { rounds: [ROUND1, ROUND2] } })],
+    })).subqs[0]!;
+    expect(done.rounds.map((r) => roundStatusLabel(done, r))).toEqual([null, null]);
+    // 앞 회차 — 재검색을 낸 1회차는 2회차가 시작되면 적지 않는다
+    const second = run(AWAITING_ROUND2_CRITIQUE).subqs[0]!;
+    expect(roundStatusLabel(second, second.rounds[0]!)).toBeNull();
   });
 });
 

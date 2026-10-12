@@ -168,6 +168,19 @@ export function subqStatusLabel(sq: SubqView): string {
   }
 }
 
+// 회차 줄의 미세 상태 — 도는 하위질문의 마지막 회차에만 단다. 검색어가 있고 판정이 아직 없으면 자기점검(LLM)을
+// 기다리는 중이고, 판정이 다음 검색어를 냈으면 그 검색어로 다시 찾는 중이다(다음 회차의 검색이 오면 그 회차가 마지막이
+// 된다). 끝난 하위질문·앞 회차·재검색 없이 판정이 난 회차는 적지 않는다. 하위질문 줄의 상태(subqStatusLabel)는
+// PlanCard 도 읽으므로 그대로 두고 회차 줄에만 단다
+export function roundStatusLabel(sq: SubqView, r: RoundView): string | null {
+  if (sq.status !== "running") return null;
+  const last = sq.rounds[sq.rounds.length - 1];
+  if (!last || last.round !== r.round) return null;
+  if (r.verdict === null && r.query) return "자기점검 중";
+  if (r.nextQuery) return "재검색 중";
+  return null;
+}
+
 export function synthProgress(view: ResearchView): { current: number; total: number } {
   const { total, sections, status } = view.synth;
   if (!total) return { current: 0, total: 0 };

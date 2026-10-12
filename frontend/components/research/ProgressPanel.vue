@@ -61,6 +61,13 @@
               <p class="rs-round__line">
                 <span class="rs-round__no">{{ r.round }}회차</span>
                 <span class="rs-round__query">‘{{ r.query }}’</span>
+                <!-- 도는 하위질문의 마지막 회차에만 — 점검을 기다리는 중(점이 깜빡인다)·다음 검색어로 다시 찾는 중 -->
+                <span
+                  v-if="roundStatusLabel(sq, r)"
+                  class="rs-round__state"
+                  :class="{ 'is-checking': r.verdict === null }"
+                  aria-live="off"
+                >{{ roundStatusLabel(sq, r) }}</span>
                 <span v-if="r.foundChunks !== null" class="rs-round__stat">대목 {{ r.foundChunks }}개</span>
                 <span v-if="r.newPapers !== null" class="rs-round__stat">새 논문 {{ r.newPapers }}편</span>
                 <!-- 뺀 논문 목록이 있으면 눌러 펼친다. 목록 없이 수만 있는 회차(목록을 기록하기 전 잡)는 글자만 둔다 -->
@@ -124,6 +131,7 @@ import { excludedAnchor, excludedDetailUrl } from "~/utils/detailSource";
 import {
   excludedLabel,
   flaggedLabel,
+  roundStatusLabel,
   showsExcludedCounter,
   stopPoint,
   subqStatusLabel,

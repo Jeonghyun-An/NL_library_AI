@@ -1444,6 +1444,33 @@ button.rs-synth__item:focus-visible,
   box-shadow: var(--skx-shadow-lnb);
 }
 
+/* ── 회차 줄 미세 상태 ──────────────────────────────────── */
+/* 도는 하위질문의 마지막 회차 — '자기점검 중'(점검 LLM 을 기다린다, 점이 깜빡인다)·'재검색 중'(다음 검색어로 다시 찾는다) */
+.rs-round__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.4rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-round__state.is-checking::before {
+  content: "";
+  width: 0.3rem;
+  height: 0.3rem;
+  background: var(--skx-primary);
+  border-radius: 50%;
+  animation: rs-blink 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-round__state.is-checking::before {
+    animation: none;
+  }
+}
+
 /* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
 /* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
 .rs-print {
