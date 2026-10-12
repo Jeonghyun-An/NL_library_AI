@@ -10,6 +10,8 @@
   (06b 정함 8 — UCI(없으면 URL) 포함, 인용 쪽 없음). 서지가 없는 논문은 '서지 정보 없음'.
 - drafts 는 쓰는 중(queued·running)인 절 생성의 입력에서 [E#]·[F#] 지도를 꺼낸 것 — 스트리밍 조각을 화면이
   칩으로 그리는 재료다.
+- section_gens 는 절 키별 마지막 section 생성 {gen_id, status}(상태 무관) — 06e 화면의 절 연쇄가 '절도 생성 기록도
+  없는 키' 를 고르는 재료다(spec §12-4). WorkView 는 끝난 생성을 최근 10건만 실어 연쇄가 쓰지 않는다.
 - topic_source 는 목차를 만든 주제(outline.topic.id) 행의 origin·card.edited — spec §5-2 'card.edited 는 데이터로만
   남기고(계보·공개 부록용)', 공개 부록의 '주제:' 줄 재료다. 행은 호출부가 이미 읽은 고른 주제를 넘기고, 그 id 가
   목차의 주제와 다르면 None.
@@ -93,6 +95,16 @@ def drafts_of(open_section_gens) -> dict:
     return out
 
 
+def section_gens_of(generations) -> dict[str, dict]:
+    """절 키 → 그 키의 마지막(id 가 가장 큰) section 생성 {gen_id, status} — 상태 무관(failed·canceled 도 기록이다).
+    target 없는 행·다른 kind(목차·문단 다시 쓰기 target '<키>#<pid>' 등)는 뺀다."""
+    out: dict[str, dict] = {}
+    for g in sorted(generations, key=lambda g: g.id):
+        if g.kind == "section" and g.target:
+            out[g.target] = {"gen_id": g.id, "status": g.status}
+    return out
+
+
 def paper_ids(proposal, generations) -> list[str]:
     """서지가 필요한 논문 — 목차 묶음 논문 → 절 근거 → 쓰는 중인 절의 근거, 처음 나온 순. 호출부가 고른 카드의
     근거를 더해 BookRepository 로 한 번에 읽는다."""
@@ -143,6 +155,7 @@ def proposal_view(work, job, proposal, books: dict, generations, picked: set[str
         "outline": outline or None,
         "sections": sections,
         "drafts": drafts_of(_open_sections(generations)),
+        "section_gens": section_gens_of(generations),
         "papers": {cnts_id: book_meta(cnts_id, books.get(cnts_id)) for cnts_id in ids},
         "references": {cnts_id: _reference(cnts_id, books.get(cnts_id))
                        for cnts_id in cited_papers(sections)},

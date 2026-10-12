@@ -31,7 +31,7 @@ from schemas.book import BookOut
 from services.research_work import section_input
 from services.research_work.enqueue import queued_event
 from services.research_work.proposal_views import (
-    cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, stale_flags,
+    cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, section_gens_of, stale_flags,
 )
 from services.research_work.seeds import corpus_of
 from services.research_work.shapes import MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, OUTLINE_TARGET
@@ -155,14 +155,39 @@ class TestCitedAndDrafts:
         assert paper_ids(None, []) == []
 
 
+class TestSectionGens:
+    """06e 절 연쇄의 재료 — 화면은 '절도 그 키의 section 생성 기록도 없는 키' 만 자동으로 넣는다(spec §12-4)."""
+
+    def test_last_section_generation_per_key_whatever_its_status(self):
+        gens = [_gen(53, "section", "failed", target="prior.g1"),
+                _gen(50, "section", "done", target="prior.g1"),     # 같은 키의 옛 생성 — id 가 큰 53 이 남는다
+                _gen(51, "section", "canceled", target="gap"),
+                _gen(54, "section", "queued", target="prior.g2"),
+                _gen(55, "section", "running", target="prior.g3")]
+        assert section_gens_of(gens) == {
+            "prior.g1": {"gen_id": 53, "status": "failed"},
+            "gap": {"gen_id": 51, "status": "canceled"},
+            "prior.g2": {"gen_id": 54, "status": "queued"},
+            "prior.g3": {"gen_id": 55, "status": "running"},
+        }
+
+    def test_other_kinds_and_rows_without_a_target_are_left_out(self):
+        gens = [_gen(60, "outline", "done", target=OUTLINE_TARGET),
+                _gen(61, "paragraph", "running", target="prior.g1#p1"),   # 문단 다시 쓰기는 절 생성 기록이 아니다
+                _gen(62, "section", "done", target=None),
+                _gen(63, "concepts", "done")]
+        assert section_gens_of(gens) == {}
+        assert section_gens_of([]) == {}
+
+
 class TestProposalView:
     def test_no_proposal_yet(self):
         work = SimpleNamespace(topic_id=None, corpus_snapshot=None)
         job = SimpleNamespace(report={"range": {"from": "1980", "to": "2017", "n_papers": 144748}},
                               finished_at=None)
         view = proposal_view(work, job, None, {}, [], set())
-        assert view == {"version": 0, "outline": None, "sections": {}, "drafts": {}, "papers": {},
-                        "references": {}, "corpus": corpus_of(job),
+        assert view == {"version": 0, "outline": None, "sections": {}, "drafts": {}, "section_gens": {},
+                        "papers": {}, "references": {}, "corpus": corpus_of(job),
                         "stale": {"outline": False, "sections": {}}, "disclosure": {"steps": []},
                         "topic_source": None}
 
@@ -369,6 +394,8 @@ class TestGetProposal:
         assert body["outline"]["groups"][0]["name"] == "노년기 우울"
         assert body["stale"] == {"outline": False, "sections": {"prior.g1": False}}
         assert body["drafts"] == {"prior.g2": {"gen_id": writing, "evidence": {"E1": "C3"}, "figures": []}}
+        # 06e 절 연쇄의 재료 — 키별 마지막 section 생성. prior.g1 은 절만 있고 생성 행이 없다, 목차 생성은 빠진다
+        assert body["section_gens"] == {"prior.g2": {"gen_id": writing, "status": "running"}}
         assert body["references"] == {"C1": "김철수 (2019). 노인 우울 연구. 노인복지연구, 74(2). UCI G704-1"}
         assert body["papers"]["C1"]["title"] == "노인 우울 연구"
         assert [s["kind"] for s in body["disclosure"]["steps"]] == ["outline"]
@@ -875,7 +902,9 @@ class TestGenerateSection:
 
         res = api.client.post(f"/api/research/{jid}/sections/gap/generate")
 
-        assert (res.status_code, res.json()["detail"]) == (409, "이 절에 넣을 논문이 없습니다")
+        # 06e — 화면의 절 연쇄는 문구가 아니라 code 로 '이 절만 건너뜀' 을 가른다. 문구는 message 그대로(detailMessage 가 읽는다)
+        assert (res.status_code, res.json()["detail"]) == (
+            409, {"code": "no_section_papers", "message": "이 절에 넣을 논문이 없습니다"})
         assert _sec_gens(api.engine, jid) == []
 
     @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])

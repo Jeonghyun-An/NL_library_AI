@@ -288,6 +288,8 @@ NO_GROUP = "묶음이 없습니다"
 SECTION_BUSY = "이 절을 쓰는 중입니다"
 NO_SECTION = "절이 없습니다"
 NO_SECTION_PAPERS = "이 절에 넣을 논문이 없습니다"
+# 06e — 근거 없음 409 의 detail code. 화면의 절 연쇄는 문구가 아니라 이 code 로 '그 절만 건너뛰고 다음 키' 를 가른다
+NO_SECTION_PAPERS_CODE = "no_section_papers"
 DUPLICATE_PARAGRAPH = "같은 문단 id 가 두 번 있습니다"
 # 화면 검사(paragraphProblem '문단은 3000자까지입니다')는 보낸 글만 보아 통과시키는데, 서버는 검사(soften_claims 가
 # '최초로' 를 '소장 코퍼스에서 확인한 범위에서 처음으로' 로 늘린다) 뒤 글로 상한을 본다 — 화면이 이 문구를 그대로
@@ -393,7 +395,8 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
         seeds = gap_seeds(dict(topic.seed or {}) if topic is not None else {}, job.report or {})
         cnts_ids = section_papers([c for s in seeds for c in s.get("papers") or []])
     if not cnts_ids:
-        raise HTTPException(status_code=409, detail=NO_SECTION_PAPERS)
+        # 구조화한 detail(version_conflict 와 같은 꼴) — 화면 문구는 detailMessage 가 message 를 그대로 읽는다
+        raise HTTPException(status_code=409, detail={"code": NO_SECTION_PAPERS_CODE, "message": NO_SECTION_PAPERS})
     books = await BookRepository(db).get_by_cnts_ids(cnts_ids)
     question = job.question
     snapshot = job.state_snapshot
