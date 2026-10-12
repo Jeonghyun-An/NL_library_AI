@@ -8,12 +8,17 @@ import { slotElementId, type PlanSlot } from "~/utils/planSlots";
 import type { SynthEta } from "~/utils/researchDraft";
 import { exploreAttemptStart, fromEarlierAttempt, type ResearchPhase } from "~/utils/researchEvents";
 
-// 창에서 받은 입력 — 이벤트마다 판단에 쓰는 값만 옮긴다(viewportWidth = document.documentElement.clientWidth)
+// 창에서 받은 입력 — 이벤트마다 판단에 쓰는 값만 옮긴다(viewportWidth = document.documentElement.clientWidth). inner 는 그 입력을
+// 페이지가 아니라 안쪽 스크롤 칸(넓은 화면 A 의 옆 칸·근거 장부 목록·인용문)이 받는가 — 대상의 조상 사슬로 scrollsInner 가 잰다
 export type FollowInput =
-  | { type: "wheel"; deltaX: number; deltaY: number; ctrlKey: boolean }
-  | { type: "touchmove" }
-  | { type: "keydown"; key: string; editable: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }
+  | { type: "wheel"; deltaX: number; deltaY: number; ctrlKey: boolean; inner: boolean }
+  | { type: "touchmove"; inner: boolean }
+  | { type: "keydown"; key: string; editable: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean; inner: boolean }
   | { type: "pointerdown"; clientX: number; viewportWidth: number };
+
+// 입력 대상(자기 포함)에서 위로 올라가며 본 조상의 세로 스크롤 모양 — 가까운 것부터, body·html(창)은 넣지 않는다.
+// overflowY 는 getComputedStyle 의 값
+export type FollowScroller = { overflowY: string; scrollTop: number; scrollHeight: number; clientHeight: number };
 
 // 페이지를 굴리는 키(" " 는 Space)
 export const FOLLOW_KEYS: readonly string[] = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "];
@@ -21,23 +26,50 @@ export const FOLLOW_PILL_WRITE = "↓ 지금 쓰는 곳으로";
 // 탐색 중에는 쓰는 글이 없다 — 도는 하위질문의 자리로 간다
 export const FOLLOW_PILL_EXPLORE = "↓ 지금 찾는 곳으로";
 
+// 사용자가 굴릴 수 있는 세로 overflow — hidden·clip 칸은 사용자가 굴리지 못한다
+const USER_SCROLLING = new Set(["auto", "scroll", "overlay"]);
+// 스크롤 키가 굴리는 방향(1 아래, -1 위). Space 는 Shift 에 따라 갈린다(followKeyDirection)
+const KEY_DIRECTION: Readonly<Record<string, number>> = { ArrowUp: -1, PageUp: -1, Home: -1, ArrowDown: 1, PageDown: 1, End: 1 };
+
 export function breaksFollow(e: FollowInput): boolean {
   switch (e.type) {
     case "wheel": {
-      // 세로가 앞설 때만 — 가로 휠(트랙패드 옆 밀기)·Ctrl+휠(확대)은 화면을 굴리지 않는다
+      // 세로가 앞설 때만 — 가로 휠(트랙패드 옆 밀기)·Ctrl+휠(확대)은 화면을 굴리지 않는다. 안쪽 칸이 받는 휠도 페이지는 그대로다
       const dy = Math.abs(e.deltaY);
-      return !e.ctrlKey && dy > 0 && dy >= Math.abs(e.deltaX);
+      return !e.inner && !e.ctrlKey && dy > 0 && dy >= Math.abs(e.deltaX);
     }
     case "touchmove":
-      return true;
+      return !e.inner;
     case "keydown":
-      // 입력칸 안의 키(글자 사이 이동·공백)는 페이지를 굴리지 않는다
-      if (e.editable || !FOLLOW_KEYS.includes(e.key)) return false;
+      // 입력칸 안의 키(글자 사이 이동·공백)와 안쪽 칸이 받는 키(옆 칸 안 초점의 방향키)는 페이지를 굴리지 않는다
+      if (e.editable || e.inner || !FOLLOW_KEYS.includes(e.key)) return false;
       return modifiedScrolls(e);
     case "pointerdown":
-      // 페이지 스크롤바는 문서 폭(clientWidth) 바깥 띠다 — 그 띠를 누르거나 끄는 것은 사용자가 굴리는 것이다
+      // 페이지 스크롤바는 문서 폭(clientWidth) 바깥 띠다 — 그 띠를 누르거나 끄는 것은 사용자가 굴리는 것이다. 안쪽 칸의
+      // 스크롤바는 그 띠 안이라 멈추지 않는다(안쪽 칸 위의 휠과 같은 판정)
       return e.clientX >= e.viewportWidth;
   }
+}
+
+// 입력이 페이지가 아니라 안쪽 스크롤 칸만 굴리는가(dir: 1 아래, -1 위, 0 모름). 휠·터치·스크롤 키는 대상에서 가까운 칸부터
+// 그 방향으로 아직 굴러갈 수 있는 칸이 받고, 끝에 닿은 칸은 바깥 칸으로 넘긴다(연쇄 스크롤) — 받을 칸이 하나도 없으면 창이
+// 받는다(페이지가 구른다). 넘치지 않는 칸(짧은 옆 칸·가로로만 굴러가는 감싸개)은 굴러갈 틈이 없어 저절로 건너뛴다. 끝까지
+// 1px 이 안 남으면 끝으로 본다 — 확대한 화면은 scrollTop 이 소수라 끝에서도 몇 분의 1px 이 남는다. 방향을 모르면 안쪽으로
+// 보지 않는다(멈추는 쪽 — 알약으로 다시 켤 수 있다). overscroll-behavior 는 보지 않는다 — 이 화면의 칸은 쓰지 않는다
+export function scrollsInner(chain: readonly FollowScroller[], dir: number): boolean {
+  if (!dir) return false;
+  return chain.some((a) => {
+    if (!USER_SCROLLING.has(a.overflowY)) return false;
+    const room = dir > 0 ? a.scrollHeight - a.clientHeight - a.scrollTop : a.scrollTop;
+    return room >= 1;
+  });
+}
+
+// 스크롤 키가 굴리는 방향 — 1 아래, -1 위, 페이지를 굴리지 않는 키 0. Shift+Space 는 한 화면 위다. 그 밖의 수식 키는 방향을
+// 바꾸지 않는다(Ctrl+Home 은 위, Cmd+↓ 는 아래 — 굴리는지는 breaksFollow 가 가른다)
+export function followKeyDirection(key: string, shiftKey: boolean): number {
+  if (key === " ") return shiftKey ? -1 : 1;
+  return KEY_DIRECTION[key] ?? 0;
 }
 
 // 스크롤 키에 수식 키를 함께 누른 조합이 페이지를 굴리는가(수식 키가 없으면 굴린다). 굴리는 조합은 셋뿐이다 — Ctrl+Home/End

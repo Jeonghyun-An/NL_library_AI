@@ -10,17 +10,43 @@ import {
   breaksFollow,
   followBehavior,
   followBlocked,
+  followKeyDirection,
   followPill,
   followTarget,
+  scrollsInner,
   sectionElementId,
   shouldFollowMove,
   type FollowInput,
+  type FollowScroller,
 } from "~/utils/researchFollow";
 
 type KeyInput = Extract<FollowInput, { type: "keydown" }>;
 
 function key(k: string, over: Partial<KeyInput> = {}): KeyInput {
-  return { type: "keydown", key: k, editable: false, ctrlKey: false, metaKey: false, altKey: false, ...over };
+  return { type: "keydown", key: k, editable: false, ctrlKey: false, metaKey: false, altKey: false, inner: false, ...over };
+}
+
+// 입력 대상에서 위로 올라가며 본 조상 한 칸의 세로 스크롤 모양 — overflow 를 주지 않으면 굴러가지 않는 칸(visible)
+function box(over: Partial<FollowScroller> = {}): FollowScroller {
+  return { overflowY: "visible", scrollTop: 0, scrollHeight: 100, clientHeight: 100, ...over };
+}
+
+// 넓은 화면(A)의 옆 칸(sticky·overflow-y auto) — 회차 타임라인이 길어 넘친다. 가운데·맨 위·맨 끝까지 굴린 모양
+const sideMid = box({ overflowY: "auto", scrollTop: 200, scrollHeight: 1400, clientHeight: 700 });
+const sideTop = { ...sideMid, scrollTop: 0 };
+const sideEnd = { ...sideMid, scrollTop: 700 };
+// 옆 칸 안의 근거 장부 목록(max-height 14rem·overflow-y auto)
+const ledgerMid = box({ overflowY: "auto", scrollTop: 100, scrollHeight: 600, clientHeight: 224 });
+const ledgerEnd = { ...ledgerMid, scrollTop: 376 };
+// 인용 팝오버의 인용문(max-height 8rem·overflow-y auto)
+const quoteMid = box({ overflowY: "auto", scrollTop: 40, scrollHeight: 300, clientHeight: 128 });
+const quoteEnd = { ...quoteMid, scrollTop: 172 };
+// 본문 칸·절·팝오버 — 제 칸이 굴러가지 않아 휠은 페이지(창)가 받는다
+const page = [box(), box(), box()];
+
+// D7 이 창의 휠을 옮기는 모양 — inner 는 대상의 조상 사슬로 잰다
+function wheelOver(chain: readonly FollowScroller[], deltaY: number): FollowInput {
+  return { type: "wheel", deltaX: 0, deltaY, ctrlKey: false, inner: scrollsInner(chain, Math.sign(deltaY)) };
 }
 
 function eta(over: Partial<SynthEta> = {}): SynthEta {
@@ -44,15 +70,39 @@ function target(over: Partial<Parameters<typeof followTarget>[0]> = {}): string 
 
 describe("breaksFollow", () => {
   it("세로 휠은 멈추고 가로 휠·Ctrl+휠(확대)은 멈추지 않는다", () => {
-    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: 120, ctrlKey: false })).toBe(true);
-    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: -40, ctrlKey: false })).toBe(true);
-    expect(breaksFollow({ type: "wheel", deltaX: 80, deltaY: 10, ctrlKey: false })).toBe(false);
-    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: 0, ctrlKey: false })).toBe(false);
-    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: 120, ctrlKey: true })).toBe(false);
+    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: 120, ctrlKey: false, inner: false })).toBe(true);
+    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: -40, ctrlKey: false, inner: false })).toBe(true);
+    expect(breaksFollow({ type: "wheel", deltaX: 80, deltaY: 10, ctrlKey: false, inner: false })).toBe(false);
+    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: 0, ctrlKey: false, inner: false })).toBe(false);
+    expect(breaksFollow({ type: "wheel", deltaX: 0, deltaY: 120, ctrlKey: true, inner: false })).toBe(false);
   });
 
   it("터치로 끌면 멈춘다", () => {
-    expect(breaksFollow({ type: "touchmove" })).toBe(true);
+    expect(breaksFollow({ type: "touchmove", inner: false })).toBe(true);
+  });
+
+  it("옆 칸·근거 장부 목록·인용문처럼 안쪽 스크롤 칸만 굴리는 휠·터치 이동·스크롤 키는 멈추지 않는다", () => {
+    // 넓은 화면은 탐색 중에도 2단(A)이라 옆 칸은 sticky — 제 칸을 굴려 읽어도 본문 따라가기가 그 읽기를 방해하지 않는다
+    expect(breaksFollow(wheelOver([box(), box(), sideMid], 120))).toBe(false);
+    expect(breaksFollow(wheelOver([box(), box(), sideMid], -120))).toBe(false);
+    expect(breaksFollow(wheelOver([box(), ledgerMid, box(), sideMid], 120))).toBe(false);
+    // 장부 목록이 끝에 닿아도 옆 칸이 더 내려가면 옆 칸이 받는다 — 페이지는 그대로다
+    expect(breaksFollow(wheelOver([box(), ledgerEnd, box(), sideMid], 120))).toBe(false);
+    // 인용 팝오버는 aria-modal 이 없어 모달로 걸러지지 않는다 — 긴 인용문을 휠로 읽어도 따라가기는 켜진 채 막힘으로만 지나간다
+    expect(breaksFollow(wheelOver([quoteMid, ...page], 120))).toBe(false);
+    expect(breaksFollow({ type: "touchmove", inner: true })).toBe(false);
+    expect(breaksFollow(key("ArrowDown", { inner: true }))).toBe(false);
+    expect(breaksFollow(key("End", { ctrlKey: true, inner: true }))).toBe(false);
+  });
+
+  it("칸 끝에 닿아 창으로 넘어가는 휠은 페이지를 굴린다 — 멈춘다", () => {
+    expect(breaksFollow(wheelOver([box(), ledgerEnd, box(), sideEnd], 120))).toBe(true);
+    expect(breaksFollow(wheelOver([box(), box(), sideTop], -120))).toBe(true);
+    expect(breaksFollow(wheelOver([quoteEnd, ...page], 120))).toBe(true);
+    // 끝에 닿은 칸도 반대 방향으로는 제 칸이 받는다
+    expect(breaksFollow(wheelOver([box(), ledgerEnd, box(), sideEnd], -120))).toBe(false);
+    // 본문 위의 휠은 페이지를 굴린다
+    expect(breaksFollow(wheelOver(page, 120))).toBe(true);
   });
 
   it("스크롤 키는 멈추되 입력칸 안의 키는 멈추지 않는다", () => {
@@ -93,6 +143,39 @@ describe("breaksFollow", () => {
     expect(breaksFollow({ type: "pointerdown", clientX: 1432, viewportWidth: 1425 })).toBe(true);
     expect(breaksFollow({ type: "pointerdown", clientX: 700, viewportWidth: 1425 })).toBe(false);
     expect(breaksFollow({ type: "pointerdown", clientX: 1424, viewportWidth: 1425 })).toBe(false);
+  });
+});
+
+describe("scrollsInner", () => {
+  it("넘치지 않는 칸·사용자가 굴리지 못하는 칸은 건너뛰고, 방향을 모르면 안쪽으로 보지 않는다", () => {
+    // 옆 칸이 짧아 넘치지 않거나, 가로로만 굴러가는 감싸개(세로 overflow 도 auto 로 계산된다)면 휠은 창이 받는다
+    expect(scrollsInner([box(), box({ overflowY: "auto", scrollHeight: 500, clientHeight: 500 })], 1)).toBe(false);
+    expect(scrollsInner([box({ overflowY: "hidden", scrollHeight: 600, clientHeight: 200 })], 1)).toBe(false);
+    expect(scrollsInner([box({ overflowY: "clip", scrollHeight: 600, clientHeight: 200 })], 1)).toBe(false);
+    expect(scrollsInner([box({ overflowY: "scroll", scrollHeight: 600, clientHeight: 200 })], 1)).toBe(true);
+    expect(scrollsInner([box({ overflowY: "overlay", scrollHeight: 600, clientHeight: 200 })], 1)).toBe(true);
+    expect(scrollsInner([box(), box(), sideMid], 0)).toBe(false);
+    expect(scrollsInner([], 1)).toBe(false);
+  });
+
+  it("끝까지 1px 이 안 남은 칸은 끝으로 본다 — 확대한 화면은 scrollTop 이 소수다", () => {
+    expect(scrollsInner([{ ...sideMid, scrollTop: 0.5 }], -1)).toBe(false);
+    expect(scrollsInner([{ ...sideMid, scrollTop: 699.4 }], 1)).toBe(false);
+    expect(scrollsInner([{ ...sideMid, scrollTop: 698 }], 1)).toBe(true);
+    expect(scrollsInner([{ ...sideMid, scrollTop: 1 }], -1)).toBe(true);
+  });
+});
+
+describe("followKeyDirection", () => {
+  it("스크롤 키가 굴리는 방향 — 위 -1·아래 1, Shift+Space 는 위, 그 밖의 키는 0", () => {
+    for (const k of ["ArrowUp", "PageUp", "Home"]) expect(followKeyDirection(k, false)).toBe(-1);
+    for (const k of ["ArrowDown", "PageDown", "End", " "]) expect(followKeyDirection(k, false)).toBe(1);
+    expect(followKeyDirection(" ", true)).toBe(-1);
+    // 수식 키는 방향을 바꾸지 않는다 — Shift 는 Space 만
+    expect(followKeyDirection("ArrowDown", true)).toBe(1);
+    expect(followKeyDirection("Tab", false)).toBe(0);
+    expect(followKeyDirection("a", false)).toBe(0);
+    for (const k of FOLLOW_KEYS) expect(followKeyDirection(k, false)).not.toBe(0);
   });
 });
 
