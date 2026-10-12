@@ -366,6 +366,9 @@ h4,
      글을 읽는 칸(AI 요약·추천 이유·참고 논문·추천 1권)은 '읽기용 짙은 유리'다 — 흰 필름·반사광·흐림 없이 짙은 초록 반투명으로 가라앉혀 글자가 또렷하다.
      읽는 칸 안의 글 톤은 본문 거의 흰색(--skx-read-*)으로 .skx-aip 의 읽는 칸 범위에서만 다시 정의한다 */
   --skx-frame-bg: rgba(15, 40, 34, 0.58);
+  /* 큰 틀의 테두리는 살짝만(흰 8% 1px) — 유리 테두리(밝은 위 가장자리)는 사이드바가 맡는다. 나눔선은 바탕에 녹아드는 어두운 선(시안 stroke 검정 12% 계열) */
+  --skx-frame-line: rgba(255, 255, 255, 0.08);
+  --skx-rule: rgba(0, 0, 0, 0.16);
   --skx-frost-panel: rgba(8, 22, 19, 0.25);
   --skx-read-surface: rgba(8, 22, 19, 0.62);
   --skx-read-ink: #e6ebe9;
@@ -461,6 +464,8 @@ h4,
   --skx-frost-blur: none;
   --skx-frost-side-bg: #ffffff;
   --skx-frame-bg: #ffffff;
+  --skx-frame-line: #e3e1dc;
+  --skx-rule: #e3e1dc;
   --skx-frost-panel: #faf9f6;
   --skx-read-surface: #ffffff;
   --skx-read-ink: #1d211f;
@@ -1383,6 +1388,7 @@ h4,
   }
 }
 /* 밝은 위 가장자리(빛을 받는 테두리) — 위 흰 60% → 아래 20% 그라데이션 1px. 배경에 mask 로 테두리 띠만 남긴다 */
+.skx-lnb::before,
 .skx-search__box::before,
 .skx-seg::before,
 .skx-rsearch::before,
@@ -2149,7 +2155,6 @@ h4,
   width: 100%;
   padding: 1.2rem;
   background: var(--skx-frame-bg);
-  box-shadow: var(--skx-frost-hilite);
   /* 모바일은 html 글자 크기가 줄어(0.9rem) rem 반경이 작아진다 — 시안의 24px 를 그대로 둔다 */
   border-radius: 24px;
 }
@@ -2159,6 +2164,10 @@ h4,
     padding: 0.8rem;
     border-radius: 16px;
   }
+}
+/* 큰 틀의 테두리 띠는 위가 밝고 아래로 옅어지는 흰 그라데이션이 아니라 흰 8% 한 가지 얇은 선이다 */
+.skx-rframe::before {
+  background: var(--skx-frame-line);
 }
 .skx-rlist {
   display: flex;
@@ -2282,9 +2291,14 @@ h4,
   grid-template-columns: 8rem minmax(0, 1fr) 8.4rem;
   grid-template-areas: "thumb main actions";
   gap: 0.8rem;
+  /* 카드 아래 여백 24 → 나눔선 → 다음 카드 위 여백 24(목록 컨테이너의 gap) — 선 위아래가 같다 */
   padding-bottom: 1.2rem;
-  border-bottom: 1px solid var(--skx-line);
+  border-bottom: 1px solid var(--skx-rule);
   cursor: pointer;
+}
+.skx-rc:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .skx-rc__thumb {
   grid-area: thumb;
@@ -4583,7 +4597,7 @@ h4,
   gap: 0.8rem;
   align-items: flex-start;
   padding: 0.8rem 0;
-  border-bottom: 1px solid var(--skx-line);
+  border-bottom: 1px solid var(--skx-rule);
 }
 .skx-pai-ref:first-child {
   padding-top: 0;
@@ -4733,6 +4747,7 @@ h4,
 .skx-paper-list {
   display: flex;
   flex-direction: column;
+  gap: 1.2rem;
 }
 
 .skx-ptag {
