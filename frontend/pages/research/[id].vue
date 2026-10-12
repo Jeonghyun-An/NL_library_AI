@@ -318,22 +318,17 @@ const revealExcluded = computed(() =>
 );
 
 // ── 배치 A·B ──────────────────────────────────────────────
-// 보고서 자리가 생기면(초안의 첫 절이 나오거나 완료) 2단으로 바뀐다 — 보고서 섹션을 그리는 조건과 같다
-const hasReport = computed(() => !!reportState.value || !!draft.value);
+// 넓은 화면은 처음부터 2단이다 — 탐색 중에도 본문(절 자리)과 옆 칸(진행 패널·근거 장부)을 함께 본다(spec D22)
 // 서버 렌더에는 폭을 모르므로 넓은 화면으로 두고, 마운트 뒤 실제 폭으로 맞춘다
 const wide = ref(true);
-// 손으로 고른 보기는 이번 방문의 지금 단계에서만 따른다. 저장해 두면 한 번 고른 사람은 보고서가 나와도 바뀌지 않는다
+// 손으로 고른 보기는 이번 방문 동안 따른다(저장하지 않는다). 보고서가 나와도 풀지 않는다 — 문서형을 고른 사람이 첫 절이
+// 완성되는 순간 2단으로 끌려가지 않게
 const layoutOverride = ref<ResearchLayout | null>(null);
-const layout = computed(() => effectiveLayout(layoutOverride.value, wide.value, hasReport.value));
+const layout = computed(() => effectiveLayout(layoutOverride.value, wide.value));
 // 단계 화면(stepMode)은 탐색·보고서 배치(rs-body)를 그리지 않는다 — 머리에서 보기 전환을 걷는다(눌러도 바뀌지 않다가
 // [보고서 보기]로 돌아가는 순간 그때 고른 배치가 갑자기 적용된다). 이어가지 않은 딥리서치·보고서 화면은 그대로다(D15)
 const canToggle = computed(() => SHOW_LAYOUT_TOGGLE && wide.value && !stepMode.value);
 let media: MediaQueryList | null = null;
-
-// 보고서가 나오는(또는 재시도로 사라지는) 순간 자동 보기로 돌아간다
-watch(hasReport, () => {
-  layoutOverride.value = null;
-});
 
 function onMediaChange(e: MediaQueryListEvent): void {
   wide.value = e.matches;
