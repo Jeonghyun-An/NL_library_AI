@@ -1,7 +1,8 @@
 // frontend/tests/unit/themeHolo.test.ts
 // round08 — 움직이는 홀로그램 배경(.skx-holo)이 글자 가독성을 해치지 않는지 지킨다.
-// style_skovix.css 의 띠(.skx-holo__band--N) 정지점 알파를 읽어, 띠가 모두 가장 밝게 겹친 최악의 자리에서도
-// 본문색(--skx-ink)이 유리 카드(--skx-glass) 위에서 4.5:1 이상인지 계산한다. 알파를 올리면 여기서 막힌다.
+// style_skovix.css 의 띠(.skx-holo__band--N) 정지점 알파를 읽어 띠가 모두 가장 밝게 겹친 최악의 자리를 만들고,
+// 유리 카드가 뒤를 --skx-glass-dim 배로 어둡게 누른 뒤(--skx-blur 의 brightness) 유리색(--skx-glass)을 얹었을 때
+// 본문색(--skx-ink)이 4.5:1 이상인지 계산한다. 밝기 계수·유리·본문색은 모두 :root 토큰에서 읽는다(사본 없음).
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -87,21 +88,26 @@ function bands(): Stop[][] {
   for (const m of holoSection.matchAll(
     /\.skx-holo__band--\d+\s*\{([^}]*)\}/g,
   )) {
-    out.push(rgbaStops(m[1] ?? ""));
+    const stops = rgbaStops(m[1] ?? "");
+    if (stops.length) out.push(stops); // 색 없는 공통 규칙(mask 등)은 띠가 아니다
   }
   return out;
 }
 
-/** 띠마다 정지점 하나(또는 비어 있음)를 골라 모든 조합을 겹쳐 본 가장 낮은 대비 */
+/** 띠마다 정지점 하나(또는 비어 있음)를 골라 모든 조합을 겹친 뒤, 카드가 어둡게 누르고(brightness) 유리를 얹은 가장 낮은 대비 */
 function worstContrast(): number {
   const ink = hexToRgb(rootToken("--skx-ink"));
+  const dim = Number(rootToken("--skx-glass-dim"));
+  if (!(dim > 0 && dim <= 1)) throw new Error(`--skx-glass-dim 은 0 초과 1 이하: ${dim}`);
   const glass = rgbaStops(rootToken("--skx-glass"))[0];
   if (!glass) throw new Error("--skx-glass 를 rgba 로 읽지 못함");
   const all = bands();
   let worst = Infinity;
   const walk = (i: number, backdrop: Rgb) => {
     if (i === all.length) {
-      worst = Math.min(worst, contrast(ink, over(backdrop, glass.rgb, glass.a)));
+      // filter: brightness() 는 sRGB 값에 계수를 곱한다
+      const dimmed = backdrop.map((c) => c * dim) as Rgb;
+      worst = Math.min(worst, contrast(ink, over(dimmed, glass.rgb, glass.a)));
       return;
     }
     walk(i + 1, backdrop); // 이 띠가 그 자리를 지나지 않는 경우
@@ -117,7 +123,13 @@ describe("홀로그램 배경 — 가독성", () => {
     expect(bands().length).toBeLessThanOrEqual(3);
   });
 
-  it("띠가 모두 가장 밝게 겹쳐도 본문색이 유리 카드 위에서 4.5:1 이상이다", () => {
+  it("--skx-blur 가 --skx-glass-dim 밝기 계수를 쓴다(뒤를 어둡게 누르는 유리)", () => {
+    expect(rootToken("--skx-blur")).toMatch(
+      /^blur\([^)]+\)\s+brightness\(var\(--skx-glass-dim\)\)$/,
+    );
+  });
+
+  it("띠가 모두 가장 밝게 겹쳐도 어둡게 누른 유리 카드 위에서 본문색이 4.5:1 이상이다", () => {
     expect(worstContrast()).toBeGreaterThanOrEqual(4.5);
   });
 
