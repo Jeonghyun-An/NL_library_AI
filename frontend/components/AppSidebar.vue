@@ -101,28 +101,28 @@
         <!-- 첫 로드가 끝나기 전의 빈 목록을 '기록 없음'으로 보이지 않게 loaded 를 기다린다 -->
         <ClientOnly>
           <template v-if="loaded">
-            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [+ 연구 시작하기]는 보인다 -->
+            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [+ 연구 시작하기]는 보인다.
+                 머리 줄은 왼쪽 'DeepResearch' + 진행 중 배지 · 오른쪽 '전체 삭제'(기록이 있을 때만)이고, [+ 연구 시작하기]는 머리 아래 줄의 전체 폭 버튼이다 —
+                 한 줄에 넷을 두면 배지와 알약이 겹쳤다 -->
             <section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
                 <div class="skx-history__head-main">
                   <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
                   <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
                 </div>
-                <div class="skx-history__head-actions">
-                  <button type="button" class="skx-history__start" @click="startDeepResearch">
-                    <span aria-hidden="true">+</span> 연구 시작하기
-                  </button>
-                  <button
-                    v-if="researchRows.length"
-                    ref="researchClearBtn"
-                    type="button"
-                    class="skx-history__clear"
-                    @click="openConfirm('research')"
-                  >
-                    전체 삭제
-                  </button>
-                </div>
+                <button
+                  v-if="researchRows.length"
+                  ref="researchClearBtn"
+                  type="button"
+                  class="skx-history__clear"
+                  @click="openConfirm('research')"
+                >
+                  전체 삭제
+                </button>
               </div>
+              <button type="button" class="skx-history__start" @click="startDeepResearch">
+                <span aria-hidden="true">+</span> 연구 시작하기
+              </button>
 
               <div
                 v-if="confirming === 'research'"
@@ -559,33 +559,36 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.4rem;
   min-height: 1.2rem;
 }
-.skx-history__head-actions {
+/* [+ 연구 시작하기] — 머리 아래 줄의 옅은 전체 폭 버튼(새 검색 버튼보다 한 단계 작고 옅게, 산호 글·테두리). 눌러 랜딩에서 딥리서치를 시작한다 */
+.skx-history__start {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.2rem;
-  flex: none;
-}
-/* [+ 연구 시작하기] — 묶음 머리의 작은 산호 테두리 알약. 눌러 랜딩에서 딥리서치를 시작한다 */
-.skx-history__start {
-  padding: 0.1rem 0.5rem;
+  width: 100%;
+  padding: 0.25rem 0.5rem;
   border: 1px solid var(--skx-primary);
-  border-radius: var(--skx-radius-pill);
+  border-color: color-mix(in srgb, var(--skx-primary) 70%, transparent);
+  border-radius: var(--skx-radius-sm);
   background: none;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--skx-primary);
   white-space: nowrap;
   cursor: pointer;
   transition:
     background-color 0.15s,
+    border-color 0.15s,
     color 0.15s;
 }
 .skx-history__start:hover {
   background: var(--skx-primary);
+  border-color: var(--skx-primary);
   color: var(--skx-on-accent);
 }
 .skx-history__start:focus-visible {
@@ -595,7 +598,8 @@ onBeforeUnmount(() => {
 .skx-history__head-main {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.4rem;
   min-width: 0;
 }
 .skx-history__group .skx-history__title {
@@ -613,6 +617,7 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 .skx-history__clear {
+  flex: none;
   padding: 0.1rem 0.4rem;
   border: none;
   border-radius: var(--skx-radius-sm);
