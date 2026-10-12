@@ -50,7 +50,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["research-work"])
 
 EXAMPLE_READ_ONLY = "예시 연구는 읽기 전용입니다"
-CONCEPTS_BUSY = "핵심 개념을 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
+CONCEPTS_BUSY = "키워드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
 RUNNING_NOT_CANCELABLE = "진행 중인 생성은 끝날 때까지 기다립니다"
 NEWER_GENERATION = "더 새 생성이 있습니다 — 최신 생성에서 다시 불러 주세요"
 MAX_MEMO = 2000
@@ -249,7 +249,7 @@ async def patch_work(job_id: str, req: WorkPatch, db: AsyncSession = Depends(get
     if req.concepts is not None:
         concepts = clean_concepts(req.concepts)
         if not concepts:
-            raise HTTPException(status_code=422, detail="핵심 개념을 1개 이상 넣어 주세요")
+            raise HTTPException(status_code=422, detail="키워드를 1개 이상 넣어 주세요")
         if concepts != list(work.concepts or []):
             if await _concepts_open(db, work.id):
                 raise HTTPException(status_code=409, detail=CONCEPTS_BUSY)

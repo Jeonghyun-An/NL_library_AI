@@ -507,7 +507,7 @@ class TestPatchWork:
         res = api.client.patch(f"/api/research/{jid}/work", json={"concepts": ["청소년"]})
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "핵심 개념을 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
+        assert res.json()["detail"] == "키워드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
         assert _rows(api.engine, ResearchWork)[0]["concepts"] == ["독서 격차"]
 
     def test_memo_and_same_concepts_pass_while_concepts_are_being_made(self, api):
