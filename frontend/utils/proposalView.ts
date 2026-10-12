@@ -11,7 +11,9 @@ import type {
   WorkView,
 } from "~/types/work";
 import { sentenceFlags, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
+import { httpStatus } from "~/utils/researchErrors";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
+import { FINAL_STEP_NAME } from "~/utils/workPhase";
 
 // 고정 6절 — 키 순서가 곧 문서 순서다. 선행연구 검토의 묶음(prior.g1~g4)은 목차의 묶음 이름으로 부른다(sectionLabel)
 export const SECTION_LABELS: Record<string, string> = {
@@ -189,4 +191,134 @@ export function removeParagraph(section: ProposalSection, pid: string): SectionP
 
 export function addParagraph(section: ProposalSection, text: string): SectionPut {
   return { paragraphs: [...section.paragraphs.map(entry), { id: null, text, state: "authored" }] };
+}
+
+// ── 보고서 자동 산출(06e D20) — [보고서 만들기] 한 번으로 목차를 자동 확정하고 절을 문서 순서대로 넣는다 ──
+
+// 화면이 쓰는 절의 차례 — 목차 묶음 순서(prior.g1~g4) → 연구 공백. 계획서 화면의 절 목록·문서(proposalDocument.printedKeys)·
+// 자동 산출이 모두 이 순서다. 목차가 없으면 연구 공백만
+export function sectionKeysOf(p: ProposalView): string[] {
+  return [...(p.outline?.groups.map((g) => g.key) ?? []), "gap"];
+}
+
+// 절 연쇄가 도는 조건 — [보고서 만들기]의 반영이 자동 승인한 목차(state approved·auto)이고, 예시 연구가 아니고(쓰기가 409),
+// 목차를 다시 만드는 중이 아닐 때. 06b 때 승인한 목차(auto 없음)·[목차 고치기]에서 승인을 푼 목차는 돌지 않는다.
+// 조건은 늘 서버 값으로 다시 계산한다 — 탭을 닫았다 와도 같은 조건으로 이어 넣는다(spec §12-4)
+export function autoChainOn(p: ProposalView | null, work: WorkView | null): boolean {
+  const outline = p?.outline;
+  if (!outline || !work) return false;
+  return (
+    outline.state === "approved" &&
+    outline.auto === true &&
+    !work.is_example &&
+    !openGeneration({ work }, "outline", "outline")
+  );
+}
+
+// 자동으로 쓸 절 — 문서 순서에서 절도, 그 키의 section 생성 기록(상태 무관 — failed·canceled 포함)도 없는 키. 실패·취소로
+// 끝난 절은 다시 넣지 않고 그 절의 [다시 시도]에 맡긴다. section_gens 가 없는 옛 서버 응답은 절이 없는 키를 모두 고른다
+export function autoTargets(p: ProposalView): string[] {
+  const gens = p.section_gens ?? {};
+  return sectionKeysOf(p).filter((k) => !p.sections[k] && !gens[k]);
+}
+
+// 다음에 넣을 절 — skip(이 방문에서 이미 넣었거나 근거가 없어 건너뛴 키)을 뺀 첫 키, 없으면 null
+export function nextAutoSection(p: ProposalView, skip: ReadonlySet<string>): string | null {
+  return autoTargets(p).find((k) => !skip.has(k)) ?? null;
+}
+
+// 절 쓰기가 '그 절에 넣을 논문이 없어' 막혔다 — 409 detail {code: "no_section_papers", message}(06e 서버). 연쇄는 그 절만
+// 건너뛰고 다음 키로 간다. 문자열 detail(06e 전 서버)·다른 409(쓰는 중·승인 전)는 아니다
+export function isNoSectionPapers(err: unknown): boolean {
+  if (httpStatus(err) !== 409) return false;
+  const data = (err as { data?: unknown } | null)?.data;
+  const detail = data && typeof data === "object" && "detail" in data ? (data as { detail: unknown }).detail : null;
+  return !!detail && typeof detail === "object" && (detail as { code?: unknown }).code === "no_section_papers";
+}
+
+// 연구 배경 글 — Outline.background 키가 없는 응답(필드를 열기 전 서버)은 빈 글이다
+export function outlineBackground(outline: Outline): string {
+  const value = (outline as Outline & { background?: unknown }).background;
+  return typeof value === "string" ? value : "";
+}
+
+// 머리 목차의 한 항목. anchor 는 보고서 화면의 자리 id(ProposalStep — 1·2·5·6 은 wk-doc-*, 절은 ProposalSection 의 wk-sec-<key>)
+export interface TocItem {
+  key: string;
+  no: string;
+  label: string;
+  anchor: string;
+  status: SectionStatus | "text" | "blank" | "skipped";
+}
+
+// 머리 목차 — 문서 순서의 여섯 자리(1 주제·2 연구 배경·3.n 선행연구 묶음·4 연구 공백·5 연구 질문·6 방법 제안 — Word 의 절
+// 제목과 같은 말). 글 자리는 적었으면 text, 비면 blank. 절은 그 절의 상태(sectionStatus), 근거가 없어 연쇄가 건너뛴 쓰기 전
+// 절은 skipped. 목차가 없으면 빈 목록
+export function docToc(p: ProposalView, state: WorkState, skipped: ReadonlySet<string>): TocItem[] {
+  const outline = p.outline;
+  if (!outline) return [];
+  const filled = (text: string | null | undefined): TocItem["status"] => (text?.trim() ? "text" : "blank");
+  const sectionItem = (key: string, no: string, label: string): TocItem => {
+    const status = sectionStatus(key, state);
+    return { key, no, label, anchor: `wk-sec-${key}`, status: status === "empty" && skipped.has(key) ? "skipped" : status };
+  };
+  return [
+    { key: "topic", no: "1", label: SECTION_LABELS.topic!, anchor: "wk-doc-topic", status: filled(outline.topic.title) },
+    {
+      key: "background",
+      no: "2",
+      label: SECTION_LABELS.background!,
+      anchor: "wk-doc-background",
+      status: filled(outlineBackground(outline)),
+    },
+    ...outline.groups.map((g, i) => sectionItem(g.key, `3.${i + 1}`, g.name)),
+    sectionItem("gap", "4", SECTION_LABELS.gap!),
+    { key: "question", no: "5", label: SECTION_LABELS.question!, anchor: "wk-doc-question", status: filled(outline.question) },
+    { key: "method", no: "6", label: SECTION_LABELS.method!, anchor: "wk-doc-method", status: filled(outline.method) },
+  ];
+}
+
+// 보고서 화면 머리의 큰 진행 막대(06e 정함 28 — 사용자 Q1 답 '현재 절 작성 중에 보이는 커다란 프로그레스바'를 자동 보고서에도)
+export interface ReportBar {
+  label: string;
+  done: number;
+  total: number;
+  percent: number;
+  running: boolean;
+}
+
+// 절이 끝날 때만 움직인다(추정 증가 없음 — 절 하나 평균 8초). 끝난 절 = 다 썼거나(done) 실패했거나, 쓰기 전인데 근거가 없어
+// 건너뛰었거나 생성 기록이 있는(취소로 끝난) 절. 쓰는 절 = 대기·쓰는 중. 남은 절 = 연쇄가 돌 때 아직 넣지 않은 절(건너뛴 키
+// 빼고) — stopped(연쇄가 오류로 멈춤)면 없다고 본다. 쓰는 절도 남은 절도 없으면 null(다 썼거나, 연쇄가 돌지 않는 목차에서
+// 손으로 쓰는 절이 없을 때 — 막대를 걷는다). 글줄은 조사 없는 꼴(정함 1)
+export function reportBar(
+  p: ProposalView,
+  state: WorkState,
+  skipped: ReadonlySet<string>,
+  stopped = false,
+): ReportBar | null {
+  const outline = p.outline;
+  if (!outline) return null;
+  const keys = sectionKeysOf(p);
+  const gens = p.section_gens ?? {};
+  const status = new Map(keys.map((k) => [k, sectionStatus(k, state)] as const));
+  const done = keys.filter((k) => {
+    const st = status.get(k);
+    return st === "done" || st === "failed" || (st === "empty" && (skipped.has(k) || gens[k] !== undefined));
+  }).length;
+  const active = keys.filter((k) => status.get(k) === "writing" || status.get(k) === "queued");
+  const pending =
+    !stopped && autoChainOn(p, state.work)
+      ? autoTargets(p).filter((k) => status.get(k) === "empty" && !skipped.has(k))
+      : [];
+  const current = active.find((k) => status.get(k) === "writing") ?? active[0] ?? pending[0];
+  if (current === undefined) return null;
+  const total = keys.length;
+  return {
+    label: `${FINAL_STEP_NAME} 작성 중 · ${done}/${total}절 — 「${sectionLabel(current, outline)}」`,
+    done,
+    total,
+    percent: Math.round((done / total) * 100),
+    running: status.get(current) === "writing",
+  };
 }

@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
 import {
+  FINAL_STEP_NAME,
+  MAKE_REPORT,
   ONBOARDING_KEY,
   ONBOARDING_STEPS,
+  REMAKE_REPORT,
   WORK_STEPS,
   continueCard,
   parseWorkStep,
@@ -236,5 +239,14 @@ describe("온보딩", () => {
       expect(s.body.length).toBeGreaterThan(0);
       expect(s.decide.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("FINAL_STEP_NAME·버튼 이름", () => {
+  it("마지막 단계 이름은 '보고서'(Q2 기본) — 버튼은 조사 없는 꼴로 이름에서 만든다", () => {
+    expect(FINAL_STEP_NAME).toBe("보고서");
+    expect(MAKE_REPORT).toBe(`${FINAL_STEP_NAME} 만들기`);
+    expect(REMAKE_REPORT).toBe(`${FINAL_STEP_NAME} 다시 만들기`);
+    expect([MAKE_REPORT, REMAKE_REPORT]).toEqual(["보고서 만들기", "보고서 다시 만들기"]);
   });
 });

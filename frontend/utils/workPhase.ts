@@ -8,6 +8,13 @@ import type { QueryValue } from "~/utils/restorePosition";
 
 export const WORK_STEPS: readonly WorkStep[] = ["topics", "reading", "proposal"];
 
+// 마지막 단계(④)의 이름 — 사용자 답(Q2)이 없을 때의 기본 '보고서'(06e 정함 1). 조사가 붙지 않는 꼴(버튼·진행 막대 글줄·
+// 단계 이름)에만 이 상수를 쓴다. 조사가 붙는 문장은 글자 그대로 '보고서'를 쓴다 — `${FINAL_STEP_NAME}를` 은 이름이
+// 바뀌면 틀린다('연구 초안를')
+export const FINAL_STEP_NAME = "보고서";
+export const MAKE_REPORT = `${FINAL_STEP_NAME} 만들기`;
+export const REMAKE_REPORT = `${FINAL_STEP_NAME} 다시 만들기`;
+
 // 진행 막대는 ① 탐색(딥리서치 — 이어갈 때 이미 끝나 있다)부터 센다
 type StepKey = "explore" | WorkStep;
 const STEP_KEYS: readonly StepKey[] = ["explore", ...WORK_STEPS];

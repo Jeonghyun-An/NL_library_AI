@@ -192,6 +192,8 @@ export interface Outline {
   approved_at: string | null;
   // 목차를 만들 때의 핵심 개념
   concepts?: string[];
+  // [보고서 만들기]의 반영이 자동 승인한 목차만 true — 화면의 절 연쇄가 읽는다(06e D20. 06b 목차엔 키가 없다)
+  auto?: boolean;
 }
 
 export type ParaState = "proposed" | "accepted" | "edited" | "authored";
@@ -240,6 +242,12 @@ export interface DisclosureStep {
   attempts: { model: string; outcome: string }[];
 }
 
+// 절 키별 마지막 section 생성(상태 무관) — 06e 절 연쇄가 '절도 생성 기록도 없는 키' 를 고르는 재료
+export interface SectionGen {
+  gen_id: number;
+  status: GenStatus;
+}
+
 export interface ProposalView {
   version: number;
   outline: Outline | null;
@@ -252,6 +260,8 @@ export interface ProposalView {
   disclosure: { steps: DisclosureStep[] };
   // 고른 주제의 출처(공개 부록용) — 주제가 없으면 null
   topic_source?: { origin: TopicItem["origin"]; edited: boolean } | null;
+  // 절 키 → 그 키의 마지막 section 생성(06e 서버부터 — 옛 응답엔 없다)
+  section_gens?: Record<string, SectionGen>;
 }
 
 // ── 요청 본문 ──────────────────────────────────────────────

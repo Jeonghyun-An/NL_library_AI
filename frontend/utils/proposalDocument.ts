@@ -10,7 +10,7 @@ import type {
   WorkView,
 } from "~/types/work";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
-import { GAP_NOTE, SECTION_LABELS, footprint, footprintLine, sectionLabel } from "~/utils/proposalView";
+import { GAP_NOTE, SECTION_LABELS, footprint, footprintLine, sectionKeysOf, sectionLabel } from "~/utils/proposalView";
 import {
   fileHead,
   kstDateTime,
@@ -212,10 +212,10 @@ function metaBlocks(input: ProposalDocInput, now: Date): DocBlock[] {
     .map((text): DocBlock => ({ type: "meta", text: xmlSafe(text) }));
 }
 
-// 문서가 그리는 절 — 목차 순서(선행연구 묶음 → 연구 공백). 계획서 화면의 절 목록(ProposalStep)도 이 범위를 쓴다 —
-// 절을 더하면(06c 연구 배경 등) 화면과 문서가 함께 바뀐다
+// 문서가 그리는 절 — 목차 순서(선행연구 묶음 → 연구 공백). 계획서 화면의 절 목록(ProposalStep)과 06e 자동 산출의 차례도
+// 이 범위다 — 정본은 proposalView.sectionKeysOf(이 파일이 proposalView 를 import 하므로 반대로 두면 순환 import)
 export function printedKeys(p: ProposalView): string[] {
-  return [...(p.outline?.groups.map((g) => g.key) ?? []), "gap"];
+  return sectionKeysOf(p);
 }
 
 // 문서에 실릴 수 있는 검토 전 AI 제안 수 — 문서가 그리는 절에서만 센다. 목차를 다시 만들며 빠진 옛 절(prior.g3 등)은

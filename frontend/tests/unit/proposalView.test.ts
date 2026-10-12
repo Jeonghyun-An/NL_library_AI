@@ -8,6 +8,7 @@ import type {
   ProposalView,
   WorkGeneration,
   WorkState,
+  WorkView,
 } from "~/types/work";
 import {
   GAP_NOTE,
@@ -15,19 +16,28 @@ import {
   SECTION_LABELS,
   acceptParagraph,
   addParagraph,
+  autoChainOn,
+  autoTargets,
   checkLine,
+  docToc,
   editParagraph,
   failedParagraphGens,
   footprint,
   footprintLine,
+  isNoSectionPapers,
+  nextAutoSection,
   openParagraphGens,
+  outlineBackground,
   paragraphParts,
   paragraphProblem,
   paragraphViews,
   removeParagraph,
+  reportBar,
+  sectionKeysOf,
   sectionLabel,
   sectionStatus,
 } from "~/utils/proposalView";
+import { FINAL_STEP_NAME } from "~/utils/workPhase";
 
 const NO_CHECKS = { dropped: 0, dropped_f: 0, unmarked: 0, numbers: [], softened: 0 };
 
@@ -318,5 +328,283 @@ describe("절 PUT 본문", () => {
     expect(removeParagraph(sec, "p2").paragraphs.map((p) => p.id)).toEqual(["p1", "p3"]);
     expect(addParagraph(sec, "더한 글.").paragraphs.at(-1)).toEqual({ id: null, text: "더한 글.", state: "authored" });
     expect(addParagraph(sec, "더한 글.").paragraphs).toHaveLength(4);
+  });
+});
+
+// ── 보고서 자동 산출(06e D20) ─────────────────────────────────
+// 묶음 둘(prior.g1·prior.g2) + 연구 공백 = 자동으로 쓰는 절 셋. [보고서 만들기]의 반영이 자동 승인한 목차(auto)다
+function autoOutline(over: Partial<Outline> = {}): Outline {
+  return {
+    ...outline(),
+    groups: [
+      { key: "prior.g1", name: "노인의 우울", hint: "노인 우울", papers: ["KCI_A"] },
+      { key: "prior.g2", name: "세대 간 지지", hint: "사회적 지지", papers: ["KCI_B"] },
+    ],
+    auto: true,
+    ...over,
+  };
+}
+
+function autoProposal(over: Partial<ProposalView> = {}): ProposalView {
+  return { ...proposal({}), outline: autoOutline(), section_gens: {}, ...over };
+}
+
+// 화면 상태 — 계획서는 p, 생성 목록은 gens(연구의 다른 칸은 over 로 바꾼다)
+function autoState(p: ProposalView, gens: WorkGeneration[] = [], over: Partial<WorkView> = {}): WorkState {
+  const s = state(gens);
+  return { ...s, work: { ...s.work!, ...over }, proposal: p };
+}
+
+function outlineGen(id: number, status: WorkGeneration["status"]): WorkGeneration {
+  return { ...gen(id, status, "outline"), kind: "outline" };
+}
+
+describe("sectionKeysOf — 자동으로 쓰는 절의 차례", () => {
+  it("목차 묶음 순서 → 연구 공백, 목차가 없으면 연구 공백만(printedKeys 와 같은 범위)", () => {
+    expect(sectionKeysOf(autoProposal())).toEqual(["prior.g1", "prior.g2", "gap"]);
+    const reversed = autoOutline({ groups: [...autoOutline().groups].reverse() });
+    expect(sectionKeysOf(autoProposal({ outline: reversed }))).toEqual(["prior.g2", "prior.g1", "gap"]);
+    expect(sectionKeysOf(autoProposal({ outline: null }))).toEqual(["gap"]);
+  });
+});
+
+describe("autoChainOn — 자동 산출이 도는 조건", () => {
+  it("승인·auto·예시 아님·목차 생성 없음이면 돈다", () => {
+    const p = autoProposal();
+    expect(autoChainOn(p, autoState(p).work)).toBe(true);
+    // 끝난 목차 생성은 막지 않는다
+    expect(autoChainOn(p, autoState(p, [outlineGen(40, "done")]).work)).toBe(true);
+  });
+
+  it("06b 목차(auto 없음)·auto false 는 돌지 않는다 — [보고서 만들기]를 누르지 않은 연구의 남은 절을 쓰지 않는다", () => {
+    const before06e: Outline = { ...autoOutline() };
+    delete before06e.auto;
+    const old = autoProposal({ outline: before06e });
+    expect(autoChainOn(old, autoState(old).work)).toBe(false);
+    const off = autoProposal({ outline: autoOutline({ auto: false }) });
+    expect(autoChainOn(off, autoState(off).work)).toBe(false);
+  });
+
+  it("초안 목차는 돌지 않는다 — 질문이 없어 자동 승인하지 못했거나 [목차 고치기]에서 승인을 푼 목차", () => {
+    const p = autoProposal({ outline: autoOutline({ state: "draft", approved_at: null }) });
+    expect(autoChainOn(p, autoState(p).work)).toBe(false);
+  });
+
+  it("예시 연구는 돌지 않는다(쓰기가 409)", () => {
+    const p = autoProposal();
+    expect(autoChainOn(p, autoState(p, [], { is_example: true }).work)).toBe(false);
+  });
+
+  it("목차를 다시 만드는 중이면 돌지 않는다", () => {
+    const p = autoProposal();
+    expect(autoChainOn(p, autoState(p, [outlineGen(40, "queued")]).work)).toBe(false);
+    expect(autoChainOn(p, autoState(p, [outlineGen(40, "running")]).work)).toBe(false);
+  });
+
+  it("조회 전(null)·목차 없음은 돌지 않는다", () => {
+    const p = autoProposal();
+    expect(autoChainOn(null, autoState(p).work)).toBe(false);
+    expect(autoChainOn(p, null)).toBe(false);
+    const none = autoProposal({ outline: null });
+    expect(autoChainOn(none, autoState(none).work)).toBe(false);
+  });
+});
+
+describe("autoTargets·nextAutoSection — 남은 절 고르기", () => {
+  const four = autoOutline({
+    groups: ["prior.g1", "prior.g2", "prior.g3", "prior.g4"].map((key, i) => ({
+      key,
+      name: `묶음 ${i + 1}`,
+      hint: "",
+      papers: [`KCI_${i}`],
+    })),
+  });
+
+  it("문서 순서 prior.g1~g4 → gap", () => {
+    expect(autoTargets(autoProposal({ outline: four }))).toEqual(["prior.g1", "prior.g2", "prior.g3", "prior.g4", "gap"]);
+  });
+
+  it("쓴 절은 빼고 생성 기록이 있는 키(failed·canceled 포함)도 뺀다 — 실패한 절은 그 절의 [다시 시도]에 맡긴다", () => {
+    const p = autoProposal({
+      outline: four,
+      sections: { "prior.g1": section([para("p1", "proposed")]) },
+      section_gens: {
+        "prior.g2": { gen_id: 61, status: "failed" },
+        "prior.g3": { gen_id: 62, status: "canceled" },
+        "prior.g4": { gen_id: 63, status: "running" },
+      },
+    });
+    expect(autoTargets(p)).toEqual(["gap"]);
+  });
+
+  it("section_gens 가 없는 옛 응답은 절이 없는 키를 모두 고른다", () => {
+    const p = autoProposal({ sections: { "prior.g1": section([para("p1", "proposed")]) } });
+    delete p.section_gens;
+    expect(autoTargets(p)).toEqual(["prior.g2", "gap"]);
+  });
+
+  it("skip 의 키(이 방문에서 넣었거나 근거가 없어 건너뛴 키)는 건너뛴다", () => {
+    const p = autoProposal();
+    expect(nextAutoSection(p, new Set())).toBe("prior.g1");
+    expect(nextAutoSection(p, new Set(["prior.g1"]))).toBe("prior.g2");
+    expect(nextAutoSection(p, new Set(["prior.g1", "prior.g2"]))).toBe("gap");
+  });
+
+  it("남은 키가 없으면 null", () => {
+    expect(nextAutoSection(autoProposal(), new Set(["prior.g1", "prior.g2", "gap"]))).toBeNull();
+    const all = autoProposal({
+      section_gens: {
+        "prior.g1": { gen_id: 1, status: "done" },
+        "prior.g2": { gen_id: 2, status: "done" },
+        gap: { gen_id: 3, status: "queued" },
+      },
+    });
+    expect(nextAutoSection(all, new Set())).toBeNull();
+  });
+});
+
+describe("isNoSectionPapers — 근거 없음 409", () => {
+  const fetchError = (status: number, detail: unknown) =>
+    Object.assign(new Error(`HTTP ${status}`), { status, statusCode: status, data: { detail } });
+
+  it("409 이고 detail code 가 no_section_papers 일 때만 참", () => {
+    expect(isNoSectionPapers(fetchError(409, { code: "no_section_papers", message: "이 절에 넣을 논문이 없습니다" }))).toBe(true);
+  });
+
+  it("문자열 detail(06e 전 서버)·다른 code·404·네트워크 오류는 거짓", () => {
+    expect(isNoSectionPapers(fetchError(409, "이 절에 넣을 논문이 없습니다"))).toBe(false);
+    expect(isNoSectionPapers(fetchError(409, "이 절을 쓰는 중입니다"))).toBe(false);
+    expect(isNoSectionPapers(fetchError(409, { code: "version_conflict", version: 3, message: "다른 곳에서 바뀌었습니다" }))).toBe(false);
+    expect(isNoSectionPapers(fetchError(404, { code: "no_section_papers", message: "이 절에 넣을 논문이 없습니다" }))).toBe(false);
+    expect(isNoSectionPapers(new TypeError("Failed to fetch"))).toBe(false);
+    expect(isNoSectionPapers(null)).toBe(false);
+  });
+});
+
+describe("docToc — 머리 목차", () => {
+  it("여섯 자리를 문서 순서로 — anchor 는 보고서 화면의 자리 id 와 같은 글자", () => {
+    const p = autoProposal({
+      outline: autoOutline({ method: "설문 조사" }),
+      sections: { "prior.g1": section([para("p1", "proposed")]) },
+    });
+    const s = autoState(p, [gen(50, "done"), gen(51, "running", "prior.g2")]);
+    expect(docToc(p, s, new Set()).map((i) => [i.key, i.no, i.label, i.anchor, i.status])).toEqual([
+      ["topic", "1", "주제", "wk-doc-topic", "text"],
+      ["background", "2", "연구 배경", "wk-doc-background", "blank"],
+      ["prior.g1", "3.1", "노인의 우울", "wk-sec-prior.g1", "done"],
+      ["prior.g2", "3.2", "세대 간 지지", "wk-sec-prior.g2", "writing"],
+      ["gap", "4", "연구 공백", "wk-sec-gap", "empty"],
+      ["question", "5", "연구 질문", "wk-doc-question", "text"],
+      ["method", "6", "방법 제안", "wk-doc-method", "text"],
+    ]);
+  });
+
+  it("배경·질문·방법이 비면 blank — 배경을 적었으면 text", () => {
+    const statuses = (p: ProposalView) => docToc(p, autoState(p), new Set()).map((i) => i.status);
+    const blank = autoProposal({ outline: autoOutline({ question: null, method: "  " }) });
+    expect(statuses(blank)).toEqual(["text", "blank", "empty", "empty", "empty", "blank", "blank"]);
+    // 연구 배경은 Outline.background 글이다 — 키가 없는 응답(필드를 열기 전 서버)은 빈 글이다
+    const written = autoProposal({ outline: { ...autoOutline(), background: "농촌 노인의 고립이 커졌다." } as Outline });
+    expect(statuses(written)[1]).toBe("text");
+    expect(outlineBackground(written.outline!)).toBe("농촌 노인의 고립이 커졌다.");
+    expect(outlineBackground(autoOutline())).toBe("");
+  });
+
+  it("근거가 없어 건너뛴 쓰기 전 절은 skipped — 손으로 다시 쓰기 시작하면 그 절의 상태", () => {
+    const p = autoProposal();
+    const gapOf = (s: WorkState, skipped: ReadonlySet<string>) => docToc(p, s, skipped).find((i) => i.key === "gap")!.status;
+    expect(gapOf(autoState(p), new Set(["gap"]))).toBe("skipped");
+    expect(gapOf(autoState(p, [gen(70, "queued", "gap")]), new Set(["gap"]))).toBe("queued");
+  });
+
+  it("목차가 없으면 빈 목록", () => {
+    const p = autoProposal({ outline: null });
+    expect(docToc(p, autoState(p), new Set())).toEqual([]);
+  });
+});
+
+describe("reportBar — 보고서 작성 중 큰 진행 막대", () => {
+  it("쓰는 절이 있으면 '보고서 작성 중 · 1/3절 — 「…」'과 33%", () => {
+    const p = autoProposal({
+      sections: { "prior.g1": section([para("p1", "proposed")]) },
+      section_gens: { "prior.g1": { gen_id: 50, status: "done" }, "prior.g2": { gen_id: 51, status: "running" } },
+    });
+    expect(reportBar(p, autoState(p, [gen(50, "done"), gen(51, "running", "prior.g2")]), new Set())).toEqual({
+      label: "보고서 작성 중 · 1/3절 — 「선행연구 검토 · 세대 간 지지」",
+      done: 1,
+      total: 3,
+      percent: 33,
+      running: true,
+    });
+  });
+
+  it("쓰는 절이 없어도 연쇄가 남은 절을 넣을 참이면 다음 절 이름 — 대기 중인 절이 있으면 그 절", () => {
+    const p = autoProposal();
+    expect(reportBar(p, autoState(p), new Set())).toEqual({
+      label: "보고서 작성 중 · 0/3절 — 「선행연구 검토 · 노인의 우울」",
+      done: 0,
+      total: 3,
+      percent: 0,
+      running: false,
+    });
+    const queued = autoProposal({ section_gens: { gap: { gen_id: 52, status: "queued" } } });
+    expect(reportBar(queued, autoState(queued, [gen(52, "queued", "gap")]), new Set())).toMatchObject({
+      label: "보고서 작성 중 · 0/3절 — 「연구 공백」",
+      running: false,
+    });
+  });
+
+  it("건너뛴 절·실패한 절·취소로 끝난 쓰기 전 절은 끝난 수에 든다", () => {
+    const p = autoProposal({
+      section_gens: { "prior.g1": { gen_id: 50, status: "failed" }, "prior.g2": { gen_id: 51, status: "running" } },
+    });
+    expect(reportBar(p, autoState(p, [gen(50, "failed"), gen(51, "running", "prior.g2")]), new Set(["gap"]))).toEqual({
+      label: "보고서 작성 중 · 2/3절 — 「선행연구 검토 · 세대 간 지지」",
+      done: 2,
+      total: 3,
+      percent: 67,
+      running: true,
+    });
+    const canceled = autoProposal({ section_gens: { "prior.g1": { gen_id: 50, status: "canceled" } } });
+    expect(reportBar(canceled, autoState(canceled, [gen(50, "canceled")]), new Set())).toMatchObject({
+      label: "보고서 작성 중 · 1/3절 — 「선행연구 검토 · 세대 간 지지」",
+      done: 1,
+      percent: 33,
+    });
+  });
+
+  it("다 썼거나, auto 없는 목차·멈춘 연쇄에 쓰는 절이 없으면 null", () => {
+    const done = autoProposal({
+      sections: {
+        "prior.g1": section([para("p1", "proposed")]),
+        "prior.g2": section([para("p1", "proposed")], { key: "prior.g2", gen_id: 51 }),
+        gap: section([para("p1", "proposed")], { key: "gap", gen_id: 52 }),
+      },
+      section_gens: {
+        "prior.g1": { gen_id: 50, status: "done" },
+        "prior.g2": { gen_id: 51, status: "done" },
+        gap: { gen_id: 52, status: "done" },
+      },
+    });
+    const doneGens = [gen(50, "done"), gen(51, "done", "prior.g2"), gen(52, "done", "gap")];
+    expect(reportBar(done, autoState(done, doneGens), new Set())).toBeNull();
+    const old = autoProposal({ outline: autoOutline({ auto: false }) });
+    expect(reportBar(old, autoState(old), new Set())).toBeNull();
+    // 06b 목차라도 손으로 쓰는 절이 있으면 그 절을 보인다
+    expect(reportBar(old, autoState(old, [gen(60, "running", "gap")]), new Set())!.label).toBe(
+      "보고서 작성 중 · 0/3절 — 「연구 공백」",
+    );
+    // 연쇄가 오류로 멈추면(넷째 인자) 남은 절로는 막대를 세우지 않는다
+    const p = autoProposal();
+    expect(reportBar(p, autoState(p), new Set(), true)).toBeNull();
+    const none = autoProposal({ outline: null });
+    expect(reportBar(none, autoState(none), new Set())).toBeNull();
+  });
+
+  it("조사를 붙이지 않는다 — FINAL_STEP_NAME 뒤가 ' 작성 중'", () => {
+    const p = autoProposal();
+    const label = reportBar(p, autoState(p), new Set())!.label;
+    expect(label.startsWith(`${FINAL_STEP_NAME} 작성 중 · `)).toBe(true);
+    expect(label).not.toMatch(new RegExp(`${FINAL_STEP_NAME}[을를이가은는의로]`));
   });
 });
