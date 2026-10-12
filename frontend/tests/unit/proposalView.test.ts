@@ -278,10 +278,10 @@ describe("footprint · footprintLine", () => {
     expect(footprint(p)).toEqual({ proposed: 1, accepted: 2, edited: 1, authored: 1 });
   });
 
-  it("AI 제안 = 검토 전 + 수락 + 수정, 사용자 작성은 따로 적는다", () => {
-    expect(footprintLine({ proposed: 0, accepted: 7, edited: 2, authored: 0 })).toBe("AI 제안 9문단 중 수락 7·수정 2");
+  it("AI 작성 = 검토 전 + 수락 + 수정, 사용자 작성은 따로 적는다", () => {
+    expect(footprintLine({ proposed: 0, accepted: 7, edited: 2, authored: 0 })).toBe("AI 작성 9문단 중 수락 7·수정 2");
     expect(footprintLine({ proposed: 2, accepted: 5, edited: 2, authored: 1 })).toBe(
-      "AI 제안 9문단 중 수락 5·수정 2·검토 전 2 · 직접 쓴 문단 1",
+      "AI 작성 9문단 중 수락 5·수정 2·검토 전 2 · 직접 쓴 문단 1",
     );
     expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 3 })).toBe("직접 쓴 문단 3");
     expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 })).toBe("아직 쓴 문단이 없습니다");

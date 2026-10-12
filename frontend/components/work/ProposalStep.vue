@@ -182,17 +182,10 @@
         <div class="rs-card wk-proposal__export">
           <p class="rs-card__title">내려받기</p>
           <label class="wk-proposal__toggle">
-            <input v-model="includeProposed" type="checkbox" :disabled="!printedProposed" />
-            미수락 문단도 넣기(워터마크) — 검토 전 AI 제안 {{ printedProposed }}문단
+            <input v-model="acceptedOnly" type="checkbox" :disabled="!printedProposed" />
+            수락한 문단만 싣기 — 검토 전 AI 작성 {{ printedProposed }}문단을 뺍니다
           </label>
-          <p class="rs-muted">
-            {{
-              includeProposed && printedProposed
-                ? "문서 쪽마다 '미검토 AI 초안' 워터마크가 붙습니다."
-                : "기본은 수락·수정·직접 쓴 문단만 싣습니다."
-            }}
-            끝에 참고문헌과 AI 사용 공개 부록이 붙습니다.
-          </p>
+          <p class="rs-muted">기본은 모든 문단을 싣습니다. 끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙습니다.</p>
           <div class="rs-card__actions">
             <button type="button" class="rs-btn" :disabled="exporting" @click="downloadWord">
               {{ exporting ? "만드는 중…" : "Word 로 내려받기" }}
@@ -262,7 +255,7 @@ const outlineGen = computed(() => openGeneration(state.value, "outline", "outlin
 const approved = computed(() => proposal.value?.outline?.state === "approved");
 // 06b 가 쓰는 절 — 문서가 그리는 절과 같다(선행연구 묶음(목차 순서) → 연구 공백, proposalDocument printedKeys)
 const writableKeys = computed(() => (proposal.value ? printedKeys(proposal.value) : []));
-// 문서에 실릴 검토 전 문단 — 목차를 다시 만들며 빠진 옛 절은 문서에 실리지 않아 세지 않는다(공개 부록·워터마크와 같은 수)
+// 문서에 실릴 검토 전 문단 — 목차를 다시 만들며 빠진 옛 절은 문서에 실리지 않아 세지 않는다(공개 부록·'수락한 문단만'과 같은 수)
 const printedProposed = computed(() => (proposal.value ? printedProposedCount(proposal.value) : 0));
 const canRemake = computed(() => {
   const p = proposal.value;
@@ -486,7 +479,7 @@ function retry(genId: number): void {
 }
 
 // ── Word 내려받기 ─────────────────────────────────────────
-const includeProposed = ref(false);
+const acceptedOnly = ref(false);
 
 // 문서에 싣는 연구 주소 — 계획서 단계로 바로 열리는 주소(쿼리의 at·y 는 빼고 s 만)
 function proposalUrl(): string {
@@ -498,13 +491,13 @@ async function downloadWord(): Promise<void> {
   const w = workView.value;
   if (!p || !w) return;
   const doc = buildProposalDocument(
-    { question: props.question, url: proposalUrl(), proposal: p, work: w, includeProposed: includeProposed.value },
+    { question: props.question, url: proposalUrl(), proposal: p, work: w, acceptedOnly: acceptedOnly.value },
     new Date(),
   );
   try {
     await exportDocx(doc);
   } catch (e) {
-    console.warn("[research] 계획서 내보내기 실패", e);
+    console.warn("[research] 보고서 내보내기 실패", e);
     // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
     say("Word 문서를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.", true);
     return;

@@ -126,7 +126,7 @@ export function failedParagraphGens(
   return out;
 }
 
-// 문단 상태로 센 기여 — 수락만 한 문단도 AI 작성으로 센다(spec §3)
+// 문단 상태로 센 기여 — 검토 전·수락만 한 문단도 AI 작성으로 센다(spec §3·D21)
 export function footprint(p: ProposalView): Footprint {
   const f: Footprint = { proposed: 0, accepted: 0, edited: 0, authored: 0 };
   for (const section of Object.values(p.sections)) {
@@ -138,7 +138,7 @@ export function footprint(p: ProposalView): Footprint {
 export function footprintLine(f: Footprint): string {
   const ai = f.proposed + f.accepted + f.edited;
   const head = ai
-    ? `AI 제안 ${ai}문단 중 수락 ${f.accepted}·수정 ${f.edited}${f.proposed ? `·검토 전 ${f.proposed}` : ""}`
+    ? `AI 작성 ${ai}문단 중 수락 ${f.accepted}·수정 ${f.edited}${f.proposed ? `·검토 전 ${f.proposed}` : ""}`
     : "";
   const own = f.authored ? `직접 쓴 문단 ${f.authored}` : "";
   return [head, own].filter(Boolean).join(" · ") || "아직 쓴 문단이 없습니다";

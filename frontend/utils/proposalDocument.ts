@@ -1,16 +1,16 @@
 // frontend/utils/proposalDocument.ts
-import type {
-  DisclosureStep,
-  GenKind,
-  Outline,
-  PaperMeta,
-  ParaState,
-  ProposalSection,
-  ProposalView,
-  WorkView,
-} from "~/types/work";
+import type { PaperMeta, ParaState, ProposalSection, ProposalView, WorkView } from "~/types/work";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
-import { GAP_NOTE, SECTION_LABELS, footprint, footprintLine, sectionKeysOf, sectionLabel } from "~/utils/proposalView";
+import {
+  GAP_NOTE,
+  SECTION_LABELS,
+  footprint,
+  footprintLine,
+  reviewLine,
+  reviewSpots,
+  sectionKeysOf,
+  sectionLabel,
+} from "~/utils/proposalView";
 import {
   fileHead,
   kstDateTime,
@@ -21,61 +21,45 @@ import {
   type DocRun,
   type ReportDoc,
 } from "~/utils/reportDocument";
-import { scopeLine } from "~/utils/workPhase";
+import { FINAL_STEP_NAME, scopeLine } from "~/utils/workPhase";
 
-// 계획서 Word — 보고서와 같은 문서 모델(ReportDoc)로 만들어 useReportExport·reportDocx·ReportPrint 를 그대로 탄다
-
-export const UNREVIEWED_WATERMARK = "미검토 AI 초안";
+// 보고서(연구계획서형 초안) Word — 딥리서치 보고서와 같은 문서 모델(ReportDoc)로 만들어 useReportExport·reportDocx·ReportPrint
+// 를 그대로 탄다. 기본은 네 상태 문단을 모두 싣고 워터마크를 달지 않는다 — 어느 문단을 AI 가 썼는지는 끝의 AI 사용 공개
+// 부록이 문단 상태별 개수로 밝힌다(D21). 이 문서 모델은 ReportDoc.watermark 를 만들지 않는다
 
 export interface ProposalDocInput {
   question: string;
   url: string;
   proposal: ProposalView;
   work: WorkView;
-  includeProposed: boolean;
+  // '수락한 문단만' — 켜면 검토 전 AI 작성 문단(proposed)을 빼고 수락·수정·직접 작성만 싣는다(워터마크 없음)
+  acceptedOnly: boolean;
 }
 
-// 기본은 사용자가 받아들인 문단만(수락·고침·직접 작성). 검토 전 AI 제안은 사용자가 켤 때만 싣고 워터마크를 단다
-const EXPORTED: readonly ParaState[] = ["accepted", "edited", "authored"];
-const NOT_YET = "이 초안에는 아직 없습니다 — 다음 단계에서 씁니다.";
+const ALL_STATES: readonly ParaState[] = ["proposed", "accepted", "edited", "authored"];
+const ACCEPTED_ONLY: readonly ParaState[] = ["accepted", "edited", "authored"];
 const RESULTS_LATER = "연구 후 직접 씁니다.";
 const DISCLOSURE_INTRO =
-  "이 초안의 문단은 연구 어시스턴트의 AI(대형 언어 모델)가 제안한 글을 사용자가 검토해 받아들이거나 고친 것입니다. " +
-  "문단 상태는 AI 제안(검토 전)·AI 작성(수락)·AI 작성(사용자가 고침)·사용자 작성으로 저장하고, 수락만 한 문단도 AI 작성으로 셉니다.";
-const KIND_LABELS: Record<GenKind, string> = {
-  concepts: "핵심 개념",
-  topic_card: "주제 카드",
-  refine: "주제 다듬기",
-  facet: "논문 특징",
-  outline: "목차",
-  section: "절 초안",
-  paragraph: "문단 다시 쓰기",
-};
-const OUTCOME_LABELS: Record<string, string> = {
-  ok: "완료",
-  parse: "해석 실패",
-  check: "검사 미달",
-  transport: "전송 실패",
-  broken: "끊김",
-};
+  "이 초안의 문단은 연구 어시스턴트의 AI(대형 언어 모델)가 소장 KCI 논문을 근거로 작성했고, 사용자가 검토해 수락·수정하거나 " +
+  "직접 쓴 문단이 섞여 있습니다. 문단 상태는 AI 작성·검토 전 / 수락 / 수정 / 직접 작성 네 가지로 저장합니다.";
+// 부록의 절별 문단 상태 — 화면 띠(ProposalSection 의 STATE_LABELS)와 같은 말, 이 순서로
 const MIX_LABELS: { state: ParaState; label: string }[] = [
+  { state: "proposed", label: "AI 작성·검토 전" },
   { state: "accepted", label: "수락" },
   { state: "edited", label: "수정" },
   { state: "authored", label: "직접 작성" },
-  { state: "proposed", label: "검토 전" },
 ];
 
-export function proposalFileName(topicTitle: string, date: Date, withProposed: boolean): string {
-  return `연구계획서_${fileHead(topicTitle) || "초안"}_${kstYmd(date)}${withProposed ? "_미검토포함" : ""}.docx`;
+export function proposalFileName(topicTitle: string, date: Date, acceptedOnly: boolean): string {
+  return `${FINAL_STEP_NAME}_${fileHead(topicTitle) || "초안"}_${kstYmd(date)}${acceptedOnly ? "_수락문단만" : ""}.docx`;
 }
 
 export function buildProposalDocument(input: ProposalDocInput, now: Date): ReportDoc {
   const p = input.proposal;
   const outline = p.outline;
-  const shown: readonly ParaState[] = input.includeProposed ? [...EXPORTED, "proposed"] : EXPORTED;
+  const shown = input.acceptedOnly ? ACCEPTED_ONLY : ALL_STATES;
   // 번호는 논문(cnts_id)마다 문서에 처음 나온 순서다 — 절마다 [E#] 가 가리키는 논문이 달라도 한 논문은 한 번호다
   const numbers = new Map<string, number>();
-  let shownProposed = 0;
 
   function cite(cnts: string): DocRun {
     const n = numbers.get(cnts) ?? numbers.size + 1;
@@ -105,9 +89,15 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
     if (!section) return [muted("아직 쓰지 않았습니다.")];
     const paragraphs = section.paragraphs.filter((x) => shown.includes(x.state));
     if (!paragraphs.length) {
-      return [muted("받아들인 문단이 없습니다 — 화면에서 [수락]하거나 '미수락 문단도 넣기'를 켜면 실립니다.")];
+      // 문단을 모두 지운 절은 쓰지 않은 절과 같다. '수락한 문단만'에 실을 문단이 없으면 끄는 길을 알린다
+      return [
+        muted(
+          input.acceptedOnly && section.paragraphs.length
+            ? "수락한 문단이 없습니다 — '수락한 문단만'을 끄면 AI 작성 문단도 실립니다."
+            : "아직 쓰지 않았습니다.",
+        ),
+      ];
     }
-    shownProposed += paragraphs.filter((x) => x.state === "proposed").length;
     return paragraphs.flatMap((x) => lines(x.text).map((line): DocBlock => ({ type: "para", runs: runs(line, section) })));
   }
 
@@ -118,7 +108,8 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
     heading(`1. ${SECTION_LABELS.topic}`),
     outline ? plain(outline.topic.title) : muted("주제를 아직 고르지 않았습니다."),
     heading(`2. ${SECTION_LABELS.background}`),
-    muted(NOT_YET),
+    // 연구 배경은 사용자가 보고서 화면 2절 칸에 적는 글(outline.background, 06e) — AI 가 쓰지 않는다
+    ...(outline?.background?.trim() ? lines(outline.background).map(plain) : [muted("연구 배경을 아직 적지 않았습니다.")]),
     heading(`3. ${SECTION_LABELS.prior}`),
   ];
   const groups = outline?.groups ?? [];
@@ -138,7 +129,7 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
     muted(RESULTS_LATER),
     heading("부록: AI 사용 공개"),
     muted(DISCLOSURE_INTRO),
-    { type: "bullets", items: disclosureLines(p, input.includeProposed).map((line) => [{ text: xmlSafe(line) }]) },
+    { type: "bullets", items: disclosureLines(p, input.acceptedOnly, now).map((line) => [{ text: xmlSafe(line) }]) },
   );
 
   const references: DocReference[] = [...numbers].map(([cnts, n]) => ({
@@ -146,34 +137,49 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
     eid: cnts,
     text: xmlSafe(p.references[cnts] ?? fallbackReference(cnts, p.papers[cnts])),
   }));
-  return {
-    fileName: proposalFileName(title, now, shownProposed > 0),
-    blocks,
-    references,
-    ...(shownProposed > 0 ? { watermark: UNREVIEWED_WATERMARK } : {}),
-  };
+  return { fileName: proposalFileName(title, now, input.acceptedOnly), blocks, references };
 }
 
-// 부록 "AI 사용 공개" — 문단 상태 비율·고른 주제의 출처·절별 상태·실은 문단·생성 단계(모델·완료 시각·시도)·결과·논의 미포함.
-// 시도는 모델·결과만 싣는다 — 실패 사유(error)에는 내부 주소가 들어 있어 문서에 내보내지 않는다
-export function disclosureLines(p: ProposalView, includeProposed: boolean): string[] {
-  const f = footprint(p);
-  // 실은 검토 전 문단은 문서가 그리는 절(목차 묶음·연구 공백)에서만 센다 — 워터마크·파일 이름 꼬리(shownProposed)와 같은 범위다
-  const included = printedProposedCount(p);
-  const out = [`문단 상태: ${footprintLine(f)}`];
+// 부록 "AI 사용 공개"(D21) — 문단 상태 비율·고른 주제의 출처·절별 문단 상태 개수·실은 문단·검토할 곳(실은 문단에서 센다)·
+// 작성 일시·결과·논의 미포함. 모델 이름·생성별 시도 기록은 싣지 않는다('AI 작성·검토' 수준 — 저장(research_generations
+// .model·attempts)은 그대로)
+export function disclosureLines(p: ProposalView, acceptedOnly: boolean, now: Date): string[] {
+  const out = [`문단 상태: ${footprintLine(footprint(p))}`];
   if (p.topic_source) out.push(topicSourceLine(p.topic_source));
   for (const key of sectionKeys(p)) {
     const section = p.sections[key];
     if (section) out.push(`${sectionLabel(key, p.outline)}: ${stateMix(section)}`);
   }
-  out.push(
-    includeProposed && included
-      ? `이 문서에 실은 문단: 수락·수정·직접 쓴 문단과 검토 전 AI 제안 ${included}문단(쪽마다 '${UNREVIEWED_WATERMARK}' 표시)`
-      : "이 문서에 실은 문단: 수락·수정·직접 쓴 문단(검토 전 AI 제안은 싣지 않음)",
-  );
-  for (const step of p.disclosure.steps) out.push(stepLine(step, p.outline));
+  out.push(includedLine(acceptedOnly, printedProposedCount(p)));
+  // '수락한 문단만'이면 문서에 실은 문단만 센다 — 빠진 검토 전 문단의 검토 단서는 이 문서의 것이 아니다
+  const counted = acceptedOnly
+    ? {
+        ...p,
+        sections: Object.fromEntries(
+          Object.entries(p.sections).map(([k, s]): [string, ProposalSection] => [
+            k,
+            { ...s, paragraphs: s.paragraphs.filter((x) => ACCEPTED_ONLY.includes(x.state)) },
+          ]),
+        ),
+      }
+    : p;
+  const review = reviewLine(reviewSpots(counted));
+  if (review) out.push(review);
+  out.push(`작성 일시 ${kstDateTime(now)}`);
   out.push("결과·논의 미포함 — 결과·논의·가설 수치는 AI 가 쓰지 않았고 이 문서에도 없습니다.");
   return out;
+}
+
+// 실은 문단 줄 — 검토 전 AI 작성 문단은 문서가 그리는 절(목차 묶음·연구 공백)에서만 센다(화면 '수락한 문단만' 체크의 수와 같다)
+function includedLine(acceptedOnly: boolean, proposed: number): string {
+  if (acceptedOnly) {
+    return proposed
+      ? `이 문서에 실은 문단: 수락·수정·직접 쓴 문단만(검토 전 AI 작성 문단 ${proposed}개는 싣지 않음)`
+      : "이 문서에 실은 문단: 수락·수정·직접 쓴 문단만(검토 전 AI 작성 문단 없음)";
+  }
+  return proposed
+    ? `이 문서에 실은 문단: 모든 문단(검토 전 AI 작성 문단 ${proposed}개 포함)`
+    : "이 문서에 실은 문단: 모든 문단(검토 전 AI 작성 문단 없음)";
 }
 
 function heading(text: string): DocBlock {
@@ -202,7 +208,7 @@ function metaBlocks(input: ProposalDocInput, now: Date): DocBlock[] {
   const at = corpus?.at ? new Date(corpus.at) : null;
   const when = at && !Number.isNaN(at.getTime()) ? ` — ${kstDateTime(at)} 시점` : "";
   return [
-    `연구계획서 초안 · 원 질문 ${input.question}`,
+    `${FINAL_STEP_NAME} 초안 · 원 질문 ${input.question}`,
     `생성 일시 ${kstDateTime(now)}`,
     scope ? `범위 ${scope}${when}` : "",
     input.url ? `연구 주소 ${input.url}` : "",
@@ -218,8 +224,8 @@ export function printedKeys(p: ProposalView): string[] {
   return sectionKeysOf(p);
 }
 
-// 문서에 실릴 수 있는 검토 전 AI 제안 수 — 문서가 그리는 절에서만 센다. 목차를 다시 만들며 빠진 옛 절(prior.g3 등)은
-// 문서에 실리지 않는다. 공개 부록의 '실은 문단' 줄과 화면의 '미수락 문단도 넣기(워터마크)' 토글이 이 수를 쓴다
+// 문서에 실릴 수 있는 검토 전 AI 작성 문단 수 — 문서가 그리는 절에서만 센다. 목차를 다시 만들며 빠진 옛 절(prior.g3 등)은
+// 문서에 실리지 않는다. 공개 부록의 '실은 문단' 줄과 화면의 '수락한 문단만' 체크가 이 수를 쓴다
 export function printedProposedCount(p: ProposalView): number {
   return printedKeys(p).reduce(
     (n, k) => n + (p.sections[k]?.paragraphs.filter((x) => x.state === "proposed").length ?? 0),
@@ -247,31 +253,6 @@ function stateMix(section: ProposalSection): string {
     return count ? `${label} ${count}` : "";
   }).filter(Boolean);
   return `문단 ${n}개 — ${parts.join("·")}`;
-}
-
-function stepName(step: DisclosureStep, outline: Outline | null): string {
-  const label = KIND_LABELS[step.kind] ?? step.kind;
-  if (!step.target) return label;
-  if (step.kind === "section") return `${label}(${sectionLabel(step.target, outline)})`;
-  if (step.kind === "paragraph") {
-    const [key = "", pid = ""] = step.target.split("#");
-    return `${label}(${sectionLabel(key, outline)} ${pid})`;
-  }
-  if (step.kind === "topic_card") return `${label}(#${step.target})`;
-  return label;
-}
-
-function stepLine(step: DisclosureStep, outline: Outline | null): string {
-  const model = step.model ?? "모델 출력 없음(기본값으로 채움)";
-  const done = step.finished_at ? new Date(step.finished_at) : null;
-  const when = done && !Number.isNaN(done.getTime()) ? kstDateTime(done) : "완료 시각 기록 없음";
-  const tries =
-    step.attempts.length > 1
-      ? ` — 시도 ${step.attempts.length}회: ${step.attempts
-          .map((a) => `${a.model} ${OUTCOME_LABELS[a.outcome] ?? a.outcome}`)
-          .join(" → ")}`
-      : "";
-  return `${stepName(step, outline)}: ${model} · ${when}${tries}`;
 }
 
 function fallbackReference(cnts: string, meta: PaperMeta | undefined): string {

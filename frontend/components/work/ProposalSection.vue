@@ -270,7 +270,8 @@ const STATUS_BADGES: Record<SectionStatus, string> = {
 };
 // 'AI 작성' 띠는 수락해도 남는다 — 사용자가 고친 문단도 AI 가 처음 쓴 문단이다
 const STATE_LABELS: Record<ParaState, string> = {
-  proposed: "AI 제안 · 검토 전",
+  // 보고서를 자동으로 쓴 글이라 '제안'을 뺀다(D21) — 저장 값 proposed 는 그대로
+  proposed: "AI 작성 · 검토 전",
   accepted: "AI 작성 · 수락",
   edited: "AI 작성 · 고침",
   authored: "직접 작성",
@@ -315,7 +316,7 @@ const failedParas = computed(() =>
 );
 
 // 문단마다 되풀이되는 버튼([수락]·[다시]·[고치기]·[지우기])의 이름에 붙이는 대상(화면에는 보이지 않는다)과, 설명으로
-// 잇는 그 문단의 띠(AI 제안 · 검토 전 등) — 스크린리더의 컨트롤 목록에서 어느 절의 몇째 문단인지 구별되게
+// 잇는 그 문단의 띠(AI 작성 · 검토 전 등) — 스크린리더의 컨트롤 목록에서 어느 절의 몇째 문단인지 구별되게
 function paraName(index: number): string {
   return `${props.label} ${index + 1}번째 문단`;
 }
