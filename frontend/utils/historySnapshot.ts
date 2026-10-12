@@ -8,20 +8,25 @@ export const SNAPSHOT_MAX_REFERENCES = 30;
 // 서버 상한(app/api/history.py 의 200KB)은 파이썬 구분자(", "·": ")까지 세어 여유를 둔다
 export const PAPER_SNAPSHOT_MAX_BYTES = 180 * 1024;
 
-// 빼는 필드를 나열하면 서버가 필드를 늘릴 때 저장량도 따라 는다 — 카드가 그리는 필드만 고른다
-const BOOK_INFO_FIELDS: readonly (keyof SnapshotBookInfo)[] = [
+// 빼는 필드를 나열하면 서버가 필드를 늘릴 때 저장량도 따라 는다 — 카드(ResultCard)가 그리는 필드만 고른다.
+// 카드가 새 필드를 읽게 되면 여기에도 넣어야 한다 — 복원 화면(주소의 h=)은 이 스냅샷으로 카드를 그려 빠진 필드의 칩·줄이 사라진다.
+// tests/unit/historySnapshot.test.ts 가 cardKeywords·cardMeta·kdcChip 이 읽는 필드가 이 목록에 모두 있는지 검사한다
+export const BOOK_INFO_FIELDS: readonly (keyof SnapshotBookInfo)[] = [
   "cnts_id",
   "title",
   "personal_author",
   "corporate_author",
   "publisher",
   "pub_date",
-  "themes",
+  // 키워드 칩(저자 키워드 → keyword → themes → subject)과 키워드가 없을 때의 분류 칩(kdc)
+  "extracted_keywords",
   "keyword",
+  "themes",
   "subject",
+  "kdc",
 ];
 
-const PAPER_INFO_FIELDS: readonly (keyof SnapshotBookInfo)[] = [
+export const PAPER_INFO_FIELDS: readonly (keyof SnapshotBookInfo)[] = [
   "cnts_id",
   "title",
   "personal_author",
@@ -30,6 +35,11 @@ const PAPER_INFO_FIELDS: readonly (keyof SnapshotBookInfo)[] = [
   "series_title",
   "grade",
   "kci_citations",
+  "extracted_keywords",
+  "keyword",
+  "themes",
+  "subject",
+  // 상한(PAPER_SNAPSHOT_MAX_BYTES)에 닿으면 가장 먼저 뒤쪽 논문부터 빠진다 — 키워드·서지는 남는다
   "references",
 ];
 
@@ -45,10 +55,14 @@ function pickInfo(info: unknown, fields: readonly (keyof SnapshotBookInfo)[]): S
   for (const field of fields) {
     const value = info[field];
     if (value === undefined || value === null || value === "") continue;
-    out[field] =
-      field === "references" && Array.isArray(value)
-        ? value.filter((r) => typeof r === "string").slice(0, SNAPSHOT_MAX_REFERENCES)
-        : value;
+    if (Array.isArray(value)) {
+      // 문자열 목록만, 비면 싣지 않는다(저자 키워드가 없는 논문은 빈 배열로 온다)
+      const list = value.filter((r) => typeof r === "string");
+      if (!list.length) continue;
+      out[field] = field === "references" ? list.slice(0, SNAPSHOT_MAX_REFERENCES) : list;
+      continue;
+    }
+    out[field] = value;
   }
   return out as SnapshotBookInfo;
 }

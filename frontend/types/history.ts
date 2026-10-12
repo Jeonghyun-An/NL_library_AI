@@ -14,7 +14,11 @@ export interface SnapshotBookInfo {
   pub_date?: string;
   themes?: string;
   keyword?: string;
+  /** 저자 키워드(논문은 보통 5~8개) — 카드 키워드 칩의 첫 출처 */
+  extracted_keywords?: string[];
   subject?: string;
+  /** 도서관 분류(KDC) — 키워드가 없는 소장자료 카드의 분류 칩 */
+  kdc?: string;
   series_title?: string;
   grade?: string;
   kci_citations?: number;
