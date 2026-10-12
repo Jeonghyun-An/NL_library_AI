@@ -31,7 +31,7 @@ from schemas.book import BookOut
 from services.research_work import section_input
 from services.research_work.enqueue import queued_event
 from services.research_work.proposal_views import (
-    cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, section_gens_of, stale_flags,
+    cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, section_gens_of, section_sources, stale_flags,
 )
 from services.research_work.seeds import corpus_of
 from services.research_work.shapes import MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, OUTLINE_TARGET
@@ -1279,3 +1279,120 @@ class TestRegenerateParagraph:
     def test_example_work_is_read_only(self, api):
         jid, _ = _para_work(api.engine, is_example=True)
         assert api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate").status_code == 409
+
+
+# ── 인용 근거 조회 (06e Task S1) ─────────────────────────────────────────
+
+SOURCE_EXCERPT = {"chunk_id": "KCI_A__0004", "page_start": 4, "page_end": 5,
+                  "text": "가족 지지가 높은 노인일수록 우울 점수가 낮았다. 배우자 유무는 차이가 없었다."}
+SOURCE_INPUT = {
+    **PARA_SOURCE_INPUT,
+    "papers": [{**PARA_SOURCE_INPUT["papers"][0], "abstract": "가족 지지와 우울 초록", "excerpt": SOURCE_EXCERPT},
+               {**PARA_SOURCE_INPUT["papers"][1], "abstract": "사회적 지지 척도 초록", "excerpt": None}],
+}
+SOURCE_VIEW = {
+    "E1": {"cnts_id": "KCI_A", "abstract": "가족 지지와 우울 초록", "excerpt": SOURCE_EXCERPT},
+    "E2": {"cnts_id": "KCI_B", "abstract": "사회적 지지 척도 초록", "excerpt": None},
+}
+
+
+class TestSectionSourcesShape:
+    def test_maps_each_number_to_the_paper_its_abstract_and_its_excerpt(self):
+        assert section_sources(SOURCE_INPUT) == SOURCE_VIEW
+        # 번호나 논문이 없는 원소는 뺀다(drafts_of 와 같은 규칙). 저장된 대목에 다른 키가 있어도 응답은 네 칸뿐이다
+        odd = {"papers": [{"eid": "E1", "cnts_id": ""}, {"cnts_id": "KCI_C"},
+                          {"eid": "E4", "cnts_id": "KCI_D", "abstract": "초록",
+                           "excerpt": {**SOURCE_EXCERPT, "score": 0.9}}]}
+        assert section_sources(odd) == {"E4": {"cnts_id": "KCI_D", "abstract": "초록", "excerpt": SOURCE_EXCERPT}}
+        assert section_sources({}) == {} and section_sources({"papers": None}) == {}
+
+    def test_a_paper_without_an_excerpt_keeps_its_abstract_only(self):
+        # 대목을 못 읽은 논문(Milvus 실패 — excerpt None)과 글이 빈 대목은 초록만 싣는다. 초록이 없으면 빈 글
+        inp = {"papers": [{"eid": "E1", "cnts_id": "KCI_A", "abstract": "초록만", "excerpt": None},
+                          {"eid": "E2", "cnts_id": "KCI_B", "abstract": None,
+                           "excerpt": {**SOURCE_EXCERPT, "text": "   "}}]}
+        assert section_sources(inp) == {"E1": {"cnts_id": "KCI_A", "abstract": "초록만", "excerpt": None},
+                                        "E2": {"cnts_id": "KCI_B", "abstract": "", "excerpt": None}}
+
+
+def _src_work(engine, *, is_example: bool = False) -> tuple[uuid.UUID, int]:
+    """prior.g1 이 써진 연구 — 저장된 절의 gen_id 가 가리키는 section 생성 행(대목이 든 입력)."""
+    jid = _sec_work(engine, is_example=is_example, proposal=False)
+    source = add_generation(engine, jid, kind="section", status="done", target="prior.g1",
+                            input=SOURCE_INPUT, output={"paragraphs": []})
+    add_proposal(engine, jid, version=3, outline=_sec_outline(_topic_id(engine, jid)),
+                 sections={"prior.g1": {**SEC_STORED, "gen_id": source}})
+    return jid, source
+
+
+def _sources(api, jid, key: str = "prior.g1", gen: int | None = None):
+    params = {} if gen is None else {"gen": gen}
+    return api.client.get(f"/api/research/{jid}/sections/{key}/sources", params=params)
+
+
+class TestGetSectionSources:
+    def test_the_written_section_reads_its_own_generation(self, api):
+        jid, _ = _src_work(api.engine)
+        # 그 뒤 실패한 다시 쓰기 — 저장된 절의 문단은 앞 생성의 입력 번호로 쓰였다
+        add_generation(api.engine, jid, kind="section", status="failed", target="prior.g1",
+                       input={"papers": [{"eid": "E1", "cnts_id": "KCI_Z", "abstract": "다른 입력", "excerpt": None}]})
+
+        res = _sources(api, jid)
+
+        assert res.status_code == 200 and res.json() == SOURCE_VIEW
+        assert api.events == [] and api.dispatch.calls == 0          # 읽기만 한다
+
+    def test_gen_query_reads_a_draft_being_written(self, api):
+        jid, source = _src_work(api.engine)
+        rewrite_input = {"papers": [{"eid": "E1", "cnts_id": "KCI_C", "abstract": "독거 노인 초록",
+                                     "excerpt": {**SOURCE_EXCERPT, "chunk_id": "KCI_C__0001", "text": "독거 노인 대목."}}]}
+        rewriting = add_generation(api.engine, jid, kind="section", status="running", target="prior.g1",
+                                   input=rewrite_input)
+        gap_input = {"papers": [{"eid": "E1", "cnts_id": "KCI_D", "abstract": "농촌 노인 초록", "excerpt": None}]}
+        gap = add_generation(api.engine, jid, kind="section", status="queued", target="gap", input=gap_input)
+
+        # 화면이 고른 생성(gen) — 다시 쓰는 중인 절의 입력이든 저장된 절의 입력이든 그 행을 읽는다
+        assert _sources(api, jid, gen=rewriting).json() == {"E1": {
+            "cnts_id": "KCI_C", "abstract": "독거 노인 초록",
+            "excerpt": {**SOURCE_EXCERPT, "chunk_id": "KCI_C__0001", "text": "독거 노인 대목."}}}
+        assert _sources(api, jid, gen=source).json() == SOURCE_VIEW
+        # gen 이 없으면 저장된 절의 생성이 먼저고, 절이 아직 없는 키는 그 키의 열린 생성이다
+        assert _sources(api, jid).json() == SOURCE_VIEW
+        gap_view = {"E1": {"cnts_id": "KCI_D", "abstract": "농촌 노인 초록", "excerpt": None}}
+        assert _sources(api, jid, key="gap").json() == gap_view
+        assert _sources(api, jid, key="gap", gen=gap).json() == gap_view
+
+    def test_a_generation_of_another_section_is_404(self, api):
+        jid, _ = _src_work(api.engine)
+        other_key = add_generation(api.engine, jid, kind="section", status="done", target="prior.g2",
+                                   input=SOURCE_INPUT)
+        paragraph = add_generation(api.engine, jid, kind="paragraph", status="done", target="prior.g1#p1",
+                                   input=SOURCE_INPUT)
+        _, other_work = _src_work(api.engine)
+
+        for gen in (other_key, paragraph, other_work, 999999):
+            res = _sources(api, jid, gen=gen)
+            assert (res.status_code, res.json()["detail"]) == (404, "이 절의 생성 기록이 아닙니다")
+
+    def test_no_section_and_no_open_generation_is_404(self, api):
+        jid, _ = _src_work(api.engine)
+        # 끝난(실패·취소) 생성만 있는 절은 읽을 입력이 없다 — 절도 열린 생성도 없다
+        add_generation(api.engine, jid, kind="section", status="failed", target="gap", input=SOURCE_INPUT)
+        add_generation(api.engine, jid, kind="section", status="canceled", target="gap", input=SOURCE_INPUT)
+
+        res = _sources(api, jid, key="gap")
+
+        assert (res.status_code, res.json()["detail"]) == (404, "절이 없습니다")
+        missing = _sources(api, uuid.uuid4())
+        assert (missing.status_code, missing.json()["detail"]) == (404, "이어간 연구가 없습니다")
+
+    @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])
+    def test_unknown_key_is_422(self, api, key):
+        jid, _ = _src_work(api.engine)
+        res = _sources(api, jid, key=key)
+        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없습니다")
+
+    def test_example_work_can_be_read(self, api):
+        jid, source = _src_work(api.engine, is_example=True)
+        assert _sources(api, jid).json() == SOURCE_VIEW
+        assert _sources(api, jid, gen=source).json() == SOURCE_VIEW

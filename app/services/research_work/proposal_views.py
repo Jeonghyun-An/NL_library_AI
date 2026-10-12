@@ -17,6 +17,8 @@
 - topic_source 는 목차를 만든 주제(outline.topic.id) 행의 origin·card.edited — spec §5-2 'card.edited 는 데이터로만
   남기고(계보·공개 부록용)', 공개 부록의 '주제:' 줄 재료다. 행은 호출부가 이미 읽은 고른 주제를 넘기고, 그 id 가
   목차의 주제와 다르면 None.
+- section_sources 는 인용 근거 조회(GET …/sections/{key}/sources)의 응답 — 절 생성 입력의 [E#] 마다 논문·초록·
+  원문 대목. 그 생성이 모델에 넘긴 그대로를 읽는다(서지·Milvus·리랭커를 다시 부르지 않는다).
 """
 from models.research_work import GEN_OPEN_STATUSES, ResearchTopic
 from services.research_work.reading_views import book_meta
@@ -136,6 +138,29 @@ def paper_ids(proposal, generations) -> list[str]:
         for cnts_id in draft["evidence"].values():
             add(cnts_id)
     return ids
+
+
+def _excerpt(value) -> dict | None:
+    """저장된 원문 대목 → 응답 모양 {chunk_id, page_start, page_end, text}. 대목이 없거나(Milvus 를 못 읽음) 글이
+    비면 None — 화면이 초록만 보인다. 쪽은 저장값 그대로다(0부터 센다 — 화면 pageLabel 이 +1 해 보인다)."""
+    if not value or not (value.get("text") or "").strip():
+        return None
+    return {"chunk_id": value.get("chunk_id") or "", "page_start": value.get("page_start"),
+            "page_end": value.get("page_end"), "text": value["text"]}
+
+
+def section_sources(gen_input: dict) -> dict[str, dict]:
+    """인용 근거 조회(GET …/sections/{key}/sources)의 응답 — 절 생성 입력의 papers 를 {E#: {cnts_id, abstract,
+    excerpt}} 로. 순서는 입력 순서(= 번호 순 — section_input._papers 가 E1 부터 매긴다). 초록·대목은 그 생성이
+    모델에 넘긴 그대로라(초록 ABSTRACT_CHARS·대목 EXCERPT_CHARS 자 안) 서지·Milvus·리랭커를 다시 부르지 않는다.
+    eid·cnts_id 가 없는 원소는 뺀다(drafts_of 와 같은 규칙)."""
+    out: dict[str, dict] = {}
+    for p in (gen_input or {}).get("papers") or []:
+        if not p.get("eid") or not p.get("cnts_id"):
+            continue
+        out[p["eid"]] = {"cnts_id": p["cnts_id"], "abstract": p.get("abstract") or "",
+                         "excerpt": _excerpt(p.get("excerpt"))}
+    return out
 
 
 def _reference(cnts_id: str, book) -> str:

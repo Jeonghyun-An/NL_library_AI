@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import and_, func, or_, select, update
@@ -38,7 +38,7 @@ from services.research_work.paragraph import paragraph_input
 from services.research_work.paragraph_edit import merge_paragraphs, revalidate
 from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
-from services.research_work.proposal_views import paper_ids, proposal_view
+from services.research_work.proposal_views import paper_ids, proposal_view, section_sources
 from services.research_work.reading_views import book_meta, subquestions_of
 from services.research_work.section_input import gap_input, gap_seeds, prior_input, section_papers
 from services.research_work.seeds import corpus_of
@@ -523,3 +523,44 @@ async def regenerate_paragraph(job_id: str, key: str, pid: str, db: AsyncSession
     _send_dispatch()
     await publish_work(jid, "generation", queued_event(gen_id, "paragraph", target))
     return {"gen_id": gen_id}
+
+
+# ── 인용 근거 조회 (06e — D24 인용 근거 A안) ─────────────────────────────
+
+NO_SECTION_SOURCE_GEN = "이 절의 생성 기록이 아닙니다"
+
+
+@router.get("/api/research/{job_id}/sections/{key}/sources")
+async def get_section_sources(job_id: str, key: str, gen: int | None = Query(None),
+                              db: AsyncSession = Depends(get_db)):
+    """인용 근거 — 그 절을 쓸 때 모델에 넘긴 근거 논문의 초록·원문 대목 {E#: {cnts_id, abstract, excerpt}}.
+
+    어느 생성인지는 gen(화면이 문단의 절 gen_id 를 싣는다)으로 고르고 — 이 연구·이 키의 section 생성이 아니면 404 —
+    없으면 저장된 절의 gen_id → 그 키의 열린 section 생성(id 가 가장 큰 것) 순이다. 절도 열린 생성도 없으면 404.
+    생성 행의 input 만 읽는다 — 대목은 절 쓰기 API 가 생성을 넣을 때 이미 골라 저장했으므로 서지·Milvus·리랭커를
+    부르지 않는다(spec §12-4). 읽기라 예시 연구도 읽는다."""
+    if key not in WRITABLE_SECTION_KEYS:
+        raise HTTPException(status_code=422, detail=SECTION_NOT_WRITABLE)
+    jid = _job_uuid(job_id)
+    await _get_work(db, jid)
+    G = ResearchGeneration
+    if gen is not None:
+        row = await db.get(G, gen)
+        if row is None or row.work_id != jid or row.kind != "section" or row.target != key:
+            raise HTTPException(status_code=404, detail=NO_SECTION_SOURCE_GEN)
+    else:
+        proposal = await db.get(ResearchProposal, jid)
+        section = dict((proposal.sections or {}).get(key) or {}) if proposal is not None else {}
+        source_id = section.get("gen_id")
+        row = await db.get(G, source_id) if source_id is not None else None
+        if row is not None and (row.work_id != jid or row.kind != "section"):
+            row = None
+        if row is None:
+            row = (await db.execute(
+                select(G).where(G.work_id == jid, G.kind == "section", G.target == key,
+                                G.status.in_(GEN_OPEN_STATUSES))
+                .order_by(G.id.desc()).limit(1)
+            )).scalar_one_or_none()
+        if row is None:
+            raise HTTPException(status_code=404, detail=NO_SECTION)
+    return section_sources(dict(row.input or {}))
