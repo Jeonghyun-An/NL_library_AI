@@ -11,11 +11,16 @@
   frontend/tests/fixtures/marker_checks.json 을 함께 읽는다.
 - 소장 코퍼스 밖을 단정하는 표현('연구가 없다'·'전무하다'·'최초로')은 "소장 코퍼스에서 확인하지 못했다" 투로
   바꾼다(soften_claims) — 이 시스템은 소장 KCI 적재분만 보았다(spec §4 시연 정직성).
+- 소장 코퍼스 범위를 말하는 문장('코퍼스'·'소장 논문/자료/문헌' 낱말이 든 문장)의 '…않음을 확인했다'·'…확인되었다'
+  단정은 '…것으로 보인다(소장 코퍼스에서 확인하지 않은 공백 후보)' 투로 바꾼다(06e — 06b 이월 §7-13). 확인 검색을
+  거치지 않은 공백이라 '확인했다' 고 쓸 수 없다. 인용한 발견('김(2015)[E1]은 … 확인되었다')은 문맥 낱말이 없어 그대로다
+  — 위 규칙이 바꿔 넣은 '소장 코퍼스에서 확인…' 의 '코퍼스'는 문맥으로 보지 않는다.
 """
 import re
 from typing import NamedTuple
 
 from services.research.citations import bind_markers, normalize_markers
+from services.research_work.shapes import GAP_NOTE
 
 FIGURE_MARKER = re.compile(r"\[F(\d+)\]")                    # 검사를 거친 표준형
 _ANY_MARKER = re.compile(r"\[[EF]\d+\]")
@@ -37,6 +42,25 @@ CLAIM_REWRITES: tuple[tuple[str, str], ...] = (
     (r"최초의", "소장 코퍼스에서 확인한 범위에서 첫"),
 )
 _REWRITES = tuple((re.compile(pattern), repl) for pattern, repl in CLAIM_REWRITES)
+
+# 연구 공백 단정(06e) — 이 낱말이 든 문장에서만 바꾼다. '분석한 결과·검토한 결과' 는 선행연구 요약에도 흔해 문맥으로 쓰지 않는다
+GAP_CLAIM_CONTEXT = re.compile(r"(?:코퍼스|소장\s*(?:학술논문|논문|자료|문헌))")
+GAP_CLAIM_TAIL = f"({GAP_NOTE})"
+# 문장 끝 단정만 — 뒤에 한글이 이어지면('확인되었다는 점') 바꾸지 않는다
+_CONFIRMED = r"(?:확인했다|확인하였다|확인할 수 있었다|알 수 있었다)(?![가-힣])"
+# (정규식, 바꿀 말) — 앞에서부터 차례로. 바꾼 글('…것으로 보인다(…확인하지 않은 공백 후보)')에는 다시 걸리는 말이 없다
+GAP_CLAIM_REWRITES: tuple[tuple[str, str], ...] = (
+    (rf"않음을\s*{_CONFIRMED}", f"않은 것으로 보인다{GAP_CLAIM_TAIL}"),
+    (rf"없음을\s*{_CONFIRMED}", f"없는 것으로 보인다{GAP_CLAIM_TAIL}"),
+    (rf"함을\s*{_CONFIRMED}", f"한 것으로 보인다{GAP_CLAIM_TAIL}"),
+    (r"것(?:으로|이)\s*확인(?:되었다|됐다)(?![가-힣])", f"것으로 보인다{GAP_CLAIM_TAIL}"),
+    (r"확인(?:되었다|됐다)(?![가-힣])", f"보인다{GAP_CLAIM_TAIL}"),
+)
+_GAP_REWRITES = tuple((re.compile(pattern), repl) for pattern, repl in GAP_CLAIM_REWRITES)
+# 문장 경계 — 마침표·물음표·느낌표 뒤 공백. 나눈 공백은 그대로 다시 잇는다(split 의 잡는 괄호)
+_SENTENCE_BREAK = re.compile(r"((?<=[.!?。])\s+)")
+# CLAIM_REWRITES 가 넣는 말 — 이 말의 '코퍼스'는 문맥으로 보지 않는다(인용 발견이 공백 후보로 바뀌지 않게, 두 번 거쳐도 같게)
+_CLAIM_INSERTS = re.compile(r"소장 코퍼스에서 확인(?:하지 못했다|되지 않았다|한 범위에서)")
 
 
 class FigureResult(NamedTuple):
@@ -66,12 +90,21 @@ def numbers_outside(text: str) -> list[str]:
 
 
 def soften_claims(text: str) -> tuple[str, int]:
-    """소장 코퍼스 밖을 단정하는 표현을 바꾼다. (바꾼 글, 바꾼 수)."""
+    """소장 코퍼스 밖을 단정하는 표현을 바꾸고, 소장 코퍼스 범위를 말하는 문장의 연구 공백 단정을 공백 후보 투로
+    바꾼다. (바꾼 글, 바꾼 수)."""
     total = 0
     for pattern, repl in _REWRITES:
         text, n = pattern.subn(repl, text)
         total += n
-    return text, total
+    parts = _SENTENCE_BREAK.split(text)
+    for i in range(0, len(parts), 2):            # 짝수 자리가 문장, 홀수 자리가 나눈 공백
+        # 문맥은 위에서 바꿔 넣은 말을 뺀 문장에서 본다 — 원문에 코퍼스 낱말이 있던 문장만 공백 단정으로 다룬다
+        if not GAP_CLAIM_CONTEXT.search(_CLAIM_INSERTS.sub("", parts[i])):
+            continue
+        for pattern, repl in _GAP_REWRITES:
+            parts[i], n = pattern.subn(repl, parts[i])
+            total += n
+    return "".join(parts), total
 
 
 def check_paragraph(text: str, *, valid_e: set[str], valid_f: set[str],

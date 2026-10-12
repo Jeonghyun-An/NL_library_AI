@@ -13,8 +13,8 @@ import pytest
 
 from services.research.citations import normalize_markers
 from services.research_work.markers import (
-    CLAIM_REWRITES, FIGURE_MARKER, FigureResult, check_figures, check_paragraph, figure,
-    numbers_outside, soften_claims,
+    CLAIM_REWRITES, FIGURE_MARKER, GAP_CLAIM_REWRITES, GAP_CLAIM_TAIL, FigureResult, check_figures,
+    check_paragraph, figure, numbers_outside, soften_claims,
 )
 
 SHARED_FIXTURE = (
@@ -137,6 +137,68 @@ class TestSoftenClaims:
     def test_rewrites_are_pattern_and_replacement_pairs(self):
         assert CLAIM_REWRITES and all(
             isinstance(p, str) and isinstance(r, str) for p, r in CLAIM_REWRITES)
+
+
+class TestGapClaims:
+    """06e(06b 이월 §7-13) — 소장 코퍼스 범위를 말하는 문장의 '…확인했다'·'…확인되었다' 단정은 '확인하지 않은 공백
+    후보' 투로 바꾼다. 문맥은 '코퍼스'·'소장 논문/자료/문헌/학술논문' 낱말이 든 문장뿐이다 — 선행연구 절의 인용
+    발견('김(2015)[E1]은 … 분석한 결과 … 확인되었다')은 그대로 둔다(뼈대 정함 10)."""
+
+    TAIL = "(소장 코퍼스에서 확인하지 않은 공백 후보)"
+
+    @pytest.mark.parametrize("text, expected", [
+        ("소장 코퍼스를 분석한 결과 노인 우울 연구는 충분하지 않음을 확인했다.",
+         f"소장 코퍼스를 분석한 결과 노인 우울 연구는 충분하지 않은 것으로 보인다{TAIL}."),
+        ("코퍼스에서 관련 연구가 없음을 확인할 수 있었다.", f"코퍼스에서 관련 연구가 없는 것으로 보인다{TAIL}."),
+        ("소장 논문을 검토한 결과 실증 연구가 부족함을 확인하였다.",
+         f"소장 논문을 검토한 결과 실증 연구가 부족한 것으로 보인다{TAIL}."),
+        ("소장 자료를 조사한 결과 연구가 드문 것으로 확인됐다.", f"소장 자료를 조사한 결과 연구가 드문 것으로 보인다{TAIL}."),
+        ("코퍼스를 살펴본 결과 이 공백이 확인되었다.", f"코퍼스를 살펴본 결과 이 공백이 보인다{TAIL}."),
+    ], ids=["않음을 확인했다(06b 실제 문장)", "없음을 확인할 수 있었다", "함을 확인하였다", "것으로 확인됐다", "확인되었다"])
+    def test_corpus_sentences_become_gap_candidates(self, text, expected):
+        softened, n = soften_claims(text)
+
+        assert (softened, n) == (expected, 1)
+        assert soften_claims(softened) == (softened, 0)          # 두 번 거쳐도 같다
+
+    @pytest.mark.parametrize("text", [
+        "김(2015)[E1]은 노인 300명을 분석한 결과 사회적 지지가 우울을 낮추는 것으로 확인되었다.",
+        "분석한 결과 집단 간 차이가 유의함을 확인하였다.",
+        "김(2015)[E1]에서 효과가 확인되었다.",
+        "효과가 있음을 확인했다.",
+        # 코퍼스 문장이라도 문장 끝의 단정만 바꾼다 — '확인되었다는' 처럼 말이 이어지면 그대로
+        "소장 코퍼스에서 확인되었다는 점은 한계다.",
+    ])
+    def test_cited_findings_in_prior_sections_are_left_alone(self, text):
+        assert soften_claims(text) == (text, 0)
+
+    def test_only_the_corpus_sentence_of_a_paragraph_changes(self):
+        first = "김(2015)[E1]은 노인 300명을 분석한 결과 사회적 지지가 우울을 낮추는 것으로 확인되었다."
+        text = f"{first} 소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않음을 확인했다."
+
+        softened, n = soften_claims(text)
+
+        assert softened == f"{first} 소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않은 것으로 보인다{self.TAIL}."
+        assert n == 1
+        # 문단 검사도 같은 글·같은 수 — 절 생성·문단 다시 쓰기·사용자가 고친 글이 모두 check_paragraph 를 탄다
+        checked, _, checks = check_paragraph(text, valid_e={"E1"}, valid_f=set(), evidence={"E1": "KCI_A"})
+        assert (checked, checks["softened"]) == (softened, 1)
+
+    @pytest.mark.parametrize("text, expected", [
+        ("선행연구에서 최초로 우울 감소 효과가 확인되었다.",
+         "선행연구에서 소장 코퍼스에서 확인한 범위에서 처음으로 우울 감소 효과가 확인되었다."),
+        ("김(2015)[E1]은 농촌 노인에 대한 연구가 거의 없다고 지적했고 지지의 효과가 확인되었다.",
+         "김(2015)[E1]은 농촌 노인에 대한 연구를 소장 코퍼스에서 확인하지 못했다고 지적했고 지지의 효과가 확인되었다."),
+    ])
+    def test_corpus_words_put_in_by_claim_rewrites_are_not_context(self, text, expected):
+        # CLAIM_REWRITES 가 넣은 '소장 코퍼스에서 확인…' 의 '코퍼스'로는 인용 발견을 공백 후보로 바꾸지 않는다 — CLAIM 만 한 번
+        assert soften_claims(text) == (expected, 1)
+        assert soften_claims(expected) == (expected, 0)
+
+    def test_rewrites_are_pattern_and_replacement_pairs(self):
+        assert GAP_CLAIM_TAIL == self.TAIL
+        assert len(GAP_CLAIM_REWRITES) == 5 and all(
+            isinstance(p, str) and isinstance(r, str) and r.endswith(GAP_CLAIM_TAIL) for p, r in GAP_CLAIM_REWRITES)
 
 
 class TestCheckParagraph:
