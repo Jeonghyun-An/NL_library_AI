@@ -77,9 +77,11 @@
         <div v-else class="rs-body" :class="`rs-body--${layout}`">
           <div class="rs-col-main">
             <section v-if="phase !== 'completed'" class="rs-block rs-block--plan">
-              <div v-if="phase === 'planning'" class="rs-card rs-card--wait">
+              <div v-if="phase === 'planning'" class="rs-card rs-card--wait" role="status">
                 <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
-                <p>연구 계획을 세우는 중입니다</p>
+                <div class="rs-card__text">
+                  <p>연구 계획을 세우는 중입니다</p>
+                </div>
               </div>
               <PlanCard
                 v-else-if="phase === 'awaiting'"
@@ -90,9 +92,12 @@
                 @approve="approve"
                 @cancel="onCancel"
               />
-              <div v-else-if="phase === 'queued'" class="rs-card rs-card--wait">
-                <p>앞선 연구가 끝나면 시작합니다</p>
-                <p v-if="queueText" class="rs-muted">{{ queueText }}</p>
+              <div v-else-if="phase === 'queued'" class="rs-card rs-card--wait" role="status">
+                <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+                <div class="rs-card__text">
+                  <p>앞선 연구가 끝나면 시작합니다</p>
+                  <p v-if="queueText" class="rs-muted">{{ queueText }}</p>
+                </div>
               </div>
               <PlanCard v-else-if="phase === 'exploring'" :plan="view.plan" :max="maxSubquestions" :subqs="view.subqs" />
               <SynthProgressCard

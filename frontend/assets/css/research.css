@@ -81,6 +81,13 @@
   align-items: center;
   font-size: 0.75rem;
 }
+/* 대기 카드의 글 묶음 — 스피너 옆에 본문과 덧붙인 줄(대기 순번·이해한 질문)을 세로로 쌓는다 */
+.rs-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
 .rs-card--error {
   border: 1px solid var(--skx-line);
 }
