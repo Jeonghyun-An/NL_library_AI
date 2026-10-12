@@ -433,6 +433,7 @@
         <BookChat
           :cnts-id="paperId"
           :book-title="paper?.title"
+          doc-kind="paper"
           @close="chatOpen = false"
         />
       </div>
