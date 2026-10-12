@@ -78,7 +78,8 @@
 
         <div v-else class="rs-body" :class="`rs-body--${layout}`">
           <div class="rs-col-main">
-            <section v-if="phase !== 'completed'" class="rs-block rs-block--plan">
+            <!-- 탐색 중에는 계획 블록을 그리지 않는다 — 하위질문 목록·상태는 본문의 절 자리(ReportSkeleton)가 보인다 -->
+            <section v-if="phase !== 'completed' && phase !== 'exploring'" class="rs-block rs-block--plan">
               <div v-if="phase === 'planning'" class="rs-card rs-card--wait" role="status">
                 <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
@@ -101,7 +102,6 @@
                   <p v-if="queueText" class="rs-muted">{{ queueText }}</p>
                 </div>
               </div>
-              <PlanCard v-else-if="phase === 'exploring'" :plan="view.plan" :max="maxSubquestions" :subqs="view.subqs" />
               <SynthProgressCard
                 v-else-if="phase === 'synthesizing'"
                 :slots="slots"
@@ -130,7 +130,7 @@
               </div>
             </section>
 
-            <section v-if="reportState || draft" class="rs-block rs-block--report">
+            <section v-if="reportState || draft || slotsShown" class="rs-block rs-block--report">
               <template v-if="shownReport">
                 <!-- 완료 이벤트 뒤 최종본을 받는 동안·실패해 다시 시도하는 동안에도 읽던 초안을 치우지 않는다 -->
                 <div v-if="reportState === 'failed'" class="rs-report-note" role="alert">
@@ -173,6 +173,7 @@
                   </template>
                 </ReportView>
               </template>
+              <ReportSkeleton v-else-if="slotsShown" :slots="planSlotList" />
               <div v-else-if="reportState === 'failed'" class="rs-card rs-card--error">
                 <p class="rs-card__title">보고서를 불러오지 못했습니다</p>
                 <p class="rs-muted">잠시 뒤 자동으로 다시 시도합니다</p>
@@ -218,6 +219,7 @@ import PlanCard from "~/components/research/PlanCard.vue";
 import ProgressPanel from "~/components/research/ProgressPanel.vue";
 import ReportDownloadMenu from "~/components/research/ReportDownloadMenu.vue";
 import ReportPrint from "~/components/research/ReportPrint.vue";
+import ReportSkeleton from "~/components/research/ReportSkeleton.vue";
 import ReportView from "~/components/research/ReportView.vue";
 import ResearchHeader from "~/components/research/ResearchHeader.vue";
 import ResearchProgressBar from "~/components/research/ResearchProgressBar.vue";
@@ -252,6 +254,7 @@ import {
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
+import { planSlots, showsPlanSlots } from "~/utils/planSlots";
 import { activeRoundKey, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
@@ -285,6 +288,10 @@ const eta = computed<SynthEta>(() => (view.value ? synthEta(view.value, now.valu
 // 초안은 쓰는 동안·멈춘 뒤·완료 직후 최종본을 받기 전까지만 보인다 — 최종본이 오면 그것으로 바꾼다
 const draftState = computed(() => draftStateFor(phase.value, reportState.value));
 const draft = computed(() => (view.value && draftState.value ? draftReport(view.value) : null));
+// 승인 뒤 첫 절 전까지 본문에 세우는 하위질문별 절 자리 — 대기열·탐색 중·종합 첫 절 전에만 그리고, 첫 절이
+// 완성되면(초안이 생기면) 초안이 그 자리에 선다. 자리는 하위질문 번호로 세운다(절 번호와 다르다 — utils/planSlots)
+const planSlotList = computed(() => (view.value ? planSlots(view.value) : []));
+const slotsShown = computed(() => showsPlanSlots(phase.value, !!draft.value));
 // 템플릿에서 객체를 만들면 1초마다 도는 시계 때문에 초안 전체가 매초 다시 그려진다
 const draftMode = computed(() => {
   const state = draftState.value;

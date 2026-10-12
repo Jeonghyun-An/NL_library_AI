@@ -1370,6 +1370,69 @@ button.rs-synth__item:focus-visible,
   }
 }
 
+/* ── 탐색 중 절 자리(ReportSkeleton) ────────────────────── */
+/* 승인 뒤 첫 절 전까지 본문에 서는 하위질문별 자리. 자리 머리의 '하위질문 N'은 절 번호가 아니라 하위질문 번호다.
+   근거를 모은 자리는 상태 글이 파랗게 '근거 N편 ✓', 근거 없음은 점선 한 줄로 접는다 */
+.rs-report--slots {
+  gap: 0.7rem;
+}
+.rs-slot {
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.rs-slot__kicker {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-slot__state {
+  align-self: flex-start;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-slot.is-collecting .rs-slot__state,
+.rs-slot.is-collected .rs-slot__state,
+.rs-slot.is-writing .rs-slot__state {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.rs-slot.is-failed .rs-slot__state {
+  color: var(--skx-ink);
+  border-color: var(--skx-ink);
+}
+.rs-slot.is-waiting .rs-section__heading {
+  color: var(--skx-gray-2);
+}
+.rs-slot.is-empty {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-style: dashed;
+}
+.rs-slot.is-empty .rs-section__heading {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--skx-gray-2);
+}
+.rs-slot__state.is-fresh {
+  animation: rs-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-slot__state.is-fresh {
+    animation: none;
+  }
+}
+
 /* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
 /* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
 .rs-print {
