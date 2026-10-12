@@ -95,6 +95,12 @@ describe("테마 토큰 대비 4.5:1 이상", () => {
     ["다크", "--skx-success", "--skx-white"],
     ["밝은 읽는 면(.skx-reading)", "--skx-success", "--skx-white"],
     ["밝은 읽는 면(.skx-reading)", "--skx-success", "--skx-success-bg"],
+    // 상태색(위험) — 실패 배지 글자·지우기 확인 버튼(위험색 바탕 위 --skx-on-accent 글자)
+    ["다크", "--skx-danger", "--skx-white"],
+    ["다크", "--skx-on-accent", "--skx-danger"],
+    ["밝은 읽는 면(.skx-reading)", "--skx-danger", "--skx-white"],
+    ["밝은 읽는 면(.skx-reading)", "--skx-danger", "--skx-danger-bg"],
+    ["밝은 읽는 면(.skx-reading)", "--skx-on-accent", "--skx-danger"],
     // 옅은 청록 틴트(--skx-glass-teal) 위에 얹는 포인트색·청록 글자(키워드 칩·선택된 메뉴 항목·KCI 배지).
     // 다크의 틴트는 rgba 라 여기서 못 읽는다 — 다크는 짙은 면 위 7:1 이상(수동 계산)
     ["밝은 읽는 면(.skx-reading)", "--skx-primary", "--skx-glass-teal"],

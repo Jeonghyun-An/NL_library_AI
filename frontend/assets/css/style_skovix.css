@@ -203,6 +203,9 @@ a:hover {
   /* 상태(성공) — 짙은 청록 면 위 5:1 이상. 초록 점·글자·일치율 링 */
   --skx-success: #5dd68b;
   --skx-success-bg: rgba(93, 214, 139, 0.14);
+  /* 상태(위험) — 지우기 확인 버튼·실패 배지. 짙은 청록 면 위 6:1 이상, 글자(--skx-on-accent)를 얹어도 6:1 이상 */
+  --skx-danger: #ff8a80;
+  --skx-danger-bg: rgba(255, 138, 128, 0.14);
   /* 아이콘 색 — <img src="/img/ico-*.svg"> 는 색이 파일에 박혀 있어 filter 로 면에 맞춘다(아이콘 색 구간 참고).
      모두 brightness(0) 으로 먼저 검게 만든 뒤 목표색을 만든다. 일반=#ccc, 포인트색 바탕 위=#0f2822, 포인트색 자체=#f8c4b7 근사 */
   --skx-ico-filter: brightness(0) invert(0.8);
@@ -251,6 +254,8 @@ a:hover {
   --skx-teal-ink: #3f7468;
   --skx-success: #166534;
   --skx-success-bg: #e6f4ea;
+  --skx-danger: #c62828;
+  --skx-danger-bg: #fdecec;
   --skx-ico-filter: none;
   --skx-ico-on-accent-filter: brightness(0) invert(1);
   --skx-ico-accent-filter: brightness(0) invert(69%) sepia(35%) saturate(940%) hue-rotate(315deg) brightness(65%) contrast(143%);
@@ -774,34 +779,6 @@ a:hover {
   font-weight: 500;
   color: var(--skx-gray-2);
   line-height: 1.5;
-}
-/* ── 검색기록 탭 ── */
-.skx-history__tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0 8px;
-}
-.skx-history__tab {
-  flex: 1;
-  padding: 5px 0;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--skx-gray-1);
-  background: transparent;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.skx-history__tab:hover {
-  background: var(--skx-glass-teal);
-  color: var(--skx-ink);
-}
-.skx-history__tab.is-active {
-  background: var(--skx-primary);
-  color: var(--skx-on-accent);
 }
 .skx-profile {
   display: flex;
