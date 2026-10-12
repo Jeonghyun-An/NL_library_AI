@@ -196,23 +196,11 @@ textarea {
 .skx-rel__label,
 .skx-score-ring__tip,
 .skx-footer__copy,
-.skx-avail__label,
-.skx-prelate-card__score,
-.skx-reco-item__score,
-.skx-reco-type,
 .skx-page-num,
 .skx-ai-expand-bar__label,
-.skx-btn-loan,
 .skx-btn-ptalk,
 .skx-btn-pview,
-.skx-btn-pview-sm,
-.skx-btn-read,
-.skx-btn-talk,
-.skx-cite-box__badge,
 .skx-deeper__btn,
-.skx-meta-role,
-.skx-meta-text,
-.skx-modal__book-meta span,
 .skx-pick__label,
 .skx-pick__heading,
 .skx-rcd-modal__author,
@@ -224,17 +212,13 @@ textarea {
 .skx-modal__sub,
 .skx-newbooks__label,
 .skx-rcd-modal__btn,
-.skx-keyword,
 .skx-rsearch__input,
 .skx-chat-source-chip,
 .skx-toast,
-.skx-pcuration__tab-btn,
-.skx-vtab,
 .skx-rcd-ai__label,
 .skx-rcd-hero__sub {
   line-height: 1.4;
 }
-.skx-btn-read,
 .skx-btn-pview,
 .skx-btn-ptalk {
   min-height: 2.5rem;
@@ -243,54 +227,37 @@ textarea {
   min-height: 2.4rem;
 }
 @media (max-width: 768px) {
-  .skx-btn-read,
   .skx-btn-pview,
-  .skx-btn-ptalk {
+.skx-btn-ptalk {
     min-height: 2.37rem;
   }
 }
 /* 자간을 -1px 에서 되돌리면 글이 조금 넓어져 좁은 카드에서 '원문 보기' 가 글자 단위로 꺾였다 — 한 줄로 둔다 */
-.skx-btn-read {
-  white-space: nowrap;
-}
+
 h1,
 h2,
 h3,
 h4,
 .skx-ai-header__title,
 .skx-aip__title,
-.skx-book-card__title,
 .skx-chat-title,
 .skx-modal__title,
 .skx-modal__book-title,
 .skx-rcd-modal__title,
 .skx-rcd-modal__book-title,
 .skx-rcd-select__tit,
-.skx-reco-empty__text,
-.skx-reco-title,
-.skx-recommend-main__txt,
-.skx-section-title {
+.skx-recommend-main__txt {
   letter-spacing: -0.02em;
   line-height: 1.3;
 }
 .skx-brand__line,
 .skx-hero,
 .skx-history__title,
-.skx-pai-section__title,
-.skx-pdetail__title,
-.skx-pdetail__title-en,
-.skx-pcuration__heading,
-.skx-paccord__title,
-.skx-prelate__heading,
-.skx-prelate-card__title,
-.skx-cite-modal__title,
 .skx-newbooks__title,
 .skx-pai-ref__title,
 .skx-rcd-book-card__name,
 .skx-rcd-hero__tit,
-.skx-recommend-item__txt,
-.skx-recommend-main__tit,
-.skx-reco-item__name {
+.skx-recommend-main__tit {
   letter-spacing: -0.02em;
 }
 /* [E] 글 리듬 */
@@ -1765,35 +1732,6 @@ h4,
 
 /* [E] 탭 패널 */
 
-/* [S] 글로우 오브 */
-/* 채팅 버튼(.skx-btn-talk)·논문 채팅 버튼의 테두리를 도는 빛 — radial-gradient + motion-path.
-   (메인의 도서 추천 배너가 같은 글로우를 썼으나 작은 링크 .skx-reco-link 로 바뀌어 배너 규칙은 없앴다) */
-.skx-btn-talk__glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 20rem;
-  height: 20rem;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle closest-side,
-    rgba(255, 255, 255, 0.95) 0%,
-    var(--skx-accent) 26%,
-    transparent 74%
-  );
-  offset-path: border-box;
-  offset-distance: 0%;
-  offset-anchor: 50% 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-@keyframes skx-glow-travel {
-  to {
-    offset-distance: 100%;
-  }
-}
-/* [E] 글로우 오브 */
-
 /* [S] 신작도서 */
 .skx-newbooks {
   display: flex;
@@ -2607,8 +2545,6 @@ h4,
 /* [S] SKOVIX 추천 1권 — 도서 AI 영역. 왼쪽: 왜 이 책인가·이 책에서 얻을 수 있는 것 / 오른쪽: 1위 도서 카드.
    임시 비주얼이다 — 디자이너 Figma 가 나오면 이 구간만 고친다 */
 
-/* 1위가 추천할 만큼 맞지 않을 때 — 안내 한 줄만 */
-
 .skx-pick__block {
   display: flex;
   flex-direction: column;
@@ -2677,46 +2613,6 @@ h4,
   border-bottom: 1px solid var(--skx-line);
 }
 
-.skx-book-card__thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 8rem;
-  height: 8rem;
-  flex-shrink: 0;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-line);
-  border-radius: 0.4rem;
-  overflow: hidden;
-  align-self: stretch;
-}
-.skx-book-card__thumb img {
-  width: 5.65rem;
-  height: 6rem;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-}
-.skx-book-card__body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.4rem;
-  min-width: 0;
-}
-.skx-book-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-book-card__tags {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
 .skx-tag {
   display: inline-flex;
   align-items: center;
@@ -2726,91 +2622,14 @@ h4,
   font-size: 0.6rem;
   white-space: nowrap;
 }
-.skx-tag--score {
-  background: var(--skx-border-c1);
-  color: var(--skx-ink);
-  font-weight: 700;
-}
+
 .skx-tag--keyword {
   background: var(--skx-glass-teal);
   color: var(--skx-primary);
   font-weight: 600;
   border-radius: 2.2rem;
 }
-/* 공통: 북마크 아이콘 버튼 (.skx-reco-info__bkmark 와 동일 디자인·크기 공유) */
-.skx-book-card__bookmark,
-.skx-reco-info__bkmark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: none;
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.skx-book-card__bookmark img,
-.skx-reco-info__bkmark img {
-  width: 0.7rem;
-  height: auto;
-  display: block;
-}
-.skx-book-card__bookmark:not(.is-active):hover img,
-.skx-reco-info__bkmark:not(.is-active):hover img {
-  filter: brightness(0.9);
-}
-.skx-book-card__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-book-card__title-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.4rem;
-}
-.skx-book-card__title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-avail {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  height: 1rem;
-}
-.skx-avail__dot {
-  width: 0.2rem;
-  height: 0.2rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.skx-avail--ok .skx-avail__dot {
-  background: var(--skx-success);
-}
-.skx-avail--no .skx-avail__dot {
-  background: var(--skx-gray-2);
-}
-.skx-avail__label {
-  font-size: 0.6rem;
-  font-weight: 700;
-}
-.skx-avail--ok .skx-avail__label {
-  color: var(--skx-success);
-}
-.skx-avail--no .skx-avail__label {
-  color: var(--skx-gray-2);
-}
-.skx-book-card__info-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
+
 .skx-dot {
   display: inline-block;
   width: 0.2rem;
@@ -2819,71 +2638,7 @@ h4,
   background: var(--skx-gray-2);
   flex-shrink: 0;
 }
-.skx-meta-text {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-}
-.skx-meta-role {
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-}
-.skx-book-card__actions {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-  margin-top: 0.4rem;
-}
 
-.skx-btn-loan {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 4rem;
-  padding: 0.6rem 0.8rem;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-primary);
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-primary);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s;
-}
-.skx-btn-loan:hover {
-  background: var(--skx-glass-teal);
-}
-.skx-btn-loan.is-loaning {
-  background: var(--skx-glass-teal);
-  border-color: var(--skx-border-c1);
-  color: var(--skx-primary);
-}
-.skx-btn-loan.is-loaning:hover {
-  background: var(--skx-glass-teal);
-  border-color: var(--skx-primary);
-}
-.skx-btn-read {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 4rem;
-  padding: 0.6rem 0.8rem;
-  background: var(--skx-glass-teal);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-.skx-btn-read:hover {
-  background: var(--skx-border-c1);
-}
 .skx-book-expand {
   display: flex;
   align-items: center;
@@ -2944,455 +2699,6 @@ h4,
   color: var(--skx-gray-1);
   line-height: 1.5;
 }
-
-/* 섹션 제목 */
-.skx-section-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-
-/* [S] AI 큐레이션 */
-.skx-curation {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-curation-panel {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: var(--skx-glass-teal);
-  border-radius: 0.8rem;
-  padding: 0.8rem;
-  min-height: 12rem;
-  position: relative;
-  overflow: visible;
-}
-.skx-vtabs-col {
-  flex-shrink: 0;
-  width: 12rem;
-  display: flex;
-  align-items: center;
-  z-index: 2;
-}
-.skx-vtabs {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-vtabs__slider {
-  position: absolute;
-  left: 0;
-  right: -0.8rem;
-  height: 2.8rem;
-  background: var(--skx-primary);
-  border-radius: 0.6rem;
-  top: 0;
-  transform: translateY(0);
-  transition: transform 0.38s cubic-bezier(0.34, 1.32, 0.42, 1);
-  z-index: 0;
-  pointer-events: none;
-}
-.skx-vtabs__slider::after {
-  content: "";
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 0.35rem solid transparent;
-  border-bottom: 0.35rem solid transparent;
-  border-left: 0.45rem solid var(--skx-primary);
-}
-.skx-vtabs.is-second .skx-vtabs__slider {
-  transform: translateY(3.6rem);
-}
-.skx-vtab {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 0.8rem;
-  height: 2.8rem;
-  background: none;
-  border: none;
-  border-radius: 0.6rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  cursor: pointer;
-  transition: color 0.25s;
-  white-space: nowrap;
-  text-align: left;
-}
-.skx-vtab.is-active {
-  color: var(--skx-white);
-}
-.skx-curation-content {
-  flex: 1;
-  min-width: 0;
-  padding-left: 0.8rem;
-  height: 10rem;
-  overflow-y: auto;
-}
-.skx-curation-card {
-  background: var(--skx-white);
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 100%;
-}
-.skx-curation-text {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
-/* [E] AI 큐레이션 */
-
-/* [S] 상세 정보 */
-.skx-detail-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-detail-info__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.2rem;
-  padding: 2rem;
-  border: 1px solid var(--skx-line);
-  border-radius: 0.8rem;
-}
-.skx-info-row {
-  display: flex;
-  gap: 0;
-  align-items: flex-start;
-}
-.skx-info-label {
-  flex-shrink: 0;
-  width: 6rem;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-  line-height: 1.5;
-}
-.skx-info-value {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  word-break: break-all;
-}
-/* [E] 상세 정보 */
-
-/* [S] AI 연관 도서 추천 */
-.skx-reco {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-reco-panel {
-  display: grid;
-  grid-template-columns: 17.65rem 1fr;
-  gap: 1rem;
-  background: var(--skx-glass-teal);
-  border-radius: 0.8rem;
-  padding: 1.2rem;
-  align-items: start;
-}
-.skx-reco-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-reco-item {
-  animation: skx-drop-in 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.skx-reco-item:nth-child(5) {
-  animation-delay: 0.15s;
-}
-.skx-reco-item:nth-child(4) {
-  animation-delay: 0.3s;
-}
-.skx-reco-item:nth-child(3) {
-  animation-delay: 0.45s;
-}
-.skx-reco-item:nth-child(2) {
-  animation-delay: 0.6s;
-}
-.skx-reco-item:nth-child(1) {
-  animation-delay: 0.75s;
-}
-@keyframes skx-drop-in {
-  0% {
-    opacity: 0;
-    transform: translateY(32px) scale(0.95);
-  }
-  75% {
-    opacity: 1;
-    transform: translateY(-2px) scale(1.01);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skx-reco-item {
-    animation: none;
-  }
-}
-.skx-reco-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 3rem;
-  border-radius: 0.8rem 0 0 0.8rem;
-  background: var(--skx-border-c1);
-  padding: 0.2rem 0 0.2rem 4rem;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12);
-  transition: background 0.2s;
-  border: none;
-  width: 100%;
-  text-align: left;
-}
-.skx-reco-item:hover {
-  background: var(--skx-teal-ink);
-}
-.skx-reco-item.is-active {
-  background: var(--skx-primary);
-}
-.skx-reco-item.is-active:hover {
-  background: var(--skx-primary);
-  filter: brightness(1.06);
-}
-.skx-reco-item__thumb {
-  position: absolute;
-  left: 1.4rem;
-  top: 0;
-  width: 1.6rem;
-  height: auto;
-  opacity: 0;
-  display: block;
-  object-fit: cover;
-  transition: opacity 0.2s;
-  border-radius: 0.1rem;
-}
-.skx-reco-item.is-active .skx-reco-item__thumb {
-  opacity: 1;
-}
-.skx-reco-item__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
-  background: var(--skx-white);
-  border-radius: 0.6rem 0 0 0.6rem;
-  padding: 0.4rem 0.4rem 0.4rem 0.8rem;
-  height: 100%;
-}
-.skx-reco-item__name {
-  flex: 1;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.skx-reco-item.is-active .skx-reco-item__name {
-  color: var(--skx-primary);
-}
-.skx-reco-item__score {
-  flex-shrink: 0;
-  font-size: 0.6rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-}
-
-/* 우측 - 빈 상태 */
-.skx-reco-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.2rem;
-  min-height: 16rem;
-  min-width: 0;
-  background: var(--skx-white);
-  border-radius: 0.8rem;
-  padding: 1.2rem;
-}
-.skx-reco-empty[hidden] {
-  display: none;
-}
-.skx-reco-empty__logo {
-  width: 8rem;
-  display: block;
-  color: var(--skx-gray-2);
-}
-.skx-reco-empty__text {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-
-/* 우측 - 도서 상세 */
-.skx-reco-detail {
-  display: flex;
-  gap: 1.2rem;
-  background: var(--skx-white);
-  border-radius: 0.8rem;
-  padding: 1.2rem;
-  min-height: 16rem;
-  max-height: 16rem;
-  min-width: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.skx-reco-detail[hidden] {
-  display: none;
-}
-.skx-reco-cover {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 11.6rem;
-  flex-shrink: 0;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-line);
-  border-radius: 0.4rem;
-  padding: 1.2rem;
-}
-.skx-reco-cover img {
-  width: 9.2rem;
-  height: 9.2rem;
-  display: block;
-  object-fit: cover;
-}
-.skx-reco-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-reco-info__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.4rem;
-}
-.skx-reco-info__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.skx-reco-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
-}
-.skx-reco-type-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-reco-type {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-reco-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-reco-author {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.skx-reco-desc {
-  margin-top: 0.4rem;
-  padding: 1.2rem;
-  background: var(--skx-glass-teal);
-  border-radius: 0.6rem;
-}
-.skx-reco-desc__text {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
-/* [E] AI 연관 도서 추천 */
-
-/* [S] 인입 애니메이션 (아래에서 위로 쌓이듯) */
-@keyframes skx-rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(1.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes skx-drop-in {
-  from {
-    opacity: 0;
-    transform: translateY(-1.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.skx-anim {
-  animation: skx-rise-in 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
-}
-.skx-anim--1 {
-  animation-delay: 0.05s;
-}
-.skx-anim--2 {
-  animation-delay: 0.15s;
-}
-.skx-anim--3 {
-  animation-delay: 0.25s;
-}
-.skx-anim--4 {
-  animation-delay: 0.35s;
-}
-@media (prefers-reduced-motion: reduce) {
-  .skx-anim {
-    animation: none;
-  }
-}
-/* [E] 인입 애니메이션 */
 
 /* [E] 검색결과 상세 페이지 */
 
@@ -3459,24 +2765,7 @@ h4,
   text-align: center;
   margin: 0;
 }
-.skx-modal__book-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.skx-modal__book-meta span {
-  font-size: 0.7rem;
-}
-.skx-modal__book-meta .skx-meta-name {
-  font-weight: 500;
-  color: var(--skx-ink);
-}
-.skx-modal__book-meta .skx-meta-role {
-  font-weight: 400;
-  color: var(--skx-gray-1);
-}
+
 .skx-modal__actions {
   display: flex;
   gap: 0.4rem;
@@ -3507,51 +2796,7 @@ h4,
 /* [E] 대출 신청 팝업 */
 
 /* [S] 채팅하기 버튼 (도서/논문 공통) + 채팅 패널 */
-.skx-btn-talk {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  background: var(--skx-primary);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-on-accent);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    filter 0.15s;
-}
-.skx-btn-talk--book {
-  width: 8rem;
-  padding: 0.6rem 0.4rem;
-}
-.skx-btn-talk--paper {
-  height: 2.05rem;
-  padding: 0 0.8rem;
-  min-width: 8rem;
-}
-.skx-btn-talk:not(.is-active):hover {
-  filter: brightness(1.08);
-}
-.skx-btn-talk__glow {
-  animation: skx-glow-travel 2.5s linear infinite;
-  opacity: 0;
-}
-.skx-btn-talk__panel {
-  position: absolute;
-  inset: 1px;
-  border-radius: calc(0.4rem - 1px);
-  background: var(--skx-primary);
-  pointer-events: none;
-  z-index: 1;
-  transition: background 0.2s;
-}
+
 .skx-btn-talk__ico {
   position: relative;
   z-index: 2;
@@ -3561,23 +2806,7 @@ h4,
   filter: var(--skx-ico-on-accent-filter);
   transition: filter 0.2s;
 }
-.skx-btn-talk__label {
-  position: relative;
-  z-index: 2;
-}
-.skx-btn-talk.is-active {
-  background: var(--skx-border-c2);
-  color: var(--skx-primary);
-}
-.skx-btn-talk.is-active .skx-btn-talk__glow {
-  opacity: 0.9;
-}
-.skx-btn-talk.is-active .skx-btn-talk__panel {
-  background: var(--skx-white);
-}
-.skx-btn-talk.is-active .skx-btn-talk__ico {
-  filter: var(--skx-ico-accent-filter);
-}
+
 .skx-chat-panel {
   flex-shrink: 0;
   width: 0;
@@ -3880,14 +3109,7 @@ h4,
   padding: 2.3rem 3.2rem;
   border-radius: 0.8rem;
 }
-.skx-recommend-item__txt {
-  position: relative;
-  z-index: 2;
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1.5;
-  white-space: nowrap;
-}
+
 /* 피그마 프레임 이미지 카드 (텍스트·아이콘 포함 통이미지) */
 .skx-recommend-item__inn--img {
   padding: 0;
@@ -3911,9 +3133,6 @@ h4,
     inset 2px 4px 45.1px -4px #fff,
     inset 2px 111px 58.9px 44px rgba(255, 128, 232, 0.25);
 }
-.skx-recommend-item.item-01 .skx-recommend-item__txt {
-  color: #5a4152;
-}
 
 /* 카드02 심리적 단단함이 필요할 때 */
 .skx-recommend-item.item-02 .skx-recommend-item__inn {
@@ -3921,9 +3140,6 @@ h4,
     linear-gradient(180deg, #fd9cbf 32.5%, #ffd8f8 100%),
     linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.03) 100%),
     linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
-}
-.skx-recommend-item.item-02 .skx-recommend-item__txt {
-  color: #ffffff;
 }
 
 /* 카드03 늦은 밤, 잠이 오지 않을 때 */
@@ -3933,17 +3149,11 @@ h4,
     inset 2px 4px 50.2px -4px rgba(171, 249, 184, 0.84),
     inset 2px 4px 49.5px 29px rgba(29, 86, 255, 0.25);
 }
-.skx-recommend-item.item-03 .skx-recommend-item__txt {
-  color: #fff;
-}
 
 /* 카드04 흥미진진한 역사 이야기가 궁금할 때 */
 .skx-recommend-item.item-04 .skx-recommend-item__inn {
   background: url("../img/skx-reco-c04-bg.png") no-repeat center / cover;
   box-shadow: inset -9px 3px 49.5px 29px rgba(255, 204, 0, 0.25);
-}
-.skx-recommend-item.item-04 .skx-recommend-item__txt {
-  color: #2e2e2e;
 }
 
 /* 카드03 장식 (별·곡선) */
@@ -4465,26 +3675,6 @@ h4,
   gap: 1.2rem;
   min-width: 0;
 }
-.skx-rsearch__icon-btn {
-  position: absolute;
-  right: 1.2rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.skx-rsearch__icon-btn img {
-  width: 1rem;
-  height: 1rem;
-  display: block;
-}
 
 .skx-pai-main {
   overflow: hidden;
@@ -4546,13 +3736,7 @@ h4,
   flex-direction: column;
   gap: 0.4rem;
 }
-.skx-pai-section__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--skx-ink-strong);
-  line-height: 1.5;
-  margin: 0;
-}
+
 .skx-pai-section__text {
   font-size: 0.9rem;
   font-weight: 400;
@@ -4560,17 +3744,7 @@ h4,
   line-height: 1.5;
   margin: 0;
 }
-.skx-pai-section__list {
-  display: flex;
-  flex-direction: column;
-}
-.skx-pai-section__list p {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  margin: 0;
-}
+
 .skx-pai-refs {
   /* 목록(.skx-pai-refs__scroll)은 이 칸에 absolute 로 채워진다 — 왼쪽 글이 짧아도(분석 중 한 줄·짧은 요약) 참고 논문 5건이 읽히는
      높이(접힌 평소 높이와 같다) */
@@ -4760,17 +3934,9 @@ h4,
   font-weight: 700;
   white-space: nowrap;
 }
-.skx-ptag--kci {
-  background: var(--skx-glass-teal);
-  color: var(--skx-teal-ink);
-}
+
 /* 등재 등급 필터 버튼 — .skx-ptag--kci 뱃지 색을 그대로 물려받아 선택 여부와
    무관하게 항상 "눌린" 것처럼 보였다. 필터 컨텍스트에서는 상태를 직접 정의. */
-
-.skx-ptag--score {
-  background: var(--skx-border-c1);
-  color: var(--skx-ink);
-}
 
 .skx-btn-pview {
   flex: 1;
@@ -4792,8 +3958,7 @@ h4,
   background: var(--skx-border-c1);
 }
 /* 공통: 논문 북마크 버튼 (.skx-btn-pbmark-sm 과 동일 디자인) */
-.skx-btn-pbmark,
-.skx-btn-pbmark-sm {
+.skx-btn-pbmark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4807,12 +3972,10 @@ h4,
   padding: 0;
   flex-shrink: 0;
 }
-.skx-btn-pbmark:hover,
-.skx-btn-pbmark-sm:hover {
+.skx-btn-pbmark:hover {
   background: var(--skx-glass-teal);
 }
-.skx-btn-pbmark img,
-.skx-btn-pbmark-sm img {
+.skx-btn-pbmark img {
   width: 1.25rem;
   height: 1.25rem;
   display: block;
@@ -4911,698 +4074,13 @@ h4,
 /* [E] 논문검색결과 페이지 */
 
 /* [S] 논문검색결과 상세 페이지 */
-.skx-pdetail {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2.4rem;
-  padding-right: 0.2rem;
-}
-.skx-pdetail__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: none;
-  border: none;
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  cursor: pointer;
-  padding: 0;
-  line-height: normal;
-}
-.skx-pdetail__back img {
-  width: 1rem;
-  height: 1rem;
-  display: block;
-  transform: rotate(180deg);
-}
-.skx-pdetail__hero {
-  display: flex;
-  gap: 0.8rem;
-  align-items: flex-start;
-  padding-bottom: 1.2rem;
-  border-bottom: 1px solid var(--skx-line);
-}
-.skx-pdetail__cover {
-  flex-shrink: 0;
-  width: 8rem;
-  height: 12rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--skx-line);
-  border-radius: 0.4rem;
-  overflow: hidden;
-  background: var(--skx-white);
-}
-.skx-pdetail__cover img {
-  width: 6rem;
-  height: 8.4rem;
-  object-fit: cover;
-  display: block;
-}
-.skx-pdetail__meta {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-pdetail__top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 2rem;
-}
-.skx-pdetail__badges {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-pdetail__share-group {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-.skx-btn-icon-sm {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: none;
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  padding: 0;
-}
-.skx-btn-icon-sm:hover {
-  background: var(--skx-glass-teal);
-}
-.skx-pdetail__share-group .skx-btn-icon-sm {
-  background: none;
-}
-.skx-pdetail__share-group .skx-btn-icon-sm img {
-  width: 1rem;
-  height: 1rem;
-  object-fit: contain;
-}
-.skx-pdetail__share-group .skx-btn-icon-sm:not(.is-active):hover img {
-  filter: brightness(0.9);
-}
-.skx-btn-icon-sm img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-pdetail__title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--skx-ink-strong);
-  line-height: normal;
-  margin: 0.4rem 0 0;
-}
-.skx-pdetail__title-en {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--skx-gray-2);
-  line-height: normal;
-  margin: 0;
-}
-.skx-pdetail__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  margin-top: 0.8rem;
-}
-.skx-pdetail__row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  font-size: 0.7rem;
-  line-height: normal;
-}
-.skx-pdetail__row-lbl {
-  width: 4rem;
-  flex-shrink: 0;
-  color: var(--skx-gray-1);
-  font-weight: 400;
-}
-.skx-pdetail__row-val {
-  flex: 1;
-  color: var(--skx-ink);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  flex-wrap: wrap;
-}
-.skx-pdetail__row-arr {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-  opacity: 0.4;
-  flex-shrink: 0;
-}
-.skx-pdetail__btns {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1rem;
-}
-.skx-btn-pview-sm {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 2.05rem;
-  padding: 0 0.8rem;
-  min-width: 4rem;
-  background: var(--skx-glass-teal);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.skx-btn-pview-sm:hover {
-  background: var(--skx-border-c1);
-}
-.skx-pcuration {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-.skx-pcuration__heading {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink-strong);
-  line-height: normal;
-  margin: 0;
-}
-.skx-pcuration__panel {
-  background: var(--skx-glass-teal);
-  border-radius: 0.8rem;
-  padding: 0.8rem;
-  display: grid;
-  grid-template-columns: 13.2rem 1fr;
-  gap: 0.8rem;
-  min-height: 8rem;
-}
-.skx-pcuration__tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-pcuration__tab-heading {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  padding: 0.8rem;
-  line-height: normal;
-}
-.skx-pcuration__tab-btn {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem;
-  border-radius: 0.6rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-gray-1);
-  background: none;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.15s;
-}
-.skx-pcuration__tab-btn.is-active {
-  color: var(--skx-on-accent);
-}
-.skx-pcuration__tab-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  display: block;
-}
-.skx-pcuration__tab-label {
-  position: relative;
-  z-index: 1;
-}
-.skx-pcuration__content {
-  background: var(--skx-white);
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-}
-.skx-pcuration__text {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.skx-paccordion {
-  border-top: 2px solid var(--skx-ink-strong);
-  display: flex;
-  flex-direction: column;
-}
-.skx-paccord {
-  border-bottom: 1px solid var(--skx-line);
-}
-.skx-paccord__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.2rem;
-  cursor: pointer;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  transition: background 0.15s;
-}
-.skx-paccord__head:hover {
-  background: var(--skx-glass-teal);
-}
-.skx-paccord__title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink-strong);
-  line-height: 1.5;
-}
-.skx-paccord__arrow {
-  width: 1.6rem;
-  height: 1.6rem;
-  display: block;
-  flex-shrink: 0;
-  transition: transform 0.28s ease;
-  transform: rotate(0deg);
-}
-.skx-paccord.is-open .skx-paccord__arrow {
-  transform: rotate(180deg);
-}
-.skx-paccord__body-outer {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-paccord.is-open .skx-paccord__body-outer {
-  grid-template-rows: 1fr;
-}
-.skx-paccord__body {
-  min-height: 0;
-  overflow: hidden;
-}
-.skx-paccord__body > * {
-  padding: 0 1.2rem 1.2rem;
-}
-.skx-keyword-list {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.skx-keyword {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.6rem;
-  background: var(--skx-glass-teal);
-  color: var(--skx-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 2.2rem;
-  white-space: nowrap;
-}
-.skx-paccord-ref {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-  line-height: 1.5;
-}
-.skx-paccord-ref p {
-  margin: 0;
-}
-.skx-prelate {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  padding-bottom: 2.4rem;
-}
-.skx-prelate__heading {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink-strong);
-  line-height: normal;
-  margin: 0;
-}
-.skx-prelate__list {
-  background: var(--skx-glass-teal);
-  border-radius: 0.8rem;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-prelate-card {
-  background: var(--skx-white);
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  cursor: pointer;
-  transition: box-shadow 0.25s ease;
-}
-.skx-prelate-card:hover {
-  box-shadow: var(--skx-shadow-banner);
-}
-.skx-prelate-card__info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-prelate-card__score {
-  display: inline-flex;
-  align-items: center;
-  height: 1.3rem;
-  padding: 0 0.6rem;
-  background: var(--skx-border-c1);
-  color: var(--skx-ink);
-  font-size: 0.6rem;
-  font-weight: 700;
-  border-radius: 1.8rem;
-  white-space: nowrap;
-  align-self: flex-start;
-}
-.skx-prelate-card__title-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-prelate-card__title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  line-height: normal;
-}
-.skx-prelate-card__author {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
-.skx-prelate-card__ai {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition:
-    max-height 0.35s ease,
-    opacity 0.3s ease 0.05s;
-}
-.skx-prelate-card:hover .skx-prelate-card__ai {
-  max-height: 12rem;
-  opacity: 1;
-}
-.skx-prelate-card__ai-inner {
-  display: flex;
-  gap: 0.8rem;
-  align-items: flex-start;
-  background: var(--skx-glass-teal);
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-  margin-top: 0.8rem;
-}
-.skx-prelate-card__ai-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  display: block;
-  flex-shrink: 0;
-}
-.skx-prelate-card__ai-text {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
+
 .skx-app > .skx-result-card {
   flex: 1;
   min-width: 0;
 }
-.skx-pcuration .skx-curation-panel {
-  min-height: 8rem;
-}
-.skx-pcuration .skx-vtabs-col {
-  align-items: flex-start;
-  padding-top: 0.4rem;
-}
-.skx-pcuration .skx-curation-content {
-  height: 6.4rem;
-  overflow-y: auto;
-}
-/* [E] 논문검색결과 상세 페이지 */
 
-/* [S] 출처 인용 모달 */
-.skx-cite-modal {
-  background: var(--skx-white);
-  border-radius: 0.8rem;
-  box-shadow: var(--skx-shadow-banner);
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  width: 32rem;
-  max-width: calc(100vw - 2.4rem);
-}
-.skx-cite-modal__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-cite-modal__title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink-strong);
-  margin: 0;
-  line-height: normal;
-}
-.skx-cite-modal__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2rem;
-  height: 1.2rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.skx-cite-modal__close img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-cite-modal__section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-cite-modal__lbl {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  margin: 0;
-  line-height: 1.5;
-}
-.skx-cite-select {
-  position: relative;
-  width: 100%;
-}
-.skx-cite-select__btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.8rem;
-  background: var(--skx-glass-teal);
-  border: 1px solid var(--skx-line);
-  border-radius: 0.2rem;
-  cursor: pointer;
-  transition: border-color 0.15s;
-}
-.skx-cite-select.is-open .skx-cite-select__btn {
-  border-color: var(--skx-gray-2);
-  border-radius: 0.2rem 0.2rem 0 0;
-}
-.skx-cite-select__text {
-  flex: 1;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  text-align: left;
-  line-height: normal;
-}
-.skx-cite-select__arrow {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-  flex-shrink: 0;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-cite-select.is-open .skx-cite-select__arrow {
-  transform: rotate(180deg);
-}
-.skx-cite-select__menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-gray-2);
-  border-top: none;
-  border-radius: 0 0 0.2rem 0.2rem;
-  box-shadow: var(--skx-shadow-banner);
-  display: none;
-  z-index: 20;
-  padding: 0.2rem;
-}
-.skx-cite-select.is-open .skx-cite-select__menu {
-  display: block;
-}
-.skx-cite-select__option {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.6rem;
-  background: none;
-  border: none;
-  border-radius: 0.1rem;
-  text-align: left;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  cursor: pointer;
-  transition: background 0.12s;
-}
-.skx-cite-select__option:hover {
-  background: var(--skx-border-c1);
-}
-.skx-cite-select__option.is-selected {
-  font-weight: 600;
-  color: var(--skx-primary);
-  background: var(--skx-glass-teal);
-}
-.skx-cite-lang-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-cite-lang {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-cite-lang__opt {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--skx-gray-1);
-  line-height: 1.5;
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.2s;
-}
-.skx-cite-lang__opt.is-active {
-  color: var(--skx-primary);
-}
-.skx-cite-lang__toggle {
-  width: 2rem;
-  height: 1.2rem;
-  border: 1px solid var(--skx-gray-2);
-  border-radius: var(--skx-radius-pill);
-  background: none;
-  padding: 0.1rem;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.skx-cite-lang__knob {
-  width: 1rem;
-  height: 1rem;
-  background: var(--skx-primary);
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-cite-lang.is-en .skx-cite-lang__knob {
-  transform: translateX(0.8rem);
-}
-.skx-cite-box {
-  background: var(--skx-glass-teal);
-  border-radius: 0.4rem;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-cite-box__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-cite-box__badge {
-  display: inline-flex;
-  align-items: center;
-  height: 1.25rem;
-  padding: 0.1rem 0.4rem;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-primary);
-  border-radius: 0.2rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-primary);
-  white-space: nowrap;
-}
-.skx-cite-box__copy {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2rem;
-  height: 1.2rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  flex-shrink: 0;
-  opacity: 0.6;
-  transition: opacity 0.15s;
-}
-.skx-cite-box__copy:hover {
-  opacity: 1;
-}
-.skx-cite-box__copy img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-cite-box__text {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  margin: 0;
-}
-/* [E] 출처 인용 모달 */
+/* [E] 논문검색결과 상세 페이지 */
 
 /* [S] 스트리밍 커서 */
 .skx-stream-cursor {
@@ -5651,30 +4129,6 @@ h4,
 .skx-toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
-}
-
-/* ── 논문 참고문헌 카드 클릭 ──────────── */
-.skx-pai-ref--clickable {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.skx-pai-ref--clickable:hover {
-  background: var(--skx-glass-teal);
-  border-radius: 8px;
-}
-.skx-pai-ref__chevron {
-  width: 14px;
-  flex-shrink: 0;
-  opacity: 0.35;
-  transform: rotate(-90deg);
-  margin-left: auto;
-}
-
-/* ── 연관도 이원화 태그 ────────────────── */
-.skx-tag--score-content {
-  background: var(--skx-success-bg);
-  color: var(--skx-success);
-  border-color: var(--skx-success);
 }
 
 /* ── 논문 AI 참고 카드 아이콘 버튼 ───── */
@@ -5970,17 +4424,6 @@ h4,
 }
 
 /* ── AI 생성 표지 코멘트 ──────────────── */
-.skx-cover-ai-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  margin: 0.5rem 0 0;
-  font-size: 0.58rem;
-  color: var(--skx-gray-2);
-  line-height: 1.5;
-  text-align: center;
-}
 
 /* ── AI 답변 인용 논문 배지 ───────────── */
 .skx-ptag--ai-cited {
@@ -5993,16 +4436,4 @@ h4,
 }
 
 /* ── 도서 상세 표지 컬럼 (표지 + AI 코멘트) ── */
-.skx-book-card__thumb-col {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  width: 8rem;
-}
-.skx-book-card__thumb-col .skx-book-card__thumb {
-  width: 100%;
-  align-self: auto;
-}
-.skx-book-card__thumb-col .skx-cover-ai-note {
-  width: 100%;
-}
+

@@ -120,7 +120,8 @@ describe("하드코딩 색 회귀 가드", () => {
   // :root·.skx-reading·.skx-holo 블록 밖에 색 리터럴(#hex·rgb()·rgba()·hsl()·색 이름·currentColor)이 다시 늘지 않게 센다.
   // 새 색은 --skx-* 토큰으로 쓰고, 정말 고정이어야 하면 이 숫자를 올리며 이유를 남긴다.
   // 의도적 잔존: 그림자·모달 막(scrim)·광택/글로우 하이라이트·/recommend 파스텔 카드·색조 틴트·색조 틴트.
-  const MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS = 60;
+  // 상세·옛 추천 화면만 쓰던 죽은 클래스를 지워 56 → 50 으로 줄었다(round08) — 줄어든 값으로 고정한다.
+  const MAX_LITERALS_OUTSIDE_TOKEN_BLOCKS = 50;
 
   const rawCss = readFileSync(cssPath, "utf-8");
   const outside = rawCss

@@ -72,7 +72,7 @@ describe("뿌연 유리 — 성능(backdrop-filter 개수 제한)", () => {
 
   it("목록 카드·결과 카드·AI 패널에는 흐림을 걸지 않는다", () => {
     const joined = blurredSelectors().join(" | ");
-    for (const banned of [".skx-book-card", ".skx-rc", ".skx-result-card", ".skx-rframe", ".skx-aip", ".skx-pick", ".skx-pai"]) {
+    for (const banned of [".skx-rc", ".skx-result-card", ".skx-rframe", ".skx-aip", ".skx-pick", ".skx-pai"]) {
       expect(joined, banned).not.toContain(banned);
     }
   });
