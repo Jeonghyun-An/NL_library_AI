@@ -84,7 +84,13 @@
             </div>
             <div class="skx-pai__grid">
               <!-- 좌측: 요약 텍스트 -->
-              <div class="skx-pai-main" :class="aiExpanded && 'is-expanded'">
+              <ClampedPanel
+                v-model:expanded="aiExpanded"
+                class="skx-pai-main"
+                :collapsed-rem="22.6"
+                more-label="전체보기"
+                scroll-anchor=".skx-pai"
+              >
                 <div class="skx-pai-main__scroll">
                   <template v-if="aiLoading && !aiText">
                     <div class="skx-pai-section">
@@ -102,22 +108,7 @@
                     </p>
                   </div>
                 </div>
-                <div class="skx-pai-main__foot">
-                  <button
-                    type="button"
-                    class="skx-pai-main__expand"
-                    :aria-expanded="aiExpanded"
-                    @click="aiExpanded = !aiExpanded"
-                  >
-                    <span>{{ aiExpanded ? "접기" : "전체보기" }}</span>
-                    <img
-                      src="/img/ico-arrow-down.svg"
-                      alt=""
-                      aria-hidden="true"
-                    />
-                  </button>
-                </div>
-              </div>
+              </ClampedPanel>
               <!-- 우측: 참고 논문 목록 -->
               <div class="skx-pai-refs">
                 <div class="skx-pai-refs__scroll">

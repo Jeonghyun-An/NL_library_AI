@@ -281,50 +281,58 @@
               </p>
             </header>
             <div v-if="topRecommended" class="skx-pick">
-              <div class="skx-pick__main">
-                <section
-                  class="skx-pick__block"
-                  aria-labelledby="skx-pick-why"
-                  :aria-busy="reasonPending"
-                >
-                  <h3 id="skx-pick-why" class="skx-pick__heading">
-                    <span class="skx-ai-dot" aria-hidden="true"></span>
-                    왜 이 책인가
-                  </h3>
-                  <p v-if="reasonText" class="skx-pick__text">
-                    {{ reasonText
-                    }}<span
-                      v-if="reasonPending"
-                      class="skx-ai-answer__cursor"
-                      aria-hidden="true"
-                    ></span>
-                  </p>
-                  <p
-                    v-else-if="reasonPending"
-                    class="skx-pick__text skx-pick__text--muted"
-                    role="status"
+              <!-- 왼쪽 글은 일정 높이(16rem)까지만 보이고 넘치면 아래가 흐려지며 [더보기]/[접기] — 스트리밍 중에도 같다 -->
+              <ClampedPanel
+                v-model:expanded="aiExpanded"
+                class="skx-pick__main"
+                :collapsed-rem="16"
+                scroll-anchor=".skx-ai-section"
+              >
+                <div class="skx-pick__body">
+                  <section
+                    class="skx-pick__block"
+                    aria-labelledby="skx-pick-why"
+                    :aria-busy="reasonPending"
                   >
-                    AI 사서가 추천 이유를 정리하고 있어요…
-                  </p>
-                  <p
-                    v-else-if="reasonStatus === 'error'"
-                    class="skx-pick__text skx-pick__text--muted"
-                    role="status"
+                    <h3 id="skx-pick-why" class="skx-pick__heading">
+                      <span class="skx-ai-dot" aria-hidden="true"></span>
+                      왜 이 책인가
+                    </h3>
+                    <p v-if="reasonText" class="skx-pick__text">
+                      {{ reasonText
+                      }}<span
+                        v-if="reasonPending"
+                        class="skx-ai-answer__cursor"
+                        aria-hidden="true"
+                      ></span>
+                    </p>
+                    <p
+                      v-else-if="reasonPending"
+                      class="skx-pick__text skx-pick__text--muted"
+                      role="status"
+                    >
+                      AI 사서가 추천 이유를 정리하고 있어요…
+                    </p>
+                    <p
+                      v-else-if="reasonStatus === 'error'"
+                      class="skx-pick__text skx-pick__text--muted"
+                      role="status"
+                    >
+                      추천 이유를 불러오지 못했어요.
+                    </p>
+                  </section>
+                  <section
+                    v-if="topReadEffect"
+                    class="skx-pick__block"
+                    aria-labelledby="skx-pick-effect"
                   >
-                    추천 이유를 불러오지 못했어요.
-                  </p>
-                </section>
-                <section
-                  v-if="topReadEffect"
-                  class="skx-pick__block"
-                  aria-labelledby="skx-pick-effect"
-                >
-                  <h3 id="skx-pick-effect" class="skx-pick__heading">
-                    이 책에서 얻을 수 있는 것
-                  </h3>
-                  <p class="skx-pick__text">{{ topReadEffect }}</p>
-                </section>
-              </div>
+                    <h3 id="skx-pick-effect" class="skx-pick__heading">
+                      이 책에서 얻을 수 있는 것
+                    </h3>
+                    <p class="skx-pick__text">{{ topReadEffect }}</p>
+                  </section>
+                </div>
+              </ClampedPanel>
               <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
                 <span class="skx-pick__label">SKOVIX 추천 1권</span>
                 <article class="skx-pick__card" @click="openDetail(topBook)">
