@@ -205,7 +205,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 - `components/AppSidebar.vue` — N1 → N3 → N7(조건부). `pages/papers/index.vue` — N4 → N6. `composables/useResearchWorks.ts`·`utils/researchHome.ts` — N5 → N6(또는 N7).
 - 한 Task 만 고치는 파일: `types/research.ts`(L4), `utils/synthCard.ts`(D3), `SynthProgressCard.vue`(D4), `evidenceLedger.ts`·`EvidenceLedger.vue`·`work.css`·`evidenceLedger.test.ts`(L5), `ProgressPanel.vue`(L3), 기록 네 파일·두 테스트(N2), `restorePosition.ts`·`useRestorePosition.ts`·`restorePosition.test.ts`(D5), `pages/index.vue`(N1 — Task Z2 는 바꿀 것이 있을 때만), `SearchPlusMenu.vue`·`composables/useResearch.ts`·`ResearchHeader.vue`(N9 — 줄 번호가 da80f23 그대로).
 
-**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`). 실행 중 더한 것: D1 품질 검토 반영 +6(`restorePosition.test.ts` 의 `scrollHolder`·`boxScrollDelta` — Task D5 '알아 둘 것'), D3 품질 검토 반영 +3(`researchProgress.test.ts` 의 재시도 모양), D4 품질 검토 반영 +2(`researchProgress.test.ts` 의 research.css 문서 스크롤 여백 — Task D5 '알아 둘 것'), D6 품질 검토 반영 +4(`researchFollow.test.ts` 12 → 15 — 수식 키 조합 둘·재시도의 갈 곳, `planSlots.test.ts` 13 → 14 — 재시도 모양 — Task D6·L1 '알아 둘 것'), D6 품질 검토 반영 2 +5(`researchFollow.test.ts` 15 → 20 — 안쪽 스크롤 칸이 받는 입력·칸 끝에서 창으로 넘어가는 휠, `scrollsInner` 둘, `followKeyDirection` — Task D6·D7 '알아 둘 것'). 뒤 Task 의 'da80f23 기준' 절대값은 이 수만큼 크다 — 상대값으로 읽는다.
+**테스트 수 어림(Task 마다 실측으로 적는다):** 기준선 + D3 18 + D5 3 + L1 13 + D6 12 + L3 3 + L4 11 + L5 5 + N2 4 + N3 8 + N4 2 + N5 4 + N6 4 + N9 13 ≈ **+100**(D1·D2·D4·D7·D8·L2·L6·N1·N8 은 +0. N7 은 N5 를 잘랐을 때만이고 그때는 N5 의 +4 대신 +3 — N6 도 하지 않으므로 그 경우 합계 +100 − 4 − 4 + 3 = **+95**), 새 테스트 파일 7개(`researchProgress`·`planSlots`·`researchFollow`·`sidebarResearch`·`researchHome`·`addToWork`·`researchMode`). 실행 중 더한 것: D1 품질 검토 반영 +6(`restorePosition.test.ts` 의 `scrollHolder`·`boxScrollDelta` — Task D5 '알아 둘 것'), D3 품질 검토 반영 +3(`researchProgress.test.ts` 의 재시도 모양), D4 품질 검토 반영 +2(`researchProgress.test.ts` 의 research.css 문서 스크롤 여백 — Task D5 '알아 둘 것'), D6 품질 검토 반영 +4(`researchFollow.test.ts` 12 → 15 — 수식 키 조합 둘·재시도의 갈 곳, `planSlots.test.ts` 13 → 14 — 재시도 모양 — Task D6·L1 '알아 둘 것'), D6 품질 검토 반영 2 +5(`researchFollow.test.ts` 15 → 20 — 안쪽 스크롤 칸이 받는 입력·칸 끝에서 창으로 넘어가는 휠, `scrollsInner` 둘, `followKeyDirection` — Task D6·D7 '알아 둘 것'), D7 품질 검토 반영 파일 1·+6(새 `useSectionFollow.test.ts` — 알약을 누른 이동의 초점·따라가며 옮길 때는 초점을 두는 것·사이의 알약·사이에 누른 알약·알약이 없는 때·그려지지 않은 자리 — Task D7 '알아 둘 것'). 뒤 Task 의 'da80f23 기준' 절대값은 이 수만큼 크다 — 상대값으로 읽는다.
 
 ---
 
@@ -2428,13 +2428,13 @@ spec §12-3 '지금 진행하는 절 따라가기' 행의 연결 — 기본 켬,
 - **`useSectionFollow`(이 Task 의 Step 1).** 창에 `wheel`·`touchmove`·`keydown`·`pointerdown` 을 capture·passive 로 마운트 때 걸고 언마운트 때 푼다(`useRestorePosition.ts:73-79` 의 걸기·풀기와 같은 꼴 — 그쪽은 탭(`touchstart`)도 움직임으로 보지만 따라가기는 끄는 것(`touchmove`)만 본다. `touchstart` 는 터치 이동의 방향을 재려고 손가락 높이만 적고 멈추지 않는다 — 아래 '안쪽 스크롤 칸'). 입력은 `breaksFollow`(D6)로 가른다. 키의 `editable` 은 입력칸·메뉴·목록 상자·대화상자 안(`input, textarea, select, [contenteditable], [role='menu'], [role='listbox'], [role='dialog']`)에서 누른 키 — 그 안의 방향키·Space 는 페이지를 굴리지 않는다(인용 팝오버도 `role="dialog"`). 초점이 간 버튼(`button, [role='button'], summary` — 인용칩·현황 카드의 절) 위의 Space 도 `editable` 로 본다 — 버튼이 누름으로 받아 페이지를 굴리지 않는다(방향키는 버튼 위에서도 굴리므로 Space 만).
 - **모달이 페이지를 묶은 동안의 입력은 멈춤으로 보지 않는다.** 원문 뷰어(`PdfViewer.vue:153-158` `lockPage`)와 온보딩(`OnboardingModal.vue:47-51` `lock`)은 열린 동안 `documentElement` 의 `overflow` 를 숨겨 페이지를 묶는다 — 둘 다 `role="dialog" aria-modal="true"`(`PdfViewer.vue:5`·`OnboardingModal.vue:5`)이고 열린 동안만 DOM 에 있다. 원문 쪽(PDF)은 iframe(`PdfViewer.vue:33`) 안이라 그 위의 휠은 이 창에 오지 않지만, 뷰어 머리 줄과 어두운 바탕(`.pdf-overlay` — `aria-modal` 바깥 부모) 위의 휠·터치는 창의 capture 리스너에 닿는다. 그대로 두면 원문을 보는 동안 멈추고 닫은 뒤에도 꺼진 채 알약만 남아 정함 5('막힌 동안 바뀐 대상은 다음 바뀜에 옮긴다')가 원문 뷰어에서 지켜지지 않는다. 그래서 `onInput` 은 멈출 입력일 때 `document.querySelector("[aria-modal='true']")` 가 있으면 멈추지 않는다 — 대상 요소의 조상으로 보지 않고 문서에 있는지로 보는 까닭은 바탕(`.pdf-overlay`·`.wk-modal`)이 `aria-modal` 요소 바깥이라서다. 모달이 열린 동안 바뀐 대상은 막힘(원문 뷰어 `pdf`)으로 지나가고, 닫은 뒤 다음 바뀜에 옮긴다.
 - **안쪽 스크롤 칸이 받는 입력은 멈춤으로 보지 않는다(D6 품질 검토 반영 2 — `FollowInput.inner`).** 넓은 화면은 탐색 중에도 A 라 옆 칸(`.rs-body--A .rs-col-side` — sticky·`overflow-y: auto`)·그 안의 근거 장부 목록(`.wk-ledger__list`)·인용 팝오버의 인용문(`.rs-cite__quote` — 팝오버는 `aria-modal` 이 없어 `PAGE_LOCKERS` 로 걸러지지 않는다)이 페이지가 아니라 제 칸만 굴린다. 그래서 `inputOf` 가 휠·터치 이동·키마다 `innerOf(대상, 방향)` 으로 `inner` 를 채운다 — 입력 대상(자기 포함)에서 body 앞까지 조상의 `getComputedStyle(a).overflowY`·`scrollTop`·`scrollHeight`·`clientHeight` 를 모아 `scrollsInner`(D6)에 넘긴다(`useRestorePosition` 의 `holderOf` 가 조상 사슬을 모으는 것과 같은 꼴 — 그쪽은 맞출 요소의 부모부터, 이쪽은 휠을 받은 요소 자신부터). 방향은 휠 `Math.sign(deltaY)`, 키 `followKeyDirection(key, shiftKey)`, 터치는 `touchstart`·앞 `touchmove` 가 적어 둔 손가락 높이와의 차(손가락이 위로 가면 1 — 내용이 아래로 구른다)다. 그 방향으로 굴러갈 칸이 있으면 페이지는 그대로라 멈추지 않고, 칸 끝에 닿아 창으로 넘어가면(연쇄 스크롤) 멈춘다. 초점이 body 인 채 옆 칸을 눌러 두고 누른 키(브라우저는 누른 자리의 칸을 굴린다)는 대상이 body 라 페이지로 본다 — 멈추는 쪽이고 알약으로 다시 켠다. 한 손짓 안에서 칸 끝에 닿으면 브라우저는 그 칸에 묶어 두고(스크롤 latching) 창으로 넘기지 않는데 이쪽은 그때부터 멈춘다 — 이것도 멈추는 쪽이다. 따라가는 중에만 사슬을 잰다(멈춘 뒤의 입력은 `onInput` 첫 줄이 거른다).
-- **옮기기.** 대상이 바뀌면 `shouldFollowMove`(따라가는 중·막히지 않음·바뀜) → `nextTick`(대상 자리가 DOM 에 붙은 뒤) → `requestAnimationFrame`(배치가 끝난 다음 프레임) → 그 순간 다시 따라가는 중인지·막혔는지 보고 `getElementById(t).scrollIntoView({ behavior: followBehavior(prefers-reduced-motion), block: "start" })`. 막힌 동안 바뀐 대상은 지나간 것으로 두고 다음 바뀜에 옮긴다(정함 5). 알약(`resume`)은 다시 켜며 지금 대상으로 곧바로 옮긴다 — 사용자가 누른 이동이라 막힘을 보지 않는다.
+- **옮기기.** 대상이 바뀌면 `shouldFollowMove`(따라가는 중·막히지 않음·바뀜) → `nextTick`(대상 자리가 DOM 에 붙은 뒤) → `requestAnimationFrame`(배치가 끝난 다음 프레임) → 그 순간 다시 따라가는 중인지·막혔는지 보고 `getElementById(t).scrollIntoView({ behavior: followBehavior(prefers-reduced-motion), block: "start" })`. 막힌 동안 바뀐 대상은 지나간 것으로 두고 다음 바뀜에 옮긴다(정함 5). 알약(`resume`)은 다시 켜며 지금 대상으로 곧바로 옮긴다 — 사용자가 누른 이동이라 막힘을 보지 않는다. **알약을 누른 이동은 초점도 그 자리로 옮긴다(D7 품질 검토 반영)** — `scrollIntoView` 다음에 `force` 일 때만 `el.focus({ preventScroll: true })`(자리 `rs-sec-N`·`rs-slot-N` 은 둘 다 `tabindex=-1`, `jumpToSection` 과 같은 꼴). 누른 알약은 따라가기가 켜지며 `v-if` 로 지워져 초점이 body 로 떨어지고, 알약이 `.rs-page` 의 마지막 자식이라 다음 Tab 은 꼬리말 쪽·Shift+Tab 은 옆 칸 끝으로 가서 옮겨 간 절의 인용칩까지 Tab 으로 처음부터 내려가야 했다. 따라가며 옮길 때(대상이 바뀜)는 읽거나 고르던 초점을 빼앗지 않게 초점을 두지 않는다. 그 순간 자리가 그려지지 않았으면(`getElementById` 가 null) 조용히 넘어간다.
 - **처음 본 대상은 기준으로만 삼는다**(파트 D 끝 '파트 메모' 4) — 연구 화면을 연 순간(새로고침·사이드바로 들어옴)의 대상으로 곧바로 끌고 내려가지 않고, 다음 바뀜(다음 절·다음 하위질문)부터 옮긴다. 대상은 `view` 를 받은 뒤 처음 생기므로 서버 렌더에서는 늘 null 이고, 첫 감시 호출은 막힘(`document`)을 보지 않는다.
 - **멈춘 채 시작(정함 6)** — 상세에서 돌아온 화면(`restore.anchor !== null`)은 사용자가 고른 자리를 다음 절이 시작될 때 빼앗지 않게 멈춘 채 시작하고 알약만 띄운다. 현황 카드의 절을 눌러 옮기면(`jumpToSection`) 따라가기를 멈춘다 — 고른 절을 읽는 동안 끌고 가지 않는다.
 - **막힘(정함 5)은 옮기려는 순간에 본다** — `restore.pending`(돌아온 자리를 맞추는 중)·`pdf`(원문 뷰어 — `usePdfOpener`, da80f23 :513-514)·`document.querySelector(".rs-page .rs-cite__pop")`(열린 인용 팝오버 — `CitationChip.vue` 는 고치지 않는다). 그래서 따라가기 절은 `pdf` 를 정의하는 '원문 보기' 절 뒤, 앵커 `// ── 내려받기(Word·PDF) ──…`(da80f23 :521) 바로 위에 둔다. `jumpToSection`(:364)은 그보다 위에 있지만 누를 때만 도는 함수라 뒤에서 만든 `follow` 를 읽어도 된다.
-- **알약**은 `rs-body` 를 닫는 `</div>` 바로 뒤 — `.rs-page`(세로 flex)의 마지막 자식이라 `position: sticky; bottom: 1rem` 으로 화면 아래 가운데에 붙는다(`work.css:613-622` `.wk-pill` 패턴 — `work.css` 는 06e 파일이라 고치지 않고 `research.css` 의 `.rs-follow-pill` 로 옮겨 쓴다). `rs-btn` 이라 인쇄 숨김(`.rs-page .rs-btn`)이 이미 덮는다. 단계 화면(stepMode)에서는 대상이 늘 null(완료 잡)이라 서지 않는다.
+- **알약**은 `rs-body` 를 닫는 `</div>` 바로 뒤 — `.rs-page`(세로 flex)의 마지막 자식이라 `position: sticky; bottom: 1rem` 으로 화면 아래 가운데에 붙는다(`work.css:613-622` `.wk-pill` 패턴 — `work.css` 는 06e 파일이라 고치지 않고 `research.css` 의 `.rs-follow-pill` 로 옮겨 쓴다). `rs-btn` 이라 인쇄 숨김(`.rs-page .rs-btn`)이 이미 덮는다. 단계 화면(stepMode)에서는 대상이 늘 null(완료 잡)이라 서지 않는다. **알약이 갈 곳은 지금 대상, 절과 절 사이(하위질문과 하위질문 사이 — `runningIdx`·도는 하위질문이 잠깐 없음)면 마지막으로 진행한 자리다(D7 품질 검토 반영 — `destination = target ?? last`, `last` 는 반응형).** 대상만 보면 멈춘 동안 사이마다 알약이 사라졌다 다시 서고, 그 알약에 Tab 으로 가 있던 초점이 body 로 떨어진다. 사이에 누르면 마지막으로 진행한 자리로 옮기고(초점 포함) 다음 바뀜에 다음 자리로 따라간다. 진행한 자리가 한 번도 없었거나 진행 단계(작성·탐색)가 아니면(최종본 뒤) 알약은 서지 않는다(`followPill` 그대로). 남는 틈: 첫 절이 끝나 초안이 절 자리(ReportSkeleton)를 대신한 직후의 사이에는 마지막 자리(`rs-slot-k`)가 DOM 에 없어 누르면 따라가기만 켜고 옮기지 않는다(다음 절이 시작되면 옮긴다).
 - 글이 나타나는 방식은 바꾸지 않는다 — 절은 지금처럼 끝나면 나타난다(`rs-reveal`, 타자 효과 없음).
-- 테스트는 없다(+0) — 판단은 Task D6 가 본다. 움직임(따라감·멈춤·알약·팝오버 동안 멈춤·즉시 이동)은 마무리 운영 확인(Task Z6 Step 2·3)에서 본다 — 막힘 항목(Step 3 항목 4)에 '원문 뷰어를 열어 머리 줄·어두운 바탕 위에서 휠을 굴려도 닫은 뒤 알약 없이 다음 절에서 따라간다'가, 따라가기 항목(Step 2 항목 5)에 '첫 하위질문에서는 옮기지 않고 다음 하위질문부터'(처음 본 대상은 기준)와 '옆 칸의 타임라인·장부를 굴려 읽는 동안은 멈추지 않는다'가, 막힘 항목에 '팝오버의 긴 인용문을 휠로 읽고 닫아도 다음 절에서 따라간다'(안쪽 스크롤 칸 — D6 품질 검토 반영 2)가 있다.
+- 테스트는 처음 계획에서 없었다(+0) — 판단은 Task D6 가 본다. D7 품질 검토 반영이 `tests/unit/useSectionFollow.test.ts`(파일 1·+6)를 더한다 — 컴포넌트 밖에서 composable 을 부르고(창 리스너는 `getCurrentInstance()` 가 있을 때만 건다 — `useResearchWork` 와 같은 꼴) `document.getElementById`·`window.matchMedia`·`requestAnimationFrame` 을 `vi.stubGlobal` 로 흉내 내 알약을 누른 이동의 초점·따라가며 옮길 때는 초점을 두는 것·사이의 알약·사이에 누른 알약을 본다(진짜 DOM 은 쓰지 않는다 — node 환경). 그 밖의 움직임(따라감·멈춤·알약·팝오버 동안 멈춤·즉시 이동)은 마무리 운영 확인(Task Z6 Step 2·3)에서 본다 — 막힘 항목(Step 3 항목 4)에 '원문 뷰어를 열어 머리 줄·어두운 바탕 위에서 휠을 굴려도 닫은 뒤 알약 없이 다음 절에서 따라간다'가, 따라가기 항목(Step 2 항목 5)에 '첫 하위질문에서는 옮기지 않고 다음 하위질문부터'(처음 본 대상은 기준)와 '옆 칸의 타임라인·장부를 굴려 읽는 동안은 멈추지 않는다'가, 막힘 항목에 '팝오버의 긴 인용문을 휠로 읽고 닫아도 다음 절에서 따라간다'(안쪽 스크롤 칸 — D6 품질 검토 반영 2)가 있다.
 
 **Files:**
 - Create: `frontend/composables/useSectionFollow.ts`
@@ -2454,7 +2454,17 @@ Expected: `1`·`1` 이상·`1`·`1`·`1`·`1` 여섯 줄(하나라도 0 이면 T
 
 ```ts
 // frontend/composables/useSectionFollow.ts
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from "vue";
+import {
+  computed,
+  getCurrentInstance,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type ComputedRef,
+  type Ref,
+} from "vue";
 import type { ResearchPhase } from "~/utils/researchEvents";
 import {
   breaksFollow,
@@ -2480,7 +2490,7 @@ const PAGE_LOCKERS = "[aria-modal='true']";
 export interface SectionFollow {
   following: Readonly<Ref<boolean>>;
   pill: ComputedRef<string | null>;
-  // 알약 — 다시 따라가며 지금 대상으로 곧바로 옮긴다
+  // 알약 — 다시 따라가며 지금 대상(사이면 마지막으로 진행한 자리)으로 곧바로 옮기고 초점도 그 자리로 옮긴다
   resume(): void;
   // 현황 카드에서 절을 눌러 옮길 때
   pause(): void;
@@ -2535,7 +2545,8 @@ function inputOf(e: Event, touchDir: number): FollowInput | null {
 
 /**
  * 지금 진행하는 절을 스크롤이 따라가게 한다(spec D22). 대상(자리 id)이 바뀌면 그 자리로 옮기고, 사용자가 직접 굴리면 멈춘다 —
- * 멈춘 동안은 알약 글(pill)을 내고, 알약을 누르면(resume) 다시 따라가며 지금 대상으로 곧바로 옮긴다.
+ * 멈춘 동안은 알약 글(pill)을 내고, 알약을 누르면(resume) 다시 따라가며 지금 대상으로 곧바로 옮기고 초점도 그 자리로 옮긴다.
+ * 절과 절 사이(하위질문과 하위질문 사이)처럼 대상이 잠깐 없는 동안에도 알약은 마지막으로 진행한 자리를 가리키며 남는다.
  * 처음 본 대상은 기준으로만 삼는다 — 들어온 화면을 곧바로 끌고 내려가지 않고 다음 바뀜부터 옮긴다. 막힌 동안(isBlocked) 바뀐
  * 대상은 지나간 것으로 두고 다음 바뀜에 옮긴다. 모달이 페이지를 묶은 동안의 입력은 멈춤으로 보지 않는다 — 원문 뷰어를 닫으면
  * 따라가던 대로 다음 바뀜에 옮긴다. 안쪽 스크롤 칸(옆 칸·근거 장부·인용문)이 받는 입력도 페이지를 굴리지 않아 멈춤이 아니다
@@ -2549,9 +2560,12 @@ export function useSectionFollow(opts: {
   startPaused: boolean;
 }): SectionFollow {
   const following = ref(!opts.startPaused);
-  const pill = computed(() => followPill({ phase: opts.phase.value, following: following.value, target: opts.target.value }));
-  // 마지막으로 옮겨 간(또는 지나간) 대상
-  let last: string | null = null;
+  // 마지막으로 옮겨 간(또는 지나간) 대상 — 사이에 알약이 갈 곳이기도 해 반응형으로 둔다
+  const last = ref<string | null>(null);
+  // 알약이 갈 곳 — 지금 대상, 절과 절 사이(하위질문과 하위질문 사이 — 쓰는·도는 것이 잠깐 없음)면 마지막으로 진행한 자리.
+  // 대상만 보면 멈춘 동안 사이마다 알약이 사라졌다 다시 서고, 그 알약에 Tab 으로 가 있던 초점이 body 로 떨어진다
+  const destination = computed(() => opts.target.value ?? last.value);
+  const pill = computed(() => followPill({ phase: opts.phase.value, following: following.value, target: destination.value }));
   let primed = false;
   let frame = 0;
   // 터치 이동의 방향을 재는 손가락의 앞 높이 — touchstart 는 높이만 적고 따라가기를 멈추지 않는다(탭은 굴림이 아니다)
@@ -2588,16 +2602,23 @@ export function useSectionFollow(opts: {
       frame = requestAnimationFrame(() => {
         frame = 0;
         if (!following.value || (!force && opts.isBlocked())) return;
+        const el = document.getElementById(id);
+        if (!el) return;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        document.getElementById(id)?.scrollIntoView({ behavior: followBehavior(reduce), block: "start" });
+        el.scrollIntoView({ behavior: followBehavior(reduce), block: "start" });
+        // 알약을 누른 이동은 초점도 그 자리로 옮긴다(자리 rs-sec-N·rs-slot-N 은 tabindex=-1, jumpToSection 과 같은 꼴). 누른 알약은
+        // 따라가기가 켜지며 사라져 초점이 body 로 떨어지고, 다음 Tab 이 옮겨 간 절이 아니라 알약이 있던 자리(.rs-page 끝)에서
+        // 이어진다. 따라가며 옮길 때는 읽거나 고르던 초점을 빼앗지 않는다
+        if (force) el.focus({ preventScroll: true });
       });
     });
   }
 
   function resume(): void {
     following.value = true;
-    const t = opts.target.value;
-    last = t;
+    // 사이(대상이 잠깐 없음)에 누르면 마지막으로 진행한 자리로 간다 — 다음 바뀜(다음 절·하위질문)에 그리로 다시 옮긴다
+    const t = destination.value;
+    last.value = t;
     if (t !== null) move(t, true);
   }
 
@@ -2610,28 +2631,31 @@ export function useSectionFollow(opts: {
     (t) => {
       if (!primed) {
         primed = t !== null;
-        last = t;
+        last.value = t;
         return;
       }
-      if (t !== null && shouldFollowMove({ following: following.value, blocked: opts.isBlocked(), target: t, last })) {
+      if (t !== null && shouldFollowMove({ following: following.value, blocked: opts.isBlocked(), target: t, last: last.value })) {
         move(t, false);
       }
-      if (t !== null) last = t;
+      if (t !== null) last.value = t;
     },
     { immediate: true },
   );
 
-  onMounted(() => {
-    for (const type of USER_INPUTS) window.addEventListener(type, onInput, { capture: true, passive: true });
-    window.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
-  });
+  // 컴포넌트 밖(단위 테스트)에서는 창 리스너를 걸지 않는다 — useResearchWork 와 같은 꼴
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      for (const type of USER_INPUTS) window.addEventListener(type, onInput, { capture: true, passive: true });
+      window.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
+    });
 
-  onBeforeUnmount(() => {
-    for (const type of USER_INPUTS) window.removeEventListener(type, onInput, true);
-    window.removeEventListener("touchstart", onTouchStart, true);
-    if (frame) cancelAnimationFrame(frame);
-    frame = 0;
-  });
+    onBeforeUnmount(() => {
+      for (const type of USER_INPUTS) window.removeEventListener(type, onInput, true);
+      window.removeEventListener("touchstart", onTouchStart, true);
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    });
+  }
 
   return { following, pill, resume, pause };
 }
@@ -2978,7 +3002,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06d && git add frontend
 1. **`activeRoundKey` 의 회차 수 칸(Task D3).** 뼈대 §3-3 은 `${idx}:${rounds.length}:${마지막 회차 verdict ?? "open"}` 이다. 이 파트는 `Math.max(1, rounds.length)` 를 쓴다 — 하위질문이 막 돌기 시작한 때(회차 없음 → 뼈대 열쇠 `k:0:open`)와 첫 검색 이벤트가 온 때(1회차·판정 없음 → `k:1:open`)는 같은 열린 회차인데, 뼈대 글자대로면 열쇠가 바뀌어 `roundSeenAt` 이 다시 잡히고 그때까지 쌓인 다가감이 0 으로 돌아가 막대가 뒤로 간다. 함수 이름·시그니처·'회차가 늘거나 판정이 날 때만 바뀐다'는 뜻은 그대로다(테스트 `searched === started` 가 고정).
 2. **`progressInset` 은 막대의 높이를 쓴다(Task D5).** 뼈대 §4 D5 는 `.rs-pbar` 의 `getBoundingClientRect().bottom` 이다. 돌아온 화면은 맞추기 전에 맨 위로 올라가 있어(`useRestorePosition.ts:200`) 그 순간 막대는 머리 아래 제자리에 있고, `bottom` 은 머리 높이까지 더한 값이라 돌아온 칩이 막대 아래로 머리 높이만큼 더 내려간다. 맞춘 뒤에는 막대가 화면 맨 위(top 0)에 붙어 가리는 것은 막대 높이뿐이므로 `getBoundingClientRect().height` 를 넘긴다. `insetTargetTop` 의 이름·시그니처·뜻('inset 은 막대가 가리는 높이')은 그대로다. 선택자는 `.rs-page .rs-pbar` 로 좁혔다.
 3. **`jumpToSection` 의 `follow.pause()` 자리(Task D7).** 뼈대는 '첫 줄'이다. 이 파트는 `if (!el) return;` 뒤에 둔다 — 옮길 절이 DOM 에 없어 아무 데도 가지 않은 누름이 따라가기만 끄고 알약을 띄우지 않게.
-4. **`useSectionFollow` 는 처음 본 대상을 기준으로만 삼는다(Task D7 — 뼈대에 없는 규칙).** 연구 화면을 연 순간(새로고침·사이드바로 들어옴)의 대상으로 곧바로 끌고 내려가지 않고 다음 바뀜부터 옮긴다 — 첫 감시 호출(서버 렌더 포함)이 `document` 를 보지 않는 효과도 있다. 알약(`resume`)으로 다시 켠 이동은 사용자가 누른 것이라 막힘(`isBlocked`)을 보지 않는다. 공개 모양(`SectionFollow`·`useSectionFollow(opts)`)은 뼈대 그대로다.
+4. **`useSectionFollow` 는 처음 본 대상을 기준으로만 삼는다(Task D7 — 뼈대에 없는 규칙).** 연구 화면을 연 순간(새로고침·사이드바로 들어옴)의 대상으로 곧바로 끌고 내려가지 않고 다음 바뀜부터 옮긴다 — 첫 감시 호출(서버 렌더 포함)이 `document` 를 보지 않는 효과도 있다. 알약(`resume`)으로 다시 켠 이동은 사용자가 누른 것이라 막힘(`isBlocked`)을 보지 않고, 초점도 그 자리로 옮긴다(D7 품질 검토 반영). 멈춘 동안 사이(대상이 잠깐 null)에도 알약은 마지막으로 진행한 자리를 가리키며 남는다. 공개 모양(`SectionFollow`·`useSectionFollow(opts)`)은 뼈대 그대로다.
 5. **키 입력의 `editable` 범위(Task D7).** 뼈대 `FollowInput` 의 `editable` 을 '입력칸'보다 넓게 — `input, textarea, select, [contenteditable], [role='menu'], [role='listbox'], [role='dialog']` 안에서 누른 키로 본다(그 안의 방향키·Space 는 페이지를 굴리지 않는다 — 인용 팝오버·다운로드 메뉴·온보딩 모달). 초점이 간 버튼(`button, [role='button'], summary`) 위의 Space 도 `editable` 로 본다. 또 모달(`[aria-modal='true']` — 원문 뷰어·온보딩)이 문서에 있는 동안의 입력은 휠·터치까지 멈춤으로 보지 않는다 — 모달 안의 휠·터치와 버튼 위 Space 는 페이지를 굴리지 않는다. `breaksFollow` 의 규칙·테스트는 뼈대 그대로다(거르는 것은 composable 의 `onInput`·`inputOf`).
 6. **`useRestorePosition` 의 import 에서 `targetTop` 을 뺀다(Task D5).** 뼈대 §4 D5 는 `insetTargetTop` 을 더한다고만 적었다. `:150` 을 바꾸면 `targetTop` 을 부르는 곳이 남지 않아(안에서 `insetTargetTop` 이 부른다) 쓰지 않는 import 를 걷는다.
 7. **Task D4 는 커밋 하나다**(뼈대 '1~2'). CSS 옮김과 부품·연결이 서로 없으면 화면이 깨지는(막대 없이 카드 막대만 사라지거나, 막대가 두 개 서는) 한 덩어리라 나누지 않았다. 부품의 채움 폭은 템플릿 식 대신 `width` computed(같은 값 — `Math.round(fraction × 1000) / 10`)로 둔다.
@@ -9194,10 +9218,10 @@ round06d(딥리서치 진행 화면·입구 — nuxt 만) 브랜치의 한 영�
 
 ```text
 [A 2단·큰 진행 막대·오프셋·스타일] diff: C:/Users/LANDSOFT/round06d-eval/review/a-layout-bar.diff. 파일: frontend/utils/researchLayout.ts, researchProgress.ts, synthCard.ts, components/research/ResearchProgressBar.vue, SynthProgressCard.vue, ResearchHeader.vue, utils/restorePosition.ts, composables/useRestorePosition.ts, pages/research/[id].vue(배치·barView·roundKey·useNow·progressInset), assets/css/research.css(토큰·.rs-pbar*·옛 .rs-synth__bar 지움·문서 scroll-padding-top·옆 칸 top·머리·옆 칸 카드 머리·인쇄). 특히: 넓은 화면은 처음부터 A 이고 override 를 푸는 watch·localStorage 기억이 없는지(2e3d87a 를 revert 하지 않고 앞으로 고쳤는지), progressBarView 의 글줄이 계획의 표(planning·awaiting·queued·exploring·synthesizing)와 글자 그대로인지, 퍼센트가 두 구간 가중(111:91)으로 작성 시작 때 뒤로 가지 않고 RUNNING_CAP 0.9 를 넘지 않는지, 막대가 completed·failed·canceled·stepMode 에서 서지 않는지(WorkStepper 와도, 06e 보고서 단계 화면의 자기 막대 .wk-rbar — 10-11 사용자 확인·06e 계획 정함 28 — 와도 한 화면에 함께 서지 않음. 06d 가 .wk-rbar·--wk-bar-thick·reportBar 를 만들거나 고치지 않았고, Q1 치수 값 1rem·0.75rem·1rem·1.25rem 이 --rs-bar-thick 쪽에 그대로인지), 막대 높이 하나(:root 의 --rs-bar-area-h → .rs-page 의 --rs-bar-h)를 옆 칸 top·문서 scroll-padding-top(html:has(.rs-page.has-progressbar) — 키보드 초점 이동이 막대 뒤에 가린 요소로 가지 않게, WCAG 2.2 2.4.11)·위치 복원 inset 이 함께 읽고, 막대 높이가 .rs-section scroll-margin-top(1.2rem 그대로)에 두 번 더해지지 않았는지, useNow 가 exploring 에도 켜지는지, 인쇄에서 .rs-pbar 가 숨는지, 현황 카드에 작은 막대가 남지 않고 절 목록·[초안 저장]은 그대로인지, 공용 .rs-card__title 규칙은 그대로이고 옆 칸만 .rs-col-side .rs-card__title 로 바꿨는지.
-[B 따라가기] diff: C:/Users/LANDSOFT/round06d-eval/review/b-follow.diff. 파일: frontend/utils/researchFollow.ts, composables/useSectionFollow.ts, pages/research/[id].vue(followTargetId·follow·jumpToSection·알약), assets/css/research.css(.rs-follow-pill). 특히: 멈추는 것이 사용자 입력뿐인지(세로 휠·touchmove·FOLLOW_KEYS 입력칸 밖 — 수식 키 조합은 굴리는 Ctrl+Home/End·Cmd+↑/↓·Option+↑/↓ 만·스크롤바 pointerdown — scroll 이벤트로 가르지 않음, 정함 4), 가로 휠·Ctrl+휠·입력칸 안 키·굴리지 않는 수식 키 조합(Ctrl+PageUp/PageDown·Alt+Home·Ctrl/Cmd+Space)은 멈추지 않는지, 안쪽 스크롤 칸(A 의 옆 칸·근거 장부 목록·인용문)이 받는 휠·터치 이동·키는 멈추지 않고 칸 끝에서 창으로 넘어가면 멈추는지(innerOf 의 조상 사슬·방향 — 휠 deltaY·키 followKeyDirection·터치 앞 높이, touchstart 는 적기만 하고 언마운트 때 푸는지 — D6 품질 검토 반영 2), 막힘(restore.pending·pdf·.rs-page .rs-cite__pop)이면 옮기지 않고 다음 바뀜에 옮기는지(정함 5), 상세에서 돌아온 화면은 멈춘 채 시작하는지(정함 6), 대상이 바뀔 때만 옮기는지(같은 대상으로 되풀이 스크롤 없음), reduced-motion 이면 behavior auto 인지, 창 리스너를 언마운트 때 모두 푸는지(passive·capture 옵션이 걸 때와 풀 때 같은지), nextTick·requestAnimationFrame 뒤 getElementById 가 null 이면 조용히 넘어가는지, 알약 문구(작성 '↓ 지금 쓰는 곳으로'·탐색 '↓ 지금 찾는 곳으로')와 누르면 곧바로 옮기는지, work.css 의 .wk-pill 을 고치지 않았는지.
+[B 따라가기] diff: C:/Users/LANDSOFT/round06d-eval/review/b-follow.diff. 파일: frontend/utils/researchFollow.ts, composables/useSectionFollow.ts, pages/research/[id].vue(followTargetId·follow·jumpToSection·알약), assets/css/research.css(.rs-follow-pill). 특히: 멈추는 것이 사용자 입력뿐인지(세로 휠·touchmove·FOLLOW_KEYS 입력칸 밖 — 수식 키 조합은 굴리는 Ctrl+Home/End·Cmd+↑/↓·Option+↑/↓ 만·스크롤바 pointerdown — scroll 이벤트로 가르지 않음, 정함 4), 가로 휠·Ctrl+휠·입력칸 안 키·굴리지 않는 수식 키 조합(Ctrl+PageUp/PageDown·Alt+Home·Ctrl/Cmd+Space)은 멈추지 않는지, 안쪽 스크롤 칸(A 의 옆 칸·근거 장부 목록·인용문)이 받는 휠·터치 이동·키는 멈추지 않고 칸 끝에서 창으로 넘어가면 멈추는지(innerOf 의 조상 사슬·방향 — 휠 deltaY·키 followKeyDirection·터치 앞 높이, touchstart 는 적기만 하고 언마운트 때 푸는지 — D6 품질 검토 반영 2), 막힘(restore.pending·pdf·.rs-page .rs-cite__pop)이면 옮기지 않고 다음 바뀜에 옮기는지(정함 5), 상세에서 돌아온 화면은 멈춘 채 시작하는지(정함 6), 대상이 바뀔 때만 옮기는지(같은 대상으로 되풀이 스크롤 없음), reduced-motion 이면 behavior auto 인지, 창 리스너를 언마운트 때 모두 푸는지(passive·capture 옵션이 걸 때와 풀 때 같은지), nextTick·requestAnimationFrame 뒤 getElementById 가 null 이면 조용히 넘어가는지, 알약 문구(작성 '↓ 지금 쓰는 곳으로'·탐색 '↓ 지금 찾는 곳으로')와 누르면 곧바로 옮기는지, 알약을 누른 이동만 초점을 그 자리로 옮기고(따라가며 옮길 때는 두지 않음) 멈춘 동안 사이(대상이 잠깐 null)에도 알약이 마지막으로 진행한 자리를 가리키며 남는지(D7 품질 검토 반영), work.css 의 .wk-pill 을 고치지 않았는지.
 [C 탐색 중 움직임] diff: C:/Users/LANDSOFT/round06d-eval/review/c-explore.diff. 파일: frontend/utils/planSlots.ts, components/research/ReportSkeleton.vue, utils/researchEvents.ts(roundStatusLabel·applyCandidates·applyCritique·applySnapshot·buildSubq), types/research.ts, components/research/ProgressPanel.vue, utils/evidenceLedger.ts, components/work/EvidenceLedger.vue, assets/css/work.css(근거 장부 블록), pages/research/[id].vue(planSlotList·slotsShown·ReportSkeleton 분기·탐색 중 PlanCard 지움·옆 칸 순서·questionUsed). 특히: 절 자리의 key·id 가 하위질문 번호이고 절 번호 대응이 synth 이벤트의 subq_idx 를 먼저, 없으면 headings 와 하위질문 글을 NFC·공백 정리 뒤 맞추는지, '종합 시작'과 '대응을 앎'을 나눠 근거를 모은 자리(adopted > 0)는 접지 않는지, draftReport·draftSlots 를 건드리지 않는지, ReportSkeleton 이 completed 의 보고서·실패·로딩 분기와 겹치지 않는지, candidates 리듀서가 subq_idx 로 하위질문을 찾고 빈 papers 는 reviewing 키를 지우되 모르는 번호·reviewing 없는 하위질문이면 같은 view 를 돌려주는지(유령 하위질문 없음), critique·snapshot·판정이 실린 step 과 잡 종료(done·failed·canceled 이벤트, 끝난 잡으로 다시 맞추는 refreshView)가 reviewing 을 지우는지, reviewing 키를 값이 있을 때만 싣는지, 장부의 검토 중이 채택 더미와 겹치지 않고 뺌 더미에 두지 않는지, 알림이 announceSeq 방식으로 한 번만 나는지, wk-review 가 reduced-motion 에서 멈추는지, 장부가 옆 칸 맨 위인지, "이렇게 이해했어요" 가 06c 의 questionUsedFromSteps·understoodLine 을 쓰고 같은 이름을 06d 가 따로 만들지 않았는지(접두를 템플릿에 다시 쓰지 않음), roundStatusLabel 이 subqStatusLabel 을 바꾸지 않았는지.
 [D 입구] diff: C:/Users/LANDSOFT/round06d-eval/review/d-entry.diff. 파일: frontend/pages/index.vue, components/AppSidebar.vue, types/history.ts, utils/historyStore.ts, utils/historyState.ts, composables/useHistory.ts, utils/sidebarResearch.ts, utils/researchHome.ts, composables/useResearchWorks.ts, pages/research/index.vue, utils/paperResearch.ts, pages/papers/index.vue, utils/addToWork.ts, components/research/AddToWorkMenu.vue. 특히: 문구가 '소장자료검색'·'소장자료'로 맞고 kind(book)·주소·/search-classic 은 그대로인지, total 이 없는 응답(06e 전 서버)에서 null 로 받아 '모두 보기' 만 그리는지, 로컬로 물러난 목록이 알던 total 을 지우지 않는지, remove·clear 의 total 조정, 모두 보기가 기록이 없어도(빈 문구 아래) 서는지, 사이드바 단계 줄이 workPhase.stepLine 을 쓰고 단계 이름 문자열을 새로 쓰지 않는지, 폴링 조건(isLiveResearch)이 진행 중 생성을 포함하는지, /research 홈이 history 를 50건씩 읽고 [더 보기]가 before 커서를 쓰는지, 예시 연구의 실행 시각(corpus.at KST)·범위(scopeLine)·읽기 전용 표시, 새 연구 시작의 429 browser_active 링크(방어 — 지금 서버는 만들기에서 429 를 내지 않고 승인·재시도에서 낸다), [딥리서치로 더 깊게]가 바로 시작하지 않고 ?draft= 로 입력창만 채우는지(길이 검사 questionProblem), [담기]가 PUT reading {"state":"in"} 이고 이어간 연구가 없으면 D17 문구 그대로인지, 담은 뒤 useHistory().refresh("research") 를 기다리지 않고 부르는지, 메뉴의 Esc·바깥 클릭·초점 복귀, 결과 카드 버튼 줄의 기존 버튼과 BookChat(:564-569) 자리를 건드리지 않았는지. 탐색 방식(Task N9 — 정함 19, 파일: utils/researchMode.ts, components/research/ResearchModePicker.vue·SearchPlusMenu.vue·ResearchHeader.vue, composables/useResearch.ts, pages/research/index.vue 의 새 연구, pages/research/[id].vue 의 modeLine·onRestart, research.css 의 .rs-mode*·.rs-head__meta·.rs-head__mode): 딥리서치를 시작하는 곳(startResearch 를 부르는 곳 모두)이 두 칸(broaden·query_context)을 함께 싣는지 — 폭넓게 {0,0}·정밀하게 {1,1}, 기본 정밀하게, query_context 만 싣는 길이 없는지, 다시 시작이 원래 잡의 두 칸을 잇고 두 칸이 없는 잡은 기본인지, 머리 표시가 두 칸 다 0 이면 폭넓게·두 칸이 없거나 갈리면 그리지 않는지, radiogroup 접근성(role·aria-checked·aria-labelledby·aria-describedby·roving tabindex·방향키·Home·End·선택이 초점을 따름)과 칸의 키가 SearchPlusMenu 의 캡처 리스너(입력창 엔터·.skx-send)에 걸리지 않는지, localStorage(skx_research_mode)를 try/catch 로 읽고 쓰며 서버 렌더와 첫 그림이 같은지(마운트 뒤 읽음)·레이아웃 기억(skx_research_layout)을 되살리지 않았는지, 고르기·기억이 서버에 쓰지 않는지(쓰는 요청은 보내기 클릭의 startResearch 뿐), ModeParams 가 ResearchParams 로 넘어가는지.
-[E 테스트] diff: C:/Users/LANDSOFT/round06d-eval/review/e-tests.diff. 파일: frontend/tests/unit/ 의 새 일곱 파일(researchProgress·planSlots·researchFollow·sidebarResearch·researchHome·addToWork·researchMode)과 고친 파일(researchLayout·queueLine·researchEvents·restorePosition·evidenceLedger·historyStore·historyState·paperResearch). 특히: 새 판단마다 실패 테스트가 먼저 있는지(TDD — 커밋 순서), spec §12-7 06d vitest 목록(배치·그리는 조건·진행 비율·따라가기 켜고 끄기·절 자리와 headings 대응·회차 미세 상태·후보 더미·큰 막대 글줄)이 모두 덮였는지, 기대값을 06e 함수(stepLine·stepForPhase·scopeLine)의 출력으로 만들어 06e 의 문구 바꾸기에 깨지지 않는지, 기존 toEqual 픽스처를 고친 곳이 evidenceLedger 의 reviewing 두 곳과 queueLine 다시 내보내기 테스트뿐인지, 대역(fakeFetcher·helpers/fakeHistory·memoryStorage)을 새로 만들지 않고 썼는지, DOM·타이머에 기대는 테스트가 없는지(node 환경), researchDraft.test.ts 를 고치지 않았는지.
+[E 테스트] diff: C:/Users/LANDSOFT/round06d-eval/review/e-tests.diff. 파일: frontend/tests/unit/ 의 새 일곱 파일(researchProgress·planSlots·researchFollow·sidebarResearch·researchHome·addToWork·researchMode)·D7 품질 검토 반영의 useSectionFollow 와 고친 파일(researchLayout·queueLine·researchEvents·restorePosition·evidenceLedger·historyStore·historyState·paperResearch). 특히: 새 판단마다 실패 테스트가 먼저 있는지(TDD — 커밋 순서), spec §12-7 06d vitest 목록(배치·그리는 조건·진행 비율·따라가기 켜고 끄기·절 자리와 headings 대응·회차 미세 상태·후보 더미·큰 막대 글줄)이 모두 덮였는지, 기대값을 06e 함수(stepLine·stepForPhase·scopeLine)의 출력으로 만들어 06e 의 문구 바꾸기에 깨지지 않는지, 기존 toEqual 픽스처를 고친 곳이 evidenceLedger 의 reviewing 두 곳과 queueLine 다시 내보내기 테스트뿐인지, 대역(fakeFetcher·helpers/fakeHistory·memoryStorage)을 새로 만들지 않고 썼는지, DOM·타이머에 기대는 테스트가 없는지(node 환경 — useSectionFollow.test.ts 는 getElementById·matchMedia·requestAnimationFrame 을 vi.stubGlobal 로 흉내 내고 진짜 DOM 은 쓰지 않는다), researchDraft.test.ts 를 고치지 않았는지.
 ```
 
 Expected: 리뷰어마다 요약 1~2문장 + 결함 목록(없으면 "없음"). 다섯 보고를 영역·severity 별로 한 표로 모은다(완료노트 §3 의 재료).
@@ -9974,7 +9998,7 @@ Expected: `candidates` 줄의 수가 회차 수(하위질문마다 1회 이상)�
 
 1. 작성 — 막대 단계 '보고서 작성' 강조, 글줄 `보고서 작성 중 · i/n절 — 「…」`, 퍼센트가 탐색 끝 값에서 이어 차오른다(뒤로 가지 않는다). 첫 절 전에는 쓰는 절의 자리가 '이 절을 쓰는 중', 근거 0 자리는 '근거 없음' 으로 접힌다. 첫 절이 오면 절 자리 대신 초안이 선다.
 2. 보고서 작성 현황 카드 — 절 목록·[초안 저장]은 그대로, 작은 막대는 없다.
-3. 따라가기 — 스크롤이 지금 쓰는 절로 옮겨 가고 절 제목이 막대 밑에 숨지 않는다. 휠을 굴리면 멈추고 `↓ 지금 쓰는 곳으로` → 누르면 다시 따라간다. 현황 카드에서 절 하나를 누르면 그 절로 옮기고 따라가기가 멈춘다(알약이 뜬다) — 그 절 제목은 막대 바로 아래에 조금(1.2rem) 띄워 서고, 막대 아래에 막대 높이만 한 빈 틈이 생기지 않는다(막대 높이를 두 번 더하지 않음 — D4 품질 검토 반영). 초안을 아래로 굴린 뒤 Shift+Tab 으로 위로 올라가면 초점을 받은 인용 칩·버튼이 막대 밑에 가린 채 남지 않고 창이 굴러 막대 아래에 보인다(문서 `scroll-padding-top` — WCAG 2.2 2.4.11).
+3. 따라가기 — 스크롤이 지금 쓰는 절로 옮겨 가고 절 제목이 막대 밑에 숨지 않는다. 휠을 굴리면 멈추고 `↓ 지금 쓰는 곳으로` → 누르면 다시 따라간다. 알약에 Tab 으로 가 Enter 로 누르면 초점이 옮겨 간 절로 가서 다음 Tab 이 그 절의 인용 칩으로 간다(꼬리말·옆 칸 끝으로 가지 않는다 — D7 품질 검토 반영). 멈춘 동안 절과 절 사이에도 알약이 사라졌다 다시 서지 않는다. 현황 카드에서 절 하나를 누르면 그 절로 옮기고 따라가기가 멈춘다(알약이 뜬다) — 그 절 제목은 막대 바로 아래에 조금(1.2rem) 띄워 서고, 막대 아래에 막대 높이만 한 빈 틈이 생기지 않는다(막대 높이를 두 번 더하지 않음 — D4 품질 검토 반영). 초안을 아래로 굴린 뒤 Shift+Tab 으로 위로 올라가면 초점을 받은 인용 칩·버튼이 막대 밑에 가린 채 남지 않고 창이 굴러 막대 아래에 보인다(문서 `scroll-padding-top` — WCAG 2.2 2.4.11).
 4. 막힘 — 인용 칩에 마우스를 올려(또는 눌러 고정해) 팝오버를 연 동안, 원문 뷰어를 연 동안에는 다음 절이 시작돼도 끌려가지 않는다. 닫은 뒤 다음 절이 시작되면 옮겨 간다(따라가는 중이었으면). 원문 뷰어를 열어 머리 줄·어두운 바탕 위에서 휠을 굴려도, 닫은 뒤 알약 없이 다음 절에서 따라간다(모달이 페이지를 묶은 동안의 입력은 멈춤이 아니다 — Task D7). 팝오버의 긴 인용문을 휠로 굴려 읽고 닫아도 알약 없이 다음 절에서 따라간다(인용문 칸이 받는 휠은 멈춤이 아니다 — D6 품질 검토 반영 2).
 5. 돌아온 자리 — 작성 중에 인용 칩 → 논문 상세 → 브라우저 뒤로: 떠난 자리로 돌아오고 그 자리가 막대 밑에 가리지 않으며, 따라가기는 멈춘 채 알약만 떠 있다.
 6. 움직임 줄이기(개발자 도구 Rendering 흉내) — 막대 채움의 transition·빛 흐름이 멈추고, 따라가기는 부드럽게가 아니라 즉시 옮긴다. 장부 더미의 반짝임도 없다.

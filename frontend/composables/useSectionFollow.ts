@@ -1,5 +1,15 @@
 // frontend/composables/useSectionFollow.ts
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from "vue";
+import {
+  computed,
+  getCurrentInstance,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type ComputedRef,
+  type Ref,
+} from "vue";
 import type { ResearchPhase } from "~/utils/researchEvents";
 import {
   breaksFollow,
@@ -25,7 +35,7 @@ const PAGE_LOCKERS = "[aria-modal='true']";
 export interface SectionFollow {
   following: Readonly<Ref<boolean>>;
   pill: ComputedRef<string | null>;
-  // 알약 — 다시 따라가며 지금 대상으로 곧바로 옮긴다
+  // 알약 — 다시 따라가며 지금 대상(사이면 마지막으로 진행한 자리)으로 곧바로 옮기고 초점도 그 자리로 옮긴다
   resume(): void;
   // 현황 카드에서 절을 눌러 옮길 때
   pause(): void;
@@ -80,7 +90,8 @@ function inputOf(e: Event, touchDir: number): FollowInput | null {
 
 /**
  * 지금 진행하는 절을 스크롤이 따라가게 한다(spec D22). 대상(자리 id)이 바뀌면 그 자리로 옮기고, 사용자가 직접 굴리면 멈춘다 —
- * 멈춘 동안은 알약 글(pill)을 내고, 알약을 누르면(resume) 다시 따라가며 지금 대상으로 곧바로 옮긴다.
+ * 멈춘 동안은 알약 글(pill)을 내고, 알약을 누르면(resume) 다시 따라가며 지금 대상으로 곧바로 옮기고 초점도 그 자리로 옮긴다.
+ * 절과 절 사이(하위질문과 하위질문 사이)처럼 대상이 잠깐 없는 동안에도 알약은 마지막으로 진행한 자리를 가리키며 남는다.
  * 처음 본 대상은 기준으로만 삼는다 — 들어온 화면을 곧바로 끌고 내려가지 않고 다음 바뀜부터 옮긴다. 막힌 동안(isBlocked) 바뀐
  * 대상은 지나간 것으로 두고 다음 바뀜에 옮긴다. 모달이 페이지를 묶은 동안의 입력은 멈춤으로 보지 않는다 — 원문 뷰어를 닫으면
  * 따라가던 대로 다음 바뀜에 옮긴다. 안쪽 스크롤 칸(옆 칸·근거 장부·인용문)이 받는 입력도 페이지를 굴리지 않아 멈춤이 아니다
@@ -94,9 +105,12 @@ export function useSectionFollow(opts: {
   startPaused: boolean;
 }): SectionFollow {
   const following = ref(!opts.startPaused);
-  const pill = computed(() => followPill({ phase: opts.phase.value, following: following.value, target: opts.target.value }));
-  // 마지막으로 옮겨 간(또는 지나간) 대상
-  let last: string | null = null;
+  // 마지막으로 옮겨 간(또는 지나간) 대상 — 사이에 알약이 갈 곳이기도 해 반응형으로 둔다
+  const last = ref<string | null>(null);
+  // 알약이 갈 곳 — 지금 대상, 절과 절 사이(하위질문과 하위질문 사이 — 쓰는·도는 것이 잠깐 없음)면 마지막으로 진행한 자리.
+  // 대상만 보면 멈춘 동안 사이마다 알약이 사라졌다 다시 서고, 그 알약에 Tab 으로 가 있던 초점이 body 로 떨어진다
+  const destination = computed(() => opts.target.value ?? last.value);
+  const pill = computed(() => followPill({ phase: opts.phase.value, following: following.value, target: destination.value }));
   let primed = false;
   let frame = 0;
   // 터치 이동의 방향을 재는 손가락의 앞 높이 — touchstart 는 높이만 적고 따라가기를 멈추지 않는다(탭은 굴림이 아니다)
@@ -133,16 +147,23 @@ export function useSectionFollow(opts: {
       frame = requestAnimationFrame(() => {
         frame = 0;
         if (!following.value || (!force && opts.isBlocked())) return;
+        const el = document.getElementById(id);
+        if (!el) return;
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        document.getElementById(id)?.scrollIntoView({ behavior: followBehavior(reduce), block: "start" });
+        el.scrollIntoView({ behavior: followBehavior(reduce), block: "start" });
+        // 알약을 누른 이동은 초점도 그 자리로 옮긴다(자리 rs-sec-N·rs-slot-N 은 tabindex=-1, jumpToSection 과 같은 꼴). 누른 알약은
+        // 따라가기가 켜지며 사라져 초점이 body 로 떨어지고, 다음 Tab 이 옮겨 간 절이 아니라 알약이 있던 자리(.rs-page 끝)에서
+        // 이어진다. 따라가며 옮길 때는 읽거나 고르던 초점을 빼앗지 않는다
+        if (force) el.focus({ preventScroll: true });
       });
     });
   }
 
   function resume(): void {
     following.value = true;
-    const t = opts.target.value;
-    last = t;
+    // 사이(대상이 잠깐 없음)에 누르면 마지막으로 진행한 자리로 간다 — 다음 바뀜(다음 절·하위질문)에 그리로 다시 옮긴다
+    const t = destination.value;
+    last.value = t;
     if (t !== null) move(t, true);
   }
 
@@ -155,28 +176,31 @@ export function useSectionFollow(opts: {
     (t) => {
       if (!primed) {
         primed = t !== null;
-        last = t;
+        last.value = t;
         return;
       }
-      if (t !== null && shouldFollowMove({ following: following.value, blocked: opts.isBlocked(), target: t, last })) {
+      if (t !== null && shouldFollowMove({ following: following.value, blocked: opts.isBlocked(), target: t, last: last.value })) {
         move(t, false);
       }
-      if (t !== null) last = t;
+      if (t !== null) last.value = t;
     },
     { immediate: true },
   );
 
-  onMounted(() => {
-    for (const type of USER_INPUTS) window.addEventListener(type, onInput, { capture: true, passive: true });
-    window.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
-  });
+  // 컴포넌트 밖(단위 테스트)에서는 창 리스너를 걸지 않는다 — useResearchWork 와 같은 꼴
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      for (const type of USER_INPUTS) window.addEventListener(type, onInput, { capture: true, passive: true });
+      window.addEventListener("touchstart", onTouchStart, { capture: true, passive: true });
+    });
 
-  onBeforeUnmount(() => {
-    for (const type of USER_INPUTS) window.removeEventListener(type, onInput, true);
-    window.removeEventListener("touchstart", onTouchStart, true);
-    if (frame) cancelAnimationFrame(frame);
-    frame = 0;
-  });
+    onBeforeUnmount(() => {
+      for (const type of USER_INPUTS) window.removeEventListener(type, onInput, true);
+      window.removeEventListener("touchstart", onTouchStart, true);
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    });
+  }
 
   return { following, pill, resume, pause };
 }
