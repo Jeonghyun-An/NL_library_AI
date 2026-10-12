@@ -8,10 +8,10 @@ export interface HistoryRoute {
   query?: Record<string, string>;
 }
 
+// 옛 주소·기록에 남은 grade(KCI 등재 필터)는 읽지도 싣지도 않는다 — 있어도 그냥 무시된다(필터 없이 전체 표시)
 export interface HistoryQuery {
   h?: string;
   q?: string;
-  grade?: string;
 }
 
 const V1_ID = /^\d{10,16}$/;
@@ -24,10 +24,7 @@ export function routeFor(entry: HistoryEntry): HistoryRoute {
     return phase ? { path, query: { s: stepForPhase(phase) } } : { path };
   }
   const query: Record<string, string> = { h: entry.id, q: entry.title };
-  if (entry.kind === "book") return { path: "/", query };
-  const grade = entry.params?.grade;
-  if (typeof grade === "string" && grade) query.grade = grade;
-  return { path: "/papers", query };
+  return { path: entry.kind === "book" ? "/" : "/papers", query };
 }
 
 export function readHistoryQuery(
@@ -40,8 +37,6 @@ export function readHistoryQuery(
   else if (raw && V1_ID.test(raw) && v1Map[raw]) out.h = v1Map[raw];
   const q = firstValue(query.q);
   if (q) out.q = q;
-  const grade = firstValue(query.grade);
-  if (grade) out.grade = grade;
   return out;
 }
 

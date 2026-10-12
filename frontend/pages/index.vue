@@ -141,57 +141,11 @@
                 </button>
               </li>
             </ul>
-            <!-- 논문 필터 드롭다운 — 딥리서치 모드에서는 쓰지 않아 숨긴다(고른 값은 그대로 두어 논문 검색으로 돌아오면 보인다) -->
-            <div v-if="!deepResearch" class="skx-filters">
-              <div :class="['skx-select', filterOpen && 'is-open']">
-                <button
-                  type="button"
-                  class="skx-select__btn"
-                  aria-haspopup="listbox"
-                  :aria-expanded="filterOpen"
-                  @click.stop="filterOpen = !filterOpen"
-                >
-                  <span class="skx-select__label">{{
-                    selectedFilter || "자료유형"
-                  }}</span>
-                  <img
-                    class="skx-select__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-                <ul class="skx-select__menu" role="listbox">
-                  <li v-for="opt in filterOptions" :key="opt">
-                    <button
-                      type="button"
-                      class="skx-select__option"
-                      :class="selectedFilter === opt && 'is-selected'"
-                      role="option"
-                      @click="selectFilter(opt)"
-                    >
-                      {{ opt }}
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div class="skx-filter-chip__wrap">
-                <span
-                  v-for="f in activeFilters"
-                  :key="f"
-                  class="skx-filter-chip"
-                >
-                  {{ f }}
-                  <button
-                    type="button"
-                    class="skx-filter-chip__x"
-                    aria-label="필터 삭제"
-                    @click="removeFilter(f)"
-                  >
-                    <img src="/img/ico-delete.svg" alt="" />
-                  </button>
-                </span>
-              </div>
-            </div>
+            <!-- 자료 검색 패널의 '도서 추천받기' 링크 자리 — 두 패널 높이를 같게 해 갈래를 바꿔도 전환·입력창이 움직이지 않게 비워 둔다(보이지 않고 눌리지도 않는다) -->
+            <span class="skx-reco-link skx-reco-link--ghost" aria-hidden="true">
+              <span>내 상황에 맞는 도서 추천받기</span>
+              <img src="/img/ico-arrow.svg" alt="" />
+            </span>
           </div>
         </div>
 
@@ -536,7 +490,7 @@ function beginRun(): AbortSignal {
 // ── Publishing additions ──────────────────────────────────────
 // 두 갈래 전환 — 갈래는 데이터 모드(mode)와 같다(도서/논문). 딥리서치는 논문 패널에서 + 메뉴·슬래시 명령으로 켜는 모드라
 // 켜져 있어도 전환은 '논문 검색'이다. 켜짐 여부의 정본은 + 메뉴(SearchPlusMenu)다 — 어디서 켜고 꺼도 메뉴가 update:mode 로
-// 알려 deepResearch 가 따라온다. 이 값은 KCI 등재 필터를 숨기는 데 쓴다
+// 알려 deepResearch 가 따라온다. 이 값은 자료 검색으로 옮길 때 켜 둔 모드를 끄는 데 쓴다
 const deepResearch = ref(false);
 const plusMenu = ref<{
   activateMode: (id: SearchModeId, options?: { focus?: boolean }) => void;
@@ -547,12 +501,6 @@ const tabIndex = computed(() => LANDING_TABS.findIndex((t) => t.id === mode.valu
 function onPlusMode(id: SearchModeId | null) {
   deepResearch.value = id === "deep-research";
 }
-
-// Filter dropdown (paper mode)
-const filterOpen = ref(false);
-const selectedFilter = ref("");
-const activeFilters = ref<string[]>([]);
-const filterOptions = ["KCI 등재", "KCI 미등재", "KCI 후보"];
 
 // Newbooks countup
 const newbooksCount = ref(0);
@@ -604,20 +552,6 @@ function onTabsKeydown(e: KeyboardEvent) {
   document.getElementById(`skx-tab-${next}`)?.focus();
 }
 
-function selectFilter(opt: string) {
-  selectedFilter.value = opt;
-  filterOpen.value = false;
-  if (!activeFilters.value.includes(opt)) activeFilters.value.push(opt);
-}
-
-function removeFilter(f: string) {
-  activeFilters.value = activeFilters.value.filter((x) => x !== f);
-  if (selectedFilter.value === f) selectedFilter.value = "";
-}
-
-function onDocClick() {
-  filterOpen.value = false;
-}
 // ── End publishing additions ──────────────────────────────────
 
 onMounted(async () => {
@@ -640,13 +574,11 @@ onMounted(async () => {
     requestAnimationFrame(tick);
   }
 
-  document.addEventListener("click", onDocClick);
 });
 
 onUnmounted(() => {
   // 떠난 화면에 늦게 온 응답이 상태를 고치지 않게, 진행 중인 검색·추천 이유 스트림을 끊는다
   runCtrl?.abort();
-  document.removeEventListener("click", onDocClick);
 });
 
 // ── 유틸 ──────────────────────────────────────────────────
@@ -677,11 +609,9 @@ function showToast(msg: string) {
 async function handleSearch(query: string, reuse?: BookEntry) {
   if (!query.trim() || loading.value) return;
 
-  // 논문 모드는 papers 전용 페이지로 이동 — 랜딩에서 고른 등재 필터를 유지해서 넘긴다
+  // 논문 모드는 papers 전용 페이지로 이동
   if (mode.value === "paper") {
-    const grade = activeFilters.value[0];
-    const gradeParam = grade ? `&grade=${encodeURIComponent(grade)}` : "";
-    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}${gradeParam}`);
+    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}`);
     return;
   }
 

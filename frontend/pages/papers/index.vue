@@ -175,44 +175,8 @@
 
           <!-- 논문 목록 -->
           <section class="skx-paper-section" aria-label="논문 검색 결과 목록">
-            <!-- 머리: 총 N 건 | 등급 필터 · 정렬 · 개수 -->
+            <!-- 머리: 총 N 건 | 정렬 · 개수 -->
             <ResultListHead :count="filteredPapers.length">
-              <!-- 등재 등급 필터 -->
-              <div
-                v-if="gradeOptions.length"
-                class="skx-paper-grade-filter"
-                role="group"
-                aria-label="등재 등급 필터"
-              >
-                <button
-                  type="button"
-                  :class="[
-                    'skx-ptag skx-ptag--filter',
-                    selectedGrade === 'all' && 'is-active',
-                  ]"
-                  @click="
-                    selectedGrade = 'all';
-                    currentPage = 1;
-                  "
-                >
-                  전체
-                </button>
-                <button
-                  v-for="g in gradeOptions"
-                  :key="g"
-                  type="button"
-                  :class="[
-                    'skx-ptag skx-ptag--filter skx-ptag--kci',
-                    selectedGrade === g && 'is-active',
-                  ]"
-                  @click="
-                    selectedGrade = g;
-                    currentPage = 1;
-                  "
-                >
-                  {{ g }}
-                </button>
-              </div>
               <div
                 class="skx-paper-sorts"
                 role="group"
@@ -531,8 +495,7 @@ const renderedAiText = computed(() =>
   aiText.value ? (marked.parse(aiText.value) as string) : "",
 );
 
-// ── 정렬 / 페이지 / 필터 ─────────────────────────────────────
-const selectedGrade = ref("all");
+// ── 정렬 / 페이지 ─────────────────────────────────────────────
 const sortBy = ref("relevance");
 const pageSize = ref(20);
 const currentPage = ref(1);
@@ -590,22 +553,8 @@ const sortedPapers = computed(() => {
   return books;
 });
 
-const gradeOptions = computed(() => {
-  const grades = new Set<string>();
-  (paperResult.value?.books ?? []).forEach((b) => {
-    const g = b.book_info?.grade;
-    if (g) grades.add(g);
-  });
-  return Array.from(grades).sort();
-});
-
 const filteredPapers = computed(() => {
-  const base =
-    selectedGrade.value === "all"
-      ? sortedPapers.value
-      : sortedPapers.value.filter(
-          (b) => b.book_info?.grade === selectedGrade.value,
-        );
+  const base = sortedPapers.value;
   if (!aiRefNumMap.value.size) return base;
   // AI 답변에 인용된 논문을 인용 번호 순으로 상단 고정, 나머지는 선택 정렬 유지
   const cited = base
@@ -706,11 +655,9 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   currentQuery.value = query;
   resultQuery.value = query;
   currentHistoryId.value = null;
-  // 등재 필터는 검색을 시작할 때의 값으로 한 번 정한다 — 주소와 기록에 같은 값이 들어가게
-  const grade = selectedGrade.value !== "all" ? selectedGrade.value : "";
   // 주소의 이전 h 도 함께 내린다 — 남겨 두면 검색이 도는 동안·실패한 뒤에도 사이드바가 이전 기록을 강조하고,
   // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
-  router.replace({ query: { q: query, ...(grade ? { grade } : {}) } });
+  router.replace({ query: { q: query } });
   loading.value = true;
   error.value = null;
   paperResult.value = null;
@@ -741,10 +688,10 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
     const snapshot = slimPaperResult(data) ?? undefined;
     const entry = reuse
       ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
-      : await historyApi.add({ kind: "paper", title: query, params: grade ? { grade } : {}, snapshot });
+      : await historyApi.add({ kind: "paper", title: query, params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query, h: entry.id, ...(grade ? { grade } : {}) } });
+    router.replace({ query: { q: query, h: entry.id } });
     if (data.books?.length) streamAiSummary(entry.id, query, data.books, signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -770,7 +717,6 @@ function goLanding() {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
-  selectedGrade.value = "all";
   // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
   pdfItem.value = null;
   citeModalOpen.value = false;
@@ -816,7 +762,7 @@ async function restoreFromQuery() {
     if (signal.aborted) return;
     target = readHistoryQuery(query, readV1Map(safeLocalStorage()));
   }
-  const { h, q, grade } = target;
+  const { h, q } = target;
   if (!h) {
     if (!q) {
       // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤
@@ -828,7 +774,6 @@ async function restoreFromQuery() {
     // 검색바가 아니라 화면 결과의 검색어와 비교한다 — 검색바를 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.
     // 둘 다 앞뒤 공백을 뗀 값이라 같은 검색어를 공백 차이로 다시 찾지 않는다
     if (q !== resultQuery.value) {
-      selectedGrade.value = grade ?? "all";
       await handleSearch(q);
     }
     return;
@@ -853,8 +798,6 @@ async function restoreFromQuery() {
   if (!paper) void historyApi.refresh("paper");
   const retryQuery = q ?? paper?.title;
   if (retryQuery) {
-    const savedGrade = typeof paper?.params.grade === "string" ? paper.params.grade : "";
-    selectedGrade.value = savedGrade || grade || "all";
     await handleSearch(retryQuery, paper ?? undefined);
     return;
   }
@@ -863,7 +806,6 @@ async function restoreFromQuery() {
 
 function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   const snap = entry.snapshot as PaperSnapshot;
-  const grade = typeof entry.params.grade === "string" ? entry.params.grade : "";
   loading.value = false;
   error.value = null;
   currentQuery.value = entry.title;
@@ -880,11 +822,10 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiLoading.value = false;
   aiExpanded.value = true;
   sortBy.value = "relevance";
-  selectedGrade.value = grade || "all";
-  // 정렬·필터를 정한 뒤에 찾아야 화면 목록과 같은 순서다
+  // 정렬을 정한 뒤에 찾아야 화면 목록과 같은 순서다
   currentPage.value = returnPage();
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
-    router.replace({ query: { q: entry.title, h: entry.id, ...(grade ? { grade } : {}) } });
+    router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 요약이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
   if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);

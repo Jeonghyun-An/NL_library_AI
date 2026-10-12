@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { CARD_KEYWORD_LIMIT, cardKeywords, cardMeta, formatPubLabel, normalizeName } from "~/utils/resultCard";
 
 describe("cardKeywords — 카드 키워드 칩", () => {
-  it("저자 키워드(extracted_keywords) 배열이 가장 먼저이고, 최대 개수에서 자른다", () => {
+  it("저자 키워드(extracted_keywords) 배열이 가장 먼저이고, 최대 3개에서 자른다(칩이 많아 정신없다는 의견)", () => {
     const info = { extracted_keywords: ["노인복지", "정서복지", "첨단기술", "감정적 고립", "고령화 사회", "복지 모델", "지속가능성", "커뮤니티"] };
-    expect(cardKeywords(info)).toEqual(["노인복지", "정서복지", "첨단기술", "감정적 고립", "고령화 사회"]);
-    expect(CARD_KEYWORD_LIMIT).toBe(5);
+    expect(cardKeywords(info)).toEqual(["노인복지", "정서복지", "첨단기술"]);
+    expect(CARD_KEYWORD_LIMIT).toBe(3);
   });
 
   it("extracted_keywords 가 있으면 keyword·themes 는 보지 않는다(섞지 않는다)", () => {
@@ -53,7 +53,7 @@ describe("cardKeywords — 카드 키워드 칩", () => {
 
   it("개수 한도를 바꿀 수 있고, fallback 에도 같은 한도를 건다", () => {
     expect(cardKeywords({ themes: "a,b,c" }, [], 2)).toEqual(["a", "b"]);
-    expect(cardKeywords({}, ["a", "b", "c", "d", "e", "f"])).toEqual(["a", "b", "c", "d", "e"]);
+    expect(cardKeywords({}, ["a", "b", "c", "d", "e", "f"])).toEqual(["a", "b", "c"]);
   });
 });
 
@@ -116,6 +116,22 @@ describe("cardMeta — 저자 줄과 서지 줄", () => {
       { text: "고전문학", arrow: true },
       { text: "인용수 12" },
     ]);
+  });
+
+  it("논문: KCI 등재 구분은 칩이 아니라 서지 줄의 맨 끝 글자이고, 없으면 생략한다", () => {
+    expect(cardMeta({ pub_date: "2021.06", kci_citations: 5, grade: "KCI 등재" }, "paper").parts).toEqual([
+      { text: "2021년 6월" },
+      { text: "인용수 5" },
+      { text: "KCI 등재" },
+    ]);
+    expect(cardMeta({ kci_citations: 5, grade: "KCI 후보" }, "paper").parts.at(-1)).toEqual({ text: "KCI 후보" });
+    expect(cardMeta({ kci_citations: 5, grade: "우수등재" }, "paper").parts.at(-1)).toEqual({ text: "우수등재" });
+    expect(cardMeta({ kci_citations: 5, grade: " " }, "paper").parts).toEqual([{ text: "인용수 5" }]);
+    expect(cardMeta({ kci_citations: 5 }, "paper").parts).toEqual([{ text: "인용수 5" }]);
+  });
+
+  it("소장자료는 등급을 서지 줄에 싣지 않는다", () => {
+    expect(cardMeta({ publisher: "출판사", grade: "KCI 등재" }, "book").parts).toEqual([{ text: "출판사" }]);
   });
 
   it("논문: 인용수 0 도 보이고, 없는 조각은 건너뛴다", () => {

@@ -23,7 +23,6 @@
           <span class="skx-ai-dot" aria-hidden="true"></span>
           AI 답변 인용 {{ aiCitedNum }}
         </span>
-        <span v-if="item.book_info?.grade" class="skx-ptag skx-ptag--kci">{{ item.book_info.grade }}</span>
         <RelevanceBadge
           :score="item.best_score"
           :title-score="item.title_score"

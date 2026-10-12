@@ -15,10 +15,15 @@ export interface CardInfo {
   pub_date?: string | null;
   series_title?: string | null;
   kci_citations?: number | null;
+  /** KCI 등재 구분('KCI 등재'·'KCI 후보'·'우수등재'). 논문 전용, 없을 수 있다 */
+  grade?: string | null;
 }
 
-/** 카드 키워드 칩의 최대 개수 — 논문은 저자 키워드가 5~8개, 소장자료 주제어는 10개를 넘기도 해 앞에서 자른다 */
-export const CARD_KEYWORD_LIMIT = 5;
+/**
+ * 카드 칩 줄의 규칙(결과 카드·추천 1권·상세가 같이 쓴다): 'AI 답변 인용 N'·관련도 알약은 그대로 두고 #키워드 칩은 최대 이 개수다 —
+ * 논문은 저자 키워드가 5~8개, 소장자료 주제어는 10개를 넘기도 해 정신없어 앞에서 자른다. KCI 등재 구분은 칩이 아니라 서지 줄 끝 글자(cardMeta)다
+ */
+export const CARD_KEYWORD_LIMIT = 3;
 
 /** `a, b; c | d` → ["a","b","c","d"] — 앞의 # 와 공백을 떼고 빈 것·중복(대소문자 무시)을 뺀다. 배열이면 항목마다 같은 정리만 한다 */
 function splitKeywords(raw: string | readonly string[] | null | undefined): string[] {
@@ -88,7 +93,7 @@ export interface CardMeta {
 
 /**
  * 저자 줄과 서지 줄.
- *  - 논문: 연월 · 발행처 > 분야 · 인용수 N
+ *  - 논문: 연월 · 발행처 > 분야 · 인용수 N · KCI 등재(등급이 없으면 생략)
  *  - 소장자료: 발행연도 · 출판사
  * 저자 줄과 같은 이름(정규화 비교)이 서지 줄에 또 나오면 서지 줄에서 뺀다 — 기관 보고서는 저자·발행처가 같은 기관이라 같은 말이 두 번 나왔다
  */
@@ -115,6 +120,8 @@ export function cardMeta(info: CardInfo | null | undefined, kind: ResultKind): C
     if (field) parts.push({ text: field, arrow: shown });
     const cites = info?.kci_citations;
     if (typeof cites === "number" && Number.isFinite(cites)) parts.push({ text: `인용수 ${cites}` });
+    const grade = (info?.grade ?? "").trim();
+    if (grade) parts.push({ text: grade });
   } else {
     addName((info?.publisher ?? "").trim());
   }
