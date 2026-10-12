@@ -132,9 +132,10 @@ async def stream_book_chat(
             ref_context_block = "\n".join(f"{i + 1}. {r}" for i, r in enumerate(refs[:50]))
             log.info(f"[{cnts_id}] 참고문헌 의도 감지 → {len(refs)}건 컨텍스트 주입")
 
-    # ── 2b. 청크 검색 (참고문헌 의도 시 건너뜀) ─────────────
+    # ── 2b. 청크 검색 (참고문헌 목록을 넣을 때만 건너뜀) ─────
+    #    참고문헌 의도여도 목록이 없으면(책·참고문헌을 뽑지 못한 논문) 청크로 돌아간다 — 근거 없이 질문만 보내지 않는다.
     hits = []
-    if not is_ref_query:
+    if not ref_context_block:
         try:
             dense, sparse = embed_texts([search_query], is_query=True)
             hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
