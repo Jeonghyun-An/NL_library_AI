@@ -1,5 +1,6 @@
 // frontend/utils/reportDocx.ts
 import type { Document as DocxDocument, Paragraph } from "docx";
+import { DEEP_RESEARCH } from "./brand";
 import { docRunText, xmlSafe, type DocBlock, type DocRun, type ReportDoc } from "./reportDocument";
 
 // docx 는 1MB 가 넘는다 — 화면 번들에 넣지 않고 내려받기를 누를 때 받는다(동적 import).
@@ -81,7 +82,7 @@ function buildDocxDocument(docx: DocxModule, doc: ReportDoc): DocxDocument {
     : {};
 
   return new Document({
-    creator: "NL-Lib 딥리서치",
+    creator: `SKOVIX ${DEEP_RESEARCH}`,
     title: xmlSafe(doc.fileName.replace(/\.docx$/i, "")),
     styles: {
       default: {

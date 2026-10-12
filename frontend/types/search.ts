@@ -29,6 +29,8 @@ export interface BookInfo {
   series_title?: string;
   subject?: string;
   keyword?: string;
+  /** 저자 키워드(논문은 보통 5~8개). 없으면 빈 배열 */
+  extracted_keywords?: string[];
   language?: string;
   abstract?: string;
   url?: string;

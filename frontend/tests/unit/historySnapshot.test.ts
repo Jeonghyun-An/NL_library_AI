@@ -1,12 +1,16 @@
 // frontend/tests/unit/historySnapshot.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  BOOK_INFO_FIELDS,
+  PAPER_INFO_FIELDS,
   PAPER_SNAPSHOT_MAX_BYTES,
   SNAPSHOT_MAX_ITEMS,
   SNAPSHOT_MAX_REFERENCES,
   slimBookResult,
   slimPaperResult,
 } from "~/utils/historySnapshot";
+import { kdcChip } from "~/utils/kdc";
+import { cardKeywords, cardMeta } from "~/utils/resultCard";
 
 function utf8Bytes(v: unknown): number {
   return new TextEncoder().encode(JSON.stringify(v)).length;
@@ -74,10 +78,28 @@ describe("slimBookResult", () => {
             publisher: "출판사",
             pub_date: "20200101",
             themes: "경제,무역",
+            extracted_keywords: ["k"],
+            // 1위 도서만 싣는다 — 복원 때 '이 책에서 얻을 수 있는 것'을 그리려고
+            read_effect: "효과",
           },
         },
       ],
     });
+  });
+
+  it("read_effect 는 1위 도서에만 싣는다(나머지는 목록 카드가 안 그려 저장량만 는다)", () => {
+    const snap = slimBookResult({ query: "q", books: [serverBook(1), serverBook(2), serverBook(3)] })!;
+    expect(snap.books[0]!.book_info?.read_effect).toBe("효과");
+    expect(snap.books[1]!.book_info).not.toHaveProperty("read_effect");
+    expect(snap.books[2]!.book_info).not.toHaveProperty("read_effect");
+  });
+
+  it("1위 도서의 read_effect 가 비었거나 없으면 싣지 않는다", () => {
+    const b = serverBook(1);
+    for (const read_effect of ["  ", null, undefined]) {
+      const snap = slimBookResult({ query: "q", books: [{ ...b, book_info: { ...b.book_info, read_effect } }] })!;
+      expect(snap.books[0]!.book_info).not.toHaveProperty("read_effect");
+    }
   });
 
   it("서버가 새 필드를 보내도 저장하지 않는다", () => {
@@ -119,6 +141,7 @@ describe("slimPaperResult", () => {
       book_id: "P1",
       best_score: 0.7,
       title_score: 0.5,
+      content_score: 0.6,
       chunks: [{ text: "x" }],
       book_info: {
         cnts_id: "P1",
@@ -138,7 +161,8 @@ describe("slimPaperResult", () => {
     const snap = slimPaperResult({ query: "딥러닝", books: [paper] })!;
     expect(snap.query).toBe("딥러닝");
     const item = snap.books[0]!;
-    expect(item).not.toHaveProperty("title_score");
+    // 관련도 알약의 팝오버(제목·내용 일치율)가 그리는 값이라 복원 뒤에도 보이게 싣는다
+    expect(item).toMatchObject({ best_score: 0.7, title_score: 0.5, content_score: 0.6 });
     expect(item.chunks).toEqual([]);
     expect(item.book_info).toMatchObject({
       title: "논문",
@@ -188,6 +212,130 @@ describe("slimPaperResult", () => {
     expect(snap.books.slice(0, cut).every((b) => b.book_info!.references!.length === SNAPSHOT_MAX_REFERENCES)).toBe(true);
     expect(snap.books.slice(cut).every((b) => !b.book_info!.references)).toBe(true);
     // 마지막으로 뺀 논문의 참고문헌을 되돌리면 상한을 넘는다 — 더 빼지 않았다
+    snap.books[cut]!.book_info!.references = snap.books[0]!.book_info!.references;
+    expect(utf8Bytes(snap)).toBeGreaterThan(PAPER_SNAPSHOT_MAX_BYTES);
+  });
+});
+
+// 복원 화면(주소의 h=)은 이 스냅샷으로 결과 카드를 그린다 — 카드가 읽는 book_info 필드가 목록에서 빠지면 그 칩·줄이 복원 때만 사라진다(재발 방지)
+describe("스냅샷 필드 목록 — 결과 카드가 읽는 필드를 모두 담는다", () => {
+  /** 함수가 info 에서 읽은 속성 이름을 모은다 */
+  function readFields(run: (info: Record<string, unknown>) => unknown): Set<string> {
+    const seen = new Set<string>();
+    const info = new Proxy({} as Record<string, unknown>, {
+      get(_target, key) {
+        seen.add(String(key));
+        return undefined;
+      },
+    });
+    run(info);
+    return seen;
+  }
+
+  // ResultCard.vue 가 템플릿에서 직접 읽는 필드(제목·표지 id)와 그 밖의 화면(참고 목록·AI 인용)이 읽는 필드
+  const TEMPLATE_FIELDS = ["title", "cnts_id"];
+
+  it("소장자료 카드가 읽는 필드(키워드·서지·분류·제목)가 BOOK_INFO_FIELDS 에 모두 있다", () => {
+    const read = new Set([
+      ...readFields((info) => cardKeywords(info as never)),
+      ...readFields((info) => cardMeta(info as never, "book")),
+      ...readFields((info) => kdcChip(info.kdc as never)),
+      ...TEMPLATE_FIELDS,
+    ]);
+    const missing = [...read].filter((f) => !(BOOK_INFO_FIELDS as readonly string[]).includes(f));
+    expect(missing).toEqual([]);
+  });
+
+  it("논문 카드가 읽는 필드(키워드·서지·등급·인용수·제목)가 PAPER_INFO_FIELDS 에 모두 있다", () => {
+    const read = new Set([
+      ...readFields((info) => cardKeywords(info as never)),
+      ...readFields((info) => cardMeta(info as never, "paper")),
+      ...TEMPLATE_FIELDS,
+    ]);
+    // 논문 카드의 서지 줄은 발행처(publisher)를 읽지 않는다 — 소장자료 전용
+    read.delete("publisher");
+    const missing = [...read].filter((f) => !(PAPER_INFO_FIELDS as readonly string[]).includes(f));
+    expect(missing).toEqual([]);
+  });
+
+  it("측정이 실제로 필드를 읽고 있다(빈 집합이면 위 두 검사가 아무것도 지키지 못한다)", () => {
+    const read = readFields((info) => cardMeta(info as never, "book"));
+    expect(read.has("personal_author")).toBe(true);
+    expect(read.has("publisher")).toBe(true);
+    expect(readFields((info) => cardKeywords(info as never)).has("extracted_keywords")).toBe(true);
+  });
+
+  it("논문 키워드 칩이 스냅샷을 거친 뒤에도 같다(저자 키워드 → keyword → themes → subject)", () => {
+    const paper = (info: Record<string, unknown>) => ({ book_id: "P1", best_score: 0.5, chunks: [], book_info: info });
+    const snapOf = (info: Record<string, unknown>) => slimPaperResult({ query: "q", books: [paper(info)] })!.books[0]!.book_info!;
+    const full = { extracted_keywords: ["노인복지", "정서복지", "첨단기술", "감정적 고립"], keyword: "노인복지, 정서복지", themes: "가, 나", subject: "다" };
+    expect(cardKeywords(snapOf(full))).toEqual(cardKeywords(full));
+    expect(cardKeywords(snapOf({ keyword: "스마트폰 중독, 고립감" }))).toEqual(["스마트폰 중독", "고립감"]);
+    expect(cardKeywords(snapOf({ themes: "일, 이, 삼, 사" }))).toEqual(["일", "이", "삼"]);
+  });
+
+  it("소장자료의 분류(kdc)·저자 키워드가 스냅샷에 남아 복원 때 분류 칩이 나온다", () => {
+    const b = serverBook(1);
+    const snap = slimBookResult({
+      query: "q",
+      books: [{ ...b, book_info: { ...b.book_info, themes: null, extracted_keywords: [], kdc: "329", publisher: "기획예산처" } }],
+    })!;
+    const info = snap.books[0]!.book_info!;
+    expect(info.kdc).toBe("329");
+    expect(kdcChip(info.kdc)?.name).toBe("재정");
+    expect(cardKeywords(info)).toEqual([]);
+    expect(info).not.toHaveProperty("extracted_keywords");
+    const withKw = slimBookResult({ query: "q", books: [{ ...b, book_info: { ...b.book_info, extracted_keywords: ["a", "b"] } }] })!;
+    expect(withKw.books[0]!.book_info!.extracted_keywords).toEqual(["a", "b"]);
+  });
+
+  it("옛 기록(키워드·분류 필드가 없는 스냅샷)은 칩 없이 오류 없이 그려진다", () => {
+    const old = { title: "옛 기록", personal_author: "저자", pub_date: "2001" };
+    expect(cardKeywords(old)).toEqual([]);
+    expect(kdcChip((old as { kdc?: string }).kdc)).toBeNull();
+    expect(cardMeta(old, "book").author).toBe("저자");
+  });
+
+  it("복원 항목에도 관련도(종합·제목·내용 점수)가 남는다", () => {
+    const snap = slimPaperResult({ query: "q", books: [{ book_id: "P1", best_score: 0.7, title_score: 0.5, content_score: 0.6, chunks: [], book_info: { title: "t" } }] })!;
+    expect(snap.books[0]).toMatchObject({ best_score: 0.7, title_score: 0.5, content_score: 0.6 });
+    const book = slimBookResult({ query: "q", books: [serverBook(1)] })!;
+    expect(book.books[0]).toMatchObject({ best_score: 0.9, title_score: 0.8, content_score: 0.7 });
+  });
+
+  it("논문 180KB 상한에서 키워드를 더해 넘치면 키워드·서지는 두고 뒤쪽 논문의 참고문헌부터 뺀다", () => {
+    const books = Array.from({ length: 60 }, (_, i) => ({
+      book_id: `P${i}`,
+      best_score: 1 - i / 100,
+      chunks: [],
+      book_info: {
+        cnts_id: `P${i}`,
+        title: `논문 ${i}`,
+        personal_author: "김",
+        corporate_author: "학회",
+        pub_date: "2021.03",
+        series_title: "학술지",
+        grade: "KCI 등재",
+        kci_citations: 3,
+        extracted_keywords: Array.from({ length: 8 }, (_, k) => `키워드${k}`),
+        keyword: Array.from({ length: 8 }, (_, k) => `키워드${k}`).join(", "),
+        themes: Array.from({ length: 10 }, (_, k) => `주제어${k}`).join(", "),
+        subject: "주제",
+        references: Array.from({ length: 40 }, () => "참고문헌".repeat(25)),
+      },
+    }));
+    const snap = slimPaperResult({ query: "q", books })!;
+    expect(snap.books).toHaveLength(60);
+    expect(utf8Bytes(snap) + separators(snap)).toBeLessThanOrEqual(200 * 1024);
+    // 키워드는 모든 논문에 남는다 — 상한 때문에 칩이 사라지지 않는다
+    expect(snap.books.every((b) => b.book_info!.extracted_keywords?.length === 8)).toBe(true);
+    expect(snap.books.every((b) => b.book_info!.themes && b.book_info!.keyword && b.book_info!.grade)).toBe(true);
+    // 참고문헌은 앞쪽 논문은 그대로, 뒤쪽 논문부터 뺀다(기존 순서 그대로)
+    const cut = snap.books.findIndex((b) => !b.book_info!.references);
+    expect(cut).toBeGreaterThan(0);
+    expect(snap.books.slice(0, cut).every((b) => !!b.book_info!.references)).toBe(true);
+    expect(snap.books.slice(cut).every((b) => !b.book_info!.references)).toBe(true);
+    // 마지막으로 뺀 논문의 참고문헌을 되돌리면 상한을 넘는다 — 필요한 만큼만 뺐다
     snap.books[cut]!.book_info!.references = snap.books[0]!.book_info!.references;
     expect(utf8Bytes(snap)).toBeGreaterThan(PAPER_SNAPSHOT_MAX_BYTES);
   });

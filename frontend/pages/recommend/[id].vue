@@ -56,15 +56,11 @@
         <!-- AI 텍스트 (타이핑 애니메이션) -->
         <div class="skx-rcd-ai">
           <div class="skx-rcd-ai__top">
-            <img
-              class="skx-rcd-ai__logo"
-              src="/img/logo-mark.svg"
-              alt="SKOVIX AI"
-            />
+            <span class="skx-ai-dot skx-rcd-ai__logo" aria-hidden="true"></span>
             <span class="skx-rcd-ai__label">{{ meta.aiLabel }}</span>
             <span
               v-if="loading"
-              style="font-size: 12px; color: var(--skx-violet)"
+              style="font-size: 12px; color: var(--skx-accent-strong)"
               >●</span
             >
           </div>
@@ -253,6 +249,7 @@
             <img src="/img/ico-arrow.svg" alt="" />상세 보기
           </button>
           <button
+            v-if="SHOW_MOCKS"
             type="button"
             class="skx-rcd-modal__btn skx-rcd-modal__btn--dark"
             @click="showToast('준비 중입니다.')"
@@ -273,6 +270,7 @@
 
 <script setup lang="ts">
 import { useApi } from "~/composables/useApi";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 
 const route = useRoute();
 const api = useApi();

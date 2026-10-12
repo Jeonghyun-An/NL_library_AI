@@ -1,0 +1,1019 @@
+/* frontend/assets/css/detail.css
+   상세 화면(논문 pages/papers/[id].vue · 소장자료 pages/books/[cnts_id].vue)의 틀 — Figma '임시 UI 개선' 2536:16714(논문 상세)를
+   두 화면이 같이 쓴다. 배치·크기·간격·반경·유리 효과는 시안대로(1920 프레임, 1px = 0.05rem), 색은 지금 테마 토큰(산호 포인트) 그대로다.
+   색 리터럴을 쓰지 않는다 — 모두 style_skovix.css :root 의 --skx-* 변수다(tests/unit/themeDetail.test.ts 가 지킨다).
+   예전 정책(틀은 다크, 읽는 면만 밝게 .skx-reading)은 상세에 쓰지 않는다 — 상세 전체가 짙은 유리이고, 글자는 본문 거의 흰색으로 또렷하게 둔다 */
+
+/* [S] 바깥 — 위 알약 검색바(.skx-rsearch, 결과 화면과 같은 부품) → 24 → 큰 틀 */
+.dt-page {
+  gap: 1.2rem;
+}
+/* 큰 틀 — 결과 화면의 큰 틀(.skx-rframe)과 같은 면: 짙은 초록 반투명(--skx-frame-bg) + 흰 8% 얇은 선(--skx-frame-line), r24, 여백 24, 세로 간격 40.
+   흐림은 쓰지 않는다 — 키가 큰 면이라 움직이는 배경 위에서 매 프레임 다시 계산된다(결과 틀과 같은 판단).
+   틀 안의 글 톤은 읽기용 거의 흰색(--skx-read-*)으로 다시 정의한다 — 결과 화면의 읽는 칸과 같은 톤, 밖으로 번지지 않는다 */
+.dt-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  min-width: 0;
+  padding: 1.2rem;
+  background: var(--skx-frame-bg);
+  border: 1px solid var(--skx-frame-line);
+  /* 모바일은 html 글자 크기가 줄어 rem 반경이 작아진다 — 시안의 24px 를 그대로 둔다(.skx-rframe 과 같다) */
+  border-radius: 24px;
+  /* 안쪽 배치(머리 3칸 → 2칸 → 1칸)는 이 틀의 폭으로 정한다 — 아래 '좁은 틀' 구간 */
+  container: dt-frame / inline-size;
+  --skx-ink: var(--skx-read-ink);
+  --skx-ink-2: var(--skx-read-ink-2);
+  --skx-gray-1: var(--skx-read-gray-1);
+  color: var(--skx-ink);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .dt-frame {
+    background: var(--skx-white);
+  }
+}
+.dt-loading {
+  padding: 2rem;
+  text-align: center;
+}
+.dt-loading img {
+  display: block;
+  width: 1.6rem;
+  margin: 0 auto;
+}
+.dt-loading p {
+  margin-top: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--skx-gray-1);
+}
+.dt-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--skx-danger);
+}
+.dt-empty {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--skx-gray-1);
+}
+
+/* 맨 위 '‹ 검색 목록 돌아가기' — 16px Medium */
+.dt-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--skx-ink-strong);
+  text-decoration: none;
+  cursor: pointer;
+}
+.dt-back img {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  transform: rotate(180deg);
+}
+.dt-back:hover span {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+/* [E] 바깥 */
+
+/* [S] 공통 버튼 — 원문 보기(옅은 바탕) · 인용(아이콘, 산호 테두리) · DeepRead·질문 초안(산호 채움). 높이 50 · r8 */
+.dt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 2.5rem;
+  padding: 0 0.8rem;
+  border: none;
+  border-radius: 0.4rem;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    filter 0.15s;
+}
+.dt-btn--ghost {
+  background: var(--skx-frost-bg);
+  color: var(--skx-ink-strong);
+  font-weight: 600;
+}
+.dt-btn--ghost:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.dt-btn--accent {
+  background: var(--skx-accent);
+  color: var(--skx-on-accent);
+}
+.dt-btn--accent:hover {
+  filter: brightness(1.05);
+}
+.dt-btn--accent .dt-spark {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+/* DeepRead 대화 창이 열린 동안 — 눌린 상태가 보이게 바깥 고리를 둔다 */
+.dt-btn--accent[aria-expanded="true"] {
+  box-shadow:
+    0 0 0 2px var(--skx-page-bg),
+    0 0 0 4px var(--skx-accent);
+}
+.dt-btn--icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  padding: 0;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c2);
+}
+.dt-btn--icon:hover {
+  background: var(--skx-frost-over);
+}
+.dt-btn--icon img {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+  filter: var(--skx-ico-accent-filter);
+}
+.dt-btn:focus-visible,
+.dt-back:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+/* 원문 파일을 확인하는 동안 — 눌린 것이 보이게(초점을 잃지 않게 disabled 는 쓰지 않는다) */
+.dt-btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.6;
+}
+/* [E] 공통 버튼 */
+
+/* [S] 머리(서지) — 왼쪽 표지 160×214 · 간격 35 · 가운데(칩 줄 → 제목 24px → 서지 표) · 오른쪽 버튼 열 168. 아래 옅은 구분선, 아래 여백 30 */
+.dt-hero {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) 8.4rem;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "cover head actions"
+    "cover meta actions";
+  column-gap: 1.75rem;
+  row-gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--skx-rule);
+}
+.dt-hero__cover {
+  grid-area: cover;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+/* 표지 칸은 흰 종이 — 표지 그림(흰 지면)과 이어지게 가장 밝은 글자 토큰을 바탕으로 쓴다 */
+.dt-cover {
+  width: 8rem;
+  height: 10.7rem;
+  overflow: hidden;
+  background: var(--skx-ink-strong);
+  border-radius: 0.4rem;
+}
+.dt-cover > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.dt-cover .book-cover {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+.dt-cover .cover-img {
+  border-radius: 0;
+}
+.dt-cover-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.55rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+}
+.dt-cover-note .skx-ai-dot {
+  margin-top: 0.35em;
+}
+.dt-hero__head {
+  grid-area: head;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+}
+.dt-hero__meta {
+  grid-area: meta;
+  min-width: 0;
+}
+.dt-hero__actions {
+  grid-area: actions;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.dt-hero__row {
+  display: flex;
+  gap: 0.5rem;
+}
+.dt-hero__row .dt-btn--ghost {
+  flex: 1;
+  min-width: 0;
+}
+.dt-hero__actions > .dt-btn--accent {
+  width: 100%;
+}
+/* 칩 줄 — 관련도 알약 · #키워드(결과 카드와 같은 규칙, 키워드가 없는 소장자료는 분류 칩) */
+.dt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 논문 키워드 칩은 그 키워드로 새 논문 검색을 여는 링크다 */
+.dt-kw-link {
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+.dt-kw-link:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.dt-kw-link:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.dt-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--skx-ink-strong);
+  overflow-wrap: anywhere;
+}
+.dt-subtitle {
+  margin: -0.4rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+  overflow-wrap: anywhere;
+}
+/* 원문 보기 옆 보조 링크(KCI) — 버튼보다 한 단계 낮춘 글자 링크 */
+.dt-ext {
+  align-self: center;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  white-space: nowrap;
+}
+.dt-ext:hover {
+  color: var(--skx-accent);
+}
+.dt-ext:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+/* 원문을 열지 못한 까닭 — 머리 아래 한 줄(버튼 열이 좁아 그 안에 두면 글이 세로로 길어진다) */
+.dt-hero__note {
+  grid-column: 1 / -1;
+}
+.dt-note {
+  margin: 0;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-danger);
+}
+.dt-note a {
+  margin-left: 0.3rem;
+  color: var(--skx-accent);
+  text-decoration: underline;
+}
+
+/* 서지 표 — 라벨 14px 회녹색 | 값 14px 거의 흰색, 행 간격 약 13 */
+.dt-meta {
+  display: grid;
+  grid-template-columns: 4.4rem minmax(0, 1fr);
+  row-gap: 0.65rem;
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.dt-meta--wide {
+  grid-template-columns: 6.4rem minmax(0, 1fr);
+}
+.dt-meta__label {
+  color: var(--skx-teal-ink);
+  font-weight: 400;
+}
+.dt-meta__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.4rem;
+  margin: 0;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.dt-meta__arrow {
+  width: 0.6rem;
+  height: 0.6rem;
+  display: block;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+/* [E] 머리 */
+
+/* [S] 인용 맥락 배너 — 보고서의 인용칩에서 온 논문 상세에만 뜬다 */
+.dt-cite {
+  padding: 0.7rem 1rem;
+  background: var(--skx-frost-bg-soft);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--skx-ink);
+}
+.dt-cite__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+}
+.dt-cite__text {
+  flex: 1;
+  min-width: 12rem;
+  margin: 0;
+  line-height: 1.6;
+}
+.dt-cite__text strong {
+  color: var(--skx-ink-strong);
+}
+.dt-cite__btn {
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  border: 1px solid var(--skx-accent);
+  border-radius: 0.4rem;
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--skx-accent);
+  cursor: pointer;
+}
+.dt-cite__btn:hover {
+  background: var(--skx-frost-bg);
+}
+.dt-cite__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.dt-cite__btn[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.6;
+}
+.dt-cite .dt-note {
+  margin-top: 0.5rem;
+}
+/* [E] 인용 맥락 배너 */
+
+/* [S] 구획 — 제목 24px Bold, 아래 내용 */
+.dt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  min-width: 0;
+}
+.dt-section__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--skx-ink-strong);
+}
+/* [E] 구획 */
+
+/* [S] AI 큐레이션 — 탭 상자(r16, 여백 10/21). 머리 줄은 가로 밑줄 탭.
+   바탕은 시안의 흰 10% 유리 대신 결과 화면의 읽는 칸과 같은 '읽기용 짙은 유리'(--skx-read-surface) — 흰 막이 끼면 AI 글이 뿌옇게 보인다는 의견 */
+.dt-tabs {
+  padding: 0.5rem 1.05rem 1.05rem;
+  background: var(--skx-read-surface);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 16px;
+}
+.dt-tabs__list {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  box-shadow: inset 0 -1px 0 var(--skx-frost-menu-line);
+}
+.dt-tabs__tab {
+  position: relative;
+  flex-shrink: 0;
+  padding: 0.4rem 0.2rem 0.5rem;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--skx-teal-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dt-tabs__tab:hover {
+  color: var(--skx-ink);
+}
+.dt-tabs__tab.is-active {
+  font-weight: 700;
+  color: var(--skx-accent);
+}
+.dt-tabs__tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--skx-accent);
+}
+.dt-tabs__tab:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: -2px;
+  border-radius: 0.3rem;
+}
+/* 본문 14px · 줄간격 1.6 · 거의 흰색 */
+.dt-tabs__panel {
+  padding-top: 0.8rem;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.dt-tabs__panel:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 4px;
+  border-radius: 0.3rem;
+}
+.dt-prose p {
+  margin: 0;
+}
+.dt-prose p + p,
+.dt-prose ul,
+.dt-prose ol {
+  margin-top: 0.6em;
+}
+.dt-prose ul,
+.dt-prose ol {
+  padding-left: 1.2em;
+}
+.dt-prose ul {
+  list-style: disc;
+}
+.dt-prose ol {
+  list-style: decimal;
+}
+.dt-prose strong {
+  font-weight: 700;
+  color: var(--skx-ink-strong);
+}
+.dt-prose h1,
+.dt-prose h2,
+.dt-prose h3,
+.dt-prose h4 {
+  margin: 0.8em 0 0.3em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink-strong);
+}
+.dt-muted {
+  color: var(--skx-gray-1);
+}
+/* 받는 중인 글 — 마크다운으로 바꾸기 전이라 줄바꿈만 살린다 */
+.dt-stream {
+  white-space: pre-line;
+}
+
+/* DeepResearch 상자 — 탭 상자와 같은 면, r12, 여백 19/21. 왼쪽 산호 원 아이콘 30 → 제목 15px Bold + 설명 13px → 오른쪽 [질문 초안 만들기] 131×40 */
+.dt-research {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.95rem 1.05rem;
+  background: var(--skx-read-surface);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 12px;
+}
+.dt-research__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--skx-accent);
+  color: var(--skx-on-accent);
+}
+.dt-research__icon .dt-spark {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.dt-research__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.dt-research__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink-strong);
+}
+.dt-research__desc {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-teal-ink);
+}
+.dt-research .dt-btn {
+  min-height: 2rem;
+  padding: 0 0.9rem;
+}
+/* [E] AI 큐레이션 */
+
+/* [S] 관련 자료 추천 — 4열 카드(간격 16, 각 349×406, r12, 흰 10% 유리). 넓은 화면에서도 4열을 넘지 않는다 */
+.dt-related__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(12.5rem, calc((100% - 2.4rem) / 4))), 1fr));
+  gap: 0.8rem;
+  padding: 0 0.8rem;
+}
+.dt-rc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--skx-frost-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 12px;
+  transition: box-shadow 0.2s;
+}
+/* 호버 — 산호 빛 번짐 */
+.dt-rc:hover,
+.dt-rc:focus-within {
+  box-shadow: 0 0 50px color-mix(in srgb, var(--skx-accent) 50%, transparent);
+}
+/* 선택(자세히 보기) — 산호 1.5px 테두리 */
+.dt-rc.is-open {
+  outline: 1.5px solid var(--skx-accent);
+  outline-offset: -1px;
+}
+.dt-rc__cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 8rem;
+  overflow: hidden;
+  background: var(--skx-ink-strong);
+  border-radius: 11px 11px 0 0;
+}
+.dt-rc__cover > img {
+  height: 88%;
+  width: auto;
+  max-width: 90%;
+  display: block;
+  object-fit: contain;
+}
+.dt-rc .dt-rc__cover .book-cover {
+  width: auto;
+  height: 88%;
+  max-width: 90%;
+  aspect-ratio: 3 / 4;
+  background: transparent;
+  border-radius: 0.2rem;
+}
+.dt-rc .dt-rc__cover .cover-img {
+  object-fit: contain;
+  border-radius: 0.2rem;
+}
+.dt-rc__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.8rem;
+}
+/* 칩 줄 ~ 서지 줄 — 남는 높이를 이 칸이 차지해 사유 상자가 카드 바닥에 맞춰진다(같은 줄 카드끼리 상자 높이가 나란하다) */
+.dt-rc__info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+/* 칩·사유 상자는 카드 전체를 덮는 제목 링크 위에 떠서 따로 눌린다 */
+.dt-rc__chips {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin-bottom: 0.2rem;
+}
+.dt-rc .skx-rel__pill {
+  height: 1.2rem;
+  font-size: 0.55rem;
+}
+/* 카드 칩은 한 줄 — 넘치는 키워드는 둘째 줄로 밀려 가려진다(관련도 팝오버는 이 칸 밖이라 잘리지 않는다) */
+.dt-rc__kws {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+  max-height: 1.3rem;
+  overflow: hidden;
+}
+.dt-rc__title {
+  display: -webkit-box;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink-strong);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.dt-rc__link {
+  color: inherit;
+  text-decoration: none;
+}
+.dt-rc__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+.dt-rc__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.dt-rc__link:focus-visible {
+  outline: none;
+}
+.dt-rc__link:focus-visible::after {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.dt-rc__author {
+  margin: 0.2rem 0 0;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dt-rc__meta {
+  margin: 0;
+  font-size: 0.6rem;
+  line-height: 1.4;
+  color: var(--skx-teal-ink);
+}
+/* 'AI 추천 사유' 상자 — 흰 10% r8, 여백 10/12 */
+.dt-rc__why {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--skx-frost-bg);
+  border-radius: 0.4rem;
+}
+.dt-rc__why-label,
+.dt-rc__pop-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink-strong);
+}
+.dt-rc__why-label .dt-spark,
+.dt-rc__pop-title .dt-spark {
+  width: 0.6rem;
+  height: 0.6rem;
+  flex-shrink: 0;
+  color: var(--skx-accent);
+}
+.dt-rc__why-text {
+  display: -webkit-box;
+  margin: 0;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.dt-rc__more {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: 0.15rem;
+  padding: 0.1rem 0.2rem;
+  background: none;
+  border: none;
+  border-radius: 0.3rem;
+  font: inherit;
+  font-size: 0.6rem;
+  line-height: 1.4;
+  color: var(--skx-accent);
+  cursor: pointer;
+}
+.dt-rc__more:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.dt-rc__more-chev {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+.dt-rc__more:focus-visible,
+.dt-rc__close:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+/* 선택 팝업 — 카드 아래쪽을 덮는 짙은 초록 불투명 면(r12, 여백 20/16) */
+.dt-rc__pop {
+  position: absolute;
+  z-index: 2;
+  top: 4.3rem;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 0.8rem 0.8rem;
+  overflow: hidden;
+  background: var(--skx-page-bg);
+  border-radius: 12px;
+  box-shadow: var(--skx-shadow-banner);
+}
+.dt-rc__pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.dt-rc__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0.3rem;
+  color: var(--skx-ink);
+  cursor: pointer;
+}
+.dt-rc__close:hover {
+  background: var(--skx-frost-bg);
+}
+.dt-rc__close svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+.dt-rc__pop-kws {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+/* 사유 전문이 길면 이 칸만 스크롤 — 아래 버튼 줄은 늘 보인다 */
+.dt-rc__pop-text {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  overflow-y: auto;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  white-space: pre-line;
+}
+.dt-rc__pop-text:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.dt-rc__pop-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+}
+.dt-rc__pop-actions .dt-btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.1rem;
+  padding: 0 0.4rem;
+  font-size: 0.65rem;
+}
+.dt-rc__pop-actions .dt-btn--icon {
+  flex: 0 0 2.1rem;
+  width: 2.1rem;
+}
+.dt-rc__pop-actions .dt-btn--icon img {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.dt-rc__pop .dt-note {
+  margin: 0;
+}
+/* [E] 관련 자료 추천 */
+
+/* [S] 접는 구획(참고문헌·상세 서지 정보) — 제목 24px Bold + 오른쪽 ˄ 접기 / ˅ 펼치기 */
+.dt-collapse__head {
+  margin: 0;
+}
+.dt-collapse__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--skx-ink-strong);
+  text-align: left;
+  cursor: pointer;
+}
+.dt-collapse__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 4px;
+  border-radius: 0.3rem;
+}
+.dt-collapse__chev {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.dt-collapse__btn[aria-expanded="false"] .dt-collapse__chev {
+  transform: rotate(180deg);
+}
+.dt-collapse__body {
+  padding: 0 0.8rem;
+}
+/* 참고문헌 본문 16px · 줄간격 1.6 */
+.dt-refs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.dt-refs li + li {
+  margin-top: 0.4rem;
+}
+/* [E] 접는 구획 */
+
+/* [S] 좁은 틀 — 화면 폭이 아니라 큰 틀의 폭으로 바꾼다(사이드바를 펼치거나 DeepRead 창을 열면 같은 화면에서도 틀이 좁아진다) */
+/* 버튼 열이 가운데 글을 너무 좁히면 아래 한 줄로 내린다 */
+@container dt-frame (max-width: 38rem) {
+  .dt-hero {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "cover head"
+      "cover meta"
+      "actions actions";
+  }
+  .dt-hero__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-self: auto;
+    max-width: 30rem;
+  }
+  .dt-hero__actions > .dt-btn--accent {
+    order: -1;
+    width: auto;
+    flex: 1 1 8.4rem;
+  }
+  .dt-hero__row {
+    flex: 1 1 8.4rem;
+  }
+}
+/* 휴대폰 폭 — 표지 옆에 칩·제목, 서지 표와 버튼은 아래로. DeepResearch 상자의 버튼도 아래 한 줄 */
+@container dt-frame (max-width: 28rem) {
+  .dt-hero {
+    grid-template-columns: 5.6rem minmax(0, 1fr);
+    grid-template-areas:
+      "cover head"
+      "meta meta"
+      "actions actions";
+    column-gap: 0.8rem;
+    row-gap: 0.8rem;
+    padding-bottom: 1.2rem;
+  }
+  .dt-hero__actions {
+    max-width: none;
+  }
+  .dt-cover {
+    width: 5.6rem;
+    height: 7.5rem;
+  }
+  .dt-title {
+    font-size: 1.1rem;
+  }
+  .dt-tabs {
+    padding: 0.4rem 0.8rem 0.8rem;
+  }
+  .dt-research {
+    flex-wrap: wrap;
+  }
+  .dt-research__text {
+    flex-basis: calc(100% - 2.3rem);
+  }
+  .dt-research .dt-btn {
+    flex: 1 1 100%;
+  }
+  .dt-related__grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    padding: 0;
+  }
+  .dt-collapse__body {
+    padding: 0;
+  }
+  .dt-refs {
+    font-size: 0.75rem;
+  }
+}
+/* 휴대폰 화면 — 큰 틀 자신의 여백·반경(컨테이너 질의는 틀의 자손만 바꿀 수 있다) */
+@media (max-width: 768px) {
+  .dt-frame {
+    gap: 1.4rem;
+    padding: 0.8rem;
+    border-radius: 16px;
+  }
+}
+/* [E] 좁은 틀 */
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-rc,
+  .dt-btn,
+  .dt-kw-link,
+  .dt-collapse__chev {
+    transition: none;
+  }
+}
