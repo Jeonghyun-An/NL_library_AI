@@ -1,6 +1,7 @@
 // frontend/tests/unit/researchEvents.test.ts
 import { describe, expect, it } from "vitest";
 import type {
+  CandidatesEvent,
   CritiqueEvent,
   ReportChunk,
   ReportEvidence,
@@ -1456,6 +1457,135 @@ describe("roundStatusLabel — 회차 줄 미세 상태", () => {
     // 앞 회차 — 재검색을 낸 1회차는 2회차가 시작되면 적지 않는다
     const second = run(AWAITING_ROUND2_CRITIQUE).subqs[0]!;
     expect(roundStatusLabel(second, second.rounds[0]!)).toBeNull();
+  });
+});
+
+describe("탐색 후보 — candidates 이벤트", () => {
+  // 워커(runner)의 _paper_brief 모양 — 뺀 논문(excluded_papers)과 같다. 서지가 없는 칸은 null 로 온다
+  const PAPERS = [
+    { cnts_id: "C1", title: " 초등 AI 윤리 수업의 효과 ", personal_author: "김철수; 이영희", pub_date: "2019-03" },
+    { cnts_id: "C2", title: null, personal_author: null, pub_date: null },
+  ];
+  const PAPERS_VIEW = [
+    { cntsId: "C1", title: "초등 AI 윤리 수업의 효과", personalAuthor: "김철수; 이영희", pubDate: "2019-03" },
+    { cntsId: "C2", title: "", personalAuthor: null, pubDate: null },
+  ];
+  const FIRST_SEARCH: ResearchEvent = { kind: "search", subq_idx: 0, query: "효과 측정", found: 12, round: 1, new_papers: 5 };
+  const RECHECK: CritiqueEvent = {
+    kind: "critique", subq_idx: 0, verdict: "insufficient", note: "초등 대상 연구가 없다", adopted: 5,
+    parse_failed: false, capped: 0, round: 1, next_query: "초등 AI 윤리 교육 효과", will_recheck: true,
+  };
+  function candidates(subqIdx: number, round: number, papers = PAPERS): CandidatesEvent {
+    return { kind: "candidates", subq_idx: subqIdx, round, papers };
+  }
+  // 1회차 검색 직후 후보를 받고 자기점검을 기다리는 장면(워커의 순서: search → counters → candidates → critique)
+  const REVIEWING: ResearchEvent[] = [SEARCH_STARTED, FIRST_SEARCH, { kind: "counters", ...SAVED }, candidates(0, 1)];
+
+  it("후보 이벤트가 그 하위질문에 '검토 중' 후보를 세운다(서지 모양은 뺀 논문과 같다)", () => {
+    const v = run(REVIEWING);
+    expect(v.subqs[0]!.reviewing).toEqual({ round: 1, papers: PAPERS_VIEW });
+    // 회차 기록은 그대로다 — 후보는 장부에 세우는 화면 상태일 뿐이다
+    expect(v.subqs[0]!.rounds.map((r) => [r.round, r.verdict, r.adoptedPapers.length])).toEqual([[1, null, 0]]);
+  });
+
+  it("같은 하위질문의 점검(critique)이 오면 검토 중을 지운다", () => {
+    const before = run(REVIEWING);
+    expect(before.subqs[0]!.reviewing?.papers).toHaveLength(2);
+    const after = applyResearchEvent(before, RECHECK);
+    expect("reviewing" in after.subqs[0]!).toBe(false);
+    expect(after.subqs[0]!.rounds[0]!.verdict).toBe("insufficient");
+  });
+
+  it("판정 전에 다음 회차 후보가 오면 앞 후보를 갈음한다", () => {
+    const next = { cnts_id: "C3", title: "교사 연수와 윤리 수업", personal_author: "박민수", pub_date: "2021" };
+    const v = run([...REVIEWING, candidates(0, 2, [next])]);
+    expect(v.subqs[0]!.reviewing).toEqual({
+      round: 2,
+      papers: [{ cntsId: "C3", title: "교사 연수와 윤리 수업", personalAuthor: "박민수", pubDate: "2021" }],
+    });
+  });
+
+  it("빈 후보 이벤트는 앞 회차의 검토 중을 지운다", () => {
+    // 1회차 점검을 놓친 채 2회차가 이은 근거 없이(papers: []) 왔다 — 앞 회차의 '검토 중'이 남지 않는다
+    const before = run(REVIEWING);
+    expect(before.subqs[0]!.reviewing?.round).toBe(1);
+    const after = applyResearchEvent(before, candidates(0, 2, []));
+    expect("reviewing" in after.subqs[0]!).toBe(false);
+  });
+
+  it("다른 하위질문의 점검은 검토 중을 지우지 않는다", () => {
+    const v = run([...REVIEWING, candidates(1, 1)]);
+    expect(v.subqs[1]!.reviewing?.round).toBe(1);
+    const next = applyResearchEvent(v, RECHECK);
+    expect("reviewing" in next.subqs[0]!).toBe(false);
+    expect(next.subqs[1]!.reviewing).toEqual({ round: 1, papers: PAPERS_VIEW });
+  });
+
+  it("진행 저장 step 이벤트는 검토 중을 남기고, 그 회차의 판정이 실린 step 이면 지운다", () => {
+    // 2회차 검색 뒤 후보를 받고 점검을 기다린다 — 1회차 기록만 실은 진행 저장은 2회차 후보를 지우지 않는다
+    const waiting = run([...AWAITING_ROUND2_CRITIQUE, candidates(0, 2)]);
+    const kept = applyResearchEvent(waiting, { ...SEARCH_STARTED, result: { rounds: [ROUND1], counters: LIVE } });
+    expect(kept.subqs[0]!.reviewing).toEqual({ round: 2, papers: PAPERS_VIEW });
+    // 2회차 점검 이벤트를 놓치고 그 판정이 실린 진행 저장만 받았다
+    const judged = applyResearchEvent(kept, { ...SEARCH_STARTED, result: { rounds: [ROUND1, ROUND2], counters: LIVE } });
+    expect("reviewing" in judged.subqs[0]!).toBe(false);
+    expect(judged.subqs[0]!.rounds.map((r) => r.verdict)).toEqual(["insufficient", "sufficient"]);
+  });
+
+  it("snapshot 은 검토 중을 지운다 — 재접속하면 더미 없이 그린다", () => {
+    const before = run(REVIEWING);
+    expect(before.subqs[0]!.reviewing).toBeDefined();
+    const v = applyResearchEvent(before, {
+      kind: "snapshot",
+      steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "running" })],
+      job: { status: "running", stage: "planned", plan: ["효과 측정", "교사 인식"] },
+    });
+    expect(v.subqs.some((s) => "reviewing" in s)).toBe(false);
+    // 라이브로 받은 회차는 그대로 남는다
+    expect(v.subqs[0]!.rounds.map((r) => r.query)).toEqual(["효과 측정"]);
+  });
+
+  it("처음 연 화면(initialResearchView)에는 검토 중이 없고, 검토 중이 없는 하위질문에 빈 후보가 오면 view 를 그대로 돌려준다 — 모르는 번호에도 하위질문을 덧붙이지 않는다", () => {
+    const opened = initialResearchView(job({ steps: [PLAN_ROW, SAVED_SEARCH_ROW] }));
+    expect(opened.subqs.some((s) => "reviewing" in s)).toBe(false);
+    expect(applyResearchEvent(opened, candidates(0, 2, []))).toBe(opened);
+    expect(applyResearchEvent(opened, candidates(5, 1, []))).toBe(opened);
+    expect(opened.subqs.map((s) => s.idx)).toEqual([0, 1]);
+  });
+
+  it("검토 중이 없는 하위질문에는 reviewing 키를 두지 않는다(기존 모양 그대로)", () => {
+    const v = run(REVIEWING);
+    expect("reviewing" in v.subqs[0]!).toBe(true);
+    expect("reviewing" in v.subqs[1]!).toBe(false);
+    // 하위질문을 다시 지어도(승인한 계획 반영 — rebuild) 검토 중은 그 하위질문에만 남고 다른 하위질문에 키가 생기지 않는다
+    const rebuilt = withPlan(v, ["효과 측정", "교사 인식"]);
+    expect(rebuilt.subqs[0]!.reviewing).toEqual({ round: 1, papers: PAPERS_VIEW });
+    expect("reviewing" in rebuilt.subqs[1]!).toBe(false);
+  });
+
+  it("끝난 잡(완료·실패·취소 이벤트)은 검토 중을 지운다 — 스트림이 닫혀 점검이 오지 않는다", () => {
+    const before = run(REVIEWING);
+    expect(before.subqs[0]!.reviewing).toBeDefined();
+    const ends: ResearchEvent[] = [
+      { kind: "canceled", status: "canceled" },
+      { kind: "failed", status: "failed", error: "시간 상한" },
+      { kind: "done", status: "completed" },
+    ];
+    for (const end of ends) {
+      expect(applyResearchEvent(before, end).subqs.some((s) => "reviewing" in s)).toBe(false);
+    }
+  });
+
+  it("끝난 잡으로 다시 맞추면(refreshView) 검토 중을 지운다 — 재연결 사이에 끝난 잡은 종료 이벤트도 snapshot 도 오지 않는다", () => {
+    const before = run(REVIEWING);
+    expect(before.subqs[0]!.reviewing).toBeDefined();
+    // 스트림이 끊겨(CLOSED) GET 으로만 다시 맞추는 사이에 잡이 실패했다 — 앞 화면의 하위질문을 잇는 길에서도 남지 않는다
+    const v = refreshView(before, job({
+      status: "failed",
+      steps: [PLAN_ROW, step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", status: "failed", result: { error: "시간 상한" } })],
+    }));
+    expect(v.status).toBe("failed");
+    expect(v.subqs.some((s) => "reviewing" in s)).toBe(false);
   });
 });
 

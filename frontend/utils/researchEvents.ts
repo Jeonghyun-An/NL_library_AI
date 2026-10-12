@@ -2,6 +2,7 @@
 import type {
   AdoptedPaper,
   AdoptedPaperView,
+  CandidatesEvent,
   CountersPayload,
   CountersView,
   CritiqueEvent,
@@ -17,6 +18,7 @@ import type {
   ResearchStatus,
   ResearchStepRow,
   ResearchView,
+  ReviewingView,
   RoundSource,
   RoundView,
   SearchEvent,
@@ -292,7 +294,10 @@ export function refreshView(prev: ResearchView | null, job: ResearchJob): Resear
     ? fresh.counters
     : reconcileCounters(prev.counters, prev.steps, fresh.counters, fresh.steps);
   const highlight = merged.status === "running" ? (prev.highlight ?? latestHighlight(merged.subqs)) : null;
-  return { ...merged, counters, highlight };
+  // 끝난 잡은 스트림이 닫혀 점검이 더 오지 않는다 — 앞 화면이 잇던 '검토 중' 후보를 남기지 않는다(재연결 사이에 끝난
+  // 잡은 종료 이벤트도 snapshot 도 오지 않고 이 GET 으로만 맞춘다)
+  const settled = isTerminalStatus(merged.status) ? clearReviewing(merged) : merged;
+  return { ...settled, counters, highlight };
 }
 
 export function withPlan(view: ResearchView, plan: string[]): ResearchView {
@@ -331,16 +336,19 @@ export function applyResearchEvent(view: ResearchView, event: ResearchEvent): Re
       return applySearch(view, event);
     case "critique":
       return applyCritique(view, event);
+    case "candidates":
+      return applyCandidates(view, event);
     case "counters":
       return { ...view, counters: countersFromPayload(event) };
     case "synth":
       return { ...view, synth: applySynth(view.synth, event) };
+    // 끝난 잡은 스트림이 닫혀 점검이 더 오지 않는다 — '검토 중' 후보를 남기지 않는다
     case "done":
-      return { ...view, status: "completed", highlight: null, queue: null };
+      return { ...clearReviewing(view), status: "completed", highlight: null, queue: null };
     case "failed":
-      return { ...view, status: "failed", lastError: event.error ?? view.lastError, highlight: null, queue: null };
+      return { ...clearReviewing(view), status: "failed", lastError: event.error ?? view.lastError, highlight: null, queue: null };
     case "canceled":
-      return { ...view, status: "canceled", highlight: null, queue: null };
+      return { ...clearReviewing(view), status: "canceled", highlight: null, queue: null };
     case "queue":
       // 서버는 대기 중인 잡에만 보낸다 — 대기를 벗어난 화면에 늦게 온 순번은 싣지 않는다
       return isWaiting(view.status) ? { ...view, queue: { ahead: event.ahead, etaSec: event.eta_sec ?? null } } : view;
@@ -366,7 +374,9 @@ function applySnapshot(view: ResearchView, event: SnapshotEvent): ResearchView {
     }
   }
   if (!next.plan.length) next.plan = planFromSteps(next.steps);
-  const rebuilt = rebuild(next);
+  // 스냅숏은 재접속·상태가 바뀔 때 온다 — 탐색 후보는 저장되지 않아 다시 오지 않으므로 '검토 중'은 지우고 저장된 장부만
+  // 그린다. 지나간 후보는 점검의 채택·뺌으로 이미 보인다
+  const rebuilt = clearReviewing(rebuild(next));
   if (rebuilt.highlight || rebuilt.status !== "running") return rebuilt;
   return { ...rebuilt, highlight: latestHighlight(rebuilt.subqs) };
 }
@@ -422,8 +432,9 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
       flagged: event.flagged ?? null,
       adoptedPapers: (event.adopted_papers ?? []).map(toAdoptedPaperView),
     };
+    // 이 하위질문의 '검토 중' 후보는 이 점검으로 채택·뺌이 정해졌다 — 지운다
     return {
-      ...sq,
+      ...withoutReviewing(sq),
       rounds: upsertRound(sq.rounds, entry),
       verdict: event.verdict,
       note: event.note,
@@ -435,6 +446,19 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
     ? { subqIdx: event.subq_idx, round, note: event.note, nextQuery: event.next_query }
     : next.highlight;
   return { ...next, highlight };
+}
+
+// 워커의 탐색 후보(candidates) — 회차마다 검색 뒤·자기점검 전에 한 번 온다. 그 하위질문의 '검토 중' 후보를 세우고(앞 후보는
+// 갈음한다), 같은 하위질문의 점검·그 회차 판정이 실린 진행 저장·snapshot·잡 종료가 지운다. 빈 후보(papers: [])는
+// 갈음 = 비움이다 — 점검을 놓친 채 다음 회차가 빈 후보로 와도 앞 회차의 '검토 중'이 남지 않는다. updateSubq 는 모르는
+// 번호에 빈 하위질문을 덧붙이므로 빈 후보는 그 하위질문에 검토 중이 있을 때만 고친다(유령 하위질문을 만들지 않는다)
+function applyCandidates(view: ResearchView, event: CandidatesEvent): ResearchView {
+  if (!event.papers.length) {
+    const sq = view.subqs.find((s) => s.idx === event.subq_idx);
+    return sq?.reviewing ? updateSubq(view, event.subq_idx, withoutReviewing) : view;
+  }
+  const reviewing: ReviewingView = { round: event.round ?? null, papers: event.papers.map(toExcludedPaperView) };
+  return updateSubq(view, event.subq_idx, (sq) => ({ ...sq, reviewing }));
 }
 
 // 다듬은 절·근거는 절이 끝날 때 synth 이벤트로 한 번만 온다 — 알리는 step 이벤트는 그것을 뺀
@@ -512,6 +536,10 @@ function buildSubq(
   if (source === "none" && rounds.length) source = "rounds";
 
   const fallbackStatus: StepStatus = trail ? (trail.failed ? "failed" : "done") : "pending";
+  // 탐색 후보('검토 중')는 저장되지 않는 화면 상태라 단계 행이 다시 지어져도 잇는다. 다만 새 회차 기록에 그 회차의
+  // 판정이 실렸으면(점검 이벤트를 놓치고 진행 저장만 받았다) 잇지 않는다
+  const rv = carry?.reviewing;
+  const reviewing = rv && !rounds.some((x) => x.round === rv.round && x.verdict !== null) ? rv : undefined;
   return {
     source,
     subq: {
@@ -525,6 +553,7 @@ function buildSubq(
       adopted: r.adopted ?? carry?.adopted ?? trail?.evidence_count ?? null,
       parseFailed: r.parse_failed ?? carry?.parseFailed ?? trail?.parse_failed ?? false,
       error: r.error ?? null,
+      ...(reviewing ? { reviewing } : {}),
     },
   };
 }
@@ -713,6 +742,18 @@ function updateSubq(view: ResearchView, idx: number, fn: (sq: SubqView) => SubqV
     ? view.subqs
     : [...view.subqs, emptySubq(idx, view.plan[idx] ?? "")].sort((a, b) => a.idx - b.idx);
   return { ...view, subqs: list.map((s) => (s.idx === idx ? fn(s) : s)) };
+}
+
+// '검토 중' 후보 키를 뺀 하위질문 — 없으면 같은 객체를 돌려준다. 키를 null 로 남기지 않는다(기존 모양 그대로)
+function withoutReviewing(sq: SubqView): SubqView {
+  if (!sq.reviewing) return sq;
+  const rest = { ...sq };
+  delete rest.reviewing;
+  return rest;
+}
+
+function clearReviewing(view: ResearchView): ResearchView {
+  return view.subqs.some((s) => s.reviewing) ? { ...view, subqs: view.subqs.map(withoutReviewing) } : view;
 }
 
 function emptySubq(idx: number, title: string): SubqView {
