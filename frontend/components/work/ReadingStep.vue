@@ -55,7 +55,7 @@
             :disabled="readOnly || busy || !canOutline"
             @click="makeOutline(true)"
           >
-            목차 다시 만들기
+            {{ REMAKE_REPORT }}
           </button>
         </template>
         <button
@@ -65,7 +65,7 @@
           :disabled="readOnly || busy || !canOutline"
           @click="makeOutline(false)"
         >
-          목차 만들기
+          {{ MAKE_REPORT }}
         </button>
       </div>
     </template>
@@ -84,15 +84,18 @@ import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
 import { canMakeOutline, outlineHint } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
-// 담음 5편 이상이면 [목차 만들기] → POST .../outline 뒤 계획서 단계로 간다
+// 담음 5편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
+// 넣는다 — 06e D20)
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload] }>();
 
-// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 바꾼다 — 다시 만들기 전에 묻는다
+// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 바꾼다 — 다시 만들기 전에 묻는다. 새 반영은 다시 자동 승인하지만
+// 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
 const REMAKE_CONFIRM =
-  "목차를 다시 만들면 지금 목차(묶음 이름·연구 질문·승인)가 새로 만든 목차로 바뀝니다. 계속할까요?";
+  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다. 이미 쓴 절은 지우지 않고(주제나 묶음이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
 
 const api = useWorkApi();
 const busy = ref(false);
@@ -153,7 +156,7 @@ async function makeOutline(again: boolean): Promise<void> {
     props.work.afterAction();
     emit("go", "proposal");
   } catch (err) {
-    error.value = workErrorMessage(err, "목차를 만들지 못했습니다");
+    error.value = workErrorMessage(err, "보고서를 만들지 못했습니다");
     if (httpStatus(err) === 409) await reloadAll(["reading", "work"]);
   } finally {
     busy.value = false;

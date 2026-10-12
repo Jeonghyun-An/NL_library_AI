@@ -1228,4 +1228,191 @@ button.wk-stepper__step {
   }
 }
 
+/* ── 보고서 화면 — 큰 진행 막대·머리 목차·문서 자리(06e Task A5) ── */
+/* 큰 진행 막대(06e 정함 28 — 사용자 Q1 답 '현재 절 작성 중에 보이는 커다란 프로그레스바'를 자동 보고서에도). 두께는 06d
+   research.css 의 --rs-bar-thick 과 같은 값이지만 import 하지 않고 이 파일의 토큰으로 둔다(시각 디자인 담당이 고칠 자리).
+   절 자리가 아래로 쌓이며 흐르는 동안 화면 위에 붙어 있다(.wk-pill 과 같은 sticky) */
+.wk-rbar {
+  --wk-bar-thick: 1rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.4rem 0.8rem;
+  padding: 0.8rem 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.wk-rbar__line {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.wk-rbar__pct {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-primary);
+}
+.wk-rbar__track {
+  grid-column: 1 / -1;
+  height: var(--wk-bar-thick);
+  overflow: hidden;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-rbar__fill {
+  height: 100%;
+  background: var(--skx-primary);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+/* 쓰는 절이 있는 동안 채움 위로 빛이 흐른다 — 퍼센트는 절이 끝날 때만 오르므로 멈춰 보이지 않게. 첫 절을 쓰는 동안(0%)도
+   조금은 보이게 최소 폭을 둔다 */
+.wk-rbar__fill.is-running {
+  min-width: calc(var(--wk-bar-thick) * 2);
+  background-image: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--skx-white) 35%, transparent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: wk-rbar-flow 1.6s linear infinite;
+}
+@keyframes wk-rbar-flow {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (max-width: 768px) {
+  .wk-rbar {
+    --wk-bar-thick: 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-rbar__fill {
+    transition: none;
+  }
+  .wk-rbar__fill.is-running {
+    animation: none;
+  }
+}
+@media print {
+  .rs-page .wk-rbar {
+    display: none !important;
+  }
+}
+/* 연쇄가 멈춘 줄 — 까닭과 [이어서 쓰기] */
+.wk-doc__resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.wk-doc__resume p {
+  margin: 0;
+}
+/* 머리 목차 — 문서 순서의 여섯 자리. 항목을 누르면 그 자리로 옮긴다 */
+.wk-doc__toc {
+  gap: 0.5rem;
+}
+.wk-doc__toc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.wk-doc__toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-doc__toc-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-size: 0.7rem;
+  text-align: left;
+  color: var(--skx-ink);
+  background: none;
+  border: 0;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.wk-doc__toc-item:hover {
+  background: var(--skx-border-c1);
+}
+.wk-doc__toc-item:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 1px;
+}
+.wk-doc__toc-no {
+  flex-shrink: 0;
+  min-width: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-gray-1);
+}
+.wk-doc__toc-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wk-doc__toc-status {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.wk-doc__toc-item.is-queued .wk-doc__toc-status,
+.wk-doc__toc-item.is-writing .wk-doc__toc-status {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-doc__toc-item.is-failed .wk-doc__toc-status,
+.wk-doc__toc-item.is-skipped .wk-doc__toc-status {
+  color: var(--skx-ink);
+}
+/* 문서 자리 — 1 주제·2 연구 배경·5 연구 질문·6 방법 제안(3·4 는 ProposalSection) */
+.wk-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.wk-doc__part {
+  gap: 0.4rem;
+}
+.wk-doc__part-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-doc__text {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.7;
+  white-space: pre-line;
+  color: var(--skx-ink);
+}
+/* 머리 목차로 옮겨 온 자리가 위에 붙은 진행 막대에 가리지 않게 */
+.wk-doc__part,
+.wk-doc .wk-psec {
+  scroll-margin-top: 6rem;
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

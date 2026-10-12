@@ -31,7 +31,7 @@
           소속으로 서버가 정합니다.
         </p>
         <div v-if="!readOnly" class="rs-card__actions">
-          <button type="button" class="rs-btn" :disabled="busy" @click="makeOutline">목차 만들기</button>
+          <button type="button" class="rs-btn" :disabled="busy" @click="makeOutline">{{ MAKE_REPORT }}</button>
           <button type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'reading')">읽기 목록으로</button>
         </div>
       </template>
@@ -44,33 +44,111 @@
       <div v-else-if="canRemake" class="wk-proposal__remake">
         <p class="rs-muted">{{ remakeWhy }}</p>
         <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="makeOutline">
-          목차 다시 만들기
+          {{ REMAKE_REPORT }}
         </button>
       </div>
-      <OutlineEditor :proposal="proposal" :read-only="readOnly" :busy="busy || !!outlineGen" @save="saveOutline" />
+
+      <template v-if="approved">
+        <!-- 큰 진행 막대(06e 정함 28) — 절을 차례로 쓰는 동안만 서고 다 쓰면 걷힌다. 글줄·퍼센트는 valuetext 로 읽힌다 -->
+        <div
+          v-if="bar"
+          class="wk-rbar"
+          role="progressbar"
+          :aria-valuenow="bar.percent"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-valuetext="bar.label"
+        >
+          <p class="wk-rbar__line">{{ bar.label }}</p>
+          <span class="wk-rbar__pct">{{ bar.percent }}%</span>
+          <div class="wk-rbar__track">
+            <div class="wk-rbar__fill" :class="{ 'is-running': bar.running }" :style="{ width: `${bar.percent}%` }" />
+          </div>
+        </div>
+        <!-- 연쇄가 멈춘 줄 — 남은 절이 있을 때만(멈춘 뒤 남은 절을 손으로 다 쓰면 이어서 쓸 것이 없어 걷는다) -->
+        <div v-if="autoStopped && autoLeft.length" class="rs-alert wk-doc__resume" role="alert">
+          <p>{{ autoStopped }} — [이어서 쓰기]를 누르면 남은 절부터 다시 씁니다.</p>
+          <button type="button" class="rs-btn rs-btn--small" :disabled="autoRunning" @click="resumeAuto">이어서 쓰기</button>
+        </div>
+        <nav class="rs-card wk-doc__toc" aria-labelledby="wk-doc-toc-title">
+          <div class="wk-doc__toc-head">
+            <h3 id="wk-doc-toc-title" class="rs-card__title">목차</h3>
+            <button
+              type="button"
+              class="rs-btn rs-btn--small rs-btn--ghost"
+              :aria-expanded="outlineOpen"
+              :aria-controls="outlineOpen ? 'wk-outline-editor' : undefined"
+              @click="outlineOpen = !outlineOpen"
+            >
+              {{ readOnly ? "목차 자세히 보기" : "목차 고치기" }}
+            </button>
+          </div>
+          <ol class="wk-doc__toc-list">
+            <li v-for="item in toc" :key="item.key">
+              <button type="button" class="wk-doc__toc-item" :class="`is-${item.status}`" @click="goPart(item.anchor)">
+                <span class="wk-doc__toc-no">{{ item.no }}</span>
+                <span class="wk-doc__toc-label">{{ item.label }}</span>
+                <span v-if="TOC_STATUS[item.status]" class="wk-doc__toc-status">{{ TOC_STATUS[item.status] }}</span>
+              </button>
+            </li>
+          </ol>
+        </nav>
+      </template>
+      <!-- [목차 고치기] — 승인 목차는 접어 두고, 초안 목차(06b·질문이 없어 자동 승인하지 못한 목차)는 승인하러 늘 편다 -->
+      <div v-if="editorShown" id="wk-outline-editor">
+        <OutlineEditor :proposal="proposal" :read-only="readOnly" :busy="busy || !!outlineGen" @save="saveOutline" />
+      </div>
 
       <template v-if="approved">
         <div class="rs-card wk-proposal__intro">
           <AiFootprintMeter :proposal="proposal" />
-          <p class="rs-muted">
-            절마다 [이 절 쓰기]를 누르세요. 선행연구 검토는 묶음마다 씁니다 — 모든 절을 한 번에 쓰는 버튼은 없습니다.
+          <!-- 절을 차례로 쓰는 것은 [보고서 만들기]가 자동 승인한 목차(auto)뿐 — 06b 때 승인했거나 초안을 손으로 승인한 목차는 손으로 쓴다 -->
+          <p v-if="proposal.outline.auto" class="rs-muted">
+            [보고서 만들기]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 씁니다. 다 쓴 문단은 그대로 두어도 되고,
+            [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
+          </p>
+          <p v-else class="rs-muted">
+            절마다 [이 절 쓰기]를 누르면 씁니다. 다 쓴 문단은 [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
           </p>
         </div>
-        <ProposalSection
-          v-for="key in writableKeys"
-          :key="key"
-          :section-key="key"
-          :label="sectionLabel(key, proposal.outline)"
-          :proposal="proposal"
-          :state="state"
-          :read-only="readOnly"
-          :busy="busy"
-          :job-id="jobId"
-          @write="write(key)"
-          @save="saveSection(key, $event)"
-          @regenerate="regenerate(key, $event)"
-          @retry="retry"
-        />
+        <div class="wk-doc">
+          <section id="wk-doc-topic" class="rs-card wk-doc__part" aria-labelledby="wk-doc-topic-title">
+            <h3 id="wk-doc-topic-title" class="wk-doc__part-title" tabindex="-1">1. {{ SECTION_LABELS.topic }}</h3>
+            <p class="wk-doc__text">{{ proposal.outline.topic.title }}</p>
+          </section>
+          <section id="wk-doc-background" class="rs-card wk-doc__part" aria-labelledby="wk-doc-background-title">
+            <h3 id="wk-doc-background-title" class="wk-doc__part-title" tabindex="-1">2. {{ SECTION_LABELS.background }}</h3>
+            <p v-if="background.trim()" class="wk-doc__text">{{ background }}</p>
+            <p v-else class="rs-muted">연구 배경을 아직 적지 않았습니다.</p>
+          </section>
+          <ProposalSection
+            v-for="key in writableKeys"
+            :key="key"
+            :section-key="key"
+            :label="partLabel(key)"
+            :proposal="proposal"
+            :state="state"
+            :read-only="readOnly"
+            :busy="busy"
+            :job-id="jobId"
+            :skipped="autoSkipped.has(key)"
+            :auto-next="autoNext.has(key)"
+            @write="write(key)"
+            @save="saveSection(key, $event)"
+            @regenerate="regenerate(key, $event)"
+            @retry="retry"
+          />
+          <section id="wk-doc-question" class="rs-card wk-doc__part" aria-labelledby="wk-doc-question-title">
+            <h3 id="wk-doc-question-title" class="wk-doc__part-title" tabindex="-1">5. {{ SECTION_LABELS.question }}</h3>
+            <p v-if="proposal.outline.question" class="wk-doc__text">{{ proposal.outline.question }}</p>
+            <p v-else class="rs-muted">연구 질문을 아직 정하지 않았습니다 — [목차 고치기]에서 고르세요.</p>
+          </section>
+          <section id="wk-doc-method" class="rs-card wk-doc__part" aria-labelledby="wk-doc-method-title">
+            <h3 id="wk-doc-method-title" class="wk-doc__part-title" tabindex="-1">6. {{ SECTION_LABELS.method }}</h3>
+            <p v-if="proposal.outline.method.trim()" class="wk-doc__text">{{ proposal.outline.method }}</p>
+            <p v-else class="rs-muted">방법을 아직 적지 않았습니다.</p>
+          </section>
+        </div>
 
         <div class="rs-card wk-proposal__export">
           <p class="rs-card__title">내려받기</p>
@@ -104,23 +182,35 @@ import AiFootprintMeter from "~/components/work/AiFootprintMeter.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
 import OutlineEditor from "~/components/work/OutlineEditor.vue";
 import ProposalSection from "~/components/work/ProposalSection.vue";
+import { useAutoReport } from "~/composables/useAutoReport";
 import { useReportExport } from "~/composables/useReportExport";
 import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWork";
 import type { OutlinePut, SectionPut, WorkStep } from "~/types/work";
 import { isFallbackOutline } from "~/utils/outlineEdit";
 import { buildProposalDocument, printedKeys, printedProposedCount } from "~/utils/proposalDocument";
-import { sectionLabel } from "~/utils/proposalView";
+import {
+  SECTION_LABELS,
+  autoChainOn,
+  autoTargets,
+  docToc,
+  outlineBackground,
+  reportBar,
+  sectionLabel,
+  type TocItem,
+} from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
 import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { openGeneration } from "~/utils/workEvents";
+import { MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep] }>();
 
 const CONFLICT = "다른 곳에서 계획서가 바뀌어 다시 불러왔습니다 — 바뀐 내용을 확인한 뒤 다시 해 주세요";
-// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다
+// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다. 새 반영은 다시
+// 자동 승인하지만 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
 const REMAKE_CONFIRM =
-  "목차를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다. 쓴 절은 남지만 '다시 맞춤 필요'가 붙습니다. 계속할까요?";
+  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다. 이미 쓴 절은 지우지 않고(주제나 묶음이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
 
 const api = useWorkApi();
 const { exporting, exportDocx } = useReportExport();
@@ -147,6 +237,71 @@ const remakeWhy = computed(() =>
     ? "주제나 읽기 목록이 바뀌었습니다 — 목차를 다시 만들면 지금 담은 논문으로 묶음을 새로 나눕니다(지금 목차를 바꿉니다)."
     : "모델이 목차 초안을 만들지 못했습니다 — 다시 만들어 볼 수 있습니다.",
 );
+
+// ── 보고서 자동 산출(06e D20) ─────────────────────────────
+// [보고서 만들기]의 반영이 자동 승인한 목차에서 남은 절을 문서 순서대로 하나씩 넣는다 — 이 화면이 열려 있는 동안만 돌고,
+// 조건은 서버 값으로 다시 계산해 탭을 닫았다 와도 남은 절부터 잇는다(useAutoReport, 정함 6)
+const {
+  running: autoRunning,
+  stopped: autoStopped,
+  skipped: autoSkipped,
+  resume: resumeAuto,
+} = useAutoReport({
+  proposal,
+  work: workView,
+  generate: (key) => api.generateSection(props.jobId, key),
+  reload: async () => {
+    await Promise.all([props.work.reload("proposal"), props.work.reload("work")]);
+    props.work.afterAction();
+  },
+});
+// 연쇄가 아직 넣을 절 — 문서 순서에서 절도 생성 기록도 없고 근거가 없어 건너뛰지도 않은 키. 연쇄가 돌지 않는 목차(06b 때
+// 승인한 목차·초안·예시 연구·목차를 다시 만드는 중)면 빈 목록이다. 멈춘 뒤 남은 절을 손으로 다 쓰면 비어 멈춘 줄이 걷힌다
+// (useAutoReport 의 stopped 는 resume·새 목차에서만 비워진다)
+const autoLeft = computed(() => {
+  const p = proposal.value;
+  return p && autoChainOn(p, workView.value) ? autoTargets(p).filter((k) => !autoSkipped.value.has(k)) : [];
+});
+// 쓰기 전 절 안내가 '차례가 오면 자동으로 씁니다' 를 말해도 되는 키 — 멈춘 동안은 [이어서 쓰기]를 눌러야 쓰므로 뺀다
+const autoNext = computed(() => new Set<string>(autoStopped.value ? [] : autoLeft.value));
+// 머리의 큰 진행 막대(정함 28) — 절이 끝날 때만 차오르고, 다 쓰면 걷힌다. 연쇄가 멈추면 쓰는 절이 있을 때만
+const bar = computed(() =>
+  proposal.value ? reportBar(proposal.value, state.value, autoSkipped.value, autoStopped.value !== null) : null,
+);
+// 머리 목차 — 문서 순서의 여섯 자리(anchor = 아래 자리 id)
+const toc = computed(() => (proposal.value ? docToc(proposal.value, state.value, autoSkipped.value) : []));
+const TOC_STATUS: Record<TocItem["status"], string> = {
+  text: "",
+  blank: "비어 있음",
+  empty: "쓰기 전",
+  queued: "대기 중",
+  writing: "쓰는 중",
+  done: "씀",
+  failed: "실패",
+  skipped: "근거 없음",
+};
+const background = computed(() => (proposal.value?.outline ? outlineBackground(proposal.value.outline) : ""));
+// [목차 고치기] — 승인 목차는 편집기를 접어 둔 채 시작한다(자동 확정이 기본). 초안 목차는 승인하러 늘 펴고, 편집기에서
+// 승인하면 saveOutline 이 outlineOpen 을 참으로 둬 편 채로 남는다
+const outlineOpen = ref(false);
+const editorShown = computed(() => !approved.value || outlineOpen.value);
+
+// 절 자리 제목 — 머리 목차의 번호를 붙인다(3.1 선행연구 검토 · 묶음 이름, 4. 연구 공백 — Word 의 절 번호와 같다)
+function partLabel(key: string): string {
+  const label = sectionLabel(key, proposal.value?.outline ?? null);
+  const no = toc.value.find((i) => i.key === key)?.no;
+  if (!no) return label;
+  return `${no.includes(".") ? no : `${no}.`} ${label}`;
+}
+
+// 머리 목차 항목 — 그 자리로 옮기고 자리 제목(h3 tabindex="-1")에 초점을 둔다(화면낭독기가 어디로 왔는지 읽는다)
+function goPart(anchor: string): void {
+  const el = document.getElementById(anchor);
+  if (!el) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  el.querySelector<HTMLElement>("h3")?.focus({ preventScroll: true });
+}
 
 onMounted(() => {
   // 다른 단계(주제·읽기 목록)에서 바뀐 다시 맞춤 표시는 조회 때 계산된다 — 단계에 들어올 때마다 다시 읽는다
@@ -197,12 +352,15 @@ function makeOutline(): void {
     await api.createOutline(props.jobId);
     // 대기 순번은 이벤트를 기다리지 않고 바로 그린다. 계획서 행이 없던 연구는 이 요청이 만든다
     await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "목차를 만들지 못했습니다");
+  }, "보고서를 만들지 못했습니다");
 }
 
 function saveOutline(body: OutlinePut): void {
   const p = proposal.value;
   if (!p) return;
+  // 초안 목차를 승인해도 편집기를 접지 않는다(editorShown) — 고치던 목차가 통째로 사라지지 않고 그 자리에서 '승인함'으로
+  // 바뀐다(06b 와 같다). 접기는 머리 목차의 [목차 고치기] 토글로
+  if (body.approve) outlineOpen.value = true;
   void act(async () => {
     await api.putOutline(props.jobId, p.version, body);
     await props.work.reload("proposal");

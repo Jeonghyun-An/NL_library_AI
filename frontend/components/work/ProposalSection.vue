@@ -2,8 +2,9 @@
 <template>
   <section :id="`wk-sec-${sectionKey}`" ref="rootEl" class="rs-card wk-psec" :aria-labelledby="`wk-sec-title-${sectionKey}`">
     <header class="wk-psec__head">
-      <h3 :id="`wk-sec-title-${sectionKey}`" class="rs-card__title">{{ label }}</h3>
-      <span class="rs-badge" :class="STATUS_BADGES[status]">{{ STATUS_LABELS[status] }}</span>
+      <!-- tabindex="-1" — 보고서 화면의 머리 목차가 이 제목으로 초점을 옮긴다 -->
+      <h3 :id="`wk-sec-title-${sectionKey}`" class="rs-card__title" tabindex="-1">{{ label }}</h3>
+      <span class="rs-badge" :class="STATUS_BADGES[status]">{{ skippedNow ? "근거 없음" : STATUS_LABELS[status] }}</span>
       <span v-if="stale" class="rs-badge wk-psec__stale">다시 맞춤 필요</span>
       <button
         v-if="!readOnly && status !== 'queued' && status !== 'writing'"
@@ -192,8 +193,18 @@
         문단 직접 쓰기
       </button>
     </div>
-    <p v-if="!section && status === 'empty'" class="rs-muted">
-      아직 쓰지 않은 절입니다. [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 받아들입니다.
+    <!-- 근거 없음 409 는 사실상 연구 공백 절에서만 난다 — 그 논문은 담은 논문·묶음이 아니라 고른 주제의 씨앗에서 온다 -->
+    <p v-if="skippedNow" class="rs-muted" role="status">
+      근거가 없어 쓰지 않았습니다 — 이 절은 고른 주제의 씨앗(향후 과제·부족한 하위질문)에 이은 논문으로 쓰는데, 이은
+      논문이 없습니다. 다른 주제를 고른 뒤 [보고서 다시 만들기]로 맞추세요.
+    </p>
+    <!-- '자동으로 씁니다'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
+    <p v-else-if="!section && status === 'empty' && autoNext" class="rs-muted">
+      아직 쓰지 않은 절입니다 — 차례가 오면 자동으로 씁니다. 지금 쓰려면 [이 절 쓰기]를 누르세요.
+    </p>
+    <p v-else-if="!section && status === 'empty'" class="rs-muted">
+      아직 쓰지 않은 절입니다. [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 다듬을 수
+      있습니다.
     </p>
   </section>
 </template>
@@ -234,6 +245,10 @@ const props = defineProps<{
   readOnly: boolean;
   busy: boolean;
   jobId: string;
+  // 보고서 자동 산출이 근거가 없어(409 no_section_papers) 건너뛴 절 — 이 방문만(06e)
+  skipped?: boolean;
+  // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 씁니다'
+  autoNext?: boolean;
 }>();
 const emit = defineEmits<{ write: []; save: [body: SectionPut]; regenerate: [pid: string]; retry: [genId: number] }>();
 
@@ -262,6 +277,8 @@ const STATE_LABELS: Record<ParaState, string> = {
 const section = computed(() => props.proposal.sections[props.sectionKey] ?? null);
 const status = computed(() => sectionStatus(props.sectionKey, props.state));
 const stale = computed(() => !!section.value && props.proposal.stale.sections[props.sectionKey] === true);
+// 자동 산출이 근거가 없어 건너뛴 쓰기 전 절 — 손으로 다시 쓰기 시작하면(대기·쓰는 중) 그 상태를 보인다
+const skippedNow = computed(() => !!props.skipped && !section.value && status.value === "empty");
 const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 씁니다` : null));
 const openSection = computed(() => openGeneration(props.state, "section", props.sectionKey));
 const queueText = computed(() => (openSection.value ? genQueueLine(openSection.value) : null));
