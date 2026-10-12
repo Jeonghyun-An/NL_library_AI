@@ -1,4 +1,5 @@
 // frontend/utils/slashCommand.ts
+import { DEEP_RESEARCH } from "./brand";
 import { questionProblem } from "./researchInput";
 
 export type SearchModeId = "deep-research";
@@ -18,7 +19,7 @@ export interface SearchMode {
 export const SEARCH_MODES: readonly SearchMode[] = [
   {
     id: "deep-research",
-    label: "딥리서치",
+    label: DEEP_RESEARCH,
     description: "질문을 하위질문으로 나눠 논문을 찾고, 스스로 점검한 뒤 인용이 달린 보고서를 씁니다",
     icon: "/img/ico-ai-related.svg",
     slash: "/deep-research",

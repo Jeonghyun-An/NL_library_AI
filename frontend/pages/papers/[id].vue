@@ -18,7 +18,7 @@
         <section v-if="cite && paper" class="pd-cite" aria-label="인용 맥락">
           <div class="pd-cite__row">
             <p class="pd-cite__text">
-              딥리서치 보고서 ‘{{ cite.question }}’에서
+              {{ DEEP_RESEARCH }} 보고서 ‘{{ cite.question }}’에서
               <strong>{{ withRo(cite.label) }}</strong> 인용됨
               <span aria-hidden="true">·</span> 인용 대목 {{ cite.chunks.length }}곳
             </p>
@@ -402,11 +402,11 @@
             aria-labelledby="pdetail-research-title"
           >
             <h2 id="pdetail-research-title" class="skx-prelate__heading">
-              이 논문으로 딥리서치
+              이 논문으로 {{ DEEP_RESEARCH }}
             </h2>
             <p class="pd-research__draft">{{ researchQuestion }}</p>
             <NuxtLink :to="paperResearchUrl(researchQuestion)" class="skx-btn-pview-sm">
-              <span class="skx-sr-only">딥리서치 질문을 </span>입력창에서 고쳐 쓰고 시작하기
+              <span class="skx-sr-only">{{ DEEP_RESEARCH }} 질문을 </span>입력창에서 고쳐 쓰고 시작하기
             </NuxtLink>
           </section>
         </template>
@@ -474,6 +474,7 @@ import { useResearchApi } from "~/composables/useResearch";
 import type { ReportChunk, ResearchJob } from "~/types/research";
 import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
 import { safeSessionStorage } from "~/utils/browserId";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
 import { paperResearchQuestion, paperResearchUrl } from "~/utils/paperResearch";

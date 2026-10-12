@@ -194,11 +194,11 @@ describe("backTarget", () => {
 
   it("딥리서치 출처는 보고서 주소로 간다", () => {
     expect(backTarget({ kind: "research", job: ID2, e: "E3" }, { at: "c-0-E3", y: 120 })).toEqual({
-      label: "딥리서치 보고서로",
+      label: "DeepResearch 보고서로",
       to: `/research/${ID2}?at=c-0-E3&y=120`,
     });
     expect(backTarget({ kind: "research", job: ID2, e: null }, NO_SPOT)).toEqual({
-      label: "딥리서치 보고서로",
+      label: "DeepResearch 보고서로",
       to: `/research/${ID2}`,
     });
   });
@@ -213,7 +213,7 @@ describe("backTarget", () => {
       to: `/research/${ID2}?s=proposal`,
     });
     expect(backTarget({ kind: "research", job: ID2, e: null, s: null }, NO_SPOT)).toEqual({
-      label: "딥리서치 보고서로",
+      label: "DeepResearch 보고서로",
       to: `/research/${ID2}`,
     });
   });

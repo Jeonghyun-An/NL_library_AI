@@ -78,6 +78,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 import { useResearchStarter } from "~/composables/useResearch";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { menuStep } from "~/utils/menuNav";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import {
@@ -364,7 +365,7 @@ async function submit(): Promise<void> {
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     // 입력은 지우지 않는다 — 사용자가 고쳐서 다시 보낼 수 있어야 한다
-    error.value = researchErrorMessage(e, "딥리서치를 시작하지 못했습니다");
+    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 시작하지 못했습니다`);
   } finally {
     busy.value = false;
   }

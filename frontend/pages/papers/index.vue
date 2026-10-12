@@ -184,7 +184,7 @@
           <!-- 이 결과에서 이어서 딥리서치로(06d N4 를 round08 이 대신한다). 바로 시작하지 않고 위 검색바에 질문을 채워 고쳐 보내게 한다 -->
           <div v-if="paperResult?.books.length" class="skx-deeper">
             <button type="button" class="skx-deeper__btn" @click="continueAsDeepResearch">
-              <span aria-hidden="true">+</span> 딥리서치로 이어서 조사하기
+              <span aria-hidden="true">+</span> {{ DEEP_RESEARCH }}로 이어서 조사하기
             </button>
           </div>
 
@@ -584,6 +584,7 @@ import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
 import { safeLocalStorage } from "~/utils/browserId";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";

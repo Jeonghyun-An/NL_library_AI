@@ -123,7 +123,8 @@ describe("slashSuggestions", () => {
   });
 
   it("슬래시 뒤의 글이 라벨의 접두여도 걸린다", () => {
-    expect(slashes("/딥")).toEqual(["/deep-research"]);
+    // 라벨은 DeepResearch(붙여 씀) — 명령 이름(/deep-research)에는 하이픈이 있어 이 입력은 라벨로만 걸린다
+    expect(slashes("/deepre")).toEqual(["/deep-research"]);
     expect(slashes("/요")).toEqual(["/summary"]);
   });
 

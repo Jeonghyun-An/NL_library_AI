@@ -60,7 +60,7 @@
             <section class="skx-history__group" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
                 <div class="skx-history__head-main">
-                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">딥리서치</h2>
+                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
                   <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
                 </div>
                 <div class="skx-history__head-actions">
@@ -83,7 +83,7 @@
                 v-if="confirming === 'research'"
                 class="skx-history__confirm"
                 role="alertdialog"
-                aria-label="딥리서치 기록 전체 삭제 확인"
+                :aria-label="`${DEEP_RESEARCH} 기록 전체 삭제 확인`"
                 aria-describedby="skx-history-research-confirm"
                 @keydown.esc.stop="closeConfirm('research')"
               >
@@ -231,6 +231,7 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { deepResearchStartRoute } from "~/utils/landingStart";
 import { countLiveResearch, entryTime, formatHistoryTime, groupSidebarHistory } from "~/utils/sidebarGroups";
 
@@ -242,8 +243,8 @@ const RESEARCH_ROW_LIMIT = 5;
 type ClearGroup = "research" | "recent";
 // 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다
 const CLEAR_TEXT: Record<ClearGroup, string> = {
-  research: "딥리서치 기록을 모두 지울까요? 보고서 자체는 지워지지 않습니다.",
-  recent: "최근 검색 기록(소장자료·논문)을 모두 지울까요? 딥리서치 기록은 지워지지 않습니다.",
+  research: `${DEEP_RESEARCH} 기록을 모두 지울까요? 보고서 자체는 지워지지 않습니다.`,
+  recent: `최근 검색 기록(소장자료·논문)을 모두 지울까요? ${DEEP_RESEARCH} 기록은 지워지지 않습니다.`,
 };
 const POLL_MS = 30_000;
 

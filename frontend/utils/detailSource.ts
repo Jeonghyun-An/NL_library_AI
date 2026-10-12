@@ -2,6 +2,7 @@
 import type { ComputedRef, InjectionKey } from "vue";
 import type { ReportPaper, ReportSection } from "~/types/research";
 import type { WorkStep } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { splitCitations } from "~/utils/citations";
 import { parseWorkStep } from "~/utils/workPhase";
 
@@ -144,7 +145,7 @@ export function backTarget(source: DetailSource, spot: ReturnSpot): { label: str
     case "research":
       if (source.s) params.set("s", source.s);
       appendSpot(params, spot);
-      return { label: source.s ? "연구 화면으로" : "딥리서치 보고서로", to: withQuery(`/research/${source.job}`, params) };
+      return { label: source.s ? "연구 화면으로" : `${DEEP_RESEARCH} 보고서로`, to: withQuery(`/research/${source.job}`, params) };
     case "none":
       return { label: "검색으로", to: "/" };
   }
