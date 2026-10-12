@@ -9,15 +9,16 @@ import { describe, expect, it } from "vitest";
 const cssPath = fileURLToPath(
   new URL("../../assets/css/style_skovix.css", import.meta.url),
 );
-const css = readFileSync(cssPath, "utf-8");
+// 주석을 먼저 지운다 — 주석 안의 선택자·중괄호에 블록 찾기가 속지 않게
+const css = readFileSync(cssPath, "utf-8").replace(/\/\*[\s\S]*?\*\//g, "");
 
-/** 선택자 바로 뒤 `{ ... }` 블록 본문(주석 제외). 중첩 괄호가 없는 토큰 블록만 대상 */
+/** 선택자 바로 뒤 `{ ... }` 블록 본문. 중첩 괄호가 없는 토큰 블록만 대상 */
 function blockBody(selectorPattern: RegExp): string {
   const m = css.match(
     new RegExp(`(?:^|\\n)${selectorPattern.source}\\s*\\{([^}]*)\\}`),
   );
   if (!m?.[1]) throw new Error(`블록을 찾지 못함: ${selectorPattern}`);
-  return m[1].replace(/\/\*[\s\S]*?\*\//g, "");
+  return m[1];
 }
 
 /** 블록 안의 `--skx-*: 값;` 선언 전부. #hex 값은 3·6자리만 받고 4·8자리는 명시적으로 실패시킨다 */

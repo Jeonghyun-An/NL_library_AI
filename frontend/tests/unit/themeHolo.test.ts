@@ -1,18 +1,20 @@
 // frontend/tests/unit/themeHolo.test.ts
 // round08 — 움직이는 홀로그램 배경(.skx-holo)이 글자 가독성을 해치지 않는지 지킨다.
-// style_skovix.css 의 띠(.skx-holo__band--N) 정지점 알파를 읽어 띠가 모두 가장 밝게 겹친 최악의 자리를 만들고,
-// 유리 카드가 뒤를 --skx-glass-dim 배로 어둡게 누른 뒤(--skx-blur 의 brightness) 유리색(--skx-glass)을 얹었을 때
-// 본문색(--skx-ink)이 4.5:1 이상인지 계산한다. 밝기 계수·유리·본문색은 모두 :root 토큰에서 읽는다(사본 없음).
+// style_skovix.css 의 띠(.skx-holo__band--N) 정지점 알파를 읽어 띠가 모두 가장 밝게 겹친 최악의 합성을 만들고,
+//  ① 그 위에 유리 색(--skx-glass·--skx-glass-2)을 알파 합성한 카드 위에서 본문색(--skx-ink)이 4.5:1 이상,
+//  ② 카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 3:1 이상인지 계산한다.
+// 유리·본문색은 :root 토큰에서 읽는다(사본 없음). 읽지 못하는 색 표기가 있으면 조용히 통과하지 않고 실패한다.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(
+const rawCss = readFileSync(
   fileURLToPath(new URL("../../assets/css/style_skovix.css", import.meta.url)),
   "utf-8",
 );
+const css = rawCss.replace(/\/\*[\s\S]*?\*\//g, "");
 const holoSection = (() => {
-  const m = css.match(
+  const m = rawCss.match(
     /\[S\] 움직이는 홀로그램 배경 \*\/([\s\S]*?)\/\* \[E\] 움직이는 홀로그램 배경/,
   );
   if (!m?.[1]) throw new Error("홀로그램 구간을 찾지 못함");
@@ -33,11 +35,39 @@ function rgbaStops(text: string): Stop[] {
     .filter((s) => s.a > 0);
 }
 
+/** 이 테스트가 읽을 수 없는 색 표기 — transparent·마스크용 #000·rgba 콤마식만 허용한다 */
+function unreadableColors(block: string): string[] {
+  const found: string[] = [];
+  const anyRgb = block.match(/\brgba?\(/g)?.length ?? 0;
+  const comma = [...block.matchAll(RGBA)].length;
+  if (anyRgb !== comma) found.push("콤마식이 아닌 rgb()/rgba()");
+  for (const h of block.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) {
+    if (h !== "#000") found.push(`hex ${h}`);
+  }
+  for (const f of block.match(
+    /\b(?:hsla?|hwb|lab|lch|oklab|oklch|color-mix|color)\(/g,
+  ) ?? []) {
+    found.push(f);
+  }
+  for (const n of block.match(
+    /\b(?:white|black|red|green|blue|gray|grey|silver|purple|pink|orange|yellow|teal|aqua|cyan|magenta|coral|violet|currentcolor)\b/gi,
+  ) ?? []) {
+    found.push(`색 이름 ${n}`);
+  }
+  return found;
+}
+
 function rootToken(name: string): string {
   const root = css.match(/(?:^|\n):root\s*\{([^}]*)\}/)?.[1] ?? "";
   const m = root.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
   if (!m?.[1]) throw new Error(`${name} 을 :root 에서 찾지 못함`);
   return m[1].trim();
+}
+
+function rootStop(name: string): Stop {
+  const stop = rgbaStops(rootToken(name))[0];
+  if (!stop) throw new Error(`${name} 을 rgba(r, g, b, a) 로 읽지 못함`);
+  return stop;
 }
 
 function hexToRgb(hex: string): Rgb {
@@ -74,63 +104,58 @@ function contrast(a: Rgb, b: Rgb): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
+function blockOf(selector: RegExp): string {
+  const m = holoSection.match(
+    new RegExp(`${selector.source}\\s*\\{([^}]*)\\}`),
+  );
+  if (!m?.[1]) throw new Error(`블록을 찾지 못함: ${selector}`);
+  return m[1];
+}
+
 /** `.skx-holo` 바탕: 단색 위에 옅은 방사 그라데이션 — 두 겹이 가장 짙게 겹친 자리 */
 function worstBase(): Rgb {
-  const block = holoSection.match(/\.skx-holo\s*\{([^}]*)\}/)?.[1];
-  if (!block) throw new Error(".skx-holo 블록을 찾지 못함");
   let base = hexToRgb(rootToken("--skx-page-bg"));
-  for (const s of rgbaStops(block)) base = over(base, s.rgb, s.a);
+  for (const s of rgbaStops(blockOf(/\.skx-holo(?![\w-])/))) {
+    base = over(base, s.rgb, s.a);
+  }
   return base;
 }
 
+const bandBlocks = [
+  ...holoSection.matchAll(/\.skx-holo__band--\d+[^{}]*\{([^}]*)\}/g),
+].map((m) => m[1] ?? "");
+
 function bands(): Stop[][] {
-  const out: Stop[][] = [];
-  for (const m of holoSection.matchAll(
-    /\.skx-holo__band--\d+\s*\{([^}]*)\}/g,
-  )) {
-    const stops = rgbaStops(m[1] ?? "");
-    if (stops.length) out.push(stops); // 색 없는 공통 규칙(mask 등)은 띠가 아니다
-  }
-  return out;
+  return bandBlocks.map(rgbaStops).filter((stops) => stops.length > 0);
 }
 
-/** 띠마다 정지점 하나(또는 비어 있음)를 골라 모든 조합을 겹친 뒤, 카드가 어둡게 누르고(brightness) 유리를 얹은 가장 낮은 대비 */
-function worstContrast(): number {
-  const ink = hexToRgb(rootToken("--skx-ink"));
-  const dim = Number(rootToken("--skx-glass-dim"));
-  if (!(dim > 0 && dim <= 1)) throw new Error(`--skx-glass-dim 은 0 초과 1 이하: ${dim}`);
-  const glass = rgbaStops(rootToken("--skx-glass"))[0];
-  if (!glass) throw new Error("--skx-glass 를 rgba 로 읽지 못함");
+/** 띠마다 정지점 하나(또는 비어 있음)를 골라 만들 수 있는 모든 합성 — 가장 밝은 자리들이 포함된다 */
+function composites(): Rgb[] {
   const all = bands();
-  let worst = Infinity;
+  const out: Rgb[] = [];
   const walk = (i: number, backdrop: Rgb) => {
     if (i === all.length) {
-      // filter: brightness() 는 sRGB 값에 계수를 곱한다
-      const dimmed = backdrop.map((c) => c * dim) as Rgb;
-      worst = Math.min(worst, contrast(ink, over(dimmed, glass.rgb, glass.a)));
+      out.push(backdrop);
       return;
     }
     walk(i + 1, backdrop); // 이 띠가 그 자리를 지나지 않는 경우
     for (const s of all[i]!) walk(i + 1, screen(backdrop, s.rgb, s.a));
   };
   walk(0, worstBase());
-  return worst;
+  return out;
 }
 
 describe("홀로그램 배경 — 가독성", () => {
-  it("띠가 2~3개다", () => {
-    expect(bands().length).toBeGreaterThanOrEqual(2);
-    expect(bands().length).toBeLessThanOrEqual(3);
+  it("띠가 2~3개이고 정지점이 읽힌다", () => {
+    const all = bands();
+    expect(all.length).toBeGreaterThanOrEqual(2);
+    expect(all.length).toBeLessThanOrEqual(3);
+    for (const stops of all) expect(stops.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("--skx-blur 가 --skx-glass-dim 밝기 계수를 쓴다(뒤를 어둡게 누르는 유리)", () => {
-    expect(rootToken("--skx-blur")).toMatch(
-      /^blur\([^)]+\)\s+brightness\(var\(--skx-glass-dim\)\)$/,
-    );
-  });
-
-  it("띠가 모두 가장 밝게 겹쳐도 어둡게 누른 유리 카드 위에서 본문색이 4.5:1 이상이다", () => {
-    expect(worstContrast()).toBeGreaterThanOrEqual(4.5);
+  it("띠·바탕 블록에 읽을 수 없는 색 표기(hex·rgb 슬래시·hsl·색 이름 등)가 없다", () => {
+    const blocks = [blockOf(/\.skx-holo(?![\w-])/), ...bandBlocks];
+    expect(blocks.flatMap(unreadableColors)).toEqual([]);
   });
 
   it("띠 정지점 알파가 .35 를 넘지 않는다", () => {
@@ -138,9 +163,50 @@ describe("홀로그램 배경 — 가독성", () => {
       for (const s of band) expect(s.a).toBeLessThanOrEqual(0.35);
     }
   });
+
+  it.each(["--skx-glass", "--skx-glass-2"])(
+    "띠가 모두 가장 밝게 겹쳐도 %s 카드 위에서 본문색(--skx-ink)이 4.5:1 이상이다",
+    (token) => {
+      const ink = hexToRgb(rootToken("--skx-ink"));
+      const glass = rootStop(token);
+      const worst = Math.min(
+        ...composites().map((c) => contrast(ink, over(c, glass.rgb, glass.a))),
+      );
+      expect(worst).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it("카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 가장 밝은 합성 위에서 3:1 이상이다", () => {
+    const worst = Math.min(
+      ...composites().map((c) => contrast([255, 255, 255], c)),
+    );
+    expect(worst).toBeGreaterThanOrEqual(3);
+  });
+
+  it("화면 아래 15% 는 마스크로 띠를 걷는다(푸터 글자가 띠 위에 놓이지 않게)", () => {
+    const m = blockOf(/\.skx-holo(?![\w-])/).match(
+      /(?<![-\w])mask-image:\s*linear-gradient\(\s*180deg[^)]*transparent\s+(\d+)%/,
+    );
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBeLessThanOrEqual(85);
+  });
+
+  it("푸터 글자색은 --skx-gray-1 이다", () => {
+    for (const sel of [".skx-footer__copy", ".skx-footer__credit"]) {
+      const block = css.match(new RegExp(`\\n${sel}\\s*\\{([^}]*)\\}`))?.[1];
+      expect(block, sel).toMatch(/color:\s*var\(--skx-gray-1\)/);
+    }
+  });
 });
 
-describe("홀로그램 배경 — 움직임·성능", () => {
+describe("홀로그램 배경 — 유리·성능", () => {
+  it("--skx-blur 는 순수 흐림이고 backdrop brightness 계수는 없다", () => {
+    expect(rootToken("--skx-blur")).toMatch(/^blur\(\d+px\)$/);
+    expect(css).not.toContain("--skx-glass-dim");
+  });
+});
+
+describe("홀로그램 배경 — 움직임", () => {
   it("흐림·배경 위치 애니메이션 없이 transform 만 움직인다", () => {
     expect(holoSection).not.toMatch(/blur\(|filter\s*:|background-position/);
     const frames = [...holoSection.matchAll(/@keyframes skx-holo-\w+\s*\{/g)];
@@ -158,6 +224,16 @@ describe("홀로그램 배경 — 움직임·성능", () => {
     expect(holoSection).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.skx-holo__band\s*\{\s*animation:\s*none;/,
     );
+  });
+
+  it("움직임 줄이기 규칙이 띠 규칙보다 뒤에 있다(같은 특이도라 순서가 이긴다)", () => {
+    const reduced = holoSection.indexOf("prefers-reduced-motion");
+    const lastBandRule = Math.max(
+      ...[...holoSection.matchAll(/\.skx-holo__band--\d+[^{}]*\{/g)].map(
+        (m) => m.index!,
+      ),
+    );
+    expect(reduced).toBeGreaterThan(lastBandRule);
   });
 
   it("띠 애니메이션 주기가 18~40초이고 서로 다르다", () => {
