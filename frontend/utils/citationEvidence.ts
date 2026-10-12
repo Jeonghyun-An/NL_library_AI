@@ -1,13 +1,17 @@
 // frontend/utils/citationEvidence.ts
 // 인용 근거 탭(보고서 단계 오른쪽 패널, D24 A안)의 판단 — 누른 인용 칩의 문장과 그 문장을 쓸 때 모델에 넘긴 원문 대목
 // (GET …/sections/{key}/sources 의 excerpt)을 견줘 대목 쪽에서 강조할 문장을 고른다. 리랭커 점수는 쓰지 않는다(대회
-// 뒤) — 화면이 글자 n-gram 겹침만 센다(spec §12-4 하이라이트). 본문 쪽 강조는 누른 칩이 든 문장이다(sentenceFlags 의 번호)
+// 뒤) — 화면이 글자 n-gram 겹침만 센다(spec §12-4 하이라이트). 본문 쪽 강조는 누른 칩이 든 문장이다(sentenceFlags 의 번호).
+// 겹침이 모자라면 아무 문장도 강조하지 않는다 — 뒷받침하지 않는 문장을 근거처럼 보이지 않는다(spec '인용이라는 말을 정확히')
 import type { OpenPdfPayload } from "~/types/research";
 import type { SectionSource } from "~/types/work";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 
 // 글자 2-gram — 한국어는 조사·어미가 붙어 낱말 단위로는 같은 말이 잘 겹치지 않는다
 export const NGRAM_N = 2;
+// 강조하려면 인용 문장 2-gram(무게를 단)의 이만큼은 그 대목 문장이 덮어야 한다 — 무관한 문장이 어미·흔한 낱말
+// ('였다'·'하였'·'연구')만으로 넘는 일이 없게. 맞는 문장(번역·요약하지 않은 것)은 대개 0.3 을 넘는다
+export const EXCERPT_MATCH_MIN = 0.2;
 
 // 문장 끝(마침표·물음표·느낌표·고리점) 뒤 공백에서 나눈다 — 대목은 원문 그대로라 [E#] 표기가 없다(본문 쪽 sentenceFlags 와 다른 규칙)
 const SENTENCE_SPLIT = /(?<=[.!?。])\s+/;
@@ -39,19 +43,32 @@ export function ngramOverlap(a: string, b: string, n: number = NGRAM_N): number 
   return count;
 }
 
-// 인용한 문장과 가장 많이 겹치는 대목 문장의 번호(excerptSentences 순서). 같으면 앞 문장, 모두 0 이면 null
+// 인용한 문장을 가장 많이 덮는 대목 문장의 번호(excerptSentences 순서). 덮는 정도 = 인용 문장 2-gram 가운데 그 문장에도
+// 있는 것의 무게 합 ÷ 인용 문장 2-gram 의 무게 합(0~1). 무게는 대목 안 IDF — ln((대목 문장 수 + 1) ÷ 그 2-gram 이 나오는
+// 대목 문장 수(대목에 없으면 1)): 여러 문장에 두루 나오는 어미·흔한 낱말은 가볍고 한 문장에만 나오는 말이 무거워, 흔한
+// 말을 많이 품은 긴 문장으로 쏠리지 않는다. 대목이 한 문장이면 무게가 모두 같아 그냥 덮는 비율이다. 같으면 앞 문장,
+// 가장 큰 값이 EXCERPT_MATCH_MIN 아래면 null(번역·요약해 쓴 문장도 여기로 온다 — 화면은 강조 없이 대목 전체를 보인다)
 export function bestExcerptSentence(cited: string, excerpt: string): number | null {
-  const sentences = excerptSentences(excerpt);
+  const sentences = excerptSentences(excerpt).map((s) => grams(s, NGRAM_N));
+  const df = new Map<string, number>();
+  for (const set of sentences) for (const g of set) df.set(g, (df.get(g) ?? 0) + 1);
+  const weight = (g: string) => Math.log((sentences.length + 1) / (df.get(g) ?? 1));
+  const target = grams(cited, NGRAM_N);
+  let total = 0;
+  for (const g of target) total += weight(g);
+  if (total <= 0) return null;
   let best: number | null = null;
   let top = 0;
   for (let i = 0; i < sentences.length; i += 1) {
-    const score = ngramOverlap(cited, sentences[i]!);
+    let covered = 0;
+    for (const g of target) if (sentences[i]!.has(g)) covered += weight(g);
+    const score = covered / total;
     if (score > top) {
       top = score;
       best = i;
     }
   }
-  return best;
+  return top >= EXCERPT_MATCH_MIN ? best : null;
 }
 
 // 대목을 그대로 이어 붙인 조각 — 강조할 문장(bestExcerptSentence)만 mark. 조각을 이으면 원문 글자 그대로다

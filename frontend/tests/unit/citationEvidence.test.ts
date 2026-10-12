@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { SectionSource } from "~/types/work";
 import {
+  EXCERPT_MATCH_MIN,
   NGRAM_N,
   bestExcerptSentence,
   citationPdfTarget,
@@ -13,6 +14,10 @@ import {
 const EXCERPT =
   "연구 대상은 농촌 노인 300명이다. 가족 지지가 높은 노인일수록 우울 점수가 낮았다.  배우자 유무는 차이가 없었다!";
 const CITED = "가족 지지가 높을수록 노인의 우울이 낮다고 보고되었다 [E1].";
+// 내용이 무관한데 첫 문장과 어미·흔한 낱말('연구'·'하였'·'였다')만 겹치는 인용 문장과 대목
+const UNRELATED = "선행 연구들은 사회적 자본이 지역 공동체의 회복력에 기여한다고 보고하였다 [E2].";
+const PANEL_EXCERPT =
+  "본 연구는 2019년 전국 패널 자료를 이용하였다. 분석 결과 소득 수준은 주관적 건강에 유의한 영향을 미치지 않았다.";
 
 function source(excerpt: SectionSource["excerpt"]): SectionSource {
   return { cnts_id: "KCI_A", abstract: "초록", excerpt };
@@ -44,13 +49,40 @@ describe("excerptSentences·ngramOverlap", () => {
   });
 });
 
-describe("bestExcerptSentence — 인용 문장과 가장 많이 겹치는 대목 문장", () => {
-  it("가장 많이 겹친 문장의 번호", () => {
+describe("bestExcerptSentence — 인용 문장을 가장 많이 덮는 대목 문장", () => {
+  it("가장 많이 덮는 문장의 번호", () => {
     expect(bestExcerptSentence(CITED, EXCERPT)).toBe(1);
   });
 
-  it("겹친 수가 같으면 앞 문장", () => {
-    expect(bestExcerptSentence("노인 우울", "노인 복지. 우울 증상. 노인 건강.")).toBe(0);
+  it("덮는 정도가 같으면 앞 문장", () => {
+    expect(bestExcerptSentence("노인 우울", "노인 복지. 우울 증상.")).toBe(0);
+  });
+
+  it("대목의 여러 문장에 두루 나오는 말보다 한 문장에만 나오는 말을 무겁게 센다", () => {
+    // '노인' 은 두 문장, '우울' 은 한 문장에 나온다 — 같은 한 개 겹침이어도 '우울 증상' 이 더 가리키는 문장이다
+    expect(bestExcerptSentence("노인 우울", "노인 복지. 우울 증상. 노인 건강.")).toBe(1);
+  });
+
+  it("인용 문장 2-gram 을 EXCERPT_MATCH_MIN 이상 덮는 문장만 고른다", () => {
+    expect(EXCERPT_MATCH_MIN).toBe(0.2);
+    // 문장이 하나면 무게가 모두 같아 그냥 덮는 비율이다 — '가족' 하나가 3개 가운데 1개(0.33)·8개 가운데 1개(0.125)
+    expect(bestExcerptSentence("가족 지지", "가족 갈등이 컸다.")).toBe(0);
+    expect(bestExcerptSentence("가족 지지와 우울 증상", "가족 갈등이 컸다.")).toBeNull();
+  });
+
+  it("어미·흔한 낱말만 겹치는 무관 문장은 고르지 않는다", () => {
+    expect(ngramOverlap(UNRELATED, excerptSentences(PANEL_EXCERPT)[0]!)).toBe(3);
+    expect(bestExcerptSentence(UNRELATED, PANEL_EXCERPT)).toBeNull();
+  });
+
+  it("흔한 말을 더 많이 나누는 긴 문장보다 내용이 겹치는 짧은 문장을 고른다", () => {
+    const cited = "선행 연구는 가족 지지가 노인의 우울을 낮춘다고 보고하였다 [E1].";
+    const excerpt =
+      "본 연구는 노인을 대상으로 사회적 지지가 정신건강에 미치는 영향을 분석하였으며, 연구 결과를 바탕으로 노인 복지 정책에 주는 함의를 논의하였다. " +
+      "가족 지지는 우울을 낮췄다. 본 연구는 노인 복지 현장에서 활용할 수 있는 기초 자료를 제공하였다.";
+    const [long, short] = excerptSentences(excerpt);
+    expect(ngramOverlap(cited, long!)).toBeGreaterThan(ngramOverlap(cited, short!));
+    expect(bestExcerptSentence(cited, excerpt)).toBe(1);
   });
 
   it("겹침이 없으면 null", () => {
@@ -79,6 +111,8 @@ describe("excerptParts", () => {
       { text: " 다른 이야기. 또 다른 이야기 ", mark: false },
     ]);
     expect(excerptParts("", CITED)).toEqual([]);
+    // 어미·흔한 낱말만 겹치면 근거처럼 강조하지 않는다
+    expect(excerptParts(PANEL_EXCERPT, UNRELATED)).toEqual([{ text: PANEL_EXCERPT, mark: false }]);
   });
 });
 
