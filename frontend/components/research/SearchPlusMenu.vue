@@ -97,7 +97,9 @@ const props = withDefaults(
   defineProps<{ modelValue: string; kind?: SearchInputKind; disabled?: boolean }>(),
   { kind: "paper", disabled: false },
 );
-const emit = defineEmits<{ "update:modelValue": [value: string] }>();
+// update:mode — 켜진 모드가 바뀔 때마다(+ 메뉴·슬래시 명령·× 해제·페이지의 activateMode/clearMode) 새 모드 id 를 알린다.
+// 끈 상태는 null. 메인 랜딩의 세 갈래 전환이 이 값으로 선택 표시를 맞춘다
+const emit = defineEmits<{ "update:modelValue": [value: string]; "update:mode": [id: SearchModeId | null] }>();
 
 const { startResearch } = useResearchStarter();
 const modes = computed(() => modesFor(props.kind));
@@ -199,25 +201,37 @@ function choose(mode: SearchMode): void {
   field?.focus();
 }
 
-function clear(): void {
+function deactivate(): void {
   active.value = null;
   error.value = "";
   if (field) field.placeholder = basePlaceholder;
+}
+
+function clear(): void {
+  deactivate();
   field?.focus();
 }
 
 // 페이지가 칩을 켠 채 입력창을 채울 때 쓴다(논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안).
-// 초안은 고쳐 쓰라고 주는 것이라 초점을 글 끝에 둔다
-function activateMode(id: SearchModeId): void {
+// 초안은 고쳐 쓰라고 주는 것이라 초점을 글 끝에 둔다. 초점을 다른 곳(예: 방향키로 옮기는 중인 전환 탭)에
+// 두고 싶으면 { focus: false }
+function activateMode(id: SearchModeId, options: { focus?: boolean } = {}): void {
   const mode = modeFor(id);
   if (!mode) return;
   activate(mode);
-  if (!field) return;
+  if (!field || options.focus === false) return;
   field.focus();
   field.setSelectionRange(field.value.length, field.value.length);
 }
 
-defineExpose({ activateMode });
+// 페이지가 칩을 끈다(메인 랜딩에서 딥리서치 갈래를 떠날 때). × 버튼과 달리 초점을 옮기지 않는다
+function clearMode(): void {
+  deactivate();
+}
+
+defineExpose({ activateMode, clearMode });
+
+watch(active, (mode) => emit("update:mode", mode?.id ?? null));
 
 // ── 슬래시 명령 목록(WAI-ARIA 콤보박스 관례: 초점은 입력창, 강조는 aria-activedescendant) ──
 const paletteId = useId();

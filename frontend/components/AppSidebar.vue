@@ -14,8 +14,7 @@
     <!-- 로고 + 접기 버튼 -->
     <div class="skx-lnb__logo">
       <a class="skx-logo" href="/" aria-label="SKOVIX 메인으로 이동">
-        <img class="skx-logo__mark" src="/img/logo-mark.svg" alt="" />
-        <img class="skx-logo__word" src="/img/logo-word.svg" alt="SKOVIX" />
+        <SkovixWordmark class="skx-logo__word" />
       </a>
       <button
         type="button"
@@ -248,6 +247,9 @@ const history = useHistory();
 // open 에는 사용자가 누른 상태만 둔다 — 채팅 때문에 접힌 상태를 여기 쓰면, 채팅을 연 채 페이지를 떠날 때
 // 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다
 const open = useState<boolean>("skx:lnb-open", () => true);
+// 휴대폰 폭(≤480px)에서는 펼친 사이드바(16rem)가 본문을 거의 다 가린다 — 앱을 처음 열 때 한 번만 접어 둔다.
+// 이미 한 번 정했으면(페이지를 옮겨 다시 마운트돼도) 사용자가 펼친 상태를 되접지 않는다
+const lnbAutoFolded = useState<boolean>("skx:lnb-auto-folded", () => false);
 const isCollapsed = computed(() => !open.value || !!props.collapsed);
 const v1Map = ref<Record<string, string>>({});
 // 첫 목록을 읽기 전·읽지 못한 때에 '기록 없음'을 띄우지 않으려고 쓴다(최상위 ref 라 템플릿에서 풀린다)
@@ -379,6 +381,10 @@ function onVisibility() {
 watch(hasLiveResearch, syncPolling);
 
 onMounted(() => {
+  if (!lnbAutoFolded.value) {
+    lnbAutoFolded.value = true;
+    if (window.matchMedia("(max-width: 480px)").matches) open.value = false;
+  }
   v1Map.value = readV1Map(safeLocalStorage());
   void history.load();
   // 업그레이드 뒤 첫 로드에서는 이전이 서버 응답을 받아야 대응표가 생긴다 — 옛 ?restore= 주소의 강조를 그때 맞춘다
