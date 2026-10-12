@@ -93,17 +93,17 @@ video {
   box-sizing: border-box;
 }
 
-/* [S] 공통 스크롤바 (전체 일관) */
+/* [S] 공통 스크롤바 (전체 일관) — 색은 tailwind.css 와 같은 --skx-scrollbar 토큰(다크 면 옅은 흰색·.skx-reading 안 짙은 색). 크기만 여기서 정한다 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  scrollbar-color: var(--skx-scrollbar) transparent;
 }
 *::-webkit-scrollbar {
   width: 0.4rem;
   height: 0.4rem;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--skx-scrollbar);
   border-radius: 1rem;
 }
 *::-webkit-scrollbar-track {
