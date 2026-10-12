@@ -12,6 +12,8 @@
       @keydown="onKeydown"
       @focusout="onFocusOut"
     >
+      <!-- 서랍·전체 폭(1200px 미만)의 Tab 가두기 보초 — 초점을 받으면 반대쪽 끝으로 돌린다(onEdge). 2단에서는 그리지 않는다 -->
+      <span v-if="trapping" class="skx-sr-only" tabindex="0" data-panel-edge @focus="onEdge('start', $event)" />
       <header class="wk-panel__head">
         <div class="wk-panel__heading">
           <!-- tabindex="-1" — 패널이 열리면 이 제목으로 초점을 옮긴다 -->
@@ -64,21 +66,24 @@
           <slot name="sources" />
         </div>
       </div>
+      <span v-if="trapping" class="skx-sr-only" tabindex="0" data-panel-edge @focus="onEdge('end', $event)" />
     </aside>
   </template>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import BookChat from "~/components/BookChat.vue";
 import type { OpenPdfPayload } from "~/types/research";
 import {
+  type PanelEdge,
   type PanelPaper,
   type PanelTab,
+  keyboardScroller,
+  panelEdgeTarget,
   panelFocusLost,
   panelHead,
   panelMode,
-  panelTrapTarget,
 } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 
@@ -110,6 +115,17 @@ const titleEl = ref<HTMLElement | null>(null);
 const head = computed(() => (props.paper ? panelHead(props.paper) : { title: "", byline: "" }));
 const bodyId = computed(() => `${props.panelId}-body`);
 
+// 서랍·전체 폭(1200px 미만)인가 — 이때만 Tab 가두기 보초를 그린다. 서버 렌더와 같게 false 로 시작해 붙은 뒤·창 크기가 바뀔 때 잰다
+const trapping = ref(false);
+function syncTrapping(): void {
+  trapping.value = panelMode(window.innerWidth) !== "side";
+}
+onMounted(() => {
+  syncTrapping();
+  window.addEventListener("resize", syncTrapping);
+});
+onBeforeUnmount(() => window.removeEventListener("resize", syncTrapping));
+
 function tabId(t: PanelTab): string {
   return `${props.panelId}-tab-${t}`;
 }
@@ -126,26 +142,48 @@ watch(
 );
 
 // Esc 는 어느 배치에서나 닫는다 — 초점이 패널 안에 있을 때만(문서가 아니라 패널에서 들어 원문 뷰어 등 위에 뜬 창의 Esc 와
-// 겹치지 않는다). 서랍·전체 폭(1200px 미만)은 화면을 덮으므로 Tab 이 패널 밖으로 나가지 않게 처음·끝에서 돌린다 — 어디로 돌릴지는
-// panelTrapTarget 이 지금 초점의 자리로 고른다(제목·답을 받는 동안 disabled 가 된 입력 칸처럼 Tab 순서 밖에 있어도 가둔다)
+// 겹치지 않는다). Tab 은 여기서 가로채지 않는다 — 패널 안 이동은 브라우저 기본이고 가두기는 처음·끝 보초(onEdge)가 한다
 function onKeydown(e: KeyboardEvent): void {
-  if (e.key === "Escape") {
-    emit("close");
-    return;
-  }
-  if (e.key !== "Tab" || !root.value || panelMode(window.innerWidth) === "side") return;
-  // 숨긴 탭 본문(v-show)의 요소와 Tab 순서에 없는 요소(고르지 않은 탭 단추 tabindex=-1)는 뺀다
-  const items = [...root.value.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-    (el) => el.offsetParent !== null && el.tabIndex >= 0,
+  if (e.key === "Escape") emit("close");
+}
+
+// 패널 안 Tab 순서(문서 순서, 보초 제외) — 셀렉터에 드는 요소(숨긴 탭 본문 v-show·고르지 않은 탭 단추 tabindex=-1 는 뺀다)와
+// 브라우저가 Tab 순서에 넣는 넘치는 스크롤 영역(keyboardScroller). 보초가 초점을 받을 때만 잰다
+function tabStops(): HTMLElement[] {
+  if (!root.value) return [];
+  return [...root.value.querySelectorAll<HTMLElement>("*")].filter(
+    (el) =>
+      !el.hasAttribute("data-panel-edge") &&
+      el.offsetParent !== null &&
+      (el.matches(FOCUSABLE) ? el.tabIndex >= 0 : isScroller(el)),
   );
-  const target = panelTrapTarget(items, document.activeElement, e.shiftKey);
-  if (!target) return;
-  e.preventDefault();
-  target.focus();
+}
+
+function isScroller(el: HTMLElement): boolean {
+  if (el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth) return false;
+  const style = getComputedStyle(el);
+  return keyboardScroller({
+    overflowX: style.overflowX,
+    overflowY: style.overflowY,
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+    scrollHeight: el.scrollHeight,
+    clientHeight: el.clientHeight,
+    hasFocusable: el.querySelector(FOCUSABLE) !== null,
+  });
+}
+
+// 보초가 초점을 받으면 반대쪽 끝으로 돌린다(panelEdgeTarget) — 패널 안에서 왔으면(relatedTarget) 끝 보초는 처음, 처음 보초는 끝.
+// 옮길 곳이 없으면 제목으로
+function onEdge(edge: PanelEdge, e: FocusEvent): void {
+  const from = e.relatedTarget;
+  const fromInside = from instanceof Node && !!root.value?.contains(from);
+  const target = panelEdgeTarget(tabStops(), edge, fromInside) ?? titleEl.value;
+  target?.focus();
 }
 
 // 서랍·전체 폭에서 패널 안 초점이 body 로 떨어지면(질문을 보내 답을 받는 동안 BookChat 의 입력 칸·보내기 단추가 disabled 가
-// 된다) aside 의 keydown 이 불리지 않아 Esc 로 닫히지 않고 Tab 이 배경으로 나간다. 그때 제목으로 되돌린다 — BookChat 은 네
+// 된다) aside 의 keydown 이 불리지 않아 Esc 로 닫히지 않고 Tab 이 보초를 거치지 않고 배경으로 나간다. 그때 제목으로 되돌린다 — BookChat 은 네
 // 화면이 함께 써서 패널 쪽에서 막는다. 패널을 닫아 내려가는 중이면(root 가 없거나 문서에서 빠짐) 여는 쪽이 초점을 돌려주므로 두고,
 // 패널 안이든 밖이든 다른 요소로 옮겨 가는 초점(relatedTarget 있음 — 입력 칸 클릭·Tab·원문 뷰어의 닫기 단추 등)은 그대로 둔다
 // (panelFocusLost). 판정은 다음 매크로태스크(setTimeout 0)에서 한다 — 사용자가 일으킨 초점 이동은 focusout 이 끝난 뒤에 새 요소가

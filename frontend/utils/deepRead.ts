@@ -58,28 +58,52 @@ export const PANEL_FULL_MAX_PX = 768;
 
 export type PanelMode = "side" | "drawer" | "full";
 
-// 서랍·전체 폭이면 패널이 화면을 덮어 Tab 초점을 패널 안에 가둔다(DeepReadPanel)
+// 서랍·전체 폭이면 패널이 화면을 덮어 Tab 초점을 패널 안에 가둔다(DeepReadPanel — 처음·끝 보초)
 export function panelMode(width: number): PanelMode {
   if (width >= PANEL_SIDE_MIN_PX) return "side";
   return width > PANEL_FULL_MAX_PX ? "drawer" : "full";
 }
 
-// 서랍·전체 폭의 Tab 가두기 — 패널 안 Tab 순서(items — 숨긴 탭 본문·disabled 는 이미 뺀 목록)에서 지금 초점(active)의
-// 자리를 보고 옮길 곳을 고른다. null 이면 브라우저 기본 이동에 맡긴다. 정방향은 끝이거나 목록 밖이면 처음으로, 역방향은 처음이거나
-// 목록 밖이면 끝으로 돌린다 — 목록 밖은 패널 안이지만 Tab 순서에 없는 요소(제목 h2 tabindex=-1, 답을 받는 동안 disabled 가 된
-// 입력 칸)다. '끝과 같은가'로만 보면 disabled 입력 칸에서 누른 Tab 이 패널 밖으로 나간다(보내기 단추도 disabled 라 그 뒤가 없다)
-export function panelTrapTarget<T>(items: readonly T[], active: unknown, shift: boolean): T | null {
-  const first = items[0];
-  const last = items[items.length - 1];
-  if (first === undefined || last === undefined) return null;
-  const i = items.indexOf(active as T);
-  if (shift) return i <= 0 ? last : null;
-  return i === -1 || i === items.length - 1 ? first : null;
+// 서랍·전체 폭의 Tab 가두기는 패널 처음·끝에 둔 보초(tabindex=0, 보이지 않음)로 한다. 패널 안의 Tab 이동은 브라우저 기본에
+// 맡겨 셀렉터 목록에 없는 Tab 순서(넘치는 출처 미리보기·메시지 칸·인용 근거 본문처럼 브라우저가 넣는 스크롤 영역)가 그대로 남고,
+// 보초가 초점을 받을 때만 돌린다 — Tab 순서를 셀렉터로 다시 만들어 keydown 에서 고르면 목록 밖 요소를 모두 '끝'으로 보아 그 뒤의
+// [원문 보기]·입력 칸에 닿지 못했다. 제목(h2 tabindex=-1)·답을 받는 동안 disabled 가 된 입력 칸에서 누른 Tab 도 문서 순서로
+// 다음(또는 앞) 요소나 보초로 가서 패널 밖으로 새지 않는다
+export type PanelEdge = "start" | "end";
+
+// 보초가 초점을 받았을 때 옮길 곳 — stops 는 보초를 뺀 패널 안 Tab 순서(문서 순서), fromInside 는 초점이 패널 안에서 왔는가
+// (focus 의 relatedTarget). 안에서 끝 보초에 닿으면(마지막 요소에서 정방향 Tab) 처음으로, 처음 보초에 닿으면(처음 요소·제목에서
+// 역방향 Tab) 끝으로 돌린다. 밖(또는 body)에서 들어오면 처음 보초는 처음, 끝 보초는 끝으로 들인다. 비어 있으면 null(제목으로)
+export function panelEdgeTarget<T>(stops: readonly T[], edge: PanelEdge, fromInside: boolean): T | null {
+  const toFirst = (edge === "end") === fromInside;
+  return (toFirst ? stops[0] : stops[stops.length - 1]) ?? null;
+}
+
+// 브라우저가 Tab 순서에 넣는 스크롤 영역인가 — Chrome 130 이후·Firefox 는 넘치는(overflow 가 auto·scroll 이고 내용이 칸보다 큰)
+// 영역 가운데 안에 초점 받을 요소가 없는 것을 Tab 순서에 넣는다. tabindex 속성이 없고 IDL tabIndex 도 -1 이라 셀렉터로는 못 찾아,
+// 처음 보초가 '끝'을 고를 때 따로 센다(누를 것 없는 인용 근거 탭 본문이 끝이면 그 본문으로 — 건너뛰지 않게)
+export interface ScrollBox {
+  overflowX: string;
+  overflowY: string;
+  scrollWidth: number;
+  clientWidth: number;
+  scrollHeight: number;
+  clientHeight: number;
+  hasFocusable: boolean;
+}
+
+export function keyboardScroller(box: ScrollBox): boolean {
+  if (box.hasFocusable) return false;
+  const scrolls = (v: string) => v === "auto" || v === "scroll";
+  return (
+    (scrolls(box.overflowY) && box.scrollHeight > box.clientHeight) ||
+    (scrolls(box.overflowX) && box.scrollWidth > box.clientWidth)
+  );
 }
 
 // 패널 안 초점이 갈 곳 없이 사라졌는가 — related 는 focusout 의 relatedTarget(초점이 옮겨 가는 요소), active 는 그 뒤의
 // document.activeElement, body 는 문서의 body. 서랍·전체 폭에서 답을 받는 동안 입력 칸·보내기 단추가 disabled 가 되면 초점이
-// body 로 떨어져 aside 의 keydown(Esc·Tab 가두기)이 듣지 못한다. 그때만 제목으로 되돌린다.
+// body 로 떨어져 aside 의 keydown(Esc)이 듣지 못하고 Tab 은 보초를 거치지 않고 배경으로 나간다. 그때만 제목으로 되돌린다.
 // relatedTarget 이 있으면 초점이 다른 요소로 옮겨 가는 중이라 잃은 것이 아니다 — 사용자의 클릭·Tab 은 focusout 이 끝난 뒤에야 새
 // 요소가 초점을 받아, 그 사이(마이크로태스크)에 읽은 activeElement 는 아직 body 다. active 만 보면 패널 안 이동까지 잃은 것으로 보고
 // 제목으로 되돌려 원래 가려던 이동을 막는다(입력 칸 클릭·Tab 순회가 막혔다).

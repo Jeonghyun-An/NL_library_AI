@@ -5,11 +5,12 @@ import {
   PANEL_FULL_MAX_PX,
   PANEL_SIDE_MIN_PX,
   chatCopy,
+  keyboardScroller,
+  panelEdgeTarget,
   panelFocusLost,
   panelHead,
   panelMode,
   panelTabs,
-  panelTrapTarget,
   sourceLabel,
   sourcePdfTarget,
 } from "~/utils/deepRead";
@@ -94,43 +95,60 @@ describe("panelMode·panelHead·panelTabs", () => {
   });
 });
 
-describe("panelTrapTarget·panelFocusLost — 서랍·전체 폭의 초점 가두기", () => {
-  // 패널 안 Tab 순서(숨긴 탭 본문·disabled 는 이미 빠진 목록). 제목 h2(tabindex=-1)와 답을 받는 동안 disabled 가 된
-  // 입력 칸은 패널 안에 있지만 목록 밖이다
+describe("panelEdgeTarget·keyboardScroller·panelFocusLost — 서랍·전체 폭의 초점 가두기", () => {
+  // 패널 안 Tab 순서(보초를 뺀 문서 순서). 패널 안의 Tab 이동은 브라우저 기본에 맡기고, 처음·끝 보초가 초점을 받을 때만 돌린다 —
+  // 그래서 목록 가운데의 목록 밖 요소(넘치는 출처 미리보기·메시지 칸처럼 브라우저가 Tab 순서에 넣는 스크롤 영역)에서 누른 Tab 은
+  // 아무도 가로채지 않고 다음 요소(원문 보기·입력 칸)로 간다
   const detail = { id: "detail" };
   const close = { id: "close" };
   const chip = { id: "chip" };
+  const preview = { id: "preview(scroller)" };
   const send = { id: "send" };
-  const items = [detail, close, chip, send];
-  const title = { id: "title" };
-  const disabledInput = { id: "input(disabled)" };
+  const stops = [detail, close, chip, preview, send];
 
-  it("정방향 Tab — 끝에서 처음으로, 가운데는 브라우저 기본(null)", () => {
-    expect(panelTrapTarget(items, send, false)).toBe(detail);
-    expect(panelTrapTarget(items, detail, false)).toBeNull();
-    expect(panelTrapTarget(items, chip, false)).toBeNull();
+  it("끝 보초에 패널 안에서 닿으면(마지막 요소에서 정방향 Tab) 처음으로", () => {
+    expect(panelEdgeTarget(stops, "end", true)).toBe(detail);
   });
 
-  it("역방향 Tab — 처음에서 끝으로, 가운데는 브라우저 기본(null)", () => {
-    expect(panelTrapTarget(items, detail, true)).toBe(send);
-    expect(panelTrapTarget(items, send, true)).toBeNull();
-    expect(panelTrapTarget(items, close, true)).toBeNull();
+  it("처음 보초에 패널 안에서 닿으면(처음 요소·제목에서 역방향 Tab) 끝으로 — 끝이 스크롤 영역이면 그 영역", () => {
+    expect(panelEdgeTarget(stops, "start", true)).toBe(send);
+    // 누를 것이 없는 인용 근거 탭 본문 — 목록의 끝이 탭 단추가 아니라 본문 스크롤 영역이다
+    const tabBtn = { id: "tab(sources)" };
+    const sourcesBody = { id: "sources(scroller)" };
+    expect(panelEdgeTarget([detail, close, tabBtn, sourcesBody], "start", true)).toBe(sourcesBody);
   });
 
-  it("초점이 목록 밖(제목·답을 받는 동안 disabled 가 된 입력 칸)이면 정방향은 처음, 역방향은 끝 — 패널 밖으로 새지 않는다", () => {
-    // 보내기 단추도 disabled 라 목록의 끝은 출처 칩이다 — 입력 칸이 끝이 아니어도 밖으로 나가지 않아야 한다
-    const streaming = [detail, close, chip];
-    expect(panelTrapTarget(streaming, disabledInput, false)).toBe(detail);
-    expect(panelTrapTarget(streaming, disabledInput, true)).toBe(chip);
-    expect(panelTrapTarget(items, title, false)).toBe(detail);
-    expect(panelTrapTarget(items, title, true)).toBe(send);
+  it("패널 밖(또는 body)에서 보초로 들어오면 처음 보초는 처음, 끝 보초는 끝으로 들인다", () => {
+    expect(panelEdgeTarget(stops, "start", false)).toBe(detail);
+    expect(panelEdgeTarget(stops, "end", false)).toBe(send);
   });
 
-  it("하나뿐이면 그 하나에 머물고, 비어 있으면 기본(null)", () => {
-    expect(panelTrapTarget([close], close, false)).toBe(close);
-    expect(panelTrapTarget([close], close, true)).toBe(close);
-    expect(panelTrapTarget([], title, false)).toBeNull();
-    expect(panelTrapTarget([], title, true)).toBeNull();
+  it("하나뿐이면 그 하나에 머물고, 비어 있으면 null(부르는 쪽이 제목으로)", () => {
+    expect(panelEdgeTarget([close], "end", true)).toBe(close);
+    expect(panelEdgeTarget([close], "start", true)).toBe(close);
+    expect(panelEdgeTarget([], "end", true)).toBeNull();
+    expect(panelEdgeTarget([], "start", true)).toBeNull();
+  });
+
+  it("넘치고 안에 누를 것이 없는 스크롤 영역은 Tab 순서에 든다 — tabindex 가 없어 셀렉터로는 못 찾는 요소다", () => {
+    const box = {
+      overflowX: "visible",
+      overflowY: "auto",
+      scrollWidth: 300,
+      clientWidth: 300,
+      scrollHeight: 400,
+      clientHeight: 120,
+      hasFocusable: false,
+    };
+    // 출처 칩을 펼친 미리보기(max-height 120px, 글만)
+    expect(keyboardScroller(box)).toBe(true);
+    expect(keyboardScroller({ ...box, overflowY: "scroll" })).toBe(true);
+    expect(keyboardScroller({ ...box, overflowY: "visible", overflowX: "auto", scrollWidth: 500 })).toBe(true);
+    // 넘치지 않으면·overflow 가 hidden·visible 이면·안에 누를 것(칩·링크)이 있으면 들지 않는다
+    expect(keyboardScroller({ ...box, scrollHeight: 120 })).toBe(false);
+    expect(keyboardScroller({ ...box, overflowY: "hidden" })).toBe(false);
+    expect(keyboardScroller({ ...box, overflowY: "visible" })).toBe(false);
+    expect(keyboardScroller({ ...box, hasFocusable: true })).toBe(false);
   });
 
   it("서랍·전체 폭에서 초점이 body(또는 없음)로 떨어진 것만 잃은 것으로 본다 — 패널 밖 다른 요소(원문 뷰어 닫기 등)로 간 것은 아니다", () => {
