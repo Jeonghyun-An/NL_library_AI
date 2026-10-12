@@ -547,6 +547,13 @@ onBeforeUnmount(() => {
   background: var(--skx-frost-side-card);
   border-radius: var(--skx-radius-md);
   box-shadow: var(--skx-frost-hilite);
+  /* 카드 안의 글 톤은 사이드바 글 톤을 올리기 전 그대로(제목 청록·행 글·시간·칩) */
+  --skx-ink: var(--skx-research-ink);
+  --skx-ink-2: var(--skx-research-ink-2);
+  --skx-gray-1: var(--skx-research-gray-1);
+  --skx-gray-2: var(--skx-research-gray-2);
+  --skx-teal-ink: var(--skx-research-teal-ink);
+  --skx-ico-filter: var(--skx-research-ico-filter);
 }
 .skx-history__head {
   display: flex;

@@ -224,7 +224,8 @@ describe("홀로그램 배경 — 가독성", () => {
     ["예시 질문 칸 올림(--skx-chip-fill-hover)", ["--skx-chip-tint", "--skx-chip-milk-hover"], ["--skx-ink"], false],
     ["사이드바(--skx-frost-side-bg)", SIDE_FACE, SIDE_TEXTS, true],
     ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg"], ["--skx-side-ink"], true],
-    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], SIDE_TEXTS, true],
+    // 묶음 카드 안의 글 톤은 사이드바 글 톤을 올리기 전 값(--skx-research-*)이다
+    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], ["--skx-research-ink", "--skx-research-gray-1"], true],
     ["결과 큰 틀(--skx-frame-bg)", FRAME_FACE, ["--skx-ink", "--skx-gray-1"], false],
     ["결과 읽는 칸(--skx-read-surface)", READ_FACE, READ_TEXTS, false],
     ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"], false],

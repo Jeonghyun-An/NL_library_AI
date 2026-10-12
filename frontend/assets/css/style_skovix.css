@@ -381,6 +381,14 @@ h4,
   --skx-side-gray-2: #bac4c1;
   --skx-side-teal-ink: #b4d6cd;
   --skx-side-ico-filter: brightness(0) invert(0.94);
+  /* 사이드바 DeepResearch 묶음 카드 안의 글 톤은 사이드바 글 톤을 올리기 전(22fc739 이전) 그대로다 — 사용자: '아까 이뻤는데'.
+     AppSidebar.vue 의 .skx-history__group--research 가 --skx-ink 등을 이 값으로 다시 정의한다 */
+  --skx-research-ink: #cccccc;
+  --skx-research-ink-2: #c2c9c7;
+  --skx-research-gray-1: #b7bfbd;
+  --skx-research-gray-2: #879491;
+  --skx-research-teal-ink: #80aba1;
+  --skx-research-ico-filter: brightness(0) invert(0.8);
   --skx-frost-side-btn: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-side-under);
   --skx-frost-side-card: linear-gradient(var(--skx-frost-bg-soft), var(--skx-frost-bg-soft)), var(--skx-frost-side-under);
   /* 예시 질문 칸 — 입력창보다 한 단계 낮은 면: 흐림·윗선·반사광 없이 옅은 흰 막과 선만. 밑칠은 이 칸의 글자(14px)를 지키는 최저값 */
@@ -467,6 +475,12 @@ h4,
   --skx-side-gray-2: #767676;
   --skx-side-teal-ink: #3f7468;
   --skx-side-ico-filter: none;
+  --skx-research-ink: #1d211f;
+  --skx-research-ink-2: #454545;
+  --skx-research-gray-1: #666666;
+  --skx-research-gray-2: #767676;
+  --skx-research-teal-ink: #3f7468;
+  --skx-research-ico-filter: none;
   --skx-frost-side-btn: linear-gradient(#f4f3ef, #f4f3ef);
   --skx-frost-side-card: linear-gradient(#faf9f6, #faf9f6);
   --skx-chip-tint: #ffffff;
