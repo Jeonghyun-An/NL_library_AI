@@ -375,6 +375,24 @@ async def _corpus_range(db: AsyncSession) -> dict:
     return {"from": row[0], "to": row[1], "n_papers": row[2]}
 
 
+async def _plan_terms(db: AsyncSession, job_id: uuid.UUID) -> list[str]:
+    """마지막 계획 단계가 뽑은 범위 용어(06c 넓히기) — 검색어 합성(query_context 1)의 재료.
+
+    계획 단계가 여럿이면(다시 계획하기 — spec §12-9) seq 가 가장 큰 행을 읽는다. 행이나 terms 칸이 없거나(06c 전 잡)
+    모양이 다르면 빈 목록이다 — 비지 않은 문자열만 남긴다.
+    """
+    result = (await db.execute(
+        select(ResearchStep.result)
+        .where(ResearchStep.job_id == job_id, ResearchStep.kind == "plan")
+        .order_by(ResearchStep.seq.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+    terms = result.get("terms") if isinstance(result, dict) else None
+    if not isinstance(terms, list):
+        return []
+    return [t for t in terms if isinstance(t, str) and t.strip()]
+
+
 async def _transition(
     db: AsyncSession, job_id: uuid.UUID, *, expect: tuple[str, ...], **values: object,
 ) -> bool:
@@ -523,6 +541,7 @@ def plan_deep_research(job_id: str) -> dict:
 
 
 async def _plan_deep_research(job_id: str) -> dict:
+    from services.research.framing import frame_question, unframed
     from services.research.planner import make_plan
 
     jid = _job_uuid(job_id)
@@ -541,8 +560,20 @@ async def _plan_deep_research(job_id: str) -> dict:
 
             step = await _step(db, jid, seq, "plan", "연구 계획 수립",
                                detail="질문을 하위질문으로 분해하는 중입니다")
+            # 계획 시간(넓히기 + 계획) — 06c 판정의 계획 시간 지표가 plan step 결과의 elapsed_ms 를 읽는다
+            started = time.monotonic()
             try:
-                plan = await make_plan(question, params=params)
+                # 넓히기(06c, 잡 파라미터 broaden)는 계획 프롬프트를 그대로 두고 make_plan 에 넘기는 질문만 바꾼다.
+                # 원 질문으로 물러나는 실패(FRAME_FAILURES·빈 응답·낱말 검사)는 frame_question 이 삼키고, 그 밖의
+                # 예외는 아래에서 계획 실패로 닫는다(함정 19). job.question 은 원문 그대로다
+                if params["broaden"]:
+                    framing = await frame_question(question)
+                    # 단계는 running 그대로 넓힌 질문을 먼저 알린다 — 계획 중 화면이 '이렇게 이해했어요'를 먼저 보인다.
+                    # subquestions 가 없어 API 는 이 행을 '계획을 안다'로 세지 않는다
+                    await _save_progress(db, step, {"question_used": framing.question, "terms": framing.terms})
+                else:
+                    framing = unframed(question)
+                plan = await make_plan(framing.question, params=params)
             except SoftTimeLimitExceeded:
                 raise
             except Exception as e:
@@ -550,7 +581,10 @@ async def _plan_deep_research(job_id: str) -> dict:
                 await _finish(db, step, "failed", {"error": str(e)[:500]})
                 return await _end_failed(db, jid, str(e), expect=("planning",))
 
-            await _finish(db, step, "done", {"subquestions": plan})
+            await _finish(db, step, "done", {
+                "subquestions": plan, "question_used": framing.question, "terms": framing.terms,
+                "elapsed_ms": int((time.monotonic() - started) * 1000),
+            })
             if not await _transition(db, jid, expect=("planning",), status="awaiting_approval",
                                      plan=plan, stage=_stage("planned")):
                 return await _stopped(db, jid)
@@ -588,6 +622,8 @@ async def _run_deep_research(job_id: str) -> dict:
             job = await db.get(ResearchJob, jid)
             stage, snapshot = job.stage, job.state_snapshot
             question, params, plan = job.question, job.params, job.plan
+            # 같은 읽기 트랜잭션에서 읽는다 — 아래 commit 이 LLM(탐색) 전에 닫는다. 스냅숏에서 되살린 잡은 스냅숏의 용어를 쓴다
+            terms = await _plan_terms(db, jid)
             seq = await _next_seq(db, jid)
             await db.commit()
             await _announce(jid, "running", stage)
@@ -604,6 +640,7 @@ async def _run_deep_research(job_id: str) -> dict:
             else:
                 state = ResearchState(
                     job_id=str(jid), question=question, params=merge_params(params or {}),
+                    terms=terms,
                 )
                 state.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(plan or [])]
                 if not state.subquestions:

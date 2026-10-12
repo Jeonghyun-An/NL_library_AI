@@ -724,6 +724,24 @@ function planFromSteps(steps: ResearchStepRow[]): string[] {
   return latestOf(steps, "plan")?.result?.subquestions ?? [];
 }
 
+// 계획 카드 머리 "이렇게 이해했어요" 한 줄의 재료(06c) — 계획 단계가 계획에 넘긴 넓힌 질문. 원 질문과 같으면(넓히기를
+// 껐거나 원 질문으로 물러난 잡) 보일 것이 없어 null 이다. 넓히기가 끝나면 도는(running) 계획 단계에도 실려 온다
+export function questionUsedFromSteps(steps: ResearchStepRow[], question: string): string | null {
+  const used = latestOf(steps, "plan")?.result?.question_used;
+  if (typeof used !== "string") return null;
+  const shown = used.replace(/\s+/g, " ").trim();
+  if (!shown || foldQuestion(shown) === foldQuestion(question)) return null;
+  return shown;
+}
+
+export function understoodLine(questionUsed: string): string {
+  return `이렇게 이해했어요: ${questionUsed}`;
+}
+
+function foldQuestion(text: string): string {
+  return text.normalize("NFKC").replace(/\s+/g, " ").trim();
+}
+
 function latestOf(steps: ResearchStepRow[], kind: StepKind): ResearchStepRow | undefined {
   let best: ResearchStepRow | undefined;
   for (const s of steps) if (s.kind === kind && (!best || s.seq > best.seq)) best = s;

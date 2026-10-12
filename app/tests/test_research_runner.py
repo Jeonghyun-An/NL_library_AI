@@ -326,8 +326,9 @@ class TestRoundEvents:
         st = self._state("가", max_recheck=1)
         events = self._run(st, explore=_explore_table(
             {"가": ["A", "B"], "다른 검색어 1": ["B", "C"]}))
+        # 탐색 후보(candidates)는 counters 뒤·자기점검 전에 회차마다 한 번 — 스위치와 무관하게 늘 낸다(06c)
         assert [k for k, _ in events] == [
-            "search", "counters", "critique", "search", "counters", "critique"]
+            "search", "counters", "candidates", "critique", "search", "counters", "candidates", "critique"]
         assert _of(events, "counters") == [
             {"papers_reviewed": 2, "evidence_adopted": 2, "rechecks": 0, "excluded": 0},
             {"papers_reviewed": 3, "evidence_adopted": 3, "rechecks": 1, "excluded": 0},
@@ -479,6 +480,131 @@ class TestRequery:
         ))
         assert sq.queries == ["AI 윤리"]
         assert critic.calls == 1
+
+
+class TestQueryComposition:
+    """검색어 합성(06c, 잡 파라미터 query_context) — 첫 검색어와 재검색 제안에서 '국내 학술논문에서' 를 떼고
+    계획 단계의 범위 용어 중 없는 것을 붙인다. 하위질문 글(절 소제목·critic 의 하위질문)은 그대로다.
+    스위치 값은 기본값에 기대지 않고 적는다(기본값은 06c 판정 뒤 바뀔 수 있다)."""
+
+    TEXT = "국내 학술논문에서 컴퓨팅 자원 할당 방법"
+    TERMS = ["컴퓨팅 자원", "클라우드"]
+
+    def _state(self, switch, *, terms=TERMS, max_recheck=0):
+        return ResearchState(job_id="j", question="컴퓨팅 자원에 대한 연구가 궁금해",
+                             params=merge_params({"query_context": switch, "max_recheck": max_recheck}),
+                             terms=list(terms))
+
+    def _searched(self):
+        sent = []
+
+        async def _explore(query, *, params, db):
+            sent.append(query)
+            return _hits(["A"], query=query)
+        return sent, _explore
+
+    def test_switch_off_searches_the_subquestion_word_for_word(self):
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(0, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic(["국내 학술논문에서 가상화 기반 자원 스케줄링"]), emit=None))
+        assert sent == [self.TEXT, "국내 학술논문에서 가상화 기반 자원 스케줄링"]
+        assert sq.queries == sent
+
+    def test_switch_off_keeps_the_spacing_too(self):
+        # spec §12-7 '글자 그대로' 는 공백도다 — 겹친 공백·앞뒤 공백을 정리하면 스위치 0 의 검색어가 06c 전과 달라진다
+        sent, explore = self._searched()
+        text = "국내 학술논문에서  컴퓨팅 자원 할당 방법 "
+        suggestion = " 국내 학술논문에서 가상화  기반 자원 스케줄링"
+        sq = SubQuestion(idx=0, text=text)
+        asyncio.run(explore_subquestion(self._state(0, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic([suggestion]), emit=None))
+        assert sent == [text, suggestion]
+        assert sq.queries == sent
+
+    def test_first_search_drops_fillers_and_adds_missing_terms(self):
+        sent, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1), SubQuestion(idx=0, text=self.TEXT), db=None,
+                                        explore_fn=explore, critique_fn=_FakeCritic(), emit=None))
+        assert sent == ["컴퓨팅 자원 할당 방법 클라우드"]
+
+    def test_terms_already_in_the_subquestion_are_not_repeated(self):
+        sent, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1), SubQuestion(idx=0, text="클라우드 컴퓨팅 자원 할당"),
+                                        db=None, explore_fn=explore, critique_fn=_FakeCritic(), emit=None))
+        assert sent == ["클라우드 컴퓨팅 자원 할당"]
+
+    def test_recheck_searches_the_composed_suggestion(self):
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic(["국내 학술논문에서 가상화 기반 자원 스케줄링"]), emit=None))
+        # 재검색 제안은 critic_scope 0 이면 원 질문을 모르고 하위질문만 보고 만든다 — 동음이의가 들어오는 자리다
+        assert sent == ["컴퓨팅 자원 할당 방법 클라우드", "가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드"]
+        assert sq.queries == sent
+
+    def test_suggestion_whose_composed_form_was_tried_is_skipped(self):
+        # 제안 '컴퓨팅 자원 할당 방법' 은 글자로는 처음이지만 합성하면 첫 검색어와 같다 — 합성한 꼴끼리 비교해 건너뛴다
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        critic = _SuggestingCritic(["컴퓨팅 자원 할당 방법", "엣지 컴퓨팅 자원"])
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=critic, emit=None))
+        assert sq.queries == ["컴퓨팅 자원 할당 방법 클라우드", "엣지 컴퓨팅 자원 클라우드"]
+
+    def test_critic_sees_the_composed_queries_it_tried(self, monkeypatch):
+        # spec §12-5 — critic 은 고치지 않고 tried_queries 가 합성본을 받는지만 본다. 진짜 critique 를 거쳐
+        # 프롬프트의 '이미 시도한 검색어' 줄을 읽는다(critic.py 가 subq.queries 를 잇는 방식이 바뀌어도 잡힌다).
+        # 합성한 꼴이어야 critic 이 같은 제안을 되풀이하지 않는다
+        prompts = []
+        replies = iter([
+            '{"verdict": "insufficient", "note": "부족", "new_queries": ["가상화 기반 자원 스케줄링"], "off_topic": []}',
+            '{"verdict": "sufficient", "note": "충분하다", "new_queries": [], "off_topic": []}',
+        ])
+
+        async def fake_chat(messages, *, params=None, timeout=None):
+            prompts.append(messages[1]["content"])
+            return next(replies)
+
+        monkeypatch.setattr(critic_module, "chat", fake_chat)
+        _, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), SubQuestion(idx=0, text=self.TEXT),
+                                        db=None, explore_fn=explore, emit=None))
+        tried = [line for p in prompts for line in p.splitlines() if line.startswith("이미 시도한 검색어:")]
+        assert tried == ["이미 시도한 검색어: 컴퓨팅 자원 할당 방법 클라우드",
+                         "이미 시도한 검색어: 컴퓨팅 자원 할당 방법 클라우드, 가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드"]
+
+    def test_round_history_and_events_carry_the_query_actually_sent(self):
+        events, emit = _recorder()
+        sent, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(1, max_recheck=1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_SuggestingCritic(["가상화 기반 자원 스케줄링"]), emit=emit))
+        assert [r["query"] for r in sq.rounds] == sent
+        assert [r["next_query"] for r in sq.rounds] == ["가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드", None]
+        assert [s["query"] for s in _of(events, "search")] == sent
+        assert [c["next_query"] for c in _of(events, "critique")] == ["가상화 기반 자원 스케줄링 컴퓨팅 자원 클라우드", None]
+
+    def test_critic_keeps_the_subquestion_text(self):
+        # 검색어만 바뀐다 — critic 의 하위질문(과 절 소제목)은 하위질문 글 그대로다
+        texts = []
+
+        async def _critic(subq, evidence, *, params, question=None):
+            texts.append(subq.text)
+            return Verdict("sufficient", note="충분")
+
+        _, explore = self._searched()
+        sq = SubQuestion(idx=0, text=self.TEXT)
+        asyncio.run(explore_subquestion(self._state(1), sq, db=None, explore_fn=explore,
+                                        critique_fn=_critic, emit=None))
+        assert texts == [self.TEXT] and sq.text == self.TEXT
+
+    def test_empty_terms_only_remove_fillers(self):
+        # 넓히지 않은 잡(broaden 0)은 용어가 없다 — 군더더기만 뗀다
+        sent, explore = self._searched()
+        asyncio.run(explore_subquestion(self._state(1, terms=[]), SubQuestion(idx=0, text=self.TEXT), db=None,
+                                        explore_fn=explore, critique_fn=_FakeCritic(), emit=None))
+        assert sent == ["컴퓨팅 자원 할당 방법"]
 
 
 class TestEvidenceOrder:
@@ -1313,3 +1439,109 @@ class TestSharedChunkScore:
         assert b.evidence_chunks == {"E1": ["P-c1"]}
         assert b.chunk_scores == {"P-c1": 0.95}
         assert a.chunk_scores == {"P-c1": 0.2}
+
+
+def _brief(cnts_id):
+    """_hits 서지(저자 없음)의 _paper_brief — candidates 이벤트의 papers 항목."""
+    return {"cnts_id": cnts_id, "title": f"논문 {cnts_id}", "personal_author": None, "pub_date": "2008-06"}
+
+
+class TestCandidatesEvent:
+    """탐색 후보 목록(06c, Q9) — 회차마다 이번 검색이 이은 후보를 자기점검 전에 낸다. 06d 장부가 '검토 중' 더미를
+    세웠다가 critique 의 채택·뺌으로 옮긴다. 화면 이벤트일 뿐이라 회차 기록·스냅숏에는 없다."""
+
+    def _state(self, *texts, **params):
+        st = ResearchState(job_id="j", question="q", params=merge_params(params))
+        st.subquestions = [SubQuestion(idx=i, text=t) for i, t in enumerate(texts)]
+        return st
+
+    def _run(self, st, sq, explore, critic):
+        events, emit = _recorder()
+        asyncio.run(explore_subquestion(st, sq, db=None, explore_fn=explore, critique_fn=critic, emit=emit))
+        return events
+
+    def test_each_round_streams_its_candidates_before_the_critique(self):
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, st.subquestions[0],
+                           _explore_table({"가": ["A", "B"], "보완": ["C"]}),
+                           _ScriptedCritic(("insufficient", [], ["보완"]), ("sufficient", [], [])))
+        assert [k for k, _ in events] == [
+            "search", "counters", "candidates", "critique", "search", "counters", "candidates", "critique"]
+        assert [(c["subq_idx"], c["round"]) for c in _of(events, "candidates")] == [(0, 1), (0, 2)]
+
+    def test_candidates_follow_the_order_they_were_linked(self):
+        # 이은 순서(검색 결과 순서)다 — 순위순(evidence_ids)이 아니다. 다른 하위질문이 먼저 만든 근거(A)도 든다
+        # (A 는 이 하위질문에는 처음 잇는 것이다 — 이은 것 전부와 처음 이은 것이 갈리는 경우는 아래
+        # test_already_adopted_paper_found_again_is_a_candidate_again)
+        st = self._state("가", "나", max_recheck=0)
+        first, second = st.subquestions
+        scores = {"가": [0.9], "나": [0.3, 0.5, 0.9]}
+        table = {"가": ["A"], "나": ["B", "C", "A"]}
+
+        async def _explore(query, *, params, db):
+            return _hits(table[query], query=query, scores=scores[query])
+
+        self._run(st, first, _explore, _ScriptedCritic(("sufficient", [], [])))
+        events = self._run(st, second, _explore, _ScriptedCritic(("sufficient", [], [])))
+        (candidates,) = _of(events, "candidates")
+        assert [p["cnts_id"] for p in candidates["papers"]] == ["B", "C", "A"]
+        # 순위는 회차 1위 B 가 앞자리, 나머지는 점수순 — 후보 순서와 다르다
+        assert [st.evidence[e].cnts_id for e in second.evidence_ids] == ["B", "A", "C"]
+
+    def test_already_adopted_paper_found_again_is_a_candidate_again(self):
+        # 후보는 이번 검색이 이 하위질문에 이은 근거 전부(linked)다 — 처음 이은 것(fresh)만이 아니다. 1회차에 채택한
+        # A 가 2회차 검색에 다시 걸리면 후보에 다시 들고, 같은 회차 critique 의 adopted_papers 에는 new 없이 있다.
+        # 06d 리듀서가 cnts_id 로 기존 채택과의 겹침을 처리한다(계획 머리 「다른 줄과의 경계」의 06d candidates 행)
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, st.subquestions[0],
+                           _explore_table({"가": ["A", "B"], "보완": ["A", "C"]}),
+                           _ScriptedCritic(("insufficient", [], ["보완"]), ("sufficient", [], [])))
+        assert [[p["cnts_id"] for p in c["papers"]] for c in _of(events, "candidates")] == [["A", "B"], ["A", "C"]]
+        adopted = {p["cnts_id"]: p for p in _of(events, "critique")[1]["adopted_papers"]}
+        assert "new" not in adopted["A"] and adopted["C"]["new"] is True
+
+    def test_candidates_carry_paper_briefs(self):
+        st = self._state("가", max_recheck=0)
+        events = self._run(st, st.subquestions[0], _explore_table({"가": ["A", "B"]}),
+                           _ScriptedCritic(("sufficient", [], [])))
+        assert _of(events, "candidates") == [
+            {"subq_idx": 0, "round": 1, "papers": [_brief("A"), _brief("B")]}]
+
+    def test_round_without_new_links_streams_an_empty_list(self):
+        # 빈 목록도 낸다 — 06d 는 다음 회차 후보로 앞 더미를 갈음한다
+        st = self._state("가", max_recheck=0)
+        events = self._run(st, st.subquestions[0], _empty_explore, _ScriptedCritic(("sufficient", [], [])))
+        assert _of(events, "candidates") == [{"subq_idx": 0, "round": 1, "papers": []}]
+
+    def test_excluded_or_budget_blocked_papers_are_not_candidates(self):
+        # 앞 회차에 무관하다고 뺀 B 는 다시 걸려도 잇지 않는다 — 후보도 아니다
+        st = self._state("가", max_recheck=1)
+        events = self._run(st, st.subquestions[0],
+                           _explore_table({"가": ["A", "B"], "보완": ["B", "C"]}),
+                           _ScriptedCritic(("insufficient", [2], ["보완"]), ("sufficient", [], [])))
+        assert [[p["cnts_id"] for p in c["papers"]] for c in _of(events, "candidates")] == [["A", "B"], ["C"]]
+        # 몫(하위질문 둘·전체 2편 → 1편)에 막힌 B 도 잇지 않는다
+        st = self._state("가", "나", max_recheck=0, max_evidence=2, min_evidence_per_subq=1)
+        events = self._run(st, st.subquestions[0], _explore_table({"가": ["A", "B"]}),
+                           _ScriptedCritic(("sufficient", [], [])))
+        assert [p["cnts_id"] for p in _of(events, "candidates")[0]["papers"]] == ["A"]
+        assert st.subquestions[0].budget_capped == 1
+
+    def test_candidates_are_not_kept_in_the_round_history(self):
+        st = self._state("가", max_recheck=0)
+        (sq,) = st.subquestions
+        self._run(st, sq, _explore_table({"가": ["A"]}), _ScriptedCritic(("sufficient", [], [])))
+        assert set(sq.rounds[0]) == {
+            "round", "query", "found_chunks", "new_papers", "verdict", "note", "next_query", "excluded",
+            "excluded_papers", "flagged", "flagged_papers", "adopted_papers"}
+        from services.research.state import snapshot_state
+        assert "candidates" not in json.dumps(snapshot_state(st), ensure_ascii=False)
+
+    @pytest.mark.parametrize("switch", [0, 1])
+    def test_candidates_are_streamed_whatever_the_switches(self, switch):
+        st = ResearchState(job_id="j", question="q", params=merge_params(
+            {"broaden": switch, "query_context": switch, "max_recheck": 0}))
+        sq = SubQuestion(idx=0, text="가")
+        st.subquestions = [sq]
+        events = self._run(st, sq, _fake_explore, _ScriptedCritic(("sufficient", [], [])))
+        assert [k for k, _ in events].count("candidates") == 1

@@ -20,11 +20,13 @@ import types
 import uuid
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from sqlalchemy.sql import operators
 from sqlalchemy.sql.elements import BinaryExpression, BindParameter, BooleanClauseList, Grouping
 from sqlalchemy.sql.selectable import Exists
 
+from services.research import framing
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, snapshot_state,
 )
@@ -250,14 +252,18 @@ class _Harness:
         self.drops: list[tuple] = []
         # 대기 순번 ZSET 에서 뺀 잡
         self.unmarked: list = []
+        # 넓히기(frame_question) 대역이 받은 질문 — TestPlan._patch 가 채운다
+        self.framed: list[str] = []
 
 
 def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
-                    explore=None, synthesize=None, session=None) -> _Harness:
+                    explore=None, synthesize=None, session=None,
+                    terms: list[str] | None = None) -> _Harness:
     """DB·Redis·LLM 을 대역으로 바꾸고 호출만 기록한다.
 
     explore·synthesize 로 하위 동작을 끼워 넣는다(취소를 찍거나 예외를 던지는 식).
     session 을 주면 그 대역을 쓴다(research_steps 행까지 흉내 내야 할 때).
+    terms 는 마지막 계획 단계의 범위 용어(_plan_terms 대역이 돌려준다 — 진짜 _plan_terms 는 TestPlanTerms 가 본다).
     """
     if session is None:
         session = _FakeSession(job=job, scalar=0)
@@ -278,6 +284,9 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
 
     async def _corpus_range(db):
         return {"from": "2002", "to": "2026", "n_papers": 7}
+
+    async def _plan_terms(db, job_id):
+        return list(terms or [])
 
     async def _publish(job_id, kind, payload):
         h.events.append((kind, payload))
@@ -313,7 +322,7 @@ def _patch_pipeline(monkeypatch, rt, *, job, explored: list, synthesized: list,
 
     for name, fn in (
         ("_next_seq", _next_seq), ("_step", _step), ("_finish", _finish),
-        ("_corpus_range", _corpus_range), ("publish", _publish),
+        ("_corpus_range", _corpus_range), ("_plan_terms", _plan_terms), ("publish", _publish),
         ("publish_terminal", _publish_terminal),
         ("explore_subquestion", _explore), ("synthesize", _synthesize),
         ("_save_progress", _save_progress), ("_drop_stale_previews", _drop_stale_previews),
@@ -847,7 +856,7 @@ class TestTimeout:
 
 
 class TestPlan:
-    def _patch(self, monkeypatch, rt, job, make_plan):
+    def _patch(self, monkeypatch, rt, job, make_plan, *, frame=None):
         h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[])
         planner = types.ModuleType("services.research.planner")
 
@@ -857,6 +866,16 @@ class TestPlan:
 
         planner.make_plan = _make_plan
         monkeypatch.setitem(sys.modules, "services.research.planner", planner)
+
+        # 넓히기는 늘 대역으로 바꾼다 — broaden 기본값이 1 로 바뀌어도(06c 판정) 계획 태스크를 도는 테스트가 진짜
+        # chat(HTTP·재시도, BROADEN_TIMEOUT 까지)을 부르지 않는다. 태스크는 함수 안에서 import 하므로 부를 때의 모듈
+        # 속성(이 대역)을 읽는다. 기본 대역은 받은 질문을 남기고 원 질문 그대로 둔다. 진짜 넓히기를 거치는 테스트는
+        # frame=framing.frame_question 을 넘기고 framing.chat 만 바꾼다
+        async def _unframed(question):
+            h.framed.append(question)
+            return framing.unframed(question)
+
+        monkeypatch.setattr(framing, "frame_question", frame or _unframed)
         return h
 
     def test_plan_success_awaits_approval(self, monkeypatch):
@@ -902,6 +921,243 @@ class TestPlan:
 
         assert out["status"] == "canceled"
         assert job.status == "canceled" and job.plan is None
+
+    BROAD = framing.Framing(
+        "청소년의 독서 격차가 생기는 원인과 격차를 줄이는 중재에 관한 국내 연구는 어디까지 왔나",
+        ["청소년 독서", "독서 격차 중재"],
+    )
+
+    def test_switch_off_plans_the_original_question_and_records_it(self, monkeypatch):
+        """broaden 0 이면 계획 입력이 지금과 글자 그대로다 — 넓히기를 부르지 않고 중간 알림도 없다. 완료 result 에는
+        계획에 넘긴 질문(원문)·빈 용어·계획 시간이 더 실린다. 기본값이 바뀌어도 뜻이 같게 값을 적는다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 0}
+        asked = []
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1", "하위2"]
+
+        h = self._patch(monkeypatch, rt, job, _plan)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "awaiting_approval"
+        assert asked == [job.question] == ["독서 격차 연구는 어디까지 왔나"]
+        assert h.framed == [] and h.progress == []
+        _, status, result, _ = h.finished[-1]
+        assert status == "done"
+        assert set(result) == {"subquestions", "question_used", "terms", "elapsed_ms"}
+        assert (result["subquestions"], result["question_used"], result["terms"]) == (
+            ["하위1", "하위2"], job.question, [])
+        assert isinstance(result["elapsed_ms"], int) and result["elapsed_ms"] >= 0
+        assert job.plan == ["하위1", "하위2"]
+
+    def test_switch_off_keeps_the_question_byte_for_byte(self, monkeypatch):
+        """spec §12-7 '스위치 0 이면 계획 입력이 지금과 글자 그대로' — 공백도 정리하지 않는다. job.question 은 어디서도
+        정규화되지 않아(ResearchCreate 에 strip 이 없다) 겹친 공백·끝 공백이 실제로 들어온다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 0}
+        job.question = "독서  격차 연구는 어디까지 왔나 "
+        asked = []
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert asked == ["독서  격차 연구는 어디까지 왔나 "]
+        assert h.finished[-1][2]["question_used"] == "독서  격차 연구는 어디까지 왔나 "
+
+    def test_switch_on_plans_the_broadened_question_and_announces_it_first(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        order = []
+        h = None
+
+        async def _frame(question):
+            order.append(("frame", question))
+            return self.BROAD
+
+        async def _plan(question, params):
+            order.append(("plan", question, len(h.progress)))
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_frame)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "awaiting_approval"
+        # 넓힌 질문을 계획보다 먼저 알린다(단계는 running 그대로) — 계획은 넓힌 문장으로 세운다
+        assert order == [("frame", "독서 격차 연구는 어디까지 왔나"), ("plan", self.BROAD.question, 1)]
+        assert [r for _, r in h.progress] == [{"question_used": self.BROAD.question, "terms": self.BROAD.terms}]
+        assert [a[1] for a in h.announced] == ["running", "done"]
+        result = h.finished[-1][2]
+        assert {k: result[k] for k in ("subquestions", "question_used", "terms")} == {
+            "subquestions": ["하위1"], "question_used": self.BROAD.question, "terms": self.BROAD.terms}
+        # 원 질문은 그대로 남는다(보고서 머리·기록·critic_scope 1·핵심 개념이 읽는다). 계획은 make_plan 결과 그대로
+        assert job.question == "독서 격차 연구는 어디까지 왔나"
+        assert job.plan == ["하위1"]
+
+    def test_plan_time_covers_broadening_and_planning(self, monkeypatch):
+        """정함 5 — elapsed_ms 는 단계를 연 뒤 넓히기 + 계획의 시간이다(§12-7 계획 p50 5초, Q4 판정 기준). 넓히기를 빼고
+        재면 판정이 켜는 쪽으로 기운다. 계획 태스크가 쓰는 time 은 monotonic 하나뿐이라 모듈 속성만 가짜 시계로
+        바꾼다 — 전역 time.monotonic 은 asyncio 루프가 쓴다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        now = [100.0]
+        monkeypatch.setattr(rt, "time", types.SimpleNamespace(monotonic=lambda: now[0]))
+
+        async def _frame(question):
+            now[0] += 3.0
+            return self.BROAD
+
+        async def _plan(question, params):
+            now[0] += 0.5
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_frame)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert h.finished[-1][2]["elapsed_ms"] == 3500
+
+    def test_broadening_waits_with_no_read_transaction_open(self, monkeypatch):
+        # 함정 18 — 넓히기도 LLM 을 기다린다. 읽기 트랜잭션을 쥔 채 기다리면 FastAPI 기동 DDL 을 막는다
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        open_at_frame = []
+        h = None
+
+        async def _frame(question):
+            open_at_frame.append(h.session.in_txn)
+            return framing.unframed(question)
+
+        async def _plan(question, params):
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_frame)
+        asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert open_at_frame == [False]
+
+    def test_failed_broadening_still_plans_the_original_question(self, monkeypatch):
+        """진짜 frame_question 을 거친다 — 넓히기 LLM 이 시간을 넘겨도 잡은 원 질문으로 계획해 승인 대기로 간다."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        asked = []
+
+        async def _timeout(messages, *, params=None, timeout=None):
+            raise httpx.ReadTimeout("넓히기 응답 없음")
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=framing.frame_question)
+        monkeypatch.setattr(framing, "chat", _timeout)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "awaiting_approval" and job.status == "awaiting_approval"
+        assert asked == [job.question]
+        # 실패여도 중간 알림은 한 번 — 원 질문 그대로라 화면은 '이렇게 이해했어요'를 숨긴다
+        assert [r for _, r in h.progress] == [{"question_used": job.question, "terms": []}]
+        result = h.finished[-1][2]
+        assert (result["question_used"], result["terms"]) == (job.question, [])
+
+    def test_unexpected_broadening_error_fails_the_plan(self, monkeypatch):
+        """넓히기 밖 예외(코드 결함)는 원문으로 숨기지 않고 계획 실패로 닫는다(정함 10 — 함정 19)."""
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="created", plan=None, status="created")
+        job.params = {"broaden": 1}
+        asked = []
+
+        async def _broken(question):
+            raise RuntimeError("넓히기 코드 결함")
+
+        async def _plan(question, params):
+            asked.append(question)
+            return ["하위1"]
+
+        h = self._patch(monkeypatch, rt, job, _plan, frame=_broken)
+        out = asyncio.run(rt._plan_deep_research(str(job.id)))
+
+        assert out["status"] == "failed" and job.status == "failed"
+        assert asked == [] and h.progress == []
+        _, status, result, _ = h.finished[-1]
+        assert status == "failed" and "넓히기 코드 결함" in result["error"]
+
+
+class TestPlanTerms:
+    """실행 태스크는 마지막 계획 단계가 뽑은 범위 용어를 ResearchState 와 체크포인트에 싣는다(06c)."""
+
+    PLAN_RESULT = {"subquestions": ["하위1"], "question_used": "넓힌 질문",
+                   "terms": ["컴퓨팅 자원", "클라우드"], "elapsed_ms": 1200}
+
+    def test_reads_the_terms_of_the_latest_plan_step(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        db = _RecordingSession(scalar=self.PLAN_RESULT)
+        jid = uuid.uuid4()
+
+        assert asyncio.run(rt._plan_terms(db, jid)) == ["컴퓨팅 자원", "클라우드"]
+        # 이 잡의 계획 단계 중 마지막 것 — job_id·kind 로 거르고 seq 내림차순 첫 행(다시 계획하기 — spec §12-9).
+        # 바인드 값까지 본다 — job_id 조건이 빠지면 다른 잡의 용어를 붙이고, kind 글자가 틀리면 늘 빈 목록이다
+        (stmt,) = db.stmts
+        sql = str(stmt)
+        assert "FROM research_steps" in sql and "ORDER BY research_steps.seq DESC" in sql and "LIMIT" in sql
+        params = stmt.compile().params
+        assert params["job_id_1"] == jid and params["kind_1"] == "plan"
+
+    @pytest.mark.parametrize("result", [{"subquestions": ["하위1"]}, None],
+                             ids=["before-06c", "no-plan-step"])
+    def test_plan_step_without_terms_gives_no_terms(self, monkeypatch, result):
+        rt = _load_tasks(monkeypatch)
+        assert asyncio.run(rt._plan_terms(_FakeSession(scalar=result), uuid.uuid4())) == []
+
+    def test_values_that_are_not_strings_are_dropped(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        mixed = {"terms": ["클라우드", 3, None, "", "  ", ["엣지"], "엣지 컴퓨팅"]}
+        assert asyncio.run(rt._plan_terms(_FakeSession(scalar=mixed), uuid.uuid4())) == ["클라우드", "엣지 컴퓨팅"]
+        for odd in ({"terms": "클라우드"}, ["클라우드"], "클라우드"):
+            assert asyncio.run(rt._plan_terms(_FakeSession(scalar=odd), uuid.uuid4())) == []
+
+    def test_fresh_run_carries_the_terms_into_the_state_and_checkpoint(self, monkeypatch):
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1", "하위2"])
+        seen = []
+
+        async def _record(state, subq):
+            seen.append(list(state.terms))
+
+        _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[], explore=_record,
+                        terms=["컴퓨팅 자원", "클라우드"])
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert seen == [["컴퓨팅 자원", "클라우드"], ["컴퓨팅 자원", "클라우드"]]
+        assert job.state_snapshot["terms"] == ["컴퓨팅 자원", "클라우드"]
+
+    def test_resumed_run_keeps_the_terms_of_its_snapshot(self, monkeypatch):
+        # 종합만 다시 하는 재개 — 그 탐색이 쓴 용어가 남는다(그 사이 계획 단계를 다시 읽어 덮지 않는다)
+        rt = _load_tasks(monkeypatch)
+        snap = _explored_snapshot()
+        snap["terms"] = ["스냅숏 용어"]
+        job = _FakeJob(stage="explored", plan=["하위1"], state_snapshot=snap, status="queued")
+        seen = []
+
+        async def _record(state, should_stop):
+            seen.append(list(state.terms))
+            return {"sections": []}
+
+        _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[], synthesize=_record,
+                        terms=["다른 용어"])
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert seen == [["스냅숏 용어"]]
 
 
 class _RecordingSession(_FakeSession):
@@ -1375,6 +1631,43 @@ class TestLiveProgress:
 
         assert [res["counters"]["excluded"] for _, res in h.progress] == [2]
         assert h.finished[0][2]["counters"]["excluded"] == 2
+
+    def test_candidates_are_streamed_but_not_saved(self, monkeypatch):
+        """탐색 후보(06c)는 화면 이벤트일 뿐이다 — 진짜 러너를 돌려 흘린 candidates 가 그대로 나가고, 진행 저장은
+        자기점검(critique)에서만 한다. 단계 result 에 싣지 않으므로 재접속한 화면에는 '검토 중' 더미가 없다."""
+        from services.research.critic import Verdict
+        from services.research.runner import explore_subquestion
+
+        rt = _load_tasks(monkeypatch)
+        job = _FakeJob(stage="planned", plan=["하위1"])
+        h = None
+        saved_at = []
+
+        async def _hits_for(query, *, params, db):
+            hit = {"book_id": "A", "chunk_id": "A-c1", "text": "대목", "page_start": 1, "page_end": 1,
+                   "score": 0.9, "rank_score": 0.9}
+            return [hit], {"A": {"title": "논문 A", "pub_date": "2008-06"}}
+
+        async def _critic(subq, evidence, *, params, question=None):
+            saved_at.append(len(h.progress))
+            return Verdict("sufficient", note="충분")
+
+        async def _real_round(state, subq):
+            await explore_subquestion(state, subq, db=None, explore_fn=_hits_for, critique_fn=_critic,
+                                      emit=h.emit)
+
+        h = _patch_pipeline(monkeypatch, rt, job=job, explored=[], synthesized=[], explore=_real_round)
+        asyncio.run(rt._run_deep_research(str(job.id)))
+
+        assert [e[0] for e in h.events if e[0] in ("search", "counters", "candidates", "critique")] == [
+            "search", "counters", "candidates", "critique"]
+        (candidates,) = [e[1] for e in h.events if e[0] == "candidates"]
+        assert candidates == {"subq_idx": 0, "round": 1, "papers": [
+            {"cnts_id": "A", "title": "논문 A", "personal_author": None, "pub_date": "2008-06"}]}
+        # 판정 전까지 저장 0번, 회차를 닫는 critique 에서 한 번 — 저장한 result 에 후보가 없다
+        assert saved_at == [0] and len(h.progress) == 1
+        assert set(h.progress[0][1]) == {"rounds", "counters"}
+        assert "candidates" not in json.dumps(h.progress[0][1], ensure_ascii=False)
 
     def test_section_progress_is_saved_on_the_synthesis_step(self, monkeypatch):
         rt = _load_tasks(monkeypatch)

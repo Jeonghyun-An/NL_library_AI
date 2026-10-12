@@ -97,7 +97,16 @@ class ResearchStep(Base):
     status      = Column(String(16), nullable=False, default="pending")
     # kind 별 shape — API 가 가공 없이 프론트로 넘기고 프론트가 kind 로 분기한다.
     # SSE step 이벤트가 같은 값을 싣는다(workers/research_tasks.py _finish).
-    # plan:       {"subquestions": [...]}                 LLM 원안 (승인본은 job.plan)
+    # plan:       {"subquestions": [...], "question_used": "...", "terms": [...], "elapsed_ms": n}
+    #             subquestions 는 LLM 원안(승인본은 job.plan). question_used 는 계획에 넘긴 질문 — 넓히기(잡 파라미터
+    #             broaden 1)가 넓힌 한 문장, 끄거나 실패하면 원 질문(job.question 은 늘 원문). terms 는 넓히기가 뽑은
+    #             범위 용어(검색어 합성 query_context 의 재료 — 실행 태스크가 ResearchState 에 싣는다), 넓히지 않았으면 [].
+    #             elapsed_ms 는 넓히기 + 계획에 걸린 시간.
+    #             도는 중(broaden 1, 넓히기가 끝난 뒤)에는 {"question_used", "terms"} 로 먼저 알린다 — subquestions 가
+    #             없어 API 는 이 행을 '계획을 안다'로 세지 않는다. 06c 전 잡은 {"subquestions": [...]} 뿐이다.
+    #             실패로 닫히면 닫는 길에 따라 칸이 다르다 — 시간 상한·회수로 닫히면(_close_orphan_steps·
+    #             reap_stale_research 는 result 에 error 를 더한다) 도는 중에 쓴 {question_used, terms} 에 error 가
+    #             더해지고, 계획 실패(_finish)로 닫히면 {"error"} 뿐이다.
     # search:     {"queries": [...], "adopted": n, "verdict": "...", "note": "...",
     #              "parse_failed": bool, "capped": n,
     #              "rounds": [{"round", "query", "found_chunks", "new_papers",

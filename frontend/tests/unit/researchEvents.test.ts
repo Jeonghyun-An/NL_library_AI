@@ -23,6 +23,7 @@ import {
   initialResearchView,
   isTerminalEvent,
   mergeEvidence,
+  questionUsedFromSteps,
   queueLine,
   refreshView,
   researchPhase,
@@ -32,6 +33,7 @@ import {
   subqStatusLabel,
   synthClosePending,
   synthProgress,
+  understoodLine,
   withPlan,
 } from "~/utils/researchEvents";
 
@@ -1377,5 +1379,87 @@ describe("queueLine — queued 문구 뒤에 덧붙이는 순번", () => {
     expect(queueLine({ ahead: 2, etaSec: 1500 })).toBe("앞에 2건 · 약 25분");
     expect(queueLine({ ahead: 1, etaSec: 61 })).toBe("앞에 1건 · 약 2분");
     expect(queueLine({ ahead: 1, etaSec: 0 })).toBe("앞에 1건 · 약 1분");
+  });
+});
+
+const ASKED = "컴퓨팅 자원에 대한 연구가 궁금해";
+const BROADENED = "클라우드·그리드 환경의 컴퓨팅 자원 관리에 대한 연구가 궁금해";
+
+describe("questionUsedFromSteps — 이렇게 이해했어요(06c)", () => {
+  it("넓힌 질문이 원 질문과 다르면 그 질문을 준다", () => {
+    const done = step({
+      result: { subquestions: ["클라우드 컴퓨팅 자원 할당"], question_used: BROADENED, terms: ["클라우드 컴퓨팅"], elapsed_ms: 3400 },
+    });
+    expect(questionUsedFromSteps([done], ASKED)).toBe(BROADENED);
+    // 줄바꿈·겹친 공백은 한 칸으로 정리해 보인다
+    const messy = step({ result: { question_used: `  클라우드·그리드 환경의\n컴퓨팅  자원 관리에 대한 연구가 궁금해 ` } });
+    expect(questionUsedFromSteps([messy], ASKED)).toBe(BROADENED);
+  });
+
+  it("원 질문과 같으면 null — 공백·NFKC 차이만 있어도 같다(넓히기를 껐거나 실패한 잡)", () => {
+    const off = step({ result: { subquestions: ["컴퓨팅 자원의 정의"], question_used: ASKED, terms: [], elapsed_ms: 700 } });
+    expect(questionUsedFromSteps([off], ASKED)).toBeNull();
+    expect(questionUsedFromSteps([step({ result: { question_used: " 컴퓨팅  자원에 대한 연구가 궁금해" } })], ASKED)).toBeNull();
+    expect(questionUsedFromSteps([step({ result: { question_used: "ＡＩ 윤리 교육의 효과" } })], "AI 윤리 교육의 효과")).toBeNull();
+    // 원 질문 쪽도 접는다 — job.question 은 서버·화면 어디서도 정규화되지 않는다(ResearchCreate 에 strip 이 없고
+    // planSlashSubmit 은 trim 만, paperResearchQuestion 은 공백만 접고 NFKC 는 안 한다). 스위치 0·넓히기 실패면
+    // 서버가 unframed(question) 으로 question_used 를 job.question 과 바이트까지 같게 둔다
+    const raw = "컴퓨팅  자원에 대한\n연구가 궁금해";
+    expect(questionUsedFromSteps([step({ result: { question_used: raw } })], raw)).toBeNull();
+    expect(questionUsedFromSteps([step({ result: { question_used: "AI 윤리 교육의 효과" } })], "ＡＩ 윤리 교육의 효과")).toBeNull();
+  });
+
+  it("question_used 가 없으면 null — 06c 전 잡·계획 단계 전", () => {
+    expect(questionUsedFromSteps([step({ result: { subquestions: ["효과 측정"] } })], ASKED)).toBeNull();
+    expect(questionUsedFromSteps([], ASKED)).toBeNull();
+    // 보강 전 서버의 snapshot 행에는 result 가 없다
+    expect(questionUsedFromSteps([step({ result: undefined })], ASKED)).toBeNull();
+    expect(questionUsedFromSteps([step({ result: { question_used: "   " } })], ASKED)).toBeNull();
+    // 계획 단계만 본다
+    const search = step({ seq: 1, kind: "search", subq_idx: 0, title: "효과 측정", result: { question_used: BROADENED } });
+    expect(questionUsedFromSteps([search], ASKED)).toBeNull();
+  });
+
+  it("계획 중(running) 단계의 중간 알림 result 도 읽는다", () => {
+    const running = step({ status: "running", result: { question_used: BROADENED, terms: ["클라우드 컴퓨팅", "자원 할당"] } });
+    expect(questionUsedFromSteps([running], ASKED)).toBe(BROADENED);
+  });
+
+  it("재시도로 계획 단계가 여럿이면 seq 가 가장 큰 행을 읽는다", () => {
+    const older = step({ seq: 0, status: "failed", result: { question_used: "앞 시도의 넓힌 질문" } });
+    const latest = step({ seq: 3, result: { subquestions: ["클라우드 컴퓨팅 자원 할당"], question_used: BROADENED } });
+    expect(questionUsedFromSteps([latest, older], ASKED)).toBe(BROADENED);
+    // 마지막 시도가 계획에서 실패하면(result 가 error 뿐) 앞 시도의 넓힌 질문을 보이지 않는다
+    const failed = step({ seq: 5, status: "failed", result: { error: "계획 LLM 실패" } });
+    expect(questionUsedFromSteps([older, latest, failed], ASKED)).toBeNull();
+  });
+});
+
+describe("understoodLine", () => {
+  it("'이렇게 이해했어요: …' 한 줄", () => {
+    expect(understoodLine(BROADENED)).toBe(`이렇게 이해했어요: ${BROADENED}`);
+  });
+});
+
+describe("applyResearchEvent — 계획 중간 알림(06c)", () => {
+  it("subquestions 없는 running 계획 단계는 계획을 비운 채 두고 넓힌 질문을 단계 result 에 남긴다", () => {
+    const planning = initialResearchView(job({ question: ASKED, status: "planning", stage: "created", plan: null }));
+    const announced = applyResearchEvent(planning, {
+      kind: "step", seq: 0, step_kind: "plan", subq_idx: null, title: "연구 계획 수립", status: "running",
+      result: { question_used: BROADENED, terms: ["클라우드 컴퓨팅", "자원 할당"] },
+    });
+    expect(announced.plan).toEqual([]);
+    expect(announced.subqs).toEqual([]);
+    expect(researchPhase(announced)).toBe("planning");
+    expect(questionUsedFromSteps(announced.steps, announced.question)).toBe(BROADENED);
+
+    // 계획이 나오면 같은 단계가 하위질문과 함께 같은 넓힌 질문을 싣는다
+    const plan = ["클라우드 컴퓨팅 자원 할당", "그리드 컴퓨팅 자원 관리"];
+    const planned = applyResearchEvent(announced, {
+      kind: "step", seq: 0, step_kind: "plan", subq_idx: null, title: "연구 계획 수립", status: "done",
+      result: { subquestions: plan, question_used: BROADENED, terms: ["클라우드 컴퓨팅", "자원 할당"], elapsed_ms: 3400 },
+    });
+    expect(planned.plan).toEqual(plan);
+    expect(questionUsedFromSteps(planned.steps, planned.question)).toBe(BROADENED);
   });
 });

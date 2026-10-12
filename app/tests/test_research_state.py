@@ -37,7 +37,7 @@ class TestMergeParams:
         assert set(DEFAULT_PARAMS) == {
             "max_subquestions", "max_recheck", "max_evidence", "per_subq_top_k",
             "chunks_per_evidence", "citation_weight", "min_evidence_per_subq",
-            "exclude_off_topic", "critic_scope",
+            "exclude_off_topic", "critic_scope", "broaden", "query_context",
         }
 
     def test_bounds_cover_exactly_the_default_keys(self):
@@ -124,6 +124,24 @@ class TestMergeParams:
         with pytest.raises(ValueError, match="파라미터 critic_scope"):
             merge_params({"critic_scope": value})
 
+    def test_query_switches_are_off_by_default(self):
+        # 06c 넓히기·검색어 합성은 운영 두 갈래 판정(spec §12-7) 뒤에 기본값을 바꿔 켠다. 기본값을 단언하는 테스트는
+        # 이것과 test_research_api 의 test_query_switches_are_saved_off_unless_asked 둘뿐이다 — 다른 테스트는 값을 적는다
+        assert (DEFAULT_PARAMS["broaden"], DEFAULT_PARAMS["query_context"]) == (0, 0)
+
+    @pytest.mark.parametrize("key", ["broaden", "query_context"])
+    @pytest.mark.parametrize("value", [0, 1])
+    def test_query_switches_take_zero_or_one(self, key, value):
+        # 판정 도구(run_pair --param)가 갈래마다 잡 파라미터로 준다
+        assert merge_params({key: value})[key] == value
+
+    @pytest.mark.parametrize("key", ["broaden", "query_context"])
+    @pytest.mark.parametrize("value", [2, -1, True, "1"])
+    def test_query_switches_reject_anything_else(self, key, value):
+        # '알 수 없는 파라미터: …' 가 아니라 값 검사에서 거부돼야 한다 — 콜론 없는 문구로 맞춘다
+        with pytest.raises(ValueError, match=f"파라미터 {key}"):
+            merge_params({key: value})
+
 
 class TestState:
     def test_new_state_has_no_subquestions(self):
@@ -148,6 +166,11 @@ class TestState:
     def test_corpus_range_defaults_to_none(self):
         st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
         assert st.corpus_range is None
+
+    def test_new_state_has_no_terms(self):
+        # 넓히지 않은 잡(broaden 0·06c 전 잡)은 범위 용어가 없다 — 검색어 합성은 군더더기만 뗀다
+        st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+        assert st.terms == []
 
 
 def _explored_state() -> ResearchState:
@@ -186,6 +209,14 @@ class TestSnapshotRoundTrip:
         # 보고서의 "수록 범위" 문구가 여기서 온다 — 떨어지면 재개한 보고서만 비어 보인다
         back = restore_state("j1", snapshot_state(_explored_state()))
         assert back.corpus_range == {"from": "2002", "to": "2026", "n_papers": 72054}
+
+    def test_terms_survive(self):
+        # 계획 단계가 뽑은 범위 용어 — 떨어지면 재개한 잡의 기록(스냅숏)만 용어를 잃는다
+        st = _explored_state()
+        st.terms = ["컴퓨팅 자원", "클라우드"]
+        snap = snapshot_state(st)
+        assert snap["terms"] == ["컴퓨팅 자원", "클라우드"]
+        assert restore_state("j1", snap).terms == ["컴퓨팅 자원", "클라우드"]
 
     def test_subquestions_survive_in_order(self):
         st = _explored_state()
@@ -284,6 +315,12 @@ class TestSnapshotEvolution:
         snap = snapshot_state(_explored_state())
         snap["evidence"]["E0"]["chunks"][0]["old_field"] = 1
         assert restore_state("j1", snap).evidence["E0"].chunks[0].chunk_id == "c1"
+
+    def test_old_snapshot_without_terms_gets_no_terms(self):
+        # 06c 전 스냅숏 — 그 잡은 넓히지 않았다
+        snap = snapshot_state(_explored_state())
+        del snap["terms"]
+        assert restore_state("j1", snap).terms == []
 
     def test_params_are_refilled_with_defaults(self):
         """나중에 추가된 파라미터를 옛 스냅샷이 모르면 읽는 쪽이 KeyError 로 터진다."""

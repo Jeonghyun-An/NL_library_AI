@@ -56,9 +56,9 @@
 | 정함 4 | **`candidates` 는 회차마다 늘 한 번** — 이은 근거가 없어도 `papers: []`. 순서는 `search` → `counters` → `candidates` → (자기점검 LLM) → `critique`. 스위치 0 이어도 회차마다 이벤트가 하나 는다 — 이벤트 종류의 전체 순서를 글자 그대로 단언하는 기존 테스트 `TestRoundEvents.test_counters_follow_each_search` 하나를 Task C7 이 고친다 | 06d 의 '다음 회차 후보가 앞 더미를 갈음'이 빈 목록으로도 성립한다. `papers` 순서 = 이번 검색이 이 하위질문에 이은 순서(`linked`) |
 | 정함 5 | **plan step 결과에 `elapsed_ms` 를 더한다** — `{"subquestions", "question_used", "terms", "elapsed_ms"}`, 단계를 연 뒤(넓히기 + 계획) `time.monotonic()` 차의 정수 밀리초 | §12-7 계획 시간 지표가 읽는다. GET 의 steps 에는 시각 칸이 없다(`api/research.py:368-378`) — API·스키마를 바꾸지 않는다 |
 | 정함 6 | **중간 알림은 `broaden` 1 일 때만** — 넓히기 뒤 결과와 무관하게 한 번 `_save_progress(db, step, {"question_used", "terms"})`. `broaden` 0 이면 넓히기 함수를 부르지 않는다 | 스위치 0 이면 계획 단계의 step 이벤트 순서까지 지금과 같다(완료 result 의 칸만 는다) |
-| 정함 7 | **`content_words` 보강:** NFKC → casefold → **문장부호(`[^\w\s]`)를 공백으로** → 어절 나누기 → 어절 끝 조사 하나 떼기(맞는 것 중 가장 긴 것, 남는 것이 2자 미만이면 떼지 않음) → 2자 이상·`QUESTION_WORDS` 아님·**`PARTICLES` 자체(조사만 남은 어절) 아님** → 처음 나온 순서·중복 없이. **spec §12-2 정의와 다르다**(문장부호·조사 어절 규칙이 없다) | '궁금해?'·논문 버튼 꼴(「…」에서, ·)이 늘 원문으로 떨어지지 않게 한다. 「…」를 공백으로 바꾸면 남는 '에서' 같은 조사 어절은 내용어가 아니다 |
+| 정함 7 | **`content_words` 보강:** NFKC → casefold → **문장부호(`[^\w\s]`)를 공백으로** → 어절 나누기 → 어절 끝 조사 하나 떼기(맞는 것 중 가장 긴 것, 남는 것이 2자 미만이면 떼지 않음) → 2자 이상·`QUESTION_WORDS` 아님·**`PARTICLES` 자체(조사만 남은 어절) 아님** → 처음 나온 순서·중복 없이. **spec §12-2 정의와 다르다**(문장부호·조사 어절 규칙이 없다). `QUESTION_WORDS` 는 spec 의 처음 값 열에 그 활용 꼴 여덟(관해·관하여·대해·대하여·궁금해요·알려주세요·찾아주세요·연구들)을 더한다(최종 리뷰) | '궁금해?'·논문 버튼 꼴(「…」에서, ·)이 늘 원문으로 떨어지지 않게 한다. 「…」를 공백으로 바꾸면 남는 '에서' 같은 조사 어절은 내용어가 아니다. 활용 꼴이 내용어로 남으면 '노인 우울에 대해 알려주세요' 를 넓힌 답이 요청 말까지 글자 그대로 옮겨야만 낱말 검사를 지나가 실사용 질문 대부분이 원문으로 물러난다(고정 5문항은 모두 '…연구가 궁금해'라 판정에 드러나지 않는다) |
 | 정함 8 | **`contains` 는 spec 글자 그대로**(NFKC → casefold → 공백 제거 뒤 부분 문자열, 아니면 word 의 낱말이 모두 순서대로) | 06e 제목 일치가 같은 함수를 쓴다(§12-4) |
-| 정함 9 | **terms 정리:** 문자열만 → NFKC → 공백 정리 → 빈 것·`TERM_MAX_CHARS`(30)자 넘는 것 버림 → casefold 기준 중복 제거 → `MAX_TERMS`(4)에서 자름. 넓힌 질문이 공백 정리 뒤 비었거나 `FRAMED_QUESTION_MAX`(500)자를 넘으면 실패(원문). 넓힌 질문은 맨 앞 입력 이름표(`질문:`·`질문：` — `_ECHO_LABEL`)를 떼고 본다 — 모델이 user 메시지를 이름표째 옮기면 낱말 검사를 통과해 계획 입력·`question_used` 에 이름표가 실린다(함정 26, Task C3 `test_echoed_input_label_is_stripped`) | 용어가 검색어에 붙으므로 긴 문장이 용어로 들어오면 검색어가 망가진다. 500 = `ResearchCreate.question` 상한(`api/research.py:90`) |
+| 정함 9 | **terms 정리:** 문자열만 → NFKC → 공백 정리 → 빈 것·`TERM_MAX_CHARS`(30)자 넘는 것 버림 → casefold 기준 중복 제거 → `MAX_TERMS`(4)에서 자름. 넓힌 질문이 공백 정리 뒤 비었거나 `FRAMED_QUESTION_MAX`(500)자를 넘으면 실패(원문). 넓힌 질문은 맨 앞 입력 이름표(`질문:`·`질문：` — `_ECHO_LABEL`)를 떼고 본다 — 모델이 user 메시지를 이름표째 옮기면 낱말 검사를 통과해 계획 입력·`question_used` 에 이름표가 실린다(함정 26, Task C3 `test_echoed_input_label_is_stripped`). 낱말 검사는 `content_words` 에 더해 원 질문의 **한 글자 어절**(조사·`QUESTION_WORDS`·`ONE_CHAR_FUNCTION_WORDS` — 및·등·왜·더·수·것 같은 잇는 말 — 제외)도 본다. 한 글자는 `contains`(부분 문자열)가 아니라 **어절 경계**로 대조한다 — 넓힌 문장을 같은 방식(NFKC·casefold·문장부호 공백)으로 나눈 어절 가운데 그 글자이거나 '그 글자 + `PARTICLES` 하나'(암의·뇌를·암에서)인 것이 있어야 한다(`_has_one_char_word`, C3 품질 검토 두 번, `test_question_that_drops_a_one_char_word_is_refused`·`test_one_char_word_is_matched_as_a_whole_word`). 어절 나누기는 `terms.tokens` 한 곳이다(`content_words` 도 쓴다 — 최종 리뷰). **원 질문에 대조할 낱말(내용어·한 글자 어절)이 하나도 없으면**('연구가 궁금해'·'관련 연구 알려줘') 검사할 수 없으니 넓히지 않는다 — 빈 문장 검사 다음에 `[framing] 원 질문에 대조할 낱말이 없어 원 질문을 쓴다` 한 줄과 함께 원문(최종 리뷰, `test_question_with_no_word_to_check_keeps_the_original`) | 용어가 검색어에 붙으므로 긴 문장이 용어로 들어오면 검색어가 망가진다. 500 = `ResearchCreate.question` 상한(`api/research.py:90`). 한 글자 명사(암·뇌·법)는 `content_words` 의 2자 바닥에 걸려 '암 연구가 궁금해'(내용어 [])에 지어낸 주제·'암'→'종양'이 낱말 검사를 지나간다 — 계약(06e·score.py)은 두고 넓히기 검사만 엄하게 본다. `contains` 로 보면 '방법'·'기법'의 '법', '암호화'의 '암', '뇌물'의 '뇌'에 맞아 지어낸 주제가 지나간다('법'은 넓힌 문장에 흔히 붙는 '방법' 때문에 사실상 아무것도 막지 못한다). 목록에 없는 한 글자 말이 빠지거나 붙여 쓴 꼴('암환자')로 원문으로 물러나는 것은 안전한 쪽이다. 대조할 낱말이 없으면 낱말 검사가 아무것도 거르지 않아 지어낸 주제('인공지능 기반 교육 플랫폼…')가 그대로 계획 입력·`question_used` 가 되고 terms 가 모든 검색어에 붙는다 — 한 글자 명사 질문에서 고친 것과 같은 실패다 |
 | 정함 10 | **넓히기 실패 타입 `FRAME_FAILURES = (httpx.HTTPError, ValueError, KeyError, IndexError)`** — `chat` 이 실제로 내는 전송·상태·JSON 해석·응답 모양 오류. 원문으로 물러나는 범위는 이것과 빈 응답·검사 실패이고, 그 밖의 예외(코드 결함·태스크 제어 예외)는 올려 계획 실패로 닫는다. **spec §12-2 '오류 … 면 원 질문으로 계획한다 — 잡을 실패시키지 않는다' 와 다르다** | 함정 19 — 폴백이 `except Exception` 이면 `SoftTimeLimitExceeded` 까지 삼키고, 코드 결함도 '넓히기 실패 — 원문'으로 숨어 스위치를 켠 판정이 넓히기 없이 나온다 |
 | 정함 11 | **검색어 합성은 runner 의 `_search_query(state, text)` 한 곳** — 첫 검색어(`runner.py:188`)와 재검색 제안(`_recheck_query` `:169` 에서 `_next_query` 에 넘기기 전). **`_next_query` 는 고치지 않는다** | 제안을 합성한 꼴로 바꿔 넘기므로 중복 비교·`subq.queries`·critic `tried_queries`(`critic.py:205`)·회차 기록의 `query`·`next_query`·`search` 이벤트의 `query` 가 모두 실제로 보낸 글이다(`explorer.py:98-100` 원칙). `:318` 은 이미 합성한 `next_query` 를 받는다 |
 | 정함 12 | **`QUERY_FILLERS`·`compose_query` 도 `terms.py`** — 붙일지는 지금까지의 글(이어 붙인 용어 포함)에 `contains` 인지로 정하고, 군더더기를 지워 비면 원문으로 물러나며, 빈 용어는 건너뛴다(두 번 거쳐도 같다 — 군더더기만으로 된 글은 예외). **spec §12-2 의 '하위질문에 `contains` 가 아닌 것을 붙인다' 보다 자세하다** — Task Z2 가 spec 을 이 글에 맞춘다 | 순수 낱말 함수를 한 파일에 — score.py 복사본·06e 가 한 곳만 본다. 이어 붙인 용어와도 견주므로 서로 품는 용어가 두 번 붙지 않고, 합성한 글(재검색 제안이 고쳐 쓴 앞 검색어)을 다시 넣어도 용어가 두 번 붙지 않는다. 빈 용어를 건너뛰어야 끝 공백 때문에 두 번 거친 값이 달라지지 않는다(Task C1 '알아 둘 것') |
@@ -84,7 +84,7 @@
 | 06e | `app/services/research/terms.py` 의 `contains(text, word) -> bool`·`content_words(text) -> list[str]`·`PARTICLES`·`QUESTION_WORDS` | 제목 키워드 일치는 06c 의 `dev` 머지 뒤 dev 를 받아 `from services.research.terms import contains` 로 쓴다. 06c 전에 같은 함수를 따로 두지 않는다 |
 | 06e | 공용 고정 예제 `frontend/tests/fixtures/term_checks.json` 의 `contains` 칸 | 화면 `keywordSpans` 의 일치 규칙 테스트가 이 칸을 읽을 수 있다. 사례를 더하면 06c 의 두 테스트(`test_research_terms.py`·`test_research_eval.py`)도 통과해야 한다 |
 | 06d | `questionUsedFromSteps(steps, question)`·`understoodLine(questionUsed)`(`frontend/utils/researchEvents.ts`), PlanCard 선택 prop `questionUsed` | `[id].vue` 의 계획 중 대기 카드(`:80-83`)와 승인 대기 PlanCard(`:84-92`)에 `questionUsedFromSteps(view.steps, view.question)` 를 잇는다. 탐색 중 PlanCard(`:97`)는 06d 판단 |
-| 06d | SSE 이벤트 `candidates` — `{"kind": "candidates", "subq_idx", "round", "papers": [{cnts_id, title, personal_author, pub_date}]}`, 회차마다 `search`·`counters` 뒤·`critique` 앞 한 번, 빈 목록도 냄, 스냅숏·rounds 에 없음 | 이벤트 타입·`ResearchEvent` 합집합·리듀서·`evidenceLedger.ts` '검토 중' 더미 |
+| 06d | SSE 이벤트 `candidates` — `{"kind": "candidates", "subq_idx", "round", "papers": [{cnts_id, title, personal_author, pub_date}]}`, 회차마다 `search`·`counters` 뒤·`critique` 앞 한 번, 빈 목록도 냄, 스냅숏·rounds 에 없음. `papers` 는 이번 검색이 그 하위질문에 이은 근거 전부(`linked` 순서)다 — 처음 이은 것만이 아니어서, **이 하위질문이 앞 회차에 이미 채택한 논문이 다시 걸리면 후보에 다시 든다**(같은 회차 `critique` 의 `adopted_papers` 에는 그 논문이 `new` 없이 있다 — `test_already_adopted_paper_found_again_is_a_candidate_again`) | 이벤트 타입·`ResearchEvent` 합집합·리듀서·`evidenceLedger.ts` '검토 중' 더미. 이미 채택 더미에 있는 논문이 후보로 다시 오면 `cnts_id` 로 기존 채택과의 겹침을 처리한다(06c 가 처음 이은 것만 내도록 바꾸는 것은 이 계약을 바꾸는 일이라 사용자 결정 없이 하지 않는다). Task Z2 가 이 겹침을 완료노트·spec §12-2 에 옮긴다 |
 | 06d | plan step 결과의 `question_used`·`terms`·`elapsed_ms`(06c 는 `StepResult` 에 선택 칸만 더한다) | 06d 는 이 세 칸을 다시 정의하지 않는다 |
 
 **같은 파일을 두 줄이 고치는 곳**
@@ -995,7 +995,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06c && git add app/serv
 - 모듈 자리(정함 1): `TestPlan._patch`(`test_research_tasks.py:850-860`)는 `services.research.planner` 를 `make_plan` 하나만 든 모듈로 통째로 바꿔치기한다 — 넓히기가 planner 안에 있으면 그 대역 위에서 import 가 깨진다. `framing.py` 는 planner 를 import 하지 않는다.
 - LLM 호출: `chat(messages, params=llm_params, timeout=BROADEN_TIMEOUT)` 한 번, `base_url`·`model` 인자 없음 = `LLM_BASE_URL`·`LLM_MODEL`(gemma). `chat` 기본 120초를 쓰지 않는다(`BOOK_CHAT_QUERY_REWRITE_TIMEOUT=20` 선례). `chat_full` 은 이 시간 안에서 재시도하고 최악은 timeout + 연결 10초다(`llm_client.py:228-231`). `asyncio.timeout` 을 따로 걸지 않는다 — 잡 데드라인(`_within_deadline` 의 `TimeoutError` 판정)과 섞이지 않게(정함 19).
 - 실패 타입(정함 10, 함정 19): `FRAME_FAILURES = (httpx.HTTPError, ValueError, KeyError, IndexError)` — `_request_once` 가 실제로 내는 전송·상태(`raise_for_status`), 응답 본문 JSON 해석(`resp.json()` 의 `JSONDecodeError` ⊂ `ValueError`), 응답 모양(`data["choices"][0]`) 오류다. 그 밖의 예외(코드 결함·`SoftTimeLimitExceeded`)는 올린다 — Task C4 가 계획 실패로 닫는다. **spec §12-2:502 '잡을 실패시키지 않는다' 와 다르다** — 계획 머리 '06c 에서 정한 것' 표·마무리 spec 맞춤 몫(정함 10).
-- 응답 검사(`parse_frame`): `extract_json`(`services/research/llm_json.py` — 펜스·산문 섞인 응답에서 첫 JSON 객체, 못 찾으면 None) → `"question"` 이 문자열이 아니면 None → 입력 이름표(`_ECHO_LABEL` — 맨 앞 `질문:`·`질문：`)를 떼고 공백 정리한 뒤 비었거나 `FRAMED_QUESTION_MAX`(500 = `ResearchCreate.question` 상한) 초과면 None → 원 질문의 `content_words` 가 하나라도 넓힌 문장에 `contains` 가 아니면 None(빠진 낱말을 경고에 적는다). 모델이 원 질문을 그대로 내도 정상이다(함정 26 — 프롬프트가 '이미 분명하면 그대로' 라고 했다).
+- 응답 검사(`parse_frame`): `extract_json`(`services/research/llm_json.py` — 펜스·산문 섞인 응답에서 첫 JSON 객체, 못 찾으면 None) → `"question"` 이 문자열이 아니면 None → 입력 이름표(`_ECHO_LABEL` — 맨 앞 `질문:`·`질문：`)를 떼고 공백 정리한 뒤 비었거나 `FRAMED_QUESTION_MAX`(500 = `ResearchCreate.question` 상한) 초과면 None → 원 질문의 `content_words` 가 하나라도 넓힌 문장에 `contains` 가 아니면 None(빠진 낱말을 경고에 적는다). 모델이 원 질문을 그대로 내도 정상이다(함정 26 — 프롬프트가 '이미 분명하면 그대로' 라고 했다). **(C3 품질 검토 반영)** 낱말 검사는 `content_words` 의 2자 바닥에 걸리는 한 글자 명사(암·뇌·법)도 본다 — 원 질문의 한 글자 어절(`content_words` 와 같은 NFKC·casefold·문장부호 공백 나누기, 조사·`QUESTION_WORDS`·`ONE_CHAR_FUNCTION_WORDS`(및·등·왜·더·수·것 같은 잇는 말) 제외)이 넓힌 문장에 어절로 없어도 같은 경고 한 줄과 함께 None. 그러지 않으면 '암 연구가 궁금해'(내용어 [])에 지어낸 주제를 낸 답도, '암'을 '종양'으로 바꾼 답도 지나간다(`test_question_that_drops_a_one_char_word_is_refused`). 한 글자는 `contains` 로 대조하지 않는다 — 넓힌 문장을 같은 방식으로 나눈 어절이 그 글자이거나 '그 글자 + `PARTICLES` 하나'(암의·뇌를·암에서)일 때만 들어 있다고 본다(`_has_one_char_word`). 부분 문자열로 보면 '법 관련 연구 알려줘'→'…교육 방법…', '암 연구가 궁금해'→'암호화…', '뇌 연구'→'뇌물…' 이 모두 지나간다(C3 두 번째 품질 검토 — 세 사례를 거절 테스트에, 홑 글자·조사 붙은 꼴·문장부호·NFKC 를 `test_one_char_word_is_matched_as_a_whole_word` 에 고정). 붙여 쓴 꼴('암환자')은 물러나지만 원 질문으로 물러나는 것은 안전한 쪽이다. `content_words`·`contains` 의 계약(06e·score.py 복사본)은 그대로다.
 - 이름표 떼기(함정 26 재발 방지 '파서는 입력 이름표로 시작하는 답을 받지 않는다'): user 메시지가 `질문: …`(`research_plan.yaml:21-22` 와 같은 꼴)이라 모델이 `{"question": "질문: 노인의 …"}` 처럼 이름표째 내면 원 질문 낱말이 다 들어 있어 낱말 검사를 통과한다. 그대로 쓰면 계획 입력이 `질문: 질문: …` 이 되고 plan step 의 `question_used`(06d 의 '이렇게 이해했어요' 줄)에도 이름표가 실린다 — 그래서 검사 전에 뗀다(`test_echoed_input_label_is_stripped`).
 - terms 정리(`clean_terms`, 정함 9): 문자열만 → NFKC → 공백 정리 → 빈 것·`TERM_MAX_CHARS`(30)자 넘는 것 버림 → casefold 기준 중복 제거 → 앞에서 `MAX_TERMS`(4)개. 개수는 모델에 맡기지 않는다(함정 15). 프롬프트의 '2개 이상 4개 이하' 는 범위 규칙이지 견본이 아니다(`research_concepts.yaml` 의 '2개 이상 5개 이하' 선례).
 - 프롬프트(정함 2): 변수 `question` 하나, parser `plain`, params `max_tokens: 600`·`temperature: 0.2`, `"예:"`·`"예시"` 없음, `guided_*` 없음(함정 25 — `test_prompts.py:146` `test_nl_library_prompts_do_not_send_removed_vllm_guided_params` 가 새 YAML 도 훑는다). user 는 `질문: {{ question }}` 한 줄(`research_plan.yaml` 과 같은 꼴).
@@ -2331,7 +2331,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06c && git add app/serv
 **알아 둘 것:**
 - 모양(계획 머리 「다른 줄과의 경계」의 06d `candidates` 행 — 정함 3): `{"subq_idx": int, "round": int, "papers": [{"cnts_id", "title", "personal_author", "pub_date"}]}` — `papers` 는 `_paper_brief`(`runner.py:85-89`) 그대로다(`excluded_papers` 와 같은 서지 요약 — 06d 가 같은 그리기 함수를 쓸 수 있다). `emit(kind, payload)` 의 kind 가 SSE 이벤트의 `kind` 가 된다(`_round_emitter` → `relay.publish`).
 - 자리: 이번 검색의 `linked`(:222-258 — 이 하위질문에 이은 근거 id, 이은 순서)가 확정되고 `subq.evidence_ids` 순위를 다시 매긴(:260-263) 뒤, `counters`(:264) 바로 다음, `critique_fn`(:267) 앞. 순서는 회차마다 `search` → `counters` → `candidates` → (자기점검 LLM) → `critique` 다.
-- `papers` 순서는 `linked` 순서 = 이번 검색 결과가 이 하위질문에 이은 순서다(`build_evidence` 가 돌려준 순서, 다른 하위질문이 먼저 만든 근거의 재사용 링크 포함). 순위순(`evidence_ids` — 회차 1위가 앞자리, 나머지 점수순)이 아니다. 앞 회차에 무관하다고 뺀 논문(`subq.excluded_cnts` — :226)과 몫·전체 상한에 막힌 후보(:236-241)는 `linked` 에 들지 않으므로 후보도 아니다. `linked` 의 id 는 이 시점에 모두 `state.evidence` 에 있다(무관 제외는 critique 뒤에 지운다).
+- `papers` 순서는 `linked` 순서 = 이번 검색 결과가 이 하위질문에 이은 순서다(`build_evidence` 가 돌려준 순서, 다른 하위질문이 먼저 만든 근거의 재사용 링크 포함). 순위순(`evidence_ids` — 회차 1위가 앞자리, 나머지 점수순)이 아니다. 앞 회차에 무관하다고 뺀 논문(`subq.excluded_cnts` — :226)과 몫·전체 상한에 막힌 후보(:236-241)는 `linked` 에 들지 않으므로 후보도 아니다. `linked` 의 id 는 이 시점에 모두 `state.evidence` 에 있다(무관 제외는 critique 뒤에 지운다). 이 하위질문이 앞 회차에 이미 채택한 논문이 이번 검색에 다시 걸리면 `linked` 에 다시 들어(`fresh` 는 아니다) 후보에 다시 선다 — 같은 회차 `critique` 의 `adopted_papers` 에는 `new` 없이 있다. 06d 리듀서가 `cnts_id` 로 그 겹침을 처리한다(머리 「다른 줄과의 경계」의 06d `candidates` 행 — 리뷰 반영 테스트 `test_already_adopted_paper_found_again_is_a_candidate_again` 가 `linked` 결정을 고정한다).
 - **저장하지 않는다:** 화면 이벤트일 뿐이라 회차 기록(`subq.rounds`)·`state_snapshot`·단계 result 에 넣지 않는다. `_round_emitter` 는 `critique` 때만 진행을 저장하므로 `candidates` 는 흘리기만 한다 — 재접속한 화면에는 '검토 중' 더미가 없고, 지나간 후보는 `critique` 의 채택·뺌으로 이미 보인다(spec '복원하지 않는다').
 - **스위치와 무관하게 늘 낸다**(정함 4) — 검색·판정을 바꾸지 않는다. 그래서 스위치 0 이어도 회차마다 이벤트가 하나 는다. 이벤트 종류의 전체 순서를 글자 그대로 단언하는 기존 테스트는 `TestRoundEvents.test_counters_follow_each_search`(:329-330) 하나뿐이라 그 기대 순서를 고친다(테스트 수는 늘지 않는다). 다른 테스트는 그대로 통과한다 — `TestExploreSubquestion.test_emit_is_called_for_progress`(:198-216)는 `in` 으로 보고, `TestRoundHistory.test_history_matches_what_was_streamed`(:387-403)는 `_of` 로 kind 를 골라 보며, `test_research_tasks.py` `TestLiveProgress.test_each_critique_saves_rounds_and_counters`(:1342-1343)는 `search`·`critique` 만 걸러 본다. 실제 runner 를 도는 테스트 파일은 이 둘(`test_research_runner.py`·`test_research_tasks.py`)뿐이다.
 - 옛 화면(06c 배포 때 nuxt 는 재생성하지 않는다)은 모르는 이벤트를 무시한다(`frontend/utils/researchEvents.ts:329` `default: return view`). 타입·리듀서·'검토 중' 더미는 06d 몫이다.
@@ -4248,7 +4248,7 @@ Expected: 커밋 해시 한 줄 — '리뷰를 마친 커밋'으로 적어 둔�
 **Files:**
 - Create: `docs/roadmap/round06c-완료노트.md`
 - Modify: `docs/roadmap/00_status.md`(3행 최종 갱신·22행 round06 머리·26행 뒤 06c 하위 줄·53행 다음 할 일의 06c 줄·82행 라운드 이력 — round06 줄만)
-- Modify: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`(3행 머리 상태 줄, 47행 D25, §12-2 491·497·501·502·506·507·512·518·520행, §12-7 723·724·733·738행)
+- Modify: `docs/superpowers/specs/2026-10-02-round06-paper-agent-design.md`(3행 머리 상태 줄, 47행 D25, §12-2 491·497·501·502·506·507·512·518·520·526행, §12-7 723·724·733·738행)
 - `docs/ops/recurring-gotchas.md` — 이 Task 에서는 고치지 않는다(운영 전이라 라이브에서만 드러난 것이 아직 없다. Task Z8 이 다시 판단한다)
 
 **알아 둘 것:**
@@ -4288,9 +4288,9 @@ plan: `docs/superpowers/plans/2026-10-08-round06c-query-broadening.md` (Task 0 �
 | 낱말 맞추기 | `app/services/research/terms.py` — `content_words`(NFKC·casefold·문장부호·조사 하나 떼기·질문 꼴 낱말과 조사만 남은 어절 제외)·`contains`(공백 무시 부분 문자열, 아니면 낱말이 순서대로)·`compose_query`, 상수 `PARTICLES`·`QUESTION_WORDS`·`QUERY_FILLERS`. 공용 고정 예제 `frontend/tests/fixtures/term_checks.json`(score.py 복사본·06e 가 같은 규칙) |
 | 넓히기 | `research_frame.yaml`(예시 없음)·`framing.py` — gemma 1회·20초, 원 질문 낱말 보존 검사, 범위 용어 정리(30자·4개), `FRAME_FAILURES`·빈 응답·검사 실패면 원 질문. 계획 태스크가 `broaden` 1 이면 계획 전에 넓히고 `{question_used, terms}` 를 먼저 알린다. plan step 결과 `{subquestions, question_used, terms, elapsed_ms}` |
 | 검색어 합성 | 실행 태스크가 마지막 plan step 의 `terms` 를 `ResearchState.terms`·체크포인트에 싣는다. runner `_search_query` 가 `query_context` 1 이면 첫 검색어·재검색 제안에 없는 범위 용어를 붙이고 '국내 학술논문에서' 를 뗀다 — `subq.queries`·critic `tried_queries`·회차 기록이 모두 실제로 보낸 글 |
-| 탐색 후보 이벤트 | `candidates {subq_idx, round, papers}` — 회차마다 `counters` 뒤·자기점검 전에 한 번(빈 목록도), 스위치와 무관, 저장하지 않음 |
+| 탐색 후보 이벤트 | `candidates {subq_idx, round, papers}` — 회차마다 `counters` 뒤·자기점검 전에 한 번(빈 목록도), 스위치와 무관, 저장하지 않음. `papers` 는 이번에 이은 근거 전부(`linked` 순서)라 이 하위질문이 이미 채택한 논문이 다시 걸리면 후보에 다시 든다 — 06d 가 `cnts_id` 로 기존 채택과의 겹침을 처리한다 |
 | 스위치 | 잡 파라미터 `broaden`·`query_context`(int 0~1, 기본 0 — `critic_scope` 와 같은 검증 경로) |
-| 판정 도구 | `run_pair.py --param0·--param·--plan own`, 대조군 `questions_control.json`, `score.py` 계획 지표(넓힌 질문·일반 틀·근거 0편·insufficient·계획 시간)·`--plan-only`·`contains` 복사본, README '06c 재판정' 절차 |
+| 판정 도구 | `run_pair.py --param0·--param·--plan own`(own 은 두 계획을 먼저 세운 뒤 승인, 잡 만들기 422 면 멈춤), 대조군 `questions_control.json`, `score.py` 계획 지표(넓힌 질문·일반 틀·근거 0편·insufficient·계획 시간)·`--plan-only`·`contains` 복사본, README '06c 재판정' 절차 |
 | 화면 한 줄 | `StepResult` 선택 칸 셋, `questionUsedFromSteps`·`understoodLine`, PlanCard 선택 prop `questionUsed`(`[id].vue` 바인딩은 06d — 10/17~18 nuxt 배포) |
 
 스키마 변경 없음 — 바뀐 모양은 plan step result(JSONB)·잡 파라미터·체크포인트 안이다. `planner.py`·`research_plan.yaml`·`parse_plan`·계획 고정 테스트·`job.plan`·승인 API·critic·explorer·synthesizer·검색 파이프라인·critic/종합 프롬프트(sha256)·06d·06e 파일·compose·인프라는 그대로다.
@@ -4314,7 +4314,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06c-query-broadening.md` (Task 0 �
 
 ## 5. `dev` 머지·운영 배포·재판정
 
-배포 전 — 계획 Task Z3~Z7 의 결과를 Task Z8 의 기록 브랜치에서 채운다.
+배포 전 — 계획 Task Z3~Z7 의 결과를 Task Z8 의 기록 브랜치에서 채운다. 롤백하게 되면 계획 끝 '롤백' 절을 따른다 — 06c 배포 동안 만들어 failed 로 끝난 잡 중 stage `planned` 인 것은 옛 워커에서 [다시 시도]해도 곧바로 실패하므로(`broaden` 이 '알 수 없는 파라미터', `explored` 는 재개된다) 새로 만들게 안내한다.
 
 ---
 
@@ -4328,9 +4328,9 @@ plan: `docs/superpowers/plans/2026-10-08-round06c-query-broadening.md` (Task 0 �
 | 정함 4 | `candidates` 는 회차마다 늘 한 번(빈 목록도) — `search` → `counters` → `candidates` → `critique`. 기존 순서 테스트 하나(`test_counters_follow_each_search`)의 기대를 고쳤다 |
 | 정함 5 | plan step 결과에 `elapsed_ms`(넓히기 + 계획) |
 | 정함 6 | 중간 알림은 `broaden` 1 일 때만, 넓히기 결과와 무관하게 한 번 |
-| 정함 7 | `content_words` — 문장부호를 공백으로, 조사만 남은 어절은 내용어가 아니다(spec 정의에 더함 — §12-2 를 맞췄다) |
+| 정함 7 | `content_words` — 문장부호를 공백으로, 조사만 남은 어절은 내용어가 아니다(spec 정의에 더함 — §12-2 를 맞췄다). `QUESTION_WORDS` 에 처음 값의 활용 꼴 여덟(관해·관하여·대해·대하여·궁금해요·알려주세요·찾아주세요·연구들)을 더했다(최종 리뷰 — 요청 꼴 질문이 넓히기에서 늘 원문으로 물러나지 않게) |
 | 정함 8 | `contains` 는 spec 글자 그대로(06e 제목 일치가 같은 함수) |
-| 정함 9 | 범위 용어 정리(문자열·NFKC·공백·빈 것과 30자 초과 버림·casefold 중복 제거·4개), 넓힌 질문이 비었거나 500자 초과면 원문. 넓힌 질문은 맨 앞 입력 이름표(`질문:`·`질문：`)를 떼고 본다(이름표째 옮긴 답이 낱말 검사를 통과하지 않게 — 함정 26) |
+| 정함 9 | 범위 용어 정리(문자열·NFKC·공백·빈 것과 30자 초과 버림·casefold 중복 제거·4개), 넓힌 질문이 비었거나 500자 초과면 원문. 넓힌 질문은 맨 앞 입력 이름표(`질문:`·`질문：`)를 떼고 본다(이름표째 옮긴 답이 낱말 검사를 통과하지 않게 — 함정 26). 낱말 검사는 `content_words` 에 더해 원 질문의 한 글자 어절(암·뇌·법 — 2자 바닥에 걸린다. 및·등·왜·더·수·것 같은 잇는 말은 빼고)도 본다 — 한 글자는 부분 문자열이 아니라 어절 경계로(그 글자이거나 그 글자 + 조사 하나, '방법'의 '법'은 아니다)(C3 품질 검토 — '암 연구가 궁금해'에 지어낸 주제가 지나가지 않게). 원 질문에 대조할 낱말(내용어·한 글자 어절)이 하나도 없으면('연구가 궁금해') 넓히지 않는다(최종 리뷰 — 검사할 수 없는 질문에 지어낸 주제가 지나가지 않게). 어절 나누기는 `terms.tokens` 한 곳 |
 | 정함 10 | 넓히기가 원문으로 물러나는 범위 = `FRAME_FAILURES`(전송·상태·JSON·응답 모양 오류)·빈 응답·검사 실패, 그 밖의 예외는 계획 실패(함정 19 — spec 의 '잡을 실패시키지 않는다' 를 맞췄다) |
 | 정함 11 | 검색어 합성은 runner `_search_query` 한 곳(첫 검색어·재검색 제안), `_next_query` 그대로 |
 | 정함 12 | `QUERY_FILLERS`·`compose_query` 도 `terms.py` — 붙일지는 지금까지의 글(이어 붙인 용어 포함)에 `contains` 인지로, 군더더기만 남으면 원문, 빈 용어는 건너뜀(두 번 거쳐도 같다 — 군더더기만으로 된 글은 예외. spec §12-2 를 맞췄다) |
@@ -4359,7 +4359,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06c-query-broadening.md` (Task 0 �
 
 1. **넓힌 문장을 고쳐 같은 잡에서 다시 계획하기** — 대회 뒤(사용자 "고도화로 냅두고", spec §12-9). `awaiting_approval → created` 전이와 `_plan_known` 처리가 필요하다.
 2. **범위 용어를 critic·핵심 개념에 공급** — 대회 뒤(spec §12-9 구조화 해석). 06c 의 `terms` 는 검색어에만 쓴다.
-3. **`QUESTION_WORDS`·`QUERY_FILLERS` 를 운영 질문으로 늘릴지** — 처음 값은 spec 의 목록이다. 운영 질문의 질문 꼴 낱말·하위질문 군더더기를 모아 본 뒤 정한다.
+3. **`QUESTION_WORDS`·`QUERY_FILLERS` 를 운영 질문으로 늘릴지** — `QUESTION_WORDS` 는 spec 의 처음 값에 그 활용 꼴 여덟을 더한 것(최종 리뷰), `QUERY_FILLERS` 는 처음 값 그대로다. 띄어 쓴 꼴('알려 주세요')·'논문' 같은 새 낱말과 하위질문 군더더기는 운영 질문을 모아 본 뒤 정한다 — Z5·Z6 운영 확인에서 '[framing] 넓힌 질문이 원 질문 낱말' 줄의 빠진 낱말 목록을 본다(목록에 요청 말만 있으면 더할 후보다).
 4. **넓히기가 원 질문 낱말 검사에서 떨어진 비율** — 물러난 잡 수는 `grep -c '\[framing\]'`(물러날 때마다 정확히 한 줄), 그 가운데 낱말 검사에서 떨어진 수는 `grep -c '\[framing\] 넓힌 질문이 원 질문 낱말'` 로 센다(§5-4 에 판정 잡의 두 수를 적는다).
 5. **화면 한 줄의 `[id].vue` 바인딩·`candidates` 의 화면** — 06d(10/17~18 nuxt 배포).
 6. **06e 의 제목 일치** — 06c 머지 뒤 `services.research.terms.contains` 를 쓴다(06e).
@@ -4495,7 +4495,7 @@ new:
 new:
 
 ```markdown
-`연구·관한·대한·관련·궁금해·궁금합니다·알려줘·찾아줘·무엇·어떻게`)도, 조사만 남은 어절(`PARTICLES` 자체 — 「…」에서 를 공백으로 나눈 뒤의 '에서')도 아닌 것을 처음 나온 순서로 중복 없이(06c 계획 정함 7).
+`연구·관한·대한·관련·궁금해·궁금합니다·알려줘·찾아줘·무엇·어떻게` — 06c 구현은 그 활용 꼴 `관해·관하여·대해·대하여·궁금해요·알려주세요·찾아주세요·연구들` 을 더했다)도, 조사만 남은 어절(`PARTICLES` 자체 — 「…」에서 를 공백으로 나눈 뒤의 '에서')도 아닌 것을 처음 나온 순서로 중복 없이(06c 계획 정함 7).
 ```
 
 ⑤ 497행 프롬프트 이름. old:
@@ -4519,7 +4519,7 @@ new:
 new:
 
 ```markdown
-`terms` 는 코드가 문자열만 받아 NFKC 정규화·공백 정리 뒤 빈 것과 30자 넘는 것을 버리고 casefold 기준 중복을 지워 4개에서 자른다. 넓힌 문장이 비었거나 500자(`ResearchCreate.question` 상한)를 넘으면 원문. 넓힌 문장은 맨 앞 입력 이름표(`질문:`·`질문：`)를 뗀 뒤 검사한다 — 모델이 user 메시지를 이름표째 옮기면 낱말 검사를 통과해 계획 입력·`question_used` 에 이름표가 실리기 때문이다(함정 26).
+`terms` 는 코드가 문자열만 받아 NFKC 정규화·공백 정리 뒤 빈 것과 30자 넘는 것을 버리고 casefold 기준 중복을 지워 4개에서 자른다. 넓힌 문장이 비었거나 500자(`ResearchCreate.question` 상한)를 넘으면 원문. 넓힌 문장은 맨 앞 입력 이름표(`질문:`·`질문：`)를 뗀 뒤 검사한다 — 모델이 user 메시지를 이름표째 옮기면 낱말 검사를 통과해 계획 입력·`question_used` 에 이름표가 실리기 때문이다(함정 26). 넓히기 검사는 `content_words` 에 더해 원 질문의 한 글자 어절(조사·질문 꼴 낱말·잇는 말 `ONE_CHAR_FUNCTION_WORDS` 제외)도 넓힌 문장에 어절로 있어야 한다 — 같은 방식(NFKC·casefold·문장부호 공백)으로 나눈 넓힌 문장의 어절이 그 글자이거나 '그 글자 + 조사 하나'(암의·뇌를)일 때만 들어 있다고 본다. 한 글자 명사(암·뇌·법)는 `content_words` 의 2자 바닥에 걸려 '암 연구가 궁금해'에 지어낸 주제를 낸 답도 지나가고, `contains`(부분 문자열)로 보면 '방법'·'암호화'·'뇌물' 안의 글자에도 맞기 때문이다(`content_words`·`contains` 정의는 그대로). 원 질문에 대조할 낱말(내용어·한 글자 어절)이 하나도 없으면('연구가 궁금해'·'관련 연구 알려줘') 검사할 수 없으니 넓히지 않고 원 질문으로 계획한다 — 그대로 두면 지어낸 주제가 계획 입력·`question_used` 가 된다.
 ```
 
 ⑦ 502행 실패 범위(정함 10). old:
@@ -4594,6 +4594,18 @@ new:
   - 군더더기를 지워 남는 것이 없으면 하위질문의 공백만 정리한 글로 물러난다. 그 글에 `terms` 를 차례로 보며, 지금까지의 글(앞에서 이어 붙인 용어 포함)에 `contains` 가 아닌 용어만 공백 하나로 이어 붙인다 — 용어도 공백을 정리하고 빈 용어는 건너뛴다. `terms` 가 비면 군더더기만 뗀다. 합성한 글을 다시 넣어도 같은 글이 나온다(재검색 제안이 앞 검색어를 고쳐 써도 용어가 두 번 붙지 않는다) — 군더더기만으로 된 글이 물러난 경우는 빼고(06c 계획 정함 12).
 ```
 
+⑪-3 526행 탐색 후보 — 이미 채택한 논문이 다시 걸릴 때(계획 머리 「다른 줄과의 경계」의 06d `candidates` 행). old:
+
+```markdown
+이번 회차에 점검할 근거 = `linked` 순서).
+```
+
+new:
+
+```markdown
+이번 회차에 점검할 근거 = `linked` 순서 — 이번 검색이 이 하위질문에 이은 근거 전부라, 이 하위질문이 앞 회차에 이미 채택한 논문이 다시 걸리면 후보에 다시 든다. 같은 회차 `critique` 의 `adopted_papers` 에는 그 논문이 `new` 없이 있으므로 06d 리듀서가 `cnts_id` 로 기존 채택과의 겹침을 처리한다).
+```
+
 ⑫ 723행 `--param`. old:
 
 ```markdown
@@ -4615,7 +4627,7 @@ new:
 new:
 
 ```markdown
-기본은 지금 동작(shared) 그대로. 대조군 질문 파일은 `scripts/research_eval/questions_control.json`(논문 버튼 꼴 2개)이고, `score.py --plan-only` 는 라벨 없이 계획 지표만 찍는다.
+기본은 지금 동작(shared) 그대로. own 은 두 갈래의 계획을 먼저 모두 세운 뒤 둘을 승인한다 — 갈래 1 의 계획 시간도 실행이 없을 때 잰다. 잡 만들기가 422(잡 파라미터 키·값 거절)면 남은 질문을 돌리지 않는다. 대조군 질문 파일은 `scripts/research_eval/questions_control.json`(논문 버튼 꼴 2개)이고, `score.py --plan-only` 는 라벨 없이 계획 지표만 찍는다.
 ```
 
 ⑭ 733행 계획 시간. old:
@@ -5219,7 +5231,7 @@ Expected: `Switched to a new branch 'fix/round06c-defaults'`. fetch 가 실패�
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06c/app && python -m pytest tests/test_research_state.py tests/test_research_api.py tests/test_research_tasks.py tests/test_research_runner.py tests/test_research_framing.py tests/test_research_terms.py tests/test_research_eval.py tests/test_research_planner.py tests/test_prompts.py tests/test_research_critic.py -q -p no:cacheprovider`
 
-Expected: 실패 0. 나온 `K passed` 를 적어 둔다 — 아래를 고친 뒤에도 같은 K 다(테스트 둘의 이름과 기대만 바꾼다). K 는 06c 전 여덟 파일(`test_research_state`·`api`·`tasks`·`runner`·`eval`·`planner`·`prompts`·`critic`)의 516(2026-10-08 실측) + 파트 C·V 가 이 열 파일에 더한 수다. 계획대로면 **K = 640**(516 + 124 — state 94 · api 124 · tasks 118 · runner 98 · framing 27 · terms 35 · eval 47 · planner 18 · prompts 9 · critic 70). 06c 전 여덟 파일의 기준선이 516 과 다르거나 06c 머지 뒤 dev 에 이 열 파일의 테스트가 더 들어왔으면 그 차이만큼 옮겨 읽는다.
+Expected: 실패 0. 나온 `K passed` 를 적어 둔다 — 아래를 고친 뒤에도 같은 K 다(테스트 둘의 이름과 기대만 바꾼다). K 는 06c 전 여덟 파일(`test_research_state`·`api`·`tasks`·`runner`·`eval`·`planner`·`prompts`·`critic`)의 516(2026-10-08 실측) + 파트 C·V 와 Task Z1 리뷰 반영이 이 열 파일에 더한 수다. Task Z1 을 마친 판(2026-10-12 실측)은 **K = 680**(516 + 164 — state 94 · api 124 · tasks 120 · runner 100 · framing 53 · terms 41 · eval 51 · planner 18 · prompts 9 · critic 70. 처음 계획의 640 보다 큰 40 은 C3 품질 검토·C7 후속·최종 리뷰가 더한 테스트다 — 640 과 견주지 않는다). 06c 전 여덟 파일의 기준선이 516 과 다르거나 06c 머지 뒤 dev 에 이 열 파일의 테스트가 더 들어왔으면 그 차이만큼 옮겨 읽는다.
 
 - [ ] **Step 3: 기본값을 바꾸고 기본값 테스트 둘만 깨지는 것을 본다**
 
@@ -5478,7 +5490,7 @@ Task Z4~Z6 의 확인이 틀리거나 운영 오류가 나면 되돌린다. 06c 
 
 1. 딥리서치가 빈 때 한다 — Task Z4 Step 4 의 두 질의가 모두 0행이고 세 워커의 `inspect active` 가 비었다.
 2. 이미지 태그를 되돌린다: `docker tag landsoftdocker/nl-lib-fastapi:pre-round06c landsoftdocker/nl-lib-fastapi:latest`. 스키마·백업 되돌리기는 없다(06c 는 바꾸지 않았다).
-3. **fastapi 를 먼저** 되돌린다 — Task Z4 Step 5 ④ 의 `idle in transaction` 질의가 0행인지 본 뒤 Portainer 에서 `nl-lib-fastapi` Recreate("Re-pull image" 끔). 새 fastapi 가 만든 잡은 params 에 `broaden`·`query_context` 가 있어 옛 워커의 `merge_params` 가 '알 수 없는 파라미터' 로 거부한다 — fastapi 를 되돌린 뒤 새로 만드는 잡은 괜찮지만, 06c 배포 동안 만들어 아직 끝나지 않은 잡(created·awaiting_approval·approved·queued)은 옛 워커에서 실패한다. 그런 잡이 있으면 끝나기를 기다리거나 사용자에게 알리고 다시 만들게 한다(끝난 잡은 영향이 없다).
+3. **fastapi 를 먼저** 되돌린다 — Task Z4 Step 5 ④ 의 `idle in transaction` 질의가 0행인지 본 뒤 Portainer 에서 `nl-lib-fastapi` Recreate("Re-pull image" 끔). 새 fastapi 가 만든 잡은 params 에 `broaden`·`query_context` 가 있어 옛 워커의 `merge_params` 가 '알 수 없는 파라미터' 로 거부한다 — fastapi 를 되돌린 뒤 새로 만드는 잡은 괜찮지만, 06c 배포 동안 만들어 아직 끝나지 않은 잡(created·awaiting_approval·approved·queued)은 옛 워커에서 실패한다. 그런 잡이 있으면 끝나기를 기다리거나 사용자에게 알리고 다시 만들게 한다. 끝난 잡 가운데 completed 는 영향이 없지만, **06c 배포 동안 만들어 failed 로 끝난 잡 중 stage `planned` 인 것은 [다시 시도]해도 옛 워커에서 같은 까닭으로 곧바로 실패한다** — retry 가 실행 태스크만 다시 넣고, 옛 `_run_deep_research` 가 `merge_params(params)` 에서 `broaden` 을 '알 수 없는 파라미터' 로 거부한다(stage `explored` 는 `restore_state` 가 스냅숏 params 를 `DEFAULT_PARAMS` 키로 걸러 재개된다). 그런 잡은 새로 만들게 안내한다.
 4. 그다음 `nl-lib-celery-research-plan` → `nl-lib-celery-research` → `nl-lib-celery-control` 을 Recreate("Re-pull image" 끔) → `docker exec nl-lib-gateway nginx -s reload` → `curl -s -o /dev/null -w '%{http_code}\n' http://localhost:92/health` 가 `200`. `docker exec nl-lib-celery-research-plan ls /app/domains/nl_library/prompts/research_frame.yaml` 이 `No such file or directory` 면 옛 이미지다.
 5. 되돌린 뒤에도 dev 에는 06c 가 있다(dev 머지가 배포보다 먼저다 — Task Z3). 고쳐서 다시 배포할지, dev 에서 06c 를 되돌릴지(revert, 사용자 승인) 정하기 전까지 dev 로 `fastapi`·`celery-research*`·`celery-control` 이미지를 빌드·Recreate 하지 않는다. 06d·06e 세션에도 머지 문이 다시 닫혔다고 알린다.
 6. 기본값만 되돌릴 때(10/17~18 배포 뒤): dev 에서 분기한 브랜치에서 Task Z7 의 커밋을 `git revert <그 커밋>` 으로 되돌려 dev 머지(사용자 승인) 뒤 워커 셋 + fastapi 를 같은 순서로 재배포한다. 급하면 새 잡을 만들 때 `params` 에 `{"broaden": 0, "query_context": 0}` 을 실어 그 잡만 지금 방식으로 돌린다.

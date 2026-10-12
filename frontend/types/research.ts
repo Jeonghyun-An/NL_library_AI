@@ -72,6 +72,11 @@ export interface SynthSectionResult {
 
 export interface StepResult {
   subquestions?: string[];
+  // 계획 단계(06c) — 계획에 넘긴 질문(넓히기를 껐거나 실패하면 원 질문)·범위 용어·넓히기와 계획에 걸린 시간(ms).
+  // 넓히기가 끝나면 도는(running) 계획 단계 result 에 question_used·terms 만 먼저 실린다. 06c 전 잡에는 없다
+  question_used?: string;
+  terms?: string[];
+  elapsed_ms?: number;
   queries?: string[];
   adopted?: number;
   verdict?: Verdict;
