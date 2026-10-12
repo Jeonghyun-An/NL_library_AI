@@ -595,6 +595,9 @@ a:hover {
     padding 0.25s ease,
     min-height 0.3s ease;
 }
+.skx-lnb.is-lnb-instant {
+  transition: none;
+}
 .skx-lnb__logo {
   display: flex;
   align-items: center;
@@ -3265,6 +3268,20 @@ a:hover {
   flex-direction: column;
   gap: 0.4rem;
 }
+/* [S] AI 표시 점 — 확정 로고의 i 위 점을 딴 작은 표시(옛 보라 심볼 logo-mark 자리).
+   기본 크기 규칙이라 이 점의 크기를 정하는 규칙(.skx-rcd-ai__logo 등)보다 앞에 둔다 */
+.skx-ai-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--skx-accent-strong);
+  flex-shrink: 0;
+}
+.skx-ptag--ai-cited .skx-ai-dot {
+  background: var(--skx-on-accent);
+}
+/* [E] AI 표시 점 */
 .skx-rcd-ai__top {
   display: flex;
   align-items: center;
@@ -5251,12 +5268,6 @@ a:hover {
   line-height: 1.5;
   text-align: center;
 }
-.skx-cover-ai-note img {
-  width: 0.7rem;
-  height: 0.7rem;
-  opacity: 0.55;
-  flex-shrink: 0;
-}
 
 /* ── AI 답변 하단 DeepRead/DeepSearch 유도 문구 ── */
 .skx-ai-hint {
@@ -5290,11 +5301,6 @@ a:hover {
   color: var(--skx-on-accent);
   font-weight: 700;
 }
-.skx-ptag--ai-cited img {
-  width: 0.7rem;
-  height: 0.7rem;
-  filter: var(--skx-ico-on-accent-filter);
-}
 
 /* ── 도서 상세 표지 컬럼 (표지 + AI 코멘트) ── */
 .skx-book-card__thumb-col {
@@ -5309,17 +5315,4 @@ a:hover {
 }
 .skx-book-card__thumb-col .skx-cover-ai-note {
   width: 100%;
-}
-
-/* [S] AI 표시 점 — 확정 로고의 i 위 점을 딴 작은 표시(옛 보라 심볼 logo-mark 자리) */
-.skx-ai-dot {
-  display: inline-block;
-  width: 0.5em;
-  height: 0.5em;
-  border-radius: 50%;
-  background: var(--skx-accent-strong);
-  flex-shrink: 0;
-}
-.skx-ptag--ai-cited .skx-ai-dot {
-  background: var(--skx-on-accent);
 }

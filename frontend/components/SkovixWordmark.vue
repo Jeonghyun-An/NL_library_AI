@@ -8,8 +8,9 @@
     viewBox="0 0 663 206"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    role="img"
-    aria-label="SKOVIX"
+    :role="decorative ? undefined : 'img'"
+    :aria-label="decorative ? undefined : 'SKOVIX'"
+    :aria-hidden="decorative ? 'true' : undefined"
   >
     <path
       d="M284.739 65.5445C370.857 58.7688 382.721 173.127 300.031 183.067C218.507 191.824 198.608 79.459 284.739 65.5445ZM296.886 177.026C343.943 169.094 340.929 66.4721 288.073 71.7474C239.835 81.2484 245.344 182.66 296.886 177.026Z"
@@ -45,11 +46,14 @@
 
 <script setup lang="ts">
 // width: CSS 길이(예: "22rem"). 없으면 부모 CSS 가 정한다
-defineProps<{ width?: string }>();
+// decorative: 옆에 글이 있는 빈 상태 그림처럼 장식일 때 — 보조기기에서 숨긴다(이름 SKOVIX 를 읽지 않는다)
+defineProps<{ width?: string; decorative?: boolean }>();
 </script>
 
-<style scoped>
-.skx-wordmark {
+<!-- 일부러 scoped 가 아니다 — scoped 는 속성 선택자가 붙어 특이도가 (0,1,0) 이라, 쓰는 쪽 클래스의 color
+     (예: .skx-reco-empty__logo)와 비기고 CSS 순서에 따라 진다. :where() 로 특이도 0 이면 쓰는 쪽이 늘 이긴다 -->
+<style>
+:where(.skx-wordmark) {
   display: block;
   height: auto;
   aspect-ratio: 663 / 206;

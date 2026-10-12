@@ -315,7 +315,7 @@
                 </button>
               </div>
               <div v-if="!selectedRelated" class="skx-reco-empty">
-                <SkovixWordmark class="skx-reco-empty__logo" />
+                <SkovixWordmark class="skx-reco-empty__logo" decorative />
                 <p class="skx-reco-empty__text">추천도서를 클릭해주세요</p>
               </div>
               <div
