@@ -60,6 +60,18 @@ async def rewrite_chat_query(message: str, history: list[dict]) -> str:
     return out or message
 
 
+def chat_prompt(book):
+    """대화 시스템 프롬프트 — 문서 종류(doc_type)의 변형이 있으면 그것(논문 → book_chat.paper.yaml), 없으면 기본
+    book_chat.yaml(책 문구). doc_type 이 비었거나 그 속성이 없는 객체도 기본으로 간다(get_prompt 의 해석 순서)."""
+    return get_prompt("book_chat", getattr(book, "doc_type", None) or None)
+
+
+def _book_references(book) -> list[str]:
+    """참고문헌 의도('참고문헌'·'인용'·'출처' 등)일 때 모델에 넘길 목록. 대화 엔드포인트가 넘기는 BookOut 에는 extra 가
+    없고 references 칸이 extra["references"] 를 싣는다(ORM Book 도 같은 이름의 property). 없으면 빈 목록."""
+    return list(getattr(book, "references", None) or [])
+
+
 def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHit]:
     """LLM 응답에서 실제 인용된 청크만 필터링.
 
@@ -115,7 +127,7 @@ async def stream_book_chat(
 
     ref_context_block = ""
     if is_ref_query:
-        refs: list[str] = (book.extra or {}).get("references", [])
+        refs = _book_references(book)
         if refs:
             ref_context_block = "\n".join(f"{i + 1}. {r}" for i, r in enumerate(refs[:50]))
             log.info(f"[{cnts_id}] 참고문헌 의도 감지 → {len(refs)}건 컨텍스트 주입")
@@ -132,7 +144,7 @@ async def stream_book_chat(
     # ── 3. 시스템 프롬프트 + 메시지 빌드 ────────────────────
     author = book.personal_author or book.corporate_author or "저자 미상"
     pub_date = f", {book.pub_date}" if book.pub_date else ""
-    tpl = get_prompt("book_chat")
+    tpl = chat_prompt(book)   # 논문이면 논문 문구(book_chat.paper.yaml)
     system, _, gen_params = tpl.render(
         title=book.title or cnts_id,
         author=author,

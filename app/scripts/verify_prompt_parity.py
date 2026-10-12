@@ -86,6 +86,13 @@ s, _, p = lib.get("book_chat").render(title="T", author="A", pub_date=", D", sum
 check("book_chat.system", bc["_SYSTEM_TEMPLATE"].format(
     title="T", author="A", pub_date=", D", summary="S", themes="TH"), s)
 assert p == {"max_tokens": 10000, "temperature": 0.3}
+# 딥리드 논문 변형(round06e) — 옮겨 온 원본 상수가 없는 새 파일이라 바이트 비교 대신 같은 변수·params 로 렌더되고
+# 글이 기본(책)과 다른지만 본다. 정본 검사는 tests/test_prompts.py 의 test_book_chat_paper_variant_keeps_the_variables_and_params
+s_paper, _, p_paper = lib.get("book_chat", "paper").render(
+    title="T", author="A", pub_date=", D", summary="S", themes="TH")
+assert s_paper != s and "논문" in s_paper, "book_chat.paper 가 기본과 같다"
+assert p_paper == p, "book_chat.paper params"
+print("OK   book_chat.paper.system (기본과 다른 논문 문구 · 같은 params)")
 
 cg = old_constants("app/services/ingestion/cover_generator.py")
 s, u, p = lib.get("cover_prompt").render(
