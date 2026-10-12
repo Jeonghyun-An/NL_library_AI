@@ -227,6 +227,11 @@ describe("홀로그램 배경 — 가독성", () => {
     // 묶음 카드 안의 글 톤은 사이드바 글 톤을 올리기 전 값(--skx-research-*)이다
     ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], ["--skx-research-ink", "--skx-research-gray-1"], true],
     ["결과 큰 틀(--skx-frame-bg)", FRAME_FACE, ["--skx-ink", "--skx-gray-1"], false],
+    // DeepRead 채팅 패널: 머리 글은 패널 위에 바로, AI 말풍선은 옅은 회색 면 + 짙은 글, 사용자 말풍선·입력창은 짙은 밑칠 + 흰 막 + 밝은 글
+    ["DeepRead 패널(--skx-chat-bg)", ["--skx-chat-bg"], ["--skx-ink-strong"], false],
+    ["DeepRead AI 말풍선(--skx-chat-ai-bg)", ["--skx-chat-bg", "--skx-chat-ai-bg"], ["--skx-on-accent"], false],
+    ["DeepRead 사용자 말풍선", ["--skx-chat-bg", "--skx-chat-user-tint", "--skx-chat-user-milk"], ["--skx-ink-strong"], false],
+    ["DeepRead 입력창(--skx-chat-input-bg)", ["--skx-chat-bg", "--skx-chat-input-tint", "--skx-chat-input-milk"], ["--skx-ink-strong", "--skx-ink-2"], false],
     ["결과 읽는 칸(--skx-read-surface)", READ_FACE, READ_TEXTS, false],
     ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"], false],
   ];

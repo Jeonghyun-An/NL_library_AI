@@ -337,6 +337,17 @@ h4,
   --skx-frame-line: rgba(255, 255, 255, 0.08);
   /* 사이드바 유리 테두리 — 위 가장자리만 옅게 밝고 아래로 갈수록 거의 안 보인다(본문 큰 틀 선보다 약간만 더 보이는 정도, 예전 0.6 → 0.2 의 절반 이하) */
   --skx-side-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.04));
+  /* DeepRead 채팅 패널(결과 화면 오른쪽, Figma 2546:21027) — 사이드 틀과 같은 다크 유리(밤색 느낌의 불투명을 걷어 어둡기를 줄이고 흐림으로 투명감을 살린다).
+     AI 말풍선은 옅은 회색 면 + 짙은 글(--skx-on-accent), 사용자 말풍선은 더 옅은 유리 면 + 밝은 글, 입력창은 큰 둥근 유리 상자.
+     글 대비는 themeHolo.test.ts 가 지킨다 */
+  --skx-chat-bg: rgba(15, 40, 34, 0.42);
+  --skx-chat-ai-bg: rgba(255, 255, 255, 0.86);
+  --skx-chat-user-tint: rgba(8, 22, 19, 0.4);
+  --skx-chat-user-milk: rgba(255, 255, 255, 0.12);
+  --skx-chat-user-bg: linear-gradient(var(--skx-chat-user-milk), var(--skx-chat-user-milk)), var(--skx-chat-user-tint);
+  --skx-chat-input-tint: rgba(8, 22, 19, 0.4);
+  --skx-chat-input-milk: rgba(255, 255, 255, 0.06);
+  --skx-chat-input-bg: linear-gradient(var(--skx-chat-input-milk), var(--skx-chat-input-milk)), var(--skx-chat-input-tint);
   /* AI 패널 — 큰 틀 안에서 하나가 떠 있는 느낌: 위가 밝은 1px 가장자리(흰 32% → 6%) + 안쪽 위 하이라이트 + 아주 옅은 바깥 그림자 */
   --skx-aip-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.06));
   --skx-aip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 6px 20px 0 rgba(0, 0, 0, 0.14);
@@ -438,6 +449,14 @@ h4,
   --skx-frame-bg: #ffffff;
   --skx-frame-line: #e3e1dc;
   --skx-side-edge: linear-gradient(#e3e1dc, #e3e1dc);
+  --skx-chat-bg: #ffffff;
+  --skx-chat-ai-bg: #f4f3ef;
+  --skx-chat-user-tint: #eef4f2;
+  --skx-chat-user-milk: #eef4f2;
+  --skx-chat-user-bg: linear-gradient(#eef4f2, #eef4f2);
+  --skx-chat-input-tint: #ffffff;
+  --skx-chat-input-milk: #ffffff;
+  --skx-chat-input-bg: linear-gradient(#ffffff, #ffffff);
   --skx-aip-edge: linear-gradient(#e3e1dc, #e3e1dc);
   --skx-aip-shadow: none;
   --skx-rule: #e3e1dc;
@@ -1364,6 +1383,7 @@ h4,
 }
 /* 밝은 위 가장자리(빛을 받는 테두리) — 위 흰 60% → 아래 20% 그라데이션 1px. 배경에 mask 로 테두리 띠만 남긴다 */
 .skx-lnb::before,
+.skx-chat-panel__inner::before,
 .skx-search__box::before,
 .skx-seg::before,
 .skx-rsearch::before,
@@ -1680,6 +1700,9 @@ h4,
   .skx-newchat {
     background: var(--skx-frost-solid);
   }
+  .skx-chat-panel__inner {
+    background: var(--skx-white);
+  }
   .skx-lnb,
   .skx-lnb.is-lnb-collapsed {
     background: var(--skx-white);
@@ -1692,6 +1715,11 @@ h4,
   .skx-rsearch,
   .skx-newchat {
     background: var(--skx-frost-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .skx-chat-panel__inner {
+    background: var(--skx-white);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -2117,7 +2145,8 @@ h4,
   background: var(--skx-frame-line);
 }
 /* 사이드바·AI 패널의 테두리 띠는 각자의 옅기(--skx-side-edge·--skx-aip-edge)로 */
-.skx-lnb::before {
+.skx-lnb::before,
+.skx-chat-panel__inner::before {
   background: var(--skx-side-edge);
 }
 .skx-aip::before {
@@ -2850,10 +2879,12 @@ h4,
   height: calc(100vh - 2.4rem);
   display: flex;
   flex-direction: column;
-  background: var(--skx-white);
+  background: var(--skx-chat-bg);
   border-radius: var(--skx-radius-lg);
   box-shadow: var(--skx-shadow-lnb);
-  padding: 2rem 1.2rem 1.2rem;
+  backdrop-filter: var(--skx-frost-blur-side);
+  -webkit-backdrop-filter: var(--skx-frost-blur-side);
+  padding: 1.2rem;
   overflow: hidden;
   position: sticky;
   top: 1.2rem;
@@ -2866,42 +2897,35 @@ h4,
   position: relative;
   z-index: 2;
 }
-.skx-chat-header:before {
-  content: "";
-  width: 100%;
-  height: 2rem;
-  background: linear-gradient(
-    180deg,
-    var(--skx-white) 0%,
-    transparent 100%
-  );
-  position: absolute;
-  left: 0;
-  top: calc(100% + 1rem);
-  z-index: 2;
-}
 .skx-chat-close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
-  height: 1rem;
+  width: 1.6rem;
+  height: 1.6rem;
   background: none;
   border: none;
+  border-radius: var(--skx-radius-sm);
   padding: 0;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background-color 0.15s;
 }
+.skx-chat-close:hover {
+  background: var(--skx-frost-bg);
+}
+/* 뒤로(‹) — 아이콘 파일은 › 라 돌려 쓴다 */
 .skx-chat-close__ico {
   width: 0.4rem;
   height: auto;
   display: block;
+  transform: rotate(180deg);
 }
 .skx-chat-title {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--skx-ink-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2920,45 +2944,50 @@ h4,
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding-right: 0.2rem;
+  gap: 0.6rem;
+  padding: 1rem 0.2rem 0 0;
+  margin-top: 0.4rem;
   min-height: 0;
-  padding-top: 2rem;
-  margin-top: 1rem;
+  /* 머리 아래에서 말풍선이 부드럽게 사라진다 — 색을 덮는 그라데이션이 아니라 mask */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1rem);
+  mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1rem);
 }
+/* 말풍선(시안: r 큼) — AI 는 옅은 회색 면 + 짙은 글 · 왼쪽, 사용자는 더 옅은 유리 면 + 밝은 글 · 오른쪽 */
 .skx-chat-msg {
-  max-width: 13rem;
-  padding: 0.8rem;
-  border-radius: 0.4rem;
-  font-size: 0.8rem;
+  max-width: 88%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 14px;
+  font-size: 0.7rem;
   font-weight: 400;
-  color: var(--skx-ink);
   line-height: 1.5;
   word-break: break-word;
 }
 .skx-chat-msg--user {
   align-self: flex-end;
-  background: var(--skx-border-c1);
-  text-align: right;
+  background: var(--skx-chat-user-bg);
+  color: var(--skx-ink-strong);
+  text-align: left;
 }
 .skx-chat-msg--ai {
   align-self: flex-start;
-  background: var(--skx-glass-teal);
+  background: var(--skx-chat-ai-bg);
+  color: var(--skx-on-accent);
 }
 .skx-chat-typing {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.9rem 1rem;
-  background: var(--skx-glass-teal);
-  border-radius: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--skx-chat-ai-bg);
+  border-radius: 14px;
   align-self: flex-start;
 }
 .skx-chat-typing__dot {
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 50%;
-  background: var(--skx-primary);
+  background: var(--skx-on-accent);
+  opacity: 0.55;
   animation: skx-dot-bounce 1.2s ease-in-out infinite both;
 }
 .skx-chat-typing__dot:nth-child(2) {
@@ -2980,12 +3009,17 @@ h4,
 .skx-chat-input-wrap {
   display: flex;
   flex-direction: column;
-  padding: 0.8rem 3rem 0.8rem 0.8rem;
-  border: 1px solid var(--skx-line);
-  border-radius: 0.4rem;
+  padding: 0.8rem 0.9rem 2.8rem;
+  background: var(--skx-chat-input-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 20px;
   flex-shrink: 0;
   position: relative;
-  margin-top: 2rem;
+  margin-top: 0.8rem;
+  transition: border-color 0.15s;
+}
+.skx-chat-input-wrap:focus-within {
+  border-color: var(--skx-accent);
 }
 .skx-chat-input {
   width: 100%;
@@ -2993,14 +3027,14 @@ h4,
   border: none;
   outline: none;
   font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--skx-ink);
+  font-size: 0.75rem;
+  color: var(--skx-ink-strong);
   background: none;
   line-height: 1.5;
-  height: 3.5rem;
+  height: 3.2rem;
 }
 .skx-chat-input::placeholder {
-  color: var(--skx-gray-1);
+  color: var(--skx-ink-2);
   font-weight: 400;
 }
 .skx-chat-send {
@@ -3010,7 +3044,7 @@ h4,
   justify-content: center;
   width: 1.8rem;
   height: 1.8rem;
-  border-radius: 0.4rem;
+  border-radius: 50%;
   border: none;
   cursor: pointer;
   background: var(--skx-primary);
@@ -3038,9 +3072,9 @@ h4,
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 99px;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-line);
-  color: var(--skx-gray-1);
+  background: none;
+  border: 1px solid var(--skx-rule);
+  color: var(--skx-on-accent);
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -3057,12 +3091,12 @@ h4,
 .skx-chat-source-preview {
   margin-top: 6px;
   padding: 7px 10px;
-  background: var(--skx-glass-teal);
-  border-left: 2px solid var(--skx-gray-2);
+  background: none;
+  border-left: 2px solid var(--skx-rule);
   border-radius: 4px;
   font-size: 11.5px;
   line-height: 1.6;
-  color: var(--skx-ink-2);
+  color: var(--skx-on-accent);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 120px;

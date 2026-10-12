@@ -58,6 +58,7 @@ describe("뿌연 유리 — 성능(backdrop-filter 개수 제한)", () => {
       ".skx-seg",
       ".skx-search__box",
       ".skx-rsearch",
+      ".skx-chat-panel__inner",
       ".rs-plus__anchor .rs-plus__menu",
       ".skx-search__box .rs-plus__palette, .skx-rsearch .rs-plus__palette",
       ".skx-rel__pop",
