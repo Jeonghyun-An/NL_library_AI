@@ -184,6 +184,22 @@ class TestGapClaims:
         checked, _, checks = check_paragraph(text, valid_e={"E1"}, valid_f=set(), evidence={"E1": "KCI_A"})
         assert (checked, checks["softened"]) == (softened, 1)
 
+    # 마침표 바로 뒤에 붙은 마커('…했다.[E1] ')와 문장부호 없는 줄바꿈도 문장 경계다 — 앞 문장(인용 발견)이 뒤 코퍼스
+    # 문장과 한 문장으로 묶여 공백 후보로 바뀌지 않게
+    @pytest.mark.parametrize("first, sep, end", [
+        ("김(2015)은 사회적 지지의 효과가 남성 노인에게서는 나타나지 않음을 확인했다.", "[E1] ", ".[E2]"),
+        ("김(2015)은 사회적 지지의 효과가 남성 노인에게서는 나타나지 않음을 확인했다", "\n", ""),
+    ], ids=["마침표에 붙은 마커", "줄바꿈"])
+    def test_a_marker_after_the_period_or_a_line_break_ends_the_sentence(self, first, sep, end):
+        text = f"{first}{sep}소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않음을 확인했다{end}"
+        expected = f"{first}{sep}소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않은 것으로 보인다{self.TAIL}{end}"
+
+        assert soften_claims(text) == (expected, 1)
+        assert soften_claims(expected) == (expected, 0)
+        checked, _, checks = check_paragraph(text, valid_e={"E1", "E2"}, valid_f=set(),
+                                             evidence={"E1": "KCI_A", "E2": "KCI_B"})
+        assert (checked, checks["softened"]) == (expected, 1)
+
     @pytest.mark.parametrize("text, expected", [
         ("선행연구에서 최초로 우울 감소 효과가 확인되었다.",
          "선행연구에서 소장 코퍼스에서 확인한 범위에서 처음으로 우울 감소 효과가 확인되었다."),

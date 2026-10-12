@@ -57,8 +57,9 @@ GAP_CLAIM_REWRITES: tuple[tuple[str, str], ...] = (
     (r"확인(?:되었다|됐다)(?![가-힣])", f"보인다{GAP_CLAIM_TAIL}"),
 )
 _GAP_REWRITES = tuple((re.compile(pattern), repl) for pattern, repl in GAP_CLAIM_REWRITES)
-# 문장 경계 — 마침표·물음표·느낌표 뒤 공백. 나눈 공백은 그대로 다시 잇는다(split 의 잡는 괄호)
-_SENTENCE_BREAK = re.compile(r"((?<=[.!?。])\s+)")
+# 문장 경계 — 마침표·물음표·느낌표 뒤 공백(그 사이에 붙은 마커 묶음 '…했다.[E1] ' 도 경계에 넣는다), 또는 줄바꿈
+# (문장부호 없이 끝난 줄). 나눈 자리는 그대로 다시 잇는다(split 의 잡는 괄호)
+_SENTENCE_BREAK = re.compile(r"((?<=[.!?。])(?:\s*\[[EF]\d+\])*\s+|\s*\n\s*)")
 # CLAIM_REWRITES 가 넣는 말 — 이 말의 '코퍼스'는 문맥으로 보지 않는다(인용 발견이 공백 후보로 바뀌지 않게, 두 번 거쳐도 같게)
 _CLAIM_INSERTS = re.compile(r"소장 코퍼스에서 확인(?:하지 못했다|되지 않았다|한 범위에서)")
 
