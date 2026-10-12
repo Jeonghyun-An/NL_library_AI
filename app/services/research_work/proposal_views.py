@@ -3,7 +3,9 @@
 - 다시 맞춤 필요(stale)는 저장하지 않고 조회 때 센다(계약 §4): 목차는 고른 주제가 바뀌었거나 묶음 논문 합집합이
   지금 담음과 다르거나 핵심 개념이 목차를 만들 때(outline.concepts)와 다르거나 고른 카드의 제목이 목차의
   topic.title 과 다르면(호출부가 넘긴 경우만), 선행연구 절(prior.gN)은 주제가 바뀌었거나 그 절의 근거 논문이 그 묶음 논문과 다르면,
-  그 밖의 절은 주제가 바뀌었으면. 앞 단계를 바꿔도 뒤 단계를 지우지 않고 배지만 붙인다(spec §4).
+  그 밖의 절은 주제가 바뀌었으면. 06e 부터 쓴 절(basis 에 question 이 있는 절)은 그때의 연구 질문이 지금과 달라도
+  다시 맞춤이다 — 06b 에 쓴 절은 키가 없어 이 이유로는 붙지 않는다. 앞 단계를 바꿔도 뒤 단계를 지우지 않고 배지만
+  붙인다(spec §4).
 - AI 사용 공개(disclosure)는 끝난(done) 생성의 단계·모델·완료 시각·시도 목록이다. 시도에는 model·outcome 만
   싣는다 — attempts.error 에는 내부 호스트 주소가 든 예외 문자열이 있다(06a 넘김 7).
 - 참고문헌(references)은 문단이 인용한 논문만, 논문 상세 인용과 같은 build_citation(book)["korean"] 으로 만든다
@@ -35,6 +37,12 @@ def _iso(value) -> str | None:
     return value.isoformat() if value is not None else None
 
 
+def _research_question(outline: dict) -> str:
+    """절을 쓸 때 프롬프트에 넣는 연구 질문 — 목차에 고른 질문, 없으면 목차 주제의 질문(research_proposal.generate_section
+    과 같은 식). 절 basis.question 과 견준다."""
+    return (outline or {}).get("question") or ((outline or {}).get("topic") or {}).get("question") or ""
+
+
 def stale_flags(work, outline: dict, sections: dict, picked: set[str], topic_title: str | None = None) -> dict:
     """topic_title 은 고른 카드의 지금 제목(호출부가 고른 주제 행에서 읽는다) — None 이면 제목은 견주지 않는다."""
     topic_id = work.topic_id
@@ -51,6 +59,8 @@ def stale_flags(work, outline: dict, sections: dict, picked: set[str], topic_tit
         stale = basis.get("topic_id") != topic_id
         if key.startswith("prior."):
             stale = stale or key not in groups or set(basis.get("papers") or []) != groups[key]
+        if "question" in basis:
+            stale = stale or basis["question"] != _research_question(outline)
         flags[key] = stale
     return {"outline": outline_stale, "sections": flags}
 

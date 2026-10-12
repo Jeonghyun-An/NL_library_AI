@@ -105,6 +105,34 @@ class TestStaleFlags:
         flags = stale_flags(SimpleNamespace(topic_id=None), {}, {}, set())
         assert flags == {"outline": False, "sections": {}}
 
+    def test_a_changed_research_question_needs_a_refit_of_written_sections(self):
+        # 06e(spec §12-4) — [목차 고치기]로 연구 질문을 바꾸면 그 앞에 쓴 절에 '다시 맞춤 필요'가 붙는다
+        def asked(key: str, question: str, **kw) -> dict:
+            # 06e 부터 쓴 절 — basis 에 그 절을 쓸 때의 연구 질문이 있다
+            sec = _section(key, **kw)
+            return {**sec, "basis": {**sec["basis"], "question": question}}
+
+        work = SimpleNamespace(topic_id=12, concepts=CONCEPTS)
+        outline = {**OUTLINE, "question": "가는 나인가?"}
+        sections = {"prior.g1": asked("prior.g1", "가는 나인가?", papers=["C1", "C2"]),
+                    "gap": asked("gap", "옛 질문인가?")}
+        assert stale_flags(work, outline, sections, {"C1", "C2", "C3"}) == {
+            "outline": False, "sections": {"prior.g1": False, "gap": True}}
+        # 목차에 고른 질문이 없으면 절을 쓸 때(research_proposal.generate_section)처럼 목차 주제의 질문과 견준다
+        no_question = {**OUTLINE, "question": None}
+        same = stale_flags(work, no_question, {"gap": asked("gap", CARD["question"])}, {"C1", "C2", "C3"})
+        other = stale_flags(work, no_question, {"gap": asked("gap", "가는 나인가?")}, {"C1", "C2", "C3"})
+        assert (same["sections"], other["sections"]) == ({"gap": False}, {"gap": True})
+
+    def test_sections_written_before_06e_have_no_question_and_stay_fresh(self):
+        # 06b 에 쓴 절은 basis 에 question 키가 없다 — 질문을 바꿔도 이 이유로는 다시 맞춤이 되지 않는다
+        work = SimpleNamespace(topic_id=12, concepts=CONCEPTS)
+        sections = {"prior.g1": _section("prior.g1", papers=["C1", "C2"]), "gap": _section("gap")}
+        assert "question" not in sections["gap"]["basis"]
+        for question in ("가는 나인가?", None):
+            assert stale_flags(work, {**OUTLINE, "question": question}, sections, {"C1", "C2", "C3"}) == {
+                "outline": False, "sections": {"prior.g1": False, "gap": False}}
+
 
 class TestDisclosure:
     def test_done_steps_without_error_strings(self):
@@ -687,6 +715,35 @@ class TestPutOutline:
         _set_work(api.engine, jid, is_example=True)
         assert api.client.put(f"/api/research/{jid}/outline", json=_put_body(),
                               headers={"If-Match": "2"}).status_code == 409
+
+    def test_background_is_saved_trimmed_and_kept_when_left_out(self, api):
+        # 06e(§12-11 권고) — 연구 배경은 outline.background 자유 글. 앞뒤 공백을 떼어 저장하고, 싣지 않은 PUT(생략·null —
+        # [목차 고치기]·옛 화면)은 저장된 배경을 지킨다. 빈 글("")은 지운다. 적은 배경은 진행 'n/6절'에도 센다
+        jid = _with_outline(api)
+        url = f"/api/research/{jid}/outline"
+
+        first = api.client.put(url, json=_put_body(background="  농촌 독거노인의 사회적 고립이 깊어지고 있다.\n"),
+                               headers={"If-Match": "2"})
+        kept = api.client.put(url, json=_put_body(), headers={"If-Match": "3"})
+        null = api.client.put(url, json=_put_body(background=None), headers={"If-Match": "4"})
+
+        assert [r.status_code for r in (first, kept, null)] == [200, 200, 200]
+        assert {r.json()["outline"]["background"] for r in (first, kept, null)} == {
+            "농촌 독거노인의 사회적 고립이 깊어지고 있다."}
+        # 주제·연구 질문·방법 + 연구 배경 = 4절(묶음 절·연구 공백은 아직 쓰지 않았다)
+        assert _work_row(api.engine, jid)["progress"]["sections"] == 4
+
+        cleared = api.client.put(url, json=_put_body(background=""), headers={"If-Match": "5"})
+        assert cleared.status_code == 200 and cleared.json()["outline"]["background"] == ""
+        assert _proposal(api.engine, jid)["outline"]["background"] == ""
+        assert _work_row(api.engine, jid)["progress"]["sections"] == 3
+
+    def test_background_over_the_limit_is_422(self, api):
+        jid = _with_outline(api)
+        url = f"/api/research/{jid}/outline"
+        res = api.client.put(url, json=_put_body(background="가" * 2001), headers={"If-Match": "2"})
+        assert res.status_code == 422 and _proposal(api.engine, jid)["version"] == 2
+        assert api.client.put(url, json=_put_body(background="가" * 2000), headers={"If-Match": "2"}).status_code == 200
 
 
 class TestAppWiring:

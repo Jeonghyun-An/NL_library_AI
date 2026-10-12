@@ -25,6 +25,7 @@ READING_NOTE_MAX = 1000
 GROUP_LABEL_MAX = 60
 OUTLINE_QUESTION_MAX = 300
 OUTLINE_METHOD_MAX = 1000
+OUTLINE_BACKGROUND_MAX = 2000   # 연구 배경(outline.background — 사용자가 쓰는 자유 글, 06e §12-11 권고) 글자 상한
 PROPOSAL_SECTIONS = ("topic", "background", "prior", "gap", "question", "method")   # 고정 6절(순서 = 문서 순서)
 PRIOR_KEYS = ("prior.g1", "prior.g2", "prior.g3", "prior.g4")
 GAP_KEY = "gap"

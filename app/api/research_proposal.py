@@ -44,7 +44,8 @@ from services.research_work.section_input import gap_input, gap_seeds, prior_inp
 from services.research_work.seeds import corpus_of
 from services.research_work.shapes import (
     GAP_KEY, GROUP_LABEL_MAX, MAX_GROUPS, MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, MIN_READING_FOR_OUTLINE,
-    OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET, PHASE_ORDER, WRITABLE_SECTION_KEYS,
+    OUTLINE_BACKGROUND_MAX, OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET, PHASE_ORDER,
+    WRITABLE_SECTION_KEYS,
 )
 
 router = APIRouter(tags=["research-work"])
@@ -76,6 +77,8 @@ class OutlinePut(BaseModel):
     question: str = Field(max_length=OUTLINE_QUESTION_MAX)
     method: str = Field(max_length=OUTLINE_METHOD_MAX)
     approve: bool
+    # 연구 배경(06e) — None(생략)이면 저장된 값을 지킨다: 배경을 모르는 [목차 고치기]·옛 화면의 PUT 이 지우지 않게
+    background: str | None = Field(None, max_length=OUTLINE_BACKGROUND_MAX)
 
 
 def _if_match(value: str | None) -> int:
@@ -240,7 +243,8 @@ def _checked_groups(req: OutlinePut, stored: list[dict]) -> list[dict]:
 async def put_outline(job_id: str, req: OutlinePut, response: Response,
                       if_match: str | None = Header(None), db: AsyncSession = Depends(get_db)):
     """목차 고치기·승인. approve 면 state approved(승인 시각), 아니면 draft — 승인한 목차를 고쳐 저장하면 다시
-    승인해야 절을 쓴다. version 이 다르면 409(조건부 UPDATE 로 확인과 쓰기를 한 문장에)."""
+    승인해야 절을 쓴다. version 이 다르면 409(조건부 UPDATE 로 확인과 쓰기를 한 문장에).
+    연구 배경(background)은 실었을 때만 앞뒤 공백을 떼어 바꾼다("" 면 지움) — 싣지 않으면 저장된 값 그대로다(06e)."""
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)
     _writable(work)
@@ -264,6 +268,8 @@ async def put_outline(job_id: str, req: OutlinePut, response: Response,
         "state": "approved" if req.approve else "draft",
         "approved_at": datetime.now(timezone.utc).isoformat() if req.approve else None,
     })
+    if req.background is not None:
+        outline["background"] = req.background.strip()
     res = await db.execute(
         update(ResearchProposal)
         .where(ResearchProposal.work_id == jid, ResearchProposal.version == expected)

@@ -112,14 +112,16 @@ def _common(question: str, topic: dict, research_question: str, papers: list[dic
 def prior_input(*, question: str, topic: dict, research_question: str, group: dict,
                 books: dict, excerpts: dict, corpus: dict | None) -> dict:
     """선행연구 묶음 하나(group = 목차의 {key, name, hint, papers})의 절 입력(계약 §3). 논문은 section_papers 로
-    6편까지. basis.papers 는 묶음의 논문 전부다 — 목차에서 묶음을 바꾸면 '다시 맞춤 필요'가 뜨게(계약 §4 stale)."""
+    6편까지. basis.papers 는 묶음의 논문 전부다 — 목차에서 묶음을 바꾸면 '다시 맞춤 필요'가 뜨게(계약 §4 stale).
+    basis.question 은 이 절을 쓸 때의 연구 질문이다 — 질문을 바꿔도 '다시 맞춤 필요'가 뜨게(06e)."""
     papers = _papers(section_papers(group.get("papers") or []), books, excerpts)
     return {
         "key": group["key"], "kind": "prior",
         **_common(question, topic, research_question, papers, corpus),
         "group": {"name": group.get("name") or group.get("hint") or ""},
         "seeds": [],
-        "basis": {"topic_id": topic.get("id"), "papers": list(group.get("papers") or [])},
+        "basis": {"topic_id": topic.get("id"), "papers": list(group.get("papers") or []),
+                  "question": research_question},
     }
 
 
@@ -133,5 +135,5 @@ def gap_input(*, question: str, topic: dict, research_question: str, seeds: list
         **_common(question, topic, research_question, papers, corpus),
         "group": None,
         "seeds": [{"heading": s.get("heading") or "", "text": s.get("text") or ""} for s in seeds],
-        "basis": {"topic_id": topic.get("id"), "papers": cnts},
+        "basis": {"topic_id": topic.get("id"), "papers": cnts, "question": research_question},
     }

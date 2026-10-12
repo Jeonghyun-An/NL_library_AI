@@ -16,7 +16,7 @@
 import re
 from datetime import datetime, timezone
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from models.research_work import ResearchProposal
 from services.prompts import get_prompt
@@ -183,7 +183,8 @@ def auto_question(output: dict, input: dict) -> str | None:
 async def apply(db, gen, output: dict) -> dict:
     """research_proposals.outline ← Outline · version + 1 · 진행 요약. 커밋하지 않는다.
     연구 질문이 있으면 자동 승인한다(state approved·approved_at·auto true — 06e D20), 없으면 06b 처럼 초안(auto false).
-    승인한 목차가 있어도 통째로 바꾼다([보고서 다시 만들기] — 새 반영이라 auto 가 다시 붙는다).
+    승인한 목차가 있어도 통째로 바꾼다([보고서 다시 만들기] — 새 반영이라 auto 가 다시 붙는다). 연구 배경(background —
+    사용자가 쓰는 자유 글)만 옛 목차에서 이어 받는다.
     concepts 는 목차를 만들 때의 핵심 개념 — 뒤에 개념을 고치면 조회가 목차에 '다시 맞춤 필요' 를 붙인다.
     반환은 generation 이벤트의 result({fallback, auto})."""
     input = dict(gen.input or {})
@@ -207,6 +208,11 @@ async def apply(db, gen, output: dict) -> dict:
         "approved_at": _now() if auto else None,
         "auto": auto,
     }
+    # 연구 배경은 사용자가 쓰는 자유 글이다(06e) — 새 반영이 목차를 통째로 바꿔도 지우지 않는다. 적은 적이 없으면 키를
+    # 두지 않는다(키가 없으면 "" 로 읽는다)
+    old = await db.scalar(select(ResearchProposal.outline).where(ResearchProposal.work_id == gen.work_id))
+    if (old or {}).get("background"):
+        outline["background"] = old["background"]
     await db.execute(
         update(ResearchProposal)
         .where(ResearchProposal.work_id == gen.work_id)

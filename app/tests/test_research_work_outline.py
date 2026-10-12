@@ -317,6 +317,22 @@ class TestApply:
         assert (out["state"], out["question"], out["method"], out["approved_at"], out["auto"]) == (
             "approved", FIRST, "", NOW, True)
 
+    def test_a_new_outline_keeps_the_research_background(self, engine, monkeypatch):
+        # 06e(§12-11 권고) — 연구 배경은 사용자가 쓰는 자유 글이다. [보고서 다시 만들기]가 목차를 통째로 바꿔도 이어 받는다.
+        # 적은 적이 없는(빈 글) 목차를 다시 만들면 키를 두지 않는다
+        monkeypatch.setattr("services.research_work.outline._now", lambda: NOW)
+        written = {"state": "approved", "groups": [], "question": "옛 질문?", "method": "옛 방법",
+                   "approved_at": "2026-10-10", "background": "농촌 독거노인의 고립이 깊어지고 있다."}
+        jid, gid = _setup(engine, outline=written, version=5)
+        blank_jid, blank_gid = _setup(engine, outline={**written, "background": ""}, version=5)
+
+        _apply(engine, gid, EXECUTOR.bind(EXECUTOR.parse(GOOD), INPUT))
+        _apply(engine, blank_gid, EXECUTOR.bind(EXECUTOR.parse(GOOD), INPUT))
+
+        out = _proposal(engine, jid)["outline"]
+        assert (out["background"], out["question"], out["method"]) == ("농촌 독거노인의 고립이 깊어지고 있다.", FIRST, "")
+        assert "background" not in _proposal(engine, blank_jid)["outline"]
+
     def test_no_question_at_all_stays_a_draft_without_auto(self, engine):
         # 후보도 카드 질문도 없으면 06b 처럼 초안으로 둔다 — 빈 질문으로 승인하면 [목차 고치기]의 PUT 이 422 다(정함 3)
         bare = {**INPUT, "topic": {**TOPIC, "question": ""}}
