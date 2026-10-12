@@ -4,7 +4,7 @@
 > 사용자 방침(2026-10-11): 기획 문서에 토큰을 쓰지 않는다 — 이 계획은 작업·파일·검증 기준만 적고 코드 전문은 싣지 않는다. 구현자는 각 작업의 "기준"을 만족하게 직접 쓴다.
 
 **Goal:** spec `docs/superpowers/specs/2026-10-12-round08-ui-dark-theme-design.md` 의 정책 1~8 을 nuxt 화면에 반영한다.
-**Architecture:** 색은 `style_skovix.css` 의 `--skx-*` 변수만 다크 값으로 바꾸고(딥리서치 `research.css`·`work.css` 는 이미 이 변수만 쓰므로 손대지 않는다), 읽는 면은 변수를 밝은 값으로 다시 정의하는 `.skx-paper` 범위 클래스로 밝힌다. 화면 구조 변경은 `pages/index.vue`·`pages/papers/index.vue`·`components/AppSidebar.vue` 세 곳에 모은다.
+**Architecture:** 색은 `style_skovix.css` 의 `--skx-*` 변수만 다크 값으로 바꾸고(딥리서치 `research.css`·`work.css` 는 이미 이 변수만 쓰므로 손대지 않는다), 읽는 면은 변수를 밝은 값으로 다시 정의하는 `.skx-reading` 범위 클래스로 밝힌다. 화면 구조 변경은 `pages/index.vue`·`pages/papers/index.vue`·`components/AppSidebar.vue` 세 곳에 모은다.
 **Tech Stack:** Nuxt 4 · Vue 3 · 전역 CSS(`nuxt.config.ts` css 배열: tailwind → style_skovix → research → work) · vitest(Node, 순수 함수만).
 
 **검증 공통(작업마다):** `cd frontend && npx vitest run`(기준 40 files/739 통과) · 구조를 바꾼 작업은 `npx nuxi typecheck` · 화면은 로컬 미리보기 `http://localhost:3005`(운영 API, `NUXT_DEV_API_TARGET=https://skovix.landsoft.co.kr/api npx nuxi dev --port 3005 --host 0.0.0.0`)에서 확인. 커밋은 `[Feat]`·`[Style]`·`[Fix]` 꺾쇠 접두, Co-Authored-By 없음.
@@ -24,7 +24,7 @@
 | 포인트 | 산호 `#f8c4b7`(진한 쪽 `#f4b19e`), 버튼 그라데이션 `#f8c4b7 → #fff5ed`, 위 글자 `#0f2822` |
 | 반경 | 8px(카드 기본) · 12/16px(패널) · 44px(알약) |
 | 글꼴 | Pretendard(이미 씀) |
-| 밝은 읽는 면(`.skx-paper`) | 바탕 `#f6f5f2`, 카드 `#ffffff`, 글자 `#1d211f`·`#454545`·`#666`, 선 `#e3e1dc`, 포인트는 진한 산호 `#c9604a` |
+| 밝은 읽는 면(`.skx-reading`) | 바탕 `#f6f5f2`, 카드 `#ffffff`, 글자 `#1d211f`·`#454545`·`#666`, 선 `#e3e1dc`, 포인트는 진한 산호 `#c9604a` |
 
 ---
 
@@ -32,11 +32,11 @@
 
 **Files:** Modify `frontend/assets/css/style_skovix.css`(:root 185-215·html/body 156-169·`.skx-app` 317-323·`.skx-footer` 5020 부근), `frontend/app.vue`(:root 23-47, body 55-61), `frontend/assets/css/tailwind.css`(스크롤바 색); Create `frontend/public/img/bg-glass.webp`(scratchpad 에서 복사); Test `frontend/tests/unit/themeTokens.test.ts`
 
-- [ ] 실패하는 테스트: `style_skovix.css` 의 `:root` 블록을 읽어 `--skx-ink` 대 `--skx-white` 대비 4.5:1 이상, `--skx-gray-1` 대 `--skx-white` 4.5:1 이상, `.skx-paper` 블록의 같은 쌍도 4.5:1 이상을 검사한다(대비 계산은 테스트 안 작은 함수 — WCAG 상대 휘도).
+- [ ] 실패하는 테스트: `style_skovix.css` 의 `:root` 블록을 읽어 `--skx-ink` 대 `--skx-white` 대비 4.5:1 이상, `--skx-gray-1` 대 `--skx-white` 4.5:1 이상, `.skx-reading` 블록의 같은 쌍도 4.5:1 이상을 검사한다(대비 계산은 테스트 안 작은 함수 — WCAG 상대 휘도).
 - [ ] `--skx-*` 값을 위 표대로 바꾸고 새 토큰을 더한다: `--skx-glass`·`--skx-glass-2`·`--skx-glass-teal`·`--skx-glass-border`·`--skx-blur`·`--skx-accent`·`--skx-accent-strong`·`--skx-accent-grad`·`--skx-on-accent`·`--skx-ink-strong`·`--skx-teal-ink`. `--skx-primary` 는 산호로, `--skx-search-grad`·`--skx-page-bg` 는 다크로(바탕 그림 + `#0f2822`).
-- [ ] html/body 글자색·`.skx-footer` 바탕 하드코딩을 토큰으로. app.vue 의 `--bg`·`--surface`·`--ink*`·`--line*` 은 **그대로 둔다**(search-classic·TopResult·CitationModal 이 쓰는 밝은 체계 — Task 7 에서 `.skx-paper` 로 감싼다). body 바탕은 `var(--skx-page-bg)`.
-- [ ] `.skx-paper` 범위 클래스: 안에서 `--skx-*` 를 표의 밝은 값으로 다시 정의하고 `color: var(--skx-ink)`.
-- [ ] 테스트 통과·vitest 전체·커밋 `[Style] round08 — 다크 글래스 토큰·바탕·.skx-paper`.
+- [ ] html/body 글자색·`.skx-footer` 바탕 하드코딩을 토큰으로. app.vue 의 `--bg`·`--surface`·`--ink*`·`--line*` 은 **그대로 둔다**(search-classic·TopResult·CitationModal 이 쓰는 밝은 체계 — Task 7 에서 `.skx-reading` 로 감싼다). body 바탕은 `var(--skx-page-bg)`.
+- [ ] `.skx-reading` 범위 클래스: 안에서 `--skx-*` 를 표의 밝은 값으로 다시 정의하고 `color: var(--skx-ink)`.
+- [ ] 테스트 통과·vitest 전체·커밋 `[Style] round08 — 다크 글래스 토큰·바탕·.skx-reading`.
 - **기준:** 미리보기에서 바탕이 다크 그림, 딥리서치 화면(`/research/<아무 잡>`)도 다크 면으로 깨지지 않고 읽힌다(남는 어긋남은 기록만 — 06d·06e 머지 뒤 맞춤).
 
 ### Task 2: style_skovix.css 하드코딩 색 → 토큰
@@ -51,7 +51,7 @@
 
 **Files:** Modify `frontend/assets/css/style_skovix.css`; 아이콘 `<img src="/img/*.svg">` 를 쓰는 템플릿(`pages/index.vue`·`pages/papers/index.vue`·`pages/papers/[id].vue`·`pages/books/[cnts_id].vue`·`components/AppSidebar.vue`·`components/BookChat.vue`)
 
-- [ ] 단색 아이콘에 `skx-ico` 클래스(다크: `filter: brightness(0) invert(.82)`), 강조 아이콘에 `skx-ico--accent`(산호 근사 filter). `.skx-paper .skx-ico { filter: none }`.
+- [ ] 단색 아이콘에 `skx-ico` 클래스(다크: `filter: brightness(0) invert(.82)`), 강조 아이콘에 `skx-ico--accent`(산호 근사 filter). `.skx-reading .skx-ico { filter: none }`.
 - [ ] 기준: 사이드바·결과 카드·채팅 패널 아이콘이 다크에서 보이고, 밝은 읽는 면 안에서는 원래 색. 커밋 `[Style] round08 — 아이콘 색을 다크·밝은 면에 맞춘다`.
 
 ### Task 4: 목업 숨김
@@ -83,7 +83,7 @@
 
 ### Task 7: 검색 결과 같은 틀 + DeepRead 옆 패널
 
-**Files:** Modify `pages/index.vue`(결과 290-630·AI 큐레이션 334-422·카드 471-608), `pages/papers/index.vue`(AI 76-191·카드 356-461·채팅 패널 548-571), `assets/css/style_skovix.css`, `components/CitationModal.vue`(모달 안쪽에 `.skx-paper`)
+**Files:** Modify `pages/index.vue`(결과 290-630·AI 큐레이션 334-422·카드 471-608), `pages/papers/index.vue`(AI 76-191·카드 356-461·채팅 패널 548-571), `assets/css/style_skovix.css`, `components/CitationModal.vue`(모달 안쪽에 `.skx-reading`)
 
 - [ ] 소장자료 결과의 AI 영역(사용자 결정 2026-10-12 — 초기 SKOVIX 와 같게): **1위 도서 한 권 + 질문 기준 추천 이유 스트리밍**. 논문과 같은 2단(`.skx-pai` 구조) — 왼쪽 추천 이유(도서 상세 '추천 이유' 탭이 쓰는 스트리밍 API·`pages/books/[cnts_id].vue` `streamReason` 과 같은 호출, 접고 펼치기), 오른쪽 1위 도서 카드(표지·제목·서지·[DeepRead]·[원문 보기]). 컬렉션 호출(`useCuration`·`/books/curate`)과 'AI 컬렉션' 태그·위로 고정은 걷는다(composable 파일은 남겨도 됨). 제목은 'AI 검색 결과'.
 - [ ] 카드 공통 배치: 왼쪽 표지 · 가운데(관련도·키워드 칩, 제목, 서지) · 오른쪽 버튼 열([원문 보기][인용(논문만)] / 강조 [DeepRead]). 논문 카드의 `:data-anchor`(360) 유지.
@@ -97,8 +97,8 @@
 
 **Files:** Modify `pages/books/[cnts_id].vue`(`div.skx-result-card` 30-414), `pages/papers/[id].vue`(`div.skx-result-card` 8), `pages/search-classic.vue`(루트), `components/PdfViewer.vue`(필요하면)
 
-- [ ] 두 상세의 `.skx-result-card` 에 `skx-paper` 를 더한다. 오른쪽 `aside.skx-chat-panel` 은 다크 그대로. 인라인 `#c00`·`#bbb`·`#999`(books 19·278·284, papers/[id] 283·320·335, index 326, papers/index 70·91·348)는 토큰으로.
-- [ ] `search-classic.vue` 루트에도 `skx-paper` — 옛 화면은 밝게 남는다(지우지 않음).
+- [ ] 두 상세의 `.skx-result-card` 에 `skx-reading` 를 더한다. 오른쪽 `aside.skx-chat-panel` 은 다크 그대로. 인라인 `#c00`·`#bbb`·`#999`(books 19·278·284, papers/[id] 283·320·335, index 326, papers/index 70·91·348)는 토큰으로.
+- [ ] `search-classic.vue` 루트에도 `skx-reading` — 옛 화면은 밝게 남는다(지우지 않음).
 - [ ] 커밋 `[Style] round08 — 상세는 다크 틀 안에 밝은 읽는 면`.
 
 ### Task 9: 전체 확인·정리

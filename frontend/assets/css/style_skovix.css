@@ -224,7 +224,7 @@ a:hover {
 }
 /* 밝은 읽는 면 — 안에서 색 변수를 밝은 값으로 다시 정의해, 안쪽 부품이 그대로 밝게 그려진다.
    상세 화면의 본문 카드·딥리서치 보고서처럼 오래 읽는 면에 감싼다. */
-.skx-paper {
+.skx-reading {
   color-scheme: light;
   --skx-primary: #b5503b;
   --skx-accent: #b5503b;

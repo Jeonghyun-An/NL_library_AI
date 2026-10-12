@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 /* ── 전역 스크롤바 ─────────────────────────────── */
-/* 색은 style_skovix.css 의 --skx-scrollbar(-hover) — 다크 면은 옅은 흰색, .skx-paper 안은 짙은 색 */
+/* 색은 style_skovix.css 의 --skx-scrollbar(-hover) — 다크 면은 옅은 흰색, .skx-reading 안은 짙은 색 */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--skx-scrollbar) transparent;
