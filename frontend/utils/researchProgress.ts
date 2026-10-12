@@ -3,9 +3,9 @@
 // 퍼센트·채움 폭을 정한다. 막대 하나가 근거 수집(탐색)과 보고서 작성(종합) 두 구간을 실측 시간 비율로 나눠 싣는다 — 구간마다
 // 0 부터 다시 세면 작성이 시작될 때 막대가 뒤로 간다. 막대는 실제 이벤트로만 움직이고, 이벤트 사이의 추정 증가는 상한
 // RUNNING_CAP(synthCard — 작성 막대와 같은 값)을 넘지 않는다
-import type { ResearchParams, SubqView } from "~/types/research";
+import type { ResearchParams, StepStatus, SubqView } from "~/types/research";
 import type { DraftSlot, SynthEta } from "~/utils/researchDraft";
-import type { ResearchPhase } from "~/utils/researchEvents";
+import { exploreAttemptStart, fromEarlierAttempt, type ResearchPhase } from "~/utils/researchEvents";
 import { RUNNING_CAP, barFraction } from "~/utils/synthCard";
 
 export type ProgressStage = "plan" | "collect" | "write" | "done";
@@ -94,8 +94,17 @@ function roundApproach(elapsedMs: number | null): number {
   return RUNNING_CAP * (1 - 0.5 ** (Math.max(0, elapsedMs) / ROUND_HALF_LIFE_MS));
 }
 
-function subqShare(sq: SubqView, maxRounds: number, roundElapsedMs: number | null): number {
-  switch (sq.status) {
+// 이번 시도에서 본 하위질문 상태. 탐색부터 다시 도는 재시도는 idx 0 부터 새 seq 로 행을 쌓고, 이번 시도가 아직 닿지 않은
+// 하위질문에는 이전 시도의 행(done·failed)이 남는다 — 그것을 끝남으로 세면 하위질문마다 새 행이 열릴 때 막대가 뒤로 간다.
+// 멈춘 지점(stopPoint)과 같은 규칙으로 대기로 본다. 워커가 running 을 알린 뒤 하위질문 0 의 새 행을 열기 전의 짧은 틈은
+// 이전 시도의 행뿐이라 1차 시도가 탐색을 막 마친 때와 모양이 같아 하위질문만으로는 가르지 못한다
+function attemptStatuses(subqs: readonly SubqView[]): StepStatus[] {
+  const since = exploreAttemptStart(subqs);
+  return subqs.map((s) => (fromEarlierAttempt(s, since) ? "pending" : s.status));
+}
+
+function subqShare(sq: SubqView, status: StepStatus, maxRounds: number, roundElapsedMs: number | null): number {
+  switch (status) {
     case "done":
     case "failed":
       return 1;
@@ -109,10 +118,11 @@ function subqShare(sq: SubqView, maxRounds: number, roundElapsedMs: number | nul
   }
 }
 
-// 탐색 비율 = 하위질문마다의 몫(끝남·실패 1, 대기 0, 도는 하위질문은 회차 몫)의 평균
+// 탐색 비율 = 하위질문마다의 몫(끝남·실패 1, 대기 0, 도는 하위질문은 회차 몫)의 평균. 상태는 이번 시도의 것(attemptStatuses)
 export function exploreFraction(subqs: readonly SubqView[], maxRounds: number, roundElapsedMs: number | null): number {
   if (!subqs.length) return 0;
-  const sum = subqs.reduce((acc, sq) => acc + subqShare(sq, maxRounds, roundElapsedMs), 0);
+  const statuses = attemptStatuses(subqs);
+  const sum = subqs.reduce((acc, sq, i) => acc + subqShare(sq, statuses[i]!, maxRounds, roundElapsedMs), 0);
   return Math.min(1, sum / subqs.length);
 }
 
@@ -126,7 +136,8 @@ export function overallFraction(stage: "collect" | "write", explore: number, syn
 // 도는 하위질문의 회차 열쇠 — 회차가 늘거나 판정이 날 때만 바뀐다(화면이 이 열쇠가 바뀐 시각을 열린 회차의 시작으로 잰다).
 // 회차가 아직 없을 때도 1회차로 센다: 첫 검색 이벤트가 와도 같은 열린 회차라 다가감이 0 으로 돌아가지 않는다
 export function activeRoundKey(subqs: readonly SubqView[]): string | null {
-  const sq = subqs.find((s) => s.status === "running");
+  const statuses = attemptStatuses(subqs);
+  const sq = subqs.find((_, i) => statuses[i] === "running");
   if (!sq) return null;
   const last = sq.rounds[sq.rounds.length - 1];
   return `${sq.idx}:${Math.max(1, sq.rounds.length)}:${last?.verdict ?? "open"}`;
@@ -150,7 +161,7 @@ export function progressBarView(input: ProgressInput): ProgressBarView | null {
   const fraction = collecting
     ? overallFraction("collect", exploreFraction(input.subqs, input.maxRounds, input.roundElapsedMs), 0)
     : overallFraction("write", 1, barFraction(input.eta));
-  const running = collecting ? input.subqs.some((s) => s.status === "running") : input.eta.runningIdx !== null;
+  const running = collecting ? attemptStatuses(input.subqs).includes("running") : input.eta.runningIdx !== null;
   const percent = Math.floor(fraction * 100);
   return { stages, line, percent, fraction, running, valueText: `${line} · ${percent}%` };
 }
@@ -161,11 +172,12 @@ function planLine(phase: ResearchPhase, queueNote: string | null): string {
   return "연구 계획을 세우는 중";
 }
 
-// 도는 하위질문, 없으면(하위질문 사이) 다음 대기 하위질문, 그것도 없으면(종합 단계 행 전) 마지막 하위질문
+// 도는 하위질문, 없으면(하위질문 사이) 다음 대기 하위질문, 그것도 없으면(종합 단계 행 전) 마지막 하위질문. 상태는 이번 시도의 것
 function collectLine(subqs: readonly SubqView[]): string {
   if (!subqs.length) return "근거 수집을 시작하는 중";
-  const running = subqs.findIndex((s) => s.status === "running");
-  const waiting = subqs.findIndex((s) => s.status === "pending");
+  const statuses = attemptStatuses(subqs);
+  const running = statuses.indexOf("running");
+  const waiting = statuses.indexOf("pending");
   const at = running >= 0 ? running : waiting >= 0 ? waiting : subqs.length - 1;
   return `근거 수집 중 · 하위질문 ${at + 1}/${subqs.length} — 「${subqs[at]!.title}」`;
 }

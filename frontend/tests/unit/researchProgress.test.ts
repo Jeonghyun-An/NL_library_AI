@@ -1,7 +1,8 @@
 // frontend/tests/unit/researchProgress.test.ts
 import { describe, expect, it } from "vitest";
-import type { RoundView, StepStatus, SubqView } from "~/types/research";
+import type { ResearchEvent, ResearchStepRow, ResearchView, RoundView, StepStatus, SubqView, Verdict } from "~/types/research";
 import type { DraftSlot, DraftSlotStatus, SynthEta } from "~/utils/researchDraft";
+import { applyResearchEvent, initialResearchView, researchPhase } from "~/utils/researchEvents";
 import {
   DEFAULT_MAX_RECHECK,
   EXPLORE_WEIGHT,
@@ -231,6 +232,94 @@ describe("progressBarView", () => {
     const idle = progressBarView(input({ subqs: [subq(0, "done"), subq(1, "pending")] }))!;
     expect(idle.running).toBe(false);
     expect(idle.percent).toBe(27);
+  });
+});
+
+describe("탐색부터 다시 도는 재시도(stage=planned)", () => {
+  // 재시도는 idx 0 부터 새 seq 로 행을 쌓고, 이번 시도가 아직 닿지 않은 하위질문에는 이전 시도의 행(done·failed)이
+  // 그대로 남는다(researchEvents stopPoint 와 같은 규칙). 1차 시도(seq 1~3): 하위질문 0·1 을 마치고 2 에서 시간 상한에 걸려 실패했다
+  const FIRST_TRY = [subq(0, "done"), subq(1, "done"), subq(2, "failed")];
+  // 이번 시도가 연 행 — 이전 시도의 행보다 seq 가 크다
+  const again = (sq: SubqView, seq: number): SubqView => ({ ...sq, seq });
+
+  it("이번 시도가 아직 닿지 않은 하위질문은 이전 시도에서 끝났어도 대기(0)로 센다", () => {
+    const opened = [again(subq(0, "running"), 4), ...FIRST_TRY.slice(1)];
+    expect(exploreFraction(opened, 4, null)).toBe(0);
+    expect(exploreFraction(opened, 4, ROUND_HALF_LIFE_MS)).toBeCloseTo((RUNNING_CAP * 0.5) / 4 / 3, 10);
+    expect(exploreFraction([again(subq(0, "done"), 4), ...FIRST_TRY.slice(1)], 4, null)).toBeCloseTo(1 / 3, 10);
+    // 이번 시도가 연 행끼리는 끝남·실패를 그대로 1 로 센다
+    expect(exploreFraction([again(subq(0, "done"), 4), again(subq(1, "failed"), 5), FIRST_TRY[2]!], 4, null))
+      .toBeCloseTo(2 / 3, 10);
+  });
+
+  it("글줄·빛 흐름·회차 열쇠도 이전 시도의 행을 대기로 본다", () => {
+    // 하위질문 사이 — 이번 시도는 하위질문 0 만 마쳤다. 다음에 돌 것은 2/6 이다(4/6 이 아니다)
+    const between = [
+      again(subq(0, "done", [], "가"), 7), subq(1, "done", [], "나"), subq(2, "failed", [], "다"),
+      subq(3, "pending"), subq(4, "pending"), subq(5, "pending"),
+    ];
+    const v = progressBarView(input({ subqs: between }))!;
+    expect(v.line).toBe("근거 수집 중 · 하위질문 2/6 — 「나」");
+    // 탐색 비율 1/6 → 111/6/202 = 9.15…% → 9
+    expect(v.percent).toBe(9);
+    // 이전 시도에 running 으로 남은 행은 도는 하위질문이 아니다
+    const stale = [again(subq(0, "done", [], "가"), 4), subq(1, "running", [round(1)], "나"), subq(2, "pending", [], "다")];
+    const s = progressBarView(input({ subqs: stale }))!;
+    expect(s.line).toBe("근거 수집 중 · 하위질문 2/3 — 「나」");
+    expect(s.running).toBe(false);
+    expect(s.fraction).toBeCloseTo((111 / 3) / 202, 10);
+    expect(activeRoundKey(stale)).toBeNull();
+  });
+
+  it("실패한 잡을 다시 시도해 라이브로 볼 때 하위질문 0 의 새 행이 열린 뒤로 막대가 뒤로 가지 않는다", () => {
+    const PLAN3 = ["효과 측정", "교사 인식", "정책 과제"];
+    const row = (seq: number, idx: number, status: StepStatus, result: ResearchStepRow["result"] = {}): ResearchStepRow => ({
+      seq, kind: "search", subq_idx: idx, title: PLAN3[idx]!, detail: null, status, result,
+    });
+    const failed = initialResearchView({
+      job_id: "11111111-1111-4111-8111-111111111111",
+      question: "AI 윤리 교육의 효과",
+      status: "failed",
+      stage: "planned",
+      plan: PLAN3,
+      report: null,
+      last_error: "시간 상한 초과",
+      steps: [
+        { seq: 0, kind: "plan", subq_idx: null, title: "연구 계획 수립", detail: null, status: "done", result: { subquestions: PLAN3 } },
+        row(1, 0, "done"), row(2, 1, "done"), row(3, 2, "failed", { error: "시간 상한 초과" }),
+      ],
+      params: {},
+      created_at: "2026-09-26T01:00:00Z",
+      started_at: "2026-09-26T01:01:00Z",
+      finished_at: "2026-09-26T01:20:00Z",
+    });
+    const opened = (seq: number, idx: number): ResearchEvent =>
+      ({ kind: "step", seq, step_kind: "search", subq_idx: idx, title: PLAN3[idx]!, status: "running" });
+    const closed = (seq: number, idx: number): ResearchEvent =>
+      ({ kind: "step", seq, step_kind: "search", subq_idx: idx, title: PLAN3[idx]!, status: "done", result: {} });
+    const searched = (idx: number, n: number): ResearchEvent => ({ kind: "search", subq_idx: idx, query: `질의 ${n}`, found: 10, round: n });
+    const judged = (idx: number, n: number, verdict: Verdict): ResearchEvent => ({
+      kind: "critique", subq_idx: idx, verdict, note: "", adopted: 2, parse_failed: false, capped: 0, round: n,
+      next_query: verdict === "insufficient" ? `다음 질의 ${n}` : null, will_recheck: verdict === "insufficient",
+    });
+    const events: ResearchEvent[] = [
+      { kind: "status", status: "queued", stage: "planned" },
+      { kind: "status", status: "running", stage: "planned" },
+      opened(4, 0), searched(0, 1), judged(0, 1, "sufficient"), closed(4, 0),
+      opened(5, 1), searched(1, 1), judged(1, 1, "insufficient"), searched(1, 2), judged(1, 2, "sufficient"), closed(5, 1),
+      opened(6, 2), searched(2, 1), judged(2, 1, "sufficient"), closed(6, 2),
+    ];
+    const views = events.reduce<ResearchView[]>((acc, e) => [...acc, applyResearchEvent(acc[acc.length - 1] ?? failed, e)], []);
+    // 워커가 running 을 알린 뒤 하위질문 0 의 새 행을 열기 전(수록 범위 조회 한 번 사이)에는 이전 시도의 행뿐이라
+    // 1차 시도가 탐색을 막 마친 때와 모양이 같다 — 그 틈은 하위질문만으로 가를 수 없어 새 행이 열린 뒤부터 본다
+    const from = views.findIndex((v) => v.subqs[0]!.seq === 4);
+    expect(from).toBe(2);
+    const fractions = views.slice(from).map((v) =>
+      progressBarView(input({ phase: researchPhase(v), subqs: v.subqs, roundElapsedMs: ROUND_HALF_LIFE_MS }))!.fraction);
+    // 새 행이 막 열린 때는 이번 시도의 하위질문 0 이 다가간 만큼뿐이다(이전 시도의 끝남·실패를 세지 않는다)
+    expect(fractions[0]).toBeCloseTo((((RUNNING_CAP * 0.5) / 4 / 3) * 111) / 202, 10);
+    fractions.slice(1).forEach((f, i) => expect(f).toBeGreaterThanOrEqual(fractions[i]!));
+    expect(fractions[fractions.length - 1]).toBeCloseTo(111 / 202, 10);
   });
 });
 

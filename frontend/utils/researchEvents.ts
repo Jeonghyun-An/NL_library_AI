@@ -209,9 +209,8 @@ export function sectionGapToRecover(view: ResearchView, recovered: string | null
 export function stopPoint(view: ResearchView): StopPoint | null {
   if (view.status !== "failed" && view.status !== "canceled") return null;
   if (view.synth.status !== null || view.stage === "explored") return { kind: "synth" };
-  const since = attemptStart(view.steps);
-  // 행 없이 라이브 search 이벤트로만 도는 하위질문(seq 없음)도 이번 시도의 것이다
-  const running = view.subqs.find((s) => s.status === "running" && (s.seq === null || s.seq >= since));
+  const since = exploreAttemptStart(view.subqs);
+  const running = view.subqs.find((s) => s.status === "running" && !fromEarlierAttempt(s, since));
   if (running) return { kind: "subq", idx: running.idx, started: true, error: null };
   const opened = view.subqs.filter((s): s is OpenedSubq => s.seq !== null && s.seq >= since);
   const last = opened.reduce<OpenedSubq | undefined>((a, s) => (a && a.seq > s.seq ? a : s), undefined);
@@ -227,9 +226,16 @@ export function stopPoint(view: ResearchView): StopPoint | null {
   return next ? { kind: "subq", idx: next.idx, started: false, error: null } : { kind: "synth" };
 }
 
-// 탐색은 시도마다 idx 0 부터 다시 돈다 — 하위질문 0 의 search 행 중 가장 늦은 것이 이번 시도의 시작이다
-function attemptStart(steps: ResearchStepRow[]): number {
-  return latestBySubq(steps, "search").get(0)?.seq ?? Number.NEGATIVE_INFINITY;
+// 탐색은 시도마다 idx 0 부터 다시 돈다 — 하위질문 0 의 seq(그 search 행 중 가장 늦은 것 — rebuild)가 이번 시도의
+// 시작이다. 멈춘 지점(stopPoint)과 진행 막대(researchProgress)가 같은 규칙으로 이번 시도의 행을 가른다
+export function exploreAttemptStart(subqs: readonly SubqView[]): number {
+  return subqs.find((s) => s.idx === 0)?.seq ?? Number.NEGATIVE_INFINITY;
+}
+
+// 이번 시도가 아직 닿지 않아 이전 시도의 행(done·failed 와 그 오류)이 남은 하위질문 — 그 행의 seq 는 이번 시도의 시작보다
+// 작다. 행 없이 라이브 search 이벤트로만 도는 하위질문(seq 없음)은 이번 시도의 것이다
+export function fromEarlierAttempt(sq: Pick<SubqView, "seq">, since: number): boolean {
+  return sq.seq !== null && sq.seq < since;
 }
 
 export function initialResearchView(job: ResearchJob): ResearchView {
