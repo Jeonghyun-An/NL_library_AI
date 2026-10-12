@@ -128,8 +128,7 @@
                   </button>
                 </li>
               </ul>
-              <!-- 5줄을 넘는 딥리서치는 '더 보기'로 이 자리에서 펼친다.
-                   06d: 전용 화면으로 가는 '모두 보기 (N)' 줄은 이 아래에 둔다 — N 은 groups.researchTotal -->
+              <!-- 5줄을 넘는 딥리서치는 '더 보기'로 이 자리에서 펼친다 -->
               <button
                 v-if="researchHiddenCount > 0 || researchExpanded"
                 type="button"
@@ -139,6 +138,7 @@
               >
                 {{ researchExpanded ? "접기" : `더 보기 (${researchHiddenCount})` }}
               </button>
+              <!-- 06d: 전용 화면으로 가는 '모두 보기 (N)' 줄은 이 자리(더 보기 버튼 아래)에 둔다 — N 은 groups.researchTotal -->
             </section>
 
             <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
@@ -238,7 +238,7 @@ import { countLiveResearch, entryTime, formatHistoryTime, groupSidebarHistory } 
 const props = defineProps<{ collapsed?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
 
-// 딥리서치 묶음이 처음 보이는 행 수 — 넘치는 만큼은 '더 보기 (N)' 로 이 자리에서 펼친다(전용 화면은 06d '모두 보기')
+// 딥리서치 묶음이 처음 보이는 행 수 — 넘치는 만큼은 '더 보기 (N)' 로 이 자리에서 펼친다(전용 화면으로 가는 '모두 보기'는 템플릿의 06d 자리 주석)
 const RESEARCH_ROW_LIMIT = 5;
 type ClearGroup = "research" | "recent";
 // 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다

@@ -64,7 +64,7 @@
                       variant="content"
                     />
                   </template>
-                  <span v-if="matchScore" class="skx-tag skx-tag--score"
+                  <span v-if="matchScore !== null" class="skx-tag skx-tag--score"
                     >관련도 {{ matchScore }}%</span
                   >
                   <span
@@ -518,6 +518,7 @@ import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import type { BookInfo } from "~/types/search";
+import { queryScorePct } from "~/utils/relevance";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
@@ -534,21 +535,10 @@ const book = ref<BookInfo | null>(null);
 const pageLoading = ref(true);
 const pageError = ref("");
 
-// 점수 표시는 내림 처리: 99.6%가 100%로 올림 표기되는 것 방지
-const matchScore = computed(() => {
-  const s = route.query.score;
-  return s ? Math.floor(Number(s) * 100) : null;
-});
-
-const titleScore = computed(() => {
-  const s = route.query.title_score;
-  return s !== undefined && s !== "" ? Math.floor(Number(s) * 100) : undefined;
-});
-
-const contentScore = computed(() => {
-  const s = route.query.content_score;
-  return s !== undefined && s !== "" ? Math.floor(Number(s) * 100) : undefined;
-});
+// 점수 표시는 결과 카드와 같은 relevancePct(내림 + 부동소수 보정) 한 규칙이다
+const matchScore = computed(() => queryScorePct(route.query.score));
+const titleScore = computed(() => queryScorePct(route.query.title_score) ?? undefined);
+const contentScore = computed(() => queryScorePct(route.query.content_score) ?? undefined);
 
 const themes = computed(() =>
   parseThemes(book.value?.themes || book.value?.keyword || book.value?.subject),

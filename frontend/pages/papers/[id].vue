@@ -61,7 +61,7 @@
                   <span v-if="paper.grade" class="skx-ptag skx-ptag--kci">
                     {{ paper.grade }}
                   </span>
-                  <span v-if="matchScore" class="skx-ptag skx-ptag--score"
+                  <span v-if="matchScore !== null" class="skx-ptag skx-ptag--score"
                     >관련도 {{ matchScore }}%</span
                   >
                 </div>
@@ -478,6 +478,7 @@ import { DEEP_RESEARCH } from "~/utils/brand";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
 import { paperResearchQuestion, paperResearchUrl } from "~/utils/paperResearch";
+import { queryScorePct } from "~/utils/relevance";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 import { isPlainClick } from "~/utils/restorePosition";
 
@@ -499,10 +500,7 @@ const spot = readReturnSpot(route.query);
 const back = backTarget(source, spot);
 
 // 관련도는 검색 결과에서 온 상세에만 뜻이 있다
-const matchScore = computed(() => {
-  const s = route.query.score;
-  return source.kind === "search" && s ? Math.round(Number(s) * 100) : null;
-});
+const matchScore = computed(() => (source.kind === "search" ? queryScorePct(route.query.score) : null));
 
 // vue-router 는 직전 기록의 경로를 history.state.back 에 둔다. 직전이 출처면 뒤로 가야 그 화면이 브라우저 기록의
 // 상태를 그대로 쓰고 기록도 한 칸 더 쌓이지 않는다. 새 탭으로 여는 클릭(보조키·가운데 버튼)은 링크에 맡긴다

@@ -1,6 +1,6 @@
 <template>
   <!-- 결과 카드 전체가 누르면 상세로 가는 영역이라, 알약·팝오버의 클릭은 카드로 번지지 않게 막는다 -->
-  <span ref="rootRef" class="skx-rel">
+  <span ref="rootRef" class="skx-rel" @pointerdown="onPointerDown">
     <!-- 제목·내용 일치율이 있으면 누르거나 올리거나 초점을 주면 팝오버가 열리는 버튼, 없으면(옛 기록 복원 등) 알약만 -->
     <button
       v-if="rings.length"
@@ -10,9 +10,8 @@
       :aria-describedby="popId"
       @pointerenter="onPointerEnter"
       @pointerleave="onPointerLeave"
-      @pointerdown="pointerDown = true"
-      @focus="onFocus"
-      @blur="close"
+      @focus="send('focus')"
+      @blur="send('blur')"
       @click.stop="onClick"
     >
       관련도 {{ pct }}%
@@ -45,10 +44,12 @@
 </template>
 
 <script setup lang="ts">
+import { INITIAL_POPOVER, popoverReduce, type PopoverEvent } from "~/utils/relevancePopover";
 import { popoverPlacement, relevancePct, relevanceRings } from "~/utils/relevance";
 
 // 결과 카드의 '관련도 N%' 알약 하나. 제목·내용 일치율은 알약을 올리거나(마우스) 초점을 주거나(키보드) 누르면(탭)
-// 뜨는 작은 유리 팝오버에 링 두 개로 보인다. 소장자료·'SKOVIX 추천 1권'·논문 카드가 같이 쓴다
+// 뜨는 작은 유리 팝오버에 링 두 개로 보인다. 소장자료·'SKOVIX 추천 1권'·논문 카드가 같이 쓴다.
+// 열기·닫기 규칙(호버·초점·누름·Esc·바깥 누름이 얽힌 전환)은 utils/relevancePopover.ts 의 리듀서가 정하고, 여기서는 이벤트를 넘긴다
 const props = defineProps<{
   /** 종합 점수(best_score, 0~1) */
   score: number | null | undefined;
@@ -67,12 +68,9 @@ const popId = `skx-rel-${useId()}`;
 const rootRef = ref<HTMLElement | null>(null);
 const popRef = ref<HTMLElement | null>(null);
 
-const open = ref(false);
-// 어떻게 열렸나 — 호버로 열린 건 마우스가 떠나면, 초점으로 열린 건 초점이 떠나면 닫고, 누른 건(고정) 다시 누를 때까지 둔다
-let openedBy: "hover" | "focus" | "click" | null = null;
+const state = ref(INITIAL_POPOVER);
+const open = computed(() => state.value.open);
 let timer: ReturnType<typeof setTimeout> | null = null;
-// 마우스로 누를 때는 초점(focus)이 click 보다 먼저 와서 열었다 닫는 깜박임이 생긴다 — 누르는 중의 초점은 열지 않는다
-const pointerDown = ref(false);
 
 const shiftX = ref(0);
 const above = ref(false);
@@ -82,60 +80,51 @@ function clearTimer() {
   timer = null;
 }
 
-function openNow(by: "hover" | "focus" | "click") {
-  clearTimer();
-  openedBy = by;
-  if (open.value) return;
-  open.value = true;
+function send(event: PopoverEvent) {
+  state.value = popoverReduce(state.value, event);
 }
 
-function close() {
-  clearTimer();
-  openedBy = null;
-  open.value = false;
-  pointerDown.value = false;
+function onPointerDown() {
+  send("pointer-down");
+  // 손을 알약·팝오버 밖에서 떼도(끌어서 벗어남) 누름 상태가 남지 않게 문서에서 한 번 푼다
+  document.addEventListener("pointerup", () => send("pointer-up"), { once: true, capture: true });
 }
 
 function onPointerEnter(e: PointerEvent) {
   // 터치의 pointerenter 는 탭마다 오므로 무시한다 — 터치는 click(탭)으로만 연다
   if (e.pointerType === "touch") return;
   clearTimer();
-  if (open.value) return;
-  timer = setTimeout(() => openNow("hover"), HOVER_OPEN_MS);
+  if (state.value.open) return;
+  timer = setTimeout(() => send("hover-open"), HOVER_OPEN_MS);
 }
 
 function onPointerLeave(e: PointerEvent) {
   if (e.pointerType === "touch") return;
   clearTimer();
-  if (!open.value) return;
-  if (openedBy === "hover") timer = setTimeout(close, HOVER_CLOSE_MS);
-}
-
-function onFocus() {
-  if (pointerDown.value) return;
-  openNow("focus");
+  if (state.value.open) timer = setTimeout(() => send("hover-close"), HOVER_CLOSE_MS);
 }
 
 function onClick() {
-  pointerDown.value = false;
-  // 호버·초점으로 이미 열려 있으면 그 자리에 고정한다. 고정된 걸 다시 누르면 닫는다
-  if (open.value && openedBy === "click") close();
-  else openNow("click");
+  clearTimer();
+  send("click");
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === "Escape" && open.value) {
-    // 초점은 알약에 그대로 둔다 — 다음 Tab 이 자연스럽게 이어지게
-    close();
-    e.stopPropagation();
-  }
+  if (e.key !== "Escape" || !state.value.open) return;
+  // 초점은 알약에 그대로 둔다 — 다음 Tab 이 자연스럽게 이어지게
+  clearTimer();
+  send("escape");
+  e.stopPropagation();
 }
 
 function onOutsidePointerDown(e: PointerEvent) {
-  if (rootRef.value && !rootRef.value.contains(e.target as Node)) close();
+  if (rootRef.value && !rootRef.value.contains(e.target as Node)) {
+    clearTimer();
+    send("outside-pointer-down");
+  }
 }
 
-// 열린 동안만 문서 수준 키·바깥 클릭을 듣는다. 열릴 때 화면 밖으로 안 잘리게 위치를 잰다
+// 열린 동안만 문서 수준 키·바깥 누름을 듣는다. 열릴 때 화면 밖으로 안 잘리게 위치를 잰다
 watch(open, async (isOpen) => {
   if (isOpen) {
     document.addEventListener("keydown", onKeydown, true);
@@ -153,7 +142,7 @@ watch(open, async (isOpen) => {
 function placePopover() {
   const pop = popRef.value;
   const root = rootRef.value;
-  if (!pop || !root || !open.value) return;
+  if (!pop || !root || !state.value.open) return;
   const rect = pop.getBoundingClientRect();
   const anchor = root.getBoundingClientRect();
   const next = popoverPlacement(rect, { top: anchor.top }, { width: window.innerWidth, height: window.innerHeight });

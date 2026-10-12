@@ -9,6 +9,7 @@ import {
   pickTopBook,
   readEffectOf,
   readReasonStream,
+  readSavedKeywords,
   readSavedReason,
 } from "~/utils/bookAiPick";
 
@@ -111,6 +112,25 @@ describe("buildBookAi · readSavedReason — 기록의 AI 영역", () => {
     expect(readSavedReason({ book_id: "B1", reason: "이유" }, "B1")).toBe("이유");
   });
 
+  it("키워드가 있으면 함께 담고(공백 없는 문자열만) 없으면 싣지 않는다", () => {
+    expect(buildBookAi("B1", "이유", [" 세태소설 ", "", "NOVELS"])).toEqual({
+      book_id: "B1",
+      reason: "이유",
+      keywords: ["세태소설", "NOVELS"],
+    });
+    expect(buildBookAi("B1", "이유", [])).toEqual({ book_id: "B1", reason: "이유" });
+  });
+
+  it("저장된 키워드는 1위 도서가 같을 때만 읽고, 없거나 모양이 틀리면 빈 목록", () => {
+    expect(readSavedKeywords({ book_id: "B1", reason: "이유", keywords: ["a", "b"] }, "B1")).toEqual(["a", "b"]);
+    expect(readSavedKeywords({ book_id: "B1", reason: "이유", keywords: ["a"] }, "B2")).toEqual([]);
+    expect(readSavedKeywords({ book_id: "B1", reason: "이유" }, "B1")).toEqual([]);
+    expect(readSavedKeywords({ book_id: "B1", reason: "이유", keywords: "a" }, "B1")).toEqual([]);
+    expect(readSavedKeywords({ book_id: "B1", reason: "이유", keywords: ["a", 3, ""] }, "B1")).toEqual(["a"]);
+    expect(readSavedKeywords({ intro: "x", items: [] }, "B1")).toEqual([]);
+    expect(readSavedKeywords(null, "B1")).toEqual([]);
+  });
+
   it("1위 도서가 달라졌으면(옛 결과와 어긋남) 쓰지 않는다", () => {
     expect(readSavedReason({ book_id: "B1", reason: "이유" }, "B2")).toBeNull();
     expect(readSavedReason({ book_id: "B1", reason: "이유" }, null)).toBeNull();
@@ -181,6 +201,23 @@ describe("readReasonStream — 추천 이유 SSE 읽기", () => {
     const { body } = streamOf([ev({ text: "중간" })]);
     expect(await readReasonStream(body, onText)).toBe(false);
     expect(onText).toHaveBeenCalledWith("중간");
+  });
+
+  it("첫 이벤트 {keywords} 를 onKeywords 로 넘긴다(문자열만)", async () => {
+    const onText = vi.fn();
+    const onKeywords = vi.fn();
+    const { body } = streamOf([ev({ keywords: ["조선후기", " 세태소설 ", 3, ""] }), ev({ text: "이유" }), "data: [DONE]\n\n"]);
+    await readReasonStream(body, onText, onKeywords);
+    expect(onKeywords).toHaveBeenCalledTimes(1);
+    expect(onKeywords).toHaveBeenCalledWith(["조선후기", "세태소설"]);
+    expect(onText).toHaveBeenCalledWith("이유");
+  });
+
+  it("onKeywords 를 안 넘기거나 keywords 가 배열이 아니면 건너뛴다", async () => {
+    const onKeywords = vi.fn();
+    await readReasonStream(streamOf([ev({ keywords: ["a"] }), "data: [DONE]\n\n"]).body, vi.fn());
+    await readReasonStream(streamOf([ev({ keywords: "a" }), ev({ keywords: [] }), "data: [DONE]\n\n"]).body, vi.fn(), onKeywords);
+    expect(onKeywords).not.toHaveBeenCalled();
   });
 
   it("깨진 줄·text 가 아닌 값은 건너뛴다", async () => {

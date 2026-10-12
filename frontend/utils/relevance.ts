@@ -9,12 +9,21 @@ export interface RelevanceRing {
 }
 
 /**
- * 점수(0~1)를 정수 퍼센트로. 내린다 — 99.6% 가 100% 로 올림 표기되는 것을 막는 결과 카드·상세와 같은 규칙.
+ * 점수(0~1)를 정수 퍼센트로. 내린다 — 99.6% 가 100% 로 올림 표기되는 것을 막는다.
+ * 소장자료·논문 결과 카드와 두 상세 화면이 모두 이 함수 하나로 퍼센트를 만든다(화면마다 값이 어긋나지 않게).
  * 0.29×100 처럼 부동소수 오차로 28.999… 가 되는 값이 한 칸 덜 나오지 않게 아주 작은 값을 더한 뒤 내린다
  */
 export function relevancePct(score: unknown): number {
   if (typeof score !== "number" || !Number.isFinite(score)) return 0;
   return Math.max(0, Math.min(100, Math.floor(score * 100 + 1e-9)));
+}
+
+/** 상세 화면 주소의 점수(?score=·title_score=·content_score=) → 퍼센트. 없거나 숫자가 아니면 null(0 점은 0) */
+export function queryScorePct(value: unknown): number | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? relevancePct(n) : null;
 }
 
 function hasScore(v: unknown): v is number {

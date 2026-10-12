@@ -1,6 +1,6 @@
 // frontend/tests/unit/relevance.test.ts
 import { describe, expect, it } from "vitest";
-import { popoverPlacement, relevancePct, relevanceRings } from "~/utils/relevance";
+import { popoverPlacement, queryScorePct, relevancePct, relevanceRings } from "~/utils/relevance";
 
 describe("relevancePct — 점수(0~1)를 정수 퍼센트로", () => {
   it("내림한다 — 99.6% 가 100% 로 올림 표기되지 않게(결과 카드·상세와 같은 규칙)", () => {
@@ -74,5 +74,33 @@ describe("popoverPlacement — 팝오버가 화면 밖으로 나가지 않게", 
 
   it("아래로 넘어도 위에도 자리가 없으면 아래에 둔다", () => {
     expect(popoverPlacement({ left: 50, right: 200, top: 30, bottom: 90 }, { top: 5 }, { width: 400, height: 80 }).above).toBe(false);
+  });
+});
+
+describe("queryScorePct — 상세 화면 주소의 점수(?score= 등)", () => {
+  it("목록 카드와 같은 규칙(내림 + 부동소수 보정)으로 퍼센트를 만든다", () => {
+    expect(queryScorePct("0.736")).toBe(73); // 상세가 Math.round 로 74 를 보이던 값
+    expect(queryScorePct("0.29")).toBe(29); // 보정 없는 Math.floor 로 28 을 보이던 값
+    expect(queryScorePct("0.996")).toBe(99);
+    expect(queryScorePct("1")).toBe(100);
+  });
+
+  it("0 점은 있는 점수다(0) — 없음(null)과 다르다", () => {
+    expect(queryScorePct("0")).toBe(0);
+    expect(queryScorePct("0.0")).toBe(0);
+  });
+
+  it("라우터가 같은 키를 배열로 풀어도 첫 값을 읽는다", () => {
+    expect(queryScorePct(["0.5", "0.9"])).toBe(50);
+  });
+
+  it("없거나 숫자가 아니면 null", () => {
+    expect(queryScorePct(undefined)).toBeNull();
+    expect(queryScorePct(null)).toBeNull();
+    expect(queryScorePct("")).toBeNull();
+    expect(queryScorePct("  ")).toBeNull();
+    expect(queryScorePct("abc")).toBeNull();
+    expect(queryScorePct("NaN")).toBeNull();
+    expect(queryScorePct([])).toBeNull();
   });
 });

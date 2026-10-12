@@ -50,7 +50,7 @@
           <div class="skx-search">
             <div class="skx-search__box">
               <label class="skx-search__field">
-                <span class="skx-sr-only">소장자료 검색어</span>
+                <span class="skx-sr-only">자료 검색어</span>
                 <textarea
                   ref="bookInputRef"
                   class="skx-search__input"
@@ -272,7 +272,7 @@
 
       <template v-else>
         <div class="skx-result-card">
-          <!-- AI 섹션 (도서) — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것(와이어 02-2) -->
+          <!-- AI 섹션 (도서) — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것 -->
           <section v-if="mode === 'book' && topBook" class="skx-ai-section">
             <header class="skx-ai-header">
               <h2 class="skx-ai-header__title">AI 검색 결과</h2>
@@ -319,6 +319,15 @@
                       role="status"
                     >
                       추천 이유를 불러오지 못했어요.
+                      <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
+                    </p>
+                    <p
+                      v-if="reasonStatus === 'interrupted'"
+                      class="skx-pick__text skx-pick__text--muted"
+                      role="status"
+                    >
+                      중간에 끊겼어요 ·
+                      <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
                     </p>
                   </section>
                   <section
@@ -348,8 +357,11 @@
                           :content-score="topBook.content_score"
                         />
                       </div>
+                      <!-- 카드 전체 클릭은 마우스용이다 — 키보드는 제목 버튼으로 상세를 연다 -->
                       <h3 class="skx-book-card__title">
-                        {{ topBook.book_info?.title || topBook.book_id }}
+                        <button type="button" class="skx-pick__title-btn" @click.stop="openDetail(topBook)">
+                          {{ topBook.book_info?.title || topBook.book_id }}
+                        </button>
                       </h3>
                       <div class="skx-book-card__info-row">
                         <template v-for="(part, pi) in topMeta" :key="pi">
@@ -615,6 +627,7 @@ import {
   pickTopBook,
   readEffectOf,
   readReasonStream,
+  readSavedKeywords,
   readSavedReason,
 } from "~/utils/bookAiPick";
 import { readV1Map } from "~/utils/historyStore";
@@ -668,13 +681,14 @@ const keywordChips = ref<string[]>([]);
 
 // ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
 // 1위 도서 한 권과, 그 책이 이 검색어에 왜 맞는지(/books/reason/stream 스트리밍)·읽으면 얻는 것(검색 응답의 read_effect).
-// 옛 AI 컬렉션(/books/curate)을 대신한다. 이유 스트림은 검색·복원·랜딩 복귀·페이지 이탈이 공유하는 묶음 signal 로 끊는다
+// 이유 스트림은 검색·복원·랜딩 복귀·페이지 이탈이 공유하는 묶음 signal 로 끊는다.
+// 상태: idle(아직 없음) · loading(받는 중) · done(끝까지 받음) · error(글 없이 실패) · interrupted(받다가 끊겨 글이 일부만 있음)
 const reasonRaw = ref("");
-const reasonStatus = ref<"idle" | "loading" | "done" | "error">("idle");
+const reasonStatus = ref<"idle" | "loading" | "done" | "error" | "interrupted">("idle");
+let reasonSignal: AbortSignal | null = null;
 // 스트림 첫 글자는 줄바꿈이라 앞뒤 공백을 뗀다
 const reasonText = computed(() => reasonRaw.value.trim());
-// 결과가 뜬 뒤 스트림이 시작되기 전(기록 저장 중)에도 빈 칸 대신 기다리는 중으로 보인다
-const reasonPending = computed(() => reasonStatus.value === "idle" || reasonStatus.value === "loading");
+const reasonPending = computed(() => reasonStatus.value === "loading");
 
 // ── 결과 펼치기/접기 ──────────────────────────────────────
 const bookListExpanded = ref(false);
@@ -911,7 +925,6 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   bookListExpanded.value = false;
   aiExpanded.value = false;
   paperSummaryText.value = "";
-  keywordChips.value = [];
   view.value = "results";
 
   try {
@@ -932,6 +945,8 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       rewrittenQuery.value = data.rewritten_query || query;
     }
     loading.value = false;
+    // 기록 저장을 기다리는 동안에도 빈 칸 대신 '정리하는 중'이 보이게 스트림 시작 전에 미리 받는 중으로 둔다
+    if (isRecommendable(pickTopBook(books.value))) reasonStatus.value = "loading";
 
     // 기록 id 를 먼저 확정해 추천 이유 스트림에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
     const snapshot = slimBookResult(data) ?? undefined;
@@ -987,7 +1002,6 @@ function goLanding() {
   searchError.value = "";
   books.value = [];
   papers.value = [];
-  keywordChips.value = [];
   resetReason();
   selectedItem.value = null;
   pdfOpen.value = false;
@@ -1027,7 +1041,10 @@ async function restoreFromQuery() {
     }
     return;
   }
-  if (h === currentHistoryId.value) return;
+  if (h === currentHistoryId.value) {
+    settleReason();
+    return;
+  }
 
   const signal = beginRun();
   loading.value = false;
@@ -1051,6 +1068,8 @@ async function restoreFromQuery() {
     await handleSearch(retryQuery, book ?? undefined);
     return;
   }
+  // 이 복원이 beginRun 으로 끊은 이유 스트림이 이어받을 화면 없이 끝나는 길 — '정리하는 중'으로 굳지 않게 매듭짓는다
+  settleReason();
   showToast("없는 기록입니다. 목록을 새로 고쳤습니다.");
 }
 
@@ -1066,7 +1085,6 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   rewrittenQuery.value = snap.rewritten_query || entry.title;
   books.value = snap.books as unknown as BookChunkGroup[];
   papers.value = [];
-  keywordChips.value = [];
   resetReason();
   bookListExpanded.value = false;
   aiExpanded.value = false;
@@ -1075,10 +1093,12 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   }
   // 저장된 추천 이유가 있으면 그대로 보이고 다시 받지 않는다. 없으면(끝나기 전에 떠났거나 실패한 기록, 옛 AI 컬렉션
   // {intro, items} 기록) 한 번 다시 받고, 끝나면 새 모양으로 덮어 다음부터는 저장분을 쓴다
-  const saved = readSavedReason(entry.ai, topBook.value?.book_id ?? null);
+  const topId = topBook.value?.book_id ?? null;
+  const saved = readSavedReason(entry.ai, topId);
   if (saved) {
     reasonRaw.value = saved;
     reasonStatus.value = "done";
+    keywordChips.value = readSavedKeywords(entry.ai, topId);
   } else {
     void streamTopReason(entry.id, entry.title, signal);
   }
@@ -1135,21 +1155,39 @@ const topMeta = computed(() => {
 function resetReason() {
   reasonRaw.value = "";
   reasonStatus.value = "idle";
+  keywordChips.value = [];
+}
+
+// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록 토스트 등) 받는 중 표시가 남지 않게 매듭짓는다 —
+// 받은 글이 있으면 끊긴 글, 없으면 실패. 끊기지 않은 스트림은 건드리지 않는다
+function settleReason() {
+  if (reasonStatus.value !== "loading" || !reasonSignal?.aborted) return;
+  reasonStatus.value = reasonText.value ? "interrupted" : "error";
+}
+
+// [다시 시도] — 지금 결과의 1위 도서로 추천 이유를 처음부터 다시 받는다
+function retryTopReason() {
+  const signal = beginRun();
+  void streamTopReason(currentHistoryId.value, resultQuery.value, signal);
 }
 
 // 1위 도서의 추천 이유를 받는다. 기록 id 와 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가
 // 고치는 중일 수 있어, 지금 값을 읽으면 다른 검색어로 만든 이유가 이 기록에 저장된다.
-// signal 이 끊기면(새 검색·복원·랜딩·이탈) 연결째 끊고 화면·기록 어디도 건드리지 않는다. 끝까지 받은 이유만 저장한다
+// signal 이 끊기면(새 검색·복원·랜딩·이탈) 연결째 끊고 화면·기록 어디도 건드리지 않는다.
+// 끝까지 받은 이유만 저장한다 — 받다가 끊기면(interrupted) 받은 글은 보이되 저장하지 않는다
 async function streamTopReason(
-  historyId: string,
+  historyId: string | null,
   query: string,
   signal: AbortSignal,
 ) {
   const book = pickTopBook(books.value);
   if (!book || !isRecommendable(book)) return;
+  reasonSignal = signal;
   reasonRaw.value = "";
+  keywordChips.value = [];
   reasonStatus.value = "loading";
   let complete = false;
+  let keywords: string[] = [];
   try {
     const resp = await fetch(apiUrl("/books/reason/stream"), {
       method: "POST",
@@ -1158,9 +1196,17 @@ async function streamTopReason(
       signal,
     });
     if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
-    complete = await readReasonStream(resp.body, (delta) => {
-      if (!signal.aborted) reasonRaw.value += delta;
-    });
+    complete = await readReasonStream(
+      resp.body,
+      (delta) => {
+        if (!signal.aborted) reasonRaw.value += delta;
+      },
+      (kw) => {
+        if (signal.aborted) return;
+        keywords = kw;
+        keywordChips.value = kw;
+      },
+    );
   } catch {
     /* 실패·중단 — 아래에서 가린다 */
   }
@@ -1170,10 +1216,14 @@ async function streamTopReason(
     reasonStatus.value = "error";
     return;
   }
+  if (!complete) {
+    reasonStatus.value = "interrupted";
+    return;
+  }
   reasonStatus.value = "done";
-  if (complete) {
+  if (historyId) {
     void historyApi
-      .patch(historyId, { ai: buildBookAi(book.book_id, reason) })
+      .patch(historyId, { ai: buildBookAi(book.book_id, reason, keywords) })
       .catch(() => undefined);
   }
 }

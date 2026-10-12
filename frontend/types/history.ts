@@ -43,13 +43,14 @@ export interface PaperSnapshot {
   books: SnapshotItem[];
 }
 
-/** 소장자료 AI 영역 — 1위 도서의 추천 이유(round08, SKOVIX 추천 1권) */
+/** 소장자료 AI 영역 — 1위 도서의 추천 이유(SKOVIX 추천 1권). keywords 는 서버가 이유 스트림 첫 이벤트로 준 도서 키워드 */
 export interface BookAiPick {
   book_id: string;
   reason: string;
+  keywords?: string[];
 }
 
-/** 옛 AI 컬렉션 기록(round08 이전)과 v1 가져오기가 남긴 모양 — 화면은 쓰지 않는다(utils/bookAiPick.readSavedReason) */
+/** 옛 AI 컬렉션 기록과 v1 가져오기가 남긴 모양 — 화면은 쓰지 않는다(utils/bookAiPick.readSavedReason) */
 export interface LegacyBookAi {
   intro: string;
   items: unknown[];
