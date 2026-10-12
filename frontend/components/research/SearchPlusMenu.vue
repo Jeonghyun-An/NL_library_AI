@@ -33,6 +33,7 @@
               <span class="rs-plus__desc">{{ m.description }}</span>
             </span>
           </button>
+          <p class="rs-plus__hint">키보드로는 {{ m.slash }}</p>
         </li>
       </ul>
     </span>

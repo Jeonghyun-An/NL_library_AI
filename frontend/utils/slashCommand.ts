@@ -22,7 +22,7 @@ export const SEARCH_MODES: readonly SearchMode[] = [
   {
     id: "deep-research",
     label: DEEP_RESEARCH,
-    description: "질문을 하위질문으로 나눠 논문을 찾고, 스스로 점검한 뒤 인용이 달린 보고서를 씁니다",
+    description: "여러 논문을 반복 탐색해 근거가 달린 보고서를 만듭니다 · 약 5~7분",
     icon: "/img/ico-ai-related.svg",
     slash: "/deep-research",
     aliases: ["딥리서치", "리서치"],

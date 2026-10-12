@@ -57,7 +57,7 @@
         <ClientOnly>
           <template v-if="loaded">
             <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [+ 연구 시작하기]는 보인다 -->
-            <section class="skx-history__group" aria-labelledby="skx-history-research">
+            <section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
                 <div class="skx-history__head-main">
                   <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
@@ -444,6 +444,13 @@ onBeforeUnmount(() => {
 }
 .skx-history__group .skx-history__list {
   overflow: visible;
+}
+/* DeepResearch 묶음 카드(시안): 흰 5% 유리 — 사이드바가 이미 흐려져 있어 이 카드는 흐림 없이 바탕만 얹는다 */
+.skx-history__group--research {
+  padding: 0.6rem;
+  background: var(--skx-frost-bg-soft);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-frost-hilite);
 }
 .skx-history__head {
   display: flex;

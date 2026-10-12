@@ -176,6 +176,40 @@ describe("홀로그램 배경 — 가독성", () => {
     },
   );
 
+  // 뿌연 유리(frost) 면 — 밑에서부터 겹치는 층(짙은 밑칠 → 흰 반투명 …)을 최악의 합성 위에 얹은 면에서 글자가 읽혀야 한다.
+  // 흐림은 최악을 덜어 주지만 믿지 않는다. 흰 10% 만으로는 이 최악에서 본문색이 2:1 이라 밑칠이 필요하다(토큰 주석)
+  const faces: [string, string[], string[]][] = [
+    // [이름, 층 토큰(아래→위), 이 면에 놓이는 글자색 토큰]
+    ["입력창·전환·예시 카드(--skx-frost-fill)", ["--skx-frost-tint", "--skx-frost-bg"], ["--skx-ink", "--skx-gray-1"]],
+    ["예시 카드 올림(--skx-frost-fill-hover)", ["--skx-frost-tint", "--skx-frost-bg-hover"], ["--skx-ink"]],
+    ["사이드바(--skx-frost-side-bg)", ["--skx-frost-side-bg"], ["--skx-ink", "--skx-gray-1"]],
+    ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-bg"], ["--skx-ink"]],
+    ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-bg-soft"], ["--skx-ink", "--skx-gray-1"]],
+    ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"]],
+  ];
+  const faceCases = faces.flatMap(([name, layers, texts]) =>
+    texts.map((text) => [name, layers, text] as const),
+  );
+
+  it.each(faceCases.map(([name, layers, text]) => ({ name, layers, text })))(
+    "띠가 모두 가장 밝게 겹쳐도 $name 위에서 $text 글자가 4.5:1 이상이다",
+    ({ layers, text }) => {
+      const fg = hexToRgb(rootToken(text));
+      const worst = Math.min(
+        ...composites().map((c) =>
+          contrast(
+            fg,
+            layers.reduce<Rgb>((acc, token) => {
+              const l = rootStop(token);
+              return over(acc, l.rgb, l.a);
+            }, c),
+          ),
+        ),
+      );
+      expect(worst).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
   it("카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 가장 밝은 합성 위에서 3:1 이상이다", () => {
     const worst = Math.min(
       ...composites().map((c) => contrast([255, 255, 255], c)),
