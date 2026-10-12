@@ -201,9 +201,7 @@ textarea {
 .skx-reco-item__score,
 .skx-reco-type,
 .skx-page-num,
-.skx-paper-count__label,
 .skx-ai-expand-bar__label,
-.skx-btn-chat__label,
 .skx-btn-loan,
 .skx-btn-ptalk,
 .skx-btn-pview,
@@ -216,14 +214,12 @@ textarea {
 .skx-meta-role,
 .skx-meta-text,
 .skx-modal__book-meta span,
-.skx-paper-meta-text,
 .skx-pick__label,
 .skx-pick__heading,
 .skx-rcd-modal__author,
 .skx-rcd-modal__author-role,
 .skx-rcd-modal__badge,
 .skx-rcd-modal__meta-text,
-.skx-ai-header__keywords,
 .skx-modal__btn-cancel,
 .skx-modal__btn-confirm,
 .skx-modal__sub,
@@ -239,7 +235,6 @@ textarea {
 .skx-rcd-hero__sub {
   line-height: 1.4;
 }
-.skx-btn-chat,
 .skx-btn-read,
 .skx-btn-pview,
 .skx-btn-ptalk {
@@ -249,7 +244,6 @@ textarea {
   min-height: 2.4rem;
 }
 @media (max-width: 768px) {
-  .skx-btn-chat,
   .skx-btn-read,
   .skx-btn-pview,
   .skx-btn-ptalk {
@@ -265,12 +259,11 @@ h2,
 h3,
 h4,
 .skx-ai-header__title,
-.skx-ai-panel__title-text,
+.skx-aip__title,
 .skx-book-card__title,
 .skx-chat-title,
 .skx-modal__title,
 .skx-modal__book-title,
-.skx-pai__hd-text,
 .skx-rcd-modal__title,
 .skx-rcd-modal__book-title,
 .skx-rcd-select__tit,
@@ -285,8 +278,6 @@ h4,
 .skx-hero,
 .skx-history__title,
 .skx-pai-section__title,
-.skx-pick__title-btn,
-.skx-paper-title,
 .skx-pdetail__title,
 .skx-pdetail__title-en,
 .skx-pcuration__heading,
@@ -372,6 +363,15 @@ h4,
   --skx-frost-blur: blur(22px) saturate(1.4);
   /* 사이드바 바탕(짙은 초록 반투명)·+ 메뉴 바탕(거의 불투명)·메뉴 테두리 */
   --skx-frost-side-bg: rgba(15, 40, 34, 0.3);
+  /* 결과 화면 — 바깥 큰 틀은 유리(사이드바와 같은 짙은 초록 반투명 + 윗선·테두리, 흐림은 키가 큰 면이라 쓰지 않는다), 그 안의 AI 패널은 한 겹 더 가라앉힌 유리,
+     글을 읽는 칸(AI 요약·추천 이유·참고 논문·추천 1권)은 '읽기용 짙은 유리'다 — 흰 필름·반사광·흐림 없이 짙은 초록 반투명으로 가라앉혀 글자가 또렷하다.
+     읽는 칸 안의 글 톤은 본문 거의 흰색(--skx-read-*)으로 .skx-aip 의 읽는 칸 범위에서만 다시 정의한다 */
+  --skx-frame-bg: rgba(15, 40, 34, 0.58);
+  --skx-frost-panel: rgba(8, 22, 19, 0.25);
+  --skx-read-surface: rgba(8, 22, 19, 0.62);
+  --skx-read-ink: #e6ebe9;
+  --skx-read-ink-2: #d5dcda;
+  --skx-read-gray-1: #c3cdca;
   --skx-frost-blur-side: blur(28px) saturate(1.4);
   --skx-frost-side-under: rgba(15, 40, 34, 0.571);
   /* 사이드바 안에서만 쓰는 한 단계 밝은 글 톤(.skx-lnb 가 --skx-ink 등을 이 값으로 다시 정의한다 — 딥리서치 화면·랜딩에는 번지지 않는다) */
@@ -453,6 +453,12 @@ h4,
   --skx-frost-hilite: none;
   --skx-frost-blur: none;
   --skx-frost-side-bg: #ffffff;
+  --skx-frame-bg: #ffffff;
+  --skx-frost-panel: #faf9f6;
+  --skx-read-surface: #ffffff;
+  --skx-read-ink: #1d211f;
+  --skx-read-ink-2: #454545;
+  --skx-read-gray-1: #666666;
   --skx-frost-blur-side: none;
   --skx-frost-side-under: #ffffff;
   --skx-side-ink: #1d211f;
@@ -1367,7 +1373,7 @@ h4,
 .skx-search__box::before,
 .skx-seg::before,
 .skx-rsearch::before,
-.skx-pick::before {
+.skx-rframe::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1670,9 +1676,7 @@ h4,
   .skx-search__box,
   .skx-seg,
   .skx-rsearch,
-  .skx-newchat,
-  .skx-pick,
-  .skx-pick__card {
+  .skx-newchat {
     background: var(--skx-frost-solid);
   }
   .skx-lnb,
@@ -1685,12 +1689,23 @@ h4,
   .skx-seg,
   .skx-chip,
   .skx-rsearch,
-  .skx-newchat,
-  .skx-pick,
-  .skx-pick__card {
+  .skx-newchat {
     background: var(--skx-frost-solid);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+  /* 큰 틀·AI 패널·읽는 칸은 흐림이 없어 투명도만 거둔다 */
+  .skx-rframe {
+    background: var(--skx-white);
+  }
+  .skx-aip {
+    background: var(--skx-frost-solid);
+  }
+  .skx-pai-main,
+  .skx-pai-refs,
+  .skx-pick__main,
+  .skx-pick__book {
+    background: var(--skx-white);
   }
   .skx-lnb,
   .skx-lnb.is-lnb-collapsed {
@@ -1707,7 +1722,6 @@ h4,
   }
 }
 /* [E] 뿌연 유리 대체 */
-
 
 /* [S] 탭 패널 + 논문 필터 */
 .skx-panel {
@@ -2039,20 +2053,21 @@ h4,
 /* [E] 검색결과 페이지 레이아웃 */
 
 /* [S] 결과 검색바 */
+/* 시안(1920 프레임, 1px = 0.05rem): 폭 본문 전체 · 높이 64 · 알약 · 안쪽 여백 오른쪽 12(보내기 40 원)/왼쪽 24 · 질의 18px Medium. 아래 큰 틀과 간격 24 */
 .skx-rsearch {
   display: flex;
   align-items: center;
   gap: 0.8rem;
   width: 100%;
-  height: 4.4rem;
-  padding: 0.4rem 0.8rem 0.4rem 1.6rem;
+  height: 3.2rem;
+  padding: 0 0.6rem 0 1.2rem;
   position: relative;
   z-index: 3;
   background: var(--skx-frost-fill);
   box-shadow: var(--skx-frost-hilite);
   backdrop-filter: var(--skx-frost-blur);
   -webkit-backdrop-filter: var(--skx-frost-blur);
-  border-radius: var(--skx-radius-lg);
+  border-radius: var(--skx-radius-pill);
 }
 .skx-rsearch__input {
   flex: 1;
@@ -2083,20 +2098,7 @@ h4,
 /* [E] 결과 컨텐츠 카드 */
 
 /* [S] AI 검색 결과 섹션 */
-.skx-ai-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-  /* 추천 패널의 두 칸/한 칸 전환을 화면 폭이 아니라 이 구역 폭으로 정한다 — 사이드바가 폭을 먹는 중간 화면에서도 */
-  container-type: inline-size;
-}
-.skx-ai-header {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  width: 100%;
-}
+
 .skx-ai-header__title {
   margin: 0;
   font-size: 1.2rem;
@@ -2104,75 +2106,7 @@ h4,
   color: var(--skx-ink);
   white-space: nowrap;
 }
-.skx-ai-header__keywords {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--skx-gray-1);
-}
-.skx-ai-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  padding: 0.8rem;
-  background: var(--skx-glass-teal);
-  border-radius: 0.8rem;
-}
-.skx-ai-panel__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4rem 0.8rem;
-}
-.skx-ai-panel__top .skx-icon-btn {
-  width: 1.8rem;
-  height: 1.8rem;
-  background: transparent;
-  border-radius: 50%;
-}
-.skx-ai-panel__top .skx-icon-btn:hover {
-  background: none;
-}
-.skx-ai-panel__top .skx-icon-btn img {
-  width: 1.2rem;
-  height: auto;
-  top: 0;
-}
-.skx-fb-btn {
-  transition:
-    background-color 0.15s,
-    opacity 0.15s;
-}
-.skx-fb-btn.is-active {
-  background: var(--skx-border-c1) !important;
-}
-.skx-fb-btn.is-active img {
-  filter: var(--skx-ico-accent-filter);
-}
-.skx-fb-btn.is-inactive {
-  opacity: 0.35;
-}
-.skx-ai-panel__logo-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-ai-panel__logo {
-  width: 1.8rem;
-  height: 1.8rem;
-  display: block;
-  flex-shrink: 0;
-  object-fit: contain;
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.1s;
-}
-.skx-ai-panel__title-text {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.28s;
-}
+
 @keyframes skx-pop-up {
   0% {
     opacity: 0;
@@ -2191,12 +2125,10 @@ h4,
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .skx-ai-panel__logo,
-  .skx-ai-panel__title-text,
+  .skx-aip__logo,
+  .skx-aip__title,
   .skx-rcd-ai__logo,
-  .skx-rcd-ai__label,
-  .skx-pai__logo,
-  .skx-pai__hd-text {
+  .skx-rcd-ai__label {
     animation: none;
   }
 }
@@ -2309,6 +2241,394 @@ h4,
 }
 /* [E] AI 검색 결과 섹션 */
 
+/* [S] 검색 결과 공통 틀 — 소장자료·논문 결과가 같이 쓴다(시안: 큰 틀 안에 AI 패널 → 목록 머리 → 결과 카드).
+   큰 틀은 유리(사이드바와 같은 짙은 초록 반투명), 그 안의 AI 패널은 한 겹 가라앉은 유리, 글을 읽는 칸은 읽기용 짙은 유리 */
+.skx-rframe {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  padding: 1.2rem;
+  background: var(--skx-frame-bg);
+  box-shadow: var(--skx-frost-hilite);
+  /* 모바일은 html 글자 크기가 줄어(0.9rem) rem 반경이 작아진다 — 시안의 24px 를 그대로 둔다 */
+  border-radius: 24px;
+}
+@media (max-width: 768px) {
+  .skx-rframe {
+    gap: 1.2rem;
+    padding: 0.8rem;
+    border-radius: 16px;
+  }
+}
+.skx-rlist {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* AI 패널 — 머리(로고 + 제목 | 오른쪽 DeepRead 안내) 아래 왼쪽 글 : 오른쪽 = 2 : 1. 칸 수 전환은 화면 폭이 아니라 이 패널 폭으로 정한다 */
+.skx-aip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  background: var(--skx-frost-panel);
+  border-radius: 16px;
+  container-type: inline-size;
+}
+.skx-aip__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  padding: 0.4rem 0.8rem;
+}
+.skx-aip__logo {
+  width: 1.65rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  margin-right: -0.4rem;
+  animation: skx-pop-up 0.6s ease-out both;
+  animation-delay: 0.1s;
+}
+.skx-aip__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--skx-ink-strong);
+  animation: skx-pop-up 0.6s ease-out both;
+  animation-delay: 0.28s;
+}
+.skx-aip__hint {
+  margin: 0 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--skx-ink);
+  text-align: right;
+}
+.skx-aip__hint strong {
+  font-weight: 700;
+  color: var(--skx-accent);
+}
+.skx-aip__body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: stretch;
+}
+.skx-aip__notice {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.4rem 0.8rem 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--skx-gray-1);
+}
+@container (max-width: 42rem) {
+  .skx-aip__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .skx-aip {
+    padding: 0.6rem;
+  }
+  .skx-aip__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .skx-aip__hint {
+    margin-left: 0;
+    flex-basis: 100%;
+    text-align: left;
+  }
+}
+
+/* 읽는 칸 — AI 요약·추천 이유(왼쪽)·참고 논문 목록·추천 1권(오른쪽). 읽기용 짙은 유리(--skx-read-surface)이고 안의 글은 본문 거의 흰색이다.
+   글 톤은 이 칸 범위에서만 다시 정의한다(밖으로 번지지 않는다) */
+.skx-pai-main,
+.skx-pai-refs,
+.skx-pick__main,
+.skx-pick__book {
+  position: relative;
+  min-width: 0;
+  background: var(--skx-read-surface);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 0.6rem;
+  --skx-ink: var(--skx-read-ink);
+  --skx-ink-2: var(--skx-read-ink-2);
+  --skx-gray-1: var(--skx-read-gray-1);
+}
+.skx-pick__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 1.2rem;
+}
+.skx-pick__book {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem;
+}
+/* [E] 검색 결과 공통 틀 */
+
+/* [S] 결과 카드(ResultCard) — 소장자료 목록·논문 목록·추천 1권이 같은 해부도.
+   시안(1px = 0.05rem): 표지 160×168 r8 · 가운데(칩 줄 → 제목 24px → 저자 → 서지 줄) · 오른쪽 버튼 열 168(위: 원문 보기 108×50 + 인용 50×50 / 아래: DeepRead 168×48),
+   카드 아래 옅은 구분선·카드 사이 24 */
+.skx-rc {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) 8.4rem;
+  grid-template-areas: "thumb main actions";
+  gap: 0.8rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--skx-line);
+  cursor: pointer;
+}
+.skx-rc__thumb {
+  grid-area: thumb;
+  position: relative;
+  width: 8rem;
+  height: 8.4rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+.skx-rc__thumb > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.skx-rc .skx-rc__thumb .book-cover {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  background: transparent;
+}
+.skx-rc .skx-rc__thumb .cover-img {
+  object-fit: contain;
+}
+.skx-rc__badge {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  padding: 0 0.4rem;
+  border-radius: var(--skx-radius-pill);
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.skx-rc__main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.skx-rc__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 분류(KDC) 칩 — 키워드 칩(청록 면 + #)·관련도 알약(면)과 달리 테두리만 있는 옅은 칩 */
+.skx-rc__kdc {
+  display: inline-flex;
+  align-items: center;
+  height: 1.3rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--skx-frost-line);
+  border-radius: var(--skx-radius-pill);
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--skx-gray-1);
+  white-space: nowrap;
+}
+.skx-rc__title {
+  display: -webkit-box;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--skx-ink-strong);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로(누름은 카드 전체로 번져 열린다) */
+.skx-rc__title-btn {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.skx-rc__title-btn:hover {
+  text-decoration: underline;
+}
+.skx-rc__title-btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
+}
+.skx-rc__author {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--skx-ink);
+}
+.skx-rc__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.skx-rc__meta-text {
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+}
+.skx-rc__arrow {
+  width: 0.8rem;
+  height: 0.8rem;
+  display: block;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+.skx-rc__actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  width: 8.4rem;
+  cursor: default;
+}
+.skx-rc__row {
+  display: flex;
+  gap: 0.4rem;
+}
+.skx-rc .skx-btn-pview {
+  flex: 1;
+  min-height: 2.5rem;
+  background: var(--skx-frost-bg);
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+}
+.skx-rc .skx-btn-pview:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.skx-rc .skx-btn-pbmark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.4rem;
+}
+.skx-rc .skx-btn-ptalk {
+  min-height: 2.4rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+}
+/* 좁은 칸(추천 패널 오른쪽)과 휴대폰·태블릿 — 표지 옆에 글, 버튼 열은 아래 한 줄 */
+.skx-rc--compact {
+  grid-template-columns: 6rem minmax(0, 1fr);
+  grid-template-areas:
+    "thumb main"
+    "actions actions";
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.skx-rc--compact .skx-rc__thumb {
+  width: 6rem;
+  height: 6.8rem;
+}
+.skx-rc--compact .skx-rc__title {
+  font-size: 1rem;
+}
+.skx-rc--compact .skx-rc__actions {
+  flex-direction: row;
+  width: 100%;
+}
+.skx-rc--compact .skx-btn-ptalk {
+  order: -1;
+  flex: 1;
+  width: auto;
+}
+.skx-rc--compact .skx-rc__row {
+  flex: 1;
+}
+@media (max-width: 768px) {
+  .skx-rc {
+    grid-template-columns: 5.6rem minmax(0, 1fr);
+    grid-template-areas:
+      "thumb main"
+      "actions actions";
+  }
+  .skx-rc__thumb {
+    width: 5.6rem;
+    height: 6.2rem;
+  }
+  .skx-rc__title {
+    font-size: 1.1rem;
+  }
+  .skx-rc__actions {
+    flex-direction: row;
+    width: 100%;
+  }
+  .skx-rc .skx-btn-ptalk {
+    order: -1;
+    flex: 1;
+    width: auto;
+  }
+  .skx-rc__row {
+    flex: 1;
+  }
+}
+/* [E] 결과 카드 */
+
+/* [S] 결과 목록 머리(ResultListHead) — 왼쪽 '총 N 건'(숫자만 포인트색), 오른쪽 정렬·개수 */
+.skx-rhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+}
+.skx-rhead__count {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--skx-ink);
+}
+.skx-rhead__count strong {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.skx-rhead__right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+}
+/* [E] 결과 목록 머리 */
+
+
 /* [S] 길어질 수 있는 AI 글 패널(ClampedPanel) */
 /* collapsedRem 은 보이는 글 높이다. 넘칠 때만(.is-clamped) 그 영역의 아래 3rem 이 완전히 투명해질 때까지 흐려지고,
    [더보기]/[접기] 는 그 아래 따로 놓인 띠(.skx-clamp__foot)에 있다 — 글이 버튼 뒤로 비치지 않는다.
@@ -2375,24 +2695,9 @@ h4,
 
 /* [S] SKOVIX 추천 1권 — 도서 AI 영역. 왼쪽: 왜 이 책인가·이 책에서 얻을 수 있는 것 / 오른쪽: 1위 도서 카드.
    임시 비주얼이다 — 디자이너 Figma 가 나오면 이 구간만 고친다 */
-.skx-pick {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
-  gap: 1.2rem;
-  padding: 1.2rem;
-  position: relative;
-  background: var(--skx-frost-bg);
-  box-shadow: var(--skx-frost-hilite);
-  /* 모바일은 html 글자 크기가 줄어(0.9rem) rem 반경이 작아진다 — 시안의 16px 를 그대로 둔다 */
-  border-radius: 16px;
-}
+
 /* 1위가 추천할 만큼 맞지 않을 때 — 안내 한 줄만 */
-.skx-pick--notice {
-  grid-template-columns: minmax(0, 1fr);
-}
-.skx-pick__main {
-  min-width: 0;
-}
+
 .skx-pick__body {
   display: flex;
   flex-direction: column;
@@ -2425,51 +2730,15 @@ h4,
 .skx-pick__text--muted {
   color: var(--skx-gray-1);
 }
-.skx-pick__book {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  min-width: 0;
-}
+
 .skx-pick__label {
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--skx-accent);
 }
-.skx-pick__card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  padding: 0.8rem;
-  background: var(--skx-frost-bg);
-  border: 1px solid var(--skx-frost-line);
-  border-radius: var(--skx-radius-md);
-  cursor: pointer;
-}
-.skx-pick__card-head {
-  display: flex;
-  gap: 0.8rem;
-  min-width: 0;
-}
+
 /* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로 */
-.skx-pick__title-btn {
-  display: inline;
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.skx-pick__title-btn:hover {
-  text-decoration: underline;
-}
-.skx-pick__title-btn:focus-visible {
-  outline: 2px solid var(--skx-accent);
-  outline-offset: 2px;
-  border-radius: var(--skx-radius-sm);
-}
+
 /* [다시 시도] — 안내 글 끝의 글자 버튼 */
 .skx-pick__retry {
   padding: 0;
@@ -2486,35 +2755,7 @@ h4,
   outline-offset: 2px;
   border-radius: var(--skx-radius-sm);
 }
-.skx-pick__card .skx-book-card__thumb {
-  width: 6rem;
-  height: 6.8rem;
-  align-self: flex-start;
-}
-.skx-pick__card .skx-book-card__thumb img {
-  width: 4.8rem;
-  height: 5.4rem;
-}
-.skx-pick__card .skx-book-card__actions {
-  flex-wrap: wrap;
-  margin-top: 0;
-}
-.skx-pick__card .skx-btn-chat,
-.skx-pick__card .skx-btn-read {
-  flex: 1;
-  width: auto;
-}
-@container (max-width: 38rem) {
-  .skx-pick {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-@media (max-width: 768px) {
-  .skx-pick {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 0.8rem;
-  }
-}
+
 /* [E] SKOVIX 추천 1권 */
 
 /* [S] 도서 결과 목록 */
@@ -2529,10 +2770,7 @@ h4,
   padding-bottom: 1.2rem;
   border-bottom: 1px solid var(--skx-line);
 }
-.skx-book-list .skx-book-card:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
+
 .skx-book-card__thumb {
   display: flex;
   align-items: center;
@@ -2691,33 +2929,7 @@ h4,
   align-items: center;
   margin-top: 0.4rem;
 }
-.skx-btn-chat {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  width: 8rem;
-  padding: 0.6rem 0.4rem;
-  background: var(--skx-primary);
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: filter 0.15s;
-}
-.skx-btn-chat:hover {
-  filter: brightness(1.08);
-}
-.skx-btn-chat img {
-  width: 0.7rem;
-  height: 0.7rem;
-  display: block;
-  filter: var(--skx-ico-on-accent-filter);
-}
-.skx-btn-chat__label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-white);
-}
+
 .skx-btn-loan {
   display: inline-flex;
   align-items: center;
@@ -2797,12 +3009,7 @@ h4,
 .skx-book-expand[aria-expanded="true"] .skx-book-expand__arrow {
   transform: rotate(180deg);
 }
-.skx-book-card--hidden {
-  display: none;
-}
-.skx-book-card--hidden.is-visible {
-  display: flex;
-}
+
 /* [E] 도서 결과 목록 */
 
 /* [S] 검색결과 상세 페이지 */
@@ -4372,48 +4579,8 @@ h4,
   height: 1rem;
   display: block;
 }
-.skx-pai {
-  background: var(--skx-glass-teal);
-  border-radius: var(--skx-radius-lg);
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-pai__header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-}
-.skx-pai__logo {
-  width: 1.65rem;
-  height: 1.6rem;
-  display: block;
-  flex-shrink: 0;
-  object-fit: contain;
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.1s;
-}
-.skx-pai__hd-text {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.28s;
-}
-.skx-pai__grid {
-  display: grid;
-  grid-template-columns: 1fr 24rem;
-  gap: 0.8rem;
-  /* 참고 목록(.skx-pai-refs)은 이 칸에 absolute 로 채워진다 — 왼쪽 글이 짧아도(분석 중 한 줄·짧은 요약) 참고 논문 5건이 읽히는
-     높이(접힌 평소 높이와 같다) */
-  min-height: 22rem;
-}
+
 .skx-pai-main {
-  background: var(--skx-frost-bg);
-  border-radius: 0.6rem;
-  position: relative;
   overflow: hidden;
 }
 .skx-pai-main__scroll {
@@ -4444,8 +4611,8 @@ h4,
   margin: 0.7rem 0 0.25rem;
 }
 .skx-pai-main__scroll p {
-  font-size: 0.88rem;
-  line-height: 1.65;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--skx-ink);
   margin: 0 0 0.4rem;
 }
@@ -4462,8 +4629,8 @@ h4,
   padding: 0;
 }
 .skx-pai-main__scroll li {
-  font-size: 0.88rem;
-  line-height: 1.65;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--skx-ink);
   margin-bottom: 0.2rem;
 }
@@ -4499,42 +4666,15 @@ h4,
   margin: 0;
 }
 .skx-pai-refs {
-  background: var(--skx-frost-bg);
-  border-radius: 0.6rem;
-  position: relative;
+  /* 목록(.skx-pai-refs__scroll)은 이 칸에 absolute 로 채워진다 — 왼쪽 글이 짧아도(분석 중 한 줄·짧은 요약) 참고 논문 5건이 읽히는
+     높이(접힌 평소 높이와 같다) */
+  min-height: 22rem;
   overflow: hidden;
 }
-.skx-pai-refs::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1.2rem;
-  background: linear-gradient(
-    to bottom,
-    var(--skx-frost-over),
-    transparent
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-.skx-pai-refs::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2rem;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--skx-frost-over)
-  );
-  pointer-events: none;
-  z-index: 1;
-}
+
 .skx-pai-refs__scroll {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1.2rem, var(--skx-ink-strong) calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1.2rem, var(--skx-ink-strong) calc(100% - 2rem), transparent);
   position: absolute;
   top: 0;
   left: 0;
@@ -4567,7 +4707,7 @@ h4,
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
-  background: var(--skx-glass-teal);
+  background: var(--skx-frost-bg-soft);
   border-radius: 0.4rem;
   font-size: 1rem;
   font-weight: 700;
@@ -4599,33 +4739,8 @@ h4,
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-  margin-top: 0.8rem;
 }
-.skx-paper-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-paper-count {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-.skx-paper-count__label {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-}
-.skx-paper-count__num {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--skx-primary);
-  line-height: 1;
-}
-.skx-paper-head__right {
-  display: flex;
-  align-items: center;
-}
+
 .skx-paper-sorts {
   display: flex;
   align-items: center;
@@ -4637,15 +4752,15 @@ h4,
   gap: 0.3rem;
   background: none;
   border: none;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 400;
-  color: var(--skx-gray-1);
+  color: var(--skx-ink);
   cursor: pointer;
   padding: 0.2rem 0;
-  line-height: normal;
+  line-height: 1.4;
 }
 .skx-paper-sort.is-active {
-  color: var(--skx-ink);
+  color: var(--skx-accent);
   font-weight: 500;
 }
 .skx-paper-sort img {
@@ -4656,22 +4771,22 @@ h4,
 }
 .skx-paper-perpage {
   position: relative;
-  margin-left: 1.2rem;
 }
 .skx-paper-perpage__btn {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.4rem 0.6rem;
-  background: none;
-  border: 1px solid var(--skx-line);
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
+  height: 1.65rem;
+  padding: 0 0.6rem;
+  background: var(--skx-frost-panel);
+  border: none;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
   font-weight: 400;
   color: var(--skx-ink);
   cursor: pointer;
   white-space: nowrap;
-  line-height: normal;
+  line-height: 1.4;
 }
 .skx-paper-perpage__btn img {
   width: 0.8rem;
@@ -4727,42 +4842,7 @@ h4,
   display: flex;
   flex-direction: column;
 }
-.skx-paper-item {
-  display: flex;
-  gap: 0.8rem;
-  align-items: flex-start;
-  padding: 1.2rem 0;
-  border-bottom: 1px solid var(--skx-line);
-}
-.skx-paper-item:first-child {
-  padding-top: 0;
-}
-.skx-paper-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-.skx-paper-item__left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-paper-item__right {
-  flex-shrink: 0;
-  width: 8.4rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-self: stretch;
-  gap: 0.4rem;
-}
-.skx-paper-tags {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  height: 2rem;
-}
+
 .skx-ptag {
   display: inline-flex;
   align-items: center;
@@ -4796,45 +4876,7 @@ h4,
   background: var(--skx-border-c1);
   color: var(--skx-ink);
 }
-.skx-paper-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  line-height: normal;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.skx-paper-author {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  line-height: normal;
-}
-.skx-paper-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.skx-paper-meta-text {
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-  white-space: nowrap;
-}
-.skx-paper-meta-arr {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-  flex-shrink: 0;
-  opacity: 0.4;
-}
-.skx-paper-item__btn-row {
-  display: flex;
-  gap: 0.4rem;
-}
+
 .skx-btn-pview {
   flex: 1;
   display: flex;
@@ -6031,7 +6073,6 @@ h4,
 .skx-footer__copy:hover .skx-footer__name-full {
   opacity: 1;
 }
-
 
 /* ── AI 생성 표지 코멘트 ──────────────── */
 .skx-cover-ai-note {

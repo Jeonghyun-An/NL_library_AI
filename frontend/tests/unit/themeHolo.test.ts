@@ -210,6 +210,11 @@ describe("홀로그램 배경 — 가독성", () => {
   const SIDE_FACE = ["--skx-frost-side-bg"];
   const CHIP_FACE = ["--skx-chip-tint", "--skx-chip-milk"];
   const SEG_FACE = ["--skx-frost-tint", "--skx-frost-bg", "--skx-frost-reflect"];
+  // 결과 화면: 큰 틀(--skx-frame-bg) → AI 패널(--skx-frost-panel) → 읽는 칸(--skx-read-surface). 틀 위의 목록 글은 틀만, 읽는 칸의 글은 세 겹 위에 얹힌다.
+  // 읽는 칸 안의 글 톤은 .skx-pai-main 등이 --skx-ink 등을 --skx-read-* 로 다시 정의한 값이다
+  const FRAME_FACE = ["--skx-frame-bg"];
+  const READ_FACE = ["--skx-frame-bg", "--skx-frost-panel", "--skx-read-surface"];
+  const READ_TEXTS = ["--skx-read-ink", "--skx-read-ink-2", "--skx-read-gray-1"];
   // 사이드바 글 톤은 .skx-lnb 안에서 --skx-ink 등을 --skx-side-* 로 다시 정의한 값이다
   const SIDE_TEXTS = ["--skx-side-ink", "--skx-side-gray-1", "--skx-side-teal-ink", "--skx-side-gray-2"];
   const faces: [string, string[], string[], boolean][] = [
@@ -220,6 +225,8 @@ describe("홀로그램 배경 — 가독성", () => {
     ["사이드바(--skx-frost-side-bg)", SIDE_FACE, SIDE_TEXTS, true],
     ["사이드바 [새 검색]", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg"], ["--skx-side-ink"], true],
     ["사이드바 DeepResearch 묶음 카드", ["--skx-frost-side-bg", "--skx-frost-side-under", "--skx-frost-bg-soft"], SIDE_TEXTS, true],
+    ["결과 큰 틀(--skx-frame-bg)", FRAME_FACE, ["--skx-ink", "--skx-gray-1"], false],
+    ["결과 읽는 칸(--skx-read-surface)", READ_FACE, READ_TEXTS, false],
     ["+ 메뉴(--skx-frost-menu-bg)", ["--skx-frost-menu-bg"], ["--skx-ink", "--skx-gray-1"], false],
   ];
   const faceCases = faces.flatMap(([name, layers, texts, veil]) =>

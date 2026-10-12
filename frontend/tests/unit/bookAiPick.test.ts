@@ -6,6 +6,7 @@ import {
   buildBookAi,
   buildReasonBody,
   isRecommendable,
+  listWithoutPick,
   pickTopBook,
   readEffectOf,
   readReasonStream,
@@ -225,5 +226,37 @@ describe("readReasonStream — 추천 이유 SSE 읽기", () => {
     const { body } = streamOf(["data: {broken\n\n", ev({ text: 3 }), ev({ text: "" }), ev({ text: "정상" }), "data: [DONE]\n\n"]);
     expect(await readReasonStream(body, onText)).toBe(true);
     expect(onText.mock.calls.map((c) => c[0])).toEqual(["정상"]);
+  });
+});
+
+describe("listWithoutPick — 추천 1권을 뺀 결과 목록", () => {
+  const list = [book("A"), book("B"), book("C")];
+
+  it("추천을 내세우면 그 책을 목록에서 뺀다(순서는 그대로)", () => {
+    expect(listWithoutPick(list, list[0]!, true).map((b) => b.book_id)).toEqual(["B", "C"]);
+    expect(listWithoutPick(list, list[1]!, true).map((b) => b.book_id)).toEqual(["A", "C"]);
+  });
+
+  it("추천을 내세우지 않으면(안내만 둘 때) 모두 남긴다", () => {
+    expect(listWithoutPick(list, list[0]!, false).map((b) => b.book_id)).toEqual(["A", "B", "C"]);
+  });
+
+  it("1위 도서가 없으면 모두 남긴다", () => {
+    expect(listWithoutPick(list, null, true)).toHaveLength(3);
+  });
+
+  it("책이 하나뿐인데 추천으로 내세우면 목록은 빈다", () => {
+    expect(listWithoutPick([book("A")], book("A"), true)).toEqual([]);
+  });
+
+  it("원본 배열을 바꾸지 않고 새 배열을 준다", () => {
+    const out = listWithoutPick(list, null, false);
+    expect(out).not.toBe(list);
+    expect(list).toHaveLength(3);
+  });
+
+  it("목록이 아니면 빈 배열", () => {
+    expect(listWithoutPick(null, null, true)).toEqual([]);
+    expect(listWithoutPick(undefined, null, false)).toEqual([]);
   });
 });

@@ -40,6 +40,20 @@ export function isRecommendable(book: { best_score?: unknown } | null | undefine
   return typeof score === "number" && score >= MIN_PICK_SCORE;
 }
 
+/**
+ * 결과 목록에 보일 도서. 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 이미 있으므로 목록에서 뺀다(같은 책이 두 번 나오지 않게).
+ * 추천을 내세우지 않을 때(안내만 둘 때)는 모두 남긴다 — 목록이 유일한 곳이다. 순서는 검색이 준 그대로
+ */
+export function listWithoutPick<T extends BookLike>(
+  books: readonly T[] | null | undefined,
+  top: T | null,
+  recommended: boolean,
+): T[] {
+  if (!Array.isArray(books)) return [];
+  if (!recommended || !top) return [...books];
+  return books.filter((b) => b.book_id !== top.book_id);
+}
+
 /** '이 책에서 얻을 수 있는 것' — 검색 응답의 book_info.read_effect. 비면 빈 문자열(화면이 블록을 숨긴다) */
 export function readEffectOf(book: BookLike | null | undefined): string {
   const v = book?.book_info?.read_effect;

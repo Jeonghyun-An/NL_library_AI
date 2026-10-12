@@ -255,324 +255,127 @@
 
       <div
         v-if="loading"
-        class="skx-result-card"
+        class="skx-rframe"
         style="padding: 40px; text-align: center"
       >
         <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
-        <p style="margin-top: 12px">
-          AI가 {{ mode === "book" ? "도서" : "논문" }}를 검색 중입니다...
-        </p>
+        <p style="margin-top: 12px">AI가 도서를 검색 중입니다...</p>
       </div>
 
       <div
         v-else-if="searchError"
-        class="skx-result-card"
+        class="skx-rframe"
         style="padding: 20px; color: #c00"
       >
         {{ searchError }}
       </div>
 
-      <template v-else>
-        <div class="skx-result-card">
-          <!-- AI 섹션 (도서) — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것 -->
-          <section v-if="mode === 'book' && topBook" class="skx-ai-section">
-            <header class="skx-ai-header">
-              <h2 class="skx-ai-header__title">AI 검색 결과</h2>
-              <p v-if="keywordChips.length" class="skx-ai-header__keywords">
-                키워드: {{ keywordChips.join(", ") }}
-              </p>
-            </header>
-            <div v-if="topRecommended" class="skx-pick">
-              <!-- 왼쪽 글은 일정 높이(16rem)까지만 보이고 넘치면 아래가 흐려지며 [더보기]/[접기] — 스트리밍 중에도 같다 -->
-              <ClampedPanel
-                v-model:expanded="aiExpanded"
-                class="skx-pick__main"
-                :collapsed-rem="16"
-                scroll-anchor=".skx-ai-section"
-              >
-                <div class="skx-pick__body">
-                  <section
-                    class="skx-pick__block"
-                    aria-labelledby="skx-pick-why"
-                    :aria-busy="reasonPending"
-                  >
-                    <h3 id="skx-pick-why" class="skx-pick__heading">
-                      <span class="skx-ai-dot" aria-hidden="true"></span>
-                      왜 이 책인가
-                    </h3>
-                    <p v-if="reasonText" class="skx-pick__text">
-                      {{ reasonText
-                      }}<span
-                        v-if="reasonPending"
-                        class="skx-ai-answer__cursor"
-                        aria-hidden="true"
-                      ></span>
-                    </p>
-                    <p
-                      v-else-if="reasonPending"
-                      class="skx-pick__text skx-pick__text--muted"
-                      role="status"
-                    >
-                      AI 사서가 추천 이유를 정리하고 있어요…
-                    </p>
-                    <p
-                      v-else-if="reasonStatus === 'error'"
-                      class="skx-pick__text skx-pick__text--muted"
-                      role="status"
-                    >
-                      추천 이유를 불러오지 못했어요.
-                      <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
-                    </p>
-                    <p
-                      v-if="reasonStatus === 'interrupted'"
-                      class="skx-pick__text skx-pick__text--muted"
-                      role="status"
-                    >
-                      중간에 끊겼어요 ·
-                      <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
-                    </p>
-                  </section>
-                  <section
-                    v-if="topReadEffect"
-                    class="skx-pick__block"
-                    aria-labelledby="skx-pick-effect"
-                  >
-                    <h3 id="skx-pick-effect" class="skx-pick__heading">
-                      이 책에서 얻을 수 있는 것
-                    </h3>
-                    <p class="skx-pick__text">{{ topReadEffect }}</p>
-                  </section>
-                </div>
-              </ClampedPanel>
-              <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
-                <span class="skx-pick__label">SKOVIX 추천 1권</span>
-                <article class="skx-pick__card" @click="openDetail(topBook)">
-                  <div class="skx-pick__card-head">
-                    <div class="skx-book-card__thumb">
-                      <BookCover :book-id="topBook.book_id" />
-                    </div>
-                    <div class="skx-book-card__body">
-                      <div class="skx-book-card__tags">
-                        <RelevanceBadge
-                          :score="topBook.best_score"
-                          :title-score="topBook.title_score"
-                          :content-score="topBook.content_score"
-                        />
-                      </div>
-                      <!-- 카드 전체 클릭은 마우스용이다 — 키보드는 제목 버튼으로 상세를 연다 -->
-                      <h3 class="skx-book-card__title">
-                        <button type="button" class="skx-pick__title-btn" @click.stop="openDetail(topBook)">
-                          {{ topBook.book_info?.title || topBook.book_id }}
-                        </button>
-                      </h3>
-                      <div class="skx-book-card__info-row">
-                        <template v-for="(part, pi) in topMeta" :key="pi">
-                          <span v-if="pi > 0" class="skx-dot"></span>
-                          <span class="skx-meta-text">{{ part }}</span>
-                        </template>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="skx-book-card__actions" @click.stop>
-                    <button
-                      type="button"
-                      class="skx-btn-chat"
-                      @click="openDetailWithChat(topBook)"
-                    >
-                      <img src="/img/ico-chat.svg" alt="" />
-                      <span class="skx-btn-chat__label">DeepRead</span>
-                    </button>
-                    <button
-                      type="button"
-                      class="skx-btn-read"
-                      @click="viewPdf(topBook)"
-                    >
-                      원문 보기
-                    </button>
-                  </div>
-                </article>
-              </aside>
-            </div>
-            <!-- 1위 도서도 질문과 거리가 멀면 추천하지 않고 목록만 안내한다(추천 이유도 부르지 않는다) -->
-            <div v-else class="skx-pick skx-pick--notice">
-              <p class="skx-pick__text skx-pick__text--muted" role="status">
-                질문과 딱 맞는 자료를 찾지 못했어요 — 아래 목록을 확인해 주세요.
-              </p>
-            </div>
-            <!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 — 그때까지 DOM 을 만들지 않는다 -->
-          </section>
-
-          <!-- AI 섹션 (논문) -->
-          <section
-            v-if="mode === 'paper' && (paperSummaryText || paperSummaryLoading)"
-            class="skx-ai-section"
-          >
-            <header class="skx-ai-header">
-              <h2 class="skx-ai-header__title">AI 검색 결과</h2>
-            </header>
-            <div class="skx-ai-panel">
-              <div class="skx-ai-panel__top">
-                <div class="skx-ai-panel__logo-row">
-                  <img
-                    class="skx-ai-panel__logo"
-                    :src="paperSummaryLoading ? '/ic_ing.gif' : '/ic_done.png'"
-                    alt="SKOVIX AI"
-                  />
-                  <span class="skx-ai-panel__title-text">AI 핵심 요약</span>
-                  <span v-if="paperSummaryLoading" class="skx-ai-panel__loading"
-                    >●</span
-                  >
-                </div>
-              </div>
-              <div :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']">
-                <div class="skx-ai-answer">
-                  <div v-html="renderedPaperSummary" />
-                </div>
-                <button
-                  type="button"
-                  class="skx-ai-expand-bar"
-                  :aria-expanded="aiExpanded"
-                  @click="aiExpanded = !aiExpanded"
-                >
-                  <span class="skx-ai-expand-bar__label">{{
-                    aiExpanded ? "접기" : "펼치기"
-                  }}</span>
-                  <img
-                    class="skx-ai-expand-bar__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- 도서/논문 목록 -->
-          <div class="skx-book-list">
-            <article
-              v-for="(item, i) in displayBooks"
-              :key="item.book_id"
-              :class="[
-                'skx-book-card',
-                i >= visibleCount && !bookListExpanded
-                  ? 'skx-book-card--hidden'
-                  : '',
-              ]"
-              style="cursor: pointer"
-              @click="openDetail(item)"
+      <div v-else class="skx-rframe">
+        <!-- AI 검색 결과 — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것. 틀은 논문 결과와 같은 AiResultPanel -->
+        <AiResultPanel v-if="topBook && topRecommended" :loading="reasonPending" hint>
+            <!-- 왼쪽 글은 일정 높이(16rem)까지만 보이고 넘치면 아래가 흐려지며 [더보기]/[접기] — 스트리밍 중에도 같다 -->
+            <ClampedPanel
+              v-model:expanded="aiExpanded"
+              class="skx-pick__main"
+              :collapsed-rem="16"
+              scroll-anchor=".skx-aip"
             >
-              <div class="skx-book-card__thumb">
-                <BookCover :book-id="item.book_id" />
-              </div>
-              <div class="skx-book-card__body">
-                <div class="skx-book-card__top">
-                  <div class="skx-book-card__tags">
-                    <RelevanceBadge
-                      :score="item.best_score"
-                      :title-score="item.title_score"
-                      :content-score="item.content_score"
-                    />
-                    <span
-                      v-for="tag in parseThemes(
-                        item.book_info?.themes ||
-                          item.book_info?.keyword ||
-                          item.book_info?.subject,
-                      )"
-                      :key="tag"
-                      class="skx-tag skx-tag--keyword"
-                      >#{{ tag }}</span
-                    >
-                  </div>
-                  <button
-                    v-if="SHOW_MOCKS"
-                    type="button"
-                    class="skx-book-card__bookmark"
-                    :aria-label="
-                      isBookmarked(item.book_id) ? '북마크 해제' : '북마크'
-                    "
-                    @click.stop="toggleBookmark(item.book_id)"
-                  >
-                    <img :src="bookmarkIcon(item.book_id)" alt="" />
-                  </button>
-                </div>
-                <div class="skx-book-card__meta">
-                  <h3 class="skx-book-card__title">
-                    {{ item.book_info?.title || item.book_id }}
+              <div class="skx-pick__body">
+                <section
+                  class="skx-pick__block"
+                  aria-labelledby="skx-pick-why"
+                  :aria-busy="reasonPending"
+                >
+                  <h3 id="skx-pick-why" class="skx-pick__heading">
+                    <span class="skx-ai-dot" aria-hidden="true"></span>
+                    왜 이 책인가
                   </h3>
-                  <div class="skx-book-card__info-row">
-                    <!-- <span
-                      v-if="item.book_info?.material_type"
-                      class="skx-meta-text"
-                      >{{ item.book_info.material_type }}</span
-                    > -->
-                    <!-- <span
-                      v-if="
-                        item.book_info?.personal_author ||
-                        item.book_info?.corporate_author
-                      "
-                      class="skx-dot"
-                    ></span> -->
-                    <span class="skx-meta-text">{{
-                      item.book_info?.personal_author ||
-                      item.book_info?.corporate_author
-                    }}</span>
-                    <span
-                      v-if="item.book_info?.pub_date"
-                      class="skx-dot"
+                  <p v-if="reasonText" class="skx-pick__text">
+                    {{ reasonText
+                    }}<span
+                      v-if="reasonPending"
+                      class="skx-ai-answer__cursor"
+                      aria-hidden="true"
                     ></span>
-                    <span v-if="item.book_info?.pub_date" class="skx-meta-text"
-                      >{{ item.book_info.pub_date.slice(0, 4) }}년</span
-                    >
-                    <span
-                      v-if="item.book_info?.publisher"
-                      class="skx-dot"
-                    ></span>
-                    <span
-                      v-if="item.book_info?.publisher"
-                      class="skx-meta-text"
-                      >{{ item.book_info.publisher }}</span
-                    >
-                  </div>
-                </div>
-                <div class="skx-book-card__actions" @click.stop>
-                  <button
-                    type="button"
-                    class="skx-btn-chat"
-                    @click="openDetailWithChat(item)"
+                  </p>
+                  <p
+                    v-else-if="reasonPending"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                    <img src="/img/ico-chat.svg" alt="" />
-                    <span class="skx-btn-chat__label">DeepRead</span>
-                  </button>
-                  <!-- <button
-                    type="button"
-                    class="skx-btn-loan"
-                    @click="requestLoan(item)"
+                    AI 사서가 추천 이유를 정리하고 있어요…
+                  </p>
+                  <p
+                    v-else-if="reasonStatus === 'error'"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                    대출신청
-                  </button> -->
-                  <button
-                    type="button"
-                    class="skx-btn-read"
-                    @click="viewPdf(item)"
+                    추천 이유를 불러오지 못했어요.
+                    <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
+                  </p>
+                  <p
+                    v-if="reasonStatus === 'interrupted'"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                    원문 보기
-                  </button>
-                  <button
-                    v-if="mode === 'paper'"
-                    type="button"
-                    class="skx-btn-loan"
-                    @click.stop="openCitation(item)"
-                  >
-                    출처 인용
-                  </button>
-                </div>
+                    중간에 끊겼어요 ·
+                    <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
+                  </p>
+                </section>
+                <section
+                  v-if="topReadEffect"
+                  class="skx-pick__block"
+                  aria-labelledby="skx-pick-effect"
+                >
+                  <h3 id="skx-pick-effect" class="skx-pick__heading">
+                    이 책에서 얻을 수 있는 것
+                  </h3>
+                  <p class="skx-pick__text">{{ topReadEffect }}</p>
+                </section>
               </div>
-            </article>
+            </ClampedPanel>
+          <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
+            <span class="skx-pick__label">SKOVIX 추천 1권</span>
+            <!-- 아래 목록 카드와 같은 해부도. 키워드 칩은 이 책 자신의 키워드가 먼저이고, 없을 때만 추천 이유 스트림이 준 키워드 -->
+            <ResultCard
+              :item="topBook"
+              kind="book"
+              compact
+              badge="AI 추천"
+              :fallback-keywords="keywordChips"
+              @open="openDetail(topBook)"
+              @chat="openDetailWithChat(topBook)"
+              @pdf="viewPdf(topBook)"
+            />
+          </aside>
+        </AiResultPanel>
+        <!-- 1위 도서도 질문과 거리가 멀면 추천하지 않고 목록만 안내한다(추천 이유도 부르지 않는다) -->
+        <AiResultPanel v-else-if="topBook">
+          <p class="skx-aip__notice" role="status">
+            질문과 딱 맞는 자료를 찾지 못했어요 — 아래 목록을 확인해 주세요.
+          </p>
+        </AiResultPanel>
+        <!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 — 그때까지 DOM 을 만들지 않는다 -->
+
+        <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건' -->
+        <section v-if="listBooks.length" class="skx-rlist" aria-label="소장자료 검색 결과 목록">
+          <ResultListHead :count="listBooks.length" :prefix="listExcludesPick ? '그 외 ' : ''" />
+          <div class="skx-book-list">
+            <ResultCard
+              v-for="(item, i) in listBooks"
+              v-show="i < visibleCount || bookListExpanded"
+              :key="item.book_id"
+              :item="item"
+              kind="book"
+              @open="openDetail(item)"
+              @chat="openDetailWithChat(item)"
+              @pdf="viewPdf(item)"
+            />
           </div>
 
           <!-- 더보기 버튼 (처음 보이는 개수보다 결과가 많을 때만) -->
           <button
-            v-if="displayBooks.length > visibleCount"
+            v-if="listBooks.length > visibleCount"
             type="button"
             class="skx-book-expand"
             :aria-expanded="bookListExpanded"
@@ -587,18 +390,11 @@
               alt=""
             />
           </button>
-        </div>
-      </template>
+        </section>
+      </div>
     </main>
 
-    <!-- CitationModal, PdfViewer, Toast (preserve existing) -->
-    <CitationModal
-      :open="citationModal"
-      :book-id="citationBook?.book_id ?? null"
-      :references="citationBook?.book_info?.references ?? []"
-      @close="citationModal = false"
-    />
-
+    <!-- PdfViewer, Toast -->
     <PdfViewer
       v-if="pdfOpen && selectedItem"
       :cnts-id="selectedItem.book_id"
@@ -615,7 +411,6 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
@@ -626,6 +421,7 @@ import {
   buildBookAi,
   buildReasonBody,
   isRecommendable,
+  listWithoutPick,
   pickTopBook,
   readEffectOf,
   readReasonStream,
@@ -697,17 +493,6 @@ const reasonPending = computed(() => reasonStatus.value === "loading");
 const bookListExpanded = ref(false);
 const aiExpanded = ref(false);
 
-// ── 논문 핵심 요약 SSE ─────────────────────────────────────
-const paperSummaryText = ref("");
-const paperSummaryLoading = ref(false);
-const paperSummarySources = ref<BookChunkGroup[]>([]);
-
-const renderedPaperSummary = computed(() =>
-  paperSummaryText.value
-    ? (marked.parse(paperSummaryText.value) as string)
-    : "",
-);
-
 // ── 상세 ──────────────────────────────────────────────────
 const selectedItem = ref<BookChunkGroup | null>(null);
 const showChat = ref(false);
@@ -732,10 +517,6 @@ const detailTabs = computed(() =>
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
 const selectedRelated = ref<any>(null);
-
-// ── 출처 인용 ──────────────────────────────────────────────
-const citationModal = ref(false);
-const citationBook = ref<BookChunkGroup | null>(null);
 
 // ── 토스트 ────────────────────────────────────────────────
 const toast = ref("");
@@ -871,15 +652,6 @@ onUnmounted(() => {
 // ── 유틸 ──────────────────────────────────────────────────
 const suggestions = SUGGESTIONS;
 
-function parseThemes(themes?: string | null): string[] {
-  if (!themes) return [];
-  return themes
-    .split(/[,;]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-}
-
 function isAvailable(_item: BookChunkGroup): boolean {
   return false; // 소장 정보 없음 — 더미
 }
@@ -927,7 +699,6 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   resetReason();
   bookListExpanded.value = false;
   aiExpanded.value = false;
-  paperSummaryText.value = "";
   view.value = "results";
 
   try {
@@ -1008,7 +779,6 @@ function goLanding() {
   resetReason();
   selectedItem.value = null;
   pdfOpen.value = false;
-  citationModal.value = false;
 }
 
 // ── 기록 복원 ─────────────────────────────────────────────
@@ -1124,36 +894,17 @@ watch(
 );
 
 // ── 결과 목록 ─────────────────────────────────────────────
-// 도서는 검색이 준 순서 그대로다(AI 영역의 1위 도서도 이 목록의 첫 카드). 처음에는 3건만 보이고 나머지는 더보기로 연다
+// 도서는 검색이 준 순서 그대로다. 처음에는 3건만 보이고 나머지는 더보기로 연다.
+// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'
 const visibleCount = 3;
-
-const displayBooks = computed(() => {
-  if (mode.value === "paper") {
-    if (!activeFilters.value.length) return papers.value;
-    return papers.value.filter((p) => {
-      const grade = p.book_info?.grade;
-      return activeFilters.value.some((f) =>
-        f === "KCI 미등재" ? !grade : grade === f,
-      );
-    });
-  }
-  return books.value;
-});
 
 // ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
 const topBook = computed(() => pickTopBook(books.value));
 // 1위가 추천할 만큼 맞을 때만 추천 패널을 낸다(MIN_PICK_SCORE) — 아니면 안내만
 const topRecommended = computed(() => isRecommendable(topBook.value));
 const topReadEffect = computed(() => readEffectOf(topBook.value));
-// 저자 · 출판사 · 발행년 — 있는 것만
-const topMeta = computed(() => {
-  const info = topBook.value?.book_info;
-  if (!info) return [];
-  const year = info.pub_date ? `${info.pub_date.slice(0, 4)}년` : "";
-  return [info.personal_author || info.corporate_author, info.publisher, year].filter(
-    (v): v is string => !!v,
-  );
-});
+const listExcludesPick = computed(() => !!topBook.value && topRecommended.value);
+const listBooks = computed(() => listWithoutPick(books.value, topBook.value, topRecommended.value));
 
 function resetReason() {
   reasonRaw.value = "";
@@ -1231,34 +982,6 @@ async function streamTopReason(
   }
 }
 
-// ── 논문 핵심 요약 SSE ─────────────────────────────────────
-async function fetchPaperSummary(query: string) {
-  paperSummaryLoading.value = true;
-  paperSummaryText.value = "";
-  paperSummarySources.value = papers.value.slice(0, 5);
-  const paperList = papers.value.slice(0, 5).map((b) => ({
-    book_id: b.book_id,
-    title: b.book_info?.title || "",
-    authors:
-      b.book_info?.personal_author || b.book_info?.corporate_author || "",
-    best_chunk_text: b.chunks?.[0]?.text || "",
-  }));
-  try {
-    const resp = await fetch(`${apiBase}/papers/summary/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, papers: paperList }),
-    });
-    await readSSE(resp, (json) => {
-      if (json.text) paperSummaryText.value += json.text;
-    });
-  } catch {
-    /* SSE 실패 — 조용히 */
-  } finally {
-    paperSummaryLoading.value = false;
-  }
-}
-
 // ── 상세 열기 ──────────────────────────────────────────────
 // 논문 상세의 출처는 결과의 검색어로 싣는다(입력창 글자가 아니다). 이 화면의 기록은 도서 기록이라 h 로 싣지 않는다 —
 // [검색 결과로]가 논문 검색에서 같은 검색어로 다시 찾는다
@@ -1331,12 +1054,6 @@ async function fetchRelated(cntsId: string) {
   }
 }
 
-// ── 출처 인용 ──────────────────────────────────────────────
-function openCitation(item: BookChunkGroup) {
-  citationBook.value = item;
-  citationModal.value = true;
-}
-
 // ── 대출 신청 / PDF ────────────────────────────────────────
 function requestLoan(item: BookChunkGroup) {
   showToast(
@@ -1347,29 +1064,5 @@ function requestLoan(item: BookChunkGroup) {
 function viewPdf(item: BookChunkGroup) {
   selectedItem.value = item;
   pdfOpen.value = true;
-}
-
-// ── SSE 헬퍼 ──────────────────────────────────────────────
-async function readSSE(resp: Response, onEvent: (json: any) => void) {
-  const reader = resp.body!.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const lines = buf.split("\n");
-    buf = lines.pop()!;
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const raw = line.slice(6).trim();
-      if (raw === "[DONE]") return;
-      try {
-        onEvent(JSON.parse(raw));
-      } catch {
-        /* skip */
-      }
-    }
-  }
 }
 </script>

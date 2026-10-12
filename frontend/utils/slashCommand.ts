@@ -22,7 +22,8 @@ export const SEARCH_MODES: readonly SearchMode[] = [
   {
     id: "deep-research",
     label: DEEP_RESEARCH,
-    description: "여러 논문을 반복 탐색해 근거가 달린 보고서를 만듭니다 · 약 5~7분",
+    // 소요 시간 표기는 뺐다 — 기본 파라미터(하위질문 6·재탐색 3)의 실측이 없다(round04a 완료노트 §8: 축소 파라미터 34~89초뿐). 실측하면 되살린다
+    description: "여러 논문을 반복 탐색해 근거가 달린 보고서를 만듭니다",
     icon: "/img/ico-ai-related.svg",
     slash: "/deep-research",
     aliases: ["딥리서치", "리서치"],
