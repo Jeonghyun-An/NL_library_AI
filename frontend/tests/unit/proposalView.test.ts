@@ -339,38 +339,114 @@ describe("putOnceMore — 버전 충돌 한 번 재전송", () => {
     status: 409,
     data: { detail: { code: "version_conflict", version, message: "다른 곳에서 보고서가 바뀌었습니다" } },
   });
-
-  it("첫 409 version_conflict 는 응답의 version 으로 한 번 더 보낸다", async () => {
-    const seen: number[] = [];
-    const put = async (v: number): Promise<string> => {
-      seen.push(v);
-      if (seen.length === 1) throw conflict(9);
+  // 묶음 둘 — 논문 배정이 바뀐 충돌을 만들 수 있게. 부를 때마다 새 객체(값만 같다)
+  function saved(over: Partial<Outline> = {}): Outline {
+    return {
+      ...outline(),
+      groups: [
+        { key: "prior.g1", name: "노인의 우울", hint: "노인 우울", papers: ["KCI_A", "KCI_C"] },
+        { key: "prior.g2", name: "세대 간 지지", hint: "사회적 지지", papers: ["KCI_B"] },
+      ],
+      method: "설문 조사",
+      background: "적어 둔 배경",
+      ...over,
+    };
+  }
+  // 보낸 version·목차를 기록하는 PUT — n 번째 부름은 errors[n-1] 이 있으면 그것을 던지고, 없으면 저장한다
+  function recorder(errors: unknown[]) {
+    const seen: { version: number; outline: Outline }[] = [];
+    const put = async (version: number, o: Outline): Promise<string> => {
+      seen.push({ version, outline: o });
+      const err = errors[seen.length - 1];
+      if (err !== undefined) throw err;
       return "저장";
     };
-    await expect(putOnceMore(put, 7)).resolves.toBe("저장");
-    expect(seen).toEqual([7, 9]);
+    return { seen, put };
+  }
+
+  it("첫 409 version_conflict 면 계획서를 다시 읽고, 목차가 그대로면(절 반영만) 다시 읽은 version·목차로 한 번 더 보낸다", async () => {
+    const { seen, put } = recorder([conflict(8)]);
+    const fresh = saved();
+    let reads = 0;
+    const reread = async () => {
+      reads += 1;
+      return { version: 9, outline: fresh };
+    };
+    await expect(putOnceMore(put, { version: 7, outline: saved() }, reread)).resolves.toBe("저장");
+    expect(reads).toBe(1);
+    expect(seen.map((s) => s.version)).toEqual([7, 9]);
+    expect(seen[1]?.outline).toBe(fresh);
+  });
+
+  it("PUT 이 쓰지 않는 값(묶음 hint·연구 질문 후보·승인 시각)만 다르면 목차가 그대로다 — 다시 보낸다", async () => {
+    const { seen, put } = recorder([conflict(9)]);
+    const fresh = saved({
+      groups: saved().groups.map((g) => ({ ...g, hint: `${g.hint} 다시` })),
+      questions: ["c?"],
+      approved_at: "2026-10-14T07:00:00Z",
+    });
+    await expect(putOnceMore(put, { version: 7, outline: saved() }, async () => ({ version: 9, outline: fresh }))).resolves.toBe(
+      "저장",
+    );
+    expect(seen.map((s) => s.version)).toEqual([7, 9]);
+  });
+
+  // 다른 탭의 [목차 고치기]·[보고서 다시 만들기] 반영이 version 을 올린 충돌 — 옛 목차로 만든 본문을 다시 보내면 서버가
+  // 묶음·연구 질문·방법·승인을 그대로 덮어써 그 변경이 말없이 사라진다(초안으로 둔 목차는 다시 승인된다)
+  it.each<[string, Partial<Outline>]>([
+    ["묶음 이름", { groups: saved().groups.map((g, i) => (i ? g : { ...g, name: "노년기 우울" })) }],
+    [
+      "논문 배정",
+      {
+        groups: [
+          { key: "prior.g1", name: "노인의 우울", hint: "노인 우울", papers: ["KCI_A"] },
+          { key: "prior.g2", name: "세대 간 지지", hint: "사회적 지지", papers: ["KCI_B", "KCI_C"] },
+        ],
+      },
+    ],
+    ["묶음 순서·키(다시 만든 목차)", { groups: [...saved().groups].reverse() }],
+    ["연구 질문", { question: "b?" }],
+    ["방법", { method: "면접 조사" }],
+    ["승인 상태(초안으로 저장)", { state: "draft", approved_at: null }],
+    ["연구 배경", { background: "다른 탭의 배경" }],
+  ])("목차가 바뀐 충돌(%s)이면 옛 본문을 다시 보내지 않고 첫 충돌을 던진다 — act 가 다시 읽고 알린다", async (_what, over) => {
+    const first = conflict(9);
+    const { seen, put } = recorder([first]);
+    await expect(
+      putOnceMore(put, { version: 7, outline: saved() }, async () => ({ version: 9, outline: saved(over) })),
+    ).rejects.toBe(first);
+    expect(seen.map((s) => s.version)).toEqual([7]);
+  });
+
+  it("다시 읽은 계획서에 목차가 없거나, 다시 읽기가 실패해 version 이 그대로면 다시 보내지 않는다", async () => {
+    for (const fresh of [null, { version: 9, outline: null }, { version: 7, outline: saved() }]) {
+      const first = conflict(9);
+      const { seen, put } = recorder([first]);
+      await expect(putOnceMore(put, { version: 7, outline: saved() }, async () => fresh)).rejects.toBe(first);
+      expect(seen.map((s) => s.version)).toEqual([7]);
+    }
   });
 
   it("두 번째도 409 면 그 오류를 던진다 — 부르는 쪽(act)이 다시 읽고 알린다", async () => {
-    const seen: number[] = [];
     const second = conflict(10);
-    const put = async (v: number): Promise<string> => {
-      seen.push(v);
-      throw seen.length === 1 ? conflict(9) : second;
-    };
-    await expect(putOnceMore(put, 7)).rejects.toBe(second);
-    expect(seen).toEqual([7, 9]);
+    const { seen, put } = recorder([conflict(9), second]);
+    await expect(
+      putOnceMore(put, { version: 7, outline: saved() }, async () => ({ version: 9, outline: saved() })),
+    ).rejects.toBe(second);
+    expect(seen.map((s) => s.version)).toEqual([7, 9]);
   });
 
-  it("버전 충돌이 아닌 오류는 다시 보내지 않고 곧바로 던진다", async () => {
+  it("버전 충돌이 아닌 오류는 다시 읽지도 보내지도 않고 곧바로 던진다", async () => {
     for (const err of [{ status: 500 }, { status: 409, data: { detail: "목차를 만드는 중입니다" } }, new TypeError("fetch failed")]) {
-      const seen: number[] = [];
-      const put = async (v: number): Promise<string> => {
-        seen.push(v);
-        throw err;
+      const { seen, put } = recorder([err]);
+      let reads = 0;
+      const reread = async () => {
+        reads += 1;
+        return { version: 9, outline: saved() };
       };
-      await expect(putOnceMore(put, 7)).rejects.toBe(err);
-      expect(seen).toEqual([7]);
+      await expect(putOnceMore(put, { version: 7, outline: saved() }, reread)).rejects.toBe(err);
+      expect(seen.map((s) => s.version)).toEqual([7]);
+      expect(reads).toBe(0);
     }
   });
 });

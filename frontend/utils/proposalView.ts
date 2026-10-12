@@ -193,16 +193,39 @@ export function addParagraph(section: ProposalSection, text: string): SectionPut
   return { paragraphs: [...section.paragraphs.map(entry), { id: null, text, state: "authored" }] };
 }
 
+// PUT /outline 이 본문 그대로 덮어쓰는 목차 값 — 묶음(키·이름·논문 순서), 연구 질문, 방법, 승인 상태, 연구 배경.
+// 묶음 hint·연구 질문 후보·승인 시각은 본문이 정하지 않는다(서버가 지키거나 새로 찍는다)
+function outlineWrites(o: Outline): string {
+  return JSON.stringify([
+    o.groups.map((g) => [g.key, g.name, g.papers]),
+    o.question ?? "",
+    o.method,
+    o.state,
+    outlineBackground(o),
+  ]);
+}
+
 // 연구 배경·방법 저장(PUT /outline) — 보고서를 자동으로 쓰는 동안 절이 반영될 때마다 version 이 올라 409 version_conflict
-// 를 받는다. 절 반영은 목차를 바꾸지 않아 덮어쓸 것이 없으므로 응답의 지금 version 으로 한 번만 다시 보낸다(spec §12-4).
-// 두 번째 409 와 그 밖의 오류는 그대로 던진다 — 부르는 쪽(ProposalStep act)이 다시 읽고 알린다
-export async function putOnceMore<T>(put: (version: number) => Promise<T>, version: number): Promise<T> {
+// 를 받는다. 본문(fieldPut)은 보낼 때의 목차로 묶음·연구 질문·방법·승인을 다시 싣고 서버는 그 값을 그대로 덮어쓰므로,
+// 충돌이 절 반영 때문일 때만 다시 보낸다: 계획서를 다시 읽어(reread) 목차의 그 값(outlineWrites)이 그대로면 다시 읽은
+// version·목차로 한 번만 보낸다(spec §12-4 — 절 반영은 목차를 바꾸지 않아 덮어쓸 것이 없다). 목차가 바뀐 충돌(다른 탭의
+// [목차 고치기]·초안 저장, [보고서 다시 만들기] 반영 뒤 다시 읽기 전)이면 옛 본문이 그 변경을 되돌리고 초안을 다시 승인하므로
+// 보내지 않고 첫 충돌을 던진다 — 다시 읽기가 실패해 version 이 그대로일 때도 같다. 두 번째 409 와 그 밖의 오류도 그대로
+// 던진다 — 부르는 쪽(ProposalStep act)이 다시 읽고 알린다(칸은 열린 채 글이 남는다)
+export async function putOnceMore<T>(
+  put: (version: number, outline: Outline) => Promise<T>,
+  sent: { version: number; outline: Outline },
+  reread: () => Promise<Pick<ProposalView, "version" | "outline"> | null>,
+): Promise<T> {
   try {
-    return await put(version);
+    return await put(sent.version, sent.outline);
   } catch (e) {
-    const current = versionConflict(e);
-    if (current === null) throw e;
-    return put(current);
+    if (versionConflict(e) === null) throw e;
+    const fresh = await reread();
+    if (!fresh?.outline || fresh.version <= sent.version || outlineWrites(fresh.outline) !== outlineWrites(sent.outline)) {
+      throw e;
+    }
+    return put(fresh.version, fresh.outline);
   }
 }
 

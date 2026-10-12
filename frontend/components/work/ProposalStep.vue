@@ -403,8 +403,10 @@ function saveOutline(body: OutlinePut): void {
 }
 
 // 문서의 연구 배경(2절)·방법(6절) 칸 — 승인 상태를 지킨 채(fieldPut) PUT /outline. 보고서를 자동으로 쓰는 동안에는 절이
-// 반영될 때마다 version 이 올라 409 version_conflict 가 난다 — 응답의 version 으로 한 번만 다시 보낸다(putOnceMore). 두 번째도
-// 409 면 act 가 보고서를 다시 읽고 CONFLICT 를 알린다(칸은 열린 채 글이 남아 다시 저장할 수 있다)
+// 반영될 때마다 version 이 올라 409 version_conflict 가 난다 — 계획서를 다시 읽어 목차가 그대로면 다시 읽은 version·목차로
+// 본문을 다시 만들어 한 번만 보낸다(putOnceMore). 목차가 바뀐 충돌(work 이벤트는 계획서를 다시 읽지 않아 다른 탭의 [목차
+// 고치기]를 이 탭은 모른다)이나 두 번째 409 면 act 가 보고서를 다시 읽고 CONFLICT 를 알린다(칸은 열린 채 글이 남아 다시
+// 저장할 수 있다)
 function saveField(field: "background" | "method", text: string): void {
   const p = proposal.value;
   const outline = p?.outline;
@@ -412,7 +414,14 @@ function saveField(field: "background" | "method", text: string): void {
   const patch = field === "background" ? { background: text } : { method: text };
   void act(
     async () => {
-      await putOnceMore((v) => api.putOutline(props.jobId, v, fieldPut(outline, patch)), p.version);
+      await putOnceMore(
+        (v, o) => api.putOutline(props.jobId, v, fieldPut(o, patch)),
+        { version: p.version, outline },
+        async () => {
+          await props.work.reload("proposal");
+          return proposal.value;
+        },
+      );
       await props.work.reload("proposal");
       say(field === "background" ? "연구 배경을 저장했습니다" : "방법을 저장했습니다");
     },
