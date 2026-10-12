@@ -77,7 +77,7 @@
 
 - [ ] 전환 [소장자료 검색 · 논문 검색 · 딥리서치]: '딥리서치'는 논문 패널 + `SearchPlusMenu` 의 `activateMode('deep-research')`(papers/index.vue 893-902 와 같은 방식), 다른 갈래로 가면 모드 해제.
 - [ ] hero: 로고 'skovix' + 한 줄 '넓게 찾고 깊게 확인하는, 도서관의 AI 탐색'(소개서와 같은 말). 입력창은 유리 카드.
-- [ ] '컬렉션 N권' 드롭다운(110-143) 제거 — `collectionSize` 는 5 고정(Task 7 의 AI 결과에 씀). '내 상황에 맞는 도서 추천받기'는 소장자료 갈래에서만 작은 링크로.
+- [ ] '컬렉션 N권' 드롭다운(110-143) 제거(`collectionSize`·`COLLECTION_SIZES` 도 걷는다 — 컬렉션은 Task 7 에서 없앤다). '내 상황에 맞는 도서 추천받기'는 소장자료 갈래에서만 작은 링크로.
 - [ ] 예시 칩은 기존 `SUGGESTIONS` 그대로(운영 검증 예시), 카드 모양만 유리로.
 - [ ] 커밋 `[Feat] round08 — 메인을 세 갈래 전환·유리 입력창으로`.
 
@@ -85,7 +85,7 @@
 
 **Files:** Modify `pages/index.vue`(결과 290-630·AI 큐레이션 334-422·카드 471-608), `pages/papers/index.vue`(AI 76-191·카드 356-461·채팅 패널 548-571), `assets/css/style_skovix.css`, `components/CitationModal.vue`(모달 안쪽에 `.skx-paper`)
 
-- [ ] 소장자료 결과의 AI 영역을 논문과 같은 2단(`.skx-pai` 구조)으로: 왼쪽 핵심 요약(기존 `/books/curate` 응답의 소개 글, 접고 펼치기), 오른쪽 참고 자료 1~5(같은 응답의 고른 책·이유). 화면 글에서 '컬렉션'은 쓰지 않는다 — 제목은 'AI 검색 결과'.
+- [ ] 소장자료 결과의 AI 영역(사용자 결정 2026-10-12 — 초기 SKOVIX 와 같게): **1위 도서 한 권 + 질문 기준 추천 이유 스트리밍**. 논문과 같은 2단(`.skx-pai` 구조) — 왼쪽 추천 이유(도서 상세 '추천 이유' 탭이 쓰는 스트리밍 API·`pages/books/[cnts_id].vue` `streamReason` 과 같은 호출, 접고 펼치기), 오른쪽 1위 도서 카드(표지·제목·서지·[DeepRead]·[원문 보기]). 컬렉션 호출(`useCuration`·`/books/curate`)과 'AI 컬렉션' 태그·위로 고정은 걷는다(composable 파일은 남겨도 됨). 제목은 'AI 검색 결과'.
 - [ ] 카드 공통 배치: 왼쪽 표지 · 가운데(관련도·키워드 칩, 제목, 서지) · 오른쪽 버튼 열([원문 보기][인용(논문만)] / 강조 [DeepRead]). 논문 카드의 `:data-anchor`(360) 유지.
 - [ ] DeepRead: 소장자료·논문 결과 카드 모두 `chatPaperId`(papers/index.vue 633 방식)로 오른쪽 패널을 연다. index.vue 에 같은 `aside.skx-chat-panel` + `BookChat` 을 둔다(새 부품 만들지 않음). 패널은 다크 유리.
 - [ ] '총 N건 · 정렬'(논문 194-341) 줄을 유리 바 모양으로. 소장자료에는 새 정렬을 만들지 않는다.
