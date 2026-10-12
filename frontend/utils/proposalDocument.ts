@@ -39,6 +39,10 @@ export interface ProposalDocInput {
 const ALL_STATES: readonly ParaState[] = ["proposed", "accepted", "edited", "authored"];
 const ACCEPTED_ONLY: readonly ParaState[] = ["accepted", "edited", "authored"];
 const RESULTS_LATER = "연구 후 직접 씁니다.";
+// 서버가 '다시 맞춤 필요'(stale)를 붙인 절 — 주제·묶음·연구 질문이 바뀐 뒤에도 [보고서 다시 만들기]는 이미 쓴 절을 다시 쓰지
+// 않아(06e 정함 4) 옛 주제·묶음으로 쓴 문단이 같은 키로 남는다. 화면 배지·안내(ProposalSection)와 같은 말로 문서에도 밝힌다
+const STALE_LABEL = "다시 맞춤 필요";
+const STALE_NOTE = `${STALE_LABEL} — 이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었고, 바뀐 목차로 다시 쓰지 않았습니다.`;
 const DISCLOSURE_INTRO =
   "이 초안의 문단은 연구 어시스턴트의 AI(대형 언어 모델)가 소장 KCI 논문을 근거로 작성했고, 사용자가 검토해 수락·수정하거나 " +
   "직접 쓴 문단이 섞여 있습니다. 문단 상태는 AI 작성·검토 전 / 수락 / 수정 / 직접 작성 네 가지로 저장합니다.";
@@ -98,7 +102,9 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
         ),
       ];
     }
-    return paragraphs.flatMap((x) => lines(x.text).map((line): DocBlock => ({ type: "para", runs: runs(line, section) })));
+    // 실은 문단이 있을 때만 — 기본(모든 문단)이면 검토 전 AI 문단이 옛 주제·묶음 그대로 새 목차 제목 아래 실린다
+    const body = paragraphs.flatMap((x) => lines(x.text).map((line): DocBlock => ({ type: "para", runs: runs(line, section) })));
+    return p.stale.sections[key] === true ? [muted(STALE_NOTE), ...body] : body;
   }
 
   const title = outline?.topic.title || input.question;
@@ -140,7 +146,7 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
   return { fileName: proposalFileName(title, now, input.acceptedOnly), blocks, references };
 }
 
-// 부록 "AI 사용 공개"(D21) — 문단 상태 비율·고른 주제의 출처·절별 문단 상태 개수·실은 문단·검토할 곳(실은 문단에서 센다)·
+// 부록 "AI 사용 공개"(D21) — 문단 상태 비율·고른 주제의 출처·절별 문단 상태 개수(다시 맞춤 필요한 절은 덧붙인다)·실은 문단·검토할 곳(실은 문단에서 센다)·
 // 작성 일시·결과·논의 미포함. 모델 이름·생성별 시도 기록은 싣지 않는다('AI 작성·검토' 수준 — 저장(research_generations
 // .model·attempts)은 그대로)
 export function disclosureLines(p: ProposalView, acceptedOnly: boolean, now: Date): string[] {
@@ -148,7 +154,9 @@ export function disclosureLines(p: ProposalView, acceptedOnly: boolean, now: Dat
   if (p.topic_source) out.push(topicSourceLine(p.topic_source));
   for (const key of sectionKeys(p)) {
     const section = p.sections[key];
-    if (section) out.push(`${sectionLabel(key, p.outline)}: ${stateMix(section)}`);
+    if (section) {
+      out.push(`${sectionLabel(key, p.outline)}: ${stateMix(section)}${p.stale.sections[key] === true ? ` · ${STALE_LABEL}` : ""}`);
+    }
   }
   out.push(includedLine(acceptedOnly, printedProposedCount(p)));
   // '수락한 문단만'이면 문서에 실은 문단만 센다 — 빠진 검토 전 문단의 검토 단서는 이 문서의 것이 아니다

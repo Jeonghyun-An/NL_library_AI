@@ -246,6 +246,32 @@ describe("buildProposalDocument", () => {
     expect(lines(buildProposalDocument(input(), NOW)).some((l) => l.includes("다음 단계에서 씁니다"))).toBe(false);
   });
 
+  it("'다시 맞춤 필요' 절은 실은 문단 앞에 흐린 안내를 단다 — 기본·'수락한 문단만' 모두, 실을 문단이 없으면 달지 않는다", () => {
+    const STALE = "para~: 다시 맞춤 필요 — 이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었고, 바뀐 목차로 다시 쓰지 않았습니다.";
+    // 주제를 바꾸고 [보고서 다시 만들기]를 해도 이미 쓴 절은 같은 키로 남는다(정함 4) — 서버가 그 절에 stale 을 붙인다
+    const p = proposal({ stale: { outline: false, sections: { "prior.g1": true, "prior.g2": false, gap: false } } });
+    for (const acceptedOnly of [false, true]) {
+      const out = lines(buildProposalDocument(input({ proposal: p, acceptedOnly }), NOW));
+      const at = out.indexOf("heading2: 3.1 노인의 우울");
+      expect(out.slice(at + 1, at + 3)).toEqual([STALE, "para: 노인 우울 연구는 6편이다 [1]."]);
+      expect(out.filter((l) => l === STALE)).toHaveLength(1);
+    }
+    // stale 이 아닌 절에는 달지 않는다
+    expect(lines(buildProposalDocument(input(), NOW))).not.toContain(STALE);
+    // '수락한 문단만'에 실을 문단이 없는 stale 절은 그 안내만 — 실은 문단이 없으니 다시 맞춤 안내를 달지 않는다
+    const onlyProposed = proposal({
+      stale: { outline: false, sections: { gap: true } },
+    });
+    const gapOnlyProposed = {
+      ...onlyProposed,
+      sections: { ...onlyProposed.sections, gap: { ...onlyProposed.sections.gap!, paragraphs: [para("p2", "proposed", "x [E1].")] } },
+    };
+    const only = lines(buildProposalDocument(input({ proposal: gapOnlyProposed, acceptedOnly: true }), NOW));
+    expect(only).not.toContain(STALE);
+    expect(only).toContain("para~: 수락한 문단이 없습니다 — '수락한 문단만'을 끄면 AI 작성 문단도 실립니다.");
+    expect(lines(buildProposalDocument(input({ proposal: gapOnlyProposed }), NOW))).toContain(STALE);
+  });
+
   it("XML 에 쓸 수 없는 제어문자는 문단·제목에서 뺀다", () => {
     const p = proposal();
     const dirty = {
@@ -277,6 +303,14 @@ describe("disclosureLines", () => {
     expect(out.some((l) => l.includes("gemma") || l.includes("시도"))).toBe(false);
     // 검토할 곳이 없으면 그 줄이 없다
     expect(disclosureLines(p, false, NOW).some((l) => l.startsWith("검토할 곳"))).toBe(false);
+  });
+
+  it("절별 줄에 '다시 맞춤 필요'를 덧붙인다 — 문서의 절 안내와 같은 말", () => {
+    const p = proposal({ stale: { outline: false, sections: { "prior.g1": true, "prior.g2": false, gap: false } } });
+    const out = disclosureLines(p, false, NOW);
+    expect(out).toContain("선행연구 검토 · 노인의 우울: 문단 2개 — AI 작성·검토 전 1·수락 1 · 다시 맞춤 필요");
+    expect(out).toContain("선행연구 검토 · 사회적 지지: 문단 1개 — 수정 1");
+    expect(out.filter((l) => l.includes("다시 맞춤 필요"))).toHaveLength(1);
   });
 
   it("'수락한 문단만'을 켜면 싣지 않은 검토 전 AI 작성 문단 수를 적는다", () => {
