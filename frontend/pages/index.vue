@@ -280,7 +280,7 @@
                 키워드: {{ keywordChips.join(", ") }}
               </p>
             </header>
-            <div class="skx-pick">
+            <div v-if="topRecommended" class="skx-pick">
               <div class="skx-pick__main">
                 <section
                   class="skx-pick__block"
@@ -334,26 +334,11 @@
                     </div>
                     <div class="skx-book-card__body">
                       <div class="skx-book-card__tags">
-                        <template
-                          v-if="
-                            topBook.title_score !== undefined &&
-                            topBook.content_score !== undefined
-                          "
-                        >
-                          <ScoreRing
-                            :pct="topBook.title_score * 100"
-                            label="제목 일치율"
-                          />
-                          <ScoreRing
-                            :pct="topBook.content_score * 100"
-                            label="내용 일치율"
-                            variant="content"
-                          />
-                        </template>
-                        <span class="skx-tag skx-tag--score"
-                          >관련도
-                          {{ Math.floor((topBook.best_score || 0) * 100) }}%</span
-                        >
+                        <RelevanceBadge
+                          :score="topBook.best_score"
+                          :title-score="topBook.title_score"
+                          :content-score="topBook.content_score"
+                        />
                       </div>
                       <h3 class="skx-book-card__title">
                         {{ topBook.book_info?.title || topBook.book_id }}
@@ -385,6 +370,12 @@
                   </div>
                 </article>
               </aside>
+            </div>
+            <!-- 1위 도서도 질문과 거리가 멀면 추천하지 않고 목록만 안내한다(추천 이유도 부르지 않는다) -->
+            <div v-else class="skx-pick skx-pick--notice">
+              <p class="skx-pick__text skx-pick__text--muted" role="status">
+                질문과 딱 맞는 자료를 찾지 못했어요 — 아래 목록을 확인해 주세요.
+              </p>
             </div>
             <!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 — 그때까지 DOM 을 만들지 않는다 -->
           </section>
@@ -454,26 +445,11 @@
               <div class="skx-book-card__body">
                 <div class="skx-book-card__top">
                   <div class="skx-book-card__tags">
-                    <template
-                      v-if="
-                        item.title_score !== undefined &&
-                        item.content_score !== undefined
-                      "
-                    >
-                      <ScoreRing
-                        :pct="item.title_score * 100"
-                        label="제목 일치율"
-                      />
-                      <ScoreRing
-                        :pct="item.content_score * 100"
-                        label="내용 일치율"
-                        variant="content"
-                      />
-                    </template>
-                    <span class="skx-tag skx-tag--score"
-                      >관련도
-                      {{ Math.floor((item.best_score || 0) * 100) }}%</span
-                    >
+                    <RelevanceBadge
+                      :score="item.best_score"
+                      :title-score="item.title_score"
+                      :content-score="item.content_score"
+                    />
                     <span
                       v-for="tag in parseThemes(
                         item.book_info?.themes ||
@@ -627,6 +603,7 @@ import { slimBookResult } from "~/utils/historySnapshot";
 import {
   buildBookAi,
   buildReasonBody,
+  isRecommendable,
   pickTopBook,
   readEffectOf,
   readReasonStream,
@@ -1120,6 +1097,8 @@ const displayBooks = computed(() => {
 
 // ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
 const topBook = computed(() => pickTopBook(books.value));
+// 1위가 추천할 만큼 맞을 때만 추천 패널을 낸다(MIN_PICK_SCORE) — 아니면 안내만
+const topRecommended = computed(() => isRecommendable(topBook.value));
 const topReadEffect = computed(() => readEffectOf(topBook.value));
 // 저자 · 출판사 · 발행년 — 있는 것만
 const topMeta = computed(() => {
@@ -1145,7 +1124,7 @@ async function streamTopReason(
   signal: AbortSignal,
 ) {
   const book = pickTopBook(books.value);
-  if (!book) return;
+  if (!book || !isRecommendable(book)) return;
   reasonRaw.value = "";
   reasonStatus.value = "loading";
   let complete = false;

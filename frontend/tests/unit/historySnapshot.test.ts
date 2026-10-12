@@ -136,6 +136,7 @@ describe("slimPaperResult", () => {
       book_id: "P1",
       best_score: 0.7,
       title_score: 0.5,
+      content_score: 0.6,
       chunks: [{ text: "x" }],
       book_info: {
         cnts_id: "P1",
@@ -155,7 +156,8 @@ describe("slimPaperResult", () => {
     const snap = slimPaperResult({ query: "딥러닝", books: [paper] })!;
     expect(snap.query).toBe("딥러닝");
     const item = snap.books[0]!;
-    expect(item).not.toHaveProperty("title_score");
+    // 관련도 알약의 팝오버(제목·내용 일치율)가 그리는 값이라 복원 뒤에도 보이게 싣는다
+    expect(item).toMatchObject({ best_score: 0.7, title_score: 0.5, content_score: 0.6 });
     expect(item.chunks).toEqual([]);
     expect(item.book_info).toMatchObject({
       title: "논문",

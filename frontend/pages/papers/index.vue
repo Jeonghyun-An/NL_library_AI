@@ -374,9 +374,11 @@
                     >
                       {{ paper.book_info.grade }}
                     </span>
-                    <span class="skx-ptag skx-ptag--score">
-                      관련도 {{ Math.round((paper.best_score || 0) * 100) }}%
-                    </span>
+                    <RelevanceBadge
+                      :score="paper.best_score"
+                      :title-score="paper.title_score"
+                      :content-score="paper.content_score"
+                    />
                   </div>
                   <h3
                     class="skx-paper-title"

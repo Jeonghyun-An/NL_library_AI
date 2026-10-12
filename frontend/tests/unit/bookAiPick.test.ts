@@ -1,9 +1,11 @@
 // frontend/tests/unit/bookAiPick.test.ts
 import { describe, expect, it, vi } from "vitest";
 import {
+  MIN_PICK_SCORE,
   REASON_CHUNK_LIMIT,
   buildBookAi,
   buildReasonBody,
+  isRecommendable,
   pickTopBook,
   readEffectOf,
   readReasonStream,
@@ -27,6 +29,24 @@ describe("pickTopBook — 1위 도서", () => {
     expect(pickTopBook([])).toBeNull();
     expect(pickTopBook(null)).toBeNull();
     expect(pickTopBook(undefined)).toBeNull();
+  });
+});
+
+describe("isRecommendable — 1위 도서를 '추천'으로 내세울 점수", () => {
+  it("옛 AI 컬렉션과 같은 0.4 이상이다", () => {
+    expect(MIN_PICK_SCORE).toBe(0.4);
+    expect(isRecommendable({ best_score: 0.4 })).toBe(true);
+    expect(isRecommendable({ best_score: 0.73 })).toBe(true);
+    expect(isRecommendable({ best_score: 0.399 })).toBe(false);
+    expect(isRecommendable({ best_score: 0 })).toBe(false);
+  });
+
+  it("도서나 점수가 없으면 아니다", () => {
+    expect(isRecommendable(null)).toBe(false);
+    expect(isRecommendable(undefined)).toBe(false);
+    expect(isRecommendable({})).toBe(false);
+    expect(isRecommendable({ best_score: "0.9" })).toBe(false);
+    expect(isRecommendable({ best_score: Number.NaN })).toBe(false);
   });
 });
 

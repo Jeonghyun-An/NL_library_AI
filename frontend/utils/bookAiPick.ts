@@ -3,6 +3,9 @@
 // 옛 AI 컬렉션(/books/curate)을 대신한다. 화면 상태 없이 순수하게 도는 부분만 여기 둔다
 import type { BookAiPick } from "~/types/history";
 
+/** 1위 도서 점수(best_score)가 이 미만이면 'SKOVIX 추천 1권'으로 내세우지 않는다 — 옛 AI 컬렉션의 포함 기준(0.4)과 같다 */
+export const MIN_PICK_SCORE = 0.4;
+
 /** 서버(app/core/config.py REASON_CHUNKS_DISPLAY_LIMIT)가 어차피 15 개에서 자른다 — 보내는 양도 맞춘다 */
 export const REASON_CHUNK_LIMIT = 15;
 
@@ -29,6 +32,12 @@ export interface ReasonBody {
 export function pickTopBook<T extends BookLike>(books: readonly T[] | null | undefined): T | null {
   if (!Array.isArray(books)) return null;
   return books.find((b) => typeof b?.book_id === "string" && b.book_id !== "") ?? null;
+}
+
+/** 1위 도서를 추천으로 내세울 만큼 질문과 맞는가(점수 MIN_PICK_SCORE 이상). 아니면 화면은 안내만 두고 추천 이유도 부르지 않는다 */
+export function isRecommendable(book: { best_score?: unknown } | null | undefined): boolean {
+  const score = book?.best_score;
+  return typeof score === "number" && score >= MIN_PICK_SCORE;
 }
 
 /** '이 책에서 얻을 수 있는 것' — 검색 응답의 book_info.read_effect. 비면 빈 문자열(화면이 블록을 숨긴다) */

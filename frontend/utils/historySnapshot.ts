@@ -114,7 +114,7 @@ function shedReferences(snap: PaperSnapshot): void {
 }
 
 export function slimPaperResult(result: unknown): PaperSnapshot | null {
-  const books = slimItems(result, PAPER_INFO_FIELDS, false);
+  const books = slimItems(result, PAPER_INFO_FIELDS, true);
   if (!books) return null;
   const r = result as Loose;
   const snap: PaperSnapshot = { query: typeof r.query === "string" ? r.query : "", books };
