@@ -360,6 +360,8 @@ h4,
   --skx-frost-milk: rgba(255, 255, 255, 0.04);
   --skx-frost-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 40%, rgba(255, 255, 255, 0) 60%);
   --skx-frost-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-milk), var(--skx-frost-milk)), var(--skx-frost-tint);
+  /* 전환 알약 바깥 면 — 시안의 흰 10%(--skx-frost-bg) 그대로여야 켜진 칸의 짙은 초록 채움이 보인다 */
+  --skx-seg-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-tint);
   --skx-frost-bg-hover: rgba(255, 255, 255, 0.15);
   --skx-frost-bg-soft: rgba(255, 255, 255, 0.05);
   --skx-frost-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
@@ -433,6 +435,7 @@ h4,
   --skx-frost-milk: #ffffff;
   --skx-frost-reflect: linear-gradient(#ffffff, #ffffff);
   --skx-frost-fill: linear-gradient(#ffffff, #ffffff);
+  --skx-seg-fill: linear-gradient(#ffffff, #ffffff);
   --skx-frost-bg-hover: #f4f3ef;
   --skx-frost-bg-soft: #faf9f6;
   --skx-frost-edge: linear-gradient(180deg, #e3e1dc, #e3e1dc);
@@ -1207,7 +1210,9 @@ h4,
 /* [E] 타이틀 */
 
 /* [S] 검색 갈래 전환 */
-/* 자료 검색 · 논문 검색 두 갈래 알약. 칸 폭이 같아(grid 1fr) 선택 표시(thumb)가 칸 폭만큼만 옮겨 간다 — 위치는 --seg-i(0부터), 칸 수는 --seg-n */
+/* 논문 검색 · 자료 검색 두 갈래 알약. 칸 폭이 같아(grid 1fr) 선택 표시(thumb)가 칸 폭만큼만 옮겨 간다 — 위치는 --seg-i(0부터), 칸 수는 --seg-n.
+   Figma 시안 색을 따른다(사용자 결정 2026-10-12 — 이 부분만은 산호 대신 시안 색): 바깥은 흰 10% 유리, 켜진 칸은 짙은 초록(#0f2822 =
+   --skx-on-accent) 채움 + 흰 글, 꺼진 칸 글은 회녹색(#879491 = --skx-gray-2) */
 .skx-seg {
   position: relative;
   display: inline-grid;
@@ -1215,7 +1220,7 @@ h4,
   width: 10.8rem;
   max-width: 100%;
   padding: 0.1rem;
-  background: var(--skx-frost-fill);
+  background: var(--skx-seg-fill);
   box-shadow: var(--skx-frost-hilite);
   backdrop-filter: var(--skx-frost-blur);
   -webkit-backdrop-filter: var(--skx-frost-blur);
@@ -1227,7 +1232,7 @@ h4,
   bottom: 0.1rem;
   left: 0.1rem;
   width: calc((100% - 0.2rem) / var(--seg-n, 2));
-  background: var(--skx-primary);
+  background: var(--skx-on-accent);
   border-radius: var(--skx-radius-pill);
   transform: translateX(calc(var(--seg-i, 0) * 100%));
   transition: transform 0.38s cubic-bezier(0.34, 1.32, 0.42, 1);
@@ -1247,14 +1252,14 @@ h4,
   font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
-  color: var(--skx-ink);
+  color: var(--skx-gray-2);
   transition: color 0.25s ease;
 }
 .skx-seg__btn:hover:not(.is-active) {
-  color: var(--skx-ink-strong);
+  color: var(--skx-ink);
 }
 .skx-seg__btn.is-active {
-  color: var(--skx-on-accent);
+  color: var(--skx-ink-strong);
 }
 .skx-seg__btn:focus-visible {
   outline: 2px solid var(--skx-accent);

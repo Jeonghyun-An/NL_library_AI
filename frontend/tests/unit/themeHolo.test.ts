@@ -129,19 +129,23 @@ function bands(): Stop[][] {
   return bandBlocks.map(rgbaStops).filter((stops) => stops.length > 0);
 }
 
-/** 띠마다 정지점 하나(또는 비어 있음)를 골라 만들 수 있는 모든 합성 — 가장 밝은 자리들이 포함된다 */
-function composites(): Rgb[] {
+/**
+ * 띠마다 정지점 하나(또는 비어 있음)를 골라 만들 수 있는 모든 합성 — 가장 밝은 자리들이 포함된다.
+ * maxBands 는 한 자리에 동시에 겹칠 수 있는 띠 수의 상한(기본: 모두) — 시안 색 글자처럼 최악 전부로는 못 지키는 것을 '띠 하나가 지나는 자리'로 따로 본다
+ */
+function composites(maxBands: number = Infinity): Rgb[] {
   const all = bands();
   const out: Rgb[] = [];
-  const walk = (i: number, backdrop: Rgb) => {
+  const walk = (i: number, backdrop: Rgb, used: number) => {
     if (i === all.length) {
       out.push(backdrop);
       return;
     }
-    walk(i + 1, backdrop); // 이 띠가 그 자리를 지나지 않는 경우
-    for (const s of all[i]!) walk(i + 1, screen(backdrop, s.rgb, s.a));
+    walk(i + 1, backdrop, used); // 이 띠가 그 자리를 지나지 않는 경우
+    if (used >= maxBands) return;
+    for (const s of all[i]!) walk(i + 1, screen(backdrop, s.rgb, s.a), used + 1);
   };
-  walk(0, worstBase());
+  walk(0, worstBase(), 0);
   return out;
 }
 
@@ -198,6 +202,7 @@ describe("홀로그램 배경 — 가독성", () => {
   const INPUT_FACE = ["--skx-frost-tint", "--skx-frost-milk", "--skx-frost-reflect"];
   const SIDE_FACE = ["--skx-frost-side-bg"];
   const CHIP_FACE = ["--skx-chip-tint", "--skx-chip-milk"];
+  const SEG_FACE = ["--skx-frost-tint", "--skx-frost-bg", "--skx-frost-reflect"];
   const faces: [string, string[], string[]][] = [
     // [이름, 층 토큰(아래→위), 이 면에 놓이는 글자색 토큰] — 입력창의 안내 글(placeholder)은 --skx-ink-2
     ["입력창·전환·결과 검색바(--skx-frost-fill)", INPUT_FACE, ["--skx-ink", "--skx-ink-2"]],
@@ -234,6 +239,32 @@ describe("홀로그램 배경 — 가독성", () => {
       1 - tokens.reduce((rest, t) => rest * (1 - peakStop(t).a), 1);
     expect(alpha(["--skx-frost-tint", "--skx-frost-milk"])).toBeLessThanOrEqual(0.62);
     expect(alpha(SIDE_FACE)).toBeLessThanOrEqual(0.62);
+  });
+
+  // 전환 알약(시안 색, 사용자 결정): 켜진 칸은 짙은 초록 채움(--skx-on-accent) 위 흰 글, 꺼진 칸은 회녹색(--skx-gray-2).
+  // 꺼진 칸 글은 시안 색이고 바깥 면도 시안의 흰 10%(SEG_FACE)라 모든 띠가 가장 밝게 겹친 최악에는 4.5:1 이 안 된다 —
+  // 평온한 자리(띠 없음)에서 3:1, 띠 하나가 지나는 자리에서 2.5:1 이상으로 지킨다(AA 4.5:1 미달은 시안 색 그대로 둔 값이다)
+  it("전환 알약: 켜진 칸의 흰 글이 짙은 초록 채움 위에서 4.5:1 이상이다", () => {
+    expect(contrast(hexToRgb(rootToken("--skx-ink-strong")), hexToRgb(rootToken("--skx-on-accent")))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each([
+    { bands: 0, min: 3 },
+    { bands: 1, min: 2.5 },
+  ])("전환 알약: 꺼진 칸의 회녹색 글(--skx-gray-2)이 띠 $bands 개가 겹치는 자리까지 $min:1 이상이다", ({ bands: n, min }) => {
+    const fg = hexToRgb(rootToken("--skx-gray-2"));
+    const worst = Math.min(
+      ...composites(n).map((c) =>
+        contrast(
+          fg,
+          SEG_FACE.reduce<Rgb>((acc, token) => {
+            const l = peakStop(token);
+            return over(acc, l.rgb, l.a);
+          }, c),
+        ),
+      ),
+    );
+    expect(worst).toBeGreaterThanOrEqual(min);
   });
 
   it("카드 없이 페이지 위에 놓이는 큰 흰 제목(#fff)이 가장 밝은 합성 위에서 3:1 이상이다", () => {
