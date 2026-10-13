@@ -220,6 +220,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
 import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
+import { citedQuote } from "~/utils/citationEvidence";
 import { citeLabel } from "~/utils/citations";
 import { paraAnchor } from "~/utils/detailSource";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
@@ -385,7 +386,8 @@ function citeKey(pid: string, si: number, eid: string): string {
   return `${pid}:${si}:${eid}`;
 }
 
-// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호)
+// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호). ProposalStep 은 그 번호의 문장이 지금도 누를 때와 같은
+// 글일 때만 activeCite 를 넘긴다(activeCiteOf — 문단을 고치거나 다시 쓰면 같은 번호가 다른 문장을 가리킨다)
 function isActiveSentence(pid: string, si: number): boolean {
   return props.activeCite?.pid === pid && props.activeCite.si === si;
 }
@@ -395,11 +397,23 @@ function isOpenCite(pid: string, si: number, eid: string): boolean {
   return isActiveSentence(pid, si) && (props.activeCite?.eid ?? eid) === eid;
 }
 
+// quote — 카드에 보이는 인용한 문장. 누르는 순간의 이 절 수치로 [F#] 를 값으로 바꾼다(citedQuote) — 절을 다시 쓰면 같은
+// [F#] 가 다른 값을 가리킬 수 있어 패널이 나중에 만들지 않는다. sentence 는 마커가 든 원문 그대로(대목 고르기·본문 강조가 쓴다)
 function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: string): void {
   const sec = section.value;
   const cntsId = sec?.evidence[eid];
   if (!sec || !cntsId) return;
-  emit("cite", { key: props.sectionKey, pid, si, eid, cntsId, genId: sec.gen_id, sentence }, e.currentTarget as HTMLElement);
+  const pick: CitePick = {
+    key: props.sectionKey,
+    pid,
+    si,
+    eid,
+    cntsId,
+    genId: sec.gen_id,
+    sentence,
+    quote: citedQuote(sentence, sec.figures),
+  };
+  emit("cite", pick, e.currentTarget as HTMLElement);
 }
 
 // ── 쓰기·고치기 ──────────────────────────────────────────

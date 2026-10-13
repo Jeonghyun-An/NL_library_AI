@@ -294,6 +294,8 @@ export interface CitePick {
   cntsId: string;
   genId: number;
   sentence: string;
+  // 카드에 보이는 인용한 문장 — [E#] 칩을 빼고 [F#] 를 그 절의 수치 값으로 바꾼 글(citedQuote). sentence 는 마커가 든 원문 그대로
+  quote?: string;
 }
 
 // ── 요청 본문 ──────────────────────────────────────────────

@@ -1,12 +1,14 @@
 // frontend/tests/unit/citationEvidence.test.ts
 import { describe, expect, it } from "vitest";
-import type { SectionSource } from "~/types/work";
+import type { CitePick, Figure, ProposalSection, ProposalView, SectionSource } from "~/types/work";
 import {
   EXCERPT_MATCH_MIN,
   NGRAM_N,
+  activeCiteOf,
   bestExcerptSentence,
   citationPdfTarget,
   citedClaims,
+  citedQuote,
   excerptParts,
   excerptSentences,
   ngramOverlap,
@@ -289,5 +291,128 @@ describe("citationPdfTarget", () => {
 
   it("대목이 없으면(초록만) 논문을 처음부터 연다", () => {
     expect(citationPdfTarget(source(null), "논문")).toEqual({ cntsId: "KCI_A", title: "논문" });
+  });
+});
+
+// 저장된 문단 — 둘째 문장이 [F1] 수치 표기를 품는다(절 프롬프트가 숫자를 직접 쓰지 말고 [F#] 로만 쓰게 한다)
+const FIGURES: Figure[] = [
+  { id: "F1", label: "소장 코퍼스의 관련 논문 수", value: "12" },
+  { id: "F2", label: "근거 중 최신 연도", value: "2024" },
+];
+const FIRST = "가족 지지는 노인의 우울을 낮춘다 [E1]. ";
+const SECOND = "소장 논문 [F1]편 가운데 세 편이 이를 다뤘다 [E2].";
+
+function citedSection(paragraphs: { id: string; text: string }[], genId = 50): ProposalSection {
+  return {
+    key: "prior.g1",
+    gen_id: genId,
+    evidence: { E1: "KCI_A", E2: "KCI_B" },
+    figures: FIGURES,
+    basis: { topic_id: 12, papers: ["KCI_A", "KCI_B"] },
+    note: null,
+    paragraphs: paragraphs.map((p) => ({
+      ...p,
+      state: "proposed",
+      cites: ["KCI_A", "KCI_B"],
+      checks: { dropped: 0, dropped_f: 0, unmarked: 0, numbers: [], softened: 0 },
+      gen_id: 50,
+    })),
+    model: "gemma-3-12b",
+    updated_at: "2026-10-14T06:00:00Z",
+  };
+}
+
+function citedProposal(sections: Record<string, ProposalSection>): ProposalView {
+  return {
+    version: 3,
+    outline: null,
+    sections,
+    drafts: {},
+    papers: {},
+    references: {},
+    corpus: null,
+    stale: { outline: false, sections: {} },
+    disclosure: { steps: [] },
+  };
+}
+
+// p1 둘째 문장(si 1)의 [E2] 칩을 누른 때 — sentence 는 sentenceFlags 가 나눈 글 그대로다
+function pickOf(over: Partial<CitePick> = {}): CitePick {
+  return { key: "prior.g1", pid: "p1", si: 1, eid: "E2", cntsId: "KCI_B", genId: 50, sentence: SECOND, ...over };
+}
+
+describe("citedQuote — 인용 근거 카드에 보이는 인용한 문장", () => {
+  it("[E#] 칩은 앞 공백과 함께 빼고 [F#] 는 그 절의 수치 값으로 바꾼다 — 본문 칩이 그리는 글과 같다", () => {
+    expect(citedQuote(SECOND, FIGURES)).toBe("소장 논문 12편 가운데 세 편이 이를 다뤘다.");
+    expect(citedQuote("근거 중 최신 연도는 [F2]년이다 [E1].", FIGURES)).toBe("근거 중 최신 연도는 2024년이다.");
+  });
+
+  it("근거가 여러 개 붙거나 문장 가운데 있어도 칩만 빠지고 앞뒤 공백은 정리한다", () => {
+    expect(citedQuote(FIRST, FIGURES)).toBe("가족 지지는 노인의 우울을 낮춘다.");
+    expect(citedQuote("가족 지지는 [E1] 우울을 낮추고, 스트레스는 수면을 해친다 [E1][E2]. ", FIGURES)).toBe(
+      "가족 지지는 우울을 낮추고, 스트레스는 수면을 해친다.",
+    );
+  });
+
+  it("수치 목록에 없는 [F#] 는 본문처럼 표기 그대로 둔다 — 수치를 지워 뜻을 바꾸지 않는다", () => {
+    expect(citedQuote("소장 논문 [F9]편이 있다 [E1].", FIGURES)).toBe("소장 논문 [F9]편이 있다.");
+    expect(citedQuote(SECOND, [])).toBe("소장 논문 [F1]편 가운데 세 편이 이를 다뤘다.");
+  });
+});
+
+describe("activeCiteOf — 본문 쪽 강조(누른 칩이 든 문장이 지금도 같은 글일 때만)", () => {
+  const before = citedProposal({ "prior.g1": citedSection([{ id: "p1", text: FIRST + SECOND }]) });
+
+  it("누른 문장이 지금도 같은 자리에 같은 글이면 그 자리(절·문단·문장 번호·근거 번호)", () => {
+    expect(activeCiteOf(pickOf(), before)).toEqual({ key: "prior.g1", pid: "p1", si: 1, eid: "E2" });
+  });
+
+  it("패널이 닫혔거나 보고서를 읽기 전이면 null", () => {
+    expect(activeCiteOf(null, before)).toBeNull();
+    expect(activeCiteOf(undefined, before)).toBeNull();
+    expect(activeCiteOf(pickOf(), null)).toBeNull();
+  });
+
+  it("절을 다시 써 gen_id 가 바뀌면 같은 글이어도 null — 근거 번호가 다른 논문을 가리킬 수 있다", () => {
+    const rewritten = citedProposal({ "prior.g1": citedSection([{ id: "p1", text: FIRST + SECOND }], 51) });
+    expect(activeCiteOf(pickOf(), rewritten)).toBeNull();
+  });
+
+  it("문단 [고치기] 저장으로 그 문장이 바뀌면 null — 절 gen_id 는 그대로다", () => {
+    const edited = citedProposal({
+      "prior.g1": citedSection([{ id: "p1", text: `${FIRST}소장 논문 [F1]편 가운데 두 편만 이를 다뤘다 [E2].` }]),
+    });
+    expect(activeCiteOf(pickOf(), edited)).toBeNull();
+  });
+
+  it("앞 문장을 더해 문장 번호가 밀리면 null — 같은 번호가 다른 문장을 가리킨다", () => {
+    const shifted = citedProposal({
+      "prior.g1": citedSection([{ id: "p1", text: `${FIRST}친구 지지도 우울을 낮춘다 [E1]. ${SECOND}` }]),
+    });
+    expect(activeCiteOf(pickOf(), shifted)).toBeNull();
+  });
+
+  it("문단 [다시]로 같은 문단 id 에 새 글이 들어오면 null — 절 gen_id 는 그대로다", () => {
+    const regenerated = citedProposal({
+      "prior.g1": citedSection([{ id: "p1", text: "사회적 지지의 효과는 연령에 따라 달랐다 [E1]. 남성에서 더 컸다 [E2]." }]),
+    });
+    expect(activeCiteOf(pickOf(), regenerated)).toBeNull();
+  });
+
+  it("문단을 지우거나 절이 없으면 null", () => {
+    const removed = citedProposal({ "prior.g1": citedSection([{ id: "p2", text: FIRST + SECOND }]) });
+    expect(activeCiteOf(pickOf(), removed)).toBeNull();
+    expect(activeCiteOf(pickOf(), citedProposal({}))).toBeNull();
+  });
+
+  it("다른 문장만 고쳤거나 뒤에 문장을 더해(끝 공백만 달라져도) 누른 문장이 같은 자리에 같은 글이면 그대로", () => {
+    const otherEdited = citedProposal({
+      "prior.g1": citedSection([{ id: "p1", text: `가족의 정서적 지지는 노인의 우울을 낮춘다 [E1]. ${SECOND}` }]),
+    });
+    expect(activeCiteOf(pickOf(), otherEdited)).toEqual({ key: "prior.g1", pid: "p1", si: 1, eid: "E2" });
+    const appended = citedProposal({
+      "prior.g1": citedSection([{ id: "p1", text: `${FIRST}${SECOND} 후속 연구가 필요하다 [E1].` }]),
+    });
+    expect(activeCiteOf(pickOf(), appended)).toEqual({ key: "prior.g1", pid: "p1", si: 1, eid: "E2" });
   });
 });

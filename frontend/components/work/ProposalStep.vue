@@ -243,6 +243,7 @@ import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWo
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, OutlinePut, PaperMeta, SectionPut, SectionSources, WorkStep } from "~/types/work";
+import { activeCiteOf, type ActiveCite } from "~/utils/citationEvidence";
 import { panelTabs, type PanelPaper, type PanelTab } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, paraAnchor } from "~/utils/detailSource";
@@ -598,13 +599,10 @@ const panelSource = computed(() => {
   const pick = panel.value?.pick;
   return pick && sources.value ? (sources.value[pick.eid] ?? null) : null;
 });
-// 본문 쪽 강조 — 절을 다시 써서 gen_id 가 바뀌면 같은 문장 번호가 다른 글을 가리키므로 강조를 뗀다(패널의 근거는
-// 그대로 둔다 — 그 문장을 쓸 때의 입력이다)
-const activeCite = computed(() => {
-  const pick = panel.value?.pick;
-  if (!pick || proposal.value?.sections[pick.key]?.gen_id !== pick.genId) return null;
-  return { key: pick.key, pid: pick.pid, si: pick.si, eid: pick.eid };
-});
+// 본문 쪽 강조 — 누른 칩이 든 문장이 지금도 같은 글일 때만 둔다(activeCiteOf). 절을 다시 써 gen_id 가 바뀌었거나, 절
+// gen_id 는 그대로인 문단 [고치기] 저장·문단 [다시]로 그 문단의 글이 바뀌어 같은 문장 번호가 다른 글을 가리키면 강조와
+// 펼침을 뗀다(S4 quality 검토 반영 — 파트 S 메모 13). 패널의 카드·근거는 그대로 둔다 — 그 문장을 쓸 때의 입력이다
+const activeCite = computed(() => activeCiteOf(panel.value?.pick, proposal.value));
 // [논문 상세 ↗] 의 링크 주소 — 높이(y)는 누르는 순간에만 잴 수 있어 링크에는 문단 앵커만 싣는다. 그냥 누르기·Ctrl·Shift
 // 클릭은 onDetail 이 그때 잰 높이를 실은 주소로 갈음하고, 가운데 버튼·메뉴는 이 주소 그대로다
 const panelDetailHref = computed(() => {
@@ -619,14 +617,16 @@ watch(
 );
 onBeforeUnmount(() => emit("panel", false));
 
-function samePick(a: CitePick, b: CitePick): boolean {
+function samePick(a: ActiveCite, b: ActiveCite): boolean {
   return a.key === b.key && a.pid === b.pid && a.si === b.si && a.eid === b.eid;
 }
 
 function onCite(pick: CitePick, el: HTMLElement): void {
   const now = panel.value;
-  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글)
-  if (now?.pick && now.tab === "sources" && samePick(now.pick, pick)) {
+  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글). 펼침은 activeCite 를 따른다 — 그 사이 문단을 고치거나 다시 써 강조가
+  // 떨어진(펼침이 아닌) 자리의 칩은 같은 문단·문장 번호·근거 번호여도 그 문장으로 새로 연다
+  const open = activeCite.value;
+  if (now?.tab === "sources" && open && samePick(open, pick)) {
     closePanel();
     return;
   }
@@ -669,20 +669,31 @@ function openChat(): void {
   void nextTick(() => document.getElementById(`${PANEL_ID}-tab-chat`)?.focus());
 }
 
-// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을, 절을 다시
-// 쓰는 중이라 문단이 없으면 그 절 제목(tabindex -1)을 찾는다
+// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을 찾는다 — 단 누른
+// 문장이 아직 같은 글일 때만(activeCite). 절을 다시 썼거나 문단을 고치거나 다시 써 그 문장이 바뀌었으면 같은 자리의 칩은
+// (쥔 칩 요소가 다시 쓰여 문서에 남아 있어도) 다른 문장의 칩이라 그 문단(li tabindex -1)으로 간다. 문단도 없으면(지웠거나
+// 절을 다시 쓰는 중) 그 절 제목(tabindex -1)으로 간다
 function closePanel(): void {
   const p = panel.value;
+  // 패널을 비우면 activeCite 도 null 이 된다 — 비우기 전에 잰다
+  const same = activeCite.value !== null;
   panel.value = null;
   if (!p) return;
   void nextTick(() => {
     const pick = p.pick;
-    const again = pick
-      ? (document.querySelector<HTMLElement>(
+    const opener = p.opener?.isConnected ? p.opener : null;
+    if (!pick) {
+      opener?.focus();
+      return;
+    }
+    const chip = same
+      ? (opener ??
+        document.querySelector<HTMLElement>(
           `#${CSS.escape(`wk-sec-${pick.key}`)} [data-cite="${CSS.escape(`${pick.pid}:${pick.si}:${pick.eid}`)}"]`,
-        ) ?? document.getElementById(`wk-sec-title-${pick.key}`))
+        ))
       : null;
-    (p.opener?.isConnected ? p.opener : again)?.focus();
+    const para = document.querySelector<HTMLElement>(`[data-anchor="${CSS.escape(paraAnchor(pick.key, pick.pid))}"]`);
+    (chip ?? para ?? document.getElementById(`wk-sec-title-${pick.key}`))?.focus();
   });
 }
 

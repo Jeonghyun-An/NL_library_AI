@@ -5,7 +5,8 @@
 // 겹침이 모자라면 아무 문장도 강조하지 않는다 — 뒷받침하지 않는 문장을 근거처럼 보이지 않는다(spec '인용이라는 말을 정확히').
 // 한 문장에 근거가 둘 이상이면 누른 칩의 번호가 받치는 말(citedClaims)로 잰다 — 문장 전체로 재면 다른 논문 몫의 말이 분모를 키운다
 import type { OpenPdfPayload } from "~/types/research";
-import type { SectionSource } from "~/types/work";
+import type { CitePick, Figure, ProposalView, SectionSource } from "~/types/work";
+import { figureById, sentenceFlags } from "~/utils/figureMarkers";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 
 // 글자 2-gram — 한국어는 조사·어미가 붙어 낱말 단위로는 같은 말이 잘 겹치지 않는다
@@ -172,4 +173,37 @@ export function citationPdfTarget(source: SectionSource, title: string): OpenPdf
   if (!excerpt) return { cntsId: source.cnts_id, title };
   const start = excerpt.page_start ?? 0;
   return citedPdfTarget(source.cnts_id, title, [{ page_start: start, page_end: excerpt.page_end ?? start }]);
+}
+
+// 인용 근거 카드에 보이는 인용한 문장 — 본문 칩이 그리는 글과 같게 만든다(ProposalSection 이 칩을 누를 때 그 절의 수치로
+// 만들어 CitePick.quote 에 싣는다). [E#] 칩은 앞 공백과 함께 빼고, [F#] 는 숫자를 대신하는 자리표라(절 프롬프트가 숫자를
+// 직접 쓰지 말고 [F#] 로만 쓰게 한다 — 화면 칩·Word 가 이 값 글자로 바꾼다) 그 절의 수치 값으로 바꾼다. 지우면 '소장 논문
+// [F1]편' 이 '소장 논문편' 이 되어 뜻이 바뀐다. 수치 목록에 없는 번호는 본문(FigureChip 이 없을 때의 [F#])처럼 표기 그대로 둔다.
+// 마커 문법은 칩을 그리는 splitMarkers 와 같다
+export function citedQuote(sentence: string, figures: readonly Figure[]): string {
+  return sentence
+    .replace(/\s*\[E\d+\]/g, "")
+    .replace(/\[(F\d+)\]/g, (marker, fid: string) => figureById(figures, fid)?.value ?? marker)
+    .trim();
+}
+
+// 본문 쪽 강조 자리 — ProposalSection 의 activeCite(누른 칩이 든 문장을 강조하고 그 칩을 펼침으로 둔다)
+export type ActiveCite = Pick<CitePick, "key" | "pid" | "si" | "eid">;
+
+// 누른 칩이 든 문장이 지금도 같은 글일 때만 그 자리를 돌려준다. 절을 다시 써 gen_id 가 바뀌면 같은 글이어도 근거 번호가
+// 다른 논문을 가리킬 수 있어 null 이다. 절 gen_id 를 그대로 두고 같은 문단 id 아래 글을 바꾸는 길 — 문단 [고치기] 저장
+// (PUT)·문단 [다시](같은 pid 에 새 글) — 이 있어, 그 문단의 지금 글을 sentenceFlags 로 다시 나눠 같은 번호의 문장이 누를
+// 때의 글(CitePick.sentence — 앞뒤 공백만 무시한다: 뒤에 문장을 더하면 끝 공백만 붙는다)과 같은지도 본다. 다르면(문장이
+// 바뀌었거나 앞 문장이 늘어 번호가 밀렸다) 같은 번호가 다른 문장을 가리키므로 null — 강조·펼침을 뗀다. 문단이나 절이
+// 없어도 null. 패널의 카드·근거는 그대로 둔다(그 문장을 쓸 때의 입력이다)
+export function activeCiteOf(
+  pick: CitePick | null | undefined,
+  proposal: ProposalView | null | undefined,
+): ActiveCite | null {
+  if (!pick || !proposal) return null;
+  const section = proposal.sections[pick.key];
+  if (!section || section.gen_id !== pick.genId) return null;
+  const para = section.paragraphs.find((p) => p.id === pick.pid);
+  if (!para || sentenceFlags(para.text)[pick.si]?.text.trim() !== pick.sentence.trim()) return null;
+  return { key: pick.key, pid: pick.pid, si: pick.si, eid: pick.eid };
 }

@@ -166,7 +166,8 @@ export interface SectionGen { gen_id: number; status: GenStatus }
 export interface SectionSourceExcerpt { chunk_id: string; page_start: number | null; page_end: number | null; text: string }
 export interface SectionSource { cnts_id: string; abstract: string; excerpt: SectionSourceExcerpt | null }
 export type SectionSources = Record<string, SectionSource>;
-export interface CitePick { key: string; pid: string; si: number; eid: string; cntsId: string; genId: number; sentence: string }
+export interface CitePick { key: string; pid: string; si: number; eid: string; cntsId: string; genId: number; sentence: string; quote?: string }
+// quote? — S4 quality 검토 반영(파트 S 메모 13): 카드에 보이는 인용한 문장([E#] 를 빼고 [F#] 를 그 절의 수치 값으로 — citedQuote). sentence 는 마커가 든 원문 그대로
 
 // K7
 export interface KeywordCandidate { text: string; source: "llm" | "paper" | "both"; n: number }
@@ -192,7 +193,7 @@ export interface KeywordCandidate { text: string; source: "llm" | "paper" | "bot
 | `utils/deepRead.ts`(새) | `type DocKind = "book" \| "paper"`, `interface ChatCopy { greeting(title?: string): string; placeholder: string; inputLabel: string; sendLabel: string }`, `chatCopy(kind: DocKind): ChatCopy`, `sourceLabel(src: DeepReadSource): string`, `sourcePdfTarget(cntsId: string, title: string, src: DeepReadSource): OpenPdfPayload` | R3 |
 | `utils/deepRead.ts` | `type PanelTab = "sources" \| "chat"`, `PANEL_SIDE_MIN_PX = 1200`, `PANEL_FULL_MAX_PX = 768`, `type PanelMode = "side" \| "drawer" \| "full"`, `panelMode(width: number): PanelMode`, `interface PanelPaper { cntsId: string; meta: PaperMeta }`, `panelHead(p: PanelPaper): { title: string; byline: string }`, `panelTabs(step: "reading" \| "proposal"): PanelTab[]` | R4 |
 | `utils/readingList.ts` | `firstPathChunk(item: ReadingItem): { label: string; chunk: PathChunk } \| null` | R5 |
-| `utils/citationEvidence.ts`(새) | `NGRAM_N = 2`, `EXCERPT_MATCH_MIN = 0.2`(S3 검토 반영 — 파트 S 메모 12), `excerptSentences(text: string): string[]`, `ngramOverlap(a: string, b: string, n?: number): number`, `citedClaims(sentence: string, eid?: string): string[]`(S3 3차 검토 반영 — 메모 12), `bestExcerptSentence(cited: string, excerpt: string, eid?: string): number \| null`, `excerptParts(excerpt: string, cited: string, eid?: string): { text: string; mark: boolean }[]`(`eid` 는 3차 검토 반영 — 누른 칩의 근거 번호, S4 가 `CitePick.eid` 를 넘긴다), `citationPdfTarget(source: SectionSource, title: string): OpenPdfPayload` | S3 |
+| `utils/citationEvidence.ts`(새) | `NGRAM_N = 2`, `EXCERPT_MATCH_MIN = 0.2`(S3 검토 반영 — 파트 S 메모 12), `excerptSentences(text: string): string[]`, `ngramOverlap(a: string, b: string, n?: number): number`, `citedClaims(sentence: string, eid?: string): string[]`(S3 3차 검토 반영 — 메모 12), `bestExcerptSentence(cited: string, excerpt: string, eid?: string): number \| null`, `excerptParts(excerpt: string, cited: string, eid?: string): { text: string; mark: boolean }[]`(`eid` 는 3차 검토 반영 — 누른 칩의 근거 번호, S4 가 `CitePick.eid` 를 넘긴다), `citationPdfTarget(source: SectionSource, title: string): OpenPdfPayload`, `citedQuote(sentence: string, figures: readonly Figure[]): string`·`type ActiveCite = Pick<CitePick, "key" \| "pid" \| "si" \| "eid">`·`activeCiteOf(pick: CitePick \| null \| undefined, proposal: ProposalView \| null \| undefined): ActiveCite \| null`(S4 quality 검토 반영 — 파트 S 메모 13) | S3·S4 |
 | `utils/topicDeck.ts` | `MIN_PICKED_KEYWORDS = 2`, `type CardStatus` 에 `"blocked"`, `cardStatus(item: TopicItem, concepts?: WorkGeneration \| null): CardStatus`, `keywordSpans(title: string, keywords: readonly string[]): { text: string; mark: boolean }[]`, `keywordsChanged(card: TopicCard, concepts: readonly string[]): boolean`, `keywordWarning(card: TopicCard): string \| null`, `interface KeywordChip { text: string; pressed: boolean; badge: string \| null }`, `keywordChips(candidates: readonly KeywordCandidate[] \| null \| undefined, picked: readonly string[]): KeywordChip[]`, `toggleKeyword(picked: readonly string[], text: string): string[]`, `regenerateProblem(picked: readonly string[]): string \| null`, `aiCardsStale(topics: TopicsView, concepts: readonly string[], conceptsGen?: WorkGeneration \| null): boolean`(다시 만들 AI 자리 — 키워드 생성이 실패해 카드가 없는 씨앗 자리(`blocked`)도 세고 다시 만드는 중인 카드는 세지 않는다), `cardRemakingNote(item: TopicItem): string \| null`(다시 만드는 중인 카드의 '새 키워드로 다시 만드는 중입니다'), `canPick` 은 시그니처 그대로 카드 생성이 열린 카드면 거짓 | K7 |
 | `utils/topicDeck.ts` | `SHORT_TITLE_MAX = 18`(← 비공개 `CHIP_TITLE_CHARS = 12` 를 지움), `chipLabel(meta: PaperMeta \| undefined, cntsId: string): string`, `chipTooltip(meta: PaperMeta \| undefined, cntsId: string): string` | H1 |
 | `composables/useAutoReport.ts`(새) | 아래 1-7 | A4 |
@@ -10977,7 +10978,7 @@ spec §12-4 '인용 근거 A안' — 보고서(마지막 단계) 문단의 인�
 
 - **칩(ProposalSection):** 저장된 문단의 칩(06b `:101-109` — 논문 상세로 떠나는 `<a>`)을 `<button type="button" class="wk-psec__cite" :aria-expanded :aria-controls="panelId" :data-cite>` 로 바꾸고, 누르면 `cite` 를 올린다(`CitePick` = 절 키·문단 id·문장 번호 `si`(`sentenceFlags` 순서 — `paragraphViews` 가 이미 나눈 번호)·근거 번호·논문·절의 `gen_id`·그 문장 글 + 누른 요소). 문장 span 에 `wk-psec__sent` 를 달고 `activeCite` 의 문단·문장이면 `is-cited`(본문 쪽 강조). 상세로 떠나는 함수(`detailHref`·`goDetail` 06b `:348-371`)와 그 import(`useDetailLeave`·`detailUrl`·`isPlainClick`·`spotOf`)는 지운다 — 상세 이동은 패널 머리의 [논문 상세 ↗](같은 주소·같은 돌아올 자리)가 맡는다. 흐르는 글(`liveBlocks`, 06b `:32-37`)의 칩은 span 그대로다(정함 24 — 절이 끝나면 문단이 다시 나뉘어 문장 번호가 바뀐다).
 - **패널(ProposalStep):** 루트를 `.wk-split`(R4 의 공용 배치 — ReadingStep 과 같은 규칙)으로 감싸고 `<DeepReadPanel panel-id="wk-panel-proposal" :tabs="panelTabs('proposal')">` 를 늘 그리고 `:paper` 로 열고 닫는다(닫힘 = null — R4 의 패널은 paper 가 null 이면 아무것도 그리지 않는다). 인용 근거 탭(슬롯 `sources`)은 새 `CitationSource`, 딥리드 탭은 패널 안 BookChat(R4 — `doc-kind="paper"`·`:store="chatStore"`·`:pdf-links="true"`). 대목은 `getSectionSources(jobId, key, genId)`(Task S3)로 읽고 `${key}#${genId}` 마다 한 번만 부른다(같은 절의 다른 칩은 캐시). 늦게 온 응답은 순번으로 버린다. 패널이 열리고 닫힐 때 `panel` 을 올리고 내려갈 때(`onBeforeUnmount`) false 를 올린다(정함 30 — 연구 화면의 `workPanelOpen`). [원문 보기](대목·BookChat 출처 칩 모두)는 `open-pdf` 로 올려 연구 화면의 `openPdf` 가 연다.
-- **CitationSource:** 논문 카드(제목·저자 줄 — R4 의 `panelHead`, 그리고 인용한 문장 — `[E#]`·`[F#]` 표기를 뺀 글. 좁은 화면에서는 패널이 본문을 덮어 본문 쪽 강조가 안 보인다), 대목이 있으면 `excerptParts`(누른 칩의 `eid` 를 셋째 인자로 — S3 3차 검토 반영, 파트 S 메모 12)를 `<mark class="wk-cite__mark">` 로 감싸 보이고 머리에 대목 이름(`citationPdfTarget` 의 `passages[0].label` — 뷰어와 같은 'p.6–8'), 겹치는 문장이 없으면 그렇다는 한 줄, 대목이 없으면 초록 + '원문 대목을 읽지 못해 초록을 보입니다', 조회 중·오류 줄, [원문 보기](`citationPdfTarget`)·[이 논문과 대화하기](`chat` → 같은 패널을 딥리드 탭으로).
+- **CitationSource:** 논문 카드(제목·저자 줄 — R4 의 `panelHead`, 그리고 인용한 문장 — `[E#]`·`[F#]` 표기를 뺀 글. 좁은 화면에서는 패널이 본문을 덮어 본문 쪽 강조가 안 보인다. → **S4 quality 검토 반영(파트 S 메모 13):** `[F#]` 는 숫자를 대신하는 자리표라 빼면 '소장 논문 [F1]편'이 '소장 논문편'이 된다 — `[E#]` 만 빼고 `[F#]` 는 그 절의 수치 값으로 바꾼 글(`citedQuote` — ProposalSection 이 칩을 누를 때 만들어 `CitePick.quote` 에 싣는다)을 보인다), 대목이 있으면 `excerptParts`(누른 칩의 `eid` 를 셋째 인자로 — S3 3차 검토 반영, 파트 S 메모 12)를 `<mark class="wk-cite__mark">` 로 감싸 보이고 머리에 대목 이름(`citationPdfTarget` 의 `passages[0].label` — 뷰어와 같은 'p.6–8'), 겹치는 문장이 없으면 그렇다는 한 줄, 대목이 없으면 초록 + '원문 대목을 읽지 못해 초록을 보입니다', 조회 중·오류 줄, [원문 보기](`citationPdfTarget`)·[이 논문과 대화하기](`chat` → 같은 패널을 딥리드 탭으로).
 - **화면 판단은 Task S3 의 순수 함수**(`excerptParts`·`citationPdfTarget`)와 R4 의 `panelTabs`·`panelHead` 를 쓴다 — 이 Task 는 `.vue` 만 고친다(단위 테스트 없음 — typecheck·build·vitest 전체 그대로).
 
 **알아 둘 것:**
@@ -10987,8 +10988,8 @@ spec §12-4 '인용 근거 A안' — 보고서(마지막 단계) 문단의 인�
 - **들여쓰기:** ProposalStep 은 루트 `<section class="wk-proposal">` 을 `<div class="wk-split">` 로 감싸되 **안의 줄 들여쓰기를 옮기지 않는다** — 감싸개 여는·닫는 줄과 `<section>` 여는·닫는 줄이 같은 두 칸에 선다. 화면 전체 들여쓰기를 옮기면 diff 가 파일 전체가 되고, 뒤의 H3(PDF)가 잡는 old(내보내기 카드의 버튼 줄)가 어긋난다.
 - **`jobId` prop:** ProposalSection 의 `jobId` 는 상세 링크(`detailHref`)만 썼다 — 그 함수를 지우며 prop 도 지우고, ProposalStep 의 `:job-id="jobId"` 줄을 새 바인딩 셋(`:active-cite`·`:panel-id`·`@cite`)으로 갈음한다(뼈대 1-7 은 ProposalSection props 를 '더함'만 적었다 — 파트 메모 4).
 - **`activeCite` 에 `eid?` 를 더한다:** 뼈대 1-7 의 `{ pid: string; si: number } | null` 만으로는 한 문장에 칩이 둘(`[E1][E2]`)일 때 둘 다 펼침(`aria-expanded="true"`)이 된다 — 누른 칩만 펼침이 되게 선택 필드 `eid?` 를 더한다(파트 메모 3). ProposalStep 은 절 키가 같은 ProposalSection 에만 넘긴다(`activeCite?.key === key ? activeCite : null`).
-- **본문 강조를 떼는 때:** 절을 다시 써서 그 절의 `gen_id` 가 누른 칩의 `genId` 와 달라지면 같은 문단·문장 번호가 다른 글을 가리킨다 — `activeCite` 를 null 로 두어 강조와 펼침을 뗀다. 패널의 근거는 그대로 둔다(그 문장을 쓸 때의 입력이고, 카드에 인용한 문장이 남아 있다).
-- **토글·초점:** 펼친 칩을 다시 누르면 닫는다(인용 근거 탭일 때 — `aria-expanded` 토글). 닫으면 누른 칩으로 초점을 돌려준다(spec — 닫으면 누른 자리로). 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면(`isConnected` 가 거짓) `#wk-sec-<key> [data-cite="<pid>:<si>:<eid>"]` 로 같은 자리의 칩을, 절을 다시 쓰는 중이라 문단이 없으면 그 절 제목(`wk-sec-title-<key>` — A5 가 `tabindex="-1"` 를 달았다)을 찾는다. 패널 안 초점 가두기·Esc·열릴 때 제목 초점은 R4 의 몫이다.
+- **본문 강조를 떼는 때:** 절을 다시 써서 그 절의 `gen_id` 가 누른 칩의 `genId` 와 달라지면 같은 문단·문장 번호가 다른 글을 가리킨다 — `activeCite` 를 null 로 두어 강조와 펼침을 뗀다. 패널의 근거는 그대로 둔다(그 문장을 쓸 때의 입력이고, 카드에 인용한 문장이 남아 있다). → **S4 quality 검토 반영(파트 S 메모 13):** 절 `gen_id` 를 그대로 두고 같은 문단 id 아래 글을 바꾸는 길(문단 [고치기] 저장·문단 [다시])도 있어, 그 문단의 지금 글을 `sentenceFlags` 로 다시 나눠 같은 번호의 문장이 누를 때의 글(`CitePick.sentence`, 앞뒤 공백 무시)과 같을 때만 둔다 — 판단은 순수 함수 `activeCiteOf(pick, proposal)`(단위 테스트 — 이 Task 의 '단위 테스트 없음'에서 빠진 하나)다.
+- **토글·초점:** 펼친 칩을 다시 누르면 닫는다(인용 근거 탭일 때 — `aria-expanded` 토글). 닫으면 누른 칩으로 초점을 돌려준다(spec — 닫으면 누른 자리로). 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면(`isConnected` 가 거짓) `#wk-sec-<key> [data-cite="<pid>:<si>:<eid>"]` 로 같은 자리의 칩을, 절을 다시 쓰는 중이라 문단이 없으면 그 절 제목(`wk-sec-title-<key>` — A5 가 `tabindex="-1"` 를 달았다)을 찾는다. 패널 안 초점 가두기·Esc·열릴 때 제목 초점은 R4 의 몫이다. → **S4 quality 검토 반영(파트 S 메모 13):** 토글과 초점 복귀도 `activeCite` 를 따른다 — 닫는 것은 지금 펼침인 칩(`activeCite` 와 절·문단·문장·근거 번호가 같은 칩)을 다시 누를 때뿐이고(강조가 떨어진 자리의 칩은 같은 번호여도 새로 연다), 닫을 때 누른 문장이 바뀌었으면(`activeCite` 가 null) 같은 자리의 칩·쥔 칩 요소 대신 그 문단(`[data-anchor="<paraAnchor>"]` — X4 의 `tabindex="-1"`)으로, 문단도 없으면 절 제목으로 간다.
 - **[논문 상세 ↗]:** 패널 머리의 링크(`detailHref`)는 06b 칩 링크와 같은 주소(`detailUrl(cnts, { kind: "research", job, e: null, s: "proposal" }, { at: paraAnchor(key, pid), y })`)다. 높이(`y`)는 누르는 순간에만 잴 수 있어 링크의 `href`(`panelDetailHref`)는 `y: null` 로 그리고, `onDetail` 이 누르는 순간 누른 칩의 문단(`[data-anchor="<paraAnchor>"]` — 칩이 새로 그려졌어도 앵커로 다시 찾는다)의 화면 높이를 `spotOf` 로 재어 **그 자리를 실은 주소**로 떠난다(06b `goDetail` 의 `detailHref(cnts, pid, spot.y)` 후 `leave(url, spot)` 와 같다). 상세 화면은 연관 논문으로 넘어갈 때 주소의 자리를 그대로 잇고(`relatedDetailUrl`), router.back() 을 못 쓰는 [돌아가기]는 그 자리로 간다(`backTarget`) — 주소에 높이가 없으면 앵커로만 맞춘다. 그냥 누르면(`isPlainClick`) `leave`, Ctrl·Shift 클릭은 높이를 실은 주소로 `href` 를 갈음해 새 탭에 맡긴다(06b 와 같다). 가운데 버튼·메뉴('새 탭에서 열기')는 R4 의 패널이 `click` 에서만 `detail` 을 올려 링크 그대로(문단 앵커만 — 높이 없음)다. 06b 는 `auxclick`·`contextmenu` 에서도 높이를 찍었는데, 그러려면 R4 부품을 고쳐야 해 이 Task 는 하지 않는다(새 탭의 [돌아가기]는 같은 문단에 맞추되 화면 높이는 기본 자리다).
 - **패널은 늘 그리고 `paper` 로 연다(닫힘 = null):** R4 의 `DeepReadPanel` 은 `<template v-if="paper">` 로 닫힘을 그리고, 열릴 때의 제목 초점을 `watch(() => props.paper !== null)`(즉시 실행 아님)로 옮긴다(06e-R.md R4 Step 5). `v-if` 로 마운트하면 처음부터 paper 가 있어 제목 초점이 빠진다 — R5 의 ReadingStep 처럼 `v-if` 없이 `:paper="panelPaper"`(패널이 닫히면 null)·`:tab="panel?.tab ?? 'sources'"` 를 넘긴다. 열린 채 다른 칩을 누르면 paper 만 바뀌어 초점은 칩에 남는다(R4 의 규칙 — 이어 누를 수 있게).
 - **대화 보관:** `chatStore = new Map<string, DeepReadMessage[]>()` 를 이 단계 화면이 쥔다(정함 20 — 같은 단계 안에서 논문을 오가면 이어지고, 단계를 옮기거나 새로고침하면 비운다). [이 논문과 대화하기]로 바꾼 딥리드 탭은 패널의 `cntsId`(누른 칩의 논문)로 BookChat 을 연다.
@@ -11071,7 +11072,10 @@ new:
 
 ```ts
 import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
+import { citedQuote } from "~/utils/citationEvidence";
 ```
+
+(`citedQuote` import 는 S4 quality 검토 반영 — 파트 S 메모 13. `~/utils/citations` 줄 바로 앞, 알파벳 자리다.)
 
 old:
 
@@ -11173,7 +11177,8 @@ function citeKey(pid: string, si: number, eid: string): string {
   return `${pid}:${si}:${eid}`;
 }
 
-// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호)
+// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호). ProposalStep 은 그 번호의 문장이 지금도 누를 때와 같은
+// 글일 때만 activeCite 를 넘긴다(activeCiteOf — 문단을 고치거나 다시 쓰면 같은 번호가 다른 문장을 가리킨다)
 function isActiveSentence(pid: string, si: number): boolean {
   return props.activeCite?.pid === pid && props.activeCite.si === si;
 }
@@ -11183,11 +11188,23 @@ function isOpenCite(pid: string, si: number, eid: string): boolean {
   return isActiveSentence(pid, si) && (props.activeCite?.eid ?? eid) === eid;
 }
 
+// quote — 카드에 보이는 인용한 문장. 누르는 순간의 이 절 수치로 [F#] 를 값으로 바꾼다(citedQuote) — 절을 다시 쓰면 같은
+// [F#] 가 다른 값을 가리킬 수 있어 패널이 나중에 만들지 않는다. sentence 는 마커가 든 원문 그대로(대목 고르기·본문 강조가 쓴다)
 function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: string): void {
   const sec = section.value;
   const cntsId = sec?.evidence[eid];
   if (!sec || !cntsId) return;
-  emit("cite", { key: props.sectionKey, pid, si, eid, cntsId, genId: sec.gen_id, sentence }, e.currentTarget as HTMLElement);
+  const pick: CitePick = {
+    key: props.sectionKey,
+    pid,
+    si,
+    eid,
+    cntsId,
+    genId: sec.gen_id,
+    sentence,
+    quote: citedQuote(sentence, sec.figures),
+  };
+  emit("cite", pick, e.currentTarget as HTMLElement);
 }
 ```
 
@@ -11245,7 +11262,7 @@ Expected: 빈 출력
 import { computed } from "vue";
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, PaperMeta, SectionSource } from "~/types/work";
-import { citationPdfTarget, excerptParts } from "~/utils/citationEvidence";
+import { citationPdfTarget, citedQuote, excerptParts } from "~/utils/citationEvidence";
 import { panelHead } from "~/utils/deepRead";
 
 const props = defineProps<{
@@ -11260,9 +11277,12 @@ const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; chat: [] }>();
 const head = computed(() =>
   props.meta ? panelHead({ cntsId: props.pick.cntsId, meta: props.meta }) : { title: props.pick.cntsId, byline: "" },
 );
-// 인용한 문장 — 좁은 화면에서는 패널이 본문을 덮어 강조한 문장이 보이지 않는다. [E#]·[F#] 표기는 빼고 보인다
-const quote = computed(() => props.pick.sentence.replace(/\s*\[[EF]\d+\]/g, "").trim());
-// 누른 칩의 근거 번호를 넘긴다 — 한 문장에 근거가 둘 이상이면 그 칩이 받치는 말로 고른다(S3 3차 검토 반영 — 파트 S 메모 12)
+// 인용한 문장 — 좁은 화면에서는 패널이 본문을 덮어 강조한 문장이 보이지 않아 이 카드가 그 문장을 읽는 자리다. 본문에 보이는
+// 글 그대로 — [E#] 칩은 빼고 [F#] 는 그 절의 수치 값으로(ProposalSection 이 누를 때 만든 pick.quote, S4 quality 검토 반영 —
+// 파트 S 메모 13). quote 가 없으면 수치 값을 몰라 [F#] 를 표기 그대로 둔다 — 지우면 '소장 논문 [F1]편' 이 '소장 논문편' 이 된다
+const quote = computed(() => props.pick.quote ?? citedQuote(props.pick.sentence, []));
+// 대목 고르기에는 마커가 든 원문(pick.sentence)을 넘긴다 — 받치는 말(citedClaims)을 [E#] 묶음으로 나눈다. 누른 칩의
+// 근거 번호도 넘긴다 — 한 문장에 근거가 둘 이상이면 그 칩이 받치는 말로 고른다(S3 3차 검토 반영 — 파트 S 메모 12)
 const parts = computed(() =>
   props.source?.excerpt ? excerptParts(props.source.excerpt.text, props.pick.sentence, props.pick.eid) : [],
 );
@@ -11417,6 +11437,7 @@ import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWo
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, OutlinePut, PaperMeta, SectionPut, SectionSources, WorkStep } from "~/types/work";
+import { activeCiteOf, type ActiveCite } from "~/utils/citationEvidence";
 import { panelTabs, type PanelPaper, type PanelTab } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 ```
@@ -11493,13 +11514,10 @@ const panelSource = computed(() => {
   const pick = panel.value?.pick;
   return pick && sources.value ? (sources.value[pick.eid] ?? null) : null;
 });
-// 본문 쪽 강조 — 절을 다시 써서 gen_id 가 바뀌면 같은 문장 번호가 다른 글을 가리키므로 강조를 뗀다(패널의 근거는
-// 그대로 둔다 — 그 문장을 쓸 때의 입력이다)
-const activeCite = computed(() => {
-  const pick = panel.value?.pick;
-  if (!pick || proposal.value?.sections[pick.key]?.gen_id !== pick.genId) return null;
-  return { key: pick.key, pid: pick.pid, si: pick.si, eid: pick.eid };
-});
+// 본문 쪽 강조 — 누른 칩이 든 문장이 지금도 같은 글일 때만 둔다(activeCiteOf). 절을 다시 써 gen_id 가 바뀌었거나, 절
+// gen_id 는 그대로인 문단 [고치기] 저장·문단 [다시]로 그 문단의 글이 바뀌어 같은 문장 번호가 다른 글을 가리키면 강조와
+// 펼침을 뗀다(S4 quality 검토 반영 — 파트 S 메모 13). 패널의 카드·근거는 그대로 둔다 — 그 문장을 쓸 때의 입력이다
+const activeCite = computed(() => activeCiteOf(panel.value?.pick, proposal.value));
 // [논문 상세 ↗] 의 링크 주소 — 높이(y)는 누르는 순간에만 잴 수 있어 링크에는 문단 앵커만 싣는다. 그냥 누르기·Ctrl·Shift
 // 클릭은 onDetail 이 그때 잰 높이를 실은 주소로 갈음하고, 가운데 버튼·메뉴는 이 주소 그대로다
 const panelDetailHref = computed(() => {
@@ -11514,14 +11532,16 @@ watch(
 );
 onBeforeUnmount(() => emit("panel", false));
 
-function samePick(a: CitePick, b: CitePick): boolean {
+function samePick(a: ActiveCite, b: ActiveCite): boolean {
   return a.key === b.key && a.pid === b.pid && a.si === b.si && a.eid === b.eid;
 }
 
 function onCite(pick: CitePick, el: HTMLElement): void {
   const now = panel.value;
-  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글)
-  if (now?.pick && now.tab === "sources" && samePick(now.pick, pick)) {
+  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글). 펼침은 activeCite 를 따른다 — 그 사이 문단을 고치거나 다시 써 강조가
+  // 떨어진(펼침이 아닌) 자리의 칩은 같은 문단·문장 번호·근거 번호여도 그 문장으로 새로 연다
+  const open = activeCite.value;
+  if (now?.tab === "sources" && open && samePick(open, pick)) {
     closePanel();
     return;
   }
@@ -11564,20 +11584,31 @@ function openChat(): void {
   void nextTick(() => document.getElementById(`${PANEL_ID}-tab-chat`)?.focus());
 }
 
-// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을, 절을 다시
-// 쓰는 중이라 문단이 없으면 그 절 제목(tabindex -1)을 찾는다
+// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을 찾는다 — 단 누른
+// 문장이 아직 같은 글일 때만(activeCite). 절을 다시 썼거나 문단을 고치거나 다시 써 그 문장이 바뀌었으면 같은 자리의 칩은
+// (쥔 칩 요소가 다시 쓰여 문서에 남아 있어도) 다른 문장의 칩이라 그 문단(li tabindex -1)으로 간다. 문단도 없으면(지웠거나
+// 절을 다시 쓰는 중) 그 절 제목(tabindex -1)으로 간다
 function closePanel(): void {
   const p = panel.value;
+  // 패널을 비우면 activeCite 도 null 이 된다 — 비우기 전에 잰다
+  const same = activeCite.value !== null;
   panel.value = null;
   if (!p) return;
   void nextTick(() => {
     const pick = p.pick;
-    const again = pick
-      ? (document.querySelector<HTMLElement>(
+    const opener = p.opener?.isConnected ? p.opener : null;
+    if (!pick) {
+      opener?.focus();
+      return;
+    }
+    const chip = same
+      ? (opener ??
+        document.querySelector<HTMLElement>(
           `#${CSS.escape(`wk-sec-${pick.key}`)} [data-cite="${CSS.escape(`${pick.pid}:${pick.si}:${pick.eid}`)}"]`,
-        ) ?? document.getElementById(`wk-sec-title-${pick.key}`))
+        ))
       : null;
-    (p.opener?.isConnected ? p.opener : again)?.focus();
+    const para = document.querySelector<HTMLElement>(`[data-anchor="${CSS.escape(paraAnchor(pick.key, pick.pid))}"]`);
+    (chip ?? para ?? document.getElementById(`wk-sec-title-${pick.key}`))?.focus();
   });
 }
 
@@ -11776,13 +11807,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 3. **S4 — `activeCite` 에 선택 필드 `eid?` 를 더했다**(뼈대 1-7 `{ pid: string; si: number } | null`). 한 문장에 칩이 둘(`[E1][E2]`)이면 문단·문장만으로는 두 칩이 함께 펼침(`aria-expanded="true"`)이 된다 — 누른 칩만 펼침이 되게 했다. 본문 강조(문장)는 `pid`·`si` 만 본다. 선택 필드라 뼈대 모양을 넘기는 호출도 그대로 돈다.
 4. **S4 — ProposalSection 의 `jobId` prop 을 지웠다**(뼈대 1-7 은 props 를 '더함'만 적었다). 그 prop 은 지우는 상세 링크(`detailHref`)만 썼다 — 남기면 쓰이지 않는 prop 이 되고, ProposalStep 의 `:job-id="jobId"` 줄을 새 바인딩 셋(`:active-cite`·`:panel-id`·`@cite`)으로 갈음하는 편이 Edit 자리도 하나로 줄어든다.
 5. **S4 — 칩에 `data-cite="<pid>:<si>:<eid>"` 를 달고, 닫을 때 초점 복귀를 그것으로 다시 찾는다.** 뼈대는 '닫으면 opener 로 초점'만 적었다. 패널이 열린 사이 보고서를 다시 읽으면(문단 수락·다른 절 생성 완료) `v-for` 가 칩 요소를 새로 그려 쥔 opener 가 문서에서 빠진다 — 같은 자리의 칩, 그것도 없으면(절을 다시 쓰는 중) 그 절 제목(A5 의 `tabindex="-1"`)으로 돌려준다.
-6. **S4 — 본문 강조는 절의 `gen_id` 가 누른 칩의 `genId` 와 같을 때만 둔다.** 뼈대에 없는 규칙이다. 절을 다시 쓰면 같은 문단 id·문장 번호가 다른 글을 가리켜 엉뚱한 문장이 강조되므로 강조·펼침을 뗀다. 패널의 근거는 그 문장을 쓸 때의 입력이라 그대로 둔다.
-7. **S4 — CitationSource 카드에 인용한 문장(`[E#]`·`[F#]` 표기를 뺀 글)을 더 보인다.** 뼈대는 '논문 카드(제목·byline)'였다. 1200px 미만 서랍·768px 이하 전체 폭에서는 패널이 본문을 덮어 본문 쪽 강조(`is-cited`)가 보이지 않는다 — 대목 강조가 무엇과 겹친 것인지 패널 안에서 읽히게 했다. 근거 기록을 못 찾은 칩(응답에 그 번호가 없음)도 [원문 보기]는 논문 처음부터 열고 한 줄로 알린다.
+6. **S4 — 본문 강조는 절의 `gen_id` 가 누른 칩의 `genId` 와 같을 때만 둔다.** 뼈대에 없는 규칙이다. 절을 다시 쓰면 같은 문단 id·문장 번호가 다른 글을 가리켜 엉뚱한 문장이 강조되므로 강조·펼침을 뗀다. 패널의 근거는 그 문장을 쓸 때의 입력이라 그대로 둔다. → 이 조건만으로는 모자랐다 — 메모 13 ②(그 문장의 지금 글도 견준다).
+7. **S4 — CitationSource 카드에 인용한 문장(`[E#]`·`[F#]` 표기를 뺀 글)을 더 보인다.** 뼈대는 '논문 카드(제목·byline)'였다. 1200px 미만 서랍·768px 이하 전체 폭에서는 패널이 본문을 덮어 본문 쪽 강조(`is-cited`)가 보이지 않는다 — 대목 강조가 무엇과 겹친 것인지 패널 안에서 읽히게 했다. 근거 기록을 못 찾은 칩(응답에 그 번호가 없음)도 [원문 보기]는 논문 처음부터 열고 한 줄로 알린다. → `[F#]` 를 빼면 수치가 사라져 뜻이 바뀌었다 — 메모 13 ①(`[F#]` 는 그 절의 수치 값으로).
 8. **S4 — 펼친 칩을 다시 누르면 패널을 닫는다(토글).** 뼈대는 여는 동작만 적었다 — `aria-expanded` 를 단 버튼은 다시 누르면 접히는 것이 관례라 인용 근거 탭일 때 닫는다(딥리드 탭으로 바꾼 뒤 같은 칩을 누르면 인용 근거 탭으로 돌아간다).
 9. **S4 — CSS 묶음에 1-8 의 이름 밖 선택자를 더했다:** `button.wk-psec__cite`(버튼 기본값 지우기·펼침·초점 모양 — `.wk-psec__cite` 의 모양은 그대로), `.wk-cite__title`·`__byline`·`__quote`·`__heading`·`__text`, `@media (forced-colors: active)`(고대비에서 배경 강조가 사라지면 테두리로). 모두 `wk-cite` 묶음 안이라 다른 Task 의 이름과 겹치지 않는다.
 10. **S4 — ProposalStep 의 안쪽 줄 들여쓰기를 옮기지 않는다.** 루트를 `.wk-split` 로 감싸면서 안쪽 화면 전체를 두 칸 들이면 diff 가 파일 전체가 되고 H3 가 잡는 old(내보내기 카드의 버튼 줄)가 어긋난다 — 감싸개와 `<section>` 이 같은 두 칸에 선다. H3 는 이미 'S4 뒤 루트 `.wk-split` 의 마지막 자식으로 `ReportPrint`'를 적었다(06e-H.md) — 패널 다음 자리가 된다.
 11. **S2 — 딥리드의 참고문헌 질문이 끊기는 기존 버그를 고친다(검토 반영 — 처음에는 '발견(고치지 않음)'이었다).** `book_chat.py:117-118` 은 참고문헌 의도('참고문헌'·'인용'·'출처' 등 — 부분 문자열)일 때 `(book.extra or {}).get("references", [])` 를 읽는데, 넘어오는 `book` 은 `BookOut` 이라 `extra` 가 없다(`schemas/book.py` — 대신 `references: list[str]` 이 `extra["references"]` 를 싣는다) — `AttributeError: 'BookOut' object has no attribute 'extra'` 로 스트림이 끊긴다(0b51e68 부터). 06e 의 인용 근거 탭 → [이 논문과 대화하기] 장면(spec §12-8 장면 3)에서는 '이 인용 근거가 맞아?'·'출처가 어디야?' 같은 첫 질문이 바로 이 길이라, 뼈대 범위 밖이어도 S2 에 함께 넣었다 — `_book_references(book)`(`getattr` 로 `references` — 속성이 없거나 None 이면 빈 목록)와 테스트 1(백엔드 +1). 계획 머리의 정함 31(06e-frame.md — '고치지 않는다(기본값)'·Z6 은 참고문헌 의도 낱말을 넣지 않는다·완료노트 두 갈래)은 '고친다 — Task S2' 로 맞춰야 한다. 사용자가 고치지 말라면 S2 의 `_book_references`·`:118` 갈음·그 테스트를 빼고 기대 수를 되돌린다(`test_book_chat_prompt.py` 4 · Step 2 `4 failed, 10 passed` · Step 4 `14 passed`·`198 passed` · 전체 `+5`).
 12. **S3 — 대목 문장 고르기를 '겹친 2-gram 수가 가장 큰 문장(모두 0 이면 null)'에서 '인용 문장을 덮는 정도가 가장 큰 문장(하한 아래면 null)'으로 바꿨다(quality 검토 반영 — spec §12-4 '제안'의 설계라 사용자 판단 대기).** 뼈대의 겹친 수는 하한도 정규화도 없어, 한국어 대목에서는 어미·흔한 낱말 2-gram('였다'·'하였'·'연구'·'이다')이 거의 늘 겹쳐 null 갈래가 사실상 타지 않았다 — 인용 문장 '선행 연구들은 사회적 자본이 지역 공동체의 회복력에 기여한다고 보고하였다'를 대목 '본 연구는 2019년 전국 패널 자료를 이용하였다. …'와 견주면 무관한 첫 문장이 '연구'·'하였'·'였다' 셋으로 강조되어, S4 가 그 문장을 '이 문장을 쓸 때 넘긴 원문 대목'의 근거처럼 `<mark>` 로 보이고 '겹치는 대목 문장을 찾지 못했습니다' 줄은 나오지 않았다(spec '인용이라는 말을 정확히 쓴다' — 뒷받침을 넘겨 말하지 않는다 — 와 어긋남). 흔한 말을 많이 품은 긴 문장으로도 쏠렸다. 이제 덮는 정도 = 인용 문장 2-gram 가운데 그 문장에도 있는 것의 무게 합 ÷ 인용 문장 2-gram 의 무게 합(0~1), 무게 = 대목 안 IDF `ln((대목 문장 수 + 1) ÷ 그 2-gram 이 나오는 대목 문장 수(대목에 없으면 1))` 이다 — 여러 문장에 두루 나오는 어미·흔한 낱말은 가볍고, 대목이 한 문장이면 그냥 덮는 비율이다. 가장 큰 값이 `EXCERPT_MATCH_MIN = 0.2`(새로 내보내는 이름 — 1-6 에 더함, `frontend/` 에 같은 이름 없음) 아래면 null. → **2차 검토 반영(상투구 무게 0):** 위 '합성 대목 다섯·인용 문장 열다섯으로 맞는 문장 0.26~0.77·무관 0.11 이하'는 상투구가 대목 안에서 되풀이되거나 인용 문장이 긴 예에서만 맞았다. 무게를 대목 하나(4~8문장) 안에서만 세므로 대목에 한 번만 나오는 학술 상투구('것으로 나타났다'·'을 대상으로'·'에 미치는 영향을 분석하였다'·'유의하게')가 오히려 가장 무거운 무게(df=1)를 받아, 내용이 무관한 짧은 인용 문장이 하한을 넉넉히 넘었다 — 대목 '이 연구는 대학생 500명을 대상으로 학업 스트레스가 수면의 질에 미치는 영향을 분석하였다. 구조방정식 모형을 적용한 결과 학업 스트레스는 수면의 질을 유의하게 낮추는 것으로 나타났다. …'에 '노인의 신체활동은 인지 기능 저하를 늦추는 것으로 나타났다' 0.321, '기업의 사회적 책임 활동은 고객 충성도를 유의하게 높이는 것으로 나타났다' 0.324, '중학생을 대상으로 한 연구에서 부모의 양육 태도가 자아존중감에 미치는 영향을 분석하였다' 0.44 로 셋 다 강조되었고, 맞는 문장이 0.18~0.30 에 머무는 경우도 있어 하한이 두 무리를 가르지 못했다(가장 흔한 한국어 논문 문형에서 S4 가 무관한 문장을 '넘긴 원문 대목'의 근거로 보였을 것이다). '어미·흔한 낱말만 겹치는 무관 문장' 테스트도 IDF 덕분이 아니라 그 인용 문장이 길어서(2-gram 약 33개 가운데 3개만 겹침) 통과했다. 그래서 상투구·어미 목록(`BOILERPLATE` — '는 것으로 나타났다'·'것으로 확인되었다' 등 결과 서술, '을 대상으로 한'·'에 미치는 영향을 분석하였다'·'영향을 미치지 않았다', '유의하게'·'본 연구는'·'연구 결과'·'분석 결과', '보고하였다'·'확인되었다' 등, '하였다'·'었다'·'았다'·'에서'·'에 따른' 같은 어미·조사 — 띄어쓰기를 뺀 이어진 2-gram 까지)의 2-gram 은 무게 0 으로 두고(분자·분모 모두에서 빠진다 — 인용 문장이 상투구뿐이면 null), 나머지는 그대로 대목 안 IDF 다. 내용을 가리키는 말('관계'·'효과'·'매개'·'차이')은 넣지 않았다. IDF 범위를 절 응답 전체 대목으로 넓히는 것만으로는 무관 문장이 0.21~0.36 으로 모자랐다(검토자 계산). 초록 꼴 대목 다섯·인용 문장 서른셋(무관 14·맞는 19)으로 다시 재면 무관은 0.13 이하(바꾸기 전 14개 가운데 9개가 0.26~0.46 으로 강조), 맞는 문장은 0.24~0.83(바꾸기 전 하나가 0.18 로 놓침)이다 — 운영 대목으로 재지 않았으므로 Z6 Step 6 에서 무관 문장 강조와 '찾지 못했습니다' 줄의 빈도를 함께 보고, 상투구 목록에 없는 문형('~로 드러났다' 등)으로 무관 문장이 강조되면 목록에 더하거나 하한을 올리고, '찾지 못했습니다' 줄이 잦으면 하한을 낮출지 본다. **남는 한계(사용자 판단 몫):** 글자 2-gram 겹침은 뜻을 보지 않는다 — 같은 주제어를 나누되 결론이 반대인 문장('우울을 낮췄다' ↔ '우울과 무관했다')은 그대로 강조된다. 이 한계를 받아들이면 S4 의 대목 머리·강조 설명을 '근거'가 아니라 '인용한 문장과 가장 비슷한 대목 문장' 류로 낮추는 것도 선택지다(지금 S4 는 탭 이름이 '인용 근거', 대목 머리가 '이 문장을 쓸 때 넘긴 원문 대목'이고 `<mark>` 한 문장을 따로 부르는 글은 없다 — 예를 들어 강조 아래에 '인용한 문장과 가장 비슷한 대목 문장을 표시했습니다' 한 줄을 더하는 식). `ngramOverlap`(겹친 수)은 1-6 계약대로 남기되 고르기에는 더 쓰지 않는다. 테스트: '겹친 수가 같으면 앞 문장'의 입력을 무게가 같은 두 문장('노인 복지. 우울 증상.')으로 바꾸고(옛 입력은 '여러 문장에 나오는 말보다 한 문장에만 나오는 말을 무겁게' 테스트로 남김), 하한·어미만 겹치는 무관 문장 → null·흔한 말을 더 많이 나누는 긴 문장보다 짧은 정답·`excerptParts` 의 무관 대목 → 표시 없음을 더해 citationEvidence 12 → 16. 2차 검토 반영으로 대목에 한 번만 나오는 상투구만 겹치는 짧은 무관 문장 → null(위 반례 셋과 독거노인 대목·패널 대목의 반례 둘)·상투구로만 된 인용 문장 → null·상투구가 섞인 맞는 인용 문장은 그대로 고름(다섯)을 더하고 `excerptParts` 의 무관 대목 → 표시 없음에 상투구 반례 하나를 더해 16 → 19. → **3차 검토 반영(근거가 둘 이상인 문장):** 덮는 정도의 분모가 칩이 든 문장 전체라, 근거가 둘 이상인 문장 — 절 프롬프트가 '문장마다 그 문장을 받치는 근거를 [E#] 표기로'(`research_section_prior.yaml`·`research_section_gap.yaml`) 붙이게 하고 백엔드 픽스처에도 나오는 꼴(`test_research_work_section.py` 의 '[E2] [E7]'·`test_research_proposal_api.py` 의 '[E2] [E9]') — 은 다른 논문 몫의 말이 분모를 키워 논문마다 덮는 정도가 하한 아래로 갈라졌다: '가족 지지는 노인의 우울을 낮추고, 학업 스트레스는 대학생의 수면의 질을 떨어뜨린다 [E1][E2].'는 E1(독거노인 대목)의 맞는 문장이 0.181, '가족과 친구의 지지는 독거노인의 우울을 낮추며 [E1], 대학생에게서는 학업 스트레스가 수면의 질을 낮춘다 [E2].'의 E1 은 0.145 로 null 이었다(잘못된 강조가 아니라 '찾지 못했습니다' 줄로 떨어지는 안전한 쪽 실패지만, 근거를 묶는 선행 연구 절에서는 많은 칩이 강조 없이 나올 수 있었다). 앞 두 차례의 측정 묶음(합성 33개)과 테스트는 모두 근거가 하나인 문장이라 이 갈래를 재지도 고정하지도 않았다. 그래서 `citedClaims(sentence, eid)`(새로 내보내는 이름 — 1-6 에 더함, `frontend/` 에 같은 이름 없음)가 누른 칩의 번호가 받치는 말 후보를 만든다 — 그 번호가 든 마커 묶음(사이에 공백·쉼표·가운뎃점만 있는 [E#] 들 — `[E1][E2]`·`[E1] [E2]`·`[E1], [E2]`. [F#] 는 절을 나누지 않는다) 앞의 절(앞 마커 묶음이나 문장 머리부터 — 같은 번호가 여러 번이면 그 절들을 이은 것과 하나씩), 그리고 묶음에 근거가 둘 이상이면 어느 말이 어느 논문 몫인지 모르므로 그 절을 쉼표·이음 어미('-고'·'-며'·'-면서'·'-지만'·'-으나') 뒤에서 나눈 조각까지다. 상투구 밖 2-gram 이 셋 미만인 후보('선행 연구들 [E1][E2]은 …' 의 '선행 연구들'·머리의 '또한')는 빼고, 남는 것이 없으면(번호가 문장에 없을 때도) 문장 그대로다. `bestExcerptSentence`·`excerptParts` 는 선택 인자 `eid` 를 받아 후보마다 덮는 정도를 재고 가장 큰 값을 그 대목 문장의 값으로 쓴다 — 하한·무게·상투구 목록은 그대로이고, `eid` 가 없거나 근거가 하나인 문장은 후보가 문장 하나라 전과 같다(앞의 합성 33개는 값이 바뀌지 않는다). S4 의 `CitationSource` 는 `excerptParts(…, props.pick.sentence, props.pick.eid)` 로 부른다(S4 의 글·코드 블록을 고쳤다 — 계획과 다른 점). 문장 끝에 몰린 마커를 위해 하한을 근거 수로 나누는 것(0.2 ÷ k)도 재 봤으나 두 근거가 같은 말을 함께 받치는 꼴('노인의 우울은 가족 지지와 친구 지지가 높을수록 낮다 [E1][E2].')에서 무관한 중학생 스마트폰 대목이 '높을수록 … 낮' 만으로 0.150 이 되어 0.1 을 넘었고, 분모에 대목 문장 쪽 덮는 정도를 섞는 것은 짧은 대목 문장이 긴 인용 문장에 쉽게 덮여 택하지 않았다. 합성 측정 — 테스트의 대목 넷(대학생 수면·독거노인·농촌 노인·패널)과 새로 쓴 셋(기업 사회적 책임·유아 놀이·중학생 스마트폰), 근거가 둘 이상인 문장 열(가운데 마커가 있는 넷·끝에 몰린 묶음만 있는 다섯 — 넷은 말을 나눠 받치고 하나는 함께 받친다·같은 번호가 두 번인 하나): 맞는 짝 20개는 문장 전체로 재면 0.130~0.596 이고 8개가 null 이었는데 좁히고 나눈 뒤 0.303~1.0 으로 모두 골랐다(같은 대목에서 연구 목적 문장과 결과 문장이 비슷하게 덮이면 앞의 목적 문장을 고르는 일은 그대로다). 주제가 겹치지 않는 대목과의 짝 89개는 전에 0.150 이하였고, 뒤에는 한 절(같은 절에 붙은 칩 둘)이 0.200 으로 하한에 닿았다 — '독거노인에게는 친구 지지의 효과가 남성에서 더 컸다'가 기업 사회적 책임 대목의 '환경 활동의 효과가 기부 활동보다 컸다'와 '의효·효과·과가·컸다' 넷(상투구 밖 20개 가운데)을 나눈다. 같은 글을 근거가 하나인 문장으로 쓰면 좁히기 전 코드도 0.200 으로 강조하므로, 좁히기가 새 문형을 만든 것이 아니라 근거가 하나인 짧은 문장에 이미 있던 한계('효과가 … 컸다'·'높을수록 … 낮았다' 같은 결과 문형은 내용어가 섞여 상투구 목록에 넣지 않았다)가 가운데 마커의 절에도 걸리게 된 것이다 — 하한을 이 한 예에 맞춰 올리지 않았다(위 '무관 0.13 이하'는 근거가 하나인 33개 묶음의 값이고, 이 새 묶음으로는 성립하지 않는다). 남는 한계: 나누는 자리는 쉼표·이음 어미뿐이라 '-고'로 끝나는 명사('최고 ')에서도 나뉘고(조각은 후보를 늘릴 뿐 절 전체도 후보로 남는다), 마커가 주어 뒤에 붙은 꼴은 문장 전체로 잰다. 테스트: `citedClaims` 다섯(번호 없음·가운데 마커의 절·끝에 몰린 묶음의 조각·같은 번호 두 번·짧은 조각과 없는 번호)과 `bestExcerptSentence` 의 근거가 둘 이상인 문장 다섯(가운데 마커 — 번호 없이는 null 이던 것·끝에 몰린 묶음 — 검토 반례 포함·함께 받치는 꼴·무관 대목은 그대로 null·근거가 하나인 문장은 번호를 넘겨도 같다), `excerptParts` 의 번호 넘김 하나를 더해 19 → 30(바꾸기 전 여덟 it 실패 확인 — 함께 받치는 꼴·무관 대목·근거 하나인 세 it 은 지금 동작을 고정한다). 운영 확인 Z6 Step 6 에 여러 [E#] 가 붙은 문장의 칩을 따로 보는 항목을 더했다. 사용자가 뼈대대로 두라면 `bestExcerptSentence` 를 겹친 수로 되돌리고 `EXCERPT_MATCH_MIN`·`BOILERPLATE`·`citedClaims`·`eid` 인자·새 테스트·바꾼 입력과 S4 의 셋째 인자를 되돌린다. 3차 반영만 되돌리려면 `citedClaims`·`eid` 인자·그 테스트 열하나·S4 의 셋째 인자를 빼면 된다(그러면 근거가 둘 이상인 문장의 칩은 위처럼 상당수 '찾지 못했습니다' 줄로 떨어진다).
+13. **S4 — quality 검토 반영 두 가지: 카드의 인용한 문장이 수치를 지우던 것, 본문 강조가 문단을 고치거나 다시 쓴 뒤에도 남던 것.** ① 카드(CitationSource)는 인용한 문장에서 `[E#]`·`[F#]` 를 함께 지웠다(`/\s*\[[EF]\d+\]/g`). 이 시스템에서 `[F#]` 는 숫자를 대신하는 자리표다 — 절 프롬프트가 숫자를 직접 쓰지 말고 `[F#]` 로만 쓰게 하고 화면 칩(FigureChip)·Word 가 그 자리에 `figure.value` 를 그린다(`markers.figure` — '화면 칩·Word 가 [F#] 를 이 값 글자로 바꾼다'). 그래서 '소장 논문 [F1]편 가운데 …[E1].' 이 카드에 '소장 논문편 가운데 …' 로 나왔다(정규식의 `\s*` 가 앞 공백까지 먹는다). 좁은 화면에서는 이 카드가 인용 문장을 읽는 유일한 자리라(메모 7) 뜻이 바뀐 글을 읽게 된다. 이제 새 순수 함수 `citedQuote(sentence, figures)` 가 `[E#]` 만 앞 공백과 함께 빼고 `[F#]` 는 그 절 수치의 값으로 바꾼다(목록에 없는 번호는 본문의 대기 칩처럼 `[F#]` 그대로). ProposalSection 이 칩을 누르는 순간의 그 절 `figures` 로 만들어 `CitePick` 의 새 선택 필드 `quote` 에 싣고(절을 다시 쓰면 같은 `[F#]` 가 다른 값을 가리킬 수 있어 패널이 나중에 만들지 않는다), CitationSource 는 `pick.quote ?? citedQuote(pick.sentence, [])` 를 보인다. 대목 고르기(`excerptParts`)에는 마커가 든 원문 `pick.sentence` 를 그대로 넘긴다(받치는 말을 `[E#]` 묶음으로 나눈다). ② 본문 강조(`activeCite`)를 떼는 조건이 절의 `gen_id` 가 바뀐 때뿐이었다(메모 6). 문단 [고치기] 저장(PUT — `merge_paragraphs` 는 절 `gen_id` 를 그대로 둔다)과 문단 [다시](`paragraph.py` — 같은 pid 에 새 글을 넣고 절 `gen_id` 는 그대로)는 같은 pid 아래 글을 바꾼다 — 2단(1200px 이상)에서 칩을 눌러 근거를 본 뒤 그 문단을 고치거나 다시 쓰면 `(pid, si)` 가 새 글의 다른 문장을 가리키는데 그 문장이 `is-cited` 로 강조되고, 같은 번호의 칩이 그 자리에 있으면 `aria-expanded="true"` 가 되고, 닫을 때 `data-cite` 대체 찾기가 다른 문장의 칩으로 초점을 돌릴 수 있었다(카드에는 옛 문장이 남는다). 이 판단은 `.vue` 안에 있어 테스트도 없었다. 이제 순수 함수 `activeCiteOf(pick, proposal)` 가 절 `gen_id` 에 더해 그 문단의 지금 글을 `sentenceFlags` 로 다시 나눠 같은 번호의 문장이 누를 때의 글(`CitePick.sentence` — 앞뒤 공백만 무시한다: 뒤에 문장을 더하면 끝 공백만 붙는다)과 같을 때만 자리를 돌려준다(문단·절이 없으면 null). ProposalStep 의 `activeCite` 가 이것을 쓰고, 토글(펼친 칩을 다시 누르면 닫기 — 메모 8)은 `activeCite` 와 같은 칩일 때만 닫아 강조가 떨어진 자리의 칩은 새로 열며, 닫을 때 누른 문장이 바뀌었으면 같은 자리의 칩·쥔 칩 요소 대신 그 문단(li `tabindex="-1"`, X4)으로, 문단도 없으면 절 제목으로 초점을 돌린다(메모 5 의 대체 찾기를 좁힌 것). 테스트는 `citedQuote` 셋(수치 값으로 바꿈·여러 근거와 가운데 마커·목록에 없는 번호)과 `activeCiteOf` 여덟(같은 글이면 유지·닫힘·절 다시 쓰기·문단 고침·앞 문장 더해 번호 밀림·문단 다시 쓰기·문단 지움과 절 없음·다른 문장만 고침과 뒤에 문장 더함은 유지)을 citationEvidence 에 더한다(바꾸기 전 열한 it 실패 확인). 1-5 `CitePick.quote?`·1-6 의 두 함수와 `ActiveCite` 타입 줄, S4 의 CitationSource·본문 강조를 떼는 때·토글·초점 글과 코드, 운영 확인 Z6 Step 6 의 3 을 맞췄다. 되돌리려면 두 함수·`ActiveCite`·`CitePick.quote`·새 테스트 열하나를 빼고 S4 의 세 `.vue` 를 이 커밋 전으로 돌린다(그러면 ①②의 증상이 돌아온다).
 
 ---
 
@@ -18943,7 +18975,7 @@ Expected(화면): 넷 모두 위와 같다.
 
 1. 머리 목차 아래 `검토할 곳: 근거 없는 문장 n · 확인 필요 숫자 m`(0 인 칸은 빠지고, 둘 다 0 이면 줄이 없다) → 누르면 그 첫 문단으로 스크롤·초점.
 2. 저장된 문단의 인용 칩을 누른다 → 오른쪽 패널이 `인용 근거` 탭으로 열린다: 논문 카드(제목·서지), 모델이 본 원문 대목에서 인용 문장을 가장 많이 덮는 문장이 하이라이트(`<mark>`)되고 쪽 표기가 있다(대목이 없으면 초록과 '원문 대목을 읽지 못해 초록을 보입니다'). 본문의 그 문장도 강조된다. 칩 몇 개를 눌러 내용이 무관한 문장이 강조되지 않는지(특히 '것으로 나타났다'·'을 대상으로' 같은 상투구만 같은 문장 — 목록에 없는 상투구로 강조되면 `BOILERPLATE` 에 더하거나 하한을 올린다), '인용한 문장과 겹치는 대목 문장을 찾지 못했습니다' 줄이 대부분의 칩에서 나오지 않는지 본다 — 잦으면 `EXCERPT_MATCH_MIN`(0.2)을 낮출지 판단한다(파트 S 메모 12). 여러 [E#] 가 붙은 문장의 칩은 따로 본다 — 마커가 문장 가운데 있는 꼴('… 낮추며 [E1], … 낮춘다 [E2].')과 끝에 몰린 꼴('… 낮추고, … 떨어뜨린다 [E1][E2].') 각각에서 칩을 하나씩 눌러, 칩마다 그 칩이 받치는 말에 맞는 대목 문장이 강조되는지('찾지 못했습니다' 줄로 떨어지지 않는지), '효과가 … 컸다'·'높을수록 … 낮았다' 같은 결과 문형만 같은 무관 문장이 강조되지 않는지 본다(파트 S 메모 12 의 3차 검토 반영 — 무관이 잦으면 하한을 올리거나 나누기를 끄고, '찾지 못했습니다' 가 잦으면 나누는 자리를 늘릴지 판단한다).
-3. [원문 보기] → 원문 뷰어가 그 쪽으로 열린다. [이 논문과 대화하기] → 같은 패널이 `딥리드` 탭으로 바뀐다. Esc → 닫히고 초점이 누른 칩으로 돌아온다.
+3. [원문 보기] → 원문 뷰어가 그 쪽으로 열린다. [이 논문과 대화하기] → 같은 패널이 `딥리드` 탭으로 바뀐다. Esc → 닫히고 초점이 누른 칩으로 돌아온다. 수치 칩(`[F#]`)이 든 문장의 인용 칩을 눌러 카드의 인용한 문장에 본문과 같은 수치가 보이는지(1200px 미만 서랍에서도 — 수치가 빠져 '논문편' 처럼 읽히지 않는지) 본다. 2단(1200px 이상)에서 칩을 눌러 둔 채 그 문단을 [고치기]로 그 문장을 바꿔 저장하거나 [다시]로 다시 쓰면 본문 강조와 칩 펼침이 떨어지고(카드는 옛 문장 그대로), 같은 자리의 칩을 누르면 새 문장으로 다시 열리며, 닫으면 초점이 그 문단으로 간다(파트 S 메모 13).
 4. 선택 기능이 남았다 — 문단 하나에 [수락] → 상태 `수락`, 다른 문단의 상태 이름은 `AI 작성 · 검토 전`. [목차 고치기] 를 열면 편집기가 펼쳐진다(다시 승인하지 않고 닫는다).
 
 Expected: 넷 모두 위와 같다.

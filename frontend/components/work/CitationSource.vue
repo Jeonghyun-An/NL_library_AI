@@ -42,7 +42,7 @@
 import { computed } from "vue";
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, PaperMeta, SectionSource } from "~/types/work";
-import { citationPdfTarget, excerptParts } from "~/utils/citationEvidence";
+import { citationPdfTarget, citedQuote, excerptParts } from "~/utils/citationEvidence";
 import { panelHead } from "~/utils/deepRead";
 
 const props = defineProps<{
@@ -57,9 +57,12 @@ const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; chat: [] }>();
 const head = computed(() =>
   props.meta ? panelHead({ cntsId: props.pick.cntsId, meta: props.meta }) : { title: props.pick.cntsId, byline: "" },
 );
-// 인용한 문장 — 좁은 화면에서는 패널이 본문을 덮어 강조한 문장이 보이지 않는다. [E#]·[F#] 표기는 빼고 보인다
-const quote = computed(() => props.pick.sentence.replace(/\s*\[[EF]\d+\]/g, "").trim());
-// 누른 칩의 근거 번호를 넘긴다 — 한 문장에 근거가 둘 이상이면 그 칩이 받치는 말로 고른다(S3 3차 검토 반영 — 파트 S 메모 12)
+// 인용한 문장 — 좁은 화면에서는 패널이 본문을 덮어 강조한 문장이 보이지 않아 이 카드가 그 문장을 읽는 자리다. 본문에 보이는
+// 글 그대로 — [E#] 칩은 빼고 [F#] 는 그 절의 수치 값으로(ProposalSection 이 누를 때 만든 pick.quote, S4 quality 검토 반영 —
+// 파트 S 메모 13). quote 가 없으면 수치 값을 몰라 [F#] 를 표기 그대로 둔다 — 지우면 '소장 논문 [F1]편' 이 '소장 논문편' 이 된다
+const quote = computed(() => props.pick.quote ?? citedQuote(props.pick.sentence, []));
+// 대목 고르기에는 마커가 든 원문(pick.sentence)을 넘긴다 — 받치는 말(citedClaims)을 [E#] 묶음으로 나눈다. 누른 칩의
+// 근거 번호도 넘긴다 — 한 문장에 근거가 둘 이상이면 그 칩이 받치는 말로 고른다(S3 3차 검토 반영 — 파트 S 메모 12)
 const parts = computed(() =>
   props.source?.excerpt ? excerptParts(props.source.excerpt.text, props.pick.sentence, props.pick.eid) : [],
 );
