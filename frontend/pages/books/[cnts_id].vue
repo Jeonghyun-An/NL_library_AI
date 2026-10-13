@@ -139,7 +139,7 @@
                 :reason="recoDesc(rel)"
                 empty-text="요약 정보가 없습니다."
                 :expanded="openRelated === rel.book_id"
-                @update:expanded="(open: boolean) => (openRelated = open ? rel.book_id : null)"
+                @update:expanded="(open: boolean) => (openRelated = relatedOpenAfter(openRelated, rel.book_id, open))"
               >
                 <template #cover>
                   <BookCover :book-id="rel.book_id" />
@@ -295,6 +295,7 @@ import {
 } from "~/utils/detailView";
 import { kdcChip } from "~/utils/kdc";
 import { cardKeywords } from "~/utils/resultCard";
+import { relatedOpenAfter } from "~/utils/relatedCard";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
