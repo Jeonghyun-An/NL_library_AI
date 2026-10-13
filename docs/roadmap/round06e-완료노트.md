@@ -33,11 +33,20 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 | K 제목 고르기 | 논문 키워드 채움률 1회성 측정 도구(`research/round06e-keyword-candidates/` — 서버 실행·판정은 Task Z1, 아직. `PAPER_KEYWORD_MIN_N` 은 기본값 1), 후보 키워드(`keywords.py` — LLM + 논문 편수·일반어·상한 10·위 3개, 목록 키워드는 `;`·`,`·`|` 로 나눔), WorkView `concept_candidates`, 카드 입력·프롬프트의 키워드 규칙·[다른 방향]도 지금 키워드(개념 생성 중이면 409), 카드는 개념 반영 때 씨앗 자리마다 한 번(`enqueue_seed_cards` — done 과 취소가 같은 함수, 카드가 있는 자리는 건너뜀), [이 키워드로 다시 만들기](`POST …/topics/regenerate` — 빈 결과는 빈 자리만 채움), 키워드 칩·제목 하이라이트(`keywordSpans`·공용 고정 예제), 제목 키워드 검사(06c `terms.contains`)·세 번 놓친 카드(`soft_check`) |
 | H 칩·total·PDF | 주제 카드 근거 칩 '제1저자 전체 이름 연도'·툴팁 서지 한 줄, 기록 목록 `total`(`HistoryRepository.count` — 읽는 화면 없음, '확인할 것' 1), 보고서 PDF(보고서 화면이 스스로 인쇄 — Word 와 같은 문서·기본값) |
 
-스키마 변경 없음 — 바뀐 모양은 모두 JSONB·응답 안이다(`models/research_work.py` 머리 주석). 딥리서치 코드·워커 파일(`research_tasks.py`·`research_work_tasks.py`)·딥리서치 프롬프트·compose·인프라·06c/06d 파일(논문 검색 화면의 `doc-kind` 한 속성 밖)·`citations.ts`·`style_skovix.css`·근거 장부 블록은 그대로다(Task Z2 Step 2).
+스키마 변경 없음 — 바뀐 모양은 모두 JSONB·응답 안이다(`models/research_work.py` 머리 주석). 딥리서치 코드·워커 파일(`research_tasks.py`·`research_work_tasks.py`)·딥리서치 프롬프트·compose·인프라·06c/06d 파일(논문 검색 화면의 `doc-kind` 한 속성 밖)·`citations.ts`·`style_skovix.css`·근거 장부 블록은 그대로다(Task Z2 Step 2). 예외는 아래 round08 맞춤의 경계 밖 세 곳이다.
+
+리뷰를 마친 뒤 round08 맞춤(2026-10-13 — 이 문서의 첫 커밋 `94f77d5` 뒤):
+- `3f7a4fe` — 서버 화면 문구 두 곳의 '딥리서치'를 'DeepResearch' 로(round08 사용자 결정 — 화면 표기 DeepResearch): 승인·재시도를 막는 429 `browser_active` 의 message('진행 중인 DeepResearch가 있습니다 — …', `app/api/research.py` — 화면 `utils/researchErrors.ts` 의 기본 문구와 같은 말)와 [이 연구 이어가기]의 409('완료된 DeepResearch만 이어갈 수 있습니다', `app/api/research_work.py`). 공유 큐 429 의 '다른 딥리서치가 …' 는 화면이 '요청이 몰려 있습니다'로 바꿔 보여 그대로. 06d 이월 §7-9 를 닫는다.
+- `5d56f12` — 도서 추천 이유 스트림(`services/search/pipeline.py` `stream_book_reason`)이 LLM 호출이 실패하면 `[DONE]` 앞에 `{error: REASON_STREAM_ERROR}` 이벤트를 먼저 보낸다(예전에는 `[DONE]` 만 보내 받다 만 이유가 완성본으로 기록에 저장됐다). 화면 `utils/bookAiPick.ts` `readReasonStream` 은 `{error}` 를 보면 false — 랜딩 검색은 받은 글이 있으면 'interrupted'(보이되 저장하지 않음), 없으면 'error'. `2af9aff` 가 vLLM 의 4xx·5xx 응답도 같은 길로 보낸다(`resp.raise_for_status()` — 형제 `paper_summary.stream_paper_reason` 과 같은 관례).
+- `07118ff` — 06e 화면 글의 '딥리드'를 화면 표기 상수 `DEEP_READ`('DeepRead', `utils/brand.ts`)로: 오른쪽 패널의 대화 탭 이름(`utils/deepRead.ts` 의 `PANEL_TAB_LABEL`)과 참고문헌 선택하기 온보딩('그 논문과 대화(DeepRead)할 수 있고'). 남은 '딥리드'는 주석뿐이다.
+- `8acbcb1`·`786c2bf` — 근거 없음 안내(`ProposalSection.vue` `skippedNow`)의 씨앗 출처를 '`{{ DEEP_RESEARCH }}` 보고서의 향후 과제·근거가 부족했던 하위질문'으로(§2 '계획과 다르게 한 것' A5).
+- 그 네 커밋 검토의 minor 다섯 반영 — `2af9aff`(4xx·5xx, pytest +1)·`786c2bf`(위 문구)·`355cc53`(`proposalSection.test.ts` 의 import 줄 단언을 이름만 보는 꼴로)·`d353b3b`(두 테스트에 복제된 pipeline import 대역을 공용 `app/tests/pipeline_stub.py` 로 — 되돌림 테스트는 `test_pipeline_stub.py` 한 곳, 같은 단언이 두 번 돌던 것이 한 번)·이 문서 맞춤(spec §12-4 탭 이름, 06d 완료노트 이월 §7-8·§7-9, 반복 함정 24 의 429 문구).
+
+경계 밖 세 곳(round08 맞춤): `app/api/research.py` 문구 한 줄(딥리서치 코드), `services/search/pipeline.py`·`utils/bookAiPick.ts`(도서 추천 이유 — 06e 기능이 아닌 기존 화면의 끊김 처리).
 
 계획과 다르게 한 것(작업 보고에서 모음):
 - **서랍 CSS(R4)** — 계획(공통 계약 1-8)은 패널 루트에 `style_skovix.css` 의 `.skx-chat-side` 를 함께 달아 모양을 물려받고 `work.css` 의 `.wk-panel.skx-chat-side` 로 덮는 것이었다. round08 이 그 블록을 쓰이지 않는 규칙으로 지워, 루트는 `wk-panel` 하나이고 세로 flex·overflow·바탕·서랍(1200px 미만)·전체 폭(768px 이하)을 모두 `work.css` 의 `.wk-panel` 에 두었다.
-- **근거 없음 안내(A5)** — '고른 주제의 씨앗(딥리서치 보고서의 향후 과제·부족한 하위질문)'에서 '딥리서치 보고서의'를 뺐다(round08 의 화면 표기 통일 중이라 새 '딥리서치' 글을 넣지 않음).
+- **근거 없음 안내(A5)** — '고른 주제의 씨앗(딥리서치 보고서의 향후 과제·부족한 하위질문)'에서 '딥리서치 보고서의'를 뺐다(round08 의 화면 표기 통일 중이라 새 '딥리서치' 글을 넣지 않음). → round08 맞춤에서 `8acbcb1` 이 화면 표기 상수로 되살리고(`{{ DEEP_RESEARCH }} 보고서의 …`), `786c2bf` 가 목차 편집·온보딩과 말을 맞췄다('향후 과제·근거가 부족했던 하위질문').
 - **R1 의 '딥리서치' 여섯 자리** — dev 를 받은 뒤 최종 리뷰 반영(`ef9746d`)에서 화면 표기 상수 `DEEP_RESEARCH`(`utils/brand.ts` — 'DeepResearch', 사용자 결정 2026-10-12)로 바꿨다.
 - **`putOnceMore`(X3)** — 계획의 '응답 version 으로 한 번 다시'를 '`GET …/proposal` 로 다시 읽어 목차가 그대로일 때만 다시 읽은 version·목차로 한 번 다시, 목차가 바뀌었거나 읽기에 실패하면 첫 충돌'로 고쳤다(`0bc2a92`·`07ea0fe` — 옛 본문이 다른 곳의 목차 변경을 말없이 되돌리던 것, 화면의 reload 가 늦은 응답 버리기로 옛 version 에 머물던 것).
 - **목록 키워드 구분자 `|`** — 계획은 Task Z1 측정 판정 뒤 더하기로 했지만, MARC·MARC+MODS 로더가 653 $a 를 ' | ' 로 잇는 것이 코드로 확정이라 최종 리뷰 반영(`22f9651`)에서 먼저 더했다.
@@ -59,6 +68,8 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 3. **문단 상태 이름 '고침'(화면 띠) ↔ '수정'(부록)**(minor) — 어느 말로 맞출지는 spec 결정이라 이 문서 작업(Task Z3)에서 spec §12-4 를 코드대로(둘 다 그대로) 적고 통일은 넘겼다 — §7-14.
 4. **`putOnceMore` 새 시그니처를 완료노트·spec §12-4 에**(minor) — 이 문서 작업에서 반영했다(§2 '계획과 다르게 한 것', §6 정함 8, spec §12-4).
 
+그 뒤 round08 맞춤 커밋 넷(`3f7a4fe`·`5d56f12`·`07118ff`·`8acbcb1`)을 다시 검토해 minor 다섯을 모두 반영했다 — §2 끝 'round08 맞춤'.
+
 ---
 
 ## 4. 검증
@@ -67,6 +78,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 - 백엔드 pytest `5 failed, 2664 passed, 1 skipped, 2 warnings, 1 error` — 실패 5·오류 1 은 Task 0 기준선과 같은 로컬 의존성 파일(test_build_manifest 2·test_loaders 3·test_book_chat 수집). 기준선 2491(이 worktree 의 Task 0 실측 — 계획 머리의 2327 보다 06c 등 dev 에 들어온 테스트만큼 많다) → 06e +173. dev 받기(06d·round08)는 nuxt 만이라 백엔드 수를 바꾸지 않았다. 06e 백엔드 묶음 스물세 파일 917 passed(`test_embed_index_guard` 포함), 06c 의 `test_research_terms.py`·`test_research_eval.py` 92 passed.
 - 프론트 vitest — dev 받기 전 45파일 908(Task 0 기준선 40파일 739 → 06e +5파일·+169), dev 받은 뒤 73파일 1569(06d·round08 테스트가 들어옴). 06e 프론트 묶음 열여덟 파일 391 passed. `nuxi typecheck` 오류 0 · `Duplicated imports` 2 — 둘 다 round08 의 `MetaPart`(`utils/detailView.ts` ↔ `resultCard.ts`)이고 06e 이름은 아니다(Task 0 의 2 는 `queueLine` 이었고 06d 가 지웠다) · `npm run build` 완료. 그대로여야 하는 `citations`·`reportDocument`·`reportDocx` 50 그대로(계획의 49 에 round08 이 `reportDocx` 테스트 하나를 더했다).
 - 경계(받은 dev `0802e27` 기준): 고치지 않을 파일(`utils/brand.ts` 포함) diff 없음, `[id].vue` 는 요약 띠 버튼 글 한 줄(R1 — '{{ DEEP_RESEARCH }} 보고서 보기') + 리스너 두 줄 + `workPanelOpen` 두 줄 + 루트·AppSidebar(R6)뿐, 논문 화면 두 곳은 `doc-kind="paper"` 한 줄씩(dev 가 `pages/papers/[id].vue` 의 BookChat 을 한 줄로 바꿔 그 줄 안에 넣었다), 근거 장부 블록 그대로, `work.css` 에서 지운 줄 0·더한 색값 0, 프롬프트에 예시 낱말 0, 커밋 트레일러 0, `git status` 깨끗함. 고친 파일 목록은 계획 Z2 목록과 같고 `research/round06e-keyword-candidates/out/fill_rate.md` 하나만 없다(Task Z1 전).
+- round08 맞춤 뒤(2026-10-13, `d353b3b` — 이 문서 맞춤 전): 백엔드 pytest `5 failed, 2669 passed, 1 skipped, 2 warnings, 1 error`(실패 5·오류 1 은 위 기준선 그대로, +5 = `5d56f12` +5 · `2af9aff` +1 · `d353b3b` −1 — 두 파일에 있던 같은 sys.modules 되돌림 테스트가 하나로), 공용 대역을 쓰는 세 파일(`test_search_chunk_answer_flag`·`test_stream_book_reason_end`·`test_pipeline_stub`)은 여섯 순서로 함께 돌려 모두 11 passed. 프론트 vitest 74파일 1574(+1파일·+5 — brand·deepRead·proposalSection 각 +1, bookAiPick +2), `nuxi typecheck` 오류 0 · `Duplicated imports` 2(`MetaPart` 그대로) · `npm run build` 완료.
 - 브라우저 확인은 하지 않았다 — `.vue` 동작(막대 차오름·sticky·머리 목차 초점·연쇄·패널 2단/서랍/전체 폭·Tab 가두기·초점 복귀·하이라이트·[원문 보기]·Word/PDF 내용)은 운영 쓰기 금지라 Task Z6 운영 확인에서 본다.
 
 ---
@@ -78,8 +90,8 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
    - (b) API 전용 필드로 남기기 — 주석 네 곳(`api/history.py`·`repositories/history.py`·`schemas/history.py`)을 용도만 말하게 고치고 Task Z6 7번을 지운다.
 2. **논문 키워드 채움률 측정(Task Z1) — 아직 하지 않았다.** 측정 도구(`research/round06e-keyword-candidates/measure.py`·README)는 만들고 개발 PC 에서 `--dry-run` 까지 봤다. 서버 실행(README '실행' — `/app/data/` 바인드 + `-e PYTHONPATH=/app`, 읽기 전용)은 사용자 몫이다. 결과로 `PAPER_KEYWORD_MIN_N` 을 1(채택 논문 중 키워드가 있는 비율 50% 이상) 그대로 둘지 2 로 바꿀지 정하고 README '결과'·`out/fill_rate.md` 를 커밋한다(2 면 상수 한 줄과 테스트). 목록 키워드 구분자 `|` 는 이미 더했다(`22f9651`) — 측정 ③ 은 그 밖의 구분자가 있는지만 본다. 지금 값(1)으로 머지·배포해도 동작은 한다(논문에만 있는 1편짜리 후보도 칩에 선다).
 3. **round08 과 겹치는 것 — 머지 때 맞출 것.** dev(`0802e27`)를 이미 받아(`f9914e9`) 코드 충돌은 풀렸고 R1 의 '딥리서치' 여섯 자리는 `DEEP_RESEARCH` 로 바꿨다. 남은 것:
-   - **'딥리드' 표기** — 패널 탭 이름(`DeepReadPanel.vue` `TAB_LABEL.chat`)과 온보딩 ② 본문('그 논문과 대화(딥리드)')은 계획·spec 대로 '딥리드'다. round08 화면은 영문 'DeepRead'(상세·검색 결과·TopResult — 상수 없음, `utils/brand.ts` 에는 `DEEP_RESEARCH` 만)를 쓴다. 맞추려면 `brand.ts` 에 상수 하나를 두고 두 자리를 바꾼다(그 글자를 기대하는 테스트는 없다).
-   - **근거 없음 안내의 출처** — A5 에서 뺀 '딥리서치 보고서의'를 다시 밝히려면 `ProposalSection.vue` 의 근거 없음 안내 문단(`skippedNow`)에 `DEEP_RESEARCH` 로 넣는다.
+   - **'딥리드' 표기** — 패널 탭 이름(`DeepReadPanel.vue` `TAB_LABEL.chat`)과 온보딩 ② 본문('그 논문과 대화(딥리드)')은 계획·spec 대로 '딥리드'다. round08 화면은 영문 'DeepRead'(상세·검색 결과·TopResult — 상수 없음, `utils/brand.ts` 에는 `DEEP_RESEARCH` 만)를 쓴다. 맞추려면 `brand.ts` 에 상수 하나를 두고 두 자리를 바꾼다(그 글자를 기대하는 테스트는 없다). → `07118ff` 로 닫음 — `brand.ts` 에 `DEEP_READ`('DeepRead')를 두고 두 자리가 그것을 쓴다(탭 이름은 `utils/deepRead.ts` 의 `PANEL_TAB_LABEL`, vitest brand·deepRead·workPhase 단언).
+   - **근거 없음 안내의 출처** — A5 에서 뺀 '딥리서치 보고서의'를 다시 밝히려면 `ProposalSection.vue` 의 근거 없음 안내 문단(`skippedNow`)에 `DEEP_RESEARCH` 로 넣는다. → `8acbcb1`·`786c2bf` 로 닫음 — '`{{ DEEP_RESEARCH }}` 보고서의 향후 과제·근거가 부족했던 하위질문'(vitest `proposalSection.test.ts`).
    - **주석의 '딥리서치'** — `utils/proposalDocument.ts` 머리 주석·`ProposalStep.vue` 진행 막대 주석. 화면 글이 아니라 그대로 둬도 된다.
    - **서랍 색** — 서랍 그림자·배경이 `color-mix(… var(--skx-ink) 15%·25% …)` 다. round08 다크 테마에서 `--skx-ink` 가 밝은 회색(`#cccccc`)이라 배경이 밝은 기운이 된다 — Task Z6 에서 보고 어색하면 새 색값 없이 다른 토큰으로 바꾼다.
    - **흰 바탕 토큰** — `.wk-review__jump`·`.wk-docfield` 등이 `--skx-white`·`--skx-ink` 를 쓴다. 다크 테마가 두 토큰을 다시 정의해(`#152e28`·`#cccccc`) 따라가지만 대비는 Task Z6 에서 본다.

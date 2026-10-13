@@ -641,7 +641,7 @@
 **참고문헌 선택하기·오른쪽 딥리드·인용 근거(D24)**
 - **이름:** '읽기 목록' → '참고문헌 선택하기'. 보이는 글만 바꾼다 — `workPhase.ts:17,22,122,166`, `ReadingStep.vue:6,25`, `WorkStepper.vue:3`, `OnboardingModal.vue:12`, `TopicsStep.vue:8,58`, `ProposalStep.vue:30,35,147`, `OutlineEditor.vue:10`, `FunnelCounter.vue:3`, `composables/useReadingSaves.ts:53`, `workPhase.test.ts`. 키·주소·API·기능(담기·순서·메모·되살리기)은 그대로다.
 - **논문을 누르면 오른쪽 딥리드:** 지금 제목은 상세로 떠나는 링크다(`ReadingTable.vue:31-37`·`:259-274`). 제목을 `<button aria-expanded aria-controls>` 로 바꿔 패널을 열고 그 행을 강조한다. 상세 이동은 작은 [논문 상세 ↗] 링크로 남긴다(`detailHref`·`goDetail` — 돌아오는 자리 복원·새 탭이 그대로 된다).
-- **패널(공용 부품 — 탭 `[인용 근거 | 딥리드]`):**
+- **패널(공용 부품 — 탭 `[인용 근거 | DeepRead]`):** 대화 탭 이름은 화면 표기 상수 `DEEP_READ`(`utils/brand.ts` — round08 화면과 같은 'DeepRead', 06e `07118ff`), 탭 이름 표는 `utils/deepRead.ts` 의 `PANEL_TAB_LABEL`.
   - 단계마다 쓰는 탭: 참고문헌 선택하기(단계 ③)는 딥리드 탭만 있다(인용 근거 탭 없음 — 누른 문장이 없다). 보고서(단계 ④)는 두 탭 모두다.
   - 머리는 행 데이터만으로 그린다(제목·저자·연도·학술지 — `types/work.ts:53-58` `meta`) + [논문 상세 ↗] + 닫기. 단계 ③ 에서만 [담음] 토글과 '들어온 경로' 첫 대목(접어 둠, `utils/readingList.ts:104-134`)을 더한다. 단계 ④ 에는 [담음]을 두지 않는다 — 바꾸면 목차가 '다시 맞춤 필요'가 된다.
   - 딥리드 탭 본문은 BookChat 대화다.
