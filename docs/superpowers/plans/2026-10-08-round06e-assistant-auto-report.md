@@ -370,7 +370,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `frontend/utils/workPhase.ts` | A3(`FINAL_STEP_NAME`·버튼 상수) → R1(`STEP_NAMES`·`PHASE_LINE`·`ONBOARDING_*`·`continueCard`) |
 | `frontend/utils/proposalView.ts` | A3(자동 산출 함수·`sectionKeysOf`·`docToc`·`reportBar`) → X3(`putOnceMore`) → X4(`reviewSpots`·`reviewLine`) → X5(`footprintLine`) |
 | `frontend/utils/proposalDocument.ts` | A3(`printedKeys` 본문 한 줄) → X5(나머지 전부) |
-| `frontend/utils/topicDeck.ts` | R1(`SEED_KIND_LABEL` :34·`conceptsNote` 문구) → K7(키워드 함수·`cardStatus`·`cardNote`·`canPick`·`cardRemakingNote`) → H1(`evidenceChips`·칩 표기) |
+| `frontend/utils/topicDeck.ts` | R1(`SEED_KIND_LABEL` :34·`conceptsNote` 문구) → K7(키워드 함수·`cardStatus`·`cardNote`·`canPick`·`cardRemakingNote`) → K8(quality 검토 반영 — 사라지는 버튼의 초점 판정 `chipFocusAfterToggle`·`regenerateFocusMoves`, `toggleKeyword`·`regenerateProblem` 바로 뒤) → H1(`evidenceChips`·칩 표기) |
 | `frontend/utils/readingList.ts` | R1(`outlineHint` 문구) → R5(`firstPathChunk`) |
 | `frontend/utils/deepRead.ts`(새) | R3(만듦 — 문구·출처) → R4(패널 함수) |
 | `frontend/composables/useResearchWork.ts` | S3(`getSectionSources`) → K7(`regenerateTopics`) |
@@ -386,14 +386,14 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `frontend/pages/research/[id].vue` | R1(:60 요약 띠 버튼 글) → R5(:73 `@panel`·script :514 뒤 두 줄) → S4(:74) → R6(조건부 :3-7) |
 | `frontend/assets/css/work.css` | A5 → X3 → X4 → R4 → R5 → S4 → K8(각자 1-8 의 묶음, 표시 줄 위) |
 | `frontend/tests/unit/proposalView.test.ts` | A3 → X3 → X4 → X5 |
-| `frontend/tests/unit/topicDeck.test.ts` | R1(`seedLine` 기대 :194·:198·`conceptsNote` 기대 :305-312) → K7 → H1 → K9(`term_checks.json` 일치 it — 06c 머지 뒤라 H1 보다 늦을 수 있다. 서로 다른 describe 라 순서가 바뀌어도 Edit old 가 겹치지 않는다) |
+| `frontend/tests/unit/topicDeck.test.ts` | R1(`seedLine` 기대 :194·:198·`conceptsNote` 기대 :305-312) → K7 → K8(quality 검토 반영 — import 두 이름·describe `keywordChips·toggleKeyword·regenerateProblem` 뒤 describe 하나) → H1 → K9(`term_checks.json` 일치 it — 06c 머지 뒤라 H1 보다 늦을 수 있다. 서로 다른 describe 라 순서가 바뀌어도 Edit old 가 겹치지 않는다) |
 | `frontend/tests/unit/readingList.test.ts` | R1 → R5 |
 | `frontend/tests/unit/deepRead.test.ts`(새) | R3 → R4 |
 | `frontend/tests/unit/workPhase.test.ts` | A3 → R1 |
 
 **각 Task 의 기대 수(파트 본문 '통과 확인' 의 'Task 앞 + N' — 매개변수는 펼친 수, 통합 사본 실측):**
 - 백엔드: A1 +3 · A2 +2 · X1 +6(목차 반영이 연구 배경을 이어 받는 테스트 1 포함) · X2 +15(그대로 남는 사례 5·CLAIM 삽입 문맥 2 포함) · S1 +10(`test_unknown_key_is_422` 매개변수 셋) · S2 +6(`test_prompts.py` +1 · 새 `test_book_chat_prompt.py` 5 — `_book_references` 1 포함) · K2 +47(새 `test_research_work_keywords.py` 44 · `test_research_work_concepts.py` +3) · K3 +3 · K4 +6 · K5 +10 · K6 +8(`TestApply.test_a_picked_topic_stays_picked` 매개변수 +1 포함) · K9 +14 · H2 +3 = **+133**, 새 테스트 파일 2개(`test_research_work_keywords.py`·`test_book_chat_prompt.py`). K1·R1 은 +0(R1 은 `test_research_work_api.py:510` 의 글자 기대만 ✎), Z1 은 판정이 2 이거나 구분자를 더할 때만 +1 씩.
-- 프론트: A3 +24 · A4 +11 · X3 +8 · X4 +4 · X5 +1(`proposalDocument.test.ts` 18 → 19 — '미수락 문단도 넣기' 두 it 을 하나로 합치고 연구 배경 it·'수락한 문단만'의 검토할 곳 it 을 더한다) · R1 +1 · R2 +10 · R3 +4 · R4 +3 · R5 +3 · S3 +12 · K7 +18(검토 반영의 `canPick`·`cardRemakingNote` it 과 blocked 씨앗 자리 `aiCardsStale` it 포함) · H1 +2 · K9 +9(06c `term_checks.json` 의 contains 사례 — 처음부터 통과) = **+110**, 새 테스트 파일 5개(`useAutoReport`·`deepReadSse`·`useDeepReadChat`·`deepRead`·`citationEvidence`) — `Test Files` 40 → 45. A5·X5 의 화면 몫·R6·S4·K8·H3 은 `.vue` 라 +0.
+- 프론트: A3 +24 · A4 +11 · X3 +8 · X4 +4 · X5 +1(`proposalDocument.test.ts` 18 → 19 — '미수락 문단도 넣기' 두 it 을 하나로 합치고 연구 배경 it·'수락한 문단만'의 검토할 곳 it 을 더한다) · R1 +1 · R2 +10 · R3 +4 · R4 +3 · R5 +3 · S3 +12 · K7 +18(검토 반영의 `canPick`·`cardRemakingNote` it 과 blocked 씨앗 자리 `aiCardsStale` it 포함) · K8 +4(quality 검토 반영 — 사라지는 버튼의 초점 판정 it, 파트 K 메모 27) · H1 +2 · K9 +9(06c `term_checks.json` 의 contains 사례 — 처음부터 통과) = **+114**, 새 테스트 파일 5개(`useAutoReport`·`deepReadSse`·`useDeepReadChat`·`deepRead`·`citationEvidence`) — `Test Files` 40 → 45. A5·X5·K8 의 화면 몫·R6·S4·H3 은 `.vue` 라 +0.
 
 ---
 
@@ -466,7 +466,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `utils/proposalView.ts` | `sectionKeysOf`·`autoChainOn`·`autoTargets`·`nextAutoSection`·`isNoSectionPapers`·`docToc`·`reportBar`(A3), `putOnceMore`(X3), `reviewSpots`·`reviewLine`(X4), `footprintLine` 머리(X5) | A3·X3·X4·X5 |
 | `utils/proposalDocument.ts` | `printedKeys` 가 `sectionKeysOf` 를 부름(A3), `acceptedOnly`·워터마크 없음·2절 연구 배경·부록 상태별 개수·파일 이름(X5) | A3·X5 |
 | `utils/outlineEdit.ts` | `OUTLINE_BACKGROUND_MAX`·`fieldPut` | X3 |
-| `utils/topicDeck.ts` | `SEED_KIND_LABEL`('딥리서치 보고서의 향후 과제')·`conceptsNote` 문구(R1), 키워드 판정 함수·`cardStatus`(`blocked`)·`cardNote`·`canPick`·`cardRemakingNote`(K7), 근거 칩 `chipLabel`·`chipTooltip`·`SHORT_TITLE_MAX`(H1) | R1·K7·H1 |
+| `utils/topicDeck.ts` | `SEED_KIND_LABEL`('딥리서치 보고서의 향후 과제')·`conceptsNote` 문구(R1), 키워드 판정 함수·`cardStatus`(`blocked`)·`cardNote`·`canPick`·`cardRemakingNote`(K7), 사라지는 버튼의 초점 판정 `chipFocusAfterToggle`·`regenerateFocusMoves`(K8 — quality 검토 반영), 근거 칩 `chipLabel`·`chipTooltip`·`SHORT_TITLE_MAX`(H1) | R1·K7·K8·H1 |
 | `utils/readingList.ts` | `outlineHint` 문구(R1), `firstPathChunk`(R5) | R1·R5 |
 | `utils/workEvents.ts` | `RELOAD.concepts` 에 `topics` | K7 |
 | `composables/useResearchWork.ts` | `useWorkApi()` 에 `getSectionSources`(S3)·`regenerateTopics`(K7) | S3·K7 |
@@ -483,7 +483,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `pages/research/[id].vue` | `:60` 요약 띠 버튼 글 `[딥리서치 보고서 보기]`(R1), `:73`·`:74` 의 `@open-pdf`·`@panel`, script `workPanelOpen` 두 줄(R5·S4), 루트 `is-lnb-collapsed`·`AppSidebar :collapsed`(R6 — 조건부) | R1·R5·S4·R6 |
 | `pages/papers/index.vue`·`pages/papers/[id].vue` | BookChat 에 `doc-kind="paper"` 한 속성(예외) | R3 |
 | `assets/css/work.css` | 표시 줄 위에 묶음 — `.wk-doc*`·`.wk-rbar*`(A5), `.wk-docfield*`(X3), `.wk-review*`(X4), `.wk-split*`·`.wk-panel*`(R4), `.wk-reading__open` 등(R5), `.wk-cite*`(S4), `.wk-kw*`·`.wk-kwchip*`·`.wk-topic__kw*`(K8) | A5·X3·X4·R4·R5·S4·K8 |
-| 기존 테스트 | `proposalView.test.ts`(A3·X3·X4·X5) · `workPhase.test.ts`(A3·R1) · `outlineEdit.test.ts`(X3) · `proposalDocument.test.ts`(X5) · `readingList.test.ts`(R1·R5) · `topicDeck.test.ts`(R1·K7·H1·K9) · `workEvents.test.ts`(K7) | — |
+| 기존 테스트 | `proposalView.test.ts`(A3·X3·X4·X5) · `workPhase.test.ts`(A3·R1) · `outlineEdit.test.ts`(X3) · `proposalDocument.test.ts`(X5) · `readingList.test.ts`(R1·R5) · `topicDeck.test.ts`(R1·K7·K8·H1·K9) · `workEvents.test.ts`(K7) | — |
 
 고치지 않는다: '실행 전 알아 둘 것'의 '고치지 않는 파일' 목록(특히 `citations.ts`·`citations.test.ts`·`components/research/*`·`EvidenceLedger`·`types/history.ts`·`historyStore.ts`·`term_checks.json`).
 
@@ -15724,10 +15724,13 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 - Modify: `frontend/components/work/TopicDeck.vue` (템플릿 9-12·25, script 64-69·79)
 - Modify: `frontend/components/work/TopicsStep.vue` (Task R1 뒤 기준 — ConceptChips 15-23, TopicDeck 45-47, import 72, `conceptGen` 96 뒤, `retryCard` 159 앞)
 - Modify: `frontend/assets/css/work.css` (이어 붙이는 자리 표시 줄 위에 한 묶음)
+- Modify: `frontend/utils/topicDeck.ts` (quality 검토 반영 — `toggleKeyword` 뒤 `chipFocusAfterToggle`, `regenerateProblem` 뒤 `regenerateFocusMoves`. 파트 K 메모 27)
+- Test: `frontend/tests/unit/topicDeck.test.ts` (quality 검토 반영 — import 두 이름, describe `keywordChips·toggleKeyword·regenerateProblem` 뒤 describe 하나)
 
 **알아 둘 것:**
-- `.vue` 는 단위 테스트하지 않는다 — 판단은 모두 Task K7 의 순수 함수다. 확인은 `npx nuxi typecheck`(오류 0)·`npm run build`(완료, WARN 수가 Task 앞과 같다 — 새 'Duplicated imports' 없음)·vitest 전체(그대로).
+- `.vue` 는 단위 테스트하지 않는다 — 판단은 모두 순수 함수다(Task K7, 그리고 quality 검토 반영으로 이 Task 가 더한 사라지는 버튼의 초점 판정 둘 — `chipFocusAfterToggle`·`regenerateFocusMoves`, 실패 테스트 → 구현 순서. 파트 K 메모 27). 확인은 `npx nuxi typecheck`(오류 0)·`npm run build`(완료, WARN 수가 Task 앞과 같다 — 새 'Duplicated imports' 없음)·vitest 전체(그대로).
 - **ConceptChips(1-7):** props `{ concepts, candidates, generation, readOnly, busy, stale }`, emits `save`(그대로)·`regenerate`(새)·`retry`(그대로 `[genId: number]` — 1-7 표의 `retry: []` 는 '그대로'라 지금 시그니처를 지킨다, 파트 메모). 칩은 `<button type="button" class="wk-kwchip" :aria-pressed>` + 배지, 상한(5)이 차면 고르지 않은 칩은 막는다. **직접 더하기는 남긴다**(정함 15 — 지금의 `addConcept` 규칙, 배지 '직접'). [키워드만 저장]은 지금의 [저장]이다(목차 묶음에만 쓰고 카드를 다시 만들지 않을 때 — 저장하면 카드에 '키워드가 바뀌었습니다'가 붙고 [이 키워드로 다시 만들기]가 그대로 보인다). [이 키워드로 다시 만들기]는 고른 것이 저장과 다르거나(`dirty`) `stale` 일 때 보이고, 둘 미만이면 막고 까닭(`regenerateProblem`)을 `aria-describedby` 로 잇는다. 생성 상태 줄(`conceptsNote` — Task R1 문구)·[다시]는 그대로.
+- **사라지는 버튼의 초점(quality 검토 반영 — 파트 K 메모 27):** 누른 버튼이 `v-if` 로 사라지면 초점이 body 로 떨어진다(TopicCard [직접 고치기] 를 운영 확인 2026-10-08 에 `nextTick` 으로 고친 것과 같은 문제). ① 칩 — 후보 없는 연구(06b)의 칩·'직접' 칩은 빼면 `keywordChips` 가 그리지 않는다. `toggle` 이 누르기 전·뒤 칩 목록으로 `chipFocusAfterToggle` 을 불러 칩이 사라졌으면 `nextTick` 에 그 자리 다음 칩(`data-chip`), 없으면 직접 더하기 칸, 그것도 막혔으면 키워드 제목(`<h3 tabindex="-1">`)으로 옮긴다. ② [이 키워드로 다시 만들기] — 성공하면 고른 것이 저장과 같아지고(dirty 거짓) 다시 만드는 카드는 `aiCardsStale` 에서 빠져(다시 만드는 중) 줄이 통째로 사라진다. `watch([showRegen, busy])`(pre — 그리기 전에 줄 안의 초점을 본다)가 `regenerateFocusMoves`(보이던 줄이 사라졌고, 줄 안에 초점이 있었거나 그 버튼으로 부른 뒤 — 부르는 동안 버튼이 막혀 브라우저가 초점을 이미 놓았을 수 있다)로 판정하고 `nextTick` 에 초점을 잃었을 때만 키워드 제목으로 옮긴다 — 다른 곳으로 간 초점은 빼앗지 않는다. 줄이 남은 채 끝나면(409 등 — busy 가 풀린다) 누른 것을 잊는다. ③ [되돌리기](06b 부터 `v-if="dirty"`)도 누르면 사라진다 — 키워드 제목으로(입력 칸이면 휴대폰에서 고치지도 않을 자판이 올라온다). 키워드 생성의 [다시](06b 그대로)는 고치지 않는다.
 - **TopicCard:** 제목 `<h3>` 안을 `keywordSpans(card.title, card.keywords ?? [])` 조각으로 — 같은 파일의 수치 문장(`figurePieces` — `:40-43`)과 같은 `<template v-for>` 방식이라 조각 사이에 공백이 끼지 않는다. 경고 줄(`.wk-topic__kwwarn`), '키워드가 바뀌었습니다'(`.wk-topic__kwchanged` — 고른·고친·사용자 카드엔 없다, 정함 16). `cardStatus(item, conceptsGen)` 로 빈 씨앗 자리의 waiting·blocked — blocked 는 대기 뼈대 없이 씨앗 글과 노트를 보이고 [다시] 가 없다(`retryId` 는 insufficient·failed 만 — 다시 부를 것은 키워드 칩의 [다시]나 [이 키워드로 다시 만들기]다). 다시 만드는 중인 카드는 `cardRemakingNote` 줄('새 키워드로 다시 만드는 중입니다')을 달고 [고르기](`canPick`)·[직접 고치기](서버 409 `CARD_BUSY`)를 막으며 그동안 '키워드가 바뀌었습니다'는 달지 않는다(06e 정함 16).
 - **TopicDeck:** 받은 `concepts`·`conceptsGen` 을 카드에 내려 주고, 키워드를 고르는 동안 [다른 방향]을 막는다(서버 409 `KEYWORDS_BUSY` — Task K4. 뼈대에 없던 작은 더함 — 파트 메모).
 - **TopicsStep:** ConceptChips 에 `candidates = view.concept_candidates ?? null`·`stale = aiCardsStale(topics, view.concepts, conceptGen)`(키워드 생성이 실패해 카드가 없는 씨앗 자리도 센다 — Task K7), `@regenerate`: 고른 것이 저장과 다르면 `patchWork({ concepts })` → `regenerateTopics(jobId)` → `act` 가 `topics`·`work` 를 다시 읽고 `afterAction()`, 오류는 `workErrorMessage`, 409 면 `topics`·`work` 를 다시 읽는다(기존 `act` 그대로). 이 함수는 `retryCard` 앞에 둔다 — Task R1 이 고친 `saveConcepts`·`retryConcepts` 의 오류 문구 줄(`:151`·`:156`)을 old 로 잡지 않는다.
@@ -16313,6 +16316,8 @@ new:
         data-edit-open
 ```
 
+⑱ (quality 검토 반영 — 파트 K 메모 27) 사라지는 버튼의 초점 — 실패 테스트 → 구현. `frontend/tests/unit/topicDeck.test.ts` 에 describe `chipFocusAfterToggle·regenerateFocusMoves — 사라지는 버튼의 초점`(it 4 — 남는 칩·후보 없는 연구의 칩·'직접' 칩·`regenerateFocusMoves`. 칩 목록은 부품과 같은 길 `keywordChips`·`toggleKeyword` 로 만든다)을 describe `keywordChips·toggleKeyword·regenerateProblem` 뒤에 먼저 더해 `npx vitest run tests/unit/topicDeck.test.ts` 가 `Tests  4 failed | 44 passed (48)`(TypeError — 이름이 없다)인 것을 보고, `frontend/utils/topicDeck.ts` 에 두 함수를 더해 `48 passed` 를 본 뒤 `ConceptChips.vue` 에 위 '알아 둘 것'의 ①②③을 잇는다(키워드 제목 `ref`·`tabindex="-1"`, 칩 `data-chip`, 목록·입력 칸·다시 만들기 줄 `ref`, `showRegen` 계산, `focusAfterGone`·`toggle`·`watch([showRegen, () => props.busy])`·`reset`·`regenerate`). 코드는 그 커밋 그대로다.
+
 - [ ] **Step 2: 타입·빌드·단위 테스트를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/frontend && npx nuxi typecheck 2>&1 | grep -c "error TS"`
@@ -16329,7 +16334,7 @@ Expected: Task 앞과 같은 수(기준선 57 — 샌드박스 실측 57, 새 'D
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/frontend && npx vitest run 2>&1 | tail -4`
 
-Expected: 실패 0, `Tests` = Task 앞 + 0
+Expected: 실패 0, `Tests` = Task 앞 + 4(quality 검토 반영의 초점 판정 it — 파트 K 메모 27)
 
 - [ ] **Step 3: 커밋한다**
 
@@ -16977,6 +16982,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 | 24 | Task K5 `enqueue_seed_cards` 는 씨앗 자리 행마다 그 행을 target 으로 한 `topic_card` 생성이 (상태 무관) 있는지만 본다 | 행을 읽을 때 `card` 도 읽어 카드가 이미 있는 행(`not r.card` 가 거짓)도 건너뛴다. docstring 에 '카드가 이미 있는 자리(직접 쓴 카드)는 넣지 않는다'를 적고, `TestEnqueueSeedCards.test_a_seed_slot_that_already_has_a_card_gets_none`(＋ — slot 1 에 사용자 카드 edited 가 있으면 그 자리에는 카드 생성이 들어가지 않는다)를 더한다. 정함 29 칸·Task K5 계약 줄·Step 2·4 기대 수와 Task K6(Step 2 `97 passed`·Step 4 `106 passed`)·K9(Step 5 `179 passed`)의 기대 수를 1 씩 맞췄다 | quality 검토 지적. 06e 에서는 이어가기와 카드 생성 사이에 빈 씨앗 자리가 생성 없이 남는 시간이 새로 생겼다(키워드 생성이 줄을 서거나 failed 인 동안). 그 사이 `edit_topic` 은 `_card_open` 이 거짓이라 막지 않고 빈 카드면 사용자 카드(edited)를 만든다(`research_topics.py:194-200`). 그 뒤 키워드를 다시 불러 done 이 반영되면 생성 기록이 없는 그 행에도 카드 생성이 들어가 전역 한 자리 디스패처(D15)로 LLM 을 한 번 헛되이 부르고, 결과는 `topic_card.apply` 의 edited 검사가 버린다 — 그 생성이 열린 동안 사용자 카드에는 '새 키워드로 다시 만드는 중입니다'(K7 `cardRemakingNote`)가 붙고 [고르기]는 `canPick` 이, [직접 고치기]는 409 `CARD_BUSY` 가 막는다. Task K6 regenerate 가 고친 카드를 건너뛰는 규칙(spec §12-4·정함 16)과 같게 한다. 씨앗 자리 행의 카드는 반영(생성 기록이 남는다)이나 [직접 고치기](edited)로만 생기므로 '카드 있음'으로 거르는 것이 06e 전 행·[다른 방향] 판정(정함 29)을 바꾸지 않는다. 되돌리려면 `topic_card.py` 의 `T.card` 읽기와 `and not r.card` 를 빼고 그 테스트를 지운다(그러면 위 헛 호출이 돌아온다) |
 | 25 | Task K6 `topic_card.apply` 의 고른 카드 검사 — 주제 행을 잠그지 않고 읽는다 | 주제 행 SELECT 에 `.with_for_update()` 를 붙이고 docstring 에 잠금 까닭·순서를 적는다. `TestApply.test_the_topic_row_is_read_under_a_row_lock`(＋ — 문장을 PostgreSQL 로 컴파일해 주제 행 SELECT 끝이 `FOR UPDATE` 이고 그 읽기가 주제 행 UPDATE·연구 행 잠금보다 앞서는지 본다)를 더하고, Task K6 알아 둘 것·Step 1 ②·Step 2(`10 failed, 97 passed`)·Step 3 ⑤⑦·Step 4(`107 passed`·Task 앞 + 9)와 Task K9 Step 5(`180 passed`·topic_card 71)를 맞췄다 | quality 검토 지적. 고른 카드 검사는 확인-후-쓰기인데 `pick_topic` 도 주제 행을 `FOR UPDATE` 로 잠그지 않는다(연구별 advisory 잠금만). READ COMMITTED 에서 ① pick 이 `UPDATE T SET state='picked'`(행 잠금, 커밋 전) ② 반영의 SELECT 가 아직 candidate 를 보고 검사를 지난다 ③ 반영 UPDATE 가 잠금을 기다린다 ④ pick 커밋 ⑤ 반영 UPDATE 가 `WHERE id=T` 만 다시 보고 새 카드·`state='candidate'` 를 쓴다 — `work.topic_id=T` 인데 T 는 candidate 이고 제목·질문·근거가 바뀐다. 06e 정함 16 의 두 탭 경합 그 자체이고, 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 닿지 않던 길을 K6 의 regenerate 가 처음 연다(내용이 있는 후보 카드에 새 생성을 넣는다). 잠그면 반영의 SELECT 가 pick 커밋을 기다렸다가 picked 를 보고 덮지 않는다. 잠금 순서는 주제 행 → 연구 행(`refresh_progress`)으로 pick 의 '앞서 고른 행 P → 고른 행 T → 연구 행'과 같은 방향이라 고리가 없다(pick 은 연구 행을 T 뒤에 잠근다). section·paragraph 의 `apply` 가 계획서 행을 `with_for_update()` 로 읽는 것과 같은 규칙이다. UPDATE 의 WHERE 에 `state != 'picked'` 를 더하고 rowcount 를 보는 대안은 쓰지 않았다 — 같은 파일들의 선례가 행 잠금이고, 잠그면 edited 검사([직접 고치기]는 카드 생성이 열려 있으면 409 `CARD_BUSY` 라 거의 겹치지 않는다)도 함께 지킨다. SQLite 대역은 잠금을 그리지 않아 동작이 아니라 문장 모양으로 고정한다(`test_research_work_dispatch.py` 의 `_Recording`·`test_job_runtime.py` 와 같은 방식). 되돌리려면 `.with_for_update()` 와 그 테스트를 지운다(그러면 위 경합이 돌아온다) |
 | 26 | Task K7 Step 1 ⑥ `aiCardsStale` 첫 it 의 고른·고친·직접 쓴 카드 단언 셋은 생성을 주지 않는다(픽스처 기본 queued). ⑨ 는 `canPick` 첫 단언만 끝난 생성으로 바꾸고 둘째 단언(고른 카드)은 그대로. 여러 키워드 `keywordSpans` it 은 겹치는 자리만 본다 | 고른·고친 카드 단언에 `generation: done`, 직접 쓴 카드 단언에 `generation: null` 을 준다. `canPick` 고른 카드 단언에 `generation: { id: 41, status: "done" }` 를 준다(✎ — ⑨ 의 old/new 에 그 줄을 더했다). 여러 키워드 it 에 맞닿은 자리 합침(`"노인우울 연구"`·`["노인", "우울"]` → `노인우울` 한 조각)과 처음 맞은 자리만(`"노인과 노인"`·`["노인"]` → 앞의 `노인` 만) 단언 둘을 더한다. 기대값·it 수(topicDeck 44)·Step 2 실패 수는 그대로 | spec 검토 지적. 기본 생성이 queued 라 카드가 있는 자리는 늘 '다시 만드는 중'(`remaking`)이어서 `!remaking(item)` 하나만으로 거짓이 나온다 — 그 단언이 고정한다던 조건을 지워도 통과했다(실측: `aiCardsStale` 둘째 절의 `item.origin !== "user"`·`item.state === "candidate"`·`!card.edited` 를 하나씩·한꺼번에 지운 변이, `canPick` 의 `item.state === "candidate"` 를 지운 변이 모두 통과). `keywordSpans` 도 '키워드마다 처음 맞은 자리만·겹치거나 맞닿은 자리는 합친다'(알아 둘 것) 가운데 맞닿음(`start <= last[1] + 1` 의 `+1`)과 처음 자리(`indexOf`)가 고정되지 않아 `+1` 을 지우거나 `lastIndexOf` 로 바꾼 변이가 통과했다. 고친 뒤에는 일곱 변이가 모두 떨어지고 구현은 그대로 통과한다(구현 변경 없음) |
+| 27 | Task K8 — `.vue` 라 vitest +0. ConceptChips 는 칩·[이 키워드로 다시 만들기] 줄·[되돌리기]를 `v-if` 로 그리기만 한다 | 사라지는 버튼의 초점을 옮긴다 — `topicDeck.ts` 에 `chipFocusAfterToggle`(누른 칩이 남으면 그 칩, 사라지면 누르기 전 목록에서 그 뒤에 남은 첫 칩, 없으면 null → 직접 더하기 칸)·`regenerateFocusMoves`(보이던 줄이 사라졌고 줄 안에 초점이 있었거나 그 버튼으로 부른 뒤)를 더하고(1-6 밖 — 한 이름 한 파일) `topicDeck.test.ts` 에 it 4(K8 +4 — 프론트 합 +114). ConceptChips 는 키워드 제목 `<h3 tabindex="-1">`·칩 `data-chip`·`nextTick` 초점 옮기기, [되돌리기] 는 키워드 제목으로 | quality 검토 반영. 다시 만들기가 성공하면 저장과 같아지고(dirty 거짓) 다시 만드는 카드가 stale 에서 빠져 줄이 통째로 사라지고, 후보 없는 연구(06b)의 칩·'직접' 칩은 빼면 사라져 초점이 body 로 떨어졌다 — TopicCard 가 운영 확인 2026-10-08 에 `nextTick` 으로 고친 꼴을 다시 들여왔다. [되돌리기] 는 06b 부터 같은 꼴이라 같은 자리에서 함께 고친다. 키워드 생성의 [다시](06b 그대로)는 이 지적 밖이라 두었다 |
 
 ---
 
@@ -17978,8 +17984,8 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/frontend && npm run
 
 Expected:
 - typecheck 오류 `0` · `Duplicated imports` — Task 0 Step 5 에서 적은 값과 같다(`2`, 또는 06d 를 받았으면 `0`). 늘었으면 새 이름 하나를 두 파일이 내보낸 것이다(한 이름 한 파일 — 공통 계약 1-6)
-- vitest 전체 — 실패 0. `Test Files` 는 기준선 파일 수 + 5, `Tests` 는 계획 순서상 마지막으로 끝낸 프론트 Task(K9 의 프론트 it, R6·H3 은 +0)의 '통과 확인' 수와 같다(= Task 0 의 기준선 + 파트가 더한 수 +110('각 Task 의 기대 수' 합 — 06c·06d 를 받지 않았으면 `Tests  842 passed (842)`) + K9·R6 이 dev 에서 받은 06c·06d 프론트 테스트 수). 다르면 Task 별 '통과 확인' 명령으로 센다
-- 06e 프론트 묶음 열여덟 파일 — 실패 0. 계획 값은 Task 0 의 열세 파일 `221` + 파트가 더한 +110 = `Test Files  18 passed (18)` / `Tests  331 passed (331)` — Task K9 의 9 는 06c `term_checks.json` 의 contains 사례 수를 따르므로 06c 가 사례를 더 두었으면 그만큼 크다. 나온 수를 적어 둔다(완료노트 §4)
+- vitest 전체 — 실패 0. `Test Files` 는 기준선 파일 수 + 5, `Tests` 는 계획 순서상 마지막으로 끝낸 프론트 Task(K9 의 프론트 it, R6·H3 은 +0)의 '통과 확인' 수와 같다(= Task 0 의 기준선 + 파트가 더한 수 +114('각 Task 의 기대 수' 합 — 06c·06d 를 받지 않았으면 `Tests  846 passed (846)`) + K9·R6 이 dev 에서 받은 06c·06d 프론트 테스트 수). 다르면 Task 별 '통과 확인' 명령으로 센다
+- 06e 프론트 묶음 열여덟 파일 — 실패 0. 계획 값은 Task 0 의 열세 파일 `221` + 파트가 더한 +114 = `Test Files  18 passed (18)` / `Tests  335 passed (335)` — Task K9 의 9 는 06c `term_checks.json` 의 contains 사례 수를 따르므로 06c 가 사례를 더 두었으면 그만큼 크다. 나온 수를 적어 둔다(완료노트 §4)
 - 그대로여야 하는 셋 — `Tests  49 passed (49)`(`citations` 18 + `reportDocument` 27 + `reportDocx` 4 — Task 0 과 같다: Q3 S, 딥리서치 보고서 내보내기 불변)
 - build 의 `Duplicated imports` 는 typecheck 와 같은 값, 마지막 줄 `└  ✨ Build complete!`
 

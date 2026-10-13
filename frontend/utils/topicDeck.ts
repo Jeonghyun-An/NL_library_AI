@@ -373,11 +373,39 @@ export function toggleKeyword(picked: readonly string[], text: string): string[]
   return [...picked, text];
 }
 
+// 칩을 누른 뒤 초점을 둘 칩(글). 누른 칩이 그대로 남으면 그 칩이다(초점이 그대로 있다). 칩이 목록에서 사라지면 — 후보가
+// 없는 연구의 칩·'직접' 칩을 빼면 keywordChips 가 그리지 않는다 — 누르기 전 목록에서 그 칩 뒤에 있고 누른 뒤에도 남은
+// 첫 칩, 그런 칩이 없으면 null(부품이 칩 다음 차례인 직접 더하기 칸으로 보낸다). 누른 버튼이 사라진 채 두면 초점이
+// body 로 떨어진다(TopicCard [직접 고치기] 와 같은 문제 — 운영 확인 2026-10-08)
+export function chipFocusAfterToggle(
+  before: readonly KeywordChip[],
+  after: readonly KeywordChip[],
+  text: string,
+): string | null {
+  const left = new Set(after.map((c) => c.text));
+  if (left.has(text)) return text;
+  const at = before.findIndex((c) => c.text === text);
+  return before.slice(at + 1).find((c) => left.has(c.text))?.text ?? null;
+}
+
 // [이 키워드로 다시 만들기] 를 막는 까닭 — 선행연구 묶음 수가 키워드 수 이하라 둘 이상 골라야 한다(서버도 409)
 export function regenerateProblem(picked: readonly string[]): string | null {
   return picked.length < MIN_PICKED_KEYWORDS
     ? `키워드를 ${MIN_PICKED_KEYWORDS}개 이상 고르면 다시 만들 수 있습니다`
     : null;
+}
+
+// [이 키워드로 다시 만들기] 줄이 사라질 때 초점을 키워드 제목으로 옮기는가. 다시 만들기가 성공하면 고른 것이 저장과 같아지고
+// (dirty 거짓) 다시 만드는 카드는 stale 에서 빠져 줄이 통째로 사라진다 — 보이던 줄이 사라졌고, 그 줄 안에 초점이 있었거나
+// 사용자가 그 버튼으로 다시 만들기를 부른 뒤일 때만(부르는 동안 버튼이 막혀 브라우저가 초점을 이미 놓았을 수 있다).
+// 칩·[되돌리기] 처럼 다른 곳에서 줄을 사라지게 했으면 초점은 그 자리의 몫이다
+export function regenerateFocusMoves(row: {
+  wasShown: boolean;
+  shown: boolean;
+  asked: boolean;
+  focusInside: boolean;
+}): boolean {
+  return row.wasShown && !row.shown && (row.asked || row.focusInside);
 }
 
 // 다시 만들 AI 자리가 있는가 — 칩을 고치지 않아도 [이 키워드로 다시 만들기] 를 보일 때. ① 지금 키워드와 다른 키워드로

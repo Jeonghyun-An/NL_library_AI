@@ -19,6 +19,7 @@ import {
   cardNote,
   cardRemakingNote,
   cardStatus,
+  chipFocusAfterToggle,
   cleanConcept,
   conceptsNote,
   conceptsRetryable,
@@ -33,6 +34,7 @@ import {
   liveTopics,
   MIN_PICKED_KEYWORDS,
   moreLine,
+  regenerateFocusMoves,
   regenerateProblem,
   seedLine,
   toggleKeyword,
@@ -464,6 +466,50 @@ describe("keywordChips·toggleKeyword·regenerateProblem", () => {
     expect(MIN_PICKED_KEYWORDS).toBe(2);
     expect(regenerateProblem(["노인 우울"])).toBe("키워드를 2개 이상 고르면 다시 만들 수 있습니다");
     expect(regenerateProblem(["노인 우울", "독거노인"])).toBeNull();
+  });
+});
+
+// 누른 버튼이 v-if 로 사라지면 초점이 body 로 떨어진다(TopicCard [직접 고치기] 와 같은 문제 — 운영 확인 2026-10-08).
+// ConceptChips 는 이 판정으로 초점을 옮긴다(06e K8 quality 검토 반영)
+describe("chipFocusAfterToggle·regenerateFocusMoves — 사라지는 버튼의 초점", () => {
+  const CANDS: KeywordCandidate[] = [
+    { text: "노인 우울", source: "both", n: 4 },
+    { text: "사회적 지지", source: "llm", n: 0 },
+    { text: "독거노인", source: "paper", n: 3 },
+  ];
+  // 칩 하나를 누르기 전·뒤의 칩 목록 — 부품과 같은 길(keywordChips·toggleKeyword)로 만든다
+  const press = (cands: KeywordCandidate[] | null, picked: string[], text: string) =>
+    chipFocusAfterToggle(keywordChips(cands, picked), keywordChips(cands, toggleKeyword(picked, text)), text);
+
+  it("누른 칩이 남으면 그 칩이다 — 후보 칩은 빼도 눌리지 않은 칩으로, 더해도 눌린 칩으로 남는다", () => {
+    expect(press(CANDS, ["노인 우울", "사회적 지지"], "노인 우울")).toBe("노인 우울");
+    expect(press(CANDS, ["노인 우울"], "독거노인")).toBe("독거노인");
+  });
+
+  it("후보가 없는 연구의 칩을 빼면 사라진 칩 다음 칩, 마지막 칩이었으면 null(직접 더하기 칸으로)", () => {
+    const picked = ["노인 우울", "사회적 지지", "독거노인"];
+    expect(press(null, picked, "노인 우울")).toBe("사회적 지지");
+    expect(press(null, picked, "사회적 지지")).toBe("독거노인");
+    expect(press(null, picked, "독거노인")).toBeNull();
+    expect(press([], ["노인 우울"], "노인 우울")).toBeNull();
+  });
+
+  it("'직접' 칩을 빼면 그 뒤의 칩, 뒤에 칩이 없으면 null — 앞의 후보 칩으로 돌아가지 않는다", () => {
+    const picked = ["노인 우울", "가족 돌봄", "돌봄 부담"];
+    expect(press(CANDS, picked, "가족 돌봄")).toBe("돌봄 부담");
+    expect(press(CANDS, picked, "돌봄 부담")).toBeNull();
+  });
+
+  it("regenerateFocusMoves — 보이던 다시 만들기 줄이 사라질 때, 줄 안에 초점이 있었거나 그 버튼으로 부른 뒤에만 옮긴다", () => {
+    const gone = { wasShown: true, shown: false };
+    // 부르는 동안 버튼이 막혀 브라우저가 초점을 이미 놓았어도(줄 안에 초점 없음) 누른 것을 기억해 옮긴다
+    expect(regenerateFocusMoves({ ...gone, asked: true, focusInside: false })).toBe(true);
+    expect(regenerateFocusMoves({ ...gone, asked: false, focusInside: true })).toBe(true);
+    // 다른 곳(칩·[되돌리기])에서 줄이 사라지게 한 것 — 초점은 그 자리의 몫이다
+    expect(regenerateFocusMoves({ ...gone, asked: false, focusInside: false })).toBe(false);
+    // 줄이 그대로 남았거나(409 등으로 끝남) 처음부터 없던 때
+    expect(regenerateFocusMoves({ wasShown: true, shown: true, asked: true, focusInside: true })).toBe(false);
+    expect(regenerateFocusMoves({ wasShown: false, shown: false, asked: true, focusInside: true })).toBe(false);
   });
 });
 
