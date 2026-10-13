@@ -590,13 +590,17 @@
   border-radius: 12px;
   transition: box-shadow 0.2s;
 }
-/* 호버 — 산호 빛 번짐 */
-.dt-rc:hover,
-.dt-rc:focus-within {
-  box-shadow: 0 0 50px color-mix(in srgb, var(--skx-accent) 50%, transparent);
+/* 빛 번짐(포인트색)은 마우스를 올렸을 때와 팝업이 열려 있는 동안만이다. :focus-within 은 쓰지 않는다 — 팝업을 닫으면 초점이 [자세히 보기]로
+   돌아와 :focus-within 이 남아, 마우스를 치운 뒤에도 빛이 계속 켜져 있었다. 키보드 초점은 빛이 아니라 요소마다의 초점 링(.dt-rc__link·.dt-rc__more·.dt-rc__close 의
+   :focus-visible)으로 보인다. 터치 기기의 눌린 채 남는 :hover 는 (hover: hover) 로 막는다 */
+@media (hover: hover) {
+  .dt-rc:hover {
+    box-shadow: 0 0 50px color-mix(in srgb, var(--skx-accent) 50%, transparent);
+  }
 }
-/* 선택(자세히 보기) — 산호 1.5px 테두리 */
+/* 선택(자세히 보기) — 포인트색 1.5px 테두리 + 빛 */
 .dt-rc.is-open {
+  box-shadow: 0 0 50px color-mix(in srgb, var(--skx-accent) 50%, transparent);
   outline: 1.5px solid var(--skx-accent);
   outline-offset: -1px;
 }

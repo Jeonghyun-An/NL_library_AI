@@ -131,7 +131,7 @@
               </div>
               <div class="skx-rcd-book-card__cover">
                 <img
-                  src="/img/ico-spinner.svg"
+                  :src="SPINNER_SRC"
                   alt=""
                   style="width: 32px; opacity: 0.3"
                 />
@@ -271,6 +271,7 @@
 <script setup lang="ts">
 import { useApi } from "~/composables/useApi";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
+import { SPINNER_SRC } from "~/utils/brand";
 
 const route = useRoute();
 const api = useApi();
