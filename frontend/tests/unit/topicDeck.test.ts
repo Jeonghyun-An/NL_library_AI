@@ -199,7 +199,7 @@ describe("canPick", () => {
   it("카드가 있는 후보만 고를 수 있다", () => {
     expect(canPick(item({ card: CARD, generation: { id: 41, status: "done" } }))).toBe(true);
     expect(canPick(item({ card: CARD, generation: null, origin: "user" }))).toBe(true);
-    expect(canPick(item({ card: CARD, state: "picked" }))).toBe(false);
+    expect(canPick(item({ card: CARD, state: "picked", generation: { id: 41, status: "done" } }))).toBe(false);
     expect(canPick(item({ state: "insufficient", generation: { id: 41, status: "done" } }))).toBe(false);
     expect(canPick(item({ generation: { id: 41, status: "running" } }))).toBe(false);
   });
@@ -397,6 +397,16 @@ describe("keywordSpans — keyword_match.json 의 하이라이트 자리", () =>
       { text: "와 ", mark: false },
       { text: "우울", mark: true },
     ]);
+    // 맞닿은 자리도 하나로 합친다
+    expect(keywordSpans("노인우울 연구", ["노인", "우울"])).toEqual([
+      { text: "노인우울", mark: true },
+      { text: " 연구", mark: false },
+    ]);
+    // 한 키워드가 여러 번 나와도 처음 맞은 자리만 감싼다
+    expect(keywordSpans("노인과 노인", ["노인"])).toEqual([
+      { text: "노인", mark: true },
+      { text: "과 노인", mark: false },
+    ]);
     expect(keywordSpans("노인 우울", [])).toEqual([{ text: "노인 우울", mark: false }]);
     expect(keywordSpans("", ["노인"])).toEqual([]);
   });
@@ -466,9 +476,10 @@ describe("aiCardsStale — 다시 만들 AI 자리가 있다", () => {
     const done = { id: 41, status: "done" as const };
     expect(aiCardsStale(deck([item({ card: made, generation: done })]), now)).toBe(true);
     expect(aiCardsStale(deck([item({ card: made, generation: done })]), ["사회적 지지", "노인 우울"])).toBe(false);
-    expect(aiCardsStale(deck([item({ card: made, state: "picked" })]), now)).toBe(false);
-    expect(aiCardsStale(deck([item({ card: { ...made, edited: true } })]), now)).toBe(false);
-    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null })]), now)).toBe(false);
+    // 픽스처 기본 생성(queued)이면 '다시 만드는 중'만으로 거짓이 된다 — 끝난 생성(사용자 카드는 생성 기록 없음)을 준다
+    expect(aiCardsStale(deck([item({ card: made, state: "picked", generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: { ...made, edited: true }, generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null, generation: null })]), now)).toBe(false);
     expect(aiCardsStale(deck([item({ card: null, state: "insufficient" })]), now)).toBe(false);
     expect(aiCardsStale(deck([item({ card: made, generation: { id: 52, status: "running" } })]), now)).toBe(false);
   });

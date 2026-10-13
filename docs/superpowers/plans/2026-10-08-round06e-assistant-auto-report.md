@@ -14970,7 +14970,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/api/
 - **`keywordSpans` 의 일치 규칙 = 06c `terms.contains`**(spec §12-2 — NFKC → casefold → 공백 제거 뒤 부분 문자열, 아니면 낱말 조각이 모두 순서대로). 원문 글자(코드포인트)마다 `ch.normalize("NFKC").toLowerCase()` 를 이어 붙이며 각 UTF-16 단위의 원문 글자 순번(`at`)을 기록하고 공백은 건너뛴다(1-9). 맞은 자리를 원문 순번으로 되돌려 원문 글자 그대로 감싼다 — 전각 'ＣＳＲ' 은 'csr' 로 맞추고 'ＣＳＲ' 을, 공백을 지우고 맞춘 '다문화가정' 은 원문 '다문화 가정' 을 감싼다. 키워드마다 처음 맞은 자리만 감싸고 겹치거나 맞닿은 자리는 합친다. 차이(알려진 한계 — 완료노트): JS `toLowerCase` 는 Python `casefold` 와 몇 글자(ß 등)에서 다르고, NFKC 를 글자마다 해 결합 자모(분리형 한글)를 합치지 못한다 — 둘 다 소장 논문 제목·키워드에는 드물다. Task K9 이 06c 의 `term_checks.json` 전부로 서버와 같은 참·거짓을 고정한다.
 - **고정 예제 `keyword_match.json` 은 하이라이트 자리만**(`{text, word, marked, note}`) — 일치 참·거짓의 정본은 06c 의 `frontend/tests/fixtures/term_checks.json` 이다(06e 는 읽기만 — 1-9). 사례는 그 `contains` 칸과 같은 text/word 여섯에 06e 만의 영문 사례 하나. vitest 는 `it.each(CASES)("$note", …)` 라 사례마다 테스트 하나다(note 가 서로 달라야 한다). 백엔드 쪽 대조(`contains == bool(marked)`)는 06c 가 dev 에 들어온 뒤 Task K9 가 단다 — 이 Task 의 vitest 는 06c 없이도 돈다.
 - **`cardStatus(item, concepts?)`** — 두 번째 인자가 없으면 지금과 같다(`canPick` 은 그대로 한 인자로 부른다). 생성 기록이 없는 빈 카드: state insufficient → insufficient(그대로). 빈 **씨앗 자리**(slot 이 있고 origin report_seed)는 키워드 생성이 있으면 `waiting`(노트 '차례를 기다리는 중입니다' 그대로 — TopicCard 가 대기 뼈대를 그린다), 그 생성이 failed 면 `blocked`(노트 `키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다`). waiting 은 키워드 생성이 열려 있을 때만이 아니다 — 씨앗 자리 카드 생성은 키워드 반영·취소와 **같은 트랜잭션**에 들어가는데(Task K5) 워커는 그 카드의 queued 이벤트를 따로 보내지 않고(정함 25) 취소 API 는 canceled 이벤트를 queued 이벤트보다 먼저 보낸다. 그래서 done·canceled 이벤트가 `state.work.generations` 에 먼저 들어오고(`applyGeneration`) topics·work 를 다시 읽기 전까지는 그 자리에 카드 생성이 없다 — 그 사이도 기다리는 중이다('카드를 만들지 못했습니다'가 잠깐 비치지 않게 — spec §12-8 장면 2 의 바로 그 순간). '키워드가 정해졌는데 카드 생성이 없는 씨앗 자리'가 오래 남는 경우는 없다(06b 이어가기는 자리마다 카드 생성을 같은 커밋에 넣었고, 06a 에서 이어간 연구에는 씨앗 행이 없다). 씨앗 자리가 아닌 빈 카드는 지금처럼 failed. 생성 기록이 있으면 생성 상태가 먼저다. `cardNote` 의 switch 는 반환 타입이 `string | null` 이라 `blocked` 를 빼면 typecheck 가 떨어진다.
-- **다시 만드는 중인 카드(06e 정함 16):** 카드는 있는데 그 카드 생성이 열려 있으면(`[이 키워드로 다시 만들기]` — Task K6) `canPick` 이 거짓이고 `cardRemakingNote` 가 '새 키워드로 다시 만드는 중입니다'다. `cardStatus` 는 카드가 먼저라 ready 그대로다 — 막지 않으면 [고르기]가 켜진 채 고른 뒤 새 결과가 고른 카드를 바꾼다(서버도 Task K6 에서 막는다). dev 의 `canPick` 첫 단언 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이 된다 — 끝난 생성으로 바꾼다(✎).
+- **다시 만드는 중인 카드(06e 정함 16):** 카드는 있는데 그 카드 생성이 열려 있으면(`[이 키워드로 다시 만들기]` — Task K6) `canPick` 이 거짓이고 `cardRemakingNote` 가 '새 키워드로 다시 만드는 중입니다'다. `cardStatus` 는 카드가 먼저라 ready 그대로다 — 막지 않으면 [고르기]가 켜진 채 고른 뒤 새 결과가 고른 카드를 바꾼다(서버도 Task K6 에서 막는다). dev 의 `canPick` 첫 단언 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이 된다 — 끝난 생성으로 바꾼다(✎). 같은 함정이 거짓을 기대하는 단언도 비운다 — 기본 생성(queued)이면 `!remaking(item)` 하나만으로 거짓이 나와 그 단언이 보려던 조건(고른 카드·고친 카드·직접 쓴 카드)을 지워도 통과한다. 그래서 `canPick` 의 고른 카드 단언(dev 둘째 단언 ✎)과 `aiCardsStale` 의 고른·고친·직접 쓴 카드 단언에는 끝난 생성(직접 쓴 카드는 생성 기록 없음 `generation: null`)을 준다(spec 검토 반영 — 파트 K 메모 26).
 - `keywordsChanged` — 06e 전 카드(`keywords` 없음)는 무엇으로 만들었는지 몰라 알리지 않는다(false), 순서·띄어쓰기·대소문자는 보지 않는다(`conceptKey` — `addConcept` 의 중복 열쇠). `keywordWarning` — 키워드가 있고 그 전부가 `missing_keywords` 일 때만, **사용자가 고친 카드는 알리지 않는다**(서버 검사가 고친 제목을 다시 보지 않는다 — `edit_topic` 은 `missing_keywords` 를 다시 세지 않는다). `keywordChips` 배지: llm `AI 후보` · paper `논문 n편` · both `AI · 논문 n편` · 후보에 없는 고른 말 `직접`, 후보가 없으면(null·undefined·빈 목록) 고른 것을 눌린 칩으로만. `toggleKeyword` 는 `CONCEPTS_MAX`(5 — 서버 PATCH `MAX_CONCEPTS` 와 같다)를 넘기지 않는다. `aiCardsStale(topics, concepts, conceptsGen?)` — '다시 만들 AI 자리가 있다': 지금 키워드와 다른 키워드로 만든 AI 후보 카드(다시 만드는 중인 카드는 빼고), 그리고 키워드 생성이 실패해 카드가 없는 빈 씨앗 자리(`cardStatus(item, conceptsGen) === "blocked"`). 뒤의 것이 없으면 키워드 생성이 failed 인 연구에서 키워드를 직접 넣고 [키워드만 저장]을 누른 사용자가 막다른 길에 선다 — [다시]는 칩이 비어 있을 때만이고(`conceptsRetryable`), 저장 뒤 `dirty` 는 거짓이라 [이 키워드로 다시 만들기]도 숨는다. 서버 regenerate(Task K6)는 카드가 `{}` 인 후보 씨앗 행도 넣으므로 버튼만 보이면 카드가 들어간다. 세 번째 인자는 뼈대 1-6 시그니처에 없던 선택 인자다(이름은 그대로 — 파트 메모). origin user·고친·고른 카드는 세지 않는다(정함 16).
 - **이름(1-6 계약 — 한 이름 한 파일):** `MIN_PICKED_KEYWORDS`·`keywordSpans`·`keywordsChanged`·`keywordWarning`·`KeywordChip`·`keywordChips`·`toggleKeyword`·`regenerateProblem`·`aiCardsStale`·`cardRemakingNote`(1-6 밖 — 파트 메모) 는 `topicDeck.ts` 만 내보낸다(dev `da80f23` 의 utils·composables 에 같은 이름 없음 — 확인함). `pages/index.vue:708` 에 지역 변수 `const keywordChips = ref(...)` 가 있지만 자동 import 는 파일 안 선언이 가린다 — 샌드박스 `nuxi typecheck` 오류 0·`npm run build` 의 WARN 57(기준선과 같음, 새 'Duplicated imports' 없음). 비공개 도우미(`flatten`·`keywordRanges`·`candidateBadge`·`remaking`)는 내보내지 않는다.
 - **`RELOAD.concepts = ["topics", "work"]`**(1-4) — 키워드 반영이 씨앗 카드 생성을 넣으므로(Task K5) 주제 목록을 다시 읽어야 빈 슬롯이 '기다리는 중'이 된다. `workEvents.test.ts` 의 두 단언(`reloadFor`·'연구를 아직 받지 않았으면')을 함께 고친다(뒤의 것은 뼈대 목록 밖 ✎). 하트비트 재동기화 it 은 topic_card·concepts 가 같은 조회로 모여 그대로 `["topics", "work"]` 다.
@@ -15133,6 +15133,16 @@ describe("keywordSpans — keyword_match.json 의 하이라이트 자리", () =>
       { text: "와 ", mark: false },
       { text: "우울", mark: true },
     ]);
+    // 맞닿은 자리도 하나로 합친다
+    expect(keywordSpans("노인우울 연구", ["노인", "우울"])).toEqual([
+      { text: "노인우울", mark: true },
+      { text: " 연구", mark: false },
+    ]);
+    // 한 키워드가 여러 번 나와도 처음 맞은 자리만 감싼다
+    expect(keywordSpans("노인과 노인", ["노인"])).toEqual([
+      { text: "노인", mark: true },
+      { text: "과 노인", mark: false },
+    ]);
     expect(keywordSpans("노인 우울", [])).toEqual([{ text: "노인 우울", mark: false }]);
     expect(keywordSpans("", ["노인"])).toEqual([]);
   });
@@ -15202,9 +15212,10 @@ describe("aiCardsStale — 다시 만들 AI 자리가 있다", () => {
     const done = { id: 41, status: "done" as const };
     expect(aiCardsStale(deck([item({ card: made, generation: done })]), now)).toBe(true);
     expect(aiCardsStale(deck([item({ card: made, generation: done })]), ["사회적 지지", "노인 우울"])).toBe(false);
-    expect(aiCardsStale(deck([item({ card: made, state: "picked" })]), now)).toBe(false);
-    expect(aiCardsStale(deck([item({ card: { ...made, edited: true } })]), now)).toBe(false);
-    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null })]), now)).toBe(false);
+    // 픽스처 기본 생성(queued)이면 '다시 만드는 중'만으로 거짓이 된다 — 끝난 생성(사용자 카드는 생성 기록 없음)을 준다
+    expect(aiCardsStale(deck([item({ card: made, state: "picked", generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: { ...made, edited: true }, generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null, generation: null })]), now)).toBe(false);
     expect(aiCardsStale(deck([item({ card: null, state: "insufficient" })]), now)).toBe(false);
     expect(aiCardsStale(deck([item({ card: made, generation: { id: 52, status: "running" } })]), now)).toBe(false);
   });
@@ -15250,12 +15261,13 @@ new:
     expect(out.reload).toEqual(["topics", "work"]);
 ```
 
-⑨ `frontend/tests/unit/topicDeck.test.ts` describe `canPick`(dev `da80f23` `:151-158`) — 다시 만드는 중인 카드(카드는 있고 카드 생성이 열려 있다)는 고르지 않는다(06e 정함 16). 지금 첫 단언의 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이다 — 끝난(done) 생성과 생성 기록 없는 사용자 카드로 바꾼다(✎). old:
+⑨ `frontend/tests/unit/topicDeck.test.ts` describe `canPick`(dev `da80f23` `:151-158`) — 다시 만드는 중인 카드(카드는 있고 카드 생성이 열려 있다)는 고르지 않는다(06e 정함 16). 지금 첫 단언의 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이다 — 끝난(done) 생성과 생성 기록 없는 사용자 카드로 바꾼다(✎). 둘째 단언(고른 카드)도 기본 생성이면 '다시 만드는 중'만으로 거짓이 나와 state 검사를 지워도 통과한다 — 끝난 생성을 준다(✎, 기대값 그대로 — 파트 K 메모 26). old:
 
 ```ts
 describe("canPick", () => {
   it("카드가 있는 후보만 고를 수 있다", () => {
     expect(canPick(item({ card: CARD }))).toBe(true);
+    expect(canPick(item({ card: CARD, state: "picked" }))).toBe(false);
 ```
 
 new:
@@ -15277,6 +15289,7 @@ describe("canPick", () => {
   it("카드가 있는 후보만 고를 수 있다", () => {
     expect(canPick(item({ card: CARD, generation: { id: 41, status: "done" } }))).toBe(true);
     expect(canPick(item({ card: CARD, generation: null, origin: "user" }))).toBe(true);
+    expect(canPick(item({ card: CARD, state: "picked", generation: { id: 41, status: "done" } }))).toBe(false);
 ```
 
 ⑩ `frontend/tests/unit/topicDeck.test.ts` 머리 import — `cardRemakingNote`(알파벳 순 자리 — Task H1 이 잡는 `  cardStatus,` 줄은 그대로 둔다). old:
@@ -16963,6 +16976,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 | 23 | Task K1 ③ 653 원문 표본 20개(`doc_type='paper'` 전체에서 `ORDER BY random() LIMIT 20`)로 구분자를 보고, ④ 는 `[;,]` 로 나눈다 | ③ 을 둘로 — source_format 갈래마다 653 키워드가 있는 행과 그중 `\|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 세어 구분자 판정 줄을 찍고(`'\|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `\|` — Task Z1 Step 5), 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())`). ④ 는 `[;,\|]` 로 나눈다. README 판정 규칙에 두 구분자와 출처 줄을 적는다. 질의는 넷에서 다섯(Task K1 Step 3·Task Z1 Step 1·2 의 기대를 맞췄다) | quality 검토 지적. keyword 의 구분자는 채운 경로마다 다르고 코드로 이미 안다 — MARC 로더는 653 $a 를 ` \| ` 로 잇고(`marc_parser.py:118`·`:256`, 함정 6), 적재 보강은 653 이 빈 논문에 `", ".join(추출 키워드)`(`stages.py:538-539` — KCI 로더는 keyword 를 채우지 않는다). MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라 딥리서치(`doc_scope="paper"` — `explorer.py:113`)의 채택 논문이 된다. 보강으로 채운 `, ` 행이 많으면 무작위 20개에 ` \| ` 행이 하나도 안 나와 Z1 이 '[;,] 그대로'로 잘못 판정하고, K2 에서 MARC 학위논문 키워드가 한 덩어리로 남거나(40자 넘으면 버려진다) ④ 가 그 행을 한 낱말로 세어 판정 2 때 참고하는 후보 수도 틀린다. 함정 10 의 교훈('코드 경로가 있다고 그 데이터가 있는 것은 아니다 — 세어서 확정한다')대로 센다. 되돌리려면 이 커밋의 `measure.py`·README 를 앞 커밋으로 돌린다(그러면 위 오판이 돌아온다) |
 | 24 | Task K5 `enqueue_seed_cards` 는 씨앗 자리 행마다 그 행을 target 으로 한 `topic_card` 생성이 (상태 무관) 있는지만 본다 | 행을 읽을 때 `card` 도 읽어 카드가 이미 있는 행(`not r.card` 가 거짓)도 건너뛴다. docstring 에 '카드가 이미 있는 자리(직접 쓴 카드)는 넣지 않는다'를 적고, `TestEnqueueSeedCards.test_a_seed_slot_that_already_has_a_card_gets_none`(＋ — slot 1 에 사용자 카드 edited 가 있으면 그 자리에는 카드 생성이 들어가지 않는다)를 더한다. 정함 29 칸·Task K5 계약 줄·Step 2·4 기대 수와 Task K6(Step 2 `97 passed`·Step 4 `106 passed`)·K9(Step 5 `179 passed`)의 기대 수를 1 씩 맞췄다 | quality 검토 지적. 06e 에서는 이어가기와 카드 생성 사이에 빈 씨앗 자리가 생성 없이 남는 시간이 새로 생겼다(키워드 생성이 줄을 서거나 failed 인 동안). 그 사이 `edit_topic` 은 `_card_open` 이 거짓이라 막지 않고 빈 카드면 사용자 카드(edited)를 만든다(`research_topics.py:194-200`). 그 뒤 키워드를 다시 불러 done 이 반영되면 생성 기록이 없는 그 행에도 카드 생성이 들어가 전역 한 자리 디스패처(D15)로 LLM 을 한 번 헛되이 부르고, 결과는 `topic_card.apply` 의 edited 검사가 버린다 — 그 생성이 열린 동안 사용자 카드에는 '새 키워드로 다시 만드는 중입니다'(K7 `cardRemakingNote`)가 붙고 [고르기]는 `canPick` 이, [직접 고치기]는 409 `CARD_BUSY` 가 막는다. Task K6 regenerate 가 고친 카드를 건너뛰는 규칙(spec §12-4·정함 16)과 같게 한다. 씨앗 자리 행의 카드는 반영(생성 기록이 남는다)이나 [직접 고치기](edited)로만 생기므로 '카드 있음'으로 거르는 것이 06e 전 행·[다른 방향] 판정(정함 29)을 바꾸지 않는다. 되돌리려면 `topic_card.py` 의 `T.card` 읽기와 `and not r.card` 를 빼고 그 테스트를 지운다(그러면 위 헛 호출이 돌아온다) |
 | 25 | Task K6 `topic_card.apply` 의 고른 카드 검사 — 주제 행을 잠그지 않고 읽는다 | 주제 행 SELECT 에 `.with_for_update()` 를 붙이고 docstring 에 잠금 까닭·순서를 적는다. `TestApply.test_the_topic_row_is_read_under_a_row_lock`(＋ — 문장을 PostgreSQL 로 컴파일해 주제 행 SELECT 끝이 `FOR UPDATE` 이고 그 읽기가 주제 행 UPDATE·연구 행 잠금보다 앞서는지 본다)를 더하고, Task K6 알아 둘 것·Step 1 ②·Step 2(`10 failed, 97 passed`)·Step 3 ⑤⑦·Step 4(`107 passed`·Task 앞 + 9)와 Task K9 Step 5(`180 passed`·topic_card 71)를 맞췄다 | quality 검토 지적. 고른 카드 검사는 확인-후-쓰기인데 `pick_topic` 도 주제 행을 `FOR UPDATE` 로 잠그지 않는다(연구별 advisory 잠금만). READ COMMITTED 에서 ① pick 이 `UPDATE T SET state='picked'`(행 잠금, 커밋 전) ② 반영의 SELECT 가 아직 candidate 를 보고 검사를 지난다 ③ 반영 UPDATE 가 잠금을 기다린다 ④ pick 커밋 ⑤ 반영 UPDATE 가 `WHERE id=T` 만 다시 보고 새 카드·`state='candidate'` 를 쓴다 — `work.topic_id=T` 인데 T 는 candidate 이고 제목·질문·근거가 바뀐다. 06e 정함 16 의 두 탭 경합 그 자체이고, 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 닿지 않던 길을 K6 의 regenerate 가 처음 연다(내용이 있는 후보 카드에 새 생성을 넣는다). 잠그면 반영의 SELECT 가 pick 커밋을 기다렸다가 picked 를 보고 덮지 않는다. 잠금 순서는 주제 행 → 연구 행(`refresh_progress`)으로 pick 의 '앞서 고른 행 P → 고른 행 T → 연구 행'과 같은 방향이라 고리가 없다(pick 은 연구 행을 T 뒤에 잠근다). section·paragraph 의 `apply` 가 계획서 행을 `with_for_update()` 로 읽는 것과 같은 규칙이다. UPDATE 의 WHERE 에 `state != 'picked'` 를 더하고 rowcount 를 보는 대안은 쓰지 않았다 — 같은 파일들의 선례가 행 잠금이고, 잠그면 edited 검사([직접 고치기]는 카드 생성이 열려 있으면 409 `CARD_BUSY` 라 거의 겹치지 않는다)도 함께 지킨다. SQLite 대역은 잠금을 그리지 않아 동작이 아니라 문장 모양으로 고정한다(`test_research_work_dispatch.py` 의 `_Recording`·`test_job_runtime.py` 와 같은 방식). 되돌리려면 `.with_for_update()` 와 그 테스트를 지운다(그러면 위 경합이 돌아온다) |
+| 26 | Task K7 Step 1 ⑥ `aiCardsStale` 첫 it 의 고른·고친·직접 쓴 카드 단언 셋은 생성을 주지 않는다(픽스처 기본 queued). ⑨ 는 `canPick` 첫 단언만 끝난 생성으로 바꾸고 둘째 단언(고른 카드)은 그대로. 여러 키워드 `keywordSpans` it 은 겹치는 자리만 본다 | 고른·고친 카드 단언에 `generation: done`, 직접 쓴 카드 단언에 `generation: null` 을 준다. `canPick` 고른 카드 단언에 `generation: { id: 41, status: "done" }` 를 준다(✎ — ⑨ 의 old/new 에 그 줄을 더했다). 여러 키워드 it 에 맞닿은 자리 합침(`"노인우울 연구"`·`["노인", "우울"]` → `노인우울` 한 조각)과 처음 맞은 자리만(`"노인과 노인"`·`["노인"]` → 앞의 `노인` 만) 단언 둘을 더한다. 기대값·it 수(topicDeck 44)·Step 2 실패 수는 그대로 | spec 검토 지적. 기본 생성이 queued 라 카드가 있는 자리는 늘 '다시 만드는 중'(`remaking`)이어서 `!remaking(item)` 하나만으로 거짓이 나온다 — 그 단언이 고정한다던 조건을 지워도 통과했다(실측: `aiCardsStale` 둘째 절의 `item.origin !== "user"`·`item.state === "candidate"`·`!card.edited` 를 하나씩·한꺼번에 지운 변이, `canPick` 의 `item.state === "candidate"` 를 지운 변이 모두 통과). `keywordSpans` 도 '키워드마다 처음 맞은 자리만·겹치거나 맞닿은 자리는 합친다'(알아 둘 것) 가운데 맞닿음(`start <= last[1] + 1` 의 `+1`)과 처음 자리(`indexOf`)가 고정되지 않아 `+1` 을 지우거나 `lastIndexOf` 로 바꾼 변이가 통과했다. 고친 뒤에는 일곱 변이가 모두 떨어지고 구현은 그대로 통과한다(구현 변경 없음) |
 
 ---
 
