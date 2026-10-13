@@ -12,7 +12,7 @@
 - 다시 맞춤 필요(stale)는 저장하지 않고 조회 때 센다(spec §5-2): 목차를 만든 뒤 고른 주제가 바뀌었으면
   (outline.topic.id != work.topic_id) 참, 목차가 없으면 거짓. 목차는 호출부가 research_proposals 에서 읽어 넘긴다.
 - 이어가기의 읽기 목록 행(preselect)은 채택 근거를 이 목록과 같은 순서(reading_order)로 세워 앞 READING_PRESELECT 편을
-  담음으로 넣는다(사용자 결정 2026-10-14). 미리 담은 행은 들어온 경로에 preselected 를 남기고, 응답의 preselected 가
+  담음으로 넣는다(사용자 결정 2026-10-13). 미리 담은 행은 들어온 경로에 preselected 를 남기고, 응답의 preselected 가
   그 수를 센다(읽기 목록 머리 안내).
 """
 import re

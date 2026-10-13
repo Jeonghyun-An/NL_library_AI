@@ -281,7 +281,7 @@ describe("canMakeOutline·outlineHint", () => {
   });
 });
 
-describe("preselectNote — 이어가기가 미리 담은 채택 근거(사용자 결정 2026-10-14)", () => {
+describe("preselectNote — 이어가기가 미리 담은 채택 근거(사용자 결정 2026-10-13)", () => {
   it("미리 담은 행이 있으면 머리 안내 한 줄 — 수는 서버가 센 preselected(뺀 행도 센다)", () => {
     expect(preselectNote(view([], { preselected: 8 }))).toBe("채택 근거 상위 8편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
     // 채택 근거가 여덟 편보다 적으면 모두 담는다

@@ -288,7 +288,7 @@ class TestContinue:
         }
         (work,) = _rows(api.engine, ResearchWork)
         assert work["owner_sid"] == str(SID_A) and work["concept_members"] == {}
-        # 채택 근거가 READING_PRESELECT 편보다 적으면 모두 미리 담는다(사용자 결정 2026-10-14)
+        # 채택 근거가 READING_PRESELECT 편보다 적으면 모두 미리 담는다(사용자 결정 2026-10-13)
         assert [(r["cnts_id"], r["state"], r["origin"]) for r in _rows(api.engine, ResearchReading)] == [
             ("C1", "in", "evidence"), ("C2", "in", "evidence"),
         ]

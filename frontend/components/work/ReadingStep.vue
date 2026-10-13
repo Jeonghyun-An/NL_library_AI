@@ -157,7 +157,7 @@ const readOnly = computed(() => view.value?.is_example ?? true);
 // 읽기 목록 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
 const loadError = computed(() => props.work.errorOf("reading"));
 const hint = computed(() => (reading.value ? outlineHint(reading.value) : null));
-// 이어가기가 채택 근거 상위 편을 미리 담았으면 머리에 한 줄(사용자 결정 2026-10-14) — 읽기 전용이면 '빼거나 더할' 절 없이
+// 이어가기가 채택 근거 상위 편을 미리 담았으면 머리에 한 줄(사용자 결정 2026-10-13) — 읽기 전용이면 '빼거나 더할' 절 없이
 const preselectText = computed(() => (reading.value ? preselectNote(reading.value, readOnly.value) : null));
 const canOutline = computed(() => !!reading.value && canMakeOutline(reading.value));
 const outlineMade = computed(() => view.value?.phase === "proposal" || view.value?.phase === "done");

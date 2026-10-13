@@ -215,7 +215,7 @@ def _candidate(cnts_id: str, ranks: dict[str, int]) -> dict:
 
 
 class TestPreselect:
-    """이어가기 때 채택 근거 상위 READING_PRESELECT 편을 미리 담는다(사용자 결정 2026-10-14)."""
+    """이어가기 때 채택 근거 상위 READING_PRESELECT 편을 미리 담는다(사용자 결정 2026-10-13)."""
 
     def test_the_constant(self):
         # 미리 담은 수만으로 [보고서 만들기](담음 MIN_READING_FOR_OUTLINE 편 이상)를 누를 수 있다

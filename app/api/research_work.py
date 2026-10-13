@@ -219,7 +219,7 @@ async def continue_research(
 
     candidates = candidates_from_snapshot(job.state_snapshot)
     if candidates:
-        # 채택 근거 상위 READING_PRESELECT 편은 담음으로 미리 넣는다(사용자 결정 2026-10-14) — 이어갈 때만, 옛 연구는 그대로
+        # 채택 근거 상위 READING_PRESELECT 편은 담음으로 미리 넣는다(사용자 결정 2026-10-13) — 이어갈 때만, 옛 연구는 그대로
         await db.execute(
             insert(ResearchReading)
             .values([{"work_id": jid, **row} for row in preselect(candidates)])
