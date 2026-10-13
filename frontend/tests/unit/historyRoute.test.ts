@@ -10,12 +10,12 @@ describe("routeFor", () => {
     expect(routeFor(bookEntry(ID1))).toEqual({ path: "/", query: { h: ID1, q: "한국 경제" } });
   });
 
-  it("논문은 /papers 에 등재구분이 있으면 grade 까지 싣는다", () => {
+  it("논문은 /papers 에 h·q 를 싣고, 옛 기록에 남은 등재구분(grade)은 싣지 않는다(KCI 필터는 없어졌다)", () => {
+    expect(routeFor(paperEntry(ID1))).toEqual({ path: "/papers", query: { h: ID1, q: "딥러닝 자연어 처리" } });
     expect(routeFor(paperEntry(ID1, { params: { grade: "KCI 등재" } }))).toEqual({
       path: "/papers",
-      query: { h: ID1, q: "딥러닝 자연어 처리", grade: "KCI 등재" },
+      query: { h: ID1, q: "딥러닝 자연어 처리" },
     });
-    expect(routeFor(paperEntry(ID1))).toEqual({ path: "/papers", query: { h: ID1, q: "딥러닝 자연어 처리" } });
   });
 
   it("딥리서치는 잡 주소로 간다", () => {
@@ -41,12 +41,9 @@ describe("routeFor", () => {
 });
 
 describe("readHistoryQuery", () => {
-  it("h 와 q·grade 를 읽는다", () => {
-    expect(readHistoryQuery({ h: ID1, q: " 경제 ", grade: "KCI 등재" })).toEqual({
-      h: ID1,
-      q: "경제",
-      grade: "KCI 등재",
-    });
+  it("h 와 q 를 읽고, 옛 주소에 남은 grade 는 오류 없이 무시한다", () => {
+    expect(readHistoryQuery({ h: ID1, q: " 경제 " })).toEqual({ h: ID1, q: "경제" });
+    expect(readHistoryQuery({ h: ID1, q: " 경제 ", grade: "KCI 등재" })).toEqual({ h: ID1, q: "경제" });
   });
 
   it("옛 restore 를 h 의 별칭으로 받되 h 가 우선이다", () => {

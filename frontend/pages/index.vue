@@ -8,80 +8,57 @@
     <!-- ===== LANDING VIEW ===== -->
     <main v-if="view === 'landing'" class="skx-contents">
       <div class="skx-contents__inner">
-        <h1 class="skx-hero">
-          <span v-if="mode === 'book'"
-            >몰랐던 책까지 찾고 알려주는<br />든든한 사서 큐레이션 AI
-            SKOVIX</span
-          >
-          <span v-else
-            >몰랐던 자료까지 찾고 분석해주는<br />똑똑한 검색 분석가 AI
-            SKOVIX</span
-          >
+        <h1 class="skx-brand">
+          <span class="skx-brand__line">넓게 찾고 깊게 확인하는, 도서관의 AI 탐색</span>
+          <SkovixWordmark class="skx-brand__logo" />
         </h1>
 
-        <!-- 검색 탭 슬라이더 -->
+        <!-- 두 갈래 전환: 자료 검색 · 논문 검색. 딥리서치는 갈래가 아니라 논문 패널의 + 메뉴·슬래시 명령 모드다 -->
         <div
-          class="skx-tabs"
+          class="skx-seg"
           role="tablist"
           aria-label="검색 유형"
-          ref="tabsRef"
+          :style="{ '--seg-i': String(tabIndex), '--seg-n': String(LANDING_TABS.length) }"
+          @keydown="onTabsKeydown"
         >
-          <span
-            class="skx-tabs__slider"
-            :style="tabSliderStyle"
-            aria-hidden="true"
-          ></span>
+          <span class="skx-seg__thumb" aria-hidden="true"></span>
           <button
+            v-for="t in LANDING_TABS"
+            :id="`skx-tab-${t.id}`"
+            :key="t.id"
             type="button"
-            :class="['skx-tab skx-tab--book', mode === 'book' && 'is-active']"
+            :class="['skx-seg__btn', mode === t.id && 'is-active']"
             role="tab"
-            :aria-selected="mode === 'book'"
-            @click="setMode('book')"
+            :aria-selected="mode === t.id"
+            :aria-controls="t.id === 'book' ? 'skx-panel-book' : 'skx-panel-paper'"
+            :tabindex="mode === t.id ? 0 : -1"
+            @click="selectTab(t.id)"
           >
-            <img
-              class="skx-tab__icon"
-              :src="
-                mode === 'book'
-                  ? '/img/ico-tab-book-on.svg'
-                  : '/img/ico-tab-book-off.svg'
-              "
-              alt=""
-            />
-            <span class="skx-tab__label">도서검색</span>
-          </button>
-          <button
-            type="button"
-            :class="['skx-tab skx-tab--paper', mode === 'paper' && 'is-active']"
-            role="tab"
-            :aria-selected="mode === 'paper'"
-            @click="setMode('paper')"
-          >
-            <img
-              class="skx-tab__icon"
-              :src="
-                mode === 'paper'
-                  ? '/img/ico-tab-paper-on.svg'
-                  : '/img/ico-tab-paper-off.svg'
-              "
-              alt=""
-            />
-            <span class="skx-tab__label">논문검색</span>
+            <span class="skx-seg__full">{{ t.label }}</span>
+            <span class="skx-seg__short">{{ t.shortLabel }}</span>
           </button>
         </div>
 
-        <!-- 도서 패널 -->
-        <div class="skx-panel" :hidden="mode !== 'book'">
+        <!-- 소장자료 패널 -->
+        <div
+          id="skx-panel-book"
+          class="skx-panel"
+          role="tabpanel"
+          aria-labelledby="skx-tab-book"
+          :hidden="mode !== 'book'"
+        >
           <div class="skx-search">
             <div class="skx-search__box">
+              <span class="skx-search__glow" aria-hidden="true"></span>
               <label class="skx-search__field">
-                <span class="skx-sr-only">도서 검색어</span>
+                <span class="skx-sr-only">자료 검색어</span>
                 <textarea
                   ref="bookInputRef"
                   class="skx-search__input"
                   v-model="currentQuery"
                   placeholder="찾고싶은 도서를 문장으로 검색해보세요!"
                   :disabled="loading"
-                  @keydown.enter.exact.prevent="handleSearch(currentQuery)"
+                  @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
@@ -89,9 +66,10 @@
                   type="button"
                   class="skx-send"
                   aria-label="검색"
+                  :aria-disabled="!hasQuery(currentQuery)"
                   @click="handleSearch(currentQuery)"
                 >
-                  <img src="/img/ico-send.svg" alt="" />
+                  <img src="/img/ico-send-up.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -102,68 +80,36 @@
                   class="skx-chip"
                   @click="fillChip(chip, bookInputRef)"
                 >
-                  {{ chip }}
+                  <img class="skx-chip__icon" src="/img/ico-bubbles.svg" alt="" />
+                  <span>{{ chip }}</span>
                 </button>
               </li>
             </ul>
-            <!-- 컬렉션 크기 드롭다운 (AI 답변에 사용될 도서 개수) -->
-            <div class="skx-filters">
-              <div :class="['skx-select', collectionOpen && 'is-open']">
-                <button
-                  type="button"
-                  class="skx-select__btn"
-                  aria-haspopup="listbox"
-                  :aria-expanded="collectionOpen"
-                  @click.stop="collectionOpen = !collectionOpen"
-                >
-                  <span class="skx-select__label"
-                    >컬렉션 {{ collectionSize }}권</span
-                  >
-                  <img
-                    class="skx-select__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-                <ul class="skx-select__menu" role="listbox">
-                  <li v-for="n in COLLECTION_SIZES" :key="n">
-                    <button
-                      type="button"
-                      class="skx-select__option"
-                      :class="collectionSize === n && 'is-selected'"
-                      role="option"
-                      :aria-selected="collectionSize === n"
-                      @click="selectCollectionSize(n)"
-                    >
-                      {{ n }}권
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </div>
+            <NuxtLink class="skx-reco-link" to="/recommend">
+              <span>내 상황에 맞는 도서 추천받기</span>
+              <img src="/img/ico-arrow.svg" alt="" />
+            </NuxtLink>
           </div>
-          <button
-            type="button"
-            class="skx-recommend"
-            @click="navigateTo('/recommend')"
-          >
-            <span class="skx-recommend__glow" aria-hidden="true"></span>
-            <span class="skx-recommend__panel" aria-hidden="true"></span>
-            <span class="skx-recommend__icon"
-              ><img src="/img/ico-search-lg.svg" alt=""
-            /></span>
-            <span class="skx-recommend__label"
-              >내 상황에 맞는 도서 추천받기</span
-            >
-            <img class="skx-recommend__arrow" src="/img/ico-arrow.svg" alt="" />
-          </button>
         </div>
 
-        <!-- 논문 패널 -->
-        <div class="skx-panel" :hidden="mode !== 'paper'">
+        <!-- 논문 패널 — 딥리서치는 이 입력창에서 + 메뉴의 딥리서치 모드를 켠 상태(켜져 있어도 전환은 '논문 검색') -->
+        <div
+          id="skx-panel-paper"
+          class="skx-panel"
+          role="tabpanel"
+          aria-labelledby="skx-tab-paper"
+          :hidden="mode !== 'paper'"
+        >
           <div class="skx-search">
             <div class="skx-search__box">
-              <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" :disabled="loading" />
+              <span class="skx-search__glow" aria-hidden="true"></span>
+              <ResearchSearchPlusMenu
+                ref="plusMenu"
+                v-model="currentQuery"
+                kind="paper"
+                :disabled="loading"
+                @update:mode="onPlusMode"
+              />
               <label class="skx-search__field">
                 <span class="skx-sr-only">논문 검색어</span>
                 <textarea
@@ -172,7 +118,7 @@
                   v-model="currentQuery"
                   placeholder="찾고싶은 논문을 문장으로 검색해보세요!"
                   :disabled="loading"
-                  @keydown.enter.exact.prevent="handleSearch(currentQuery)"
+                  @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
@@ -180,9 +126,10 @@
                   type="button"
                   class="skx-send"
                   aria-label="검색"
+                  :aria-disabled="!hasQuery(currentQuery)"
                   @click="handleSearch(currentQuery)"
                 >
-                  <img src="/img/ico-send.svg" alt="" />
+                  <img src="/img/ico-send-up.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -193,66 +140,23 @@
                   class="skx-chip"
                   @click="fillChip(chip, paperInputRef)"
                 >
-                  {{ chip }}
+                  <img class="skx-chip__icon" src="/img/ico-bubbles.svg" alt="" />
+                  <span>{{ chip }}</span>
                 </button>
               </li>
             </ul>
-            <!-- 논문 필터 드롭다운 -->
-            <div class="skx-filters">
-              <div :class="['skx-select', filterOpen && 'is-open']">
-                <button
-                  type="button"
-                  class="skx-select__btn"
-                  aria-haspopup="listbox"
-                  :aria-expanded="filterOpen"
-                  @click.stop="filterOpen = !filterOpen"
-                >
-                  <span class="skx-select__label">{{
-                    selectedFilter || "자료유형"
-                  }}</span>
-                  <img
-                    class="skx-select__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-                <ul class="skx-select__menu" role="listbox">
-                  <li v-for="opt in filterOptions" :key="opt">
-                    <button
-                      type="button"
-                      class="skx-select__option"
-                      :class="selectedFilter === opt && 'is-selected'"
-                      role="option"
-                      @click="selectFilter(opt)"
-                    >
-                      {{ opt }}
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div class="skx-filter-chip__wrap">
-                <span
-                  v-for="f in activeFilters"
-                  :key="f"
-                  class="skx-filter-chip"
-                >
-                  {{ f }}
-                  <button
-                    type="button"
-                    class="skx-filter-chip__x"
-                    aria-label="필터 삭제"
-                    @click="removeFilter(f)"
-                  >
-                    <img src="/img/ico-delete.svg" alt="" />
-                  </button>
-                </span>
-              </div>
-            </div>
+            <!-- 자료 검색 패널의 '도서 추천받기' 링크 자리 — 두 패널 높이를 같게 해 갈래를 바꿔도 전환·입력창이 움직이지 않게 비워 둔다(보이지 않고 눌리지도 않는다) -->
+            <span class="skx-reco-link skx-reco-link--ghost" aria-hidden="true">
+              <span>내 상황에 맞는 도서 추천받기</span>
+              <img src="/img/ico-arrow.svg" alt="" />
+            </span>
           </div>
+          <!-- DeepResearch 모드일 때 예시 연구 카드(미리 돌린 실제 연구 — 읽기 전용). 예시가 없으면 그리지 않는다 -->
+          <ResearchExampleCards v-if="deepResearch" />
         </div>
 
         <!-- 신작도서 카운트업 -->
-        <section class="skx-newbooks">
+        <section v-if="SHOW_MOCKS" class="skx-newbooks">
           <h2 class="skx-newbooks__title">
             지금도 새로운 책이 업데이트 되고 있어요!
           </h2>
@@ -275,7 +179,7 @@
                 <span class="skx-book__spine"
                   ><img
                     class="skx-book__spinner"
-                    src="/img/ico-spinner.svg"
+                    :src="SPINNER_SRC"
                     alt=""
                 /></span>
                 <span class="skx-book__bar"></span>
@@ -296,321 +200,149 @@
           v-model="currentQuery"
           aria-label="검색어 입력"
           :disabled="loading"
-          @keydown.enter.prevent="handleSearch(currentQuery)"
+          @keydown.enter="onSearchEnter"
         />
         <button
           type="button"
           class="skx-send"
           aria-label="검색"
+          :aria-disabled="!hasQuery(currentQuery)"
           :disabled="loading"
           @click="handleSearch(currentQuery)"
         >
-          <img src="/img/ico-send.svg" alt="" />
+          <img src="/img/ico-send-up.svg" alt="" />
         </button>
       </div>
 
       <div
         v-if="loading"
-        class="skx-result-card"
+        class="skx-rframe"
         style="padding: 40px; text-align: center"
       >
-        <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
-        <p style="margin-top: 12px">
-          AI가 {{ mode === "book" ? "도서" : "논문" }}를 검색 중입니다...
-        </p>
+        <img :src="SPINNER_SRC" alt="" style="width: 32px" />
+        <p style="margin-top: 12px">AI가 도서를 검색 중입니다...</p>
       </div>
 
       <div
         v-else-if="searchError"
-        class="skx-result-card"
+        class="skx-rframe"
         style="padding: 20px; color: #c00"
       >
         {{ searchError }}
       </div>
 
-      <template v-else>
-        <div class="skx-result-card">
-          <!-- AI 섹션 (도서) -->
-          <section
-            v-if="mode === 'book' && books.length"
-            class="skx-ai-section"
-          >
-            <header class="skx-ai-header">
-              <h2 class="skx-ai-header__title">AI 검색 결과</h2>
-              <p v-if="keywordChips.length" class="skx-ai-header__keywords">
-                키워드: {{ keywordChips.join(", ") }}
-              </p>
-            </header>
-            <div class="skx-ai-panel">
-              <div class="skx-ai-panel__top">
-                <div class="skx-ai-panel__logo-row">
-                  <img
-                    class="skx-ai-panel__logo"
-                    :src="
-                      curationLoading || curationTyping
-                        ? '/ic_ing.gif'
-                        : '/ic_done.png'
-                    "
-                    alt="SKOVIX AI"
-                  />
-                  <Transition name="skx-stage-fade" mode="out-in">
-                    <span
-                      :key="aiPanelTitle"
-                      class="skx-ai-panel__title-text"
-                      >{{ aiPanelTitle }}</span
-                    >
-                  </Transition>
-                  <span v-if="curationLoading" class="skx-ai-panel__loading"
-                    >●</span
-                  >
-                </div>
-                <div class="skx-ai-panel__fb">
-                  <span class="skx-ai-panel__fb-label"
-                    >찾으시는 도서가 맞나요?</span
-                  >
-                </div>
-              </div>
-              <div :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']">
-                <div class="skx-ai-answer">
-                  <p class="skx-ai-answer__text">{{ curationIntro }}</p>
-                  <ul v-if="curationItems.length" class="skx-ai-answer__list">
-                    <li v-for="ci in curationItems" :key="ci.book_id">
-                      {{ ci.reason }}
-                    </li>
-                  </ul>
-                  <!-- <div
-                    v-if="curationItems.length && !curationLoading"
-                    class="skx-deepread-cta"
-                  >
-                    <span class="skx-deepread-cta__text">컬렉션에서 책과 직접 대화해보세요</span>
-                    <button
-                      type="button"
-                      class="skx-deepread-cta__btn"
-                      @click="navigateTo(`/books/${curationItems[0].book_id}?q=${encodeURIComponent(currentQuery)}&chat=1`)"
-                    >
-                      DeepRead 시작하기
-                      <img src="/img/ico-arrow.svg" alt="" />
-                    </button>
-                  </div> -->
-                </div>
-                <button
-                  type="button"
-                  class="skx-ai-expand-bar"
-                  :aria-expanded="aiExpanded"
-                  @click="aiExpanded = !aiExpanded"
-                >
-                  <span class="skx-ai-expand-bar__label">{{
-                    aiExpanded ? "접기" : "펼치기"
-                  }}</span>
-                  <img
-                    class="skx-ai-expand-bar__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-              </div>
-              <p
-                v-if="curationItems.length && !curationLoading"
-                class="skx-ai-hint"
-              >
-                <img src="/img/ico-chat.svg" alt="" />
-                마음에 드는 책을 찾으셨다면
-                <strong>DeepRead</strong>로 책과 직접 대화하며 더 깊이
-                읽어보세요
-              </p>
-            </div>
-          </section>
-
-          <!-- AI 섹션 (논문) -->
-          <section
-            v-if="mode === 'paper' && (paperSummaryText || paperSummaryLoading)"
-            class="skx-ai-section"
-          >
-            <header class="skx-ai-header">
-              <h2 class="skx-ai-header__title">AI 검색 결과</h2>
-            </header>
-            <div class="skx-ai-panel">
-              <div class="skx-ai-panel__top">
-                <div class="skx-ai-panel__logo-row">
-                  <img
-                    class="skx-ai-panel__logo"
-                    :src="paperSummaryLoading ? '/ic_ing.gif' : '/ic_done.png'"
-                    alt="SKOVIX AI"
-                  />
-                  <span class="skx-ai-panel__title-text">AI 핵심 요약</span>
-                  <span v-if="paperSummaryLoading" class="skx-ai-panel__loading"
-                    >●</span
-                  >
-                </div>
-              </div>
-              <div :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']">
-                <div class="skx-ai-answer">
-                  <div v-html="renderedPaperSummary" />
-                </div>
-                <button
-                  type="button"
-                  class="skx-ai-expand-bar"
-                  :aria-expanded="aiExpanded"
-                  @click="aiExpanded = !aiExpanded"
-                >
-                  <span class="skx-ai-expand-bar__label">{{
-                    aiExpanded ? "접기" : "펼치기"
-                  }}</span>
-                  <img
-                    class="skx-ai-expand-bar__arrow"
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                  />
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- 도서/논문 목록 -->
-          <div class="skx-book-list">
-            <article
-              v-for="(item, i) in displayBooks"
-              :key="item.book_id"
-              :class="[
-                'skx-book-card',
-                i >= visibleCount && !bookListExpanded
-                  ? 'skx-book-card--hidden'
-                  : '',
-              ]"
-              style="cursor: pointer"
-              @click="openDetail(item)"
+      <div v-else class="skx-rframe">
+        <!-- AI 검색 결과 — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것. 틀은 논문 결과와 같은 AiResultPanel -->
+        <AiResultPanel v-if="topBook && topRecommended" :loading="reasonPending" hint>
+            <!-- 왼쪽 글은 일정 높이(16rem)까지만 보이고 넘치면 아래가 흐려지며 [더보기]/[접기] — 스트리밍 중에도 같다 -->
+            <ClampedPanel
+              v-model:expanded="aiExpanded"
+              class="skx-pick__main"
+              :collapsed-rem="16"
+              scroll-anchor=".skx-aip"
             >
-              <div class="skx-book-card__thumb">
-                <BookCover :book-id="item.book_id" />
-              </div>
-              <div class="skx-book-card__body">
-                <div class="skx-book-card__top">
-                  <div class="skx-book-card__tags">
-                    <span
-                      v-if="collectionIds.has(item.book_id)"
-                      class="skx-tag skx-tag--collection"
-                      >AI 컬렉션</span
-                    >
-                    <template
-                      v-if="
-                        item.title_score !== undefined &&
-                        item.content_score !== undefined
-                      "
-                    >
-                      <ScoreRing
-                        :pct="item.title_score * 100"
-                        label="제목 일치율"
-                      />
-                      <ScoreRing
-                        :pct="item.content_score * 100"
-                        label="내용 일치율"
-                        variant="content"
-                      />
-                    </template>
-                    <span class="skx-tag skx-tag--score"
-                      >관련도
-                      {{ Math.floor((item.best_score || 0) * 100) }}%</span
-                    >
-                    <span
-                      v-for="tag in parseThemes(
-                        item.book_info?.themes ||
-                          item.book_info?.keyword ||
-                          item.book_info?.subject,
-                      )"
-                      :key="tag"
-                      class="skx-tag skx-tag--keyword"
-                      >#{{ tag }}</span
-                    >
-                  </div>
-                  <button
-                    type="button"
-                    class="skx-book-card__bookmark"
-                    :aria-label="
-                      isBookmarked(item.book_id) ? '북마크 해제' : '북마크'
-                    "
-                    @click.stop="toggleBookmark(item.book_id)"
-                  >
-                    <img :src="bookmarkIcon(item.book_id)" alt="" />
-                  </button>
-                </div>
-                <div class="skx-book-card__meta">
-                  <h3 class="skx-book-card__title">
-                    {{ item.book_info?.title || item.book_id }}
+              <div class="skx-pick__body">
+                <section
+                  class="skx-pick__block"
+                  aria-labelledby="skx-pick-why"
+                  :aria-busy="reasonPending"
+                >
+                  <h3 id="skx-pick-why" class="skx-pick__heading">
+                    <span class="skx-ai-dot" aria-hidden="true"></span>
+                    왜 이 책인가
                   </h3>
-                  <div class="skx-book-card__info-row">
-                    <!-- <span
-                      v-if="item.book_info?.material_type"
-                      class="skx-meta-text"
-                      >{{ item.book_info.material_type }}</span
-                    > -->
-                    <!-- <span
-                      v-if="
-                        item.book_info?.personal_author ||
-                        item.book_info?.corporate_author
-                      "
-                      class="skx-dot"
-                    ></span> -->
-                    <span class="skx-meta-text">{{
-                      item.book_info?.personal_author ||
-                      item.book_info?.corporate_author
-                    }}</span>
-                    <span
-                      v-if="item.book_info?.pub_date"
-                      class="skx-dot"
+                  <p v-if="reasonText" class="skx-pick__text">
+                    {{ reasonText
+                    }}<span
+                      v-if="reasonPending"
+                      class="skx-ai-answer__cursor"
+                      aria-hidden="true"
                     ></span>
-                    <span v-if="item.book_info?.pub_date" class="skx-meta-text"
-                      >{{ item.book_info.pub_date.slice(0, 4) }}년</span
-                    >
-                    <span
-                      v-if="item.book_info?.publisher"
-                      class="skx-dot"
-                    ></span>
-                    <span
-                      v-if="item.book_info?.publisher"
-                      class="skx-meta-text"
-                      >{{ item.book_info.publisher }}</span
-                    >
-                  </div>
-                </div>
-                <div class="skx-book-card__actions" @click.stop>
-                  <button
-                    type="button"
-                    class="skx-btn-chat"
-                    @click="openDetailWithChat(item)"
+                  </p>
+                  <p
+                    v-else-if="reasonPending"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                    <img src="/img/ico-chat.svg" alt="" />
-                    <span class="skx-btn-chat__label">DeepRead</span>
-                  </button>
-                  <!-- <button
-                    type="button"
-                    class="skx-btn-loan"
-                    @click="requestLoan(item)"
+                    AI 사서가 추천 이유를 정리하고 있어요…
+                  </p>
+                  <p
+                    v-else-if="reasonStatus === 'error'"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                    대출신청
-                  </button> -->
-                  <button
-                    type="button"
-                    class="skx-btn-read"
-                    @click="viewPdf(item)"
+                    추천 이유를 불러오지 못했어요.
+                    <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
+                  </p>
+                  <p
+                    v-if="reasonStatus === 'interrupted'"
+                    class="skx-pick__text skx-pick__text--muted"
+                    role="status"
                   >
-                    원문 보기
-                  </button>
-                  <button
-                    v-if="mode === 'paper'"
-                    type="button"
-                    class="skx-btn-loan"
-                    @click.stop="openCitation(item)"
-                  >
-                    출처 인용
-                  </button>
-                </div>
+                    중간에 끊겼어요 ·
+                    <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
+                  </p>
+                </section>
+                <section
+                  v-if="topReadEffect"
+                  class="skx-pick__block"
+                  aria-labelledby="skx-pick-effect"
+                >
+                  <h3 id="skx-pick-effect" class="skx-pick__heading">
+                    이 책에서 얻을 수 있는 것
+                  </h3>
+                  <p class="skx-pick__text">{{ topReadEffect }}</p>
+                </section>
               </div>
-            </article>
+            </ClampedPanel>
+          <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
+            <span class="skx-pick__label">SKOVIX 추천 1권</span>
+            <!-- 아래 목록 카드와 같은 해부도. 키워드 칩은 이 책 자신의 키워드가 먼저이고, 없을 때만 추천 이유 스트림이 준 키워드 -->
+            <ResultCard
+              :item="topBook"
+              kind="book"
+              compact
+              badge="AI 추천"
+              :fallback-keywords="keywordChips"
+              @open="openDetail(topBook)"
+              @chat="openDetailWithChat(topBook)"
+              @pdf="viewPdf(topBook)"
+            />
+          </aside>
+        </AiResultPanel>
+        <!-- 1위 도서도 질문과 거리가 멀면 추천하지 않고 목록만 안내한다(추천 이유도 부르지 않는다) -->
+        <AiResultPanel v-else-if="topBook">
+          <p class="skx-aip__notice" role="status">
+            질문과 딱 맞는 자료를 찾지 못했어요 — 아래 목록을 확인해 주세요.
+          </p>
+        </AiResultPanel>
+        <!-- 이 결과에서 이어서 — [DeepResearch로 이어서 조사하기]는 메인 입력창에 이 검색어를 채우고 DeepResearch 모드를 켠다(시작은
+             하지 않는다 — 논문 결과의 같은 버튼과 같은 모양) -->
+        <div v-if="topBook && resultQuery" class="skx-deeper">
+          <button type="button" class="skx-deeper__btn" @click="continueAsDeepResearch">
+            <span aria-hidden="true">+</span> {{ DEEP_RESEARCH }}로 이어서 조사하기
+          </button>
+        </div>
+
+        <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건' -->
+        <section v-if="listBooks.length" class="skx-rlist" aria-label="소장자료 검색 결과 목록">
+          <ResultListHead :count="listBooks.length" :prefix="listExcludesPick ? '그 외 ' : ''" />
+          <div class="skx-book-list">
+            <ResultCard
+              v-for="(item, i) in listBooks"
+              v-show="i < visibleCount || bookListExpanded"
+              :key="item.book_id"
+              :item="item"
+              kind="book"
+              @open="openDetail(item)"
+              @chat="openDetailWithChat(item)"
+              @pdf="viewPdf(item)"
+            />
           </div>
 
-          <!-- 더보기 버튼 (컬렉션 외 도서가 있을 때만) -->
+          <!-- 더보기 버튼 (처음 보이는 개수보다 결과가 많을 때만) -->
           <button
-            v-if="displayBooks.length > visibleCount"
+            v-if="listBooks.length > visibleCount"
             type="button"
             class="skx-book-expand"
             :aria-expanded="bookListExpanded"
@@ -625,18 +357,11 @@
               alt=""
             />
           </button>
-        </div>
-      </template>
+        </section>
+      </div>
     </main>
 
-    <!-- CitationModal, PdfViewer, Toast (preserve existing) -->
-    <CitationModal
-      :open="citationModal"
-      :book-id="citationBook?.book_id ?? null"
-      :references="citationBook?.book_info?.references ?? []"
-      @close="citationModal = false"
-    />
-
+    <!-- PdfViewer, Toast -->
     <PdfViewer
       v-if="pdfOpen && selectedItem"
       :cnts-id="selectedItem.book_id"
@@ -653,19 +378,36 @@
 </template>
 
 <script setup lang="ts">
-import type { Ref } from "vue";
-import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
-import { useApi } from "~/composables/useApi";
+import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
-import { useCuration } from "~/composables/useCuration";
+import ResearchExampleCards from "~/components/research/ResearchExampleCards.vue";
+import { useResearchExamples } from "~/composables/useResearchWorks";
 import { safeLocalStorage } from "~/utils/browserId";
+import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { slimBookResult } from "~/utils/historySnapshot";
+import {
+  buildBookAi,
+  buildReasonBody,
+  isRecommendable,
+  listWithoutPick,
+  pickTopBook,
+  readEffectOf,
+  readReasonStream,
+  readSavedKeywords,
+  readSavedReason,
+} from "~/utils/bookAiPick";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
+import { DEFAULT_LANDING_TAB, LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
+import { deepResearchStartRoute, queryWithoutStart, readStart, readStartDraft } from "~/utils/landingStart";
+import { DEEP_RESEARCH } from "~/utils/brand";
+import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
+import { hasQuery } from "~/utils/searchInput";
+import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).
@@ -693,7 +435,8 @@ const router = useRouter();
 
 // ── 뷰 상태 ───────────────────────────────────────────────
 const view = ref<"landing" | "results" | "detail">("landing");
-const mode = ref<"book" | "paper">("book");
+// 처음 열 때의 갈래는 전환의 첫 칸(논문 검색)이다
+const mode = ref<"book" | "paper">(DEFAULT_LANDING_TAB);
 
 // ── 검색 ──────────────────────────────────────────────────
 const currentQuery = ref("");
@@ -707,34 +450,23 @@ const books = ref<BookChunkGroup[]>([]);
 const papers = ref<BookChunkGroup[]>([]);
 const keywordChips = ref<string[]>([]);
 
-// ── 큐레이션 (도서) ────────────────────────────────────────
-const curation = ref<any>(null);
-const curationOpen = ref(true);
-const curationLoading = ref(false);
+// ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
+// 1위 도서 한 권과, 그 책이 이 검색어에 왜 맞는지(/books/reason/stream 스트리밍)·읽으면 얻는 것(검색 응답의 read_effect).
+// 이유 스트림은 검색·복원·랜딩 복귀·페이지 이탈이 공유하는 묶음 signal 로 끊는다.
+// 상태: idle(아직 없음) · loading(받는 중) · done(끝까지 받음) · error(글 없이 실패) · interrupted(받다가 끊겨 글이 일부만 있음)
+const reasonRaw = ref("");
+const reasonStatus = ref<"idle" | "loading" | "done" | "error" | "interrupted">("idle");
+let reasonSignal: AbortSignal | null = null;
+// 스트림 첫 글자는 줄바꿈이라 앞뒤 공백을 뗀다
+const reasonText = computed(() => reasonRaw.value.trim());
+const reasonPending = computed(() => reasonStatus.value === "loading");
 
 // ── 결과 펼치기/접기 ──────────────────────────────────────
 const bookListExpanded = ref(false);
 const aiExpanded = ref(false);
-// SSE 스트리밍용 분리 ref
-const curationIntro = ref("");
-const curationItems = ref<Array<{ book_id: string; reason: string }>>([]);
-
-// ── 논문 핵심 요약 SSE ─────────────────────────────────────
-const paperSummaryText = ref("");
-const paperSummaryLoading = ref(false);
-const paperSummarySources = ref<BookChunkGroup[]>([]);
-
-const renderedPaperSummary = computed(() =>
-  paperSummaryText.value
-    ? (marked.parse(paperSummaryText.value) as string)
-    : "",
-);
 
 // ── 상세 ──────────────────────────────────────────────────
 const selectedItem = ref<BookChunkGroup | null>(null);
-const detailTab = ref("reason");
-const reasonText = ref("");
-const reasonLoading = ref(false);
 const showChat = ref(false);
 const pdfOpen = ref(false);
 const refsOpen = ref(true);
@@ -753,18 +485,10 @@ const detailTabs = computed(() =>
       ],
 );
 
-const renderedReason = computed(() =>
-  reasonText.value ? (marked.parse(reasonText.value) as string) : "",
-);
-
 // ── 연관 추천 ──────────────────────────────────────────────
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
 const selectedRelated = ref<any>(null);
-
-// ── 출처 인용 ──────────────────────────────────────────────
-const citationModal = ref(false);
-const citationBook = ref<BookChunkGroup | null>(null);
 
 // ── 토스트 ────────────────────────────────────────────────
 const toast = ref("");
@@ -772,10 +496,9 @@ const toast = ref("");
 // ── 검색 기록 ─────────────────────────────────────────────
 const historyApi = useHistory();
 const currentHistoryId = ref<string | null>(null);
-// 검색·복원·큐레이션을 한 묶음으로 끊는다 — 새 검색이나 복원이 시작되면 이전 묶음의
-// 응답·타이핑·저장이 새 화면과 새 기록을 덮지 못하게 한다. 큐레이션은 화면 갱신만 끊고 요청·저장은 끝까지 간다
+// 검색·복원·추천 이유 스트림을 한 묶음으로 끊는다 — 새 검색이나 복원·랜딩 복귀·페이지 이탈이 오면 이전 묶음의
+// 응답·스트림·저장이 새 화면과 새 기록을 덮지 못하게 한다(이유 스트림은 연결째 끊겨 서버 생성도 멈춘다)
 let runCtrl: AbortController | null = null;
-const curationRequests = useCuration();
 function beginRun(): AbortSignal {
   runCtrl?.abort();
   runCtrl = new AbortController();
@@ -783,18 +506,23 @@ function beginRun(): AbortSignal {
 }
 
 // ── Publishing additions ──────────────────────────────────────
-// Tab slider
-const tabsRef = ref<HTMLElement | null>(null);
-const tabSliderStyle = ref<{ width: string; transform: string }>({
-  width: "0px",
-  transform: "translateX(0px)",
-});
+// 두 갈래 전환 — 갈래는 데이터 모드(mode)와 같다(도서/논문). 딥리서치는 논문 패널에서 + 메뉴·슬래시 명령으로 켜는 모드라
+// 켜져 있어도 전환은 '논문 검색'이다. 켜짐 여부의 정본은 + 메뉴(SearchPlusMenu)다 — 어디서 켜고 꺼도 메뉴가 update:mode 로
+// 알려 deepResearch 가 따라온다. 이 값은 자료 검색으로 옮길 때 켜 둔 모드를 끄는 데 쓴다
+const deepResearch = ref(false);
+const plusMenu = ref<{
+  activateMode: (id: SearchModeId, options?: { focus?: boolean }) => void;
+  clearMode: () => void;
+} | null>(null);
+const tabIndex = computed(() => LANDING_TABS.findIndex((t) => t.id === mode.value));
 
-// Filter dropdown (paper mode)
-const filterOpen = ref(false);
-const selectedFilter = ref("");
-const activeFilters = ref<string[]>([]);
-const filterOptions = ["KCI 등재", "KCI 미등재", "KCI 후보"];
+function onPlusMode(id: SearchModeId | null) {
+  deepResearch.value = id === "deep-research";
+}
+
+// DeepResearch 모드의 예시 연구 카드 재료를 랜딩이 뜰 때 미리 읽어 둔다(앱에서 한 번 — useState). 모드를 켠 뒤에야 읽기 시작하면
+// 응답이 온 뒤에 카드가 서서, 세로 가운데 정렬인 랜딩의 입력창이 사용자가 막 쓰기 시작한 때 비동기로 밀린다(P5 리뷰)
+const { load: loadResearchExamples } = useResearchExamples();
 
 // Newbooks countup
 const newbooksCount = ref(0);
@@ -803,84 +531,92 @@ const NEW_BOOKS_TARGET = 1245;
 // Bookmark
 const { isBookmarked, toggleBookmark, bookmarkIcon } = useBookmark();
 
-function setMode(m: "book" | "paper") {
-  mode.value = m;
-  nextTick(() => updateTabSlider());
+// 갈래를 고른다. 초점은 옮기지 않는다 — 방향키로 갈래를 옮기는 중이거나 모바일에서 갈래만 바꿀 때 입력창·키보드가 끼어들지 않게.
+// 자료 검색으로 가면 논문 패널에 켜 둔 딥리서치 모드는 끈다(숨은 패널에 칩이 남지 않게)
+function selectTab(next: LandingTab) {
+  if (next === mode.value) return;
+  mode.value = next;
+  if (next === "book" && deepResearch.value) dropDeepResearch();
 }
 
-function updateTabSlider() {
-  if (!tabsRef.value) return;
-  const active = tabsRef.value.querySelector(
-    ".skx-tab.is-active",
-  ) as HTMLElement | null;
-  if (!active) return;
-  tabSliderStyle.value = {
-    width: active.offsetWidth + "px",
-    transform: `translateX(${active.offsetLeft}px)`,
-  };
+// 딥리서치 모드를 끈다. 화면 상태(deepResearch)도 바로 내린다 — 같은 틱에 랜딩이 걷히면(자료 검색 기록 복원)
+// 메뉴가 unmount 돼 update:mode 가 오지 않을 수 있고, 그러면 돌아온 논문 패널에 딥리서치 상태가 남는다
+function dropDeepResearch() {
+  deepResearch.value = false;
+  plusMenu.value?.clearMode();
 }
 
-function selectFilter(opt: string) {
-  selectedFilter.value = opt;
-  filterOpen.value = false;
-  if (!activeFilters.value.includes(opt)) activeFilters.value.push(opt);
+// 기록 복원처럼 코드가 자료 검색 화면으로 돌릴 때 — 딥리서치 모드도 함께 끈다
+function showBookMode() {
+  mode.value = "book";
+  if (deepResearch.value) dropDeepResearch();
 }
 
-function removeFilter(f: string) {
-  activeFilters.value = activeFilters.value.filter((x) => x !== f);
-  if (selectedFilter.value === f) selectedFilter.value = "";
+// 사이드바 [+ 연구 시작하기](?start=deep-research) — 랜딩의 논문 패널에 딥리서치 모드를 켜고 입력창에 초점을 준다.
+// 결과 화면이었다면 랜딩으로 걷는다. 처리한 뒤 주소에서 start·draft 를 지운다(남기면 새로고침마다 다시 켜진다).
+// 이미 '/' 에 있어도 쿼리가 바뀌므로 watch 가 같은 길로 받는다
+async function startFromQuery() {
+  if (route.path !== "/" || !readStart(route.query)) return;
+  // 소장자료 결과의 [DeepResearch로 이어서 조사하기]가 실은 질문 초안 — 주소에서 지우기 전에 읽는다
+  const draft = readStartDraft(route.query);
+  void router.replace({ query: queryWithoutStart(route.query) });
+  if (view.value !== "landing") goLanding();
+  mode.value = "paper";
+  if (draft) currentQuery.value = draft;
+  // 논문 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창에는 초점이 가지 않는다. 초안이 있으면 초점이 글 끝에 간다
+  await nextTick();
+  plusMenu.value?.activateMode("deep-research");
 }
 
-function onDocClick() {
-  filterOpen.value = false;
-  collectionOpen.value = false;
+// 소장자료 결과의 [DeepResearch로 이어서 조사하기] — 결과의 검색어를 메인 입력창(논문 패널)에 채우고 DeepResearch 모드를 켠다.
+// 연구는 시작하지 않는다(고쳐 보내면 기존 흐름). 사이드바 [+ 연구 시작하기]와 같은 랜딩 주소(?start=)로 옮겨 뒤로 가기로 이 결과에
+// 돌아온다. 입력창이 아니라 화면 결과의 검색어(resultQuery)를 싣는다
+function continueAsDeepResearch() {
+  void router.push(deepResearchStartRoute(resultQuery.value));
 }
+
+// tablist 키보드: 좌우·Home·End 로 갈래를 옮기고(자동 선택) 초점도 그 갈래로 따라간다
+function onTabsKeydown(e: KeyboardEvent) {
+  const next = landingTabStep(mode.value, e.key, e);
+  if (!next) return;
+  e.preventDefault();
+  selectTab(next);
+  document.getElementById(`skx-tab-${next}`)?.focus();
+}
+
 // ── End publishing additions ──────────────────────────────────
 
 onMounted(async () => {
   if (!process.client) return;
   // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
   restoreFromQuery();
+  void startFromQuery();
+  // 목록 API 는 브라우저 ID 헤더가 있어야 해서 서버 렌더가 아니라 마운트 뒤에 읽는다
+  void loadResearchExamples();
 
-  // Tab slider
-  nextTick(() => updateTabSlider());
-  window.addEventListener("resize", updateTabSlider);
+  // Newbooks countup — 신작도서 블록이 숨겨져 있으면(SHOW_MOCKS=false) 보이지 않는 숫자를 돌리지 않는다
+  if (SHOW_MOCKS) {
+    const duration = 1600;
+    const startTime = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      newbooksCount.value = Math.round(NEW_BOOKS_TARGET * eased);
+      if (p < 1) requestAnimationFrame(tick);
+      else newbooksCount.value = NEW_BOOKS_TARGET;
+    };
+    requestAnimationFrame(tick);
+  }
 
-  // Newbooks countup
-  const duration = 1600;
-  const startTime = performance.now();
-  const tick = (now: number) => {
-    const p = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - p, 3);
-    newbooksCount.value = Math.round(NEW_BOOKS_TARGET * eased);
-    if (p < 1) requestAnimationFrame(tick);
-    else newbooksCount.value = NEW_BOOKS_TARGET;
-  };
-  requestAnimationFrame(tick);
-
-  document.addEventListener("click", onDocClick);
 });
 
 onUnmounted(() => {
-  // 떠난 화면에 늦게 온 응답·타이핑 타이머가 상태를 고치지 않게 묶음을 끊는다.
-  // 큐레이션 요청은 끊지 않는다 — 끝까지 받아 기록에 저장해야 돌아왔을 때 다시 만들지 않는다(fetchCuration)
+  // 떠난 화면에 늦게 온 응답이 상태를 고치지 않게, 진행 중인 검색·추천 이유 스트림을 끊는다
   runCtrl?.abort();
-  window.removeEventListener("resize", updateTabSlider);
-  document.removeEventListener("click", onDocClick);
-  if (aiStageTimer) clearTimeout(aiStageTimer);
 });
 
 // ── 유틸 ──────────────────────────────────────────────────
 const suggestions = SUGGESTIONS;
-
-function parseThemes(themes?: string | null): string[] {
-  if (!themes) return [];
-  return themes
-    .split(/[,;]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-}
 
 function isAvailable(_item: BookChunkGroup): boolean {
   return false; // 소장 정보 없음 — 더미
@@ -907,11 +643,9 @@ function showToast(msg: string) {
 async function handleSearch(query: string, reuse?: BookEntry) {
   if (!query.trim() || loading.value) return;
 
-  // 논문 모드는 papers 전용 페이지로 이동 — 랜딩에서 고른 등재 필터를 유지해서 넘긴다
+  // 논문 모드는 papers 전용 페이지로 이동
   if (mode.value === "paper") {
-    const grade = activeFilters.value[0];
-    const gradeParam = grade ? `&grade=${encodeURIComponent(grade)}` : "";
-    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}${gradeParam}`);
+    navigateTo(`/papers?q=${encodeURIComponent(query.trim())}`);
     return;
   }
 
@@ -926,16 +660,9 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   searchError.value = "";
   books.value = [];
   papers.value = [];
-  curation.value = null;
-  curationIntro.value = "";
-  curationItems.value = [];
-  curationLoading.value = false;
-  curationTyping.value = false;
-  curationOpen.value = true;
+  resetReason();
   bookListExpanded.value = false;
   aiExpanded.value = false;
-  paperSummaryText.value = "";
-  keywordChips.value = [];
   view.value = "results";
 
   try {
@@ -944,8 +671,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       body: {
         query,
         mode: "book",
-        // 컬렉션 크기 + 더보기 목록용 여유분 확보 (백엔드 상한 20)
-        top_k: Math.min(20, Math.max(collectionSize.value + 5, 10)),
+        top_k: 10,
         use_rewrite: true,
         use_rerank: true,
       },
@@ -957,8 +683,10 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       rewrittenQuery.value = data.rewritten_query || query;
     }
     loading.value = false;
+    // 기록 저장을 기다리는 동안에도 빈 칸 대신 '정리하는 중'이 보이게 스트림 시작 전에 미리 받는 중으로 둔다
+    if (isRecommendable(pickTopBook(books.value))) reasonStatus.value = "loading";
 
-    // 기록 id 를 먼저 확정해 큐레이션에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
+    // 기록 id 를 먼저 확정해 추천 이유 스트림에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
     const snapshot = slimBookResult(data) ?? undefined;
     const entry = reuse
       ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
@@ -966,7 +694,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
     router.replace({ query: { q: query.trim(), h: entry.id } });
-    if (books.value.length) fetchCuration(entry.id, query.trim(), rewrittenQuery.value, signal);
+    void streamTopReason(entry.id, query.trim(), signal);
   } catch (e: any) {
     if (signal.aborted) return;
     searchError.value =
@@ -974,6 +702,14 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   } finally {
     if (!signal.aborted) loading.value = false;
   }
+}
+
+// 입력창의 엔터는 검색이다. 한글 조합 중의 엔터는 글자 확정용이라 검색하지 않는다(SearchPlusMenu 와 같은 관례) —
+// 안 막으면 마지막 글자가 빠진 채 검색이 나가거나 두 번 나간다
+function onSearchEnter(e: KeyboardEvent) {
+  e.preventDefault();
+  if (e.isComposing) return;
+  void handleSearch(currentQuery.value);
 }
 
 // 예시 질의는 입력창에만 채운다 — 바로 검색하지 않아 고쳐 쓰거나(논문은 + 메뉴로 딥리서치를 골라) 보낼 수 있다.
@@ -991,7 +727,7 @@ function fillChip(chip: string, input: HTMLTextAreaElement | null) {
   });
 }
 
-// 랜딩으로 되돌린다 — 진행 중인 검색·복원·큐레이션 묶음을 끊고 결과 화면 상태를 비운다
+// 랜딩으로 되돌린다 — 진행 중인 검색·복원·추천 이유 스트림 묶음을 끊고 결과 화면 상태를 비운다
 function goLanding() {
   runCtrl?.abort();
   runCtrl = null;
@@ -1004,17 +740,9 @@ function goLanding() {
   searchError.value = "";
   books.value = [];
   papers.value = [];
-  keywordChips.value = [];
-  curation.value = null;
-  curationIntro.value = "";
-  curationItems.value = [];
-  curationLoading.value = false;
-  curationTyping.value = false;
+  resetReason();
   selectedItem.value = null;
   pdfOpen.value = false;
-  citationModal.value = false;
-  // 결과 화면으로 처음 열린 페이지는 탭이 그려진 적이 없어 슬라이더 폭이 0 이다 — 탭이 다시 그려진 뒤 맞춘다
-  nextTick(() => updateTabSlider());
 }
 
 // ── 기록 복원 ─────────────────────────────────────────────
@@ -1045,12 +773,15 @@ async function restoreFromQuery() {
     // 입력창이 아니라 화면 결과의 검색어와 비교한다 — 입력창을 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.
     // 둘 다 앞뒤 공백을 뗀 값이라 같은 검색어를 공백 차이로 다시 찾지 않는다
     if (q !== resultQuery.value) {
-      mode.value = "book";
+      showBookMode();
       await handleSearch(q);
     }
     return;
   }
-  if (h === currentHistoryId.value) return;
+  if (h === currentHistoryId.value) {
+    settleReason();
+    return;
+  }
 
   const signal = beginRun();
   loading.value = false;
@@ -1070,16 +801,18 @@ async function restoreFromQuery() {
   if (!book) void historyApi.refresh("book");
   const retryQuery = q ?? book?.title;
   if (retryQuery) {
-    mode.value = "book";
+    showBookMode();
     await handleSearch(retryQuery, book ?? undefined);
     return;
   }
+  // 이 복원이 beginRun 으로 끊은 이유 스트림이 이어받을 화면 없이 끝나는 길 — '정리하는 중'으로 굳지 않게 매듭짓는다
+  settleReason();
   showToast("없는 기록입니다. 목록을 새로 고쳤습니다.");
 }
 
 function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   const snap = entry.snapshot as BookSnapshot;
-  mode.value = "book";
+  showBookMode();
   view.value = "results";
   loading.value = false;
   searchError.value = "";
@@ -1089,21 +822,22 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   rewrittenQuery.value = snap.rewritten_query || entry.title;
   books.value = snap.books as unknown as BookChunkGroup[];
   papers.value = [];
-  keywordChips.value = [];
-  curation.value = null;
-  curationLoading.value = false;
-  curationTyping.value = false;
-  curationIntro.value = entry.ai?.intro ?? "";
-  curationItems.value = (entry.ai?.items ?? []) as Array<{ book_id: string; reason: string }>;
-  curationOpen.value = true;
+  resetReason();
   bookListExpanded.value = false;
   aiExpanded.value = false;
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
-  // 요약이 비어 있으면 큐레이션이 아직 도는 중이거나 실패한 기록이다 — 도는 중이면 그 요청을 이어받고, 실패했으면 다시 만든다
-  if (!entry.ai && books.value.length) {
-    fetchCuration(entry.id, entry.title, rewrittenQuery.value, signal);
+  // 저장된 추천 이유가 있으면 그대로 보이고 다시 받지 않는다. 없으면(끝나기 전에 떠났거나 실패한 기록, 옛 AI 컬렉션
+  // {intro, items} 기록) 한 번 다시 받고, 끝나면 새 모양으로 덮어 다음부터는 저장분을 쓴다
+  const topId = topBook.value?.book_id ?? null;
+  const saved = readSavedReason(entry.ai, topId);
+  if (saved) {
+    reasonRaw.value = saved;
+    reasonStatus.value = "done";
+    keywordChips.value = readSavedKeywords(entry.ai, topId);
+  } else {
+    void streamTopReason(entry.id, entry.title, signal);
   }
 }
 
@@ -1115,178 +849,106 @@ watch(
     restoreFromQuery();
   },
 );
-
-// ── 컬렉션 개수 조정 (AI 답변에 사용될 도서 수, 랜딩 드롭다운) ──
-const COLLECTION_SIZES = [3, 5, 10, 20];
-// 컬렉션 포함 최소 연관도 (임계값 미달 도서는 LLM 답변에서 제외)
-const COLLECTION_SCORE_THRESHOLD = 0.4;
-const collectionSize = ref(3);
-const collectionOpen = ref(false);
-
-function selectCollectionSize(n: number) {
-  collectionSize.value = n;
-  collectionOpen.value = false;
-}
-
-// 컬렉션 소속 도서 id — 큐레이션 완료 후엔 실제 답변에 사용된 도서,
-// 생성 전엔 동일한 선정 규칙(임계값+크기)으로 미리 계산
-const collectionIds = computed(() => {
-  if (curationItems.value.length) {
-    return new Set(curationItems.value.map((ci) => ci.book_id));
-  }
-  return new Set(
-    books.value
-      .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
-      .slice(0, collectionSize.value)
-      .map((b) => b.book_id),
-  );
-});
-
-// 컬렉션 도서를 상위로 정렬한 표시용 목록
-const displayBooks = computed(() => {
-  if (mode.value === "paper") {
-    if (!activeFilters.value.length) return papers.value;
-    return papers.value.filter((p) => {
-      const grade = p.book_info?.grade;
-      return activeFilters.value.some((f) =>
-        f === "KCI 미등재" ? !grade : grade === f,
-      );
-    });
-  }
-  const ids = collectionIds.value;
-  const inCollection = books.value.filter((b) => ids.has(b.book_id));
-  const rest = books.value.filter((b) => !ids.has(b.book_id));
-  return [...inCollection, ...rest];
-});
-
-// 항상 보이는 개수: 컬렉션 전체 (없으면 기본 3권)
-const visibleCount = computed(() => {
-  if (mode.value === "paper") return 3;
-  const n = collectionIds.value.size;
-  return n > 0 ? n : 3;
-});
-
-// ── AI 패널 단계별 로딩 메시지 ─────────────────────────────
-const AI_STAGES = [
-  "AI가 질문을 이해했어요",
-  "AI 사서가 모든 도서 본문을 탐색하고 있어요",
-];
-const aiStage = ref(0);
-let aiStageTimer: ReturnType<typeof setTimeout> | null = null;
-
-const aiPanelTitle = computed(() =>
-  curationLoading.value
-    ? AI_STAGES[Math.min(aiStage.value, AI_STAGES.length - 1)]
-    : "AI가 가장 적합한 도서를 찾았어요!",
+// 사이드바 [+ 연구 시작하기] 는 '/' 에 이미 있어도 ?start= 만 바뀌는 이동이다
+watch(
+  () => route.query.start,
+  () => {
+    void startFromQuery();
+  },
 );
 
-function startAiStages() {
-  aiStage.value = 0;
-  if (aiStageTimer) clearTimeout(aiStageTimer);
-  aiStageTimer = setTimeout(() => {
-    aiStage.value = 1;
-  }, 900);
+// ── 결과 목록 ─────────────────────────────────────────────
+// 도서는 검색이 준 순서 그대로다. 처음에는 3건만 보이고 나머지는 더보기로 연다.
+// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'
+const visibleCount = 3;
+
+// ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
+const topBook = computed(() => pickTopBook(books.value));
+// 1위가 추천할 만큼 맞을 때만 추천 패널을 낸다(MIN_PICK_SCORE) — 아니면 안내만
+const topRecommended = computed(() => isRecommendable(topBook.value));
+const topReadEffect = computed(() => readEffectOf(topBook.value));
+const listExcludesPick = computed(() => !!topBook.value && topRecommended.value);
+const listBooks = computed(() => listWithoutPick(books.value, topBook.value, topRecommended.value));
+
+function resetReason() {
+  reasonRaw.value = "";
+  reasonStatus.value = "idle";
+  keywordChips.value = [];
 }
 
-// 타이프라이터 출력 중 여부 (아이콘은 타이핑 종료까지 ing 유지)
-const curationTyping = ref(false);
-
-function typeInto(target: Ref<string>, text: string, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    let i = 0;
-    const step = () => {
-      if (signal.aborted || i >= text.length) {
-        resolve();
-        return;
-      }
-      target.value += text.charAt(i++);
-      setTimeout(step, 18);
-    };
-    step();
-  });
+// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록 토스트 등) 받는 중 표시가 남지 않게 매듭짓는다 —
+// 받은 글이 있으면 끊긴 글, 없으면 실패. 끊기지 않은 스트림은 건드리지 않는다
+function settleReason() {
+  if (reasonStatus.value !== "loading" || !reasonSignal?.aborted) return;
+  reasonStatus.value = reasonText.value ? "interrupted" : "error";
 }
 
-// ── 큐레이션 (도서) ── 타이프라이터 출력 ──────────────────────
-// 기록 id 와 함께 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가 고치는 중일 수 있어,
-// 지금 값을 읽으면 다른 검색어로 만든 요약이 이 기록에 저장된다
-async function fetchCuration(
-  historyId: string,
+// [다시 시도] — 지금 결과의 1위 도서로 추천 이유를 처음부터 다시 받는다
+function retryTopReason() {
+  const signal = beginRun();
+  void streamTopReason(currentHistoryId.value, resultQuery.value, signal);
+}
+
+// 1위 도서의 추천 이유를 받는다. 기록 id 와 검색어도 호출하는 쪽이 붙잡아 넘긴다 — 입력창(currentQuery)은 사용자가
+// 고치는 중일 수 있어, 지금 값을 읽으면 다른 검색어로 만든 이유가 이 기록에 저장된다.
+// signal 이 끊기면(새 검색·복원·랜딩·이탈) 연결째 끊고 화면·기록 어디도 건드리지 않는다.
+// 끝까지 받은 이유만 저장한다 — 받다가 끊기면(interrupted) 받은 글은 보이되 저장하지 않는다
+async function streamTopReason(
+  historyId: string | null,
   query: string,
-  rewritten: string,
   signal: AbortSignal,
 ) {
-  // 임계값을 넘는 도서만, 선택한 컬렉션 크기만큼 LLM 답변에 포함
-  const topBooks = books.value
-    .filter((b) => (b.best_score || 0) >= COLLECTION_SCORE_THRESHOLD)
-    .slice(0, collectionSize.value);
-  if (!topBooks.length) return;
-  startAiStages();
-  curationLoading.value = true;
-  curationTyping.value = true;
-  curationIntro.value = "";
-  curationItems.value = [];
+  const book = pickTopBook(books.value);
+  if (!book || !isRecommendable(book)) return;
+  reasonSignal = signal;
+  reasonRaw.value = "";
+  keywordChips.value = [];
+  reasonStatus.value = "loading";
+  let complete = false;
+  let keywords: string[] = [];
   try {
-    // 요청은 묶음의 signal 로 끊지 않는다 — 단발 POST 라 끊어도 서버 생성은 끝까지 돌고 결과만 버려져, 돌아오면 다시 만든다.
-    // 응답이 오면 시작 때 붙잡은 id 로 저장되고(떠난 뒤에 와도), 같은 기록의 요청이 도는 중이면 새로 부르지 않고 이어받는다.
-    // 타이핑은 화면 연출로만 둔다 — 떠났거나 다른 묶음이 시작됐으면 화면만 건너뛴다
-    const result = await curationRequests.run(historyId, {
-      query,
-      book_ids: topBooks.map((b) => b.book_id),
-      scores: topBooks.map((b) => b.best_score || 0),
-      rewritten_query: rewritten,
-    });
-    if (signal.aborted || !result) return;
-    curation.value = result.data;
-    curationLoading.value = false;
-    const { intro, items } = result;
-    if (intro) {
-      curationOpen.value = true;
-      await typeInto(curationIntro, intro, signal);
-      if (signal.aborted) return;
-    }
-    curationItems.value = items;
-    curationTyping.value = false;
-  } catch {
-    /* 큐레이션 실패 시 조용히 무시 */
-  } finally {
-    if (!signal.aborted) {
-      curationLoading.value = false;
-      curationTyping.value = false;
-    }
-  }
-}
-
-// ── 논문 핵심 요약 SSE ─────────────────────────────────────
-async function fetchPaperSummary(query: string) {
-  paperSummaryLoading.value = true;
-  paperSummaryText.value = "";
-  paperSummarySources.value = papers.value.slice(0, 5);
-  const paperList = papers.value.slice(0, 5).map((b) => ({
-    book_id: b.book_id,
-    title: b.book_info?.title || "",
-    authors:
-      b.book_info?.personal_author || b.book_info?.corporate_author || "",
-    best_chunk_text: b.chunks?.[0]?.text || "",
-  }));
-  try {
-    const resp = await fetch(`${apiBase}/papers/summary/stream`, {
+    const resp = await fetch(apiUrl("/books/reason/stream"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, papers: paperList }),
+      headers: apiHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(buildReasonBody(query, book)),
+      signal,
     });
-    await readSSE(resp, (json) => {
-      if (json.text) paperSummaryText.value += json.text;
-    });
+    if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+    complete = await readReasonStream(
+      resp.body,
+      (delta) => {
+        if (!signal.aborted) reasonRaw.value += delta;
+      },
+      (kw) => {
+        if (signal.aborted) return;
+        keywords = kw;
+        keywordChips.value = kw;
+      },
+    );
   } catch {
-    /* SSE 실패 — 조용히 */
-  } finally {
-    paperSummaryLoading.value = false;
+    /* 실패·중단 — 아래에서 가린다 */
+  }
+  if (signal.aborted) return;
+  const reason = reasonRaw.value.trim();
+  if (!reason) {
+    reasonStatus.value = "error";
+    return;
+  }
+  if (!complete) {
+    reasonStatus.value = "interrupted";
+    return;
+  }
+  reasonStatus.value = "done";
+  if (historyId) {
+    void historyApi
+      .patch(historyId, { ai: buildBookAi(book.book_id, reason, keywords) })
+      .catch(() => undefined);
   }
 }
 
 // ── 상세 열기 ──────────────────────────────────────────────
 // 논문 상세의 출처는 결과의 검색어로 싣는다(입력창 글자가 아니다). 이 화면의 기록은 도서 기록이라 h 로 싣지 않는다 —
-// [검색 결과로]가 논문 검색에서 같은 검색어로 다시 찾는다
+// [검색 목록 돌아가기]가 논문 검색에서 같은 검색어로 다시 찾는다
 function paperDetailUrl(bookId: string, extra: Record<string, string> = {}): string {
   return detailUrl(bookId, { kind: "search", h: null, q: resultQuery.value }, undefined, extra);
 }
@@ -1339,40 +1001,6 @@ function openRelatedDetail(rel: any) {
   openDetail(fakeGroup);
 }
 
-function switchDetailTab(key: string) {
-  detailTab.value = key;
-  if (key === "reason" && !reasonText.value && selectedItem.value) {
-    fetchReason(selectedItem.value);
-  }
-}
-
-// ── 추천 이유 SSE ──────────────────────────────────────────
-async function fetchReason(item: BookChunkGroup) {
-  reasonLoading.value = true;
-  reasonText.value = "";
-  try {
-    const resp = await fetch(`${apiBase}/books/reason/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: currentQuery.value,
-        book_id: item.book_id,
-        chunk_texts: item.chunks?.map((c) => c.text) ?? [],
-        rewritten_query: rewrittenQuery.value,
-      }),
-    });
-    await readSSE(resp, (json) => {
-      if (json.text) reasonText.value += json.text;
-      if (json.keywords?.length && !keywordChips.value.length)
-        keywordChips.value = json.keywords;
-    });
-  } catch {
-    /* 추천 이유 실패 */
-  } finally {
-    reasonLoading.value = false;
-  }
-}
-
 // ── 연관 추천 ──────────────────────────────────────────────
 async function fetchRelated(cntsId: string) {
   relatedLoading.value = true;
@@ -1390,12 +1018,6 @@ async function fetchRelated(cntsId: string) {
   }
 }
 
-// ── 출처 인용 ──────────────────────────────────────────────
-function openCitation(item: BookChunkGroup) {
-  citationBook.value = item;
-  citationModal.value = true;
-}
-
 // ── 대출 신청 / PDF ────────────────────────────────────────
 function requestLoan(item: BookChunkGroup) {
   showToast(
@@ -1406,29 +1028,5 @@ function requestLoan(item: BookChunkGroup) {
 function viewPdf(item: BookChunkGroup) {
   selectedItem.value = item;
   pdfOpen.value = true;
-}
-
-// ── SSE 헬퍼 ──────────────────────────────────────────────
-async function readSSE(resp: Response, onEvent: (json: any) => void) {
-  const reader = resp.body!.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const lines = buf.split("\n");
-    buf = lines.pop()!;
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const raw = line.slice(6).trim();
-      if (raw === "[DONE]") return;
-      try {
-        onEvent(JSON.parse(raw));
-      } catch {
-        /* skip */
-      }
-    }
-  }
 }
 </script>

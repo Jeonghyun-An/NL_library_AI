@@ -86,6 +86,8 @@ function load(): Promise<void> {
 
 export interface UseHistory {
   entries: Ref<HistoryEntry[]>;
+  loaded: Ref<boolean>;
+  listFailed: Ref<boolean>;
   byKind(kind: HistoryKind): ComputedRef<HistoryEntry[]>;
   load(): Promise<void>;
   migrated(): Promise<void>;
@@ -102,6 +104,8 @@ export function useHistory(): UseHistory {
   const s = historyState();
   return {
     entries: s.entries,
+    loaded: s.loaded,
+    listFailed: s.listFailed,
     byKind: s.byKind,
     load,
     migrated,

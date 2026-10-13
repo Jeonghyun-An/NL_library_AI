@@ -1,4 +1,6 @@
 // frontend/utils/researchErrors.ts
+import { DEEP_RESEARCH } from "./brand";
+
 interface FetchLikeError {
   status?: number;
   statusCode?: number;
@@ -39,7 +41,7 @@ export function pdfCheckProblem(status: number | null): string | null {
 
 // 같은 브라우저의 다른 딥리서치가 진행 중이라 승인·재시도가 막혔다(api/research.py _to_run_queue 의 429
 // detail {code: "browser_active", message, job_id}). 서버가 문구를 비워 보내도 같은 안내를 쓴다
-const BROWSER_ACTIVE_MESSAGE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요";
+const BROWSER_ACTIVE_MESSAGE = `진행 중인 ${DEEP_RESEARCH}가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요`;
 
 interface LimitDetail {
   code?: unknown;

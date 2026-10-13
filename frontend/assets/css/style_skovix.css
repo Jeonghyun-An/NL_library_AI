@@ -93,17 +93,17 @@ video {
   box-sizing: border-box;
 }
 
-/* [S] 공통 스크롤바 (전체 일관) */
+/* [S] 공통 스크롤바 (전체 일관) — 색은 tailwind.css 와 같은 --skx-scrollbar 토큰(다크 면 옅은 흰색·.skx-reading 안 짙은 색). 크기만 여기서 정한다 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  scrollbar-color: var(--skx-scrollbar) transparent;
 }
 *::-webkit-scrollbar {
   width: 0.4rem;
   height: 0.4rem;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--skx-scrollbar);
   border-radius: 1rem;
 }
 *::-webkit-scrollbar-track {
@@ -163,9 +163,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-weight: 400;
-  line-height: 130%;
-  color: #111;
-  letter-spacing: -1px;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  letter-spacing: -0.01em;
 }
 a,
 a:visited,
@@ -180,40 +180,674 @@ a:hover {
   }
 }
 
+/* [S] 글 리듬 — 글꼴은 Pretendard 그대로, 자간·줄간격만 바로잡는다.
+   예전 html,body 는 letter-spacing -1px(20px 에서 -0.05em, 휴대폰 14.4px 에서 -7%)·line-height 130%(20px 기준 26px 로 계산돼 모든 자손이
+   글자 크기와 상관없이 26px 를 물려받음 — 큰 제목은 답답하고 작은 라벨은 헐렁했다)였다.
+   - 본문: 자간 -0.01em, 줄간격 1.6(긴 글 — AI 요약·추천 이유·초록·카드 서지)
+   - UI(버튼·입력·칩·태그·한 줄 라벨): 줄간격 1.4. 줄 높이로 높이가 정해지던 큰 버튼은 줄간격을 줄여도 높이가 그대로이도록 최소 높이를 둔다
+   - 제목류: 자간 -0.02em, 줄간격 1.3(이미 줄간격을 정해 둔 제목은 그 값 그대로)
+   대문자 라벨의 0.04em 같은 자간은 각 클래스가 정한 대로 둔다 */
+button,
+input,
+select,
+textarea {
+  line-height: 1.4;
+}
+.skx-rel__label,
+.skx-score-ring__tip,
+.skx-footer__copy,
+.skx-page-num,
+.skx-ai-expand-bar__label,
+.skx-btn-ptalk,
+.skx-btn-pview,
+.skx-deeper__btn,
+.skx-pick__label,
+.skx-pick__heading,
+.skx-rcd-modal__author,
+.skx-rcd-modal__author-role,
+.skx-rcd-modal__badge,
+.skx-rcd-modal__meta-text,
+.skx-modal__btn-cancel,
+.skx-modal__btn-confirm,
+.skx-modal__sub,
+.skx-newbooks__label,
+.skx-rcd-modal__btn,
+.skx-rsearch__input,
+.skx-chat-source-chip,
+.skx-toast,
+.skx-rcd-ai__label,
+.skx-rcd-hero__sub {
+  line-height: 1.4;
+}
+.skx-btn-pview,
+.skx-btn-ptalk {
+  min-height: 2.5rem;
+}
+.skx-deeper__btn {
+  min-height: 2.4rem;
+}
+@media (max-width: 768px) {
+  .skx-btn-pview,
+.skx-btn-ptalk {
+    min-height: 2.37rem;
+  }
+}
+/* 자간을 -1px 에서 되돌리면 글이 조금 넓어져 좁은 카드에서 '원문 보기' 가 글자 단위로 꺾였다 — 한 줄로 둔다 */
+
+h1,
+h2,
+h3,
+h4,
+.skx-ai-header__title,
+.skx-aip__title,
+.skx-chat-title,
+.skx-modal__title,
+.skx-modal__book-title,
+.skx-rcd-modal__title,
+.skx-rcd-modal__book-title,
+.skx-rcd-select__tit,
+.skx-recommend-main__txt {
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.skx-brand__line,
+.skx-hero,
+.skx-history__title,
+.skx-newbooks__title,
+.skx-pai-ref__title,
+.skx-rcd-book-card__name,
+.skx-rcd-hero__tit,
+.skx-recommend-main__tit {
+  letter-spacing: -0.02em;
+}
+/* [E] 글 리듬 */
+
 /* [S] 디자인 토큰 */
 /* 단위 기준: 1rem = 20px */
+/* 다크 글래스 테마. 색은 모두 이 변수로만 쓴다(research.css·work.css 도 변수만 쓴다).
+   --skx-white 는 이름이 남은 "불투명 면" 자리다: 진한 청록(#152e28)이라 본문색(--skx-ink) 글자가 읽히고,
+   --skx-primary(산호) 바탕 위에 얹는 글자(color: var(--skx-white))도 그대로 읽힌다. */
 :root {
-  --skx-primary: #4f46e5;
-  --skx-ink: #333333;
-  --skx-ink-2: #454545;
-  --skx-gray-1: #666666;
-  --skx-gray-2: #999999;
-  --skx-line: #cccccc;
-  --skx-white: #ffffff;
+  color-scheme: dark;
+  /* 포인트 */
+  --skx-primary: #f8c4b7;
+  --skx-accent: #f8c4b7;
+  --skx-accent-strong: #f4b19e;
+  --skx-accent-grad: linear-gradient(135deg, #f8c4b7 0%, #fff5ed 100%);
+  --skx-on-accent: #0f2822;
+  /* 글자 */
+  --skx-ink-strong: #ffffff;
+  --skx-ink: #cccccc;
+  --skx-ink-2: #c2c9c7;
+  --skx-gray-1: #b7bfbd;
+  --skx-gray-2: #879491;
+  --skx-teal-ink: #80aba1;
+  /* 상태(성공) — 짙은 청록 면 위 5:1 이상. 초록 점·글자·일치율 링 */
+  --skx-success: #5dd68b;
+  --skx-success-bg: rgba(93, 214, 139, 0.14);
+  /* 상태(위험) — 지우기 확인 버튼·실패 배지. 짙은 청록 면 위 6:1 이상, 글자(--skx-on-accent)를 얹어도 6:1 이상 */
+  --skx-danger: #ff8a80;
+  --skx-danger-bg: rgba(255, 138, 128, 0.14);
+  /* 아이콘 색 — <img src="/img/ico-*.svg"> 는 색이 파일에 박혀 있어 filter 로 면에 맞춘다(아이콘 색 구간 참고).
+     모두 brightness(0) 으로 먼저 검게 만든 뒤 목표색을 만든다. 일반=#ccc, 포인트색 바탕 위=#0f2822, 포인트색 자체=#f8c4b7 근사 */
+  --skx-ico-filter: brightness(0) invert(0.8);
+  --skx-ico-on-accent-filter: brightness(0) invert(34%) sepia(10%) saturate(1228%) hue-rotate(115deg) brightness(50%) contrast(112%);
+  --skx-ico-accent-filter: brightness(0) invert(84%) sepia(99%) saturate(1746%) hue-rotate(292deg) brightness(113%) contrast(95%);
+  /* 선·면 */
+  --skx-line: rgba(255, 255, 255, 0.2);
+  --skx-white: #152e28;
+  /* 유리 면 — 흰 반투명이 아니라 짙은 청록 반투명: 움직이는 홀로그램이 밝게 겹쳐도 카드 위 본문색이 4.5:1 을 지킨다(themeHolo.test.ts 가 최악의 합성 위에서 검사).
+     옅은 흰 기운은 테두리(--skx-glass-border)·윗선으로만 낸다 */
+  --skx-glass: rgba(18, 44, 38, 0.62);
+  --skx-glass-2: rgba(18, 44, 38, 0.5);
+  --skx-glass-teal: rgba(128, 171, 161, 0.1);
+  --skx-glass-border: rgba(255, 255, 255, 0.16);
+  /* 뿌연 유리(frost) — 흰 반투명 바탕 + 배경 흐림 + 밝은 위 테두리(그라데이션) + 안쪽 위 하이라이트(Figma GLASS 효과).
+     메인 입력창·전환·예시 카드·사이드바·+ 메뉴·결과 AI 패널처럼 우리 클래스에만 쓴다 — --skx-glass 는 딥리서치 화면(research.css·work.css)도
+     쓰므로 값을 바꾸지 않는다. 글자 대비는 themeHolo.test.ts 가 띠가 가장 밝게 겹친 최악의 합성 위에서 검사한다 —
+     흰 10% 만으로는 그 자리에서 본문색이 2:1 이라, 움직이는 배경 위의 큰 면(입력창·전환·결과 검색바)은 아래에서부터
+     짙은 밑칠(--skx-frost-tint) → 옅은 흰 막(--skx-frost-milk) → 비스듬한 반사광(--skx-frost-reflect) 을 쌓은 --skx-frost-fill 을 쓴다.
+     밑칠 알파는 themeHolo.test.ts 의 최악 합성(띠가 모두 가장 밝게 겹친 자리, 반사광은 가장 센 알파로 깔아 본다)에서 본문색이 4.5:1 을
+     넘는 가장 낮은 값(0.60)이다 — 불투명도로 글자를 지키는 대신 투명감은 배경 흐림·반사광·윗선이 맡는다.
+     밑칠 색은 페이지 바탕보다 어두운 청록이라 어두운 자리에서는 바탕과 거의 같고, 밝은 띠 위에서 글자를 지킨다.
+     사이드바 바탕은 시안대로 짙은 초록 30%(밑칠 없음) + 강한 흐림(28px) + 아주 옅은 그림자다. 글자는 불투명도가 아니라 ① 흐림 ② 사이드바
+     폭 구간에서 띠를 덜어내는 .skx-holo__veil(짙은 초록 40% → 띠 알파 60%) ③ 사이드바 안의 한 단계 밝은 글색(--skx-side-*) 순으로 지킨다 —
+     themeHolo.test.ts 가 모든 띠가 가장 밝게 겹쳐도 veil 을 거친 자리에서 본문 4.5:1 을 확인한다.
+     사이드바 안의 [새 검색]·DeepResearch 묶음 카드는 예전 0.70 과 같은 모양(합계)을 내도록 밑칠(--skx-frost-side-under)을 한 겹 더 깐다 */
+  --skx-frost-bg: rgba(255, 255, 255, 0.1);
+  --skx-frost-tint: rgba(8, 22, 19, 0.6);
+  --skx-frost-milk: rgba(255, 255, 255, 0.04);
+  --skx-frost-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 40%, rgba(255, 255, 255, 0) 60%);
+  --skx-frost-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-milk), var(--skx-frost-milk)), var(--skx-frost-tint);
+  /* 전환 알약 바깥 면 — 시안의 흰 10%(--skx-frost-bg) 그대로여야 켜진 칸의 짙은 초록 채움이 보인다 */
+  --skx-seg-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-tint);
+  --skx-frost-bg-hover: rgba(255, 255, 255, 0.15);
+  --skx-frost-bg-soft: rgba(255, 255, 255, 0.05);
+  --skx-frost-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
+  --skx-frost-line: rgba(255, 255, 255, 0.24);
+  --skx-frost-hilite: inset 0 1px 0 0 rgba(255, 255, 255, 0.22);
+  --skx-frost-blur: blur(22px) saturate(1.4);
+  /* 사이드바 바탕(짙은 초록 반투명)·+ 메뉴 바탕(거의 불투명)·메뉴 테두리 */
+  --skx-frost-side-bg: rgba(15, 40, 34, 0.3);
+  /* 결과 화면 — 바깥 큰 틀은 유리(사이드바와 같은 짙은 초록 반투명 + 윗선·테두리, 흐림은 키가 큰 면이라 쓰지 않는다), 그 안의 AI 패널은 한 겹 더 가라앉힌 유리,
+     글을 읽는 칸(AI 요약·추천 이유·참고 논문·추천 1권)은 '읽기용 짙은 유리'다 — 흰 필름·반사광·흐림 없이 짙은 초록 반투명으로 가라앉혀 글자가 또렷하다.
+     읽는 칸 안의 글 톤은 본문 거의 흰색(--skx-read-*)으로 .skx-aip 의 읽는 칸 범위에서만 다시 정의한다 */
+  --skx-frame-bg: rgba(15, 40, 34, 0.58);
+  /* 큰 틀의 테두리는 살짝만(흰 8% 1px) — 유리 테두리(밝은 위 가장자리)는 사이드바가 맡는다. 나눔선은 바탕에 녹아드는 어두운 선(시안 stroke 검정 12% 계열) */
+  --skx-frame-line: rgba(255, 255, 255, 0.08);
+  /* 사이드바 유리 테두리 — 위 가장자리만 옅게 밝고 아래로 갈수록 거의 안 보인다(본문 큰 틀 선보다 약간만 더 보이는 정도, 예전 0.6 → 0.2 의 절반 이하) */
+  --skx-side-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.04));
+  /* DeepRead 채팅 패널(결과 화면 오른쪽, Figma 2546:21027) — 사이드 틀과 같은 다크 유리(밤색 느낌의 불투명을 걷어 어둡기를 줄이고 흐림으로 투명감을 살린다).
+     AI 말풍선은 옅은 회색 면 + 짙은 글(--skx-on-accent), 사용자 말풍선은 더 옅은 유리 면 + 밝은 글, 입력창은 큰 둥근 유리 상자.
+     글 대비는 themeHolo.test.ts 가 지킨다 */
+  --skx-chat-bg: rgba(15, 40, 34, 0.42);
+  --skx-chat-ai-bg: rgba(255, 255, 255, 0.86);
+  --skx-chat-user-tint: rgba(8, 22, 19, 0.4);
+  --skx-chat-user-milk: rgba(255, 255, 255, 0.12);
+  --skx-chat-user-bg: linear-gradient(var(--skx-chat-user-milk), var(--skx-chat-user-milk)), var(--skx-chat-user-tint);
+  --skx-chat-input-tint: rgba(8, 22, 19, 0.4);
+  --skx-chat-input-milk: rgba(255, 255, 255, 0.06);
+  --skx-chat-input-bg: linear-gradient(var(--skx-chat-input-milk), var(--skx-chat-input-milk)), var(--skx-chat-input-tint);
+  /* AI 패널 — 큰 틀 안에서 하나가 떠 있는 느낌: 위가 밝은 1px 가장자리(흰 32% → 6%) + 안쪽 위 하이라이트 + 아주 옅은 바깥 그림자 */
+  --skx-aip-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.06));
+  --skx-aip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 6px 20px 0 rgba(0, 0, 0, 0.14);
+  --skx-rule: rgba(0, 0, 0, 0.16);
+  --skx-frost-panel: rgba(8, 22, 19, 0.25);
+  --skx-read-surface: rgba(8, 22, 19, 0.62);
+  --skx-read-ink: #e6ebe9;
+  --skx-read-ink-2: #d5dcda;
+  --skx-read-gray-1: #c3cdca;
+  --skx-frost-blur-side: blur(28px) saturate(1.4);
+  --skx-frost-side-under: rgba(15, 40, 34, 0.571);
+  /* 사이드바 안에서만 쓰는 한 단계 밝은 글 톤(.skx-lnb 가 --skx-ink 등을 이 값으로 다시 정의한다 — 딥리서치 화면·랜딩에는 번지지 않는다) */
+  --skx-side-ink: #f0f3f2;
+  --skx-side-ink-2: #e1e7e5;
+  --skx-side-gray-1: #d3dad8;
+  --skx-side-gray-2: #bac4c1;
+  --skx-side-teal-ink: #b4d6cd;
+  --skx-side-ico-filter: brightness(0) invert(0.94);
+  /* 사이드바 DeepResearch 묶음 카드 안의 글 톤은 사이드바 글 톤을 올리기 전(22fc739 이전) 그대로다 — 사용자: '아까 이뻤는데'.
+     AppSidebar.vue 의 .skx-history__group--research 가 --skx-ink 등을 이 값으로 다시 정의한다 */
+  --skx-research-ink: #cccccc;
+  --skx-research-ink-2: #c2c9c7;
+  --skx-research-gray-1: #b7bfbd;
+  --skx-research-gray-2: #879491;
+  --skx-research-teal-ink: #80aba1;
+  --skx-research-ico-filter: brightness(0) invert(0.8);
+  --skx-frost-side-btn: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-side-under);
+  --skx-frost-side-card: linear-gradient(var(--skx-frost-bg-soft), var(--skx-frost-bg-soft)), var(--skx-frost-side-under);
+  /* 예시 질문 칸 — 입력창보다 한 단계 낮은 면: 흐림·윗선·반사광 없이 옅은 흰 막과 선만. 밑칠은 이 칸의 글자(14px)를 지키는 최저값 */
+  --skx-chip-tint: rgba(8, 22, 19, 0.54);
+  --skx-chip-milk: rgba(255, 255, 255, 0.05);
+  --skx-chip-milk-hover: rgba(255, 255, 255, 0.07);
+  --skx-chip-fill: linear-gradient(var(--skx-chip-milk), var(--skx-chip-milk)), var(--skx-chip-tint);
+  --skx-chip-fill-hover: linear-gradient(var(--skx-chip-milk-hover), var(--skx-chip-milk-hover)), var(--skx-chip-tint);
+  --skx-chip-line: rgba(255, 255, 255, 0.12);
+  --skx-frost-menu-bg: rgba(21, 46, 40, 0.95);
+  --skx-frost-menu-line: rgba(255, 255, 255, 0.1);
+  /* 불투명 대체(backdrop-filter 를 못 쓰거나 투명도 줄이기 설정일 때) · 결과 AI 패널 위 흐려지는 끝 색(흰 10% 를 얹은 면과 같은 색) */
+  --skx-frost-solid: #1f3a34;
+  --skx-frost-over: #364e48;
+  /* 순수 흐림 — 사이드바·메인 큰 패널 같은 큰 컨테이너 몇 개에만 쓴다. 목록 카드마다 쓰지 말 것:
+     움직이는 배경 위의 backdrop-filter 는 매 프레임 다시 계산돼 비싸다 */
+  --skx-blur: blur(12px);
   --skx-radius-sm: 0.4rem;
   --skx-radius-md: 0.6rem;
-  --skx-radius-lg: 1.2rem;
-  --skx-radius-pill: 2.8rem;
-  --skx-search-grad: linear-gradient(134deg, #4f46e5 13%, #e0e7ff 89%);
-  --skx-page-bg:
-    radial-gradient(
-      90% 80% at 82% 112%,
-      rgba(79, 70, 229, 0.1) 0%,
-      rgba(79, 70, 229, 0) 50%
-    ),
-    radial-gradient(
-      80% 60% at 8% -12%,
-      rgba(129, 140, 248, 0.08) 0%,
-      rgba(129, 140, 248, 0) 48%
-    ),
-    linear-gradient(135deg, #f3f4fe 0%, #edeffc 52%, #f4f5fe 100%);
-  --skx-shadow-lnb: 2px 2px 36px 0 rgba(79, 70, 229, 0.05);
+  --skx-radius-lg: 0.8rem;
+  --skx-radius-pill: 2.2rem;
+  --skx-search-grad: linear-gradient(134deg, #5f8f85 13%, #152e28 89%);
+  --skx-page-bg: #0f2822;
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(0, 0, 0, 0.08);
   --skx-shadow-banner:
-    0 4px 12px 0 rgba(0, 0, 0, 0.05), 0 4px 24px 0 rgba(79, 70, 229, 0.08);
-  --skx-border-c1: #e0e7ff;
-  --skx-border-c2: #4f46e5;
+    0 4px 12px 0 rgba(0, 0, 0, 0.16), 0 4px 24px 0 rgba(0, 0, 0, 0.22);
+  --skx-border-c1: rgba(255, 255, 255, 0.16);
+  --skx-border-c2: #f8c4b7;
+  --skx-scrollbar: rgba(255, 255, 255, 0.25);
+  --skx-scrollbar-hover: rgba(255, 255, 255, 0.45);
+  /* 포인트색 바탕 위 글자(--skx-on-accent)와 갈라 쓰는 역할 — 다크에서는 같은 짙은 청록이라 값이 같지만, 포인트가 검정인 핑크 테마에서는 갈린다 */
+  /* 밝은 면(AI 말풍선·답변 안 출처 칩) 위의 짙은 글·점 */
+  --skx-ink-on-light: #0f2822;
+  /* 전환 알약의 켜진 칸 채움과 그 위 글 */
+  --skx-seg-thumb: #0f2822;
+  --skx-seg-thumb-ink: #ffffff;
+  /* 좁은 화면 사이드바 서랍 뒤의 어두운 막 */
+  --skx-scrim: rgba(4, 12, 10, 0.62);
+  /* 새 스피너 그림에 두르는 필터 — 다크는 그대로, 밝은 면에서는 어둡게 눌러 윤곽을 살린다 */
+  --skx-spinner-filter: none;
+  /* 입력창 테두리(평소·초점)와 랜딩 입력창 테두리를 따라 도는 빛 — 평소는 옅은 흰 선, 초점 때만 포인트색, 빛은 흰색 하나(색을 늘리지 않는다) */
+  --skx-input-ring: var(--skx-frost-line);
+  --skx-input-ring-focus: var(--skx-accent);
+  --skx-input-glow: radial-gradient(circle closest-side, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0) 75%);
+  /* 보내기 버튼이 빈 입력일 때(aria-disabled) — 옅은 중립 채움 + 테두리 + 옅은 화살표. 글자가 있으면 포인트색(--skx-primary)으로 채워진다.
+     빈 상태도 입력창 면 위에서 테두리·화살표가 3:1 이상 읽히게 잡았다(themeContrast 계열 테스트가 최악의 합성에서 검사) */
+  --skx-send-empty-bg: rgba(255, 255, 255, 0.16);
+  --skx-send-empty-line: rgba(255, 255, 255, 0.5);
+  --skx-send-empty-ico-filter: brightness(0) invert(0.9);
+  /* 흐림을 더 거는 면(예시 질문 칸·결과 AI 패널)과 예시 칸 그림자 — 다크는 none 이라 지금 모습 그대로이고, 비치는 흰 유리인 핑크만 쓴다 */
+  --skx-chip-blur: none;
+  --skx-aip-blur: none;
+  --skx-chip-shadow: none;
+  /* 움직이는 홀로그램 배경(.skx-holo)의 색 — 모양·움직임은 아래 [S] 홀로그램 구간이 정하고, 색만 테마마다 이 토큰으로 갈아 끼운다.
+     wash 는 페이지 바탕(--skx-page-bg) 위에 깔리는 옅은 번짐, band-1 은 폭 넓은 포일 띠, band-2·3 은 가는 빛줄기, veil 은 사이드바 폭 구간의 막이다(none 이면 막 없음).
+     themeContrast.test.ts 가 테마마다 이 값을 읽어 띠가 가장 밝게 겹친 최악의 합성 위에서 글자 대비를 검사한다 */
+  --skx-holo-wash:
+    radial-gradient(60% 50% at 14% 6%, rgba(128, 171, 161, 0.03) 0%, rgba(128, 171, 161, 0) 70%),
+    radial-gradient(55% 50% at 88% 94%, rgba(128, 171, 161, 0.03) 0%, rgba(128, 171, 161, 0) 70%);
+  --skx-holo-band-1: linear-gradient(
+    180deg,
+    rgba(139, 127, 224, 0) 0%,
+    rgba(139, 127, 224, 0.32) 22%,
+    rgba(244, 177, 158, 0.26) 44%,
+    rgba(128, 171, 161, 0.3) 66%,
+    rgba(223, 243, 255, 0.16) 84%,
+    rgba(223, 243, 255, 0) 100%
+  );
+  --skx-holo-band-2: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-band-3: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-veil: linear-gradient(90deg, rgba(15, 40, 34, 0.4) 0, rgba(15, 40, 34, 0.4) 17.2rem, rgba(15, 40, 34, 0) 22.2rem);
+  /* 화면 아래 15% 는 띠를 걷는다 — 푸터 글자가 띠 위에 놓이지 않게(none 이면 걷지 않는다: 띠가 흰색이라 어두운 글자가 더 잘 읽히는 핑크) */
+  --skx-holo-mask: linear-gradient(180deg, #000 0%, #000 72%, transparent 85%);
+}
+/* 밝은 읽는 면 — 안에서 색 변수를 밝은 값으로 다시 정의해, 안쪽 부품이 그대로 밝게 그려진다.
+   상세 화면의 본문 카드·딥리서치 보고서처럼 오래 읽는 면에 감싼다. */
+.skx-reading {
+  color-scheme: light;
+  --skx-primary: #b5503b;
+  --skx-accent: #b5503b;
+  --skx-accent-strong: #9f4330;
+  --skx-accent-grad: linear-gradient(135deg, #b5503b 0%, #9f4330 100%);
+  --skx-on-accent: #ffffff;
+  --skx-ink-strong: #1d211f;
+  --skx-ink: #1d211f;
+  --skx-ink-2: #454545;
+  --skx-gray-1: #666666;
+  --skx-gray-2: #767676;
+  --skx-teal-ink: #3f7468;
+  --skx-success: #166534;
+  --skx-success-bg: #e6f4ea;
+  --skx-danger: #c62828;
+  --skx-danger-bg: #fdecec;
+  --skx-ico-filter: none;
+  --skx-ico-on-accent-filter: brightness(0) invert(1);
+  --skx-ico-accent-filter: brightness(0) invert(69%) sepia(35%) saturate(940%) hue-rotate(315deg) brightness(65%) contrast(143%);
+  --skx-line: #e3e1dc;
+  --skx-white: #ffffff;
+  --skx-glass: #ffffff;
+  --skx-glass-2: #faf9f6;
+  --skx-glass-teal: #eef4f2;
+  --skx-glass-border: #e3e1dc;
+  --skx-frost-bg: #ffffff;
+  --skx-frost-tint: #ffffff;
+  --skx-frost-milk: #ffffff;
+  --skx-frost-reflect: linear-gradient(#ffffff, #ffffff);
+  --skx-frost-fill: linear-gradient(#ffffff, #ffffff);
+  --skx-seg-fill: linear-gradient(#ffffff, #ffffff);
+  --skx-frost-bg-hover: #f4f3ef;
+  --skx-frost-bg-soft: #faf9f6;
+  --skx-frost-edge: linear-gradient(180deg, #e3e1dc, #e3e1dc);
+  --skx-frost-line: #e3e1dc;
+  --skx-frost-hilite: none;
+  --skx-frost-blur: none;
+  --skx-frost-side-bg: #ffffff;
+  --skx-frame-bg: #ffffff;
+  --skx-frame-line: #e3e1dc;
+  --skx-side-edge: linear-gradient(#e3e1dc, #e3e1dc);
+  --skx-chat-bg: #ffffff;
+  --skx-chat-ai-bg: #f4f3ef;
+  --skx-chat-user-tint: #eef4f2;
+  --skx-chat-user-milk: #eef4f2;
+  --skx-chat-user-bg: linear-gradient(#eef4f2, #eef4f2);
+  --skx-chat-input-tint: #ffffff;
+  --skx-chat-input-milk: #ffffff;
+  --skx-chat-input-bg: linear-gradient(#ffffff, #ffffff);
+  --skx-aip-edge: linear-gradient(#e3e1dc, #e3e1dc);
+  --skx-aip-shadow: none;
+  --skx-rule: #e3e1dc;
+  --skx-frost-panel: #faf9f6;
+  --skx-read-surface: #ffffff;
+  --skx-read-ink: #1d211f;
+  --skx-read-ink-2: #454545;
+  --skx-read-gray-1: #666666;
+  --skx-frost-blur-side: none;
+  --skx-frost-side-under: #ffffff;
+  --skx-side-ink: #1d211f;
+  --skx-side-ink-2: #454545;
+  --skx-side-gray-1: #666666;
+  --skx-side-gray-2: #767676;
+  --skx-side-teal-ink: #3f7468;
+  --skx-side-ico-filter: none;
+  --skx-research-ink: #1d211f;
+  --skx-research-ink-2: #454545;
+  --skx-research-gray-1: #666666;
+  --skx-research-gray-2: #767676;
+  --skx-research-teal-ink: #3f7468;
+  --skx-research-ico-filter: none;
+  --skx-frost-side-btn: linear-gradient(#f4f3ef, #f4f3ef);
+  --skx-frost-side-card: linear-gradient(#faf9f6, #faf9f6);
+  --skx-chip-tint: #ffffff;
+  --skx-chip-milk: #ffffff;
+  --skx-chip-milk-hover: #f4f3ef;
+  --skx-chip-fill: linear-gradient(#ffffff, #ffffff);
+  --skx-chip-fill-hover: linear-gradient(#f4f3ef, #f4f3ef);
+  --skx-chip-line: #e3e1dc;
+  --skx-frost-menu-bg: #ffffff;
+  --skx-frost-menu-line: #e3e1dc;
+  --skx-frost-solid: #ffffff;
+  --skx-frost-over: #ffffff;
+  --skx-blur: none;
+  --skx-search-grad: linear-gradient(134deg, #b5503b 13%, #f6f5f2 89%);
+  --skx-page-bg: #f6f5f2;
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(29, 33, 31, 0.06);
+  --skx-shadow-banner:
+    0 4px 12px 0 rgba(29, 33, 31, 0.06), 0 4px 24px 0 rgba(29, 33, 31, 0.08);
+  --skx-border-c1: #e3e1dc;
+  --skx-border-c2: #b5503b;
+  --skx-scrollbar: rgba(29, 33, 31, 0.28);
+  --skx-scrollbar-hover: rgba(29, 33, 31, 0.5);
+  --skx-ink-on-light: #1d211f;
+  --skx-seg-thumb: #1d211f;
+  --skx-seg-thumb-ink: #ffffff;
+  --skx-scrim: rgba(29, 33, 31, 0.5);
+  --skx-spinner-filter: brightness(0.62) saturate(1.4) drop-shadow(0 0 0.5px rgba(29, 33, 31, 0.45));
+  --skx-input-ring: var(--skx-line);
+  --skx-input-ring-focus: var(--skx-accent);
+  --skx-input-glow: radial-gradient(circle closest-side, rgba(29, 33, 31, 0.3) 0%, rgba(29, 33, 31, 0.12) 30%, rgba(29, 33, 31, 0.04) 55%, rgba(29, 33, 31, 0) 75%);
+  --skx-send-empty-bg: rgba(29, 33, 31, 0.08);
+  --skx-send-empty-line: rgba(29, 33, 31, 0.5);
+  --skx-send-empty-ico-filter: brightness(0) invert(0.4);
+  --skx-chip-blur: none;
+  --skx-aip-blur: none;
+  --skx-chip-shadow: none;
+  color: var(--skx-ink);
+  background: var(--skx-page-bg);
+}
+/* ───────── 핑크 테마 — html[data-theme="pink"] ─────────
+   기준 시안: Figma main_시안D(2065:15102) — 연한 분홍·크림 그라데이션 바탕, 흰 유리 입력창·예시 카드, 검정 탭·보내기 버튼. 라이트 계열이다.
+   포인트는 시안의 검정(#1a1115)이고 산호는 쓰지 않는다. 다크 :root 와 같은 토큰 이름을 모두 다시 선언한다(themeTokens.test.ts 가 빠짐없는지 본다).
+   색 리터럴은 이 테마 블록 안에서만 쓴다 — 블록 밖 규칙은 var(--skx-*) 로만 읽는다.
+   글자 대비(본문·보조·안내 글 4.5:1)는 themeContrast.test.ts 가 이 테마도 똑같이 검사한다.
+   시안과 다른 점: 꺼진 탭 글(시안 #879491)·입력창 안내 글(#666)은 흰 유리 위 4.5:1 에 맞춰 조금 더 짙게 잡았다. */
+html[data-theme="pink"] {
+  color-scheme: light;
+  /* 포인트 — 시안의 검정 */
+  --skx-primary: #1a1115;
+  --skx-accent: #1a1115;
+  --skx-accent-strong: #3a2a32;
+  --skx-accent-grad: linear-gradient(135deg, #1a1115 0%, #3a2a32 100%);
+  --skx-on-accent: #f2f2f0;
+  /* 글자 */
+  --skx-ink-strong: #1a1115;
+  --skx-ink: #2b2025;
+  --skx-ink-2: #4a3f45;
+  --skx-gray-1: #574c53;
+  --skx-gray-2: #5c5158;
+  --skx-teal-ink: #7a3f5c;
+  /* 상태 */
+  --skx-success: #166534;
+  --skx-success-bg: rgba(22, 101, 52, 0.1);
+  --skx-danger: #b3261e;
+  --skx-danger-bg: rgba(179, 38, 30, 0.1);
+  /* 아이콘 색 — 일반은 거의 검정, 포인트(검정) 바탕 위는 흰색 */
+  --skx-ico-filter: brightness(0) invert(0.12);
+  --skx-ico-on-accent-filter: brightness(0) invert(0.95);
+  --skx-ico-accent-filter: brightness(0) invert(0.1);
+  /* 선·면 */
+  --skx-line: rgba(26, 17, 21, 0.14);
+  --skx-white: #ffffff;
+  /* 유리 면 — 다크는 짙은 반투명이지만 핑크는 흰 반투명이다. 본문색이 어두워 띠가 흰색으로 겹쳐도 대비가 높다 */
+  --skx-glass: rgba(255, 255, 255, 0.5);
+  --skx-glass-2: rgba(255, 255, 255, 0.38);
+  --skx-glass-teal: rgba(234, 169, 203, 0.22);
+  --skx-glass-border: rgba(26, 17, 21, 0.1);
+  --skx-frost-bg: rgba(255, 255, 255, 0.34);
+  --skx-frost-tint: rgba(255, 255, 255, 0.1);
+  --skx-frost-milk: rgba(255, 255, 255, 0.22);
+  --skx-frost-reflect: linear-gradient(135deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0) 62%);
+  --skx-frost-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-milk), var(--skx-frost-milk)), var(--skx-frost-tint);
+  --skx-seg-fill: var(--skx-frost-reflect), linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-tint);
+  --skx-frost-bg-hover: rgba(255, 255, 255, 0.6);
+  --skx-frost-bg-soft: rgba(255, 255, 255, 0.2);
+  --skx-frost-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.4));
+  --skx-frost-line: rgba(255, 255, 255, 0.7);
+  --skx-frost-hilite: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 0 rgba(255, 255, 255, 0.35), 0 10px 30px -10px rgba(150, 70, 110, 0.16);
+  --skx-frost-blur: blur(22px) saturate(1.4);
+  --skx-frost-side-bg: rgba(255, 255, 255, 0.3);
+  --skx-frame-bg: rgba(255, 255, 255, 0.28);
+  --skx-frame-line: rgba(255, 255, 255, 0.8);
+  --skx-side-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.3));
+  --skx-chat-bg: rgba(255, 255, 255, 0.34);
+  --skx-chat-ai-bg: rgba(255, 255, 255, 0.85);
+  --skx-chat-user-tint: rgba(234, 169, 203, 0.34);
+  --skx-chat-user-milk: rgba(255, 255, 255, 0.22);
+  --skx-chat-user-bg: linear-gradient(var(--skx-chat-user-milk), var(--skx-chat-user-milk)), var(--skx-chat-user-tint);
+  --skx-chat-input-tint: rgba(255, 255, 255, 0.1);
+  --skx-chat-input-milk: rgba(255, 255, 255, 0.4);
+  --skx-chat-input-bg: linear-gradient(var(--skx-chat-input-milk), var(--skx-chat-input-milk)), var(--skx-chat-input-tint);
+  --skx-aip-edge: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35));
+  --skx-aip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 10px 30px -10px rgba(150, 70, 110, 0.16);
+  --skx-rule: rgba(26, 17, 21, 0.1);
+  --skx-frost-panel: rgba(255, 255, 255, 0.3);
+  --skx-read-surface: rgba(255, 255, 255, 0.55);
+  --skx-read-ink: #1a1115;
+  --skx-read-ink-2: #3a2f35;
+  --skx-read-gray-1: #574c53;
+  --skx-frost-blur-side: blur(28px) saturate(1.4);
+  --skx-frost-side-under: rgba(255, 255, 255, 0.12);
+  --skx-side-ink: #1a1115;
+  --skx-side-ink-2: #3a2f35;
+  --skx-side-gray-1: #574c53;
+  --skx-side-gray-2: #5c5158;
+  --skx-side-teal-ink: #7a3f5c;
+  --skx-side-ico-filter: brightness(0) invert(0.12);
+  --skx-research-ink: #2b2025;
+  --skx-research-ink-2: #3a2f35;
+  --skx-research-gray-1: #574c53;
+  --skx-research-gray-2: #5c5158;
+  --skx-research-teal-ink: #7a3f5c;
+  --skx-research-ico-filter: brightness(0) invert(0.12);
+  --skx-frost-side-btn: linear-gradient(var(--skx-frost-bg), var(--skx-frost-bg)), var(--skx-frost-side-under);
+  --skx-frost-side-card: linear-gradient(var(--skx-frost-bg-soft), var(--skx-frost-bg-soft)), var(--skx-frost-side-under);
+  /* 예시 질문 칸 — 시안: 흰 칸 + #ccc 선 */
+  --skx-chip-tint: rgba(255, 255, 255, 0.12);
+  --skx-chip-milk: rgba(255, 255, 255, 0.28);
+  --skx-chip-milk-hover: rgba(255, 255, 255, 0.5);
+  --skx-chip-fill: linear-gradient(var(--skx-chip-milk), var(--skx-chip-milk)), var(--skx-chip-tint);
+  --skx-chip-fill-hover: linear-gradient(var(--skx-chip-milk-hover), var(--skx-chip-milk-hover)), var(--skx-chip-tint);
+  --skx-chip-line: rgba(255, 255, 255, 0.85);
+  --skx-frost-menu-bg: rgba(255, 255, 255, 0.9);
+  --skx-frost-menu-line: rgba(26, 17, 21, 0.1);
+  --skx-frost-solid: #ffffff;
+  --skx-frost-over: #fbf1f5;
+  --skx-blur: blur(12px);
+  --skx-search-grad: linear-gradient(134deg, #eaa9cb 13%, #fff5f9 89%);
+  --skx-page-bg: #f0ddd6;
+  --skx-shadow-lnb: 2px 2px 36px 0 rgba(26, 17, 21, 0.06);
+  --skx-shadow-banner: 0 4px 12px 0 rgba(26, 17, 21, 0.08), 0 4px 24px 0 rgba(26, 17, 21, 0.1);
+  --skx-border-c1: rgba(214, 140, 178, 0.32);
+  --skx-border-c2: #1a1115;
+  --skx-scrollbar: rgba(26, 17, 21, 0.25);
+  --skx-scrollbar-hover: rgba(26, 17, 21, 0.45);
+  /* 포인트 바탕 밖에서 갈라 쓰는 역할 */
+  --skx-ink-on-light: #1a1115;
+  --skx-seg-thumb: #1a1115;
+  --skx-seg-thumb-ink: #f2f2f0;
+  --skx-scrim: rgba(26, 17, 21, 0.4);
+  --skx-spinner-filter: brightness(0.62) saturate(1.4) drop-shadow(0 0 0.5px rgba(26, 17, 21, 0.45));
+  --skx-input-ring: var(--skx-line);
+  --skx-input-ring-focus: #1a1115;
+  --skx-input-glow: radial-gradient(circle closest-side, rgba(230, 120, 170, 0.85) 0%, rgba(236, 150, 188, 0.4) 30%, rgba(240, 170, 200, 0.14) 55%, rgba(240, 170, 200, 0) 75%);
+  --skx-send-empty-bg: rgba(26, 17, 21, 0.08);
+  --skx-send-empty-line: rgba(26, 17, 21, 0.5);
+  --skx-send-empty-ico-filter: brightness(0) invert(0.4);
+  --skx-chip-blur: blur(18px) saturate(1.3);
+  --skx-aip-blur: blur(22px) saturate(1.3);
+  --skx-chip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 8px 24px -10px rgba(150, 70, 110, 0.14);
+  /* 움직이는 배경 — 시안의 분홍·크림 번짐 위로 흰 진주빛 띠가 천천히 지난다. 띠가 흰색이라 본문(검정 계열)이 더 잘 읽힌다 */
+  --skx-holo-wash:
+    radial-gradient(48% 58% at 48% 42%, rgba(232, 166, 194, 0.7) 0%, rgba(232, 166, 194, 0) 100%),
+    radial-gradient(40% 50% at 92% 14%, rgba(240, 228, 205, 0.85) 0%, rgba(240, 228, 205, 0) 100%),
+    radial-gradient(50% 45% at 10% 92%, rgba(255, 250, 247, 0.7) 0%, rgba(255, 250, 247, 0) 100%),
+    radial-gradient(40% 40% at 96% 88%, rgba(247, 233, 232, 0.8) 0%, rgba(247, 233, 232, 0) 100%);
+  --skx-holo-band-1: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 250, 244, 0.3) 28%,
+    rgba(255, 255, 255, 0.34) 52%,
+    rgba(255, 238, 247, 0.24) 76%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --skx-holo-band-2: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-band-3: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0) 100%);
+  --skx-holo-veil: none;
+  --skx-holo-mask: none;
+}
+/* 핑크 테마의 밝은 읽는 면 — 중립 흰 면은 .skx-reading 그대로 두고, 포인트(산호)만 검정 계열로 바꾼다 */
+html[data-theme="pink"] .skx-reading {
+  --skx-primary: #1a1115;
+  --skx-accent: #1a1115;
+  --skx-accent-strong: #3a2a32;
+  --skx-accent-grad: linear-gradient(135deg, #1a1115 0%, #3a2a32 100%);
+  --skx-on-accent: #ffffff;
+  --skx-ico-on-accent-filter: brightness(0) invert(1);
+  --skx-ico-accent-filter: brightness(0) invert(0.1);
+  --skx-teal-ink: #7a3f5c;
+  --skx-side-teal-ink: #7a3f5c;
+  --skx-research-teal-ink: #7a3f5c;
+  --skx-search-grad: linear-gradient(134deg, #eaa9cb 13%, #f6f5f2 89%);
+  --skx-border-c2: #1a1115;
 }
 /* [E] 디자인 토큰 */
+
+/* [S] 움직이는 홀로그램 배경 */
+/* app.vue 맨 앞의 .skx-holo — 짙은 초록 바탕 위로 무지개 포일 띠 1개(왼쪽 1/3 을 대각선으로)와 가는 흰 빛줄기 2개(오른쪽)가
+   천천히 흐른다. 사진·흐림 없이 CSS 만 쓰고, 가장자리는 투명 정지점·mask 로 부드럽게 한다.
+   .skx-app·.skx-footer 는 투명이라 이 층이 비쳐 보인다.
+   글자 가독성: 유리 카드 색(--skx-glass)이 짙은 청록 반투명이라, 띠가 모두 최대 알파로 겹친 최악의 자리에서도
+   본문색이 카드 위 4.5:1 이상이다. 카드 없이 페이지 위에 놓이는 큰 흰 제목도 3:1 이상이고,
+   화면 아래 15%(푸터 자리)는 마스크로 띠를 걷어 작은 글자가 띠 위에 놓이지 않는다.
+   이 값들을 tests/unit/themeHolo.test.ts 가 읽어 검사한다. */
+.skx-holo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+  /* 화면 아래 15% 는 띠를 걷는다 — 푸터 글자가 띠 위에 놓이지 않게 */
+  -webkit-mask-image: var(--skx-holo-mask);
+  mask-image: var(--skx-holo-mask);
+  background: var(--skx-holo-wash), var(--skx-page-bg);
+}
+.skx-holo__band {
+  position: absolute;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+/* 무지개 포일 띠 — 보라 → 산호 → 민트, 폭 넓게. 화면 왼쪽 1/3 을 위에서 아래로 비스듬히 지난다 */
+.skx-holo__band--1 {
+  top: 50%;
+  left: 20%;
+  width: 150vmax;
+  height: 26vmax;
+  margin: -13vmax 0 0 -75vmax;
+  background: var(--skx-holo-band-1);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 22%,
+    #000 78%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 22%,
+    #000 78%,
+    transparent 100%
+  );
+  transform: rotate(64deg);
+  animation: skx-holo-a 36s ease-in-out -11s infinite alternate;
+}
+/* 가는 흰 빛줄기 — 오른쪽에서 위아래로 흐른다 */
+.skx-holo__band--2,
+.skx-holo__band--3 {
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 30%,
+    #000 70%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 30%,
+    #000 70%,
+    transparent 100%
+  );
+}
+.skx-holo__band--2 {
+  top: 12vh;
+  left: 76%;
+  width: 5vmax;
+  height: 70vh;
+  margin-left: -2.5vmax;
+  background: var(--skx-holo-band-2);
+  transform: rotate(12deg);
+  animation: skx-holo-b 24s ease-in-out -7s infinite alternate;
+}
+.skx-holo__band--3 {
+  top: 30vh;
+  left: 90%;
+  width: 3.5vmax;
+  height: 55vh;
+  margin-left: -1.75vmax;
+  background: var(--skx-holo-band-3);
+  transform: rotate(-8deg);
+  animation: skx-holo-c 31s ease-in-out -19s infinite alternate;
+}
+/* transform(이동·회전·확대)만 움직인다 — background-position·filter 는 매 프레임 바꾸지 않는다.
+   무지개 띠는 화면 폭의 13% 쯤 왕복하며 살짝 돌고, 빛줄기는 화면 높이의 절반 가까이 위아래로 흐른다 */
+@keyframes skx-holo-a {
+  from {
+    transform: translate3d(-6vw, -2vh, 0) rotate(60deg) scale(1);
+  }
+  to {
+    transform: translate3d(7vw, 3vh, 0) rotate(68deg) scale(1.06);
+  }
+}
+@keyframes skx-holo-b {
+  from {
+    transform: translate3d(0, -22vh, 0) rotate(10deg);
+  }
+  to {
+    transform: translate3d(-2vw, 24vh, 0) rotate(14deg);
+  }
+}
+@keyframes skx-holo-c {
+  from {
+    transform: translate3d(1vw, 20vh, 0) rotate(-10deg);
+  }
+  to {
+    transform: translate3d(-1vw, -22vh, 0) rotate(-6deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-holo__band {
+    animation: none;
+  }
+}
+/* 사이드바 폭 구간(왼쪽 17.2rem)에서 띠를 덜어내는 막 — 바탕과 같은 짙은 초록 40% 를 띠 위에 덮어 그 구간의 띠 알파를 60% 로 줄이고,
+   그 오른쪽 5rem 에서 부드럽게 걷는다(본문 위에 이음매가 보이지 않게). 사이드바 바탕을 30~40% 로 투명하게 두고도 글자를 지키는 두 번째 수단이다 */
+.skx-holo__veil {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 22.2rem;
+  background: var(--skx-holo-veil);
+}
+/* [E] 움직이는 홀로그램 배경 */
 
 /* [S] 공통 리셋 */
 .skx-app *,
@@ -313,13 +947,48 @@ a:hover {
 }
 /* [E] 공통 리셋 */
 
+/* [S] 아이콘 색 */
+/* 아이콘은 대부분 <img src="/img/ico-*.svg"> 라 색(짙은 회색·흰색·보라)이 파일에 박혀 있다. 템플릿은 건드리지 않고 filter 로 면에 맞춘다.
+   일반 아이콘은 --skx-ico-filter(다크 #ccc·밝은 면 원본), 포인트색 바탕 버튼 위는 --skx-ico-on-accent-filter, 포인트색으로 보일 것은
+   --skx-ico-accent-filter. 이 구간의 img[...] 규칙은 모두 :where() 로 감싸 특이도 0 이다 — 단일 클래스 규칙(.skx-btn-talk__ico 등)·img 가 든 규칙이
+   언제나 이기게 하는 기본값이고, 이 구간 안에서는 뒤의 규칙이 이긴다. (:where 없이 img[src] 만 쓰면 특이도 (0,1,1) 이라 단일 클래스 규칙을 이긴다.) */
+:where(img[src*="/img/ico-"]) {
+  filter: var(--skx-ico-filter);
+}
+/* 색 자체가 뜻인 것 — 북마크(노랑·회색)는 그대로 */
+:where(img[src$="/img/ico-bookmark-on.svg"], img[src$="/img/ico-bookmark.svg"]) {
+  filter: none;
+}
+/* 보라 배지(아바타·표지 자리·AI 연관·책 선택) — 색상만 포인트색 쪽(산호)으로 돌린다 */
+:where(
+  img[src$="/img/ico-avatar.svg"],
+  img[src$="/img/ico-book-thumb.svg"],
+  img[src$="/img/ico-ai-related.svg"],
+  img[src$="/img/ico-book-select.svg"]
+) {
+  filter: hue-rotate(110deg) saturate(0.55) brightness(1.25);
+}
+/* 보라 한 가지 색 아이콘(정렬 선택 체크·논문 인용 따옴표) — 포인트색 */
+:where(img[src$="/img/ico-sort-on.svg"], img[src$="/img/ico-paper-bookmark.svg"]) {
+  filter: var(--skx-ico-accent-filter);
+}
+/* 흰 선 로딩 아이콘이 밝은 면 위에 놓이면 안 보인다 */
+.skx-reading img[src$="/img/ico-spinner.svg"] {
+  filter: brightness(0) invert(0.4);
+}
+/* 새 스피너(스스로 도는 GIF·정지 PNG, public/skovix-spinner-*)는 연한 분홍·은색이라 밝은 면 위에서는 거의 안 보인다 — 테마 토큰(--skx-spinner-filter)으로 밝은 면에서는 한 단계 어둡게 하고 가는 그림자를 두른다(다크는 none).
+   CSS 회전은 걸지 않는다(GIF 자체가 돈다). :where() 라 단일 클래스 규칙이 늘 이긴다 */
+:where(img[src*="/skovix-spinner-"]) {
+  filter: var(--skx-spinner-filter);
+}
+/* [E] 아이콘 색 */
+
 /* [S] 도서검색 메인 레이아웃 */
 .skx-app {
   display: flex;
   align-items: stretch;
   min-height: 100vh;
   padding: 1.2rem;
-  background: var(--skx-page-bg);
 }
 /* [E] 도서검색 메인 레이아웃 */
 
@@ -331,11 +1000,18 @@ a:hover {
   width: 16rem;
   max-height: calc(100vh - 2.4rem);
   min-height: 30rem;
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--skx-frost-side-bg);
   border-radius: var(--skx-radius-lg);
   box-shadow: var(--skx-shadow-lnb);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: var(--skx-frost-blur-side);
+  -webkit-backdrop-filter: var(--skx-frost-blur-side);
+  /* 사이드바 안의 글·아이콘은 한 단계 밝게 — 이 범위에서만 토큰을 다시 정의한다(밖으로 번지지 않는다) */
+  --skx-ink: var(--skx-side-ink);
+  --skx-ink-2: var(--skx-side-ink-2);
+  --skx-gray-1: var(--skx-side-gray-1);
+  --skx-gray-2: var(--skx-side-gray-2);
+  --skx-teal-ink: var(--skx-side-teal-ink);
+  --skx-ico-filter: var(--skx-side-ico-filter);
   overflow: hidden;
   position: sticky;
   top: 1.2rem;
@@ -354,42 +1030,37 @@ a:hover {
 .skx-logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  height: 1.2rem;
   text-decoration: none;
   cursor: pointer;
 }
-.skx-logo__mark {
-  width: 1.25rem;
-  height: 1.2rem;
-  display: block;
+.skx-logo:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 4px;
 }
 .skx-logo__word {
-  width: 4.05rem;
-  height: 0.9rem;
-  display: block;
+  width: 4.6rem;
 }
+/* 사이드바의 아이콘 버튼 — 접힌 띠의 아이콘 칸(.skx-rail__btn)과 같은 40px 살짝 둥근 네모(--skx-radius-md), 올리면 같은 흰 10% 면.
+   아이콘은 칸 정중앙(위로 올려 두던 보정은 걷었다 — 칸과 아이콘 중심이 2px 어긋났다) */
 .skx-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 40px;
+  height: 40px;
   padding: 0;
   background: none;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--skx-radius-md);
   transition: background-color 0.15s;
 }
 .skx-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--skx-frost-bg);
 }
 .skx-icon-btn img {
   width: 1.6rem;
   height: 1.6rem;
   display: block;
-  position: relative;
-  top: -0.1rem;
 }
 .skx-lnb__new {
   padding: 0.8rem 1.2rem;
@@ -401,13 +1072,15 @@ a:hover {
   gap: 0.4rem;
   width: 100%;
   padding: 0.4rem 1.2rem 0.4rem 0.4rem;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--skx-frost-side-btn);
   border: none;
   border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-frost-hilite);
   transition: background-color 0.15s;
 }
+/* 올림은 면을 더 희게(글자 대비가 모자란다) 하지 않고 선을 밝힌다 */
 .skx-newchat:hover {
-  background: rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 0 0 1px var(--skx-frost-line);
 }
 .skx-newchat__icon {
   display: inline-flex;
@@ -447,7 +1120,7 @@ a:hover {
   transition: background-color 0.15s;
 }
 .skx-menu-item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--skx-glass-teal);
 }
 .skx-menu-item__icon {
   display: inline-flex;
@@ -507,7 +1180,7 @@ a:hover {
   transition: background-color 0.15s;
 }
 .skx-history-item:hover {
-  background: rgba(79, 70, 229, 0.06);
+  background: var(--skx-frost-bg);
 }
 .skx-history-item__query {
   width: 100%;
@@ -525,34 +1198,6 @@ a:hover {
   font-weight: 500;
   color: var(--skx-gray-2);
   line-height: 1.5;
-}
-/* ── 검색기록 탭 ── */
-.skx-history__tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0 8px;
-}
-.skx-history__tab {
-  flex: 1;
-  padding: 5px 0;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-3);
-  background: transparent;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.skx-history__tab:hover {
-  background: var(--line-2);
-  color: var(--ink-2);
-}
-.skx-history__tab.is-active {
-  background: var(--skx-primary);
-  color: #fff;
 }
 .skx-profile {
   display: flex;
@@ -573,46 +1218,237 @@ a:hover {
   color: var(--skx-ink);
   line-height: 1.5;
 }
-/* LNB 접힌 상태: 60px(3rem) 흰 바 + 펼치기(>) 버튼만 노출 */
-.skx-lnb__expand {
+/* LNB 접힌 상태 — 펼친 사이드바와 같은 유리 면의 세로 띠. 데스크톱은 위에서부터 [사이드바 열기](접기 버튼과 같은 아이콘·같은 높이)
+   · [새 검색] · [DeepResearch](진행 중·승인 대기가 있으면 산호 점), 맨 아래는 프로필 자리(목업이라 지금은 없다).
+   아이콘 칸은 40px 히트 영역이다. 휴대폰(≤480px)은 예전처럼 열기(화살표) 버튼만 둔다 */
+.skx-lnb__rail {
   display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.skx-rail__item {
+  position: relative;
+  display: flex;
+}
+.skx-rail__btn {
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   background: none;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--skx-radius-md);
+  cursor: pointer;
   transition: background-color 0.15s;
-  padding: 0;
 }
-.skx-lnb__expand:hover {
-  background: rgba(0, 0, 0, 0.05);
+.skx-rail__btn:hover {
+  background: var(--skx-frost-bg);
 }
-.skx-lnb__expand img {
-  width: 0.4rem;
-  height: auto;
-  object-fit: contain;
+.skx-rail__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-rail__ico {
+  width: 1.6rem;
+  height: 1.6rem;
   display: block;
 }
-.skx-app.is-lnb-collapsed .skx-lnb,
-.skx-lnb.is-lnb-collapsed {
-  width: 3.2rem;
-  min-width: 3.2rem;
-  min-height: 0;
-  background: var(--skx-white);
-  padding: 1.2rem 0.6rem;
+/* 진행 중·승인 대기 연구가 있다는 작은 산호 점 */
+.skx-rail__dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--skx-primary);
+  box-shadow: 0 0 0 2px var(--skx-frost-menu-bg);
 }
-.skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__expand),
-.skx-lnb.is-lnb-collapsed > :not(.skx-lnb__expand) {
+/* 이름표 — 띠 오른쪽으로 뜨는 작은 말풍선 */
+.skx-rail__tip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.6rem);
+  z-index: 6;
+  padding: 0.25rem 0.6rem;
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-shadow-banner);
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  animation: skx-rail-tip 0.12s ease-out both;
+}
+.skx-rail__tip::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -0.25rem;
+  border: 0.25rem solid transparent;
+  border-right-color: var(--skx-frost-menu-bg);
+}
+@keyframes skx-rail-tip {
+  from {
+    opacity: 0;
+    transform: translate(-0.2rem, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-rail__tip {
+    animation: none;
+  }
+}
+/* 접힌 띠는 넓은 화면(>768px)에서만 있다 — 좁은 화면(≤768px)은 띠 대신 위 [사이드바 열기] 버튼과 서랍이 한다(아래 '좁은 화면의 사이드바 서랍') */
+@media (min-width: 769px) {
+  .skx-app.is-lnb-collapsed .skx-lnb,
+  .skx-lnb.is-lnb-collapsed {
+    width: calc(40px + 1.2rem);
+    min-width: calc(40px + 1.2rem);
+    min-height: 0;
+    background: var(--skx-frost-side-bg);
+    padding: 1.2rem 0.6rem;
+    /* 이름표가 띠 밖으로 나가 본문 위에 뜬다 */
+    overflow: visible;
+    z-index: 5;
+  }
+  .skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__rail):not(.skx-profile),
+  .skx-lnb.is-lnb-collapsed > :not(.skx-lnb__rail):not(.skx-profile) {
+    display: none;
+  }
+  .skx-app.is-lnb-collapsed .skx-lnb__rail,
+  .skx-lnb.is-lnb-collapsed .skx-lnb__rail {
+    display: flex;
+  }
+  .skx-lnb.is-lnb-collapsed .skx-profile {
+    margin-top: auto;
+    justify-content: center;
+    padding: 0;
+  }
+  .skx-lnb.is-lnb-collapsed .skx-profile > :not(.skx-profile__avatar) {
+    display: none;
+  }
+}
+
+/* [S] 좁은 화면의 사이드바 서랍 — 기준 폭 768px(utils/sidebarDrawer.ts 의 NARROW_MAX_WIDTH, 앱의 다른 휴대폰 배치와 같은 폭).
+   펼친 사이드바(16rem)가 본문을 밀면 375px 에서 본문이 87px, 문서 가로 폭이 화면보다 커져 가로 스크롤이 생겼다. 그래서 이 폭 이하에서는
+   사이드바가 본문을 밀지 않고 위를 덮는 서랍이다: position: fixed 로 왼쪽에서 열리고, 뒤에 어두운 막(.skx-lnb-scrim)을 깔고, 열린 동안 본문 스크롤을 잠근다.
+   닫힌 서랍은 visibility: hidden 이라 키보드 초점도 가지 않는다. 본문은 늘 화면 폭 그대로이고, 접힌 띠 자리에는 본문 위 한 줄의 [사이드바 열기] 버튼이 온다 */
+.skx-lnb-opener,
+.skx-lnb-scrim {
   display: none;
 }
-.skx-app.is-lnb-collapsed .skx-lnb__expand,
-.skx-lnb.is-lnb-collapsed .skx-lnb__expand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+@media (max-width: 768px) {
+  /* 위 줄: 열기 버튼, 아래: 본문 — 가로로 놓던 사이드바 자리를 본문이 쓰지 않으므로 세로로 쌓는다 */
+  .skx-app {
+    flex-direction: column;
+  }
+  .skx-lnb-opener {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: flex-start;
+    width: 2.4rem;
+    height: 2.4rem;
+    margin: 0 0 0.6rem;
+    padding: 0;
+    background: var(--skx-frost-bg);
+    border: none;
+    border-radius: var(--skx-radius-md);
+    box-shadow: var(--skx-frost-hilite);
+    cursor: pointer;
+  }
+  .skx-lnb-opener img {
+    width: 1.4rem;
+    height: 1.4rem;
+    display: block;
+  }
+  .skx-lnb-opener:focus-visible {
+    outline: 2px solid var(--skx-accent);
+    outline-offset: 2px;
+  }
+  .skx-lnb,
+  .skx-lnb.is-lnb-collapsed,
+  .skx-app.is-lnb-collapsed .skx-lnb {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 90;
+    width: min(17rem, calc(100vw - 3rem));
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    /* 서랍은 본문 위에 얹히는 면이라 비치는 유리가 아니라 불투명 면이다(뒤 글자가 비쳐 읽기 어렵지 않게) — 흐림도 필요 없다 */
+    background: var(--skx-frost-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-radius: 0 var(--skx-radius-lg) var(--skx-radius-lg) 0;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.28s;
+  }
+  .skx-lnb.is-drawer-open {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s;
+  }
+  /* 서랍 안은 항상 펼친 모양 — 접힌 띠의 숨김 규칙은 위에서 >768px 로 묶여 있어 여기 걸리지 않는다 */
+  .skx-lnb-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: var(--skx-scrim);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.28s ease,
+      visibility 0s linear 0.28s;
+  }
+  .skx-lnb-scrim.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.28s ease;
+  }
 }
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .skx-lnb,
+  .skx-lnb.is-lnb-collapsed,
+  .skx-app.is-lnb-collapsed .skx-lnb,
+  .skx-lnb.is-drawer-open,
+  .skx-lnb-scrim,
+  .skx-lnb-scrim.is-open {
+    transition: none;
+  }
+}
+/* 서랍이 열린 동안 본문 스크롤 잠금(components/AppSidebar.vue 가 <html> 에 붙인다) */
+html.skx-scroll-lock {
+  overflow: hidden;
+}
+/* [E] 좁은 화면의 사이드바 서랍 */
 /* [E] LNB */
 
 /* [S] 검색 메인 컨텐츠 */
@@ -624,13 +1460,23 @@ a:hover {
   min-width: 0;
   padding: 1.2rem 3rem;
   border-radius: var(--skx-radius-lg);
-  filter: drop-shadow(0 0 22px rgba(139, 127, 224, 0.05));
+}
+/* 휴대폰: 입력창 좌우 여백 16px — 화면 좌우 가장자리와 본문 사이를 16px 씩 둔다(px: 이 폭에서는 html 글자 크기가 줄어 rem 이 14.4px 다) */
+@media (max-width: 480px) {
+  .skx-app {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .skx-contents {
+    padding: 1.2rem 0;
+  }
 }
 .skx-contents__inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  /* 시안(1920 프레임, 1px = 0.05rem): 전환 ↔ 입력창 30px. 로고 ↔ 전환은 .skx-brand 의 아래 여백까지 더해 60px */
+  gap: 1.5rem;
   width: 100%;
   max-width: 48rem;
 }
@@ -645,152 +1491,324 @@ a:hover {
   text-align: center;
   line-height: 1.5;
 }
+/* 메인 랜딩 히어로 — 한 줄 소개 아래에 세리프 워드마크. 워드마크는 22rem(≈440px)까지, 좁은 화면에서는 부모 폭을 따른다 */
+.skx-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+.skx-brand__line {
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  text-wrap: balance;
+}
+.skx-brand__logo {
+  width: min(17.5rem, 100%);
+}
+@media (max-width: 480px) {
+  .skx-brand__line {
+    font-size: 1rem;
+  }
+}
 /* [E] 타이틀 */
 
-/* [S] 검색 탭 */
-.skx-tabs {
+/* [S] 검색 갈래 전환 */
+/* 논문 검색 · 자료 검색 두 갈래 알약. 칸 폭이 같아(grid 1fr) 선택 표시(thumb)가 칸 폭만큼만 옮겨 간다 — 위치는 --seg-i(0부터), 칸 수는 --seg-n.
+   Figma 시안 색을 따른다(사용자 결정 2026-10-12 — 이 부분만은 산호 대신 시안 색): 바깥은 흰 10% 유리, 켜진 칸은 짙은 초록(#0f2822 =
+   --skx-on-accent) 채움 + 흰 글, 꺼진 칸 글은 회녹색(#879491 = --skx-gray-2) */
+.skx-seg {
   position: relative;
-  display: inline-flex;
-  align-items: stretch;
-  gap: 0;
-  padding: 0.4rem;
-  background: var(--skx-white);
+  display: inline-grid;
+  grid-template-columns: repeat(var(--seg-n, 2), 1fr);
+  width: 10.8rem;
+  max-width: 100%;
+  padding: 0.1rem;
+  background: var(--skx-seg-fill);
+  box-shadow: var(--skx-frost-hilite);
+  backdrop-filter: var(--skx-frost-blur);
+  -webkit-backdrop-filter: var(--skx-frost-blur);
   border-radius: var(--skx-radius-pill);
 }
-/* 옆에서 밀려오듯 이동하는 선택 인디케이터 */
-.skx-tabs__slider {
+.skx-seg__thumb {
   position: absolute;
-  top: 0.4rem;
-  left: 0;
-  width: 0;
-  height: calc(100% - 0.8rem);
-  background: var(--skx-ink);
+  top: 0.1rem;
+  bottom: 0.1rem;
+  left: 0.1rem;
+  width: calc((100% - 0.2rem) / var(--seg-n, 2));
+  background: var(--skx-seg-thumb);
   border-radius: var(--skx-radius-pill);
-  transform: translateX(0);
-  transition:
-    transform 0.38s cubic-bezier(0.34, 1.32, 0.42, 1),
-    width 0.38s cubic-bezier(0.34, 1.32, 0.42, 1);
-  z-index: 0;
+  transform: translateX(calc(var(--seg-i, 0) * 100%));
+  transition: transform 0.38s cubic-bezier(0.34, 1.32, 0.42, 1);
   pointer-events: none;
 }
-.skx-tabs.no-anim .skx-tabs__slider {
-  transition: none;
-}
-.skx-tab {
+.skx-seg__btn {
   position: relative;
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 1.2rem;
+  justify-content: center;
+  padding: 0.35rem 0;
   background: none;
   border: none;
   border-radius: var(--skx-radius-pill);
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--skx-gray-2);
   line-height: 1.5;
+  white-space: nowrap;
+  color: var(--skx-gray-2);
   transition: color 0.25s ease;
 }
-/* 탭 아이콘: 상태별 컬러 SVG를 src 교체로 사용 (Figma 글리프 실측 사이즈) */
-.skx-tab__icon {
-  display: block;
-  flex-shrink: 0;
+.skx-seg__btn:hover:not(.is-active) {
+  color: var(--skx-ink);
 }
-.skx-tab--book .skx-tab__icon {
-  width: 0.7rem;
-  height: 0.8rem;
+.skx-seg__btn.is-active {
+  color: var(--skx-seg-thumb-ink);
 }
-.skx-tab--paper .skx-tab__icon {
-  width: 0.8rem;
-  height: 0.9rem;
+.skx-seg__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
 }
-.skx-tab.is-active {
-  color: var(--skx-white);
+.skx-seg__short {
+  display: none;
+}
+@media (max-width: 480px) {
+  .skx-seg__btn {
+    padding: 0.35rem 0;
+  }
+  .skx-seg__full {
+    display: none;
+  }
+  .skx-seg__short {
+    display: inline;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .skx-tabs__slider {
+  .skx-seg__thumb {
     transition: none;
   }
 }
-/* [E] 검색 탭 */
+/* [E] 검색 갈래 전환 */
 
 /* [S] 검색 입력 */
+/* 입력 상자는 뿌연 유리 한 장(큰 컨테이너라 흐림을 쓴다). 시안(1px = 0.05rem): 폭 960(48rem)·r20·안쪽 여백 위아래 16/좌우 24,
+   위 입력 글 · 아래 줄 [+] 칩 … 보내기. 두 랜딩(메인·/papers)이 같은 껍데기를 쓴다 */
 .skx-search {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   width: 100%;
-  padding: 0.8rem;
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: var(--skx-radius-lg);
 }
 .skx-search__box {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "field field"
+    "plus send";
+  align-items: center;
+  row-gap: 0.6rem;
   width: 100%;
-  padding: 0.8rem 3rem 0.8rem 0.8rem;
-  background: var(--skx-white);
-  border-radius: var(--skx-radius-md);
+  min-height: 6.8rem;
+  padding: 1rem 1.3rem 0.75rem;
+  background: var(--skx-frost-fill);
+  box-shadow: var(--skx-frost-hilite);
+  border-radius: 1rem;
+  backdrop-filter: var(--skx-frost-blur);
+  -webkit-backdrop-filter: var(--skx-frost-blur);
   position: relative;
+  /* backdrop-filter 가 쌓임 맥락을 만든다 — 상자 안의 + 메뉴·슬래시 목록이 아래 예시 카드 위에 뜨게 카드보다 위에 둔다 */
+  z-index: 3;
+}
+.skx-search__box > .rs-plus {
+  grid-area: plus;
+}
+@media (max-width: 480px) {
+  .skx-search__box {
+    padding: 1.1rem 1.1rem 0.8rem;
+    row-gap: 0.5rem;
+  }
+}
+/* 밝은 위 가장자리(빛을 받는 테두리) — 위 흰 60% → 아래 20% 그라데이션 1px. 배경에 mask 로 테두리 띠만 남긴다 */
+.skx-lnb::before,
+.skx-chat-panel__inner::before,
+.skx-search__box::before,
+.skx-seg::before,
+.skx-rsearch::before,
+.skx-rframe::before,
+.skx-aip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--skx-frost-edge);
+  -webkit-mask:
+    linear-gradient(var(--skx-ink-strong) 0 0) content-box,
+    linear-gradient(var(--skx-ink-strong) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* 입력창(랜딩 입력 상자·결과 위 검색바·상세 검색바 모두)의 테두리 1px — 평소에는 흰색 계열의 옅은 선(다크 기준, 라이트는 그 테마의 중립 선),
+   초점일 때만 포인트색(다크 산호·라이트 검정). 사용자 결정(2026-10-13; 10-12 의 '늘 산호'를 바꿨다). 색은 테마 토큰(--skx-input-ring·-focus)이다 */
+.skx-search__box::before,
+.skx-rsearch::before {
+  background: var(--skx-input-ring);
+}
+.skx-search__box:focus-within::before,
+.skx-rsearch:focus-within::before {
+  background: var(--skx-input-ring-focus);
+}
+/* 랜딩 입력 상자의 테두리를 따라 도는 빛(결과·상세 검색바에는 없다) — 테두리 띠(2px — 테두리 선 1px 과 그 안쪽 1px) 모양의 틀(.skx-search__glow)을 마스크로 도려내 띠 안에서만 보이게 하고,
+   그 안의 빛 덩어리(::before)를 offset-path: border-box 로 틀의 테두리를 따라 한 바퀴 돌린다(5초, 일정한 속도). 안쪽 글·버튼 위로는 덮이지 않는다.
+   offset-path 를 모르는 브라우저(@supports)·움직임 줄이기 설정이면 아예 그리지 않는다. 빛 색은 테마 토큰(--skx-input-glow) */
+.skx-search__glow {
+  display: none;
+}
+@supports (offset-path: border-box) {
+  @media (prefers-reduced-motion: no-preference) {
+    .skx-search__glow {
+      display: block;
+      position: absolute;
+      inset: 0;
+      padding: 2px;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+      -webkit-mask:
+        linear-gradient(var(--skx-ink-strong) 0 0) content-box,
+        linear-gradient(var(--skx-ink-strong) 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    .skx-search__glow::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 12rem;
+      height: 12rem;
+      border-radius: 50%;
+      background: var(--skx-input-glow);
+      offset-path: border-box;
+      offset-distance: 0%;
+      offset-anchor: 50% 50%;
+      animation: skx-glow-travel 5s linear infinite;
+    }
+    @keyframes skx-glow-travel {
+      to {
+        offset-distance: 100%;
+      }
+    }
+  }
 }
 .skx-search__field {
+  grid-area: field;
   display: block;
   width: 100%;
-  padding: 0.4rem 0 0 0.4rem;
+  padding: 0;
 }
 .skx-search__input {
   display: block;
   width: 100%;
-  height: 5rem;
+  height: 2.8rem;
   border: none;
   outline: none;
   resize: none;
   background: transparent;
   font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 400;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--skx-ink);
   line-height: 1.4;
 }
+/* 글자 대비는 themeHolo.test.ts 가 밑칠(--skx-frost-tint) 알파를 정할 때 --skx-ink-2 기준으로 지킨다 */
 .skx-search__input::placeholder {
-  color: var(--skx-gray-1);
+  color: var(--skx-ink-2);
 }
 .skx-search__actions {
+  grid-area: send;
   display: flex;
   justify-content: flex-end;
 }
+/* 보내기 — 시안 크기(40 → 2rem)의 원. 색은 지금 포인트색 그대로 */
 .skx-send {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.4rem;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   background: var(--skx-primary);
   border: none;
-  border-radius: var(--skx-radius-sm);
-  transition: filter 0.15s;
-  position: absolute;
-  right: 0.8rem;
-  bottom: 0.8rem;
+  border-radius: 50%;
+  transition:
+    filter 0.15s,
+    background-color 0.15s,
+    box-shadow 0.15s;
 }
 .skx-send:hover {
   filter: brightness(1.05);
+}
+/* 빈 입력 — 글자가 있으면(공백만은 빈 것) 위의 포인트색 채움, 없으면 옅은 중립 채움 + 테두리 + 옅은 화살표. disabled 로 막지 않고 aria-disabled 로만 알린다(클릭은 그대로,
+   빈 입력의 검색은 원래 아무 일도 하지 않는다). 랜딩·/papers 랜딩·결과·상세 검색바 모두 같은 규칙 */
+.skx-send[aria-disabled="true"] {
+  background: var(--skx-send-empty-bg);
+  box-shadow: inset 0 0 0 1px var(--skx-send-empty-line);
+}
+.skx-send[aria-disabled="true"]:hover {
+  filter: none;
+}
+.skx-send[aria-disabled="true"] img {
+  filter: var(--skx-send-empty-ico-filter);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-send {
+    transition: none;
+  }
 }
 .skx-send img {
   width: 1rem;
   height: auto;
   display: block;
+  filter: var(--skx-ico-on-accent-filter);
 }
+/* 랜딩 입력 상자의 보내기 — 입력창이 주인공이라 한 단계 작게(34 → 1.7rem), 아이콘도 비례. 휴대폰은 rem 이 줄어 2rem(약 29px)을 그대로 둔다 */
+.skx-search__box .skx-send {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+.skx-search__box .skx-send img {
+  width: 0.85rem;
+}
+@media (max-width: 768px) {
+  .skx-search__box .skx-send {
+    width: 2rem;
+    height: 2rem;
+  }
+  .skx-search__box .skx-send img {
+    width: 1rem;
+  }
+}
+/* 예시 질문 — 입력창 아래의 중간 칸(시안 136 보다 작게, 입력창보다 낮게). 3칸이 폭을 나눠 갖고 칸 사이 9(0.45rem),
+   위에 작은 말풍선 아이콘(글보다 옅게) · 아래 글 15px 가운데 정렬 최대 2줄, 안쪽 여백 위아래 18 · 좌우 16, 높이 106 이상(2줄 글이 들어간다).
+   흐림·윗선·반사광 없이 옅은 흰 막과 선만이고, 올릴 때만 살짝 밝아진다. 휴대폰은 가로 한 줄씩 */
 .skx-chips {
-  display: flex;
-  gap: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
   width: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .skx-chips > li {
-  flex: 1 1 0;
   min-width: 0;
   animation: skx-chip-rise 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
 }
@@ -806,7 +1824,7 @@ a:hover {
 @keyframes skx-chip-rise {
   from {
     opacity: 0;
-    transform: translateY(1.2rem);
+    transform: translateY(0.8rem);
   }
   to {
     opacity: 1;
@@ -818,32 +1836,246 @@ a:hover {
     animation: none;
   }
 }
+@media (max-width: 480px) {
+  .skx-chips {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.4rem;
+  }
+}
 .skx-chip {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   width: 100%;
-  min-height: 100%;
-  padding: 1rem;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-line);
-  border-radius: var(--skx-radius-md);
-  font-size: 0.7rem;
-  font-weight: 700;
+  height: 100%;
+  /* 2줄 글(아이콘 + 15px 2줄 + 여백 ≈ 105px)이 들어가는 높이로 맞춘다 — 두 패널의 글 길이가 달라도 칸 높이가 같아 갈래를 바꿔도 화면이 움직이지 않는다 */
+  min-height: 5.3rem;
+  padding: 0.9rem 0.8rem;
+  background: var(--skx-chip-fill);
+  border: 1px solid var(--skx-chip-line);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-chip-shadow);
+  backdrop-filter: var(--skx-chip-blur);
+  -webkit-backdrop-filter: var(--skx-chip-blur);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 400;
   color: var(--skx-ink);
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.4;
   transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+    background-color 0.15s,
+    border-color 0.15s;
 }
 .skx-chip:hover {
-  border-color: var(--skx-primary);
-  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.1);
+  background: var(--skx-chip-fill-hover);
+  border-color: var(--skx-frost-line);
+}
+.skx-chip__icon {
+  width: auto;
+  height: 0.95rem;
+  flex-shrink: 0;
+  display: block;
+  filter: var(--skx-ico-filter);
+  opacity: 0.55;
+}
+/* 휴대폰·태블릿은 rem 이 줄어(0.9rem) 0.75rem 이 11px 로 작아진다 — 13px 로 키운다 */
+@media (max-width: 768px) {
+  .skx-chip {
+    font-size: 0.9rem;
+  }
+}
+/* 휴대폰은 칸이 세로로 쌓이므로 아이콘을 글 왼쪽에 둔 가로 칸으로 한다 */
+@media (max-width: 480px) {
+  .skx-chip {
+    flex-direction: row;
+    justify-content: flex-start;
+    /* 두 패널의 글 길이가 달라도(1줄·2줄) 칸 높이가 같게 — 2줄 글이 들어가는 높이 */
+    min-height: 3.8rem;
+    padding: 0.6rem 0.8rem;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  .skx-chip__icon {
+    height: 1.1rem;
+  }
+}
+.skx-chip:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+/* 소장자료 패널의 작은 링크 줄 — 예시 칩 아래, 큰 배너가 아니라 글자 링크 */
+.skx-reco-link {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--skx-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.skx-reco-link:hover {
+  color: var(--skx-ink-strong);
+  text-decoration: underline;
+}
+.skx-reco-link:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-reco-link img {
+  width: auto;
+  height: 0.65rem;
+  display: block;
+}
+.skx-reco-link--ghost {
+  visibility: hidden;
+  pointer-events: none;
 }
 /* [E] 검색 입력 */
 
-/* [S] 탭 패널 + 논문 필터 */
+/* [S] + 메뉴 팝오버(시안) — 폭 226(11.3rem)·r12·짙은 초록 95%·흰 10% 테두리·약한 흐림, 항목 칸은 흰 10%: 제목 굵게 가운데 · 설명 · 칸 밖 안내.
+   랜딩 입력 상자에서는 상자 왼쪽 아래 가장자리에 붙는다(anchor 를 static 으로 둬 상자가 위치 기준) */
+.skx-search__box .rs-plus__anchor {
+  position: static;
+}
+.rs-plus__anchor .rs-plus__menu {
+  width: 11.3rem;
+  min-width: 0;
+  padding: 0.45rem;
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-md);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.skx-search__box .rs-plus__anchor .rs-plus__menu {
+  top: calc(100% - 1px);
+}
+.skx-search__box .rs-plus__palette,
+.skx-rsearch .rs-plus__palette {
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-md);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.rs-plus__menu .rs-plus__item {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.6rem;
+  background: var(--skx-frost-bg);
+  border-radius: var(--skx-radius-sm);
+}
+.rs-plus__menu .rs-plus__item:hover,
+.rs-plus__menu .rs-plus__item:focus-visible,
+.rs-plus__menu .rs-plus__item.is-selected {
+  background: var(--skx-frost-bg-hover);
+}
+.rs-plus__menu .rs-plus__icon {
+  display: none;
+}
+.rs-plus__menu .rs-plus__label {
+  text-align: center;
+}
+.rs-plus__hint {
+  margin: 0.4rem 0.2rem 0.1rem;
+  font-size: 0.5rem;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+}
+/* 랜딩 입력 상자의 아래 줄 — [+] 는 원 없이 글자만, 켜진 모드 칩은 시안 크기(높이 30 → 1.5rem).
+   + 글자는 버튼 칸 안쪽으로 들어앉아 있어 입력 글의 시작선과 어긋난다 — 칸을 왼쪽으로 내어 + 의 왼쪽 선을 입력 글에 맞춘다 */
+.skx-search__box .rs-plus__btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: -0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  font-weight: 300;
+}
+.skx-search__box .rs-plus__btn:hover:not(:disabled) {
+  background: var(--skx-frost-bg);
+}
+.skx-search__box .rs-plus__chip {
+  height: 1.5rem;
+  padding: 0 0.3rem 0 0.6rem;
+  border-radius: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+/* [E] + 메뉴 팝오버 */
+
+/* [S] 뿌연 유리 대체 — backdrop-filter 를 못 쓰거나(@supports) 투명도 줄이기 설정이면 불투명 면으로 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .skx-search__box,
+  .skx-seg,
+  .skx-rsearch,
+  .skx-newchat {
+    background: var(--skx-frost-solid);
+  }
+  .skx-chat-panel__inner {
+    background: var(--skx-white);
+  }
+  .skx-lnb,
+  .skx-lnb.is-lnb-collapsed {
+    background: var(--skx-white);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .skx-search__box,
+  .skx-seg,
+  .skx-chip,
+  .skx-rsearch,
+  .skx-newchat {
+    background: var(--skx-frost-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .skx-chat-panel__inner {
+    background: var(--skx-white);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  /* 큰 틀·읽는 칸은 흐림이 없어 투명도만 거둔다(AI 패널은 핑크에서만 흐림이 있어 같이 끈다) */
+  .skx-rframe {
+    background: var(--skx-white);
+  }
+  .skx-aip {
+    background: var(--skx-frost-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .skx-pai-main,
+  .skx-pai-refs,
+  .skx-pick__main,
+  .skx-pick__book {
+    background: var(--skx-white);
+  }
+  .skx-lnb,
+  .skx-lnb.is-lnb-collapsed {
+    background: var(--skx-white);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .rs-plus__anchor .rs-plus__menu,
+  .skx-search__box .rs-plus__palette,
+  .skx-rsearch .rs-plus__palette {
+    background: var(--skx-white);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+/* [E] 뿌연 유리 대체 */
+
+/* [S] 탭 패널 */
 .skx-panel {
   display: flex;
   flex-direction: column;
@@ -854,225 +2086,11 @@ a:hover {
 .skx-panel[hidden] {
   display: none;
 }
-.skx-select {
-  position: relative;
-}
-.skx-select__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 8.5rem;
-  height: 2.4rem;
-  padding: 0 0.8rem;
-  background: var(--skx-white);
-  border: none;
-  border-radius: 2.6rem;
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  z-index: 6;
-  position: relative;
-}
-.skx-select__arrow {
-  width: auto;
-  height: 0.6rem;
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-.skx-select.is-open .skx-select__arrow {
-  transform: rotate(180deg);
-}
-.skx-select__menu {
-  position: absolute;
-  top: calc(100% - 1.2rem);
-  left: 0;
-  z-index: 5;
-  width: 8.5rem;
-  margin: 0;
-  list-style: none;
-  background: var(--skx-white);
-  border-radius: 0 0 var(--skx-radius-md) var(--skx-radius-md);
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.12);
-  display: none;
-  padding: 1.2rem 0.4rem 0.4rem;
-  max-height: 12rem;
-  overflow-y: auto;
-}
-.skx-select.is-open .skx-select__menu {
-  display: block;
-}
-.skx-select__option {
-  display: block;
-  width: 100%;
-  padding: 0.4rem 0.6rem;
-  background: none;
-  border: none;
-  border-radius: var(--skx-radius-sm);
-  text-align: left;
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  transition: background-color 0.12s;
-}
-.skx-select__option:hover {
-  background: rgba(79, 70, 229, 0.06);
-}
-.skx-select__option.is-selected {
-  background: rgba(79, 70, 229, 0.08);
-  color: var(--skx-ink);
-  font-weight: 600;
-}
-.skx-filters {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  width: 100%;
-  padding: 0;
-  background: rgba(79, 70, 229, 0.12);
-  border-radius: 2.2rem;
-}
-.skx-filter-chip__wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.25rem 0;
-}
-.skx-filter-chip {
-  height: 1.85rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0 0.6rem 0 0.8rem;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 2rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-filter-chip__x {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 0.8rem;
-  height: 0.8rem;
-  padding: 0;
-  background: none;
-  border: none;
-}
-.skx-filter-chip__x img {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-}
-/* [E] 탭 패널 + 논문 필터 */
 
-/* [S] 추천 배너 */
-.skx-recommend {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  width: 100%;
-  padding: 1.2rem;
-  border: none;
-  border-radius: var(--skx-radius-lg);
-  background: var(--skx-border-c2);
-  box-shadow: var(--skx-shadow-banner);
-  text-align: left;
-  overflow: hidden;
-  transition:
-    transform 0.12s,
-    box-shadow 0.12s;
-}
-.skx-recommend:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 6px 16px 0 rgba(0, 0, 0, 0.06),
-    0 8px 28px 0 rgba(79, 70, 229, 0.12);
-}
-/* 내부를 덮는 흰 패널 — 2px 테두리만 남겨, 글로우가 그 띠 안에서만 보이게 한다 */
-.skx-recommend__panel {
-  position: absolute;
-  inset: 2px;
-  border-radius: calc(var(--skx-radius-lg) - 2px);
-  background: var(--skx-white);
-  pointer-events: none;
-  z-index: 1;
-}
-/* 공통: 글로우 오브 — 추천 배너·채팅 버튼·논문 채팅 버튼 3곳에서 동일 radial-gradient + motion-path 공유 */
-.skx-recommend__glow,
-.skx-btn-talk__glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 20rem;
-  height: 20rem;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle closest-side,
-    rgba(255, 255, 255, 0.95) 0%,
-    var(--skx-border-c1) 26%,
-    rgba(214, 215, 248, 0.45) 48%,
-    rgba(214, 215, 248, 0) 74%
-  );
-  offset-path: border-box;
-  offset-distance: 0%;
-  offset-anchor: 50% 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-.skx-recommend__glow {
-  animation: skx-glow-travel 5s linear infinite;
-  opacity: 0.9;
-}
-@keyframes skx-glow-travel {
-  to {
-    offset-distance: 100%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .skx-recommend__glow {
-    animation: none;
-  }
-}
-/* 콘텐츠를 흰 패널 위로 */
-.skx-recommend__icon,
-.skx-recommend__label,
-.skx-recommend__arrow {
-  position: relative;
-  z-index: 2;
-}
-.skx-recommend__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.8rem;
-  background: var(--skx-search-grad);
-  border-radius: var(--skx-radius-md);
-  flex-shrink: 0;
-}
-.skx-recommend__icon img {
-  width: 1.25rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-recommend__label {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--skx-ink);
-}
-.skx-recommend__arrow {
-  width: 0.65rem;
-  height: 1.05rem;
-  flex-shrink: 0;
-}
-/* [E] 추천 배너 */
+/* 메뉴는 다른 내용 위에 겹쳐 뜨므로 불투명 면(--skx-white)에 테두리. 이 드롭다운은 랜딩의 맨 아래 줄이라 아래에는
+   푸터뿐이고 낮은 창에서는 자리가 모자란다 — 위로 연다 */
+
+/* [E] 탭 패널 */
 
 /* [S] 신작도서 */
 .skx-newbooks {
@@ -1170,7 +2188,7 @@ a:hover {
   opacity: 0.6;
   padding: 0.4rem 0.3rem;
   background: var(--skx-white);
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 .skx-book__spine {
   position: relative;
@@ -1204,26 +2222,98 @@ a:hover {
   width: 1rem;
   height: 1rem;
   display: none;
-  animation: skx-spin 1s linear infinite;
 }
 .skx-book.is-loading .skx-book__spinner {
   display: block;
-}
-@keyframes skx-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 /* [E] 신작도서 */
 
 /* [S] 히스토리 아이템 활성 상태 */
 .skx-history-item.is-active {
-  background: rgba(79, 70, 229, 0.1);
+  background: var(--skx-border-c1);
 }
 .skx-history-item.is-active .skx-history-item__query {
   font-weight: 500;
 }
 /* [E] 히스토리 아이템 활성 상태 */
+
+/* [S] 설정(톱니)과 팝오버 — 사이드바 맨 아래(components/SettingsMenu.vue). 팝오버는 톱니 위쪽, 사이드바 폭 안에 열린다(사이드바가 overflow: hidden 이라 폭 안이어야 잘리지 않는다).
+   색은 모두 토큰이다 — 켜진 칸은 포인트색(다크는 산호, 핑크는 검정) 채움 + 그 위 글(--skx-on-accent) */
+.skx-settings {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.4rem 1.2rem 1rem;
+}
+.skx-set {
+  position: relative;
+  display: inline-flex;
+}
+.skx-set__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  z-index: 20;
+  width: 13.6rem;
+  padding: 0.8rem;
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+.skx-set__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--skx-ink);
+  line-height: 1.5;
+}
+.skx-set__label {
+  margin: 0 0 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--skx-gray-1);
+  line-height: 1.5;
+}
+.skx-set__seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.1rem;
+  padding: 0.1rem;
+  background: var(--skx-frost-bg-soft);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-pill);
+}
+.skx-set__opt {
+  padding: 0.35rem 0;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.skx-set__opt:hover:not(.is-active) {
+  background: var(--skx-frost-bg);
+  color: var(--skx-ink);
+}
+.skx-set__opt.is-active {
+  background: var(--skx-accent);
+  color: var(--skx-on-accent);
+}
+.skx-set__opt:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-set__opt {
+    transition: none;
+  }
+}
+/* [E] 설정(톱니)과 팝오버 */
 
 /* [S] 검색결과 페이지 레이아웃 */
 .skx-result {
@@ -1236,15 +2326,21 @@ a:hover {
 /* [E] 검색결과 페이지 레이아웃 */
 
 /* [S] 결과 검색바 */
+/* 시안(1920 프레임, 1px = 0.05rem): 폭 본문 전체 · 높이 64 · 알약 · 안쪽 여백 오른쪽 12(보내기 40 원)/왼쪽 24 · 질의 18px Medium. 아래 큰 틀과 간격 24 */
 .skx-rsearch {
   display: flex;
   align-items: center;
   gap: 0.8rem;
   width: 100%;
-  height: 4.4rem;
-  padding: 0.4rem 0.8rem 0.4rem 1.6rem;
-  background: var(--skx-white);
-  border-radius: var(--skx-radius-lg);
+  height: 3.2rem;
+  padding: 0 0.6rem 0 1.2rem;
+  position: relative;
+  z-index: 3;
+  background: var(--skx-frost-fill);
+  box-shadow: var(--skx-frost-hilite);
+  backdrop-filter: var(--skx-frost-blur);
+  -webkit-backdrop-filter: var(--skx-frost-blur);
+  border-radius: var(--skx-radius-pill);
 }
 .skx-rsearch__input {
   flex: 1;
@@ -1275,18 +2371,7 @@ a:hover {
 /* [E] 결과 컨텐츠 카드 */
 
 /* [S] AI 검색 결과 섹션 */
-.skx-ai-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-ai-header {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  width: 100%;
-}
+
 .skx-ai-header__title {
   margin: 0;
   font-size: 1.2rem;
@@ -1294,76 +2379,7 @@ a:hover {
   color: var(--skx-ink);
   white-space: nowrap;
 }
-.skx-ai-header__keywords {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--skx-gray-1);
-}
-.skx-ai-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  padding: 0.8rem;
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: 0.8rem;
-}
-.skx-ai-panel__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4rem 0.8rem;
-}
-.skx-ai-panel__top .skx-icon-btn {
-  width: 1.8rem;
-  height: 1.8rem;
-  background: transparent;
-  border-radius: 50%;
-}
-.skx-ai-panel__top .skx-icon-btn:hover {
-  background: none;
-}
-.skx-ai-panel__top .skx-icon-btn img {
-  width: 1.2rem;
-  height: auto;
-  top: 0;
-}
-.skx-fb-btn {
-  transition:
-    background-color 0.15s,
-    opacity 0.15s;
-}
-.skx-fb-btn.is-active {
-  background: rgba(79, 70, 229, 0.12) !important;
-}
-.skx-fb-btn.is-active img {
-  filter: invert(27%) sepia(84%) saturate(5000%) hue-rotate(252deg)
-    brightness(85%) contrast(95%);
-}
-.skx-fb-btn.is-inactive {
-  opacity: 0.35;
-}
-.skx-ai-panel__logo-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-ai-panel__logo {
-  width: 1.8rem;
-  height: 1.8rem;
-  display: block;
-  flex-shrink: 0;
-  object-fit: contain;
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.1s;
-}
-.skx-ai-panel__title-text {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.28s;
-}
+
 @keyframes skx-pop-up {
   0% {
     opacity: 0;
@@ -1382,26 +2398,12 @@ a:hover {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .skx-ai-panel__logo,
-  .skx-ai-panel__title-text,
+  .skx-aip__logo,
+  .skx-aip__title,
   .skx-rcd-ai__logo,
-  .skx-rcd-ai__label,
-  .skx-pai__logo,
-  .skx-pai__hd-text {
+  .skx-rcd-ai__label {
     animation: none;
   }
-}
-.skx-ai-panel__fb {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-.skx-ai-panel__fb-label {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-gray-2);
-  white-space: nowrap;
-  margin-right: 0.55rem;
 }
 .skx-ai-answer-wrap {
   position: relative;
@@ -1420,7 +2422,7 @@ a:hover {
   height: 3.5rem;
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0),
+    transparent,
     var(--skx-white) 70%
   );
   pointer-events: none;
@@ -1474,21 +2476,6 @@ a:hover {
     opacity: 0;
   }
 }
-.skx-ai-answer__list {
-  padding-left: 1.35rem;
-  list-style: disc;
-  opacity: 0;
-  transition: opacity 0.4s ease 0.2s;
-}
-.skx-ai-answer__list.is-visible {
-  opacity: 1;
-}
-.skx-ai-answer__list li {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
 .skx-ai-expand-bar {
   position: sticky;
   bottom: 0;
@@ -1504,7 +2491,7 @@ a:hover {
   background: none;
   cursor: pointer;
   width: 100%;
-  background: #fff;
+  background: var(--skx-white);
 }
 .skx-ai-expand-bar.is-visible {
   display: flex;
@@ -1527,6 +2514,535 @@ a:hover {
 }
 /* [E] AI 검색 결과 섹션 */
 
+/* [S] 검색 결과 공통 틀 — 소장자료·논문 결과가 같이 쓴다(시안: 큰 틀 안에 AI 패널 → 목록 머리 → 결과 카드).
+   큰 틀은 유리(사이드바와 같은 짙은 초록 반투명), 그 안의 AI 패널은 한 겹 가라앉은 유리, 글을 읽는 칸은 읽기용 짙은 유리 */
+.skx-rframe {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  padding: 1.2rem;
+  background: var(--skx-frame-bg);
+  /* 모바일은 html 글자 크기가 줄어(0.9rem) rem 반경이 작아진다 — 시안의 24px 를 그대로 둔다 */
+  border-radius: 24px;
+}
+@media (max-width: 768px) {
+  .skx-rframe {
+    gap: 1.2rem;
+    padding: 0.8rem;
+    border-radius: 16px;
+  }
+}
+/* 큰 틀의 테두리 띠는 위가 밝고 아래로 옅어지는 흰 그라데이션이 아니라 흰 8% 한 가지 얇은 선이다 */
+.skx-rframe::before {
+  background: var(--skx-frame-line);
+}
+/* 사이드바·AI 패널의 테두리 띠는 각자의 옅기(--skx-side-edge·--skx-aip-edge)로 */
+.skx-lnb::before,
+.skx-chat-panel__inner::before {
+  background: var(--skx-side-edge);
+}
+.skx-aip::before {
+  background: var(--skx-aip-edge);
+}
+.skx-rlist {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* AI 패널 — 머리(로고 + 제목 | 오른쪽 DeepRead 안내) 아래 왼쪽 글 : 오른쪽 = 2 : 1. 칸 수 전환은 화면 폭이 아니라 이 패널 폭으로 정한다 */
+.skx-aip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  background: var(--skx-frost-panel);
+  box-shadow: var(--skx-aip-shadow);
+  backdrop-filter: var(--skx-aip-blur);
+  -webkit-backdrop-filter: var(--skx-aip-blur);
+  border-radius: 16px;
+  container-type: inline-size;
+}
+.skx-aip__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  padding: 0.4rem 0.8rem;
+}
+.skx-aip__logo {
+  width: 1.65rem;
+  height: 1.6rem;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  margin-right: -0.4rem;
+  animation: skx-pop-up 0.6s ease-out both;
+  animation-delay: 0.1s;
+}
+.skx-aip__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--skx-ink-strong);
+  animation: skx-pop-up 0.6s ease-out both;
+  animation-delay: 0.28s;
+}
+.skx-aip__hint {
+  margin: 0 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--skx-ink);
+  text-align: right;
+}
+.skx-aip__hint strong {
+  font-weight: 700;
+  color: var(--skx-accent);
+}
+.skx-aip__body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: stretch;
+}
+.skx-aip__notice {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.4rem 0.8rem 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--skx-gray-1);
+}
+@container (max-width: 42rem) {
+  .skx-aip__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .skx-aip {
+    padding: 0.6rem;
+  }
+  .skx-aip__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .skx-aip__hint {
+    margin-left: 0;
+    flex-basis: 100%;
+    text-align: left;
+  }
+}
+
+/* 읽는 칸 — AI 요약·추천 이유(왼쪽)·참고 논문 목록·추천 1권(오른쪽). 읽기용 짙은 유리(--skx-read-surface)이고 안의 글은 본문 거의 흰색이다.
+   글 톤은 이 칸 범위에서만 다시 정의한다(밖으로 번지지 않는다) */
+.skx-pai-main,
+.skx-pai-refs,
+.skx-pick__main,
+.skx-pick__book {
+  position: relative;
+  min-width: 0;
+  background: var(--skx-read-surface);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 0.6rem;
+  --skx-ink: var(--skx-read-ink);
+  --skx-ink-2: var(--skx-read-ink-2);
+  --skx-gray-1: var(--skx-read-gray-1);
+}
+.skx-pick__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding: 1.2rem;
+}
+.skx-pick__book {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem;
+}
+/* [E] 검색 결과 공통 틀 */
+
+/* [S] 결과 카드(ResultCard) — 소장자료 목록·논문 목록·추천 1권이 같은 해부도.
+   시안(1px = 0.05rem): 표지 160×168 r8 · 가운데(칩 줄 → 제목 24px → 저자 → 서지 줄) · 오른쪽 버튼 열 168(위: 원문 보기 108×50 + 인용 50×50 / 아래: DeepRead 168×48),
+   카드 아래 옅은 구분선·카드 사이 24 */
+.skx-rc {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) 8.4rem;
+  grid-template-areas: "thumb main actions";
+  gap: 0.8rem;
+  /* 카드 아래 여백 24 → 나눔선 → 다음 카드 위 여백 24(목록 컨테이너의 gap) — 선 위아래가 같다 */
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--skx-rule);
+  cursor: pointer;
+}
+.skx-rc:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.skx-rc__thumb {
+  grid-area: thumb;
+  position: relative;
+  width: 8rem;
+  height: 8.4rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+.skx-rc__thumb > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.skx-rc .skx-rc__thumb .book-cover {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  background: transparent;
+}
+.skx-rc .skx-rc__thumb .cover-img {
+  object-fit: contain;
+}
+.skx-rc__badge {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  padding: 0 0.4rem;
+  border-radius: var(--skx-radius-pill);
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.skx-rc__main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.skx-rc__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 분류(KDC) 칩 — 키워드 칩(청록 면 + #)·관련도 알약(면)과 달리 테두리만 있는 옅은 칩 */
+.skx-rc__kdc {
+  display: inline-flex;
+  align-items: center;
+  height: 1.3rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--skx-frost-line);
+  border-radius: var(--skx-radius-pill);
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--skx-gray-1);
+  white-space: nowrap;
+}
+.skx-rc__title {
+  display: -webkit-box;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--skx-ink-strong);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+/* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로(누름은 카드 전체로 번져 열린다) */
+.skx-rc__title-btn {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.skx-rc__title-btn:hover {
+  text-decoration: underline;
+}
+.skx-rc__title-btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
+}
+.skx-rc__author {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--skx-ink);
+}
+.skx-rc__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.skx-rc__meta-text {
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+}
+.skx-rc__arrow {
+  width: 0.8rem;
+  height: 0.8rem;
+  display: block;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+.skx-rc__actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  width: 8.4rem;
+  cursor: default;
+}
+.skx-rc__row {
+  display: flex;
+  gap: 0.4rem;
+}
+.skx-rc .skx-btn-pview {
+  flex: 1;
+  min-height: 2.5rem;
+  background: var(--skx-frost-bg);
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+}
+.skx-rc .skx-btn-pview:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.skx-rc .skx-btn-pbmark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.4rem;
+}
+.skx-rc .skx-btn-ptalk {
+  min-height: 2.4rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+}
+/* 좁은 칸(추천 패널 오른쪽)과 휴대폰·태블릿 — 표지 옆에 글, 버튼 열은 아래 한 줄 */
+.skx-rc--compact {
+  grid-template-columns: 6rem minmax(0, 1fr);
+  grid-template-areas:
+    "thumb main"
+    "actions actions";
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.skx-rc--compact .skx-rc__thumb {
+  width: 6rem;
+  height: 6.8rem;
+}
+.skx-rc--compact .skx-rc__title {
+  font-size: 1rem;
+}
+.skx-rc--compact .skx-rc__actions {
+  flex-direction: row;
+  width: 100%;
+}
+.skx-rc--compact .skx-btn-ptalk {
+  order: -1;
+  flex: 1;
+  width: auto;
+}
+.skx-rc--compact .skx-rc__row {
+  flex: 1;
+}
+@media (max-width: 768px) {
+  .skx-rc {
+    grid-template-columns: 5.6rem minmax(0, 1fr);
+    grid-template-areas:
+      "thumb main"
+      "actions actions";
+  }
+  .skx-rc__thumb {
+    width: 5.6rem;
+    height: 6.2rem;
+  }
+  .skx-rc__title {
+    font-size: 1.1rem;
+  }
+  .skx-rc__actions {
+    flex-direction: row;
+    width: 100%;
+  }
+  .skx-rc .skx-btn-ptalk {
+    order: -1;
+    flex: 1;
+    width: auto;
+  }
+  .skx-rc__row {
+    flex: 1;
+  }
+}
+/* [E] 결과 카드 */
+
+/* [S] 결과 목록 머리(ResultListHead) — 왼쪽 '총 N 건'(숫자만 포인트색), 오른쪽 정렬·개수 */
+.skx-rhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+}
+.skx-rhead__count {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--skx-ink);
+}
+.skx-rhead__count strong {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.skx-rhead__right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+}
+/* [E] 결과 목록 머리 */
+
+/* [S] 길어질 수 있는 AI 글 패널(ClampedPanel) */
+/* collapsedRem 은 보이는 글 높이다. 넘칠 때만(.is-clamped) 그 영역의 아래 3rem 이 완전히 투명해질 때까지 흐려지고,
+   [더보기]/[접기] 는 그 아래 따로 놓인 띠(.skx-clamp__foot)에 있다 — 글이 버튼 뒤로 비치지 않는다.
+   흐림은 배경색을 덮는 그라데이션이 아니라 mask(알파만 쓰므로 불투명 토큰 하나면 된다)라 유리·불투명 어느 면 위에서도 같다 */
+.skx-clamp {
+  position: relative;
+}
+.skx-clamp__clip {
+  /* hidden 이 아니라 clip — Ctrl+F·초점 이동으로 상자가 스스로 스크롤돼 글이 밀려 올라가지 않게 */
+  overflow: clip;
+  transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.skx-clamp.is-clamped .skx-clamp__clip {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    var(--skx-ink-strong) calc(100% - 3rem),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    var(--skx-ink-strong) calc(100% - 3rem),
+    transparent
+  );
+}
+.skx-clamp__foot {
+  display: flex;
+  justify-content: center;
+  padding: 0.2rem 0 0.8rem;
+}
+.skx-clamp__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  cursor: pointer;
+}
+.skx-clamp__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
+}
+.skx-clamp__btn img {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: block;
+  transition: transform 0.28s ease;
+}
+.skx-clamp.is-expanded .skx-clamp__btn img {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-clamp__clip,
+  .skx-clamp__btn img {
+    transition: none;
+  }
+}
+/* [E] 길어질 수 있는 AI 글 패널 */
+
+/* [S] SKOVIX 추천 1권 — 도서 AI 영역. 왼쪽: 왜 이 책인가·이 책에서 얻을 수 있는 것 / 오른쪽: 1위 도서 카드.
+   임시 비주얼이다 — 디자이너 Figma 가 나오면 이 구간만 고친다 */
+
+.skx-pick__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.skx-pick__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--skx-ink-strong);
+}
+.skx-pick__text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  /* 서버 글의 문단 나눔(빈 줄)을 살린다 */
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.skx-pick__text--muted {
+  color: var(--skx-gray-1);
+}
+
+.skx-pick__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-accent);
+}
+
+/* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로 */
+
+/* [다시 시도] — 안내 글 끝의 글자 버튼 */
+.skx-pick__retry {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--skx-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.skx-pick__retry:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
+}
+
+/* [E] SKOVIX 추천 1권 */
+
 /* [S] 도서 결과 목록 */
 .skx-book-list {
   display: flex;
@@ -1537,249 +3053,41 @@ a:hover {
   display: flex;
   gap: 0.8rem;
   padding-bottom: 1.2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--skx-line);
 }
-.skx-book-list .skx-book-card:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-.skx-book-card__thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 8rem;
-  height: 8rem;
-  flex-shrink: 0;
-  background: var(--skx-white);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.4rem;
-  overflow: hidden;
-  align-self: stretch;
-}
-.skx-book-card__thumb img {
-  width: 5.65rem;
-  height: 6rem;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-}
-.skx-book-card__body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.4rem;
-  min-width: 0;
-}
-.skx-book-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-book-card__tags {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
+
+/* 칩은 한 줄이고, 좁은 칸보다 길면 칸 폭에서 말줄임으로 자른다(max-width: 100%) — 길고 안 끊기는 키워드 칩이 휴대폰 폭을 넘어 문서 가로 폭을 늘리지 않게 */
 .skx-tag {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
   height: 1.3rem;
   padding: 0 0.6rem;
+  overflow: hidden;
   border-radius: 1.8rem;
   font-size: 0.6rem;
+  line-height: 1.3rem;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
-.skx-tag--score {
-  background: rgba(51, 51, 51, 0.1);
-  color: var(--skx-ink);
-  font-weight: 700;
-}
+
 .skx-tag--keyword {
-  background: rgba(79, 70, 229, 0.1);
+  background: var(--skx-glass-teal);
   color: var(--skx-primary);
   font-weight: 600;
   border-radius: 2.2rem;
 }
-.skx-tag--collection {
-  background: var(--skx-primary);
-  color: #fff;
-  font-weight: 700;
-}
-/* 공통: 북마크 아이콘 버튼 (.skx-reco-info__bkmark 와 동일 디자인·크기 공유) */
-.skx-book-card__bookmark,
-.skx-reco-info__bkmark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: none;
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.skx-book-card__bookmark img,
-.skx-reco-info__bkmark img {
-  width: 0.7rem;
-  height: auto;
-  display: block;
-}
-.skx-book-card__bookmark:not(.is-active):hover img,
-.skx-reco-info__bkmark:not(.is-active):hover img {
-  filter: brightness(0.9);
-}
-.skx-book-card__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-book-card__title-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.4rem;
-}
-.skx-book-card__title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-avail {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  height: 1rem;
-}
-.skx-avail__dot {
-  width: 0.2rem;
-  height: 0.2rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.skx-avail--ok .skx-avail__dot {
-  background: #17b93a;
-}
-.skx-avail--no .skx-avail__dot {
-  background: var(--skx-gray-2);
-}
-.skx-avail__label {
-  font-size: 0.6rem;
-  font-weight: 700;
-}
-.skx-avail--ok .skx-avail__label {
-  color: #17b93a;
-}
-.skx-avail--no .skx-avail__label {
-  color: var(--skx-gray-2);
-}
-.skx-book-card__info-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
+
 .skx-dot {
   display: inline-block;
   width: 0.2rem;
   height: 0.2rem;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--skx-gray-2);
   flex-shrink: 0;
 }
-.skx-meta-text {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-}
-.skx-meta-role {
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-}
-.skx-book-card__actions {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-  margin-top: 0.4rem;
-}
-.skx-btn-chat {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  width: 8rem;
-  padding: 0.6rem 0.4rem;
-  background: var(--skx-primary);
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: filter 0.15s;
-}
-.skx-btn-chat:hover {
-  filter: brightness(1.08);
-}
-.skx-btn-chat img {
-  width: 0.7rem;
-  height: 0.7rem;
-  display: block;
-  filter: brightness(10) grayscale(1);
-}
-.skx-btn-chat__label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-white);
-}
-.skx-btn-loan {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 4rem;
-  padding: 0.6rem 0.8rem;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-primary);
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-primary);
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s;
-}
-.skx-btn-loan:hover {
-  background: rgba(79, 70, 229, 0.04);
-}
-.skx-btn-loan.is-loaning {
-  background: rgba(79, 70, 229, 0.08);
-  border-color: rgba(79, 70, 229, 0.3);
-  color: var(--skx-primary);
-}
-.skx-btn-loan.is-loaning:hover {
-  background: rgba(79, 70, 229, 0.14);
-}
-.skx-btn-read {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 4rem;
-  padding: 0.6rem 0.8rem;
-  background: rgba(0, 0, 0, 0.05);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-.skx-btn-read:hover {
-  background: rgba(0, 0, 0, 0.08);
-}
+
 .skx-book-expand {
   display: flex;
   align-items: center;
@@ -1787,14 +3095,14 @@ a:hover {
   gap: 0.4rem;
   width: 100%;
   padding: 0.8rem;
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--skx-glass-teal);
   border: none;
   border-radius: 0.4rem;
   cursor: pointer;
   transition: background-color 0.15s;
 }
 .skx-book-expand:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--skx-border-c1);
 }
 .skx-book-expand__label {
   font-size: 1rem;
@@ -1811,12 +3119,7 @@ a:hover {
 .skx-book-expand[aria-expanded="true"] .skx-book-expand__arrow {
   transform: rotate(180deg);
 }
-.skx-book-card--hidden {
-  display: none;
-}
-.skx-book-card--hidden.is-visible {
-  display: flex;
-}
+
 /* [E] 도서 결과 목록 */
 
 /* [S] 검색결과 상세 페이지 */
@@ -1846,455 +3149,6 @@ a:hover {
   line-height: 1.5;
 }
 
-/* 섹션 제목 */
-.skx-section-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-
-/* [S] AI 큐레이션 */
-.skx-curation {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-curation-panel {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: 0.8rem;
-  padding: 0.8rem;
-  min-height: 12rem;
-  position: relative;
-  overflow: visible;
-}
-.skx-vtabs-col {
-  flex-shrink: 0;
-  width: 12rem;
-  display: flex;
-  align-items: center;
-  z-index: 2;
-}
-.skx-vtabs {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-vtabs__slider {
-  position: absolute;
-  left: 0;
-  right: -0.8rem;
-  height: 2.8rem;
-  background: var(--skx-primary);
-  border-radius: 0.6rem;
-  top: 0;
-  transform: translateY(0);
-  transition: transform 0.38s cubic-bezier(0.34, 1.32, 0.42, 1);
-  z-index: 0;
-  pointer-events: none;
-}
-.skx-vtabs__slider::after {
-  content: "";
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 0.35rem solid transparent;
-  border-bottom: 0.35rem solid transparent;
-  border-left: 0.45rem solid var(--skx-primary);
-}
-.skx-vtabs.is-second .skx-vtabs__slider {
-  transform: translateY(3.6rem);
-}
-.skx-vtab {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 0.8rem;
-  height: 2.8rem;
-  background: none;
-  border: none;
-  border-radius: 0.6rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  cursor: pointer;
-  transition: color 0.25s;
-  white-space: nowrap;
-  text-align: left;
-}
-.skx-vtab.is-active {
-  color: var(--skx-white);
-}
-.skx-curation-content {
-  flex: 1;
-  min-width: 0;
-  padding-left: 0.8rem;
-  height: 10rem;
-  overflow-y: auto;
-}
-.skx-curation-card {
-  background: var(--skx-white);
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 100%;
-}
-.skx-curation-text {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #1a1a1a;
-  line-height: 1.5;
-}
-/* [E] AI 큐레이션 */
-
-/* [S] 상세 정보 */
-.skx-detail-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-detail-info__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.2rem;
-  padding: 2rem;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.8rem;
-}
-.skx-info-row {
-  display: flex;
-  gap: 0;
-  align-items: flex-start;
-}
-.skx-info-label {
-  flex-shrink: 0;
-  width: 6rem;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #666;
-  line-height: 1.5;
-}
-.skx-info-value {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #333;
-  line-height: 1.5;
-  word-break: break-all;
-}
-/* [E] 상세 정보 */
-
-/* [S] AI 연관 도서 추천 */
-.skx-reco {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-.skx-reco-panel {
-  display: grid;
-  grid-template-columns: 17.65rem 1fr;
-  gap: 1rem;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 0.8rem;
-  padding: 1.2rem;
-  align-items: start;
-}
-.skx-reco-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-reco-item {
-  animation: skx-drop-in 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.skx-reco-item:nth-child(5) {
-  animation-delay: 0.15s;
-}
-.skx-reco-item:nth-child(4) {
-  animation-delay: 0.3s;
-}
-.skx-reco-item:nth-child(3) {
-  animation-delay: 0.45s;
-}
-.skx-reco-item:nth-child(2) {
-  animation-delay: 0.6s;
-}
-.skx-reco-item:nth-child(1) {
-  animation-delay: 0.75s;
-}
-@keyframes skx-drop-in {
-  0% {
-    opacity: 0;
-    transform: translateY(32px) scale(0.95);
-  }
-  75% {
-    opacity: 1;
-    transform: translateY(-2px) scale(1.01);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skx-reco-item {
-    animation: none;
-  }
-}
-.skx-reco-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 3rem;
-  border-radius: 0.8rem 0 0 0.8rem;
-  background: rgba(79, 70, 229, 0.1);
-  padding: 0.2rem 0 0.2rem 4rem;
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: inset 0 2px 4px rgba(79, 70, 229, 0.1);
-  transition: background 0.2s;
-  border: none;
-  width: 100%;
-  text-align: left;
-}
-.skx-reco-item:hover {
-  background: rgba(79, 70, 229, 0.18);
-}
-.skx-reco-item.is-active {
-  background: var(--skx-primary);
-}
-.skx-reco-item.is-active:hover {
-  background: var(--skx-primary);
-  filter: brightness(1.06);
-}
-.skx-reco-item__thumb {
-  position: absolute;
-  left: 1.4rem;
-  top: 0;
-  width: 1.6rem;
-  height: auto;
-  opacity: 0;
-  display: block;
-  object-fit: cover;
-  transition: opacity 0.2s;
-  border-radius: 0.1rem;
-}
-.skx-reco-item.is-active .skx-reco-item__thumb {
-  opacity: 1;
-}
-.skx-reco-item__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
-  background: #fefefe;
-  border-radius: 0.6rem 0 0 0.6rem;
-  padding: 0.4rem 0.4rem 0.4rem 0.8rem;
-  height: 100%;
-}
-.skx-reco-item__name {
-  flex: 1;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  line-height: 1.5;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.skx-reco-item.is-active .skx-reco-item__name {
-  color: var(--skx-primary);
-}
-.skx-reco-item__score {
-  flex-shrink: 0;
-  font-size: 0.6rem;
-  font-weight: 400;
-  color: var(--skx-gray-1);
-}
-
-/* 우측 - 빈 상태 */
-.skx-reco-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.2rem;
-  min-height: 16rem;
-  min-width: 0;
-  background: var(--skx-white);
-  border-radius: 0.8rem;
-  padding: 1.2rem;
-}
-.skx-reco-empty[hidden] {
-  display: none;
-}
-.skx-reco-empty__logo {
-  width: 5.2rem;
-  height: 5.1rem;
-  display: block;
-}
-.skx-reco-empty__text {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-
-/* 우측 - 도서 상세 */
-.skx-reco-detail {
-  display: flex;
-  gap: 1.2rem;
-  background: var(--skx-white);
-  border-radius: 0.8rem;
-  padding: 1.2rem;
-  min-height: 16rem;
-  max-height: 16rem;
-  min-width: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.skx-reco-detail[hidden] {
-  display: none;
-}
-.skx-reco-cover {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 11.6rem;
-  flex-shrink: 0;
-  background: var(--skx-white);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.4rem;
-  padding: 1.2rem;
-}
-.skx-reco-cover img {
-  width: 9.2rem;
-  height: 9.2rem;
-  display: block;
-  object-fit: cover;
-}
-.skx-reco-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-reco-info__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.4rem;
-}
-.skx-reco-info__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.skx-reco-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
-}
-.skx-reco-type-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-reco-type {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-reco-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-}
-.skx-reco-author {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.skx-reco-desc {
-  margin-top: 0.4rem;
-  padding: 1.2rem;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 0.6rem;
-}
-.skx-reco-desc__text {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
-/* [E] AI 연관 도서 추천 */
-
-/* [S] 인입 애니메이션 (아래에서 위로 쌓이듯) */
-@keyframes skx-rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(1.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@keyframes skx-drop-in {
-  from {
-    opacity: 0;
-    transform: translateY(-1.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.skx-anim {
-  animation: skx-rise-in 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
-}
-.skx-anim--1 {
-  animation-delay: 0.05s;
-}
-.skx-anim--2 {
-  animation-delay: 0.15s;
-}
-.skx-anim--3 {
-  animation-delay: 0.25s;
-}
-.skx-anim--4 {
-  animation-delay: 0.35s;
-}
-@media (prefers-reduced-motion: reduce) {
-  .skx-anim {
-    animation: none;
-  }
-}
-/* [E] 인입 애니메이션 */
-
 /* [E] 검색결과 상세 페이지 */
 
 /* [S] 대출 신청 팝업 */
@@ -2313,7 +3167,7 @@ a:hover {
 .skx-modal {
   background: var(--skx-white);
   border-radius: 0.8rem;
-  box-shadow: 0 2px 1rem rgba(79, 70, 229, 0.15);
+  box-shadow: var(--skx-shadow-banner);
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -2338,13 +3192,13 @@ a:hover {
 .skx-modal__sub {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #666;
+  color: var(--skx-gray-1);
   text-align: center;
   margin: 0;
   white-space: nowrap;
 }
 .skx-modal__book {
-  background: rgba(79, 70, 229, 0.05);
+  background: var(--skx-glass-teal);
   border-radius: 0.4rem;
   padding: 0.8rem;
   display: flex;
@@ -2360,24 +3214,7 @@ a:hover {
   text-align: center;
   margin: 0;
 }
-.skx-modal__book-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.skx-modal__book-meta span {
-  font-size: 0.7rem;
-}
-.skx-modal__book-meta .skx-meta-name {
-  font-weight: 500;
-  color: #333;
-}
-.skx-modal__book-meta .skx-meta-role {
-  font-weight: 400;
-  color: #666;
-}
+
 .skx-modal__actions {
   display: flex;
   gap: 0.4rem;
@@ -2386,99 +3223,39 @@ a:hover {
 .skx-modal__btn-cancel {
   width: 8rem;
   height: 2.4rem;
-  border: 1px solid rgba(0, 0, 0, 0.38);
+  border: 1px solid var(--skx-gray-2);
   background: none;
   border-radius: 0.4rem;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #333;
+  color: var(--skx-ink);
   cursor: pointer;
 }
 .skx-modal__btn-confirm {
   width: 8rem;
   height: 2.4rem;
-  background: #333;
+  background: var(--skx-primary);
   border: none;
   border-radius: 0.4rem;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   cursor: pointer;
 }
 /* [E] 대출 신청 팝업 */
 
 /* [S] 채팅하기 버튼 (도서/논문 공통) + 채팅 패널 */
-.skx-btn-talk {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  background: var(--skx-primary);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fff;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    filter 0.15s;
-}
-.skx-btn-talk--book {
-  width: 8rem;
-  padding: 0.6rem 0.4rem;
-}
-.skx-btn-talk--paper {
-  height: 2.05rem;
-  padding: 0 0.8rem;
-  min-width: 8rem;
-}
-.skx-btn-talk:not(.is-active):hover {
-  filter: brightness(1.08);
-}
-.skx-btn-talk__glow {
-  animation: skx-glow-travel 2.5s linear infinite;
-  opacity: 0;
-}
-.skx-btn-talk__panel {
-  position: absolute;
-  inset: 1px;
-  border-radius: calc(0.4rem - 1px);
-  background: var(--skx-primary);
-  pointer-events: none;
-  z-index: 1;
-  transition: background 0.2s;
-}
+
 .skx-btn-talk__ico {
   position: relative;
   z-index: 2;
   width: 0.7rem;
   height: 0.7rem;
   display: block;
-  filter: brightness(10) grayscale(1);
+  filter: var(--skx-ico-on-accent-filter);
   transition: filter 0.2s;
 }
-.skx-btn-talk__label {
-  position: relative;
-  z-index: 2;
-}
-.skx-btn-talk.is-active {
-  background: var(--skx-border-c2);
-  color: var(--skx-primary);
-}
-.skx-btn-talk.is-active .skx-btn-talk__glow {
-  opacity: 0.9;
-}
-.skx-btn-talk.is-active .skx-btn-talk__panel {
-  background: var(--skx-white);
-}
-.skx-btn-talk.is-active .skx-btn-talk__ico {
-  filter: none;
-}
+
 .skx-chat-panel {
   flex-shrink: 0;
   width: 0;
@@ -2504,13 +3281,67 @@ a:hover {
   height: calc(100vh - 2.4rem);
   display: flex;
   flex-direction: column;
-  background: var(--skx-white);
+  background: var(--skx-chat-bg);
   border-radius: var(--skx-radius-lg);
   box-shadow: var(--skx-shadow-lnb);
-  padding: 2rem 1.2rem 1.2rem;
+  backdrop-filter: var(--skx-frost-blur-side);
+  -webkit-backdrop-filter: var(--skx-frost-blur-side);
+  padding: 1.2rem;
   overflow: hidden;
   position: sticky;
   top: 1.2rem;
+}
+/* DeepRead 패널은 1100px 이하에서 본문을 밀지 않고 오른쪽에서 열려 위를 덮는다 — 펼친 사이드바(16rem) + 패널(24rem)이 함께 폭을 쓰면
+   1024px 에서 본문이 118px, 375px 에서는 화면 밖으로 밀려 가로 스크롤이 생겼다. 닫힌 패널은 visibility: hidden(키보드 초점도 가지 않음),
+   휴대폰(≤600px)에서는 화면 폭을 다 덮는다. 넓은 화면(>1100px)은 지금처럼 본문을 민다 */
+@media (max-width: 1100px) {
+  .skx-chat-panel,
+  .skx-chat-panel.is-open {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    width: min(24rem, 100vw);
+    margin: 0;
+    opacity: 1;
+    overflow: hidden;
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.3s;
+  }
+  .skx-chat-panel.is-open {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s;
+  }
+  .skx-chat-panel__inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    top: 0;
+    border-radius: var(--skx-radius-lg) 0 0 var(--skx-radius-lg);
+    box-shadow: var(--skx-shadow-banner);
+  }
+}
+@media (max-width: 600px) {
+  .skx-chat-panel,
+  .skx-chat-panel.is-open {
+    width: 100vw;
+  }
+  .skx-chat-panel__inner {
+    border-radius: 0;
+  }
+}
+@media (max-width: 1100px) and (prefers-reduced-motion: reduce) {
+  .skx-chat-panel,
+  .skx-chat-panel.is-open {
+    transition: none;
+  }
 }
 .skx-chat-header {
   display: flex;
@@ -2520,42 +3351,35 @@ a:hover {
   position: relative;
   z-index: 2;
 }
-.skx-chat-header:before {
-  content: "";
-  width: 100%;
-  height: 2rem;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  position: absolute;
-  left: 0;
-  top: calc(100% + 1rem);
-  z-index: 2;
-}
 .skx-chat-close {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
-  height: 1rem;
+  width: 1.6rem;
+  height: 1.6rem;
   background: none;
   border: none;
+  border-radius: var(--skx-radius-sm);
   padding: 0;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background-color 0.15s;
 }
+.skx-chat-close:hover {
+  background: var(--skx-frost-bg);
+}
+/* 뒤로(‹) — 아이콘 파일은 › 라 돌려 쓴다 */
 .skx-chat-close__ico {
   width: 0.4rem;
   height: auto;
   display: block;
+  transform: rotate(180deg);
 }
 .skx-chat-title {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--skx-ink);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--skx-ink-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2574,45 +3398,50 @@ a:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding-right: 0.2rem;
+  gap: 0.6rem;
+  padding: 1rem 0.2rem 0 0;
+  margin-top: 0.4rem;
   min-height: 0;
-  padding-top: 2rem;
-  margin-top: 1rem;
+  /* 머리 아래에서 말풍선이 부드럽게 사라진다 — 색을 덮는 그라데이션이 아니라 mask */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1rem);
+  mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1rem);
 }
+/* 말풍선(시안: r 큼) — AI 는 옅은 회색 면 + 짙은 글 · 왼쪽, 사용자는 더 옅은 유리 면 + 밝은 글 · 오른쪽 */
 .skx-chat-msg {
-  max-width: 13rem;
-  padding: 0.8rem;
-  border-radius: 0.4rem;
-  font-size: 0.8rem;
+  max-width: 88%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 14px;
+  font-size: 0.7rem;
   font-weight: 400;
-  color: #333;
   line-height: 1.5;
   word-break: break-word;
 }
 .skx-chat-msg--user {
   align-self: flex-end;
-  background: rgba(79, 70, 229, 0.1);
-  text-align: right;
+  background: var(--skx-chat-user-bg);
+  color: var(--skx-ink-strong);
+  text-align: left;
 }
 .skx-chat-msg--ai {
   align-self: flex-start;
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--skx-chat-ai-bg);
+  color: var(--skx-ink-on-light);
 }
 .skx-chat-typing {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.9rem 1rem;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--skx-chat-ai-bg);
+  border-radius: 14px;
   align-self: flex-start;
 }
 .skx-chat-typing__dot {
   width: 0.35rem;
   height: 0.35rem;
   border-radius: 50%;
-  background: var(--skx-primary);
+  background: var(--skx-ink-on-light);
+  opacity: 0.55;
   animation: skx-dot-bounce 1.2s ease-in-out infinite both;
 }
 .skx-chat-typing__dot:nth-child(2) {
@@ -2634,12 +3463,17 @@ a:hover {
 .skx-chat-input-wrap {
   display: flex;
   flex-direction: column;
-  padding: 0.8rem 3rem 0.8rem 0.8rem;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.4rem;
+  padding: 0.8rem 0.9rem 2.8rem;
+  background: var(--skx-chat-input-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: 20px;
   flex-shrink: 0;
   position: relative;
-  margin-top: 2rem;
+  margin-top: 0.8rem;
+  transition: border-color 0.15s;
+}
+.skx-chat-input-wrap:focus-within {
+  border-color: var(--skx-accent);
 }
 .skx-chat-input {
   width: 100%;
@@ -2647,14 +3481,14 @@ a:hover {
   border: none;
   outline: none;
   font-family: inherit;
-  font-size: 0.9rem;
-  color: var(--skx-ink);
+  font-size: 0.75rem;
+  color: var(--skx-ink-strong);
   background: none;
   line-height: 1.5;
-  height: 3.5rem;
+  height: 3.2rem;
 }
 .skx-chat-input::placeholder {
-  color: #666;
+  color: var(--skx-ink-2);
   font-weight: 400;
 }
 .skx-chat-send {
@@ -2664,7 +3498,7 @@ a:hover {
   justify-content: center;
   width: 1.8rem;
   height: 1.8rem;
-  border-radius: 0.4rem;
+  border-radius: 50%;
   border: none;
   cursor: pointer;
   background: var(--skx-primary);
@@ -2677,6 +3511,7 @@ a:hover {
   width: 1rem;
   height: 1rem;
   display: block;
+  filter: var(--skx-ico-on-accent-filter);
 }
 /* 출처 칩 */
 .skx-chat-sources {
@@ -2691,9 +3526,9 @@ a:hover {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 99px;
-  background: #fff;
-  border: 1px solid #d0d0ce;
-  color: #666662;
+  background: none;
+  border: 1px solid var(--skx-rule);
+  color: var(--skx-ink-on-light);
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -2702,20 +3537,20 @@ a:hover {
     color 0.12s;
 }
 .skx-chat-source-chip.is-active {
-  background: #2c2c2a;
-  border-color: #2c2c2a;
-  color: #fff;
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+  color: var(--skx-on-accent);
 }
 /* 청크 미리보기 */
 .skx-chat-source-preview {
   margin-top: 6px;
   padding: 7px 10px;
-  background: #f0f0ee;
-  border-left: 2px solid #c0c0be;
+  background: none;
+  border-left: 2px solid var(--skx-rule);
   border-radius: 4px;
   font-size: 11.5px;
   line-height: 1.6;
-  color: #555552;
+  color: var(--skx-ink-on-light);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 120px;
@@ -2735,13 +3570,17 @@ a:hover {
   height: auto;
   padding: 5rem 2rem;
   border-radius: 1.2rem;
-  background: rgba(255, 255, 255, 0.75) url("../img/skx-recommend-main-bg.jpg")
-    no-repeat center right 3rem / auto 100%;
-  box-shadow: 0 4px 20px 0 rgba(79, 70, 229, 0.2);
+  background: var(--skx-glass);
+  box-shadow: var(--skx-shadow-banner);
   display: flex;
   justify-content: center;
   flex-flow: column;
   gap: 0.8rem;
+}
+/* 배경 그림(skx-recommend-main-bg.jpg)은 흰 바탕의 불투명 jpg 라 다크 면에서는 흰 사각형으로 뜬다 — 밝은 읽는 면에서만 쓴다 */
+.skx-reading .skx-recommend-main__wrap {
+  background: var(--skx-glass) url("../img/skx-recommend-main-bg.jpg")
+    no-repeat center right 3rem / auto 100%;
 }
 .skx-recommend-main__tit {
   font-size: 2rem;
@@ -2776,14 +3615,7 @@ a:hover {
   padding: 2.3rem 3.2rem;
   border-radius: 0.8rem;
 }
-.skx-recommend-item__txt {
-  position: relative;
-  z-index: 2;
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1.5;
-  white-space: nowrap;
-}
+
 /* 피그마 프레임 이미지 카드 (텍스트·아이콘 포함 통이미지) */
 .skx-recommend-item__inn--img {
   padding: 0;
@@ -2807,9 +3639,6 @@ a:hover {
     inset 2px 4px 45.1px -4px #fff,
     inset 2px 111px 58.9px 44px rgba(255, 128, 232, 0.25);
 }
-.skx-recommend-item.item-01 .skx-recommend-item__txt {
-  color: #5a4152;
-}
 
 /* 카드02 심리적 단단함이 필요할 때 */
 .skx-recommend-item.item-02 .skx-recommend-item__inn {
@@ -2817,9 +3646,6 @@ a:hover {
     linear-gradient(180deg, #fd9cbf 32.5%, #ffd8f8 100%),
     linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.03) 100%),
     linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%);
-}
-.skx-recommend-item.item-02 .skx-recommend-item__txt {
-  color: #ffffff;
 }
 
 /* 카드03 늦은 밤, 잠이 오지 않을 때 */
@@ -2829,17 +3655,11 @@ a:hover {
     inset 2px 4px 50.2px -4px rgba(171, 249, 184, 0.84),
     inset 2px 4px 49.5px 29px rgba(29, 86, 255, 0.25);
 }
-.skx-recommend-item.item-03 .skx-recommend-item__txt {
-  color: #fff;
-}
 
 /* 카드04 흥미진진한 역사 이야기가 궁금할 때 */
 .skx-recommend-item.item-04 .skx-recommend-item__inn {
   background: url("../img/skx-reco-c04-bg.png") no-repeat center / cover;
   box-shadow: inset -9px 3px 49.5px 29px rgba(255, 204, 0, 0.25);
-}
-.skx-recommend-item.item-04 .skx-recommend-item__txt {
-  color: #2e2e2e;
 }
 
 /* 카드03 장식 (별·곡선) */
@@ -2929,8 +3749,8 @@ a:hover {
 .skx-recommend__hover:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 6px 16px 0 rgba(0, 0, 0, 0.06),
-    0 8px 28px 0 rgba(79, 70, 229, 0.12);
+    0 6px 16px 0 rgba(0, 0, 0, 0.24),
+    0 8px 28px 0 rgba(0, 0, 0, 0.3);
 }
 /* [E] 현재 나의 상황 메인 페이지 */
 
@@ -3025,13 +3845,27 @@ a:hover {
   color: rgba(46, 46, 46, 0.7);
 }
 .skx-rcd-ai {
-  background: rgba(79, 70, 229, 0.05);
+  background: var(--skx-glass-teal);
   border-radius: 0.8rem;
   padding: 0.8rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
+/* [S] AI 표시 점 — 확정 로고의 i 위 점을 딴 작은 표시(옛 보라 심볼 logo-mark 자리).
+   기본 크기 규칙이라 이 점의 크기를 정하는 규칙(.skx-rcd-ai__logo 등)보다 앞에 둔다 */
+.skx-ai-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--skx-accent-strong);
+  flex-shrink: 0;
+}
+.skx-ptag--ai-cited .skx-ai-dot {
+  background: var(--skx-on-accent);
+}
+/* [E] AI 표시 점 */
 .skx-rcd-ai__top {
   display: flex;
   align-items: center;
@@ -3039,8 +3873,8 @@ a:hover {
   padding: 0.8rem;
 }
 .skx-rcd-ai__logo {
-  width: 1.65rem;
-  height: 1.6rem;
+  width: 0.7rem;
+  height: 0.7rem;
   display: block;
   flex-shrink: 0;
   animation: skx-pop-up 0.6s ease-out both;
@@ -3090,7 +3924,7 @@ a:hover {
   background: rgba(121, 135, 185, 0.1);
 }
 .skx-rcd-book-card--3 {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--skx-glass-teal);
 }
 .skx-rcd-book-card--4 {
   background: rgba(197, 79, 68, 0.04);
@@ -3142,7 +3976,7 @@ a:hover {
   max-height: 100%;
   object-fit: contain;
   display: block;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--skx-line);
 }
 /* 책 속 인물이 건네는 한줄 코멘트 */
 .skx-rcd-book-card__quote {
@@ -3192,7 +4026,7 @@ a:hover {
   flex-direction: column;
   gap: 1.2rem;
   align-items: center;
-  box-shadow: 0 2px 20px 0 rgba(79, 70, 229, 0.15);
+  box-shadow: var(--skx-shadow-banner);
 }
 .skx-rcd-modal__title {
   margin: 0;
@@ -3203,7 +4037,7 @@ a:hover {
   align-self: stretch;
 }
 .skx-rcd-modal__card {
-  background: #f2f3ee;
+  background: var(--skx-glass-teal);
   border-radius: 0.4rem;
   padding: 2rem 0.8rem;
   width: 20rem;
@@ -3327,12 +4161,15 @@ a:hover {
 }
 .skx-rcd-modal__btn--outline {
   background: var(--skx-white);
-  border: 1px solid rgba(0, 0, 0, 0.38);
+  border: 1px solid var(--skx-gray-2);
   color: var(--skx-ink);
 }
 .skx-rcd-modal__btn--dark {
-  background: #333;
-  color: var(--skx-white);
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
+}
+.skx-rcd-modal__btn--dark img {
+  filter: var(--skx-ico-on-accent-filter);
 }
 /* [E] 도서추천 팝업 */
 
@@ -3344,78 +4181,15 @@ a:hover {
   gap: 1.2rem;
   min-width: 0;
 }
-.skx-rsearch__icon-btn {
-  position: absolute;
-  right: 1.2rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.skx-rsearch__icon-btn img {
-  width: 1rem;
-  height: 1rem;
-  display: block;
-}
-.skx-pai {
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: var(--skx-radius-lg);
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-pai__header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-}
-.skx-pai__logo {
-  width: 1.65rem;
-  height: 1.6rem;
-  display: block;
-  flex-shrink: 0;
-  object-fit: contain;
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.1s;
-}
-.skx-pai__hd-text {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  animation: skx-pop-up 0.6s ease-out both;
-  animation-delay: 0.28s;
-}
-.skx-pai__grid {
-  display: grid;
-  grid-template-columns: 1fr 24rem;
-  gap: 0.8rem;
-}
+
 .skx-pai-main {
-  background: var(--skx-white);
-  border-radius: 0.6rem;
-  position: relative;
   overflow: hidden;
 }
 .skx-pai-main__scroll {
-  padding: 1.2rem 1.2rem 4.3rem;
-  max-height: 22.6rem;
-  overflow: hidden;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  transition: max-height 0.42s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-pai-main.is-expanded .skx-pai-main__scroll {
-  max-height: 80rem;
 }
 
 /* marked() 렌더링 결과물 스타일 */
@@ -3435,13 +4209,13 @@ a:hover {
 .skx-pai-main__scroll h3 {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--ink-2);
+  color: var(--skx-ink-2);
   margin: 0.7rem 0 0.25rem;
 }
 .skx-pai-main__scroll p {
-  font-size: 0.88rem;
-  line-height: 1.65;
-  color: var(--ink-2);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
   margin: 0 0 0.4rem;
 }
 .skx-pai-main__scroll p:last-child {
@@ -3449,7 +4223,7 @@ a:hover {
 }
 .skx-pai-main__scroll strong {
   font-weight: 600;
-  color: var(--ink);
+  color: var(--skx-ink-strong);
 }
 .skx-pai-main__scroll ul,
 .skx-pai-main__scroll ol {
@@ -3457,9 +4231,9 @@ a:hover {
   padding: 0;
 }
 .skx-pai-main__scroll li {
-  font-size: 0.88rem;
-  line-height: 1.65;
-  color: var(--ink-2);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
   margin-bottom: 0.2rem;
 }
 
@@ -3468,109 +4242,25 @@ a:hover {
   flex-direction: column;
   gap: 0.4rem;
 }
-.skx-pai-section__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.5;
-  margin: 0;
-}
+
 .skx-pai-section__text {
   font-size: 0.9rem;
   font-weight: 400;
-  color: #333;
+  color: var(--skx-ink);
   line-height: 1.5;
   margin: 0;
 }
-.skx-pai-section__list {
-  display: flex;
-  flex-direction: column;
-}
-.skx-pai-section__list p {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #333;
-  line-height: 1.5;
-  margin: 0;
-}
-.skx-pai-main__foot {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4.3rem;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 1) 60%
-  );
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 0.8rem;
-  transition: background 0.3s ease;
-}
-.skx-pai-main.is-expanded .skx-pai-main__foot {
-  background: transparent;
-}
-.skx-pai-main__expand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  cursor: pointer;
-  line-height: 1.5;
-}
-.skx-pai-main__expand img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-  transition: transform 0.28s ease;
-}
-.skx-pai-main.is-expanded .skx-pai-main__expand img {
-  transform: rotate(180deg);
-}
+
 .skx-pai-refs {
-  background: var(--skx-white);
-  border-radius: 0.6rem;
-  position: relative;
+  /* 목록(.skx-pai-refs__scroll)은 이 칸에 absolute 로 채워진다 — 왼쪽 글이 짧아도(분석 중 한 줄·짧은 요약) 참고 논문 5건이 읽히는
+     높이(접힌 평소 높이와 같다) */
+  min-height: 22rem;
   overflow: hidden;
 }
-.skx-pai-refs::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1.2rem;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 1),
-    rgba(255, 255, 255, 0)
-  );
-  pointer-events: none;
-  z-index: 1;
-}
-.skx-pai-refs::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2rem;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1)
-  );
-  pointer-events: none;
-  z-index: 1;
-}
+
 .skx-pai-refs__scroll {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1.2rem, var(--skx-ink-strong) calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to bottom, transparent, var(--skx-ink-strong) 1.2rem, var(--skx-ink-strong) calc(100% - 2rem), transparent);
   position: absolute;
   top: 0;
   left: 0;
@@ -3587,7 +4277,7 @@ a:hover {
   gap: 0.8rem;
   align-items: flex-start;
   padding: 0.8rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--skx-rule);
 }
 .skx-pai-ref:first-child {
   padding-top: 0;
@@ -3603,11 +4293,11 @@ a:hover {
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--skx-frost-bg-soft);
   border-radius: 0.4rem;
   font-size: 1rem;
   font-weight: 700;
-  color: #000;
+  color: var(--skx-ink-strong);
   line-height: 1;
 }
 .skx-pai-ref__body {
@@ -3620,14 +4310,14 @@ a:hover {
 .skx-pai-ref__title {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #333;
+  color: var(--skx-ink);
   line-height: 1.5;
   margin: 0;
 }
 .skx-pai-ref__author {
   font-size: 0.7rem;
   font-weight: 400;
-  color: #666;
+  color: var(--skx-gray-1);
   line-height: normal;
   margin: 0;
 }
@@ -3635,33 +4325,8 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-  margin-top: 0.8rem;
 }
-.skx-paper-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-paper-count {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-}
-.skx-paper-count__label {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-}
-.skx-paper-count__num {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--skx-primary);
-  line-height: 1;
-}
-.skx-paper-head__right {
-  display: flex;
-  align-items: center;
-}
+
 .skx-paper-sorts {
   display: flex;
   align-items: center;
@@ -3673,15 +4338,15 @@ a:hover {
   gap: 0.3rem;
   background: none;
   border: none;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 400;
-  color: #666;
+  color: var(--skx-ink);
   cursor: pointer;
   padding: 0.2rem 0;
-  line-height: normal;
+  line-height: 1.4;
 }
 .skx-paper-sort.is-active {
-  color: var(--skx-ink);
+  color: var(--skx-accent);
   font-weight: 500;
 }
 .skx-paper-sort img {
@@ -3692,22 +4357,22 @@ a:hover {
 }
 .skx-paper-perpage {
   position: relative;
-  margin-left: 1.2rem;
 }
 .skx-paper-perpage__btn {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.4rem 0.6rem;
-  background: none;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
+  height: 1.65rem;
+  padding: 0 0.6rem;
+  background: var(--skx-frost-panel);
+  border: none;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
   font-weight: 400;
   color: var(--skx-ink);
   cursor: pointer;
   white-space: nowrap;
-  line-height: normal;
+  line-height: 1.4;
 }
 .skx-paper-perpage__btn img {
   width: 0.8rem;
@@ -3728,9 +4393,9 @@ a:hover {
   padding: 0.4rem;
   list-style: none;
   background: var(--skx-white);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--skx-line);
   border-radius: 0.4rem;
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.12);
+  box-shadow: var(--skx-shadow-banner);
   display: none;
 }
 .skx-paper-perpage.is-open .skx-paper-perpage__menu {
@@ -3753,52 +4418,18 @@ a:hover {
   transition: background-color 0.12s;
 }
 .skx-paper-perpage__opt:hover {
-  background: rgba(79, 70, 229, 0.06);
+  background: var(--skx-glass-teal);
 }
 .skx-paper-perpage__opt.is-selected {
-  background: rgba(79, 70, 229, 0.08);
+  background: var(--skx-border-c1);
   font-weight: 600;
 }
 .skx-paper-list {
   display: flex;
   flex-direction: column;
+  gap: 1.2rem;
 }
-.skx-paper-item {
-  display: flex;
-  gap: 0.8rem;
-  align-items: flex-start;
-  padding: 1.2rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-.skx-paper-item:first-child {
-  padding-top: 0;
-}
-.skx-paper-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-.skx-paper-item__left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-paper-item__right {
-  flex-shrink: 0;
-  width: 8.4rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-self: stretch;
-  gap: 0.4rem;
-}
-.skx-paper-tags {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  height: 2rem;
-}
+
 .skx-ptag {
   display: inline-flex;
   align-items: center;
@@ -3809,75 +4440,17 @@ a:hover {
   font-weight: 700;
   white-space: nowrap;
 }
-.skx-ptag--kci {
-  background: rgba(214, 215, 248, 0.25);
-  color: #3f4ef5;
-}
+
 /* 등재 등급 필터 버튼 — .skx-ptag--kci 뱃지 색을 그대로 물려받아 선택 여부와
    무관하게 항상 "눌린" 것처럼 보였다. 필터 컨텍스트에서는 상태를 직접 정의. */
-.skx-paper-grade-filter .skx-ptag--filter {
-  cursor: pointer;
-  border: none;
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--skx-gray-1);
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.skx-paper-grade-filter .skx-ptag--filter.is-active {
-  background: var(--skx-primary);
-  color: var(--skx-white);
-}
-.skx-ptag--score {
-  background: rgba(51, 51, 51, 0.1);
-  color: #333;
-}
-.skx-paper-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--skx-ink);
-  line-height: normal;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.skx-paper-author {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  line-height: normal;
-}
-.skx-paper-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.skx-paper-meta-text {
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: #666;
-  white-space: nowrap;
-}
-.skx-paper-meta-arr {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-  flex-shrink: 0;
-  opacity: 0.4;
-}
-.skx-paper-item__btn-row {
-  display: flex;
-  gap: 0.4rem;
-}
+
 .skx-btn-pview {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.6rem;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--skx-glass-teal);
   border: none;
   border-radius: 0.4rem;
   font-size: 0.7rem;
@@ -3888,11 +4461,10 @@ a:hover {
   transition: background 0.15s;
 }
 .skx-btn-pview:hover {
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--skx-border-c1);
 }
 /* 공통: 논문 북마크 버튼 (.skx-btn-pbmark-sm 과 동일 디자인) */
-.skx-btn-pbmark,
-.skx-btn-pbmark-sm {
+.skx-btn-pbmark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3906,12 +4478,10 @@ a:hover {
   padding: 0;
   flex-shrink: 0;
 }
-.skx-btn-pbmark:hover,
-.skx-btn-pbmark-sm:hover {
-  background: rgba(79, 70, 229, 0.04);
+.skx-btn-pbmark:hover {
+  background: var(--skx-glass-teal);
 }
-.skx-btn-pbmark img,
-.skx-btn-pbmark-sm img {
+.skx-btn-pbmark img {
   width: 1.25rem;
   height: 1.25rem;
   display: block;
@@ -3940,7 +4510,7 @@ a:hover {
   width: 0.7rem;
   height: 0.7rem;
   display: block;
-  filter: grayscale(1) brightness(10);
+  filter: var(--skx-ico-on-accent-filter);
 }
 .skx-pagination {
   display: flex;
@@ -3995,7 +4565,7 @@ a:hover {
   border-radius: 2rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #666;
+  color: var(--skx-gray-1);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -4005,703 +4575,18 @@ a:hover {
   color: var(--skx-primary);
 }
 .skx-page-num:hover:not(.is-active) {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--skx-glass-teal);
 }
 /* [E] 논문검색결과 페이지 */
 
 /* [S] 논문검색결과 상세 페이지 */
-.skx-pdetail {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2.4rem;
-  padding-right: 0.2rem;
-}
-.skx-pdetail__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: none;
-  border: none;
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--skx-ink);
-  cursor: pointer;
-  padding: 0;
-  line-height: normal;
-}
-.skx-pdetail__back img {
-  width: 1rem;
-  height: 1rem;
-  display: block;
-  transform: rotate(180deg);
-}
-.skx-pdetail__hero {
-  display: flex;
-  gap: 0.8rem;
-  align-items: flex-start;
-  padding-bottom: 1.2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-.skx-pdetail__cover {
-  flex-shrink: 0;
-  width: 8rem;
-  height: 12rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.4rem;
-  overflow: hidden;
-  background: #fff;
-}
-.skx-pdetail__cover img {
-  width: 6rem;
-  height: 8.4rem;
-  object-fit: cover;
-  display: block;
-}
-.skx-pdetail__meta {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-pdetail__top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 2rem;
-}
-.skx-pdetail__badges {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-pdetail__share-group {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-.skx-btn-icon-sm {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: none;
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  padding: 0;
-}
-.skx-btn-icon-sm:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-.skx-pdetail__share-group .skx-btn-icon-sm {
-  background: none;
-}
-.skx-pdetail__share-group .skx-btn-icon-sm img {
-  width: 1rem;
-  height: 1rem;
-  object-fit: contain;
-}
-.skx-pdetail__share-group .skx-btn-icon-sm:not(.is-active):hover img {
-  filter: brightness(0.9);
-}
-.skx-btn-icon-sm img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-pdetail__title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #333;
-  line-height: normal;
-  margin: 0.4rem 0 0;
-}
-.skx-pdetail__title-en {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: #999;
-  line-height: normal;
-  margin: 0;
-}
-.skx-pdetail__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  margin-top: 0.8rem;
-}
-.skx-pdetail__row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  font-size: 0.7rem;
-  line-height: normal;
-}
-.skx-pdetail__row-lbl {
-  width: 4rem;
-  flex-shrink: 0;
-  color: #666;
-  font-weight: 400;
-}
-.skx-pdetail__row-val {
-  flex: 1;
-  color: #333;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  flex-wrap: wrap;
-}
-.skx-pdetail__row-arr {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-  opacity: 0.4;
-  flex-shrink: 0;
-}
-.skx-pdetail__btns {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1rem;
-}
-.skx-btn-pview-sm {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 2.05rem;
-  padding: 0 0.8rem;
-  min-width: 4rem;
-  background: rgba(0, 0, 0, 0.05);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #333;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.skx-btn-pview-sm:hover {
-  background: rgba(0, 0, 0, 0.08);
-}
-.skx-pcuration {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-.skx-pcuration__heading {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #333;
-  line-height: normal;
-  margin: 0;
-}
-.skx-pcuration__panel {
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: 0.8rem;
-  padding: 0.8rem;
-  display: grid;
-  grid-template-columns: 13.2rem 1fr;
-  gap: 0.8rem;
-  min-height: 8rem;
-}
-.skx-pcuration__tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-pcuration__tab-heading {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  padding: 0.8rem;
-  line-height: normal;
-}
-.skx-pcuration__tab-btn {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem;
-  border-radius: 0.6rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #666;
-  background: none;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.15s;
-}
-.skx-pcuration__tab-btn.is-active {
-  color: #fff;
-}
-.skx-pcuration__tab-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  display: block;
-}
-.skx-pcuration__tab-label {
-  position: relative;
-  z-index: 1;
-}
-.skx-pcuration__content {
-  background: #fff;
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-}
-.skx-pcuration__text {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #1a1a1a;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.skx-paccordion {
-  border-top: 2px solid #000;
-  display: flex;
-  flex-direction: column;
-}
-.skx-paccord {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-.skx-paccord__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.2rem;
-  cursor: pointer;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  transition: background 0.15s;
-}
-.skx-paccord__head:hover {
-  background: rgba(0, 0, 0, 0.02);
-}
-.skx-paccord__title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #000;
-  line-height: 1.5;
-}
-.skx-paccord__arrow {
-  width: 1.6rem;
-  height: 1.6rem;
-  display: block;
-  flex-shrink: 0;
-  transition: transform 0.28s ease;
-  transform: rotate(0deg);
-}
-.skx-paccord.is-open .skx-paccord__arrow {
-  transform: rotate(180deg);
-}
-.skx-paccord__body-outer {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-paccord.is-open .skx-paccord__body-outer {
-  grid-template-rows: 1fr;
-}
-.skx-paccord__body {
-  min-height: 0;
-  overflow: hidden;
-}
-.skx-paccord__body > * {
-  padding: 0 1.2rem 1.2rem;
-}
-.skx-keyword-list {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.skx-keyword {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.6rem;
-  background: rgba(79, 70, 229, 0.1);
-  color: var(--skx-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 2.2rem;
-  white-space: nowrap;
-}
-.skx-paccord-ref {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #666;
-  line-height: 1.5;
-}
-.skx-paccord-ref p {
-  margin: 0;
-}
-.skx-prelate {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  padding-bottom: 2.4rem;
-}
-.skx-prelate__heading {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #333;
-  line-height: normal;
-  margin: 0;
-}
-.skx-prelate__list {
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 0.8rem;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-prelate-card {
-  background: #fff;
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  cursor: pointer;
-  transition: box-shadow 0.25s ease;
-}
-.skx-prelate-card:hover {
-  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
-}
-.skx-prelate-card__info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-prelate-card__score {
-  display: inline-flex;
-  align-items: center;
-  height: 1.3rem;
-  padding: 0 0.6rem;
-  background: rgba(51, 51, 51, 0.1);
-  color: #333;
-  font-size: 0.6rem;
-  font-weight: 700;
-  border-radius: 1.8rem;
-  white-space: nowrap;
-  align-self: flex-start;
-}
-.skx-prelate-card__title-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-prelate-card__title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #333;
-  line-height: normal;
-}
-.skx-prelate-card__author {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #1a1a1a;
-  line-height: 1.5;
-}
-.skx-prelate-card__ai {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition:
-    max-height 0.35s ease,
-    opacity 0.3s ease 0.05s;
-}
-.skx-prelate-card:hover .skx-prelate-card__ai {
-  max-height: 12rem;
-  opacity: 1;
-}
-.skx-prelate-card__ai-inner {
-  display: flex;
-  gap: 0.8rem;
-  align-items: flex-start;
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: 0.6rem;
-  padding: 1.2rem;
-  margin-top: 0.8rem;
-}
-.skx-prelate-card__ai-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  display: block;
-  flex-shrink: 0;
-}
-.skx-prelate-card__ai-text {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #1a1a1a;
-  line-height: 1.5;
-}
+
 .skx-app > .skx-result-card {
   flex: 1;
   min-width: 0;
 }
-.skx-pcuration .skx-curation-panel {
-  min-height: 8rem;
-}
-.skx-pcuration .skx-vtabs-col {
-  align-items: flex-start;
-  padding-top: 0.4rem;
-}
-.skx-pcuration .skx-curation-content {
-  height: 6.4rem;
-  overflow-y: auto;
-}
-/* [E] 논문검색결과 상세 페이지 */
 
-/* [S] 출처 인용 모달 */
-.skx-cite-modal {
-  background: var(--skx-white);
-  border-radius: 0.8rem;
-  box-shadow: 0 2px 1rem rgba(79, 70, 229, 0.15);
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  width: 32rem;
-  max-width: calc(100vw - 2.4rem);
-}
-.skx-cite-modal__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-cite-modal__title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-  line-height: normal;
-}
-.skx-cite-modal__close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2rem;
-  height: 1.2rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.skx-cite-modal__close img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-cite-modal__section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.skx-cite-modal__lbl {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-  line-height: 1.5;
-}
-.skx-cite-select {
-  position: relative;
-  width: 100%;
-}
-.skx-cite-select__btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.8rem;
-  background: rgba(51, 51, 51, 0.05);
-  border: 1px solid rgba(51, 51, 51, 0.12);
-  border-radius: 0.2rem;
-  cursor: pointer;
-  transition: border-color 0.15s;
-}
-.skx-cite-select.is-open .skx-cite-select__btn {
-  border-color: rgba(51, 51, 51, 0.3);
-  border-radius: 0.2rem 0.2rem 0 0;
-}
-.skx-cite-select__text {
-  flex: 1;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #333;
-  text-align: left;
-  line-height: normal;
-}
-.skx-cite-select__arrow {
-  width: 0.8rem;
-  height: 0.8rem;
-  display: block;
-  flex-shrink: 0;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-cite-select.is-open .skx-cite-select__arrow {
-  transform: rotate(180deg);
-}
-.skx-cite-select__menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--skx-white);
-  border: 1px solid rgba(51, 51, 51, 0.3);
-  border-top: none;
-  border-radius: 0 0 0.2rem 0.2rem;
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.1);
-  display: none;
-  z-index: 20;
-  padding: 0.2rem;
-}
-.skx-cite-select.is-open .skx-cite-select__menu {
-  display: block;
-}
-.skx-cite-select__option {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 0.6rem;
-  background: none;
-  border: none;
-  border-radius: 0.1rem;
-  text-align: left;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #333;
-  cursor: pointer;
-  transition: background 0.12s;
-}
-.skx-cite-select__option:hover {
-  background: rgba(79, 70, 229, 0.06);
-}
-.skx-cite-select__option.is-selected {
-  font-weight: 600;
-  color: var(--skx-primary);
-  background: rgba(79, 70, 229, 0.05);
-}
-.skx-cite-lang-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-cite-lang {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.skx-cite-lang__opt {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #666;
-  line-height: 1.5;
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.2s;
-}
-.skx-cite-lang__opt.is-active {
-  color: var(--skx-primary);
-}
-.skx-cite-lang__toggle {
-  width: 2rem;
-  height: 1.2rem;
-  border: 1px solid rgba(79, 70, 229, 0.38);
-  border-radius: var(--skx-radius-pill);
-  background: none;
-  padding: 0.1rem;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.skx-cite-lang__knob {
-  width: 1rem;
-  height: 1rem;
-  background: var(--skx-primary);
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.skx-cite-lang.is-en .skx-cite-lang__knob {
-  transform: translateX(0.8rem);
-}
-.skx-cite-box {
-  background: rgba(79, 70, 229, 0.05);
-  border-radius: 0.4rem;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-.skx-cite-box__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.skx-cite-box__badge {
-  display: inline-flex;
-  align-items: center;
-  height: 1.25rem;
-  padding: 0.1rem 0.4rem;
-  background: var(--skx-white);
-  border: 1px solid var(--skx-primary);
-  border-radius: 0.2rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--skx-primary);
-  white-space: nowrap;
-}
-.skx-cite-box__copy {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2rem;
-  height: 1.2rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  flex-shrink: 0;
-  opacity: 0.6;
-  transition: opacity 0.15s;
-}
-.skx-cite-box__copy:hover {
-  opacity: 1;
-}
-.skx-cite-box__copy img {
-  width: 1.2rem;
-  height: 1.2rem;
-  display: block;
-}
-.skx-cite-box__text {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: #333;
-  line-height: 1.5;
-  margin: 0;
-}
-/* [E] 출처 인용 모달 */
+/* [E] 논문검색결과 상세 페이지 */
 
 /* [S] 스트리밍 커서 */
 .skx-stream-cursor {
@@ -4730,8 +4615,9 @@ a:hover {
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(18, 19, 26, 0.85);
-  color: #fff;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  color: var(--skx-ink-strong);
   padding: 10px 20px;
   border-radius: 100px;
   font-size: 13px;
@@ -4749,138 +4635,6 @@ a:hover {
 .skx-toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(8px);
-}
-
-/* ── 컬렉션 DeepRead CTA ───────────────── */
-.skx-deepread-cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 14px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-  border: 1px solid #c7d2fe;
-  border-radius: 10px;
-  flex-wrap: wrap;
-}
-.skx-deepread-cta__text {
-  font-size: 13px;
-  color: #312e81;
-  font-weight: 500;
-}
-.skx-deepread-cta__btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  background: var(--skx-primary);
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-}
-.skx-deepread-cta__btn img {
-  width: 14px;
-  filter: brightness(0) invert(1);
-}
-.skx-deepread-cta__btn:hover {
-  opacity: 0.88;
-}
-
-/* ── 논문 참고문헌 카드 클릭 ──────────── */
-.skx-pai-ref--clickable {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.skx-pai-ref--clickable:hover {
-  background: var(--bg-hover, #eef2ff);
-  border-radius: 8px;
-}
-.skx-pai-ref__chevron {
-  width: 14px;
-  flex-shrink: 0;
-  opacity: 0.35;
-  transform: rotate(-90deg);
-  margin-left: auto;
-}
-
-/* ── 논문 상세 인터랙티브 사이드패널 ─── */
-.skx-result-card--chat-open {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 0;
-  align-items: start;
-}
-.skx-result-card--chat-open .skx-pdetail {
-  overflow-y: auto;
-  max-height: calc(100vh - 80px);
-}
-.skx-chat-side {
-  position: sticky;
-  top: 24px;
-  height: calc(100vh - 80px);
-  border-left: 1px solid var(--border, #e5e7eb);
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.skx-chat-side__close {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--ink-3, #9ca3af);
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--border, #e5e7eb);
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-}
-.skx-chat-side__close img {
-  width: 14px;
-  transform: rotate(90deg);
-  opacity: 0.5;
-}
-.skx-chat-side-enter-active,
-.skx-chat-side-leave-active {
-  transition:
-    transform 0.25s ease,
-    opacity 0.25s ease;
-}
-.skx-chat-side-enter-from,
-.skx-chat-side-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
-}
-@media (max-width: 768px) {
-  .skx-result-card--chat-open {
-    grid-template-columns: 1fr;
-  }
-  .skx-chat-side {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    max-width: 400px;
-    z-index: 200;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-  }
-}
-
-/* ── 연관도 이원화 태그 ────────────────── */
-.skx-tag--score-content {
-  background: var(--green-lt, #ecfdf5);
-  color: var(--green, #047857);
-  border-color: var(--green-border, #a7f3d0);
 }
 
 /* ── 논문 AI 참고 카드 아이콘 버튼 ───── */
@@ -4904,8 +4658,8 @@ a:hover {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  border: 1px solid var(--border, #e5e7eb);
-  background: #fff;
+  border: 1px solid var(--skx-line);
+  background: var(--skx-white);
   cursor: pointer;
   transition:
     background 0.12s,
@@ -4917,7 +4671,7 @@ a:hover {
   height: 14px;
 }
 .skx-pai-ref__btn:hover {
-  background: var(--bg-hover, #eef2ff);
+  background: var(--skx-glass-teal);
   border-color: var(--skx-primary);
 }
 .skx-pai-ref__btn--ai {
@@ -4925,11 +4679,11 @@ a:hover {
   border-color: var(--skx-primary);
 }
 .skx-pai-ref__btn--ai img {
-  filter: brightness(0) invert(1);
+  filter: var(--skx-ico-on-accent-filter);
 }
 .skx-pai-ref__btn--ai:hover {
-  background: #4338ca;
-  border-color: #4338ca;
+  background: var(--skx-accent-strong);
+  border-color: var(--skx-accent-strong);
 }
 
 /* ── 제목/내용 일치율 도넛 링 ─────────── */
@@ -4956,22 +4710,22 @@ a:hover {
 }
 /* 제목 일치율 (그린 톤) */
 .skx-score-ring__bg {
-  stroke: rgba(4, 120, 87, 0.15);
+  stroke: var(--skx-success-bg);
 }
 .skx-score-ring__fg {
-  stroke: #059669;
+  stroke: var(--skx-success);
   stroke-linecap: round;
   transition: stroke-dashoffset 0.5s ease;
 }
 .skx-score-ring__pct {
   font-size: 0.5rem;
   font-weight: 700;
-  color: #047857;
+  color: var(--skx-success);
   line-height: 1;
 }
-/* 내용 일치율 변형 (보라 톤) */
+/* 내용 일치율 변형 (포인트색 톤) */
 .skx-score-ring--content .skx-score-ring__bg {
-  stroke: rgba(79, 70, 229, 0.15);
+  stroke: var(--skx-border-c1);
 }
 .skx-score-ring--content .skx-score-ring__fg {
   stroke: var(--skx-primary);
@@ -4987,8 +4741,8 @@ a:hover {
   transform: translateX(-50%) translateY(2px);
   padding: 0.25rem 0.5rem;
   border-radius: 0.4rem;
-  background: rgba(17, 24, 39, 0.92);
-  color: #fff;
+  background: var(--skx-ink-strong);
+  color: var(--skx-page-bg);
   font-size: 0.55rem;
   font-weight: 600;
   white-space: nowrap;
@@ -5006,7 +4760,7 @@ a:hover {
   left: 50%;
   transform: translateX(-50%);
   border: 0.25rem solid transparent;
-  border-top-color: rgba(17, 24, 39, 0.92);
+  border-top-color: var(--skx-ink-strong);
 }
 .skx-score-ring:hover .skx-score-ring__tip,
 .skx-score-ring:focus .skx-score-ring__tip {
@@ -5014,20 +4768,141 @@ a:hover {
   transform: translateX(-50%) translateY(0);
 }
 
+/* ── 관련도 알약 + 일치율 팝오버(RelevanceBadge) ──
+   알약 하나만 카드에 두고, 제목·내용 일치율 링 두 개는 올림·초점·누름(탭) 때 작은 유리 팝오버로 보인다.
+   팝오버는 알약 기준 absolute — 카드 안쪽 어느 조상도 overflow 를 자르지 않는다(자르는 조상을 두지 말 것) */
+.skx-rel {
+  position: relative;
+  display: inline-flex;
+}
+.skx-rel__pill {
+  display: inline-flex;
+  align-items: center;
+  height: 1.3rem;
+  padding: 0 0.6rem;
+  border: none;
+  border-radius: 1.8rem;
+  background: var(--skx-border-c1);
+  color: var(--skx-ink);
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.skx-rel__pill--btn {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.skx-rel__pill--btn:hover,
+.skx-rel__pill--btn[aria-expanded="true"] {
+  background: var(--skx-glass-border);
+  color: var(--skx-ink-strong);
+}
+.skx-rel__pill--btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-rel__pop {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--skx-glass);
+  -webkit-backdrop-filter: var(--skx-blur);
+  backdrop-filter: var(--skx-blur);
+  border: 1px solid var(--skx-glass-border);
+  border-radius: 12px;
+  box-shadow: var(--skx-shadow-banner);
+}
+.skx-rel__pop.is-above {
+  top: auto;
+  bottom: calc(100% + 0.4rem);
+}
+.skx-rel__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+.skx-rel__ring .skx-score-ring {
+  width: 2.6rem;
+  height: 2.6rem;
+}
+.skx-rel__ring .skx-score-ring__pct {
+  font-size: 0.75rem;
+}
+.skx-rel__label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--skx-ink);
+  white-space: nowrap;
+}
+.skx-rel-pop-enter-active,
+.skx-rel-pop-leave-active {
+  transition: opacity 0.12s ease;
+}
+.skx-rel-pop-enter-from,
+.skx-rel-pop-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-rel__pill--btn,
+  .skx-rel-pop-enter-active,
+  .skx-rel-pop-leave-active {
+    transition: none;
+  }
+}
+
+/* ── 논문 결과: AI 분석 아래 [딥리서치로 이어서 조사하기] ── */
+.skx-deeper {
+  display: flex;
+  justify-content: flex-start;
+  /* 결과 카드의 칸 사이(2rem)를 절반으로 — AI 분석 패널에 붙은 줄로 보이게 */
+  margin-top: -1rem;
+}
+.skx-deeper__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--skx-primary);
+  border-radius: var(--skx-radius-pill);
+  background: var(--skx-glass-teal);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.skx-deeper__btn:hover {
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
+}
+.skx-deeper__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+
 /* ── 푸터 ─────────────────────────────── */
 .skx-footer {
   padding: 0 1.2rem 1.2rem;
   text-align: center;
-  background: #f4f5fe; /* --skx-page-bg 그라데이션 끝색과 동일 */
 }
 .skx-footer__copy {
   margin: 0;
   font-size: 0.65rem;
   font-weight: 400;
-  color: var(--skx-gray-2);
+  color: var(--skx-gray-1);
 }
 .skx-footer__credit {
-  color: var(--skx-gray-2);
+  color: var(--skx-gray-1);
   transition: color 0.2s;
 }
 .skx-footer__copy:hover .skx-footer__credit {
@@ -5054,63 +4929,7 @@ a:hover {
   opacity: 1;
 }
 
-/* ── AI 패널 단계 메시지 전환 ─────────── */
-.skx-stage-fade-enter-active,
-.skx-stage-fade-leave-active {
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease;
-}
-.skx-stage-fade-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
-}
-.skx-stage-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
 /* ── AI 생성 표지 코멘트 ──────────────── */
-.skx-cover-ai-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  margin: 0.5rem 0 0;
-  font-size: 0.58rem;
-  color: var(--skx-gray-2);
-  line-height: 1.5;
-  text-align: center;
-}
-.skx-cover-ai-note img {
-  width: 0.7rem;
-  height: 0.7rem;
-  opacity: 0.55;
-  flex-shrink: 0;
-}
-
-/* ── AI 답변 하단 DeepRead/DeepSearch 유도 문구 ── */
-.skx-ai-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0.9rem 0 0;
-  padding-top: 0.7rem;
-  border-top: 1px dashed var(--skx-border-c1);
-  font-size: 0.7rem;
-  color: var(--skx-gray-1);
-  line-height: 1.5;
-}
-.skx-ai-hint img {
-  width: 0.8rem;
-  height: 0.8rem;
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-.skx-ai-hint strong {
-  color: var(--skx-primary);
-  font-weight: 700;
-}
 
 /* ── AI 답변 인용 논문 배지 ───────────── */
 .skx-ptag--ai-cited {
@@ -5118,26 +4937,9 @@ a:hover {
   align-items: center;
   gap: 0.25rem;
   background: var(--skx-primary);
-  color: #fff;
+  color: var(--skx-on-accent);
   font-weight: 700;
-}
-.skx-ptag--ai-cited img {
-  width: 0.7rem;
-  height: 0.7rem;
-  filter: brightness(0) invert(1);
 }
 
 /* ── 도서 상세 표지 컬럼 (표지 + AI 코멘트) ── */
-.skx-book-card__thumb-col {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  width: 8rem;
-}
-.skx-book-card__thumb-col .skx-book-card__thumb {
-  width: 100%;
-  align-self: auto;
-}
-.skx-book-card__thumb-col .skx-cover-ai-note {
-  width: 100%;
-}
+

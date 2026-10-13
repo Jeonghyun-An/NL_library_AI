@@ -31,7 +31,7 @@
       <button type="button" class="rs-btn" @click="reloadAll(['topics'])">다시 불러오기</button>
     </div>
     <div v-else-if="!topics" class="rs-card rs-card--wait">
-      <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+      <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
       <p>주제 카드를 불러오는 중입니다</p>
     </div>
     <template v-else>

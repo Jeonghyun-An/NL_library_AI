@@ -346,6 +346,16 @@ export interface QueueEvent {
   eta_sec: number | null;
 }
 
+// 워커(runner)의 탐색 후보 목록 — 회차마다 search·counters 뒤·자기점검(critique) 전에 늘 한 번 온다. 이은 근거가 없어도
+// papers: [] 로 온다. 하위질문 키는 search·critique 와 같은 subq_idx 다. 스냅숏·회차 기록에는 없다 — 재접속하면 오지
+// 않는다. papers 는 runner._paper_brief 모양(뺀 논문 ExcludedPaper 와 같다)이고, 이번 회차에 점검할 근거를 이은 순서다
+export interface CandidatesEvent {
+  kind: "candidates";
+  subq_idx: number;
+  round?: number;
+  papers: ExcludedPaper[];
+}
+
 export type ResearchEvent =
   | SnapshotEvent
   | StatusEvent
@@ -357,7 +367,8 @@ export type ResearchEvent =
   | DoneEvent
   | FailedEvent
   | CanceledEvent
-  | QueueEvent;
+  | QueueEvent
+  | CandidatesEvent;
 
 // ── 화면 상태 ─────────────────────────────────────────────
 export type RoundSource = "rounds" | "trail" | "queries" | "none";
@@ -407,6 +418,15 @@ export interface SubqView {
   adopted: number | null;
   parseFailed: boolean;
   error: string | null;
+  // 자기점검을 기다리는 탐색 후보(후보 이벤트 candidates 가 세운다). 있을 때만 키를 둔다 — 없는 하위질문에 null 로 채우지 않는다
+  reviewing?: ReviewingView;
+}
+
+// 화면 상태 — 그 하위질문의 '검토 중' 후보. 같은 하위질문의 점검(critique)·그 회차 판정이 실린 진행 저장·그 하위질문 단계가
+// 닫힘(done·failed)·snapshot·잡 종료가 지운다(저장되지 않는 값이라 재접속하면 없다). round 는 후보가 온 회차(이벤트에 없으면 null)
+export interface ReviewingView {
+  round: number | null;
+  papers: ExcludedPaperView[];
 }
 
 export interface CountersView {

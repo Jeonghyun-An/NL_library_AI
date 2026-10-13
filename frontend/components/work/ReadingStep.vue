@@ -23,7 +23,7 @@
         <button type="button" class="rs-btn" @click="reloadAll(['reading'])">다시 불러오기</button>
       </div>
       <div v-else-if="!reading" class="rs-card rs-card--wait">
-        <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+        <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
         <p>참고문헌 후보를 불러오는 중입니다</p>
       </div>
       <template v-else>

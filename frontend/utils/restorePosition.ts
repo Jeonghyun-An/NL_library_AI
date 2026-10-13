@@ -41,10 +41,58 @@ export function holdDelta(elementTop: number, targetY: number): number {
   return Math.abs(off) >= 1 ? Math.round(off) : 0;
 }
 
+// 맞출 요소에서 위로 올라가며 본 조상의 모양(가까운 것부터) — getComputedStyle 의 overflowY·position 과 그 칸의 높이
+export type ScrollAncestor = { overflowY: string; position: string; scrollHeight: number; clientHeight: number };
+// 맞춘 요소를 무엇으로 붙잡는지 — 창, 그 요소를 품은 안쪽 스크롤 칸(box, 조상 목록의 index — pinned 면 그 칸이나 그 위가
+// 고정이라 창을 굴려도 칸이 따라오지 않는다), 안에서 굴러가지 않는 고정 칸(pinned — 창을 굴려도 요소가 따라 움직이지 않는다)
+export type ScrollHolder =
+  | { kind: "window" }
+  | { kind: "box"; index: number; pinned: boolean }
+  | { kind: "pinned"; index: number };
+
+const SCROLLING_OVERFLOW = new Set(["auto", "scroll", "overlay"]);
+
+function isPinned(a: ScrollAncestor): boolean {
+  return a.position === "sticky" || a.position === "fixed";
+}
+
+// 가까운 조상부터 본다. 세로로 넘치는 overflow auto·scroll 칸은 그 칸이 붙잡는다 — 창을 굴려도 칸 안에서 잘린 요소는
+// 보이지 않는다. sticky·fixed 칸은 창을 굴려도 따라오지 않아 창으로 붙잡으면 매 프레임 창만 끌려 내려간다 — 안에서
+// 굴러가는 고정 칸(넓은 연구 화면의 옆 칸)은 지금 넘치지 않아도 그 칸이 붙잡고(나중에 넘치면 그 칸을 굴린다), 굴러가지
+// 않는 고정 칸이면 붙잡지 않는다. 가로로만 굴러가는 감싸개는 세로 overflow 도 auto 로 계산되지만 넘치지 않으므로 건너뛴다
+export function scrollHolder(chain: readonly ScrollAncestor[]): ScrollHolder {
+  for (let index = 0; index < chain.length; index++) {
+    const a = chain[index]!;
+    if (SCROLLING_OVERFLOW.has(a.overflowY) && (isPinned(a) || a.scrollHeight > a.clientHeight)) {
+      return { kind: "box", index, pinned: chain.slice(index).some(isPinned) };
+    }
+    if (isPinned(a)) return { kind: "pinned", index };
+  }
+  return { kind: "window" };
+}
+
+// 안쪽 스크롤 칸 안의 요소를 칸이 보이는 범위(칸과 화면이 겹치는 곳) 안에서 목표 높이에 가장 가깝게 두려면 칸을 얼마나
+// 굴려야 하는지(+ 면 아래로). 넘쳐 잘린 곳으로 보내지 않고, 요소가 그 범위보다 크면 위를 맞춘다. 1px 미만은 굴리지 않는다
+export function boxScrollDelta(
+  el: { top: number; height: number },
+  box: { top: number; bottom: number },
+  viewportHeight: number,
+  targetY: number,
+): number {
+  const lo = Math.max(box.top, 0);
+  const hi = Math.max(lo, Math.min(box.bottom, viewportHeight) - el.height);
+  return holdDelta(el.top, Math.min(Math.max(targetY, lo), hi));
+}
+
 // 떠날 때 높이를 모르면(새 창 링크를 높이 없이 연 경우) 화면 위쪽 1/3 에 둔다
 export function targetTop(y: number | null, viewportHeight: number): number {
   if (y === null) return Math.round(viewportHeight / 3);
   return Math.min(y, Math.max(0, viewportHeight - KEEP_VISIBLE_PX));
+}
+
+// 고정 진행 막대가 화면 위를 가리면 그 아래로 내린다 — inset 은 막대가 화면 위에 붙었을 때 가리는 높이(막대가 없으면 0)
+export function insetTargetTop(y: number | null, viewportHeight: number, inset: number): number {
+  return Math.max(targetTop(y, viewportHeight), Math.ceil(Math.max(0, inset)));
 }
 
 export function restoreStep(found: boolean, now: number, deadline: number): RestoreStep {

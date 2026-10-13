@@ -12,6 +12,7 @@
         <h1 class="skx-hero">논문 의미 기반 검색</h1>
         <div class="skx-search">
           <div class="skx-search__box">
+            <span class="skx-search__glow" aria-hidden="true"></span>
             <ResearchSearchPlusMenu ref="plusMenu" v-model="currentQuery" kind="paper" :disabled="loading" />
             <label class="skx-search__field">
               <span class="skx-sr-only">논문 검색어</span>
@@ -27,9 +28,11 @@
               <button
                 type="button"
                 class="skx-send"
+                aria-label="검색"
+                :aria-disabled="!hasQuery(currentQuery)"
                 @click="handleSearch(currentQuery)"
               >
-                <img src="/img/ico-send.svg" alt="" />
+                <img src="/img/ico-send-up.svg" alt="" />
               </button>
             </div>
           </div>
@@ -43,7 +46,7 @@
 
       <!-- 검색바 -->
       <div class="skx-rsearch">
-        <ResearchSearchPlusMenu v-model="currentQuery" kind="paper" />
+        <ResearchSearchPlusMenu ref="plusMenu" v-model="currentQuery" kind="paper" />
         <input
           type="text"
           class="skx-rsearch__input"
@@ -53,16 +56,18 @@
         <button
           type="button"
           class="skx-send"
+          aria-label="검색"
+          :aria-disabled="!hasQuery(currentQuery)"
           @click="handleSearch(currentQuery)"
         >
-          <img src="/img/ico-send.svg" alt="" />
+          <img src="/img/ico-send-up.svg" alt="" />
         </button>
       </div>
 
-      <div class="skx-result-card">
+      <div class="skx-rframe">
         <!-- 로딩 -->
         <div v-if="loading" style="padding: 40px; text-align: center">
-          <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
+          <img :src="SPINNER_SRC" alt="" style="width: 32px" />
           <p style="margin-top: 12px">논문을 탐색하고 있습니다...</p>
         </div>
 
@@ -72,275 +77,214 @@
         </div>
 
         <template v-else>
-          <!-- AI 검색 결과 -->
-          <section class="skx-pai" aria-label="AI 분석 결과">
-            <div class="skx-pai__header">
-              <img
-                class="skx-pai__logo"
-                :src="aiLoading ? '/ic_ing.gif' : '/ic_done.png'"
-                alt="SKOVIX AI"
-              />
-              <span class="skx-pai__hd-text">AI 분석 결과</span>
-            </div>
-            <div class="skx-pai__grid">
-              <!-- 좌측: 요약 텍스트 -->
-              <div class="skx-pai-main" :class="aiExpanded && 'is-expanded'">
-                <div class="skx-pai-main__scroll">
-                  <template v-if="aiLoading && !aiText">
-                    <div class="skx-pai-section">
-                      <p class="skx-pai-section__text" style="color: #999">
-                        AI가 논문을 분석하고 있습니다<span
-                          class="skx-stream-cursor"
-                        />
-                      </p>
-                    </div>
-                  </template>
-                  <div v-else-if="aiText" v-html="renderedAiText" />
-                  <div v-else class="skx-pai-section">
-                    <p class="skx-pai-section__text">
-                      AI 요약 정보가 없습니다.
+          <!-- AI 검색 결과 — 틀(머리·DeepRead 안내·2:1 두 칸)은 소장자료 결과와 같은 AiResultPanel -->
+          <AiResultPanel :loading="aiLoading" :hint="!!aiText && !aiLoading">
+            <!-- 좌측: 요약 텍스트 -->
+            <ClampedPanel
+              v-model:expanded="aiExpanded"
+              class="skx-pai-main"
+              :collapsed-rem="20"
+              more-label="전체보기"
+              scroll-anchor=".skx-aip"
+            >
+              <div class="skx-pai-main__scroll">
+                <template v-if="aiLoading && !aiText">
+                  <div class="skx-pai-section">
+                    <p class="skx-pai-section__text" style="color: #999">
+                      AI가 논문을 분석하고 있습니다<span
+                        class="skx-stream-cursor"
+                      />
                     </p>
                   </div>
-                </div>
-                <div class="skx-pai-main__foot">
-                  <button
-                    type="button"
-                    class="skx-pai-main__expand"
-                    :aria-expanded="aiExpanded"
-                    @click="aiExpanded = !aiExpanded"
-                  >
-                    <span>{{ aiExpanded ? "접기" : "전체보기" }}</span>
-                    <img
-                      src="/img/ico-arrow-down.svg"
-                      alt=""
-                      aria-hidden="true"
-                    />
-                  </button>
+                </template>
+                <div v-else-if="aiText" v-html="renderedAiText" />
+                <div v-else class="skx-pai-section">
+                  <p class="skx-pai-section__text">
+                    AI 요약 정보가 없습니다.
+                  </p>
                 </div>
               </div>
-              <!-- 우측: 참고 논문 목록 -->
-              <div class="skx-pai-refs">
-                <div class="skx-pai-refs__scroll">
-                  <div v-for="ref in aiRefs" :key="ref.num" class="skx-pai-ref">
-                    <div class="skx-pai-ref__num">{{ ref.num }}</div>
-                    <div class="skx-pai-ref__body">
-                      <p
-                        class="skx-pai-ref__title skx-pai-ref__title--link"
-                        @click="navigateTo(paperDetailUrl(ref.book_id))"
+            </ClampedPanel>
+            <!-- 우측: 참고 논문 목록 -->
+            <div class="skx-pai-refs">
+              <div class="skx-pai-refs__scroll">
+                <div v-for="ref in aiRefs" :key="ref.num" class="skx-pai-ref">
+                  <div class="skx-pai-ref__num">{{ ref.num }}</div>
+                  <div class="skx-pai-ref__body">
+                    <p
+                      class="skx-pai-ref__title skx-pai-ref__title--link"
+                      @click="navigateTo(paperDetailUrl(ref.book_id))"
+                    >
+                      {{ ref.title }}
+                    </p>
+                    <p class="skx-pai-ref__author">{{ ref.authors }}</p>
+                    <div class="skx-pai-ref__actions">
+                      <button
+                        type="button"
+                        class="skx-pai-ref__btn"
+                        aria-label="출처 인용"
+                        @click="openRefCitation(ref)"
                       >
-                        {{ ref.title }}
-                      </p>
-                      <p class="skx-pai-ref__author">{{ ref.authors }}</p>
-                      <div class="skx-pai-ref__actions">
-                        <button
-                          type="button"
-                          class="skx-pai-ref__btn"
-                          aria-label="출처 인용"
-                          @click="openRefCitation(ref)"
-                        >
-                          <img src="/img/ico-paper-bookmark.svg" alt="" />
-                        </button>
-                        <button
-                          type="button"
-                          class="skx-pai-ref__btn skx-pai-ref__btn--ai"
-                          aria-label="DeepRead"
-                          @click="chatPaperId = ref.book_id"
-                        >
-                          <img src="/img/ico-chat.svg" alt="" />
-                        </button>
-                        <button
-                          type="button"
-                          class="skx-pai-ref__btn"
-                          aria-label="원문 보기"
-                          @click="
-                            pdfItem = aiRefPaperMap.get(ref.book_id) ?? null
-                          "
-                        >
-                          <img src="/img/ico-share.svg" alt="" />
-                        </button>
-                      </div>
+                        <img src="/img/ico-paper-bookmark.svg" alt="" />
+                      </button>
+                      <button
+                        type="button"
+                        class="skx-pai-ref__btn skx-pai-ref__btn--ai"
+                        aria-label="DeepRead"
+                        @click="chatPaperId = ref.book_id"
+                      >
+                        <img src="/img/ico-chat.svg" alt="" />
+                      </button>
+                      <button
+                        type="button"
+                        class="skx-pai-ref__btn"
+                        aria-label="원문 보기"
+                        @click="
+                          pdfItem = aiRefPaperMap.get(ref.book_id) ?? null
+                        "
+                      >
+                        <img src="/img/ico-share.svg" alt="" />
+                      </button>
                     </div>
                   </div>
-                  <template v-if="aiLoading && !aiRefs.length">
-                    <div
-                      v-for="n in Math.min(pagedPapers.length, 5)"
-                      :key="n"
-                      class="skx-pai-ref"
-                    >
-                      <div class="skx-pai-ref__num">{{ n }}</div>
-                      <div class="skx-pai-ref__body">
-                        <p class="skx-pai-ref__title">
-                          {{ pagedPapers[n - 1]?.book_info?.title || "" }}
-                        </p>
-                        <p class="skx-pai-ref__author">
-                          {{
-                            pagedPapers[n - 1]?.book_info?.personal_author || ""
-                          }}
-                        </p>
-                      </div>
-                    </div>
-                  </template>
                 </div>
+                <template v-if="aiLoading && !aiRefs.length">
+                  <div
+                    v-for="n in Math.min(pagedPapers.length, 5)"
+                    :key="n"
+                    class="skx-pai-ref"
+                  >
+                    <div class="skx-pai-ref__num">{{ n }}</div>
+                    <div class="skx-pai-ref__body">
+                      <p class="skx-pai-ref__title">
+                        {{ pagedPapers[n - 1]?.book_info?.title || "" }}
+                      </p>
+                      <p class="skx-pai-ref__author">
+                        {{
+                          pagedPapers[n - 1]?.book_info?.personal_author || ""
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
-            <p v-if="aiText && !aiLoading" class="skx-ai-hint">
-              <img src="/img/ico-chat.svg" alt="" />
-              더 깊이 알고 싶은 논문은 <strong>DeepRead</strong>로 자유롭게
-              질문하며 분석해보세요
-            </p>
-          </section>
+          </AiResultPanel>
+
+          <!-- 이 결과에서 이어서 DeepResearch 로 — 바로 시작하지 않고 위 검색바에 질문을 채워 고쳐 보내게 한다 -->
+          <div v-if="paperResult?.books.length" class="skx-deeper">
+            <button type="button" class="skx-deeper__btn" @click="continueAsDeepResearch">
+              <span aria-hidden="true">+</span> {{ DEEP_RESEARCH }}로 이어서 조사하기
+            </button>
+          </div>
 
           <!-- 논문 목록 -->
           <section class="skx-paper-section" aria-label="논문 검색 결과 목록">
-            <!-- 헤더 -->
-            <div class="skx-paper-head">
-              <div class="skx-paper-count">
-                <span class="skx-paper-count__label">그 외 총</span>
-                <strong class="skx-paper-count__num">{{
-                  filteredPapers.length
-                }}</strong>
-                <span class="skx-paper-count__label">건</span>
+            <!-- 머리: 총 N 건 | 정렬 · 개수 -->
+            <ResultListHead :count="filteredPapers.length">
+              <div
+                class="skx-paper-sorts"
+                role="group"
+                aria-label="정렬 기준"
+              >
+                <button
+                  type="button"
+                  :class="[
+                    'skx-paper-sort',
+                    sortBy === 'relevance' && 'is-active',
+                  ]"
+                  :aria-pressed="sortBy === 'relevance'"
+                  @click="setSortBy('relevance')"
+                >
+                  <img
+                    :src="
+                      sortBy === 'relevance'
+                        ? '/img/ico-sort-on.svg'
+                        : '/img/ico-sort-off.svg'
+                    "
+                    alt=""
+                  />
+                  관련도순
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'skx-paper-sort',
+                    sortBy === 'name' && 'is-active',
+                  ]"
+                  :aria-pressed="sortBy === 'name'"
+                  @click="setSortBy('name')"
+                >
+                  <img
+                    :src="
+                      sortBy === 'name'
+                        ? '/img/ico-sort-on.svg'
+                        : '/img/ico-sort-off.svg'
+                    "
+                    alt=""
+                  />
+                  이름순
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'skx-paper-sort',
+                    sortBy === 'date_desc' && 'is-active',
+                  ]"
+                  :aria-pressed="sortBy === 'date_desc'"
+                  @click="setSortBy('date_desc')"
+                >
+                  <img
+                    :src="
+                      sortBy === 'date_desc'
+                        ? '/img/ico-sort-on.svg'
+                        : '/img/ico-sort-off.svg'
+                    "
+                    alt=""
+                  />
+                  최신순
+                </button>
               </div>
-              <div class="skx-paper-head__right">
-                <!-- 등재 등급 필터 -->
-                <div
-                  v-if="gradeOptions.length"
-                  class="skx-paper-grade-filter"
-                  role="group"
-                  aria-label="등재 등급 필터"
+              <div
+                class="skx-paper-perpage"
+                :class="perpageOpen && 'is-open'"
+                ref="perpageRef"
+              >
+                <button
+                  type="button"
+                  class="skx-paper-perpage__btn"
+                  aria-haspopup="listbox"
+                  :aria-expanded="perpageOpen"
+                  @click.stop="perpageOpen = !perpageOpen"
                 >
-                  <button
-                    type="button"
-                    :class="[
-                      'skx-ptag skx-ptag--filter',
-                      selectedGrade === 'all' && 'is-active',
-                    ]"
-                    @click="
-                      selectedGrade = 'all';
-                      currentPage = 1;
-                    "
+                  <span class="skx-paper-perpage__label"
+                    >{{ pageSize }}개씩</span
                   >
-                    전체
-                  </button>
-                  <button
-                    v-for="g in gradeOptions"
-                    :key="g"
-                    type="button"
-                    :class="[
-                      'skx-ptag skx-ptag--filter skx-ptag--kci',
-                      selectedGrade === g && 'is-active',
-                    ]"
-                    @click="
-                      selectedGrade = g;
-                      currentPage = 1;
-                    "
-                  >
-                    {{ g }}
-                  </button>
-                </div>
-                <div
-                  class="skx-paper-sorts"
-                  role="group"
-                  aria-label="정렬 기준"
-                >
-                  <button
-                    type="button"
-                    :class="[
-                      'skx-paper-sort',
-                      sortBy === 'relevance' && 'is-active',
-                    ]"
-                    :aria-pressed="sortBy === 'relevance'"
-                    @click="setSortBy('relevance')"
-                  >
-                    <img
-                      :src="
-                        sortBy === 'relevance'
-                          ? '/img/ico-sort-on.svg'
-                          : '/img/ico-sort-off.svg'
-                      "
-                      alt=""
-                    />
-                    관련도순
-                  </button>
-                  <button
-                    type="button"
-                    :class="[
-                      'skx-paper-sort',
-                      sortBy === 'name' && 'is-active',
-                    ]"
-                    :aria-pressed="sortBy === 'name'"
-                    @click="setSortBy('name')"
-                  >
-                    <img
-                      :src="
-                        sortBy === 'name'
-                          ? '/img/ico-sort-on.svg'
-                          : '/img/ico-sort-off.svg'
-                      "
-                      alt=""
-                    />
-                    이름순
-                  </button>
-                  <button
-                    type="button"
-                    :class="[
-                      'skx-paper-sort',
-                      sortBy === 'date_desc' && 'is-active',
-                    ]"
-                    :aria-pressed="sortBy === 'date_desc'"
-                    @click="setSortBy('date_desc')"
-                  >
-                    <img
-                      :src="
-                        sortBy === 'date_desc'
-                          ? '/img/ico-sort-on.svg'
-                          : '/img/ico-sort-off.svg'
-                      "
-                      alt=""
-                    />
-                    최신순
-                  </button>
-                </div>
-                <div
-                  class="skx-paper-perpage"
-                  :class="perpageOpen && 'is-open'"
-                  ref="perpageRef"
-                >
-                  <button
-                    type="button"
-                    class="skx-paper-perpage__btn"
-                    aria-haspopup="listbox"
-                    :aria-expanded="perpageOpen"
-                    @click.stop="perpageOpen = !perpageOpen"
-                  >
-                    <span class="skx-paper-perpage__label"
-                      >{{ pageSize }}개씩</span
+                  <img
+                    src="/img/ico-arrow-down.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+                <ul class="skx-paper-perpage__menu" role="listbox">
+                  <li v-for="n in [10, 20, 30, 50]" :key="n">
+                    <button
+                      type="button"
+                      :class="[
+                        'skx-paper-perpage__opt',
+                        pageSize === n && 'is-selected',
+                      ]"
+                      role="option"
+                      :aria-selected="pageSize === n"
+                      @click="setPageSize(n)"
                     >
-                    <img
-                      src="/img/ico-arrow-down.svg"
-                      alt=""
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <ul class="skx-paper-perpage__menu" role="listbox">
-                    <li v-for="n in [10, 20, 30, 50]" :key="n">
-                      <button
-                        type="button"
-                        :class="[
-                          'skx-paper-perpage__opt',
-                          pageSize === n && 'is-selected',
-                        ]"
-                        role="option"
-                        :aria-selected="pageSize === n"
-                        @click="setPageSize(n)"
-                      >
-                        {{ n }}개씩
-                      </button>
-                    </li>
-                  </ul>
-                </div>
+                      {{ n }}개씩
+                    </button>
+                  </li>
+                </ul>
               </div>
-            </div>
+
+            </ResultListHead>
 
             <!-- 목록 없음 -->
             <div
@@ -353,112 +297,19 @@
             <!-- 논문 목록 -->
             <div v-else class="skx-paper-list">
               <h2 class="skx-sr-only">논문 목록</h2>
-              <article
+              <ResultCard
                 v-for="paper in pagedPapers"
                 :key="paper.book_id"
-                class="skx-paper-item"
-                :data-anchor="resultAnchor(paper.book_id)"
-              >
-                <div class="skx-paper-item__left">
-                  <div class="skx-paper-tags">
-                    <span
-                      v-if="aiRefNumMap.has(paper.book_id)"
-                      class="skx-ptag skx-ptag--ai-cited"
-                    >
-                      <img src="/img/logo-mark.svg" alt="" />
-                      AI 답변 인용 {{ aiRefNumMap.get(paper.book_id) }}
-                    </span>
-                    <span
-                      v-if="paper.book_info?.grade"
-                      class="skx-ptag skx-ptag--kci"
-                    >
-                      {{ paper.book_info.grade }}
-                    </span>
-                    <span class="skx-ptag skx-ptag--score">
-                      관련도 {{ Math.round((paper.best_score || 0) * 100) }}%
-                    </span>
-                  </div>
-                  <h3
-                    class="skx-paper-title"
-                    style="cursor: pointer"
-                    @click="goToDetail(paper, $event)"
-                  >
-                    {{ paper.book_info?.title || paper.book_id }}
-                  </h3>
-                  <div
-                    v-if="
-                      paper.book_info?.personal_author ||
-                      paper.book_info?.corporate_author
-                    "
-                    class="skx-paper-author"
-                  >
-                    {{
-                      paper.book_info?.personal_author ||
-                      paper.book_info?.corporate_author
-                    }}
-                  </div>
-                  <div class="skx-paper-meta">
-                    <template v-if="paper.book_info?.pub_date">
-                      <span class="skx-paper-meta-text">{{
-                        formatPubDate(paper.book_info.pub_date)
-                      }}</span>
-                    </template>
-                    <template v-if="paper.book_info?.corporate_author">
-                      <span class="skx-dot"></span>
-                      <span class="skx-paper-meta-text">{{
-                        paper.book_info.corporate_author
-                      }}</span>
-                    </template>
-                    <template v-if="paper.book_info?.series_title">
-                      <img
-                        class="skx-paper-meta-arr"
-                        src="/img/ico-arrow.svg"
-                        alt=""
-                      />
-                      <span class="skx-paper-meta-text">{{
-                        paper.book_info.series_title
-                      }}</span>
-                    </template>
-                    <template v-if="paper.book_info?.kci_citations">
-                      <span class="skx-dot"></span>
-                      <span class="skx-paper-meta-text"
-                        >KCI 인용수 {{ paper.book_info.kci_citations }}</span
-                      >
-                    </template>
-                  </div>
-                </div>
-                <div class="skx-paper-item__right">
-                  <div class="skx-paper-item__btn-row">
-                    <button
-                      type="button"
-                      class="skx-btn-pview"
-                      @click.stop="pdfItem = paper"
-                    >
-                      원문 보기
-                    </button>
-                    <button
-                      type="button"
-                      class="skx-btn-pbmark"
-                      aria-label="인용 모달 팝업 열림"
-                      @click.stop="
-                        citeBookId = paper.book_id;
-                        citeRefs = paper.book_info?.references ?? [];
-                        citeModalOpen = true;
-                      "
-                    >
-                      <img src="/img/ico-paper-bookmark.svg" alt="" />
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    class="skx-btn-ptalk"
-                    @click.stop="goToDetail(paper, $event, { chat: '1' })"
-                  >
-                    <img src="/img/ico-chat.svg" alt="" />
-                    DeepRead
-                  </button>
-                </div>
-              </article>
+                :item="paper"
+                kind="paper"
+                show-cite
+                :anchor="resultAnchor(paper.book_id)"
+                :ai-cited-num="aiRefNumMap.get(paper.book_id) ?? null"
+                @open="goToDetail(paper, $event)"
+                @chat="goToDetail(paper, $event, { chat: '1' })"
+                @pdf="pdfItem = paper"
+                @cite="openPaperCitation(paper)"
+              />
             </div>
 
             <!-- 페이지네이션 -->
@@ -585,7 +436,9 @@ import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
 import { safeLocalStorage } from "~/utils/browserId";
+import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
+import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";
 import { readV1Map } from "~/utils/historyStore";
@@ -594,6 +447,7 @@ import { readResearchDraft } from "~/utils/paperResearch";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
+import { hasQuery } from "~/utils/searchInput";
 
 const api = useApi();
 const route = useRoute();
@@ -649,8 +503,7 @@ const renderedAiText = computed(() =>
   aiText.value ? (marked.parse(aiText.value) as string) : "",
 );
 
-// ── 정렬 / 페이지 / 필터 ─────────────────────────────────────
-const selectedGrade = ref("all");
+// ── 정렬 / 페이지 ─────────────────────────────────────────────
 const sortBy = ref("relevance");
 const pageSize = ref(20);
 const currentPage = ref(1);
@@ -708,22 +561,8 @@ const sortedPapers = computed(() => {
   return books;
 });
 
-const gradeOptions = computed(() => {
-  const grades = new Set<string>();
-  (paperResult.value?.books ?? []).forEach((b) => {
-    const g = b.book_info?.grade;
-    if (g) grades.add(g);
-  });
-  return Array.from(grades).sort();
-});
-
 const filteredPapers = computed(() => {
-  const base =
-    selectedGrade.value === "all"
-      ? sortedPapers.value
-      : sortedPapers.value.filter(
-          (b) => b.book_info?.grade === selectedGrade.value,
-        );
+  const base = sortedPapers.value;
   if (!aiRefNumMap.value.size) return base;
   // AI 답변에 인용된 논문을 인용 번호 순으로 상단 고정, 나머지는 선택 정렬 유지
   const cited = base
@@ -784,6 +623,12 @@ function formatPubDate(pubDate: string): string {
   return `${m[1]}년 ${parseInt(m[2])}월`;
 }
 
+function openPaperCitation(paper: BookChunkGroup) {
+  citeBookId.value = paper.book_id;
+  citeRefs.value = paper.book_info?.references ?? [];
+  citeModalOpen.value = true;
+}
+
 function openRefCitation(ref: { book_id: string }) {
   const paper = aiRefPaperMap.value.get(ref.book_id);
   citeBookId.value = ref.book_id;
@@ -791,19 +636,21 @@ function openRefCitation(ref: { book_id: string }) {
   citeModalOpen.value = true;
 }
 
-// 상세로 갈 때 출처(이 검색 기록)를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, [검색 결과로]가 재검색 없이
-// 복원된다. q 는 검색바가 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색). 관련도는 상세 머리 카드가 보인다
+// 상세로 갈 때 출처(이 검색 기록)를 넘긴다 — 상세에서도 사이드바가 이 기록을 강조하고, [검색 목록 돌아가기]가 재검색 없이
+// 복원된다. q 는 검색바가 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색).
+// 관련도(종합·제목·내용 점수)도 함께 싣는다 — 상세 머리의 관련도 알약과 일치율 팝오버가 읽는다. 점수는 이 화면 결과(paperResult)의
+// 그 논문에서 찾는다 — 결과 카드·참고 목록·AI 답변 인용이 모두 같은 결과에서 온 논문이라 어느 길로 가도 같은 값이 실린다
 function paperDetailUrl(bookId: string, spot?: ReturnSpot, extra: Record<string, string> = {}): string {
-  const score = aiRefPaperMap.value.get(bookId)?.best_score;
+  const hit = paperResult.value?.books.find((b) => b.book_id === bookId);
   return detailUrl(
     bookId,
     { kind: "search", h: currentHistoryId.value, q: resultQuery.value },
     spot,
-    score === undefined ? extra : { score: String(score), ...extra },
+    { ...detailScoreParams(hit), ...extra },
   );
 }
 
-// 누른 카드의 지금 화면 높이를 싣고 떠난다 — [검색 결과로]·뒤로 가기로 돌아오면 이 카드를 같은 높이에 맞춘다
+// 누른 카드의 지금 화면 높이를 싣고 떠난다 — [검색 목록 돌아가기]·뒤로 가기로 돌아오면 이 카드를 같은 높이에 맞춘다
 function goToDetail(paper: BookChunkGroup, e: MouseEvent, extra: Record<string, string> = {}) {
   const card = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]")!;
   const spot = spotOf(card, resultAnchor(paper.book_id));
@@ -818,11 +665,9 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   currentQuery.value = query;
   resultQuery.value = query;
   currentHistoryId.value = null;
-  // 등재 필터는 검색을 시작할 때의 값으로 한 번 정한다 — 주소와 기록에 같은 값이 들어가게
-  const grade = selectedGrade.value !== "all" ? selectedGrade.value : "";
   // 주소의 이전 h 도 함께 내린다 — 남겨 두면 검색이 도는 동안·실패한 뒤에도 사이드바가 이전 기록을 강조하고,
   // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
-  router.replace({ query: { q: query, ...(grade ? { grade } : {}) } });
+  router.replace({ query: { q: query } });
   loading.value = true;
   error.value = null;
   paperResult.value = null;
@@ -853,10 +698,10 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
     const snapshot = slimPaperResult(data) ?? undefined;
     const entry = reuse
       ? ((await historyApi.patch(reuse.id, { snapshot })) ?? reuse)
-      : await historyApi.add({ kind: "paper", title: query, params: grade ? { grade } : {}, snapshot });
+      : await historyApi.add({ kind: "paper", title: query, params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query, h: entry.id, ...(grade ? { grade } : {}) } });
+    router.replace({ query: { q: query, h: entry.id } });
     if (data.books?.length) streamAiSummary(entry.id, query, data.books, signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -882,7 +727,6 @@ function goLanding() {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
-  selectedGrade.value = "all";
   // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
   pdfItem.value = null;
   citeModalOpen.value = false;
@@ -892,6 +736,14 @@ function goLanding() {
 // 논문 상세의 [이 논문으로 딥리서치]가 넘긴 질문 초안(?draft=) — 검색하지 않고 랜딩 입력창에 딥리서치 칩을
 // 켠 채 채운다. 주소에서는 draft 만 지운다: 남겨 두면 새로고침·뒤로 가기로 올 때마다 고쳐 쓰던 글을 초안이 다시 덮는다
 const plusMenu = ref<{ activateMode: (id: SearchModeId) => void } | null>(null);
+
+// 결과 화면의 [딥리서치로 이어서 조사하기] — 지금 결과의 질의를 상단 검색바에 채우고 딥리서치 모드를 켜 초점을 둔다.
+// 연구 잡은 만들지 않는다: 사용자가 보내기를 누르면 기존 흐름(계획 카드)으로 간다
+function continueAsDeepResearch() {
+  if (resultQuery.value) currentQuery.value = resultQuery.value;
+  // 입력창 값이 바뀐 뒤에 켜야 초점이 글 끝에 간다
+  nextTick(() => plusMenu.value?.activateMode("deep-research"));
+}
 
 function fillResearchDraft() {
   const draft = readResearchDraft(route.query);
@@ -920,7 +772,7 @@ async function restoreFromQuery() {
     if (signal.aborted) return;
     target = readHistoryQuery(query, readV1Map(safeLocalStorage()));
   }
-  const { h, q, grade } = target;
+  const { h, q } = target;
   if (!h) {
     if (!q) {
       // 기록도 검색어도 없는 주소는 랜딩이다 — 같은 경로라 다시 마운트되지 않으므로(랜딩에서 기록을 연 뒤
@@ -932,7 +784,6 @@ async function restoreFromQuery() {
     // 검색바가 아니라 화면 결과의 검색어와 비교한다 — 검색바를 고쳐 둔 채 이 주소로 오면 엉뚱하게 건너뛴다.
     // 둘 다 앞뒤 공백을 뗀 값이라 같은 검색어를 공백 차이로 다시 찾지 않는다
     if (q !== resultQuery.value) {
-      selectedGrade.value = grade ?? "all";
       await handleSearch(q);
     }
     return;
@@ -957,8 +808,6 @@ async function restoreFromQuery() {
   if (!paper) void historyApi.refresh("paper");
   const retryQuery = q ?? paper?.title;
   if (retryQuery) {
-    const savedGrade = typeof paper?.params.grade === "string" ? paper.params.grade : "";
-    selectedGrade.value = savedGrade || grade || "all";
     await handleSearch(retryQuery, paper ?? undefined);
     return;
   }
@@ -967,7 +816,6 @@ async function restoreFromQuery() {
 
 function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   const snap = entry.snapshot as PaperSnapshot;
-  const grade = typeof entry.params.grade === "string" ? entry.params.grade : "";
   loading.value = false;
   error.value = null;
   currentQuery.value = entry.title;
@@ -984,11 +832,10 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiLoading.value = false;
   aiExpanded.value = true;
   sortBy.value = "relevance";
-  selectedGrade.value = grade || "all";
-  // 정렬·필터를 정한 뒤에 찾아야 화면 목록과 같은 순서다
+  // 정렬을 정한 뒤에 찾아야 화면 목록과 같은 순서다
   currentPage.value = returnPage();
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
-    router.replace({ query: { q: entry.title, h: entry.id, ...(grade ? { grade } : {}) } });
+    router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 요약이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
   if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);

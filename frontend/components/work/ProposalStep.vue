@@ -17,7 +17,7 @@
       </div>
     </div>
     <div v-else-if="!proposal" class="rs-card rs-card--wait" role="status">
-      <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+      <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
       <p>보고서를 불러오는 중입니다</p>
     </div>
 
