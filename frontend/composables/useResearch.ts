@@ -1,5 +1,5 @@
 // frontend/composables/useResearch.ts
-import { getCurrentInstance, onBeforeUnmount, onMounted, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from "vue";
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from "vue";
 import type {
   ResearchApproveResponse,
   ResearchCancelResponse,
@@ -22,6 +22,7 @@ import {
   synthClosePending,
 } from "~/utils/researchEvents";
 import { activeResearchId, httpStatus, researchErrorMessage } from "~/utils/researchErrors";
+import { researchStartState, startNotice } from "~/utils/researchStart";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";
 
@@ -50,9 +51,14 @@ export function useResearchApi() {
   };
 }
 
+// DeepResearch 를 시작하는 입력창(+ 메뉴 — SearchPlusMenu)이 쓰는 판단은 여기 한 곳이다 — 시작 요청(startResearch — 기록도 남긴다),
+// DeepResearch 모드일 때 입력창의 한 줄(notice — 이 브라우저 기록의 끝나지 않은 연구, utils/researchStart)과 그 줄의 [취소]
+// (cancelResearch). 사이드바 [+ 연구 시작하기]는 끝나지 않은 연구가 있어도 늘 메인에서 새 연구를 시작한다(사용자 결정 2026-10-13).
+// 서버의 승인 429 browser_active 는 그대로 마지막 안전망이다
 export function useResearchStarter() {
   const research = useResearchApi();
   const history = useHistory();
+  const notice = computed(() => startNotice(researchStartState(history.entries.value)));
 
   async function startResearch(question: string): Promise<string> {
     const { job_id } = await research.create(question);
@@ -65,7 +71,17 @@ export function useResearchStarter() {
     return job_id;
   }
 
-  return { startResearch };
+  // 입력창 한 줄의 [취소] — 기존 취소 API 로 그 연구를 멈추고 기록을 다시 읽는다(이 줄과 사이드바 배지가 함께 바뀐다). 그새 끝나
+  // 취소할 수 없어도(409) 기록을 다시 읽어 낡은 줄을 걷는다. 실패는 그대로 던진다 — 부르는 쪽이 문구를 보인다
+  async function cancelResearch(jobId: string): Promise<void> {
+    try {
+      await research.cancel(jobId);
+    } finally {
+      await history.refresh("research");
+    }
+  }
+
+  return { startResearch, notice, cancelResearch };
 }
 
 export function useResearchJob(jobId: MaybeRefOrGetter<string>) {

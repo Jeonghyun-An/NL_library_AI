@@ -1525,6 +1525,80 @@ button.rs-synth__item:focus-visible,
   border-radius: var(--skx-radius-pill);
 }
 
+/* ── 끝나지 않은 DeepResearch 한 줄(+ 메뉴 안) ─────────────── */
+/* DeepResearch 모드가 켜진 입력창에 이 브라우저의 끝나지 않은 연구를 알리는 한 줄(SearchPlusMenu — 메인·/papers 랜딩·결과 검색바가
+   같은 부품). 면은 + 메뉴 팝오버와 같은 짙은 면·옅은 테두리, 버튼은 메뉴 칸과 같은 흰 10% 알약이고 '정말 취소'는 위험색이다.
+   랜딩 입력 상자에서는 아래 줄(+ · 칩)의 다음 줄 전체로 내려 서고(보내기는 칩 줄 높이), 높이가 정해진 결과 검색바에서는 바 아래
+   오른쪽에 뜬다(오류 문구는 바 아래 왼쪽, + 메뉴·슬래시 목록이 그 위) */
+.rs-plus:has(> .rs-start-note) {
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
+}
+.skx-search__box:has(> .rs-plus > .rs-start-note) > .skx-search__actions {
+  align-self: start;
+}
+.rs-start-note {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
+  min-width: 0;
+  padding: 0.3rem 0.35rem 0.3rem 0.7rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-md);
+}
+.skx-rsearch .rs-start-note {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 30;
+  flex: none;
+  max-width: calc(100% - 2rem);
+  box-shadow: var(--skx-shadow-banner);
+}
+.rs-start-note__text {
+  font-weight: 700;
+}
+.rs-start-note__dot {
+  color: var(--skx-gray-1);
+}
+.rs-start-note__btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--skx-frost-bg);
+  border: none;
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.rs-start-note__btn:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.rs-start-note__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+.rs-start-note__btn.is-danger {
+  color: var(--skx-on-accent);
+  background: var(--skx-danger);
+}
+.rs-start-note__btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 /* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
 /* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
 .rs-print {

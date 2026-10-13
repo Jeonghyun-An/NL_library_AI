@@ -42,6 +42,25 @@
       <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">×</button>
     </span>
     <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
+    <!-- DeepResearch 모드일 때 이 브라우저에 끝나지 않은 연구가 있으면 한 줄(사용자 결정 2026-10-13 — 판단은 useResearchStarter·
+         utils/researchStart). [보기]는 그 연구 화면, [취소]는 한 번 더 눌러('정말 취소') 기존 취소 API 로 멈춘다. 보내기는 막지
+         않는다 — 서버의 승인 429 browser_active 가 마지막 안전망이다. 랜딩 입력 상자에서는 칩 줄 아래, 결과 검색바에서는 바 아래에 선다 -->
+    <div v-if="active?.id === 'deep-research' && notice" class="rs-start-note" role="group" :aria-labelledby="noteId">
+      <span :id="noteId" class="rs-start-note__text" role="status">{{ notice.text }}</span>
+      <span class="rs-start-note__dot" aria-hidden="true">·</span>
+      <NuxtLink :to="notice.to" class="rs-start-note__btn">보기</NuxtLink>
+      <button
+        type="button"
+        :class="['rs-start-note__btn', cancelStep !== 'idle' && 'is-danger']"
+        :disabled="cancelStep === 'busy'"
+        @click="onNoticeCancel"
+      >
+        {{ noticeCancelLabel(cancelStep) }}
+      </button>
+      <button v-if="cancelStep === 'confirm'" type="button" class="rs-start-note__btn" @click="cancelStep = 'idle'">
+        그대로 두기
+      </button>
+    </div>
     <!-- 슬래시 명령 목록: 초점은 입력창에 둔 채(aria-activedescendant) 방향키로 고른다.
          mousedown 을 막아 항목·여백을 눌러도 입력창 초점이 빠지지 않게 한다 -->
     <ul
@@ -82,6 +101,7 @@ import { useResearchStarter } from "~/composables/useResearch";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { menuStep } from "~/utils/menuNav";
 import { researchErrorMessage } from "~/utils/researchErrors";
+import { noticeCancelLabel, noticeCancelPress, type NoticeCancelStep } from "~/utils/researchStart";
 import {
   createEchoGuard,
   modesFor,
@@ -103,7 +123,7 @@ const props = withDefaults(
 // 끈 상태는 null. 메인 랜딩이 이 값으로 딥리서치 모드 여부(KCI 등재 필터 숨김 등)를 맞춘다
 const emit = defineEmits<{ "update:modelValue": [value: string]; "update:mode": [id: SearchModeId | null] }>();
 
-const { startResearch } = useResearchStarter();
+const { startResearch, notice, cancelResearch } = useResearchStarter();
 const modes = computed(() => modesFor(props.kind));
 const root = ref<HTMLElement | null>(null);
 const trigger = ref<HTMLButtonElement | null>(null);
@@ -236,6 +256,39 @@ defineExpose({ activateMode, clearMode });
 // sync — 같은 틱에 메뉴가 unmount 되는 경로(딥리서치 모드가 켜진 채 자료 검색 기록을 열어 랜딩이 걷힘)에서도 알림이 가게,
 // 기본(pre) 플러시는 unmount 로 감시자가 멈추면 한 번도 돌지 못한다
 watch(active, (mode) => emit("update:mode", mode?.id ?? null), { flush: "sync" });
+
+// ── 끝나지 않은 연구 한 줄(DeepResearch 모드일 때만) ─────────
+// [취소]는 두 번 눌러야 멈춘다 — 첫 누름은 '정말 취소'로 바꾸기만 하고, 잠깐(NOTICE_CANCEL_ARM_MS) 안의 누름은 받지 않는다(더블클릭
+// 한 번에 확인까지 넘어가지 않게). 줄의 연구가 바뀌거나 모드를 끄면 확인을 푼다 — '정말 취소'가 다른 연구에 남지 않게
+const noteId = useId();
+const cancelStep = ref<NoticeCancelStep>("idle");
+let cancelArmedAt = 0;
+
+async function onNoticeCancel(): Promise<void> {
+  const target = notice.value;
+  if (!target) return;
+  const now = Date.now();
+  const press = noticeCancelPress(cancelStep.value, cancelArmedAt, now);
+  if (press === "arm") {
+    cancelStep.value = "confirm";
+    cancelArmedAt = now;
+    return;
+  }
+  if (press !== "run") return;
+  cancelStep.value = "busy";
+  error.value = "";
+  try {
+    await cancelResearch(target.jobId);
+  } catch (e) {
+    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 취소하지 못했습니다`);
+  } finally {
+    cancelStep.value = "idle";
+  }
+}
+
+watch([() => notice.value?.jobId, () => active.value?.id], () => {
+  if (cancelStep.value === "confirm") cancelStep.value = "idle";
+});
 
 // ── 슬래시 명령 목록(WAI-ARIA 콤보박스 관례: 초점은 입력창, 강조는 aria-activedescendant) ──
 const paletteId = useId();
