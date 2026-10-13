@@ -1,5 +1,6 @@
 // frontend/tests/unit/readingList.test.ts
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ExcludedCandidate, PaperMeta, PathChunk, ReadingItem, ReadingSubqPath, ReadingView } from "~/types/work";
@@ -299,9 +300,38 @@ describe("canMakeOutline·outlineHint", () => {
   it("담음이 모자라면 몇 편인지, 주제가 없으면 주제를 먼저 고르라고 알린다", () => {
     const four = [...five.slice(0, 4), row({ cnts_id: "KCI_9", state: "candidate" })];
     expect(canMakeOutline(view(four))).toBe(false);
-    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 보고서를 만들 수 있습니다");
+    // 미리 담은 여덟 편에서 빼다 보면 나오는 말이라 '5편 이상 담으면'(0 에서 담아 올라가는 말) 대신 '5편 이상이면'
+    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상이면 보고서를 만들 수 있습니다");
+    expect(outlineHint(view([]))).toBe("담은 논문이 0편입니다 — 5편 이상이면 보고서를 만들 수 있습니다");
     expect(canMakeOutline(view(five, { topic_id: null }))).toBe(false);
     expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다");
+  });
+});
+
+describe("최소 편수 문구 — 미리 담은 채로 시작하니 '담은 논문이 N편 이상이면' 꼴(규칙 5편은 서버 POST …/outline 409 와 같다)", () => {
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  const read = (rel: string) => readFileSync(join(root, rel), "utf8");
+  // 화면 코드(.vue·.ts) 전부 — 테스트·빌드 산출물·의존성은 뺀다
+  function sourceFiles(dir: string): string[] {
+    return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) return sourceFiles(rel);
+      return /\.(vue|ts)$/.test(e.name) ? [rel] : [];
+    });
+  }
+  const files = ["components", "composables", "pages", "utils", "types"].flatMap(sourceFiles);
+
+  it("'N편 이상 담으면'(0 에서 담아 올라가는 말)과 숫자를 그대로 적은 'N편 이상'이 화면 코드에 남지 않는다", () => {
+    expect(files).toContain("components/work/ReadingStep.vue");
+    const left = files.filter((f) => /편 이상 담으면|\d편 이상/.test(read(f)));
+    expect(left).toEqual([]);
+  });
+
+  it("온보딩·보고서 단계 빈 목차 안내는 같은 꼴에 MIN_READING_FOR_OUTLINE 을 쓴다", () => {
+    expect(read("utils/workPhase.ts")).toContain("담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 [${MAKE_REPORT}]를 누를 수 있습니다.");
+    const proposal = read("components/work/ProposalStep.vue");
+    expect(proposal).toContain("참고문헌에 담은 논문이 {{ MIN_READING_FOR_OUTLINE }}편 이상이면 보고서를 만들 수 있습니다.");
+    expect(proposal).toMatch(/import \{[^}]*\bMIN_READING_FOR_OUTLINE\b[^}]*\} from "~\/utils\/readingList";/);
   });
 });
 

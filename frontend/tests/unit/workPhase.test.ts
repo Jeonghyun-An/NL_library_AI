@@ -289,6 +289,12 @@ describe("온보딩 — 참고문헌 선택하기는 미리 담아 둔 채로 �
     expect(body).not.toContain("후보로 들어와 있습니다");
   });
 
+  it("결정할 것 — 여덟 편이 담긴 채 시작하니 '5편 이상 담으면'이 아니라 '담은 논문이 5편 이상이면'", () => {
+    expect(ONBOARDING_STEPS[1]!.decide).toBe(
+      "보고서에 쓸 논문을 담습니다. 담은 논문이 5편 이상이면 [보고서 만들기]를 누를 수 있습니다.",
+    );
+  });
+
   it("같은 문단 안에서 말투를 섞지 않는다 — 승인 문구의 해요체로 이어 간다", () => {
     expect(body).not.toMatch(/니다[.,]/);
     expect(body.split(". ").every((sentence) => /요\.?$/.test(sentence))).toBe(true);

@@ -5,7 +5,7 @@ import type { ResearchView } from "~/types/research";
 import type { Corpus, WorkPhase, WorkStep, WorkView } from "~/types/work";
 import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
 import { pubYear } from "~/utils/citations";
-import { READING_PRESELECT } from "~/utils/readingList";
+import { MIN_READING_FOR_OUTLINE, READING_PRESELECT } from "~/utils/readingList";
 import type { QueryValue } from "~/utils/restorePosition";
 
 export const WORK_STEPS: readonly WorkStep[] = ["topics", "reading", "proposal"];
@@ -136,7 +136,8 @@ export const ONBOARDING_STEPS: readonly { title: string; body: string; decide: s
     title: STEP_NAMES.reading,
     // 첫 두 문장은 승인 문구(사용자 결정 2026-10-13 — 글자 그대로, '8' 자리만 상수). 뒤 안내도 같은 문단이라 해요체로 맞춘다
     body: `근거로 쓰인 논문 ${READING_PRESELECT}편을 미리 담아 두었어요. 빼거나 더 담아서 참고문헌을 정해 보세요. 제목을 누르면 오른쪽에서 그 논문과 대화(${DEEP_READ})할 수 있고, 들어온 경로를 보거나 자기점검이 뺀 논문을 되살릴 수 있어요.`,
-    decide: `보고서에 쓸 논문을 담습니다. 5편 이상 담으면 [${MAKE_REPORT}]를 누를 수 있습니다.`,
+    // 미리 담은 채로 시작하니 '…담으면'(0 에서 담아 올라가는 말)이 아니라 담은 수가 기준에 닿는지로 적는다(outlineHint 와 같은 꼴)
+    decide: `보고서에 쓸 논문을 담습니다. 담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 [${MAKE_REPORT}]를 누를 수 있습니다.`,
   },
   {
     title: STEP_NAMES.proposal,

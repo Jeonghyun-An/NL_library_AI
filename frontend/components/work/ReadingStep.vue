@@ -133,7 +133,7 @@ import { isPlainClick } from "~/utils/restorePosition";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
-// 담음 5편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
+// 담은 논문이 MIN_READING_FOR_OUTLINE 편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
 // 넣는다 — 06e D20)
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload]; panel: [open: boolean] }>();
