@@ -14545,9 +14545,9 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 - 순서: `_writable` → 키워드 `< MIN_PICKED_KEYWORDS`(keywords.py, 2) 면 409 `KEYWORDS_TOO_FEW` → 키워드 생성이 열려 있으면 409 `KEYWORDS_BUSY`(Task K4 상수) → 연구별 잠금 `lock_key(jid, "topic_card", REGENERATE_LOCK_TARGET)`(`"regenerate"` — 주제 id 숫자 문자열과 겹치지 않는 이름, `OTHER_LOCK_TARGET` 과 같은 방식) → 대상 읽기(id 순 — 씨앗 자리가 먼저 만들어졌다) → 행마다 `enqueue_generation`. 그 주제의 카드 생성이 열려 있으면 `None` 이고(enqueue 가 같은 대상 열린 생성을 막는다 — `enqueue.py:34-38`, spec 의 ':251-255' 는 옛 줄) `skipped` 로 센다 — 넣은 행이 없으니 되돌리지 않는다.
 - 넣은 것도 건너뛴 것도 없으면 롤백하고 409 `NOTHING_TO_REGENERATE`. 건너뛴 것만 있으면 200(`{"topic_ids": [], "gen_ids": [], "skipped": n}`)이고 디스패치는 보내지 않는다. 넣은 것이 있으면 커밋 → `_send_dispatch()` → 카드마다 queued 이벤트([다른 방향]과 같은 순서 — `enqueue.py` 머리 docstring).
 - 입력은 `topic_input(job.question, row.seed, report, row.id, keywords=list(work.concepts))` — 씨앗과 지금 키워드뿐이다. 카드의 지금 제목을 주지 않는다(함정 26). 카드는 새 결과가 반영될 때까지 그대로 보인다(`topic_card.apply` 가 그 행만 바꾼다). 그 사이 [직접 고치기]는 409 `CARD_BUSY`(`edit_topic` — 카드 생성이 열려 있으면)이고, 그래도 고친 카드(`card.edited`)는 반영이 덮지 않는다(`topic_card.apply` 의 edited 검사 — dev `:206-207`, Task K5 뒤 `:213-214`).
-- **다시 만드는 사이의 [고르기](06e 정함 16):** 화면은 카드 생성이 열린 카드를 고르지 않게 막고 '새 키워드로 다시 만드는 중입니다'를 단다(Task K7 `canPick`·`cardRemakingNote`, Task K8). 두 탭이 거의 같이 누른 경우는 서버가 막는다 — `topic_card.apply` 의 edited 검사 바로 뒤에서 고른 카드(state picked·제목 있음)면 덮지 않고 `{"topic_id", "state": "picked"}` 를 돌려준다(새 카드든 빈 결과든). 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 동작이 바뀌지 않는다 — 다만 고른 카드가 새 카드로 바뀌는 것을 단언하던 `TestApply.test_a_picked_topic_stays_picked` 를 새 규칙으로 바꾼다(✎ — 매개변수 둘이라 +1). `pick_topic` 에서 409 로 막는 대안은 쓰지 않는다 — 고르기를 늦출 까닭이 서버에는 없고, 반영 쪽에서 막으면 두 탭 경합까지 한 곳에서 끝난다.
+- **다시 만드는 사이의 [고르기](06e 정함 16):** 화면은 카드 생성이 열린 카드를 고르지 않게 막고 '새 키워드로 다시 만드는 중입니다'를 단다(Task K7 `canPick`·`cardRemakingNote`, Task K8). 두 탭이 거의 같이 누른 경우는 서버가 막는다 — `topic_card.apply` 의 edited 검사 바로 뒤에서 고른 카드(state picked·제목 있음)면 덮지 않고 `{"topic_id", "state": "picked"}` 를 돌려준다(새 카드든 빈 결과든). 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 동작이 바뀌지 않는다 — 다만 고른 카드가 새 카드로 바뀌는 것을 단언하던 `TestApply.test_a_picked_topic_stays_picked` 를 새 규칙으로 바꾼다(✎ — 매개변수 둘이라 +1). `pick_topic` 에서 409 로 막는 대안은 쓰지 않는다 — 고르기를 늦출 까닭이 서버에는 없고, 반영 쪽에서 막으면 두 탭 경합까지 한 곳에서 끝난다. 그러려면 반영이 주제 행을 `FOR UPDATE` 로 읽는다(quality 검토 반영 — 파트 K 메모 25) — 잠그지 않으면 READ COMMITTED 에서 `pick_topic` 의 `UPDATE … state='picked'` 가 커밋 전일 때 반영의 SELECT 가 candidate 를 보고, 반영 UPDATE 는 그 커밋을 기다렸다가 `WHERE id` 만 다시 보고 새 카드·candidate 를 써서 `work.topic_id` 는 그 주제인데 state 는 candidate 로 남는다. 잠금 순서는 주제 행 → 연구 행(`refresh_progress`)으로 `pick_topic` 의 '앞서 고른 행 → 고른 행 → 연구 행'과 같은 방향이라 고리가 없다(section·paragraph 의 `apply` 가 계획서 행을 `with_for_update()` 로 읽는 것과 같은 읽기-고치기-쓰기 규칙). [직접 고치기]는 카드 생성이 열려 있으면 409 `CARD_BUSY` 라 경합은 거의 [고르기]뿐이지만 같은 잠금이 막는다.
 - `KEYWORDS_TOO_FEW` 는 `f"키워드를 {MIN_PICKED_KEYWORDS}개 이상 고르세요"` — 1-1 의 값('키워드를 2개 이상 고르세요')과 같은 글을 상수에서 만든다.
-- 구현 전 POST `…/topics/regenerate` 는 `PATCH …/topics/{tid}` 만 맞아 405 다(새 테스트 7개 실패). `{tid}` 는 int 라 경로 'regenerate' 와 겹치지 않는다. 고른 카드 테스트 둘도 구현 전에는 떨어진다(새 카드면 카드가 바뀌고, 빈 결과면 state 가 insufficient).
+- 구현 전 POST `…/topics/regenerate` 는 `PATCH …/topics/{tid}` 만 맞아 405 다(새 테스트 7개 실패). `{tid}` 는 int 라 경로 'regenerate' 와 겹치지 않는다. 고른 카드 테스트 둘도 구현 전에는 떨어진다(새 카드면 카드가 바뀌고, 빈 결과면 state 가 insufficient). 잠금 테스트 하나도 떨어진다(주제 행 SELECT 에 `FOR UPDATE` 가 없다 — 파트 K 메모 25).
 
 - [ ] **Step 1: 실패하는 테스트를 쓴다**
 
@@ -14679,7 +14679,7 @@ class TestRegenerate:
 # ── 직접 쓰기·직접 고치기 ─────────────────────────────────────────────
 ```
 
-② `app/tests/test_research_work_topic_card.py` `TestApply.test_a_picked_topic_stays_picked` ✎ — 고른 카드는 다시 만든 결과로 덮지 않는다(새 카드·빈 결과 두 매개변수). 지금 테스트는 고른 카드가 새 카드로 바뀌는 것을 단언한다 — 06b 에서는 고른 카드에 열린 생성이 생길 수 없어 실제로 일어나지 않던 경로다. old:
+② `app/tests/test_research_work_topic_card.py` `TestApply.test_a_picked_topic_stays_picked` ✎ — 고른 카드는 다시 만든 결과로 덮지 않는다(새 카드·빈 결과 두 매개변수). 지금 테스트는 고른 카드가 새 카드로 바뀌는 것을 단언한다 — 06b 에서는 고른 카드에 열린 생성이 생길 수 없어 실제로 일어나지 않던 경로다. 그 뒤에 `test_the_topic_row_is_read_under_a_row_lock`(＋ — 반영이 주제 행을 `FOR UPDATE` 로 읽고 그 읽기가 주제 행 UPDATE·연구 행 잠금보다 앞선다, quality 검토 반영 — 파트 K 메모 25)을 더하고, 머리 import 의 `from jinja2 import Environment, meta` 아래에 `from sqlalchemy.dialects import postgresql` 를 더한다(SQLite 는 잠금을 그리지 않아 문장을 PostgreSQL 로 컴파일해 본다 — `test_research_work_dispatch.py` 의 `_Recording` 과 같은 방식). old:
 
 ```python
     def test_a_picked_topic_stays_picked(self, engine):
@@ -14705,13 +14705,46 @@ new:
 
         row = _topic_row(engine, tid)
         assert (row["card"], row["state"]) == (old, "picked")
+
+    def test_the_topic_row_is_read_under_a_row_lock(self, engine):
+        # 고른 카드 검사는 읽기와 쓰기 사이가 비면 두 탭 경합을 놓친다 — PostgreSQL READ COMMITTED 에서 pick_topic 의
+        # UPDATE(state picked)가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 pick 커밋을
+        # 기다렸다가 WHERE id 만 다시 보고 새 카드·candidate 를 쓴다(work.topic_id 는 그 주제인데 state 는 candidate).
+        # 행을 FOR UPDATE 로 읽으면 pick 이 끝난 뒤의 값을 본다. SQLite 는 잠금을 그리지 않아 문장을 PostgreSQL 로
+        # 컴파일해 본다(test_research_work_dispatch 의 _Recording 과 같은 방식)
+        _, tid, gid = _setup(engine)
+        log: list[str] = []
+
+        class _Recording(AsyncSessionOverSync):
+            async def execute(self, stmt, params=None):
+                log.append(str(stmt.compile(dialect=postgresql.dialect())))
+                return await super().execute(stmt, params)
+
+        async def _go():
+            db = _Recording(engine)
+            try:
+                await apply_result(db, await db.get(ResearchGeneration, gid), _bound(GOOD))
+                await db.commit()
+            finally:
+                await db.close()
+
+        asyncio.run(_go())
+        read = next(i for i, s in enumerate(log) if s.startswith("SELECT research_topics.card"))
+        write = next(i for i, s in enumerate(log) if s.startswith("UPDATE research_topics"))
+        work_lock = next(i for i, s in enumerate(log)
+                         if s.startswith("SELECT research_works.id") and "FOR UPDATE" in s)
+        assert log[read].rstrip().endswith("FOR UPDATE")
+        # 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른 행 → 연구 행'과 같은
+        # 방향이라 서로 기다리는 고리가 생기지 않는다
+        assert read < write < work_lock
+        assert _topic_row(engine, tid)["state"] == "candidate"
 ```
 
 - [ ] **Step 2: 실패를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_topics_api.py tests/test_research_work_topic_card.py -q -p no:cacheprovider`
 
-Expected: `9 failed, 97 passed, 2 warnings` — `test_research_topics_api.py::TestRegenerate` 7개 모두(405 Method Not Allowed — 경로가 없다), `test_research_work_topic_card.py::TestApply::test_a_picked_card_is_not_overwritten_by_a_regeneration[card]`(고른 카드가 새 카드로 바뀐다)·`[empty]`(state 가 insufficient 로 온다)
+Expected: `10 failed, 97 passed, 2 warnings` — `test_research_topics_api.py::TestRegenerate` 7개 모두(405 Method Not Allowed — 경로가 없다), `test_research_work_topic_card.py::TestApply::test_a_picked_card_is_not_overwritten_by_a_regeneration[card]`(고른 카드가 새 카드로 바뀐다)·`[empty]`(state 가 insufficient 로 온다)·`test_the_topic_row_is_read_under_a_row_lock`(주제 행 SELECT 끝에 `FOR UPDATE` 가 없다 — 파트 K 메모 25)
 
 - [ ] **Step 3: 구현한다**
 
@@ -14852,7 +14885,14 @@ new:
     카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient.
     그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
     지우면 안 된다. 고른 카드(picked — 제목이 있다)도 덮지 않는다 — [이 키워드로 다시 만들기](06e)가 도는 사이
-    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16)."""
+    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16).
+
+    행을 FOR UPDATE 로 읽는다 — 두 검사는 읽고 쓰는 사이가 비면 겹친 쓰기를 놓친다. READ COMMITTED 에서 [고르기]
+    (pick_topic)의 UPDATE 가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 그 커밋을 기다렸다가
+    WHERE id 만 다시 보고 새 카드·candidate 를 써서 work.topic_id 는 그 주제인데 state 는 candidate 로 남는다. 잠그면
+    고르기가 끝난 뒤의 값을 본다. [직접 고치기]는 카드 생성이 열려 있으면 409 CARD_BUSY 라 여기서 겹칠 일이 거의
+    없지만 같은 잠금이 막는다. 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른
+    행 → 연구 행'과 같은 방향이라 서로 기다리는 고리가 없다(section·paragraph 의 apply 와 같은 읽기-고치기-쓰기 규칙)."""
 ```
 
 ⑥ 같은 함수 — edited 검사 바로 뒤에 고른 카드 검사. old:
@@ -14875,15 +14915,34 @@ new:
     card = output.get("card")
 ```
 
+⑦ 같은 함수 — 주제 행을 `FOR UPDATE` 로 읽는다(quality 검토 반영 — 파트 K 메모 25). old:
+
+```python
+    row = (await db.execute(
+        select(ResearchTopic.card, ResearchTopic.state)
+        .where(ResearchTopic.id == topic_id, ResearchTopic.work_id == gen.work_id)
+    )).first()
+```
+
+new:
+
+```python
+    row = (await db.execute(
+        select(ResearchTopic.card, ResearchTopic.state)
+        .where(ResearchTopic.id == topic_id, ResearchTopic.work_id == gen.work_id)
+        .with_for_update()
+    )).first()
+```
+
 - [ ] **Step 4: 통과를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_topics_api.py tests/test_research_work_topic_card.py -q -p no:cacheprovider`
 
-Expected: `106 passed, 2 warnings` (topics 46 · topic_card 60 — Task K5 의 quality 검토 반영 테스트 1 포함, 파트 K 메모 24)
+Expected: `107 passed, 2 warnings` (topics 46 · topic_card 61 — Task K5 의 quality 검토 반영 테스트 1(파트 K 메모 24)과 이 Task 의 잠금 테스트 1(파트 K 메모 25) 포함)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 8
+Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 9
 
 - [ ] **Step 5: 커밋한다**
 
@@ -16853,7 +16912,7 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_generate.py tests/test_research_work_executor.py tests/test_research_work_topic_card.py tests/test_research_topics_api.py tests/test_research_work_tasks.py -q -p no:cacheprovider`
 
-Expected: `179 passed, 2 warnings` (generate 24 · executor 12 · topic_card 70 · topics 46 · tasks 27 — topic_card 는 Task K6 뒤 60 에 고정 예제 7·검사 2·세 번 놓친 카드 1 을 더했다)
+Expected: `180 passed, 2 warnings` (generate 24 · executor 12 · topic_card 71 · topics 46 · tasks 27 — topic_card 는 Task K6 뒤 61(잠금 테스트 포함 — 파트 K 메모 25)에 고정 예제 7·검사 2·세 번 놓친 카드 1 을 더했다)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
@@ -16896,13 +16955,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 | 15 | Task K8 | TopicDeck 이 키워드를 고르는 동안 [다른 방향]을 막는다 | 서버가 409 `KEYWORDS_BUSY`(Task K4)로 막는 것을 화면이 먼저 막는다 |
 | 16 | 1-8 Task K8 CSS 묶음 | `.wk-concepts__regen`·`.wk-topic--blocked` 를 더한다. 06b 의 `.wk-concept`·`.wk-concept__remove` 는 쓰지 않게 되지만 지우지 않는다 | 새 줄·새 상태(`blocked`)의 모양. 남는 규칙은 시각 디자인 담당 정리 몫 |
 | 17 | Task K9 프론트 `term_checks.json` 일치 it(＋) | 처음부터 통과(실패 확인 단계에서 '실패 0' 을 기대) | Task K7 의 `keywordSpans` 가 같은 규칙이라 — 06c 계획의 공용 고정 예제 `term_checks.json`(contains 9 사례)으로 샌드박스 실측 |
-| 18 | Task K6 — `topic_card.apply` 는 그대로(뼈대에 없음) | `apply` 의 edited 검사 바로 뒤에 고른 카드 검사 — state picked·제목 있음이면 새 카드든 빈 결과든 덮지 않는다. `TestApply.test_a_picked_topic_stays_picked` ✎(매개변수 둘 — +1) | 검토 반영. [이 키워드로 다시 만들기]가 도는 사이 고른 카드가 바뀌면 06e 정함 16 이 깨진다 |
+| 18 | Task K6 — `topic_card.apply` 는 그대로(뼈대에 없음) | `apply` 의 edited 검사 바로 뒤에 고른 카드 검사 — state picked·제목 있음이면 새 카드든 빈 결과든 덮지 않는다. `TestApply.test_a_picked_topic_stays_picked` ✎(매개변수 둘 — +1) | 검토 반영. [이 키워드로 다시 만들기]가 도는 사이 고른 카드가 바뀌면 06e 정함 16 이 깨진다(두 탭 경합을 닫는 주제 행 잠금은 메모 25) |
 | 19 | 1-6 Task K7 `cardStatus` — 생성 기록 없는 빈 카드는 concepts 가 열려 있으면 waiting, failed 면 blocked, 그 밖 failed | 빈 씨앗 자리(slot 있음·origin report_seed)만 — concepts 가 있으면 waiting(done·canceled 포함), failed 면 blocked. 씨앗 자리가 아니면 failed | 검토 반영. 씨앗 자리 카드 생성은 키워드 반영·취소와 같은 트랜잭션에 들어가 이벤트와 다시 읽기 사이에 생성이 없다 |
 | 20 | 1-6 Task K7 `cardNote("blocked")` = `키워드를 다시 부르면 카드를 만듭니다` | `키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다` | 검토 반영. 키워드를 직접 넣고 저장한 사용자의 길을 함께 알린다 |
 | 21 | 1-6 Task K7 `aiCardsStale(topics, concepts)` | `aiCardsStale(topics, concepts, conceptsGen?)` — blocked 씨앗 자리도 세고 다시 만드는 중인 카드는 세지 않는다(이름 그대로) | 검토 반영. 키워드 생성 failed 뒤 직접 저장한 연구가 막다른 길에 서지 않게 |
 | 22 | 1-6 Task K7 이름 목록 | `cardRemakingNote` 를 더하고 `canPick` 이 다시 만드는 중인 카드를 막는다. Task K8 TopicCard 는 그 줄을 달고 [직접 고치기]도 막는다 | 검토 반영 — 06e 정함 16 의 화면 쪽 |
 | 23 | Task K1 ③ 653 원문 표본 20개(`doc_type='paper'` 전체에서 `ORDER BY random() LIMIT 20`)로 구분자를 보고, ④ 는 `[;,]` 로 나눈다 | ③ 을 둘로 — source_format 갈래마다 653 키워드가 있는 행과 그중 `\|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 세어 구분자 판정 줄을 찍고(`'\|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `\|` — Task Z1 Step 5), 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())`). ④ 는 `[;,\|]` 로 나눈다. README 판정 규칙에 두 구분자와 출처 줄을 적는다. 질의는 넷에서 다섯(Task K1 Step 3·Task Z1 Step 1·2 의 기대를 맞췄다) | quality 검토 지적. keyword 의 구분자는 채운 경로마다 다르고 코드로 이미 안다 — MARC 로더는 653 $a 를 ` \| ` 로 잇고(`marc_parser.py:118`·`:256`, 함정 6), 적재 보강은 653 이 빈 논문에 `", ".join(추출 키워드)`(`stages.py:538-539` — KCI 로더는 keyword 를 채우지 않는다). MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라 딥리서치(`doc_scope="paper"` — `explorer.py:113`)의 채택 논문이 된다. 보강으로 채운 `, ` 행이 많으면 무작위 20개에 ` \| ` 행이 하나도 안 나와 Z1 이 '[;,] 그대로'로 잘못 판정하고, K2 에서 MARC 학위논문 키워드가 한 덩어리로 남거나(40자 넘으면 버려진다) ④ 가 그 행을 한 낱말로 세어 판정 2 때 참고하는 후보 수도 틀린다. 함정 10 의 교훈('코드 경로가 있다고 그 데이터가 있는 것은 아니다 — 세어서 확정한다')대로 센다. 되돌리려면 이 커밋의 `measure.py`·README 를 앞 커밋으로 돌린다(그러면 위 오판이 돌아온다) |
 | 24 | Task K5 `enqueue_seed_cards` 는 씨앗 자리 행마다 그 행을 target 으로 한 `topic_card` 생성이 (상태 무관) 있는지만 본다 | 행을 읽을 때 `card` 도 읽어 카드가 이미 있는 행(`not r.card` 가 거짓)도 건너뛴다. docstring 에 '카드가 이미 있는 자리(직접 쓴 카드)는 넣지 않는다'를 적고, `TestEnqueueSeedCards.test_a_seed_slot_that_already_has_a_card_gets_none`(＋ — slot 1 에 사용자 카드 edited 가 있으면 그 자리에는 카드 생성이 들어가지 않는다)를 더한다. 정함 29 칸·Task K5 계약 줄·Step 2·4 기대 수와 Task K6(Step 2 `97 passed`·Step 4 `106 passed`)·K9(Step 5 `179 passed`)의 기대 수를 1 씩 맞췄다 | quality 검토 지적. 06e 에서는 이어가기와 카드 생성 사이에 빈 씨앗 자리가 생성 없이 남는 시간이 새로 생겼다(키워드 생성이 줄을 서거나 failed 인 동안). 그 사이 `edit_topic` 은 `_card_open` 이 거짓이라 막지 않고 빈 카드면 사용자 카드(edited)를 만든다(`research_topics.py:194-200`). 그 뒤 키워드를 다시 불러 done 이 반영되면 생성 기록이 없는 그 행에도 카드 생성이 들어가 전역 한 자리 디스패처(D15)로 LLM 을 한 번 헛되이 부르고, 결과는 `topic_card.apply` 의 edited 검사가 버린다 — 그 생성이 열린 동안 사용자 카드에는 '새 키워드로 다시 만드는 중입니다'(K7 `cardRemakingNote`)가 붙고 [고르기]는 `canPick` 이, [직접 고치기]는 409 `CARD_BUSY` 가 막는다. Task K6 regenerate 가 고친 카드를 건너뛰는 규칙(spec §12-4·정함 16)과 같게 한다. 씨앗 자리 행의 카드는 반영(생성 기록이 남는다)이나 [직접 고치기](edited)로만 생기므로 '카드 있음'으로 거르는 것이 06e 전 행·[다른 방향] 판정(정함 29)을 바꾸지 않는다. 되돌리려면 `topic_card.py` 의 `T.card` 읽기와 `and not r.card` 를 빼고 그 테스트를 지운다(그러면 위 헛 호출이 돌아온다) |
+| 25 | Task K6 `topic_card.apply` 의 고른 카드 검사 — 주제 행을 잠그지 않고 읽는다 | 주제 행 SELECT 에 `.with_for_update()` 를 붙이고 docstring 에 잠금 까닭·순서를 적는다. `TestApply.test_the_topic_row_is_read_under_a_row_lock`(＋ — 문장을 PostgreSQL 로 컴파일해 주제 행 SELECT 끝이 `FOR UPDATE` 이고 그 읽기가 주제 행 UPDATE·연구 행 잠금보다 앞서는지 본다)를 더하고, Task K6 알아 둘 것·Step 1 ②·Step 2(`10 failed, 97 passed`)·Step 3 ⑤⑦·Step 4(`107 passed`·Task 앞 + 9)와 Task K9 Step 5(`180 passed`·topic_card 71)를 맞췄다 | quality 검토 지적. 고른 카드 검사는 확인-후-쓰기인데 `pick_topic` 도 주제 행을 `FOR UPDATE` 로 잠그지 않는다(연구별 advisory 잠금만). READ COMMITTED 에서 ① pick 이 `UPDATE T SET state='picked'`(행 잠금, 커밋 전) ② 반영의 SELECT 가 아직 candidate 를 보고 검사를 지난다 ③ 반영 UPDATE 가 잠금을 기다린다 ④ pick 커밋 ⑤ 반영 UPDATE 가 `WHERE id=T` 만 다시 보고 새 카드·`state='candidate'` 를 쓴다 — `work.topic_id=T` 인데 T 는 candidate 이고 제목·질문·근거가 바뀐다. 06e 정함 16 의 두 탭 경합 그 자체이고, 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 닿지 않던 길을 K6 의 regenerate 가 처음 연다(내용이 있는 후보 카드에 새 생성을 넣는다). 잠그면 반영의 SELECT 가 pick 커밋을 기다렸다가 picked 를 보고 덮지 않는다. 잠금 순서는 주제 행 → 연구 행(`refresh_progress`)으로 pick 의 '앞서 고른 행 P → 고른 행 T → 연구 행'과 같은 방향이라 고리가 없다(pick 은 연구 행을 T 뒤에 잠근다). section·paragraph 의 `apply` 가 계획서 행을 `with_for_update()` 로 읽는 것과 같은 규칙이다. UPDATE 의 WHERE 에 `state != 'picked'` 를 더하고 rowcount 를 보는 대안은 쓰지 않았다 — 같은 파일들의 선례가 행 잠금이고, 잠그면 edited 검사([직접 고치기]는 카드 생성이 열려 있으면 409 `CARD_BUSY` 라 거의 겹치지 않는다)도 함께 지킨다. SQLite 대역은 잠금을 그리지 않아 동작이 아니라 문장 모양으로 고정한다(`test_research_work_dispatch.py` 의 `_Recording`·`test_job_runtime.py` 와 같은 방식). 되돌리려면 `.with_for_update()` 와 그 테스트를 지운다(그러면 위 경합이 돌아온다) |
 
 ---
 

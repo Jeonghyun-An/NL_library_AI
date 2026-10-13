@@ -203,11 +203,19 @@ async def apply(db, gen, output: dict) -> dict:
     카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient.
     그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
     지우면 안 된다. 고른 카드(picked — 제목이 있다)도 덮지 않는다 — [이 키워드로 다시 만들기](06e)가 도는 사이
-    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16)."""
+    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16).
+
+    행을 FOR UPDATE 로 읽는다 — 두 검사는 읽고 쓰는 사이가 비면 겹친 쓰기를 놓친다. READ COMMITTED 에서 [고르기]
+    (pick_topic)의 UPDATE 가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 그 커밋을 기다렸다가
+    WHERE id 만 다시 보고 새 카드·candidate 를 써서 work.topic_id 는 그 주제인데 state 는 candidate 로 남는다. 잠그면
+    고르기가 끝난 뒤의 값을 본다. [직접 고치기]는 카드 생성이 열려 있으면 409 CARD_BUSY 라 여기서 겹칠 일이 거의
+    없지만 같은 잠금이 막는다. 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른
+    행 → 연구 행'과 같은 방향이라 서로 기다리는 고리가 없다(section·paragraph 의 apply 와 같은 읽기-고치기-쓰기 규칙)."""
     topic_id = int(gen.input["topic_id"])
     row = (await db.execute(
         select(ResearchTopic.card, ResearchTopic.state)
         .where(ResearchTopic.id == topic_id, ResearchTopic.work_id == gen.work_id)
+        .with_for_update()
     )).first()
     if row is None:                    # 연구가 지워졌다(CASCADE) — finish 도 행을 찾지 못해 되돌린다
         return {"topic_id": topic_id, "state": None}

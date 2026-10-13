@@ -11,6 +11,7 @@ import re
 import pytest
 import sqlalchemy as sa
 from jinja2 import Environment, meta
+from sqlalchemy.dialects import postgresql
 
 from history_sqlite import (
     AsyncSessionOverSync, add_generation, add_research_job, add_topic, add_work, make_engine,
@@ -410,6 +411,39 @@ class TestApply:
 
         row = _topic_row(engine, tid)
         assert (row["card"], row["state"]) == (old, "picked")
+
+    def test_the_topic_row_is_read_under_a_row_lock(self, engine):
+        # 고른 카드 검사는 읽기와 쓰기 사이가 비면 두 탭 경합을 놓친다 — PostgreSQL READ COMMITTED 에서 pick_topic 의
+        # UPDATE(state picked)가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 pick 커밋을
+        # 기다렸다가 WHERE id 만 다시 보고 새 카드·candidate 를 쓴다(work.topic_id 는 그 주제인데 state 는 candidate).
+        # 행을 FOR UPDATE 로 읽으면 pick 이 끝난 뒤의 값을 본다. SQLite 는 잠금을 그리지 않아 문장을 PostgreSQL 로
+        # 컴파일해 본다(test_research_work_dispatch 의 _Recording 과 같은 방식)
+        _, tid, gid = _setup(engine)
+        log: list[str] = []
+
+        class _Recording(AsyncSessionOverSync):
+            async def execute(self, stmt, params=None):
+                log.append(str(stmt.compile(dialect=postgresql.dialect())))
+                return await super().execute(stmt, params)
+
+        async def _go():
+            db = _Recording(engine)
+            try:
+                await apply_result(db, await db.get(ResearchGeneration, gid), _bound(GOOD))
+                await db.commit()
+            finally:
+                await db.close()
+
+        asyncio.run(_go())
+        read = next(i for i, s in enumerate(log) if s.startswith("SELECT research_topics.card"))
+        write = next(i for i, s in enumerate(log) if s.startswith("UPDATE research_topics"))
+        work_lock = next(i for i, s in enumerate(log)
+                         if s.startswith("SELECT research_works.id") and "FOR UPDATE" in s)
+        assert log[read].rstrip().endswith("FOR UPDATE")
+        # 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른 행 → 연구 행'과 같은
+        # 방향이라 서로 기다리는 고리가 생기지 않는다
+        assert read < write < work_lock
+        assert _topic_row(engine, tid)["state"] == "candidate"
 
     def test_apply_does_not_commit(self, engine):
         _, tid, gid = _setup(engine)
