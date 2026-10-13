@@ -119,7 +119,7 @@
             <p v-else class="dt-empty">AI 큐레이션 정보가 없습니다.</p>
           </section>
 
-          <!-- 관련 자료 추천 — 제목으로 찾은 소장자료 4권. 카드를 누르면 그 자료 상세로, [자세히 보기]는 요약 전문과 버튼 -->
+          <!-- 관련 자료 추천 — 제목으로 찾은 다른 소장자료 최대 4권(연관도 하한 아래는 비운다). 카드를 누르면 그 자료 상세로, [자세히 보기]는 요약 전문과 버튼 -->
           <section class="dt-section" aria-labelledby="bdetail-related-title">
             <h2 id="bdetail-related-title" class="dt-section__title">관련 자료 추천</h2>
             <p v-if="relatedLoading" class="dt-empty">불러오는 중...</p>
@@ -471,21 +471,15 @@ async function streamReason() {
   }
 }
 
-// ── 연관 도서 (제목 기반 검색) ─────────────────────────────
+// ── 연관 도서 (관련 자료 전용 GET) ─────────────────────────
+// 백엔드가 이 자료의 제목으로 찾되 자기 자신은 검색 조건에서 미리 빼고, 연관도 하한 아래는 채우지 않는다.
+// 사용자 검색(POST /books/search)을 쓰면 긴 학위논문은 자기 청크가 후보를 다 채워 1권만 남았다
 async function fetchRelatedBooks() {
   if (!book.value) return;
   relatedLoading.value = true;
-  const query = book.value.title || "";
   try {
-    const data = await api<any>("/books/search", {
-      method: "POST",
-      body: {
-        query,
-        mode: "book",
-        top_k: 6,
-        use_rewrite: false,
-        use_rerank: true,
-      },
+    const data = await api<any>(`/books/${encodeURIComponent(cnts_id)}/related`, {
+      query: { top_k: RELATED_LIMIT },
       signal: pageAbort.signal,
     });
     if (data?.books) {
