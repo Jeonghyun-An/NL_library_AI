@@ -43,7 +43,7 @@
           @click="emit('update:tab', t)"
           @keydown="onTabKey($event, t)"
         >
-          {{ TAB_LABEL[t] }}
+          {{ PANEL_TAB_LABEL[t] }}
         </button>
       </div>
       <div
@@ -77,6 +77,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import BookChat from "~/components/BookChat.vue";
 import type { OpenPdfPayload } from "~/types/research";
 import {
+  PANEL_TAB_LABEL,
   type PanelEdge,
   type PanelPaper,
   type PanelTab,
@@ -107,7 +108,6 @@ const emit = defineEmits<{
   detail: [e: MouseEvent];
 }>();
 
-const TAB_LABEL: Record<PanelTab, string> = { sources: "인용 근거", chat: "딥리드" };
 const FOCUSABLE =
   "button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex='-1'])";
 

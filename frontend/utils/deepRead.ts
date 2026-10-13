@@ -3,6 +3,7 @@
 // 연구 화면의 오른쪽 패널(06e)과 기존 네 화면이 함께 쓴다
 import type { OpenPdfPayload } from "~/types/research";
 import type { PaperMeta } from "~/types/work";
+import { DEEP_READ } from "~/utils/brand";
 import { pubYear, splitAuthors } from "~/utils/citations";
 import type { DeepReadSource } from "~/utils/deepReadSse";
 import { citedPdfTarget } from "~/utils/pdfViewer";
@@ -50,6 +51,9 @@ export function sourcePdfTarget(cntsId: string, title: string, src: DeepReadSour
 // ── 단계 화면 오른쪽 패널(spec §12-4 D24) ─────────────────────────
 // 탭 — 인용 근거(보고서 인용 칩이 연다)·딥리드(BookChat)
 export type PanelTab = "sources" | "chat";
+
+// 탭 이름 — 대화 탭은 화면 표기 상수(utils/brand DEEP_READ)
+export const PANEL_TAB_LABEL: Readonly<Record<PanelTab, string>> = { sources: "인용 근거", chat: DEEP_READ };
 
 // 배치 경계(px) — 이 폭 이상은 단계 본문 옆 2단(sticky), 그 미만은 오른쪽 서랍, PANEL_FULL_MAX_PX 이하는 전체 폭 서랍.
 // work.css 의 @media (max-width: 1199px)·(max-width: 768px) 와 같은 값이다

@@ -1,9 +1,11 @@
 // frontend/tests/unit/deepRead.test.ts
 import { describe, expect, it } from "vitest";
 import type { PaperMeta } from "~/types/work";
+import { DEEP_READ } from "~/utils/brand";
 import {
   PANEL_FULL_MAX_PX,
   PANEL_SIDE_MIN_PX,
+  PANEL_TAB_LABEL,
   chatCopy,
   keyboardScroller,
   panelEdgeTarget,
@@ -89,9 +91,14 @@ describe("panelMode·panelHead·panelTabs", () => {
     ).toEqual({ title: "KCI_C", byline: "" });
   });
 
-  it("참고문헌 선택하기는 딥리드 탭만, 보고서는 인용 근거·딥리드 두 탭", () => {
+  it("참고문헌 선택하기는 DeepRead 탭만, 보고서는 인용 근거·DeepRead 두 탭", () => {
     expect(panelTabs("reading")).toEqual(["chat"]);
     expect(panelTabs("proposal")).toEqual(["sources", "chat"]);
+  });
+
+  it("탭 이름 — 대화 탭은 화면 표기 상수 DEEP_READ(utils/brand)다", () => {
+    expect(PANEL_TAB_LABEL).toEqual({ sources: "인용 근거", chat: DEEP_READ });
+    expect(PANEL_TAB_LABEL.chat).toBe("DeepRead");
   });
 });
 

@@ -3,7 +3,7 @@
 // 진행 막대·요약 띠·범위 띠·온보딩의 문구도 여기서 만든다(.vue 는 그리기만 한다)
 import type { ResearchView } from "~/types/research";
 import type { Corpus, WorkPhase, WorkStep, WorkView } from "~/types/work";
-import { DEEP_RESEARCH } from "~/utils/brand";
+import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
 import { pubYear } from "~/utils/citations";
 import type { QueryValue } from "~/utils/restorePosition";
 
@@ -133,7 +133,7 @@ export const ONBOARDING_STEPS: readonly { title: string; body: string; decide: s
   },
   {
     title: STEP_NAMES.reading,
-    body: "탐색에서 채택한 논문이 후보로 들어와 있습니다. 제목을 누르면 오른쪽에서 그 논문과 대화(딥리드)할 수 있고, 들어온 경로를 보거나 자기점검이 뺀 논문을 되살릴 수 있습니다.",
+    body: `탐색에서 채택한 논문이 후보로 들어와 있습니다. 제목을 누르면 오른쪽에서 그 논문과 대화(${DEEP_READ})할 수 있고, 들어온 경로를 보거나 자기점검이 뺀 논문을 되살릴 수 있습니다.`,
     decide: `보고서에 쓸 논문을 담습니다. 5편 이상 담으면 [${MAKE_REPORT}]를 누를 수 있습니다.`,
   },
   {
