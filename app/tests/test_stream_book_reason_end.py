@@ -4,58 +4,18 @@ LLM 호출이 실패하면(httpx 연결·읽기 오류, 4xx·5xx 응답 등) [DO
 (frontend/utils/bookAiPick.ts readReasonStream)이 '끝까지 받음'으로 읽어 받다 만 이유를 완성본으로 기록에 저장한다.
 정상으로 끝난 스트림에는 {error} 가 없다.
 
-pipeline 은 reranker(torch)·indexer(pymilvus) 를 물고 오므로, 미설치 환경에서만 더미를 꽂아 새로 import 하고 끝나면
-import 전 그대로 되돌린다(test_search_chunk_answer_flag.py 의 _stubbed_pipeline 과 같은 방식).
+pipeline 은 reranker(torch)·indexer(pymilvus) 를 물고 오므로 공용 대역(pipeline_stub.py)의 pipeline 픽스처로
+import 한다 — 미설치 환경에서만 더미를 꽂고, 끝나면 import 전 그대로 되돌린다.
 """
 import asyncio
-import importlib
 import json
-import sys
 from types import SimpleNamespace
-from unittest.mock import MagicMock
 
 import httpx
-import pytest
 
-_HEAVY = ("torch", "transformers", "FlagEmbedding", "pymilvus")
-_CACHED = ("services.search.pipeline", "services.search.reranker",
-           "services.ingestion.embedder", "services.ingestion.indexer")
+from pipeline_stub import pipeline  # noqa: F401 — 픽스처(테스트 인자 이름으로 쓴다)
+
 DONE = "data: [DONE]\n\n"
-
-
-def _stubbed_pipeline(monkeypatch):
-    """더미 위에서 pipeline 을 새로 import 해 넘기고, 끝나면 import 전 그대로 되돌린다 — 새로 올린 모듈은 직접 빼고,
-    원래 있던 항목·부모 패키지 속성은 monkeypatch 가 되돌리게 둔다."""
-    for name in _HEAVY:
-        try:
-            importlib.import_module(name)
-        except ModuleNotFoundError:
-            monkeypatch.setitem(sys.modules, name, MagicMock())
-    for name in _CACHED:
-        parent, _, child = name.rpartition(".")
-        if hasattr(sys.modules.get(parent), child):
-            monkeypatch.delattr(sys.modules[parent], child)
-        monkeypatch.delitem(sys.modules, name, raising=False)
-    yield importlib.import_module("services.search.pipeline")
-    for name in _CACHED:
-        module = sys.modules.pop(name, None)
-        parent, _, child = name.rpartition(".")
-        if module is not None and getattr(sys.modules.get(parent), child, None) is module:
-            delattr(sys.modules[parent], child)
-
-
-@pytest.fixture
-def pipeline(monkeypatch):
-    yield from _stubbed_pipeline(monkeypatch)
-
-
-def test_loader_leaves_sys_modules_as_it_found_them():
-    snapshot = {name: sys.modules.get(name) for name in _CACHED}
-    with pytest.MonkeyPatch.context() as mp:
-        loader = _stubbed_pipeline(mp)
-        next(loader)
-        next(loader, None)
-    assert {name: sys.modules.get(name) for name in _CACHED} == snapshot
 
 
 def _delta(text: str) -> str:
