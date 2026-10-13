@@ -9,9 +9,10 @@ from typing import AsyncGenerator
 import httpx
 
 from core.config import get_settings
+from schemas.book import BookOut
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import SearchHit, search_chunks
-from services.prompts import get_prompt
+from services.prompts import PromptTemplate, get_prompt
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -58,6 +59,18 @@ async def rewrite_chat_query(message: str, history: list[dict]) -> str:
         resp.raise_for_status()
         out = resp.json()["choices"][0]["message"]["content"].strip()
     return out or message
+
+
+def chat_prompt(book: BookOut) -> PromptTemplate:
+    """대화 시스템 프롬프트 — 문서 종류(doc_type)의 변형이 있으면 그것(논문 → book_chat.paper.yaml), 없으면 기본
+    book_chat.yaml(책 문구). doc_type 이 비었거나 그 속성이 없는 객체도 기본으로 간다(get_prompt 의 해석 순서)."""
+    return get_prompt("book_chat", getattr(book, "doc_type", None) or None)
+
+
+def _book_references(book: BookOut) -> list[str]:
+    """참고문헌 의도('참고문헌'·'인용'·'출처' 등)일 때 모델에 넘길 목록. 대화 엔드포인트가 넘기는 BookOut 에는 extra 가
+    없고 references 칸이 extra["references"] 를 싣는다(ORM Book 도 같은 이름의 property). 없으면 빈 목록."""
+    return list(getattr(book, "references", None) or [])
 
 
 def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHit]:
@@ -115,14 +128,15 @@ async def stream_book_chat(
 
     ref_context_block = ""
     if is_ref_query:
-        refs: list[str] = (book.extra or {}).get("references", [])
+        refs = _book_references(book)
         if refs:
             ref_context_block = "\n".join(f"{i + 1}. {r}" for i, r in enumerate(refs[:50]))
             log.info(f"[{cnts_id}] 참고문헌 의도 감지 → {len(refs)}건 컨텍스트 주입")
 
-    # ── 2b. 청크 검색 (참고문헌 의도 시 건너뜀) ─────────────
+    # ── 2b. 청크 검색 (참고문헌 목록을 넣을 때만 건너뜀) ─────
+    #    참고문헌 의도여도 목록이 없으면(책·참고문헌을 뽑지 못한 논문) 청크로 돌아간다 — 근거 없이 질문만 보내지 않는다.
     hits = []
-    if not is_ref_query:
+    if not ref_context_block:
         try:
             dense, sparse = embed_texts([search_query], is_query=True)
             hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
@@ -132,7 +146,7 @@ async def stream_book_chat(
     # ── 3. 시스템 프롬프트 + 메시지 빌드 ────────────────────
     author = book.personal_author or book.corporate_author or "저자 미상"
     pub_date = f", {book.pub_date}" if book.pub_date else ""
-    tpl = get_prompt("book_chat")
+    tpl = chat_prompt(book)   # 논문이면 논문 문구(book_chat.paper.yaml)
     system, _, gen_params = tpl.render(
         title=book.title or cnts_id,
         author=author,

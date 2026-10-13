@@ -7,6 +7,7 @@ import { GROUP_LABEL_MAX } from "~/utils/readingList";
 // (Nuxt 자동 import 는 같은 이름을 두 파일이 내보내면 경고하고 하나를 버린다)
 export const OUTLINE_QUESTION_MAX = 300;
 export const OUTLINE_METHOD_MAX = 1000;
+export const OUTLINE_BACKGROUND_MAX = 2000;
 const QUESTION_MIN = 2;
 
 // 목차 화면이 고치는 것 — 묶음 이름·묶음 사이 논문 배정·연구 질문·방법. 묶음 수·키는 서버가 정하고 바꾸지 않는다
@@ -81,6 +82,19 @@ export function toOutlinePut(d: OutlineDraft, approve: boolean): OutlinePut {
     question: d.question.trim(),
     method: d.method.trim(),
     approve,
+  };
+}
+
+// 문서의 연구 배경(2절)·방법(6절) 칸 저장 본문(06e) — 저장된 묶음·논문 순서·연구 질문을 그대로 싣고 승인 상태를 지킨다:
+// 승인한 목차는 approve true(false 로 보내면 초안이 되어 절 쓰기가 409), 초안 목차는 false. 보내지 않은 방법은 저장된
+// 값을 싣고, 보내지 않은 연구 배경은 키를 싣지 않는다(서버가 저장된 값을 지킨다)
+export function fieldPut(outline: Outline, patch: { method?: string; background?: string }): OutlinePut {
+  return {
+    groups: outline.groups.map((g) => ({ key: g.key, name: g.name, papers: [...g.papers] })),
+    question: outline.question ?? "",
+    method: (patch.method ?? outline.method).trim(),
+    approve: outline.state === "approved",
+    ...(patch.background !== undefined ? { background: patch.background.trim() } : {}),
   };
 }
 

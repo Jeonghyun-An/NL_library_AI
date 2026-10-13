@@ -259,13 +259,15 @@ class TestDispatch:
         assert env.calls == [("http://gemma.test/v1", "gemma-test", 300.0)]
         assert (row["status"], row["model"], row["error"]) == ("done", "gemma-test", None)
         assert row["output"] == {"concepts": ["독서 격차", "청소년"],
+                                 "candidates": [{"text": "독서 격차", "source": "llm", "n": 0},
+                                                {"text": "청소년", "source": "llm", "n": 0}],
                                  "attempts": [{"model": "gemma-test", "outcome": "ok"}]}
         assert row["started_at"] is not None and row["finished_at"] is not None
         work = env.work_row(work_id)
         assert (work["concepts"], work["concept_members"]) == (["독서 격차", "청소년"], {})
         assert env.events == [(work_id, "generation", {
             "gen_id": gid, "gen_kind": "concepts", "target": None, "status": "done",
-            "model": "gemma-test", "result": {"concepts": ["독서 격차", "청소년"]},
+            "model": "gemma-test", "result": {"concepts": ["독서 격차", "청소년"], "cards": []},
         })]
         assert env.dispatched == 0 and env.disposed == 1
 
@@ -297,7 +299,7 @@ class TestDispatch:
             "generation", "concepts", gid, "done")
 
     def test_no_answer_after_three_calls_is_done_with_no_concepts(self, monkeypatch, wt):
-        env = _Env(monkeypatch, wt, replies=["모르겠다", '{"concepts": ["하나"]}', "{}"])
+        env = _Env(monkeypatch, wt, replies=["모르겠다", '{"keywords": ["연구 동향", "선행연구"]}', "{}"])
         work_id = env.work()
         gid = env.gen(work_id)
 
@@ -308,7 +310,7 @@ class TestDispatch:
         assert (row["status"], row["model"]) == ("done", None)
         assert row["output"]["concepts"] == []
         assert [a["outcome"] for a in row["output"]["attempts"]] == ["parse", "check", "parse"]
-        assert env.events[0][2]["result"] == {"concepts": []}
+        assert env.events[0][2]["result"] == {"concepts": [], "cards": []}
 
     def test_transport_failure_hands_over_to_qwen(self, monkeypatch, wt):
         env = _Env(monkeypatch, wt, replies=[httpx.ConnectError("거부"), GOOD])

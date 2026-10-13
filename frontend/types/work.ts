@@ -38,6 +38,14 @@ export interface WorkGeneration {
   others_ahead?: boolean;
 }
 
+// 키워드 후보(06e 제목 고르기 — 키워드 생성 output.candidates). source 는 출처(모델·채택 논문의 소장 키워드·둘 다),
+// n 은 그 키워드를 가진 채택 논문 수(모델만이면 0)
+export interface KeywordCandidate {
+  text: string;
+  source: "llm" | "paper" | "both";
+  n: number;
+}
+
 export interface WorkView {
   id: string;
   phase: WorkPhase;
@@ -48,6 +56,8 @@ export interface WorkView {
   topic_id?: number | null;
   corpus?: Corpus | null;
   generations: WorkGeneration[];
+  // 최신 done 키워드 생성의 후보(06e) — 06e 전 생성·키워드 생성이 끝나지 않은 연구는 null
+  concept_candidates?: KeywordCandidate[] | null;
 }
 
 export interface PaperMeta {
@@ -83,7 +93,10 @@ export interface TopicCard {
   figures: Figure[];
   latest_year: number | null;
   edited: boolean;
-  checks: { numbers: string[]; softened: number; recovered: number };
+  // 카드를 만들 때 넘긴 고른 키워드(06e) — 06e 전 카드·사용자 카드엔 없다
+  keywords?: string[];
+  // missing_keywords — keywords 가운데 제목에 들어 있지 않은 것(06e)
+  checks: { numbers: string[]; softened: number; recovered: number; missing_keywords?: string[] };
   gen_id: number | null;
 }
 
@@ -192,6 +205,10 @@ export interface Outline {
   approved_at: string | null;
   // 목차를 만들 때의 핵심 개념
   concepts?: string[];
+  // 연구 배경 — 사용자가 문서 2절 자리에 적는 자유 글(06e). 키가 없으면 아직 적지 않았다
+  background?: string;
+  // [보고서 만들기]의 반영이 자동 승인한 목차만 true — 화면의 절 연쇄가 읽는다(06e D20. 06b 목차엔 키가 없다)
+  auto?: boolean;
 }
 
 export type ParaState = "proposed" | "accepted" | "edited" | "authored";
@@ -218,7 +235,8 @@ export interface ProposalSection {
   gen_id: number;
   evidence: Record<string, string>;
   figures: Figure[];
-  basis: { topic_id: number | null; papers: string[] };
+  // question — 이 절을 쓸 때의 연구 질문(06e 부터. 06b 절엔 없다 — 바뀌면 서버가 다시 맞춤 필요를 붙인다)
+  basis: { topic_id: number | null; papers: string[]; question?: string };
   note: string | null;
   paragraphs: Paragraph[];
   model: string | null;
@@ -240,6 +258,12 @@ export interface DisclosureStep {
   attempts: { model: string; outcome: string }[];
 }
 
+// 절 키별 마지막 section 생성(상태 무관) — 06e 절 연쇄가 '절도 생성 기록도 없는 키' 를 고르는 재료
+export interface SectionGen {
+  gen_id: number;
+  status: GenStatus;
+}
+
 export interface ProposalView {
   version: number;
   outline: Outline | null;
@@ -252,6 +276,39 @@ export interface ProposalView {
   disclosure: { steps: DisclosureStep[] };
   // 고른 주제의 출처(공개 부록용) — 주제가 없으면 null
   topic_source?: { origin: TopicItem["origin"]; edited: boolean } | null;
+  // 절 키 → 그 키의 마지막 section 생성(06e 서버부터 — 옛 응답엔 없다)
+  section_gens?: Record<string, SectionGen>;
+}
+
+// 인용 근거(GET …/sections/{key}/sources) — 그 절을 쓸 때 모델에 넘긴 근거 논문의 초록·원문 대목. 쪽은 0부터 센 저장값
+export interface SectionSourceExcerpt {
+  chunk_id: string;
+  page_start: number | null;
+  page_end: number | null;
+  text: string;
+}
+
+export interface SectionSource {
+  cnts_id: string;
+  abstract: string;
+  // 대목을 읽지 못한 논문(Milvus 실패)은 null — 초록만 보인다
+  excerpt: SectionSourceExcerpt | null;
+}
+
+// [E#] → 그 번호의 근거
+export type SectionSources = Record<string, SectionSource>;
+
+// 보고서 문단에서 누른 인용 칩 — 절 키·문단 id·문장 번호(sentenceFlags 순서)·근거 번호·논문·그 절의 생성·그 문장 글
+export interface CitePick {
+  key: string;
+  pid: string;
+  si: number;
+  eid: string;
+  cntsId: string;
+  genId: number;
+  sentence: string;
+  // 카드에 보이는 인용한 문장 — [E#] 칩을 빼고 [F#] 를 그 절의 수치 값으로 바꾼 글(citedQuote). sentence 는 마커가 든 원문 그대로
+  quote?: string;
 }
 
 // ── 요청 본문 ──────────────────────────────────────────────
@@ -283,6 +340,8 @@ export interface OutlinePut {
   question: string;
   method: string;
   approve: boolean;
+  // 실을 때만 바뀐다 — 싣지 않으면 서버가 저장된 연구 배경을 지킨다
+  background?: string;
 }
 
 export interface SectionPut {

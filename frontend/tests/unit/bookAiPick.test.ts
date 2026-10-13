@@ -204,6 +204,27 @@ describe("readReasonStream — 추천 이유 SSE 읽기", () => {
     expect(onText).toHaveBeenCalledWith("중간");
   });
 
+  // 서버(app/services/search/pipeline.py stream_book_reason)는 LLM 호출이 실패하면 [DONE] 앞에 {error} 를 보낸다
+  it("{error} 가 오면 [DONE] 이 뒤따라도 끝나지 않았다고 알리고 읽기를 그만둔다 — 받다 만 이유를 완성본으로 저장하지 않게", async () => {
+    const onText = vi.fn();
+    const { body, cancelled } = streamOf([
+      ev({ text: "받다 만" }),
+      ev({ error: "추천 이유를 만들지 못했습니다" }),
+      ev({ text: "뒤" }),
+      "data: [DONE]\n\n",
+    ]);
+    expect(await readReasonStream(body, onText)).toBe(false);
+    expect(onText.mock.calls.map((c) => c[0])).toEqual(["받다 만"]);
+    expect(cancelled()).toBe(true);
+  });
+
+  it("글 없이 {error} 만 와도 끝나지 않았다고 알린다", async () => {
+    const onText = vi.fn();
+    const { body } = streamOf([ev({ keywords: ["k"] }), ev({ error: "x" }), "data: [DONE]\n\n"]);
+    expect(await readReasonStream(body, onText)).toBe(false);
+    expect(onText).not.toHaveBeenCalled();
+  });
+
   it("첫 이벤트 {keywords} 를 onKeywords 로 넘긴다(문자열만)", async () => {
     const onText = vi.fn();
     const onKeywords = vi.fn();

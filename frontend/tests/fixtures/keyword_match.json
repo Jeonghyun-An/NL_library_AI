@@ -1,0 +1,9 @@
+[
+  {"text": "노인의 우울과 사회적 지지", "word": "노인 우울", "marked": ["노인", "우울"], "note": "낱말이 순서대로 — 조각마다 감싼다(term_checks 와 같은 사례)"},
+  {"text": "노인의 우울", "word": "우울 노인", "marked": [], "note": "순서가 바뀌면 맞지 않는다(같은 사례)"},
+  {"text": "다문화 가정 아동", "word": "다문화가정", "marked": ["다문화 가정"], "note": "공백을 지우고 맞춘다 — 원문 자리는 공백을 품는다(같은 사례)"},
+  {"text": "ＣＳＲ과 재무성과", "word": "csr", "marked": ["ＣＳＲ"], "note": "NFKC·casefold — 원문 글자 그대로 감싼다(같은 사례)"},
+  {"text": "공공도서관 서비스", "word": "도서관", "marked": ["도서관"], "note": "부분 문자열(같은 사례)"},
+  {"text": "컴퓨팅 자원 할당", "word": "클라우드", "marked": [], "note": "없는 낱말(같은 사례)"},
+  {"text": "Digital Library Use", "word": "digital library", "marked": ["Digital Library"], "note": "영문 대소문자 — 06e 만"}
+]

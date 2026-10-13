@@ -9,6 +9,7 @@ from sqlalchemy import update
 
 from models.research_work import ResearchWork
 from services.research_work.executors import EXECUTORS
+from services.research_work.topic_card import enqueue_seed_cards
 
 
 async def apply_result(db, gen, output: dict) -> dict:
@@ -17,6 +18,10 @@ async def apply_result(db, gen, output: dict) -> dict:
     concepts: research_works.concepts 를 바꾸고 개념 소속(concept_members)을 비운다 — 소속은 FastAPI 가
     개념 임베딩으로 다시 계산한다(spec §5-3, 06c). 세 번 다 못 얻은 빈 결과면 연구를 건드리지 않는다 —
     빈 결과를 다시 부르기 전에 사용자가 넣은 칩과 소속을 아무 결과 없이 지우면 안 된다.
+    그 뒤 늘 씨앗 자리 카드 생성을 넣는다(06e D23 '카드 시점' — topic_card.enqueue_seed_cards, 자리마다 한 번만).
+    concepts 는 미리 고른 키워드라 카드 입력의 keywords 가 되고, 빈 결과면 키워드 없이 넣는다. 넣은 카드의 queued
+    이벤트는 따로 보내지 않는다 — 화면이 concepts done 에 topics·work 를 다시 읽는다(06e 정함 25). 워커 _close 가
+    queued 를 보고 다음 디스패치를 보낸다. result 는 {"concepts", "cards": [gen_id]}.
     그 밖의 kind 는 실행기의 apply(있으면)를 부르고 그 반환값을 result 로 낸다. 실행기나 apply 가 없으면
     하는 일이 없다(result {}).
     """
@@ -28,7 +33,8 @@ async def apply_result(db, gen, output: dict) -> dict:
                 .where(ResearchWork.id == gen.work_id)
                 .values(concepts=concepts, concept_members={})
             )
-        return {"concepts": concepts}
+        cards = await enqueue_seed_cards(db, gen.work_id, concepts)
+        return {"concepts": concepts, "cards": [gen_id for _, gen_id in cards]}
     executor = EXECUTORS.get(gen.kind)
     if executor is None or executor.apply is None:
         return {}

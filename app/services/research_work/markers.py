@@ -11,11 +11,21 @@
   frontend/tests/fixtures/marker_checks.json 을 함께 읽는다.
 - 소장 코퍼스 밖을 단정하는 표현('연구가 없다'·'전무하다'·'최초로')은 "소장 코퍼스에서 확인하지 못했다" 투로
   바꾼다(soften_claims) — 이 시스템은 소장 KCI 적재분만 보았다(spec §4 시연 정직성).
+- 소장 코퍼스 범위를 말하는 문장('코퍼스'·'소장 논문/자료/문헌' 낱말이 든 문장)의 '…않음을 확인했다'·'…확인되었다'
+  단정은 '…것으로 보인다(소장 코퍼스에서 확인하지 않은 공백 후보)' 투로 바꾼다(06e — 06b 이월 §7-13). 확인 검색을
+  거치지 않은 공백이라 '확인했다' 고 쓸 수 없다. 인용한 발견('김(2015)[E1]은 … 확인되었다')은 문맥 낱말이 없어 그대로다
+  — 위 규칙이 바꿔 넣은 '소장 코퍼스에서 확인…' 의 '코퍼스'는 문맥으로 보지 않는다. '않(았)음을/없(었)음을 확인' 밖의
+  단정은 바로 앞이 결핍 말('부족함을'·'전무한 것으로'·'공백이'·'없음이')일 때만 바꾼다 — 코퍼스 문장의 긍정 단정('다수
+  확인되었다')은 그대로. 결핍 말의 부정('부족하지 않은'·'적지 않음을')·'다르지 않음을'·'없' 으로 끝나는 합성어('다름없는'·
+  '변함없음')도 결핍이 아니라 그대로다. 공백 후보 말(GAP_NOTE)을 이미 쓴 문장은 단정만 바꾸고 꼬리를 또 붙이지 않는다.
+  남는 한계: 코퍼스 문장 안의 효과 없음 결과('소장 논문을 분석한 결과 성별 간 차이가 없음을 확인했다')는 결핍 단정과
+  같은 꼴이라 공백 후보로 바뀐다 — 주어(연구·논문)로 좁히면 '다룬 것이 없음을'·'아직까지 없음을' 같은 결핍 단정을 놓친다.
 """
 import re
 from typing import NamedTuple
 
 from services.research.citations import bind_markers, normalize_markers
+from services.research_work.shapes import GAP_NOTE
 
 FIGURE_MARKER = re.compile(r"\[F(\d+)\]")                    # 검사를 거친 표준형
 _ANY_MARKER = re.compile(r"\[[EF]\d+\]")
@@ -37,6 +47,44 @@ CLAIM_REWRITES: tuple[tuple[str, str], ...] = (
     (r"최초의", "소장 코퍼스에서 확인한 범위에서 첫"),
 )
 _REWRITES = tuple((re.compile(pattern), repl) for pattern, repl in CLAIM_REWRITES)
+
+# 연구 공백 단정(06e) — 이 낱말이 든 문장에서만 바꾼다. '분석한 결과·검토한 결과' 는 선행연구 요약에도 흔해 문맥으로 쓰지 않는다
+GAP_CLAIM_CONTEXT = re.compile(r"(?:코퍼스|소장\s*(?:학술논문|논문|자료|문헌))")
+GAP_CLAIM_TAIL = f"({GAP_NOTE})"
+# 문장 끝 단정만 — 뒤에 한글이 이어지면('확인되었다는 점') 바꾸지 않는다
+_CONFIRMED = r"(?:확인했다|확인하였다|확인할 수 있었다|알 수 있었다)(?![가-힣])"
+# 결핍을 말하는 말 — ①② 는 그 자체가 부정('않음을'·'않았음을'·'없음을'·'없었음을')이지만 ③~⑤ 의 '함을 확인'·
+# '것으로 확인되었다'·'확인되었다' 는 일반 서술어라, 단정 바로 앞이 이 말일 때만 바꾼다. 코퍼스 문장의 긍정 단정('연구는
+# 다수 확인되었다'·'유의함을 확인하였다')과 대조 문장의 긍정 쪽('…드물고 도시 노인 연구가 주로 확인되었다')은 그대로다.
+# '전무한 것으로 확인되었다'는 CLAIM_REWRITES 의 '전무하다'·'전무한 실정이다' 꼴이 아니라 여기서 잡는다
+_LACK_STEMS = ("부족", "미흡", "미비", "불충분", "희소", "빈약", "미진")
+_LACK_STEM = rf"(?:{'|'.join(_LACK_STEMS)})"
+# '않음을'·'않은' 바로 앞이 결핍(·작음) 말의 부정이면 결핍이 아니다 — '부족하지 않은'·'적지 않음을' 은 넉넉하다는 말,
+# '다르지 않음을' 은 같다는 말이다. 뒤보기는 고정 길이라 낱말마다 띄어 쓴 꼴·붙여 쓴 꼴을 따로 건다
+_NEGATED_LACK = (*(f"{stem}하" for stem in _LACK_STEMS), "미미하", "희박하", "전무하", "제한적이", "불과하", "모자라",
+                 "드물", "적", "작", "낮", "없", "어렵", "그치", "다르")
+_NOT_NEGATED_LACK = "".join(rf"(?<!{word}지 )(?<!{word}지)" for word in _NEGATED_LACK)
+# '없' 은 낱말 첫머리일 때만 결핍이다 — '다름없는'·'틀림없는'·'끊임없는'·'변함없음' 은 같다(·늘 그렇다)는 말
+_NONE = r"(?<![가-힣])없"
+_LACK_ADNOMINAL = (rf"(?:{_LACK_STEM}한|전무한|미미한|희박한|찾아보기\s*어려운|제한적인|드문|적은|{_NONE}는|"
+                   rf"{_NOT_NEGATED_LACK}않은|불과한|그치는)")
+_LACK_NOUN = rf"(?:공백|부재|결여|{_NONE}음|{_LACK_STEM}함?)"
+# (정규식, 바꿀 말) — 앞에서부터 차례로. 바꾼 글('…것으로 보인다(…확인하지 않은 공백 후보)')에는 다시 걸리는 말이 없다
+GAP_CLAIM_REWRITES: tuple[tuple[str, str], ...] = (
+    (rf"{_NOT_NEGATED_LACK}않(?:았)?음을\s*{_CONFIRMED}", f"않은 것으로 보인다{GAP_CLAIM_TAIL}"),
+    (rf"{_NONE}(?:었)?음을\s*{_CONFIRMED}", f"없는 것으로 보인다{GAP_CLAIM_TAIL}"),
+    (rf"({_LACK_STEM})함을\s*{_CONFIRMED}", rf"\1한 것으로 보인다{GAP_CLAIM_TAIL}"),
+    (rf"({_LACK_ADNOMINAL}\s*)것(?:으로|이)\s*확인(?:되었다|됐다)(?![가-힣])", rf"\1것으로 보인다{GAP_CLAIM_TAIL}"),
+    (rf"({_LACK_NOUN}(?:이|가)\s*)확인(?:되었다|됐다)(?![가-힣])", rf"\1보인다{GAP_CLAIM_TAIL}"),
+)
+_GAP_REWRITES = tuple((re.compile(pattern), repl) for pattern, repl in GAP_CLAIM_REWRITES)
+# 공백 후보 말(GAP_NOTE)을 이미 쓴 문장 — 연구 공백 프롬프트가 이 말로 쓰라고 시킨다. 단정만 바꾸고 꼬리는 붙이지 않는다
+_GAP_REWRITES_NO_TAIL = tuple((pattern, repl.removesuffix(GAP_CLAIM_TAIL)) for pattern, repl in _GAP_REWRITES)
+# 문장 경계 — 마침표·물음표·느낌표 뒤 공백(그 사이에 붙은 마커 묶음 '…했다.[E1] ' 도 경계에 넣는다), 또는 줄바꿈
+# (문장부호 없이 끝난 줄). 나눈 자리는 그대로 다시 잇는다(split 의 잡는 괄호)
+_SENTENCE_BREAK = re.compile(r"((?<=[.!?。])(?:\s*\[[EF]\d+\])*\s+|\s*\n\s*)")
+# CLAIM_REWRITES 가 넣는 말 — 이 말의 '코퍼스'는 문맥으로 보지 않는다(인용 발견이 공백 후보로 바뀌지 않게, 두 번 거쳐도 같게)
+_CLAIM_INSERTS = re.compile(r"소장 코퍼스에서 확인(?:하지 못했다|되지 않았다|한 범위에서)")
 
 
 class FigureResult(NamedTuple):
@@ -66,12 +114,24 @@ def numbers_outside(text: str) -> list[str]:
 
 
 def soften_claims(text: str) -> tuple[str, int]:
-    """소장 코퍼스 밖을 단정하는 표현을 바꾼다. (바꾼 글, 바꾼 수)."""
+    """소장 코퍼스 밖을 단정하는 표현을 바꾸고, 소장 코퍼스 범위를 말하는 문장의 연구 공백 단정을 공백 후보 투로
+    바꾼다. (바꾼 글, 바꾼 수)."""
     total = 0
     for pattern, repl in _REWRITES:
         text, n = pattern.subn(repl, text)
         total += n
-    return text, total
+    parts = _SENTENCE_BREAK.split(text)
+    for i in range(0, len(parts), 2):            # 짝수 자리가 문장, 홀수 자리가 나눈 공백
+        # 문맥은 위에서 바꿔 넣은 말을 뺀 문장에서 본다 — 원문에 코퍼스 낱말이 있던 문장만 공백 단정으로 다룬다
+        sentence = _CLAIM_INSERTS.sub("", parts[i])
+        if not GAP_CLAIM_CONTEXT.search(sentence):
+            continue
+        # 공백 후보 말을 이미 쓴 문장에는 꼬리를 또 붙이지 않는다(한 문장에 같은 말이 두 번 서지 않게)
+        rewrites = _GAP_REWRITES_NO_TAIL if GAP_NOTE in sentence else _GAP_REWRITES
+        for pattern, repl in rewrites:
+            parts[i], n = pattern.subn(repl, parts[i])
+            total += n
+    return "".join(parts), total
 
 
 def check_paragraph(text: str, *, valid_e: set[str], valid_f: set[str],

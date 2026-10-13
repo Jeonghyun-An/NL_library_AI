@@ -58,6 +58,8 @@ class BookOut(BookBase):
     chunk_count:      Optional[int] = None
     full_text_length: Optional[int] = None
     created_at:       datetime
+    # 문서 종류(book/paper/literature/policy — 프로파일 doc_types). 딥리드 대화가 프롬프트 변형을 고른다(book_chat.chat_prompt)
+    doc_type:         Optional[str] = None
     # KCI 논문 전용
     grade:            Optional[str] = None
     vol_issue:        Optional[str] = None

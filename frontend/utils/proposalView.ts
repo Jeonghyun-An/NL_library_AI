@@ -11,7 +11,9 @@ import type {
   WorkView,
 } from "~/types/work";
 import { sentenceFlags, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
+import { httpStatus, versionConflict } from "~/utils/researchErrors";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
+import { FINAL_STEP_NAME } from "~/utils/workPhase";
 
 // 고정 6절 — 키 순서가 곧 문서 순서다. 선행연구 검토의 묶음(prior.g1~g4)은 목차의 묶음 이름으로 부른다(sectionLabel)
 export const SECTION_LABELS: Record<string, string> = {
@@ -124,7 +126,7 @@ export function failedParagraphGens(
   return out;
 }
 
-// 문단 상태로 센 기여 — 수락만 한 문단도 AI 작성으로 센다(spec §3)
+// 문단 상태로 센 기여 — 검토 전·수락만 한 문단도 AI 작성으로 센다(spec §3·D21)
 export function footprint(p: ProposalView): Footprint {
   const f: Footprint = { proposed: 0, accepted: 0, edited: 0, authored: 0 };
   for (const section of Object.values(p.sections)) {
@@ -136,7 +138,7 @@ export function footprint(p: ProposalView): Footprint {
 export function footprintLine(f: Footprint): string {
   const ai = f.proposed + f.accepted + f.edited;
   const head = ai
-    ? `AI 제안 ${ai}문단 중 수락 ${f.accepted}·수정 ${f.edited}${f.proposed ? `·검토 전 ${f.proposed}` : ""}`
+    ? `AI 작성 ${ai}문단 중 수락 ${f.accepted}·수정 ${f.edited}${f.proposed ? `·검토 전 ${f.proposed}` : ""}`
     : "";
   const own = f.authored ? `직접 쓴 문단 ${f.authored}` : "";
   return [head, own].filter(Boolean).join(" · ") || "아직 쓴 문단이 없습니다";
@@ -189,4 +191,242 @@ export function removeParagraph(section: ProposalSection, pid: string): SectionP
 
 export function addParagraph(section: ProposalSection, text: string): SectionPut {
   return { paragraphs: [...section.paragraphs.map(entry), { id: null, text, state: "authored" }] };
+}
+
+// PUT /outline 이 본문 그대로 덮어쓰는 목차 값 — 묶음(키·이름·논문 순서), 연구 질문, 방법, 승인 상태, 연구 배경.
+// 묶음 hint·연구 질문 후보·승인 시각은 본문이 정하지 않는다(서버가 지키거나 새로 찍는다)
+function outlineWrites(o: Outline): string {
+  return JSON.stringify([
+    o.groups.map((g) => [g.key, g.name, g.papers]),
+    o.question ?? "",
+    o.method,
+    o.state,
+    outlineBackground(o),
+  ]);
+}
+
+// 연구 배경·방법 저장(PUT /outline) — 보고서를 자동으로 쓰는 동안 절이 반영될 때마다 version 이 올라 409 version_conflict
+// 를 받는다. 본문(fieldPut)은 보낼 때의 목차로 묶음·연구 질문·방법·승인을 다시 싣고 서버는 그 값을 그대로 덮어쓰므로,
+// 충돌이 절 반영 때문일 때만 다시 보낸다: 계획서를 다시 읽어(reread — ProposalStep 은 proposalReread) 목차의 그 값
+// (outlineWrites)이 그대로면 다시 읽은 version·목차로 한 번만 보낸다(spec §12-4 — 절 반영은 목차를 바꾸지 않아 덮어쓸
+// 것이 없다). 목차가 바뀐 충돌(다른 탭의
+// [목차 고치기]·초안 저장, [보고서 다시 만들기] 반영 뒤 다시 읽기 전)이면 옛 본문이 그 변경을 되돌리고 초안을 다시 승인하므로
+// 보내지 않고 첫 충돌을 던진다 — 다시 읽기가 실패해 version 이 그대로일 때도 같다. 두 번째 409 와 그 밖의 오류도 그대로
+// 던진다 — 부르는 쪽(ProposalStep act)이 다시 읽고 알린다(칸은 열린 채 글이 남는다)
+export async function putOnceMore<T>(
+  put: (version: number, outline: Outline) => Promise<T>,
+  sent: { version: number; outline: Outline },
+  reread: () => Promise<Pick<ProposalView, "version" | "outline"> | null>,
+): Promise<T> {
+  try {
+    return await put(sent.version, sent.outline);
+  } catch (e) {
+    if (versionConflict(e) === null) throw e;
+    const fresh = await reread();
+    if (!fresh?.outline || fresh.version <= sent.version || outlineWrites(fresh.outline) !== outlineWrites(sent.outline)) {
+      throw e;
+    }
+    return put(fresh.version, fresh.outline);
+  }
+}
+
+// putOnceMore 의 다시 읽기 — 화면 상태를 거치지 않고 GET /proposal 응답 하나에서 version·목차를 함께 꺼낸다. 화면의
+// work.reload('proposal') 는 같은 조회를 새로 읽기 시작하면 제 응답을 버린다(늦은 응답 버리기). 충돌은 절이 반영된 바로
+// 그때 나고 그 절의 generation 이벤트가 reload('proposal') 를 부르므로, reload 로 다시 읽으면 화면이 옛 version 에 머물러
+// 절 반영만 있었는데도 첫 충돌을 던졌다. 읽기가 실패하면 null — putOnceMore 가 다시 보내지 않고 첫 충돌을 던진다.
+// 화면 갱신은 부르는 쪽이 그대로 맡는다(저장 뒤·act 의 충돌 처리에서 reload)
+export function proposalReread(get: () => Promise<ProposalView>): () => Promise<ProposalView | null> {
+  return async () => {
+    try {
+      return await get();
+    } catch {
+      return null;
+    }
+  };
+}
+
+// 검토할 곳(06e, §12-11 권고) — 수락 관문이 빠진 자동 보고서에서 코드 검사 표시(근거 표시 없는 문장·[F#] 밖 숫자)가 사실상
+// 유일한 검토 단서다. 문서가 그리는 절(목차 묶음 → 연구 공백)의 저장된 문단만 센다 — 목차에서 빠진 옛 절은 화면·문서에 없다.
+// first 는 둘 중 하나라도 있는 첫 문단(머리 줄을 누르면 그 자리로 간다)
+export interface ReviewSpots {
+  unmarked: number;
+  numbers: number;
+  first: { key: string; pid: string } | null;
+}
+
+export function reviewSpots(p: ProposalView): ReviewSpots {
+  const out: ReviewSpots = { unmarked: 0, numbers: 0, first: null };
+  for (const key of sectionKeysOf(p)) {
+    for (const para of p.sections[key]?.paragraphs ?? []) {
+      // 직접 쓴 문단은 저장 전 checks 가 {} 일 수 있다(서버가 다시 검사해 채운다) — 없는 칸은 0 으로 센다
+      const unmarked = para.checks?.unmarked ?? 0;
+      const numbers = para.checks?.numbers?.length ?? 0;
+      out.unmarked += unmarked;
+      out.numbers += numbers;
+      if (!out.first && (unmarked || numbers)) out.first = { key, pid: para.id };
+    }
+  }
+  return out;
+}
+
+// 머리 한 줄 '검토할 곳: 근거 없는 문장 n · 확인 필요 숫자 m' — 0 인 칸은 빼고, 둘 다 0 이면 null(줄을 그리지 않는다).
+// 공개 부록에도 같은 줄을 싣는다(proposalDocument.disclosureLines)
+export function reviewLine(r: ReviewSpots): string | null {
+  const parts = [r.unmarked ? `근거 없는 문장 ${r.unmarked}` : "", r.numbers ? `확인 필요 숫자 ${r.numbers}` : ""].filter(
+    Boolean,
+  );
+  return parts.length ? `검토할 곳: ${parts.join(" · ")}` : null;
+}
+
+// ── 보고서 자동 산출(06e D20) — [보고서 만들기] 한 번으로 목차를 자동 확정하고 절을 문서 순서대로 넣는다 ──
+
+// 화면이 쓰는 절의 차례 — 목차 묶음 순서(prior.g1~g4) → 연구 공백. 계획서 화면의 절 목록·문서(proposalDocument.printedKeys)·
+// 자동 산출이 모두 이 순서다. 목차가 없으면 연구 공백만
+export function sectionKeysOf(p: ProposalView): string[] {
+  return [...(p.outline?.groups.map((g) => g.key) ?? []), "gap"];
+}
+
+// 절 연쇄가 도는 조건 — [보고서 만들기]의 반영이 자동 승인한 목차(state approved·auto)이고, 예시 연구가 아니고(쓰기가 409),
+// 목차를 다시 만드는 중이 아니고, 끝난 목차 생성이 계획서에 다 반영됐을 때. 06b 때 승인한 목차(auto 없음)·[목차 고치기]에서
+// 승인을 푼 목차는 돌지 않는다. 조건은 늘 서버 값으로 다시 계산한다 — 탭을 닫았다 와도 같은 조건으로 이어 넣는다(spec §12-4)
+export function autoChainOn(p: ProposalView | null, work: WorkView | null): boolean {
+  const outline = p?.outline;
+  if (!outline || !work) return false;
+  return (
+    outline.state === "approved" &&
+    outline.auto === true &&
+    !work.is_example &&
+    !openGeneration({ work }, "outline", "outline") &&
+    !unappliedOutline(outline, work)
+  );
+}
+
+// 끝났지만 이 계획서에 아직 없는 목차 생성 — done 이벤트는 생성 목록에 바로 오고 계획서는 비동기로 다시 읽는다. 그 틈에
+// 옛 목차의 묶음 키를 넣으면 서버(새 목차)가 404·409 로 거절해 연쇄가 멈춘다. 목차 반영(outline.apply)은 빈 결과여도 늘
+// gen_id 를 그 생성으로 쓰므로 목차의 gen_id 보다 나중의 done 이면 다시 읽기 전이다. failed·canceled 는 목차를 바꾸지 않는다.
+// 가장 새 생성만 보지 않는다 — done 뒤에 또 다시 만들기가 실패해도 계획서는 그 done 의 목차여야 한다(sectionStatus 와 같은 규칙)
+function unappliedOutline(outline: Outline, work: WorkView): boolean {
+  const applied = outline.gen_id ?? 0;
+  return work.generations.some(
+    (g) => g.kind === "outline" && g.target === "outline" && g.status === "done" && g.id > applied,
+  );
+}
+
+// 자동으로 쓸 절 — 문서 순서에서 절도, 그 키의 section 생성 기록(상태 무관 — failed·canceled 포함)도 없는 키. 실패·취소로
+// 끝난 절은 다시 넣지 않고 그 절의 [다시 시도]에 맡긴다. section_gens 가 없는 옛 서버 응답은 절이 없는 키를 모두 고른다
+export function autoTargets(p: ProposalView): string[] {
+  const gens = p.section_gens ?? {};
+  return sectionKeysOf(p).filter((k) => !p.sections[k] && !gens[k]);
+}
+
+// 다음에 넣을 절 — skip(이 방문에서 이미 넣었거나 근거가 없어 건너뛴 키)을 뺀 첫 키, 없으면 null
+export function nextAutoSection(p: ProposalView, skip: ReadonlySet<string>): string | null {
+  return autoTargets(p).find((k) => !skip.has(k)) ?? null;
+}
+
+// 절 쓰기가 '그 절에 넣을 논문이 없어' 막혔다 — 409 detail {code: "no_section_papers", message}(06e 서버). 연쇄는 그 절만
+// 건너뛰고 다음 키로 간다. 문자열 detail(06e 전 서버)·다른 409(쓰는 중·승인 전)는 아니다
+export function isNoSectionPapers(err: unknown): boolean {
+  if (httpStatus(err) !== 409) return false;
+  const data = (err as { data?: unknown } | null)?.data;
+  const detail = data && typeof data === "object" && "detail" in data ? (data as { detail: unknown }).detail : null;
+  return !!detail && typeof detail === "object" && (detail as { code?: unknown }).code === "no_section_papers";
+}
+
+// 연구 배경 글 — Outline.background 키가 없는 응답(필드를 열기 전 서버)은 빈 글이다
+export function outlineBackground(outline: Outline): string {
+  const value = (outline as Outline & { background?: unknown }).background;
+  return typeof value === "string" ? value : "";
+}
+
+// 머리 목차의 한 항목. anchor 는 보고서 화면의 자리 id(ProposalStep — 1·2·5·6 은 wk-doc-*, 절은 ProposalSection 의 wk-sec-<key>)
+export interface TocItem {
+  key: string;
+  no: string;
+  label: string;
+  anchor: string;
+  status: SectionStatus | "text" | "blank" | "skipped";
+}
+
+// 머리 목차 — 문서 순서의 여섯 자리(1 주제·2 연구 배경·3.n 선행연구 묶음·4 연구 공백·5 연구 질문·6 방법 제안 — Word 의 절
+// 제목과 같은 말). 글 자리는 적었으면 text, 비면 blank. 절은 그 절의 상태(sectionStatus), 근거가 없어 연쇄가 건너뛴 쓰기 전
+// 절은 skipped. 목차가 없으면 빈 목록
+export function docToc(p: ProposalView, state: WorkState, skipped: ReadonlySet<string>): TocItem[] {
+  const outline = p.outline;
+  if (!outline) return [];
+  const filled = (text: string | null | undefined): TocItem["status"] => (text?.trim() ? "text" : "blank");
+  const sectionItem = (key: string, no: string, label: string): TocItem => {
+    const status = sectionStatus(key, state);
+    return { key, no, label, anchor: `wk-sec-${key}`, status: status === "empty" && skipped.has(key) ? "skipped" : status };
+  };
+  return [
+    { key: "topic", no: "1", label: SECTION_LABELS.topic!, anchor: "wk-doc-topic", status: filled(outline.topic.title) },
+    {
+      key: "background",
+      no: "2",
+      label: SECTION_LABELS.background!,
+      anchor: "wk-doc-background",
+      status: filled(outlineBackground(outline)),
+    },
+    ...outline.groups.map((g, i) => sectionItem(g.key, `3.${i + 1}`, g.name)),
+    sectionItem("gap", "4", SECTION_LABELS.gap!),
+    { key: "question", no: "5", label: SECTION_LABELS.question!, anchor: "wk-doc-question", status: filled(outline.question) },
+    { key: "method", no: "6", label: SECTION_LABELS.method!, anchor: "wk-doc-method", status: filled(outline.method) },
+  ];
+}
+
+// 목차 편집기의 편집 버튼 이름 — 머리 목차의 토글도 접혀 있을 때 이 이름으로 편집기를 편집 모드로 바로 연다
+export const OUTLINE_EDIT = "목차 고치기";
+
+// 머리 목차의 편집기 토글 이름(06e) — 접혀 있으면 여는 이름(고칠 수 있으면 [목차 고치기], 예시 연구는 읽기만), 펴 있으면
+// '목차 접기'. 편 동안 편집기 안의 [목차 고치기](그만두기·다시 승인 뒤 읽기 모드에서 서는 버튼)와 같은 이름의 버튼이 한
+// 화면에 둘 서지 않는다 — 접으면 편집기는 v-show 로 숨어 컨트롤 목록에서 빠진다
+export function outlineToggleLabel(open: boolean, readOnly: boolean): string {
+  if (open) return "목차 접기";
+  return readOnly ? "목차 자세히 보기" : OUTLINE_EDIT;
+}
+
+// 보고서 화면 머리의 큰 진행 막대(06e 정함 28 — 사용자 Q1 답 '현재 절 작성 중에 보이는 커다란 프로그레스바'를 자동 보고서에도)
+export interface ReportBar {
+  label: string;
+  done: number;
+  total: number;
+  percent: number;
+  running: boolean;
+}
+
+// 절이 끝날 때만 움직인다(추정 증가 없음 — 절 하나 평균 8초). 끝난 절 = 다 썼거나(done) 실패했거나, 쓰기 전인데 근거가 없어
+// 건너뛰었거나 생성 기록이 있는(취소로 끝난) 절. 쓰는 절 = 대기·쓰는 중. 남은 절 = 연쇄가 돌 때 아직 넣지 않은 절(건너뛴 키
+// 빼고) — stopped(연쇄가 오류로 멈춤)면 없다고 본다. 쓰는 절도 남은 절도 없으면 null(다 썼거나, 연쇄가 돌지 않는 목차에서
+// 손으로 쓰는 절이 없을 때 — 막대를 걷는다). 글줄은 조사 없는 꼴(정함 1)
+export function reportBar(
+  p: ProposalView,
+  state: WorkState,
+  skipped: ReadonlySet<string>,
+  stopped = false,
+): ReportBar | null {
+  const outline = p.outline;
+  if (!outline) return null;
+  const keys = sectionKeysOf(p);
+  const gens = p.section_gens ?? {};
+  const status = new Map(keys.map((k) => [k, sectionStatus(k, state)] as const));
+  const done = keys.filter((k) => {
+    const st = status.get(k);
+    return st === "done" || st === "failed" || (st === "empty" && (skipped.has(k) || gens[k] !== undefined));
+  }).length;
+  const active = keys.filter((k) => status.get(k) === "writing" || status.get(k) === "queued");
+  const pending =
+    !stopped && autoChainOn(p, state.work)
+      ? autoTargets(p).filter((k) => status.get(k) === "empty" && !skipped.has(k))
+      : [];
+  const current = active.find((k) => status.get(k) === "writing") ?? active[0] ?? pending[0];
+  if (current === undefined) return null;
+  const total = keys.length;
+  return {
+    label: `${FINAL_STEP_NAME} 작성 중 · ${done}/${total}절 — 「${sectionLabel(current, outline)}」`,
+    done,
+    total,
+    percent: Math.round((done / total) * 100),
+    running: status.get(current) === "writing",
+  };
 }

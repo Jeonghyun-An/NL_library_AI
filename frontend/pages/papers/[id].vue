@@ -266,7 +266,7 @@
             DeepRead<template v-if="paper?.title">: {{ paper.title }}</template>
           </h2>
         </div>
-        <BookChat :cnts-id="paperId" :book-title="paper?.title" @close="chatOpen = false" />
+        <BookChat :cnts-id="paperId" :book-title="paper?.title" doc-kind="paper" @close="chatOpen = false" />
       </div>
     </aside>
 

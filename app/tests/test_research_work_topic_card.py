@@ -6,25 +6,32 @@ history_sqlite 의 SQLite 에서 실제 SQL 로 돈다.
 """
 import asyncio
 import json
+import re
+from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
 from jinja2 import Environment, meta
+from sqlalchemy.dialects import postgresql
 
 from history_sqlite import (
     AsyncSessionOverSync, add_generation, add_research_job, add_topic, add_work, make_engine,
 )
+from models.research import ResearchJob
 from models.research_work import GEN_KINDS, ResearchGeneration, ResearchTopic, ResearchWork
 from services.llm_client import LLMResult
 from services.prompts import get_prompt
+from services.research.terms import contains
 from services.research_work import routing, topic_card
 from services.research_work.apply import apply_result
 from services.research_work.executors import EXECUTORS
 from services.research_work.generate import run_generation
 from services.research_work.markers import numbers_outside, soften_claims
+from services.research_work.seeds import topic_input
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE
 from services.research_work.topic_card import (
     EXECUTOR, FIG_ADOPTED, FIG_CORPUS, FIG_LATEST, PROMPT, card_figures, evidence_ids, figure_sentence,
+    keyword_misses,
 )
 
 PAPERS = [
@@ -58,13 +65,25 @@ class TestPrompt:
         env = Environment()
         names = meta.find_undeclared_variables(env.parse(tpl.system)) | meta.find_undeclared_variables(
             env.parse(tpl.user))
-        assert names == {"question", "heading", "seed", "evidence_list"}
+        assert names == {"question", "heading", "seed", "evidence_list", "keywords"}
+
+    def test_the_keyword_rule_is_there_only_when_keywords_are_given(self):
+        # 06e D23 — 고른 키워드가 있을 때만 규칙 한 줄. 없으면(옛 행·키워드 없이 넣은 카드) 06b 프롬프트와 글자까지 같다
+        rule = "- title 에 다음 키워드 가운데 하나 이상을 글자 그대로 넣습니다: 노인 우울 · 사회적 지지"
+        plain, _ = EXECUTOR.build(INPUT)
+        with_kw, _ = EXECUTOR.build({**INPUT, "keywords": ["노인 우울", "사회적 지지"]})
+        assert rule in with_kw[0]["content"] and "키워드" not in plain[0]["content"]
+        assert with_kw[0]["content"].replace("\n" + rule, "") == plain[0]["content"]
+        # 사용자 메시지(원 질문·씨앗·근거)는 그대로다 — 다시 만들 때도 이전 제목을 주지 않는다(함정 26)
+        assert with_kw[1]["content"] == plain[1]["content"]
 
     def test_no_array_sample_no_example_and_no_figures(self):
-        # 함정 15 — 원소가 든 배열 견본·JSON 견본·예시는 개수와 분야를 베끼게 한다. 수치는 모델에 주지 않는다(정함 3)
+        # 함정 15 — 원소가 든 배열 견본·JSON 견본·예시는 개수와 분야를 베끼게 한다. 수치는 모델에 주지 않는다(정함 3).
+        # Jinja 문({% if %})과 변수({{ }})는 견본이 아니다 — 빼고 본다
         tpl = get_prompt(PROMPT)
         for text in (tpl.system, tpl.user):
-            assert "[" not in text and "{" not in text.replace("{{", "").replace("}}", "")
+            body = re.sub(r"\{%.*?%\}", "", text).replace("{{", "").replace("}}", "")
+            assert "[" not in body and "{" not in body
             assert "예:" not in text and "예시" not in text
             assert "F#" not in text and "수치 목록" not in text
 
@@ -90,6 +109,14 @@ class TestBuild:
                "[E3] 노인 우울의 종단 연구 (연도 미상)" in user
         assert "144748" not in user and "144,748" not in user
         assert params == {"max_tokens": 400, "temperature": 0.3}
+
+    def test_old_rows_without_keywords_still_build(self):
+        # 06e 전에 넣은 행엔 keywords 키가 없다 — 다시 부르기(retry)가 그 input 을 그대로 쓴다. 렌더러가 StrictUndefined
+        # (services/prompts.py)라 _build 가 늘 넘겨야 한다. 빈 목록·None 도 키워드 규칙이 없는 프롬프트다
+        assert "keywords" not in INPUT
+        for inp in (INPUT, {**INPUT, "keywords": []}, {**INPUT, "keywords": None}):
+            messages, _ = EXECUTOR.build(inp)
+            assert "키워드" not in messages[0]["content"]
 
 
 class TestParse:
@@ -189,6 +216,7 @@ class TestFigures:
 
 class TestBind:
     def test_card_shape(self):
+        # INPUT 은 06e 전 입력(keywords 키 없음)이다 — 카드에도 keywords 를 싣지 않는다(아래 옛 input 테스트)
         assert _bound(GOOD) == {"card": {
             "title": "독거노인의 지지망 유형과 우울",
             "question": "독거노인의 지지망 유형에 따라 우울 수준이 다른가?",
@@ -198,9 +226,19 @@ class TestBind:
             "figures": card_figures(12, 2015, INPUT["corpus"]),
             "latest_year": 2015,
             "edited": False,
-            "checks": {"numbers": [], "softened": 0, "recovered": 0},
+            "checks": {"numbers": [], "softened": 0, "recovered": 0, "missing_keywords": []},
             "gen_id": None,
         }}
+
+    def test_an_old_input_makes_a_card_without_keywords(self):
+        # 06b 의 근거 부족·실패 카드에 [다시]를 누르거나 배포 때 줄을 서 있던 06b 카드 생성이 끝나면 옛 input(keywords 키
+        # 없음)으로 묶는다. 그 카드에 keywords [] 를 실으면 화면 keywordsChanged 가 '06e 전 카드'로 보지 못해 그 카드에만
+        # '키워드가 바뀌었습니다'와 [이 키워드로 다시 만들기] 줄이 선다 — 키 자체를 싣지 않는다. 06e 입력은 keywords 를
+        # 늘 싣고(seeds.topic_input — 취소 경로는 []) 그 카드는 지금처럼 keywords 를 갖는다
+        assert "keywords" not in _bound(GOOD)["card"]
+        assert _bound(GOOD, {**INPUT, "keywords": []})["card"]["keywords"] == []
+        card = _bound(GOOD, {**INPUT, "keywords": ["지지망", "치매"]})["card"]
+        assert (card["keywords"], card["checks"]["missing_keywords"]) == (["지지망", "치매"], ["치매"])
 
     def test_latest_year_comes_from_the_chosen_evidence(self):
         card = _bound({**GOOD, "evidence": ["E2", "E3"]})["card"]
@@ -239,7 +277,41 @@ class TestBind:
         assert json.loads(json.dumps(card, ensure_ascii=False)) == card
 
 
+# 06e 화면 keywordSpans 가 감싸는 자리(Task K7) — 일치(참·거짓)의 정본은 06c 의 term_checks.json 이고 06c 테스트가 지킨다.
+# 여기서는 하이라이트 사례도 서버 제목 검사(06c contains)와 같은 참·거짓인지만 본다
+KEYWORD_MATCH = json.loads(
+    (Path(__file__).resolve().parents[2] / "frontend" / "tests" / "fixtures" / "keyword_match.json")
+    .read_text(encoding="utf-8"))
+
+
+class TestKeywordMatchFixture:
+    @pytest.mark.parametrize("case", KEYWORD_MATCH, ids=[c["note"] for c in KEYWORD_MATCH])
+    def test_contains_agrees_with_the_highlight_cases(self, case):
+        assert contains(case["text"], case["word"]) is bool(case["marked"])
+        assert keyword_misses(case["text"], [case["word"]]) == ([] if case["marked"] else [case["word"]])
+
+
 class TestCheck:
+    def test_a_title_without_any_keyword_fails_the_strict_check(self):
+        # 06e D23 — 고른 키워드가 제목에 하나도 없으면 엄격한 검사 미달(공통 규칙이 다시 부른다). 하나라도 있으면 통과
+        inp = {**INPUT, "keywords": ["농촌 노인", "지지망 유형"]}
+        hit = _bound(GOOD, inp)                      # 제목 '독거노인의 지지망 유형과 우울' 에 '지지망 유형'이 있다
+        assert hit["card"]["keywords"] == ["농촌 노인", "지지망 유형"]
+        assert hit["card"]["checks"]["missing_keywords"] == ["농촌 노인"]
+        assert EXECUTOR.check(hit) is True
+        miss = _bound({**GOOD, "title": "독거노인의 관계망과 우울"}, inp)
+        assert miss["card"]["checks"]["missing_keywords"] == ["농촌 노인", "지지망 유형"]
+        assert EXECUTOR.check(miss) is False
+        # 무른 검사(06b 의 근거 2편)는 넘는다 — 세 번 다 놓치면 이 카드를 보관한다(06e 정함 17)
+        assert EXECUTOR.soft_check(miss) is True
+        assert EXECUTOR.soft_check(_bound({**GOOD, "evidence": ["E1"]}, inp)) is False
+
+    def test_no_keywords_means_no_keyword_rule(self):
+        # 키워드 없이 넣은 카드(취소·빈 결과)와 06e 전 행은 06b 검사 그대로다
+        card = _bound({**GOOD, "title": "아무 낱말"}, {**INPUT, "keywords": []})
+        assert card["card"]["checks"]["missing_keywords"] == [] and EXECUTOR.check(card) is True
+        assert EXECUTOR.check(_bound({**GOOD, "title": "아무 낱말"})) is True
+
     def test_needs_two_evidence_chips(self):
         assert MIN_TOPIC_EVIDENCE == 2
         assert EXECUTOR.check(_bound(GOOD)) is True
@@ -295,6 +367,28 @@ class TestThroughTheCommonRule:
         assert seen == [primary, primary, fallback]
         assert result.output == {"card": None} and result.model is None
         assert [a["outcome"] for a in result.attempts] == ["check", "check", "check"]
+
+    def test_three_misses_keep_the_last_card_with_its_warning(self, cfg):
+        # 세 번 다 제목에 키워드를 못 넣었다 — 빈 결과('근거 부족' — 잘못된 안내) 대신 마지막 카드를 그 모델 이름으로
+        # 보관하고, 화면은 card.checks.missing_keywords 로 '제목에 「…」 없음' 경고를 단다(06e 정함 17)
+        inp = {**INPUT, "keywords": ["농촌 노인", "우울 선별"]}
+        primary, fallback = _models()
+        first = _reply({**GOOD, "title": "독거노인의 지지망과 우울"})
+        last = _reply({**GOOD, "title": "독거노인 지지망 유형"})
+        answers = {primary: [first, first], fallback: [last]}
+        seen: list[str] = []
+
+        async def fake_chat(messages, *, params=None, timeout=120.0, base_url=None, model=None):
+            seen.append(model)
+            return LLMResult(content=answers[model].pop(0), finish_reason="stop")
+
+        result = asyncio.run(run_generation(EXECUTOR, inp, chat_fn=fake_chat))
+
+        assert seen == [primary, primary, fallback]
+        assert [a["outcome"] for a in result.attempts] == ["check", "check", "check"]
+        assert result.model == fallback and EXECUTOR.is_empty(result.output) is False
+        assert result.output["card"]["title"] == "독거노인 지지망 유형"
+        assert result.output["card"]["checks"]["missing_keywords"] == ["농촌 노인", "우울 선별"]
 
 
 class TestExecutors:
@@ -375,12 +469,64 @@ class TestApply:
 
         assert _topic_row(engine, tid)["card"] == mine
 
-    def test_a_picked_topic_stays_picked(self, engine):
-        _, tid, gid = _setup(engine, card={"title": "옛 카드", "question": "옛 질문?"}, state="picked")
+    @pytest.mark.parametrize("answer", ["card", "empty"])
+    def test_a_picked_card_is_not_overwritten_by_a_regeneration(self, engine, answer):
+        # 06e 정함 16 — [이 키워드로 다시 만들기] 가 도는 사이 고른 카드는 새 카드로도, 빈 결과(근거 부족)로도 덮지
+        # 않는다 — 덮으면 목차에 '다시 맞춤 필요'가 붙는다. 06b 에서는 고른 카드에 열린 생성이 생길 수 없었다
+        old = {"title": "옛 카드", "question": "옛 질문?"}
+        _, tid, gid = _setup(engine, card=old, state="picked")
+        output = _bound(GOOD) if answer == "card" else {"card": None}
 
-        assert _apply(engine, gid, _bound(GOOD))["state"] == "picked"
+        assert _apply(engine, gid, output) == {"topic_id": tid, "state": "picked"}
 
-        assert _topic_row(engine, tid)["card"]["title"] == "독거노인의 지지망 유형과 우울"
+        row = _topic_row(engine, tid)
+        assert (row["card"], row["state"]) == (old, "picked")
+
+    def test_an_empty_regeneration_keeps_a_candidate_card(self, engine):
+        # [이 키워드로 다시 만들기](06e)는 제목이 있는 후보 카드에도 새 생성을 넣는다. 그 생성이 빈 결과(세 번 다 근거 2편
+        # 미만, 또는 vLLM 이 내려가 전송 실패 — run_generation 은 둘 다 done 의 빈 결과다)면 멀쩡하던 카드를 '근거 부족'으로
+        # 지우지 않는다 — 빈 결과는 빈 자리만 채운다(06b 동작). 그 생성은 done-empty 라 [다시]가 열리고, 카드의 옛
+        # keywords 가 지금 키워드와 달라 '키워드가 바뀌었습니다'가 그대로 뜬다
+        old = {"title": "옛 카드", "question": "옛 질문?", "evidence": ["P1", "P2"], "keywords": ["노인"]}
+        wid, tid, gid = _setup(engine, card=old, state="candidate")
+
+        assert _apply(engine, gid, {"card": None}) == {"topic_id": tid, "state": "candidate"}
+
+        row = _topic_row(engine, tid)
+        assert (row["card"], row["state"]) == (old, "candidate")
+
+    def test_the_topic_row_is_read_under_a_row_lock(self, engine):
+        # 고른 카드 검사는 읽기와 쓰기 사이가 비면 두 탭 경합을 놓친다 — PostgreSQL READ COMMITTED 에서 pick_topic 의
+        # UPDATE(state picked)가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 pick 커밋을
+        # 기다렸다가 WHERE id 만 다시 보고 새 카드·candidate 를 쓴다(work.topic_id 는 그 주제인데 state 는 candidate).
+        # 행을 FOR UPDATE 로 읽으면 pick 이 끝난 뒤의 값을 본다. SQLite 는 잠금을 그리지 않아 문장을 PostgreSQL 로
+        # 컴파일해 본다(test_research_work_dispatch 의 _Recording 과 같은 방식)
+        _, tid, gid = _setup(engine)
+        log: list[str] = []
+
+        class _Recording(AsyncSessionOverSync):
+            async def execute(self, stmt, params=None):
+                log.append(str(stmt.compile(dialect=postgresql.dialect())))
+                return await super().execute(stmt, params)
+
+        async def _go():
+            db = _Recording(engine)
+            try:
+                await apply_result(db, await db.get(ResearchGeneration, gid), _bound(GOOD))
+                await db.commit()
+            finally:
+                await db.close()
+
+        asyncio.run(_go())
+        read = next(i for i, s in enumerate(log) if s.startswith("SELECT research_topics.card"))
+        write = next(i for i, s in enumerate(log) if s.startswith("UPDATE research_topics"))
+        work_lock = next(i for i, s in enumerate(log)
+                         if s.startswith("SELECT research_works.id") and "FOR UPDATE" in s)
+        assert log[read].rstrip().endswith("FOR UPDATE")
+        # 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른 행 → 연구 행'과 같은
+        # 방향이라 서로 기다리는 고리가 생기지 않는다
+        assert read < write < work_lock
+        assert _topic_row(engine, tid)["state"] == "candidate"
 
     def test_apply_does_not_commit(self, engine):
         _, tid, gid = _setup(engine)
@@ -395,3 +541,120 @@ class TestApply:
 
         asyncio.run(_go())
         assert (_topic_row(engine, tid)["card"], _topic_row(engine, tid)["state"]) == ({}, "candidate")
+
+
+# ── 씨앗 카드 넣기(enqueue_seed_cards — 06e D23 '카드 시점') ──────────────────────
+
+SEED_QUESTION = "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
+SEED_REPORT = {
+    "range": {"from": "1980", "to": "2017", "n_papers": 144748},
+    "evidence": {"E1": {"cnts_id": "P1", "meta": {"title": "노인의 사회적 지지와 우울의 관계", "pub_date": "2013"}},
+                 "E2": {"cnts_id": "P2", "meta": {"title": "독거노인의 사회적 관계망", "pub_date": "2015"}}},
+}
+KEYWORDS = ["노인 우울", "사회적 지지"]
+
+
+def _seed(n: int) -> dict:
+    return {"key": f"future:{n}:0", "kind": "future", "section_idx": n, "subq_idx": n, "heading": f"절 {n}",
+            "text": f"씨앗 {n}", "papers": ["P1", "P2"], "adopted": 5}
+
+
+def _seed_work(engine, slots: int = 4) -> tuple:
+    """이어가기가 남긴 모양 — 잡(질문·보고서)·연구·씨앗 자리 주제 행(slot 1~), 카드 생성은 아직 없다."""
+    wid = add_research_job(engine, status="completed", stage="synthesized")
+    with engine.begin() as conn:
+        conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == wid)
+                     .values(question=SEED_QUESTION, report=SEED_REPORT))
+    add_work(engine, wid)
+    return wid, [add_topic(engine, wid, slot=n, seed=_seed(n)) for n in range(1, slots + 1)]
+
+
+def _enqueue(engine, wid, keywords, *, commit: bool = True):
+    async def _go():
+        db = AsyncSessionOverSync(engine)
+        try:
+            out = await topic_card.enqueue_seed_cards(db, wid, keywords)
+            await (db.commit() if commit else db.rollback())
+            return out
+        finally:
+            await db.close()
+
+    return asyncio.run(_go())
+
+
+def _card_gens(engine, wid):
+    table = ResearchGeneration.__table__
+    with engine.connect() as conn:
+        return conn.execute(sa.select(table).where(table.c.work_id == wid, table.c.kind == "topic_card")
+                            .order_by(table.c.id)).mappings().all()
+
+
+class TestEnqueueSeedCards:
+    def test_one_card_generation_per_seed_slot_with_the_keywords(self, engine):
+        wid, tids = _seed_work(engine)
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        gens = _card_gens(engine, wid)
+        assert out == [(tid, g["id"]) for tid, g in zip(tids, gens)]
+        assert [(g["target"], g["status"], g["priority"]) for g in gens] == [(str(t), "queued", 10) for t in tids]
+        for n, (tid, gen) in enumerate(zip(tids, gens), start=1):
+            assert gen["input"] == topic_input(SEED_QUESTION, _seed(n), SEED_REPORT, tid, keywords=KEYWORDS)
+
+    @pytest.mark.parametrize("status", ["done", "failed", "canceled"])
+    def test_a_seed_slot_that_already_has_a_card_generation_gets_none(self, engine, status):
+        # 상태와 상관없이 — 카드 생성을 한 번 넣은 자리는 다시 넣지 않는다(키워드를 다시 불러 반영돼도 또 들어가지 않는다)
+        wid, tids = _seed_work(engine)
+        add_generation(engine, wid, kind="topic_card", status=status, target=str(tids[0]))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids[1:]
+        assert len(_card_gens(engine, wid)) == 4
+        assert _enqueue(engine, wid, KEYWORDS) == []            # 두 번째 반영은 아무것도 넣지 않는다
+
+    def test_a_seed_slot_that_already_has_a_card_gets_none(self, engine):
+        # 이어가기와 카드 생성 사이(키워드 생성이 줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접
+        # 고치기]가 사용자 카드(edited)를 만든다. 생성 기록이 없다고 그 자리에 카드를 넣으면 LLM 을 헛되이 부르고 결과는
+        # apply 의 edited 검사가 버리며, 그 사이 화면은 '다시 만드는 중'을 달고 [고르기]·[직접 고치기]를 막는다.
+        # [이 키워드로 다시 만들기](K6)가 고친 카드를 건너뛰는 것과 같은 규칙(spec §12-4·정함 16)
+        wid, tids = _seed_work(engine)
+        mine = {"title": "내가 쓴 주제", "question": "내가 쓴 질문인가?", "evidence": [], "figure_sentence": None,
+                "figures": [], "latest_year": None, "edited": True,
+                "checks": {"numbers": [], "softened": 0, "recovered": 0}, "gen_id": None}
+        table = ResearchTopic.__table__
+        with engine.begin() as conn:
+            conn.execute(sa.update(table).where(table.c.id == tids[0]).values(card=mine))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids[1:]
+        assert [g["target"] for g in _card_gens(engine, wid)] == [str(t) for t in tids[1:]]
+
+    def test_other_direction_cards_do_not_block_the_seed_cards(self, engine):
+        # 키워드 생성이 줄을 서는 사이 [다른 방향]이 먼저 카드를 만든 연구 — '그 연구에 카드 생성이 하나라도 있으면 안
+        # 넣는다'로 하면 씨앗 카드 4장이 영영 생기지 않는다(06e 정함 29). 판정은 씨앗 자리 행마다다
+        wid, tids = _seed_work(engine)
+        other = add_topic(engine, wid, origin="other", seed=_seed(9))
+        add_generation(engine, wid, kind="topic_card", status="done", target=str(other))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids
+
+    def test_user_and_other_direction_topics_get_none(self, engine):
+        wid, tids = _seed_work(engine, slots=2)
+        add_topic(engine, wid, origin="other", seed=_seed(8))
+        add_topic(engine, wid, origin="user", card={"title": "내 주제", "question": "내 질문?", "evidence": []})
+
+        out = _enqueue(engine, wid, [])
+
+        assert [tid for tid, _ in out] == tids
+        # 키워드 없이 넣으면(취소·빈 결과) 입력의 keywords 가 비고 프롬프트에 키워드 규칙이 붙지 않는다
+        assert [g["input"]["keywords"] for g in _card_gens(engine, wid)] == [[], []]
+
+    def test_does_not_commit(self, engine):
+        wid, _ = _seed_work(engine)
+
+        assert len(_enqueue(engine, wid, KEYWORDS, commit=False)) == 4
+        assert _card_gens(engine, wid) == []

@@ -263,6 +263,13 @@ class TestSectionsFilled:
                     "background": _section("라")}
         assert sections_filled(_outline(), sections) == 6
 
+    def test_background_written_in_the_outline_counts(self):
+        # 06e(§12-11 권고) — 연구 배경은 사용자가 목차에 적는 자유 글(outline.background)이다. 공백뿐이면 세지 않는다
+        sections = {"prior.g1": _section("가"), "prior.g2": _section("나"), "gap": _section("다")}
+        assert sections_filled(_outline(background="농촌 독거노인의 고립이 깊어진다."), sections) == 6
+        assert sections_filled(_outline(background="  "), sections) == 5
+        assert sections_filled(_outline(), sections) == 5
+
     def test_prior_needs_every_group(self):
         assert sections_filled(_outline(question=None, method=""), {"prior.g1": _section("가")}) == 1
         assert sections_filled(_outline(question=None, method="", groups=[]),

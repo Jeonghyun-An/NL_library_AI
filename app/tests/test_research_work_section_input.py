@@ -402,8 +402,9 @@ class TestPriorInput:
             {"id": "F2", "label": "발행 연도 범위", "value": "2013~2016"},
             {"id": "F3", "label": "소장 KCI 적재분 논문 수", "value": "144,748"},
         ]
-        # 다시 맞춤 판정의 기준은 묶음의 논문 전부(넣지 못한 7번째 포함)
-        assert inp["basis"] == {"topic_id": 12, "papers": GROUP["papers"]}
+        # 다시 맞춤 판정의 기준은 묶음의 논문 전부(넣지 못한 7번째 포함)와 이 절을 쓸 때의 연구 질문(06e)
+        assert inp["basis"] == {"topic_id": 12, "papers": GROUP["papers"],
+                                "question": "가족 지지는 농촌 독거노인의 우울을 낮추는가?"}
 
     def test_group_without_a_name_uses_its_hint(self):
         inp = prior_input(question="q", topic=TOPIC, research_question="rq", group={**GROUP, "name": ""},
@@ -423,5 +424,5 @@ class TestGapInput:
                                 {"heading": "노인의 사회적 지지", "text": "insufficient:1"}]
         # 씨앗에 묶인 근거 논문을 씨앗 순서로, 같은 논문은 한 번
         assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_B", "KCI_C"]
-        assert inp["basis"] == {"topic_id": 12, "papers": ["KCI_A", "KCI_B", "KCI_C"]}
+        assert inp["basis"] == {"topic_id": 12, "papers": ["KCI_A", "KCI_B", "KCI_C"], "question": "rq"}
         assert [f["id"] for f in inp["figures"]] == ["F1", "F2"]

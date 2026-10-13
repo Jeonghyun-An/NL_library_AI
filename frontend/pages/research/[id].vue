@@ -1,7 +1,8 @@
 <!-- frontend/pages/research/[id].vue -->
 <template>
-  <div class="skx-app">
+  <div :class="['skx-app', workPanelOpen && 'is-lnb-collapsed']">
     <AppSidebar
+      :collapsed="workPanelOpen"
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
     />
@@ -60,7 +61,7 @@
         <div v-if="stepMode" class="wk-body">
           <div class="rs-card wk-summary">
             <p class="wk-summary__line">{{ band ? summaryLine(band) : view.question }}</p>
-            <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">보고서 보기</button>
+            <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">{{ DEEP_RESEARCH }} 보고서 보기</button>
           </div>
           <div v-if="!workView && work.errorOf('load')" class="rs-card rs-card--error">
             <p>{{ work.errorOf("load") }}</p>
@@ -73,8 +74,8 @@
             <p>이어간 연구를 불러오는 중입니다</p>
           </div>
           <TopicsStep v-else-if="step === 'topics'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
-          <ReadingStep v-else-if="step === 'reading'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" />
-          <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
+          <ReadingStep v-else-if="step === 'reading'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
+          <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
         </div>
 
         <div v-else class="rs-body" :class="`rs-body--${layout}`">
@@ -581,6 +582,8 @@ function firstContinue(): boolean {
 // ── 원문 보기 ─────────────────────────────────────────────
 const pdfOpener = usePdfOpener();
 const { pdf, closePdf } = pdfOpener;
+// 단계 화면(ReadingStep·ProposalStep)의 오른쪽 딥리드 패널이 열려 있는지 — 왼쪽 메뉴(LNB) 접기가 읽는다(06e 정함 30)
+const workPanelOpen = ref(false);
 
 async function openPdf(target: OpenPdfPayload): Promise<void> {
   const problem = await pdfOpener.openPdf(target);

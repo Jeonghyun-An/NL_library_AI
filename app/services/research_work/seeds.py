@@ -172,9 +172,10 @@ def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()
     return out
 
 
-def topic_input(question: str, seed: dict, report: dict, topic_id: int) -> dict:
+def topic_input(question: str, seed: dict, report: dict, topic_id: int, keywords: list[str] | None = None) -> dict:
     """주제 카드 생성 1건의 입력(계약 §3 topic_card input). 근거 후보는 E1 부터 차례로 번호를 붙인다 —
-    호출마다 붙이는 로컬 번호이고 카드에는 cnts_id 로 저장한다(spec §3 [E#])."""
+    호출마다 붙이는 로컬 번호이고 카드에는 cnts_id 로 저장한다(spec §3 [E#]). keywords 는 카드를 만들 때 고른
+    키워드(06e D23 — work.concepts)이고 제목 규칙·검사가 읽는다. 06e 전 행에는 이 키가 없다(읽는 쪽이 or [])."""
     metas = _metas(report if isinstance(report, dict) else {})
     papers = []
     for n, cnts_id in enumerate(seed.get("papers") or [], start=1):
@@ -188,6 +189,7 @@ def topic_input(question: str, seed: dict, report: dict, topic_id: int) -> dict:
         "papers": papers,
         "adopted": seed.get("adopted"),
         "corpus": _corpus(report if isinstance(report, dict) else {}),
+        "keywords": list(keywords or []),
     }
 
 

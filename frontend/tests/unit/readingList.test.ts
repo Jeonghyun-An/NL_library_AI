@@ -7,6 +7,7 @@ import {
   candidateNote,
   canMakeOutline,
   fieldValue,
+  firstPathChunk,
   freshIds,
   funnelLine,
   originLabel,
@@ -212,6 +213,36 @@ describe("pathLines", () => {
   });
 });
 
+describe("firstPathChunk — 패널의 첫 대목", () => {
+  it("[경로] 와 같은 순서의 첫 매칭 대목 — 대목이 없는 하위질문은 건너뛴다", () => {
+    const second: PathChunk = { ...CHUNK, chunk_id: "KCI_A#9", page_start: 9, page_end: 10 };
+    const item = row({
+      path: { subqs: [subq({ chunks: [CHUNK, second] }), subq({ idx: 1, chunks: [second] })], revived: null, user: false },
+    });
+    expect(firstPathChunk(item)).toEqual({ label: "하위질문 1 · 대목 p.4", chunk: CHUNK });
+    const later = row({ path: { subqs: [subq(), subq({ idx: 1, chunks: [second] })], revived: null, user: false } });
+    expect(firstPathChunk(later)).toEqual({ label: "하위질문 2 · 대목 p.10–11", chunk: second });
+  });
+
+  it("매칭 대목이 하나도 없으면 null — 쪽을 모르는 대목은 '쪽 정보 없음'으로 적는다", () => {
+    expect(firstPathChunk(row({ path: { subqs: [subq()], revived: null, user: false } }))).toBeNull();
+    const bare: PathChunk = { chunk_id: "KCI_A#0", page_start: null, page_end: null, score: null, text: "초록" };
+    expect(firstPathChunk(row({ path: { subqs: [subq({ chunks: [bare] })], revived: null, user: false } }))).toEqual({
+      label: "하위질문 1 · 대목 쪽 정보 없음",
+      chunk: bare,
+    });
+  });
+
+  it("되살림·직접 담음만 있는 논문은 null", () => {
+    const revived = row({
+      origin: "revived",
+      path: { subqs: [], revived: { subq_idx: 1, subquestion: "사회적 지지 측정 도구", round: 2, note: "" }, user: false },
+    });
+    expect(firstPathChunk(revived)).toBeNull();
+    expect(firstPathChunk(row({ origin: "user", path: { subqs: [], revived: null, user: true } }))).toBeNull();
+  });
+});
+
 describe("pathPdfTarget", () => {
   it("대목의 쪽에서 원문을 열고, 쪽을 모르면 쪽 없이 연다", () => {
     expect(pathPdfTarget(row(), CHUNK)).toEqual({
@@ -241,9 +272,9 @@ describe("canMakeOutline·outlineHint", () => {
   it("담음이 모자라면 몇 편인지, 주제가 없으면 주제를 먼저 고르라고 알린다", () => {
     const four = [...five.slice(0, 4), row({ cnts_id: "KCI_9", state: "candidate" })];
     expect(canMakeOutline(view(four))).toBe(false);
-    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 목차를 만들 수 있습니다");
+    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 보고서를 만들 수 있습니다");
     expect(canMakeOutline(view(five, { topic_id: null }))).toBe(false);
-    expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 목차를 만듭니다");
+    expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다");
   });
 });
 

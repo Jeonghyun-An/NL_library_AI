@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import and_, func, or_, select, update
@@ -38,24 +38,25 @@ from services.research_work.paragraph import paragraph_input
 from services.research_work.paragraph_edit import merge_paragraphs, revalidate
 from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
-from services.research_work.proposal_views import paper_ids, proposal_view
+from services.research_work.proposal_views import paper_ids, proposal_view, section_sources
 from services.research_work.reading_views import book_meta, subquestions_of
 from services.research_work.section_input import gap_input, gap_seeds, prior_input, section_papers
 from services.research_work.seeds import corpus_of
 from services.research_work.shapes import (
     GAP_KEY, GROUP_LABEL_MAX, MAX_GROUPS, MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, MIN_READING_FOR_OUTLINE,
-    OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET, PHASE_ORDER, WRITABLE_SECTION_KEYS,
+    OUTLINE_BACKGROUND_MAX, OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET, PHASE_ORDER,
+    WRITABLE_SECTION_KEYS,
 )
 
 router = APIRouter(tags=["research-work"])
 
 PICK_TOPIC_FIRST = "주제를 먼저 고르세요"
-NEED_READING = f"담은 논문이 {MIN_READING_FOR_OUTLINE}편 이상이어야 목차를 만듭니다"
+NEED_READING = f"담은 논문이 {MIN_READING_FOR_OUTLINE}편 이상이어야 보고서를 만듭니다"
 OUTLINE_BUSY = "목차를 만드는 중입니다"
 NO_OUTLINE = "목차가 없습니다"
 IF_MATCH_REQUIRED = "If-Match 가 필요합니다"
-IF_MATCH_FORMAT = "If-Match 는 계획서 버전 숫자입니다"
-VERSION_CONFLICT = "다른 곳에서 계획서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요"
+IF_MATCH_FORMAT = "If-Match 는 보고서 버전 숫자입니다"
+VERSION_CONFLICT = "다른 곳에서 보고서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요"
 GROUP_KEYS_DIFFER = "묶음이 저장된 목차와 다릅니다"
 GROUP_PAPERS_DIFFER = "묶음의 논문이 저장된 목차와 다릅니다"
 PAPER_IN_TWO_GROUPS = "한 논문이 두 묶음에 들어 있습니다"
@@ -76,6 +77,8 @@ class OutlinePut(BaseModel):
     question: str = Field(max_length=OUTLINE_QUESTION_MAX)
     method: str = Field(max_length=OUTLINE_METHOD_MAX)
     approve: bool
+    # 연구 배경(06e) — None(생략)이면 저장된 값을 지킨다: 배경을 모르는 [목차 고치기]·옛 화면의 PUT 이 지우지 않게
+    background: str | None = Field(None, max_length=OUTLINE_BACKGROUND_MAX)
 
 
 def _if_match(value: str | None) -> int:
@@ -240,7 +243,8 @@ def _checked_groups(req: OutlinePut, stored: list[dict]) -> list[dict]:
 async def put_outline(job_id: str, req: OutlinePut, response: Response,
                       if_match: str | None = Header(None), db: AsyncSession = Depends(get_db)):
     """목차 고치기·승인. approve 면 state approved(승인 시각), 아니면 draft — 승인한 목차를 고쳐 저장하면 다시
-    승인해야 절을 쓴다. version 이 다르면 409(조건부 UPDATE 로 확인과 쓰기를 한 문장에)."""
+    승인해야 절을 쓴다. version 이 다르면 409(조건부 UPDATE 로 확인과 쓰기를 한 문장에).
+    연구 배경(background)은 실었을 때만 앞뒤 공백을 떼어 바꾼다("" 면 지움) — 싣지 않으면 저장된 값 그대로다(06e)."""
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)
     _writable(work)
@@ -264,6 +268,8 @@ async def put_outline(job_id: str, req: OutlinePut, response: Response,
         "state": "approved" if req.approve else "draft",
         "approved_at": datetime.now(timezone.utc).isoformat() if req.approve else None,
     })
+    if req.background is not None:
+        outline["background"] = req.background.strip()
     res = await db.execute(
         update(ResearchProposal)
         .where(ResearchProposal.work_id == jid, ResearchProposal.version == expected)
@@ -288,6 +294,8 @@ NO_GROUP = "묶음이 없습니다"
 SECTION_BUSY = "이 절을 쓰는 중입니다"
 NO_SECTION = "절이 없습니다"
 NO_SECTION_PAPERS = "이 절에 넣을 논문이 없습니다"
+# 06e — 근거 없음 409 의 detail code. 화면의 절 연쇄는 문구가 아니라 이 code 로 '그 절만 건너뛰고 다음 키' 를 가른다
+NO_SECTION_PAPERS_CODE = "no_section_papers"
 DUPLICATE_PARAGRAPH = "같은 문단 id 가 두 번 있습니다"
 # 화면 검사(paragraphProblem '문단은 3000자까지입니다')는 보낸 글만 보아 통과시키는데, 서버는 검사(soften_claims 가
 # '최초로' 를 '소장 코퍼스에서 확인한 범위에서 처음으로' 로 늘린다) 뒤 글로 상한을 본다 — 화면이 이 문구를 그대로
@@ -393,7 +401,8 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
         seeds = gap_seeds(dict(topic.seed or {}) if topic is not None else {}, job.report or {})
         cnts_ids = section_papers([c for s in seeds for c in s.get("papers") or []])
     if not cnts_ids:
-        raise HTTPException(status_code=409, detail=NO_SECTION_PAPERS)
+        # 구조화한 detail(version_conflict 와 같은 꼴) — 화면 문구는 detailMessage 가 message 를 그대로 읽는다
+        raise HTTPException(status_code=409, detail={"code": NO_SECTION_PAPERS_CODE, "message": NO_SECTION_PAPERS})
     books = await BookRepository(db).get_by_cnts_ids(cnts_ids)
     question = job.question
     snapshot = job.state_snapshot
@@ -514,3 +523,44 @@ async def regenerate_paragraph(job_id: str, key: str, pid: str, db: AsyncSession
     _send_dispatch()
     await publish_work(jid, "generation", queued_event(gen_id, "paragraph", target))
     return {"gen_id": gen_id}
+
+
+# ── 인용 근거 조회 (06e — D24 인용 근거 A안) ─────────────────────────────
+
+NO_SECTION_SOURCE_GEN = "이 절의 생성 기록이 아닙니다"
+
+
+@router.get("/api/research/{job_id}/sections/{key}/sources")
+async def get_section_sources(job_id: str, key: str, gen: int | None = Query(None),
+                              db: AsyncSession = Depends(get_db)):
+    """인용 근거 — 그 절을 쓸 때 모델에 넘긴 근거 논문의 초록·원문 대목 {E#: {cnts_id, abstract, excerpt}}.
+
+    어느 생성인지는 gen(화면이 문단의 절 gen_id 를 싣는다)으로 고르고 — 이 연구·이 키의 section 생성이 아니면 404 —
+    없으면 저장된 절의 gen_id → 그 키의 열린 section 생성(id 가 가장 큰 것) 순이다. 절도 열린 생성도 없으면 404.
+    생성 행의 input 만 읽는다 — 대목은 절 쓰기 API 가 생성을 넣을 때 이미 골라 저장했으므로 서지·Milvus·리랭커를
+    부르지 않는다(spec §12-4). 읽기라 예시 연구도 읽는다."""
+    if key not in WRITABLE_SECTION_KEYS:
+        raise HTTPException(status_code=422, detail=SECTION_NOT_WRITABLE)
+    jid = _job_uuid(job_id)
+    await _get_work(db, jid)
+    G = ResearchGeneration
+    if gen is not None:
+        row = await db.get(G, gen)
+        if row is None or row.work_id != jid or row.kind != "section" or row.target != key:
+            raise HTTPException(status_code=404, detail=NO_SECTION_SOURCE_GEN)
+    else:
+        proposal = await db.get(ResearchProposal, jid)
+        section = dict((proposal.sections or {}).get(key) or {}) if proposal is not None else {}
+        source_id = section.get("gen_id")
+        row = await db.get(G, source_id) if source_id is not None else None
+        if row is not None and (row.work_id != jid or row.kind != "section"):
+            row = None
+        if row is None:
+            row = (await db.execute(
+                select(G).where(G.work_id == jid, G.kind == "section", G.target == key,
+                                G.status.in_(GEN_OPEN_STATUSES))
+                .order_by(G.id.desc()).limit(1)
+            )).scalar_one_or_none()
+        if row is None:
+            raise HTTPException(status_code=404, detail=NO_SECTION)
+    return section_sources(dict(row.input or {}))

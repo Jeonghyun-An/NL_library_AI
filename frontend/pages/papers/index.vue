@@ -416,6 +416,7 @@
           v-if="chatPaperId"
           :cnts-id="chatPaperId"
           :book-title="chatPaperTitle"
+          doc-kind="paper"
           @close="chatPaperId = null"
         />
       </div>

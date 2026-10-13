@@ -29,8 +29,17 @@
     </form>
 
     <template v-else-if="card">
-      <h3 :id="titleId" class="wk-topic__title">{{ card.title }}</h3>
+      <!-- 고른 키워드가 든 자리는 <mark> — 서버 제목 검사와 같은 일치 규칙(keywordSpans, 06e D23) -->
+      <h3 :id="titleId" class="wk-topic__title">
+        <template v-for="(part, i) in titleParts" :key="i">
+          <mark v-if="part.mark" class="wk-kw">{{ part.text }}</mark>
+          <template v-else>{{ part.text }}</template>
+        </template>
+      </h3>
+      <p v-if="kwWarning" class="wk-topic__kwwarn">{{ kwWarning }}</p>
       <p class="wk-topic__question">{{ card.question }}</p>
+      <p v-if="kwChanged" class="wk-topic__kwchanged">키워드가 바뀌었습니다</p>
+      <p v-if="remakingNote" class="wk-topic__note">{{ remakingNote }}</p>
       <ul v-if="chips.length" class="wk-topic__chips" aria-label="근거 논문">
         <li v-for="chip in chips" :key="chip.cntsId">
           <span class="wk-topic__chip" :title="chip.title">{{ chip.label }}</span>
@@ -81,7 +90,7 @@
       <button
         type="button"
         class="rs-btn rs-btn--small rs-btn--ghost"
-        :disabled="readOnly || busy"
+        :disabled="readOnly || busy || remakingNote !== null"
         data-edit-open
         @click="startEdit"
       >
@@ -94,7 +103,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
-import type { Figure, PaperMeta, TopicItem, TopicPatch } from "~/types/work";
+import type { Figure, PaperMeta, TopicItem, TopicPatch, WorkGeneration } from "~/types/work";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
 import {
   TOPIC_QUESTION_MAX,
@@ -103,23 +112,30 @@ import {
   cardArrived,
   cardNote,
   cardNumbersLine,
+  cardRemakingNote,
   cardStatus,
   evidenceChips,
+  keywordSpans,
+  keywordWarning,
+  keywordsChanged,
   seedLine,
   topicProblem,
 } from "~/utils/topicDeck";
 
 // 주제 카드 한 장(spec §4 S3·§5-2). 의도만 emit 하고 API(고르기·고치기·다시)는 TopicsStep 이 부른다
+// concepts·conceptsGen — 지금 고른 키워드와 그 생성(06e D23). 빈 씨앗 자리는 키워드가 정해지기를 기다린다(cardStatus)
 const props = defineProps<{
   item: TopicItem;
   papers: Record<string, PaperMeta>;
   picked: boolean;
   readOnly: boolean;
   busy: boolean;
+  concepts: string[];
+  conceptsGen: WorkGeneration | null;
 }>();
 const emit = defineEmits<{ pick: []; edit: [body: TopicPatch]; retry: [genId: number]; arrived: [el: HTMLElement] }>();
 
-const status = computed(() => cardStatus(props.item));
+const status = computed(() => cardStatus(props.item, props.conceptsGen));
 const pending = computed(() => status.value === "waiting" || status.value === "making");
 const card = computed(() => (status.value === "ready" ? props.item.card : null));
 const note = computed(() => cardNote(status.value));
@@ -127,6 +143,22 @@ const pickable = computed(() => canPick(props.item));
 const chips = computed(() => (card.value ? evidenceChips(card.value, props.papers) : []));
 // 제목·질문에 [F#] 밖 숫자가 있으면 '확인 필요' — 서버가 센 값(card.checks.numbers)을 계획서 문단과 같은 모양으로 보인다
 const numbersLine = computed(() => (card.value ? cardNumbersLine(card.value) : null));
+// 제목 속 고른 키워드(카드를 만들 때 넘긴 키워드), 하나도 못 넣은 카드의 경고, 지금 고른 키워드와 다른 키워드로 만든 카드.
+// '바뀌었습니다'는 다시 만들 대상(고르지 않은·고치지 않은 AI 카드)에만 단다 — 고른 카드는 다시 만들지 않는다(06e 정함 16)
+const titleParts = computed(() => (card.value ? keywordSpans(card.value.title, card.value.keywords ?? []) : []));
+const kwWarning = computed(() => (card.value ? keywordWarning(card.value) : null));
+// [이 키워드로 다시 만들기] 가 넣은 새 카드를 기다리는 중 — 새 결과가 반영될 때까지 지금 카드를 그대로 보이고 [고르기]
+// (canPick)·[직접 고치기](서버 409 CARD_BUSY)는 막는다. 그동안은 '바뀌었습니다'를 달지 않는다(06e 정함 16)
+const remakingNote = computed(() => cardRemakingNote(props.item));
+const kwChanged = computed(
+  () =>
+    card.value !== null &&
+    remakingNote.value === null &&
+    !props.picked &&
+    props.item.origin !== "user" &&
+    !card.value.edited &&
+    keywordsChanged(card.value, props.concepts),
+);
 // 머리 줄은 보고서 씨앗 카드의 계보뿐이다 — 사용자 카드(seed 가 {} → null)·고친 카드에는 출처 표시를 달지 않는다(D7·D9)
 const origin = computed(() => seedLine(props.item.seed));
 const seedText = computed(() => props.item.seed?.text.trim() || null);

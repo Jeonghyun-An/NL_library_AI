@@ -67,7 +67,8 @@ describe("initialWorkState·withWork·withResource", () => {
 
 describe("reloadFor", () => {
   it("끝난 생성의 종류로 다시 읽을 조회를 정하고, 모든 종류가 연구(work)도 다시 읽는다", () => {
-    expect(reloadFor("concepts")).toEqual(["work"]);
+    // 06e — 키워드 반영이 씨앗 카드 생성을 넣는다(D23). 주제 목록을 다시 읽어야 빈 슬롯이 '기다리는 중'이 된다
+    expect(reloadFor("concepts")).toEqual(["topics", "work"]);
     expect(reloadFor("topic_card")).toEqual(["topics", "work"]);
     expect(reloadFor("refine")).toEqual(["topics", "work"]);
     expect(reloadFor("facet")).toEqual(["reading", "work"]);
@@ -189,7 +190,7 @@ describe("applyWorkEvent — generation", () => {
   it("연구를 아직 받지 않았으면 생성 목록은 두고 다시 읽을 조회만 알린다", () => {
     const out = applyWorkEvent(initialWorkState(), genEvent({ gen_kind: "concepts", target: null, status: "done" }));
     expect(out.state.work).toBeNull();
-    expect(out.reload).toEqual(["work"]);
+    expect(out.reload).toEqual(["topics", "work"]);
   });
 });
 

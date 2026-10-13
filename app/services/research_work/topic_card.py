@@ -10,19 +10,28 @@
   - 개수: 직접 받치는 논문 MIN_TOPIC_EVIDENCE(2)편 이상(정함 4). 미달이면 공통 규칙(generate.run_generation)의
     내용 검사 미달로 다시 부르고, 끝내 미달이면 card 가 None 인 빈 결과로 done — 화면은 '근거 부족' 슬롯이다.
   - 표현: 제목·질문의 단정 표현은 soften_claims 로 바꾸고, [F#] 밖 숫자는 numbers_outside 로 센다('확인 필요').
+  - 키워드(06e D23): 고른 키워드(input.keywords)를 넘기면 프롬프트에 '제목에 하나 이상 글자 그대로' 규칙 한 줄이 붙는다.
+    예시 제목·이전 제목은 주지 않는다(함정 15·26). 06e 전 행(keywords 없음)은 06b 프롬프트 그대로다.
+    검사는 06c 의 terms.contains(NFKC·casefold·공백 무시, 아니면 낱말이 순서대로)로 제목에 든 키워드를 보고
+    card.keywords·card.checks.missing_keywords 에 싣는다. 하나도 없으면 엄격한 검사 미달로 다시 부르고, 세 번 다
+    놓치면 근거 검사(무른 검사)만 넘은 마지막 카드를 보관한다 — 화면이 '제목에 ○○ 없음' 경고를 단다(06e 정함 17).
 결과 반영(apply)은 research_topics 의 그 행만 바꾼다 — 사용자가 직접 고친 카드(card.edited)는 덮지 않는다.
 """
 import re
 
 from sqlalchemy import select, update
 
-from models.research_work import ResearchTopic
+from models.research import ResearchJob
+from models.research_work import ResearchGeneration, ResearchTopic
 from services.prompts import get_prompt
 from services.research.citations import strip_markers
 from services.research.llm_json import extract_json
+from services.research.terms import contains
+from services.research_work.enqueue import enqueue_generation
 from services.research_work.generate import Executor
 from services.research_work.markers import figure, numbers_outside, soften_claims
 from services.research_work.progress import refresh_progress
+from services.research_work.seeds import topic_input
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE, TOPIC_QUESTION_MAX, TOPIC_TITLE_MAX
 
 PROMPT = "research_topic_card"
@@ -63,6 +72,8 @@ def _build(input: dict) -> tuple[list[dict], dict]:
         heading=seed.get("heading") or "",
         seed=seed.get("text") or "",
         evidence_list=_evidence_list(input.get("papers") or []),
+        # 렌더러가 StrictUndefined 라(services/prompts.py) 늘 넘긴다 — 빈 글이면 프롬프트의 키워드 규칙 줄이 빠진다
+        keywords=" · ".join(k for k in (input.get("keywords") or []) if isinstance(k, str)),
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}], params
 
@@ -156,8 +167,17 @@ def _clean(value: str) -> str:
     return " ".join(strip_markers(value or "").split())
 
 
+def keyword_misses(title: str, keywords: list[str]) -> list[str]:
+    """keywords 가운데 title 에 들어 있지 않은 것(06c terms.contains — 화면 keywordSpans 와 같은 일치 규칙)."""
+    return [k for k in keywords if not contains(title, k)]
+
+
 def _bind(output: dict, input: dict) -> dict:
-    """해석한 출력 → {"card": Card | None}(계약 §4 Card). 제목이나 질문이 비면 card 는 None."""
+    """해석한 출력 → {"card": Card | None}(계약 §4 Card). 제목이나 질문이 비면 card 는 None.
+    고른 키워드(input.keywords — 06e)를 카드에 싣고, 다듬은 제목(단정 표현 바꿈·글자 상한 뒤)에 없는 것을
+    checks.missing_keywords 에 센다. 06e 전 input(keywords 키 없음 — 06b 카드의 [다시]·배포 때 줄을 서 있던 생성)으로
+    묶은 카드에는 keywords 키를 싣지 않는다 — 화면은 키가 없는 카드를 '06e 전 카드'로 보고 '키워드가 바뀌었습니다'를 달지
+    않는다(06e 의 topic_input 은 늘 keywords 를 싣는다)."""
     title, question = _clean(output.get("title")), _clean(output.get("question"))
     if not title or not question:
         return {"card": None}
@@ -171,7 +191,8 @@ def _bind(output: dict, input: dict) -> dict:
     question, soft_question = soften_claims(question)
     title, question = title[:TOPIC_TITLE_MAX], question[:TOPIC_QUESTION_MAX]
     figures = card_figures(input.get("adopted"), latest_year, input.get("corpus"))
-    return {"card": {
+    keywords = [k for k in (input.get("keywords") or []) if isinstance(k, str)]
+    card = {
         "title": title,
         "question": question,
         "evidence": [p["cnts_id"] for p in chosen],
@@ -180,30 +201,63 @@ def _bind(output: dict, input: dict) -> dict:
         "latest_year": latest_year,
         "edited": False,
         "checks": {"numbers": numbers_outside(f"{title}\n{question}"),
-                   "softened": soft_title + soft_question, "recovered": recovered},
+                   "softened": soft_title + soft_question, "recovered": recovered,
+                   "missing_keywords": keyword_misses(title, keywords)},
         "gen_id": None,
-    }}
+    }
+    if "keywords" in input:
+        card["keywords"] = keywords
+    return {"card": card}
+
+
+def _soft_check(output: dict) -> bool:
+    """무른 검사 — 06b 의 검사 그대로(직접 받치는 근거 MIN_TOPIC_EVIDENCE 편 이상)."""
+    card = output.get("card")
+    return card is not None and len(card["evidence"]) >= MIN_TOPIC_EVIDENCE
 
 
 def _check(output: dict) -> bool:
-    card = output.get("card")
-    return card is not None and len(card["evidence"]) >= MIN_TOPIC_EVIDENCE
+    """엄격한 검사 — 무른 검사에 더해, 고른 키워드를 넘겼으면 제목에 하나 이상 들어 있다(06e D23). 하나도 없으면 공통
+    규칙의 내용 검사 미달로 다시 부르고, 세 번 다 놓치면 run_generation 이 무른 검사를 넘은 마지막 카드를 낸다(정함 17)."""
+    if not _soft_check(output):
+        return False
+    card = output["card"]
+    keywords = card.get("keywords") or []
+    return not keywords or len(card["checks"].get("missing_keywords") or []) < len(keywords)
 
 
 async def apply(db, gen, output: dict) -> dict:
     """카드를 research_topics 의 그 행(input.topic_id)에 반영한다. 커밋하지 않는다(apply_result 와 같은 규칙).
 
-    카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient.
-    그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
-    지우면 안 된다."""
+    카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient — 단 빈 결과는
+    빈 자리(제목이 없는 카드)만 채우고 제목이 있는 카드는 그대로 둔다. 그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
+    지우면 안 된다. 고른 카드(picked — 제목이 있다)도 덮지 않는다 — [이 키워드로 다시 만들기](06e)가 도는 사이
+    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16).
+
+    행을 FOR UPDATE 로 읽는다 — 두 검사는 읽고 쓰는 사이가 비면 겹친 쓰기를 놓친다. READ COMMITTED 에서 [고르기]
+    (pick_topic)의 UPDATE 가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 그 커밋을 기다렸다가
+    WHERE id 만 다시 보고 새 카드·candidate 를 써서 work.topic_id 는 그 주제인데 state 는 candidate 로 남는다. 잠그면
+    고르기가 끝난 뒤의 값을 본다. [직접 고치기]는 카드 생성이 열려 있으면 409 CARD_BUSY 라 여기서 겹칠 일이 거의
+    없지만 같은 잠금이 막는다. 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른
+    행 → 연구 행'과 같은 방향이라 서로 기다리는 고리가 없다(section·paragraph 의 apply 와 같은 읽기-고치기-쓰기 규칙)."""
     topic_id = int(gen.input["topic_id"])
     row = (await db.execute(
         select(ResearchTopic.card, ResearchTopic.state)
         .where(ResearchTopic.id == topic_id, ResearchTopic.work_id == gen.work_id)
+        .with_for_update()
     )).first()
     if row is None:                    # 연구가 지워졌다(CASCADE) — finish 도 행을 찾지 못해 되돌린다
         return {"topic_id": topic_id, "state": None}
     if (row.card or {}).get("edited"):
+        return {"topic_id": topic_id, "state": row.state}
+    # 06e 정함 16 — 고른 카드는 다시 만든 결과(새 카드든 빈 결과든)로 덮지 않는다. 06b 에서는 고른 카드에 열린 카드
+    # 생성이 생길 수 없어(다시 부르기는 카드 없는 자리뿐) 동작이 바뀌지 않는다
+    if row.state == "picked" and (row.card or {}).get("title"):
+        return {"topic_id": topic_id, "state": "picked"}
+    # 빈 결과는 빈 자리만 채운다 — [이 키워드로 다시 만들기](06e)가 제목이 있는 후보 카드에 넣은 생성이 빈 결과(세 번 다 근거
+    # 부족, 또는 vLLM 전송 실패 — run_generation 은 둘 다 done 의 빈 결과다)면 멀쩡하던 카드를 '근거 부족'으로 지우지 않는다.
+    # 그 생성은 done-empty 라 화면이 [다시]를 열고, 카드의 옛 keywords 가 지금 키워드와 달라 '키워드가 바뀌었습니다'가 남는다
+    if not output.get("card") and (row.card or {}).get("title"):
         return {"topic_id": topic_id, "state": row.state}
     card = output.get("card")
     if card:
@@ -216,6 +270,49 @@ async def apply(db, gen, output: dict) -> dict:
     return {"topic_id": topic_id, "state": values["state"]}
 
 
+async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int, int]]:
+    """보고서 씨앗 자리(slot 이 있는 report_seed 주제 행)마다 카드 생성 1건을 고른 키워드로 넣는다 — 06e D23 '카드 시점'.
+
+    키워드(개념) 생성의 반영(apply_result 의 concepts 분기 — 세 번 다 못 얻은 빈 결과도 done 이다)과 그 생성의 취소
+    (api/research_work.cancel_generation — 키워드 없이)가 이 함수 하나를 부른다. '한 번만'은 씨앗 자리 행마다 본다 —
+    그 행을 target 으로 하는 topic_card 생성이 (상태와 상관없이) 하나라도 있으면 건너뛴다(06e 정함 29): 키워드를 다시
+    불러 반영돼도 카드가 또 들어가지 않고, 키워드 생성이 줄을 서는 사이 [다른 방향](origin other)이 먼저 카드를 만들어도
+    씨앗 카드는 들어간다. 카드가 이미 있는 자리(직접 쓴 카드)도 넣지 않는다 — 이어가기와 이 함수 사이(키워드 생성이
+    줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접 고치기]가 사용자 카드(edited)를 만들 수 있고,
+    넣으면 LLM 을 헛되이 부른 결과를 apply 의 edited 검사가 버린다([이 키워드로 다시 만들기]가 고친 카드를 건너뛰는 것과
+    같은 규칙 — spec §12-4·정함 16). 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
+    커밋하지 않는다 — 부르는 쪽의 트랜잭션(디스패처 finish·취소 API)에 묶인다. 돌려주는 값은 [(topic_id, gen_id)].
+    """
+    T, G = ResearchTopic, ResearchGeneration
+    rows = (await db.execute(
+        select(T.id, T.seed, T.card).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
+        .order_by(T.slot, T.id)
+    )).all()
+    if not rows:
+        return []
+    made = set((await db.execute(
+        select(G.target).where(G.work_id == work_id, G.kind == "topic_card",
+                               G.target.in_([str(r.id) for r in rows]))
+    )).scalars().all())
+    todo = [r for r in rows if str(r.id) not in made and not r.card]
+    if not todo:
+        return []
+    job = (await db.execute(
+        select(ResearchJob.question, ResearchJob.report).where(ResearchJob.id == work_id)
+    )).first()
+    question = job.question if job is not None else ""
+    report = job.report if job is not None and isinstance(job.report, dict) else {}
+    cards: list[tuple[int, int]] = []
+    for row in todo:
+        gen_id = await enqueue_generation(
+            db, work_id, kind="topic_card", target=str(row.id),
+            input=topic_input(question, row.seed or {}, report, row.id, keywords=keywords),
+        )
+        if gen_id is not None:
+            cards.append((row.id, gen_id))
+    return cards
+
+
 EXECUTOR = Executor(
     kind="topic_card",
     build=_build,
@@ -225,4 +322,5 @@ EXECUTOR = Executor(
     bind=_bind,
     apply=apply,
     is_empty=lambda out: (out or {}).get("card") is None,
+    soft_check=_soft_check,
 )

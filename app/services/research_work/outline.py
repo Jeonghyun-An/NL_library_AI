@@ -9,10 +9,14 @@
 목차를 그대로 고칠 수 있고, 다시 부르기(retry)도 열린다(is_empty).
 반영(apply)은 research_proposals.outline 을 Outline 모양으로 바꾸고 version 을 올린다 — 화면이 들고 있던
 옛 version 의 PUT 은 409 가 된다. 행은 POST .../outline 이 미리 만든다. 커밋은 디스패처(finish)가 한다.
+06e 부터 반영이 목차를 자동 확정한다(D20 — [보고서 만들기] 한 번): 연구 질문 = 첫 후보, 없으면 고른 카드의 질문
+(auto_question), 방법 빈칸, state approved·approved_at 지금·auto true — 화면의 절 연쇄가 auto 를 읽는다. 질문이 하나도
+없으면 06b 처럼 초안(auto false)으로 둔다 — 빈 질문으로 승인하면 [목차 고치기]의 PUT 이 422 가 된다.
 """
 import re
+from datetime import datetime, timezone
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from models.research_work import ResearchProposal
 from services.prompts import get_prompt
@@ -159,11 +163,34 @@ def _empty(input: dict) -> dict:
             "questions": [question] if question else [], "fallback": True}
 
 
+def _now() -> str:
+    """자동 승인 시각(UTC ISO) — PUT .../outline 의 approved_at 과 같은 모양. 테스트가 바꿔 끼운다."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def auto_question(output: dict, input: dict) -> str | None:
+    """자동 확정의 연구 질문 — 첫 후보(output.questions[0]), 없으면 고른 카드의 질문(input.topic.question), 둘 다
+    비면 None. 공백을 정리하고 2자 미만(공백만 포함)은 없는 것으로 본다 — PUT .../outline 의 승인 하한과 같아야
+    자동 승인한 목차를 [목차 고치기]로 다시 승인할 수 있다. 빈 결과(fallback)는 _empty 가 이미 카드 질문을 후보로 채운다."""
+    candidates = list(output.get("questions") or [])[:1] + [(input.get("topic") or {}).get("question")]
+    for raw in candidates:
+        text = " ".join(raw.split()) if isinstance(raw, str) else ""
+        if len(text) >= 2:
+            return text
+    return None
+
+
 async def apply(db, gen, output: dict) -> dict:
-    """research_proposals.outline ← Outline(state draft) · version + 1 · 진행 요약. 커밋하지 않는다.
-    concepts 는 목차를 만들 때의 핵심 개념 — 뒤에 개념을 고치면 조회가 목차에 '다시 맞춤 필요' 를 붙인다."""
+    """research_proposals.outline ← Outline · version + 1 · 진행 요약. 커밋하지 않는다.
+    연구 질문이 있으면 자동 승인한다(state approved·approved_at·auto true — 06e D20), 없으면 06b 처럼 초안(auto false).
+    승인한 목차가 있어도 통째로 바꾼다([보고서 다시 만들기] — 새 반영이라 auto 가 다시 붙는다). 연구 배경(background —
+    사용자가 쓰는 자유 글)만 옛 목차에서 이어 받는다.
+    concepts 는 목차를 만들 때의 핵심 개념 — 뒤에 개념을 고치면 조회가 목차에 '다시 맞춤 필요' 를 붙인다.
+    반환은 generation 이벤트의 result({fallback, auto})."""
     input = dict(gen.input or {})
     names = output.get("group_names") or {}
+    question = auto_question(output, input)
+    auto = question is not None
     outline = {
         "topic": input.get("topic"),
         "basis": input.get("basis"),
@@ -174,19 +201,25 @@ async def apply(db, gen, output: dict) -> dict:
             for g in input.get("groups") or []
         ],
         "questions": list(output.get("questions") or []),
-        "question": None,
+        "question": question,
         "method": "",
-        "state": "draft",
+        "state": "approved" if auto else "draft",
         "gen_id": gen.id,
-        "approved_at": None,
+        "approved_at": _now() if auto else None,
+        "auto": auto,
     }
+    # 연구 배경은 사용자가 쓰는 자유 글이다(06e) — 새 반영이 목차를 통째로 바꿔도 지우지 않는다. 적은 적이 없으면 키를
+    # 두지 않는다(키가 없으면 "" 로 읽는다)
+    old = await db.scalar(select(ResearchProposal.outline).where(ResearchProposal.work_id == gen.work_id))
+    if (old or {}).get("background"):
+        outline["background"] = old["background"]
     await db.execute(
         update(ResearchProposal)
         .where(ResearchProposal.work_id == gen.work_id)
         .values(outline=outline, version=ResearchProposal.version + 1)
     )
     await refresh_progress(db, gen.work_id)
-    return {"fallback": bool(output.get("fallback"))}
+    return {"fallback": bool(output.get("fallback")), "auto": auto}
 
 
 EXECUTOR = Executor(

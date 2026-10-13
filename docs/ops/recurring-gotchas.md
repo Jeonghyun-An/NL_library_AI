@@ -250,7 +250,7 @@
 ## 24. 브로커 메시지를 잃은 approved·queued 딥리서치 잡이 그 브라우저의 승인·재시도를 계속 429 로 막는다
 
 - **날짜**: 2026-10-03 (round06a — 머지 전 리뷰에서 찾았다. 라이브에서는 아직 안 터졌다)
-- **증상**: 한 브라우저에서 딥리서치를 승인·다시 시도하면 계속 429 `browser_active`("진행 중인 딥리서치가 있습니다 …")와 [진행 중인 연구 보기] 링크가 나오는데, 링크의 잡은 '대기열'(approved·queued)에서 움직이지 않는다. 사용자에게는 '진행 중' 으로 보여 취소할 까닭을 알기 어렵다.
+- **증상**: 한 브라우저에서 딥리서치를 승인·다시 시도하면 계속 429 `browser_active`("진행 중인 딥리서치가 있습니다 …" — round06e `3f7a4fe` 부터 "진행 중인 DeepResearch가 있습니다 …")와 [진행 중인 연구 보기] 링크가 나오는데, 링크의 잡은 '대기열'(approved·queued)에서 움직이지 않는다. 사용자에게는 '진행 중' 으로 보여 취소할 까닭을 알기 어렵다.
 - **원인**: round06a 의 브라우저당 실행 제한(`app/api/research.py` 의 `_to_run_queue`)은 같은 `created_by` 의 approved·queued·running 잡을 센다. 그런데 회수기(`tasks.reap_stale_research`)는 approved·queued 를 회수하지 않는다 — 아직 워커가 집지 않은 정상 대기 상태라서다. 그래서 브로커 메시지를 잃어 워커가 끝내 집지 못한 잡(Redis 컨테이너가 AOF 없이 죽어 `q_research` 목록이 사라짐, 연구 테이블을 덤프에서 복원 — `infra/backup/pg_backup.sh` 머리 주석)은 approved·queued 로 영원히 남고, 06a 전에는 그 잡 하나만 멈췄지만 이제는 같은 브라우저의 모든 승인·재시도가 막힌다.
 - **확인 순서**:
   1. 429 응답의 `job_id`(또는 링크의 잡)가 approved·queued 인지 본다 — `echo "SELECT id, status, created_at FROM research_jobs WHERE id = '<job_id>'" | pgq`(계획 Task 17 Step 5 의 셸 함수).

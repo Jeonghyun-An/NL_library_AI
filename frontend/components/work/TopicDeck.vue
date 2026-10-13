@@ -10,6 +10,8 @@
         :picked="item.id === topics.picked_id"
         :read-only="readOnly"
         :busy="busy"
+        :concepts="concepts"
+        :concepts-gen="conceptsGen"
         @pick="emit('pick', item.id)"
         @edit="(body) => emit('edit', item.id, body)"
         @retry="(genId) => emit('retry', genId)"
@@ -22,7 +24,7 @@
       <button
         type="button"
         class="rs-btn rs-btn--ghost"
-        :disabled="readOnly || busy || topics.seeds_left <= 0"
+        :disabled="readOnly || busy || topics.seeds_left <= 0 || keywordsBusy"
         @click="emit('more')"
       >
         다른 방향
@@ -61,12 +63,26 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import TopicCard from "~/components/work/TopicCard.vue";
-import type { TopicCreate, TopicPatch, TopicsView } from "~/types/work";
-import { TOPIC_QUESTION_MAX, TOPIC_TITLE_MAX, deckOrder, moreLine, topicProblem } from "~/utils/topicDeck";
+import type { TopicCreate, TopicPatch, TopicsView, WorkGeneration } from "~/types/work";
+import {
+  TOPIC_QUESTION_MAX,
+  TOPIC_TITLE_MAX,
+  conceptsStatus,
+  deckOrder,
+  moreLine,
+  topicProblem,
+} from "~/utils/topicDeck";
 
 // 주제 카드 덱(spec §4 S3) — 카드 순서는 deckOrder, [다른 방향]·[직접 쓰기] 는 의도만 emit 한다.
-// 카드 도착(arrived)은 그대로 올린다 — 화면 밖인지 보고 알약을 띄우는 것은 TopicsStep 이다
-const props = defineProps<{ topics: TopicsView; readOnly: boolean; busy: boolean }>();
+// 카드 도착(arrived)은 그대로 올린다 — 화면 밖인지 보고 알약을 띄우는 것은 TopicsStep 이다.
+// concepts·conceptsGen 은 카드로 내려 준다(제목 하이라이트·'키워드가 바뀌었습니다'·빈 씨앗 자리 — 06e D23)
+const props = defineProps<{
+  topics: TopicsView;
+  concepts: string[];
+  conceptsGen: WorkGeneration | null;
+  readOnly: boolean;
+  busy: boolean;
+}>();
 const emit = defineEmits<{
   pick: [tid: number];
   edit: [tid: number, body: TopicPatch];
@@ -77,6 +93,8 @@ const emit = defineEmits<{
 }>();
 
 const items = computed(() => deckOrder(props.topics.items));
+// 키워드를 고르는 중에는 [다른 방향] 을 막는다 — 끝나기 전의 키워드는 비어 있다(서버 409, 06e 정함 29)
+const keywordsBusy = computed(() => conceptsStatus(props.concepts, props.conceptsGen) === "making");
 
 const writing = ref(false);
 const title = ref("");

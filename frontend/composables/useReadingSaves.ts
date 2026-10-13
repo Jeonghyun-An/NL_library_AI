@@ -50,7 +50,7 @@ export function useReadingSaves(deps: ReadingSavesDeps) {
       current.saved = true;
       if (body.state !== undefined) current.kinds.add("work");
     } catch (err) {
-      deps.error.value = workErrorMessage(err, "읽기 목록을 고치지 못했습니다");
+      deps.error.value = workErrorMessage(err, "참고문헌 목록을 고치지 못했습니다");
       if (httpStatus(err) === 409) current.kinds.add("work");
     }
     try {

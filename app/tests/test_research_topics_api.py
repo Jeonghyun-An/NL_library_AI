@@ -352,6 +352,143 @@ class TestOtherDirection:
         assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
         assert _rows(api.engine, ResearchTopic) == []
 
+    def test_cards_take_the_current_keywords(self, api):
+        # 06e D23 — [다른 방향]도 지금 고른 키워드(work.concepts)를 카드 입력에 넘긴다(spec §12-4)
+        jid = _work_job(api.engine, concepts=["노인 우울", "사회적 지지"])
+        add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/generate", json={"mode": "other"})
+
+        assert res.status_code == 200
+        made = [t for t in _rows(api.engine, ResearchTopic) if t["origin"] == "other"]
+        gens = _rows(api.engine, ResearchGeneration)
+        assert len(gens) == 2 and [g["input"]["keywords"] for g in gens] == [["노인 우울", "사회적 지지"]] * 2
+        for topic, gen in zip(made, gens):
+            assert gen["input"] == topic_input(QUESTION, topic["seed"], REPORT, topic["id"],
+                                               keywords=["노인 우울", "사회적 지지"])
+
+    @pytest.mark.parametrize("status", ["queued", "running"])
+    def test_409_while_keywords_are_being_made(self, api, status):
+        # 정함 29 — 키워드 생성이 끝나기 전의 work.concepts 는 비어 있다. 그 값으로 카드를 만들지 않는다
+        jid = _work_job(api.engine)
+        concepts = add_generation(api.engine, jid, kind="concepts", status=status)
+
+        res = api.client.post(f"/api/research/{jid}/topics/generate", json={"mode": "other"})
+
+        assert res.status_code == 409
+        assert res.json()["detail"] == "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
+        assert _rows(api.engine, ResearchTopic) == []
+        assert [g["id"] for g in _rows(api.engine, ResearchGeneration)] == [concepts]
+        assert api.dispatch.calls == 0 and api.events == []
+
+
+# ── 이 키워드로 다시 만들기(06e D23) ──────────────────────────────────
+
+KEYWORDS = ["노인 우울", "사회적 지지"]
+
+
+class TestRegenerate:
+    def test_ai_cards_are_queued_again_with_the_current_keywords(self, api):
+        # 지금 고른 키워드로 AI 카드(씨앗 카드·다른 방향 카드)를 다시 만든다. 카드는 새 결과가 올 때까지 그대로다
+        jid = _work_job(api.engine, concepts=KEYWORDS)
+        seed_card = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+        add_generation(api.engine, jid, kind="topic_card", status="done", target=str(seed_card))
+        thin = add_topic(api.engine, jid, slot=2, seed=SEEDS[1], state="insufficient")
+        add_generation(api.engine, jid, kind="topic_card", status="done", target=str(thin))
+        other = add_topic(api.engine, jid, origin="other", seed=SEEDS[4], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200
+        new = [g for g in _rows(api.engine, ResearchGeneration) if g["status"] == "queued"]
+        assert res.json() == {"topic_ids": [seed_card, thin, other], "gen_ids": [g["id"] for g in new],
+                              "skipped": 0}
+        for tid, seed, gen in zip((seed_card, thin, other), (SEEDS[0], SEEDS[1], SEEDS[4]), new):
+            assert (gen["kind"], gen["target"]) == ("topic_card", str(tid))
+            # 입력은 씨앗과 지금 키워드뿐이다 — 이전 제목을 주지 않는다(함정 26)
+            assert gen["input"] == topic_input(QUESTION, seed, REPORT, tid, keywords=KEYWORDS)
+        assert _topic(api.engine, seed_card)["card"] == CARD
+        assert api.dispatch.calls == 1
+        assert api.events == [(str(jid), "generation", {
+            "gen_id": g["id"], "gen_kind": "topic_card", "target": g["target"], "status": "queued",
+            "model": None, "result": None}) for g in new]
+
+    def test_edited_user_picked_and_folded_cards_are_left_alone(self, api):
+        # 06e 정함 16 — 고른 카드는 키워드를 바꿔도 다시 만들지 않는다(목차 '다시 맞춤 필요'를 피한다). 사용자가 고친
+        # 카드·직접 쓴 카드·접은 카드도 대상이 아니다
+        jid = _work_job(api.engine, concepts=KEYWORDS)
+        add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card={**CARD, "edited": True})
+        add_topic(api.engine, jid, slot=2, seed=SEEDS[1], card=CARD, state="picked")
+        add_topic(api.engine, jid, slot=3, seed=SEEDS[2], card=CARD, state="folded")
+        add_topic(api.engine, jid, origin="user", card=CARD)
+        target = add_topic(api.engine, jid, slot=4, seed=SEEDS[3], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200 and res.json()["topic_ids"] == [target]
+        assert [g["target"] for g in _rows(api.engine, ResearchGeneration)] == [str(target)]
+
+    def test_a_card_being_made_is_skipped_and_counted(self, api):
+        # 열린 카드 생성은 건너뛴다(enqueue_generation 이 None — 기존 [다시]와 같은 규칙)
+        jid = _work_job(api.engine, concepts=KEYWORDS)
+        busy = add_topic(api.engine, jid, slot=1, seed=SEEDS[0])
+        open_gen = add_generation(api.engine, jid, kind="topic_card", status="running", target=str(busy))
+        idle = add_topic(api.engine, jid, slot=2, seed=SEEDS[1], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200
+        (new,) = [g for g in _rows(api.engine, ResearchGeneration) if g["id"] != open_gen]
+        assert res.json() == {"topic_ids": [idle], "gen_ids": [new["id"]], "skipped": 1}
+
+        # 만드는 중인 카드만 남았으면 넣은 것 없이 200 — 건너뛴 수만 알리고 디스패치도 보내지 않는다
+        only = _work_job(api.engine, concepts=KEYWORDS)
+        tid = add_topic(api.engine, only, slot=1, seed=SEEDS[0])
+        add_generation(api.engine, only, kind="topic_card", status="queued", target=str(tid))
+        calls = api.dispatch.calls
+        again = api.client.post(f"/api/research/{only}/topics/regenerate")
+        assert again.status_code == 200 and again.json() == {"topic_ids": [], "gen_ids": [], "skipped": 1}
+        assert api.dispatch.calls == calls
+
+    def test_fewer_than_two_keywords_is_409(self, api):
+        # 06e 정함 15 — 선행연구 묶음 수는 키워드 수 이하다(membership) — 키워드 1개면 묶음도 1개
+        jid = _work_job(api.engine, concepts=["노인 우울"])
+        add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 409 and res.json()["detail"] == "키워드를 2개 이상 고르세요"
+        assert _rows(api.engine, ResearchGeneration) == [] and api.dispatch.calls == 0
+
+    def test_409_while_keywords_are_being_made(self, api):
+        jid = _work_job(api.engine, concepts=KEYWORDS)
+        add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+        concepts = add_generation(api.engine, jid, kind="concepts", status="queued")
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 409
+        assert res.json()["detail"] == "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
+        assert [g["id"] for g in _rows(api.engine, ResearchGeneration)] == [concepts]
+
+    def test_nothing_to_regenerate_is_409(self, api):
+        jid = _work_job(api.engine, concepts=KEYWORDS)
+        add_topic(api.engine, jid, origin="user", card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 409 and res.json()["detail"] == "다시 만들 AI 카드가 없습니다"
+        assert _rows(api.engine, ResearchGeneration) == [] and api.events == []
+
+    def test_example_work_is_read_only(self, api):
+        jid = _work_job(api.engine, concepts=KEYWORDS, is_example=True)
+        add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert _rows(api.engine, ResearchGeneration) == []
+
 
 # ── 직접 쓰기·직접 고치기 ─────────────────────────────────────────────
 
@@ -561,7 +698,8 @@ class TestPick:
 
 class TestEndToEnd:
     def test_continue_makes_four_cards_then_one_is_picked(self, api):
-        # 이어가기(씨앗 4장) → 디스패처가 생성을 하나씩 집어 실행기·결과 적용·닫기 → 주제 조회 → 고르기
+        # 이어가기(씨앗 자리 4) → 디스패처가 키워드 생성을 집어 반영 — 그 트랜잭션에서 고른 키워드를 실은 카드 4건이 줄에
+        # 선다(06e D23) → 카드를 하나씩 집어 실행기·결과 적용·닫기 → 주제 조회 → 고르기
         from services.llm_client import LLMResult
         from services.research_work import dispatch
         from services.research_work.apply import apply_result
@@ -573,10 +711,10 @@ class TestEndToEnd:
 
         async def _chat(messages, *, params=None, timeout=120.0, base_url=None, model=None):
             if "향후 과제(씨앗)" in messages[-1]["content"]:
-                content = {"title": "독거노인 지지망 연구", "question": "지지망은 우울을 낮추는가?",
+                content = {"title": "독거노인의 사회적 지지와 우울", "question": "지지망은 우울을 낮추는가?",
                            "evidence": ["E1", "E2"]}
             else:
-                content = {"concepts": ["노인 우울", "사회적 지지"]}
+                content = {"keywords": ["노인 우울", "사회적 지지"]}
             return LLMResult(content=json.dumps(content, ensure_ascii=False), finish_reason="stop")
 
         async def _drain() -> list[str]:
@@ -597,6 +735,8 @@ class TestEndToEnd:
                     await db.close()
 
         assert asyncio.run(_drain()) == ["concepts", "topic_card", "topic_card", "topic_card", "topic_card"]
+        cards = [g for g in _rows(api.engine, ResearchGeneration) if g["kind"] == "topic_card"]
+        assert [g["input"]["keywords"] for g in cards] == [["노인 우울", "사회적 지지"]] * 4
 
         topics = api.client.get(f"/api/research/{jid}/topics").json()
         assert [(i["slot"], i["state"], i["generation"]["status"]) for i in topics["items"]] == [

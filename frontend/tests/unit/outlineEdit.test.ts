@@ -6,9 +6,11 @@ import { parse } from "vue/compiler-sfc";
 import type { Outline } from "~/types/work";
 import { GROUP_LABEL_MAX } from "~/utils/readingList";
 import {
+  OUTLINE_BACKGROUND_MAX,
   OUTLINE_METHOD_MAX,
   OUTLINE_QUESTION_MAX,
   draftFrom,
+  fieldPut,
   isFallbackOutline,
   movePaper,
   moveTarget,
@@ -161,6 +163,52 @@ describe("toOutlinePut", () => {
       approve: true,
     });
     expect(toOutlinePut(d, false).approve).toBe(false);
+  });
+
+  it("연구 배경은 싣지 않는다 — 서버가 저장된 배경을 지킨다([목차 고치기]가 배경을 지우지 않게)", () => {
+    expect("background" in toOutlinePut(draft(), true)).toBe(false);
+  });
+});
+
+describe("fieldPut — 승인 상태를 지키는 본문", () => {
+  const approved = outline({
+    question: "다듬은 질문?",
+    method: "설문 조사",
+    state: "approved",
+    approved_at: "2026-10-17T01:00:00Z",
+    background: "농촌 노인의 고립",
+  });
+
+  it("승인한 목차는 approve true — 묶음·논문 순서·연구 질문을 저장된 그대로 싣는다", () => {
+    expect(fieldPut(approved, { method: "면담" })).toEqual({
+      groups: [
+        { key: "prior.g1", name: "노인의 우울", papers: ["KCI_A", "KCI_B", "KCI_C"] },
+        { key: "prior.g2", name: "사회적 지지", papers: ["KCI_D", "KCI_E"] },
+      ],
+      question: "다듬은 질문?",
+      method: "면담",
+      approve: true,
+    });
+  });
+
+  it("초안 목차(06b 목차·질문이 없어 초안으로 둔 목차)는 approve false — 칸을 저장해도 승인되지 않는다", () => {
+    const put = fieldPut(outline(), { method: "면담" });
+    expect([put.approve, put.question]).toEqual([false, ""]);
+  });
+
+  it("연구 배경만 보내면 방법은 저장된 값이고, 배경을 보내지 않으면 background 키가 없다", () => {
+    expect(fieldPut(approved, { background: "도시 노인과 견준다" })).toMatchObject({
+      method: "설문 조사",
+      background: "도시 노인과 견준다",
+    });
+    expect("background" in fieldPut(approved, { method: "면담" })).toBe(false);
+  });
+
+  it("앞뒤 공백을 지운다 — 공백뿐이면 그 칸을 비운다", () => {
+    expect(fieldPut(approved, { background: "  배경 첫 줄\n둘째 줄 \n" }).background).toBe("배경 첫 줄\n둘째 줄");
+    expect(fieldPut(approved, { method: "  면담 \n" }).method).toBe("면담");
+    expect(fieldPut(approved, { background: "   " }).background).toBe("");
+    expect(OUTLINE_BACKGROUND_MAX).toBe(2000);
   });
 });
 

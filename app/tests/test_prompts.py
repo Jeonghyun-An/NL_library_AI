@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from jinja2 import Environment, meta
 
 from services.prompts import PromptLibrary
 
@@ -141,6 +142,38 @@ def test_nl_library_prompts_exist_and_render():
         evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
     assert '"summaries"' in rs_s and "E1, E3" in rs_s
     assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
+
+
+def test_book_chat_paper_variant_keeps_the_variables_and_params():
+    """딥리드 논문 변형(round06e) — book_chat.paper.yaml 은 기본 book_chat.yaml 과 같은 변수·params·빈 user 로
+    렌더되고 글만 '논문'이다(호출부 book_chat.chat_prompt 가 doc_type 으로 고른다). 변형이 없는 종류는 기본으로
+    물러난다. 쪽 언급 규칙은 그대로다 — 출처 칩(_find_cited_hits)이 답 글의 쪽 표기로 대목을 고른다.
+    예시·개수는 넣지 않는다(함정 15)."""
+    real_dir = Path(__file__).resolve().parents[1] / "domains" / "nl_library" / "prompts"
+    env = Environment()
+
+    def variables(name: str) -> set[str]:
+        data = yaml.safe_load((real_dir / name).read_text(encoding="utf-8"))
+        return meta.find_undeclared_variables(env.parse(data["system"] + data["user"]))
+
+    assert variables("book_chat.paper.yaml") == variables("book_chat.yaml") == {
+        "title", "author", "pub_date", "summary", "themes"}
+
+    lib = PromptLibrary(real_dir)
+    values = {"title": "t", "author": "a", "pub_date": ", 2024", "summary": "s", "themes": "th"}
+    base_s, base_u, base_p = lib.get("book_chat").render(**values)
+    paper_s, paper_u, paper_p = lib.get("book_chat", doc_type="paper").render(**values)
+    assert paper_p == base_p == {"max_tokens": 10000, "temperature": 0.3}
+    assert paper_u == base_u == ""
+    assert paper_s.startswith('당신은 논문 "t" (a, 2024) 의 전담 읽기 도우미입니다.')
+    assert "[논문 요약]\ns" in paper_s and "[핵심 주제]\nth" in paper_s
+    assert "이 논문에서는 다루지 않습니다" in paper_s and "페이지" in paper_s
+    # 참고문헌 의도 질문은 [참고 내용] 대신 [이 논문의 참고문헌 목록] 블록을 보낸다(book_chat.stream_book_chat) — 규칙이 그 이름을 댄다
+    assert "[이 논문의 참고문헌 목록]" in paper_s
+    assert "책" not in paper_s and paper_s != base_s
+    assert not re.search(r"예:|예시|\d+\s*(?:개|가지|문장|줄)", paper_s)
+    for dt in ("book", "literature", "policy", None):
+        assert lib.get("book_chat", doc_type=dt).render(**values)[0] == base_s
 
 
 def test_nl_library_prompts_do_not_send_removed_vllm_guided_params():
