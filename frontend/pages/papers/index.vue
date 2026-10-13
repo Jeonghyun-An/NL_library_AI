@@ -97,7 +97,17 @@
                     </p>
                   </div>
                 </template>
-                <div v-else-if="aiText" v-html="renderedAiText" />
+                <!-- 요약이 끝난 뒤(참고 목록이 정해진 뒤)에는 (1)·(1, 3) 인용 번호를 눌러 그 논문 카드를 본다 -->
+                <SummaryText
+                  v-else-if="aiText"
+                  :html="renderedAiText"
+                  :refs="summaryRefs"
+                  :linked="!aiLoading"
+                  @detail="(id) => navigateTo(paperDetailUrl(id))"
+                  @pdf="(id) => (pdfItem = aiRefPaperMap.get(id) ?? null)"
+                  @chat="(id) => (chatPaperId = id)"
+                  @reveal="aiExpanded = true"
+                />
                 <div v-else class="skx-pai-section">
                   <p class="skx-pai-section__text">
                     AI 요약 정보가 없습니다.
@@ -298,6 +308,7 @@ import {
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
+import { citeYear, type SummaryRef } from "~/utils/summaryCite";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
@@ -391,6 +402,17 @@ const aiRefNumMap = computed(() => {
   for (const r of aiRefs.value) m.set(r.book_id, r.num);
   return m;
 });
+
+// 요약 속 인용 번호가 가리키는 논문 — 오른쪽 참고 목록(aiRefs)의 번호·제목·저자와 그 논문의 발행 연도
+const summaryRefs = computed<SummaryRef[]>(() =>
+  aiRefs.value.map((r) => ({
+    num: r.num,
+    book_id: r.book_id,
+    title: r.title,
+    authors: r.authors,
+    year: citeYear(aiRefPaperMap.value.get(r.book_id)?.book_info?.pub_date),
+  })),
+);
 
 const aiRefPaperMap = computed(() => {
   const map = new Map<string, BookChunkGroup>();

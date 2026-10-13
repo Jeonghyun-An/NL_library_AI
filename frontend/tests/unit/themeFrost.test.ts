@@ -46,6 +46,8 @@ const BASE_BLURRED = [
   ".rs-plus__anchor .rs-plus__menu",
   ".skx-search__box .rs-plus__palette, .skx-rsearch .rs-plus__palette",
   ".skx-rel__pop",
+  // 논문 AI 요약의 인용 번호를 누르면 뜨는 작은 카드 — 열려 있는 동안만 한 면
+  ".skx-citepop",
 ];
 /** 핑크가 더 거는 면 — 비치는 흰 유리라서 예시 질문 칸과 결과 AI 패널에도 흐림을 건다 */
 const PINK_EXTRA_BLURRED = [".skx-chip", ".skx-aip"];
@@ -100,8 +102,8 @@ describe.each(THEMES)("뿌연 유리 — 성능(backdrop-filter 개수 제한) [
     expect([...allowed].filter((sel) => !found.includes(sel))).toEqual([]);
   });
 
-  it("흐림을 거는 면은 다크 8곳·핑크 10곳이다(늘리면 이 숫자와 목록을 같이 고친다)", () => {
-    expect(blurredSelectors(theme).length).toBe(theme === DEFAULT_THEME ? 8 : 10);
+  it("흐림을 거는 면은 다크 9곳·핑크 11곳이다(늘리면 이 숫자와 목록을 같이 고친다)", () => {
+    expect(blurredSelectors(theme).length).toBe(theme === DEFAULT_THEME ? 9 : 11);
   });
 
   it("결과 카드·큰 틀·읽는 칸·목록에는 흐림을 걸지 않는다", () => {
