@@ -12,6 +12,7 @@ import type {
   TopicsView,
   WorkGeneration,
 } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { pubYear, splitAuthors } from "~/utils/citations";
 import { genQueueLine } from "~/utils/queueLine";
 
@@ -39,7 +40,7 @@ const HANGUL_NAME = /^[가-힣\s]+$/;
 // '최성훈 외 2인' 의 꼬리 — citations.firstAuthorSurname 과 같은 규칙
 const OTHERS_TAIL = /\s*외\s*\d*\s*인?\s*$/;
 const SEED_KIND_LABEL: Record<TopicSeed["kind"], string> = {
-  future: "딥리서치 보고서의 향후 과제",
+  future: `${DEEP_RESEARCH} 보고서의 향후 과제`,
   insufficient: "근거가 모자랐던 하위질문",
 };
 

@@ -5,7 +5,7 @@
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
       <h2 id="wk-topics-title" class="wk-screen__title" tabindex="-1">제목 고르기</h2>
       <p class="rs-muted">
-        「{{ question }}」 딥리서치 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 참고문헌을 고르고 보고서를 만듭니다.
+        「{{ question }}」 {{ DEEP_RESEARCH }} 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 참고문헌을 고르고 보고서를 만듭니다.
       </p>
       <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
     </header>
@@ -73,6 +73,7 @@ import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
 import TopicDeck from "~/components/work/TopicDeck.vue";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
 import type { TopicCreate, TopicPatch, WorkResource, WorkStep } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
 import { aiCardsStale, deckQueueLine, liveTopics } from "~/utils/topicDeck";
 import { latestGeneration } from "~/utils/workEvents";

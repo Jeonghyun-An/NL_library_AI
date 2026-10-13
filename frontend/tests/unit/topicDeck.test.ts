@@ -9,6 +9,7 @@ import type {
   TopicsView,
   WorkGeneration,
 } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { genQueueLine } from "~/utils/queueLine";
 import {
   addConcept,
@@ -304,11 +305,12 @@ describe("cardNumbersLine — [F#] 밖 숫자", () => {
 
 describe("seedLine", () => {
   it("씨앗 종류와 절 소제목을 잇고, 씨앗이 없으면 null 이다", () => {
-    expect(seedLine(SEED)).toBe("딥리서치 보고서의 향후 과제 · 노인 우울과 사회적 지지의 관계");
+    // 제품 기능 이름은 화면 표기 상수(utils/brand — 사용자 결정 2026-10-12)다
+    expect(seedLine(SEED)).toBe(`${DEEP_RESEARCH} 보고서의 향후 과제 · 노인 우울과 사회적 지지의 관계`);
     expect(seedLine({ ...SEED, kind: "insufficient", key: "insufficient:3" })).toBe(
       "근거가 모자랐던 하위질문 · 노인 우울과 사회적 지지의 관계",
     );
-    expect(seedLine({ ...SEED, heading: "  " })).toBe("딥리서치 보고서의 향후 과제");
+    expect(seedLine({ ...SEED, heading: "  " })).toBe(`${DEEP_RESEARCH} 보고서의 향후 과제`);
     expect(seedLine(null)).toBeNull();
   });
 });

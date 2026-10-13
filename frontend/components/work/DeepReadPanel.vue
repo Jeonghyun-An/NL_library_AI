@@ -7,7 +7,8 @@
       :id="panelId"
       ref="root"
       class="wk-panel"
-      role="complementary"
+      :role="trapping ? 'dialog' : 'complementary'"
+      :aria-modal="trapping || undefined"
       :aria-labelledby="`${panelId}-title`"
       @keydown="onKeydown"
       @focusout="onFocusOut"
@@ -115,7 +116,8 @@ const titleEl = ref<HTMLElement | null>(null);
 const head = computed(() => (props.paper ? panelHead(props.paper) : { title: "", byline: "" }));
 const bodyId = computed(() => `${props.panelId}-body`);
 
-// 서랍·전체 폭(1200px 미만)인가 — 이때만 Tab 가두기 보초를 그린다. 서버 렌더와 같게 false 로 시작해 붙은 뒤·창 크기가 바뀔 때 잰다
+// 서랍·전체 폭(1200px 미만)인가 — 이때만 Tab 가두기 보초를 그리고 role dialog·aria-modal 로 모달임을 알린다(2단은 본문 옆
+// complementary). 서버 렌더와 같게 false 로 시작해 붙은 뒤·창 크기가 바뀔 때 잰다
 const trapping = ref(false);
 function syncTrapping(): void {
   trapping.value = panelMode(window.innerWidth) !== "side";

@@ -110,7 +110,7 @@
                     class="wk-psec__cite"
                     :data-cite="citeKey(p.id, si, part.eid)"
                     :aria-expanded="isOpenCite(p.id, si, part.eid)"
-                    :aria-controls="panelId"
+                    :aria-controls="isOpenCite(p.id, si, part.eid) ? panelId : undefined"
                     :title="paperTitle(section.evidence[part.eid])"
                     @click="onCite($event, p.id, si, part.eid, s.text)"
                   >{{ citeText(section.evidence[part.eid], part.eid) }}</button>
@@ -203,7 +203,7 @@
     <!-- 근거 없음 409 는 사실상 연구 공백 절에서만 난다 — 그 논문은 담은 논문·묶음이 아니라 고른 주제의 씨앗에서 온다 -->
     <p v-if="skippedNow" class="rs-muted" role="status">
       근거가 없어 쓰지 않았습니다 — 이 절은 고른 주제의 씨앗(향후 과제·부족한 하위질문)에 이은 논문으로 쓰는데, 이은
-      논문이 없습니다. 다른 주제를 고른 뒤 [보고서 다시 만들기]로 맞추세요.
+      논문이 없습니다. 다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞추세요.
     </p>
     <!-- '자동으로 씁니다'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
     <p v-else-if="!section && status === 'empty' && autoNext" class="rs-muted">
@@ -242,6 +242,7 @@ import {
 } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
+import { REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{
   sectionKey: string;

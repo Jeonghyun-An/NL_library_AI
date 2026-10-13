@@ -1,5 +1,5 @@
 <template>
-  <div class="skx-chat-body">
+  <div ref="rootEl" class="skx-chat-body">
     <div class="skx-chat-messages" ref="messagesEl">
       <!-- 빈 상태 -->
       <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai">
@@ -114,6 +114,7 @@ const { messages, streamingText, isStreaming, send: sendChat } = useDeepReadChat
   store: () => props.store,
 });
 const inputText = ref("");
+const rootEl = ref<HTMLElement | null>(null);
 const messagesEl = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
 // 화면낭독기가 읽을 끝난 답(HTML) — 방금 보낸 질문의 답만 싣는다(논문을 바꿔 다른 대화를 펼칠 때 옛 답을 다시 읽지 않게)
@@ -145,7 +146,12 @@ async function send() {
   if (props.cntsId !== sentFor) return;
   const last = messages.value.at(-1);
   if (last?.role === "assistant") liveHtml.value = formatText(last.content);
-  nextTick(() => inputEl.value?.focus());
+  // 초점이 갈 곳 없이 떨어졌거나(보내는 동안 막힌 버튼 — body) 대화 안에 있을 때만 질문 칸으로 — 연구 화면 2단에서는 답을
+  // 기다리는 사이 본문 칸(메모·연구 배경·문단 고치기)에 쓸 수 있어, 그 글을 끊지 않는다
+  nextTick(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body || rootEl.value?.contains(active)) inputEl.value?.focus();
+  });
 }
 
 // 펼친 출처 대목 — 없으면 null

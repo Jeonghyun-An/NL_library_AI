@@ -46,7 +46,9 @@ const STALE_NOTE = `${STALE_LABEL} — 이 절을 쓴 뒤 주제나 목차의 �
 const DISCLOSURE_INTRO =
   "이 초안의 문단은 연구 어시스턴트의 AI(대형 언어 모델)가 소장 KCI 논문을 근거로 작성했고, 사용자가 검토해 수락·수정하거나 " +
   "직접 쓴 문단이 섞여 있습니다. 문단 상태는 AI 작성·검토 전 / 수락 / 수정 / 직접 작성 네 가지로 저장합니다.";
-// 부록의 절별 문단 상태 — 화면 띠(ProposalSection 의 STATE_LABELS)와 같은 말, 이 순서로
+// 부록의 절별 문단 상태 — 화면 띠(ProposalSection 의 STATE_LABELS)와 같은 순서·같은 상태지만 글자는 다르다: 띠는
+// 'AI 작성 · 고침'(가운데점 앞뒤 띄움), 부록·footprintLine 은 '수정'(DISCLOSURE_INTRO 의 네 상태 이름). 어느 말로 맞출지는
+// spec §12-4 정리(Task Z3)에서 정한다
 const MIX_LABELS: { state: ParaState; label: string }[] = [
   { state: "proposed", label: "AI 작성·검토 전" },
   { state: "accepted", label: "수락" },

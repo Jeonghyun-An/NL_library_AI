@@ -89,7 +89,7 @@
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">4. {{ LABELS.gap }}</h4>
-        <p class="rs-muted">딥리서치 보고서의 향후 과제와 근거가 부족했던 하위질문으로 씁니다 — {{ gapNote }}로만 적습니다.</p>
+        <p class="rs-muted">{{ DEEP_RESEARCH }} 보고서의 향후 과제와 근거가 부족했던 하위질문으로 씁니다 — {{ gapNote }}로만 적습니다.</p>
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">5. {{ LABELS.question }}</h4>
@@ -148,6 +148,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import type { OutlinePut, ProposalView } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { citeLabel } from "~/utils/citations";
 import {
   draftFrom,

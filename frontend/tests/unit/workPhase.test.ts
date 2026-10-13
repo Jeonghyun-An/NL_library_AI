@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import {
   FINAL_STEP_NAME,
   MAKE_REPORT,
@@ -258,7 +259,10 @@ describe("온보딩", () => {
     // 마지막 단계는 [보고서 만들기] 한 번으로 목차·절이 서는 흐름을 알린다(D20)
     expect(ONBOARDING_STEPS[1]!.decide).toContain("[보고서 만들기]");
     expect(ONBOARDING_STEPS[2]!.body).toContain("[보고서 만들기]");
+    // 제품 기능 이름은 화면 표기 상수(utils/brand — 사용자 결정 2026-10-12)로 — '딥리서치' 글자를 두지 않는다
+    expect(ONBOARDING_STEPS[0]!.body.startsWith(`${DEEP_RESEARCH} 보고서의 향후 과제`)).toBe(true);
     for (const s of ONBOARDING_STEPS) {
+      expect(s.body).not.toContain("딥리서치");
       expect(s.body.length).toBeGreaterThan(0);
       expect(s.decide.length).toBeGreaterThan(0);
     }

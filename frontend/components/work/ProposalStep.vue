@@ -51,11 +51,13 @@
       </div>
 
       <template v-if="approved">
-        <!-- 큰 진행 막대(06e 정함 28) — 절을 차례로 쓰는 동안만 서고 다 쓰면 걷힌다. 글줄·퍼센트는 valuetext 로 읽힌다 -->
+        <!-- 큰 진행 막대(06e 정함 28) — 절을 차례로 쓰는 동안만 서고 다 쓰면 걷힌다. 글줄·퍼센트는 valuetext 로 읽힌다.
+             progressbar 는 이름이 있어야 한다(ARIA 1.2 — 딥리서치 진행 카드 SynthProgressCard 와 같은 꼴) -->
         <div
           v-if="bar"
           class="wk-rbar"
           role="progressbar"
+          :aria-label="`${FINAL_STEP_NAME} 작성 진행`"
           :aria-valuenow="bar.percent"
           aria-valuemin="0"
           aria-valuemax="100"
@@ -74,7 +76,8 @@
         </div>
         <nav class="rs-card wk-doc__toc" aria-labelledby="wk-doc-toc-title">
           <div class="wk-doc__toc-head">
-            <h3 id="wk-doc-toc-title" class="rs-card__title">목차</h3>
+            <!-- tabindex="-1" — [이어서 쓰기]를 누르면 그 줄이 사라져 초점을 여기로 옮긴다(resumeAuto) -->
+            <h3 id="wk-doc-toc-title" class="rs-card__title" tabindex="-1">목차</h3>
             <button
               type="button"
               class="rs-btn rs-btn--small rs-btn--ghost"
@@ -119,7 +122,7 @@
           <AiFootprintMeter :proposal="proposal" />
           <!-- 절을 차례로 쓰는 것은 [보고서 만들기]가 자동 승인한 목차(auto)뿐 — 06b 때 승인했거나 초안을 손으로 승인한 목차는 손으로 쓴다 -->
           <p v-if="proposal.outline.auto" class="rs-muted">
-            [보고서 만들기]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 씁니다. 다 쓴 문단은 그대로 두어도 되고,
+            [{{ MAKE_REPORT }}]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 씁니다. 다 쓴 문단은 그대로 두어도 되고,
             [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
           </p>
           <p v-else class="rs-muted">
@@ -186,7 +189,8 @@
         <div class="rs-card wk-proposal__export">
           <p class="rs-card__title">내려받기</p>
           <label class="wk-proposal__toggle">
-            <input v-model="acceptedOnly" type="checkbox" :disabled="!printedProposed" />
+            <!-- 켠 채 검토 전 문단이 0 이 되어도(다 [수락]) 끌 수 있게 켜져 있으면 막지 않는다 — 그때 문서는 모든 문단과 같다(exportProposal) -->
+            <input v-model="acceptedOnly" type="checkbox" :disabled="!printedProposed && !acceptedOnly" />
             수락한 문단만 싣기 — 검토 전 AI 작성 {{ printedProposed }}문단을 뺍니다
           </label>
           <p class="rs-muted">기본은 모든 문단을 싣습니다. 끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙습니다.</p>
@@ -327,7 +331,7 @@ const {
   running: autoRunning,
   stopped: autoStopped,
   skipped: autoSkipped,
-  resume: resumeAuto,
+  resume: resumeChain,
 } = useAutoReport({
   proposal,
   work: workView,
@@ -344,6 +348,16 @@ const autoLeft = computed(() => {
   const p = proposal.value;
   return p && autoChainOn(p, workView.value) ? autoTargets(p).filter((k) => !autoSkipped.value.has(k)) : [];
 });
+// [이어서 쓰기] — 멈춤이 풀리면 그 줄(v-if autoStopped)이 누른 버튼째 사라져 초점이 body 로 떨어진다. 그린 뒤 초점을 잃었을
+// 때만 바로 아래 머리 목차 제목으로 옮긴다(다른 곳으로 간 초점은 빼앗지 않는다 — ConceptChips·TopicCard 와 같은 꼴)
+function resumeAuto(): void {
+  resumeChain();
+  void nextTick(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    document.getElementById("wk-doc-toc-title")?.focus({ preventScroll: true });
+  });
+}
 // 쓰기 전 절 안내가 '차례가 오면 자동으로 씁니다' 를 말해도 되는 키 — 멈춘 동안은 [이어서 쓰기]를 눌러야 쓰므로 뺀다
 const autoNext = computed(() => new Set<string>(autoStopped.value ? [] : autoLeft.value));
 // 머리의 큰 진행 막대(정함 28) — 절이 끝날 때만 차오르고, 다 쓰면 걷힌다. 연쇄가 멈추면 쓰는 절이 있을 때만
@@ -550,8 +564,10 @@ async function exportProposal(format: ReportExportFormat): Promise<void> {
   if (!p || !w || exporting.value) return;
   // 앞 안내를 지운다(act 와 같다) — PDF 는 성공 안내가 없어, 지우지 않으면 앞선 실패 안내가 성공 뒤에도 남는다
   say("");
+  // 검토 전 문단이 없으면 '수락한 문단만'은 모든 문단과 같은 문서다 — 파일 이름 꼬리(_수락문단만)·부록의 '…만' 줄을 달지 않는다
+  const onlyAccepted = acceptedOnly.value && printedProposed.value > 0;
   const doc = buildProposalDocument(
-    { question: props.question, url: proposalUrl(), proposal: p, work: w, acceptedOnly: acceptedOnly.value },
+    { question: props.question, url: proposalUrl(), proposal: p, work: w, acceptedOnly: onlyAccepted },
     new Date(),
   );
   exportingAs.value = format;

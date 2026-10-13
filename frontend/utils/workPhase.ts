@@ -3,6 +3,7 @@
 // 진행 막대·요약 띠·범위 띠·온보딩의 문구도 여기서 만든다(.vue 는 그리기만 한다)
 import type { ResearchView } from "~/types/research";
 import type { Corpus, WorkPhase, WorkStep, WorkView } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { pubYear } from "~/utils/citations";
 import type { QueryValue } from "~/utils/restorePosition";
 
@@ -127,7 +128,7 @@ export const ONBOARDING_LEAD = `${STEP_NAMES.topics} → ${STEP_NAMES.reading} �
 export const ONBOARDING_STEPS: readonly { title: string; body: string; decide: string }[] = [
   {
     title: STEP_NAMES.topics,
-    body: "딥리서치 보고서의 향후 과제와 근거가 부족했던 하위질문에서 제목 카드를 만듭니다. 고른 키워드가 카드 제목에 들어가고, 카드마다 연구 질문과 근거 논문이 붙습니다.",
+    body: `${DEEP_RESEARCH} 보고서의 향후 과제와 근거가 부족했던 하위질문에서 제목 카드를 만듭니다. 고른 키워드가 카드 제목에 들어가고, 카드마다 연구 질문과 근거 논문이 붙습니다.`,
     decide: "카드 하나를 고릅니다. 키워드를 바꿔 카드를 다시 만들거나, 카드를 고치거나 직접 쓸 수도 있습니다.",
   },
   {
