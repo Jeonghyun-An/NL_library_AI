@@ -398,12 +398,18 @@ class TestApply:
 
         assert _topic_row(engine, tid)["card"] == mine
 
-    def test_a_picked_topic_stays_picked(self, engine):
-        _, tid, gid = _setup(engine, card={"title": "옛 카드", "question": "옛 질문?"}, state="picked")
+    @pytest.mark.parametrize("answer", ["card", "empty"])
+    def test_a_picked_card_is_not_overwritten_by_a_regeneration(self, engine, answer):
+        # 06e 정함 16 — [이 키워드로 다시 만들기] 가 도는 사이 고른 카드는 새 카드로도, 빈 결과(근거 부족)로도 덮지
+        # 않는다 — 덮으면 목차에 '다시 맞춤 필요'가 붙는다. 06b 에서는 고른 카드에 열린 생성이 생길 수 없었다
+        old = {"title": "옛 카드", "question": "옛 질문?"}
+        _, tid, gid = _setup(engine, card=old, state="picked")
+        output = _bound(GOOD) if answer == "card" else {"card": None}
 
-        assert _apply(engine, gid, _bound(GOOD))["state"] == "picked"
+        assert _apply(engine, gid, output) == {"topic_id": tid, "state": "picked"}
 
-        assert _topic_row(engine, tid)["card"]["title"] == "독거노인의 지지망 유형과 우울"
+        row = _topic_row(engine, tid)
+        assert (row["card"], row["state"]) == (old, "picked")
 
     def test_apply_does_not_commit(self, engine):
         _, tid, gid = _setup(engine)

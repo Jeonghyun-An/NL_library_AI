@@ -202,7 +202,8 @@ async def apply(db, gen, output: dict) -> dict:
 
     카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient.
     그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
-    지우면 안 된다."""
+    지우면 안 된다. 고른 카드(picked — 제목이 있다)도 덮지 않는다 — [이 키워드로 다시 만들기](06e)가 도는 사이
+    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16)."""
     topic_id = int(gen.input["topic_id"])
     row = (await db.execute(
         select(ResearchTopic.card, ResearchTopic.state)
@@ -212,6 +213,10 @@ async def apply(db, gen, output: dict) -> dict:
         return {"topic_id": topic_id, "state": None}
     if (row.card or {}).get("edited"):
         return {"topic_id": topic_id, "state": row.state}
+    # 06e 정함 16 — 고른 카드는 다시 만든 결과(새 카드든 빈 결과든)로 덮지 않는다. 06b 에서는 고른 카드에 열린 카드
+    # 생성이 생길 수 없어(다시 부르기는 카드 없는 자리뿐) 동작이 바뀌지 않는다
+    if row.state == "picked" and (row.card or {}).get("title"):
+        return {"topic_id": topic_id, "state": "picked"}
     card = output.get("card")
     if card:
         values = {"card": {**card, "edited": False, "gen_id": gen.id},
