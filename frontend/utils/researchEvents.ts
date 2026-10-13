@@ -449,7 +449,8 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
 }
 
 // 워커의 탐색 후보(candidates) — 회차마다 검색 뒤·자기점검 전에 한 번 온다. 그 하위질문의 '검토 중' 후보를 세우고(앞 후보는
-// 갈음한다), 같은 하위질문의 점검·그 회차 판정이 실린 진행 저장·snapshot·잡 종료가 지운다. 빈 후보(papers: [])는
+// 갈음한다), 같은 하위질문의 점검·그 회차 판정이 실린 진행 저장·그 하위질문 단계의 닫힘(done·failed)·snapshot·잡 종료가
+// 지운다. 빈 후보(papers: [])는
 // 갈음 = 비움이다 — 점검을 놓친 채 다음 회차가 빈 후보로 와도 앞 회차의 '검토 중'이 남지 않는다. updateSubq 는 모르는
 // 번호에 빈 하위질문을 덧붙이므로 빈 후보는 그 하위질문에 검토 중이 있을 때만 고친다(유령 하위질문을 만들지 않는다)
 function applyCandidates(view: ResearchView, event: CandidatesEvent): ResearchView {
@@ -536,17 +537,20 @@ function buildSubq(
   if (source === "none" && rounds.length) source = "rounds";
 
   const fallbackStatus: StepStatus = trail ? (trail.failed ? "failed" : "done") : "pending";
+  const status: StepStatus = step?.status ?? carry?.status ?? fallbackStatus;
   // 탐색 후보('검토 중')는 저장되지 않는 화면 상태라 단계 행이 다시 지어져도 잇는다. 다만 새 회차 기록에 그 회차의
-  // 판정이 실렸으면(점검 이벤트를 놓치고 진행 저장만 받았다) 잇지 않는다
+  // 판정이 실렸거나(점검 이벤트를 놓치고 진행 저장만 받았다) 그 하위질문 단계가 닫혔으면(done·failed — 점검 중 예외로 단계가
+  // failed 로 닫히면 점검 이벤트가 오지 않고 잡은 다음 하위질문으로 넘어간다) 잇지 않는다
   const rv = carry?.reviewing;
-  const reviewing = rv && !rounds.some((x) => x.round === rv.round && x.verdict !== null) ? rv : undefined;
+  const closed = status === "done" || status === "failed";
+  const reviewing = rv && !closed && !rounds.some((x) => x.round === rv.round && x.verdict !== null) ? rv : undefined;
   return {
     source,
     subq: {
       idx,
       title: title ?? step?.title ?? carry?.title ?? "",
       seq: step?.seq ?? carry?.seq ?? null,
-      status: step?.status ?? carry?.status ?? fallbackStatus,
+      status,
       rounds,
       verdict: r.verdict ?? carry?.verdict ?? trail?.verdict ?? null,
       note: r.note ?? carry?.note ?? trail?.note ?? "",

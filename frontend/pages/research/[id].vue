@@ -266,7 +266,7 @@ import {
 import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
-import { planSlots, showsPlanSlots } from "~/utils/planSlots";
+import { planSlots, showsPlanSlots, slotFocusSection } from "~/utils/planSlots";
 import { activeRoundKey, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
 import { followBlocked, followTarget, userOpenedPopover, type PointerTrail } from "~/utils/researchFollow";
 import { holdsReturnSpot } from "~/utils/restorePosition";
@@ -624,6 +624,33 @@ const follow = useSectionFollow({
       userPopover: userCitePopover(pointer),
     }),
   startPaused: restore.anchor !== null,
+});
+
+// 사라지는 자리에 있던 초점을 지킨다 — 종합의 첫 절이 완성되면 절 자리(ReportSkeleton — 자리는 tabindex=-1 이라 알약 이동·누름으로
+// 초점을 받는다)가 통째로 빠지고 같은 자리에 초안이 서며, 잡이 끝나면 알약이 사라진다. 그대로 두면 초점이 body 로 떨어져 키보드·
+// 스크린리더 사용자가 문서 처음부터 다시 시작한다(ReportView 가 초안 → 최종본 교체에서 막아 둔 것과 같은 손실). 바뀌기 전(watch 의
+// 기본 flush 'pre' — DOM 이 아직 그대로)에 초점 자리를 보고, 그린 뒤(nextTick) 그 하위질문의 절(rs-sec-N)로, 대응이 없으면 보고서
+// 제목으로 옮긴다
+function keepFocusAt(sectionId: string | null): void {
+  void nextTick(() => {
+    const el = sectionId ? document.getElementById(sectionId) : null;
+    if (el) el.focus({ preventScroll: true });
+    else focusScreenTitle();
+  });
+}
+
+watch(slotsShown, (shown, was) => {
+  if (shown || !was) return;
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement) || !active.closest(".rs-report--slots")) return;
+  keepFocusAt(slotFocusSection(planSlotList.value, active.closest(".rs-slot")?.id ?? null));
+});
+
+// 누른 알약(다시 따라가기)은 옮겨 간 자리가 초점을 받는다(useSectionFollow 의 move) — 멈춘 채 잡이 끝나 알약이 사라질 때만 옮긴다
+watch(follow.pill, (now, before) => {
+  if (now !== null || before === null || follow.following.value) return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active.classList.contains("rs-follow-pill")) keepFocusAt(null);
 });
 
 // ── 내려받기(Word·PDF) ────────────────────────────────────

@@ -26,6 +26,17 @@ export function slotElementId(subqIdx: number): string {
   return `rs-slot-${subqIdx}`;
 }
 
+// 종합의 첫 절이 완성되면 절 자리(ReportSkeleton)가 통째로 빠지고 같은 자리에 초안(ReportView)이 선다 — 자리에 있던 초점을 옮길
+// 절의 id. 초점이 있던 자리(slotId — rs-slot-N)의 하위질문이 절이 됐으면 그 절(rs-sec-M, 절 번호는 하위질문 번호와 다르다), 자리
+// 밖이거나 절이 되지 않았거나 대응을 모르면 null(부르는 쪽이 보고서 제목으로 옮긴다)
+export function slotFocusSection(slots: readonly PlanSlot[], slotId: string | null): string | null {
+  const m = slotId?.match(/^rs-slot-(\d+)$/);
+  if (!m) return null;
+  const subqIdx = Number(m[1]);
+  const sectionIdx = slots.find((s) => s.subqIdx === subqIdx)?.sectionIdx ?? null;
+  return sectionIdx === null ? null : `rs-sec-${sectionIdx}`;
+}
+
 // 절 제목(하위질문 글)과 계획 하위질문 글을 견주는 꼴 — 조합형·완성형 차이와 공백 차이를 지운다
 function sameText(s: string): string {
   return s.normalize("NFC").trim().replace(/\s+/g, " ");

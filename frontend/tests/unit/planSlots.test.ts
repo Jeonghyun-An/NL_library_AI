@@ -8,6 +8,7 @@ import {
   sectionOfSubq,
   showsPlanSlots,
   slotElementId,
+  slotFocusSection,
   type PlanSlot,
 } from "~/utils/planSlots";
 import { initialResearchView } from "~/utils/researchEvents";
@@ -237,5 +238,29 @@ describe("slotElementId", () => {
   it("자리 id 는 rs-slot-{하위질문 번호}", () => {
     expect(slotElementId(0)).toBe("rs-slot-0");
     expect(slotElementId(5)).toBe("rs-slot-5");
+  });
+});
+
+// 종합의 첫 절이 완성되면 절 자리(ReportSkeleton)가 통째로 빠지고 초안(ReportView)이 선다 — 자리에 있던 초점이 body 로 떨어지지
+// 않게 그 하위질문의 절로 옮긴다. 하위질문 번호와 절 번호는 다르다(근거 없는 하위질문은 절이 되지 않는다)
+describe("slotFocusSection", () => {
+  // 하위질문 1 은 근거가 없어 절이 되지 않았다 — 하위질문 2 가 절 1 이다
+  const SLOTS = [
+    slot(0, "writing", { sectionIdx: 0 }),
+    slot(1, "empty", { adopted: 0 }),
+    slot(2, "collected", { sectionIdx: 1 }),
+  ];
+
+  it("초점이 있던 자리의 하위질문이 절이 됐으면 그 절의 id(rs-sec-{절 번호})", () => {
+    expect(slotFocusSection(SLOTS, slotElementId(0))).toBe("rs-sec-0");
+    expect(slotFocusSection(SLOTS, slotElementId(2))).toBe("rs-sec-1");
+  });
+
+  it("절이 되지 않은 자리·모르는 자리·자리 밖(null·다른 id)이면 null — 부르는 쪽이 보고서 제목으로 옮긴다", () => {
+    expect(slotFocusSection(SLOTS, slotElementId(1))).toBeNull();
+    expect(slotFocusSection(SLOTS, slotElementId(7))).toBeNull();
+    expect(slotFocusSection(SLOTS, null)).toBeNull();
+    expect(slotFocusSection(SLOTS, "rs-slots-title")).toBeNull();
+    expect(slotFocusSection(SLOTS, "rs-sec-0")).toBeNull();
   });
 });

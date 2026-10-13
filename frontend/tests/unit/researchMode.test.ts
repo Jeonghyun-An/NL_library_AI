@@ -217,4 +217,24 @@ describe("탐색 방식 배치 — 결과 검색바(높이가 정해진 한 줄 
       expect(rule(sel, NARROW)?.decls.get("top")).toBe("calc(100% + 2.6rem)");
     }
   });
+
+  // 오류(왼쪽)와 한 줄(오른쪽 — 최대 바 폭 - 2rem, z-index 30)이 같은 높이면 좁은 바(휴대폰 281px)에서 한 줄이 오류를 덮는다 —
+  // 진행 중인 연구가 있는데 1자를 보냈거나 [정말 취소]가 실패해 줄이 남을 때. 오류가 떠 있으면 한 줄을 오류 한 줄(약 0.84rem) 아래로
+  it("오류 문구가 떠 있으면 끝나지 않은 연구 줄은 오류 아래로 내려 겹치지 않는다(넓은 바·좁은 바 모두)", () => {
+    const offset = (v: string | undefined) => Number(v?.match(/^calc\(100% \+ ([\d.]+)rem\)$/)?.[1] ?? Number.NaN);
+    const pairs: [string, string, string][] = [
+      ["", ".rs-plus__error", ".skx-rsearch .rs-plus:has(> .rs-plus__error) > .rs-start-note"],
+      [
+        NARROW,
+        ".skx-rsearch .rs-plus:has(> .rs-mode) > .rs-plus__error",
+        ".skx-rsearch .rs-plus:has(> .rs-mode):has(> .rs-plus__error) > .rs-start-note",
+      ],
+    ];
+    for (const [at, errorSel, noteSel] of pairs) {
+      const error = offset(rule(errorSel, at)?.decls.get("top"));
+      const note = offset(rule(noteSel, at)?.decls.get("top"));
+      expect(error, `${at} ${errorSel}`).not.toBeNaN();
+      expect(note - error, `${at} ${noteSel}`).toBeGreaterThanOrEqual(1.2);
+    }
+  });
 });

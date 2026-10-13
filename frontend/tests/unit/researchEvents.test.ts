@@ -1532,6 +1532,18 @@ describe("탐색 후보 — candidates 이벤트", () => {
     expect(judged.subqs[0]!.rounds.map((r) => r.verdict)).toEqual(["insufficient", "sufficient"]);
   });
 
+  it("하위질문 단계가 점검 전에 닫히면(failed) 검토 중을 지운다 — 다시 맞출 점검이 오지 않는다", () => {
+    // 워커가 후보를 낸 뒤 점검 중 예외로 단계를 failed 로 닫았다 — 그 회차 기록은 rounds 에 없고 잡은 다음 하위질문으로 넘어간다
+    const before = run(REVIEWING);
+    expect(before.subqs[0]!.reviewing).toBeDefined();
+    const closed = applyResearchEvent(before, { ...SEARCH_STARTED, status: "failed", result: { error: "x", rounds: [], counters: LIVE } });
+    expect(closed.subqs[0]!.status).toBe("failed");
+    expect("reviewing" in closed.subqs[0]!).toBe(false);
+    // 다음 하위질문이 시작돼(다시 지어도) 되살아나지 않는다
+    const next = applyResearchEvent(closed, { ...SEARCH_STARTED, seq: 2, subq_idx: 1, title: "교사 인식" } as ResearchEvent);
+    expect(next.subqs.some((s) => "reviewing" in s)).toBe(false);
+  });
+
   it("snapshot 은 검토 중을 지운다 — 재접속하면 더미 없이 그린다", () => {
     const before = run(REVIEWING);
     expect(before.subqs[0]!.reviewing).toBeDefined();

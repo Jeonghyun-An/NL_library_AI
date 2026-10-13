@@ -376,4 +376,27 @@ describe("고정 진행 영역의 문서 스크롤 여백(research.css)", () => 
     expect(margins.length).toBeGreaterThan(0);
     for (const m of margins) expect(m).not.toMatch(/--rs-bar/);
   });
+
+  // 접힌 LNB 레일은 z-index 5 의 쌓임 맥락이고 그 안의 이름표가 레일 오른쪽 본문 위로 뜬다(style_skovix.css — round08). 막대가 같은
+  // 값이면 DOM 에서 뒤인 막대가 위에 그려져 맨 위 레일 버튼(펼치기·새 채팅·DeepResearch)의 이름표를 덮는다
+  it("막대는 접힌 LNB 레일보다 낮게 쌓인다 — 인용 팝오버(30)·메뉴(40)는 여전히 막대 위", () => {
+    const skx = cssRules(readFileSync(fileURLToPath(new URL("../../assets/css/style_skovix.css", import.meta.url)), "utf8"));
+    const rail = Number(skx.find((r) => !r.at && r.selectors.includes(".skx-lnb.is-lnb-collapsed") && r.decls.has("z-index"))?.decls.get("z-index"));
+    const bar = Number(rules.find((r) => !r.at && r.selectors.includes(".rs-pbar") && r.decls.has("z-index"))?.decls.get("z-index"));
+    expect(rail).toBeGreaterThan(0);
+    expect(bar).toBeGreaterThan(0);
+    expect(bar).toBeLessThan(rail);
+  });
+
+  // 절·자리(.rs-section — 자리 rs-slot-N 포함)는 강조용 투명 outline 을 늘 두어 브라우저 기본 초점 링을 덮는다. 알약으로 다시 켠 이동은
+  // 그 자리로 초점을 옮기는데(useSectionFollow) jumpToSection 의 1.6초 강조(is-linked)가 없어 키보드 사용자가 초점을 볼 수 없었다
+  it("스크립트가 옮긴 절·자리의 초점은 :focus-visible 에서 보이고, 강제 색 모드가 투명 outline 을 지울 때 초점 표시는 남긴다", () => {
+    expect(rules.find((r) => !r.at && r.selectors.includes(".rs-section:focus-visible"))?.decls.get("outline-color")).toBe(
+      "var(--skx-border-c2)",
+    );
+    const forced = rules.filter((r) => r.at.includes("forced-colors") && r.decls.get("outline") === "none");
+    const sections = forced.flatMap((r) => r.selectors).filter((s) => s.startsWith(".rs-section"));
+    expect(sections.length).toBeGreaterThan(0);
+    for (const s of sections) expect(s).toContain(":not(:focus-visible)");
+  });
 });

@@ -1028,9 +1028,14 @@ button.rs-synth__item:focus-visible,
 .rs-section.is-linked {
   outline-color: var(--skx-border-c2);
 }
-/* 강제 색 모드(Windows 고대비)는 투명 outline 도 시스템 색으로 칠해 절마다 테두리 상자가 생긴다 — 강조한 절에만 남긴다 */
+/* 늘 두는 투명 outline 이 브라우저 기본 초점 링을 덮는다 — 키보드로 누른 뒤 스크립트가 옮긴 초점(알약으로 다시 켠 이동·현황 카드의
+   절)은 강조와 같은 색으로 보인다. 마우스로 누른 자리에는 :focus-visible 이 걸리지 않는다 */
+.rs-section:focus-visible {
+  outline-color: var(--skx-border-c2);
+}
+/* 강제 색 모드(Windows 고대비)는 투명 outline 도 시스템 색으로 칠해 절마다 테두리 상자가 생긴다 — 강조한 절과 초점이 간 절에만 남긴다 */
 @media (forced-colors: active) {
-  .rs-section:not(.is-linked) {
+  .rs-section:not(.is-linked):not(:focus-visible) {
     outline: none;
   }
 }
@@ -1046,15 +1051,17 @@ button.rs-synth__item:focus-visible,
 .rs-report--draft .rs-section__body {
   animation: rs-reveal 0.45s ease-out backwards;
 }
+/* 줄 모양 자리 — 바탕은 면 색에 기대지 않는 옅은 선(투명과 섞음), 반짝임 가운데는 두 테마 모두 밝은 유리 선(--skx-frost-line).
+   불투명 면(--skx-white — 다크에서 짙은 청록)을 정지점에 쓰면 읽기용 짙은 유리 위로 바탕보다 어두운 띠가 흐른다(큰 막대 빛 흐름과 같다) */
 .rs-skeleton {
-  --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, var(--skx-white));
+  --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, transparent);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 .rs-skeleton__line {
   height: 0.55rem;
-  background: linear-gradient(90deg, var(--rs-skeleton) 25%, var(--skx-white) 50%, var(--rs-skeleton) 75%);
+  background: linear-gradient(90deg, var(--rs-skeleton) 25%, var(--skx-frost-line) 50%, var(--rs-skeleton) 75%);
   background-size: 200% 100%;
   border-radius: var(--skx-radius-pill);
   animation: rs-shimmer 1.6s linear infinite;
@@ -1288,11 +1295,12 @@ button.rs-synth__item:focus-visible,
 /* ── 큰 진행 막대(고정 진행 영역) ────────────────────────── */
 /* 끝나지 않은 잡의 연구 화면 위에 붙는다(sticky top 0) — 그 아래 본문만 스크롤한다. 높이는 토큰(--rs-bar-h)으로 고정하고 글줄은
    한 줄로 말줄임한다 — 높이가 흔들리면 옆 칸·절 이동·돌아온 자리의 오프셋이 따라 흔들린다. 치수(두께 --rs-bar-thick·글줄 1rem·
-   퍼센트 1.25rem)는 06e 자동 보고서의 큰 막대와 값으로 맞춘다. 인용 팝오버(z-index 30)·메뉴(40)는 이 막대 위로 뜬다 */
+   퍼센트 1.25rem)는 06e 자동 보고서의 큰 막대와 값으로 맞춘다. 인용 팝오버(z-index 30)·메뉴(40)는 이 막대 위로 뜬다. 접힌 LNB
+   레일(z-index 5 — 이름표가 본문 위로 뜬다, style_skovix.css)보다는 낮게 둔다 — 같은 값이면 DOM 에서 뒤인 막대가 레일 이름표를 덮는다 */
 .rs-pbar {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1406,7 +1414,7 @@ button.rs-synth__item:focus-visible,
 
 /* ── 탐색 중 절 자리(ReportSkeleton) ────────────────────── */
 /* 승인 뒤 첫 절 전까지 본문에 서는 하위질문별 자리. 자리 머리의 '하위질문 N'은 절 번호가 아니라 하위질문 번호다.
-   근거를 모은 자리는 상태 글이 파랗게 '근거 N편 ✓', 근거 없음은 점선 한 줄로 접는다 */
+   근거를 모은 자리는 상태 글이 강조색(--skx-primary)으로 '근거 N편 ✓', 근거 없음은 점선 한 줄로 접는다 */
 .rs-report--slots {
   gap: 0.7rem;
 }
@@ -1527,9 +1535,9 @@ button.rs-synth__item:focus-visible,
 
 /* ── 끝나지 않은 DeepResearch 한 줄(+ 메뉴 안) ─────────────── */
 /* DeepResearch 모드가 켜진 입력창에 이 브라우저의 끝나지 않은 연구를 알리는 한 줄(SearchPlusMenu — 메인·/papers 랜딩·결과 검색바가
-   같은 부품). 면은 + 메뉴 팝오버와 같은 짙은 면·옅은 테두리, 버튼은 메뉴 칸과 같은 흰 10% 알약이고 '정말 취소'는 위험색이다.
-   랜딩 입력 상자에서는 아래 줄(+ · 칩)의 다음 줄 전체로 내려 서고(보내기는 칩 줄 높이), 높이가 정해진 결과 검색바에서는 바 아래
-   오른쪽에 뜬다(오류 문구는 바 아래 왼쪽, + 메뉴·슬래시 목록이 그 위) */
+   같은 부품). 면은 + 메뉴 팝오버와 같은 짙은 면·옅은 테두리, 버튼은 메뉴 칸과 같은 흰 10% 알약에 + 버튼과 같은 테두리를 두르고
+   '정말 취소'는 위험색이다. 랜딩 입력 상자에서는 아래 줄(+ · 칩)의 다음 줄 전체로 내려 서고(보내기는 칩 줄 높이), 높이가 정해진
+   결과 검색바에서는 바 아래 오른쪽에 뜬다(오류 문구는 바 아래 왼쪽 — 오류가 떠 있으면 한 줄은 그 아래, + 메뉴·슬래시 목록이 그 위) */
 .rs-plus:has(> .rs-start-note) {
   flex-wrap: wrap;
   row-gap: 0.3rem;
@@ -1561,6 +1569,11 @@ button.rs-synth__item:focus-visible,
   max-width: calc(100% - 2rem);
   box-shadow: var(--skx-shadow-banner);
 }
+/* 오류 문구가 떠 있으면 한 줄은 오류(바 아래 왼쪽 한 줄 — 약 0.84rem) 아래로 — 같은 높이면 좁은 바(휴대폰)에서 넓어진 한 줄이
+   오류를 덮는다. 탐색 방식을 바 아래로 내린 좁은 바는 아래 @container 블록이 같은 조합으로 한 번 더 내린다 */
+.skx-rsearch .rs-plus:has(> .rs-plus__error) > .rs-start-note {
+  top: calc(100% + 1.8rem);
+}
 .rs-start-note__text {
   font-weight: 700;
 }
@@ -1581,10 +1594,14 @@ button.rs-synth__item:focus-visible,
   background: var(--skx-frost-bg);
   border: none;
   border-radius: var(--skx-radius-pill);
+  /* 경계는 + 버튼과 같은 테두리 토큰 — 핑크에서는 알약 면(흰 34%)과 줄 면(흰 90%)이 같은 색이라 이 선이 없으면 안내 글 사이에 낀
+     두 버튼이 보통 글자로 보인다. 안쪽 그림자라 크기가 바뀌지 않는다 */
+  box-shadow: inset 0 0 0 1px var(--skx-border-c1);
   cursor: pointer;
 }
+/* 올림은 + 메뉴의 고른 칸과 같은 바탕 — 핑크에서도 바뀐 것이 보인다 */
 .rs-start-note__btn:hover {
-  background: var(--skx-frost-bg-hover);
+  background: var(--skx-border-c1);
 }
 .rs-start-note__btn:focus-visible {
   outline: 2px solid var(--skx-accent);
@@ -1614,11 +1631,13 @@ button.rs-synth__item:focus-visible,
   font-weight: 700;
   color: var(--skx-ink-strong);
 }
+/* 받치는 면 없이 홀로그램 위에 바로 놓이는 작은 글 — 랜딩의 작은 글 선례(.skx-reco-link)와 같은 --skx-ink(띠 하나가 지나는 자리까지
+   4.5:1 — themeResearch.test.ts) */
 .rs-examples__note {
   margin: 0;
   font-size: 0.6rem;
   line-height: 1.5;
-  color: var(--skx-gray-1);
+  color: var(--skx-ink);
 }
 .rs-examples__list {
   display: grid;
@@ -1697,10 +1716,12 @@ button.rs-synth__item:focus-visible,
   gap: 0.3rem 0.4rem;
   min-width: 0;
 }
+/* 라벨·설명·안 고른 칸의 글은 입력창 유리 면(--skx-frost-fill — 밑칠 알파는 --skx-ink-2 가 겨우 4.5:1 이 되는 값) 위에 놓인다 —
+   그보다 옅은 --skx-gray-1 은 띠가 겹치면 4.5:1 아래로 떨어진다(themeResearch.test.ts 가 round08 홀로그램 모델로 잰다) */
 .rs-mode__label {
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--skx-gray-1);
+  color: var(--skx-ink-2);
   white-space: nowrap;
 }
 .rs-mode__group {
@@ -1716,7 +1737,9 @@ button.rs-synth__item:focus-visible,
   font-size: 0.6rem;
   font-weight: 700;
   line-height: 1.4;
-  color: var(--skx-gray-1);
+  /* 홈(흰 10%)을 한 겹 더 얹은 자리라 본문 톤 중 가장 밝은 --skx-ink — 전환 알약 꺼진 칸처럼 낮춘 기준(띠 하나까지 4.5:1, 모두
+     겹쳐도 3:1)을 지킨다 */
+  color: var(--skx-ink);
   white-space: nowrap;
   background: none;
   border: none;
@@ -1745,7 +1768,7 @@ button.rs-synth__item:focus-visible,
   min-width: 0;
   font-size: 0.55rem;
   line-height: 1.4;
-  color: var(--skx-gray-1);
+  color: var(--skx-ink-2);
 }
 .rs-mode__hint-text {
   grid-area: 1 / 1;
@@ -1806,6 +1829,10 @@ button.rs-synth__item:focus-visible,
   .skx-rsearch .rs-plus:has(> .rs-mode) > .rs-plus__error,
   .skx-rsearch .rs-plus:has(> .rs-mode) > .rs-start-note {
     top: calc(100% + 2.6rem);
+  }
+  /* 오류가 떠 있으면 한 줄은 그 오류 아래로 한 번 더(좁은 바는 한 줄이 넓어져 오류와 같은 높이면 덮는다) */
+  .skx-rsearch .rs-plus:has(> .rs-mode):has(> .rs-plus__error) > .rs-start-note {
+    top: calc(100% + 4rem);
   }
 }
 @media (prefers-reduced-motion: reduce) {

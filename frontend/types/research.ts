@@ -422,8 +422,8 @@ export interface SubqView {
   reviewing?: ReviewingView;
 }
 
-// 화면 상태 — 그 하위질문의 '검토 중' 후보. 같은 하위질문의 점검(critique)·그 회차 판정이 실린 진행 저장·snapshot·잡 종료가
-// 지운다(저장되지 않는 값이라 재접속하면 없다). round 는 후보가 온 회차(이벤트에 없으면 null)
+// 화면 상태 — 그 하위질문의 '검토 중' 후보. 같은 하위질문의 점검(critique)·그 회차 판정이 실린 진행 저장·그 하위질문 단계가
+// 닫힘(done·failed)·snapshot·잡 종료가 지운다(저장되지 않는 값이라 재접속하면 없다). round 는 후보가 온 회차(이벤트에 없으면 null)
 export interface ReviewingView {
   round: number | null;
   papers: ExcludedPaperView[];

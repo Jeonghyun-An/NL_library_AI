@@ -157,20 +157,20 @@
     transform: none;
   }
 }
-/* 검토 중 — 후보 이벤트(candidates)로 세운 이번 회차의 후보. 흐린 점선 카드가 천천히 반짝이다 점검이 끝나면 채택(wk-drop)·
-   뺌(wk-sink)으로 옮긴다. 후보 목록은 채택 목록보다 낮게 둔다 — 아래 뺌 더미가 옆 칸 밖으로 밀려나지 않게 */
+/* 검토 중 — 후보 이벤트(candidates)로 세운 이번 회차의 후보. 점선 카드의 테두리가 천천히 반짝이다 점검이 끝나면 채택(wk-drop)·
+   뺌(wk-sink)으로 옮긴다. 카드 전체를 opacity 로 흐리지 않는다 — 글자에도 걸려 가장 옅을 때 제목·메타가 3:1 아래로 떨어진다(상태는
+   점선·테두리 색으로만 보인다). 후보 목록은 채택 목록보다 낮게 둔다 — 아래 뺌 더미가 옆 칸 밖으로 밀려나지 않게 */
 .wk-ledger__list--reviewing {
   max-height: 9rem;
 }
 .wk-ledger__paper.is-reviewing {
-  opacity: 0.7;
   border-style: dashed;
   border-color: var(--skx-border-c2);
   animation: wk-review 1.6s ease-in-out infinite;
 }
 @keyframes wk-review {
   50% {
-    opacity: 0.45;
+    border-color: var(--skx-border-c1);
   }
 }
 @media (prefers-reduced-motion: reduce) {
