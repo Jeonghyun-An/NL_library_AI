@@ -150,6 +150,39 @@ async def search(
         )
 
 
+# Milvus 조건식 문자열에 그대로 넣는 도서 id 가 쓸 수 있는 글자 — 소장(CNTS-…)·논문(KCI_FI…) id 는 이 안에 든다.
+# 따옴표·공백·줄바꿈이 들어오면 조건식이 깨지거나 다른 조건이 붙는다. $ 는 끝 줄바꿈을 통과시키므로 fullmatch 로 본다
+_SAFE_BOOK_ID = re.compile(r"[A-Za-z0-9._-]+")
+
+
+def is_safe_book_id(cnts_id: str) -> bool:
+    return bool(_SAFE_BOOK_ID.fullmatch(cnts_id or ""))
+
+
+async def search_related_books(title: str, exclude_id: str, *, fetch_top_k: int) -> BookSearchResponse:
+    """소장자료 상세 '관련 자료 추천'의 후보 — 그 자료의 제목으로 도서를 찾되 자기 자신은 조건식에서 미리 뺀다.
+
+    사용자 검색(search)을 그대로 쓰면 긴 학위논문은 자기 본문 청크가 후보 창(top_k 6 → 180청크)을 거의 다 채워
+    (운영: 178/180) 묶은 결과가 자기 + 1권이 된다. 묶은 뒤에 자기를 빼면 창은 이미 자기로 차 있으므로 Milvus
+    조건식에서 뺀다(논문 상세의 paper_related.py 와 같은 방식).
+
+    재작성·날짜 필터 LLM 은 부르지 않는다 — 제목의 '初期'·'近代'가 오래된 순·최신 순 정렬로, '1999'가 연도 필터로
+    읽혀 관련 자료가 발행일순으로 잘리거나 0권이 됐다. 점수·리랭크·로그 부스트는 도서 모드(_search_book_mode)
+    그대로라 연관도의 뜻은 검색 결과 카드와 같다. 하한·자르기·응답 가볍게 하기는 호출자(api/book.py)가 한다.
+    """
+    if not is_safe_book_id(exclude_id):
+        raise ValueError(f"조건식에 넣을 수 없는 도서 id: {exclude_id!r}")
+    t0 = time.perf_counter()
+    dense_vecs, sparse_vecs = embed_texts([title], is_query=True)
+    expr = f'{_BOOK_EXPR} && book_id != "{exclude_id}"'
+    elapsed = (time.perf_counter() - t0) * 1000
+    return await _search_book_mode(
+        title, None, dense_vecs[0], sparse_vecs[0], fetch_top_k, True, elapsed,
+        meta_expr=expr,
+        metadata_filter=None,
+    )
+
+
 async def _search_chunk_mode(
     original: str,
     rewritten: str | None,

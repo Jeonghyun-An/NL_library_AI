@@ -279,6 +279,12 @@ class Settings(BaseSettings):
     BOOK_MODE_FETCH_MULTIPLIER_SORT: int = 4   # 날짜 정렬 시
     BOOK_MODE_FETCH_MULTIPLIER: int = 3        # 일반
     HYBRID_SEARCH_CHUNK_LIMIT_MULT: int = 10
+    # 소장자료 상세 '관련 자료 추천'(GET /api/books/{id}/related) — 자기 자신은 Milvus 조건식에서 빠지므로 창은
+    # 남의 청크로만 찬다. 10 이면 30권·300청크 창(위 두 배수). 연관도(제목·내용 종합)가 하한 아래면 칸을 비운다 —
+    # 운영 관측(2026-10-14): 관련 있는 책은 대개 0.4 이상, 0.27~0.37 은 관련 책과 영어 Gutenberg 소설이 섞이고,
+    # 무관 도서는 0.01~0.1
+    BOOK_RELATED_FETCH_TOP_K: int = 10
+    BOOK_RELATED_MIN_SCORE: float = 0.3
     MARC_KEYWORDS_LIMIT: int = 5
     KEYWORDS_MAX_COUNT: int = 5
 
