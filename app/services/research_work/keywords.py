@@ -26,7 +26,8 @@ GENERIC_KEYWORDS: frozenset[str] = frozenset({
     "연구 동향", "선행연구", "연구 방법", "개념 및 정의", "한계 및 과제", "적용 분야", "향후 과제",
 })
 
-_CATALOG_SEP = re.compile(r"[;,]")
+# ';'·',' 와 MARC 로더가 653 $a 를 잇는 ' | '(domains/nl_library/loaders/marc_parser.py) — 키워드 안에 '|' 는 들지 않는다
+_CATALOG_SEP = re.compile(r"[;,|]")
 
 
 def keyword_key(text: str) -> str:
@@ -48,8 +49,8 @@ def clean_keyword(raw: object) -> str | None:
 
 
 def split_catalog_keywords(raw: str | None) -> list[str]:
-    """library_catalog.keyword(653 $a 를 이은 글) → 키워드 조각. NFKC 뒤 ';'·',' 로 나눈다(전각 '；'·'，' 도 NFKC 로
-    같아진다). 빈 조각은 버린다 — 정리·일반어 거르기는 clean_keyword 의 몫이다."""
+    """library_catalog.keyword(653 $a 를 이은 글) → 키워드 조각. NFKC 뒤 ';'·','·'|'(MARC 로더의 ' | ' 잇기) 로 나눈다
+    (전각 '；'·'，'·'｜' 도 NFKC 로 같아진다). 빈 조각은 버린다 — 정리·일반어 거르기는 clean_keyword 의 몫이다."""
     if not isinstance(raw, str):
         return []
     return [p.strip() for p in _CATALOG_SEP.split(unicodedata.normalize("NFKC", raw)) if p.strip()]

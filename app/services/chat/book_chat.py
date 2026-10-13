@@ -9,9 +9,10 @@ from typing import AsyncGenerator
 import httpx
 
 from core.config import get_settings
+from schemas.book import BookOut
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import SearchHit, search_chunks
-from services.prompts import get_prompt
+from services.prompts import PromptTemplate, get_prompt
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -60,13 +61,13 @@ async def rewrite_chat_query(message: str, history: list[dict]) -> str:
     return out or message
 
 
-def chat_prompt(book):
+def chat_prompt(book: BookOut) -> PromptTemplate:
     """대화 시스템 프롬프트 — 문서 종류(doc_type)의 변형이 있으면 그것(논문 → book_chat.paper.yaml), 없으면 기본
     book_chat.yaml(책 문구). doc_type 이 비었거나 그 속성이 없는 객체도 기본으로 간다(get_prompt 의 해석 순서)."""
     return get_prompt("book_chat", getattr(book, "doc_type", None) or None)
 
 
-def _book_references(book) -> list[str]:
+def _book_references(book: BookOut) -> list[str]:
     """참고문헌 의도('참고문헌'·'인용'·'출처' 등)일 때 모델에 넘길 목록. 대화 엔드포인트가 넘기는 BookOut 에는 extra 가
     없고 references 칸이 extra["references"] 를 싣는다(ORM Book 도 같은 이름의 property). 없으면 빈 목록."""
     return list(getattr(book, "references", None) or [])

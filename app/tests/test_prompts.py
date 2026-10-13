@@ -168,6 +168,8 @@ def test_book_chat_paper_variant_keeps_the_variables_and_params():
     assert paper_s.startswith('당신은 논문 "t" (a, 2024) 의 전담 읽기 도우미입니다.')
     assert "[논문 요약]\ns" in paper_s and "[핵심 주제]\nth" in paper_s
     assert "이 논문에서는 다루지 않습니다" in paper_s and "페이지" in paper_s
+    # 참고문헌 의도 질문은 [참고 내용] 대신 [이 논문의 참고문헌 목록] 블록을 보낸다(book_chat.stream_book_chat) — 규칙이 그 이름을 댄다
+    assert "[이 논문의 참고문헌 목록]" in paper_s
     assert "책" not in paper_s and paper_s != base_s
     assert not re.search(r"예:|예시|\d+\s*(?:개|가지|문장|줄)", paper_s)
     for dt in ("book", "literature", "policy", None):

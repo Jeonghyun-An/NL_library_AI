@@ -216,6 +216,7 @@ class TestFigures:
 
 class TestBind:
     def test_card_shape(self):
+        # INPUT 은 06e 전 입력(keywords 키 없음)이다 — 카드에도 keywords 를 싣지 않는다(아래 옛 input 테스트)
         assert _bound(GOOD) == {"card": {
             "title": "독거노인의 지지망 유형과 우울",
             "question": "독거노인의 지지망 유형에 따라 우울 수준이 다른가?",
@@ -225,10 +226,19 @@ class TestBind:
             "figures": card_figures(12, 2015, INPUT["corpus"]),
             "latest_year": 2015,
             "edited": False,
-            "keywords": [],
             "checks": {"numbers": [], "softened": 0, "recovered": 0, "missing_keywords": []},
             "gen_id": None,
         }}
+
+    def test_an_old_input_makes_a_card_without_keywords(self):
+        # 06b 의 근거 부족·실패 카드에 [다시]를 누르거나 배포 때 줄을 서 있던 06b 카드 생성이 끝나면 옛 input(keywords 키
+        # 없음)으로 묶는다. 그 카드에 keywords [] 를 실으면 화면 keywordsChanged 가 '06e 전 카드'로 보지 못해 그 카드에만
+        # '키워드가 바뀌었습니다'와 [이 키워드로 다시 만들기] 줄이 선다 — 키 자체를 싣지 않는다. 06e 입력은 keywords 를
+        # 늘 싣고(seeds.topic_input — 취소 경로는 []) 그 카드는 지금처럼 keywords 를 갖는다
+        assert "keywords" not in _bound(GOOD)["card"]
+        assert _bound(GOOD, {**INPUT, "keywords": []})["card"]["keywords"] == []
+        card = _bound(GOOD, {**INPUT, "keywords": ["지지망", "치매"]})["card"]
+        assert (card["keywords"], card["checks"]["missing_keywords"]) == (["지지망", "치매"], ["치매"])
 
     def test_latest_year_comes_from_the_chosen_evidence(self):
         card = _bound({**GOOD, "evidence": ["E2", "E3"]})["card"]
@@ -471,6 +481,19 @@ class TestApply:
 
         row = _topic_row(engine, tid)
         assert (row["card"], row["state"]) == (old, "picked")
+
+    def test_an_empty_regeneration_keeps_a_candidate_card(self, engine):
+        # [이 키워드로 다시 만들기](06e)는 제목이 있는 후보 카드에도 새 생성을 넣는다. 그 생성이 빈 결과(세 번 다 근거 2편
+        # 미만, 또는 vLLM 이 내려가 전송 실패 — run_generation 은 둘 다 done 의 빈 결과다)면 멀쩡하던 카드를 '근거 부족'으로
+        # 지우지 않는다 — 빈 결과는 빈 자리만 채운다(06b 동작). 그 생성은 done-empty 라 [다시]가 열리고, 카드의 옛
+        # keywords 가 지금 키워드와 달라 '키워드가 바뀌었습니다'가 그대로 뜬다
+        old = {"title": "옛 카드", "question": "옛 질문?", "evidence": ["P1", "P2"], "keywords": ["노인"]}
+        wid, tid, gid = _setup(engine, card=old, state="candidate")
+
+        assert _apply(engine, gid, {"card": None}) == {"topic_id": tid, "state": "candidate"}
+
+        row = _topic_row(engine, tid)
+        assert (row["card"], row["state"]) == (old, "candidate")
 
     def test_the_topic_row_is_read_under_a_row_lock(self, engine):
         # 고른 카드 검사는 읽기와 쓰기 사이가 비면 두 탭 경합을 놓친다 — PostgreSQL READ COMMITTED 에서 pick_topic 의

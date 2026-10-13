@@ -175,7 +175,9 @@ def keyword_misses(title: str, keywords: list[str]) -> list[str]:
 def _bind(output: dict, input: dict) -> dict:
     """해석한 출력 → {"card": Card | None}(계약 §4 Card). 제목이나 질문이 비면 card 는 None.
     고른 키워드(input.keywords — 06e)를 카드에 싣고, 다듬은 제목(단정 표현 바꿈·글자 상한 뒤)에 없는 것을
-    checks.missing_keywords 에 센다."""
+    checks.missing_keywords 에 센다. 06e 전 input(keywords 키 없음 — 06b 카드의 [다시]·배포 때 줄을 서 있던 생성)으로
+    묶은 카드에는 keywords 키를 싣지 않는다 — 화면은 키가 없는 카드를 '06e 전 카드'로 보고 '키워드가 바뀌었습니다'를 달지
+    않는다(06e 의 topic_input 은 늘 keywords 를 싣는다)."""
     title, question = _clean(output.get("title")), _clean(output.get("question"))
     if not title or not question:
         return {"card": None}
@@ -190,7 +192,7 @@ def _bind(output: dict, input: dict) -> dict:
     title, question = title[:TOPIC_TITLE_MAX], question[:TOPIC_QUESTION_MAX]
     figures = card_figures(input.get("adopted"), latest_year, input.get("corpus"))
     keywords = [k for k in (input.get("keywords") or []) if isinstance(k, str)]
-    return {"card": {
+    card = {
         "title": title,
         "question": question,
         "evidence": [p["cnts_id"] for p in chosen],
@@ -198,12 +200,14 @@ def _bind(output: dict, input: dict) -> dict:
         "figures": figures,
         "latest_year": latest_year,
         "edited": False,
-        "keywords": keywords,
         "checks": {"numbers": numbers_outside(f"{title}\n{question}"),
                    "softened": soft_title + soft_question, "recovered": recovered,
                    "missing_keywords": keyword_misses(title, keywords)},
         "gen_id": None,
-    }}
+    }
+    if "keywords" in input:
+        card["keywords"] = keywords
+    return {"card": card}
 
 
 def _soft_check(output: dict) -> bool:
@@ -225,8 +229,8 @@ def _check(output: dict) -> bool:
 async def apply(db, gen, output: dict) -> dict:
     """카드를 research_topics 의 그 행(input.topic_id)에 반영한다. 커밋하지 않는다(apply_result 와 같은 규칙).
 
-    카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient.
-    그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
+    카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient — 단 빈 결과는
+    빈 자리(제목이 없는 카드)만 채우고 제목이 있는 카드는 그대로 둔다. 그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
     지우면 안 된다. 고른 카드(picked — 제목이 있다)도 덮지 않는다 — [이 키워드로 다시 만들기](06e)가 도는 사이
     고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16).
 
@@ -250,6 +254,11 @@ async def apply(db, gen, output: dict) -> dict:
     # 생성이 생길 수 없어(다시 부르기는 카드 없는 자리뿐) 동작이 바뀌지 않는다
     if row.state == "picked" and (row.card or {}).get("title"):
         return {"topic_id": topic_id, "state": "picked"}
+    # 빈 결과는 빈 자리만 채운다 — [이 키워드로 다시 만들기](06e)가 제목이 있는 후보 카드에 넣은 생성이 빈 결과(세 번 다 근거
+    # 부족, 또는 vLLM 전송 실패 — run_generation 은 둘 다 done 의 빈 결과다)면 멀쩡하던 카드를 '근거 부족'으로 지우지 않는다.
+    # 그 생성은 done-empty 라 화면이 [다시]를 열고, 카드의 옛 keywords 가 지금 키워드와 달라 '키워드가 바뀌었습니다'가 남는다
+    if not output.get("card") and (row.card or {}).get("title"):
+        return {"topic_id": topic_id, "state": row.state}
     card = output.get("card")
     if card:
         values = {"card": {**card, "edited": False, "gen_id": gen.id},

@@ -175,6 +175,8 @@ def test_a_reference_question_streams_with_the_paper_prompt_and_its_references(b
     assert system["content"].startswith('당신은 논문 "노인 우울 연구" (김철수, 2019) 의 전담 읽기 도우미입니다.')
     assert user == {"role": "user",
                     "content": "[이 논문의 참고문헌 목록]\n1. 김(2019)\n2. 이(2020)\n\n[질문]\n이 논문의 참고문헌은?"}
+    # 이 길의 user 메시지에는 [참고 내용]·쪽이 없다 — 시스템 규칙이 이 블록 이름을 근거로 대야 '근거 없음'으로 답하지 않는다
+    assert "[이 논문의 참고문헌 목록]" in system["content"]
     assert searched.embedded == [] and searched.filters == []
 
 

@@ -62,6 +62,12 @@ class TestSplitCatalogKeywords:
     def test_full_width_separators_are_normalized_first(self):
         assert split_catalog_keywords("노인 우울；사회적 지지，가족") == ["노인 우울", "사회적 지지", "가족"]
 
+    def test_splits_the_marc_loader_pipe_join(self):
+        # MARC·MARC+MODS 로더는 653 $a 를 ' | ' 로 잇는다(loaders/marc_parser.py) — MODS genre 가 thesis·report 면
+        # doc_type paper 라 채택 논문이 될 수 있다. 나누지 않으면 한 조각이 가짜 후보 칩이 되거나(40자 이하) 통째로 빠진다
+        assert split_catalog_keywords("노인 | 우울 | 사회적 지지") == ["노인", "우울", "사회적 지지"]
+        assert split_catalog_keywords("노인｜우울; 가족") == ["노인", "우울", "가족"]   # 전각 세로줄도 NFKC 로 같다
+
     @pytest.mark.parametrize("raw", [None, "", " ; , "])
     def test_empty_values(self, raw):
         assert split_catalog_keywords(raw) == []
