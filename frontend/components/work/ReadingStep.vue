@@ -10,6 +10,7 @@
           「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. 제목을 누르면 오른쪽에서
           그 논문과 대화할 수 있습니다.
         </p>
+        <p v-if="preselectText" class="rs-muted">{{ preselectText }}</p>
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
         <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
         <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
@@ -129,7 +130,7 @@ import { type PanelPaper, panelTabs } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, readingAnchor } from "~/utils/detailSource";
 import { passageText } from "~/utils/passageText";
-import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget } from "~/utils/readingList";
+import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, preselectNote } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
@@ -156,6 +157,8 @@ const readOnly = computed(() => view.value?.is_example ?? true);
 // 읽기 목록 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
 const loadError = computed(() => props.work.errorOf("reading"));
 const hint = computed(() => (reading.value ? outlineHint(reading.value) : null));
+// 이어가기가 채택 근거 상위 편을 미리 담았으면 머리에 한 줄(사용자 결정 2026-10-14)
+const preselectText = computed(() => (reading.value ? preselectNote(reading.value) : null));
 const canOutline = computed(() => !!reading.value && canMakeOutline(reading.value));
 const outlineMade = computed(() => view.value?.phase === "proposal" || view.value?.phase === "done");
 // 범위 띠(spec §4 단계 공통·§7) — TopicsStep 과 같이 주제 목록의 corpus, 없으면 연구의 corpus

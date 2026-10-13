@@ -43,6 +43,7 @@ from services.research_work.enqueue import lock_key, queued_event
 from services.research_work.executors import EXECUTORS
 from services.research_work.keywords import paper_keyword_counts
 from services.research_work.progress import refresh_progress
+from services.research_work.reading_views import preselect
 from services.research_work.seeds import corpus_of, pick_seeds
 from services.research_work.shapes import PHASE_ORDER, TOPIC_SEED_SLOTS
 from services.research_work.topic_card import enqueue_seed_cards
@@ -218,9 +219,10 @@ async def continue_research(
 
     candidates = candidates_from_snapshot(job.state_snapshot)
     if candidates:
+        # 채택 근거 상위 READING_PRESELECT 편은 담음으로 미리 넣는다(사용자 결정 2026-10-14) — 이어갈 때만, 옛 연구는 그대로
         await db.execute(
             insert(ResearchReading)
-            .values([{"work_id": jid, "state": "candidate", **c} for c in candidates])
+            .values([{"work_id": jid, **row} for row in preselect(candidates)])
             .on_conflict_do_nothing()
         )
     # 키워드 후보의 논문 쪽 원천 — 채택 논문(읽기 목록 후보)의 소장 키워드 문서 빈도(spec §12-4, 06e 정함 14).

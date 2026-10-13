@@ -184,6 +184,8 @@ export interface ReadingView {
   excluded: ExcludedCandidate[];
   // 목차를 만든 뒤 고른 주제가 바뀌었다 — 목차가 없으면 false
   stale?: boolean;
+  // 이어가기가 담음으로 미리 넣은 채택 근거 수(지금 상태와 관계없이) — 그 전에 이어간 연구는 0
+  preselected?: number;
 }
 
 export interface OutlineGroup {

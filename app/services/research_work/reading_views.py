@@ -10,8 +10,11 @@
   cnts_id 를 둔다.
 - 다시 맞춤 필요(stale)는 저장하지 않고 조회 때 센다(spec §5-2): 목차를 만든 뒤 고른 주제가 바뀌었으면
   (outline.topic.id != work.topic_id) 참, 목차가 없으면 거짓. 목차는 호출부가 research_proposals 에서 읽어 넘긴다.
+- 이어가기의 읽기 목록 행(preselect)은 채택 근거를 이 목록과 같은 순서(reading_order)로 세워 앞 READING_PRESELECT 편을
+  담음으로 넣는다(사용자 결정 2026-10-14). 미리 담은 행은 들어온 경로에 preselected 를 남기고, 응답의 preselected 가
+  그 수를 센다(읽기 목록 머리 안내).
 """
-from services.research_work.shapes import PATH_CHUNK_CHARS
+from services.research_work.shapes import PATH_CHUNK_CHARS, READING_PRESELECT
 from services.research_work.views import pool_from_job
 
 
@@ -130,12 +133,29 @@ def _best_rank(origin_ref) -> int | None:
     return min(values) if values else None
 
 
+def _order_key(position, origin_ref, cnts_id: str) -> tuple:
+    rank = _best_rank(origin_ref)
+    return (position is None, position or 0, rank is None, rank or 0, cnts_id)
+
+
 def reading_order(rows) -> list:
     """사용자가 정한 순서(position, 없으면 뒤) → 하위질문 안 가장 앞선 순위(없으면 뒤) → cnts_id."""
-    def key(row):
-        rank = _best_rank(row.origin_ref)
-        return (row.position is None, row.position or 0, rank is None, rank or 0, row.cnts_id)
-    return sorted(rows, key=key)
+    return sorted(rows, key=lambda row: _order_key(row.position, row.origin_ref, row.cnts_id))
+
+
+def preselect(candidates: list[dict], limit: int = READING_PRESELECT) -> list[dict]:
+    """이어가기의 읽기 목록 행 값 — candidates_from_snapshot 의 각 편에 state 를 붙인다. 읽기 목록 순서(reading_order —
+    이어갈 때는 position 이 없어 하위질문 안 가장 앞선 순위 → cnts_id)로 앞 limit 편은 담음(in)이고 들어온 경로에
+    preselected: true 를 남긴다. 나머지는 후보(candidate). 순서는 candidates 그대로, 받은 dict 는 바꾸지 않는다."""
+    ranked = sorted(candidates, key=lambda c: _order_key(None, c["origin_ref"], c["cnts_id"]))
+    top = {c["cnts_id"] for c in ranked[:limit]}
+    return [{**c, "state": "in", "origin_ref": {**c["origin_ref"], "preselected": True}} if c["cnts_id"] in top
+            else {**c, "state": "candidate"} for c in candidates]
+
+
+def _preselected(rows) -> int:
+    """이어가기가 미리 담은 행 수 — 지금 상태와 관계없이(뺀 행도 미리 담았던 것이다)."""
+    return sum(1 for r in rows if isinstance(r.origin_ref, dict) and r.origin_ref.get("preselected") is True)
 
 
 def reading_view(work, job, rows, books: dict, outline: dict | None = None) -> dict:
@@ -149,6 +169,7 @@ def reading_view(work, job, rows, books: dict, outline: dict | None = None) -> d
         "stale": bool(outline) and (outline.get("topic") or {}).get("id") != work.topic_id,
         "subquestions": subquestions,
         "funnel": funnel(report, rows),
+        "preselected": _preselected(rows),
         "items": [reading_item(r, book_meta(r.cnts_id, books.get(r.cnts_id)), snapshot, subquestions)
                   for r in reading_order(rows)],
         "excluded": excluded_candidates(job, rows),

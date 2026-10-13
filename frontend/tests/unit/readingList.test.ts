@@ -1,4 +1,6 @@
 // frontend/tests/unit/readingList.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ExcludedCandidate, PaperMeta, PathChunk, ReadingItem, ReadingSubqPath, ReadingView } from "~/types/work";
 import {
@@ -14,6 +16,7 @@ import {
   outlineHint,
   pathLines,
   pathPdfTarget,
+  preselectNote,
   reorderPuts,
   sortedItems,
   withPositions,
@@ -275,6 +278,26 @@ describe("canMakeOutline·outlineHint", () => {
     expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 보고서를 만들 수 있습니다");
     expect(canMakeOutline(view(five, { topic_id: null }))).toBe(false);
     expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다");
+  });
+});
+
+describe("preselectNote — 이어가기가 미리 담은 채택 근거(사용자 결정 2026-10-14)", () => {
+  it("미리 담은 행이 있으면 머리 안내 한 줄 — 수는 서버가 센 preselected(뺀 행도 센다)", () => {
+    expect(preselectNote(view([], { preselected: 8 }))).toBe("채택 근거 상위 8편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
+    // 채택 근거가 여덟 편보다 적으면 모두 담는다
+    expect(preselectNote(view([], { preselected: 3 }))).toBe("채택 근거 상위 3편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
+  });
+
+  it("미리 담지 않았으면(이 안내 전에 이어간 연구·이 칸을 모르는 응답) 안내가 없다", () => {
+    expect(preselectNote(view([], { preselected: 0 }))).toBeNull();
+    expect(preselectNote(view([]))).toBeNull();
+  });
+
+  it("읽기 목록 화면 머리에 그 한 줄을 보인다", () => {
+    const source = readFileSync(fileURLToPath(new URL("../../components/work/ReadingStep.vue", import.meta.url)), "utf8");
+    expect(source).toMatch(/import \{[^}]*\bpreselectNote\b[^}]*\} from "~\/utils\/readingList";/);
+    expect(source).toContain('<p v-if="preselectText" class="rs-muted">{{ preselectText }}</p>');
+    expect(source).toContain("preselectNote(reading.value)");
   });
 });
 

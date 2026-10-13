@@ -25,10 +25,10 @@ from history_sqlite import (
 from models.research import ResearchJob
 from models.research_work import ResearchReading, ResearchWork
 from services.research_work.reading_views import (
-    book_meta, excluded_candidates, funnel, reading_item, reading_order, reading_path, reading_view,
+    book_meta, excluded_candidates, funnel, preselect, reading_item, reading_order, reading_path, reading_view,
     subquestions_of,
 )
-from services.research_work.shapes import PATH_CHUNK_CHARS
+from services.research_work.shapes import MIN_READING_FOR_OUTLINE, PATH_CHUNK_CHARS, READING_PRESELECT
 
 PLAN = ["독서 격차의 원인", "독서 격차의 영향"]
 LONG = "가" * (PATH_CHUNK_CHARS + 50)
@@ -168,6 +168,71 @@ class TestFunnel:
         assert funnel({"stats": {"papers_reviewed": True}}, [])["reviewed"] is None
 
 
+def _candidate(cnts_id: str, ranks: dict[str, int]) -> dict:
+    """candidates_from_snapshot 한 편의 모양 — 순위만 다르게."""
+    return {"cnts_id": cnts_id, "origin": "evidence",
+            "origin_ref": {"subq_idx": [int(k) for k in ranks], "rank": dict(ranks), "chunks": {},
+                           "chunk_scores": {}, "verdict": {}}}
+
+
+class TestPreselect:
+    """이어가기 때 채택 근거 상위 READING_PRESELECT 편을 미리 담는다(사용자 결정 2026-10-14)."""
+
+    def test_the_constant(self):
+        # 미리 담은 수만으로 [보고서 만들기](담음 MIN_READING_FOR_OUTLINE 편 이상)를 누를 수 있다
+        assert READING_PRESELECT == 8
+        assert READING_PRESELECT >= MIN_READING_FOR_OUTLINE
+
+    def test_top_eight_in_reading_order_are_picked_and_the_rest_stay_candidates(self):
+        # 하위질문 셋에서 들어온 열 편 — 읽기 목록 순서(하위질문 안 가장 앞선 순위 → cnts_id)로 앞 여덟 편이 담음
+        candidates = [
+            _candidate("P01", {"0": 1}), _candidate("P02", {"0": 2}), _candidate("P03", {"0": 3}),
+            _candidate("P04", {"0": 4}), _candidate("P05", {"1": 1}), _candidate("P06", {"1": 2, "0": 5}),
+            _candidate("P07", {"1": 3}), _candidate("P08", {"2": 1}), _candidate("P09", {"2": 2}),
+            _candidate("P10", {"2": 3}),
+        ]
+        rows = preselect(candidates)
+
+        # 넣는 순서는 candidates 그대로, 모양은 candidates_from_snapshot + state
+        assert [r["cnts_id"] for r in rows] == [c["cnts_id"] for c in candidates]
+        picked = {r["cnts_id"] for r in rows if r["state"] == "in"}
+        # 순위 1: P01·P05·P08, 순위 2: P02·P06·P09, 순위 3: P03·P07 (P10 은 순위 3 의 셋째, P04 는 순위 4)
+        assert picked == {"P01", "P05", "P08", "P02", "P06", "P09", "P03", "P07"}
+        assert {r["cnts_id"]: r["state"] for r in rows if r["cnts_id"] not in picked} == {
+            "P04": "candidate", "P10": "candidate"}
+        # 같은 순서를 읽기 목록(reading_order)이 그대로 보인다 — 미리 담은 여덟 편이 표의 맨 위 여덟 줄이다
+        shown = reading_order([_row(r["cnts_id"], state=r["state"], origin_ref=r["origin_ref"]) for r in rows])
+        assert [r.state for r in shown] == ["in"] * READING_PRESELECT + ["candidate"] * 2
+
+    def test_preselected_rows_carry_a_mark_in_the_path_and_the_input_is_untouched(self):
+        candidates = [_candidate(f"P{n}", {"0": n}) for n in range(1, 11)]
+        before = json.loads(json.dumps(candidates))
+        rows = preselect(candidates)
+
+        assert candidates == before
+        for row, cand in zip(rows, candidates):
+            if row["state"] == "in":
+                assert row["origin_ref"] == {**cand["origin_ref"], "preselected": True}
+            else:
+                assert row["origin_ref"] == cand["origin_ref"]
+            assert (row["origin"], row["cnts_id"]) == (cand["origin"], cand["cnts_id"])
+
+    def test_fewer_than_eight_are_all_picked(self):
+        rows = preselect([_candidate("A", {"0": 2}), _candidate("B", {"0": 1}), _candidate("C", {})])
+        assert [(r["cnts_id"], r["state"]) for r in rows] == [("A", "in"), ("B", "in"), ("C", "in")]
+        assert preselect([]) == []
+
+    def test_papers_without_a_rank_come_after_ranked_ones(self):
+        # 어느 하위질문에도 남지 않은 근거(경로 없이 뒤에 둔 옛 스냅샷) — 순위가 있는 논문이 먼저 담긴다
+        candidates = [_candidate(f"N{n}", {}) for n in range(3)] + [_candidate(f"R{n}", {"0": n}) for n in range(1, 8)]
+        picked = [r["cnts_id"] for r in preselect(candidates) if r["state"] == "in"]
+        assert sorted(picked) == ["N0", "R1", "R2", "R3", "R4", "R5", "R6", "R7"]
+
+    def test_limit(self):
+        rows = preselect([_candidate(f"P{n}", {"0": n}) for n in range(1, 4)], limit=1)
+        assert [r["state"] for r in rows] == ["in", "candidate", "candidate"]
+
+
 class TestExcludedCandidates:
     def test_round_and_note_come_from_the_snapshot_rounds(self):
         assert excluded_candidates(_job_ns(), []) == [
@@ -198,6 +263,17 @@ class TestReadingView:
             ("C1", "독서 격차 연구"), ("C2", "C2")]
         assert [c["cnts_id"] for c in view["excluded"]] == ["X1", "X2"]
         assert json.loads(json.dumps(view)) == view
+
+    def test_preselected_counts_rows_picked_at_continue_whatever_their_state_now(self):
+        # 읽기 목록 머리 안내('채택 근거 상위 N편을 미리 담았습니다')의 N — 뺀(out) 행도 미리 담았던 것이다.
+        # 이 안내 전에 이어간 연구·되살림·직접 담음 행에는 표시가 없다
+        work = SimpleNamespace(topic_id=None)
+        rows = [_row("C1", state="in", origin_ref={**REF_C1, "preselected": True}),
+                _row("C2", state="out", origin_ref={**REF_C2, "preselected": True}),
+                _row("C3", state="in", origin_ref={"rank": {"0": 3}}),
+                _row("R1", state="in", origin="revived", origin_ref={"subq_idx": 0})]
+        assert reading_view(work, _job_ns(), rows, {})["preselected"] == 2
+        assert reading_view(work, _job_ns(), rows[2:], {})["preselected"] == 0
 
     def test_no_outline_or_the_same_topic_is_not_stale(self):
         work = SimpleNamespace(topic_id=2)
@@ -437,6 +513,50 @@ class TestPutReading:
     def test_404_until_continued(self, api):
         jid = _work_job(api.engine, continued=False)
         assert api.client.put(f"/api/research/{jid}/reading/C1", json={"state": "in"}).status_code == 404
+
+
+class TestPreselectedReading:
+    """이어가기가 미리 담은 행(preselect — 채택 근거 상위 READING_PRESELECT 편)이 읽기 목록 API 에서 그대로 보이고,
+    빼기·되살리기는 전과 같다."""
+
+    def _continued(self, engine) -> uuid.UUID:
+        jid = _work_job(engine, continued=False)
+        add_work(engine, jid, phase="reading")
+        candidates = [_candidate(f"P{n:02d}", {"0": n}) for n in range(1, 11)]
+        for row in preselect(candidates):
+            add_reading(engine, jid, row["cnts_id"], state=row["state"], origin=row["origin"],
+                        origin_ref=row["origin_ref"])
+        return jid
+
+    def test_funnel_and_the_report_button_condition(self, api):
+        jid = self._continued(api.engine)
+
+        body = api.client.get(f"/api/research/{jid}/reading").json()
+
+        assert body["funnel"] == {"reviewed": 121, "adopted": 48, "candidates": 10, "picked": READING_PRESELECT}
+        assert body["funnel"]["picked"] >= MIN_READING_FOR_OUTLINE
+        assert body["preselected"] == READING_PRESELECT
+        # 표 맨 위 여덟 줄이 담음이다
+        assert [i["state"] for i in body["items"]] == ["in"] * 8 + ["candidate"] * 2
+        assert [i["cnts_id"] for i in body["items"][:8]] == [f"P{n:02d}" for n in range(1, 9)]
+
+    def test_taking_one_out_and_reviving_work_as_before(self, api):
+        jid = self._continued(api.engine)
+
+        out = api.client.put(f"/api/research/{jid}/reading/P01", json={"state": "out"})
+        revived = api.client.put(f"/api/research/{jid}/reading/X2", json={})
+
+        assert out.status_code == 200 and out.json()["state"] == "out"
+        assert revived.status_code == 200 and revived.json()["origin"] == "revived"
+        rows = _reading(api.engine, jid)
+        assert rows["P01"]["state"] == "out" and rows["P01"]["origin_ref"]["preselected"] is True
+        assert (rows["X2"]["state"], rows["X2"]["origin_ref"]) == (
+            "candidate", {"subq_idx": 1, "round": 1, "note": "영향 연구가 적다"})
+        assert _progress(api.engine, jid)["reading"] == READING_PRESELECT - 1
+        body = api.client.get(f"/api/research/{jid}/reading").json()
+        # 후보 = 뺌이 아닌 행(미리 담은 일곱 + 남은 후보 둘 + 되살린 하나), 미리 담은 수는 뺀 행도 센다
+        assert body["funnel"]["candidates"] == 10 and body["funnel"]["picked"] == READING_PRESELECT - 1
+        assert body["preselected"] == READING_PRESELECT
 
 
 class TestAppWiring:
