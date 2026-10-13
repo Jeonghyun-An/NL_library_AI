@@ -1628,6 +1628,31 @@ describe("questionUsedFromSteps — 이렇게 이해했어요(06c)", () => {
     expect(questionUsedFromSteps([step({ result: { question_used: "AI 윤리 교육의 효과" } })], "ＡＩ 윤리 교육의 효과")).toBeNull();
   });
 
+  it("끝 문장부호·따옴표·안쪽 공백만 다르면 같다 — 운영: 넓히기가 원 질문 끝에 마침표만 붙였다(2026-10-13)", () => {
+    const used = (q: string) => [step({ result: { question_used: q } })];
+    // GET /api/research/9ba10849-36e2-417a-bc59-abec8e002c2c 의 question 과 계획 단계 result.question_used 그대로
+    const live = "노인의 우울과 사회적 지지에 관한 연구가 궁금해";
+    expect(questionUsedFromSteps(used(`${live}.`), live)).toBeNull();
+    expect(questionUsedFromSteps(used(live), `${live}.`)).toBeNull();
+    // 물음표·느낌표·고리점(전각 포함), 여러 개, 끝 공백과 섞여도
+    for (const end of ["?", "？", "!", "！", "。", "?!", "...", "…", " . ", ".\n"]) {
+      expect(questionUsedFromSteps(used(`${ASKED}${end}`), ASKED)).toBeNull();
+    }
+    // 따옴표로 감쌌거나 끝에만 붙었어도
+    for (const quoted of [`"${ASKED}"`, `“${ASKED}.”`, `'${ASKED}?'`, `‘${ASKED}’`, `「${ASKED}」`, `『${ASKED}』`, `＂${ASKED}＂`]) {
+      expect(questionUsedFromSteps(used(quoted), ASKED)).toBeNull();
+    }
+    // 안쪽 띄어쓰기만 다르면
+    expect(questionUsedFromSteps(used("컴퓨팅자원에 대한 연구가궁금해."), ASKED)).toBeNull();
+  });
+
+  it("끝이 아닌 문장부호나 낱말이 다르면 다르다 — 보이는 글은 공백만 정리한 넓힌 질문 그대로", () => {
+    const used = (q: string) => [step({ result: { question_used: q } })];
+    expect(questionUsedFromSteps(used("컴퓨팅, 자원에 대한 연구가 궁금해."), ASKED)).toBe("컴퓨팅, 자원에 대한 연구가 궁금해.");
+    expect(questionUsedFromSteps(used(`${BROADENED}?`), ASKED)).toBe(`${BROADENED}?`);
+    expect(questionUsedFromSteps(used("컴퓨팅 자원에 대한 연구가 궁금해요."), ASKED)).toBe("컴퓨팅 자원에 대한 연구가 궁금해요.");
+  });
+
   it("question_used 가 없으면 null — 06c 전 잡·계획 단계 전", () => {
     expect(questionUsedFromSteps([step({ result: { subquestions: ["효과 측정"] } })], ASKED)).toBeNull();
     expect(questionUsedFromSteps([], ASKED)).toBeNull();
