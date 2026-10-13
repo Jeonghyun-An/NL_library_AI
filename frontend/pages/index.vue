@@ -371,6 +371,7 @@ import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import ResearchExampleCards from "~/components/research/ResearchExampleCards.vue";
+import { useResearchExamples } from "~/composables/useResearchWorks";
 import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { slimBookResult } from "~/utils/historySnapshot";
@@ -505,6 +506,10 @@ function onPlusMode(id: SearchModeId | null) {
   deepResearch.value = id === "deep-research";
 }
 
+// DeepResearch 모드의 예시 연구 카드 재료를 랜딩이 뜰 때 미리 읽어 둔다(앱에서 한 번 — useState). 모드를 켠 뒤에야 읽기 시작하면
+// 응답이 온 뒤에 카드가 서서, 세로 가운데 정렬인 랜딩의 입력창이 사용자가 막 쓰기 시작한 때 비동기로 밀린다(P5 리뷰)
+const { load: loadResearchExamples } = useResearchExamples();
+
 // Newbooks countup
 const newbooksCount = ref(0);
 const NEW_BOOKS_TARGET = 1245;
@@ -562,6 +567,8 @@ onMounted(async () => {
   // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
   restoreFromQuery();
   void startFromQuery();
+  // 목록 API 는 브라우저 ID 헤더가 있어야 해서 서버 렌더가 아니라 마운트 뒤에 읽는다
+  void loadResearchExamples();
 
   // Newbooks countup — 신작도서 블록이 숨겨져 있으면(SHOW_MOCKS=false) 보이지 않는 숫자를 돌리지 않는다
   if (SHOW_MOCKS) {
