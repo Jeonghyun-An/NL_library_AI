@@ -230,12 +230,15 @@ async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int
     (api/research_work.cancel_generation — 키워드 없이)가 이 함수 하나를 부른다. '한 번만'은 씨앗 자리 행마다 본다 —
     그 행을 target 으로 하는 topic_card 생성이 (상태와 상관없이) 하나라도 있으면 건너뛴다(06e 정함 29): 키워드를 다시
     불러 반영돼도 카드가 또 들어가지 않고, 키워드 생성이 줄을 서는 사이 [다른 방향](origin other)이 먼저 카드를 만들어도
-    씨앗 카드는 들어간다. 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
+    씨앗 카드는 들어간다. 카드가 이미 있는 자리(직접 쓴 카드)도 넣지 않는다 — 이어가기와 이 함수 사이(키워드 생성이
+    줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접 고치기]가 사용자 카드(edited)를 만들 수 있고,
+    넣으면 LLM 을 헛되이 부른 결과를 apply 의 edited 검사가 버린다([이 키워드로 다시 만들기]가 고친 카드를 건너뛰는 것과
+    같은 규칙 — spec §12-4·정함 16). 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
     커밋하지 않는다 — 부르는 쪽의 트랜잭션(디스패처 finish·취소 API)에 묶인다. 돌려주는 값은 [(topic_id, gen_id)].
     """
     T, G = ResearchTopic, ResearchGeneration
     rows = (await db.execute(
-        select(T.id, T.seed).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
+        select(T.id, T.seed, T.card).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
         .order_by(T.slot, T.id)
     )).all()
     if not rows:
@@ -244,7 +247,7 @@ async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int
         select(G.target).where(G.work_id == work_id, G.kind == "topic_card",
                                G.target.in_([str(r.id) for r in rows]))
     )).scalars().all())
-    todo = [r for r in rows if str(r.id) not in made]
+    todo = [r for r in rows if str(r.id) not in made and not r.card]
     if not todo:
         return []
     job = (await db.execute(

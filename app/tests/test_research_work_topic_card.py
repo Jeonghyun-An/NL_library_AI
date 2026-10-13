@@ -490,6 +490,24 @@ class TestEnqueueSeedCards:
         assert len(_card_gens(engine, wid)) == 4
         assert _enqueue(engine, wid, KEYWORDS) == []            # 두 번째 반영은 아무것도 넣지 않는다
 
+    def test_a_seed_slot_that_already_has_a_card_gets_none(self, engine):
+        # 이어가기와 카드 생성 사이(키워드 생성이 줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접
+        # 고치기]가 사용자 카드(edited)를 만든다. 생성 기록이 없다고 그 자리에 카드를 넣으면 LLM 을 헛되이 부르고 결과는
+        # apply 의 edited 검사가 버리며, 그 사이 화면은 '다시 만드는 중'을 달고 [고르기]·[직접 고치기]를 막는다.
+        # [이 키워드로 다시 만들기](K6)가 고친 카드를 건너뛰는 것과 같은 규칙(spec §12-4·정함 16)
+        wid, tids = _seed_work(engine)
+        mine = {"title": "내가 쓴 주제", "question": "내가 쓴 질문인가?", "evidence": [], "figure_sentence": None,
+                "figures": [], "latest_year": None, "edited": True,
+                "checks": {"numbers": [], "softened": 0, "recovered": 0}, "gen_id": None}
+        table = ResearchTopic.__table__
+        with engine.begin() as conn:
+            conn.execute(sa.update(table).where(table.c.id == tids[0]).values(card=mine))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids[1:]
+        assert [g["target"] for g in _card_gens(engine, wid)] == [str(t) for t in tids[1:]]
+
     def test_other_direction_cards_do_not_block_the_seed_cards(self, engine):
         # 키워드 생성이 줄을 서는 사이 [다른 방향]이 먼저 카드를 만든 연구 — '그 연구에 카드 생성이 하나라도 있으면 안
         # 넣는다'로 하면 씨앗 카드 4장이 영영 생기지 않는다(06e 정함 29). 판정은 씨앗 자리 행마다다

@@ -76,7 +76,7 @@ spec 과 다르게 읽거나 좁힌 것(정함 9·10·22·23·29 — 실제 코�
 | 정함 26 | **기록 total 은 따로 센다.** `HistoryRepository.list` 의 반환 모양(2-튜플)은 그대로 두고 `count(session_id, kind) -> int` 를 더해 API 가 둘 다 부른다 — 기존 저장소 테스트를 깨지 않는다. `total` 은 `before` 와 무관한 '지우지 않은 그 kind 전부'의 수 | spec D26·§12-3 |
 | 정함 27 | **PDF 는 보고서 화면이 스스로 인쇄한다.** ProposalStep 이 자기 `useReportExport()` 의 `printPdf` 와 `<ReportPrint v-if="printDoc">` 를 쥔다(`[id].vue:196` 의 ReportPrint 는 06d 영역이라 건드리지 않는다). 문서는 Word 와 같은 `buildProposalDocument`(같은 기본값) | spec §12-4 PDF·§12-5 |
 | 정함 28 | **자동 보고서에도 큰 진행 막대를 둔다(사용자 Q1 답을 06e 보고서 화면에도 적용 — 이 계획의 판단을 사용자가 2026-10-11 확인: "보고서 화면에도 넣으라고 한 것이 맞아").** 사용자 답 "현재 절 작성중에 보여지는 커다란 프로그레스바 필요, 예시 막대는 너무 작음"을 spec 은 06d 딥리서치 진행 화면에만 적었고 §12-3 은 그 막대를 단계 화면(stepMode)에 그리지 않는다. 그런데 06e 자동 보고서도 '절을 차례로 쓰는 중'인 화면이다(§12-8 장면 3) — 이 계획이 06e 에도 넣자고 판단했고 사용자가 그 판단이 맞다고 확인했다. 그래서 보고서 화면 머리 목차 위에 같은 크기 규칙의 막대를 둔다 — 막대 두께 `--wk-bar-thick: 1rem`(768px 이하 0.75rem), 막대 바로 위 큰 글줄(1rem 굵게) `보고서 작성 중 · 3/6절 — 「지금 쓰는 절 이름」`, 오른쪽 끝 퍼센트(1.25rem 굵게), 쓰는 중이면 채움에 `is-running` 움직임(reduced-motion 이면 멈춤). 06d 의 `research.css` 토큰·부품은 import 하지 않고 값만 맞춘다(`work.css` 토큰 — 시각 디자인 담당이 고칠 자리). 단계 칩은 두지 않는다 — 같은 화면 위 WorkStepper 가 단계 표시다. 계산은 순수 함수 `reportBar`(Task A3), 그리기는 Task A5. spec 은 Task Z3 이 맞춘다 — §12-3 오프셋 행의 '단계 화면(`stepMode`)에서는 그리지 않는다'는 06d 막대 이야기이고 06e 보고서 화면은 자기 막대(`.wk-rbar`)를 따로 그린다는 것을 덧붙인다 | 사용자 확인 2026-10-11(하네스 전달), spec §12-3 :542·:543, §12-8 :755 |
-| 정함 29 | **씨앗 카드 '한 번만' 은 씨앗 자리 행마다 판정한다.** `enqueue_seed_cards` 는 `slot is not None and origin == "report_seed"` 인 주제 행마다 그 행 id 를 target 으로 하는 `topic_card` 생성이 (상태 무관) 하나도 없을 때만 그 행에 넣는다 — '그 연구에 topic_card 생성이 하나라도 있으면 []' 로 하면, 개념 생성이 줄을 서는 사이(디스패처 전역 1건 — 여럿이 함께 쓰면 몇 분) [다른 방향]을 누른 연구는 그 origin other 카드 때문에 씨앗 카드 4장이 영영 생기지 않는다. spec §12-4 '그 연구에 topic_card 생성이 한 번도 없을 때만'은 '그 씨앗 자리에 카드 생성이 한 번도 없을 때만'으로 읽는다(완료노트·spec 메모에 범위를 적는다). 그와 함께 **[다른 방향]은 개념(키워드) 생성이 열려 있으면 409 `KEYWORDS_BUSY`**(Task K4 — [이 키워드로 다시 만들기]와 같은 규칙) — 비어 있는 `work.concepts` 를 키워드로 넘긴 카드를 만들지 않는다 | `research_topics.py:120-156`(개념 생성 검사 없음), `research_work.py:123-129` `_concepts_open` |
+| 정함 29 | **씨앗 카드 '한 번만' 은 씨앗 자리 행마다 판정한다.** `enqueue_seed_cards` 는 `slot is not None and origin == "report_seed"` 인 주제 행마다 그 행 id 를 target 으로 하는 `topic_card` 생성이 (상태 무관) 하나도 없고 카드가 비어 있을 때만 그 행에 넣는다(카드가 있는 자리 — 이어가기와 카드 생성 사이에 [직접 고치기]가 만든 사용자 카드 — 는 건너뛴다, 파트 K 메모 24) — '그 연구에 topic_card 생성이 하나라도 있으면 []' 로 하면, 개념 생성이 줄을 서는 사이(디스패처 전역 1건 — 여럿이 함께 쓰면 몇 분) [다른 방향]을 누른 연구는 그 origin other 카드 때문에 씨앗 카드 4장이 영영 생기지 않는다. spec §12-4 '그 연구에 topic_card 생성이 한 번도 없을 때만'은 '그 씨앗 자리에 카드 생성이 한 번도 없을 때만'으로 읽는다(완료노트·spec 메모에 범위를 적는다). 그와 함께 **[다른 방향]은 개념(키워드) 생성이 열려 있으면 409 `KEYWORDS_BUSY`**(Task K4 — [이 키워드로 다시 만들기]와 같은 규칙) — 비어 있는 `work.concepts` 를 키워드로 넘긴 카드를 만들지 않는다 | `research_topics.py:120-156`(개념 생성 검사 없음), `research_work.py:123-129` `_concepts_open` |
 | 정함 30 | **딥리드 패널 LNB 접기 계약(06d 계획과 같은 문장):** "06e 는 ReadingStep·ProposalStep 의 emit `panel: [open: boolean]` 과 `[id].vue:73-74` 의 리스너 `@panel="workPanelOpen = $event"`, script 의 `const workPanelOpen = ref(false);`(`:514` 뒤)까지 단다. `AppSidebar :collapsed="workPanelOpen"` 와 루트 `is-lnb-collapsed`(`[id].vue:3-7` 두 곳)는 늦게 머지하는 줄이 단다 — 06d 가 늦으면 06d 계획의 LNB 접기 연결 Task 가, 06e 가 늦으면 이 계획의 Task R6 이 이 두 곳만 고친다. 06d 의 그 Task 는 리스너·새 ref·`watch(step)` 를 넣지 않고 `workPanelOpen` 을 읽기만 한다." 단계를 옮기면 ReadingStep·ProposalStep 이 내려가며 `onBeforeUnmount` 에서 `panel` false 를 내므로 `watch(step)` 가 필요 없다 | 계획 비평 — 06d 쪽 처음 안(`deepPanelOpen`·`@<06e emit>`·`watch(step)`)과 겹치면 같은 요소에 `@panel` 이 두 번(Vue 컴파일 오류 Duplicate attribute), spec §12-5 :689 |
 | 정함 31 | **딥리드의 참고문헌 질문이 끊기는 기존 버그를 06e 에서 고친다 — Task S2(계획 검토에서 정함. 사용자가 빼라면 S2 의 함수·`:118` 갈음·테스트를 빼고 S2 의 백엔드 +6 을 +5 로 되돌린다).** `services/chat/book_chat.py:117-118` 은 참고문헌 의도(`_REF_INTENT_KEYWORDS` `:19-22` — '참고문헌'·'인용'·'출처'·'reference' 등)일 때 `(book.extra or {}).get("references", [])` 를 읽는데, 엔드포인트가 넘기는 `book` 은 `BookRepository.get_by_cnts_id` 가 돌려준 `BookOut`(`app/api/book.py:647-651`)이라 `extra` 가 없다 — `AttributeError` 로 스트림이 끊기고 화면은 `CHAT_ERROR_TEXT` 를 보인다. `book.extra` 를 읽는 코드는 0b51e68 부터이고 지금은 기존 네 화면(논문 상세·논문 검색 채팅 패널·도서 상세·TopResult)도 같은 길로 끊긴다 — spec §12-4·D24 범위 밖이다. 06e 의 오른쪽 딥리드도 같은 길을 쓰므로 '출처'·'인용'이 든 질문이 끊긴다 — 인용 근거 탭에서 [이 논문과 대화하기]로 넘어가 '출처가 어디야?'처럼 묻는 장면(spec §12-8 장면 3)이 바로 이 길이다. Task S2 가 작은 함수 `_book_references(book)` 로 `BookOut.references`(`schemas/book.py:66-67` — `extra["references"]` 를 노출한다)를 `getattr` 로 읽게 하고(속성이 없거나 None 이면 빈 목록) `:118` 을 그것으로 바꾼다. 테스트 1(`test_book_references_reads_the_book_out_field` — `test_book_chat_prompt.py` 의 대역 fixture 위). 기존 네 화면도 같은 엔드포인트라 함께 고쳐진다. Task Z6 Step 4 에서 참고문헌 의도 질문 하나를 보내 본다 | Task S2 작성 중 발견(`book_chat.py:117-118`·`schemas/book.py:47-73`·`app/api/book.py:645-651`) |
 
@@ -13739,7 +13739,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 - Test: `app/tests/test_research_topics_api.py` (`TestEndToEnd` 562-)
 
 **알아 둘 것:**
-- **`enqueue_seed_cards(db, work_id, keywords) -> list[tuple[int, int]]`** — ① `slot IS NOT NULL AND origin = 'report_seed'` 주제 행을 slot 순으로 읽고 ② 그 행 id 들을 target 으로 하는 `topic_card` 생성이 (상태 무관 — queued·running·done·failed·canceled) 이미 있는 target 집합을 한 번에 읽어 그 행은 건너뛴다 ③ 남은 행이 없으면 `[]`(잡도 읽지 않는다) ④ 있으면 잡의 `question`·`report` 두 칸만 읽어(`select(ResearchJob.question, ResearchJob.report)` — 연구 id = 잡 id) 행마다 `enqueue_generation(…, kind="topic_card", target=str(tid), input=topic_input(…, keywords=keywords))`(우선순위 기본 `PRIORITY_USER` — 이어가기가 넣던 값과 같다). `None`(그 사이 열린 생성)이면 그 자리는 건너뛴다. 커밋하지 않는다 — 디스패처 `finish`·취소 API 의 트랜잭션에 묶인다(도는 사이 취소돼 `finish` 가 반영을 되돌리면 카드 생성도 함께 사라진다). origin other·user 카드는 보지 않는다.
+- **`enqueue_seed_cards(db, work_id, keywords) -> list[tuple[int, int]]`** — ① `slot IS NOT NULL AND origin = 'report_seed'` 주제 행을 slot 순으로 읽고 ② 그 행 id 들을 target 으로 하는 `topic_card` 생성이 (상태 무관 — queued·running·done·failed·canceled) 이미 있는 target 집합을 한 번에 읽어 그 행은 건너뛰고, 카드가 이미 있는 행(`card` 가 비지 않음 — 이어가기와 카드 생성 사이에 [직접 고치기]가 만든 사용자 카드)도 건너뛴다(quality 검토 반영 — 파트 K 메모 24) ③ 남은 행이 없으면 `[]`(잡도 읽지 않는다) ④ 있으면 잡의 `question`·`report` 두 칸만 읽어(`select(ResearchJob.question, ResearchJob.report)` — 연구 id = 잡 id) 행마다 `enqueue_generation(…, kind="topic_card", target=str(tid), input=topic_input(…, keywords=keywords))`(우선순위 기본 `PRIORITY_USER` — 이어가기가 넣던 값과 같다). `None`(그 사이 열린 생성)이면 그 자리는 건너뛴다. 커밋하지 않는다 — 디스패처 `finish`·취소 API 의 트랜잭션에 묶인다(도는 사이 취소돼 `finish` 가 반영을 되돌리면 카드 생성도 함께 사라진다). origin other·user 카드는 보지 않는다.
 - **import 순환 없음** — `topic_card` 가 `enqueue`(모델만)·`seeds`(순수)·`models.research` 를 import 하고, `apply` 가 `topic_card` 를 import 한다(`apply` 는 이미 `executors`→`topic_card` 를 거친다). `api/research_work.py` 도 `topic_card` 를 import 한다(이미 `executors` 로 거친다).
 - **반영(워커):** `apply_result` 의 concepts 분기는 개념이 있으면 지금처럼 칩을 쓰고(빈 결과면 칩을 건드리지 않는다) **그 뒤 늘** `enqueue_seed_cards(db, gen.work_id, concepts)` — 빈 결과면 키워드 없이 넣는다. result 는 `{"concepts": [...], "cards": [gen_id]}`(1-4). 넣은 카드의 queued 이벤트는 따로 보내지 않는다 — 화면이 concepts done 에 `topics`·`work` 를 다시 읽는다(정함 25, Task K7 의 `RELOAD.concepts`). 워커 `_close` 가 `has_queued` 를 보고 다음 디스패치를 보낸다(`research_work_tasks.py:241-242`) — 회수기·`research_work_tasks.py` 는 고치지 않는다.
 - **취소(API):** kind concepts 를 queued 에서 취소하면 같은 트랜잭션에서 `enqueue_seed_cards(db, jid, [])` → 커밋 → generation canceled 이벤트 → 카드가 있으면 `_send_dispatch()` 와 카드마다 `queued_event`(정함 25 — 화면이 다시 읽을 계기가 없다). 그 밖의 kind 취소는 지금과 같다(디스패치 없음 — 기존 `test_queued_generation_is_canceled` 는 씨앗 자리가 없는 연구라 그대로 통과한다).
@@ -13850,6 +13850,24 @@ class TestEnqueueSeedCards:
         assert [tid for tid, _ in out] == tids[1:]
         assert len(_card_gens(engine, wid)) == 4
         assert _enqueue(engine, wid, KEYWORDS) == []            # 두 번째 반영은 아무것도 넣지 않는다
+
+    def test_a_seed_slot_that_already_has_a_card_gets_none(self, engine):
+        # 이어가기와 카드 생성 사이(키워드 생성이 줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접
+        # 고치기]가 사용자 카드(edited)를 만든다. 생성 기록이 없다고 그 자리에 카드를 넣으면 LLM 을 헛되이 부르고 결과는
+        # apply 의 edited 검사가 버리며, 그 사이 화면은 '다시 만드는 중'을 달고 [고르기]·[직접 고치기]를 막는다.
+        # [이 키워드로 다시 만들기](K6)가 고친 카드를 건너뛰는 것과 같은 규칙(spec §12-4·정함 16)
+        wid, tids = _seed_work(engine)
+        mine = {"title": "내가 쓴 주제", "question": "내가 쓴 질문인가?", "evidence": [], "figure_sentence": None,
+                "figures": [], "latest_year": None, "edited": True,
+                "checks": {"numbers": [], "softened": 0, "recovered": 0}, "gen_id": None}
+        table = ResearchTopic.__table__
+        with engine.begin() as conn:
+            conn.execute(sa.update(table).where(table.c.id == tids[0]).values(card=mine))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids[1:]
+        assert [g["target"] for g in _card_gens(engine, wid)] == [str(t) for t in tids[1:]]
 
     def test_other_direction_cards_do_not_block_the_seed_cards(self, engine):
         # 키워드 생성이 줄을 서는 사이 [다른 방향]이 먼저 카드를 만든 연구 — '그 연구에 카드 생성이 하나라도 있으면 안
@@ -14212,8 +14230,8 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_topic_card.py tests/test_research_work_dispatch.py tests/test_research_work_api.py tests/test_research_work_tasks.py tests/test_research_work_executor.py tests/test_research_topics_api.py -q -p no:cacheprovider`
 
-Expected: `19 failed, 236 passed, 2 warnings` — 실패는 정확히 다음 19개(샌드박스 실측):
-- `test_research_work_topic_card.py::TestEnqueueSeedCards` 7개(매개변수 포함) — `enqueue_seed_cards` 가 없다(AttributeError)
+Expected: `20 failed, 236 passed, 2 warnings` — 실패는 정확히 다음 20개(샌드박스 실측 19 + quality 검토 반영 테스트 1 — 파트 K 메모 24):
+- `test_research_work_topic_card.py::TestEnqueueSeedCards` 8개(매개변수 포함) — `enqueue_seed_cards` 가 없다(AttributeError)
 - `test_research_work_dispatch.py::TestApplyResult` 4개 — `test_concepts_replace_the_chips_and_reset_membership`·`test_an_empty_result_keeps_the_chips`(payload 에 `cards` 없음)·`test_an_empty_result_still_queues_the_seed_cards_without_keywords`·`test_a_second_concepts_result_queues_no_more_cards`(카드를 넣지 않는다)
 - `test_research_work_api.py` 4개 — `TestContinueSeeds::test_report_seeds_become_four_topics_without_card_generations_yet`·`test_second_continue_adds_no_topic_or_card`(이어가기가 카드 생성 4건을 넣는다), `TestCancelGeneration::test_canceling_concepts_queues_the_seed_cards_without_keywords`(카드를 넣지 않는다), `TestEndToEnd::test_continue_then_the_dispatcher_fills_the_concepts`(payload)
 - `test_research_work_tasks.py::TestDispatch` 2개 — 이벤트 result 에 `cards` 없음
@@ -14282,12 +14300,15 @@ async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int
     (api/research_work.cancel_generation — 키워드 없이)가 이 함수 하나를 부른다. '한 번만'은 씨앗 자리 행마다 본다 —
     그 행을 target 으로 하는 topic_card 생성이 (상태와 상관없이) 하나라도 있으면 건너뛴다(06e 정함 29): 키워드를 다시
     불러 반영돼도 카드가 또 들어가지 않고, 키워드 생성이 줄을 서는 사이 [다른 방향](origin other)이 먼저 카드를 만들어도
-    씨앗 카드는 들어간다. 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
+    씨앗 카드는 들어간다. 카드가 이미 있는 자리(직접 쓴 카드)도 넣지 않는다 — 이어가기와 이 함수 사이(키워드 생성이
+    줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접 고치기]가 사용자 카드(edited)를 만들 수 있고,
+    넣으면 LLM 을 헛되이 부른 결과를 apply 의 edited 검사가 버린다([이 키워드로 다시 만들기]가 고친 카드를 건너뛰는 것과
+    같은 규칙 — spec §12-4·정함 16). 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
     커밋하지 않는다 — 부르는 쪽의 트랜잭션(디스패처 finish·취소 API)에 묶인다. 돌려주는 값은 [(topic_id, gen_id)].
     """
     T, G = ResearchTopic, ResearchGeneration
     rows = (await db.execute(
-        select(T.id, T.seed).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
+        select(T.id, T.seed, T.card).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
         .order_by(T.slot, T.id)
     )).all()
     if not rows:
@@ -14296,7 +14317,7 @@ async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int
         select(G.target).where(G.work_id == work_id, G.kind == "topic_card",
                                G.target.in_([str(r.id) for r in rows]))
     )).scalars().all())
-    todo = [r for r in rows if str(r.id) not in made]
+    todo = [r for r in rows if str(r.id) not in made and not r.card]
     if not todo:
         return []
     job = (await db.execute(
@@ -14496,11 +14517,11 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_topic_card.py tests/test_research_work_dispatch.py tests/test_research_work_api.py tests/test_research_work_tasks.py tests/test_research_work_executor.py tests/test_research_topics_api.py -q -p no:cacheprovider`
 
-Expected: `255 passed, 2 warnings` (topic_card 58 · dispatch 34 · api 85 · tasks 27 · executor 12 · topics 39)
+Expected: `256 passed, 2 warnings` (topic_card 59 · dispatch 34 · api 85 · tasks 27 · executor 12 · topics 39)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 10
+Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 11
 
 - [ ] **Step 5: 커밋한다**
 
@@ -14690,7 +14711,7 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_topics_api.py tests/test_research_work_topic_card.py -q -p no:cacheprovider`
 
-Expected: `9 failed, 96 passed, 2 warnings` — `test_research_topics_api.py::TestRegenerate` 7개 모두(405 Method Not Allowed — 경로가 없다), `test_research_work_topic_card.py::TestApply::test_a_picked_card_is_not_overwritten_by_a_regeneration[card]`(고른 카드가 새 카드로 바뀐다)·`[empty]`(state 가 insufficient 로 온다)
+Expected: `9 failed, 97 passed, 2 warnings` — `test_research_topics_api.py::TestRegenerate` 7개 모두(405 Method Not Allowed — 경로가 없다), `test_research_work_topic_card.py::TestApply::test_a_picked_card_is_not_overwritten_by_a_regeneration[card]`(고른 카드가 새 카드로 바뀐다)·`[empty]`(state 가 insufficient 로 온다)
 
 - [ ] **Step 3: 구현한다**
 
@@ -14858,7 +14879,7 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_topics_api.py tests/test_research_work_topic_card.py -q -p no:cacheprovider`
 
-Expected: `105 passed, 2 warnings` (topics 46 · topic_card 59)
+Expected: `106 passed, 2 warnings` (topics 46 · topic_card 60 — Task K5 의 quality 검토 반영 테스트 1 포함, 파트 K 메모 24)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
@@ -16832,7 +16853,7 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_generate.py tests/test_research_work_executor.py tests/test_research_work_topic_card.py tests/test_research_topics_api.py tests/test_research_work_tasks.py -q -p no:cacheprovider`
 
-Expected: `178 passed, 2 warnings` (generate 24 · executor 12 · topic_card 69 · topics 46 · tasks 27 — topic_card 는 Task K6 뒤 59 에 고정 예제 7·검사 2·세 번 놓친 카드 1 을 더했다)
+Expected: `179 passed, 2 warnings` (generate 24 · executor 12 · topic_card 70 · topics 46 · tasks 27 — topic_card 는 Task K6 뒤 60 에 고정 예제 7·검사 2·세 번 놓친 카드 1 을 더했다)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
@@ -16881,6 +16902,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 | 21 | 1-6 Task K7 `aiCardsStale(topics, concepts)` | `aiCardsStale(topics, concepts, conceptsGen?)` — blocked 씨앗 자리도 세고 다시 만드는 중인 카드는 세지 않는다(이름 그대로) | 검토 반영. 키워드 생성 failed 뒤 직접 저장한 연구가 막다른 길에 서지 않게 |
 | 22 | 1-6 Task K7 이름 목록 | `cardRemakingNote` 를 더하고 `canPick` 이 다시 만드는 중인 카드를 막는다. Task K8 TopicCard 는 그 줄을 달고 [직접 고치기]도 막는다 | 검토 반영 — 06e 정함 16 의 화면 쪽 |
 | 23 | Task K1 ③ 653 원문 표본 20개(`doc_type='paper'` 전체에서 `ORDER BY random() LIMIT 20`)로 구분자를 보고, ④ 는 `[;,]` 로 나눈다 | ③ 을 둘로 — source_format 갈래마다 653 키워드가 있는 행과 그중 `\|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 세어 구분자 판정 줄을 찍고(`'\|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `\|` — Task Z1 Step 5), 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())`). ④ 는 `[;,\|]` 로 나눈다. README 판정 규칙에 두 구분자와 출처 줄을 적는다. 질의는 넷에서 다섯(Task K1 Step 3·Task Z1 Step 1·2 의 기대를 맞췄다) | quality 검토 지적. keyword 의 구분자는 채운 경로마다 다르고 코드로 이미 안다 — MARC 로더는 653 $a 를 ` \| ` 로 잇고(`marc_parser.py:118`·`:256`, 함정 6), 적재 보강은 653 이 빈 논문에 `", ".join(추출 키워드)`(`stages.py:538-539` — KCI 로더는 keyword 를 채우지 않는다). MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라 딥리서치(`doc_scope="paper"` — `explorer.py:113`)의 채택 논문이 된다. 보강으로 채운 `, ` 행이 많으면 무작위 20개에 ` \| ` 행이 하나도 안 나와 Z1 이 '[;,] 그대로'로 잘못 판정하고, K2 에서 MARC 학위논문 키워드가 한 덩어리로 남거나(40자 넘으면 버려진다) ④ 가 그 행을 한 낱말로 세어 판정 2 때 참고하는 후보 수도 틀린다. 함정 10 의 교훈('코드 경로가 있다고 그 데이터가 있는 것은 아니다 — 세어서 확정한다')대로 센다. 되돌리려면 이 커밋의 `measure.py`·README 를 앞 커밋으로 돌린다(그러면 위 오판이 돌아온다) |
+| 24 | Task K5 `enqueue_seed_cards` 는 씨앗 자리 행마다 그 행을 target 으로 한 `topic_card` 생성이 (상태 무관) 있는지만 본다 | 행을 읽을 때 `card` 도 읽어 카드가 이미 있는 행(`not r.card` 가 거짓)도 건너뛴다. docstring 에 '카드가 이미 있는 자리(직접 쓴 카드)는 넣지 않는다'를 적고, `TestEnqueueSeedCards.test_a_seed_slot_that_already_has_a_card_gets_none`(＋ — slot 1 에 사용자 카드 edited 가 있으면 그 자리에는 카드 생성이 들어가지 않는다)를 더한다. 정함 29 칸·Task K5 계약 줄·Step 2·4 기대 수와 Task K6(Step 2 `97 passed`·Step 4 `106 passed`)·K9(Step 5 `179 passed`)의 기대 수를 1 씩 맞췄다 | quality 검토 지적. 06e 에서는 이어가기와 카드 생성 사이에 빈 씨앗 자리가 생성 없이 남는 시간이 새로 생겼다(키워드 생성이 줄을 서거나 failed 인 동안). 그 사이 `edit_topic` 은 `_card_open` 이 거짓이라 막지 않고 빈 카드면 사용자 카드(edited)를 만든다(`research_topics.py:194-200`). 그 뒤 키워드를 다시 불러 done 이 반영되면 생성 기록이 없는 그 행에도 카드 생성이 들어가 전역 한 자리 디스패처(D15)로 LLM 을 한 번 헛되이 부르고, 결과는 `topic_card.apply` 의 edited 검사가 버린다 — 그 생성이 열린 동안 사용자 카드에는 '새 키워드로 다시 만드는 중입니다'(K7 `cardRemakingNote`)가 붙고 [고르기]는 `canPick` 이, [직접 고치기]는 409 `CARD_BUSY` 가 막는다. Task K6 regenerate 가 고친 카드를 건너뛰는 규칙(spec §12-4·정함 16)과 같게 한다. 씨앗 자리 행의 카드는 반영(생성 기록이 남는다)이나 [직접 고치기](edited)로만 생기므로 '카드 있음'으로 거르는 것이 06e 전 행·[다른 방향] 판정(정함 29)을 바꾸지 않는다. 되돌리려면 `topic_card.py` 의 `T.card` 읽기와 `and not r.card` 를 빼고 그 테스트를 지운다(그러면 위 헛 호출이 돌아온다) |
 
 ---
 
