@@ -12,7 +12,7 @@ import type {
   TopicsView,
   WorkGeneration,
 } from "~/types/work";
-import { citeLabel } from "~/utils/citations";
+import { pubYear, splitAuthors } from "~/utils/citations";
 import { genQueueLine } from "~/utils/queueLine";
 
 // blocked — 키워드 생성이 실패해 씨앗 카드가 아직 들어가지 않은 자리(06e D23 — 키워드를 다시 부르면 카드가 들어간다)
@@ -32,8 +32,12 @@ export const CONCEPT_LEN_MAX = 40;
 export const MIN_PICKED_KEYWORDS = 2;
 
 const OPEN: readonly GenStatus[] = ["queued", "running"];
-// 저자를 모르는 근거 칩은 제목 앞부분으로 가른다
-const CHIP_TITLE_CHARS = 12;
+// 근거 칩 — 저자를 모르는 논문은 제목 앞 이만큼(코드포인트)과 연도로 가른다(spec §12-4 D27)
+export const SHORT_TITLE_MAX = 18;
+// 한글 이름(띄어 쓴 복성 '남궁 민' 포함)은 공백만 빼고 전체를 쓴다. 영문 이름('Smith, John')은 적힌 그대로
+const HANGUL_NAME = /^[가-힣\s]+$/;
+// '최성훈 외 2인' 의 꼬리 — citations.firstAuthorSurname 과 같은 규칙
+const OTHERS_TAIL = /\s*외\s*\d*\s*인?\s*$/;
 const SEED_KIND_LABEL: Record<TopicSeed["kind"], string> = {
   future: "딥리서치 보고서의 향후 과제",
   insufficient: "근거가 모자랐던 하위질문",
@@ -121,25 +125,48 @@ export function cardRemakingNote(item: TopicItem): string | null {
   return remaking(item) ? "새 키워드로 다시 만드는 중입니다" : null;
 }
 
+// 자른 끝의 공백은 떼고 말줄임을 붙인다 — '… 미치는 …' 가 아니라 '… 미치는…'
 function shortTitle(title: string | null | undefined): string | null {
   const chars = [...(title ?? "").trim()];
   if (!chars.length) return null;
-  return chars.length > CHIP_TITLE_CHARS ? `${chars.slice(0, CHIP_TITLE_CHARS).join("")}…` : chars.join("");
+  return chars.length > SHORT_TITLE_MAX ? `${chars.slice(0, SHORT_TITLE_MAX).join("").trimEnd()}…` : chars.join("");
 }
 
-// 근거 칩 — 보고서 인용칩과 같은 '저자 연도' 라벨(citeLabel). 단계 화면에는 REPORT_JOB provide 가 없어
-// CitationChip 을 쓰지 않는다. 저자를 모르면 제목 앞부분, 서지가 없으면 cnts_id
+// 제1저자의 전체 이름 — '외 n인' 꼬리를 떼고, 한글 이름은 공백을 빼 붙인다(복성 그대로). 저자가 없으면 null
+function firstAuthorName(personal: string | null | undefined): string | null {
+  const first = splitAuthors(personal)[0]?.replace(OTHERS_TAIL, "").trim();
+  if (!first) return null;
+  return HANGUL_NAME.test(first) ? first.replace(/\s/g, "") : first;
+}
+
+// 근거 칩 라벨(D27, Q3 범위 S) — '제1저자 전체 이름 연도'(최성훈 2018). '성 연도'(최 2018)는 같은 성이 많아 칩만으로
+// 가를 수 없었다(06b 이월 §7-14 와 같은 문제). 저자가 없으면 짧은 제목과 연도, 저자도 제목도 없으면 cnts_id, 연도를 모르면 이름만.
+// 보고서 인용칩·목차·절·논문 상세의 citeLabel('성 연도')은 그대로 둔다
+export function chipLabel(meta: PaperMeta | undefined, cntsId: string): string {
+  const who = firstAuthorName(meta?.personal_author) ?? shortTitle(meta?.title);
+  if (!who) return cntsId;
+  const year = pubYear(meta?.pub_date);
+  return year ? `${who} ${year}` : who;
+}
+
+// 근거 칩 툴팁 — 서지 한 줄(제목 · 저자 · 학술지 · 연도 가운데 있는 것). 저자는 칩과 같은 구분(splitAuthors)으로 나눠
+// 쉼표로 잇는다. 서지가 없거나 모든 칸이 비면 cnts_id
+export function chipTooltip(meta: PaperMeta | undefined, cntsId: string): string {
+  if (!meta) return cntsId;
+  const parts = [meta.title, splitAuthors(meta.personal_author).join(", "), meta.series_title, pubYear(meta.pub_date)]
+    .map((s) => (s ?? "").trim())
+    .filter(Boolean);
+  return parts.length ? parts.join(" · ") : cntsId;
+}
+
+// 근거 칩 — 라벨은 chipLabel, 툴팁(title)은 chipTooltip. 단계 화면에는 REPORT_JOB provide 가 없어 CitationChip 을 쓰지 않는다
 export function evidenceChips(
   card: TopicCard,
   papers: Record<string, PaperMeta>,
 ): { cntsId: string; label: string; title: string }[] {
   return card.evidence.map((cntsId) => {
     const meta = papers[cntsId];
-    return {
-      cntsId,
-      label: citeLabel(meta, shortTitle(meta?.title) ?? cntsId),
-      title: meta?.title?.trim() || cntsId,
-    };
+    return { cntsId, label: chipLabel(meta, cntsId), title: chipTooltip(meta, cntsId) };
   });
 }
 

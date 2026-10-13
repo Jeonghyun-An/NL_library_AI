@@ -20,6 +20,8 @@ import {
   cardRemakingNote,
   cardStatus,
   chipFocusAfterToggle,
+  chipLabel,
+  chipTooltip,
   cleanConcept,
   conceptsNote,
   conceptsRetryable,
@@ -37,6 +39,7 @@ import {
   regenerateFocusMoves,
   regenerateProblem,
   seedLine,
+  SHORT_TITLE_MAX,
   toggleKeyword,
   topicProblem,
 } from "~/utils/topicDeck";
@@ -215,11 +218,24 @@ describe("evidenceChips", () => {
     KCI_C: { title: "지지망 분석", personal_author: null, pub_date: null, series_title: null },
   };
 
-  it("보고서 인용칩과 같은 '저자 연도' 라벨과 전체 제목을 준다", () => {
+  it("제1저자 전체 이름과 연도를 라벨로, 서지 한 줄을 툴팁으로 — 저자가 없으면 제목 앞 18자와 연도", () => {
     expect(evidenceChips(CARD, PAPERS)).toEqual([
-      { cntsId: "KCI_A", label: "김 2015", title: "노인의 우울과 사회적 지지" },
-      { cntsId: "KCI_B", label: "가족 지지가 노인 우울…", title: "가족 지지가 노인 우울에 미치는 영향 연구" },
+      {
+        cntsId: "KCI_A",
+        label: "김철수 2015",
+        title: "노인의 우울과 사회적 지지 · 김철수, 이영희 · 노인복지연구 · 2015",
+      },
+      {
+        cntsId: "KCI_B",
+        label: "가족 지지가 노인 우울에 미치는… 2013",
+        title: "가족 지지가 노인 우울에 미치는 영향 연구 · 2013",
+      },
     ]);
+    // 18자까지는 자르지 않고, 넘으면 18자 뒤에 말줄임(자른 끝의 공백은 뗀다 — KCI_B 의 18번째 글자는 공백이다)
+    const untitled = (title: string): PaperMeta => ({ title, personal_author: null, pub_date: null, series_title: null });
+    expect(SHORT_TITLE_MAX).toBe(18);
+    expect(chipLabel(untitled("가".repeat(18)), "K")).toBe("가".repeat(18));
+    expect(chipLabel(untitled("가".repeat(19)), "K")).toBe(`${"가".repeat(18)}…`);
   });
 
   it("저자를 모르면 제목 앞부분(짧으면 그대로), 서지가 없으면 cnts_id 로 가른다", () => {
@@ -228,6 +244,52 @@ describe("evidenceChips", () => {
       { cntsId: "KCI_C", label: "지지망 분석", title: "지지망 분석" },
       { cntsId: "KCI_Z", label: "KCI_Z", title: "KCI_Z" },
     ]);
+  });
+
+  it("복성·외 n인·영문 이름·연도 없음", () => {
+    const meta = (personal_author: string | null, pub_date: string | null = "2018-05"): PaperMeta => ({
+      title: "사회적 지지 척도의 타당화",
+      personal_author,
+      pub_date,
+      series_title: null,
+    });
+    expect(chipLabel(meta("최성훈"), "K1")).toBe("최성훈 2018");
+    // 한글 이름은 공백만 빼고 전체 — 띄어 쓴 복성도 붙인다
+    expect(chipLabel(meta("남궁 민"), "K1")).toBe("남궁민 2018");
+    expect(chipLabel(meta("선우 현정 외 2인"), "K1")).toBe("선우현정 2018");
+    expect(chipLabel(meta("최성훈외3인"), "K1")).toBe("최성훈 2018");
+    // 여러 저자는 제1저자만(쉼표·세미콜론·세로줄·가운뎃점 — splitAuthors 와 같은 구분)
+    expect(chipLabel(meta("김철수, 이영희"), "K1")).toBe("김철수 2018");
+    expect(chipLabel(meta("Jane Doe | 박지원"), "K1")).toBe("Jane Doe 2018");
+    // 영문 '성, 이름' 은 적힌 그대로
+    expect(chipLabel(meta("Smith, John"), "K1")).toBe("Smith, John 2018");
+    // 연도를 모르면 이름만
+    expect(chipLabel(meta("이영희", null), "K1")).toBe("이영희");
+    expect(chipLabel(meta("이영희", "발행년 미상"), "K1")).toBe("이영희");
+    // 저자 칸이 공백뿐이면 저자가 없는 것 — 짧은 제목과 연도
+    expect(chipLabel(meta("  ", "2019"), "K1")).toBe("사회적 지지 척도의 타당화 2019");
+    // 저자도 제목도 없으면 연도가 있어도 cnts_id
+    expect(chipLabel({ title: " ", personal_author: null, pub_date: "2019", series_title: null }, "K2")).toBe("K2");
+    expect(chipLabel(undefined, "KCI_Z")).toBe("KCI_Z");
+  });
+
+  it("툴팁은 서지 한 줄", () => {
+    expect(
+      chipTooltip(
+        { title: " 노인의 우울과 사회적 지지 ", personal_author: "김철수; 이영희", pub_date: "2015-03", series_title: "노인복지연구" },
+        "KCI_A",
+      ),
+    ).toBe("노인의 우울과 사회적 지지 · 김철수, 이영희 · 노인복지연구 · 2015");
+    // 빈 칸(공백뿐인 칸 포함)은 건너뛴다
+    expect(chipTooltip({ title: "지지망 분석", personal_author: null, pub_date: null, series_title: " " }, "KCI_C")).toBe(
+      "지지망 분석",
+    );
+    expect(chipTooltip({ title: "", personal_author: "Smith, John", pub_date: "2020", series_title: null }, "KCI_D")).toBe(
+      "Smith, John · 2020",
+    );
+    // 서지가 없거나 모든 칸이 비면 cnts_id
+    expect(chipTooltip(undefined, "KCI_Z")).toBe("KCI_Z");
+    expect(chipTooltip({ title: " ", personal_author: null, pub_date: null, series_title: null }, "KCI_E")).toBe("KCI_E");
   });
 });
 
