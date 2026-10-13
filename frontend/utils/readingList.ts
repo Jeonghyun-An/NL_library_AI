@@ -189,6 +189,13 @@ export function canMakeOutline(view: ReadingView): boolean {
   return outlineHint(view) === null;
 }
 
+// 다음 단계 버튼(ReadingNextActions)의 aria-describedby — 보이는 까닭 줄들의 id 를 공백으로 잇는다. 없는 id(null)는 건너뛰고
+// 하나도 없으면 undefined(속성을 달지 않는다)
+export function describedByIds(...ids: (string | null)[]): string | undefined {
+  const present = ids.filter((id): id is string => !!id);
+  return present.length ? present.join(" ") : undefined;
+}
+
 // 'critic 이 뺀 논문' 서랍 — 하위질문 순으로 묶고 묶음 안은 뺀 회차 순(회차를 모르면 뒤)
 export function candidateGroups(excluded: ExcludedCandidate[]): CandidateGroup[] {
   const groups = new Map<number, CandidateGroup>();

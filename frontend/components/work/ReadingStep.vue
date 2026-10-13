@@ -14,7 +14,8 @@
         </div>
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
         <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
-        <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+        <!-- 읽기 전용으로 꺼진 [보고서 만들기]·[보고서 다시 만들기](위·아래 두 묶음)가 이 줄을 까닭으로 가리킨다(aria-describedby) -->
+        <p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
       </header>
 
       <CorpusScopeNote :corpus="corpus" />
@@ -139,13 +140,16 @@ const intro = computed(() => readingIntro(reading.value, props.question, readOnl
 const canOutline = computed(() => !!reading.value && canMakeOutline(reading.value));
 const outlineMade = computed(() => view.value?.phase === "proposal" || view.value?.phase === "done");
 // 다음 단계 버튼 묶음(머리·표 아래 두 곳의 ReadingNextActions)이 함께 받는 상태 — 비활성 조건을 여기 한 곳에서 정한다.
-// busy 는 makeOutline 의 잠금이라 위·아래 어느 쪽을 눌러도 두 묶음이 함께 꺼진다
+// busy 는 makeOutline 의 잠금이라 위·아래 어느 쪽을 눌러도 두 묶음이 함께 꺼진다. 까닭은 hint(주제 없음·담음 모자람)와
+// 읽기 전용 줄(READ_ONLY_ID) — busy 는 누른 그 순간뿐이라 따로 적지 않는다
+const READ_ONLY_ID = "wk-reading-readonly";
 const makeDisabled = computed(() => readOnly.value || busy.value || !canOutline.value);
 const nextActions = computed(() => ({
   noTopic: reading.value?.topic_id === null,
   outlineMade: outlineMade.value,
   makeDisabled: makeDisabled.value,
   hint: hint.value,
+  disabledWhyId: readOnly.value ? READ_ONLY_ID : null,
 }));
 // 범위 띠(spec §4 단계 공통·§7) — TopicsStep 과 같이 주제 목록의 corpus, 없으면 연구의 corpus
 const corpus = computed(() => state.value.topics?.corpus ?? view.value?.corpus ?? null);

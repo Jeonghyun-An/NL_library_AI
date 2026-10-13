@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { describedByIds } from "~/utils/readingList";
 import { NARROW_QUERY } from "~/utils/sidebarDrawer";
 import { cssRules } from "./helpers/cssRules";
 
@@ -36,10 +37,35 @@ describe("ReadingNextActions — 다음 단계 버튼 묶음", () => {
   it("비활성 까닭(hint)을 버튼 곁에 보이고 aria-describedby 로 잇는다 — id 는 자리(where)마다 달라 두 묶음이 겹치지 않는다", () => {
     expect(tpl).toMatch(/<p v-if="hint" :id="hintId" class="rs-muted">\{\{ hint \}\}<\/p>/);
     expect(script(src)).toContain("const hintId = computed(() => `wk-reading-next-hint-${props.where}`);");
-    expect(script(src)).toContain("const describedBy = computed(() => (props.hint ? hintId.value : undefined));");
-    // [제목 고르기]·[보고서 다시 만들기]·[보고서 만들기] — 까닭이 있을 때만 이어진다
-    expect(count(tpl, ':aria-describedby="describedBy"')).toBe(3);
+    expect(script(src)).toContain("const describedBy = computed(() => describedByIds(props.hint ? hintId.value : null));");
+    // [제목 고르기] — 끄지 않는 버튼이라 '주제를 먼저 고르세요' 까닭(hint)만 잇는다
+    expect(tpl).toMatch(/<button\s+v-if="noTopic"[^>]*:aria-describedby="describedBy"/);
+    expect(count(tpl, ':aria-describedby="describedBy"')).toBe(1);
     expect(script(src)).toMatch(/where: "top" \| "bottom";/);
+  });
+
+  it("읽기 전용으로 꺼진 [보고서 만들기]·[보고서 다시 만들기] 도 까닭과 잇는다 — 화면이 보인 다른 까닭 줄의 id(disabledWhyId)를 hint 와 함께", () => {
+    expect(script(src)).toMatch(/disabledWhyId: string \| null;/);
+    expect(script(src)).toContain(
+      "const makeDescribedBy = computed(() => describedByIds(props.hint ? hintId.value : null, props.disabledWhyId));",
+    );
+    expect(script(src)).toMatch(/import \{ describedByIds \} from "~\/utils\/readingList";/);
+    // :disabled="makeDisabled" 인 두 버튼이 모두 makeDescribedBy 를 쓴다
+    expect(count(tpl, ':disabled="makeDisabled"')).toBe(2);
+    expect(count(tpl, ':aria-describedby="makeDescribedBy"')).toBe(2);
+    for (const m of tpl.matchAll(/<button[^>]*:disabled="makeDisabled"[^>]*>/g)) {
+      expect(m[0]).toContain(':aria-describedby="makeDescribedBy"');
+    }
+  });
+
+  it("describedByIds — 있는 id 만 공백으로 잇고, 하나도 없으면 undefined(속성을 달지 않는다)", () => {
+    expect(describedByIds()).toBeUndefined();
+    expect(describedByIds(null, null)).toBeUndefined();
+    expect(describedByIds("wk-reading-next-hint-top", null)).toBe("wk-reading-next-hint-top");
+    expect(describedByIds(null, "wk-reading-readonly")).toBe("wk-reading-readonly");
+    expect(describedByIds("wk-reading-next-hint-bottom", "wk-reading-readonly")).toBe(
+      "wk-reading-next-hint-bottom wk-reading-readonly",
+    );
   });
 
   it("상태는 받기만 하고 저장·목차 생성은 하지 않는다 — 누르면 go·make 를 올려 보낸다", () => {
@@ -71,10 +97,18 @@ describe("ReadingStep — 위(소개 옆)·아래(표 밑) 두 곳에 같은 묶
   it("비활성 조건은 한 곳에서 — 읽기 전용·저장 중(busy)·만들 수 없음. busy 잠금을 두 묶음이 함께 써 두 번 눌리지 않는다", () => {
     expect(js).toContain("const makeDisabled = computed(() => readOnly.value || busy.value || !canOutline.value);");
     expect(js).toMatch(
-      /const nextActions = computed\(\(\) => \(\{\s*noTopic: reading\.value\?\.topic_id === null,\s*outlineMade: outlineMade\.value,\s*makeDisabled: makeDisabled\.value,\s*hint: hint\.value,\s*\}\)\);/,
+      /const nextActions = computed\(\(\) => \(\{\s*noTopic: reading\.value\?\.topic_id === null,\s*outlineMade: outlineMade\.value,\s*makeDisabled: makeDisabled\.value,\s*hint: hint\.value,\s*disabledWhyId: readOnly\.value \? READ_ONLY_ID : null,\s*\}\)\);/,
     );
     // 위·아래 어느 쪽을 눌러도 같은 makeOutline — 들어가자마자 busy 를 보고 돌아선다
     expect(js).toMatch(/async function makeOutline\(again: boolean\): Promise<void> \{\s*if \(busy\.value \|\| readOnly\.value \|\| !canOutline\.value\) return;/);
+  });
+
+  it("읽기 전용 줄(머리)에 고정 id 를 주고 두 묶음이 함께 가리킨다 — 한 요소를 둘이 가리키는 것이라 id 가 겹치지 않는다", () => {
+    expect(js).toContain('const READ_ONLY_ID = "wk-reading-readonly";');
+    expect(tpl).toMatch(/<p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용입니다/);
+    // id 를 단 요소는 그 줄 하나 — 같은 id 를 다른 곳에 적지 않는다
+    expect(count(tpl, "READ_ONLY_ID")).toBe(1);
+    expect(count(tpl, "wk-reading-readonly")).toBe(0);
   });
 
   it("위 묶음은 읽기 목록을 불러온 뒤에만 — 머리의 소개와 한 줄(wk-screen__lead)에, 아래 묶음은 표 밑(v-else 갈래)에", () => {
