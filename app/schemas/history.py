@@ -75,6 +75,8 @@ class HistoryItemDetail(HistoryItemOut):
 class HistoryListOut(BaseModel):
     items: list[HistoryItemOut]
     next_cursor: str | None = None
+    # 이 브라우저·이 kind(없으면 모든 kind)의 지우지 않은 기록 수 — before 와 무관하다(사이드바 '모두 보기 (N)')
+    total: int | None = None
 
 
 class HistoryImportItem(HistoryItemIn):

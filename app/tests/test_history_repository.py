@@ -55,6 +55,10 @@ def _list(engine, sid, kind=None, limit=30, before=None):
     return _call(engine, lambda r: r.list(sid, kind, limit, before))
 
 
+def _count(engine, sid, kind=None):
+    return _call(engine, lambda r: r.count(sid, kind))
+
+
 def _at(minutes: int) -> datetime:
     return T0 + timedelta(minutes=minutes)
 
@@ -227,6 +231,30 @@ class TestList:
     def test_malformed_cursor_raises(self, engine):
         with pytest.raises(InvalidCursor):
             _list(engine, SID_A, before="garbage")
+
+    def test_count_is_the_live_items_of_that_kind_whatever_the_page(self, engine):
+        books = [uuid.uuid4() for _ in range(4)]
+        _import(engine, SID_A, *[
+            {"id": i, "kind": "book", "title": f"검색 {n}", "created_at": _at(n)}
+            for n, i in enumerate(books)
+        ], {"id": uuid.uuid4(), "kind": "paper", "title": "논문 검색", "created_at": _at(9)})
+        # 한 쪽(limit)만 읽어도 수는 그 kind 전부다 — 사이드바 '모두 보기 (N)'
+        items, cursor = _list(engine, SID_A, kind="book", limit=2)
+        assert len(items) == 2 and cursor is not None
+        assert _count(engine, SID_A, "book") == 4
+        assert _count(engine, SID_A, "paper") == 1
+        assert _count(engine, SID_A, "research") == 0
+
+    def test_count_without_kind_counts_every_kind_and_skips_deleted_and_other_browsers(self, engine):
+        book, paper, gone = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        _put(engine, SID_A, book, kind="book")
+        _put(engine, SID_A, paper, kind="paper")
+        _put(engine, SID_A, gone, kind="book")
+        _put(engine, SID_B, uuid.uuid4(), kind="book")
+        _call(engine, lambda r: r.soft_delete(SID_A, gone))
+        assert _count(engine, SID_A) == 2
+        assert _count(engine, SID_A, "book") == 1
+        assert _count(engine, SID_B) == 1
 
 
 class TestResearchStatus:

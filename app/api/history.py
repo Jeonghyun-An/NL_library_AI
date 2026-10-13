@@ -84,11 +84,14 @@ async def list_history(
     browser_id: uuid.UUID = Depends(get_browser_id),
     db: AsyncSession = Depends(get_db),
 ):
+    repo = HistoryRepository(db)
     try:
-        items, next_cursor = await HistoryRepository(db).list(browser_id, kind, limit, before)
+        items, next_cursor = await repo.list(browser_id, kind, limit, before)
     except InvalidCursor:
         raise HTTPException(status_code=400, detail="before 형식이 올바르지 않다")
-    return HistoryListOut(items=items, next_cursor=next_cursor)
+    # 사이드바 '모두 보기 (N)' — 이 브라우저·이 kind 의 지우지 않은 기록 전부(쪽과 무관)
+    total = await repo.count(browser_id, kind)
+    return HistoryListOut(items=items, next_cursor=next_cursor, total=total)
 
 
 @router.post("/import", response_model=HistoryImportOut)
