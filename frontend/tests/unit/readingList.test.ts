@@ -16,7 +16,7 @@ import {
   outlineHint,
   pathLines,
   pathPdfTarget,
-  preselectNote,
+  readingIntro,
   reorderPuts,
   sortedItems,
   withPositions,
@@ -281,30 +281,50 @@ describe("canMakeOutline·outlineHint", () => {
   });
 });
 
-describe("preselectNote — 이어가기가 미리 담은 채택 근거(사용자 결정 2026-10-13)", () => {
-  it("미리 담은 행이 있으면 머리 안내 한 줄 — 수는 서버가 센 preselected(뺀 행도 센다)", () => {
-    expect(preselectNote(view([], { preselected: 8 }))).toBe("채택 근거 상위 8편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
-    // 채택 근거가 여덟 편보다 적으면 모두 담는다
-    expect(preselectNote(view([], { preselected: 3 }))).toBe("채택 근거 상위 3편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
+describe("readingIntro — 참고문헌 선택하기 머리 소개(승인 문구 2026-10-13)", () => {
+  const Q = "노인의 우울과 사회적 지지";
+  const DEEP_READ_LINE = "제목을 누르면 오른쪽에서 그 논문과 대화할 수 있습니다.";
+  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함). '8' 자리만 실제 미리 담은 수로 채운다
+  const approved = (n: number) =>
+    `보고서의 근거로 쓰인 논문 중 ${n}편을 미리 담아 두었습니다. 필요 없는 건 빼고, 더 넣고 싶은 논문은 담아 주세요.`;
+
+  it("미리 담았으면 승인 문구 뒤에 DeepRead 안내 — 수는 서버가 센 preselected(뺀 행도 센다)", () => {
+    expect(approved(8)).toBe(
+      "보고서의 근거로 쓰인 논문 중 8편을 미리 담아 두었습니다. 필요 없는 건 빼고, 더 넣고 싶은 논문은 담아 주세요.",
+    );
+    expect(readingIntro(view([], { preselected: 8 }), Q)).toBe(`${approved(8)} ${DEEP_READ_LINE}`);
+    // 채택 근거가 여덟 편보다 적으면 모두 담는다 — 그 수로 적는다
+    expect(readingIntro(view([], { preselected: 3 }), Q)).toBe(`${approved(3)} ${DEEP_READ_LINE}`);
   });
 
-  it("미리 담지 않았으면(이 안내 전에 이어간 연구·이 칸을 모르는 응답) 안내가 없다", () => {
-    expect(preselectNote(view([], { preselected: 0 }))).toBeNull();
-    expect(preselectNote(view([]))).toBeNull();
-    expect(preselectNote(view([], { preselected: 0 }), true)).toBeNull();
+  it("미리 담지 않았으면(이 기능 전에 이어간 연구·이 칸을 모르는 응답) 옛 소개 그대로 — 미리 담았다고 하면 거짓이다", () => {
+    const old = `「${Q}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. ${DEEP_READ_LINE}`;
+    expect(readingIntro(view([], { preselected: 0 }), Q)).toBe(old);
+    expect(readingIntro(view([]), Q)).toBe(old);
+    expect(readingIntro(view([], { preselected: 0 }), Q, true)).toBe(old);
   });
 
-  it("읽기 전용(예시 연구)이면 '빼거나 더할 수 있습니다'를 싣지 않는다 — 쓰기 API 가 409 라 바로 아래 '읽기 전용' 줄과 어긋난다", () => {
-    expect(preselectNote(view([], { preselected: 8 }), true)).toBe("채택 근거 상위 8편을 미리 담았습니다");
-    expect(preselectNote(view([], { preselected: 8 }), false)).toBe("채택 근거 상위 8편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
+  it("읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 '읽기 전용' 줄과 어긋난다", () => {
+    expect(readingIntro(view([], { preselected: 8 }), Q, true)).toBe(
+      `보고서의 근거로 쓰인 논문 중 8편을 미리 담아 두었습니다. ${DEEP_READ_LINE}`,
+    );
+    expect(readingIntro(view([], { preselected: 8 }), Q, false)).toBe(`${approved(8)} ${DEEP_READ_LINE}`);
   });
 
-  it("읽기 목록 화면 머리에 그 한 줄을 보인다", () => {
+  it("읽기 목록을 아직 못 불러왔으면(null) 소개가 없다 — 수를 몰라 옛 소개를 보였다가 바꾸지 않는다", () => {
+    expect(readingIntro(null, Q)).toBeNull();
+    expect(readingIntro(null, Q, true)).toBeNull();
+  });
+
+  it("화면 머리는 이 함수 한 곳에서 소개를 받는다 — 따로 있던 미리 담음 한 줄(preselectNote)은 없앤다", () => {
     const source = readFileSync(fileURLToPath(new URL("../../components/work/ReadingStep.vue", import.meta.url)), "utf8");
-    expect(source).toMatch(/import \{[^}]*\bpreselectNote\b[^}]*\} from "~\/utils\/readingList";/);
-    expect(source).toContain('<p v-if="preselectText" class="rs-muted">{{ preselectText }}</p>');
-    // 읽기 전용이면 앞 절만 — 화면의 readOnly 를 넘긴다
-    expect(source).toContain("preselectNote(reading.value, readOnly.value)");
+    const util = readFileSync(fileURLToPath(new URL("../../utils/readingList.ts", import.meta.url)), "utf8");
+    expect(source).toMatch(/import \{[^}]*\breadingIntro\b[^}]*\} from "~\/utils\/readingList";/);
+    expect(source).toContain("readingIntro(reading.value, props.question, readOnly.value)");
+    expect(source).toMatch(/<p v-if="intro" class="rs-muted[^"]*">\{\{ intro \}\}<\/p>/);
+    expect(source).not.toMatch(/preselectNote|preselectText/);
+    expect(source).not.toContain("탐색의 채택 근거가 후보로 들어와 있습니다");
+    expect(util).not.toContain("preselectNote");
   });
 });
 

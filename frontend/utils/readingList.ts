@@ -162,14 +162,23 @@ export function outlineHint(view: ReadingView): string | null {
   return null;
 }
 
-// 읽기 목록 머리 안내 — 이어가기가 채택 근거 상위 편을 담음으로 미리 넣었으면(서버가 센 preselected) 그 수와 함께 알린다.
-// 이 안내 전에 이어간 연구는 미리 담은 행이 없어(0) 안내도 없다. 읽기 전용(예시 연구)이면 앞 절만 — 쓰기 API 가 409 라
-// '빼거나 더할 수 있습니다'가 바로 아래 '예시 연구는 읽기 전용입니다'와 어긋난다
-export function preselectNote(view: ReadingView, readOnly = false): string | null {
+const READING_DEEP_READ_LINE = "제목을 누르면 오른쪽에서 그 논문과 대화할 수 있습니다.";
+
+// 참고문헌 선택하기 머리 소개. 이어가기가 채택 근거 상위 편을 담음으로 미리 넣었으면(서버가 센 preselected — 뺀 행도 센다,
+// 서버 shapes.READING_PRESELECT 편, 후보가 그보다 적으면 그 수) 승인 문구(사용자 결정 2026-10-13 — 글자 그대로)를 그 수로 채운다.
+// - 0(이 기능 전에 이어간 연구)이면 미리 담았다고 하면 거짓이라 옛 소개 그대로
+// - 읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 바로 아래 '예시 연구는 읽기 전용입니다'와 어긋난다
+// - 읽기 목록을 아직 못 불러왔으면(null) 수를 모른다 — 옛 소개를 보였다가 미리 담음 문장으로 바꾸지 않게 소개를 싣지 않는다
+// 끝의 DeepRead 안내(제목 → 오른쪽 대화)는 세 경우 모두 같다
+export function readingIntro(view: ReadingView | null, question: string, readOnly = false): string | null {
+  if (!view) return null;
   const n = view.preselected ?? 0;
-  if (n <= 0) return null;
-  const note = `채택 근거 상위 ${n}편을 미리 담았습니다`;
-  return readOnly ? note : `${note} — 빼거나 더할 수 있습니다`;
+  if (n <= 0) {
+    return `「${question}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. ${READING_DEEP_READ_LINE}`;
+  }
+  const lead = `보고서의 근거로 쓰인 논문 중 ${n}편을 미리 담아 두었습니다.`;
+  const ask = readOnly ? "" : " 필요 없는 건 빼고, 더 넣고 싶은 논문은 담아 주세요.";
+  return `${lead}${ask} ${READING_DEEP_READ_LINE}`;
 }
 
 export function canMakeOutline(view: ReadingView): boolean {
