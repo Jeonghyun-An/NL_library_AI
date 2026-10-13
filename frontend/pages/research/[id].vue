@@ -85,12 +85,15 @@
                 <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
                   <p>연구 계획을 세우는 중입니다</p>
+                  <!-- 넓히기가 끝나면 계획이 나오기 전에도 도는 계획 단계에 넓힌 질문이 먼저 실려 온다 -->
+                  <p v-if="questionUsed" class="rs-muted rs-plan__understood">{{ understoodLine(questionUsed) }}</p>
                 </div>
               </div>
               <PlanCard
                 v-else-if="phase === 'awaiting'"
                 :plan="view.plan"
                 :max="maxSubquestions"
+                :question-used="questionUsed"
                 editable
                 :busy="busy"
                 @approve="approve"
@@ -250,7 +253,7 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { queueLine } from "~/utils/queueLine";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
-import { researchPhase } from "~/utils/researchEvents";
+import { questionUsedFromSteps, researchPhase, understoodLine } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
 import { researchModeLine, restartParams } from "~/utils/researchMode";
 import {
@@ -280,6 +283,8 @@ const { startResearch } = useResearchStarter();
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
 // 대기 카드·진행 패널의 대기열 문구 뒤에 덧붙이는 순번 — 대기 중이 아니거나 순번을 모르면 null
 const queueText = computed(() => (view.value ? queueLine(view.value.queue) : null));
+// 계획이 쓴 넓힌 질문("이렇게 이해했어요" 한 줄). 원 질문과 같거나(넓히기를 껐거나 원문으로 물러남) 넓히기 전 잡이면 null
+const questionUsed = computed(() => (view.value ? questionUsedFromSteps(view.value.steps, view.value.question) : null));
 const reportState = computed(() => reportSlot(phase.value, !!view.value?.report, syncFailed.value));
 const maxSubquestions = computed(() => Number(view.value?.params.max_subquestions) || DEFAULT_MAX_SUBQUESTIONS);
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다
