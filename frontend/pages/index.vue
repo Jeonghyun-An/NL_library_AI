@@ -49,6 +49,7 @@
         >
           <div class="skx-search">
             <div class="skx-search__box">
+              <span class="skx-search__glow" aria-hidden="true"></span>
               <label class="skx-search__field">
                 <span class="skx-sr-only">자료 검색어</span>
                 <textarea
@@ -65,9 +66,10 @@
                   type="button"
                   class="skx-send"
                   aria-label="검색"
+                  :aria-disabled="!hasQuery(currentQuery)"
                   @click="handleSearch(currentQuery)"
                 >
-                  <img src="/img/ico-send.svg" alt="" />
+                  <img src="/img/ico-send-up.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -100,6 +102,7 @@
         >
           <div class="skx-search">
             <div class="skx-search__box">
+              <span class="skx-search__glow" aria-hidden="true"></span>
               <ResearchSearchPlusMenu
                 ref="plusMenu"
                 v-model="currentQuery"
@@ -123,9 +126,10 @@
                   type="button"
                   class="skx-send"
                   aria-label="검색"
+                  :aria-disabled="!hasQuery(currentQuery)"
                   @click="handleSearch(currentQuery)"
                 >
-                  <img src="/img/ico-send.svg" alt="" />
+                  <img src="/img/ico-send-up.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -173,7 +177,7 @@
                 <span class="skx-book__spine"
                   ><img
                     class="skx-book__spinner"
-                    src="/img/ico-spinner.svg"
+                    :src="SPINNER_SRC"
                     alt=""
                 /></span>
                 <span class="skx-book__bar"></span>
@@ -200,10 +204,11 @@
           type="button"
           class="skx-send"
           aria-label="검색"
+          :aria-disabled="!hasQuery(currentQuery)"
           :disabled="loading"
           @click="handleSearch(currentQuery)"
         >
-          <img src="/img/ico-send.svg" alt="" />
+          <img src="/img/ico-send-up.svg" alt="" />
         </button>
       </div>
 
@@ -212,7 +217,7 @@
         class="skx-rframe"
         style="padding: 40px; text-align: center"
       >
-        <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
+        <img :src="SPINNER_SRC" alt="" style="width: 32px" />
         <p style="margin-top: 12px">AI가 도서를 검색 중입니다...</p>
       </div>
 
@@ -390,6 +395,8 @@ import { queryWithoutStart, readStart } from "~/utils/landingStart";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
+import { hasQuery } from "~/utils/searchInput";
+import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).

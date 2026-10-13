@@ -410,9 +410,19 @@ h4,
   /* 전환 알약의 켜진 칸 채움과 그 위 글 */
   --skx-seg-thumb: #0f2822;
   --skx-seg-thumb-ink: #ffffff;
-  /* 입력창 테두리(평소·초점) */
-  --skx-input-ring: var(--skx-accent);
+  /* 좁은 화면 사이드바 서랍 뒤의 어두운 막 */
+  --skx-scrim: rgba(4, 12, 10, 0.62);
+  /* 새 스피너 그림에 두르는 필터 — 다크는 그대로, 밝은 면에서는 어둡게 눌러 윤곽을 살린다 */
+  --skx-spinner-filter: none;
+  /* 입력창 테두리(평소·초점)와 랜딩 입력창 테두리를 따라 도는 빛 — 평소는 옅은 흰 선, 초점 때만 포인트색, 빛은 흰색 하나(색을 늘리지 않는다) */
+  --skx-input-ring: var(--skx-frost-line);
   --skx-input-ring-focus: var(--skx-accent);
+  --skx-input-glow: radial-gradient(circle closest-side, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0) 75%);
+  /* 보내기 버튼이 빈 입력일 때(aria-disabled) — 옅은 중립 채움 + 테두리 + 옅은 화살표. 글자가 있으면 포인트색(--skx-primary)으로 채워진다.
+     빈 상태도 입력창 면 위에서 테두리·화살표가 3:1 이상 읽히게 잡았다(themeContrast 계열 테스트가 최악의 합성에서 검사) */
+  --skx-send-empty-bg: rgba(255, 255, 255, 0.16);
+  --skx-send-empty-line: rgba(255, 255, 255, 0.5);
+  --skx-send-empty-ico-filter: brightness(0) invert(0.9);
   /* 흐림을 더 거는 면(예시 질문 칸·결과 AI 패널)과 예시 칸 그림자 — 다크는 none 이라 지금 모습 그대로이고, 비치는 흰 유리인 핑크만 쓴다 */
   --skx-chip-blur: none;
   --skx-aip-blur: none;
@@ -537,8 +547,14 @@ h4,
   --skx-ink-on-light: #1d211f;
   --skx-seg-thumb: #1d211f;
   --skx-seg-thumb-ink: #ffffff;
-  --skx-input-ring: var(--skx-accent);
+  --skx-scrim: rgba(29, 33, 31, 0.5);
+  --skx-spinner-filter: brightness(0.62) saturate(1.4) drop-shadow(0 0 0.5px rgba(29, 33, 31, 0.45));
+  --skx-input-ring: var(--skx-line);
   --skx-input-ring-focus: var(--skx-accent);
+  --skx-input-glow: radial-gradient(circle closest-side, rgba(29, 33, 31, 0.3) 0%, rgba(29, 33, 31, 0.12) 30%, rgba(29, 33, 31, 0.04) 55%, rgba(29, 33, 31, 0) 75%);
+  --skx-send-empty-bg: rgba(29, 33, 31, 0.08);
+  --skx-send-empty-line: rgba(29, 33, 31, 0.5);
+  --skx-send-empty-ico-filter: brightness(0) invert(0.4);
   --skx-chip-blur: none;
   --skx-aip-blur: none;
   --skx-chip-shadow: none;
@@ -655,8 +671,14 @@ html[data-theme="pink"] {
   --skx-ink-on-light: #1a1115;
   --skx-seg-thumb: #1a1115;
   --skx-seg-thumb-ink: #f2f2f0;
-  --skx-input-ring: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.45));
+  --skx-scrim: rgba(26, 17, 21, 0.4);
+  --skx-spinner-filter: brightness(0.62) saturate(1.4) drop-shadow(0 0 0.5px rgba(26, 17, 21, 0.45));
+  --skx-input-ring: var(--skx-line);
   --skx-input-ring-focus: #1a1115;
+  --skx-input-glow: radial-gradient(circle closest-side, rgba(230, 120, 170, 0.85) 0%, rgba(236, 150, 188, 0.4) 30%, rgba(240, 170, 200, 0.14) 55%, rgba(240, 170, 200, 0) 75%);
+  --skx-send-empty-bg: rgba(26, 17, 21, 0.08);
+  --skx-send-empty-line: rgba(26, 17, 21, 0.5);
+  --skx-send-empty-ico-filter: brightness(0) invert(0.4);
   --skx-chip-blur: blur(18px) saturate(1.3);
   --skx-aip-blur: blur(22px) saturate(1.3);
   --skx-chip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 8px 24px -10px rgba(150, 70, 110, 0.14);
@@ -954,6 +976,11 @@ html[data-theme="pink"] .skx-reading {
 .skx-reading img[src$="/img/ico-spinner.svg"] {
   filter: brightness(0) invert(0.4);
 }
+/* 새 스피너(스스로 도는 GIF·정지 PNG, public/skovix-spinner-*)는 연한 분홍·은색이라 밝은 면 위에서는 거의 안 보인다 — 테마 토큰(--skx-spinner-filter)으로 밝은 면에서는 한 단계 어둡게 하고 가는 그림자를 두른다(다크는 none).
+   CSS 회전은 걸지 않는다(GIF 자체가 돈다). :where() 라 단일 클래스 규칙이 늘 이긴다 */
+:where(img[src*="/skovix-spinner-"]) {
+  filter: var(--skx-spinner-filter);
+}
 /* [E] 아이콘 색 */
 
 /* [S] 도서검색 메인 레이아웃 */
@@ -993,9 +1020,6 @@ html[data-theme="pink"] .skx-reading {
     width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     padding 0.25s ease,
     min-height 0.3s ease;
-}
-.skx-lnb.is-lnb-instant {
-  transition: none;
 }
 .skx-lnb__logo {
   display: flex;
@@ -1233,12 +1257,6 @@ html[data-theme="pink"] .skx-reading {
   height: 1.6rem;
   display: block;
 }
-.skx-rail__ico--arrow {
-  display: none;
-  width: 0.4rem;
-  height: auto;
-  object-fit: contain;
-}
 /* 진행 중·승인 대기 연구가 있다는 작은 산호 점 */
 .skx-rail__dot {
   position: absolute;
@@ -1294,57 +1312,143 @@ html[data-theme="pink"] .skx-reading {
     animation: none;
   }
 }
-.skx-app.is-lnb-collapsed .skx-lnb,
-.skx-lnb.is-lnb-collapsed {
-  width: 3.2rem;
-  min-width: 3.2rem;
-  min-height: 0;
-  background: var(--skx-frost-side-bg);
-  padding: 1.2rem 0.6rem;
-  /* 이름표가 띠 밖으로 나가 본문 위에 뜬다 */
-  overflow: visible;
-  z-index: 5;
-}
-.skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__rail):not(.skx-profile),
-.skx-lnb.is-lnb-collapsed > :not(.skx-lnb__rail):not(.skx-profile) {
-  display: none;
-}
-.skx-app.is-lnb-collapsed .skx-lnb__rail,
-.skx-lnb.is-lnb-collapsed .skx-lnb__rail {
-  display: flex;
-}
-.skx-lnb.is-lnb-collapsed .skx-profile {
-  margin-top: auto;
-  justify-content: center;
-  padding: 0;
-}
-.skx-lnb.is-lnb-collapsed .skx-profile > :not(.skx-profile__avatar) {
-  display: none;
-}
-@media (min-width: 481px) {
+/* 접힌 띠는 넓은 화면(>768px)에서만 있다 — 좁은 화면(≤768px)은 띠 대신 위 [사이드바 열기] 버튼과 서랍이 한다(아래 '좁은 화면의 사이드바 서랍') */
+@media (min-width: 769px) {
   .skx-app.is-lnb-collapsed .skx-lnb,
   .skx-lnb.is-lnb-collapsed {
     width: calc(40px + 1.2rem);
     min-width: calc(40px + 1.2rem);
+    min-height: 0;
+    background: var(--skx-frost-side-bg);
+    padding: 1.2rem 0.6rem;
+    /* 이름표가 띠 밖으로 나가 본문 위에 뜬다 */
+    overflow: visible;
+    z-index: 5;
   }
-}
-@media (max-width: 480px) {
-  .skx-rail__item--extra,
-  .skx-rail__ico--panel {
+  .skx-app.is-lnb-collapsed .skx-lnb > :not(.skx-lnb__rail):not(.skx-profile),
+  .skx-lnb.is-lnb-collapsed > :not(.skx-lnb__rail):not(.skx-profile) {
     display: none;
   }
-  .skx-rail__ico--arrow {
+  .skx-app.is-lnb-collapsed .skx-lnb__rail,
+  .skx-lnb.is-lnb-collapsed .skx-lnb__rail {
+    display: flex;
+  }
+  .skx-lnb.is-lnb-collapsed .skx-profile {
+    margin-top: auto;
+    justify-content: center;
+    padding: 0;
+  }
+  .skx-lnb.is-lnb-collapsed .skx-profile > :not(.skx-profile__avatar) {
+    display: none;
+  }
+}
+
+/* [S] 좁은 화면의 사이드바 서랍 — 기준 폭 768px(utils/sidebarDrawer.ts 의 NARROW_MAX_WIDTH, 앱의 다른 휴대폰 배치와 같은 폭).
+   펼친 사이드바(16rem)가 본문을 밀면 375px 에서 본문이 87px, 문서 가로 폭이 화면보다 커져 가로 스크롤이 생겼다. 그래서 이 폭 이하에서는
+   사이드바가 본문을 밀지 않고 위를 덮는 서랍이다: position: fixed 로 왼쪽에서 열리고, 뒤에 어두운 막(.skx-lnb-scrim)을 깔고, 열린 동안 본문 스크롤을 잠근다.
+   닫힌 서랍은 visibility: hidden 이라 키보드 초점도 가지 않는다. 본문은 늘 화면 폭 그대로이고, 접힌 띠 자리에는 본문 위 한 줄의 [사이드바 열기] 버튼이 온다 */
+.skx-lnb-opener,
+.skx-lnb-scrim {
+  display: none;
+}
+@media (max-width: 768px) {
+  /* 위 줄: 열기 버튼, 아래: 본문 — 가로로 놓던 사이드바 자리를 본문이 쓰지 않으므로 세로로 쌓는다 */
+  .skx-app {
+    flex-direction: column;
+  }
+  .skx-lnb-opener {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: flex-start;
+    width: 2.4rem;
+    height: 2.4rem;
+    margin: 0 0 0.6rem;
+    padding: 0;
+    background: var(--skx-frost-bg);
+    border: none;
+    border-radius: var(--skx-radius-md);
+    box-shadow: var(--skx-frost-hilite);
+    cursor: pointer;
+  }
+  .skx-lnb-opener img {
+    width: 1.4rem;
+    height: 1.4rem;
     display: block;
   }
-  .skx-rail__btn {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
+  .skx-lnb-opener:focus-visible {
+    outline: 2px solid var(--skx-accent);
+    outline-offset: 2px;
   }
-  .skx-rail__tip {
-    display: none;
+  .skx-lnb,
+  .skx-lnb.is-lnb-collapsed,
+  .skx-app.is-lnb-collapsed .skx-lnb {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 90;
+    width: min(17rem, calc(100vw - 3rem));
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    /* 서랍은 본문 위에 얹히는 면이라 비치는 유리가 아니라 불투명 면이다(뒤 글자가 비쳐 읽기 어렵지 않게) — 흐림도 필요 없다 */
+    background: var(--skx-frost-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-radius: 0 var(--skx-radius-lg) var(--skx-radius-lg) 0;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.28s;
+  }
+  .skx-lnb.is-drawer-open {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s;
+  }
+  /* 서랍 안은 항상 펼친 모양 — 접힌 띠의 숨김 규칙은 위에서 >768px 로 묶여 있어 여기 걸리지 않는다 */
+  .skx-lnb-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: var(--skx-scrim);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.28s ease,
+      visibility 0s linear 0.28s;
+  }
+  .skx-lnb-scrim.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.28s ease;
   }
 }
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .skx-lnb,
+  .skx-lnb.is-lnb-collapsed,
+  .skx-app.is-lnb-collapsed .skx-lnb,
+  .skx-lnb.is-drawer-open,
+  .skx-lnb-scrim,
+  .skx-lnb-scrim.is-open {
+    transition: none;
+  }
+}
+/* 서랍이 열린 동안 본문 스크롤 잠금(components/AppSidebar.vue 가 <html> 에 붙인다) */
+html.skx-scroll-lock {
+  overflow: hidden;
+}
+/* [E] 좁은 화면의 사이드바 서랍 */
 /* [E] LNB */
 
 /* [S] 검색 메인 컨텐츠 */
@@ -1357,14 +1461,11 @@ html[data-theme="pink"] .skx-reading {
   padding: 1.2rem 3rem;
   border-radius: var(--skx-radius-lg);
 }
-/* 휴대폰: 입력창 좌우 여백 16px — 접힌 사이드바 띠와 화면 오른쪽 가장자리 사이를 16px 씩 둔다(px: 이 폭에서는 html 글자 크기가 줄어 rem 이 14.4px 다) */
+/* 휴대폰: 입력창 좌우 여백 16px — 화면 좌우 가장자리와 본문 사이를 16px 씩 둔다(px: 이 폭에서는 html 글자 크기가 줄어 rem 이 14.4px 다) */
 @media (max-width: 480px) {
   .skx-app {
     padding-left: 16px;
     padding-right: 16px;
-  }
-  .skx-lnb {
-    margin-right: 16px;
   }
   .skx-contents {
     padding: 1.2rem 0;
@@ -1553,15 +1654,58 @@ html[data-theme="pink"] .skx-reading {
   mask-composite: exclude;
   pointer-events: none;
 }
-/* 입력창(랜딩 입력 상자·결과 위 검색바)의 테두리는 흰 그라데이션이 아니라 늘 보이는 포인트색 1px — 사용자 결정(2026-10-12, 다크는 산호).
-   초점 때는 예전처럼 같은 포인트색이다. 다른 유리 면(전환·예시·카드)의 흰 테두리는 그대로. 색은 테마 토큰(--skx-input-ring·-focus)이다 —
-   핑크는 시안에 테두리가 없어 평소에는 옅은 선, 초점 때만 검정 포인트로 짚는다 */
+/* 입력창(랜딩 입력 상자·결과 위 검색바·상세 검색바 모두)의 테두리 1px — 평소에는 흰색 계열의 옅은 선(다크 기준, 라이트는 그 테마의 중립 선),
+   초점일 때만 포인트색(다크 산호·라이트 검정). 사용자 결정(2026-10-13; 10-12 의 '늘 산호'를 바꿨다). 색은 테마 토큰(--skx-input-ring·-focus)이다 */
 .skx-search__box::before,
 .skx-rsearch::before {
   background: var(--skx-input-ring);
 }
-.skx-search__box:focus-within::before {
+.skx-search__box:focus-within::before,
+.skx-rsearch:focus-within::before {
   background: var(--skx-input-ring-focus);
+}
+/* 랜딩 입력 상자의 테두리를 따라 도는 빛(결과·상세 검색바에는 없다) — 테두리 띠(2px — 테두리 선 1px 과 그 안쪽 1px) 모양의 틀(.skx-search__glow)을 마스크로 도려내 띠 안에서만 보이게 하고,
+   그 안의 빛 덩어리(::before)를 offset-path: border-box 로 틀의 테두리를 따라 한 바퀴 돌린다(5초, 일정한 속도). 안쪽 글·버튼 위로는 덮이지 않는다.
+   offset-path 를 모르는 브라우저(@supports)·움직임 줄이기 설정이면 아예 그리지 않는다. 빛 색은 테마 토큰(--skx-input-glow) */
+.skx-search__glow {
+  display: none;
+}
+@supports (offset-path: border-box) {
+  @media (prefers-reduced-motion: no-preference) {
+    .skx-search__glow {
+      display: block;
+      position: absolute;
+      inset: 0;
+      padding: 2px;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+      -webkit-mask:
+        linear-gradient(var(--skx-ink-strong) 0 0) content-box,
+        linear-gradient(var(--skx-ink-strong) 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    .skx-search__glow::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 12rem;
+      height: 12rem;
+      border-radius: 50%;
+      background: var(--skx-input-glow);
+      offset-path: border-box;
+      offset-distance: 0%;
+      offset-anchor: 50% 50%;
+      animation: skx-glow-travel 5s linear infinite;
+    }
+    @keyframes skx-glow-travel {
+      to {
+        offset-distance: 100%;
+      }
+    }
+  }
 }
 .skx-search__field {
   grid-area: field;
@@ -1604,10 +1748,30 @@ html[data-theme="pink"] .skx-reading {
   background: var(--skx-primary);
   border: none;
   border-radius: 50%;
-  transition: filter 0.15s;
+  transition:
+    filter 0.15s,
+    background-color 0.15s,
+    box-shadow 0.15s;
 }
 .skx-send:hover {
   filter: brightness(1.05);
+}
+/* 빈 입력 — 글자가 있으면(공백만은 빈 것) 위의 포인트색 채움, 없으면 옅은 중립 채움 + 테두리 + 옅은 화살표. disabled 로 막지 않고 aria-disabled 로만 알린다(클릭은 그대로,
+   빈 입력의 검색은 원래 아무 일도 하지 않는다). 랜딩·/papers 랜딩·결과·상세 검색바 모두 같은 규칙 */
+.skx-send[aria-disabled="true"] {
+  background: var(--skx-send-empty-bg);
+  box-shadow: inset 0 0 0 1px var(--skx-send-empty-line);
+}
+.skx-send[aria-disabled="true"]:hover {
+  filter: none;
+}
+.skx-send[aria-disabled="true"] img {
+  filter: var(--skx-send-empty-ico-filter);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-send {
+    transition: none;
+  }
 }
 .skx-send img {
   width: 1rem;
@@ -2058,16 +2222,9 @@ html[data-theme="pink"] .skx-reading {
   width: 1rem;
   height: 1rem;
   display: none;
-  filter: var(--skx-ico-on-accent-filter);
-  animation: skx-spin 1s linear infinite;
 }
 .skx-book.is-loading .skx-book__spinner {
   display: block;
-}
-@keyframes skx-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 /* [E] 신작도서 */
 
@@ -2899,14 +3056,20 @@ html[data-theme="pink"] .skx-reading {
   border-bottom: 1px solid var(--skx-line);
 }
 
+/* 칩은 한 줄이고, 좁은 칸보다 길면 칸 폭에서 말줄임으로 자른다(max-width: 100%) — 길고 안 끊기는 키워드 칩이 휴대폰 폭을 넘어 문서 가로 폭을 늘리지 않게 */
 .skx-tag {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
   height: 1.3rem;
   padding: 0 0.6rem;
+  overflow: hidden;
   border-radius: 1.8rem;
   font-size: 0.6rem;
+  line-height: 1.3rem;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .skx-tag--keyword {
@@ -3127,6 +3290,58 @@ html[data-theme="pink"] .skx-reading {
   overflow: hidden;
   position: sticky;
   top: 1.2rem;
+}
+/* DeepRead 패널은 1100px 이하에서 본문을 밀지 않고 오른쪽에서 열려 위를 덮는다 — 펼친 사이드바(16rem) + 패널(24rem)이 함께 폭을 쓰면
+   1024px 에서 본문이 118px, 375px 에서는 화면 밖으로 밀려 가로 스크롤이 생겼다. 닫힌 패널은 visibility: hidden(키보드 초점도 가지 않음),
+   휴대폰(≤600px)에서는 화면 폭을 다 덮는다. 넓은 화면(>1100px)은 지금처럼 본문을 민다 */
+@media (max-width: 1100px) {
+  .skx-chat-panel,
+  .skx-chat-panel.is-open {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    width: min(24rem, 100vw);
+    margin: 0;
+    opacity: 1;
+    overflow: hidden;
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.3s;
+  }
+  .skx-chat-panel.is-open {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s;
+  }
+  .skx-chat-panel__inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    top: 0;
+    border-radius: var(--skx-radius-lg) 0 0 var(--skx-radius-lg);
+    box-shadow: var(--skx-shadow-banner);
+  }
+}
+@media (max-width: 600px) {
+  .skx-chat-panel,
+  .skx-chat-panel.is-open {
+    width: 100vw;
+  }
+  .skx-chat-panel__inner {
+    border-radius: 0;
+  }
+}
+@media (max-width: 1100px) and (prefers-reduced-motion: reduce) {
+  .skx-chat-panel,
+  .skx-chat-panel.is-open {
+    transition: none;
+  }
 }
 .skx-chat-header {
   display: flex;

@@ -50,7 +50,7 @@
         </section>
 
         <div v-if="loading" class="dt-loading">
-          <img src="/img/ico-spinner.svg" alt="" />
+          <img :src="SPINNER_SRC" alt="" />
         </div>
 
         <template v-else-if="paper">
@@ -199,7 +199,7 @@
                 :reason-loading="relatedReasonLoading.has(rel.book_id)"
                 empty-text="추천 사유 정보가 없습니다."
                 :expanded="openRelated === rel.book_id"
-                @update:expanded="(open: boolean) => (openRelated = open ? rel.book_id : null)"
+                @update:expanded="(open: boolean) => (openRelated = relatedOpenAfter(openRelated, rel.book_id, open))"
               >
                 <template #cover>
                   <img
@@ -306,7 +306,7 @@ import { useResearchApi } from "~/composables/useResearch";
 import type { ReportChunk, ResearchJob } from "~/types/research";
 import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
 import { safeSessionStorage } from "~/utils/browserId";
-import { DEEP_RESEARCH } from "~/utils/brand";
+import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import {
   activeTabKey,
@@ -324,6 +324,7 @@ import { paperResearchQuestion, paperResearchUrl } from "~/utils/paperResearch";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 import { isPlainClick } from "~/utils/restorePosition";
 import { cardKeywords } from "~/utils/resultCard";
+import { relatedOpenAfter } from "~/utils/relatedCard";
 
 const route = useRoute();
 const router = useRouter();

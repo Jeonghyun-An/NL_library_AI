@@ -12,6 +12,7 @@
         <h1 class="skx-hero">논문 의미 기반 검색</h1>
         <div class="skx-search">
           <div class="skx-search__box">
+            <span class="skx-search__glow" aria-hidden="true"></span>
             <ResearchSearchPlusMenu ref="plusMenu" v-model="currentQuery" kind="paper" :disabled="loading" />
             <label class="skx-search__field">
               <span class="skx-sr-only">논문 검색어</span>
@@ -27,9 +28,11 @@
               <button
                 type="button"
                 class="skx-send"
+                aria-label="검색"
+                :aria-disabled="!hasQuery(currentQuery)"
                 @click="handleSearch(currentQuery)"
               >
-                <img src="/img/ico-send.svg" alt="" />
+                <img src="/img/ico-send-up.svg" alt="" />
               </button>
             </div>
           </div>
@@ -53,16 +56,18 @@
         <button
           type="button"
           class="skx-send"
+          aria-label="검색"
+          :aria-disabled="!hasQuery(currentQuery)"
           @click="handleSearch(currentQuery)"
         >
-          <img src="/img/ico-send.svg" alt="" />
+          <img src="/img/ico-send-up.svg" alt="" />
         </button>
       </div>
 
       <div class="skx-rframe">
         <!-- 로딩 -->
         <div v-if="loading" style="padding: 40px; text-align: center">
-          <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
+          <img :src="SPINNER_SRC" alt="" style="width: 32px" />
           <p style="margin-top: 12px">논문을 탐색하고 있습니다...</p>
         </div>
 
@@ -430,7 +435,7 @@ import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
 import { safeLocalStorage } from "~/utils/browserId";
-import { DEEP_RESEARCH } from "~/utils/brand";
+import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
@@ -441,6 +446,7 @@ import { readResearchDraft } from "~/utils/paperResearch";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
+import { hasQuery } from "~/utils/searchInput";
 
 const api = useApi();
 const route = useRoute();
