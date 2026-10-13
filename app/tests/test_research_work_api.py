@@ -276,6 +276,7 @@ class TestContinue:
             "generations": [{"id": gen["id"], "kind": "concepts", "target": None,
                              "status": "queued", "model": None, "error": None,
                              "position": POSITION, "eta_sec": ETA, "others_ahead": False}],
+            "concept_candidates": None,
         }
         (work,) = _rows(api.engine, ResearchWork)
         assert work["owner_sid"] == str(SID_A) and work["concept_members"] == {}
@@ -478,6 +479,33 @@ class TestGetWork:
         assert (body["topic_id"], body["corpus"]) == (7, CORPUS)
         assert {g["id"]: (g["position"], g["eta_sec"], g["others_ahead"]) for g in body["generations"]} == {
             queued: (POSITION, ETA, False), done: (None, None, False)}
+
+    def test_carries_the_latest_done_concept_candidates(self, api):
+        # 끝난 생성은 최근 RECENT_FINISHED 건만 싣는다 — 키워드 후보는 그와 따로, 가장 새 done 키워드 생성에서 읽는다
+        jid = _work_job(api.engine, concepts=["독서 격차"])
+        old = [{"text": "옛 후보", "source": "llm", "n": 0}]
+        new = [{"text": "독서 격차", "source": "both", "n": 3}, {"text": "학교 도서관", "source": "paper", "n": 2}]
+        add_generation(api.engine, jid, status="done", output={"concepts": ["옛 후보"], "candidates": old})
+        add_generation(api.engine, jid, status="done", output={"concepts": ["독서 격차"], "candidates": new})
+        for _ in range(11):
+            add_generation(api.engine, jid, kind="topic_card", status="done", target="7")
+        add_generation(api.engine, jid, status="queued")             # 열린 키워드 생성(다시 부름)은 보지 않는다
+
+        body = api.client.get(f"/api/research/{jid}/work").json()
+
+        assert body["concept_candidates"] == new
+        # 최근 끝난 생성 10건을 카드 생성이 채워 키워드 생성은 목록에 없다 — 그래도 후보는 온다
+        assert [g["kind"] for g in body["generations"] if g["status"] == "done"] == ["topic_card"] * 10
+
+    def test_an_old_concepts_output_without_candidates_is_null(self, api):
+        # 06e 전 키워드(개념) 생성의 output 은 {"concepts": [...]} 뿐이다 — 화면은 concepts 를 고른 칩으로 그린다
+        jid = _work_job(api.engine, concepts=["독서 격차"])
+        add_generation(api.engine, jid, status="done", output={"concepts": ["독서 격차"], "attempts": []})
+        add_generation(api.engine, jid, status="failed")
+        no_gen = _work_job(api.engine)
+
+        assert api.client.get(f"/api/research/{jid}/work").json()["concept_candidates"] is None
+        assert api.client.get(f"/api/research/{no_gen}/work").json()["concept_candidates"] is None
 
 
 class TestPatchWork:

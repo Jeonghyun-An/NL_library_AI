@@ -144,10 +144,23 @@ async def _generations(db: AsyncSession, jid: uuid.UUID) -> list[ResearchGenerat
     return [*open_rows, *finished]
 
 
+async def _concept_candidates(db: AsyncSession, jid: uuid.UUID) -> list[dict] | None:
+    """가장 새 done 키워드(개념) 생성의 후보(output.candidates — 06e 제목 고르기). 끝난 생성은 최근 RECENT_FINISHED 건만
+    응답에 실어(_generations) 카드·절 생성이 쌓이면 키워드 생성이 밀려나므로 따로 읽는다. 06e 전 생성의 output 은
+    {"concepts": [...]} 뿐이라 None — 화면은 지금 concepts 를 고른 칩으로 그린다."""
+    G = ResearchGeneration
+    output = await db.scalar(
+        select(G.output).where(G.work_id == jid, G.kind == "concepts", G.status == "done")
+        .order_by(G.id.desc()).limit(1)
+    )
+    candidates = output.get("candidates") if isinstance(output, dict) else None
+    return candidates if isinstance(candidates, list) else None
+
+
 async def _view(db: AsyncSession, work: ResearchWork) -> dict:
     gens = await _generations(db, work.id)
     queue = {g.id: await queue_info(db, g) for g in gens if g.status == "queued"}
-    return work_view(work, gens, queue)
+    return work_view(work, gens, queue, concept_candidates=await _concept_candidates(db, work.id))
 
 
 def _send_dispatch() -> bool:

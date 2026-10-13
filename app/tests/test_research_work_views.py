@@ -243,7 +243,16 @@ class TestWorkView:
                  "model": None, "error": None,
                  "position": 2, "eta_sec": 120, "others_ahead": True},
             ],
+            "concept_candidates": None,
         }
+
+    def test_concept_candidates_ride_along(self):
+        # 06e 키워드 후보 — 라우터가 최신 done 키워드 생성에서 따로 읽어 넘긴 값을 그대로 싣는다
+        work = SimpleNamespace(id=uuid.uuid4(), phase="topics", concepts=["독서 격차"], memo=None, is_example=False,
+                               progress={}, topic_id=None, corpus_snapshot=None)
+        cands = [{"text": "독서 격차", "source": "both", "n": 3}, {"text": "학교 도서관", "source": "paper", "n": 2}]
+        assert work_view(work, [], {}, concept_candidates=cands)["concept_candidates"] == cands
+        assert work_view(work, [], {})["concept_candidates"] is None
 
     def test_id_is_a_string(self):
         wid = uuid.uuid4()
