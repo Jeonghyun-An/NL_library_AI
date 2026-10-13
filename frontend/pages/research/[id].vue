@@ -71,7 +71,7 @@
           </div>
           <TopicsStep v-else-if="step === 'topics'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
           <ReadingStep v-else-if="step === 'reading'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
-          <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
+          <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
         </div>
 
         <div v-else class="rs-body" :class="`rs-body--${layout}`">

@@ -97,18 +97,23 @@
         <template v-else>
           <p class="wk-psec__para">
             <template v-for="(s, si) in sentences" :key="si">
-              <span :class="{ 'wk-psec__unmarked': s.unmarked }" :title="s.unmarked ? '근거 표시가 없는 문장' : undefined">
+              <span
+                class="wk-psec__sent"
+                :class="{ 'wk-psec__unmarked': s.unmarked, 'is-cited': isActiveSentence(p.id, si) }"
+                :title="s.unmarked ? '근거 표시가 없는 문장' : undefined"
+              >
                 <template v-for="(part, ti) in s.parts" :key="ti">
                   <template v-if="part.type === 'text'">{{ part.text }}</template>
-                  <a
+                  <button
                     v-else-if="part.type === 'cite'"
+                    type="button"
                     class="wk-psec__cite"
-                    :href="detailHref(section.evidence[part.eid] ?? '', p.id, null)"
+                    :data-cite="citeKey(p.id, si, part.eid)"
+                    :aria-expanded="isOpenCite(p.id, si, part.eid)"
+                    :aria-controls="panelId"
                     :title="paperTitle(section.evidence[part.eid])"
-                    @click="goDetail($event, section.evidence[part.eid] ?? '', p.id)"
-                    @auxclick="goDetail($event, section.evidence[part.eid] ?? '', p.id)"
-                    @contextmenu="goDetail($event, section.evidence[part.eid] ?? '', p.id)"
-                  >{{ citeText(section.evidence[part.eid], part.eid) }}</a>
+                    @click="onCite($event, p.id, si, part.eid, s.text)"
+                  >{{ citeText(section.evidence[part.eid], part.eid) }}</button>
                   <s v-else-if="part.type === 'badcite'" class="wk-psec__badcite">[{{ part.eid }}]</s>
                   <FigureChip v-else-if="figureOf(section.figures, part.fid)" :figure="figureOf(section.figures, part.fid)!" />
                   <span v-else class="wk-psec__cite is-pending">[{{ part.fid }}]</span>
@@ -214,10 +219,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
-import { useDetailLeave } from "~/composables/useRestorePosition";
-import type { Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
+import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
 import { citeLabel } from "~/utils/citations";
-import { detailUrl, paraAnchor } from "~/utils/detailSource";
+import { paraAnchor } from "~/utils/detailSource";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
 import {
   GAP_NOTE,
@@ -236,7 +240,6 @@ import {
   type SectionStatus,
 } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
-import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
 
 const props = defineProps<{
@@ -246,13 +249,23 @@ const props = defineProps<{
   state: WorkState;
   readOnly: boolean;
   busy: boolean;
-  jobId: string;
+  // 오른쪽 패널이 보이는 인용 — ProposalStep 이 이 절의 것만 넘긴다. 그 문장을 강조하고 그 칩을 펼침으로 둔다
+  activeCite?: { pid: string; si: number; eid?: string } | null;
+  // 오른쪽 패널의 id — 칩의 aria-controls
+  panelId?: string;
   // 보고서 자동 산출이 근거가 없어(409 no_section_papers) 건너뛴 절 — 이 방문만(06e)
   skipped?: boolean;
   // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 씁니다'
   autoNext?: boolean;
 }>();
-const emit = defineEmits<{ write: []; save: [body: SectionPut]; regenerate: [pid: string]; retry: [genId: number] }>();
+const emit = defineEmits<{
+  write: [];
+  save: [body: SectionPut];
+  regenerate: [pid: string];
+  retry: [genId: number];
+  // 인용 칩 — 누른 칩(초점을 돌려줄 자리)과 함께 올린다
+  cite: [pick: CitePick, el: HTMLElement];
+}>();
 
 const STATUS_LABELS: Record<SectionStatus, string> = {
   empty: "쓰기 전",
@@ -365,29 +378,28 @@ function citeText(cnts: string | undefined, eid: string): string {
   return citeLabel(cnts ? props.proposal.papers[cnts] : undefined, eid);
 }
 
-// ── 논문 상세로 — 돌아오면 이 문단에 맞춘다 ───────────────
-const { leave } = useDetailLeave();
-
-function detailHref(cnts: string, pid: string, y: number | null): string {
-  return detailUrl(
-    cnts,
-    { kind: "research", job: props.jobId, e: null, s: "proposal" },
-    { at: paraAnchor(props.sectionKey, pid), y },
-  );
+// ── 인용 칩 → 오른쪽 인용 근거 패널(D24 A안 — 패널은 ProposalStep 이 쥔다) ──
+// 칩은 저장된 문단에서만 패널을 연다 — 흐르는 글(liveBlocks)의 칩은 span 그대로다: 절이 끝나면 문단이 다시 나뉘어
+// 문장 번호가 바뀐다. 논문 상세로 떠나는 길은 패널 머리의 [논문 상세 ↗] 가 맡는다(돌아오는 자리는 이 문단)
+function citeKey(pid: string, si: number, eid: string): string {
+  return `${pid}:${si}:${eid}`;
 }
 
-function goDetail(e: MouseEvent, cnts: string, pid: string): void {
-  if (!cnts) return;
-  const at = paraAnchor(props.sectionKey, pid);
-  const item = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]");
-  const spot = item ? spotOf(item, at) : { at, y: null };
-  const url = detailHref(cnts, pid, spot.y);
-  if (e.type === "contextmenu" || !isPlainClick(e)) {
-    (e.currentTarget as HTMLAnchorElement).href = url;
-    return;
-  }
-  e.preventDefault();
-  void leave(url, spot);
+// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호)
+function isActiveSentence(pid: string, si: number): boolean {
+  return props.activeCite?.pid === pid && props.activeCite.si === si;
+}
+
+// 패널이 그 칩의 논문을 보이는 중인가 — 한 문장에 칩이 둘이면 누른 칩만 펼침
+function isOpenCite(pid: string, si: number, eid: string): boolean {
+  return isActiveSentence(pid, si) && (props.activeCite?.eid ?? eid) === eid;
+}
+
+function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: string): void {
+  const sec = section.value;
+  const cntsId = sec?.evidence[eid];
+  if (!sec || !cntsId) return;
+  emit("cite", { key: props.sectionKey, pid, si, eid, cntsId, genId: sec.gen_id, sentence }, e.currentTarget as HTMLElement);
 }
 
 // ── 쓰기·고치기 ──────────────────────────────────────────

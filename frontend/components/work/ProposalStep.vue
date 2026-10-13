@@ -1,6 +1,8 @@
 <!-- frontend/components/work/ProposalStep.vue -->
 <template>
-  <section class="wk-proposal" aria-labelledby="wk-proposal-title">
+  <!-- 오른쪽 패널(인용 근거·딥리드)이 열리면 본문 | 패널 2단 — .wk-split 은 ReadingStep 과 같은 공용 배치다 -->
+  <div class="wk-split" :class="{ 'is-panel-open': !!panel }">
+  <section class="wk-proposal wk-split__main" aria-labelledby="wk-proposal-title">
     <header class="wk-proposal__head">
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
       <h2 id="wk-proposal-title" class="wk-proposal__title" tabindex="-1">{{ FINAL_STEP_NAME }}</h2>
@@ -151,7 +153,9 @@
             :state="state"
             :read-only="readOnly"
             :busy="busy"
-            :job-id="jobId"
+            :active-cite="activeCite?.key === key ? activeCite : null"
+            :panel-id="PANEL_ID"
+            @cite="onCite"
             :skipped="autoSkipped.has(key)"
             :auto-next="autoNext.has(key)"
             @write="write(key)"
@@ -196,20 +200,52 @@
       <p v-else class="rs-muted">목차를 승인하면 선행연구 검토(묶음마다)와 연구 공백 절을 쓸 수 있습니다.</p>
     </template>
   </section>
+  <DeepReadPanel
+    :panel-id="PANEL_ID"
+    :paper="panelPaper"
+    :tabs="PANEL_TABS"
+    :tab="panel?.tab ?? 'sources'"
+    :detail-href="panelDetailHref"
+    :store="chatStore"
+    @update:tab="setTab"
+    @close="closePanel"
+    @open-pdf="emit('open-pdf', $event)"
+    @detail="onDetail"
+  >
+    <template #sources>
+      <CitationSource
+        v-if="panel?.pick"
+        :pick="panel.pick"
+        :meta="panelPaper?.meta ?? null"
+        :source="panelSource"
+        :loading="sourcesLoading"
+        :error="sourcesError"
+        @open-pdf="emit('open-pdf', $event)"
+        @chat="openChat"
+      />
+    </template>
+  </DeepReadPanel>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import AiFootprintMeter from "~/components/work/AiFootprintMeter.vue";
+import CitationSource from "~/components/work/CitationSource.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
+import DeepReadPanel from "~/components/work/DeepReadPanel.vue";
 import DocField from "~/components/work/DocField.vue";
 import OutlineEditor from "~/components/work/OutlineEditor.vue";
 import ProposalSection from "~/components/work/ProposalSection.vue";
 import { useAutoReport } from "~/composables/useAutoReport";
 import { useReportExport } from "~/composables/useReportExport";
 import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWork";
-import type { OutlinePut, SectionPut, WorkStep } from "~/types/work";
-import { paraAnchor } from "~/utils/detailSource";
+import { useDetailLeave } from "~/composables/useRestorePosition";
+import type { OpenPdfPayload } from "~/types/research";
+import type { CitePick, OutlinePut, PaperMeta, SectionPut, SectionSources, WorkStep } from "~/types/work";
+import { panelTabs, type PanelPaper, type PanelTab } from "~/utils/deepRead";
+import type { DeepReadMessage } from "~/utils/deepReadSse";
+import { detailUrl, paraAnchor } from "~/utils/detailSource";
 import { OUTLINE_BACKGROUND_MAX, OUTLINE_METHOD_MAX, fieldPut, isFallbackOutline } from "~/utils/outlineEdit";
 import { buildProposalDocument, printedKeys, printedProposedCount } from "~/utils/proposalDocument";
 import {
@@ -229,11 +265,18 @@ import {
 } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
 import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
+import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { openGeneration } from "~/utils/workEvents";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
-const emit = defineEmits<{ go: [step: WorkStep] }>();
+const emit = defineEmits<{
+  go: [step: WorkStep];
+  // [원문 보기] — 연구 화면의 원문 뷰어(openPdf)가 연다
+  "open-pdf": [payload: OpenPdfPayload];
+  // 오른쪽 패널이 열렸는지 — 연구 화면이 LNB 를 접는 재료(workPanelOpen)
+  panel: [open: boolean];
+}>();
 
 const CONFLICT = "다른 곳에서 보고서가 바뀌어 다시 불러왔습니다 — 바뀐 내용을 확인한 뒤 다시 해 주세요";
 // 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다. 새 반영은 다시
@@ -512,5 +555,158 @@ async function downloadWord(): Promise<void> {
     // 내려받기는 끝났다 — 단계 표시는 다음 내려받기나 새로고침에서 다시 맞춘다
     console.warn("[research] 완료 단계를 저장하지 못했습니다", e);
   }
+}
+
+// ── 오른쪽 패널 — 인용 근거·딥리드(D24) ─────────────────
+// 인용 칩을 누르면 인용 근거 탭으로 열리고, [이 논문과 대화하기]는 같은 자리를 딥리드 탭으로 바꾼다. 보고서 단계에는
+// [담음]을 두지 않는다 — 바꾸면 목차가 '다시 맞춤 필요'가 된다(spec §12-4)
+interface ProposalPanel {
+  cntsId: string;
+  tab: PanelTab;
+  pick: CitePick | null;
+  // 닫으면 초점을 돌려줄 칩
+  opener: HTMLElement | null;
+}
+
+const PANEL_ID = "wk-panel-proposal";
+const PANEL_TABS = panelTabs("proposal");
+// 통째로 바꿔 끼운다(shallowRef) — 칩 요소를 반응형으로 감싸지 않는다
+const panel = shallowRef<ProposalPanel | null>(null);
+// 딥리드 대화 — 이 단계 안에서 논문을 오가면 이어지고, 단계를 옮기거나 새로고침하면 비운다(서버 저장 없음)
+const chatStore = new Map<string, DeepReadMessage[]>();
+// 인용 근거는 절 생성마다 한 번 읽는다 — 같은 절의 다른 칩은 다시 부르지 않는다
+const sourceCache = new Map<string, SectionSources>();
+const sources = shallowRef<SectionSources | null>(null);
+const sourcesLoading = ref(false);
+const sourcesError = ref<string | null>(null);
+let sourcesSeq = 0;
+const { leave } = useDetailLeave();
+
+const panelPaper = computed<PanelPaper | null>(() => {
+  const p = panel.value;
+  if (!p) return null;
+  // 서지가 없는 논문은 서버 book_meta 와 같이 cnts_id 를 제목 자리에 쓴다
+  const meta: PaperMeta = proposal.value?.papers[p.cntsId] ?? {
+    title: p.cntsId,
+    personal_author: null,
+    pub_date: null,
+    series_title: null,
+  };
+  return { cntsId: p.cntsId, meta };
+});
+const panelSource = computed(() => {
+  const pick = panel.value?.pick;
+  return pick && sources.value ? (sources.value[pick.eid] ?? null) : null;
+});
+// 본문 쪽 강조 — 절을 다시 써서 gen_id 가 바뀌면 같은 문장 번호가 다른 글을 가리키므로 강조를 뗀다(패널의 근거는
+// 그대로 둔다 — 그 문장을 쓸 때의 입력이다)
+const activeCite = computed(() => {
+  const pick = panel.value?.pick;
+  if (!pick || proposal.value?.sections[pick.key]?.gen_id !== pick.genId) return null;
+  return { key: pick.key, pid: pick.pid, si: pick.si, eid: pick.eid };
+});
+// [논문 상세 ↗] 의 링크 주소 — 높이(y)는 누르는 순간에만 잴 수 있어 링크에는 문단 앵커만 싣는다. 그냥 누르기·Ctrl·Shift
+// 클릭은 onDetail 이 그때 잰 높이를 실은 주소로 갈음하고, 가운데 버튼·메뉴는 이 주소 그대로다
+const panelDetailHref = computed(() => {
+  const p = panel.value;
+  return p ? detailUrlOf(p, null) : null;
+});
+
+// 연구 화면이 LNB 를 접는 재료 — 단계를 옮기면 이 화면이 내려가며 닫힘을 알린다(연구 화면에 watch(step) 가 필요 없다)
+watch(
+  () => panel.value !== null,
+  (open) => emit("panel", open),
+);
+onBeforeUnmount(() => emit("panel", false));
+
+function samePick(a: CitePick, b: CitePick): boolean {
+  return a.key === b.key && a.pid === b.pid && a.si === b.si && a.eid === b.eid;
+}
+
+function onCite(pick: CitePick, el: HTMLElement): void {
+  const now = panel.value;
+  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글)
+  if (now?.pick && now.tab === "sources" && samePick(now.pick, pick)) {
+    closePanel();
+    return;
+  }
+  panel.value = { cntsId: pick.cntsId, tab: "sources", pick, opener: el };
+  void loadSources(pick);
+}
+
+// 늦게 온 응답은 버린다 — 그 사이 다른 칩을 눌렀으면 그 칩의 근거가 보여야 한다(받은 것은 캐시에만 남긴다)
+async function loadSources(pick: CitePick): Promise<void> {
+  const cacheKey = `${pick.key}#${pick.genId}`;
+  const seq = ++sourcesSeq;
+  sourcesError.value = null;
+  const cached = sourceCache.get(cacheKey);
+  if (cached) {
+    sources.value = cached;
+    sourcesLoading.value = false;
+    return;
+  }
+  sources.value = null;
+  sourcesLoading.value = true;
+  try {
+    const got = await api.getSectionSources(props.jobId, pick.key, pick.genId);
+    sourceCache.set(cacheKey, got);
+    if (seq === sourcesSeq) sources.value = got;
+  } catch (e) {
+    if (seq === sourcesSeq) sourcesError.value = workErrorMessage(e, "원문 대목을 불러오지 못했습니다");
+  } finally {
+    if (seq === sourcesSeq) sourcesLoading.value = false;
+  }
+}
+
+function setTab(tab: PanelTab): void {
+  if (panel.value) panel.value = { ...panel.value, tab };
+}
+
+// [이 논문과 대화하기] — 같은 자리를 딥리드 탭으로 바꾼다. 누른 버튼은 인용 근거 탭 본문(v-if)과 함께 사라지므로 초점을
+// 딥리드 탭 단추로 옮긴다 — body 로 떨어지면 패널의 Esc(aside 의 keydown)·Tab 가두기(처음·끝 보초)가 듣지 못한다
+function openChat(): void {
+  setTab("chat");
+  void nextTick(() => document.getElementById(`${PANEL_ID}-tab-chat`)?.focus());
+}
+
+// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을, 절을 다시
+// 쓰는 중이라 문단이 없으면 그 절 제목(tabindex -1)을 찾는다
+function closePanel(): void {
+  const p = panel.value;
+  panel.value = null;
+  if (!p) return;
+  void nextTick(() => {
+    const pick = p.pick;
+    const again = pick
+      ? (document.querySelector<HTMLElement>(
+          `#${CSS.escape(`wk-sec-${pick.key}`)} [data-cite="${CSS.escape(`${pick.pid}:${pick.si}:${pick.eid}`)}"]`,
+        ) ?? document.getElementById(`wk-sec-title-${pick.key}`))
+      : null;
+    (p.opener?.isConnected ? p.opener : again)?.focus();
+  });
+}
+
+// 상세 주소 — 출처는 이 연구의 보고서 단계, 돌아올 자리는 누른 칩의 문단(06b 칩 링크와 같은 주소)
+function detailUrlOf(p: ProposalPanel, y: number | null): string {
+  const at = p.pick ? paraAnchor(p.pick.key, p.pick.pid) : null;
+  return detailUrl(p.cntsId, { kind: "research", job: props.jobId, e: null, s: "proposal" }, { at, y });
+}
+
+// [논문 상세 ↗] — 누르는 순간 누른 칩의 문단 높이를 재어 상세 주소와 이 화면 주소(돌아올 자리)에 함께 싣는다(06b goDetail
+// 과 같다 — 상세가 연관 논문으로 넘어가도 높이가 이어져 router.back() 을 못 쓰는 [돌아가기]도 같은 높이로 온다). 칩이 새로
+// 그려졌어도 문단은 앵커로 다시 찾는다. 그냥 누르면 떠나고, Ctrl·Shift 클릭은 높이를 실은 주소를 새 탭에 맡긴다
+function onDetail(e: MouseEvent): void {
+  const p = panel.value;
+  if (!p) return;
+  const at = p.pick ? paraAnchor(p.pick.key, p.pick.pid) : null;
+  const item = at ? document.querySelector<HTMLElement>(`[data-anchor="${CSS.escape(at)}"]`) : null;
+  const spot = item && at ? spotOf(item, at) : { at, y: null };
+  const url = detailUrlOf(p, spot.y);
+  if (!isPlainClick(e)) {
+    (e.currentTarget as HTMLAnchorElement).href = url;
+    return;
+  }
+  e.preventDefault();
+  void leave(url, spot);
 }
 </script>

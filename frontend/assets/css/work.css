@@ -1741,4 +1741,99 @@ button.wk-stepper__step {
   margin: 0 0 0.4rem;
 }
 
+/* ── 보고서 인용 칩 → 오른쪽 인용 근거 탭(Task S4 — D24 A안) ── */
+/* 저장된 문단의 칩은 패널을 여는 버튼이다 — 모양은 .wk-psec__cite 그대로 두고 버튼 기본값만 지운다
+   (자간은 브라우저 기본이 normal 로 되돌려 링크였을 때와 글자 모양이 달라지지 않게 물려받는다 — R5 의 제목 버튼과 같다) */
+button.wk-psec__cite {
+  font-family: inherit;
+  letter-spacing: inherit;
+  vertical-align: baseline;
+  border: 0;
+  cursor: pointer;
+}
+button.wk-psec__cite:hover,
+button.wk-psec__cite[aria-expanded="true"] {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+}
+button.wk-psec__cite:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 1px;
+}
+/* 누른 칩이 든 문장 — 형광펜처럼 글줄 아래쪽만 칠한다(근거 없는 문장의 점선 밑줄과 겹쳐도 둘 다 보인다) */
+.wk-psec__sent.is-cited {
+  background: linear-gradient(transparent 55%, var(--skx-border-c1) 55%);
+}
+.wk-cite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.wk-cite__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-cite__title {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-cite__byline {
+  margin: 0;
+  font-size: 0.55rem;
+}
+.wk-cite__quote {
+  margin: 0;
+  padding-left: 0.5rem;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+  border-left: 2px solid var(--skx-primary);
+}
+.wk-cite__excerpt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-cite__heading {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-cite__text {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.75;
+  color: var(--skx-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* 대목 쪽 강조 — 인용한 문장과 글자가 가장 많이 겹치는 문장 */
+.wk-cite__mark {
+  padding: 0 0.1rem;
+  color: var(--skx-ink);
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: inset 0 -2px 0 var(--skx-primary);
+}
+.wk-cite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+/* 고대비 모드는 배경색을 지운다 — 강조한 문장·대목을 테두리로 남긴다 */
+@media (forced-colors: active) {
+  .wk-psec__sent.is-cited,
+  .wk-cite__mark {
+    outline: 1px solid CanvasText;
+  }
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
