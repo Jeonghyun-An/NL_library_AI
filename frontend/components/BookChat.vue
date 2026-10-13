@@ -30,7 +30,7 @@
             </button>
           </div>
           <div v-if="msg.pinnedChip !== undefined" class="skx-chat-source-preview">
-            {{ msg.sources[msg.pinnedChip]?.text }}
+            {{ passageText(msg.sources[msg.pinnedChip]?.text) }}
           </div>
           <button
             v-if="pdfLinks && pinnedSource(msg)"
@@ -90,6 +90,7 @@ import { useDeepReadChat } from "~/composables/useDeepReadChat";
 import type { OpenPdfPayload } from "~/types/research";
 import { type DocKind, chatCopy, sourceLabel, sourcePdfTarget } from "~/utils/deepRead";
 import type { DeepReadMessage, DeepReadSource } from "~/utils/deepReadSse";
+import { passageText } from "~/utils/passageText";
 
 // 딥리드 대화 칸 — 논문 상세·논문 검색 결과 채팅·도서 상세·TopResult 와 연구 화면의 오른쪽 패널(06e)이 함께 쓴다.
 // 대화 흐름(보내기·스트림 읽기·끊기·논문별 대화)은 useDeepReadChat 이 맡고 여기서는 그리기·입력·스크롤만 한다.

@@ -6,7 +6,7 @@
         <span class="wk-path__label">{{ line.label }}</span>
         <span class="wk-path__detail">{{ line.detail }}</span>
         <template v-if="line.chunk">
-          <span class="wk-path__quote">{{ line.chunk.text }}</span>
+          <span class="wk-path__quote">{{ passageText(line.chunk.text) }}</span>
           <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" @click="openChunk(line)">원문 보기</button>
         </template>
       </li>
@@ -18,6 +18,7 @@
 import { computed } from "vue";
 import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingItem } from "~/types/work";
+import { passageText } from "~/utils/passageText";
 import { type PathLine, pathLines, pathPdfTarget } from "~/utils/readingList";
 
 // 행의 [경로] — 저장된 값만으로 그린 들어온 경로(spec §5-4)와, 매칭 대목에서 원문 쪽으로 가는 [원문 보기].

@@ -105,7 +105,7 @@
         </div>
         <details v-if="panelPath" class="wk-panel__path">
           <summary>들어온 경로 — {{ panelPath.label }}</summary>
-          <p class="wk-path__quote">{{ panelPath.chunk.text }}</p>
+          <p class="wk-path__quote">{{ passageText(panelPath.chunk.text) }}</p>
           <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" @click="openPathChunk">원문 보기</button>
         </details>
       </template>
@@ -128,6 +128,7 @@ import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
 import { type PanelPaper, panelTabs } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, readingAnchor } from "~/utils/detailSource";
+import { passageText } from "~/utils/passageText";
 import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";

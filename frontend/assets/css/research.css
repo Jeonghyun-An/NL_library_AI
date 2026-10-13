@@ -639,11 +639,13 @@ html:has(.rs-page.has-progressbar) {
 .rs-cite__meta {
   color: var(--skx-gray-1);
 }
+/* 대목 글은 passageText 가 <br> 태그 글자를 줄바꿈으로 바꿔 둔다 — 그 줄을 나눠 보인다 */
 .rs-cite__quote {
   display: block;
   max-height: 8rem;
   padding-left: 0.5rem;
   overflow-y: auto;
+  white-space: pre-line;
   border-left: 2px solid var(--skx-border-c1);
 }
 .rs-cite__foot {
