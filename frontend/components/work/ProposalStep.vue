@@ -191,10 +191,14 @@
           </label>
           <p class="rs-muted">기본은 모든 문단을 싣습니다. 끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙습니다.</p>
           <div class="rs-card__actions">
-            <button type="button" class="rs-btn" :disabled="exporting" @click="downloadWord">
-              {{ exporting ? "만드는 중…" : "Word 로 내려받기" }}
+            <button type="button" class="rs-btn" :disabled="exporting" @click="exportProposal('docx')">
+              {{ exportingAs === "docx" ? "만드는 중…" : "Word 로 내려받기" }}
+            </button>
+            <button type="button" class="rs-btn rs-btn--ghost" :disabled="exporting" @click="exportProposal('pdf')">
+              {{ exportingAs === "pdf" ? "인쇄 창을 여는 중…" : "PDF 로 내려받기" }}
             </button>
           </div>
+          <p class="rs-muted">PDF 는 인쇄 창에서 대상을 ‘PDF로 저장’으로 고릅니다. Word 와 같은 문서·같은 기본값입니다.</p>
         </div>
       </template>
       <p v-else class="rs-muted">목차를 승인하면 선행연구 검토(묶음마다)와 연구 공백 절을 쓸 수 있습니다.</p>
@@ -225,11 +229,14 @@
       />
     </template>
   </DeepReadPanel>
+  <!-- PDF 내려받기(인쇄) 동안에만 body 에 붙는 인쇄 전용 문서(Teleport) — 화면에는 그리지 않는다(research.css .rs-print) -->
+  <ReportPrint v-if="printDoc" :doc="printDoc" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
+import ReportPrint from "~/components/research/ReportPrint.vue";
 import AiFootprintMeter from "~/components/work/AiFootprintMeter.vue";
 import CitationSource from "~/components/work/CitationSource.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
@@ -265,6 +272,7 @@ import {
   type TocItem,
 } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
+import type { ReportExportFormat } from "~/utils/reportDocument";
 import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { openGeneration } from "~/utils/workEvents";
@@ -286,7 +294,8 @@ const REMAKE_CONFIRM =
   "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다 — 연구 배경은 그대로 둡니다. 이미 쓴 절은 지우지 않고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
 
 const api = useWorkApi();
-const { exporting, exportDocx } = useReportExport();
+// PDF 는 딥리서치 보고서와 같은 인쇄 경로다 — printDoc 이 차면 템플릿 끝의 ReportPrint 가 body 에 붙고 인쇄 창이 열린다
+const { exporting, printDoc, exportDocx, printPdf } = useReportExport();
 
 const state = computed(() => props.work.state.value);
 const proposal = computed(() => state.value.proposal);
@@ -522,33 +531,56 @@ function retry(genId: number): void {
   }, "다시 시도하지 못했습니다");
 }
 
-// ── Word 내려받기 ─────────────────────────────────────────
+// ── 내려받기(Word·PDF) ────────────────────────────────────
 const acceptedOnly = ref(false);
+// 누른 형식 — 두 버튼은 한 exporting 으로 함께 잠그고, '만드는 중…' 글은 누른 버튼에만 보인다
+const exportingAs = ref<ReportExportFormat | null>(null);
 
 // 문서에 싣는 연구 주소 — 계획서 단계로 바로 열리는 주소(쿼리의 at·y 는 빼고 s 만)
 function proposalUrl(): string {
   return `${window.location.origin}/research/${props.jobId}?s=proposal`;
 }
 
-async function downloadWord(): Promise<void> {
+// Word·PDF 는 같은 문서 모델(buildProposalDocument — 같은 기본값과 '수락한 문단만' 체크)이다. PDF 는 인쇄 창의
+// 'PDF로 저장' 이 문서 제목(파일 이름에서 .docx 를 뗀 것)을 파일 이름으로 쓴다(useReportExport.printPdf)
+async function exportProposal(format: ReportExportFormat): Promise<void> {
   const p = proposal.value;
   const w = workView.value;
-  if (!p || !w) return;
+  // 이미 내보내는 중이면 exportDocx·printPdf 가 아무 일 없이 돌아온다 — 여기서 먼저 막아 markDone 이 헛돌지 않게 한다
+  if (!p || !w || exporting.value) return;
+  // 앞 안내를 지운다(act 와 같다) — PDF 는 성공 안내가 없어, 지우지 않으면 앞선 실패 안내가 성공 뒤에도 남는다
+  say("");
   const doc = buildProposalDocument(
     { question: props.question, url: proposalUrl(), proposal: p, work: w, acceptedOnly: acceptedOnly.value },
     new Date(),
   );
+  exportingAs.value = format;
   try {
-    await exportDocx(doc);
+    if (format === "docx") await exportDocx(doc);
+    else await printPdf(doc);
   } catch (e) {
     console.warn("[research] 보고서 내보내기 실패", e);
     // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
-    say("Word 문서를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.", true);
+    say(
+      format === "docx"
+        ? "Word 문서를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요."
+        : "인쇄 창을 열지 못했습니다. 다시 시도해 주세요.",
+      true,
+    );
     return;
+  } finally {
+    exportingAs.value = null;
   }
-  say("Word 문서를 내려받았습니다");
-  // 처음 내려받으면 연구를 마친 것으로 둔다(phase done) — 단계는 앞으로만 가므로 이미 done 이면 보내지 않는다
-  if (w.phase !== "proposal" || readOnly.value) return;
+  // PDF 는 인쇄 창 자체가 결과다 — 딥리서치 보고서의 PDF 도 안내를 띄우지 않는다
+  if (format === "docx") say("Word 문서를 내려받았습니다");
+  await markDone();
+}
+
+// 처음 내려받으면 연구를 마친 것으로 둔다(phase done) — 단계는 앞으로만 가므로 이미 done 이면 보내지 않는다.
+// PDF 는 인쇄 창을 취소했는지 브라우저가 알려 주지 않아, 창이 닫히고 오류 없이 돌아오면 내려받은 것으로 본다
+async function markDone(): Promise<void> {
+  const w = workView.value;
+  if (!w || w.phase !== "proposal" || readOnly.value) return;
   try {
     props.work.setWork(await api.patchWork(props.jobId, { phase: "done" }));
     props.work.afterAction();
