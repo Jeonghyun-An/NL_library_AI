@@ -8,8 +8,11 @@ import { citedPdfTarget } from "~/utils/pdfViewer";
 import { verdictLabel } from "~/utils/researchEvents";
 import { excludedPaperLine } from "~/utils/researchReport";
 
-// 서버 경계와 같은 값(app/services/research_work/shapes.py)
+// 서버 경계와 같은 값(app/services/research_work/shapes.py — tests/unit/readingList.test.ts 가 파일을 읽어 맞춰 본다)
 export const MIN_READING_FOR_OUTLINE = 5;
+// 이어가기 때 담음으로 미리 넣는 채택 근거 수 — shapes.READING_PRESELECT 와 같은 값(사용자 결정 2026-10-13). 실제 미리 담은
+// 수(후보가 적으면 그보다 적다)는 GET …/reading 의 preselected 다 — 이 상수는 그 수를 모를 때의 안내(온보딩)에만 쓴다
+export const READING_PRESELECT = 8;
 export const READING_NOTE_MAX = 1000;
 export const GROUP_LABEL_MAX = 60;
 
@@ -165,7 +168,7 @@ export function outlineHint(view: ReadingView): string | null {
 const READING_DEEP_READ_LINE = "제목을 누르면 오른쪽에서 그 논문과 대화할 수 있습니다.";
 
 // 참고문헌 선택하기 머리 소개. 이어가기가 채택 근거 상위 편을 담음으로 미리 넣었으면(서버가 센 preselected — 뺀 행도 센다,
-// 서버 shapes.READING_PRESELECT 편, 후보가 그보다 적으면 그 수) 승인 문구(사용자 결정 2026-10-13 — 글자 그대로)를 그 수로 채운다.
+// 후보가 READING_PRESELECT 편보다 적으면 그 수) 승인 문구(사용자 결정 2026-10-13 — 글자 그대로)를 그 수로 채운다.
 // - 0(이 기능 전에 이어간 연구)이면 미리 담았다고 하면 거짓이라 옛 소개 그대로
 // - 읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 바로 아래 '예시 연구는 읽기 전용입니다'와 어긋난다
 // - 읽기 목록을 아직 못 불러왔으면(null) 수를 모른다 — 옛 소개를 보였다가 미리 담음 문장으로 바꾸지 않게 소개를 싣지 않는다

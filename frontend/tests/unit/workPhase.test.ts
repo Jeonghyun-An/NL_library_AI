@@ -1,8 +1,11 @@
 // frontend/tests/unit/workPhase.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
 import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
+import { READING_PRESELECT } from "~/utils/readingList";
 import {
   FINAL_STEP_NAME,
   MAKE_REPORT,
@@ -262,12 +265,33 @@ describe("온보딩", () => {
     // 제품 기능 이름은 화면 표기 상수(utils/brand — 사용자 결정 2026-10-12)로 — '딥리서치' 글자를 두지 않는다
     expect(ONBOARDING_STEPS[0]!.body.startsWith(`${DEEP_RESEARCH} 보고서의 향후 과제`)).toBe(true);
     expect(ONBOARDING_STEPS[1]!.body).toContain(`그 논문과 대화(${DEEP_READ})할 수 있고`);
+    expect(ONBOARDING_STEPS[1]!.body.endsWith("자기점검이 뺀 논문을 되살릴 수 있어요.")).toBe(true);
     for (const s of ONBOARDING_STEPS) {
       expect(s.body).not.toContain("딥리서치");
       expect(s.body).not.toContain("딥리드");
       expect(s.body.length).toBeGreaterThan(0);
       expect(s.decide.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("온보딩 — 참고문헌 선택하기는 미리 담아 둔 채로 시작한다(승인 문구 2026-10-13)", () => {
+  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함)
+  const APPROVED = "근거로 쓰인 논문 8편을 미리 담아 두었어요. 빼거나 더 담아서 참고문헌을 정해 보세요.";
+  const body = ONBOARDING_STEPS[1]!.body;
+
+  it("설명은 승인 문구로 시작한다 — '8' 은 미리 담는 수 상수(READING_PRESELECT)에서 온다", () => {
+    expect(READING_PRESELECT).toBe(8);
+    expect(body.startsWith(APPROVED)).toBe(true);
+    const src = readFileSync(fileURLToPath(new URL("../../utils/workPhase.ts", import.meta.url)), "utf8");
+    expect(src).toContain("근거로 쓰인 논문 ${READING_PRESELECT}편을 미리 담아 두었어요.");
+    // 미리 담기 전의 '후보로 들어와 있습니다'(0 에서 담아 올라가는 말)는 이제 틀린 말이다
+    expect(body).not.toContain("후보로 들어와 있습니다");
+  });
+
+  it("같은 문단 안에서 말투를 섞지 않는다 — 승인 문구의 해요체로 이어 간다", () => {
+    expect(body).not.toMatch(/니다[.,]/);
+    expect(body.split(". ").every((sentence) => /요\.?$/.test(sentence))).toBe(true);
   });
 });
 

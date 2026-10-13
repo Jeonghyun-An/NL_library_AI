@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ExcludedCandidate, PaperMeta, PathChunk, ReadingItem, ReadingSubqPath, ReadingView } from "~/types/work";
 import {
+  GROUP_LABEL_MAX,
+  MIN_READING_FOR_OUTLINE,
+  READING_NOTE_MAX,
+  READING_PRESELECT,
   candidateGroups,
   candidateLine,
   candidateNote,
@@ -73,6 +77,26 @@ function excluded(over: Partial<ExcludedCandidate> = {}): ExcludedCandidate {
     ...over,
   };
 }
+
+describe("서버 경계와 같은 값(app/services/research_work/shapes.py)", () => {
+  const shapes = readFileSync(fileURLToPath(new URL("../../../app/services/research_work/shapes.py", import.meta.url)), "utf8");
+  // 모듈 맨 앞의 `NAME = 정수` 한 줄 — 없으면 이름이 바뀐 것이라 테스트가 알아야 한다
+  function serverInt(name: string): number {
+    const m = shapes.match(new RegExp(`^${name}\\s*=\\s*(\\d+)\\b`, "m"));
+    if (!m) throw new Error(`shapes.py 에서 ${name} 을 찾지 못함`);
+    return Number(m[1]);
+  }
+
+  it("READING_PRESELECT — 이어가기 때 미리 담는 채택 근거 수(온보딩 안내의 '8편')", () => {
+    expect(READING_PRESELECT).toBe(serverInt("READING_PRESELECT"));
+  });
+
+  it("MIN_READING_FOR_OUTLINE·READING_NOTE_MAX·GROUP_LABEL_MAX", () => {
+    expect(MIN_READING_FOR_OUTLINE).toBe(serverInt("MIN_READING_FOR_OUTLINE"));
+    expect(READING_NOTE_MAX).toBe(serverInt("READING_NOTE_MAX"));
+    expect(GROUP_LABEL_MAX).toBe(serverInt("GROUP_LABEL_MAX"));
+  });
+});
 
 describe("funnelLine", () => {
   it("검토 → 채택 → 후보 → 담음을 잇고, 보고서 통계를 모르는 칸은 뺀다", () => {
