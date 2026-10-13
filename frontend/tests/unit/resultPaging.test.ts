@@ -10,6 +10,7 @@ import {
   pageButtons,
   pageCount,
   pageSlice,
+  restoredPage,
   sortResults,
   stateWithListView,
   type SortableResult,
@@ -117,6 +118,26 @@ describe("pageButtons — 쪽 번호 줄", () => {
     expect(pageButtons(10, 5)).toEqual([1, "...", 4, 5, 6, "...", 10]);
     expect(pageButtons(10, 8)).toEqual([1, "...", 7, 8, 9, 10]);
     expect(pageButtons(10, 10)).toEqual([1, "...", 9, 10]);
+  });
+});
+
+describe("restoredPage — 기록을 다시 열 때의 쪽", () => {
+  const saved = { sortBy: "name", pageSize: 10, page: 3 } as const;
+
+  it("누른 카드가 있는 쪽이 남긴 쪽보다 먼저다", () => {
+    expect(restoredPage(2, saved, 60, 10)).toBe(2);
+    expect(restoredPage(1, saved, 60, 10)).toBe(1);
+  });
+
+  it("누른 카드가 없으면 남긴 쪽, 둘 다 없으면 첫 쪽", () => {
+    expect(restoredPage(null, saved, 60, 10)).toBe(3);
+    expect(restoredPage(null, null, 60, 10)).toBe(1);
+  });
+
+  it("어느 쪽이든 지금 목록 길이 안으로 맞춘다", () => {
+    expect(restoredPage(null, saved, 15, 10)).toBe(2);
+    expect(restoredPage(9, null, 15, 10)).toBe(2);
+    expect(restoredPage(null, { ...saved, page: 4 }, 0, 10)).toBe(1);
   });
 });
 

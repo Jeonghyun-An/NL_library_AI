@@ -90,6 +90,15 @@ export function stateWithListView(state: unknown, view: ListView): Record<string
   return { ...base, [LIST_VIEW_KEY]: { sortBy: view.sortBy, pageSize: view.pageSize, page: view.page } };
 }
 
+/**
+ * 기록을 다시 열 때 보일 쪽. 상세에서 누른 카드가 있는 쪽(anchorPage)이 먼저다 — 그 카드를 같은 자리에 맞추려면 그 쪽이어야 한다.
+ * 없으면 남긴 보기의 쪽, 그것도 없으면 첫 쪽. 어느 쪽이든 지금 목록 길이 안으로 맞춘다
+ */
+export function restoredPage(anchorPage: number | null, saved: ListView | null, total: number, size: number): number {
+  if (anchorPage !== null) return clampPage(anchorPage, total, size);
+  return saved ? clampPage(saved.page, total, size) : 1;
+}
+
 /** state 에서 목록 보기를 읽는다. 없거나 모양이 틀리면 null(기본값으로 연다) */
 export function listViewFromState(state: unknown): ListView | null {
   if (typeof state !== "object" || state === null) return null;

@@ -279,13 +279,22 @@ import { marked } from "marked";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
+import { rememberListView, savedListView } from "~/composables/useListView";
 import { safeLocalStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";
-import { DEFAULT_SORT, pageCount, pageSlice, sortResults, type SortKey } from "~/utils/resultPaging";
+import {
+  DEFAULT_SORT,
+  pageCount,
+  pageSlice,
+  restoredPage,
+  sortResults,
+  type PageSize,
+  type SortKey,
+} from "~/utils/resultPaging";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
@@ -350,7 +359,7 @@ const renderedAiText = computed(() =>
 
 // ── 정렬 / 페이지 ─────────────────────────────────────────────
 const sortBy = ref<SortKey>(DEFAULT_SORT);
-const pageSize = ref<number>(20);
+const pageSize = ref<PageSize>(20);
 const currentPage = ref(1);
 
 // ── PDF 뷰어 ─────────────────────────────────────────────────
@@ -372,6 +381,9 @@ function showToast(msg: string) {
 
 // ── 계산 ─────────────────────────────────────────────────────
 const hasResults = computed(() => paperResult.value !== null || loading.value);
+
+// 고른 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 소장자료 결과와 같다. 상세에서 돌아오면 applyPaperEntry 가 읽는다
+rememberListView(sortBy, pageSize, currentPage, () => hasResults.value);
 
 // AI 답변 인용 논문: book_id → 인용 번호 (우측 참고 카드 번호와 동일)
 const aiRefNumMap = computed(() => {
@@ -422,7 +434,7 @@ function setSortBy(key: SortKey) {
   currentPage.value = 1;
 }
 
-function setPageSize(n: number) {
+function setPageSize(n: PageSize) {
   pageSize.value = n;
   currentPage.value = 1;
 }
@@ -641,9 +653,16 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
   aiLoading.value = false;
   aiExpanded.value = true;
-  sortBy.value = DEFAULT_SORT;
-  // 정렬을 정한 뒤에 찾아야 화면 목록과 같은 순서다
-  currentPage.value = returnPage();
+  // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 고른 정렬·개수를 다시 연다(그 방문 기록의 state — 소장자료 결과와
+  // 같다). 새로 연 기록은 기본 정렬이고 개수는 지금 고른 대로 둔다
+  const saved = savedListView();
+  sortBy.value = saved?.sortBy ?? DEFAULT_SORT;
+  if (saved) pageSize.value = saved.pageSize;
+  // 정렬·개수를 정한 뒤에 찾아야 화면 목록과 같은 순서·쪽이다. 누른 카드가 있으면 그 카드가 있는 쪽이 먼저이고(카드 자리 복원),
+  // 없으면 남긴 쪽, 그것도 없으면 첫 쪽
+  const before = currentPage.value;
+  currentPage.value = restoredPage(returnPage(), saved, filteredPapers.value.length, pageSize.value);
+  if (currentPage.value !== before) skipPageScroll = true;
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
@@ -651,12 +670,12 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);
 }
 
-// 상세에서 돌아왔으면 그 카드가 있는 쪽을 연다 — 기록은 화면이 쪽으로 나눠 보인 결과를 모두 담아(slimPaperResult)
-// 둘째 쪽 이후의 카드도 찾는다. 쪽 크기·정렬은 기록에 없어 기본값으로 찾는다
-function returnPage(): number {
+// 상세에서 돌아왔으면 그 카드가 있는 쪽 — 기록은 화면이 쪽으로 나눠 보인 결과를 모두 담아(slimPaperResult) 둘째 쪽 이후의
+// 카드도 찾는다. 정렬·쪽 크기는 호출하는 쪽이 먼저 정해 둔 것(남긴 보기 또는 기본값)으로 찾는다. 누른 카드가 없으면 null
+function returnPage(): number | null {
   const anchor = restore.pending.value ? restore.anchor : null;
-  if (anchor?.kind !== "result") return 1;
-  return pageOfItem(filteredPapers.value.map((p) => p.book_id), anchor.cnts, pageSize.value) ?? 1;
+  if (anchor?.kind !== "result") return null;
+  return pageOfItem(filteredPapers.value.map((p) => p.book_id), anchor.cnts, pageSize.value);
 }
 
 // ── AI 요약 SSE ───────────────────────────────────────────────
@@ -744,8 +763,14 @@ watch(
 // 페이지를 떠나면 요약 스트림도 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
 onBeforeUnmount(() => runCtrl?.abort());
 
-// 돌아온 카드의 쪽을 여는 동안에는 맨 위로 올리지 않는다 — 그 카드 자리를 맞추는 중이다
+// 돌아온 카드의 쪽을 여는 동안에는 맨 위로 올리지 않는다 — 그 카드 자리를 맞추는 중이다.
+// 기록 복원(applyPaperEntry)이 쪽을 바꾼 것도 올리지 않는다 — 브라우저가 되돌린 스크롤을 덮지 않게
+let skipPageScroll = false;
 watch(currentPage, () => {
+  if (skipPageScroll) {
+    skipPageScroll = false;
+    return;
+  }
   if (!restore.pending.value) window.scrollTo({ top: 0, behavior: "smooth" });
 });
 </script>

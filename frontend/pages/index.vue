@@ -407,14 +407,14 @@ import { detailScoreParams } from "~/utils/relevance";
 import {
   DEFAULT_SORT,
   clampPage,
-  listViewFromState,
   pageCount,
   pageSlice,
   sortResults,
-  stateWithListView,
+  type ListView,
   type PageSize,
   type SortKey,
 } from "~/utils/resultPaging";
+import { rememberListView, savedListView } from "~/composables/useListView";
 import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -678,9 +678,9 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       body: {
         query,
         mode: "book",
-        // 정렬·쪽 나누기에 쓸 후보를 논문 검색과 같은 20 으로 받는다 — 서버 상한이다(SearchRequest.top_k le=20).
-        // 서버는 이 값의 몇 배(3 배)를 후보로 훑어 도서가 모인 만큼(2026-10-13 운영: 10 → 16~30권, 20 → 23~37권)을 돌려준다
-        top_k: 20,
+        // 서버는 top_k 의 3 배를 후보로 훑어 도서가 모인 만큼을 돌려준다 — 10 이어도 16~30권이라 정렬·쪽 이동에 충분하다.
+        // 20(서버 상한)으로 올려도 23~37권뿐이고 응답이 약 1.4s → 2.1s, 본문 2 배라 속도를 우선해 10 으로 둔다(2026-10-13 운영 실측)
+        top_k: 10,
         use_rewrite: true,
         use_rerank: true,
       },
@@ -834,7 +834,7 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   papers.value = [];
   resetReason();
   // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 보던 정렬·개수·쪽을 다시 연다(그 방문 기록의 state). 새로 연 기록은 기본값
-  restoreListView(listViewFromState(import.meta.client ? window.history.state : null));
+  restoreListView(savedListView());
   aiExpanded.value = false;
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id } });
@@ -914,7 +914,7 @@ function resetListView() {
 }
 
 // 저장된 보기가 있으면 그대로, 없으면 기본값. 쪽은 지금 목록 길이 안으로 맞춘다
-function restoreListView(saved: ReturnType<typeof listViewFromState>) {
+function restoreListView(saved: ListView | null) {
   if (!saved) {
     resetListView();
     return;
@@ -924,19 +924,8 @@ function restoreListView(saved: ReturnType<typeof listViewFromState>) {
   currentPage.value = clampPage(saved.page, listBooks.value.length, pageSize.value);
 }
 
-// 보던 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 주소에는 싣지 않는다(논문 결과도 그렇다).
-// 결과가 떠 있을 때만 남기고, 라우터가 둔 다른 state 키는 그대로 둔다
-watch([sortBy, pageSize, currentPage], () => {
-  if (!import.meta.client || view.value !== "results") return;
-  window.history.replaceState(
-    stateWithListView(window.history.state, {
-      sortBy: sortBy.value,
-      pageSize: pageSize.value,
-      page: currentPage.value,
-    }),
-    "",
-  );
-});
+// 보던 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 주소에는 싣지 않는다(논문 결과도 그렇다). 결과가 떠 있을 때만
+rememberListView(sortBy, pageSize, currentPage, () => view.value === "results");
 
 function resetReason() {
   reasonRaw.value = "";
