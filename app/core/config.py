@@ -280,11 +280,17 @@ class Settings(BaseSettings):
     BOOK_MODE_FETCH_MULTIPLIER: int = 3        # 일반
     HYBRID_SEARCH_CHUNK_LIMIT_MULT: int = 10
     # 소장자료 상세 '관련 자료 추천'(GET /api/books/{id}/related) — 자기 자신은 Milvus 조건식에서 빠지므로 창은
-    # 남의 청크로만 찬다. 10 이면 30권·300청크 창(위 두 배수). 연관도(제목·내용 종합)가 하한 아래면 칸을 비운다 —
-    # 운영 관측(2026-10-14): 관련 있는 책은 대개 0.4 이상, 0.27~0.37 은 관련 책과 영어 Gutenberg 소설이 섞이고,
-    # 무관 도서는 0.01~0.1
+    # 남의 청크로만 찬다. 10 이면 30권·300청크 창(위 두 배수 — BOOK_MODE_FETCH_MULTIPLIER·HYBRID_SEARCH_CHUNK_LIMIT_MULT
+    # 를 바꾸면 이 창도 함께 바뀐다). 연관도(제목·내용 종합)가 하한 아래면 칸을 비운다 — 운영 관측(2026-10-14): 관련
+    # 있는 책은 대개 0.4 이상, 0.27~0.37 은 관련 책과 영어 Gutenberg 소설이 섞이고, 무관 도서는 0.01~0.1.
+    # 그 연관도는 청크 수 로그 부스트 뒤 값이라 리랭크 0 인 책도 청크 20개면 0.30 이 된다 — 그래서 제목만으로 하한을
+    # 넘지 않는 책은 가장 맞는 청크의 부스트 전 원점수도 RAW 하한을 넘어야 한다. 운영 역산(q1 '조선후기 세태소설 연구'):
+    # 관련 책 원점수 0.30~0.50, 韓國古典小說 文體論 0.15.
+    # 세 값은 docker-compose.yml 공통 env 에 ${VAR:-기본값} 선언이 없어 Portainer 스택 env 로는 바뀌지 않는다(넣어도
+    # 무시된다) — 대회 전에는 바꾸려면 코드 수정·재배포, 대회 뒤 compose 공통 env 에 선언을 더한다.
     BOOK_RELATED_FETCH_TOP_K: int = 10
     BOOK_RELATED_MIN_SCORE: float = 0.3
+    BOOK_RELATED_MIN_RAW_SCORE: float = 0.2
     MARC_KEYWORDS_LIMIT: int = 5
     KEYWORDS_MAX_COUNT: int = 5
 

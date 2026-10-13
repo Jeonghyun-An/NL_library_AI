@@ -221,7 +221,7 @@ def api(monkeypatch):
     SearchHistory.__table__.to_metadata(sa.MetaData()).create(engine)
     add_book(engine, SELF, title=SELF_TITLE, doc_type="literature")
     for bid, title in (("B", "갑 을"), ("C", "병 정"), ("D", "무 기"), ("E", "경 신"),
-                       ("F", "임 계"), ("G", "자 축")):
+                       ("F", "임 계"), ("G", "자 축"), ("L", "Pride and Prejudice"), ("T", "조선후기 세태소설")):
         add_book(engine, bid, title=title, doc_type="literature")
     add_book(engine, "NOTITLE", title="", doc_type="literature")
 
@@ -263,6 +263,33 @@ class TestRelatedApi:
         api.wire({"B": 0.8, "C": 0.25})
         books = api.client.get(f"/api/books/{SELF}/related").json()["books"]
         assert [b["book_id"] for b in books] == ["B"]
+
+    @pytest.mark.parametrize("rerank, n", [(0.0, 20), (0.0, 30), (0.05, 16)])
+    def test_long_unrelated_book_is_not_lifted_over_the_floor_by_its_chunk_count(self, api, rerank, n):
+        """로그 부스트 1-(1-r)/(1+0.1·log2 n) 은 리랭크가 0 이어도 청크 20개면 0.30, 30개면 0.33 이다(r=0.05 면 16개로
+        넘는다). 새 창은 자기 청크가 빠져 긴 남의 책이 청크를 더 받으므로 하한을 정한 관측보다 점수가 위로 밀린다 —
+        하한은 부스트 전 원점수에도 건다."""
+        api.wire({"B": 0.8, "L": (rerank, n)})
+        lifted = asyncio.run(api.pipeline.search_related_books(SELF_TITLE, SELF, fetch_top_k=10))
+        # 전제: 부스트만으로 종합 하한(0.3)을 넘는다 — 영어 제목이라 제목 일치는 0
+        assert next(b for b in lifted.books if b.book_id == "L").best_score >= 0.3
+        books = api.client.get(f"/api/books/{SELF}/related").json()["books"]
+        assert [b["book_id"] for b in books] == ["B"]
+
+    def test_long_related_book_is_kept_with_its_boosted_score(self, api):
+        """원점수가 하한 이상인 긴 책은 그대로 둔다 — 화면의 연관도는 검색 결과 카드처럼 부스트 뒤 값이다."""
+        api.wire({"L": (0.35, 30)})
+        books = api.client.get(f"/api/books/{SELF}/related").json()["books"]
+        assert [b["book_id"] for b in books] == ["L"]
+        assert books[0]["content_score"] == pytest.approx(1 - 0.65 / 1.4907, abs=1e-3)
+
+    def test_title_alone_over_the_floor_needs_no_passage_evidence(self, api):
+        """제목만으로 하한을 넘는 책('조선후기 세태소설' ⊂ 원제목 → 제목 일치 1.0)은 부스트와 상관없이 넘으므로
+        본문 원점수를 묻지 않는다."""
+        api.wire({"T": (0.05, 3)})
+        books = api.client.get(f"/api/books/{SELF}/related").json()["books"]
+        assert [b["book_id"] for b in books] == ["T"]
+        assert books[0]["title_score"] == 1.0
 
     def test_self_never_comes_back_even_if_the_index_returns_it(self, api):
         api.wire({SELF: 0.99, "B": 0.8}, index_ignores_self_condition=True)

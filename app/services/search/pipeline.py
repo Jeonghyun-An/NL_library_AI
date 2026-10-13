@@ -271,6 +271,14 @@ async def _search_chunk_mode(
     )
 
 
+def best_chunk_score(chunks: list[ChunkHit], *, default: float) -> float:
+    """도서 모드의 로그 부스트 전 원점수 — 본문 청크의 리랭크 점수(없으면 Milvus 점수) 최댓값, 본문 청크가 없으면 default.
+
+    _search_book_mode 는 이 값에 청크 수 로그 부스트를 얹어 best_score 로 쓴다. 관련 자료 하한(api/book.py)은 부스트가
+    긴 책을 끌어올리지 못하게 이 값도 본다."""
+    return max((c.rerank_score or c.score for c in chunks), default=default)
+
+
 async def _search_book_mode(
     original: str,
     rewritten: str | None,
@@ -343,7 +351,7 @@ async def _search_book_mode(
                 log.warning(f"[{book_id}] 도서 내 리랭킹 실패: {e}")
 
         # 리랭킹된 본문 청크 점수, 없으면 메타 청크 점수(best_raw)로 fallback
-        best = max((c.rerank_score or c.score for c in chunks), default=best_raw)
+        best = best_chunk_score(chunks, default=best_raw)
 
         # 다수 청크가 매칭될수록 도서 적합도가 높음 → 로그 스케일 부스팅
         # 1.0과의 간격을 줄이는 점근 방식: 원점수가 1.0이 아닌 한 100%로 포화되지 않음
