@@ -12,6 +12,7 @@
         <h1 class="skx-hero">논문 의미 기반 검색</h1>
         <div class="skx-search">
           <div class="skx-search__box">
+            <span class="skx-search__glow" aria-hidden="true"></span>
             <ResearchSearchPlusMenu ref="plusMenu" v-model="currentQuery" kind="paper" :disabled="loading" />
             <label class="skx-search__field">
               <span class="skx-sr-only">논문 검색어</span>
@@ -27,9 +28,11 @@
               <button
                 type="button"
                 class="skx-send"
+                aria-label="검색"
+                :aria-disabled="!hasQuery(currentQuery)"
                 @click="handleSearch(currentQuery)"
               >
-                <img src="/img/ico-send.svg" alt="" />
+                <img src="/img/ico-send-up.svg" alt="" />
               </button>
             </div>
           </div>
@@ -53,9 +56,11 @@
         <button
           type="button"
           class="skx-send"
+          aria-label="검색"
+          :aria-disabled="!hasQuery(currentQuery)"
           @click="handleSearch(currentQuery)"
         >
-          <img src="/img/ico-send.svg" alt="" />
+          <img src="/img/ico-send-up.svg" alt="" />
         </button>
       </div>
 
@@ -441,6 +446,7 @@ import { readResearchDraft } from "~/utils/paperResearch";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
+import { hasQuery } from "~/utils/searchInput";
 
 const api = useApi();
 const route = useRoute();

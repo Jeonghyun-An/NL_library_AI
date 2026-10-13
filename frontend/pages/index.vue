@@ -49,6 +49,7 @@
         >
           <div class="skx-search">
             <div class="skx-search__box">
+              <span class="skx-search__glow" aria-hidden="true"></span>
               <label class="skx-search__field">
                 <span class="skx-sr-only">자료 검색어</span>
                 <textarea
@@ -65,9 +66,10 @@
                   type="button"
                   class="skx-send"
                   aria-label="검색"
+                  :aria-disabled="!hasQuery(currentQuery)"
                   @click="handleSearch(currentQuery)"
                 >
-                  <img src="/img/ico-send.svg" alt="" />
+                  <img src="/img/ico-send-up.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -100,6 +102,7 @@
         >
           <div class="skx-search">
             <div class="skx-search__box">
+              <span class="skx-search__glow" aria-hidden="true"></span>
               <ResearchSearchPlusMenu
                 ref="plusMenu"
                 v-model="currentQuery"
@@ -123,9 +126,10 @@
                   type="button"
                   class="skx-send"
                   aria-label="검색"
+                  :aria-disabled="!hasQuery(currentQuery)"
                   @click="handleSearch(currentQuery)"
                 >
-                  <img src="/img/ico-send.svg" alt="" />
+                  <img src="/img/ico-send-up.svg" alt="" />
                 </button>
               </div>
             </div>
@@ -200,10 +204,11 @@
           type="button"
           class="skx-send"
           aria-label="검색"
+          :aria-disabled="!hasQuery(currentQuery)"
           :disabled="loading"
           @click="handleSearch(currentQuery)"
         >
-          <img src="/img/ico-send.svg" alt="" />
+          <img src="/img/ico-send-up.svg" alt="" />
         </button>
       </div>
 
@@ -390,6 +395,7 @@ import { queryWithoutStart, readStart } from "~/utils/landingStart";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
+import { hasQuery } from "~/utils/searchInput";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).
