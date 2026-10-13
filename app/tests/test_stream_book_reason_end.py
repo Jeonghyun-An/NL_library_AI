@@ -1,6 +1,6 @@
 """test_stream_book_reason_end.py — 도서 추천 이유 스트림(services/search/pipeline.stream_book_reason)의 끝.
 
-LLM 호출이 실패하면(httpx 연결·읽기 오류 등) [DONE] 앞에 {error} 이벤트를 먼저 보낸다. [DONE] 만 보내면 화면
+LLM 호출이 실패하면(httpx 연결·읽기 오류, 4xx·5xx 응답 등) [DONE] 앞에 {error} 이벤트를 먼저 보낸다. [DONE] 만 보내면 화면
 (frontend/utils/bookAiPick.ts readReasonStream)이 '끝까지 받음'으로 읽어 받다 만 이유를 완성본으로 기록에 저장한다.
 정상으로 끝난 스트림에는 {error} 가 없다.
 
@@ -62,11 +62,16 @@ def _delta(text: str) -> str:
     return f"data: {json.dumps({'choices': [{'delta': {'content': text}}]}, ensure_ascii=False)}"
 
 
-def _fake_llm(monkeypatch, pipeline, lines, *, open_error=None, read_error=None):
+def _fake_llm(monkeypatch, pipeline, lines, *, open_error=None, read_error=None, status=200):
     """LLM 스트리밍 대역 — pipeline.httpx.AsyncClient 를 갈아 lines 를 SSE 줄로 흘려 준다. open_error 면 stream() 을 여는
-    자리에서, read_error 면 lines 를 다 흘린 뒤 읽는 자리에서 그 예외를 던진다."""
+    자리에서, read_error 면 lines 를 다 흘린 뒤 읽는 자리에서 그 예외를 던진다. status 가 4xx·5xx 면 raise_for_status 가
+    httpx 처럼 HTTPStatusError 를 던진다."""
 
     class _Response:
+        def raise_for_status(self):
+            request = httpx.Request("POST", "http://vllm.test/v1/chat/completions")
+            httpx.Response(status, request=request).raise_for_status()
+
         async def aiter_lines(self):
             for line in lines:
                 yield line
@@ -117,6 +122,16 @@ def test_a_failed_connection_sends_an_error_event_before_done(pipeline, monkeypa
     events = _events(chunks)
     assert events == [{"error": pipeline.REASON_STREAM_ERROR}]
     assert isinstance(pipeline.REASON_STREAM_ERROR, str) and pipeline.REASON_STREAM_ERROR.strip()
+
+
+def test_an_error_status_sends_an_error_event_before_done(pipeline, monkeypatch):
+    # vLLM 이 503 을 돌려주면 본문은 SSE 가 아닌 오류 JSON 이다 — 상태를 보지 않으면 줄을 다 거르고 [DONE] 만 남는다
+    _fake_llm(monkeypatch, pipeline, ['{"object": "error", "message": "Service Unavailable", "code": 503}'], status=503)
+
+    chunks = _run(pipeline)
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert _events(chunks) == [{"error": pipeline.REASON_STREAM_ERROR}]
 
 
 def test_a_read_error_after_some_text_keeps_the_text_then_sends_the_error(pipeline, monkeypatch):

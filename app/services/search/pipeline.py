@@ -366,8 +366,8 @@ async def stream_book_reason(
     book 객체는 호출자(엔드포인트)에서 미리 조회해 넘긴다.
 
     이벤트: {keywords}·{text}·{effect}(sse_helpers.process_reason_deltas) 뒤에 늘 [DONE]. LLM 호출이 실패하면
-    (httpx 연결·읽기 오류 등) [DONE] 앞에 {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을 보면 끝까지
-    받지 못한 것으로 읽는다.
+    (httpx 연결·읽기 오류, 4xx·5xx 응답 등) [DONE] 앞에 {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을
+    보면 끝까지 받지 못한 것으로 읽는다.
     """
 
     # ── 도서 서지 정보 블록 ──────────────────────────────
@@ -454,6 +454,9 @@ async def stream_book_reason(
                 },
                 timeout=float(cfg.REASON_TIMEOUT),
             ) as resp:
+                # 4xx·5xx 도 아래 except 로 — 보지 않으면 오류 본문(SSE 아님)을 다 걸러 [DONE] 만 남는다
+                resp.raise_for_status()
+
                 async def _delta_gen():
                     async for line in resp.aiter_lines():
                         if not line.startswith("data: "):
