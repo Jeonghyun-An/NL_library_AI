@@ -82,6 +82,13 @@ def _job_ns(**fields) -> SimpleNamespace:
     return SimpleNamespace(**{**base, **fields})
 
 
+def _path_text(text: str) -> str:
+    """대목 하나(글 text)를 단 스냅숏으로 들어온 경로를 그려 그 대목의 글만."""
+    snapshot = {"evidence": {"E1": {"cnts_id": "C1", "chunks": [{"chunk_id": "c1", "text": text}]}}}
+    ref = {"subq_idx": [0], "rank": {"0": 1}, "chunks": {"0": ["c1"]}}
+    return reading_path("evidence", ref, snapshot, PLAN)["subqs"][0]["chunks"][0]["text"]
+
+
 def _row(cnts_id, **fields) -> SimpleNamespace:
     base = {"cnts_id": cnts_id, "state": "candidate", "origin": "evidence", "origin_ref": {},
             "note": None, "group_label": None, "position": None}
@@ -105,6 +112,38 @@ class TestReadingPath:
         ]
         # 같은 대목이라도 점수는 그 하위질문의 매칭 점수다
         assert path["subqs"][1]["chunks"][0]["score"] == 0.5
+
+    def test_br_tags_become_line_breaks_before_the_cut(self):
+        # 운영(2026-10-13, 연구 9ba10849… 의 KCI_FI001594560__0055 — 대목 67개 중 6개): 300자째가 '<br>' 안에 떨어져
+        # '|Model 3<br><br>B (S.E.)<' 처럼 태그 조각이 끝에 남았다. 화면(frontend/utils/passageText.ts)은 온전한 <br> 만
+        # 줄바꿈으로 바꾸므로 조각이 글자로 보인다 — 자르기 전에 같은 규칙으로 바꾼다
+        cut_inside = "가" * (PATH_CHUNK_CHARS - 2) + "<br><br>B (S.E.)<br>|"
+        assert cut_inside[:PATH_CHUNK_CHARS].endswith("<b")
+        assert _path_text(cut_inside) == "가" * (PATH_CHUNK_CHARS - 2) + "\n\n"
+        # 운영 끝 글자 그대로 — 원문으로 자르면 'B (S.E.)<' 에서 끝난다
+        live_tail = "가" * (PATH_CHUNK_CHARS - 25) + "|Model 3<br><br>B (S.E.)<br>|0.12|"
+        assert live_tail[:PATH_CHUNK_CHARS].endswith("|Model 3<br><br>B (S.E.)<")
+        assert _path_text(live_tail) == "가" * (PATH_CHUNK_CHARS - 25) + "|Model 3\n\nB (S.E.)\n|0.12|"
+        for raw in (cut_inside, live_tail):
+            assert "<" not in _path_text(raw)
+
+    def test_br_tags_do_not_use_up_the_character_limit(self):
+        # 표가 많은 대목은 태그 글자(<br> 4자)가 상한을 먹어 실제 글이 줄었다 — 줄바꿈 한 글자로 센다
+        cells = "<br>".join(["가" * 10] * 40)
+        text = _path_text(cells)
+        assert text == "\n".join(["가" * 10] * 40)[:PATH_CHUNK_CHARS]
+        assert text.count("가") > cells[:PATH_CHUNK_CHARS].count("가")
+
+    def test_same_rule_as_the_screen(self):
+        # passageText 와 같은 글자 — <br>·<br/>·<br />·대소문자, 빈 줄 연속(사이 공백·탭 포함)은 빈 줄 하나
+        assert _path_text("가<br>나<br/>다<br />라<BR>마<Br/>바<bR  />사") == "가\n나\n다\n라\n마\n바\n사"
+        assert _path_text("요한다.<br><br>한편") == "요한다.\n\n한편"
+        assert _path_text("표<br><br><br><br><br><br>|") == "표\n\n|"
+        assert _path_text("가\n<br> <br>\n나") == "가\n\n나"
+        # <br> 가 아닌 태그 꼴과 통계 글의 '<' 는 글자 그대로 — 잘린 끝의 '<' 라도 지우지 않는다
+        assert _path_text("<b>굵게</b> <brx> p < .05") == "<b>굵게</b> <brx> p < .05"
+        stat = "가" * (PATH_CHUNK_CHARS - 3) + "p <.05"
+        assert _path_text(stat) == "가" * (PATH_CHUNK_CHARS - 3) + "p <"
 
     def test_chunks_missing_from_the_snapshot_are_left_out(self):
         # c9 는 스냅숏에 글이 없다 — 저장된 값만 쓴다

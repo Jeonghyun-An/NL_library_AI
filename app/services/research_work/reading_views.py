@@ -2,7 +2,8 @@
 
 - 들어온 경로(reading_path)는 저장된 값만 쓴다(spec §5-4): 행의 origin_ref(하위질문·그 안 순위·매칭 대목 id 와
   점수·critic 판정·처음 채택된 회차, 되살린 논문이면 뺀 하위질문·회차·note)와 잡의 state_snapshot 에 남은 대목 글.
-  탐색 때만 있던 rank_score 는 저장되지 않으므로 쓰지 않는다. 대목 글은 팝오버용으로 PATH_CHUNK_CHARS 에서 자른다.
+  탐색 때만 있던 rank_score 는 저장되지 않으므로 쓰지 않는다. 대목 글은 팝오버용으로 <br> 를 줄바꿈으로 바꾼 뒤
+  PATH_CHUNK_CHARS 에서 자른다(path_chunk_text).
 - critic 이 뺀 논문(excluded_candidates)은 06a pool_from_job 의 제외 목록에서 이미 행이 있는 논문을 뺀 것이다.
   회차·note 는 스냅숏의 subquestions[].rounds 로 붙인다 — 탐색 단계 result.rounds 와 같은 회차 기록이라(runner 가
   두 곳에 같은 목록을 쓴다) research_steps 를 다시 읽지 않는다.
@@ -14,8 +15,15 @@
   담음으로 넣는다(사용자 결정 2026-10-14). 미리 담은 행은 들어온 경로에 preselected 를 남기고, 응답의 preselected 가
   그 수를 센다(읽기 목록 머리 안내).
 """
+import re
+
 from services.research_work.shapes import PATH_CHUNK_CHARS, READING_PRESELECT
 from services.research_work.views import pool_from_job
+
+# 대목 글의 <br> 태그 글자(적재 ODL 마크다운이 표 칸·문단 사이 줄바꿈으로 남긴다)와 빈 줄 연속 — 화면의
+# frontend/utils/passageText.ts 와 같은 규칙이다(BR_TAG·BLANK_RUN)
+_BR_TAG = re.compile(r"<br\s*/?>", re.IGNORECASE)
+_BLANK_RUN = re.compile(r"\n(?:[ \t]*\n)+")
 
 
 def subquestions_of(job) -> list[str]:
@@ -48,6 +56,14 @@ def _chunk_index(snapshot: dict | None) -> dict[str, dict]:
     return out
 
 
+def path_chunk_text(text: str | None) -> str:
+    """들어온 경로 팝오버의 대목 글 — <br> 를 줄바꿈으로 바꾸고 빈 줄 연속을 빈 줄 하나로 접은 뒤 PATH_CHUNK_CHARS 에서
+    자른다. 원문 그대로 자르면 자른 자리가 '<br>' 안에 떨어져 '<'·'<br' 조각이 끝에 남고(화면은 온전한 <br> 만 바꾼다 —
+    운영 2026-10-13), 태그 글자가 상한을 먹어 표가 많은 대목은 실제 글이 줄었다. '<' 하나는 통계 글('p <')일 수 있어
+    지우지 않는다."""
+    return _BLANK_RUN.sub("\n\n", _BR_TAG.sub("\n", text or ""))[:PATH_CHUNK_CHARS]
+
+
 def reading_path(origin: str, origin_ref: dict, snapshot: dict | None, subquestions: list[str]) -> dict:
     """ReadingPath. evidence 는 하위질문마다 순위·판정·처음 채택된 회차·매칭 대목(스냅숏에 글이 남은 것만),
     revived 는 뺀 하위질문·회차·note, user 는 표시만."""
@@ -73,7 +89,7 @@ def reading_path(origin: str, origin_ref: dict, snapshot: dict | None, subquesti
             "chunks": [
                 {"chunk_id": cid, "page_start": chunks[cid].get("page_start"),
                  "page_end": chunks[cid].get("page_end"), "score": scores.get(cid),
-                 "text": (chunks[cid].get("text") or "")[:PATH_CHUNK_CHARS]}
+                 "text": path_chunk_text(chunks[cid].get("text"))}
                 for cid in (ref.get("chunks") or {}).get(key) or [] if cid in chunks
             ],
         })
