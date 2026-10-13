@@ -177,7 +177,8 @@
                     <span class="skx-history-item__query">{{ h.title }}</span>
                     <span class="skx-history-item__meta">
                       <span :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
-                      <!-- 06d: 단계 문구(stage text)는 이 배지 옆에 붙인다 -->
+                      <!-- 진행 중인 연구 줄에만 — 지금 단계('근거 수집 중' 등, 숫자 없이). 완료 줄에는 붙이지 않는다 -->
+                      <span v-if="stageOf(h)" class="skx-history-item__stage">{{ stageOf(h) }}</span>
                       <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(h)) }}</span>
                     </span>
                   </button>
@@ -191,17 +192,20 @@
                   </button>
                 </li>
               </ul>
-              <!-- 5줄을 넘는 딥리서치는 '더 보기'로 이 자리에서 펼친다 -->
+              <!-- 5줄을 넘는 연구는 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다(시안 C — 숫자는 최근 검색의 종류 칩과
+                   같은 칩, 오른쪽 끝 ⌄, 펼치면 '접기') -->
               <button
                 v-if="researchHiddenCount > 0 || researchExpanded"
                 type="button"
-                class="skx-history__more"
+                :class="['skx-history__older', researchExpanded && 'is-expanded']"
                 :aria-expanded="researchExpanded"
+                :aria-label="older.ariaLabel"
                 @click="researchExpanded = !researchExpanded"
               >
-                {{ researchExpanded ? "접기" : `더 보기 (${researchHiddenCount})` }}
+                <span>{{ older.label }}</span>
+                <span v-if="older.count !== null" class="skx-history-chip" aria-hidden="true">{{ older.count }}</span>
+                <span class="skx-history__older-chev" aria-hidden="true">⌄</span>
               </button>
-              <!-- 06d: 전용 화면으로 가는 '모두 보기 (N)' 줄은 이 자리(더 보기 버튼 아래)에 둔다 — N 은 groups.researchTotal -->
             </section>
 
             <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
@@ -306,12 +310,14 @@ import {
   formatHistoryTime,
   groupSidebarHistory,
   hasActiveResearch,
+  isLiveResearch,
 } from "~/utils/sidebarGroups";
+import { olderToggle, statusStageLine } from "~/utils/sidebarResearch";
 
 const props = defineProps<{ collapsed?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
 
-// 딥리서치 묶음이 처음 보이는 행 수 — 넘치는 만큼은 '더 보기 (N)' 로 이 자리에서 펼친다(전용 화면으로 가는 '모두 보기'는 템플릿의 06d 자리 주석)
+// DeepResearch 묶음이 처음 보이는 행 수 — 넘치는 만큼은 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다
 const RESEARCH_ROW_LIMIT = 5;
 type ClearGroup = "research" | "recent";
 // 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다
@@ -419,6 +425,7 @@ const groups = computed(() =>
 );
 const researchRows = computed(() => groups.value.research);
 const researchHiddenCount = computed(() => groups.value.researchTotal - groups.value.research.length);
+const older = computed(() => olderToggle(researchExpanded.value, researchHiddenCount.value));
 const recentRows = computed(() => groups.value.recent);
 // 진행 중 수·폴링은 자르기 전 전체에서 센다 — 접힌 줄 밖의 진행 중 건도 놓치지 않는다
 const liveCount = computed(() => countLiveResearch(history.entries.value));
@@ -556,6 +563,13 @@ function badgeOf(h: HistoryEntry): { label: string; tone: string } {
     default:
       return { label: "진행 중", tone: "running" };
   }
+}
+
+// 진행 중인 연구 줄(배지 '진행 중'과 같은 상태 — sidebarGroups.LIVE_STATUSES)에만 기록 목록이 주는 잡의 상태·stage 로 짧은 단계 글을
+// 단다(utils/sidebarResearch — 숫자 없이). 그것을 내려고 잡을 따로 읽지 않는다(사용자 결정 2026-10-13). 승인 대기·완료·실패·취소 줄은
+// 배지가 말한다
+function stageOf(h: HistoryEntry): string | null {
+  return h.kind === "research" && isLiveResearch(h) ? statusStageLine(h.research) : null;
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -718,20 +732,57 @@ onBeforeUnmount(() => {
   color: var(--skx-primary);
   background: var(--skx-frost-bg);
 }
-/* 더 보기 / 접기 — 묶음 맨 아래의 조용한 글자 버튼 */
-.skx-history__more {
-  align-self: flex-start;
-  padding: 0.2rem 0.4rem;
+/* 이전 연구 [n] / 접기 — 묶음 맨 아래 구분선 아래의 한 줄(시안 C). 숫자는 최근 검색의 종류 칩(.skx-history-chip)과 같은 칩,
+   오른쪽 끝 ⌄ 는 펼치면 뒤집힌다 */
+.skx-history__older {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  margin-top: 0.2rem;
+  padding: 0.5rem 0.4rem 0.2rem;
   border: none;
-  border-radius: var(--skx-radius-sm);
+  border-top: 1px solid var(--skx-line);
+  border-radius: 0;
   background: none;
   font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
   color: var(--skx-teal-ink);
+  text-align: left;
   cursor: pointer;
 }
-.skx-history__more:hover {
+.skx-history__older:hover {
   color: var(--skx-primary);
-  background: var(--skx-frost-bg);
+}
+.skx-history__older:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-history__older-chev {
+  margin-left: auto;
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.skx-history__older.is-expanded .skx-history__older-chev {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-history__older-chev {
+    transition: none;
+  }
+}
+/* 진행 중인 연구 줄의 단계 글 — 배지 옆의 청록 글자(테두리·바탕 없음), 좁으면 말줄임 */
+.skx-history-item__stage {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--skx-teal-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .skx-history__empty {
   margin: 0;

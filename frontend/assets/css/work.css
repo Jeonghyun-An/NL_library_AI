@@ -157,9 +157,26 @@
     transform: none;
   }
 }
+/* 검토 중 — 후보 이벤트(candidates)로 세운 이번 회차의 후보. 점선 카드의 테두리가 천천히 반짝이다 점검이 끝나면 채택(wk-drop)·
+   뺌(wk-sink)으로 옮긴다. 카드 전체를 opacity 로 흐리지 않는다 — 글자에도 걸려 가장 옅을 때 제목·메타가 3:1 아래로 떨어진다(상태는
+   점선·테두리 색으로만 보인다). 후보 목록은 채택 목록보다 낮게 둔다 — 아래 뺌 더미가 옆 칸 밖으로 밀려나지 않게 */
+.wk-ledger__list--reviewing {
+  max-height: 9rem;
+}
+.wk-ledger__paper.is-reviewing {
+  border-style: dashed;
+  border-color: var(--skx-border-c2);
+  animation: wk-review 1.6s ease-in-out infinite;
+}
+@keyframes wk-review {
+  50% {
+    border-color: var(--skx-border-c1);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .wk-ledger__paper.is-fresh,
-  .wk-ledger__list--dropped .wk-ledger__paper.is-fresh {
+  .wk-ledger__list--dropped .wk-ledger__paper.is-fresh,
+  .wk-ledger__paper.is-reviewing {
     animation: none;
   }
 }
@@ -1213,10 +1230,10 @@ button.wk-stepper__step {
   font-size: 0.7rem;
   color: var(--skx-ink);
 }
-/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터 떠 있어야
-   첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
+/* 옆 칸 맨 위 근거 장부(진행 패널 위) — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터
+   떠 있어야 첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
 .wk-side-ledger .wk-ledger {
-  margin-top: 1.2rem;
+  margin-bottom: 1.2rem;
 }
 /* 화면을 그대로 인쇄(Ctrl+P)하면 research.css 의 @media print 가 머리·옆 칸·버튼을 뺀다. 보고서 끝 이어가기 카드와
    이어간 연구의 진행 막대는 그 규칙에 걸리지 않아(카드는 본문 article 안, 막대의 칸은 rs-btn 이 아니다) 여기서 뺀다 —
