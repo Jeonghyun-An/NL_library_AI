@@ -8,7 +8,6 @@ import {
   GROUP_LABEL_MAX,
   MIN_READING_FOR_OUTLINE,
   READING_NOTE_MAX,
-  READING_PRESELECT,
   candidateGroups,
   candidateLine,
   candidateNote,
@@ -87,10 +86,6 @@ describe("서버 경계와 같은 값(app/services/research_work/shapes.py)", ()
     if (!m) throw new Error(`shapes.py 에서 ${name} 을 찾지 못함`);
     return Number(m[1]);
   }
-
-  it("READING_PRESELECT — 이어가기 때 미리 담는 채택 근거 수(온보딩 안내의 '8편')", () => {
-    expect(READING_PRESELECT).toBe(serverInt("READING_PRESELECT"));
-  });
 
   it("MIN_READING_FOR_OUTLINE·READING_NOTE_MAX·GROUP_LABEL_MAX", () => {
     expect(MIN_READING_FOR_OUTLINE).toBe(serverInt("MIN_READING_FOR_OUTLINE"));

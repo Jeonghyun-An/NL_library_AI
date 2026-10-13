@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
 import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
-import { READING_PRESELECT } from "~/utils/readingList";
 import {
   FINAL_STEP_NAME,
   MAKE_REPORT,
@@ -276,15 +275,14 @@ describe("온보딩", () => {
 });
 
 describe("온보딩 — 참고문헌 선택하기는 미리 담아 둔 채로 시작한다(승인 문구 2026-10-13)", () => {
-  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함)
-  const APPROVED = "근거로 쓰인 논문 8편을 미리 담아 두었습니다. 빼거나 더 담아서 참고문헌을 정해 보세요.";
+  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함). 숫자 없는 기능 설명이다 — 이 안내는 [단계 안내 다시 보기]로
+  // 이어간 모든 연구(미리 담기 전에 이어간 연구·후보가 적은 연구·예시 연구 포함)에서 열리니, 경우별 실제 수는 머리 소개가 맡는다
+  const APPROVED = "이어가기를 시작하면 근거로 쓰인 논문을 미리 담아 둡니다. 빼거나 더 담아서 참고문헌을 정해 보세요.";
   const body = ONBOARDING_STEPS[1]!.body;
 
-  it("설명은 승인 문구로 시작한다 — '8' 은 미리 담는 수 상수(READING_PRESELECT)에서 온다", () => {
-    expect(READING_PRESELECT).toBe(8);
+  it("설명은 승인 문구로 시작하고 편수를 적지 않는다(사용자 결정 2026-10-13)", () => {
     expect(body.startsWith(APPROVED)).toBe(true);
-    const src = readFileSync(fileURLToPath(new URL("../../utils/workPhase.ts", import.meta.url)), "utf8");
-    expect(src).toContain("근거로 쓰인 논문 ${READING_PRESELECT}편을 미리 담아 두었습니다.");
+    expect(body).not.toMatch(/\d+\s*편/);
     // 미리 담기 전의 '후보로 들어와 있습니다'(0 에서 담아 올라가는 말)는 이제 틀린 말이다
     expect(body).not.toContain("후보로 들어와 있습니다");
   });
