@@ -14,8 +14,10 @@ async 테스트는 asyncio.run 으로 돈다(pytest-asyncio 없음).
 """
 import asyncio
 import importlib
+import re
 import sys
 from types import SimpleNamespace
+from urllib.parse import quote
 
 import pytest
 import sqlalchemy as sa
@@ -31,29 +33,63 @@ SELF_TITLE = "조선후기 세태소설 연구"
 
 
 class _Hit:
-    """indexer.search_chunks·search_by_book 이 돌려주는 행 대역. 리랭커 대역이 text 로 점수를 찾는다."""
+    """indexer.search_chunks 가 돌려주는 행 대역. score 는 Milvus 하이브리드(RRF) 점수, rerank 는 리랭커 대역이 text 로
+    찾아 돌려주는 점수다."""
 
-    def __init__(self, book_id: str, chunk_idx: int, score: float):
+    def __init__(self, book_id: str, chunk_idx: int, score: float, *, rerank: float | None = None,
+                 pub_date: str = "1990"):
         self.chunk_id = f"{book_id}__{chunk_idx:04d}"
         self.book_id, self.chunk_idx = book_id, chunk_idx
         self.text = f"{book_id} 본문 {chunk_idx}"
         self.page_start = self.page_end = 3
         self.score = score
-        self.pub_date = "1990"
+        self.rerank = score if rerank is None else rerank
+        self.pub_date = pub_date
 
 
-def _wire(monkeypatch, pipeline, book_scores: dict[str, float]) -> dict:
-    """Milvus 는 책마다 본문 청크 1개(점수 = book_scores)로 고정한다. 청크가 1개라 로그 부스트가 없어 연관도 = 그 점수.
+# RRF(k=60) 점수는 많아야 2/61 ≈ 0.033 이다 — 긴 책의 청크는 이 눈금의 Milvus 점수를 받는다
+_RRF = 0.02
+# 대역 Milvus 가 조건식에서 읽는 자기 제외 — 실제 Milvus 처럼 창을 자르기 전에 뺀다
+_EXCLUDE = re.compile(r'book_id != "([^"]*)"')
 
-    재작성·날짜 필터 LLM 은 부르면 실패하게 둔다 — 관련 자료 경로는 둘 다 부르지 않아야 한다."""
-    seen: dict = {"search_by_book": [], "embedded": []}
-    hits = {bid: [_Hit(bid, 5, score)] for bid, score in book_scores.items()}
-    by_text = {h.text: h.score for hs in hits.values() for h in hs}
+
+def _hits(book_scores: dict, pub_dates: dict[str, str] | None = None) -> list[_Hit]:
+    """{책: 점수} → 청크 목록. 점수가 float 면 본문 청크 1개(Milvus·리랭크 모두 그 점수, 로그 부스트 없음 → 연관도 =
+    그 점수), (리랭크, n) 이면 리랭크가 그 값인 청크 n개(Milvus 점수는 RRF 눈금) — 로그 부스트를 받는 긴 책이다."""
+    out: list[_Hit] = []
+    for bid, spec in book_scores.items():
+        pub = (pub_dates or {}).get(bid, "1990")
+        if isinstance(spec, tuple):
+            rerank, n = spec
+            out += [_Hit(bid, i, _RRF, rerank=rerank, pub_date=pub) for i in range(n)]
+        else:
+            out.append(_Hit(bid, 5, spec, pub_date=pub))
+    return out
+
+
+def _wire(monkeypatch, pipeline, book_scores: dict | None = None, *, hits: list[_Hit] | None = None,
+          pub_dates: dict[str, str] | None = None, index_ignores_self_condition: bool = False) -> dict:
+    """Milvus 대역은 indexer.search_by_book 처럼 조건식의 자기 제외를 먼저 적용하고, Milvus 점수 순 상위
+    top_k_chunks 청크를 책으로 묶어 상위 top_k_books 권을 돌려준다.
+
+    재작성·날짜 필터 LLM 은 부르면 seen["llm"] 에 남기고 그럴듯한 값을 돌려준다 — 예외를 던지면 search() 의
+    gather(return_exceptions=True) 가 삼켜 테스트가 회귀를 못 본다. 재작성은 다른 질의를, 날짜 필터는 오래된 순
+    정렬을 돌려주므로 관련 자료 경로가 사용자 검색으로 돌아가면 임베딩·순서 단언도 깨진다."""
+    seen: dict = {"search_by_book": [], "embedded": [], "llm": []}
+    pool = sorted(hits if hits is not None else _hits(book_scores or {}, pub_dates),
+                  key=lambda h: h.score, reverse=True)
+    by_text = {h.text: h.rerank for h in pool}
 
     def _search_by_book(dense, sparse, top_k_chunks=20, top_k_books=5, *, meta_expr=None):
         seen["search_by_book"].append(
             {"top_k_chunks": top_k_chunks, "top_k_books": top_k_books, "meta_expr": meta_expr})
-        return dict(hits)
+        m = None if index_ignores_self_condition else _EXCLUDE.search(meta_expr or "")
+        window = [h for h in pool if not (m and h.book_id == m.group(1))][:top_k_chunks]
+        grouped: dict[str, list[_Hit]] = {}
+        for h in window:
+            grouped.setdefault(h.book_id, []).append(h)
+        order = sorted(grouped, key=lambda b: max(h.score for h in grouped[b]), reverse=True)
+        return {b: grouped[b] for b in order[:top_k_books]}
 
     def _embed(texts, is_query=False):
         seen["embedded"].append((list(texts), is_query))
@@ -62,15 +98,30 @@ def _wire(monkeypatch, pipeline, book_scores: dict[str, float]) -> dict:
     def _rerank(query, docs):
         return [SimpleNamespace(index=i, score=by_text[d]) for i, d in enumerate(docs)]
 
-    async def _no_llm(*args, **kwargs):
-        raise AssertionError("관련 자료 경로가 LLM(재작성·날짜 필터)을 불렀다")
+    async def _rewrite(query, **kwargs):
+        seen["llm"].append(("rewrite", query))
+        return f"{query} 연구 동향"
+
+    async def _metadata_filter(query):
+        seen["llm"].append(("filter", query))
+        return pipeline.MetadataFilter(sort_by="oldest", has_filter=True)
 
     monkeypatch.setattr(pipeline, "search_by_book", _search_by_book)
     monkeypatch.setattr(pipeline, "embed_texts", _embed)
     monkeypatch.setattr(pipeline, "rerank_docs", _rerank)
-    monkeypatch.setattr(pipeline, "rewrite_query", _no_llm)
-    monkeypatch.setattr(pipeline, "extract_metadata_filter", _no_llm)
+    monkeypatch.setattr(pipeline, "rewrite_query", _rewrite)
+    monkeypatch.setattr(pipeline, "extract_metadata_filter", _metadata_filter)
     return seen
+
+
+def _long_self_window() -> list[_Hit]:
+    """운영 q1(조선후기 세태소설 연구) 모양 — 자기 청크 400개가 Milvus 상위를 다 차지하고 남의 책은 그 아래 3개씩.
+    자기를 조건식에서 빼지 않으면 300자리 창이 자기로만 찬다."""
+    own = [_Hit(SELF, i, 0.033 - i * 1e-6, rerank=0.95) for i in range(400)]
+    others = [_Hit(bid, i, 0.01 - k * 1e-4 - i * 1e-6, rerank=r)
+              for k, (bid, r) in enumerate((("B", 0.8), ("C", 0.7), ("D", 0.6), ("E", 0.5)))
+              for i in range(3)]
+    return own + others
 
 
 @pytest.fixture
@@ -92,25 +143,37 @@ class TestSearchRelatedBooks:
         assert f'book_id != "{SELF}"' in expr
         assert "pub_date" not in expr
 
+    def test_long_self_does_not_crowd_the_window(self, monkeypatch, pipeline):
+        """결함 그 자체 — 자기 청크 400개가 Milvus 상위를 차지해도 300자리 창은 남의 책으로 찬다."""
+        seen = _wire(monkeypatch, pipeline, hits=_long_self_window())
+        resp = self._run(pipeline)
+        assert [b.book_id for b in resp.books] == ["B", "C", "D", "E"]
+        assert seen["llm"] == []
+
     def test_window_is_three_books_and_thirty_chunks_per_fetch_unit(self, monkeypatch, pipeline):
         """사용자 검색과 같은 배수(×3권, 권당 ×10청크)를 쓴다 — fetch_top_k 10 이면 30권·300청크 창."""
         seen = _wire(monkeypatch, pipeline, {"B": 0.8})
         self._run(pipeline, fetch_top_k=10)
         assert seen["search_by_book"][0]["top_k_books"] == 30
         assert seen["search_by_book"][0]["top_k_chunks"] == 300
+        assert seen["llm"] == []
 
     def test_no_llm_is_called_and_the_title_is_embedded_as_is(self, monkeypatch, pipeline):
         """'韓國初期近代詩論硏究'의 初期가 오래된 순 정렬로, '경제백서 1999'의 1999가 연도 필터로 읽히면 안 된다."""
         seen = _wire(monkeypatch, pipeline, {"B": 0.8})
         resp = self._run(pipeline, title="경제백서 1999", exclude_id="CNTS-00049655779")
+        assert seen["llm"] == []
         assert seen["embedded"] == [(["경제백서 1999"], True)]
         assert resp.query == "경제백서 1999"
         assert resp.rewritten_query is None
 
     def test_books_come_back_in_score_order_not_date_order(self, monkeypatch, pipeline):
-        _wire(monkeypatch, pipeline, {"B": 0.5, "C": 0.9, "D": 0.7})
+        """날짜 필터가 불렸다면 오래된 순(B 1980 → D 1990 → C 2000)이 된다 — 대역 날짜 필터는 늘 오래된 순을 돌려준다."""
+        seen = _wire(monkeypatch, pipeline, {"B": 0.5, "C": 0.9, "D": 0.7},
+                     pub_dates={"B": "1980", "C": "2000", "D": "1990"})
         resp = self._run(pipeline)
         assert [b.book_id for b in resp.books] == ["C", "D", "B"]
+        assert seen["llm"] == []
 
     @pytest.mark.parametrize("bad", ['X" || book_id != "Y', "CNTS-1\n", "CNTS 1", ""])
     def test_unsafe_id_is_refused_before_it_reaches_the_expression(self, monkeypatch, pipeline, bad):
@@ -133,8 +196,8 @@ class _Api:
     def __init__(self, client, engine, pipeline, monkeypatch):
         self.client, self.engine, self.pipeline, self._mp = client, engine, pipeline, monkeypatch
 
-    def wire(self, book_scores: dict[str, float]) -> dict:
-        return _wire(self._mp, self.pipeline, book_scores)
+    def wire(self, book_scores: dict | None = None, **kw) -> dict:
+        return _wire(self._mp, self.pipeline, book_scores, **kw)
 
     def history_rows(self) -> int:
         with self.engine.connect() as conn:
@@ -202,13 +265,21 @@ class TestRelatedApi:
         assert [b["book_id"] for b in books] == ["B"]
 
     def test_self_never_comes_back_even_if_the_index_returns_it(self, api):
-        api.wire({SELF: 0.99, "B": 0.8})
+        api.wire({SELF: 0.99, "B": 0.8}, index_ignores_self_condition=True)
         books = api.client.get(f"/api/books/{SELF}/related").json()["books"]
         assert [b["book_id"] for b in books] == ["B"]
+
+    def test_long_self_does_not_leave_a_single_related_book(self, api):
+        """운영 q1: 자기 청크가 창(180자리 중 178)을 채워 관련 자료가 1권만 남던 것 — 이제 4칸이 찬다."""
+        seen = api.wire(hits=_long_self_window())
+        books = api.client.get(f"/api/books/{SELF}/related").json()["books"]
+        assert [b["book_id"] for b in books] == ["B", "C", "D", "E"]
+        assert seen["llm"] == []
 
     def test_searches_by_the_catalog_title_without_self(self, api):
         seen = api.wire(SIX)
         api.client.get(f"/api/books/{SELF}/related")
+        assert seen["llm"] == []
         assert seen["embedded"] == [([SELF_TITLE], True)]
         assert f'book_id != "{SELF}"' in seen["search_by_book"][0]["meta_expr"]
         assert seen["search_by_book"][0]["top_k_books"] == 30
