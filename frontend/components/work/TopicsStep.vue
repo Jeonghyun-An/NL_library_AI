@@ -15,10 +15,13 @@
     <ConceptChips
       v-if="view"
       :concepts="view.concepts"
+      :candidates="view.concept_candidates ?? null"
       :generation="conceptGen"
       :read-only="readOnly"
       :busy="busy"
+      :stale="cardsStale"
       @save="saveConcepts"
+      @regenerate="regenerate"
       @retry="retryConcepts"
     />
     <CorpusScopeNote :corpus="corpus" />
@@ -44,6 +47,8 @@
       </button>
       <TopicDeck
         :topics="topics"
+        :concepts="view?.concepts ?? []"
+        :concepts-gen="conceptGen"
         :read-only="readOnly"
         :busy="busy"
         @pick="pick"
@@ -69,7 +74,7 @@ import TopicDeck from "~/components/work/TopicDeck.vue";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
 import type { TopicCreate, TopicPatch, WorkResource, WorkStep } from "~/types/work";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
-import { deckQueueLine, liveTopics } from "~/utils/topicDeck";
+import { aiCardsStale, deckQueueLine, liveTopics } from "~/utils/topicDeck";
 import { latestGeneration } from "~/utils/workEvents";
 
 // 주제 단계 화면(?s=topics, spec §4 S3). 잎 부품(ConceptChips·TopicDeck·TopicCard)의 의도를 받아 useWorkApi 로 부르고,
@@ -94,6 +99,11 @@ const topics = computed(() => {
   return t && view.value ? liveTopics(t, view.value.generations) : t;
 });
 const conceptGen = computed(() => latestGeneration(state.value, "concepts"));
+// 다시 만들 AI 자리가 있다(지금 키워드와 다른 키워드로 만든 AI 카드, 키워드 생성이 실패해 카드가 없는 씨앗 자리) —
+// 칩을 고치지 않아도 [이 키워드로 다시 만들기] 를 보인다
+const cardsStale = computed(() =>
+  topics.value && view.value ? aiCardsStale(topics.value, view.value.concepts, conceptGen.value) : false,
+);
 const corpus = computed(() => state.value.topics?.corpus ?? view.value?.corpus ?? null);
 const queueNote = computed(() => (view.value ? deckQueueLine(view.value.generations) : null));
 const pickedTitle = computed(() => {
@@ -154,6 +164,22 @@ function saveConcepts(concepts: string[]): void {
 
 function retryConcepts(genId: number): void {
   void act(() => api.retryGeneration(props.jobId, genId), ["work"], "키워드를 다시 부르지 못했습니다");
+}
+
+// [이 키워드로 다시 만들기] — 고른 칩이 저장된 것과 다르면 먼저 저장(PATCH work)하고 그 키워드로 AI 카드를 다시 만든다
+// (POST topics/regenerate). 409(키워드가 둘 미만·키워드를 고르는 중·다시 만들 카드 없음)면 act 가 주제·연구를 다시 읽는다
+function regenerate(concepts: string[]): void {
+  void act(
+    async () => {
+      const saved = view.value?.concepts ?? [];
+      if (concepts.length !== saved.length || concepts.some((c, i) => c !== saved[i])) {
+        props.work.setWork(await api.patchWork(props.jobId, { concepts }));
+      }
+      await api.regenerateTopics(props.jobId);
+    },
+    ["topics", "work"],
+    "카드를 다시 만들지 못했습니다",
+  );
 }
 
 function retryCard(genId: number): void {

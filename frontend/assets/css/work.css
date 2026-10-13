@@ -1836,4 +1836,73 @@ button.wk-psec__cite:focus-visible {
   }
 }
 
+/* ── 키워드 칩·제목 하이라이트(06e Task K8 — 제목 고르기 D23) ── */
+/* 후보 토글 칩 — 고른 칩(aria-pressed)은 실선·주색, 고르지 않은 칩은 점선·회색. 배지는 출처·편수(AI 후보·논문 n편·직접) */
+.wk-kwchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.wk-kwchip[aria-pressed="true"] {
+  color: var(--skx-primary);
+  background: var(--skx-border-c1);
+  border-style: solid;
+  border-color: var(--skx-border-c2);
+}
+.wk-kwchip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.wk-kwchip:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+.wk-kwchip__badge {
+  font-size: 0.5rem;
+  font-weight: 400;
+  color: var(--skx-gray-1);
+}
+.wk-concepts__regen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 카드 제목 속 고른 키워드 */
+.wk-kw {
+  padding: 0 0.1rem;
+  color: inherit;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-topic__kwwarn {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+.wk-topic__kwchanged {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+/* 키워드 생성이 실패해 카드가 아직 없는 씨앗 자리 — 근거 부족·실패 슬롯과 같은 점선 */
+.wk-topic--blocked {
+  border-style: dashed;
+  border-color: var(--skx-line);
+}
+
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */
