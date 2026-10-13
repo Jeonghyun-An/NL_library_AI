@@ -163,10 +163,13 @@ export function outlineHint(view: ReadingView): string | null {
 }
 
 // 읽기 목록 머리 안내 — 이어가기가 채택 근거 상위 편을 담음으로 미리 넣었으면(서버가 센 preselected) 그 수와 함께 알린다.
-// 이 안내 전에 이어간 연구는 미리 담은 행이 없어(0) 안내도 없다
-export function preselectNote(view: ReadingView): string | null {
+// 이 안내 전에 이어간 연구는 미리 담은 행이 없어(0) 안내도 없다. 읽기 전용(예시 연구)이면 앞 절만 — 쓰기 API 가 409 라
+// '빼거나 더할 수 있습니다'가 바로 아래 '예시 연구는 읽기 전용입니다'와 어긋난다
+export function preselectNote(view: ReadingView, readOnly = false): string | null {
   const n = view.preselected ?? 0;
-  return n > 0 ? `채택 근거 상위 ${n}편을 미리 담았습니다 — 빼거나 더할 수 있습니다` : null;
+  if (n <= 0) return null;
+  const note = `채택 근거 상위 ${n}편을 미리 담았습니다`;
+  return readOnly ? note : `${note} — 빼거나 더할 수 있습니다`;
 }
 
 export function canMakeOutline(view: ReadingView): boolean {

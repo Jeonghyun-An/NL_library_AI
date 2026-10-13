@@ -291,13 +291,20 @@ describe("preselectNote — 이어가기가 미리 담은 채택 근거(사용�
   it("미리 담지 않았으면(이 안내 전에 이어간 연구·이 칸을 모르는 응답) 안내가 없다", () => {
     expect(preselectNote(view([], { preselected: 0 }))).toBeNull();
     expect(preselectNote(view([]))).toBeNull();
+    expect(preselectNote(view([], { preselected: 0 }), true)).toBeNull();
+  });
+
+  it("읽기 전용(예시 연구)이면 '빼거나 더할 수 있습니다'를 싣지 않는다 — 쓰기 API 가 409 라 바로 아래 '읽기 전용' 줄과 어긋난다", () => {
+    expect(preselectNote(view([], { preselected: 8 }), true)).toBe("채택 근거 상위 8편을 미리 담았습니다");
+    expect(preselectNote(view([], { preselected: 8 }), false)).toBe("채택 근거 상위 8편을 미리 담았습니다 — 빼거나 더할 수 있습니다");
   });
 
   it("읽기 목록 화면 머리에 그 한 줄을 보인다", () => {
     const source = readFileSync(fileURLToPath(new URL("../../components/work/ReadingStep.vue", import.meta.url)), "utf8");
     expect(source).toMatch(/import \{[^}]*\bpreselectNote\b[^}]*\} from "~\/utils\/readingList";/);
     expect(source).toContain('<p v-if="preselectText" class="rs-muted">{{ preselectText }}</p>');
-    expect(source).toContain("preselectNote(reading.value)");
+    // 읽기 전용이면 앞 절만 — 화면의 readOnly 를 넘긴다
+    expect(source).toContain("preselectNote(reading.value, readOnly.value)");
   });
 });
 
