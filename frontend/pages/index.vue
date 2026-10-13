@@ -147,6 +147,8 @@
               <img src="/img/ico-arrow.svg" alt="" />
             </span>
           </div>
+          <!-- DeepResearch 모드일 때 예시 연구 카드(미리 돌린 실제 연구 — 읽기 전용). 예시가 없으면 그리지 않는다 -->
+          <ResearchExampleCards v-if="deepResearch" />
         </div>
 
         <!-- 신작도서 카운트업 -->
@@ -368,6 +370,7 @@
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
+import ResearchExampleCards from "~/components/research/ResearchExampleCards.vue";
 import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { slimBookResult } from "~/utils/historySnapshot";
