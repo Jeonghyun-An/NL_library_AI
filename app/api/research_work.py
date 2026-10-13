@@ -39,12 +39,13 @@ from repositories.book import BookRepository
 from services.research.relay import publish_work, subscribe_work
 from services.research_work.concepts import MAX_CONCEPTS, clean_concepts, concepts_input
 from services.research_work.dispatch import queue_info
-from services.research_work.enqueue import lock_key
+from services.research_work.enqueue import lock_key, queued_event
 from services.research_work.executors import EXECUTORS
 from services.research_work.keywords import paper_keyword_counts
 from services.research_work.progress import refresh_progress
-from services.research_work.seeds import corpus_of, pick_seeds, topic_input
+from services.research_work.seeds import corpus_of, pick_seeds
 from services.research_work.shapes import PHASE_ORDER, TOPIC_SEED_SLOTS
+from services.research_work.topic_card import enqueue_seed_cards
 from services.research_work.views import candidates_from_snapshot, pool_from_job, work_view
 
 log = logging.getLogger(__name__)
@@ -192,10 +193,12 @@ async def continue_research(
     job_id: str, db: AsyncSession = Depends(get_db),
     browser_id: uuid.UUID | None = Depends(get_browser_id_optional),
 ):
-    """[이 연구 이어가기]. 완료된 잡만, 멱등 — 연구 행을 새로 만든 요청만 후보·핵심 개념 생성·보고서 씨앗
-    주제 카드(최대 TOPIC_SEED_SLOTS 장, 카드 1장 = 생성 1건)를 넣는다. 동시에 두 번 눌러도 ON CONFLICT DO NOTHING
-    이 한쪽만 행을 만들게 하고, 넣는 것은 모두 그 요청의 커밋 하나에 묶인다. 이미 이어간 연구(06a 에서 이어간
-    것 포함)에는 아무것도 더 넣지 않는다 — 그 연구는 주제 화면의 [다른 방향] 으로 카드를 받는다(정함 15)."""
+    """[이 연구 이어가기]. 완료된 잡만, 멱등 — 연구 행을 새로 만든 요청만 후보·키워드(개념) 생성·보고서 씨앗 주제 행
+    (최대 TOPIC_SEED_SLOTS 개, slot 1~)을 넣는다. 씨앗 자리의 카드 생성(카드 1장 = 생성 1건)은 여기서 넣지 않는다 —
+    키워드가 정해진 뒤 키워드 생성의 반영(apply_result)·취소(cancel_generation)가 고른 키워드로 넣는다(06e D23,
+    topic_card.enqueue_seed_cards). 동시에 두 번 눌러도 ON CONFLICT DO NOTHING 이 한쪽만 행을 만들게 하고, 넣는 것은
+    모두 그 요청의 커밋 하나에 묶인다. 이미 이어간 연구(06a 에서 이어간 것 포함)에는 아무것도 더 넣지 않는다 — 그
+    연구는 주제 화면의 [다른 방향] 으로 카드를 받는다(06b 정함 15)."""
     jid = _job_uuid(job_id)
     job = await _get_job(db, jid)
     if job.status != "completed":
@@ -231,17 +234,12 @@ async def continue_research(
     ))
     report = job.report if isinstance(job.report, dict) else {}
     for slot, seed in enumerate(pick_seeds(report, limit=TOPIC_SEED_SLOTS), start=1):
-        # 주제 행 id 가 생성의 target 이다 — 행을 먼저 넣고 RETURNING 으로 id 를 받는다
-        topic_id = await db.scalar(
+        # 카드 생성은 키워드가 정해진 뒤에 넣는다(06e D23) — 여기서는 씨앗 자리 주제 행만
+        await db.execute(
             insert(ResearchTopic)
             .values(work_id=jid, slot=slot, origin="report_seed", seed=seed, card={},
                     state="candidate", corpus_snapshot=corpus)
-            .returning(ResearchTopic.id)
         )
-        await db.execute(insert(ResearchGeneration).values(
-            work_id=jid, kind="topic_card", target=str(topic_id), priority=PRIORITY_USER, status="queued",
-            input=topic_input(job.question, seed, report, topic_id),
-        ))
     await refresh_progress(db, jid)
     await db.commit()
     _send_dispatch()
@@ -347,7 +345,9 @@ async def cancel_generation(job_id: str, gen_id: int, db: AsyncSession = Depends
     """queued → canceled. 도는(running) 생성은 409 — 끝날 때까지 기다린다. canceled 로 두면 디스패처(running
     만 센다)의 전역 한 자리가 비어 다음 생성이 q_research_plan 의 남은 자리를 쓰는데, 취소한 생성의 LLM
     호출은 워커에서 계속 돌므로 두 자리를 생성이 다 쓴다(D15 — 새 딥리서치의 계획이 밀린다).
-    읽은 뒤 디스패처가 집었으면 조건부 UPDATE 가 바꾸지 않아 409 다. 디스패치는 보내지 않는다."""
+    읽은 뒤 디스패처가 집었으면 조건부 UPDATE 가 바꾸지 않아 409 다. 키워드(개념) 생성을 취소하면 같은 트랜잭션에서
+    씨앗 자리 카드를 키워드 없이 넣고(06e D23 — topic_card.enqueue_seed_cards), 그때만 커밋 뒤 디스패치와 카드마다
+    queued 이벤트를 보낸다(06e 정함 25). 그 밖의 취소는 디스패치를 보내지 않는다."""
     jid = _job_uuid(job_id)
     _writable(await _get_work(db, jid))
     gen = await _get_generation(db, jid, gen_id)
@@ -363,8 +363,13 @@ async def cancel_generation(job_id: str, gen_id: int, db: AsyncSession = Depends
     if res.rowcount != 1:
         await db.rollback()
         raise HTTPException(status_code=409, detail="취소할 수 없는 상태입니다")
+    cards = await enqueue_seed_cards(db, jid, []) if gen.kind == "concepts" else []
     await db.commit()
     await publish_work(jid, "generation", event)
+    if cards:
+        _send_dispatch()
+        for topic_id, card_gen in cards:
+            await publish_work(jid, "generation", queued_event(card_gen, "topic_card", str(topic_id)))
     return {"gen_id": gen_id, "status": "canceled"}
 
 

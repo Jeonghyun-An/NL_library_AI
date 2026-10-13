@@ -267,7 +267,7 @@ class TestDispatch:
         assert (work["concepts"], work["concept_members"]) == (["독서 격차", "청소년"], {})
         assert env.events == [(work_id, "generation", {
             "gen_id": gid, "gen_kind": "concepts", "target": None, "status": "done",
-            "model": "gemma-test", "result": {"concepts": ["독서 격차", "청소년"]},
+            "model": "gemma-test", "result": {"concepts": ["독서 격차", "청소년"], "cards": []},
         })]
         assert env.dispatched == 0 and env.disposed == 1
 
@@ -310,7 +310,7 @@ class TestDispatch:
         assert (row["status"], row["model"]) == ("done", None)
         assert row["output"]["concepts"] == []
         assert [a["outcome"] for a in row["output"]["attempts"]] == ["parse", "check", "parse"]
-        assert env.events[0][2]["result"] == {"concepts": []}
+        assert env.events[0][2]["result"] == {"concepts": [], "cards": []}
 
     def test_transport_failure_hands_over_to_qwen(self, monkeypatch, wt):
         env = _Env(monkeypatch, wt, replies=[httpx.ConnectError("거부"), GOOD])

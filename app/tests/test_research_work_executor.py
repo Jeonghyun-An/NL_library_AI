@@ -203,7 +203,7 @@ class TestApplyDelegation:
 
         payload = self._apply(engine, gid, {"concepts": ["노인 우울", "사회적 지지"]}, commit=True)
 
-        assert payload == {"concepts": ["노인 우울", "사회적 지지"]}
+        assert payload == {"concepts": ["노인 우울", "사회적 지지"], "cards": []}
         assert self._work(engine, work_id)["concepts"] == ["노인 우울", "사회적 지지"]
 
 

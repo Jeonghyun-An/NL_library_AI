@@ -371,7 +371,9 @@ class TestContinue:
 
 
 class TestContinueSeeds:
-    def test_report_seeds_become_four_topics_each_with_one_card_generation(self, api):
+    def test_report_seeds_become_four_topics_without_card_generations_yet(self, api):
+        # 06e D23 '카드 시점' — 주제 행(씨앗 자리 slot 1~4)은 이어가기 때, 카드 생성은 키워드가 정해진 뒤 키워드 생성의
+        # 반영(apply_result)·취소(cancel)가 고른 키워드로 넣는다(topic_card.enqueue_seed_cards)
         jid = _seed_job(api.engine)
 
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
@@ -383,10 +385,7 @@ class TestContinueSeeds:
         assert all(t["corpus_snapshot"] == CORPUS and t["parent_id"] is None for t in topics)
         gens = _rows(api.engine, ResearchGeneration)
         assert [(g["kind"], g["target"], g["priority"], g["status"]) for g in gens] == [
-            ("concepts", None, 10, "queued"),
-            *[("topic_card", str(t["id"]), 10, "queued") for t in topics]]
-        for topic, gen in zip(topics, gens[1:]):
-            assert gen["input"] == topic_input("청소년 독서 격차", topic["seed"], SEED_REPORT, topic["id"])
+            ("concepts", None, 10, "queued")]
         (work,) = _rows(api.engine, ResearchWork)
         assert (work["corpus_snapshot"], work["progress"], work["topic_id"]) == (CORPUS, PROGRESS0, None)
         body = res.json()
@@ -404,7 +403,7 @@ class TestContinueSeeds:
 
         assert second.status_code == 200 and second.json() == first.json()
         assert len(_rows(api.engine, ResearchTopic)) == 4
-        assert len(_rows(api.engine, ResearchGeneration)) == 5
+        assert len(_rows(api.engine, ResearchGeneration)) == 1
         assert api.dispatch.calls == 1 and len(api.events) == 1
 
     def test_a_work_continued_before_06b_gets_no_seed_cards(self, api):
@@ -427,16 +426,19 @@ class TestContinueSeeds:
         assert [g["kind"] for g in _rows(api.engine, ResearchGeneration)] == ["concepts"]
         assert _rows(api.engine, ResearchWork)[0]["corpus_snapshot"] is None
 
-    def test_a_failure_while_adding_cards_leaves_nothing_behind(self, api, monkeypatch):
-        # 씨앗 카드까지 한 커밋이다 — 중간에 실패하면 연구 행도 남지 않아 다음 이어가기가 처음부터 만든다
-        def _broken(*args, **kwargs):
-            raise RuntimeError("카드 입력을 만들지 못했다")
+    def test_a_failure_while_adding_topics_leaves_nothing_behind(self, api):
+        # 주제 행까지 한 커밋이다 — 주제 행을 넣다 실패하면 연구 행·후보·키워드 생성도 남지 않아 다음 이어가기가 처음부터 만든다
+        def _broken(conn, cursor, statement, params, context, executemany):
+            if statement.startswith("INSERT INTO research_topics"):
+                raise RuntimeError("주제 행을 넣지 못했다")
 
-        monkeypatch.setattr(api.router, "topic_input", _broken)
         jid = _seed_job(api.engine)
-
-        with pytest.raises(RuntimeError):
-            api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+        sa.event.listen(api.engine, "before_cursor_execute", _broken)
+        try:
+            with pytest.raises(RuntimeError):
+                api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+        finally:
+            sa.event.remove(api.engine, "before_cursor_execute", _broken)
 
         assert _rows(api.engine, ResearchWork) == []
         assert _rows(api.engine, ResearchTopic) == [] and _rows(api.engine, ResearchGeneration) == []
@@ -803,6 +805,33 @@ class TestCancelGeneration:
         gid = add_generation(api.engine, jid)
         assert api.client.post(f"/api/research/{jid}/generations/{gid}/cancel").status_code == 409
 
+    def test_canceling_concepts_queues_the_seed_cards_without_keywords(self, api):
+        # 06e D23 — 사용자가 키워드 생성을 취소하면 같은 트랜잭션에서 씨앗 카드를 키워드 없이 넣는다. 워커 반영과 달리
+        # 화면이 다시 읽을 계기(concepts done)가 없어 커밋 뒤 디스패치와 카드마다 queued 이벤트를 보낸다(06e 정함 25)
+        jid = _seed_job(api.engine)
+        assert api.client.post(f"/api/research/{jid}/work/continue", headers=A).status_code == 200
+        (concepts,) = _rows(api.engine, ResearchGeneration)
+        api.events.clear()
+        api.dispatch.calls = 0
+
+        res = api.client.post(f"/api/research/{jid}/generations/{concepts['id']}/cancel")
+
+        assert res.status_code == 200 and res.json() == {"gen_id": concepts["id"], "status": "canceled"}
+        topics = _rows(api.engine, ResearchTopic)
+        first, *cards = _rows(api.engine, ResearchGeneration)
+        assert first["status"] == "canceled"
+        assert [(c["kind"], c["target"], c["status"]) for c in cards] == [
+            ("topic_card", str(t["id"]), "queued") for t in topics]
+        for topic, card in zip(topics, cards):
+            assert card["input"] == topic_input("청소년 독서 격차", topic["seed"], SEED_REPORT, topic["id"], keywords=[])
+        assert api.dispatch.calls == 1
+        assert api.events == [
+            (str(jid), "generation", {"gen_id": concepts["id"], "gen_kind": "concepts", "target": None,
+                                      "status": "canceled", "model": None, "result": None}),
+            *[(str(jid), "generation", {"gen_id": c["id"], "gen_kind": "topic_card", "target": c["target"],
+                                        "status": "queued", "model": None, "result": None}) for c in cards],
+        ]
+
 
 class TestRetryGeneration:
     @pytest.mark.parametrize("status", ["failed", "canceled"])
@@ -1152,7 +1181,7 @@ class TestEndToEnd:
 
         gen_id, payload, closed = asyncio.run(_work_once())
 
-        assert closed and payload == {"concepts": ["독서 격차", "청소년"]}
+        assert closed and payload == {"concepts": ["독서 격차", "청소년"], "cards": []}
         assert len(models) == 1
         work = api.client.get(f"/api/research/{jid}/work").json()
         assert work["concepts"] == ["독서 격차", "청소년"]

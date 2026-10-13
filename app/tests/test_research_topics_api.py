@@ -590,7 +590,8 @@ class TestPick:
 
 class TestEndToEnd:
     def test_continue_makes_four_cards_then_one_is_picked(self, api):
-        # 이어가기(씨앗 4장) → 디스패처가 생성을 하나씩 집어 실행기·결과 적용·닫기 → 주제 조회 → 고르기
+        # 이어가기(씨앗 자리 4) → 디스패처가 키워드 생성을 집어 반영 — 그 트랜잭션에서 고른 키워드를 실은 카드 4건이 줄에
+        # 선다(06e D23) → 카드를 하나씩 집어 실행기·결과 적용·닫기 → 주제 조회 → 고르기
         from services.llm_client import LLMResult
         from services.research_work import dispatch
         from services.research_work.apply import apply_result
@@ -602,10 +603,10 @@ class TestEndToEnd:
 
         async def _chat(messages, *, params=None, timeout=120.0, base_url=None, model=None):
             if "향후 과제(씨앗)" in messages[-1]["content"]:
-                content = {"title": "독거노인 지지망 연구", "question": "지지망은 우울을 낮추는가?",
+                content = {"title": "독거노인의 사회적 지지와 우울", "question": "지지망은 우울을 낮추는가?",
                            "evidence": ["E1", "E2"]}
             else:
-                content = {"concepts": ["노인 우울", "사회적 지지"]}
+                content = {"keywords": ["노인 우울", "사회적 지지"]}
             return LLMResult(content=json.dumps(content, ensure_ascii=False), finish_reason="stop")
 
         async def _drain() -> list[str]:
@@ -626,6 +627,8 @@ class TestEndToEnd:
                     await db.close()
 
         assert asyncio.run(_drain()) == ["concepts", "topic_card", "topic_card", "topic_card", "topic_card"]
+        cards = [g for g in _rows(api.engine, ResearchGeneration) if g["kind"] == "topic_card"]
+        assert [g["input"]["keywords"] for g in cards] == [["노인 우울", "사회적 지지"]] * 4
 
         topics = api.client.get(f"/api/research/{jid}/topics").json()
         assert [(i["slot"], i["state"], i["generation"]["status"]) for i in topics["items"]] == [

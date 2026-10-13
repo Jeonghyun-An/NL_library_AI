@@ -18,13 +18,16 @@ import re
 
 from sqlalchemy import select, update
 
-from models.research_work import ResearchTopic
+from models.research import ResearchJob
+from models.research_work import ResearchGeneration, ResearchTopic
 from services.prompts import get_prompt
 from services.research.citations import strip_markers
 from services.research.llm_json import extract_json
+from services.research_work.enqueue import enqueue_generation
 from services.research_work.generate import Executor
 from services.research_work.markers import figure, numbers_outside, soften_claims
 from services.research_work.progress import refresh_progress
+from services.research_work.seeds import topic_input
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE, TOPIC_QUESTION_MAX, TOPIC_TITLE_MAX
 
 PROMPT = "research_topic_card"
@@ -218,6 +221,46 @@ async def apply(db, gen, output: dict) -> dict:
     await db.execute(update(ResearchTopic).where(ResearchTopic.id == topic_id).values(**values))
     await refresh_progress(db, gen.work_id)
     return {"topic_id": topic_id, "state": values["state"]}
+
+
+async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int, int]]:
+    """보고서 씨앗 자리(slot 이 있는 report_seed 주제 행)마다 카드 생성 1건을 고른 키워드로 넣는다 — 06e D23 '카드 시점'.
+
+    키워드(개념) 생성의 반영(apply_result 의 concepts 분기 — 세 번 다 못 얻은 빈 결과도 done 이다)과 그 생성의 취소
+    (api/research_work.cancel_generation — 키워드 없이)가 이 함수 하나를 부른다. '한 번만'은 씨앗 자리 행마다 본다 —
+    그 행을 target 으로 하는 topic_card 생성이 (상태와 상관없이) 하나라도 있으면 건너뛴다(06e 정함 29): 키워드를 다시
+    불러 반영돼도 카드가 또 들어가지 않고, 키워드 생성이 줄을 서는 사이 [다른 방향](origin other)이 먼저 카드를 만들어도
+    씨앗 카드는 들어간다. 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
+    커밋하지 않는다 — 부르는 쪽의 트랜잭션(디스패처 finish·취소 API)에 묶인다. 돌려주는 값은 [(topic_id, gen_id)].
+    """
+    T, G = ResearchTopic, ResearchGeneration
+    rows = (await db.execute(
+        select(T.id, T.seed).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
+        .order_by(T.slot, T.id)
+    )).all()
+    if not rows:
+        return []
+    made = set((await db.execute(
+        select(G.target).where(G.work_id == work_id, G.kind == "topic_card",
+                               G.target.in_([str(r.id) for r in rows]))
+    )).scalars().all())
+    todo = [r for r in rows if str(r.id) not in made]
+    if not todo:
+        return []
+    job = (await db.execute(
+        select(ResearchJob.question, ResearchJob.report).where(ResearchJob.id == work_id)
+    )).first()
+    question = job.question if job is not None else ""
+    report = job.report if job is not None and isinstance(job.report, dict) else {}
+    cards: list[tuple[int, int]] = []
+    for row in todo:
+        gen_id = await enqueue_generation(
+            db, work_id, kind="topic_card", target=str(row.id),
+            input=topic_input(question, row.seed or {}, report, row.id, keywords=keywords),
+        )
+        if gen_id is not None:
+            cards.append((row.id, gen_id))
+    return cards
 
 
 EXECUTOR = Executor(

@@ -15,6 +15,7 @@ from jinja2 import Environment, meta
 from history_sqlite import (
     AsyncSessionOverSync, add_generation, add_research_job, add_topic, add_work, make_engine,
 )
+from models.research import ResearchJob
 from models.research_work import GEN_KINDS, ResearchGeneration, ResearchTopic, ResearchWork
 from services.llm_client import LLMResult
 from services.prompts import get_prompt
@@ -23,6 +24,7 @@ from services.research_work.apply import apply_result
 from services.research_work.executors import EXECUTORS
 from services.research_work.generate import run_generation
 from services.research_work.markers import numbers_outside, soften_claims
+from services.research_work.seeds import topic_input
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE
 from services.research_work.topic_card import (
     EXECUTOR, FIG_ADOPTED, FIG_CORPUS, FIG_LATEST, PROMPT, card_figures, evidence_ids, figure_sentence,
@@ -416,3 +418,102 @@ class TestApply:
 
         asyncio.run(_go())
         assert (_topic_row(engine, tid)["card"], _topic_row(engine, tid)["state"]) == ({}, "candidate")
+
+
+# ── 씨앗 카드 넣기(enqueue_seed_cards — 06e D23 '카드 시점') ──────────────────────
+
+SEED_QUESTION = "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
+SEED_REPORT = {
+    "range": {"from": "1980", "to": "2017", "n_papers": 144748},
+    "evidence": {"E1": {"cnts_id": "P1", "meta": {"title": "노인의 사회적 지지와 우울의 관계", "pub_date": "2013"}},
+                 "E2": {"cnts_id": "P2", "meta": {"title": "독거노인의 사회적 관계망", "pub_date": "2015"}}},
+}
+KEYWORDS = ["노인 우울", "사회적 지지"]
+
+
+def _seed(n: int) -> dict:
+    return {"key": f"future:{n}:0", "kind": "future", "section_idx": n, "subq_idx": n, "heading": f"절 {n}",
+            "text": f"씨앗 {n}", "papers": ["P1", "P2"], "adopted": 5}
+
+
+def _seed_work(engine, slots: int = 4) -> tuple:
+    """이어가기가 남긴 모양 — 잡(질문·보고서)·연구·씨앗 자리 주제 행(slot 1~), 카드 생성은 아직 없다."""
+    wid = add_research_job(engine, status="completed", stage="synthesized")
+    with engine.begin() as conn:
+        conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == wid)
+                     .values(question=SEED_QUESTION, report=SEED_REPORT))
+    add_work(engine, wid)
+    return wid, [add_topic(engine, wid, slot=n, seed=_seed(n)) for n in range(1, slots + 1)]
+
+
+def _enqueue(engine, wid, keywords, *, commit: bool = True):
+    async def _go():
+        db = AsyncSessionOverSync(engine)
+        try:
+            out = await topic_card.enqueue_seed_cards(db, wid, keywords)
+            await (db.commit() if commit else db.rollback())
+            return out
+        finally:
+            await db.close()
+
+    return asyncio.run(_go())
+
+
+def _card_gens(engine, wid):
+    table = ResearchGeneration.__table__
+    with engine.connect() as conn:
+        return conn.execute(sa.select(table).where(table.c.work_id == wid, table.c.kind == "topic_card")
+                            .order_by(table.c.id)).mappings().all()
+
+
+class TestEnqueueSeedCards:
+    def test_one_card_generation_per_seed_slot_with_the_keywords(self, engine):
+        wid, tids = _seed_work(engine)
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        gens = _card_gens(engine, wid)
+        assert out == [(tid, g["id"]) for tid, g in zip(tids, gens)]
+        assert [(g["target"], g["status"], g["priority"]) for g in gens] == [(str(t), "queued", 10) for t in tids]
+        for n, (tid, gen) in enumerate(zip(tids, gens), start=1):
+            assert gen["input"] == topic_input(SEED_QUESTION, _seed(n), SEED_REPORT, tid, keywords=KEYWORDS)
+
+    @pytest.mark.parametrize("status", ["done", "failed", "canceled"])
+    def test_a_seed_slot_that_already_has_a_card_generation_gets_none(self, engine, status):
+        # 상태와 상관없이 — 카드 생성을 한 번 넣은 자리는 다시 넣지 않는다(키워드를 다시 불러 반영돼도 또 들어가지 않는다)
+        wid, tids = _seed_work(engine)
+        add_generation(engine, wid, kind="topic_card", status=status, target=str(tids[0]))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids[1:]
+        assert len(_card_gens(engine, wid)) == 4
+        assert _enqueue(engine, wid, KEYWORDS) == []            # 두 번째 반영은 아무것도 넣지 않는다
+
+    def test_other_direction_cards_do_not_block_the_seed_cards(self, engine):
+        # 키워드 생성이 줄을 서는 사이 [다른 방향]이 먼저 카드를 만든 연구 — '그 연구에 카드 생성이 하나라도 있으면 안
+        # 넣는다'로 하면 씨앗 카드 4장이 영영 생기지 않는다(06e 정함 29). 판정은 씨앗 자리 행마다다
+        wid, tids = _seed_work(engine)
+        other = add_topic(engine, wid, origin="other", seed=_seed(9))
+        add_generation(engine, wid, kind="topic_card", status="done", target=str(other))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids
+
+    def test_user_and_other_direction_topics_get_none(self, engine):
+        wid, tids = _seed_work(engine, slots=2)
+        add_topic(engine, wid, origin="other", seed=_seed(8))
+        add_topic(engine, wid, origin="user", card={"title": "내 주제", "question": "내 질문?", "evidence": []})
+
+        out = _enqueue(engine, wid, [])
+
+        assert [tid for tid, _ in out] == tids
+        # 키워드 없이 넣으면(취소·빈 결과) 입력의 keywords 가 비고 프롬프트에 키워드 규칙이 붙지 않는다
+        assert [g["input"]["keywords"] for g in _card_gens(engine, wid)] == [[], []]
+
+    def test_does_not_commit(self, engine):
+        wid, _ = _seed_work(engine)
+
+        assert len(_enqueue(engine, wid, KEYWORDS, commit=False)) == 4
+        assert _card_gens(engine, wid) == []
