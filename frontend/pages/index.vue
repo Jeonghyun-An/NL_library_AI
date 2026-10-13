@@ -324,13 +324,24 @@
           </button>
         </div>
 
-        <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건' -->
-        <section v-if="listBooks.length" class="skx-rlist" aria-label="소장자료 검색 결과 목록">
-          <ResultListHead :count="listBooks.length" :prefix="listExcludesPick ? '그 외 ' : ''" />
+        <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건'. 정렬·개수·쪽은 이 나머지 목록에만 적용된다 -->
+        <section
+          v-if="listBooks.length"
+          ref="listRef"
+          class="skx-rlist"
+          aria-label="소장자료 검색 결과 목록"
+        >
+          <ResultListHead :count="listBooks.length" :prefix="listExcludesPick ? '그 외 ' : ''">
+            <ResultSortControls
+              :sort-by="sortBy"
+              :page-size="pageSize"
+              @sort="setSortBy"
+              @size="setPageSize"
+            />
+          </ResultListHead>
           <div class="skx-book-list">
             <ResultCard
-              v-for="(item, i) in listBooks"
-              v-show="i < visibleCount || bookListExpanded"
+              v-for="item in pagedBooks"
               :key="item.book_id"
               :item="item"
               kind="book"
@@ -340,23 +351,8 @@
             />
           </div>
 
-          <!-- 더보기 버튼 (처음 보이는 개수보다 결과가 많을 때만) -->
-          <button
-            v-if="listBooks.length > visibleCount"
-            type="button"
-            class="skx-book-expand"
-            :aria-expanded="bookListExpanded"
-            @click="bookListExpanded = !bookListExpanded"
-          >
-            <span class="skx-book-expand__label">{{
-              bookListExpanded ? "접기" : "더보기"
-            }}</span>
-            <img
-              class="skx-book-expand__arrow"
-              src="/img/ico-arrow-down.svg"
-              alt=""
-            />
-          </button>
+          <!-- 쪽 이동 -->
+          <ResultPager :page="currentPage" :total="totalPages" @go="goToPage" />
         </section>
       </div>
     </main>
@@ -408,6 +404,17 @@ import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
 import { detailScoreParams } from "~/utils/relevance";
+import {
+  DEFAULT_SORT,
+  clampPage,
+  listViewFromState,
+  pageCount,
+  pageSlice,
+  sortResults,
+  stateWithListView,
+  type PageSize,
+  type SortKey,
+} from "~/utils/resultPaging";
 import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -462,8 +469,7 @@ let reasonSignal: AbortSignal | null = null;
 const reasonText = computed(() => reasonRaw.value.trim());
 const reasonPending = computed(() => reasonStatus.value === "loading");
 
-// ── 결과 펼치기/접기 ──────────────────────────────────────
-const bookListExpanded = ref(false);
+// ── 추천 패널 펼치기/접기 ─────────────────────────────────
 const aiExpanded = ref(false);
 
 // ── 상세 ──────────────────────────────────────────────────
@@ -662,7 +668,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   books.value = [];
   papers.value = [];
   resetReason();
-  bookListExpanded.value = false;
+  resetListView();
   aiExpanded.value = false;
   view.value = "results";
 
@@ -672,7 +678,9 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       body: {
         query,
         mode: "book",
-        top_k: 10,
+        // 정렬·쪽 나누기에 쓸 후보를 논문 검색과 같은 20 으로 받는다 — 서버 상한이다(SearchRequest.top_k le=20).
+        // 서버는 이 값의 몇 배(3 배)를 후보로 훑어 도서가 모인 만큼(2026-10-13 운영: 10 → 16~30권, 20 → 23~37권)을 돌려준다
+        top_k: 20,
         use_rewrite: true,
         use_rerank: true,
       },
@@ -742,6 +750,7 @@ function goLanding() {
   books.value = [];
   papers.value = [];
   resetReason();
+  resetListView();
   selectedItem.value = null;
   pdfOpen.value = false;
 }
@@ -824,7 +833,8 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   books.value = snap.books as unknown as BookChunkGroup[];
   papers.value = [];
   resetReason();
-  bookListExpanded.value = false;
+  // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 보던 정렬·개수·쪽을 다시 연다(그 방문 기록의 state). 새로 연 기록은 기본값
+  restoreListView(listViewFromState(import.meta.client ? window.history.state : null));
   aiExpanded.value = false;
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
     router.replace({ query: { q: entry.title, h: entry.id } });
@@ -859,9 +869,8 @@ watch(
 );
 
 // ── 결과 목록 ─────────────────────────────────────────────
-// 도서는 검색이 준 순서 그대로다. 처음에는 3건만 보이고 나머지는 더보기로 연다.
-// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'
-const visibleCount = 3;
+// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'.
+// 정렬(관련도순·이름순·최신순)·한 쪽 개수·쪽 이동은 이 나머지 목록에만 적용한다 — 추천 1권은 늘 검색이 준 1위다(topBook)
 
 // ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
 const topBook = computed(() => pickTopBook(books.value));
@@ -870,6 +879,64 @@ const topRecommended = computed(() => isRecommendable(topBook.value));
 const topReadEffect = computed(() => readEffectOf(topBook.value));
 const listExcludesPick = computed(() => !!topBook.value && topRecommended.value);
 const listBooks = computed(() => listWithoutPick(books.value, topBook.value, topRecommended.value));
+
+// 기본 한 쪽 개수. 도서 후보는 수십 권이라 10 으로 두면 쪽 이동이 보인다(논문은 후보가 최대 60 편이라 20)
+const BOOK_PAGE_SIZE: PageSize = 10;
+const sortBy = ref<SortKey>(DEFAULT_SORT);
+const pageSize = ref<PageSize>(BOOK_PAGE_SIZE);
+const currentPage = ref(1);
+const listRef = ref<HTMLElement | null>(null);
+
+const sortedBooks = computed(() => sortResults(listBooks.value, sortBy.value));
+const totalPages = computed(() => pageCount(sortedBooks.value.length, pageSize.value));
+const pagedBooks = computed(() => pageSlice(sortedBooks.value, currentPage.value, pageSize.value));
+
+function setSortBy(key: SortKey) {
+  sortBy.value = key;
+  currentPage.value = 1;
+}
+
+function setPageSize(n: PageSize) {
+  pageSize.value = n;
+  currentPage.value = 1;
+}
+
+// 쪽 이동 버튼은 목록 아래에 있다 — 새 쪽은 목록 맨 앞부터 읽게 목록 머리로 올린다
+function goToPage(p: number) {
+  currentPage.value = clampPage(p, sortedBooks.value.length, pageSize.value);
+  void nextTick(() => listRef.value?.scrollIntoView({ block: "start", behavior: "smooth" }));
+}
+
+// 새 검색·랜딩으로 가면 정렬·쪽을 처음으로 돌린다. 한 쪽 개수는 사용자가 고른 대로 둔다(논문 결과와 같다)
+function resetListView() {
+  sortBy.value = DEFAULT_SORT;
+  currentPage.value = 1;
+}
+
+// 저장된 보기가 있으면 그대로, 없으면 기본값. 쪽은 지금 목록 길이 안으로 맞춘다
+function restoreListView(saved: ReturnType<typeof listViewFromState>) {
+  if (!saved) {
+    resetListView();
+    return;
+  }
+  sortBy.value = saved.sortBy;
+  pageSize.value = saved.pageSize;
+  currentPage.value = clampPage(saved.page, listBooks.value.length, pageSize.value);
+}
+
+// 보던 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 주소에는 싣지 않는다(논문 결과도 그렇다).
+// 결과가 떠 있을 때만 남기고, 라우터가 둔 다른 state 키는 그대로 둔다
+watch([sortBy, pageSize, currentPage], () => {
+  if (!import.meta.client || view.value !== "results") return;
+  window.history.replaceState(
+    stateWithListView(window.history.state, {
+      sortBy: sortBy.value,
+      pageSize: pageSize.value,
+      page: currentPage.value,
+    }),
+    "",
+  );
+});
 
 function resetReason() {
   reasonRaw.value = "";

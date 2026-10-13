@@ -2550,6 +2550,8 @@ html.skx-scroll-lock {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  /* 쪽 이동 뒤 목록 머리로 올릴 때(scrollIntoView) 머리가 화면 가장자리에 붙지 않게 */
+  scroll-margin-top: 1.2rem;
 }
 
 /* AI 패널 — 머리(로고 + 제목 | 오른쪽 DeepRead 안내) 아래 왼쪽 글 : 오른쪽 = 2 : 1. 칸 수 전환은 화면 폭이 아니라 이 패널 폭으로 정한다 */
@@ -3086,38 +3088,6 @@ html.skx-scroll-lock {
   border-radius: 50%;
   background: var(--skx-gray-2);
   flex-shrink: 0;
-}
-
-.skx-book-expand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.8rem;
-  background: var(--skx-glass-teal);
-  border: none;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-.skx-book-expand:hover {
-  background: var(--skx-border-c1);
-}
-.skx-book-expand__label {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--skx-ink);
-  line-height: 1.5;
-}
-.skx-book-expand__arrow {
-  width: 1.2rem;
-  height: auto;
-  display: block;
-  transition: transform 0.25s ease;
-}
-.skx-book-expand[aria-expanded="true"] .skx-book-expand__arrow {
-  transform: rotate(180deg);
 }
 
 /* [E] 도서 결과 목록 */

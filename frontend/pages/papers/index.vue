@@ -182,108 +182,12 @@
           <section class="skx-paper-section" aria-label="논문 검색 결과 목록">
             <!-- 머리: 총 N 건 | 정렬 · 개수 -->
             <ResultListHead :count="filteredPapers.length">
-              <div
-                class="skx-paper-sorts"
-                role="group"
-                aria-label="정렬 기준"
-              >
-                <button
-                  type="button"
-                  :class="[
-                    'skx-paper-sort',
-                    sortBy === 'relevance' && 'is-active',
-                  ]"
-                  :aria-pressed="sortBy === 'relevance'"
-                  @click="setSortBy('relevance')"
-                >
-                  <img
-                    :src="
-                      sortBy === 'relevance'
-                        ? '/img/ico-sort-on.svg'
-                        : '/img/ico-sort-off.svg'
-                    "
-                    alt=""
-                  />
-                  관련도순
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'skx-paper-sort',
-                    sortBy === 'name' && 'is-active',
-                  ]"
-                  :aria-pressed="sortBy === 'name'"
-                  @click="setSortBy('name')"
-                >
-                  <img
-                    :src="
-                      sortBy === 'name'
-                        ? '/img/ico-sort-on.svg'
-                        : '/img/ico-sort-off.svg'
-                    "
-                    alt=""
-                  />
-                  이름순
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'skx-paper-sort',
-                    sortBy === 'date_desc' && 'is-active',
-                  ]"
-                  :aria-pressed="sortBy === 'date_desc'"
-                  @click="setSortBy('date_desc')"
-                >
-                  <img
-                    :src="
-                      sortBy === 'date_desc'
-                        ? '/img/ico-sort-on.svg'
-                        : '/img/ico-sort-off.svg'
-                    "
-                    alt=""
-                  />
-                  최신순
-                </button>
-              </div>
-              <div
-                class="skx-paper-perpage"
-                :class="perpageOpen && 'is-open'"
-                ref="perpageRef"
-              >
-                <button
-                  type="button"
-                  class="skx-paper-perpage__btn"
-                  aria-haspopup="listbox"
-                  :aria-expanded="perpageOpen"
-                  @click.stop="perpageOpen = !perpageOpen"
-                >
-                  <span class="skx-paper-perpage__label"
-                    >{{ pageSize }}개씩</span
-                  >
-                  <img
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                </button>
-                <ul class="skx-paper-perpage__menu" role="listbox">
-                  <li v-for="n in [10, 20, 30, 50]" :key="n">
-                    <button
-                      type="button"
-                      :class="[
-                        'skx-paper-perpage__opt',
-                        pageSize === n && 'is-selected',
-                      ]"
-                      role="option"
-                      :aria-selected="pageSize === n"
-                      @click="setPageSize(n)"
-                    >
-                      {{ n }}개씩
-                    </button>
-                  </li>
-                </ul>
-              </div>
-
+              <ResultSortControls
+                :sort-by="sortBy"
+                :page-size="pageSize"
+                @sort="setSortBy"
+                @size="setPageSize"
+              />
             </ResultListHead>
 
             <!-- 목록 없음 -->
@@ -312,68 +216,8 @@
               />
             </div>
 
-            <!-- 페이지네이션 -->
-            <div v-if="totalPages > 1" class="skx-pagination">
-              <nav class="skx-page" aria-label="페이지 탐색">
-                <div class="skx-page-nav">
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="처음 페이지"
-                    :disabled="currentPage === 1"
-                    @click="currentPage = 1"
-                  >
-                    <img src="/img/ico-page-first.svg" alt="" />
-                  </button>
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="이전 페이지"
-                    :disabled="currentPage === 1"
-                    @click="currentPage--"
-                  >
-                    <img src="/img/ico-page-prev.svg" alt="" />
-                  </button>
-                </div>
-                <div class="skx-page-nums">
-                  <template v-for="p in pageButtons" :key="p">
-                    <span v-if="p === '...'" class="skx-page-ellipsis">…</span>
-                    <button
-                      v-else
-                      type="button"
-                      :class="[
-                        'skx-page-num',
-                        p === currentPage && 'is-active',
-                      ]"
-                      :aria-current="p === currentPage ? 'page' : undefined"
-                      @click="currentPage = Number(p)"
-                    >
-                      {{ p }}
-                    </button>
-                  </template>
-                </div>
-                <div class="skx-page-nav">
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="다음 페이지"
-                    :disabled="currentPage === totalPages"
-                    @click="currentPage++"
-                  >
-                    <img src="/img/ico-page-next.svg" alt="" />
-                  </button>
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="마지막 페이지"
-                    :disabled="currentPage === totalPages"
-                    @click="currentPage = totalPages"
-                  >
-                    <img src="/img/ico-page-last.svg" alt="" />
-                  </button>
-                </div>
-              </nav>
-            </div>
+            <!-- 쪽 이동 -->
+            <ResultPager :page="currentPage" :total="totalPages" @go="currentPage = $event" />
           </section>
         </template>
       </div>
@@ -441,6 +285,7 @@ import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";
+import { DEFAULT_SORT, pageCount, pageSlice, sortResults, type SortKey } from "~/utils/resultPaging";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
@@ -504,11 +349,9 @@ const renderedAiText = computed(() =>
 );
 
 // ── 정렬 / 페이지 ─────────────────────────────────────────────
-const sortBy = ref("relevance");
-const pageSize = ref(20);
+const sortBy = ref<SortKey>(DEFAULT_SORT);
+const pageSize = ref<number>(20);
 const currentPage = ref(1);
-const perpageOpen = ref(false);
-const perpageRef = ref<HTMLElement | null>(null);
 
 // ── PDF 뷰어 ─────────────────────────────────────────────────
 const pdfItem = ref<BookChunkGroup | null>(null);
@@ -545,21 +388,9 @@ const aiRefPaperMap = computed(() => {
   return map;
 });
 
-const sortedPapers = computed(() => {
-  if (!paperResult.value) return [];
-  const books = [...paperResult.value.books];
-  if (sortBy.value === "relevance")
-    return books.sort((a, b) => b.best_score - a.best_score);
-  if (sortBy.value === "name")
-    return books.sort((a, b) =>
-      (a.book_info?.title ?? "").localeCompare(b.book_info?.title ?? ""),
-    );
-  if (sortBy.value === "date_desc")
-    return books.sort((a, b) =>
-      (b.book_info?.pub_date ?? "").localeCompare(a.book_info?.pub_date ?? ""),
-    );
-  return books;
-});
+const sortedPapers = computed(() =>
+  paperResult.value ? sortResults(paperResult.value.books, sortBy.value) : [],
+);
 
 const filteredPapers = computed(() => {
   const base = sortedPapers.value;
@@ -576,29 +407,9 @@ const filteredPapers = computed(() => {
   return [...cited, ...rest];
 });
 
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredPapers.value.length / pageSize.value)),
-);
+const totalPages = computed(() => pageCount(filteredPapers.value.length, pageSize.value));
 
-const pagedPapers = computed(() =>
-  filteredPapers.value.slice(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  ),
-);
-
-const pageButtons = computed(() => {
-  const total = totalPages.value;
-  const cur = currentPage.value;
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | string)[] = [1];
-  if (cur > 3) pages.push("...");
-  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++)
-    pages.push(i);
-  if (cur < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
-});
+const pagedPapers = computed(() => pageSlice(filteredPapers.value, currentPage.value, pageSize.value));
 
 // ── 유틸 ─────────────────────────────────────────────────────
 function monthStr(pubDate: string): string {
@@ -606,7 +417,7 @@ function monthStr(pubDate: string): string {
   return m ? `${parseInt(m)}월` : "";
 }
 
-function setSortBy(key: string) {
+function setSortBy(key: SortKey) {
   sortBy.value = key;
   currentPage.value = 1;
 }
@@ -614,7 +425,6 @@ function setSortBy(key: string) {
 function setPageSize(n: number) {
   pageSize.value = n;
   currentPage.value = 1;
-  perpageOpen.value = false;
 }
 
 function formatPubDate(pubDate: string): string {
@@ -676,7 +486,7 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   aiLoading.value = false;
   aiExpanded.value = false;
   currentPage.value = 1;
-  sortBy.value = "relevance";
+  sortBy.value = DEFAULT_SORT;
 
   try {
     const data = await api<BookSearchResponse>("/papers/search", {
@@ -831,7 +641,7 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
   aiLoading.value = false;
   aiExpanded.value = true;
-  sortBy.value = "relevance";
+  sortBy.value = DEFAULT_SORT;
   // 정렬을 정한 뒤에 찾아야 화면 목록과 같은 순서다
   currentPage.value = returnPage();
   if (route.query.h !== entry.id || route.query.q !== entry.title) {
@@ -916,11 +726,8 @@ async function streamAiSummary(
   }
 }
 
-// ── 페이지당 개수 드롭다운 닫기 + 주소 기준 첫 복원 ─────────────
+// ── 주소 기준 첫 복원 ─────────────────────────────────────────
 onMounted(() => {
-  document.addEventListener("click", () => {
-    perpageOpen.value = false;
-  });
   // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
   restoreFromQuery();
 });
