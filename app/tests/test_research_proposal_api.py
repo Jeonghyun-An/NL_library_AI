@@ -222,8 +222,8 @@ class TestProposalView:
     def test_references_use_build_citation_and_papers_use_the_catalog(self):
         book = SimpleNamespace(cnts_id="C1", title="노인 우울 연구", title_remainder=None,
                                personal_author="김철수|이영희", corporate_author=None, pub_date="2019",
-                               series_title="노인복지연구", vol_issue="74(2)", uci="G704-1.2019.74.2.001",
-                               url=None)
+                               series_title="노인복지연구", vol_issue="74(2)", extent="77~104",
+                               uci="G704-1.2019.74.2.001", url=None)
         snapshot = {"n_papers": 10, "from": "2000", "to": "2020", "at": "2026-10-10T00:00:00+00:00"}
         work = SimpleNamespace(topic_id=12, concepts=CONCEPTS, corpus_snapshot=snapshot)
         proposal = SimpleNamespace(version=3, outline=OUTLINE,
@@ -234,6 +234,8 @@ class TestProposalView:
         assert view["version"] == 3 and view["outline"] == OUTLINE and view["corpus"] == snapshot
         assert view["references"] == {"C1": build_citation(book)["korean"],
                                       "C2": "서지 정보 없음 (C2)."}
+        # 학술지 자리 — 학술지, 권(호), 쪽(수록면)
+        assert "노인복지연구, 74(2), 77–104." in view["references"]["C1"]
         assert list(view["papers"]) == ["C1", "C2", "C3", "K9"]
         assert view["papers"]["C1"]["title"] == "노인 우울 연구"
         assert view["papers"]["C3"] == {"title": "C3", "personal_author": None, "pub_date": None,

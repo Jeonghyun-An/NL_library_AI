@@ -161,7 +161,7 @@ async def get_paper_citation(
 ):
     """논문 출처 인용 국문/영문 반환.
 
-    메타데이터(저자, 연도, 제목, 학술지, 권호, UCI)로 KCI 스타일 인용문을 구성한다.
+    메타데이터(저자, 연도, 제목, 학술지, 권호, 수록면, UCI)로 KCI 스타일 인용문을 구성한다.
     LLM 호출 없이 즉시 응답한다.
     """
     from services.search.paper_citation import build_citation

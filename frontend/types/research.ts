@@ -120,6 +120,8 @@ export interface EvidenceMeta {
   personal_author?: string | null;
   series_title?: string | null;
   vol_issue?: string | null;
+  // 수록면(KCI 'S~E') — 이 칸을 싣기 전 보고서에는 없다
+  extent?: string | null;
   pub_date?: string | null;
   kci_citations?: number | null;
   grade?: string | null;

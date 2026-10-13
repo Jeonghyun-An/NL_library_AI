@@ -1,7 +1,20 @@
 // frontend/tests/unit/citations.test.ts
 import { describe, expect, it } from "vitest";
 import type { ReportEvidence, ReportSection } from "~/types/research";
-import { chunkListKey, citeChunks, citeLabel, metaLine, pageLabel, pdfPage, splitAuthors, splitCitations } from "~/utils/citations";
+import {
+  chunkListKey,
+  citeChunks,
+  citeLabel,
+  journalText,
+  metaLine,
+  pageLabel,
+  parseVolIssue,
+  pdfPage,
+  referencePages,
+  referenceVolIssue,
+  splitAuthors,
+  splitCitations,
+} from "~/utils/citations";
 
 function chunk(id: string, score = 0.5, page = 3) {
   return { chunk_id: id, text: `본문 ${id}`, page_start: page, page_end: page, score };
@@ -86,6 +99,13 @@ describe("metaLine", () => {
     })).toBe("김철수 · 교육학연구 12(3) · 2019 · 피인용 0 · KCI등재");
     expect(metaLine({ title: "제목만" })).toBe("");
   });
+
+  it("권호는 참고문헌과 같은 꼴로 — 권 없이 호만('-46')이면 (46), 기호뿐이면 뺀다", () => {
+    expect(metaLine({ personal_author: "김영주", series_title: "노인복지연구", vol_issue: "-46", pub_date: "2009.12" })).toBe(
+      "김영주 · 노인복지연구 (46) · 2009",
+    );
+    expect(metaLine({ series_title: "노인복지연구", vol_issue: "-" })).toBe("노인복지연구");
+  });
 });
 
 describe("pageLabel·pdfPage", () => {
@@ -135,5 +155,58 @@ describe("chunkListKey", () => {
   it("대목이 바뀌면 열쇠도 바뀐다", () => {
     expect(chunkListKey([chunk("c1"), chunk("c2")])).not.toBe(chunkListKey([chunk("c1")]));
     expect(chunkListKey([chunk("c1"), chunk("c2")])).not.toBe(chunkListKey([chunk("c2"), chunk("c1")]));
+  });
+});
+
+describe("parseVolIssue — 권호 운영 값 읽기", () => {
+  it("'V(N)' 은 권과 호, '-N' 은 호만(권 없이 — KCI 적재 값), 'V' 는 권만", () => {
+    expect(parseVolIssue("57(3)")).toEqual({ vol: "57", issue: "3", raw: null });
+    expect(parseVolIssue(" 13 ( 4 ) ")).toEqual({ vol: "13", issue: "4", raw: null });
+    expect(parseVolIssue("-46")).toEqual({ vol: null, issue: "46", raw: null });
+    expect(parseVolIssue("- 5")).toEqual({ vol: null, issue: "5", raw: null });
+    expect(parseVolIssue("7")).toEqual({ vol: "7", issue: null, raw: null });
+  });
+
+  it("비었거나 기호뿐이면 null, 그 밖의 꼴은 글 그대로(raw)", () => {
+    for (const blank of ["", "  ", "-", " - ", "—", null, undefined]) expect(parseVolIssue(blank)).toBeNull();
+    expect(parseVolIssue("특별호")).toEqual({ vol: null, issue: null, raw: "특별호" });
+    expect(parseVolIssue("11-3")).toEqual({ vol: null, issue: null, raw: "11-3" });
+  });
+});
+
+describe("참고문헌의 학술지 자리 — 학술지, 권(호), 쪽", () => {
+  it("referenceVolIssue — APA 꼴: 권(호)·(호)·권, 없으면 빈 글", () => {
+    expect(referenceVolIssue("57(3)")).toBe("57(3)");
+    expect(referenceVolIssue("-46")).toBe("(46)");
+    expect(referenceVolIssue("57")).toBe("57");
+    expect(referenceVolIssue("특별호")).toBe("특별호");
+    expect(referenceVolIssue("-")).toBe("");
+    expect(referenceVolIssue(null)).toBe("");
+  });
+
+  it("referencePages — KCI 수록면 'S~E' 를 'S–E' 로, 같은 쪽이면 하나, 쪽으로 읽을 수 없으면 빈 글", () => {
+    expect(referencePages("77~104")).toBe("77–104");
+    expect(referencePages("12-34")).toBe("12–34");
+    expect(referencePages("5 ~ 9")).toBe("5–9");
+    expect(referencePages("23")).toBe("23");
+    expect(referencePages("23~23")).toBe("23");
+    // 단행본 형태사항 같은 다른 꼴은 쪽이 아니다
+    expect(referencePages("352 p.")).toBe("");
+    expect(referencePages("")).toBe("");
+    expect(referencePages(undefined)).toBe("");
+  });
+
+  it("journalText — 있는 칸만 쉼표로 잇고, 학술지가 없으면 권·호·쪽도 싣지 않는다", () => {
+    const journal = "노인복지연구";
+    // 2026-10-13 운영 확인 — GET /api/books/KCI_FI001407641 (vol_issue '-46', extent '77~104')
+    expect(journalText({ series_title: journal, vol_issue: "-46", extent: "77~104" })).toBe("노인복지연구, (46), 77–104");
+    expect(journalText({ series_title: journal, vol_issue: "-46" })).toBe("노인복지연구, (46)");
+    expect(journalText({ series_title: journal, vol_issue: "15(9)", extent: "397~406" })).toBe("노인복지연구, 15(9), 397–406");
+    expect(journalText({ series_title: journal, vol_issue: "15", extent: "397~406" })).toBe("노인복지연구, 15, 397–406");
+    expect(journalText({ series_title: journal, vol_issue: "-", extent: "77~104" })).toBe("노인복지연구, 77–104");
+    expect(journalText({ series_title: journal, vol_issue: "", extent: "" })).toBe("노인복지연구");
+    expect(journalText({ series_title: ` ${journal} `, vol_issue: null, extent: null })).toBe("노인복지연구");
+    expect(journalText({ series_title: null, vol_issue: "15(9)", extent: "397~406" })).toBe("");
+    expect(journalText({ series_title: "  ", vol_issue: "15(9)" })).toBe("");
   });
 });

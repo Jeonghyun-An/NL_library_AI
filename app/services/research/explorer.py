@@ -129,7 +129,7 @@ async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[H
     meta_by_id = {
         cnts_id: {
             "title": b.title, "personal_author": b.personal_author,
-            "series_title": b.series_title, "vol_issue": b.vol_issue,
+            "series_title": b.series_title, "vol_issue": b.vol_issue, "extent": b.extent,
             "pub_date": b.pub_date, "kci_citations": b.kci_citations,
             "grade": b.grade,
         }
