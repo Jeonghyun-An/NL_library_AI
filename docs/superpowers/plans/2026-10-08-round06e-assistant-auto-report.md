@@ -440,7 +440,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 
 고치지 않는다: `workers/research_work_tasks.py`·`workers/research_tasks.py`(회수기 — `_close` 의 `has_queued` → `send_dispatch` 가 새 카드 생성을 집는다), `services/research/*`, 딥리서치 프롬프트, `alembic/`.
 
-**1회성(`research/`)**: `research/round06e-keyword-candidates/README.md`(목적·판정 규칙·실행 방법·결과 칸)·`measure.py`(읽기 전용 SELECT — 채움률·최근 연구 20건의 채택 논문 키워드 비율·653 원문 표본·연구별 키워드 수) — Task K1, 서버 실행 결과 `out/fill_rate.md` 와 README '결과'는 Task Z1.
+**1회성(`research/`)**: `research/round06e-keyword-candidates/README.md`(목적·판정 규칙·실행 방법·결과 칸)·`measure.py`(읽기 전용 SELECT — 채움률·최근 연구 20건의 채택 논문 키워드 비율·source_format 별 653 구분자 수와 원문 표본·연구별 키워드 수) — Task K1, 서버 실행 결과 `out/fill_rate.md` 와 README '결과'는 Task Z1.
 
 **프론트 — 새 파일** (`frontend/` 기준)
 
@@ -11839,14 +11839,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 
 **알아 둘 것:**
 - **읽기 전용** — SELECT 만, 트랜잭션을 `SET TRANSACTION READ ONLY` 로 열고 `statement_timeout` 120초. DB 주소는 `core.config` 의 `DATABASE_URL_SYNC`(`postgresql://…` — psycopg2, 앱 이미지 `requirements.txt:13` 에 있다). 뼈대가 적은 `DATABASE_URL` 은 asyncpg URL(`postgresql+asyncpg://`)이라 동기 엔진에 쓸 수 없다(파트 메모).
-- **SQL 이 피할 함정**(README '판정' 칸에도 적는다): 함정 10 — `extra->'keywords'` 가 '비지 않음'은 jsonb `?` 로 세지 않는다(빈 배열이 '있음'으로 든다). `jsonb_typeof(…) = 'array'` 이고 `jsonb_array_length(…) > 0` 일 때만 센다 — 길이는 `CASE` 안에서만 부른다(배열이 아닌 값에 부르면 오류이고 Postgres 는 AND 의 계산 순서를 보장하지 않는다). `keyword` 칼럼은 `keyword IS NOT NULL AND btrim(keyword) <> ''`. 함정 11 — ③ 원문 표본은 `ORDER BY random() LIMIT 20`. ② 의 '최근 20건'은 표본이 아니라 대상의 정의(시연·실사용에 가까운 최근 연구)라 `ORDER BY created_at DESC LIMIT 20` 그대로 두고 README 에 그 뜻을 적는다. `CAST(… AS jsonb)` 로 쓴다(함정 7 — `text()` 안에서 `::` 캐스트를 피한다).
-- 판정: ② ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → 2. ③ 으로 `split_catalog_keywords` 구분자(`[;,]`)를 확인한다. 서버 실행·결과 반영은 마무리(뼈대 §7-1).
+- **SQL 이 피할 함정**(README '판정' 칸에도 적는다): 함정 10 — `extra->'keywords'` 가 '비지 않음'은 jsonb `?` 로 세지 않는다(빈 배열이 '있음'으로 든다). `jsonb_typeof(…) = 'array'` 이고 `jsonb_array_length(…) > 0` 일 때만 센다 — 길이는 `CASE` 안에서만 부른다(배열이 아닌 값에 부르면 오류이고 Postgres 는 AND 의 계산 순서를 보장하지 않는다). `keyword` 칼럼은 `keyword IS NOT NULL AND btrim(keyword) <> ''`. 함정 11 — ③ 원문 표본은 source_format 갈래마다 `row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` 로 10개씩(quality 검토 반영 — 파트 K 메모 23). ② 의 '최근 20건'은 표본이 아니라 대상의 정의(시연·실사용에 가까운 최근 연구)라 `ORDER BY created_at DESC LIMIT 20` 그대로 두고 README 에 그 뜻을 적는다. `CAST(… AS jsonb)` 로 쓴다(함정 7 — `text()` 안에서 `::` 캐스트를 피한다).
+- 판정: ② ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → 2. ③ 으로 `split_catalog_keywords` 구분자(`[;,]`)를 정한다 — keyword 의 구분자는 채운 경로마다 다르다(MARC 로더 ` | ` — `marc_parser.py:118`·`:256`, 적재 보강 `, ` — `stages.py:538-539`). 표본이 아니라 source_format 갈래마다 `|`·`,`·`;` 를 포함한 행을 세어(채택 논문·소장 논문 전체) `|` 행이 있으면 `|` 를 더한다(파트 K 메모 23). 서버 실행·결과 반영은 마무리(뼈대 §7-1).
 - 서버 경로: `research/` 는 앱 이미지에 없다(함정 4) — 폴더를 `/data/nl-lib/data/round06e-keyword-candidates/`(컨테이너 안 `/app/data/…`)로 옮기고 `docker exec -e PYTHONPATH=/app nl-lib-fastapi …`. 개발 PC 에서는 `--dry-run`(SQL 만 찍는다)만 돌린다 — 운영 DB 에 붙지 않는다.
 - pytest 대상이 아니다(1회성). `--dry-run` 출력으로 확인한다.
 
 - [ ] **Step 1: 측정 스크립트를 쓴다**
 
-`research/round06e-keyword-candidates/measure.py` (새 파일, 전체):
+`research/round06e-keyword-candidates/measure.py` (새 파일, 전체 — quality 검토 반영 뒤의 글, 파트 K 메모 23):
 
 ```python
 r"""measure.py — 논문 키워드 채움률 1회성 측정 (round06e Task K1 — spec §12-4 '논문 키워드 채움률은 착수 전에 한 번 잰다')
@@ -11855,12 +11855,24 @@ r"""measure.py — 논문 키워드 채움률 1회성 측정 (round06e Task K1 �
 논문 쪽 원천은 library_catalog.keyword(653 $a — 구분자로 이은 글)와 extra.keywords(적재 enrichment 가 뽑은 배열)다.
 채움률이 낮으면 논문 키워드는 보조로만 둔다 — 2편 이상 겹친 것만 후보에 든다(keywords.PAPER_KEYWORD_MIN_N = 2).
 
+keyword 의 구분자는 어느 경로로 채웠느냐에 따라 다르고, 그것은 코드로 이미 안다:
+  - MARC 로더는 653 $a 를 ' | ' 로 잇는다(app/domains/nl_library/loaders/marc_parser.py:118·256, 함정 6) — source_format
+    'MARC'·'MARC+MODS'. MARC+MODS 는 MARC 값이 MODS 를 덮고(marc_mods_xlsx.py:103) MODS genre 가 thesis·report 면
+    doc_type 'paper'(doc_types.py:38)라 딥리서치(doc_scope="paper" — explorer.py:113)의 채택 논문이 될 수 있다.
+  - 적재 보강은 653 이 빈 논문에 ", ".join(추출 키워드) 를 넣는다(app/services/ingestion/stages.py:538-539).
+    KCI 로더는 keyword 를 채우지 않아(kci_xlsx.py _COL_MAP) KCI 행은 보강 몫뿐이다.
+보강으로 채운 ', ' 행이 많으면 무작위 표본에 ' | ' 행이 하나도 안 나올 수 있다 — 구분자는 표본이 아니라 source_format
+갈래마다 세어서 판정한다(함정 10 의 교훈 — 코드 경로가 있다고 그 데이터가 있는 것은 아니다).
+
 읽기 전용이다 — SELECT 만 하고 트랜잭션을 READ ONLY 로 연다. 출력은 markdown 표(stdout).
   ① 소장 논문 전체(doc_type='paper')의 653 키워드·추출 키워드·둘 중 하나가 있는 비율
   ② 최근 이어간 연구 RECENT_WORKS 건(research_works 최근순)의 채택 논문(research_reading origin evidence) 중
      키워드가 하나라도 있는 비율과 연구별 분포 — 판정의 기준
-  ③ 653 키워드 원문 표본 SAMPLE_SIZE 개(ORDER BY random() — 함정 11) — 구분자 확인용
-  ④ ② 의 연구별로 서로 다른 키워드 수(1편 이상·2편 이상) — 판정이 2 일 때 남는 후보 수를 가늠한다
+  ③ 653 키워드 구분자 — ② 의 채택 논문과 소장 논문 전체에서 source_format 갈래마다 keyword 가 있는 행 수와 그중
+     '|'·','·';' 를 포함한 행 수. '|' 행이 있으면 split_catalog_keywords 에 '|' 를 더한다(구분자 판정 줄 — Task Z1 Step 5).
+     그리고 653 키워드 원문 표본 — 갈래마다 SAMPLE_PER_FORMAT 개(row_number() OVER (PARTITION BY source_format
+     ORDER BY random()) — 함정 11, 한 갈래가 많아도 다른 갈래가 빠지지 않는다) — 그 밖의 구분자(예: '/')를 눈으로 본다
+  ④ ② 의 연구별로 서로 다른 키워드 수(1편 이상·2편 이상, ';'·','·'|' 로 나눈다) — 판정이 2 일 때 남는 후보 수를 가늠한다
 함정 10: extra->'keywords' 를 jsonb ? 로 세지 않는다(빈 배열이 '있음'으로 든다) — 배열이고 길이가 0 보다 클 때만 센다.
 Postgres 는 AND 의 계산 순서를 보장하지 않아 jsonb_array_length 는 CASE 안에서만 부른다(배열이 아니면 오류).
 
@@ -11873,9 +11885,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "app"))   # 개발 PC 에서 돌릴 때 — 컨테이너는 PYTHONPATH=/app
 
-RECENT_WORKS = 20     # 판정 대상 — 표본이 아니라 '시연·실사용에 가까운 최근 연구'라는 정의다(ORDER BY created_at DESC 그대로)
-SAMPLE_SIZE = 20      # 653 키워드 원문 표본 — 구분자를 눈으로 본다(ORDER BY random())
-THRESHOLD = 0.5       # ② 의 비율이 이 값 이상이면 PAPER_KEYWORD_MIN_N = 1, 아래면 2
+RECENT_WORKS = 20       # 판정 대상 — 표본이 아니라 '시연·실사용에 가까운 최근 연구'라는 정의다(ORDER BY created_at DESC 그대로)
+SAMPLE_PER_FORMAT = 10  # 653 키워드 원문 표본 — source_format 갈래마다(PARTITION BY … ORDER BY random())
+THRESHOLD = 0.5         # ② 의 비율이 이 값 이상이면 PAPER_KEYWORD_MIN_N = 1, 아래면 2
 
 HAS_CATALOG = "(lc.keyword IS NOT NULL AND btrim(lc.keyword) <> '')"
 HAS_EXTRACTED = ("(CASE WHEN jsonb_typeof(lc.extra->'keywords') = 'array' "
@@ -11908,12 +11920,45 @@ LEFT JOIN library_catalog lc ON lc.cnts_id = rr.cnts_id
 GROUP BY r.id, r.created_at
 ORDER BY r.created_at DESC"""
 
+# 범위 — recent: ② 와 같은 최근 연구의 채택 논문(doc_type 을 거르지 않는다 — ② 와 같다), catalog: ① 과 같은 소장 논문 전체
+SCOPES = (("recent", f"최근 연구 {RECENT_WORKS}건 채택 논문"), ("catalog", "소장 논문 전체"))
+
+SQL_SEPARATORS = f"""
+WITH {RECENT.strip()},
+adopted AS (
+  SELECT DISTINCT rr.cnts_id
+  FROM recent r
+  JOIN research_reading rr ON rr.work_id = r.id AND rr.origin = 'evidence'
+),
+scoped AS (
+  SELECT 'recent' AS scope, lc.source_format, lc.keyword
+  FROM adopted a
+  JOIN library_catalog lc ON lc.cnts_id = a.cnts_id
+  UNION ALL
+  SELECT 'catalog' AS scope, lc.source_format, lc.keyword
+  FROM library_catalog lc
+  WHERE lc.doc_type = 'paper'
+)
+SELECT lc.scope, coalesce(lc.source_format, '') AS source_format,
+       count(*) AS papers,
+       count(*) FILTER (WHERE {HAS_CATALOG}) AS catalog_keyword,
+       count(*) FILTER (WHERE {HAS_CATALOG} AND position('|' in lc.keyword) > 0) AS has_pipe,
+       count(*) FILTER (WHERE {HAS_CATALOG} AND position(',' in lc.keyword) > 0) AS has_comma,
+       count(*) FILTER (WHERE {HAS_CATALOG} AND position(';' in lc.keyword) > 0) AS has_semicolon
+FROM scoped lc
+GROUP BY lc.scope, lc.source_format
+ORDER BY lc.scope DESC, lc.source_format"""
+
 SQL_SAMPLE = f"""
-SELECT lc.cnts_id, lc.keyword
-FROM library_catalog lc
-WHERE lc.doc_type = 'paper' AND {HAS_CATALOG}
-ORDER BY random()
-LIMIT {SAMPLE_SIZE}"""
+SELECT coalesce(s.source_format, '') AS source_format, s.cnts_id, s.keyword
+FROM (
+  SELECT lc.source_format, lc.cnts_id, lc.keyword,
+         row_number() OVER (PARTITION BY lc.source_format ORDER BY random()) AS rn
+  FROM library_catalog lc
+  WHERE lc.doc_type = 'paper' AND {HAS_CATALOG}
+) s
+WHERE s.rn <= {SAMPLE_PER_FORMAT}
+ORDER BY s.source_format, s.rn"""
 
 SQL_OVERLAP = f"""
 WITH {RECENT.strip()},
@@ -11922,7 +11967,7 @@ words AS (
   FROM recent r
   JOIN research_reading rr ON rr.work_id = r.id AND rr.origin = 'evidence'
   JOIN library_catalog lc ON lc.cnts_id = rr.cnts_id
-  CROSS JOIN LATERAL regexp_split_to_table(coalesce(lc.keyword, ''), '[;,]') AS k(word)
+  CROSS JOIN LATERAL regexp_split_to_table(coalesce(lc.keyword, ''), '[;,|]') AS k(word)
   UNION
   SELECT rr.work_id, rr.cnts_id, lower(btrim(k.word))
   FROM recent r
@@ -11945,7 +11990,8 @@ ORDER BY work_id"""
 QUERIES = (
     ("① 소장 논문 전체의 키워드 채움", SQL_CATALOG),
     (f"② 최근 이어간 연구 {RECENT_WORKS}건의 채택 논문 — 판정 기준", SQL_RECENT),
-    (f"③ 653 키워드 원문 표본 {SAMPLE_SIZE}개 — 구분자 확인", SQL_SAMPLE),
+    ("③ 653 키워드 구분자 — source_format 별 행 수(채택 논문·소장 논문 전체)", SQL_SEPARATORS),
+    (f"③ 653 키워드 원문 표본 — source_format 마다 {SAMPLE_PER_FORMAT}개", SQL_SAMPLE),
     ("④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)", SQL_OVERLAP),
 )
 
@@ -11955,7 +12001,7 @@ def _cell(value) -> str:
 
 
 def _table(headers: list[str], rows: list[tuple]) -> str:
-    lines = ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+    lines = ["| " + " | ".join(_cell(h) for h in headers) + " |", "|" + "---|" * len(headers)]
     lines += ["| " + " | ".join(_cell(v) for v in row) + " |" for row in rows]
     return "\n".join(lines)
 
@@ -11993,11 +12039,25 @@ def report(conn) -> str:
     else:
         out += ["판정: 이어간 연구의 채택 논문이 없다 — 기본값 PAPER_KEYWORD_MIN_N = 1 그대로", ""]
 
+    seps = conn.execute(text(SQL_SEPARATORS)).all()
+    labels = dict(SCOPES)
+    out += [f"## {QUERIES[2][0]}", "", _table(
+        ["범위", "source_format", "논문", "653 키워드 있음", "'|' 포함", "',' 포함", "';' 포함"],
+        [(labels.get(r.scope, r.scope), r.source_format, r.papers, r.catalog_keyword,
+          r.has_pipe, r.has_comma, r.has_semicolon) for r in seps]), ""]
+    pipe = {scope: sum(r.has_pipe for r in seps if r.scope == scope) for scope, _ in SCOPES}
+    if any(pipe.values()):
+        out += [f"구분자 판정: '|' 를 포함한 653 키워드 — {labels['recent']} {pipe['recent']}행·"
+                f"{labels['catalog']} {pipe['catalog']}행 → split_catalog_keywords 에 '|' 를 더한다(Task Z1 Step 5)", ""]
+    else:
+        out += ["구분자 판정: '|' 를 포함한 653 키워드가 없다 → split_catalog_keywords 의 [;,] 그대로", ""]
+
     sample = conn.execute(text(SQL_SAMPLE)).all()
-    out += [f"## {QUERIES[2][0]}", "", _table(["cnts_id", "keyword 원문"], [tuple(r) for r in sample]), ""]
+    out += [f"## {QUERIES[3][0]}", "", _table(
+        ["source_format", "cnts_id", "keyword 원문"], [tuple(r) for r in sample]), ""]
 
     overlap = conn.execute(text(SQL_OVERLAP)).all()
-    out += [f"## {QUERIES[3][0]}", "", _table(
+    out += [f"## {QUERIES[4][0]}", "", _table(
         ["연구", "키워드(1편 이상)", "키워드(2편 이상)"], [tuple(r) for r in overlap]), ""]
     return "\n".join(out)
 
@@ -12033,7 +12093,7 @@ if __name__ == "__main__":
 
 - [ ] **Step 2: README 를 쓴다**
 
-`research/round06e-keyword-candidates/README.md` (새 파일, 전체):
+`research/round06e-keyword-candidates/README.md` (새 파일, 전체 — quality 검토 반영 뒤의 글, 파트 K 메모 23):
 
 ````markdown
 # round06e — 논문 키워드 채움률 (1회성)
@@ -12050,13 +12110,18 @@ if __name__ == "__main__":
 - 기준은 ② **최근 이어간 연구 20건의 채택 논문 중 키워드(653 또는 추출)가 하나라도 있는 논문의 비율**이다. 소장 전체(①)가 아니라 실제로 후보가 될 논문(채택 근거)을 본다.
   - **50% 이상** → `PAPER_KEYWORD_MIN_N = 1` — 논문에만 있는 후보도 1편부터 후보에 든다(구현 기본값).
   - **50% 미만** → `PAPER_KEYWORD_MIN_N = 2` — 보조로만: 2편 이상 겹친 논문 키워드만 후보에 든다(LLM 후보와 겹친 것은 편수와 상관없이 출처 'AI · 논문 n편'으로 남는다).
-- ③ 의 원문 표본으로 `split_catalog_keywords` 의 구분자(기본 `;`·`,`, NFKC 뒤 앞뒤 공백 정리)가 맞는지 본다. 다른 구분자(예: `/`·`|`)가 보이면 그 정규식을 고친다.
-- ④ 는 판정이 2 일 때 연구마다 남는 논문 후보 수를 가늠하는 참고다(서버 SQL 의 `lower(btrim())` 은 코드의 `keyword_key`(NFKC → 공백 제거 → casefold)보다 느슨하다 — 띄어쓰기만 다른 같은 말은 둘로 센다).
+- ③ 은 `split_catalog_keywords` 의 구분자(기본 `[;,]`, NFKC 뒤 앞뒤 공백 정리)를 정한다. `library_catalog.keyword` 의 구분자는 어느 경로로 채웠느냐에 따라 다르고, 두 가지는 코드로 이미 안다.
+  - **MARC 로더 — ` | `**: 653 $a 를 ` | ` 로 잇는다(`app/domains/nl_library/loaders/marc_parser.py:118`·`:256`, 함정 6). source_format `MARC`·`MARC+MODS` 행이다. MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라, 딥리서치(`doc_scope="paper"` — `app/services/research/explorer.py:113`)의 채택 논문이 될 수 있다.
+  - **적재 보강 — `, `**: 653 이 빈 논문에 `", ".join(추출 키워드)` 를 넣는다(`app/services/ingestion/stages.py:538-539`). KCI 로더는 keyword 를 채우지 않아(`kci_xlsx.py` `_COL_MAP`) KCI 행은 보강 몫뿐이다.
+  - 보강으로 채운 `, ` 행이 많으면 무작위 표본에 ` | ` 행이 하나도 안 나올 수 있다. 그래서 표본이 아니라 **세어서** 판정한다(함정 10 의 교훈 — 코드 경로가 있다고 그 데이터가 있는 것은 아니다). ③ 첫 표는 ② 의 채택 논문과 소장 논문 전체에서 source_format 갈래마다 653 키워드가 있는 행과 그중 `|`·`,`·`;` 를 포함한 행을 센다.
+  - **판정:** 첫 표의 `'|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `|` 를 더한다(Task Z1 Step 5). 0 이면 그대로. 스크립트가 표 아래에 이 판정 줄(`구분자 판정: …`)을 찍는다.
+  - ③ 둘째 표(source_format 마다 10개 원문 표본)로는 그 밖의 구분자(예: `/`)가 있는지 눈으로 본다. 보이면 그 글자도 같은 식으로 더한다.
+- ④ 는 판정이 2 일 때 연구마다 남는 논문 후보 수를 가늠하는 참고다. `;`·`,`·`|` 로 나눈다 — ③ 판정이 `|` 를 더하면 코드와 같고, `|` 행이 없으면 나누는 결과가 같다(서버 SQL 의 `lower(btrim())` 은 코드의 `keyword_key`(NFKC → 공백 제거 → casefold)보다 느슨하다 — 띄어쓰기만 다른 같은 말은 둘로 센다).
 
 ### SQL 이 피하는 함정
 
 - **함정 10** — `extra->'keywords'` 가 '비지 않음'은 jsonb `?`(키 있음)로 세지 않는다. 빈 배열이 '있음'으로 든다. `jsonb_typeof(…) = 'array'` 이고 `jsonb_array_length(…) > 0` 일 때만 센다(길이는 `CASE` 안에서만 부른다 — 배열이 아닌 값에 부르면 오류이고, Postgres 는 AND 의 계산 순서를 보장하지 않는다). `keyword` 칼럼은 `keyword IS NOT NULL AND btrim(keyword) <> ''`. ② 의 '키워드가 하나라도 있음'도 같은 두 조건의 OR 이다.
-- **함정 11** — ③ 의 원문 표본은 정렬 걸린 `LIMIT` 이 아니라 `ORDER BY random() LIMIT 20` 이다(앞부분 편중을 피한다).
+- **함정 11** — ③ 의 원문 표본은 정렬 걸린 `LIMIT` 이 아니라 source_format 갈래마다 `row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` 로 10개씩이다(앞부분 편중을 피하고, 한 갈래가 많아 다른 갈래가 표본에서 빠지는 일도 피한다).
 - ② 의 '최근 20건'은 표본이 아니라 **대상의 정의**(시연·실사용에 가까운 최근 연구)라 `ORDER BY created_at DESC LIMIT 20` 그대로 둔다. 예시 연구(`is_example`)·지운 연구(`deleted_at`)는 뺀다.
 
 ## 실행
@@ -12079,14 +12144,14 @@ DB 주소는 컨테이너 env(`DB_*`)로 만든 `DATABASE_URL_SYNC`(psycopg2)다
 
 ## 결과
 
-(서버 실행 뒤 채운다 — `out/fill_rate.md` 의 ①·② 합계 줄·판정 줄·③ 에서 본 구분자, 그리고 그에 따른 결정: `PAPER_KEYWORD_MIN_N` 을 1 로 둘지 2 로 바꿀지, `split_catalog_keywords` 구분자를 고칠지. 바꾸면 그 커밋 해시를 적는다.)
+(서버 실행 뒤 채운다 — `out/fill_rate.md` 의 ①·② 합계 줄·판정 줄·③ 구분자 판정 줄(범위별 `'|' 포함` 행 수)과 표본에서 본 그 밖의 구분자, 그리고 그에 따른 결정: `PAPER_KEYWORD_MIN_N` 을 1 로 둘지 2 로 바꿀지, `split_catalog_keywords` 구분자를 고칠지. 바꾸면 그 커밋 해시를 적는다.)
 ````
 
 - [ ] **Step 3: dry-run 으로 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && python -I research/round06e-keyword-candidates/measure.py --dry-run | grep -c "^-- "`
 
-Expected: `4`(질의 넷의 머리 줄 — `-- ① 소장 논문 전체의 키워드 채움` … `-- ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)`)
+Expected: `5`(질의 다섯의 머리 줄 — `-- ① 소장 논문 전체의 키워드 채움` … `-- ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)`. ③ 이 구분자 수·원문 표본 두 덩이다 — 파트 K 메모 23)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && python -I research/round06e-keyword-candidates/measure.py --dry-run | head -3`
 
@@ -16815,6 +16880,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 | 20 | 1-6 Task K7 `cardNote("blocked")` = `키워드를 다시 부르면 카드를 만듭니다` | `키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다` | 검토 반영. 키워드를 직접 넣고 저장한 사용자의 길을 함께 알린다 |
 | 21 | 1-6 Task K7 `aiCardsStale(topics, concepts)` | `aiCardsStale(topics, concepts, conceptsGen?)` — blocked 씨앗 자리도 세고 다시 만드는 중인 카드는 세지 않는다(이름 그대로) | 검토 반영. 키워드 생성 failed 뒤 직접 저장한 연구가 막다른 길에 서지 않게 |
 | 22 | 1-6 Task K7 이름 목록 | `cardRemakingNote` 를 더하고 `canPick` 이 다시 만드는 중인 카드를 막는다. Task K8 TopicCard 는 그 줄을 달고 [직접 고치기]도 막는다 | 검토 반영 — 06e 정함 16 의 화면 쪽 |
+| 23 | Task K1 ③ 653 원문 표본 20개(`doc_type='paper'` 전체에서 `ORDER BY random() LIMIT 20`)로 구분자를 보고, ④ 는 `[;,]` 로 나눈다 | ③ 을 둘로 — source_format 갈래마다 653 키워드가 있는 행과 그중 `\|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 세어 구분자 판정 줄을 찍고(`'\|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `\|` — Task Z1 Step 5), 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())`). ④ 는 `[;,\|]` 로 나눈다. README 판정 규칙에 두 구분자와 출처 줄을 적는다. 질의는 넷에서 다섯(Task K1 Step 3·Task Z1 Step 1·2 의 기대를 맞췄다) | quality 검토 지적. keyword 의 구분자는 채운 경로마다 다르고 코드로 이미 안다 — MARC 로더는 653 $a 를 ` \| ` 로 잇고(`marc_parser.py:118`·`:256`, 함정 6), 적재 보강은 653 이 빈 논문에 `", ".join(추출 키워드)`(`stages.py:538-539` — KCI 로더는 keyword 를 채우지 않는다). MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라 딥리서치(`doc_scope="paper"` — `explorer.py:113`)의 채택 논문이 된다. 보강으로 채운 `, ` 행이 많으면 무작위 20개에 ` \| ` 행이 하나도 안 나와 Z1 이 '[;,] 그대로'로 잘못 판정하고, K2 에서 MARC 학위논문 키워드가 한 덩어리로 남거나(40자 넘으면 버려진다) ④ 가 그 행을 한 낱말로 세어 판정 2 때 참고하는 후보 수도 틀린다. 함정 10 의 교훈('코드 경로가 있다고 그 데이터가 있는 것은 아니다 — 세어서 확정한다')대로 센다. 되돌리려면 이 커밋의 `measure.py`·README 를 앞 커밋으로 돌린다(그러면 위 오판이 돌아온다) |
 
 ---
 
@@ -17679,14 +17745,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 
 **알아 둘 것:**
 - 실행 절차의 정본은 Task K1 이 쓴 `research/round06e-keyword-candidates/README.md` 의 '실행' 절이다. 아래 명령은 그 절차(`/app/data/` 바인드 마운트 + `-e PYTHONPATH=/app` — 함정 4)의 꼴이고, README 의 경로·인자가 다르면 README 를 따른다.
-- **판정 규칙(정함 14):** ② '최근 이어간 연구 20건(예시·지운 연구 뺌)의 채택 논문(`research_reading.origin = 'evidence'`) 중 키워드가 하나라도 있는 비율' ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → `2` — 스크립트가 ② 표 아래에 판정 줄(`판정: 비율 n% — 기준 50% 이상|미만 → PAPER_KEYWORD_MIN_N = 1|2`)을 찍는다. ① 전체 논문 채움률과 ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)는 참고값이다(시연·실사용은 최근 이어간 연구가 대상이다 — '최근 20건'은 표본이 아니라 대상 정의라 `ORDER BY created_at DESC LIMIT 20` 그대로 둔다). ③ 653 원문 표본 20개(`ORDER BY random() LIMIT 20` — 함정 11)로 구분자를 본다. DB 주소는 컨테이너 env 로 만든 `DATABASE_URL_SYNC`(psycopg2 — `DATABASE_URL` 은 asyncpg URL 이라 동기 엔진에 못 쓴다), 트랜잭션은 `READ ONLY`·`statement_timeout` 120초다(Task K1).
+- **판정 규칙(정함 14):** ② '최근 이어간 연구 20건(예시·지운 연구 뺌)의 채택 논문(`research_reading.origin = 'evidence'`) 중 키워드가 하나라도 있는 비율' ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → `2` — 스크립트가 ② 표 아래에 판정 줄(`판정: 비율 n% — 기준 50% 이상|미만 → PAPER_KEYWORD_MIN_N = 1|2`)을 찍는다. ① 전체 논문 채움률과 ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)는 참고값이다(시연·실사용은 최근 이어간 연구가 대상이다 — '최근 20건'은 표본이 아니라 대상 정의라 `ORDER BY created_at DESC LIMIT 20` 그대로 둔다). ③ 은 구분자 판정이다 — source_format 갈래마다 653 키워드가 있는 행과 그중 `|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 센다(MARC 로더는 ` | `, 적재 보강은 `, ` 로 잇는다 — README 판정 규칙). 스크립트가 표 아래에 구분자 판정 줄(`구분자 판정: '|' 를 포함한 653 키워드 — … → split_catalog_keywords 에 '|' 를 더한다(Task Z1 Step 5)` 또는 `… 없다 → split_catalog_keywords 의 [;,] 그대로`)을 찍는다. 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` — 함정 11)로 그 밖의 구분자를 눈으로 본다(파트 K 메모 23). DB 주소는 컨테이너 env 로 만든 `DATABASE_URL_SYNC`(psycopg2 — `DATABASE_URL` 은 asyncpg URL 이라 동기 엔진에 못 쓴다), 트랜잭션은 `READ ONLY`·`statement_timeout` 120초다(Task K1).
 - 출력은 운영 데이터의 집계와 키워드 원문 표본이다 — 저장소에 들이기 전에 그 밖의 것(논문 제목·저자·초록)이 섞이지 않았는지 본다.
 
 - [ ] **Step 1: (개발 PC) dry-run 으로 SQL 을 다시 본다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && python -I research/round06e-keyword-candidates/measure.py --dry-run`
 
-Expected: SQL 네 덩이(머리 줄 `-- ①` ~ `-- ④`)만 찍히고 DB 에 붙지 않는다(`--dry-run` 은 엔진을 만들기 전에 끝난다 — `core.config` 도 읽지 않는다). 눈으로 확인한다 — ①·② 의 '키워드 있음' 조건이 `(lc.keyword IS NOT NULL AND btrim(lc.keyword) <> '')` 와 `(CASE WHEN jsonb_typeof(lc.extra->'keywords') = 'array' THEN jsonb_array_length(lc.extra->'keywords') ELSE 0 END > 0)` 의 OR 이고 jsonb `?` 를 쓰지 않는다(함정 10), ② 가 `research_works` 의 `deleted_at IS NULL AND is_example = false` 를 `ORDER BY created_at DESC LIMIT 20` 으로 고른 뒤 `research_reading` 의 `origin = 'evidence'` 를 센다, ③ 이 `ORDER BY random() LIMIT 20` 이다(함정 11). 다르면 Task K1 으로 돌아가 고친 뒤 이 Step 부터 다시.
+Expected: SQL 다섯 덩이(머리 줄 `-- ①`·`-- ②`·`-- ③` 둘·`-- ④`)만 찍히고 DB 에 붙지 않는다(`--dry-run` 은 엔진을 만들기 전에 끝난다 — `core.config` 도 읽지 않는다). 눈으로 확인한다 — ①·② 의 '키워드 있음' 조건이 `(lc.keyword IS NOT NULL AND btrim(lc.keyword) <> '')` 와 `(CASE WHEN jsonb_typeof(lc.extra->'keywords') = 'array' THEN jsonb_array_length(lc.extra->'keywords') ELSE 0 END > 0)` 의 OR 이고 jsonb `?` 를 쓰지 않는다(함정 10), ② 가 `research_works` 의 `deleted_at IS NULL AND is_example = false` 를 `ORDER BY created_at DESC LIMIT 20` 으로 고른 뒤 `research_reading` 의 `origin = 'evidence'` 를 센다, ③ 의 첫 덩이가 source_format 별로 `position('|' in lc.keyword) > 0`(과 `,`·`;`)을 세고 둘째 덩이가 `row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` 의 10 이하다(함정 11), ④ 가 `'[;,|]'` 로 나눈다. 다르면 Task K1 으로 돌아가 고친 뒤 이 Step 부터 다시.
 
 - [ ] **Step 2: (사용자, 서버) 측정 스크립트를 돌린다**
 
@@ -17702,11 +17768,11 @@ echo "exit=$?"; wc -l /data/nl-lib/data/round06e-keyword-candidates/out/fill_rat
 cat /data/nl-lib/data/round06e-keyword-candidates/out/fill_rate.md
 ```
 
-Expected: `exit=0`, 머리 `# round06e 논문 키워드 채움률` 과 markdown 표 넷 — ① `doc_type='paper'` 전체의 논문 수·653 키워드·추출 키워드·둘 중 하나·비율 ② 최근 이어간 연구 20건의 연구별 채택 논문·키워드 있음·비율과 합계 줄, 그 아래 판정 줄(`판정: 비율 … → PAPER_KEYWORD_MIN_N = 1` 또는 `2`, 채택 논문이 없으면 '기본값 … = 1 그대로') ③ `cnts_id`·`keyword` 원문 표본 20줄 ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상). Traceback 이 나오면(`ModuleNotFoundError: No module named 'core'` 는 `-e PYTHONPATH=/app` 를 빠뜨린 것 — 함정 4) 그 줄을 개발 PC 로 가져와 Task K1 으로 돌아간다. `fill_rate.md` 를 개발 PC 의 `C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/research/round06e-keyword-candidates/out/fill_rate.md` 로 가져온다(scp 또는 붙여 넣기 — 줄바꿈은 그대로).
+Expected: `exit=0`, 머리 `# round06e 논문 키워드 채움률` 과 markdown 표 다섯 — ① `doc_type='paper'` 전체의 논문 수·653 키워드·추출 키워드·둘 중 하나·비율 ② 최근 이어간 연구 20건의 연구별 채택 논문·키워드 있음·비율과 합계 줄, 그 아래 판정 줄(`판정: 비율 … → PAPER_KEYWORD_MIN_N = 1` 또는 `2`, 채택 논문이 없으면 '기본값 … = 1 그대로') ③ 범위(최근 연구 채택 논문·소장 논문 전체)·source_format 별 논문·653 키워드 있음·`'|' 포함`·`',' 포함`·`';' 포함` 과 그 아래 구분자 판정 줄, 그리고 `source_format`·`cnts_id`·`keyword` 원문 표본(갈래마다 10줄 이하) ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상). Traceback 이 나오면(`ModuleNotFoundError: No module named 'core'` 는 `-e PYTHONPATH=/app` 를 빠뜨린 것 — 함정 4) 그 줄을 개발 PC 로 가져와 Task K1 으로 돌아간다. `fill_rate.md` 를 개발 PC 의 `C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/research/round06e-keyword-candidates/out/fill_rate.md` 로 가져온다(scp 또는 붙여 넣기 — 줄바꿈은 그대로).
 
 - [ ] **Step 3: 판정하고 README '결과'에 적는다 (Edit 도구)**
 
-`research/round06e-keyword-candidates/README.md` 의 '결과' 칸에 다음을 적는다(값은 `out/fill_rate.md` 그대로): 측정 날짜·실행한 사람(사용자), ① 비율, ② 합계 줄의 비율·채택 논문 수·판정 줄, ④ 의 1편 이상·2편 이상 키워드 수 범위 한 줄(참고), ③ 에서 본 구분자(예: `;` 만 · `;` 와 `,` · 그 밖에 `|`), **판정** — `PAPER_KEYWORD_MIN_N = <1|2>`(② 판정 줄 그대로 — 50% 이상/미만), 구분자 — '가정과 같다' 또는 '`<글자>` 를 더한다'.
+`research/round06e-keyword-candidates/README.md` 의 '결과' 칸에 다음을 적는다(값은 `out/fill_rate.md` 그대로): 측정 날짜·실행한 사람(사용자), ① 비율, ② 합계 줄의 비율·채택 논문 수·판정 줄, ④ 의 1편 이상·2편 이상 키워드 수 범위 한 줄(참고), ③ 구분자 판정 줄(범위별 `'|' 포함` 행 수)과 표본에서 본 그 밖의 구분자, **판정** — `PAPER_KEYWORD_MIN_N = <1|2>`(② 판정 줄 그대로 — 50% 이상/미만), 구분자 — '가정과 같다' 또는 '`<글자>` 를 더한다'.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && grep -c "PAPER_KEYWORD_MIN_N = [12]" research/round06e-keyword-candidates/README.md`
 
@@ -17739,7 +17805,7 @@ Expected: 실패 0(`test_research_work_api.py` 의 이어가기 테스트는 논
 
 - [ ] **Step 5: (구분자가 다를 때만) `split_catalog_keywords` 에 구분자를 더한다 — 실패 테스트 먼저**
 
-③ 에서 본 새 구분자를 `S` 라 하자(예: `|`). `app/tests/test_research_work_keywords.py` 끝에 다음을 더한다(`|` 자리에 실제 글자):
+③ 구분자 판정 줄이 `|` 를 더한다고 하거나 표본에서 새 구분자를 봤으면 그 글자를 `S` 라 하자(예: `|`). `app/tests/test_research_work_keywords.py` 끝에 다음을 더한다(`|` 자리에 실제 글자):
 
 ```python
 def test_the_separator_seen_in_the_k1_sample_is_split_too():
