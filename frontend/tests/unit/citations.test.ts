@@ -106,6 +106,11 @@ describe("metaLine", () => {
     );
     expect(metaLine({ series_title: "노인복지연구", vol_issue: "-" })).toBe("노인복지연구");
   });
+
+  it("학술지가 없으면 권호도 싣지 않는다 — 참고문헌의 학술지 자리(journalText)와 같은 규칙", () => {
+    expect(metaLine({ personal_author: "김영주", vol_issue: "-46", pub_date: "2009.12" })).toBe("김영주 · 2009");
+    expect(metaLine({ personal_author: "김영주", series_title: "  ", vol_issue: "15(9)", pub_date: "2009" })).toBe("김영주 · 2009");
+  });
 });
 
 describe("pageLabel·pdfPage", () => {

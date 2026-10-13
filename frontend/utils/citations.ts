@@ -104,7 +104,9 @@ export function journalText(meta: Pick<EvidenceMeta, "series_title" | "vol_issue
 
 export function metaLine(meta: EvidenceMeta | undefined): string {
   if (!meta) return "";
-  const journal = [meta.series_title?.trim(), referenceVolIssue(meta.vol_issue)].filter(Boolean).join(" ");
+  // 학술지가 없으면 권호도 싣지 않는다 — journalText 와 같은 규칙('김영주 · (46) · 2009' 처럼 권호만 떠 있지 않게)
+  const title = meta.series_title?.trim() ?? "";
+  const journal = title ? [title, referenceVolIssue(meta.vol_issue)].filter(Boolean).join(" ") : "";
   const citations = meta.kci_citations != null ? `피인용 ${meta.kci_citations}` : "";
   return [meta.personal_author ?? "", journal, pubYear(meta.pub_date) ?? "", citations, meta.grade ?? ""]
     .map((s) => s.trim())
