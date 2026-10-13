@@ -394,6 +394,51 @@ button.wk-stepper__step {
   padding-top: 0.8rem;
   border-top: 1px solid var(--skx-border-c1);
 }
+/* 참고문헌 선택하기 머리 — 소개 문단 옆(같은 줄 오른쪽)에 다음 단계 버튼 묶음(표 아래 .wk-screen__next 와 같은 ReadingNextActions).
+   소개가 18rem 아래로 줄 만큼 본문 칸이 좁으면(오른쪽 DeepRead 패널을 연 2단 등) 버튼이 소개 아래로 감기고 오른쪽 끝에 선다.
+   비활성 까닭 줄(hint)은 버튼 위 한 줄을 다 쓰고 묶음 폭(18rem) 안에서 접힌다 — 소개 글을 밀어내지 않는다 */
+.wk-screen__lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem 1.2rem;
+}
+.wk-screen__intro {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+.wk-screen__lead-actions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem 0.6rem;
+  max-width: 18rem;
+  margin-left: auto;
+}
+.wk-screen__lead-actions > .rs-muted {
+  flex-basis: 100%;
+  text-align: right;
+}
+/* 좁은 화면(앱의 휴대폰 배치 기준 768px — utils/sidebarDrawer NARROW_QUERY)은 늘 소개 아래, 왼쪽에 붙여 손이 닿게 한다 */
+@media (max-width: 768px) {
+  .wk-screen__lead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wk-screen__intro {
+    flex-basis: auto;
+  }
+  .wk-screen__lead-actions {
+    max-width: none;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+  .wk-screen__lead-actions > .rs-muted {
+    text-align: left;
+  }
+}
 .wk-edit {
   display: flex;
   flex-direction: column;

@@ -6,8 +6,12 @@
       <header class="wk-screen__head">
         <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
         <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">참고문헌 선택하기</h2>
-        <!-- 소개는 읽기 목록을 불러온 뒤에만 — 미리 담은 수(preselected)를 알아야 맞는 말을 고른다(readingIntro) -->
-        <p v-if="intro" class="rs-muted">{{ intro }}</p>
+        <div v-if="reading" class="wk-screen__lead">
+          <!-- 소개와 다음 단계 버튼은 읽기 목록을 불러온 뒤에만 — 소개는 미리 담은 수(preselected)를, 버튼은 주제·담은 수를 알아야
+               맞는 말·맞는 상태가 된다. 버튼은 표 아래와 같은 묶음(ReadingNextActions) — 넓으면 소개 옆, 좁으면 소개 아래 -->
+          <p v-if="intro" class="rs-muted wk-screen__intro">{{ intro }}</p>
+          <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
+        </div>
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
         <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
         <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
@@ -45,32 +49,7 @@
           :busy="busy"
           @revive="(cnts) => update(cnts, { state: 'candidate' })"
         />
-        <div class="wk-screen__next">
-          <p v-if="hint" class="rs-muted">{{ hint }}</p>
-          <button v-if="reading.topic_id === null" type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'topics')">
-            제목 고르기
-          </button>
-          <template v-else-if="outlineMade">
-            <button type="button" class="rs-btn" @click="emit('go', 'proposal')">{{ FINAL_STEP_NAME }} 단계로</button>
-            <button
-              type="button"
-              class="rs-btn rs-btn--ghost"
-              :disabled="readOnly || busy || !canOutline"
-              @click="makeOutline(true)"
-            >
-              {{ REMAKE_REPORT }}
-            </button>
-          </template>
-          <button
-            v-else
-            type="button"
-            class="rs-btn"
-            :disabled="readOnly || busy || !canOutline"
-            @click="makeOutline(false)"
-          >
-            {{ MAKE_REPORT }}
-          </button>
-        </div>
+        <ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
       </template>
     </section>
 
@@ -117,6 +96,7 @@ import CandidateDrawer from "~/components/work/CandidateDrawer.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
 import DeepReadPanel from "~/components/work/DeepReadPanel.vue";
 import FunnelCounter from "~/components/work/FunnelCounter.vue";
+import ReadingNextActions from "~/components/work/ReadingNextActions.vue";
 import ReadingTable from "~/components/work/ReadingTable.vue";
 import { useReadingSaves } from "~/composables/useReadingSaves";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
@@ -130,7 +110,7 @@ import { passageText } from "~/utils/passageText";
 import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, readingIntro } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
-import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
+import { REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
 // 담은 논문이 MIN_READING_FOR_OUTLINE 편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
@@ -158,6 +138,15 @@ const hint = computed(() => (reading.value ? outlineHint(reading.value) : null))
 const intro = computed(() => readingIntro(reading.value, props.question, readOnly.value));
 const canOutline = computed(() => !!reading.value && canMakeOutline(reading.value));
 const outlineMade = computed(() => view.value?.phase === "proposal" || view.value?.phase === "done");
+// 다음 단계 버튼 묶음(머리·표 아래 두 곳의 ReadingNextActions)이 함께 받는 상태 — 비활성 조건을 여기 한 곳에서 정한다.
+// busy 는 makeOutline 의 잠금이라 위·아래 어느 쪽을 눌러도 두 묶음이 함께 꺼진다
+const makeDisabled = computed(() => readOnly.value || busy.value || !canOutline.value);
+const nextActions = computed(() => ({
+  noTopic: reading.value?.topic_id === null,
+  outlineMade: outlineMade.value,
+  makeDisabled: makeDisabled.value,
+  hint: hint.value,
+}));
 // 범위 띠(spec §4 단계 공통·§7) — TopicsStep 과 같이 주제 목록의 corpus, 없으면 연구의 corpus
 const corpus = computed(() => state.value.topics?.corpus ?? view.value?.corpus ?? null);
 const topicTitle = computed(() => {
