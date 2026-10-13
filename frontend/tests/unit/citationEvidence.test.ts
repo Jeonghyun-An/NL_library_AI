@@ -18,6 +18,16 @@ const CITED = "가족 지지가 높을수록 노인의 우울이 낮다고 보�
 const UNRELATED = "선행 연구들은 사회적 자본이 지역 공동체의 회복력에 기여한다고 보고하였다 [E2].";
 const PANEL_EXCERPT =
   "본 연구는 2019년 전국 패널 자료를 이용하였다. 분석 결과 소득 수준은 주관적 건강에 유의한 영향을 미치지 않았다.";
+// 논문 초록 꼴 대목 — '을 대상으로'·'에 미치는 영향을 분석하였다'·'유의하게'·'것으로 나타났다' 가 대목에 한 번씩만 나온다
+const ABSTRACT =
+  "이 연구는 대학생 500명을 대상으로 학업 스트레스가 수면의 질에 미치는 영향을 분석하였다. " +
+  "구조방정식 모형을 적용한 결과 학업 스트레스는 수면의 질을 유의하게 낮추는 것으로 나타났다. " +
+  "또한 자기효능감은 이 관계를 부분 매개하였다. 성별에 따른 차이는 확인되지 않았다.";
+const ELDERLY =
+  "본 연구는 독거노인 412명을 대상으로 사회적 지지와 우울의 관계를 살펴보았다. " +
+  "위계적 회귀분석 결과 가족 지지와 친구 지지는 모두 우울을 유의하게 낮추는 것으로 나타났다. " +
+  "특히 친구 지지의 효과는 남성 노인에게서 더 컸다. 경제 상태는 우울과 정적 관계가 있었다. " +
+  "이러한 결과는 지역사회 차원의 관계망 지원이 필요함을 시사한다. 후속 연구에서는 종단 자료를 활용할 필요가 있다.";
 
 function source(excerpt: SectionSource["excerpt"]): SectionSource {
   return { cnts_id: "KCI_A", abstract: "초록", excerpt };
@@ -75,6 +85,32 @@ describe("bestExcerptSentence — 인용 문장을 가장 많이 덮는 대목 �
     expect(bestExcerptSentence(UNRELATED, PANEL_EXCERPT)).toBeNull();
   });
 
+  it("대목에 한 번만 나오는 논문 상투구만 겹치는 짧은 무관 문장은 고르지 않는다", () => {
+    // 대목 안 IDF 만으로는 한 번 나오는 상투구가 가장 무거워 이 문장들이 0.32·0.32·0.44·0.32·0.38 로 강조되었다
+    for (const cited of [
+      "노인의 신체활동은 인지 기능 저하를 늦추는 것으로 나타났다 [E1].",
+      "기업의 사회적 책임 활동은 고객 충성도를 유의하게 높이는 것으로 나타났다 [E1].",
+      "중학생을 대상으로 한 연구에서 부모의 양육 태도가 자아존중감에 미치는 영향을 분석하였다 [E1].",
+    ]) {
+      expect(bestExcerptSentence(cited, ABSTRACT), cited).toBeNull();
+    }
+    expect(bestExcerptSentence("청소년의 스마트폰 과의존은 학업 성취도를 낮추는 것으로 나타났다 [E2].", ELDERLY)).toBeNull();
+    expect(bestExcerptSentence("유아의 놀이 시간은 언어 발달에 영향을 미치지 않았다 [E2].", PANEL_EXCERPT)).toBeNull();
+  });
+
+  it("상투구로만 된 인용 문장은 대목에 같은 말이 있어도 고르지 않는다", () => {
+    expect(bestExcerptSentence("것으로 나타났다 [E1].", ABSTRACT)).toBeNull();
+    expect(bestExcerptSentence("을 대상으로 한 연구에서 유의하게 확인되었다.", ABSTRACT)).toBeNull();
+  });
+
+  it("상투구가 섞인 맞는 인용 문장은 그대로 고른다", () => {
+    expect(bestExcerptSentence("학업 스트레스가 수면의 질을 유의하게 낮추는 것으로 나타났다 [E1].", ABSTRACT)).toBe(1);
+    expect(bestExcerptSentence("자기효능감이 학업 스트레스와 수면의 관계를 매개한다 [E1].", ABSTRACT)).toBe(2);
+    expect(bestExcerptSentence("성별 차이는 없었다 [E1].", ABSTRACT)).toBe(3);
+    expect(bestExcerptSentence("친구 지지의 효과는 남성 노인에서 더 크게 나타났다 [E1].", ELDERLY)).toBe(2);
+    expect(bestExcerptSentence("독거노인의 우울을 줄이려면 지역사회 관계망 지원이 필요하다 [E1].", ELDERLY)).toBe(4);
+  });
+
   it("흔한 말을 더 많이 나누는 긴 문장보다 내용이 겹치는 짧은 문장을 고른다", () => {
     const cited = "선행 연구는 가족 지지가 노인의 우울을 낮춘다고 보고하였다 [E1].";
     const excerpt =
@@ -113,6 +149,10 @@ describe("excerptParts", () => {
     expect(excerptParts("", CITED)).toEqual([]);
     // 어미·흔한 낱말만 겹치면 근거처럼 강조하지 않는다
     expect(excerptParts(PANEL_EXCERPT, UNRELATED)).toEqual([{ text: PANEL_EXCERPT, mark: false }]);
+    // 논문 상투구만 겹쳐도 그렇다
+    expect(excerptParts(ABSTRACT, "노인의 신체활동은 인지 기능 저하를 늦추는 것으로 나타났다 [E1].")).toEqual([
+      { text: ABSTRACT, mark: false },
+    ]);
   });
 });
 
