@@ -342,6 +342,8 @@ class TestContinue:
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
 
         assert res.status_code == 409
+        # 화면이 detail 을 그대로 보인다(researchErrorMessage 의 409) — 화면 표기 DeepResearch(round08 사용자 결정)
+        assert res.json()["detail"] == "완료된 DeepResearch만 이어갈 수 있습니다"
         assert _rows(api.engine, ResearchWork) == []
         assert api.dispatch.calls == 0
 

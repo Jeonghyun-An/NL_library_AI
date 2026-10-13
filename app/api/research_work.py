@@ -202,7 +202,7 @@ async def continue_research(
     jid = _job_uuid(job_id)
     job = await _get_job(db, jid)
     if job.status != "completed":
-        raise HTTPException(status_code=409, detail="완료된 딥리서치만 이어갈 수 있습니다")
+        raise HTTPException(status_code=409, detail="완료된 DeepResearch만 이어갈 수 있습니다")
     corpus = corpus_of(job)
     created = await db.scalar(
         insert(ResearchWork)

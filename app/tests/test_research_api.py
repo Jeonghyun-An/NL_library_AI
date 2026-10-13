@@ -552,7 +552,8 @@ class TestSharedQueueRunSlot:
 
 _SID = "3f2b8c1e-4d5a-4b6c-8d7e-9f0a1b2c3d4e"
 _OTHER_SID = "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
-_BROWSER_ACTIVE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
+# 화면 표기는 DeepResearch(round08 사용자 결정) — frontend/utils/researchErrors.ts BROWSER_ACTIVE_MESSAGE 와 같은 말
+_BROWSER_ACTIVE = "진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
 
 
 class TestBrowserRunLimit:
