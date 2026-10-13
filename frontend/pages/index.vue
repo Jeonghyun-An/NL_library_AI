@@ -311,7 +311,13 @@
             질문과 딱 맞는 자료를 찾지 못했어요 — 아래 목록을 확인해 주세요.
           </p>
         </AiResultPanel>
-        <!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 — 그때까지 DOM 을 만들지 않는다 -->
+        <!-- 이 결과에서 이어서 — [DeepResearch로 이어서 조사하기]는 메인 입력창에 이 검색어를 채우고 DeepResearch 모드를 켠다(시작은
+             하지 않는다 — 논문 결과의 같은 버튼과 같은 모양) -->
+        <div v-if="topBook && resultQuery" class="skx-deeper">
+          <button type="button" class="skx-deeper__btn" @click="continueAsDeepResearch">
+            <span aria-hidden="true">+</span> {{ DEEP_RESEARCH }}로 이어서 조사하기
+          </button>
+        </div>
 
         <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건' -->
         <section v-if="listBooks.length" class="skx-rlist" aria-label="소장자료 검색 결과 목록">
@@ -390,7 +396,8 @@ import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
 import { DEFAULT_LANDING_TAB, LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
-import { queryWithoutStart, readStart } from "~/utils/landingStart";
+import { deepResearchStartRoute, queryWithoutStart, readStart, readStartDraft } from "~/utils/landingStart";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
@@ -539,16 +546,26 @@ function showBookMode() {
 }
 
 // 사이드바 [+ 연구 시작하기](?start=deep-research) — 랜딩의 논문 패널에 딥리서치 모드를 켜고 입력창에 초점을 준다.
-// 결과 화면이었다면 랜딩으로 걷는다. 처리한 뒤 주소에서 start 만 지운다(남기면 새로고침마다 다시 켜진다).
+// 결과 화면이었다면 랜딩으로 걷는다. 처리한 뒤 주소에서 start·draft 를 지운다(남기면 새로고침마다 다시 켜진다).
 // 이미 '/' 에 있어도 쿼리가 바뀌므로 watch 가 같은 길로 받는다
 async function startFromQuery() {
   if (route.path !== "/" || !readStart(route.query)) return;
+  // 소장자료 결과의 [DeepResearch로 이어서 조사하기]가 실은 질문 초안 — 주소에서 지우기 전에 읽는다
+  const draft = readStartDraft(route.query);
   void router.replace({ query: queryWithoutStart(route.query) });
   if (view.value !== "landing") goLanding();
   mode.value = "paper";
-  // 논문 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창에는 초점이 가지 않는다
+  if (draft) currentQuery.value = draft;
+  // 논문 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창에는 초점이 가지 않는다. 초안이 있으면 초점이 글 끝에 간다
   await nextTick();
   plusMenu.value?.activateMode("deep-research");
+}
+
+// 소장자료 결과의 [DeepResearch로 이어서 조사하기] — 결과의 검색어를 메인 입력창(논문 패널)에 채우고 DeepResearch 모드를 켠다.
+// 연구는 시작하지 않는다(고쳐 보내면 기존 흐름). 사이드바 [+ 연구 시작하기]와 같은 랜딩 주소(?start=)로 옮겨 뒤로 가기로 이 결과에
+// 돌아온다. 입력창이 아니라 화면 결과의 검색어(resultQuery)를 싣는다
+function continueAsDeepResearch() {
+  void router.push(deepResearchStartRoute(resultQuery.value));
 }
 
 // tablist 키보드: 좌우·Home·End 로 갈래를 옮기고(자동 선택) 초점도 그 갈래로 따라간다
