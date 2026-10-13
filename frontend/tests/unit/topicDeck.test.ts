@@ -41,6 +41,7 @@ import {
   topicProblem,
 } from "~/utils/topicDeck";
 import keywordMatch from "../fixtures/keyword_match.json";
+import termChecks from "../fixtures/term_checks.json";
 
 const CARD: TopicCard = {
   title: "노인의 사회적 지지 유형별 우울 완화 효과",
@@ -536,5 +537,21 @@ describe("aiCardsStale — 다시 만들 AI 자리가 있다", () => {
     // 키워드 생성이 끝난 직후(카드 생성을 다시 읽기 전)는 기다리는 중이라 세지 않는다
     expect(aiCardsStale(blocked, now, concepts("done"))).toBe(false);
     expect(aiCardsStale(blocked, now)).toBe(false);
+  });
+});
+
+// 06c 의 공용 고정 예제 — 서버 terms.contains(제목 키워드 검사)와 화면 keywordSpans(하이라이트)가 같은 참·거짓이어야 한다.
+// 어긋나면 keywordSpans 를 고친다 — term_checks.json 은 06c 가 지키는 정본이라 고치지 않는다(06e Task K9)
+interface TermCase {
+  text: string;
+  word: string;
+  expected: boolean;
+  note: string;
+}
+const TERM_CASES: TermCase[] = termChecks.contains;
+
+describe("keywordSpans 는 06c term_checks.json 의 contains 칸과 같은 참·거짓", () => {
+  it.each(TERM_CASES)("$note", (c) => {
+    expect(keywordSpans(c.text, [c.word]).some((p) => p.mark)).toBe(c.expected);
   });
 });

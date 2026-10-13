@@ -246,3 +246,60 @@ class TestRunGeneration:
 
         with pytest.raises(ValueError):
             _run(chat)
+
+
+# ── 무른 검사(soft_check — 06e 정함 17) ──────────────────────────────────
+
+
+def _soft(n: int) -> str:
+    """엄격한 검사(ok)는 못 넘고 무른 검사(soft)만 넘는 답 — n 으로 어느 답인지 가른다."""
+    return json.dumps({"ok": False, "soft": True, "n": n})
+
+
+def _soft_executor(*, soft: bool = True) -> Executor:
+    """엄격한 검사와 무른 검사를 함께 가진 실행기 — 주제 카드(근거 2편 / 근거 2편 + 제목 키워드)와 같은 모양."""
+    return Executor(
+        kind="facet", build=lambda inp: (MESSAGES, dict(PARAMS)), parse=_parse,
+        check=lambda out: out.get("ok") is True,
+        empty=lambda inp: {"empty": True},
+        soft_check=(lambda out: out.get("soft") is True) if soft else None,
+    )
+
+
+def _run_soft(chat: _ScriptedChat, *, soft: bool = True) -> GenerationResult:
+    return asyncio.run(run_generation(_soft_executor(soft=soft), {"q": "질문"}, chat_fn=chat))
+
+
+class TestSoftCheck:
+    def test_a_strict_pass_wins_over_a_kept_soft_pass(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [_soft(1), OK]})
+
+        result = _run_soft(chat)
+
+        assert result.output == {"ok": True} and result.model == "qwen-test"
+        assert _outcomes(result) == ["check", "ok"]
+
+    def test_three_soft_passes_return_the_last_one_with_its_model(self, cfg):
+        # 세 번 다 엄격한 검사를 놓쳤다 — 빈 결과 대신 무른 검사를 넘은 마지막 답을 그 모델 이름으로 낸다
+        chat = _ScriptedChat({"qwen-test": [_soft(1), _soft(2)], "gemma-test": [_soft(3)]})
+
+        result = _run_soft(chat)
+
+        assert chat.models == ["qwen-test", "qwen-test", "gemma-test"]
+        assert result.output == {"ok": False, "soft": True, "n": 3} and result.model == "gemma-test"
+
+    def test_without_soft_check_the_empty_result_is_unchanged(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [_soft(1), _soft(2)], "gemma-test": [_soft(3)]})
+
+        result = _run_soft(chat, soft=False)
+
+        assert result.output == {"empty": True} and result.model is None
+
+    def test_attempts_record_check_for_soft_passes(self, cfg):
+        # 무른 검사만 넘은 시도도 공개 부록(attempts)에는 check 다 — 뒤 시도가 해석에 실패해도 보관한 답을 낸다
+        chat = _ScriptedChat({"qwen-test": [_soft(1), NOT_JSON], "gemma-test": [THIN]})
+
+        result = _run_soft(chat)
+
+        assert _outcomes(result) == ["check", "parse", "check"]
+        assert result.output == {"ok": False, "soft": True, "n": 1} and result.model == "qwen-test"

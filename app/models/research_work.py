@@ -29,7 +29,9 @@ JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 
   Card      = {"title": str, "question": str, "evidence": [cnts_id], "figure_sentence": str|null,
                "figures": [Figure], "latest_year": int|null, "edited": bool,
                "keywords": [str],                               — 만들 때 넘긴 고른 키워드(06e — 옛 카드엔 없음)
-               "checks": {"numbers": [str], "softened": int, "recovered": int}, "gen_id": int|null}
+               "checks": {"numbers": [str], "softened": int, "recovered": int,
+                          "missing_keywords": [str]},           — keywords 중 제목에 없는 것(06e)
+               "gen_id": int|null}
   Outline   = {"topic": {"id": int, "title": str, "question": str}, "basis": "concept"|"subq",
                "concepts": [str],                                    — 목차를 만들 때의 핵심 개념
                "groups": [{"key": "prior.g1", "name": str, "hint": str, "papers": [cnts_id]}],

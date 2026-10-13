@@ -7,6 +7,7 @@ history_sqlite 의 SQLite 에서 실제 SQL 로 돈다.
 import asyncio
 import json
 import re
+from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
@@ -20,6 +21,7 @@ from models.research import ResearchJob
 from models.research_work import GEN_KINDS, ResearchGeneration, ResearchTopic, ResearchWork
 from services.llm_client import LLMResult
 from services.prompts import get_prompt
+from services.research.terms import contains
 from services.research_work import routing, topic_card
 from services.research_work.apply import apply_result
 from services.research_work.executors import EXECUTORS
@@ -29,6 +31,7 @@ from services.research_work.seeds import topic_input
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE
 from services.research_work.topic_card import (
     EXECUTOR, FIG_ADOPTED, FIG_CORPUS, FIG_LATEST, PROMPT, card_figures, evidence_ids, figure_sentence,
+    keyword_misses,
 )
 
 PAPERS = [
@@ -222,7 +225,8 @@ class TestBind:
             "figures": card_figures(12, 2015, INPUT["corpus"]),
             "latest_year": 2015,
             "edited": False,
-            "checks": {"numbers": [], "softened": 0, "recovered": 0},
+            "keywords": [],
+            "checks": {"numbers": [], "softened": 0, "recovered": 0, "missing_keywords": []},
             "gen_id": None,
         }}
 
@@ -263,7 +267,41 @@ class TestBind:
         assert json.loads(json.dumps(card, ensure_ascii=False)) == card
 
 
+# 06e 화면 keywordSpans 가 감싸는 자리(Task K7) — 일치(참·거짓)의 정본은 06c 의 term_checks.json 이고 06c 테스트가 지킨다.
+# 여기서는 하이라이트 사례도 서버 제목 검사(06c contains)와 같은 참·거짓인지만 본다
+KEYWORD_MATCH = json.loads(
+    (Path(__file__).resolve().parents[2] / "frontend" / "tests" / "fixtures" / "keyword_match.json")
+    .read_text(encoding="utf-8"))
+
+
+class TestKeywordMatchFixture:
+    @pytest.mark.parametrize("case", KEYWORD_MATCH, ids=[c["note"] for c in KEYWORD_MATCH])
+    def test_contains_agrees_with_the_highlight_cases(self, case):
+        assert contains(case["text"], case["word"]) is bool(case["marked"])
+        assert keyword_misses(case["text"], [case["word"]]) == ([] if case["marked"] else [case["word"]])
+
+
 class TestCheck:
+    def test_a_title_without_any_keyword_fails_the_strict_check(self):
+        # 06e D23 — 고른 키워드가 제목에 하나도 없으면 엄격한 검사 미달(공통 규칙이 다시 부른다). 하나라도 있으면 통과
+        inp = {**INPUT, "keywords": ["농촌 노인", "지지망 유형"]}
+        hit = _bound(GOOD, inp)                      # 제목 '독거노인의 지지망 유형과 우울' 에 '지지망 유형'이 있다
+        assert hit["card"]["keywords"] == ["농촌 노인", "지지망 유형"]
+        assert hit["card"]["checks"]["missing_keywords"] == ["농촌 노인"]
+        assert EXECUTOR.check(hit) is True
+        miss = _bound({**GOOD, "title": "독거노인의 관계망과 우울"}, inp)
+        assert miss["card"]["checks"]["missing_keywords"] == ["농촌 노인", "지지망 유형"]
+        assert EXECUTOR.check(miss) is False
+        # 무른 검사(06b 의 근거 2편)는 넘는다 — 세 번 다 놓치면 이 카드를 보관한다(06e 정함 17)
+        assert EXECUTOR.soft_check(miss) is True
+        assert EXECUTOR.soft_check(_bound({**GOOD, "evidence": ["E1"]}, inp)) is False
+
+    def test_no_keywords_means_no_keyword_rule(self):
+        # 키워드 없이 넣은 카드(취소·빈 결과)와 06e 전 행은 06b 검사 그대로다
+        card = _bound({**GOOD, "title": "아무 낱말"}, {**INPUT, "keywords": []})
+        assert card["card"]["checks"]["missing_keywords"] == [] and EXECUTOR.check(card) is True
+        assert EXECUTOR.check(_bound({**GOOD, "title": "아무 낱말"})) is True
+
     def test_needs_two_evidence_chips(self):
         assert MIN_TOPIC_EVIDENCE == 2
         assert EXECUTOR.check(_bound(GOOD)) is True
@@ -319,6 +357,28 @@ class TestThroughTheCommonRule:
         assert seen == [primary, primary, fallback]
         assert result.output == {"card": None} and result.model is None
         assert [a["outcome"] for a in result.attempts] == ["check", "check", "check"]
+
+    def test_three_misses_keep_the_last_card_with_its_warning(self, cfg):
+        # 세 번 다 제목에 키워드를 못 넣었다 — 빈 결과('근거 부족' — 잘못된 안내) 대신 마지막 카드를 그 모델 이름으로
+        # 보관하고, 화면은 card.checks.missing_keywords 로 '제목에 「…」 없음' 경고를 단다(06e 정함 17)
+        inp = {**INPUT, "keywords": ["농촌 노인", "우울 선별"]}
+        primary, fallback = _models()
+        first = _reply({**GOOD, "title": "독거노인의 지지망과 우울"})
+        last = _reply({**GOOD, "title": "독거노인 지지망 유형"})
+        answers = {primary: [first, first], fallback: [last]}
+        seen: list[str] = []
+
+        async def fake_chat(messages, *, params=None, timeout=120.0, base_url=None, model=None):
+            seen.append(model)
+            return LLMResult(content=answers[model].pop(0), finish_reason="stop")
+
+        result = asyncio.run(run_generation(EXECUTOR, inp, chat_fn=fake_chat))
+
+        assert seen == [primary, primary, fallback]
+        assert [a["outcome"] for a in result.attempts] == ["check", "check", "check"]
+        assert result.model == fallback and EXECUTOR.is_empty(result.output) is False
+        assert result.output["card"]["title"] == "독거노인 지지망 유형"
+        assert result.output["card"]["checks"]["missing_keywords"] == ["농촌 노인", "우울 선별"]
 
 
 class TestExecutors:

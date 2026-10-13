@@ -76,9 +76,9 @@ class TestExecutorFields:
     def test_new_fields_follow_the_06a_five_with_defaults(self):
         # frozen dataclass — 06a 의 다섯 필드만 위치 인자로 준 실행기가 그대로 06a 처럼 돈다
         assert [f.name for f in dataclasses.fields(Executor)] == [
-            "kind", "build", "parse", "check", "empty", "bind", "stream", "apply", "is_empty"]
+            "kind", "build", "parse", "check", "empty", "bind", "stream", "apply", "is_empty", "soft_check"]
         ex = _plain()
-        assert (ex.bind, ex.stream, ex.apply, ex.is_empty) == (None, False, None, None)
+        assert (ex.bind, ex.stream, ex.apply, ex.is_empty, ex.soft_check) == (None, False, None, None, None)
 
     def test_concepts_marks_an_empty_done_as_retryable(self):
         # 06a api._retryable 의 concepts 특례(빈 개념 done 은 다시 부를 수 있다)를 실행기로 옮긴 것

@@ -12,6 +12,9 @@
   - 표현: 제목·질문의 단정 표현은 soften_claims 로 바꾸고, [F#] 밖 숫자는 numbers_outside 로 센다('확인 필요').
   - 키워드(06e D23): 고른 키워드(input.keywords)를 넘기면 프롬프트에 '제목에 하나 이상 글자 그대로' 규칙 한 줄이 붙는다.
     예시 제목·이전 제목은 주지 않는다(함정 15·26). 06e 전 행(keywords 없음)은 06b 프롬프트 그대로다.
+    검사는 06c 의 terms.contains(NFKC·casefold·공백 무시, 아니면 낱말이 순서대로)로 제목에 든 키워드를 보고
+    card.keywords·card.checks.missing_keywords 에 싣는다. 하나도 없으면 엄격한 검사 미달로 다시 부르고, 세 번 다
+    놓치면 근거 검사(무른 검사)만 넘은 마지막 카드를 보관한다 — 화면이 '제목에 ○○ 없음' 경고를 단다(06e 정함 17).
 결과 반영(apply)은 research_topics 의 그 행만 바꾼다 — 사용자가 직접 고친 카드(card.edited)는 덮지 않는다.
 """
 import re
@@ -23,6 +26,7 @@ from models.research_work import ResearchGeneration, ResearchTopic
 from services.prompts import get_prompt
 from services.research.citations import strip_markers
 from services.research.llm_json import extract_json
+from services.research.terms import contains
 from services.research_work.enqueue import enqueue_generation
 from services.research_work.generate import Executor
 from services.research_work.markers import figure, numbers_outside, soften_claims
@@ -163,8 +167,15 @@ def _clean(value: str) -> str:
     return " ".join(strip_markers(value or "").split())
 
 
+def keyword_misses(title: str, keywords: list[str]) -> list[str]:
+    """keywords 가운데 title 에 들어 있지 않은 것(06c terms.contains — 화면 keywordSpans 와 같은 일치 규칙)."""
+    return [k for k in keywords if not contains(title, k)]
+
+
 def _bind(output: dict, input: dict) -> dict:
-    """해석한 출력 → {"card": Card | None}(계약 §4 Card). 제목이나 질문이 비면 card 는 None."""
+    """해석한 출력 → {"card": Card | None}(계약 §4 Card). 제목이나 질문이 비면 card 는 None.
+    고른 키워드(input.keywords — 06e)를 카드에 싣고, 다듬은 제목(단정 표현 바꿈·글자 상한 뒤)에 없는 것을
+    checks.missing_keywords 에 센다."""
     title, question = _clean(output.get("title")), _clean(output.get("question"))
     if not title or not question:
         return {"card": None}
@@ -178,6 +189,7 @@ def _bind(output: dict, input: dict) -> dict:
     question, soft_question = soften_claims(question)
     title, question = title[:TOPIC_TITLE_MAX], question[:TOPIC_QUESTION_MAX]
     figures = card_figures(input.get("adopted"), latest_year, input.get("corpus"))
+    keywords = [k for k in (input.get("keywords") or []) if isinstance(k, str)]
     return {"card": {
         "title": title,
         "question": question,
@@ -186,15 +198,28 @@ def _bind(output: dict, input: dict) -> dict:
         "figures": figures,
         "latest_year": latest_year,
         "edited": False,
+        "keywords": keywords,
         "checks": {"numbers": numbers_outside(f"{title}\n{question}"),
-                   "softened": soft_title + soft_question, "recovered": recovered},
+                   "softened": soft_title + soft_question, "recovered": recovered,
+                   "missing_keywords": keyword_misses(title, keywords)},
         "gen_id": None,
     }}
 
 
-def _check(output: dict) -> bool:
+def _soft_check(output: dict) -> bool:
+    """무른 검사 — 06b 의 검사 그대로(직접 받치는 근거 MIN_TOPIC_EVIDENCE 편 이상)."""
     card = output.get("card")
     return card is not None and len(card["evidence"]) >= MIN_TOPIC_EVIDENCE
+
+
+def _check(output: dict) -> bool:
+    """엄격한 검사 — 무른 검사에 더해, 고른 키워드를 넘겼으면 제목에 하나 이상 들어 있다(06e D23). 하나도 없으면 공통
+    규칙의 내용 검사 미달로 다시 부르고, 세 번 다 놓치면 run_generation 이 무른 검사를 넘은 마지막 카드를 낸다(정함 17)."""
+    if not _soft_check(output):
+        return False
+    card = output["card"]
+    keywords = card.get("keywords") or []
+    return not keywords or len(card["checks"].get("missing_keywords") or []) < len(keywords)
 
 
 async def apply(db, gen, output: dict) -> dict:
@@ -288,4 +313,5 @@ EXECUTOR = Executor(
     bind=_bind,
     apply=apply,
     is_empty=lambda out: (out or {}).get("card") is None,
+    soft_check=_soft_check,
 )

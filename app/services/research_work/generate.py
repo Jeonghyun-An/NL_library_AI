@@ -12,6 +12,10 @@ chat_full 안의 일시적 실패 재시도는 이 횟수에 세지 않는다. �
 해석한 결과는 실행기의 bind(06b)가 있으면 검사 전에 입력으로 맞춘다 — 모델이 낸 근거 번호를 cnts_id 로
 바꾸고 문단을 마커 검사하는 일처럼 입력이 있어야 하는 정리다. 끝내 못 얻은 빈 결과(empty)에는 하지 않는다.
 
+무른 검사(soft_check, 06e 정함 17 — 주제 카드 제목의 키워드): 엄격한 검사(check)는 못 넘었지만 soft_check 를 넘은
+출력은 그 모델과 함께 마지막 것으로 보관한다. 사다리가 끝나도록 엄격한 검사를 넘은 답이 없으면 빈 결과 대신 그것을
+돌려준다(attempts 에는 그 시도가 check 로 남는다). 스트리밍(run_stream_generation)은 쓰지 않는다.
+
 스트리밍(run_stream_generation, 06b 절 쓰기 — 06b 계획 정함 11)도 같은 '최대 3회·넘김' 규칙이다. 다만
 chat_stream 은 첫 조각 전에만 연결 실패·4xx·5xx 를 올리므로, 다른 모델로 곧바로 넘기는 전송 실패는 첫 조각
 전의 실패뿐이다. 첫 조각 뒤에 끊기거나 호출 상한을 넘기면 그 시도는 broken — 해석·내용 미달처럼 센다(화면에
@@ -51,6 +55,8 @@ class Executor:
     stream: bool = False                               # True 면 워커가 run_stream_generation 으로 돌린다
     apply: Callable[[Any, Any, dict], Awaitable[dict]] | None = None   # (db, gen, output) → 이벤트 result. 커밋 금지
     is_empty: Callable[[dict], bool] | None = None     # done 인데 빈 결과인가 — 다시 부르기(retry)를 허용한다
+    # 06e 의 선택 필드 — check 를 못 넘어도 이것을 넘은 마지막 출력을 빈 결과 대신 낸다(정함 17)
+    soft_check: Callable[[dict], bool] | None = None
 
 
 @dataclass
@@ -70,6 +76,7 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
     switched = False
     content_failures = 0
     attempts: list[dict] = []
+    soft: tuple[dict, str] | None = None     # 무른 검사만 넘은 마지막 출력과 그 모델(06e 정함 17)
     for _ in range(MAX_CALLS):
         base_url, model = endpoint(route)
         try:
@@ -90,6 +97,8 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
             attempts.append({"model": model, "outcome": "ok"})
             return GenerationResult(output=output, model=model, attempts=attempts)
         outcome = "parse" if output is None else "check"
+        if output is not None and executor.soft_check is not None and executor.soft_check(output):
+            soft = (output, model)
         # 진단용 원문 앞부분과 끝난 이유(length 면 잘림)는 로그에만 남긴다 — attempts 는 공개 부록에 실린다
         log.warning("[research_work] %s %s 실패 model=%s finish=%s 원문=%r", executor.kind, outcome, model,
                     reply.finish_reason, (reply.content or "")[:200])
@@ -99,6 +108,9 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
         content_failures += 1
         if content_failures >= 2:
             route, switched = other(route), True
+    if soft is not None:
+        # 엄격한 검사를 끝내 못 넘었다 — 빈 결과 대신 무른 검사를 넘은 마지막 출력을 그 모델 이름으로 낸다
+        return GenerationResult(output=soft[0], model=soft[1], attempts=attempts)
     return GenerationResult(output=executor.empty(input), model=None, attempts=attempts)
 
 
