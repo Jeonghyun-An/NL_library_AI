@@ -407,6 +407,7 @@ import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
+import { detailScoreParams } from "~/utils/relevance";
 import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -953,23 +954,25 @@ function paperDetailUrl(bookId: string, extra: Record<string, string> = {}): str
   return detailUrl(bookId, { kind: "search", h: null, q: resultQuery.value }, undefined, extra);
 }
 
+// 소장자료 상세 주소의 쿼리 — q 는 입력창이 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색을 가리키게). 상세에서도 사이드바가
+// 이 기록을 강조하고 뒤로가기가 재검색 없이 복원되게 h 도 싣는다. 점수(종합·제목·내용)는 논문 쪽과 같은 함수(detailScoreParams)로 싣는다 —
+// 종합 점수는 없어도 0 으로 늘 싣는다(관련도 알약이 보이게)
+function bookDetailParams(item: BookChunkGroup, extra: Record<string, string> = {}): URLSearchParams {
+  const scores = detailScoreParams(item);
+  const params = new URLSearchParams({ q: resultQuery.value, score: scores.score ?? "0" });
+  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
+  if (scores.title_score !== undefined) params.set("title_score", scores.title_score);
+  if (scores.content_score !== undefined) params.set("content_score", scores.content_score);
+  for (const [key, value] of Object.entries(extra)) params.set(key, value);
+  return params;
+}
+
 function openDetail(item: BookChunkGroup) {
   if (mode.value === "paper") {
     navigateTo(paperDetailUrl(item.book_id));
     return;
   }
-  // q 는 입력창이 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
-  const params = new URLSearchParams({
-    q: resultQuery.value,
-    score: String(item.best_score || 0),
-  });
-  // 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원되게
-  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
-  if (item.title_score !== undefined)
-    params.set("title_score", String(item.title_score));
-  if (item.content_score !== undefined)
-    params.set("content_score", String(item.content_score));
-  navigateTo(`/books/${item.book_id}?${params}`);
+  navigateTo(`/books/${item.book_id}?${bookDetailParams(item)}`);
 }
 
 // 이 책과 대화하기 → detail + chat 자동 오픈
@@ -978,17 +981,7 @@ function openDetailWithChat(item: BookChunkGroup) {
     navigateTo(paperDetailUrl(item.book_id, { chat: "1" }));
     return;
   }
-  const params = new URLSearchParams({
-    q: resultQuery.value,
-    score: String(item.best_score || 0),
-    chat: "1",
-  });
-  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
-  if (item.title_score !== undefined)
-    params.set("title_score", String(item.title_score));
-  if (item.content_score !== undefined)
-    params.set("content_score", String(item.content_score));
-  navigateTo(`/books/${item.book_id}?${params}`);
+  navigateTo(`/books/${item.book_id}?${bookDetailParams(item, { chat: "1" })}`);
 }
 
 function openRelatedDetail(rel: any) {
