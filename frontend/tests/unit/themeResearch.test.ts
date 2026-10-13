@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { cssRules } from "./helpers/cssRules";
-import { rootDecls } from "./helpers/themeCss";
+import { THEMES, contrast, over, parseColor, rootDecls, solidOf, themeTokens } from "./helpers/themeCss";
 
 function read(rel: string): string {
   return readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf-8");
@@ -65,6 +65,24 @@ describe("다크 테마의 글자색·빛(research.css)", () => {
     const sheen = rules.find((r) => r.selectors.includes(".rs-pbar__fill.is-running::after"))?.decls.get("background") ?? "";
     expect(sheen).toContain("var(--skx-frost-line)");
     expect(sheen).not.toContain("var(--skx-white)");
+  });
+
+  it("탐색 방식의 고른 칸은 두 테마 모두에서 3:1 이상의 테두리로 짚는다 — 핑크는 고른 칸 면(흰)과 홈(흰 반투명)·두 글자색이 거의 같다", () => {
+    const picked = rules.find((r) => !r.at && r.selectors.includes('.rs-mode__opt[aria-checked="true"]'));
+    const ring = picked?.decls.get("box-shadow")?.match(/^inset 0 0 0 1px var\((--skx-[\w-]+)\)$/)?.[1];
+    expect(ring).toBeDefined();
+    expect(picked?.decls.get("background")).toBe("var(--skx-white)");
+    for (const theme of THEMES) {
+      const t = themeTokens(theme);
+      const ringColor = parseColor(t[ring!]!);
+      expect(ringColor.a).toBe(1);
+      // 테두리 안쪽은 고른 칸 면, 바깥은 칸 홈(입력 상자 위 --skx-frost-bg — 바탕은 페이지 색으로 어림)
+      const face = solidOf(t["--skx-white"]!, t);
+      const frost = parseColor(t["--skx-frost-bg"]!);
+      const home = over(parseColor(t["--skx-page-bg"]!).rgb, frost.rgb, frost.a);
+      expect(contrast(ringColor.rgb, face), `${theme} 면`).toBeGreaterThanOrEqual(3);
+      expect(contrast(ringColor.rgb, home), `${theme} 홈`).toBeGreaterThanOrEqual(3);
+    }
   });
 });
 

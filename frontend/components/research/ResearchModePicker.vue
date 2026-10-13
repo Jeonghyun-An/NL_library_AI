@@ -29,12 +29,24 @@
         {{ m.label }}
       </button>
     </div>
-    <span :id="hintId" class="rs-mode__hint">{{ hint }}</span>
   </div>
+  <!-- 고른 방식의 설명은 .rs-mode 밖(+ 메뉴 줄의 자식)이라 랜딩 입력 상자에서 늘 자기 줄에 선다 — 설명 길이가 묶음이 칩 줄에 설지를
+       정하지 않는다. 두 방식의 설명을 같은 칸에 겹쳐 두고 고른 것만 보여, 칸을 바꿔도 설명 줄 높이(=상자 높이)가 그대로다.
+       radiogroup 의 설명(aria-describedby)은 보이는 것 하나이고 숨긴 것은 읽히지 않는다 -->
+  <span class="rs-mode__hint">
+    <span
+      v-for="m in RESEARCH_MODES"
+      :id="m.id === modelValue ? hintId : undefined"
+      :key="m.id"
+      class="rs-mode__hint-text"
+      :class="{ 'is-shown': m.id === modelValue }"
+      :aria-hidden="m.id === modelValue ? undefined : 'true'"
+    >{{ m.hint }}</span>
+  </span>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, useId } from "vue";
+import { nextTick, ref, useId } from "vue";
 import { RESEARCH_MODES, RESEARCH_MODE_LABEL, modeStep, type ResearchMode } from "~/utils/researchMode";
 
 const props = withDefaults(defineProps<{ modelValue: ResearchMode; disabled?: boolean }>(), { disabled: false });
@@ -43,7 +55,6 @@ const emit = defineEmits<{ "update:modelValue": [mode: ResearchMode] }>();
 const group = ref<HTMLElement | null>(null);
 const labelId = useId();
 const hintId = useId();
-const hint = computed(() => RESEARCH_MODES.find((m) => m.id === props.modelValue)?.hint ?? "");
 
 function pick(mode: ResearchMode): void {
   if (props.disabled || mode === props.modelValue) return;
