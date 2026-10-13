@@ -24,7 +24,7 @@
 
         <!-- 로딩 -->
         <div v-if="pageLoading" class="dt-loading">
-          <img src="/img/ico-spinner.svg" alt="" />
+          <img :src="SPINNER_SRC" alt="" />
           <p>도서 정보를 불러오는 중...</p>
         </div>
         <div v-else-if="pageError" class="dt-error">
@@ -296,6 +296,7 @@ import {
 import { kdcChip } from "~/utils/kdc";
 import { cardKeywords } from "~/utils/resultCard";
 import { relatedOpenAfter } from "~/utils/relatedCard";
+import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();

@@ -50,7 +50,7 @@
         </section>
 
         <div v-if="loading" class="dt-loading">
-          <img src="/img/ico-spinner.svg" alt="" />
+          <img :src="SPINNER_SRC" alt="" />
         </div>
 
         <template v-else-if="paper">
@@ -306,7 +306,7 @@ import { useResearchApi } from "~/composables/useResearch";
 import type { ReportChunk, ResearchJob } from "~/types/research";
 import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
 import { safeSessionStorage } from "~/utils/browserId";
-import { DEEP_RESEARCH } from "~/utils/brand";
+import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import {
   activeTabKey,

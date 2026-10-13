@@ -412,6 +412,8 @@ h4,
   --skx-seg-thumb-ink: #ffffff;
   /* 좁은 화면 사이드바 서랍 뒤의 어두운 막 */
   --skx-scrim: rgba(4, 12, 10, 0.62);
+  /* 새 스피너 그림에 두르는 필터 — 다크는 그대로, 밝은 면에서는 어둡게 눌러 윤곽을 살린다 */
+  --skx-spinner-filter: none;
   /* 입력창 테두리(평소·초점)와 랜딩 입력창 테두리를 따라 도는 빛 — 평소는 옅은 흰 선, 초점 때만 포인트색, 빛은 흰색 하나(색을 늘리지 않는다) */
   --skx-input-ring: var(--skx-frost-line);
   --skx-input-ring-focus: var(--skx-accent);
@@ -546,6 +548,7 @@ h4,
   --skx-seg-thumb: #1d211f;
   --skx-seg-thumb-ink: #ffffff;
   --skx-scrim: rgba(29, 33, 31, 0.5);
+  --skx-spinner-filter: brightness(0.62) saturate(1.4) drop-shadow(0 0 0.5px rgba(29, 33, 31, 0.45));
   --skx-input-ring: var(--skx-line);
   --skx-input-ring-focus: var(--skx-accent);
   --skx-input-glow: radial-gradient(circle closest-side, rgba(29, 33, 31, 0.3) 0%, rgba(29, 33, 31, 0.12) 30%, rgba(29, 33, 31, 0.04) 55%, rgba(29, 33, 31, 0) 75%);
@@ -669,6 +672,7 @@ html[data-theme="pink"] {
   --skx-seg-thumb: #1a1115;
   --skx-seg-thumb-ink: #f2f2f0;
   --skx-scrim: rgba(26, 17, 21, 0.4);
+  --skx-spinner-filter: brightness(0.62) saturate(1.4) drop-shadow(0 0 0.5px rgba(26, 17, 21, 0.45));
   --skx-input-ring: var(--skx-line);
   --skx-input-ring-focus: #1a1115;
   --skx-input-glow: radial-gradient(circle closest-side, rgba(230, 120, 170, 0.85) 0%, rgba(236, 150, 188, 0.4) 30%, rgba(240, 170, 200, 0.14) 55%, rgba(240, 170, 200, 0) 75%);
@@ -971,6 +975,11 @@ html[data-theme="pink"] .skx-reading {
 /* 흰 선 로딩 아이콘이 밝은 면 위에 놓이면 안 보인다 */
 .skx-reading img[src$="/img/ico-spinner.svg"] {
   filter: brightness(0) invert(0.4);
+}
+/* 새 스피너(스스로 도는 GIF·정지 PNG, public/skovix-spinner-*)는 연한 분홍·은색이라 밝은 면 위에서는 거의 안 보인다 — 테마 토큰(--skx-spinner-filter)으로 밝은 면에서는 한 단계 어둡게 하고 가는 그림자를 두른다(다크는 none).
+   CSS 회전은 걸지 않는다(GIF 자체가 돈다). :where() 라 단일 클래스 규칙이 늘 이긴다 */
+:where(img[src*="/skovix-spinner-"]) {
+  filter: var(--skx-spinner-filter);
 }
 /* [E] 아이콘 색 */
 
@@ -2213,16 +2222,9 @@ html.skx-scroll-lock {
   width: 1rem;
   height: 1rem;
   display: none;
-  filter: var(--skx-ico-on-accent-filter);
-  animation: skx-spin 1s linear infinite;
 }
 .skx-book.is-loading .skx-book__spinner {
   display: block;
-}
-@keyframes skx-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 /* [E] 신작도서 */
 

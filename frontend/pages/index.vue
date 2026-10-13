@@ -177,7 +177,7 @@
                 <span class="skx-book__spine"
                   ><img
                     class="skx-book__spinner"
-                    src="/img/ico-spinner.svg"
+                    :src="SPINNER_SRC"
                     alt=""
                 /></span>
                 <span class="skx-book__bar"></span>
@@ -217,7 +217,7 @@
         class="skx-rframe"
         style="padding: 40px; text-align: center"
       >
-        <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
+        <img :src="SPINNER_SRC" alt="" style="width: 32px" />
         <p style="margin-top: 12px">AI가 도서를 검색 중입니다...</p>
       </div>
 
@@ -396,6 +396,7 @@ import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
+import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).

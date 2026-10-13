@@ -67,7 +67,7 @@
       <div class="skx-rframe">
         <!-- 로딩 -->
         <div v-if="loading" style="padding: 40px; text-align: center">
-          <img src="/img/ico-spinner.svg" alt="" style="width: 32px" />
+          <img :src="SPINNER_SRC" alt="" style="width: 32px" />
           <p style="margin-top: 12px">논문을 탐색하고 있습니다...</p>
         </div>
 
@@ -435,7 +435,7 @@ import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
 import { safeLocalStorage } from "~/utils/browserId";
-import { DEEP_RESEARCH } from "~/utils/brand";
+import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
