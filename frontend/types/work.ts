@@ -38,6 +38,14 @@ export interface WorkGeneration {
   others_ahead?: boolean;
 }
 
+// 키워드 후보(06e 제목 고르기 — 키워드 생성 output.candidates). source 는 출처(모델·채택 논문의 소장 키워드·둘 다),
+// n 은 그 키워드를 가진 채택 논문 수(모델만이면 0)
+export interface KeywordCandidate {
+  text: string;
+  source: "llm" | "paper" | "both";
+  n: number;
+}
+
 export interface WorkView {
   id: string;
   phase: WorkPhase;
@@ -48,6 +56,8 @@ export interface WorkView {
   topic_id?: number | null;
   corpus?: Corpus | null;
   generations: WorkGeneration[];
+  // 최신 done 키워드 생성의 후보(06e) — 06e 전 생성·키워드 생성이 끝나지 않은 연구는 null
+  concept_candidates?: KeywordCandidate[] | null;
 }
 
 export interface PaperMeta {
@@ -83,7 +93,10 @@ export interface TopicCard {
   figures: Figure[];
   latest_year: number | null;
   edited: boolean;
-  checks: { numbers: string[]; softened: number; recovered: number };
+  // 카드를 만들 때 넘긴 고른 키워드(06e) — 06e 전 카드·사용자 카드엔 없다
+  keywords?: string[];
+  // missing_keywords — keywords 가운데 제목에 들어 있지 않은 것(06e)
+  checks: { numbers: string[]; softened: number; recovered: number; missing_keywords?: string[] };
   gen_id: number | null;
 }
 

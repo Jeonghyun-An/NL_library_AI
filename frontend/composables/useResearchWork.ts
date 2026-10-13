@@ -58,6 +58,11 @@ export function useWorkApi() {
         method: "POST",
         body: { mode: "other" },
       }),
+    // [이 키워드로 다시 만들기] — 저장된 키워드(work.concepts)로 고치지 않은 AI 카드를 다시(06e). skipped = 만드는 중이라 건너뛴 수
+    regenerateTopics: (jobId: string) =>
+      api<{ topic_ids: number[]; gen_ids: number[]; skipped: number }>(`${job(jobId)}/topics/regenerate`, {
+        method: "POST",
+      }),
     createTopic: (jobId: string, body: TopicCreate) =>
       api<TopicItem>(`${job(jobId)}/topics`, { method: "POST", body }),
     editTopic: (jobId: string, tid: number, body: TopicPatch) =>

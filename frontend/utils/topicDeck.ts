@@ -3,6 +3,7 @@
 // 카드 한 장 = 생성 1건(topic_card)이고, 카드가 오지 않으면 '근거 부족' 빈 슬롯으로 정직하게 보인다(spec §4 시연 정직성)
 import type {
   GenStatus,
+  KeywordCandidate,
   PaperMeta,
   TopicCard,
   TopicCreate,
@@ -14,7 +15,8 @@ import type {
 import { citeLabel } from "~/utils/citations";
 import { genQueueLine } from "~/utils/queueLine";
 
-export type CardStatus = "waiting" | "making" | "ready" | "insufficient" | "failed";
+// blocked — 키워드 생성이 실패해 씨앗 카드가 아직 들어가지 않은 자리(06e D23 — 키워드를 다시 부르면 카드가 들어간다)
+export type CardStatus = "waiting" | "making" | "ready" | "insufficient" | "failed" | "blocked";
 export type ConceptsStatus = "making" | "ready" | "empty" | "failed";
 
 // 서버 경계와 같은 값(app/services/research_work/shapes.py·concepts.py) — 화면이 먼저 막아 422 를 보지 않게 한다
@@ -26,6 +28,8 @@ export const MIN_TOPIC_EVIDENCE = 2;
 export const OTHER_DIRECTION_CARDS = 2;
 export const CONCEPTS_MAX = 5;
 export const CONCEPT_LEN_MAX = 40;
+// [이 키워드로 다시 만들기] 의 최소 선택 수(keywords.MIN_PICKED_KEYWORDS) — 선행연구 묶음 수가 키워드 수 이하다
+export const MIN_PICKED_KEYWORDS = 2;
 
 const OPEN: readonly GenStatus[] = ["queued", "running"];
 // 저자를 모르는 근거 칩은 제목 앞부분으로 가른다
@@ -58,12 +62,20 @@ export function deckOrder(items: TopicItem[]): TopicItem[] {
 }
 
 // 카드가 있으면 ready. 없으면 그 주제의 마지막 카드 생성으로 가른다 — 끝났는데(done) 카드가 없으면 근거 부족이고
-// (서버 topic_card.apply 가 state 를 insufficient 로 둔다), 실패·취소면 failed. 생성 기록이 없는 빈 카드는
-// 다시 부를 생성도 없으므로 근거 부족(state 가 그렇다면) 또는 failed 로 둔다
-export function cardStatus(item: TopicItem): CardStatus {
+// (서버 topic_card.apply 가 state 를 insufficient 로 둔다), 실패·취소면 failed. 생성 기록이 없는 빈 씨앗 자리(slot 이 있는
+// 보고서 씨앗)는 06e 부터 키워드가 정해지기를 기다린다(D23) — 씨앗 자리 카드 생성은 키워드 생성의 반영·취소와 같은
+// 트랜잭션에 들어간다. 그래서 키워드 생성(concepts)이 열려 있을 때뿐 아니라 done·canceled 이벤트와 topics·work 다시 읽기
+// 사이도 waiting 이고, 키워드 생성이 실패했으면 카드가 들어가지 않아 blocked. 그 밖은 근거 부족(state 가 그렇다면) 또는 failed
+export function cardStatus(item: TopicItem, concepts?: WorkGeneration | null): CardStatus {
   if (cardOf(item)) return "ready";
   const g = item.generation;
-  if (!g) return item.state === "insufficient" ? "insufficient" : "failed";
+  if (!g) {
+    if (item.state === "insufficient") return "insufficient";
+    if (concepts && item.slot !== null && item.origin === "report_seed") {
+      return concepts.status === "failed" ? "blocked" : "waiting";
+    }
+    return "failed";
+  }
   if (g.status === "queued") return "waiting";
   if (g.status === "running") return "making";
   if (g.status === "done") return "insufficient";
@@ -86,13 +98,27 @@ export function cardNote(status: CardStatus): string | null {
       return `근거 부족 — 이 씨앗을 직접 받치는 논문을 ${MIN_TOPIC_EVIDENCE}편 이상 찾지 못했습니다`;
     case "failed":
       return "카드를 만들지 못했습니다";
+    case "blocked":
+      return "키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다";
     case "ready":
       return null;
   }
 }
 
+// 카드는 있는데 그 카드 생성이 열려 있다 — [이 키워드로 다시 만들기](06e)가 넣은 새 카드를 기다리는 중
+function remaking(item: TopicItem): boolean {
+  return cardOf(item) !== null && item.generation !== null && OPEN.includes(item.generation.status);
+}
+
+// 다시 만드는 중인 카드는 고르지 않는다 — 고른 카드는 다시 만든 결과로 덮지 않으므로(서버 topic_card.apply,
+// 06e 정함 16) 고르면 새 카드가 버려진다
 export function canPick(item: TopicItem): boolean {
-  return item.state === "candidate" && cardStatus(item) === "ready";
+  return item.state === "candidate" && cardStatus(item) === "ready" && !remaking(item);
+}
+
+// 다시 만드는 중인 카드에 붙이는 줄 — 새 결과가 반영될 때까지 지금 카드를 그대로 보인다
+export function cardRemakingNote(item: TopicItem): string | null {
+  return remaking(item) ? "새 키워드로 다시 만드는 중입니다" : null;
 }
 
 function shortTitle(title: string | null | undefined): string | null {
@@ -231,4 +257,144 @@ export function conceptsNote(concepts: string[], generation: WorkGeneration | nu
     case "ready":
       return null;
   }
+}
+
+// ── 제목 고르기 — 키워드(06e D23) ──
+
+// 원문 → 글자 맞추기용 평평한 글. 원문 글자(코드포인트)마다 NFKC·소문자로 바꾼 글자를 잇고 공백은 뺀다. at[k] 는 평평한
+// 글의 k 번째 UTF-16 단위가 나온 원문 글자 순번이다 — 맞은 자리를 원문 그대로 감싸려고(전각 'ＣＳＲ' 은 'csr' 로 맞추고
+// 'ＣＳＲ' 을 감싼다, 공백을 지우고 맞춘 '다문화가정' 은 원문 '다문화 가정' 을 감싼다)
+function flatten(chars: readonly string[]): { flat: string; at: number[] } {
+  let flat = "";
+  const at: number[] = [];
+  chars.forEach((ch, i) => {
+    for (const c of ch.normalize("NFKC").toLowerCase()) {
+      if (/\s/.test(c)) continue;
+      flat += c;
+      for (let u = 0; u < c.length; u += 1) at.push(i);
+    }
+  });
+  return { flat, at };
+}
+
+// 낱말 하나의 맞은 자리(원문 글자 순번 [처음, 끝]) — 서버 06c terms.contains 와 같은 규칙: 공백을 지운 글에서 낱말 전체가
+// 부분 문자열이면 그 자리, 아니면 낱말 조각이 모두 순서대로 있을 때 조각마다. 하나라도 없으면 맞지 않는다(빈 배열)
+function keywordRanges(flat: string, at: readonly number[], word: string): [number, number][] {
+  const pieces = word.normalize("NFKC").toLowerCase().split(/\s+/).filter(Boolean);
+  if (!pieces.length) return [];
+  const joined = pieces.join("");
+  const hit = flat.indexOf(joined);
+  if (hit >= 0) return [[at[hit]!, at[hit + joined.length - 1]!]];
+  const out: [number, number][] = [];
+  let pos = 0;
+  for (const piece of pieces) {
+    const found = flat.indexOf(piece, pos);
+    if (found < 0) return [];
+    out.push([at[found]!, at[found + piece.length - 1]!]);
+    pos = found + piece.length;
+  }
+  return out;
+}
+
+// 카드 제목 속 키워드 자리 — <mark> 로 감쌀 조각. 이어 붙이면 원문 그대로다. 키워드마다 처음 맞은 자리만(서버 검사와 같은
+// '들어 있음' 판정), 겹치거나 맞닿은 자리는 하나로 합친다. 일치 규칙의 정본은 06c 의 frontend/tests/fixtures/term_checks.json
+export function keywordSpans(title: string, keywords: readonly string[]): { text: string; mark: boolean }[] {
+  const chars = [...title];
+  if (!chars.length) return [];
+  const { flat, at } = flatten(chars);
+  const ranges = keywords.flatMap((k) => keywordRanges(flat, at, k)).sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [start, end] of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && start <= last[1] + 1) last[1] = Math.max(last[1], end);
+    else merged.push([start, end]);
+  }
+  const parts: { text: string; mark: boolean }[] = [];
+  let pos = 0;
+  for (const [start, end] of merged) {
+    if (start > pos) parts.push({ text: chars.slice(pos, start).join(""), mark: false });
+    parts.push({ text: chars.slice(start, end + 1).join(""), mark: true });
+    pos = end + 1;
+  }
+  if (pos < chars.length) parts.push({ text: chars.slice(pos).join(""), mark: false });
+  return parts;
+}
+
+// 카드를 만들 때 넘긴 키워드(card.keywords)가 지금 고른 키워드와 다른가 — 순서·띄어쓰기·대소문자는 보지 않는다.
+// 06e 전 카드(keywords 없음)는 무엇으로 만들었는지 모르니 알리지 않는다
+export function keywordsChanged(card: TopicCard, concepts: readonly string[]): boolean {
+  if (!card.keywords) return false;
+  const made = new Set(card.keywords.map(conceptKey));
+  const now = new Set(concepts.map(conceptKey));
+  return made.size !== now.size || [...made].some((k) => !now.has(k));
+}
+
+// 고른 키워드를 제목에 하나도 넣지 못한 카드 — 서버가 세 번 다 놓친 카드를 버리지 않고 마지막 답을 보관한다(06e 정함 17).
+// 사용자가 고친 카드는 서버 검사가 고친 제목을 보지 않아 알리지 않는다
+export function keywordWarning(card: TopicCard): string | null {
+  const keywords = card.keywords ?? [];
+  const missing = new Set(card.checks?.missing_keywords ?? []);
+  if (card.edited || !keywords.length || !keywords.every((k) => missing.has(k))) return null;
+  return `제목에 ${keywords.map((k) => `「${k}」`).join("·")} 없음`;
+}
+
+export interface KeywordChip {
+  text: string;
+  pressed: boolean;
+  badge: string | null;
+}
+
+function candidateBadge(c: KeywordCandidate): string {
+  if (c.source === "paper") return `논문 ${c.n}편`;
+  if (c.source === "both") return `AI · 논문 ${c.n}편`;
+  return "AI 후보";
+}
+
+// 키워드 칩 — 후보(최신 키워드 생성)를 낸 순서대로, 고른 것은 눌린 칩. 후보에 없는 고른 말(직접 더한 것)은 뒤에 '직접'.
+// 후보가 없는 연구(06e 전·예시 연구)는 지금 고른 키워드를 눌린 칩으로만 보인다
+export function keywordChips(
+  candidates: readonly KeywordCandidate[] | null | undefined,
+  picked: readonly string[],
+): KeywordChip[] {
+  if (!candidates?.length) return picked.map((text) => ({ text, pressed: true, badge: null }));
+  const pickedKeys = new Set(picked.map(conceptKey));
+  const shown = new Set(candidates.map((c) => conceptKey(c.text)));
+  return [
+    ...candidates.map((c) => ({ text: c.text, pressed: pickedKeys.has(conceptKey(c.text)), badge: candidateBadge(c) })),
+    ...picked.filter((text) => !shown.has(conceptKey(text))).map((text) => ({ text, pressed: true, badge: "직접" })),
+  ];
+}
+
+// 칩 하나를 누르면 — 고른 것이면 빼고, 아니면 뒤에 더한다. 고른 수는 칩 상한(CONCEPTS_MAX — 서버 PATCH 와 같다)을 넘지 않는다
+export function toggleKeyword(picked: readonly string[], text: string): string[] {
+  const key = conceptKey(text);
+  if (picked.some((p) => conceptKey(p) === key)) return picked.filter((p) => conceptKey(p) !== key);
+  if (picked.length >= CONCEPTS_MAX) return [...picked];
+  return [...picked, text];
+}
+
+// [이 키워드로 다시 만들기] 를 막는 까닭 — 선행연구 묶음 수가 키워드 수 이하라 둘 이상 골라야 한다(서버도 409)
+export function regenerateProblem(picked: readonly string[]): string | null {
+  return picked.length < MIN_PICKED_KEYWORDS
+    ? `키워드를 ${MIN_PICKED_KEYWORDS}개 이상 고르면 다시 만들 수 있습니다`
+    : null;
+}
+
+// 다시 만들 AI 자리가 있는가 — 칩을 고치지 않아도 [이 키워드로 다시 만들기] 를 보일 때. ① 지금 키워드와 다른 키워드로
+// 만든 AI 후보 카드(다시 만드는 중인 카드는 빼고), ② 키워드 생성이 실패해 카드가 들어가지 않은 빈 씨앗 자리(blocked —
+// 키워드를 직접 넣고 [키워드만 저장] 한 뒤 카드를 받는 길. 서버 regenerate 는 카드 없는 후보 씨앗 행도 넣는다). 고른 카드·
+// 고친 카드·사용자가 쓴 카드는 다시 만들지 않으므로 세지 않는다(06e 정함 16). conceptsGen 은 최신 키워드 생성(cardStatus)
+export function aiCardsStale(
+  topics: TopicsView,
+  concepts: readonly string[],
+  conceptsGen?: WorkGeneration | null,
+): boolean {
+  return topics.items.some((item) => {
+    if (item.state === "candidate" && cardStatus(item, conceptsGen) === "blocked") return true;
+    const card = cardOf(item);
+    return (
+      item.origin !== "user" && item.state === "candidate" && card !== null && !card.edited &&
+      !remaking(item) && keywordsChanged(card, concepts)
+    );
+  });
 }

@@ -1,13 +1,23 @@
 // frontend/tests/unit/topicDeck.test.ts
 import { describe, expect, it } from "vitest";
-import type { PaperMeta, TopicCard, TopicItem, TopicSeed, TopicsView, WorkGeneration } from "~/types/work";
+import type {
+  KeywordCandidate,
+  PaperMeta,
+  TopicCard,
+  TopicItem,
+  TopicSeed,
+  TopicsView,
+  WorkGeneration,
+} from "~/types/work";
 import { genQueueLine } from "~/utils/queueLine";
 import {
   addConcept,
+  aiCardsStale,
   canPick,
   cardArrived,
   cardNumbersLine,
   cardNote,
+  cardRemakingNote,
   cardStatus,
   cleanConcept,
   conceptsNote,
@@ -16,11 +26,19 @@ import {
   deckOrder,
   deckQueueLine,
   evidenceChips,
+  keywordChips,
+  keywordSpans,
+  keywordWarning,
+  keywordsChanged,
   liveTopics,
+  MIN_PICKED_KEYWORDS,
   moreLine,
+  regenerateProblem,
   seedLine,
+  toggleKeyword,
   topicProblem,
 } from "~/utils/topicDeck";
+import keywordMatch from "../fixtures/keyword_match.json";
 
 const CARD: TopicCard = {
   title: "노인의 사회적 지지 유형별 우울 완화 효과",
@@ -121,6 +139,23 @@ describe("cardStatus", () => {
     expect(cardStatus(item({ generation: null }))).toBe("failed");
     expect(cardStatus(item({ card: { ...CARD, title: " " }, generation: { id: 41, status: "done" } }))).toBe("insufficient");
   });
+
+  it("생성 기록이 없는 빈 씨앗 자리는 키워드 생성이 있으면 waiting, 실패했으면 blocked 다(06e — 카드는 키워드가 정해진 뒤 들어간다)", () => {
+    const concepts = (status: WorkGeneration["status"]) => gen({ id: 40, kind: "concepts", target: null, status });
+    expect(cardStatus(item({ generation: null }), concepts("queued"))).toBe("waiting");
+    expect(cardStatus(item({ generation: null }), concepts("running"))).toBe("waiting");
+    // 씨앗 자리 카드 생성은 키워드 반영·취소와 같은 트랜잭션에 들어간다 — done·canceled 이벤트가 온 뒤 topics·work 를
+    // 다시 읽기 전까지는 그 생성이 목록에 없다. 그 사이도 기다리는 중이다('카드를 만들지 못했습니다'가 비치지 않게)
+    expect(cardStatus(item({ generation: null }), concepts("done"))).toBe("waiting");
+    expect(cardStatus(item({ generation: null }), concepts("canceled"))).toBe("waiting");
+    expect(cardStatus(item({ generation: null }), concepts("failed"))).toBe("blocked");
+    expect(cardNote("blocked")).toBe("키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다");
+    // 씨앗 자리가 아닌 빈 카드는 지금처럼 failed, 근거 부족은 그대로, 생성이 있으면 생성 상태가 먼저다
+    expect(cardStatus(item({ generation: null, slot: null, origin: "other" }), concepts("done"))).toBe("failed");
+    expect(cardStatus(item({ generation: null, slot: null, origin: "other" }), concepts("failed"))).toBe("failed");
+    expect(cardStatus(item({ state: "insufficient", generation: null }), concepts("running"))).toBe("insufficient");
+    expect(cardStatus(item({ generation: { id: 41, status: "running" } }), concepts("failed"))).toBe("making");
+  });
 });
 
 describe("cardArrived — 카드 뒤집기", () => {
@@ -149,8 +184,21 @@ describe("cardNote", () => {
 });
 
 describe("canPick", () => {
+  it("카드를 새 키워드로 다시 만드는 중이면(카드 생성이 열려 있으면) 고르지 않고 그 줄을 보인다(06e 정함 16)", () => {
+    for (const status of ["queued", "running"] as const) {
+      const remaking = item({ card: CARD, generation: { id: 52, status } });
+      expect(canPick(remaking)).toBe(false);
+      expect(cardRemakingNote(remaking)).toBe("새 키워드로 다시 만드는 중입니다");
+    }
+    expect(cardRemakingNote(item({ card: CARD, generation: { id: 52, status: "done" } }))).toBeNull();
+    expect(cardRemakingNote(item({ card: CARD, generation: null, origin: "user" }))).toBeNull();
+    // 카드가 없는 자리의 열린 생성은 대기 뼈대(cardStatus waiting·making)가 알린다
+    expect(cardRemakingNote(item({ generation: { id: 52, status: "running" } }))).toBeNull();
+  });
+
   it("카드가 있는 후보만 고를 수 있다", () => {
-    expect(canPick(item({ card: CARD }))).toBe(true);
+    expect(canPick(item({ card: CARD, generation: { id: 41, status: "done" } }))).toBe(true);
+    expect(canPick(item({ card: CARD, generation: null, origin: "user" }))).toBe(true);
     expect(canPick(item({ card: CARD, state: "picked" }))).toBe(false);
     expect(canPick(item({ state: "insufficient", generation: { id: 41, status: "done" } }))).toBe(false);
     expect(canPick(item({ generation: { id: 41, status: "running" } }))).toBe(false);
@@ -311,5 +359,125 @@ describe("핵심 개념 칩", () => {
     );
     expect(conceptsNote([], null)).toBe("키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요");
     expect(conceptsNote(["노인 우울"], null)).toBeNull();
+  });
+});
+
+// ── 제목 고르기 — 키워드(06e D23) ──
+
+// 06e 만의 하이라이트 자리 — 일치(참·거짓)의 정본은 06c 의 term_checks.json 이다(사례는 그 contains 칸과 같은 text/word)
+interface KeywordMatchCase {
+  text: string;
+  word: string;
+  marked: string[];
+  note: string;
+}
+const MATCH_CASES: KeywordMatchCase[] = keywordMatch;
+
+describe("keywordSpans — keyword_match.json 의 하이라이트 자리", () => {
+  it("고정 예제가 맞음·안 맞음·공백 무시·전각·영문 사례를 다 갖고 있다", () => {
+    expect(MATCH_CASES.some((c) => c.marked.length === 0)).toBe(true);
+    expect(MATCH_CASES.some((c) => c.marked.length > 1)).toBe(true);
+    expect(MATCH_CASES.some((c) => c.marked.some((m) => /\s/.test(m)))).toBe(true);
+    expect(MATCH_CASES.some((c) => c.text !== c.text.normalize("NFKC"))).toBe(true);
+    expect(MATCH_CASES.some((c) => /[A-Za-z]/.test(c.text))).toBe(true);
+  });
+
+  it.each(MATCH_CASES)("$note", (c) => {
+    const parts = keywordSpans(c.text, [c.word]);
+    expect(parts.filter((p) => p.mark).map((p) => p.text)).toEqual(c.marked);
+    expect(parts.map((p) => p.text).join("")).toBe(c.text);
+  });
+
+  it("여러 키워드는 각자 처음 맞은 자리를, 겹치는 자리는 하나로 감싼다", () => {
+    expect(keywordSpans("독거노인의 사회적 지지와 우울", ["사회적 지지", "노인 우울", "지지"])).toEqual([
+      { text: "독거", mark: false },
+      { text: "노인", mark: true },
+      { text: "의 ", mark: false },
+      { text: "사회적 지지", mark: true },
+      { text: "와 ", mark: false },
+      { text: "우울", mark: true },
+    ]);
+    expect(keywordSpans("노인 우울", [])).toEqual([{ text: "노인 우울", mark: false }]);
+    expect(keywordSpans("", ["노인"])).toEqual([]);
+  });
+});
+
+describe("keywordsChanged·keywordWarning", () => {
+  const made: TopicCard = { ...CARD, keywords: ["노인 우울", "사회적 지지"] };
+
+  it("카드를 만든 키워드와 지금 고른 키워드가 다르면 바뀌었다 — 순서·띄어쓰기는 보지 않고, 06e 전 카드는 알리지 않는다", () => {
+    expect(keywordsChanged(made, ["사회적지지", "노인 우울"])).toBe(false);
+    expect(keywordsChanged(made, ["노인 우울"])).toBe(true);
+    expect(keywordsChanged(made, ["노인 우울", "가족 지지"])).toBe(true);
+    expect(keywordsChanged({ ...made, keywords: [] }, ["노인 우울"])).toBe(true);
+    expect(keywordsChanged(CARD, ["노인 우울"])).toBe(false);
+  });
+
+  it("제목에 고른 키워드가 하나도 없을 때만 경고하고, 사용자가 고친 카드는 알리지 않는다", () => {
+    const missed: TopicCard = { ...made, checks: { ...CARD.checks, missing_keywords: ["노인 우울", "사회적 지지"] } };
+    expect(keywordWarning(missed)).toBe("제목에 「노인 우울」·「사회적 지지」 없음");
+    expect(keywordWarning({ ...missed, checks: { ...CARD.checks, missing_keywords: ["노인 우울"] } })).toBeNull();
+    expect(keywordWarning({ ...missed, edited: true })).toBeNull();
+    expect(keywordWarning({ ...CARD, keywords: [] })).toBeNull();
+    expect(keywordWarning(CARD)).toBeNull();
+  });
+});
+
+describe("keywordChips·toggleKeyword·regenerateProblem", () => {
+  const CANDS: KeywordCandidate[] = [
+    { text: "노인 우울", source: "both", n: 4 },
+    { text: "사회적 지지", source: "llm", n: 0 },
+    { text: "독거노인", source: "paper", n: 3 },
+  ];
+
+  it("후보를 낸 순서대로, 고른 것은 눌린 칩·출처와 편수 배지, 후보에 없는 고른 말은 뒤에 '직접'", () => {
+    expect(keywordChips(CANDS, ["사회적지지", "가족 돌봄"])).toEqual([
+      { text: "노인 우울", pressed: false, badge: "AI · 논문 4편" },
+      { text: "사회적 지지", pressed: true, badge: "AI 후보" },
+      { text: "독거노인", pressed: false, badge: "논문 3편" },
+      { text: "가족 돌봄", pressed: true, badge: "직접" },
+    ]);
+  });
+
+  it("후보가 없는 연구(06e 전·예시)는 고른 키워드를 눌린 칩으로만 보인다", () => {
+    const want = [{ text: "노인 우울", pressed: true, badge: null }];
+    expect(keywordChips(null, ["노인 우울"])).toEqual(want);
+    expect(keywordChips(undefined, ["노인 우울"])).toEqual(want);
+    expect(keywordChips([], ["노인 우울"])).toEqual(want);
+  });
+
+  it("toggleKeyword — 고른 것은 빼고 아니면 뒤에 더하되 칩 상한(5)을 넘지 않는다, regenerateProblem — 둘 미만이면 까닭", () => {
+    expect(toggleKeyword(["노인 우울", "사회적 지지"], "노인우울")).toEqual(["사회적 지지"]);
+    expect(toggleKeyword(["노인 우울"], "독거노인")).toEqual(["노인 우울", "독거노인"]);
+    const full = ["가", "나", "다", "라", "마"];
+    expect(toggleKeyword(full, "바")).toEqual(full);
+    expect(MIN_PICKED_KEYWORDS).toBe(2);
+    expect(regenerateProblem(["노인 우울"])).toBe("키워드를 2개 이상 고르면 다시 만들 수 있습니다");
+    expect(regenerateProblem(["노인 우울", "독거노인"])).toBeNull();
+  });
+});
+
+describe("aiCardsStale — 다시 만들 AI 자리가 있다", () => {
+  const made: TopicCard = { ...CARD, keywords: ["노인 우울", "사회적 지지"] };
+  const now = ["노인 우울", "독거노인"];
+  const concepts = (status: WorkGeneration["status"]) => gen({ id: 40, kind: "concepts", target: null, status });
+
+  it("지금 키워드와 다른 키워드로 만든 AI 후보 카드가 있을 때 — 고른·고친·직접 쓴 카드와 다시 만드는 중인 카드는 세지 않는다", () => {
+    const done = { id: 41, status: "done" as const };
+    expect(aiCardsStale(deck([item({ card: made, generation: done })]), now)).toBe(true);
+    expect(aiCardsStale(deck([item({ card: made, generation: done })]), ["사회적 지지", "노인 우울"])).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, state: "picked" })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: { ...made, edited: true } })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: null, state: "insufficient" })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, generation: { id: 52, status: "running" } })]), now)).toBe(false);
+  });
+
+  it("키워드 생성이 실패해 카드가 들어가지 않은 빈 씨앗 자리(blocked)도 다시 만들 자리다 — 키워드를 직접 넣고 저장한 뒤의 길", () => {
+    const blocked = deck([item({ card: null, generation: null })]);
+    expect(aiCardsStale(blocked, now, concepts("failed"))).toBe(true);
+    // 키워드 생성이 끝난 직후(카드 생성을 다시 읽기 전)는 기다리는 중이라 세지 않는다
+    expect(aiCardsStale(blocked, now, concepts("done"))).toBe(false);
+    expect(aiCardsStale(blocked, now)).toBe(false);
   });
 });
