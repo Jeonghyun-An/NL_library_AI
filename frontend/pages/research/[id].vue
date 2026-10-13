@@ -19,7 +19,7 @@
       </div>
 
       <div v-else-if="!view || !phase" class="rs-card rs-state">
-        <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+        <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
         <p class="rs-muted">연구를 불러오는 중입니다</p>
       </div>
 
@@ -69,7 +69,7 @@
             </div>
           </div>
           <div v-else-if="!workView" class="rs-card rs-card--wait" role="status">
-            <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+            <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
             <p>이어간 연구를 불러오는 중입니다</p>
           </div>
           <TopicsStep v-else-if="step === 'topics'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
@@ -82,7 +82,7 @@
             <!-- 탐색 중에는 계획 블록을 그리지 않는다 — 하위질문 목록·상태는 본문의 절 자리(ReportSkeleton)가 보인다 -->
             <section v-if="phase !== 'completed' && phase !== 'exploring'" class="rs-block rs-block--plan">
               <div v-if="phase === 'planning'" class="rs-card rs-card--wait" role="status">
-                <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+                <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
                   <p>연구 계획을 세우는 중입니다</p>
                   <!-- 넓히기가 끝나면 계획이 나오기 전에도 도는 계획 단계에 넓힌 질문이 먼저 실려 온다 -->
@@ -100,7 +100,7 @@
                 @cancel="onCancel"
               />
               <div v-else-if="phase === 'queued'" class="rs-card rs-card--wait" role="status">
-                <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+                <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
                   <p>앞선 연구가 끝나면 시작합니다</p>
                   <p v-if="queueText" class="rs-muted">{{ queueText }}</p>
@@ -142,7 +142,7 @@
                   <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" :disabled="syncing" @click="resync">다시 불러오기</button>
                 </div>
                 <div v-else-if="reportState === 'loading'" class="rs-report-note" role="status">
-                  <img src="/img/ico-spinner.svg" alt="" class="rs-spinner rs-spinner--small" />
+                  <img :src="SPINNER_SRC" alt="" class="rs-spinner rs-spinner--small" />
                   <p>최종 보고서를 불러오는 중입니다 — 서론과 한계가 붙은 완성본으로 곧 바뀝니다.</p>
                 </div>
                 <ReportView
@@ -186,7 +186,7 @@
                 </div>
               </div>
               <div v-else class="rs-card rs-card--wait" role="status">
-                <img src="/img/ico-spinner.svg" alt="" class="rs-spinner" />
+                <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
                 <p>보고서를 불러오는 중입니다</p>
               </div>
             </section>

@@ -381,7 +381,8 @@ describe("고정 진행 영역의 문서 스크롤 여백(research.css)", () => 
   // 값이면 DOM 에서 뒤인 막대가 위에 그려져 맨 위 레일 버튼(펼치기·새 채팅·DeepResearch)의 이름표를 덮는다
   it("막대는 접힌 LNB 레일보다 낮게 쌓인다 — 인용 팝오버(30)·메뉴(40)는 여전히 막대 위", () => {
     const skx = cssRules(readFileSync(fileURLToPath(new URL("../../assets/css/style_skovix.css", import.meta.url)), "utf8"));
-    const rail = Number(skx.find((r) => !r.at && r.selectors.includes(".skx-lnb.is-lnb-collapsed") && r.decls.has("z-index"))?.decls.get("z-index"));
+    // 접힌 레일은 넓은 화면에만 있다 — round08 이 좁은 화면(≤768px)을 서랍으로 바꾸며 레일 규칙을 @media (min-width: 769px) 안으로 옮겼다
+    const rail = Number(skx.find((r) => (!r.at || r.at.includes("min-width")) && r.selectors.includes(".skx-lnb.is-lnb-collapsed") && r.decls.has("z-index"))?.decls.get("z-index"));
     const bar = Number(rules.find((r) => !r.at && r.selectors.includes(".rs-pbar") && r.decls.has("z-index"))?.decls.get("z-index"));
     expect(rail).toBeGreaterThan(0);
     expect(bar).toBeGreaterThan(0);

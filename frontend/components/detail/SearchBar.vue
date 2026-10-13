@@ -11,13 +11,15 @@
       :placeholder="placeholder"
       enterkeyhint="search"
     />
-    <button type="submit" class="skx-send" :aria-label="`${label} 보내기`">
-      <img src="/img/ico-send.svg" alt="" />
+    <button type="submit" class="skx-send" :aria-label="`${label} 보내기`" :aria-disabled="!hasQuery(text)">
+      <img src="/img/ico-send-up.svg" alt="" />
     </button>
   </form>
 </template>
 
 <script setup lang="ts">
+import { hasQuery } from "~/utils/searchInput";
+
 const props = defineProps<{
   /** 처음 채울 검색어 */
   initial: string;

@@ -1,9 +1,27 @@
 <!-- frontend/components/AppSidebar.vue -->
 <template>
-  <aside :class="['skx-lnb', isCollapsed && 'is-lnb-collapsed', foldInstant && 'is-lnb-instant']">
+  <!-- 좁은 화면(≤768px) 전용 [사이드바 열기] — 사이드바는 본문을 밀지 않는 서랍(position: fixed, 왼쪽에서 열림)이라 본문 위 한 줄에 둔다.
+       서랍이 닫히면 초점이 여기로 돌아온다. 넓은 화면에서는 CSS 로 숨는다(그쪽은 아래 접힌 띠가 한다) -->
+  <button
+    ref="openerBtn"
+    type="button"
+    class="skx-lnb-opener"
+    aria-label="사이드바 열기"
+    :aria-expanded="drawerOpen"
+    aria-controls="skx-lnb"
+    @click="openDrawer"
+  >
+    <img src="/img/ico-collapse.svg" alt="" />
+  </button>
+  <aside
+    id="skx-lnb"
+    ref="asideEl"
+    :class="['skx-lnb', isCollapsed && 'is-lnb-collapsed', drawerOpen && 'is-drawer-open']"
+    @keydown="onAsideKeydown"
+  >
     <!-- 접힌 띠(데스크톱) — 위에서부터 [사이드바 열기](접기 버튼과 같은 아이콘) · [새 검색] · [DeepResearch].
-         휴대폰(≤480px)은 열기 버튼(화살표)만 둔다. 이름표는 마우스를 올리거나 키보드 초점이 갈 때 오른쪽에 뜨고 Esc 로 닫힌다.
-         06e R6(사이드바 접기)는 이 띠 위에 붙인다 — 접힘 상태·자동 접힘은 아래 open·lnbAutoFolded 가 정한다 -->
+         이름표는 마우스를 올리거나 키보드 초점이 갈 때 오른쪽에 뜨고 Esc 로 닫힌다. 좁은 화면(≤768px)에는 띠가 없다 — 위 [사이드바 열기]와 서랍이 대신한다.
+         06e R6(사이드바 접기)는 이 띠 위에 붙인다 — 접힘 상태는 아래 open 이 정한다 -->
     <div class="skx-lnb__rail">
       <div class="skx-rail__item">
         <button
@@ -16,8 +34,7 @@
           @focus="showTip('open', $event)"
           @blur="hideTip('open')"
         >
-          <img class="skx-rail__ico skx-rail__ico--panel" src="/img/ico-collapse.svg" alt="" />
-          <img class="skx-rail__ico skx-rail__ico--arrow" src="/img/ico-arrow.svg" alt="" />
+          <img class="skx-rail__ico" src="/img/ico-collapse.svg" alt="" />
         </button>
         <span v-if="railTip === 'open'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.open }}</span>
       </div>
@@ -62,10 +79,11 @@
         <SkovixWordmark class="skx-logo__word" />
       </a>
       <button
+        ref="collapseBtn"
         type="button"
         class="skx-icon-btn"
         aria-label="사이드바 접기"
-        @click="open = false"
+        @click="collapse"
       >
         <img src="/img/ico-collapse.svg" alt="" />
       </button>
@@ -272,6 +290,8 @@
       <SettingsMenu />
     </div>
   </aside>
+  <!-- 서랍이 열렸을 때 본문을 덮는 어두운 막 — 누르면 닫힌다(좁은 화면에서만 그려진다) -->
+  <div :class="['skx-lnb-scrim', drawerOpen && 'is-open']" aria-hidden="true" @click="closeDrawer(true)"></div>
 </template>
 
 <script setup lang="ts">
@@ -283,6 +303,7 @@ import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { deepResearchStartRoute } from "~/utils/landingStart";
+import { NARROW_QUERY, trapTabTarget } from "~/utils/sidebarDrawer";
 import {
   countLiveResearch,
   entryTime,
@@ -311,14 +332,80 @@ const router = useRouter();
 const history = useHistory();
 
 // open 에는 사용자가 누른 상태만 둔다 — 채팅 때문에 접힌 상태를 여기 쓰면, 채팅을 연 채 페이지를 떠날 때
-// 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다
+// 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다. 넓은 화면(>768px)의 펼침·접힘(띠)만 이 값이 정한다
 const open = useState<boolean>("skx:lnb-open", () => true);
-// 휴대폰 폭(≤480px)에서는 펼친 사이드바(16rem)가 본문을 거의 다 가린다 — 앱을 처음 열 때 한 번만 접어 둔다.
-// 이미 한 번 정했으면(페이지를 옮겨 다시 마운트돼도) 사용자가 펼친 상태를 되접지 않는다
-const lnbAutoFolded = useState<boolean>("skx:lnb-auto-folded", () => false);
-// 처음 자동으로 접는 순간만 폭 전환(.3s)을 끈다 — 열려 있던 16rem 이 3.2rem 으로 줄어드는 모습이 보이면 레이아웃이 튄다
-const foldInstant = ref(false);
 const isCollapsed = computed(() => !open.value || !!props.collapsed);
+
+// ── 좁은 화면(≤768px)의 서랍 ─────────────────────────────
+// 좁은 화면에서는 위 open 값과 상관없이 늘 닫힌 채 시작한다(데스크톱에서 펼쳐 둔 상태가 휴대폰에 그대로 열려 나오지 않게) —
+// 서랍의 열림은 이 컴포넌트가 따로 갖는다(페이지마다 새로 마운트되므로 페이지를 옮기면 저절로 닫힌다). 서랍은 본문을 밀지 않고 위를 덮는다
+const narrow = ref(false);
+const drawerOpen = ref(false);
+const asideEl = ref<HTMLElement | null>(null);
+const openerBtn = ref<HTMLButtonElement | null>(null);
+const collapseBtn = ref<HTMLButtonElement | null>(null);
+let narrowMql: MediaQueryList | null = null;
+
+const SCROLL_LOCK_CLASS = "skx-scroll-lock";
+
+async function openDrawer() {
+  drawerOpen.value = true;
+  await nextTick();
+  collapseBtn.value?.focus({ preventScroll: true });
+}
+
+/** 서랍 닫기 — restoreFocus 면 [사이드바 열기]로 초점을 되돌린다(Esc·막·접기 버튼) */
+function closeDrawer(restoreFocus: boolean) {
+  if (!drawerOpen.value) return;
+  drawerOpen.value = false;
+  if (restoreFocus) void nextTick(() => openerBtn.value?.focus({ preventScroll: true }));
+}
+
+/** 서랍 안의 [사이드바 접기] — 좁은 화면에서는 서랍을 닫고, 넓은 화면에서는 띠로 접는다 */
+function collapse() {
+  if (narrow.value) closeDrawer(true);
+  else open.value = false;
+}
+
+function onDrawerEsc(e: KeyboardEvent) {
+  if (e.key === "Escape" && drawerOpen.value) {
+    e.preventDefault();
+    closeDrawer(true);
+  }
+}
+
+/** 서랍이 열린 동안 Tab 이 서랍 밖(본문)으로 새지 않게 돌린다 */
+function onAsideKeydown(e: KeyboardEvent) {
+  if (e.key !== "Tab" || !narrow.value || !drawerOpen.value || !asideEl.value) return;
+  const items = [
+    ...asideEl.value.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter((el) => el.getClientRects().length > 0);
+  const target = trapTabTarget(items, document.activeElement as HTMLElement | null, e.shiftKey);
+  if (target) {
+    e.preventDefault();
+    target.focus();
+  }
+}
+
+function onNarrowChange(e: MediaQueryListEvent) {
+  narrow.value = e.matches;
+  // 넓은 화면으로 돌아가거나 좁아지는 순간에는 서랍을 닫아 둔다(열린 채 폭이 바뀌어 막이 남지 않게)
+  drawerOpen.value = false;
+}
+
+// 서랍이 열린 동안 본문 스크롤을 잠근다(Esc 도 이때만 듣는다)
+watch(drawerOpen, (isOpen) => {
+  document.documentElement.classList.toggle(SCROLL_LOCK_CLASS, isOpen);
+  if (isOpen) document.addEventListener("keydown", onDrawerEsc);
+  else document.removeEventListener("keydown", onDrawerEsc);
+});
+// 같은 페이지 안에서 주소가 바뀌어도(최근 검색 눌러 결과 전환 등) 서랍은 닫는다
+watch(
+  () => route.fullPath,
+  () => closeDrawer(false),
+);
 const v1Map = ref<Record<string, string>>({});
 // 첫 목록을 읽기 전·읽지 못한 때에 '기록 없음'을 띄우지 않으려고 쓴다(최상위 ref 라 템플릿에서 풀린다)
 const { loaded, listFailed } = history;
@@ -510,17 +597,14 @@ watch(hasLiveResearch, syncPolling);
 watch(isCollapsed, (collapsed, wasCollapsed) => {
   if (wasCollapsed && !collapsed && hasLiveResearch.value) pollOnce();
 });
+watch(drawerOpen, (isOpen) => {
+  if (isOpen && hasLiveResearch.value) pollOnce();
+});
 
 onMounted(() => {
-  if (!lnbAutoFolded.value) {
-    lnbAutoFolded.value = true;
-    if (window.matchMedia("(max-width: 480px)").matches) {
-      foldInstant.value = true;
-      open.value = false;
-      // 접힌 모양이 그려진 뒤(두 프레임) 전환을 되살린다 — 이후 사용자가 펼치고 접는 동작은 그대로 움직인다
-      requestAnimationFrame(() => requestAnimationFrame(() => (foldInstant.value = false)));
-    }
-  }
+  narrowMql = window.matchMedia(NARROW_QUERY);
+  narrow.value = narrowMql.matches;
+  narrowMql.addEventListener("change", onNarrowChange);
   v1Map.value = readV1Map(safeLocalStorage());
   void history.load();
   // 업그레이드 뒤 첫 로드에서는 이전이 서버 응답을 받아야 대응표가 생긴다 — 옛 ?restore= 주소의 강조를 그때 맞춘다
@@ -533,6 +617,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("keydown", onTipEsc);
+  document.removeEventListener("keydown", onDrawerEsc);
+  document.documentElement.classList.remove(SCROLL_LOCK_CLASS);
+  narrowMql?.removeEventListener("change", onNarrowChange);
   if (pollTimer) clearInterval(pollTimer);
   document.removeEventListener("visibilitychange", onVisibility);
 });

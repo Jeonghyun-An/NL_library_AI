@@ -186,7 +186,18 @@ watch(
   },
 );
 
-onBeforeUnmount(() =>
-  document.removeEventListener("pointerdown", onOutsidePointerDown, true),
-);
+// 카드는 늘 닫힌 채 시작한다 — 부모가 쥔 열림이 목록을 다시 그릴 때·되돌아올 때(뒤로 가기 캐시 pageshow)에 남아 있어도
+// 사용자가 누르지 않은 팝업이 저절로 열려 보이지 않게, 처음부터 열려 있다고 오면 닫는다고 알린다
+function onPageShow(e: PageTransitionEvent) {
+  if (e.persisted && props.expanded) setOpen(false);
+}
+onMounted(() => {
+  if (props.expanded) setOpen(false);
+  window.addEventListener("pageshow", onPageShow);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+  window.removeEventListener("pageshow", onPageShow);
+});
 </script>
