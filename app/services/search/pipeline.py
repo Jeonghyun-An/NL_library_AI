@@ -150,9 +150,12 @@ async def search(
         )
 
 
-# Milvus 조건식 문자열에 그대로 넣는 도서 id 가 쓸 수 있는 글자 — 소장(CNTS-…)·논문(KCI_FI…) id 는 이 안에 든다.
-# 따옴표·공백·줄바꿈이 들어오면 조건식이 깨지거나 다른 조건이 붙는다. $ 는 끝 줄바꿈을 통과시키므로 fullmatch 로 본다
-_SAFE_BOOK_ID = re.compile(r"[A-Za-z0-9._-]+")
+# Milvus 조건식의 큰따옴표 문자열에 그대로 넣는 도서 id 가 쓸 수 있는 글자. 소장(CNTS-…)·논문(KCI_FI…) id 뿐 아니라
+# 업로드 적재가 파일 이름을 id 로 쓰므로(api/book.py upload_and_ingest) 한글·공백·괄호도 받는다 — Milvus 문자열 리터럴
+# 안에서 글자 그대로 읽히지 않는 것은 문자열을 끝내는 따옴표, 이스케이프를 여는 역슬래시, 줄바꿈 같은 제어 문자뿐이다.
+# 작은따옴표는 큰따옴표 안에서는 글자 그대로지만 Milvus 가 작은따옴표 이스케이프를 바꿔 쓰는 단계가 있어 받지 않는다
+# (그런 id 는 상세에서 관련 자료 없이 404). $ 는 끝 줄바꿈을 통과시키므로 fullmatch 로 본다
+_SAFE_BOOK_ID = re.compile(r"[^\"'\\\x00-\x1f\x7f]+")
 
 
 def is_safe_book_id(cnts_id: str) -> bool:

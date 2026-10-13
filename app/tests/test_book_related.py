@@ -175,17 +175,25 @@ class TestSearchRelatedBooks:
         assert [b.book_id for b in resp.books] == ["C", "D", "B"]
         assert seen["llm"] == []
 
-    @pytest.mark.parametrize("bad", ['X" || book_id != "Y', "CNTS-1\n", "CNTS 1", ""])
+    @pytest.mark.parametrize("bad", ['X" || book_id != "Y', "A\\B", "it's", "CNTS-1\n", "CNTS\t1", ""])
     def test_unsafe_id_is_refused_before_it_reaches_the_expression(self, monkeypatch, pipeline, bad):
-        """id 는 조건식 문자열에 그대로 들어간다 — 따옴표·공백·줄바꿈은 받지 않는다($ 는 끝 줄바꿈을 통과시킨다)."""
+        """id 는 조건식의 큰따옴표 문자열에 그대로 들어간다 — 그 문자열을 끝내거나 이스케이프로 읽히는 글자(따옴표·
+        역슬래시·제어 문자)는 받지 않는다($ 는 끝 줄바꿈을 통과시킨다)."""
         seen = _wire(monkeypatch, pipeline, {"B": 0.8})
         with pytest.raises(ValueError):
             self._run(pipeline, exclude_id=bad)
         assert seen["search_by_book"] == []
 
-    @pytest.mark.parametrize("ok", [SELF, "KCI_FI001234567", "NL.abc-01_x"])
-    def test_catalog_ids_are_safe(self, pipeline, ok):
+    # 업로드 적재는 파일 이름(확장자 뺀 것)을 id 로 쓴다(api/book.py upload_and_ingest → stages Book(cnts_id=book_id))
+    @pytest.mark.parametrize("ok", [SELF, "KCI_FI001234567", "NL.abc-01_x", "CNTS 1",
+                                    "조선후기 세태소설 연구(최종본)", "보고서 [2024] #3 & 부록"])
+    def test_catalog_and_upload_ids_are_safe(self, pipeline, ok):
         assert pipeline.is_safe_book_id(ok)
+
+    def test_upload_id_goes_into_the_expression_verbatim(self, monkeypatch, pipeline):
+        seen = _wire(monkeypatch, pipeline, {"B": 0.8})
+        self._run(pipeline, exclude_id="조선후기 세태소설 연구(최종본)")
+        assert 'book_id != "조선후기 세태소설 연구(최종본)"' in seen["search_by_book"][0]["meta_expr"]
 
 
 # ── GET /api/books/{cnts_id}/related ─────────────────────
@@ -353,6 +361,16 @@ class TestRelatedApi:
         assert resp.status_code == 404
         assert resp.json()["detail"] == '도서 없음: A"B'
         assert seen["search_by_book"] == []
+
+    def test_uploaded_book_with_a_hangul_file_name_id_has_related(self, api):
+        """업로드 자료는 파일 이름이 id 다 — 한글·공백·괄호가 든 id 도 404 가 아니라 관련 자료를 받는다."""
+        upload_id = "조선후기 세태소설 연구(최종본)"
+        add_book(api.engine, upload_id, title=upload_id, doc_type="literature")
+        seen = api.wire(SIX)
+        resp = api.client.get(f"/api/books/{quote(upload_id)}/related")
+        assert resp.status_code == 200
+        assert [b["book_id"] for b in resp.json()["books"]] == ["B", "C", "D", "E"]
+        assert f'book_id != "{upload_id}"' in seen["search_by_book"][0]["meta_expr"]
 
     def test_book_without_title_has_no_related(self, api):
         seen = api.wire(SIX)
