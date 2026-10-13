@@ -6,6 +6,7 @@ history_sqlite 의 SQLite 에서 실제 SQL 로 돈다.
 """
 import asyncio
 import json
+import re
 
 import pytest
 import sqlalchemy as sa
@@ -58,13 +59,25 @@ class TestPrompt:
         env = Environment()
         names = meta.find_undeclared_variables(env.parse(tpl.system)) | meta.find_undeclared_variables(
             env.parse(tpl.user))
-        assert names == {"question", "heading", "seed", "evidence_list"}
+        assert names == {"question", "heading", "seed", "evidence_list", "keywords"}
+
+    def test_the_keyword_rule_is_there_only_when_keywords_are_given(self):
+        # 06e D23 — 고른 키워드가 있을 때만 규칙 한 줄. 없으면(옛 행·키워드 없이 넣은 카드) 06b 프롬프트와 글자까지 같다
+        rule = "- title 에 다음 키워드 가운데 하나 이상을 글자 그대로 넣습니다: 노인 우울 · 사회적 지지"
+        plain, _ = EXECUTOR.build(INPUT)
+        with_kw, _ = EXECUTOR.build({**INPUT, "keywords": ["노인 우울", "사회적 지지"]})
+        assert rule in with_kw[0]["content"] and "키워드" not in plain[0]["content"]
+        assert with_kw[0]["content"].replace("\n" + rule, "") == plain[0]["content"]
+        # 사용자 메시지(원 질문·씨앗·근거)는 그대로다 — 다시 만들 때도 이전 제목을 주지 않는다(함정 26)
+        assert with_kw[1]["content"] == plain[1]["content"]
 
     def test_no_array_sample_no_example_and_no_figures(self):
-        # 함정 15 — 원소가 든 배열 견본·JSON 견본·예시는 개수와 분야를 베끼게 한다. 수치는 모델에 주지 않는다(정함 3)
+        # 함정 15 — 원소가 든 배열 견본·JSON 견본·예시는 개수와 분야를 베끼게 한다. 수치는 모델에 주지 않는다(정함 3).
+        # Jinja 문({% if %})과 변수({{ }})는 견본이 아니다 — 빼고 본다
         tpl = get_prompt(PROMPT)
         for text in (tpl.system, tpl.user):
-            assert "[" not in text and "{" not in text.replace("{{", "").replace("}}", "")
+            body = re.sub(r"\{%.*?%\}", "", text).replace("{{", "").replace("}}", "")
+            assert "[" not in body and "{" not in body
             assert "예:" not in text and "예시" not in text
             assert "F#" not in text and "수치 목록" not in text
 
@@ -90,6 +103,14 @@ class TestBuild:
                "[E3] 노인 우울의 종단 연구 (연도 미상)" in user
         assert "144748" not in user and "144,748" not in user
         assert params == {"max_tokens": 400, "temperature": 0.3}
+
+    def test_old_rows_without_keywords_still_build(self):
+        # 06e 전에 넣은 행엔 keywords 키가 없다 — 다시 부르기(retry)가 그 input 을 그대로 쓴다. 렌더러가 StrictUndefined
+        # (services/prompts.py)라 _build 가 늘 넘겨야 한다. 빈 목록·None 도 키워드 규칙이 없는 프롬프트다
+        assert "keywords" not in INPUT
+        for inp in (INPUT, {**INPUT, "keywords": []}, {**INPUT, "keywords": None}):
+            messages, _ = EXECUTOR.build(inp)
+            assert "키워드" not in messages[0]["content"]
 
 
 class TestParse:

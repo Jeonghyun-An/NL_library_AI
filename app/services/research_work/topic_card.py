@@ -10,6 +10,8 @@
   - 개수: 직접 받치는 논문 MIN_TOPIC_EVIDENCE(2)편 이상(정함 4). 미달이면 공통 규칙(generate.run_generation)의
     내용 검사 미달로 다시 부르고, 끝내 미달이면 card 가 None 인 빈 결과로 done — 화면은 '근거 부족' 슬롯이다.
   - 표현: 제목·질문의 단정 표현은 soften_claims 로 바꾸고, [F#] 밖 숫자는 numbers_outside 로 센다('확인 필요').
+  - 키워드(06e D23): 고른 키워드(input.keywords)를 넘기면 프롬프트에 '제목에 하나 이상 글자 그대로' 규칙 한 줄이 붙는다.
+    예시 제목·이전 제목은 주지 않는다(함정 15·26). 06e 전 행(keywords 없음)은 06b 프롬프트 그대로다.
 결과 반영(apply)은 research_topics 의 그 행만 바꾼다 — 사용자가 직접 고친 카드(card.edited)는 덮지 않는다.
 """
 import re
@@ -63,6 +65,8 @@ def _build(input: dict) -> tuple[list[dict], dict]:
         heading=seed.get("heading") or "",
         seed=seed.get("text") or "",
         evidence_list=_evidence_list(input.get("papers") or []),
+        # 렌더러가 StrictUndefined 라(services/prompts.py) 늘 넘긴다 — 빈 글이면 프롬프트의 키워드 규칙 줄이 빠진다
+        keywords=" · ".join(k for k in (input.get("keywords") or []) if isinstance(k, str)),
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}], params
 

@@ -178,7 +178,16 @@ class TestTopicInput:
             ],
             "adopted": 12,
             "corpus": {"n_papers": 144748, "from": "1980", "to": "2017"},
+            "keywords": [],
         }
+
+    def test_topic_input_carries_the_keywords_or_an_empty_list(self):
+        # 06e D23 — 카드를 만들 때 고른 키워드(work.concepts)를 입력에 싣는다. 넘긴 목록을 복사해 둔다
+        seed = pick_seeds(REPORT, limit=1)[0]
+        picked = ["노인 우울", "사회적 지지"]
+        made = topic_input("q", seed, REPORT, 12, keywords=picked)
+        assert made["keywords"] == picked and made["keywords"] is not picked
+        assert topic_input("q", seed, REPORT, 12, keywords=None)["keywords"] == []
 
     def test_missing_range_and_counts_are_null(self):
         seed = {"heading": "h", "text": "t", "papers": ["P1", "P2"], "adopted": None}

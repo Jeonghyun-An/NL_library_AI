@@ -17,7 +17,7 @@ from sqlalchemy import case, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.research_work import _get_job, _get_work, _job_uuid, _send_dispatch, _writable
+from api.research_work import _concepts_open, _get_job, _get_work, _job_uuid, _send_dispatch, _writable
 from core.deps import get_db
 from models.research_work import GEN_OPEN_STATUSES, ResearchGeneration, ResearchTopic, ResearchWork
 from services.research.relay import publish_work
@@ -37,6 +37,8 @@ TOPIC_NOT_FOUND = "주제가 없습니다"
 CARD_BUSY = "카드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
 NO_CARD_YET = "카드가 아직 없습니다"
 EMPTY_CARD_NEEDS_BOTH = "빈 카드는 제목과 연구 질문을 함께 보내 주세요"
+# 키워드(개념) 생성이 열려 있는 동안의 [다른 방향]·[이 키워드로 다시 만들기] — 그동안 work.concepts 는 비었거나 곧 바뀐다
+KEYWORDS_BUSY = "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
 # [다른 방향] 의 연구별 잠금 대상 — 주제 카드 생성의 target(주제 id 숫자 문자열)과 겹치지 않는 이름
 OTHER_LOCK_TARGET = "other-direction"
 # [고르기] 의 연구별 잠금 kind — 생성 kind 가 아니라 생성 넣기·[다른 방향]의 잠금과 겹치지 않는다
@@ -120,10 +122,14 @@ async def get_topics(job_id: str, db: AsyncSession = Depends(get_db)):
 @router.post("/api/research/{job_id}/topics/generate")
 async def generate_topics(job_id: str, req: TopicsGenerate, db: AsyncSession = Depends(get_db)):
     """[다른 방향] — 쓰지 않은 보고서 씨앗으로 카드 OTHER_DIRECTION_CARDS 장(origin other, 자리 없음). 연구별
-    잠금이 '쓴 씨앗 읽기 → 주제·생성 넣기' 를 한 줄로 세운다 — 두 번 눌러도 같은 씨앗이 두 장 되지 않는다."""
+    잠금이 '쓴 씨앗 읽기 → 주제·생성 넣기' 를 한 줄로 세운다 — 두 번 눌러도 같은 씨앗이 두 장 되지 않는다.
+    카드 입력에는 지금 고른 키워드(work.concepts)를 싣는다(06e D23). 키워드 생성이 열려 있으면 409 — 끝나기 전의
+    concepts 는 비어 있어 키워드 없는 카드가 된다(06e 정함 29)."""
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)
     _writable(work)
+    if await _concepts_open(db, jid):
+        raise HTTPException(status_code=409, detail=KEYWORDS_BUSY)
     job = await _get_job(db, jid)
     report = job.report if isinstance(job.report, dict) else {}
     await db.execute(select(func.pg_advisory_xact_lock(lock_key(jid, "topic_card", OTHER_LOCK_TARGET))))
@@ -145,8 +151,10 @@ async def generate_topics(job_id: str, req: TopicsGenerate, db: AsyncSession = D
             .returning(ResearchTopic.id)
         )
         # 방금 만든 주제라 열린 생성이 없다 — enqueue_generation 은 늘 새 id 를 돌려준다
-        gen_id = await enqueue_generation(db, jid, kind="topic_card", target=str(topic_id),
-                                          input=topic_input(job.question, seed, report, topic_id))
+        gen_id = await enqueue_generation(
+            db, jid, kind="topic_card", target=str(topic_id),
+            input=topic_input(job.question, seed, report, topic_id, keywords=list(work.concepts or [])),
+        )
         topic_ids.append(topic_id)
         gen_ids.append(gen_id)
     await db.commit()

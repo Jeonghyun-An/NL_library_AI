@@ -352,6 +352,35 @@ class TestOtherDirection:
         assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
         assert _rows(api.engine, ResearchTopic) == []
 
+    def test_cards_take_the_current_keywords(self, api):
+        # 06e D23 — [다른 방향]도 지금 고른 키워드(work.concepts)를 카드 입력에 넘긴다(spec §12-4)
+        jid = _work_job(api.engine, concepts=["노인 우울", "사회적 지지"])
+        add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card=CARD)
+
+        res = api.client.post(f"/api/research/{jid}/topics/generate", json={"mode": "other"})
+
+        assert res.status_code == 200
+        made = [t for t in _rows(api.engine, ResearchTopic) if t["origin"] == "other"]
+        gens = _rows(api.engine, ResearchGeneration)
+        assert len(gens) == 2 and [g["input"]["keywords"] for g in gens] == [["노인 우울", "사회적 지지"]] * 2
+        for topic, gen in zip(made, gens):
+            assert gen["input"] == topic_input(QUESTION, topic["seed"], REPORT, topic["id"],
+                                               keywords=["노인 우울", "사회적 지지"])
+
+    @pytest.mark.parametrize("status", ["queued", "running"])
+    def test_409_while_keywords_are_being_made(self, api, status):
+        # 정함 29 — 키워드 생성이 끝나기 전의 work.concepts 는 비어 있다. 그 값으로 카드를 만들지 않는다
+        jid = _work_job(api.engine)
+        concepts = add_generation(api.engine, jid, kind="concepts", status=status)
+
+        res = api.client.post(f"/api/research/{jid}/topics/generate", json={"mode": "other"})
+
+        assert res.status_code == 409
+        assert res.json()["detail"] == "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
+        assert _rows(api.engine, ResearchTopic) == []
+        assert [g["id"] for g in _rows(api.engine, ResearchGeneration)] == [concepts]
+        assert api.dispatch.calls == 0 and api.events == []
+
 
 # ── 직접 쓰기·직접 고치기 ─────────────────────────────────────────────
 
