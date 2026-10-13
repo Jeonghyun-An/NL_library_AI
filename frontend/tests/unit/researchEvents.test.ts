@@ -1644,6 +1644,10 @@ describe("questionUsedFromSteps — 이렇게 이해했어요(06c)", () => {
     }
     // 안쪽 띄어쓰기만 다르면
     expect(questionUsedFromSteps(used("컴퓨팅자원에 대한 연구가궁금해."), ASKED)).toBeNull();
+    // 입말 끝의 물결(반각·전각 — NFKC 로 같은 글자)만 떼고 마침표를 붙였어도
+    for (const [asked, broadened] of [[`${ASKED}~`, `${ASKED}.`], [`${ASKED}～`, ASKED], [ASKED, `${ASKED}~!`]]) {
+      expect(questionUsedFromSteps(used(broadened!), asked!)).toBeNull();
+    }
   });
 
   it("끝이 아닌 문장부호나 낱말이 다르면 다르다 — 보이는 글은 공백만 정리한 넓힌 질문 그대로", () => {
