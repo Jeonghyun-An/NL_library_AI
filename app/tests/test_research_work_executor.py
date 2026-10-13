@@ -85,7 +85,8 @@ class TestExecutorFields:
         ex = concepts.EXECUTOR
         assert ex.is_empty({"concepts": []}) and ex.is_empty({}) and ex.is_empty(None)
         assert not ex.is_empty({"concepts": ["독서 격차", "청소년"]})
-        assert (ex.bind, ex.stream, ex.apply) == (None, False, None)
+        # 06e — 모델 후보와 채택 논문 키워드를 bind 가 합친다(concepts._bind). 반영은 apply_result 의 concepts 분기 그대로
+        assert ex.bind is concepts._bind and (ex.stream, ex.apply) == (False, None)
 
 
 class TestBind:

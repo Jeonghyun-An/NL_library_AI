@@ -44,7 +44,7 @@ class Executor:
     kind: str
     build: Callable[[dict], tuple[list[dict], dict]]   # input → (messages, llm params)
     parse: Callable[[str], dict | None]                # 원문 → output, 못 읽으면 None
-    check: Callable[[dict], bool]                      # 내용 검사(예: 개념 2개 이상)
+    check: Callable[[dict], bool]                      # 내용 검사(예: 주제 카드 근거 2편 이상)
     empty: Callable[[dict], dict]                      # 끝내 못 얻었을 때의 빈 결과(input → output)
     # 06b 의 선택 필드 — 기본값이 06a 동작이다(핵심 개념 실행기는 is_empty 만 쓴다)
     bind: Callable[[dict, dict], dict] | None = None   # (output, input) → output: 해석 뒤·검사 전에 입력으로 맞춘다

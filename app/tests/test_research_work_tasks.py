@@ -259,6 +259,8 @@ class TestDispatch:
         assert env.calls == [("http://gemma.test/v1", "gemma-test", 300.0)]
         assert (row["status"], row["model"], row["error"]) == ("done", "gemma-test", None)
         assert row["output"] == {"concepts": ["독서 격차", "청소년"],
+                                 "candidates": [{"text": "독서 격차", "source": "llm", "n": 0},
+                                                {"text": "청소년", "source": "llm", "n": 0}],
                                  "attempts": [{"model": "gemma-test", "outcome": "ok"}]}
         assert row["started_at"] is not None and row["finished_at"] is not None
         work = env.work_row(work_id)
@@ -297,7 +299,7 @@ class TestDispatch:
             "generation", "concepts", gid, "done")
 
     def test_no_answer_after_three_calls_is_done_with_no_concepts(self, monkeypatch, wt):
-        env = _Env(monkeypatch, wt, replies=["모르겠다", '{"concepts": ["하나"]}', "{}"])
+        env = _Env(monkeypatch, wt, replies=["모르겠다", '{"keywords": ["연구 동향", "선행연구"]}', "{}"])
         work_id = env.work()
         gid = env.gen(work_id)
 

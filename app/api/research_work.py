@@ -35,11 +35,13 @@ from models.research import ResearchJob, ResearchStep
 from models.research_work import (
     GEN_OPEN_STATUSES, PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchTopic, ResearchWork,
 )
+from repositories.book import BookRepository
 from services.research.relay import publish_work, subscribe_work
 from services.research_work.concepts import MAX_CONCEPTS, clean_concepts, concepts_input
 from services.research_work.dispatch import queue_info
 from services.research_work.enqueue import lock_key
 from services.research_work.executors import EXECUTORS
+from services.research_work.keywords import paper_keyword_counts
 from services.research_work.progress import refresh_progress
 from services.research_work.seeds import corpus_of, pick_seeds, topic_input
 from services.research_work.shapes import PHASE_ORDER, TOPIC_SEED_SLOTS
@@ -61,7 +63,7 @@ PHASE_BACKWARD = "단계를 되돌릴 수 없습니다"
 
 
 class WorkPatch(BaseModel):
-    # 사용자가 고친 핵심 개념은 1~5개(LLM 결과의 '2개 이상' 검사는 생성 쪽 규칙이다)
+    # 사용자가 고른·고친 키워드는 1~5개(키워드 생성의 '모델 후보 하나 이상' 검사는 생성 쪽 규칙이다 — concepts._check)
     concepts: list[str] | None = Field(None, min_length=1, max_length=MAX_CONCEPTS)
     memo: str | None = Field(None, max_length=MAX_MEMO)
     # 도달한 단계 — 앞으로만 간다(shapes.PHASE_ORDER). 화면이 Word 내려받기에 성공하면 done 을 보낸다
@@ -205,9 +207,14 @@ async def continue_research(
             .values([{"work_id": jid, "state": "candidate", **c} for c in candidates])
             .on_conflict_do_nothing()
         )
+    # 키워드 후보의 논문 쪽 원천 — 채택 논문(읽기 목록 후보)의 소장 키워드 문서 빈도(spec §12-4, 06e 정함 14).
+    # 서지는 DB 순서로 오므로 후보 순서로 다시 줄 세운다 — 같은 편수면 앞 후보의 키워드가 먼저다
+    ids = [c["cnts_id"] for c in candidates]
+    books = await BookRepository(db).get_by_cnts_ids(ids)
+    in_order = {c: books[c] for c in ids if c in books}
     await db.execute(insert(ResearchGeneration).values(
         work_id=jid, kind="concepts", priority=PRIORITY_USER, status="queued",
-        input=concepts_input(job),
+        input=concepts_input(job, paper_keywords=paper_keyword_counts(in_order)),
     ))
     report = job.report if isinstance(job.report, dict) else {}
     for slot, seed in enumerate(pick_seeds(report, limit=TOPIC_SEED_SLOTS), start=1):

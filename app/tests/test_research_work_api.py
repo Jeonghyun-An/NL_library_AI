@@ -28,7 +28,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from history_sqlite import (
-    SID_A, SID_B, AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
+    SID_A, SID_B, AsyncSessionOverSync, add_book, add_generation, add_research_job, add_work, make_engine,
 )
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
@@ -263,7 +263,7 @@ def _frames(body: str) -> list[dict]:
 class TestContinue:
     def test_creates_the_work_its_candidates_and_one_concepts_generation(self, api, monkeypatch):
         monkeypatch.setattr(api.router, "concepts_input",
-                            lambda job: {"question": job.question, "marker": 1})
+                            lambda job, paper_keywords=None: {"question": job.question, "marker": 1})
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
 
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
@@ -290,16 +290,21 @@ class TestContinue:
         assert api.events == [(str(jid), "work", {"phase": "topics", "progress": PROGRESS0})]
 
     def test_concepts_input_reads_the_job(self, api):
-        # 가짜 없이 — 핵심 개념 생성 입력이 잡 행(질문·계획·보고서)에서 만들어지는지
+        # 가짜 없이 — 키워드 생성 입력이 잡 행(질문·계획)과 채택 논문(C1·C2)의 소장 키워드에서 만들어지는지.
+        # 653 키워드(구분자로 이은 글)와 추출 키워드(extra.keywords)를 합쳐 논문 수로 센다 — 같은 수면 후보 순서(C1 먼저)
+        add_book(api.engine, "C1", keyword="독서 격차; 학교 도서관")
+        add_book(api.engine, "C2", extra={"keywords": ["학교 도서관", "가정 환경", "연구 동향"]})
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
 
         assert api.client.post(f"/api/research/{jid}/work/continue", headers=A).status_code == 200
 
         (gen,) = _rows(api.engine, ResearchGeneration)
+        paper = [{"text": "학교 도서관", "n": 2}, {"text": "독서 격차", "n": 1}, {"text": "가정 환경", "n": 1}]
         same_job = SimpleNamespace(id=jid, question="청소년 독서 격차", plan=["독서 격차의 원인"],
                                    report=REPORT, state_snapshot=SNAPSHOT, params={})
-        assert gen["input"] == json.loads(json.dumps(api.router.concepts_input(same_job)))
+        assert gen["input"] == json.loads(json.dumps(api.router.concepts_input(same_job, paper_keywords=paper)))
         assert gen["input"]["question"] == "청소년 독서 격차"
+        assert gen["input"]["paper_keywords"] == paper
 
     def test_second_continue_adds_nothing(self, api):
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
