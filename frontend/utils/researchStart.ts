@@ -75,3 +75,31 @@ export function noticeCancelPress(step: NoticeCancelStep, armedAt: number, now: 
 export function noticeCancelLabel(step: NoticeCancelStep): string {
   return step === "idle" ? "취소" : step === "confirm" ? "정말 취소" : "취소하는 중";
 }
+
+// 확인에서 물러날 때([그대로 두기]·Esc) 다음 단계. 확인 중이 아니면 null — 그 Esc 는 받지 않고 페이지(+ 메뉴 닫기 등)로 흘려보낸다
+export function noticeCancelBack(step: NoticeCancelStep): NoticeCancelStep | null {
+  return step === "confirm" ? "idle" : null;
+}
+
+// 스크린리더에만 들리는 문구 — '취소'가 '정말 취소'로 바뀌고 [그대로 두기]가 새로 서는 것, 취소에 성공해 줄이 사라지는 것은 눈으로만 보인다
+export const NOTICE_CANCEL_CONFIRM_TEXT = "정말 취소할까요? 한 번 더 누르면 멈추고, 그대로 두기 버튼이나 Esc 키로 물러납니다";
+export const NOTICE_CANCEL_DONE_TEXT = `${DEEP_RESEARCH}를 취소했습니다`;
+
+interface FocusCandidate {
+  isConnected: boolean;
+}
+
+// 확인을 풀거나 취소가 끝난 뒤 초점을 둘 곳 — 사이드바 clearGroup 의 대체 경로와 같은 방식. 쥔 버튼이 사라져(v-if) 초점이 body 로
+// 떨어졌거나 걷힌 요소에 남았을 때, 또는 취소하는 동안 잠긴 취소 버튼에 묶여 있을 때만 옮긴다: 취소 버튼이 남아 있으면(다음 연구가 줄에
+// 섰거나 실패) 그 버튼, 줄째 사라졌으면 입력창. 기다리는 동안 사용자가 다른 곳으로 옮겼으면 null — 그 초점을 빼앗지 않는다
+export function noticeFocusTarget<T extends FocusCandidate>(
+  focus: { active: FocusCandidate | null; body: FocusCandidate | null },
+  cancelBtn: T | null,
+  field: T | null,
+): T | null {
+  const { active, body } = focus;
+  const lost = !active || active === body || active === cancelBtn || !active.isConnected;
+  if (!lost) return null;
+  if (cancelBtn?.isConnected) return cancelBtn;
+  return field?.isConnected ? field : null;
+}
