@@ -41,6 +41,13 @@
       {{ active.label }}
       <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">×</button>
     </span>
+    <!-- DeepResearch 를 고르면 칩 옆에 탐색 방식(spec D28) — 고른 값을 잡 params 두 칸(broaden·query_context)으로 싣는다 -->
+    <ResearchModePicker
+      v-if="active?.id === 'deep-research'"
+      :model-value="researchMode"
+      :disabled="disabled || busy"
+      @update:model-value="pickMode"
+    />
     <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
     <!-- DeepResearch 모드일 때 이 브라우저에 끝나지 않은 연구가 있으면 한 줄(사용자 결정 2026-10-13 — 판단은 useResearchStarter·
          utils/researchStart). [보기]는 그 연구 화면, [취소]는 한 번 더 눌러('정말 취소') 기존 취소 API 로 멈춘다. 보내기는 막지
@@ -111,10 +118,19 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
+import ResearchModePicker from "~/components/research/ResearchModePicker.vue";
 import { useResearchStarter } from "~/composables/useResearch";
 import { DEEP_RESEARCH } from "~/utils/brand";
+import { safeLocalStorage } from "~/utils/browserId";
 import { menuStep } from "~/utils/menuNav";
 import { researchErrorMessage } from "~/utils/researchErrors";
+import {
+  DEFAULT_RESEARCH_MODE,
+  modeParams,
+  readResearchMode,
+  saveResearchMode,
+  type ResearchMode,
+} from "~/utils/researchMode";
 import {
   NOTICE_CANCEL_CONFIRM_TEXT,
   NOTICE_CANCEL_DONE_TEXT,
@@ -155,6 +171,8 @@ const menuOpen = ref(false);
 const active = ref<SearchMode | null>(null);
 const busy = ref(false);
 const error = ref("");
+// 탐색 방식 — 서버 렌더와 첫 그림이 같게 기본(정밀하게)으로 시작하고 마운트 뒤 기억한 값을 읽는다
+const researchMode = ref<ResearchMode>(DEFAULT_RESEARCH_MODE);
 
 let host: HTMLElement | null = null;
 let field: HTMLTextAreaElement | HTMLInputElement | null = null;
@@ -179,6 +197,12 @@ function activate(mode: SearchMode): void {
   active.value = mode;
   error.value = "";
   if (field) field.placeholder = mode.placeholder;
+}
+
+// 고른 탐색 방식은 같은 브라우저에 기억한다 — 편의일 뿐이라 저장이 막혀도 이 화면에서는 고른 값을 쓴다
+function pickMode(mode: ResearchMode): void {
+  researchMode.value = mode;
+  saveResearchMode(safeLocalStorage(), mode);
 }
 
 // ── + 메뉴 키보드(WAI-ARIA 메뉴 버튼 관례) ─────────────────
@@ -478,7 +502,7 @@ async function submit(): Promise<void> {
   busy.value = true;
   error.value = "";
   try {
-    const jobId = await startResearch(plan.question);
+    const jobId = await startResearch(plan.question, modeParams(researchMode.value));
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     // 입력은 지우지 않는다 — 사용자가 고쳐서 다시 보낼 수 있어야 한다
@@ -522,6 +546,7 @@ onMounted(() => {
   host = root.value?.parentElement ?? null;
   field = host?.querySelector<HTMLTextAreaElement | HTMLInputElement>("textarea, input[type='text'], input:not([type])") ?? null;
   basePlaceholder = field?.placeholder ?? "";
+  researchMode.value = readResearchMode(safeLocalStorage());
   focused.value = !!field && document.activeElement === field;
   field?.addEventListener("focus", onFieldFocus);
   field?.addEventListener("blur", onFieldBlur);

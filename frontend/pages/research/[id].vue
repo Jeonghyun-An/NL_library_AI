@@ -31,6 +31,7 @@
           :can-toggle="canToggle"
           :can-retry="canRetry"
           :busy="busy || restarting"
+          :mode-line="modeLine"
           @toggle-layout="toggleLayout"
           @copy-link="copyLink"
           @cancel="onCancel"
@@ -251,6 +252,7 @@ import { queueLine } from "~/utils/queueLine";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { researchPhase } from "~/utils/researchEvents";
 import { researchErrorMessage } from "~/utils/researchErrors";
+import { researchModeLine, restartParams } from "~/utils/researchMode";
 import {
   buildReportDocument,
   docInputFromDraft,
@@ -283,6 +285,8 @@ const maxSubquestions = computed(() => Number(view.value?.params.max_subquestion
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다
 const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);
 const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
+// 머리의 탐색 방식 — 두 칸이 다 0 이면 폭넓게, 두 칸이 없는 잡(06c 전)은 null(그리지 않는다)
+const modeLine = computed(() => (view.value ? researchModeLine(view.value.params) : null));
 
 useHead({ title: () => (view.value ? `${view.value.question} — ${DEEP_RESEARCH}` : DEEP_RESEARCH) });
 
@@ -457,7 +461,8 @@ async function onRestart(): Promise<void> {
   restarting.value = true;
   pageError.value = "";
   try {
-    const jobId = await startResearch(view.value.question);
+    // 원래 잡의 탐색 방식(broaden·query_context 두 칸)을 그대로 이어 쓴다 — 고르는 칸은 없다
+    const jobId = await startResearch(view.value.question, restartParams(view.value.params));
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     pageError.value = researchErrorMessage(e, "새 연구를 시작하지 못했습니다");

@@ -60,8 +60,9 @@ export function useResearchStarter() {
   const history = useHistory();
   const notice = computed(() => startNotice(researchStartState(history.entries.value)));
 
-  async function startResearch(question: string): Promise<string> {
-    const { job_id } = await research.create(question);
+  // params 는 잡 파라미터(서버 merge_params 가 검증) — 탐색 방식의 두 칸(broaden·query_context)을 싣는다. 없으면 서버 기본값
+  async function startResearch(question: string, params?: ResearchParams): Promise<string> {
+    const { job_id } = await research.create(question, params);
     try {
       await history.upsertResearch(job_id, question);
     } catch (e) {
