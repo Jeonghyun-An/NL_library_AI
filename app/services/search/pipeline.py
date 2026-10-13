@@ -52,6 +52,10 @@ _BOOK_EXPR  = '(doc_type != "paper" && not (book_id like "KCI_FI%"))'
 # 허용 목록으로 좁히면 services 가 celery 를 몰라도 된다.
 _RERANK_FAILURES = (RuntimeError, OSError, ValueError, ImportError)
 
+# 추천 이유 스트림이 LLM 호출 실패로 끝날 때 [DONE] 앞에 보내는 {error} 이벤트의 문구. [DONE] 만 보내면 화면
+# (frontend/utils/bookAiPick.ts readReasonStream)이 '끝까지 받음'으로 읽어 받다 만 이유를 완성본으로 기록에 저장한다
+REASON_STREAM_ERROR = "추천 이유를 만들지 못했습니다"
+
 
 def _build_milvus_expr(f: MetadataFilter, doc_scope: str = "all") -> str | None:
     """
@@ -360,6 +364,10 @@ async def stream_book_reason(
     도서 추천 이유 SSE 스트리밍 생성기.
     FastAPI StreamingResponse에 직접 전달한다.
     book 객체는 호출자(엔드포인트)에서 미리 조회해 넘긴다.
+
+    이벤트: {keywords}·{text}·{effect}(sse_helpers.process_reason_deltas) 뒤에 늘 [DONE]. LLM 호출이 실패하면
+    (httpx 연결·읽기 오류 등) [DONE] 앞에 {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을 보면 끝까지
+    받지 못한 것으로 읽는다.
     """
 
     # ── 도서 서지 정보 블록 ──────────────────────────────
@@ -466,6 +474,7 @@ async def stream_book_reason(
 
     except Exception as e:
         log.error(f"[{book_id}] 추천 이유 스트리밍 실패: {e}")
+        yield f"data: {json.dumps({'error': REASON_STREAM_ERROR}, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"
 
