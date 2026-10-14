@@ -23,7 +23,9 @@
           :disabled="readOnly || busy || item.state === 'out'"
           @change="toggleIn(item, $event)"
         />
-        <span>담음</span>
+        <!-- 글은 지금 상태를 따른다 — 담은 행 '담음', 아직 안 담은 후보 '담기', 뺀 행 '뺌'(체크 잠김). 늘 '담음'이라 안 담은 행도
+             담긴 것처럼 읽혔다(2026-10-14 운영 확인) -->
+        <span>{{ item.state === "in" ? "담음" : item.state === "out" ? "뺌" : "담기" }}</span>
         <span class="rs-sr-only"> {{ rowName(item) }}</span>
       </label>
 

@@ -398,6 +398,7 @@ import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
 import { DEFAULT_LANDING_TAB, LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
 import { deepResearchStartRoute, queryWithoutStart, readStart, readStartDraft } from "~/utils/landingStart";
+import { usePageLeaving } from "~/composables/usePageLeaving";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
@@ -440,6 +441,8 @@ const apiBase = config.public.apiBase as string;
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
+// 결과를 그린 뒤 기록 저장을 기다리는 사이 상세로 떠나면 늦은 주소 바꾸기가 그 이동을 취소하지 않게
+const { leaving } = usePageLeaving();
 
 // ── 뷰 상태 ───────────────────────────────────────────────
 const view = ref<"landing" | "results" | "detail">("landing");
@@ -702,7 +705,8 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       : await historyApi.add({ kind: "book", title: query.trim(), params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query.trim(), h: entry.id } });
+    // 결과를 그린 뒤 저장을 기다리는 사이 상세로 떠났으면 주소를 건드리지 않는다 — 늦은 replace 가 그 이동을 취소한다(usePageLeaving)
+    if (!leaving.value) router.replace({ query: { q: query.trim(), h: entry.id } });
     void streamTopReason(entry.id, query.trim(), signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -836,7 +840,7 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 보던 정렬·개수·쪽을 다시 연다(그 방문 기록의 state). 새로 연 기록은 기본값
   restoreListView(savedListView());
   aiExpanded.value = false;
-  if (route.query.h !== entry.id || route.query.q !== entry.title) {
+  if (!leaving.value && (route.query.h !== entry.id || route.query.q !== entry.title)) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 저장된 추천 이유가 있으면 그대로 보이고 다시 받지 않는다. 없으면(끝나기 전에 떠났거나 실패한 기록, 옛 AI 컬렉션

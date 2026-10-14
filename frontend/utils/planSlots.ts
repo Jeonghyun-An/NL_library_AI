@@ -125,10 +125,10 @@ export function planSlotLabel(slot: PlanSlot): string {
     case "waiting":
       return "대기";
     case "collecting":
-      return slot.round !== null ? `근거 수집 중 · ${slot.round}회차` : "근거 수집 중";
+      return slot.round !== null ? `탐색 중 · ${slot.round}회차` : "탐색 중";
     case "collected":
       // 근거 0편으로 끝난 자리는 성공 표시(✓)를 달지 않는다 — 종합이 시작되면 '근거 없음'으로 접힌다
-      if (slot.adopted === null) return "근거 수집 완료";
+      if (slot.adopted === null) return "탐색 완료";
       return slot.adopted > 0 ? `근거 ${slot.adopted}편 ✓` : "근거 0편";
     case "writing":
       return "이 절을 쓰는 중";

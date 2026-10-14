@@ -272,6 +272,7 @@ import { marked } from "marked";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
+import { usePageLeaving } from "~/composables/usePageLeaving";
 import { rememberListView, savedListView } from "~/composables/useListView";
 import { safeLocalStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
@@ -332,6 +333,8 @@ const restore = useRestorePosition(
   { maxWaitMs: 0 },
 );
 const { leave } = useDetailLeave();
+// 결과를 그린 뒤 기록 저장을 기다리는 사이 상세로 떠나면 늦은 주소 바꾸기가 그 이동을 취소하지 않게(usePageLeaving)
+const { leaving, markLeaving } = usePageLeaving();
 
 // ── 인라인 채팅 ──────────────────────────────────────────────
 const chatPaperId = ref<string | null>(null);
@@ -477,6 +480,7 @@ function paperDetailUrl(bookId: string, spot?: ReturnSpot, extra: Record<string,
 function goToDetail(paper: BookChunkGroup, e: MouseEvent, extra: Record<string, string> = {}) {
   const card = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]")!;
   const spot = spotOf(card, resultAnchor(paper.book_id));
+  markLeaving();
   void leave(paperDetailUrl(paper.book_id, spot, extra), spot);
 }
 
@@ -526,7 +530,7 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
       : await historyApi.add({ kind: "paper", title: query, params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query, h: entry.id } });
+    if (!leaving.value) router.replace({ query: { q: query, h: entry.id } });
     if (data.books?.length) streamAiSummary(entry.id, query, data.books, signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -668,7 +672,7 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   const before = currentPage.value;
   currentPage.value = restoredPage(returnPage(), saved, filteredPapers.value.length, pageSize.value);
   if (currentPage.value !== before) skipPageScroll = true;
-  if (route.query.h !== entry.id || route.query.q !== entry.title) {
+  if (!leaving.value && (route.query.h !== entry.id || route.query.q !== entry.title)) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 요약이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다

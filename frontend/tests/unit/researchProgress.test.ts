@@ -15,6 +15,7 @@ import {
   exploreFraction,
   maxRoundsOf,
   overallFraction,
+  currentStageTag,
   progressBarView,
   progressStage,
   progressStages,
@@ -56,7 +57,7 @@ function input(over: Partial<ProgressInput> = {}): ProgressInput {
 const rechecked = (n: number) => round(n, { verdict: "insufficient", nextQuery: `다음 검색어 ${n}` });
 
 describe("progressStage·progressStages", () => {
-  it("계획·승인 대기·대기열은 계획, 탐색은 근거 수집, 종합은 보고서 작성, 완료는 완료, 실패·취소는 null", () => {
+  it("계획·승인 대기·대기열은 계획, 탐색은 탐색, 종합은 보고서 작성, 완료는 완료, 실패·취소는 null", () => {
     expect(progressStage("planning")).toBe("plan");
     expect(progressStage("awaiting")).toBe("plan");
     expect(progressStage("queued")).toBe("plan");
@@ -68,10 +69,10 @@ describe("progressStage·progressStages", () => {
   });
 
   it("지금 단계만 current 이고 앞 단계는 done, 뒤 단계는 todo", () => {
-    expect(PROGRESS_STAGES.map((s) => s.label)).toEqual(["계획", "근거 수집", "보고서 작성", "완료"]);
+    expect(PROGRESS_STAGES.map((s) => s.label)).toEqual(["계획", "탐색", "보고서 작성", "완료"]);
     expect(progressStages("collect")).toEqual([
       { key: "plan", label: "계획", state: "done" },
-      { key: "collect", label: "근거 수집", state: "current" },
+      { key: "collect", label: "탐색", state: "current" },
       { key: "write", label: "보고서 작성", state: "todo" },
       { key: "done", label: "완료", state: "todo" },
     ]);
@@ -151,6 +152,15 @@ describe("overallFraction", () => {
   });
 });
 
+describe("currentStageTag — 지금 단계 칩의 꼬리표", () => {
+  it("승인을 기다리면 '승인 대기 중', 대기열이면 '순서 대기 중', 그 밖에는 '진행 중' — 사이드바·머리 상태와 같은 말", () => {
+    expect(currentStageTag("awaiting")).toBe("승인 대기 중");
+    expect(currentStageTag("queued")).toBe("순서 대기 중");
+    for (const phase of ["planning", "exploring", "synthesizing"] as const) expect(currentStageTag(phase)).toBe("진행 중");
+    expect(currentStageTag(null)).toBe("진행 중");
+  });
+});
+
 describe("progressBarView", () => {
   it("끝난 잡(완료·실패·취소)은 그리지 않는다", () => {
     for (const phase of ["completed", "failed", "canceled"] as const) {
@@ -167,14 +177,14 @@ describe("progressBarView", () => {
       running: false,
       valueText: "연구 계획을 세우는 중",
     });
-    expect(progressBarView(input({ phase: "awaiting" }))?.line).toBe("계획 확인 대기 · 승인하면 근거 수집을 시작합니다");
+    expect(progressBarView(input({ phase: "awaiting" }))?.line).toBe("승인 대기 중 · 승인하면 근거 수집을 시작합니다");
     expect(progressBarView(input({ phase: "queued", queueNote: "앞에 2건 · 약 25분" }))?.line).toBe("대기열 · 앞에 2건 · 약 25분");
     const queued = progressBarView(input({ phase: "queued" }));
     expect(queued?.line).toBe("대기열 · 앞선 연구가 끝나면 시작합니다");
     expect(queued?.percent).toBeNull();
   });
 
-  it("탐색 중 글줄은 '근거 수집 중 · 하위질문 k/n — 「하위질문」'", () => {
+  it("탐색 중 글줄은 '근거 수집 중 · 하위질문 k/n — 「하위질문」'(칩은 '탐색', 글줄은 하는 일을 풀어 쓴다)", () => {
     const subqs = [
       subq(0, "done", [], "노인 우울과 가족 지지"),
       subq(1, "done", [], "지역사회 지지의 효과"),

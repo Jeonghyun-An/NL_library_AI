@@ -188,9 +188,14 @@
                         <span v-else :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
                         <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(h)) }}</span>
                       </span>
-                      <!-- 단계 글이 이미 읽히므로 막대는 눈으로만 보는 보조다 -->
-                      <span v-if="progressOf(h) !== null" class="skx-history-item__progress" aria-hidden="true">
-                        <span class="skx-history-item__progress-fill" :style="{ width: `${(progressOf(h) ?? 0) * 100}%` }"></span>
+                      <!-- 단계 글이 이미 읽히므로 막대는 눈으로만 보는 보조다. 지난 단계까지 채우고 지금 단계 구간은 옅게 깜빡인다 -->
+                      <span v-if="progressOf(h)" class="skx-history-item__progress" aria-hidden="true">
+                        <span class="skx-history-item__progress-fill" :style="{ width: pct(progressOf(h)?.start) }"></span>
+                        <span
+                          v-if="(progressOf(h)?.span ?? 0) > 0"
+                          class="skx-history-item__progress-now"
+                          :style="{ left: pct(progressOf(h)?.start), width: pct(progressOf(h)?.span) }"
+                        ></span>
                       </span>
                     </button>
                     <button
@@ -375,7 +380,7 @@ import {
   hasActiveResearch,
   isLiveResearch,
 } from "~/utils/sidebarGroups";
-import { olderToggle, stageProgress, statusStageLine } from "~/utils/sidebarResearch";
+import { olderToggle, stageProgress, statusStageLine, type StageRange } from "~/utils/sidebarResearch";
 
 const props = defineProps<{ collapsed?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
@@ -658,7 +663,7 @@ function badgeOf(h: HistoryEntry): { label: string; tone: string } {
     case "canceled":
       return { label: "취소", tone: "canceled" };
     case "awaiting_approval":
-      return { label: "승인 대기", tone: "waiting" };
+      return { label: "승인 대기 중", tone: "waiting" };
     case undefined:
       return { label: "알 수 없음", tone: "unknown" };
     default:
@@ -673,9 +678,14 @@ function stageOf(h: HistoryEntry): string | null {
   return h.kind === "research" && isLiveResearch(h) ? statusStageLine(h.research) : null;
 }
 
-// 진행 중인 연구 줄 아래 막대의 채움(0~1) — 단계 글과 같은 줄에만(utils/sidebarResearch.stageProgress)
-function progressOf(h: HistoryEntry): number | null {
+// 진행 중인 연구 줄 아래 막대 — 지난 단계까지 채움 + 지금 단계 구간(연구 화면 큰 막대와 같은 경계, utils/sidebarResearch.stageProgress).
+// 단계 글과 같은 줄에만
+function progressOf(h: HistoryEntry): StageRange | null {
   return h.kind === "research" && isLiveResearch(h) ? stageProgress(h.research) : null;
+}
+
+function pct(n: number | undefined): string {
+  return `${(n ?? 0) * 100}%`;
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -891,9 +901,11 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 포인트 색 채움(다크 산호·라이트 검정 —
-   머리의 '진행 중 N' 알약과 같은 색). 단계가 바뀌면 부드럽게 늘어난다 */
+/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 포인트 색(다크 산호·라이트 검정 — 머리의
+   '진행 중 N' 알약과 같은 색). 지난 단계까지는 채우고, 지금 단계 구간은 옅게 깜빡인다 — 단계 안의 진행은 모르므로 한 값으로 칠하지
+   않는다(연구 화면 막대의 값이 늘 이 구간 안이라 둘이 어긋나 보이지 않는다). 단계가 바뀌면 부드럽게 늘어난다 */
 .skx-history-item__progress {
+  position: relative;
   display: block;
   width: 100%;
   height: 3px;
@@ -901,16 +913,36 @@ onBeforeUnmount(() => {
   border-radius: var(--skx-radius-pill);
   background: var(--skx-line);
 }
-.skx-history-item__progress-fill {
-  display: block;
+.skx-history-item__progress-fill,
+.skx-history-item__progress-now {
+  position: absolute;
+  top: 0;
   height: 100%;
-  border-radius: inherit;
   background: var(--skx-primary);
-  transition: width 0.4s ease;
+  transition:
+    left 0.4s ease,
+    width 0.4s ease;
+}
+.skx-history-item__progress-fill {
+  left: 0;
+}
+.skx-history-item__progress-now {
+  opacity: 0.35;
+  animation: skx-stage-pulse 1.6s ease-in-out infinite alternate;
+}
+@keyframes skx-stage-pulse {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 0.55;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .skx-history-item__progress-fill {
+  .skx-history-item__progress-fill,
+  .skx-history-item__progress-now {
     transition: none;
+    animation: none;
   }
 }
 .skx-history__empty {

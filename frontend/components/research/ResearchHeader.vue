@@ -15,9 +15,8 @@
         {{ layout === "A" ? "문서형으로 보기" : "2단으로 보기" }}
       </button>
       <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="$emit('copy-link')">링크 복사</button>
-      <button v-if="cancellable" type="button" class="rs-btn rs-btn--ghost rs-btn--small" :disabled="busy" @click="$emit('cancel')">
-        취소
-      </button>
+      <!-- 취소는 화면 안 한 번 확인('정말 취소' + [그대로 두기]) — 메인 입력창의 연구 줄과 같다 -->
+      <CancelConfirm v-if="cancellable" small :disabled="busy" @confirm="$emit('cancel')" />
       <button v-if="phase === 'failed' && canRetry" type="button" class="rs-btn rs-btn--small" :disabled="busy" @click="$emit('retry')">
         다시 시도
       </button>
@@ -30,6 +29,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import CancelConfirm from "~/components/research/CancelConfirm.vue";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { phaseLabel, type ResearchPhase } from "~/utils/researchEvents";
 import type { ResearchLayout } from "~/utils/researchLayout";
