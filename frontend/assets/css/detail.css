@@ -573,12 +573,24 @@
 }
 /* [E] AI 큐레이션 */
 
-/* [S] 관련 자료 추천 — 4열 카드(간격 16, 각 349×406, r12, 흰 10% 유리). 넓은 화면에서도 4열을 넘지 않는다 */
+/* [S] 관련 자료 추천 — 4열 카드(간격 16, 각 349×406, r12, 흰 10% 유리). 넓은 화면에서도 4열을 넘지 않는다.
+   열 수는 4 → 2 → 1 로만 바뀐다 — 칸 폭으로 자동 채우면 틀이 중간 폭일 때 3열이 되어 4권의 둘째 줄에 1장만 남았다(2026-10-14
+   운영 확인). 기준은 상세 틀(dt-frame) 폭: 카드 최소 12.5rem 4장 + 간격 + 안 여백이 들어가지 않으면 2열, 11rem 2장이 안 되면 1열 */
 .dt-related__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(12.5rem, calc((100% - 2.4rem) / 4))), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.8rem;
   padding: 0 0.8rem;
+}
+@container dt-frame (max-width: 56rem) {
+  .dt-related__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container dt-frame (max-width: 25rem) {
+  .dt-related__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .dt-rc {
   position: relative;
@@ -1000,7 +1012,6 @@
     flex: 1 1 100%;
   }
   .dt-related__grid {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
     padding: 0;
   }
   .dt-collapse__body {

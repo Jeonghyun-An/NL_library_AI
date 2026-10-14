@@ -35,6 +35,15 @@ describe("passageText — 원문 대목의 <br> 태그 글자를 줄바꿈으로
     expect(passageText(undefined)).toBe("");
   });
 
+  it("줄 머리의 마크다운 제목 표시(#~######)는 떼고 제목 글만 둔다 — <br> 뒤 줄도, 줄 가운데 # 는 그대로", () => {
+    expect(passageText("#### 5. 결론\n본문이다.")).toBe("5. 결론\n본문이다.");
+    expect(passageText("표 끝<br><br>###### Figure 1. 연구 모형")).toBe("표 끝\n\nFigure 1. 연구 모형");
+    expect(passageText("  ## 서론")).toBe("서론");
+    expect(passageText("####\n본문")).toBe("\n본문");
+    expect(passageText("C# 언어와 #해시태그, 1#2")).toBe("C# 언어와 #해시태그, 1#2");
+    expect(passageText("####### 일곱 개는 제목이 아니다")).toBe("####### 일곱 개는 제목이 아니다");
+  });
+
   it("다른 태그 꼴은 글자 그대로 둔다 — HTML 로 읽지 않는다", () => {
     expect(passageText("<b>굵게</b> <script>x</script> <brx>")).toBe("<b>굵게</b> <script>x</script> <brx>");
   });
