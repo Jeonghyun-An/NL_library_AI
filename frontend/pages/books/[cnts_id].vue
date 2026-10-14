@@ -110,7 +110,11 @@
                     추천 이유를 생성하고 있습니다<span class="skx-stream-cursor" />
                   </p>
                   <div v-else-if="reasonText" class="dt-prose" v-html="renderedReason" />
-                  <p v-else class="dt-muted">추천 이유 정보가 없습니다.</p>
+                  <p v-else-if="!reasonError" class="dt-muted">추천 이유 정보가 없습니다.</p>
+                  <!-- 추천 이유를 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
+                  <p v-if="reasonError && !reasonLoading" class="dt-muted" role="alert">{{ reasonError }} ·
+                    <button type="button" class="skx-retry" @click="streamReason">다시 시도</button>
+                  </p>
                 </template>
                 <p v-else-if="active === 'plot'" class="dt-prose">{{ plotText }}</p>
                 <p v-else-if="active === 'intro'" class="dt-prose">{{ book.introduction }}</p>
@@ -297,6 +301,7 @@ import { kdcChip } from "~/utils/kdc";
 import { cardKeywords } from "~/utils/resultCard";
 import { relatedOpenAfter } from "~/utils/relatedCard";
 import { SPINNER_SRC } from "~/utils/brand";
+import { BOOK_REASON_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
@@ -347,6 +352,8 @@ const reasonText = ref("");
 const reasonLoading = ref(false);
 // 추천 이유를 다 받았는지 — 받기 전에는 비어 있어도 [추천 이유] 탭을 둔다(곧 채워진다)
 const reasonDone = ref(false);
+// 추천 이유를 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 BOOK_REASON_FAILED) — 받은 글에 잇지 않고 따로 보인다
+const reasonError = ref("");
 const renderedReason = computed(() =>
   reasonText.value ? (marked.parse(reasonText.value) as string) : "",
 );
@@ -356,7 +363,7 @@ const plotText = computed(() => book.value?.plot || book.value?.summary || "");
 const detailTab = ref<string | null>("reason");
 const curationTabs = computed(() =>
   visibleTabs([
-    { key: "reason", label: "추천 이유", available: !!searchQuery && (!reasonDone.value || !!reasonText.value) },
+    { key: "reason", label: "추천 이유", available: !!searchQuery && (!reasonDone.value || !!reasonText.value || !!reasonError.value) },
     { key: "plot", label: "줄거리", available: !!plotText.value },
     { key: "intro", label: "소개", available: !!book.value?.introduction },
   ]),
@@ -441,13 +448,16 @@ async function fetchBook() {
 }
 
 // ── 추천 이유 SSE ──────────────────────────────────────────
+// 처음 열 때와 [다시 시도]가 부른다
 async function streamReason() {
+  reasonError.value = "";
   if (!searchQuery) {
     reasonDone.value = true;
     return;
   }
   reasonLoading.value = true;
   reasonText.value = "";
+  let end: AiStreamEnd = { ok: false, error: null };
   try {
     const resp = await fetch(apiUrl("/books/reason/stream"), {
       method: "POST",
@@ -460,15 +470,16 @@ async function streamReason() {
       }),
       signal: pageAbort.signal,
     });
-    await readSSE(resp, (json) => {
-      if (json.text) reasonText.value += json.text;
+    end = await readAiStream(resp, (json) => {
+      if (typeof json.text === "string" && json.text) reasonText.value += json.text;
     });
   } catch {
-    /* ignore */
-  } finally {
-    reasonLoading.value = false;
-    reasonDone.value = true;
+    /* 떠남(pageAbort)·네트워크 오류 — 아래에서 가린다 */
   }
+  reasonLoading.value = false;
+  reasonDone.value = true;
+  // 이 화면은 추천 이유를 저장하지 않는다 — 실패({error}·끊김)면 받은 글에 잇지 않고 안내를 따로 보인다
+  if (!end.ok && !pageAbort.signal.aborted) reasonError.value = failureText(end, BOOK_REASON_FAILED);
 }
 
 // ── 연관 도서 (관련 자료 전용 GET) ─────────────────────────
@@ -497,28 +508,5 @@ async function fetchRelatedBooks() {
 // ── 유틸 ──────────────────────────────────────────────────
 function recoDesc(rel: any): string {
   return rel.book_info?.summary || rel.book_info?.introduction || "";
-}
-
-async function readSSE(resp: Response, onEvent: (json: any) => void) {
-  const reader = resp.body!.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const lines = buf.split("\n");
-    buf = lines.pop()!;
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const raw = line.slice(6).trim();
-      if (raw === "[DONE]") return;
-      try {
-        onEvent(JSON.parse(raw));
-      } catch {
-        /* skip */
-      }
-    }
-  }
 }
 </script>
