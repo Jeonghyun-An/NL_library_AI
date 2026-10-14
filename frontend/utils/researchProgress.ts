@@ -18,7 +18,7 @@ export interface ProgressStageItem {
 
 export const PROGRESS_STAGES: readonly { key: ProgressStage; label: string }[] = [
   { key: "plan", label: "계획" },
-  { key: "collect", label: "근거 수집" },
+  { key: "collect", label: "탐색" },
   { key: "write", label: "보고서 작성" },
   { key: "done", label: "완료" },
 ];
@@ -143,12 +143,12 @@ export function activeRoundKey(subqs: readonly SubqView[]): string | null {
   return `${sq.idx}:${Math.max(1, sq.rounds.length)}:${last?.verdict ?? "open"}`;
 }
 
-// 지금 단계 칩에 붙는 작은 꼬리표 — 계획 단계라도 승인을 기다리는 중이면 '승인 대기', 순서를 기다리면 '순서 대기'(일은 멈춰 있다).
+// 지금 단계 칩에 붙는 작은 꼬리표 — 계획 단계라도 승인을 기다리면 '승인 대기 중', 순서를 기다리면 '순서 대기 중'(일은 멈춰 있다).
 // 그 밖에는 '진행 중'(사용자 결정 2026-10-14 — 후배 시안의 박스 단계에서 지금 단계 표시만 작은 칩으로 옮겼다). 말은 사이드바·머리
 // 상태(researchEvents PHASE_LABEL)와 같다
 export function currentStageTag(phase: ResearchPhase | null): string {
-  if (phase === "awaiting") return "승인 대기";
-  if (phase === "queued") return "순서 대기";
+  if (phase === "awaiting") return "승인 대기 중";
+  if (phase === "queued") return "순서 대기 중";
   return "진행 중";
 }
 
@@ -176,9 +176,11 @@ export function progressBarView(input: ProgressInput): ProgressBarView | null {
 }
 
 function planLine(phase: ResearchPhase, queueNote: string | null): string {
-  if (phase === "awaiting") return "승인 대기 · 계획을 확인하고 승인하면 근거 수집을 시작합니다";
-  if (phase === "queued") return `순서 대기 · ${queueNote ?? "앞선 연구가 끝나면 시작합니다"}`;
-  return "계획 중 · 연구 계획을 세우고 있습니다";
+  // 글줄은 풀어 쓴 원래 문구 그대로 둔다 — 칩·머리·사이드바의 짧은 상태 말('탐색'·'승인 대기 중'·'순서 대기 중')과 달리 하는 일을
+  // 문장으로 말한다(사용자 결정 2026-10-14)
+  if (phase === "awaiting") return "계획 확인 대기 · 승인하면 근거 수집을 시작합니다";
+  if (phase === "queued") return `대기열 · ${queueNote ?? "앞선 연구가 끝나면 시작합니다"}`;
+  return "연구 계획을 세우는 중";
 }
 
 // 도는 하위질문, 없으면(하위질문 사이) 다음 대기 하위질문, 그것도 없으면(종합 단계 행 전) 마지막 하위질문. 상태는 이번 시도의 것

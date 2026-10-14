@@ -93,7 +93,7 @@ describe("sectionOfSubq", () => {
 });
 
 describe("planSlots", () => {
-  it("하위질문마다 자리를 만들고 key 는 하위질문 번호다 — 대기·근거 수집 중(회차)·근거 N편", () => {
+  it("하위질문마다 자리를 만들고 key 는 하위질문 번호다 — 대기·탐색 중(회차)·근거 N편", () => {
     const v = viewWith([
       subq(0, { adopted: 4 }),
       subq(1, { status: "running", rounds: [round(1), round(2, { verdict: null })], verdict: "insufficient", adopted: 2 }),
@@ -169,7 +169,7 @@ describe("planSlots", () => {
       ["waiting", null, null],
       ["waiting", null, null],
     ]);
-    expect(slots.map(planSlotLabel)).toEqual(["근거 수집 중 · 1회차", "대기", "대기"]);
+    expect(slots.map(planSlotLabel)).toEqual(["탐색 중 · 1회차", "대기", "대기"]);
     // 이번 시도가 연 행은 그대로 읽는다 — 하위질문 0 을 마치고 1 을 seq 5 로 열었다
     const next = viewWith([
       subq(0, { seq: 4, adopted: 5 }),
@@ -195,12 +195,12 @@ describe("planSlots", () => {
 });
 
 describe("planSlotLabel", () => {
-  it("상태마다 짧은 글 — 대기·근거 수집 중 · n회차·근거 N편 ✓·이 절을 쓰는 중·근거 없음·오류", () => {
+  it("상태마다 짧은 글 — 대기·탐색 중 · n회차·근거 N편 ✓·이 절을 쓰는 중·근거 없음·오류", () => {
     expect(planSlotLabel(slot(0, "waiting", { adopted: null }))).toBe("대기");
-    expect(planSlotLabel(slot(0, "collecting", { round: 2 }))).toBe("근거 수집 중 · 2회차");
-    expect(planSlotLabel(slot(0, "collecting", { round: null }))).toBe("근거 수집 중");
+    expect(planSlotLabel(slot(0, "collecting", { round: 2 }))).toBe("탐색 중 · 2회차");
+    expect(planSlotLabel(slot(0, "collecting", { round: null }))).toBe("탐색 중");
     expect(planSlotLabel(slot(0, "collected", { adopted: 4 }))).toBe("근거 4편 ✓");
-    expect(planSlotLabel(slot(0, "collected", { adopted: null }))).toBe("근거 수집 완료");
+    expect(planSlotLabel(slot(0, "collected", { adopted: null }))).toBe("탐색 완료");
     // 근거 0편으로 끝난 자리(종합 시작 전)는 성공 표시(✓)를 달지 않는다
     expect(planSlotLabel(slot(0, "collected", { adopted: 0 }))).toBe("근거 0편");
     expect(planSlotLabel(slot(0, "writing", { sectionIdx: 0 }))).toBe("이 절을 쓰는 중");
