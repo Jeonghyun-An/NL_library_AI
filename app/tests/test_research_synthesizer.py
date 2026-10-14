@@ -1181,3 +1181,92 @@ class TestSectionEvidence:
         sec = {"heading": "h", "intro": "도입 [E3].", "papers": [],
                "future": [{"text": "과제 [E2].", "evidence": ["E2"]}], "evidence_chunks": {}}
         assert set(section_evidence(st, sec)) == {"E2", "E3"}
+
+
+# 운영 630e0d65 의 대목 모양 — 2절에서 박혜성(2014)의 유일한 대목이 남의 연구를 정리한 표의 한 행이었다
+_TABLE_ROW = ("정금자, 이영숙 (2013)|만 5세 유아로 실험집단 60명 &amp; 비교집단 60명|사회극놀이를 통한 다문화교육활동이 "
+              "유아의 사회적 능력에 미치는 효과를 탐색함|1) 사회적 능력 향상에 긍정적인 효과를 미침.<br>"
+              "2) 전 유아를 대상으로 구성, 적용되어야 함.<br>|실험(비교)연구")
+_PROSE = "연구 방법에서는 비교와 조사 유형이 주를 이루는 양적 연구 방법이 76%로 편중되었다. 질적 연구는 드물었다."
+# 황상심(2009)의 1위 대목 — 참고문헌 꼬리와 다음 쪽 영문 제목·초록 머리가 한 청크라 앞 400자에 서술 문장이 없다
+_BIB_TAIL = ("Toronto: University of Toronto press. Vihman, M.\n(1996).\nPhonological development: "
+             "The origins of language in the child.\nCambridge, MA: Blackwell.\n"
+             "### A Study on Language Characteristics of Children\n\n&lt;Abstract&gt;\n\nThis s")
+
+
+def _mapped_state(*mappings: dict[str, list[Chunk]]) -> ResearchState:
+    """하위질문마다 {근거 번호: 그 하위질문이 매칭한 대목(점수순)} — 근거는 매칭한 대목의 합집합이다."""
+    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+    for idx, mapping in enumerate(mappings):
+        sq = SubQuestion(idx=idx, text=f"하위{idx + 1}", evidence_ids=list(mapping), verdict="sufficient")
+        for eid, chunks in mapping.items():
+            ev = st.evidence.setdefault(eid, Evidence(id=eid, cnts_id=f"P{eid}", meta={"title": f"논문 {eid}"}))
+            ev.chunks.extend(c for c in chunks if c.chunk_id not in {x.chunk_id for x in ev.chunks})
+            sq.evidence_chunks[eid] = [c.chunk_id for c in chunks]
+            sq.chunk_scores.update({c.chunk_id: c.score for c in chunks})
+        st.subquestions.append(sq)
+    return st
+
+
+class TestSectionExcerpts:
+    """절마다 논문 하나에 대목 하나를 모델에 넘긴다 — 운영 630e0d65 에서 그 하위질문의 1위 대목을 그대로 넘겨,
+    같은 대목이 4개 절에 들어가 같은 문장이 되풀이됐고(장 2019 의 '2004년…'), 표 행·참고문헌 꼬리뿐인 대목으로
+    남의 연구를 그 논문의 성과처럼 쓰거나 제목만 되풀이한 요약이 나왔다."""
+
+    def _run(self, monkeypatch, st, replies=None):
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        n = sum(1 for sq in st.subquestions if sq.evidence_ids)
+        calls = TestSynthesize()._patch_chat(monkeypatch, replies or [reply] * n)
+        infos = []
+        _, on_section = TestSectionProgress()._record(infos)
+        report = asyncio.run(synthesize(st, on_section=on_section))
+        return calls, report, [i for i in infos if "section" in i]
+
+    def test_table_row_gives_way_to_a_prose_excerpt(self, monkeypatch):
+        st = _mapped_state({"E1": [Chunk("t1", _TABLE_ROW, 9, 9, 0.9), Chunk("n1", _PROSE, 2, 2, 0.6)]})
+        calls, report, _ = self._run(monkeypatch, st)
+        assert "76%로 편중" in calls[0] and "정금자" not in calls[0]
+        # 인용칩 팝오버의 첫 대목이 모델이 읽은 대목이다
+        assert report["sections"][0]["evidence_chunks"]["E1"] == ["n1", "t1"]
+
+    def test_excerpt_without_a_sentence_is_skipped(self, monkeypatch):
+        method = "연령 집단 별 차이 비교를 위해서 t 검정을 실시하였으며, SPSS/Win 15.0 을 사용하였다."
+        st = _mapped_state({"E1": [Chunk("b1", _BIB_TAIL, 9, 9, 0.739), Chunk("m1", method, 4, 4, 0.629)]})
+        calls, _, _ = self._run(monkeypatch, st)
+        assert "t 검정" in calls[0] and "Blackwell" not in calls[0]
+
+    def test_sections_sharing_a_paper_get_its_other_excerpt(self, monkeypatch):
+        first = Chunk("c1a", "가 대목에서 음운 발달을 분석하였다.", 1, 1, 0.9)
+        second = Chunk("c1b", "나 대목에서 연구 방법을 정리하였다.", 2, 2, 0.8)
+        st = _mapped_state({"E1": [first, second]}, {"E1": [first, second]})
+        calls, report, _ = self._run(monkeypatch, st)
+        assert "가 대목" in calls[0] and "나 대목" not in calls[0]
+        assert "나 대목" in calls[1] and "가 대목" not in calls[1]
+        assert report["sections"][1]["evidence_chunks"]["E1"] == ["c1b", "c1a"]
+
+    def test_excerpt_of_a_section_without_narrative_is_not_counted_as_shown(self, monkeypatch):
+        # 서술을 받지 못한 절의 대목은 보고서에 쓰이지 않았다 — 다음 절이 피할 까닭이 없다
+        first = Chunk("c1a", "가 대목에서 음운 발달을 분석하였다.", 1, 1, 0.9)
+        second = Chunk("c1b", "나 대목에서 연구 방법을 정리하였다.", 2, 2, 0.8)
+        st = _mapped_state({"E1": [first, second]}, {"E1": [first, second]})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        calls, _, _ = self._run(monkeypatch, st, [_timeout(), _timeout(), reply])
+        assert "가 대목" in calls[2]
+
+    def test_paper_with_only_table_excerpts_borrows_its_prose_matched_elsewhere(self, monkeypatch):
+        st = _mapped_state({"E1": [Chunk("t1", _TABLE_ROW, 9, 9, 0.548)]},
+                           {"E1": [Chunk("n1", _PROSE, 2, 2, 0.637)]})
+        # 재검색이 갈아끼워 어느 하위질문도 가리키지 않는 대목은 보고서 근거에 실리지 않는다 — 빌려 오지 않는다
+        st.evidence["E1"].chunks.append(Chunk("old", "지난 대목에서 다른 결과를 보고하였다.", 7, 7, 0.99))
+        calls, report, drafts = self._run(monkeypatch, st)
+        assert "76%로 편중" in calls[0] and "정금자" not in calls[0] and "지난 대목" not in calls[0]
+        assert report["sections"][0]["evidence_chunks"]["E1"] == ["n1", "t1"]
+        assert {c["chunk_id"] for c in report["evidence"]["E1"]["chunks"]} == {"t1", "n1"}
+        assert {c["chunk_id"] for c in drafts[0]["evidence"]["E1"]["chunks"]} == {"t1", "n1"}
+
+    def test_html_escapes_and_line_breaks_are_unfolded(self, monkeypatch):
+        text = "검사 도구는 &lt;기초학습기능검사&gt;였다.<br>대상은 232명이었다."
+        st = _mapped_state({"E1": [Chunk("c1", text, 1, 1, 0.9)]})
+        calls, _, _ = self._run(monkeypatch, st)
+        assert "<기초학습기능검사>였다.\n대상은 232명" in calls[0]
+        assert "&lt;" not in calls[0] and "<br>" not in calls[0]

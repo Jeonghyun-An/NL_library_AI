@@ -14,6 +14,7 @@ gemma-3-12b) 프롬프트 예시의 "섹션 1·논문 1·과제 1" 모양을 그
 제목·저자·연도는 모델 출력에서 가져오지 않는다. evidence 의 meta 를 쓴다 —
 라벨을 모델이 쓰게 두면 언젠가 없는 논문을 만들어낸다.
 """
+import html
 import logging
 import re
 from collections.abc import Awaitable, Callable
@@ -23,6 +24,7 @@ import httpx
 
 from services.llm_client import chat
 from services.prompts import get_prompt
+from services.research.bibliography import has_prose
 from services.research.citations import bind_markers, chunks_for, strip_markers
 from services.research.hangul import josa
 from services.research.llm_json import extract_json
@@ -44,6 +46,16 @@ _SECTION_ATTEMPTS = 2
 # (recurring-gotchas 15번) 이게 남은 문장은 서술이 아니라 지시문 원문이다.
 _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
+
+# 절 생성에 논문마다 넘기는 대목 길이(앞에서 자른다)
+EXCERPT_CHARS = 400
+_BR = re.compile(r"<br\s*/?>", re.I)
+# 표 대목 — '|' 가 둘 이상인 줄이 대목 창의 이만큼을 차지하면 표로 본다
+_TABLE_SHARE = 0.6
+# 완결 문장의 끝 — 마침표 뒤 공백·끝·각주 번호 '4)'·닫는 따옴표. 창 끝에서 잘린 조각('<Abstract> This s')은 문장이 아니다
+_SENTENCE_STOP = re.compile(r"[.!?。](?=\s|$|\d{1,3}\)|[\"”’」』])")
+# 영문 초록 문장에 흔한 서술 동사 — bibliography.has_prose 의 목록에 없는 것만
+_ENGLISH_VERBS = re.compile(r"\b(?:analy[sz]ed|examined|investigated|revealed|indicated|compared|results?)\b", re.I)
 
 
 # on_section(idx, total, status, info) — info 의 모양은 synthesize 독스트링에 있다. 인자 수를
@@ -435,13 +447,18 @@ def _eid_key(key: str) -> str:
     return f"E{int(m.group(1))}" if m else key
 
 
-def build_section(state: ResearchState, sq: SubQuestion, data: dict | None) -> dict:
+def build_section(state: ResearchState, sq: SubQuestion, data: dict | None,
+                  excerpts: dict[str, Chunk] | None = None) -> dict:
     """하위질문 하나와 모델 출력으로 절을 만든다 (순수 함수).
 
     소제목은 하위질문 그대로, 논문 목록은 section_paper_ids 그대로다 — 모델
     출력에 무엇이 있든 없든 바뀌지 않는다. 모델이 요약을 빠뜨린 논문도 빈
     요약으로 싣고 assemble_report 가 개수를 한계에 올린다. data 가 None(서술을
     끝내 받지 못함)이면 논문 목록만 남기고 failed 로 표시한다.
+
+    excerpts(pick_excerpts — 모델이 읽은 대목)가 있으면 그 대목을 evidence_chunks[eid] 맨 앞에 둔다. 인용칩
+    팝오버는 이 순서로 대목을 띄우므로 첫 대목이 요약·도입이 읽은 대목과 같아진다. 다른 하위질문에서 빌려 온
+    대목이면 이 절의 매칭 대목 앞에 더한다 — 이 하위질문의 검색어로 받은 점수가 없어 chunk_scores 에는 싣지 않는다.
     """
     raw = data or {}
     summaries = raw.get("summaries")
@@ -455,6 +472,13 @@ def build_section(state: ResearchState, sq: SubQuestion, data: dict | None) -> d
             future_texts.append(text)
     eids = section_paper_ids(state, sq)
     chunks = {eid: chunks_for(state.evidence[eid], sq) for eid in eids}
+    read = excerpts or {}
+
+    def _shown_first(eid: str, cs: list[Chunk]) -> list[str]:
+        ids = [c.chunk_id for c in cs]
+        first = read.get(eid)
+        return ids if first is None else [first.chunk_id, *(i for i in ids if i != first.chunk_id)]
+
     return {
         "heading": sq.text,
         "intro": _text(raw.get("intro")),
@@ -463,7 +487,7 @@ def build_section(state: ResearchState, sq: SubQuestion, data: dict | None) -> d
             for eid in eids
         ],
         "future": [{"text": t} for t in future_texts],
-        "evidence_chunks": {eid: [c.chunk_id for c in cs] for eid, cs in chunks.items()},
+        "evidence_chunks": {eid: _shown_first(eid, cs) for eid, cs in chunks.items()},
         "chunk_scores": {c.chunk_id: c.score for cs in chunks.values() for c in cs},
         "failed": data is None,
     }
@@ -485,26 +509,81 @@ def _has_narrative(section: dict) -> bool:
     )
 
 
-def _evidence_block(state: ResearchState, sq: SubQuestion) -> str:
+def excerpt_text(chunk: Chunk) -> str:
+    """모델에 넘기는 대목 글 — HTML 이스케이프(&lt; &amp;)를 풀고 <br> 을 줄바꿈으로 바꾼 앞 EXCERPT_CHARS 자.
+    적재된 표·초록 글에 이스케이프가 그대로 남아 있어 모델이 '&lt;기초학습기능검사&gt;' 를 읽었다."""
+    return _BR.sub("\n", html.unescape(chunk.text))[:EXCERPT_CHARS]
+
+
+def _narrative(chunk: Chunk) -> bool:
+    """모델이 읽을 창(excerpt_text)에 그 논문의 서술 문장이 있는가. 아닌 것은 둘이다.
+
+    - 표: '|' 가 둘 이상인 줄이 창의 _TABLE_SHARE 이상. 선행연구 정리표의 한 행만 받은 모델은 표 속 남의 연구를 그
+      논문의 성과로 썼다(운영 630e0d65 박혜성 2014 — '정금자, 이영숙 (2013)|만 5세 유아…').
+    - 완결 문장이 없는 창: 창 끝에서 잘린 조각은 버리고 본다. 참고문헌 꼬리 + 영문 제목 + '<Abstract> This s' 로 400자가
+      끝난 대목은 요약이 제목을 다시 쓴 한 문장이 됐다(같은 보고서 황상심 2009).
+    """
+    window = excerpt_text(chunk)
+    rows = [line for line in window.splitlines() if line.count("|") >= 2]
+    if window and sum(len(r) for r in rows) >= _TABLE_SHARE * len(window):
+        return False
+    stops = list(_SENTENCE_STOP.finditer(window))
+    body = window[:stops[-1].end()] if stops else ""
+    return has_prose(body) or bool(_ENGLISH_VERBS.search(body))
+
+
+def _borrowed(state: ResearchState, ev: Evidence, own: list[Chunk]) -> list[Chunk]:
+    """그 논문이 다른 하위질문에서 매칭한 서술 대목(점수순). 지금 어느 하위질문이든 가리키는 대목만 —
+    _serialize_evidence 가 그 대목만 보고서 근거에 싣는다. 재검색이 갈아끼운 대목을 쓰면 칩이 빈 팝오버를 연다."""
+    own_ids = {c.chunk_id for c in own}
+    mapped = {i for s in state.subquestions for i in s.evidence_chunks.get(ev.id, [])}
+    return sorted((c for c in ev.chunks
+                   if c.chunk_id in mapped and c.chunk_id not in own_ids and _narrative(c)),
+                  key=lambda c: c.score, reverse=True)
+
+
+def pick_excerpts(state: ResearchState, sq: SubQuestion,
+                  shown: set[tuple[str, str]]) -> dict[str, Chunk]:
+    """절의 논문마다 모델에 넘길 대목 하나를 고른다 (순수 함수). 근거 번호 → 대목.
+
+    그 하위질문이 매칭한 대목(chunks_for, 점수순) 가운데 서술 대목(_narrative)을 쓰고, 그중 앞 절에서 이 논문으로
+    이미 보여 준 대목(shown — (근거 번호, 청크 ID))은 뒤로 미룬다. 한 논문이 여러 절에 실리면 각 하위질문의 1위
+    대목이 같은 때가 많아(운영 630e0d65 장 2019 의 같은 대목이 1·2·4·5절 1위) 절마다 같은 문장이 되풀이됐고,
+    2위였던 연구방법 대목은 방법 절에서도 모델에 가지 않았다.
+
+    그 하위질문의 대목이 모두 서술이 아니면 다른 하위질문이 매칭한 그 논문의 서술 대목을 빌린다(_borrowed) —
+    하위질문과 덜 맞더라도 그 논문 자신의 글이다. 그것도 없으면 지금처럼 1위 대목을 쓴다.
+    """
+    picked: dict[str, Chunk] = {}
+    for eid in section_paper_ids(state, sq):
+        ev = state.evidence[eid]
+        # 그 하위질문 검색에서 매칭된 대목이 먼저다 — 재사용 근거의 첫 청크는 다른 하위질문의 검색어로 뽑힌 것일 수 있다
+        own = chunks_for(ev, sq)
+        pool = [c for c in own if _narrative(c)] or _borrowed(state, ev, own) or own
+        fresh = [c for c in pool if (eid, c.chunk_id) not in shown]
+        if pool:
+            picked[eid] = (fresh or pool)[0]
+    return picked
+
+
+def _evidence_block(state: ResearchState, sq: SubQuestion, excerpts: dict[str, Chunk]) -> str:
     lines = []
     for eid in section_paper_ids(state, sq):
         ev = state.evidence[eid]
-        # 그 하위질문 검색에서 매칭된 대목을 준다 — 재사용 근거의 첫 청크는
-        # 다른 하위질문의 검색어로 뽑힌 것일 수 있다.
-        chunks = chunks_for(ev, sq)
-        excerpt = chunks[0].text[:400] if chunks else ""
+        chunk = excerpts.get(eid)
         lines.append(
             f"[{eid}] {ev.meta.get('title')} "
-            f"({ev.meta.get('pub_date')}, {ev.meta.get('series_title')})\n{excerpt}"
+            f"({ev.meta.get('pub_date')}, {ev.meta.get('series_title')})\n"
+            f"{excerpt_text(chunk) if chunk else ''}"
         )
     return "\n\n".join(lines)
 
 
 async def _synthesize_section(
-    state: ResearchState, sq: SubQuestion,
+    state: ResearchState, sq: SubQuestion, excerpts: dict[str, Chunk],
     *, should_stop: Callable[[], Awaitable[bool]] | None,
 ) -> dict:
-    """절 하나를 만든다.
+    """절 하나를 만든다. excerpts 는 pick_excerpts 가 고른 대목이다.
 
     전송 오류·해석 실패·서술 없는 응답은 한 번 다시 부르고, 그래도 안 되면
     논문 목록만 남긴 절(failed)을 돌려준다 — 한 절의 실패가 이미 받은 다른
@@ -512,7 +591,7 @@ async def _synthesize_section(
     """
     system, user, llm_params = get_prompt("research_synthesize").render(
         question=state.question, subquestion=sq.text,
-        evidence_block=_evidence_block(state, sq),
+        evidence_block=_evidence_block(state, sq, excerpts),
         paper_ids=", ".join(section_paper_ids(state, sq)),
     )
     for attempt in range(1, _SECTION_ATTEMPTS + 1):
@@ -535,7 +614,7 @@ async def _synthesize_section(
             log.error("[research] 절 종합 JSON 파싱 실패 job=%s idx=%s 시도=%d: %s",
                       state.job_id, sq.idx, attempt, (raw or "")[:300])
             continue
-        section = build_section(state, sq, data)
+        section = build_section(state, sq, data, excerpts)
         # 파싱만으로 성공을 판정하면 키가 다른 dict·빈 dict 가 성공으로 세어져,
         # 모든 절이 그렇게 와도 아래 '전부 실패' 가드를 빠져나간다.
         if _has_narrative(section):
@@ -576,10 +655,16 @@ async def synthesize(
     # 첫 절을 쓰는 동안에도 화면이 남은 절을 "작성 대기"로 그릴 수 있게 소제목을 전부 싣는다
     headings = [sq.text for sq in targets]
     sections = []
+    # 앞 절들이 모델에 보여 준 (근거 번호, 청크 ID) — pick_excerpts 가 같은 논문의 다른 대목을 먼저 고른다
+    shown: set[tuple[str, str]] = set()
     for i, sq in enumerate(targets):
         info = {"subq_idx": sq.idx, "heading": sq.text, "headings": headings}
         await on_section(i, len(targets), "running", info)
-        section = await _synthesize_section(state, sq, should_stop=should_stop)
+        excerpts = pick_excerpts(state, sq, shown)
+        section = await _synthesize_section(state, sq, excerpts, should_stop=should_stop)
+        if not section["failed"]:
+            # 서술을 받지 못한 절의 대목은 보고서 어디에도 쓰이지 않았다 — 다음 절이 피할 까닭이 없다
+            shown.update((eid, c.chunk_id) for eid, c in excerpts.items())
         sections.append(section)
         log.info("[research] 절 종합 job=%s idx=%s 논문=%d ok=%s",
                  state.job_id, sq.idx, len(section["papers"]), not section["failed"])

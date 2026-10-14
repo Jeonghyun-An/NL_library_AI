@@ -86,6 +86,11 @@ def _no_prose(text: str) -> bool:
     return not _KOREAN_SENTENCE_END.search(text) and not _ENGLISH_PROSE.search(text)
 
 
+def has_prose(text: str) -> bool:
+    """서술 문장(한국어 서술 종결 또는 영어 서술 동사)이 하나라도 있는가 — 종합이 절 생성에 넘길 대목을 고를 때 쓴다."""
+    return not _no_prose(text)
+
+
 def _bibliography_before_abstract(text: str) -> bool:
     """제 줄의 'Abstract' 앞이 참고문헌 꼬리인가 — 서술 0·서지 꼴 두 종류 이상·첫 제목 줄 앞의 저자-연도."""
     abstract = _ABSTRACT_LINE.search(text)
