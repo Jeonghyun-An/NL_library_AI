@@ -854,6 +854,33 @@ class TestSynthesize:
         assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
         assert not any("서술을 생성하지 못한 절" in x for x in report["limitations"])
 
+    @pytest.mark.parametrize("hollow_intro", ["", "[E1]."])
+    def test_retry_without_an_intro_does_not_replace_the_intro(self, monkeypatch, hollow_intro):
+        """요약을 다 채웠어도 도입이 없는(빈 글·마커뿐) 재시도 응답이 도입이 있던 첫 응답을 밀어내지 않는다 — 도입은
+        하위질문에 대한 답 문단이라 요약 하나보다 잃는 것이 크다. 첫 응답을 싣고 빠진 요약 1편을 한계에 센다."""
+        partial = json.dumps({"intro": "첫 응답 도입 [E1].", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
+        introless = json.dumps({"intro": hollow_intro, "summaries": _SUMMARIES,
+                                "future": [{"text": "후속 연구가 필요하다 [E1]."}]})
+        full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
+        calls = self._patch_chat(monkeypatch, [partial, introless, full])
+        report = asyncio.run(synthesize(_state_three()))
+        assert "하위1" in calls[1]
+        first = report["sections"][0]
+        assert first["intro"] == "첫 응답 도입 [E1]."
+        assert [p["summary"] for p in first["papers"]] == ["첫 논문 요약이다.", ""]
+        assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
+        assert not any("도입 문단을 생성하지 못한 절" in x for x in report["limitations"])
+
+    def test_retry_filling_the_summaries_wins_when_neither_reply_has_an_intro(self, monkeypatch):
+        # 둘 다 도입이 없으면 요약이 덜 빠진 쪽이다
+        partial = json.dumps({"intro": "", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
+        introless = json.dumps({"intro": "", "summaries": _SUMMARIES, "future": []})
+        full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
+        self._patch_chat(monkeypatch, [partial, introless, full])
+        report = asyncio.run(synthesize(_state_three()))
+        assert all(p["summary"] for p in report["sections"][0]["papers"])
+        assert not any("요약을 생성하지 못한" in x for x in report["limitations"])
+
     def test_transport_error_on_the_retry_keeps_the_reply_missing_a_summary(self, monkeypatch):
         partial = json.dumps({"intro": "도입 [E1].", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
         full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})

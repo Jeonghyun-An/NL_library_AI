@@ -745,17 +745,21 @@ async def _synthesize_section(
     절을 버리게 두지 않는다.
 
     서술은 있지만 summaries 에서 논문 요약을 빠뜨린 응답(_unsummarized)도 같은 횟수 안에서 다시 부른다 — 프롬프트가
-    번호를 빠짐없이 키로 넣으라고 하는데도 빠뜨린 형식 위반이다(A/B focus2 85d2 3절 E11, 48호출 중 1건). 끝내 다
-    채우지 못하면 빠진 논문이 가장 적은 응답을 싣는다. 빠진 논문은 지금처럼 빈 요약으로 나가고 finalize_section 이
-    '요약을 생성하지 못한 논문' 한계로 센다 — 절을 failed 로 돌리면 이미 받은 도입·요약까지 잃는다.
+    번호를 빠짐없이 키로 넣으라고 하는데도 빠뜨린 형식 위반이다(A/B focus2 85d2 3절 E11, 48호출 중 1건). 요약을 다
+    채운 응답이 오거나 횟수가 다하면 받은 응답 가운데 (도입 서술이 있는가, 빠진 논문이 적은가) 순으로 가장 나은 것을
+    싣는다(같으면 먼저 받은 것). 도입을 앞에 두는 것은 도입이 하위질문에 대한 답 문단이라 요약 하나보다 잃는 것이 커서다 —
+    요약만 다 채우고 도입이 빈 재시도가 도입이 있던 첫 응답을 밀어내면 한계가 '요약을 생성하지 못한 논문 1편' 에서
+    '도입 문단을 생성하지 못한 절' 로 바뀐다. 요약을 빠뜨리지 않은 첫 응답은 도입이 없어도 다시 부르지 않는다(예전대로).
+    빠진 논문은 지금처럼 빈 요약으로 나가고 finalize_section 이 '요약을 생성하지 못한 논문' 한계로 센다 — 절을 failed 로
+    돌리면 이미 받은 도입·요약까지 잃는다.
     """
     system, user, llm_params = get_prompt("research_synthesize").render(
         question=state.question, subquestion=sq.text,
         evidence_block=_evidence_block(state, sq, excerpts),
         paper_ids=", ".join(section_paper_ids(state, sq)),
     )
-    # 서술은 있으나 요약이 빠진 응답 가운데 빠진 논문이 가장 적은 것 — (절, 빠진 근거 번호)
-    partial: tuple[dict, list[str]] | None = None
+    # 서술이 있는 응답 가운데 가장 나은 것 — ((도입 서술이 있는가, -빠진 논문 수), 절, 빠진 근거 번호)
+    best: tuple[tuple[bool, int], dict, list[str]] | None = None
     for attempt in range(1, _SECTION_ATTEMPTS + 1):
         if should_stop is not None and await should_stop():
             raise SynthesisCanceled
@@ -784,17 +788,19 @@ async def _synthesize_section(
                       state.job_id, sq.idx, attempt, (raw or "")[:300])
             continue
         missing = _unsummarized(state, sq, section)
+        rank = (bool(_prose(section["intro"])), -len(missing))
+        if best is None or rank > best[0]:
+            best = (rank, section, missing)
         if not missing:
-            return section
+            break
         log.warning("[research] 절 종합 응답에 요약이 빠졌다 job=%s idx=%s 시도=%d 빠진=%s",
                     state.job_id, sq.idx, attempt, missing)
-        if partial is None or len(missing) < len(partial[1]):
-            partial = (section, missing)
-    if partial is not None:
+    if best is None:
+        return build_section(state, sq, None)
+    if best[2]:
         log.warning("[research] 절 종합 — 요약이 빠진 채 싣는다 job=%s idx=%s 빠진=%s",
-                    state.job_id, sq.idx, partial[1])
-        return partial[0]
-    return build_section(state, sq, None)
+                    state.job_id, sq.idx, best[2])
+    return best[1]
 
 
 async def synthesize(
