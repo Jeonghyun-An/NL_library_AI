@@ -120,7 +120,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 | 참고문헌 선택하기 문구 | 기획 세션 승인 문구(합니다체)·다음 단계 버튼을 머리 소개 옆에도 |
 | 소장자료 관련 자료 | 전용 `GET /api/books/{id}/related` — 자기 제외·하한(종합 0.3 + 원점수 0.2)·검색 기록에 남기지 않음. 첫 시연 질의 1위의 관련 자료 1권 → 4권 |
 | 스트리밍 오류 | AI 글 스트림 다섯이 LLM 실패를 `{error}` 이벤트로(D4 — `app/services/llm_sse.py` `sse_deltas`, 스트림 안 오류 줄·`[DONE]` 없는 끝 포함). 캐시·검색 기록·DeepRead 이력에 오류가 남지 않는다 |
-| 논문 검색 쿼리 재작성 | 끔 — 서버가 요청 값을 무시한다(사용자 결정 2026-10-14). 근거는 파이프라인 측정 Recall@10 켬 70~71% vs 끔 86~88%(브로셔 평가 세션 보고 — 브랜치 `feat/brochure-search-eval` 의 `research/brochure-search-eval/README.md` 본문과 `d5636a7` 커밋 메시지. '끔' 수치는 커밋된 결과표에 아직 없다). 배포본 재측정 전이라 제품 수치로 쓰지 않는다 — 재측정은 '논문 작업 정리' 세션이 시드 20261015 로 진행 중 |
+| 논문 검색 쿼리 재작성 | 끔 — 서버가 요청 값을 무시한다(사용자 결정 2026-10-14). 근거는 켬 71% vs 끔 87%(파이프라인 측정, 독립 3세트 450문항 — 재작성 단계 −17.6%p), 배포본 실측 Recall@10 89%(2026-10-14, 합성 질문 150건 기준 — 사람 검증 없음) — 브랜치 `feat/brochure-search-eval` 의 `research/brochure-search-eval/README.md`. 메타데이터 필터는 판단 불가(날짜 조건이 걸린 질의 5%)라 그대로 둔다 |
 | 소장자료 비교 사유 | 시험만 하고 접음(`research/book-related-reason-trial`) |
 
 | 배포 | 이미지 | 비고 |
