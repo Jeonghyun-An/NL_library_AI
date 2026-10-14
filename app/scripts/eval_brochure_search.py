@@ -12,7 +12,8 @@
   skovix_hybrid  BGE-M3 dense+sparse RRF. 질의 재작성·리랭커 없음.
   skovix_rerank  위 + 리랭커.
   skovix_rewrite 위 + LLM 질의 재작성(메타데이터 필터 없음).
-  skovix_full    운영 기본 설정 그대로(LLM 질의 재작성 + 메타데이터 필터 + 리랭커).
+  skovix_full    pipeline.search 기본 플래그 그대로(LLM 질의 재작성 + 메타데이터 필터 + 리랭커). 2026-10-14 전까지 논문 검색의 운영 기본이었고
+                 그 뒤로는 '재작성 켬' 대조 구성이다(논문 검색은 재작성을 끈 채 배포됨).
                  rewrite 와 full 을 나눈 이유 — 단계마다 실제로 기여하는지, 어느 단계가 해치는지 가르기 위해서다.
 
 질의 세트
@@ -97,7 +98,7 @@ ARM_LABEL = {
     "skovix_norewrite": "SKOVIX 재작성 끔(리랭커+메타필터)",
     API_ARM: "스코빅스 논문 검색 API(배포본, top_k=20)",
     "skovix_rewrite": "SKOVIX + 질의 재작성",
-    "skovix_full": "SKOVIX 전체(재작성+메타필터, 운영 기본)",
+    "skovix_full": "SKOVIX 재작성 켬(재작성+메타필터+리랭커, 이전 운영 기본)",
 }
 
 _PAPER_SQL = "(COALESCE(doc_type, '') = 'paper' OR cnts_id LIKE 'KCI_FI%')"
@@ -877,7 +878,7 @@ def render_markdown(report: dict, meta: dict, judge_info: dict) -> str:
         scope, qtype = gk.split("|")
         lines += [f"## {_SCOPE_TITLE.get(scope, scope)} · {_GROUP_TITLE.get(qtype, qtype)} (n={g['n']})", ""]
         if g.get("n_excluded_filtered"):
-            lines += [f"> 제외 {g['n_excluded_filtered']}건 — 운영 기본 설정이 날짜 필터·정렬을 건 질의. "
+            lines += [f"> 제외 {g['n_excluded_filtered']}건 — 메타데이터 필터가 날짜 필터·정렬을 건 질의. "
                       "시간 조건이 든 질문은 제품이 의도대로 정렬·필터하므로 '정답 1건' 평가가 맞지 않아 별도 층으로 뺐다.", ""]
         lines += ["| 방식 | Recall@1 | Recall@10 | MRR@10 | nDCG@10 | OTR@10 |", "|---|---|---|---|---|---|"]
         for a, m in g["arms"].items():

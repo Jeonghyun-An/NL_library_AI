@@ -370,7 +370,7 @@ def test_steps_attribute_the_regression_to_the_step_that_causes_it():
 def test_markdown_shows_step_lines_and_flags_the_negative_step():
     queries, runs = _ladder_runs()
     md = ev.render_markdown(ev.build_report(queries, runs, {}), {"created": "2026-10-13"}, {"judges": "vlm=x"})
-    assert "단계별: SKOVIX + 질의 재작성 → **SKOVIX 전체(재작성+메타필터, 운영 기본)**: Recall@10 -100.0%p" in md
+    assert "단계별: SKOVIX + 질의 재작성 → **SKOVIX 재작성 켬(재작성+메타필터+리랭커, 이전 운영 기본)**: Recall@10 -100.0%p" in md
     assert "SKOVIX + 질의 재작성" in md
 
 
