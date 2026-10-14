@@ -1,7 +1,7 @@
 // frontend/tests/unit/sidebarResearch.test.ts
 import { describe, expect, it } from "vitest";
 import { EXPLORE_WEIGHT, SYNTH_WEIGHT, overallFraction } from "~/utils/researchProgress";
-import { olderToggle, stageProgress, statusStageLine } from "~/utils/sidebarResearch";
+import { olderToggle, sidebarStatusOf, stageProgress, statusStageLine } from "~/utils/sidebarResearch";
 
 describe("statusStageLine — 진행 중인 연구 줄의 단계 글(기록의 상태·stage 만, 숫자 없이)", () => {
   it("계획 중·순서를 기다리는 중", () => {
@@ -62,6 +62,17 @@ describe("stageProgress — 진행 중인 연구 줄의 진행 막대(지난 단
     }
     expect(stageProgress(undefined)).toBeNull();
     expect(stageProgress(null)).toBeNull();
+  });
+});
+
+describe("sidebarStatusOf — 연구 화면이 사이드바 줄에 넘기는 상태", () => {
+  it("잡의 status·stage 그대로 — 화면이 먼저 아는 보고서 작성은 stage 를 explored 로", () => {
+    expect(sidebarStatusOf({ status: "awaiting_approval", stage: "planned" }, "awaiting")).toEqual({ status: "awaiting_approval", stage: "planned" });
+    expect(sidebarStatusOf({ status: "running", stage: "planned" }, "exploring")).toEqual({ status: "running", stage: "planned" });
+    expect(sidebarStatusOf({ status: "running", stage: "planned" }, "synthesizing")).toEqual({ status: "running", stage: "explored" });
+    expect(sidebarStatusOf({ status: "running", stage: "synthesized" }, "synthesizing")).toEqual({ status: "running", stage: "synthesized" });
+    // 넘긴 상태로 사이드바 단계 글이 본문과 같아진다
+    expect(statusStageLine(sidebarStatusOf({ status: "running", stage: "planned" }, "synthesizing"))).toBe("보고서 작성 중");
   });
 });
 
