@@ -15,6 +15,7 @@ MIN_READING_FOR_OUTLINE = 5     # 담음 5편 이상이면 [목차 만들기]
 READING_PRESELECT = 8           # 이어가기 때 미리 담는 채택 근거 수 — 읽기 목록 순서의 앞 8편(사용자 결정 2026-10-13)
 PAPERS_PER_GROUP = 4            # 담은 논문 4편당 선행연구 묶음 1개
 MAX_GROUPS = 4
+MIN_GROUP_PAPERS = 2            # 묶음이 둘 이상일 때 묶음 하나의 최소 편수 — 1편짜리 선행연구 절을 만들지 않는다
 SECTION_PAPERS_MAX = 6          # 절 생성 입력 논문 상한
 EXCERPT_CHARS = 1200            # 원문 대목 글자 상한(말줄임 없이 자른다)
 ABSTRACT_CHARS = 600            # 절 입력의 초록 글자 상한(06b 는 특징 자리를 초록으로)
