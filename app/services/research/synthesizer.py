@@ -26,7 +26,7 @@ import httpx
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.bibliography import has_prose
-from services.research.citations import bind_markers, chunks_for, strip_markers
+from services.research.citations import bind_markers, chunks_for, strip_markers, strip_numbered_refs
 from services.research.hangul import josa
 from services.research.llm_json import extract_json
 from services.research.runner import subq_budget
@@ -48,13 +48,29 @@ _SECTION_ATTEMPTS = 2
 _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
 
-# 절 생성에 논문마다 넘기는 대목 길이(앞에서 자른다)
+# 절 생성에 논문마다 넘기는 대목 길이 상한(앞에서 자른다). 그 안의 마지막 문장 끝에서 자르되, 그 자리가
+# _EXCERPT_MIN_CUT 자보다 앞이면 남는 글이 너무 적어 지금처럼 이 길이에서 자른다(excerpt_text)
 EXCERPT_CHARS = 400
+_EXCERPT_MIN_CUT = 120
 _BR = re.compile(r"<br\s*/?>", re.I)
 # 표 대목 — '|' 가 둘 이상인 줄이 대목 창의 이만큼을 차지하면 표로 본다
 _TABLE_SHARE = 0.6
 # 완결 문장의 끝 — 마침표 뒤 공백·끝·각주 번호 '4)'·닫는 따옴표. 창 끝에서 잘린 조각('<Abstract> This s')은 문장이 아니다
 _SENTENCE_STOP = re.compile(r"[.!?。](?=\s|$|\d{1,3}\)|[\"”’」』])")
+# 문장 끝으로 보지 않는 마침표 앞 낱말 — 절·목록 번호('#### 3.'·'3.1.')·머리글자와 그 연쇄('- [7] H.'·'U.S.'·'e.g.')·
+# 로마 숫자('- Ⅳ.')·서지 약어('Vol.'·'no.'·'et al.')·칭호·회사 약어('Dr.'·'Co., Ltd.'). 운영 잡 4건(630e·85d2·9ba1·
+# d60a)에서 모델이 읽은 대목을 이 자리에서 자르면 번호·머리글자만 남았다. 한글 한 글자는 넣지 않는다 — OCR 띄어쓰기
+# ('연구이 다.')의 '다' 가 문장 끝이다. 줄 처음의 목록 기호('가.')만 _sentence_ends 가 따로 뺀다(_LIST_MARKER_LEAD)
+_NOT_SENTENCE_WORD = re.compile(
+    r"\d{1,3}(?:\.\d{1,3})*|[A-Za-z](?:\.[A-Za-z])*|[IVX]{2,5}|[Ⅰ-Ⅻⅰ-ⅻ]+"
+    r"|[Vv]ol|[Nn]o|pp|Dept|al|vs|cf|Fig|eds?|etc|Dr|Mrs?|Ms|Prof|Jr|Inc|Ltd|Co")
+# 한 글자 한글 낱말('가.')의 줄 안 앞에 이 글자만 있으면(줄 처음·제목 표시 '#### 가.') 목록 기호다. '- ' 는 넣지 않는다 —
+# OCR 이 이어지는 줄 앞에 붙여('…기대할 수 있\n\n- 다. 따라서', 운영 KCI_FI001407641__0008) 그 '다.' 가 문장 끝이다
+_LIST_MARKER_LEAD = " \t#"
+# 마침표 앞 낱말에서 떼고 보는 여는 기호 — 떼고 남는 게 없으면('(.815)') 소수점이다
+_WORD_OPENERS = "#*-([|<\"'“‘「『"
+# 문장 끝 마침표 바로 뒤의 닫는 따옴표는 그 문장과 함께 자른다(_SENTENCE_STOP 의 따옴표와 같은 글자)
+_CLOSING_QUOTES = "\"”’」』"
 # 영문 초록 문장에 흔한 서술 동사 — bibliography.has_prose 의 목록에 없는 것만
 _ENGLISH_VERBS = re.compile(r"\b(?:analy[sz]ed|examined|investigated|revealed|indicated|compared|results?)\b", re.I)
 
@@ -452,6 +468,9 @@ def _text(value: object) -> str:
     문장 배열은 잇는다 — str() 로 바꾸면 "['문장1', '문장2']" 가 화면에 나간다.
     그 밖의 모양(null·숫자·dict)은 버린다. null 이 bind_markers 까지 가면 모든 절
     호출이 끝난 뒤 TypeError 로 보고서 전체를 잃는다.
+
+    대목에서 옮겨 온 남의 번호 인용('[3, 4]')은 여기서 지운다(strip_numbered_refs) — 되풀이 지우기(drop_repeats)·
+    작성 중 초안·완성본이 모두 이 글을 쓴다.
     """
     if isinstance(value, str):
         text = value.strip()
@@ -459,7 +478,7 @@ def _text(value: object) -> str:
         text = " ".join(v.strip() for v in value if v.strip())
     else:
         return ""
-    return "" if _PLACEHOLDER in text else text
+    return "" if _PLACEHOLDER in text else strip_numbered_refs(text)
 
 
 def _eid_key(key: str) -> str:
@@ -473,7 +492,8 @@ def build_section(state: ResearchState, sq: SubQuestion, data: dict | None,
 
     소제목은 하위질문 그대로, 논문 목록은 section_paper_ids 그대로다 — 모델
     출력에 무엇이 있든 없든 바뀌지 않는다. 모델이 요약을 빠뜨린 논문도 빈
-    요약으로 싣고 assemble_report 가 개수를 한계에 올린다. data 가 None(서술을
+    요약으로 싣고 assemble_report 가 개수를 한계에 올린다(_synthesize_section 이 그 전에
+    한 번 다시 묻는다). data 가 None(서술을
     끝내 받지 못함)이면 논문 목록만 남기고 failed 로 표시한다.
 
     excerpts(pick_excerpts — 모델이 읽은 대목)가 있으면 그 대목을 evidence_chunks[eid] 맨 앞에 둔다. 인용칩
@@ -527,6 +547,13 @@ def _has_narrative(section: dict) -> bool:
         or any(_prose(f["text"]) for f in section["future"])
         or any(_prose(p["summary"]) for p in section["papers"])
     )
+
+
+def _unsummarized(state: ResearchState, sq: SubQuestion, section: dict) -> list[str]:
+    """요약이 없는 논문의 근거 번호(절의 논문 순서). finalize_section 이 '요약을 생성하지 못한 논문'으로 세는 것과
+    같은 기준이다 — 키가 없거나, 값이 빈 글·마커뿐('[E2]')인 요약. build_section 은 논문을 section_paper_ids 순서로
+    싣는다."""
+    return [eid for eid, p in zip(section_paper_ids(state, sq), section["papers"]) if not _prose(p["summary"])]
 
 
 def _sentences(text: str) -> list[str]:
@@ -586,10 +613,62 @@ def drop_repeats(section: dict, seen: list[str]) -> tuple[dict, list[str]]:
     return {**section, "intro": trimmed, "future": future}, keys
 
 
+def _list_marker(text: str, start: int, word: str) -> bool:
+    """text[start:] 에서 시작하는 마침표 앞 낱말 word 가 한글 목록 기호('가.'·'나.')인가 — 한 글자 한글이고 줄 안에서 그
+    앞이 공백·제목 표시('#')뿐이다. 한글 학위논문의 '1. 서론\\n\\n가. 연구의 필요성' 에서 '가.' 를 문장 끝으로 보면 창이
+    목록 기호로 끝난다."""
+    if len(word) != 1 or not "가" <= word <= "힣":
+        return False
+    return not text[text.rfind("\n", 0, start) + 1:start].strip(_LIST_MARKER_LEAD)
+
+
+def _sentence_ends(text: str) -> list[int]:
+    """text 앞 EXCERPT_CHARS 자 안의 완결 문장 끝 — 문장을 맺는 마침표(와 바로 뒤 닫는 따옴표) 다음 자리, 앞에서부터.
+
+    _SENTENCE_STOP 이 문장 끝으로 본 자리 가운데 마침표 앞 낱말이 번호·머리글자·약어(_NOT_SENTENCE_WORD)·줄 처음의 한글
+    목록 기호(_list_marker)이거나 여는 기호뿐인 것은 뺀다. 창 끝 마침표는 창 밖 다음 글자로 판단한다 — 400자째가 '3.14' 의 '3.' 이면 문장 끝이 아니다.
+    마침표 뒤가 숫자(_SENTENCE_STOP 의 각주 '어렵다.4)')면 마침표 앞이 글자일 때만 문장 끝이다 — 'p<.05)'·'SD=6.3)'·
+    '3.0)' 의 마침표는 소수점이라 거기서 자르면 값이 바뀐다. 운영 4건 근거 대목 전문에서 앞이 글자인 26건은 모두 각주,
+    숫자(136)·비교 기호(<·=, 11)인 것은 모두 통계·표의 소수였다.
+    """
+    head = text[:EXCERPT_CHARS + 1]
+    ends: list[int] = []
+    for m in _SENTENCE_STOP.finditer(head):
+        if m.end() > EXCERPT_CHARS:
+            break
+        if head[m.end():m.end() + 1].isdigit() and not (m.start() and head[m.start() - 1].isalpha()):
+            continue
+        before = head[max(0, m.start() - 16):m.start()]
+        word = "" if not before or before[-1].isspace() else before.split()[-1].lstrip(_WORD_OPENERS)
+        if not word or _NOT_SENTENCE_WORD.fullmatch(word) or _list_marker(head, m.start() - len(word), word):
+            continue
+        end = m.end()
+        while end < min(len(head), EXCERPT_CHARS) and head[end] in _CLOSING_QUOTES:
+            end += 1
+        ends.append(end)
+    return ends
+
+
+def _excerpt(chunk: Chunk) -> tuple[str, str]:
+    """(모델에 넘기는 창, 그 창의 완결 문장 부분). 둘 다 _sentence_ends 로 정한다 — 창을 자르는 문장 끝과 _narrative 의
+    '완결 문장' 이 같은 자리여야 한다. 창을 문장 끝에서 잘랐으면 둘은 같고, 아니면 완결 문장 부분은 창의 앞쪽이다."""
+    text = _BR.sub("\n", html.unescape(chunk.text))
+    ends = _sentence_ends(text)
+    body = text[:ends[-1]] if ends else ""
+    if len(text) <= EXCERPT_CHARS:
+        return text, body
+    return (body if len(body) >= _EXCERPT_MIN_CUT else text[:EXCERPT_CHARS]), body
+
+
 def excerpt_text(chunk: Chunk) -> str:
-    """모델에 넘기는 대목 글 — HTML 이스케이프(&lt; &amp;)를 풀고 <br> 을 줄바꿈으로 바꾼 앞 EXCERPT_CHARS 자.
-    적재된 표·초록 글에 이스케이프가 그대로 남아 있어 모델이 '&lt;기초학습기능검사&gt;' 를 읽었다."""
-    return _BR.sub("\n", html.unescape(chunk.text))[:EXCERPT_CHARS]
+    """모델에 넘기는 대목 글 — HTML 이스케이프(&lt; &amp;)를 풀고 <br> 을 줄바꿈으로 바꾼 앞 EXCERPT_CHARS 자 안에서, 마지막
+    문장 끝(_sentence_ends)까지. 적재된 표·초록 글에 이스케이프가 그대로 남아 있어 모델이 '&lt;기초학습기능검사&gt;' 를 읽었다.
+
+    400자째에서 그냥 자르면 문장 중간에서 끊겨 모델이 잘린 문장을 짐작해 잇거나 되풀이 루프에 빠졌다(A/B 설계 단계 630e
+    2절 E16 '넷 째, 분석대상논문들을 통해 총 6개의 하위 주제와 5개의' — focus2 2/44절). 마지막 문장 끝이 _EXCERPT_MIN_CUT
+    자보다 앞이거나 없으면(표·목록·참고문헌) 지금처럼 400자에서 자른다. 400자를 넘지 않는 대목은 자르지 않는다.
+    """
+    return _excerpt(chunk)[0]
 
 
 def _narrative(chunk: Chunk) -> bool:
@@ -598,14 +677,13 @@ def _narrative(chunk: Chunk) -> bool:
     - 표: '|' 가 둘 이상인 줄이 창의 _TABLE_SHARE 이상. 선행연구 정리표의 한 행만 받은 모델은 표 속 남의 연구를 그
       논문의 성과로 썼다(운영 630e0d65 박혜성 2014 — '정금자, 이영숙 (2013)|만 5세 유아…').
     - 완결 문장이 없는 창: 창 끝에서 잘린 조각은 버리고 본다. 참고문헌 꼬리 + 영문 제목 + '<Abstract> This s' 로 400자가
-      끝난 대목은 요약이 제목을 다시 쓴 한 문장이 됐다(같은 보고서 황상심 2009).
+      끝난 대목은 요약이 제목을 다시 쓴 한 문장이 됐다(같은 보고서 황상심 2009). 완결 문장은 창을 자르는 문장 끝과 같은
+      기준(_sentence_ends)으로 본다 — 머리글자 'H.' 까지를 문장으로 보면 그 앞 서지 조각의 'This study was' 가 서술로 세어진다.
     """
-    window = excerpt_text(chunk)
+    window, body = _excerpt(chunk)
     rows = [line for line in window.splitlines() if line.count("|") >= 2]
     if window and sum(len(r) for r in rows) >= _TABLE_SHARE * len(window):
         return False
-    stops = list(_SENTENCE_STOP.finditer(window))
-    body = window[:stops[-1].end()] if stops else ""
     return has_prose(body) or bool(_ENGLISH_VERBS.search(body))
 
 
@@ -665,12 +743,23 @@ async def _synthesize_section(
     전송 오류·해석 실패·서술 없는 응답은 한 번 다시 부르고, 그래도 안 되면
     논문 목록만 남긴 절(failed)을 돌려준다 — 한 절의 실패가 이미 받은 다른
     절을 버리게 두지 않는다.
+
+    서술은 있지만 summaries 에서 논문 요약을 빠뜨린 응답(_unsummarized)도 같은 횟수 안에서 다시 부른다 — 프롬프트가
+    번호를 빠짐없이 키로 넣으라고 하는데도 빠뜨린 형식 위반이다(A/B focus2 85d2 3절 E11, 48호출 중 1건). 요약을 다
+    채운 응답이 오거나 횟수가 다하면 받은 응답 가운데 (도입 서술이 있는가, 빠진 논문이 적은가) 순으로 가장 나은 것을
+    싣는다(같으면 먼저 받은 것). 도입을 앞에 두는 것은 도입이 하위질문에 대한 답 문단이라 요약 하나보다 잃는 것이 커서다 —
+    요약만 다 채우고 도입이 빈 재시도가 도입이 있던 첫 응답을 밀어내면 한계가 '요약을 생성하지 못한 논문 1편' 에서
+    '도입 문단을 생성하지 못한 절' 로 바뀐다. 요약을 빠뜨리지 않은 첫 응답은 도입이 없어도 다시 부르지 않는다(예전대로).
+    빠진 논문은 지금처럼 빈 요약으로 나가고 finalize_section 이 '요약을 생성하지 못한 논문' 한계로 센다 — 절을 failed 로
+    돌리면 이미 받은 도입·요약까지 잃는다.
     """
     system, user, llm_params = get_prompt("research_synthesize").render(
         question=state.question, subquestion=sq.text,
         evidence_block=_evidence_block(state, sq, excerpts),
         paper_ids=", ".join(section_paper_ids(state, sq)),
     )
+    # 서술이 있는 응답 가운데 가장 나은 것 — ((도입 서술이 있는가, -빠진 논문 수), 절, 빠진 근거 번호)
+    best: tuple[tuple[bool, int], dict, list[str]] | None = None
     for attempt in range(1, _SECTION_ATTEMPTS + 1):
         if should_stop is not None and await should_stop():
             raise SynthesisCanceled
@@ -694,11 +783,24 @@ async def _synthesize_section(
         section = build_section(state, sq, data, excerpts)
         # 파싱만으로 성공을 판정하면 키가 다른 dict·빈 dict 가 성공으로 세어져,
         # 모든 절이 그렇게 와도 아래 '전부 실패' 가드를 빠져나간다.
-        if _has_narrative(section):
-            return section
-        log.error("[research] 절 종합 응답에 서술이 없다 job=%s idx=%s 시도=%d: %s",
-                  state.job_id, sq.idx, attempt, (raw or "")[:300])
-    return build_section(state, sq, None)
+        if not _has_narrative(section):
+            log.error("[research] 절 종합 응답에 서술이 없다 job=%s idx=%s 시도=%d: %s",
+                      state.job_id, sq.idx, attempt, (raw or "")[:300])
+            continue
+        missing = _unsummarized(state, sq, section)
+        rank = (bool(_prose(section["intro"])), -len(missing))
+        if best is None or rank > best[0]:
+            best = (rank, section, missing)
+        if not missing:
+            break
+        log.warning("[research] 절 종합 응답에 요약이 빠졌다 job=%s idx=%s 시도=%d 빠진=%s",
+                    state.job_id, sq.idx, attempt, missing)
+    if best is None:
+        return build_section(state, sq, None)
+    if best[2]:
+        log.warning("[research] 절 종합 — 요약이 빠진 채 싣는다 job=%s idx=%s 빠진=%s",
+                    state.job_id, sq.idx, best[2])
+    return best[1]
 
 
 async def synthesize(

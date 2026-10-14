@@ -4,7 +4,9 @@ import json
 import httpx
 import pytest
 
+from services.prompts import get_prompt
 from services.research import synthesizer
+from services.research.llm_json import extract_json
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
 )
@@ -699,13 +701,48 @@ class TestBuildSection:
         assert sec["papers"][1]["summary"] == ""
 
     def test_template_placeholder_copy_is_not_taken_as_narrative(self):
-        """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다."""
+        """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다.
+
+        손으로 옮긴 골격 문자열은 프롬프트의 골격 설명이 바뀌면 어긋난 채 통과한다 — 렌더한 프롬프트의 JSON 골격을
+        그대로 읽어 넣는다(모델이 통째로 베낀 응답과 같은 모양)."""
+        st = _state_three()
+        system, _, _ = get_prompt("research_synthesize").render(
+            question="질문", subquestion="하위1", evidence_block="[E1] 논문 A\n본문", paper_ids="E1, E2")
+        skeleton = extract_json(system)
+        assert skeleton is not None and set(skeleton) == {"intro", "summaries", "future"}
+        assert skeleton["future"][0]["text"]
+        sec = build_section(st, st.subquestions[0], skeleton)
+        assert sec["intro"] == "" and sec["future"] == []
+        # 견본의 키 'E#' 는 어느 논문 번호도 아니다
+        assert all(p["summary"] == "" for p in sec["papers"])
+
+    def test_numbered_refs_copied_from_excerpts_are_removed(self):
+        """대목 속 남의 번호 인용('[3, 4]')을 옮긴 문장 — 근거 칩처럼 보이지만 어느 근거도 아니다(A/B focus 9ba1 1절).
+        도입·요약·향후 과제 모두에서 지우고, 우리 마커 [E#] 는 그대로 둔다."""
         st = _state_three()
         sec = build_section(st, st.subquestions[0], {
-            "intro": "이 하위질문에 대한 연구 흐름을 설명하는 2~4문장. 문장마다 [E#] 를 단다.",
-            "summaries": {"E#": "그 논문이 무엇을 했고"},
-            "future": [{"text": "남은 과제 한 문장 [E#]."}]})
-        assert sec["intro"] == "" and sec["future"] == []
+            "intro": "우울은 다른 연령에 비해 유발 가능성이 높은 정서반응이다 [3, 4]. "
+                     "삶의 질을 심각하게 저하시킨다 [5, 6, 7, 8] [E1]. 5문항으로 구성된 도구이다 [33, 34].",
+            "summaries": {"E1": "Hoyl 등[33]의 GDS-5를 사용했다. 삶의 질을 저하시킨다 [8].",
+                          "E2": "체계적 문헌고찰을 수행했다 [2]."},
+            "future": [{"text": "변화 궤적을 분석하는 추가 연구가 필요하다 [8] [E2]."}, {"text": "[3]"}]})
+        assert sec["intro"] == ("우울은 다른 연령에 비해 유발 가능성이 높은 정서반응이다. "
+                                "삶의 질을 심각하게 저하시킨다 [E1]. 5문항으로 구성된 도구이다.")
+        assert [p["summary"] for p in sec["papers"]] == [
+            "Hoyl 등의 GDS-5를 사용했다. 삶의 질을 저하시킨다.", "체계적 문헌고찰을 수행했다."]
+        # 번호만 있던 항목은 빈 글이라 싣지 않는다
+        assert sec["future"] == [{"text": "변화 궤적을 분석하는 추가 연구가 필요하다 [E2]."}]
+
+    def test_removed_numbered_refs_are_not_reported_as_our_markers(self):
+        """지운 남의 번호는 우리 인용 표기가 아니다 — 한계의 '해석할 수 없는 인용 표기'·'없는 번호' 로 세지 않는다.
+        근거 칩이 없는 문장은 무표기로 센다(지우기 전에도 [E#] 가 없던 문장이다)."""
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0], {
+            "intro": "정서반응이다 [3, 4]. 저하시킨다 [E1].", "summaries": {"E1": "요약이다.", "E2": "요약이다."},
+            "future": []})
+        _, tally = finalize_section(st, sec)
+        assert tally.unparsed == 0 and tally.dropped == 0
+        assert tally.unmarked == 1
 
     def test_section_carries_chunks_matched_in_its_subquestion(self):
         st = _state_three()
@@ -724,6 +761,11 @@ def _timeout() -> httpx.ReadTimeout:
     return httpx.ReadTimeout("timeout")
 
 
+# 절 응답의 요약 — 어느 절의 논문이든 번호마다 요약이 있다. 요약을 빠뜨린 응답은 그 절을 다시 묻는다
+# (_synthesize_section). 절에 없는 번호의 요약은 build_section 이 읽지 않는다
+_SUMMARIES = {f"E{i}": "그 논문의 방법과 결과를 요약했다." for i in range(1, 10)}
+
+
 class TestSynthesize:
     def _patch_chat(self, monkeypatch, replies):
         """replies 항목이 예외면 그 호출에서 던진다 — 전송 오류 대역."""
@@ -740,7 +782,7 @@ class TestSynthesize:
 
     def test_one_section_per_subquestion_with_evidence(self, monkeypatch):
         """2026-09-23 라이브 회귀: 하위질문 3개인데 절이 1개만 나왔다."""
-        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         calls = self._patch_chat(monkeypatch, [reply, reply])
         report = asyncio.run(synthesize(_state_three()))
         assert [s["heading"] for s in report["sections"]] == ["하위1", "하위2"]
@@ -750,7 +792,7 @@ class TestSynthesize:
     def test_insufficient_line_names_the_section_the_report_shows(self, monkeypatch):
         """한계의 'N절' 은 보고서 화면·내려받은 문서의 'N. 제목' 과 같은 절이어야 한다 — 절을 건너뛰거나 합치게
         바뀌면 번호가 어긋나 엉뚱한 절을 가리킨다. 근거 없는 하위질문이 앞에 있어 하위질문 번호와 다른 경우로 묶는다."""
-        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         self._patch_chat(monkeypatch, [reply, reply])
         st = _state_three()
         st.subquestions = [st.subquestions[2], st.subquestions[0], st.subquestions[1]]
@@ -765,7 +807,7 @@ class TestSynthesize:
         assert where == f"{k}절(하위질문 3)" and st.subquestions[2].text == "하위2"
 
     def test_every_evidence_appears_in_some_section(self, monkeypatch):
-        reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입.", "summaries": _SUMMARIES, "future": []})
         self._patch_chat(monkeypatch, [reply, reply])
         st = _state_three()
         report = asyncio.run(synthesize(st))
@@ -776,13 +818,81 @@ class TestSynthesize:
 
     def test_missing_summaries_are_reported(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {"E1": "요약"}, "future": []})
-        self._patch_chat(monkeypatch, [reply, reply])
+        calls = self._patch_chat(monkeypatch, [reply] * 4)
         report = asyncio.run(synthesize(_state_three()))
+        assert len(calls) == 4                      # 절마다 한 번 다시 묻고도 빠졌다
         # 하위1 의 E2, 하위2 의 E2·E3 — 절마다 따로 센다
         assert any("요약을 생성하지 못한 논문 3편" in x for x in report["limitations"])
+        assert not any("서술을 생성하지 못한 절" in x for x in report["limitations"])
+
+    def test_missing_summary_is_asked_again(self, monkeypatch):
+        """summaries 에서 근거 번호 하나를 빠뜨린 응답(A/B focus2 85d2 3절 E11, 48호출 중 1건)은 빈 요약으로 내지
+        않고 그 절을 다시 묻는다. 값이 빈 글·마커뿐인 요약도 빠진 것이다(finalize_section 이 요약 없음으로 센다)."""
+        partial = json.dumps({"intro": "도입 [E1].", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
+        hollow = json.dumps({"intro": "도입 [E1].", "summaries": {"E1": "첫 논문 요약이다.", "E2": "[E2]"},
+                             "future": []})
+        full = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
+        calls = self._patch_chat(monkeypatch, [partial, full, hollow, full])
+        report = asyncio.run(synthesize(_state_three()))
+        assert len(calls) == 4
+        assert "하위1" in calls[1] and "하위2" in calls[3]
+        assert all(p["summary"] for s in report["sections"] for p in s["papers"])
+        assert not any("요약을 생성하지 못한" in x for x in report["limitations"])
+
+    def test_reply_missing_fewer_summaries_is_kept_after_the_retry(self, monkeypatch):
+        """다시 물어도 빠지면 서술은 버리지 않는다 — 빠진 수가 가장 적은 응답을 싣고, 빠진 논문은 지금처럼 빈 요약으로
+        '요약을 생성하지 못한 논문' 한계에 센다. 절을 실패(논문 목록만)로 돌리면 받은 도입·요약까지 잃는다."""
+        one_missing = json.dumps({"intro": "첫 응답 도입 [E1].", "summaries": {"E1": "첫 논문 요약이다."},
+                                  "future": []})
+        both_missing = json.dumps({"intro": "둘째 응답 도입 [E2].", "summaries": {}, "future": []})
+        full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
+        self._patch_chat(monkeypatch, [one_missing, both_missing, full])
+        report = asyncio.run(synthesize(_state_three()))
+        first = report["sections"][0]
+        assert first["intro"] == "첫 응답 도입 [E1]."
+        assert [p["summary"] for p in first["papers"]] == ["첫 논문 요약이다.", ""]
+        assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
+        assert not any("서술을 생성하지 못한 절" in x for x in report["limitations"])
+
+    @pytest.mark.parametrize("hollow_intro", ["", "[E1]."])
+    def test_retry_without_an_intro_does_not_replace_the_intro(self, monkeypatch, hollow_intro):
+        """요약을 다 채웠어도 도입이 없는(빈 글·마커뿐) 재시도 응답이 도입이 있던 첫 응답을 밀어내지 않는다 — 도입은
+        하위질문에 대한 답 문단이라 요약 하나보다 잃는 것이 크다. 첫 응답을 싣고 빠진 요약 1편을 한계에 센다."""
+        partial = json.dumps({"intro": "첫 응답 도입 [E1].", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
+        introless = json.dumps({"intro": hollow_intro, "summaries": _SUMMARIES,
+                                "future": [{"text": "후속 연구가 필요하다 [E1]."}]})
+        full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
+        calls = self._patch_chat(monkeypatch, [partial, introless, full])
+        report = asyncio.run(synthesize(_state_three()))
+        assert "하위1" in calls[1]
+        first = report["sections"][0]
+        assert first["intro"] == "첫 응답 도입 [E1]."
+        assert [p["summary"] for p in first["papers"]] == ["첫 논문 요약이다.", ""]
+        assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
+        assert not any("도입 문단을 생성하지 못한 절" in x for x in report["limitations"])
+
+    def test_retry_filling_the_summaries_wins_when_neither_reply_has_an_intro(self, monkeypatch):
+        # 둘 다 도입이 없으면 요약이 덜 빠진 쪽이다
+        partial = json.dumps({"intro": "", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
+        introless = json.dumps({"intro": "", "summaries": _SUMMARIES, "future": []})
+        full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
+        self._patch_chat(monkeypatch, [partial, introless, full])
+        report = asyncio.run(synthesize(_state_three()))
+        assert all(p["summary"] for p in report["sections"][0]["papers"])
+        assert not any("요약을 생성하지 못한" in x for x in report["limitations"])
+
+    def test_transport_error_on_the_retry_keeps_the_reply_missing_a_summary(self, monkeypatch):
+        partial = json.dumps({"intro": "도입 [E1].", "summaries": {"E1": "첫 논문 요약이다."}, "future": []})
+        full = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
+        calls = self._patch_chat(monkeypatch, [partial, _timeout(), full])
+        report = asyncio.run(synthesize(_state_three()))
+        assert "하위1" in calls[1]                   # 다시 물은 것이 끊겼다
+        assert report["sections"][0]["intro"] == "도입 [E1]."
+        assert any("요약을 생성하지 못한 논문 1편" in x for x in report["limitations"])
+        assert not any("서술을 생성하지 못한 절" in x for x in report["limitations"])
 
     def test_partial_parse_failure_is_reported_not_raised(self, monkeypatch):
-        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        good = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         self._patch_chat(monkeypatch, [good, "모르겠습니다", "여전히 모르겠습니다"])
         report = asyncio.run(synthesize(_state_three()))
         assert len(report["sections"]) == 2
@@ -795,7 +905,7 @@ class TestSynthesize:
             asyncio.run(synthesize(_state_three()))
 
     def test_parse_failure_is_retried_once(self, monkeypatch):
-        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        good = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         calls = self._patch_chat(monkeypatch, ["모르겠습니다", good, good])
         report = asyncio.run(synthesize(_state_three()))
         assert len(calls) == 3
@@ -803,7 +913,7 @@ class TestSynthesize:
 
     def test_transport_error_is_retried_once(self, monkeypatch):
         """spec §6 '종합 LLM 실패 — 1회 재시도'. 공유 GPU 의 대기로 300초를 넘기는 일이 있다."""
-        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        good = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         calls = self._patch_chat(monkeypatch, [_timeout(), good, good])
         report = asyncio.run(synthesize(_state_three()))
         assert len(calls) == 3
@@ -811,7 +921,7 @@ class TestSynthesize:
 
     def test_section_failing_twice_does_not_lose_other_sections(self, monkeypatch):
         """절 하나의 전송 오류가 이미 받은 절까지 버리면 잡이 failed 가 되고 재시도가 전부 다시 부른다."""
-        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        good = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         self._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
         report = asyncio.run(synthesize(_state_three()))
         assert report["sections"][0]["intro"] == "도입 [E1]."
@@ -840,7 +950,7 @@ class TestSynthesize:
         assert len(calls) == 4                      # 절마다 1회 재시도
 
     def test_null_future_text_does_not_lose_report(self, monkeypatch):
-        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": [{"text": None}]})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": [{"text": None}]})
         self._patch_chat(monkeypatch, [reply, reply])
         report = asyncio.run(synthesize(_state_three()))
         assert report["sections"][0]["future"] == []
@@ -850,7 +960,7 @@ class TestSynthesize:
         절에서 빼면 그 근거가 보고서에서 사라진다(report.evidence 는 절에 실린 근거만 담는다)."""
         st = _state_three()
         st.subquestions[1].failed = True
-        reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입.", "summaries": _SUMMARIES, "future": []})
         self._patch_chat(monkeypatch, [reply, reply])
         report = asyncio.run(synthesize(st))
         assert [s["heading"] for s in report["sections"]] == ["하위1", "하위2"]
@@ -862,7 +972,7 @@ class TestSynthesize:
                                     Chunk("c2b", "하위2 대목", 2, 2, 0.8)]
         st.subquestions[0].evidence_chunks = {"E1": ["c1"], "E2": ["c2a"]}
         st.subquestions[1].evidence_chunks = {"E2": ["c2b"], "E3": ["c3"]}
-        reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입.", "summaries": _SUMMARIES, "future": []})
         calls = self._patch_chat(monkeypatch, [reply, reply])
         asyncio.run(synthesize(st))
         assert "하위1 대목" in calls[0] and "하위2 대목" not in calls[0]
@@ -880,7 +990,7 @@ class TestSynthesize:
 
     def test_should_stop_is_checked_before_each_section(self, monkeypatch):
         """취소 후에도 남은 절을 다 부르면 '취소가 GPU 를 비운다'가 거짓이 된다."""
-        reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입.", "summaries": _SUMMARIES, "future": []})
         calls = self._patch_chat(monkeypatch, [reply, reply])
         checks = []
 
@@ -901,7 +1011,7 @@ class TestSynthesizePrompt:
 
         async def fake_chat(messages, *, params=None, timeout=None):
             systems.append(messages[0]["content"])
-            return json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+            return json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
 
         monkeypatch.setattr(synthesizer, "chat", fake_chat)
         asyncio.run(synthesize(_state_three()))
@@ -983,7 +1093,7 @@ class TestSectionProgress:
         return seen, on_section
 
     def test_each_section_reports_start_and_end(self, monkeypatch):
-        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
         seen, on_section = self._record()
         asyncio.run(synthesize(_state_three(), on_section=on_section))
@@ -991,7 +1101,7 @@ class TestSectionProgress:
         assert seen == [(0, 2, "running"), (0, 2, "done"), (1, 2, "running"), (1, 2, "done")]
 
     def test_section_without_narrative_reports_failed(self, monkeypatch):
-        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        good = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         TestSynthesize()._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
         seen, on_section = self._record()
         asyncio.run(synthesize(_state_three(), on_section=on_section))
@@ -1013,7 +1123,7 @@ class TestSectionProgress:
         # 절 순번과 하위질문 번호는 다르다 — 근거 없는 하위질문은 절이 되지 않는다
         st = _state_three()
         st.subquestions[0].evidence_ids = []
-        reply = json.dumps({"intro": "도입 [E2].", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입 [E2].", "summaries": _SUMMARIES, "future": []})
         TestSynthesize()._patch_chat(monkeypatch, [reply])
         infos = []
         seen, on_section = self._record(infos)
@@ -1022,7 +1132,7 @@ class TestSectionProgress:
         assert infos[0] == {"subq_idx": 1, "heading": "하위2", "headings": ["하위2"]}
 
     def test_end_carries_the_finalized_section_and_its_evidence(self, monkeypatch):
-        reply = json.dumps({"intro": "도입 [E1] [E2].", "summaries": {"E1": "요약 [E1]."},
+        reply = json.dumps({"intro": "도입 [E1] [E2].", "summaries": {**_SUMMARIES, "E1": "요약 [E1]."},
                             "future": []})
         TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
         infos = []
@@ -1038,7 +1148,7 @@ class TestSectionProgress:
 
     def test_failed_section_is_carried_with_its_paper_list(self, monkeypatch):
         # 서술을 끝내 받지 못한 절도 초안에 싣는다 — 최종본도 그 절을 논문 목록만으로 싣는다
-        good = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        good = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         TestSynthesize()._patch_chat(monkeypatch, [good, _timeout(), _timeout()])
         infos = []
         seen, on_section = self._record(infos)
@@ -1228,7 +1338,7 @@ class TestSectionExcerpts:
     남의 연구를 그 논문의 성과처럼 쓰거나 제목만 되풀이한 요약이 나왔다."""
 
     def _run(self, monkeypatch, st, replies=None):
-        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         n = sum(1 for sq in st.subquestions if sq.evidence_ids)
         calls = TestSynthesize()._patch_chat(monkeypatch, replies or [reply] * n)
         infos = []
@@ -1263,7 +1373,7 @@ class TestSectionExcerpts:
         first = Chunk("c1a", "가 대목에서 음운 발달을 분석하였다.", 1, 1, 0.9)
         second = Chunk("c1b", "나 대목에서 연구 방법을 정리하였다.", 2, 2, 0.8)
         st = _mapped_state({"E1": [first, second]}, {"E1": [first, second]})
-        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": _SUMMARIES, "future": []})
         calls, _, _ = self._run(monkeypatch, st, [_timeout(), _timeout(), reply])
         assert "가 대목" in calls[2]
 
@@ -1284,6 +1394,105 @@ class TestSectionExcerpts:
         calls, _, _ = self._run(monkeypatch, st)
         assert "<기초학습기능검사>였다.\n대상은 232명" in calls[0]
         assert "&lt;" not in calls[0] and "<br>" not in calls[0]
+
+    def test_window_whose_only_sentence_ends_are_initials_is_skipped(self, monkeypatch):
+        """'완결 문장이 없는 대목' 판정은 대목을 자르는 문장 끝과 같은 기준이다 — 머리글자 'H.'·'J.' 를 문장 끝으로 보면
+        그 앞의 영문 서지 조각('This study was …')이 서술로 세어져, 잘린 문장만 있는 대목이 모델에 간다."""
+        bib = "This study was cited by Song, H. and Kim, J. in the review of " + "x" * 400
+        st = _mapped_state({"E1": [Chunk("b1", bib, 9, 9, 0.9), Chunk("n1", _PROSE, 2, 2, 0.6)]})
+        calls, _, _ = self._run(monkeypatch, st)
+        assert "76%로 편중" in calls[0] and "Song" not in calls[0]
+
+
+# 모델이 읽는 대목 창 — 운영 630e0d65 2절 E16 은 400자째에서 '넷 째, …5개의' 로 끊겨, 모델이 잘린 문장을 짐작해
+# 잇거나 되풀이 루프에 빠졌다
+_DONE = "셋 째, 연구 방법에서는 양적 연구 방법이 76%로서 편중된 양상을 나타내었다. "
+_CUT_TAIL = "넷 째, 분석대상논문들을 통해 총 6개의 하위 주제와 5개의 "
+
+
+class TestExcerptText:
+    def _text(self, text: str) -> str:
+        return synthesizer.excerpt_text(Chunk("c1", text, 1, 1, 0.9))
+
+    def test_window_is_cut_at_the_last_sentence_end(self):
+        text = _DONE * 5 + _CUT_TAIL + "하위 범주를 " * 40 + "도출하였다."
+        assert text.index("도출하였다") > synthesizer.EXCERPT_CHARS
+        assert self._text(text) == (_DONE * 5).rstrip()
+
+    def test_english_window_is_cut_at_the_last_sentence_end(self):
+        done = "This study reviewed the assessment methods used in the researches. "
+        text = done * 4 + "The findings suggest that while early researches focused on vocabulary, " * 5
+        assert self._text(text) == (done * 4).rstrip()
+
+    def test_sentence_end_too_close_to_the_start_keeps_the_400_char_cut(self):
+        # 마지막 문장 끝이 너무 앞이면 남는 글이 거의 없다 — 지금처럼 400자에서 자른다
+        text = "짧은 문장이다. " + "가" * 500
+        assert self._text(text) == text[:synthesizer.EXCERPT_CHARS]
+
+    def test_window_without_a_sentence_end_keeps_the_400_char_cut(self):
+        text = "|번호|성별|연령|\n" * 60
+        assert self._text(text) == text[:synthesizer.EXCERPT_CHARS]
+
+    def test_chunk_within_the_window_is_kept_whole(self):
+        # 400자를 넘지 않으면 자르지 않는다 — 청크가 끝난 자리다
+        text = _DONE * 3 + "끝나지 않은 조각"
+        assert self._text(text) == text
+
+    def test_period_at_the_window_edge_is_judged_by_the_next_char(self):
+        # 400자째 마침표가 '3.14' 의 소수점이면 문장 끝이 아니다 — '평균은 3.' 에서 자르면 값이 바뀐다
+        head = _DONE * 5 + "평균은 "
+        text = head + "나" * (synthesizer.EXCERPT_CHARS - 2 - len(head)) + "3.14점이었다. " + "다" * 100
+        assert text.index("3.14") + 1 == synthesizer.EXCERPT_CHARS - 1
+        assert self._text(text) == (_DONE * 5).rstrip()
+
+    @pytest.mark.parametrize("tail", [
+        "#### 3. 연구 방법",                 # 절 번호(운영 d60a5dc1 E1 '#### 3.')
+        "- [7] H. Song, A study on",         # 머리글자(운영 d60a5dc1 E11 '- [7] H.')
+        "- Ⅳ. 공공도서관 지역",               # 로마 숫자(운영 85d2bc0e E19 '- Ⅳ.')
+        "|3.615 (.815)\n\n.125",             # 소수점(운영 9ba10849 E6 '3.615 (.')
+        "Journal of Welfare, Vol. 17, pp",   # 서지 약어(운영 9ba10849 E1 'Vol.')
+        "(Kim et al. 2019",                  # et al.
+        "As noted by Dr. Kim, the",          # 칭호
+        "funded by the U.S. Department of",  # 머리글자 연쇄('U.S'·'e.g'·'i.e')
+        "such as tables, etc. and the",
+        "Journal, vol. 3, no. 2, the",       # 소문자 서지 약어
+        "Nuri Media Co., Ltd. 여고찰하였고",  # 회사 약어(운영 KCI_FI001003146__0006)
+        "1. 서론\n\n가. 연구의 필요성",        # 줄 처음의 한글 목록 기호
+        "\n#### 나. 연구 문제",               # 제목 표시 뒤의 한글 목록 기호
+    ])
+    def test_numbers_initials_and_abbreviations_are_not_sentence_ends(self, tail):
+        text = _DONE * 5 + tail + " " + "가" * 400
+        assert self._text(text) == (_DONE * 5).rstrip()
+
+    @pytest.mark.parametrize("tail", [
+        "결과를 보고하고 있 다.",                     # OCR 띄어쓰기(운영 KCI_FI002180207__0009)
+        "기대할 수 있\n\n- 다.",                      # OCR 이어짐 줄(운영 KCI_FI001407641__0008)
+    ])
+    def test_one_hangul_syllable_mid_line_is_a_sentence_end(self, tail):
+        # 한 글자 한글 낱말은 줄 처음(제목 표시 '#' 만 앞에 올 때 포함)일 때만 목록 기호다 — OCR 의 '다.' 는 문장 끝이다
+        text = _DONE * 4 + tail + " 따라서 " + "가" * 400
+        assert self._text(text) == _DONE * 4 + tail
+
+    def test_closing_quote_stays_with_its_sentence(self):
+        text = _DONE * 4 + "연구자는 “언어 지원이 먼저 필요하다.” " + "가" * 400
+        assert self._text(text).endswith("“언어 지원이 먼저 필요하다.”")
+
+    def test_footnote_number_after_the_period_is_left_out(self):
+        text = _DONE * 4 + "일반화하기는 어렵다.4)\n\n그러므로 객관적 자료 조사가 " + "가" * 400
+        assert self._text(text).endswith("일반화하기는 어렵다.")
+
+    @pytest.mark.parametrize("tail", [
+        "자기효능감(β=.18, p<.05)이 우울에",          # 비교 기호 뒤 소수(운영 9ba1·d60a 노인 우울 결과 문단)
+        "평균 연령(M=72.4, SD=6.3)은 여성이",          # 숫자 뒤 소수 — 'SD=6.' 에서 자르면 값이 바뀐다
+        "유의하였으며(p<.05), 이는 선행연구와",
+        "계수는(β =.380, p=.135) 사회적",               # 운영 KCI_FI002267397__0000
+        "licenses/by-nc/3.0) which permits",           # 운영 KCI_FI002267397__0003 저작권 고지
+    ])
+    def test_decimal_before_a_closing_paren_is_not_a_footnote(self, tail):
+        # 각주 '어렵다.4)' 는 마침표 앞이 글자다 — 운영 4건 근거 대목 전문에서 앞이 글자인 26건은 모두 각주, 숫자(136)·
+        # 비교 기호(<·=, 11)인 것은 모두 통계·표의 소수였다
+        text = _DONE * 5 + tail + " " + "가" * 400
+        assert self._text(text) == (_DONE * 5).rstrip()
 
 
 def _drafted(intro: str = "", future: tuple[str, ...] = (), summary: str = "요약이다.") -> dict:
@@ -1372,10 +1581,10 @@ class TestDropRepeats:
 
 class TestSynthesizeDropsRepeats:
     def test_draft_and_report_show_the_same_trimmed_section(self, monkeypatch):
-        first = json.dumps({"intro": TestDropRepeats._FIRST, "summaries": {},
+        first = json.dumps({"intro": TestDropRepeats._FIRST, "summaries": _SUMMARIES,
                             "future": [{"text": TestDropRepeats._FUTURE}]})
         second = json.dumps({"intro": f"{TestDropRepeats._AGAIN} 연구 방법으로는 조사 연구가 가장 많았다 [E3].",
-                             "summaries": {},
+                             "summaries": _SUMMARIES,
                              "future": [{"text": TestDropRepeats._FUTURE.replace("[E1]", "[E2]")}]})
         TestSynthesize()._patch_chat(monkeypatch, [first, second])
         infos = []
@@ -1386,7 +1595,7 @@ class TestSynthesizeDropsRepeats:
         assert infos[3]["section"] == report["sections"][1]
 
     def test_intro_made_only_of_repeats_is_not_reported_as_missing(self, monkeypatch):
-        reply = json.dumps({"intro": TestDropRepeats._FIRST.replace("[E1]", "[E2]"), "summaries": {}, "future": []})
+        reply = json.dumps({"intro": TestDropRepeats._FIRST.replace("[E1]", "[E2]"), "summaries": _SUMMARIES, "future": []})
         TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
         report = asyncio.run(synthesize(_state_three()))
         assert report["sections"][1]["intro"]
