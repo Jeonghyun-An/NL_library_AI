@@ -1342,6 +1342,19 @@ class TestDropRepeats:
         sec, _ = synthesizer.drop_repeats(_drafted(intro, ("과제다 [E1].",)), [])
         assert sec["intro"] == intro and sec["future"] == [{"text": "과제다 [E1]."}]
 
+    @pytest.mark.parametrize("earlier, intro", [
+        # 번호 매김 '1.' — '. ' 에서 잘린 조각의 비교 키가 '1' 로 같아 유사도 1.0 이었다
+        ("다문화가정 아동의 어휘 발달은 2004년부터 연구되었다 [E1]. 1. 이후 여러 연구가 이어졌다 [E2].",
+         "선행 연구는 다음과 같다. 1. 어휘 발달 연구가 있다 [E3]. 2. 문법 발달 연구가 있다 [E5]."),
+        # 'vs.' — '가정 vs.' 조각이 앞 절과 같다
+        ("가정 vs. 학교 환경의 차이를 본 연구가 많다 [E1].", "가정 vs. 기관 환경을 비교한 연구도 있다 [E3]."),
+    ], ids=["numbering", "versus"])
+    def test_short_fragments_are_not_repeats(self, earlier, intro):
+        # 마침표에서 잘린 짧은 조각은 앞 절에 같은 조각이 있어도 되풀이로 보지 않는다 — 지우면 '2. 문법 …' 만 번호가 남는다
+        _, seen = synthesizer.drop_repeats(_drafted(earlier), [])
+        sec, _ = synthesizer.drop_repeats(_drafted(intro), seen)
+        assert sec["intro"] == intro
+
 
 class TestSynthesizeDropsRepeats:
     def test_draft_and_report_show_the_same_trimmed_section(self, monkeypatch):

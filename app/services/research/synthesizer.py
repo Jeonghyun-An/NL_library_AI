@@ -62,6 +62,10 @@ _ENGLISH_VERBS = re.compile(r"\b(?:analy[sz]ed|examined|investigated|revealed|in
 # 9회에서 0.85 이상은 모두 같은 대목을 옮긴 거의 같은 문장이었고, 0.70~0.82 는 바꿔 쓴 일반론('…다양한 변인에 대한
 # 연구가 필요하다')이었다 — 그쪽은 남긴다
 _REPEAT_RATIO = 0.85
+# 비교 키(인용 표기·공백·문장부호를 뺀 글)가 이보다 짧으면 되풀이로 보지 않는다 — 마침표에서 잘린 번호 '1.'·'가정 vs.'
+# 조각은 키가 '1'·'가정vs' 라 앞 절에 같은 조각이 있으면 유사도 1.0 으로 지워졌다. 되풀이로 지운 운영·재생성 문장은 모두
+# 이보다 길다
+_REPEAT_KEY_MIN = 8
 # 절 자신을 가리키는 메타 문장('본 절에서는 … 분석하고자 한다') — 근거가 없는데 마커가 붙어 나온다
 _META_SENTENCE = re.compile(r"^(?:본|이)\s?(?:절|장|보고서|섹션)(?:에서는|에서|은|는)\s")
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?。])\s+")
@@ -543,7 +547,7 @@ def _sentence_key(sentence: str) -> str:
 
 
 def _repeats(key: str, seen: list[str]) -> bool:
-    if not key:
+    if len(key) < _REPEAT_KEY_MIN:
         return False
     for prev in seen:
         sm = difflib.SequenceMatcher(None, key, prev)
