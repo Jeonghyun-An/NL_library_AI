@@ -1,5 +1,5 @@
 // frontend/utils/slashCommand.ts
-import { DEEP_RESEARCH } from "./brand";
+import { DEEP_RESEARCH, SYMBOL_SRC } from "./brand";
 import { questionProblem } from "./researchInput";
 
 export type SearchModeId = "deep-research";
@@ -24,7 +24,8 @@ export const SEARCH_MODES: readonly SearchMode[] = [
     label: DEEP_RESEARCH,
     // 소요 시간 표기는 뺐다 — 기본 파라미터(하위질문 6·재탐색 3)의 실측이 없다(round04a 완료노트 §8: 축소 파라미터 34~89초뿐). 실측하면 되살린다
     description: "여러 논문을 반복 탐색해 근거가 달린 보고서를 만듭니다",
-    icon: "/img/ico-ai-related.svg",
+    // 슬래시 명령 목록의 아이콘 — SKOVIX 심볼(사용자 결정 2026-10-14). + 메뉴에서는 아이콘을 숨긴다(style_skovix.css)
+    icon: SYMBOL_SRC,
     slash: "/deep-research",
     aliases: ["딥리서치", "리서치"],
     placeholder: "연구 질문을 입력하세요",

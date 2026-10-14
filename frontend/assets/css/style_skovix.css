@@ -1977,10 +1977,32 @@ html.skx-scroll-lock {
   background: var(--skx-frost-bg);
   border-radius: var(--skx-radius-sm);
 }
+.rs-plus__menu .rs-plus__item {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+/* 올리면(키보드 초점·고른 항목도) 고른 뒤 될 칩의 포인트 색을 미리 보인다 — 테두리와 이름이 포인트 색(다크 산호·라이트 검정)이 된다.
+   전에는 바탕만 살짝 밝아져 반응이 거의 없었다(사용자 의견 2026-10-14) */
 .rs-plus__menu .rs-plus__item:hover,
 .rs-plus__menu .rs-plus__item:focus-visible,
 .rs-plus__menu .rs-plus__item.is-selected {
   background: var(--skx-frost-bg-hover);
+  box-shadow: inset 0 0 0 1px var(--skx-border-c2);
+}
+.rs-plus__menu .rs-plus__label {
+  transition: color 0.15s ease;
+}
+.rs-plus__menu .rs-plus__item:hover .rs-plus__label,
+.rs-plus__menu .rs-plus__item:focus-visible .rs-plus__label,
+.rs-plus__menu .rs-plus__item.is-selected .rs-plus__label {
+  color: var(--skx-primary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-plus__menu .rs-plus__item,
+  .rs-plus__menu .rs-plus__label {
+    transition: none;
+  }
 }
 .rs-plus__menu .rs-plus__icon {
   display: none;

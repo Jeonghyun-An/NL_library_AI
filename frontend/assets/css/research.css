@@ -766,6 +766,16 @@ html:has(.rs-page.has-progressbar) {
   height: 1rem;
   margin-top: 0.1rem;
 }
+/* 슬래시 명령 목록의 SKOVIX 심볼 — 그림 둘레에 여백이 있어 1rem 칸에서는 너무 작다. 조금 키우고 두 줄 글(명령·설명)의 가운데에 둔다 */
+.rs-plus__option {
+  align-items: center;
+}
+.rs-plus__option .rs-plus__icon {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+}
 .rs-plus__text {
   display: flex;
   flex-direction: column;
