@@ -28,8 +28,10 @@ _ENTRY_SHAPES = (
     re.compile(r"\b[A-Z][a-zA-Z'\-]+,\s*[A-Z]\.(?:\s*[A-Z]\.)?\s*(?:,|&|and\b|\()"),  # Selig, J. P., &
     re.compile(r"\b[A-Z][a-z]+(?:-[A-Z][a-z]+)?\s[A-Z]{1,3},"),                       # Bruce ML, Seeman TE,
 )
-# 본문 문장 — 한국어 서술 종결, 영어 서술 동사
-_KOREAN_SENTENCE_END = re.compile(r"(?:다|요|함|음|임)\s*[.。](?=\s|$|\[|\")")
+# 본문 문장 — 한국어 서술 종결, 영어 서술 동사. 종결과 마침표 사이의 괄호 인용 '…하였다(김철수, 2012: 45-67).'·
+# '…하였다[3].' 과 마침표 뒤에 바로 붙는 각주 번호 '…하였다.12)'·닫는 따옴표 '…하였다.”' 도 서술 종결로 센다
+_KOREAN_SENTENCE_END = re.compile(
+    r"(?:다|요|함|음|임)\s*(?:\([^()]{1,120}\)|\[[^\[\]]{1,30}\])?\s*[.。](?=\s|$|\[|[\"”’」』]|\d{1,3}\))")
 _ENGLISH_PROSE = re.compile(
     r"\b(?:is|are|was|were|we|our|this study|these|has|have|had|will|can|could|may|should|showed|found|suggests?)\b",
     re.I)
@@ -38,9 +40,13 @@ _ENGLISH_PROSE = re.compile(
 _HEAD_WORD = (r"(?:#{1,6}\s*)?(?:&lt;|<|\[|【)?\s*"
               r"(?:참\s*고\s*문\s*헌|References|REFERENCES|Bibliography|BIBLIOGRAPHY)\s*(?:&gt;|>|\]|】)?")
 # 머리가 제 줄에 혼자 있거나 청크 맨 앞(쪽 머리글 60자 안)에 있을 때만 머리로 본다 — 목차의 '<참 고 문 헌>'·
-# 본문의 '참고문헌 분석' 같은 낱말을 머리로 보지 않게
+# 본문의 '참고문헌 분석' 같은 낱말을 머리로 보지 않게. 청크 맨 앞의 머리는 그 줄이 끝나거나 서지 항목이 바로 이을 때만
+# 머리다 — 뒤에 소문자 낱말('Bibliography instruction'·'References to')이나 띄어 쓴 한글 낱말 둘('참고문헌 분석에
+# 관한')이 이으면 절 제목·본문 낱말이다. 항목 첫머리 '고병률.'·'김철수 (2010).'·'Kim, J.' 는 머리로 둔다
 _HEAD_LINE = re.compile(r"(?m)^[ \t]*" + _HEAD_WORD + r"[ \t]*$")
-_HEAD_START = re.compile(r"^.{0,60}?(?:^|\s)(" + _HEAD_WORD + r")\s", re.S)
+_HEAD_START = re.compile(
+    r"^.{0,60}?(?:^|\s)(" + _HEAD_WORD + r")"
+    r"(?=[ \t]*(?:\r?\n|$)|[ \t]+(?![ \t])(?![a-z])(?![가-힣]+[ \t]+[가-힣]))", re.S)
 
 _HEAD_TAIL_MIN = 0.6     # 머리 뒤 글이 청크에서 차지하는 몫
 _ENTRIES_MIN = 4         # 머리가 없을 때 서지 꼴 개수
@@ -55,7 +61,8 @@ def looks_like_bibliography(text: str) -> bool:
         return False
     counts = [len(shape.findall(text)) for shape in _ENTRY_SHAPES]
     entries = sum(counts)
-    korean_ends = len(_KOREAN_SENTENCE_END.findall(text))
+    # 서술 문장 수 — 한국어 종결 + 영어 서술 동사/3. 머리가 있어도 서술이 하나를 넘으면 머리 갈래로는 거르지 않는다
+    prose = len(_KOREAN_SENTENCE_END.findall(text)) + len(_ENGLISH_PROSE.findall(text)) / 3
 
     head = _HEAD_LINE.search(text)
     head_at = head.start() if head else None
@@ -63,12 +70,11 @@ def looks_like_bibliography(text: str) -> bool:
         head_at = head.start(1)
     if head_at is not None:
         tail = (len(text) - head_at) / len(text)
-        if tail >= _HEAD_TAIL_MIN and korean_ends <= 1 and entries >= 2:
+        if tail >= _HEAD_TAIL_MIN and prose <= 1 and entries >= 2:
             return True
 
     # 머리 없는 목록 — 같은 꼴 하나만 되풀이되는 글(번호 목록 '- 1)', 본문 번호 인용 ' [3] ', 법률 번호 '제8029호')은
     # 본문에도 있어 서로 다른 꼴이 둘 이상일 때만 목록으로 본다
-    prose = korean_ends + len(_ENGLISH_PROSE.findall(text)) / 3
     return (entries >= _ENTRIES_MIN
             and entries * 1000 / len(text) >= _ENTRIES_PER_K_MIN
             and entries >= _ENTRIES_PER_PROSE * prose
