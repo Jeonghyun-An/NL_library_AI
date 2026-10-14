@@ -177,8 +177,8 @@ export function progressBarView(input: ProgressInput): ProgressBarView | null {
 
 function planLine(phase: ResearchPhase, queueNote: string | null): string {
   // 글줄은 풀어 쓴 원래 문구 그대로 둔다 — 칩·머리·사이드바의 짧은 상태 말('탐색'·'승인 대기 중'·'순서 대기 중')과 달리 하는 일을
-  // 문장으로 말한다(사용자 결정 2026-10-14)
-  if (phase === "awaiting") return "계획 확인 대기 · 승인하면 근거 수집을 시작합니다";
+  // 문장으로 말한다. 승인을 기다릴 때만 칩과 같은 '승인 대기 중'으로 연다(사용자 결정 2026-10-14)
+  if (phase === "awaiting") return "승인 대기 중 · 승인하면 근거 수집을 시작합니다";
   if (phase === "queued") return `대기열 · ${queueNote ?? "앞선 연구가 끝나면 시작합니다"}`;
   return "연구 계획을 세우는 중";
 }
