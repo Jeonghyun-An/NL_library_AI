@@ -40,7 +40,7 @@
           @restart="onRestart"
         />
         <!-- 고정 진행 영역 — 끝나지 않은 잡에만 선다. 끝난 잡의 이어간 연구에 서는 아래 WorkStepper 와 함께 서지 않는다 -->
-        <ResearchProgressBar v-if="barView" :view="barView" />
+        <ResearchProgressBar v-if="barView" :view="barView" :tag="currentStageTag(phase)" />
         <!-- 이어간 연구에만 단다 — 이어가지 않은 딥리서치의 머리는 지금과 같다 -->
         <WorkStepper
           v-if="workView"
@@ -268,7 +268,7 @@ import { DEFAULT_MAX_SUBQUESTIONS } from "~/utils/researchInput";
 import { draftStateFor, reportSlot } from "~/utils/researchReport";
 import { SHOW_LAYOUT_TOGGLE, WIDE_MIN_PX, effectiveLayout, type ResearchLayout } from "~/utils/researchLayout";
 import { planSlots, showsPlanSlots, slotFocusSection } from "~/utils/planSlots";
-import { activeRoundKey, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
+import { activeRoundKey, currentStageTag, maxRoundsOf, progressBarView, showsProgressBar } from "~/utils/researchProgress";
 import { followBlocked, followTarget, userOpenedPopover, type PointerTrail } from "~/utils/researchFollow";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";

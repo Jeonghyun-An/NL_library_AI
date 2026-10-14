@@ -143,6 +143,14 @@ export function activeRoundKey(subqs: readonly SubqView[]): string | null {
   return `${sq.idx}:${Math.max(1, sq.rounds.length)}:${last?.verdict ?? "open"}`;
 }
 
+// 지금 단계 칩에 붙는 작은 꼬리표 — 계획 단계라도 승인을 기다리는 중이면 '확인 대기', 대기열이면 '순서 대기'(일은 멈춰 있다).
+// 그 밖에는 '진행 중'(사용자 결정 2026-10-14 — 후배 시안의 박스 단계에서 지금 단계 표시만 작은 칩으로 옮겼다)
+export function currentStageTag(phase: ResearchPhase | null): string {
+  if (phase === "awaiting") return "확인 대기";
+  if (phase === "queued") return "순서 대기";
+  return "진행 중";
+}
+
 // 끝나지 않은 잡에만 그린다. 단계 화면(stepMode — 끝난 잡의 이어간 연구)에는 WorkStepper 가 서므로 그리지 않는다
 export function showsProgressBar(phase: ResearchPhase | null, stepMode: boolean): boolean {
   return phase !== null && !ENDED_PHASES.includes(phase) && !stepMode;

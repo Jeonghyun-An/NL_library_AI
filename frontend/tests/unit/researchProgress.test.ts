@@ -15,6 +15,7 @@ import {
   exploreFraction,
   maxRoundsOf,
   overallFraction,
+  currentStageTag,
   progressBarView,
   progressStage,
   progressStages,
@@ -148,6 +149,15 @@ describe("overallFraction", () => {
     expect(overallFraction("write", 1, barFraction(e))).toBeCloseTo((111 + 91 * barFraction(e)) / 202, 10);
     expect(overallFraction("write", 1, 1)).toBe(1);
     expect(overallFraction("write", 1, 1.4)).toBe(1);
+  });
+});
+
+describe("currentStageTag — 지금 단계 칩의 꼬리표", () => {
+  it("승인을 기다리면 '확인 대기', 대기열이면 '순서 대기', 그 밖에는 '진행 중'", () => {
+    expect(currentStageTag("awaiting")).toBe("확인 대기");
+    expect(currentStageTag("queued")).toBe("순서 대기");
+    for (const phase of ["planning", "exploring", "synthesizing"] as const) expect(currentStageTag(phase)).toBe("진행 중");
+    expect(currentStageTag(null)).toBe("진행 중");
   });
 });
 
