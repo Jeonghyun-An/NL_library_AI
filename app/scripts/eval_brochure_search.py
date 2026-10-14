@@ -11,10 +11,13 @@
                  갖지 못하는 정보라서 넣으면 기준선이 부당하게 강해진다.
   skovix_hybrid  BGE-M3 dense+sparse RRF. 질의 재작성·리랭커 없음.
   skovix_rerank  위 + 리랭커.
-  skovix_rewrite 위 + LLM 질의 재작성(메타데이터 필터 없음).
+  skovix_norewrite 리랭커 + 메타데이터 필터, 질의 재작성 끔 — 2026-10-14 부터 논문 검색의 기본 구성(리랭커에서 갈라지는 분기).
+  skovix_rewrite 리랭커 + LLM 질의 재작성(메타데이터 필터 없음).
   skovix_full    pipeline.search 기본 플래그 그대로(LLM 질의 재작성 + 메타데이터 필터 + 리랭커). 2026-10-14 전까지 논문 검색의 운영 기본이었고
                  그 뒤로는 '재작성 켬' 대조 구성이다(논문 검색은 재작성을 끈 채 배포됨).
                  rewrite 와 full 을 나눈 이유 — 단계마다 실제로 기여하는지, 어느 단계가 해치는지 가르기 위해서다.
+  prod_api       배포된 POST /api/papers/search 를 그대로 호출(논문 화면과 같은 top_k=20·리랭커). pipeline.search 바깥의 제목 일치율
+                 재정렬까지 포함한, 사용자가 실제로 받는 결과. 요청에 재작성 켬을 보내 서버가 무시하는지 확인하는 카나리를 둔다.
 
 질의 세트
   nl      자연어 질문 — 문서 초록에서 LLM 이 "이용자가 검색창에 칠 법한 질문"으로 합성.
@@ -305,7 +308,7 @@ _QGEN_SYS = (
 # 메타데이터 필터 프롬프트가 날짜 조건·정렬로 읽는 표현("최신·최근·올해·YYYY년"). 이런 질문은 제품이 의도대로
 # 날짜 정렬·필터를 걸기 때문에 '정답 1건' 평가와 맞지 않는다 — 스모크에서 "요즘 …" 이 sort_by=recent 를 켜
 # 정답을 밀어냈다. "17세기" 같은 시대 표현은 필터를 만들지 않았으므로 막지 않는다.
-_TIME_EXPR = re.compile(r"요즘|최근|최신|올해|작년|지난해|\d{3,4}\s*년|\d{2,4}\s*[~∼\-]\s*\d{2,4}\s*년대")
+_TIME_EXPR = re.compile(r"요즘|최근|최신|올해|작년|지난해|\d{3,4}\s*년|\d{2,4}\s*[~∼\-]\s*\d{2,4}\s*년대|\d{2}\s*년대")
 
 _JUDGE_EXAMPLES = (
     '[검색어] 노인 일자리 사업이 소득에 미치는 효과\n'
@@ -363,8 +366,17 @@ def parse_judgment(text: str) -> dict | None:
     for m in reversed(_JSON_RE.findall(text or "")):
         try:
             obj = json.loads(m)
-            on_topic, score = int(obj["on_topic"]), float(obj["score"])
+            raw, score = obj["on_topic"], float(obj["score"])
         except (ValueError, KeyError, TypeError):
+            continue
+        # int() 로 자르면 0.8 이 0 으로 읽혀 파싱 실패가 '주제 아님'이 된다 — 0·1(과 "0"·"1")만 받는다
+        if isinstance(raw, bool):
+            on_topic = int(raw)
+        elif isinstance(raw, int):
+            on_topic = raw
+        elif isinstance(raw, str) and raw.strip() in ("0", "1"):
+            on_topic = int(raw)
+        else:
             continue
         if on_topic in (0, 1) and 0.0 <= score <= 1.0:
             return {"on_topic": on_topic, "score": score, "reason": str(obj.get("reason", ""))[:200]}
@@ -408,7 +420,9 @@ class ServerBackend:
             return name
 
     async def close(self) -> None:
-        return None
+        from db.postgres import engine
+
+        await engine.dispose()    # 커넥션 풀을 닫아 끝난 뒤 연결이 남지 않게
 
     async def _rows(self, sql: str, params: dict | None = None, expanding: tuple = ()) -> list[dict]:
         from sqlalchemy import bindparam, text
@@ -457,19 +471,19 @@ class ServerBackend:
         return out
 
     async def search(self, arm: str, query: str, scope: str) -> dict:
-        from services.search.pipeline import search as pipeline_search
-
-        if arm == API_ARM:
+        if arm == API_ARM:    # 배포된 엔드포인트는 HTTP 로 부른다 — pipeline 을 import 할 필요가 없다
             return await self._search_api(query, scope)
         if arm not in _ARM_FLAGS:
             raise ValueError(f"unknown arm: {arm}")
+        from services.search.pipeline import search as pipeline_search
+
         rewrite, rerank, meta_filter = _ARM_FLAGS[arm]
         kw: dict = {"mode": "book", "top_k": K, "doc_scope": scope, "use_rewrite": rewrite,
                     "use_rerank": rerank, "use_metadata_filter": meta_filter}
         t0 = time.perf_counter()
         with capture_logs() as logs:
             if rewrite or meta_filter:
-                async with self._Session() as db:   # 재작성·필터는 db 가 있을 때만 켜진다
+                async with self._Session() as db:   # 메타필터는 db 가 있어야 켜지고, 재작성은 db 로 'X 같은 책'의 참조 도서를 조회한다 — API 와 같은 호출 모양
                     resp = await pipeline_search(query, db=db, **kw)
             else:
                 resp = await pipeline_search(query, db=None, **kw)
@@ -552,6 +566,10 @@ async def _gen_one(be, row: dict, sem: asyncio.Semaphore) -> tuple[str | None, s
 
 
 async def stage_build(args, be, wd: Path) -> dict:
+    if (wd / "runs.json").exists() and not args.force:
+        raise SystemExit(
+            "이 작업 폴더에 이미 runs.json 이 있다 — build 를 다시 돌리면 같은 qid 에 다른 질문이 들어가 옛 검색 결과·판정과 섞인다. "
+            "새 --workdir 를 쓰세요. 정말 덮어쓰려면 runs.json·judgments_*.json 을 먼저 치우고 --force 를 주세요.")
     sem = asyncio.Semaphore(args.concurrency)
     queries: list[dict] = []
     dropped: Counter = Counter()
@@ -629,7 +647,8 @@ async def stage_run(args, be, wd: Path) -> None:
 
     for i, q in enumerate(queries, 1):
         for arm in arms:
-            if arm in runs.get(q["qid"], {}):
+            prev = runs.get(q["qid"], {}).get(arm)
+            if prev is not None and not prev.get("error"):    # 오류로 끝난 항목은 재실행 때 다시 돈다
                 continue
             if arm == API_ARM and q["scope"] != "paper":    # 배포된 엔드포인트는 논문 검색뿐
                 continue
@@ -650,7 +669,9 @@ async def stage_run(args, be, wd: Path) -> None:
     if API_ARM in arms:    # 배포 확인 — 재작성 요청을 보냈는데도 재작성된 질의가 돌아오면 재작성을 끈 이미지가 아직 안 올라간 것
         applied = sum(1 for r in runs.values() if (r.get(API_ARM) or {}).get("rewritten"))
         done = sum(1 for r in runs.values() if (r.get(API_ARM) or {}).get("ids"))
-        if applied:
+        if not done:
+            print(f"경고: {API_ARM} 호출이 하나도 성공하지 못했다 — EVAL_API_BASE·배포 상태를 확인하세요(배포 확인을 할 수 없다).")
+        elif applied:
             print(f"경고: 배포본이 재작성을 적용했다({applied}/{done}건) — 재작성을 끈 이미지가 아직 올라가지 않았다. "
                   f"이 상태의 {API_ARM} 수치는 '재작성 켬'이므로 배포 뒤 다시 측정하세요.")
         else:
@@ -685,14 +706,20 @@ async def stage_judge(args, be, wd: Path) -> None:
         for res in arms.values():
             for d in res.get("ids", [])[:K]:
                 key = pair_key(qid, d)
-                if key not in seen and key not in judgments:
+                if key not in seen and (key not in judgments or judgments[key].get("failed")):    # 실패한 쌍은 다시 판정
                     seen.add(key)
                     pairs.append((qid, d))
     label = args.model_label or await be.model_label(role)
     models = _load(wd / "judge_models.json", {})
+    old_label = models.get(args.judge, {}).get("label")
+    if old_label and old_label != label and any(not v.get("failed") for v in judgments.values()):
+        print(f"경고: 이어 하는 판정의 서빙 모델 표기가 바뀌었다({old_label} → {label}) — 앞뒤 판정이 섞인다. "
+              "필요하면 판정 파일을 지우고 처음부터 다시 하세요.", flush=True)
     models[args.judge] = {"label": label}
     _dump(wd / "judge_models.json", models)
-    print(f"판정 대상 쌍 {len(pairs)}건 (이미 판정 {len(judgments)}건) · 판정자 {label}", flush=True)
+    ok_n = sum(1 for v in judgments.values() if not v.get("failed"))
+    retry_n = sum(1 for qid, d in pairs if pair_key(qid, d) in judgments)
+    print(f"판정 대상 쌍 {len(pairs)}건 (이미 판정 {ok_n}건 · 실패 재시도 {retry_n}건) · 판정자 {label}", flush=True)
     if not pairs:
         return
 
@@ -705,7 +732,7 @@ async def stage_judge(args, be, wd: Path) -> None:
         async with sem:
             doc = infos.get(d, {})
             user = judge_user_prompt(qmap[qid]["query"], doc)
-            j, tail = None, ""
+            j, tail, kind = None, "", "parse"
             for attempt in range(2):
                 try:
                     out = await be.chat(
@@ -715,14 +742,14 @@ async def stage_judge(args, be, wd: Path) -> None:
                         max_tokens=200, temperature=0.0,
                     )
                 except Exception as e:
-                    tail = f"<error: {e}>"[:200]
+                    tail, kind = f"<error: {e}>"[:200], "error"    # 연결·타임아웃 등 — 파싱 실패와 구분해 남긴다
                     continue
                 j = parse_judgment(out)
                 if j:
                     break
-                tail = (out or "")[-200:]
+                tail, kind = (out or "")[-200:], "parse"
             # 파싱 실패를 조용히 버리면 선택 편향이 되므로 failed 로 남겨 결측률을 보고한다.
-            judgments[pair_key(qid, d)] = j or {"failed": True, "tail": tail}
+            judgments[pair_key(qid, d)] = j or {"failed": True, "kind": kind, "tail": tail}
             done += 1
             if done % 50 == 0:
                 _dump(wd / f"judgments_{args.judge}.json", judgments)
@@ -873,6 +900,7 @@ def render_markdown(report: dict, meta: dict, judge_info: dict) -> str:
     lines = ["# 브로셔용 검색 품질 수치", "",
              f"- 측정일 {meta.get('created', '')[:10]} · 색인 문서 {meta.get('corpus_docs', {})}",
              f"- 질문 합성 모델 {meta.get('question_model')} · 시드 {meta.get('seed')}",
+             *([f"- 신뢰구간(부트스트랩) 시드 {meta['report_seed']}"] if meta.get("report_seed") is not None else []),
              f"- OTR 판정자 {judge_info.get('judges', '미실시')}", ""]
     for gk, g in report.items():
         scope, qtype = gk.split("|")
@@ -884,6 +912,10 @@ def render_markdown(report: dict, meta: dict, judge_info: dict) -> str:
         for a, m in g["arms"].items():
             lines.append(f"| {ARM_LABEL[a]} | {_pct(m['r1'])} | {_pct(m['r10'])} | {_dec(m['mrr'])} "
                          f"| {_dec(m['ndcg'])} | {_pct(m['otr'])} |")
+        errs = {a: m["errors"] for a, m in g["arms"].items() if m.get("errors")}
+        if errs:
+            lines += ["", "> ⚠️ 검색 오류(정답 미발견으로 집계되어 표의 수치가 낮아진다): "
+                      + ", ".join(f"{ARM_LABEL[a]} {n}건" for a, n in errs.items())]
         for a, d in g["deltas"].items():
             r10 = d["r10"]
             ci = f" [{r10['ci'][0] * 100:+.1f}, {r10['ci'][1] * 100:+.1f}]" if r10.get("ci") else ""
@@ -913,9 +945,9 @@ def render_markdown(report: dict, meta: dict, judge_info: dict) -> str:
               + (f" 다른 LLM 교차 확인(사람 아님): {judge_info['rater_check']}." if judge_info.get("rater_check") else ""),
               "- **OTR@10 의 절대값을 '정확도'로 읽지 않는다.** 질문에 맞는 문서가 코퍼스에 2건뿐이면 OTR@10 은 아무리 잘해도 20% 가 "
               "상한이다. 방식 간 상대 비교(예: BM25 대비 몇 배)로만 쓴다.",
-              *(["- ⚠️ **OTR 판정 모델(llm=gemma)이 질문 합성·질의 재작성·메타필터에도 쓰였다.** `SKOVIX + 질의 재작성`·`SKOVIX 전체`의 OTR 은 "
-                 "순환 가능성이 있어 단정하지 않는다. 순환이 없는 비교는 BM25 → 하이브리드 → +리랭커 구간이다."]
-                if "llm" in judge_info.get("judge_names", []) else []),
+              *(["- ⚠️ **이 표의 OTR 판정자(llm=gemma)가 질문 합성·메타필터·질의 재작성에도 쓰였다.** 재작성을 켠 구성과 메타필터가 낀 구성(재작성 끔·배포본 API)의 "
+                 "OTR 은 순환 가능성이 있어 단정하지 않는다. 순환이 없는 비교는 BM25 → 하이브리드 → +리랭커 구간이다."]
+                if (judge_info.get("judge_names") or [None])[0] == "llm" else []),
               "- 지연시간·만족도·'찾는 시간 단축'은 이 실험이 측정하지 않았다."]
     return "\n".join(lines) + "\n"
 
@@ -935,6 +967,7 @@ def stage_report(args, wd: Path) -> None:
     if not queries:
         raise SystemExit(f"--scopes {args.scopes} 에 해당하는 질의가 없다.")
     meta = dict(data["meta"])
+    meta["report_seed"] = args.seed    # 신뢰구간 부트스트랩 시드 — build 시드와 다를 수 있어 summary.json 에 남긴다
     if scopes:    # 빼 둔 범위의 색인 문서 수가 표 머리에 남지 않게
         meta["corpus_docs"] = {k: v for k, v in meta.get("corpus_docs", {}).items() if k in scopes}
     judges = [j for j in args.judges.split(",") if j]
@@ -948,7 +981,9 @@ def stage_report(args, wd: Path) -> None:
                                             for j in jmaps) or "미실시"}
     if len(jmaps) >= 2:
         (n1, m1), (n2, m2) = list(jmaps.items())[:2]
-        common = [k for k in m1 if k in m2 and not m1[k].get("failed") and not m2[k].get("failed")]
+        scope_of = {q["qid"]: q["scope"] for q in data["queries"]}
+        common = [k for k in m1 if k in m2 and not m1[k].get("failed") and not m2[k].get("failed")
+                  and (not scopes or scope_of.get(k.split("|", 1)[0]) in scopes)]
         a = [1 if is_on_topic(m1[k]) else 0 for k in common]
         b = [1 if is_on_topic(m2[k]) else 0 for k in common]
         judge_info["cross_judge"] = {
@@ -958,7 +993,11 @@ def stage_report(args, wd: Path) -> None:
         }
     agree = _load(wd / "human_agreement.json")
     if agree:
-        text = f"{agree['n']}쌍 일치율 {agree['agreement']:.1%}, kappa {agree['kappa']:.2f}"
+        kappa = agree.get("kappa")
+        text = f"{agree['n']}쌍 일치율 {agree['agreement']:.1%}, kappa {'정의 불가' if kappa is None else format(kappa, '.2f')}"
+        judged = agree.get("judge")
+        if judged and judged != next(iter(jmaps), None):    # 다른 판정자의 라벨을 대상으로 한 일치도를 이 표의 판정자에 붙이지 않는다
+            text += f" — {judged} 판정 대상(이 표의 판정자와 다름)"
         rater = agree.get("rater", "사람")
         if rater == "사람":
             judge_info["human"] = text
@@ -1012,8 +1051,8 @@ async def stage_review_sheet(args, be, wd: Path) -> None:
     scopes = _scope_filter(args.scopes)
     usable = {k: v for k, v in judgments.items()
               if not v.get("failed") and (not scopes or qmap.get(k.split("|", 1)[0], {}).get("scope") in scopes)}
-    pos = [k for k, v in usable.items() if is_on_topic(v)]
-    neg = [k for k, v in usable.items() if not is_on_topic(v)]
+    pos = [k for k, v in sorted(usable.items()) if is_on_topic(v)]       # 정렬해 두어야 같은 시드가 같은 표본을 뽑는다
+    neg = [k for k, v in sorted(usable.items()) if not is_on_topic(v)]
     rng = random.Random(args.seed)
     rng.shuffle(pos), rng.shuffle(neg)
     picked = pos[: args.n // 2] + neg[: args.n - args.n // 2]
@@ -1031,6 +1070,7 @@ async def stage_review_sheet(args, be, wd: Path) -> None:
             w.writerow([i, qmap[qid]["query"], doc.get("title", ""), doc.get("keyword", ""),
                         re.sub(r"\s+", " ", doc.get("body") or "")[:400], "", ""])
     _dump(wd / "review_key.json", key)
+    _dump(wd / "review_meta.json", {"judge": args.judge, "scopes": sorted(scopes) if scopes else None})
     print(f"검토 시트 {len(picked)}쌍 → {path}  (LLM 판정은 가려져 있음. 채운 뒤 agreement 단계 실행)")
 
 
@@ -1053,7 +1093,7 @@ def stage_agreement(args, wd: Path) -> None:
     hum = [human[i] for i in ids]
     tp = sum(1 for x, y in zip(llm, hum) if x == 1 and y == 1)
     res = {
-        "rater": args.rater, "n": len(ids), "agreement": sum(x == y for x, y in zip(llm, hum)) / len(ids),
+        "rater": args.rater, "judge": _load(wd / "review_meta.json", {}).get("judge"), "n": len(ids), "agreement": sum(x == y for x, y in zip(llm, hum)) / len(ids),
         "kappa": cohen_kappa(llm, hum),
         "llm_precision": tp / max(1, sum(llm)), "llm_recall": tp / max(1, sum(hum)),
         "note": "표본은 LLM 판정 1/0 을 절반씩 뽑은 층화 표본이라 일치율은 전체 분포 기준이 아니다.",
@@ -1076,6 +1116,7 @@ def make_parser() -> argparse.ArgumentParser:
     b.add_argument("--n-books", type=int, default=50)
     b.add_argument("--golden", default=None, help="build_golden_queries.py 결과 JSON(선택)")
     b.add_argument("--concurrency", type=int, default=4)
+    b.add_argument("--force", action="store_true", help="runs.json 이 있는 작업 폴더에서도 build 를 허용(옛 runs·judgments 는 직접 치울 것)")
 
     r = sub.add_parser("run", help="방식별 검색 실행")
     r.add_argument("--arms", default=",".join(a for a in ARMS if a != API_ARM),
