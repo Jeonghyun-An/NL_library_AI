@@ -10,6 +10,9 @@ export type ResearchMode = "broad" | "precise";
 
 export interface ResearchModeOption {
   id: ResearchMode;
+  /** 카드 머리의 굵은 영문 이름(Precise·Broad) */
+  en: string;
+  /** 우리말 이름 — 칩·연구 화면 머리('탐색 방식 · 정밀하게 탐색')에 쓴다 */
   label: string;
   hint: string;
 }
@@ -22,18 +25,21 @@ export const RESEARCH_MODE_LABEL = "탐색 방식";
 export const DEFAULT_RESEARCH_MODE: ResearchMode = "precise";
 // 고른 방식의 기억 — 같은 브라우저의 편의일 뿐이다(없거나 읽지 못하면 기본 방식)
 export const RESEARCH_MODE_KEY = "skx_research_mode";
-// 화면의 칸 순서(폭넓게 · 정밀하게). 설명은 얻는 것을 앞에, 치르는 것을 뒤에 둔다(후배 시안 '탐색 방식 선택'의 문구를 받아 2026-10-14) —
-// 폭넓게는 범위 용어 없이 하위질문 그대로 찾고, 정밀하게는 질문의 범위 용어를 검색어에 합성한다(D25·D28)
+// 고르는 카드의 순서(기본인 정밀하게가 위)와 이름·설명은 후배 시안 '탐색 방식 선택'(피그마 DeepResearch_hover 2701:10988) 그대로다
+// (사용자 결정 2026-10-14). '폭 넓게'만 표준 띄어쓰기('폭넓다' 한 낱말)로 붙인다. 정밀하게는 질문의 범위 용어를 검색어에 합성하고,
+// 폭넓게는 범위 용어 없이 하위질문 그대로 찾는다(D25·D28)
 export const RESEARCH_MODES: readonly ResearchModeOption[] = [
   {
-    id: "broad",
-    label: "폭넓게",
-    hint: "연관 분야까지 넓게 탐색해 더 많은 논문을 찾습니다. 주제와 먼 논문이 섞일 수 있습니다",
+    id: "precise",
+    en: "Precise",
+    label: "정밀하게 탐색",
+    hint: "핵심 주제를 중심으로 탐색하여 정확도가 높고 심도 있는 검색을 진행합니다",
   },
   {
-    id: "precise",
-    label: "정밀하게",
-    hint: "질문의 핵심 주제와 범위에 맞춰 탐색해 엉뚱한 논문을 줄입니다. 관련 논문 몇 편을 놓칠 수 있습니다",
+    id: "broad",
+    en: "Broad",
+    label: "폭넓게 탐색",
+    hint: "연관 분야를 다각도로 탐색하여 많은 자료를 찾아 검색을 진행합니다",
   },
 ];
 

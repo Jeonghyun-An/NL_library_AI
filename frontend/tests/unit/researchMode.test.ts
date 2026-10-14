@@ -28,10 +28,15 @@ describe("modeParams · 선택지", () => {
     expect(modeParams("precise")).toEqual({ broaden: 1, query_context: 1 });
   });
 
-  it("기본 선택은 정밀하게, 선택지는 폭넓게 · 정밀하게 순서", () => {
+  it("기본 선택은 정밀하게 — 카드는 기본이 위(정밀하게 · 폭넓게), 이름·설명은 후배 시안 그대로", () => {
     expect(DEFAULT_RESEARCH_MODE).toBe("precise");
-    expect(RESEARCH_MODES.map((m) => m.id)).toEqual(["broad", "precise"]);
-    expect(RESEARCH_MODES.map((m) => researchModeLabel(m.id))).toEqual(["폭넓게", "정밀하게"]);
+    expect(RESEARCH_MODES.map((m) => m.id)).toEqual(["precise", "broad"]);
+    expect(RESEARCH_MODES.map((m) => m.en)).toEqual(["Precise", "Broad"]);
+    expect(RESEARCH_MODES.map((m) => researchModeLabel(m.id))).toEqual(["정밀하게 탐색", "폭넓게 탐색"]);
+    expect(RESEARCH_MODES.map((m) => m.hint)).toEqual([
+      "핵심 주제를 중심으로 탐색하여 정확도가 높고 심도 있는 검색을 진행합니다",
+      "연관 분야를 다각도로 탐색하여 많은 자료를 찾아 검색을 진행합니다",
+    ]);
   });
 });
 
@@ -39,8 +44,8 @@ describe("modeOfParams · researchModeLine", () => {
   it("두 칸이 모두 1 이면 정밀하게, 모두 0 이면 폭넓게(06c 배포 뒤·06d 전 잡)", () => {
     expect(modeOfParams({ ...SERVER_DEFAULTS, broaden: 1, query_context: 1 })).toBe("precise");
     expect(modeOfParams({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 })).toBe("broad");
-    expect(researchModeLine({ ...SERVER_DEFAULTS, broaden: 1, query_context: 1 })).toBe("탐색 방식 · 정밀하게");
-    expect(researchModeLine({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 })).toBe("탐색 방식 · 폭넓게");
+    expect(researchModeLine({ ...SERVER_DEFAULTS, broaden: 1, query_context: 1 })).toBe("탐색 방식 · 정밀하게 탐색");
+    expect(researchModeLine({ ...SERVER_DEFAULTS, broaden: 0, query_context: 0 })).toBe("탐색 방식 · 폭넓게 탐색");
   });
 
   it("두 칸이 모두 없으면(06c 전 잡·params 없음) null — 머리에 그리지 않는다", () => {
@@ -80,14 +85,14 @@ describe("restartParams", () => {
 });
 
 describe("modeStep", () => {
-  it("방향키로 옆 칸을 고르고 끝에서 돈다(radiogroup 관례), Home·End 는 처음·끝", () => {
-    expect(modeStep("broad", "ArrowRight")).toBe("precise");
-    expect(modeStep("broad", "ArrowDown")).toBe("precise");
+  it("방향키로 옆 카드를 고르고 끝에서 돈다(radiogroup 관례), Home·End 는 처음·끝 — 카드 순서는 정밀하게 · 폭넓게", () => {
+    expect(modeStep("precise", "ArrowDown")).toBe("broad");
     expect(modeStep("precise", "ArrowRight")).toBe("broad");
-    expect(modeStep("precise", "ArrowLeft")).toBe("broad");
+    expect(modeStep("broad", "ArrowDown")).toBe("precise");
     expect(modeStep("broad", "ArrowUp")).toBe("precise");
-    expect(modeStep("precise", "Home")).toBe("broad");
-    expect(modeStep("broad", "End")).toBe("precise");
+    expect(modeStep("precise", "ArrowUp")).toBe("broad");
+    expect(modeStep("broad", "Home")).toBe("precise");
+    expect(modeStep("precise", "End")).toBe("broad");
   });
 
   it("움직일 키가 아니면 null — 부품은 그 키를 막지 않는다(Tab·Space·Enter)", () => {
@@ -152,37 +157,40 @@ function descendants(n: TplNode, out: TplNode[] = []): TplNode[] {
   return out;
 }
 
-describe("탐색 방식 배치 — 랜딩 입력 상자(설명 길이가 줄 자리·상자 높이를 정하지 않는다)", () => {
+describe("탐색 방식 고르기 — 칩 하나 + 누르면 펼쳐지는 카드 두 장(후배 시안 DeepResearch_hover)", () => {
   const source = readFileSync(fileURLToPath(new URL("../../components/research/ResearchModePicker.vue", import.meta.url)), "utf8");
   const tpl = parse(source).descriptor.template?.ast as unknown as TplNode;
   const roots = (tpl.children ?? []).filter((n) => n.type === ELEMENT);
   const mode = roots.find((n) => hasClass(n, "rs-mode"));
-  const hint = roots.find((n) => hasClass(n, "rs-mode__hint"));
+  const all = mode ? descendants(mode) : [];
+  const chip = all.find((n) => hasClass(n, "rs-mode__chip"));
+  const panel = all.find((n) => hasClass(n, "rs-mode__panel"));
+  const card = all.find((n) => hasClass(n, "rs-mode__card"));
+  const attr = (n: TplNode | undefined, name: string) => n?.props?.find((p) => p.type === 6 && p.name === name)?.value?.content;
 
-  it("설명은 .rs-mode(라벨·두 칸) 밖 — + 메뉴 줄의 자식으로 늘 자기 줄에 선다. 묶음이 칩 줄에 서는지가 설명 길이로 바뀌지 않는다", () => {
+  it("입력 상자에는 칩 하나만 선다 — 입력창 아래 설명 줄은 없고 설명은 펼친 카드 안에 있다", () => {
+    expect(roots).toHaveLength(1);
     expect(mode).toBeDefined();
-    expect(hint).toBeDefined();
-    expect(descendants(mode!).some((n) => hasClass(n, "rs-mode__hint"))).toBe(false);
-    expect(rule(".rs-mode__hint")?.decls.get("flex")).toBe("1 0 100%");
-    // .rs-mode 는 라벨·두 칸만이라 크기가 고른 방식과 상관없다 — 설명 길이를 따르는 기준 크기(flex-basis)를 두지 않는다
-    expect(rule(".rs-mode")?.decls.has("flex")).toBe(false);
+    expect(all.some((n) => /rs-mode__hint/.test(classOf(n)))).toBe(false);
+    expect(attr(chip, "aria-haspopup")).toBe("dialog");
+    expect(directive(chip!, "bind", "aria-expanded")).toBe("open");
+    expect(directive(panel!, "if")).toBe("open");
+    expect(rule(".rs-mode__panel")?.decls.get("position")).toBe("absolute");
+    expect(rule(".rs-mode__panel")?.decls.get("z-index")).toBe("40");
   });
 
-  it("두 방식의 설명을 같은 칸에 겹쳐 두고 고른 것만 보인다 — 칸을 바꿔도 설명 줄 높이(=상자 높이)가 그대로, 설명은 고른 것만 읽힌다", () => {
-    expect(hint).toBeDefined();
-    const texts = descendants(hint!).filter((n) => hasClass(n, "rs-mode__hint-text"));
-    expect(texts).toHaveLength(1);
-    expect(directive(texts[0]!, "for")).toMatch(/\bin RESEARCH_MODES$/);
-    expect(directive(texts[0]!, "bind", "class")).toContain("is-shown");
-    // radiogroup 의 설명(aria-describedby)은 보이는 설명 하나 — 숨긴 설명은 읽히지 않는다
-    expect(directive(texts[0]!, "bind", "id")).toMatch(/hintId/);
-    expect(directive(texts[0]!, "bind", "aria-hidden")).toBeDefined();
-    expect(rule(".rs-mode__hint")?.decls.get("display")).toBe("grid");
-    expect(rule(".rs-mode__hint-text")?.decls.get("grid-area")).toBe("1 / 1");
-    expect(rule(".rs-mode__hint-text:not(.is-shown)")?.decls.get("visibility")).toBe("hidden");
+  it("카드는 radiogroup 의 라디오 — 고른 카드만 Tab 으로 들어오고(roving tabindex), 설명은 그 카드의 aria-describedby 다", () => {
+    expect(directive(card!, "for")).toMatch(/in RESEARCH_MODES$/);
+    expect(attr(card, "role")).toBe("radio");
+    expect(directive(card!, "bind", "aria-checked")).toBe("m.id === modelValue");
+    expect(directive(card!, "bind", "tabindex")).toBe("m.id === modelValue ? 0 : -1");
+    const desc = descendants(card!).find((n) => hasClass(n, "rs-mode__desc"));
+    expect(directive(desc!, "bind", "id")).toBe(directive(card!, "bind", "aria-describedby"));
+    // 설명은 낱말 단위로 꺾는다
+    expect(rule(".rs-mode__desc")?.decls.get("word-break")).toBe("keep-all");
   });
 
-  it("설명 줄이 붙어 + 메뉴 줄이 높아지면 보내기는 칩 줄에 맞춘다(P4 의 끝나지 않은 연구 한 줄과 같이)", () => {
+  it("+ 메뉴 줄이 꺾여 높아지면 보내기는 칩 줄에 맞춘다(P4 의 끝나지 않은 연구 한 줄과 같이)", () => {
     expect(rule(".skx-search__box:has(> .rs-plus > .rs-mode) > .skx-search__actions")?.decls.get("align-self")).toBe("start");
   });
 });
@@ -191,10 +199,10 @@ describe("탐색 방식 배치 — 결과 검색바(높이가 정해진 한 줄 
   const NARROW = "@container rs-bar (max-width: 34rem)";
   const WIDE = "@container rs-bar (width > 34rem)";
 
-  it("+ 메뉴 줄은 꺾지 않고(바 밖으로 넘치지 않게) 탐색 방식은 줄거나 안에서 꺾이지 않는다", () => {
+  it("+ 메뉴 줄은 꺾지 않고(바 밖으로 넘치지 않게) 탐색 방식 칩은 줄지 않는다(칩 글은 한 줄)", () => {
     expect(rule(".skx-rsearch > .rs-plus:has(> .rs-mode)")?.decls.get("flex-wrap")).toBe("nowrap");
-    expect(rule(".skx-rsearch .rs-mode")?.decls.get("flex-wrap")).toBe("nowrap");
     expect(rule(".skx-rsearch .rs-mode")?.decls.get("flex-shrink")).toBe("0");
+    expect(rule(".rs-mode__chip")?.decls.get("white-space")).toBe("nowrap");
   });
 
   it("바 폭으로 정한다 — 바가 좁으면(34rem 이하 — LNB 가 열린 노트북·휴대폰) 탐색 방식을 바 아래 왼쪽으로 내리고, 넓으면 입력칸이 8rem 아래로 줄지 않는다", () => {
@@ -203,8 +211,8 @@ describe("탐색 방식 배치 — 결과 검색바(높이가 정해진 한 줄 
     expect(dropped?.decls.get("position")).toBe("absolute");
     expect(dropped?.decls.get("top")).toBe("calc(100% + 0.4rem)");
     expect(dropped?.decls.get("left")).toBe("0");
-    // 바 아래로 내려 결과 틀 위에 겹치므로 + 메뉴 팝오버·끝나지 않은 연구 줄과 같은 면을 깐다
-    expect(dropped?.decls.get("background")).toBe("var(--skx-frost-menu-bg)");
+    // 바 아래로 내려 결과 틀 위에 겹치므로 칩에 + 메뉴 팝오버·끝나지 않은 연구 줄과 같은 면을 깐다
+    expect(rule(".skx-rsearch .rs-mode__chip", NARROW)?.decls.get("background")).toBe("var(--skx-frost-menu-bg)");
     expect(rule(".skx-rsearch > .skx-rsearch__input", WIDE)?.decls.get("min-width")).toBe("8rem");
   });
 
