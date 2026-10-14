@@ -230,7 +230,8 @@ def topic_input(question: str, seed: dict, report: dict, topic_id: int, keywords
     """주제 카드 생성 1건의 입력(계약 §3 topic_card input). 근거 후보는 E1 부터 차례로 번호를 붙인다 —
     호출마다 붙이는 로컬 번호이고 카드에는 cnts_id 로 저장한다(spec §3 [E#]). keywords 는 카드를 만들 때 고른
     키워드(06e D23 — work.concepts)이고 제목 규칙·검사가 읽는다. 06e 전 행에는 이 키가 없다(읽는 쪽이 or []).
-    focus 는 [이 키워드로 다시 만들기]가 카드를 만들 때보다 더한 키워드(keywords 의 일부)다 — 프롬프트가 한 줄 더
+    focus 는 [이 키워드로 다시 만들기]가 카드를 만들 때보다 더한 키워드와 앞서 더했는데 아직 제목에 없는 키워드
+    (keywords 의 일부 — api.research_topics._regenerate_focus)다 — 프롬프트가 한 줄 더
     강조하고 엄격한 검사가 그 가운데 하나를 요구한다(운영 630e0d65). 처음 카드·[다른 방향]은 빈 목록이고, 이 키가
     없는 옛 행은 읽는 쪽이 or [] 로 읽는다."""
     metas = _metas(report if isinstance(report, dict) else {})
