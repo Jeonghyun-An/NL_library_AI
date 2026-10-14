@@ -280,7 +280,8 @@ class TestInsufficientLineShape:
 
     def test_section_number_counts_only_subquestions_with_evidence(self):
         """절은 근거 있는 하위질문마다 순서대로 하나씩이다(synthesize) — 앞 하위질문이 0편이면 번호가 당겨진다.
-        '하위질문 N' 으로 쓰면 그 번호가 보고서 절 번호와 어긋난다."""
+        그때는 하위질문 번호를 함께 적는다 — 보고서 옆 과정 패널과 내려받은 문서의 '부록: 탐색 경로'는 하위질문을
+        0편까지 세어 번호 매기므로, '2절' 만 쓰면 그쪽의 '2.'(다른 하위질문, 판정 충분)를 가리키는 것으로 읽힌다."""
         st = _state()
         st.subquestions = [
             SubQuestion(idx=0, text="하위0", evidence_ids=[], verdict="insufficient"),
@@ -288,10 +289,20 @@ class TestInsufficientLineShape:
             SubQuestion(idx=2, text="하위2", evidence_ids=["E1"], verdict="insufficient",
                         note="개념을 다루지 않는다"),
         ]
-        line = self._line(st, "2절은")
-        assert line == ("2절은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+        line = self._line(st, "2절")
+        assert line == ("2절(하위질문 3)은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
                         " — 자기점검 메모: “개념을 다루지 않는다”")
         assert "하위2" not in line
+
+    def test_section_number_alone_when_it_matches_the_subquestion_number(self):
+        # 앞에 0편 하위질문이 없으면 절 번호와 하위질문 번호가 같다 — 뒤에 0편 하위질문이 있어도 덧붙이지 않는다
+        st = _state()
+        st.subquestions = [
+            SubQuestion(idx=0, text="하위0", evidence_ids=["E1"], verdict="sufficient"),
+            SubQuestion(idx=1, text="하위1", evidence_ids=["E1"], verdict="insufficient", note="부족하다"),
+            SubQuestion(idx=2, text="하위2", evidence_ids=[], verdict="insufficient"),
+        ]
+        assert self._line(st, "2절").startswith("2절은 근거 1편을 모았으나")
 
     def test_only_the_first_sentence_of_the_note_is_quoted(self):
         st = self._insufficient("제시된 근거들은 동향을 다루지만 개념에 대한 직접적인 분석은 부족합니다. "
@@ -747,8 +758,11 @@ class TestSynthesize:
         st.subquestions[2].note = "비교 연구가 없다."
         report = asyncio.run(synthesize(st))
         line = next(x for x in report["limitations"] if "'근거 부족'" in x)
-        k = int(line.split("절은", 1)[0])
+        where = line.split("은 근거", 1)[0]
+        k = int(where.split("절", 1)[0])
         assert report["sections"][k - 1]["heading"] == "하위2"
+        # 하위질문 번호는 과정 패널·탐색 경로 부록의 번호(근거 0편 하위질문까지 센다)다
+        assert where == f"{k}절(하위질문 3)" and st.subquestions[2].text == "하위2"
 
     def test_every_evidence_appears_in_some_section(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})

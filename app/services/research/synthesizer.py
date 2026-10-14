@@ -160,7 +160,7 @@ def build_limitations(
     # 보고서의 절 — synthesize 는 근거 있는 하위질문마다 순서대로 절을 하나씩 만든다. 화면·내려받은 문서는
     # 이 순서로 'N. 제목' 을 단다
     sectioned = [sq for sq in state.subquestions if sq.evidence_ids]
-    for sq in state.subquestions:
+    for number, sq in enumerate(state.subquestions, 1):
         # note 를 여러 분기에 붙인다. 근거가 0편인 하위질문은 아래 insufficient
         # 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장 필요한 경우다.
         # 판정을 못 받았을 때의 note 는 '왜'가 아니라 같은 실패의 반복이라 뺀다 —
@@ -195,10 +195,13 @@ def build_limitations(
             # 하나일 뿐이고(research_critique.yaml) 까닭은 note 가 말한다. '근거 부족' 은 탐색 경로 라벨과 같은 말이다
             # 주어는 절 번호다 — 하위질문 전문을 쓰면 계획이 낸 하위질문들이 같은 앞머리를 공유해 부족 줄 다섯이
             # 같은 45자로 시작하고 줄마다 280~310자가 됐다(운영 630e0d65). 근거가 있으니 늘 절이 있고, 절 제목이
-            # 곧 하위질문이라 바로 위에서 찾는다. '하위질문 N' 은 앞에 근거 0편 하위질문이 있으면 절 번호와 어긋난다
+            # 곧 하위질문이라 바로 위에서 찾는다. 앞에 근거 0편 하위질문이 있으면 절 번호가 당겨져 하위질문 번호와
+            # 어긋난다 — 그때만 하위질문 번호를 함께 적는다. 보고서 옆 과정 패널과 내려받은 문서의 '부록: 탐색 경로'는
+            # 하위질문을 0편까지 세어 번호 매겨, '2절' 만 쓰면 그쪽의 '2.'(다른 하위질문)를 가리키는 것으로 읽힌다
             k = next(i for i, s in enumerate(sectioned, 1) if s is sq)
+            where = f"{k}절" if k == number else f"{k}절(하위질문 {number})"
             cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
-            out.append(f"{k}절은 근거 {n}편을 모았으나 자기점검에서 '근거 부족'으로 판정했다{cap}{note}")
+            out.append(f"{where}은 근거 {n}편을 모았으나 자기점검에서 '근거 부족'으로 판정했다{cap}{note}")
 
     # 근거가 0편이면 충분성을 따질 대상이 없고, failed 는 위에서 이미 알렸다
     unchecked = sum(1 for sq in state.subquestions
