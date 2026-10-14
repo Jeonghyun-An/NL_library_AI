@@ -813,27 +813,17 @@ onBeforeUnmount(() => {
 .skx-history__group .skx-history__title {
   color: var(--skx-teal-ink);
 }
-/* 머리의 '진행 중 N' — 살아 있는 딥리서치가 있다는 표시. 후배 시안처럼 옅은 유리 알약 + 점(2026-10-14, 산호 면에서 바꿈).
-   좁은 사이드바(1024px 화면)에서 '전체 삭제'와 한 줄에 서도록 점·여백을 작게 둔다 */
+/* 머리의 '진행 중 N' — 살아 있는 딥리서치가 있다는 표시. 사이드바에서 포인트 색은 움직이는 것(이 알약·진행 막대 채움)에만 쓴다 —
+   끝난 줄의 배지는 차분한 유리 알약(사용자 결정 2026-10-14). 라이트에서는 포인트 색이 검정이라 검정 알약이 된다 */
 .skx-history__live {
-  display: inline-flex;
   flex: none;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0 0.3rem;
+  padding: 0 0.4rem;
   border-radius: var(--skx-radius-pill);
-  background: var(--skx-frost-bg);
-  color: var(--skx-ink);
+  background: var(--skx-primary);
+  color: var(--skx-on-accent);
   font-size: 0.6rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.5;
-}
-.skx-history__live::before {
-  content: "";
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: 50%;
-  background: var(--skx-ink);
 }
 .skx-history__clear {
   flex: none;
@@ -901,8 +891,8 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 본문 글자색 채움(다크 흰·라이트 검정).
-   단계가 바뀌면 부드럽게 늘어난다 */
+/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 포인트 색 채움(다크 산호·라이트 검정 —
+   머리의 '진행 중 N' 알약과 같은 색). 단계가 바뀌면 부드럽게 늘어난다 */
 .skx-history-item__progress {
   display: block;
   width: 100%;
@@ -915,7 +905,7 @@ onBeforeUnmount(() => {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--skx-ink);
+  background: var(--skx-primary);
   transition: width 0.4s ease;
 }
 @media (prefers-reduced-motion: reduce) {
