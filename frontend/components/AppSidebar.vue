@@ -663,7 +663,7 @@ function badgeOf(h: HistoryEntry): { label: string; tone: string } {
     case "canceled":
       return { label: "취소", tone: "canceled" };
     case "awaiting_approval":
-      return { label: "승인 대기", tone: "waiting" };
+      return { label: "승인 대기 중", tone: "waiting" };
     case undefined:
       return { label: "알 수 없음", tone: "unknown" };
     default:
