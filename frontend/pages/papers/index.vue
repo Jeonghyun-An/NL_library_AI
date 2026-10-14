@@ -701,7 +701,8 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
         query,
         mode: "book",
         top_k: 20,
-        use_rewrite: true,
+        // 논문 검색은 서버가 재작성하지 않는다(app/api/paper.py — 사용자 결정 2026-10-14) — 보내는 값도 그에 맞춘다
+        use_rewrite: false,
         use_rerank: true,
       },
       signal,
