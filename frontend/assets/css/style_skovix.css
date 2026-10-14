@@ -1507,6 +1507,8 @@ html.skx-scroll-lock {
   line-height: 1.5;
   color: var(--skx-ink);
   text-wrap: balance;
+  /* 좁을 때 낱말 단위로 꺾는다 — 글자 단위로 꺾여 '확인하 / 는,'으로 끊겼다(사이드바를 연 1024px) */
+  word-break: keep-all;
 }
 .skx-brand__logo {
   width: min(17.5rem, 100%);
@@ -1853,6 +1855,8 @@ html.skx-scroll-lock {
   /* 2줄 글(아이콘 + 15px 2줄 + 여백 ≈ 105px)이 들어가는 높이로 맞춘다 — 두 패널의 글 길이가 달라도 칸 높이가 같아 갈래를 바꿔도 화면이 움직이지 않는다 */
   min-height: 5.3rem;
   padding: 0.9rem 0.8rem;
+  /* 낱말 단위로 꺾는다 — 좁은 칸에서 '언 / 어 발달'·'품 / 질 평가'처럼 글자 중간에서 끊겼다 */
+  word-break: keep-all;
   background: var(--skx-chip-fill);
   border: 1px solid var(--skx-chip-line);
   border-radius: var(--skx-radius-sm);
@@ -1981,8 +1985,14 @@ html.skx-scroll-lock {
 .rs-plus__menu .rs-plus__icon {
   display: none;
 }
+/* 이름·설명 모두 왼쪽 맞춤(후배 시안 DeepResearch_hover 와 같다 — 이름만 가운데라 설명과 어긋났다). 설명은 글자 크기를 시안(12px)에
+   맞추고 낱말 단위로 꺾어 '…근거가 달린 / 보고서를 만듭니다'로 나뉜다 — 글자 단위로 꺾여 '보고 / 서를'로 끊겼다(사용자 의견 2026-10-14) */
 .rs-plus__menu .rs-plus__label {
-  text-align: center;
+  text-align: left;
+}
+.rs-plus__menu .rs-plus__desc {
+  font-size: 0.6rem;
+  word-break: keep-all;
 }
 .rs-plus__hint {
   margin: 0.4rem 0.2rem 0.1rem;

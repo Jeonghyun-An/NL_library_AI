@@ -100,21 +100,38 @@ describe("다크 테마의 글자색·빛(research.css)", () => {
     expect(hover).toBe(rules.find((r) => !r.at && r.selectors.includes(".rs-plus__item.is-selected"))?.decls.get("background"));
   });
 
-  it("탐색 방식의 고른 칸은 두 테마 모두에서 3:1 이상의 테두리로 짚는다 — 핑크는 고른 칸 면(흰)과 홈(흰 반투명)·두 글자색이 거의 같다", () => {
-    const picked = rules.find((r) => !r.at && r.selectors.includes('.rs-mode__opt[aria-checked="true"]'));
+  it("탐색 방식의 고른 카드는 두 테마 모두에서 3:1 이상의 테두리로 짚는다 — 카드 면(펼침 면 위 옅은 홈)과 펼침 면 모두에 대해", () => {
+    const picked = rules.find((r) => !r.at && r.selectors.includes('.rs-mode__card[aria-checked="true"]'));
     const ring = picked?.decls.get("box-shadow")?.match(/^inset 0 0 0 1px var\((--skx-[\w-]+)\)$/)?.[1];
     expect(ring).toBeDefined();
-    expect(picked?.decls.get("background")).toBe("var(--skx-white)");
+    expect(rules.find((r) => !r.at && r.selectors.includes(".rs-mode__panel"))?.decls.get("background")).toBe("var(--skx-white)");
+    expect(rules.find((r) => !r.at && r.selectors.includes(".rs-mode__card"))?.decls.get("background")).toBe("var(--skx-frost-bg)");
     for (const theme of THEMES) {
       const t = themeTokens(theme);
       const ringColor = parseColor(t[ring!]!);
       expect(ringColor.a).toBe(1);
-      // 테두리 안쪽은 고른 칸 면, 바깥은 칸 홈(입력 상자 위 --skx-frost-bg — 바탕은 페이지 색으로 어림)
-      const face = solidOf(t["--skx-white"]!, t);
+      // 펼침 면(--skx-white)과 그 위 카드 면(--skx-frost-bg 를 한 겹 얹은 것)
+      const panel = solidOf(t["--skx-white"]!, t);
       const frost = parseColor(t["--skx-frost-bg"]!);
-      const home = over(parseColor(t["--skx-page-bg"]!).rgb, frost.rgb, frost.a);
-      expect(contrast(ringColor.rgb, face), `${theme} 면`).toBeGreaterThanOrEqual(3);
-      expect(contrast(ringColor.rgb, home), `${theme} 홈`).toBeGreaterThanOrEqual(3);
+      const card = over(panel, frost.rgb, frost.a);
+      expect(contrast(ringColor.rgb, panel), `${theme} 펼침 면`).toBeGreaterThanOrEqual(3);
+      expect(contrast(ringColor.rgb, card), `${theme} 카드 면`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("탐색 방식 카드의 글(영문·우리말 이름·설명·기본 배지)은 카드 면 위에서 4.5:1 이상이다", () => {
+    const colorOfRule = (selector: string) =>
+      rules.find((r) => !r.at && r.selectors.includes(selector))?.decls.get("color")?.match(/^var\((--skx-[\w-]+)\)$/)?.[1];
+    for (const theme of THEMES) {
+      const t = themeTokens(theme);
+      const panel = solidOf(t["--skx-white"]!, t);
+      const frost = parseColor(t["--skx-frost-bg"]!);
+      const card = over(panel, frost.rgb, frost.a);
+      for (const selector of [".rs-mode__en", ".rs-mode__ko", ".rs-mode__desc"]) {
+        const token = colorOfRule(selector);
+        expect(token, selector).toBeDefined();
+        expect(contrast(parseColor(t[token!]!).rgb, card), `${theme} ${selector}`).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 });
@@ -184,16 +201,10 @@ describe("홀로그램 위 작은 글의 대비(research.css · work.css)", () =
     );
   };
 
-  it.each(THEMES)("%s: 탐색 방식의 라벨·설명은 입력창 유리 면 위에서 띠가 모두 겹쳐도 4.5:1 이상이다", (theme) => {
-    for (const selector of [".rs-mode__label", ".rs-mode__hint"]) {
-      expect(worstOn(theme, INPUT_FACE, colorOf(selector)), selector).toBeGreaterThanOrEqual(4.5);
-    }
-  });
-
-  // 안 고른 칸은 홈(흰 10%)을 한 겹 더 얹어 가장 밝은 겹침에서는 어떤 본문 톤도 4.5:1 에 못 미친다 — 전환 알약 꺼진 칸처럼 낮춘
-  // 기준이다: 띠 하나가 지나는 자리까지 4.5:1, 띠가 모두 겹친 가장 밝은 자리에서 3:1
-  it.each(THEMES)("%s: 탐색 방식의 안 고른 칸 글은 띠 하나가 지나는 자리까지 4.5:1, 모두 겹쳐도 3:1 이상이다", (theme) => {
-    const text = colorOf(".rs-mode__opt");
+  // 탐색 방식 칩은 입력창 유리 면 위에 옅은 홈(흰 10%)을 한 겹 더 얹어 가장 밝은 겹침에서는 어떤 본문 톤도 4.5:1 에 못 미친다 —
+  // 전환 알약 꺼진 칸처럼 낮춘 기준이다: 띠 하나가 지나는 자리까지 4.5:1, 띠가 모두 겹친 가장 밝은 자리에서 3:1
+  it.each(THEMES)("%s: 탐색 방식 칩 글은 띠 하나가 지나는 자리까지 4.5:1, 모두 겹쳐도 3:1 이상이다", (theme) => {
+    const text = colorOf(".rs-mode__chip");
     expect(worstOn(theme, OPT_FACE, text, 1)).toBeGreaterThanOrEqual(4.5);
     expect(worstOn(theme, OPT_FACE, text)).toBeGreaterThanOrEqual(3);
   });
