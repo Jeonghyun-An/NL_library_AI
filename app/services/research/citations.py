@@ -55,6 +55,12 @@ _SENT_SPLIT = re.compile(r"(?<=[.!?。])\s+")
 # 남은 마커가 다음 문장 소속으로 잘못 잡혀 과소 계수된다. 계수용 사본에만
 # 쓰므로 치환 뒤 공백이 지저분해도 무해하다. 반환 텍스트에는 적용하지 않는다.
 _TRAILING_MARKER = re.compile(r"([.!?。])(\s+)((?:\[E\d+\][ \t]*)+)")
+# 대목(남의 논문 본문)에 박힌 번호 인용 — '[3]'·'[3, 4]'·'[33-35]'·'[6,7]'. 번호는 0 으로 시작하지 않는 1~3자리다.
+# 4자리는 연도로 보고 남긴다: 저자[연도] 꼴('홍길동[2017]은')은 그 문장이 남의 연구임을 독자에게 보이는 표기라
+# 지우면 재인용이 그 근거 논문의 서술로 읽힌다. '[0, 1]' 구간·'[1.2, 3.4]' 소수·글자가 섞인 괄호도 남는다
+_REF_NUM = r"[1-9]\d{0,2}"
+_NUMBERED_REF = re.compile(
+    rf"[ \t]*[\[［【][ \t]*{_REF_NUM}(?:[ \t]*[,，;；{_RANGE_CHARS}][ \t]*{_REF_NUM})*[ \t]*[\]］】]")
 
 
 def evidence_id(index: int) -> str:
@@ -272,3 +278,14 @@ def strip_markers(text: str) -> str:
         return "" if _CITATION_LIKE.search(m.group(2)) else m.group(0)
 
     return _BRACKET.sub(_drop, text).strip()
+
+
+def strip_numbered_refs(text: str) -> str:
+    """대목 속 남의 번호 인용('[3, 4]')을 (그 앞 공백과 함께) 지운다. [E#]·[F#] 와 다른 괄호는 그대로 둔다.
+
+    모델은 대목 문장을 옮기며 원 논문의 각주 번호까지 싣는다(A/B focus 9ba1 1절 — 두 회차 모두 '[3, 4]'·
+    '[5, 6, 7, 8]'·'[33, 34]'). 근거 칩처럼 보이지만 어느 근거도 가리키지 않고, 프롬프트로는 막지 못했다.
+    E 번호로 바꾸지 않는다 — '[8]' 은 대목 원문의 8번 문헌일 때가 많아 E8 로 읽으면 다른 논문에 붙는다.
+    우리 인용 표기가 아니라 한계의 인용 표기 계수(dropped·unparsed)에도 넣지 않는다.
+    """
+    return _NUMBERED_REF.sub("", text).strip()

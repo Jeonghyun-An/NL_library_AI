@@ -707,6 +707,34 @@ class TestBuildSection:
             "future": [{"text": "이 하위질문에 대해 남은 과제 한 문장 [E#]."}]})
         assert sec["intro"] == "" and sec["future"] == []
 
+    def test_numbered_refs_copied_from_excerpts_are_removed(self):
+        """대목 속 남의 번호 인용('[3, 4]')을 옮긴 문장 — 근거 칩처럼 보이지만 어느 근거도 아니다(A/B focus 9ba1 1절).
+        도입·요약·향후 과제 모두에서 지우고, 우리 마커 [E#] 는 그대로 둔다."""
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0], {
+            "intro": "우울은 다른 연령에 비해 유발 가능성이 높은 정서반응이다 [3, 4]. "
+                     "삶의 질을 심각하게 저하시킨다 [5, 6, 7, 8] [E1]. 5문항으로 구성된 도구이다 [33, 34].",
+            "summaries": {"E1": "Hoyl 등[33]의 GDS-5를 사용했다. 삶의 질을 저하시킨다 [8].",
+                          "E2": "체계적 문헌고찰을 수행했다 [2]."},
+            "future": [{"text": "변화 궤적을 분석하는 추가 연구가 필요하다 [8] [E2]."}, {"text": "[3]"}]})
+        assert sec["intro"] == ("우울은 다른 연령에 비해 유발 가능성이 높은 정서반응이다. "
+                                "삶의 질을 심각하게 저하시킨다 [E1]. 5문항으로 구성된 도구이다.")
+        assert [p["summary"] for p in sec["papers"]] == [
+            "Hoyl 등의 GDS-5를 사용했다. 삶의 질을 저하시킨다.", "체계적 문헌고찰을 수행했다."]
+        # 번호만 있던 항목은 빈 글이라 싣지 않는다
+        assert sec["future"] == [{"text": "변화 궤적을 분석하는 추가 연구가 필요하다 [E2]."}]
+
+    def test_removed_numbered_refs_are_not_reported_as_our_markers(self):
+        """지운 남의 번호는 우리 인용 표기가 아니다 — 한계의 '해석할 수 없는 인용 표기'·'없는 번호' 로 세지 않는다.
+        근거 칩이 없는 문장은 무표기로 센다(지우기 전에도 [E#] 가 없던 문장이다)."""
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0], {
+            "intro": "정서반응이다 [3, 4]. 저하시킨다 [E1].", "summaries": {"E1": "요약이다.", "E2": "요약이다."},
+            "future": []})
+        _, tally = finalize_section(st, sec)
+        assert tally.unparsed == 0 and tally.dropped == 0
+        assert tally.unmarked == 1
+
     def test_section_carries_chunks_matched_in_its_subquestion(self):
         st = _state_three()
         st.evidence["E2"].chunks.append(Chunk("c2b", "하위2 대목", 5, 5, 0.8))

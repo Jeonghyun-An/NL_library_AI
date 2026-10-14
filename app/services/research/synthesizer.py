@@ -26,7 +26,7 @@ import httpx
 from services.llm_client import chat
 from services.prompts import get_prompt
 from services.research.bibliography import has_prose
-from services.research.citations import bind_markers, chunks_for, strip_markers
+from services.research.citations import bind_markers, chunks_for, strip_markers, strip_numbered_refs
 from services.research.hangul import josa
 from services.research.llm_json import extract_json
 from services.research.runner import subq_budget
@@ -452,6 +452,9 @@ def _text(value: object) -> str:
     문장 배열은 잇는다 — str() 로 바꾸면 "['문장1', '문장2']" 가 화면에 나간다.
     그 밖의 모양(null·숫자·dict)은 버린다. null 이 bind_markers 까지 가면 모든 절
     호출이 끝난 뒤 TypeError 로 보고서 전체를 잃는다.
+
+    대목에서 옮겨 온 남의 번호 인용('[3, 4]')은 여기서 지운다(strip_numbered_refs) — 되풀이 지우기(drop_repeats)·
+    작성 중 초안·완성본이 모두 이 글을 쓴다.
     """
     if isinstance(value, str):
         text = value.strip()
@@ -459,7 +462,7 @@ def _text(value: object) -> str:
         text = " ".join(v.strip() for v in value if v.strip())
     else:
         return ""
-    return "" if _PLACEHOLDER in text else text
+    return "" if _PLACEHOLDER in text else strip_numbered_refs(text)
 
 
 def _eid_key(key: str) -> str:
