@@ -1,6 +1,6 @@
 // frontend/tests/unit/sidebarResearch.test.ts
 import { describe, expect, it } from "vitest";
-import { olderToggle, statusStageLine } from "~/utils/sidebarResearch";
+import { olderToggle, stageProgress, statusStageLine } from "~/utils/sidebarResearch";
 
 describe("statusStageLine — 진행 중인 연구 줄의 단계 글(기록의 상태·stage 만, 숫자 없이)", () => {
   it("계획 중·순서를 기다리는 중", () => {
@@ -22,6 +22,31 @@ describe("statusStageLine — 진행 중인 연구 줄의 단계 글(기록의 �
     }
     expect(statusStageLine(undefined)).toBeNull();
     expect(statusStageLine(null)).toBeNull();
+  });
+});
+
+describe("stageProgress — 진행 중인 연구 줄의 진행 막대(네 단계 중 지금 단계까지)", () => {
+  it("계획 → 순서 대기 → 근거 수집 → 보고서 작성 순으로 늘고, 끝까지 차지는 않는다", () => {
+    const planning = stageProgress({ status: "planning", stage: "created" })!;
+    const queued = stageProgress({ status: "queued", stage: "planned" })!;
+    const collecting = stageProgress({ status: "running", stage: "planned" })!;
+    const writing = stageProgress({ status: "running", stage: "explored" })!;
+    expect(stageProgress({ status: "created", stage: "created" })).toBe(planning);
+    expect(stageProgress({ status: "approved", stage: "planned" })).toBe(queued);
+    expect(stageProgress({ status: "running", stage: "synthesized" })).toBe(writing);
+    expect(planning).toBeGreaterThan(0);
+    expect(queued).toBeGreaterThan(planning);
+    expect(collecting).toBeGreaterThan(queued);
+    expect(writing).toBeGreaterThan(collecting);
+    expect(writing).toBeLessThan(1);
+  });
+
+  it("승인 대기·끝난 잡·상태 모름은 막대 없음(null) — 단계 글과 같은 줄에만 선다", () => {
+    for (const status of ["awaiting_approval", "completed", "failed", "canceled"]) {
+      expect(stageProgress({ status, stage: "synthesized" })).toBeNull();
+    }
+    expect(stageProgress(undefined)).toBeNull();
+    expect(stageProgress(null)).toBeNull();
   });
 });
 

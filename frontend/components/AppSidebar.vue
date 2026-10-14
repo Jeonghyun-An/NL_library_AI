@@ -182,10 +182,15 @@
                     >
                       <span class="skx-history-item__query">{{ h.title }}</span>
                       <span class="skx-history-item__meta">
-                        <span :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
-                        <!-- 진행 중인 연구 줄에만 — 지금 단계('근거 수집 중' 등, 숫자 없이). 완료 줄에는 붙이지 않는다 -->
+                        <!-- 진행 중인 연구 줄은 배지 대신 지금 단계('근거 수집 중' 등, 숫자 없이)와 아래 진행 막대(후배 시안, 2026-10-14).
+                             승인 대기·완료·실패·취소 줄은 차분한 배지 하나 -->
                         <span v-if="stageOf(h)" class="skx-history-item__stage">{{ stageOf(h) }}</span>
+                        <span v-else :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
                         <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(h)) }}</span>
+                      </span>
+                      <!-- 단계 글이 이미 읽히므로 막대는 눈으로만 보는 보조다 -->
+                      <span v-if="progressOf(h) !== null" class="skx-history-item__progress" aria-hidden="true">
+                        <span class="skx-history-item__progress-fill" :style="{ width: `${(progressOf(h) ?? 0) * 100}%` }"></span>
                       </span>
                     </button>
                     <button
@@ -370,7 +375,7 @@ import {
   hasActiveResearch,
   isLiveResearch,
 } from "~/utils/sidebarGroups";
-import { olderToggle, statusStageLine } from "~/utils/sidebarResearch";
+import { olderToggle, stageProgress, statusStageLine } from "~/utils/sidebarResearch";
 
 const props = defineProps<{ collapsed?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
@@ -668,6 +673,11 @@ function stageOf(h: HistoryEntry): string | null {
   return h.kind === "research" && isLiveResearch(h) ? statusStageLine(h.research) : null;
 }
 
+// 진행 중인 연구 줄 아래 막대의 채움(0~1) — 단계 글과 같은 줄에만(utils/sidebarResearch.stageProgress)
+function progressOf(h: HistoryEntry): number | null {
+  return h.kind === "research" && isLiveResearch(h) ? stageProgress(h.research) : null;
+}
+
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 // 접혀 있어도 읽는다 — 접힌 띠의 현미경 점이 낡지 않게(숨은 탭에서만 건너뛴다)
@@ -758,7 +768,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.2rem 0.4rem;
+  gap: 0.2rem 0.3rem;
   min-height: 1.2rem;
 }
 /* [+ 연구 시작하기] — 머리 아래 줄의 옅은 전체 폭 버튼(새 검색 버튼보다 한 단계 작고 옅게, 산호 글·테두리). 눌러 랜딩에서 딥리서치를 시작한다 */
@@ -797,22 +807,33 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.2rem 0.4rem;
+  gap: 0.2rem 0.3rem;
   min-width: 0;
 }
 .skx-history__group .skx-history__title {
   color: var(--skx-teal-ink);
 }
-/* '진행 중 N' — 살아 있는 딥리서치가 있다는 표시. 행 배지(진행 중)와 같은 산호색 */
+/* 머리의 '진행 중 N' — 살아 있는 딥리서치가 있다는 표시. 후배 시안처럼 옅은 유리 알약 + 점(2026-10-14, 산호 면에서 바꿈).
+   좁은 사이드바(1024px 화면)에서 '전체 삭제'와 한 줄에 서도록 점·여백을 작게 둔다 */
 .skx-history__live {
+  display: inline-flex;
   flex: none;
-  padding: 0 0.4rem;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0 0.3rem;
   border-radius: var(--skx-radius-pill);
-  background: var(--skx-primary);
-  color: var(--skx-on-accent);
+  background: var(--skx-frost-bg);
+  color: var(--skx-ink);
   font-size: 0.6rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.5;
+}
+.skx-history__live::before {
+  content: "";
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 50%;
+  background: var(--skx-ink);
 }
 .skx-history__clear {
   flex: none;
@@ -869,16 +890,38 @@ onBeforeUnmount(() => {
     transition: none;
   }
 }
-/* 진행 중인 연구 줄의 단계 글 — 배지 옆의 청록 글자(테두리·바탕 없음), 좁으면 말줄임 */
+/* 진행 중인 연구 줄의 단계 글 — 배지 자리의 글자(테두리·바탕 없음), 좁으면 말줄임 */
 .skx-history-item__stage {
   min-width: 0;
   overflow: hidden;
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1.5;
-  color: var(--skx-teal-ink);
+  color: var(--skx-ink-2);
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 본문 글자색 채움(다크 흰·라이트 검정).
+   단계가 바뀌면 부드럽게 늘어난다 */
+.skx-history-item__progress {
+  display: block;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: var(--skx-radius-pill);
+  background: var(--skx-line);
+}
+.skx-history-item__progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--skx-ink);
+  transition: width 0.4s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-history-item__progress-fill {
+    transition: none;
+  }
 }
 .skx-history__empty {
   margin: 0;
@@ -956,7 +999,8 @@ onBeforeUnmount(() => {
   font-weight: 600;
   line-height: 1.5;
 }
-/* 상태 배지 — 진행 중은 산호 면, 승인 대기는 산호 테두리(사용자가 움직여야 하는 상태) */
+/* 상태 배지 — 후배 시안처럼 모두 옅은 유리 알약(2026-10-14 — 완료의 진한 초록·진행 중 산호 면·실패의 빨강을 걷었다). 바탕은 같고
+   글자 톤으로만 가른다: 승인 대기(사용자가 움직일 차례)는 가장 밝게, 완료는 본문 보조색, 실패·취소·모름은 흐리게 */
 .skx-history-badge {
   flex: none;
   padding: 0 0.3rem;
@@ -964,25 +1008,15 @@ onBeforeUnmount(() => {
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1.5;
-  background: var(--skx-primary);
-  color: var(--skx-on-accent);
-}
-.skx-history-badge.is-done {
-  background: var(--skx-success-bg);
-  color: var(--skx-success);
-}
-.skx-history-badge.is-failed {
-  background: var(--skx-danger-bg);
-  color: var(--skx-danger);
+  background: var(--skx-frost-bg);
+  color: var(--skx-ink-2);
 }
 .skx-history-badge.is-waiting {
-  background: none;
-  color: var(--skx-primary);
-  box-shadow: inset 0 0 0 1px var(--skx-primary);
+  color: var(--skx-ink);
 }
+.skx-history-badge.is-failed,
 .skx-history-badge.is-canceled,
 .skx-history-badge.is-unknown {
-  background: var(--skx-glass-teal);
   color: var(--skx-gray-1);
 }
 .skx-history__confirm {

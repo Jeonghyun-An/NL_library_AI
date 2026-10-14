@@ -127,47 +127,18 @@
                 </p>
               </template>
             </ClampedPanel>
-            <!-- 우측: 참고 논문 목록 -->
+            <!-- 우측: 참고 논문 목록 — 번호·제목(누르면 상세)·저자만. 원문 보기·DeepRead 는 요약 속 번호의 팝오버와 결과 카드에, 출처 인용은
+                 결과 카드에 있어 카드마다 달던 아이콘 버튼 셋은 뺐다(사용자 결정 2026-10-14) -->
             <div class="skx-pai-refs">
               <div class="skx-pai-refs__scroll">
                 <div v-for="ref in aiRefs" :key="ref.num" class="skx-pai-ref">
                   <div class="skx-pai-ref__num">{{ ref.num }}</div>
                   <div class="skx-pai-ref__body">
-                    <p
-                      class="skx-pai-ref__title skx-pai-ref__title--link"
-                      @click="navigateTo(paperDetailUrl(ref.book_id))"
-                    >
+                    <!-- 버튼 셋이 빠져 이 줄에서 키보드로 닿는 것은 제목뿐이라 링크로 둔다(전에는 클릭만 받는 <p>) -->
+                    <NuxtLink class="skx-pai-ref__title skx-pai-ref__title--link" :to="paperDetailUrl(ref.book_id)">
                       {{ ref.title }}
-                    </p>
+                    </NuxtLink>
                     <p class="skx-pai-ref__author">{{ ref.authors }}</p>
-                    <div class="skx-pai-ref__actions">
-                      <button
-                        type="button"
-                        class="skx-pai-ref__btn"
-                        aria-label="출처 인용"
-                        @click="openRefCitation(ref)"
-                      >
-                        <img src="/img/ico-paper-bookmark.svg" alt="" />
-                      </button>
-                      <button
-                        type="button"
-                        class="skx-pai-ref__btn skx-pai-ref__btn--ai"
-                        aria-label="DeepRead"
-                        @click="chatPaperId = ref.book_id"
-                      >
-                        <img src="/img/ico-chat.svg" alt="" />
-                      </button>
-                      <button
-                        type="button"
-                        class="skx-pai-ref__btn"
-                        aria-label="원문 보기"
-                        @click="
-                          pdfItem = aiRefPaperMap.get(ref.book_id) ?? null
-                        "
-                      >
-                        <img src="/img/ico-share.svg" alt="" />
-                      </button>
-                    </div>
                   </div>
                 </div>
                 <template v-if="aiLoading && !aiRefs.length">
@@ -485,13 +456,6 @@ function formatPubDate(pubDate: string): string {
 function openPaperCitation(paper: BookChunkGroup) {
   citeBookId.value = paper.book_id;
   citeRefs.value = paper.book_info?.references ?? [];
-  citeModalOpen.value = true;
-}
-
-function openRefCitation(ref: { book_id: string }) {
-  const paper = aiRefPaperMap.value.get(ref.book_id);
-  citeBookId.value = ref.book_id;
-  citeRefs.value = paper?.book_info?.references ?? [];
   citeModalOpen.value = true;
 }
 

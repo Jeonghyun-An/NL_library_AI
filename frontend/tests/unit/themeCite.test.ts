@@ -1,6 +1,7 @@
 // frontend/tests/unit/themeCite.test.ts
 // 논문 AI 요약 속 인용 번호 버튼(.skx-cite)·팝오버(.skx-citepop)의 색 — 두 테마에서 읽을 수 있어야 한다.
-// 번호는 본문 글자색과 달라 보이도록 --skx-teal-ink 를 쓰고(밑줄·굵기가 보조), 요약 패널(--skx-frost-panel) 위에서 본문 글자 기준(4.5:1)을 넘긴다
+// 번호는 본문 글자색과 달라 보이도록 --skx-teal-ink 를 쓰고(굵기·올림 면이 보조 — 점선 밑줄은 2026-10-14 사용자 결정으로 뺐다),
+// 요약 패널(--skx-frost-panel) 위에서 본문 글자 기준(4.5:1)을 넘긴다
 import { describe, expect, it } from "vitest";
 import {
   THEMES,
@@ -29,10 +30,11 @@ describe("인용 번호 버튼 — 규칙", () => {
     expect(rule(".skx-cite:focus-visible")).toMatch(/outline:\s*2px solid var\(--skx-accent\)/);
   });
 
-  it("누를 수 있다는 단서가 색만이 아니다 — 점선 밑줄과 굵은 글씨", () => {
+  it("누를 수 있다는 단서가 색만이 아니다 — 굵은 글씨와 올림·펼침 면(밑줄은 없다)", () => {
     const body = rule(".skx-cite");
-    expect(body).toMatch(/text-decoration:\s*underline dotted/);
+    expect(body).toMatch(/text-decoration:\s*none/);
     expect(body).toMatch(/font-weight:\s*700/);
+    expect(css).toMatch(/\.skx-cite:hover,\s*\.skx-cite\[aria-expanded="true"\]\s*\{[^}]*background:\s*var\(--skx-glass-teal\)/);
   });
 
   it("팝오버 규칙에도 색 리터럴이 없다", () => {
