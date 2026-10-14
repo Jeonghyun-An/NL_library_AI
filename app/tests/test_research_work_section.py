@@ -103,10 +103,10 @@ class TestSplitParagraphs:
 
 class TestPrompts:
     @pytest.mark.parametrize("kind, variables, max_tokens", [
-        ("prior", {"question", "topic_title", "research_question", "group_name", "evidence_block", "figure_list"},
-         1500),
-        ("gap", {"question", "topic_title", "research_question", "seed_block", "evidence_block", "figure_list"},
-         1200),
+        ("prior", {"question", "topic_title", "research_question", "group_name", "evidence_block", "figure_list",
+                   "paragraph_range"}, 1500),
+        ("gap", {"question", "topic_title", "research_question", "seed_block", "evidence_block", "figure_list",
+                 "paragraph_range"}, 1200),
     ])
     def test_templates_read_exactly_their_inputs(self, kind, variables, max_tokens):
         tpl = get_prompt(PROMPTS[kind])
@@ -128,6 +128,17 @@ class TestPrompts:
         assert "숫자를 직접 쓰지 마세요" in system and "제목·저자·연도" in system
         assert "빈 줄" in system and "'~다'" in system
 
+    @pytest.mark.parametrize("kind", ["prior", "gap"])
+    def test_figures_are_counts_and_years_only_and_cited_papers_are_not_this_study(self, kind):
+        """운영(2026-10-14 prior.g2): 수치 목록을 문장으로 옮기고([F3] 을 근거 표기 자리에), 근거 대목의 '본 연구는 …' 을
+        그대로 옮겨 인용 논문을 이 계획서처럼 썼다. 문단 수는 입력(쓸 문단 수)이 정하고, 근거가 적으면 줄인다."""
+        system = get_prompt(PROMPTS[kind]).system
+        assert "몇 편인지, 어느 해에 나왔는지를 말할 때만" in system and "표기 바로 뒤에" in system
+        assert "문장 끝에 붙이지 말고" in system and "쓸 까닭이 없으면 쓰지 마세요" in system
+        assert "'본 연구'·'이 연구'·'본 논문'으로 부르지 마세요" in system and "'선행연구'나 '해당 연구'" in system
+        assert "'쓸 문단 수'만큼" in system and "근거가 적으면 문단을 줄이고" in system
+        assert "2~3" not in system
+
     def test_gap_prompt_writes_only_unchecked_gap_candidates(self):
         assert GAP_NOTE in get_prompt(PROMPTS["gap"]).system
 
@@ -144,6 +155,7 @@ class TestBuild:
         assert "이 묶음: 가족 지지와 우울" in user
         assert "[E1] 노인 우울과 가족 지지 (2013)\n초록: 초록 하나\n대목(쪽 3): 대목 하나" in user
         assert "[F1] 이 절에 준 논문 수: 2\n[F2] 발행 연도 범위: 2013~2015" in user
+        assert "이 묶음: 가족 지지와 우울\n쓸 문단 수: 2~3개\n" in user
         assert params == {"max_tokens": 1500, "temperature": 0.3}
 
     def test_gap_renders_the_seeds(self):
@@ -152,7 +164,15 @@ class TestBuild:
         user = messages[1]["content"]
         assert "공백 후보:\n- 농촌 노인 표본이 부족하다 (하위질문: 노인의 사회적 지지)" in user
         assert "이 묶음" not in user
+        assert "쓸 문단 수: 2~3개\n" in user
         assert params["max_tokens"] == 1200
+
+    @pytest.mark.parametrize("section_input", [PRIOR_ONE_PAPER, {**GAP, "papers": PRIOR_ONE_PAPER["papers"]}],
+                             ids=["prior", "gap"])
+    def test_a_section_with_one_paper_asks_for_fewer_paragraphs(self, section_input):
+        # 논문 1편에 2~3문단을 시키자 gemma 가 셋째 문단을 수치 목록으로 채웠다(운영 2026-10-14 prior.g2)
+        user = EXECUTOR.build(section_input)[0][1]["content"]
+        assert "쓸 문단 수: 1~2개\n" in user
 
 
 class TestExecutor:

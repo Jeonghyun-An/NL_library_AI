@@ -66,13 +66,21 @@ def _seed_block(seeds: list[dict]) -> str:
     return "\n".join(f"- {s['text']} (하위질문: {s['heading']})" for s in seeds) or "(없음)"
 
 
+def paragraph_range(n_papers: int) -> str:
+    """프롬프트의 '쓸 문단 수' — 논문이 1편 이하인 절은 1~2, 아니면 2~3. 운영(2026-10-14 prior.g2 — 미리 담은 8편이 7:1 로
+    나뉨)에서 논문 1편에 2~3문단을 시키자 gemma 가 셋째 문단을 수치 목록으로 채웠다. 상한은 여전히 코드가 자른다."""
+    return "1~2" if n_papers <= 1 else "2~3"
+
+
 def _build(input: dict) -> tuple[list[dict], dict]:
+    papers = input.get("papers") or []
     common = {
         "question": input["question"],
         "topic_title": (input.get("topic") or {}).get("title") or "",
         "research_question": input.get("research_question") or "",
-        "evidence_block": evidence_block(input.get("papers") or []),
+        "evidence_block": evidence_block(papers),
         "figure_list": figure_block(input.get("figures") or []),
+        "paragraph_range": paragraph_range(len(papers)),
     }
     if input["kind"] == "prior":
         extra = {"group_name": (input.get("group") or {}).get("name") or ""}

@@ -78,6 +78,12 @@ class TestPrompt:
         assert "[E#]" in system and "[F#]" in system and "숫자를 직접 쓰지 마세요" in system
         assert "문단 하나만" in system and GAP_NOTE in system
 
+    def test_figures_are_counts_and_years_only_and_cited_papers_are_not_this_study(self):
+        # 절 프롬프트와 같은 규칙 — 운영(2026-10-14 prior.g2)에서 수치 목록을 문장으로 옮기고 인용 논문을 '본 연구'로 썼다
+        system = get_prompt(PROMPT).system
+        assert "몇 편인지, 어느 해에 나왔는지를 말할 때만" in system and "문장 끝에 붙이지 말고" in system
+        assert "'본 연구'·'이 연구'·'본 논문'으로 부르지 마세요" in system and "'선행연구'나 '해당 연구'" in system
+
     def test_asks_for_new_sentences_not_a_copy_of_the_inputs(self):
         # 운영(2026-10-08): gemma 가 '고칠 문단'을 그대로 내거나 '앞 문단:' 블록을 이름표째 옮겼다
         system = get_prompt(PROMPT).system
