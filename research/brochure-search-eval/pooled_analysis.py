@@ -68,10 +68,11 @@ def main():
     queries, runs, judgments, metas = collect()
     report = ev.build_report(queries, runs, judgments, seed=SEED)
     meta = {"created": "2026-10-14", "seed": "20261013·20261014·20261015",
-            "corpus_docs": {"paper": "197,256~198,126"}, "question_model": metas["A"].get("question_model")}
+            "corpus_docs": {"paper": "197,256~198,126"}, "question_model": metas["A"].get("question_model"),
+            "report_seed": SEED}
     models = load(HERE / "results" / "judge_models.json")
     judge_info = {"judges": f"vlm={models['vlm']['label']}", "judge_names": ["vlm"],
-                  "rater_check": "Claude 60쌍 일치율 81.7%, kappa 0.63 — 세트 A 의 판정만 대상"}
+                  "rater_check": "Claude 60쌍 일치율 81.7%, kappa 0.63 — 세트 A 의 Qwen(vlm) 판정 대상"}
     md = ev.render_markdown(report, meta, judge_info)
     md = md.replace("# 브로셔용 검색 품질 수치", "# 브로셔용 검색 품질 수치 — 세 세트 통합(논문 질문 450개)", 1)
 

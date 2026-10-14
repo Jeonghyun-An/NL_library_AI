@@ -5,14 +5,15 @@
   "corpus_docs": {
    "paper": "197,256~198,126"
   },
-  "question_model": "gemma-3-12b (서빙 모델: google/gemma-3-12b-it)"
+  "question_model": "gemma-3-12b (서빙 모델: google/gemma-3-12b-it)",
+  "report_seed": 20261014
  },
  "judge": {
   "judges": "vlm=qwen3-vl-8b (서빙 모델: Qwen/Qwen3-VL-30B-A3B-Instruct-FP8)",
   "judge_names": [
    "vlm"
   ],
-  "rater_check": "Claude 60쌍 일치율 81.7%, kappa 0.63 — 세트 A 의 판정만 대상"
+  "rater_check": "Claude 60쌍 일치율 81.7%, kappa 0.63 — 세트 A 의 Qwen(vlm) 판정 대상"
  },
  "groups": {
   "paper|nl": {

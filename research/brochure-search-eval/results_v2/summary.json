@@ -10,7 +10,8 @@
    "title_copy": 20,
    "time_expr": 5
   },
-  "n_queries": 150
+  "n_queries": 150,
+  "report_seed": 20261013
  },
  "judge": {
   "judges": "vlm=qwen3-vl-8b (서빙 모델: Qwen/Qwen3-VL-30B-A3B-Instruct-FP8)",
