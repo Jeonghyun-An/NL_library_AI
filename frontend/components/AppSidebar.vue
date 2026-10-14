@@ -167,29 +167,58 @@
               </div>
 
               <ul v-if="researchRows.length" class="skx-history__list">
-                <li v-for="h in researchRows" :key="h.id" class="skx-history__row">
-                  <button
-                    type="button"
-                    :class="['skx-history-item', h.id === activeId && 'is-active']"
-                    :aria-current="h.id === activeId ? 'page' : undefined"
-                    @click="go(h)"
+                <li
+                  v-for="h in researchRows"
+                  :key="h.id"
+                  :data-history-id="h.id"
+                  :class="['skx-history__row', rowConfirm === h.id && 'is-confirming']"
+                >
+                  <div class="skx-history__row-main">
+                    <button
+                      type="button"
+                      :class="['skx-history-item', h.id === activeId && 'is-active']"
+                      :aria-current="h.id === activeId ? 'page' : undefined"
+                      @click="go(h)"
+                    >
+                      <span class="skx-history-item__query">{{ h.title }}</span>
+                      <span class="skx-history-item__meta">
+                        <span :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
+                        <!-- 진행 중인 연구 줄에만 — 지금 단계('근거 수집 중' 등, 숫자 없이). 완료 줄에는 붙이지 않는다 -->
+                        <span v-if="stageOf(h)" class="skx-history-item__stage">{{ stageOf(h) }}</span>
+                        <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(h)) }}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="skx-history-item__del"
+                      :aria-label="`'${h.title}' 기록 삭제`"
+                      :aria-expanded="rowConfirm === h.id"
+                      @click="toggleRowConfirm(h.id)"
+                    >
+                      <img src="/img/ico-delete.svg" alt="" />
+                    </button>
+                  </div>
+                  <div
+                    v-if="rowConfirm === h.id"
+                    class="skx-history__confirm skx-history__confirm--row"
+                    role="alertdialog"
+                    :aria-label="`'${h.title}' 기록 삭제 확인`"
+                    :aria-describedby="`skx-row-confirm-${h.id}`"
+                    @keydown.esc.stop="cancelRowConfirm(h.id)"
                   >
-                    <span class="skx-history-item__query">{{ h.title }}</span>
-                    <span class="skx-history-item__meta">
-                      <span :class="['skx-history-badge', `is-${badgeOf(h).tone}`]">{{ badgeOf(h).label }}</span>
-                      <!-- 진행 중인 연구 줄에만 — 지금 단계('근거 수집 중' 등, 숫자 없이). 완료 줄에는 붙이지 않는다 -->
-                      <span v-if="stageOf(h)" class="skx-history-item__stage">{{ stageOf(h) }}</span>
-                      <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(h)) }}</span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class="skx-history-item__del"
-                    :aria-label="`'${h.title}' 기록 삭제`"
-                    @click="removeRow(h.id, $event)"
-                  >
-                    <img src="/img/ico-delete.svg" alt="" />
-                  </button>
+                    <p :id="`skx-row-confirm-${h.id}`" class="skx-history__confirm-text">{{ ROW_CLEAR_TEXT.research }}</p>
+                    <div class="skx-history__confirm-actions">
+                      <button
+                        type="button"
+                        class="skx-history__confirm-btn is-danger"
+                        data-row-confirm
+                        @click="removeRow(h.id, $event)"
+                      >
+                        지우기
+                      </button>
+                      <button type="button" class="skx-history__confirm-btn" @click="cancelRowConfirm(h.id)">취소</button>
+                    </div>
+                  </div>
                 </li>
               </ul>
               <!-- 5줄을 넘는 연구는 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다(시안 C — 숫자는 최근 검색의 종류 칩과
@@ -251,27 +280,56 @@
               </div>
 
               <ul class="skx-history__list">
-                <li v-for="r in recentRows" :key="r.entry.id" class="skx-history__row">
-                  <button
-                    type="button"
-                    :class="['skx-history-item', r.entry.id === activeId && 'is-active']"
-                    :aria-current="r.entry.id === activeId ? 'page' : undefined"
-                    @click="go(r.entry)"
+                <li
+                  v-for="r in recentRows"
+                  :key="r.entry.id"
+                  :data-history-id="r.entry.id"
+                  :class="['skx-history__row', rowConfirm === r.entry.id && 'is-confirming']"
+                >
+                  <div class="skx-history__row-main">
+                    <button
+                      type="button"
+                      :class="['skx-history-item', r.entry.id === activeId && 'is-active']"
+                      :aria-current="r.entry.id === activeId ? 'page' : undefined"
+                      @click="go(r.entry)"
+                    >
+                      <span class="skx-history-item__query">{{ r.entry.title }}</span>
+                      <span class="skx-history-item__meta">
+                        <span class="skx-history-chip">{{ r.label }}</span>
+                        <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(r.entry)) }}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="skx-history-item__del"
+                      :aria-label="`'${r.entry.title}' 기록 삭제`"
+                      :aria-expanded="rowConfirm === r.entry.id"
+                      @click="toggleRowConfirm(r.entry.id)"
+                    >
+                      <img src="/img/ico-delete.svg" alt="" />
+                    </button>
+                  </div>
+                  <div
+                    v-if="rowConfirm === r.entry.id"
+                    class="skx-history__confirm skx-history__confirm--row"
+                    role="alertdialog"
+                    :aria-label="`'${r.entry.title}' 기록 삭제 확인`"
+                    :aria-describedby="`skx-row-confirm-${r.entry.id}`"
+                    @keydown.esc.stop="cancelRowConfirm(r.entry.id)"
                   >
-                    <span class="skx-history-item__query">{{ r.entry.title }}</span>
-                    <span class="skx-history-item__meta">
-                      <span class="skx-history-chip">{{ r.label }}</span>
-                      <span class="skx-history-item__time">{{ formatHistoryTime(entryTime(r.entry)) }}</span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class="skx-history-item__del"
-                    :aria-label="`'${r.entry.title}' 기록 삭제`"
-                    @click="removeRow(r.entry.id, $event)"
-                  >
-                    <img src="/img/ico-delete.svg" alt="" />
-                  </button>
+                    <p :id="`skx-row-confirm-${r.entry.id}`" class="skx-history__confirm-text">{{ ROW_CLEAR_TEXT.recent }}</p>
+                    <div class="skx-history__confirm-actions">
+                      <button
+                        type="button"
+                        class="skx-history__confirm-btn is-danger"
+                        data-row-confirm
+                        @click="removeRow(r.entry.id, $event)"
+                      >
+                        지우기
+                      </button>
+                      <button type="button" class="skx-history__confirm-btn" @click="cancelRowConfirm(r.entry.id)">취소</button>
+                    </div>
+                  </div>
                 </li>
               </ul>
             </section>
@@ -324,6 +382,11 @@ type ClearGroup = "research" | "recent";
 const CLEAR_TEXT: Record<ClearGroup, string> = {
   research: `${DEEP_RESEARCH} 기록을 모두 지울까요? 보고서 자체는 지워지지 않습니다.`,
   recent: `최근 검색 기록(소장자료·논문)을 모두 지울까요? ${DEEP_RESEARCH} 기록은 지워지지 않습니다.`,
+};
+// 한 줄 삭제 확인 문구 — 묶음 전체 삭제와 같은 말투
+const ROW_CLEAR_TEXT: Record<ClearGroup, string> = {
+  research: "이 연구 기록을 지울까요? 보고서 자체는 지워지지 않습니다.",
+  recent: "이 검색 기록을 지울까요?",
 };
 const POLL_MS = 30_000;
 
@@ -451,6 +514,7 @@ const CONFIRM = { research: researchConfirmBtn, recent: recentConfirmBtn } as co
 
 // 확인창이 열리면 확인 버튼으로, 닫히면 연 버튼으로 초점을 옮긴다 — 키보드 사용자가 자리를 잃지 않게
 async function openConfirm(group: ClearGroup) {
+  rowConfirm.value = null;
   confirming.value = group;
   await nextTick();
   CONFIRM[group].value?.focus();
@@ -476,8 +540,38 @@ async function clearGroup(group: ClearGroup) {
   await done;
 }
 
+// ── 한 줄 삭제 확인 ──────────────────────────────────────
+// 휴지통은 바로 지우지 않고 그 줄 아래에 확인을 펼친다(한 번에 한 줄). 다시 누르면 접는다. 묶음 전체 삭제 확인과는 함께 열리지 않는다
+const rowConfirm = ref<string | null>(null);
+
+async function toggleRowConfirm(id: string) {
+  confirming.value = null;
+  rowConfirm.value = rowConfirm.value === id ? null : id;
+  if (!rowConfirm.value) return;
+  // 열리면 [지우기]에 초점 — 묶음 확인(openConfirm)과 같다. 엔터 한 번 더면 지워지고, Esc·[취소]면 휴지통으로 돌아간다
+  await nextTick();
+  asideEl.value?.querySelector<HTMLButtonElement>("[data-row-confirm]")?.focus({ preventScroll: true });
+}
+
+// [취소]·Esc — 확인이 걷히면 초점을 그 줄의 휴지통으로 돌린다
+async function cancelRowConfirm(id: string) {
+  rowConfirm.value = null;
+  await nextTick();
+  const rows = asideEl.value?.querySelectorAll<HTMLButtonElement>(".skx-history-item__del") ?? [];
+  [...rows].find((btn) => btn.closest("li")?.dataset.historyId === id)?.focus();
+}
+
+// 확인을 연 줄이 다른 곳(다른 탭·폴링)에서 지워지면 확인도 거둔다
+watch(
+  () => history.entries.value,
+  (entries) => {
+    if (rowConfirm.value && !entries.some((e) => e.id === rowConfirm.value)) rowConfirm.value = null;
+  },
+);
+
 // 행을 지우면 초점을 다음 행으로, 마지막 행이었으면 그 묶음 제목으로, 묶음이 사라지면 새 검색 버튼으로 옮긴다
 function removeRow(id: string, ev: Event) {
+  rowConfirm.value = null;
   const li = (ev.currentTarget as HTMLElement).closest("li");
   const nextRow = li?.nextElementSibling?.querySelector<HTMLElement>(".skx-history-item") ?? null;
   const title = li?.closest("section")?.querySelector<HTMLElement>(".skx-history__title") ?? null;
@@ -533,6 +627,7 @@ async function openResearchFromRail() {
 // pages/index.vue 의 route.query watch 가 같은 페이지에서 goLanding 으로 결과를 걷는다 — 이쪽에서 따로 비울 상태는 없다
 function newSearch() {
   confirming.value = null;
+  rowConfirm.value = null;
   void router.push({ path: "/" });
 }
 
@@ -540,6 +635,7 @@ function newSearch() {
 // '/' 에 이미 있어도 쿼리가 바뀌는 이동이라 같은 길로 받는다
 function startDeepResearch() {
   confirming.value = null;
+  rowConfirm.value = null;
   void router.push(deepResearchStartRoute());
 }
 
@@ -791,7 +887,8 @@ onBeforeUnmount(() => {
   line-height: 1.6;
   color: var(--skx-gray-1);
 }
-.skx-history__row {
+/* 휴지통은 줄 본체(제목·메타)의 세로 가운데에 선다 — 확인이 그 아래로 펼쳐져도 자리가 밀리지 않게 기준을 본체에 둔다 */
+.skx-history__row-main {
   position: relative;
 }
 .skx-history__row .skx-history-item {
@@ -823,8 +920,17 @@ onBeforeUnmount(() => {
   transition: opacity 0.15s;
 }
 .skx-history__row:hover .skx-history-item__del,
-.skx-history-item__del:focus-visible {
+.skx-history-item__del:focus-visible,
+.skx-history__row.is-confirming .skx-history-item__del {
   opacity: 1;
+}
+/* 확인을 연 줄은 휴지통이 눌린 채 남는다 — 어느 줄을 지우려는지 보인다 */
+.skx-history__row.is-confirming .skx-history-item__del {
+  background: var(--skx-frost-bg);
+}
+/* 한 줄 삭제 확인 — 그 줄 바로 아래(휴지통 자리와 겹치지 않게 흐름 안)에 선다 */
+.skx-history__confirm--row {
+  margin: 0.2rem 0 0.4rem;
 }
 /* 아이콘 버튼 올림은 모두 같은 모양(살짝 둥근 네모 + 흰 10% 면) */
 .skx-history-item__del:hover {
