@@ -31,6 +31,8 @@ JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 
   Card      = {"title": str, "question": str, "evidence": [cnts_id], "figure_sentence": str|null,
                "figures": [Figure], "latest_year": int|null, "edited": bool,
                "keywords": [str],                               — 만들 때 넘긴 고른 키워드(06e — 옛 카드엔 없음)
+               "focus": [str],                                  — [이 키워드로 다시 만들기]가 더한 키워드(그때만 —
+                                                                  엄격한 검사가 하나 이상을 요구, 2026-10-14)
                "checks": {"numbers": [str], "softened": int, "recovered": int,
                           "missing_keywords": [str]},           — keywords 중 제목에 없는 것(06e)
                "gen_id": int|null}

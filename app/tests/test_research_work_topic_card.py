@@ -65,7 +65,7 @@ class TestPrompt:
         env = Environment()
         names = meta.find_undeclared_variables(env.parse(tpl.system)) | meta.find_undeclared_variables(
             env.parse(tpl.user))
-        assert names == {"question", "heading", "seed", "evidence_list", "keywords"}
+        assert names == {"question", "heading", "seed", "evidence_list", "keywords", "focus"}
 
     def test_the_keyword_rule_is_there_only_when_keywords_are_given(self):
         # 06e D23 — 고른 키워드가 있을 때만 규칙 한 줄. 없으면(옛 행·키워드 없이 넣은 카드) 06b 프롬프트와 글자까지 같다
@@ -76,6 +76,27 @@ class TestPrompt:
         assert with_kw[0]["content"].replace("\n" + rule, "") == plain[0]["content"]
         # 사용자 메시지(원 질문·씨앗·근거)는 그대로다 — 다시 만들 때도 이전 제목을 주지 않는다(함정 26)
         assert with_kw[1]["content"] == plain[1]["content"]
+
+    def test_the_focus_rule_is_there_only_when_keywords_were_added(self):
+        # 운영 630e0d65 — [이 키워드로 다시 만들기]에서 더한 '연구 대상'이 4장 모두 빠졌다. 미리 고른 키워드에 원 질문의
+        # 말('다문화가정 아동')이 들어 있어 '하나 이상' 규칙은 늘 그 말로 채워진다. 다시 만들 때 새로 더한 키워드
+        # (input.focus)를 키워드 규칙 바로 아래 한 줄로 강조한다. focus 가 없거나 비면 06e 프롬프트와 글자까지 같다.
+        # 더한 키워드가 하나면 '다음 키워드는' — gemma 로 운영 입력 3가지를 6회씩 다시 만들면 72/72 가 제목에 넣었고,
+        # '가운데 하나 이상은'은 일반어 '연구 대상'에서 19/24 였다. 둘 이상이면 하나만 넣어도 되게 '가운데 하나 이상은'
+        kw = {**INPUT, "keywords": ["노인 우울", "사회적 지지", "측정 방법"]}
+        rule = "- 특히 다음 키워드는 title 에 꼭 글자 그대로 넣습니다: 측정 방법"
+        plain, _ = EXECUTOR.build(kw)
+        for inp in ({**kw, "focus": []}, {**kw, "focus": None}):
+            assert EXECUTOR.build(inp)[0] == plain
+        focused, _ = EXECUTOR.build({**kw, "focus": ["측정 방법"]})
+        system = focused[0]["content"]
+        assert "넣습니다: 노인 우울 · 사회적 지지 · 측정 방법\n" + rule + "\n" in system
+        assert "꼭" not in plain[0]["content"]
+        assert system.replace("\n" + rule, "") == plain[0]["content"]
+        assert focused[1]["content"] == plain[1]["content"]          # 이전 제목은 여전히 주지 않는다(함정 26)
+        two, _ = EXECUTOR.build({**kw, "focus": ["측정 방법", "사회적 지지"]})
+        assert ("\n- 특히 다음 키워드 가운데 하나 이상은 title 에 꼭 글자 그대로 넣습니다: 측정 방법 · 사회적 지지\n"
+                in two[0]["content"])
 
     def test_no_array_sample_no_example_and_no_figures(self):
         # 함정 15 — 원소가 든 배열 견본·JSON 견본·예시는 개수와 분야를 베끼게 한다. 수치는 모델에 주지 않는다(정함 3).
@@ -113,7 +134,8 @@ class TestBuild:
     def test_old_rows_without_keywords_still_build(self):
         # 06e 전에 넣은 행엔 keywords 키가 없다 — 다시 부르기(retry)가 그 input 을 그대로 쓴다. 렌더러가 StrictUndefined
         # (services/prompts.py)라 _build 가 늘 넘겨야 한다. 빈 목록·None 도 키워드 규칙이 없는 프롬프트다
-        assert "keywords" not in INPUT
+        # focus(다시 만들 때 더한 키워드) 키도 없다 — 06e 행과 다시 만들기 밖의 입력이다
+        assert "keywords" not in INPUT and "focus" not in INPUT
         for inp in (INPUT, {**INPUT, "keywords": []}, {**INPUT, "keywords": None}):
             messages, _ = EXECUTOR.build(inp)
             assert "키워드" not in messages[0]["content"]
@@ -240,6 +262,16 @@ class TestBind:
         card = _bound(GOOD, {**INPUT, "keywords": ["지지망", "치매"]})["card"]
         assert (card["keywords"], card["checks"]["missing_keywords"]) == (["지지망", "치매"], ["치매"])
 
+    def test_focus_is_carried_only_when_given(self):
+        # 다시 만들 때 더한 키워드(input.focus)는 엄격한 검사가 읽도록 카드에 싣는다. 비었거나 없으면 키를 싣지 않는다 —
+        # 처음 카드·[다른 방향]·06e 전 행의 카드 모양은 그대로다
+        inp = {**INPUT, "keywords": ["지지망", "치매"]}
+        assert "focus" not in _bound(GOOD, inp)["card"]
+        assert "focus" not in _bound(GOOD, {**inp, "focus": []})["card"]
+        assert "focus" not in _bound(GOOD, {**inp, "focus": None})["card"]
+        card = _bound(GOOD, {**inp, "focus": ["치매"]})["card"]
+        assert card["focus"] == ["치매"] and card["checks"]["missing_keywords"] == ["치매"]
+
     def test_latest_year_comes_from_the_chosen_evidence(self):
         card = _bound({**GOOD, "evidence": ["E2", "E3"]})["card"]
         assert (card["evidence"], card["latest_year"]) == (["P1", "P3"], 2013)
@@ -311,6 +343,29 @@ class TestCheck:
         card = _bound({**GOOD, "title": "아무 낱말"}, {**INPUT, "keywords": []})
         assert card["card"]["checks"]["missing_keywords"] == [] and EXECUTOR.check(card) is True
         assert EXECUTOR.check(_bound({**GOOD, "title": "아무 낱말"})) is True
+
+    def test_a_title_without_the_added_keyword_fails_the_strict_check(self):
+        # 운영 630e0d65 — 다시 만든 4장이 원 질문의 말로 '하나 이상'을 채워 첫 시도에 통과했고, 더한 '연구 대상'은 하나도
+        # 들지 않았다. 다시 만들 때 더한 키워드(focus)가 하나도 없으면 다른 키워드가 있어도 엄격한 검사 미달이다
+        inp = {**INPUT, "keywords": ["독거노인", "지지망 유형", "농촌 노인"], "focus": ["농촌 노인"]}
+        miss = _bound(GOOD, inp)                     # '독거노인의 지지망 유형과 우울' — 농촌 노인만 없다
+        assert miss["card"]["checks"]["missing_keywords"] == ["농촌 노인"]
+        assert EXECUTOR.check(miss) is False
+        # 무른 검사(근거 2편)는 넘는다 — 세 번 다 놓치면 이 카드를 보관한다(06e 정함 17 그대로)
+        assert EXECUTOR.soft_check(miss) is True
+        hit = _bound({**GOOD, "title": "농촌 노인의 지지망 유형과 우울"}, inp)
+        assert EXECUTOR.check(hit) is True
+        # 더한 키워드가 여럿이면 그 가운데 하나 이상
+        assert EXECUTOR.check(_bound(GOOD, {**inp, "focus": ["농촌 노인", "지지망 유형"]})) is True
+        # 근거가 모자라면 focus 가 맞아도 미달이다
+        assert EXECUTOR.check(_bound({**GOOD, "title": "농촌 노인의 지지망", "evidence": ["E1"]}, inp)) is False
+
+    def test_no_focus_keeps_the_06e_check(self):
+        # 처음 카드·[다른 방향]·06e 전 행(focus 없음·빈 목록) — 고른 키워드 하나라도 있으면 통과(06e D23 그대로)
+        inp = {**INPUT, "keywords": ["독거노인", "지지망 유형", "농촌 노인"]}
+        for given in (inp, {**inp, "focus": []}, {**inp, "focus": None}):
+            assert EXECUTOR.check(_bound(GOOD, given)) is True
+            assert EXECUTOR.check(_bound({**GOOD, "title": "노인의 관계망과 우울"}, given)) is False
 
     def test_needs_two_evidence_chips(self):
         assert MIN_TOPIC_EVIDENCE == 2
@@ -389,6 +444,26 @@ class TestThroughTheCommonRule:
         assert result.model == fallback and EXECUTOR.is_empty(result.output) is False
         assert result.output["card"]["title"] == "독거노인 지지망 유형"
         assert result.output["card"]["checks"]["missing_keywords"] == ["농촌 노인", "우울 선별"]
+
+    def test_a_missed_added_keyword_is_asked_again(self, cfg):
+        # 다시 만들 때 더한 키워드(focus)를 놓친 카드는 다른 키워드가 있어도 다시 부른다 — 두 번째 카드를 보관한다
+        inp = {**INPUT, "keywords": ["독거노인", "농촌 노인"], "focus": ["농촌 노인"]}
+        primary, _ = _models()
+        answers = {primary: [_reply(GOOD), _reply({**GOOD, "title": "독거노인과 농촌 노인의 지지망 유형"})]}
+        seen: list[str] = []
+
+        async def fake_chat(messages, *, params=None, timeout=120.0, base_url=None, model=None):
+            seen.append(model)
+            assert "꼭 글자 그대로 넣습니다: 농촌 노인" in messages[0]["content"]
+            return LLMResult(content=answers[model].pop(0), finish_reason="stop")
+
+        result = asyncio.run(run_generation(EXECUTOR, inp, chat_fn=fake_chat))
+
+        assert seen == [primary, primary]
+        assert [a["outcome"] for a in result.attempts] == ["check", "ok"]
+        card = result.output["card"]
+        assert card["title"] == "독거노인과 농촌 노인의 지지망 유형" and card["checks"]["missing_keywords"] == []
+        assert card["focus"] == ["농촌 노인"]
 
 
 class TestExecutors:

@@ -15,6 +15,9 @@
     검사는 06c 의 terms.contains(NFKC·casefold·공백 무시, 아니면 낱말이 순서대로)로 제목에 든 키워드를 보고
     card.keywords·card.checks.missing_keywords 에 싣는다. 하나도 없으면 엄격한 검사 미달로 다시 부르고, 세 번 다
     놓치면 근거 검사(무른 검사)만 넘은 마지막 카드를 보관한다 — 화면이 '제목에 ○○ 없음' 경고를 단다(06e 정함 17).
+  - 더한 키워드: [이 키워드로 다시 만들기]는 카드를 만들 때보다 더한 키워드를 input.focus 로 넘긴다. 그러면 프롬프트에
+    '특히 … 꼭' 한 줄이 더 붙고, 엄격한 검사는 focus 가운데 하나 이상을 요구한다(card.focus). 미리 고른 키워드에 원 질문의
+    말이 들어 있어 '하나 이상'은 늘 그 말로 채워졌다(운영 630e0d65 — 더한 '연구 대상' 0/4). focus 가 비면 06e 그대로다.
 결과 반영(apply)은 research_topics 의 그 행만 바꾼다 — 사용자가 직접 고친 카드(card.edited)는 덮지 않는다.
 """
 import re
@@ -65,6 +68,11 @@ def _evidence_list(papers: list[dict]) -> str:
     ) or "(없음)"
 
 
+def _focus(input: dict) -> list[str]:
+    """다시 만들 때 더한 키워드(input.focus — seeds.topic_input). 키가 없는 옛 행·처음 카드는 빈 목록."""
+    return [k for k in (input.get("focus") or []) if isinstance(k, str) and k]
+
+
 def _build(input: dict) -> tuple[list[dict], dict]:
     seed = input.get("seed") or {}
     system, user, params = get_prompt(PROMPT).render(
@@ -74,6 +82,9 @@ def _build(input: dict) -> tuple[list[dict], dict]:
         evidence_list=_evidence_list(input.get("papers") or []),
         # 렌더러가 StrictUndefined 라(services/prompts.py) 늘 넘긴다 — 빈 글이면 프롬프트의 키워드 규칙 줄이 빠진다
         keywords=" · ".join(k for k in (input.get("keywords") or []) if isinstance(k, str)),
+        # 다시 만들 때 더한 키워드(input.focus) 목록 — 비면 강조 줄이 빠져 06e 프롬프트와 글자까지 같다. 하나면
+        # '다음 키워드는', 둘 이상이면 '다음 키워드 가운데 하나 이상은'(프롬프트가 고른다)
+        focus=_focus(input),
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}], params
 
@@ -207,6 +218,8 @@ def _bind(output: dict, input: dict) -> dict:
     }
     if "keywords" in input:
         card["keywords"] = keywords
+    if focus := _focus(input):
+        card["focus"] = focus           # 엄격한 검사가 읽는다 — 다시 만들기 밖의 카드 모양은 그대로다
     return {"card": card}
 
 
@@ -217,11 +230,17 @@ def _soft_check(output: dict) -> bool:
 
 
 def _check(output: dict) -> bool:
-    """엄격한 검사 — 무른 검사에 더해, 고른 키워드를 넘겼으면 제목에 하나 이상 들어 있다(06e D23). 하나도 없으면 공통
-    규칙의 내용 검사 미달로 다시 부르고, 세 번 다 놓치면 run_generation 이 무른 검사를 넘은 마지막 카드를 낸다(정함 17)."""
+    """엄격한 검사 — 무른 검사에 더해, 고른 키워드를 넘겼으면 제목에 하나 이상 들어 있다(06e D23). 다시 만들 때 더한
+    키워드(card.focus)가 있으면 그 가운데 하나 이상이 제목에 있어야 한다 — 미리 고른 키워드에 원 질문의 말이 들어 있어
+    '하나 이상'만으로는 더한 키워드를 빼도 늘 통과했다(운영 630e0d65 — 4장 모두 '연구 대상' 없이 첫 시도 통과).
+    미달이면 공통 규칙의 내용 검사 미달로 다시 부르고, 세 번 다 놓치면 run_generation 이 무른 검사를 넘은 마지막 카드를
+    낸다(정함 17)."""
     if not _soft_check(output):
         return False
     card = output["card"]
+    focus = card.get("focus") or []
+    if focus and not any(contains(card["title"], k) for k in focus):
+        return False
     keywords = card.get("keywords") or []
     return not keywords or len(card["checks"].get("missing_keywords") or []) < len(keywords)
 

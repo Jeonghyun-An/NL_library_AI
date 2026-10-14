@@ -275,7 +275,18 @@ class TestTopicInput:
             "adopted": 12,
             "corpus": {"n_papers": 144748, "from": "1980", "to": "2017"},
             "keywords": [],
+            "focus": [],
         }
+
+    def test_topic_input_carries_the_added_keywords_as_focus(self):
+        # [이 키워드로 다시 만들기]가 카드를 만들 때보다 더한 키워드를 focus 로 싣는다(운영 630e0d65). 처음 카드·
+        # [다른 방향]은 넘기지 않아 빈 목록이다. 넘긴 목록을 복사해 둔다
+        seed = pick_seeds(REPORT, limit=1)[0]
+        added = ["측정 방법"]
+        made = topic_input("q", seed, REPORT, 12, keywords=["노인 우울", "측정 방법"], focus=added)
+        assert made["focus"] == added and made["focus"] is not added
+        assert topic_input("q", seed, REPORT, 12, keywords=["노인 우울"])["focus"] == []
+        assert topic_input("q", seed, REPORT, 12, keywords=["노인 우울"], focus=None)["focus"] == []
 
     def test_topic_input_carries_the_keywords_or_an_empty_list(self):
         # 06e D23 — 카드를 만들 때 고른 키워드(work.concepts)를 입력에 싣는다. 넘긴 목록을 복사해 둔다

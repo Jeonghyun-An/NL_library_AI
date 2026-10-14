@@ -413,6 +413,31 @@ class TestRegenerate:
             "gen_id": g["id"], "gen_kind": "topic_card", "target": g["target"], "status": "queued",
             "model": None, "result": None}) for g in new]
 
+    def test_keywords_added_since_the_card_was_made_are_the_focus(self, api):
+        # 운영 630e0d65 — 처음 고른 키워드(카드의 keywords)에 '연구 대상'을 더해 다시 만들었는데 4장 모두 빠졌다. 카드를
+        # 만들 때보다 더한 키워드를 input.focus 로 넘겨 프롬프트·엄격한 검사가 그 말을 따로 본다(같은 말 판정은
+        # keyword_key — 띄어쓰기만 다른 것은 더한 것이 아니다). 비교할 기준이 없는 카드 — 근거 부족(카드 없음)·06e 전
+        # 카드(keywords 없음)·키워드 없이 만든 카드(keywords []) — 와 더한 것이 없는 카드는 focus 가 비어 06e 그대로다
+        added = "연구 대상"
+        jid = _work_job(api.engine, concepts=[*KEYWORDS, added])
+        made = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card={**CARD, "keywords": KEYWORDS})
+        thin = add_topic(api.engine, jid, slot=2, seed=SEEDS[1], state="insufficient")
+        old = add_topic(api.engine, jid, slot=3, seed=SEEDS[2], card=CARD)
+        bare = add_topic(api.engine, jid, slot=4, seed=SEEDS[3], card={**CARD, "keywords": []})
+        same = add_topic(api.engine, jid, origin="other", seed=SEEDS[4],
+                         card={**CARD, "keywords": ["노인우울", "사회적 지지", added]})
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200 and res.json()["topic_ids"] == [made, thin, old, bare, same]
+        inputs = {g["target"]: g["input"] for g in _rows(api.engine, ResearchGeneration)}
+        assert inputs[str(made)] == topic_input(QUESTION, SEEDS[0], REPORT, made, keywords=[*KEYWORDS, added],
+                                                focus=[added])
+        assert inputs[str(made)]["focus"] == [added]
+        for tid in (thin, old, bare, same):
+            assert inputs[str(tid)]["focus"] == []
+            assert inputs[str(tid)]["keywords"] == [*KEYWORDS, added]
+
     def test_edited_user_picked_and_folded_cards_are_left_alone(self, api):
         # 06e 정함 16 — 고른 카드는 키워드를 바꿔도 다시 만들지 않는다(목차 '다시 맞춤 필요'를 피한다). 사용자가 고친
         # 카드·직접 쓴 카드·접은 카드도 대상이 아니다
