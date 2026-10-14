@@ -8,7 +8,7 @@ paper_summary.py — 논문 검색 결과 핵심 요약 SSE 스트리밍
 summary 엔드포인트:
   - 입력: query + top-K 논문 book_id 목록 (검색 결과에서 전달)
   - 처리: 각 논문의 best chunk 로 컨텍스트 구성 → LLM 스트리밍
-  - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하면 sources 대신 error 이벤트)
+  - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하면 sources 뒤에 error 이벤트)
 """
 import json
 import logging
@@ -93,7 +93,7 @@ async def stream_paper_summary(
     SSE 이벤트:
       data: {"text": "..."}       — 토큰 스트리밍
       data: {"sources": [...]}    — 최종 출처 목록
-      data: {"error": SUMMARY_STREAM_ERROR} — LLM 호출이 실패하면 sources 대신(받은 글 뒤, [DONE] 바로 앞)
+      data: {"error": SUMMARY_STREAM_ERROR} — LLM 호출이 실패하면(받은 글·sources 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     if not papers:
@@ -127,6 +127,17 @@ async def stream_paper_summary(
         "stream": True,
     }
 
+    # 출처는 LLM 이 아니라 넘겨받은 논문으로 만든다 — 요약이 실패해도 그대로 맞아 오류 앞에 보낸다(화면 오른쪽 참고 논문 칸)
+    sources: list[dict] = [
+        {
+            "num": p["num"],
+            "book_id": papers[i]["book_id"],
+            "title": p["title"],
+            "authors": p["authors"],
+        }
+        for i, p in enumerate(paper_ctx)
+    ]
+
     # ── 텍스트 스트리밍 ───────────────────────────────────────
     try:
         async with httpx.AsyncClient() as client:
@@ -152,20 +163,12 @@ async def stream_paper_summary(
                         pass
     except Exception as e:
         log.error(f"[paper_summary] LLM 스트리밍 실패: {e}")
+        yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
         yield _error_event(SUMMARY_STREAM_ERROR)
         yield "data: [DONE]\n\n"
         return
 
     # ── 출처 목록 이벤트 ─────────────────────────────────────
-    sources: list[dict] = [
-        {
-            "num": p["num"],
-            "book_id": papers[i]["book_id"],
-            "title": p["title"],
-            "authors": p["authors"],
-        }
-        for i, p in enumerate(paper_ctx)
-    ]
     yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
     yield "data: [DONE]\n\n"
 
