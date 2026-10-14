@@ -27,6 +27,8 @@
         @click="pick(m.id)"
       >
         {{ m.label }}
+        <!-- 기본 방식 표시(후배 시안의 '기본' 배지) — 칸 이름에 함께 읽혀 '정밀하게 기본'이 된다 -->
+        <span v-if="m.id === DEFAULT_RESEARCH_MODE" class="rs-mode__default">기본</span>
       </button>
     </div>
   </div>
@@ -47,7 +49,13 @@
 
 <script setup lang="ts">
 import { nextTick, ref, useId } from "vue";
-import { RESEARCH_MODES, RESEARCH_MODE_LABEL, modeStep, type ResearchMode } from "~/utils/researchMode";
+import {
+  DEFAULT_RESEARCH_MODE,
+  RESEARCH_MODES,
+  RESEARCH_MODE_LABEL,
+  modeStep,
+  type ResearchMode,
+} from "~/utils/researchMode";
 
 const props = withDefaults(defineProps<{ modelValue: ResearchMode; disabled?: boolean }>(), { disabled: false });
 const emit = defineEmits<{ "update:modelValue": [mode: ResearchMode] }>();

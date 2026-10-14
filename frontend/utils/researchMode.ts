@@ -22,13 +22,18 @@ export const RESEARCH_MODE_LABEL = "탐색 방식";
 export const DEFAULT_RESEARCH_MODE: ResearchMode = "precise";
 // 고른 방식의 기억 — 같은 브라우저의 편의일 뿐이다(없거나 읽지 못하면 기본 방식)
 export const RESEARCH_MODE_KEY = "skx_research_mode";
-// 화면의 칸 순서(폭넓게 · 정밀하게)
+// 화면의 칸 순서(폭넓게 · 정밀하게). 설명은 얻는 것을 앞에, 치르는 것을 뒤에 둔다(후배 시안 '탐색 방식 선택'의 문구를 받아 2026-10-14) —
+// 폭넓게는 범위 용어 없이 하위질문 그대로 찾고, 정밀하게는 질문의 범위 용어를 검색어에 합성한다(D25·D28)
 export const RESEARCH_MODES: readonly ResearchModeOption[] = [
-  { id: "broad", label: "폭넓게", hint: "많이 찾지만 엉뚱한 논문이 섞일 수 있습니다" },
+  {
+    id: "broad",
+    label: "폭넓게",
+    hint: "연관 분야까지 넓게 탐색해 더 많은 논문을 찾습니다. 주제와 먼 논문이 섞일 수 있습니다",
+  },
   {
     id: "precise",
     label: "정밀하게",
-    hint: "질문의 범위를 검색어에 함께 넣어 엉뚱한 논문을 줄입니다. 관련 논문 몇 편을 놓칠 수 있습니다",
+    hint: "질문의 핵심 주제와 범위에 맞춰 탐색해 엉뚱한 논문을 줄입니다. 관련 논문 몇 편을 놓칠 수 있습니다",
   },
 ];
 
