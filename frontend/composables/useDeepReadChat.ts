@@ -17,11 +17,21 @@ export interface DeepReadChatOptions {
   fetchFn?: typeof fetch;
 }
 
+// 답을 받지 못한 질문과 보일 문구(서버의 {error} 문구, 없으면 CHAT_ERROR_TEXT). 질문도 오류도 대화(messages·store)에는
+// 남기지 않는다 — 남기면 오류 문구가 답처럼 굳고 다음 질문의 history 로 모델에게까지 간다
+export interface DeepReadFailure {
+  question: string;
+  message: string;
+}
+
 export interface DeepReadChat {
   messages: Ref<DeepReadMessage[]>;
   streamingText: Ref<string>;
   isStreaming: Ref<boolean>;
+  failure: Ref<DeepReadFailure | null>;
   send(text: string): Promise<void>;
+  // 실패한 질문을 그대로 다시 보낸다 — 실패가 없으면 아무것도 하지 않는다
+  retry(): Promise<void>;
   stop(): void;
 }
 
@@ -31,7 +41,9 @@ interface Run {
 }
 
 // 딥리드 대화의 흐름(BookChat 에서 뺐다 — spec §12-4). 논문(cntsId)이 바뀌면 받던 답을 끊고 그 논문의 대화로 바꾸며,
-// 닫히면(scope 끝) 끊는다. 끊은 답은 받은 글 + '멈췄습니다'로 그 논문의 대화에 남는다(06e 정함 21)
+// 닫히면(scope 끝) 끊는다. 끊은 답은 받은 글 + '멈췄습니다'로 그 논문의 대화에 남는다(06e 정함 21).
+// 답을 받지 못하면({error}·4xx·5xx·네트워크 오류·[DONE] 없이 끊김) 받던 글을 버리고 질문도 대화에서 빼 failure 로 알린다 —
+// user/assistant 짝은 그대로이고, 화면이 [다시 시도](retry)로 같은 질문을 다시 보낸다
 export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
   // store 가 있으면 그 논문의 배열을 그대로 쥔다 — messages 에 쓰는 것이 곧 store 에 남는다
   function thread(id: string): DeepReadMessage[] {
@@ -48,6 +60,7 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
   const messages = ref<DeepReadMessage[]>(thread(opts.cntsId()));
   const streamingText = ref("");
   const isStreaming = ref(false);
+  const failure = ref<DeepReadFailure | null>(null);
   // 지금 받는 답 — 끊긴 뒤 늦게 끝난 읽기가 다음 답의 상태를 건드리지 않게 이것과 견준다
   let current: Run | null = null;
 
@@ -65,15 +78,19 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
   async function send(raw: string): Promise<void> {
     const text = raw.trim();
     if (!text || current) return;
+    failure.value = null;
     const list = messages.value;
-    list.push({ role: "user", content: text });
+    const asked: DeepReadMessage = { role: "user", content: text };
+    list.push(asked);
     const history = list.slice(0, -1).map((m) => ({ role: m.role, content: m.content }));
     const run: Run = { ctrl: new AbortController(), list };
     current = run;
     isStreaming.value = true;
     streamingText.value = "";
     let sources: DeepReadSource[] | undefined;
-    let failed = false;
+    // [DONE] 까지 받았는지 — 못 받았으면(끊김·{error}·오류) 실패다. 실패 문구는 서버가 준 것, 없으면 CHAT_ERROR_TEXT
+    let finished = false;
+    let failMessage: string | null = null;
     try {
       const fetchFn = opts.fetchFn ?? fetch;
       const resp = await fetchFn(apiUrl(`/books/chat/${opts.cntsId()}`), {
@@ -92,31 +109,49 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
         const parsed = parseSse(buffer, decoder.decode(value, { stream: true }));
         buffer = parsed.buffer;
         for (const evt of parsed.events) {
-          if (evt.type === "done") break reading;
+          if (evt.type === "error") {
+            failMessage = evt.message;
+            break reading;
+          }
+          if (evt.type === "done") {
+            finished = true;
+            break reading;
+          }
           if (evt.type === "text") streamingText.value += evt.text;
           else sources = evt.sources;
         }
       }
+      // 일찍 끝낸 읽기({error})는 연결을 끊는다 — 이미 닫힌 스트림의 취소 실패는 무시한다
+      void reader.cancel().catch(() => undefined);
     } catch {
-      failed = true;
+      /* 4xx·5xx·네트워크 오류 — finished 가 false 로 남는다 */
     }
     // stop() 이 이미 끊고 남겼다(닫기·논문 바꾸기)
     if (current !== run) return;
     current = null;
-    run.list.push(
-      failed
-        ? { role: "assistant", content: CHAT_ERROR_TEXT }
-        : { role: "assistant", content: streamingText.value, ...(sources ? { sources } : {}) },
-    );
+    if (finished) {
+      run.list.push({ role: "assistant", content: streamingText.value, ...(sources ? { sources } : {}) });
+    } else {
+      // 받던 글은 버리고 질문도 대화에서 뺀다 — 오류가 답처럼 굳거나 다음 질문의 history 에 실리지 않게
+      const at = run.list.lastIndexOf(asked);
+      if (at >= 0) run.list.splice(at, 1);
+      failure.value = { question: text, message: failMessage ?? CHAT_ERROR_TEXT };
+    }
     streamingText.value = "";
     isStreaming.value = false;
   }
 
+  async function retry(): Promise<void> {
+    if (!failure.value || current) return;
+    await send(failure.value.question);
+  }
+
   watch(opts.cntsId, (id) => {
     stop();
+    failure.value = null;
     messages.value = thread(id);
   });
   onScopeDispose(stop);
 
-  return { messages, streamingText, isStreaming, send, stop };
+  return { messages, streamingText, isStreaming, failure, send, retry, stop };
 }

@@ -43,6 +43,17 @@
         </div>
       </div>
 
+      <!-- 답을 받지 못한 질문 — 대화에는 남기지 않고(오류가 답처럼 굳거나 다음 질문의 history 로 가지 않게) 여기에만 보인다.
+           [다시 시도]는 같은 질문을 다시 보낸다 -->
+      <template v-if="failure">
+        <div class="skx-chat-msg skx-chat-msg--user">
+          <div v-html="formatText(failure.question)" />
+        </div>
+        <div class="skx-chat-msg skx-chat-msg--ai" role="alert">{{ failure.message }} ·
+          <button type="button" class="skx-retry" @click="retry">다시 시도</button>
+        </div>
+      </template>
+
       <!-- 스트리밍 중 -->
       <template v-if="isStreaming">
         <div v-if="streamingText" class="skx-chat-msg skx-chat-msg--ai">
@@ -110,7 +121,7 @@ const emit = defineEmits<{ close: []; "open-pdf": [payload: OpenPdfPayload] }>()
 
 const copy = computed(() => chatCopy(props.docKind));
 
-const { messages, streamingText, isStreaming, send: sendChat } = useDeepReadChat({
+const { messages, streamingText, isStreaming, failure, send: sendChat, retry: retryChat } = useDeepReadChat({
   cntsId: () => props.cntsId,
   store: () => props.store,
 });
@@ -133,20 +144,31 @@ function scrollBottom() {
   });
 }
 
-// 질문·답이 쌓이거나 글이 흐르거나 다른 논문의 대화로 바뀌면 맨 아래로
-watch([messages, () => messages.value.length, streamingText], scrollBottom);
+// 질문·답이 쌓이거나 글이 흐르거나 답을 받지 못했거나 다른 논문의 대화로 바뀌면 맨 아래로
+watch([messages, () => messages.value.length, streamingText, failure], scrollBottom);
 
 async function send() {
   const text = inputText.value.trim();
   if (!text || isStreaming.value) return;
   inputText.value = "";
+  await ask(() => sendChat(text));
+}
+
+// [다시 시도] — 답을 받지 못한 질문을 그대로 다시 보낸다
+async function retry() {
+  if (isStreaming.value) return;
+  await ask(retryChat);
+}
+
+async function ask(request: () => Promise<void>) {
   liveHtml.value = "";
   const sentFor = props.cntsId;
-  await sendChat(text);
+  await request();
   // 답을 다 받았을 때만 읽고 입력 칸으로 돌아간다 — 논문을 바꿔 끊긴 경우 초점은 사용자가 누른 곳에 둔다
   if (props.cntsId !== sentFor) return;
   const last = messages.value.at(-1);
-  if (last?.role === "assistant") liveHtml.value = formatText(last.content);
+  // 답을 받지 못했으면 앞 답을 다시 읽히지 않는다 — 실패 안내는 role=alert 가 읽는다
+  if (!failure.value && last?.role === "assistant") liveHtml.value = formatText(last.content);
   // 초점이 갈 곳 없이 떨어졌거나(보내는 동안 막힌 버튼 — body) 대화 안에 있을 때만 질문 칸으로 — 연구 화면 2단에서는 답을
   // 기다리는 사이 본문 칸(메모·연구 배경·문단 고치기)에 쓸 수 있어, 그 글을 끊지 않는다
   nextTick(() => {

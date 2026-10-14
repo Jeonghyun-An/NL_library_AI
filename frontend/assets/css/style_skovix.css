@@ -3429,6 +3429,10 @@ html.skx-scroll-lock {
   background: var(--skx-chat-ai-bg);
   color: var(--skx-ink-on-light);
 }
+/* 답을 받지 못한 안내의 [다시 시도] — 밝은 말풍선 위라 강조색(어두운 테마에서는 밝아 묻힌다) 대신 말풍선 글자색 */
+.skx-chat-msg--ai .skx-retry {
+  color: inherit;
+}
 .skx-chat-typing {
   display: flex;
   align-items: center;

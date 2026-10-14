@@ -101,17 +101,109 @@ describe("useDeepReadChat", () => {
     expect(chat.isStreaming.value).toBe(false);
   });
 
-  it("응답 오류(5xx)·네트워크 오류면 오류 문구를 답으로 남긴다", async () => {
+  it("응답 오류(5xx)·네트워크 오류면 질문을 대화에서 빼고 실패(CHAT_ERROR_TEXT)로 알린다 — 오류 문구를 답으로 남기지 않는다", async () => {
     const failing = vi.fn().mockResolvedValue(new Response("x", { status: 500 }));
     const { chat } = setup({ fetchFn: failing as unknown as typeof fetch });
     await chat.send("질문");
-    expect(chat.messages.value.at(-1)).toEqual({ role: "assistant", content: CHAT_ERROR_TEXT });
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
     expect(chat.isStreaming.value).toBe(false);
 
     const offline = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     const other = setup({ fetchFn: offline as unknown as typeof fetch });
     await other.chat.send("질문");
-    expect(other.chat.messages.value.at(-1)).toEqual({ role: "assistant", content: CHAT_ERROR_TEXT });
+    expect(other.chat.messages.value).toEqual([]);
+    expect(other.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+  });
+
+  // 서버(app/services/chat/book_chat.py)는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error: 문구} 를 보낸다
+  it("{error} 가 오면 받던 글도 질문도 대화에 남기지 않고 서버 문구로 실패를 알린다 — 다음 질문의 history 에 실리지 않는다", async () => {
+    const store = new Map<string, DeepReadMessage[]>();
+    const { chat, calls, push } = setup({ store });
+    const first = chat.send("대상은?");
+    await flush();
+    push('data: {"text": "노인 300명입니다."}\n\ndata: [DONE]\n\n');
+    await first;
+
+    const second = chat.send("방법은?");
+    await flush();
+    push('data: {"text": "받다 만 "}\n\n');
+    await flush();
+    expect(chat.streamingText.value).toBe("받다 만 ");
+    push('data: {"error": "답을 만들지 못했습니다"}\n\ndata: [DONE]\n\n');
+    await second;
+    const answered = [
+      { role: "user", content: "대상은?" },
+      { role: "assistant", content: "노인 300명입니다." },
+    ];
+    expect(store.get("KCI_1")).toEqual(answered);
+    expect(chat.failure.value).toEqual({ question: "방법은?", message: "답을 만들지 못했습니다" });
+    expect(chat.streamingText.value).toBe("");
+    expect(chat.isStreaming.value).toBe(false);
+
+    // 새 질문을 보내면 실패 안내는 걷히고, history 에는 실패한 질문·오류가 없다
+    const third = chat.send("결론은?");
+    await flush();
+    expect(chat.failure.value).toBeNull();
+    expect(JSON.parse(String(calls[2]!.init.body))).toEqual({ message: "결론은?", history: answered });
+    chat.stop();
+    await third;
+  });
+
+  it("{error} 의 문구가 없으면 CHAT_ERROR_TEXT 로, [DONE] 없이 끊겨도 실패로 알린다 — 받던 글을 답으로 남기지 않는다", async () => {
+    const { chat, push } = setup();
+    const sent = chat.send("질문");
+    await flush();
+    push('data: {"error": ""}\n\ndata: [DONE]\n\n');
+    await sent;
+    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+
+    const cut = setup();
+    const again = cut.chat.send("질문");
+    await flush();
+    cut.push('data: {"text": "반쯤"}\n\n');
+    await flush();
+    cut.end();
+    await again;
+    expect(cut.chat.messages.value).toEqual([]);
+    expect(cut.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+  });
+
+  it("retry 는 실패한 질문을 그대로 다시 보낸다 — 실패가 없으면 아무것도 하지 않는다", async () => {
+    const { chat, calls, push } = setup();
+    const sent = chat.send("방법은?");
+    await flush();
+    push('data: {"error": "답을 만들지 못했습니다"}\n\ndata: [DONE]\n\n');
+    await sent;
+
+    const again = chat.retry();
+    await flush();
+    expect(calls).toHaveLength(2);
+    expect(JSON.parse(String(calls[1]!.init.body))).toEqual({ message: "방법은?", history: [] });
+    expect(chat.failure.value).toBeNull();
+    expect(chat.messages.value).toEqual([{ role: "user", content: "방법은?" }]);
+    push('data: {"text": "설문 조사입니다."}\n\ndata: [DONE]\n\n');
+    await again;
+    expect(chat.messages.value).toEqual([
+      { role: "user", content: "방법은?" },
+      { role: "assistant", content: "설문 조사입니다." },
+    ]);
+
+    await chat.retry();
+    expect(calls).toHaveLength(2);
+  });
+
+  it("논문을 바꾸면 실패 안내를 걷는다 — 다른 논문의 대화 아래에 남지 않게", async () => {
+    const { chat, id, push } = setup();
+    const sent = chat.send("질문");
+    await flush();
+    push('data: {"error": "답을 만들지 못했습니다"}\n\ndata: [DONE]\n\n');
+    await sent;
+    expect(chat.failure.value).not.toBeNull();
+
+    id.value = "KCI_2";
+    await nextTick();
+    expect(chat.failure.value).toBeNull();
   });
 
   it("cntsId 가 바뀌면 스트림을 끊고 받던 글을 그 논문 대화에 남긴 뒤 store 의 새 논문 대화로 바꾼다", async () => {
