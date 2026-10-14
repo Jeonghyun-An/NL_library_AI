@@ -98,11 +98,19 @@
                   </div>
                 </template>
                 <div v-else-if="aiText" v-html="renderedAiText" />
-                <div v-else class="skx-pai-section">
+                <div v-else-if="!aiError" class="skx-pai-section">
                   <p class="skx-pai-section__text">
                     AI 요약 정보가 없습니다.
                   </p>
                 </div>
+                <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
+                <p
+                  v-if="aiError && !aiLoading"
+                  class="skx-pai-section__text skx-pai-section__text--muted"
+                  role="alert"
+                >{{ aiError }} ·
+                  <button type="button" class="skx-retry" @click="retryAiSummary">다시 시도</button>
+                </p>
               </div>
             </ClampedPanel>
             <!-- 우측: 참고 논문 목록 -->
@@ -448,6 +456,7 @@ import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
+import { AI_SUMMARY_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
 
 const api = useApi();
 const route = useRoute();
@@ -495,6 +504,8 @@ const chatPaperTitle = computed(() =>
 // ── AI 요약 ──────────────────────────────────────────────────
 const aiText = ref("");
 const aiLoading = ref(false);
+// 요약을 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 AI_SUMMARY_FAILED) — 받은 글에 잇지 않고 따로 보인다
+const aiError = ref("");
 const aiExpanded = ref(false);
 const aiRefs = ref<
   { num: number; book_id: string; title: string; authors: string }[]
@@ -674,6 +685,7 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
+  aiError.value = "";
   aiExpanded.value = false;
   currentPage.value = 1;
   sortBy.value = "relevance";
@@ -727,6 +739,7 @@ function goLanding() {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
+  aiError.value = "";
   // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
   pdfItem.value = null;
   citeModalOpen.value = false;
@@ -830,6 +843,7 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiText.value = entry.ai?.text ?? "";
   aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
   aiLoading.value = false;
+  aiError.value = "";
   aiExpanded.value = true;
   sortBy.value = "relevance";
   // 정렬을 정한 뒤에 찾아야 화면 목록과 같은 순서다
@@ -862,6 +876,7 @@ async function streamAiSummary(
   signal: AbortSignal,
 ) {
   aiLoading.value = true;
+  aiError.value = "";
   const papers = books.slice(0, 5).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
@@ -871,6 +886,7 @@ async function streamAiSummary(
   }));
   let text = "";
   let refs: typeof aiRefs.value = [];
+  let end: AiStreamEnd = { ok: false, error: null };
   try {
     const resp = await fetch(apiUrl("/papers/summary/stream"), {
       method: "POST",
@@ -878,42 +894,39 @@ async function streamAiSummary(
       body: JSON.stringify({ query, papers }),
       signal,
     });
-    if (!resp.ok || !resp.body) return;
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop()!;
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const raw = line.slice(6).trim();
-        if (raw === "[DONE]") return;
-        try {
-          const evt = JSON.parse(raw);
-          if (evt.text) {
-            text += evt.text;
-            aiText.value = text;
-          }
-          if (evt.sources) {
-            refs = evt.sources;
-            aiRefs.value = refs;
-          }
-        } catch {}
+    end = await readAiStream(resp, (evt) => {
+      if (typeof evt.text === "string" && evt.text) {
+        text += evt.text;
+        aiText.value = text;
       }
-    }
+      if (Array.isArray(evt.sources)) {
+        refs = evt.sources;
+        aiRefs.value = refs;
+      }
+    });
   } catch {
-    /* 중단·네트워크 오류 — 받은 데까지만 남긴다 */
-  } finally {
-    // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
-    if (!signal.aborted) {
-      aiLoading.value = false;
-      if (text) historyApi.patch(historyId, { ai: { text, refs } });
-    }
+    /* 중단·네트워크 오류 — 아래에서 가린다 */
   }
+  // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
+  if (signal.aborted) return;
+  aiLoading.value = false;
+  // 끝까지 받은 요약만 기록에 저장한다. 실패({error}·끊김)면 받은 글은 보이되 오류 문구를 잇지 않고 따로 보이며,
+  // 기록에 남기지 않아 다시 열면(applyPaperEntry) 다시 만든다
+  if (end.ok) {
+    if (text) void historyApi.patch(historyId, { ai: { text, refs } });
+  } else {
+    aiError.value = failureText(end, AI_SUMMARY_FAILED);
+  }
+}
+
+// [다시 시도] — 지금 결과(기록·검색어·논문)로 AI 요약을 처음부터 다시 받는다
+function retryAiSummary() {
+  const books = paperResult.value?.books;
+  if (!currentHistoryId.value || !books?.length) return;
+  const signal = beginRun();
+  aiText.value = "";
+  aiRefs.value = [];
+  void streamAiSummary(currentHistoryId.value, resultQuery.value, books, signal);
 }
 
 // ── 페이지당 개수 드롭다운 닫기 + 주소 기준 첫 복원 ─────────────
