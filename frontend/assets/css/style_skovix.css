@@ -4827,6 +4827,102 @@ html.skx-scroll-lock {
   }
 }
 
+/* ── 논문 AI 요약 속 인용 번호 버튼(.skx-cite)과 그 팝오버(.skx-citepop) ──
+   번호만 눌리는 글자(괄호·쉼표는 글 그대로)다. 눌리면 오른쪽 참고 논문 목록의 그 논문 카드가 번호 옆에 뜬다 */
+.skx-cite {
+  display: inline;
+  margin: 0;
+  padding: 0 0.15em;
+  border: 0;
+  border-radius: 0.25em;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: inherit;
+  color: var(--skx-teal-ink);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.skx-cite:hover,
+.skx-cite[aria-expanded="true"] {
+  background: var(--skx-glass-teal);
+}
+.skx-cite:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+.skx-citepop {
+  position: fixed;
+  z-index: 60;
+  box-sizing: border-box;
+  width: min(17rem, calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--skx-glass);
+  -webkit-backdrop-filter: var(--skx-blur);
+  backdrop-filter: var(--skx-blur);
+  border: 1px solid var(--skx-glass-border);
+  border-radius: 12px;
+  box-shadow: var(--skx-shadow-banner);
+  color: var(--skx-ink);
+  /* 열릴 때 초점이 이 상자로 온다 — 상자 자체에는 초점 링을 그리지 않는다(안의 버튼이 그린다) */
+  outline: none;
+}
+.skx-citepop__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  text-align: left;
+  color: var(--skx-ink-strong);
+  cursor: pointer;
+}
+.skx-citepop__title:hover {
+  text-decoration: underline;
+}
+.skx-citepop__title:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
+}
+.skx-citepop__meta {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--skx-ink-2);
+}
+.skx-citepop__actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+.skx-citepop__actions .skx-btn-pview,
+.skx-citepop__actions .skx-btn-ptalk {
+  flex: 1;
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.7rem;
+}
+.skx-citepop__actions .skx-btn-pview:focus-visible,
+.skx-citepop__actions .skx-btn-ptalk:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+
 /* ── 논문 결과: AI 분석 아래 [딥리서치로 이어서 조사하기] ── */
 .skx-deeper {
   display: flex;
