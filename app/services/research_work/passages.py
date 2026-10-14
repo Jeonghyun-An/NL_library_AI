@@ -15,6 +15,7 @@ pipeline._RERANK_FAILURES, Milvus 는 거기에 MilvusException 과 grpc.RpcErro
 """
 import logging
 import re
+import time
 from types import SimpleNamespace
 
 from services.research.explorer import is_source_passage
@@ -83,10 +84,12 @@ def _passage(chunk_id: str, text: str, page_start, page_end, score) -> dict:
 def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
     """딥리서치 스냅숏에서 그 논문의 청크 — [{chunk_id, text, page_start, page_end, score}], 점수 높은 순(같으면
     스냅숏 순서), 같은 청크는 한 번. 탐색이 원문 대목만 남겼지만 그 규칙 전에 만든 옛 잡에는 보강 청크·참고문헌
-    목록 조각이 섞여 있을 수 있어 같은 규칙으로 한 번 더 거른다."""
+    목록 조각이 섞여 있을 수 있어 같은 규칙으로 한 번 더 거른다. 스냅숏 청크가 모두 걸러졌으면 info 한 줄을 남긴다 —
+    그 논문은 Milvus 한 편 청크를 리랭크해 요청이 길어지므로 빈도를 운영 로그로 본다."""
     evidence = snapshot.get("evidence") if isinstance(snapshot, dict) else None
     out: list[dict] = []
     seen: set[str] = set()
+    filtered = 0
     for ev in (evidence or {}).values():
         if not isinstance(ev, dict) or ev.get("cnts_id") != cnts_id:
             continue
@@ -95,9 +98,12 @@ def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
             if not chunk_id or not text or chunk_id in seen:
                 continue
             if not _source(_chunk_idx(chunk_id), c.get("page_start"), text):
+                filtered += 1
                 continue
             seen.add(chunk_id)
             out.append(_passage(chunk_id, text, c.get("page_start"), c.get("page_end"), c.get("score")))
+    if filtered and not out:
+        log.info("[passages] 스냅숏 대목 %d개가 모두 원문 대목이 아니라 Milvus 청크로 넘어간다 cnts=%s", filtered, cnts_id)
     out.sort(key=lambda p: p["score"] if p["score"] is not None else float("-inf"), reverse=True)
     return out
 
@@ -146,11 +152,14 @@ def pick_excerpt(query: str, passages: list[dict], *, limit: int = EXCERPT_CHARS
     from services.search.pipeline import _RERANK_FAILURES
     from services.search.reranker import compute_scores
 
+    started = time.monotonic()
     try:
         scores = list(compute_scores(query, [p["text"] for p in passages]))
     except _RERANK_FAILURES as e:
         log.warning("[passages] 리랭커 실패 — 저장된 점수로 대목을 고른다: %s", e)
         scores = [p["score"] if p.get("score") is not None else float("-inf") for p in passages]
+    # [이 절 쓰기]는 게이트웨이 120초 안의 동기 요청이다 — Milvus 로 넘어간 긴 논문의 리랭크 시간을 로그로 잰다
+    log.info("[passages] 대목 고르기 후보 %d개 %.2fs", len(passages), time.monotonic() - started)
     best = passages[max(range(len(passages)), key=scores.__getitem__)]
     return {"chunk_id": best["chunk_id"], "page_start": best["page_start"], "page_end": best["page_end"],
             "text": clip(best["text"], limit)}

@@ -157,6 +157,17 @@ class TestSnapshotPassages:
             _snapshot_chunk("KCI_FI001613573__0041", 0.7)]}}}
         assert snapshot_passages(snapshot, "KCI_FI001613573") == []
 
+    def test_falling_back_to_milvus_because_every_chunk_was_filtered_is_logged(self, caplog):
+        """스냅숏 대목이 모두 걸려 Milvus 한 편 청크(최대 MAX_PASSAGES 개 리랭크)로 넘어가는 일은 요청 시간을 늘린다 —
+        빈도를 운영 로그로 보게 info 한 줄을 남긴다. 스냅숏에 없던 논문(되살림·담기)은 원래 그 길이라 남기지 않는다."""
+        snapshot = {"evidence": {"E3": {"cnts_id": "KCI_FI001613573", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI001613573__0041", 0.7)]}}}
+        with caplog.at_level("INFO", logger="services.research_work.passages"):
+            snapshot_passages(snapshot, "KCI_FI001613573")
+            snapshot_passages(snapshot, "KCI_Z")
+        (record,) = caplog.records
+        assert record.levelname == "INFO" and "KCI_FI001613573" in record.getMessage()
+
 
 def _snapshot_chunk(chunk_id: str, score: float) -> dict:
     c = bibliography_chunk(chunk_id)
@@ -268,6 +279,14 @@ class TestPickExcerpt:
 
         assert out == {"chunk_id": "c3", "page_start": 9, "page_end": 9, "text": "셋째 대목이다."}
         assert seen["args"] == ("노인 우울 사회적 지지", [c["text"] for c in CANDIDATES])
+
+    def test_candidate_count_and_time_are_logged(self, search, monkeypatch, caplog):
+        # [이 절 쓰기]는 게이트웨이 120초 안의 동기 요청이다 — 리랭크 후보 수·걸린 시간을 운영 로그로 잰다
+        monkeypatch.setattr(search.reranker, "compute_scores", lambda query, documents: [0.2, 0.3, 0.8])
+        with caplog.at_level("INFO", logger="services.research_work.passages"):
+            passages.pick_excerpt("질의", CANDIDATES)
+        (record,) = caplog.records
+        assert record.levelname == "INFO" and "후보 3개" in record.getMessage()
 
     def test_long_best_passage_is_clipped_to_the_limit(self, search, monkeypatch):
         monkeypatch.setattr(search.reranker, "compute_scores", lambda q, d: [0.1, 0.9, 0.1])
