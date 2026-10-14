@@ -78,3 +78,42 @@ def test_a_finished_stream_has_no_error_event_and_keeps_its_sources(book_chat, m
         {"text": "p.3–4 에 나옵니다."},
         {"sources": [{"page_start": 3, "page_end": 4, "text": "표본은 노인 300명이다."}]},
     ]
+
+
+@pytest.mark.parametrize("engine_error", [
+    'data: {"error": {"object": "error", "message": "EngineDeadError", "type": "InternalServerError", "code": 500}}',
+    'data: {"object": "error", "message": "EngineDeadError", "type": "InternalServerError", "code": 500}',
+], ids=["wrapped", "bare"])
+def test_an_error_inside_the_stream_sends_the_error_and_no_sources(book_chat, monkeypatch, hit, engine_error):
+    # vLLM 이 생성 도중 실패하면 HTTP 200 스트림 안에 오류 줄을 보내고 이어 [DONE] 을 보낸다 — 이것도 실패다
+    _fake_search(monkeypatch, book_chat, [hit])
+    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 따르면 "), engine_error, "data: [DONE]"])
+
+    chunks = _stream(book_chat)
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert events(chunks) == [{"text": "p.3–4 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
+
+
+def test_a_stream_closed_without_done_is_a_failure(book_chat, monkeypatch, hit):
+    _fake_search(monkeypatch, book_chat, [hit])
+    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 따르면 ")])
+
+    chunks = _stream(book_chat)
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert events(chunks) == [{"text": "p.3–4 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
+
+
+def test_the_failure_log_names_the_exception_type_and_the_text_already_sent(book_chat, monkeypatch, hit, caplog):
+    # httpx.ReadTimeout 은 str(e) 가 빈 글일 때가 많다 — 예외 종류와 이미 보낸 글 길이로 원인·시점을 남긴다
+    _fake_search(monkeypatch, book_chat, [hit])
+    fake_llm(monkeypatch, book_chat, [delta("노인 우울은 ")], read_error=httpx.ReadTimeout(""))
+
+    with caplog.at_level("ERROR", logger=book_chat.log.name):
+        _stream(book_chat)
+
+    messages = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
+    assert len(messages) == 1
+    assert "ReadTimeout" in messages[0]
+    assert "보낸 글 7자" in messages[0]

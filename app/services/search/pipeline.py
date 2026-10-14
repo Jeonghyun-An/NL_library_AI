@@ -19,6 +19,7 @@ from typing import AsyncGenerator, Callable
 import httpx
 
 from core.config import get_settings
+from services.llm_sse import sse_deltas
 from services.prompts import get_prompt
 from services.search.sse_helpers import process_reason_deltas
 from services.search.curator import curate_books, _parse_curation_result
@@ -410,7 +411,8 @@ async def stream_book_reason(
     book 객체는 호출자(엔드포인트)에서 미리 조회해 넘긴다.
 
     이벤트: {keywords}·{text}·{effect}(sse_helpers.process_reason_deltas) 뒤에 늘 [DONE]. LLM 호출이 실패하면
-    (httpx 연결·읽기 오류, 4xx·5xx 응답 등) [DONE] 앞에 {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을
+    (httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas) [DONE] 앞에
+    {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을
     보면 끝까지 받지 못한 것으로 읽는다.
     """
 
@@ -481,6 +483,7 @@ async def stream_book_reason(
         context_text=context_text,
     )
 
+    received = 0   # LLM 에서 받은 글 길이 — 실패 로그가 시작 전 실패인지 글 일부 뒤 실패인지 남긴다
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -502,25 +505,17 @@ async def stream_book_reason(
                 resp.raise_for_status()
 
                 async def _delta_gen():
-                    async for line in resp.aiter_lines():
-                        if not line.startswith("data: "):
-                            continue
-                        data = line[6:]
-                        if data.strip() == "[DONE]":
-                            return
-                        try:
-                            chunk = json.loads(data)
-                            delta = chunk["choices"][0]["delta"].get("content", "")
-                            if delta:
-                                yield delta
-                        except Exception:
-                            pass
+                    nonlocal received
+                    async for delta in sse_deltas(resp):
+                        received += len(delta)
+                        yield delta
 
                 async for event in process_reason_deltas(_delta_gen(), marc_keywords):
                     yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
     except Exception as e:
-        log.error(f"[{book_id}] 추천 이유 스트리밍 실패: {e}")
+        # 받은 글 — 키워드 줄(#KW:)·효과 구분자를 process_reason_deltas 가 걸러 내므로 화면에 간 글과 길이가 다를 수 있다
+        log.error("[%s] 추천 이유 스트리밍 실패(받은 글 %d자): %s: %s", book_id, received, type(e).__name__, e)
         yield f"data: {json.dumps({'error': REASON_STREAM_ERROR}, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"

@@ -107,3 +107,49 @@ def test_a_finished_summary_still_ends_with_its_sources(monkeypatch):
     got = events(_collect(paper_summary.stream_paper_summary("노인 우울", PAPERS)))
 
     assert got == [{"text": "요약 [1]"}, SOURCES]
+
+
+# vLLM 이 생성 도중 실패하면(엔진 오류 등) HTTP 200 스트림 안에 {"error": {...}}(옛 판은 {"object": "error", ...}) 를 보내고
+# 이어 [DONE] 을 보낸다 — 이것도 실패다. 전에는 choices 가 없어 난 KeyError 를 삼키고 [DONE] 에서 정상으로 끝나, 받다 만 글이
+# 화면 캐시·검색 기록에 완성본으로 저장됐다
+ENGINE_ERRORS = [
+    'data: {"error": {"object": "error", "message": "EngineDeadError", "type": "InternalServerError", "code": 500}}',
+    'data: {"object": "error", "message": "EngineDeadError", "type": "InternalServerError", "code": 500}',
+]
+
+
+@pytest.mark.parametrize("engine_error", ENGINE_ERRORS, ids=["wrapped", "bare"])
+@pytest.mark.parametrize("name, run, const, lead, tail", STREAMS, ids=IDS)
+def test_an_error_inside_the_stream_sends_an_error_event(monkeypatch, name, run, const, lead, tail, engine_error):
+    fake_llm(monkeypatch, paper_summary, [delta("부분 "), engine_error, "data: [DONE]"])
+
+    chunks = _collect(run())
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert events(chunks) == [*lead, {"text": "부분 "}, *tail, {"error": getattr(paper_summary, const)}]
+
+
+@pytest.mark.parametrize("name, run, const, lead, tail", STREAMS, ids=IDS)
+def test_a_stream_closed_without_done_is_a_failure(monkeypatch, name, run, const, lead, tail):
+    # 위쪽이 [DONE] 없이 깨끗이 닫아도 끝까지 받은 것이 아니다
+    fake_llm(monkeypatch, paper_summary, [delta("부분 ")])
+
+    chunks = _collect(run())
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert events(chunks) == [*lead, {"text": "부분 "}, *tail, {"error": getattr(paper_summary, const)}]
+
+
+@pytest.mark.parametrize("name, run, const, lead, tail", STREAMS, ids=IDS)
+def test_the_failure_log_names_the_exception_type_and_the_text_already_sent(monkeypatch, caplog, name, run, const,
+                                                                           lead, tail):
+    # httpx.ReadTimeout 은 str(e) 가 빈 글일 때가 많다 — 예외 종류와 이미 보낸 글 길이로 원인·시점을 남긴다
+    fake_llm(monkeypatch, paper_summary, [delta("노인 우울은 ")], read_error=httpx.ReadTimeout(""))
+
+    with caplog.at_level("ERROR", logger=paper_summary.log.name):
+        _collect(run())
+
+    messages = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
+    assert len(messages) == 1
+    assert "ReadTimeout" in messages[0]
+    assert "보낸 글 7자" in messages[0]

@@ -12,12 +12,13 @@ from core.config import get_settings
 from schemas.book import BookOut
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import SearchHit, search_chunks
+from services.llm_sse import sse_deltas
 from services.prompts import PromptTemplate, get_prompt
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-# 대화 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답 등)로 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의
+# 대화 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas)로 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의
 # 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면(frontend/composables/useDeepReadChat)은 이것을
 # 답 글에 잇지 않고 오류로 보이며 대화에 남기지 않는다. 전에는 '응답 생성 중 오류가 발생했습니다.' 를 보통 {text} 로 흘려
 # 정상 답처럼 대화에 남고 다음 질문의 history 로 모델에게까지 갔다
@@ -198,22 +199,11 @@ async def stream_book_chat(
                 timeout=float(cfg.BOOK_CHAT_TIMEOUT),
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            full_response += delta
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    full_response += delta
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[{cnts_id}] 채팅 스트리밍 실패: {e}")
+        log.error("[%s] 채팅 스트리밍 실패(보낸 글 %d자): %s: %s", cnts_id, len(full_response), type(e).__name__, e)
         # 실패한 답에는 출처 칩을 붙이지 않는다 — 오류가 [DONE] 바로 앞, 마지막 이벤트다
         yield f"data: {json.dumps({'error': CHAT_STREAM_ERROR}, ensure_ascii=False)}\n\n"
         yield "data: [DONE]\n\n"

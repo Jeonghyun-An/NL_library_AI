@@ -18,6 +18,7 @@ from typing import AsyncGenerator
 import httpx
 
 from core.config import get_settings
+from services.llm_sse import sse_deltas
 from services.prompts import get_prompt
 
 log = logging.getLogger(__name__)
@@ -26,8 +27,8 @@ cfg = get_settings()
 _MAX_EXCERPT_CHARS = 500   # 논문당 발췌 최대 길이
 _MAX_PAPERS = 5            # 요약에 사용할 최대 논문 수
 
-# 세 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답 등)로 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의
-# 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면은 이것을 답 글에 잇지 않고 오류로 보이며
+# 세 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas)로
+# 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면은 이것을 답 글에 잇지 않고 오류로 보이며
 # 캐시·검색 기록에 담지 않는다. 전에는 '…오류가 발생했습니다.' 를 보통 {text} 로 흘려 정상 답처럼 저장됐다
 SUMMARY_STREAM_ERROR = "AI 요약을 만들지 못했습니다"          # 논문 검색 결과의 AI 요약(stream_paper_summary)
 RELATED_REASON_STREAM_ERROR = "추천 사유를 만들지 못했습니다"  # 논문 상세 관련 논문의 AI 추천 사유(stream_related_reason)
@@ -139,6 +140,7 @@ async def stream_paper_summary(
     ]
 
     # ── 텍스트 스트리밍 ───────────────────────────────────────
+    sent = 0   # 이미 흘린 글 길이 — 실패 로그가 시작 전 실패인지 글 일부 뒤 실패인지 남긴다
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -148,21 +150,11 @@ async def stream_paper_summary(
                 timeout=float(cfg.PAPER_SUMMARY_TIMEOUT),
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    sent += len(delta)
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[paper_summary] LLM 스트리밍 실패: {e}")
+        log.error("[paper_summary] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
         yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
         yield _error_event(SUMMARY_STREAM_ERROR)
         yield "data: [DONE]\n\n"
@@ -211,6 +203,7 @@ async def stream_related_reason(
         "stream": True,
     }
 
+    sent = 0
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -220,21 +213,11 @@ async def stream_related_reason(
                 timeout=30.0,
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    sent += len(delta)
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[paper_related_reason] LLM 스트리밍 실패: {e}")
+        log.error("[paper_related_reason] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
         yield _error_event(RELATED_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"
@@ -316,6 +299,7 @@ async def stream_paper_reason(
     )
 
     # ── LLM 스트리밍 ─────────────────────────────────────────
+    sent = 0
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -334,21 +318,11 @@ async def stream_paper_reason(
                 timeout=float(cfg.REASON_TIMEOUT),
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    sent += len(delta)
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[paper_reason] LLM 스트리밍 실패: {e}")
+        log.error("[paper_reason] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
         yield _error_event(PAPER_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"

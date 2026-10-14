@@ -129,3 +129,40 @@ def test_a_finished_stream_has_no_error_event(pipeline, monkeypatch):
     events = _events(chunks)
     assert not any("error" in e for e in events)
     assert {"effect": "읽고 난 후입니다."} in events
+
+
+def test_an_error_inside_the_stream_sends_an_error_event(pipeline, monkeypatch):
+    # vLLM 이 생성 도중 실패하면 HTTP 200 스트림 안에 {"error": {...}} 를 보내고 이어 [DONE] 을 보낸다 — 이것도 실패다
+    engine_error = ('data: {"error": {"object": "error", "message": "EngineDeadError", '
+                    '"type": "InternalServerError", "code": 500}}')
+    _fake_llm(monkeypatch, pipeline, [_delta("#KW: 우울\n"), _delta("이 책은 노년의 우울을 다루며 " * 3), engine_error,
+                                      "data: [DONE]"])
+
+    chunks = _run(pipeline)
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    events = _events(chunks)
+    assert events[-1] == {"error": pipeline.REASON_STREAM_ERROR}
+    assert sum("error" in e for e in events) == 1
+
+
+def test_a_stream_closed_without_done_is_a_failure(pipeline, monkeypatch):
+    _fake_llm(monkeypatch, pipeline, [_delta("#KW: 우울\n"), _delta("이 책은 노년의 우울을 다루며 " * 3)])
+
+    chunks = _run(pipeline)
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert _events(chunks)[-1] == {"error": pipeline.REASON_STREAM_ERROR}
+
+
+def test_the_failure_log_names_the_exception_type_and_the_text_already_sent(pipeline, monkeypatch, caplog):
+    # httpx.ReadTimeout 은 str(e) 가 빈 글일 때가 많다 — 예외 종류와 이미 받은 글 길이로 원인·시점을 남긴다
+    _fake_llm(monkeypatch, pipeline, [_delta("노인 우울은 ")], read_error=httpx.ReadTimeout(""))
+
+    with caplog.at_level("ERROR", logger=pipeline.log.name):
+        _run(pipeline)
+
+    messages = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
+    assert len(messages) == 1
+    assert "ReadTimeout" in messages[0]
+    assert "받은 글 7자" in messages[0]
