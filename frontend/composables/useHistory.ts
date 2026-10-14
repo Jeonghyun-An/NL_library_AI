@@ -98,6 +98,7 @@ export interface UseHistory {
   clear(kind: HistoryKind): Promise<void>;
   get(id: string): Promise<HistoryEntry | null>;
   upsertResearch(jobId: string, question: string): Promise<HistoryEntry | null>;
+  setResearchStatus(jobId: string, next: { status: string; stage: string }): void;
 }
 
 export function useHistory(): UseHistory {
@@ -116,5 +117,6 @@ export function useHistory(): UseHistory {
     clear: s.clear,
     get: s.get,
     upsertResearch: s.upsertResearch,
+    setResearchStatus: s.setResearchStatus,
   };
 }

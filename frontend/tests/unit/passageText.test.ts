@@ -44,6 +44,27 @@ describe("passageText — 원문 대목의 <br> 태그 글자를 줄바꿈으로
     expect(passageText("####### 일곱 개는 제목이 아니다")).toBe("####### 일곱 개는 제목이 아니다");
   });
 
+  it("저장된 HTML 엔티티를 글자로 푼다 — &amp; 는 한 번만(두 번 풀지 않는다)", () => {
+    expect(passageText("&lt;Abstract&gt; 본문 &lt;표 1&gt; A &amp; B")).toBe("<Abstract> 본문 <표 1> A & B");
+    expect(passageText("&quot;인용&quot; &#39;작은&#39; &#x27;x&#x27; &apos;y&apos;")).toBe("\"인용\" '작은' 'x' 'y'");
+    expect(passageText("&amp;lt;그대로&amp;gt;")).toBe("&lt;그대로&gt;");
+    expect(passageText("&LT;대문자&GT;")).toBe("<대문자>");
+    // 엔티티로 적힌 <br> 도 줄바꿈이 된다
+    expect(passageText("가&lt;br&gt;나")).toBe("가\n나");
+  });
+
+  it("마크다운 표는 구분줄을 지우고 칸을 ' · ' 로 이어 편다 — 세로선이 하나뿐인 글은 그대로", () => {
+    expect(passageText("|연도|기초연구|응용연구|<br>|---|---|---|<br>|2019|10|20|")).toBe("연도 · 기초연구 · 응용연구\n\n2019 · 10 · 20");
+    expect(passageText("| 구분 | 값 |\n| :--- | ---: |\n| A | 1 |")).toBe("구분 · 값\n\nA · 1");
+    expect(passageText("앞 문장 |---|---| 뒤 문장")).toBe("앞 문장  뒤 문장");
+    expect(passageText("A | B 는 그대로")).toBe("A | B 는 그대로");
+  });
+
+  it("줄 가운데에 붙은 제목 표시(##~######)도 뗀다 — 'C#'·'#태그'·'#' 하나는 그대로", () => {
+    expect(passageText("결과를 보였다. #### 4. 논의 이어서")).toBe("결과를 보였다. 4. 논의 이어서");
+    expect(passageText("C# 과 #태그 와 # 하나")).toBe("C# 과 #태그 와 # 하나");
+  });
+
   it("다른 태그 꼴은 글자 그대로 둔다 — HTML 로 읽지 않는다", () => {
     expect(passageText("<b>굵게</b> <script>x</script> <brx>")).toBe("<b>굵게</b> <script>x</script> <brx>");
   });

@@ -3,6 +3,7 @@
 // 단계 글은 기록 목록(GET history)이 주는 잡의 상태·stage 로만 정하고 숫자를 붙이지 않는다 — 진행 중 잡의 하위질문·절 수는 기록 응답에
 // 없고, 그것을 내려고 잡(GET /api/research/{id})을 따로 읽지 않는다. 완료 줄에는 아무것도 붙이지 않는다(사용자 결정 2026-10-13)
 import type { HistoryResearchStatus } from "~/types/history";
+import type { ResearchPhase } from "~/utils/researchEvents";
 import { EXPLORE_WEIGHT, SYNTH_WEIGHT } from "~/utils/researchProgress";
 
 // 진행 중(사이드바 배지 '진행 중' — sidebarGroups.LIVE_STATUSES)인 잡의 단계 글. 승인 대기·끝난 잡·상태 모름은 null(배지가 말한다).
@@ -48,6 +49,14 @@ export function stageProgress(r: HistoryResearchStatus | null | undefined): Stag
     default:
       return null;
   }
+}
+
+// 연구 화면이 사이드바 줄에 넘기는 상태(useHistory.setResearchStatus) — 잡의 status·stage 그대로이되, 화면이 종합 단계 행으로 먼저
+// 아는 보고서 작성(phase synthesizing)은 stage 가 아직 explored 가 아니어도 explored 로 싣는다. 그래야 사이드바 단계 글
+// (statusStageLine)·막대(stageProgress)도 '보고서 작성 중'이 된다
+export function sidebarStatusOf(view: { status: string; stage: string }, phase: ResearchPhase): { status: string; stage: string } {
+  const writing = phase === "synthesizing" && view.stage !== "explored" && view.stage !== "synthesized";
+  return { status: view.status, stage: writing ? "explored" : view.stage };
 }
 
 // 묶음이 처음 보이는 줄 수를 넘는 연구를 펼치는 한 줄(시안 C) — 접혀 있으면 '이전 연구' + 숨은 수 칩, 펼치면 '접기'

@@ -245,6 +245,8 @@ import { useNow } from "~/composables/useNow";
 import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
+import { useHistory } from "~/composables/useHistory";
+import { sidebarStatusOf } from "~/utils/sidebarResearch";
 import { useResearchWork, useWorkApi } from "~/composables/useResearchWork";
 import { useRestorePosition } from "~/composables/useRestorePosition";
 import { useSectionFollow } from "~/composables/useSectionFollow";
@@ -282,6 +284,17 @@ const {
 const { startResearch } = useResearchStarter();
 
 const phase = computed(() => (view.value ? researchPhase(view.value) : null));
+
+// 이 화면이 받은 상태를 사이드바의 그 연구 줄에 바로 싣는다 — 사이드바의 다시 읽기(몇 초 간격)를 기다리지 않아 승인·대기열·작성
+// 시작이 본문과 같은 때에 바뀐다(sidebarStatusOf)
+const historyList = useHistory();
+watch(
+  () => (view.value && phase.value ? sidebarStatusOf(view.value, phase.value) : null),
+  (next) => {
+    if (next && view.value) historyList.setResearchStatus(view.value.jobId, next);
+  },
+  { immediate: true, deep: true },
+);
 // 대기 카드·진행 패널의 대기열 문구 뒤에 덧붙이는 순번 — 대기 중이 아니거나 순번을 모르면 null
 const queueText = computed(() => (view.value ? queueLine(view.value.queue) : null));
 // 계획이 쓴 넓힌 질문("이렇게 이해했어요" 한 줄). 원 질문과 같거나(넓히기를 껐거나 원문으로 물러남) 넓히기 전 잡이면 null

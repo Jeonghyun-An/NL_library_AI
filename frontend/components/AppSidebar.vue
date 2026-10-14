@@ -398,7 +398,9 @@ const ROW_CLEAR_TEXT: Record<ClearGroup, string> = {
   research: "이 연구 기록을 지울까요? 보고서 자체는 지워지지 않습니다.",
   recent: "이 검색 기록을 지울까요?",
 };
-const POLL_MS = 30_000;
+// 진행 중인 연구가 있을 때만 도는 다시 읽기 간격 — 30초는 본문과 세 번 어긋났다(2026-10-14 운영 확인). 연구 화면이 열려 있으면
+// 그 화면이 상태를 바로 싣고(useHistory.setResearchStatus), 다른 화면에서는 이 간격으로 따라잡는다
+const POLL_MS = 10_000;
 
 const route = useRoute();
 const router = useRouter();

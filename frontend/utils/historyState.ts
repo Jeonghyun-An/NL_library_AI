@@ -32,6 +32,8 @@ export interface HistoryState {
   clear(kind: HistoryKind): Promise<void>;
   get(id: string): Promise<HistoryEntry | null>;
   upsertResearch(jobId: string, question: string): Promise<HistoryEntry | null>;
+  /** 연구 화면이 아는 지금 상태를 사이드바 목록의 그 연구 줄에 바로 싣는다(서버에는 보내지 않는다 — 서버가 이미 안다) */
+  setResearchStatus(jobId: string, next: { status: string; stage: string }): void;
 }
 
 /** 반응형 목록에는 무거운 필드를 두지 않는다 — 복원은 get(id) 로 상세를 읽는다 */
@@ -236,5 +238,17 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     }
   }
 
-  return { entries, loaded, listFailed, byKind, refresh, add, patch, remove, clear, get, upsertResearch };
+  // 사이드바는 진행 중인 연구가 있을 때만 몇 초마다 다시 읽는다 — 그 사이 연구 화면이 이미 받은 단계(승인·대기열·작성 시작)를 바로
+  // 실어 본문과 사이드바가 어긋나지 않게 한다(2026-10-14 운영 확인 — 승인 직후에도 '계획 중', 보고서 작성 중인데 '탐색 중').
+  // 목록에 없는 잡(다른 브라우저의 연구 등)이면 아무것도 하지 않는다. 다음 목록 읽기가 서버 값으로 다시 덮는다
+  function setResearchStatus(jobId: string, next: { status: string; stage: string }): void {
+    const idx = entries.value.findIndex((e) => e.kind === "research" && (e.id === jobId || e.refId === jobId));
+    if (idx < 0) return;
+    const cur = entries.value[idx] as ResearchEntry;
+    if (cur.research?.status === next.status && cur.research?.stage === next.stage) return;
+    const updated: ResearchEntry = { ...cur, research: { ...cur.research, status: next.status, stage: next.stage } };
+    entries.value = entries.value.map((e, i) => (i === idx ? updated : e));
+  }
+
+  return { entries, loaded, listFailed, byKind, refresh, add, patch, remove, clear, get, upsertResearch, setResearchStatus };
 }
