@@ -4629,55 +4629,21 @@ html.skx-scroll-lock {
   transform: translateX(-50%) translateY(8px);
 }
 
-/* ── 논문 AI 참고 카드 아이콘 버튼 ───── */
+/* ── 논문 AI 참고 카드 제목(누르면 상세) ───── */
 .skx-pai-ref__title--link {
+  display: block;
+  text-decoration: none;
   cursor: pointer;
 }
 .skx-pai-ref__title--link:hover {
   text-decoration: underline;
   color: var(--skx-primary);
 }
-.skx-pai-ref__actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
+.skx-pai-ref__title--link:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
 }
-.skx-pai-ref__btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  border: 1px solid var(--skx-line);
-  background: var(--skx-white);
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    border-color 0.12s;
-  text-decoration: none;
-}
-.skx-pai-ref__btn img {
-  width: 14px;
-  height: 14px;
-}
-.skx-pai-ref__btn:hover {
-  background: var(--skx-glass-teal);
-  border-color: var(--skx-primary);
-}
-.skx-pai-ref__btn--ai {
-  background: var(--skx-primary);
-  border-color: var(--skx-primary);
-}
-.skx-pai-ref__btn--ai img {
-  filter: var(--skx-ico-on-accent-filter);
-}
-.skx-pai-ref__btn--ai:hover {
-  background: var(--skx-accent-strong);
-  border-color: var(--skx-accent-strong);
-}
-
 /* ── 제목/내용 일치율 도넛 링 ─────────── */
 .skx-score-ring {
   position: relative;
@@ -4850,7 +4816,8 @@ html.skx-scroll-lock {
 }
 
 /* ── 논문 AI 요약 속 인용 번호 버튼(.skx-cite)과 그 팝오버(.skx-citepop) ──
-   번호만 눌리는 글자(괄호·쉼표는 글 그대로)다. 눌리면 오른쪽 참고 논문 목록의 그 논문 카드가 번호 옆에 뜬다 */
+   번호만 눌리는 글자(괄호·쉼표는 글 그대로)다. 눌리면 오른쪽 참고 논문 목록의 그 논문 카드가 번호 옆에 뜬다.
+   점선 밑줄은 뺐다(사용자 결정 2026-10-14 — 요약 글이 지저분해 보인다). 누를 수 있다는 단서는 색·굵은 글씨·올림 면이다 */
 .skx-cite {
   display: inline;
   margin: 0;
@@ -4862,8 +4829,7 @@ html.skx-scroll-lock {
   font-weight: 700;
   letter-spacing: inherit;
   color: var(--skx-teal-ink);
-  text-decoration: underline dotted;
-  text-underline-offset: 0.2em;
+  text-decoration: none;
   cursor: pointer;
   transition: background-color 0.15s;
 }
