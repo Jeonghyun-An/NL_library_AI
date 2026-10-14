@@ -853,6 +853,13 @@
   outline: 2px solid var(--skx-accent);
   outline-offset: 2px;
 }
+/* 사유를 만들지 못한 안내 — 받은 사유 글에 잇지 않고 흐린 글자로 따로(.dt-muted 와 같은 색). 팝업에서는 받은 글 아래 줄에 */
+.dt-rc__failed {
+  color: var(--skx-gray-1);
+}
+.dt-rc__failed--block {
+  display: block;
+}
 .dt-rc__pop-actions {
   display: flex;
   flex-shrink: 0;

@@ -35,6 +35,8 @@
           <template v-if="reasonLoading && !reason">
             AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
           </template>
+          <!-- 사유를 만들지 못했다 — 두 줄 상자에는 받다 만 글 대신 안내만(받은 글은 팝업에) -->
+          <span v-else-if="reasonError && !reasonLoading" class="dt-rc__failed">{{ reasonError }}</span>
           <template v-else>{{ reason || emptyText }}</template>
         </p>
         <button
@@ -104,8 +106,12 @@
           AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
         </template>
         <template v-else>
-          {{ reason || emptyText
-          }}<span v-if="reasonLoading" class="skx-stream-cursor" />
+          {{ reason || (reasonError ? "" : emptyText)
+          }}<span v-if="reasonLoading" class="skx-stream-cursor" /><span
+            v-if="reasonError && !reasonLoading"
+            class="dt-rc__failed dt-rc__failed--block"
+            >{{ reasonError }}</span
+          >
         </template>
       </p>
       <div class="dt-rc__pop-actions">
@@ -136,6 +142,8 @@ const props = withDefaults(
     popTitle: string;
     reason?: string;
     reasonLoading?: boolean;
+    /** 사유를 만들지 못했을 때 보일 문구(서버의 {error}·끊김) — 받은 사유 글에 잇지 않고 따로 보인다 */
+    reasonError?: string;
     emptyText?: string;
     /** 팝업이 열렸는지 — 한 번에 한 카드만 열리도록 부모가 쥔다 */
     expanded: boolean;
@@ -147,6 +155,7 @@ const props = withDefaults(
     kdc: null,
     reason: "",
     reasonLoading: false,
+    reasonError: "",
     emptyText: "정보가 없습니다.",
   },
 );

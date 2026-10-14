@@ -157,7 +157,11 @@
                     {{ summaryText }}<span class="skx-stream-cursor" />
                   </p>
                   <div v-else-if="summaryText" class="dt-prose" v-html="renderedSummary" />
-                  <p v-else class="dt-muted">AI 분석 정보가 없습니다.</p>
+                  <p v-else-if="!summaryError" class="dt-muted">AI 분석 정보가 없습니다.</p>
+                  <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
+                  <p v-if="summaryError && !summaryLoading" class="dt-muted" role="alert">{{ summaryError }} ·
+                    <button type="button" class="skx-retry" @click="retrySummary">다시 시도</button>
+                  </p>
                 </template>
                 <p v-else-if="active === 'abstract'" class="dt-prose">{{ abstractText }}</p>
               </template>
@@ -197,6 +201,7 @@
                 pop-title="AI 추천 사유 & 유사점 분석"
                 :reason="relatedReasons[rel.book_id]"
                 :reason-loading="relatedReasonLoading.has(rel.book_id)"
+                :reason-error="relatedReasonErrors[rel.book_id]"
                 empty-text="추천 사유 정보가 없습니다."
                 :expanded="openRelated === rel.book_id"
                 @update:expanded="(open: boolean) => (openRelated = relatedOpenAfter(openRelated, rel.book_id, open))"
@@ -305,6 +310,13 @@ import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useResearchApi } from "~/composables/useResearch";
 import type { ReportChunk, ResearchJob } from "~/types/research";
 import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
+import {
+  AI_SUMMARY_FAILED,
+  type AiStreamEnd,
+  failureText,
+  readAiStream,
+  RELATED_REASON_FAILED,
+} from "~/utils/aiStream";
 import { safeSessionStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
@@ -423,13 +435,17 @@ const summaryText = ref("");
 const summaryLoading = ref(false);
 // 요약을 다 정했는지(받기 끝·캐시·소개글) — 정하기 전에는 비어 있어도 [AI 요약] 탭을 둔다(곧 채워진다)
 const summaryDone = ref(false);
+// 요약을 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 AI_SUMMARY_FAILED) — 받은 글에 잇지 않고 따로 보인다.
+// summaryQuestionText 는 [다시 시도]가 같은 기준 질문으로 다시 받게 쥔다
+const summaryError = ref("");
+const summaryQuestionText = ref("");
 const renderedSummary = computed(() => (summaryText.value ? (marked.parse(summaryText.value) as string) : ""));
 
 // AI 큐레이션 탭 — 글이 없는 탭은 뺀다. 고른 탭이 빠지면 첫 탭
 const curationTab = ref<string | null>("ai-summary");
 const curationTabs = computed(() =>
   visibleTabs([
-    { key: "ai-summary", label: "AI 요약", available: !summaryDone.value || !!summaryText.value },
+    { key: "ai-summary", label: "AI 요약", available: !summaryDone.value || !!summaryText.value || !!summaryError.value },
     { key: "abstract", label: "초록", available: !!abstractText.value },
   ]),
 );
@@ -440,6 +456,8 @@ const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
 const relatedReasons = ref<Record<string, string>>({});
 const relatedReasonLoading = ref<Set<string>>(new Set());
+// 추천 사유를 만들지 못한 연관 논문 → 보일 문구. 캐시에 담지 않으므로 상세를 다시 열면 다시 만든다
+const relatedReasonErrors = ref<Record<string, string>>({});
 // [자세히 보기]로 연 카드 — 한 번에 하나
 const openRelated = ref<string | null>(null);
 // 연관 논문 점수는 절대값이 아주 작아 목록 1위를 100% 로 둔 비율로 보인다
@@ -544,6 +562,8 @@ async function fetchRelated() {
 
 // 기준 질문이 없으면(출처 없음·보고서를 못 읽음) 만들지 않고 소개글을 보인다
 async function streamPaperReason(query: string) {
+  summaryQuestionText.value = query;
+  summaryError.value = "";
   if (!query) {
     summaryText.value = paper.value?.introduction || "";
     summaryDone.value = true;
@@ -558,6 +578,7 @@ async function streamPaperReason(query: string) {
   }
   summaryText.value = "";
   summaryLoading.value = true;
+  let end: AiStreamEnd = { ok: false, error: null };
   try {
     const resp = await fetch(apiUrl("/papers/reason/stream"), {
       method: "POST",
@@ -565,16 +586,23 @@ async function streamPaperReason(query: string) {
       body: JSON.stringify({ paper_id: paperId, query }),
       signal: pageAbort.signal,
     });
-    const finished = await readSSE(resp, (json) => {
-      if (json.text) summaryText.value += json.text;
+    end = await readAiStream(resp, (json) => {
+      if (typeof json.text === "string" && json.text) summaryText.value += json.text;
     });
-    if (finished) writeAiCache(safeSessionStorage(), key, summaryText.value);
   } catch {
-    /* silent */
-  } finally {
-    summaryLoading.value = false;
-    summaryDone.value = true;
+    /* 떠남(pageAbort)·네트워크 오류 — 아래에서 가린다 */
   }
+  summaryLoading.value = false;
+  summaryDone.value = true;
+  // 끝까지 받은 글만 캐시에 담는다 — 실패({error}·끊김)한 글은 담지 않아 상세를 다시 열면 다시 만든다
+  if (end.ok) writeAiCache(safeSessionStorage(), key, summaryText.value);
+  else if (!pageAbort.signal.aborted) summaryError.value = failureText(end, AI_SUMMARY_FAILED);
+}
+
+// [다시 시도] — 같은 기준 질문으로 AI 요약을 처음부터 다시 받는다
+function retrySummary() {
+  if (summaryLoading.value) return;
+  void streamPaperReason(summaryQuestionText.value);
 }
 
 async function streamRelatedReason(relatedId: string) {
@@ -585,6 +613,7 @@ async function streamRelatedReason(relatedId: string) {
     return;
   }
   relatedReasonLoading.value = new Set([...relatedReasonLoading.value, relatedId]);
+  let end: AiStreamEnd = { ok: false, error: null };
   try {
     const resp = await fetch(apiUrl("/papers/related-reason/stream"), {
       method: "POST",
@@ -592,47 +621,25 @@ async function streamRelatedReason(relatedId: string) {
       body: JSON.stringify({ source_id: paperId, related_id: relatedId }),
       signal: pageAbort.signal,
     });
-    const finished = await readSSE(resp, (json) => {
-      if (json.text) {
+    end = await readAiStream(resp, (json) => {
+      if (typeof json.text === "string" && json.text) {
         relatedReasons.value = {
           ...relatedReasons.value,
           [relatedId]: (relatedReasons.value[relatedId] || "") + json.text,
         };
       }
     });
-    if (finished) writeAiCache(safeSessionStorage(), key, relatedReasons.value[relatedId] ?? "");
   } catch {
-    /* silent */
-  } finally {
-    const next = new Set(relatedReasonLoading.value);
-    next.delete(relatedId);
-    relatedReasonLoading.value = next;
+    /* 떠남(pageAbort)·네트워크 오류 — 아래에서 가린다 */
   }
-}
-
-// [DONE] 까지 받았으면 true — 도중에 끊긴 글은 캐시에 담지 않는다
-async function readSSE(resp: Response, onEvent: (json: any) => void): Promise<boolean> {
-  const reader = resp.body!.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const lines = buf.split("\n");
-    buf = lines.pop()!;
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const raw = line.slice(6).trim();
-      if (raw === "[DONE]") return true;
-      try {
-        onEvent(JSON.parse(raw));
-      } catch {
-        /* skip */
-      }
-    }
+  const next = new Set(relatedReasonLoading.value);
+  next.delete(relatedId);
+  relatedReasonLoading.value = next;
+  // 끝까지 받은 사유만 캐시에 담는다 — 실패({error}·끊김)는 카드에 오류로 보이고 담지 않는다
+  if (end.ok) writeAiCache(safeSessionStorage(), key, relatedReasons.value[relatedId] ?? "");
+  else if (!pageAbort.signal.aborted) {
+    relatedReasonErrors.value = { ...relatedReasonErrors.value, [relatedId]: failureText(end, RELATED_REASON_FAILED) };
   }
-  return false;
 }
 
 onMounted(async () => {
