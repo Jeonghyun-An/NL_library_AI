@@ -113,6 +113,24 @@ describe("sortedItems", () => {
     expect(sortedItems(items).map((i) => i.cnts_id)).toEqual(["KCI_A", "KCI_B", "KCI_D", "KCI_E", "KCI_C"]);
     expect(items[0]!.cnts_id).toBe("KCI_D");
   });
+
+  it("같은 순위면 대목 점수(하위질문 전부 중 가장 높은 값)가 높은 편이 먼저, 점수 없는 편은 뒤 — 서버 reading_order 와 같은 키", () => {
+    const scored = (cnts_id: string, subqs: ReadingSubqPath[], position: number | null = null) =>
+      row({ cnts_id, position, path: { subqs, revived: null, user: false } });
+    const chunk = (score: number | null): PathChunk => ({ ...CHUNK, score });
+    // app/tests/test_research_reading_api.py test_same_best_rank_goes_to_the_higher_chunk_score_then_id 와 같은 줄
+    const items = [
+      scored("C1", [subq({ rank: 1, chunks: [chunk(0.4)] })]),
+      scored("C2", [subq({ idx: 1, rank: 1, chunks: [chunk(0.9), chunk(0.3)] })]),
+      scored("C3", [subq({ rank: 2, chunks: [chunk(0.95)] }), subq({ idx: 1, rank: 1, chunks: [chunk(0.5)] })]),
+      scored("C4", [subq({ idx: 2, rank: 1 })]),
+      scored("C0", [subq({ idx: 2, rank: 1, chunks: [] })]),
+      scored("C9", [subq({ idx: 2, rank: 1, chunks: [chunk(null)] })]),
+      scored("C5", [subq({ rank: 9, chunks: [chunk(0.1)] })], 0),
+      scored("C6", [subq({ rank: 2, chunks: [chunk(0.99)] })]),
+    ];
+    expect(sortedItems(items).map((i) => i.cnts_id)).toEqual(["C5", "C3", "C2", "C1", "C0", "C4", "C9", "C6"]);
+  });
 });
 
 describe("reorderPuts — [위로]·[아래로]", () => {

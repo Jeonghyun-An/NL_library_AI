@@ -51,13 +51,36 @@ function minRank(item: ReadingItem): number {
   return ranks.length ? Math.min(...ranks) : LAST;
 }
 
-// 서버 reading_views.reading_order 와 같은 순서 — 사용자 순서(position, 없으면 뒤) → 하위질문 안 최소 순위 → cnts_id.
+// 매칭 대목 점수 중 가장 높은 값(하위질문 전부) — 서버 reading_views._best_score 와 같은 값이다. 서버는 들어온 경로의
+// chunk_scores 를, 화면은 그 점수를 실은 대목(path 의 chunks — 스냅숏에 있는 대목만)을 읽는다. 점수가 붙는 대목은 모두
+// 스냅숏의 근거 대목에 들어 있어(Evidence.chunks 는 매칭된 적 있는 청크를 지우지 않는다) 두 쪽이 같은 값을 본다
+function bestScore(item: ReadingItem): number | null {
+  const scores = item.path.subqs
+    .flatMap((s) => s.chunks.map((c) => c.score))
+    .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  return scores.length ? Math.max(...scores) : null;
+}
+
+// 높은 점수가 앞, 점수가 없는 편은 뒤
+function byScore(a: ReadingItem, b: ReadingItem): number {
+  const sa = bestScore(a);
+  const sb = bestScore(b);
+  if (sa === sb) return 0;
+  if (sa === null) return 1;
+  if (sb === null) return -1;
+  return sb - sa;
+}
+
+// 서버 reading_views.reading_order 와 같은 순서 — 사용자 순서(position, 없으면 뒤) → 하위질문 안 최소 순위 → 대목 점수 중
+// 가장 높은 값이 큰 순(없으면 뒤, 사용자 결정 2026-10-14 — 같은 순위에서 id 가 작은 옛 논문이 먼저 오던 것) → cnts_id.
+// 이어가기의 미리 담기(서버 preselect)가 같은 키로 앞 여덟 편을 고르므로 미리 담은 행이 표의 맨 위에 온다.
 // 담음·뺌으로 줄을 옮기지 않는다 — 체크하는 순간 행이 손 밑에서 움직이지 않게
 export function sortedItems(items: ReadingItem[]): ReadingItem[] {
   return [...items].sort(
     (a, b) =>
       (a.position ?? LAST) - (b.position ?? LAST) ||
       minRank(a) - minRank(b) ||
+      byScore(a, b) ||
       (a.cnts_id < b.cnts_id ? -1 : a.cnts_id > b.cnts_id ? 1 : 0),
   );
 }

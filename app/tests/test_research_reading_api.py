@@ -192,6 +192,20 @@ class TestReadingItemAndOrder:
                 _row("C1", position=0), _row("R1", origin="revived", origin_ref={"subq_idx": 0})]
         assert [r.cnts_id for r in reading_order(rows)] == ["C1", "C2", "C3", "C4", "C5", "R1"]
 
+    def test_same_best_rank_goes_to_the_higher_chunk_score_then_id(self):
+        # 같은 순위면 들어온 경로의 대목 점수(chunk_scores, 하위질문 전부) 중 가장 높은 값이 큰 편이 먼저다(사용자 결정
+        # 2026-10-14 — id 가 작은 옛 논문이 먼저 오던 것). 점수가 없는 편은 점수 있는 편 뒤, 그래도 같으면 cnts_id.
+        # 사용자가 정한 순서(position)는 그대로 맨 앞이다
+        rows = [_row("C1", origin_ref={"rank": {"0": 1}, "chunk_scores": {"0": {"a": 0.4}}}),
+                _row("C2", origin_ref={"rank": {"1": 1}, "chunk_scores": {"1": {"b": 0.9, "c": 0.3}}}),
+                _row("C3", origin_ref={"rank": {"0": 2, "1": 1}, "chunk_scores": {"0": {"d": 0.95}, "1": {"e": 0.5}}}),
+                _row("C4", origin_ref={"rank": {"2": 1}}),
+                _row("C0", origin_ref={"rank": {"2": 1}, "chunk_scores": {"2": {}}}),
+                _row("C9", origin_ref={"rank": {"2": 1}, "chunk_scores": {"2": {"f": None, "g": True}}}),
+                _row("C5", position=0, origin_ref={"rank": {"0": 9}, "chunk_scores": {"0": {"h": 0.1}}}),
+                _row("C6", origin_ref={"rank": {"0": 2}, "chunk_scores": {"0": {"i": 0.99}}})]
+        assert [r.cnts_id for r in reading_order(rows)] == ["C5", "C3", "C2", "C1", "C0", "C4", "C9", "C6"]
+
     def test_subquestions_are_the_plan_strings(self):
         assert subquestions_of(_job_ns(plan=[PLAN[0], 3, None, PLAN[1]])) == PLAN
         assert subquestions_of(_job_ns(plan=None)) == []
@@ -207,11 +221,11 @@ class TestFunnel:
         assert funnel({"stats": {"papers_reviewed": True}}, [])["reviewed"] is None
 
 
-def _candidate(cnts_id: str, ranks: dict[str, int]) -> dict:
-    """candidates_from_snapshot 한 편의 모양 — 순위만 다르게."""
+def _candidate(cnts_id: str, ranks: dict[str, int], scores: dict[str, dict[str, float]] | None = None) -> dict:
+    """candidates_from_snapshot 한 편의 모양 — 순위(와 대목 점수)만 다르게."""
     return {"cnts_id": cnts_id, "origin": "evidence",
             "origin_ref": {"subq_idx": [int(k) for k in ranks], "rank": dict(ranks), "chunks": {},
-                           "chunk_scores": {}, "verdict": {}}}
+                           "chunk_scores": dict(scores or {}), "verdict": {}}}
 
 
 class TestPreselect:
@@ -242,6 +256,26 @@ class TestPreselect:
         # 같은 순서를 읽기 목록(reading_order)이 그대로 보인다 — 미리 담은 여덟 편이 표의 맨 위 여덟 줄이다
         shown = reading_order([_row(r["cnts_id"], state=r["state"], origin_ref=r["origin_ref"]) for r in rows])
         assert [r.state for r in shown] == ["in"] * READING_PRESELECT + ["candidate"] * 2
+
+    def test_a_tie_at_the_cut_goes_to_the_higher_chunk_score_not_the_older_id(self):
+        # 순위 1·2 가 여섯 편, 순위 3 이 네 편 — 남은 두 칸은 순위 3 중 대목 점수가 높은 P10·P09 (옛 키는 id 가 작은
+        # P07·P08 을 담았다). 점수가 없는 편(P11)은 점수 있는 편 뒤
+        candidates = [
+            _candidate("P01", {"0": 1}, {"0": {"a": 0.5}}), _candidate("P02", {"1": 1}), _candidate("P03", {"2": 1}),
+            _candidate("P04", {"0": 2}), _candidate("P05", {"1": 2}), _candidate("P06", {"2": 2}),
+            _candidate("P07", {"0": 3}, {"0": {"b": 0.41}}), _candidate("P08", {"1": 3}, {"1": {"c": 0.42}}),
+            _candidate("P09", {"2": 3}, {"2": {"d": 0.3, "e": 0.8}}), _candidate("P10", {"0": 3, "1": 4},
+                                                                                   {"0": {"f": 0.2}, "1": {"g": 0.9}}),
+            _candidate("P11", {"3": 3}),
+        ]
+        rows = preselect(candidates)
+
+        picked = {r["cnts_id"] for r in rows if r["state"] == "in"}
+        assert picked == {"P01", "P02", "P03", "P04", "P05", "P06", "P09", "P10"}
+        # 표(reading_order)도 같은 키다 — 미리 담은 여덟 편이 맨 위 여덟 줄, 순위 3 은 점수 높은 순
+        shown = reading_order([_row(r["cnts_id"], state=r["state"], origin_ref=r["origin_ref"]) for r in rows])
+        assert [r.state for r in shown] == ["in"] * READING_PRESELECT + ["candidate"] * 3
+        assert [r.cnts_id for r in shown][6:] == ["P10", "P09", "P08", "P07", "P11"]
 
     def test_preselected_rows_carry_a_mark_in_the_path_and_the_input_is_untouched(self):
         candidates = [_candidate(f"P{n}", {"0": n}) for n in range(1, 11)]
