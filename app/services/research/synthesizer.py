@@ -65,6 +65,35 @@ def _topic(text: str) -> str:
     return f"'{text}' {josa(text, '은는')}"
 
 
+def _first_sentence(text: str) -> str:
+    """첫 문장 — 한글 바로 뒤 마침표에 공백이 이어지는 곳까지. 「제목」 안의 '. '·'58.4%' 같은 숫자 사이
+    마침표에서는 자르지 않고, 끊을 곳이 없으면 통째로 돌려준다."""
+    text = text.strip()
+    depth = 0
+    for i, ch in enumerate(text):
+        if ch == "「":
+            depth += 1
+        elif ch == "」":
+            depth = max(depth - 1, 0)
+        elif (ch == "." and not depth and i and "가" <= text[i - 1] <= "힣"
+              and i + 1 < len(text) and text[i + 1].isspace()):
+            return text[:i + 1]
+    return text
+
+
+def _memo(note: str) -> str:
+    """한계 줄 끝에 붙이는 critic note — 첫 문장만 '자기점검 메모'로 따옴표 안에 인용한다.
+
+    note 를 그대로 이으면 '-다' 체 문장 뒤에 '…부족합니다. 특히 …어렵습니다.' 가 붙어 문체가 섞이고 줄이
+    길어졌다(운영 630e0d65, 회차 note 42개 중 38개가 합니다체 — 프롬프트의 '-다 체'를 gemma 가 대부분 지키지
+    않는다). 합니다→다 를 코드로 바꾸지 않는다: '않습니다'가 '않다'인지 '않는다'인지 코드가 가를 수 없다.
+    직접 인용은 원문의 말투를 그대로 두는 표기라 섞여 보이지 않고, critic 의 판단이라는 출처도 드러난다.
+    첫 문장만 싣는 것은 note 의 핵심('…은 부족하다')이 첫 문장 끝에 오기 때문이다 — 글자 수로 자르면 그게
+    잘린다. 둘째 문장('특히 …')은 탐색 경로의 회차 note 에 그대로 남는다."""
+    first = _first_sentence(note)
+    return f" — 자기점검 메모: “{first}”" if first else ""
+
+
 def _capped_clause(state: ResearchState, sq: SubQuestion, noun: str) -> str:
     """상한에 막힌 후보를 원인별로 적는다 — "…에 닿아 {noun} N편을" 을 쉼표로 잇는다.
 
@@ -99,12 +128,15 @@ def build_limitations(
     과하게 알리면서 정작 심각한 쪽을 임계값에 묻는다.
     """
     out: list[str] = []
+    # 보고서의 절 — synthesize 는 근거 있는 하위질문마다 순서대로 절을 하나씩 만든다. 화면·내려받은 문서는
+    # 이 순서로 'N. 제목' 을 단다
+    sectioned = [sq for sq in state.subquestions if sq.evidence_ids]
     for sq in state.subquestions:
         # note 를 여러 분기에 붙인다. 근거가 0편인 하위질문은 아래 insufficient
         # 분기에 닿지 못하는데, 정작 "왜 못 찾았는지"가 가장 필요한 경우다.
         # 판정을 못 받았을 때의 note 는 '왜'가 아니라 같은 실패의 반복이라 뺀다 —
         # 아래 집계 문장이 따로 센다.
-        note = f" — {sq.note}" if sq.note and not sq.parse_failed else ""
+        note = _memo(sq.note) if sq.note and not sq.parse_failed else ""
         n = len(sq.evidence_ids)
         topic = _topic(sq.text)
         blocked = sq.capped or sq.budget_capped
@@ -132,8 +164,12 @@ def build_limitations(
             # 판정을 적는다 — '근거 N편으로 결론이 약하다' 는 편수 탓으로 읽혀, critic 이 발췌가 핵심 개념을 다루지
             # 않는다고 본 13편 하위질문이 5편 '충분' 옆에서 모순으로 보였다(운영 d60a5dc1). 편수는 판정 신호의
             # 하나일 뿐이고(research_critique.yaml) 까닭은 note 가 말한다. '근거 부족' 은 탐색 경로 라벨과 같은 말이다
+            # 주어는 절 번호다 — 하위질문 전문을 쓰면 계획이 낸 하위질문들이 같은 앞머리를 공유해 부족 줄 다섯이
+            # 같은 45자로 시작하고 줄마다 280~310자가 됐다(운영 630e0d65). 근거가 있으니 늘 절이 있고, 절 제목이
+            # 곧 하위질문이라 바로 위에서 찾는다. '하위질문 N' 은 앞에 근거 0편 하위질문이 있으면 절 번호와 어긋난다
+            k = next(i for i, s in enumerate(sectioned, 1) if s is sq)
             cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
-            out.append(f"{topic} 근거 {n}편을 모았으나 자기점검에서 '근거 부족'으로 판정했다{cap}{note}")
+            out.append(f"{k}절은 근거 {n}편을 모았으나 자기점검에서 '근거 부족'으로 판정했다{cap}{note}")
 
     # 근거가 0편이면 충분성을 따질 대상이 없고, failed 는 위에서 이미 알렸다
     unchecked = sum(1 for sq in state.subquestions

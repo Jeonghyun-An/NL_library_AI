@@ -88,7 +88,7 @@ class TestBuildLimitations:
         st.subquestions[0].verdict = "insufficient"
         st.subquestions[0].capped = 2
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
-        line = next(x for x in lims if "하위1" in x)
+        line = next(x for x in lims if x.startswith("1절은"))
         assert "'근거 부족'으로 판정했다" in line and "근거 상한" in line and "2편" in line
 
     def test_budget_capped_insufficient_subquestion_names_the_per_subquestion_cap(self):
@@ -97,7 +97,7 @@ class TestBuildLimitations:
         st.subquestions[0].verdict = "insufficient"
         st.subquestions[0].budget_capped = 3
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if "하위1" in x)
+                    if x.startswith("1절은"))
         assert "(하위질문당 근거 상한(45편)에 닿아 후보 3편을 더 싣지 못했다)" in line
         assert "전체 근거 상한" not in line
 
@@ -107,7 +107,7 @@ class TestBuildLimitations:
         st.subquestions[0].budget_capped = 2
         st.subquestions[0].capped = 1
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if "하위1" in x)
+                    if x.startswith("1절은"))
         assert ("(하위질문당 근거 상한(45편)에 닿아 후보 2편을, "
                 "전체 근거 상한(90편)에 닿아 후보 1편을 더 싣지 못했다)") in line
 
@@ -126,7 +126,7 @@ class TestBuildLimitations:
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "하위2" in x)
         assert line == ("'하위2' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다"
-                        " — 2015년 이후 자료가 없다")
+                        " — 자기점검 메모: “2015년 이후 자료가 없다”")
 
     def test_emptied_subquestion_still_names_a_cap_that_blocked_more(self):
         # 모두 뺀 것이 먼저다 — 상한은 덧붙인다. 상한 분기로 보내면 critic 이 근거를 읽고 뺀 사실과 note 가 사라진다
@@ -136,7 +136,8 @@ class TestBuildLimitations:
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "하위2" in x)
         assert line == ("'하위2' 에 대해서는 모은 논문 1편이 모두 하위질문과 무관해 근거에서 뺐다"
-                        "(전체 근거 상한(90편)에 닿아 후보 3편을 더 싣지 못했다) — 2015년 이후 자료가 없다")
+                        "(전체 근거 상한(90편)에 닿아 후보 3편을 더 싣지 못했다)"
+                        " — 자기점검 메모: “2015년 이후 자료가 없다”")
 
     def test_unchecked_subquestion_without_evidence_is_not_counted_twice(self):
         """근거가 0편이면 충분성을 따질 대상이 없다 — '못 찾았다'와 '점검 못 함'을 둘 다 쓰지 않는다."""
@@ -230,12 +231,13 @@ class TestTopic:
         assert _topic(text) == f"'{text}' (은)는"
 
     def test_limitation_sentence_uses_the_matching_particle(self):
+        # 부족 줄은 절 번호를 주어로 쓴다 — 하위질문 전문을 주어로 쓰는 중단 줄로 조사를 본다
         st = _state()
         st.subquestions[0].text = "자원 할당"
-        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].failed = True
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "자원 할당" in x)
-        assert line.startswith("'자원 할당' 은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다")
+        assert line.startswith("'자원 할당' 은 탐색이 오류로 중단돼")
 
     def test_insufficient_line_names_the_verdict_not_the_count(self):
         """운영 d60a5dc1 — 근거 13편인 하위질문에 '근거 13편으로 결론이 약하다'가 붙어 편수 탓으로 읽혔다(같은
@@ -249,14 +251,89 @@ class TestTopic:
         st.subquestions[0].note = "측정 도구를 직접 비교한 논문이 없다"
         st.subquestions[0].evidence_ids = [f"E{i}" for i in range(13)]
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if "무엇인가" in x)
-        assert line == (f"'{text}' 는 근거 13편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
-                        " — 측정 도구를 직접 비교한 논문이 없다")
+                    if "13편" in x)
+        assert line == ("1절은 근거 13편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+                        " — 자기점검 메모: “측정 도구를 직접 비교한 논문이 없다”")
 
     def test_about_phrase_keeps_its_fixed_particle(self):
         # '에 대해서는' 은 받침과 무관하다 — 그대로 둔다
         lims = build_limitations(_state(), unmarked_total=0, dropped_total=0)
         assert any(x.startswith("'하위2' 에 대해서는 근거를 찾지 못했다") for x in lims)
+
+
+class TestInsufficientLineShape:
+    """운영 630e0d65 — 하위질문 6개 중 5개가 부족이었고, 줄마다 같은 앞머리('국내 학술 논문에서 다문화가정 아동
+    언어 발달…')의 하위질문 전문과 critic note 두 문장을 이어 263~314자가 됐다. 앞은 '-다' 체, 뒤 note 는
+    '…부족합니다. 특히 …어렵습니다.'(운영 회차 note 42개 중 38개가 합니다체)라 한 줄에 문체가 섞였다.
+    부족 줄의 주어는 보고서의 절 번호로 쓰고(절 제목이 곧 하위질문이다), note 는 첫 문장만 자기점검 메모로
+    따옴표 안에 인용한다 — 직접 인용은 원문의 말투를 그대로 둔다."""
+
+    def _line(self, st, prefix):
+        return next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if x.startswith(prefix))
+
+    def _insufficient(self, note):
+        st = _state()
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].note = note
+        return st
+
+    def test_section_number_counts_only_subquestions_with_evidence(self):
+        """절은 근거 있는 하위질문마다 순서대로 하나씩이다(synthesize) — 앞 하위질문이 0편이면 번호가 당겨진다.
+        '하위질문 N' 으로 쓰면 그 번호가 보고서 절 번호와 어긋난다."""
+        st = _state()
+        st.subquestions = [
+            SubQuestion(idx=0, text="하위0", evidence_ids=[], verdict="insufficient"),
+            SubQuestion(idx=1, text="하위1", evidence_ids=["E1"], verdict="sufficient"),
+            SubQuestion(idx=2, text="하위2", evidence_ids=["E1"], verdict="insufficient",
+                        note="개념을 다루지 않는다"),
+        ]
+        line = self._line(st, "2절은")
+        assert line == ("2절은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+                        " — 자기점검 메모: “개념을 다루지 않는다”")
+        assert "하위2" not in line
+
+    def test_only_the_first_sentence_of_the_note_is_quoted(self):
+        st = self._insufficient("제시된 근거들은 동향을 다루지만 개념에 대한 직접적인 분석은 부족합니다. "
+                                "특히, 정의의 변화를 추적하는 논문은 찾기 어렵습니다.")
+        assert self._line(st, "1절은").endswith(
+            " — 자기점검 메모: “제시된 근거들은 동향을 다루지만 개념에 대한 직접적인 분석은 부족합니다.”")
+
+    @pytest.mark.parametrize("note, first", [
+        # 제목 안의 '. ' 는 문장 끝이 아니다(_titled_note 가 번호를 「제목」으로 바꾼다)
+        ("「다문화 아동. 언어 발달」은 개념을 다루지 않는다. 특히 정의가 없다.",
+         "「다문화 아동. 언어 발달」은 개념을 다루지 않는다."),
+        # 숫자 사이 마침표도 문장 끝이 아니다
+        ("양적연구 66편(58.4%)만 다룬다. 질적연구는 없다.", "양적연구 66편(58.4%)만 다룬다."),
+        # 마침표가 없으면 통째로 싣는다
+        ("2015년 이후 자료가 없다", "2015년 이후 자료가 없다"),
+        ("  한 문장뿐이다.  ", "한 문장뿐이다."),
+    ])
+    def test_sentence_boundary(self, note, first):
+        assert self._line(self._insufficient(note), "1절은").endswith(f" — 자기점검 메모: “{first}”")
+
+    def test_blank_note_adds_no_memo(self):
+        line = self._line(self._insufficient("   "), "1절은")
+        assert line == "1절은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+
+    def test_note_of_an_unjudged_subquestion_is_left_out(self):
+        # 판정을 못 받았을 때의 note 는 '왜'가 아니라 같은 실패의 반복이다 — 집계 줄이 따로 센다
+        st = _state()
+        st.subquestions[0].failed = True
+        st.subquestions[0].parse_failed = True
+        st.subquestions[0].note = "판정 JSON 파싱 실패"
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "'하위1'" in x)
+        assert "판정 JSON 파싱 실패" not in line and "자기점검 메모" not in line
+
+    def test_failed_and_missing_branches_quote_the_memo_too(self):
+        st = _state()
+        st.subquestions[0].failed = True
+        st.subquestions[0].note = "앞 회차까지는 관련 논문이 있었다. 둘째 문장."
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert ("'하위1' (은)는 탐색이 오류로 중단돼 끝까지 확인하지 못했다(중단 전까지 모은 근거 1편으로만 썼다)"
+                " — 자기점검 메모: “앞 회차까지는 관련 논문이 있었다.”") in lims
+        assert "'하위2' 에 대해서는 근거를 찾지 못했다 — 자기점검 메모: “2015년 이후 자료가 없다”" in lims
 
 
 class TestAssembleReport:
@@ -658,6 +735,20 @@ class TestSynthesize:
         assert [s["heading"] for s in report["sections"]] == ["하위1", "하위2"]
         assert len(calls) == 2                      # 근거 없는 하위3 은 호출하지 않는다
         assert "하위2" in calls[1] and "[E3]" in calls[1] and "[E1]" not in calls[1]
+
+    def test_insufficient_line_names_the_section_the_report_shows(self, monkeypatch):
+        """한계의 'N절' 은 보고서 화면·내려받은 문서의 'N. 제목' 과 같은 절이어야 한다 — 절을 건너뛰거나 합치게
+        바뀌면 번호가 어긋나 엉뚱한 절을 가리킨다. 근거 없는 하위질문이 앞에 있어 하위질문 번호와 다른 경우로 묶는다."""
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        self._patch_chat(monkeypatch, [reply, reply])
+        st = _state_three()
+        st.subquestions = [st.subquestions[2], st.subquestions[0], st.subquestions[1]]
+        st.subquestions[2].verdict = "insufficient"
+        st.subquestions[2].note = "비교 연구가 없다."
+        report = asyncio.run(synthesize(st))
+        line = next(x for x in report["limitations"] if "'근거 부족'" in x)
+        k = int(line.split("절은", 1)[0])
+        assert report["sections"][k - 1]["heading"] == "하위2"
 
     def test_every_evidence_appears_in_some_section(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
