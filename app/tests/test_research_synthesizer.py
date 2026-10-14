@@ -1425,10 +1425,26 @@ class TestExcerptText:
         "|3.615 (.815)\n\n.125",             # 소수점(운영 9ba10849 E6 '3.615 (.')
         "Journal of Welfare, Vol. 17, pp",   # 서지 약어(운영 9ba10849 E1 'Vol.')
         "(Kim et al. 2019",                  # et al.
+        "As noted by Dr. Kim, the",          # 칭호
+        "funded by the U.S. Department of",  # 머리글자 연쇄('U.S'·'e.g'·'i.e')
+        "such as tables, etc. and the",
+        "Journal, vol. 3, no. 2, the",       # 소문자 서지 약어
+        "Nuri Media Co., Ltd. 여고찰하였고",  # 회사 약어(운영 KCI_FI001003146__0006)
+        "1. 서론\n\n가. 연구의 필요성",        # 줄 처음의 한글 목록 기호
+        "\n#### 나. 연구 문제",               # 제목 표시 뒤의 한글 목록 기호
     ])
     def test_numbers_initials_and_abbreviations_are_not_sentence_ends(self, tail):
         text = _DONE * 5 + tail + " " + "가" * 400
         assert self._text(text) == (_DONE * 5).rstrip()
+
+    @pytest.mark.parametrize("tail", [
+        "결과를 보고하고 있 다.",                     # OCR 띄어쓰기(운영 KCI_FI002180207__0009)
+        "기대할 수 있\n\n- 다.",                      # OCR 이어짐 줄(운영 KCI_FI001407641__0008)
+    ])
+    def test_one_hangul_syllable_mid_line_is_a_sentence_end(self, tail):
+        # 한 글자 한글 낱말은 줄 처음(제목 표시 '#' 만 앞에 올 때 포함)일 때만 목록 기호다 — OCR 의 '다.' 는 문장 끝이다
+        text = _DONE * 4 + tail + " 따라서 " + "가" * 400
+        assert self._text(text) == _DONE * 4 + tail
 
     def test_closing_quote_stays_with_its_sentence(self):
         text = _DONE * 4 + "연구자는 “언어 지원이 먼저 필요하다.” " + "가" * 400

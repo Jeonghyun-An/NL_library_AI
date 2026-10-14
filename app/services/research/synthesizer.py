@@ -57,11 +57,16 @@ _BR = re.compile(r"<br\s*/?>", re.I)
 _TABLE_SHARE = 0.6
 # 완결 문장의 끝 — 마침표 뒤 공백·끝·각주 번호 '4)'·닫는 따옴표. 창 끝에서 잘린 조각('<Abstract> This s')은 문장이 아니다
 _SENTENCE_STOP = re.compile(r"[.!?。](?=\s|$|\d{1,3}\)|[\"”’」』])")
-# 문장 끝으로 보지 않는 마침표 앞 낱말 — 절·목록 번호('#### 3.'·'3.1.')·머리글자('- [7] H.')·로마 숫자('- Ⅳ.')·서지
-# 약어('Vol.'·'et al.'). 운영 잡 4건(630e·85d2·9ba1·d60a)에서 모델이 읽은 대목을 이 자리에서 자르면 번호·머리글자만
-# 남았다. 한글 한 글자는 넣지 않는다 — OCR 띄어쓰기('연구이 다.')의 '다' 가 문장 끝이다
+# 문장 끝으로 보지 않는 마침표 앞 낱말 — 절·목록 번호('#### 3.'·'3.1.')·머리글자와 그 연쇄('- [7] H.'·'U.S.'·'e.g.')·
+# 로마 숫자('- Ⅳ.')·서지 약어('Vol.'·'no.'·'et al.')·칭호·회사 약어('Dr.'·'Co., Ltd.'). 운영 잡 4건(630e·85d2·9ba1·
+# d60a)에서 모델이 읽은 대목을 이 자리에서 자르면 번호·머리글자만 남았다. 한글 한 글자는 넣지 않는다 — OCR 띄어쓰기
+# ('연구이 다.')의 '다' 가 문장 끝이다. 줄 처음의 목록 기호('가.')만 _sentence_ends 가 따로 뺀다(_LIST_MARKER_LEAD)
 _NOT_SENTENCE_WORD = re.compile(
-    r"\d{1,3}(?:\.\d{1,3})*|[A-Za-z]|[IVX]{2,5}|[Ⅰ-Ⅻⅰ-ⅻ]+|Vol|No|pp|Dept|al|vs|cf|Fig|eds?|e\.g|i\.e")
+    r"\d{1,3}(?:\.\d{1,3})*|[A-Za-z](?:\.[A-Za-z])*|[IVX]{2,5}|[Ⅰ-Ⅻⅰ-ⅻ]+"
+    r"|[Vv]ol|[Nn]o|pp|Dept|al|vs|cf|Fig|eds?|etc|Dr|Mrs?|Ms|Prof|Jr|Inc|Ltd|Co")
+# 한 글자 한글 낱말('가.')의 줄 안 앞에 이 글자만 있으면(줄 처음·제목 표시 '#### 가.') 목록 기호다. '- ' 는 넣지 않는다 —
+# OCR 이 이어지는 줄 앞에 붙여('…기대할 수 있\n\n- 다. 따라서', 운영 KCI_FI001407641__0008) 그 '다.' 가 문장 끝이다
+_LIST_MARKER_LEAD = " \t#"
 # 마침표 앞 낱말에서 떼고 보는 여는 기호 — 떼고 남는 게 없으면('(.815)') 소수점이다
 _WORD_OPENERS = "#*-([|<\"'“‘「『"
 # 문장 끝 마침표 바로 뒤의 닫는 따옴표는 그 문장과 함께 자른다(_SENTENCE_STOP 의 따옴표와 같은 글자)
@@ -608,11 +613,20 @@ def drop_repeats(section: dict, seen: list[str]) -> tuple[dict, list[str]]:
     return {**section, "intro": trimmed, "future": future}, keys
 
 
+def _list_marker(text: str, start: int, word: str) -> bool:
+    """text[start:] 에서 시작하는 마침표 앞 낱말 word 가 한글 목록 기호('가.'·'나.')인가 — 한 글자 한글이고 줄 안에서 그
+    앞이 공백·제목 표시('#')뿐이다. 한글 학위논문의 '1. 서론\\n\\n가. 연구의 필요성' 에서 '가.' 를 문장 끝으로 보면 창이
+    목록 기호로 끝난다."""
+    if len(word) != 1 or not "가" <= word <= "힣":
+        return False
+    return not text[text.rfind("\n", 0, start) + 1:start].strip(_LIST_MARKER_LEAD)
+
+
 def _sentence_ends(text: str) -> list[int]:
     """text 앞 EXCERPT_CHARS 자 안의 완결 문장 끝 — 문장을 맺는 마침표(와 바로 뒤 닫는 따옴표) 다음 자리, 앞에서부터.
 
-    _SENTENCE_STOP 이 문장 끝으로 본 자리 가운데 마침표 앞 낱말이 번호·머리글자·약어(_NOT_SENTENCE_WORD)이거나 여는
-    기호뿐인 것은 뺀다. 창 끝 마침표는 창 밖 다음 글자로 판단한다 — 400자째가 '3.14' 의 '3.' 이면 문장 끝이 아니다.
+    _SENTENCE_STOP 이 문장 끝으로 본 자리 가운데 마침표 앞 낱말이 번호·머리글자·약어(_NOT_SENTENCE_WORD)·줄 처음의 한글
+    목록 기호(_list_marker)이거나 여는 기호뿐인 것은 뺀다. 창 끝 마침표는 창 밖 다음 글자로 판단한다 — 400자째가 '3.14' 의 '3.' 이면 문장 끝이 아니다.
     마침표 뒤가 숫자(_SENTENCE_STOP 의 각주 '어렵다.4)')면 마침표 앞이 글자일 때만 문장 끝이다 — 'p<.05)'·'SD=6.3)'·
     '3.0)' 의 마침표는 소수점이라 거기서 자르면 값이 바뀐다. 운영 4건 근거 대목 전문에서 앞이 글자인 26건은 모두 각주,
     숫자(136)·비교 기호(<·=, 11)인 것은 모두 통계·표의 소수였다.
@@ -626,7 +640,7 @@ def _sentence_ends(text: str) -> list[int]:
             continue
         before = head[max(0, m.start() - 16):m.start()]
         word = "" if not before or before[-1].isspace() else before.split()[-1].lstrip(_WORD_OPENERS)
-        if not word or _NOT_SENTENCE_WORD.fullmatch(word):
+        if not word or _NOT_SENTENCE_WORD.fullmatch(word) or _list_marker(head, m.start() - len(word), word):
             continue
         end = m.end()
         while end < min(len(head), EXCERPT_CHARS) and head[end] in _CLOSING_QUOTES:
