@@ -77,8 +77,8 @@ async def search_papers(
 
     # 논문 검색은 쿼리 재작성을 하지 않는다(요청의 use_rewrite 는 무시) — 재작성 프롬프트는 도서 추천용이라 논문 질문의
     # 구체어를 버리고 없던 주제어를 덧붙였다. 켬 71% vs 끔 87%(파이프라인 측정, 독립 3세트 450문항 — 재작성 단계 −17.6%p),
-    # 배포본 실측 Recall@10 89%(2026-10-14, 합성 질문 기준) — research/brochure-search-eval/README.md(브랜치
-    # feat/brochure-search-eval), 사용자 결정 2026-10-14. 소장자료 검색(/api/books/search)은 그대로 재작성한다
+    # 배포본 실측 Recall@10 89%(2026-10-14, 합성 질문 기준) — research/brochure-search-eval/README.md, 사용자 결정
+    # 2026-10-14. 소장자료 검색(/api/books/search)은 그대로 재작성한다
     result = await search(
         req.query,
         mode=req.mode,
