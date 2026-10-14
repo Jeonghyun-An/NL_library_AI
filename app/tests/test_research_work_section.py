@@ -135,6 +135,7 @@ class TestPrompts:
         system = get_prompt(PROMPTS[kind]).system
         assert "몇 편인지, 어느 해에 나왔는지를 말할 때만" in system and "표기 바로 뒤에" in system
         assert "문장 끝에 붙이지 말고" in system and "쓸 까닭이 없으면 쓰지 마세요" in system
+        assert "[F#] 를 쓴 문장에도 그 논문들의 [E#] 를 붙입니다" in system
         assert "'본 연구'·'이 연구'·'본 논문'으로 부르지 마세요" in system and "'선행연구'나 '해당 연구'" in system
         assert "'쓸 문단 수'만큼" in system and "근거가 적으면 문단을 줄이고" in system
         assert "2~3" not in system
@@ -212,6 +213,15 @@ class TestExecutor:
         assert paragraph["text"] == "가족 지지는 우울을 낮춘다고 보고되었다 [E1]."
         assert paragraph["cites"] == ["KCI_A"]
         assert paragraph["checks"] == {"dropped": 0, "dropped_f": 3, "unmarked": 0, "numbers": [], "softened": 0}
+
+    def test_a_count_sentence_without_a_citation_stays_as_unmarked(self):
+        # [E#] 만 빠뜨린 집계 문장은 지우지 않는다 — 근거 표시 없는 문장(화면 점선)으로 세고 수치 표기도 버리지 않는다
+        text = "가족 지지는 우울을 낮춘다고 보고되었다 [E1]. 이 묶음의 선행연구 [F1]편은 [F2]년에 발표되었다."
+
+        (paragraph,) = EXECUTOR.bind({"paragraphs": [text]}, PRIOR)["paragraphs"]
+
+        assert paragraph["text"] == text
+        assert paragraph["checks"]["unmarked"] == 1 and paragraph["checks"]["dropped_f"] == 0
 
     def test_paragraph_left_empty_by_the_check_is_dropped(self):
         output = EXECUTOR.bind({"paragraphs": ["[E9]", "본문이다 [E1]."]}, PRIOR)

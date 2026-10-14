@@ -82,6 +82,7 @@ class TestPrompt:
         # 절 프롬프트와 같은 규칙 — 운영(2026-10-14 prior.g2)에서 수치 목록을 문장으로 옮기고 인용 논문을 '본 연구'로 썼다
         system = get_prompt(PROMPT).system
         assert "몇 편인지, 어느 해에 나왔는지를 말할 때만" in system and "문장 끝에 붙이지 말고" in system
+        assert "[F#] 를 쓴 문장에도 그 논문들의 [E#] 를 붙입니다" in system
         assert "'본 연구'·'이 연구'·'본 논문'으로 부르지 마세요" in system and "'선행연구'나 '해당 연구'" in system
 
     def test_asks_for_new_sentences_not_a_copy_of_the_inputs(self):
