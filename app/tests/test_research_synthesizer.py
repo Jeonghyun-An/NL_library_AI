@@ -1438,6 +1438,19 @@ class TestExcerptText:
         text = _DONE * 4 + "일반화하기는 어렵다.4)\n\n그러므로 객관적 자료 조사가 " + "가" * 400
         assert self._text(text).endswith("일반화하기는 어렵다.")
 
+    @pytest.mark.parametrize("tail", [
+        "자기효능감(β=.18, p<.05)이 우울에",          # 비교 기호 뒤 소수(운영 9ba1·d60a 노인 우울 결과 문단)
+        "평균 연령(M=72.4, SD=6.3)은 여성이",          # 숫자 뒤 소수 — 'SD=6.' 에서 자르면 값이 바뀐다
+        "유의하였으며(p<.05), 이는 선행연구와",
+        "계수는(β =.380, p=.135) 사회적",               # 운영 KCI_FI002267397__0000
+        "licenses/by-nc/3.0) which permits",           # 운영 KCI_FI002267397__0003 저작권 고지
+    ])
+    def test_decimal_before_a_closing_paren_is_not_a_footnote(self, tail):
+        # 각주 '어렵다.4)' 는 마침표 앞이 글자다 — 운영 4건 근거 대목 전문에서 앞이 글자인 26건은 모두 각주, 숫자(136)·
+        # 비교 기호(<·=, 11)인 것은 모두 통계·표의 소수였다
+        text = _DONE * 5 + tail + " " + "가" * 400
+        assert self._text(text) == (_DONE * 5).rstrip()
+
 
 def _drafted(intro: str = "", future: tuple[str, ...] = (), summary: str = "요약이다.") -> dict:
     """모델 출력으로 만든 절(build_section 의 모양) — 다듬기(finalize_section) 전이다."""

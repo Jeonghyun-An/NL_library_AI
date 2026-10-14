@@ -613,12 +613,17 @@ def _sentence_ends(text: str) -> list[int]:
 
     _SENTENCE_STOP 이 문장 끝으로 본 자리 가운데 마침표 앞 낱말이 번호·머리글자·약어(_NOT_SENTENCE_WORD)이거나 여는
     기호뿐인 것은 뺀다. 창 끝 마침표는 창 밖 다음 글자로 판단한다 — 400자째가 '3.14' 의 '3.' 이면 문장 끝이 아니다.
+    마침표 뒤가 숫자(_SENTENCE_STOP 의 각주 '어렵다.4)')면 마침표 앞이 글자일 때만 문장 끝이다 — 'p<.05)'·'SD=6.3)'·
+    '3.0)' 의 마침표는 소수점이라 거기서 자르면 값이 바뀐다. 운영 4건 근거 대목 전문에서 앞이 글자인 26건은 모두 각주,
+    숫자(136)·비교 기호(<·=, 11)인 것은 모두 통계·표의 소수였다.
     """
     head = text[:EXCERPT_CHARS + 1]
     ends: list[int] = []
     for m in _SENTENCE_STOP.finditer(head):
         if m.end() > EXCERPT_CHARS:
             break
+        if head[m.end():m.end() + 1].isdigit() and not (m.start() and head[m.start() - 1].isalpha()):
+            continue
         before = head[max(0, m.start() - 16):m.start()]
         word = "" if not before or before[-1].isspace() else before.split()[-1].lstrip(_WORD_OPENERS)
         if not word or _NOT_SENTENCE_WORD.fullmatch(word):
