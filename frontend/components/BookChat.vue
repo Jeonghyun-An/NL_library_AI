@@ -44,13 +44,17 @@
       </div>
 
       <!-- 답을 받지 못한 질문 — 대화에는 남기지 않고(오류가 답처럼 굳거나 다음 질문의 history 로 가지 않게) 여기에만 보인다.
-           [다시 시도]는 같은 질문을 다시 보낸다 -->
+           실패 전까지 받던 글은 흐리게 남기고(다른 AI 글 화면처럼 읽던 글이 사라지지 않게) 그 아래 안내만 알린다(role=alert —
+           받던 글까지 다시 읽지 않게). [다시 시도]는 같은 질문을 다시 보낸다 -->
       <template v-if="failure">
         <div class="skx-chat-msg skx-chat-msg--user">
           <div v-html="formatText(failure.question)" />
         </div>
-        <div class="skx-chat-msg skx-chat-msg--ai" role="alert">{{ failure.message }} ·
-          <button type="button" class="skx-retry" @click="retry">다시 시도</button>
+        <div class="skx-chat-msg skx-chat-msg--ai">
+          <div v-if="failure.partial" class="skx-chat-msg__partial" v-html="formatText(failure.partial)" />
+          <p class="skx-chat-msg__failed" role="alert">{{ failure.message }} ·
+            <button type="button" class="skx-retry" @click="retry">다시 시도</button>
+          </p>
         </div>
       </template>
 

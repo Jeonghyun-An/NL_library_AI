@@ -17,11 +17,14 @@ export interface DeepReadChatOptions {
   fetchFn?: typeof fetch;
 }
 
-// 답을 받지 못한 질문과 보일 문구(서버의 {error} 문구, 없으면 CHAT_ERROR_TEXT). 질문도 오류도 대화(messages·store)에는
-// 남기지 않는다 — 남기면 오류 문구가 답처럼 굳고 다음 질문의 history 로 모델에게까지 간다
+// 답을 받지 못한 질문과 보일 문구(서버의 {error} 문구, 없으면 CHAT_ERROR_TEXT), 실패 전까지 받던 글(partial — 없으면 "").
+// 질문도 오류도 받던 글도 대화(messages·store)에는 남기지 않는다 — 남기면 오류 문구·끊긴 답이 답처럼 굳고 다음 질문의
+// history 로 모델에게까지 간다. 받던 글은 실패 안내에만 둔다: 다른 AI 글 화면(논문 검색·상세 요약·추천 이유)처럼 읽던 글이
+// 실패 순간 사라지지 않게. 다음 질문·[다시 시도]·논문 바꾸기가 failure 와 함께 걷는다
 export interface DeepReadFailure {
   question: string;
   message: string;
+  partial: string;
 }
 
 export interface DeepReadChat {
@@ -42,8 +45,8 @@ interface Run {
 
 // 딥리드 대화의 흐름(BookChat 에서 뺐다 — spec §12-4). 논문(cntsId)이 바뀌면 받던 답을 끊고 그 논문의 대화로 바꾸며,
 // 닫히면(scope 끝) 끊는다. 끊은 답은 받은 글 + '멈췄습니다'로 그 논문의 대화에 남는다(06e 정함 21).
-// 답을 받지 못하면({error}·4xx·5xx·네트워크 오류·[DONE] 없이 끊김) 받던 글을 버리고 질문도 대화에서 빼 failure 로 알린다 —
-// user/assistant 짝은 그대로이고, 화면이 [다시 시도](retry)로 같은 질문을 다시 보낸다
+// 답을 받지 못하면({error}·4xx·5xx·네트워크 오류·[DONE] 없이 끊김) 받던 글과 질문을 대화에서 빼 failure 로 알린다(받던 글은
+// failure.partial) — user/assistant 짝은 그대로이고, 화면이 [다시 시도](retry)로 같은 질문을 다시 보낸다
 export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
   // store 가 있으면 그 논문의 배열을 그대로 쥔다 — messages 에 쓰는 것이 곧 store 에 남는다
   function thread(id: string): DeepReadMessage[] {
@@ -132,10 +135,11 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
     if (finished) {
       run.list.push({ role: "assistant", content: streamingText.value, ...(sources ? { sources } : {}) });
     } else {
-      // 받던 글은 버리고 질문도 대화에서 뺀다 — 오류가 답처럼 굳거나 다음 질문의 history 에 실리지 않게
+      // 받던 글은 대화에 넣지 않고 질문도 대화에서 뺀다 — 오류가 답처럼 굳거나 다음 질문의 history 에 실리지 않게.
+      // 받던 글은 실패 안내에만 남긴다
       const at = run.list.lastIndexOf(asked);
       if (at >= 0) run.list.splice(at, 1);
-      failure.value = { question: text, message: failMessage ?? CHAT_ERROR_TEXT };
+      failure.value = { question: text, message: failMessage ?? CHAT_ERROR_TEXT, partial: streamingText.value };
     }
     streamingText.value = "";
     isStreaming.value = false;

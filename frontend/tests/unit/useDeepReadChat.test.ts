@@ -106,18 +106,19 @@ describe("useDeepReadChat", () => {
     const { chat } = setup({ fetchFn: failing as unknown as typeof fetch });
     await chat.send("질문");
     expect(chat.messages.value).toEqual([]);
-    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "" });
     expect(chat.isStreaming.value).toBe(false);
 
     const offline = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     const other = setup({ fetchFn: offline as unknown as typeof fetch });
     await other.chat.send("질문");
     expect(other.chat.messages.value).toEqual([]);
-    expect(other.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+    expect(other.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "" });
   });
 
-  // 서버(app/services/chat/book_chat.py)는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error: 문구} 를 보낸다
-  it("{error} 가 오면 받던 글도 질문도 대화에 남기지 않고 서버 문구로 실패를 알린다 — 다음 질문의 history 에 실리지 않는다", async () => {
+  // 서버(app/services/chat/book_chat.py)는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error: 문구} 를 보낸다.
+  // 받던 글은 실패 안내(failure.partial)에만 둔다 — 다른 AI 글 화면처럼 읽던 글이 실패 순간 사라지지 않되 대화에는 남지 않는다
+  it("{error} 가 오면 받던 글도 질문도 대화에 남기지 않고(받던 글은 failure.partial) 서버 문구로 실패를 알린다 — 다음 질문의 history 에 실리지 않는다", async () => {
     const store = new Map<string, DeepReadMessage[]>();
     const { chat, calls, push } = setup({ store });
     const first = chat.send("대상은?");
@@ -137,7 +138,7 @@ describe("useDeepReadChat", () => {
       { role: "assistant", content: "노인 300명입니다." },
     ];
     expect(store.get("KCI_1")).toEqual(answered);
-    expect(chat.failure.value).toEqual({ question: "방법은?", message: "답을 만들지 못했습니다" });
+    expect(chat.failure.value).toEqual({ question: "방법은?", message: "답을 만들지 못했습니다", partial: "받다 만 " });
     expect(chat.streamingText.value).toBe("");
     expect(chat.isStreaming.value).toBe(false);
 
@@ -150,13 +151,13 @@ describe("useDeepReadChat", () => {
     await third;
   });
 
-  it("{error} 의 문구가 없으면 CHAT_ERROR_TEXT 로, [DONE] 없이 끊겨도 실패로 알린다 — 받던 글을 답으로 남기지 않는다", async () => {
+  it("{error} 의 문구가 없으면 CHAT_ERROR_TEXT 로, [DONE] 없이 끊겨도 실패로 알린다 — 받던 글을 답으로 남기지 않는다(failure.partial 에만)", async () => {
     const { chat, push } = setup();
     const sent = chat.send("질문");
     await flush();
     push('data: {"error": ""}\n\ndata: [DONE]\n\n');
     await sent;
-    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "" });
 
     const cut = setup();
     const again = cut.chat.send("질문");
@@ -166,7 +167,7 @@ describe("useDeepReadChat", () => {
     cut.end();
     await again;
     expect(cut.chat.messages.value).toEqual([]);
-    expect(cut.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT });
+    expect(cut.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "반쯤" });
   });
 
   it("retry 는 실패한 질문을 그대로 다시 보낸다 — 실패가 없으면 아무것도 하지 않는다", async () => {

@@ -3433,6 +3433,13 @@ html.skx-scroll-lock {
 .skx-chat-msg--ai .skx-retry {
   color: inherit;
 }
+/* 실패 전까지 받던 글 — 대화에 남지 않는 끊긴 글이라 흐리게(새 색값 없이 투명도). 안내는 그 아래 한 줄 띄워 */
+.skx-chat-msg__partial {
+  opacity: 0.6;
+}
+.skx-chat-msg__partial + .skx-chat-msg__failed {
+  margin-top: 0.5rem;
+}
 .skx-chat-typing {
   display: flex;
   align-items: center;
