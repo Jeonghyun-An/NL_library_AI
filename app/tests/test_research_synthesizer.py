@@ -1368,6 +1368,76 @@ class TestSectionExcerpts:
         assert "<기초학습기능검사>였다.\n대상은 232명" in calls[0]
         assert "&lt;" not in calls[0] and "<br>" not in calls[0]
 
+    def test_window_whose_only_sentence_ends_are_initials_is_skipped(self, monkeypatch):
+        """'완결 문장이 없는 대목' 판정은 대목을 자르는 문장 끝과 같은 기준이다 — 머리글자 'H.'·'J.' 를 문장 끝으로 보면
+        그 앞의 영문 서지 조각('This study was …')이 서술로 세어져, 잘린 문장만 있는 대목이 모델에 간다."""
+        bib = "This study was cited by Song, H. and Kim, J. in the review of " + "x" * 400
+        st = _mapped_state({"E1": [Chunk("b1", bib, 9, 9, 0.9), Chunk("n1", _PROSE, 2, 2, 0.6)]})
+        calls, _, _ = self._run(monkeypatch, st)
+        assert "76%로 편중" in calls[0] and "Song" not in calls[0]
+
+
+# 모델이 읽는 대목 창 — 운영 630e0d65 2절 E16 은 400자째에서 '넷 째, …5개의' 로 끊겨, 모델이 잘린 문장을 짐작해
+# 잇거나 되풀이 루프에 빠졌다
+_DONE = "셋 째, 연구 방법에서는 양적 연구 방법이 76%로서 편중된 양상을 나타내었다. "
+_CUT_TAIL = "넷 째, 분석대상논문들을 통해 총 6개의 하위 주제와 5개의 "
+
+
+class TestExcerptText:
+    def _text(self, text: str) -> str:
+        return synthesizer.excerpt_text(Chunk("c1", text, 1, 1, 0.9))
+
+    def test_window_is_cut_at_the_last_sentence_end(self):
+        text = _DONE * 5 + _CUT_TAIL + "하위 범주를 " * 40 + "도출하였다."
+        assert text.index("도출하였다") > synthesizer.EXCERPT_CHARS
+        assert self._text(text) == (_DONE * 5).rstrip()
+
+    def test_english_window_is_cut_at_the_last_sentence_end(self):
+        done = "This study reviewed the assessment methods used in the researches. "
+        text = done * 4 + "The findings suggest that while early researches focused on vocabulary, " * 5
+        assert self._text(text) == (done * 4).rstrip()
+
+    def test_sentence_end_too_close_to_the_start_keeps_the_400_char_cut(self):
+        # 마지막 문장 끝이 너무 앞이면 남는 글이 거의 없다 — 지금처럼 400자에서 자른다
+        text = "짧은 문장이다. " + "가" * 500
+        assert self._text(text) == text[:synthesizer.EXCERPT_CHARS]
+
+    def test_window_without_a_sentence_end_keeps_the_400_char_cut(self):
+        text = "|번호|성별|연령|\n" * 60
+        assert self._text(text) == text[:synthesizer.EXCERPT_CHARS]
+
+    def test_chunk_within_the_window_is_kept_whole(self):
+        # 400자를 넘지 않으면 자르지 않는다 — 청크가 끝난 자리다
+        text = _DONE * 3 + "끝나지 않은 조각"
+        assert self._text(text) == text
+
+    def test_period_at_the_window_edge_is_judged_by_the_next_char(self):
+        # 400자째 마침표가 '3.14' 의 소수점이면 문장 끝이 아니다 — '평균은 3.' 에서 자르면 값이 바뀐다
+        head = _DONE * 5 + "평균은 "
+        text = head + "나" * (synthesizer.EXCERPT_CHARS - 2 - len(head)) + "3.14점이었다. " + "다" * 100
+        assert text.index("3.14") + 1 == synthesizer.EXCERPT_CHARS - 1
+        assert self._text(text) == (_DONE * 5).rstrip()
+
+    @pytest.mark.parametrize("tail", [
+        "#### 3. 연구 방법",                 # 절 번호(운영 d60a5dc1 E1 '#### 3.')
+        "- [7] H. Song, A study on",         # 머리글자(운영 d60a5dc1 E11 '- [7] H.')
+        "- Ⅳ. 공공도서관 지역",               # 로마 숫자(운영 85d2bc0e E19 '- Ⅳ.')
+        "|3.615 (.815)\n\n.125",             # 소수점(운영 9ba10849 E6 '3.615 (.')
+        "Journal of Welfare, Vol. 17, pp",   # 서지 약어(운영 9ba10849 E1 'Vol.')
+        "(Kim et al. 2019",                  # et al.
+    ])
+    def test_numbers_initials_and_abbreviations_are_not_sentence_ends(self, tail):
+        text = _DONE * 5 + tail + " " + "가" * 400
+        assert self._text(text) == (_DONE * 5).rstrip()
+
+    def test_closing_quote_stays_with_its_sentence(self):
+        text = _DONE * 4 + "연구자는 “언어 지원이 먼저 필요하다.” " + "가" * 400
+        assert self._text(text).endswith("“언어 지원이 먼저 필요하다.”")
+
+    def test_footnote_number_after_the_period_is_left_out(self):
+        text = _DONE * 4 + "일반화하기는 어렵다.4)\n\n그러므로 객관적 자료 조사가 " + "가" * 400
+        assert self._text(text).endswith("일반화하기는 어렵다.")
+
 
 def _drafted(intro: str = "", future: tuple[str, ...] = (), summary: str = "요약이다.") -> dict:
     """모델 출력으로 만든 절(build_section 의 모양) — 다듬기(finalize_section) 전이다."""

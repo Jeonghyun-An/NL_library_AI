@@ -48,13 +48,24 @@ _SECTION_ATTEMPTS = 2
 _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
 
-# 절 생성에 논문마다 넘기는 대목 길이(앞에서 자른다)
+# 절 생성에 논문마다 넘기는 대목 길이 상한(앞에서 자른다). 그 안의 마지막 문장 끝에서 자르되, 그 자리가
+# _EXCERPT_MIN_CUT 자보다 앞이면 남는 글이 너무 적어 지금처럼 이 길이에서 자른다(excerpt_text)
 EXCERPT_CHARS = 400
+_EXCERPT_MIN_CUT = 120
 _BR = re.compile(r"<br\s*/?>", re.I)
 # 표 대목 — '|' 가 둘 이상인 줄이 대목 창의 이만큼을 차지하면 표로 본다
 _TABLE_SHARE = 0.6
 # 완결 문장의 끝 — 마침표 뒤 공백·끝·각주 번호 '4)'·닫는 따옴표. 창 끝에서 잘린 조각('<Abstract> This s')은 문장이 아니다
 _SENTENCE_STOP = re.compile(r"[.!?。](?=\s|$|\d{1,3}\)|[\"”’」』])")
+# 문장 끝으로 보지 않는 마침표 앞 낱말 — 절·목록 번호('#### 3.'·'3.1.')·머리글자('- [7] H.')·로마 숫자('- Ⅳ.')·서지
+# 약어('Vol.'·'et al.'). 운영 잡 4건(630e·85d2·9ba1·d60a)에서 모델이 읽은 대목을 이 자리에서 자르면 번호·머리글자만
+# 남았다. 한글 한 글자는 넣지 않는다 — OCR 띄어쓰기('연구이 다.')의 '다' 가 문장 끝이다
+_NOT_SENTENCE_WORD = re.compile(
+    r"\d{1,3}(?:\.\d{1,3})*|[A-Za-z]|[IVX]{2,5}|[Ⅰ-Ⅻⅰ-ⅻ]+|Vol|No|pp|Dept|al|vs|cf|Fig|eds?|e\.g|i\.e")
+# 마침표 앞 낱말에서 떼고 보는 여는 기호 — 떼고 남는 게 없으면('(.815)') 소수점이다
+_WORD_OPENERS = "#*-([|<\"'“‘「『"
+# 문장 끝 마침표 바로 뒤의 닫는 따옴표는 그 문장과 함께 자른다(_SENTENCE_STOP 의 따옴표와 같은 글자)
+_CLOSING_QUOTES = "\"”’」』"
 # 영문 초록 문장에 흔한 서술 동사 — bibliography.has_prose 의 목록에 없는 것만
 _ENGLISH_VERBS = re.compile(r"\b(?:analy[sz]ed|examined|investigated|revealed|indicated|compared|results?)\b", re.I)
 
@@ -597,10 +608,48 @@ def drop_repeats(section: dict, seen: list[str]) -> tuple[dict, list[str]]:
     return {**section, "intro": trimmed, "future": future}, keys
 
 
+def _sentence_ends(text: str) -> list[int]:
+    """text 앞 EXCERPT_CHARS 자 안의 완결 문장 끝 — 문장을 맺는 마침표(와 바로 뒤 닫는 따옴표) 다음 자리, 앞에서부터.
+
+    _SENTENCE_STOP 이 문장 끝으로 본 자리 가운데 마침표 앞 낱말이 번호·머리글자·약어(_NOT_SENTENCE_WORD)이거나 여는
+    기호뿐인 것은 뺀다. 창 끝 마침표는 창 밖 다음 글자로 판단한다 — 400자째가 '3.14' 의 '3.' 이면 문장 끝이 아니다.
+    """
+    head = text[:EXCERPT_CHARS + 1]
+    ends: list[int] = []
+    for m in _SENTENCE_STOP.finditer(head):
+        if m.end() > EXCERPT_CHARS:
+            break
+        before = head[max(0, m.start() - 16):m.start()]
+        word = "" if not before or before[-1].isspace() else before.split()[-1].lstrip(_WORD_OPENERS)
+        if not word or _NOT_SENTENCE_WORD.fullmatch(word):
+            continue
+        end = m.end()
+        while end < min(len(head), EXCERPT_CHARS) and head[end] in _CLOSING_QUOTES:
+            end += 1
+        ends.append(end)
+    return ends
+
+
+def _excerpt(chunk: Chunk) -> tuple[str, str]:
+    """(모델에 넘기는 창, 그 창의 완결 문장 부분). 둘 다 _sentence_ends 로 정한다 — 창을 자르는 문장 끝과 _narrative 의
+    '완결 문장' 이 같은 자리여야 한다. 창을 문장 끝에서 잘랐으면 둘은 같고, 아니면 완결 문장 부분은 창의 앞쪽이다."""
+    text = _BR.sub("\n", html.unescape(chunk.text))
+    ends = _sentence_ends(text)
+    body = text[:ends[-1]] if ends else ""
+    if len(text) <= EXCERPT_CHARS:
+        return text, body
+    return (body if len(body) >= _EXCERPT_MIN_CUT else text[:EXCERPT_CHARS]), body
+
+
 def excerpt_text(chunk: Chunk) -> str:
-    """모델에 넘기는 대목 글 — HTML 이스케이프(&lt; &amp;)를 풀고 <br> 을 줄바꿈으로 바꾼 앞 EXCERPT_CHARS 자.
-    적재된 표·초록 글에 이스케이프가 그대로 남아 있어 모델이 '&lt;기초학습기능검사&gt;' 를 읽었다."""
-    return _BR.sub("\n", html.unescape(chunk.text))[:EXCERPT_CHARS]
+    """모델에 넘기는 대목 글 — HTML 이스케이프(&lt; &amp;)를 풀고 <br> 을 줄바꿈으로 바꾼 앞 EXCERPT_CHARS 자 안에서, 마지막
+    문장 끝(_sentence_ends)까지. 적재된 표·초록 글에 이스케이프가 그대로 남아 있어 모델이 '&lt;기초학습기능검사&gt;' 를 읽었다.
+
+    400자째에서 그냥 자르면 문장 중간에서 끊겨 모델이 잘린 문장을 짐작해 잇거나 되풀이 루프에 빠졌다(A/B 설계 단계 630e
+    2절 E16 '넷 째, 분석대상논문들을 통해 총 6개의 하위 주제와 5개의' — focus2 2/44절). 마지막 문장 끝이 _EXCERPT_MIN_CUT
+    자보다 앞이거나 없으면(표·목록·참고문헌) 지금처럼 400자에서 자른다. 400자를 넘지 않는 대목은 자르지 않는다.
+    """
+    return _excerpt(chunk)[0]
 
 
 def _narrative(chunk: Chunk) -> bool:
@@ -609,14 +658,13 @@ def _narrative(chunk: Chunk) -> bool:
     - 표: '|' 가 둘 이상인 줄이 창의 _TABLE_SHARE 이상. 선행연구 정리표의 한 행만 받은 모델은 표 속 남의 연구를 그
       논문의 성과로 썼다(운영 630e0d65 박혜성 2014 — '정금자, 이영숙 (2013)|만 5세 유아…').
     - 완결 문장이 없는 창: 창 끝에서 잘린 조각은 버리고 본다. 참고문헌 꼬리 + 영문 제목 + '<Abstract> This s' 로 400자가
-      끝난 대목은 요약이 제목을 다시 쓴 한 문장이 됐다(같은 보고서 황상심 2009).
+      끝난 대목은 요약이 제목을 다시 쓴 한 문장이 됐다(같은 보고서 황상심 2009). 완결 문장은 창을 자르는 문장 끝과 같은
+      기준(_sentence_ends)으로 본다 — 머리글자 'H.' 까지를 문장으로 보면 그 앞 서지 조각의 'This study was' 가 서술로 세어진다.
     """
-    window = excerpt_text(chunk)
+    window, body = _excerpt(chunk)
     rows = [line for line in window.splitlines() if line.count("|") >= 2]
     if window and sum(len(r) for r in rows) >= _TABLE_SHARE * len(window):
         return False
-    stops = list(_SENTENCE_STOP.finditer(window))
-    body = window[:stops[-1].end()] if stops else ""
     return has_prose(body) or bool(_ENGLISH_VERBS.search(body))
 
 
