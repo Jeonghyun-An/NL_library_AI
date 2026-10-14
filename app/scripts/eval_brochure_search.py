@@ -47,6 +47,7 @@ import csv
 import json
 import logging
 import math
+import os
 import random
 import re
 import statistics
@@ -61,12 +62,29 @@ from pathlib import Path
 import numpy as np
 
 K = 10
-ARMS = ("bm25_meta", "skovix_hybrid", "skovix_rerank", "skovix_rewrite", "skovix_full")
+API_TOP_K = 20    # 논문 검색 화면(pages/papers/index.vue)이 보내는 top_k
+API_ARM = "prod_api"    # 배포된 POST /api/papers/search 를 그대로 부르는 방식(파이프라인 바깥 단계 포함)
+ARMS = ("bm25_meta", "skovix_hybrid", "skovix_rerank", "skovix_norewrite", "skovix_rewrite", "skovix_full", API_ARM)
 BASELINE = "bm25_meta"
+# 단계별 차이의 '직전 단계'. 사다리가 한 줄이 아니다 — 재작성 끔(norewrite)과 재작성은 둘 다 리랭커에서 갈라진다.
+_STEP_PREV = {
+    "skovix_hybrid": "bm25_meta", "skovix_rerank": "skovix_hybrid", "skovix_norewrite": "skovix_rerank",
+    "skovix_rewrite": "skovix_rerank", "skovix_full": "skovix_rewrite",
+    API_ARM: "skovix_norewrite",    # 파이프라인 구성(재작성 끔) 위에 API 의 제목 일치율 재정렬·top_k=20 이 얹힌 것
+}
+
+
+def step_prev(arm: str, present) -> str | None:
+    """arm 의 직전 단계. 그 단계가 실행되지 않았다면 사다리를 거슬러 올라가 가장 가까운 실행된 단계."""
+    prev = _STEP_PREV.get(arm)
+    while prev is not None and prev not in present:
+        prev = _STEP_PREV.get(prev)
+    return prev
 # SKOVIX 방식별 pipeline.search 플래그: (질의 재작성, 리랭커, 메타데이터 필터)
 _ARM_FLAGS = {
     "skovix_hybrid": (False, False, False),
     "skovix_rerank": (False, True, False),
+    "skovix_norewrite": (False, True, True),    # 운영 기본에서 질의 재작성만 끈 구성(리랭커 + 메타필터)
     "skovix_rewrite": (True, True, False),
     "skovix_full": (True, True, True),
 }
@@ -76,6 +94,8 @@ ARM_LABEL = {
     "bm25_meta": "키워드 통합검색(BM25)",
     "skovix_hybrid": "SKOVIX 하이브리드",
     "skovix_rerank": "SKOVIX + 리랭커",
+    "skovix_norewrite": "SKOVIX 재작성 끔(리랭커+메타필터)",
+    API_ARM: "스코빅스 논문 검색 API(배포본, top_k=20)",
     "skovix_rewrite": "SKOVIX + 질의 재작성",
     "skovix_full": "SKOVIX 전체(재작성+메타필터, 운영 기본)",
 }
@@ -438,6 +458,8 @@ class ServerBackend:
     async def search(self, arm: str, query: str, scope: str) -> dict:
         from services.search.pipeline import search as pipeline_search
 
+        if arm == API_ARM:
+            return await self._search_api(query, scope)
         if arm not in _ARM_FLAGS:
             raise ValueError(f"unknown arm: {arm}")
         rewrite, rerank, meta_filter = _ARM_FLAGS[arm]
@@ -456,6 +478,26 @@ class ServerBackend:
             "rewritten": getattr(resp, "rewritten_query", None),
             "log": [m for m in logs if _KEEP_LOG.search(m)],
         }
+
+    async def _search_api(self, query: str, scope: str) -> dict:
+        """배포된 논문 검색(POST /api/papers/search)을 그대로 부른다 — 제목 일치율 재정렬처럼 pipeline.search 바깥의
+        단계까지 포함한, 사용자가 실제로 받는 결과. 논문 검색 화면이 보내는 값(mode=book, top_k=20, use_rerank=true)을 따르되
+        use_rewrite 는 일부러 true 로 보낸다 — 서버가 요청값을 무시하고 재작성을 끄는지 확인하는 카나리다(재작성된 질의가
+        돌아오면 재작성을 끈 이미지가 아직 올라가지 않은 것). 순위는 서버가 돌려준 순서(재정렬 뒤)를 그대로 쓴다."""
+        import httpx
+
+        if scope != "paper":
+            raise ValueError("prod_api 는 논문 범위만 지원한다")
+        base = os.environ.get("EVAL_API_BASE", "http://localhost:8000")
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient(timeout=120.0) as c:
+            r = await c.post(f"{base}/api/papers/search", json={
+                "query": query, "mode": "book", "top_k": API_TOP_K, "use_rewrite": True, "use_rerank": True})
+            r.raise_for_status()
+            data = r.json()
+        ids = [b["book_id"] for b in data.get("books", [])]
+        return {"ids": ids[:K], "ids_all": ids, "ms": round((time.perf_counter() - t0) * 1000, 1),
+                "rewritten": data.get("rewritten_query") or None, "log": []}
 
     async def chat(self, role: str, messages: list[dict], *, max_tokens: int, temperature: float) -> str:
         # eval_answer_quality 의 _chat 은 Qwen3 의 </think> 처리 함정을 이미 풀어 둔 것을 재사용한다.
@@ -588,6 +630,8 @@ async def stage_run(args, be, wd: Path) -> None:
         for arm in arms:
             if arm in runs.get(q["qid"], {}):
                 continue
+            if arm == API_ARM and q["scope"] != "paper":    # 배포된 엔드포인트는 논문 검색뿐
+                continue
             if arm == BASELINE:
                 t0 = time.perf_counter()
                 hits = bm25[q["scope"]].search(q["query"], K)
@@ -602,6 +646,14 @@ async def stage_run(args, be, wd: Path) -> None:
             _dump(wd / "runs.json", runs)
             print(f"[run] {i}/{len(queries)}", flush=True)
     _dump(wd / "runs.json", runs)
+    if API_ARM in arms:    # 배포 확인 — 재작성 요청을 보냈는데도 재작성된 질의가 돌아오면 재작성을 끈 이미지가 아직 안 올라간 것
+        applied = sum(1 for r in runs.values() if (r.get(API_ARM) or {}).get("rewritten"))
+        done = sum(1 for r in runs.values() if (r.get(API_ARM) or {}).get("ids"))
+        if applied:
+            print(f"경고: 배포본이 재작성을 적용했다({applied}/{done}건) — 재작성을 끈 이미지가 아직 올라가지 않았다. "
+                  f"이 상태의 {API_ARM} 수치는 '재작성 켬'이므로 배포 뒤 다시 측정하세요.")
+        else:
+            print(f"확인: 배포본이 재작성을 적용하지 않았다(재작성 요청을 보내도 rewritten_query 없음, {done}건).")
     errs = sum(1 for r in runs.values() for v in r.values() if v.get("error"))
     if errs:
         print(f"경고: 검색 오류 {errs}건 — runs.json 의 error 필드 확인(정답 미발견으로 집계되므로 수치가 낮아진다)")
@@ -746,21 +798,23 @@ def summarize_group(qs: list[dict], runs: dict, judgments: dict, seed: int = 0) 
     deltas: dict = {}
     steps: dict = {}
     ladder = [a for a in ARMS if a in per]
-    for i, a in enumerate(ladder):
+    for a in ladder:
         if a != BASELINE and BASELINE in per:
             d = _paired_delta(per, a, BASELINE, seed)
             if d:
                 deltas[a] = d
-        if i > 0:   # 직전 단계 대비 — 이 단계가 실제로 보탬이 되는지, 해치는지
-            d = _paired_delta(per, a, ladder[i - 1], seed)
+        prev = step_prev(a, per)
+        if prev:    # 직전 단계 대비 — 이 단계가 실제로 보탬이 되는지, 해치는지
+            d = _paired_delta(per, a, prev, seed)
             if d:
-                steps[a] = {**d, "prev": ladder[i - 1]}
+                steps[a] = {**d, "prev": prev}
     return {"n": len(qs), "arms": out_arms, "deltas": deltas, "steps": steps}
 
 
 def _filter_applied(runs: dict, qid: str) -> bool:
-    """운영 기본 설정(skovix_full)이 이 질의에 날짜 필터·정렬을 실제로 건 적이 있는가(로그 기준)."""
-    return any("메타데이터 필터 감지" in m for m in runs.get(qid, {}).get("skovix_full", {}).get("log", []))
+    """메타필터가 켜진 구성(skovix_full·skovix_norewrite)이 이 질의에 날짜 필터·정렬을 실제로 건 적이 있는가(로그 기준)."""
+    r = runs.get(qid, {})
+    return any("메타데이터 필터 감지" in m for arm in ("skovix_full", "skovix_norewrite") for m in r.get(arm, {}).get("log", []))
 
 
 def build_report(queries: list[dict], runs: dict, judgments: dict, seed: int = 0) -> dict:
@@ -1023,7 +1077,8 @@ def make_parser() -> argparse.ArgumentParser:
     b.add_argument("--concurrency", type=int, default=4)
 
     r = sub.add_parser("run", help="방식별 검색 실행")
-    r.add_argument("--arms", default=",".join(ARMS))
+    r.add_argument("--arms", default=",".join(a for a in ARMS if a != API_ARM),
+                   help=f"기본은 {API_ARM} 를 뺀 전부 — 배포된 API 를 부르는 {API_ARM} 는 배포 뒤 --arms 로 따로 지정")
 
     j = sub.add_parser("judge", help="OTR 판정")
     j.add_argument("--judge", choices=["vlm", "llm"], default="vlm",

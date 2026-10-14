@@ -329,10 +329,11 @@ def test_capture_logs_collects_child_logger_messages_and_restores_level():
     assert parent.level == before and not parent.handlers
 
 
-def test_arm_flags_cover_all_skovix_arms_and_only_full_uses_filter():
-    assert set(ev._ARM_FLAGS) == {a for a in ev.ARMS if a != ev.BASELINE}
-    assert [a for a, (_, _, mf) in ev._ARM_FLAGS.items() if mf] == ["skovix_full"]
+def test_arm_flags_cover_all_skovix_arms_and_define_rewrite_and_filter_use():
+    assert set(ev._ARM_FLAGS) == {a for a in ev.ARMS if a not in (ev.BASELINE, ev.API_ARM)}    # API 방식은 플래그가 아니라 HTTP 호출
+    assert [a for a, (_, _, mf) in ev._ARM_FLAGS.items() if mf] == ["skovix_norewrite", "skovix_full"]
     assert [a for a, (rw, _, _) in ev._ARM_FLAGS.items() if rw] == ["skovix_rewrite", "skovix_full"]
+    assert ev._ARM_FLAGS["skovix_norewrite"] == (False, True, True)      # 운영 기본에서 재작성만 끈 구성
 
 
 def _ladder_runs():
@@ -557,3 +558,71 @@ def test_non_human_rater_is_reported_as_cross_check_not_human_validation(tmp_pat
     ev.stage_report(_args(parser, "report", workdir=tmp_path), tmp_path)
     md = (tmp_path / "brochure_table.md").read_text(encoding="utf-8")
     assert "사람 검증: 10쌍" in md and "교차 확인" not in md
+
+
+# ── 재작성 끈 구성(norewrite)이 사다리에 끼어도 단계별 비교가 맞는 상대와 이뤄진다 ──
+def test_norewrite_and_rewrite_both_branch_from_rerank_and_full_follows_rewrite():
+    queries, runs = _ladder_runs()
+    for q in queries:       # 재작성 끔: 정답 1위(필터가 걸러내지 않음)
+        runs[q["qid"]]["skovix_norewrite"] = {"ids": [q["expected_id"]] + [f"x{j}" for j in range(9)], "ms": 12}
+    g = ev.summarize_group(queries, runs, {}, seed=0)
+    assert g["steps"]["skovix_norewrite"]["prev"] == "skovix_rerank"
+    assert g["steps"]["skovix_rewrite"]["prev"] == "skovix_rerank"        # norewrite 다음이 아니라 리랭커에서 갈라진다
+    assert g["steps"]["skovix_full"]["prev"] == "skovix_rewrite"
+    assert g["deltas"]["skovix_norewrite"]["r10"]["mean"] == pytest.approx(1.0)
+
+
+def test_step_prev_falls_back_to_nearest_executed_ancestor():
+    assert ev.step_prev("skovix_rewrite", {"bm25_meta", "skovix_hybrid", "skovix_rewrite"}) == "skovix_hybrid"
+    assert ev.step_prev("skovix_norewrite", {"bm25_meta", "skovix_norewrite"}) == "bm25_meta"
+    assert ev.step_prev("bm25_meta", {"bm25_meta"}) is None
+
+
+# ── 배포된 논문 검색 API 를 부르는 방식(prod_api) ─────────────────────────
+class ApiFakeBackend(FakeBackend):
+    def __init__(self, rewritten=None):
+        super().__init__()
+        self.rewritten, self.api_calls = rewritten, 0
+
+    async def search(self, arm, query, scope):
+        if arm == ev.API_ARM:
+            self.api_calls += 1
+            res = await super().search("skovix_rerank", query, scope)
+            return {**res, "rewritten": self.rewritten, "log": []}
+        return await super().search(arm, query, scope)
+
+
+def _api_flow(tmp_path, be, capsys, n_books="6"):
+    parser = ev.make_parser()
+    asyncio.run(ev.stage_build(_args(parser, "build", "--n-papers", "8", "--n-books", n_books, workdir=tmp_path), be, tmp_path))
+    asyncio.run(ev.stage_run(_args(parser, "run", "--arms", f"bm25_meta,{ev.API_ARM}", workdir=tmp_path), be, tmp_path))
+    return json.loads((tmp_path / "runs.json").read_text(encoding="utf-8")), capsys.readouterr().out
+
+
+def test_prod_api_arm_runs_papers_only_and_confirms_rewrite_is_off(tmp_path, capsys):
+    be = ApiFakeBackend(rewritten=None)
+    runs, out = _api_flow(tmp_path, be, capsys)
+    paper = [q for q in runs if q.startswith("nl-p-")]
+    book = [q for q in runs if q.startswith("nl-b-")]
+    assert paper and book and all(ev.API_ARM in runs[q] for q in paper)
+    assert all(ev.API_ARM not in runs[q] for q in book)                  # 배포된 엔드포인트는 논문 검색뿐
+    assert be.api_calls == len(paper)
+    assert "확인: 배포본이 재작성을 적용하지 않았다" in out and "경고" not in out
+
+
+def test_prod_api_arm_warns_when_deployed_build_still_rewrites(tmp_path, capsys):
+    _, out = _api_flow(tmp_path, ApiFakeBackend(rewritten="키워드, 나열"), capsys, n_books="0")
+    assert "경고: 배포본이 재작성을 적용했다" in out and "다시 측정" in out
+
+
+def test_default_run_arms_exclude_the_api_arm_and_ladder_puts_it_after_norewrite():
+    args = ev.make_parser().parse_args(["run"])
+    assert ev.API_ARM not in args.arms.split(",") and "skovix_norewrite" in args.arms.split(",")
+    assert ev.step_prev(ev.API_ARM, {"bm25_meta", "skovix_rerank", "skovix_norewrite", ev.API_ARM}) == "skovix_norewrite"
+    assert ev.step_prev(ev.API_ARM, {"bm25_meta", "skovix_rerank", ev.API_ARM}) == "skovix_rerank"    # 재작성 끔이 없으면 거슬러 오른다
+
+
+def test_filter_applied_falls_back_to_norewrite_logs_when_full_was_not_run():
+    runs = {"q1": {"skovix_norewrite": {"ids": [], "log": ["메타데이터 필터 감지: pub_year_from=2015"]}},
+            "q2": {"skovix_norewrite": {"ids": [], "log": []}}}
+    assert ev._filter_applied(runs, "q1") and not ev._filter_applied(runs, "q2")
