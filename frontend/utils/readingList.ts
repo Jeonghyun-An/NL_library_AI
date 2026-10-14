@@ -73,7 +73,9 @@ function byScore(a: ReadingItem, b: ReadingItem): number {
 
 // 서버 reading_views.reading_order 와 같은 순서 — 사용자 순서(position, 없으면 뒤) → 하위질문 안 최소 순위 → 대목 점수 중
 // 가장 높은 값이 큰 순(없으면 뒤, 사용자 결정 2026-10-14 — 같은 순위에서 id 가 작은 옛 논문이 먼저 오던 것) → cnts_id.
-// 이어가기의 미리 담기(서버 preselect)가 같은 키로 앞 여덟 편을 고르므로 미리 담은 행이 표의 맨 위에 온다.
+// 이어가기의 미리 담기(서버 preselect)가 같은 키로 앞 여덟 편을 고르므로 미리 담은 행이 표의 맨 위에 온다([위로]·[아래로]로
+// position 을 매기기 전까지. 미리 담기와 이 키는 같은 배포로 나가 옛 키(순위 → cnts_id)로 미리 담은 연구는 없다 — 나중에 더해지는
+// 행(되살림·직접 담음)은 순위가 없어 뒤에 온다).
 // 담음·뺌으로 줄을 옮기지 않는다 — 체크하는 순간 행이 손 밑에서 움직이지 않게
 export function sortedItems(items: ReadingItem[]): ReadingItem[] {
   return [...items].sort(
