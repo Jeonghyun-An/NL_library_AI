@@ -14,7 +14,8 @@ export function statusStageLine(r: HistoryResearchStatus | null | undefined): st
       return "계획 중";
     case "approved":
     case "queued":
-      return "대기 중";
+      // 연구 화면 머리·단계 칩과 같은 말(researchEvents PHASE_LABEL — 사용자 결정 2026-10-14)
+      return "순서 대기";
     case "running":
       return r.stage === "explored" || r.stage === "synthesized" ? "보고서 작성 중" : "근거 수집 중";
     default:

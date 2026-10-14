@@ -7,7 +7,7 @@
     <p v-else-if="phase === 'awaiting'" class="rs-muted">
       계획을 승인하면 하위질문마다 논문을 찾고, 근거가 부족하다고 판단하면 검색어를 바꿔 다시 찾습니다.
     </p>
-    <p v-else-if="phase === 'queued'" class="rs-muted">대기열에 들어갔습니다. 앞선 연구가 끝나면 시작합니다.<span v-if="queueNote">{{ " " + queueNote }}</span></p>
+    <p v-else-if="phase === 'queued'" class="rs-muted">순서 대기 중입니다. 앞선 연구가 끝나면 시작합니다.<span v-if="queueNote">{{ " " + queueNote }}</span></p>
 
     <template v-else>
       <dl class="rs-counters">

@@ -70,11 +70,14 @@ const EMPTY_SYNTH: SynthView = {
 const SECTION_RANK: Record<SynthSectionStatus, number> = { running: 1, done: 2, failed: 2 };
 const SOURCE_ORDER: readonly RoundSource[] = ["rounds", "trail", "queries"];
 
+// 연구 화면 머리의 상태 — 사이드바 단계 글(sidebarResearch.statusStageLine)·큰 막대의 단계 칩·글줄(researchProgress)과 같은 말을
+// 쓴다: 단계 이름(계획·근거 수집·보고서 작성) + '중', 멈춰 기다리면 '승인 대기'·'순서 대기'(사용자 결정 2026-10-14 — 화면마다
+// '계획 수립 중'·'탐색 중'·'대기열'·'대기 중'·'확인 대기'로 달라 어지러웠다)
 const PHASE_LABEL: Record<ResearchPhase, string> = {
-  planning: "계획 수립 중",
+  planning: "계획 중",
   awaiting: "승인 대기",
-  queued: "대기열",
-  exploring: "탐색 중",
+  queued: "순서 대기",
+  exploring: "근거 수집 중",
   synthesizing: "보고서 작성 중",
   completed: "완료",
   failed: "실패",

@@ -7,8 +7,8 @@ describe("statusStageLine — 진행 중인 연구 줄의 단계 글(기록의 �
   it("계획 중·순서를 기다리는 중", () => {
     expect(statusStageLine({ status: "created", stage: "created" })).toBe("계획 중");
     expect(statusStageLine({ status: "planning", stage: "created" })).toBe("계획 중");
-    expect(statusStageLine({ status: "approved", stage: "planned" })).toBe("대기 중");
-    expect(statusStageLine({ status: "queued", stage: "planned" })).toBe("대기 중");
+    expect(statusStageLine({ status: "approved", stage: "planned" })).toBe("순서 대기");
+    expect(statusStageLine({ status: "queued", stage: "planned" })).toBe("순서 대기");
   });
 
   it("실행 중은 stage 로 가른다 — 탐색을 마쳤으면(explored) 보고서 작성, 아니면 근거 수집", () => {

@@ -153,8 +153,8 @@ describe("overallFraction", () => {
 });
 
 describe("currentStageTag — 지금 단계 칩의 꼬리표", () => {
-  it("승인을 기다리면 '확인 대기', 대기열이면 '순서 대기', 그 밖에는 '진행 중'", () => {
-    expect(currentStageTag("awaiting")).toBe("확인 대기");
+  it("승인을 기다리면 '승인 대기', 대기열이면 '순서 대기', 그 밖에는 '진행 중' — 사이드바·머리 상태와 같은 말", () => {
+    expect(currentStageTag("awaiting")).toBe("승인 대기");
     expect(currentStageTag("queued")).toBe("순서 대기");
     for (const phase of ["planning", "exploring", "synthesizing"] as const) expect(currentStageTag(phase)).toBe("진행 중");
     expect(currentStageTag(null)).toBe("진행 중");
@@ -171,16 +171,16 @@ describe("progressBarView", () => {
   it("계획 중·승인 대기·대기열은 퍼센트 없이 단계 글줄만 — 대기열은 순번 문구를 잇는다", () => {
     expect(progressBarView(input({ phase: "planning" }))).toEqual({
       stages: progressStages("plan"),
-      line: "연구 계획을 세우는 중",
+      line: "계획 중 · 연구 계획을 세우고 있습니다",
       percent: null,
       fraction: 0,
       running: false,
-      valueText: "연구 계획을 세우는 중",
+      valueText: "계획 중 · 연구 계획을 세우고 있습니다",
     });
-    expect(progressBarView(input({ phase: "awaiting" }))?.line).toBe("계획 확인 대기 · 승인하면 근거 수집을 시작합니다");
-    expect(progressBarView(input({ phase: "queued", queueNote: "앞에 2건 · 약 25분" }))?.line).toBe("대기열 · 앞에 2건 · 약 25분");
+    expect(progressBarView(input({ phase: "awaiting" }))?.line).toBe("승인 대기 · 계획을 확인하고 승인하면 근거 수집을 시작합니다");
+    expect(progressBarView(input({ phase: "queued", queueNote: "앞에 2건 · 약 25분" }))?.line).toBe("순서 대기 · 앞에 2건 · 약 25분");
     const queued = progressBarView(input({ phase: "queued" }));
-    expect(queued?.line).toBe("대기열 · 앞선 연구가 끝나면 시작합니다");
+    expect(queued?.line).toBe("순서 대기 · 앞선 연구가 끝나면 시작합니다");
     expect(queued?.percent).toBeNull();
   });
 
