@@ -9,10 +9,9 @@ LLM 만 쓴다). 근거 번호 [E#] 는 이 절 입력의 로컬 번호(E1 부�
 from services.research.scoring import parse_pub_year
 from services.research_work.markers import figure
 from services.research_work.passages import clip
-from services.research_work.seeds import pick_seeds
+from services.research_work.seeds import pick_seeds, seed_evidence
 from services.research_work.shapes import ABSTRACT_CHARS, GAP_KEY, SECTION_PAPERS_MAX
 
-GAP_SEEDS_MAX = 4        # 연구 공백 절의 씨앗 상한(고른 카드의 씨앗 포함)
 USER_CARD_SEEDS = 3      # 직접 쓴 카드(씨앗 없음)일 때 보고서에서 고르는 씨앗 수
 
 
@@ -31,19 +30,18 @@ def section_figures(years: list[int], n: int) -> list[dict]:
 
 
 def gap_seeds(topic_seed: dict, report: dict) -> list[dict]:
-    """연구 공백 절의 씨앗(계약 §4 seed 모양, 최대 GAP_SEEDS_MAX). 06b 의 공백 재료는 보고서의 향후 과제와 critic
-    이 insufficient 로 본 하위질문 note 로 한정한다(spec §5-5).
-    고른 카드의 씨앗을 맨 앞에 두고, 같은 절이나 같은 하위질문에서 나온 다른 씨앗을 pick_seeds 순서로 잇는다.
-    직접 쓴 카드(씨앗 {})면 보고서 전체에서 pick_seeds 로 USER_CARD_SEEDS 개를 고른다."""
+    """연구 공백 절의 씨앗(계약 §4 seed 모양 + evidence). 06b 의 공백 재료는 보고서의 향후 과제와 critic 이
+    insufficient 로 본 하위질문 note 로 한정한다(spec §5-5).
+    고른 카드면 그 카드의 씨앗 하나만 쓴다 — 카드의 주제는 씨앗의 글에서 나오는데, 종합은 절마다 그 절 하위질문과 상관없는
+    향후 과제를 써서 씨앗이 들어 있던 절의 이웃(다른 과제·그 하위질문의 note)은 고른 주제와 어긋난다(운영 630e0d65·d60a5dc1
+    2026-10-14: 연구 공백 절이 고른 주제가 아닌 그 절 하위질문의 공백을 썼다. 넘기는 논문은 씨앗의 papers 라 줄지 않는다).
+    직접 쓴 카드(씨앗 {})면 보고서 전체에서 pick_seeds 로 USER_CARD_SEEDS 개를 고른다.
+    씨앗마다 보고서가 그 향후 과제에 달았던 근거(cnts_id)를 evidence 로 붙인다(seeds.seed_evidence — gap_input 이 [E#] 로)."""
     if not topic_seed or not topic_seed.get("key"):
-        return pick_seeds(report, limit=USER_CARD_SEEDS)
-    sec, subq = topic_seed.get("section_idx"), topic_seed.get("subq_idx")
-    near = [
-        s for s in pick_seeds(report, limit=None, exclude={topic_seed["key"]})
-        if (sec is not None and s.get("section_idx") == sec)
-        or (subq is not None and s.get("subq_idx") == subq)
-    ]
-    return [topic_seed, *near][:GAP_SEEDS_MAX]
+        seeds = pick_seeds(report, limit=USER_CARD_SEEDS)
+    else:
+        seeds = [topic_seed]
+    return [{**s, "evidence": seed_evidence(report, s)} for s in seeds]
 
 
 def section_papers(cnts_ids: list[str], limit: int = SECTION_PAPERS_MAX) -> list[str]:
@@ -123,15 +121,37 @@ def prior_input(*, question: str, topic: dict, research_question: str, group: di
     }
 
 
+_SENTENCE_END = (".", "?", "!")
+
+
+def _gap_seed_text(seed: dict, eid_of: dict[str, str]) -> str:
+    """프롬프트 '공백 후보' 한 줄의 글.
+    - insufficient 씨앗: critic note 원문은 자기점검 말투('제시된 근거들은 …부족합니다')라 모델이 옮긴다(운영 630e0d65 gap
+      p3). 그 하위질문에 답할 근거가 소장 코퍼스에서 충분히 확인되지 않았다는 한 줄로 쓴다.
+    - 향후 과제 씨앗: 보고서가 그 과제에 달았던 근거(seed.evidence)가 이 절 논문(eid_of — cnts_id → 이 절의 E#)에 있으면
+      그 [E#] 를 문장 끝 마침표 앞에 붙인다 — 모델이 씨앗 문장을 옮겨도 근거 표시가 남는다(630e0d65 gap p1)."""
+    if seed.get("kind") == "insufficient":
+        return f"'{seed.get('heading') or ''}'에 답할 근거가 소장 코퍼스에서 충분히 확인되지 않았다."
+    text = (seed.get("text") or "").strip()
+    marks = " ".join(f"[{eid_of[c]}]" for c in dict.fromkeys(seed.get("evidence") or []) if c in eid_of)
+    if not marks:
+        return text
+    if text.endswith(_SENTENCE_END):
+        return f"{text[:-1]} {marks}{text[-1]}"
+    return f"{text} {marks}"
+
+
 def gap_input(*, question: str, topic: dict, research_question: str, seeds: list[dict],
               books: dict, excerpts: dict) -> dict:
-    """연구 공백 절의 입력(계약 §3). 논문은 씨앗에 묶인 근거 논문을 씨앗 순서로 모아 6편까지(spec §5-5)."""
+    """연구 공백 절의 입력(계약 §3). 논문은 씨앗에 묶인 근거 논문을 씨앗 순서로 모아 6편까지(spec §5-5).
+    seeds 는 프롬프트에 그대로 쓸 줄(_gap_seed_text)과 그 씨앗의 하위질문(기록용)이다."""
     cnts = section_papers([c for s in seeds for c in s.get("papers") or []])
     papers = _papers(cnts, books, excerpts)
+    eid_of = {p["cnts_id"]: p["eid"] for p in papers}
     return {
         "key": GAP_KEY, "kind": "gap",
         **_common(question, topic, research_question, papers),
         "group": None,
-        "seeds": [{"heading": s.get("heading") or "", "text": s.get("text") or ""} for s in seeds],
+        "seeds": [{"heading": s.get("heading") or "", "text": _gap_seed_text(s, eid_of)} for s in seeds],
         "basis": {"topic_id": topic.get("id"), "papers": cnts, "question": research_question},
     }

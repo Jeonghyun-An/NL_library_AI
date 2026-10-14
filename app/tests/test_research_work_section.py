@@ -163,7 +163,10 @@ class TestBuild:
         messages, params = EXECUTOR.build(GAP)
 
         user = messages[1]["content"]
-        assert "공백 후보:\n- 농촌 노인 표본이 부족하다 (하위질문: 노인의 사회적 지지)" in user
+        assert "공백 후보:\n- 농촌 노인 표본이 부족하다\n" in user
+        # 씨앗이 들어 있던 절의 하위질문을 꼬리표로 붙이지 않는다 — 운영 630e0d65 는 고른 주제('변인')가 아니라 그 꼬리표의
+        # 하위질문('시간적 변화 추이')으로 공백을 짰다
+        assert "하위질문" not in user
         assert "이 묶음" not in user
         assert "쓸 문단 수: 2~3개\n" in user
         assert params["max_tokens"] == 1200

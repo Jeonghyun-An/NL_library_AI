@@ -9,7 +9,7 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from services.research_work.seeds import (
-    corpus_of, pick_seeds, seed_papers, topic_input, used_seed_keys,
+    corpus_of, pick_seeds, seed_evidence, seed_papers, topic_input, used_seed_keys,
 )
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE, TOPIC_PAPERS_MAX
 
@@ -103,6 +103,29 @@ class TestSeedPapers:
         report = {"sections": [section], "evidence": evidence}
         assert seed_papers(report, ["E9"], 0) == ["Q9", "Q1", "Q2", "Q3", "Q4", "Q5"]
         assert len(seed_papers(report, [], 0)) == TOPIC_PAPERS_MAX
+
+
+class TestSeedEvidence:
+    """향후 과제 씨앗에 보고서가 달았던 근거(cnts_id) — 연구 공백 절이 씨앗 줄에 그 근거의 [E#] 를 붙인다(운영 630e0d65:
+    씨앗 문장을 옮긴 첫 문장이 근거 표시 없이 남았다). DB 에 이미 있는 카드의 씨앗도 key 로 풀린다."""
+
+    def test_the_future_evidence_in_order(self):
+        seeds = {s["key"]: s for s in pick_seeds(REPORT, limit=None)}
+        assert seed_evidence(REPORT, seeds["future:0:1"]) == ["P1", "P3"]
+        assert seed_evidence(REPORT, seeds["future:1:0"]) == ["P4"]
+
+    def test_insufficient_and_user_card_seeds_have_none(self):
+        seeds = {s["key"]: s for s in pick_seeds(REPORT, limit=None)}
+        assert seed_evidence(REPORT, seeds["insufficient:2"]) == []
+        assert seed_evidence(REPORT, {}) == []
+
+    def test_a_key_that_no_longer_points_at_that_future_has_none(self):
+        # 번호가 범위를 벗어나거나 그 자리의 향후 과제 글이 씨앗 글과 다르면 엉뚱한 근거를 붙이지 않는다
+        seed = pick_seeds(REPORT, limit=1)[0]
+        assert seed_evidence(REPORT, {**seed, "key": "future:9:0"}) == []
+        assert seed_evidence(REPORT, {**seed, "key": "future:0:1"}) == []
+        assert seed_evidence(REPORT, {**seed, "key": "future:x:0"}) == []
+        assert seed_evidence({}, seed) == [] and seed_evidence(None, seed) == []
 
 
 class TestPickSeeds:
