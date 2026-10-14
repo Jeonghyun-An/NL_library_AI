@@ -806,14 +806,27 @@ html:has(.rs-page.has-progressbar) {
   background: var(--skx-primary);
   border-radius: var(--skx-radius-pill);
 }
+/* 칩 글은 대문자 높이~기준선으로 잘라 가운데에 둔다 — 글꼴마다 위·아래 여백(ascent·descent)이 달라 영문 이름이 위로 떠 보이지 않게.
+   text-box 를 모르는 브라우저는 지금과 같다 */
+.rs-plus__chip-label {
+  text-box: trim-both cap alphabetic;
+}
 .rs-plus__chip-x {
-  padding: 0 0.2rem;
-  font-size: 0.7rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.9rem;
+  height: 0.9rem;
+  padding: 0;
   color: var(--skx-on-accent);
   background: none;
   border: none;
+  border-radius: 50%;
   cursor: pointer;
+}
+.rs-plus__chip-x svg {
+  width: 0.45rem;
+  height: 0.45rem;
 }
 .rs-plus__error {
   position: absolute;
