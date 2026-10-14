@@ -4256,8 +4256,8 @@ html.skx-scroll-lock {
   line-height: 1.5;
   margin: 0;
 }
-/* 요약을 만들지 못한 안내 — 추천 1권의 실패 안내(.skx-pick__text--muted)와 같은 색 */
-.skx-pai-section__text--muted {
+/* 요약을 만들지 못한 안내 — 추천 1권의 실패 안내(.skx-pick__text--muted)와 같은 색. 요약 칸의 문단 색(.skx-pai-main__scroll p)보다 앞서게 */
+.skx-pai-main__scroll .skx-pai-section__text--muted {
   color: var(--skx-gray-1);
 }
 
