@@ -171,6 +171,20 @@ export function activeTabKey(current: string | null, tabs: readonly Pick<Curatio
   return tabs[0]?.key ?? null;
 }
 
+/** AI 글 탭(논문 상세 AI 요약·소장자료 상세 추천 이유)을 둘지 — 아직 정하지 않았거나(곧 채워진다) 받는 중이거나, 받은 글이나
+ *  실패 안내가 있으면 둔다. 받는 중을 따로 보는 까닭: [다시 시도]는 실패로 done 이 된 뒤 글·안내를 비우고 다시 받는다 — 보지
+ *  않으면 첫 글자가 올 때까지 탭이 빠져 첫 탭(초록·줄거리)으로 넘어가고, 누른 버튼도 사라진다 */
+export function aiTabAvailable(s: { loading: boolean; done: boolean; text: string; error: string }): boolean {
+  return s.loading || !s.done || !!s.text || !!s.error;
+}
+
+/** [다시 시도]처럼 누르면 DOM 에서 빠지는 버튼의 초점을 그 버튼이 든 탭 본문(Tabs.vue 의 tabpanel, tabindex=0)으로 옮긴다 —
+ *  그대로 두면 초점이 body 로 떨어져 키보드·화면낭독기 사용자가 자리를 잃는다. 탭 본문 밖이면 아무것도 하지 않는다 */
+export function focusOwningPanel(target: EventTarget | null): void {
+  const el = target as { closest?: (selector: string) => { focus?: () => void } | null } | null;
+  el?.closest?.('[role="tabpanel"]')?.focus?.();
+}
+
 /** 탭 목록에서 방향키로 옮겨 갈 자리 — 좌우는 끝에서 반대쪽으로 돌고, Home·End 는 처음·끝. 그 밖의 키는 null */
 export function tabKeyTarget(key: string, index: number, count: number): number | null {
   if (count <= 0) return null;

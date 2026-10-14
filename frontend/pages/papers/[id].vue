@@ -160,7 +160,7 @@
                   <p v-else-if="!summaryError" class="dt-muted">AI 분석 정보가 없습니다.</p>
                   <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
                   <p v-if="summaryError && !summaryLoading" class="dt-muted" role="alert">{{ summaryError }} ·
-                    <button type="button" class="skx-retry" @click="retrySummary">다시 시도</button>
+                    <button type="button" class="skx-retry" @click="retrySummary($event)">다시 시도</button>
                   </p>
                 </template>
                 <p v-else-if="active === 'abstract'" class="dt-prose">{{ abstractText }}</p>
@@ -322,7 +322,9 @@ import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { backTarget, readDetailSource, readReturnSpot, relatedDetailUrl, shouldGoBack } from "~/utils/detailSource";
 import {
   activeTabKey,
+  aiTabAvailable,
   detailSearchUrl,
+  focusOwningPanel,
   formatAuthors,
   paperMetaRows,
   queryScore,
@@ -441,11 +443,11 @@ const summaryError = ref("");
 const summaryQuestionText = ref("");
 const renderedSummary = computed(() => (summaryText.value ? (marked.parse(summaryText.value) as string) : ""));
 
-// AI 큐레이션 탭 — 글이 없는 탭은 뺀다. 고른 탭이 빠지면 첫 탭
+// AI 큐레이션 탭 — 글이 없는 탭은 뺀다. 고른 탭이 빠지면 첫 탭. [AI 요약]은 [다시 시도]로 다시 받는 동안에도 남는다
 const curationTab = ref<string | null>("ai-summary");
 const curationTabs = computed(() =>
   visibleTabs([
-    { key: "ai-summary", label: "AI 요약", available: !summaryDone.value || !!summaryText.value || !!summaryError.value },
+    { key: "ai-summary", label: "AI 요약", available: aiTabAvailable({ loading: summaryLoading.value, done: summaryDone.value, text: summaryText.value, error: summaryError.value }) },
     { key: "abstract", label: "초록", available: !!abstractText.value },
   ]),
 );
@@ -599,9 +601,10 @@ async function streamPaperReason(query: string) {
   else if (!pageAbort.signal.aborted) summaryError.value = failureText(end, AI_SUMMARY_FAILED);
 }
 
-// [다시 시도] — 같은 기준 질문으로 AI 요약을 처음부터 다시 받는다
-function retrySummary() {
+// [다시 시도] — 같은 기준 질문으로 AI 요약을 처음부터 다시 받는다. 버튼은 받는 동안 빠지므로 초점을 탭 본문으로 먼저 옮긴다
+function retrySummary(event?: Event) {
   if (summaryLoading.value) return;
+  focusOwningPanel(event?.currentTarget ?? null);
   void streamPaperReason(summaryQuestionText.value);
 }
 

@@ -113,7 +113,7 @@
                   <p v-else-if="!reasonError" class="dt-muted">추천 이유 정보가 없습니다.</p>
                   <!-- 추천 이유를 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
                   <p v-if="reasonError && !reasonLoading" class="dt-muted" role="alert">{{ reasonError }} ·
-                    <button type="button" class="skx-retry" @click="streamReason">다시 시도</button>
+                    <button type="button" class="skx-retry" @click="retryReason($event)">다시 시도</button>
                   </p>
                 </template>
                 <p v-else-if="active === 'plot'" class="dt-prose">{{ plotText }}</p>
@@ -288,9 +288,11 @@ import type { BookInfo } from "~/types/search";
 import { firstValue, shouldGoBack } from "~/utils/detailSource";
 import {
   activeTabKey,
+  aiTabAvailable,
   bookDetailRows,
   bookMetaRows,
   detailSearchUrl,
+  focusOwningPanel,
   formatAuthors,
   queryScore,
   relatedMetaLine,
@@ -359,11 +361,12 @@ const renderedReason = computed(() =>
 );
 const plotText = computed(() => book.value?.plot || book.value?.summary || "");
 
-// 글이 없는 탭은 뺀다 — 추천 이유는 검색어가 있을 때만 만든다. 고른 탭이 빠지면 첫 탭
+// 글이 없는 탭은 뺀다 — 추천 이유는 검색어가 있을 때만 만든다. 고른 탭이 빠지면 첫 탭. [추천 이유]는 [다시 시도]로 다시 받는
+// 동안에도 남는다
 const detailTab = ref<string | null>("reason");
 const curationTabs = computed(() =>
   visibleTabs([
-    { key: "reason", label: "추천 이유", available: !!searchQuery && (!reasonDone.value || !!reasonText.value || !!reasonError.value) },
+    { key: "reason", label: "추천 이유", available: !!searchQuery && aiTabAvailable({ loading: reasonLoading.value, done: reasonDone.value, text: reasonText.value, error: reasonError.value }) },
     { key: "plot", label: "줄거리", available: !!plotText.value },
     { key: "intro", label: "소개", available: !!book.value?.introduction },
   ]),
@@ -448,7 +451,7 @@ async function fetchBook() {
 }
 
 // ── 추천 이유 SSE ──────────────────────────────────────────
-// 처음 열 때와 [다시 시도]가 부른다
+// 처음 열 때와 [다시 시도](retryReason)가 부른다
 async function streamReason() {
   reasonError.value = "";
   if (!searchQuery) {
@@ -480,6 +483,13 @@ async function streamReason() {
   reasonDone.value = true;
   // 이 화면은 추천 이유를 저장하지 않는다 — 실패({error}·끊김)면 받은 글에 잇지 않고 안내를 따로 보인다
   if (!end.ok && !pageAbort.signal.aborted) reasonError.value = failureText(end, BOOK_REASON_FAILED);
+}
+
+// [다시 시도] — 추천 이유를 처음부터 다시 받는다. 버튼은 받는 동안 빠지므로 초점을 탭 본문으로 먼저 옮긴다
+function retryReason(event?: Event) {
+  if (reasonLoading.value) return;
+  focusOwningPanel(event?.currentTarget ?? null);
+  void streamReason();
 }
 
 // ── 연관 도서 (관련 자료 전용 GET) ─────────────────────────

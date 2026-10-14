@@ -71,8 +71,16 @@ describe("논문 상세 — pages/papers/[id].vue", () => {
 
   it("AI 요약 오류는 role=alert 로 보이고 [다시 시도]가 있으며, 글 없이 실패해도 [AI 요약] 탭이 남는다", () => {
     expect(alertShows(src, "summaryError")).toBe(true);
-    expect(src).toMatch(/@click="retrySummary"[^>]*>\s*다시 시도/);
+    expect(src).toMatch(/@click="retrySummary\(\$event\)"[^>]*>\s*다시 시도/);
     expect(src).toMatch(/key: "ai-summary", label: "AI 요약", available: [^\n]*summaryError\.value/);
+  });
+
+  // 실패로 summaryDone 이 된 뒤 [다시 시도]가 글·안내를 비우면, 받는 중을 보지 않는 조건은 첫 글자까지 탭을 뺐다(초록 탭으로 넘어감)
+  it("[다시 시도]로 다시 받는 동안에도 [AI 요약] 탭이 남고, 사라지는 버튼의 초점은 탭 본문으로 간다", () => {
+    expect(src).toContain(
+      "available: aiTabAvailable({ loading: summaryLoading.value, done: summaryDone.value, text: summaryText.value, error: summaryError.value })",
+    );
+    expect(src).toMatch(/function retrySummary\(event\?: Event\)[\s\S]*?focusOwningPanel\(event\?\.currentTarget \?\? null\)/);
   });
 
   it("관련 논문 카드에 추천 사유 오류를 넘긴다", () => {
@@ -95,8 +103,15 @@ describe("소장자료 상세 추천 이유 — pages/books/[cnts_id].vue", () =
   it("실패는 role=alert 오류로 보이고 [다시 시도]가 있으며, 글 없이 실패해도 [추천 이유] 탭이 남는다", () => {
     expect(src).toContain("reasonError.value = failureText(end, BOOK_REASON_FAILED)");
     expect(alertShows(src, "reasonError")).toBe(true);
-    expect(src).toMatch(/@click="streamReason"[^>]*>\s*다시 시도/);
+    expect(src).toMatch(/@click="retryReason\(\$event\)"[^>]*>\s*다시 시도/);
     expect(src).toMatch(/key: "reason", label: "추천 이유", available: [^\n]*reasonError\.value/);
+  });
+
+  it("[다시 시도]로 다시 받는 동안에도 [추천 이유] 탭이 남고, 사라지는 버튼의 초점은 탭 본문으로 간다", () => {
+    expect(src).toContain(
+      "available: !!searchQuery && aiTabAvailable({ loading: reasonLoading.value, done: reasonDone.value, text: reasonText.value, error: reasonError.value })",
+    );
+    expect(src).toMatch(/function retryReason\(event\?: Event\)[\s\S]*?focusOwningPanel\(event\?\.currentTarget \?\? null\)[\s\S]*?streamReason\(\)/);
   });
 });
 
