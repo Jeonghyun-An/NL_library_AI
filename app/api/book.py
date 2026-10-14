@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Header
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from uuid import uuid4
+from uuid import UUID, uuid4
 from sqlalchemy import text
 import json
 
@@ -31,6 +31,16 @@ from services.search.title_scorer import apply_title_scores
 log = logging.getLogger(__name__)
 cfg = get_settings()
 router = APIRouter(prefix="/api/books", tags=["books"])
+
+
+def _history_session_id(raw: str | None) -> str | None:
+    """옛 검색 기록(search_history)의 세션 id — uuid 로 읽히면 그 문자열, 아니면 None."""
+    if not raw:
+        return None
+    try:
+        return str(UUID(raw))
+    except ValueError:
+        return None
 
 
 def _resolve_original_key(client, cnts_id: str) -> str | None:
@@ -61,9 +71,8 @@ async def search_books(
     session_id: str | None = Header(None, alias="x-session-id"),
     db: AsyncSession = Depends(get_db),
 ):
-    # session_id 없으면 생성
-    if not session_id or session_id == "null":
-        session_id = str(uuid4())
+    # 기록의 세션 id — search_history.session_id 는 UUID 칼럼이다. 없거나 uuid 가 아니면('null'·임의 글자) 새로 만든다
+    session_id = _history_session_id(session_id) or str(uuid4())
 
     result = await search(
         req.query,
@@ -113,6 +122,8 @@ async def search_books(
         )
         await db.commit()
     except Exception as e:
+        # 실패한 트랜잭션을 그대로 두면 get_db 의 commit 이 다시 터지고 연결이 'idle in transaction' 으로 남을 수 있다
+        await db.rollback()
         log.warning(f"히스토리 저장 실패: {e}")
 
     return result
@@ -665,6 +676,9 @@ async def get_book(cnts_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("/history/{session_id}")
 async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
+    # uuid 가 아니면 Postgres 가 칼럼 비교에서 터져 500 이 됐다 — DB 를 부르기 전에 400
+    if _history_session_id(session_id) is None:
+        raise HTTPException(400, "세션 id 는 uuid 여야 한다")
     rows = await db.execute(
         text("""
             SELECT id, query, result, created_at
