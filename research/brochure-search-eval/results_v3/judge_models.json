@@ -1,0 +1,5 @@
+{
+ "vlm": {
+  "label": "qwen3-vl-8b (서빙 모델: Qwen/Qwen3-VL-30B-A3B-Instruct-FP8)"
+ }
+}
