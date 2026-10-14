@@ -57,6 +57,18 @@ describe("논문 검색 AI 요약 — pages/papers/index.vue", () => {
     expect(src).toMatch(/@click="retryAiSummary"[^>]*>\s*다시 시도/);
     expect(src).toMatch(/function retryAiSummary\(\)[\s\S]*?streamAiSummary\(currentHistoryId\.value, resultQuery\.value/);
   });
+
+  // 요약 칸은 ClampedPanel(:collapsed-rem 20) 안이다 — 받은 글이 20rem 을 넘은 뒤 실패하면 접힌 기본 상태에서 안내가 잘려,
+  // 페이드와 '전체보기'만 보고 끊긴 요약을 끝까지 받은 것으로 읽었다
+  it("실패 안내는 접히는 칸 밖(#after)에 하나만 있어 글이 길어 접혀도 늘 보인다", () => {
+    expect(src).toMatch(/<template #after>\s*<p\b[^>]*role="alert"[^>]*>\{\{ aiError \}\}/);
+    expect(src.match(/\{\{\s*aiError\s*\}\}/g)).toHaveLength(1);
+    const panel = read("components/ClampedPanel.vue");
+    // 접히는 영역(.skx-clamp__clip) 이 닫힌 뒤, [더보기] 띠 앞
+    expect(panel).toMatch(
+      /class="skx-clamp__clip"[\s\S]*?<slot \/><\/div>\s*<\/div>\s*(?:<!--[\s\S]*?-->\s*)?<slot name="after" \/>\s*<div v-if="overflowing" class="skx-clamp__foot">/,
+    );
+  });
 });
 
 describe("논문 상세 — pages/papers/[id].vue", () => {

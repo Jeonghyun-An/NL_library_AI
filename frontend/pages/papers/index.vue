@@ -87,7 +87,8 @@
               more-label="전체보기"
               scroll-anchor=".skx-aip"
             >
-              <div class="skx-pai-main__scroll">
+              <!-- 글 없이 실패하면 칸 안은 비우고 아래(#after) 안내만 보인다 -->
+              <div v-if="aiLoading || aiText || !aiError" class="skx-pai-main__scroll">
                 <template v-if="aiLoading && !aiText">
                   <div class="skx-pai-section">
                     <p class="skx-pai-section__text" style="color: #999">
@@ -98,20 +99,23 @@
                   </div>
                 </template>
                 <div v-else-if="aiText" v-html="renderedAiText" />
-                <div v-else-if="!aiError" class="skx-pai-section">
+                <div v-else class="skx-pai-section">
                   <p class="skx-pai-section__text">
                     AI 요약 정보가 없습니다.
                   </p>
                 </div>
-                <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
+              </div>
+              <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로. 접히는 칸 밖이라
+                   받은 글이 길어 접혀도 늘 보인다(접힌 채로는 페이드와 '전체보기'만 보여 끊긴 요약을 다 받은 것으로 읽었다) -->
+              <template #after>
                 <p
                   v-if="aiError && !aiLoading"
-                  class="skx-pai-section__text skx-pai-section__text--muted"
+                  :class="['skx-pai-section__text', 'skx-pai-main__failed', !aiText && 'is-alone']"
                   role="alert"
                 >{{ aiError }} ·
                   <button type="button" class="skx-retry" @click="retryAiSummary">다시 시도</button>
                 </p>
-              </div>
+              </template>
             </ClampedPanel>
             <!-- 우측: 참고 논문 목록 -->
             <div class="skx-pai-refs">
