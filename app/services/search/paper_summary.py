@@ -8,7 +8,7 @@ paper_summary.py — 논문 검색 결과 핵심 요약 SSE 스트리밍
 summary 엔드포인트:
   - 입력: query + top-K 논문 book_id 목록 (검색 결과에서 전달)
   - 처리: 각 논문의 best chunk 로 컨텍스트 구성 → LLM 스트리밍
-  - 출력: text 토큰 SSE + 마지막에 sources 이벤트
+  - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하면 sources 대신 error 이벤트)
 """
 import json
 import logging
@@ -25,6 +25,17 @@ cfg = get_settings()
 
 _MAX_EXCERPT_CHARS = 500   # 논문당 발췌 최대 길이
 _MAX_PAPERS = 5            # 요약에 사용할 최대 논문 수
+
+# 세 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답 등)로 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의
+# 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면은 이것을 답 글에 잇지 않고 오류로 보이며
+# 캐시·검색 기록에 담지 않는다. 전에는 '…오류가 발생했습니다.' 를 보통 {text} 로 흘려 정상 답처럼 저장됐다
+SUMMARY_STREAM_ERROR = "AI 요약을 만들지 못했습니다"          # 논문 검색 결과의 AI 요약(stream_paper_summary)
+RELATED_REASON_STREAM_ERROR = "추천 사유를 만들지 못했습니다"  # 논문 상세 관련 논문의 AI 추천 사유(stream_related_reason)
+PAPER_REASON_STREAM_ERROR = "AI 요약을 만들지 못했습니다"     # 논문 상세의 AI 요약(stream_paper_reason)
+
+
+def _error_event(message: str) -> str:
+    return f"data: {json.dumps({'error': message}, ensure_ascii=False)}\n\n"
 
 
 def _truncate(text: str, max_chars: int) -> str:
@@ -82,6 +93,7 @@ async def stream_paper_summary(
     SSE 이벤트:
       data: {"text": "..."}       — 토큰 스트리밍
       data: {"sources": [...]}    — 최종 출처 목록
+      data: {"error": SUMMARY_STREAM_ERROR} — LLM 호출이 실패하면 sources 대신(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     if not papers:
@@ -140,7 +152,9 @@ async def stream_paper_summary(
                         pass
     except Exception as e:
         log.error(f"[paper_summary] LLM 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '요약 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        yield _error_event(SUMMARY_STREAM_ERROR)
+        yield "data: [DONE]\n\n"
+        return
 
     # ── 출처 목록 이벤트 ─────────────────────────────────────
     sources: list[dict] = [
@@ -166,6 +180,7 @@ async def stream_related_reason(
 
     SSE 이벤트:
       data: {"text": "..."}   — 토큰 스트리밍
+      data: {"error": RELATED_REASON_STREAM_ERROR} — LLM 호출이 실패하면(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     src_excerpt = _truncate(_clean_excerpt(source_abstract), 400) if source_abstract else "초록 없음"
@@ -217,7 +232,7 @@ async def stream_related_reason(
                         pass
     except Exception as e:
         log.error(f"[paper_related_reason] LLM 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '유사성 분석 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        yield _error_event(RELATED_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"
 
@@ -236,6 +251,7 @@ async def stream_paper_reason(
     SSE 이벤트:
       data: {"keywords": [...]}   — 키워드 즉시 emit (있을 때)
       data: {"text": "..."}       — 토큰 스트리밍
+      data: {"error": PAPER_REASON_STREAM_ERROR} — LLM 호출이 실패하면(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     # ── 키워드 즉시 emit ─────────────────────────────────────
@@ -330,6 +346,6 @@ async def stream_paper_reason(
                         pass
     except Exception as e:
         log.error(f"[paper_reason] LLM 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '분석 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        yield _error_event(PAPER_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"

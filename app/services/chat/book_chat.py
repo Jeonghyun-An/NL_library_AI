@@ -17,6 +17,12 @@ from services.prompts import PromptTemplate, get_prompt
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
+# 대화 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답 등)로 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의
+# 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면(frontend/composables/useDeepReadChat)은 이것을
+# 답 글에 잇지 않고 오류로 보이며 대화에 남기지 않는다. 전에는 '응답 생성 중 오류가 발생했습니다.' 를 보통 {text} 로 흘려
+# 정상 답처럼 대화에 남고 다음 질문의 history 로 모델에게까지 갔다
+CHAT_STREAM_ERROR = "답을 만들지 못했습니다"
+
 _REF_INTENT_KEYWORDS = frozenset({
     "참고문헌", "참고 문헌", "인용", "reference", "cited", "출처", "bibliography",
     "참고자료", "인용문헌", "인용 문헌",
@@ -208,7 +214,10 @@ async def stream_book_chat(
                         pass
     except Exception as e:
         log.error(f"[{cnts_id}] 채팅 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '응답 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        # 실패한 답에는 출처 칩을 붙이지 않는다 — 오류가 [DONE] 바로 앞, 마지막 이벤트다
+        yield f"data: {json.dumps({'error': CHAT_STREAM_ERROR}, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+        return
 
     # ── 5. 실제 인용된 출처만 전달 ───────────────────────────
     # LLM 응답에서 p.X 또는 p.X–Y 형태로 언급된 청크만 타일로 표시.
