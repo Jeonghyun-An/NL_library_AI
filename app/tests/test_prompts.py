@@ -8,6 +8,7 @@ import yaml
 from jinja2 import Environment, meta
 
 from services.prompts import PromptLibrary
+from services.research.llm_json import extract_json
 
 
 def _write(path: Path, body: str) -> None:
@@ -132,19 +133,25 @@ def test_nl_library_prompts_exist_and_render():
     rp_s, rp_u, _ = lib.get("research_plan").render(question="청소년 진로상담", limit=6)
     assert "연구 사서" in rp_s and "6" in rp_s and "청소년 진로상담" in rp_u
 
+    # 하위질문 값은 템플릿의 라벨 글자('하위질문:')와 달라야 한다 — 같으면 '값이 실렸다' 는 단언이 늘 참이다
+    sub = "진로 장벽의 측정 도구"
     rc_s, rc_u, _ = lib.get("research_critique").render(
-        subquestion="하위질문", evidence_count=3, evidence_list="- 논문 (2008)",
+        subquestion=sub, evidence_count=3, evidence_list="- 논문 (2008)",
         min_evidence=5, tried_queries="검색어")
-    assert '"verdict"' in rc_s and "하위질문" in rc_u and "3편" in rc_u
+    assert '"verdict"' in rc_s and f"하위질문: {sub}" in rc_u and "3편" in rc_u
 
     rs_s, rs_u, _ = lib.get("research_synthesize").render(
-        question="청소년 진로상담", subquestion="하위질문",
+        question="청소년 진로상담", subquestion=sub,
         evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
-    assert '"summaries"' in rs_s and "E1, E3" in rs_s
+    assert "E1, E3" in rs_s
+    # 출력 JSON 골격 — 모델이 견본으로 따르는 모양이다(함정 15). 키와 future 항목의 text 를 렌더한 글에서 읽어 확인한다
+    skeleton = extract_json(rs_s)
+    assert skeleton is not None and set(skeleton) == {"intro", "summaries", "future"}
+    assert isinstance(skeleton["summaries"], dict) and skeleton["future"][0]["text"]
     # 절은 하위질문에 곧장 답한다 — intro 는 도입부가 아니라 답 문단이고, user 끝에서 하위질문을 한 번 더 짚는다
     assert "도입부가 아니라 하위질문에 대한 답 문단" in rs_s
-    assert rs_u.endswith('위 근거로 하위질문 "하위질문" 에 답하세요.')
-    assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
+    assert rs_u.endswith(f'위 근거로 하위질문 "{sub}" 에 답하세요.')
+    assert "청소년 진로상담" in rs_u and f"하위질문: {sub}" in rs_u and "[E1]" in rs_u
 
 
 def test_book_chat_paper_variant_keeps_the_variables_and_params():

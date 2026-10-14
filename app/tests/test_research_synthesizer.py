@@ -4,7 +4,9 @@ import json
 import httpx
 import pytest
 
+from services.prompts import get_prompt
 from services.research import synthesizer
+from services.research.llm_json import extract_json
 from services.research.state import (
     Chunk, Evidence, ResearchState, SubQuestion, merge_params, restore_state, snapshot_state,
 )
@@ -699,13 +701,20 @@ class TestBuildSection:
         assert sec["papers"][1]["summary"] == ""
 
     def test_template_placeholder_copy_is_not_taken_as_narrative(self):
-        """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다."""
+        """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다.
+
+        손으로 옮긴 골격 문자열은 프롬프트의 골격 설명이 바뀌면 어긋난 채 통과한다 — 렌더한 프롬프트의 JSON 골격을
+        그대로 읽어 넣는다(모델이 통째로 베낀 응답과 같은 모양)."""
         st = _state_three()
-        sec = build_section(st, st.subquestions[0], {
-            "intro": "하위질문에 대한 답 2~4문장. 첫 문장부터 문장마다 [E#] 를 단다.",
-            "summaries": {"E#": "그 논문이 무엇을 했고"},
-            "future": [{"text": "이 하위질문에 대해 남은 과제 한 문장 [E#]."}]})
+        system, _, _ = get_prompt("research_synthesize").render(
+            question="질문", subquestion="하위1", evidence_block="[E1] 논문 A\n본문", paper_ids="E1, E2")
+        skeleton = extract_json(system)
+        assert skeleton is not None and set(skeleton) == {"intro", "summaries", "future"}
+        assert skeleton["future"][0]["text"]
+        sec = build_section(st, st.subquestions[0], skeleton)
         assert sec["intro"] == "" and sec["future"] == []
+        # 견본의 키 'E#' 는 어느 논문 번호도 아니다
+        assert all(p["summary"] == "" for p in sec["papers"])
 
     def test_numbered_refs_copied_from_excerpts_are_removed(self):
         """대목 속 남의 번호 인용('[3, 4]')을 옮긴 문장 — 근거 칩처럼 보이지만 어느 근거도 아니다(A/B focus 9ba1 1절).
