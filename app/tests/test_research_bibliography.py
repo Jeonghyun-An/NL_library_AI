@@ -150,13 +150,42 @@ FOOTNOTE_DATES = "- 3) 서울경제, 2013년 7월 18일 참조. - 4) 국민일�
 SHORT_CITES_LIST = "선행연구: 김철수(2010), 이영희(2012), 박민수(2015), 정수진(2017)."
 RECEIVED_DATES = "논문접수일: 2013. 10. 4. 심사완료일: 2013. 11. 2. 게재확정일: 2013. 12. 1."
 
+# 쪽 경계에서 잘린 본문 조각 — 쪽 머리글의 학술지 권호('제45권 제2호'·'Vol. 45, No. 2')와 직접 인용의 'p. 23' 이 40자 넘게
+# 떨어져 서지 꼴 두 종류·두 자리가 되지만, 권호는 쪽마다 찍히는 머리글이다. 문장이 잘려 서술 종결이 없다
+RUNNING_HEADER_QUOTE = (
+    "- 152 - 한국도서관·정보학회지(제45권 제2호) 공공도서관은 지역 주민 누구에게나 열려 있는 \"평생학습의 장\""
+    "(김철수, 2010, p. 23)이라는 점에서 다문화가정 아동을 위한 서비스를 확대할 필요가 있으며, 이를 위해")
+RUNNING_HEADER_EN_QUOTE = (
+    "Journal of Korean Library and Information Science Society Vol. 45, No. 2 공공도서관은 지역 주민 누구에게나 "
+    "열려 있는 \"평생학습의 장\"(Kim, 2010, p. 23)이라는 점에서 다문화가정 아동을 위한 서비스를 확대할 필요가 있으며")
+RUNNING_HEADER_CITES = (
+    "한국비블리아학회지 제26권 제2호 2015 다문화가정 아동을 위한 공공도서관 서비스 연구 59 이러한 관점에서 "
+    "선행연구로는 김철수(2010), 이영희(2012) 등이 있으며 이들 연구에서는")
+
+# 첫 쪽 인용 안내 줄이 논문 제목 줄보다 앞에 있거나 제목 줄('#')이 없는 첫 쪽 — 인용 안내의 '(2017).' 는 이 논문 자신의
+# 서지라 참고문헌 꼬리가 아니고, 뒤의 영문 초록이 근거다
+_CITE_LINE = ("Citation: Hong, G. D., & Kim, C. S. (2017). Vocabulary of children from multicultural families. "
+              "Journal of Speech-Language & Hearing Disorders, 26(3), 1-12.\n")
+_KO_ABSTRACT = (
+    "ABSTRACT\nPurpose: The purpose of this study was to examine the receptive and expressive vocabulary of "
+    "children from multicultural families. Methods: Forty children aged 5 to 6 years participated in the study. "
+    "Results: Children from multicultural families showed lower scores than their peers. "
+    "Conclusion: These findings suggest that early vocabulary support is needed.")
+_JOURNAL_LINE = "Journal of Speech-Language & Hearing Disorders Vol. 26, No. 3, 1-12\n"
+CITATION_BEFORE_TITLE = _JOURNAL_LINE + _CITE_LINE + "## 다문화가정 아동의 어휘 발달\n홍길동, 김철수\n" + _KO_ABSTRACT
+CITATION_NO_HEADING = _JOURNAL_LINE + _CITE_LINE + "다문화가정 아동의 어휘 발달\n홍길동, 김철수\n" + _KO_ABSTRACT
+HOW_TO_CITE_BEFORE_TITLE = CITATION_BEFORE_TITLE.replace("Citation:", "How to cite this article:")
+
 
 @pytest.mark.parametrize(
     "text",
     [MASTHEAD_NO_ABSTRACT, MASTHEAD_EN_ABSTRACT, MASTHEAD_HOW_TO_CITE, FIGURE_SOURCE, SOURCE_THEN_METHOD,
-     FOOTNOTE_DATES, SHORT_CITES_LIST, RECEIVED_DATES],
+     FOOTNOTE_DATES, SHORT_CITES_LIST, RECEIVED_DATES, RUNNING_HEADER_QUOTE, RUNNING_HEADER_EN_QUOTE,
+     RUNNING_HEADER_CITES, CITATION_BEFORE_TITLE, CITATION_NO_HEADING, HOW_TO_CITE_BEFORE_TITLE],
     ids=["masthead-no-abstract", "masthead-en-abstract", "masthead-how-to-cite", "figure-source",
-         "source-then-method", "footnote-dates", "short-cites-list", "received-dates"])
+         "source-then-method", "footnote-dates", "short-cites-list", "received-dates", "running-header-quote",
+         "running-header-en-quote", "running-header-cites", "citation-before-title", "citation-no-heading",
+         "how-to-cite-before-title"])
 def test_short_or_abstract_headed_body_is_kept(text):
     assert not looks_like_bibliography(text)
 
