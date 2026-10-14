@@ -318,3 +318,36 @@
   - 서빙 플래그를 바꾸면 서버가 뜨는 것만 보지 말고 그 기능을 쓰는 요청 하나(위 curl)로 결과 필드를 본다.
   - 앱이 tools 를 보내기 시작하는 변경 전에 이 확인을 다시 한다. 도구를 부르면 `content` 가 null 이 되므로 `["content"].strip()` 처럼 읽는 곳(`app/services/ingestion/paper_enricher.py` 의 `describe_figure`)을 함께 고친다(`llm_client` 는 `or ""` 로 받는다).
   - vLLM 버전은 태그 이름이 아니라 `/version` 으로 본다. 버전을 올릴 때는 `latest-cu130` 같은 떠다니는 태그 대신 `vX.Y.Z` 로 고정하고, 올리기 전에 25번·이 항목처럼 요청 필드·파서 동작이 바뀌었는지 그 버전의 소스로 확인한다.
+
+## 28. 서버와 화면이 같이 바뀐 배포에서 nuxt 가 먼저 나가면 새 API 404 로 칸이 비고, 오류 문구가 정상 답으로 저장된다
+
+- **날짜**: 2026-10-14 (round06 운영 확인 수정 `c205a88` 배포 — 배포 순서를 정하며 코드로 본 경로)
+- **증상**: 화면(nuxt)은 새것이고 서버(fastapi)는 옛것인 동안
+  - 소장자료 상세의 '관련 자료 추천'이 '연관 추천 항목이 없습니다'(0권)로 빈다. 새 화면은 새 전용 경로 `GET /api/books/{id}/related` 를 부르는데 옛 서버에는 그 경로가 없어 404 이고, 화면은 실패를 조용히 삼킨다(`frontend/pages/books/[cnts_id].vue` 의 `fetchRelatedBooks` — `catch {}`).
+  - AI 글 스트림(논문 검색 AI 요약·관련 논문 비교 사유·논문 상세 AI 요약·DeepRead)에서 LLM 이 실패하면 옛 서버는 '…오류가 발생했습니다.' 를 보통 `{text}` 로 흘린다. 새 화면은 실패를 `{error}` 이벤트로만 알아보므로(`frontend/utils/aiStream.ts`·`frontend/composables/useDeepReadChat.ts`) 그 문구를 정상 답으로 받아 캐시·검색 기록·대화에 저장한다 — 이 배포가 막으려던 결함이 그대로 되살아난다.
+- **원인**:
+  - 새 API·응답 모양·스트림 이벤트 꼴처럼 서버와 화면이 함께 바뀐 변경은 두 컨테이너가 같은 판일 때만 맞는다. 컨테이너별 Recreate(16·20번) 사이가 벌어지면 그동안 짝이 어긋난다.
+  - nuxt 이미지는 빌드한 커밋의 `frontend/` 전체를 싣는다. 화면만 고친 커밋을 내려고 nuxt 를 올려도, 그 커밋에 아직 운영에 안 나간 서버 변경에 기대는 화면이 있으면 함께 나간다. 프론트 전용 빌드·배포와 서버·워커 배포를 서로 다른 세션이 하면 더 쉽게 어긋난다 — 10-14 의 nuxt `sha256:c6d7a7f7…` 는 프론트 세션의 `1f2c328` 로 빌드됐고, 그 안에 `c205a88` 의 화면(관련 자료 전용 경로·`{error}` 처리)이 들어 있었다.
+- **해결**: 서버와 화면이 같이 바뀐 배포는 fastapi 를 먼저, nuxt 를 바로 이어서 낸다. 워커도 바뀌었으면 워커 → fastapi → nuxt → 게이트웨이 reload(20번)다.
+- **재발 방지**:
+  - nuxt 이미지를 빌드·배포하기 전에 운영 fastapi 가 든 커밋과 빌드할 커밋 사이에 서버 변경이 있는지 본다 — `git diff --stat <운영 fastapi 커밋> <빌드할 커밋> -- app/` 이 비어 있지 않으면 화면이 그 변경에 기대는지 확인하고, 기대면 그 배포를 서버 배포와 묶어 fastapi 를 먼저 낸다.
+  - 배포 뒤에는 새 경로를 게이트웨이를 거쳐 부른다 — 예: `curl -s -o /dev/null -w '%{http_code}\n' http://<서버>:92/api/books/<id>/related` 가 200 인지(404 면 fastapi 가 옛 판이다).
+
+## 29. Git Bash 에서 `curl -d` 로 한글 JSON 을 보내면 cp949 로 깨져 FastAPI 가 400 'There was an error parsing the body' 를 낸다
+
+- **날짜**: 2026-10-14 (round06 운영 점검)
+- **증상**: 개발 PC(Windows)의 Git Bash 에서 `curl -X POST <주소> -H 'Content-Type: application/json' -d '{"query": "…한글…"}'` 로 한글이 든 본문을 보내면 400 `{"detail": "There was an error parsing the body"}` 가 온다. 요청 모양은 맞아 API 결함처럼 보인다.
+- **원인**: Git Bash 가 띄우는 Windows 용 curl 에 명령줄 인자로 넘긴 한글이 UTF-8 이 아니라 시스템 코드 페이지(한국어 Windows 는 cp949) 바이트로 나간다. FastAPI 는 JSON 본문을 UTF-8 로 풀다 디코딩에 실패하고, 이것은 JSON 문법 오류가 아니라 그 밖의 파싱 실패로 잡혀 400 'There was an error parsing the body' 가 된다.
+- **해결**: 한글 본문을 명령줄 인자로 넘기지 않는다.
+  - 파이썬으로 보낸다(`httpx.post(url, json=...)` 나 `urllib.request` 에 `json.dumps(...).encode("utf-8")`).
+  - UTF-8 파일에 쓰고 `curl … --data-binary @body.json` 으로 보낸다.
+  - heredoc 을 표준입력으로 넘긴다 — `curl … -H 'Content-Type: application/json' --data-binary @- <<'EOF'` … `EOF`(표준입력의 바이트는 코드 페이지를 거치지 않는다).
+- **재발 방지**: 개발 PC 에서 운영 API 에 한글 본문을 보내는 확인 명령은 처음부터 위 셋 중 하나로 쓴다. 400 'There was an error parsing the body' 가 나면 API 를 의심하기 전에 보낸 바이트를 본다 — `curl --trace - …` 에서 한글 한 글자가 3바이트(UTF-8, `ea`~`ed` 로 시작)가 아니라 2바이트면 이 함정이다.
+
+## 30. 서버 셸에서 `su - root` 를 다른 줄과 함께 붙여 넣으면 뒤 줄을 먹는다
+
+- **날짜**: 2026-10-14 (round06 운영 점검)
+- **증상**: 서버 셸에 `su - root` 와 root 셸에서 돌릴 명령 여러 줄을 한꺼번에 붙여 넣으면, 비밀번호를 치고 root 셸이 열려도 뒤 줄이 돌지 않는다 — 붙여 넣은 명령이 사라진다.
+- **원인**: `su` 는 비밀번호를 터미널에서 직접 읽는다. 비밀번호를 물으며 터미널 에코를 끌 때 이미 들어와 있던 입력을 비우거나(PAM 의 비밀번호 입력은 `TCSAFLUSH` 로 터미널 설정을 바꾼다) 그 입력을 비밀번호로 읽는다. 어느 쪽이든 root 셸이 열린 뒤에는 붙여 넣은 뒤 줄이 남아 있지 않다(동작 원리로 본 설명이다 — 관찰한 것은 뒤 줄이 사라진 것이다).
+- **해결**: root 셸을 여는 줄 — 이 서버는 `su - root`(`bulk_ingest_runbook.md` §9) — 은 혼자 먼저 넣고, 비밀번호를 친 뒤 프롬프트가 `#` 로 바뀐 것을 보고 나머지를 붙여 넣는다. 셸을 바꾸면 앞 셸의 변수(`JOB`·`PGU`·`PGD` 등)도 없으니 root 셸에서 다시 넣는다.
+- **재발 방지**: 서버에 붙여 넣을 명령 묶음(런북·배포 절차)은 root 전환 줄을 따로 떼어 적고 '이 줄만 먼저' 를 붙인다. 비밀번호를 묻는 명령(`su`·`sudo`) 뒤 줄은 한 번에 붙여 넣지 않는다.

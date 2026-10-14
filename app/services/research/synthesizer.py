@@ -60,7 +60,8 @@ async def _no_progress(idx: int, total: int, status: str, info: dict | None = No
 
 
 def _topic(text: str) -> str:
-    """한계 문장의 주어 조각. 조사는 마지막 글자의 받침에 맞춘다(한글로 끝나지 않으면 '(은)는')."""
+    """한계 문장의 주어 조각. 조사는 끝 문장부호('?' 등)를 뺀 마지막 글자의 받침에 맞춘다
+    (한글로 끝나지 않으면 '(은)는')."""
     return f"'{text}' {josa(text, '은는')}"
 
 
@@ -128,8 +129,11 @@ def build_limitations(
         elif not n:
             out.append(f"'{sq.text}' 에 대해서는 근거를 찾지 못했다{note}")
         elif sq.verdict == "insufficient":
+            # 판정을 적는다 — '근거 N편으로 결론이 약하다' 는 편수 탓으로 읽혀, critic 이 발췌가 핵심 개념을 다루지
+            # 않는다고 본 13편 하위질문이 5편 '충분' 옆에서 모순으로 보였다(운영 d60a5dc1). 편수는 판정 신호의
+            # 하나일 뿐이고(research_critique.yaml) 까닭은 note 가 말한다. '근거 부족' 은 탐색 경로 라벨과 같은 말이다
             cap = f"({_capped_clause(state, sq, '후보')} 더 싣지 못했다)" if blocked else ""
-            out.append(f"{topic} 근거 {n}편으로 결론이 약하다{cap}{note}")
+            out.append(f"{topic} 근거 {n}편을 모았으나 자기점검에서 '근거 부족'으로 판정했다{cap}{note}")
 
     # 근거가 0편이면 충분성을 따질 대상이 없고, failed 는 위에서 이미 알렸다
     unchecked = sum(1 for sq in state.subquestions

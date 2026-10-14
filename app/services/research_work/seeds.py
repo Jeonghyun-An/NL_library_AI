@@ -8,14 +8,17 @@
 card_seeds 와 같은 방식).
 
 고르는 규칙(pick_seeds): 절마다 후보 줄을 만들고(향후 과제 → 그 하위질문의 insufficient note 순), 절을
-한 바퀴씩 돌며 하나씩 고른다 — 서로 다른 절이 먼저 나온다. 같은 글(공백 접고 casefold)은 하나만,
-근거 후보가 MIN_TOPIC_EVIDENCE 편 미만인 씨앗은 버린다(카드가 근거 2개를 받칠 수 없다 — 정함 4).
+한 바퀴씩 돌며 하나씩 고른다 — 서로 다른 절이 먼저 나온다. 같은 글은 하나만 — 문장부호·공백을 빼고 casefold 한
+글이 NEAR_SAME_RATIO 이상 같으면 같은 글로 본다(종합이 절마다 한 낱말만 바꾼 향후 과제를 써서, 운영 d60a5dc1 은 '유형'·'형태'만
+다른 두 씨앗이 slot1·slot4 에 들어가 카드 제목이 똑같이 나왔다). 근거 후보가 MIN_TOPIC_EVIDENCE 편 미만인 씨앗은 버린다(카드가
+근거 2개를 받칠 수 없다 — 정함 4).
 근거 후보(seed_papers)는 씨앗에 묶인 근거(향후 과제의 evidence) → 그 절 논문 순으로 최대 TOPIC_PAPERS_MAX 편.
 
 DB·LLM·네트워크를 쓰지 않는다 — FastAPI(이어가기·다른 방향·주제 조회)와 1회성 재비교 도구가 함께 쓴다.
 """
 import re
 from collections.abc import Collection, Iterable
+from difflib import SequenceMatcher
 
 from services.research.citations import strip_markers
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE, TOPIC_PAPERS_MAX
@@ -28,8 +31,29 @@ def _norm(text: object) -> str:
     return " ".join(str(text or "").split())
 
 
+# 비교 글이 이만큼 같으면 같은 씨앗이다 — 문단 [다시]의 '옮긴 글' 기준(paragraph.COPY_RATIO)과 같은 값. 운영 보고서 48개의
+# 씨앗 3,782쌍(2026-10-14)에서 0.9 이상 14쌍(글자까지 같은 4쌍 포함)은 모두 한두 낱말만 바꾼 같은 과제였다. 0.85~0.9 에도
+# 같은 과제를 달리 쓴 쌍이 몇 있지만 기준을 낮추지 않는다 — 대상만 다른 틀 문장('향후 연구에서는 … 필요가 있다')을 합치지 않게
+NEAR_SAME_RATIO = 0.9
+_PUNCT_AND_SPACE = re.compile(r"[\W_]+")
+
+
 def _same_text_key(text: str) -> str:
-    return _norm(text).casefold()
+    """씨앗 비교용 글 — [E#] 마커·문장부호·공백을 빼고 casefold."""
+    return _PUNCT_AND_SPACE.sub("", strip_markers(text)).casefold()
+
+
+def _near_same(key: str, others: list[str]) -> bool:
+    """key 가 others 가운데 하나와 같은 글인가(비율 NEAR_SAME_RATIO 이상). 빠른 상한 비율로 먼저 거른다."""
+    for other in others:
+        if key == other:
+            return True
+        # autojunk 를 끈다 — 200자 넘는 글에서 자주 나오는 글자를 버려 비율이 낮게 나온다
+        matcher = SequenceMatcher(None, key, other, autojunk=False)
+        if matcher.real_quick_ratio() >= NEAR_SAME_RATIO and matcher.quick_ratio() >= NEAR_SAME_RATIO \
+                and matcher.ratio() >= NEAR_SAME_RATIO:
+            return True
+    return False
 
 
 def _year(pub_date: object) -> int | None:
@@ -147,13 +171,14 @@ def _queues(report: dict) -> list[list[dict]]:
 def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()) -> list[dict]:
     """쓸 씨앗을 고른다(계약 §4 seed 모양). 절을 한 바퀴씩 돌며 하나씩 — 서로 다른 절이 먼저다.
     exclude(이미 카드로 쓴 seed.key)는 돌아가는 순서에서 제 차례를 차지한 채 건너뛴다 — [다른 방향] 이 이미 쓴
-    절 다음 절부터 고르게 된다. exclude 와 같은 글도 다시 고르지 않는다. limit 이 None 이면 남은 것 전부."""
+    절 다음 절부터 고르게 된다. 앞서 만난 씨앗이나 exclude 와 같은 글(거의 같은 글 포함 — _near_same)은 고르지 않는다.
+    limit 이 None 이면 남은 것 전부."""
     if not isinstance(report, dict) or (limit is not None and limit <= 0):
         return []
     skip = set(exclude)
     queues = [[s for s in q if len(s["papers"]) >= MIN_TOPIC_EVIDENCE] for q in _queues(report)]
-    used_text = {_same_text_key(s["text"]) for q in queues for s in q if s["key"] in skip}
-    seen: set[str] = set()
+    used_text = [_same_text_key(s["text"]) for q in queues for s in q if s["key"] in skip]
+    seen: list[str] = []
     out: list[dict] = []
     for depth in range(max((len(q) for q in queues), default=0)):
         for queue in queues:
@@ -161,10 +186,10 @@ def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()
                 continue
             seed = queue[depth]
             text = _same_text_key(seed["text"])
-            if text in seen:
+            if _near_same(text, seen):
                 continue
-            seen.add(text)
-            if seed["key"] in skip or text in used_text:
+            seen.append(text)
+            if seed["key"] in skip or _near_same(text, used_text):
                 continue
             out.append(seed)
             if limit is not None and len(out) >= limit:

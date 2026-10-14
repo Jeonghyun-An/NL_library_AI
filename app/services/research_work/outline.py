@@ -9,9 +9,12 @@
 목차를 그대로 고칠 수 있고, 다시 부르기(retry)도 열린다(is_empty).
 반영(apply)은 research_proposals.outline 을 Outline 모양으로 바꾸고 version 을 올린다 — 화면이 들고 있던
 옛 version 의 PUT 은 409 가 된다. 행은 POST .../outline 이 미리 만든다. 커밋은 디스패처(finish)가 한다.
-06e 부터 반영이 목차를 자동 확정한다(D20 — [보고서 만들기] 한 번): 연구 질문 = 첫 후보, 없으면 고른 카드의 질문
+06e 부터 반영이 목차를 자동 확정한다(D20 — [보고서 만들기] 한 번): 연구 질문 = 고른 카드의 질문, 없으면 첫 후보
 (auto_question), 방법 빈칸, state approved·approved_at 지금·auto true — 화면의 절 연쇄가 auto 를 읽는다. 질문이 하나도
 없으면 06b 처럼 초안(auto false)으로 둔다 — 빈 질문으로 승인하면 [목차 고치기]의 PUT 이 422 가 된다.
+카드 질문이 먼저인 까닭: 프롬프트가 후보끼리 '서로 다른 각도'로 묻게 해서 첫 후보가 카드와 다른 질문일 수 있다 — 운영
+d60a5dc1 은 5절 연구 질문과 절 본문(basis.question)이 고른 카드가 아닌 첫 후보를 따라갔다. 저장하는 후보 목록(questions)도
+카드 질문 → LLM 후보 순(question_choices)이라 [목차 고치기]에서 카드 질문 칸이 체크된 채 보이고 LLM 후보는 선택지로 남는다.
 """
 import re
 from datetime import datetime, timezone
@@ -168,16 +171,33 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _usable(raw) -> str | None:
+    """공백을 정리한 질문, 2자 미만(공백만 포함)이면 None — PUT .../outline 의 승인 하한과 같아야 자동 승인한 목차를
+    [목차 고치기]로 다시 승인할 수 있다."""
+    text = " ".join(raw.split()) if isinstance(raw, str) else ""
+    return text if len(text) >= 2 else None
+
+
+def question_choices(output: dict, input: dict) -> list[str]:
+    """목차에 저장하는 연구 질문 후보 — 고른 카드의 질문(input.topic.question) → LLM 후보(output.questions) 순, 공백을
+    정리하고 _key(공백·대소문자 무시)로 중복 없이. 빈 결과(fallback)는 _empty 가 이미 카드 질문을 후보로 채웠다 — 한 번만 남는다."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in [(input.get("topic") or {}).get("question"), *(output.get("questions") or [])]:
+        text = _usable(raw)
+        if text is None or _key(text) in seen:
+            continue
+        seen.add(_key(text))
+        out.append(text)
+    return out
+
+
 def auto_question(output: dict, input: dict) -> str | None:
-    """자동 확정의 연구 질문 — 첫 후보(output.questions[0]), 없으면 고른 카드의 질문(input.topic.question), 둘 다
-    비면 None. 공백을 정리하고 2자 미만(공백만 포함)은 없는 것으로 본다 — PUT .../outline 의 승인 하한과 같아야
-    자동 승인한 목차를 [목차 고치기]로 다시 승인할 수 있다. 빈 결과(fallback)는 _empty 가 이미 카드 질문을 후보로 채운다."""
-    candidates = list(output.get("questions") or [])[:1] + [(input.get("topic") or {}).get("question")]
-    for raw in candidates:
-        text = " ".join(raw.split()) if isinstance(raw, str) else ""
-        if len(text) >= 2:
-            return text
-    return None
+    """자동 확정의 연구 질문 — 고른 카드의 질문(input.topic.question), 없으면 첫 후보(output.questions[0]), 둘 다 비면
+    None. question_choices 의 첫째라 저장한 question 이 늘 questions[0] 이다(화면 [목차 고치기]가 그 칸을 체크한다).
+    공백을 정리하고 2자 미만(공백만 포함)은 없는 것으로 본다(_usable)."""
+    choices = question_choices(output, input)
+    return choices[0] if choices else None
 
 
 async def apply(db, gen, output: dict) -> dict:
@@ -200,7 +220,7 @@ async def apply(db, gen, output: dict) -> dict:
              "hint": g.get("hint") or "", "papers": [p["cnts_id"] for p in g["papers"]]}
             for g in input.get("groups") or []
         ],
-        "questions": list(output.get("questions") or []),
+        "questions": question_choices(output, input),
         "question": question,
         "method": "",
         "state": "approved" if auto else "draft",

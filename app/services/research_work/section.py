@@ -3,7 +3,8 @@
 선행연구 검토의 묶음 하나(prior.g1~g4)나 연구 공백(gap)을 쓴다. 출력은 조각마다 화면에 그대로 흐르므로
 (section_delta) JSON 이 아니라 빈 줄로 나눈 평문 문단이다. 문단 수 상한·인용 번호·수치 표기는 코드가 정하고
 검사한다(함정 15 — 프롬프트에 예시가 없다): 문단마다 markers.check_paragraph 가 틀린 [E#]·[F#] 를 지우고
-[F#] 밖 숫자와 단정 표현을 센다(정함 3). 인용은 절 범위 [E#] 를 그대로 두고 evidence 지도(E# → cnts_id)를
+[F#] 밖 숫자와 단정 표현을 세며(정함 3), 그 뒤 [F#] 를 수치 자리 밖에 쓴 문장을 지운다(markers.drop_misplaced_figures
+— 생성 글에만). 인용은 절 범위 [E#] 를 그대로 두고 evidence 지도(E# → cnts_id)를
 함께 저장한다(정함 9). 사용자가 고친 글(PUT)과 문단 다시 쓰기(paragraph.py)도 같은 검사를 쓴다.
 """
 import re
@@ -14,7 +15,7 @@ from sqlalchemy import select, update
 from models.research_work import ResearchProposal
 from services.prompts import get_prompt
 from services.research_work.generate import Executor
-from services.research_work.markers import check_paragraph
+from services.research_work.markers import check_paragraph, drop_misplaced_figures
 from services.research_work.progress import refresh_progress
 from services.research_work.section_input import evidence_block, figure_block
 from services.research_work.shapes import GAP_NOTE, MAX_SECTION_PARAGRAPHS
@@ -43,11 +44,19 @@ def evidence_map(input: dict) -> dict[str, str]:
 
 
 def make_paragraph(text: str, input: dict, pid: str) -> dict | None:
-    """모델이 쓴 문단 하나를 그 절 입력의 번호·수치로 검사한 Paragraph(state proposed). 검사 뒤 글이 비면 None."""
+    """모델이 쓴 문단 하나를 그 절 입력의 번호·수치로 검사한 Paragraph(state proposed). 검사 뒤 글이 비면 None.
+
+    검사(check_paragraph) 뒤 [F#] 를 수치 자리 밖에 쓴 문장을 지운다(markers.drop_misplaced_figures — 생성 글에만,
+    사용자가 고친 글은 아니다). 지운 문장이 있으면 남은 글로 인용·근거 표시 없는 문장·숫자를 다시 센다 — 이미 표준형이라
+    다시 검사해도 지울 표기·바꿀 표현이 없다. 지운 [F#] 수는 dropped_f 에 더한다."""
     evidence = evidence_map(input)
-    fixed, cites, checks = check_paragraph(
-        text, valid_e=set(evidence), valid_f={f["id"] for f in input.get("figures") or []}, evidence=evidence,
-    )
+    valid_e, valid_f = set(evidence), {f["id"] for f in input.get("figures") or []}
+    fixed, cites, checks = check_paragraph(text, valid_e=valid_e, valid_f=valid_f, evidence=evidence)
+    fixed, removed = drop_misplaced_figures(fixed)
+    if removed:
+        fixed, cites, again = check_paragraph(fixed, valid_e=valid_e, valid_f=valid_f, evidence=evidence)
+        checks = {**again, "dropped": checks["dropped"], "dropped_f": checks["dropped_f"] + removed,
+                  "softened": checks["softened"]}
     if not fixed.strip():
         return None
     return {"id": pid, "text": fixed, "state": "proposed", "cites": cites, "checks": checks, "gen_id": None}
@@ -57,13 +66,21 @@ def _seed_block(seeds: list[dict]) -> str:
     return "\n".join(f"- {s['text']} (하위질문: {s['heading']})" for s in seeds) or "(없음)"
 
 
+def paragraph_range(n_papers: int) -> str:
+    """프롬프트의 '쓸 문단 수' — 논문이 1편 이하인 절은 1~2, 아니면 2~3. 운영(2026-10-14 prior.g2 — 미리 담은 8편이 7:1 로
+    나뉨)에서 논문 1편에 2~3문단을 시키자 gemma 가 셋째 문단을 수치 목록으로 채웠다. 상한은 여전히 코드가 자른다."""
+    return "1~2" if n_papers <= 1 else "2~3"
+
+
 def _build(input: dict) -> tuple[list[dict], dict]:
+    papers = input.get("papers") or []
     common = {
         "question": input["question"],
         "topic_title": (input.get("topic") or {}).get("title") or "",
         "research_question": input.get("research_question") or "",
-        "evidence_block": evidence_block(input.get("papers") or []),
+        "evidence_block": evidence_block(papers),
         "figure_list": figure_block(input.get("figures") or []),
+        "paragraph_range": paragraph_range(len(papers)),
     }
     if input["kind"] == "prior":
         extra = {"group_name": (input.get("group") or {}).get("name") or ""}

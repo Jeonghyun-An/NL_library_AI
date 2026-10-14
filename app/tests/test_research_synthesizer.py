@@ -89,7 +89,7 @@ class TestBuildLimitations:
         st.subquestions[0].capped = 2
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
         line = next(x for x in lims if "하위1" in x)
-        assert "결론이 약하다" in line and "근거 상한" in line and "2편" in line
+        assert "'근거 부족'으로 판정했다" in line and "근거 상한" in line and "2편" in line
 
     def test_budget_capped_insufficient_subquestion_names_the_per_subquestion_cap(self):
         # 몫에 막힌 것을 전체 상한 탓으로 쓰면 max_evidence 를 올리라는 잘못된 신호가 된다
@@ -213,13 +213,45 @@ class TestTopic:
         # 'HPC' 는 '는'(에이치피시)이지만 'LAN' 은 '은'(랜)이다 — 읽는 소리는 코드가 모른다
         assert _topic(text) == f"'{text}' (은)는"
 
+    @pytest.mark.parametrize(("text", "expected"), [
+        # 운영 연구 d60a5dc1 — 계획이 하위질문을 의문문으로 내면 끝 글자가 '?' 라 한계 줄이 모두 '(은)는' 이었다
+        ("국내 학술 논문에서 노인의 우울과 사회적 지지 간의 관계를 측정하기 위해 사용된 방법 및 기법은 무엇인가?",
+         "'국내 학술 논문에서 노인의 우울과 사회적 지지 간의 관계를 측정하기 위해 사용된 방법 및 기법은 무엇인가?' 는"),
+        ("자원 할당 방법은?", "'자원 할당 방법은?' 은"),
+        ("자원 할당의 한계!", "'자원 할당의 한계!' 는"),
+        ("자원 할당의 동향.", "'자원 할당의 동향.' 은"),
+        ("자원 할당의 과제？ ", "'자원 할당의 과제？ ' 는"),
+    ])
+    def test_closing_punctuation_is_skipped_before_the_final_consonant(self, text, expected):
+        assert _topic(text) == expected
+
+    @pytest.mark.parametrize("text", ["IoT?", "?", "고성능 컴퓨팅 (HPC)?"])
+    def test_non_hangul_before_the_punctuation_still_gets_both_particles(self, text):
+        assert _topic(text) == f"'{text}' (은)는"
+
     def test_limitation_sentence_uses_the_matching_particle(self):
         st = _state()
         st.subquestions[0].text = "자원 할당"
         st.subquestions[0].verdict = "insufficient"
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "자원 할당" in x)
-        assert line.startswith("'자원 할당' 은 근거 1편으로 결론이 약하다")
+        assert line.startswith("'자원 할당' 은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다")
+
+    def test_insufficient_line_names_the_verdict_not_the_count(self):
+        """운영 d60a5dc1 — 근거 13편인 하위질문에 '근거 13편으로 결론이 약하다'가 붙어 편수 탓으로 읽혔다(같은
+        연구에서 5~6편은 충분). 부족 판정은 critic 이 발췌가 핵심 개념을 다루는지로 내린다 — 편수는 신호일 뿐이다
+        (research_critique.yaml). 줄은 판정을 적고 까닭은 note 가 말한다. 탐색 경로의 '근거 부족'과 같은 말이다."""
+        text = ("국내 학술 논문에서 노인의 우울과 사회적 지지 간의 관계를 측정하기 위해 "
+                "사용된 방법 및 기법은 무엇인가?")
+        st = _state()
+        st.subquestions[0].text = text
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].note = "측정 도구를 직접 비교한 논문이 없다"
+        st.subquestions[0].evidence_ids = [f"E{i}" for i in range(13)]
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "무엇인가" in x)
+        assert line == (f"'{text}' 는 근거 13편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+                        " — 측정 도구를 직접 비교한 논문이 없다")
 
     def test_about_phrase_keeps_its_fixed_particle(self):
         # '에 대해서는' 은 받침과 무관하다 — 그대로 둔다

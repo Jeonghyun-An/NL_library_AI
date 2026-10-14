@@ -14,7 +14,7 @@ import pytest
 from services.research.citations import normalize_markers
 from services.research_work.markers import (
     CLAIM_REWRITES, FIGURE_MARKER, GAP_CLAIM_REWRITES, GAP_CLAIM_TAIL, FigureResult, check_figures,
-    check_paragraph, figure, numbers_outside, soften_claims,
+    check_paragraph, drop_misplaced_figures, figure, numbers_outside, soften_claims,
 )
 
 SHARED_FIXTURE = (
@@ -107,6 +107,73 @@ class TestFigures:
         # [E#](딥리서치 bind_markers)는 그대로 — 인용처럼 생긴 괄호는 읽지 못하면 지우고 센다
         assert normalize_markers("근거 [E1-score] 다.", {"E1"}, "E") == ("근거 다.", [], [], ["[E1-score]"])
         assert normalize_markers("근거 [F1-score] 다.", {"F1"}, "F") == ("근거 [F1-score] 다.", [], [], [])
+
+
+class TestDropMisplacedFigures:
+    """생성 글에서 [F#] 를 수치 자리 밖에 쓴 문장을 지운다(절 생성·문단 [다시]만 — 사용자가 고친 글은 아니다).
+
+    운영(2026-10-14, 연구 d60a5dc1 의 prior.g2 셋째 문단): 논문 1편만 받은 절에서 gemma 가 수치 목록을 문장으로 옮겨
+    값 칩 '1'·'2017'·'198,518' 이 글에 박혔다. ① [F#] 바로 뒤에 한글(단위·조사)이 없거나 ② [E#] 없이 수치 목록의
+    이름표('이 절에 준'·'논문 수'·'적재분'·'발행 연도'·'연도 범위')를 옮긴 문장을, 뒤에 붙은 마커 묶음과 함께 지운다.
+    [E#] 만 빠뜨린 집계 문장('선행연구 [F1]편은 [F2]년에 발표되었다.')은 남긴다 — 근거 표시 없는 문장으로 셀 뿐이다.
+    돌려주는 수는 지운 문장에 있던 [F#] 수다(dropped_f — '수치 표기 n개 버림')."""
+    PROD_P3 = ("이 연구는 농촌 여성 노인이라는 특정 집단에 초점을 맞추었으며, [F1] 발행 연도는 [F2]년이다 [E1]. "
+               "또한, KCI 적재분 논문 수는 [F3]건에 달한다 [F3].")
+
+    def test_the_production_paragraph_is_emptied(self):
+        assert drop_misplaced_figures(self.PROD_P3) == ("", 4)
+
+    @pytest.mark.parametrize("text", [
+        "이 묶음의 선행연구는 [F1]편이며 [F2]년에 걸쳐 발표되었다 [E1] [E2].",
+        "선행연구 [F1]편 가운데 해당 연구는 가족 지지를 다루었다 [E1].",
+        "[F2]에 걸친 선행연구들은 가족 지지를 다루었다 [E1] [E2].",
+        "가족 지지는 우울을 낮춘다고 보고되었다 [E1]. 측정 도구도 정리되었다 [E2].",
+        "수치 표기가 없는 문장은 근거가 없어도 그대로다.",
+    ])
+    def test_figures_with_a_unit_in_cited_sentences_stay(self, text):
+        assert drop_misplaced_figures(text) == (text, 0)
+
+    @pytest.mark.parametrize("text", [
+        "이 묶음의 선행연구 [F1]편은 [F2]년에 발표되었다.",
+        "가족 지지를 다룬 선행연구는 [F1]편이며 모두 [F2]년에 나왔다.",
+        "가족 지지를 다루었다 [E1]. 이 묶음의 선행연구는 [F1]편이다.",
+    ])
+    def test_count_sentences_without_a_citation_stay(self, text):
+        # 프롬프트가 [F#] 를 쓰라는 집계 문장은 특정 논문 하나를 받치는 말이 아니라 [E#] 를 빠뜨리기 쉽다 — 지우지 않고
+        # 근거 표시 없는 문장(unmarked)으로 센다. 수치 목록 이름표를 옮긴 문장만 지운다
+        assert drop_misplaced_figures(text) == (text, 0)
+
+    @pytest.mark.parametrize("text, expected, removed", [
+        # ① 값이 문장에서 떨어졌다 — 근거 표기가 있어도 지운다
+        ("가족 지지를 다루었다 [E1]. [F1] 발행 연도는 [F2]년이다 [E1].", "가족 지지를 다루었다 [E1].", 2),
+        # ① 근거 표기 자리(문장 끝)에 붙었다
+        ("가족 지지를 다루었다 [E1]. 소장 논문은 [F3]편에 이른다 [E1] [F3].", "가족 지지를 다루었다 [E1].", 2),
+        # ① 수치를 나열했다
+        ("[F1], [F2] 범위의 선행연구가 있다 [E1]. 가족 지지를 다루었다 [E2].", "가족 지지를 다루었다 [E2].", 2),
+        # ② 근거 표기 없이 수치 목록의 이름표를 옮겼다
+        ("가족 지지를 다루었다 [E1]. KCI 적재분 논문 수는 [F3]건에 달한다.", "가족 지지를 다루었다 [E1].", 1),
+        ("가족 지지를 다루었다 [E1]. 이 절에 준 논문 수는 [F1]편이다.", "가족 지지를 다루었다 [E1].", 1),
+        ("가족 지지를 다루었다 [E1]. 발행 연도 범위는 [F2]년이다.", "가족 지지를 다루었다 [E1].", 1),
+    ], ids=["값이 떨어짐", "근거 자리", "나열", "적재분 이름표", "논문 수 이름표", "연도 범위 이름표"])
+    def test_misplaced_figure_sentences_are_dropped(self, text, expected, removed):
+        assert drop_misplaced_figures(text) == (expected, removed)
+
+    def test_citations_after_the_period_belong_to_the_sentence_before(self):
+        # '…편이다. [E2]' — 마침표 뒤에 붙은 근거 표기도 그 문장의 근거다(②에 걸리지 않는다)
+        kept = "가족 지지를 다루었다. [E1] 선행연구는 [F1]편이다. [E2] 척도도 정리되었다. [E2]"
+        assert drop_misplaced_figures(kept) == (kept, 0)
+
+        # 지우는 문장은 마침표 뒤에 붙은 근거 표기까지 함께 지운다 — 남기면 앞 문장 뒤에 [E1] 이 하나 더 붙는다.
+        # 마침표 뒤의 [F#] 는 앞 문장의 꼬리가 아니라 뒤 문장의 첫머리다 — 앞 문장('…다루었다.')은 남는다
+        dropped = "가족 지지를 다루었다. [E1] [F1] 발행 연도는 [F2]년이다. [E1] 척도도 정리되었다. [E2]"
+        assert drop_misplaced_figures(dropped) == ("가족 지지를 다루었다. [E1] 척도도 정리되었다. [E2]", 2)
+
+    def test_running_twice_changes_nothing_more(self):
+        text = "가족 지지를 다루었다 [E1]. [F1] 발행 연도는 [F2]년이다 [E1]. 선행연구는 [F1]편이다 [E2]."
+        once, removed = drop_misplaced_figures(text)
+
+        assert (once, removed) == ("가족 지지를 다루었다 [E1]. 선행연구는 [F1]편이다 [E2].", 2)
+        assert drop_misplaced_figures(once) == (once, 0)
 
 
 class TestSoftenClaims:

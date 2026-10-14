@@ -1,8 +1,9 @@
 """test_paper_search_no_rewrite.py — 논문 검색(POST /api/papers/search)은 쿼리 재작성을 하지 않는다.
 
 재작성 프롬프트(query_rewrite.yaml)는 도서 추천용('X 같은 책', 감성 → 주제 키워드)이다. 논문 검색에 켜 두면 원 질문의
-구체어를 버리고 질문에 없던 주제어를 덧붙여, 논문 150문항 × 2세트 측정에서 Recall@10 이 리랭커 대비 16~18%p
-떨어졌다(재작성 켬 70~71% vs 끔 86~88%, research/brochure-search-eval). 사용자 결정 2026-10-14 로 논문 검색은 화면이
+구체어를 버리고 질문에 없던 주제어를 덧붙였다. 켬 71% vs 끔 87%(파이프라인 측정, 독립 3세트 450문항 — 재작성 단계
+−17.6%p), 배포본 실측 Recall@10 89%(2026-10-14, 합성 질문 기준) — research/brochure-search-eval/README.md(브랜치
+feat/brochure-search-eval). 사용자 결정 2026-10-14 로 논문 검색은 화면이
 무엇을 보내든 재작성을 끈다 — 소장자료 검색(/api/books/search)은 원래 목적대로 그대로 둔다.
 
 pipeline.search 만 대역으로 바꿔 라우트가 넘기는 값을 본다. async 테스트 없음.

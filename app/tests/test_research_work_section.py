@@ -47,6 +47,30 @@ ANSWER = (
     "가족 지지는 노인의 우울을 낮춘다고 보고되었다 [E1]. 측정 도구도 정리되었다 [E2] [E7].\n\n"
     "두 연구는 [F1]편이고 발행 연도는 [F2]년이다 [E1]."
 )
+# 운영(2026-10-14, 연구 d60a5dc1 의 prior.g2 — gen 102): 미리 담은 8편이 7:1 로 나뉘어 논문 1편만 받은 절. gemma 가
+# 셋째 문단을 수치 목록으로 채웠고 첫 시도가 검사를 넘어 그대로 저장됐다(화면에 값 칩 '1'·'2017'·'198,518')
+PRIOR_ONE_PAPER = {
+    **PRIOR, "key": "prior.g2", "group": {"name": "사회적 지지"},
+    "papers": [
+        {"eid": "E1", "cnts_id": "KCI_FI002278740", "title": "농촌 여성노인의 사회적 지지망과 사회적지지가 우울에 미치는 융합적인 영향",
+         "year": 2017, "abstract": "The purposes of this study were to identify influence of social networks.",
+         "excerpt": {"chunk_id": "KCI_FI002278740__0024", "page_start": 7, "page_end": 7,
+                     "text": "본 연구는 우울의 고위험군인 농촌 여성 노인의 우울 을 감소시키기 위해 시도되었다."}},
+    ],
+    "figures": [{"id": "F1", "label": "이 절에 준 논문 수", "value": "1"},
+                {"id": "F2", "label": "발행 연도 범위", "value": "2017"},
+                {"id": "F3", "label": "소장 KCI 적재분 논문 수", "value": "198,518"}],
+    "basis": {"topic_id": 54, "papers": ["KCI_FI002278740"]},
+}
+PROD_PARAGRAPHS = [
+    "농촌 여성 노인의 우울에 대한 사회적 지지망의 영향은 직간접적으로 나타났으며, 물질적 지지는 직접적인 영향을 미치는 "
+    "것으로 확인되었다 [E1]. 이는 사회적 지지망의 다양한 측면이 노인의 우울에 복합적인 방식으로 기여할 수 있음을 시사한다 [E1].",
+    "본 연구는 농촌 여성 노인의 우울 감소를 위한 사회적 지지 시스템 구축의 기초 자료를 제공하고자 하였다 [E1]. 이는 사회적 "
+    "지지 네트워크의 특징을 파악하고, 우울과의 관계에 미치는 영향을 분석하는 연구 질문과 관련하여, 사회적 지지망의 구체적인 "
+    "형태와 그 효과를 탐색하는 데 중요한 정보를 제공한다 [E1].",
+    "이 연구는 농촌 여성 노인이라는 특정 집단에 초점을 맞추었으며, [F1] 발행 연도는 [F2]년이다 [E1]. 또한, KCI 적재분 논문 "
+    "수는 [F3]건에 달한다 [F3].",
+]
 
 
 @pytest.fixture
@@ -79,10 +103,10 @@ class TestSplitParagraphs:
 
 class TestPrompts:
     @pytest.mark.parametrize("kind, variables, max_tokens", [
-        ("prior", {"question", "topic_title", "research_question", "group_name", "evidence_block", "figure_list"},
-         1500),
-        ("gap", {"question", "topic_title", "research_question", "seed_block", "evidence_block", "figure_list"},
-         1200),
+        ("prior", {"question", "topic_title", "research_question", "group_name", "evidence_block", "figure_list",
+                   "paragraph_range"}, 1500),
+        ("gap", {"question", "topic_title", "research_question", "seed_block", "evidence_block", "figure_list",
+                 "paragraph_range"}, 1200),
     ])
     def test_templates_read_exactly_their_inputs(self, kind, variables, max_tokens):
         tpl = get_prompt(PROMPTS[kind])
@@ -104,6 +128,18 @@ class TestPrompts:
         assert "숫자를 직접 쓰지 마세요" in system and "제목·저자·연도" in system
         assert "빈 줄" in system and "'~다'" in system
 
+    @pytest.mark.parametrize("kind", ["prior", "gap"])
+    def test_figures_are_counts_and_years_only_and_cited_papers_are_not_this_study(self, kind):
+        """운영(2026-10-14 prior.g2): 수치 목록을 문장으로 옮기고([F3] 을 근거 표기 자리에), 근거 대목의 '본 연구는 …' 을
+        그대로 옮겨 인용 논문을 이 계획서처럼 썼다. 문단 수는 입력(쓸 문단 수)이 정하고, 근거가 적으면 줄인다."""
+        system = get_prompt(PROMPTS[kind]).system
+        assert "몇 편인지, 어느 해에 나왔는지를 말할 때만" in system and "표기 바로 뒤에" in system
+        assert "문장 끝에 붙이지 말고" in system and "쓸 까닭이 없으면 쓰지 마세요" in system
+        assert "[F#] 를 쓴 문장에도 그 논문들의 [E#] 를 붙입니다" in system
+        assert "'본 연구'·'이 연구'·'본 논문'으로 부르지 마세요" in system and "'선행연구'나 '해당 연구'" in system
+        assert "'쓸 문단 수'만큼" in system and "근거가 적으면 문단을 줄이고" in system
+        assert "2~3" not in system
+
     def test_gap_prompt_writes_only_unchecked_gap_candidates(self):
         assert GAP_NOTE in get_prompt(PROMPTS["gap"]).system
 
@@ -120,6 +156,7 @@ class TestBuild:
         assert "이 묶음: 가족 지지와 우울" in user
         assert "[E1] 노인 우울과 가족 지지 (2013)\n초록: 초록 하나\n대목(쪽 3): 대목 하나" in user
         assert "[F1] 이 절에 준 논문 수: 2\n[F2] 발행 연도 범위: 2013~2015" in user
+        assert "이 묶음: 가족 지지와 우울\n쓸 문단 수: 2~3개\n" in user
         assert params == {"max_tokens": 1500, "temperature": 0.3}
 
     def test_gap_renders_the_seeds(self):
@@ -128,7 +165,15 @@ class TestBuild:
         user = messages[1]["content"]
         assert "공백 후보:\n- 농촌 노인 표본이 부족하다 (하위질문: 노인의 사회적 지지)" in user
         assert "이 묶음" not in user
+        assert "쓸 문단 수: 2~3개\n" in user
         assert params["max_tokens"] == 1200
+
+    @pytest.mark.parametrize("section_input", [PRIOR_ONE_PAPER, {**GAP, "papers": PRIOR_ONE_PAPER["papers"]}],
+                             ids=["prior", "gap"])
+    def test_a_section_with_one_paper_asks_for_fewer_paragraphs(self, section_input):
+        # 논문 1편에 2~3문단을 시키자 gemma 가 셋째 문단을 수치 목록으로 채웠다(운영 2026-10-14 prior.g2)
+        user = EXECUTOR.build(section_input)[0][1]["content"]
+        assert "쓸 문단 수: 1~2개\n" in user
 
 
 class TestExecutor:
@@ -148,6 +193,35 @@ class TestExecutor:
         assert "[F1]" in second["text"] and "[F2]" in second["text"]
         assert second["checks"]["numbers"] == []             # 숫자는 [F#] 안에만 있다
         assert output["dropped"] == 1
+
+    def test_the_production_figure_paragraph_is_dropped(self):
+        """운영 prior.g2 의 셋째 문단은 두 문장 모두 [F#] 를 수치 자리 밖에 썼다 — 문단째 빠지고 앞 두 문단만 남는다."""
+        output = EXECUTOR.bind(EXECUTOR.parse("\n\n".join(PROD_PARAGRAPHS)), PRIOR_ONE_PAPER)
+
+        assert [(p["id"], p["text"]) for p in output["paragraphs"]] == [
+            ("p1", PROD_PARAGRAPHS[0]), ("p2", PROD_PARAGRAPHS[1])]
+        assert all(p["checks"]["dropped_f"] == 0 for p in output["paragraphs"])
+        assert EXECUTOR.check(output) is True
+
+    def test_misplaced_figure_sentences_are_dropped_and_the_rest_counted_again(self):
+        # 지운 문장만 근거로 든 [E2]·근거 표시 없는 문장은 남은 글로 다시 센다. dropped_f = 없는 번호 [F9] + 지운 문장의 [F#] 둘
+        text = ("가족 지지는 우울을 낮춘다고 보고되었다 [E1] [F9]. [F1] 척도는 정리되었다 [E2]. "
+                "또한 논문 수는 [F2]건에 달한다.")
+
+        (paragraph,) = EXECUTOR.bind({"paragraphs": [text]}, PRIOR)["paragraphs"]
+
+        assert paragraph["text"] == "가족 지지는 우울을 낮춘다고 보고되었다 [E1]."
+        assert paragraph["cites"] == ["KCI_A"]
+        assert paragraph["checks"] == {"dropped": 0, "dropped_f": 3, "unmarked": 0, "numbers": [], "softened": 0}
+
+    def test_a_count_sentence_without_a_citation_stays_as_unmarked(self):
+        # [E#] 만 빠뜨린 집계 문장은 지우지 않는다 — 근거 표시 없는 문장(화면 점선)으로 세고 수치 표기도 버리지 않는다
+        text = "가족 지지는 우울을 낮춘다고 보고되었다 [E1]. 이 묶음의 선행연구 [F1]편은 [F2]년에 발표되었다."
+
+        (paragraph,) = EXECUTOR.bind({"paragraphs": [text]}, PRIOR)["paragraphs"]
+
+        assert paragraph["text"] == text
+        assert paragraph["checks"]["unmarked"] == 1 and paragraph["checks"]["dropped_f"] == 0
 
     def test_paragraph_left_empty_by_the_check_is_dropped(self):
         output = EXECUTOR.bind({"paragraphs": ["[E9]", "본문이다 [E1]."]}, PRIOR)

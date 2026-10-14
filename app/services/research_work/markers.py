@@ -6,6 +6,9 @@
 - [F#] 수치: 코드가 센 값(figure)만 쓴다. [E#] 와 같은 괄호 문법(citations.normalize_markers — 묶음·범위·전각·
   소문자·0패딩)으로 읽어 입력에 있는 번호만 표준형 [F#] 로 남기고, 없는 번호·못 읽은 표기는 지운다(check_figures).
   괄호 안이 마커 문법으로만 된 것만 [F#] 로 본다 — '[F1-score]'·'[F1 점수 0.92]' 는 글로 남는다.
+  생성 글(절·문단 다시 쓰기)은 그 뒤 [F#] 를 수치 자리 밖에 쓴 문장 — 단위·조사 없이 떨어졌거나 근거 표기 자리에
+  붙었거나 [E#] 없이 수치 목록 이름표를 옮긴 문장 — 을 통째로 지운다(drop_misplaced_figures, 2026-10-14 운영).
+  사용자가 고친 글은 아니다.
 - [E#]·[F#] 밖에 쓴 숫자는 '확인 필요'로 센다(numbers_outside). 이름에 붙은 숫자(COVID-19·B2B·5G·WHO-5)는
   세지 않는다. 같은 규칙을 프론트 utils/figureMarkers.ts 가 쓰고, 두 쪽 테스트가 공용 고정 예제
   frontend/tests/fixtures/marker_checks.json 을 함께 읽는다.
@@ -85,6 +88,18 @@ _GAP_REWRITES_NO_TAIL = tuple((pattern, repl.removesuffix(GAP_CLAIM_TAIL)) for p
 _SENTENCE_BREAK = re.compile(r"((?<=[.!?。])(?:\s*\[[EF]\d+\])*\s+|\s*\n\s*)")
 # CLAIM_REWRITES 가 넣는 말 — 이 말의 '코퍼스'는 문맥으로 보지 않는다(인용 발견이 공백 후보로 바뀌지 않게, 두 번 거쳐도 같게)
 _CLAIM_INSERTS = re.compile(r"소장 코퍼스에서 확인(?:하지 못했다|되지 않았다|한 범위에서)")
+# drop_misplaced_figures 의 문장 경계 — _SENTENCE_BREAK 와 같되 마침표 뒤에서 앞 문장에 붙이는 마커는 [E#] 뿐이다.
+# 인용은 앞 주장에 붙지만 [F#] 는 문장 안의 값이라, 마침표 뒤의 '[F1] 발행 연도는 …' 은 뒤 문장의 첫머리다
+_FIGURE_SENTENCE_BREAK = re.compile(r"((?<=[.!?。])(?:\s*\[E\d+\])*\s+|\s*\n\s*)")
+# 그 경계를 '앞 문장에 붙은 [E#] 묶음'과 '공백'으로 가른다
+_BREAK_PARTS = re.compile(r"((?:\s*\[E\d+\])*)(\s*)")
+# 수치 자리 밖의 [F#] — 바로 뒤에 한글(단위·조사)이 없다: 값이 문장에서 떨어졌거나('[F1] 발행 연도는')·근거 표기처럼
+# 문장 끝에 붙었거나('…달한다 [F3].')·나열했다('[F1], [F2]')
+_LOOSE_FIGURE = re.compile(r"\[F\d+\](?![가-힣])")
+_CITATION = re.compile(r"\[E\d+\]")
+# 수치 목록의 이름표 낱말 — 절 수치(section_input.section_figures: '이 절에 준 논문 수'·'발행 연도 범위')와 이전 입력의
+# '소장 KCI 적재분 논문 수'. [E#] 없이 이 말과 [F#] 를 함께 쓴 문장은 목록을 옮긴 것이다('KCI 적재분 논문 수는 [F3]건에 달한다.')
+_FIGURE_LABEL_WORDS = re.compile(r"이\s*절에\s*준|논문\s*수|적재분|발행\s*연도|연도\s*범위")
 
 
 class FigureResult(NamedTuple):
@@ -132,6 +147,37 @@ def soften_claims(text: str) -> tuple[str, int]:
             parts[i], n = pattern.subn(repl, parts[i])
             total += n
     return "".join(parts), total
+
+
+def drop_misplaced_figures(text: str) -> tuple[str, int]:
+    """생성 글에서 [F#] 를 수치 자리 밖에 쓴 문장을 지운다 → (고친 글, 지운 문장에 있던 [F#] 수).
+
+    ① [F#] 바로 뒤에 한글(단위·조사)이 없는 문장, ② [E#] 없이 수치 목록의 이름표('이 절에 준'·'논문 수'·'적재분'·
+    '발행 연도'·'연도 범위')를 옮긴 문장을 마침표 뒤에 붙은 근거 표기('…편이다. [E2]' 의 [E2])와 함께 지운다.
+    운영(2026-10-14)에서 논문 1편만 받은 절의 gemma 가 수치 목록('이 절에 준 논문 수: 1' 같은 시스템 수치)을 문장으로
+    옮겨 '[F1] 발행 연도는 [F2]년이다'·'…[F3]건에 달한다 [F3].' 를 썼고, 화면은 그 자리에 값 칩을 그렸다.
+    [E#] 만 빠뜨린 집계 문장('이 묶음의 선행연구 [F1]편은 [F2]년에 발표되었다.')은 프롬프트가 [F#] 를 쓰라는 바로 그
+    자리라 지우지 않는다 — 근거 표시 없는 문장(unmarked)으로 셀 뿐이다. 받는 글은 검사(check_paragraph)를 거친
+    표준형이다. 절 생성·문단 다시 쓰기(section.make_paragraph)만 쓴다 — 사용자가 고친 글(PUT)은 지우지 않는다.
+    한계: '[F2] 사이'처럼 띄어 쓴 단위도 ①에 걸린다(프롬프트가 단위를 표기 바로 뒤에 붙이게 한다).
+    """
+    if not FIGURE_MARKER.search(text):
+        return text, 0
+    parts = _FIGURE_SENTENCE_BREAK.split(text)
+    kept: list[str] = []
+    removed = 0
+    for i in range(0, len(parts), 2):            # 짝수 자리가 문장, 홀수 자리가 나눈 자리
+        tail, space = _BREAK_PARTS.fullmatch(parts[i + 1]).groups() if i + 1 < len(parts) else ("", "")
+        sentence = parts[i] + tail
+        if FIGURE_MARKER.search(sentence) and (
+                _LOOSE_FIGURE.search(sentence)
+                or (not _CITATION.search(sentence) and _FIGURE_LABEL_WORDS.search(sentence))):
+            removed += len(FIGURE_MARKER.findall(sentence))
+            continue
+        kept.append(sentence + space)
+    if not removed:
+        return text, 0
+    return "".join(kept).strip(), removed
 
 
 def check_paragraph(text: str, *, valid_e: set[str], valid_f: set[str],
