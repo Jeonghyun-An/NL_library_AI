@@ -141,6 +141,9 @@ def test_nl_library_prompts_exist_and_render():
         question="청소년 진로상담", subquestion="하위질문",
         evidence_block="[E1] 논문 가 (2008-06, 학술지)\n본문", paper_ids="E1, E3")
     assert '"summaries"' in rs_s and "E1, E3" in rs_s
+    # 절은 하위질문에 곧장 답한다 — intro 는 도입부가 아니라 답 문단이고, user 끝에서 하위질문을 한 번 더 짚는다
+    assert "도입부가 아니라 하위질문에 대한 답 문단" in rs_s
+    assert rs_u.endswith('위 근거로 하위질문 "하위질문" 에 답하세요.')
     assert "청소년 진로상담" in rs_u and "하위질문" in rs_u and "[E1]" in rs_u
 
 

@@ -702,9 +702,9 @@ class TestBuildSection:
         """gemma 는 프롬프트 예시를 견본으로 베낀다 — '[E#]' 가 남은 문장은 지시문 원문이다."""
         st = _state_three()
         sec = build_section(st, st.subquestions[0], {
-            "intro": "이 하위질문에 대한 연구 흐름을 설명하는 2~4문장. 문장마다 [E#] 를 단다.",
+            "intro": "하위질문에 대한 답 2~4문장. 첫 문장부터 문장마다 [E#] 를 단다.",
             "summaries": {"E#": "그 논문이 무엇을 했고"},
-            "future": [{"text": "남은 과제 한 문장 [E#]."}]})
+            "future": [{"text": "이 하위질문에 대해 남은 과제 한 문장 [E#]."}]})
         assert sec["intro"] == "" and sec["future"] == []
 
     def test_section_carries_chunks_matched_in_its_subquestion(self):
