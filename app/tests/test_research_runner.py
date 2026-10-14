@@ -1050,7 +1050,8 @@ class TestOffTopicExclusion:
         self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
         assert self._cnts(st, sq.evidence_ids) == ["B"]
         assert sq.budget_capped == 0
-        assert self._limitation(st, "엣지 컴퓨팅") == "'엣지 컴퓨팅' 은 근거 1편으로 결론이 약하다 — 점검"
+        assert self._limitation(st, "엣지 컴퓨팅") == (
+            "'엣지 컴퓨팅' 은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다 — 점검")
 
     def test_pool_seat_freed_by_exclusion_is_not_blamed_on_the_global_cap(self):
         st = self._state("가", "나", max_recheck=1, max_evidence=3, min_evidence_per_subq=3)
