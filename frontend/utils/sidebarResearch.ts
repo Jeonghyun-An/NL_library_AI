@@ -21,6 +21,26 @@ export function statusStageLine(r: HistoryResearchStatus | null | undefined): st
   }
 }
 
+// 진행 중인 연구 줄 아래 진행 막대의 채움(0~1) — 후배 시안의 사이드바 진행 막대(사용자 결정 2026-10-14). 기록 목록에는 하위질문·절 수가
+// 없어 단계로만 채운다: 네 단계(계획 · 승인 · 근거 수집 · 보고서 작성) 중 지금 단계의 가운데까지. 승인 대기·끝난 잡·상태 모름은 null
+// (막대 없이 배지가 말한다). 단계 글(statusStageLine)과 같은 상태 나눔을 쓴다
+const STAGE_STEPS = 4;
+export function stageProgress(r: HistoryResearchStatus | null | undefined): number | null {
+  const at = (step: number) => (step + 0.5) / STAGE_STEPS;
+  switch (r?.status) {
+    case "created":
+    case "planning":
+      return at(0);
+    case "approved":
+    case "queued":
+      return 2 / STAGE_STEPS;
+    case "running":
+      return r.stage === "explored" || r.stage === "synthesized" ? at(3) : at(2);
+    default:
+      return null;
+  }
+}
+
 // 묶음이 처음 보이는 줄 수를 넘는 연구를 펼치는 한 줄(시안 C) — 접혀 있으면 '이전 연구' + 숨은 수 칩, 펼치면 '접기'
 export function olderToggle(expanded: boolean, hidden: number): { label: string; count: number | null; ariaLabel: string } {
   return expanded
