@@ -6,13 +6,16 @@
       <header class="wk-screen__head">
         <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
         <h2 id="wk-reading-title" class="wk-screen__title" tabindex="-1">참고문헌 선택하기</h2>
-        <p class="rs-muted">
-          「{{ question }}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. 제목을 누르면 오른쪽에서
-          그 논문과 대화할 수 있습니다.
-        </p>
+        <div v-if="reading" class="wk-screen__lead">
+          <!-- 소개와 다음 단계 버튼은 읽기 목록을 불러온 뒤에만 — 소개는 미리 담은 수(preselected)를, 버튼은 주제·담은 수를 알아야
+               맞는 말·맞는 상태가 된다. 버튼은 표 아래와 같은 묶음(ReadingNextActions) — 넓으면 소개 옆, 좁으면 소개 아래 -->
+          <p v-if="intro" class="rs-muted wk-screen__intro">{{ intro }}</p>
+          <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
+        </div>
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
         <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
-        <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+        <!-- 읽기 전용으로 꺼진 [보고서 만들기]·[보고서 다시 만들기](위·아래 두 묶음)가 이 줄을 까닭으로 가리킨다(aria-describedby) -->
+        <p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
       </header>
 
       <CorpusScopeNote :corpus="corpus" />
@@ -47,32 +50,7 @@
           :busy="busy"
           @revive="(cnts) => update(cnts, { state: 'candidate' })"
         />
-        <div class="wk-screen__next">
-          <p v-if="hint" class="rs-muted">{{ hint }}</p>
-          <button v-if="reading.topic_id === null" type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'topics')">
-            제목 고르기
-          </button>
-          <template v-else-if="outlineMade">
-            <button type="button" class="rs-btn" @click="emit('go', 'proposal')">{{ FINAL_STEP_NAME }} 단계로</button>
-            <button
-              type="button"
-              class="rs-btn rs-btn--ghost"
-              :disabled="readOnly || busy || !canOutline"
-              @click="makeOutline(true)"
-            >
-              {{ REMAKE_REPORT }}
-            </button>
-          </template>
-          <button
-            v-else
-            type="button"
-            class="rs-btn"
-            :disabled="readOnly || busy || !canOutline"
-            @click="makeOutline(false)"
-          >
-            {{ MAKE_REPORT }}
-          </button>
-        </div>
+        <ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
       </template>
     </section>
 
@@ -105,7 +83,7 @@
         </div>
         <details v-if="panelPath" class="wk-panel__path">
           <summary>들어온 경로 — {{ panelPath.label }}</summary>
-          <p class="wk-path__quote">{{ panelPath.chunk.text }}</p>
+          <p class="wk-path__quote">{{ passageText(panelPath.chunk.text) }}</p>
           <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" @click="openPathChunk">원문 보기</button>
         </details>
       </template>
@@ -119,6 +97,7 @@ import CandidateDrawer from "~/components/work/CandidateDrawer.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
 import DeepReadPanel from "~/components/work/DeepReadPanel.vue";
 import FunnelCounter from "~/components/work/FunnelCounter.vue";
+import ReadingNextActions from "~/components/work/ReadingNextActions.vue";
 import ReadingTable from "~/components/work/ReadingTable.vue";
 import { useReadingSaves } from "~/composables/useReadingSaves";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
@@ -128,13 +107,14 @@ import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
 import { type PanelPaper, panelTabs } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, readingAnchor } from "~/utils/detailSource";
-import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget } from "~/utils/readingList";
+import { passageText } from "~/utils/passageText";
+import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, readingIntro } from "~/utils/readingList";
 import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
-import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
+import { REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
-// 담음 5편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
+// 담은 논문이 MIN_READING_FOR_OUTLINE 편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
 // 넣는다 — 06e D20)
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload]; panel: [open: boolean] }>();
@@ -155,8 +135,22 @@ const readOnly = computed(() => view.value?.is_example ?? true);
 // 읽기 목록 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
 const loadError = computed(() => props.work.errorOf("reading"));
 const hint = computed(() => (reading.value ? outlineHint(reading.value) : null));
+// 머리 소개 — 이어가기가 미리 담은 수에 따라 승인 문구(사용자 결정 2026-10-13) 또는 옛 소개, 읽기 전용이면 첫 문장만
+const intro = computed(() => readingIntro(reading.value, props.question, readOnly.value));
 const canOutline = computed(() => !!reading.value && canMakeOutline(reading.value));
 const outlineMade = computed(() => view.value?.phase === "proposal" || view.value?.phase === "done");
+// 다음 단계 버튼 묶음(머리·표 아래 두 곳의 ReadingNextActions)이 함께 받는 상태 — 비활성 조건을 여기 한 곳에서 정한다.
+// busy 는 makeOutline 의 잠금이라 위·아래 어느 쪽을 눌러도 두 묶음이 함께 꺼진다. 까닭은 hint(주제 없음·담음 모자람)와
+// 읽기 전용 줄(READ_ONLY_ID) — busy 는 누른 그 순간뿐이라 따로 적지 않는다
+const READ_ONLY_ID = "wk-reading-readonly";
+const makeDisabled = computed(() => readOnly.value || busy.value || !canOutline.value);
+const nextActions = computed(() => ({
+  noTopic: reading.value?.topic_id === null,
+  outlineMade: outlineMade.value,
+  makeDisabled: makeDisabled.value,
+  hint: hint.value,
+  disabledWhyId: readOnly.value ? READ_ONLY_ID : null,
+}));
 // 범위 띠(spec §4 단계 공통·§7) — TopicsStep 과 같이 주제 목록의 corpus, 없으면 연구의 corpus
 const corpus = computed(() => state.value.topics?.corpus ?? view.value?.corpus ?? null);
 const topicTitle = computed(() => {

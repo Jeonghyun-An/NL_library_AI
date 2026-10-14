@@ -35,14 +35,16 @@ from models.research import ResearchJob, ResearchStep
 from models.research_work import (
     WORK_PHASES, ResearchGeneration, ResearchReading, ResearchTopic, ResearchWork,
 )
+from services.research_work.reading_views import reading_view
 from services.research_work.seeds import topic_input
-from services.research_work.shapes import PHASE_ORDER
+from services.research_work.shapes import MIN_READING_FOR_OUTLINE, PHASE_ORDER, READING_PRESELECT
 
 A = {"x-session-id": str(SID_A)}
 B = {"x-session-id": str(SID_B)}
 POSITION = 3                     # 가짜 queue_info 가 늘 돌려주는 대기 순번
 ETA = 90                         # 가짜 queue_info 가 늘 돌려주는 예상 시간(초)
 PROGRESS0 = {"topics": 0, "reading": 0, "sections": 0, "sections_total": 6}   # 카드·담음·절이 없는 연구
+PROGRESS2 = {**PROGRESS0, "reading": 2}   # SNAPSHOT 으로 이어간 연구 — 채택 근거 두 편을 미리 담는다
 
 SNAPSHOT = {
     "question": "청소년 독서 격차", "params": {}, "corpus_range": None,
@@ -252,6 +254,12 @@ def _set(engine, model, key, **values) -> None:
         conn.execute(sa.update(table).where(pk == key).values(**values))
 
 
+def _set_reading(engine, jid: uuid.UUID, cnts_id: str, **values) -> None:
+    table = ResearchReading.__table__
+    with engine.begin() as conn:
+        conn.execute(sa.update(table).where(table.c.work_id == jid, table.c.cnts_id == cnts_id).values(**values))
+
+
 def _frames(body: str) -> list[dict]:
     return [json.loads(line[len("data: "):]) for line in body.splitlines()
             if line.startswith("data: ")]
@@ -272,7 +280,7 @@ class TestContinue:
         (gen,) = _rows(api.engine, ResearchGeneration)
         assert res.json() == {
             "id": str(jid), "phase": "topics", "concepts": [], "memo": None, "is_example": False,
-            "progress": PROGRESS0, "topic_id": None, "corpus": None,
+            "progress": PROGRESS2, "topic_id": None, "corpus": None,
             "generations": [{"id": gen["id"], "kind": "concepts", "target": None,
                              "status": "queued", "model": None, "error": None,
                              "position": POSITION, "eta_sec": ETA, "others_ahead": False}],
@@ -280,15 +288,17 @@ class TestContinue:
         }
         (work,) = _rows(api.engine, ResearchWork)
         assert work["owner_sid"] == str(SID_A) and work["concept_members"] == {}
+        # 채택 근거가 READING_PRESELECT 편보다 적으면 모두 미리 담는다(사용자 결정 2026-10-13)
         assert [(r["cnts_id"], r["state"], r["origin"]) for r in _rows(api.engine, ResearchReading)] == [
-            ("C1", "candidate", "evidence"), ("C2", "candidate", "evidence"),
+            ("C1", "in", "evidence"), ("C2", "in", "evidence"),
         ]
-        assert _rows(api.engine, ResearchReading, cnts_id="C1")[0]["origin_ref"]["rank"] == {"0": 1}
+        ref = _rows(api.engine, ResearchReading, cnts_id="C1")[0]["origin_ref"]
+        assert ref["rank"] == {"0": 1} and ref["preselected"] is True
         assert (gen["work_id"], gen["kind"], gen["priority"], gen["status"]) == (
             jid, "concepts", 10, "queued")
         assert gen["input"] == {"question": "청소년 독서 격차", "marker": 1}
         assert api.dispatch.calls == 1
-        assert api.events == [(str(jid), "work", {"phase": "topics", "progress": PROGRESS0})]
+        assert api.events == [(str(jid), "work", {"phase": "topics", "progress": PROGRESS2})]
 
     def test_concepts_input_reads_the_job(self, api):
         # 가짜 없이 — 키워드 생성 입력이 잡 행(질문·계획)과 채택 논문(C1·C2)의 소장 키워드에서 만들어지는지.
@@ -320,6 +330,18 @@ class TestContinue:
         assert len(_rows(api.engine, ResearchGeneration)) == 1
         assert api.dispatch.calls == 1 and len(api.events) == 1
 
+    def test_second_continue_keeps_what_the_user_changed(self, api):
+        # 이미 이어간 연구에는 다시 미리 담지 않는다 — 사용자가 뺀(out) 행·되돌린 후보는 그대로
+        jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
+        api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+        _set_reading(api.engine, jid, "C1", state="out")
+        _set_reading(api.engine, jid, "C2", state="candidate")
+
+        assert api.client.post(f"/api/research/{jid}/work/continue", headers=A).status_code == 200
+
+        assert {r["cnts_id"]: r["state"] for r in _rows(api.engine, ResearchReading)} == {
+            "C1": "out", "C2": "candidate"}
+
     def test_without_a_browser_id_the_owner_stays_empty(self, api):
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT)
 
@@ -334,6 +356,41 @@ class TestContinue:
 
         assert _rows(api.engine, ResearchReading) == []
         assert len(_rows(api.engine, ResearchGeneration)) == 1
+
+    def test_top_eight_adopted_papers_are_picked_in_advance(self, api):
+        # 채택 근거 열 편 — 하위질문 0 에 P01~P06(순위 1~6), 하위질문 1 에 P07~P10(순위 1~4)과 P02(순위 5).
+        # 읽기 목록 순서(하위질문 안 가장 앞선 순위 → cnts_id)로 앞 여덟 편을 담음으로 넣는다
+        subqs = [
+            {"idx": 0, "text": "독서 격차의 원인", "evidence_ids": [f"E{n}" for n in range(1, 7)],
+             "verdict": "sufficient", "evidence_chunks": {}, "chunk_scores": {}, "rounds": []},
+            {"idx": 1, "text": "독서 격차의 영향", "evidence_ids": ["E7", "E8", "E9", "E10", "E2"],
+             "verdict": "sufficient", "evidence_chunks": {}, "chunk_scores": {}, "rounds": []},
+        ]
+        evidence = {f"E{n}": {"cnts_id": f"P{n:02d}", "meta": {"title": f"논문 {n}"}, "chunks": []}
+                    for n in range(1, 11)}
+        snapshot = {**SNAPSHOT, "subquestions": subqs, "evidence": evidence}
+        report = {**REPORT, "stats": {"papers_reviewed": 40, "evidence_adopted": 10}}
+        jid = _job(api.engine, snapshot=snapshot, report=report, plan=["독서 격차의 원인", "독서 격차의 영향"])
+
+        res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+
+        assert res.status_code == 200
+        rows = _rows(api.engine, ResearchReading)
+        picked = {"P01", "P07", "P02", "P08", "P03", "P09", "P04", "P10"}
+        assert {r["cnts_id"]: r["state"] for r in rows} == {
+            **{c: "in" for c in picked}, "P05": "candidate", "P06": "candidate"}
+        assert {r["cnts_id"] for r in rows if r["origin_ref"].get("preselected") is True} == picked
+        # 진행 요약·work 이벤트의 담음 수, 읽기 목록 깔때기 — 담음 여덟 편이면 [보고서 만들기](담음 5편 이상) 조건을 넘는다
+        progress = {**PROGRESS0, "reading": READING_PRESELECT}
+        assert res.json()["progress"] == progress and _rows(api.engine, ResearchWork)[0]["progress"] == progress
+        assert api.events == [(str(jid), "work", {"phase": "topics", "progress": progress})]
+        job = SimpleNamespace(plan=["독서 격차의 원인", "독서 격차의 영향"], state_snapshot=snapshot, report=report)
+        view = reading_view(SimpleNamespace(topic_id=None), job, [SimpleNamespace(**r) for r in rows], {})
+        assert view["funnel"] == {"reviewed": 40, "adopted": 10, "candidates": 10, "picked": READING_PRESELECT}
+        assert view["funnel"]["picked"] >= MIN_READING_FOR_OUTLINE
+        assert view["preselected"] == READING_PRESELECT
+        assert [i["cnts_id"] for i in view["items"] if i["state"] == "in"] == [
+            "P01", "P07", "P02", "P08", "P03", "P09", "P04", "P10"]
 
     @pytest.mark.parametrize("status", ["awaiting_approval", "queued", "running", "failed", "canceled"])
     def test_only_a_completed_job_can_be_continued(self, api, status):

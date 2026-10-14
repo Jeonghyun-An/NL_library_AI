@@ -21,7 +21,7 @@
 - **B** 끝나지 않은 연구(created·planning·approved·queued·running, 또는 승인 대기 awaiting_approval)가 이 브라우저에 있으면 공용 입력창 부품 `SearchPlusMenu.vue` 안에, DeepResearch 모드가 켜졌을 때 한 줄: '진행 중인 DeepResearch 1건 · [보기] [취소]'(승인 대기만 있으면 '승인 대기 중인 DeepResearch 1건 · [보기] [취소]'). [취소]는 기존 취소 API(`useResearchApi().cancel`)·한 번 확인('정말 취소'). 줄이 + 메뉴 안이라 메인·논문 결과(`/papers`)·논문 상세에서 온 입력창 어디서나 같다. 색·모양은 round08 의 팝오버·칩 토큰(`--skx-*` 만). 서버의 승인 429 `browser_active` 는 그대로(마지막 안전망). 시연 메모: 손님이 중간에 떠나면 [취소] 한 번(새로고침으로는 안 풀린다 — 잡은 서버에서 돌고 브라우저 ID 는 localStorage).
 - **C** 보고서 본문·탐색 중 절 자리·연구 화면 면은 다크로 — `.skx-reading`(밝은 면)을 쓰지 않고 round08 의 읽기용 짙은 유리 토큰(`--skx-read-surface`, 글 `--skx-read-ink`·`--skx-read-ink-2`·`--skx-read-gray-1`, 줄간격 1.6, 흐림·반사광 없음). `research.css` 의 불투명 흰 카드 면은 06d 범위에서 `--skx-*` 토큰으로만. 색 리터럴 금지(테마 가드).
 - **D** 사이드바 진행 중 줄의 단계 글은 숫자 없이 상태에 맞는 짧은 글(계획 중·근거 수집 중·보고서 작성 중), history 응답의 상태만으로 — 진행 중 잡을 30초마다 `GET /api/research/{id}` 로 읽지 않는다. 완료 줄에는 아무것도 붙이지 않는다. 진행 중 배지·'진행 중 N'은 round08 자리 그대로, '더 보기'는 시안 C('이전 연구 [n]' + 칩 + ⌄) 그대로.
-- **E** [담기](원 N6·P8 8-2)는 **자른다**(사용자 2026-10-14 — 참고문헌·보고서는 자동화 방향이고 시연 흐름에도 없다). 마무리의 회귀 수·파일 목록에서 뺀다. 소장자료 결과 [DeepResearch로 이어서 조사하기](P8 8-1)는 [담기]와 별개라 남긴다(P8 머리).
+- **E** [담기](원 N6·P8 8-2)는 **자른다**(사용자 2026-10-13 — 참고문헌·보고서는 자동화 방향이고 시연 흐름에도 없다). 마무리의 회귀 수·파일 목록에서 뺀다. 소장자료 결과 [DeepResearch로 이어서 조사하기](P8 8-1)는 [담기]와 별개라 남긴다(P8 머리).
 - **F** 배포 순서: round08 은 이미 운영 이미지(`nl-lib-nuxt:latest`, `6b90e79` 기준)로 올라가 있고 운영 재배포만 남았다 — round08 을 먼저 운영에 반영하고 06d 는 그 뒤 따로 배포한다(Z4 Step 1·Z5 Step 0·롤백). `6b90e79` 에는 핑크 테마 구조가 없어(2026-10-13 확인) 핑크는 dev 로 빌드하는 06d 배포에 함께 나간다 — Z4 Step 2 에서 사용자에게 보인다.
 - **G** 핑크 테마 브랜치(`feat/theme-pink`, `1b0eaa4`)와의 dev 머지 순서는 사용자가 정한다 — 06d 가 먼저 들어가면 핑크 쪽이 rebase, 반대면 06d 가 rebase(Z4 Step 1 의 확인 한 줄). **2026-10-13 확인(계획을 고친 때):** 핑크는 이미 dev 에 머지돼 있고(`7adf93b Merge feat/theme-pink into dev`, `origin/dev` 도 같다) 06d 브랜치도 그 dev 를 받았다(`a084ff3 Merge dev into feat/round06d-research-progress-screen — round08 UI 다크 테마·테마 구조(핑크) 받기`) — 그대로면 rebase 할 쪽이 없다. Z4 Step 1 이 다시 본다.
 
@@ -35,7 +35,7 @@
 | N3 사이드바 단계·폴링·모두 보기 (N) | 고침 | **P3** | 결정 4 → **최종 결정 D** — 단계 글은 '진행 중' 줄에만, 숫자 없이 기록의 상태만으로(잡을 읽지 않는다 — 앞 개정의 잡 GET·`collectPosition` 도 없앰), 이어간 연구 줄의 단계·수·'생성 중'(원 정함 13)·생성 폴링은 넣지 않는다, '모두 보기 (N)' 없음, round08 의 '더 보기 (n) ▾' 를 시안 C '이전 연구 [n]' 으로 |
 | N4 빠른검색 [딥리서치로 더 깊게] | 없앰 | — | 결정 6 — round08 이 논문 결과에 `.skx-deeper` [DeepResearch로 이어서 조사하기](`pages/papers/index.vue:170-174`·`continueAsDeepResearch` `:733-738`)로 만들었다. 소장자료 결과 쪽은 P8 8-1 |
 | N5 `/research` 홈 | 없앰 | — | 결정 1. 예시 연구는 P5, 시작 판단은 P4 |
-| N6 빠른검색 [담기 ▾] | **없앰(사용자 10-14)** | P8 8-2(하지 않는다) | 결정 6 → **최종 결정 E** — 사용자 답 대기, 답이 없으면 하지 않는다(기본은 자름). 계획 글(자리 `pages/index.vue:312` 의 'SKOVIX 추천 1권' 패널 아래, 담는 것은 추천 1권, 본문 `{"state": "in"}`)은 P8 Step 7~11 에 기록으로 둔다. 같은 자리의 소장자료 [DeepResearch로 이어서 조사하기](P8 8-1)는 한다 |
+| N6 빠른검색 [담기 ▾] | **없앰(사용자 10-13)** | P8 8-2(하지 않는다) | 결정 6 → **최종 결정 E** — 사용자 답 대기, 답이 없으면 하지 않는다(기본은 자름). 계획 글(자리 `pages/index.vue:312` 의 'SKOVIX 추천 1권' 패널 아래, 담는 것은 추천 1권, 본문 `{"state": "in"}`)은 P8 Step 7~11 에 기록으로 둔다. 같은 자리의 소장자료 [DeepResearch로 이어서 조사하기](P8 8-1)는 한다 |
 | N7 사이드바 예시 묶음 | 없앰 | P5 가 갈음 | 결정 3 — 예시 연구는 메인 DeepResearch 모드의 입력창 아래 한 곳 |
 | N8 (조건부) LNB 접기 | 그대로 | **P9**(조건부) | 결정 8 — 06e 정함 30 계약 그대로, 앵커는 round08 뒤 `[id].vue:3-7`(그대로 남아 있다) |
 | N9 탐색 방식 | 고침 | **P6** | 결정 5 — `/research` 홈 Step 8 없음, `ResearchModePicker` 는 + 메뉴(`SearchPlusMenu.vue`)에만, 다크 토큰(고른 칸 = 짙은 면·산호 글자, 홈 = 흰 10%), 입력 상자 아래 줄이 모자라면 줄바꿈 |
@@ -3086,7 +3086,7 @@ Expected: `M  frontend/pages/research/[id].vue`, 커밋 1개.
 결정 6 · 정함 25 · **최종 결정 E**(2026-10-13) · 원 계획 정함 17·Task N6. round08 이 남긴 자리 — `pages/index.vue:312` 의 `<!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 … -->`('SKOVIX 추천 1권' 패널 뒤·도서 목록 앞).
 
 - **8-1 [DeepResearch로 이어서 조사하기] — 한다(자르는 순서 1).** [담기]와 별개다 — round08 은 논문 결과에만 `.skx-deeper` 를 만들고(`pages/papers/index.vue:170-174`) 소장자료 쪽 자리를 06d 몫으로 남겼고, 이 계획이 처음부터 06d 몫으로 두었다. 메인 입력창으로 가서 DeepResearch 모드를 켜므로 P4 의 한 줄·P5 의 예시 카드·P6 의 탐색 방식이 함께 선다(결정 A — 늘 새 연구라 이 길도 바뀐 것이 없다). 10/16 까지 끝내지 못하면 이 Task 를 가장 먼저 자른다 — 자르면 round08 의 자리 주석은 그대로 남는다.
-- **8-2 [담기 ▾](원 N6) — 하지 않는다(사용자 2026-10-14 '자른다').** 사용자에게 다시 묻는 중이고 기본은 자른다(자르는 순서 1 의 앞 칸). 아래 Step 7~11 은 기록으로 남기고 **실행하지 않는다** — 마무리(Z)의 회귀 수·고친 파일 목록·리뷰 diff·배포 확인에서 뺐다. 사용자가 하자고 하면 그때 Step 7~11 을 8-1 뒤에 그대로 하고(앵커는 이 개정에서 P4·P5 뒤 글로 맞췄다), Z1 Step 1·2 의 목록에 `utils/addToWork.ts`·`tests/unit/addToWork.test.ts`·`components/research/AddToWorkMenu.vue` 셋과 +1 파일·+4 를 더한다.
+- **8-2 [담기 ▾](원 N6) — 하지 않는다(사용자 2026-10-13 '자른다').** 사용자에게 다시 묻는 중이고 기본은 자른다(자르는 순서 1 의 앞 칸). 아래 Step 7~11 은 기록으로 남기고 **실행하지 않는다** — 마무리(Z)의 회귀 수·고친 파일 목록·리뷰 diff·배포 확인에서 뺐다. 사용자가 하자고 하면 그때 Step 7~11 을 8-1 뒤에 그대로 하고(앵커는 이 개정에서 P4·P5 뒤 글로 맞췄다), Z1 Step 1·2 의 목록에 `utils/addToWork.ts`·`tests/unit/addToWork.test.ts`·`components/research/AddToWorkMenu.vue` 셋과 +1 파일·+4 를 더한다.
 
 **Files(8-1):**
 - Modify: `frontend/utils/landingStart.ts`(`deepResearchStartRoute(draft?)`·`readStartDraft`·`queryWithoutStart`)

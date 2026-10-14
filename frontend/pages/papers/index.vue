@@ -87,7 +87,8 @@
               more-label="전체보기"
               scroll-anchor=".skx-aip"
             >
-              <div class="skx-pai-main__scroll">
+              <!-- 글 없이 실패하면 칸 안은 비우고 아래(#after) 안내만 보인다 -->
+              <div v-if="aiLoading || aiText || !aiError" class="skx-pai-main__scroll">
                 <template v-if="aiLoading && !aiText">
                   <div class="skx-pai-section">
                     <p class="skx-pai-section__text" style="color: #999">
@@ -114,6 +115,17 @@
                   </p>
                 </div>
               </div>
+              <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로. 접히는 칸 밖이라
+                   받은 글이 길어 접혀도 늘 보인다(접힌 채로는 페이드와 '전체보기'만 보여 끊긴 요약을 다 받은 것으로 읽었다) -->
+              <template #after>
+                <p
+                  v-if="aiError && !aiLoading"
+                  :class="['skx-pai-section__text', 'skx-pai-main__failed', !aiText && 'is-alone']"
+                  role="alert"
+                >{{ aiError }} ·
+                  <button type="button" class="skx-retry" @click="retryAiSummary">다시 시도</button>
+                </p>
+              </template>
             </ClampedPanel>
             <!-- 우측: 참고 논문 목록 -->
             <div class="skx-pai-refs">
@@ -313,6 +325,7 @@ import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
+import { AI_SUMMARY_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
 
 const api = useApi();
 const route = useRoute();
@@ -360,6 +373,8 @@ const chatPaperTitle = computed(() =>
 // ── AI 요약 ──────────────────────────────────────────────────
 const aiText = ref("");
 const aiLoading = ref(false);
+// 요약을 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 AI_SUMMARY_FAILED) — 받은 글에 잇지 않고 따로 보인다
+const aiError = ref("");
 const aiExpanded = ref(false);
 const aiRefs = ref<
   { num: number; book_id: string; title: string; authors: string }[]
@@ -518,6 +533,7 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
+  aiError.value = "";
   aiExpanded.value = false;
   currentPage.value = 1;
   sortBy.value = DEFAULT_SORT;
@@ -529,7 +545,8 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
         query,
         mode: "book",
         top_k: 20,
-        use_rewrite: true,
+        // 논문 검색은 서버가 재작성하지 않는다(app/api/paper.py — 사용자 결정 2026-10-14) — 보내는 값도 그에 맞춘다
+        use_rewrite: false,
         use_rerank: true,
       },
       signal,
@@ -571,6 +588,7 @@ function goLanding() {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
+  aiError.value = "";
   // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
   pdfItem.value = null;
   citeModalOpen.value = false;
@@ -674,6 +692,7 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiText.value = entry.ai?.text ?? "";
   aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
   aiLoading.value = false;
+  aiError.value = "";
   aiExpanded.value = true;
   // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 고른 정렬·개수를 다시 연다(그 방문 기록의 state — 소장자료 결과와
   // 같다). 새로 연 기록은 기본 정렬이고 개수는 지금 고른 대로 둔다
@@ -713,6 +732,7 @@ async function streamAiSummary(
   signal: AbortSignal,
 ) {
   aiLoading.value = true;
+  aiError.value = "";
   const papers = books.slice(0, 5).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
@@ -722,6 +742,7 @@ async function streamAiSummary(
   }));
   let text = "";
   let refs: typeof aiRefs.value = [];
+  let end: AiStreamEnd = { ok: false, error: null };
   try {
     const resp = await fetch(apiUrl("/papers/summary/stream"), {
       method: "POST",
@@ -729,42 +750,39 @@ async function streamAiSummary(
       body: JSON.stringify({ query, papers }),
       signal,
     });
-    if (!resp.ok || !resp.body) return;
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop()!;
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const raw = line.slice(6).trim();
-        if (raw === "[DONE]") return;
-        try {
-          const evt = JSON.parse(raw);
-          if (evt.text) {
-            text += evt.text;
-            aiText.value = text;
-          }
-          if (evt.sources) {
-            refs = evt.sources;
-            aiRefs.value = refs;
-          }
-        } catch {}
+    end = await readAiStream(resp, (evt) => {
+      if (typeof evt.text === "string" && evt.text) {
+        text += evt.text;
+        aiText.value = text;
       }
-    }
+      if (Array.isArray(evt.sources)) {
+        refs = evt.sources;
+        aiRefs.value = refs;
+      }
+    });
   } catch {
-    /* 중단·네트워크 오류 — 받은 데까지만 남긴다 */
-  } finally {
-    // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
-    if (!signal.aborted) {
-      aiLoading.value = false;
-      if (text) historyApi.patch(historyId, { ai: { text, refs } });
-    }
+    /* 중단·네트워크 오류 — 아래에서 가린다 */
   }
+  // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
+  if (signal.aborted) return;
+  aiLoading.value = false;
+  // 끝까지 받은 요약만 기록에 저장한다. 실패({error}·끊김)면 받은 글은 보이되 오류 문구를 잇지 않고 따로 보이며,
+  // 기록에 남기지 않아 다시 열면(applyPaperEntry) 다시 만든다
+  if (end.ok) {
+    if (text) void historyApi.patch(historyId, { ai: { text, refs } });
+  } else {
+    aiError.value = failureText(end, AI_SUMMARY_FAILED);
+  }
+}
+
+// [다시 시도] — 지금 결과(기록·검색어·논문)로 AI 요약을 처음부터 다시 받는다
+function retryAiSummary() {
+  const books = paperResult.value?.books;
+  if (!currentHistoryId.value || !books?.length) return;
+  const signal = beginRun();
+  aiText.value = "";
+  aiRefs.value = [];
+  void streamAiSummary(currentHistoryId.value, resultQuery.value, books, signal);
 }
 
 // ── 주소 기준 첫 복원 ─────────────────────────────────────────

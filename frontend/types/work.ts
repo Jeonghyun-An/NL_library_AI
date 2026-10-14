@@ -184,6 +184,8 @@ export interface ReadingView {
   excluded: ExcludedCandidate[];
   // 목차를 만든 뒤 고른 주제가 바뀌었다 — 목차가 없으면 false
   stale?: boolean;
+  // 이어가기가 담음으로 미리 넣은 채택 근거 수(지금 상태와 관계없이) — 그 전에 이어간 연구는 0
+  preselected?: number;
 }
 
 export interface OutlineGroup {
@@ -278,6 +280,9 @@ export interface ProposalView {
   topic_source?: { origin: TopicItem["origin"]; edited: boolean } | null;
   // 절 키 → 그 키의 마지막 section 생성(06e 서버부터 — 옛 응답엔 없다)
   section_gens?: Record<string, SectionGen>;
+  // 이어가기가 읽기 목록에 미리 담은 행 수(공개 부록용 — ReadingView.preselected 와 같은 셈: 지금 뺀 행 포함, 미리 담기
+  // 전에 이어간 연구는 0). 2026-10-14 서버부터 — 옛 응답엔 없다
+  preselected?: number;
 }
 
 // 인용 근거(GET …/sections/{key}/sources) — 그 절을 쓸 때 모델에 넘긴 근거 논문의 초록·원문 대목. 쪽은 0부터 센 저장값

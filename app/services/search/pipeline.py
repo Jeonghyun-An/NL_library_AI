@@ -19,6 +19,7 @@ from typing import AsyncGenerator, Callable
 import httpx
 
 from core.config import get_settings
+from services.llm_sse import sse_deltas
 from services.prompts import get_prompt
 from services.search.sse_helpers import process_reason_deltas
 from services.search.curator import curate_books, _parse_curation_result
@@ -150,6 +151,42 @@ async def search(
         )
 
 
+# Milvus 조건식의 큰따옴표 문자열에 그대로 넣는 도서 id 가 쓸 수 있는 글자. 소장(CNTS-…)·논문(KCI_FI…) id 뿐 아니라
+# 업로드 적재가 파일 이름을 id 로 쓰므로(api/book.py upload_and_ingest) 한글·공백·괄호도 받는다 — Milvus 문자열 리터럴
+# 안에서 글자 그대로 읽히지 않는 것은 문자열을 끝내는 따옴표, 이스케이프를 여는 역슬래시, 줄바꿈 같은 제어 문자뿐이다.
+# 작은따옴표는 큰따옴표 안에서는 글자 그대로지만 Milvus 가 작은따옴표 이스케이프를 바꿔 쓰는 단계가 있어 받지 않는다
+# (그런 id 는 상세에서 관련 자료 없이 404). $ 는 끝 줄바꿈을 통과시키므로 fullmatch 로 본다
+_SAFE_BOOK_ID = re.compile(r"[^\"'\\\x00-\x1f\x7f]+")
+
+
+def is_safe_book_id(cnts_id: str) -> bool:
+    return bool(_SAFE_BOOK_ID.fullmatch(cnts_id or ""))
+
+
+async def search_related_books(title: str, exclude_id: str, *, fetch_top_k: int) -> BookSearchResponse:
+    """소장자료 상세 '관련 자료 추천'의 후보 — 그 자료의 제목으로 도서를 찾되 자기 자신은 조건식에서 미리 뺀다.
+
+    사용자 검색(search)을 그대로 쓰면 긴 학위논문은 자기 본문 청크가 후보 창(top_k 6 → 180청크)을 거의 다 채워
+    (운영: 178/180) 묶은 결과가 자기 + 1권이 된다. 묶은 뒤에 자기를 빼면 창은 이미 자기로 차 있으므로 Milvus
+    조건식에서 뺀다(논문 상세의 paper_related.py 와 같은 방식).
+
+    재작성·날짜 필터 LLM 은 부르지 않는다 — 제목의 '初期'·'近代'가 오래된 순·최신 순 정렬로, '1999'가 연도 필터로
+    읽혀 관련 자료가 발행일순으로 잘리거나 0권이 됐다. 점수·리랭크·로그 부스트는 도서 모드(_search_book_mode)
+    그대로라 연관도의 뜻은 검색 결과 카드와 같다. 하한·자르기·응답 가볍게 하기는 호출자(api/book.py)가 한다.
+    """
+    if not is_safe_book_id(exclude_id):
+        raise ValueError(f"조건식에 넣을 수 없는 도서 id: {exclude_id!r}")
+    t0 = time.perf_counter()
+    dense_vecs, sparse_vecs = embed_texts([title], is_query=True)
+    expr = f'{_BOOK_EXPR} && book_id != "{exclude_id}"'
+    elapsed = (time.perf_counter() - t0) * 1000
+    return await _search_book_mode(
+        title, None, dense_vecs[0], sparse_vecs[0], fetch_top_k, True, elapsed,
+        meta_expr=expr,
+        metadata_filter=None,
+    )
+
+
 async def _search_chunk_mode(
     original: str,
     rewritten: str | None,
@@ -238,6 +275,14 @@ async def _search_chunk_mode(
     )
 
 
+def best_chunk_score(chunks: list[ChunkHit], *, default: float) -> float:
+    """도서 모드의 로그 부스트 전 원점수 — 본문 청크의 리랭크 점수(없으면 Milvus 점수) 최댓값, 본문 청크가 없으면 default.
+
+    _search_book_mode 는 이 값에 청크 수 로그 부스트를 얹어 best_score 로 쓴다. 관련 자료 하한(api/book.py)은 부스트가
+    긴 책을 끌어올리지 못하게 이 값도 본다."""
+    return max((c.rerank_score or c.score for c in chunks), default=default)
+
+
 async def _search_book_mode(
     original: str,
     rewritten: str | None,
@@ -310,7 +355,7 @@ async def _search_book_mode(
                 log.warning(f"[{book_id}] 도서 내 리랭킹 실패: {e}")
 
         # 리랭킹된 본문 청크 점수, 없으면 메타 청크 점수(best_raw)로 fallback
-        best = max((c.rerank_score or c.score for c in chunks), default=best_raw)
+        best = best_chunk_score(chunks, default=best_raw)
 
         # 다수 청크가 매칭될수록 도서 적합도가 높음 → 로그 스케일 부스팅
         # 1.0과의 간격을 줄이는 점근 방식: 원점수가 1.0이 아닌 한 100%로 포화되지 않음
@@ -366,7 +411,8 @@ async def stream_book_reason(
     book 객체는 호출자(엔드포인트)에서 미리 조회해 넘긴다.
 
     이벤트: {keywords}·{text}·{effect}(sse_helpers.process_reason_deltas) 뒤에 늘 [DONE]. LLM 호출이 실패하면
-    (httpx 연결·읽기 오류, 4xx·5xx 응답 등) [DONE] 앞에 {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을
+    (httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas) [DONE] 앞에
+    {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을
     보면 끝까지 받지 못한 것으로 읽는다.
     """
 
@@ -437,6 +483,7 @@ async def stream_book_reason(
         context_text=context_text,
     )
 
+    received = 0   # LLM 에서 받은 글 길이 — 실패 로그가 시작 전 실패인지 글 일부 뒤 실패인지 남긴다
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -458,25 +505,17 @@ async def stream_book_reason(
                 resp.raise_for_status()
 
                 async def _delta_gen():
-                    async for line in resp.aiter_lines():
-                        if not line.startswith("data: "):
-                            continue
-                        data = line[6:]
-                        if data.strip() == "[DONE]":
-                            return
-                        try:
-                            chunk = json.loads(data)
-                            delta = chunk["choices"][0]["delta"].get("content", "")
-                            if delta:
-                                yield delta
-                        except Exception:
-                            pass
+                    nonlocal received
+                    async for delta in sse_deltas(resp):
+                        received += len(delta)
+                        yield delta
 
                 async for event in process_reason_deltas(_delta_gen(), marc_keywords):
                     yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
     except Exception as e:
-        log.error(f"[{book_id}] 추천 이유 스트리밍 실패: {e}")
+        # 받은 글 — 키워드 줄(#KW:)·효과 구분자를 process_reason_deltas 가 걸러 내므로 화면에 간 글과 길이가 다를 수 있다
+        log.error("[%s] 추천 이유 스트리밍 실패(받은 글 %d자): %s: %s", book_id, received, type(e).__name__, e)
         yield f"data: {json.dumps({'error': REASON_STREAM_ERROR}, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"

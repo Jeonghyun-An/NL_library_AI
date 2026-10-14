@@ -35,7 +35,7 @@
       <strong class="rs-cite__title">{{ title }}</strong>
       <span v-if="meta" class="rs-cite__meta">{{ meta }}</span>
       <template v-if="current">
-        <span class="rs-cite__quote">{{ current.text }}</span>
+        <span class="rs-cite__quote">{{ passageText(current.text) }}</span>
         <span class="rs-cite__foot">
           <span>{{ pageLabel(current) }}</span>
           <span v-if="chunks.length > 1" class="rs-cite__pager">
@@ -67,6 +67,7 @@ import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload, ReportChunk, ReportEvidence } from "~/types/research";
 import { chunkListKey, citeLabel, metaLine, pageLabel, pdfPage } from "~/utils/citations";
 import { REPORT_JOB, detailUrl } from "~/utils/detailSource";
+import { passageText } from "~/utils/passageText";
 import { hideOnPointerLeave, stepChunk } from "~/utils/researchReport";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 

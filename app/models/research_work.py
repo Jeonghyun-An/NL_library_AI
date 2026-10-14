@@ -20,6 +20,8 @@ JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 
   research_reading.origin_ref     evidence: {"subq_idx": [int], "rank": {"0": int}, "chunks": {"0": [chunk_id]},
                                              "chunk_scores": {"0": {chunk_id: float}}, "verdict": {"0": str},
                                              "first_round": {"0": int}}  (06a)
+                                            + "preselected": true  — 이어가기가 담음으로 미리 넣은 행만
+                                              (reading_views.preselect, 2026-10-13 — 그 전 연구엔 없음)
                                   revived:  {"subq_idx": int, "round": int|null, "note": str}
                                   user:     {}
   research_proposals.outline      Outline | {}

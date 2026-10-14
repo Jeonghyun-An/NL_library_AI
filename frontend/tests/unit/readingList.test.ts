@@ -1,7 +1,13 @@
 // frontend/tests/unit/readingList.test.ts
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ExcludedCandidate, PaperMeta, PathChunk, ReadingItem, ReadingSubqPath, ReadingView } from "~/types/work";
 import {
+  GROUP_LABEL_MAX,
+  MIN_READING_FOR_OUTLINE,
+  READING_NOTE_MAX,
   candidateGroups,
   candidateLine,
   candidateNote,
@@ -14,6 +20,7 @@ import {
   outlineHint,
   pathLines,
   pathPdfTarget,
+  readingIntro,
   reorderPuts,
   sortedItems,
   withPositions,
@@ -71,6 +78,22 @@ function excluded(over: Partial<ExcludedCandidate> = {}): ExcludedCandidate {
   };
 }
 
+describe("서버 경계와 같은 값(app/services/research_work/shapes.py)", () => {
+  const shapes = readFileSync(fileURLToPath(new URL("../../../app/services/research_work/shapes.py", import.meta.url)), "utf8");
+  // 모듈 맨 앞의 `NAME = 정수` 한 줄 — 없으면 이름이 바뀐 것이라 테스트가 알아야 한다
+  function serverInt(name: string): number {
+    const m = shapes.match(new RegExp(`^${name}\\s*=\\s*(\\d+)\\b`, "m"));
+    if (!m) throw new Error(`shapes.py 에서 ${name} 을 찾지 못함`);
+    return Number(m[1]);
+  }
+
+  it("MIN_READING_FOR_OUTLINE·READING_NOTE_MAX·GROUP_LABEL_MAX", () => {
+    expect(MIN_READING_FOR_OUTLINE).toBe(serverInt("MIN_READING_FOR_OUTLINE"));
+    expect(READING_NOTE_MAX).toBe(serverInt("READING_NOTE_MAX"));
+    expect(GROUP_LABEL_MAX).toBe(serverInt("GROUP_LABEL_MAX"));
+  });
+});
+
 describe("funnelLine", () => {
   it("검토 → 채택 → 후보 → 담음을 잇고, 보고서 통계를 모르는 칸은 뺀다", () => {
     expect(funnelLine({ reviewed: 121, adopted: 48, candidates: 31, picked: 12 })).toBe("검토 121 → 채택 48 → 후보 31 → 담음 12");
@@ -89,6 +112,24 @@ describe("sortedItems", () => {
     ];
     expect(sortedItems(items).map((i) => i.cnts_id)).toEqual(["KCI_A", "KCI_B", "KCI_D", "KCI_E", "KCI_C"]);
     expect(items[0]!.cnts_id).toBe("KCI_D");
+  });
+
+  it("같은 순위면 대목 점수(하위질문 전부 중 가장 높은 값)가 높은 편이 먼저, 점수 없는 편은 뒤 — 서버 reading_order 와 같은 키", () => {
+    const scored = (cnts_id: string, subqs: ReadingSubqPath[], position: number | null = null) =>
+      row({ cnts_id, position, path: { subqs, revived: null, user: false } });
+    const chunk = (score: number | null): PathChunk => ({ ...CHUNK, score });
+    // app/tests/test_research_reading_api.py test_same_best_rank_goes_to_the_higher_chunk_score_then_id 와 같은 줄
+    const items = [
+      scored("C1", [subq({ rank: 1, chunks: [chunk(0.4)] })]),
+      scored("C2", [subq({ idx: 1, rank: 1, chunks: [chunk(0.9), chunk(0.3)] })]),
+      scored("C3", [subq({ rank: 2, chunks: [chunk(0.95)] }), subq({ idx: 1, rank: 1, chunks: [chunk(0.5)] })]),
+      scored("C4", [subq({ idx: 2, rank: 1 })]),
+      scored("C0", [subq({ idx: 2, rank: 1, chunks: [] })]),
+      scored("C9", [subq({ idx: 2, rank: 1, chunks: [chunk(null)] })]),
+      scored("C5", [subq({ rank: 9, chunks: [chunk(0.1)] })], 0),
+      scored("C6", [subq({ rank: 2, chunks: [chunk(0.99)] })]),
+    ];
+    expect(sortedItems(items).map((i) => i.cnts_id)).toEqual(["C5", "C3", "C2", "C1", "C0", "C4", "C9", "C6"]);
   });
 });
 
@@ -272,9 +313,85 @@ describe("canMakeOutline·outlineHint", () => {
   it("담음이 모자라면 몇 편인지, 주제가 없으면 주제를 먼저 고르라고 알린다", () => {
     const four = [...five.slice(0, 4), row({ cnts_id: "KCI_9", state: "candidate" })];
     expect(canMakeOutline(view(four))).toBe(false);
-    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상 담으면 보고서를 만들 수 있습니다");
+    // 미리 담은 여덟 편에서 빼다 보면 나오는 말이라 '5편 이상 담으면'(0 에서 담아 올라가는 말) 대신 '5편 이상이면'
+    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상이면 보고서를 만들 수 있습니다");
+    expect(outlineHint(view([]))).toBe("담은 논문이 0편입니다 — 5편 이상이면 보고서를 만들 수 있습니다");
     expect(canMakeOutline(view(five, { topic_id: null }))).toBe(false);
     expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다");
+  });
+});
+
+describe("최소 편수 문구 — 미리 담은 채로 시작하니 '담은 논문이 N편 이상이면' 꼴(규칙 5편은 서버 POST …/outline 409 와 같다)", () => {
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+  const read = (rel: string) => readFileSync(join(root, rel), "utf8");
+  // 화면 코드(.vue·.ts) 전부 — 테스트·빌드 산출물·의존성은 뺀다
+  function sourceFiles(dir: string): string[] {
+    return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) return sourceFiles(rel);
+      return /\.(vue|ts)$/.test(e.name) ? [rel] : [];
+    });
+  }
+  const files = ["components", "composables", "pages", "utils", "types"].flatMap(sourceFiles);
+
+  it("'N편 이상 담으면'(0 에서 담아 올라가는 말)과 숫자를 그대로 적은 'N편 이상'이 화면 코드에 남지 않는다", () => {
+    expect(files).toContain("components/work/ReadingStep.vue");
+    const left = files.filter((f) => /편 이상 담으면|\d편 이상/.test(read(f)));
+    expect(left).toEqual([]);
+  });
+
+  it("온보딩·보고서 단계 빈 목차 안내는 같은 꼴에 MIN_READING_FOR_OUTLINE 을 쓴다", () => {
+    expect(read("utils/workPhase.ts")).toContain("담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 [${MAKE_REPORT}]를 누를 수 있습니다.");
+    const proposal = read("components/work/ProposalStep.vue");
+    expect(proposal).toContain("참고문헌에 담은 논문이 {{ MIN_READING_FOR_OUTLINE }}편 이상이면 보고서를 만들 수 있습니다.");
+    expect(proposal).toMatch(/import \{[^}]*\bMIN_READING_FOR_OUTLINE\b[^}]*\} from "~\/utils\/readingList";/);
+  });
+});
+
+describe("readingIntro — 참고문헌 선택하기 머리 소개(승인 문구 2026-10-13)", () => {
+  const Q = "노인의 우울과 사회적 지지";
+  const DEEP_READ_LINE = "제목을 누르면 오른쪽에서 그 논문과 대화할 수 있습니다.";
+  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함). '8' 자리만 실제 미리 담은 수로 채운다
+  const approved = (n: number) =>
+    `보고서의 근거로 쓰인 논문 중 ${n}편을 미리 담아 두었습니다. 필요 없는 건 빼고, 더 넣고 싶은 논문은 담아 주세요.`;
+
+  it("미리 담았으면 승인 문구 뒤에 DeepRead 안내 — 수는 서버가 센 preselected(뺀 행도 센다)", () => {
+    expect(approved(8)).toBe(
+      "보고서의 근거로 쓰인 논문 중 8편을 미리 담아 두었습니다. 필요 없는 건 빼고, 더 넣고 싶은 논문은 담아 주세요.",
+    );
+    expect(readingIntro(view([], { preselected: 8 }), Q)).toBe(`${approved(8)} ${DEEP_READ_LINE}`);
+    // 채택 근거가 여덟 편보다 적으면 모두 담는다 — 그 수로 적는다
+    expect(readingIntro(view([], { preselected: 3 }), Q)).toBe(`${approved(3)} ${DEEP_READ_LINE}`);
+  });
+
+  it("미리 담지 않았으면(이 기능 전에 이어간 연구·이 칸을 모르는 응답) 옛 소개 그대로 — 미리 담았다고 하면 거짓이다", () => {
+    const old = `「${Q}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. ${DEEP_READ_LINE}`;
+    expect(readingIntro(view([], { preselected: 0 }), Q)).toBe(old);
+    expect(readingIntro(view([]), Q)).toBe(old);
+    expect(readingIntro(view([], { preselected: 0 }), Q, true)).toBe(old);
+  });
+
+  it("읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 '읽기 전용' 줄과 어긋난다", () => {
+    expect(readingIntro(view([], { preselected: 8 }), Q, true)).toBe(
+      `보고서의 근거로 쓰인 논문 중 8편을 미리 담아 두었습니다. ${DEEP_READ_LINE}`,
+    );
+    expect(readingIntro(view([], { preselected: 8 }), Q, false)).toBe(`${approved(8)} ${DEEP_READ_LINE}`);
+  });
+
+  it("읽기 목록을 아직 못 불러왔으면(null) 소개가 없다 — 수를 몰라 옛 소개를 보였다가 바꾸지 않는다", () => {
+    expect(readingIntro(null, Q)).toBeNull();
+    expect(readingIntro(null, Q, true)).toBeNull();
+  });
+
+  it("화면 머리는 이 함수 한 곳에서 소개를 받는다 — 따로 있던 미리 담음 한 줄(preselectNote)은 없앤다", () => {
+    const source = readFileSync(fileURLToPath(new URL("../../components/work/ReadingStep.vue", import.meta.url)), "utf8");
+    const util = readFileSync(fileURLToPath(new URL("../../utils/readingList.ts", import.meta.url)), "utf8");
+    expect(source).toMatch(/import \{[^}]*\breadingIntro\b[^}]*\} from "~\/utils\/readingList";/);
+    expect(source).toContain("readingIntro(reading.value, props.question, readOnly.value)");
+    expect(source).toMatch(/<p v-if="intro" class="rs-muted[^"]*">\{\{ intro \}\}<\/p>/);
+    expect(source).not.toMatch(/preselectNote|preselectText/);
+    expect(source).not.toContain("탐색의 채택 근거가 후보로 들어와 있습니다");
+    expect(util).not.toContain("preselectNote");
   });
 });
 

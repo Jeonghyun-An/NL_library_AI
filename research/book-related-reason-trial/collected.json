@@ -1,0 +1,1550 @@
+{
+  "collected_at": "2026-10-13 23:22:48",
+  "queries": [
+    {
+      "query": "조선시대 고전소설을 연구한 자료 찾아줘",
+      "search_api": {
+        "method": "POST",
+        "url": "http://192.168.12.57:92/api/books/search",
+        "body": {
+          "query": "조선시대 고전소설을 연구한 자료 찾아줘",
+          "mode": "book",
+          "top_k": 10,
+          "use_rewrite": true,
+          "use_rerank": true
+        },
+        "note": "frontend/pages/index.vue handleSearch 와 같은 본문. 스트리밍 아님(JSON 한 번에)",
+        "elapsed_s": 1.35,
+        "rewritten_query": "조선시대 소설 연구, 고전 소설 비평, 문학사 연구, 작품 해석, 주제 분석, 등장인물 연구, 시대적 배경, 사회 문화 반영",
+        "result_count": 16,
+        "results": [
+          {
+            "api_rank": 1,
+            "book_id": "CNTS-00052063539",
+            "title": "조선후기 세태소설 연구",
+            "best_score": 0.735,
+            "title_score": 0.24,
+            "content_score": 0.7068273440617321
+          },
+          {
+            "api_rank": 2,
+            "book_id": "CNTS-00052064428",
+            "title": "가정소설 작품세계의 시대적 변모",
+            "best_score": 0.6603,
+            "title_score": 0.1538,
+            "content_score": 0.6380564689826058
+          },
+          {
+            "api_rank": 3,
+            "book_id": "CNTS-00052063979",
+            "title": "조선후기 우화소설의 다층적 의미구현양상",
+            "best_score": 0.6436,
+            "title_score": 0.1212,
+            "content_score": 0.625428898667802
+          },
+          {
+            "api_rank": 4,
+            "book_id": "CNTS-00052063369",
+            "title": "조선 초기 소설의 갈래 교섭 양상",
+            "best_score": 0.6146,
+            "title_score": 0.1429,
+            "content_score": 0.5912256659085029
+          },
+          {
+            "api_rank": 5,
+            "book_id": "CNTS-00052064616",
+            "title": "조선조 가정소설 연구",
+            "best_score": 0.5805,
+            "title_score": 0.25,
+            "content_score": 0.533890576110694
+          },
+          {
+            "api_rank": 6,
+            "book_id": "CNTS-00052065073",
+            "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+            "best_score": 0.5255,
+            "title_score": 0.16,
+            "content_score": 0.4930331908249185
+          },
+          {
+            "api_rank": 7,
+            "book_id": "CNTS-00052063368",
+            "title": "韓國古典小說의 文體論的 硏究",
+            "best_score": 0.4943,
+            "title_score": 0.0,
+            "content_score": 0.4943193427749951
+          },
+          {
+            "api_rank": 8,
+            "book_id": "CNTS-00052063078",
+            "title": "옥루몽 연구",
+            "best_score": 0.4759,
+            "title_score": 0.1,
+            "content_score": 0.45406400240384615
+          },
+          {
+            "api_rank": 9,
+            "book_id": "CNTS-00052064735",
+            "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+            "best_score": 0.4715,
+            "title_score": 0.0,
+            "content_score": 0.47148907696985964
+          },
+          {
+            "api_rank": 10,
+            "book_id": "CNTS-00052063982",
+            "title": "韓國 漢文小說의 背景硏究",
+            "best_score": 0.4674,
+            "title_score": 0.0,
+            "content_score": 0.4674203953971974
+          },
+          {
+            "api_rank": 11,
+            "book_id": "CNTS-00052063987",
+            "title": "李光洙小說의 批評的 硏究",
+            "best_score": 0.3238,
+            "title_score": 0.0,
+            "content_score": 0.3238431326266801
+          },
+          {
+            "api_rank": 12,
+            "book_id": "CNTS-00052063400",
+            "title": "韓.中.越 傳奇小說의 比較 硏究",
+            "best_score": 0.3111,
+            "title_score": 0.0,
+            "content_score": 0.3110795454545455
+          },
+          {
+            "api_rank": 13,
+            "book_id": "CNTS-00052063063",
+            "title": "韓國 近代小說論 硏究",
+            "best_score": 0.3026,
+            "title_score": 0.0,
+            "content_score": 0.30257161458333326
+          },
+          {
+            "api_rank": 14,
+            "book_id": "CNTS-00052063268",
+            "title": "판소리系 小說의 形成과 展開樣相 硏究",
+            "best_score": 0.2495,
+            "title_score": 0.0,
+            "content_score": 0.2494895241477273
+          },
+          {
+            "api_rank": 15,
+            "book_id": "CNTS-00052064904",
+            "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+            "best_score": 0.2346,
+            "title_score": 0.1111,
+            "content_score": 0.198974609375
+          },
+          {
+            "api_rank": 16,
+            "book_id": "CNTS-00052064509",
+            "title": "韓國 仙道說話 硏究",
+            "best_score": 0.1781,
+            "title_score": 0.0,
+            "content_score": 0.1781005859375
+          }
+        ]
+      },
+      "top1": {
+        "cnts_id": "CNTS-00052063539",
+        "title": "조선후기 세태소설 연구",
+        "title_remainder": null,
+        "personal_author": "우창호",
+        "corporate_author": null,
+        "publisher": "慶北大學校",
+        "pub_date": "1997",
+        "doc_type": "literature",
+        "material_type": "텍스트",
+        "genre": "일반도서",
+        "source_format": "MARC+MODS",
+        "kdc": "813.5",
+        "subject": "조선후기 | 세태소설 | NOVELS | MANNERS",
+        "keyword": null,
+        "themes": "세태, 사회 변화, 신분제, 상업, 실학, 물질만능주의, 허위의식, 사회 부패, 풍자, 설화, 고전 소설 연구, 현대 소설 연구, 문학 유형론, 개념 정립, 연구 방법론",
+        "extracted_keywords": [],
+        "is_embedded": true,
+        "body_fields": {
+          "abstract": {
+            "len": 0,
+            "len_stripped": 0,
+            "head400": ""
+          },
+          "summary": {
+            "len": 591,
+            "len_stripped": 591,
+            "head400": "우창호의 \"조선후기 세태소설 연구\"는 조선후기 세태소설 연구의 현황을 비판적으로 검토하고 새로운 연구 방향을 제시하는 논문이다. 기존 연구들이 세태소설을 하나의 유형으로 묶어 연구하거나 특정 작품의 근원 설화에만 집중하는 경향을 보였으며, 세태소설 개념 자체가 명확하게 정립되지 않았다는 문제점을 지적한다. 논문은 고전 소설과 현대 소설의 세태소설 개념을 구분하고, 작품군 연구와 함께 세태소설의 전반적인 성격을 다루는 연구의 필요성을 강조한다. 특히, 조선후기 사회의 변화, 신분제의 동요, 상업의 발달, 실학 사상의 대두 등 사회경제적 배경과 예술계의 변화가 세태소설 형성에 미친 영향을 분석하며, 물질만능주의, 허위의식, 그리고 사회 부패를 풍자하는 작품들의 특징을 밝힌다. 또한, 세태소설이 설화적 요소를 차"
+          },
+          "introduction": {
+            "len": 734,
+            "len_stripped": 734,
+            "head400": "조선 후기, 격변하는 사회 속에서 피어난 이야기들을 깊이 있게 들여다보고 싶으신가요? 낡은 가치관은 무너지고 새로운 욕망이 싹트는 혼란스러운 시대, 그 시대 사람들의 삶과 고민을 생생하게 엿볼 수 있는 책이 있습니다. 바로 우창호 선생님의 ‘조선후기 세태소설 연구’입니다.\n\n이 책은 단순히 세태소설이라는 장르를 정의하는 데 그치지 않습니다. 기존 연구의 한계를 날카롭게 지적하며, 세태소설이 가진 다양한 가능성을 탐색합니다. 신분제의 동요, 상업의 발달, 몰락 양반의 등장, 실학 사상의 대두 등 당시 사회의 변화가 문학 작품에 어떻게 반영되었는지, 그리고 그 작품들이 우리에게 무엇을 말해주는지를 깊이 있게 분석합니다.\n\n혹시, 낡은 권위에 도전하며 새로운 삶을 개척하는 여성들의 이야기에 관심이 있으신가요? 아"
+          }
+        },
+        "plot_len": 778,
+        "read_effect_len": 305,
+        "server_pick_field": "summary",
+        "server_excerpt": "우창호의 \"조선후기 세태소설 연구\"는 조선후기 세태소설 연구의 현황을 비판적으로 검토하고 새로운 연구 방향을 제시하는 논문이다. 기존 연구들이 세태소설을 하나의 유형으로 묶어 연구하거나 특정 작품의 근원 설화에만 집중하는 경향을 보였으며, 세태소설 개념 자체가 명확하게 정립되지 않았다는 문제점을 지적한다. 논문은 고전 소설과 현대 소설의 세태소설 개념을 구분하고, 작품군 연구와 함께 세태소설의 전반적인 성격을 다루는 연구의 필요성을 강조한다. 특히, 조선후기 사회의 변화, 신분제의 동요, 상업의 발달, 실학 사상의 대두 등 사회경제적 배경과 예술계의 변화가 세태소설 형성에 미친 영향을 분석하며, 물질만능주의, 허위의식, 그리고 사회 부패를 풍자하는 작품들의 특징을 밝힌다. 또한, 세태소설이 설화적 요소를…",
+        "body_all_empty": false,
+        "card_ai_summary_len": 591,
+        "best_score": 0.735,
+        "recommendable": true
+      },
+      "related_api": {
+        "method": "POST",
+        "url": "http://192.168.12.57:92/api/books/search",
+        "body": {
+          "query": "조선후기 세태소설 연구",
+          "mode": "book",
+          "top_k": 6,
+          "use_rewrite": false,
+          "use_rerank": true
+        },
+        "note": "frontend/pages/books/[cnts_id].vue fetchRelatedBooks — 상세 title 로 검색, 자기 자신 제외, 앞 4권",
+        "elapsed_s": 0.93,
+        "result_count": 2,
+        "results": [
+          {
+            "api_rank": 1,
+            "book_id": "CNTS-00052063539",
+            "title": "조선후기 세태소설 연구",
+            "best_score": 1.0,
+            "title_score": 1.0,
+            "content_score": 0.9052816041147141
+          },
+          {
+            "api_rank": 2,
+            "book_id": "CNTS-00052063978",
+            "title": "1930年代 世態小說 硏究",
+            "best_score": 0.4656,
+            "title_score": 0.0,
+            "content_score": 0.465576171875
+          }
+        ],
+        "retry_check": {
+          "result_count": 2,
+          "results": [
+            [
+              "CNTS-00052063539",
+              1.0
+            ],
+            [
+              "CNTS-00052063978",
+              0.4656
+            ]
+          ],
+          "note": "같은 요청을 한 번 더 보내도 2건(1위 자신 + 1권) — 우연이 아니라 재현된다. 제목 질의라 후보 청크가 1위 책 자신의 청크로 채워져 다른 책이 거의 안 들어온다(app/services/search/pipeline.py _search_book_mode: search_by_book 의 청크 풀 → 책 묶음)"
+        }
+      },
+      "related": [
+        {
+          "cnts_id": "CNTS-00052063978",
+          "title": "1930年代 世態小說 硏究",
+          "title_remainder": null,
+          "personal_author": "박영순",
+          "corporate_author": null,
+          "publisher": "梨花女子大學校",
+          "pub_date": "1992",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "813.6",
+          "subject": "세태소설 | NOVEL | MANNER | 천구백삼십년대 | 1930년대",
+          "keyword": null,
+          "themes": "세태, 사회 비판, 현실 반영, 양식론, 메타픽션, 동시성, 교차 구성, 평면적 인물, 전지적 서술, 영화 기법",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 655,
+              "len_stripped": 655,
+              "head400": "박영순의 연구는 1930년대 한국 문학계에 등장한 ‘세태소설’이라는 장르를 심층적으로 분석한다. 기존 연구가 서구 이론에 기반하여 세태소설을 하위 장르로 정의하는 데 집중했던 것에 반해, 본 연구는 1930년대 비평가들이 사용했던 개념적 인식을 중심으로 세태소설을 양식적 개념으로 재정립하고자 한다. 세태소설은 동시적 시간 구조와 계열적 질서를 특징으로 하는 새로운 장편 소설 양식으로, 평면적 인물, 전지적 서술자, 영화 기법의 소설화 등 독특한 구성 방식을 통해 기존 소설의 틀을 벗어나 메타픽션의 가능성을 제시한다. 특히 ‘통시성의 공시성화’라는 독특한 구성 방식을 통해 일상적 삶의 다양성과 통일성을 포착하여 현실을 총체적으로 표현하며, 교차식 구성, 시간착오 구성 등을 통해 사회의 어두운 단면과 인간의 고"
+            },
+            "introduction": {
+              "len": 746,
+              "len_stripped": 746,
+              "head400": "안녕하세요, 도서관을 찾아주신 독자님. 오늘 소개해 드릴 책은 박영순 선생님의 \"1930년대 세태소설 연구\"입니다. 1930년대 문학에 관심 있는 분, 특히 한국 근대 소설의 흐름과 새로운 시도를 탐구하고 싶으신 분들께 이 책을 추천해 드리고 싶습니다.\n\n혹시 1930년대라는 시대적 배경이 주는 낯섦과, 그 시대의 문학이 어떤 고민과 시도를 보여주었을까 궁금했던 적 없으신가요? 이 책은 당시 문학계의 뜨거운 감자였던 '세태소설'이라는 장르를 깊이 있게 파고듭니다. 단순한 작품 분석을 넘어, '세태소설'이라는 개념 자체가 어떻게 형성되고 변화해왔는지, 그리고 그 의미가 무엇이었는지에 대한 통찰을 제공합니다.\n\n이 책을 읽으시면, 1930년대의 사회상을 반영하며 인간의 욕망과 고독을 섬세하게 그려낸 소설들이 어"
+            }
+          },
+          "plot_len": 759,
+          "read_effect_len": 281,
+          "server_pick_field": "summary",
+          "server_excerpt": "박영순의 연구는 1930년대 한국 문학계에 등장한 ‘세태소설’이라는 장르를 심층적으로 분석한다. 기존 연구가 서구 이론에 기반하여 세태소설을 하위 장르로 정의하는 데 집중했던 것에 반해, 본 연구는 1930년대 비평가들이 사용했던 개념적 인식을 중심으로 세태소설을 양식적 개념으로 재정립하고자 한다. 세태소설은 동시적 시간 구조와 계열적 질서를 특징으로 하는 새로운 장편 소설 양식으로, 평면적 인물, 전지적 서술자, 영화 기법의 소설화 등 독특한 구성 방식을 통해 기존 소설의 틀을 벗어나 메타픽션의 가능성을 제시한다. 특히 ‘통시성의 공시성화’라는 독특한 구성 방식을 통해 일상적 삶의 다양성과 통일성을 포착하여 현실을 총체적으로 표현하며, 교차식 구성, 시간착오 구성 등을 통해 사회의 어두운 단면과 인간의…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 655,
+          "related_api_rank": 2,
+          "display_rank": 1,
+          "best_score": 0.4656
+        }
+      ],
+      "related_shortfall": 3,
+      "related_supplement": [
+        {
+          "cnts_id": "CNTS-00052064428",
+          "title": "가정소설 작품세계의 시대적 변모",
+          "title_remainder": null,
+          "personal_author": "이원수",
+          "corporate_author": null,
+          "publisher": "慶北大學校",
+          "pub_date": "1992",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "813.5",
+          "subject": "가정소설 | 작품세계 | 시대적 | 변모 | CHRONICAL | CHANGE | WORLD | WORKS | DOMESTIC | NOVELS",
+          "keyword": null,
+          "themes": "다부제, 처첩 갈등, 계모-전처 자식 갈등, 여성 억압, 가부장제, 사회 규범 저항, 시대적 변모, 유형 연구, 소설사, 유교 윤리",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 593,
+              "len_stripped": 593,
+              "head400": "이원수의 논문 \"가정소설 작품세계의 시대적 변모\"는 한국 고전소설의 한 장르인 가정소설을 유형 연구의 대상으로 삼아, 그 형성 배경, 작품 세계, 작가 의식, 그리고 시대적 변모 과정을 심층적으로 분석한다. 기존 연구의 한계를 지적하며, 가정소설의 실상과 소설사적 위상을 명확히 규명하고자 하는 이 연구는 17세기 후반 등장하여 소설 시대를 연 가정소설의 유형적 특징과 변화 과정을 집중적으로 조명한다. 논문은 초기 가정소설이 다부제 사회의 가족 갈등, 특히 처-첩 갈등과 계모-전처 자식 갈등을 중심으로 형성되었으며, 이는 조선시대 사회적 특수성, 적서 차별, 축첩제 등의 복합적인 요인이 작용한 결과임을 밝힌다. 이후 가정소설은 시대 변화에 따라 통속화 경향을 보이기도 하고, 개화기에는 봉건적 가치관과 근대적 "
+            },
+            "introduction": {
+              "len": 674,
+              "len_stripped": 674,
+              "head400": "혹시 한국 고전소설, 그중에서도 가정소설에 관심 있으신가요? 콩쥐와 팔찌, 장화홍련전 같은 이야기 혹시 기억나시나요? 이 책, ‘가정소설 작품세계의 시대적 변모’는 바로 그런 가정소설이라는 특별한 장르를 깊이 있게 파고드는 연구서입니다.\n\n이 책은 단순히 이야기 속 인물들의 감정에 공감하는 것을 넘어, 왜 조선 시대에 가정소설이 등장했고, 시대가 변하면서 어떤 모습으로 변화해 왔는지, 그 사회적 배경과 문학사적 의미까지 꼼꼼하게 분석합니다. 특히 다부제 사회의 현실, 여성들의 고된 삶, 그리고 그 속에서 벌어지는 갈등들이 어떻게 소설 속에 녹아들었는지 살펴보는 과정은 정말 흥미롭습니다.\n\n혹시 한국 고전소설 연구에 관심 있는 분, 혹은 조선 시대의 사회와 문화를 좀 더 깊이 이해하고 싶으신 분이라면 이 책을"
+            }
+          },
+          "plot_len": 722,
+          "read_effect_len": 386,
+          "server_pick_field": "summary",
+          "server_excerpt": "이원수의 논문 \"가정소설 작품세계의 시대적 변모\"는 한국 고전소설의 한 장르인 가정소설을 유형 연구의 대상으로 삼아, 그 형성 배경, 작품 세계, 작가 의식, 그리고 시대적 변모 과정을 심층적으로 분석한다. 기존 연구의 한계를 지적하며, 가정소설의 실상과 소설사적 위상을 명확히 규명하고자 하는 이 연구는 17세기 후반 등장하여 소설 시대를 연 가정소설의 유형적 특징과 변화 과정을 집중적으로 조명한다. 논문은 초기 가정소설이 다부제 사회의 가족 갈등, 특히 처-첩 갈등과 계모-전처 자식 갈등을 중심으로 형성되었으며, 이는 조선시대 사회적 특수성, 적서 차별, 축첩제 등의 복합적인 요인이 작용한 결과임을 밝힌다. 이후 가정소설은 시대 변화에 따라 통속화 경향을 보이기도 하고, 개화기에는 봉건적 가치관과 근대적…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 593,
+          "screen_equivalent": false,
+          "source": "메인 검색 결과 2위(관련 자료 API 는 이 책을 주지 않았다)",
+          "main_search_rank": 2,
+          "best_score": 0.6603
+        },
+        {
+          "cnts_id": "CNTS-00052063979",
+          "title": "조선후기 우화소설의 다층적 의미구현양상",
+          "title_remainder": null,
+          "personal_author": "민찬",
+          "corporate_author": null,
+          "publisher": "서울大學校",
+          "pub_date": "1994",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "813.5",
+          "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+          "keyword": null,
+          "themes": "계층 갈등, 사회 비판, 권력 욕망, 인간 본성, 허영심, 위선, 몰락사족, 요호부민, 이행기적 사회, 우화 형식을 통한 사회 반영, 텍스트 변이, 수용미학, 판소리 전승, 사회적 불안정, 현실 인식",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 659,
+              "len_stripped": 659,
+              "head400": "이 논문은 조선 후기 우화소설을 심층적으로 분석하여 당시 사회의 불안정성과 변화, 그리고 사람들의 현실 인식과 갈등을 조명한다. 우화소설은 전래 동물을 소재로 활용하여 계층 갈등, 몰락사족과 요호부민의 이행기적 삶, 사회적 모순 등 당시의 주요 사회적 관심사를 간접적으로 드러낸다. 특히 '다룸' 구조를 통해 위계질서의 불안정성과 인간관계의 파괴된 모습을 상징적으로 보여주며, '생애자랑' 소재는 허영심과 권력 욕망을 비판적으로 드러낸다. <노섬상좌기>와 <녹처사연회>는 권위의 붕괴와 사회적 위선을, <두껍전>과 <서대주전>은 빈곤과 생존의 어려움, 사회적 불평등을 각각 보여준다. 작품들은 단순한 풍자를 넘어 사회의 부조리와 인간 본성에 대한 질문을 던지며, 다양한 이본의 존재는 수용자의 해석에 따라 작품의 의"
+            },
+            "introduction": {
+              "len": 703,
+              "len_stripped": 703,
+              "head400": "조선 후기 사회의 어두운 그림자와 그 속에서 피어난 사람들의 이야기를 깊이 있게 들여다보고 싶으신가요? 그렇다면 이 책, \"조선후기 우화소설의 다층적 의미 구현양상\"을 추천합니다.\n\n이 책은 단순한 동물을 주인공으로 내세운 우화소설 속에 숨겨진 사회적 메시지를 꿰뚫어보는 연구서입니다. 붕락한 몰락사족, 불안정한 계층 관계, 흉년으로 고통받는 백성들의 삶… 당대 사회의 불안과 갈등이 우화라는 재미있는 형식을 빌려 우리 눈앞에 펼쳐집니다. 특히, \"장끼전\", \"토끼전\", \"서대주전\" 등 익숙한 이야기들을 새로운 시각으로 분석하며, 그 속에 담긴 복잡한 의미들을 하나하나 풀어냅니다.\n\n이 책은 문학 연구에 익숙한 분들뿐만 아니라, 조선 후기 사회와 문화에 대한 깊이 있는 이해를 원하는 분들에게도 큰 도움이 될 것"
+            }
+          },
+          "plot_len": 774,
+          "read_effect_len": 439,
+          "server_pick_field": "summary",
+          "server_excerpt": "이 논문은 조선 후기 우화소설을 심층적으로 분석하여 당시 사회의 불안정성과 변화, 그리고 사람들의 현실 인식과 갈등을 조명한다. 우화소설은 전래 동물을 소재로 활용하여 계층 갈등, 몰락사족과 요호부민의 이행기적 삶, 사회적 모순 등 당시의 주요 사회적 관심사를 간접적으로 드러낸다. 특히 '다룸' 구조를 통해 위계질서의 불안정성과 인간관계의 파괴된 모습을 상징적으로 보여주며, '생애자랑' 소재는 허영심과 권력 욕망을 비판적으로 드러낸다. <노섬상좌기>와 <녹처사연회>는 권위의 붕괴와 사회적 위선을, <두껍전>과 <서대주전>은 빈곤과 생존의 어려움, 사회적 불평등을 각각 보여준다. 작품들은 단순한 풍자를 넘어 사회의 부조리와 인간 본성에 대한 질문을 던지며, 다양한 이본의 존재는 수용자의 해석에 따라 작품의…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 659,
+          "screen_equivalent": false,
+          "source": "메인 검색 결과 3위(관련 자료 API 는 이 책을 주지 않았다)",
+          "main_search_rank": 3,
+          "best_score": 0.6436
+        },
+        {
+          "cnts_id": "CNTS-00052063369",
+          "title": "조선 초기 소설의 갈래 교섭 양상",
+          "title_remainder": null,
+          "personal_author": "김근태",
+          "corporate_author": null,
+          "publisher": "崇實大學校",
+          "pub_date": "1997",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "813.5",
+          "subject": "조선 | 초기 | 소설 | 갈래 | 교섭 | 양상 | ASPECTS | GENRE | INTERMIXTURE | EARLY | PERIOD | NOVELS | CHOSUN",
+          "keyword": null,
+          "themes": "갈래 교섭, 문학사적 맥락, 내포의 원리, 융합의 원리, 전기소설, 가전, 몽유록, 작가 의식, 독자 의식, 현실 인식, 서사 구조",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 584,
+              "len_stripped": 584,
+              "head400": "김근태의 논문 “조선 초기 소설의 갈래 교섭 양상”은 조선 초기 소설이 다양한 문학 갈래와의 교섭을 통해 형성되고 발전해 온 과정을 심층적으로 분석한다. 기존 연구의 한계를 지적하며, 서사 갈래나 작품 관계에만 집중했던 시각에서 벗어나 문학사적 맥락 속에서 소설사를 고찰할 것을 제안한다. 특히 ‘내포의 원리’와 ‘융합의 원리’라는 개념을 제시하여 소설이 다른 갈래의 요소를 흡수하고 융합하며 새로운 형태를 갖추게 된 과정을 설명한다. 김시습, 신광한, 임제, 권필 등 주요 작가들의 작품을 중심으로 전기소설, 가전, 몽유록 등 다양한 유형 간의 관계를 분석하며, 작가들의 현실 인식 변화와 독자들의 소설 의식 변모가 서로 긴밀하게 연관되어 있음을 강조한다. 또한, 설화, 서정시, 교술 등 다양한 갈래와의 교섭이 "
+            },
+            "introduction": {
+              "len": 836,
+              "len_stripped": 836,
+              "head400": "조선 초기 소설, 그 매혹적인 세계에 발을 들여놓으시겠습니까? \n\n혹시, 묵직한 역사서보다는 흥미로운 이야기 속에 숨겨진 사회와 문화를 엿보고 싶으신 분, 혹은 문학 작품의 탄생 배경과 그 안에 숨겨진 의미를 깊이 파고들고 싶은 분이라면 이 책, ‘조선 초기 소설의 갈래 교섭 양상’은 분명히 당신에게 특별한 선물이 될 것입니다.\n\n이 책은 단순한 줄거리 소개를 넘어, 조선 초기 소설이라는 문학 장르가 어떻게 탄생하고 발전해 왔는지, 그 이면에는 어떤 시대적 배경과 작가들의 고민이 숨겨져 있는지 섬세하게 분석합니다. 김시습, 신광한, 임제, 권필 등 당대 문인들의 작품을 깊이 있게 탐구하며, 기존 연구의 한계를 극복하고 새로운 시각을 제시합니다. \n\n특히, ‘갈래 교섭’이라는 흥미로운 개념을 통해, 소설이 설"
+            }
+          },
+          "plot_len": 866,
+          "read_effect_len": 390,
+          "server_pick_field": "summary",
+          "server_excerpt": "김근태의 논문 “조선 초기 소설의 갈래 교섭 양상”은 조선 초기 소설이 다양한 문학 갈래와의 교섭을 통해 형성되고 발전해 온 과정을 심층적으로 분석한다. 기존 연구의 한계를 지적하며, 서사 갈래나 작품 관계에만 집중했던 시각에서 벗어나 문학사적 맥락 속에서 소설사를 고찰할 것을 제안한다. 특히 ‘내포의 원리’와 ‘융합의 원리’라는 개념을 제시하여 소설이 다른 갈래의 요소를 흡수하고 융합하며 새로운 형태를 갖추게 된 과정을 설명한다. 김시습, 신광한, 임제, 권필 등 주요 작가들의 작품을 중심으로 전기소설, 가전, 몽유록 등 다양한 유형 간의 관계를 분석하며, 작가들의 현실 인식 변화와 독자들의 소설 의식 변모가 서로 긴밀하게 연관되어 있음을 강조한다. 또한, 설화, 서정시, 교술 등 다양한 갈래와의 교섭이…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 584,
+          "screen_equivalent": false,
+          "source": "메인 검색 결과 4위(관련 자료 API 는 이 책을 주지 않았다)",
+          "main_search_rank": 4,
+          "best_score": 0.6146
+        }
+      ]
+    },
+    {
+      "query": "국가 재정 운용 계획에 관한 자료 찾아줘",
+      "search_api": {
+        "method": "POST",
+        "url": "http://192.168.12.57:92/api/books/search",
+        "body": {
+          "query": "국가 재정 운용 계획에 관한 자료 찾아줘",
+          "mode": "book",
+          "top_k": 10,
+          "use_rewrite": true,
+          "use_rerank": true
+        },
+        "note": "frontend/pages/index.vue handleSearch 와 같은 본문. 스트리밍 아님(JSON 한 번에)",
+        "elapsed_s": 1.29,
+        "rewritten_query": "국가 재정 정책, 예산 편성, 재정 지출, 재정 수입, 경제 정책, 거시 경제, 재정 안정화",
+        "result_count": 30,
+        "results": [
+          {
+            "api_rank": 1,
+            "book_id": "CNTS-00049655658",
+            "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+            "best_score": 0.6846,
+            "title_score": 0.2727,
+            "content_score": 0.6459874386825171
+          },
+          {
+            "api_rank": 2,
+            "book_id": "CNTS-00049655312",
+            "title": "2006~2010년 국가재정운용계획",
+            "best_score": 0.6729,
+            "title_score": 0.4667,
+            "content_score": 0.5978175709027451
+          },
+          {
+            "api_rank": 3,
+            "book_id": "CNTS-00049655670",
+            "title": "주요 재정개혁과제의 추진방향",
+            "best_score": 0.6216,
+            "title_score": 0.0741,
+            "content_score": 0.6100208916867629
+          },
+          {
+            "api_rank": 4,
+            "book_id": "CNTS-00049655448",
+            "title": "더 나은 미래를 위한 재정의 역할과 과제",
+            "best_score": 0.6072,
+            "title_score": 0.0667,
+            "content_score": 0.5964326713180662
+          },
+          {
+            "api_rank": 5,
+            "book_id": "CNTS-00049655693",
+            "title": "일본 - 재정건전화 및 중기재정계획",
+            "best_score": 0.5637,
+            "title_score": 0.1481,
+            "content_score": 0.5361882758557406
+          },
+          {
+            "api_rank": 6,
+            "book_id": "CNTS-00049655679",
+            "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+            "best_score": 0.5134,
+            "title_score": 0.0,
+            "content_score": 0.5133914147260181
+          },
+          {
+            "api_rank": 7,
+            "book_id": "CNTS-00049655779",
+            "title": "경제백서 1999",
+            "best_score": 0.4954,
+            "title_score": 0.0645,
+            "content_score": 0.48208143749857535
+          },
+          {
+            "api_rank": 8,
+            "book_id": "CNTS-00049655671",
+            "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+            "best_score": 0.4728,
+            "title_score": 0.0,
+            "content_score": 0.4728440504807693
+          },
+          {
+            "api_rank": 9,
+            "book_id": "CNTS-00049655651",
+            "title": "2003년도 예산개요 참고자료",
+            "best_score": 0.4707,
+            "title_score": 0.0714,
+            "content_score": 0.4551048576568668
+          },
+          {
+            "api_rank": 10,
+            "book_id": "CNTS-00049655745",
+            "title": "최근 경제동향과 2003년도 재정운영",
+            "best_score": 0.462,
+            "title_score": 0.129,
+            "content_score": 0.4326990198821852
+          },
+          {
+            "api_rank": 11,
+            "book_id": "CNTS-00049202839",
+            "title": "Diversity in Development",
+            "best_score": 0.4605,
+            "title_score": 0.0,
+            "content_score": 0.4605234466560698
+          },
+          {
+            "api_rank": 12,
+            "book_id": "CNTS-00049655488",
+            "title": "2005년도 세입세출예산안사항별설명서",
+            "best_score": 0.4093,
+            "title_score": 0.0465,
+            "content_score": 0.39813248486787867
+          },
+          {
+            "api_rank": 13,
+            "book_id": "CNTS-00049655891",
+            "title": "2002년도 예산개요 참고자료",
+            "best_score": 0.4068,
+            "title_score": 0.0714,
+            "content_score": 0.3893668956642292
+          },
+          {
+            "api_rank": 14,
+            "book_id": "CNTS-00049655748",
+            "title": "(경제위기 이후 5년간의)재정운영·공공개혁 성과와 과제",
+            "best_score": 0.4063,
+            "title_score": 0.1081,
+            "content_score": 0.37951455299614
+          },
+          {
+            "api_rank": 15,
+            "book_id": "CNTS-00049655048",
+            "title": "2001년도 예산안편성지침 및 기준",
+            "best_score": 0.3424,
+            "title_score": 0.1,
+            "content_score": 0.3149920843394183
+          },
+          {
+            "api_rank": 16,
+            "book_id": "CNTS-00049655466",
+            "title": "2005 나라살림",
+            "best_score": 0.3406,
+            "title_score": 0.0,
+            "content_score": 0.3405983664772728
+          },
+          {
+            "api_rank": 17,
+            "book_id": "CNTS-00049655899",
+            "title": "2002년 나라살림",
+            "best_score": 0.298,
+            "title_score": 0.0444,
+            "content_score": 0.2852778508036109
+          },
+          {
+            "api_rank": 18,
+            "book_id": "CNTS-00049655713",
+            "title": "개혁과 도약의 길",
+            "best_score": 0.2906,
+            "title_score": 0.0455,
+            "content_score": 0.2774804987410231
+          },
+          {
+            "api_rank": 19,
+            "book_id": "CNTS-00049655206",
+            "title": "2008년도 기금운용계획안 심의참고자료",
+            "best_score": 0.2876,
+            "title_score": 0.2424,
+            "content_score": 0.1492919921875
+          },
+          {
+            "api_rank": 20,
+            "book_id": "CNTS-00049655484",
+            "title": "변화 선도를 위한 기획예산처 혁신 핸드북",
+            "best_score": 0.2694,
+            "title_score": 0.0488,
+            "content_score": 0.2548828125
+          },
+          {
+            "api_rank": 21,
+            "book_id": "CNTS-00049655319",
+            "title": "2007년도 기금운용계획안 심의참고자료",
+            "best_score": 0.2616,
+            "title_score": 0.2424,
+            "content_score": 0.063232421875
+          },
+          {
+            "api_rank": 22,
+            "book_id": "CNTS-00049203536",
+            "title": "North Korea Development Report 2003/04",
+            "best_score": 0.2395,
+            "title_score": 0.0,
+            "content_score": 0.2395474346527583
+          },
+          {
+            "api_rank": 23,
+            "book_id": "CNTS-00049655326",
+            "title": "2006年度 基金現況",
+            "best_score": 0.2365,
+            "title_score": 0.0,
+            "content_score": 0.2364501953125
+          },
+          {
+            "api_rank": 24,
+            "book_id": "CNTS-00049655631",
+            "title": "(참여정부 100일)기획예산처의 역할과 성과",
+            "best_score": 0.2286,
+            "title_score": 0.0465,
+            "content_score": 0.2139892578125
+          },
+          {
+            "api_rank": 25,
+            "book_id": "CNTS-00049655903",
+            "title": "2002년도 공공기금운용계획서",
+            "best_score": 0.226,
+            "title_score": 0.2069,
+            "content_score": 0.060302734375
+          },
+          {
+            "api_rank": 26,
+            "book_id": "CNTS-00049202249",
+            "title": "(2006년 지역별 경제전망과 한국의 대외경제정책 방향)EU",
+            "best_score": 0.1933,
+            "title_score": 0.1224,
+            "content_score": 0.1517333984375
+          },
+          {
+            "api_rank": 27,
+            "book_id": "CNTS-00049655768",
+            "title": "재정연방주의와 연방예산의 삭감",
+            "best_score": 0.1902,
+            "title_score": 0.1081,
+            "content_score": 0.15355335582386376
+          },
+          {
+            "api_rank": 28,
+            "book_id": "CNTS-00049655741",
+            "title": "2003년 나라살림",
+            "best_score": 0.1681,
+            "title_score": 0.0588,
+            "content_score": 0.1480712890625
+          },
+          {
+            "api_rank": 29,
+            "book_id": "CNTS-00049655314",
+            "title": "2007년 나라살림 함께가는 활기찬 미래에 투자합니다",
+            "best_score": 0.1548,
+            "title_score": 0.0,
+            "content_score": 0.15478515625
+          },
+          {
+            "api_rank": 30,
+            "book_id": "CNTS-00049204004",
+            "title": "세계화와 개방정책",
+            "best_score": 0.1338,
+            "title_score": 0.0625,
+            "content_score": 0.11163330078125
+          }
+        ]
+      },
+      "top1": {
+        "cnts_id": "CNTS-00049655658",
+        "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+        "title_remainder": "A Macroeconomic Perspective",
+        "personal_author": null,
+        "corporate_author": "기획예산처",
+        "publisher": "기획예산처",
+        "pub_date": "----",
+        "doc_type": "policy",
+        "material_type": "텍스트",
+        "genre": "일반도서",
+        "source_format": "MODS",
+        "kdc": "329",
+        "subject": null,
+        "keyword": null,
+        "themes": null,
+        "extracted_keywords": [],
+        "is_embedded": true,
+        "body_fields": {
+          "abstract": {
+            "len": 0,
+            "len_stripped": 0,
+            "head400": ""
+          },
+          "summary": {
+            "len": 982,
+            "len_stripped": 982,
+            "head400": "본 문서는 2003년 IMF 보고서를 바탕으로 한국의 예산 편성 및 집행 과정에서 나타나는 거시경제적 문제점을 진단하고, 재정 건전성 확보와 거시경제 정책 효율성 제고를 위한 개선 방안을 모색하는 것을 목적으로 한다. 규율 대상은 한국의 예산 편성 및 집행 시스템 전반이며, 특히 거시경제적 관점에서 정책 효과를 분석하고 개선하는 데 초점을 맞춘다.\n\n주요 규정 사항은 한국 재정 운영이 재정적자와 공공부채에 대한 저항성이 강하지만, 복잡한 예산 구조와 부족한 투명성으로 거시경제 정책 도구로서 효율성이 떨어진다는 점을 지적한다. 성과주의 예산 편성과 재정 건전화 특별법 도입에도 불구하고 자동 안정 장치가 미흡하고, 예산 집행 결과와 예산안 간 차이가 커 정책 효과가 불확실하다. 재정 지출은 GDP 대비 낮은 수"
+          },
+          "introduction": {
+            "len": 892,
+            "len_stripped": 892,
+            "head400": "안녕하세요, 손님. 혹시 요즘 경제 흐름이나 정부 정책에 대해 좀 더 깊이 있게 알고 싶으신가요? 그렇다면 이 책, ‘거시경제적 관점에서 본 한국의 예산편성 및 집행’ 한 번 살펴보시겠어요. 겉보기엔 조금 딱딱해 보일 수도 있지만, 사실 우리 삶과 떼려야 뗄 수 없는 이야기들을 담고 있답니다.\n\n이 책은 경제학을 전공했거나, 정부 기관에서 일하시는 분들께 특히 유용할 것 같아요. 하지만 단순히 이론적인 내용만 다루는 건 아니에요. 2003년 IMF 보고서를 시작으로, 한국의 예산 편성 방식과 집행 과정에서 드러나는 문제점들을 날카롭게 지적하고 있거든요. 복잡한 예산 구조, 부족한 투명성, 그리고 실제 경기 상황에 제대로 대응하지 못하는 재정 정책의 한계를 짚어내면서, 우리 경제가 앞으로 어떻게 나아가야 할지"
+          }
+        },
+        "plot_len": 887,
+        "read_effect_len": 405,
+        "server_pick_field": "summary",
+        "server_excerpt": "본 문서는 2003년 IMF 보고서를 바탕으로 한국의 예산 편성 및 집행 과정에서 나타나는 거시경제적 문제점을 진단하고, 재정 건전성 확보와 거시경제 정책 효율성 제고를 위한 개선 방안을 모색하는 것을 목적으로 한다. 규율 대상은 한국의 예산 편성 및 집행 시스템 전반이며, 특히 거시경제적 관점에서 정책 효과를 분석하고 개선하는 데 초점을 맞춘다.\n\n주요 규정 사항은 한국 재정 운영이 재정적자와 공공부채에 대한 저항성이 강하지만, 복잡한 예산 구조와 부족한 투명성으로 거시경제 정책 도구로서 효율성이 떨어진다는 점을 지적한다. 성과주의 예산 편성과 재정 건전화 특별법 도입에도 불구하고 자동 안정 장치가 미흡하고, 예산 집행 결과와 예산안 간 차이가 커 정책 효과가 불확실하다. 재정 지출은 GDP 대비 낮은…",
+        "body_all_empty": false,
+        "card_ai_summary_len": 982,
+        "best_score": 0.6846,
+        "recommendable": true
+      },
+      "related_api": {
+        "method": "POST",
+        "url": "http://192.168.12.57:92/api/books/search",
+        "body": {
+          "query": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+          "mode": "book",
+          "top_k": 6,
+          "use_rewrite": false,
+          "use_rerank": true
+        },
+        "note": "frontend/pages/books/[cnts_id].vue fetchRelatedBooks — 상세 title 로 검색, 자기 자신 제외, 앞 4권",
+        "elapsed_s": 0.95,
+        "result_count": 18,
+        "results": [
+          {
+            "api_rank": 1,
+            "book_id": "CNTS-00049655658",
+            "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+            "best_score": 1.0,
+            "title_score": 1.0,
+            "content_score": 0.9009587316352831
+          },
+          {
+            "api_rank": 2,
+            "book_id": "CNTS-00049655448",
+            "title": "더 나은 미래를 위한 재정의 역할과 과제",
+            "best_score": 0.6341,
+            "title_score": 0.0,
+            "content_score": 0.6340650431211865
+          },
+          {
+            "api_rank": 3,
+            "book_id": "CNTS-00049655779",
+            "title": "경제백서 1999",
+            "best_score": 0.554,
+            "title_score": 0.08,
+            "content_score": 0.5392717633928571
+          },
+          {
+            "api_rank": 4,
+            "book_id": "CNTS-00049655745",
+            "title": "최근 경제동향과 2003년도 재정운영",
+            "best_score": 0.5491,
+            "title_score": 0.0571,
+            "content_score": 0.53857421875
+          },
+          {
+            "api_rank": 5,
+            "book_id": "CNTS-00049655891",
+            "title": "2002년도 예산개요 참고자료",
+            "best_score": 0.5324,
+            "title_score": 0.0625,
+            "content_score": 0.5204095681947811
+          },
+          {
+            "api_rank": 6,
+            "book_id": "CNTS-00049655312",
+            "title": "2006~2010년 국가재정운용계획",
+            "best_score": 0.5299,
+            "title_score": 0.0,
+            "content_score": 0.529916093549816
+          },
+          {
+            "api_rank": 7,
+            "book_id": "CNTS-00049655670",
+            "title": "주요 재정개혁과제의 추진방향",
+            "best_score": 0.5005,
+            "title_score": 0.0,
+            "content_score": 0.5004507211538461
+          },
+          {
+            "api_rank": 8,
+            "book_id": "CNTS-00049655671",
+            "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+            "best_score": 0.4751,
+            "title_score": 0.0,
+            "content_score": 0.47505244357133114
+          },
+          {
+            "api_rank": 9,
+            "book_id": "CNTS-00049655651",
+            "title": "2003년도 예산개요 참고자료",
+            "best_score": 0.4599,
+            "title_score": 0.0625,
+            "content_score": 0.4460923753019784
+          },
+          {
+            "api_rank": 10,
+            "book_id": "CNTS-00049655360",
+            "title": "2006년도 세출예산 집행지침",
+            "best_score": 0.4072,
+            "title_score": 0.125,
+            "content_score": 0.3760197239847588
+          },
+          {
+            "api_rank": 11,
+            "book_id": "CNTS-00049655792",
+            "title": "재정집행특별점검단 제8차 회의 개최",
+            "best_score": 0.3918,
+            "title_score": 0.0588,
+            "content_score": 0.377197265625
+          },
+          {
+            "api_rank": 12,
+            "book_id": "CNTS-00049655713",
+            "title": "개혁과 도약의 길",
+            "best_score": 0.3905,
+            "title_score": 0.0526,
+            "content_score": 0.37744140625
+          },
+          {
+            "api_rank": 13,
+            "book_id": "CNTS-00049203536",
+            "title": "North Korea Development Report 2003/04",
+            "best_score": 0.3554,
+            "title_score": 0.0,
+            "content_score": 0.3553501456200234
+          },
+          {
+            "api_rank": 14,
+            "book_id": "CNTS-00049655631",
+            "title": "(참여정부 100일)기획예산처의 역할과 성과",
+            "best_score": 0.3547,
+            "title_score": 0.0541,
+            "content_score": 0.3403764204545455
+          },
+          {
+            "api_rank": 15,
+            "book_id": "CNTS-00049655693",
+            "title": "일본 - 재정건전화 및 중기재정계획",
+            "best_score": 0.3482,
+            "title_score": 0.0,
+            "content_score": 0.34818041773823827
+          },
+          {
+            "api_rank": 16,
+            "book_id": "CNTS-00049204001",
+            "title": "북핵 해결 이후 국제사회의 대북 경제지원 활성화 방안",
+            "best_score": 0.2958,
+            "title_score": 0.05,
+            "content_score": 0.2814135864937102
+          },
+          {
+            "api_rank": 17,
+            "book_id": "CNTS-00049655466",
+            "title": "2005 나라살림",
+            "best_score": 0.278,
+            "title_score": 0.0,
+            "content_score": 0.27800734685336015
+          },
+          {
+            "api_rank": 18,
+            "book_id": "CNTS-00049655314",
+            "title": "2007년 나라살림 함께가는 활기찬 미래에 투자합니다",
+            "best_score": 0.0969,
+            "title_score": 0.0,
+            "content_score": 0.09686279296875
+          }
+        ]
+      },
+      "related": [
+        {
+          "cnts_id": "CNTS-00049655448",
+          "title": "더 나은 미래를 위한 재정의 역할과 과제",
+          "title_remainder": null,
+          "personal_author": null,
+          "corporate_author": "기획예산처",
+          "publisher": "기획예산처",
+          "pub_date": "----",
+          "doc_type": "policy",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MODS",
+          "kdc": "329",
+          "subject": null,
+          "keyword": null,
+          "themes": null,
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 1087,
+              "len_stripped": 1087,
+              "head400": "본 문서는 기획예산처가 재정의 역할과 기능을 재정립하고자 하는 내용을 담고 있다. 국민 기대와 전문가 의견을 반영하여 국가 재원을 장기적 관점에서 전략적으로 배분하고, 국민 기본 수요 충족, 형평 증진, 경제 안정적 성장 지원, 성과 중심의 재정 운영, 투명성 및 혁신 활성화를 목표로 한다.\n\n주요 규정 사항은 국가재정운용계획 합의 도출, 세출 구조조정, 균형발전 영향평가 제도 도입, 부처별 중장기 투자계획과 국가재정운용계획 연계 강화, 복지지출 확대 및 성장잠재력 저하 방지를 위한 구조개혁 병행 추진 등이다. 특히, 재정사업 투자 시 균형발전에 미치는 영향을 분석하고, 지자체 성과평가 및 R&D 비중 확대, 차등보조율 도입 등을 통해 지역 간 격차 해소를 도모한다.\n\n적용 대상은 중앙정부와 지방정부의 산하"
+            },
+            "introduction": {
+              "len": 859,
+              "len_stripped": 859,
+              "head400": "안녕하세요, 도서관을 찾아주신 분. 오늘 소개해 드릴 책은 조금 독특할 것 같아요. 바로 기획예산처에서 발간한 \"더 나은 미래를 위한 재정의 역할과 과제\"라는 보고서입니다. \n\n혹시 ‘국가 예산’이라는 단어에 살짝 부담을 느끼셨을 수도 있겠지만, 이 책은 딱딱한 경제 용어만 나열한 그런 책이 아니에요. 우리 삶과 떼려야 뗄 수 없는 예산, 즉 국가 재정이 어떻게 흘러가고, 앞으로 어떻게 변화해야 하는지에 대한 고민과 비전을 담고 있습니다.\n\n이 책은 특히, 우리 사회의 미래에 대해 관심이 많고, 더 나은 세상을 만들기 위해 어떤 노력이 필요한지 생각하는 분들께 추천하고 싶어요. 예를 들어, 아이를 키우는 부모님이라면 교육, 보육, 주거 등 국민 기본 수요에 대한 투자가 어떻게 이루어지는지, 사회 초년생이라면"
+            }
+          },
+          "plot_len": 791,
+          "read_effect_len": 391,
+          "server_pick_field": "summary",
+          "server_excerpt": "본 문서는 기획예산처가 재정의 역할과 기능을 재정립하고자 하는 내용을 담고 있다. 국민 기대와 전문가 의견을 반영하여 국가 재원을 장기적 관점에서 전략적으로 배분하고, 국민 기본 수요 충족, 형평 증진, 경제 안정적 성장 지원, 성과 중심의 재정 운영, 투명성 및 혁신 활성화를 목표로 한다.\n\n주요 규정 사항은 국가재정운용계획 합의 도출, 세출 구조조정, 균형발전 영향평가 제도 도입, 부처별 중장기 투자계획과 국가재정운용계획 연계 강화, 복지지출 확대 및 성장잠재력 저하 방지를 위한 구조개혁 병행 추진 등이다. 특히, 재정사업 투자 시 균형발전에 미치는 영향을 분석하고, 지자체 성과평가 및 R&D 비중 확대, 차등보조율 도입 등을 통해 지역 간 격차 해소를 도모한다.\n\n적용 대상은 중앙정부와 지방정부의…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 1087,
+          "related_api_rank": 2,
+          "display_rank": 1,
+          "best_score": 0.6341
+        },
+        {
+          "cnts_id": "CNTS-00049655779",
+          "title": "경제백서 1999",
+          "title_remainder": "외환위기 극복과 새천년 대비",
+          "personal_author": null,
+          "corporate_author": "재정경제부",
+          "publisher": "재정경제부",
+          "pub_date": "1999",
+          "doc_type": "policy",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MODS",
+          "kdc": "329",
+          "subject": null,
+          "keyword": null,
+          "themes": null,
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 1001,
+              "len_stripped": 1001,
+              "head400": "## 경제백서 1999 문서 요약\n\n**목적 및 규율 대상:** 1999년 경제백서는 외환위기 극복과 새천년 대비를 목표로 작성되었으며, 경제 전반에 적용된다. 1998년 마이너스 성장률을 기록했던 한국 경제가 1999년 10% 성장률을 기록하며 회복세를 보인 상황을 종합적으로 평가하고, 지속적인 구조개혁을 통해 국제경쟁질서에 능동적으로 대처하는 경제 시스템 구축을 강조한다.\n\n**주요 규정 사항 및 핵심 조항:** 금융, 기업, 노동, 공공부문 구조조정 추진, 투명한 시장경제 질서 확립, 지식집약화 경제 구축, 사회안전망 강화, WTO 협상 참여 등이 주요 내용이다. 특히 금융구조조정은 금융기관 부실 정리, 공적자금 투입, 대마불사 원칙 적용 등을 통해 추진되었으며, 기업 구조조정은 자율협상 및 워크아웃을"
+            },
+            "introduction": {
+              "len": 814,
+              "len_stripped": 814,
+              "head400": "안녕하세요. 공공도서관 사서입니다. 혹시 1999년의 대한민국 경제 상황에 대해 깊이 있게 알고 싶으신가요? 아니면, IMF 외환 위기 극복 과정과 그 이후의 경제 회복 과정을 생생하게 엿보고 싶으신가요? 그렇다면 이 책, \"경제백서 1999\"를 추천해 드립니다.\n\n이 책은 당시 재정경제부가 발행한 공식 보고서로, 1999년 한국 경제의 상황을 종합적으로 평가하고, 미래를 전망하는 내용을 담고 있습니다. 특히 1998년의 고통스러운 경제 침체기를 겪고, 1999년 10%라는 놀라운 성장률을 기록하며 회복세를 보였던 시기를 생생하게 담고 있어, 경제 흐름을 이해하는 데 큰 도움이 될 것입니다.\n\n이 책은 단순히 숫자를 나열하는 것이 아니라, 외환 위기 극복을 위한 정부의 노력, 구조 개혁의 추진 과정, 그리고"
+            }
+          },
+          "plot_len": 712,
+          "read_effect_len": 339,
+          "server_pick_field": "summary",
+          "server_excerpt": "## 경제백서 1999 문서 요약\n\n**목적 및 규율 대상:** 1999년 경제백서는 외환위기 극복과 새천년 대비를 목표로 작성되었으며, 경제 전반에 적용된다. 1998년 마이너스 성장률을 기록했던 한국 경제가 1999년 10% 성장률을 기록하며 회복세를 보인 상황을 종합적으로 평가하고, 지속적인 구조개혁을 통해 국제경쟁질서에 능동적으로 대처하는 경제 시스템 구축을 강조한다.\n\n**주요 규정 사항 및 핵심 조항:** 금융, 기업, 노동, 공공부문 구조조정 추진, 투명한 시장경제 질서 확립, 지식집약화 경제 구축, 사회안전망 강화, WTO 협상 참여 등이 주요 내용이다. 특히 금융구조조정은 금융기관 부실 정리, 공적자금 투입, 대마불사 원칙 적용 등을 통해 추진되었으며, 기업 구조조정은 자율협상 및…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 1001,
+          "related_api_rank": 3,
+          "display_rank": 2,
+          "best_score": 0.554
+        },
+        {
+          "cnts_id": "CNTS-00049655745",
+          "title": "최근 경제동향과 2003년도 재정운영",
+          "title_remainder": null,
+          "personal_author": null,
+          "corporate_author": "기획예산처",
+          "publisher": "기획예산처",
+          "pub_date": "2002",
+          "doc_type": "policy",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MODS",
+          "kdc": "329",
+          "subject": null,
+          "keyword": null,
+          "themes": null,
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 950,
+              "len_stripped": 950,
+              "head400": "본 문서는 1997년 외환위기 극복 노력과 2000년대 초 경기 침체 대응 과정에서 추진된 경제 정책들을 검토하고, 2003년도 재정 운영 상황을 종합적으로 파악하여 경제 불안 요인을 진단하는 것을 목적으로 한다. 규율 대상은 주가, 가계대출, 부동산 가격 등 경제 전반의 상황이며, 기업과 소비자의 심리 위축에 대한 내용이 적용 범위에 포함된다.\n\n주요 규정 사항은 거시경제 점검을 통한 신축적 대응으로 안정성장과 경제체질 개선을 목표로 하며, 내수, 수출, 투자를 지원하고 태풍피해 추경 집행, 시장 불안 심리 확산 방지 등을 포함한다. 핵심 조항으로는 연기금 주식투자 확대, 장기투자 세제혜택 강화, 가계대출 관리 강화, 부동산 투기 방지, 금융·기업·공공·노사 개혁 마무리 등이 있다. 2003년 예산은 11"
+            },
+            "introduction": {
+              "len": 879,
+              "len_stripped": 879,
+              "head400": "안녕하세요, 도서관을 찾아주신 분. 혹시 2000년대 초반, 한국 경제가 정말 힘든 시기를 겪었지만, 어떻게 극복해 나갔는지 궁금하신가요? 아니면, 지금의 경제 상황을 이해하고, 앞으로 어떤 방향으로 나아갈지 고민하고 계신가요?\n\n그렇다면 이 책, '최근 경제동향과 2003년도 재정운영'이 조금 특별한 도움을 줄 수 있을 것 같아요. 1997년 외환위기 이후 힘든 시간을 겪었던 한국 경제가, 2003년 균형재정을 달성하고 6%의 경제 성장률을 기록하며 다시 일어설 수 있었던 과정이 담겨 있거든요.\n\n이 책은 딱딱한 경제 용어의 나열이 아니라, 당시 정부가 어떤 문제의식을 가지고 어떤 정책들을 펼쳤는지, 그리고 그 결과가 어떠했는지를 생생하게 보여줍니다. 특히, 기업과 가계의 심리 위축을 막기 위해 어떤 노력"
+            }
+          },
+          "plot_len": 773,
+          "read_effect_len": 463,
+          "server_pick_field": "summary",
+          "server_excerpt": "본 문서는 1997년 외환위기 극복 노력과 2000년대 초 경기 침체 대응 과정에서 추진된 경제 정책들을 검토하고, 2003년도 재정 운영 상황을 종합적으로 파악하여 경제 불안 요인을 진단하는 것을 목적으로 한다. 규율 대상은 주가, 가계대출, 부동산 가격 등 경제 전반의 상황이며, 기업과 소비자의 심리 위축에 대한 내용이 적용 범위에 포함된다.\n\n주요 규정 사항은 거시경제 점검을 통한 신축적 대응으로 안정성장과 경제체질 개선을 목표로 하며, 내수, 수출, 투자를 지원하고 태풍피해 추경 집행, 시장 불안 심리 확산 방지 등을 포함한다. 핵심 조항으로는 연기금 주식투자 확대, 장기투자 세제혜택 강화, 가계대출 관리 강화, 부동산 투기 방지, 금융·기업·공공·노사 개혁 마무리 등이 있다. 2003년 예산은…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 950,
+          "related_api_rank": 4,
+          "display_rank": 3,
+          "best_score": 0.5491
+        },
+        {
+          "cnts_id": "CNTS-00049655891",
+          "title": "2002년도 예산개요 참고자료",
+          "title_remainder": null,
+          "personal_author": null,
+          "corporate_author": "기획예산처",
+          "publisher": "기획예산처",
+          "pub_date": "2002",
+          "doc_type": "policy",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MODS",
+          "kdc": "329",
+          "subject": null,
+          "keyword": null,
+          "themes": null,
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 1175,
+              "len_stripped": 1175,
+              "head400": "2002년도 예산개요 참고자료는 기획예산처에서 작성한 자료로, 2002년도 세입세출 예산 규모, 세입 및 세출 내역, 통합예산, 공무원 정원 및 복급, 기타 직보수, 차량 및 선박 관련 경비, 보조금 및 출연금, 정부투자출자기관 현황, 특별회계 규모 및 개요 등 예산 전반에 대한 정보를 담고 있습니다. 예산 집행의 투명성 확보와 운영 효율성 증진을 목표로 기능별, 성질별 세출 예산 분류를 통해 예산 집행 현황을 제시하고, 주요 경제 지표 및 연차별 재정 지표를 제공합니다.\n\n주요 규정 사항은 기관별 예산 배정 및 집행이며, 기관별 예산 현황은 일반재원, 정부채, 외국차입금별로 세분화하여 관리됩니다. 총 예산 규모는 10조 4,164억 원으로, 인건비와 물건비가 큰 비중을 차지하며, 방위비, 교육비, 사회개발"
+            },
+            "introduction": {
+              "len": 798,
+              "len_stripped": 798,
+              "head400": "안녕하세요, 도서관을 찾아주신 분. 혹시 2002년의 대한민국 예산에 대해 궁금하신가요? 아니면, 국가 재정 운영의 큰 그림을 한눈에 살펴보고 싶으신가요? 그렇다면 이 자료를 추천해 드립니다.\n\n이 책, 정확히는 ‘2002년도 예산 개요 참고자료’는 기획예산처에서 발행한 자료로, 2002년 한 해 동안 국가 예산이 어떻게 편성되고 집행되었는지 자세하게 보여줍니다. \n\n혹시 경제학을 전공하시는 분이나, 정책 결정 과정에 관심 있는 분이라면 이 자료는 매우 유용한 참고자료가 될 겁니다. 물론, 공무원 시험을 준비하시는 분들에게도 재정 관련 지식을 쌓는 데 큰 도움이 될 거예요. \n\n이 자료를 통해 2002년 당시 우리나라의 주요 경제 지표와 재정 지표를 확인하고, 어떤 분야에 예산이 집중되었는지 파악할 수 있습"
+            }
+          },
+          "plot_len": 778,
+          "read_effect_len": 319,
+          "server_pick_field": "summary",
+          "server_excerpt": "2002년도 예산개요 참고자료는 기획예산처에서 작성한 자료로, 2002년도 세입세출 예산 규모, 세입 및 세출 내역, 통합예산, 공무원 정원 및 복급, 기타 직보수, 차량 및 선박 관련 경비, 보조금 및 출연금, 정부투자출자기관 현황, 특별회계 규모 및 개요 등 예산 전반에 대한 정보를 담고 있습니다. 예산 집행의 투명성 확보와 운영 효율성 증진을 목표로 기능별, 성질별 세출 예산 분류를 통해 예산 집행 현황을 제시하고, 주요 경제 지표 및 연차별 재정 지표를 제공합니다.\n\n주요 규정 사항은 기관별 예산 배정 및 집행이며, 기관별 예산 현황은 일반재원, 정부채, 외국차입금별로 세분화하여 관리됩니다. 총 예산 규모는 10조 4,164억 원으로, 인건비와 물건비가 큰 비중을 차지하며, 방위비, 교육비,…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 1175,
+          "related_api_rank": 5,
+          "display_rank": 4,
+          "best_score": 0.5324
+        }
+      ],
+      "related_shortfall": 0,
+      "related_supplement": []
+    },
+    {
+      "query": "한국 현대시를 연구한 자료 찾아줘",
+      "search_api": {
+        "method": "POST",
+        "url": "http://192.168.12.57:92/api/books/search",
+        "body": {
+          "query": "한국 현대시를 연구한 자료 찾아줘",
+          "mode": "book",
+          "top_k": 10,
+          "use_rewrite": true,
+          "use_rerank": true
+        },
+        "note": "frontend/pages/index.vue handleSearch 와 같은 본문. 스트리밍 아님(JSON 한 번에)",
+        "elapsed_s": 1.32,
+        "rewritten_query": "한국 현대시 연구, 한국시, 현대시, 시 연구, 시론, 시 해석, 시 감상, 시 비평, 한국 현대시 흐름, 한국 현대시 사조",
+        "result_count": 15,
+        "results": [
+          {
+            "api_rank": 1,
+            "book_id": "CNTS-00052064036",
+            "title": "韓國初期近代詩論硏究",
+            "best_score": 0.6204,
+            "title_score": 0.0,
+            "content_score": 0.6204272346681357
+          },
+          {
+            "api_rank": 2,
+            "book_id": "CNTS-00052063588",
+            "title": "柳致環 詩의 效用論的 硏究",
+            "best_score": 0.5906,
+            "title_score": 0.0,
+            "content_score": 0.59060874637226
+          },
+          {
+            "api_rank": 3,
+            "book_id": "CNTS-00052064782",
+            "title": "韓國現代時에 나타난 道家思想 硏究",
+            "best_score": 0.562,
+            "title_score": 0.0,
+            "content_score": 0.562029691111801
+          },
+          {
+            "api_rank": 4,
+            "book_id": "CNTS-00052064810",
+            "title": "時調의 韻律構造 硏究",
+            "best_score": 0.5152,
+            "title_score": 0.0,
+            "content_score": 0.5152193436691013
+          },
+          {
+            "api_rank": 5,
+            "book_id": "CNTS-00052063230",
+            "title": "19世紀 時調의 變貌樣相",
+            "best_score": 0.5139,
+            "title_score": 0.0,
+            "content_score": 0.5138917747447632
+          },
+          {
+            "api_rank": 6,
+            "book_id": "CNTS-00052064623",
+            "title": "韓國基督敎 初期 讚頌詩歌의 硏究",
+            "best_score": 0.508,
+            "title_score": 0.0,
+            "content_score": 0.5079960249717472
+          },
+          {
+            "api_rank": 7,
+            "book_id": "CNTS-00052063898",
+            "title": "金洙暎 詩의 모더니즘 硏究",
+            "best_score": 0.4873,
+            "title_score": 0.0,
+            "content_score": 0.4873046875
+          },
+          {
+            "api_rank": 8,
+            "book_id": "CNTS-00052064565",
+            "title": "素月과 萬海詩의 女性志向 硏究",
+            "best_score": 0.4356,
+            "title_score": 0.0,
+            "content_score": 0.43555839982229505
+          },
+          {
+            "api_rank": 9,
+            "book_id": "CNTS-00052063399",
+            "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+            "best_score": 0.4222,
+            "title_score": 0.0,
+            "content_score": 0.4221741889446008
+          },
+          {
+            "api_rank": 10,
+            "book_id": "CNTS-00052063321",
+            "title": "韓國 四時歌의 硏究",
+            "best_score": 0.401,
+            "title_score": 0.0,
+            "content_score": 0.4010166724763131
+          },
+          {
+            "api_rank": 11,
+            "book_id": "CNTS-00052063368",
+            "title": "韓國古典小說의 文體論的 硏究",
+            "best_score": 0.359,
+            "title_score": 0.0,
+            "content_score": 0.3590436662946428
+          },
+          {
+            "api_rank": 12,
+            "book_id": "CNTS-00052063398",
+            "title": "辛夕汀 硏究",
+            "best_score": 0.3084,
+            "title_score": 0.0,
+            "content_score": 0.30836995442708326
+          },
+          {
+            "api_rank": 13,
+            "book_id": "CNTS-00052063278",
+            "title": "白湖 林悌의 詩文學 硏究",
+            "best_score": 0.2921,
+            "title_score": 0.0,
+            "content_score": 0.29212687626399203
+          },
+          {
+            "api_rank": 14,
+            "book_id": "CNTS-00052064759",
+            "title": "1930年代 韓國詩의 意識構造硏究",
+            "best_score": 0.1703,
+            "title_score": 0.0,
+            "content_score": 0.1702880859375
+          },
+          {
+            "api_rank": 15,
+            "book_id": "CNTS-00052063862",
+            "title": "韓國 女性文學 硏究",
+            "best_score": 0.0932,
+            "title_score": 0.0,
+            "content_score": 0.09320068359375
+          }
+        ]
+      },
+      "top1": {
+        "cnts_id": "CNTS-00052064036",
+        "title": "韓國初期近代詩論硏究",
+        "title_remainder": "1920年代를 中心으로",
+        "personal_author": "김병택",
+        "corporate_author": null,
+        "publisher": "東國大學校",
+        "pub_date": "1986",
+        "doc_type": "literature",
+        "material_type": "텍스트",
+        "genre": "일반도서",
+        "source_format": "MARC+MODS",
+        "kdc": "811.6",
+        "subject": "한국초기근대시론연구 | KOREAN | CRITICISM | POETRY | 1920S",
+        "keyword": null,
+        "themes": "표현론, 모방론, 효용론, 기교론, 김소월, 梁柱東, 김억, 박영희, 이광수, 민족주의, 계급주의, 유미주의, 낭만주의, 근대성, 문학의 사회적 역할, 시의 본질, 창작 과정, 시대정신, 민족 정서",
+        "extracted_keywords": [],
+        "is_embedded": true,
+        "body_fields": {
+          "abstract": {
+            "len": 0,
+            "len_stripped": 0,
+            "head400": ""
+          },
+          "summary": {
+            "len": 626,
+            "len_stripped": 626,
+            "head400": "김병택의 \"韓國初期近代詩論硏究\"는 1920년대 한국 근대 시론의 형성과 발전을 심층적으로 분석하는 연구이다. 이 논문은 기존 연구의 단편성을 지적하며, 1920년대 시론이 개화기 모방론에 대한 반발로 나타난 표현론을 중심으로 다양한 관점(모방론, 효용론, 기교론)을 포괄적으로 검토한다. 에이브람즈의 삼각모형을 변형하여 시론의 흐름을 파악하고 사회·문화적 맥락과의 연관성을 밝히는 데 집중하며, 시론을 작가의 현실 반응, 작품 창작, 독자의 감동, 그리고 우주에 대한 인식으로 이어지는 순환 과정으로 분석한다. 특히 표현론적 시의식, 김소월의 시혼 개념, 梁柱東의 개성론과 상상력, 김억과 박영희의 문학관, 이광수의 효용론 등 주요 이론가들의 주장을 분석하며, 민족주의, 계급주의, 유미주의 등 다양한 이데올로기가 "
+          },
+          "introduction": {
+            "len": 871,
+            "len_stripped": 871,
+            "head400": "이 책, ‘韓國初期近代詩論硏究’는 1920년대 한국 근대 시론의 풍경을 깊이 있게 탐구하는 연구서입니다. 혹시, 한국 근대 문학의 태동기를 이해하고 싶거나, 초기 시인들의 문학관과 그 시대의 문학적 흐름에 대해 좀 더 알고 싶으신 분 계신가요? 아니면, 문학 이론과 비평에 관심이 많아, 1920년대 한국 시론이 어떻게 형성되고 발전했는지 궁금하신가요? 그렇다면 이 책은 분명히 흥미로운 읽을거리가 될 것입니다.\n\n김병택 선생님의 연구는 1920년대 시론이 단순한 문학적 논쟁을 넘어, 격변하는 사회 속에서 민족의 정체성을 찾고 새로운 문학의 길을 모색하는 과정이었음을 보여줍니다. 표현론, 모방론, 효용론, 기교론 등 다양한 관점들이 어떻게 충돌하고 융합하며, 오늘날 우리가 읽는 한국 근대시의 토대를 만들어냈는지"
+          }
+        },
+        "plot_len": 837,
+        "read_effect_len": 325,
+        "server_pick_field": "summary",
+        "server_excerpt": "김병택의 \"韓國初期近代詩論硏究\"는 1920년대 한국 근대 시론의 형성과 발전을 심층적으로 분석하는 연구이다. 이 논문은 기존 연구의 단편성을 지적하며, 1920년대 시론이 개화기 모방론에 대한 반발로 나타난 표현론을 중심으로 다양한 관점(모방론, 효용론, 기교론)을 포괄적으로 검토한다. 에이브람즈의 삼각모형을 변형하여 시론의 흐름을 파악하고 사회·문화적 맥락과의 연관성을 밝히는 데 집중하며, 시론을 작가의 현실 반응, 작품 창작, 독자의 감동, 그리고 우주에 대한 인식으로 이어지는 순환 과정으로 분석한다. 특히 표현론적 시의식, 김소월의 시혼 개념, 梁柱東의 개성론과 상상력, 김억과 박영희의 문학관, 이광수의 효용론 등 주요 이론가들의 주장을 분석하며, 민족주의, 계급주의, 유미주의 등 다양한 이데올로기가…",
+        "body_all_empty": false,
+        "card_ai_summary_len": 626,
+        "best_score": 0.6204,
+        "recommendable": true
+      },
+      "related_api": {
+        "method": "POST",
+        "url": "http://192.168.12.57:92/api/books/search",
+        "body": {
+          "query": "韓國初期近代詩論硏究",
+          "mode": "book",
+          "top_k": 6,
+          "use_rewrite": false,
+          "use_rerank": true
+        },
+        "note": "frontend/pages/books/[cnts_id].vue fetchRelatedBooks — 상세 title 로 검색, 자기 자신 제외, 앞 4권",
+        "elapsed_s": 1.09,
+        "result_count": 6,
+        "results": [
+          {
+            "api_rank": 1,
+            "book_id": "CNTS-00052064036",
+            "title": "韓國初期近代詩論硏究",
+            "best_score": 0.9277,
+            "title_score": 0.0,
+            "content_score": 0.92767333984375
+          },
+          {
+            "api_rank": 2,
+            "book_id": "CNTS-00052064759",
+            "title": "1930年代 韓國詩의 意識構造硏究",
+            "best_score": 0.7171,
+            "title_score": 0.0,
+            "content_score": 0.7170891874619907
+          },
+          {
+            "api_rank": 3,
+            "book_id": "CNTS-00052063398",
+            "title": "辛夕汀 硏究",
+            "best_score": 0.6111,
+            "title_score": 0.0,
+            "content_score": 0.6110998481724925
+          },
+          {
+            "api_rank": 4,
+            "book_id": "CNTS-00052063987",
+            "title": "李光洙小說의 批評的 硏究",
+            "best_score": 0.5696,
+            "title_score": 0.0,
+            "content_score": 0.5695680063487816
+          },
+          {
+            "api_rank": 5,
+            "book_id": "CNTS-00052065073",
+            "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+            "best_score": 0.4427,
+            "title_score": 0.0,
+            "content_score": 0.44269353693181823
+          },
+          {
+            "api_rank": 6,
+            "book_id": "CNTS-00052063982",
+            "title": "韓國 漢文小說의 背景硏究",
+            "best_score": 0.0096,
+            "title_score": 0.0,
+            "content_score": 0.009555967524647713
+          }
+        ]
+      },
+      "related": [
+        {
+          "cnts_id": "CNTS-00052064759",
+          "title": "1930年代 韓國詩의 意識構造硏究",
+          "title_remainder": "世界喪失과 그 變移過程을 中心으로",
+          "personal_author": "이기서",
+          "corporate_author": null,
+          "publisher": "高麗大學校",
+          "pub_date": "1983",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "811.6",
+          "subject": "1930년대 | 한국시 | 의식구조연구 | CONSCIONSSTRUCTURE | KOREAN | LYRIC | POEMS | 1930S",
+          "keyword": null,
+          "themes": "세계 상실, 식민지 경험, 시대적 고뇌, 내면 심리, 자아 상실, 회복, 초월, 억압, 민족 정체성, 모더니즘, 문학사조",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 567,
+              "len_stripped": 567,
+              "head400": "이기서의 ‘1930年代 韓國詩의 意識構造硏究’는 일제강점기라는 암울한 시대적 배경 속에서 1930년대 한국 시인들이 겪은 ‘세계 상실’이라는 주제를 심층적으로 분석한다. 정지용, 이육사, 김광균, 김영랑, 이삭 등 주요 시인들의 작품을 통해 상실의 양상과 극복 과정을 ‘폐쇄’, ‘망명’, ‘소멸’이라는 세 가지 패턴으로 제시하며, 각 시인들의 내면 심리와 시대적 고뇌를 탐구한다. 연구는 단순히 줄거리를 요약하는 것을 넘어, 식민지 시대의 모순적인 상황 속에서 좌절과 절망을 겪은 시인들이 세계 상실 경험을 바탕으로 구축한 심리적 방어 기제를 시에 어떻게 반영했는지, 그리고 그들이 상실을 넘어 회복과 초월을 모색하는 과정을 밝히는 데 집중한다. 특히, 각 시인들의 작품 세계에 대한 기존 연구를 비판적으로 검토하"
+            },
+            "introduction": {
+              "len": 899,
+              "len_stripped": 899,
+              "head400": "안녕하세요, 도서관을 찾아주신 독자님. 혹시 1930년대 한국 시에 대해 깊이 있는 이해를 원하시거나, 그 시대 시인들이 겪었던 고뇌와 예술적 탐구를 만나보고 싶으신가요? 그렇다면 이 책, \"1930년대 한국시의 의식 구조 연구\"를 잠시 훑어보시는 건 어떨까요?\n\n이 책은 일제강점기라는 암울한 시대 속에서 정지용, 이육사, 김광균, 김영랑, 이삭 등 주요 시인들이 겪은 ‘세계 상실’이라는 주제를 심층적으로 파고듭니다. 단순히 시를 분석하는 것을 넘어, 그 시대 지식인들이 느꼈을 불안과 절망, 그리고 그 안에서 희망을 찾고자 했던 노력까지 꿰뚫어보는 여정이 될 것입니다.\n\n혹시 지금 당신은 정체성에 대한 고민, 혹은 잃어버린 꿈에 대한 아쉬움이나, 혹은 시대의 변화 속에서 느끼는 소외감을 경험하고 있나요? 그"
+            }
+          },
+          "plot_len": 840,
+          "read_effect_len": 317,
+          "server_pick_field": "summary",
+          "server_excerpt": "이기서의 ‘1930年代 韓國詩의 意識構造硏究’는 일제강점기라는 암울한 시대적 배경 속에서 1930년대 한국 시인들이 겪은 ‘세계 상실’이라는 주제를 심층적으로 분석한다. 정지용, 이육사, 김광균, 김영랑, 이삭 등 주요 시인들의 작품을 통해 상실의 양상과 극복 과정을 ‘폐쇄’, ‘망명’, ‘소멸’이라는 세 가지 패턴으로 제시하며, 각 시인들의 내면 심리와 시대적 고뇌를 탐구한다. 연구는 단순히 줄거리를 요약하는 것을 넘어, 식민지 시대의 모순적인 상황 속에서 좌절과 절망을 겪은 시인들이 세계 상실 경험을 바탕으로 구축한 심리적 방어 기제를 시에 어떻게 반영했는지, 그리고 그들이 상실을 넘어 회복과 초월을 모색하는 과정을 밝히는 데 집중한다. 특히, 각 시인들의 작품 세계에 대한 기존 연구를 비판적으로…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 567,
+          "related_api_rank": 2,
+          "display_rank": 1,
+          "best_score": 0.7171
+        },
+        {
+          "cnts_id": "CNTS-00052063398",
+          "title": "辛夕汀 硏究",
+          "title_remainder": null,
+          "personal_author": "허형석",
+          "corporate_author": null,
+          "publisher": "慶熙大學校",
+          "pub_date": "1988",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "811.6",
+          "subject": "신석정 | SHIN | SOK | JONGS | POEMS",
+          "keyword": null,
+          "themes": "자연 친화, 현실 참여, 老莊 철학, 민족 정체성, 고독, 슬픔, 저항 정신, 시대정신, 수용 이론, 문학사적 위치",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 660,
+              "len_stripped": 660,
+              "head400": "허형석의 \"辛夕汀 硏究\"는 시인 辛夕汀의 작품 세계를 다각도로 분석하고 평가하는 연구를 담고 있다. 이 연구는 辛夕汀 시를 특정 시기나 사상적 경향에 갇혀 해석하는 오류를 경계하며, 그의 시 세계가 초기 자연 친화적 경향과 현실 참여적 경향이 공존하는 복합적인 결과임을 강조한다. 작품 연구는 단순히 작품을 설명하는 것을 넘어, 그 의미를 해석하고 분석하는 과정을 포함하며, 예술은 현실과 사회적 기능 사이의 양면성을 지닌다는 점을 역설한다. 辛夕汀의 시는 타고르의 영향에서 출발했지만, 萬海의 민족적 사상과 현실 참여의 중요성을 자각하며 독자적인 시적 세계를 구축해 나갔고, 老莊 철학의 무심 사상을 바탕으로 자연과의 합일을 통해 인간을 초월하는 경향을 보였다. 특히, 일제강점기라는 시대적 배경 속에서 辛夕汀은 "
+            },
+            "introduction": {
+              "len": 753,
+              "len_stripped": 753,
+              "head400": "혹시 辛夕汀, 석정이라는 시인을 아시나요? 고즈넉한 자연 속에서 어머니의 따스함을 노래하는 서정적인 시인이죠. 하지만 그의 시는 단순히 아름다운 풍경을 담아낸 것만은 아니었습니다. 일제강점기라는 어두운 시대 속에서 겪은 고뇌와 현실에 대한 깊은 성찰이 그의 시에 녹아 있었죠.\n\n이 책, \"辛夕汀 硏究\"는 바로 그 석정, 辛夕汀의 시 세계를 깊이 있게 파헤친 연구서입니다. 辛夕汀의 작품을 단순히 ‘목가시인’으로만 단정짓고 싶지 않으신가요? 그의 시가 어떻게 시대의 아픔과 개인의 경험 속에서 탄생했는지, 그리고 그의 작품이 문학사적으로 어떤 의미를 가지는지 궁금하신가요?\n\n이 책은 기존 연구의 한계를 지적하며 辛夕汀의 시를 다각도로 분석합니다. 초기 자연 친화적 경향과 현실 참여적 경향이 공존하는 그의 시 세계"
+            }
+          },
+          "plot_len": 937,
+          "read_effect_len": 371,
+          "server_pick_field": "summary",
+          "server_excerpt": "허형석의 \"辛夕汀 硏究\"는 시인 辛夕汀의 작품 세계를 다각도로 분석하고 평가하는 연구를 담고 있다. 이 연구는 辛夕汀 시를 특정 시기나 사상적 경향에 갇혀 해석하는 오류를 경계하며, 그의 시 세계가 초기 자연 친화적 경향과 현실 참여적 경향이 공존하는 복합적인 결과임을 강조한다. 작품 연구는 단순히 작품을 설명하는 것을 넘어, 그 의미를 해석하고 분석하는 과정을 포함하며, 예술은 현실과 사회적 기능 사이의 양면성을 지닌다는 점을 역설한다. 辛夕汀의 시는 타고르의 영향에서 출발했지만, 萬海의 민족적 사상과 현실 참여의 중요성을 자각하며 독자적인 시적 세계를 구축해 나갔고, 老莊 철학의 무심 사상을 바탕으로 자연과의 합일을 통해 인간을 초월하는 경향을 보였다. 특히, 일제강점기라는 시대적 배경 속에서 辛夕汀은…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 660,
+          "related_api_rank": 3,
+          "display_rank": 2,
+          "best_score": 0.6111
+        },
+        {
+          "cnts_id": "CNTS-00052063987",
+          "title": "李光洙小說의 批評的 硏究",
+          "title_remainder": null,
+          "personal_author": "한용환",
+          "corporate_author": null,
+          "publisher": "東國大學校",
+          "pub_date": "1984",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "813.6",
+          "subject": "이광수소설 | 비평적 | NOVELS | LEE | KWANGSOO",
+          "keyword": null,
+          "themes": "목적 소설, 예술 소설, 문체론, 수용미학, 향수 가치, 사회적 역할, 교훈주의, 자아 상실, 억압, 권위주의, 문학사 기술, 비평적 시각, 언어 예술, 심미적 가치",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 544,
+              "len_stripped": 544,
+              "head400": "한용환의 논문 \"李光洙小說의 批評的 硏究\"는 이광수 소설 연구의 현황과 문제점을 비판적으로 분석하며 새로운 접근을 모색한다. 기존 연구가 이광수의 문학적 가치를 충분히 조명하지 못하고, 특히 예술 소설로서의 잠재력을 간과했으며, '무정'에 대한 과도한 집중으로 인해 작품 전체에 대한 균형 잡힌 이해를 방해해왔음을 지적한다. 논문은 이광수 소설을 목적 소설과 예술 소설로 구분하여 분석하며, 예술 소설의 중요성을 강조하고, 작품 자체의 심미적 가치와 표현 방식에 주목할 것을 주장한다. 특히 '혁명가의 아내'와 같은 간과된 예술 소설의 가치를 재평가하고, 문체론적 분석을 통해 이광수의 언어 예술가로서의 면모를 부각한다. 더 나아가, 김동인과 같은 비평가들의 평가에 나타난 모순점을 지적하며, 문학 연구의 객관성과 "
+            },
+            "introduction": {
+              "len": 778,
+              "len_stripped": 778,
+              "head400": "안녕하세요. 공공도서관 사서입니다. 오늘 소개해 드릴 책은 한용환 선생님의 \"이광수 소설의 비판적 연구\"입니다. 1984년에 출간된 이 책은, 이광수라는 작가에 대한 기존의 연구들을 날카롭게 분석하고 새로운 시각을 제시하는, 문학 연구사에서 중요한 위치를 차지하는 논문집입니다.\n\n혹시 이광수의 \"무정\"을 읽고, 그의 작품이 시대의 아픔을 반영하는 사회 비판적인 소설이라고 생각하신 분 계신가요? 물론 그 점도 중요하지만, 이 책은 이광수 소설의 또 다른 매력, 바로 '예술 소설'로서의 가치를 재조명하고자 합니다. 기존 연구들이 간과했던 이광수 소설의 언어적 아름다움, 인물의 심리 묘사, 그리고 작품 자체의 독자적인 예술성을 깊이 있게 파헤쳐 볼 수 있을 거예요.\n\n이 책은 특히 문학 연구에 관심 있는 분, 혹"
+            }
+          },
+          "plot_len": 781,
+          "read_effect_len": 321,
+          "server_pick_field": "summary",
+          "server_excerpt": "한용환의 논문 \"李光洙小說의 批評的 硏究\"는 이광수 소설 연구의 현황과 문제점을 비판적으로 분석하며 새로운 접근을 모색한다. 기존 연구가 이광수의 문학적 가치를 충분히 조명하지 못하고, 특히 예술 소설로서의 잠재력을 간과했으며, '무정'에 대한 과도한 집중으로 인해 작품 전체에 대한 균형 잡힌 이해를 방해해왔음을 지적한다. 논문은 이광수 소설을 목적 소설과 예술 소설로 구분하여 분석하며, 예술 소설의 중요성을 강조하고, 작품 자체의 심미적 가치와 표현 방식에 주목할 것을 주장한다. 특히 '혁명가의 아내'와 같은 간과된 예술 소설의 가치를 재평가하고, 문체론적 분석을 통해 이광수의 언어 예술가로서의 면모를 부각한다. 더 나아가, 김동인과 같은 비평가들의 평가에 나타난 모순점을 지적하며, 문학 연구의 객관성과…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 544,
+          "related_api_rank": 4,
+          "display_rank": 3,
+          "best_score": 0.5696
+        },
+        {
+          "cnts_id": "CNTS-00052065073",
+          "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+          "title_remainder": null,
+          "personal_author": "김교봉",
+          "corporate_author": null,
+          "publisher": "延世大學校",
+          "pub_date": "1986",
+          "doc_type": "literature",
+          "material_type": "텍스트",
+          "genre": "일반도서",
+          "source_format": "MARC+MODS",
+          "kdc": "813.6",
+          "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+          "keyword": null,
+          "themes": "개화사상, 민족주의, 서사 양식, 사회 변화, 전통과 근대, 도덕적 딜레마, 여성 정체성, 억압, 구원, 비극, 언론 탄압, 자아 상실",
+          "extracted_keywords": [],
+          "is_embedded": true,
+          "body_fields": {
+            "abstract": {
+              "len": 0,
+              "len_stripped": 0,
+              "head400": ""
+            },
+            "summary": {
+              "len": 550,
+              "len_stripped": 550,
+              "head400": "김교봉의 논문은 신소설에 대한 부정적인 평가를 비판적으로 검토하며, 이 작품들이 개화기 시대의 복잡한 사회적, 문화적 맥락 속에서 형성된 서사적 시도임을 강조한다. 신소설은 주제적, 희극적, 비극적 서사 양식으로 분류될 수 있으며, 각 양식은 반제국적 민족주의, 고난과 구원, 그리고 궁극적인 비극을 드러낸다. 논문은 신소설이 서구 문학의 단순한 모방이 아닌, 동아시아 3국의 개화사상과 연관되어 민족 계몽 의식을 담고 있으며, 언론 탄압이라는 제약 속에서도 인간 경험을 진솔하게 담아내려 노력했음을 주장한다. 특히, 기존 연구의 한계를 지적하며 신소설 자체의 특성을 규명하고, 서사 양식에 따른 분류를 통해 구조와 의미를 심층적으로 분석하고자 한다. 작품 분석을 통해 신소설이 제시하는 개화사상의 실체, 시대적 배"
+            },
+            "introduction": {
+              "len": 1026,
+              "len_stripped": 1026,
+              "head400": "안녕하세요. 도서관에서 오랜 시간 책과 함께 해온 사서입니다. 혹시 한국 근대문학, 특히 신소설에 대해 깊이 있는 이해를 원하시는 분 계신가요? 그렇다면 이 책, 김교봉 선생님의 \"신소설의 敍事樣式과 主題意識에 관한 연구\"를 조심스럽게 추천해 드립니다.\n\n이 책은 1986년에 출간되었지만, 신소설이라는 한국 근대문학의 중요한 흐름을 새롭게 조명하는 깊이 있는 연구서입니다. 흔히 신소설은 서구 문학의 모방이라는 부정적인 시선으로 평가받기도 했죠. 하지만 이 책은 그런 시각에 정면으로 도전하며, 신소설 자체의 독자적인 가치와 의미를 탐구합니다.\n\n혹시 개화기 시대의 격변 속에서, 새로운 가치관과 전통적인 가치관이 충돌하며 겪었던 혼란에 대해 생각해 보신 적 있으신가요? 혹은 당시 작가들이 겪었던 언론 탄압과 표"
+            }
+          },
+          "plot_len": 1012,
+          "read_effect_len": 322,
+          "server_pick_field": "summary",
+          "server_excerpt": "김교봉의 논문은 신소설에 대한 부정적인 평가를 비판적으로 검토하며, 이 작품들이 개화기 시대의 복잡한 사회적, 문화적 맥락 속에서 형성된 서사적 시도임을 강조한다. 신소설은 주제적, 희극적, 비극적 서사 양식으로 분류될 수 있으며, 각 양식은 반제국적 민족주의, 고난과 구원, 그리고 궁극적인 비극을 드러낸다. 논문은 신소설이 서구 문학의 단순한 모방이 아닌, 동아시아 3국의 개화사상과 연관되어 민족 계몽 의식을 담고 있으며, 언론 탄압이라는 제약 속에서도 인간 경험을 진솔하게 담아내려 노력했음을 주장한다. 특히, 기존 연구의 한계를 지적하며 신소설 자체의 특성을 규명하고, 서사 양식에 따른 분류를 통해 구조와 의미를 심층적으로 분석하고자 한다. 작품 분석을 통해 신소설이 제시하는 개화사상의 실체, 시대적…",
+          "body_all_empty": false,
+          "card_ai_summary_len": 550,
+          "related_api_rank": 5,
+          "display_rank": 4,
+          "best_score": 0.4427
+        }
+      ],
+      "related_shortfall": 0,
+      "related_supplement": []
+    }
+  ],
+  "llm": {
+    "reachable": true,
+    "base_url": "http://192.168.12.57:18080/v1",
+    "model": "gemma-3-12b",
+    "model_root": "google/gemma-3-12b-it",
+    "max_model_len": 32768,
+    "checked_at": "2026-10-13 23:24:45",
+    "evidence": [
+      "GET http://192.168.12.57:18080/v1/models → 200, id=gemma-3-12b, root=google/gemma-3-12b-it, max_model_len=32768",
+      "docker-compose.yml gemma 서비스(container nl-lib-gemma): command google/gemma-3-12b-it --served-model-name gemma-3-12b --port 8000, ports \"18080:8000\" (호스트에 공개), --max-num-seqs 16, --gpu-memory-utilization 0.30",
+      "docker-compose.yml x-common-env(fastapi·celery 공통): LLM_BASE_URL ${LLM_BASE_URL:-http://gemma:8000/v1}, LLM_MODEL ${LLM_MODEL:-gemma-3-12b} — 운영 fastapi 가 쓰는 것과 같은 vLLM 인스턴스(컨테이너 안에서는 gemma:8000, 밖에서는 :18080)",
+      "저장소 infra/conf.d/default.conf(운영은 /data/nl-lib/nginx/conf.d 를 마운트 — 저장소 사본 기준) 게이트웨이(:92)는 /api/→fastapi, /→nuxt 만 프록시 — LLM 은 게이트웨이로는 안 나가고 18080 직접 공개로만 닿는다",
+      "GET http://192.168.12.57:18081/v1/models(VLM vllm 공개 포트)·:8000 은 연결 거부"
+    ],
+    "note": "같은 GPU 를 운영 적재(celery-llm)·검색 재작성·추천 이유가 함께 쓴다 — 변형 프롬프트는 순차로, 짝마다 쉬어 보낸다. stream_related_reason 과 같게 보내려면 POST {base_url}/chat/completions, model=gemma-3-12b, temperature 0.2, max_tokens 200, system/user 는 app/services/search/paper_summary.py 159-194행 그대로(초록 400자 _truncate(_clean_excerpt)). 각 자료의 server_excerpt 필드가 그 '초록:' 줄에 들어갈 값이다"
+  },
+  "summary": {
+    "screen_items": 12,
+    "screen_items_note": "질의 1 의 관련 자료가 화면에 1권뿐이라 15권이 아니라 12권(1위 3 + 관련 9). 보충 후보 3권은 related_supplement 에 따로",
+    "screen_body_all_empty": 0,
+    "screen_pick_field_counts": {
+      "abstract": 0,
+      "summary": 12,
+      "introduction": 0,
+      "none": 0
+    },
+    "supplement_items": 3,
+    "supplement_body_all_empty": 0,
+    "side_effect_note": "POST /api/books/search 는 서버가 매번 search_history 에 한 줄 INSERT 한다(app/api/book.py search_books — 피할 수 없음). 이 수집에서 7번 호출, x-session-id=trial-book-related-20261013 로 구분된다. 그 밖에 쓰기 호출은 없다"
+  },
+  "observations": [
+    "화면 관련 자료 12권(1위 3 + 관련 9) 모두 abstract 가 비어 있고 summary 가 채워져 있다 — 서버는 12권 전부 summary 를 고른다. 초록 없음(셋 다 빈 자료)은 0건(보충 3권 포함 0건)",
+    "summary 는 적재 때 LLM 이 만든 요약(544~1175자)이라 400자 _truncate 에서 문장 중간에 잘려 끝에 … 가 붙는다",
+    "재정 보고서(doc_type=policy) 요약은 \"목적 및 규율 대상 / 주요 규정 사항 / 적용 대상\" 같은 법령식 틀로 쓰여 있고, CNTS-00049655779(경제백서 1999)는 \"## 경제백서 1999 문서 요약\" 머리와 **굵게** 마크다운이 그대로 남는다(_clean_excerpt 는 ^## SUMMARY: 만 지운다)",
+    "질의 1 은 관련 자료 API(1위 제목 \"조선후기 세태소설 연구\", use_rewrite=false, top_k=6)가 1위 자신 + 1권만 준다 — 두 번 보내도 같다. 화면 관련 자료 칸에 1권뿐. 그 1권은 1930년대(근대) 세태소설 연구로, 조선후기와 시대가 다르고 \"세태소설\" 낱말만 겹친다",
+    "질의 3 은 1위 제목이 한자(韓國初期近代詩論硏究)라 관련 자료 검색이 내용 의미로 잡힌다: 시 연구 2권(1930年代 韓國詩, 辛夕汀 硏究) + 소설 연구 2권(李光洙小說, 신소설) — 시론 연구와 소설 연구의 짝이 섞인다",
+    "질의 2 관련 4권은 모두 기획예산처·재정경제부 정책 자료(doc_type=policy, 저자 없음·기관 저자)로 같은 출처·같은 요약 틀이라, 비교 문장이 \"둘 다 재정 운용을 다룬다\" 식으로 겹칠 위험이 크다",
+    "모든 1위의 best_score 가 0.4 이상(0.735·0.6846·0.6204)이라 화면에 SKOVIX 추천 1권 패널이 뜬다"
+  ]
+}

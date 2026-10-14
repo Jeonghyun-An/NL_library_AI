@@ -4,6 +4,8 @@
     <div :id="bodyId" class="skx-clamp__clip" :style="clipStyle">
       <div ref="innerRef" class="skx-clamp__inner"><slot /></div>
     </div>
+    <!-- 접히지 않는 자리 — 글이 길어 접혀도 늘 보여야 하는 것(실패 안내 등). 높이 재기(innerRef)에 들지 않는다 -->
+    <slot name="after" />
     <div v-if="overflowing" class="skx-clamp__foot">
       <button
         type="button"

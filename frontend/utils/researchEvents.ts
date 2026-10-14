@@ -788,7 +788,8 @@ function planFromSteps(steps: ResearchStepRow[]): string[] {
 }
 
 // 계획 카드 머리 "이렇게 이해했어요" 한 줄의 재료(06c) — 계획 단계가 계획에 넘긴 넓힌 질문. 원 질문과 같으면(넓히기를
-// 껐거나 원 질문으로 물러난 잡) 보일 것이 없어 null 이다. 넓히기가 끝나면 도는(running) 계획 단계에도 실려 온다
+// 껐거나 원 질문으로 물러난 잡 — 끝 문장부호·따옴표·띄어쓰기만 다른 것도 같다, foldQuestion) 보일 것이 없어 null 이다.
+// 넓히기가 끝나면 도는(running) 계획 단계에도 실려 온다
 export function questionUsedFromSteps(steps: ResearchStepRow[], question: string): string | null {
   const used = latestOf(steps, "plan")?.result?.question_used;
   if (typeof used !== "string") return null;
@@ -801,8 +802,14 @@ export function understoodLine(questionUsed: string): string {
   return `이렇게 이해했어요: ${questionUsed}`;
 }
 
+// 같음 판단만 쓰는 접기 — NFKC(전각 ？！＂～ 를 반각으로) 뒤 공백을 모두 빼고, 끝의 문장부호(. ? ! 。 … 입말 물결 ~)·따옴표류와
+// 머리의 따옴표류를 지운다. 넓히기가 원 질문 끝에 마침표만 붙여 돌려주기도 한다(운영 2026-10-13: '…연구가 궁금해' →
+// '…연구가 궁금해.'). 끝이 아닌 문장부호와 낱말은 그대로 견준다
+const TRAILING_MARKS = /[.?!。…~"'“”‘’「」『』«»`]+$/u;
+const LEADING_QUOTES = /^["'“”‘’「」『』«»`]+/u;
+
 function foldQuestion(text: string): string {
-  return text.normalize("NFKC").replace(/\s+/g, " ").trim();
+  return text.normalize("NFKC").replace(/\s+/g, "").replace(TRAILING_MARKS, "").replace(LEADING_QUOTES, "");
 }
 
 function latestOf(steps: ResearchStepRow[], kind: StepKind): ResearchStepRow | undefined {

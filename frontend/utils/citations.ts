@@ -55,9 +55,58 @@ export function citeLabel(meta: EvidenceMeta | undefined, eid: string): string {
   return who ?? eid;
 }
 
+export interface VolIssue {
+  vol: string | null;
+  issue: string | null;
+  // 권·호로 읽지 못한 꼴('특별호' 등)은 글 그대로 — 이때 vol·issue 는 null
+  raw: string | null;
+}
+
+// 논문 권호(vol_issue) 읽기. 운영 값: 'V(N)'(권(호))·'-N'(권 없이 호만 — KCI 적재가 빈 권 자리를 비워 이은 꼴)·'V'(권만).
+// 비었거나 기호뿐이면 null. 서버 paper_citation 과 같은 규칙이고, 결과 카드·상세의 'V권 N호'(resultCard.formatVolIssue)도 이것으로 읽는다
+export function parseVolIssue(value: string | null | undefined): VolIssue | null {
+  const raw = (value ?? "").trim();
+  if (!raw || /^[-–—\s/.,]+$/.test(raw)) return null;
+  const both = raw.match(/^(\d+)\s*\(\s*(\d+)\s*\)$/);
+  if (both) return { vol: both[1]!, issue: both[2]!, raw: null };
+  const issueOnly = raw.match(/^-\s*(\d+)$/);
+  if (issueOnly) return { vol: null, issue: issueOnly[1]!, raw: null };
+  const volOnly = raw.match(/^(\d+)$/);
+  if (volOnly) return { vol: volOnly[1]!, issue: null, raw: null };
+  return { vol: null, issue: null, raw };
+}
+
+// 참고문헌의 권호 — APA 꼴 '57(3)'·'(46)'(호만)·'57'(권만), 없으면 빈 글
+export function referenceVolIssue(value: string | null | undefined): string {
+  const v = parseVolIssue(value);
+  if (!v) return "";
+  if (v.raw !== null) return v.raw;
+  return `${v.vol ?? ""}${v.issue ? `(${v.issue})` : ""}`;
+}
+
+// 참고문헌의 쪽 — 수록면(extent, KCI 적재 값 'S~E')을 'S–E'(같은 쪽이면 하나)로. 다른 꼴(단행본 형태사항 '352 p.' 등)은
+// 쪽으로 읽지 않는다(빈 글)
+export function referencePages(extent: string | null | undefined): string {
+  const m = (extent ?? "").trim().match(/^(\d+)\s*(?:[~\-–—]\s*(\d+))?$/);
+  if (!m) return "";
+  const [, start, end] = m;
+  return end && end !== start ? `${start}–${end}` : start!;
+}
+
+// 참고문헌의 학술지 자리 '학술지, 권(호), 쪽' — 있는 칸만 쉼표로 잇는다. 학술지가 없으면 권·호·쪽도 싣지 않는다(빈 글).
+// 논문 상세 인용(app/services/search/paper_citation.py _journal_part)과 같은 글자다 — 두 쪽 테스트가
+// tests/fixtures/citation_reference.json 을 함께 읽는다
+export function journalText(meta: Pick<EvidenceMeta, "series_title" | "vol_issue" | "extent">): string {
+  const journal = meta.series_title?.trim() ?? "";
+  if (!journal) return "";
+  return [journal, referenceVolIssue(meta.vol_issue), referencePages(meta.extent)].filter(Boolean).join(", ");
+}
+
 export function metaLine(meta: EvidenceMeta | undefined): string {
   if (!meta) return "";
-  const journal = [meta.series_title, meta.vol_issue].filter((s) => s && s.trim()).join(" ");
+  // 학술지가 없으면 권호도 싣지 않는다 — journalText 와 같은 규칙('김영주 · (46) · 2009' 처럼 권호만 떠 있지 않게)
+  const title = meta.series_title?.trim() ?? "";
+  const journal = title ? [title, referenceVolIssue(meta.vol_issue)].filter(Boolean).join(" ") : "";
   const citations = meta.kci_citations != null ? `피인용 ${meta.kci_citations}` : "";
   return [meta.personal_author ?? "", journal, pubYear(meta.pub_date) ?? "", citations, meta.grade ?? ""]
     .map((s) => s.trim())

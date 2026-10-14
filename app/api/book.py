@@ -25,7 +25,7 @@ from schemas.book import (
     CurationResponse,
 )
 from repositories.book import BookRepository
-from services.search.pipeline import search
+from services.search.pipeline import best_chunk_score, is_safe_book_id, search, search_related_books
 from services.search.title_scorer import apply_title_scores
 
 log = logging.getLogger(__name__)
@@ -687,3 +687,57 @@ async def get_history(session_id: str, db: AsyncSession = Depends(get_db)):
         }
         for r in items
     ]
+
+
+# ── 관련 자료 추천 (소장자료 상세) ───────────────────────
+# 맨 끝에 둔다 — 두 마디 경로라 위의 /ingest/{task_id}·/history/{session_id} 를 가리지 않게
+@router.get("/{cnts_id}/related", response_model=BookSearchResponse)
+async def get_related_books(
+    cnts_id: str,
+    top_k: int = 4,
+    db: AsyncSession = Depends(get_db),
+):
+    """소장자료 상세 '관련 자료 추천' — 그 자료의 제목으로 찾은 다른 소장자료 최대 top_k 권(기본 4).
+
+    자기 자신은 Milvus 조건식에서 미리 빼고 재작성·날짜 필터 LLM 은 부르지 않는다(search_related_books).
+    연관도(제목·내용 종합, 검색 결과 카드와 같은 뜻)가 BOOK_RELATED_MIN_SCORE 아래인 책, 그리고 청크 수 로그 부스트로만
+    하한을 넘은 긴 책으로 칸을 채우지 않는다(_clears_related_floor).
+    카드는 서지·점수만 쓰므로 청크 본문은 빼고 보낸다. 사용자가 검색한 것이 아니므로 search_history 에 남기지 않는다.
+    """
+    if top_k < 1 or top_k > 10:
+        raise HTTPException(400, "top_k는 1~10 사이여야 합니다.")
+    if not is_safe_book_id(cnts_id):
+        raise HTTPException(404, f"도서 없음: {cnts_id}")
+    repo = BookRepository(db)
+    source = await repo.get_by_cnts_id(cnts_id)
+    if not source:
+        raise HTTPException(404, f"도서 없음: {cnts_id}")
+    title = (source.title or "").strip()
+    if not title:
+        return BookSearchResponse(query="", books=[], elapsed_ms=0.0)
+
+    result = await search_related_books(title, cnts_id, fetch_top_k=cfg.BOOK_RELATED_FETCH_TOP_K)
+    book_map = await repo.get_by_cnts_ids([bg.book_id for bg in result.books])
+    for bg in result.books:
+        bg.book_info = book_map.get(bg.book_id)
+    apply_title_scores(result.books, title)
+
+    picked = [bg for bg in result.books if bg.book_id != cnts_id and _clears_related_floor(bg)][:top_k]
+    for bg in picked:
+        bg.chunks = []
+    result.books = picked
+    return result
+
+
+def _clears_related_floor(bg) -> bool:
+    """관련 자료 하한 — 화면의 연관도(제목·내용 종합, 부스트 뒤)가 BOOK_RELATED_MIN_SCORE 이상이고, 그것이 청크 수
+    로그 부스트만으로 올라선 것이 아니어야 한다. 부스트 1-(1-r)/(1+0.1·log2 n) 은 리랭크 0 인 책도 청크 20개면
+    0.30 으로 올리고, 자기 청크가 빠진 창에서는 긴 남의 책이 청크를 더 받는다. 그래서 제목 일치만으로 하한을 넘거나
+    (부스트와 상관없다), 가장 맞는 청크의 부스트 전 원점수가 BOOK_RELATED_MIN_RAW_SCORE 이상이어야 한다.
+    청크 본문을 비우기 전에 부른다."""
+    if bg.best_score < cfg.BOOK_RELATED_MIN_SCORE:
+        return False
+    if (bg.title_score or 0.0) >= cfg.BOOK_RELATED_MIN_SCORE:
+        return True
+    content = bg.content_score if bg.content_score is not None else bg.best_score
+    return best_chunk_score(bg.chunks, default=content) >= cfg.BOOK_RELATED_MIN_RAW_SCORE

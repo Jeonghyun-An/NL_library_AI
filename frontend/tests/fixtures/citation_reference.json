@@ -1,5 +1,5 @@
 {
-  "about": "같은 서지로 두 화면의 인용 글자를 맞춘다. 논문 상세 인용(app/services/search/paper_citation.py build_citation)의 국문 앞부분과 보고서 내보내기 참고문헌(frontend/utils/reportDocument.ts referenceText)이 reference 와 같아야 한다. app/tests/test_paper_citation.py 와 frontend/tests/unit/reportDocument.test.ts 가 함께 읽는다 — 한쪽 글자를 바꾸려면 이 파일을 고쳐야 하고, 그러면 다른 쪽 테스트가 깨진다.",
+  "about": "같은 서지로 두 화면의 인용 글자를 맞춘다. 논문 상세 인용(app/services/search/paper_citation.py build_citation)의 국문 앞부분과 보고서 내보내기 참고문헌(frontend/utils/reportDocument.ts referenceText)이 reference 와 같아야 한다. app/tests/test_paper_citation.py 와 frontend/tests/unit/reportDocument.test.ts 가 함께 읽는다 — 한쪽 글자를 바꾸려면 이 파일을 고쳐야 하고, 그러면 다른 쪽 테스트가 깨진다. journal: 로 시작하는 경우는 학술지 자리(학술지, 권(호), 쪽)의 권·호·쪽이 비거나 일부만 있는 조합이다 — 고정 예제에서 vol_issue·extent·series_title 만 다르다. vol_issue 운영 값은 'V(N)'·'-N'(권 없이 호만 — KCI 적재 값)·'V', extent 는 KCI 수록면 'S~E'",
   "cases": [
     {
       "name": "3-authors",
@@ -39,6 +39,159 @@
         "uci": "G704-000001.2019.57.3.001"
       },
       "reference": "윤기찬, 이순철 (2019). AI 윤리 교육. 교육학연구, 57(3)."
+    },
+    {
+      "name": "journal:vol-issue-pages",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "77~104"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 57(3), 77–104."
+    },
+    {
+      "name": "journal:issue-only-pages",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "-46",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "77~104"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, (46), 77–104."
+    },
+    {
+      "name": "journal:issue-only",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "-46",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, (46)."
+    },
+    {
+      "name": "journal:vol-only-pages",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "12-34"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 57, 12–34."
+    },
+    {
+      "name": "journal:pages-only",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "-",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "77~104"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 77–104."
+    },
+    {
+      "name": "journal:no-vol-no-pages",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": ""
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구."
+    },
+    {
+      "name": "journal:single-page",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "23"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 57(3), 23."
+    },
+    {
+      "name": "journal:same-start-end",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "23~23"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 57(3), 23."
+    },
+    {
+      "name": "journal:unreadable-extent",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "352 p."
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 57(3)."
+    },
+    {
+      "name": "journal:other-vol-issue",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": "교육학연구",
+        "vol_issue": "특별호",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "5 ~ 9"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육. 교육학연구, 특별호, 5–9."
+    },
+    {
+      "name": "journal:no-journal",
+      "meta": {
+        "personal_author": "김철수; 이영희; 박민수",
+        "pub_date": "2019-03",
+        "title": "AI 윤리 교육",
+        "series_title": null,
+        "vol_issue": "57(3)",
+        "publisher": "한국교육학회",
+        "uci": "G704-000001.2019.57.3.001",
+        "extent": "77~104"
+      },
+      "reference": "김철수, 이영희, 박민수 (2019). AI 윤리 교육."
     }
   ]
 }

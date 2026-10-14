@@ -8,7 +8,7 @@ paper_summary.py — 논문 검색 결과 핵심 요약 SSE 스트리밍
 summary 엔드포인트:
   - 입력: query + top-K 논문 book_id 목록 (검색 결과에서 전달)
   - 처리: 각 논문의 best chunk 로 컨텍스트 구성 → LLM 스트리밍
-  - 출력: text 토큰 SSE + 마지막에 sources 이벤트
+  - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하면 sources 뒤에 error 이벤트)
 """
 import json
 import logging
@@ -18,6 +18,7 @@ from typing import AsyncGenerator
 import httpx
 
 from core.config import get_settings
+from services.llm_sse import sse_deltas
 from services.prompts import get_prompt
 
 log = logging.getLogger(__name__)
@@ -25,6 +26,17 @@ cfg = get_settings()
 
 _MAX_EXCERPT_CHARS = 500   # 논문당 발췌 최대 길이
 _MAX_PAPERS = 5            # 요약에 사용할 최대 논문 수
+
+# 세 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas)로
+# 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면은 이것을 답 글에 잇지 않고 오류로 보이며
+# 캐시·검색 기록에 담지 않는다. 전에는 '…오류가 발생했습니다.' 를 보통 {text} 로 흘려 정상 답처럼 저장됐다
+SUMMARY_STREAM_ERROR = "AI 요약을 만들지 못했습니다"          # 논문 검색 결과의 AI 요약(stream_paper_summary)
+RELATED_REASON_STREAM_ERROR = "추천 사유를 만들지 못했습니다"  # 논문 상세 관련 논문의 AI 추천 사유(stream_related_reason)
+PAPER_REASON_STREAM_ERROR = "AI 요약을 만들지 못했습니다"     # 논문 상세의 AI 요약(stream_paper_reason)
+
+
+def _error_event(message: str) -> str:
+    return f"data: {json.dumps({'error': message}, ensure_ascii=False)}\n\n"
 
 
 def _truncate(text: str, max_chars: int) -> str:
@@ -82,6 +94,7 @@ async def stream_paper_summary(
     SSE 이벤트:
       data: {"text": "..."}       — 토큰 스트리밍
       data: {"sources": [...]}    — 최종 출처 목록
+      data: {"error": SUMMARY_STREAM_ERROR} — LLM 호출이 실패하면(받은 글·sources 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     if not papers:
@@ -115,34 +128,7 @@ async def stream_paper_summary(
         "stream": True,
     }
 
-    # ── 텍스트 스트리밍 ───────────────────────────────────────
-    try:
-        async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                f"{cfg.LLM_BASE_URL}/chat/completions",
-                json=payload,
-                timeout=float(cfg.PAPER_SUMMARY_TIMEOUT),
-            ) as resp:
-                resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
-    except Exception as e:
-        log.error(f"[paper_summary] LLM 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '요약 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
-
-    # ── 출처 목록 이벤트 ─────────────────────────────────────
+    # 출처는 LLM 이 아니라 넘겨받은 논문으로 만든다 — 요약이 실패해도 그대로 맞아 오류 앞에 보낸다(화면 오른쪽 참고 논문 칸)
     sources: list[dict] = [
         {
             "num": p["num"],
@@ -152,6 +138,29 @@ async def stream_paper_summary(
         }
         for i, p in enumerate(paper_ctx)
     ]
+
+    # ── 텍스트 스트리밍 ───────────────────────────────────────
+    sent = 0   # 이미 흘린 글 길이 — 실패 로그가 시작 전 실패인지 글 일부 뒤 실패인지 남긴다
+    try:
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                f"{cfg.LLM_BASE_URL}/chat/completions",
+                json=payload,
+                timeout=float(cfg.PAPER_SUMMARY_TIMEOUT),
+            ) as resp:
+                resp.raise_for_status()
+                async for delta in sse_deltas(resp):
+                    sent += len(delta)
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+    except Exception as e:
+        log.error("[paper_summary] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
+        yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
+        yield _error_event(SUMMARY_STREAM_ERROR)
+        yield "data: [DONE]\n\n"
+        return
+
+    # ── 출처 목록 이벤트 ─────────────────────────────────────
     yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
     yield "data: [DONE]\n\n"
 
@@ -166,6 +175,7 @@ async def stream_related_reason(
 
     SSE 이벤트:
       data: {"text": "..."}   — 토큰 스트리밍
+      data: {"error": RELATED_REASON_STREAM_ERROR} — LLM 호출이 실패하면(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     src_excerpt = _truncate(_clean_excerpt(source_abstract), 400) if source_abstract else "초록 없음"
@@ -193,6 +203,7 @@ async def stream_related_reason(
         "stream": True,
     }
 
+    sent = 0
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -202,22 +213,12 @@ async def stream_related_reason(
                 timeout=30.0,
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    sent += len(delta)
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[paper_related_reason] LLM 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '유사성 분석 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        log.error("[paper_related_reason] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
+        yield _error_event(RELATED_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"
 
@@ -236,6 +237,7 @@ async def stream_paper_reason(
     SSE 이벤트:
       data: {"keywords": [...]}   — 키워드 즉시 emit (있을 때)
       data: {"text": "..."}       — 토큰 스트리밍
+      data: {"error": PAPER_REASON_STREAM_ERROR} — LLM 호출이 실패하면(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     # ── 키워드 즉시 emit ─────────────────────────────────────
@@ -297,6 +299,7 @@ async def stream_paper_reason(
     )
 
     # ── LLM 스트리밍 ─────────────────────────────────────────
+    sent = 0
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -315,21 +318,11 @@ async def stream_paper_reason(
                 timeout=float(cfg.REASON_TIMEOUT),
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    sent += len(delta)
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[paper_reason] LLM 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '분석 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        log.error("[paper_reason] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
+        yield _error_event(PAPER_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"

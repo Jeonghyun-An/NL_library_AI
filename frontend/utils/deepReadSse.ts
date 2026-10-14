@@ -1,6 +1,7 @@
 // frontend/utils/deepReadSse.ts
 // 딥리드(논문·책 1편과의 대화 — POST /api/books/chat/{cnts_id})의 SSE 조각 읽기와 대화 모양. 서버(services/chat/book_chat.py)는
 // `data: {"text": …}` 를 흘리고, 답에서 인용한 대목이 있으면 `data: {"sources": […]}` 하나, 끝에 `data: [DONE]` 을 보낸다.
+// LLM 호출이 실패하면 sources 대신 [DONE] 바로 앞에 `data: {"error": 문구}` 를 보낸다(받은 글이 있어도 실패다).
 // 대화는 서버에 저장하지 않는다 — 요청마다 앞 대화를 history 로 싣는다(spec §12-4 D24)
 
 // 출처 대목의 쪽은 저장된 값 그대로다(0부터 센다 — 서버가 LLM 문맥에도 같은 값 [p.X–Y] 를 싣는다, book_chat.py:155)
@@ -18,9 +19,15 @@ export interface DeepReadMessage {
   pinnedChip?: number;
 }
 
-export type DeepReadEvent = { type: "text"; text: string } | { type: "sources"; sources: DeepReadSource[] } | { type: "done" };
+// error 의 message 는 서버 문구 — 비었거나 글이 아니면 null(화면은 CHAT_ERROR_TEXT 를 보인다)
+export type DeepReadEvent =
+  | { type: "text"; text: string }
+  | { type: "sources"; sources: DeepReadSource[] }
+  | { type: "error"; message: string | null }
+  | { type: "done" };
 
-export const CHAT_ERROR_TEXT = "오류가 발생했습니다. 다시 시도해주세요.";
+// 답을 받지 못했을 때(4xx·5xx·네트워크 오류·[DONE] 없이 끊김, 문구 없는 {error}) 보이는 문구 — 대화에는 남기지 않는다
+export const CHAT_ERROR_TEXT = "답을 받지 못했습니다";
 // 닫기·논문 바꾸기로 끊은 답의 꼬리 — 끊긴 답도 대화에 남겨 다음 질문의 history 가 user/assistant 짝을 잃지 않게 한다(06e 정함 21)
 export const CHAT_STOPPED_TEXT = "(답을 받다가 멈췄습니다)";
 export const CHAT_STOPPED_EMPTY = "(답을 받기 전에 멈췄습니다)";
@@ -47,8 +54,10 @@ export function parseSse(buffer: string, chunk: string): { buffer: string; event
       continue;
     }
     if (!evt || typeof evt !== "object") continue;
-    const { text, sources } = evt as { text?: unknown; sources?: unknown };
-    if (typeof text === "string" && text) events.push({ type: "text", text });
+    const { text, sources, error } = evt as { text?: unknown; sources?: unknown; error?: unknown };
+    if ("error" in evt) {
+      events.push({ type: "error", message: typeof error === "string" && error.trim() ? error.trim() : null });
+    } else if (typeof text === "string" && text) events.push({ type: "text", text });
     else if (Array.isArray(sources)) events.push({ type: "sources", sources: sources as DeepReadSource[] });
   }
   return { buffer: rest, events };

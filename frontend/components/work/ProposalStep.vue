@@ -29,8 +29,8 @@
       <template v-else>
         <p class="rs-card__title">아직 목차가 없습니다</p>
         <p class="rs-muted">
-          참고문헌에 논문을 5편 이상 담으면 보고서를 만들 수 있습니다. 선행연구 묶음의 수와 배정은 담은 논문의 키워드
-          소속으로 서버가 정합니다.
+          참고문헌에 담은 논문이 {{ MIN_READING_FOR_OUTLINE }}편 이상이면 보고서를 만들 수 있습니다. 선행연구 묶음의 수와 배정은
+          담은 논문의 키워드 소속으로 서버가 정합니다.
         </p>
         <div v-if="!readOnly" class="rs-card__actions">
           <button type="button" class="rs-btn" :disabled="busy" @click="makeOutline">{{ MAKE_REPORT }}</button>
@@ -276,6 +276,7 @@ import {
   type TocItem,
 } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
+import { MIN_READING_FOR_OUTLINE } from "~/utils/readingList";
 import type { ReportExportFormat } from "~/utils/reportDocument";
 import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";

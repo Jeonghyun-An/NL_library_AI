@@ -7,6 +7,7 @@
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, Figure, ProposalView, SectionSource } from "~/types/work";
 import { figureById, sentenceFlags } from "~/utils/figureMarkers";
+import { passageText } from "~/utils/passageText";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 
 // 글자 2-gram — 한국어는 조사·어미가 붙어 낱말 단위로는 같은 말이 잘 겹치지 않는다
@@ -17,7 +18,9 @@ export const NGRAM_N = 2;
 // 결과 문형만 겹친 하나가 0.20 으로 하한에 닿고 나머지는 0.15 이하였다 — 운영 대목으로 잰 값이 아니다(계획 파트 S 메모 12)
 export const EXCERPT_MATCH_MIN = 0.2;
 
-// 문장 끝(마침표·물음표·느낌표·고리점) 뒤 공백에서 나눈다 — 대목은 원문 그대로라 [E#] 표기가 없다(본문 쪽 sentenceFlags 와 다른 규칙)
+// 문장 끝(마침표·물음표·느낌표·고리점) 뒤 공백에서 나눈다 — 대목은 원문 그대로라 [E#] 표기가 없다(본문 쪽 sentenceFlags 와 다른 규칙).
+// 대목은 먼저 passageText 로 정리한다 — '요한다.<br><br>한편' 의 태그 글자가 줄바꿈이 되어 그 자리에서도 나뉘고, 'br' 글자가
+// n-gram 으로 세이지 않는다
 const SENTENCE_SPLIT = /(?<=[.!?。])\s+/;
 // 같은 자리에서 나누되 사이 공백을 남긴다(excerptParts 가 원문 글자를 하나도 빼지 않게)
 const SENTENCE_SPLIT_KEEP = /((?<=[.!?。])\s+)/;
@@ -26,7 +29,7 @@ const MARKERS = /\[[EF]\p{Nd}+\]/gu;
 const NOISE = /[\s\p{P}\p{S}]/gu;
 
 export function excerptSentences(text: string): string[] {
-  return text
+  return passageText(text)
     .split(SENTENCE_SPLIT)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -138,8 +141,8 @@ export function bestExcerptSentence(cited: string, excerpt: string, eid?: string
   return top >= EXCERPT_MATCH_MIN ? best : null;
 }
 
-// 대목을 그대로 이어 붙인 조각 — 강조할 문장(bestExcerptSentence)만 mark. 조각을 이으면 원문 글자 그대로다.
-// eid 는 누른 칩의 근거 번호(CitePick.eid — bestExcerptSentence 에 그대로 넘긴다)
+// 정리한 대목(passageText)을 그대로 이어 붙인 조각 — 강조할 문장(bestExcerptSentence)만 mark. 조각을 이으면 정리한 글
+// 그대로다(<br> 태그 글자는 줄바꿈이 되어 있다). eid 는 누른 칩의 근거 번호(CitePick.eid — bestExcerptSentence 에 그대로 넘긴다)
 export function excerptParts(excerpt: string, cited: string, eid?: string): { text: string; mark: boolean }[] {
   const best = bestExcerptSentence(cited, excerpt, eid);
   const parts: { text: string; mark: boolean }[] = [];
@@ -150,7 +153,7 @@ export function excerptParts(excerpt: string, cited: string, eid?: string): { te
     else parts.push({ text, mark });
   };
   let index = 0;
-  for (const piece of excerpt.split(SENTENCE_SPLIT_KEEP)) {
+  for (const piece of passageText(excerpt).split(SENTENCE_SPLIT_KEEP)) {
     if (!piece.trim()) {
       push(piece, false);
       continue;

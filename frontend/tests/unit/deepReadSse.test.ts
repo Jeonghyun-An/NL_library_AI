@@ -32,6 +32,18 @@ describe("parseSse", () => {
     expect(parseSse("", "data: [DONE]\r\n").events).toEqual([{ type: "done" }]);
   });
 
+  // 서버(app/services/chat/book_chat.py)는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error: 문구} 를 보낸다
+  it("{error} 는 서버 문구와 함께 error 로 읽는다 — 문구가 비었거나 글이 아니면 문구 없는 error", () => {
+    const chunk = ['data: {"text": "받다 만"}', "", 'data: {"error": "답을 만들지 못했습니다"}', "", "data: [DONE]", ""].join("\n");
+    expect(parseSse("", chunk).events).toEqual([
+      { type: "text", text: "받다 만" },
+      { type: "error", message: "답을 만들지 못했습니다" },
+      { type: "done" },
+    ]);
+    expect(parseSse("", 'data: {"error": "  "}\n').events).toEqual([{ type: "error", message: null }]);
+    expect(parseSse("", 'data: {"error": true}\n').events).toEqual([{ type: "error", message: null }]);
+  });
+
   it("data: 가 아닌 줄·깨진 JSON·빈 글·모르는 모양은 버린다", () => {
     const chunk = [
       ": keep-alive",

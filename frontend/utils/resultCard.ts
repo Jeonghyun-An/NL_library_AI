@@ -1,6 +1,7 @@
 // frontend/utils/resultCard.ts
 // 결과 카드(소장자료·논문 공통)가 보이는 글을 만드는 순수 함수 — 키워드 칩·저자·서지 줄.
 // 화면 상태 없이 도는 부분만 여기 둔다(components/ResultCard.vue 가 쓴다)
+import { parseVolIssue } from "~/utils/citations";
 
 export type ResultKind = "book" | "paper";
 
@@ -74,17 +75,13 @@ export function formatPubLabel(pubDate: string | null | undefined, kind: ResultK
  * 논문 권호(vol_issue)를 읽기 좋게. 운영 값: '11(3)'·'4(2)'·'24(10)'(권(호)), '-33'·'-42'(권 없이 호만), 숫자 하나(권만).
  *  - 'V(N)' → 'V권 N호', '-N' → 'N호', 'V' → 'V권'
  *  - 비었거나 '-' 같은 기호뿐이면 빈 문자열(생략), 그 밖의 모양은 원문 그대로(예: '특별호', '11-3')
+ * 읽기는 참고문헌과 같은 parseVolIssue(utils/citations)
  */
 export function formatVolIssue(value: string | null | undefined): string {
-  const raw = (value ?? "").trim();
-  if (!raw || /^[-–—\s/.,]+$/.test(raw)) return "";
-  const both = raw.match(/^(\d+)\s*\(\s*(\d+)\s*\)$/);
-  if (both) return `${both[1]}권 ${both[2]}호`;
-  const issueOnly = raw.match(/^-\s*(\d+)$/);
-  if (issueOnly) return `${issueOnly[1]}호`;
-  const volOnly = raw.match(/^(\d+)$/);
-  if (volOnly) return `${volOnly[1]}권`;
-  return raw;
+  const v = parseVolIssue(value);
+  if (!v) return "";
+  if (v.raw !== null) return v.raw;
+  return [v.vol ? `${v.vol}권` : "", v.issue ? `${v.issue}호` : ""].filter(Boolean).join(" ");
 }
 
 /** 이름 비교용 정리 — 공백·괄호·가운뎃점 같은 겉모양 차이와 대소문자를 지운다('한국 도서관 협회' = '한국도서관협회' = '(한국도서관협회)') */

@@ -1,4 +1,6 @@
 // frontend/tests/unit/workPhase.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
@@ -262,11 +264,39 @@ describe("온보딩", () => {
     // 제품 기능 이름은 화면 표기 상수(utils/brand — 사용자 결정 2026-10-12)로 — '딥리서치' 글자를 두지 않는다
     expect(ONBOARDING_STEPS[0]!.body.startsWith(`${DEEP_RESEARCH} 보고서의 향후 과제`)).toBe(true);
     expect(ONBOARDING_STEPS[1]!.body).toContain(`그 논문과 대화(${DEEP_READ})할 수 있고`);
+    expect(ONBOARDING_STEPS[1]!.body.endsWith("자기점검이 뺀 논문을 되살릴 수 있습니다.")).toBe(true);
     for (const s of ONBOARDING_STEPS) {
       expect(s.body).not.toContain("딥리서치");
       expect(s.body).not.toContain("딥리드");
       expect(s.body.length).toBeGreaterThan(0);
       expect(s.decide.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("온보딩 — 참고문헌 선택하기는 미리 담아 둔 채로 시작한다(승인 문구 2026-10-13)", () => {
+  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함). 숫자 없는 기능 설명이다 — 이 안내는 [단계 안내 다시 보기]로
+  // 이어간 모든 연구(미리 담기 전에 이어간 연구·후보가 적은 연구·예시 연구 포함)에서 열리니, 경우별 실제 수는 머리 소개가 맡는다
+  const APPROVED = "이어가기를 시작하면 근거로 쓰인 논문을 미리 담아 둡니다. 빼거나 더 담아서 참고문헌을 정해 보세요.";
+  const body = ONBOARDING_STEPS[1]!.body;
+
+  it("설명은 승인 문구로 시작하고 편수를 적지 않는다(사용자 결정 2026-10-13)", () => {
+    expect(body.startsWith(APPROVED)).toBe(true);
+    expect(body).not.toMatch(/\d+\s*편/);
+    // 미리 담기 전의 '후보로 들어와 있습니다'(0 에서 담아 올라가는 말)는 이제 틀린 말이다
+    expect(body).not.toContain("후보로 들어와 있습니다");
+  });
+
+  it("결정할 것 — 여덟 편이 담긴 채 시작하니 '5편 이상 담으면'이 아니라 '담은 논문이 5편 이상이면'", () => {
+    expect(ONBOARDING_STEPS[1]!.decide).toBe(
+      "보고서에 쓸 논문을 담습니다. 담은 논문이 5편 이상이면 [보고서 만들기]를 누를 수 있습니다.",
+    );
+  });
+
+  it("말투는 다른 단계와 같은 합니다체 — 해요체 서술('…어요.')을 두지 않는다(사용자 결정 2026-10-13)", () => {
+    for (const s of ONBOARDING_STEPS) {
+      expect(s.body).not.toMatch(/[어아]요\./);
+      expect(s.decide).not.toMatch(/[어아]요\./);
     }
   });
 });

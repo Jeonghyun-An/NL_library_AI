@@ -39,7 +39,7 @@ from services.research_work.paragraph_edit import merge_paragraphs, revalidate
 from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
 from services.research_work.proposal_views import paper_ids, proposal_view, section_sources
-from services.research_work.reading_views import book_meta, subquestions_of
+from services.research_work.reading_views import book_meta, preselected_count, subquestions_of
 from services.research_work.section_input import gap_input, gap_seeds, prior_input, section_papers
 from services.research_work.seeds import corpus_of
 from services.research_work.shapes import (
@@ -113,6 +113,13 @@ async def _picked_rows(db: AsyncSession, jid) -> list[ResearchReading]:
     )).scalars().all())
 
 
+async def _reading_rows(db: AsyncSession, jid) -> list[ResearchReading]:
+    """읽기 목록 행 전부(상태 무관) — 계획서 응답이 담은 논문(in)과 미리 담은 수(뺀 행 포함)를 한 번에 센다."""
+    return list((await db.execute(
+        select(ResearchReading).where(ResearchReading.work_id == jid)
+    )).scalars().all())
+
+
 async def _picked_topic(db: AsyncSession, work) -> ResearchTopic | None:
     if work.topic_id is None:
         return None
@@ -132,13 +139,16 @@ async def _proposal_response(db: AsyncSession, work, response: Response) -> dict
     )).scalar_one_or_none()
     G = ResearchGeneration
     generations = list((await db.execute(select(G).where(G.work_id == jid).order_by(G.id))).scalars().all())
-    picked = {r.cnts_id for r in await _picked_rows(db, jid)}
+    rows = await _reading_rows(db, jid)
+    picked = {r.cnts_id for r in rows if r.state == "in"}
     topic = await _picked_topic(db, work)
     ids = paper_ids(proposal, generations)
     ids += [c for c in ((topic.card or {}).get("evidence") or [] if topic else []) if c not in ids]
     books = await BookRepository(db).get_by_cnts_ids(ids)
-    # 고른 주제 행을 그대로 넘긴다 — 카드 제목(목차 뒤 [직접 고치기] 면 다시 맞춤 필요)·출처(topic_source — 공개 부록)
-    view = proposal_view(work, job, proposal, books, generations, picked, topic)
+    # 고른 주제 행을 그대로 넘긴다 — 카드 제목(목차 뒤 [직접 고치기] 면 다시 맞춤 필요)·출처(topic_source — 공개 부록).
+    # 미리 담은 수(공개 부록 '참고문헌:' 줄)는 읽기 목록 머리 안내와 같은 셈이다 — 뺀 행도 센다
+    view = proposal_view(work, job, proposal, books, generations, picked, topic,
+                         preselected=preselected_count(rows))
     response.headers["ETag"] = str(view["version"])
     return view
 
