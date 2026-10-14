@@ -120,7 +120,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 | 참고문헌 선택하기 문구 | 기획 세션 승인 문구(합니다체)·다음 단계 버튼을 머리 소개 옆에도 |
 | 소장자료 관련 자료 | 전용 `GET /api/books/{id}/related` — 자기 제외·하한(종합 0.3 + 원점수 0.2)·검색 기록에 남기지 않음. 첫 시연 질의 1위의 관련 자료 1권 → 4권 |
 | 스트리밍 오류 | AI 글 스트림 다섯이 LLM 실패를 `{error}` 이벤트로(D4 — `app/services/llm_sse.py` `sse_deltas`, 스트림 안 오류 줄·`[DONE]` 없는 끝 포함). 캐시·검색 기록·DeepRead 이력에 오류가 남지 않는다 |
-| 논문 검색 쿼리 재작성 | 끔 — 서버가 요청 값을 무시한다(사용자 결정 2026-10-14). 근거는 파이프라인 측정 Recall@10 켬 70~71% vs 끔 86~88%(`research/brochure-search-eval`, 브랜치 `feat/brochure-search-eval`). 배포본 재측정 전이라 제품 수치로 쓰지 않는다 — 재측정은 '논문 작업 정리' 세션이 시드 20261015 로 진행 중 |
+| 논문 검색 쿼리 재작성 | 끔 — 서버가 요청 값을 무시한다(사용자 결정 2026-10-14). 근거는 파이프라인 측정 Recall@10 켬 70~71% vs 끔 86~88%(브로셔 평가 세션 보고 — 브랜치 `feat/brochure-search-eval` 의 `research/brochure-search-eval/README.md` 본문과 `d5636a7` 커밋 메시지. '끔' 수치는 커밋된 결과표에 아직 없다). 배포본 재측정 전이라 제품 수치로 쓰지 않는다 — 재측정은 '논문 작업 정리' 세션이 시드 20261015 로 진행 중 |
 | 소장자료 비교 사유 | 시험만 하고 접음(`research/book-related-reason-trial`) |
 
 | 배포 | 이미지 | 비고 |
@@ -143,7 +143,7 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 |---|---|
 | 예시 연구 | 0건 — 지정 필요(`scripts/research_eval/mark_example.py`) |
 | 미리 담기 8편 | 새 이어가기로만 확인할 수 있다 — 브라우저 E2E 진행 중 |
-| 옛 검색 기록 API 의 비-uuid 세션 id 500 | `20dbe10` 으로 고침(fastapi 만) — 다음 배포 대기 |
+| 옛 검색 기록 API 의 비-uuid 세션 id 500 | `20dbe10` 으로 고침(fastapi 만) — `c205a88` 머지 뒤 커밋이라 지금 `fix/round06-live-check` 에만 있다 → `dev` 재머지(사용자 승인) → fastapi 배포 |
 
 반복 함정 — 이 배포 작업에서 나온 것 셋을 `docs/ops/recurring-gotchas.md` 28~30번에 더했다(서버·화면이 같이 바뀐 배포의 순서, Git Bash curl 의 한글 JSON, 서버 셸 root 전환 줄 붙여 넣기).
 
