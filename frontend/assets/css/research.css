@@ -177,6 +177,17 @@ html:has(.rs-page.has-progressbar) {
   padding: 0.3rem 0.6rem;
   font-size: 0.6rem;
 }
+/* 연구 취소의 한 번 확인(CancelConfirm) — '정말 취소'는 메인 입력창의 끝나지 않은 연구 줄(.rs-start-note__btn.is-danger)과 같은 위험 면 */
+.rs-cancel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.rs-btn.rs-cancel__btn--danger {
+  color: var(--skx-on-accent);
+  background: var(--skx-danger);
+  border-color: var(--skx-danger);
+}
 .rs-icon-btn {
   width: 1.4rem;
   height: 1.4rem;

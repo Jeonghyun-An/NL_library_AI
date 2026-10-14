@@ -458,8 +458,9 @@ onBeforeUnmount(() => {
 const restarting = ref(false);
 const pageError = ref("");
 
+// 확인은 누른 버튼(CancelConfirm — 화면 안 '정말 취소')이 이미 받았다. 브라우저 확인창은 쓰지 않는다 — 메인 입력창의 연구 줄과 같게
 function onCancel(): void {
-  if (window.confirm("이 연구를 취소할까요? 진행 중인 단계가 끝나는 대로 멈춥니다.")) void cancel();
+  void cancel();
 }
 
 async function onRestart(): Promise<void> {
