@@ -37,9 +37,15 @@
         </li>
       </ul>
     </span>
+    <!-- 글은 대문자 높이 기준으로 가운데(.rs-plus__chip-label — text-box), × 는 글자 대신 그림이라 칩 정가운데에 선다. 전에는 × 글자가
+         글꼴·크기가 달라 1px 쯤 처져 'DeepResearch' 가 위로 떠 보였다(사용자 의견 2026-10-14) -->
     <span v-if="active" class="rs-plus__chip">
-      {{ active.label }}
-      <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">×</button>
+      <span class="rs-plus__chip-label">{{ active.label }}</span>
+      <button type="button" class="rs-plus__chip-x" :aria-label="`${active.label} 해제`" @click="clear">
+        <svg viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+          <path d="M2 2 8 8M8 2 2 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" />
+        </svg>
+      </button>
     </span>
     <!-- DeepResearch 를 고르면 칩 옆에 탐색 방식(spec D28) — 고른 값을 잡 params 두 칸(broaden·query_context)으로 싣는다 -->
     <ResearchModePicker
