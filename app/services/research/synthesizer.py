@@ -14,6 +14,7 @@ gemma-3-12b) 프롬프트 예시의 "섹션 1·논문 1·과제 1" 모양을 그
 제목·저자·연도는 모델 출력에서 가져오지 않는다. evidence 의 meta 를 쓴다 —
 라벨을 모델이 쓰게 두면 언젠가 없는 논문을 만들어낸다.
 """
+import difflib
 import html
 import logging
 import re
@@ -56,6 +57,18 @@ _TABLE_SHARE = 0.6
 _SENTENCE_STOP = re.compile(r"[.!?。](?=\s|$|\d{1,3}\)|[\"”’」』])")
 # 영문 초록 문장에 흔한 서술 동사 — bibliography.has_prose 의 목록에 없는 것만
 _ENGLISH_VERBS = re.compile(r"\b(?:analy[sz]ed|examined|investigated|revealed|indicated|compared|results?)\b", re.I)
+
+# 앞 절과 같은 문장으로 보는 유사도(difflib ratio, 인용 표기·공백·문장부호를 뺀 글끼리). 운영 보고서 2건과 gemma 재생성
+# 9회에서 0.85 이상은 모두 같은 대목을 옮긴 거의 같은 문장이었고, 0.70~0.82 는 바꿔 쓴 일반론('…다양한 변인에 대한
+# 연구가 필요하다')이었다 — 그쪽은 남긴다
+_REPEAT_RATIO = 0.85
+# 절 자신을 가리키는 메타 문장('본 절에서는 … 분석하고자 한다') — 근거가 없는데 마커가 붙어 나온다
+_META_SENTENCE = re.compile(r"^(?:본|이)\s?(?:절|장|보고서|섹션)(?:에서는|에서|은|는)\s")
+_SENTENCE_BREAK = re.compile(r"(?<=[.!?。])\s+")
+_LEADING_BRACKETS = re.compile(r"^(?:[ \t]*[\[［【][^\[\]［］【】\n]*[\]］】])+")
+# 마커 바로 뒤가 '연구는'·'논문에서'·조사('[E3]의')면 그 마커는 다음 문장의 주어다(운영 630e0d65 4절 '[E3] 연구는 …')
+_MARKER_AS_SUBJECT = re.compile(r"^(?:[ \t]*(?:연구|논문)|[은는이가의에와과도])")
+_NON_WORD = re.compile(r"[\W_]+")
 
 
 # on_section(idx, total, status, info) — info 의 모양은 synthesize 독스트링에 있다. 인자 수를
@@ -509,6 +522,63 @@ def _has_narrative(section: dict) -> bool:
     )
 
 
+def _sentences(text: str) -> list[str]:
+    """문장 단위로 나눈다. 마침표 뒤에 붙은 마커 묶음('…다. [E1] 다음')은 앞 문장에 붙인다 — bind_markers 가 셀 때와
+    같은 관례다. 다만 마커 바로 뒤가 '연구는'·조사면 다음 문장의 주어라 그 문장에 둔다(_MARKER_AS_SUBJECT)."""
+    out: list[str] = []
+    for piece in _SENTENCE_BREAK.split(text.strip()):
+        lead = _LEADING_BRACKETS.match(piece)
+        # strip_markers 가 다 걷어 내야 인용 표기 묶음이다 — '[표 1]' 같은 괄호는 문장의 글이다
+        if (lead and out and not strip_markers(lead.group(0))
+                and not _MARKER_AS_SUBJECT.match(piece[lead.end():])):
+            out[-1] = f"{out[-1]} {lead.group(0).strip()}"
+            piece = piece[lead.end():]
+        if piece.strip():
+            out.append(piece.strip())
+    return out
+
+
+def _sentence_key(sentence: str) -> str:
+    return _NON_WORD.sub("", strip_markers(sentence))
+
+
+def _repeats(key: str, seen: list[str]) -> bool:
+    if not key:
+        return False
+    for prev in seen:
+        sm = difflib.SequenceMatcher(None, key, prev)
+        if (sm.real_quick_ratio() >= _REPEAT_RATIO and sm.quick_ratio() >= _REPEAT_RATIO
+                and sm.ratio() >= _REPEAT_RATIO):
+            return True
+    return False
+
+
+def drop_repeats(section: dict, seen: list[str]) -> tuple[dict, list[str]]:
+    """앞 절과 거의 같은 도입 문장·향후 과제, 그리고 도입의 메타 문장을 지운다 (순수 함수).
+
+    절마다 따로 부르므로 모델은 앞 절에서 쓴 문장을 모른다. 같은 논문의 같은 대목이 여러 절에 들어가면 같은 문장이
+    절마다 되풀이됐다(운영 630e0d65 — 1·2·4·5절 도입 첫 문장, 4개 절의 같은 향후 과제). pick_excerpts 가 대목을
+    갈라도 같은 논문의 대목이 하나뿐이면 남는다.
+
+    seen 은 앞 절들에 남은 문장의 비교 키다. (다듬기 전 절, 이 절에 남은 문장의 비교 키)를 돌려준다 — 부르는 쪽이
+    seen 에 더한다. 대표 논문 요약은 건드리지 않는다(논문마다 하나라 되풀이가 아니다). 도입에서 남는 서술이 없으면
+    도입은 원문 그대로 둔다 — 비우면 '도입 문단을 생성하지 못한 절' 한계 줄이 잘못 붙는다. 향후 과제는 비어도 된다.
+    """
+    intro = section.get("intro", "")
+    sentences = _sentences(intro)
+    kept = [s for s in sentences
+            if not _META_SENTENCE.match(s) and not _repeats(_sentence_key(s), seen)]
+    if len(kept) == len(sentences):
+        trimmed = intro                    # 지운 것이 없으면 줄바꿈까지 원문 그대로
+    elif _prose(" ".join(kept)):
+        trimmed = " ".join(kept)
+    else:
+        trimmed, kept = intro, sentences
+    future = [f for f in section.get("future", []) if not _repeats(_sentence_key(f["text"]), seen)]
+    keys = [k for k in map(_sentence_key, [*kept, *(f["text"] for f in future)]) if k]
+    return {**section, "intro": trimmed, "future": future}, keys
+
+
 def excerpt_text(chunk: Chunk) -> str:
     """모델에 넘기는 대목 글 — HTML 이스케이프(&lt; &amp;)를 풀고 <br> 을 줄바꿈으로 바꾼 앞 EXCERPT_CHARS 자.
     적재된 표·초록 글에 이스케이프가 그대로 남아 있어 모델이 '&lt;기초학습기능검사&gt;' 를 읽었다."""
@@ -657,6 +727,8 @@ async def synthesize(
     sections = []
     # 앞 절들이 모델에 보여 준 (근거 번호, 청크 ID) — pick_excerpts 가 같은 논문의 다른 대목을 먼저 고른다
     shown: set[tuple[str, str]] = set()
+    # 앞 절들에 남은 도입 문장·향후 과제의 비교 키 — drop_repeats
+    seen: list[str] = []
     for i, sq in enumerate(targets):
         info = {"subq_idx": sq.idx, "heading": sq.text, "headings": headings}
         await on_section(i, len(targets), "running", info)
@@ -665,6 +737,9 @@ async def synthesize(
         if not section["failed"]:
             # 서술을 받지 못한 절의 대목은 보고서 어디에도 쓰이지 않았다 — 다음 절이 피할 까닭이 없다
             shown.update((eid, c.chunk_id) for eid, c in excerpts.items())
+            # 초안(on_section)을 다듬기 전에 지운다 — 초안과 완성본이 같은 절을 쓴다
+            section, kept = drop_repeats(section, seen)
+            seen.extend(kept)
         sections.append(section)
         log.info("[research] 절 종합 job=%s idx=%s 논문=%d ok=%s",
                  state.job_id, sq.idx, len(section["papers"]), not section["failed"])

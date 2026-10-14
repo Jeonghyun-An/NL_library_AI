@@ -1270,3 +1270,97 @@ class TestSectionExcerpts:
         calls, _, _ = self._run(monkeypatch, st)
         assert "<기초학습기능검사>였다.\n대상은 232명" in calls[0]
         assert "&lt;" not in calls[0] and "<br>" not in calls[0]
+
+
+def _drafted(intro: str = "", future: tuple[str, ...] = (), summary: str = "요약이다.") -> dict:
+    """모델 출력으로 만든 절(build_section 의 모양) — 다듬기(finalize_section) 전이다."""
+    return {"heading": "h", "intro": intro, "papers": [{"cnts_id": "A", "summary": summary}],
+            "future": [{"text": t} for t in future], "evidence_chunks": {}, "chunk_scores": {},
+            "failed": False}
+
+
+class TestDropRepeats:
+    """앞 절과 거의 같은 도입 문장·향후 과제를 지운다 — 운영 630e0d65 에서 '2004년부터 시작되었으며…' 가 1·2·4·5절
+    도입 첫 문장으로, '객관적인 자료 조사가 필요하다 [E4]' 가 네 절의 향후 과제로 거의 그대로 되풀이됐다."""
+
+    _FIRST = ("국내 학술 논문에서 다문화가정 아동의 언어 발달에 대한 연구는 2004년부터 시작되었으며, 유아와 아동의 음운, "
+              "어휘 발달, 형태론 등을 분석한 경우가 많다 [E1].")
+    _AGAIN = ("국내 학술 논문에서 다문화가정 아동의 언어 발달 연구는 2004년부터 시작되었으며, 유아와 아동의 음운, "
+              "어휘 발달, 형태론 등을 분석한 경우가 많았다 [E2].")
+    _FUTURE = "다문화가정 아동의 언어 능력을 정확히 보여줄 수 있는 객관적인 자료 조사가 필요하다 [E1]."
+
+    def _seen(self, intro: str = _FIRST, future: tuple[str, ...] = (_FUTURE,)) -> list[str]:
+        _, seen = synthesizer.drop_repeats(_drafted(intro, future), [])
+        return seen
+
+    def test_repeated_intro_sentence_is_dropped(self):
+        sec, _ = synthesizer.drop_repeats(_drafted(f"{self._AGAIN} 연구 방법으로는 조사 연구가 가장 많았다 [E3]."),
+                                          self._seen())
+        assert sec["intro"] == "연구 방법으로는 조사 연구가 가장 많았다 [E3]."
+
+    def test_paraphrase_below_the_threshold_is_kept(self):
+        # 바꿔 쓴 일반론(유사도 0.79)은 남긴다 — 같은 문장의 되풀이만 지운다
+        earlier = "다문화가정 아동의 언어 발달에 영향을 미치는 다양한 요인들을 종합적으로 고려하는 연구가 필요하다 [E1]."
+        later = "다문화가정 아동의 언어 발달에 영향을 미치는 다양한 변인들에 대한 추가적인 연구가 필요하다 [E2]."
+        sec, _ = synthesizer.drop_repeats(_drafted("새 도입이다 [E2].", (later,)),
+                                          self._seen(future=(earlier,)))
+        assert sec["future"] == [{"text": later}]
+
+    def test_repeated_future_item_is_dropped(self):
+        again = "다문화가정 아동의 언어 능력을 정확히 보여줄 수 있는 객관적인 자료 조사가 필요하다. [E2]"
+        other = "연령별 특성을 세분화하여 분석하는 연구가 필요하다 [E2]."
+        sec, _ = synthesizer.drop_repeats(_drafted("새 도입이다 [E2].", (again, other)), self._seen())
+        assert sec["future"] == [{"text": other}]
+
+    def test_intro_made_only_of_repeats_is_kept_whole(self):
+        # 비우면 '도입 문단을 생성하지 못한 절' 한계 줄이 잘못 붙는다
+        sec, _ = synthesizer.drop_repeats(_drafted(self._AGAIN), self._seen())
+        assert sec["intro"] == self._AGAIN
+
+    def test_meta_sentence_is_dropped(self):
+        sec, _ = synthesizer.drop_repeats(_drafted(
+            "본 절에서는 국내 학술 논문에서 연구 대상 집단을 분석하고자 한다 [E3]. 양적 연구 방법이 주로 활용되었다 [E1]."), [])
+        assert sec["intro"] == "양적 연구 방법이 주로 활용되었다 [E1]."
+
+    def test_marker_after_the_period_goes_with_the_dropped_sentence(self):
+        intro = f"{self._AGAIN.removesuffix(' [E2].')}. [E2] 이러한 연구들은 어머니의 언어 능력을 함께 보고한다. [E3]"
+        sec, _ = synthesizer.drop_repeats(_drafted(intro), self._seen())
+        assert sec["intro"] == "이러한 연구들은 어머니의 언어 능력을 함께 보고한다. [E3]"
+
+    def test_marker_used_as_the_next_subject_stays_with_it(self):
+        # '[E1] 연구는…' 의 마커는 다음 문장의 주어다 — 앞 문장과 함께 지우면 '연구는…' 이 근거 없이 남는다
+        intro = f"{self._AGAIN.removesuffix(' [E2].')}. [E2] 연구는 어머니의 한국 거주 기간을 변수로 보았다."
+        sec, _ = synthesizer.drop_repeats(_drafted(intro), self._seen())
+        assert sec["intro"] == "[E2] 연구는 어머니의 한국 거주 기간을 변수로 보았다."
+
+    def test_paper_summaries_are_left_alone(self):
+        sec, _ = synthesizer.drop_repeats(_drafted("새 도입이다 [E2].", summary=self._FIRST), self._seen())
+        assert sec["papers"] == [{"cnts_id": "A", "summary": self._FIRST}]
+
+    def test_unchanged_section_keeps_its_text(self):
+        intro = "첫 문장이다 [E1].\n둘째 문장이다 [E2]."
+        sec, _ = synthesizer.drop_repeats(_drafted(intro, ("과제다 [E1].",)), [])
+        assert sec["intro"] == intro and sec["future"] == [{"text": "과제다 [E1]."}]
+
+
+class TestSynthesizeDropsRepeats:
+    def test_draft_and_report_show_the_same_trimmed_section(self, monkeypatch):
+        first = json.dumps({"intro": TestDropRepeats._FIRST, "summaries": {},
+                            "future": [{"text": TestDropRepeats._FUTURE}]})
+        second = json.dumps({"intro": f"{TestDropRepeats._AGAIN} 연구 방법으로는 조사 연구가 가장 많았다 [E3].",
+                             "summaries": {},
+                             "future": [{"text": TestDropRepeats._FUTURE.replace("[E1]", "[E2]")}]})
+        TestSynthesize()._patch_chat(monkeypatch, [first, second])
+        infos = []
+        _, on_section = TestSectionProgress()._record(infos)
+        report = asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert report["sections"][1]["intro"] == "연구 방법으로는 조사 연구가 가장 많았다 [E3]."
+        assert report["sections"][1]["future"] == []
+        assert infos[3]["section"] == report["sections"][1]
+
+    def test_intro_made_only_of_repeats_is_not_reported_as_missing(self, monkeypatch):
+        reply = json.dumps({"intro": TestDropRepeats._FIRST.replace("[E1]", "[E2]"), "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
+        report = asyncio.run(synthesize(_state_three()))
+        assert report["sections"][1]["intro"]
+        assert not any("도입 문단" in x for x in report["limitations"])
