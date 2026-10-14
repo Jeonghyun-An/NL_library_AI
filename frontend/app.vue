@@ -24,6 +24,13 @@
   </div>
 </template>
 
+<script setup lang="ts">
+// 기본 탭 제목 — 제목을 따로 두지 않는 화면(메인·결과)으로 돌아오면 이 값으로 돌아간다. 페이지의 useHead 가 떠나며 걷히면 남은 항목이
+// 없어 직전 화면(연구·상세)의 제목이 그대로 남았다(2026-10-14 운영 확인 — 메인인데 탭이 'DeepResearch'). nuxt.config 의 app.head 는
+// 서버 첫 그림에만 실려 화면을 옮길 때는 되살아나지 않으므로 늘 살아 있는 이 컴포넌트에 둔다
+useHead({ title: "SKOVIX" });
+</script>
+
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
