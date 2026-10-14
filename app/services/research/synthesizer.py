@@ -476,7 +476,8 @@ def build_section(state: ResearchState, sq: SubQuestion, data: dict | None,
 
     소제목은 하위질문 그대로, 논문 목록은 section_paper_ids 그대로다 — 모델
     출력에 무엇이 있든 없든 바뀌지 않는다. 모델이 요약을 빠뜨린 논문도 빈
-    요약으로 싣고 assemble_report 가 개수를 한계에 올린다. data 가 None(서술을
+    요약으로 싣고 assemble_report 가 개수를 한계에 올린다(_synthesize_section 이 그 전에
+    한 번 다시 묻는다). data 가 None(서술을
     끝내 받지 못함)이면 논문 목록만 남기고 failed 로 표시한다.
 
     excerpts(pick_excerpts — 모델이 읽은 대목)가 있으면 그 대목을 evidence_chunks[eid] 맨 앞에 둔다. 인용칩
@@ -530,6 +531,13 @@ def _has_narrative(section: dict) -> bool:
         or any(_prose(f["text"]) for f in section["future"])
         or any(_prose(p["summary"]) for p in section["papers"])
     )
+
+
+def _unsummarized(state: ResearchState, sq: SubQuestion, section: dict) -> list[str]:
+    """요약이 없는 논문의 근거 번호(절의 논문 순서). finalize_section 이 '요약을 생성하지 못한 논문'으로 세는 것과
+    같은 기준이다 — 키가 없거나, 값이 빈 글·마커뿐('[E2]')인 요약. build_section 은 논문을 section_paper_ids 순서로
+    싣는다."""
+    return [eid for eid, p in zip(section_paper_ids(state, sq), section["papers"]) if not _prose(p["summary"])]
 
 
 def _sentences(text: str) -> list[str]:
@@ -668,12 +676,19 @@ async def _synthesize_section(
     전송 오류·해석 실패·서술 없는 응답은 한 번 다시 부르고, 그래도 안 되면
     논문 목록만 남긴 절(failed)을 돌려준다 — 한 절의 실패가 이미 받은 다른
     절을 버리게 두지 않는다.
+
+    서술은 있지만 summaries 에서 논문 요약을 빠뜨린 응답(_unsummarized)도 같은 횟수 안에서 다시 부른다 — 프롬프트가
+    번호를 빠짐없이 키로 넣으라고 하는데도 빠뜨린 형식 위반이다(A/B focus2 85d2 3절 E11, 48호출 중 1건). 끝내 다
+    채우지 못하면 빠진 논문이 가장 적은 응답을 싣는다. 빠진 논문은 지금처럼 빈 요약으로 나가고 finalize_section 이
+    '요약을 생성하지 못한 논문' 한계로 센다 — 절을 failed 로 돌리면 이미 받은 도입·요약까지 잃는다.
     """
     system, user, llm_params = get_prompt("research_synthesize").render(
         question=state.question, subquestion=sq.text,
         evidence_block=_evidence_block(state, sq, excerpts),
         paper_ids=", ".join(section_paper_ids(state, sq)),
     )
+    # 서술은 있으나 요약이 빠진 응답 가운데 빠진 논문이 가장 적은 것 — (절, 빠진 근거 번호)
+    partial: tuple[dict, list[str]] | None = None
     for attempt in range(1, _SECTION_ATTEMPTS + 1):
         if should_stop is not None and await should_stop():
             raise SynthesisCanceled
@@ -697,10 +712,21 @@ async def _synthesize_section(
         section = build_section(state, sq, data, excerpts)
         # 파싱만으로 성공을 판정하면 키가 다른 dict·빈 dict 가 성공으로 세어져,
         # 모든 절이 그렇게 와도 아래 '전부 실패' 가드를 빠져나간다.
-        if _has_narrative(section):
+        if not _has_narrative(section):
+            log.error("[research] 절 종합 응답에 서술이 없다 job=%s idx=%s 시도=%d: %s",
+                      state.job_id, sq.idx, attempt, (raw or "")[:300])
+            continue
+        missing = _unsummarized(state, sq, section)
+        if not missing:
             return section
-        log.error("[research] 절 종합 응답에 서술이 없다 job=%s idx=%s 시도=%d: %s",
-                  state.job_id, sq.idx, attempt, (raw or "")[:300])
+        log.warning("[research] 절 종합 응답에 요약이 빠졌다 job=%s idx=%s 시도=%d 빠진=%s",
+                    state.job_id, sq.idx, attempt, missing)
+        if partial is None or len(missing) < len(partial[1]):
+            partial = (section, missing)
+    if partial is not None:
+        log.warning("[research] 절 종합 — 요약이 빠진 채 싣는다 job=%s idx=%s 빠진=%s",
+                    state.job_id, sq.idx, partial[1])
+        return partial[0]
     return build_section(state, sq, None)
 
 
