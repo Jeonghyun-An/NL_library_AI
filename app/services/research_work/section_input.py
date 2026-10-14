@@ -16,18 +16,17 @@ GAP_SEEDS_MAX = 4        # 연구 공백 절의 씨앗 상한(고른 카드의 �
 USER_CARD_SEEDS = 3      # 직접 쓴 카드(씨앗 없음)일 때 보고서에서 고르는 씨앗 수
 
 
-def section_figures(years: list[int], corpus: dict | None, n: int) -> list[dict]:
-    """이 절에 주는 수치. 있는 것만 F1 부터 차례로 번호를 붙인다.
-    ① 이 절에 준 논문 수 ② 발행 연도 범위(연도를 아는 논문이 있을 때, 한 해면 그 해) ③ 소장 KCI 적재분(코퍼스
-    스냅숏이 있을 때, 천 단위 쉼표)."""
+def section_figures(years: list[int], n: int) -> list[dict]:
+    """이 절에 주는 수치 — 근거 논문의 편수·연도뿐이다. 있는 것만 F1 부터 차례로 번호를 붙인다.
+    ① 이 절에 준 논문 수 ② 발행 연도 범위(연도를 아는 논문이 있을 때, 한 해면 그 해).
+    소장 KCI 적재분은 주지 않는다 — 절·문단 프롬프트가 [F#] 를 근거 논문의 편수·연도에만 쓰라고 하는데, 쓰지 말라는
+    값을 목록에 두면 모델이 옮긴다(운영 2026-10-14 prior.g2 '…[F3]건에 달한다' → 값 칩 198,518). 적재분 기준은
+    화면 머리띠(workPhase.scopeLine)와 주제 카드 수치 문장이 말한다."""
     items = [("이 절에 준 논문 수", str(n))]
     known = sorted({y for y in years if isinstance(y, int)})
     if known:
         span = str(known[0]) if known[0] == known[-1] else f"{known[0]}~{known[-1]}"
         items.append(("발행 연도 범위", span))
-    n_papers = (corpus or {}).get("n_papers")
-    if isinstance(n_papers, int) and n_papers > 0:
-        items.append(("소장 KCI 적재분 논문 수", f"{n_papers:,}"))
     return [figure(f"F{i}", label, value) for i, (label, value) in enumerate(items, start=1)]
 
 
@@ -98,26 +97,25 @@ def _papers(cnts_ids: list[str], books: dict, excerpts: dict) -> list[dict]:
     return out
 
 
-def _common(question: str, topic: dict, research_question: str, papers: list[dict],
-            corpus: dict | None) -> dict:
+def _common(question: str, topic: dict, research_question: str, papers: list[dict]) -> dict:
     return {
         "question": question,
         "topic": {"id": topic.get("id"), "title": topic.get("title") or ""},
         "research_question": research_question,
         "papers": papers,
-        "figures": section_figures([p["year"] for p in papers if p["year"]], corpus, len(papers)),
+        "figures": section_figures([p["year"] for p in papers if p["year"]], len(papers)),
     }
 
 
 def prior_input(*, question: str, topic: dict, research_question: str, group: dict,
-                books: dict, excerpts: dict, corpus: dict | None) -> dict:
+                books: dict, excerpts: dict) -> dict:
     """선행연구 묶음 하나(group = 목차의 {key, name, hint, papers})의 절 입력(계약 §3). 논문은 section_papers 로
     6편까지. basis.papers 는 묶음의 논문 전부다 — 목차에서 묶음을 바꾸면 '다시 맞춤 필요'가 뜨게(계약 §4 stale).
     basis.question 은 이 절을 쓸 때의 연구 질문이다 — 질문을 바꿔도 '다시 맞춤 필요'가 뜨게(06e)."""
     papers = _papers(section_papers(group.get("papers") or []), books, excerpts)
     return {
         "key": group["key"], "kind": "prior",
-        **_common(question, topic, research_question, papers, corpus),
+        **_common(question, topic, research_question, papers),
         "group": {"name": group.get("name") or group.get("hint") or ""},
         "seeds": [],
         "basis": {"topic_id": topic.get("id"), "papers": list(group.get("papers") or []),
@@ -126,13 +124,13 @@ def prior_input(*, question: str, topic: dict, research_question: str, group: di
 
 
 def gap_input(*, question: str, topic: dict, research_question: str, seeds: list[dict],
-              books: dict, excerpts: dict, corpus: dict | None) -> dict:
+              books: dict, excerpts: dict) -> dict:
     """연구 공백 절의 입력(계약 §3). 논문은 씨앗에 묶인 근거 논문을 씨앗 순서로 모아 6편까지(spec §5-5)."""
     cnts = section_papers([c for s in seeds for c in s.get("papers") or []])
     papers = _papers(cnts, books, excerpts)
     return {
         "key": GAP_KEY, "kind": "gap",
-        **_common(question, topic, research_question, papers, corpus),
+        **_common(question, topic, research_question, papers),
         "group": None,
         "seeds": [{"heading": s.get("heading") or "", "text": s.get("text") or ""} for s in seeds],
         "basis": {"topic_id": topic.get("id"), "papers": cnts, "question": research_question},

@@ -908,7 +908,8 @@ class TestGenerateSection:
         assert inp["papers"][1]["excerpt"]["chunk_id"] == "KCI_B__0001"
         assert [c[1] for c in heavy if c[0] == "milvus"] == ["KCI_B", "KCI_C"]
         assert {c[1] for c in heavy if c[0] == "pick"} == {"가족 지지와 우울 가족 지지는 농촌 독거노인의 우울을 낮추는가?"}
-        assert [f["value"] for f in inp["figures"]] == ["3", "2013~2016", "144,748"]
+        # 연구에 코퍼스 스냅숏(144,748)이 있어도 절 수치는 근거 논문의 편수·연도뿐이다
+        assert [f["value"] for f in inp["figures"]] == ["3", "2013~2016"]
         assert inp["basis"]["papers"] == ["KCI_A", "KCI_B", "KCI_C"]
         assert api.dispatch.calls == 1
         assert api.events == [(str(jid), "generation", queued_event(gen["id"], "section", "prior.g1"))]

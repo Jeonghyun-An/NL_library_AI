@@ -299,23 +299,17 @@ class TestPickExcerpt:
 
 
 class TestSectionFigures:
-    def test_count_year_range_and_corpus(self):
-        assert section_figures([2015, 2008, 2011], {"n_papers": 144748, "from": "1980", "to": "2017"}, 6) == [
+    def test_count_and_year_range(self):
+        assert section_figures([2015, 2008, 2011], 6) == [
             {"id": "F1", "label": "이 절에 준 논문 수", "value": "6"},
             {"id": "F2", "label": "발행 연도 범위", "value": "2008~2015"},
-            {"id": "F3", "label": "소장 KCI 적재분 논문 수", "value": "144,748"},
         ]
 
     def test_one_year_is_that_year(self):
-        assert section_figures([2013, 2013], None, 2)[1] == {"id": "F2", "label": "발행 연도 범위",
-                                                            "value": "2013"}
+        assert section_figures([2013, 2013], 2)[1] == {"id": "F2", "label": "발행 연도 범위", "value": "2013"}
 
-    def test_missing_parts_are_left_out_and_numbers_stay_dense(self):
-        assert section_figures([], {"n_papers": 1200}, 1) == [
-            {"id": "F1", "label": "이 절에 준 논문 수", "value": "1"},
-            {"id": "F2", "label": "소장 KCI 적재분 논문 수", "value": "1,200"},
-        ]
-        assert section_figures([], None, 3) == [{"id": "F1", "label": "이 절에 준 논문 수", "value": "3"}]
+    def test_missing_parts_are_left_out(self):
+        assert section_figures([], 3) == [{"id": "F1", "label": "이 절에 준 논문 수", "value": "3"}]
 
 
 SEED = {"key": "future:1:0", "kind": "future", "section_idx": 1, "subq_idx": 1, "heading": "노인의 사회적 지지",
@@ -387,7 +381,7 @@ class TestBlocks:
         assert "대목(쪽 3): 대목 하나" in evidence_block([paper])
 
     def test_figure_block_lines(self):
-        figures = section_figures([2013], None, 2)
+        figures = section_figures([2013], 2)
         assert figure_block(figures) == "[F1] 이 절에 준 논문 수: 2\n[F2] 발행 연도 범위: 2013"
 
     def test_empty_blocks(self):
@@ -413,7 +407,7 @@ class TestPriorInput:
     def test_shape(self):
         inp = prior_input(question="노인의 우울과 사회적 지지에 관한 연구가 궁금해", topic=TOPIC,
                           research_question="가족 지지는 농촌 독거노인의 우울을 낮추는가?", group=GROUP,
-                          books=BOOKS, excerpts={"KCI_A": EXCERPT}, corpus={"n_papers": 144748})
+                          books=BOOKS, excerpts={"KCI_A": EXCERPT})
 
         assert inp["key"] == "prior.g1" and inp["kind"] == "prior"
         assert inp["question"] == "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
@@ -429,10 +423,11 @@ class TestPriorInput:
         assert second == {"eid": "E2", "cnts_id": "KCI_B", "title": "사회적 지지 척도", "year": None,
                           "abstract": "", "excerpt": None}
         assert fourth["title"] == "KCI_D"                 # 서지가 없으면 cnts_id 를 제목 자리에
+        # 수치는 근거 논문의 편수·연도뿐이다 — 소장 KCI 적재분은 절에 주지 않는다(프롬프트가 [F#] 를 근거 논문의 편수·
+        # 연도에만 쓰라고 한다. 운영 2026-10-14 prior.g2 는 적재분 '198,518' 을 '…건에 달한다' 로 옮겼다)
         assert inp["figures"] == [
             {"id": "F1", "label": "이 절에 준 논문 수", "value": "6"},
             {"id": "F2", "label": "발행 연도 범위", "value": "2013~2016"},
-            {"id": "F3", "label": "소장 KCI 적재분 논문 수", "value": "144,748"},
         ]
         # 다시 맞춤 판정의 기준은 묶음의 논문 전부(넣지 못한 7번째 포함)와 이 절을 쓸 때의 연구 질문(06e)
         assert inp["basis"] == {"topic_id": 12, "papers": GROUP["papers"],
@@ -440,7 +435,7 @@ class TestPriorInput:
 
     def test_group_without_a_name_uses_its_hint(self):
         inp = prior_input(question="q", topic=TOPIC, research_question="rq", group={**GROUP, "name": ""},
-                          books={}, excerpts={}, corpus=None)
+                          books={}, excerpts={})
         assert inp["group"] == {"name": "노인의 우울"}
 
 
@@ -449,7 +444,7 @@ class TestGapInput:
         seeds = [SEED, _seed("insufficient:1", None, 1, ["KCI_C", "KCI_A"])]
 
         inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=seeds, books=BOOKS,
-                        excerpts={}, corpus=None)
+                        excerpts={})
 
         assert inp["key"] == "gap" and inp["kind"] == "gap" and inp["group"] is None
         assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다"},

@@ -41,7 +41,6 @@ from services.research_work.progress import refresh_progress
 from services.research_work.proposal_views import paper_ids, proposal_view, section_sources
 from services.research_work.reading_views import book_meta, preselected_count, subquestions_of
 from services.research_work.section_input import gap_input, gap_seeds, prior_input, section_papers
-from services.research_work.seeds import corpus_of
 from services.research_work.shapes import (
     GAP_KEY, GROUP_LABEL_MAX, MAX_GROUPS, MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, MIN_READING_FOR_OUTLINE,
     OUTLINE_BACKGROUND_MAX, OUTLINE_METHOD_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET, PHASE_ORDER,
@@ -416,7 +415,6 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
     books = await BookRepository(db).get_by_cnts_ids(cnts_ids)
     question = job.question
     snapshot = job.state_snapshot
-    corpus = work.corpus_snapshot or corpus_of(job)
     topic_of_outline = dict(outline.get("topic") or {})
     research_question = outline.get("question") or topic_of_outline.get("question") or ""
     await db.commit()
@@ -426,10 +424,10 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
     excerpts = await run_in_threadpool(_excerpts, query, snapshot, cnts_ids)
     if group is not None:
         inp = prior_input(question=question, topic=topic_of_outline, research_question=research_question,
-                          group=group, books=books, excerpts=excerpts, corpus=corpus)
+                          group=group, books=books, excerpts=excerpts)
     else:
         inp = gap_input(question=question, topic=topic_of_outline, research_question=research_question,
-                        seeds=seeds, books=books, excerpts=excerpts, corpus=corpus)
+                        seeds=seeds, books=books, excerpts=excerpts)
 
     await _lock_section(db, jid, key)
     if await _section_busy(db, jid, key):
