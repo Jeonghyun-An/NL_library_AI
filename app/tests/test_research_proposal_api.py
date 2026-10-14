@@ -965,6 +965,38 @@ class TestGenerateSection:
         assert {c[1] for c in heavy if c[0] == "pick"} == {
             "가족 지지는 농촌 독거노인의 우울을 낮추는가? 농촌 노인 표본이 부족하다"}
 
+    def test_gap_takes_only_the_picked_seed_with_the_number_of_its_original_evidence(self, api, heavy):
+        """운영 630e0d65·d60a5dc1(2026-10-14) — 고른 카드 씨앗이 들어 있던 절의 다른 향후 과제와 그 하위질문의 insufficient
+        note('제공된 근거들은 …')까지 넣어, 연구 공백 절이 고른 주제가 아닌 그 절 하위질문의 공백을 썼다. 고른 씨앗 하나만
+        넣고, 보고서가 그 과제에 달았던 근거가 이 절 논문에 있으면 그 [E#] 를 씨앗 줄에 붙인다."""
+        jid = _sec_work(api.engine)
+        report = {
+            **SEC_REPORT,
+            "sections": [{"heading": "다른 절", "papers": [], "future": []},
+                         {"heading": "노인의 사회적 지지",
+                          "papers": [{"cnts_id": c, "evidence": [e]} for c, e in
+                                     (("KCI_D", "E4"), ("KCI_B", "E2"), ("KCI_C", "E3"))],
+                          "future": [{"text": "농촌 노인 표본이 부족하다 [E4]", "evidence": ["E4"]},
+                                     {"text": "교육 프로그램 개발 연구가 이어져야 한다 [E2]", "evidence": ["E2"]}]}],
+            "evidence": {e: {"cnts_id": c, "meta": {"title": c}} for e, c in
+                         (("E4", "KCI_D"), ("E2", "KCI_B"), ("E3", "KCI_C"))},
+            "trail": [{"subquestion": "다른 절", "verdict": "sufficient", "note": ""},
+                      {"subquestion": "노인의 사회적 지지", "verdict": "insufficient",
+                       "note": "제공된 근거들은 지지 유형을 다루지만 방법 및 기법은 부족합니다."}],
+        }
+        with api.engine.begin() as conn:
+            conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == jid).values(
+                report=report))
+
+        assert api.client.post(f"/api/research/{jid}/sections/gap/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다 [E2]"}]
+        assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_D"]
+        # 대목 질의는 씨앗의 원래 글이다(붙인 번호 없이)
+        assert {c[1] for c in heavy if c[0] == "pick"} == {
+            "가족 지지는 농촌 독거노인의 우울을 낮추는가? 농촌 노인 표본이 부족하다"}
+
     def test_gap_seeds_come_from_the_outline_topic_after_the_topic_changes(self, api, heavy, monkeypatch):
         """목차를 승인한 뒤 주제를 바꿔도 씨앗·주제 제목·연구 질문·basis 가 모두 목차의 주제 기준이다 — 새 주제의 씨앗과
         옛 주제의 제목·질문이 섞인 절을 쓰지 않는다(바뀐 것은 목차의 '다시 맞춤 필요'가 알린다)."""

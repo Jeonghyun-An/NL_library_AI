@@ -23,7 +23,7 @@ from core.deps import get_db
 from models.research_work import GEN_OPEN_STATUSES, ResearchGeneration, ResearchTopic, ResearchWork
 from services.research.relay import publish_work
 from services.research_work.enqueue import enqueue_generation, lock_key, queued_event
-from services.research_work.keywords import MIN_PICKED_KEYWORDS
+from services.research_work.keywords import MIN_PICKED_KEYWORDS, keyword_key
 from services.research_work.markers import numbers_outside, soften_claims
 from services.research_work.progress import refresh_progress
 from services.research_work.seeds import corpus_of, pick_seeds, topic_input, used_seed_keys
@@ -87,6 +87,37 @@ def _user_card(title: str, question: str, *, edited: bool) -> dict:
             "checks": {"numbers": numbers_outside(f"{title}\n{question}"),
                        "softened": soft_title + soft_question, "recovered": 0},
             "gen_id": None}
+
+
+def _added_keywords(keywords: list[str], made_with) -> list[str]:
+    """지금 키워드 가운데 카드를 만들 때(card.keywords) 없던 것. 같은 말 판정은 keyword_key(띄어쓰기·대소문자·전각
+    무시). 비교할 기준이 없으면(06e 전 카드·입력의 keywords 없음·키워드 없이 만든 카드의 빈 목록) 빈 목록이다."""
+    if not isinstance(made_with, list) or not made_with:
+        return []
+    before = {keyword_key(k) for k in made_with if isinstance(k, str)}
+    return [k for k in keywords if keyword_key(k) not in before]
+
+
+def _regenerate_focus(keywords: list[str], card: dict, last_input: dict | None) -> list[str]:
+    """[이 키워드로 다시 만들기]의 input.focus — 지금 키워드 가운데 (가) 카드를 만들 때보다 더한 것과 (나) 앞서 focus 였는데
+    아직 제목에 없는 것. 순서는 지금 키워드 순서다.
+
+    (나)가 없으면 세 번 다 더한 키워드를 놓쳐 무른 검사 카드가 보관된 뒤(그 카드의 keywords 에는 그 키워드가 이미 있다)
+    한 번 더 누를 때 차이가 비어 강조 줄과 엄격한 검사가 빠졌다. 카드에는 card.focus ∩ checks.missing_keywords 가 그것이다.
+    근거 부족 행(card {})은 카드가 없어 그 주제의 마지막 카드 생성 입력(last_input)의 keywords 와 견주고, 그 입력의 focus 는
+    카드가 나오지 않았으니 모두 이어받는다. 기준이 없으면(생성 없음·06e 전 입력) 빈 목록 — 06e 프롬프트·검사 그대로다."""
+    def keys(values) -> set[str]:
+        return {keyword_key(k) for k in (values if isinstance(values, list) else []) if isinstance(k, str)}
+
+    if card:
+        made_with = card.get("keywords")
+        pending = keys(card.get("focus")) & keys((card.get("checks") or {}).get("missing_keywords"))
+    else:
+        last_input = last_input if isinstance(last_input, dict) else {}
+        made_with = last_input.get("keywords")
+        pending = keys(last_input.get("focus"))
+    wanted = keys(_added_keywords(keywords, made_with)) | pending
+    return [k for k in keywords if keyword_key(k) in wanted]
 
 
 async def _get_topic(db: AsyncSession, jid: uuid.UUID, tid: int) -> ResearchTopic:
@@ -178,8 +209,9 @@ async def regenerate_topics(job_id: str, db: AsyncSession = Depends(get_db)):
     않은(card.edited 아님) 것 — 고른 카드(picked)·접은 카드·직접 쓴 카드(origin user)·고친 카드는 그대로 둔다(고른 카드를
     다시 만들면 목차에 '다시 맞춤 필요'가 붙는다 — §12-11 권고). 카드를 만드는 중인 주제는 건너뛰고 skipped 로 센다
     (enqueue_generation 이 None — 기존 [다시]와 같은 규칙). 입력은 씨앗과 지금 키워드뿐이고 이전 제목은 주지 않는다
-    (함정 26). 키워드가 MIN_PICKED_KEYWORDS 개 미만이면 409(선행연구 묶음 수 ≤ 키워드 수 — membership), 키워드 생성이
-    열려 있으면 409. 연구별 잠금이 '대상 읽기 → 생성 넣기'를 한 줄로 세운다. 넣은 것도 건너뛴 것도 없으면 409."""
+    (함정 26). 카드를 만들 때보다 더한 키워드와 앞서 더했는데 아직 제목에 없는 키워드는 focus 로 따로 싣는다
+    (_regenerate_focus — 운영 630e0d65 에서 더한 '연구 대상'이 4장 모두 빠졌다). 키워드가 MIN_PICKED_KEYWORDS 개 미만이면 409(선행연구 묶음 수 ≤ 키워드 수 —
+    membership), 키워드 생성이 열려 있으면 409. 연구별 잠금이 '대상 읽기 → 생성 넣기'를 한 줄로 세운다. 넣은 것도 건너뛴 것도 없으면 409."""
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)
     _writable(work)
@@ -201,11 +233,14 @@ async def regenerate_topics(job_id: str, db: AsyncSession = Depends(get_db)):
     gen_ids: list[int] = []
     skipped = 0
     for row in rows:
-        if (row.card or {}).get("edited"):
+        card = row.card or {}
+        if card.get("edited"):
             continue
+        last = None if card else await _latest_card_generation(db, jid, row.id)
         gen_id = await enqueue_generation(
             db, jid, kind="topic_card", target=str(row.id),
-            input=topic_input(job.question, row.seed or {}, report, row.id, keywords=keywords),
+            input=topic_input(job.question, row.seed or {}, report, row.id, keywords=keywords,
+                              focus=_regenerate_focus(keywords, card, last.input if last is not None else None)),
         )
         if gen_id is None:          # 그 카드를 만드는 중이다 — 넣은 행이 없어 되돌릴 것도 없다
             skipped += 1

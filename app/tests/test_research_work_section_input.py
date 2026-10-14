@@ -339,23 +339,61 @@ def _seed(key: str, section_idx: int | None, subq_idx: int | None, papers: list[
     return {**SEED, "key": key, "section_idx": section_idx, "subq_idx": subq_idx, "text": key, "papers": papers}
 
 
+# 운영 630e0d65(2026-10-14) 보고서의 꼴 — 고른 카드(59, '…변인들의 관계')의 씨앗 future:1:0 이 들어 있던 절의 하위질문은
+# '시간적 변화 추이'다. 같은 절에 주제와 무관한 향후 과제(future:1:1 교육 프로그램)와 그 하위질문의 insufficient note
+# ('제시된 근거들은 …')가 함께 있어, 연구 공백 절이 이 이웃을 끌어와 고른 주제가 아닌 '시간적 변화 추이' 공백을 썼다
+_LIVE_GAP_HEADINGS = ["개념은 어떻게 제시되어 왔는가?", "연구의 시간적 변화 추이는 어떠한가?"]
+LIVE_GAP_REPORT = {
+    "sections": [
+        {"heading": _LIVE_GAP_HEADINGS[0],
+         "papers": [{"cnts_id": "K1", "evidence": ["E1"]}, {"cnts_id": "K2", "evidence": ["E2"]}],
+         "future": [{"text": "언어 능력을 보여줄 객관적인 자료 조사가 필요하다 [E2].", "evidence": ["E2"]}]},
+        {"heading": _LIVE_GAP_HEADINGS[1],
+         "papers": [{"cnts_id": "K3", "evidence": ["E3"]}, {"cnts_id": "K4", "evidence": ["E4"]}],
+         "future": [{"text": "언어 발달에 영향을 미치는 다양한 변인들에 대한 추가적인 연구가 필요하다 [E4].",
+                     "evidence": ["E4"]},
+                    {"text": "효과적인 교육 프로그램 개발에 대한 연구가 이루어져야 한다 [E3].", "evidence": ["E3"]}]},
+    ],
+    "evidence": {f"E{n}": {"cnts_id": f"K{n}", "meta": {"title": f"논문 {n}"}} for n in range(1, 5)},
+    "trail": [
+        {"subquestion": _LIVE_GAP_HEADINGS[0], "verdict": "sufficient", "note": "충분하다"},
+        {"subquestion": _LIVE_GAP_HEADINGS[1], "verdict": "insufficient",
+         "note": "제시된 근거들은 연구 현황을 다루고 있지만, 시간적 변화 추이를 종합적으로 보여주지는 못합니다."},
+    ],
+}
+
+
 class TestGapSeeds:
-    def test_picked_seed_first_then_seeds_of_the_same_section_or_subquestion(self, monkeypatch):
+    def test_a_picked_card_uses_only_its_own_seed_with_its_original_evidence(self, monkeypatch):
+        """고른 카드의 주제는 씨앗의 글에서 나온다 — 씨앗이 들어 있던 절의 이웃(다른 향후 과제·하위질문 note)은 잇지 않는다.
+        보고서가 그 향후 과제에 달았던 근거(cnts_id)를 evidence 로 붙인다. 넘기는 논문은 씨앗의 papers 그대로다."""
         calls = []
-        pool = [_seed("future:0:0", 0, 0, ["X"]), _seed("future:1:1", 1, 1, ["KCI_C"]),
-                _seed("insufficient:1", None, 1, ["KCI_D"]), _seed("future:2:0", 2, 2, ["Y"]),
-                _seed("future:1:2", 1, 1, ["KCI_E"]), _seed("future:1:3", 1, 1, ["KCI_F"])]
 
         def _pick(report, *, limit, exclude=()):
-            calls.append((limit, set(exclude)))
-            return [s for s in pool if s["key"] not in exclude]
+            calls.append(limit)
+            return []
 
         monkeypatch.setattr(section_input, "pick_seeds", _pick)
+        report = {"sections": [{"heading": "다른 절", "future": []},
+                               {"heading": "노인의 사회적 지지",
+                                "future": [{"text": "농촌 노인 표본이 부족하다 [E2]", "evidence": ["E2", "E9"]}]}],
+                  "evidence": {"E2": {"cnts_id": "KCI_B", "meta": {"title": "사회적 지지 척도"}}}}
 
-        out = gap_seeds(SEED, {"sections": []})
+        out = gap_seeds(SEED, report)
 
-        assert [s["key"] for s in out] == ["future:1:0", "future:1:1", "insufficient:1", "future:1:2"]
-        assert calls == [(None, {"future:1:0"})]
+        assert out == [{**SEED, "evidence": ["KCI_B"]}]
+        assert calls == []                                  # 보고서에서 씨앗을 더 고르지 않는다
+        assert "evidence" not in SEED                       # 저장된 카드 씨앗을 고치지 않는다
+
+    def test_live_report_does_not_pull_in_the_neighbours_of_the_picked_seed(self):
+        # 운영 630e0d65 카드 59 — 고치기 전에는 [future:1:0, future:1:1, insufficient:1] 이었다
+        from services.research_work.seeds import pick_seeds as real_pick_seeds
+        picked = next(s for s in real_pick_seeds(LIVE_GAP_REPORT, limit=None) if s["key"] == "future:1:0")
+
+        out = gap_seeds(picked, LIVE_GAP_REPORT)
+
+        assert [s["key"] for s in out] == ["future:1:0"]
+        assert out[0]["evidence"] == ["K4"] and out[0]["papers"] == picked["papers"]
 
     def test_user_card_takes_three_seeds_from_the_whole_report(self, monkeypatch):
         calls = []
@@ -366,7 +404,9 @@ class TestGapSeeds:
 
         monkeypatch.setattr(section_input, "pick_seeds", _pick)
 
-        assert [s["key"] for s in gap_seeds({}, {"sections": []})] == ["future:0:0", "future:1:0", "future:2:0"]
+        out = gap_seeds({}, {"sections": []})
+        assert [s["key"] for s in out] == ["future:0:0", "future:1:0", "future:2:0"]
+        assert [s["evidence"] for s in out] == [[], [], []]
         assert calls == [3]
 
 
@@ -472,3 +512,36 @@ class TestGapInput:
         assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_B", "KCI_C"]
         assert inp["basis"] == {"topic_id": 12, "papers": ["KCI_A", "KCI_B", "KCI_C"], "question": "rq"}
         assert [f["id"] for f in inp["figures"]] == ["F1", "F2"]
+
+    def test_an_insufficient_seed_is_written_as_an_unanswered_subquestion_not_the_critic_note(self):
+        """insufficient 씨앗의 글은 critic 의 자기점검 메모('제시된 근거들은 …부족합니다')다. 그대로 넘기면 모델이 그 말투를
+        옮긴다(운영 630e0d65 gap p3 '제시된 근거들은 … 보여주지는 못한다'). 하위질문에 답할 근거가 확인되지 않았다는 한 줄로 쓴다."""
+        note = "제시된 근거들은 연구 현황을 다루고 있지만, 시간적 변화 추이를 종합적으로 보여주지는 못합니다. 제공된 근거는 부족합니다."
+        seed = {**SEED, "key": "insufficient:1", "kind": "insufficient", "heading": "연구의 시간적 변화 추이는 어떠한가?",
+                "text": note, "evidence": []}
+
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[seed], books=BOOKS, excerpts={})
+
+        (line,) = inp["seeds"]
+        assert line == {"heading": "연구의 시간적 변화 추이는 어떠한가?",
+                        "text": "'연구의 시간적 변화 추이는 어떠한가?'에 답할 근거가 소장 코퍼스에서 충분히 확인되지 않았다."}
+        assert not any(w in line["text"] for w in ("제시된 근거", "제공된 근거", "합니다"))
+
+    def test_a_future_seed_carries_the_number_of_its_original_evidence_in_this_section(self):
+        """보고서가 그 향후 과제에 달았던 근거가 이 절의 논문에 있으면 씨앗 줄에 그 [E#] 를 붙인다 — 모델이 씨앗 문장을
+        옮겨도 근거 표시가 남는다(운영 630e0d65 gap p1 은 씨앗 문장을 옮긴 근거 없는 문장이었다). 없으면 붙이지 않는다."""
+        seed = {**SEED, "text": "농촌 노인 표본이 부족하다.", "evidence": ["KCI_B", "KCI_Z"]}
+
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[seed], books=BOOKS, excerpts={})
+
+        assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_B"]
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다 [E2]."}]
+
+        outside = {**seed, "evidence": ["KCI_Z"]}
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[outside], books=BOOKS, excerpts={})
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다."}]
+
+    def test_a_seed_line_without_a_sentence_end_takes_the_marks_at_its_end(self):
+        seed = {**SEED, "evidence": ["KCI_A", "KCI_B", "KCI_A"]}
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[seed], books=BOOKS, excerpts={})
+        assert inp["seeds"][0]["text"] == "농촌 노인 표본이 부족하다 [E1] [E2]"

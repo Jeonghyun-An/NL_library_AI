@@ -15,6 +15,9 @@ chat_full 안의 일시적 실패 재시도는 이 횟수에 세지 않는다. �
 무른 검사(soft_check, 06e 정함 17 — 주제 카드 제목의 키워드): 엄격한 검사(check)는 못 넘었지만 soft_check 를 넘은
 출력은 그 모델과 함께 마지막 것으로 보관한다. 사다리가 끝나도록 엄격한 검사를 넘은 답이 없으면 빈 결과 대신 그것을
 돌려준다(attempts 에는 그 시도가 check 로 남는다). 스트리밍(run_stream_generation)은 쓰지 않는다.
+settle 을 넘은 출력(주제 카드의 더한 키워드만 놓친 카드)이 주 모델의 두 번째 미달이면 다른 모델로 넘기지 않고 그 출력을
+낸다 — 주제 카드의 넘길 모델 Qwen 은 적재 OCR 과 같은 VLM 이라, 고치기 전에는 첫 시도에 통과하던 [이 키워드로 다시
+만들기]가 VLM 호출을 늘리지 않게 한다. 06e 부터 있던 미달(근거 모자람·키워드를 하나도 못 넣음)은 그대로 넘긴다.
 
 스트리밍(run_stream_generation, 06b 절 쓰기 — 06b 계획 정함 11)도 같은 '최대 3회·넘김' 규칙이다. 다만
 chat_stream 은 첫 조각 전에만 연결 실패·4xx·5xx 를 올리므로, 다른 모델로 곧바로 넘기는 전송 실패는 첫 조각
@@ -57,6 +60,9 @@ class Executor:
     is_empty: Callable[[dict], bool] | None = None     # done 인데 빈 결과인가 — 다시 부르기(retry)를 허용한다
     # 06e 의 선택 필드 — check 를 못 넘어도 이것을 넘은 마지막 출력을 빈 결과 대신 낸다(정함 17)
     soft_check: Callable[[dict], bool] | None = None
+    # check 미달이지만 다른 모델로 넘기지 않을 출력인가 — 주 모델의 두 번째 미달이 이것이면 사다리를 멈추고 무른 검사를
+    # 넘은 마지막 출력을 낸다. 참이면 soft_check 도 참이어야 한다(주제 카드의 더한 키워드만 놓친 카드 — 2026-10-14)
+    settle: Callable[[dict], bool] | None = None
 
 
 @dataclass
@@ -107,6 +113,8 @@ async def run_generation(executor: Executor, input: dict, *, chat_fn: ChatFn) ->
             break
         content_failures += 1
         if content_failures >= 2:
+            if output is not None and executor.settle is not None and executor.settle(output):
+                break                       # 다른 모델로 넘기지 않는다 — 아래에서 이 출력(soft)을 낸다
             route, switched = other(route), True
     if soft is not None:
         # 엄격한 검사를 끝내 못 넘었다 — 빈 결과 대신 무른 검사를 넘은 마지막 출력을 그 모델 이름으로 낸다

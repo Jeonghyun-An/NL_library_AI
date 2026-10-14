@@ -88,7 +88,7 @@ class TestBuildLimitations:
         st.subquestions[0].verdict = "insufficient"
         st.subquestions[0].capped = 2
         lims = build_limitations(st, unmarked_total=0, dropped_total=0)
-        line = next(x for x in lims if "하위1" in x)
+        line = next(x for x in lims if x.startswith("1절은"))
         assert "'근거 부족'으로 판정했다" in line and "근거 상한" in line and "2편" in line
 
     def test_budget_capped_insufficient_subquestion_names_the_per_subquestion_cap(self):
@@ -97,7 +97,7 @@ class TestBuildLimitations:
         st.subquestions[0].verdict = "insufficient"
         st.subquestions[0].budget_capped = 3
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if "하위1" in x)
+                    if x.startswith("1절은"))
         assert "(하위질문당 근거 상한(45편)에 닿아 후보 3편을 더 싣지 못했다)" in line
         assert "전체 근거 상한" not in line
 
@@ -107,7 +107,7 @@ class TestBuildLimitations:
         st.subquestions[0].budget_capped = 2
         st.subquestions[0].capped = 1
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if "하위1" in x)
+                    if x.startswith("1절은"))
         assert ("(하위질문당 근거 상한(45편)에 닿아 후보 2편을, "
                 "전체 근거 상한(90편)에 닿아 후보 1편을 더 싣지 못했다)") in line
 
@@ -126,7 +126,7 @@ class TestBuildLimitations:
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "하위2" in x)
         assert line == ("'하위2' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다"
-                        " — 2015년 이후 자료가 없다")
+                        " — 자기점검 메모: “2015년 이후 자료가 없다”")
 
     def test_emptied_subquestion_still_names_a_cap_that_blocked_more(self):
         # 모두 뺀 것이 먼저다 — 상한은 덧붙인다. 상한 분기로 보내면 critic 이 근거를 읽고 뺀 사실과 note 가 사라진다
@@ -136,7 +136,8 @@ class TestBuildLimitations:
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "하위2" in x)
         assert line == ("'하위2' 에 대해서는 모은 논문 1편이 모두 하위질문과 무관해 근거에서 뺐다"
-                        "(전체 근거 상한(90편)에 닿아 후보 3편을 더 싣지 못했다) — 2015년 이후 자료가 없다")
+                        "(전체 근거 상한(90편)에 닿아 후보 3편을 더 싣지 못했다)"
+                        " — 자기점검 메모: “2015년 이후 자료가 없다”")
 
     def test_unchecked_subquestion_without_evidence_is_not_counted_twice(self):
         """근거가 0편이면 충분성을 따질 대상이 없다 — '못 찾았다'와 '점검 못 함'을 둘 다 쓰지 않는다."""
@@ -230,12 +231,13 @@ class TestTopic:
         assert _topic(text) == f"'{text}' (은)는"
 
     def test_limitation_sentence_uses_the_matching_particle(self):
+        # 부족 줄은 절 번호를 주어로 쓴다 — 하위질문 전문을 주어로 쓰는 중단 줄로 조사를 본다
         st = _state()
         st.subquestions[0].text = "자원 할당"
-        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].failed = True
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
                     if "자원 할당" in x)
-        assert line.startswith("'자원 할당' 은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다")
+        assert line.startswith("'자원 할당' 은 탐색이 오류로 중단돼")
 
     def test_insufficient_line_names_the_verdict_not_the_count(self):
         """운영 d60a5dc1 — 근거 13편인 하위질문에 '근거 13편으로 결론이 약하다'가 붙어 편수 탓으로 읽혔다(같은
@@ -249,14 +251,100 @@ class TestTopic:
         st.subquestions[0].note = "측정 도구를 직접 비교한 논문이 없다"
         st.subquestions[0].evidence_ids = [f"E{i}" for i in range(13)]
         line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if "무엇인가" in x)
-        assert line == (f"'{text}' 는 근거 13편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
-                        " — 측정 도구를 직접 비교한 논문이 없다")
+                    if "13편" in x)
+        assert line == ("1절은 근거 13편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+                        " — 자기점검 메모: “측정 도구를 직접 비교한 논문이 없다”")
 
     def test_about_phrase_keeps_its_fixed_particle(self):
         # '에 대해서는' 은 받침과 무관하다 — 그대로 둔다
         lims = build_limitations(_state(), unmarked_total=0, dropped_total=0)
         assert any(x.startswith("'하위2' 에 대해서는 근거를 찾지 못했다") for x in lims)
+
+
+class TestInsufficientLineShape:
+    """운영 630e0d65 — 하위질문 6개 중 5개가 부족이었고, 줄마다 같은 앞머리('국내 학술 논문에서 다문화가정 아동
+    언어 발달…')의 하위질문 전문과 critic note 두 문장을 이어 263~314자가 됐다. 앞은 '-다' 체, 뒤 note 는
+    '…부족합니다. 특히 …어렵습니다.'(운영 회차 note 42개 중 38개가 합니다체)라 한 줄에 문체가 섞였다.
+    부족 줄의 주어는 보고서의 절 번호로 쓰고(절 제목이 곧 하위질문이다), note 는 첫 문장만 자기점검 메모로
+    따옴표 안에 인용한다 — 직접 인용은 원문의 말투를 그대로 둔다."""
+
+    def _line(self, st, prefix):
+        return next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if x.startswith(prefix))
+
+    def _insufficient(self, note):
+        st = _state()
+        st.subquestions[0].verdict = "insufficient"
+        st.subquestions[0].note = note
+        return st
+
+    def test_section_number_counts_only_subquestions_with_evidence(self):
+        """절은 근거 있는 하위질문마다 순서대로 하나씩이다(synthesize) — 앞 하위질문이 0편이면 번호가 당겨진다.
+        그때는 하위질문 번호를 함께 적는다 — 보고서 옆 과정 패널과 내려받은 문서의 '부록: 탐색 경로'는 하위질문을
+        0편까지 세어 번호 매기므로, '2절' 만 쓰면 그쪽의 '2.'(다른 하위질문, 판정 충분)를 가리키는 것으로 읽힌다."""
+        st = _state()
+        st.subquestions = [
+            SubQuestion(idx=0, text="하위0", evidence_ids=[], verdict="insufficient"),
+            SubQuestion(idx=1, text="하위1", evidence_ids=["E1"], verdict="sufficient"),
+            SubQuestion(idx=2, text="하위2", evidence_ids=["E1"], verdict="insufficient",
+                        note="개념을 다루지 않는다"),
+        ]
+        line = self._line(st, "2절")
+        assert line == ("2절(하위질문 3)은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+                        " — 자기점검 메모: “개념을 다루지 않는다”")
+        assert "하위2" not in line
+
+    def test_section_number_alone_when_it_matches_the_subquestion_number(self):
+        # 앞에 0편 하위질문이 없으면 절 번호와 하위질문 번호가 같다 — 뒤에 0편 하위질문이 있어도 덧붙이지 않는다
+        st = _state()
+        st.subquestions = [
+            SubQuestion(idx=0, text="하위0", evidence_ids=["E1"], verdict="sufficient"),
+            SubQuestion(idx=1, text="하위1", evidence_ids=["E1"], verdict="insufficient", note="부족하다"),
+            SubQuestion(idx=2, text="하위2", evidence_ids=[], verdict="insufficient"),
+        ]
+        assert self._line(st, "2절").startswith("2절은 근거 1편을 모았으나")
+
+    def test_only_the_first_sentence_of_the_note_is_quoted(self):
+        st = self._insufficient("제시된 근거들은 동향을 다루지만 개념에 대한 직접적인 분석은 부족합니다. "
+                                "특히, 정의의 변화를 추적하는 논문은 찾기 어렵습니다.")
+        assert self._line(st, "1절은").endswith(
+            " — 자기점검 메모: “제시된 근거들은 동향을 다루지만 개념에 대한 직접적인 분석은 부족합니다.”")
+
+    @pytest.mark.parametrize("note, first", [
+        # 제목 안의 '. ' 는 문장 끝이 아니다(_titled_note 가 번호를 「제목」으로 바꾼다)
+        ("「다문화 아동. 언어 발달」은 개념을 다루지 않는다. 특히 정의가 없다.",
+         "「다문화 아동. 언어 발달」은 개념을 다루지 않는다."),
+        # 숫자 사이 마침표도 문장 끝이 아니다
+        ("양적연구 66편(58.4%)만 다룬다. 질적연구는 없다.", "양적연구 66편(58.4%)만 다룬다."),
+        # 마침표가 없으면 통째로 싣는다
+        ("2015년 이후 자료가 없다", "2015년 이후 자료가 없다"),
+        ("  한 문장뿐이다.  ", "한 문장뿐이다."),
+    ])
+    def test_sentence_boundary(self, note, first):
+        assert self._line(self._insufficient(note), "1절은").endswith(f" — 자기점검 메모: “{first}”")
+
+    def test_blank_note_adds_no_memo(self):
+        line = self._line(self._insufficient("   "), "1절은")
+        assert line == "1절은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다"
+
+    def test_note_of_an_unjudged_subquestion_is_left_out(self):
+        # 판정을 못 받았을 때의 note 는 '왜'가 아니라 같은 실패의 반복이다 — 집계 줄이 따로 센다
+        st = _state()
+        st.subquestions[0].failed = True
+        st.subquestions[0].parse_failed = True
+        st.subquestions[0].note = "판정 JSON 파싱 실패"
+        line = next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
+                    if "'하위1'" in x)
+        assert "판정 JSON 파싱 실패" not in line and "자기점검 메모" not in line
+
+    def test_failed_and_missing_branches_quote_the_memo_too(self):
+        st = _state()
+        st.subquestions[0].failed = True
+        st.subquestions[0].note = "앞 회차까지는 관련 논문이 있었다. 둘째 문장."
+        lims = build_limitations(st, unmarked_total=0, dropped_total=0)
+        assert ("'하위1' (은)는 탐색이 오류로 중단돼 끝까지 확인하지 못했다(중단 전까지 모은 근거 1편으로만 썼다)"
+                " — 자기점검 메모: “앞 회차까지는 관련 논문이 있었다.”") in lims
+        assert "'하위2' 에 대해서는 근거를 찾지 못했다 — 자기점검 메모: “2015년 이후 자료가 없다”" in lims
 
 
 class TestAssembleReport:
@@ -658,6 +746,23 @@ class TestSynthesize:
         assert [s["heading"] for s in report["sections"]] == ["하위1", "하위2"]
         assert len(calls) == 2                      # 근거 없는 하위3 은 호출하지 않는다
         assert "하위2" in calls[1] and "[E3]" in calls[1] and "[E1]" not in calls[1]
+
+    def test_insufficient_line_names_the_section_the_report_shows(self, monkeypatch):
+        """한계의 'N절' 은 보고서 화면·내려받은 문서의 'N. 제목' 과 같은 절이어야 한다 — 절을 건너뛰거나 합치게
+        바뀌면 번호가 어긋나 엉뚱한 절을 가리킨다. 근거 없는 하위질문이 앞에 있어 하위질문 번호와 다른 경우로 묶는다."""
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        self._patch_chat(monkeypatch, [reply, reply])
+        st = _state_three()
+        st.subquestions = [st.subquestions[2], st.subquestions[0], st.subquestions[1]]
+        st.subquestions[2].verdict = "insufficient"
+        st.subquestions[2].note = "비교 연구가 없다."
+        report = asyncio.run(synthesize(st))
+        line = next(x for x in report["limitations"] if "'근거 부족'" in x)
+        where = line.split("은 근거", 1)[0]
+        k = int(where.split("절", 1)[0])
+        assert report["sections"][k - 1]["heading"] == "하위2"
+        # 하위질문 번호는 과정 패널·탐색 경로 부록의 번호(근거 0편 하위질문까지 센다)다
+        assert where == f"{k}절(하위질문 3)" and st.subquestions[2].text == "하위2"
 
     def test_every_evidence_appears_in_some_section(self, monkeypatch):
         reply = json.dumps({"intro": "도입.", "summaries": {}, "future": []})
@@ -1090,3 +1195,199 @@ class TestSectionEvidence:
         sec = {"heading": "h", "intro": "도입 [E3].", "papers": [],
                "future": [{"text": "과제 [E2].", "evidence": ["E2"]}], "evidence_chunks": {}}
         assert set(section_evidence(st, sec)) == {"E2", "E3"}
+
+
+# 운영 630e0d65 의 대목 모양 — 2절에서 박혜성(2014)의 유일한 대목이 남의 연구를 정리한 표의 한 행이었다
+_TABLE_ROW = ("정금자, 이영숙 (2013)|만 5세 유아로 실험집단 60명 &amp; 비교집단 60명|사회극놀이를 통한 다문화교육활동이 "
+              "유아의 사회적 능력에 미치는 효과를 탐색함|1) 사회적 능력 향상에 긍정적인 효과를 미침.<br>"
+              "2) 전 유아를 대상으로 구성, 적용되어야 함.<br>|실험(비교)연구")
+_PROSE = "연구 방법에서는 비교와 조사 유형이 주를 이루는 양적 연구 방법이 76%로 편중되었다. 질적 연구는 드물었다."
+# 황상심(2009)의 1위 대목 — 참고문헌 꼬리와 다음 쪽 영문 제목·초록 머리가 한 청크라 앞 400자에 서술 문장이 없다
+_BIB_TAIL = ("Toronto: University of Toronto press. Vihman, M.\n(1996).\nPhonological development: "
+             "The origins of language in the child.\nCambridge, MA: Blackwell.\n"
+             "### A Study on Language Characteristics of Children\n\n&lt;Abstract&gt;\n\nThis s")
+
+
+def _mapped_state(*mappings: dict[str, list[Chunk]]) -> ResearchState:
+    """하위질문마다 {근거 번호: 그 하위질문이 매칭한 대목(점수순)} — 근거는 매칭한 대목의 합집합이다."""
+    st = ResearchState(job_id="j1", question="질문", params=merge_params({}))
+    for idx, mapping in enumerate(mappings):
+        sq = SubQuestion(idx=idx, text=f"하위{idx + 1}", evidence_ids=list(mapping), verdict="sufficient")
+        for eid, chunks in mapping.items():
+            ev = st.evidence.setdefault(eid, Evidence(id=eid, cnts_id=f"P{eid}", meta={"title": f"논문 {eid}"}))
+            ev.chunks.extend(c for c in chunks if c.chunk_id not in {x.chunk_id for x in ev.chunks})
+            sq.evidence_chunks[eid] = [c.chunk_id for c in chunks]
+            sq.chunk_scores.update({c.chunk_id: c.score for c in chunks})
+        st.subquestions.append(sq)
+    return st
+
+
+class TestSectionExcerpts:
+    """절마다 논문 하나에 대목 하나를 모델에 넘긴다 — 운영 630e0d65 에서 그 하위질문의 1위 대목을 그대로 넘겨,
+    같은 대목이 4개 절에 들어가 같은 문장이 되풀이됐고(장 2019 의 '2004년…'), 표 행·참고문헌 꼬리뿐인 대목으로
+    남의 연구를 그 논문의 성과처럼 쓰거나 제목만 되풀이한 요약이 나왔다."""
+
+    def _run(self, monkeypatch, st, replies=None):
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        n = sum(1 for sq in st.subquestions if sq.evidence_ids)
+        calls = TestSynthesize()._patch_chat(monkeypatch, replies or [reply] * n)
+        infos = []
+        _, on_section = TestSectionProgress()._record(infos)
+        report = asyncio.run(synthesize(st, on_section=on_section))
+        return calls, report, [i for i in infos if "section" in i]
+
+    def test_table_row_gives_way_to_a_prose_excerpt(self, monkeypatch):
+        st = _mapped_state({"E1": [Chunk("t1", _TABLE_ROW, 9, 9, 0.9), Chunk("n1", _PROSE, 2, 2, 0.6)]})
+        calls, report, _ = self._run(monkeypatch, st)
+        assert "76%로 편중" in calls[0] and "정금자" not in calls[0]
+        # 인용칩 팝오버의 첫 대목이 모델이 읽은 대목이다
+        assert report["sections"][0]["evidence_chunks"]["E1"] == ["n1", "t1"]
+
+    def test_excerpt_without_a_sentence_is_skipped(self, monkeypatch):
+        method = "연령 집단 별 차이 비교를 위해서 t 검정을 실시하였으며, SPSS/Win 15.0 을 사용하였다."
+        st = _mapped_state({"E1": [Chunk("b1", _BIB_TAIL, 9, 9, 0.739), Chunk("m1", method, 4, 4, 0.629)]})
+        calls, _, _ = self._run(monkeypatch, st)
+        assert "t 검정" in calls[0] and "Blackwell" not in calls[0]
+
+    def test_sections_sharing_a_paper_get_its_other_excerpt(self, monkeypatch):
+        first = Chunk("c1a", "가 대목에서 음운 발달을 분석하였다.", 1, 1, 0.9)
+        second = Chunk("c1b", "나 대목에서 연구 방법을 정리하였다.", 2, 2, 0.8)
+        st = _mapped_state({"E1": [first, second]}, {"E1": [first, second]})
+        calls, report, _ = self._run(monkeypatch, st)
+        assert "가 대목" in calls[0] and "나 대목" not in calls[0]
+        assert "나 대목" in calls[1] and "가 대목" not in calls[1]
+        assert report["sections"][1]["evidence_chunks"]["E1"] == ["c1b", "c1a"]
+
+    def test_excerpt_of_a_section_without_narrative_is_not_counted_as_shown(self, monkeypatch):
+        # 서술을 받지 못한 절의 대목은 보고서에 쓰이지 않았다 — 다음 절이 피할 까닭이 없다
+        first = Chunk("c1a", "가 대목에서 음운 발달을 분석하였다.", 1, 1, 0.9)
+        second = Chunk("c1b", "나 대목에서 연구 방법을 정리하였다.", 2, 2, 0.8)
+        st = _mapped_state({"E1": [first, second]}, {"E1": [first, second]})
+        reply = json.dumps({"intro": "도입 [E1].", "summaries": {}, "future": []})
+        calls, _, _ = self._run(monkeypatch, st, [_timeout(), _timeout(), reply])
+        assert "가 대목" in calls[2]
+
+    def test_paper_with_only_table_excerpts_borrows_its_prose_matched_elsewhere(self, monkeypatch):
+        st = _mapped_state({"E1": [Chunk("t1", _TABLE_ROW, 9, 9, 0.548)]},
+                           {"E1": [Chunk("n1", _PROSE, 2, 2, 0.637)]})
+        # 재검색이 갈아끼워 어느 하위질문도 가리키지 않는 대목은 보고서 근거에 실리지 않는다 — 빌려 오지 않는다
+        st.evidence["E1"].chunks.append(Chunk("old", "지난 대목에서 다른 결과를 보고하였다.", 7, 7, 0.99))
+        calls, report, drafts = self._run(monkeypatch, st)
+        assert "76%로 편중" in calls[0] and "정금자" not in calls[0] and "지난 대목" not in calls[0]
+        assert report["sections"][0]["evidence_chunks"]["E1"] == ["n1", "t1"]
+        assert {c["chunk_id"] for c in report["evidence"]["E1"]["chunks"]} == {"t1", "n1"}
+        assert {c["chunk_id"] for c in drafts[0]["evidence"]["E1"]["chunks"]} == {"t1", "n1"}
+
+    def test_html_escapes_and_line_breaks_are_unfolded(self, monkeypatch):
+        text = "검사 도구는 &lt;기초학습기능검사&gt;였다.<br>대상은 232명이었다."
+        st = _mapped_state({"E1": [Chunk("c1", text, 1, 1, 0.9)]})
+        calls, _, _ = self._run(monkeypatch, st)
+        assert "<기초학습기능검사>였다.\n대상은 232명" in calls[0]
+        assert "&lt;" not in calls[0] and "<br>" not in calls[0]
+
+
+def _drafted(intro: str = "", future: tuple[str, ...] = (), summary: str = "요약이다.") -> dict:
+    """모델 출력으로 만든 절(build_section 의 모양) — 다듬기(finalize_section) 전이다."""
+    return {"heading": "h", "intro": intro, "papers": [{"cnts_id": "A", "summary": summary}],
+            "future": [{"text": t} for t in future], "evidence_chunks": {}, "chunk_scores": {},
+            "failed": False}
+
+
+class TestDropRepeats:
+    """앞 절과 거의 같은 도입 문장·향후 과제를 지운다 — 운영 630e0d65 에서 '2004년부터 시작되었으며…' 가 1·2·4·5절
+    도입 첫 문장으로, '객관적인 자료 조사가 필요하다 [E4]' 가 네 절의 향후 과제로 거의 그대로 되풀이됐다."""
+
+    _FIRST = ("국내 학술 논문에서 다문화가정 아동의 언어 발달에 대한 연구는 2004년부터 시작되었으며, 유아와 아동의 음운, "
+              "어휘 발달, 형태론 등을 분석한 경우가 많다 [E1].")
+    _AGAIN = ("국내 학술 논문에서 다문화가정 아동의 언어 발달 연구는 2004년부터 시작되었으며, 유아와 아동의 음운, "
+              "어휘 발달, 형태론 등을 분석한 경우가 많았다 [E2].")
+    _FUTURE = "다문화가정 아동의 언어 능력을 정확히 보여줄 수 있는 객관적인 자료 조사가 필요하다 [E1]."
+
+    def _seen(self, intro: str = _FIRST, future: tuple[str, ...] = (_FUTURE,)) -> list[str]:
+        _, seen = synthesizer.drop_repeats(_drafted(intro, future), [])
+        return seen
+
+    def test_repeated_intro_sentence_is_dropped(self):
+        sec, _ = synthesizer.drop_repeats(_drafted(f"{self._AGAIN} 연구 방법으로는 조사 연구가 가장 많았다 [E3]."),
+                                          self._seen())
+        assert sec["intro"] == "연구 방법으로는 조사 연구가 가장 많았다 [E3]."
+
+    def test_paraphrase_below_the_threshold_is_kept(self):
+        # 바꿔 쓴 일반론(유사도 0.79)은 남긴다 — 같은 문장의 되풀이만 지운다
+        earlier = "다문화가정 아동의 언어 발달에 영향을 미치는 다양한 요인들을 종합적으로 고려하는 연구가 필요하다 [E1]."
+        later = "다문화가정 아동의 언어 발달에 영향을 미치는 다양한 변인들에 대한 추가적인 연구가 필요하다 [E2]."
+        sec, _ = synthesizer.drop_repeats(_drafted("새 도입이다 [E2].", (later,)),
+                                          self._seen(future=(earlier,)))
+        assert sec["future"] == [{"text": later}]
+
+    def test_repeated_future_item_is_dropped(self):
+        again = "다문화가정 아동의 언어 능력을 정확히 보여줄 수 있는 객관적인 자료 조사가 필요하다. [E2]"
+        other = "연령별 특성을 세분화하여 분석하는 연구가 필요하다 [E2]."
+        sec, _ = synthesizer.drop_repeats(_drafted("새 도입이다 [E2].", (again, other)), self._seen())
+        assert sec["future"] == [{"text": other}]
+
+    def test_intro_made_only_of_repeats_is_kept_whole(self):
+        # 비우면 '도입 문단을 생성하지 못한 절' 한계 줄이 잘못 붙는다
+        sec, _ = synthesizer.drop_repeats(_drafted(self._AGAIN), self._seen())
+        assert sec["intro"] == self._AGAIN
+
+    def test_meta_sentence_is_dropped(self):
+        sec, _ = synthesizer.drop_repeats(_drafted(
+            "본 절에서는 국내 학술 논문에서 연구 대상 집단을 분석하고자 한다 [E3]. 양적 연구 방법이 주로 활용되었다 [E1]."), [])
+        assert sec["intro"] == "양적 연구 방법이 주로 활용되었다 [E1]."
+
+    def test_marker_after_the_period_goes_with_the_dropped_sentence(self):
+        intro = f"{self._AGAIN.removesuffix(' [E2].')}. [E2] 이러한 연구들은 어머니의 언어 능력을 함께 보고한다. [E3]"
+        sec, _ = synthesizer.drop_repeats(_drafted(intro), self._seen())
+        assert sec["intro"] == "이러한 연구들은 어머니의 언어 능력을 함께 보고한다. [E3]"
+
+    def test_marker_used_as_the_next_subject_stays_with_it(self):
+        # '[E1] 연구는…' 의 마커는 다음 문장의 주어다 — 앞 문장과 함께 지우면 '연구는…' 이 근거 없이 남는다
+        intro = f"{self._AGAIN.removesuffix(' [E2].')}. [E2] 연구는 어머니의 한국 거주 기간을 변수로 보았다."
+        sec, _ = synthesizer.drop_repeats(_drafted(intro), self._seen())
+        assert sec["intro"] == "[E2] 연구는 어머니의 한국 거주 기간을 변수로 보았다."
+
+    def test_paper_summaries_are_left_alone(self):
+        sec, _ = synthesizer.drop_repeats(_drafted("새 도입이다 [E2].", summary=self._FIRST), self._seen())
+        assert sec["papers"] == [{"cnts_id": "A", "summary": self._FIRST}]
+
+    def test_unchanged_section_keeps_its_text(self):
+        intro = "첫 문장이다 [E1].\n둘째 문장이다 [E2]."
+        sec, _ = synthesizer.drop_repeats(_drafted(intro, ("과제다 [E1].",)), [])
+        assert sec["intro"] == intro and sec["future"] == [{"text": "과제다 [E1]."}]
+
+    @pytest.mark.parametrize("earlier, intro", [
+        # 번호 매김 '1.' — '. ' 에서 잘린 조각의 비교 키가 '1' 로 같아 유사도 1.0 이었다
+        ("다문화가정 아동의 어휘 발달은 2004년부터 연구되었다 [E1]. 1. 이후 여러 연구가 이어졌다 [E2].",
+         "선행 연구는 다음과 같다. 1. 어휘 발달 연구가 있다 [E3]. 2. 문법 발달 연구가 있다 [E5]."),
+        # 'vs.' — '가정 vs.' 조각이 앞 절과 같다
+        ("가정 vs. 학교 환경의 차이를 본 연구가 많다 [E1].", "가정 vs. 기관 환경을 비교한 연구도 있다 [E3]."),
+    ], ids=["numbering", "versus"])
+    def test_short_fragments_are_not_repeats(self, earlier, intro):
+        # 마침표에서 잘린 짧은 조각은 앞 절에 같은 조각이 있어도 되풀이로 보지 않는다 — 지우면 '2. 문법 …' 만 번호가 남는다
+        _, seen = synthesizer.drop_repeats(_drafted(earlier), [])
+        sec, _ = synthesizer.drop_repeats(_drafted(intro), seen)
+        assert sec["intro"] == intro
+
+
+class TestSynthesizeDropsRepeats:
+    def test_draft_and_report_show_the_same_trimmed_section(self, monkeypatch):
+        first = json.dumps({"intro": TestDropRepeats._FIRST, "summaries": {},
+                            "future": [{"text": TestDropRepeats._FUTURE}]})
+        second = json.dumps({"intro": f"{TestDropRepeats._AGAIN} 연구 방법으로는 조사 연구가 가장 많았다 [E3].",
+                             "summaries": {},
+                             "future": [{"text": TestDropRepeats._FUTURE.replace("[E1]", "[E2]")}]})
+        TestSynthesize()._patch_chat(monkeypatch, [first, second])
+        infos = []
+        _, on_section = TestSectionProgress()._record(infos)
+        report = asyncio.run(synthesize(_state_three(), on_section=on_section))
+        assert report["sections"][1]["intro"] == "연구 방법으로는 조사 연구가 가장 많았다 [E3]."
+        assert report["sections"][1]["future"] == []
+        assert infos[3]["section"] == report["sections"][1]
+
+    def test_intro_made_only_of_repeats_is_not_reported_as_missing(self, monkeypatch):
+        reply = json.dumps({"intro": TestDropRepeats._FIRST.replace("[E1]", "[E2]"), "summaries": {}, "future": []})
+        TestSynthesize()._patch_chat(monkeypatch, [reply, reply])
+        report = asyncio.run(synthesize(_state_three()))
+        assert report["sections"][1]["intro"]
+        assert not any("도입 문단" in x for x in report["limitations"])

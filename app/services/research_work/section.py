@@ -63,7 +63,9 @@ def make_paragraph(text: str, input: dict, pid: str) -> dict | None:
 
 
 def _seed_block(seeds: list[dict]) -> str:
-    return "\n".join(f"- {s['text']} (하위질문: {s['heading']})" for s in seeds) or "(없음)"
+    # 씨앗이 들어 있던 절의 하위질문(heading)은 붙이지 않는다 — 고른 카드의 주제는 씨앗의 글에서 나오는데, 운영
+    # 630e0d65(2026-10-14)는 '(하위질문: …시간적 변화 추이…)' 꼬리표를 따라 고른 주제가 아닌 그 하위질문의 공백을 썼다
+    return "\n".join(f"- {s['text']}" for s in seeds) or "(없음)"
 
 
 def paragraph_range(n_papers: int) -> str:

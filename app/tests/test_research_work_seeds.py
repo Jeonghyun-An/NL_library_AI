@@ -9,7 +9,7 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from services.research_work.seeds import (
-    corpus_of, pick_seeds, seed_papers, topic_input, used_seed_keys,
+    corpus_of, pick_seeds, seed_evidence, seed_papers, topic_input, used_seed_keys,
 )
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE, TOPIC_PAPERS_MAX
 
@@ -103,6 +103,29 @@ class TestSeedPapers:
         report = {"sections": [section], "evidence": evidence}
         assert seed_papers(report, ["E9"], 0) == ["Q9", "Q1", "Q2", "Q3", "Q4", "Q5"]
         assert len(seed_papers(report, [], 0)) == TOPIC_PAPERS_MAX
+
+
+class TestSeedEvidence:
+    """향후 과제 씨앗에 보고서가 달았던 근거(cnts_id) — 연구 공백 절이 씨앗 줄에 그 근거의 [E#] 를 붙인다(운영 630e0d65:
+    씨앗 문장을 옮긴 첫 문장이 근거 표시 없이 남았다). DB 에 이미 있는 카드의 씨앗도 key 로 풀린다."""
+
+    def test_the_future_evidence_in_order(self):
+        seeds = {s["key"]: s for s in pick_seeds(REPORT, limit=None)}
+        assert seed_evidence(REPORT, seeds["future:0:1"]) == ["P1", "P3"]
+        assert seed_evidence(REPORT, seeds["future:1:0"]) == ["P4"]
+
+    def test_insufficient_and_user_card_seeds_have_none(self):
+        seeds = {s["key"]: s for s in pick_seeds(REPORT, limit=None)}
+        assert seed_evidence(REPORT, seeds["insufficient:2"]) == []
+        assert seed_evidence(REPORT, {}) == []
+
+    def test_a_key_that_no_longer_points_at_that_future_has_none(self):
+        # 번호가 범위를 벗어나거나 그 자리의 향후 과제 글이 씨앗 글과 다르면 엉뚱한 근거를 붙이지 않는다
+        seed = pick_seeds(REPORT, limit=1)[0]
+        assert seed_evidence(REPORT, {**seed, "key": "future:9:0"}) == []
+        assert seed_evidence(REPORT, {**seed, "key": "future:0:1"}) == []
+        assert seed_evidence(REPORT, {**seed, "key": "future:x:0"}) == []
+        assert seed_evidence({}, seed) == [] and seed_evidence(None, seed) == []
 
 
 class TestPickSeeds:
@@ -252,7 +275,18 @@ class TestTopicInput:
             "adopted": 12,
             "corpus": {"n_papers": 144748, "from": "1980", "to": "2017"},
             "keywords": [],
+            "focus": [],
         }
+
+    def test_topic_input_carries_the_added_keywords_as_focus(self):
+        # [이 키워드로 다시 만들기]가 카드를 만들 때보다 더한 키워드를 focus 로 싣는다(운영 630e0d65). 처음 카드·
+        # [다른 방향]은 넘기지 않아 빈 목록이다. 넘긴 목록을 복사해 둔다
+        seed = pick_seeds(REPORT, limit=1)[0]
+        added = ["측정 방법"]
+        made = topic_input("q", seed, REPORT, 12, keywords=["노인 우울", "측정 방법"], focus=added)
+        assert made["focus"] == added and made["focus"] is not added
+        assert topic_input("q", seed, REPORT, 12, keywords=["노인 우울"])["focus"] == []
+        assert topic_input("q", seed, REPORT, 12, keywords=["노인 우울"], focus=None)["focus"] == []
 
     def test_topic_input_carries_the_keywords_or_an_empty_list(self):
         # 06e D23 — 카드를 만들 때 고른 키워드(work.concepts)를 입력에 싣는다. 넘긴 목록을 복사해 둔다

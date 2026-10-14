@@ -116,6 +116,34 @@ def seed_papers(report: dict, future_eids: list[str], section_idx: int | None) -
     return out
 
 
+def _future_text(fut: dict) -> str:
+    """향후 과제의 씨앗 글 — [E#] 마커를 걷어내고 공백을 하나로."""
+    return _norm(strip_markers(str(fut.get("text") or "")))
+
+
+_FUTURE_KEY = re.compile(r"future:(\d+):(\d+)")
+
+
+def seed_evidence(report: dict, seed: dict) -> list[str]:
+    """향후 과제 씨앗('future:i:j')에 보고서가 달았던 근거의 cnts_id — 그 과제의 evidence 순서로, 중복 없이. 연구 공백 절이
+    씨앗 줄에 그 근거의 [E#] 를 붙인다(section_input.gap_input). 씨앗 글에서는 마커를 걷어냈고(_queues) papers 는 그 절
+    논문까지 섞여 있어 key 로 보고서에서 다시 푼다 — DB 에 이미 있는 카드의 씨앗도 풀린다.
+    insufficient 씨앗·사용자 카드(씨앗 {})·key 가 가리키는 자리의 과제 글이 씨앗 글과 다르면 []."""
+    m = _FUTURE_KEY.fullmatch(str((seed or {}).get("key") or ""))
+    if not m or not isinstance(report, dict):
+        return []
+    s_idx, f_idx = int(m.group(1)), int(m.group(2))
+    sections = report.get("sections") or []
+    section = sections[s_idx] if s_idx < len(sections) and isinstance(sections[s_idx], dict) else {}
+    futures = section.get("future") or []
+    fut = futures[f_idx] if f_idx < len(futures) and isinstance(futures[f_idx], dict) else None
+    if fut is None or _future_text(fut) != seed.get("text"):
+        return []
+    evidence = _evidence(report)
+    cnts = [(evidence.get(e) or {}).get("cnts_id") for e in fut.get("evidence") or [] if isinstance(e, str)]
+    return list(dict.fromkeys(c for c in cnts if isinstance(c, str) and c))
+
+
 def _adopted(trail: list, t_idx: int | None) -> int | None:
     if t_idx is None:
         return None
@@ -141,7 +169,7 @@ def _queues(report: dict) -> list[list[dict]]:
         for f_idx, fut in enumerate(sec.get("future") or []):
             if not isinstance(fut, dict):
                 continue
-            text = _norm(strip_markers(str(fut.get("text") or "")))
+            text = _future_text(fut)
             if not text:
                 continue
             queue.append({
@@ -197,10 +225,15 @@ def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()
     return out
 
 
-def topic_input(question: str, seed: dict, report: dict, topic_id: int, keywords: list[str] | None = None) -> dict:
+def topic_input(question: str, seed: dict, report: dict, topic_id: int, keywords: list[str] | None = None,
+                focus: list[str] | None = None) -> dict:
     """주제 카드 생성 1건의 입력(계약 §3 topic_card input). 근거 후보는 E1 부터 차례로 번호를 붙인다 —
     호출마다 붙이는 로컬 번호이고 카드에는 cnts_id 로 저장한다(spec §3 [E#]). keywords 는 카드를 만들 때 고른
-    키워드(06e D23 — work.concepts)이고 제목 규칙·검사가 읽는다. 06e 전 행에는 이 키가 없다(읽는 쪽이 or [])."""
+    키워드(06e D23 — work.concepts)이고 제목 규칙·검사가 읽는다. 06e 전 행에는 이 키가 없다(읽는 쪽이 or []).
+    focus 는 [이 키워드로 다시 만들기]가 카드를 만들 때보다 더한 키워드와 앞서 더했는데 아직 제목에 없는 키워드
+    (keywords 의 일부 — api.research_topics._regenerate_focus)다 — 프롬프트가 한 줄 더
+    강조하고 엄격한 검사가 그 가운데 하나를 요구한다(운영 630e0d65). 처음 카드·[다른 방향]은 빈 목록이고, 이 키가
+    없는 옛 행은 읽는 쪽이 or [] 로 읽는다."""
     metas = _metas(report if isinstance(report, dict) else {})
     papers = []
     for n, cnts_id in enumerate(seed.get("papers") or [], start=1):
@@ -215,6 +248,7 @@ def topic_input(question: str, seed: dict, report: dict, topic_id: int, keywords
         "adopted": seed.get("adopted"),
         "corpus": _corpus(report if isinstance(report, dict) else {}),
         "keywords": list(keywords or []),
+        "focus": list(focus or []),
     }
 
 

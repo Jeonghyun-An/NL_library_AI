@@ -7,6 +7,7 @@ torch·FlagEmbedding·pymilvus 가 없다(test_search_research_path.py 와 같�
 import ast
 import importlib
 import json
+import random
 import sys
 import types
 from pathlib import Path
@@ -20,7 +21,9 @@ from services.research_work.membership import (
     MEMBER_THRESHOLD, assign_groups, concept_affinity, cosine, group_count, members_from_affinity,
     ordered_papers, subq_affinity,
 )
-from services.research_work.shapes import MAX_GROUPS, PAPERS_PER_GROUP
+from services.research_work.shapes import (
+    MAX_GROUPS, MIN_GROUP_PAPERS, MIN_READING_FOR_OUTLINE, PAPERS_PER_GROUP, PRIOR_KEYS,
+)
 
 MODULE = Path(__file__).resolve().parents[1] / "services" / "research_work" / "membership.py"
 
@@ -48,7 +51,7 @@ class TestCosine:
 
 class TestGroupCount:
     def test_constants(self):
-        assert (MEMBER_THRESHOLD, PAPERS_PER_GROUP, MAX_GROUPS) == (0.45, 4, 4)
+        assert (MEMBER_THRESHOLD, PAPERS_PER_GROUP, MAX_GROUPS, MIN_GROUP_PAPERS) == (0.45, 4, 4, 2)
 
     @pytest.mark.parametrize("n, k", [(0, 1), (1, 1), (5, 1), (7, 1), (8, 2), (12, 3), (16, 4), (40, 4)])
     def test_one_group_per_four_papers_between_one_and_four(self, n, k):
@@ -107,16 +110,16 @@ class TestAssignGroups:
         assert [(g["hint"], g["papers"]) for g in groups] == [("B", ["P1", "P4"]), ("A", ["P2", "P3"])]
 
     def test_group_count_is_capped_by_the_distinct_first_keys(self):
-        affinity = {p: {"A": 0.9} for p in ("P1", "P2", "P3")} | {"P4": {"B": 0.9}}
-        groups = assign_groups(["P1", "P2", "P3", "P4"], affinity, 4, keys=KEYS)
+        affinity = {p: {"A": 0.9} for p in ("P1", "P2", "P3")} | {p: {"B": 0.9} for p in ("P4", "P5")}
+        groups = assign_groups(["P1", "P2", "P3", "P4", "P5"], affinity, 4, keys=KEYS)
         assert [g["key"] for g in groups] == ["prior.g1", "prior.g2"]
 
     def test_papers_without_affinity_go_to_the_first_group(self):
-        affinity = {"P1": {"B": 0.9}, "P3": {"A": 0.9}, "P4": {"B": 0.5}}
-        groups = assign_groups(["P1", "P2", "P3", "P4"], affinity, 2, keys=KEYS)
+        affinity = {"P1": {"B": 0.9}, "P3": {"A": 0.9}, "P4": {"B": 0.5}, "P5": {"A": 0.8}}
+        groups = assign_groups(["P1", "P2", "P3", "P4", "P5"], affinity, 2, keys=KEYS)
         assert groups == [
             {"key": "prior.g1", "hint": "B", "papers": ["P1", "P2", "P4"]},
-            {"key": "prior.g2", "hint": "A", "papers": ["P3"]},
+            {"key": "prior.g2", "hint": "A", "papers": ["P3", "P5"]},
         ]
 
     def test_no_affinity_at_all_is_one_group(self):
@@ -128,9 +131,70 @@ class TestAssignGroups:
         assert groups[0]["hint"] == "A"
 
     def test_keys_outside_the_given_keys_are_ignored(self):
-        groups = assign_groups(["P1", "P2"], {"P1": {"옛 개념": 0.9, "B": 0.1}, "P2": {"A": 0.3}}, 2,
-                               keys=KEYS)
-        assert [(g["hint"], g["papers"]) for g in groups] == [("B", ["P1"]), ("A", ["P2"])]
+        affinity = {"P1": {"옛 개념": 0.9, "B": 0.1}, "P2": {"A": 0.3}, "P3": {"B": 0.4}, "P4": {"A": 0.5}}
+        groups = assign_groups(["P1", "P2", "P3", "P4"], affinity, 2, keys=KEYS)
+        assert [(g["hint"], g["papers"]) for g in groups] == [("B", ["P1", "P3"]), ("A", ["P2", "P4"])]
+
+    def test_a_one_paper_group_takes_the_least_regretful_paper(self):
+        # 운영 2026-10-14 — 미리 담은 8편이 7:1. A 가 7편, B 는 P8 하나 → A 에서 B 친밀도가 A 보다 덜 뒤지는 P3 을 데려온다
+        # (B 친밀도만 보면 P2 가 더 높지만 P2 는 A 에 더 붙어 있다)
+        affinity = {f"P{i}": {"A": 0.7, "B": 0.5} for i in range(1, 8)} | {"P8": {"B": 0.7, "A": 0.6}}
+        affinity["P2"] = {"A": 0.9, "B": 0.66}
+        affinity["P3"] = {"A": 0.66, "B": 0.64}
+        groups = assign_groups([f"P{i}" for i in range(1, 9)], affinity, 2, keys=KEYS)
+        assert groups == [
+            {"key": "prior.g1", "hint": "A", "papers": ["P1", "P2", "P4", "P5", "P6", "P7"]},
+            {"key": "prior.g2", "hint": "B", "papers": ["P3", "P8"]},
+        ]
+
+    def test_a_short_group_with_nothing_to_take_is_merged_away(self):
+        # 다른 논문에 B 친밀도가 없으면(하위질문 소속에서 흔하다) B 묶음을 풀어 A 에 합친다 — 묶음 하나, 안은 papers 순서
+        affinity = {f"P{i}": {"A": 0.9} for i in range(1, 8)} | {"P8": {"B": 0.9}}
+        papers = ["P8"] + [f"P{i}" for i in range(1, 8)]
+        assert assign_groups(papers, affinity, 2, keys=KEYS) == [
+            {"key": "prior.g1", "hint": "A", "papers": papers}]
+
+    def test_the_donor_never_drops_below_the_minimum(self):
+        # 묶음 셋 5:2:1 — C 에 가장 가까운 것은 B 의 두 편이지만 B 는 2편이라 내주지 않고 여유 있는 A 에서 데려온다
+        affinity = ({f"A{i}": {"A": 0.9, "C": 0.1} for i in range(1, 6)}
+                    | {f"B{i}": {"B": 0.9, "C": 0.85} for i in (1, 2)} | {"C0": {"C": 0.9}})
+        groups = assign_groups([*affinity], affinity, 3, keys=KEYS)
+        assert groups == [
+            {"key": "prior.g1", "hint": "A", "papers": ["A2", "A3", "A4", "A5"]},
+            {"key": "prior.g2", "hint": "B", "papers": ["B1", "B2"]},
+            {"key": "prior.g3", "hint": "C", "papers": ["A1", "C0"]},
+        ]
+
+    def test_a_merged_middle_group_shifts_the_later_keys_forward(self):
+        # A 4·B 1·C 1·D 1 에서 k=3 — D 의 논문은 C 로 가 C 가 2편, B 는 데려올 논문이 없어 풀린다(첫 묶음으로).
+        # 남은 C 묶음은 prior.g3 이 아니라 prior.g2 — 절 키에 빈자리가 없어야 한다
+        keys = ["A", "B", "C", "D"]
+        affinity = ({f"A{i}": {"A": 0.9} for i in range(1, 5)}
+                    | {"B1": {"B": 0.9}, "C1": {"C": 0.9}, "D1": {"D": 0.9, "C": 0.5}})
+        groups = assign_groups([*affinity], affinity, 3, keys=keys)
+        assert groups == [
+            {"key": "prior.g1", "hint": "A", "papers": ["A1", "A2", "A3", "A4", "B1"]},
+            {"key": "prior.g2", "hint": "C", "papers": ["C1", "D1"]},
+        ]
+
+    def test_invariants_hold_over_random_affinities(self):
+        # 개념 기준(모든 논문에 모든 키)·하위질문 기준(듬성듬성)·친밀도 없는 논문을 섞어 불변식을 본다
+        rng = random.Random(20261014)
+        for _ in range(500):
+            n = rng.randint(MIN_READING_FOR_OUTLINE, 16)
+            keys = ["A", "B", "C", "D"][:rng.randint(1, 4)]
+            papers = [f"P{i}" for i in range(n)]
+            dense = rng.random() < 0.5
+            affinity = {p: {k: rng.random() for k in keys if dense or rng.random() < 0.4}
+                        for p in papers if rng.random() < 0.9}
+            k = group_count(n)
+            groups = assign_groups(papers, affinity, k, keys=keys)
+            placed = [p for g in groups for p in g["papers"]]
+            assert sorted(placed) == sorted(papers) and len(placed) == len(set(placed))
+            assert 1 <= len(groups) <= k
+            assert [g["key"] for g in groups] == list(PRIOR_KEYS[:len(groups)])
+            assert len(groups) == 1 or all(len(g["papers"]) >= MIN_GROUP_PAPERS for g in groups)
+            assert all(g["papers"] == sorted(g["papers"], key=papers.index) for g in groups)
 
     def test_never_more_than_four_groups(self):
         keys = ["A", "B", "C", "D", "E"]
@@ -145,6 +209,7 @@ class TestAssignGroups:
         placed = [p for g in groups for p in g["papers"]]
         assert sorted(placed) == sorted(papers) and len(placed) == len(set(placed))
         assert all(g["papers"] for g in groups)
+        assert len(groups) == 1 or all(len(g["papers"]) >= MIN_GROUP_PAPERS for g in groups)
 
 
 # ── concept_affinity(FastAPI 전용) ───────────────────────────────────

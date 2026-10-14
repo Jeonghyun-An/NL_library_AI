@@ -413,6 +413,77 @@ class TestRegenerate:
             "gen_id": g["id"], "gen_kind": "topic_card", "target": g["target"], "status": "queued",
             "model": None, "result": None}) for g in new]
 
+    def test_keywords_added_since_the_card_was_made_are_the_focus(self, api):
+        # 운영 630e0d65 — 처음 고른 키워드(카드의 keywords)에 '연구 대상'을 더해 다시 만들었는데 4장 모두 빠졌다. 카드를
+        # 만들 때보다 더한 키워드를 input.focus 로 넘겨 프롬프트·엄격한 검사가 그 말을 따로 본다(같은 말 판정은
+        # keyword_key — 띄어쓰기만 다른 것은 더한 것이 아니다). 비교할 기준이 없는 카드 — 근거 부족(카드 없음)·06e 전
+        # 카드(keywords 없음)·키워드 없이 만든 카드(keywords []) — 와 더한 것이 없는 카드는 focus 가 비어 06e 그대로다
+        added = "연구 대상"
+        jid = _work_job(api.engine, concepts=[*KEYWORDS, added])
+        made = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card={**CARD, "keywords": KEYWORDS})
+        thin = add_topic(api.engine, jid, slot=2, seed=SEEDS[1], state="insufficient")
+        old = add_topic(api.engine, jid, slot=3, seed=SEEDS[2], card=CARD)
+        bare = add_topic(api.engine, jid, slot=4, seed=SEEDS[3], card={**CARD, "keywords": []})
+        same = add_topic(api.engine, jid, origin="other", seed=SEEDS[4],
+                         card={**CARD, "keywords": ["노인우울", "사회적 지지", added]})
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200 and res.json()["topic_ids"] == [made, thin, old, bare, same]
+        inputs = {g["target"]: g["input"] for g in _rows(api.engine, ResearchGeneration)}
+        assert inputs[str(made)] == topic_input(QUESTION, SEEDS[0], REPORT, made, keywords=[*KEYWORDS, added],
+                                                focus=[added])
+        assert inputs[str(made)]["focus"] == [added]
+        for tid in (thin, old, bare, same):
+            assert inputs[str(tid)]["focus"] == []
+            assert inputs[str(tid)]["keywords"] == [*KEYWORDS, added]
+
+    def test_an_added_keyword_the_title_still_misses_stays_the_focus(self, api):
+        # 세 번 다 더한 키워드를 놓쳐 무른 검사 카드가 보관되면 card.keywords 에는 그 키워드가 이미 있다. 같은 키워드로 한 번
+        # 더 누르면 차이가 비어 focus 가 사라졌다 — 앞서 focus 였는데 아직 제목에 없는 것(card.focus ∩
+        # checks.missing_keywords)을 이어받는다. 제목에 들어간 focus 는 넘기지 않는다
+        added = "연구 대상"
+        now = [*KEYWORDS, added]
+        jid = _work_job(api.engine, concepts=now)
+        soft = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], card={
+            **CARD, "keywords": now, "focus": [added],
+            "checks": {**CARD["checks"], "missing_keywords": [added]}})
+        met = add_topic(api.engine, jid, slot=2, seed=SEEDS[1], card={
+            **CARD, "title": "연구 대상별 지지망 유형과 우울", "keywords": now, "focus": [added],
+            "checks": {**CARD["checks"], "missing_keywords": ["노인 우울", "사회적 지지"]}})
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200 and res.json()["topic_ids"] == [soft, met]
+        inputs = {g["target"]: g["input"] for g in _rows(api.engine, ResearchGeneration)}
+        assert inputs[str(soft)] == topic_input(QUESTION, SEEDS[0], REPORT, soft, keywords=now, focus=[added])
+        assert inputs[str(met)]["focus"] == []
+
+    def test_an_empty_card_counts_from_its_last_card_generation(self, api):
+        # 근거 부족 행(card {})은 비교할 card.keywords 가 없다 — 그 주제의 마지막 카드 생성 입력(input.keywords)과 견주고,
+        # 그 입력의 focus 는 카드가 나오지 않았으니 아직 채우지 못한 것으로 이어받는다. 생성이 없거나 06e 전 입력(keywords
+        # 없음)이면 06e 그대로 빈 목록이다
+        added, more = "연구 대상", "측정 방법"
+        jid = _work_job(api.engine, concepts=[*KEYWORDS, added, more])
+        first = add_topic(api.engine, jid, slot=1, seed=SEEDS[0], state="insufficient")
+        add_generation(api.engine, jid, kind="topic_card", status="done", target=str(first),
+                       input={"keywords": ["옛 키워드"]})
+        add_generation(api.engine, jid, kind="topic_card", status="done", target=str(first),
+                       input={"keywords": KEYWORDS})
+        again = add_topic(api.engine, jid, slot=2, seed=SEEDS[1], state="insufficient")
+        add_generation(api.engine, jid, kind="topic_card", status="done", target=str(again),
+                       input={"keywords": [*KEYWORDS, added], "focus": [added]})
+        before_06e = add_topic(api.engine, jid, slot=3, seed=SEEDS[2], state="insufficient")
+        add_generation(api.engine, jid, kind="topic_card", status="done", target=str(before_06e), input={})
+
+        res = api.client.post(f"/api/research/{jid}/topics/regenerate")
+
+        assert res.status_code == 200 and res.json()["topic_ids"] == [first, again, before_06e]
+        queued = {g["target"]: g["input"] for g in _rows(api.engine, ResearchGeneration) if g["status"] == "queued"}
+        assert queued[str(first)]["focus"] == [added, more]
+        assert queued[str(again)]["focus"] == [added, more]
+        assert queued[str(before_06e)]["focus"] == []
+
     def test_edited_user_picked_and_folded_cards_are_left_alone(self, api):
         # 06e 정함 16 — 고른 카드는 키워드를 바꿔도 다시 만들지 않는다(목차 '다시 맞춤 필요'를 피한다). 사용자가 고친
         # 카드·직접 쓴 카드·접은 카드도 대상이 아니다

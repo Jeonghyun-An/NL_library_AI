@@ -110,6 +110,86 @@ def test_body_with_mixed_entry_shapes_is_kept(text):
     assert not looks_like_bibliography(text)
 
 
+# 아래는 짧은 조각 갈래(300자 이하·서술 0·서지 꼴 두 종류가 떨어진 두 자리)와 서지 꼬리 + 영문 초록 갈래('Abstract' 줄 앞이
+# 서술 없는 서지이고 첫 제목 줄 앞에 저자-연도 '(1996).')가 거르면 안 되는 본문 — 학술지 첫 쪽 머리·출처 줄·날짜 줄
+
+# 초록이 잘린 학술지 첫 쪽 머리 — 서술이 없고 꼴이 셋('2010.'·'No. 2'·'pp. 1')이지만 한 줄에 몰려 있다
+MASTHEAD_NO_ABSTRACT = (
+    "교육의 이론과 실천\n\nTheory and practice of Education\n\n2010. 15, No. 2, pp. 1-24\n\n*\n\n"
+    "# 다문화가정 아동의 언어교육지원 체계 구축을 위한 모형제안\n\n고 은(전남대학교)")
+
+_EN_ABSTRACT = (
+    "\n\nAbstract\n\nThis study was conducted to identify the effects of social support on depression among older "
+    "adults. Data were collected from 359 adults aged 65 and over living in the community. Social support was "
+    "negatively associated with depression, and resilience mediated the association. These findings suggest that "
+    "community programs should strengthen both social support and resilience.")
+
+# 영문 첫 쪽 머리의 '(2017).' 는 저자 이니셜 뒤가 아니라 학술지 권호 뒤다
+MASTHEAD_EN_ABSTRACT = (
+    "Journal of the Korea Convergence Society Vol. 10, No. 3 (2017). pp. 339-349\n\n"
+    "# Effects of Social Support on Depression among Older Adults\n\nHong, G. D., Kim, C. S.\n\n"
+    "Dept. of Nursing, Chodang University" + _EN_ABSTRACT)
+
+# 첫 쪽의 인용 안내 줄 — 저자-연도 '(2017).' 가 있어도 논문 제목(첫 제목 줄) 뒤라 참고문헌 꼬리가 아니다
+MASTHEAD_HOW_TO_CITE = (
+    "Journal of the Korea Convergence Society Vol. 10, No. 3, pp. 339-349, 2017\n\n"
+    "# Effects of Social Support on Depression among Older Adults\n\nHong, G. D., Kim, C. S.\n\n"
+    "Citation: Hong, G. D., & Kim, C. S. (2017). Effects of social support on depression among older adults. "
+    "Journal of the Korea Convergence Society, 10(3), 339-349." + _EN_ABSTRACT)
+
+# 그림 출처 한 줄 — 꼴 둘('(2013).'·'p.74')이 붙어 한 자리다
+FIGURE_SOURCE = "<그림 1> 사회정서적 선택이론 사회적 동기 변화 궤적\n자료: 정효채 등. (2013). p.74 재인용."
+
+# 출처 줄 뒤에 다음 절 본문 — 서술이 있다
+SOURCE_THEN_METHOD = (
+    "자료: 김철수(2010). 공공도서관 연구. p. 23\n\n### 3. 연구방법\n\n"
+    "본 연구는 공공도서관 이용자 359명을 대상으로 설문조사를 실시하였다. 자료는 SPSS 25.0 으로 분석하였다.")
+
+# 각주 날짜·짧은 인용 나열·접수일 — 서지 꼴이 한 종류뿐이거나 없다
+FOOTNOTE_DATES = "- 3) 서울경제, 2013년 7월 18일 참조. - 4) 국민일보, 2013년 1월 28일 참조."
+SHORT_CITES_LIST = "선행연구: 김철수(2010), 이영희(2012), 박민수(2015), 정수진(2017)."
+RECEIVED_DATES = "논문접수일: 2013. 10. 4. 심사완료일: 2013. 11. 2. 게재확정일: 2013. 12. 1."
+
+# 쪽 경계에서 잘린 본문 조각 — 쪽 머리글의 학술지 권호('제45권 제2호'·'Vol. 45, No. 2')와 직접 인용의 'p. 23' 이 40자 넘게
+# 떨어져 서지 꼴 두 종류·두 자리가 되지만, 권호는 쪽마다 찍히는 머리글이다. 문장이 잘려 서술 종결이 없다
+RUNNING_HEADER_QUOTE = (
+    "- 152 - 한국도서관·정보학회지(제45권 제2호) 공공도서관은 지역 주민 누구에게나 열려 있는 \"평생학습의 장\""
+    "(김철수, 2010, p. 23)이라는 점에서 다문화가정 아동을 위한 서비스를 확대할 필요가 있으며, 이를 위해")
+RUNNING_HEADER_EN_QUOTE = (
+    "Journal of Korean Library and Information Science Society Vol. 45, No. 2 공공도서관은 지역 주민 누구에게나 "
+    "열려 있는 \"평생학습의 장\"(Kim, 2010, p. 23)이라는 점에서 다문화가정 아동을 위한 서비스를 확대할 필요가 있으며")
+RUNNING_HEADER_CITES = (
+    "한국비블리아학회지 제26권 제2호 2015 다문화가정 아동을 위한 공공도서관 서비스 연구 59 이러한 관점에서 "
+    "선행연구로는 김철수(2010), 이영희(2012) 등이 있으며 이들 연구에서는")
+
+# 첫 쪽 인용 안내 줄이 논문 제목 줄보다 앞에 있거나 제목 줄('#')이 없는 첫 쪽 — 인용 안내의 '(2017).' 는 이 논문 자신의
+# 서지라 참고문헌 꼬리가 아니고, 뒤의 영문 초록이 근거다
+_CITE_LINE = ("Citation: Hong, G. D., & Kim, C. S. (2017). Vocabulary of children from multicultural families. "
+              "Journal of Speech-Language & Hearing Disorders, 26(3), 1-12.\n")
+_KO_ABSTRACT = (
+    "ABSTRACT\nPurpose: The purpose of this study was to examine the receptive and expressive vocabulary of "
+    "children from multicultural families. Methods: Forty children aged 5 to 6 years participated in the study. "
+    "Results: Children from multicultural families showed lower scores than their peers. "
+    "Conclusion: These findings suggest that early vocabulary support is needed.")
+_JOURNAL_LINE = "Journal of Speech-Language & Hearing Disorders Vol. 26, No. 3, 1-12\n"
+CITATION_BEFORE_TITLE = _JOURNAL_LINE + _CITE_LINE + "## 다문화가정 아동의 어휘 발달\n홍길동, 김철수\n" + _KO_ABSTRACT
+CITATION_NO_HEADING = _JOURNAL_LINE + _CITE_LINE + "다문화가정 아동의 어휘 발달\n홍길동, 김철수\n" + _KO_ABSTRACT
+HOW_TO_CITE_BEFORE_TITLE = CITATION_BEFORE_TITLE.replace("Citation:", "How to cite this article:")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [MASTHEAD_NO_ABSTRACT, MASTHEAD_EN_ABSTRACT, MASTHEAD_HOW_TO_CITE, FIGURE_SOURCE, SOURCE_THEN_METHOD,
+     FOOTNOTE_DATES, SHORT_CITES_LIST, RECEIVED_DATES, RUNNING_HEADER_QUOTE, RUNNING_HEADER_EN_QUOTE,
+     RUNNING_HEADER_CITES, CITATION_BEFORE_TITLE, CITATION_NO_HEADING, HOW_TO_CITE_BEFORE_TITLE],
+    ids=["masthead-no-abstract", "masthead-en-abstract", "masthead-how-to-cite", "figure-source",
+         "source-then-method", "footnote-dates", "short-cites-list", "received-dates", "running-header-quote",
+         "running-header-en-quote", "running-header-cites", "citation-before-title", "citation-no-heading",
+         "how-to-cite-before-title"])
+def test_short_or_abstract_headed_body_is_kept(text):
+    assert not looks_like_bibliography(text)
+
+
 @pytest.mark.parametrize("head", ["참고문헌", "### 참고문헌", "References", "5. 참고문헌"])
 def test_head_at_chunk_start_followed_by_entries_is_bibliography(head):
     """머리 낱말 뒤에 바로 서지 항목(저자 이름 + 마침표·괄호)이 이으면 머리다 — 머리를 좁혀도 이 꼴은 잡는다."""

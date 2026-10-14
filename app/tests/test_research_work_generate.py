@@ -256,18 +256,25 @@ def _soft(n: int) -> str:
     return json.dumps({"ok": False, "soft": True, "n": n})
 
 
-def _soft_executor(*, soft: bool = True) -> Executor:
-    """엄격한 검사와 무른 검사를 함께 가진 실행기 — 주제 카드(근거 2편 / 근거 2편 + 제목 키워드)와 같은 모양."""
+def _soft_executor(*, soft: bool = True, settle: bool = False) -> Executor:
+    """엄격한 검사와 무른 검사를 함께 가진 실행기 — 주제 카드(근거 2편 / 근거 2편 + 제목 키워드)와 같은 모양.
+    settle 이면 '"settle": true' 인 답은 다른 모델로 넘기지 않는 미달이다(주제 카드의 더한 키워드만 놓친 카드)."""
     return Executor(
         kind="facet", build=lambda inp: (MESSAGES, dict(PARAMS)), parse=_parse,
         check=lambda out: out.get("ok") is True,
         empty=lambda inp: {"empty": True},
         soft_check=(lambda out: out.get("soft") is True) if soft else None,
+        settle=(lambda out: out.get("settle") is True) if settle else None,
     )
 
 
-def _run_soft(chat: _ScriptedChat, *, soft: bool = True) -> GenerationResult:
-    return asyncio.run(run_generation(_soft_executor(soft=soft), {"q": "질문"}, chat_fn=chat))
+def _settled(n: int) -> str:
+    """무른 검사를 넘고 settle 인 답 — 엄격한 검사는 못 넘는다."""
+    return json.dumps({"ok": False, "soft": True, "settle": True, "n": n})
+
+
+def _run_soft(chat: _ScriptedChat, *, soft: bool = True, settle: bool = False) -> GenerationResult:
+    return asyncio.run(run_generation(_soft_executor(soft=soft, settle=settle), {"q": "질문"}, chat_fn=chat))
 
 
 class TestSoftCheck:
@@ -303,3 +310,52 @@ class TestSoftCheck:
 
         assert _outcomes(result) == ["check", "parse", "check"]
         assert result.output == {"ok": False, "soft": True, "n": 1} and result.model == "qwen-test"
+
+
+class TestSettle:
+    """settle — 주 모델의 두 번째 미달이 settle 인 답이면 다른 모델로 넘기지 않고 그 답을 낸다. 주제 카드는 다시 만들 때
+    더한 키워드(focus)만 놓친 카드가 그렇다 — 넘길 모델(Qwen)은 적재 OCR 과 같은 VLM 이라 카드 다시 만들기로 늘리지
+    않는다. 고치기 전(06e)부터 있던 미달(근거 모자람·키워드를 하나도 못 넣음)은 그대로 넘긴다."""
+
+    def test_two_settled_misses_stay_on_the_primary_model(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [_settled(1), _settled(2)], "gemma-test": [OK]})
+
+        result = _run_soft(chat, settle=True)
+
+        assert chat.models == ["qwen-test", "qwen-test"]
+        assert result.output == {"ok": False, "soft": True, "settle": True, "n": 2}
+        assert result.model == "qwen-test" and _outcomes(result) == ["check", "check"]
+
+    def test_a_settled_first_miss_then_another_miss_still_switches(self, cfg):
+        # 두 번째 미달이 settle 이 아니면 예전처럼 다른 모델에 한 번 묻는다
+        chat = _ScriptedChat({"qwen-test": [_settled(1), _soft(2)], "gemma-test": [OK]})
+
+        result = _run_soft(chat, settle=True)
+
+        assert chat.models == ["qwen-test", "qwen-test", "gemma-test"]
+        assert result.output == {"ok": True} and result.model == "gemma-test"
+
+    def test_another_first_miss_then_a_settled_miss_stops(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [THIN, _settled(2)], "gemma-test": [OK]})
+
+        result = _run_soft(chat, settle=True)
+
+        assert chat.models == ["qwen-test", "qwen-test"]
+        assert result.output["n"] == 2 and result.model == "qwen-test"
+        assert _outcomes(result) == ["check", "check"]
+
+    def test_a_parse_failure_is_never_settled(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [_settled(1), NOT_JSON], "gemma-test": [OK]})
+
+        result = _run_soft(chat, settle=True)
+
+        assert chat.models == ["qwen-test", "qwen-test", "gemma-test"]
+        assert result.output == {"ok": True}
+
+    def test_without_settle_the_ladder_is_unchanged(self, cfg):
+        chat = _ScriptedChat({"qwen-test": [_settled(1), _settled(2)], "gemma-test": [_settled(3)]})
+
+        result = _run_soft(chat)
+
+        assert chat.models == ["qwen-test", "qwen-test", "gemma-test"]
+        assert result.output["n"] == 3 and result.model == "gemma-test"
