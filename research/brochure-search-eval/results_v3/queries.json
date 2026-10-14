@@ -1,0 +1,1368 @@
+{
+ "meta": {
+  "created": "2026-10-14T05:16:30",
+  "seed": 20261015,
+  "corpus_docs": {
+   "paper": 198126
+  },
+  "question_model": "gemma-3-12b (서빙 모델: google/gemma-3-12b-it)",
+  "dropped": {
+   "title_copy": 18,
+   "time_expr": 4,
+   "body_copy": 1
+  },
+  "n_queries": 150
+ },
+ "queries": [
+  {
+   "qid": "nl-p-0000",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "수감자들이 겪는 권리 제한이 합리적인 이유로 설명되고 있는지 궁금합니다.",
+   "expected_id": "KCI_FI000947420",
+   "title": "헌법재판소 판례로 본 행형과 수용자의 인권- 행형에 대한 헌법적 이해 -",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0001",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "조선시대 가정소설에서 가족 간 갈등은 주로 어떤 원인으로 발생했나요?",
+   "expected_id": "KCI_FI001082818",
+   "title": "朝鮮朝 家庭小說에 나타난 個人間의 葛藤樣相",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0002",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "여성의 교육 수준이 늦어지는 결혼과 출산에 어떤 영향을 주는지 궁금합니다.",
+   "expected_id": "KCI_FI002429046",
+   "title": "한국 여성의 초혼연령과 교육, 출산: 1975년 인구총조사 자료를 이용한 분석",
+   "lex_coverage": 0.5714
+  },
+  {
+   "qid": "nl-p-0003",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "심신상실 상태에서 범죄를 저지른 경우, 법원은 어떤 점을 고려하여 처벌할까요?",
+   "expected_id": "KCI_FI001805960",
+   "title": "형법 제10조 제3항의 적용에 관한 실무의 동향",
+   "lex_coverage": 0.4091
+  },
+  {
+   "qid": "nl-p-0004",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중학교 선생님과 예비 교사들은 어떤 수업을 통해 교사와 학생 모두가 함께 성장하기를 바랄까요?",
+   "expected_id": "KCI_FI002526913",
+   "title": "공감수업에 대한 중등교사와 예비교사의 요구분석",
+   "lex_coverage": 0.48
+  },
+  {
+   "qid": "nl-p-0005",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "나이가 들어서 운동하면 몸에 어떤 변화가 일어나는지 궁금합니다.",
+   "expected_id": "KCI_FI000874467",
+   "title": "노화와 운동 효과에 대한 항산화, 내분비, 면역학적 접근",
+   "lex_coverage": 0.0526
+  },
+  {
+   "qid": "nl-p-0006",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "큰 배가 얕은 물로 들어갈 때 흘수량과 트림 변화를 예측하는 방법이 있을까요?",
+   "expected_id": "KCI_FI000896935",
+   "title": "A Study on the Quantity of Hull Sinkage and Trim Change of a VLCC Passing on Shallow waters from Deep Sea and Establishing the Tables concerned",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0007",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "유치원 교사들이 더 잘 일하기 위해 어떤 역량을 키워야 할까요?",
+   "expected_id": "KCI_FI001580509",
+   "title": "미국과 캐나다의 유아 교사 핵심 역량 분석과 교육적 시사",
+   "lex_coverage": 0.3529
+  },
+  {
+   "qid": "nl-p-0008",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "14~16세 여학생들의 체형 특징을 파악하고, 이를 바탕으로 교실이나 교복 디자인에 활용할 수 있는 연구가 있나요?",
+   "expected_id": "KCI_FI001036913",
+   "title": "청소년기 여학생(14세～16세)의 신체치수에 관한 연구",
+   "lex_coverage": 0.1875
+  },
+  {
+   "qid": "nl-p-0009",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "철을 녹여서 철기를 만드는 과정에서 어떤 점들이 중요하고, 품질을 높이기 위해 어떤 노력이 필요할까요?",
+   "expected_id": "KCI_FI002293084",
+   "title": "재현실험을 통한 중원지역 고대 제련-단야기술의 공정별 특성 연구",
+   "lex_coverage": 0.3704
+  },
+  {
+   "qid": "nl-p-0010",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "역사 수업에서 다양한 관점을 제시하고 학생들이 스스로 판단하는 능력을 키우려면 어떻게 해야 할까요?",
+   "expected_id": "KCI_FI001325415",
+   "title": "다원적 관점의 역사이해와 역사교육",
+   "lex_coverage": 0.069
+  },
+  {
+   "qid": "nl-p-0011",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "건강에 해로운 제품에 건강 정보를 표시하는 것이 소비자들의 인식에 어떤 영향을 줄까요?",
+   "expected_id": "KCI_FI002169631",
+   "title": "악한 제품의 건강 라벨링 유형이범주 지각 및 제품 평가에 미치는 효과",
+   "lex_coverage": 0.5652
+  },
+  {
+   "qid": "nl-p-0012",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "동북아시아 지역 유목민족 음악 용어들을 어떻게 분류하고 정리했는지 궁금합니다.",
+   "expected_id": "KCI_FI002050312",
+   "title": "동북아시아 유목음악 표제어의 준거 제안",
+   "lex_coverage": 0.24
+  },
+  {
+   "qid": "nl-p-0013",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "고관절 골절 환자 수술 후 회복 정도와 합병증 발생에 대한 연구 결과가 궁금합니다.",
+   "expected_id": "KCI_FI001703376",
+   "title": "A2형 이상의 대퇴골 전자간 골절에서 무시멘트형의 직각 단면을 가진 표준형 주대를 이용한 인공 고관절 반치환술",
+   "lex_coverage": 0.5714
+  },
+  {
+   "qid": "nl-p-0014",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "형사 사건에서 피해자의 권리를 넓히는 것은 어떤 점을 고려해야 할까요?",
+   "expected_id": "KCI_FI002772616",
+   "title": "형사사법에서 ‘피해자 중심’의 의미와 법정책",
+   "lex_coverage": 0.4737
+  },
+  {
+   "qid": "nl-p-0015",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "5·4 시기 유교를 옹호했던 학자들이 서양 사상을 받아들여 유교를 어떻게 변화시키려 했는지 궁금합니다.",
+   "expected_id": "KCI_FI001979064",
+   "title": "신문화운동기 유교인문주의 연구",
+   "lex_coverage": 0.3448
+  },
+  {
+   "qid": "nl-p-0016",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "홍주 전투나 동학 농민 봉기 등 혼란했던 조선 후기에, 천부경 비석을 새긴 남자는 어떤 배경을 가지고 있었을까?",
+   "expected_id": "KCI_FI002548838",
+   "title": "광무9년명 천부경각석의 발굴과 그 사상사적 의의",
+   "lex_coverage": 0.1786
+  },
+  {
+   "qid": "nl-p-0017",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "기후 변화 때문에 댐 물 부족 문제가 심각해지고 있는데, 댐 운영 방식을 어떻게 개선해야 할까요?",
+   "expected_id": "KCI_FI002535765",
+   "title": "기후변화를 고려한 다목적댐 운영기준 개선 및 평가",
+   "lex_coverage": 0.32
+  },
+  {
+   "qid": "nl-p-0018",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "뇌졸중 환자의 일상생활 복귀를 돕기 위해 어떤 전문가들이 관련되어 있나요?",
+   "expected_id": "KCI_FI002899001",
+   "title": "Predicting Functional Outcomes of Patients With Stroke Using Machine Learning: A Systematic Review",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0019",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "한국에서 영어 시험 정책이 어떻게 변화해 왔는지, 그 배경에는 어떤 사회적 요인들이 있었는지 궁금합니다.",
+   "expected_id": "KCI_FI002390548",
+   "title": "영어시험에 관한 담론 정치의 역사성 분석: 신자유주의와 평가국가의 논점으로부터",
+   "lex_coverage": 0.2759
+  },
+  {
+   "qid": "nl-p-0020",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중학교 운영 효율성을 높이기 위해 어떤 요소들을 고려해야 할까요?",
+   "expected_id": "KCI_FI001727417",
+   "title": "DEA기법을 적용한 중학교교육 운영 효율성 분석",
+   "lex_coverage": 0.2778
+  },
+  {
+   "qid": "nl-p-0021",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "기업의 생존 기간에 사고 정보가 어떤 영향을 미치는지 궁금합니다.",
+   "expected_id": "KCI_FI002291042",
+   "title": "창업기업 금융정책 개선을 위한 기업 신용정보 데이터의 정량적 분석 연구: 기업의 생존에 부정적인 요인을 중심으로",
+   "lex_coverage": 0.6667
+  },
+  {
+   "qid": "nl-p-0022",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "방송사들이 여러 사업을 함께 운영하는 것이 시장에 어떤 영향을 미치는지, 어떻게 규제해야 할지 궁금합니다.",
+   "expected_id": "KCI_FI001621326",
+   "title": "방송사업의 소유겸영규제 개선",
+   "lex_coverage": 0.3
+  },
+  {
+   "qid": "nl-p-0023",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중국에서 태권도를 배우는 사람들이 운동을 계속하는 데 어떤 점이 영향을 주나요?",
+   "expected_id": "KCI_FI002783798",
+   "title": "중국 태권도 수련생의 참가동기가 수련만족 및 운동지속의도에 미치는 영향",
+   "lex_coverage": 0.3478
+  },
+  {
+   "qid": "nl-p-0024",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "입원한 노인들에게 음악 프로그램을 하니, 인간관계나 자존감, 우울감에 어떤 변화가 있을까요?",
+   "expected_id": "KCI_FI001410469",
+   "title": "음악을 활용한 집단회상프로그램이 입원노인의 대인관계, 자아존중감, 우울에 미치는 효과",
+   "lex_coverage": 0.2963
+  },
+  {
+   "qid": "nl-p-0025",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "초기 치매 환자들이 겪는 어려움을 겪는 사람들을 위해 미술 활동이 도움이 될까요?",
+   "expected_id": "KCI_FI002769490",
+   "title": "경증치매노인의 인지기능 향상, 우울 감소, 생활만족도 증진을 위한 집단미술치료 프로그램 효과성 연구",
+   "lex_coverage": 0.5
+  },
+  {
+   "qid": "nl-p-0026",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "피부 타입별로 어떤 딥클린저가 가장 효과적인가요?",
+   "expected_id": "KCI_FI001392940",
+   "title": "피부유형에 따른 딥클린저의 각질제거 효과 비교",
+   "lex_coverage": 0.4667
+  },
+  {
+   "qid": "nl-p-0027",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "가정폭력 가해자의 재범 위험도를 파악하는 데 도움이 되는 도구나 방법이 있을까요?",
+   "expected_id": "KCI_FI001815159",
+   "title": "경찰의 현장출동단계에서 가정폭력 피해자 보호를 위한 가정폭력 재범위험성 조사표 개발 및 활용 방안",
+   "lex_coverage": 0.4583
+  },
+  {
+   "qid": "nl-p-0028",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "믿음의 정도를 업데이트하는 여러 방법 중에서, 어떤 방법이 논리적인 문제를 일으키지 않고 더 효과적일까?",
+   "expected_id": "KCI_FI001597787",
+   "title": "조건화와 고차 믿음 갱신",
+   "lex_coverage": 0.2414
+  },
+  {
+   "qid": "nl-p-0029",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중국 민사 재판의 질을 높이기 위한 개혁이 진행되고 있는데, 현재 어떤 문제점들이 남아있나요?",
+   "expected_id": "KCI_FI002412240",
+   "title": "中国民事庭审优质化改革评析",
+   "lex_coverage": 0.36
+  },
+  {
+   "qid": "nl-p-0030",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "전기 도금 폐액 재활용 시, 도금 시간이나 효율은 어떤 요인에 따라 달라지나요?",
+   "expected_id": "KCI_FI000893139",
+   "title": "無電解 Ni-Cu-B 廢 鍍金液의 再使用에 관한 硏究",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0031",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "두루봉 동굴에서 발견된 동물 화석과 꽃가루, 석기 등 고고학적 자료들은 무엇을 의미하나요?",
+   "expected_id": "KCI_FI001042479",
+   "title": "두루봉 연구 30년",
+   "lex_coverage": 0.6538
+  },
+  {
+   "qid": "nl-p-0032",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "만 4세 아이들이 활동 중심의 유치원에서 수학적 경험을 하는 상황은 어떤 것이 있을까요?",
+   "expected_id": "KCI_FI001345876",
+   "title": "유아들의 수학적 경험이 발생하는 상황과 교사의 중재 방법 탐색",
+   "lex_coverage": 0.2083
+  },
+  {
+   "qid": "nl-p-0033",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "유전적인 요인으로 시력 저하가 발생하는 질환과 관련된 연구 자료 좀 찾아주세요.",
+   "expected_id": "KCI_FI002281960",
+   "title": "사립체 DNA의 11778 점돌연변이가 확인된 Leber씨 유전성 시신경병증 1례",
+   "lex_coverage": 0.2609
+  },
+  {
+   "qid": "nl-p-0034",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "러시아어에서 새로운 단어가 만들어지는 방식이 어떻게 변화해 왔는지 궁금합니다.",
+   "expected_id": "KCI_FI002641460",
+   "title": "러시아표준어의 통시적 · 공시적 역동성: 언어의 민주화 (II) ― 접사 -ка 단일어를 중심으로 ―",
+   "lex_coverage": 0.32
+  },
+  {
+   "qid": "nl-p-0035",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "친환경 제품의 품질과 소비 행동이 고객 만족도와 충성도에 어떤 영향을 미치는지 궁금합니다.",
+   "expected_id": "KCI_FI002065080",
+   "title": "그린제품 품질과 그린소비 행위가 고객만족과 고객충성도에 미치는 영향",
+   "lex_coverage": 0.4615
+  },
+  {
+   "qid": "nl-p-0036",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "일제강점기 시절, 식민지 조선 사람들의 이동 방식이 어떻게 변했는지 문학 작품을 통해 살펴본 연구 자료가 있을까요?",
+   "expected_id": "KCI_FI002536422",
+   "title": "제국의 법역(法域)으로서의 대동아와 식민지 조선인의 모빌리티(mobility) (2) -박태원을 중심으로",
+   "lex_coverage": 0.2903
+  },
+  {
+   "qid": "nl-p-0037",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "건축물의 장기적인 성능 저하를 일으키는 요인이 무엇이며, 그 영향을 어떻게 파악할 수 있을까요?",
+   "expected_id": "KCI_FI002041626",
+   "title": "철근부식에 의한 철근콘크리트골조의 구조성능분석",
+   "lex_coverage": 0.0357
+  },
+  {
+   "qid": "nl-p-0038",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "경영학 논문들을 분석해 보니, 연구자들의 연구 주제나 방식에 어떤 변화가 있었는지 궁금합니다.",
+   "expected_id": "KCI_FI001701555",
+   "title": "메타 데이터와 계량서지 데이터를 이용한 경영사학 연구특성 분석",
+   "lex_coverage": 0.2692
+  },
+  {
+   "qid": "nl-p-0039",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "박물관 전시를 기획할 때 어떤 점들을 신경 쓰면 좋을까요?",
+   "expected_id": "KCI_FI002713842",
+   "title": "박물관 전시계획을 위한 Check-list",
+   "lex_coverage": 0.3333
+  },
+  {
+   "qid": "nl-p-0040",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "뇌졸중 환자의 눈 움직임에 문제가 생기는 이유는 무엇이며, 어떤 종류의 문제가 나타날 수 있나요?",
+   "expected_id": "KCI_FI001644094",
+   "title": "뇌졸중과 안구 운동 장애",
+   "lex_coverage": 0.24
+  },
+  {
+   "qid": "nl-p-0041",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "지역 주민들이 직접 참여하는 방식으로 보육 서비스를 제공하는 방안에 대한 연구가 있나요?",
+   "expected_id": "KCI_FI001157254",
+   "title": "뉴가버넌스 시각에서의 복지행정서비스의 공급에 관한 연구 - 서울시 사례를 중심으로 -",
+   "lex_coverage": 0.375
+  },
+  {
+   "qid": "nl-p-0042",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "손해보험에서 보험 계약이 무효가 되는 조건은 무엇이며, 이와 관련된 법적 쟁점이 있다면 무엇인가요?",
+   "expected_id": "KCI_FI002663476",
+   "title": "미국법상 피보험이익으로서 이해관계의 종류에 관한 연구 – 법적 이해관계와 사실상 이해관계를 중심으로",
+   "lex_coverage": 0.5769
+  },
+  {
+   "qid": "nl-p-0043",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "위성영상을 분석하여 군사 정보를 얻는 데 어려움이 있다면, 인공지능 기술은 어떻게 활용될 수 있을까요?",
+   "expected_id": "KCI_FI002638345",
+   "title": "위성영상 내 항공기 식별 시 오탐률 감소를 위한 결합된 CNN 알고리즘",
+   "lex_coverage": 0.5333
+  },
+  {
+   "qid": "nl-p-0044",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "대학생들이 스스로 공부하고, 자신감 있게 학습하는 데 플립드 러닝 수업이 도움이 될까요?",
+   "expected_id": "KCI_FI002155813",
+   "title": "사회복지교육에서 플립드 러닝(Flipped Learning)수업의 효과성 : 자기주도적 학습력, 학습동기, 자아효능감을 중심으로",
+   "lex_coverage": 0.44
+  },
+  {
+   "qid": "nl-p-0045",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "과거 학자들이 마음을 다스리고 학문하는 방법에 대해 어떤 생각을 가지고 있었는지 궁금합니다.",
+   "expected_id": "KCI_FI000972444",
+   "title": "月谷 吳瑗의 學問과 思想",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0046",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "남미 이민자들이 고국으로 돌아오거나 다른 나라로 떠나는 현상이 나타나는 이유는 무엇인가요?",
+   "expected_id": "KCI_FI001136711",
+   "title": "라틴아메리카와 한국인 이민/아르헨티나 한인사회와 현지적응",
+   "lex_coverage": 0.037
+  },
+  {
+   "qid": "nl-p-0047",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "천식 환자에게서 나타나는 만성 중이염의 치료법과 발생 시 주요 합병증은 무엇인가요?",
+   "expected_id": "KCI_FI001111504",
+   "title": "호산구성 중이염 2예",
+   "lex_coverage": 0.08
+  },
+  {
+   "qid": "nl-p-0048",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "초등학생들이 스스로를 칭찬하는 마음을 갖게 하는 데 아버지의 역할은 무엇일까요?",
+   "expected_id": "KCI_FI001838052",
+   "title": "초등학생이 지각한 아버지의 양육 참여와 아동의 자기 격려 관계에서 아버지 공감의 매개 효과",
+   "lex_coverage": 0.25
+  },
+  {
+   "qid": "nl-p-0049",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "일본인들이 실제 대화에서 거절할 때 어떤 표현을 주로 사용하는지 궁금합니다.",
+   "expected_id": "KCI_FI002870371",
+   "title": "교섭상황 거절표현 연구‒일본인 모어 화자의 자연담화를 중심으로‒",
+   "lex_coverage": 0.4348
+  },
+  {
+   "qid": "nl-p-0050",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "건물이나 구조물의 움직임을 측정하는 장비들을 이용해서, 구조물의 특성을 파악하는 방법이 있을까요?",
+   "expected_id": "KCI_FI002550825",
+   "title": "구조안전도 평가를 위한 동적변위 기반 손상도 추정 기법 개발",
+   "lex_coverage": 0.037
+  },
+  {
+   "qid": "nl-p-0051",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "대화할 때 사람들이 말 시작 부분에서 여러 개의 표현을 함께 사용하는 이유는 무엇인가요?",
+   "expected_id": "KCI_FI002903922",
+   "title": "중국어 말차례 시작지점에서 연속으로 나타나는 담화표지의 사용패턴과 기능",
+   "lex_coverage": 0.12
+  },
+  {
+   "qid": "nl-p-0052",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "알루미늄-탄탈 합금 박막의 전기 저항과 발열 온도에 영향을 주는 요소는 무엇인가요?",
+   "expected_id": "KCI_FI000936340",
+   "title": "Al-Ta 합금박막의 구조적 인자가 전기적 특성 및 발열 특성에 미치는 영향",
+   "lex_coverage": 0.3182
+  },
+  {
+   "qid": "nl-p-0053",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "남북 교류 협력 사업을 진행할 때 정부와 지방 정부, 기업이 각각 어떤 역할을 맡으면 좋을까요?",
+   "expected_id": "KCI_FI001079295",
+   "title": "남북교류의 구조적 특징과 지방자치단체의 역할",
+   "lex_coverage": 0.4545
+  },
+  {
+   "qid": "nl-p-0054",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "조선업에서 제작된 블록의 형태를 설계와 비교하여 정확하게 평가하는 방법이 궁금합니다.",
+   "expected_id": "KCI_FI001921536",
+   "title": "자유도 제약을 이용한 블록의 완성도 평가 연구",
+   "lex_coverage": 0.1111
+  },
+  {
+   "qid": "nl-p-0055",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "박지원이라는 학자가 청나라에 대해 어떤 생각을 가지고 있었는지, 관련 내용을 알려주세요.",
+   "expected_id": "KCI_FI001811180",
+   "title": "『일신수필』 서문, 청나라 중화론을 위한 학문론",
+   "lex_coverage": 0.2692
+  },
+  {
+   "qid": "nl-p-0056",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "강아지 뼈에 의한 식도 파열 환자를 어떻게 치료했는지 궁금합니다.",
+   "expected_id": "KCI_FI001085416",
+   "title": "내시경 클립술로 치료한 이물에 의한 식도천공 1예",
+   "lex_coverage": 0.1667
+  },
+  {
+   "qid": "nl-p-0057",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "간암 환자에게 어깨 통증이 나타난 경우, 드물게 뼈 전이가 있을 수 있나요?",
+   "expected_id": "KCI_FI001198972",
+   "title": "극상근 완전 파열을 동반한 원발성 간종양의 견갑골 전이 1례 -증례 보고-",
+   "lex_coverage": 0.0526
+  },
+  {
+   "qid": "nl-p-0058",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "송전탑 건설과 전자파 유해성 때문에 분쟁이 계속되는 이유가 무엇인가요?",
+   "expected_id": "KCI_FI001823287",
+   "title": "송전선로 건설에 따른 전자파 분쟁과 환경법의 역할",
+   "lex_coverage": 0.619
+  },
+  {
+   "qid": "nl-p-0059",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중장년층의 행복과 자아 통합에 도움을 주는 치매 예방 프로그램이 효과가 있는지 궁금합니다.",
+   "expected_id": "KCI_FI002659121",
+   "title": "평생교육프로그램이 신중년의 행복감 및 자아통합에 미치는 효과",
+   "lex_coverage": 0.3462
+  },
+  {
+   "qid": "nl-p-0060",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "간통죄 처벌에 있어 사회 구성원의 지지가 어떤 의미인지 좀 더 자세히 설명하는 글이 있을까요?",
+   "expected_id": "KCI_FI001312180",
+   "title": "간통죄에 대한 헌법재판소 결정의 다수의견에 대한 검토",
+   "lex_coverage": 0.5385
+  },
+  {
+   "qid": "nl-p-0061",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "대학생들이 학교 생활에 만족하는 이유가 무엇인지 궁금합니다.",
+   "expected_id": "KCI_FI002638775",
+   "title": "대학생의 학교생활만족도 영향요인 연구",
+   "lex_coverage": 0.2632
+  },
+  {
+   "qid": "nl-p-0062",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "보청기 착용으로 얻는 효과를 측정하는 도구의 신뢰도와 타당도가 어느 정도인지 궁금합니다.",
+   "expected_id": "KCI_FI002162285",
+   "title": "한국어판 보청기이득평가 설문지 개발",
+   "lex_coverage": 0.0741
+  },
+  {
+   "qid": "nl-p-0063",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "기업의 사업 기회를 부당하게 이용하는 행위를 막기 위해 어떤 법 조항이 만들어졌고, 그 효과는 어떠한가요?",
+   "expected_id": "KCI_FI001943991",
+   "title": "기업집단의 지배구조와 회사기회 유용금지에 관한 소고",
+   "lex_coverage": 0.5
+  },
+  {
+   "qid": "nl-p-0064",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "러시아 지역에서 일어난 3·1 독립운동 이후, 한인들이 모여 항일 활동을 했던 단체에 대해 알려주는 자료가 있을까요?",
+   "expected_id": "KCI_FI002640730",
+   "title": "러시아 연해주 3·1독립만세운동과 대한국민노인동맹단 연구",
+   "lex_coverage": 0.2188
+  },
+  {
+   "qid": "nl-p-0065",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "영화에서 색깔이 주는 느낌은 감독의 의도에 따라 어떻게 표현될까요?",
+   "expected_id": "KCI_FI001290273",
+   "title": "공포영화의 색채컨셉 분석 - 영화 ‘장화홍련’ 을 중심으로 -",
+   "lex_coverage": 0.4211
+  },
+  {
+   "qid": "nl-p-0066",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "범죄 혐의가 없는 사람도 출국이 제한되는 경우가 있다는 내용이 맞나요?",
+   "expected_id": "KCI_FI002770615",
+   "title": "피내사자에 대한 수사목적 출국금지 허용에 관한 대법원 판례에 대한 비판적 검토",
+   "lex_coverage": 0.7895
+  },
+  {
+   "qid": "nl-p-0067",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "17~19세기 중국 연경을 배경으로 한 시들을 비교 분석한 연구는 무엇이 담겨 있나요?",
+   "expected_id": "KCI_FI002773083",
+   "title": "金進洙의 「燕京雜詠」과 得輿의 「都門竹枝詞」･「京都竹枝詞」 비교 연구",
+   "lex_coverage": 0.4348
+  },
+  {
+   "qid": "nl-p-0068",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "한국 형법은 어떤 과정을 거쳐 변화해 왔고, 앞으로는 어떻게 바뀌어야 할까요?",
+   "expected_id": "KCI_FI001723057",
+   "title": "형법개정의 역사와 전망",
+   "lex_coverage": 0.25
+  },
+  {
+   "qid": "nl-p-0069",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "술에 대한 소비자들의 경험과 지식이 술 제품에 대한 태도에 어떤 영향을 미치는지 궁금합니다.",
+   "expected_id": "KCI_FI002641065",
+   "title": "감각추구 성향이 주류 제품 태도에 미치는 영향: 제품 사전지식의 조절효과를 중심으로",
+   "lex_coverage": 0.28
+  },
+  {
+   "qid": "nl-p-0070",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "경찰이 사람을 불심검문했는데, 이 과정에서 저항하는 행동이 정당화될 수 있는 상황인가요?",
+   "expected_id": "KCI_FI002750666",
+   "title": "적법한 공무집행에 대해 오인한 저항행위에 있어서 오상방위 적용의 전제로서 정당방위상황의 판단기준",
+   "lex_coverage": 0.5357
+  },
+  {
+   "qid": "nl-p-0071",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "갑상선암 수술 시 후두, 기관지, 식도 기능에 문제가 생길 수 있는데, 수술 범위 결정에 대한 논쟁은 왜 계속될까요?",
+   "expected_id": "KCI_FI002411605",
+   "title": "국소 진행된 갑상선암의 수술 – 기관 및 후두, 식도침범의 치료",
+   "lex_coverage": 0.25
+  },
+  {
+   "qid": "nl-p-0072",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중국 기업들이 사회적 책임을 실천하는 것이 왜 어려운지, 그리고 기업 성과에 어떤 영향을 미치는지 궁금합니다.",
+   "expected_id": "KCI_FI002290055",
+   "title": "중국기업의 사회적 책임이 기업의 성과에 미치는 영향",
+   "lex_coverage": 0.3333
+  },
+  {
+   "qid": "nl-p-0073",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "선형 가속기에서 작은 조사면을 잴 때 어떤 검출기를 사용하면 좋을까요?",
+   "expected_id": "KCI_FI001697201",
+   "title": "선형가속기의 소조사면에 대한 빔 자료 측정에서 검출기의 선량 특성 분석",
+   "lex_coverage": 0.5714
+  },
+  {
+   "qid": "nl-p-0074",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "독일 민법상 소송 중에는 권리 소멸 시효가 중단되나요?",
+   "expected_id": "KCI_FI001371800",
+   "title": "독일민법상 교섭으로 인한소멸시효의 정지",
+   "lex_coverage": 0.3571
+  },
+  {
+   "qid": "nl-p-0075",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "미국 외교 정책에 영향을 미치는 사회 세력에는 어떤 것들이 있으며, 그 영향력은 어떻게 나타나나요?",
+   "expected_id": "KCI_FI000931857",
+   "title": "신보수주의와 미국의 외교정책: 사회세력의 영향력을 중심으로",
+   "lex_coverage": 0.2692
+  },
+  {
+   "qid": "nl-p-0076",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "윤동주 시 ‘간’에 나온 상징들이 무엇을 의미하며, 시인의 자아 변화와 어떤 관련이 있는지 궁금합니다.",
+   "expected_id": "KCI_FI002516953",
+   "title": "윤동주의 「간」 읽기 - 상징 분석을 중심으로",
+   "lex_coverage": 0.6071
+  },
+  {
+   "qid": "nl-p-0077",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "아리스토텔레스 윤리학에서 말하는 도덕 교육이 인간의 행복에 어떤 영향을 주는지 궁금합니다.",
+   "expected_id": "KCI_FI002779902",
+   "title": "『니코마코스 윤리학』에 나타난 도덕성의 의미와 성격",
+   "lex_coverage": 0.3214
+  },
+  {
+   "qid": "nl-p-0078",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중앙아시아에 살던 고려인들의 이야기를 다룬 희곡 작품에 대한 연구는 어떤 점이 부족할까요?",
+   "expected_id": "KCI_FI002799402",
+   "title": "고려인 희곡 유산 <홍범도>에 나타난 적대자 인물 유형의 역사적 근원과 그 형상화 방식에 관한 연구",
+   "lex_coverage": 0.6538
+  },
+  {
+   "qid": "nl-p-0079",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "안중근 의사가 이토 히로부미를 죽인 이유는 무엇이며, 그 당시 한국 지식인들은 이를 어떻게 바라보았나요?",
+   "expected_id": "KCI_FI002285380",
+   "title": "안중근 연구와 교육사 서술",
+   "lex_coverage": 0.5
+  },
+  {
+   "qid": "nl-p-0080",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "유아 특수교육 실습 평가 시, 지도교사의 관찰 기록 내용이 실제 평가에 도움이 되는지 궁금합니다.",
+   "expected_id": "KCI_FI001729530",
+   "title": "Clinical Supervisors’ Observation Note Analysis during Student Teaching in Early Childhood Special Education",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0081",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "전통 마을의 자연과의 조화로운 관계가 현대 관광 시스템에 주는 의미는 무엇일까?",
+   "expected_id": "KCI_FI001616679",
+   "title": "안동 하회마을과 경주 양동마을의 생활문화와 관광체계",
+   "lex_coverage": 0.1364
+  },
+  {
+   "qid": "nl-p-0082",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "소아 환자에서 연쇄상구균 인두염을 진단할 때 어떤 점들을 고려해야 할까요?",
+   "expected_id": "KCI_FI001451207",
+   "title": "인두염 환아에서 A군 연구균 검출의 임상적 점수제의 유용성",
+   "lex_coverage": 0.4545
+  },
+  {
+   "qid": "nl-p-0083",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "기러기 가족들의 관계 특징과 문제점을 파악하고, 이들을 위한 상담 방법은 무엇일까요?",
+   "expected_id": "KCI_FI001732920",
+   "title": "자녀 해외유학 ‘기러기가족’의 가족구조 분석에 대한 질적 사례 연구 -구조적 가족치료 모델의 관점을 중심으로",
+   "lex_coverage": 0.4167
+  },
+  {
+   "qid": "nl-p-0084",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중학교 학생들은 중국어 학습에 능숙한데, 고등학교에 올라가면 학습 의욕이 떨어진다고 합니다. 이유가 무엇일까요?",
+   "expected_id": "KCI_FI001390199",
+   "title": "중․고등학교 중국어교육의 개선 방안 - 경기도 교육을 중심으로 -",
+   "lex_coverage": 0.1562
+  },
+  {
+   "qid": "nl-p-0085",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "기계 고장 진단에 파형 분석 기법과 인공신경망을 활용한 연구가 있나요?",
+   "expected_id": "KCI_FI001198653",
+   "title": "웨이블렛 변환과 신경망 알고리즘을 이용한 회전기기 결함진단",
+   "lex_coverage": 0.2105
+  },
+  {
+   "qid": "nl-p-0086",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "동화 속 미녀와 야수의 이야기가 가진 다양한 의미와 사회적 배경에 대한 연구가 있나요?",
+   "expected_id": "KCI_FI002297835",
+   "title": "박해받는 여성: 유럽민담 속의 여인수난사 (II) － ‘미녀와 야수’ 유형의 민담 연구",
+   "lex_coverage": 0.6087
+  },
+  {
+   "qid": "nl-p-0087",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "정부 예산이 실제로 국민들의 삶에 어떤 영향을 주는지 궁금합니다.",
+   "expected_id": "KCI_FI002678318",
+   "title": "정부지출이 국민 삶의 질에 미치는 영향에 대한 분석: OECD Better Life Index를 중심으로",
+   "lex_coverage": 0.2778
+  },
+  {
+   "qid": "nl-p-0088",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "수술 후 통증을 줄이기 위해 전기 자극을 사용하는 방법이 있나요?",
+   "expected_id": "KCI_FI001280978",
+   "title": "포르말린 유도 통증에 대한 전기 자극의 예방적 제통 연구",
+   "lex_coverage": 0.5294
+  },
+  {
+   "qid": "nl-p-0089",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "초등학생들이 수업에 더 잘 집중하고 참여할 수 있도록 돕는 교육 프로그램이 있나요?",
+   "expected_id": "KCI_FI000987566",
+   "title": "초등학교 아동의 자기주도적 학습능력 향상을 위한 학습기술 훈련 프로그램 개발: 수업참여 기술",
+   "lex_coverage": 0.52
+  },
+  {
+   "qid": "nl-p-0090",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "법과 정치 질서의 정당성에 의문을 제기하는 해체론이 입헌민주주의에 어떤 새로운 가능성을 제시할 수 있을까?",
+   "expected_id": "KCI_FI002302945",
+   "title": "법과 정의의 사이: 데리다에게 있어서 헌법의 정당성",
+   "lex_coverage": 0.7188
+  },
+  {
+   "qid": "nl-p-0091",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "북한이 개혁을 하려면 권력층의 변화가 어떻게 이루어져야 할까요?",
+   "expected_id": "KCI_FI001732248",
+   "title": "북한의 개혁·개방 추진과 권력엘리트 변화:중국·베트남 사례와의 비교를 중심으로",
+   "lex_coverage": 0.2632
+  },
+  {
+   "qid": "nl-p-0092",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "2차 세계대전 이후 일본 외교 정책은 어떤 고민과 선택을 거쳐 결정되었을까요?",
+   "expected_id": "KCI_FI002411524",
+   "title": "미국의 대일압력과 요시다 노선의 대미협조외교에 대한 재고찰",
+   "lex_coverage": 0.1905
+  },
+  {
+   "qid": "nl-p-0093",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "소셜미디어가 외교 활동에 어떤 방식으로 활용되고 있는지 궁금합니다.",
+   "expected_id": "KCI_FI002420383",
+   "title": "문화외교와 소셜미디어 활용: 디지털 문화공공외교의 대두와 개념화를 중심으로",
+   "lex_coverage": 0.381
+  },
+  {
+   "qid": "nl-p-0094",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "초등학생의 행동 문제와 관련이 있는 요인에는 어떤 것들이 있을까요?",
+   "expected_id": "KCI_FI002074028",
+   "title": "아동의 기질, 어머니의 양육태도, 사회적 지지가 내재화·외현화 문제행동에 미치는 영향",
+   "lex_coverage": 0.3684
+  },
+  {
+   "qid": "nl-p-0095",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "14세기~15세기 한반도 연안 지역 사람들은 어떤 믿음을 통해 공동체 안에서 평안을 얻고자 했을까?",
+   "expected_id": "KCI_FI000887042",
+   "title": "여말선초 향촌사회의 변화와 埋香활동",
+   "lex_coverage": 0.0769
+  },
+  {
+   "qid": "nl-p-0096",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "무당 의례에서 입는 겉옷의 형태와 명칭이 지역별로 어떻게 다르고 있는지 궁금합니다.",
+   "expected_id": "KCI_FI002159951",
+   "title": "현행 굿거리에서 무복 겉옷의 착용실태와 명칭에 관한 연구",
+   "lex_coverage": 0.2083
+  },
+  {
+   "qid": "nl-p-0097",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "식품 포장지에 담긴 이야기들이 브랜드 이미지를 어떻게 형성하는지 궁금합니다.",
+   "expected_id": "KCI_FI001487227",
+   "title": "If This Brand Were a Person, or Anthropomorphism of Brands Through Packaging Stories",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0098",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "조선시대가 중국과의 관계에서 어떤 의례를 통해 자신들의 위상을 높이려 했는지 궁금합니다.",
+   "expected_id": "KCI_FI001716318",
+   "title": "朝鮮 初期 迎詔勅 관련 儀註의 성립과 朝明關係",
+   "lex_coverage": 0.5556
+  },
+  {
+   "qid": "nl-p-0099",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "소양인 환자의 불면증과 변비 증상에 한약이 효과가 있을까요?",
+   "expected_id": "KCI_FI002802315",
+   "title": "소양인 중풍환자에 병발된 불면증에 凉膈散火湯을 투여한 症例",
+   "lex_coverage": 0.5294
+  },
+  {
+   "qid": "nl-p-0100",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "지능 검사 결과 해석 시, 2가지 요인 외에 3가지 요인을 고려하면 어떤 차이가 있을까요?",
+   "expected_id": "KCI_FI000888563",
+   "title": "K-WAIS의 3요인 해석을 위한 규준 연구",
+   "lex_coverage": 0.25
+  },
+  {
+   "qid": "nl-p-0101",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중국인 학습자들이 한국어 단어 발음을 알아듣는 데 어떤 어려움이 있는지 궁금합니다.",
+   "expected_id": "KCI_FI001930426",
+   "title": "중국인 L2 학습자들의 한국어 음운변동 적용 어휘의 지각 양상",
+   "lex_coverage": 0.36
+  },
+  {
+   "qid": "nl-p-0102",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "성매매 문제 해결을 위해 개인적인 차원과 사회적인 차원에서 접근해야 하는 이유는 무엇인가요?",
+   "expected_id": "KCI_FI000931221",
+   "title": "성의 매춘화와 성매매(Sex Trafficking)에 대한 윤리학적 고찰",
+   "lex_coverage": 0.08
+  },
+  {
+   "qid": "nl-p-0103",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "수업 자료를 만들 때 경험이 많은 교사와 그렇지 않은 교사의 차이점은 무엇인가요?",
+   "expected_id": "KCI_FI001036264",
+   "title": "NVivo를 활용한 전문가 교사와 예비 교사의 시각화 과정 특성 비교 분석 연구",
+   "lex_coverage": 0.4762
+  },
+  {
+   "qid": "nl-p-0104",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "아이들이 도덕적으로 행동하지 못하는 이유를 알고, 교육에 활용할 수 있는 방법은 무엇일까요?",
+   "expected_id": "KCI_FI002535713",
+   "title": "도덕성 4요소의 통합적 발달을 위한 교육 방안",
+   "lex_coverage": 0.5185
+  },
+  {
+   "qid": "nl-p-0105",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "동북아 해안 도시들의 광역 개발 전략을 비교 분석한 연구가 있나요?",
+   "expected_id": "KCI_FI001625155",
+   "title": "동북아 연해거점도시의 광역권 발전전략과 거버넌스 : 다롄, 후쿠오카, 블라디보스토크 광역권의 특성 비교",
+   "lex_coverage": 0.5294
+  },
+  {
+   "qid": "nl-p-0106",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "수업에서 예술적 가치를 어떻게 활용하면 교육에 새로운 아이디어를 얻을 수 있을까요?",
+   "expected_id": "KCI_FI002168007",
+   "title": "창조의 관점에서 본 ‘가르침의 예술성’에 관한 교육학적 이해: 예술기반 교육연구에 기초한 실행연구",
+   "lex_coverage": 0.16
+  },
+  {
+   "qid": "nl-p-0107",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "귀와 관절, 코 등에 반복적으로 염증이 생기는 질환에 대한 사례를 찾아보고 싶습니다.",
+   "expected_id": "KCI_FI000998688",
+   "title": "삼출성 중이염을 동반한 재발성 다발연골염 1예",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0108",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "현대 미술에서 회화의 기본을 다지는 기술이 왜 중요하며, 어떤 방식으로 활용될 수 있을까요?",
+   "expected_id": "KCI_FI001407445",
+   "title": "현대회화에서 파운데이션 회화 기법 활용 연구",
+   "lex_coverage": 0.3846
+  },
+  {
+   "qid": "nl-p-0109",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "산불 피해 지역의 식생 회복을 돕기 위해 어떤 점들을 고려해야 할까요?",
+   "expected_id": "KCI_FI001406605",
+   "title": "산화지의 입지와 임분특성 및 경영시업에 따른 식생변화 추이분석",
+   "lex_coverage": 0.3529
+  },
+  {
+   "qid": "nl-p-0110",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "과거 조선인들이 일본을 여행하며 일본과 일본인에 대해 어떤 시각을 가졌는지 궁금합니다.",
+   "expected_id": "KCI_FI001411727",
+   "title": "『海行摠載』 所載 일본 기행시 考察",
+   "lex_coverage": 0.0833
+  },
+  {
+   "qid": "nl-p-0111",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "전통시장의 젊은 상인들이 성공적으로 자리를 잡기 위해서는 어떤 점들을 고려해야 할까요?",
+   "expected_id": "KCI_FI002641003",
+   "title": "전통시장 청년몰 청년상인의 기업가정신 및 정부지원 프로그램이 창업성과에 미치는 영향: 창업준비성, 상인과의 협력의 매개효과를 중심으로",
+   "lex_coverage": 0.1923
+  },
+  {
+   "qid": "nl-p-0112",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "한국과 중국의 인사 표현에 나타나는 문화적 차이점은 무엇인가요?",
+   "expected_id": "KCI_FI002780320",
+   "title": "한·중 일상 인사말의 언어문화적 연구",
+   "lex_coverage": 0.2632
+  },
+  {
+   "qid": "nl-p-0113",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "한국의 배심원 제도에 대한 언론 보도가 정치적 편향을 드러내면서 대중의 의견이 분열되는 현상에 대한 연구가 있나요?",
+   "expected_id": "KCI_FI002176381",
+   "title": "국민참여재판제도의 정치적 쟁점화: 언론의 정치적 성향에 따른 뉴스 논조의 차이와 선택적 뉴스 노출의 영향에 관한 실증적 연구",
+   "lex_coverage": 0.1613
+  },
+  {
+   "qid": "nl-p-0114",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "두 작가의 산문이 어떤 시대적 의미를 지니는지, 그리고 참여 의식과 어떤 관련이 있는지 궁금합니다.",
+   "expected_id": "KCI_FI002543278",
+   "title": "김수영과 베이다오 산문에 나타난 참여의식 비교연구",
+   "lex_coverage": 0.32
+  },
+  {
+   "qid": "nl-p-0115",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "농촌 지역 개발 사업이 주민들에게 어떻게 받아들여지고 있는지 궁금합니다.",
+   "expected_id": "KCI_FI001622596",
+   "title": "지역유형을 고려한 농촌마을종합개발사업의 주민평가 및 개선방안",
+   "lex_coverage": 0.3636
+  },
+  {
+   "qid": "nl-p-0116",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "도덕적 판단이 사실을 설명하거나 주장하는 게 아니라 어떤 의미를 가질 수 있을까요?",
+   "expected_id": "KCI_FI002177624",
+   "title": "A. J. 에이어의 정의주의에 대한 비판적 고찰",
+   "lex_coverage": 0.5
+  },
+  {
+   "qid": "nl-p-0117",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "열다한소탕이 뇌졸중으로 인한 신경세포 손상을 막아줄 수 있는지 궁금합니다.",
+   "expected_id": "KCI_FI002713029",
+   "title": "熱多寒少湯 煎湯液이 XO/HX에 의해 損傷된 培養脊髓感覺神經細胞 미치는 效果",
+   "lex_coverage": 0.5
+  },
+  {
+   "qid": "nl-p-0118",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "14세기 화엄종이 당시 사회의 요구에 맞춰 어떤 방식으로 변화하고 활동했는지 궁금합니다.",
+   "expected_id": "KCI_FI002632677",
+   "title": "體元의 著述과 華嚴思想",
+   "lex_coverage": 0.4444
+  },
+  {
+   "qid": "nl-p-0119",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "김려 시에 나타난 다양한 지식과 관련하여, 그의 경험이 어떻게 반영되었는지 궁금합니다.",
+   "expected_id": "KCI_FI001022594",
+   "title": "조선후기 박물학적 취향과 김려의 한시",
+   "lex_coverage": 0.04
+  },
+  {
+   "qid": "nl-p-0120",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "대학생들의 결혼 및 출산에 대한 생각은 어떤 요인에 의해 영향을 받나요?",
+   "expected_id": "KCI_FI002538067",
+   "title": "여대생의 결혼가치관과 출산의지에 미치는 영향에 관한 연구",
+   "lex_coverage": 0.4211
+  },
+  {
+   "qid": "nl-p-0121",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "아동학대 문제에 대한 법적인 처벌이나 예방 대책은 어떻게 변화하고 있나요?",
+   "expected_id": "KCI_FI002062276",
+   "title": "「아동학대범죄의 처벌 등에 관한 특례법」 시행 1주년에 즈음하여 - 아동학대 처벌 관련법 통합 논의를 중심으로 -",
+   "lex_coverage": 0.619
+  },
+  {
+   "qid": "nl-p-0122",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "독일 의약품 정보에 담긴 설명 방식에는 어떤 종류의 표현들이 사용되나요?",
+   "expected_id": "KCI_FI001076580",
+   "title": "텍스트 유형 “지침”의 발화수반표지: 독일 제조약품-사용정보의 형식구조를 중심으로",
+   "lex_coverage": 0.2
+  },
+  {
+   "qid": "nl-p-0123",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "초중고등학교에서 국어 맞춤법 교육은 어떻게 변화해왔고, 어떤 점이 부족할까요?",
+   "expected_id": "KCI_FI001625475",
+   "title": "국어 어문 규범 교육의 목표 및 내용의 재구성 -초등학교, 중학교, 고등학교급의 위계성을 중심으로-",
+   "lex_coverage": 0.4167
+  },
+  {
+   "qid": "nl-p-0124",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "중학교 교사의 직무 몰입에 영향을 미치는 요인에는 무엇이 있을까?",
+   "expected_id": "KCI_FI002908630",
+   "title": "학교장의 서번트 리더십이 교사 직무열의에 미치는 영향에서긍정심리자본의 매개효과",
+   "lex_coverage": 0.3333
+  },
+  {
+   "qid": "nl-p-0125",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "국경을 넘어 금융 서비스가 거래되는 현상이 왜 일어나는지, 그리고 어떤 점들이 거래를 막을 수 있는지 궁금합니다.",
+   "expected_id": "KCI_FI000948226",
+   "title": "국경간(Cross-Border) 금융서비스 거래: 협의의 정의와 거래 가능성",
+   "lex_coverage": 0.4
+  },
+  {
+   "qid": "nl-p-0126",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "소의 염색체에서 리보솜 유전자가 있는 특정 위치는 어디에 있나요?",
+   "expected_id": "KCI_FI000900025",
+   "title": "AgNOR 염색법에 의한 한우 염색체의Nucleolus Organizer Regions 양상 분석",
+   "lex_coverage": 0.3889
+  },
+  {
+   "qid": "nl-p-0127",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "사회 문제 중심의 사회과 교육이 왜 중요해졌는지, 관련 교과서 개발에는 어떤 어려움이 있었는지 궁금합니다.",
+   "expected_id": "KCI_FI001711450",
+   "title": "쟁점 중심 사회과 교육과정의 원류를 찾아서: Harold Rugg의 통합 사회과 교과서의 설계 및 개발 탐색",
+   "lex_coverage": 0.2414
+  },
+  {
+   "qid": "nl-p-0128",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "예이츠 시에 나타난 이상향에 대한 그의 생각과, 그 이상향을 찾아 나선 이유가 무엇인가요?",
+   "expected_id": "KCI_FI002431648",
+   "title": "Yeats’s Utopian Desire in “The Lake Isle of Innisfree” and “Byzantium”",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0129",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "두 종류의 고객이 있는 대기 시스템에서, 우선순위가 있는 고객과 그렇지 않은 고객의 서비스 방식이 어떻게 다른가요?",
+   "expected_id": "KCI_FI000873589",
+   "title": "전용서버가 있는 이계층고객 M/M/2 대기모형",
+   "lex_coverage": 0.1034
+  },
+  {
+   "qid": "nl-p-0130",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "여성 노동자 계층의 차별 문제를 설명하려던 사회주의 페미니즘이 나중에는 어떤 변화를 겪었나요?",
+   "expected_id": "KCI_FI002652546",
+   "title": "‘차이’를 보는 관점의 차이: 교차성 이론과 탈근대 페미니즘 비교 및 그를 통해 도출되는 이론적 문제",
+   "lex_coverage": 0.1429
+  },
+  {
+   "qid": "nl-p-0131",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "해양 준설토의 수분 함량이 높은 경우, 지반 침하가 크게 발생하는데, 이런 토양의 압밀 시험은 어떻게 진행해야 할까요?",
+   "expected_id": "KCI_FI000898410",
+   "title": "고함수비를 가진 준설토의 압밀특성",
+   "lex_coverage": 0.1333
+  },
+  {
+   "qid": "nl-p-0132",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "신라 시대 사람들은 시를 통해 왕, 관리, 백성 간의 관계 속 정치적인 생각이나 현실을 어떻게 표현했을까요?",
+   "expected_id": "KCI_FI000927299",
+   "title": "향가에 나타난 정치의 이념과 현실 - <도솔가>, <안민가>, <원가>를 대상으로",
+   "lex_coverage": 0.0714
+  },
+  {
+   "qid": "nl-p-0133",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "애슬레저 의류 시장에서 한국 기업의 수출 경쟁력은 어느 정도이며, 주요 수출입 국가의 현황은 어떤가요?",
+   "expected_id": "KCI_FI002484420",
+   "title": "애슬레저 웨어의 무역 네트워크 변화: 사회연결망 분석",
+   "lex_coverage": 0.1111
+  },
+  {
+   "qid": "nl-p-0134",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "과거 동아시아 사회에서 여성들이 겪었던 차별과 억압에 대한 이야기를 다룬 자료 좀 찾아주세요.",
+   "expected_id": "KCI_FI001979278",
+   "title": "< 얼폐전 (孼嬖傳) > 을 통해 본 ' 악녀 ' 이미지 연구",
+   "lex_coverage": 0.3704
+  },
+  {
+   "qid": "nl-p-0135",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "책이 만들어지고 나서 다양한 형태로 다시 만들어지는 과정은 어떻게 이루어질까요?",
+   "expected_id": "KCI_FI001073485",
+   "title": "서지적 관계를 기반으로 한 한국어 도서의 저작유형 분석",
+   "lex_coverage": 0.0952
+  },
+  {
+   "qid": "nl-p-0136",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "성 아우구스티누스와 토마스 아퀴나스는 인간의 행복 추구에 대해 어떤 차이점을 보였을까요?",
+   "expected_id": "KCI_FI001642033",
+   "title": "The Thomistic Thesis of Man's Desire for God and for Happiniess : A Critique of the Augustinian Thesis",
+   "lex_coverage": 0.6429
+  },
+  {
+   "qid": "nl-p-0137",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "정책 분야별 정보 안내 자료를 만들고, 관련 정보 저장 시스템을 구축하는 연구가 진행되었나요?",
+   "expected_id": "KCI_FI001914749",
+   "title": "정책분야 주제가이드 개발에 관한 연구",
+   "lex_coverage": 0.5
+  },
+  {
+   "qid": "nl-p-0138",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "로렌스와 예이츠 작품에서 불교의 '무이분' 사상이 어떻게 나타나는지 궁금합니다.",
+   "expected_id": "KCI_FI000863163",
+   "title": "불이일원론과 존재의 통일: Lawrence와 Yeats",
+   "lex_coverage": 0.0
+  },
+  {
+   "qid": "nl-p-0139",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "학교에서 교사들의 역량에 영향을 미치는 요소에는 무엇이 있을까요?",
+   "expected_id": "KCI_FI002388152",
+   "title": "혁신학교와 일반 학교의 교사효능감 영향 요인 탐색: 학교 안 전문적 학습공동체를 중심으로",
+   "lex_coverage": 0.15
+  },
+  {
+   "qid": "nl-p-0140",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "한국 그림책 역사에서 홍성찬 작가가 어떤 위치를 차지하는지 궁금합니다.",
+   "expected_id": "KCI_FI002540817",
+   "title": "그림책작가 홍성찬의 작품 활동과 작가정신 고찰",
+   "lex_coverage": 0.4286
+  },
+  {
+   "qid": "nl-p-0141",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "국가 예산 편성 시 양성평등을 고려하는 제도는 어떤 원칙들을 중요하게 생각하며, 현재는 어떻게 운영되고 있나요?",
+   "expected_id": "KCI_FI001273837",
+   "title": "독일의 성인지 예산제도의 법적 근거 및 내용",
+   "lex_coverage": 0.4062
+  },
+  {
+   "qid": "nl-p-0142",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "고대 인도 수학자 아리아바타가 제곱근을 계산하는 방법은 무엇이며, 어떤 특징이 있나요?",
+   "expected_id": "KCI_FI001830637",
+   "title": "Āryabhaṭa의 제곱근 풀이법_Āryabhaṭīya를 중심으로_",
+   "lex_coverage": 0.08
+  },
+  {
+   "qid": "nl-p-0143",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "유방암 검사로 맘모그래피와 유방 초음파 중 어떤 것이 더 효과적인가요?",
+   "expected_id": "KCI_FI001208948",
+   "title": "유방의 X선 검사와 초음파 검사의 유용성 연구",
+   "lex_coverage": 0.2
+  },
+  {
+   "qid": "nl-p-0144",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "청각 장애가 있는 사람이 직장 생활을 잘 적응하도록 돕기 위한 기업의 방안에 대한 연구가 있나요?",
+   "expected_id": "KCI_FI000947651",
+   "title": "농학교 졸업 후 청각장애인의 직업 적응 정도와 근로조건에 대한 연구: 울산지역 H회사 사례를 중심으로",
+   "lex_coverage": 0.2
+  },
+  {
+   "qid": "nl-p-0145",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "음악과 인성 교육을 결합한 수업이 아이들의 인성 함양에 어떤 영향을 미치는지 궁금합니다.",
+   "expected_id": "KCI_FI002777851",
+   "title": "작곡가 하이든의 삶을 통한 대학생들의 인성교육",
+   "lex_coverage": 0.2083
+  },
+  {
+   "qid": "nl-p-0146",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "치위생학과 학생들의 자존감, 우울감, 스트레스 정도는 어떻게 되나요?",
+   "expected_id": "KCI_FI001949141",
+   "title": "학제에 따른 학생들의 자아존중감, 우울, 스트레스 관계연구",
+   "lex_coverage": 0.55
+  },
+  {
+   "qid": "nl-p-0147",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "유럽에서 러시아와 NATO 간의 갈등이 심화된 이유와 배경에 대해 알려줘.",
+   "expected_id": "KCI_FI002157241",
+   "title": "동유럽을 향한 NATO 동진 정책과 러시아: 현황과 사례 분석을 중심으로",
+   "lex_coverage": 0.619
+  },
+  {
+   "qid": "nl-p-0148",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "노점상에 대한 기존 연구들이 놓치고 있는 점은 무엇이며, 어떤 새로운 관점으로 바라볼 수 있을까요?",
+   "expected_id": "KCI_FI002039516",
+   "title": "노점상 연구에서 도시 비공식성 개념의 이론적, 실천적 함의",
+   "lex_coverage": 0.2963
+  },
+  {
+   "qid": "nl-p-0149",
+   "qtype": "nl",
+   "scope": "paper",
+   "query": "자유무역협정에서 원산지를 판단하는 기준은 어떻게 정해지고, 어떤 점을 고려해야 할까요?",
+   "expected_id": "KCI_FI001161150",
+   "title": "우리나라 FTA 협정상 원산지 규정의 의의 및 결정기준 비교",
+   "lex_coverage": 0.1481
+  }
+ ]
+}
