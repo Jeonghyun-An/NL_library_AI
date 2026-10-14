@@ -13,6 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bibliography_chunks import chunk as bibliography_chunk
 from services.research_work import passages, section_input
 from services.research_work.passages import CLIP_WINDOW, clip, snapshot_passages
 from services.research_work.section_input import (
@@ -143,6 +144,25 @@ class TestSnapshotPassages:
         assert snapshot_passages(snapshot, "KCI_A") == []
         assert snapshot_passages(SNAPSHOT, "KCI_Z") == []
 
+    def test_bibliography_chunks_are_not_passages(self):
+        """옛 잡의 스냅숏에는 탐색이 거르기 전의 참고문헌 목록 조각이 있다 — 같은 점수여도 본문 대목만 후보로 남긴다
+        (운영 d60a5dc1 E2: 참고문헌 __0071 과 본문 __0003 이 0.591 로 같았고 리랭커가 참고문헌을 골랐다)."""
+        snapshot = {"evidence": {"E2": {"cnts_id": "KCI_FI002548462", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI002548462__0071", 0.591), _snapshot_chunk("KCI_FI002548462__0003", 0.591)]}}}
+        assert [p["chunk_id"] for p in snapshot_passages(snapshot, "KCI_FI002548462")] == ["KCI_FI002548462__0003"]
+
+    def test_a_paper_with_only_bibliography_chunks_gives_nothing(self):
+        """빈 목록이라 _excerpts 의 `or milvus_passages(cnts)` 가 그 논문의 Milvus 청크에서 본문 대목을 고른다."""
+        snapshot = {"evidence": {"E3": {"cnts_id": "KCI_FI001613573", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI001613573__0041", 0.7)]}}}
+        assert snapshot_passages(snapshot, "KCI_FI001613573") == []
+
+
+def _snapshot_chunk(chunk_id: str, score: float) -> dict:
+    c = bibliography_chunk(chunk_id)
+    return {"chunk_id": chunk_id, "text": c["text"], "page_start": c["page_start"], "page_end": c["page_end"],
+            "score": score}
+
 
 class _Collection:
     def __init__(self, rows=None, error: Exception | None = None):
@@ -175,6 +195,18 @@ class TestMilvusPassages:
         assert set(call["output_fields"]) == {"chunk_id", "chunk_idx", "text", "page_start", "page_end"}
         # 상한은 정수 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다(membership 과 같다)
         assert call["timeout"] == 10 and type(call["timeout"]) is int
+
+    def test_bibliography_chunks_are_left_out(self, search, monkeypatch):
+        """Milvus 로 넘어온 논문도 같은 규칙 — 참고문헌 목록 조각은 리랭커 후보에 넣지 않는다."""
+        bib, body = bibliography_chunk("KCI_FI002548462__0071"), bibliography_chunk("KCI_FI002548462__0003")
+        col = _Collection(rows=[
+            {"chunk_id": "KCI_FI002548462__0071", "chunk_idx": 71, "text": bib["text"], "page_start": 33,
+             "page_end": 33},
+            {"chunk_id": "KCI_FI002548462__0003", "chunk_idx": 3, "text": body["text"], "page_start": 1,
+             "page_end": 1},
+        ])
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
+        assert [p["chunk_id"] for p in passages.milvus_passages("KCI_FI002548462")] == ["KCI_FI002548462__0003"]
 
     @pytest.mark.parametrize("error", [RuntimeError("스키마 불일치"), OSError("연결 끊김")])
     def test_known_failures_give_no_passages(self, search, monkeypatch, error):

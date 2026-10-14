@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from bibliography_chunks import chunk as bibliography_chunk
 from history_sqlite import (
     AsyncSessionOverSync, add_book, add_generation, add_proposal, add_reading, add_research_job,
     add_topic, add_work, make_engine,
@@ -931,6 +932,24 @@ class TestGenerateSection:
         assert set(inp["basis"]["papers"]) == set(outline["groups"][0]["papers"])
         stored = _sec_proposal(api.engine, jid)["outline"]["groups"][0]["papers"]
         assert stored == outline["groups"][0]["papers"]                          # 저장된 목차는 그대로
+
+    def test_a_paper_whose_snapshot_chunks_are_bibliography_takes_its_excerpt_from_milvus(self, api, heavy):
+        """스냅숏 대목이 참고문헌 목록 조각뿐인 논문은 Milvus 의 본문 청크에서 대목을 고른다 — 참고문헌 항목을 그 논문의
+        내용처럼 쓰지 않게(운영 이어가기 gap: E3 대목이 '기백석(1996). 한국판 노인 우울척도…'뿐인데 글은 '[E3]에서는
+        노인의 우울 척도와 사회적 지지 척도를 언급하고 있지만'이라고 썼다)."""
+        jid = _sec_work(api.engine)
+        bib = bibliography_chunk("KCI_FI001613573__0041")
+        snapshot = {"evidence": {"E3": {"cnts_id": "KCI_A", "meta": {}, "chunks": [
+            {"chunk_id": "KCI_A__0041", "text": bib["text"], "page_start": 23, "page_end": 23, "score": 0.8}]}}}
+        with api.engine.begin() as conn:
+            conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == jid).values(
+                state_snapshot=snapshot))
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert inp["papers"][0]["excerpt"]["chunk_id"] == "KCI_A__0001"
+        assert [c[1] for c in heavy if c[0] == "milvus"] == ["KCI_A", "KCI_B", "KCI_C"]
 
     def test_gap_uses_the_picked_card_seed_and_its_papers(self, api, heavy, monkeypatch):
         monkeypatch.setattr(section_input, "pick_seeds", lambda report, *, limit, exclude=(): [])

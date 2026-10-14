@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bibliography_chunks import chunk as bibliography_chunk
 from schemas.book import BookOut
 from services.research.explorer import explore
 from services.research.state import merge_params
@@ -228,8 +229,8 @@ class TestExploreThroughRealPipeline:
         _Hit(7, "본문 다", book_id="C"),
     ]
 
-    def _explore(self, monkeypatch, pipeline, *, top_k):
-        seen = _wire(monkeypatch, pipeline, self._HITS)
+    def _explore(self, monkeypatch, pipeline, *, top_k, hits=None):
+        seen = _wire(monkeypatch, pipeline, self._HITS if hits is None else hits)
         monkeypatch.setattr("services.research.explorer.BookRepository", _FakeRepo)
         ranked, _ = asyncio.run(explore(
             "2006년 도서관법 전부개정이 공공도서관 운영에 미친 영향",
@@ -253,3 +254,15 @@ class TestExploreThroughRealPipeline:
         """메타·보강 청크가 상위 슬롯을 먹어도 본문이 top_k 만큼 남아야 한다."""
         _, ranked = self._explore(monkeypatch, pipeline, top_k=3)
         assert [h["text"] for h in ranked] == ["첫 쪽 본문", "본문 가", self._HITS[7].text]
+
+    def test_bibliography_chunks_never_reach_rerank_or_evidence(self, monkeypatch, pipeline):
+        """참고문헌 목록 조각은 리랭크 전에 빠진다 — 같은 논문의 본문은 남고, 참고문헌으로만 걸린 논문(B)은 근거가 되지
+        않는다(운영 85d2bc0e 의 무관 논문이 참고문헌 속 주제어 제목만으로 근거가 됐다)."""
+        bib_a = bibliography_chunk("KCI_FI002548462__0071")["text"]
+        body_a = bibliography_chunk("KCI_FI002548462__0003")["text"]
+        bib_b = bibliography_chunk("KCI_FI001613573__0041")["text"]
+        hits = [_Hit(71, bib_a, book_id="A", page=33), _Hit(41, bib_b, book_id="B", page=23),
+                _Hit(3, body_a, book_id="A", page=1)]
+        seen, ranked = self._explore(monkeypatch, pipeline, top_k=3, hits=hits)
+        assert seen["reranked"] == [[body_a]]
+        assert [h["chunk_id"] for h in ranked] == ["A__0003"]

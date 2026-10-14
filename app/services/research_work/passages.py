@@ -5,7 +5,8 @@
 
 후보는 딥리서치 스냅숏의 근거 청크(state_snapshot.evidence[eid].chunks)가 먼저다 — 탐색이 이미 원문 대목만
 골라 두었다. 스냅숏에 없는 논문(되살림·담기)은 Milvus 에서 그 논문 한 편의 청크를 읽는다. 어느 쪽이든 메타청크·
-보강 청크([초록]·[키워드]·[표 설명]·[그림 설명])는 탐색과 같은 규칙(explorer.is_source_passage)으로 뺀다.
+보강 청크([초록]·[키워드]·[표 설명]·[그림 설명])·참고문헌 목록 조각은 탐색과 같은 규칙(explorer.is_source_passage)으로
+뺀다. 스냅숏 대목이 참고문헌 조각뿐인 논문은 후보가 비어 Milvus 쪽으로 넘어간다.
 
 리랭커(compute_scores)·Milvus(ensure_collection)·검색 파이프라인(_RERANK_FAILURES)은 torch·FlagEmbedding·
 pymilvus 를 끌어오므로 함수 안에서 import 한다(함정 13). 실패는 실제로 나는 타입만 받는다(함정 19) — 리랭커는
@@ -81,8 +82,8 @@ def _passage(chunk_id: str, text: str, page_start, page_end, score) -> dict:
 
 def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
     """딥리서치 스냅숏에서 그 논문의 청크 — [{chunk_id, text, page_start, page_end, score}], 점수 높은 순(같으면
-    스냅숏 순서), 같은 청크는 한 번. 탐색이 원문 대목만 남겼지만 그 규칙 전에 만든 옛 잡에는 보강 청크가 섞여
-    있을 수 있어 같은 규칙으로 한 번 더 거른다."""
+    스냅숏 순서), 같은 청크는 한 번. 탐색이 원문 대목만 남겼지만 그 규칙 전에 만든 옛 잡에는 보강 청크·참고문헌
+    목록 조각이 섞여 있을 수 있어 같은 규칙으로 한 번 더 거른다."""
     evidence = snapshot.get("evidence") if isinstance(snapshot, dict) else None
     out: list[dict] = []
     seen: set[str] = set()

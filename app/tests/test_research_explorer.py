@@ -15,6 +15,7 @@ from uuid import uuid4
 
 import pytest
 
+from bibliography_chunks import chunk as bibliography_chunk
 from schemas.book import BookOut, ChunkHit, ChunkSearchResponse
 from services.research.explorer import explore, is_source_passage, rank_hits
 from services.research.state import merge_params
@@ -173,6 +174,15 @@ class TestIsSourcePassage:
     def test_label_lookalike_in_paged_body_is_kept(self):
         """보강 청크는 쪽수가 늘 0 이다 — 쪽수가 있으면 본문에 우연히 나온 글자다."""
         assert is_source_passage(_chunk("A", text="[표 설명] 아래 표는 …"))
+
+    def test_bibliography_list_chunk_is_dropped(self):
+        """본문 청킹이 논문 끝 참고문헌까지 쪽수 달린 청크로 만든다 — 그 조각은 논문의 주장이 아니다."""
+        bib = bibliography_chunk("KCI_FI002548462__0071")
+        assert not is_source_passage(_chunk("A", chunk_idx=71, text=bib["text"], pages=(33, 33)))
+
+    def test_body_with_inline_citations_is_kept(self):
+        body = bibliography_chunk("KCI_FI002548462__0003")
+        assert is_source_passage(_chunk("A", chunk_idx=3, text=body["text"], pages=(1, 1)))
 
 
 class TestExplore:
