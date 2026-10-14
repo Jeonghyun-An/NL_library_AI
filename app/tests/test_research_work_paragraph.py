@@ -117,6 +117,16 @@ class TestExecutor:
         assert new["text"] == "척도가 정리되었다 [E2]." and new["cites"] == ["KCI_B"]
         assert new["checks"]["dropped"] == 1
 
+    def test_misplaced_figure_sentences_are_dropped_like_the_section(self):
+        # 절과 같은 검사(make_paragraph) — [F#] 를 근거 표기 자리에 붙인 문장은 지우고, 다 지워지면 검사에서 떨어져 다시 부른다
+        output = EXECUTOR.bind({"text": "척도를 새로 정리했다 [E2]. 또한 논문 수는 [F1]건에 달한다 [F1]."}, INPUT)
+
+        assert output["paragraph"]["text"] == "척도를 새로 정리했다 [E2]."
+        assert output["paragraph"]["checks"]["dropped_f"] == 2
+        assert EXECUTOR.check(output) is True
+        only = EXECUTOR.bind({"text": "[F1] 발행 연도의 선행연구가 있다 [E1]."}, INPUT)
+        assert only == {"paragraph": None} and EXECUTOR.check(only) is False
+
     def test_unreadable_answer_parses_to_none(self):
         assert EXECUTOR.parse("# 다시 쓴 문단") is None
 
