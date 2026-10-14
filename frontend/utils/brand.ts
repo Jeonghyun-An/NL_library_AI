@@ -14,5 +14,7 @@ export const SPINNER_VARIANTS = {
   bold: "/skovix-spinner-bold-160.gif",
 } as const;
 export const SPINNER_SRC: string = SPINNER_VARIANTS.clean;
-// 결과 AI 패널 로고가 끝났을 때 보이는 정지 그림(깔끔 스피너의 정면 프레임, 160px)
-export const SPINNER_DONE_SRC = "/skovix-spinner-front-160.png";
+// SKOVIX 심볼(깔끔 스피너의 정면 프레임 — S 고리와 별, 160px). 결과 AI 패널 로고가 끝났을 때의 정지 그림과 슬래시 명령 목록의
+// 아이콘(사용자 결정 2026-10-14)이 같은 그림을 쓴다
+export const SYMBOL_SRC = "/skovix-spinner-front-160.png";
+export const SPINNER_DONE_SRC = SYMBOL_SRC;
