@@ -17,6 +17,8 @@
 - topic_source 는 목차를 만든 주제(outline.topic.id) 행의 origin·card.edited — spec §5-2 'card.edited 는 데이터로만
   남기고(계보·공개 부록용)', 공개 부록의 '주제:' 줄 재료다. 행은 호출부가 이미 읽은 고른 주제를 넘기고, 그 id 가
   목차의 주제와 다르면 None.
+- preselected 는 이어가기가 읽기 목록에 미리 담은 행 수(reading_views.preselected_count — 지금 뺀 행 포함, 미리 담기
+  전에 이어간 연구는 0) — 공개 부록의 '참고문헌:' 줄 재료다. 행은 호출부가 읽어 센다.
 - section_sources 는 인용 근거 조회(GET …/sections/{key}/sources)의 응답 — 절 생성 입력의 [E#] 마다 논문·초록·
   원문 대목. 그 생성이 모델에 넘긴 그대로를 읽는다(서지·Milvus·리랭커를 다시 부르지 않는다).
 """
@@ -175,11 +177,11 @@ def _topic_source(outline: dict, topic_row) -> dict | None:
 
 
 def proposal_view(work, job, proposal, books: dict, generations, picked: set[str],
-                  topic_row: ResearchTopic | None = None) -> dict:
+                  topic_row: ResearchTopic | None = None, preselected: int = 0) -> dict:
     """ProposalView. proposal 이 None(목차를 아직 만들지 않음)이면 version 0·outline None·sections {}.
     books 는 {cnts_id: BookOut}, generations 는 이 연구의 생성 전부, picked 는 지금 담은 논문, topic_row 는
     호출부가 읽은 고른 주제 행 — 카드 제목은 stale 셈에, origin·card.edited 는 topic_source 에 쓴다(None 이면
-    제목은 견주지 않고 topic_source 도 None)."""
+    제목은 견주지 않고 topic_source 도 None). preselected 는 호출부가 읽기 목록 행에서 센 미리 담은 수."""
     outline = dict((proposal.outline if proposal is not None else None) or {})
     sections = dict((proposal.sections if proposal is not None else None) or {})
     ids = paper_ids(proposal, generations)
@@ -198,4 +200,5 @@ def proposal_view(work, job, proposal, books: dict, generations, picked: set[str
         "stale": stale_flags(work, outline, sections, picked, topic_title),
         "disclosure": disclosure_of(generations),
         "topic_source": _topic_source(outline, topic_row),
+        "preselected": preselected,
     }

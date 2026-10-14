@@ -182,8 +182,9 @@ def preselect(candidates: list[dict], limit: int = READING_PRESELECT) -> list[di
             else {**c, "state": "candidate"} for c in candidates]
 
 
-def _preselected(rows) -> int:
-    """이어가기가 미리 담은 행 수 — 지금 상태와 관계없이(뺀 행도 미리 담았던 것이다)."""
+def preselected_count(rows) -> int:
+    """이어가기가 미리 담은 행 수 — 지금 상태와 관계없이(뺀 행도 미리 담았던 것이다). 읽기 목록 머리 안내와 계획서
+    응답의 preselected(Word 공개 부록 '참고문헌:' 줄)가 이 수를 쓴다."""
     return sum(1 for r in rows if isinstance(r.origin_ref, dict) and r.origin_ref.get("preselected") is True)
 
 
@@ -198,7 +199,7 @@ def reading_view(work, job, rows, books: dict, outline: dict | None = None) -> d
         "stale": bool(outline) and (outline.get("topic") or {}).get("id") != work.topic_id,
         "subquestions": subquestions,
         "funnel": funnel(report, rows),
-        "preselected": _preselected(rows),
+        "preselected": preselected_count(rows),
         "items": [reading_item(r, book_meta(r.cnts_id, books.get(r.cnts_id)), snapshot, subquestions)
                   for r in reading_order(rows)],
         "excluded": excluded_candidates(job, rows),

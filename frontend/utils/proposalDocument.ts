@@ -148,12 +148,14 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
   return { fileName: proposalFileName(title, now, input.acceptedOnly), blocks, references };
 }
 
-// 부록 "AI 사용 공개"(D21) — 문단 상태 비율·고른 주제의 출처·절별 문단 상태 개수(다시 맞춤 필요한 절은 덧붙인다)·실은 문단·검토할 곳(실은 문단에서 센다)·
-// 작성 일시·결과·논의 미포함. 모델 이름·생성별 시도 기록은 싣지 않는다('AI 작성·검토' 수준 — 저장(research_generations
-// .model·attempts)은 그대로)
+// 부록 "AI 사용 공개"(D21) — 문단 상태 비율·고른 주제의 출처·미리 담은 참고문헌 수·절별 문단 상태 개수(다시 맞춤 필요한 절은
+// 덧붙인다)·실은 문단·검토할 곳(실은 문단에서 센다)·작성 일시·결과·논의 미포함. 모델 이름·생성별 시도 기록은 싣지 않는다('AI 작성·
+// 검토' 수준 — 저장(research_generations.model·attempts)은 그대로)
 export function disclosureLines(p: ProposalView, acceptedOnly: boolean, now: Date): string[] {
   const out = [`문단 상태: ${footprintLine(footprint(p))}`];
   if (p.topic_source) out.push(topicSourceLine(p.topic_source));
+  const preselected = p.preselected ?? 0;
+  if (preselected > 0) out.push(preselectedLine(preselected));
   for (const key of sectionKeys(p)) {
     const section = p.sections[key];
     if (section) {
@@ -253,6 +255,13 @@ function sectionKeys(p: ProposalView): string[] {
 function topicSourceLine(source: NonNullable<ProposalView["topic_source"]>): string {
   if (source.origin === "user") return "주제: 사용자가 직접 쓴 주제";
   return source.edited ? "주제: AI 주제 카드(사용자가 고침)" : "주제: AI 주제 카드";
+}
+
+// 이어가기가 채택 근거 상위 편을 참고문헌(읽기 목록)에 담음으로 미리 넣은 사실(사용자 결정 2026-10-14 — 글자 그대로). 수는 서버가
+// 센 preselected(뺀 행 포함 — 읽기 목록 머리 안내 readingList.readingIntro 와 같은 수). 0(이 기능 전에 이어간 연구)이면 싣지 않는다.
+// 단계 순서(주제 → 참고문헌 선택하기 → 보고서)대로 '주제:' 줄 다음에 둔다
+function preselectedLine(n: number): string {
+  return `참고문헌: 이어가기 때 채택 근거 상위 ${n}편을 미리 담음 — 사용자가 확인·수정`;
 }
 
 function stateMix(section: ProposalSection): string {

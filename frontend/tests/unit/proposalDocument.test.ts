@@ -363,6 +363,24 @@ describe("disclosureLines", () => {
     expect(second({ origin: "other", edited: false })).toBe("주제: AI 주제 카드");
     expect(second(null)).toBe("선행연구 검토 · 노인의 우울: 문단 2개 — AI 작성·검토 전 1·수락 1");
   });
+
+  it("이어가기가 참고문헌을 미리 담았으면(서버가 센 preselected — 뺀 행 포함) 주제 다음 줄에 그 수를 적는다", () => {
+    const line = "참고문헌: 이어가기 때 채택 근거 상위 8편을 미리 담음 — 사용자가 확인·수정";
+    const out = disclosureLines(proposal({ topic_source: { origin: "report_seed", edited: false }, preselected: 8 }), false, NOW);
+    expect(out.slice(0, 3)).toEqual(["문단 상태: AI 작성 4문단 중 수락 1·수정 1·검토 전 2 · 직접 쓴 문단 1", "주제: AI 주제 카드", line]);
+    // 주제 출처를 모르면 문단 상태 다음 줄이다
+    expect(disclosureLines(proposal({ preselected: 3 }), false, NOW)[1]).toBe(
+      "참고문헌: 이어가기 때 채택 근거 상위 3편을 미리 담음 — 사용자가 확인·수정",
+    );
+    // '수락한 문단만'이어도 같다 — 참고문헌을 고른 과정이지 실은 문단의 수가 아니다
+    expect(disclosureLines(proposal({ preselected: 8 }), true, NOW)).toContain(line);
+  });
+
+  it("미리 담기 전에 이어간 연구(preselected 0)·그 수를 모르는 응답이면 참고문헌 줄을 싣지 않는다", () => {
+    for (const preselected of [0, undefined]) {
+      expect(disclosureLines(proposal({ preselected }), false, NOW).some((l) => l.startsWith("참고문헌:"))).toBe(false);
+    }
+  });
 });
 
 describe("printedKeys·printedProposedCount — 계획서 화면의 절 목록·토글 수와 문서가 같은 범위", () => {

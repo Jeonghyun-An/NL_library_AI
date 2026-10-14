@@ -217,7 +217,13 @@ class TestProposalView:
         assert view == {"version": 0, "outline": None, "sections": {}, "drafts": {}, "section_gens": {},
                         "papers": {}, "references": {}, "corpus": corpus_of(job),
                         "stale": {"outline": False, "sections": {}}, "disclosure": {"steps": []},
-                        "topic_source": None}
+                        "topic_source": None, "preselected": 0}
+
+    def test_preselected_is_passed_through_for_the_disclosure(self):
+        # 공개 부록 '참고문헌:' 줄의 N — 호출부가 읽기 목록 행에서 센 수(reading_views.preselected_count)를 그대로 싣는다
+        work = SimpleNamespace(topic_id=None, corpus_snapshot=None)
+        job = SimpleNamespace(report={}, finished_at=None)
+        assert proposal_view(work, job, None, {}, [], set(), preselected=8)["preselected"] == 8
 
     def test_references_use_build_citation_and_papers_use_the_catalog(self):
         book = SimpleNamespace(cnts_id="C1", title="노인 우울 연구", title_remainder=None,
@@ -432,6 +438,24 @@ class TestGetProposal:
         assert body["disclosure"]["steps"][0]["attempts"] == [{"model": "gemma-3-12b", "outcome": "ok"}]
         # 공개 부록의 '주제:' 줄 재료 — 목차 topic.id 의 주제 행(라우터가 읽은 고른 주제)의 origin·card.edited
         assert body["topic_source"] == {"origin": "report_seed", "edited": False}
+        # 미리 담기 전에 이어간 연구(행에 preselected 표시가 없다)는 0 — 공개 부록에 '참고문헌:' 줄을 싣지 않는다
+        assert body["preselected"] == 0
+
+    def test_preselected_counts_rows_picked_at_continue_whatever_their_state_now(self, api):
+        # 공개 부록 '참고문헌: 이어가기 때 채택 근거 상위 N편을 미리 담음'의 N — 읽기 목록 머리 안내와 같은 수다.
+        # 미리 담았다가 뺀(out) 행도 세고, 표시 없이 담은 행(직접 담음·되살림)은 세지 않는다
+        jid = _work_job(api.engine, picked=("C1", "C2"))
+        add_reading(api.engine, jid, "C3", state="in", origin_ref={"subq_idx": [0], "rank": {"0": 3},
+                                                                  "preselected": True})
+        add_reading(api.engine, jid, "C4", state="out", origin_ref={"subq_idx": [1], "rank": {"1": 4},
+                                                                   "preselected": True})
+        add_reading(api.engine, jid, "C7", state="candidate", origin_ref={"subq_idx": [1], "rank": {"1": 7},
+                                                                         "preselected": True})
+        add_reading(api.engine, jid, "U1", state="in", origin="user")
+
+        body = api.client.get(f"/api/research/{jid}/proposal").json()
+
+        assert body["preselected"] == 3
 
     def test_editing_the_picked_card_title_after_the_outline_needs_a_refit(self, api):
         # 목차를 만든 뒤 고른 카드를 [직접 고치기] 로 고쳤다 — 목차의 topic.title 은 고치기 전 제목으로 남고
