@@ -35,8 +35,9 @@
           <template v-if="reasonLoading && !reason">
             AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
           </template>
-          <!-- 사유를 만들지 못했다 — 두 줄 상자에는 받다 만 글 대신 안내만(받은 글은 팝업에) -->
-          <span v-else-if="reasonError && !reasonLoading" class="dt-rc__failed">{{ reasonError }}</span>
+          <!-- 사유를 만들지 못했다 — 두 줄 상자에는 받다 만 글 대신 안내만(받은 글은 팝업에). 카드 네 장이 한꺼번에 실패할 수
+               있어 화면낭독기에는 alert(끼어들어 읽음) 대신 status(차례가 오면 읽음)로 알린다. 팝업 쪽 안내는 열 때 읽힌다 -->
+          <span v-else-if="reasonError && !reasonLoading" class="dt-rc__failed" role="status">{{ reasonError }}</span>
           <template v-else>{{ reason || emptyText }}</template>
         </p>
         <button

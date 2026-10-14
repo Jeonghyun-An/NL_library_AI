@@ -107,6 +107,12 @@ describe("관련 자료 카드 — components/detail/RelatedCard.vue", () => {
     expect(src).toMatch(/reasonError\?: string;/);
     expect(src.match(/\{\{\s*reasonError\s*\}\}/g)).toHaveLength(2);
   });
+
+  // 카드 네 장이 한꺼번에 실패할 수 있어 alert(끼어들어 읽음) 대신 status(차례가 오면 읽음). 팝업 쪽은 열 때 읽힌다
+  it("상자의 실패 안내는 화면낭독기에 role=status 로 알린다", () => {
+    expect(src).toMatch(/<span\b(?=[^>]*class="dt-rc__failed")(?=[^>]*role="status")[^>]*>\{\{ reasonError \}\}/);
+    expect(src).not.toContain('role="alert"');
+  });
 });
 
 describe("소장자료 상세 추천 이유 — pages/books/[cnts_id].vue", () => {
