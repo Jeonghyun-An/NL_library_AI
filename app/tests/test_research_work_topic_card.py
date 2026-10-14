@@ -367,6 +367,17 @@ class TestCheck:
             assert EXECUTOR.check(_bound(GOOD, given)) is True
             assert EXECUTOR.check(_bound({**GOOD, "title": "노인의 관계망과 우울"}, given)) is False
 
+    def test_settle_is_a_miss_of_the_added_keyword_alone(self):
+        # 다른 모델로 넘기지 않는 미달(settle)은 06e 검사(근거 2편·고른 키워드 하나 이상)는 넘고 더한 키워드(focus)만 놓친
+        # 카드뿐이다. 06e 부터 있던 미달 — 근거 모자람·키워드를 하나도 못 넣음 — 과 통과한 카드는 settle 이 아니다
+        inp = {**INPUT, "keywords": ["독거노인", "지지망 유형", "농촌 노인"], "focus": ["농촌 노인"]}
+        assert EXECUTOR.settle(_bound(GOOD, inp)) is True
+        assert EXECUTOR.settle(_bound({**GOOD, "title": "농촌 노인의 지지망 유형과 우울"}, inp)) is False
+        assert EXECUTOR.settle(_bound({**GOOD, "title": "노인의 관계망과 우울"}, inp)) is False
+        assert EXECUTOR.settle(_bound({**GOOD, "evidence": ["E1"]}, inp)) is False
+        assert EXECUTOR.settle(_bound(GOOD, {**inp, "focus": []})) is False
+        assert EXECUTOR.settle({"card": None}) is False
+
     def test_needs_two_evidence_chips(self):
         assert MIN_TOPIC_EVIDENCE == 2
         assert EXECUTOR.check(_bound(GOOD)) is True
@@ -464,6 +475,27 @@ class TestThroughTheCommonRule:
         card = result.output["card"]
         assert card["title"] == "독거노인과 농촌 노인의 지지망 유형" and card["checks"]["missing_keywords"] == []
         assert card["focus"] == ["농촌 노인"]
+
+    def test_an_added_keyword_missed_twice_is_not_passed_to_the_other_model(self, cfg):
+        # 더한 키워드만 두 번 놓치면 다른 모델(Qwen — 적재 OCR 과 같은 VLM)로 넘기지 않고 두 번째 카드를 보관한다. 화면은
+        # '제목에 「농촌 노인」 없음'을 달고, 한 번 더 누르면 focus 를 이어받는다(api.research_topics._regenerate_focus)
+        inp = {**INPUT, "keywords": ["독거노인", "농촌 노인"], "focus": ["농촌 노인"]}
+        primary, fallback = _models()
+        second = {**GOOD, "title": "독거노인의 지지망과 우울"}
+        answers = {primary: [_reply(GOOD), _reply(second)], fallback: [_reply(GOOD)]}
+        seen: list[str] = []
+
+        async def fake_chat(messages, *, params=None, timeout=120.0, base_url=None, model=None):
+            seen.append(model)
+            return LLMResult(content=answers[model].pop(0), finish_reason="stop")
+
+        result = asyncio.run(run_generation(EXECUTOR, inp, chat_fn=fake_chat))
+
+        assert seen == [primary, primary]
+        assert [a["outcome"] for a in result.attempts] == ["check", "check"]
+        assert result.model == primary and result.output["card"]["title"] == "독거노인의 지지망과 우울"
+        assert result.output["card"]["checks"]["missing_keywords"] == ["농촌 노인"]
+        assert result.output["card"]["focus"] == ["농촌 노인"]
 
 
 class TestExecutors:

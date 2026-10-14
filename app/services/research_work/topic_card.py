@@ -18,6 +18,8 @@
   - 더한 키워드: [이 키워드로 다시 만들기]는 카드를 만들 때보다 더한 키워드를 input.focus 로 넘긴다. 그러면 프롬프트에
     '특히 … 꼭' 한 줄이 더 붙고, 엄격한 검사는 focus 가운데 하나 이상을 요구한다(card.focus). 미리 고른 키워드에 원 질문의
     말이 들어 있어 '하나 이상'은 늘 그 말로 채워졌다(운영 630e0d65 — 더한 '연구 대상' 0/4). focus 가 비면 06e 그대로다.
+    더한 키워드만 두 번 놓치면 다른 모델로 넘기지 않고 두 번째 카드를 보관한다(_settle — 넘길 모델 Qwen 은 적재 OCR 과
+    같은 VLM 이다). 다시 누르면 아직 제목에 없는 focus 를 이어받는다(api.research_topics._regenerate_focus).
 결과 반영(apply)은 research_topics 의 그 행만 바꾼다 — 사용자가 직접 고친 카드(card.edited)는 덮지 않는다.
 """
 import re
@@ -229,20 +231,32 @@ def _soft_check(output: dict) -> bool:
     return card is not None and len(card["evidence"]) >= MIN_TOPIC_EVIDENCE
 
 
+def _keywords_ok(card: dict) -> bool:
+    """06e D23 — 고른 키워드를 넘겼으면 제목에 하나 이상 들어 있다."""
+    keywords = card.get("keywords") or []
+    return not keywords or len(card["checks"].get("missing_keywords") or []) < len(keywords)
+
+
+def _focus_ok(card: dict) -> bool:
+    """다시 만들 때 더한 키워드(card.focus)가 있으면 그 가운데 하나 이상이 제목에 있다."""
+    focus = card.get("focus") or []
+    return not focus or any(contains(card["title"], k) for k in focus)
+
+
 def _check(output: dict) -> bool:
     """엄격한 검사 — 무른 검사에 더해, 고른 키워드를 넘겼으면 제목에 하나 이상 들어 있다(06e D23). 다시 만들 때 더한
     키워드(card.focus)가 있으면 그 가운데 하나 이상이 제목에 있어야 한다 — 미리 고른 키워드에 원 질문의 말이 들어 있어
     '하나 이상'만으로는 더한 키워드를 빼도 늘 통과했다(운영 630e0d65 — 4장 모두 '연구 대상' 없이 첫 시도 통과).
     미달이면 공통 규칙의 내용 검사 미달로 다시 부르고, 세 번 다 놓치면 run_generation 이 무른 검사를 넘은 마지막 카드를
-    낸다(정함 17)."""
-    if not _soft_check(output):
-        return False
-    card = output["card"]
-    focus = card.get("focus") or []
-    if focus and not any(contains(card["title"], k) for k in focus):
-        return False
-    keywords = card.get("keywords") or []
-    return not keywords or len(card["checks"].get("missing_keywords") or []) < len(keywords)
+    낸다(정함 17). 더한 키워드만 놓친 미달(_settle)은 두 번째 뒤 다른 모델로 넘기지 않는다."""
+    return _soft_check(output) and _keywords_ok(output["card"]) and _focus_ok(output["card"])
+
+
+def _settle(output: dict) -> bool:
+    """다른 모델로 넘기지 않는 미달 — 06e 검사(근거·고른 키워드 하나 이상)는 넘고 더한 키워드(focus)만 놓친 카드.
+    고치기 전에는 이 카드가 첫 시도에 통과했다. 넘길 모델(Qwen)은 적재 OCR 과 같은 VLM 이라 [이 키워드로 다시 만들기]
+    한 번에 카드 4장 × 1회씩 VLM 호출이 늘 수 있었다 — 두 번째 카드를 보관하고 화면이 '제목에 ○○ 없음'을 단다."""
+    return _soft_check(output) and _keywords_ok(output["card"]) and not _focus_ok(output["card"])
 
 
 async def apply(db, gen, output: dict) -> dict:
@@ -342,4 +356,5 @@ EXECUTOR = Executor(
     apply=apply,
     is_empty=lambda out: (out or {}).get("card") is None,
     soft_check=_soft_check,
+    settle=_settle,
 )
