@@ -161,8 +161,29 @@ describe("운영 대목 넷(노인 연구 c816c7b2, 2026-10-15) — 표 칸 속 
     }
   });
 
+  it("쪽이 바뀌는 자리의 머리말(쪽수 ❙ 학술지 줄과 그 위 '|' 머리 제목 줄, 세로선만 남은 줄)은 대목 가운데서도 걷는다", () => {
+    expect([tails.E2_0006.text.length, tails.E2_0016.text.length]).toEqual([1314, 1471]);
+    const odd = passageText(tails.E2_0006.text);
+    expect(odd).not.toMatch(/❙|\||Moderating Effects of Interpersonal/);
+    expect(odd).toContain("노인우울과 건강증진행위\n\n간의 관계에 있어 사회적 지지와");
+    const even = passageText(tails.E2_0016.text);
+    expect(even).not.toMatch(/❙|\||404 /);
+    expect(even).toContain("기초자료를 제시\n\n하였다는 데에 그 의의가 있다.");
+    // 같은 대목 끝의 'REFERENCES\n\n[1] …' 목록은 꼬리로 잘린다
+    expect(even).toMatch(/지지체계가 마 련되고 시행될 필요가 있다\.$/);
+  });
+
+  it("쪽 머리말 꼴 — '❙' 와 쪽수가 붙은 줄만, '|' 제목 줄은 그 바로 위일 때만 걷는다. 머리말뿐인 대목은 그대로", () => {
+    expect(passageText("앞 문장이다.\n\n|논문 제목\n\nJournal of X❙ 12\n\n뒤 문장이다.")).toBe("앞 문장이다.\n\n뒤 문장이다.");
+    // ❙ 없는 '|' 줄·쪽수 없는 ❙ 줄·표 그림의 상자 선(│)은 그대로
+    expect(passageText("|논문 제목\n본문이다.")).toBe("|논문 제목\n본문이다.");
+    expect(passageText("구분 ❙ 설명이 이어진다\n본문")).toBe("구분 ❙ 설명이 이어진다\n본문");
+    expect(passageText("본문\n합계 │ 120\n끝")).toBe("본문\n합계 │ 120\n끝");
+    expect(passageText("Journal of X❙ 12")).toBe("Journal of X❙ 12");
+  });
+
   it("넷 모두 두 번 정리해도 같다", () => {
-    for (const t of [tails.E2.text, tails.E4.text, tails.E20.text, tails.E21.text]) {
+    for (const t of [tails.E2.text, tails.E2_0006.text, tails.E2_0016.text, tails.E4.text, tails.E20.text, tails.E21.text]) {
       const once = passageText(t);
       expect(passageText(once)).toBe(once);
     }
