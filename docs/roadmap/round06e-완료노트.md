@@ -142,10 +142,24 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 | 남은 것 | 상태 |
 |---|---|
 | 예시 연구 | 0건 — 지정 필요(`scripts/research_eval/mark_example.py`) |
-| 미리 담기 8편 | 새 이어가기로만 확인할 수 있다 — 브라우저 E2E 진행 중 |
-| 옛 검색 기록 API 의 비-uuid 세션 id 500 | `20dbe10` 으로 고침(fastapi 만) — `c205a88` 머지 뒤 커밋이라 지금 `fix/round06-live-check` 에만 있다 → `dev` 재머지(사용자 승인) → fastapi 배포 |
+| 미리 담기 8편 | 운영 E2E 2회(이어가기 630e0d65·d60a5dc1)에서 8편이 담겼다 — 목차 묶음이 7:1 로 나뉘던 것은 아래 3차에서 고침 |
+| 옛 검색 기록 API 의 비-uuid 세션 id 500 | `20dbe10` 으로 고침(fastapi 만) — 아래 2차(`dev` `65907eb`)로 운영 배포됨(10-14) |
 
 반복 함정 — 이 배포 작업에서 나온 것 셋을 `docs/ops/recurring-gotchas.md` 28~30번에 더했다(서버·화면이 같이 바뀐 배포의 순서, Git Bash curl 의 한글 JSON, 서버 셸 root 전환 줄 붙여 넣기).
+
+#### 운영 E2E 품질 수정 2~4차(10-14)
+
+위 배포(1차 `c205a88`) 뒤 운영 E2E(딥리서치 → 이어가기 → 보고서, 이어가기 630e0d65·d60a5dc1)에서 나온 서버 품질 수정을 같은 브랜치에서 차수마다 `dev` 에 머지했다. 3·4차는 서버만이다 — nuxt 는 바뀌지 않았고 DB·env·compose 설정 변화도 없다.
+
+| 차수 | `dev` 머지 | 고친 것 | 다시 만들 컨테이너 | 이미지 | 배포 |
+|---|---|---|---|---|---|
+| 2차 | `65907eb` | 근거 대목에서 논문 끝 참고문헌 목록 조각 빼기([`research/bibliography-chunk-filter/`](../../research/bibliography-chunk-filter/README.md))·이어가기 절의 수치 칩 누설과 '본 연구' 지칭·한계 문구의 조사와 '결론이 약하다'·거의 같은 씨앗 중복·보고서 연구 질문을 고른 카드 질문으로·옛 검색 기록 세션 id 400(`20dbe10`) | celery-research·celery-research-plan·fastapi·nuxt(프론트 세션 변경 포함) | fastapi `sha256:37856894…`·nuxt `sha256:14d93215…` | 운영 배포됨(10-14) |
+| 3차 | `cb12bcb` | 이어가기 목차 묶음 최소 2편(`MIN_GROUP_PAPERS` — 8편이 7:1 로 나뉘던 것)·연구 공백 절이 고른 카드 씨앗만·한계 줄을 절 번호 + 자기점검 메모 첫 문장으로·짧은 참고문헌 조각 판정·[이 키워드로 다시 만들기]가 더한 키워드를 제목에 넣기(두 번 놓치면 다른 모델로 넘기지 않고 무른 검사 카드를 보관 — `settle`)·절 생성 대목을 논문마다 서술 대목으로 고르고 절 사이 되풀이 문장 지움(`drop_repeats`) | fastapi·celery-research·celery-research-plan | fastapi `sha256:99c360b2…` | 대기(사용자 확인 전) |
+| 4차 | `f06b814` | 딥리서치 종합 프롬프트 개편(A/B 채택 focus — 절마다 하위질문에 곧장 답하기, `fd360d1`)·대목 속 남의 번호 인용 지우기(`strip_numbered_refs`)·요약 빠지면 재요청(도입 있는 응답 우선)·모델에 넘기는 대목을 400자 안 문장 끝에서 자르기(통계 소수·약어 예외) | celery-research(3차를 안 했으면 위 셋) | fastapi `sha256:b8dd67fb…`(3차 내용 포함) | 대기(사용자 확인 전) |
+
+- **배포(사용자)** — 도는 연구·생성이 없을 때, 적재 워커는 건드리지 않고 Portainer 에서 하나씩 Recreate(스택 업데이트 금지). 순서는 celery-research → celery-research-plan → fastapi → 게이트웨이 reload, 되돌리기 태그 `:pre-cb12bcb`·`:pre-f06b814`. 확인: fastapi 의 `services/research_work/shapes.py` 에 `MIN_GROUP_PAPERS`, celery-research 의 `domains/nl_library/prompts/research_synthesize.yaml` 에 '하위질문에 대한 답'·`services/research/citations.py` 에 `strip_numbered_refs`.
+- **4차 A/B** — [`research/synth-prompt-ab/`](../../research/synth-prompt-ab/README.md). 운영 보고서 4건(630e0d65·d60a5dc1·85d2bc0e·9ba10849, 보고서마다 6절) × 2회를 종합 프롬프트 세 방향(focus·attrib·concise)으로 다시 만들어 LLM 판정자 셋이 블라인드로 판정했다. focus 채택 — 현행 대비 10승 0패 2무(r0 회차 4짝 × 판정자 3), 보고서당 근거 표시 없는 문장 3.5→0.8, 첫 문장이 일반론인 절 3.8→0(v1 정규식)·3.9→0.6(v2), '본 절에서는' 류 군말 1.0→0. attrib·concise 는 판정은 넘었지만 자동 지표(무효 인용 / 형식 문제·빈 요약)에서 떨어졌다. 남은 약점은 도입 4문장 초과 절 42%·1문장 요약 45%·한 논문의 표본을 분야 전체로 넓히는 일반화·재인용 오귀속(6.1→6.4 그대로). 한 번 더 겨룬 focus2(focus + 재인용·일반화 규칙)는 focus 대비 판정 15승 7패 2무였지만 형식 문제 1·빈 요약 1·게재지 군말 19편으로 채택하지 않았다. 수치 범위: 운영 보고서 4건 × 2회, 생성 gemma-3-12b, 판정자는 사람이 아닌 LLM 에이전트 — 운영 화면에서 다시 잰 값이 아니다.
+- **배포 뒤** — 새 연구(딥리서치 → 이어가기 → 보고서)로 품질을 확인한다(Task Z6 운영 처음부터 끝까지 1회와 함께).
 
 ---
 
