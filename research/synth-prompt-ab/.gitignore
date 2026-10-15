@@ -1,0 +1,9 @@
+# 재현하며 생기는 큰 파일·원문(README '넣지 않은 것') — 커밋하지 않는다
+jobs/
+gen_ab/
+gen_r2/
+gen_r3/
+judge_pairs.json
+r2_pairs.json
+ab_metrics.json
+checks/figleak/measure_g2.json
