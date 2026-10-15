@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from history_sqlite import (
-    AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
+    AsyncSessionOverSync, add_generation, add_research_job, add_topic, add_work, make_engine,
 )
 from models.research_work import ResearchGeneration, ResearchWork
 from services.research_work.apply import apply_result
@@ -373,7 +373,7 @@ class TestApplyResult:
         payload, log = _call(engine, _apply)
 
         row = _work_row(engine, w1)
-        assert payload == {"concepts": ["독서 격차", "청소년"]}
+        assert payload == {"concepts": ["독서 격차", "청소년"], "cards": []}      # 이 연구엔 씨앗 자리가 없다
         assert (row["concepts"], row["concept_members"]) == (["독서 격차", "청소년"], {})
         assert log.count("COMMIT") == 1          # 적용은 커밋하지 않는다 — 위 커밋은 테스트가 했다
 
@@ -391,8 +391,54 @@ class TestApplyResult:
         payload, log = _call(engine, _apply)
 
         row = _work_row(engine, w1)
-        assert payload == {"concepts": []} and log == []
+        assert payload == {"concepts": [], "cards": []}
+        # 씨앗 자리를 찾는 읽기만 있다 — 이 연구엔 주제 행이 없어 연구도 생성도 바꾸지 않는다
+        assert not [s for s in log if s.startswith(("INSERT", "UPDATE"))]
         assert (row["concepts"], row["concept_members"]) == (["사용자 개념"], {"사용자 개념": ["C1"]})
+
+    def test_an_empty_result_still_queues_the_seed_cards_without_keywords(self, engine):
+        # 06e D23 — 세 번 다 못 얻은 빈 결과도 done 이다. 칩은 그대로 두고 씨앗 카드는 키워드 없이 넣는다
+        w1 = _work(engine, concepts=["사용자 개념"])
+        tids = [add_topic(engine, w1, slot=n, seed={"key": f"future:{n}:0", "heading": "절", "text": "씨앗",
+                                                     "papers": ["P1", "P2"], "adopted": 3}) for n in (1, 2)]
+        gid = _gen(engine, w1, minute=0, kind="concepts", status="running", started_at=T0)
+
+        async def _apply(db):
+            payload = await apply_result(db, await db.get(ResearchGeneration, gid), {"concepts": []})
+            await db.commit()
+            return payload
+
+        payload, _ = _call(engine, _apply)
+
+        with engine.connect() as conn:
+            cards = conn.execute(sa.select(GEN).where(GEN.c.kind == "topic_card").order_by(GEN.c.id)).mappings().all()
+        assert payload == {"concepts": [], "cards": [c["id"] for c in cards]}
+        assert [(c["target"], c["status"], c["input"]["keywords"]) for c in cards] == [
+            (str(t), "queued", []) for t in tids]
+        assert _work_row(engine, w1)["concepts"] == ["사용자 개념"]
+
+    def test_a_second_concepts_result_queues_no_more_cards(self, engine):
+        # 키워드를 다시 불러(retry) 두 번째 결과가 반영돼도 씨앗 카드는 자리마다 한 번만 — 칩만 바뀐다
+        w1 = _work(engine)
+        add_topic(engine, w1, slot=1, seed={"key": "future:1:0", "heading": "절", "text": "씨앗",
+                                            "papers": ["P1", "P2"], "adopted": 3})
+        first = _gen(engine, w1, minute=0, kind="concepts", status="done", started_at=T0)
+        second = _gen(engine, w1, minute=1, kind="concepts", status="running", started_at=T0)
+
+        def _apply(gid: int, concepts: list[str]) -> dict:
+            async def _go(db):
+                payload = await apply_result(db, await db.get(ResearchGeneration, gid), {"concepts": concepts})
+                await db.commit()
+                return payload
+
+            return _call(engine, _go)[0]
+
+        assert len(_apply(first, ["독서 격차", "청소년"])["cards"]) == 1
+        assert _apply(second, ["가정 환경", "독서 격차"]) == {"concepts": ["가정 환경", "독서 격차"], "cards": []}
+        with engine.connect() as conn:
+            cards = conn.execute(sa.select(GEN).where(GEN.c.kind == "topic_card")).mappings().all()
+        assert [c["input"]["keywords"] for c in cards] == [["독서 격차", "청소년"]]
+        assert _work_row(engine, w1)["concepts"] == ["가정 환경", "독서 격차"]
 
     def test_kinds_without_an_executor_change_nothing(self, engine):
         # facet 은 06c 까지 실행기가 없다 — outline 은 06b 에서 실행기와 반영이 생겼다

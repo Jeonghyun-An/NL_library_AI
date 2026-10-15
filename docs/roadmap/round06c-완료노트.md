@@ -539,5 +539,5 @@ pairs_20261012_06c_q.out: 갈래 0 {"critic_scope": 0, "broaden": 0, "query_cont
 - [x] 두 갈래 재판정·기본값 결정(Q4 — §5-4·§5-5, 2026-10-12, 사용자 "응 돌려"·"응 그렇게 돌려") — 서버 기본값 0 그대로(결정 커밋 없음), '탐색 방식' 선택지를 06d 에(사용자 "응 넣자. 정확하게로 가자. 탐색 방식: 폭넓게 · 정밀하게 로 가자")
 - [x] 문서 갱신 — `00_status` · spec(D28·Q4) · `scripts/research_eval/README.md` 06c 재판정 결과 · 라벨 CSV(2026-10-12, 배포 기록 `docs/round06c-deploy-record`) (교본은 대회 뒤 round06 한 권 — D13)
 - [x] `dev` 머지 승인 — 코드 `ef202fb`(2026-10-12, 사용자 "머지하고 배포 명령 줘")
-- [ ] `dev` 머지 승인 — 이 배포·판정 기록(`docs/round06c-deploy-record`)
-- [ ] `dev→main` 머지 + push 완료
+- [x] `dev` 머지 승인 — 이 배포·판정 기록(`docs/round06c-deploy-record`, `d261476`)
+- [x] `dev→main` 머지 + push 완료 — round06 묶음으로 2026-10-15(사용자 승인 "응 끝나면 main 머지하고 push해")

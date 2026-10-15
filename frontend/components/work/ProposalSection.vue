@@ -2,8 +2,9 @@
 <template>
   <section :id="`wk-sec-${sectionKey}`" ref="rootEl" class="rs-card wk-psec" :aria-labelledby="`wk-sec-title-${sectionKey}`">
     <header class="wk-psec__head">
-      <h3 :id="`wk-sec-title-${sectionKey}`" class="rs-card__title">{{ label }}</h3>
-      <span class="rs-badge" :class="STATUS_BADGES[status]">{{ STATUS_LABELS[status] }}</span>
+      <!-- tabindex="-1" — 보고서 화면의 머리 목차가 이 제목으로 초점을 옮긴다 -->
+      <h3 :id="`wk-sec-title-${sectionKey}`" class="rs-card__title" tabindex="-1">{{ label }}</h3>
+      <span class="rs-badge" :class="STATUS_BADGES[status]">{{ skippedNow ? "근거 없음" : STATUS_LABELS[status] }}</span>
       <span v-if="stale" class="rs-badge wk-psec__stale">다시 맞춤 필요</span>
       <button
         v-if="!readOnly && status !== 'queued' && status !== 'writing'"
@@ -17,8 +18,8 @@
     </header>
     <p v-if="note" class="rs-muted">{{ note }}</p>
     <p v-if="stale" class="rs-muted">
-      이 절을 쓴 뒤 주제나 목차의 묶음이 바뀌었습니다. 쓴 문단은 그대로 두었습니다 — 바뀐 목차로 맞추려면 이 절을 다시
-      쓰세요.
+      이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었습니다. 쓴 문단은 그대로 두었습니다 — 바뀐 목차로 맞추려면 이
+      절을 다시 쓰세요.
     </p>
 
     <p v-if="status === 'queued'" class="rs-muted" role="status">
@@ -78,6 +79,7 @@
         class="wk-psec__item"
         :class="`is-${p.state}`"
         :data-anchor="paraAnchor(sectionKey, p.id)"
+        tabindex="-1"
       >
         <span :id="bandId(p.id)" class="wk-psec__band">{{ STATE_LABELS[p.state] }}</span>
         <div v-if="editingId === p.id" class="wk-psec__edit">
@@ -95,22 +97,28 @@
         <template v-else>
           <p class="wk-psec__para">
             <template v-for="(s, si) in sentences" :key="si">
-              <span :class="{ 'wk-psec__unmarked': s.unmarked }" :title="s.unmarked ? '근거 표시가 없는 문장' : undefined">
+              <span
+                class="wk-psec__sent"
+                :class="{ 'wk-psec__unmarked': s.unmarked, 'is-cited': isActiveSentence(p.id, si) }"
+                :title="s.unmarked ? '근거 표시가 없는 문장' : undefined"
+              >
                 <template v-for="(part, ti) in s.parts" :key="ti">
                   <template v-if="part.type === 'text'">{{ part.text }}</template>
-                  <a
+                  <button
                     v-else-if="part.type === 'cite'"
+                    type="button"
                     class="wk-psec__cite"
-                    :href="detailHref(section.evidence[part.eid] ?? '', p.id, null)"
+                    :data-cite="citeKey(p.id, si, part.eid)"
+                    :aria-expanded="isOpenCite(p.id, si, part.eid)"
+                    :aria-controls="isOpenCite(p.id, si, part.eid) ? panelId : undefined"
                     :title="paperTitle(section.evidence[part.eid])"
-                    @click="goDetail($event, section.evidence[part.eid] ?? '', p.id)"
-                    @auxclick="goDetail($event, section.evidence[part.eid] ?? '', p.id)"
-                    @contextmenu="goDetail($event, section.evidence[part.eid] ?? '', p.id)"
-                  >{{ citeText(section.evidence[part.eid], part.eid) }}</a>
+                    @click="onCite($event, p.id, si, part.eid, s.text)"
+                  >{{ citeText(section.evidence[part.eid], part.eid) }}</button>
                   <s v-else-if="part.type === 'badcite'" class="wk-psec__badcite">[{{ part.eid }}]</s>
                   <FigureChip v-else-if="figureOf(section.figures, part.fid)" :figure="figureOf(section.figures, part.fid)!" />
                   <span v-else class="wk-psec__cite is-pending">[{{ part.fid }}]</span>
                 </template>
+                <span v-if="s.unmarked" class="rs-sr-only">(근거 표시 없음)</span>
               </span>
               <span v-if="s.numbers.length" class="wk-psec__check" :title="`[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요`">
                 확인 필요 {{ s.numbers.join(", ") }}
@@ -192,8 +200,18 @@
         문단 직접 쓰기
       </button>
     </div>
-    <p v-if="!section && status === 'empty'" class="rs-muted">
-      아직 쓰지 않은 절입니다. [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 받아들입니다.
+    <!-- 근거 없음 409 는 사실상 연구 공백 절에서만 난다 — 그 논문은 담은 논문·묶음이 아니라 고른 주제의 씨앗에서 온다 -->
+    <p v-if="skippedNow" class="rs-muted" role="status">
+      근거가 없어 쓰지 않았습니다 — 이 절은 고른 주제의 씨앗({{ DEEP_RESEARCH }} 보고서의 향후 과제·근거가 부족했던
+      하위질문)에 이은 논문으로 쓰는데, 이은 논문이 없습니다. 다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞추세요.
+    </p>
+    <!-- '자동으로 씁니다'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
+    <p v-else-if="!section && status === 'empty' && autoNext" class="rs-muted">
+      아직 쓰지 않은 절입니다 — 차례가 오면 자동으로 씁니다. 지금 쓰려면 [이 절 쓰기]를 누르세요.
+    </p>
+    <p v-else-if="!section && status === 'empty'" class="rs-muted">
+      아직 쓰지 않은 절입니다. [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 다듬을 수
+      있습니다.
     </p>
   </section>
 </template>
@@ -201,11 +219,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
-import { useDetailLeave } from "~/composables/useRestorePosition";
-import type { Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
+import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
+import { citedQuote } from "~/utils/citationEvidence";
 import { citeLabel } from "~/utils/citations";
-import { detailUrl, paraAnchor } from "~/utils/detailSource";
-import { figureById, splitMarkers } from "~/utils/figureMarkers";
+import { paraAnchor } from "~/utils/detailSource";
+import { figureById, spaceBeforeCites, splitMarkers } from "~/utils/figureMarkers";
 import {
   GAP_NOTE,
   MAX_PARAGRAPHS_PUT,
@@ -223,8 +242,8 @@ import {
   type SectionStatus,
 } from "~/utils/proposalView";
 import { genQueueLine } from "~/utils/queueLine";
-import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
+import { REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{
   sectionKey: string;
@@ -233,9 +252,23 @@ const props = defineProps<{
   state: WorkState;
   readOnly: boolean;
   busy: boolean;
-  jobId: string;
+  // 오른쪽 패널이 보이는 인용 — ProposalStep 이 이 절의 것만 넘긴다. 그 문장을 강조하고 그 칩을 펼침으로 둔다
+  activeCite?: { pid: string; si: number; eid?: string } | null;
+  // 오른쪽 패널의 id — 칩의 aria-controls
+  panelId?: string;
+  // 보고서 자동 산출이 근거가 없어(409 no_section_papers) 건너뛴 절 — 이 방문만(06e)
+  skipped?: boolean;
+  // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 씁니다'
+  autoNext?: boolean;
 }>();
-const emit = defineEmits<{ write: []; save: [body: SectionPut]; regenerate: [pid: string]; retry: [genId: number] }>();
+const emit = defineEmits<{
+  write: [];
+  save: [body: SectionPut];
+  regenerate: [pid: string];
+  retry: [genId: number];
+  // 인용 칩 — 누른 칩(초점을 돌려줄 자리)과 함께 올린다
+  cite: [pick: CitePick, el: HTMLElement];
+}>();
 
 const STATUS_LABELS: Record<SectionStatus, string> = {
   empty: "쓰기 전",
@@ -253,7 +286,8 @@ const STATUS_BADGES: Record<SectionStatus, string> = {
 };
 // 'AI 작성' 띠는 수락해도 남는다 — 사용자가 고친 문단도 AI 가 처음 쓴 문단이다
 const STATE_LABELS: Record<ParaState, string> = {
-  proposed: "AI 제안 · 검토 전",
+  // 보고서를 자동으로 쓴 글이라 '제안'을 뺀다(D21) — 저장 값 proposed 는 그대로
+  proposed: "AI 작성 · 검토 전",
   accepted: "AI 작성 · 수락",
   edited: "AI 작성 · 고침",
   authored: "직접 작성",
@@ -262,6 +296,8 @@ const STATE_LABELS: Record<ParaState, string> = {
 const section = computed(() => props.proposal.sections[props.sectionKey] ?? null);
 const status = computed(() => sectionStatus(props.sectionKey, props.state));
 const stale = computed(() => !!section.value && props.proposal.stale.sections[props.sectionKey] === true);
+// 자동 산출이 근거가 없어 건너뛴 쓰기 전 절 — 손으로 다시 쓰기 시작하면(대기·쓰는 중) 그 상태를 보인다
+const skippedNow = computed(() => !!props.skipped && !section.value && status.value === "empty");
 const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 씁니다` : null));
 const openSection = computed(() => openGeneration(props.state, "section", props.sectionKey));
 const queueText = computed(() => (openSection.value ? genQueueLine(openSection.value) : null));
@@ -296,7 +332,7 @@ const failedParas = computed(() =>
 );
 
 // 문단마다 되풀이되는 버튼([수락]·[다시]·[고치기]·[지우기])의 이름에 붙이는 대상(화면에는 보이지 않는다)과, 설명으로
-// 잇는 그 문단의 띠(AI 제안 · 검토 전 등) — 스크린리더의 컨트롤 목록에서 어느 절의 몇째 문단인지 구별되게
+// 잇는 그 문단의 띠(AI 작성 · 검토 전 등) — 스크린리더의 컨트롤 목록에서 어느 절의 몇째 문단인지 구별되게
 function paraName(index: number): string {
   return `${props.label} ${index + 1}번째 문단`;
 }
@@ -330,7 +366,7 @@ const liveBlocks = computed<ParaPart[][]>(() =>
     .split(/\n\s*\n/)
     .map((t) => t.trim())
     .filter(Boolean)
-    .map((t) => (liveEvidence.value ? paragraphParts(t, liveEvidence.value) : splitMarkers(t))),
+    .map((t) => (liveEvidence.value ? paragraphParts(t, liveEvidence.value) : spaceBeforeCites(splitMarkers(t)))),
 );
 
 function figureOf(figures: Figure[], fid: string): Figure | null {
@@ -345,29 +381,41 @@ function citeText(cnts: string | undefined, eid: string): string {
   return citeLabel(cnts ? props.proposal.papers[cnts] : undefined, eid);
 }
 
-// ── 논문 상세로 — 돌아오면 이 문단에 맞춘다 ───────────────
-const { leave } = useDetailLeave();
-
-function detailHref(cnts: string, pid: string, y: number | null): string {
-  return detailUrl(
-    cnts,
-    { kind: "research", job: props.jobId, e: null, s: "proposal" },
-    { at: paraAnchor(props.sectionKey, pid), y },
-  );
+// ── 인용 칩 → 오른쪽 인용 근거 패널(D24 A안 — 패널은 ProposalStep 이 쥔다) ──
+// 칩은 저장된 문단에서만 패널을 연다 — 흐르는 글(liveBlocks)의 칩은 span 그대로다: 절이 끝나면 문단이 다시 나뉘어
+// 문장 번호가 바뀐다. 논문 상세로 떠나는 길은 패널 머리의 [논문 상세 ↗] 가 맡는다(돌아오는 자리는 이 문단)
+function citeKey(pid: string, si: number, eid: string): string {
+  return `${pid}:${si}:${eid}`;
 }
 
-function goDetail(e: MouseEvent, cnts: string, pid: string): void {
-  if (!cnts) return;
-  const at = paraAnchor(props.sectionKey, pid);
-  const item = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]");
-  const spot = item ? spotOf(item, at) : { at, y: null };
-  const url = detailHref(cnts, pid, spot.y);
-  if (e.type === "contextmenu" || !isPlainClick(e)) {
-    (e.currentTarget as HTMLAnchorElement).href = url;
-    return;
-  }
-  e.preventDefault();
-  void leave(url, spot);
+// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호). ProposalStep 은 그 번호의 문장이 지금도 누를 때와 같은
+// 글일 때만 activeCite 를 넘긴다(activeCiteOf — 문단을 고치거나 다시 쓰면 같은 번호가 다른 문장을 가리킨다)
+function isActiveSentence(pid: string, si: number): boolean {
+  return props.activeCite?.pid === pid && props.activeCite.si === si;
+}
+
+// 패널이 그 칩의 논문을 보이는 중인가 — 한 문장에 칩이 둘이면 누른 칩만 펼침
+function isOpenCite(pid: string, si: number, eid: string): boolean {
+  return isActiveSentence(pid, si) && (props.activeCite?.eid ?? eid) === eid;
+}
+
+// quote — 카드에 보이는 인용한 문장. 누르는 순간의 이 절 수치로 [F#] 를 값으로 바꾼다(citedQuote) — 절을 다시 쓰면 같은
+// [F#] 가 다른 값을 가리킬 수 있어 패널이 나중에 만들지 않는다. sentence 는 마커가 든 원문 그대로(대목 고르기·본문 강조가 쓴다)
+function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: string): void {
+  const sec = section.value;
+  const cntsId = sec?.evidence[eid];
+  if (!sec || !cntsId) return;
+  const pick: CitePick = {
+    key: props.sectionKey,
+    pid,
+    si,
+    eid,
+    cntsId,
+    genId: sec.gen_id,
+    sentence,
+    quote: citedQuote(sentence, sec.figures),
+  };
+  emit("cite", pick, e.currentTarget as HTMLElement);
 }
 
 // ── 쓰기·고치기 ──────────────────────────────────────────

@@ -1,7 +1,8 @@
 """research_topics.py — 연구 어시스턴트 주제 단계 API (round06b, spec §5-2·§6-2 '주제', 계약 §6)
 
 조회(TopicsView)·[다른 방향](쓰지 않은 보고서 씨앗으로 카드 2장 더)·[직접 쓰기](사용자 카드, LLM 없음)·
-[직접 고치기](제목·연구 질문만, card.edited)·[고르기](다음 단계로 갈 주제 하나 — phase 를 reading 으로 올린다).
+[직접 고치기](제목·연구 질문만, card.edited)·[고르기](다음 단계로 갈 주제 하나 — phase 를 reading 으로 올린다)·
+[이 키워드로 다시 만들기](06e — 지금 고른 키워드로 고치지 않은 AI 카드를 다시).
 카드 1장 = 생성 1건이다(D8 — 한 번에 여러 장을 시키면 구성이 무너진다). 생성은 06a 디스패처(전역 1건)가 돈다.
 
 06a 라우터(api/research_work.py)의 도우미를 그대로 쓴다 — 잡 id 형식(422)·연구 없음(404)·예시 연구 쓰기(409)·
@@ -17,11 +18,12 @@ from sqlalchemy import case, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.research_work import _get_job, _get_work, _job_uuid, _send_dispatch, _writable
+from api.research_work import _concepts_open, _get_job, _get_work, _job_uuid, _send_dispatch, _writable
 from core.deps import get_db
 from models.research_work import GEN_OPEN_STATUSES, ResearchGeneration, ResearchTopic, ResearchWork
 from services.research.relay import publish_work
 from services.research_work.enqueue import enqueue_generation, lock_key, queued_event
+from services.research_work.keywords import MIN_PICKED_KEYWORDS, keyword_key
 from services.research_work.markers import numbers_outside, soften_claims
 from services.research_work.progress import refresh_progress
 from services.research_work.seeds import corpus_of, pick_seeds, topic_input, used_seed_keys
@@ -37,8 +39,14 @@ TOPIC_NOT_FOUND = "주제가 없습니다"
 CARD_BUSY = "카드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
 NO_CARD_YET = "카드가 아직 없습니다"
 EMPTY_CARD_NEEDS_BOTH = "빈 카드는 제목과 연구 질문을 함께 보내 주세요"
+# 키워드(개념) 생성이 열려 있는 동안의 [다른 방향]·[이 키워드로 다시 만들기] — 그동안 work.concepts 는 비었거나 곧 바뀐다
+KEYWORDS_BUSY = "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
+KEYWORDS_TOO_FEW = f"키워드를 {MIN_PICKED_KEYWORDS}개 이상 고르세요"
+NOTHING_TO_REGENERATE = "다시 만들 AI 카드가 없습니다"
 # [다른 방향] 의 연구별 잠금 대상 — 주제 카드 생성의 target(주제 id 숫자 문자열)과 겹치지 않는 이름
 OTHER_LOCK_TARGET = "other-direction"
+# [이 키워드로 다시 만들기] 의 연구별 잠금 대상 — 같은 까닭으로 주제 id 와 겹치지 않는 이름
+REGENERATE_LOCK_TARGET = "regenerate"
 # [고르기] 의 연구별 잠금 kind — 생성 kind 가 아니라 생성 넣기·[다른 방향]의 잠금과 겹치지 않는다
 PICK_LOCK_KIND = "topic_pick"
 
@@ -81,6 +89,37 @@ def _user_card(title: str, question: str, *, edited: bool) -> dict:
             "gen_id": None}
 
 
+def _added_keywords(keywords: list[str], made_with) -> list[str]:
+    """지금 키워드 가운데 카드를 만들 때(card.keywords) 없던 것. 같은 말 판정은 keyword_key(띄어쓰기·대소문자·전각
+    무시). 비교할 기준이 없으면(06e 전 카드·입력의 keywords 없음·키워드 없이 만든 카드의 빈 목록) 빈 목록이다."""
+    if not isinstance(made_with, list) or not made_with:
+        return []
+    before = {keyword_key(k) for k in made_with if isinstance(k, str)}
+    return [k for k in keywords if keyword_key(k) not in before]
+
+
+def _regenerate_focus(keywords: list[str], card: dict, last_input: dict | None) -> list[str]:
+    """[이 키워드로 다시 만들기]의 input.focus — 지금 키워드 가운데 (가) 카드를 만들 때보다 더한 것과 (나) 앞서 focus 였는데
+    아직 제목에 없는 것. 순서는 지금 키워드 순서다.
+
+    (나)가 없으면 세 번 다 더한 키워드를 놓쳐 무른 검사 카드가 보관된 뒤(그 카드의 keywords 에는 그 키워드가 이미 있다)
+    한 번 더 누를 때 차이가 비어 강조 줄과 엄격한 검사가 빠졌다. 카드에는 card.focus ∩ checks.missing_keywords 가 그것이다.
+    근거 부족 행(card {})은 카드가 없어 그 주제의 마지막 카드 생성 입력(last_input)의 keywords 와 견주고, 그 입력의 focus 는
+    카드가 나오지 않았으니 모두 이어받는다. 기준이 없으면(생성 없음·06e 전 입력) 빈 목록 — 06e 프롬프트·검사 그대로다."""
+    def keys(values) -> set[str]:
+        return {keyword_key(k) for k in (values if isinstance(values, list) else []) if isinstance(k, str)}
+
+    if card:
+        made_with = card.get("keywords")
+        pending = keys(card.get("focus")) & keys((card.get("checks") or {}).get("missing_keywords"))
+    else:
+        last_input = last_input if isinstance(last_input, dict) else {}
+        made_with = last_input.get("keywords")
+        pending = keys(last_input.get("focus"))
+    wanted = keys(_added_keywords(keywords, made_with)) | pending
+    return [k for k in keywords if keyword_key(k) in wanted]
+
+
 async def _get_topic(db: AsyncSession, jid: uuid.UUID, tid: int) -> ResearchTopic:
     topic = await db.get(ResearchTopic, tid)
     if topic is None or topic.work_id != jid:
@@ -120,10 +159,14 @@ async def get_topics(job_id: str, db: AsyncSession = Depends(get_db)):
 @router.post("/api/research/{job_id}/topics/generate")
 async def generate_topics(job_id: str, req: TopicsGenerate, db: AsyncSession = Depends(get_db)):
     """[다른 방향] — 쓰지 않은 보고서 씨앗으로 카드 OTHER_DIRECTION_CARDS 장(origin other, 자리 없음). 연구별
-    잠금이 '쓴 씨앗 읽기 → 주제·생성 넣기' 를 한 줄로 세운다 — 두 번 눌러도 같은 씨앗이 두 장 되지 않는다."""
+    잠금이 '쓴 씨앗 읽기 → 주제·생성 넣기' 를 한 줄로 세운다 — 두 번 눌러도 같은 씨앗이 두 장 되지 않는다.
+    카드 입력에는 지금 고른 키워드(work.concepts)를 싣는다(06e D23). 키워드 생성이 열려 있으면 409 — 끝나기 전의
+    concepts 는 비어 있어 키워드 없는 카드가 된다(06e 정함 29)."""
     jid = _job_uuid(job_id)
     work = await _get_work(db, jid)
     _writable(work)
+    if await _concepts_open(db, jid):
+        raise HTTPException(status_code=409, detail=KEYWORDS_BUSY)
     job = await _get_job(db, jid)
     report = job.report if isinstance(job.report, dict) else {}
     await db.execute(select(func.pg_advisory_xact_lock(lock_key(jid, "topic_card", OTHER_LOCK_TARGET))))
@@ -145,8 +188,10 @@ async def generate_topics(job_id: str, req: TopicsGenerate, db: AsyncSession = D
             .returning(ResearchTopic.id)
         )
         # 방금 만든 주제라 열린 생성이 없다 — enqueue_generation 은 늘 새 id 를 돌려준다
-        gen_id = await enqueue_generation(db, jid, kind="topic_card", target=str(topic_id),
-                                          input=topic_input(job.question, seed, report, topic_id))
+        gen_id = await enqueue_generation(
+            db, jid, kind="topic_card", target=str(topic_id),
+            input=topic_input(job.question, seed, report, topic_id, keywords=list(work.concepts or [])),
+        )
         topic_ids.append(topic_id)
         gen_ids.append(gen_id)
     await db.commit()
@@ -154,6 +199,63 @@ async def generate_topics(job_id: str, req: TopicsGenerate, db: AsyncSession = D
     for topic_id, gen_id in zip(topic_ids, gen_ids):
         await publish_work(jid, "generation", queued_event(gen_id, "topic_card", str(topic_id)))
     return {"topic_ids": topic_ids, "gen_ids": gen_ids}
+
+
+@router.post("/api/research/{job_id}/topics/regenerate")
+async def regenerate_topics(job_id: str, db: AsyncSession = Depends(get_db)):
+    """[이 키워드로 다시 만들기] — 지금 고른 키워드(work.concepts)로 AI 카드를 다시 만든다(06e D23, 정함 15·16).
+
+    대상은 보고서 씨앗 카드(origin report_seed·other) 가운데 후보(candidate)·근거 부족(insufficient)이고 사용자가 고치지
+    않은(card.edited 아님) 것 — 고른 카드(picked)·접은 카드·직접 쓴 카드(origin user)·고친 카드는 그대로 둔다(고른 카드를
+    다시 만들면 목차에 '다시 맞춤 필요'가 붙는다 — §12-11 권고). 카드를 만드는 중인 주제는 건너뛰고 skipped 로 센다
+    (enqueue_generation 이 None — 기존 [다시]와 같은 규칙). 입력은 씨앗과 지금 키워드뿐이고 이전 제목은 주지 않는다
+    (함정 26). 카드를 만들 때보다 더한 키워드와 앞서 더했는데 아직 제목에 없는 키워드는 focus 로 따로 싣는다
+    (_regenerate_focus — 운영 630e0d65 에서 더한 '연구 대상'이 4장 모두 빠졌다). 키워드가 MIN_PICKED_KEYWORDS 개 미만이면 409(선행연구 묶음 수 ≤ 키워드 수 —
+    membership), 키워드 생성이 열려 있으면 409. 연구별 잠금이 '대상 읽기 → 생성 넣기'를 한 줄로 세운다. 넣은 것도 건너뛴 것도 없으면 409."""
+    jid = _job_uuid(job_id)
+    work = await _get_work(db, jid)
+    _writable(work)
+    keywords = list(work.concepts or [])
+    if len(keywords) < MIN_PICKED_KEYWORDS:
+        raise HTTPException(status_code=409, detail=KEYWORDS_TOO_FEW)
+    if await _concepts_open(db, jid):
+        raise HTTPException(status_code=409, detail=KEYWORDS_BUSY)
+    job = await _get_job(db, jid)
+    report = job.report if isinstance(job.report, dict) else {}
+    await db.execute(select(func.pg_advisory_xact_lock(lock_key(jid, "topic_card", REGENERATE_LOCK_TARGET))))
+    rows = (await db.execute(
+        select(ResearchTopic)
+        .where(ResearchTopic.work_id == jid, ResearchTopic.origin.in_(("report_seed", "other")),
+               ResearchTopic.state.in_(("candidate", "insufficient")))
+        .order_by(ResearchTopic.id)
+    )).scalars().all()
+    topic_ids: list[int] = []
+    gen_ids: list[int] = []
+    skipped = 0
+    for row in rows:
+        card = row.card or {}
+        if card.get("edited"):
+            continue
+        last = None if card else await _latest_card_generation(db, jid, row.id)
+        gen_id = await enqueue_generation(
+            db, jid, kind="topic_card", target=str(row.id),
+            input=topic_input(job.question, row.seed or {}, report, row.id, keywords=keywords,
+                              focus=_regenerate_focus(keywords, card, last.input if last is not None else None)),
+        )
+        if gen_id is None:          # 그 카드를 만드는 중이다 — 넣은 행이 없어 되돌릴 것도 없다
+            skipped += 1
+            continue
+        topic_ids.append(row.id)
+        gen_ids.append(gen_id)
+    if not gen_ids and not skipped:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail=NOTHING_TO_REGENERATE)
+    await db.commit()
+    if gen_ids:
+        _send_dispatch()
+    for topic_id, gen_id in zip(topic_ids, gen_ids):
+        await publish_work(jid, "generation", queued_event(gen_id, "topic_card", str(topic_id)))
+    return {"topic_ids": topic_ids, "gen_ids": gen_ids, "skipped": skipped}
 
 
 @router.post("/api/research/{job_id}/topics")

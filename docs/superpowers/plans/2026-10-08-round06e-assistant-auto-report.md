@@ -48,7 +48,7 @@ spec 과 다르게 읽거나 좁힌 것(정함 9·10·22·23·29 — 실제 코�
 
 | # | 정함 | 근거 |
 |---|---|---|
-| 정함 1 | **Q2 기본 = 마지막 단계 이름 '보고서'.** 이름 낱말은 상수 하나 `FINAL_STEP_NAME = "보고서"`(`utils/workPhase.ts`, Task A3)에서 만들고, **상수는 조사가 붙지 않는 꼴에만 쓴다** — 버튼 `[보고서 만들기]`·`[보고서 다시 만들기]`, 진행 막대 `보고서 작성 중 · n/m절`, 단계 제목·`STEP_NAMES`, 이동 버튼 `보고서 단계로`, Word 파일 이름 접두(`보고서_<주제>_<날짜>.docx`)·문서 머리 `보고서 초안 · 원 질문 …`. `${FINAL_STEP_NAME}를`·`${FINAL_STEP_NAME}로` 처럼 조사를 붙여 만드는 문구는 두지 않는다('연구 초안를' 이 된다). 조사가 붙는 문장(확인 창 `보고서를 다시 만들면 …`·ProposalSection 안내·ProposalStep 안내·온보딩 본문)은 글자 그대로 '보고서'를 쓴다. 사용자 답이 '연구 초안'이면 ① 상수 한 줄 ② `grep -rn "보고서[를로가는의은이]" frontend/components/work frontend/utils/workPhase.ts frontend/utils/readingList.ts` 가 내는 문장 가운데 마지막 단계를 가리키는 것(앞에 '딥리서치 '가 붙은 글 — Task R1 이 붙인 `TopicsStep.vue:8`·`OutlineEditor.vue:92`·`CandidateDrawer.vue:7`·`topicDeck.ts` `SEED_KIND_LABEL`·`[id].vue:60` 과 온보딩 ② 본문 — 은 그대로) ③ 그 문자열을 기대하는 테스트를 고친다. '목차'·'딥리서치' 용어는 그대로 | spec §12-10 Q2 '답이 없을 때 = 보고서' |
+| 정함 1 | **Q2 기본 = 마지막 단계 이름 '보고서'.** 이름 낱말은 상수 하나 `FINAL_STEP_NAME = "보고서"`(`utils/workPhase.ts`, Task A3)에서 만들고, **상수는 조사가 붙지 않는 꼴에만 쓴다** — 버튼 `[보고서 만들기]`·`[보고서 다시 만들기]`, 진행 막대 `보고서 작성 중 · n/m절`, 단계 제목·`STEP_NAMES`, 이동 버튼 `보고서 단계로`, Word 파일 이름 접두(`보고서_<주제>_<날짜>.docx`)·문서 머리 `보고서 초안 · 원 질문 …`. `${FINAL_STEP_NAME}를`·`${FINAL_STEP_NAME}로` 처럼 조사를 붙여 만드는 문구는 두지 않는다('연구 초안를' 이 된다). 조사가 붙는 문장(확인 창 `보고서를 다시 만들면 …`·ProposalSection 안내·ProposalStep 안내·온보딩 본문)은 글자 그대로 '보고서'를 쓴다. 사용자 답이 '연구 초안'이면 ① 상수 한 줄 ② `grep -rn "보고서[를로가는의은이]" frontend/components/work frontend/utils/workPhase.ts frontend/utils/readingList.ts` 가 내는 문장 가운데 마지막 단계를 가리키는 것(앞에 '딥리서치 '가 붙은 글 — 최종 리뷰 반영(dev 받기 뒤)에서 화면 표기 상수 `DEEP_RESEARCH`(`utils/brand.ts`, 사용자 결정 2026-10-12 — 'DeepResearch')로 바꿨다. Task R1 이 붙인 `TopicsStep.vue:8`·`OutlineEditor.vue:92`·`CandidateDrawer.vue:7`·`topicDeck.ts` `SEED_KIND_LABEL`·`[id].vue:60` 과 온보딩 ② 본문 — 은 그대로) ③ 그 문자열을 기대하는 테스트를 고친다. '목차'·'딥리서치' 용어는 그대로 | spec §12-10 Q2 '답이 없을 때 = 보고서' |
 | 정함 2 | **Q3 기본 = 범위 S(주제 카드 칩만).** `utils/topicDeck.ts` 의 `evidenceChips` 만 바꾸고 `citeLabel`(`utils/citations.ts:51-56`)·보고서 `CitationChip`·`OutlineEditor`·`ProposalSection`·`paperDetail` 은 그대로 | spec §12-10 Q3 |
 | 정함 3 | **자동 승인은 질문이 있을 때만.** `outline.apply` 는 `question = questions[0]` → 없으면 `topic.question` → 둘 다 비면 `None`(공백을 정리하고 2자 미만은 없는 것으로 본다 — `PUT …/outline` 의 승인 하한 `APPROVE_NEEDS_QUESTION` 2자와 같아야 자동 승인한 목차를 [목차 고치기]로 다시 승인할 때 422 가 나지 않는다, Task A1). 질문이 있으면 `state "approved"`·`approved_at`·`auto: true`, 없으면 06b 처럼 `draft`·`auto: false`(사용자가 질문을 쓰고 승인) — 빈 질문으로 승인하면 이후 PUT 이 `APPROVE_NEEDS_QUESTION` 422 를 낸다 | `research_proposal.py:258-259` |
 | 정함 4 | **[보고서 다시 만들기] 는 이미 쓴 절을 다시 쓰지 않는다.** 새 apply 가 `auto` 를 다시 붙이지만 연쇄의 대상은 '절도 생성 기록도 없는 키'(spec §12-4)라, 이미 쓴 절은 그대로 남고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요' + [이 절 다시 쓰기]) 아직 쓰지 않은 절(새로 생긴 묶음 절과 06b 때 쓰지 않은 기존 키)만 자동으로 쓴다. 확인 창 문구에 이것을 적는다(Task A5 — 두 화면 같은 글, '연구 배경은 그대로 둡니다'와 '연구 질문'은 Task X3) | spec §12-4 '대상'·'목차를 고쳐 다시 승인하면' — 사용자 글을 덮지 않는다 |
@@ -76,7 +76,7 @@ spec 과 다르게 읽거나 좁힌 것(정함 9·10·22·23·29 — 실제 코�
 | 정함 26 | **기록 total 은 따로 센다.** `HistoryRepository.list` 의 반환 모양(2-튜플)은 그대로 두고 `count(session_id, kind) -> int` 를 더해 API 가 둘 다 부른다 — 기존 저장소 테스트를 깨지 않는다. `total` 은 `before` 와 무관한 '지우지 않은 그 kind 전부'의 수 | spec D26·§12-3 |
 | 정함 27 | **PDF 는 보고서 화면이 스스로 인쇄한다.** ProposalStep 이 자기 `useReportExport()` 의 `printPdf` 와 `<ReportPrint v-if="printDoc">` 를 쥔다(`[id].vue:196` 의 ReportPrint 는 06d 영역이라 건드리지 않는다). 문서는 Word 와 같은 `buildProposalDocument`(같은 기본값) | spec §12-4 PDF·§12-5 |
 | 정함 28 | **자동 보고서에도 큰 진행 막대를 둔다(사용자 Q1 답을 06e 보고서 화면에도 적용 — 이 계획의 판단을 사용자가 2026-10-11 확인: "보고서 화면에도 넣으라고 한 것이 맞아").** 사용자 답 "현재 절 작성중에 보여지는 커다란 프로그레스바 필요, 예시 막대는 너무 작음"을 spec 은 06d 딥리서치 진행 화면에만 적었고 §12-3 은 그 막대를 단계 화면(stepMode)에 그리지 않는다. 그런데 06e 자동 보고서도 '절을 차례로 쓰는 중'인 화면이다(§12-8 장면 3) — 이 계획이 06e 에도 넣자고 판단했고 사용자가 그 판단이 맞다고 확인했다. 그래서 보고서 화면 머리 목차 위에 같은 크기 규칙의 막대를 둔다 — 막대 두께 `--wk-bar-thick: 1rem`(768px 이하 0.75rem), 막대 바로 위 큰 글줄(1rem 굵게) `보고서 작성 중 · 3/6절 — 「지금 쓰는 절 이름」`, 오른쪽 끝 퍼센트(1.25rem 굵게), 쓰는 중이면 채움에 `is-running` 움직임(reduced-motion 이면 멈춤). 06d 의 `research.css` 토큰·부품은 import 하지 않고 값만 맞춘다(`work.css` 토큰 — 시각 디자인 담당이 고칠 자리). 단계 칩은 두지 않는다 — 같은 화면 위 WorkStepper 가 단계 표시다. 계산은 순수 함수 `reportBar`(Task A3), 그리기는 Task A5. spec 은 Task Z3 이 맞춘다 — §12-3 오프셋 행의 '단계 화면(`stepMode`)에서는 그리지 않는다'는 06d 막대 이야기이고 06e 보고서 화면은 자기 막대(`.wk-rbar`)를 따로 그린다는 것을 덧붙인다 | 사용자 확인 2026-10-11(하네스 전달), spec §12-3 :542·:543, §12-8 :755 |
-| 정함 29 | **씨앗 카드 '한 번만' 은 씨앗 자리 행마다 판정한다.** `enqueue_seed_cards` 는 `slot is not None and origin == "report_seed"` 인 주제 행마다 그 행 id 를 target 으로 하는 `topic_card` 생성이 (상태 무관) 하나도 없을 때만 그 행에 넣는다 — '그 연구에 topic_card 생성이 하나라도 있으면 []' 로 하면, 개념 생성이 줄을 서는 사이(디스패처 전역 1건 — 여럿이 함께 쓰면 몇 분) [다른 방향]을 누른 연구는 그 origin other 카드 때문에 씨앗 카드 4장이 영영 생기지 않는다. spec §12-4 '그 연구에 topic_card 생성이 한 번도 없을 때만'은 '그 씨앗 자리에 카드 생성이 한 번도 없을 때만'으로 읽는다(완료노트·spec 메모에 범위를 적는다). 그와 함께 **[다른 방향]은 개념(키워드) 생성이 열려 있으면 409 `KEYWORDS_BUSY`**(Task K4 — [이 키워드로 다시 만들기]와 같은 규칙) — 비어 있는 `work.concepts` 를 키워드로 넘긴 카드를 만들지 않는다 | `research_topics.py:120-156`(개념 생성 검사 없음), `research_work.py:123-129` `_concepts_open` |
+| 정함 29 | **씨앗 카드 '한 번만' 은 씨앗 자리 행마다 판정한다.** `enqueue_seed_cards` 는 `slot is not None and origin == "report_seed"` 인 주제 행마다 그 행 id 를 target 으로 하는 `topic_card` 생성이 (상태 무관) 하나도 없고 카드가 비어 있을 때만 그 행에 넣는다(카드가 있는 자리 — 이어가기와 카드 생성 사이에 [직접 고치기]가 만든 사용자 카드 — 는 건너뛴다, 파트 K 메모 24) — '그 연구에 topic_card 생성이 하나라도 있으면 []' 로 하면, 개념 생성이 줄을 서는 사이(디스패처 전역 1건 — 여럿이 함께 쓰면 몇 분) [다른 방향]을 누른 연구는 그 origin other 카드 때문에 씨앗 카드 4장이 영영 생기지 않는다. spec §12-4 '그 연구에 topic_card 생성이 한 번도 없을 때만'은 '그 씨앗 자리에 카드 생성이 한 번도 없을 때만'으로 읽는다(완료노트·spec 메모에 범위를 적는다). 그와 함께 **[다른 방향]은 개념(키워드) 생성이 열려 있으면 409 `KEYWORDS_BUSY`**(Task K4 — [이 키워드로 다시 만들기]와 같은 규칙) — 비어 있는 `work.concepts` 를 키워드로 넘긴 카드를 만들지 않는다 | `research_topics.py:120-156`(개념 생성 검사 없음), `research_work.py:123-129` `_concepts_open` |
 | 정함 30 | **딥리드 패널 LNB 접기 계약(06d 계획과 같은 문장):** "06e 는 ReadingStep·ProposalStep 의 emit `panel: [open: boolean]` 과 `[id].vue:73-74` 의 리스너 `@panel="workPanelOpen = $event"`, script 의 `const workPanelOpen = ref(false);`(`:514` 뒤)까지 단다. `AppSidebar :collapsed="workPanelOpen"` 와 루트 `is-lnb-collapsed`(`[id].vue:3-7` 두 곳)는 늦게 머지하는 줄이 단다 — 06d 가 늦으면 06d 계획의 LNB 접기 연결 Task 가, 06e 가 늦으면 이 계획의 Task R6 이 이 두 곳만 고친다. 06d 의 그 Task 는 리스너·새 ref·`watch(step)` 를 넣지 않고 `workPanelOpen` 을 읽기만 한다." 단계를 옮기면 ReadingStep·ProposalStep 이 내려가며 `onBeforeUnmount` 에서 `panel` false 를 내므로 `watch(step)` 가 필요 없다 | 계획 비평 — 06d 쪽 처음 안(`deepPanelOpen`·`@<06e emit>`·`watch(step)`)과 겹치면 같은 요소에 `@panel` 이 두 번(Vue 컴파일 오류 Duplicate attribute), spec §12-5 :689 |
 | 정함 31 | **딥리드의 참고문헌 질문이 끊기는 기존 버그를 06e 에서 고친다 — Task S2(계획 검토에서 정함. 사용자가 빼라면 S2 의 함수·`:118` 갈음·테스트를 빼고 S2 의 백엔드 +6 을 +5 로 되돌린다).** `services/chat/book_chat.py:117-118` 은 참고문헌 의도(`_REF_INTENT_KEYWORDS` `:19-22` — '참고문헌'·'인용'·'출처'·'reference' 등)일 때 `(book.extra or {}).get("references", [])` 를 읽는데, 엔드포인트가 넘기는 `book` 은 `BookRepository.get_by_cnts_id` 가 돌려준 `BookOut`(`app/api/book.py:647-651`)이라 `extra` 가 없다 — `AttributeError` 로 스트림이 끊기고 화면은 `CHAT_ERROR_TEXT` 를 보인다. `book.extra` 를 읽는 코드는 0b51e68 부터이고 지금은 기존 네 화면(논문 상세·논문 검색 채팅 패널·도서 상세·TopResult)도 같은 길로 끊긴다 — spec §12-4·D24 범위 밖이다. 06e 의 오른쪽 딥리드도 같은 길을 쓰므로 '출처'·'인용'이 든 질문이 끊긴다 — 인용 근거 탭에서 [이 논문과 대화하기]로 넘어가 '출처가 어디야?'처럼 묻는 장면(spec §12-8 장면 3)이 바로 이 길이다. Task S2 가 작은 함수 `_book_references(book)` 로 `BookOut.references`(`schemas/book.py:66-67` — `extra["references"]` 를 노출한다)를 `getattr` 로 읽게 하고(속성이 없거나 None 이면 빈 목록) `:118` 을 그것으로 바꾼다. 테스트 1(`test_book_references_reads_the_book_out_field` — `test_book_chat_prompt.py` 의 대역 fixture 위). 기존 네 화면도 같은 엔드포인트라 함께 고쳐진다. Task Z6 Step 4 에서 참고문헌 의도 질문 하나를 보내 본다 | Task S2 작성 중 발견(`book_chat.py:117-118`·`schemas/book.py:47-73`·`app/api/book.py:645-651`) |
 
@@ -166,7 +166,8 @@ export interface SectionGen { gen_id: number; status: GenStatus }
 export interface SectionSourceExcerpt { chunk_id: string; page_start: number | null; page_end: number | null; text: string }
 export interface SectionSource { cnts_id: string; abstract: string; excerpt: SectionSourceExcerpt | null }
 export type SectionSources = Record<string, SectionSource>;
-export interface CitePick { key: string; pid: string; si: number; eid: string; cntsId: string; genId: number; sentence: string }
+export interface CitePick { key: string; pid: string; si: number; eid: string; cntsId: string; genId: number; sentence: string; quote?: string }
+// quote? — S4 quality 검토 반영(파트 S 메모 13): 카드에 보이는 인용한 문장([E#] 를 빼고 [F#] 를 그 절의 수치 값으로 — citedQuote). sentence 는 마커가 든 원문 그대로
 
 // K7
 export interface KeywordCandidate { text: string; source: "llm" | "paper" | "both"; n: number }
@@ -183,7 +184,7 @@ export interface KeywordCandidate { text: string; source: "llm" | "paper" | "bot
 | `utils/workPhase.ts` | `FINAL_STEP_NAME = "보고서"`, `MAKE_REPORT = \`${FINAL_STEP_NAME} 만들기\``, `REMAKE_REPORT = \`${FINAL_STEP_NAME} 다시 만들기\`` | A3 |
 | `utils/workPhase.ts` | `STEP_NAMES: Readonly<Record<"explore" \| WorkStep, string>>` = `{ explore: "탐색", topics: "제목 고르기", reading: "참고문헌 선택하기", proposal: FINAL_STEP_NAME }`(지금의 비공개 `STEP_LABEL` 을 이것으로 갈음 — 06d 사이드바가 읽을 수 있게 내보냄), `ONBOARDING_LEAD: string`, `stepLine(phase)` 시그니처 그대로 | R1 |
 | `utils/proposalView.ts` | `sectionKeysOf(p: ProposalView): string[]`(목차 묶음 순서 → "gap" — `proposalDocument.printedKeys` 는 이것을 부른다), `autoChainOn(p: ProposalView \| null, work: WorkView \| null): boolean`, `autoTargets(p: ProposalView): string[]`, `nextAutoSection(p: ProposalView, skip: ReadonlySet<string>): string \| null`, `isNoSectionPapers(err: unknown): boolean`, `interface TocItem { key: string; no: string; label: string; anchor: string; status: SectionStatus \| "text" \| "blank" \| "skipped" }`, `docToc(p: ProposalView, state: WorkState, skipped: ReadonlySet<string>): TocItem[]`(anchor 는 아래 1-7 '문서 자리 id' 표), `interface ReportBar { label: string; done: number; total: number; percent: number; running: boolean }`, `reportBar(p: ProposalView, state: WorkState, skipped: ReadonlySet<string>, stopped = false): ReportBar \| null`(정함 28 — 조사 없는 꼴 `` `${FINAL_STEP_NAME} 작성 중 · ${done}/${total}절 — 「${이름}」` ``. `stopped` 가 참이면(연쇄가 오류로 멈춤) 남은 절을 세지 않아 쓰는 절이 없을 때 null — [이어서 쓰기] 줄만 남는다. 끝난 절 = done·failed·건너뜀·생성 기록이 있는 쓰기 전(취소) 절), `outlineBackground(outline: Outline): string`(`Outline.background` 타입 필드는 X3 이 더하므로 그 전에도 읽게 교차 타입으로 읽는다 — X3 뒤에도 그대로 컴파일된다) | A3 |
-| `utils/proposalView.ts` | `putOnceMore<T>(put: (version: number) => Promise<T>, version: number): Promise<T>` | X3 |
+| `utils/proposalView.ts` | `putOnceMore<T>(put: (version: number, outline: Outline) => Promise<T>, sent: { version: number; outline: Outline }, reread: () => Promise<Pick<ProposalView, "version" \| "outline"> \| null>): Promise<T>`(X3 리뷰 반영 0bc2a92·07ea0fe — 첫 409 `version_conflict` 에 계획서를 다시 읽어 목차가 그대로일 때만 다시 읽은 version·목차로 한 번 더 보내고, 목차가 바뀌었거나 다시 읽기가 실패하면 첫 충돌을 던진다), `proposalReread(get: () => Promise<ProposalView>): () => Promise<ProposalView \| null>`(다시 읽기는 `work.reload` 가 아니라 GET 을 바로 부른다 — 늦은 응답 버리기에 걸리지 않게) | X3 |
 | `utils/proposalView.ts` | `interface ReviewSpots { unmarked: number; numbers: number; first: { key: string; pid: string } \| null }`, `reviewSpots(p: ProposalView): ReviewSpots`, `reviewLine(r: ReviewSpots): string \| null` | X4 |
 | `utils/outlineEdit.ts` | `OUTLINE_BACKGROUND_MAX = 2000`, `fieldPut(outline: Outline, patch: { method?: string; background?: string }): OutlinePut` | X3 |
 | `utils/proposalDocument.ts` | `ProposalDocInput.acceptedOnly: boolean`(← `includeProposed`), `proposalFileName(topicTitle: string, date: Date, acceptedOnly: boolean): string`, `disclosureLines(p: ProposalView, acceptedOnly: boolean, now: Date): string[]`, `printedKeys`·`printedProposedCount` 그대로(이름·의미), `UNREVIEWED_WATERMARK` 삭제 | X5 |
@@ -192,7 +193,7 @@ export interface KeywordCandidate { text: string; source: "llm" | "paper" | "bot
 | `utils/deepRead.ts`(새) | `type DocKind = "book" \| "paper"`, `interface ChatCopy { greeting(title?: string): string; placeholder: string; inputLabel: string; sendLabel: string }`, `chatCopy(kind: DocKind): ChatCopy`, `sourceLabel(src: DeepReadSource): string`, `sourcePdfTarget(cntsId: string, title: string, src: DeepReadSource): OpenPdfPayload` | R3 |
 | `utils/deepRead.ts` | `type PanelTab = "sources" \| "chat"`, `PANEL_SIDE_MIN_PX = 1200`, `PANEL_FULL_MAX_PX = 768`, `type PanelMode = "side" \| "drawer" \| "full"`, `panelMode(width: number): PanelMode`, `interface PanelPaper { cntsId: string; meta: PaperMeta }`, `panelHead(p: PanelPaper): { title: string; byline: string }`, `panelTabs(step: "reading" \| "proposal"): PanelTab[]` | R4 |
 | `utils/readingList.ts` | `firstPathChunk(item: ReadingItem): { label: string; chunk: PathChunk } \| null` | R5 |
-| `utils/citationEvidence.ts`(새) | `NGRAM_N = 2`, `excerptSentences(text: string): string[]`, `ngramOverlap(a: string, b: string, n?: number): number`, `bestExcerptSentence(cited: string, excerpt: string): number \| null`, `excerptParts(excerpt: string, cited: string): { text: string; mark: boolean }[]`, `citationPdfTarget(source: SectionSource, title: string): OpenPdfPayload` | S3 |
+| `utils/citationEvidence.ts`(새) | `NGRAM_N = 2`, `EXCERPT_MATCH_MIN = 0.2`(S3 검토 반영 — 파트 S 메모 12), `excerptSentences(text: string): string[]`, `ngramOverlap(a: string, b: string, n?: number): number`, `citedClaims(sentence: string, eid?: string): string[]`(S3 3차 검토 반영 — 메모 12), `bestExcerptSentence(cited: string, excerpt: string, eid?: string): number \| null`, `excerptParts(excerpt: string, cited: string, eid?: string): { text: string; mark: boolean }[]`(`eid` 는 3차 검토 반영 — 누른 칩의 근거 번호, S4 가 `CitePick.eid` 를 넘긴다), `citationPdfTarget(source: SectionSource, title: string): OpenPdfPayload`, `citedQuote(sentence: string, figures: readonly Figure[]): string`·`type ActiveCite = Pick<CitePick, "key" \| "pid" \| "si" \| "eid">`·`activeCiteOf(pick: CitePick \| null \| undefined, proposal: ProposalView \| null \| undefined): ActiveCite \| null`(S4 quality 검토 반영 — 파트 S 메모 13) | S3·S4 |
 | `utils/topicDeck.ts` | `MIN_PICKED_KEYWORDS = 2`, `type CardStatus` 에 `"blocked"`, `cardStatus(item: TopicItem, concepts?: WorkGeneration \| null): CardStatus`, `keywordSpans(title: string, keywords: readonly string[]): { text: string; mark: boolean }[]`, `keywordsChanged(card: TopicCard, concepts: readonly string[]): boolean`, `keywordWarning(card: TopicCard): string \| null`, `interface KeywordChip { text: string; pressed: boolean; badge: string \| null }`, `keywordChips(candidates: readonly KeywordCandidate[] \| null \| undefined, picked: readonly string[]): KeywordChip[]`, `toggleKeyword(picked: readonly string[], text: string): string[]`, `regenerateProblem(picked: readonly string[]): string \| null`, `aiCardsStale(topics: TopicsView, concepts: readonly string[], conceptsGen?: WorkGeneration \| null): boolean`(다시 만들 AI 자리 — 키워드 생성이 실패해 카드가 없는 씨앗 자리(`blocked`)도 세고 다시 만드는 중인 카드는 세지 않는다), `cardRemakingNote(item: TopicItem): string \| null`(다시 만드는 중인 카드의 '새 키워드로 다시 만드는 중입니다'), `canPick` 은 시그니처 그대로 카드 생성이 열린 카드면 거짓 | K7 |
 | `utils/topicDeck.ts` | `SHORT_TITLE_MAX = 18`(← 비공개 `CHIP_TITLE_CHARS = 12` 를 지움), `chipLabel(meta: PaperMeta \| undefined, cntsId: string): string`, `chipTooltip(meta: PaperMeta \| undefined, cntsId: string): string` | H1 |
 | `composables/useAutoReport.ts`(새) | 아래 1-7 | A4 |
@@ -369,7 +370,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `frontend/utils/workPhase.ts` | A3(`FINAL_STEP_NAME`·버튼 상수) → R1(`STEP_NAMES`·`PHASE_LINE`·`ONBOARDING_*`·`continueCard`) |
 | `frontend/utils/proposalView.ts` | A3(자동 산출 함수·`sectionKeysOf`·`docToc`·`reportBar`) → X3(`putOnceMore`) → X4(`reviewSpots`·`reviewLine`) → X5(`footprintLine`) |
 | `frontend/utils/proposalDocument.ts` | A3(`printedKeys` 본문 한 줄) → X5(나머지 전부) |
-| `frontend/utils/topicDeck.ts` | R1(`SEED_KIND_LABEL` :34·`conceptsNote` 문구) → K7(키워드 함수·`cardStatus`·`cardNote`·`canPick`·`cardRemakingNote`) → H1(`evidenceChips`·칩 표기) |
+| `frontend/utils/topicDeck.ts` | R1(`SEED_KIND_LABEL` :34·`conceptsNote` 문구) → K7(키워드 함수·`cardStatus`·`cardNote`·`canPick`·`cardRemakingNote`) → K8(quality 검토 반영 — 사라지는 버튼의 초점 판정 `chipFocusAfterToggle`·`regenerateFocusMoves`, `toggleKeyword`·`regenerateProblem` 바로 뒤) → H1(`evidenceChips`·칩 표기) |
 | `frontend/utils/readingList.ts` | R1(`outlineHint` 문구) → R5(`firstPathChunk`) |
 | `frontend/utils/deepRead.ts`(새) | R3(만듦 — 문구·출처) → R4(패널 함수) |
 | `frontend/composables/useResearchWork.ts` | S3(`getSectionSources`) → K7(`regenerateTopics`) |
@@ -385,14 +386,14 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `frontend/pages/research/[id].vue` | R1(:60 요약 띠 버튼 글) → R5(:73 `@panel`·script :514 뒤 두 줄) → S4(:74) → R6(조건부 :3-7) |
 | `frontend/assets/css/work.css` | A5 → X3 → X4 → R4 → R5 → S4 → K8(각자 1-8 의 묶음, 표시 줄 위) |
 | `frontend/tests/unit/proposalView.test.ts` | A3 → X3 → X4 → X5 |
-| `frontend/tests/unit/topicDeck.test.ts` | R1(`seedLine` 기대 :194·:198·`conceptsNote` 기대 :305-312) → K7 → H1 → K9(`term_checks.json` 일치 it — 06c 머지 뒤라 H1 보다 늦을 수 있다. 서로 다른 describe 라 순서가 바뀌어도 Edit old 가 겹치지 않는다) |
+| `frontend/tests/unit/topicDeck.test.ts` | R1(`seedLine` 기대 :194·:198·`conceptsNote` 기대 :305-312) → K7 → K8(quality 검토 반영 — import 두 이름·describe `keywordChips·toggleKeyword·regenerateProblem` 뒤 describe 하나) → H1 → K9(`term_checks.json` 일치 it — 06c 머지 뒤라 H1 보다 늦을 수 있다. 서로 다른 describe 라 순서가 바뀌어도 Edit old 가 겹치지 않는다) |
 | `frontend/tests/unit/readingList.test.ts` | R1 → R5 |
 | `frontend/tests/unit/deepRead.test.ts`(새) | R3 → R4 |
 | `frontend/tests/unit/workPhase.test.ts` | A3 → R1 |
 
 **각 Task 의 기대 수(파트 본문 '통과 확인' 의 'Task 앞 + N' — 매개변수는 펼친 수, 통합 사본 실측):**
 - 백엔드: A1 +3 · A2 +2 · X1 +6(목차 반영이 연구 배경을 이어 받는 테스트 1 포함) · X2 +15(그대로 남는 사례 5·CLAIM 삽입 문맥 2 포함) · S1 +10(`test_unknown_key_is_422` 매개변수 셋) · S2 +6(`test_prompts.py` +1 · 새 `test_book_chat_prompt.py` 5 — `_book_references` 1 포함) · K2 +47(새 `test_research_work_keywords.py` 44 · `test_research_work_concepts.py` +3) · K3 +3 · K4 +6 · K5 +10 · K6 +8(`TestApply.test_a_picked_topic_stays_picked` 매개변수 +1 포함) · K9 +14 · H2 +3 = **+133**, 새 테스트 파일 2개(`test_research_work_keywords.py`·`test_book_chat_prompt.py`). K1·R1 은 +0(R1 은 `test_research_work_api.py:510` 의 글자 기대만 ✎), Z1 은 판정이 2 이거나 구분자를 더할 때만 +1 씩.
-- 프론트: A3 +24 · A4 +11 · X3 +8 · X4 +4 · X5 +1(`proposalDocument.test.ts` 18 → 19 — '미수락 문단도 넣기' 두 it 을 하나로 합치고 연구 배경 it·'수락한 문단만'의 검토할 곳 it 을 더한다) · R1 +1 · R2 +10 · R3 +4 · R4 +3 · R5 +3 · S3 +12 · K7 +18(검토 반영의 `canPick`·`cardRemakingNote` it 과 blocked 씨앗 자리 `aiCardsStale` it 포함) · H1 +2 · K9 +9(06c `term_checks.json` 의 contains 사례 — 처음부터 통과) = **+110**, 새 테스트 파일 5개(`useAutoReport`·`deepReadSse`·`useDeepReadChat`·`deepRead`·`citationEvidence`) — `Test Files` 40 → 45. A5·X5 의 화면 몫·R6·S4·K8·H3 은 `.vue` 라 +0.
+- 프론트: A3 +24 · A4 +11 · X3 +8 · X4 +4 · X5 +1(`proposalDocument.test.ts` 18 → 19 — '미수락 문단도 넣기' 두 it 을 하나로 합치고 연구 배경 it·'수락한 문단만'의 검토할 곳 it 을 더한다) · R1 +1 · R2 +10 · R3 +4 · R4 +3 · R5 +3 · S3 +12 · K7 +18(검토 반영의 `canPick`·`cardRemakingNote` it 과 blocked 씨앗 자리 `aiCardsStale` it 포함) · K8 +4(quality 검토 반영 — 사라지는 버튼의 초점 판정 it, 파트 K 메모 27) · H1 +2 · K9 +9(06c `term_checks.json` 의 contains 사례 — 처음부터 통과) = **+114**, 새 테스트 파일 5개(`useAutoReport`·`deepReadSse`·`useDeepReadChat`·`deepRead`·`citationEvidence`) — `Test Files` 40 → 45. A5·X5·K8 의 화면 몫·R6·S4·H3 은 `.vue` 라 +0.
 
 ---
 
@@ -439,7 +440,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 
 고치지 않는다: `workers/research_work_tasks.py`·`workers/research_tasks.py`(회수기 — `_close` 의 `has_queued` → `send_dispatch` 가 새 카드 생성을 집는다), `services/research/*`, 딥리서치 프롬프트, `alembic/`.
 
-**1회성(`research/`)**: `research/round06e-keyword-candidates/README.md`(목적·판정 규칙·실행 방법·결과 칸)·`measure.py`(읽기 전용 SELECT — 채움률·최근 연구 20건의 채택 논문 키워드 비율·653 원문 표본·연구별 키워드 수) — Task K1, 서버 실행 결과 `out/fill_rate.md` 와 README '결과'는 Task Z1.
+**1회성(`research/`)**: `research/round06e-keyword-candidates/README.md`(목적·판정 규칙·실행 방법·결과 칸)·`measure.py`(읽기 전용 SELECT — 채움률·최근 연구 20건의 채택 논문 키워드 비율·source_format 별 653 구분자 수와 원문 표본·연구별 키워드 수) — Task K1, 서버 실행 결과 `out/fill_rate.md` 와 README '결과'는 Task Z1.
 
 **프론트 — 새 파일** (`frontend/` 기준)
 
@@ -465,7 +466,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `utils/proposalView.ts` | `sectionKeysOf`·`autoChainOn`·`autoTargets`·`nextAutoSection`·`isNoSectionPapers`·`docToc`·`reportBar`(A3), `putOnceMore`(X3), `reviewSpots`·`reviewLine`(X4), `footprintLine` 머리(X5) | A3·X3·X4·X5 |
 | `utils/proposalDocument.ts` | `printedKeys` 가 `sectionKeysOf` 를 부름(A3), `acceptedOnly`·워터마크 없음·2절 연구 배경·부록 상태별 개수·파일 이름(X5) | A3·X5 |
 | `utils/outlineEdit.ts` | `OUTLINE_BACKGROUND_MAX`·`fieldPut` | X3 |
-| `utils/topicDeck.ts` | `SEED_KIND_LABEL`('딥리서치 보고서의 향후 과제')·`conceptsNote` 문구(R1), 키워드 판정 함수·`cardStatus`(`blocked`)·`cardNote`·`canPick`·`cardRemakingNote`(K7), 근거 칩 `chipLabel`·`chipTooltip`·`SHORT_TITLE_MAX`(H1) | R1·K7·H1 |
+| `utils/topicDeck.ts` | `SEED_KIND_LABEL`('딥리서치 보고서의 향후 과제')·`conceptsNote` 문구(R1), 키워드 판정 함수·`cardStatus`(`blocked`)·`cardNote`·`canPick`·`cardRemakingNote`(K7), 사라지는 버튼의 초점 판정 `chipFocusAfterToggle`·`regenerateFocusMoves`(K8 — quality 검토 반영), 근거 칩 `chipLabel`·`chipTooltip`·`SHORT_TITLE_MAX`(H1) | R1·K7·K8·H1 |
 | `utils/readingList.ts` | `outlineHint` 문구(R1), `firstPathChunk`(R5) | R1·R5 |
 | `utils/workEvents.ts` | `RELOAD.concepts` 에 `topics` | K7 |
 | `composables/useResearchWork.ts` | `useWorkApi()` 에 `getSectionSources`(S3)·`regenerateTopics`(K7) | S3·K7 |
@@ -482,7 +483,7 @@ Task 는 파트 영문 접두 + 번호로 부른다(다른 Task 를 부를 때�
 | `pages/research/[id].vue` | `:60` 요약 띠 버튼 글 `[딥리서치 보고서 보기]`(R1), `:73`·`:74` 의 `@open-pdf`·`@panel`, script `workPanelOpen` 두 줄(R5·S4), 루트 `is-lnb-collapsed`·`AppSidebar :collapsed`(R6 — 조건부) | R1·R5·S4·R6 |
 | `pages/papers/index.vue`·`pages/papers/[id].vue` | BookChat 에 `doc-kind="paper"` 한 속성(예외) | R3 |
 | `assets/css/work.css` | 표시 줄 위에 묶음 — `.wk-doc*`·`.wk-rbar*`(A5), `.wk-docfield*`(X3), `.wk-review*`(X4), `.wk-split*`·`.wk-panel*`(R4), `.wk-reading__open` 등(R5), `.wk-cite*`(S4), `.wk-kw*`·`.wk-kwchip*`·`.wk-topic__kw*`(K8) | A5·X3·X4·R4·R5·S4·K8 |
-| 기존 테스트 | `proposalView.test.ts`(A3·X3·X4·X5) · `workPhase.test.ts`(A3·R1) · `outlineEdit.test.ts`(X3) · `proposalDocument.test.ts`(X5) · `readingList.test.ts`(R1·R5) · `topicDeck.test.ts`(R1·K7·H1·K9) · `workEvents.test.ts`(K7) | — |
+| 기존 테스트 | `proposalView.test.ts`(A3·X3·X4·X5) · `workPhase.test.ts`(A3·R1) · `outlineEdit.test.ts`(X3) · `proposalDocument.test.ts`(X5) · `readingList.test.ts`(R1·R5) · `topicDeck.test.ts`(R1·K7·K8·H1·K9) · `workEvents.test.ts`(K7) | — |
 
 고치지 않는다: '실행 전 알아 둘 것'의 '고치지 않는 파일' 목록(특히 `citations.ts`·`citations.test.ts`·`components/research/*`·`EvidenceLedger`·`types/history.ts`·`historyStore.ts`·`term_checks.json`).
 
@@ -6412,7 +6413,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 - **Task R1(단계 이름):** R1 의 마지막 grep('계획서'·'핵심 개념' 등)에서 X5 몫 — `proposalDocument.ts:69`(파일 이름)·`:205`(문서 머리)·`ProposalStep.vue:263`(`console.warn`)·`KIND_LABELS`(지움)는 X5 가 고쳤다. `proposalDocument.ts` 에 남는 '계획서'는 주석 둘(`printedKeys` 위 '계획서 화면의 절 목록'·머리 '연구계획서형 초안')뿐이다. ProposalStep 의 보이는 '계획서'(제목 `:6`·`:19`·`CONFLICT` `:120`)는 R1 몫이다.
 - **Task S4·K·R:** `ProposalSection.vue` 는 X5 뒤 S4 가 인용 칩을 고친다 — X4 가 단 `li` 의 `tabindex="-1"`·sr-only 는 S4 의 자리(`:101-109` 칩·`:349-371` 상세 함수)와 겹치지 않는다. `work.css` 는 X3·X4 가 표시 줄 위에 묶음 둘을 더했다 — R4·R5·S4·K8 은 그 아래(표시 줄 바로 위)에 잇는다.
 - **06c·06d 와는 기대는 것이 없다.** X2 는 06c 의 `terms.py` 를 쓰지 않는다. `work.css` 근거 장부 블록(`:75-166`·`:1215-1220`)·`research.css`·`reportDocument.ts`·`reportDocx.ts`·`ReportPrint.vue` 를 고치지 않는다.
-- **완료노트에 넣을 것:** X2 의 남는 한계(코퍼스 낱말이 앞 문장에만 있는 단정은 못 잡는다), [보고서 다시 만들기]가 방법은 빈칸으로 되돌리지만(D20) 연구 배경은 이어 받는다는 것(X1), 정함 11 의 판단(보이는 '근거 없음' 배지는 넣지 않고 sr-only·머리 줄·부록 수만), D21 로 부록에서 모델·시도 줄을 뺐다는 것(저장은 그대로 — 필요하면 DB 의 `research_generations` 로 본다), 방법 칸이 [목차 고치기] 안과 문서 6절에 둘 있다는 것.
+- **완료노트에 넣을 것:** X2 의 남는 한계(코퍼스 낱말이 앞 문장에만 있는 단정은 못 잡는다, 코퍼스 문장 안의 효과 없음 결과 '차이가 없음을 확인했다'는 공백 후보로 바뀐다), [보고서 다시 만들기]가 방법은 빈칸으로 되돌리지만(D20) 연구 배경은 이어 받는다는 것(X1), 정함 11 의 판단(보이는 '근거 없음' 배지는 넣지 않고 sr-only·머리 줄·부록 수만), D21 로 부록에서 모델·시도 줄을 뺐다는 것(저장은 그대로 — 필요하면 DB 의 `research_generations` 로 본다), 방법 칸이 [목차 고치기] 안과 문서 6절에 둘 있다는 것.
 - **실행자가 확인할 것:** 통합 사본(`da80f23` + A3 대역 + X1~X5)에서 백엔드 연구 어시스턴트 테스트(계획서 API·절 입력·진행·검사·문단 고치기·절·주제 카드·주제 API·모델)와 vitest 전체 `40 files / 744`(검토 반영 4 의 it 하나를 더하면 745)·`nuxi typecheck` 오류 0·`npm run build` 완료(WARN 57줄 — 기준선과 같음, 새 `Duplicated imports` 없음)를 확인했다. 통합 사본의 백엔드 전체 실행은 `scripts/`·`research/`·compose 파일이 없어 그것을 읽는 다른 테스트 파일(`test_build_canary_manifest.py` 등)이 사본에서만 실패했다 — 06e worktree 에서는 기준선대로 '실패 5·오류 1, 세 파일'로 읽는다. ProposalStep 의 A5 자리(2·6절·머리 목차)는 사본에 A5 가 없어 같은 이름의 자리를 흉내 내 typecheck 만 확인했다 — 실제 A5 뒤 Step 5 의 grep 두 개(`<DocField` 2·흐린 안내 0, `wk-review` 1)로 자리를 확인한다.
 
 ## 파트 메모 — 파트 사이 일관성 반영
@@ -9153,7 +9154,7 @@ spec §12-4 '논문을 누르면 오른쪽 딥리드'(제목을 `<button aria-ex
 - **패널 열림 emit(정함 30):** `panel: [open: boolean]` — 열리고 닫힐 때(`panelPaper` 가 있는지) 내고, 단계를 옮겨 이 화면이 내려갈 때 `onBeforeUnmount` 에서 false 를 낸다(그래서 연구 화면은 `watch(step)` 가 필요 없다). `[id].vue` 는 `:73` 에 `@panel="workPanelOpen = $event"`, script `:514`(`const { pdf, closePdf } = pdfOpener;`) 바로 뒤에 `const workPanelOpen = ref(false);`(+ 주석 한 줄)만 단다 — §12-5 의 `:57-75` 밖이지만 리스너가 쓸 변수라 06e 가 넣는 유일한 script 줄이다. `AppSidebar :collapsed` 와 루트 `is-lnb-collapsed`(`:3-7`)는 늦게 머지하는 줄이 단다(Task R6 또는 06d 계획의 조건부 LNB 접기 연결). `ref` 는 이미 import 돼 있다(`:208`).
 - **ReadingStep 템플릿은 통째로 갈음한다** — 루트를 `.wk-split` 으로 감싸면 안쪽이 모두 한 단 들어간다. 아래 '교체 전'은 A5·R1 뒤의 기대 모습이다. A5 가 두 버튼(`{{ REMAKE_REPORT }}`·`{{ MAKE_REPORT }}`)의 글을 다른 꼴로 두었으면 '교체 후'의 같은 두 자리도 A5 의 꼴을 그대로 옮긴다(그 밖은 R1 이 쓴 글이다). 머리 안내에 '제목을 누르면 오른쪽에서 그 논문과 대화할 수 있습니다.' 한 문장을 더한다.
 - **CSS:** `.wk-reading__title` 은 `<a>` 에 쓰던 글자 모양 그대로 버튼에 함께 단다. `.wk-reading__open` 은 버튼 기본 모양(테두리·배경·안쪽 여백·가운데 정렬)만 지운다 — `font: inherit` 를 쓰지 않는다(같은 요소의 `.wk-reading__title` 크기·굵기를 뒤에 오는 규칙이 덮는다, 글꼴 이름은 `.skx-app button` 이 이미 상속시킨다). `a:visited`(전역 `style_skovix.css` — 특이성 0,1,1)가 링크 색을 덮지 않게 `.wk-reading__detail:visited` 를 함께 적는다.
-- `.vue` 는 단위 테스트하지 않는다 — 첫 대목 고르기는 `utils/readingList.firstPathChunk` 로 vitest, 화면은 typecheck·build 와 브라우저 확인 항목(마무리 운영 확인에 넘긴다): 1440px 에서 제목을 누르면 표 옆에 22rem 패널이 서고(LNB 접기는 R6 뒤) 행이 강조된다 · 같은 제목을 다시 누르면 닫히고 초점이 그 제목으로 돌아온다 · 다른 제목을 누르면 패널의 논문·대화가 바뀌고 앞 논문으로 돌아오면 대화가 이어진다 · [담음]이 표의 체크와 함께 바뀐다 · 1100px 에서 오른쪽 서랍(배경을 누르면 닫힘·Tab 이 패널 안에서 돈다)·375px 에서 전체 폭 · 대화 출처 칩의 [원문 보기]·들어온 경로 [원문 보기]가 원문 뷰어를 연다 · 예시 연구는 [담음]이 꺼지고 대화는 된다.
+- `.vue` 는 단위 테스트하지 않는다 — 첫 대목 고르기는 `utils/readingList.firstPathChunk` 로 vitest, 화면은 typecheck·build 와 브라우저 확인 항목(마무리 운영 확인에 넘긴다): 1440px 에서 제목을 누르면 표 옆에 22rem 패널이 서고(LNB 접기는 R6 뒤) 행이 강조된다 · 같은 제목을 다시 누르면 닫히고 초점이 그 제목으로 돌아온다 · 다른 제목을 누르면 패널의 논문·대화가 바뀌고 앞 논문으로 돌아오면 대화가 이어진다 · [담음]이 표의 체크와 함께 바뀐다 · 1100px 에서 오른쪽 서랍(배경을 누르면 닫힘·Tab 이 패널 안에서 돈다) · 1199px 이하(서랍·전체 폭)에서 제목에 초점이 있을 때 입력 칸을 클릭하면 초점이 입력 칸에 머물고(제목으로 되돌아가지 않는다), Tab·Shift+Tab 으로 상세 링크·닫기·출처 칩·입력 칸·보내기 단추를 모두 지나 처음·끝에서 돈다 · 같은 폭에서 출처 칩을 펼친 뒤 Tab 으로 펼친 대목(넘치는 스크롤 영역)·[원문 보기]·뒤 메시지·입력 칸까지 가고, 출처 칩 없는 답이 쌓여 넘친 대화 칸에서도 Tab 으로 입력 칸에 닿는다(처음으로 감기지 않는다) · 질문을 보내 입력 칸·보내기 단추가 잠기면 초점이 제목으로 돌아와 Esc 로 닫힌다·375px 에서 전체 폭 · 대화 출처 칩의 [원문 보기]·들어온 경로 [원문 보기]가 원문 뷰어를 연다 · 예시 연구는 [담음]이 꺼지고 대화는 된다.
 
 **Files:**
 - Modify: `frontend/utils/readingList.ts` (`pathPdfTarget` :136 위에 `firstPathChunk`)
@@ -10638,14 +10639,14 @@ spec §12-4 '하이라이트(제안)' — 본문 쪽은 누른 칩이 든 문장
 
 - **문장 나누기 `excerptSentences(text)`:** 문장 끝(`.`·`!`·`?`·`。`) 뒤 공백에서 나누고(`(?<=[.!?。])\s+`), 앞뒤 공백을 떼고 빈 조각은 버린다. 대목은 원문 글 그대로라 `[E#]` 표기가 없다 — 본문 쪽 `sentenceFlags`(`figureMarkers.ts:47-61` — 마침표 뒤에 붙은 `[E#]` 묶음을 앞 문장으로 센다)와 다른 규칙이 맞다. 고리점 뒤에 공백이 없으면 나누지 않는다(원문의 '…。다음' 은 한 조각).
 - **겹침 `ngramOverlap(a, b, n = NGRAM_N)`:** 두 글을 각각 NFKC → `[E#]`·`[F#]` 표기 빼기(전각 표기도 NFKC 뒤 잡힌다) → 소문자 → 공백·문장부호·기호(`\p{P}`·`\p{S}`) 빼기 한 뒤, 코드포인트 단위 글자 n-gram 의 **서로 다른 것** 집합끼리 교집합 크기를 센다. `NGRAM_N = 2` — 한국어는 조사·어미가 붙어 낱말 단위로는 같은 말이 잘 겹치지 않는다('가족 지지가'·'가족지지는' 이 '가족·족지·지지' 셋을 나눈다). n 보다 짧은 글은 n-gram 이 없어 0 이다.
-- **고르기 `bestExcerptSentence(cited, excerpt)`:** `excerptSentences(excerpt)` 가운데 겹침이 가장 큰 문장의 번호. 같으면 앞 문장, 모두 0 이면 null(번역·요약해 쓴 문장 — 화면은 강조 없이 대목 전체를 보이고 그렇다고 알린다, Task S4).
+- **고르기 `bestExcerptSentence(cited, excerpt)`:** `excerptSentences(excerpt)` 가운데 겹침이 가장 큰 문장의 번호. 같으면 앞 문장, 모두 0 이면 null(번역·요약해 쓴 문장 — 화면은 강조 없이 대목 전체를 보이고 그렇다고 알린다, Task S4). → **S3 quality 검토 반영(계획과 다른 점 — 파트 S 메모 12, 사용자 판단 대기):** 겹친 수 대신 인용 문장을 덮는 정도(논문 상투구·어미 2-gram 은 무게 0, 나머지는 대목 안 IDF 로 무게를 단 2-gram 의 덮는 비율)가 가장 큰 문장이고, 인용 문장이 상투구뿐이거나 그 값이 `EXCERPT_MATCH_MIN = 0.2` 아래면 null 이다. → **3차 검토 반영(근거가 둘 이상인 문장):** 선택 인자 `eid`(누른 칩의 근거 번호)를 받으면 인용 문장 대신 `citedClaims(sentence, eid)` — 그 번호가 든 마커 묶음 앞의 절(앞 마커 묶음이나 문장 머리부터), 묶음에 근거가 둘 이상이면 그 절을 쉼표·이음 어미 뒤에서 나눈 조각까지 — 의 후보마다 덮는 정도를 재어 가장 큰 값을 쓴다(근거가 하나인 문장은 후보가 문장 하나라 같다). `excerptParts` 도 `eid` 를 받아 그대로 넘긴다. 아래 Step 의 코드·테스트는 처음 계획 그대로 두었다 — 실제 코드는 커밋을 본다.
 - **조각 `excerptParts(excerpt, cited)`:** 대목을 문장 경계에서 나누되 사이 공백을 남겨 그대로 이어 붙인다 — 고른 문장만 `mark: true`, 문장 앞뒤 공백은 강조 밖, 이웃한 같은 표시 조각은 하나로 합친다. 조각의 글을 이으면 원문 글자 그대로다(화면이 `<mark>` 로만 감싼다).
 - **원문 열기 `citationPdfTarget(source, title)`:** 대목이 있으면 `citedPdfTarget(cnts, title, [{ page_start: excerpt.page_start ?? 0, page_end: excerpt.page_end ?? excerpt.page_start ?? 0 }])`(`pdfViewer.ts:66-73` — 0부터 센 저장값을 뷰어 쪽으로 +1, 0 은 쪽 없이 열고 대목 이름 '쪽 정보 없음'), 없으면 `{ cntsId, title }`(논문 처음부터). 대목 이름(`passages[0].label` — `pageLabel` 의 'p.6–8')은 Task S4 의 대목 머리가 그대로 쓴다.
 - **타입(뼈대 1-5):** `SectionSourceExcerpt`·`SectionSource`·`SectionSources`·`CitePick` 은 새 인터페이스다(기존 타입에 필드를 더하지 않아 기존 픽스처가 깨지지 않는다). 서버 모양 그대로 snake_case(`cnts_id`·`page_start`), 화면 상태인 `CitePick` 만 camelCase(`cntsId`·`genId` — `OpenPdfPayload` 와 같은 관례).
 - **조회 `getSectionSources(jobId, key, gen)`:** `useWorkApi()` 에 한 줄 — `api<SectionSources>(\`${job(jobId)}/sections/${encodeURIComponent(key)}/sources\`, { query: { gen } })`(`$fetch` 의 query 옵션). 절 키의 점(`prior.g1`)은 그대로 경로에 실린다(`generateSection` 과 같은 인코딩).
 
 **알아 둘 것:**
-- **이름(1-6 계약):** `NGRAM_N`·`excerptSentences`·`ngramOverlap`·`bestExcerptSentence`·`excerptParts`·`citationPdfTarget` 은 이 파일만 내보낸다(Nuxt 자동 import 중복 없음 — dev `da80f23` 에서 `grep -rn "export .*\(NGRAM_N\|excerptSentences\|ngramOverlap\|bestExcerptSentence\|excerptParts\|citationPdfTarget\)" frontend/utils frontend/composables` 빈 출력). 정규식 상수(`SENTENCE_SPLIT`·`SENTENCE_SPLIT_KEEP`·`MARKERS`·`NOISE`)와 도우미 `grams` 는 내보내지 않는다.
+- **이름(1-6 계약):** `NGRAM_N`·`excerptSentences`·`ngramOverlap`·`bestExcerptSentence`·`excerptParts`·`citationPdfTarget` 은 이 파일만 내보낸다(Nuxt 자동 import 중복 없음 — dev `da80f23` 에서 `grep -rn "export .*\(NGRAM_N\|excerptSentences\|ngramOverlap\|bestExcerptSentence\|excerptParts\|citationPdfTarget\)" frontend/utils frontend/composables` 빈 출력). 정규식 상수(`SENTENCE_SPLIT`·`SENTENCE_SPLIT_KEEP`·`MARKERS`·`NOISE`)와 도우미 `grams`, S3 검토 반영의 상투구 목록(`BOILERPLATE`·`BOILERPLATE_GRAMS` — 파트 S 메모 12)은 내보내지 않는다. 3차 검토 반영의 `citedClaims` 는 내보내고(`frontend/` 에 같은 이름 없음 — `grep -rn "export .*citedClaims" frontend/utils frontend/composables frontend/components` 는 이 파일 한 줄), 그 정규식·상수(`CITE_GROUP`·`CITE_ID`·`CLAUSE_SPLIT`·`CLAUSE_EDGE`·`CLAIM_MIN_GRAMS`)와 도우미 `contentGrams` 는 내보내지 않는다.
 - **앞 Task 뒤 기준:** `types/work.ts` 는 A3(`SectionGen`·`Outline.auto`·`ProposalView.section_gens`)·X3(`Outline.background`·`OutlinePut.background`·basis `question`)이 먼저 고친다 — 이 Task 는 그 Task 들이 건드리지 않는 `// ── 요청 본문 ──` 머리 줄(`:257`) 바로 위에 새 타입을 넣는다. `useResearchWork.ts` 는 이 Task 가 06e 에서 처음 고친다(K7 은 뒤 — K7 의 `regenerateTopics` 는 `generateTopics` 바로 뒤에 들어가 이 Task 의 자리(`retryGeneration` 뒤)와 겹치지 않는다).
 - 정규식의 뒤보기(`(?<=…)`)는 이미 화면 코드에 있다(`figureMarkers.ts:20` 의 `NUMBER`) — 같은 브라우저 지원 범위다.
 - 고치는 두 파일(`types/work.ts`·`useResearchWork.ts`)은 CRLF 다 — Edit 도구로 고친다.
@@ -10977,7 +10978,7 @@ spec §12-4 '인용 근거 A안' — 보고서(마지막 단계) 문단의 인�
 
 - **칩(ProposalSection):** 저장된 문단의 칩(06b `:101-109` — 논문 상세로 떠나는 `<a>`)을 `<button type="button" class="wk-psec__cite" :aria-expanded :aria-controls="panelId" :data-cite>` 로 바꾸고, 누르면 `cite` 를 올린다(`CitePick` = 절 키·문단 id·문장 번호 `si`(`sentenceFlags` 순서 — `paragraphViews` 가 이미 나눈 번호)·근거 번호·논문·절의 `gen_id`·그 문장 글 + 누른 요소). 문장 span 에 `wk-psec__sent` 를 달고 `activeCite` 의 문단·문장이면 `is-cited`(본문 쪽 강조). 상세로 떠나는 함수(`detailHref`·`goDetail` 06b `:348-371`)와 그 import(`useDetailLeave`·`detailUrl`·`isPlainClick`·`spotOf`)는 지운다 — 상세 이동은 패널 머리의 [논문 상세 ↗](같은 주소·같은 돌아올 자리)가 맡는다. 흐르는 글(`liveBlocks`, 06b `:32-37`)의 칩은 span 그대로다(정함 24 — 절이 끝나면 문단이 다시 나뉘어 문장 번호가 바뀐다).
 - **패널(ProposalStep):** 루트를 `.wk-split`(R4 의 공용 배치 — ReadingStep 과 같은 규칙)으로 감싸고 `<DeepReadPanel panel-id="wk-panel-proposal" :tabs="panelTabs('proposal')">` 를 늘 그리고 `:paper` 로 열고 닫는다(닫힘 = null — R4 의 패널은 paper 가 null 이면 아무것도 그리지 않는다). 인용 근거 탭(슬롯 `sources`)은 새 `CitationSource`, 딥리드 탭은 패널 안 BookChat(R4 — `doc-kind="paper"`·`:store="chatStore"`·`:pdf-links="true"`). 대목은 `getSectionSources(jobId, key, genId)`(Task S3)로 읽고 `${key}#${genId}` 마다 한 번만 부른다(같은 절의 다른 칩은 캐시). 늦게 온 응답은 순번으로 버린다. 패널이 열리고 닫힐 때 `panel` 을 올리고 내려갈 때(`onBeforeUnmount`) false 를 올린다(정함 30 — 연구 화면의 `workPanelOpen`). [원문 보기](대목·BookChat 출처 칩 모두)는 `open-pdf` 로 올려 연구 화면의 `openPdf` 가 연다.
-- **CitationSource:** 논문 카드(제목·저자 줄 — R4 의 `panelHead`, 그리고 인용한 문장 — `[E#]`·`[F#]` 표기를 뺀 글. 좁은 화면에서는 패널이 본문을 덮어 본문 쪽 강조가 안 보인다), 대목이 있으면 `excerptParts` 를 `<mark class="wk-cite__mark">` 로 감싸 보이고 머리에 대목 이름(`citationPdfTarget` 의 `passages[0].label` — 뷰어와 같은 'p.6–8'), 겹치는 문장이 없으면 그렇다는 한 줄, 대목이 없으면 초록 + '원문 대목을 읽지 못해 초록을 보입니다', 조회 중·오류 줄, [원문 보기](`citationPdfTarget`)·[이 논문과 대화하기](`chat` → 같은 패널을 딥리드 탭으로).
+- **CitationSource:** 논문 카드(제목·저자 줄 — R4 의 `panelHead`, 그리고 인용한 문장 — `[E#]`·`[F#]` 표기를 뺀 글. 좁은 화면에서는 패널이 본문을 덮어 본문 쪽 강조가 안 보인다. → **S4 quality 검토 반영(파트 S 메모 13):** `[F#]` 는 숫자를 대신하는 자리표라 빼면 '소장 논문 [F1]편'이 '소장 논문편'이 된다 — `[E#]` 만 빼고 `[F#]` 는 그 절의 수치 값으로 바꾼 글(`citedQuote` — ProposalSection 이 칩을 누를 때 만들어 `CitePick.quote` 에 싣는다)을 보인다), 대목이 있으면 `excerptParts`(누른 칩의 `eid` 를 셋째 인자로 — S3 3차 검토 반영, 파트 S 메모 12)를 `<mark class="wk-cite__mark">` 로 감싸 보이고 머리에 대목 이름(`citationPdfTarget` 의 `passages[0].label` — 뷰어와 같은 'p.6–8'), 겹치는 문장이 없으면 그렇다는 한 줄, 대목이 없으면 초록 + '원문 대목을 읽지 못해 초록을 보입니다', 조회 중·오류 줄, [원문 보기](`citationPdfTarget`)·[이 논문과 대화하기](`chat` → 같은 패널을 딥리드 탭으로).
 - **화면 판단은 Task S3 의 순수 함수**(`excerptParts`·`citationPdfTarget`)와 R4 의 `panelTabs`·`panelHead` 를 쓴다 — 이 Task 는 `.vue` 만 고친다(단위 테스트 없음 — typecheck·build·vitest 전체 그대로).
 
 **알아 둘 것:**
@@ -10987,12 +10988,12 @@ spec §12-4 '인용 근거 A안' — 보고서(마지막 단계) 문단의 인�
 - **들여쓰기:** ProposalStep 은 루트 `<section class="wk-proposal">` 을 `<div class="wk-split">` 로 감싸되 **안의 줄 들여쓰기를 옮기지 않는다** — 감싸개 여는·닫는 줄과 `<section>` 여는·닫는 줄이 같은 두 칸에 선다. 화면 전체 들여쓰기를 옮기면 diff 가 파일 전체가 되고, 뒤의 H3(PDF)가 잡는 old(내보내기 카드의 버튼 줄)가 어긋난다.
 - **`jobId` prop:** ProposalSection 의 `jobId` 는 상세 링크(`detailHref`)만 썼다 — 그 함수를 지우며 prop 도 지우고, ProposalStep 의 `:job-id="jobId"` 줄을 새 바인딩 셋(`:active-cite`·`:panel-id`·`@cite`)으로 갈음한다(뼈대 1-7 은 ProposalSection props 를 '더함'만 적었다 — 파트 메모 4).
 - **`activeCite` 에 `eid?` 를 더한다:** 뼈대 1-7 의 `{ pid: string; si: number } | null` 만으로는 한 문장에 칩이 둘(`[E1][E2]`)일 때 둘 다 펼침(`aria-expanded="true"`)이 된다 — 누른 칩만 펼침이 되게 선택 필드 `eid?` 를 더한다(파트 메모 3). ProposalStep 은 절 키가 같은 ProposalSection 에만 넘긴다(`activeCite?.key === key ? activeCite : null`).
-- **본문 강조를 떼는 때:** 절을 다시 써서 그 절의 `gen_id` 가 누른 칩의 `genId` 와 달라지면 같은 문단·문장 번호가 다른 글을 가리킨다 — `activeCite` 를 null 로 두어 강조와 펼침을 뗀다. 패널의 근거는 그대로 둔다(그 문장을 쓸 때의 입력이고, 카드에 인용한 문장이 남아 있다).
-- **토글·초점:** 펼친 칩을 다시 누르면 닫는다(인용 근거 탭일 때 — `aria-expanded` 토글). 닫으면 누른 칩으로 초점을 돌려준다(spec — 닫으면 누른 자리로). 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면(`isConnected` 가 거짓) `#wk-sec-<key> [data-cite="<pid>:<si>:<eid>"]` 로 같은 자리의 칩을, 절을 다시 쓰는 중이라 문단이 없으면 그 절 제목(`wk-sec-title-<key>` — A5 가 `tabindex="-1"` 를 달았다)을 찾는다. 패널 안 초점 가두기·Esc·열릴 때 제목 초점은 R4 의 몫이다.
+- **본문 강조를 떼는 때:** 절을 다시 써서 그 절의 `gen_id` 가 누른 칩의 `genId` 와 달라지면 같은 문단·문장 번호가 다른 글을 가리킨다 — `activeCite` 를 null 로 두어 강조와 펼침을 뗀다. 패널의 근거는 그대로 둔다(그 문장을 쓸 때의 입력이고, 카드에 인용한 문장이 남아 있다). → **S4 quality 검토 반영(파트 S 메모 13):** 절 `gen_id` 를 그대로 두고 같은 문단 id 아래 글을 바꾸는 길(문단 [고치기] 저장·문단 [다시])도 있어, 그 문단의 지금 글을 `sentenceFlags` 로 다시 나눠 같은 번호의 문장이 누를 때의 글(`CitePick.sentence`, 앞뒤 공백 무시)과 같을 때만 둔다 — 판단은 순수 함수 `activeCiteOf(pick, proposal)`(단위 테스트 — 이 Task 의 '단위 테스트 없음'에서 빠진 하나)다.
+- **토글·초점:** 펼친 칩을 다시 누르면 닫는다(인용 근거 탭일 때 — `aria-expanded` 토글). 닫으면 누른 칩으로 초점을 돌려준다(spec — 닫으면 누른 자리로). 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면(`isConnected` 가 거짓) `#wk-sec-<key> [data-cite="<pid>:<si>:<eid>"]` 로 같은 자리의 칩을, 절을 다시 쓰는 중이라 문단이 없으면 그 절 제목(`wk-sec-title-<key>` — A5 가 `tabindex="-1"` 를 달았다)을 찾는다. 패널 안 초점 가두기·Esc·열릴 때 제목 초점은 R4 의 몫이다. → **S4 quality 검토 반영(파트 S 메모 13):** 토글과 초점 복귀도 `activeCite` 를 따른다 — 닫는 것은 지금 펼침인 칩(`activeCite` 와 절·문단·문장·근거 번호가 같은 칩)을 다시 누를 때뿐이고(강조가 떨어진 자리의 칩은 같은 번호여도 새로 연다), 닫을 때 누른 문장이 바뀌었으면(`activeCite` 가 null) 같은 자리의 칩·쥔 칩 요소 대신 그 문단(`[data-anchor="<paraAnchor>"]` — X4 의 `tabindex="-1"`)으로, 문단도 없으면 절 제목으로 간다.
 - **[논문 상세 ↗]:** 패널 머리의 링크(`detailHref`)는 06b 칩 링크와 같은 주소(`detailUrl(cnts, { kind: "research", job, e: null, s: "proposal" }, { at: paraAnchor(key, pid), y })`)다. 높이(`y`)는 누르는 순간에만 잴 수 있어 링크의 `href`(`panelDetailHref`)는 `y: null` 로 그리고, `onDetail` 이 누르는 순간 누른 칩의 문단(`[data-anchor="<paraAnchor>"]` — 칩이 새로 그려졌어도 앵커로 다시 찾는다)의 화면 높이를 `spotOf` 로 재어 **그 자리를 실은 주소**로 떠난다(06b `goDetail` 의 `detailHref(cnts, pid, spot.y)` 후 `leave(url, spot)` 와 같다). 상세 화면은 연관 논문으로 넘어갈 때 주소의 자리를 그대로 잇고(`relatedDetailUrl`), router.back() 을 못 쓰는 [돌아가기]는 그 자리로 간다(`backTarget`) — 주소에 높이가 없으면 앵커로만 맞춘다. 그냥 누르면(`isPlainClick`) `leave`, Ctrl·Shift 클릭은 높이를 실은 주소로 `href` 를 갈음해 새 탭에 맡긴다(06b 와 같다). 가운데 버튼·메뉴('새 탭에서 열기')는 R4 의 패널이 `click` 에서만 `detail` 을 올려 링크 그대로(문단 앵커만 — 높이 없음)다. 06b 는 `auxclick`·`contextmenu` 에서도 높이를 찍었는데, 그러려면 R4 부품을 고쳐야 해 이 Task 는 하지 않는다(새 탭의 [돌아가기]는 같은 문단에 맞추되 화면 높이는 기본 자리다).
 - **패널은 늘 그리고 `paper` 로 연다(닫힘 = null):** R4 의 `DeepReadPanel` 은 `<template v-if="paper">` 로 닫힘을 그리고, 열릴 때의 제목 초점을 `watch(() => props.paper !== null)`(즉시 실행 아님)로 옮긴다(06e-R.md R4 Step 5). `v-if` 로 마운트하면 처음부터 paper 가 있어 제목 초점이 빠진다 — R5 의 ReadingStep 처럼 `v-if` 없이 `:paper="panelPaper"`(패널이 닫히면 null)·`:tab="panel?.tab ?? 'sources'"` 를 넘긴다. 열린 채 다른 칩을 누르면 paper 만 바뀌어 초점은 칩에 남는다(R4 의 규칙 — 이어 누를 수 있게).
 - **대화 보관:** `chatStore = new Map<string, DeepReadMessage[]>()` 를 이 단계 화면이 쥔다(정함 20 — 같은 단계 안에서 논문을 오가면 이어지고, 단계를 옮기거나 새로고침하면 비운다). [이 논문과 대화하기]로 바꾼 딥리드 탭은 패널의 `cntsId`(누른 칩의 논문)로 BookChat 을 연다.
-- **[이 논문과 대화하기] 뒤 초점:** 이 버튼은 R4 패널의 인용 근거 탭 본문(`<div v-if="tab === 'sources'">` 의 슬롯) 안에 있다 — 누르면 탭이 chat 으로 바뀌며 본문이 DOM 에서 빠져 초점이 body 로 떨어진다. R4 의 Esc·Tab 가두기는 `<aside @keydown>` 에서만 들으므로 그대로 두면 키보드 사용자가 Esc 로 닫지 못하고 서랍·전체 폭(1200px 미만)에서는 Tab 이 패널 밖으로 빠진다(spec §12-4 '초점 가두기·Esc'). 그래서 `openChat` 이 탭을 바꾼 뒤 `nextTick` 에 딥리드 탭 단추(R4 의 id 규칙 `${panelId}-tab-${t}` — `wk-panel-proposal-tab-chat`)로 초점을 옮긴다(탭 방향키로 옮길 때 R4 `onTabKey` 가 하는 것과 같은 자리).
+- **[이 논문과 대화하기] 뒤 초점:** 이 버튼은 R4 패널의 인용 근거 탭 본문(`<div v-if="tab === 'sources'">` 의 슬롯) 안에 있다 — 누르면 탭이 chat 으로 바뀌며 본문이 DOM 에서 빠져 초점이 body 로 떨어진다. R4 의 Esc 는 `<aside @keydown>` 에서만 듣고 Tab 가두기는 패널 처음·끝 보초가 하므로(body 에서 누른 Tab 은 보초를 거치지 않는다) 그대로 두면 키보드 사용자가 Esc 로 닫지 못하고 서랍·전체 폭(1200px 미만)에서는 Tab 이 패널 밖으로 빠진다(spec §12-4 '초점 가두기·Esc'). 그래서 `openChat` 이 탭을 바꾼 뒤 `nextTick` 에 딥리드 탭 단추(R4 의 id 규칙 `${panelId}-tab-${t}` — `wk-panel-proposal-tab-chat`)로 초점을 옮긴다(탭 방향키로 옮길 때 R4 `onTabKey` 가 하는 것과 같은 자리).
 - **예시 연구:** 패널·대화·[원문 보기]는 모두 읽기라 예시 연구에서도 연다(쓰기 버튼이 없다 — 보고서 단계에는 [담음]이 없다).
 - **바꾸지 않는 것:** `components/research/CitationChip.vue`(딥리서치 보고서 팝오버), `utils/citations.ts`(`citeLabel` — Q3 범위 S), `.wk-psec__cite` 의 모양(색·모서리 — 버튼 기본값만 지운다).
 - 고치는 기존 파일은 모두 CRLF 다 — Edit 도구로 고친다. `[id].vue` 경로의 대괄호는 git 명령에서 따옴표로 감싼다.
@@ -11071,7 +11072,10 @@ new:
 
 ```ts
 import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
+import { citedQuote } from "~/utils/citationEvidence";
 ```
+
+(`citedQuote` import 는 S4 quality 검토 반영 — 파트 S 메모 13. `~/utils/citations` 줄 바로 앞, 알파벳 자리다.)
 
 old:
 
@@ -11173,7 +11177,8 @@ function citeKey(pid: string, si: number, eid: string): string {
   return `${pid}:${si}:${eid}`;
 }
 
-// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호)
+// 누른 칩이 든 문장 — 본문 쪽 강조(sentenceFlags 의 문장 번호). ProposalStep 은 그 번호의 문장이 지금도 누를 때와 같은
+// 글일 때만 activeCite 를 넘긴다(activeCiteOf — 문단을 고치거나 다시 쓰면 같은 번호가 다른 문장을 가리킨다)
 function isActiveSentence(pid: string, si: number): boolean {
   return props.activeCite?.pid === pid && props.activeCite.si === si;
 }
@@ -11183,11 +11188,23 @@ function isOpenCite(pid: string, si: number, eid: string): boolean {
   return isActiveSentence(pid, si) && (props.activeCite?.eid ?? eid) === eid;
 }
 
+// quote — 카드에 보이는 인용한 문장. 누르는 순간의 이 절 수치로 [F#] 를 값으로 바꾼다(citedQuote) — 절을 다시 쓰면 같은
+// [F#] 가 다른 값을 가리킬 수 있어 패널이 나중에 만들지 않는다. sentence 는 마커가 든 원문 그대로(대목 고르기·본문 강조가 쓴다)
 function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: string): void {
   const sec = section.value;
   const cntsId = sec?.evidence[eid];
   if (!sec || !cntsId) return;
-  emit("cite", { key: props.sectionKey, pid, si, eid, cntsId, genId: sec.gen_id, sentence }, e.currentTarget as HTMLElement);
+  const pick: CitePick = {
+    key: props.sectionKey,
+    pid,
+    si,
+    eid,
+    cntsId,
+    genId: sec.gen_id,
+    sentence,
+    quote: citedQuote(sentence, sec.figures),
+  };
+  emit("cite", pick, e.currentTarget as HTMLElement);
 }
 ```
 
@@ -11245,7 +11262,7 @@ Expected: 빈 출력
 import { computed } from "vue";
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, PaperMeta, SectionSource } from "~/types/work";
-import { citationPdfTarget, excerptParts } from "~/utils/citationEvidence";
+import { citationPdfTarget, citedQuote, excerptParts } from "~/utils/citationEvidence";
 import { panelHead } from "~/utils/deepRead";
 
 const props = defineProps<{
@@ -11260,9 +11277,15 @@ const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; chat: [] }>();
 const head = computed(() =>
   props.meta ? panelHead({ cntsId: props.pick.cntsId, meta: props.meta }) : { title: props.pick.cntsId, byline: "" },
 );
-// 인용한 문장 — 좁은 화면에서는 패널이 본문을 덮어 강조한 문장이 보이지 않는다. [E#]·[F#] 표기는 빼고 보인다
-const quote = computed(() => props.pick.sentence.replace(/\s*\[[EF]\d+\]/g, "").trim());
-const parts = computed(() => (props.source?.excerpt ? excerptParts(props.source.excerpt.text, props.pick.sentence) : []));
+// 인용한 문장 — 좁은 화면에서는 패널이 본문을 덮어 강조한 문장이 보이지 않아 이 카드가 그 문장을 읽는 자리다. 본문에 보이는
+// 글 그대로 — [E#] 칩은 빼고 [F#] 는 그 절의 수치 값으로(ProposalSection 이 누를 때 만든 pick.quote, S4 quality 검토 반영 —
+// 파트 S 메모 13). quote 가 없으면 수치 값을 몰라 [F#] 를 표기 그대로 둔다 — 지우면 '소장 논문 [F1]편' 이 '소장 논문편' 이 된다
+const quote = computed(() => props.pick.quote ?? citedQuote(props.pick.sentence, []));
+// 대목 고르기에는 마커가 든 원문(pick.sentence)을 넘긴다 — 받치는 말(citedClaims)을 [E#] 묶음으로 나눈다. 누른 칩의
+// 근거 번호도 넘긴다 — 한 문장에 근거가 둘 이상이면 그 칩이 받치는 말로 고른다(S3 3차 검토 반영 — 파트 S 메모 12)
+const parts = computed(() =>
+  props.source?.excerpt ? excerptParts(props.source.excerpt.text, props.pick.sentence, props.pick.eid) : [],
+);
 // 겹치는 문장이 없으면(번역·요약해 쓴 문장 등) 강조 없이 대목 전체를 보이고 그렇다고 알린다
 const marked = computed(() => parts.value.some((p) => p.mark));
 // 대목이 없으면 논문을 처음부터 연다(citationPdfTarget). 근거 기록을 못 찾았을 때도 같다
@@ -11414,6 +11437,7 @@ import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWo
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { CitePick, OutlinePut, PaperMeta, SectionPut, SectionSources, WorkStep } from "~/types/work";
+import { activeCiteOf, type ActiveCite } from "~/utils/citationEvidence";
 import { panelTabs, type PanelPaper, type PanelTab } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 ```
@@ -11490,13 +11514,10 @@ const panelSource = computed(() => {
   const pick = panel.value?.pick;
   return pick && sources.value ? (sources.value[pick.eid] ?? null) : null;
 });
-// 본문 쪽 강조 — 절을 다시 써서 gen_id 가 바뀌면 같은 문장 번호가 다른 글을 가리키므로 강조를 뗀다(패널의 근거는
-// 그대로 둔다 — 그 문장을 쓸 때의 입력이다)
-const activeCite = computed(() => {
-  const pick = panel.value?.pick;
-  if (!pick || proposal.value?.sections[pick.key]?.gen_id !== pick.genId) return null;
-  return { key: pick.key, pid: pick.pid, si: pick.si, eid: pick.eid };
-});
+// 본문 쪽 강조 — 누른 칩이 든 문장이 지금도 같은 글일 때만 둔다(activeCiteOf). 절을 다시 써 gen_id 가 바뀌었거나, 절
+// gen_id 는 그대로인 문단 [고치기] 저장·문단 [다시]로 그 문단의 글이 바뀌어 같은 문장 번호가 다른 글을 가리키면 강조와
+// 펼침을 뗀다(S4 quality 검토 반영 — 파트 S 메모 13). 패널의 카드·근거는 그대로 둔다 — 그 문장을 쓸 때의 입력이다
+const activeCite = computed(() => activeCiteOf(panel.value?.pick, proposal.value));
 // [논문 상세 ↗] 의 링크 주소 — 높이(y)는 누르는 순간에만 잴 수 있어 링크에는 문단 앵커만 싣는다. 그냥 누르기·Ctrl·Shift
 // 클릭은 onDetail 이 그때 잰 높이를 실은 주소로 갈음하고, 가운데 버튼·메뉴는 이 주소 그대로다
 const panelDetailHref = computed(() => {
@@ -11511,14 +11532,16 @@ watch(
 );
 onBeforeUnmount(() => emit("panel", false));
 
-function samePick(a: CitePick, b: CitePick): boolean {
+function samePick(a: ActiveCite, b: ActiveCite): boolean {
   return a.key === b.key && a.pid === b.pid && a.si === b.si && a.eid === b.eid;
 }
 
 function onCite(pick: CitePick, el: HTMLElement): void {
   const now = panel.value;
-  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글)
-  if (now?.pick && now.tab === "sources" && samePick(now.pick, pick)) {
+  // 펼친 칩을 다시 누르면 닫는다(aria-expanded 토글). 펼침은 activeCite 를 따른다 — 그 사이 문단을 고치거나 다시 써 강조가
+  // 떨어진(펼침이 아닌) 자리의 칩은 같은 문단·문장 번호·근거 번호여도 그 문장으로 새로 연다
+  const open = activeCite.value;
+  if (now?.tab === "sources" && open && samePick(open, pick)) {
     closePanel();
     return;
   }
@@ -11555,26 +11578,37 @@ function setTab(tab: PanelTab): void {
 }
 
 // [이 논문과 대화하기] — 같은 자리를 딥리드 탭으로 바꾼다. 누른 버튼은 인용 근거 탭 본문(v-if)과 함께 사라지므로 초점을
-// 딥리드 탭 단추로 옮긴다 — body 로 떨어지면 패널의 Esc·Tab 가두기(aside 의 keydown)가 듣지 못한다
+// 딥리드 탭 단추로 옮긴다 — body 로 떨어지면 패널의 Esc(aside 의 keydown)·Tab 가두기(처음·끝 보초)가 듣지 못한다
 function openChat(): void {
   setTab("chat");
   void nextTick(() => document.getElementById(`${PANEL_ID}-tab-chat`)?.focus());
 }
 
-// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을, 절을 다시
-// 쓰는 중이라 문단이 없으면 그 절 제목(tabindex -1)을 찾는다
+// 닫으면 누른 칩으로 초점을 돌려준다. 그 사이 보고서를 다시 읽어 칩이 새로 그려졌으면 같은 자리의 칩을 찾는다 — 단 누른
+// 문장이 아직 같은 글일 때만(activeCite). 절을 다시 썼거나 문단을 고치거나 다시 써 그 문장이 바뀌었으면 같은 자리의 칩은
+// (쥔 칩 요소가 다시 쓰여 문서에 남아 있어도) 다른 문장의 칩이라 그 문단(li tabindex -1)으로 간다. 문단도 없으면(지웠거나
+// 절을 다시 쓰는 중) 그 절 제목(tabindex -1)으로 간다
 function closePanel(): void {
   const p = panel.value;
+  // 패널을 비우면 activeCite 도 null 이 된다 — 비우기 전에 잰다
+  const same = activeCite.value !== null;
   panel.value = null;
   if (!p) return;
   void nextTick(() => {
     const pick = p.pick;
-    const again = pick
-      ? (document.querySelector<HTMLElement>(
+    const opener = p.opener?.isConnected ? p.opener : null;
+    if (!pick) {
+      opener?.focus();
+      return;
+    }
+    const chip = same
+      ? (opener ??
+        document.querySelector<HTMLElement>(
           `#${CSS.escape(`wk-sec-${pick.key}`)} [data-cite="${CSS.escape(`${pick.pid}:${pick.si}:${pick.eid}`)}"]`,
-        ) ?? document.getElementById(`wk-sec-title-${pick.key}`))
+        ))
       : null;
-    (p.opener?.isConnected ? p.opener : again)?.focus();
+    const para = document.querySelector<HTMLElement>(`[data-anchor="${CSS.escape(paraAnchor(pick.key, pick.pid))}"]`);
+    (chip ?? para ?? document.getElementById(`wk-sec-title-${pick.key}`))?.focus();
   });
 }
 
@@ -11752,7 +11786,7 @@ Expected: 빈 출력(딥리서치 보고서 팝오버·`citeLabel`·연구 화�
 2. 탭 본문: 논문 제목·저자 줄·인용한 문장(표기 없음), '이 문장을 쓸 때 넘긴 원문 대목 · p.n' 과 대목 안 가장 많이 겹치는 문장의 `<mark>` 강조. 대목이 없는 논문(Milvus 를 못 읽은 논문)은 '원문 대목을 읽지 못해 초록을 보입니다'와 초록.
 3. [원문 보기] → 원문 뷰어가 대목의 쪽(대목 이름과 같은 쪽)에서 열린다. 뷰어를 닫으면 [원문 보기]로 초점이 돌아온다.
 4. [이 논문과 대화하기] → 같은 패널이 딥리드 탭으로 바뀌고 논문 문구('《제목》 논문에 대해 …' — R3)와 논문 프롬프트(S2 — 답이 '이 논문에서는 …'으로 말한다)로 대화한다. 다른 칩의 같은 논문으로 돌아오면 대화가 이어진다(정함 20). 출처 칩 미리보기의 [원문 보기]도 뷰어를 연다. [이 논문과 대화하기]를 키보드(Tab 으로 가서 Enter)로 누르면 초점이 '딥리드' 탭 단추로 가고, 거기서 Esc 로 패널이 닫히며 초점이 누른 칩으로 돌아온다(1200px 미만에서는 Tab 이 패널 밖으로 나가지 않는다). '이 인용 근거가 맞아?'·'이 논문의 참고문헌은?' 처럼 '인용'·'참고문헌'이 든 질문도 끊기지 않고 답이 온다(S2 의 `_book_references`).
-5. Esc·닫기·(1200px 미만) 배경 누르기로 닫히고 초점이 누른 칩으로 돌아온다. 1440px 에서 패널이 열리면 LNB 가 접힌다(R6 또는 06d N8 이 단 뒤 — 정함 30).
+5. Esc·닫기·(1200px 미만) 배경 누르기로 닫히고 초점이 누른 칩으로 돌아온다. 1440px 에서 패널이 열리면 LNB 가 접힌다(R6 또는 06d N8 이 단 뒤 — 정함 30). 1200px 미만에서 인용 근거 본문이 넘치면 Tab 이 '인용 근거' 탭 단추 다음에 그 본문으로 가고(방향키로 스크롤된다) 다시 Tab 이면 처음(상세 링크)으로 감기며, 처음에서 Shift+Tab 이면 그 본문으로 온다.
 6. [논문 상세 ↗] → 상세 주소에 `at=g-<절 키>-<문단 id>`·`y=<숫자>` 가 실리고, [돌아가기]로 오면 누른 칩의 문단이 누를 때와 같은 화면 높이에 온다. 상세에서 연관 논문을 한 번 거친 뒤 [돌아가기]로 와도 같은 높이다(주소의 자리가 이어진다). Ctrl+클릭은 새 탭으로 열리고(새 탭 주소에도 `y=` 가 실린다) 이 화면은 그대로다. 가운데 버튼·메뉴의 '새 탭에서 열기'는 `at=` 만 실린다(높이 없음 — 알아 둘 것).
 7. 쓰는 중인 절(흐르는 글)의 칩은 눌러도 아무것도 하지 않는다(span 그대로). 예시 연구에서도 칩·패널·대화·[원문 보기]가 열린다.
 8. 딥리서치 보고서(이어가지 않은 연구)의 인용칩 팝오버는 지금과 같다.
@@ -11773,12 +11807,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 3. **S4 — `activeCite` 에 선택 필드 `eid?` 를 더했다**(뼈대 1-7 `{ pid: string; si: number } | null`). 한 문장에 칩이 둘(`[E1][E2]`)이면 문단·문장만으로는 두 칩이 함께 펼침(`aria-expanded="true"`)이 된다 — 누른 칩만 펼침이 되게 했다. 본문 강조(문장)는 `pid`·`si` 만 본다. 선택 필드라 뼈대 모양을 넘기는 호출도 그대로 돈다.
 4. **S4 — ProposalSection 의 `jobId` prop 을 지웠다**(뼈대 1-7 은 props 를 '더함'만 적었다). 그 prop 은 지우는 상세 링크(`detailHref`)만 썼다 — 남기면 쓰이지 않는 prop 이 되고, ProposalStep 의 `:job-id="jobId"` 줄을 새 바인딩 셋(`:active-cite`·`:panel-id`·`@cite`)으로 갈음하는 편이 Edit 자리도 하나로 줄어든다.
 5. **S4 — 칩에 `data-cite="<pid>:<si>:<eid>"` 를 달고, 닫을 때 초점 복귀를 그것으로 다시 찾는다.** 뼈대는 '닫으면 opener 로 초점'만 적었다. 패널이 열린 사이 보고서를 다시 읽으면(문단 수락·다른 절 생성 완료) `v-for` 가 칩 요소를 새로 그려 쥔 opener 가 문서에서 빠진다 — 같은 자리의 칩, 그것도 없으면(절을 다시 쓰는 중) 그 절 제목(A5 의 `tabindex="-1"`)으로 돌려준다.
-6. **S4 — 본문 강조는 절의 `gen_id` 가 누른 칩의 `genId` 와 같을 때만 둔다.** 뼈대에 없는 규칙이다. 절을 다시 쓰면 같은 문단 id·문장 번호가 다른 글을 가리켜 엉뚱한 문장이 강조되므로 강조·펼침을 뗀다. 패널의 근거는 그 문장을 쓸 때의 입력이라 그대로 둔다.
-7. **S4 — CitationSource 카드에 인용한 문장(`[E#]`·`[F#]` 표기를 뺀 글)을 더 보인다.** 뼈대는 '논문 카드(제목·byline)'였다. 1200px 미만 서랍·768px 이하 전체 폭에서는 패널이 본문을 덮어 본문 쪽 강조(`is-cited`)가 보이지 않는다 — 대목 강조가 무엇과 겹친 것인지 패널 안에서 읽히게 했다. 근거 기록을 못 찾은 칩(응답에 그 번호가 없음)도 [원문 보기]는 논문 처음부터 열고 한 줄로 알린다.
+6. **S4 — 본문 강조는 절의 `gen_id` 가 누른 칩의 `genId` 와 같을 때만 둔다.** 뼈대에 없는 규칙이다. 절을 다시 쓰면 같은 문단 id·문장 번호가 다른 글을 가리켜 엉뚱한 문장이 강조되므로 강조·펼침을 뗀다. 패널의 근거는 그 문장을 쓸 때의 입력이라 그대로 둔다. → 이 조건만으로는 모자랐다 — 메모 13 ②(그 문장의 지금 글도 견준다).
+7. **S4 — CitationSource 카드에 인용한 문장(`[E#]`·`[F#]` 표기를 뺀 글)을 더 보인다.** 뼈대는 '논문 카드(제목·byline)'였다. 1200px 미만 서랍·768px 이하 전체 폭에서는 패널이 본문을 덮어 본문 쪽 강조(`is-cited`)가 보이지 않는다 — 대목 강조가 무엇과 겹친 것인지 패널 안에서 읽히게 했다. 근거 기록을 못 찾은 칩(응답에 그 번호가 없음)도 [원문 보기]는 논문 처음부터 열고 한 줄로 알린다. → `[F#]` 를 빼면 수치가 사라져 뜻이 바뀌었다 — 메모 13 ①(`[F#]` 는 그 절의 수치 값으로).
 8. **S4 — 펼친 칩을 다시 누르면 패널을 닫는다(토글).** 뼈대는 여는 동작만 적었다 — `aria-expanded` 를 단 버튼은 다시 누르면 접히는 것이 관례라 인용 근거 탭일 때 닫는다(딥리드 탭으로 바꾼 뒤 같은 칩을 누르면 인용 근거 탭으로 돌아간다).
 9. **S4 — CSS 묶음에 1-8 의 이름 밖 선택자를 더했다:** `button.wk-psec__cite`(버튼 기본값 지우기·펼침·초점 모양 — `.wk-psec__cite` 의 모양은 그대로), `.wk-cite__title`·`__byline`·`__quote`·`__heading`·`__text`, `@media (forced-colors: active)`(고대비에서 배경 강조가 사라지면 테두리로). 모두 `wk-cite` 묶음 안이라 다른 Task 의 이름과 겹치지 않는다.
 10. **S4 — ProposalStep 의 안쪽 줄 들여쓰기를 옮기지 않는다.** 루트를 `.wk-split` 로 감싸면서 안쪽 화면 전체를 두 칸 들이면 diff 가 파일 전체가 되고 H3 가 잡는 old(내보내기 카드의 버튼 줄)가 어긋난다 — 감싸개와 `<section>` 이 같은 두 칸에 선다. H3 는 이미 'S4 뒤 루트 `.wk-split` 의 마지막 자식으로 `ReportPrint`'를 적었다(06e-H.md) — 패널 다음 자리가 된다.
 11. **S2 — 딥리드의 참고문헌 질문이 끊기는 기존 버그를 고친다(검토 반영 — 처음에는 '발견(고치지 않음)'이었다).** `book_chat.py:117-118` 은 참고문헌 의도('참고문헌'·'인용'·'출처' 등 — 부분 문자열)일 때 `(book.extra or {}).get("references", [])` 를 읽는데, 넘어오는 `book` 은 `BookOut` 이라 `extra` 가 없다(`schemas/book.py` — 대신 `references: list[str]` 이 `extra["references"]` 를 싣는다) — `AttributeError: 'BookOut' object has no attribute 'extra'` 로 스트림이 끊긴다(0b51e68 부터). 06e 의 인용 근거 탭 → [이 논문과 대화하기] 장면(spec §12-8 장면 3)에서는 '이 인용 근거가 맞아?'·'출처가 어디야?' 같은 첫 질문이 바로 이 길이라, 뼈대 범위 밖이어도 S2 에 함께 넣었다 — `_book_references(book)`(`getattr` 로 `references` — 속성이 없거나 None 이면 빈 목록)와 테스트 1(백엔드 +1). 계획 머리의 정함 31(06e-frame.md — '고치지 않는다(기본값)'·Z6 은 참고문헌 의도 낱말을 넣지 않는다·완료노트 두 갈래)은 '고친다 — Task S2' 로 맞춰야 한다. 사용자가 고치지 말라면 S2 의 `_book_references`·`:118` 갈음·그 테스트를 빼고 기대 수를 되돌린다(`test_book_chat_prompt.py` 4 · Step 2 `4 failed, 10 passed` · Step 4 `14 passed`·`198 passed` · 전체 `+5`).
+12. **S3 — 대목 문장 고르기를 '겹친 2-gram 수가 가장 큰 문장(모두 0 이면 null)'에서 '인용 문장을 덮는 정도가 가장 큰 문장(하한 아래면 null)'으로 바꿨다(quality 검토 반영 — spec §12-4 '제안'의 설계라 사용자 판단 대기).** 뼈대의 겹친 수는 하한도 정규화도 없어, 한국어 대목에서는 어미·흔한 낱말 2-gram('였다'·'하였'·'연구'·'이다')이 거의 늘 겹쳐 null 갈래가 사실상 타지 않았다 — 인용 문장 '선행 연구들은 사회적 자본이 지역 공동체의 회복력에 기여한다고 보고하였다'를 대목 '본 연구는 2019년 전국 패널 자료를 이용하였다. …'와 견주면 무관한 첫 문장이 '연구'·'하였'·'였다' 셋으로 강조되어, S4 가 그 문장을 '이 문장을 쓸 때 넘긴 원문 대목'의 근거처럼 `<mark>` 로 보이고 '겹치는 대목 문장을 찾지 못했습니다' 줄은 나오지 않았다(spec '인용이라는 말을 정확히 쓴다' — 뒷받침을 넘겨 말하지 않는다 — 와 어긋남). 흔한 말을 많이 품은 긴 문장으로도 쏠렸다. 이제 덮는 정도 = 인용 문장 2-gram 가운데 그 문장에도 있는 것의 무게 합 ÷ 인용 문장 2-gram 의 무게 합(0~1), 무게 = 대목 안 IDF `ln((대목 문장 수 + 1) ÷ 그 2-gram 이 나오는 대목 문장 수(대목에 없으면 1))` 이다 — 여러 문장에 두루 나오는 어미·흔한 낱말은 가볍고, 대목이 한 문장이면 그냥 덮는 비율이다. 가장 큰 값이 `EXCERPT_MATCH_MIN = 0.2`(새로 내보내는 이름 — 1-6 에 더함, `frontend/` 에 같은 이름 없음) 아래면 null. → **2차 검토 반영(상투구 무게 0):** 위 '합성 대목 다섯·인용 문장 열다섯으로 맞는 문장 0.26~0.77·무관 0.11 이하'는 상투구가 대목 안에서 되풀이되거나 인용 문장이 긴 예에서만 맞았다. 무게를 대목 하나(4~8문장) 안에서만 세므로 대목에 한 번만 나오는 학술 상투구('것으로 나타났다'·'을 대상으로'·'에 미치는 영향을 분석하였다'·'유의하게')가 오히려 가장 무거운 무게(df=1)를 받아, 내용이 무관한 짧은 인용 문장이 하한을 넉넉히 넘었다 — 대목 '이 연구는 대학생 500명을 대상으로 학업 스트레스가 수면의 질에 미치는 영향을 분석하였다. 구조방정식 모형을 적용한 결과 학업 스트레스는 수면의 질을 유의하게 낮추는 것으로 나타났다. …'에 '노인의 신체활동은 인지 기능 저하를 늦추는 것으로 나타났다' 0.321, '기업의 사회적 책임 활동은 고객 충성도를 유의하게 높이는 것으로 나타났다' 0.324, '중학생을 대상으로 한 연구에서 부모의 양육 태도가 자아존중감에 미치는 영향을 분석하였다' 0.44 로 셋 다 강조되었고, 맞는 문장이 0.18~0.30 에 머무는 경우도 있어 하한이 두 무리를 가르지 못했다(가장 흔한 한국어 논문 문형에서 S4 가 무관한 문장을 '넘긴 원문 대목'의 근거로 보였을 것이다). '어미·흔한 낱말만 겹치는 무관 문장' 테스트도 IDF 덕분이 아니라 그 인용 문장이 길어서(2-gram 약 33개 가운데 3개만 겹침) 통과했다. 그래서 상투구·어미 목록(`BOILERPLATE` — '는 것으로 나타났다'·'것으로 확인되었다' 등 결과 서술, '을 대상으로 한'·'에 미치는 영향을 분석하였다'·'영향을 미치지 않았다', '유의하게'·'본 연구는'·'연구 결과'·'분석 결과', '보고하였다'·'확인되었다' 등, '하였다'·'었다'·'았다'·'에서'·'에 따른' 같은 어미·조사 — 띄어쓰기를 뺀 이어진 2-gram 까지)의 2-gram 은 무게 0 으로 두고(분자·분모 모두에서 빠진다 — 인용 문장이 상투구뿐이면 null), 나머지는 그대로 대목 안 IDF 다. 내용을 가리키는 말('관계'·'효과'·'매개'·'차이')은 넣지 않았다. IDF 범위를 절 응답 전체 대목으로 넓히는 것만으로는 무관 문장이 0.21~0.36 으로 모자랐다(검토자 계산). 초록 꼴 대목 다섯·인용 문장 서른셋(무관 14·맞는 19)으로 다시 재면 무관은 0.13 이하(바꾸기 전 14개 가운데 9개가 0.26~0.46 으로 강조), 맞는 문장은 0.24~0.83(바꾸기 전 하나가 0.18 로 놓침)이다 — 운영 대목으로 재지 않았으므로 Z6 Step 6 에서 무관 문장 강조와 '찾지 못했습니다' 줄의 빈도를 함께 보고, 상투구 목록에 없는 문형('~로 드러났다' 등)으로 무관 문장이 강조되면 목록에 더하거나 하한을 올리고, '찾지 못했습니다' 줄이 잦으면 하한을 낮출지 본다. **남는 한계(사용자 판단 몫):** 글자 2-gram 겹침은 뜻을 보지 않는다 — 같은 주제어를 나누되 결론이 반대인 문장('우울을 낮췄다' ↔ '우울과 무관했다')은 그대로 강조된다. 이 한계를 받아들이면 S4 의 대목 머리·강조 설명을 '근거'가 아니라 '인용한 문장과 가장 비슷한 대목 문장' 류로 낮추는 것도 선택지다(지금 S4 는 탭 이름이 '인용 근거', 대목 머리가 '이 문장을 쓸 때 넘긴 원문 대목'이고 `<mark>` 한 문장을 따로 부르는 글은 없다 — 예를 들어 강조 아래에 '인용한 문장과 가장 비슷한 대목 문장을 표시했습니다' 한 줄을 더하는 식). `ngramOverlap`(겹친 수)은 1-6 계약대로 남기되 고르기에는 더 쓰지 않는다. 테스트: '겹친 수가 같으면 앞 문장'의 입력을 무게가 같은 두 문장('노인 복지. 우울 증상.')으로 바꾸고(옛 입력은 '여러 문장에 나오는 말보다 한 문장에만 나오는 말을 무겁게' 테스트로 남김), 하한·어미만 겹치는 무관 문장 → null·흔한 말을 더 많이 나누는 긴 문장보다 짧은 정답·`excerptParts` 의 무관 대목 → 표시 없음을 더해 citationEvidence 12 → 16. 2차 검토 반영으로 대목에 한 번만 나오는 상투구만 겹치는 짧은 무관 문장 → null(위 반례 셋과 독거노인 대목·패널 대목의 반례 둘)·상투구로만 된 인용 문장 → null·상투구가 섞인 맞는 인용 문장은 그대로 고름(다섯)을 더하고 `excerptParts` 의 무관 대목 → 표시 없음에 상투구 반례 하나를 더해 16 → 19. → **3차 검토 반영(근거가 둘 이상인 문장):** 덮는 정도의 분모가 칩이 든 문장 전체라, 근거가 둘 이상인 문장 — 절 프롬프트가 '문장마다 그 문장을 받치는 근거를 [E#] 표기로'(`research_section_prior.yaml`·`research_section_gap.yaml`) 붙이게 하고 백엔드 픽스처에도 나오는 꼴(`test_research_work_section.py` 의 '[E2] [E7]'·`test_research_proposal_api.py` 의 '[E2] [E9]') — 은 다른 논문 몫의 말이 분모를 키워 논문마다 덮는 정도가 하한 아래로 갈라졌다: '가족 지지는 노인의 우울을 낮추고, 학업 스트레스는 대학생의 수면의 질을 떨어뜨린다 [E1][E2].'는 E1(독거노인 대목)의 맞는 문장이 0.181, '가족과 친구의 지지는 독거노인의 우울을 낮추며 [E1], 대학생에게서는 학업 스트레스가 수면의 질을 낮춘다 [E2].'의 E1 은 0.145 로 null 이었다(잘못된 강조가 아니라 '찾지 못했습니다' 줄로 떨어지는 안전한 쪽 실패지만, 근거를 묶는 선행 연구 절에서는 많은 칩이 강조 없이 나올 수 있었다). 앞 두 차례의 측정 묶음(합성 33개)과 테스트는 모두 근거가 하나인 문장이라 이 갈래를 재지도 고정하지도 않았다. 그래서 `citedClaims(sentence, eid)`(새로 내보내는 이름 — 1-6 에 더함, `frontend/` 에 같은 이름 없음)가 누른 칩의 번호가 받치는 말 후보를 만든다 — 그 번호가 든 마커 묶음(사이에 공백·쉼표·가운뎃점만 있는 [E#] 들 — `[E1][E2]`·`[E1] [E2]`·`[E1], [E2]`. [F#] 는 절을 나누지 않는다) 앞의 절(앞 마커 묶음이나 문장 머리부터 — 같은 번호가 여러 번이면 그 절들을 이은 것과 하나씩), 그리고 묶음에 근거가 둘 이상이면 어느 말이 어느 논문 몫인지 모르므로 그 절을 쉼표·이음 어미('-고'·'-며'·'-면서'·'-지만'·'-으나') 뒤에서 나눈 조각까지다. 상투구 밖 2-gram 이 셋 미만인 후보('선행 연구들 [E1][E2]은 …' 의 '선행 연구들'·머리의 '또한')는 빼고, 남는 것이 없으면(번호가 문장에 없을 때도) 문장 그대로다. `bestExcerptSentence`·`excerptParts` 는 선택 인자 `eid` 를 받아 후보마다 덮는 정도를 재고 가장 큰 값을 그 대목 문장의 값으로 쓴다 — 하한·무게·상투구 목록은 그대로이고, `eid` 가 없거나 근거가 하나인 문장은 후보가 문장 하나라 전과 같다(앞의 합성 33개는 값이 바뀌지 않는다). S4 의 `CitationSource` 는 `excerptParts(…, props.pick.sentence, props.pick.eid)` 로 부른다(S4 의 글·코드 블록을 고쳤다 — 계획과 다른 점). 문장 끝에 몰린 마커를 위해 하한을 근거 수로 나누는 것(0.2 ÷ k)도 재 봤으나 두 근거가 같은 말을 함께 받치는 꼴('노인의 우울은 가족 지지와 친구 지지가 높을수록 낮다 [E1][E2].')에서 무관한 중학생 스마트폰 대목이 '높을수록 … 낮' 만으로 0.150 이 되어 0.1 을 넘었고, 분모에 대목 문장 쪽 덮는 정도를 섞는 것은 짧은 대목 문장이 긴 인용 문장에 쉽게 덮여 택하지 않았다. 합성 측정 — 테스트의 대목 넷(대학생 수면·독거노인·농촌 노인·패널)과 새로 쓴 셋(기업 사회적 책임·유아 놀이·중학생 스마트폰), 근거가 둘 이상인 문장 열(가운데 마커가 있는 넷·끝에 몰린 묶음만 있는 다섯 — 넷은 말을 나눠 받치고 하나는 함께 받친다·같은 번호가 두 번인 하나): 맞는 짝 20개는 문장 전체로 재면 0.130~0.596 이고 8개가 null 이었는데 좁히고 나눈 뒤 0.303~1.0 으로 모두 골랐다(같은 대목에서 연구 목적 문장과 결과 문장이 비슷하게 덮이면 앞의 목적 문장을 고르는 일은 그대로다). 주제가 겹치지 않는 대목과의 짝 89개는 전에 0.150 이하였고, 뒤에는 한 절(같은 절에 붙은 칩 둘)이 0.200 으로 하한에 닿았다 — '독거노인에게는 친구 지지의 효과가 남성에서 더 컸다'가 기업 사회적 책임 대목의 '환경 활동의 효과가 기부 활동보다 컸다'와 '의효·효과·과가·컸다' 넷(상투구 밖 20개 가운데)을 나눈다. 같은 글을 근거가 하나인 문장으로 쓰면 좁히기 전 코드도 0.200 으로 강조하므로, 좁히기가 새 문형을 만든 것이 아니라 근거가 하나인 짧은 문장에 이미 있던 한계('효과가 … 컸다'·'높을수록 … 낮았다' 같은 결과 문형은 내용어가 섞여 상투구 목록에 넣지 않았다)가 가운데 마커의 절에도 걸리게 된 것이다 — 하한을 이 한 예에 맞춰 올리지 않았다(위 '무관 0.13 이하'는 근거가 하나인 33개 묶음의 값이고, 이 새 묶음으로는 성립하지 않는다). 남는 한계: 나누는 자리는 쉼표·이음 어미뿐이라 '-고'로 끝나는 명사('최고 ')에서도 나뉘고(조각은 후보를 늘릴 뿐 절 전체도 후보로 남는다), 마커가 주어 뒤에 붙은 꼴은 문장 전체로 잰다. 테스트: `citedClaims` 다섯(번호 없음·가운데 마커의 절·끝에 몰린 묶음의 조각·같은 번호 두 번·짧은 조각과 없는 번호)과 `bestExcerptSentence` 의 근거가 둘 이상인 문장 다섯(가운데 마커 — 번호 없이는 null 이던 것·끝에 몰린 묶음 — 검토 반례 포함·함께 받치는 꼴·무관 대목은 그대로 null·근거가 하나인 문장은 번호를 넘겨도 같다), `excerptParts` 의 번호 넘김 하나를 더해 19 → 30(바꾸기 전 여덟 it 실패 확인 — 함께 받치는 꼴·무관 대목·근거 하나인 세 it 은 지금 동작을 고정한다). 운영 확인 Z6 Step 6 에 여러 [E#] 가 붙은 문장의 칩을 따로 보는 항목을 더했다. 사용자가 뼈대대로 두라면 `bestExcerptSentence` 를 겹친 수로 되돌리고 `EXCERPT_MATCH_MIN`·`BOILERPLATE`·`citedClaims`·`eid` 인자·새 테스트·바꾼 입력과 S4 의 셋째 인자를 되돌린다. 3차 반영만 되돌리려면 `citedClaims`·`eid` 인자·그 테스트 열하나·S4 의 셋째 인자를 빼면 된다(그러면 근거가 둘 이상인 문장의 칩은 위처럼 상당수 '찾지 못했습니다' 줄로 떨어진다).
+13. **S4 — quality 검토 반영 두 가지: 카드의 인용한 문장이 수치를 지우던 것, 본문 강조가 문단을 고치거나 다시 쓴 뒤에도 남던 것.** ① 카드(CitationSource)는 인용한 문장에서 `[E#]`·`[F#]` 를 함께 지웠다(`/\s*\[[EF]\d+\]/g`). 이 시스템에서 `[F#]` 는 숫자를 대신하는 자리표다 — 절 프롬프트가 숫자를 직접 쓰지 말고 `[F#]` 로만 쓰게 하고 화면 칩(FigureChip)·Word 가 그 자리에 `figure.value` 를 그린다(`markers.figure` — '화면 칩·Word 가 [F#] 를 이 값 글자로 바꾼다'). 그래서 '소장 논문 [F1]편 가운데 …[E1].' 이 카드에 '소장 논문편 가운데 …' 로 나왔다(정규식의 `\s*` 가 앞 공백까지 먹는다). 좁은 화면에서는 이 카드가 인용 문장을 읽는 유일한 자리라(메모 7) 뜻이 바뀐 글을 읽게 된다. 이제 새 순수 함수 `citedQuote(sentence, figures)` 가 `[E#]` 만 앞 공백과 함께 빼고 `[F#]` 는 그 절 수치의 값으로 바꾼다(목록에 없는 번호는 본문의 대기 칩처럼 `[F#]` 그대로). ProposalSection 이 칩을 누르는 순간의 그 절 `figures` 로 만들어 `CitePick` 의 새 선택 필드 `quote` 에 싣고(절을 다시 쓰면 같은 `[F#]` 가 다른 값을 가리킬 수 있어 패널이 나중에 만들지 않는다), CitationSource 는 `pick.quote ?? citedQuote(pick.sentence, [])` 를 보인다. 대목 고르기(`excerptParts`)에는 마커가 든 원문 `pick.sentence` 를 그대로 넘긴다(받치는 말을 `[E#]` 묶음으로 나눈다). ② 본문 강조(`activeCite`)를 떼는 조건이 절의 `gen_id` 가 바뀐 때뿐이었다(메모 6). 문단 [고치기] 저장(PUT — `merge_paragraphs` 는 절 `gen_id` 를 그대로 둔다)과 문단 [다시](`paragraph.py` — 같은 pid 에 새 글을 넣고 절 `gen_id` 는 그대로)는 같은 pid 아래 글을 바꾼다 — 2단(1200px 이상)에서 칩을 눌러 근거를 본 뒤 그 문단을 고치거나 다시 쓰면 `(pid, si)` 가 새 글의 다른 문장을 가리키는데 그 문장이 `is-cited` 로 강조되고, 같은 번호의 칩이 그 자리에 있으면 `aria-expanded="true"` 가 되고, 닫을 때 `data-cite` 대체 찾기가 다른 문장의 칩으로 초점을 돌릴 수 있었다(카드에는 옛 문장이 남는다). 이 판단은 `.vue` 안에 있어 테스트도 없었다. 이제 순수 함수 `activeCiteOf(pick, proposal)` 가 절 `gen_id` 에 더해 그 문단의 지금 글을 `sentenceFlags` 로 다시 나눠 같은 번호의 문장이 누를 때의 글(`CitePick.sentence` — 앞뒤 공백만 무시한다: 뒤에 문장을 더하면 끝 공백만 붙는다)과 같을 때만 자리를 돌려준다(문단·절이 없으면 null). ProposalStep 의 `activeCite` 가 이것을 쓰고, 토글(펼친 칩을 다시 누르면 닫기 — 메모 8)은 `activeCite` 와 같은 칩일 때만 닫아 강조가 떨어진 자리의 칩은 새로 열며, 닫을 때 누른 문장이 바뀌었으면 같은 자리의 칩·쥔 칩 요소 대신 그 문단(li `tabindex="-1"`, X4)으로, 문단도 없으면 절 제목으로 초점을 돌린다(메모 5 의 대체 찾기를 좁힌 것). 테스트는 `citedQuote` 셋(수치 값으로 바꿈·여러 근거와 가운데 마커·목록에 없는 번호)과 `activeCiteOf` 여덟(같은 글이면 유지·닫힘·절 다시 쓰기·문단 고침·앞 문장 더해 번호 밀림·문단 다시 쓰기·문단 지움과 절 없음·다른 문장만 고침과 뒤에 문장 더함은 유지)을 citationEvidence 에 더한다(바꾸기 전 열한 it 실패 확인). 1-5 `CitePick.quote?`·1-6 의 두 함수와 `ActiveCite` 타입 줄, S4 의 CitationSource·본문 강조를 떼는 때·토글·초점 글과 코드, 운영 확인 Z6 Step 6 의 3 을 맞췄다. 되돌리려면 두 함수·`ActiveCite`·`CitePick.quote`·새 테스트 열하나를 빼고 S4 의 세 `.vue` 를 이 커밋 전으로 돌린다(그러면 ①②의 증상이 돌아온다).
 
 ---
 
@@ -11803,14 +11839,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 
 **알아 둘 것:**
 - **읽기 전용** — SELECT 만, 트랜잭션을 `SET TRANSACTION READ ONLY` 로 열고 `statement_timeout` 120초. DB 주소는 `core.config` 의 `DATABASE_URL_SYNC`(`postgresql://…` — psycopg2, 앱 이미지 `requirements.txt:13` 에 있다). 뼈대가 적은 `DATABASE_URL` 은 asyncpg URL(`postgresql+asyncpg://`)이라 동기 엔진에 쓸 수 없다(파트 메모).
-- **SQL 이 피할 함정**(README '판정' 칸에도 적는다): 함정 10 — `extra->'keywords'` 가 '비지 않음'은 jsonb `?` 로 세지 않는다(빈 배열이 '있음'으로 든다). `jsonb_typeof(…) = 'array'` 이고 `jsonb_array_length(…) > 0` 일 때만 센다 — 길이는 `CASE` 안에서만 부른다(배열이 아닌 값에 부르면 오류이고 Postgres 는 AND 의 계산 순서를 보장하지 않는다). `keyword` 칼럼은 `keyword IS NOT NULL AND btrim(keyword) <> ''`. 함정 11 — ③ 원문 표본은 `ORDER BY random() LIMIT 20`. ② 의 '최근 20건'은 표본이 아니라 대상의 정의(시연·실사용에 가까운 최근 연구)라 `ORDER BY created_at DESC LIMIT 20` 그대로 두고 README 에 그 뜻을 적는다. `CAST(… AS jsonb)` 로 쓴다(함정 7 — `text()` 안에서 `::` 캐스트를 피한다).
-- 판정: ② ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → 2. ③ 으로 `split_catalog_keywords` 구분자(`[;,]`)를 확인한다. 서버 실행·결과 반영은 마무리(뼈대 §7-1).
+- **SQL 이 피할 함정**(README '판정' 칸에도 적는다): 함정 10 — `extra->'keywords'` 가 '비지 않음'은 jsonb `?` 로 세지 않는다(빈 배열이 '있음'으로 든다). `jsonb_typeof(…) = 'array'` 이고 `jsonb_array_length(…) > 0` 일 때만 센다 — 길이는 `CASE` 안에서만 부른다(배열이 아닌 값에 부르면 오류이고 Postgres 는 AND 의 계산 순서를 보장하지 않는다). `keyword` 칼럼은 `keyword IS NOT NULL AND btrim(keyword) <> ''`. 함정 11 — ③ 원문 표본은 source_format 갈래마다 `row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` 로 10개씩(quality 검토 반영 — 파트 K 메모 23). ② 의 '최근 20건'은 표본이 아니라 대상의 정의(시연·실사용에 가까운 최근 연구)라 `ORDER BY created_at DESC LIMIT 20` 그대로 두고 README 에 그 뜻을 적는다. `CAST(… AS jsonb)` 로 쓴다(함정 7 — `text()` 안에서 `::` 캐스트를 피한다).
+- 판정: ② ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → 2. ③ 으로 `split_catalog_keywords` 구분자(`[;,]`)를 정한다 — keyword 의 구분자는 채운 경로마다 다르다(MARC 로더 ` | ` — `marc_parser.py:118`·`:256`, 적재 보강 `, ` — `stages.py:538-539`). 표본이 아니라 source_format 갈래마다 `|`·`,`·`;` 를 포함한 행을 세어(채택 논문·소장 논문 전체) `|` 행이 있으면 `|` 를 더한다(파트 K 메모 23). 서버 실행·결과 반영은 마무리(뼈대 §7-1).
 - 서버 경로: `research/` 는 앱 이미지에 없다(함정 4) — 폴더를 `/data/nl-lib/data/round06e-keyword-candidates/`(컨테이너 안 `/app/data/…`)로 옮기고 `docker exec -e PYTHONPATH=/app nl-lib-fastapi …`. 개발 PC 에서는 `--dry-run`(SQL 만 찍는다)만 돌린다 — 운영 DB 에 붙지 않는다.
 - pytest 대상이 아니다(1회성). `--dry-run` 출력으로 확인한다.
 
 - [ ] **Step 1: 측정 스크립트를 쓴다**
 
-`research/round06e-keyword-candidates/measure.py` (새 파일, 전체):
+`research/round06e-keyword-candidates/measure.py` (새 파일, 전체 — quality 검토 반영 뒤의 글, 파트 K 메모 23):
 
 ```python
 r"""measure.py — 논문 키워드 채움률 1회성 측정 (round06e Task K1 — spec §12-4 '논문 키워드 채움률은 착수 전에 한 번 잰다')
@@ -11819,12 +11855,24 @@ r"""measure.py — 논문 키워드 채움률 1회성 측정 (round06e Task K1 �
 논문 쪽 원천은 library_catalog.keyword(653 $a — 구분자로 이은 글)와 extra.keywords(적재 enrichment 가 뽑은 배열)다.
 채움률이 낮으면 논문 키워드는 보조로만 둔다 — 2편 이상 겹친 것만 후보에 든다(keywords.PAPER_KEYWORD_MIN_N = 2).
 
+keyword 의 구분자는 어느 경로로 채웠느냐에 따라 다르고, 그것은 코드로 이미 안다:
+  - MARC 로더는 653 $a 를 ' | ' 로 잇는다(app/domains/nl_library/loaders/marc_parser.py:118·256, 함정 6) — source_format
+    'MARC'·'MARC+MODS'. MARC+MODS 는 MARC 값이 MODS 를 덮고(marc_mods_xlsx.py:103) MODS genre 가 thesis·report 면
+    doc_type 'paper'(doc_types.py:38)라 딥리서치(doc_scope="paper" — explorer.py:113)의 채택 논문이 될 수 있다.
+  - 적재 보강은 653 이 빈 논문에 ", ".join(추출 키워드) 를 넣는다(app/services/ingestion/stages.py:538-539).
+    KCI 로더는 keyword 를 채우지 않아(kci_xlsx.py _COL_MAP) KCI 행은 보강 몫뿐이다.
+보강으로 채운 ', ' 행이 많으면 무작위 표본에 ' | ' 행이 하나도 안 나올 수 있다 — 구분자는 표본이 아니라 source_format
+갈래마다 세어서 판정한다(함정 10 의 교훈 — 코드 경로가 있다고 그 데이터가 있는 것은 아니다).
+
 읽기 전용이다 — SELECT 만 하고 트랜잭션을 READ ONLY 로 연다. 출력은 markdown 표(stdout).
   ① 소장 논문 전체(doc_type='paper')의 653 키워드·추출 키워드·둘 중 하나가 있는 비율
   ② 최근 이어간 연구 RECENT_WORKS 건(research_works 최근순)의 채택 논문(research_reading origin evidence) 중
      키워드가 하나라도 있는 비율과 연구별 분포 — 판정의 기준
-  ③ 653 키워드 원문 표본 SAMPLE_SIZE 개(ORDER BY random() — 함정 11) — 구분자 확인용
-  ④ ② 의 연구별로 서로 다른 키워드 수(1편 이상·2편 이상) — 판정이 2 일 때 남는 후보 수를 가늠한다
+  ③ 653 키워드 구분자 — ② 의 채택 논문과 소장 논문 전체에서 source_format 갈래마다 keyword 가 있는 행 수와 그중
+     '|'·','·';' 를 포함한 행 수. '|' 행이 있으면 split_catalog_keywords 에 '|' 를 더한다(구분자 판정 줄 — Task Z1 Step 5).
+     그리고 653 키워드 원문 표본 — 갈래마다 SAMPLE_PER_FORMAT 개(row_number() OVER (PARTITION BY source_format
+     ORDER BY random()) — 함정 11, 한 갈래가 많아도 다른 갈래가 빠지지 않는다) — 그 밖의 구분자(예: '/')를 눈으로 본다
+  ④ ② 의 연구별로 서로 다른 키워드 수(1편 이상·2편 이상, ';'·','·'|' 로 나눈다) — 판정이 2 일 때 남는 후보 수를 가늠한다
 함정 10: extra->'keywords' 를 jsonb ? 로 세지 않는다(빈 배열이 '있음'으로 든다) — 배열이고 길이가 0 보다 클 때만 센다.
 Postgres 는 AND 의 계산 순서를 보장하지 않아 jsonb_array_length 는 CASE 안에서만 부른다(배열이 아니면 오류).
 
@@ -11837,9 +11885,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "app"))   # 개발 PC 에서 돌릴 때 — 컨테이너는 PYTHONPATH=/app
 
-RECENT_WORKS = 20     # 판정 대상 — 표본이 아니라 '시연·실사용에 가까운 최근 연구'라는 정의다(ORDER BY created_at DESC 그대로)
-SAMPLE_SIZE = 20      # 653 키워드 원문 표본 — 구분자를 눈으로 본다(ORDER BY random())
-THRESHOLD = 0.5       # ② 의 비율이 이 값 이상이면 PAPER_KEYWORD_MIN_N = 1, 아래면 2
+RECENT_WORKS = 20       # 판정 대상 — 표본이 아니라 '시연·실사용에 가까운 최근 연구'라는 정의다(ORDER BY created_at DESC 그대로)
+SAMPLE_PER_FORMAT = 10  # 653 키워드 원문 표본 — source_format 갈래마다(PARTITION BY … ORDER BY random())
+THRESHOLD = 0.5         # ② 의 비율이 이 값 이상이면 PAPER_KEYWORD_MIN_N = 1, 아래면 2
 
 HAS_CATALOG = "(lc.keyword IS NOT NULL AND btrim(lc.keyword) <> '')"
 HAS_EXTRACTED = ("(CASE WHEN jsonb_typeof(lc.extra->'keywords') = 'array' "
@@ -11872,12 +11920,45 @@ LEFT JOIN library_catalog lc ON lc.cnts_id = rr.cnts_id
 GROUP BY r.id, r.created_at
 ORDER BY r.created_at DESC"""
 
+# 범위 — recent: ② 와 같은 최근 연구의 채택 논문(doc_type 을 거르지 않는다 — ② 와 같다), catalog: ① 과 같은 소장 논문 전체
+SCOPES = (("recent", f"최근 연구 {RECENT_WORKS}건 채택 논문"), ("catalog", "소장 논문 전체"))
+
+SQL_SEPARATORS = f"""
+WITH {RECENT.strip()},
+adopted AS (
+  SELECT DISTINCT rr.cnts_id
+  FROM recent r
+  JOIN research_reading rr ON rr.work_id = r.id AND rr.origin = 'evidence'
+),
+scoped AS (
+  SELECT 'recent' AS scope, lc.source_format, lc.keyword
+  FROM adopted a
+  JOIN library_catalog lc ON lc.cnts_id = a.cnts_id
+  UNION ALL
+  SELECT 'catalog' AS scope, lc.source_format, lc.keyword
+  FROM library_catalog lc
+  WHERE lc.doc_type = 'paper'
+)
+SELECT lc.scope, coalesce(lc.source_format, '') AS source_format,
+       count(*) AS papers,
+       count(*) FILTER (WHERE {HAS_CATALOG}) AS catalog_keyword,
+       count(*) FILTER (WHERE {HAS_CATALOG} AND position('|' in lc.keyword) > 0) AS has_pipe,
+       count(*) FILTER (WHERE {HAS_CATALOG} AND position(',' in lc.keyword) > 0) AS has_comma,
+       count(*) FILTER (WHERE {HAS_CATALOG} AND position(';' in lc.keyword) > 0) AS has_semicolon
+FROM scoped lc
+GROUP BY lc.scope, lc.source_format
+ORDER BY lc.scope DESC, lc.source_format"""
+
 SQL_SAMPLE = f"""
-SELECT lc.cnts_id, lc.keyword
-FROM library_catalog lc
-WHERE lc.doc_type = 'paper' AND {HAS_CATALOG}
-ORDER BY random()
-LIMIT {SAMPLE_SIZE}"""
+SELECT coalesce(s.source_format, '') AS source_format, s.cnts_id, s.keyword
+FROM (
+  SELECT lc.source_format, lc.cnts_id, lc.keyword,
+         row_number() OVER (PARTITION BY lc.source_format ORDER BY random()) AS rn
+  FROM library_catalog lc
+  WHERE lc.doc_type = 'paper' AND {HAS_CATALOG}
+) s
+WHERE s.rn <= {SAMPLE_PER_FORMAT}
+ORDER BY s.source_format, s.rn"""
 
 SQL_OVERLAP = f"""
 WITH {RECENT.strip()},
@@ -11886,7 +11967,7 @@ words AS (
   FROM recent r
   JOIN research_reading rr ON rr.work_id = r.id AND rr.origin = 'evidence'
   JOIN library_catalog lc ON lc.cnts_id = rr.cnts_id
-  CROSS JOIN LATERAL regexp_split_to_table(coalesce(lc.keyword, ''), '[;,]') AS k(word)
+  CROSS JOIN LATERAL regexp_split_to_table(coalesce(lc.keyword, ''), '[;,|]') AS k(word)
   UNION
   SELECT rr.work_id, rr.cnts_id, lower(btrim(k.word))
   FROM recent r
@@ -11909,7 +11990,8 @@ ORDER BY work_id"""
 QUERIES = (
     ("① 소장 논문 전체의 키워드 채움", SQL_CATALOG),
     (f"② 최근 이어간 연구 {RECENT_WORKS}건의 채택 논문 — 판정 기준", SQL_RECENT),
-    (f"③ 653 키워드 원문 표본 {SAMPLE_SIZE}개 — 구분자 확인", SQL_SAMPLE),
+    ("③ 653 키워드 구분자 — source_format 별 행 수(채택 논문·소장 논문 전체)", SQL_SEPARATORS),
+    (f"③ 653 키워드 원문 표본 — source_format 마다 {SAMPLE_PER_FORMAT}개", SQL_SAMPLE),
     ("④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)", SQL_OVERLAP),
 )
 
@@ -11919,7 +12001,7 @@ def _cell(value) -> str:
 
 
 def _table(headers: list[str], rows: list[tuple]) -> str:
-    lines = ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+    lines = ["| " + " | ".join(_cell(h) for h in headers) + " |", "|" + "---|" * len(headers)]
     lines += ["| " + " | ".join(_cell(v) for v in row) + " |" for row in rows]
     return "\n".join(lines)
 
@@ -11957,11 +12039,25 @@ def report(conn) -> str:
     else:
         out += ["판정: 이어간 연구의 채택 논문이 없다 — 기본값 PAPER_KEYWORD_MIN_N = 1 그대로", ""]
 
+    seps = conn.execute(text(SQL_SEPARATORS)).all()
+    labels = dict(SCOPES)
+    out += [f"## {QUERIES[2][0]}", "", _table(
+        ["범위", "source_format", "논문", "653 키워드 있음", "'|' 포함", "',' 포함", "';' 포함"],
+        [(labels.get(r.scope, r.scope), r.source_format, r.papers, r.catalog_keyword,
+          r.has_pipe, r.has_comma, r.has_semicolon) for r in seps]), ""]
+    pipe = {scope: sum(r.has_pipe for r in seps if r.scope == scope) for scope, _ in SCOPES}
+    if any(pipe.values()):
+        out += [f"구분자 판정: '|' 를 포함한 653 키워드 — {labels['recent']} {pipe['recent']}행·"
+                f"{labels['catalog']} {pipe['catalog']}행 → split_catalog_keywords 에 '|' 를 더한다(Task Z1 Step 5)", ""]
+    else:
+        out += ["구분자 판정: '|' 를 포함한 653 키워드가 없다 → split_catalog_keywords 의 [;,] 그대로", ""]
+
     sample = conn.execute(text(SQL_SAMPLE)).all()
-    out += [f"## {QUERIES[2][0]}", "", _table(["cnts_id", "keyword 원문"], [tuple(r) for r in sample]), ""]
+    out += [f"## {QUERIES[3][0]}", "", _table(
+        ["source_format", "cnts_id", "keyword 원문"], [tuple(r) for r in sample]), ""]
 
     overlap = conn.execute(text(SQL_OVERLAP)).all()
-    out += [f"## {QUERIES[3][0]}", "", _table(
+    out += [f"## {QUERIES[4][0]}", "", _table(
         ["연구", "키워드(1편 이상)", "키워드(2편 이상)"], [tuple(r) for r in overlap]), ""]
     return "\n".join(out)
 
@@ -11997,7 +12093,7 @@ if __name__ == "__main__":
 
 - [ ] **Step 2: README 를 쓴다**
 
-`research/round06e-keyword-candidates/README.md` (새 파일, 전체):
+`research/round06e-keyword-candidates/README.md` (새 파일, 전체 — quality 검토 반영 뒤의 글, 파트 K 메모 23):
 
 ````markdown
 # round06e — 논문 키워드 채움률 (1회성)
@@ -12014,13 +12110,18 @@ if __name__ == "__main__":
 - 기준은 ② **최근 이어간 연구 20건의 채택 논문 중 키워드(653 또는 추출)가 하나라도 있는 논문의 비율**이다. 소장 전체(①)가 아니라 실제로 후보가 될 논문(채택 근거)을 본다.
   - **50% 이상** → `PAPER_KEYWORD_MIN_N = 1` — 논문에만 있는 후보도 1편부터 후보에 든다(구현 기본값).
   - **50% 미만** → `PAPER_KEYWORD_MIN_N = 2` — 보조로만: 2편 이상 겹친 논문 키워드만 후보에 든다(LLM 후보와 겹친 것은 편수와 상관없이 출처 'AI · 논문 n편'으로 남는다).
-- ③ 의 원문 표본으로 `split_catalog_keywords` 의 구분자(기본 `;`·`,`, NFKC 뒤 앞뒤 공백 정리)가 맞는지 본다. 다른 구분자(예: `/`·`|`)가 보이면 그 정규식을 고친다.
-- ④ 는 판정이 2 일 때 연구마다 남는 논문 후보 수를 가늠하는 참고다(서버 SQL 의 `lower(btrim())` 은 코드의 `keyword_key`(NFKC → 공백 제거 → casefold)보다 느슨하다 — 띄어쓰기만 다른 같은 말은 둘로 센다).
+- ③ 은 `split_catalog_keywords` 의 구분자(기본 `[;,]`, NFKC 뒤 앞뒤 공백 정리)를 정한다. `library_catalog.keyword` 의 구분자는 어느 경로로 채웠느냐에 따라 다르고, 두 가지는 코드로 이미 안다.
+  - **MARC 로더 — ` | `**: 653 $a 를 ` | ` 로 잇는다(`app/domains/nl_library/loaders/marc_parser.py:118`·`:256`, 함정 6). source_format `MARC`·`MARC+MODS` 행이다. MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라, 딥리서치(`doc_scope="paper"` — `app/services/research/explorer.py:113`)의 채택 논문이 될 수 있다.
+  - **적재 보강 — `, `**: 653 이 빈 논문에 `", ".join(추출 키워드)` 를 넣는다(`app/services/ingestion/stages.py:538-539`). KCI 로더는 keyword 를 채우지 않아(`kci_xlsx.py` `_COL_MAP`) KCI 행은 보강 몫뿐이다.
+  - 보강으로 채운 `, ` 행이 많으면 무작위 표본에 ` | ` 행이 하나도 안 나올 수 있다. 그래서 표본이 아니라 **세어서** 판정한다(함정 10 의 교훈 — 코드 경로가 있다고 그 데이터가 있는 것은 아니다). ③ 첫 표는 ② 의 채택 논문과 소장 논문 전체에서 source_format 갈래마다 653 키워드가 있는 행과 그중 `|`·`,`·`;` 를 포함한 행을 센다.
+  - **판정:** 첫 표의 `'|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `|` 를 더한다(Task Z1 Step 5). 0 이면 그대로. 스크립트가 표 아래에 이 판정 줄(`구분자 판정: …`)을 찍는다.
+  - ③ 둘째 표(source_format 마다 10개 원문 표본)로는 그 밖의 구분자(예: `/`)가 있는지 눈으로 본다. 보이면 그 글자도 같은 식으로 더한다.
+- ④ 는 판정이 2 일 때 연구마다 남는 논문 후보 수를 가늠하는 참고다. `;`·`,`·`|` 로 나눈다 — ③ 판정이 `|` 를 더하면 코드와 같고, `|` 행이 없으면 나누는 결과가 같다(서버 SQL 의 `lower(btrim())` 은 코드의 `keyword_key`(NFKC → 공백 제거 → casefold)보다 느슨하다 — 띄어쓰기만 다른 같은 말은 둘로 센다).
 
 ### SQL 이 피하는 함정
 
 - **함정 10** — `extra->'keywords'` 가 '비지 않음'은 jsonb `?`(키 있음)로 세지 않는다. 빈 배열이 '있음'으로 든다. `jsonb_typeof(…) = 'array'` 이고 `jsonb_array_length(…) > 0` 일 때만 센다(길이는 `CASE` 안에서만 부른다 — 배열이 아닌 값에 부르면 오류이고, Postgres 는 AND 의 계산 순서를 보장하지 않는다). `keyword` 칼럼은 `keyword IS NOT NULL AND btrim(keyword) <> ''`. ② 의 '키워드가 하나라도 있음'도 같은 두 조건의 OR 이다.
-- **함정 11** — ③ 의 원문 표본은 정렬 걸린 `LIMIT` 이 아니라 `ORDER BY random() LIMIT 20` 이다(앞부분 편중을 피한다).
+- **함정 11** — ③ 의 원문 표본은 정렬 걸린 `LIMIT` 이 아니라 source_format 갈래마다 `row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` 로 10개씩이다(앞부분 편중을 피하고, 한 갈래가 많아 다른 갈래가 표본에서 빠지는 일도 피한다).
 - ② 의 '최근 20건'은 표본이 아니라 **대상의 정의**(시연·실사용에 가까운 최근 연구)라 `ORDER BY created_at DESC LIMIT 20` 그대로 둔다. 예시 연구(`is_example`)·지운 연구(`deleted_at`)는 뺀다.
 
 ## 실행
@@ -12043,14 +12144,14 @@ DB 주소는 컨테이너 env(`DB_*`)로 만든 `DATABASE_URL_SYNC`(psycopg2)다
 
 ## 결과
 
-(서버 실행 뒤 채운다 — `out/fill_rate.md` 의 ①·② 합계 줄·판정 줄·③ 에서 본 구분자, 그리고 그에 따른 결정: `PAPER_KEYWORD_MIN_N` 을 1 로 둘지 2 로 바꿀지, `split_catalog_keywords` 구분자를 고칠지. 바꾸면 그 커밋 해시를 적는다.)
+(서버 실행 뒤 채운다 — `out/fill_rate.md` 의 ①·② 합계 줄·판정 줄·③ 구분자 판정 줄(범위별 `'|' 포함` 행 수)과 표본에서 본 그 밖의 구분자, 그리고 그에 따른 결정: `PAPER_KEYWORD_MIN_N` 을 1 로 둘지 2 로 바꿀지, `split_catalog_keywords` 구분자를 고칠지. 바꾸면 그 커밋 해시를 적는다.)
 ````
 
 - [ ] **Step 3: dry-run 으로 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && python -I research/round06e-keyword-candidates/measure.py --dry-run | grep -c "^-- "`
 
-Expected: `4`(질의 넷의 머리 줄 — `-- ① 소장 논문 전체의 키워드 채움` … `-- ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)`)
+Expected: `5`(질의 다섯의 머리 줄 — `-- ① 소장 논문 전체의 키워드 채움` … `-- ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)`. ③ 이 구분자 수·원문 표본 두 덩이다 — 파트 K 메모 23)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && python -I research/round06e-keyword-candidates/measure.py --dry-run | head -3`
 
@@ -13638,7 +13739,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 - Test: `app/tests/test_research_topics_api.py` (`TestEndToEnd` 562-)
 
 **알아 둘 것:**
-- **`enqueue_seed_cards(db, work_id, keywords) -> list[tuple[int, int]]`** — ① `slot IS NOT NULL AND origin = 'report_seed'` 주제 행을 slot 순으로 읽고 ② 그 행 id 들을 target 으로 하는 `topic_card` 생성이 (상태 무관 — queued·running·done·failed·canceled) 이미 있는 target 집합을 한 번에 읽어 그 행은 건너뛴다 ③ 남은 행이 없으면 `[]`(잡도 읽지 않는다) ④ 있으면 잡의 `question`·`report` 두 칸만 읽어(`select(ResearchJob.question, ResearchJob.report)` — 연구 id = 잡 id) 행마다 `enqueue_generation(…, kind="topic_card", target=str(tid), input=topic_input(…, keywords=keywords))`(우선순위 기본 `PRIORITY_USER` — 이어가기가 넣던 값과 같다). `None`(그 사이 열린 생성)이면 그 자리는 건너뛴다. 커밋하지 않는다 — 디스패처 `finish`·취소 API 의 트랜잭션에 묶인다(도는 사이 취소돼 `finish` 가 반영을 되돌리면 카드 생성도 함께 사라진다). origin other·user 카드는 보지 않는다.
+- **`enqueue_seed_cards(db, work_id, keywords) -> list[tuple[int, int]]`** — ① `slot IS NOT NULL AND origin = 'report_seed'` 주제 행을 slot 순으로 읽고 ② 그 행 id 들을 target 으로 하는 `topic_card` 생성이 (상태 무관 — queued·running·done·failed·canceled) 이미 있는 target 집합을 한 번에 읽어 그 행은 건너뛰고, 카드가 이미 있는 행(`card` 가 비지 않음 — 이어가기와 카드 생성 사이에 [직접 고치기]가 만든 사용자 카드)도 건너뛴다(quality 검토 반영 — 파트 K 메모 24) ③ 남은 행이 없으면 `[]`(잡도 읽지 않는다) ④ 있으면 잡의 `question`·`report` 두 칸만 읽어(`select(ResearchJob.question, ResearchJob.report)` — 연구 id = 잡 id) 행마다 `enqueue_generation(…, kind="topic_card", target=str(tid), input=topic_input(…, keywords=keywords))`(우선순위 기본 `PRIORITY_USER` — 이어가기가 넣던 값과 같다). `None`(그 사이 열린 생성)이면 그 자리는 건너뛴다. 커밋하지 않는다 — 디스패처 `finish`·취소 API 의 트랜잭션에 묶인다(도는 사이 취소돼 `finish` 가 반영을 되돌리면 카드 생성도 함께 사라진다). origin other·user 카드는 보지 않는다.
 - **import 순환 없음** — `topic_card` 가 `enqueue`(모델만)·`seeds`(순수)·`models.research` 를 import 하고, `apply` 가 `topic_card` 를 import 한다(`apply` 는 이미 `executors`→`topic_card` 를 거친다). `api/research_work.py` 도 `topic_card` 를 import 한다(이미 `executors` 로 거친다).
 - **반영(워커):** `apply_result` 의 concepts 분기는 개념이 있으면 지금처럼 칩을 쓰고(빈 결과면 칩을 건드리지 않는다) **그 뒤 늘** `enqueue_seed_cards(db, gen.work_id, concepts)` — 빈 결과면 키워드 없이 넣는다. result 는 `{"concepts": [...], "cards": [gen_id]}`(1-4). 넣은 카드의 queued 이벤트는 따로 보내지 않는다 — 화면이 concepts done 에 `topics`·`work` 를 다시 읽는다(정함 25, Task K7 의 `RELOAD.concepts`). 워커 `_close` 가 `has_queued` 를 보고 다음 디스패치를 보낸다(`research_work_tasks.py:241-242`) — 회수기·`research_work_tasks.py` 는 고치지 않는다.
 - **취소(API):** kind concepts 를 queued 에서 취소하면 같은 트랜잭션에서 `enqueue_seed_cards(db, jid, [])` → 커밋 → generation canceled 이벤트 → 카드가 있으면 `_send_dispatch()` 와 카드마다 `queued_event`(정함 25 — 화면이 다시 읽을 계기가 없다). 그 밖의 kind 취소는 지금과 같다(디스패치 없음 — 기존 `test_queued_generation_is_canceled` 는 씨앗 자리가 없는 연구라 그대로 통과한다).
@@ -13749,6 +13850,24 @@ class TestEnqueueSeedCards:
         assert [tid for tid, _ in out] == tids[1:]
         assert len(_card_gens(engine, wid)) == 4
         assert _enqueue(engine, wid, KEYWORDS) == []            # 두 번째 반영은 아무것도 넣지 않는다
+
+    def test_a_seed_slot_that_already_has_a_card_gets_none(self, engine):
+        # 이어가기와 카드 생성 사이(키워드 생성이 줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접
+        # 고치기]가 사용자 카드(edited)를 만든다. 생성 기록이 없다고 그 자리에 카드를 넣으면 LLM 을 헛되이 부르고 결과는
+        # apply 의 edited 검사가 버리며, 그 사이 화면은 '다시 만드는 중'을 달고 [고르기]·[직접 고치기]를 막는다.
+        # [이 키워드로 다시 만들기](K6)가 고친 카드를 건너뛰는 것과 같은 규칙(spec §12-4·정함 16)
+        wid, tids = _seed_work(engine)
+        mine = {"title": "내가 쓴 주제", "question": "내가 쓴 질문인가?", "evidence": [], "figure_sentence": None,
+                "figures": [], "latest_year": None, "edited": True,
+                "checks": {"numbers": [], "softened": 0, "recovered": 0}, "gen_id": None}
+        table = ResearchTopic.__table__
+        with engine.begin() as conn:
+            conn.execute(sa.update(table).where(table.c.id == tids[0]).values(card=mine))
+
+        out = _enqueue(engine, wid, KEYWORDS)
+
+        assert [tid for tid, _ in out] == tids[1:]
+        assert [g["target"] for g in _card_gens(engine, wid)] == [str(t) for t in tids[1:]]
 
     def test_other_direction_cards_do_not_block_the_seed_cards(self, engine):
         # 키워드 생성이 줄을 서는 사이 [다른 방향]이 먼저 카드를 만든 연구 — '그 연구에 카드 생성이 하나라도 있으면 안
@@ -14111,8 +14230,8 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_topic_card.py tests/test_research_work_dispatch.py tests/test_research_work_api.py tests/test_research_work_tasks.py tests/test_research_work_executor.py tests/test_research_topics_api.py -q -p no:cacheprovider`
 
-Expected: `19 failed, 236 passed, 2 warnings` — 실패는 정확히 다음 19개(샌드박스 실측):
-- `test_research_work_topic_card.py::TestEnqueueSeedCards` 7개(매개변수 포함) — `enqueue_seed_cards` 가 없다(AttributeError)
+Expected: `20 failed, 236 passed, 2 warnings` — 실패는 정확히 다음 20개(샌드박스 실측 19 + quality 검토 반영 테스트 1 — 파트 K 메모 24):
+- `test_research_work_topic_card.py::TestEnqueueSeedCards` 8개(매개변수 포함) — `enqueue_seed_cards` 가 없다(AttributeError)
 - `test_research_work_dispatch.py::TestApplyResult` 4개 — `test_concepts_replace_the_chips_and_reset_membership`·`test_an_empty_result_keeps_the_chips`(payload 에 `cards` 없음)·`test_an_empty_result_still_queues_the_seed_cards_without_keywords`·`test_a_second_concepts_result_queues_no_more_cards`(카드를 넣지 않는다)
 - `test_research_work_api.py` 4개 — `TestContinueSeeds::test_report_seeds_become_four_topics_without_card_generations_yet`·`test_second_continue_adds_no_topic_or_card`(이어가기가 카드 생성 4건을 넣는다), `TestCancelGeneration::test_canceling_concepts_queues_the_seed_cards_without_keywords`(카드를 넣지 않는다), `TestEndToEnd::test_continue_then_the_dispatcher_fills_the_concepts`(payload)
 - `test_research_work_tasks.py::TestDispatch` 2개 — 이벤트 result 에 `cards` 없음
@@ -14181,12 +14300,15 @@ async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int
     (api/research_work.cancel_generation — 키워드 없이)가 이 함수 하나를 부른다. '한 번만'은 씨앗 자리 행마다 본다 —
     그 행을 target 으로 하는 topic_card 생성이 (상태와 상관없이) 하나라도 있으면 건너뛴다(06e 정함 29): 키워드를 다시
     불러 반영돼도 카드가 또 들어가지 않고, 키워드 생성이 줄을 서는 사이 [다른 방향](origin other)이 먼저 카드를 만들어도
-    씨앗 카드는 들어간다. 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
+    씨앗 카드는 들어간다. 카드가 이미 있는 자리(직접 쓴 카드)도 넣지 않는다 — 이어가기와 이 함수 사이(키워드 생성이
+    줄을 서거나 failed 인 동안)는 빈 씨앗 자리에 카드 생성이 없어 [직접 고치기]가 사용자 카드(edited)를 만들 수 있고,
+    넣으면 LLM 을 헛되이 부른 결과를 apply 의 edited 검사가 버린다([이 키워드로 다시 만들기]가 고친 카드를 건너뛰는 것과
+    같은 규칙 — spec §12-4·정함 16). 그 사이 열린 생성이 생겨 enqueue_generation 이 None 이면 그 자리도 건너뛴다.
     커밋하지 않는다 — 부르는 쪽의 트랜잭션(디스패처 finish·취소 API)에 묶인다. 돌려주는 값은 [(topic_id, gen_id)].
     """
     T, G = ResearchTopic, ResearchGeneration
     rows = (await db.execute(
-        select(T.id, T.seed).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
+        select(T.id, T.seed, T.card).where(T.work_id == work_id, T.slot.is_not(None), T.origin == "report_seed")
         .order_by(T.slot, T.id)
     )).all()
     if not rows:
@@ -14195,7 +14317,7 @@ async def enqueue_seed_cards(db, work_id, keywords: list[str]) -> list[tuple[int
         select(G.target).where(G.work_id == work_id, G.kind == "topic_card",
                                G.target.in_([str(r.id) for r in rows]))
     )).scalars().all())
-    todo = [r for r in rows if str(r.id) not in made]
+    todo = [r for r in rows if str(r.id) not in made and not r.card]
     if not todo:
         return []
     job = (await db.execute(
@@ -14395,11 +14517,11 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_topic_card.py tests/test_research_work_dispatch.py tests/test_research_work_api.py tests/test_research_work_tasks.py tests/test_research_work_executor.py tests/test_research_topics_api.py -q -p no:cacheprovider`
 
-Expected: `255 passed, 2 warnings` (topic_card 58 · dispatch 34 · api 85 · tasks 27 · executor 12 · topics 39)
+Expected: `256 passed, 2 warnings` (topic_card 59 · dispatch 34 · api 85 · tasks 27 · executor 12 · topics 39)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 10
+Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 11
 
 - [ ] **Step 5: 커밋한다**
 
@@ -14423,9 +14545,9 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 - 순서: `_writable` → 키워드 `< MIN_PICKED_KEYWORDS`(keywords.py, 2) 면 409 `KEYWORDS_TOO_FEW` → 키워드 생성이 열려 있으면 409 `KEYWORDS_BUSY`(Task K4 상수) → 연구별 잠금 `lock_key(jid, "topic_card", REGENERATE_LOCK_TARGET)`(`"regenerate"` — 주제 id 숫자 문자열과 겹치지 않는 이름, `OTHER_LOCK_TARGET` 과 같은 방식) → 대상 읽기(id 순 — 씨앗 자리가 먼저 만들어졌다) → 행마다 `enqueue_generation`. 그 주제의 카드 생성이 열려 있으면 `None` 이고(enqueue 가 같은 대상 열린 생성을 막는다 — `enqueue.py:34-38`, spec 의 ':251-255' 는 옛 줄) `skipped` 로 센다 — 넣은 행이 없으니 되돌리지 않는다.
 - 넣은 것도 건너뛴 것도 없으면 롤백하고 409 `NOTHING_TO_REGENERATE`. 건너뛴 것만 있으면 200(`{"topic_ids": [], "gen_ids": [], "skipped": n}`)이고 디스패치는 보내지 않는다. 넣은 것이 있으면 커밋 → `_send_dispatch()` → 카드마다 queued 이벤트([다른 방향]과 같은 순서 — `enqueue.py` 머리 docstring).
 - 입력은 `topic_input(job.question, row.seed, report, row.id, keywords=list(work.concepts))` — 씨앗과 지금 키워드뿐이다. 카드의 지금 제목을 주지 않는다(함정 26). 카드는 새 결과가 반영될 때까지 그대로 보인다(`topic_card.apply` 가 그 행만 바꾼다). 그 사이 [직접 고치기]는 409 `CARD_BUSY`(`edit_topic` — 카드 생성이 열려 있으면)이고, 그래도 고친 카드(`card.edited`)는 반영이 덮지 않는다(`topic_card.apply` 의 edited 검사 — dev `:206-207`, Task K5 뒤 `:213-214`).
-- **다시 만드는 사이의 [고르기](06e 정함 16):** 화면은 카드 생성이 열린 카드를 고르지 않게 막고 '새 키워드로 다시 만드는 중입니다'를 단다(Task K7 `canPick`·`cardRemakingNote`, Task K8). 두 탭이 거의 같이 누른 경우는 서버가 막는다 — `topic_card.apply` 의 edited 검사 바로 뒤에서 고른 카드(state picked·제목 있음)면 덮지 않고 `{"topic_id", "state": "picked"}` 를 돌려준다(새 카드든 빈 결과든). 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 동작이 바뀌지 않는다 — 다만 고른 카드가 새 카드로 바뀌는 것을 단언하던 `TestApply.test_a_picked_topic_stays_picked` 를 새 규칙으로 바꾼다(✎ — 매개변수 둘이라 +1). `pick_topic` 에서 409 로 막는 대안은 쓰지 않는다 — 고르기를 늦출 까닭이 서버에는 없고, 반영 쪽에서 막으면 두 탭 경합까지 한 곳에서 끝난다.
+- **다시 만드는 사이의 [고르기](06e 정함 16):** 화면은 카드 생성이 열린 카드를 고르지 않게 막고 '새 키워드로 다시 만드는 중입니다'를 단다(Task K7 `canPick`·`cardRemakingNote`, Task K8). 두 탭이 거의 같이 누른 경우는 서버가 막는다 — `topic_card.apply` 의 edited 검사 바로 뒤에서 고른 카드(state picked·제목 있음)면 덮지 않고 `{"topic_id", "state": "picked"}` 를 돌려준다(새 카드든 빈 결과든). 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 동작이 바뀌지 않는다 — 다만 고른 카드가 새 카드로 바뀌는 것을 단언하던 `TestApply.test_a_picked_topic_stays_picked` 를 새 규칙으로 바꾼다(✎ — 매개변수 둘이라 +1). `pick_topic` 에서 409 로 막는 대안은 쓰지 않는다 — 고르기를 늦출 까닭이 서버에는 없고, 반영 쪽에서 막으면 두 탭 경합까지 한 곳에서 끝난다. 그러려면 반영이 주제 행을 `FOR UPDATE` 로 읽는다(quality 검토 반영 — 파트 K 메모 25) — 잠그지 않으면 READ COMMITTED 에서 `pick_topic` 의 `UPDATE … state='picked'` 가 커밋 전일 때 반영의 SELECT 가 candidate 를 보고, 반영 UPDATE 는 그 커밋을 기다렸다가 `WHERE id` 만 다시 보고 새 카드·candidate 를 써서 `work.topic_id` 는 그 주제인데 state 는 candidate 로 남는다. 잠금 순서는 주제 행 → 연구 행(`refresh_progress`)으로 `pick_topic` 의 '앞서 고른 행 → 고른 행 → 연구 행'과 같은 방향이라 고리가 없다(section·paragraph 의 `apply` 가 계획서 행을 `with_for_update()` 로 읽는 것과 같은 읽기-고치기-쓰기 규칙). [직접 고치기]는 카드 생성이 열려 있으면 409 `CARD_BUSY` 라 경합은 거의 [고르기]뿐이지만 같은 잠금이 막는다.
 - `KEYWORDS_TOO_FEW` 는 `f"키워드를 {MIN_PICKED_KEYWORDS}개 이상 고르세요"` — 1-1 의 값('키워드를 2개 이상 고르세요')과 같은 글을 상수에서 만든다.
-- 구현 전 POST `…/topics/regenerate` 는 `PATCH …/topics/{tid}` 만 맞아 405 다(새 테스트 7개 실패). `{tid}` 는 int 라 경로 'regenerate' 와 겹치지 않는다. 고른 카드 테스트 둘도 구현 전에는 떨어진다(새 카드면 카드가 바뀌고, 빈 결과면 state 가 insufficient).
+- 구현 전 POST `…/topics/regenerate` 는 `PATCH …/topics/{tid}` 만 맞아 405 다(새 테스트 7개 실패). `{tid}` 는 int 라 경로 'regenerate' 와 겹치지 않는다. 고른 카드 테스트 둘도 구현 전에는 떨어진다(새 카드면 카드가 바뀌고, 빈 결과면 state 가 insufficient). 잠금 테스트 하나도 떨어진다(주제 행 SELECT 에 `FOR UPDATE` 가 없다 — 파트 K 메모 25).
 
 - [ ] **Step 1: 실패하는 테스트를 쓴다**
 
@@ -14557,7 +14679,7 @@ class TestRegenerate:
 # ── 직접 쓰기·직접 고치기 ─────────────────────────────────────────────
 ```
 
-② `app/tests/test_research_work_topic_card.py` `TestApply.test_a_picked_topic_stays_picked` ✎ — 고른 카드는 다시 만든 결과로 덮지 않는다(새 카드·빈 결과 두 매개변수). 지금 테스트는 고른 카드가 새 카드로 바뀌는 것을 단언한다 — 06b 에서는 고른 카드에 열린 생성이 생길 수 없어 실제로 일어나지 않던 경로다. old:
+② `app/tests/test_research_work_topic_card.py` `TestApply.test_a_picked_topic_stays_picked` ✎ — 고른 카드는 다시 만든 결과로 덮지 않는다(새 카드·빈 결과 두 매개변수). 지금 테스트는 고른 카드가 새 카드로 바뀌는 것을 단언한다 — 06b 에서는 고른 카드에 열린 생성이 생길 수 없어 실제로 일어나지 않던 경로다. 그 뒤에 `test_the_topic_row_is_read_under_a_row_lock`(＋ — 반영이 주제 행을 `FOR UPDATE` 로 읽고 그 읽기가 주제 행 UPDATE·연구 행 잠금보다 앞선다, quality 검토 반영 — 파트 K 메모 25)을 더하고, 머리 import 의 `from jinja2 import Environment, meta` 아래에 `from sqlalchemy.dialects import postgresql` 를 더한다(SQLite 는 잠금을 그리지 않아 문장을 PostgreSQL 로 컴파일해 본다 — `test_research_work_dispatch.py` 의 `_Recording` 과 같은 방식). old:
 
 ```python
     def test_a_picked_topic_stays_picked(self, engine):
@@ -14583,13 +14705,46 @@ new:
 
         row = _topic_row(engine, tid)
         assert (row["card"], row["state"]) == (old, "picked")
+
+    def test_the_topic_row_is_read_under_a_row_lock(self, engine):
+        # 고른 카드 검사는 읽기와 쓰기 사이가 비면 두 탭 경합을 놓친다 — PostgreSQL READ COMMITTED 에서 pick_topic 의
+        # UPDATE(state picked)가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 pick 커밋을
+        # 기다렸다가 WHERE id 만 다시 보고 새 카드·candidate 를 쓴다(work.topic_id 는 그 주제인데 state 는 candidate).
+        # 행을 FOR UPDATE 로 읽으면 pick 이 끝난 뒤의 값을 본다. SQLite 는 잠금을 그리지 않아 문장을 PostgreSQL 로
+        # 컴파일해 본다(test_research_work_dispatch 의 _Recording 과 같은 방식)
+        _, tid, gid = _setup(engine)
+        log: list[str] = []
+
+        class _Recording(AsyncSessionOverSync):
+            async def execute(self, stmt, params=None):
+                log.append(str(stmt.compile(dialect=postgresql.dialect())))
+                return await super().execute(stmt, params)
+
+        async def _go():
+            db = _Recording(engine)
+            try:
+                await apply_result(db, await db.get(ResearchGeneration, gid), _bound(GOOD))
+                await db.commit()
+            finally:
+                await db.close()
+
+        asyncio.run(_go())
+        read = next(i for i, s in enumerate(log) if s.startswith("SELECT research_topics.card"))
+        write = next(i for i, s in enumerate(log) if s.startswith("UPDATE research_topics"))
+        work_lock = next(i for i, s in enumerate(log)
+                         if s.startswith("SELECT research_works.id") and "FOR UPDATE" in s)
+        assert log[read].rstrip().endswith("FOR UPDATE")
+        # 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른 행 → 연구 행'과 같은
+        # 방향이라 서로 기다리는 고리가 생기지 않는다
+        assert read < write < work_lock
+        assert _topic_row(engine, tid)["state"] == "candidate"
 ```
 
 - [ ] **Step 2: 실패를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_topics_api.py tests/test_research_work_topic_card.py -q -p no:cacheprovider`
 
-Expected: `9 failed, 96 passed, 2 warnings` — `test_research_topics_api.py::TestRegenerate` 7개 모두(405 Method Not Allowed — 경로가 없다), `test_research_work_topic_card.py::TestApply::test_a_picked_card_is_not_overwritten_by_a_regeneration[card]`(고른 카드가 새 카드로 바뀐다)·`[empty]`(state 가 insufficient 로 온다)
+Expected: `10 failed, 97 passed, 2 warnings` — `test_research_topics_api.py::TestRegenerate` 7개 모두(405 Method Not Allowed — 경로가 없다), `test_research_work_topic_card.py::TestApply::test_a_picked_card_is_not_overwritten_by_a_regeneration[card]`(고른 카드가 새 카드로 바뀐다)·`[empty]`(state 가 insufficient 로 온다)·`test_the_topic_row_is_read_under_a_row_lock`(주제 행 SELECT 끝에 `FOR UPDATE` 가 없다 — 파트 K 메모 25)
 
 - [ ] **Step 3: 구현한다**
 
@@ -14730,7 +14885,14 @@ new:
     카드가 있으면 state 는 candidate(이미 고른 주제면 picked 그대로), 없으면 card 를 비우고 insufficient.
     그 사이 사용자가 직접 고친 카드(card.edited)는 덮지 않는다 — 다시 부르기(빈 카드의 retry)가 사용자의 글을
     지우면 안 된다. 고른 카드(picked — 제목이 있다)도 덮지 않는다 — [이 키워드로 다시 만들기](06e)가 도는 사이
-    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16)."""
+    고른 카드의 제목·질문·근거가 바뀌면 목차에 '다시 맞춤 필요'가 붙는다(06e 정함 16).
+
+    행을 FOR UPDATE 로 읽는다 — 두 검사는 읽고 쓰는 사이가 비면 겹친 쓰기를 놓친다. READ COMMITTED 에서 [고르기]
+    (pick_topic)의 UPDATE 가 커밋 전이면 잠그지 않는 SELECT 는 candidate 를 보고, 반영 UPDATE 는 그 커밋을 기다렸다가
+    WHERE id 만 다시 보고 새 카드·candidate 를 써서 work.topic_id 는 그 주제인데 state 는 candidate 로 남는다. 잠그면
+    고르기가 끝난 뒤의 값을 본다. [직접 고치기]는 카드 생성이 열려 있으면 409 CARD_BUSY 라 여기서 겹칠 일이 거의
+    없지만 같은 잠금이 막는다. 잠금 순서는 주제 행 → 연구 행(refresh_progress) — pick_topic 의 '앞서 고른 행 → 고른
+    행 → 연구 행'과 같은 방향이라 서로 기다리는 고리가 없다(section·paragraph 의 apply 와 같은 읽기-고치기-쓰기 규칙)."""
 ```
 
 ⑥ 같은 함수 — edited 검사 바로 뒤에 고른 카드 검사. old:
@@ -14753,15 +14915,34 @@ new:
     card = output.get("card")
 ```
 
+⑦ 같은 함수 — 주제 행을 `FOR UPDATE` 로 읽는다(quality 검토 반영 — 파트 K 메모 25). old:
+
+```python
+    row = (await db.execute(
+        select(ResearchTopic.card, ResearchTopic.state)
+        .where(ResearchTopic.id == topic_id, ResearchTopic.work_id == gen.work_id)
+    )).first()
+```
+
+new:
+
+```python
+    row = (await db.execute(
+        select(ResearchTopic.card, ResearchTopic.state)
+        .where(ResearchTopic.id == topic_id, ResearchTopic.work_id == gen.work_id)
+        .with_for_update()
+    )).first()
+```
+
 - [ ] **Step 4: 통과를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_topics_api.py tests/test_research_work_topic_card.py -q -p no:cacheprovider`
 
-Expected: `105 passed, 2 warnings` (topics 46 · topic_card 59)
+Expected: `107 passed, 2 warnings` (topics 46 · topic_card 61 — Task K5 의 quality 검토 반영 테스트 1(파트 K 메모 24)과 이 Task 의 잠금 테스트 1(파트 K 메모 25) 포함)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
-Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 8
+Expected: 실패 5·오류 1 은 기준선과 같은 세 파일, 통과 = Task 앞 + 9
 
 - [ ] **Step 5: 커밋한다**
 
@@ -14789,7 +14970,7 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/api/
 - **`keywordSpans` 의 일치 규칙 = 06c `terms.contains`**(spec §12-2 — NFKC → casefold → 공백 제거 뒤 부분 문자열, 아니면 낱말 조각이 모두 순서대로). 원문 글자(코드포인트)마다 `ch.normalize("NFKC").toLowerCase()` 를 이어 붙이며 각 UTF-16 단위의 원문 글자 순번(`at`)을 기록하고 공백은 건너뛴다(1-9). 맞은 자리를 원문 순번으로 되돌려 원문 글자 그대로 감싼다 — 전각 'ＣＳＲ' 은 'csr' 로 맞추고 'ＣＳＲ' 을, 공백을 지우고 맞춘 '다문화가정' 은 원문 '다문화 가정' 을 감싼다. 키워드마다 처음 맞은 자리만 감싸고 겹치거나 맞닿은 자리는 합친다. 차이(알려진 한계 — 완료노트): JS `toLowerCase` 는 Python `casefold` 와 몇 글자(ß 등)에서 다르고, NFKC 를 글자마다 해 결합 자모(분리형 한글)를 합치지 못한다 — 둘 다 소장 논문 제목·키워드에는 드물다. Task K9 이 06c 의 `term_checks.json` 전부로 서버와 같은 참·거짓을 고정한다.
 - **고정 예제 `keyword_match.json` 은 하이라이트 자리만**(`{text, word, marked, note}`) — 일치 참·거짓의 정본은 06c 의 `frontend/tests/fixtures/term_checks.json` 이다(06e 는 읽기만 — 1-9). 사례는 그 `contains` 칸과 같은 text/word 여섯에 06e 만의 영문 사례 하나. vitest 는 `it.each(CASES)("$note", …)` 라 사례마다 테스트 하나다(note 가 서로 달라야 한다). 백엔드 쪽 대조(`contains == bool(marked)`)는 06c 가 dev 에 들어온 뒤 Task K9 가 단다 — 이 Task 의 vitest 는 06c 없이도 돈다.
 - **`cardStatus(item, concepts?)`** — 두 번째 인자가 없으면 지금과 같다(`canPick` 은 그대로 한 인자로 부른다). 생성 기록이 없는 빈 카드: state insufficient → insufficient(그대로). 빈 **씨앗 자리**(slot 이 있고 origin report_seed)는 키워드 생성이 있으면 `waiting`(노트 '차례를 기다리는 중입니다' 그대로 — TopicCard 가 대기 뼈대를 그린다), 그 생성이 failed 면 `blocked`(노트 `키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다`). waiting 은 키워드 생성이 열려 있을 때만이 아니다 — 씨앗 자리 카드 생성은 키워드 반영·취소와 **같은 트랜잭션**에 들어가는데(Task K5) 워커는 그 카드의 queued 이벤트를 따로 보내지 않고(정함 25) 취소 API 는 canceled 이벤트를 queued 이벤트보다 먼저 보낸다. 그래서 done·canceled 이벤트가 `state.work.generations` 에 먼저 들어오고(`applyGeneration`) topics·work 를 다시 읽기 전까지는 그 자리에 카드 생성이 없다 — 그 사이도 기다리는 중이다('카드를 만들지 못했습니다'가 잠깐 비치지 않게 — spec §12-8 장면 2 의 바로 그 순간). '키워드가 정해졌는데 카드 생성이 없는 씨앗 자리'가 오래 남는 경우는 없다(06b 이어가기는 자리마다 카드 생성을 같은 커밋에 넣었고, 06a 에서 이어간 연구에는 씨앗 행이 없다). 씨앗 자리가 아닌 빈 카드는 지금처럼 failed. 생성 기록이 있으면 생성 상태가 먼저다. `cardNote` 의 switch 는 반환 타입이 `string | null` 이라 `blocked` 를 빼면 typecheck 가 떨어진다.
-- **다시 만드는 중인 카드(06e 정함 16):** 카드는 있는데 그 카드 생성이 열려 있으면(`[이 키워드로 다시 만들기]` — Task K6) `canPick` 이 거짓이고 `cardRemakingNote` 가 '새 키워드로 다시 만드는 중입니다'다. `cardStatus` 는 카드가 먼저라 ready 그대로다 — 막지 않으면 [고르기]가 켜진 채 고른 뒤 새 결과가 고른 카드를 바꾼다(서버도 Task K6 에서 막는다). dev 의 `canPick` 첫 단언 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이 된다 — 끝난 생성으로 바꾼다(✎).
+- **다시 만드는 중인 카드(06e 정함 16):** 카드는 있는데 그 카드 생성이 열려 있으면(`[이 키워드로 다시 만들기]` — Task K6) `canPick` 이 거짓이고 `cardRemakingNote` 가 '새 키워드로 다시 만드는 중입니다'다. `cardStatus` 는 카드가 먼저라 ready 그대로다 — 막지 않으면 [고르기]가 켜진 채 고른 뒤 새 결과가 고른 카드를 바꾼다(서버도 Task K6 에서 막는다). dev 의 `canPick` 첫 단언 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이 된다 — 끝난 생성으로 바꾼다(✎). 같은 함정이 거짓을 기대하는 단언도 비운다 — 기본 생성(queued)이면 `!remaking(item)` 하나만으로 거짓이 나와 그 단언이 보려던 조건(고른 카드·고친 카드·직접 쓴 카드)을 지워도 통과한다. 그래서 `canPick` 의 고른 카드 단언(dev 둘째 단언 ✎)과 `aiCardsStale` 의 고른·고친·직접 쓴 카드 단언에는 끝난 생성(직접 쓴 카드는 생성 기록 없음 `generation: null`)을 준다(spec 검토 반영 — 파트 K 메모 26).
 - `keywordsChanged` — 06e 전 카드(`keywords` 없음)는 무엇으로 만들었는지 몰라 알리지 않는다(false), 순서·띄어쓰기·대소문자는 보지 않는다(`conceptKey` — `addConcept` 의 중복 열쇠). `keywordWarning` — 키워드가 있고 그 전부가 `missing_keywords` 일 때만, **사용자가 고친 카드는 알리지 않는다**(서버 검사가 고친 제목을 다시 보지 않는다 — `edit_topic` 은 `missing_keywords` 를 다시 세지 않는다). `keywordChips` 배지: llm `AI 후보` · paper `논문 n편` · both `AI · 논문 n편` · 후보에 없는 고른 말 `직접`, 후보가 없으면(null·undefined·빈 목록) 고른 것을 눌린 칩으로만. `toggleKeyword` 는 `CONCEPTS_MAX`(5 — 서버 PATCH `MAX_CONCEPTS` 와 같다)를 넘기지 않는다. `aiCardsStale(topics, concepts, conceptsGen?)` — '다시 만들 AI 자리가 있다': 지금 키워드와 다른 키워드로 만든 AI 후보 카드(다시 만드는 중인 카드는 빼고), 그리고 키워드 생성이 실패해 카드가 없는 빈 씨앗 자리(`cardStatus(item, conceptsGen) === "blocked"`). 뒤의 것이 없으면 키워드 생성이 failed 인 연구에서 키워드를 직접 넣고 [키워드만 저장]을 누른 사용자가 막다른 길에 선다 — [다시]는 칩이 비어 있을 때만이고(`conceptsRetryable`), 저장 뒤 `dirty` 는 거짓이라 [이 키워드로 다시 만들기]도 숨는다. 서버 regenerate(Task K6)는 카드가 `{}` 인 후보 씨앗 행도 넣으므로 버튼만 보이면 카드가 들어간다. 세 번째 인자는 뼈대 1-6 시그니처에 없던 선택 인자다(이름은 그대로 — 파트 메모). origin user·고친·고른 카드는 세지 않는다(정함 16).
 - **이름(1-6 계약 — 한 이름 한 파일):** `MIN_PICKED_KEYWORDS`·`keywordSpans`·`keywordsChanged`·`keywordWarning`·`KeywordChip`·`keywordChips`·`toggleKeyword`·`regenerateProblem`·`aiCardsStale`·`cardRemakingNote`(1-6 밖 — 파트 메모) 는 `topicDeck.ts` 만 내보낸다(dev `da80f23` 의 utils·composables 에 같은 이름 없음 — 확인함). `pages/index.vue:708` 에 지역 변수 `const keywordChips = ref(...)` 가 있지만 자동 import 는 파일 안 선언이 가린다 — 샌드박스 `nuxi typecheck` 오류 0·`npm run build` 의 WARN 57(기준선과 같음, 새 'Duplicated imports' 없음). 비공개 도우미(`flatten`·`keywordRanges`·`candidateBadge`·`remaking`)는 내보내지 않는다.
 - **`RELOAD.concepts = ["topics", "work"]`**(1-4) — 키워드 반영이 씨앗 카드 생성을 넣으므로(Task K5) 주제 목록을 다시 읽어야 빈 슬롯이 '기다리는 중'이 된다. `workEvents.test.ts` 의 두 단언(`reloadFor`·'연구를 아직 받지 않았으면')을 함께 고친다(뒤의 것은 뼈대 목록 밖 ✎). 하트비트 재동기화 it 은 topic_card·concepts 가 같은 조회로 모여 그대로 `["topics", "work"]` 다.
@@ -14952,6 +15133,16 @@ describe("keywordSpans — keyword_match.json 의 하이라이트 자리", () =>
       { text: "와 ", mark: false },
       { text: "우울", mark: true },
     ]);
+    // 맞닿은 자리도 하나로 합친다
+    expect(keywordSpans("노인우울 연구", ["노인", "우울"])).toEqual([
+      { text: "노인우울", mark: true },
+      { text: " 연구", mark: false },
+    ]);
+    // 한 키워드가 여러 번 나와도 처음 맞은 자리만 감싼다
+    expect(keywordSpans("노인과 노인", ["노인"])).toEqual([
+      { text: "노인", mark: true },
+      { text: "과 노인", mark: false },
+    ]);
     expect(keywordSpans("노인 우울", [])).toEqual([{ text: "노인 우울", mark: false }]);
     expect(keywordSpans("", ["노인"])).toEqual([]);
   });
@@ -15021,9 +15212,10 @@ describe("aiCardsStale — 다시 만들 AI 자리가 있다", () => {
     const done = { id: 41, status: "done" as const };
     expect(aiCardsStale(deck([item({ card: made, generation: done })]), now)).toBe(true);
     expect(aiCardsStale(deck([item({ card: made, generation: done })]), ["사회적 지지", "노인 우울"])).toBe(false);
-    expect(aiCardsStale(deck([item({ card: made, state: "picked" })]), now)).toBe(false);
-    expect(aiCardsStale(deck([item({ card: { ...made, edited: true } })]), now)).toBe(false);
-    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null })]), now)).toBe(false);
+    // 픽스처 기본 생성(queued)이면 '다시 만드는 중'만으로 거짓이 된다 — 끝난 생성(사용자 카드는 생성 기록 없음)을 준다
+    expect(aiCardsStale(deck([item({ card: made, state: "picked", generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: { ...made, edited: true }, generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null, generation: null })]), now)).toBe(false);
     expect(aiCardsStale(deck([item({ card: null, state: "insufficient" })]), now)).toBe(false);
     expect(aiCardsStale(deck([item({ card: made, generation: { id: 52, status: "running" } })]), now)).toBe(false);
   });
@@ -15069,12 +15261,13 @@ new:
     expect(out.reload).toEqual(["topics", "work"]);
 ```
 
-⑨ `frontend/tests/unit/topicDeck.test.ts` describe `canPick`(dev `da80f23` `:151-158`) — 다시 만드는 중인 카드(카드는 있고 카드 생성이 열려 있다)는 고르지 않는다(06e 정함 16). 지금 첫 단언의 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이다 — 끝난(done) 생성과 생성 기록 없는 사용자 카드로 바꾼다(✎). old:
+⑨ `frontend/tests/unit/topicDeck.test.ts` describe `canPick`(dev `da80f23` `:151-158`) — 다시 만드는 중인 카드(카드는 있고 카드 생성이 열려 있다)는 고르지 않는다(06e 정함 16). 지금 첫 단언의 `item({ card: CARD })` 는 픽스처 기본 생성이 queued 라 06e 에서는 '다시 만드는 중'이다 — 끝난(done) 생성과 생성 기록 없는 사용자 카드로 바꾼다(✎). 둘째 단언(고른 카드)도 기본 생성이면 '다시 만드는 중'만으로 거짓이 나와 state 검사를 지워도 통과한다 — 끝난 생성을 준다(✎, 기대값 그대로 — 파트 K 메모 26). old:
 
 ```ts
 describe("canPick", () => {
   it("카드가 있는 후보만 고를 수 있다", () => {
     expect(canPick(item({ card: CARD }))).toBe(true);
+    expect(canPick(item({ card: CARD, state: "picked" }))).toBe(false);
 ```
 
 new:
@@ -15096,6 +15289,7 @@ describe("canPick", () => {
   it("카드가 있는 후보만 고를 수 있다", () => {
     expect(canPick(item({ card: CARD, generation: { id: 41, status: "done" } }))).toBe(true);
     expect(canPick(item({ card: CARD, generation: null, origin: "user" }))).toBe(true);
+    expect(canPick(item({ card: CARD, state: "picked", generation: { id: 41, status: "done" } }))).toBe(false);
 ```
 
 ⑩ `frontend/tests/unit/topicDeck.test.ts` 머리 import — `cardRemakingNote`(알파벳 순 자리 — Task H1 이 잡는 `  cardStatus,` 줄은 그대로 둔다). old:
@@ -15530,10 +15724,13 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 - Modify: `frontend/components/work/TopicDeck.vue` (템플릿 9-12·25, script 64-69·79)
 - Modify: `frontend/components/work/TopicsStep.vue` (Task R1 뒤 기준 — ConceptChips 15-23, TopicDeck 45-47, import 72, `conceptGen` 96 뒤, `retryCard` 159 앞)
 - Modify: `frontend/assets/css/work.css` (이어 붙이는 자리 표시 줄 위에 한 묶음)
+- Modify: `frontend/utils/topicDeck.ts` (quality 검토 반영 — `toggleKeyword` 뒤 `chipFocusAfterToggle`, `regenerateProblem` 뒤 `regenerateFocusMoves`. 파트 K 메모 27)
+- Test: `frontend/tests/unit/topicDeck.test.ts` (quality 검토 반영 — import 두 이름, describe `keywordChips·toggleKeyword·regenerateProblem` 뒤 describe 하나)
 
 **알아 둘 것:**
-- `.vue` 는 단위 테스트하지 않는다 — 판단은 모두 Task K7 의 순수 함수다. 확인은 `npx nuxi typecheck`(오류 0)·`npm run build`(완료, WARN 수가 Task 앞과 같다 — 새 'Duplicated imports' 없음)·vitest 전체(그대로).
+- `.vue` 는 단위 테스트하지 않는다 — 판단은 모두 순수 함수다(Task K7, 그리고 quality 검토 반영으로 이 Task 가 더한 사라지는 버튼의 초점 판정 둘 — `chipFocusAfterToggle`·`regenerateFocusMoves`, 실패 테스트 → 구현 순서. 파트 K 메모 27). 확인은 `npx nuxi typecheck`(오류 0)·`npm run build`(완료, WARN 수가 Task 앞과 같다 — 새 'Duplicated imports' 없음)·vitest 전체(그대로).
 - **ConceptChips(1-7):** props `{ concepts, candidates, generation, readOnly, busy, stale }`, emits `save`(그대로)·`regenerate`(새)·`retry`(그대로 `[genId: number]` — 1-7 표의 `retry: []` 는 '그대로'라 지금 시그니처를 지킨다, 파트 메모). 칩은 `<button type="button" class="wk-kwchip" :aria-pressed>` + 배지, 상한(5)이 차면 고르지 않은 칩은 막는다. **직접 더하기는 남긴다**(정함 15 — 지금의 `addConcept` 규칙, 배지 '직접'). [키워드만 저장]은 지금의 [저장]이다(목차 묶음에만 쓰고 카드를 다시 만들지 않을 때 — 저장하면 카드에 '키워드가 바뀌었습니다'가 붙고 [이 키워드로 다시 만들기]가 그대로 보인다). [이 키워드로 다시 만들기]는 고른 것이 저장과 다르거나(`dirty`) `stale` 일 때 보이고, 둘 미만이면 막고 까닭(`regenerateProblem`)을 `aria-describedby` 로 잇는다. 생성 상태 줄(`conceptsNote` — Task R1 문구)·[다시]는 그대로.
+- **사라지는 버튼의 초점(quality 검토 반영 — 파트 K 메모 27):** 누른 버튼이 `v-if` 로 사라지면 초점이 body 로 떨어진다(TopicCard [직접 고치기] 를 운영 확인 2026-10-08 에 `nextTick` 으로 고친 것과 같은 문제). ① 칩 — 후보 없는 연구(06b)의 칩·'직접' 칩은 빼면 `keywordChips` 가 그리지 않는다. `toggle` 이 누르기 전·뒤 칩 목록으로 `chipFocusAfterToggle` 을 불러 칩이 사라졌으면 `nextTick` 에 그 자리 다음 칩(`data-chip`), 없으면 직접 더하기 칸, 그것도 막혔으면 키워드 제목(`<h3 tabindex="-1">`)으로 옮긴다. ② [이 키워드로 다시 만들기] — 성공하면 고른 것이 저장과 같아지고(dirty 거짓) 다시 만드는 카드는 `aiCardsStale` 에서 빠져(다시 만드는 중) 줄이 통째로 사라진다. `watch([showRegen, busy])`(pre — 그리기 전에 줄 안의 초점을 본다)가 `regenerateFocusMoves`(보이던 줄이 사라졌고, 줄 안에 초점이 있었거나 그 버튼으로 부른 뒤 — 부르는 동안 버튼이 막혀 브라우저가 초점을 이미 놓았을 수 있다)로 판정하고 `nextTick` 에 초점을 잃었을 때만 키워드 제목으로 옮긴다 — 다른 곳으로 간 초점은 빼앗지 않는다. 줄이 남은 채 끝나면(409 등 — busy 가 풀린다) 누른 것을 잊는다. ③ [되돌리기](06b 부터 `v-if="dirty"`)도 누르면 사라진다 — 키워드 제목으로(입력 칸이면 휴대폰에서 고치지도 않을 자판이 올라온다). 키워드 생성의 [다시](06b 그대로)는 고치지 않는다.
 - **TopicCard:** 제목 `<h3>` 안을 `keywordSpans(card.title, card.keywords ?? [])` 조각으로 — 같은 파일의 수치 문장(`figurePieces` — `:40-43`)과 같은 `<template v-for>` 방식이라 조각 사이에 공백이 끼지 않는다. 경고 줄(`.wk-topic__kwwarn`), '키워드가 바뀌었습니다'(`.wk-topic__kwchanged` — 고른·고친·사용자 카드엔 없다, 정함 16). `cardStatus(item, conceptsGen)` 로 빈 씨앗 자리의 waiting·blocked — blocked 는 대기 뼈대 없이 씨앗 글과 노트를 보이고 [다시] 가 없다(`retryId` 는 insufficient·failed 만 — 다시 부를 것은 키워드 칩의 [다시]나 [이 키워드로 다시 만들기]다). 다시 만드는 중인 카드는 `cardRemakingNote` 줄('새 키워드로 다시 만드는 중입니다')을 달고 [고르기](`canPick`)·[직접 고치기](서버 409 `CARD_BUSY`)를 막으며 그동안 '키워드가 바뀌었습니다'는 달지 않는다(06e 정함 16).
 - **TopicDeck:** 받은 `concepts`·`conceptsGen` 을 카드에 내려 주고, 키워드를 고르는 동안 [다른 방향]을 막는다(서버 409 `KEYWORDS_BUSY` — Task K4. 뼈대에 없던 작은 더함 — 파트 메모).
 - **TopicsStep:** ConceptChips 에 `candidates = view.concept_candidates ?? null`·`stale = aiCardsStale(topics, view.concepts, conceptGen)`(키워드 생성이 실패해 카드가 없는 씨앗 자리도 센다 — Task K7), `@regenerate`: 고른 것이 저장과 다르면 `patchWork({ concepts })` → `regenerateTopics(jobId)` → `act` 가 `topics`·`work` 를 다시 읽고 `afterAction()`, 오류는 `workErrorMessage`, 409 면 `topics`·`work` 를 다시 읽는다(기존 `act` 그대로). 이 함수는 `retryCard` 앞에 둔다 — Task R1 이 고친 `saveConcepts`·`retryConcepts` 의 오류 문구 줄(`:151`·`:156`)을 old 로 잡지 않는다.
@@ -16119,6 +16316,8 @@ new:
         data-edit-open
 ```
 
+⑱ (quality 검토 반영 — 파트 K 메모 27) 사라지는 버튼의 초점 — 실패 테스트 → 구현. `frontend/tests/unit/topicDeck.test.ts` 에 describe `chipFocusAfterToggle·regenerateFocusMoves — 사라지는 버튼의 초점`(it 4 — 남는 칩·후보 없는 연구의 칩·'직접' 칩·`regenerateFocusMoves`. 칩 목록은 부품과 같은 길 `keywordChips`·`toggleKeyword` 로 만든다)을 describe `keywordChips·toggleKeyword·regenerateProblem` 뒤에 먼저 더해 `npx vitest run tests/unit/topicDeck.test.ts` 가 `Tests  4 failed | 44 passed (48)`(TypeError — 이름이 없다)인 것을 보고, `frontend/utils/topicDeck.ts` 에 두 함수를 더해 `48 passed` 를 본 뒤 `ConceptChips.vue` 에 위 '알아 둘 것'의 ①②③을 잇는다(키워드 제목 `ref`·`tabindex="-1"`, 칩 `data-chip`, 목록·입력 칸·다시 만들기 줄 `ref`, `showRegen` 계산, `focusAfterGone`·`toggle`·`watch([showRegen, () => props.busy])`·`reset`·`regenerate`). 코드는 그 커밋 그대로다.
+
 - [ ] **Step 2: 타입·빌드·단위 테스트를 확인한다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/frontend && npx nuxi typecheck 2>&1 | grep -c "error TS"`
@@ -16135,7 +16334,7 @@ Expected: Task 앞과 같은 수(기준선 57 — 샌드박스 실측 57, 새 'D
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/frontend && npx vitest run 2>&1 | tail -4`
 
-Expected: 실패 0, `Tests` = Task 앞 + 0
+Expected: 실패 0, `Tests` = Task 앞 + 4(quality 검토 반영의 초점 판정 it — 파트 K 메모 27)
 
 - [ ] **Step 3: 커밋한다**
 
@@ -16731,7 +16930,7 @@ new:
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests/test_research_work_generate.py tests/test_research_work_executor.py tests/test_research_work_topic_card.py tests/test_research_topics_api.py tests/test_research_work_tasks.py -q -p no:cacheprovider`
 
-Expected: `178 passed, 2 warnings` (generate 24 · executor 12 · topic_card 69 · topics 46 · tasks 27 — topic_card 는 Task K6 뒤 59 에 고정 예제 7·검사 2·세 번 놓친 카드 1 을 더했다)
+Expected: `180 passed, 2 warnings` (generate 24 · executor 12 · topic_card 71 · topics 46 · tasks 27 — topic_card 는 Task K6 뒤 61(잠금 테스트 포함 — 파트 K 메모 25)에 고정 예제 7·검사 2·세 번 놓친 카드 1 을 더했다)
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/app && python -m pytest tests -q -p no:cacheprovider --continue-on-collection-errors`
 
@@ -16774,11 +16973,16 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add app/serv
 | 15 | Task K8 | TopicDeck 이 키워드를 고르는 동안 [다른 방향]을 막는다 | 서버가 409 `KEYWORDS_BUSY`(Task K4)로 막는 것을 화면이 먼저 막는다 |
 | 16 | 1-8 Task K8 CSS 묶음 | `.wk-concepts__regen`·`.wk-topic--blocked` 를 더한다. 06b 의 `.wk-concept`·`.wk-concept__remove` 는 쓰지 않게 되지만 지우지 않는다 | 새 줄·새 상태(`blocked`)의 모양. 남는 규칙은 시각 디자인 담당 정리 몫 |
 | 17 | Task K9 프론트 `term_checks.json` 일치 it(＋) | 처음부터 통과(실패 확인 단계에서 '실패 0' 을 기대) | Task K7 의 `keywordSpans` 가 같은 규칙이라 — 06c 계획의 공용 고정 예제 `term_checks.json`(contains 9 사례)으로 샌드박스 실측 |
-| 18 | Task K6 — `topic_card.apply` 는 그대로(뼈대에 없음) | `apply` 의 edited 검사 바로 뒤에 고른 카드 검사 — state picked·제목 있음이면 새 카드든 빈 결과든 덮지 않는다. `TestApply.test_a_picked_topic_stays_picked` ✎(매개변수 둘 — +1) | 검토 반영. [이 키워드로 다시 만들기]가 도는 사이 고른 카드가 바뀌면 06e 정함 16 이 깨진다 |
+| 18 | Task K6 — `topic_card.apply` 는 그대로(뼈대에 없음) | `apply` 의 edited 검사 바로 뒤에 고른 카드 검사 — state picked·제목 있음이면 새 카드든 빈 결과든 덮지 않는다. `TestApply.test_a_picked_topic_stays_picked` ✎(매개변수 둘 — +1) | 검토 반영. [이 키워드로 다시 만들기]가 도는 사이 고른 카드가 바뀌면 06e 정함 16 이 깨진다(두 탭 경합을 닫는 주제 행 잠금은 메모 25) |
 | 19 | 1-6 Task K7 `cardStatus` — 생성 기록 없는 빈 카드는 concepts 가 열려 있으면 waiting, failed 면 blocked, 그 밖 failed | 빈 씨앗 자리(slot 있음·origin report_seed)만 — concepts 가 있으면 waiting(done·canceled 포함), failed 면 blocked. 씨앗 자리가 아니면 failed | 검토 반영. 씨앗 자리 카드 생성은 키워드 반영·취소와 같은 트랜잭션에 들어가 이벤트와 다시 읽기 사이에 생성이 없다 |
 | 20 | 1-6 Task K7 `cardNote("blocked")` = `키워드를 다시 부르면 카드를 만듭니다` | `키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다` | 검토 반영. 키워드를 직접 넣고 저장한 사용자의 길을 함께 알린다 |
 | 21 | 1-6 Task K7 `aiCardsStale(topics, concepts)` | `aiCardsStale(topics, concepts, conceptsGen?)` — blocked 씨앗 자리도 세고 다시 만드는 중인 카드는 세지 않는다(이름 그대로) | 검토 반영. 키워드 생성 failed 뒤 직접 저장한 연구가 막다른 길에 서지 않게 |
 | 22 | 1-6 Task K7 이름 목록 | `cardRemakingNote` 를 더하고 `canPick` 이 다시 만드는 중인 카드를 막는다. Task K8 TopicCard 는 그 줄을 달고 [직접 고치기]도 막는다 | 검토 반영 — 06e 정함 16 의 화면 쪽 |
+| 23 | Task K1 ③ 653 원문 표본 20개(`doc_type='paper'` 전체에서 `ORDER BY random() LIMIT 20`)로 구분자를 보고, ④ 는 `[;,]` 로 나눈다 | ③ 을 둘로 — source_format 갈래마다 653 키워드가 있는 행과 그중 `\|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 세어 구분자 판정 줄을 찍고(`'\|' 포함` 이 어느 범위에서든 0 보다 크면 `split_catalog_keywords` 에 `\|` — Task Z1 Step 5), 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())`). ④ 는 `[;,\|]` 로 나눈다. README 판정 규칙에 두 구분자와 출처 줄을 적는다. 질의는 넷에서 다섯(Task K1 Step 3·Task Z1 Step 1·2 의 기대를 맞췄다) | quality 검토 지적. keyword 의 구분자는 채운 경로마다 다르고 코드로 이미 안다 — MARC 로더는 653 $a 를 ` \| ` 로 잇고(`marc_parser.py:118`·`:256`, 함정 6), 적재 보강은 653 이 빈 논문에 `", ".join(추출 키워드)`(`stages.py:538-539` — KCI 로더는 keyword 를 채우지 않는다). MARC+MODS 는 MARC 값이 MODS 를 덮고(`marc_mods_xlsx.py:103`) MODS genre 가 thesis·report 면 `doc_type='paper'`(`doc_types.py:38`)라 딥리서치(`doc_scope="paper"` — `explorer.py:113`)의 채택 논문이 된다. 보강으로 채운 `, ` 행이 많으면 무작위 20개에 ` \| ` 행이 하나도 안 나와 Z1 이 '[;,] 그대로'로 잘못 판정하고, K2 에서 MARC 학위논문 키워드가 한 덩어리로 남거나(40자 넘으면 버려진다) ④ 가 그 행을 한 낱말로 세어 판정 2 때 참고하는 후보 수도 틀린다. 함정 10 의 교훈('코드 경로가 있다고 그 데이터가 있는 것은 아니다 — 세어서 확정한다')대로 센다. 되돌리려면 이 커밋의 `measure.py`·README 를 앞 커밋으로 돌린다(그러면 위 오판이 돌아온다) |
+| 24 | Task K5 `enqueue_seed_cards` 는 씨앗 자리 행마다 그 행을 target 으로 한 `topic_card` 생성이 (상태 무관) 있는지만 본다 | 행을 읽을 때 `card` 도 읽어 카드가 이미 있는 행(`not r.card` 가 거짓)도 건너뛴다. docstring 에 '카드가 이미 있는 자리(직접 쓴 카드)는 넣지 않는다'를 적고, `TestEnqueueSeedCards.test_a_seed_slot_that_already_has_a_card_gets_none`(＋ — slot 1 에 사용자 카드 edited 가 있으면 그 자리에는 카드 생성이 들어가지 않는다)를 더한다. 정함 29 칸·Task K5 계약 줄·Step 2·4 기대 수와 Task K6(Step 2 `97 passed`·Step 4 `106 passed`)·K9(Step 5 `179 passed`)의 기대 수를 1 씩 맞췄다 | quality 검토 지적. 06e 에서는 이어가기와 카드 생성 사이에 빈 씨앗 자리가 생성 없이 남는 시간이 새로 생겼다(키워드 생성이 줄을 서거나 failed 인 동안). 그 사이 `edit_topic` 은 `_card_open` 이 거짓이라 막지 않고 빈 카드면 사용자 카드(edited)를 만든다(`research_topics.py:194-200`). 그 뒤 키워드를 다시 불러 done 이 반영되면 생성 기록이 없는 그 행에도 카드 생성이 들어가 전역 한 자리 디스패처(D15)로 LLM 을 한 번 헛되이 부르고, 결과는 `topic_card.apply` 의 edited 검사가 버린다 — 그 생성이 열린 동안 사용자 카드에는 '새 키워드로 다시 만드는 중입니다'(K7 `cardRemakingNote`)가 붙고 [고르기]는 `canPick` 이, [직접 고치기]는 409 `CARD_BUSY` 가 막는다. Task K6 regenerate 가 고친 카드를 건너뛰는 규칙(spec §12-4·정함 16)과 같게 한다. 씨앗 자리 행의 카드는 반영(생성 기록이 남는다)이나 [직접 고치기](edited)로만 생기므로 '카드 있음'으로 거르는 것이 06e 전 행·[다른 방향] 판정(정함 29)을 바꾸지 않는다. 되돌리려면 `topic_card.py` 의 `T.card` 읽기와 `and not r.card` 를 빼고 그 테스트를 지운다(그러면 위 헛 호출이 돌아온다) |
+| 25 | Task K6 `topic_card.apply` 의 고른 카드 검사 — 주제 행을 잠그지 않고 읽는다 | 주제 행 SELECT 에 `.with_for_update()` 를 붙이고 docstring 에 잠금 까닭·순서를 적는다. `TestApply.test_the_topic_row_is_read_under_a_row_lock`(＋ — 문장을 PostgreSQL 로 컴파일해 주제 행 SELECT 끝이 `FOR UPDATE` 이고 그 읽기가 주제 행 UPDATE·연구 행 잠금보다 앞서는지 본다)를 더하고, Task K6 알아 둘 것·Step 1 ②·Step 2(`10 failed, 97 passed`)·Step 3 ⑤⑦·Step 4(`107 passed`·Task 앞 + 9)와 Task K9 Step 5(`180 passed`·topic_card 71)를 맞췄다 | quality 검토 지적. 고른 카드 검사는 확인-후-쓰기인데 `pick_topic` 도 주제 행을 `FOR UPDATE` 로 잠그지 않는다(연구별 advisory 잠금만). READ COMMITTED 에서 ① pick 이 `UPDATE T SET state='picked'`(행 잠금, 커밋 전) ② 반영의 SELECT 가 아직 candidate 를 보고 검사를 지난다 ③ 반영 UPDATE 가 잠금을 기다린다 ④ pick 커밋 ⑤ 반영 UPDATE 가 `WHERE id=T` 만 다시 보고 새 카드·`state='candidate'` 를 쓴다 — `work.topic_id=T` 인데 T 는 candidate 이고 제목·질문·근거가 바뀐다. 06e 정함 16 의 두 탭 경합 그 자체이고, 06b 에서는 고른 카드에 열린 카드 생성이 생길 수 없어 닿지 않던 길을 K6 의 regenerate 가 처음 연다(내용이 있는 후보 카드에 새 생성을 넣는다). 잠그면 반영의 SELECT 가 pick 커밋을 기다렸다가 picked 를 보고 덮지 않는다. 잠금 순서는 주제 행 → 연구 행(`refresh_progress`)으로 pick 의 '앞서 고른 행 P → 고른 행 T → 연구 행'과 같은 방향이라 고리가 없다(pick 은 연구 행을 T 뒤에 잠근다). section·paragraph 의 `apply` 가 계획서 행을 `with_for_update()` 로 읽는 것과 같은 규칙이다. UPDATE 의 WHERE 에 `state != 'picked'` 를 더하고 rowcount 를 보는 대안은 쓰지 않았다 — 같은 파일들의 선례가 행 잠금이고, 잠그면 edited 검사([직접 고치기]는 카드 생성이 열려 있으면 409 `CARD_BUSY` 라 거의 겹치지 않는다)도 함께 지킨다. SQLite 대역은 잠금을 그리지 않아 동작이 아니라 문장 모양으로 고정한다(`test_research_work_dispatch.py` 의 `_Recording`·`test_job_runtime.py` 와 같은 방식). 되돌리려면 `.with_for_update()` 와 그 테스트를 지운다(그러면 위 경합이 돌아온다) |
+| 26 | Task K7 Step 1 ⑥ `aiCardsStale` 첫 it 의 고른·고친·직접 쓴 카드 단언 셋은 생성을 주지 않는다(픽스처 기본 queued). ⑨ 는 `canPick` 첫 단언만 끝난 생성으로 바꾸고 둘째 단언(고른 카드)은 그대로. 여러 키워드 `keywordSpans` it 은 겹치는 자리만 본다 | 고른·고친 카드 단언에 `generation: done`, 직접 쓴 카드 단언에 `generation: null` 을 준다. `canPick` 고른 카드 단언에 `generation: { id: 41, status: "done" }` 를 준다(✎ — ⑨ 의 old/new 에 그 줄을 더했다). 여러 키워드 it 에 맞닿은 자리 합침(`"노인우울 연구"`·`["노인", "우울"]` → `노인우울` 한 조각)과 처음 맞은 자리만(`"노인과 노인"`·`["노인"]` → 앞의 `노인` 만) 단언 둘을 더한다. 기대값·it 수(topicDeck 44)·Step 2 실패 수는 그대로 | spec 검토 지적. 기본 생성이 queued 라 카드가 있는 자리는 늘 '다시 만드는 중'(`remaking`)이어서 `!remaking(item)` 하나만으로 거짓이 나온다 — 그 단언이 고정한다던 조건을 지워도 통과했다(실측: `aiCardsStale` 둘째 절의 `item.origin !== "user"`·`item.state === "candidate"`·`!card.edited` 를 하나씩·한꺼번에 지운 변이, `canPick` 의 `item.state === "candidate"` 를 지운 변이 모두 통과). `keywordSpans` 도 '키워드마다 처음 맞은 자리만·겹치거나 맞닿은 자리는 합친다'(알아 둘 것) 가운데 맞닿음(`start <= last[1] + 1` 의 `+1`)과 처음 자리(`indexOf`)가 고정되지 않아 `+1` 을 지우거나 `lastIndexOf` 로 바꾼 변이가 통과했다. 고친 뒤에는 일곱 변이가 모두 떨어지고 구현은 그대로 통과한다(구현 변경 없음) |
+| 27 | Task K8 — `.vue` 라 vitest +0. ConceptChips 는 칩·[이 키워드로 다시 만들기] 줄·[되돌리기]를 `v-if` 로 그리기만 한다 | 사라지는 버튼의 초점을 옮긴다 — `topicDeck.ts` 에 `chipFocusAfterToggle`(누른 칩이 남으면 그 칩, 사라지면 누르기 전 목록에서 그 뒤에 남은 첫 칩, 없으면 null → 직접 더하기 칸)·`regenerateFocusMoves`(보이던 줄이 사라졌고 줄 안에 초점이 있었거나 그 버튼으로 부른 뒤)를 더하고(1-6 밖 — 한 이름 한 파일) `topicDeck.test.ts` 에 it 4(K8 +4 — 프론트 합 +114). ConceptChips 는 키워드 제목 `<h3 tabindex="-1">`·칩 `data-chip`·`nextTick` 초점 옮기기, [되돌리기] 는 키워드 제목으로 | quality 검토 반영. 다시 만들기가 성공하면 저장과 같아지고(dirty 거짓) 다시 만드는 카드가 stale 에서 빠져 줄이 통째로 사라지고, 후보 없는 연구(06b)의 칩·'직접' 칩은 빼면 사라져 초점이 body 로 떨어졌다 — TopicCard 가 운영 확인 2026-10-08 에 `nextTick` 으로 고친 꼴을 다시 들여왔다. [되돌리기] 는 06b 부터 같은 꼴이라 같은 자리에서 함께 고친다. 키워드 생성의 [다시](06b 그대로)는 이 지적 밖이라 두었다 |
 
 ---
 
@@ -17643,14 +17847,14 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && git add frontend
 
 **알아 둘 것:**
 - 실행 절차의 정본은 Task K1 이 쓴 `research/round06e-keyword-candidates/README.md` 의 '실행' 절이다. 아래 명령은 그 절차(`/app/data/` 바인드 마운트 + `-e PYTHONPATH=/app` — 함정 4)의 꼴이고, README 의 경로·인자가 다르면 README 를 따른다.
-- **판정 규칙(정함 14):** ② '최근 이어간 연구 20건(예시·지운 연구 뺌)의 채택 논문(`research_reading.origin = 'evidence'`) 중 키워드가 하나라도 있는 비율' ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → `2` — 스크립트가 ② 표 아래에 판정 줄(`판정: 비율 n% — 기준 50% 이상|미만 → PAPER_KEYWORD_MIN_N = 1|2`)을 찍는다. ① 전체 논문 채움률과 ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)는 참고값이다(시연·실사용은 최근 이어간 연구가 대상이다 — '최근 20건'은 표본이 아니라 대상 정의라 `ORDER BY created_at DESC LIMIT 20` 그대로 둔다). ③ 653 원문 표본 20개(`ORDER BY random() LIMIT 20` — 함정 11)로 구분자를 본다. DB 주소는 컨테이너 env 로 만든 `DATABASE_URL_SYNC`(psycopg2 — `DATABASE_URL` 은 asyncpg URL 이라 동기 엔진에 못 쓴다), 트랜잭션은 `READ ONLY`·`statement_timeout` 120초다(Task K1).
+- **판정 규칙(정함 14):** ② '최근 이어간 연구 20건(예시·지운 연구 뺌)의 채택 논문(`research_reading.origin = 'evidence'`) 중 키워드가 하나라도 있는 비율' ≥ 50% → `PAPER_KEYWORD_MIN_N = 1`, < 50% → `2` — 스크립트가 ② 표 아래에 판정 줄(`판정: 비율 n% — 기준 50% 이상|미만 → PAPER_KEYWORD_MIN_N = 1|2`)을 찍는다. ① 전체 논문 채움률과 ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상)는 참고값이다(시연·실사용은 최근 이어간 연구가 대상이다 — '최근 20건'은 표본이 아니라 대상 정의라 `ORDER BY created_at DESC LIMIT 20` 그대로 둔다). ③ 은 구분자 판정이다 — source_format 갈래마다 653 키워드가 있는 행과 그중 `|`·`,`·`;` 를 포함한 행을 ② 의 채택 논문·소장 논문 전체에서 센다(MARC 로더는 ` | `, 적재 보강은 `, ` 로 잇는다 — README 판정 규칙). 스크립트가 표 아래에 구분자 판정 줄(`구분자 판정: '|' 를 포함한 653 키워드 — … → split_catalog_keywords 에 '|' 를 더한다(Task Z1 Step 5)` 또는 `… 없다 → split_catalog_keywords 의 [;,] 그대로`)을 찍는다. 원문 표본은 갈래마다 10개(`row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` — 함정 11)로 그 밖의 구분자를 눈으로 본다(파트 K 메모 23). DB 주소는 컨테이너 env 로 만든 `DATABASE_URL_SYNC`(psycopg2 — `DATABASE_URL` 은 asyncpg URL 이라 동기 엔진에 못 쓴다), 트랜잭션은 `READ ONLY`·`statement_timeout` 120초다(Task K1).
 - 출력은 운영 데이터의 집계와 키워드 원문 표본이다 — 저장소에 들이기 전에 그 밖의 것(논문 제목·저자·초록)이 섞이지 않았는지 본다.
 
 - [ ] **Step 1: (개발 PC) dry-run 으로 SQL 을 다시 본다**
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && python -I research/round06e-keyword-candidates/measure.py --dry-run`
 
-Expected: SQL 네 덩이(머리 줄 `-- ①` ~ `-- ④`)만 찍히고 DB 에 붙지 않는다(`--dry-run` 은 엔진을 만들기 전에 끝난다 — `core.config` 도 읽지 않는다). 눈으로 확인한다 — ①·② 의 '키워드 있음' 조건이 `(lc.keyword IS NOT NULL AND btrim(lc.keyword) <> '')` 와 `(CASE WHEN jsonb_typeof(lc.extra->'keywords') = 'array' THEN jsonb_array_length(lc.extra->'keywords') ELSE 0 END > 0)` 의 OR 이고 jsonb `?` 를 쓰지 않는다(함정 10), ② 가 `research_works` 의 `deleted_at IS NULL AND is_example = false` 를 `ORDER BY created_at DESC LIMIT 20` 으로 고른 뒤 `research_reading` 의 `origin = 'evidence'` 를 센다, ③ 이 `ORDER BY random() LIMIT 20` 이다(함정 11). 다르면 Task K1 으로 돌아가 고친 뒤 이 Step 부터 다시.
+Expected: SQL 다섯 덩이(머리 줄 `-- ①`·`-- ②`·`-- ③` 둘·`-- ④`)만 찍히고 DB 에 붙지 않는다(`--dry-run` 은 엔진을 만들기 전에 끝난다 — `core.config` 도 읽지 않는다). 눈으로 확인한다 — ①·② 의 '키워드 있음' 조건이 `(lc.keyword IS NOT NULL AND btrim(lc.keyword) <> '')` 와 `(CASE WHEN jsonb_typeof(lc.extra->'keywords') = 'array' THEN jsonb_array_length(lc.extra->'keywords') ELSE 0 END > 0)` 의 OR 이고 jsonb `?` 를 쓰지 않는다(함정 10), ② 가 `research_works` 의 `deleted_at IS NULL AND is_example = false` 를 `ORDER BY created_at DESC LIMIT 20` 으로 고른 뒤 `research_reading` 의 `origin = 'evidence'` 를 센다, ③ 의 첫 덩이가 source_format 별로 `position('|' in lc.keyword) > 0`(과 `,`·`;`)을 세고 둘째 덩이가 `row_number() OVER (PARTITION BY lc.source_format ORDER BY random())` 의 10 이하다(함정 11), ④ 가 `'[;,|]'` 로 나눈다. 다르면 Task K1 으로 돌아가 고친 뒤 이 Step 부터 다시.
 
 - [ ] **Step 2: (사용자, 서버) 측정 스크립트를 돌린다**
 
@@ -17666,11 +17870,11 @@ echo "exit=$?"; wc -l /data/nl-lib/data/round06e-keyword-candidates/out/fill_rat
 cat /data/nl-lib/data/round06e-keyword-candidates/out/fill_rate.md
 ```
 
-Expected: `exit=0`, 머리 `# round06e 논문 키워드 채움률` 과 markdown 표 넷 — ① `doc_type='paper'` 전체의 논문 수·653 키워드·추출 키워드·둘 중 하나·비율 ② 최근 이어간 연구 20건의 연구별 채택 논문·키워드 있음·비율과 합계 줄, 그 아래 판정 줄(`판정: 비율 … → PAPER_KEYWORD_MIN_N = 1` 또는 `2`, 채택 논문이 없으면 '기본값 … = 1 그대로') ③ `cnts_id`·`keyword` 원문 표본 20줄 ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상). Traceback 이 나오면(`ModuleNotFoundError: No module named 'core'` 는 `-e PYTHONPATH=/app` 를 빠뜨린 것 — 함정 4) 그 줄을 개발 PC 로 가져와 Task K1 으로 돌아간다. `fill_rate.md` 를 개발 PC 의 `C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/research/round06e-keyword-candidates/out/fill_rate.md` 로 가져온다(scp 또는 붙여 넣기 — 줄바꿈은 그대로).
+Expected: `exit=0`, 머리 `# round06e 논문 키워드 채움률` 과 markdown 표 다섯 — ① `doc_type='paper'` 전체의 논문 수·653 키워드·추출 키워드·둘 중 하나·비율 ② 최근 이어간 연구 20건의 연구별 채택 논문·키워드 있음·비율과 합계 줄, 그 아래 판정 줄(`판정: 비율 … → PAPER_KEYWORD_MIN_N = 1` 또는 `2`, 채택 논문이 없으면 '기본값 … = 1 그대로') ③ 범위(최근 연구 채택 논문·소장 논문 전체)·source_format 별 논문·653 키워드 있음·`'|' 포함`·`',' 포함`·`';' 포함` 과 그 아래 구분자 판정 줄, 그리고 `source_format`·`cnts_id`·`keyword` 원문 표본(갈래마다 10줄 이하) ④ 연구별 서로 다른 키워드 수(1편 이상·2편 이상). Traceback 이 나오면(`ModuleNotFoundError: No module named 'core'` 는 `-e PYTHONPATH=/app` 를 빠뜨린 것 — 함정 4) 그 줄을 개발 PC 로 가져와 Task K1 으로 돌아간다. `fill_rate.md` 를 개발 PC 의 `C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/research/round06e-keyword-candidates/out/fill_rate.md` 로 가져온다(scp 또는 붙여 넣기 — 줄바꿈은 그대로).
 
 - [ ] **Step 3: 판정하고 README '결과'에 적는다 (Edit 도구)**
 
-`research/round06e-keyword-candidates/README.md` 의 '결과' 칸에 다음을 적는다(값은 `out/fill_rate.md` 그대로): 측정 날짜·실행한 사람(사용자), ① 비율, ② 합계 줄의 비율·채택 논문 수·판정 줄, ④ 의 1편 이상·2편 이상 키워드 수 범위 한 줄(참고), ③ 에서 본 구분자(예: `;` 만 · `;` 와 `,` · 그 밖에 `|`), **판정** — `PAPER_KEYWORD_MIN_N = <1|2>`(② 판정 줄 그대로 — 50% 이상/미만), 구분자 — '가정과 같다' 또는 '`<글자>` 를 더한다'.
+`research/round06e-keyword-candidates/README.md` 의 '결과' 칸에 다음을 적는다(값은 `out/fill_rate.md` 그대로): 측정 날짜·실행한 사람(사용자), ① 비율, ② 합계 줄의 비율·채택 논문 수·판정 줄, ④ 의 1편 이상·2편 이상 키워드 수 범위 한 줄(참고), ③ 구분자 판정 줄(범위별 `'|' 포함` 행 수)과 표본에서 본 그 밖의 구분자, **판정** — `PAPER_KEYWORD_MIN_N = <1|2>`(② 판정 줄 그대로 — 50% 이상/미만), 구분자 — '가정과 같다' 또는 '`<글자>` 를 더한다'.
 
 Run: `cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e && grep -c "PAPER_KEYWORD_MIN_N = [12]" research/round06e-keyword-candidates/README.md`
 
@@ -17703,7 +17907,7 @@ Expected: 실패 0(`test_research_work_api.py` 의 이어가기 테스트는 논
 
 - [ ] **Step 5: (구분자가 다를 때만) `split_catalog_keywords` 에 구분자를 더한다 — 실패 테스트 먼저**
 
-③ 에서 본 새 구분자를 `S` 라 하자(예: `|`). `app/tests/test_research_work_keywords.py` 끝에 다음을 더한다(`|` 자리에 실제 글자):
+③ 구분자 판정 줄이 `|` 를 더한다고 하거나 표본에서 새 구분자를 봤으면 그 글자를 `S` 라 하자(예: `|`). `app/tests/test_research_work_keywords.py` 끝에 다음을 더한다(`|` 자리에 실제 글자):
 
 ```python
 def test_the_separator_seen_in_the_k1_sample_is_split_too():
@@ -17780,8 +17984,8 @@ cd C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/round06e/frontend && npm run
 
 Expected:
 - typecheck 오류 `0` · `Duplicated imports` — Task 0 Step 5 에서 적은 값과 같다(`2`, 또는 06d 를 받았으면 `0`). 늘었으면 새 이름 하나를 두 파일이 내보낸 것이다(한 이름 한 파일 — 공통 계약 1-6)
-- vitest 전체 — 실패 0. `Test Files` 는 기준선 파일 수 + 5, `Tests` 는 계획 순서상 마지막으로 끝낸 프론트 Task(K9 의 프론트 it, R6·H3 은 +0)의 '통과 확인' 수와 같다(= Task 0 의 기준선 + 파트가 더한 수 +110('각 Task 의 기대 수' 합 — 06c·06d 를 받지 않았으면 `Tests  842 passed (842)`) + K9·R6 이 dev 에서 받은 06c·06d 프론트 테스트 수). 다르면 Task 별 '통과 확인' 명령으로 센다
-- 06e 프론트 묶음 열여덟 파일 — 실패 0. 계획 값은 Task 0 의 열세 파일 `221` + 파트가 더한 +110 = `Test Files  18 passed (18)` / `Tests  331 passed (331)` — Task K9 의 9 는 06c `term_checks.json` 의 contains 사례 수를 따르므로 06c 가 사례를 더 두었으면 그만큼 크다. 나온 수를 적어 둔다(완료노트 §4)
+- vitest 전체 — 실패 0. `Test Files` 는 기준선 파일 수 + 5, `Tests` 는 계획 순서상 마지막으로 끝낸 프론트 Task(K9 의 프론트 it, R6·H3 은 +0)의 '통과 확인' 수와 같다(= Task 0 의 기준선 + 파트가 더한 수 +114('각 Task 의 기대 수' 합 — 06c·06d 를 받지 않았으면 `Tests  846 passed (846)`) + K9·R6 이 dev 에서 받은 06c·06d 프론트 테스트 수). 다르면 Task 별 '통과 확인' 명령으로 센다
+- 06e 프론트 묶음 열여덟 파일 — 실패 0. 계획 값은 Task 0 의 열세 파일 `221` + 파트가 더한 +114 = `Test Files  18 passed (18)` / `Tests  335 passed (335)` — Task K9 의 9 는 06c `term_checks.json` 의 contains 사례 수를 따르므로 06c 가 사례를 더 두었으면 그만큼 크다. 나온 수를 적어 둔다(완료노트 §4)
 - 그대로여야 하는 셋 — `Tests  49 passed (49)`(`citations` 18 + `reportDocument` 27 + `reportDocx` 4 — Task 0 과 같다: Q3 S, 딥리서치 보고서 내보내기 불변)
 - build 의 `Duplicated imports` 는 typecheck 와 같은 값, 마지막 줄 `└  ✨ Build complete!`
 
@@ -18130,12 +18334,12 @@ plan: `docs/superpowers/plans/2026-10-08-round06e-assistant-auto-report.md` (Tas
 3. **연구 맥락을 반영한 딥리드 첫 화면**(§12-11 선택 — 정함 19).
 4. **리랭커 뒷받침 점수·원문 뷰어 안 하이라이트**(§12-9 — 인용 근거 하이라이트가 대신한다).
 5. **연쇄를 다른 단계 화면에서도 돌리기**(정함 6)·**쓰는 중인 글의 인용 칩**(정함 24).
-6. **연구 공백 단정의 남는 한계** — 코퍼스 낱말이 앞 문장에만 있고 단정이 다음 문장에 있으면 잡지 못한다(Task X2 — '확인했다' 를 문장 단위로만 본다).
+6. **연구 공백 단정의 남는 한계** — 코퍼스 낱말이 앞 문장에만 있고 단정이 다음 문장에 있으면 잡지 못한다(Task X2 — '확인했다' 를 문장 단위로만 본다). 코퍼스 문장 안의 효과 없음 결과('소장 논문을 분석한 결과 성별 간 차이가 없음을 확인했다')는 결핍 단정('관련 연구가 없음을 확인했다')과 같은 꼴이라 공백 후보로 바뀐다 — 주어를 연구·논문으로 좁히면 '다룬 것이 없음을'·'아직까지 없음을' 같은 결핍 단정을 놓쳐 좁히지 않았다(결핍 말의 부정 '부족하지 않은'·'적지 않음을'·'다르지 않음을'과 '다름없는'·'변함없음' 같은 합성어는 그대로 둔다).
 7. **LNB 접기 연결** — <R6 판정 — '06e 가 달았다 — 이월 없음' 또는 '06d 의 LNB 접기 연결 Task 가 단다(06d 는 06e 의 workPanelOpen 을 읽기만 한다 — 정함 30, spec §12-5)'>.
 8. **PDF** — <H3 판정 — '했다. 인쇄 창 취소를 브라우저가 알려 주지 않아 창이 닫히면 내려받은 것으로 본다(단계 done 은 앞으로만 가는 도달 표시)' 또는 'PDF 내보내기(06e 마지막 Task) — 일정으로 자름(spec §12-6 자르는 순서 맨 앞)'>.
 9. **리허설 전** — ETA 표본 섞임(06b 이월 §7-1), 3~5명 동시 사용 때 자동 보고서의 대기 길이(보고서 1건 = 생성 약 6건, 디스패처 전역 1건 — §12-8).
 10. **해당 없음으로 닫은 06b 이월** — §7-3(개념 칩을 고쳐도 소속을 다시 세지 않음 — 06b 규칙 그대로, 목차 때 다시 센다), §7-6(`Section.model` 늘 null — D21 로 부록에 모델을 싣지 않는다).
-11. **딥리드 참고문헌 질문(정함 31)** — 고쳤다 — 이월 없음(Task S2 의 `_book_references`).
+11. **딥리드 참고문헌 질문(정함 31)** — 끊기던 것은 고쳤다(Task S2 의 `_book_references`). 참고문헌 목록이 없으면(책·참고문헌을 뽑지 못한 논문) 청크 검색으로 돌아가 본문 대목을 근거로 답한다(S2 quality 검토 반영). 남은 것은 의도 낱말이다 — `_REF_INTENT_KEYWORDS`(`book_chat.py:19-22`)를 부분 문자열로 보아, 목록이 있는 논문에서는 '이 인용 근거가 맞아?'·'출처가 어디야?'(spec §12-8 장면 3) 같은 본문 확인 질문도 청크 대신 참고문헌 목록을 받는다. 끊기지는 않지만 본문으로 확인한 답은 아니다. '인용'·'출처' 단독을 빼거나 '참고문헌'·'목록'과 함께 나올 때만 거는 좁히기는 사용자 결정 몫이다(기존 네 화면도 같은 길을 쓴다).
 12. **방법 칸이 둘** — [목차 고치기] 안의 방법 칸과 문서 6절의 칸(`DocField`)이 같은 `outline.method` 를 고친다(시각 디자인 정리 때 하나로).
 
 ---
@@ -18872,7 +19076,7 @@ Expected: 셋 모두 위와 같다. `pg` 로 `SELECT count(*) FROM research_gene
 - [ ] **Step 4: (브라우저, 1440px) 참고문헌 선택하기 — 오른쪽 딥리드**
 
 1. 단계 제목 `참고문헌 선택하기`. 논문 제목을 누르면 오른쪽에 딥리드 패널이 열린다(제목 버튼 `aria-expanded="true"`, 그 행 강조, 패널 머리에 제목·`저자 · 연도 · 학술지`·[논문 상세 ↗]·닫기). 1440px 에서 LNB 가 접힌다 — Task R6 을 했거나(06d 먼저) 06d 의 LNB 접기 연결이 운영에 있을 때만이다. 둘 다 아니면 접히지 않는 것이 맞다(적어 둔다).
-2. 질문 하나를 보낸다 → 답이 흐르며(`aria-live`) 끝나면 출처 칩(`p.X–Y`)이 붙는다. 칩을 누르면 대목 미리보기가 열리고 [원문 보기] 를 누르면 원문 뷰어가 `X+1` 쪽으로 열린다(칩의 쪽은 저장값 그대로, 뷰어 쪽은 +1 — 정함 22). 이어서 `이 논문의 참고문헌은?` 을 보낸다 → 끊기지 않고(오류 글 `오류가 발생했습니다. 다시 시도해주세요.` 없이) 그 논문의 참고문헌 목록을 들어 답한다(정함 31 — Task S2). 참고문헌이 비어 있는 논문이면 끊기지 않고 답이 오는 것만 본다.
+2. 질문 하나를 보낸다 → 답이 흐르며(`aria-live`) 끝나면 출처 칩(`p.X–Y`)이 붙는다. 칩을 누르면 대목 미리보기가 열리고 [원문 보기] 를 누르면 원문 뷰어가 `X+1` 쪽으로 열린다(칩의 쪽은 저장값 그대로, 뷰어 쪽은 +1 — 정함 22). 이어서 `이 논문의 참고문헌은?` 을 보낸다 → 끊기지 않고(오류 글 `오류가 발생했습니다. 다시 시도해주세요.` 없이) 그 논문의 참고문헌 목록을 들어 답한다(정함 31 — Task S2). 참고문헌이 비어 있는 논문이면 끊기지 않고 본문 대목으로 답한다 — 쪽을 말하면 출처 칩이 붙는다(목록이 없으면 청크 검색으로 돌아간다 — S2 quality 검토 반영).
 3. 답이 흐르는 동안 다른 논문 제목을 누른다 → 스트림이 끊기고 그 논문의 대화가 열린다. 처음 논문으로 돌아오면 받다 만 답이 `(답을 받다가 멈췄습니다)` 와 함께 남아 있다. 다시 질문하면 이어서 답한다.
 4. 패널의 [담음] 토글로 논문을 담거나 뺀다 — 행 상태가 같이 바뀐다. '들어온 경로' 첫 대목(접어 둠)을 펼치면 대목 글이 보인다.
 5. Esc → 패널이 닫히고 초점이 누른 제목으로 돌아온다(LNB 가 접혔으면 다시 펼쳐진다). [논문 상세 ↗] → 상세로 갔다가 브라우저 뒤로 → 참고문헌 선택하기의 그 자리.
@@ -18938,8 +19142,8 @@ Expected(화면): 넷 모두 위와 같다.
 - [ ] **Step 6: (브라우저) 검토할 곳·인용 근거·선택 기능**
 
 1. 머리 목차 아래 `검토할 곳: 근거 없는 문장 n · 확인 필요 숫자 m`(0 인 칸은 빠지고, 둘 다 0 이면 줄이 없다) → 누르면 그 첫 문단으로 스크롤·초점.
-2. 저장된 문단의 인용 칩을 누른다 → 오른쪽 패널이 `인용 근거` 탭으로 열린다: 논문 카드(제목·서지), 모델이 본 원문 대목에서 인용 문장과 가장 많이 겹친 문장이 하이라이트(`<mark>`)되고 쪽 표기가 있다(대목이 없으면 초록과 '원문 대목을 읽지 못해 초록을 보입니다'). 본문의 그 문장도 강조된다.
-3. [원문 보기] → 원문 뷰어가 그 쪽으로 열린다. [이 논문과 대화하기] → 같은 패널이 `딥리드` 탭으로 바뀐다. Esc → 닫히고 초점이 누른 칩으로 돌아온다.
+2. 저장된 문단의 인용 칩을 누른다 → 오른쪽 패널이 `인용 근거` 탭으로 열린다: 논문 카드(제목·서지), 모델이 본 원문 대목에서 인용 문장을 가장 많이 덮는 문장이 하이라이트(`<mark>`)되고 쪽 표기가 있다(대목이 없으면 초록과 '원문 대목을 읽지 못해 초록을 보입니다'). 본문의 그 문장도 강조된다. 칩 몇 개를 눌러 내용이 무관한 문장이 강조되지 않는지(특히 '것으로 나타났다'·'을 대상으로' 같은 상투구만 같은 문장 — 목록에 없는 상투구로 강조되면 `BOILERPLATE` 에 더하거나 하한을 올린다), '인용한 문장과 겹치는 대목 문장을 찾지 못했습니다' 줄이 대부분의 칩에서 나오지 않는지 본다 — 잦으면 `EXCERPT_MATCH_MIN`(0.2)을 낮출지 판단한다(파트 S 메모 12). 여러 [E#] 가 붙은 문장의 칩은 따로 본다 — 마커가 문장 가운데 있는 꼴('… 낮추며 [E1], … 낮춘다 [E2].')과 끝에 몰린 꼴('… 낮추고, … 떨어뜨린다 [E1][E2].') 각각에서 칩을 하나씩 눌러, 칩마다 그 칩이 받치는 말에 맞는 대목 문장이 강조되는지('찾지 못했습니다' 줄로 떨어지지 않는지), '효과가 … 컸다'·'높을수록 … 낮았다' 같은 결과 문형만 같은 무관 문장이 강조되지 않는지 본다(파트 S 메모 12 의 3차 검토 반영 — 무관이 잦으면 하한을 올리거나 나누기를 끄고, '찾지 못했습니다' 가 잦으면 나누는 자리를 늘릴지 판단한다).
+3. [원문 보기] → 원문 뷰어가 그 쪽으로 열린다. [이 논문과 대화하기] → 같은 패널이 `딥리드` 탭으로 바뀐다. Esc → 닫히고 초점이 누른 칩으로 돌아온다. 수치 칩(`[F#]`)이 든 문장의 인용 칩을 눌러 카드의 인용한 문장에 본문과 같은 수치가 보이는지(1200px 미만 서랍에서도 — 수치가 빠져 '논문편' 처럼 읽히지 않는지) 본다. 2단(1200px 이상)에서 칩을 눌러 둔 채 그 문단을 [고치기]로 그 문장을 바꿔 저장하거나 [다시]로 다시 쓰면 본문 강조와 칩 펼침이 떨어지고(카드는 옛 문장 그대로), 같은 자리의 칩을 누르면 새 문장으로 다시 열리며, 닫으면 초점이 그 문단으로 간다(파트 S 메모 13).
 4. 선택 기능이 남았다 — 문단 하나에 [수락] → 상태 `수락`, 다른 문단의 상태 이름은 `AI 작성 · 검토 전`. [목차 고치기] 를 열면 편집기가 펼쳐진다(다시 승인하지 않고 닫는다).
 
 Expected: 넷 모두 위와 같다.

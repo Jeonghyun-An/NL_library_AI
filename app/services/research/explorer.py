@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from repositories.book import BookRepository
 from schemas.book import ChunkHit
+from services.research.bibliography import looks_like_bibliography
 from services.research.scoring import blend_score, impact_per_year, parse_pub_year
 from services.research.state import HitRow
 
@@ -33,7 +34,7 @@ _NON_SOURCE_LABELS = ("[초록] ", "[키워드] ", "[표 설명] ", "[그림 설
 
 
 def is_source_passage(chunk: ChunkHit) -> bool:
-    """근거로 인용할 수 있는 원문 대목인가. 메타청크와 생성·중복 보강 청크를 뺀다.
+    """근거로 인용할 수 있는 원문 대목인가. 메타청크, 생성·중복 보강 청크, 참고문헌 목록 조각을 뺀다.
 
     라벨만 보지 않고 쪽수 0 을 함께 요구한다. 보강 청크는 쪽수가 늘 0 이라, 쪽수가
     있는 청크의 같은 글자는 본문에 우연히 나온 것이다. 반대로 쪽수 0 만으로는 가를 수
@@ -46,7 +47,11 @@ def is_source_passage(chunk: ChunkHit) -> bool:
     # 발췌로 인용하고 critic 에게도 그게 발췌로 들어간다.
     if chunk.chunk_idx == -1:
         return False
-    return not (chunk.page_start == 0 and chunk.text.startswith(_NON_SOURCE_LABELS))
+    if chunk.page_start == 0 and chunk.text.startswith(_NON_SOURCE_LABELS):
+        return False
+    # 논문 끝 참고문헌 목록 조각은 쪽수가 있는 본문 청크라 위 둘로는 걸러지지 않는다(판단 근거는 bibliography.py).
+    # 여기서 빼면 탐색 검색(리랭크·top_k 전)·critic 발췌·절 생성 입력·보고서 팝오버와 이어가기 대목 후보가 함께 바뀐다
+    return not looks_like_bibliography(chunk.text)
 
 
 def rank_hits(
@@ -129,7 +134,7 @@ async def explore(query: str, *, params: dict, db: AsyncSession) -> tuple[list[H
     meta_by_id = {
         cnts_id: {
             "title": b.title, "personal_author": b.personal_author,
-            "series_title": b.series_title, "vol_issue": b.vol_issue,
+            "series_title": b.series_title, "vol_issue": b.vol_issue, "extent": b.extent,
             "pub_date": b.pub_date, "kci_citations": b.kci_citations,
             "grade": b.grade,
         }

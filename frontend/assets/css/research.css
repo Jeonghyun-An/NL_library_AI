@@ -4,14 +4,40 @@
    색·모서리·그림자는 --skx-* 토큰만 읽는다. 1rem = 20px(style_skovix.css). */
 
 /* ── 페이지 골격 ─────────────────────────────────────────── */
+/* --rs-bar-thick: 큰 진행 막대의 두께(Q1). --rs-bar-area-h: 화면 위에 고정한 진행 영역 전체 높이 — 값은 이 :root 한 곳에만 둔다
+   (문서 스크롤 칸 html 은 .rs-page 에 둔 값을 읽지 못한다). --rs-bar-h: 지금 막대가 가리는 높이 — 막대가 서 있으면
+   --rs-bar-area-h, 없으면 0px. 막대 높이·옆 칸 top·돌아온 자리 맞추기가 읽는다(정함 3 — 높이를 재지 않고 토큰으로 고정한다) */
+:root {
+  --rs-bar-area-h: 5.6rem;
+}
 .rs-page {
   --rs-side-width: 17rem;
+  --rs-bar-thick: 1rem;
+  --rs-bar-h: 0px;
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 1.2rem;
   min-width: 0;
   color: var(--skx-ink);
+}
+.rs-page.has-progressbar {
+  --rs-bar-h: var(--rs-bar-area-h);
+}
+/* 막대가 서 있는 동안 문서 스크롤(창)의 위쪽 여백 — 브라우저는 초점 이동·scrollIntoView·#조각 이동에서 sticky 막대를 모르므로
+   막대 밑에 놓인 요소(초안의 인용 칩·PlanCard 편집 칸 등)가 가린 채 초점을 받지 않게 그 높이를 알린다(WCAG 2.2 2.4.11).
+   절 이동(scrollIntoView)도 이 여백을 따르므로 .rs-section 의 scroll-margin-top 에는 막대 높이를 다시 더하지 않는다.
+   scrollBy·scrollTo 에는 걸리지 않는다 — 그것으로 굴리는 돌아온 자리 맞추기는 막대 높이를 따로 받아야 한다 */
+html:has(.rs-page.has-progressbar) {
+  scroll-padding-top: var(--rs-bar-area-h);
+}
+@media (max-width: 768px) {
+  :root {
+    --rs-bar-area-h: 5.2rem;
+  }
+  .rs-page {
+    --rs-bar-thick: 0.75rem;
+  }
 }
 .rs-body {
   display: flex;
@@ -30,10 +56,11 @@
   grid-template-columns: minmax(0, 1fr) var(--rs-side-width);
   align-items: start;
 }
+/* 고정 진행 막대(--rs-bar-h — 막대가 없으면 0px) 바로 아래에 붙는다 */
 .rs-body--A .rs-col-side {
   position: sticky;
-  top: 1.2rem;
-  max-height: calc(100vh - 2.4rem);
+  top: calc(var(--rs-bar-h) + 1.2rem);
+  max-height: calc(100vh - 2.4rem - var(--rs-bar-h));
   overflow-y: auto;
 }
 /* B: 계획 → 탐색 과정 → 보고서가 한 줄로 쌓인다. 본문 묶음을 풀어 진행 패널을 가운데 끼운다 */
@@ -49,16 +76,26 @@
 .rs-body--B .rs-block--report {
   order: 3;
 }
+/* 탐색 중에는 보고서 자리가 곧 과정('AI가 지금 하는 일')이고 옆 칸에는 근거 장부만 있다 — 과정을 먼저, 장부를 그 아래로 */
+.rs-body--B.is-exploring .rs-block--report {
+  order: 2;
+}
+.rs-body--B.is-exploring .rs-col-side {
+  order: 3;
+}
 
 /* ── 공통 부품 ───────────────────────────────────────────── */
+/* 카드는 불투명 면(--skx-white — 다크 테마에서 짙은 청록)이라 움직이는 배경 위에서도 글자가 읽힌다. 다크에서는 옅은 그림자가 거의
+   보이지 않아 가장자리를 흰 8% 선(--skx-frame-line — 결과 화면 큰 틀과 같은 선)과 위 하이라이트(--skx-frost-hilite)로 세운다 */
 .rs-card {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   padding: 1.2rem;
   background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
   border-radius: var(--skx-radius-lg);
-  box-shadow: var(--skx-shadow-lnb);
+  box-shadow: var(--skx-frost-hilite), var(--skx-shadow-lnb);
 }
 .rs-card__head {
   display: flex;
@@ -80,6 +117,13 @@
   flex-direction: row;
   align-items: center;
   font-size: 0.75rem;
+}
+/* 대기 카드의 글 묶음 — 스피너 옆에 본문과 덧붙인 줄(대기 순번·이해한 질문)을 세로로 쌓는다 */
+.rs-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 .rs-card--error {
   border: 1px solid var(--skx-line);
@@ -119,7 +163,7 @@
   padding: 0.45rem 0.9rem;
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   white-space: nowrap;
   text-decoration: none;
   background: var(--skx-primary);
@@ -139,6 +183,17 @@
 .rs-btn--small {
   padding: 0.3rem 0.6rem;
   font-size: 0.6rem;
+}
+/* 연구 취소의 한 번 확인(CancelConfirm) — '정말 취소'는 메인 입력창의 끝나지 않은 연구 줄(.rs-start-note__btn.is-danger)과 같은 위험 면 */
+.rs-cancel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.rs-btn.rs-cancel__btn--danger {
+  color: var(--skx-on-accent);
+  background: var(--skx-danger);
+  border-color: var(--skx-danger);
 }
 .rs-icon-btn {
   width: 1.4rem;
@@ -180,6 +235,9 @@
 }
 
 /* ── 머리 ────────────────────────────────────────────────── */
+/* 머리 — 카드와 같은 불투명 면·가장자리(.rs-card 주석). 'DeepResearch' kicker 는 사이드바 묶음 이름과 같은 청록 칩, 질문은 화면의
+   주인이라 제목 글자색(--skx-ink-strong)으로 바로 아래 큰 진행 막대의 글줄(1rem)보다 한 단계 크게 둔다. kicker·상태 배지·버튼 줄
+   간격은 큰 진행 막대의 단계 칩(.rs-pbar__stage — 0.55rem·0.1rem 0.45rem·알약)과 같은 크기 체계 */
 .rs-head {
   display: flex;
   flex-wrap: wrap;
@@ -188,45 +246,54 @@
   gap: 0.8rem;
   padding: 1.2rem;
   background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
   border-radius: var(--skx-radius-lg);
-  box-shadow: var(--skx-shadow-lnb);
+  box-shadow: var(--skx-frost-hilite), var(--skx-shadow-lnb);
 }
 .rs-head__main {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 .rs-head__kicker {
+  align-self: flex-start;
   margin: 0;
-  font-size: 0.6rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  color: var(--skx-primary);
+  line-height: 1.4;
+  color: var(--skx-teal-ink);
+  background: var(--skx-glass-teal);
+  border-radius: var(--skx-radius-pill);
 }
 .rs-head__question {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.4;
+  color: var(--skx-ink-strong);
   word-break: keep-all;
 }
 .rs-head__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.3rem;
 }
 .rs-status {
   align-self: flex-start;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.6rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--skx-primary);
   background: var(--skx-white);
   border: 1px solid var(--skx-border-c1);
   border-radius: var(--skx-radius-pill);
 }
 .rs-status--completed {
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
   border-color: var(--skx-primary);
 }
@@ -429,6 +496,21 @@
 .rs-report {
   gap: 1.2rem;
 }
+/* 보고서(초안·최종본 — ReportView)와 탐색 중 절 자리(ReportSkeleton)는 오래 읽는 면이라 결과 화면의 읽는 칸(.skx-pick__main 등 —
+   round08)과 같은 '읽기용 짙은 유리'다: 바탕 --skx-read-surface, 글 톤은 이 면 안에서만 --skx-read-*(본문 거의 흰색)로 다시 정의,
+   줄간격 1.6, 흐림·반사광·위 하이라이트 없음. 읽는 칸은 큰 틀 위에 겹쳐 짙어지지만 연구 화면의 카드는 움직이는 배경 위에 바로 서므로
+   불투명 면(--skx-white) 위에 깐다 — 띠가 밝게 지나가도 글자가 흐려지지 않는다. 두 부품 모두 뿌리가 .rs-card.rs-report 라 부품 파일을
+   고치지 않고, 첫 절이 오면 같은 자리에 초안이 서도 면이 그대로다. 밝은 읽는 면(.skx-reading)은 쓰지 않는다(사용자 결정 2026-10-13) */
+.rs-card.rs-report {
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: linear-gradient(var(--skx-read-surface), var(--skx-read-surface)), var(--skx-white);
+  border-color: var(--skx-frost-menu-line);
+  box-shadow: none;
+  --skx-ink: var(--skx-read-ink);
+  --skx-ink-2: var(--skx-read-ink-2);
+  --skx-gray-1: var(--skx-read-gray-1);
+}
 .rs-report__head {
   display: flex;
   align-items: flex-start;
@@ -575,11 +657,13 @@
 .rs-cite__meta {
   color: var(--skx-gray-1);
 }
+/* 대목 글은 passageText 가 <br> 태그 글자를 줄바꿈으로 바꿔 둔다 — 그 줄을 나눠 보인다 */
 .rs-cite__quote {
   display: block;
   max-height: 8rem;
   padding-left: 0.5rem;
   overflow-y: auto;
+  white-space: pre-line;
   border-left: 2px solid var(--skx-border-c1);
 }
 .rs-cite__foot {
@@ -689,6 +773,16 @@
   height: 1rem;
   margin-top: 0.1rem;
 }
+/* 슬래시 명령 목록의 SKOVIX 심볼 — 그림 둘레에 여백이 있어 1rem 칸에서는 너무 작다. 조금 키우고 두 줄 글(명령·설명)의 가운데에 둔다 */
+.rs-plus__option {
+  align-items: center;
+}
+.rs-plus__option .rs-plus__icon {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+}
 .rs-plus__text {
   display: flex;
   flex-direction: column;
@@ -725,18 +819,31 @@
   padding: 0.15rem 0.3rem 0.15rem 0.55rem;
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
   border-radius: var(--skx-radius-pill);
 }
+/* 칩 글은 대문자 높이~기준선으로 잘라 가운데에 둔다 — 글꼴마다 위·아래 여백(ascent·descent)이 달라 영문 이름이 위로 떠 보이지 않게.
+   text-box 를 모르는 브라우저는 지금과 같다 */
+.rs-plus__chip-label {
+  text-box: trim-both cap alphabetic;
+}
 .rs-plus__chip-x {
-  padding: 0 0.2rem;
-  font-size: 0.7rem;
-  line-height: 1;
-  color: var(--skx-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.9rem;
+  height: 0.9rem;
+  padding: 0;
+  color: var(--skx-on-accent);
   background: none;
   border: none;
+  border-radius: 50%;
   cursor: pointer;
+}
+.rs-plus__chip-x svg {
+  width: 0.45rem;
+  height: 0.45rem;
 }
 .rs-plus__error {
   position: absolute;
@@ -774,33 +881,6 @@
 }
 .rs-synth__actions:empty {
   display: none;
-}
-.rs-synth__bar {
-  position: relative;
-  height: 0.4rem;
-  overflow: hidden;
-  background: var(--skx-border-c1);
-  border-radius: var(--skx-radius-pill);
-}
-.rs-synth__fill {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  overflow: hidden;
-  background: var(--skx-primary);
-  border-radius: inherit;
-  /* 폭은 1초마다 다시 잰다 — 같은 1초로 이어 붙여 멈춤 없이 늘어나 보이게 한다 */
-  transition: width 1s linear;
-}
-.rs-synth__fill.is-running::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--skx-white) 45%, transparent), transparent);
-  transform: translateX(-100%);
-  animation: rs-sheen 1.8s ease-in-out infinite;
 }
 .rs-synth__list {
   display: flex;
@@ -855,7 +935,7 @@ button.rs-synth__item:focus-visible,
   border-radius: 50%;
 }
 .rs-synth__item.is-done .rs-synth__icon {
-  color: var(--skx-white);
+  color: var(--skx-on-accent);
   background: var(--skx-primary);
 }
 .rs-synth__item.is-running .rs-synth__icon {
@@ -918,11 +998,9 @@ button.rs-synth__item:focus-visible,
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rs-synth__fill,
   .rs-synth__item {
     transition: none;
   }
-  .rs-synth__fill.is-running::after,
   .rs-synth__item.is-running .rs-synth__icon,
   .rs-synth__icon.is-fresh {
     animation: none;
@@ -981,7 +1059,8 @@ button.rs-synth__item:focus-visible,
   border-radius: 50%;
   animation: rs-blink 1.2s ease-in-out infinite;
 }
-/* 카드 목록에서 눌러 옮겨 오는 자리 — 화면 맨 위에 딱 붙지 않게 조금 띄우고, 강조는 바깥 테두리로 한다 */
+/* 카드 목록에서 눌러 옮겨 오는 자리 — 화면 맨 위(고정 진행 막대가 서 있으면 html 의 scroll-padding-top 이 막대 아래로 내린
+   자리)에 딱 붙지 않게 조금 띄우고, 강조는 바깥 테두리로 한다. 막대 높이를 여기에 다시 더하지 않는다(두 번 내려간다) */
 .rs-section {
   scroll-margin-top: 1.2rem;
   border-radius: var(--skx-radius-sm);
@@ -992,9 +1071,14 @@ button.rs-synth__item:focus-visible,
 .rs-section.is-linked {
   outline-color: var(--skx-border-c2);
 }
-/* 강제 색 모드(Windows 고대비)는 투명 outline 도 시스템 색으로 칠해 절마다 테두리 상자가 생긴다 — 강조한 절에만 남긴다 */
+/* 늘 두는 투명 outline 이 브라우저 기본 초점 링을 덮는다 — 키보드로 누른 뒤 스크립트가 옮긴 초점(알약으로 다시 켠 이동·현황 카드의
+   절)은 강조와 같은 색으로 보인다. 마우스로 누른 자리에는 :focus-visible 이 걸리지 않는다 */
+.rs-section:focus-visible {
+  outline-color: var(--skx-border-c2);
+}
+/* 강제 색 모드(Windows 고대비)는 투명 outline 도 시스템 색으로 칠해 절마다 테두리 상자가 생긴다 — 강조한 절과 초점이 간 절에만 남긴다 */
 @media (forced-colors: active) {
-  .rs-section:not(.is-linked) {
+  .rs-section:not(.is-linked):not(:focus-visible) {
     outline: none;
   }
 }
@@ -1010,15 +1094,17 @@ button.rs-synth__item:focus-visible,
 .rs-report--draft .rs-section__body {
   animation: rs-reveal 0.45s ease-out backwards;
 }
+/* 줄 모양 자리 — 바탕은 면 색에 기대지 않는 옅은 선(투명과 섞음), 반짝임 가운데는 두 테마 모두 밝은 유리 선(--skx-frost-line).
+   불투명 면(--skx-white — 다크에서 짙은 청록)을 정지점에 쓰면 읽기용 짙은 유리 위로 바탕보다 어두운 띠가 흐른다(큰 막대 빛 흐름과 같다) */
 .rs-skeleton {
-  --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, var(--skx-white));
+  --rs-skeleton: color-mix(in srgb, var(--skx-line) 40%, transparent);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 .rs-skeleton__line {
   height: 0.55rem;
-  background: linear-gradient(90deg, var(--rs-skeleton) 25%, var(--skx-white) 50%, var(--rs-skeleton) 75%);
+  background: linear-gradient(90deg, var(--rs-skeleton) 25%, var(--skx-frost-line) 50%, var(--rs-skeleton) 75%);
   background-size: 200% 100%;
   border-radius: var(--skx-radius-pill);
   animation: rs-shimmer 1.6s linear infinite;
@@ -1249,6 +1335,652 @@ button.rs-synth__item:focus-visible,
   }
 }
 
+/* ── 큰 진행 막대(고정 진행 영역) ────────────────────────── */
+/* 끝나지 않은 잡의 연구 화면 위에 붙는다(sticky top 0) — 그 아래 본문만 스크롤한다. 높이는 토큰(--rs-bar-h)으로 고정하고 글줄은
+   한 줄로 말줄임한다 — 높이가 흔들리면 옆 칸·절 이동·돌아온 자리의 오프셋이 따라 흔들린다. 치수(두께 --rs-bar-thick·글줄 1rem·
+   퍼센트 1.25rem)는 06e 자동 보고서의 큰 막대와 값으로 맞춘다. 인용 팝오버(z-index 30)·메뉴(40)는 이 막대 위로 뜬다. 접힌 LNB
+   레일(z-index 5 — 이름표가 본문 위로 뜬다, style_skovix.css)보다는 낮게 둔다 — 같은 값이면 DOM 에서 뒤인 막대가 레일 이름표를 덮는다 */
+.rs-pbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  height: var(--rs-bar-h);
+  padding: 0 1.2rem;
+  overflow: hidden;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
+  border-radius: var(--skx-radius-md);
+  /* 다크에서는 옅은 그림자가 보이지 않아 아래로 지나가는 본문에 막대가 붙어 보인다 — 메뉴와 같은 짙은 그림자로 띄운다 */
+  box-shadow: var(--skx-frost-hilite), var(--skx-shadow-banner);
+}
+.rs-pbar__stages {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* 단계 칩 — 번호(01~04, 끝난 단계는 ✓)를 앞에 두고, 지금 단계는 산호 테두리·산호 글자에 작은 꼬리표('진행 중' 등)를 단다.
+   면을 채우지 않는다 — 아래 막대 채움(같은 산호)과 한 덩어리로 보이지 않게. 한 줄 높이는 그대로다(고정 영역 높이 --rs-bar-h) */
+.rs-pbar__stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-gray-2);
+  white-space: nowrap;
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-pbar__num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  opacity: 0.8;
+}
+.rs-pbar__stage.is-done {
+  color: var(--skx-ink-2);
+  border-color: var(--skx-border-c1);
+}
+.rs-pbar__stage.is-current {
+  color: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.rs-pbar__tag {
+  padding: 0 0.3rem;
+  font-weight: 600;
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-pbar__line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  min-width: 0;
+}
+.rs-pbar__text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rs-pbar__pct {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-primary);
+}
+.rs-pbar__track {
+  position: relative;
+  flex-shrink: 0;
+  height: var(--rs-bar-thick);
+  overflow: hidden;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+/* 채움은 보고서 작성 현황 카드에 있던 작은 막대의 채움을 크게 옮긴 것 — 폭은 1초마다 다시 재므로 같은 1초로 이어 붙여
+   멈춤 없이 늘어나 보이게 한다 */
+.rs-pbar__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  overflow: hidden;
+  background: var(--skx-primary);
+  border-radius: inherit;
+  transition: width 1s linear;
+}
+.rs-pbar__fill.is-running::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* 빛은 밝은 유리 선(--skx-frost-line — 두 테마 모두 흰색 계열)이다. 짙은 면 색(--skx-white)을 섞으면 다크의 산호 막대 위로 어두운
+     띠가 흐르고, 제목 글자색(--skx-ink-strong)을 섞으면 라이트(핑크)의 짙은 막대 위에서 보이지 않는다 */
+  background: linear-gradient(90deg, transparent, var(--skx-frost-line), transparent);
+  transform: translateX(-100%);
+  animation: rs-sheen 1.8s ease-in-out infinite;
+}
+@media (max-width: 768px) {
+  .rs-pbar {
+    padding: 0 0.8rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-pbar__fill {
+    transition: none;
+  }
+  .rs-pbar__fill.is-running::after {
+    animation: none;
+  }
+}
+
+/* ── 탐색 중 절 자리(ReportSkeleton) ────────────────────── */
+/* 승인 뒤 첫 절 전까지 본문에 서는 하위질문별 자리. 자리 머리의 '하위질문 N'은 절 번호가 아니라 하위질문 번호다.
+   근거를 모은 자리는 상태 글이 강조색(--skx-primary)으로 '근거 N편 ✓', 근거 없음은 점선 한 줄로 접는다 */
+.rs-report--slots {
+  gap: 0.7rem;
+}
+.rs-slot {
+  gap: 0.35rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.rs-slot__kicker {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.rs-slot__state {
+  align-self: flex-start;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-slot.is-collecting .rs-slot__state,
+.rs-slot.is-collected .rs-slot__state,
+.rs-slot.is-writing .rs-slot__state {
+  color: var(--skx-primary);
+  border-color: var(--skx-border-c2);
+}
+.rs-slot.is-failed .rs-slot__state {
+  color: var(--skx-ink);
+  border-color: var(--skx-ink);
+}
+.rs-slot.is-waiting .rs-section__heading {
+  color: var(--skx-gray-2);
+}
+.rs-slot.is-empty {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-style: dashed;
+}
+.rs-slot.is-empty .rs-section__heading {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--skx-gray-2);
+}
+.rs-slot__state.is-fresh {
+  animation: rs-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-slot__state.is-fresh {
+    animation: none;
+  }
+}
+
+/* ── 따라가기 알약 ───────────────────────────────────────── */
+/* 사용자가 굴려 따라가기를 멈춘 동안만 뜬다 — 화면 아래 가운데에 붙어 있다가 누르면 지금 쓰는(찾는) 곳으로 옮긴다.
+   work.css 의 .wk-pill 패턴(sticky·가운데·그림자)을 옮겨 쓴다(work.css 는 고치지 않는다). 인쇄에서는 .rs-btn 규칙이 뺀다 */
+.rs-follow-pill {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 4;
+  align-self: center;
+  box-shadow: var(--skx-shadow-lnb);
+}
+
+/* ── 회차 줄 미세 상태 ──────────────────────────────────── */
+/* 도는 하위질문의 마지막 회차 — '자기점검 중'(점검 LLM 을 기다린다, 점이 깜빡인다)·'재검색 중'(다음 검색어로 다시 찾는다) */
+.rs-round__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.4rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-primary);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-round__state.is-checking::before {
+  content: "";
+  width: 0.3rem;
+  height: 0.3rem;
+  background: var(--skx-primary);
+  border-radius: 50%;
+  animation: rs-blink 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-round__state.is-checking::before {
+    animation: none;
+  }
+}
+
+/* ── 옆 칸 카드 머리 ─────────────────────────────────────── */
+/* 옆 칸의 진행 패널·근거 장부 머리를 같은 높이·글자로 맞추고 앞에 청록 세로 막대(사이드바 DeepResearch 묶음 이름과 같은 색)를
+   단다. 공용 .rs-card__title 은 본문 카드(보고서 작성 현황·실패·취소·보고서 오류)와 연구 어시스턴트 부품도 쓰므로 고치지 않고
+   옆 칸 안으로 좁힌다(좁은 화면 B 의 옆 칸도 같은 .rs-col-side). 앞 막대는 인라인 블록 — 장부 머리(.wk-ledger__head, baseline
+   정렬)의 글자 기준선을 바꾸지 않는다 */
+.rs-col-side .rs-card__title {
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.rs-col-side .rs-card__title::before {
+  content: "";
+  display: inline-block;
+  width: 0.25rem;
+  height: 0.75rem;
+  margin-right: 0.4rem;
+  vertical-align: -0.1rem;
+  background: var(--skx-teal-ink);
+  border-radius: var(--skx-radius-pill);
+}
+
+/* ── 끝나지 않은 DeepResearch 한 줄(+ 메뉴 안) ─────────────── */
+/* DeepResearch 모드가 켜진 입력창에 이 브라우저의 끝나지 않은 연구를 알리는 한 줄(SearchPlusMenu — 메인·/papers 랜딩·결과 검색바가
+   같은 부품). 면은 + 메뉴 팝오버와 같은 짙은 면·옅은 테두리, 버튼은 메뉴 칸과 같은 흰 10% 알약에 + 버튼과 같은 테두리를 두르고
+   '정말 취소'는 위험색이다. 랜딩 입력 상자에서는 아래 줄(+ · 칩)의 다음 줄 전체로 내려 서고(보내기는 칩 줄 높이), 높이가 정해진
+   결과 검색바에서는 바 아래 오른쪽에 뜬다(오류 문구는 바 아래 왼쪽 — 오류가 떠 있으면 한 줄은 그 아래, + 메뉴·슬래시 목록이 그 위) */
+.rs-plus:has(> .rs-start-note) {
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
+}
+.skx-search__box:has(> .rs-plus > .rs-start-note) > .skx-search__actions {
+  align-self: start;
+}
+.rs-start-note {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.4rem;
+  min-width: 0;
+  padding: 0.3rem 0.35rem 0.3rem 0.7rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-md);
+}
+.skx-rsearch .rs-start-note {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 30;
+  flex: none;
+  max-width: calc(100% - 2rem);
+  box-shadow: var(--skx-shadow-banner);
+}
+/* 오류 문구가 떠 있으면 한 줄은 오류(바 아래 왼쪽 한 줄 — 약 0.84rem) 아래로 — 같은 높이면 좁은 바(휴대폰)에서 넓어진 한 줄이
+   오류를 덮는다. 탐색 방식을 바 아래로 내린 좁은 바는 아래 @container 블록이 같은 조합으로 한 번 더 내린다 */
+.skx-rsearch .rs-plus:has(> .rs-plus__error) > .rs-start-note {
+  top: calc(100% + 1.8rem);
+}
+.rs-start-note__text {
+  font-weight: 700;
+}
+.rs-start-note__dot {
+  color: var(--skx-gray-1);
+}
+.rs-start-note__btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--skx-frost-bg);
+  border: none;
+  border-radius: var(--skx-radius-pill);
+  /* 경계는 + 버튼과 같은 테두리 토큰 — 핑크에서는 알약 면(흰 34%)과 줄 면(흰 90%)이 같은 색이라 이 선이 없으면 안내 글 사이에 낀
+     두 버튼이 보통 글자로 보인다. 안쪽 그림자라 크기가 바뀌지 않는다 */
+  box-shadow: inset 0 0 0 1px var(--skx-border-c1);
+  cursor: pointer;
+}
+/* 올림은 + 메뉴의 고른 칸과 같은 바탕 — 핑크에서도 바뀐 것이 보인다 */
+.rs-start-note__btn:hover {
+  background: var(--skx-border-c1);
+}
+.rs-start-note__btn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+.rs-start-note__btn.is-danger {
+  color: var(--skx-on-accent);
+  background: var(--skx-danger);
+}
+.rs-start-note__btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* ── DeepResearch 예시 연구(메인 입력창 아래) ──────────────── */
+/* 메인에서 DeepResearch 모드를 켜면 예시 질문 칸 아래에 미리 돌린 실제 연구 카드 2~3개가 선다. 카드는 불투명 면이라 움직이는 배경
+   위에서도 읽히고, '읽기 전용' 은 사이드바 묶음 이름과 같은 청록 칩, 실행 시각·코퍼스 범위는 작은 회색 글 */
+.rs-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+.rs-examples__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--skx-ink-strong);
+}
+/* 받치는 면 없이 홀로그램 위에 바로 놓이는 작은 글 — 랜딩의 작은 글 선례(.skx-reco-link)와 같은 --skx-ink(띠 하나가 지나는 자리까지
+   4.5:1 — themeResearch.test.ts) */
+.rs-examples__note {
+  margin: 0;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+}
+.rs-examples__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-examples__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  height: 100%;
+  padding: 0.8rem;
+  color: var(--skx-ink);
+  text-decoration: none;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
+  border-radius: var(--skx-radius-sm);
+  transition: border-color 0.15s;
+}
+.rs-examples__card:hover,
+.rs-examples__card:focus-visible {
+  border-color: var(--skx-primary);
+}
+.rs-examples__card:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.rs-examples__kicker {
+  align-self: flex-start;
+  padding: 0 0.4rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--skx-teal-ink);
+  background: var(--skx-glass-teal);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-examples__q {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.rs-examples__meta {
+  font-size: 0.55rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-examples__card {
+    transition: none;
+  }
+}
+
+/* ── DeepResearch 탐색 방식(정밀하게 · 폭넓게 — spec D28) ─── */
+/* + 메뉴에서 DeepResearch 를 고르면 그 칩 옆에 작은 칩 하나('정밀하게 탐색 ▾')가 선다(메인 입력창·/papers 랜딩·결과 검색바 — 같은
+   SearchPlusMenu). 누르면 칩 아래에 고르기 카드 두 장(라디오 · 영문 이름 · 우리말 이름 · 기본 배지 · 설명)이 펼쳐진다 — 후배 시안
+   '탐색 방식 선택'(피그마 DeepResearch_hover 2701:10988). 전에는 두 칸 + 입력창 아래 설명 줄이라 입력 상자가 어수선했다(사용자 의견
+   2026-10-14). 칩은 켠 모드 칩(산호 바탕)과 다른 옅은 유리 알약이라 둘이 한 덩어리로 보이지 않는다 */
+.rs-plus:has(> .rs-mode) {
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
+}
+/* + 메뉴 줄이 꺾여 높아지면 보내기는 칩 줄 높이에 둔다(P4 의 끝나지 않은 연구 한 줄과 같다) */
+.skx-search__box:has(> .rs-plus > .rs-mode) > .skx-search__actions {
+  align-self: start;
+}
+.rs-mode {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+/* 칩 글은 입력창 유리 면 위 — 본문 톤 중 가장 밝은 --skx-ink(홈 한 겹을 더 얹은 자리의 기준, themeResearch.test.ts) */
+.rs-mode__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  background: var(--skx-frost-bg);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.rs-mode__chip:hover {
+  background: var(--skx-border-c1);
+}
+.rs-mode__chip[aria-expanded="true"] {
+  border-color: var(--skx-border-c2);
+}
+.rs-mode__chip:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+.rs-mode__chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rs-mode__caret {
+  font-size: 0.55rem;
+  transition: transform 0.15s ease;
+}
+.rs-mode__chip[aria-expanded="true"] .rs-mode__caret {
+  transform: rotate(180deg);
+}
+/* 펼친 카드 — + 메뉴 팝오버(.rs-plus__menu)와 같은 면·테두리·그림자 */
+.rs-mode__panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: min(15rem, calc(100vw - 2rem));
+  padding: 0.6rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-banner);
+}
+.rs-mode__title {
+  margin: 0;
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+}
+.rs-mode__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rs-mode__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  font-family: inherit;
+  text-align: left;
+  background: var(--skx-frost-bg);
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.rs-mode__card:hover {
+  background: var(--skx-border-c1);
+}
+/* 고른 카드는 테두리로 짚는다(--skx-border-c2 — 다크 산호·핑크 검정, 3:1 — themeResearch.test.ts) */
+.rs-mode__card[aria-checked="true"] {
+  box-shadow: inset 0 0 0 1px var(--skx-border-c2);
+}
+.rs-mode__card:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+/* 라디오 동그라미 — 고르면 포인트 색으로 채우고 안쪽에 면 색 고리를 둔다 */
+.rs-mode__radio {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-top: 0.15rem;
+  border: 1.5px solid var(--skx-ink-2);
+  border-radius: 50%;
+}
+.rs-mode__card[aria-checked="true"] .rs-mode__radio {
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+  box-shadow: inset 0 0 0 2px var(--skx-white);
+}
+.rs-mode__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.rs-mode__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+.rs-mode__en {
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--skx-ink);
+}
+.rs-mode__ko {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--skx-ink-2);
+}
+/* 기본 방식 배지 — 포인트 색 글자에 칸 올림 면(새 색 없음) */
+.rs-mode__default {
+  padding: 0 0.3rem;
+  font-size: 0.55rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--skx-primary);
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.rs-mode__desc {
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink-2);
+  word-break: keep-all;
+}
+/* 결과 검색바는 높이가 정해진 한 줄 알약이다 — + 메뉴 줄을 꺾지 않고(꺾이면 바 밖으로 넘친다) 탐색 방식 칩도 줄지 않는다.
+   자리는 바 안쪽 폭(컨테이너 rs-bar — 안 여백을 뺀 폭)으로 정한다: 넓으면 칩 옆(입력칸은 8rem 아래로 줄지 않는다), 34rem 이하(LNB 가
+   열린 노트북·휴대폰)면 입력칸 자리를 먹지 않게 칩을 바 아래 왼쪽으로 내려 + 메뉴 팝오버와 같은 면을 깔고, 오류 문구(왼쪽)·끝나지
+   않은 연구 줄(오른쪽)은 그 줄 아래로 옮겨 셋이 겹치지 않는다 */
+.skx-rsearch:has(> .rs-plus > .rs-mode) {
+  container: rs-bar / inline-size;
+}
+.skx-rsearch > .rs-plus:has(> .rs-mode) {
+  flex-wrap: nowrap;
+}
+.skx-rsearch .rs-mode {
+  flex-shrink: 0;
+}
+@container rs-bar (width > 34rem) {
+  .skx-rsearch > .skx-rsearch__input {
+    min-width: 8rem;
+  }
+}
+@container rs-bar (max-width: 34rem) {
+  .skx-rsearch .rs-mode {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    z-index: 20;
+  }
+  .skx-rsearch .rs-mode__chip {
+    background: var(--skx-frost-menu-bg);
+    border-color: var(--skx-frost-menu-line);
+    box-shadow: var(--skx-shadow-banner);
+  }
+  /* 내린 칩(0.4rem 아래 · 높이 약 1.25rem) 아래 넉넉히 */
+  .skx-rsearch .rs-plus:has(> .rs-mode) > .rs-plus__error,
+  .skx-rsearch .rs-plus:has(> .rs-mode) > .rs-start-note {
+    top: calc(100% + 2.6rem);
+  }
+  /* 오류가 떠 있으면 한 줄은 그 오류 아래로 한 번 더(좁은 바는 한 줄이 넓어져 오류와 같은 높이면 덮는다) */
+  .skx-rsearch .rs-plus:has(> .rs-mode):has(> .rs-plus__error) > .rs-start-note {
+    top: calc(100% + 4rem);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-mode__chip,
+  .rs-mode__caret,
+  .rs-mode__card {
+    transition: none;
+  }
+}
+/* 연구 화면 머리 — 상태 배지 옆에 그 잡의 탐색 방식(상태 배지와 같은 크기의 점선 알약) */
+.rs-head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+.rs-head__mode {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+  background: none;
+  border: 1px dashed var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+
 /* ── 인쇄(PDF로 저장) ────────────────────────────────────── */
 /* 인쇄 전용 문서는 화면에 그리지 않는다 — [PDF로 저장]을 누른 동안에만 body 에 붙는다 */
 .rs-print {
@@ -1276,6 +2008,7 @@ button.rs-synth__item:focus-visible,
   body:has(.rs-page) .skx-footer,
   .rs-page .rs-head,
   .rs-page .rs-col-side,
+  .rs-page .rs-pbar,
   .rs-page .rs-dl,
   .rs-page .rs-btn {
     display: none !important;
@@ -1284,8 +2017,16 @@ button.rs-synth__item:focus-visible,
   .rs-page .rs-body {
     display: block;
   }
+  /* 화면 인쇄(Ctrl+P)의 보고서는 화면의 읽기용 짙은 유리를 그대로 찍는다 — 브라우저가 바탕을 빼고 찍으면 다크 테마의 밝은 글자만
+     흰 종이에 남는다. 흰 종이에 짙은 글자는 [PDF로 저장]의 인쇄 전용 문서(.rs-print)가 맡는다 */
+  .rs-page .rs-report {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* 인쇄 전용 문서는 밝은 읽는 면(.skx-reading — ReportPrint.vue)이라 두 테마 모두 흰 종이에 짙은 글자다. 그 면의 옅은 바탕은 찍지 않는다 */
   .rs-print {
     display: block;
+    background: none;
     font-family: "맑은 고딕", "Malgun Gothic", "Pretendard", sans-serif;
     font-size: 10.5pt;
     line-height: 1.6;
@@ -1339,5 +2080,342 @@ button.rs-synth__item:focus-visible,
   .rs-print__refs li {
     padding-left: 22pt;
     text-indent: -22pt;
+  }
+}
+
+/* ── 탐색 중 본문 — 'AI가 지금 하는 일'(ResearchLive) ──────────────── */
+/* 탐색 중에는 과정을 보고서 자리에 크게 띄운다 — 지금 하는 일 한 줄(살아 있는 점) · 숫자 칸 · 하위질문마다 회차 단계가 내려앉는 줄.
+   보고서를 쓰기 시작하면 과정(탐색 경로)은 옆 칸으로 가고 이 화면은 절 자리(ReportSkeleton)·초안으로 바뀐다(사용자 결정 2026-10-14) */
+.rs-live {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.2rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
+  border-radius: var(--skx-radius-md);
+}
+.rs-live__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rs-live__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+/* 살아 있는 점 — 포인트 색이 숨 쉬듯 번진다 */
+.rs-live__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--skx-primary);
+  animation: rs-live-breathe 1.6s ease-in-out infinite;
+}
+@keyframes rs-live-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--skx-border-c1);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 0.3rem var(--skx-border-c1);
+    opacity: 0.7;
+  }
+}
+/* 지금 하는 일 — 두 줄 높이를 늘 잡아 글이 바뀌어도 아래가 출렁이지 않는다 */
+.rs-live__now {
+  min-height: 2.6em;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--skx-ink);
+  word-break: keep-all;
+}
+.rs-live__counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+.rs-live__counter {
+  padding: 0.55rem 0.7rem;
+  background: var(--skx-frost-bg);
+  border-radius: var(--skx-radius-sm);
+}
+.rs-live__counter dt {
+  font-size: 0.55rem;
+  color: var(--skx-ink-2);
+}
+/* 수가 바뀌면 key 가 바뀌어 다시 그려지며 톡 튄다 */
+.rs-live__counter dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-ink);
+  animation: rs-live-bump 0.45s ease-out;
+}
+/* 등장 효과는 위치만 움직인다 — 투명도를 쓰면 화면 프레임이 멈춘 창(숨은 탭·미리보기)에서 첫 장면(투명)에 멈춰 글이 안 보였다 */
+@keyframes rs-live-bump {
+  from {
+    transform: translateY(0.25rem);
+  }
+  to {
+    transform: none;
+  }
+}
+.rs-live__subqs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-live__subq {
+  /* 따라가기(scrollIntoView)의 여백 — 고정 진행 막대 높이는 문서 스크롤 여백(html scroll-padding)이 이미 더한다(절과 같다) */
+  scroll-margin-top: 1.2rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--skx-frost-bg);
+  border-radius: var(--skx-radius-sm);
+  transition: box-shadow 0.2s ease;
+}
+/* 대기 중인 하위질문은 글을 흐리게(투명도 전환은 쓰지 않는다 — 멈춘 창에서 돌던 하위질문까지 흐린 채 남았다) */
+.rs-live__subq.is-pending .rs-live__subq-title,
+.rs-live__subq.is-pending .rs-live__subq-state {
+  color: var(--skx-ink-2);
+}
+/* 지금 도는 하위질문 — 포인트 색 테두리로 짚는다 */
+.rs-live__subq.is-current {
+  box-shadow: inset 0 0 0 1px var(--skx-border-c2);
+}
+.rs-live__subq-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.rs-live__no {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: var(--skx-ink-2);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: 50%;
+}
+.rs-live__subq.is-current .rs-live__no {
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.rs-live__subq.is-done .rs-live__no {
+  color: var(--skx-teal-ink);
+  border-color: var(--skx-teal-ink);
+}
+.rs-live__subq-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--skx-ink);
+}
+.rs-live__subq-state {
+  flex: none;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--skx-ink-2);
+  white-space: nowrap;
+}
+.rs-live__subq.is-current .rs-live__subq-state {
+  color: var(--skx-primary);
+}
+.rs-live__toggle {
+  flex: none;
+  padding: 0.1rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.55rem;
+  color: var(--skx-ink-2);
+  background: none;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.rs-live__toggle:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.rs-live__toggle:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+.rs-live__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0 0.6rem;
+  padding-left: 1rem;
+  border-left: 1px dashed var(--skx-border-c1);
+}
+.rs-live__alert {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-glass-teal);
+  border-left: 3px solid var(--skx-primary);
+  border-radius: var(--skx-radius-sm);
+  animation: rs-live-in 0.35s ease-out;
+}
+.rs-live__alert strong {
+  color: var(--skx-primary);
+}
+.rs-live__alert-note {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.6rem;
+  color: var(--skx-ink-2);
+}
+.rs-live__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-live__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.rs-live__step-ico {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--skx-ink-2);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: 50%;
+}
+.rs-live__step.is-ok .rs-live__step-ico {
+  color: var(--skx-teal-ink);
+  border-color: var(--skx-teal-ink);
+}
+.rs-live__step.is-warn .rs-live__step-ico {
+  color: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+/* 지금 하는 단계 — 동그라미가 숨 쉰다 */
+.rs-live__step.is-pending .rs-live__step-ico {
+  color: var(--skx-primary);
+  border-color: var(--skx-primary);
+  animation: rs-live-breathe 1.6s ease-in-out infinite;
+}
+.rs-live__step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.rs-live__step-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  word-break: keep-all;
+}
+.rs-live__step.is-ok .rs-live__step-title {
+  color: var(--skx-teal-ink);
+}
+.rs-live__step.is-warn .rs-live__step-title,
+.rs-live__step.is-pending .rs-live__step-title {
+  color: var(--skx-primary);
+}
+.rs-live__step-detail {
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink-2);
+  word-break: keep-all;
+}
+/* 단계가 새로 생기면 아래에서 떠오른다 — 그려질 때 한 번 도는 CSS 애니메이션(이미 있는 단계는 다시 그려지지 않아 돌지 않는다).
+   Vue 전환(TransitionGroup)은 화면 프레임이 돌아야 끝나 숨은 탭에서 투명한 채로 남았다 */
+.rs-live__step {
+  animation: rs-live-in 0.35s ease-out;
+}
+@keyframes rs-live-in {
+  from {
+    transform: translateY(0.35rem);
+  }
+  to {
+    transform: none;
+  }
+}
+.rs-live__reviewing {
+  padding: 0.5rem 0.7rem;
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+  animation: rs-live-in 0.35s ease-out;
+}
+.rs-live__reviewing-title {
+  margin: 0 0 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+.rs-live__papers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-live__paper {
+  overflow: hidden;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rs-live__paper.is-more {
+  color: var(--skx-ink-2);
+}
+.rs-live__error {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-danger);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-live__dot,
+  .rs-live__counter dd,
+  .rs-live__alert,
+  .rs-live__step,
+  .rs-live__step.is-pending .rs-live__step-ico,
+  .rs-live__reviewing {
+    animation: none;
+  }
+  .rs-live__subq {
+    transition: none;
   }
 }

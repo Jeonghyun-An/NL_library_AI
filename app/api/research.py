@@ -78,7 +78,8 @@ _SHARED_QUEUE_MESSAGE = (
     "다른 딥리서치가 실행 중이거나 실행을 기다리고 있다 — 끝나거나 취소된 뒤 "
     "다시 요청한다(적재와 워커를 나눠 쓰는 동안은 한 번에 한 건만 실행한다)"
 )
-_BROWSER_ACTIVE_MESSAGE = "진행 중인 딥리서치가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
+# 화면이 그대로 보이는 문구 — 화면 표기 DeepResearch(round08 사용자 결정). frontend/utils/researchErrors.ts 의 기본 문구와 같은 말
+_BROWSER_ACTIVE_MESSAGE = "진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요"
 # 예상 대기 시간의 기준 — 최근 완료분 몇 건의 소요 시간 중앙값을 쓰는가
 RECENT_RUNS = 20
 

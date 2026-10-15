@@ -2,9 +2,11 @@
 import { describe, expect, it } from "vitest";
 import {
   activeTabKey,
+  aiTabAvailable,
   bookDetailRows,
   bookMetaRows,
   detailSearchUrl,
+  focusOwningPanel,
   formatAuthors,
   kdcLabel,
   paperMetaRows,
@@ -198,6 +200,42 @@ describe("AI 큐레이션 탭", () => {
     expect(tabKeyTarget("End", 0, 3)).toBe(2);
     expect(tabKeyTarget("Enter", 0, 3)).toBeNull();
     expect(tabKeyTarget("ArrowRight", 0, 0)).toBeNull();
+  });
+});
+
+describe("aiTabAvailable — AI 글 탭(논문 AI 요약·소장자료 추천 이유)을 둘지", () => {
+  const idle = { loading: false, done: false, text: "", error: "" };
+
+  it("정하기 전·받는 중·받은 글·실패 안내가 있으면 둔다", () => {
+    expect(aiTabAvailable(idle)).toBe(true);
+    expect(aiTabAvailable({ ...idle, loading: true })).toBe(true);
+    expect(aiTabAvailable({ ...idle, done: true, text: "요약" })).toBe(true);
+    expect(aiTabAvailable({ ...idle, done: true, error: "AI 요약을 만들지 못했습니다" })).toBe(true);
+  });
+
+  it("다 정했는데 글도 실패도 없으면 뺀다", () => {
+    expect(aiTabAvailable({ ...idle, done: true })).toBe(false);
+  });
+
+  it("[다시 시도] — 실패로 정한 뒤 글·안내를 비우고 다시 받는 동안에도 탭이 남는다(첫 글자가 오기 전)", () => {
+    // 첫 실패: done=true · error 있음 → 다시 받기 시작: error·text 를 비우고 loading=true(done 은 앞 실패에서 true)
+    expect(aiTabAvailable({ loading: true, done: true, text: "", error: "" })).toBe(true);
+  });
+});
+
+describe("focusOwningPanel — 누르면 사라지는 버튼의 초점을 그 탭 본문으로", () => {
+  it("버튼에서 가장 가까운 tabpanel 에 초점을 준다", () => {
+    const focused: string[] = [];
+    const panel = { focus: () => focused.push("panel") };
+    const button = { closest: (sel: string) => (sel === '[role="tabpanel"]' ? panel : null) };
+    focusOwningPanel(button as unknown as EventTarget);
+    expect(focused).toEqual(["panel"]);
+  });
+
+  it("탭 본문 밖이거나 대상이 없으면 아무것도 하지 않는다", () => {
+    expect(() => focusOwningPanel({ closest: () => null } as unknown as EventTarget)).not.toThrow();
+    expect(() => focusOwningPanel(null)).not.toThrow();
+    expect(() => focusOwningPanel({} as EventTarget)).not.toThrow();
   });
 });
 

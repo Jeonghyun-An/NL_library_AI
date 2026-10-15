@@ -78,6 +78,13 @@ class TestPrompt:
         assert "[E#]" in system and "[F#]" in system and "숫자를 직접 쓰지 마세요" in system
         assert "문단 하나만" in system and GAP_NOTE in system
 
+    def test_figures_are_counts_and_years_only_and_cited_papers_are_not_this_study(self):
+        # 절 프롬프트와 같은 규칙 — 운영(2026-10-14 prior.g2)에서 수치 목록을 문장으로 옮기고 인용 논문을 '본 연구'로 썼다
+        system = get_prompt(PROMPT).system
+        assert "몇 편인지, 어느 해에 나왔는지를 말할 때만" in system and "문장 끝에 붙이지 말고" in system
+        assert "[F#] 를 쓴 문장에도 그 논문들의 [E#] 를 붙입니다" in system
+        assert "'본 연구'·'이 연구'·'본 논문'으로 부르지 마세요" in system and "'선행연구'나 '해당 연구'" in system
+
     def test_asks_for_new_sentences_not_a_copy_of_the_inputs(self):
         # 운영(2026-10-08): gemma 가 '고칠 문단'을 그대로 내거나 '앞 문단:' 블록을 이름표째 옮겼다
         system = get_prompt(PROMPT).system
@@ -116,6 +123,16 @@ class TestExecutor:
         assert (new["id"], new["state"], new["gen_id"]) == ("p2", "proposed", None)
         assert new["text"] == "척도가 정리되었다 [E2]." and new["cites"] == ["KCI_B"]
         assert new["checks"]["dropped"] == 1
+
+    def test_misplaced_figure_sentences_are_dropped_like_the_section(self):
+        # 절과 같은 검사(make_paragraph) — [F#] 를 근거 표기 자리에 붙인 문장은 지우고, 다 지워지면 검사에서 떨어져 다시 부른다
+        output = EXECUTOR.bind({"text": "척도를 새로 정리했다 [E2]. 또한 논문 수는 [F1]건에 달한다 [F1]."}, INPUT)
+
+        assert output["paragraph"]["text"] == "척도를 새로 정리했다 [E2]."
+        assert output["paragraph"]["checks"]["dropped_f"] == 2
+        assert EXECUTOR.check(output) is True
+        only = EXECUTOR.bind({"text": "[F1] 발행 연도의 선행연구가 있다 [E1]."}, INPUT)
+        assert only == {"paragraph": None} and EXECUTOR.check(only) is False
 
     def test_unreadable_answer_parses_to_none(self):
         assert EXECUTOR.parse("# 다시 쓴 문단") is None

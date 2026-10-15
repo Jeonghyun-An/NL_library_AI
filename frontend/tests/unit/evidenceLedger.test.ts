@@ -27,6 +27,11 @@ function subq(idx: number, rounds: RoundView[]): SubqView {
   };
 }
 
+// 후보 이벤트(candidates)를 받아 자기점검을 기다리는 하위질문(리듀서가 세운 '검토 중' — SubqView.reviewing)
+function reviewingSubq(idx: number, rounds: RoundView[], round: number | null, papers: ExcludedPaperView[]): SubqView {
+  return { ...subq(idx, rounds), status: "running", verdict: null, reviewing: { round, papers } };
+}
+
 const C1 = { title: "노인 우울과 가족 지지", author: "김철수; 이영희", date: "2013" };
 const C2 = { title: "지역사회 지지의 효과", author: "박민수", date: "2016-05" };
 const C3 = { title: "사회적 지지 척도 비교", author: "최지은", date: "2019" };
@@ -78,7 +83,7 @@ describe("ledgerFrom — 채택", () => {
       ]),
     ]);
     expect(l.adopted.map((p) => p.cntsId)).toEqual(["C1"]);
-    expect(ledgerFrom([subq(0, [round(1, { verdict: null })])])).toEqual({ adopted: [], dropped: [] });
+    expect(ledgerFrom([subq(0, [round(1, { verdict: null })])])).toEqual({ adopted: [], dropped: [], reviewing: [] });
   });
 
   it("서지를 어디서도 찾지 못하면 null 로 둔다(화면은 cnts_id 를 보인다)", () => {
@@ -123,6 +128,58 @@ describe("ledgerFrom — 뺌", () => {
   });
 });
 
+describe("ledgerFrom — 검토 중", () => {
+  it("검토 중 = 하위질문의 후보 가운데 채택 더미에 없는 논문, 하위질문 순", () => {
+    const l = ledgerFrom([
+      subq(0, [round(1, { adoptedPapers: [adopted("C1", 1, C1)] })]),
+      // 앞 하위질문이 이미 채택한 C1 은 검토 중에 두지 않는다(같은 논문이 두 더미에 함께 있지 않다)
+      reviewingSubq(1, [round(1, { verdict: null })], 1, [
+        excluded("C1", C1.title), excluded("C4", "온라인 수업의 윤리"), excluded("C5", "교사 연수 효과"),
+      ]),
+      reviewingSubq(2, [round(1), round(2), round(3, { verdict: null })], 3, [excluded("C5", "교사 연수 효과"), excluded("C6")]),
+    ]);
+    expect(l.reviewing).toEqual([
+      { cntsId: "C4", title: "온라인 수업의 윤리", personalAuthor: "김철수", pubDate: "2015", subqIdx: [1], round: 1, isNew: true },
+      { cntsId: "C5", title: "교사 연수 효과", personalAuthor: "김철수", pubDate: "2015", subqIdx: [1, 2], round: 1, isNew: true },
+      { cntsId: "C6", title: null, personalAuthor: null, pubDate: null, subqIdx: [2], round: 3, isNew: true },
+    ]);
+    expect(l.adopted.map((p) => p.cntsId)).toEqual(["C1"]);
+  });
+
+  it("검토 중인 논문은 뺌 더미에 두지 않는다", () => {
+    // 하위질문 1 이 뺀 X1 을 하위질문 2 가 다시 후보로 이었다 — 판정 전에는 검토 중에만 있고, 서지는 뺀 논문 목록에서 찾는다
+    const l = ledgerFrom([
+      subq(0, [round(1, { adoptedPapers: [adopted("C1", 1, C1)], excludedPapers: [excluded("X1", "무관한 논문 1")] })]),
+      reviewingSubq(1, [round(1, { verdict: null })], 1, [excluded("X1")]),
+    ]);
+    expect(l.dropped).toEqual([]);
+    expect(l.reviewing).toEqual([
+      { cntsId: "X1", title: "무관한 논문 1", personalAuthor: "김철수", pubDate: "2015", subqIdx: [1], round: 1, isNew: true },
+    ]);
+  });
+
+  it("점검 뒤(리듀서가 검토 중을 지움) 채택된 후보는 newlyAdded 로 새 채택이 된다", () => {
+    const before = ledgerFrom([
+      reviewingSubq(0, [round(1, { verdict: null })], 1, [excluded("C2", C2.title), excluded("X2", "무관한 논문 2")]),
+    ]);
+    expect(before.reviewing.map((p) => p.cntsId)).toEqual(["C2", "X2"]);
+    expect(before.adopted).toEqual([]);
+    // 점검이 오면 리듀서가 reviewing 을 지우고 그 회차에 판정·채택·뺌을 싣는다 — 채택은 떨어지고(wk-drop) 뺀 것은 가라앉는다(wk-sink)
+    const after = ledgerFrom([
+      subq(0, [round(1, { adoptedPapers: [adopted("C2", 1, C2)], excludedPapers: [excluded("X2", "무관한 논문 2")] })]),
+    ]);
+    expect(after.reviewing).toEqual([]);
+    expect(newlyAdded(new Set(before.adopted.map((p) => p.cntsId)), after.adopted)).toEqual(["C2"]);
+    expect(newlyAdded(new Set(before.dropped.map((p) => p.cntsId)), after.dropped)).toEqual(["X2"]);
+  });
+
+  it("hasLedger 는 채택 목록이 없어도 검토 중이 있으면 그린다", () => {
+    // 첫 회차의 후보가 왔지만 아직 점검 전 — 채택 목록은 어디에도 없다
+    expect(hasLedger([reviewingSubq(0, [round(1, { verdict: null })], 1, [excluded("C1", C1.title)])])).toBe(true);
+    expect(hasLedger([subq(0, [round(1, { verdict: null })])])).toBe(false);
+  });
+});
+
 describe("ledgerLine·newlyAdded", () => {
   const l = ledgerFrom([
     subq(0, [round(1, { adoptedPapers: [adopted("C1", 1, C1), adopted("C2", 2, C2)], excludedPapers: [excluded("X1", "x")] })]),
@@ -130,7 +187,16 @@ describe("ledgerLine·newlyAdded", () => {
 
   it("채택·뺌 수 한 줄", () => {
     expect(ledgerLine(l)).toBe("채택 2 · 뺌 1");
-    expect(ledgerLine({ adopted: [], dropped: [] })).toBe("채택 0 · 뺌 0");
+    expect(ledgerLine({ adopted: [], dropped: [], reviewing: [] })).toBe("채택 0 · 뺌 0");
+  });
+
+  it("검토 중이 있으면 '· 검토 중 n' 을 잇는다", () => {
+    const waiting = ledgerFrom([
+      reviewingSubq(0, [round(1, { adoptedPapers: [adopted("C1", 1, C1)] }), round(2, { verdict: null })], 2, [
+        excluded("C2", C2.title), excluded("C3", C3.title),
+      ]),
+    ]);
+    expect(ledgerLine(waiting)).toBe("채택 1 · 뺌 0 · 검토 중 2");
   });
 
   it("직전 장부에 없던 논문만 새로 들어온 것으로 보고, 처음 그릴 때는 없다", () => {

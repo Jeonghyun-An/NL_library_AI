@@ -1,10 +1,19 @@
 // frontend/tests/unit/workPhase.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
+import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
 import {
+  BETA_LABEL,
+  FINAL_STEP_NAME,
+  MAKE_REPORT,
   ONBOARDING_KEY,
+  ONBOARDING_LEAD,
   ONBOARDING_STEPS,
+  REMAKE_REPORT,
+  STEP_NAMES,
   WORK_STEPS,
   continueCard,
   parseWorkStep,
@@ -82,10 +91,28 @@ describe("stepForPhase·stepLine", () => {
   });
 
   it("진행 막대 옆 한 줄", () => {
-    expect(stepLine("topics")).toBe("2/4 단계 · 주제 고르는 중");
-    expect(stepLine("reading")).toBe("3/4 단계 · 읽기 목록 만드는 중");
-    expect(stepLine("proposal")).toBe("4/4 단계 · 계획서 쓰는 중");
+    expect(stepLine("topics")).toBe("2/4 단계 · 제목 고르는 중");
+    expect(stepLine("reading")).toBe("3/4 단계 · 참고문헌 고르는 중");
+    expect(stepLine("proposal")).toBe("4/4 단계 · 보고서 쓰는 중");
     expect(stepLine("done")).toBe("4/4 단계 · 완료");
+  });
+
+  it("보고서를 다 썼으면(Word 를 받기 전, 서버 단계는 아직 proposal) '보고서 완성' — 다른 단계는 그대로", () => {
+    expect(stepLine("proposal", true)).toBe("4/4 단계 · 보고서 완성");
+    expect(stepLine("proposal", false)).toBe("4/4 단계 · 보고서 쓰는 중");
+    expect(stepLine("reading", true)).toBe("3/4 단계 · 참고문헌 고르는 중");
+    expect(stepLine("done", true)).toBe("4/4 단계 · 완료");
+  });
+});
+
+describe("단계 이름", () => {
+  it("STEP_NAMES 는 사이드바가 읽는 단계 이름이다", () => {
+    expect(STEP_NAMES).toEqual({ explore: "탐색", topics: "제목 고르기", reading: "참고문헌 선택하기", proposal: "보고서" });
+    // 진행 막대·이어가기 카드·온보딩이 같은 이름을 쓴다 — 화면마다 이름을 다시 쓰지 않는다
+    expect(stepperItems("topics", null).map((i) => i.label)).toEqual(Object.values(STEP_NAMES));
+    expect(ONBOARDING_STEPS.map((s) => s.title)).toEqual([STEP_NAMES.topics, STEP_NAMES.reading, STEP_NAMES.proposal]);
+    // 마지막 단계 이름은 조사가 붙지 않는 꼴에만 쓴다(06e 정함 1) — '보고서를'·'보고서로' 를 상수로 만들지 않는다
+    expect(stepLine("proposal")).toBe(`4/4 단계 · ${STEP_NAMES.proposal} 쓰는 중`);
   });
 });
 
@@ -93,9 +120,9 @@ describe("stepperItems", () => {
   it("탐색은 늘 끝난 단계이고, 도달한 단계가 지금 단계, 그 뒤는 아직이다", () => {
     expect(stepperItems("reading", "reading")).toEqual([
       { key: "explore", label: "탐색", state: "done", clickable: true },
-      { key: "topics", label: "주제", state: "done", clickable: true },
-      { key: "reading", label: "읽기 목록", state: "current", clickable: false },
-      { key: "proposal", label: "계획서", state: "todo", clickable: false },
+      { key: "topics", label: "제목 고르기", state: "done", clickable: true },
+      { key: "reading", label: "참고문헌 선택하기", state: "current", clickable: false },
+      { key: "proposal", label: "보고서", state: "todo", clickable: false },
     ]);
   });
 
@@ -194,14 +221,20 @@ describe("continueCard", () => {
     ...over,
   });
 
-  it("이어가지 않았으면 4단계 미리보기(탐색 끝 · 주제 · 읽기 목록 · 계획서)와 [이 연구 이어가기]", () => {
+  it("이어가지 않았으면 4단계 미리보기(탐색 끝 · 제목 고르기 · 참고문헌 선택하기 · 보고서)와 [이 연구 이어가기]", () => {
     const card = continueCard(false, null);
-    expect(card).toMatchObject({ title: "이 연구 이어가기", label: "이 연구 이어가기", action: "continue", note: null });
+    expect(card).toMatchObject({
+      title: "이 연구 이어가기",
+      body: "탐색이 끝났습니다. 제목 고르기 → 참고문헌 선택하기 → 보고서 3단계를 거쳐 보고서 초안까지 이어 갈 수 있습니다.",
+      label: "이 연구 이어가기",
+      action: "continue",
+      note: null,
+    });
     expect(card.preview).toEqual([
       { label: "탐색 끝", state: "done" },
-      { label: "주제", state: "todo" },
-      { label: "읽기 목록", state: "todo" },
-      { label: "계획서", state: "todo" },
+      { label: "제목 고르기", state: "todo" },
+      { label: "참고문헌 선택하기", state: "todo" },
+      { label: "보고서", state: "todo" },
     ]);
   });
 
@@ -213,7 +246,7 @@ describe("continueCard", () => {
     const card = continueCard(true, work());
     expect(card).toMatchObject({
       title: "이어간 연구",
-      body: "3/4 단계 · 읽기 목록 만드는 중",
+      body: "3/4 단계 · 참고문헌 고르는 중",
       label: "이어간 연구 열기",
       action: "open",
       note: null,
@@ -226,15 +259,79 @@ describe("continueCard", () => {
       "예시 연구는 읽기 전용입니다 — 둘러볼 수 있고 바꿀 수는 없습니다.",
     );
   });
+
+  it("보고서를 다 썼으면 머리 단계 줄(WorkStepper)과 같은 '보고서 완성' — 한 화면에서 위아래가 갈리지 않게", () => {
+    expect(continueCard(true, work({ phase: "proposal" }), true).body).toBe("4/4 단계 · 보고서 완성");
+    expect(continueCard(true, work({ phase: "proposal" })).body).toBe("4/4 단계 · 보고서 쓰는 중");
+  });
+});
+
+describe("연구 이어가기는 베타 기능이다(사용자 결정 2026-10-15)", () => {
+  const read = (rel: string) => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
+
+  it("이어가기 카드 제목·단계 막대 옆에 같은 'Beta' 표시를 단다", () => {
+    expect(BETA_LABEL).toBe("Beta");
+    for (const path of ["components/work/ContinueResearchCard.vue", "components/work/WorkStepper.vue"]) {
+      const src = read(path);
+      expect(src).toContain('class="wk-beta"');
+      expect(src).toContain("{{ BETA_LABEL }}");
+    }
+  });
 });
 
 describe("온보딩", () => {
-  it("브라우저 저장 열쇠와 세 단계(주제·읽기 목록·계획서)의 설명·결정할 것", () => {
+  it("브라우저 저장 열쇠와 세 단계(제목 고르기·참고문헌 선택하기·보고서)의 설명·결정할 것", () => {
     expect(ONBOARDING_KEY).toBe("skx_work_onboarded");
-    expect(ONBOARDING_STEPS.map((s) => s.title)).toEqual(["주제", "읽기 목록", "계획서"]);
+    expect(ONBOARDING_LEAD).toBe("제목 고르기 → 참고문헌 선택하기 → 보고서 3단계를 거쳐 보고서 초안까지 갑니다.");
+    expect(ONBOARDING_STEPS.map((s) => s.title)).toEqual(["제목 고르기", "참고문헌 선택하기", "보고서"]);
+    // 마지막 단계는 [보고서 만들기] 한 번으로 목차·절이 서는 흐름을 알린다(D20)
+    expect(ONBOARDING_STEPS[1]!.decide).toContain("[보고서 만들기]");
+    expect(ONBOARDING_STEPS[2]!.body).toContain("[보고서 만들기]");
+    // 제품 기능 이름은 화면 표기 상수(utils/brand — 사용자 결정 2026-10-12)로 — '딥리서치' 글자를 두지 않는다
+    expect(ONBOARDING_STEPS[0]!.body.startsWith(`${DEEP_RESEARCH} 보고서의 향후 과제`)).toBe(true);
+    expect(ONBOARDING_STEPS[1]!.body).toContain(`그 논문과 대화(${DEEP_READ})할 수 있고`);
+    expect(ONBOARDING_STEPS[1]!.body.endsWith("자기점검이 뺀 논문을 되살릴 수 있습니다.")).toBe(true);
     for (const s of ONBOARDING_STEPS) {
+      expect(s.body).not.toContain("딥리서치");
+      expect(s.body).not.toContain("딥리드");
       expect(s.body.length).toBeGreaterThan(0);
       expect(s.decide.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("온보딩 — 참고문헌 선택하기는 미리 담아 둔 채로 시작한다(승인 문구 2026-10-13)", () => {
+  // 사용자가 승인한 문구 — 글자 그대로(띄어쓰기·문장부호 포함). 숫자 없는 기능 설명이다 — 이 안내는 [단계 안내 다시 보기]로
+  // 이어간 모든 연구(미리 담기 전에 이어간 연구·후보가 적은 연구·예시 연구 포함)에서 열리니, 경우별 실제 수는 머리 소개가 맡는다
+  const APPROVED = "이어가기를 시작하면 근거로 쓰인 논문을 미리 담아 둡니다. 빼거나 더 담아서 참고문헌을 정해 보세요.";
+  const body = ONBOARDING_STEPS[1]!.body;
+
+  it("설명은 승인 문구로 시작하고 편수를 적지 않는다(사용자 결정 2026-10-13)", () => {
+    expect(body.startsWith(APPROVED)).toBe(true);
+    expect(body).not.toMatch(/\d+\s*편/);
+    // 미리 담기 전의 '후보로 들어와 있습니다'(0 에서 담아 올라가는 말)는 이제 틀린 말이다
+    expect(body).not.toContain("후보로 들어와 있습니다");
+  });
+
+  it("결정할 것 — 여덟 편이 담긴 채 시작하니 '5편 이상 담으면'이 아니라 '담은 논문이 5편 이상이면'", () => {
+    expect(ONBOARDING_STEPS[1]!.decide).toBe(
+      "보고서에 쓸 논문을 담습니다. 담은 논문이 5편 이상이면 [보고서 만들기]를 누를 수 있습니다.",
+    );
+  });
+
+  it("말투는 다른 단계와 같은 합니다체 — 해요체 서술('…어요.')을 두지 않는다(사용자 결정 2026-10-13)", () => {
+    for (const s of ONBOARDING_STEPS) {
+      expect(s.body).not.toMatch(/[어아]요\./);
+      expect(s.decide).not.toMatch(/[어아]요\./);
+    }
+  });
+});
+
+describe("FINAL_STEP_NAME·버튼 이름", () => {
+  it("마지막 단계 이름은 '보고서'(Q2 기본) — 버튼은 조사 없는 꼴로 이름에서 만든다", () => {
+    expect(FINAL_STEP_NAME).toBe("보고서");
+    expect(MAKE_REPORT).toBe(`${FINAL_STEP_NAME} 만들기`);
+    expect(REMAKE_REPORT).toBe(`${FINAL_STEP_NAME} 다시 만들기`);
+    expect([MAKE_REPORT, REMAKE_REPORT]).toEqual(["보고서 만들기", "보고서 다시 만들기"]);
   });
 });

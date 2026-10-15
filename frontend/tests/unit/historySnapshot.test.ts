@@ -2,9 +2,9 @@
 import { describe, expect, it } from "vitest";
 import {
   BOOK_INFO_FIELDS,
+  BOOK_SNAPSHOT_MAX_BYTES,
   PAPER_INFO_FIELDS,
   PAPER_SNAPSHOT_MAX_BYTES,
-  SNAPSHOT_MAX_ITEMS,
   SNAPSHOT_MAX_REFERENCES,
   slimBookResult,
   slimPaperResult,
@@ -110,10 +110,37 @@ describe("slimBookResult", () => {
     expect(snap.books[0]!.book_info).not.toHaveProperty("brand_new");
   });
 
-  it(`최대 ${SNAPSHOT_MAX_ITEMS}건만 남긴다`, () => {
-    const snap = slimBookResult({ query: "q", books: Array.from({ length: 25 }, (_, i) => serverBook(i)) })!;
-    expect(snap.books).toHaveLength(SNAPSHOT_MAX_ITEMS);
+  it("건수로 자르지 않는다 — 검색이 돌려준 도서는 20권을 넘어도 모두 남긴다(둘째 쪽 이후 카드도 복원한다)", () => {
+    const books = Array.from({ length: 60 }, (_, i) => serverBook(i));
+    const snap = slimBookResult({ query: "q", books })!;
+    expect(snap.books.map((b) => b.book_id)).toEqual(books.map((b) => b.book_id));
+    expect(utf8Bytes(snap) + separators(snap)).toBeLessThanOrEqual(200 * 1024);
+  });
+
+  // 키워드 문자열이 한 권에 6KB 가까이 되는 극단 — 서버 상한(200KB)에 닿는 만큼
+  function fatBook(i: number) {
+    const b = serverBook(i);
+    return { ...b, book_info: { ...b.book_info, themes: "경제무역".repeat(1000) } };
+  }
+
+  it("서버 상한에 닿을 만큼이면 뒤쪽 도서부터 넘는 만큼만 뺀다 — 1위와 앞쪽은 그대로", () => {
+    const books = Array.from({ length: 60 }, (_, i) => fatBook(i));
+    const snap = slimBookResult({ query: "q", books })!;
+    expect(snap.books.length).toBeGreaterThan(1);
+    expect(snap.books.length).toBeLessThan(60);
+    expect(snap.books.map((b) => b.book_id)).toEqual(books.slice(0, snap.books.length).map((b) => b.book_id));
+    expect(utf8Bytes(snap) + separators(snap)).toBeLessThanOrEqual(200 * 1024);
+    expect(utf8Bytes(snap)).toBeLessThanOrEqual(BOOK_SNAPSHOT_MAX_BYTES);
+    // 한 권을 더 실으면 상한을 넘는다 — 더 빼지 않았다
+    const next = slimBookResult({ query: "q", books: [books[snap.books.length]!] })!.books[0]!;
+    expect(utf8Bytes({ ...snap, books: [...snap.books, next] })).toBeGreaterThan(BOOK_SNAPSHOT_MAX_BYTES);
+  });
+
+  it("상한을 넘어도 1위 도서는 남기고, 그 책의 read_effect 도 그대로 싣는다", () => {
+    const top = { ...fatBook(0), book_info: { ...fatBook(0).book_info, read_effect: "얻는 것" } };
+    const snap = slimBookResult({ query: "q", books: [top, ...Array.from({ length: 59 }, (_, i) => fatBook(i + 1))] })!;
     expect(snap.books[0]!.book_id).toBe("B0");
+    expect(snap.books[0]!.book_info!.read_effect).toBe("얻는 것");
   });
 
   it("모양이 틀리면 null, book_id 없는 항목은 건너뛴다", () => {
@@ -194,7 +221,7 @@ describe("slimPaperResult", () => {
     };
   }
 
-  it(`검색이 돌려준 논문은 ${SNAPSHOT_MAX_ITEMS}편을 넘어도 모두 남긴다 — 둘째 쪽 이후 카드도 돌아와 찾는다`, () => {
+  it(`검색이 돌려준 논문은 20편을 넘어도 모두 남긴다 — 둘째 쪽 이후 카드도 돌아와 찾는다`, () => {
     const books = Array.from({ length: 60 }, (_, i) => serverPaper(i, 2));
     const snap = slimPaperResult({ query: "q", books })!;
     expect(snap.books.map((b) => b.book_id)).toEqual(books.map((b) => b.book_id));

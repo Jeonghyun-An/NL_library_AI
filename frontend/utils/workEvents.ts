@@ -22,9 +22,10 @@ interface WorkEventResult {
 
 const OPEN_STATUSES: readonly GenStatus[] = ["queued", "running"];
 
-// 생성이 끝나면 다시 읽을 조회. 모든 kind 가 work 도 다시 읽는다 — 진행 요약(progress)과 남은 생성의 순번이 바뀐다
+// 생성이 끝나면 다시 읽을 조회. 모든 kind 가 work 도 다시 읽는다 — 진행 요약(progress)과 남은 생성의 순번이 바뀐다.
+// 키워드(concepts) 반영은 씨앗 카드 생성을 넣는다(06e D23) — 주제 목록을 다시 읽어야 빈 슬롯이 '기다리는 중'이 된다
 const RELOAD: Record<GenKind, readonly WorkResource[]> = {
-  concepts: ["work"],
+  concepts: ["topics", "work"],
   topic_card: ["topics", "work"],
   refine: ["topics", "work"],
   facet: ["reading", "work"],

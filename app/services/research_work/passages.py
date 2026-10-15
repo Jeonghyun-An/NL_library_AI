@@ -5,7 +5,10 @@
 
 후보는 딥리서치 스냅숏의 근거 청크(state_snapshot.evidence[eid].chunks)가 먼저다 — 탐색이 이미 원문 대목만
 골라 두었다. 스냅숏에 없는 논문(되살림·담기)은 Milvus 에서 그 논문 한 편의 청크를 읽는다. 어느 쪽이든 메타청크·
-보강 청크([초록]·[키워드]·[표 설명]·[그림 설명])는 탐색과 같은 규칙(explorer.is_source_passage)으로 뺀다.
+보강 청크([초록]·[키워드]·[표 설명]·[그림 설명])·참고문헌 목록 조각은 탐색과 같은 규칙(explorer.is_source_passage)으로
+뺀다. 스냅숏 대목이 참고문헌 조각뿐인 논문은 후보가 비어 Milvus 쪽으로 넘어간다. 본문 끝에 참고문헌 머리와 첫 항목이
+붙은 청크는 후보로 남기되 머리 뒤를 뗀다(bibliography.strip_reference_tail) — 리랭커가 서지 속 제목으로 점수를 매기지
+않고, 대목이 남의 논문 제목으로 끝나지 않는다.
 
 리랭커(compute_scores)·Milvus(ensure_collection)·검색 파이프라인(_RERANK_FAILURES)은 torch·FlagEmbedding·
 pymilvus 를 끌어오므로 함수 안에서 import 한다(함정 13). 실패는 실제로 나는 타입만 받는다(함정 19) — 리랭커는
@@ -14,8 +17,10 @@ pipeline._RERANK_FAILURES, Milvus 는 거기에 MilvusException 과 grpc.RpcErro
 """
 import logging
 import re
+import time
 from types import SimpleNamespace
 
+from services.research.bibliography import strip_reference_tail
 from services.research.explorer import is_source_passage
 from services.research_work.shapes import EXCERPT_CHARS
 
@@ -74,18 +79,20 @@ def _source(chunk_idx: int, page_start, text: str) -> bool:
 
 def _passage(chunk_id: str, text: str, page_start, page_end, score) -> dict:
     start = int(page_start or 0)
-    return {"chunk_id": chunk_id, "text": text, "page_start": start,
+    return {"chunk_id": chunk_id, "text": strip_reference_tail(text), "page_start": start,
             "page_end": int(page_end if page_end is not None else start),
             "score": None if score is None else float(score)}
 
 
 def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
     """딥리서치 스냅숏에서 그 논문의 청크 — [{chunk_id, text, page_start, page_end, score}], 점수 높은 순(같으면
-    스냅숏 순서), 같은 청크는 한 번. 탐색이 원문 대목만 남겼지만 그 규칙 전에 만든 옛 잡에는 보강 청크가 섞여
-    있을 수 있어 같은 규칙으로 한 번 더 거른다."""
+    스냅숏 순서), 같은 청크는 한 번. 탐색이 원문 대목만 남겼지만 그 규칙 전에 만든 옛 잡에는 보강 청크·참고문헌
+    목록 조각이 섞여 있을 수 있어 같은 규칙으로 한 번 더 거른다. 스냅숏 청크가 모두 걸러졌으면 info 한 줄을 남긴다 —
+    그 논문은 Milvus 한 편 청크를 리랭크해 요청이 길어지므로 빈도를 운영 로그로 본다."""
     evidence = snapshot.get("evidence") if isinstance(snapshot, dict) else None
     out: list[dict] = []
     seen: set[str] = set()
+    filtered = 0
     for ev in (evidence or {}).values():
         if not isinstance(ev, dict) or ev.get("cnts_id") != cnts_id:
             continue
@@ -94,9 +101,12 @@ def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
             if not chunk_id or not text or chunk_id in seen:
                 continue
             if not _source(_chunk_idx(chunk_id), c.get("page_start"), text):
+                filtered += 1
                 continue
             seen.add(chunk_id)
             out.append(_passage(chunk_id, text, c.get("page_start"), c.get("page_end"), c.get("score")))
+    if filtered and not out:
+        log.info("[passages] 스냅숏 대목 %d개가 모두 원문 대목이 아니라 Milvus 청크로 넘어간다 cnts=%s", filtered, cnts_id)
     out.sort(key=lambda p: p["score"] if p["score"] is not None else float("-inf"), reverse=True)
     return out
 
@@ -145,11 +155,14 @@ def pick_excerpt(query: str, passages: list[dict], *, limit: int = EXCERPT_CHARS
     from services.search.pipeline import _RERANK_FAILURES
     from services.search.reranker import compute_scores
 
+    started = time.monotonic()
     try:
         scores = list(compute_scores(query, [p["text"] for p in passages]))
     except _RERANK_FAILURES as e:
         log.warning("[passages] 리랭커 실패 — 저장된 점수로 대목을 고른다: %s", e)
         scores = [p["score"] if p.get("score") is not None else float("-inf") for p in passages]
+    # [이 절 쓰기]는 게이트웨이 120초 안의 동기 요청이다 — Milvus 로 넘어간 긴 논문의 리랭크 시간을 로그로 잰다
+    log.info("[passages] 대목 고르기 후보 %d개 %.2fs", len(passages), time.monotonic() - started)
     best = passages[max(range(len(passages)), key=scores.__getitem__)]
     return {"chunk_id": best["chunk_id"], "page_start": best["page_start"], "page_end": best["page_end"],
             "text": clip(best["text"], limit)}

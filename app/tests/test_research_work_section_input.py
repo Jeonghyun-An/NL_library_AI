@@ -13,6 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from bibliography_chunks import chunk as bibliography_chunk
 from services.research_work import passages, section_input
 from services.research_work.passages import CLIP_WINDOW, clip, snapshot_passages
 from services.research_work.section_input import (
@@ -143,6 +144,44 @@ class TestSnapshotPassages:
         assert snapshot_passages(snapshot, "KCI_A") == []
         assert snapshot_passages(SNAPSHOT, "KCI_Z") == []
 
+    def test_bibliography_chunks_are_not_passages(self):
+        """옛 잡의 스냅숏에는 탐색이 거르기 전의 참고문헌 목록 조각이 있다 — 같은 점수여도 본문 대목만 후보로 남긴다
+        (운영 d60a5dc1 E2: 참고문헌 __0071 과 본문 __0003 이 0.591 로 같았고 리랭커가 참고문헌을 골랐다)."""
+        snapshot = {"evidence": {"E2": {"cnts_id": "KCI_FI002548462", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI002548462__0071", 0.591), _snapshot_chunk("KCI_FI002548462__0003", 0.591)]}}}
+        assert [p["chunk_id"] for p in snapshot_passages(snapshot, "KCI_FI002548462")] == ["KCI_FI002548462__0003"]
+
+    def test_reference_tail_after_the_body_is_left_out(self):
+        """본문 끝에 참고문헌 머리와 첫 항목이 붙은 청크는 본문이라 후보로 남되 머리 뒤를 뗀다 — 리랭커가 서지 속 제목으로
+        점수를 매기지 않고, 대목이 남의 학위논문 제목으로 끝나지 않는다(운영 c816c7b2 이어가기 gap E3)."""
+        snapshot = {"evidence": {"E4": {"cnts_id": "KCI_FI001407641", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI001407641__0037", 0.8)]}}}
+        (p,) = snapshot_passages(snapshot, "KCI_FI001407641")
+        assert p["text"].endswith("실험연구를 수행할 필요를 느낀다.") and "고문희" not in p["text"]
+
+    def test_a_paper_with_only_bibliography_chunks_gives_nothing(self):
+        """빈 목록이라 _excerpts 의 `or milvus_passages(cnts)` 가 그 논문의 Milvus 청크에서 본문 대목을 고른다."""
+        snapshot = {"evidence": {"E3": {"cnts_id": "KCI_FI001613573", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI001613573__0041", 0.7)]}}}
+        assert snapshot_passages(snapshot, "KCI_FI001613573") == []
+
+    def test_falling_back_to_milvus_because_every_chunk_was_filtered_is_logged(self, caplog):
+        """스냅숏 대목이 모두 걸려 Milvus 한 편 청크(최대 MAX_PASSAGES 개 리랭크)로 넘어가는 일은 요청 시간을 늘린다 —
+        빈도를 운영 로그로 보게 info 한 줄을 남긴다. 스냅숏에 없던 논문(되살림·담기)은 원래 그 길이라 남기지 않는다."""
+        snapshot = {"evidence": {"E3": {"cnts_id": "KCI_FI001613573", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI001613573__0041", 0.7)]}}}
+        with caplog.at_level("INFO", logger="services.research_work.passages"):
+            snapshot_passages(snapshot, "KCI_FI001613573")
+            snapshot_passages(snapshot, "KCI_Z")
+        (record,) = caplog.records
+        assert record.levelname == "INFO" and "KCI_FI001613573" in record.getMessage()
+
+
+def _snapshot_chunk(chunk_id: str, score: float) -> dict:
+    c = bibliography_chunk(chunk_id)
+    return {"chunk_id": chunk_id, "text": c["text"], "page_start": c["page_start"], "page_end": c["page_end"],
+            "score": score}
+
 
 class _Collection:
     def __init__(self, rows=None, error: Exception | None = None):
@@ -175,6 +214,26 @@ class TestMilvusPassages:
         assert set(call["output_fields"]) == {"chunk_id", "chunk_idx", "text", "page_start", "page_end"}
         # 상한은 정수 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다(membership 과 같다)
         assert call["timeout"] == 10 and type(call["timeout"]) is int
+
+    def test_bibliography_chunks_are_left_out(self, search, monkeypatch):
+        """Milvus 로 넘어온 논문도 같은 규칙 — 참고문헌 목록 조각은 리랭커 후보에 넣지 않는다."""
+        bib, body = bibliography_chunk("KCI_FI002548462__0071"), bibliography_chunk("KCI_FI002548462__0003")
+        col = _Collection(rows=[
+            {"chunk_id": "KCI_FI002548462__0071", "chunk_idx": 71, "text": bib["text"], "page_start": 33,
+             "page_end": 33},
+            {"chunk_id": "KCI_FI002548462__0003", "chunk_idx": 3, "text": body["text"], "page_start": 1,
+             "page_end": 1},
+        ])
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
+        assert [p["chunk_id"] for p in passages.milvus_passages("KCI_FI002548462")] == ["KCI_FI002548462__0003"]
+
+    def test_reference_tail_after_the_body_is_left_out(self, search, monkeypatch):
+        tail = bibliography_chunk("KCI_FI001061014__0022")
+        col = _Collection(rows=[{"chunk_id": "KCI_FI001061014__0022", "chunk_idx": 22, "text": tail["text"],
+                                 "page_start": 12, "page_end": 12}])
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
+        (p,) = passages.milvus_passages("KCI_FI001061014")
+        assert p["text"].endswith("연구의 필요성을 시사한다.") and "강희숙" not in p["text"]
 
     @pytest.mark.parametrize("error", [RuntimeError("스키마 불일치"), OSError("연결 끊김")])
     def test_known_failures_give_no_passages(self, search, monkeypatch, error):
@@ -237,6 +296,14 @@ class TestPickExcerpt:
         assert out == {"chunk_id": "c3", "page_start": 9, "page_end": 9, "text": "셋째 대목이다."}
         assert seen["args"] == ("노인 우울 사회적 지지", [c["text"] for c in CANDIDATES])
 
+    def test_candidate_count_and_time_are_logged(self, search, monkeypatch, caplog):
+        # [이 절 쓰기]는 게이트웨이 120초 안의 동기 요청이다 — 리랭크 후보 수·걸린 시간을 운영 로그로 잰다
+        monkeypatch.setattr(search.reranker, "compute_scores", lambda query, documents: [0.2, 0.3, 0.8])
+        with caplog.at_level("INFO", logger="services.research_work.passages"):
+            passages.pick_excerpt("질의", CANDIDATES)
+        (record,) = caplog.records
+        assert record.levelname == "INFO" and "후보 3개" in record.getMessage()
+
     def test_long_best_passage_is_clipped_to_the_limit(self, search, monkeypatch):
         monkeypatch.setattr(search.reranker, "compute_scores", lambda q, d: [0.1, 0.9, 0.1])
         out = passages.pick_excerpt("질의", CANDIDATES)
@@ -267,23 +334,17 @@ class TestPickExcerpt:
 
 
 class TestSectionFigures:
-    def test_count_year_range_and_corpus(self):
-        assert section_figures([2015, 2008, 2011], {"n_papers": 144748, "from": "1980", "to": "2017"}, 6) == [
+    def test_count_and_year_range(self):
+        assert section_figures([2015, 2008, 2011], 6) == [
             {"id": "F1", "label": "이 절에 준 논문 수", "value": "6"},
             {"id": "F2", "label": "발행 연도 범위", "value": "2008~2015"},
-            {"id": "F3", "label": "소장 KCI 적재분 논문 수", "value": "144,748"},
         ]
 
     def test_one_year_is_that_year(self):
-        assert section_figures([2013, 2013], None, 2)[1] == {"id": "F2", "label": "발행 연도 범위",
-                                                            "value": "2013"}
+        assert section_figures([2013, 2013], 2)[1] == {"id": "F2", "label": "발행 연도 범위", "value": "2013"}
 
-    def test_missing_parts_are_left_out_and_numbers_stay_dense(self):
-        assert section_figures([], {"n_papers": 1200}, 1) == [
-            {"id": "F1", "label": "이 절에 준 논문 수", "value": "1"},
-            {"id": "F2", "label": "소장 KCI 적재분 논문 수", "value": "1,200"},
-        ]
-        assert section_figures([], None, 3) == [{"id": "F1", "label": "이 절에 준 논문 수", "value": "3"}]
+    def test_missing_parts_are_left_out(self):
+        assert section_figures([], 3) == [{"id": "F1", "label": "이 절에 준 논문 수", "value": "3"}]
 
 
 SEED = {"key": "future:1:0", "kind": "future", "section_idx": 1, "subq_idx": 1, "heading": "노인의 사회적 지지",
@@ -294,23 +355,61 @@ def _seed(key: str, section_idx: int | None, subq_idx: int | None, papers: list[
     return {**SEED, "key": key, "section_idx": section_idx, "subq_idx": subq_idx, "text": key, "papers": papers}
 
 
+# 운영 630e0d65(2026-10-14) 보고서의 꼴 — 고른 카드(59, '…변인들의 관계')의 씨앗 future:1:0 이 들어 있던 절의 하위질문은
+# '시간적 변화 추이'다. 같은 절에 주제와 무관한 향후 과제(future:1:1 교육 프로그램)와 그 하위질문의 insufficient note
+# ('제시된 근거들은 …')가 함께 있어, 연구 공백 절이 이 이웃을 끌어와 고른 주제가 아닌 '시간적 변화 추이' 공백을 썼다
+_LIVE_GAP_HEADINGS = ["개념은 어떻게 제시되어 왔는가?", "연구의 시간적 변화 추이는 어떠한가?"]
+LIVE_GAP_REPORT = {
+    "sections": [
+        {"heading": _LIVE_GAP_HEADINGS[0],
+         "papers": [{"cnts_id": "K1", "evidence": ["E1"]}, {"cnts_id": "K2", "evidence": ["E2"]}],
+         "future": [{"text": "언어 능력을 보여줄 객관적인 자료 조사가 필요하다 [E2].", "evidence": ["E2"]}]},
+        {"heading": _LIVE_GAP_HEADINGS[1],
+         "papers": [{"cnts_id": "K3", "evidence": ["E3"]}, {"cnts_id": "K4", "evidence": ["E4"]}],
+         "future": [{"text": "언어 발달에 영향을 미치는 다양한 변인들에 대한 추가적인 연구가 필요하다 [E4].",
+                     "evidence": ["E4"]},
+                    {"text": "효과적인 교육 프로그램 개발에 대한 연구가 이루어져야 한다 [E3].", "evidence": ["E3"]}]},
+    ],
+    "evidence": {f"E{n}": {"cnts_id": f"K{n}", "meta": {"title": f"논문 {n}"}} for n in range(1, 5)},
+    "trail": [
+        {"subquestion": _LIVE_GAP_HEADINGS[0], "verdict": "sufficient", "note": "충분하다"},
+        {"subquestion": _LIVE_GAP_HEADINGS[1], "verdict": "insufficient",
+         "note": "제시된 근거들은 연구 현황을 다루고 있지만, 시간적 변화 추이를 종합적으로 보여주지는 못합니다."},
+    ],
+}
+
+
 class TestGapSeeds:
-    def test_picked_seed_first_then_seeds_of_the_same_section_or_subquestion(self, monkeypatch):
+    def test_a_picked_card_uses_only_its_own_seed_with_its_original_evidence(self, monkeypatch):
+        """고른 카드의 주제는 씨앗의 글에서 나온다 — 씨앗이 들어 있던 절의 이웃(다른 향후 과제·하위질문 note)은 잇지 않는다.
+        보고서가 그 향후 과제에 달았던 근거(cnts_id)를 evidence 로 붙인다. 넘기는 논문은 씨앗의 papers 그대로다."""
         calls = []
-        pool = [_seed("future:0:0", 0, 0, ["X"]), _seed("future:1:1", 1, 1, ["KCI_C"]),
-                _seed("insufficient:1", None, 1, ["KCI_D"]), _seed("future:2:0", 2, 2, ["Y"]),
-                _seed("future:1:2", 1, 1, ["KCI_E"]), _seed("future:1:3", 1, 1, ["KCI_F"])]
 
         def _pick(report, *, limit, exclude=()):
-            calls.append((limit, set(exclude)))
-            return [s for s in pool if s["key"] not in exclude]
+            calls.append(limit)
+            return []
 
         monkeypatch.setattr(section_input, "pick_seeds", _pick)
+        report = {"sections": [{"heading": "다른 절", "future": []},
+                               {"heading": "노인의 사회적 지지",
+                                "future": [{"text": "농촌 노인 표본이 부족하다 [E2]", "evidence": ["E2", "E9"]}]}],
+                  "evidence": {"E2": {"cnts_id": "KCI_B", "meta": {"title": "사회적 지지 척도"}}}}
 
-        out = gap_seeds(SEED, {"sections": []})
+        out = gap_seeds(SEED, report)
 
-        assert [s["key"] for s in out] == ["future:1:0", "future:1:1", "insufficient:1", "future:1:2"]
-        assert calls == [(None, {"future:1:0"})]
+        assert out == [{**SEED, "evidence": ["KCI_B"]}]
+        assert calls == []                                  # 보고서에서 씨앗을 더 고르지 않는다
+        assert "evidence" not in SEED                       # 저장된 카드 씨앗을 고치지 않는다
+
+    def test_live_report_does_not_pull_in_the_neighbours_of_the_picked_seed(self):
+        # 운영 630e0d65 카드 59 — 고치기 전에는 [future:1:0, future:1:1, insufficient:1] 이었다
+        from services.research_work.seeds import pick_seeds as real_pick_seeds
+        picked = next(s for s in real_pick_seeds(LIVE_GAP_REPORT, limit=None) if s["key"] == "future:1:0")
+
+        out = gap_seeds(picked, LIVE_GAP_REPORT)
+
+        assert [s["key"] for s in out] == ["future:1:0"]
+        assert out[0]["evidence"] == ["K4"] and out[0]["papers"] == picked["papers"]
 
     def test_user_card_takes_three_seeds_from_the_whole_report(self, monkeypatch):
         calls = []
@@ -321,7 +420,9 @@ class TestGapSeeds:
 
         monkeypatch.setattr(section_input, "pick_seeds", _pick)
 
-        assert [s["key"] for s in gap_seeds({}, {"sections": []})] == ["future:0:0", "future:1:0", "future:2:0"]
+        out = gap_seeds({}, {"sections": []})
+        assert [s["key"] for s in out] == ["future:0:0", "future:1:0", "future:2:0"]
+        assert [s["evidence"] for s in out] == [[], [], []]
         assert calls == [3]
 
 
@@ -355,7 +456,7 @@ class TestBlocks:
         assert "대목(쪽 3): 대목 하나" in evidence_block([paper])
 
     def test_figure_block_lines(self):
-        figures = section_figures([2013], None, 2)
+        figures = section_figures([2013], 2)
         assert figure_block(figures) == "[F1] 이 절에 준 논문 수: 2\n[F2] 발행 연도 범위: 2013"
 
     def test_empty_blocks(self):
@@ -381,7 +482,7 @@ class TestPriorInput:
     def test_shape(self):
         inp = prior_input(question="노인의 우울과 사회적 지지에 관한 연구가 궁금해", topic=TOPIC,
                           research_question="가족 지지는 농촌 독거노인의 우울을 낮추는가?", group=GROUP,
-                          books=BOOKS, excerpts={"KCI_A": EXCERPT}, corpus={"n_papers": 144748})
+                          books=BOOKS, excerpts={"KCI_A": EXCERPT})
 
         assert inp["key"] == "prior.g1" and inp["kind"] == "prior"
         assert inp["question"] == "노인의 우울과 사회적 지지에 관한 연구가 궁금해"
@@ -397,17 +498,19 @@ class TestPriorInput:
         assert second == {"eid": "E2", "cnts_id": "KCI_B", "title": "사회적 지지 척도", "year": None,
                           "abstract": "", "excerpt": None}
         assert fourth["title"] == "KCI_D"                 # 서지가 없으면 cnts_id 를 제목 자리에
+        # 수치는 근거 논문의 편수·연도뿐이다 — 소장 KCI 적재분은 절에 주지 않는다(프롬프트가 [F#] 를 근거 논문의 편수·
+        # 연도에만 쓰라고 한다. 운영 2026-10-14 prior.g2 는 적재분 '198,518' 을 '…건에 달한다' 로 옮겼다)
         assert inp["figures"] == [
             {"id": "F1", "label": "이 절에 준 논문 수", "value": "6"},
             {"id": "F2", "label": "발행 연도 범위", "value": "2013~2016"},
-            {"id": "F3", "label": "소장 KCI 적재분 논문 수", "value": "144,748"},
         ]
-        # 다시 맞춤 판정의 기준은 묶음의 논문 전부(넣지 못한 7번째 포함)
-        assert inp["basis"] == {"topic_id": 12, "papers": GROUP["papers"]}
+        # 다시 맞춤 판정의 기준은 묶음의 논문 전부(넣지 못한 7번째 포함)와 이 절을 쓸 때의 연구 질문(06e)
+        assert inp["basis"] == {"topic_id": 12, "papers": GROUP["papers"],
+                                "question": "가족 지지는 농촌 독거노인의 우울을 낮추는가?"}
 
     def test_group_without_a_name_uses_its_hint(self):
         inp = prior_input(question="q", topic=TOPIC, research_question="rq", group={**GROUP, "name": ""},
-                          books={}, excerpts={}, corpus=None)
+                          books={}, excerpts={})
         assert inp["group"] == {"name": "노인의 우울"}
 
 
@@ -416,12 +519,45 @@ class TestGapInput:
         seeds = [SEED, _seed("insufficient:1", None, 1, ["KCI_C", "KCI_A"])]
 
         inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=seeds, books=BOOKS,
-                        excerpts={}, corpus=None)
+                        excerpts={})
 
         assert inp["key"] == "gap" and inp["kind"] == "gap" and inp["group"] is None
         assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다"},
                                 {"heading": "노인의 사회적 지지", "text": "insufficient:1"}]
         # 씨앗에 묶인 근거 논문을 씨앗 순서로, 같은 논문은 한 번
         assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_B", "KCI_C"]
-        assert inp["basis"] == {"topic_id": 12, "papers": ["KCI_A", "KCI_B", "KCI_C"]}
+        assert inp["basis"] == {"topic_id": 12, "papers": ["KCI_A", "KCI_B", "KCI_C"], "question": "rq"}
         assert [f["id"] for f in inp["figures"]] == ["F1", "F2"]
+
+    def test_an_insufficient_seed_is_written_as_an_unanswered_subquestion_not_the_critic_note(self):
+        """insufficient 씨앗의 글은 critic 의 자기점검 메모('제시된 근거들은 …부족합니다')다. 그대로 넘기면 모델이 그 말투를
+        옮긴다(운영 630e0d65 gap p3 '제시된 근거들은 … 보여주지는 못한다'). 하위질문에 답할 근거가 확인되지 않았다는 한 줄로 쓴다."""
+        note = "제시된 근거들은 연구 현황을 다루고 있지만, 시간적 변화 추이를 종합적으로 보여주지는 못합니다. 제공된 근거는 부족합니다."
+        seed = {**SEED, "key": "insufficient:1", "kind": "insufficient", "heading": "연구의 시간적 변화 추이는 어떠한가?",
+                "text": note, "evidence": []}
+
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[seed], books=BOOKS, excerpts={})
+
+        (line,) = inp["seeds"]
+        assert line == {"heading": "연구의 시간적 변화 추이는 어떠한가?",
+                        "text": "'연구의 시간적 변화 추이는 어떠한가?'에 답할 근거가 소장 코퍼스에서 충분히 확인되지 않았다."}
+        assert not any(w in line["text"] for w in ("제시된 근거", "제공된 근거", "합니다"))
+
+    def test_a_future_seed_carries_the_number_of_its_original_evidence_in_this_section(self):
+        """보고서가 그 향후 과제에 달았던 근거가 이 절의 논문에 있으면 씨앗 줄에 그 [E#] 를 붙인다 — 모델이 씨앗 문장을
+        옮겨도 근거 표시가 남는다(운영 630e0d65 gap p1 은 씨앗 문장을 옮긴 근거 없는 문장이었다). 없으면 붙이지 않는다."""
+        seed = {**SEED, "text": "농촌 노인 표본이 부족하다.", "evidence": ["KCI_B", "KCI_Z"]}
+
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[seed], books=BOOKS, excerpts={})
+
+        assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_B"]
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다 [E2]."}]
+
+        outside = {**seed, "evidence": ["KCI_Z"]}
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[outside], books=BOOKS, excerpts={})
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다."}]
+
+    def test_a_seed_line_without_a_sentence_end_takes_the_marks_at_its_end(self):
+        seed = {**SEED, "evidence": ["KCI_A", "KCI_B", "KCI_A"]}
+        inp = gap_input(question="q", topic=TOPIC, research_question="rq", seeds=[seed], books=BOOKS, excerpts={})
+        assert inp["seeds"][0]["text"] == "농촌 노인 표본이 부족하다 [E1] [E2]"

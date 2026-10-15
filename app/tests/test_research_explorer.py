@@ -15,6 +15,7 @@ from uuid import uuid4
 
 import pytest
 
+from bibliography_chunks import chunk as bibliography_chunk
 from schemas.book import BookOut, ChunkHit, ChunkSearchResponse
 from services.research.explorer import explore, is_source_passage, rank_hits
 from services.research.state import merge_params
@@ -85,12 +86,12 @@ def _chunk(book_id, *, chunk_idx=4, text="본문", score=0.5, rerank_score=0.8, 
 
 
 def _book(cnts_id, *, title="논문 가", pub_date="2008-06", kci_citations=3):
-    """실제 BookOut 을 쓴다 — explore 가 방어 없이 직접 속성 접근으로 읽는 7개
-    필드(title·personal_author·series_title·vol_issue·pub_date·kci_citations·grade)가
+    """실제 BookOut 을 쓴다 — explore 가 방어 없이 직접 속성 접근으로 읽는 8개
+    필드(title·personal_author·series_title·vol_issue·extent·pub_date·kci_citations·grade)가
     스키마에 실재하는지 여기서 고정된다."""
     return BookOut(
         id=uuid4(), cnts_id=cnts_id, title=title, created_at=datetime(2026, 1, 1),
-        personal_author="저자", series_title="학술지", vol_issue="12(3)",
+        personal_author="저자", series_title="학술지", vol_issue="12(3)", extent="77~104",
         pub_date=pub_date, kci_citations=kci_citations, grade="등재",
     )
 
@@ -173,6 +174,15 @@ class TestIsSourcePassage:
     def test_label_lookalike_in_paged_body_is_kept(self):
         """보강 청크는 쪽수가 늘 0 이다 — 쪽수가 있으면 본문에 우연히 나온 글자다."""
         assert is_source_passage(_chunk("A", text="[표 설명] 아래 표는 …"))
+
+    def test_bibliography_list_chunk_is_dropped(self):
+        """본문 청킹이 논문 끝 참고문헌까지 쪽수 달린 청크로 만든다 — 그 조각은 논문의 주장이 아니다."""
+        bib = bibliography_chunk("KCI_FI002548462__0071")
+        assert not is_source_passage(_chunk("A", chunk_idx=71, text=bib["text"], pages=(33, 33)))
+
+    def test_body_with_inline_citations_is_kept(self):
+        body = bibliography_chunk("KCI_FI002548462__0003")
+        assert is_source_passage(_chunk("A", chunk_idx=3, text=body["text"], pages=(1, 1)))
 
 
 class TestExplore:
@@ -261,9 +271,10 @@ class TestExplore:
         _, _, _, meta = self._run(
             monkeypatch, chunks=[_chunk("A")], books={"A": _book("A")},
         )
+        # extent(수록면) — 보고서 참고문헌의 쪽 자리(frontend citations.journalText)가 읽는다
         assert meta == {"A": {
             "title": "논문 가", "personal_author": "저자", "series_title": "학술지",
-            "vol_issue": "12(3)", "pub_date": "2008-06", "kci_citations": 3,
+            "vol_issue": "12(3)", "extent": "77~104", "pub_date": "2008-06", "kci_citations": 3,
             "grade": "등재",
         }}
 

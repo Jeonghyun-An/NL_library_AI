@@ -1035,11 +1035,12 @@ class TestOffTopicExclusion:
         assert set(self._cnts(st, sq2.evidence_ids)) == {"C", "D"}
         assert sq2.capped == 1             # 2회차에 막힌 E 뿐이다
 
-    def _limitation(self, st, text):
+    def _limitation(self, st, head):
+        """head 로 시작하는 한계 줄. 부족 줄은 절 번호('1절은')로, 그 밖의 줄은 하위질문 전문으로 시작한다."""
         from services.research.synthesizer import build_limitations
 
         return next(x for x in build_limitations(st, unmarked_total=0, dropped_total=0)
-                    if f"'{text}'" in x)
+                    if x.startswith(head))
 
     def test_seat_freed_by_exclusion_is_not_blamed_on_the_share(self):
         """제외로 몫에 자리가 났는데 다음 검색이 막혔던 후보를 다시 찾지 못했다 — 싣지 못한 것은 이제
@@ -1050,7 +1051,8 @@ class TestOffTopicExclusion:
         self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
         assert self._cnts(st, sq.evidence_ids) == ["B"]
         assert sq.budget_capped == 0
-        assert self._limitation(st, "엣지 컴퓨팅") == "'엣지 컴퓨팅' 은 근거 1편으로 결론이 약하다 — 점검"
+        assert self._limitation(st, "1절은") == (
+            "1절은 근거 1편을 모았으나 자기점검에서 '근거 부족'으로 판정했다 — 자기점검 메모: “점검”")
 
     def test_pool_seat_freed_by_exclusion_is_not_blamed_on_the_global_cap(self):
         st = self._state("가", "나", max_recheck=1, max_evidence=3, min_evidence_per_subq=3)
@@ -1071,8 +1073,8 @@ class TestOffTopicExclusion:
         critic = _ScriptedCritic(("insufficient", [1, 2], ["보완"]), ("insufficient", [], []))
         self._run(st, sq, {"엣지 컴퓨팅": ["A", "B", "C"], "보완": []}, critic)
         assert sq.evidence_ids == [] and (sq.budget_capped, sq.capped) == (0, 0)
-        assert self._limitation(st, "엣지 컴퓨팅") == (
-            "'엣지 컴퓨팅' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다 — 점검")
+        assert self._limitation(st, "'엣지 컴퓨팅'") == (
+            "'엣지 컴퓨팅' 에 대해서는 모은 논문 2편이 모두 하위질문과 무관해 근거에서 뺐다 — 자기점검 메모: “점검”")
 
 
 class TestJudgedBeforeExclusion:

@@ -7,11 +7,11 @@
       <span v-if="proposal.stale.outline" class="rs-badge wk-outline__stale">다시 맞춤 필요</span>
     </header>
     <p v-if="proposal.stale.outline" class="rs-muted">
-      목차를 만든 뒤 주제나 읽기 목록이 바뀌었습니다. 지금 목차는 지우지 않고 그대로 두었습니다 — 바뀐 목록으로 묶음을
+      목차를 만든 뒤 주제나 참고문헌이 바뀌었습니다. 지금 목차는 지우지 않고 그대로 두었습니다 — 바뀐 목록으로 묶음을
       다시 나누려면 목차를 다시 만드세요.
     </p>
     <p v-if="fallback" class="rs-muted">
-      모델이 목차 초안을 만들지 못해 묶음 이름은 묶음의 핵심 개념으로, 연구 질문 후보는 고른 주제의 질문으로 채웠습니다.
+      모델이 목차 초안을 만들지 못해 묶음 이름은 묶음의 키워드로, 연구 질문 후보는 고른 주제의 질문으로 채웠습니다.
       직접 고쳐 승인하거나 목차를 다시 만드세요.
     </p>
 
@@ -89,7 +89,7 @@
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">4. {{ LABELS.gap }}</h4>
-        <p class="rs-muted">보고서의 향후 과제와 근거가 부족했던 하위질문으로 씁니다 — {{ gapNote }}로만 적습니다.</p>
+        <p class="rs-muted">{{ DEEP_RESEARCH }} 보고서의 향후 과제와 근거가 부족했던 하위질문으로 씁니다 — {{ gapNote }}로만 적습니다.</p>
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">5. {{ LABELS.question }}</h4>
@@ -140,7 +140,7 @@
           그만두기
         </button>
       </template>
-      <button v-else type="button" class="rs-btn rs-btn--ghost" :disabled="busy" @click="editing = true">목차 고치기</button>
+      <button v-else type="button" class="rs-btn rs-btn--ghost" :disabled="busy" @click="editing = true">{{ OUTLINE_EDIT }}</button>
     </div>
   </section>
 </template>
@@ -148,6 +148,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import type { OutlinePut, ProposalView } from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { citeLabel } from "~/utils/citations";
 import {
   draftFrom,
@@ -159,7 +160,7 @@ import {
   toOutlinePut,
   type OutlineDraft,
 } from "~/utils/outlineEdit";
-import { GAP_NOTE, SECTION_LABELS } from "~/utils/proposalView";
+import { GAP_NOTE, OUTLINE_EDIT, SECTION_LABELS } from "~/utils/proposalView";
 
 const props = defineProps<{ proposal: ProposalView; readOnly: boolean; busy: boolean }>();
 const emit = defineEmits<{ save: [body: OutlinePut] }>();
@@ -198,8 +199,8 @@ const canApprove = computed(() => !props.busy && problems.value.length === 0 && 
 const basisNote = computed(() => {
   const why =
     outline.value?.basis === "subq"
-      ? "핵심 개념이 비어 담은 논문의 하위질문 소속으로 묶음을 나눴습니다."
-      : "묶음 수와 배정은 담은 논문의 핵심 개념 소속으로 서버가 정했습니다.";
+      ? "키워드가 비어 담은 논문의 하위질문 소속으로 묶음을 나눴습니다."
+      : "묶음 수와 배정은 담은 논문의 키워드 소속으로 서버가 정했습니다.";
   return editing.value ? `${why} 논문을 끌어 놓거나 [옮기기]로 다른 묶음에 넣을 수 있습니다.` : why;
 });
 
@@ -313,4 +314,14 @@ function stopEditing(): void {
   chosen.value = {};
   editing.value = false;
 }
+
+// 머리 목차의 [목차 고치기] 토글(ProposalStep)이 편집기를 펼 때 편집 모드로 바로 연다 — 펴고 또 [목차 고치기]를 누르는
+// 두 단계를 하나로. 안의 [목차 고치기]처럼 예시 연구·바쁜 동안(목차를 다시 만드는 중 등)은 열지 않고 읽기로 둔다.
+// 이미 고치던 중이면 그대로다(접어도 v-show 라 고치던 것이 남는다)
+function startEditing(): void {
+  if (props.readOnly || props.busy) return;
+  editing.value = true;
+}
+
+defineExpose({ startEditing });
 </script>

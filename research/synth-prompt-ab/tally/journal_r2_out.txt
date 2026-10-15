@@ -1,0 +1,6 @@
+게재지 군말 요약(편/전체): {'focus': '0/236', 'focus2': '19/236'}
+  focus2 630e r0 절6: 5편
+  focus2 630e r1 절6: 5편
+  focus2 9ba1 r0 절1: 3편
+  focus2 9ba1 r1 절1: 4편
+  focus2 9ba1 r1 절6: 2편

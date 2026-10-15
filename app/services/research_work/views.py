@@ -15,10 +15,12 @@
 _NOT_WAITING = {"position": None, "eta_sec": None, "others_ahead": False}
 
 
-def work_view(work, generations, queue: dict[int, dict]) -> dict:
+def work_view(work, generations, queue: dict[int, dict], concept_candidates: list[dict] | None = None) -> dict:
     """연구 한 건. generations 는 호출부가 고른 생성(열린 것 전부 + 최근 끝난 것)이고 id 순으로 싣는다.
     queue 는 대기 중(queued) 생성마다 dispatch.queue_info 의 결과(position·eta_sec·others_ahead) — 없는 생성은
-    기다리지 않는다(position·eta_sec 는 None). corpus 는 이어가기 때 담은 코퍼스 스냅숏이다."""
+    기다리지 않는다(position·eta_sec 는 None). corpus 는 이어가기 때 담은 코퍼스 스냅숏이다.
+    concept_candidates 는 최신 done 키워드(개념) 생성의 output.candidates(06e 제목 고르기) — 호출부가 따로 읽어 넘기고,
+    06e 전 생성이거나 끝난 키워드 생성이 없으면 None 이다(키는 늘 싣는다)."""
     return {
         "id": str(work.id),
         "phase": work.phase,
@@ -33,6 +35,7 @@ def work_view(work, generations, queue: dict[int, dict]) -> dict:
              "model": g.model, "error": g.error, **_waiting(queue.get(g.id))}
             for g in sorted(generations, key=lambda g: g.id)
         ],
+        "concept_candidates": concept_candidates,
     }
 
 

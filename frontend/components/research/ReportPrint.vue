@@ -2,7 +2,9 @@
 <template>
   <!-- body 바로 아래에 붙인다 — 인쇄 CSS 가 body 의 다른 자식(앱 전체)을 한 번에 숨기고 이것만 찍는다 -->
   <Teleport to="body">
-    <article class="rs-print">
+    <!-- 흰 종이에 찍는 문서라 밝은 읽는 면 — 다크 테마의 밝은 글 톤이 흰 종이에 찍히지 않게 토큰을 밝은 면 값으로 바꾼다.
+         화면에는 그리지 않는다(research.css 의 .rs-print — [PDF로 저장]을 누른 동안에만 body 에 붙는다) -->
+    <article class="rs-print skx-reading">
       <!-- 인쇄에서 position: fixed 는 쪽마다 되풀이된다 — 검토 전 AI 문단을 실은 계획서의 경고 글(work.css) -->
       <p v-if="doc.watermark" class="wk-print-watermark">{{ doc.watermark }}</p>
       <template v-for="(block, bi) in doc.blocks" :key="bi">

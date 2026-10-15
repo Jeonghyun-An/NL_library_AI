@@ -1,0 +1,17 @@
+# 재현하며 생기는 큰 파일·원문(README '넣지 않은 것') — 커밋하지 않는다
+jobs/
+gen_ab/
+gen_r2/
+gen_r3/
+judge_pairs.json
+r2_pairs.json
+ab_metrics.json
+checks/figleak/measure_g2.json
+# 설계 단계 생성 원문(run_prompt.py 출력 — variants.md 의 gen_*.json)·focus2 초안 출력
+gen_*.json
+focus2/
+# --dump 덤프·대목 원문 덤프·실행 로그(ab_metrics.py·r2_metrics.py --dump 를 파일로 받을 때)
+dump*.txt
+*_dump*
+excerpts*.txt
+*.log

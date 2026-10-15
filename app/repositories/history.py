@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Iterable, Sequence
 from datetime import datetime, timezone
 
-from sqlalchemy import and_, exists, func, or_, select, update
+from sqlalchemy import ColumnElement, and_, exists, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +32,14 @@ def legacy_history_id(v1: str) -> uuid.UUID:
 
 class InvalidCursor(ValueError):
     pass
+
+
+def _live(session_id: uuid.UUID, kind: HistoryKind | None) -> list[ColumnElement[bool]]:
+    """목록과 수가 함께 쓰는 조건 — 이 브라우저의 지우지 않은 기록(kind 를 주면 그 kind 만)."""
+    clauses = [HistoryItem.session_id == session_id, HistoryItem.deleted_at.is_(None)]
+    if kind is not None:
+        clauses.append(HistoryItem.kind == kind)
+    return clauses
 
 
 def encode_cursor(created_at: datetime, item_id: uuid.UUID) -> str:
@@ -64,11 +72,7 @@ class HistoryRepository:
         self, session_id: uuid.UUID, kind: HistoryKind | None, limit: int, before: str | None,
     ) -> tuple[list[HistoryItemOut], str | None]:
         """최신순 한 쪽과 다음 쪽 커서. 커서가 틀리면 InvalidCursor."""
-        stmt = select(*_LIST_COLUMNS).where(
-            HistoryItem.session_id == session_id, HistoryItem.deleted_at.is_(None),
-        )
-        if kind is not None:
-            stmt = stmt.where(HistoryItem.kind == kind)
+        stmt = select(*_LIST_COLUMNS).where(*_live(session_id, kind))
         if before is not None:
             at, item_id = decode_cursor(before)
             # created_at 이 같은 행이 쪽 경계에 걸려도 빠지거나 겹치지 않게 id 로 한 번 더 가른다
@@ -86,6 +90,11 @@ class HistoryRepository:
         ]
         next_cursor = encode_cursor(page[-1].created_at, page[-1].id) if len(rows) > limit else None
         return items, next_cursor
+
+    async def count(self, session_id: uuid.UUID, kind: HistoryKind | None) -> int:
+        """list 와 같은 조건의 전체 수 — 쪽(before·limit)과 무관하다(사이드바 '모두 보기 (N)')."""
+        stmt = select(func.count()).select_from(HistoryItem).where(*_live(session_id, kind))
+        return (await self.db.execute(stmt)).scalar_one()
 
     async def get(self, session_id: uuid.UUID, item_id: uuid.UUID) -> HistoryItemDetail | None:
         row = (await self.db.execute(

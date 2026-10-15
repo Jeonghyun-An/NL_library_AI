@@ -9,12 +9,20 @@ from typing import AsyncGenerator
 import httpx
 
 from core.config import get_settings
+from schemas.book import BookOut
 from services.ingestion.embedder import embed_texts
 from services.ingestion.indexer import SearchHit, search_chunks
-from services.prompts import get_prompt
+from services.llm_sse import sse_deltas
+from services.prompts import PromptTemplate, get_prompt
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
+
+# 대화 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas)로 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의
+# 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면(frontend/composables/useDeepReadChat)은 이것을
+# 답 글에 잇지 않고 오류로 보이며 대화에 남기지 않는다. 전에는 '응답 생성 중 오류가 발생했습니다.' 를 보통 {text} 로 흘려
+# 정상 답처럼 대화에 남고 다음 질문의 history 로 모델에게까지 갔다
+CHAT_STREAM_ERROR = "답을 만들지 못했습니다"
 
 _REF_INTENT_KEYWORDS = frozenset({
     "참고문헌", "참고 문헌", "인용", "reference", "cited", "출처", "bibliography",
@@ -58,6 +66,18 @@ async def rewrite_chat_query(message: str, history: list[dict]) -> str:
         resp.raise_for_status()
         out = resp.json()["choices"][0]["message"]["content"].strip()
     return out or message
+
+
+def chat_prompt(book: BookOut) -> PromptTemplate:
+    """대화 시스템 프롬프트 — 문서 종류(doc_type)의 변형이 있으면 그것(논문 → book_chat.paper.yaml), 없으면 기본
+    book_chat.yaml(책 문구). doc_type 이 비었거나 그 속성이 없는 객체도 기본으로 간다(get_prompt 의 해석 순서)."""
+    return get_prompt("book_chat", getattr(book, "doc_type", None) or None)
+
+
+def _book_references(book: BookOut) -> list[str]:
+    """참고문헌 의도('참고문헌'·'인용'·'출처' 등)일 때 모델에 넘길 목록. 대화 엔드포인트가 넘기는 BookOut 에는 extra 가
+    없고 references 칸이 extra["references"] 를 싣는다(ORM Book 도 같은 이름의 property). 없으면 빈 목록."""
+    return list(getattr(book, "references", None) or [])
 
 
 def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHit]:
@@ -115,14 +135,15 @@ async def stream_book_chat(
 
     ref_context_block = ""
     if is_ref_query:
-        refs: list[str] = (book.extra or {}).get("references", [])
+        refs = _book_references(book)
         if refs:
             ref_context_block = "\n".join(f"{i + 1}. {r}" for i, r in enumerate(refs[:50]))
             log.info(f"[{cnts_id}] 참고문헌 의도 감지 → {len(refs)}건 컨텍스트 주입")
 
-    # ── 2b. 청크 검색 (참고문헌 의도 시 건너뜀) ─────────────
+    # ── 2b. 청크 검색 (참고문헌 목록을 넣을 때만 건너뜀) ─────
+    #    참고문헌 의도여도 목록이 없으면(책·참고문헌을 뽑지 못한 논문) 청크로 돌아간다 — 근거 없이 질문만 보내지 않는다.
     hits = []
-    if not is_ref_query:
+    if not ref_context_block:
         try:
             dense, sparse = embed_texts([search_query], is_query=True)
             hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
@@ -132,7 +153,7 @@ async def stream_book_chat(
     # ── 3. 시스템 프롬프트 + 메시지 빌드 ────────────────────
     author = book.personal_author or book.corporate_author or "저자 미상"
     pub_date = f", {book.pub_date}" if book.pub_date else ""
-    tpl = get_prompt("book_chat")
+    tpl = chat_prompt(book)   # 논문이면 논문 문구(book_chat.paper.yaml)
     system, _, gen_params = tpl.render(
         title=book.title or cnts_id,
         author=author,
@@ -178,23 +199,15 @@ async def stream_book_chat(
                 timeout=float(cfg.BOOK_CHAT_TIMEOUT),
             ) as resp:
                 resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:]
-                    if data.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                        delta = chunk["choices"][0]["delta"].get("content", "")
-                        if delta:
-                            full_response += delta
-                            yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
-                    except Exception:
-                        pass
+                async for delta in sse_deltas(resp):
+                    full_response += delta
+                    yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
-        log.error(f"[{cnts_id}] 채팅 스트리밍 실패: {e}")
-        yield f"data: {json.dumps({'text': '응답 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+        log.error("[%s] 채팅 스트리밍 실패(보낸 글 %d자): %s: %s", cnts_id, len(full_response), type(e).__name__, e)
+        # 실패한 답에는 출처 칩을 붙이지 않는다 — 오류가 [DONE] 바로 앞, 마지막 이벤트다
+        yield f"data: {json.dumps({'error': CHAT_STREAM_ERROR}, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+        return
 
     # ── 5. 실제 인용된 출처만 전달 ───────────────────────────
     # LLM 응답에서 p.X 또는 p.X–Y 형태로 언급된 청크만 타일로 표시.

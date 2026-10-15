@@ -1,6 +1,8 @@
+import pytest
+
 from services.research.citations import (
     MarkerResult, bind_markers, build_evidence, chunks_for, evidence_id, link_chunks,
-    strip_markers,
+    strip_markers, strip_numbered_refs,
 )
 from services.research.state import Chunk, Evidence, SubQuestion
 
@@ -214,6 +216,47 @@ class TestMarkerGrammar:
 
     def test_strip_markers_keeps_scientific_notation(self):
         assert strip_markers("표본 [N = 1.5E4] 이다 [E1].") == "표본 [N = 1.5E4] 이다."
+
+
+class TestStripNumberedRefs:
+    """대목(남의 논문 본문)의 번호 인용 '[3, 4]' 를 모델이 문장째 옮기면 근거 칩 [E#] 처럼 보이지만 어느 근거도
+    가리키지 않는다(A/B focus 9ba1 1절 두 회차 모두 '[3, 4]'·'[5, 6, 7, 8]'·'[33, 34]'). 프롬프트로는 못 막아 지운다."""
+
+    @pytest.mark.parametrize("text, expected", [
+        ("유발 가능성이 높다 [3].", "유발 가능성이 높다."),
+        ("정서반응이다 [3, 4]. 노인의 우울은", "정서반응이다. 노인의 우울은"),
+        ("저하시킨다 [5, 6, 7, 8].", "저하시킨다."),
+        ("도구이다 [33, 34].", "도구이다."),
+        ("이어진다 [6,7]. 결과적으로", "이어진다. 결과적으로"),
+        ("보고됐다 [3,4,5].", "보고됐다."),
+        ("보고됐다 [33-35].", "보고됐다."),
+        ("보고됐다 [3–5, 9].", "보고됐다."),
+        ("보고됐다 ［3］ 【4】.", "보고됐다."),
+        # 앞 공백이 없으면 붙은 자리에서 그대로 뗀다
+        ("Hoyl 등[33]의 GDS-5를 사용했다.", "Hoyl 등의 GDS-5를 사용했다."),
+        ("높다[4]. 우울은", "높다. 우울은"),
+        # 마침표 뒤에 단 번호 — 다음 문장과의 띄어쓰기는 남는다
+        ("높다. [3] 노인의 우울은", "높다. 노인의 우울은"),
+        ("[3] 노인의 우울은 높다.", "노인의 우울은 높다."),
+    ])
+    def test_numbered_citation_is_removed(self, text, expected):
+        assert strip_numbered_refs(text) == expected
+
+    @pytest.mark.parametrize("text", [
+        # 우리 마커 — bind_markers·strip_markers 의 몫이다
+        "근거다 [E1].", "근거다 [E1, E2].", "근거다 [E3-E5].", "수치다 [F1].", "못 읽는다 [E3, 4].",
+        # 4자리는 연도다 — '홍길동[2017]' 은 남의 연구임을 보이는 표기라 지우면 재인용이 그 논문의 서술로 읽힌다
+        "홍길동[2017]은 우울을 측정했다.", "조사했다 [2017, 2019].",
+        # 0 은 인용 번호가 아니다(구간)·소수·문자가 섞인 괄호
+        "점수 범위는 [0, 1] 이다.", "신뢰구간 [1.2, 3.4] 이다.", "[표 1] 과 [그림 2] 를 보라.", "표본 [n=200] 이다.",
+        # 괄호 없는 서지·각주·통계 표기
+        "한국심리학회지 15(3): 45-67 에 실렸다.", "연구가 늘었다.6) 그러나", "유의수준 p < .05 였다.",
+    ])
+    def test_other_brackets_and_bibliographic_forms_are_kept(self, text):
+        assert strip_numbered_refs(text) == text
+
+    def test_newline_is_kept(self):
+        assert strip_numbered_refs("첫 줄이다 [3].\n둘째 줄이다 [4].") == "첫 줄이다.\n둘째 줄이다."
 
 
 class TestChunksFor:

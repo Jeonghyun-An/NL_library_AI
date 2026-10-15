@@ -31,8 +31,9 @@ def _written(section) -> bool:
 def sections_filled(outline: dict, sections: dict) -> int:
     """고정 6절 가운데 내용이 채워진 절 수(정함 16).
 
-    주제 = 목차의 주제 제목, 연구 질문·방법 제안 = 목차에서 고른·적은 값, 연구 배경·연구 공백 = 글이 있는
-    문단이 있는 절. 선행연구 검토는 목차의 묶음이 하나 이상이고 모든 묶음 절(prior.gN)이 써졌을 때 1절이다.
+    주제 = 목차의 주제 제목, 연구 질문·방법 제안 = 목차에서 고른·적은 값, 연구 배경 = 목차에 적은 글(06e
+    outline.background — 06b 의 절 자리 sections.background 도 센다), 연구 공백 = 글이 있는 문단이 있는 절.
+    선행연구 검토는 목차의 묶음이 하나 이상이고 모든 묶음 절(prior.gN)이 써졌을 때 1절이다.
     """
     outline = outline if isinstance(outline, dict) else {}
     sections = sections if isinstance(sections, dict) else {}
@@ -40,7 +41,7 @@ def sections_filled(outline: dict, sections: dict) -> int:
     keys = [g.get("key") for g in outline.get("groups") or [] if isinstance(g, dict)]
     filled = {
         "topic": _text(topic.get("title")),
-        "background": _written(sections.get("background")),
+        "background": _text(outline.get("background")) or _written(sections.get("background")),
         "prior": bool(keys) and all(_written(sections.get(key)) for key in keys),
         "gap": _written(sections.get("gap")),
         "question": _text(outline.get("question")),

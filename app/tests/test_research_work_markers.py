@@ -13,8 +13,8 @@ import pytest
 
 from services.research.citations import normalize_markers
 from services.research_work.markers import (
-    CLAIM_REWRITES, FIGURE_MARKER, FigureResult, check_figures, check_paragraph, figure,
-    numbers_outside, soften_claims,
+    CLAIM_REWRITES, FIGURE_MARKER, GAP_CLAIM_REWRITES, GAP_CLAIM_TAIL, FigureResult, check_figures,
+    check_paragraph, drop_misplaced_figures, figure, numbers_outside, soften_claims,
 )
 
 SHARED_FIXTURE = (
@@ -109,6 +109,73 @@ class TestFigures:
         assert normalize_markers("근거 [F1-score] 다.", {"F1"}, "F") == ("근거 [F1-score] 다.", [], [], [])
 
 
+class TestDropMisplacedFigures:
+    """생성 글에서 [F#] 를 수치 자리 밖에 쓴 문장을 지운다(절 생성·문단 [다시]만 — 사용자가 고친 글은 아니다).
+
+    운영(2026-10-14, 연구 d60a5dc1 의 prior.g2 셋째 문단): 논문 1편만 받은 절에서 gemma 가 수치 목록을 문장으로 옮겨
+    값 칩 '1'·'2017'·'198,518' 이 글에 박혔다. ① [F#] 바로 뒤에 한글(단위·조사)이 없거나 ② [E#] 없이 수치 목록의
+    이름표('이 절에 준'·'논문 수'·'적재분'·'발행 연도'·'연도 범위')를 옮긴 문장을, 뒤에 붙은 마커 묶음과 함께 지운다.
+    [E#] 만 빠뜨린 집계 문장('선행연구 [F1]편은 [F2]년에 발표되었다.')은 남긴다 — 근거 표시 없는 문장으로 셀 뿐이다.
+    돌려주는 수는 지운 문장에 있던 [F#] 수다(dropped_f — '수치 표기 n개 버림')."""
+    PROD_P3 = ("이 연구는 농촌 여성 노인이라는 특정 집단에 초점을 맞추었으며, [F1] 발행 연도는 [F2]년이다 [E1]. "
+               "또한, KCI 적재분 논문 수는 [F3]건에 달한다 [F3].")
+
+    def test_the_production_paragraph_is_emptied(self):
+        assert drop_misplaced_figures(self.PROD_P3) == ("", 4)
+
+    @pytest.mark.parametrize("text", [
+        "이 묶음의 선행연구는 [F1]편이며 [F2]년에 걸쳐 발표되었다 [E1] [E2].",
+        "선행연구 [F1]편 가운데 해당 연구는 가족 지지를 다루었다 [E1].",
+        "[F2]에 걸친 선행연구들은 가족 지지를 다루었다 [E1] [E2].",
+        "가족 지지는 우울을 낮춘다고 보고되었다 [E1]. 측정 도구도 정리되었다 [E2].",
+        "수치 표기가 없는 문장은 근거가 없어도 그대로다.",
+    ])
+    def test_figures_with_a_unit_in_cited_sentences_stay(self, text):
+        assert drop_misplaced_figures(text) == (text, 0)
+
+    @pytest.mark.parametrize("text", [
+        "이 묶음의 선행연구 [F1]편은 [F2]년에 발표되었다.",
+        "가족 지지를 다룬 선행연구는 [F1]편이며 모두 [F2]년에 나왔다.",
+        "가족 지지를 다루었다 [E1]. 이 묶음의 선행연구는 [F1]편이다.",
+    ])
+    def test_count_sentences_without_a_citation_stay(self, text):
+        # 프롬프트가 [F#] 를 쓰라는 집계 문장은 특정 논문 하나를 받치는 말이 아니라 [E#] 를 빠뜨리기 쉽다 — 지우지 않고
+        # 근거 표시 없는 문장(unmarked)으로 센다. 수치 목록 이름표를 옮긴 문장만 지운다
+        assert drop_misplaced_figures(text) == (text, 0)
+
+    @pytest.mark.parametrize("text, expected, removed", [
+        # ① 값이 문장에서 떨어졌다 — 근거 표기가 있어도 지운다
+        ("가족 지지를 다루었다 [E1]. [F1] 발행 연도는 [F2]년이다 [E1].", "가족 지지를 다루었다 [E1].", 2),
+        # ① 근거 표기 자리(문장 끝)에 붙었다
+        ("가족 지지를 다루었다 [E1]. 소장 논문은 [F3]편에 이른다 [E1] [F3].", "가족 지지를 다루었다 [E1].", 2),
+        # ① 수치를 나열했다
+        ("[F1], [F2] 범위의 선행연구가 있다 [E1]. 가족 지지를 다루었다 [E2].", "가족 지지를 다루었다 [E2].", 2),
+        # ② 근거 표기 없이 수치 목록의 이름표를 옮겼다
+        ("가족 지지를 다루었다 [E1]. KCI 적재분 논문 수는 [F3]건에 달한다.", "가족 지지를 다루었다 [E1].", 1),
+        ("가족 지지를 다루었다 [E1]. 이 절에 준 논문 수는 [F1]편이다.", "가족 지지를 다루었다 [E1].", 1),
+        ("가족 지지를 다루었다 [E1]. 발행 연도 범위는 [F2]년이다.", "가족 지지를 다루었다 [E1].", 1),
+    ], ids=["값이 떨어짐", "근거 자리", "나열", "적재분 이름표", "논문 수 이름표", "연도 범위 이름표"])
+    def test_misplaced_figure_sentences_are_dropped(self, text, expected, removed):
+        assert drop_misplaced_figures(text) == (expected, removed)
+
+    def test_citations_after_the_period_belong_to_the_sentence_before(self):
+        # '…편이다. [E2]' — 마침표 뒤에 붙은 근거 표기도 그 문장의 근거다(②에 걸리지 않는다)
+        kept = "가족 지지를 다루었다. [E1] 선행연구는 [F1]편이다. [E2] 척도도 정리되었다. [E2]"
+        assert drop_misplaced_figures(kept) == (kept, 0)
+
+        # 지우는 문장은 마침표 뒤에 붙은 근거 표기까지 함께 지운다 — 남기면 앞 문장 뒤에 [E1] 이 하나 더 붙는다.
+        # 마침표 뒤의 [F#] 는 앞 문장의 꼬리가 아니라 뒤 문장의 첫머리다 — 앞 문장('…다루었다.')은 남는다
+        dropped = "가족 지지를 다루었다. [E1] [F1] 발행 연도는 [F2]년이다. [E1] 척도도 정리되었다. [E2]"
+        assert drop_misplaced_figures(dropped) == ("가족 지지를 다루었다. [E1] 척도도 정리되었다. [E2]", 2)
+
+    def test_running_twice_changes_nothing_more(self):
+        text = "가족 지지를 다루었다 [E1]. [F1] 발행 연도는 [F2]년이다 [E1]. 선행연구는 [F1]편이다 [E2]."
+        once, removed = drop_misplaced_figures(text)
+
+        assert (once, removed) == ("가족 지지를 다루었다 [E1]. 선행연구는 [F1]편이다 [E2].", 2)
+        assert drop_misplaced_figures(once) == (once, 0)
+
+
 class TestSoftenClaims:
     @pytest.mark.parametrize("text, expected", [
         ("이에 관한 연구가 거의 없다.", "이에 관한 연구를 소장 코퍼스에서 확인하지 못했다."),
@@ -137,6 +204,166 @@ class TestSoftenClaims:
     def test_rewrites_are_pattern_and_replacement_pairs(self):
         assert CLAIM_REWRITES and all(
             isinstance(p, str) and isinstance(r, str) for p, r in CLAIM_REWRITES)
+
+
+class TestGapClaims:
+    """06e(06b 이월 §7-13) — 소장 코퍼스 범위를 말하는 문장의 '…확인했다'·'…확인되었다' 단정은 '확인하지 않은 공백
+    후보' 투로 바꾼다. 문맥은 '코퍼스'·'소장 논문/자료/문헌/학술논문' 낱말이 든 문장뿐이다 — 선행연구 절의 인용
+    발견('김(2015)[E1]은 … 분석한 결과 … 확인되었다')은 그대로 둔다(뼈대 정함 10)."""
+
+    TAIL = "(소장 코퍼스에서 확인하지 않은 공백 후보)"
+
+    @pytest.mark.parametrize("text, expected", [
+        ("소장 코퍼스를 분석한 결과 노인 우울 연구는 충분하지 않음을 확인했다.",
+         f"소장 코퍼스를 분석한 결과 노인 우울 연구는 충분하지 않은 것으로 보인다{TAIL}."),
+        ("코퍼스에서 관련 연구가 없음을 확인할 수 있었다.", f"코퍼스에서 관련 연구가 없는 것으로 보인다{TAIL}."),
+        ("소장 논문을 검토한 결과 실증 연구가 부족함을 확인하였다.",
+         f"소장 논문을 검토한 결과 실증 연구가 부족한 것으로 보인다{TAIL}."),
+        ("소장 자료를 조사한 결과 연구가 드문 것으로 확인됐다.", f"소장 자료를 조사한 결과 연구가 드문 것으로 보인다{TAIL}."),
+        ("코퍼스를 살펴본 결과 이 공백이 확인되었다.", f"코퍼스를 살펴본 결과 이 공백이 보인다{TAIL}."),
+        ("소장 코퍼스에서 농촌 노인 연구는 거의 없는 것으로 확인되었다 [E1].",
+         f"소장 코퍼스에서 농촌 노인 연구는 거의 없는 것으로 보인다{TAIL} [E1]."),
+        ("소장 논문에서 종단 연구의 미흡함이 확인됐다.", f"소장 논문에서 종단 연구의 미흡함이 보인다{TAIL}."),
+        # 결핍을 말하는 흔한 관형형·과거형·명사형 — 프롬프트가 금지하는 '전무'도 '것으로 확인되었다' 꼴이면 CLAIM 이 못 잡는다
+        ("소장 코퍼스에서 관련 연구는 전무한 것으로 확인되었다 [E1].",
+         f"소장 코퍼스에서 관련 연구는 전무한 것으로 보인다{TAIL} [E1]."),
+        ("소장 논문에서 종단 연구는 미미한 것으로 확인되었다.", f"소장 논문에서 종단 연구는 미미한 것으로 보인다{TAIL}."),
+        ("소장 자료에서 질적 연구는 희박한 것으로 확인됐다.", f"소장 자료에서 질적 연구는 희박한 것으로 보인다{TAIL}."),
+        ("소장 코퍼스에서 농촌 노인 연구는 찾아보기 어려운 것으로 확인되었다.",
+         f"소장 코퍼스에서 농촌 노인 연구는 찾아보기 어려운 것으로 보인다{TAIL}."),
+        ("소장 코퍼스에서 종단 연구는 수행되지 않았음을 확인했다.",
+         f"소장 코퍼스에서 종단 연구는 수행되지 않은 것으로 보인다{TAIL}."),
+        ("소장 코퍼스에서 관련 연구는 없었음을 확인하였다.", f"소장 코퍼스에서 관련 연구는 없는 것으로 보인다{TAIL}."),
+        ("소장 코퍼스에서 관련 연구가 없음이 확인되었다.", f"소장 코퍼스에서 관련 연구가 없음이 보인다{TAIL}."),
+        # 아래 이중부정 제외는 결핍 말의 부정만 뺀다 — '많지 않은'·'충분하지 않은' 은 결핍이고, 띄어 쓴 '수 없는' 도 결핍이다
+        ("소장 코퍼스에서 종단 연구는 많지 않은 것으로 확인되었다.",
+         f"소장 코퍼스에서 종단 연구는 많지 않은 것으로 보인다{TAIL}."),
+        ("소장 코퍼스에서 관련 연구는 찾아볼 수 없는 것으로 확인되었다.",
+         f"소장 코퍼스에서 관련 연구는 찾아볼 수 없는 것으로 보인다{TAIL}."),
+    ], ids=["않음을 확인했다(06b 실제 문장)", "없음을 확인할 수 있었다", "함을 확인하였다", "것으로 확인됐다", "확인되었다",
+            "없는 것으로 확인되었다", "미흡함이 확인됐다", "전무한 것으로", "미미한 것으로", "희박한 것으로",
+            "찾아보기 어려운 것으로", "않았음을 확인했다", "없었음을 확인하였다", "없음이 확인되었다",
+            "많지 않은 것으로", "수 없는 것으로"])
+    def test_corpus_sentences_become_gap_candidates(self, text, expected):
+        softened, n = soften_claims(text)
+
+        assert (softened, n) == (expected, 1)
+        assert soften_claims(softened) == (softened, 0)          # 두 번 거쳐도 같다
+
+    # 코퍼스 낱말이 없는 문장의 결핍 단정은 인용한 발견이라 그대로 — 다섯 쌍이 모두 걸릴 말이라 문맥 검사가 있어야만 남는다
+    @pytest.mark.parametrize("text", [
+        "김(2015)[E1]은 노인 300명을 분석한 결과 사회적 지지가 부족함을 확인했다.",
+        "분석한 결과 집단 간 차이는 나타나지 않음을 확인하였다.",
+        "박(2020)[E2]은 중재 집단에서 우울 감소 효과가 없음을 확인했다.",
+        "이(2019)[E3]에서 농촌 노인의 여가 참여는 적은 것으로 확인되었다.",
+        "김(2015)[E1]에서 지지의 공백이 확인되었다.",
+    ], ids=["부족함을 확인했다", "않음을 확인하였다('분석한 결과'는 문맥 아님)", "없음을 확인했다", "적은 것으로 확인되었다",
+            "공백이 확인되었다"])
+    def test_cited_findings_in_prior_sections_are_left_alone(self, text):
+        assert soften_claims(text) == (text, 0)
+
+    # 코퍼스 문장의 결핍 단정이라도 문장 끝의 단정만 바꾼다 — '확인했다는'·'확인되었다는' 처럼 말이 이어지면 그대로
+    @pytest.mark.parametrize("text", [
+        "소장 코퍼스에서 연구가 부족함을 확인했다는 점은 한계다.",
+        "소장 코퍼스에서 관련 연구가 드문 것으로 확인되었다는 점은 한계다.",
+        "소장 코퍼스에서 지지의 공백이 확인되었다는 점은 한계다.",
+    ], ids=["함을 확인했다는", "것으로 확인되었다는", "공백이 확인되었다는"])
+    def test_a_claim_that_runs_on_is_left_alone(self, text):
+        assert soften_claims(text) == (text, 0)
+
+    # 코퍼스 문장이라도 결핍을 말하지 않는 단정(있는 것·유의한 것)은 그대로 — ③~⑤ 는 단정 바로 앞이 결핍 말일 때만
+    # 바꾼다. 연구 공백 절은 '있는 것 vs 빠진 것' 대조를 자주 써서, 문장 어디에 결핍 말이 있는지로 가르면 대조 문장의
+    # 긍정 단정('도시 노인 연구가 주로 확인되었다')까지 공백 후보로 뒤집힌다
+    @pytest.mark.parametrize("text", [
+        "소장 코퍼스에서 도시 노인을 다룬 연구는 다수 확인되었다 [E1].",
+        "소장 논문을 분석한 결과 사회적 지지의 효과가 유의함을 확인하였다.",
+        "소장 코퍼스에서 관련 논문 12편이 확인되었다.",
+        "소장 코퍼스에서 사회적 지지가 우울을 낮추는 것으로 확인되었다.",
+        "소장 코퍼스에서 농촌 노인 연구는 드물고 도시 노인 연구가 주로 확인되었다.",
+    ], ids=["다수 확인되었다", "유의함을 확인하였다", "12편이 확인되었다", "낮추는 것으로 확인되었다", "대조 문장"])
+    def test_positive_corpus_statements_are_left_alone(self, text):
+        assert soften_claims(text) == (text, 0)
+
+    # 결핍 말의 부정('부족하지 않은'·'적지 않음을' — 넉넉하다는 말)과 '다르지 않음을'(같다는 말), '없' 으로 끝나는 합성어
+    # ('다름없는'·'다름없음을'·'변함없음이' — 같다는 말)는 결핍 단정이 아니다. ①④ 의 '않음을/않은' 은 바로 앞이 결핍 말의
+    # 부정('…지 않')이 아닐 때만, ②④⑤ 의 '없' 은 낱말 첫머리일 때만 결핍으로 본다 — 그대로 두지 않으면 공백 후보 꼬리가
+    # 붙어 뜻이 뒤집힌다
+    @pytest.mark.parametrize("text", [
+        "소장 코퍼스에서 관련 연구는 부족하지 않은 것으로 확인되었다 [E1].",
+        "소장 코퍼스에서 도시 노인 연구는 적지 않은 것으로 확인되었다.",
+        "소장 코퍼스에서 관련 연구는 부족하지 않음을 확인했다.",
+        "소장 코퍼스에서 관련 연구는 적지 않음을 확인했다.",
+        "소장 코퍼스에서 질적 연구는 드물지않았음을 확인하였다.",
+        "소장 코퍼스에서 두 집단을 다룬 연구의 경향은 다르지 않음을 확인하였다.",
+        "소장 코퍼스에서 이 주제의 연구 경향은 주류 연구와 다름없는 것으로 확인되었다.",
+        "소장 코퍼스에서 이 주제의 비중은 십 년 전과 다름없음을 확인했다.",
+        "소장 코퍼스에서 관련 연구 흐름의 변함없음이 확인되었다.",
+    ], ids=["부족하지 않은 것으로", "적지 않은 것으로", "부족하지 않음을", "적지 않음을", "드물지않았음을(붙여 씀)",
+            "다르지 않음을", "다름없는 것으로", "다름없음을", "변함없음이"])
+    def test_negated_lack_words_and_compounds_with_none_are_left_alone(self, text):
+        assert soften_claims(text) == (text, 0)
+
+    # 프롬프트(research_section_gap·research_paragraph)가 시키는 대로 공백 후보 말(GAP_NOTE)을 이미 쓴 문장 — 그 말의
+    # '코퍼스'로 문맥이 잡히지만 꼬리를 또 붙이지 않고 단정만 바꾼다
+    @pytest.mark.parametrize("text, expected", [
+        ("농촌 노인 연구가 부족함을 확인했다(소장 코퍼스에서 확인하지 않은 공백 후보) [E1].",
+         "농촌 노인 연구가 부족한 것으로 보인다(소장 코퍼스에서 확인하지 않은 공백 후보) [E1]."),
+        ("소장 코퍼스에서 확인하지 않은 공백 후보로서 농촌 노인 연구가 부족함을 확인했다.",
+         "소장 코퍼스에서 확인하지 않은 공백 후보로서 농촌 노인 연구가 부족한 것으로 보인다."),
+    ], ids=["꼬리를 이미 단 단정", "문장 앞에 공백 후보 말"])
+    def test_a_sentence_that_already_names_the_gap_candidate_gets_no_second_tail(self, text, expected):
+        softened, n = soften_claims(text)
+
+        assert (softened, n) == (expected, 1)
+        assert softened.count("공백 후보") == 1
+        assert soften_claims(softened) == (softened, 0)          # 두 번 거쳐도 같다
+
+    def test_only_the_corpus_sentence_of_a_paragraph_changes(self):
+        first = "김(2015)[E1]은 노인 300명을 분석한 결과 사회적 지지가 우울을 낮추는 것으로 확인되었다."
+        text = f"{first} 소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않음을 확인했다."
+
+        softened, n = soften_claims(text)
+
+        assert softened == f"{first} 소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않은 것으로 보인다{self.TAIL}."
+        assert n == 1
+        # 문단 검사도 같은 글·같은 수 — 절 생성·문단 다시 쓰기·사용자가 고친 글이 모두 check_paragraph 를 탄다
+        checked, _, checks = check_paragraph(text, valid_e={"E1"}, valid_f=set(), evidence={"E1": "KCI_A"})
+        assert (checked, checks["softened"]) == (softened, 1)
+
+    # 마침표 바로 뒤에 붙은 마커('…했다.[E1] ')와 문장부호 없는 줄바꿈도 문장 경계다 — 앞 문장(인용 발견)이 뒤 코퍼스
+    # 문장과 한 문장으로 묶여 공백 후보로 바뀌지 않게
+    @pytest.mark.parametrize("first, sep, end", [
+        ("김(2015)은 사회적 지지의 효과가 남성 노인에게서는 나타나지 않음을 확인했다.", "[E1] ", ".[E2]"),
+        ("김(2015)은 사회적 지지의 효과가 남성 노인에게서는 나타나지 않음을 확인했다", "\n", ""),
+    ], ids=["마침표에 붙은 마커", "줄바꿈"])
+    def test_a_marker_after_the_period_or_a_line_break_ends_the_sentence(self, first, sep, end):
+        text = f"{first}{sep}소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않음을 확인했다{end}"
+        expected = f"{first}{sep}소장 코퍼스를 분석한 결과 농촌 노인 연구는 충분하지 않은 것으로 보인다{self.TAIL}{end}"
+
+        assert soften_claims(text) == (expected, 1)
+        assert soften_claims(expected) == (expected, 0)
+        checked, _, checks = check_paragraph(text, valid_e={"E1", "E2"}, valid_f=set(),
+                                             evidence={"E1": "KCI_A", "E2": "KCI_B"})
+        assert (checked, checks["softened"]) == (expected, 1)
+
+    # 인용 발견에 결핍 단정을 넣어 둔다 — 넣은 말의 '코퍼스'를 문맥으로 보면 그 단정이 공백 후보로 바뀌어 바꾼 수가 2 가 된다
+    @pytest.mark.parametrize("text, expected", [
+        ("선행연구에서 최초로 농촌 노인의 사회적 지지가 부족함을 확인했다.",
+         "선행연구에서 소장 코퍼스에서 확인한 범위에서 처음으로 농촌 노인의 사회적 지지가 부족함을 확인했다."),
+        ("김(2015)[E1]은 농촌 노인에 대한 연구가 거의 없다고 지적했고 지지의 공백이 확인되었다.",
+         "김(2015)[E1]은 농촌 노인에 대한 연구를 소장 코퍼스에서 확인하지 못했다고 지적했고 지지의 공백이 확인되었다."),
+        ("이(2018)[E2]는 농촌 노인의 여가가 논의되지 않았다고 지적했고 지지의 결여가 확인되었다.",
+         "이(2018)[E2]는 농촌 노인의 여가가 소장 코퍼스에서 확인되지 않았다고 지적했고 지지의 결여가 확인되었다."),
+    ], ids=["확인한 범위에서", "확인하지 못했다", "확인되지 않았다"])
+    def test_corpus_words_put_in_by_claim_rewrites_are_not_context(self, text, expected):
+        # CLAIM_REWRITES 가 넣은 '소장 코퍼스에서 확인…' 의 '코퍼스'로는 인용 발견을 공백 후보로 바꾸지 않는다 — CLAIM 만 한 번
+        assert soften_claims(text) == (expected, 1)
+        assert soften_claims(expected) == (expected, 0)
+
+    def test_rewrites_are_pattern_and_replacement_pairs(self):
+        assert GAP_CLAIM_TAIL == self.TAIL
+        assert len(GAP_CLAIM_REWRITES) == 5 and all(
+            isinstance(p, str) and isinstance(r, str) and r.endswith(GAP_CLAIM_TAIL) for p, r in GAP_CLAIM_REWRITES)
 
 
 class TestCheckParagraph:

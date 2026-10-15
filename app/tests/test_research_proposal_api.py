@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from bibliography_chunks import chunk as bibliography_chunk
 from history_sqlite import (
     AsyncSessionOverSync, add_book, add_generation, add_proposal, add_reading, add_research_job,
     add_topic, add_work, make_engine,
@@ -31,7 +32,7 @@ from schemas.book import BookOut
 from services.research_work import section_input
 from services.research_work.enqueue import queued_event
 from services.research_work.proposal_views import (
-    cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, stale_flags,
+    cited_papers, disclosure_of, drafts_of, paper_ids, proposal_view, section_gens_of, section_sources, stale_flags,
 )
 from services.research_work.seeds import corpus_of
 from services.research_work.shapes import MAX_PARAGRAPH_CHARS, MAX_PARAGRAPHS_PUT, OUTLINE_TARGET
@@ -105,6 +106,34 @@ class TestStaleFlags:
         flags = stale_flags(SimpleNamespace(topic_id=None), {}, {}, set())
         assert flags == {"outline": False, "sections": {}}
 
+    def test_a_changed_research_question_needs_a_refit_of_written_sections(self):
+        # 06e(spec §12-4) — [목차 고치기]로 연구 질문을 바꾸면 그 앞에 쓴 절에 '다시 맞춤 필요'가 붙는다
+        def asked(key: str, question: str, **kw) -> dict:
+            # 06e 부터 쓴 절 — basis 에 그 절을 쓸 때의 연구 질문이 있다
+            sec = _section(key, **kw)
+            return {**sec, "basis": {**sec["basis"], "question": question}}
+
+        work = SimpleNamespace(topic_id=12, concepts=CONCEPTS)
+        outline = {**OUTLINE, "question": "가는 나인가?"}
+        sections = {"prior.g1": asked("prior.g1", "가는 나인가?", papers=["C1", "C2"]),
+                    "gap": asked("gap", "옛 질문인가?")}
+        assert stale_flags(work, outline, sections, {"C1", "C2", "C3"}) == {
+            "outline": False, "sections": {"prior.g1": False, "gap": True}}
+        # 목차에 고른 질문이 없으면 절을 쓸 때(research_proposal.generate_section)처럼 목차 주제의 질문과 견준다
+        no_question = {**OUTLINE, "question": None}
+        same = stale_flags(work, no_question, {"gap": asked("gap", CARD["question"])}, {"C1", "C2", "C3"})
+        other = stale_flags(work, no_question, {"gap": asked("gap", "가는 나인가?")}, {"C1", "C2", "C3"})
+        assert (same["sections"], other["sections"]) == ({"gap": False}, {"gap": True})
+
+    def test_sections_written_before_06e_have_no_question_and_stay_fresh(self):
+        # 06b 에 쓴 절은 basis 에 question 키가 없다 — 질문을 바꿔도 이 이유로는 다시 맞춤이 되지 않는다
+        work = SimpleNamespace(topic_id=12, concepts=CONCEPTS)
+        sections = {"prior.g1": _section("prior.g1", papers=["C1", "C2"]), "gap": _section("gap")}
+        assert "question" not in sections["gap"]["basis"]
+        for question in ("가는 나인가?", None):
+            assert stale_flags(work, {**OUTLINE, "question": question}, sections, {"C1", "C2", "C3"}) == {
+                "outline": False, "sections": {"prior.g1": False, "gap": False}}
+
 
 class TestDisclosure:
     def test_done_steps_without_error_strings(self):
@@ -155,22 +184,53 @@ class TestCitedAndDrafts:
         assert paper_ids(None, []) == []
 
 
+class TestSectionGens:
+    """06e 절 연쇄의 재료 — 화면은 '절도 그 키의 section 생성 기록도 없는 키' 만 자동으로 넣는다(spec §12-4)."""
+
+    def test_last_section_generation_per_key_whatever_its_status(self):
+        gens = [_gen(53, "section", "failed", target="prior.g1"),
+                _gen(50, "section", "done", target="prior.g1"),     # 같은 키의 옛 생성 — id 가 큰 53 이 남는다
+                _gen(51, "section", "canceled", target="gap"),
+                _gen(54, "section", "queued", target="prior.g2"),
+                _gen(55, "section", "running", target="prior.g3")]
+        assert section_gens_of(gens) == {
+            "prior.g1": {"gen_id": 53, "status": "failed"},
+            "gap": {"gen_id": 51, "status": "canceled"},
+            "prior.g2": {"gen_id": 54, "status": "queued"},
+            "prior.g3": {"gen_id": 55, "status": "running"},
+        }
+
+    def test_other_kinds_and_rows_without_a_target_are_left_out(self):
+        gens = [_gen(60, "outline", "done", target=OUTLINE_TARGET),
+                _gen(61, "paragraph", "running", target="prior.g1#p1"),   # 문단 다시 쓰기는 절 생성 기록이 아니다
+                _gen(62, "section", "done", target=None),
+                _gen(63, "concepts", "done")]
+        assert section_gens_of(gens) == {}
+        assert section_gens_of([]) == {}
+
+
 class TestProposalView:
     def test_no_proposal_yet(self):
         work = SimpleNamespace(topic_id=None, corpus_snapshot=None)
         job = SimpleNamespace(report={"range": {"from": "1980", "to": "2017", "n_papers": 144748}},
                               finished_at=None)
         view = proposal_view(work, job, None, {}, [], set())
-        assert view == {"version": 0, "outline": None, "sections": {}, "drafts": {}, "papers": {},
-                        "references": {}, "corpus": corpus_of(job),
+        assert view == {"version": 0, "outline": None, "sections": {}, "drafts": {}, "section_gens": {},
+                        "papers": {}, "references": {}, "corpus": corpus_of(job),
                         "stale": {"outline": False, "sections": {}}, "disclosure": {"steps": []},
-                        "topic_source": None}
+                        "topic_source": None, "preselected": 0}
+
+    def test_preselected_is_passed_through_for_the_disclosure(self):
+        # 공개 부록 '참고문헌:' 줄의 N — 호출부가 읽기 목록 행에서 센 수(reading_views.preselected_count)를 그대로 싣는다
+        work = SimpleNamespace(topic_id=None, corpus_snapshot=None)
+        job = SimpleNamespace(report={}, finished_at=None)
+        assert proposal_view(work, job, None, {}, [], set(), preselected=8)["preselected"] == 8
 
     def test_references_use_build_citation_and_papers_use_the_catalog(self):
         book = SimpleNamespace(cnts_id="C1", title="노인 우울 연구", title_remainder=None,
                                personal_author="김철수|이영희", corporate_author=None, pub_date="2019",
-                               series_title="노인복지연구", vol_issue="74(2)", uci="G704-1.2019.74.2.001",
-                               url=None)
+                               series_title="노인복지연구", vol_issue="74(2)", extent="77~104",
+                               uci="G704-1.2019.74.2.001", url=None)
         snapshot = {"n_papers": 10, "from": "2000", "to": "2020", "at": "2026-10-10T00:00:00+00:00"}
         work = SimpleNamespace(topic_id=12, concepts=CONCEPTS, corpus_snapshot=snapshot)
         proposal = SimpleNamespace(version=3, outline=OUTLINE,
@@ -181,6 +241,8 @@ class TestProposalView:
         assert view["version"] == 3 and view["outline"] == OUTLINE and view["corpus"] == snapshot
         assert view["references"] == {"C1": build_citation(book)["korean"],
                                       "C2": "서지 정보 없음 (C2)."}
+        # 학술지 자리 — 학술지, 권(호), 쪽(수록면)
+        assert "노인복지연구, 74(2), 77–104." in view["references"]["C1"]
         assert list(view["papers"]) == ["C1", "C2", "C3", "K9"]
         assert view["papers"]["C1"]["title"] == "노인 우울 연구"
         assert view["papers"]["C3"] == {"title": "C3", "personal_author": None, "pub_date": None,
@@ -369,12 +431,32 @@ class TestGetProposal:
         assert body["outline"]["groups"][0]["name"] == "노년기 우울"
         assert body["stale"] == {"outline": False, "sections": {"prior.g1": False}}
         assert body["drafts"] == {"prior.g2": {"gen_id": writing, "evidence": {"E1": "C3"}, "figures": []}}
+        # 06e 절 연쇄의 재료 — 키별 마지막 section 생성. prior.g1 은 절만 있고 생성 행이 없다, 목차 생성은 빠진다
+        assert body["section_gens"] == {"prior.g2": {"gen_id": writing, "status": "running"}}
         assert body["references"] == {"C1": "김철수 (2019). 노인 우울 연구. 노인복지연구, 74(2). UCI G704-1"}
         assert body["papers"]["C1"]["title"] == "노인 우울 연구"
         assert [s["kind"] for s in body["disclosure"]["steps"]] == ["outline"]
         assert body["disclosure"]["steps"][0]["attempts"] == [{"model": "gemma-3-12b", "outcome": "ok"}]
         # 공개 부록의 '주제:' 줄 재료 — 목차 topic.id 의 주제 행(라우터가 읽은 고른 주제)의 origin·card.edited
         assert body["topic_source"] == {"origin": "report_seed", "edited": False}
+        # 미리 담기 전에 이어간 연구(행에 preselected 표시가 없다)는 0 — 공개 부록에 '참고문헌:' 줄을 싣지 않는다
+        assert body["preselected"] == 0
+
+    def test_preselected_counts_rows_picked_at_continue_whatever_their_state_now(self, api):
+        # 공개 부록 '참고문헌: 이어가기 때 채택 근거 상위 N편을 미리 담음'의 N — 읽기 목록 머리 안내와 같은 수다.
+        # 미리 담았다가 뺀(out) 행도 세고, 표시 없이 담은 행(직접 담음·되살림)은 세지 않는다
+        jid = _work_job(api.engine, picked=("C1", "C2"))
+        add_reading(api.engine, jid, "C3", state="in", origin_ref={"subq_idx": [0], "rank": {"0": 3},
+                                                                  "preselected": True})
+        add_reading(api.engine, jid, "C4", state="out", origin_ref={"subq_idx": [1], "rank": {"1": 4},
+                                                                   "preselected": True})
+        add_reading(api.engine, jid, "C7", state="candidate", origin_ref={"subq_idx": [1], "rank": {"1": 7},
+                                                                         "preselected": True})
+        add_reading(api.engine, jid, "U1", state="in", origin="user")
+
+        body = api.client.get(f"/api/research/{jid}/proposal").json()
+
+        assert body["preselected"] == 3
 
     def test_editing_the_picked_card_title_after_the_outline_needs_a_refit(self, api):
         # 목차를 만든 뒤 고른 카드를 [직접 고치기] 로 고쳤다 — 목차의 topic.title 은 고치기 전 제목으로 남고
@@ -505,7 +587,7 @@ class TestCreateOutline:
     def test_five_picked_papers_are_needed(self, api):
         jid = _work_job(api.engine, picked=("C1", "C2", "C3", "C4"))
         res = api.client.post(f"/api/research/{jid}/outline")
-        assert res.status_code == 409 and res.json()["detail"] == "담은 논문이 5편 이상이어야 목차를 만듭니다"
+        assert res.status_code == 409 and res.json()["detail"] == "담은 논문이 5편 이상이어야 보고서를 만듭니다"
         assert api.affinity.calls == []
 
     def test_second_request_while_one_is_open_is_409(self, api):
@@ -565,6 +647,25 @@ class TestPutOutline:
         out = res.json()["outline"]
         assert (out["state"], out["question"], out["approved_at"]) == ("draft", None, None)
         assert res.headers["etag"] == "4"
+
+    def test_saving_keeps_the_auto_mark(self, api):
+        # 06e — 자동 확정한 목차(auto)를 [목차 고치기]·방법 저장으로 PUT 해도 auto 는 그대로다(절 연쇄가 읽는다).
+        # 승인을 풀면(approve false) 연쇄는 state 로 멈춘다 — auto 를 지우지 않는다
+        jid = _work_job(api.engine)
+        outline = {**OUTLINE, "topic": {**OUTLINE["topic"], "id": _topic_id(api.engine, jid)},
+                   "question": OUTLINE["questions"][0], "state": "approved",
+                   "approved_at": "2026-10-17T01:02:03+00:00", "auto": True}
+        add_proposal(api.engine, jid, version=2, outline=outline)
+
+        first = api.client.put(f"/api/research/{jid}/outline", json=_put_body(approve=True),
+                               headers={"If-Match": "2"})
+        second = api.client.put(f"/api/research/{jid}/outline", json=_put_body(approve=False),
+                                headers={"If-Match": "3"})
+
+        assert first.status_code == 200 and second.status_code == 200
+        assert (first.json()["outline"]["state"], first.json()["outline"]["auto"]) == ("approved", True)
+        assert (second.json()["outline"]["state"], second.json()["outline"]["auto"]) == ("draft", True)
+        assert _proposal(api.engine, jid)["outline"]["auto"] is True
 
     def test_weak_etag_is_read(self, api):
         jid = _with_outline(api)
@@ -641,6 +742,35 @@ class TestPutOutline:
         _set_work(api.engine, jid, is_example=True)
         assert api.client.put(f"/api/research/{jid}/outline", json=_put_body(),
                               headers={"If-Match": "2"}).status_code == 409
+
+    def test_background_is_saved_trimmed_and_kept_when_left_out(self, api):
+        # 06e(§12-11 권고) — 연구 배경은 outline.background 자유 글. 앞뒤 공백을 떼어 저장하고, 싣지 않은 PUT(생략·null —
+        # [목차 고치기]·옛 화면)은 저장된 배경을 지킨다. 빈 글("")은 지운다. 적은 배경은 진행 'n/6절'에도 센다
+        jid = _with_outline(api)
+        url = f"/api/research/{jid}/outline"
+
+        first = api.client.put(url, json=_put_body(background="  농촌 독거노인의 사회적 고립이 깊어지고 있다.\n"),
+                               headers={"If-Match": "2"})
+        kept = api.client.put(url, json=_put_body(), headers={"If-Match": "3"})
+        null = api.client.put(url, json=_put_body(background=None), headers={"If-Match": "4"})
+
+        assert [r.status_code for r in (first, kept, null)] == [200, 200, 200]
+        assert {r.json()["outline"]["background"] for r in (first, kept, null)} == {
+            "농촌 독거노인의 사회적 고립이 깊어지고 있다."}
+        # 주제·연구 질문·방법 + 연구 배경 = 4절(묶음 절·연구 공백은 아직 쓰지 않았다)
+        assert _work_row(api.engine, jid)["progress"]["sections"] == 4
+
+        cleared = api.client.put(url, json=_put_body(background=""), headers={"If-Match": "5"})
+        assert cleared.status_code == 200 and cleared.json()["outline"]["background"] == ""
+        assert _proposal(api.engine, jid)["outline"]["background"] == ""
+        assert _work_row(api.engine, jid)["progress"]["sections"] == 3
+
+    def test_background_over_the_limit_is_422(self, api):
+        jid = _with_outline(api)
+        url = f"/api/research/{jid}/outline"
+        res = api.client.put(url, json=_put_body(background="가" * 2001), headers={"If-Match": "2"})
+        assert res.status_code == 422 and _proposal(api.engine, jid)["version"] == 2
+        assert api.client.put(url, json=_put_body(background="가" * 2000), headers={"If-Match": "2"}).status_code == 200
 
 
 class TestAppWiring:
@@ -778,7 +908,8 @@ class TestGenerateSection:
         assert inp["papers"][1]["excerpt"]["chunk_id"] == "KCI_B__0001"
         assert [c[1] for c in heavy if c[0] == "milvus"] == ["KCI_B", "KCI_C"]
         assert {c[1] for c in heavy if c[0] == "pick"} == {"가족 지지와 우울 가족 지지는 농촌 독거노인의 우울을 낮추는가?"}
-        assert [f["value"] for f in inp["figures"]] == ["3", "2013~2016", "144,748"]
+        # 연구에 코퍼스 스냅숏(144,748)이 있어도 절 수치는 근거 논문의 편수·연도뿐이다
+        assert [f["value"] for f in inp["figures"]] == ["3", "2013~2016"]
         assert inp["basis"]["papers"] == ["KCI_A", "KCI_B", "KCI_C"]
         assert api.dispatch.calls == 1
         assert api.events == [(str(jid), "generation", queued_event(gen["id"], "section", "prior.g1"))]
@@ -803,6 +934,24 @@ class TestGenerateSection:
         stored = _sec_proposal(api.engine, jid)["outline"]["groups"][0]["papers"]
         assert stored == outline["groups"][0]["papers"]                          # 저장된 목차는 그대로
 
+    def test_a_paper_whose_snapshot_chunks_are_bibliography_takes_its_excerpt_from_milvus(self, api, heavy):
+        """스냅숏 대목이 참고문헌 목록 조각뿐인 논문은 Milvus 의 본문 청크에서 대목을 고른다 — 참고문헌 항목을 그 논문의
+        내용처럼 쓰지 않게(운영 이어가기 gap: E3 대목이 '기백석(1996). 한국판 노인 우울척도…'뿐인데 글은 '[E3]에서는
+        노인의 우울 척도와 사회적 지지 척도를 언급하고 있지만'이라고 썼다)."""
+        jid = _sec_work(api.engine)
+        bib = bibliography_chunk("KCI_FI001613573__0041")
+        snapshot = {"evidence": {"E3": {"cnts_id": "KCI_A", "meta": {}, "chunks": [
+            {"chunk_id": "KCI_A__0041", "text": bib["text"], "page_start": 23, "page_end": 23, "score": 0.8}]}}}
+        with api.engine.begin() as conn:
+            conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == jid).values(
+                state_snapshot=snapshot))
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert inp["papers"][0]["excerpt"]["chunk_id"] == "KCI_A__0001"
+        assert [c[1] for c in heavy if c[0] == "milvus"] == ["KCI_A", "KCI_B", "KCI_C"]
+
     def test_gap_uses_the_picked_card_seed_and_its_papers(self, api, heavy, monkeypatch):
         monkeypatch.setattr(section_input, "pick_seeds", lambda report, *, limit, exclude=(): [])
         jid = _sec_work(api.engine)
@@ -813,6 +962,38 @@ class TestGenerateSection:
         assert (inp["key"], inp["kind"], inp["group"]) == ("gap", "gap", None)
         assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다"}]
         assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_D"]
+        assert {c[1] for c in heavy if c[0] == "pick"} == {
+            "가족 지지는 농촌 독거노인의 우울을 낮추는가? 농촌 노인 표본이 부족하다"}
+
+    def test_gap_takes_only_the_picked_seed_with_the_number_of_its_original_evidence(self, api, heavy):
+        """운영 630e0d65·d60a5dc1(2026-10-14) — 고른 카드 씨앗이 들어 있던 절의 다른 향후 과제와 그 하위질문의 insufficient
+        note('제공된 근거들은 …')까지 넣어, 연구 공백 절이 고른 주제가 아닌 그 절 하위질문의 공백을 썼다. 고른 씨앗 하나만
+        넣고, 보고서가 그 과제에 달았던 근거가 이 절 논문에 있으면 그 [E#] 를 씨앗 줄에 붙인다."""
+        jid = _sec_work(api.engine)
+        report = {
+            **SEC_REPORT,
+            "sections": [{"heading": "다른 절", "papers": [], "future": []},
+                         {"heading": "노인의 사회적 지지",
+                          "papers": [{"cnts_id": c, "evidence": [e]} for c, e in
+                                     (("KCI_D", "E4"), ("KCI_B", "E2"), ("KCI_C", "E3"))],
+                          "future": [{"text": "농촌 노인 표본이 부족하다 [E4]", "evidence": ["E4"]},
+                                     {"text": "교육 프로그램 개발 연구가 이어져야 한다 [E2]", "evidence": ["E2"]}]}],
+            "evidence": {e: {"cnts_id": c, "meta": {"title": c}} for e, c in
+                         (("E4", "KCI_D"), ("E2", "KCI_B"), ("E3", "KCI_C"))},
+            "trail": [{"subquestion": "다른 절", "verdict": "sufficient", "note": ""},
+                      {"subquestion": "노인의 사회적 지지", "verdict": "insufficient",
+                       "note": "제공된 근거들은 지지 유형을 다루지만 방법 및 기법은 부족합니다."}],
+        }
+        with api.engine.begin() as conn:
+            conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == jid).values(
+                report=report))
+
+        assert api.client.post(f"/api/research/{jid}/sections/gap/generate").status_code == 200
+
+        inp = _sec_gens(api.engine, jid)[0]["input"]
+        assert inp["seeds"] == [{"heading": "노인의 사회적 지지", "text": "농촌 노인 표본이 부족하다 [E2]"}]
+        assert [p["cnts_id"] for p in inp["papers"]] == ["KCI_A", "KCI_D"]
+        # 대목 질의는 씨앗의 원래 글이다(붙인 번호 없이)
         assert {c[1] for c in heavy if c[0] == "pick"} == {
             "가족 지지는 농촌 독거노인의 우울을 낮추는가? 농촌 노인 표본이 부족하다"}
 
@@ -856,7 +1037,9 @@ class TestGenerateSection:
 
         res = api.client.post(f"/api/research/{jid}/sections/gap/generate")
 
-        assert (res.status_code, res.json()["detail"]) == (409, "이 절에 넣을 논문이 없습니다")
+        # 06e — 화면의 절 연쇄는 문구가 아니라 code 로 '이 절만 건너뜀' 을 가른다. 문구는 message 그대로(detailMessage 가 읽는다)
+        assert (res.status_code, res.json()["detail"]) == (
+            409, {"code": "no_section_papers", "message": "이 절에 넣을 논문이 없습니다"})
         assert _sec_gens(api.engine, jid) == []
 
     @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])
@@ -1174,3 +1357,120 @@ class TestRegenerateParagraph:
     def test_example_work_is_read_only(self, api):
         jid, _ = _para_work(api.engine, is_example=True)
         assert api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate").status_code == 409
+
+
+# ── 인용 근거 조회 (06e Task S1) ─────────────────────────────────────────
+
+SOURCE_EXCERPT = {"chunk_id": "KCI_A__0004", "page_start": 4, "page_end": 5,
+                  "text": "가족 지지가 높은 노인일수록 우울 점수가 낮았다. 배우자 유무는 차이가 없었다."}
+SOURCE_INPUT = {
+    **PARA_SOURCE_INPUT,
+    "papers": [{**PARA_SOURCE_INPUT["papers"][0], "abstract": "가족 지지와 우울 초록", "excerpt": SOURCE_EXCERPT},
+               {**PARA_SOURCE_INPUT["papers"][1], "abstract": "사회적 지지 척도 초록", "excerpt": None}],
+}
+SOURCE_VIEW = {
+    "E1": {"cnts_id": "KCI_A", "abstract": "가족 지지와 우울 초록", "excerpt": SOURCE_EXCERPT},
+    "E2": {"cnts_id": "KCI_B", "abstract": "사회적 지지 척도 초록", "excerpt": None},
+}
+
+
+class TestSectionSourcesShape:
+    def test_maps_each_number_to_the_paper_its_abstract_and_its_excerpt(self):
+        assert section_sources(SOURCE_INPUT) == SOURCE_VIEW
+        # 번호나 논문이 없는 원소는 뺀다(drafts_of 와 같은 규칙). 저장된 대목에 다른 키가 있어도 응답은 네 칸뿐이다
+        odd = {"papers": [{"eid": "E1", "cnts_id": ""}, {"cnts_id": "KCI_C"},
+                          {"eid": "E4", "cnts_id": "KCI_D", "abstract": "초록",
+                           "excerpt": {**SOURCE_EXCERPT, "score": 0.9}}]}
+        assert section_sources(odd) == {"E4": {"cnts_id": "KCI_D", "abstract": "초록", "excerpt": SOURCE_EXCERPT}}
+        assert section_sources({}) == {} and section_sources({"papers": None}) == {}
+
+    def test_a_paper_without_an_excerpt_keeps_its_abstract_only(self):
+        # 대목을 못 읽은 논문(Milvus 실패 — excerpt None)과 글이 빈 대목은 초록만 싣는다. 초록이 없으면 빈 글
+        inp = {"papers": [{"eid": "E1", "cnts_id": "KCI_A", "abstract": "초록만", "excerpt": None},
+                          {"eid": "E2", "cnts_id": "KCI_B", "abstract": None,
+                           "excerpt": {**SOURCE_EXCERPT, "text": "   "}}]}
+        assert section_sources(inp) == {"E1": {"cnts_id": "KCI_A", "abstract": "초록만", "excerpt": None},
+                                        "E2": {"cnts_id": "KCI_B", "abstract": "", "excerpt": None}}
+
+
+def _src_work(engine, *, is_example: bool = False) -> tuple[uuid.UUID, int]:
+    """prior.g1 이 써진 연구 — 저장된 절의 gen_id 가 가리키는 section 생성 행(대목이 든 입력)."""
+    jid = _sec_work(engine, is_example=is_example, proposal=False)
+    source = add_generation(engine, jid, kind="section", status="done", target="prior.g1",
+                            input=SOURCE_INPUT, output={"paragraphs": []})
+    add_proposal(engine, jid, version=3, outline=_sec_outline(_topic_id(engine, jid)),
+                 sections={"prior.g1": {**SEC_STORED, "gen_id": source}})
+    return jid, source
+
+
+def _sources(api, jid, key: str = "prior.g1", gen: int | None = None):
+    params = {} if gen is None else {"gen": gen}
+    return api.client.get(f"/api/research/{jid}/sections/{key}/sources", params=params)
+
+
+class TestGetSectionSources:
+    def test_the_written_section_reads_its_own_generation(self, api):
+        jid, _ = _src_work(api.engine)
+        # 그 뒤 실패한 다시 쓰기 — 저장된 절의 문단은 앞 생성의 입력 번호로 쓰였다
+        add_generation(api.engine, jid, kind="section", status="failed", target="prior.g1",
+                       input={"papers": [{"eid": "E1", "cnts_id": "KCI_Z", "abstract": "다른 입력", "excerpt": None}]})
+
+        res = _sources(api, jid)
+
+        assert res.status_code == 200 and res.json() == SOURCE_VIEW
+        assert api.events == [] and api.dispatch.calls == 0          # 읽기만 한다
+
+    def test_gen_query_reads_a_draft_being_written(self, api):
+        jid, source = _src_work(api.engine)
+        rewrite_input = {"papers": [{"eid": "E1", "cnts_id": "KCI_C", "abstract": "독거 노인 초록",
+                                     "excerpt": {**SOURCE_EXCERPT, "chunk_id": "KCI_C__0001", "text": "독거 노인 대목."}}]}
+        rewriting = add_generation(api.engine, jid, kind="section", status="running", target="prior.g1",
+                                   input=rewrite_input)
+        gap_input = {"papers": [{"eid": "E1", "cnts_id": "KCI_D", "abstract": "농촌 노인 초록", "excerpt": None}]}
+        gap = add_generation(api.engine, jid, kind="section", status="queued", target="gap", input=gap_input)
+
+        # 화면이 고른 생성(gen) — 다시 쓰는 중인 절의 입력이든 저장된 절의 입력이든 그 행을 읽는다
+        assert _sources(api, jid, gen=rewriting).json() == {"E1": {
+            "cnts_id": "KCI_C", "abstract": "독거 노인 초록",
+            "excerpt": {**SOURCE_EXCERPT, "chunk_id": "KCI_C__0001", "text": "독거 노인 대목."}}}
+        assert _sources(api, jid, gen=source).json() == SOURCE_VIEW
+        # gen 이 없으면 저장된 절의 생성이 먼저고, 절이 아직 없는 키는 그 키의 열린 생성이다
+        assert _sources(api, jid).json() == SOURCE_VIEW
+        gap_view = {"E1": {"cnts_id": "KCI_D", "abstract": "농촌 노인 초록", "excerpt": None}}
+        assert _sources(api, jid, key="gap").json() == gap_view
+        assert _sources(api, jid, key="gap", gen=gap).json() == gap_view
+
+    def test_a_generation_of_another_section_is_404(self, api):
+        jid, _ = _src_work(api.engine)
+        other_key = add_generation(api.engine, jid, kind="section", status="done", target="prior.g2",
+                                   input=SOURCE_INPUT)
+        paragraph = add_generation(api.engine, jid, kind="paragraph", status="done", target="prior.g1#p1",
+                                   input=SOURCE_INPUT)
+        _, other_work = _src_work(api.engine)
+
+        for gen in (other_key, paragraph, other_work, 999999):
+            res = _sources(api, jid, gen=gen)
+            assert (res.status_code, res.json()["detail"]) == (404, "이 절의 생성 기록이 아닙니다")
+
+    def test_no_section_and_no_open_generation_is_404(self, api):
+        jid, _ = _src_work(api.engine)
+        # 끝난(실패·취소) 생성만 있는 절은 읽을 입력이 없다 — 절도 열린 생성도 없다
+        add_generation(api.engine, jid, kind="section", status="failed", target="gap", input=SOURCE_INPUT)
+        add_generation(api.engine, jid, kind="section", status="canceled", target="gap", input=SOURCE_INPUT)
+
+        res = _sources(api, jid, key="gap")
+
+        assert (res.status_code, res.json()["detail"]) == (404, "절이 없습니다")
+        missing = _sources(api, uuid.uuid4())
+        assert (missing.status_code, missing.json()["detail"]) == (404, "이어간 연구가 없습니다")
+
+    @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])
+    def test_unknown_key_is_422(self, api, key):
+        jid, _ = _src_work(api.engine)
+        res = _sources(api, jid, key=key)
+        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없습니다")
+
+    def test_example_work_can_be_read(self, api):
+        jid, source = _src_work(api.engine, is_example=True)
+        assert _sources(api, jid).json() == SOURCE_VIEW
+        assert _sources(api, jid, gen=source).json() == SOURCE_VIEW

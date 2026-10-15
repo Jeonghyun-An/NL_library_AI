@@ -1,0 +1,2 @@
+# sha256sum -c 가 Git Bash·Linux 에서 읽게 — Windows(core.autocrlf=true)에서 받아도 LF 로 둔다
+jobs.sha256 text eol=lf

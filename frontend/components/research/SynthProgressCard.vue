@@ -11,18 +11,7 @@
       </div>
     </header>
 
-    <div
-      class="rs-synth__bar"
-      role="progressbar"
-      aria-label="보고서 작성 진행"
-      aria-valuemin="0"
-      :aria-valuemax="eta.total || 1"
-      :aria-valuenow="Math.min(eta.done, eta.total)"
-      :aria-valuetext="summary"
-    >
-      <span class="rs-synth__fill" :class="{ 'is-running': eta.runningIdx !== null }" :style="{ width: `${percent}%` }" />
-    </div>
-
+    <!-- 진행 막대는 연구 화면 위 고정 진행 영역(ResearchProgressBar)으로 옮겼다. 이 카드는 요약·절 목록·초안 저장만 -->
     <ol v-if="slots.length" class="rs-synth__list">
       <li v-for="slot in slots" :key="slot.idx">
         <!-- 초안이 생기기 전(끝난 절이 없을 때)에는 옮겨 갈 곳이 없어 누를 수 없는 줄로 그린다 -->
@@ -53,14 +42,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import type { DraftSlot, DraftSlotStatus, SynthEta } from "~/utils/researchDraft";
-import {
-  barFraction,
-  finishedAnnouncement,
-  newlyFinished,
-  slotStateLabel,
-  synthSummary,
-  type SlotHoverEvent,
-} from "~/utils/synthCard";
+import { finishedAnnouncement, newlyFinished, slotStateLabel, synthSummary, type SlotHoverEvent } from "~/utils/synthCard";
 
 const props = withDefaults(defineProps<{ slots: DraftSlot[]; eta: SynthEta; highlightIdx?: number | null }>(), {
   highlightIdx: null,
@@ -72,7 +54,6 @@ const ICONS: Record<DraftSlotStatus, string> = { done: "✓", running: "", waiti
 const FRESH_MS = 900;
 
 const summary = computed(() => synthSummary(props.eta));
-const percent = computed(() => Math.round(barFraction(props.eta) * 1000) / 10);
 const canJump = computed(() => props.slots.some((s) => s.sectionIndex !== null));
 
 const fresh = ref<number[]>([]);

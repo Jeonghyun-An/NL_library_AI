@@ -9,7 +9,7 @@
             ✕
           </button>
         </header>
-        <p class="wk-modal__lead">주제 → 읽기 목록 → 계획서 3단계를 거쳐 연구계획서 초안까지 갑니다.</p>
+        <p class="wk-modal__lead">{{ ONBOARDING_LEAD }}</p>
         <ol class="wk-modal__steps">
           <li v-for="(s, i) in ONBOARDING_STEPS" :key="s.title" class="wk-modal__step">
             <p class="wk-modal__step-title"><span class="wk-stepper__no" aria-hidden="true">{{ i + 2 }}</span>{{ s.title }}</p>
@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { focusReturnTarget } from "~/utils/pdfViewer";
-import { ONBOARDING_STEPS } from "~/utils/workPhase";
+import { ONBOARDING_LEAD, ONBOARDING_STEPS } from "~/utils/workPhase";
 
 const props = defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();

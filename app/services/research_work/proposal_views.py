@@ -3,16 +3,24 @@
 - 다시 맞춤 필요(stale)는 저장하지 않고 조회 때 센다(계약 §4): 목차는 고른 주제가 바뀌었거나 묶음 논문 합집합이
   지금 담음과 다르거나 핵심 개념이 목차를 만들 때(outline.concepts)와 다르거나 고른 카드의 제목이 목차의
   topic.title 과 다르면(호출부가 넘긴 경우만), 선행연구 절(prior.gN)은 주제가 바뀌었거나 그 절의 근거 논문이 그 묶음 논문과 다르면,
-  그 밖의 절은 주제가 바뀌었으면. 앞 단계를 바꿔도 뒤 단계를 지우지 않고 배지만 붙인다(spec §4).
+  그 밖의 절은 주제가 바뀌었으면. 06e 부터 쓴 절(basis 에 question 이 있는 절)은 그때의 연구 질문이 지금과 달라도
+  다시 맞춤이다 — 06b 에 쓴 절은 키가 없어 이 이유로는 붙지 않는다. 앞 단계를 바꿔도 뒤 단계를 지우지 않고 배지만
+  붙인다(spec §4).
 - AI 사용 공개(disclosure)는 끝난(done) 생성의 단계·모델·완료 시각·시도 목록이다. 시도에는 model·outcome 만
   싣는다 — attempts.error 에는 내부 호스트 주소가 든 예외 문자열이 있다(06a 넘김 7).
 - 참고문헌(references)은 문단이 인용한 논문만, 논문 상세 인용과 같은 build_citation(book)["korean"] 으로 만든다
   (06b 정함 8 — UCI(없으면 URL) 포함, 인용 쪽 없음). 서지가 없는 논문은 '서지 정보 없음'.
 - drafts 는 쓰는 중(queued·running)인 절 생성의 입력에서 [E#]·[F#] 지도를 꺼낸 것 — 스트리밍 조각을 화면이
   칩으로 그리는 재료다.
+- section_gens 는 절 키별 마지막 section 생성 {gen_id, status}(상태 무관) — 06e 화면의 절 연쇄가 '절도 생성 기록도
+  없는 키' 를 고르는 재료다(spec §12-4). WorkView 는 끝난 생성을 최근 10건만 실어 연쇄가 쓰지 않는다.
 - topic_source 는 목차를 만든 주제(outline.topic.id) 행의 origin·card.edited — spec §5-2 'card.edited 는 데이터로만
   남기고(계보·공개 부록용)', 공개 부록의 '주제:' 줄 재료다. 행은 호출부가 이미 읽은 고른 주제를 넘기고, 그 id 가
   목차의 주제와 다르면 None.
+- preselected 는 이어가기가 읽기 목록에 미리 담은 행 수(reading_views.preselected_count — 지금 뺀 행 포함, 미리 담기
+  전에 이어간 연구는 0) — 공개 부록의 '참고문헌:' 줄 재료다. 행은 호출부가 읽어 센다.
+- section_sources 는 인용 근거 조회(GET …/sections/{key}/sources)의 응답 — 절 생성 입력의 [E#] 마다 논문·초록·
+  원문 대목. 그 생성이 모델에 넘긴 그대로를 읽는다(서지·Milvus·리랭커를 다시 부르지 않는다).
 """
 from models.research_work import GEN_OPEN_STATUSES, ResearchTopic
 from services.research_work.reading_views import book_meta
@@ -33,6 +41,12 @@ def _iso(value) -> str | None:
     return value.isoformat() if value is not None else None
 
 
+def _research_question(outline: dict) -> str:
+    """절을 쓸 때 프롬프트에 넣는 연구 질문 — 목차에 고른 질문, 없으면 목차 주제의 질문(research_proposal.generate_section
+    과 같은 식). 절 basis.question 과 견준다."""
+    return (outline or {}).get("question") or ((outline or {}).get("topic") or {}).get("question") or ""
+
+
 def stale_flags(work, outline: dict, sections: dict, picked: set[str], topic_title: str | None = None) -> dict:
     """topic_title 은 고른 카드의 지금 제목(호출부가 고른 주제 행에서 읽는다) — None 이면 제목은 견주지 않는다."""
     topic_id = work.topic_id
@@ -49,6 +63,8 @@ def stale_flags(work, outline: dict, sections: dict, picked: set[str], topic_tit
         stale = basis.get("topic_id") != topic_id
         if key.startswith("prior."):
             stale = stale or key not in groups or set(basis.get("papers") or []) != groups[key]
+        if "question" in basis:
+            stale = stale or basis["question"] != _research_question(outline)
         flags[key] = stale
     return {"outline": outline_stale, "sections": flags}
 
@@ -93,6 +109,16 @@ def drafts_of(open_section_gens) -> dict:
     return out
 
 
+def section_gens_of(generations) -> dict[str, dict]:
+    """절 키 → 그 키의 마지막(id 가 가장 큰) section 생성 {gen_id, status} — 상태 무관(failed·canceled 도 기록이다).
+    target 없는 행·다른 kind(목차·문단 다시 쓰기 target '<키>#<pid>' 등)는 뺀다."""
+    out: dict[str, dict] = {}
+    for g in sorted(generations, key=lambda g: g.id):
+        if g.kind == "section" and g.target:
+            out[g.target] = {"gen_id": g.id, "status": g.status}
+    return out
+
+
 def paper_ids(proposal, generations) -> list[str]:
     """서지가 필요한 논문 — 목차 묶음 논문 → 절 근거 → 쓰는 중인 절의 근거, 처음 나온 순. 호출부가 고른 카드의
     근거를 더해 BookRepository 로 한 번에 읽는다."""
@@ -116,6 +142,29 @@ def paper_ids(proposal, generations) -> list[str]:
     return ids
 
 
+def _excerpt(value) -> dict | None:
+    """저장된 원문 대목 → 응답 모양 {chunk_id, page_start, page_end, text}. 대목이 없거나(Milvus 를 못 읽음) 글이
+    비면 None — 화면이 초록만 보인다. 쪽은 저장값 그대로다(0부터 센다 — 화면 pageLabel 이 +1 해 보인다)."""
+    if not value or not (value.get("text") or "").strip():
+        return None
+    return {"chunk_id": value.get("chunk_id") or "", "page_start": value.get("page_start"),
+            "page_end": value.get("page_end"), "text": value["text"]}
+
+
+def section_sources(gen_input: dict) -> dict[str, dict]:
+    """인용 근거 조회(GET …/sections/{key}/sources)의 응답 — 절 생성 입력의 papers 를 {E#: {cnts_id, abstract,
+    excerpt}} 로. 순서는 입력 순서(= 번호 순 — section_input._papers 가 E1 부터 매긴다). 초록·대목은 그 생성이
+    모델에 넘긴 그대로라(초록 ABSTRACT_CHARS·대목 EXCERPT_CHARS 자 안) 서지·Milvus·리랭커를 다시 부르지 않는다.
+    eid·cnts_id 가 없는 원소는 뺀다(drafts_of 와 같은 규칙)."""
+    out: dict[str, dict] = {}
+    for p in (gen_input or {}).get("papers") or []:
+        if not p.get("eid") or not p.get("cnts_id"):
+            continue
+        out[p["eid"]] = {"cnts_id": p["cnts_id"], "abstract": p.get("abstract") or "",
+                         "excerpt": _excerpt(p.get("excerpt"))}
+    return out
+
+
 def _reference(cnts_id: str, book) -> str:
     return build_citation(book)["korean"] if book is not None else f"서지 정보 없음 ({cnts_id})."
 
@@ -128,11 +177,11 @@ def _topic_source(outline: dict, topic_row) -> dict | None:
 
 
 def proposal_view(work, job, proposal, books: dict, generations, picked: set[str],
-                  topic_row: ResearchTopic | None = None) -> dict:
+                  topic_row: ResearchTopic | None = None, preselected: int = 0) -> dict:
     """ProposalView. proposal 이 None(목차를 아직 만들지 않음)이면 version 0·outline None·sections {}.
     books 는 {cnts_id: BookOut}, generations 는 이 연구의 생성 전부, picked 는 지금 담은 논문, topic_row 는
     호출부가 읽은 고른 주제 행 — 카드 제목은 stale 셈에, origin·card.edited 는 topic_source 에 쓴다(None 이면
-    제목은 견주지 않고 topic_source 도 None)."""
+    제목은 견주지 않고 topic_source 도 None). preselected 는 호출부가 읽기 목록 행에서 센 미리 담은 수."""
     outline = dict((proposal.outline if proposal is not None else None) or {})
     sections = dict((proposal.sections if proposal is not None else None) or {})
     ids = paper_ids(proposal, generations)
@@ -143,6 +192,7 @@ def proposal_view(work, job, proposal, books: dict, generations, picked: set[str
         "outline": outline or None,
         "sections": sections,
         "drafts": drafts_of(_open_sections(generations)),
+        "section_gens": section_gens_of(generations),
         "papers": {cnts_id: book_meta(cnts_id, books.get(cnts_id)) for cnts_id in ids},
         "references": {cnts_id: _reference(cnts_id, books.get(cnts_id))
                        for cnts_id in cited_papers(sections)},
@@ -150,4 +200,5 @@ def proposal_view(work, job, proposal, books: dict, generations, picked: set[str
         "stale": stale_flags(work, outline, sections, picked, topic_title),
         "disclosure": disclosure_of(generations),
         "topic_source": _topic_source(outline, topic_row),
+        "preselected": preselected,
     }

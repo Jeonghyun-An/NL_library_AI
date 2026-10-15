@@ -87,7 +87,8 @@
               more-label="전체보기"
               scroll-anchor=".skx-aip"
             >
-              <div class="skx-pai-main__scroll">
+              <!-- 글 없이 실패하면 칸 안은 비우고 아래(#after) 안내만 보인다 -->
+              <div v-if="aiLoading || aiText || !aiError" class="skx-pai-main__scroll">
                 <template v-if="aiLoading && !aiText">
                   <div class="skx-pai-section">
                     <p class="skx-pai-section__text" style="color: #999">
@@ -97,55 +98,47 @@
                     </p>
                   </div>
                 </template>
-                <div v-else-if="aiText" v-html="renderedAiText" />
+                <!-- 요약이 끝난 뒤(참고 목록이 정해진 뒤)에는 (1)·(1, 3) 인용 번호를 눌러 그 논문 카드를 본다 -->
+                <SummaryText
+                  v-else-if="aiText"
+                  :html="renderedAiText"
+                  :refs="summaryRefs"
+                  :linked="!aiLoading"
+                  @detail="(id) => navigateTo(paperDetailUrl(id))"
+                  @pdf="(id) => (pdfItem = aiRefPaperMap.get(id) ?? null)"
+                  @chat="(id) => (chatPaperId = id)"
+                  @reveal="aiExpanded = true"
+                />
                 <div v-else class="skx-pai-section">
                   <p class="skx-pai-section__text">
                     AI 요약 정보가 없습니다.
                   </p>
                 </div>
               </div>
+              <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로. 접히는 칸 밖이라
+                   받은 글이 길어 접혀도 늘 보인다(접힌 채로는 페이드와 '전체보기'만 보여 끊긴 요약을 다 받은 것으로 읽었다) -->
+              <template #after>
+                <p
+                  v-if="aiError && !aiLoading"
+                  :class="['skx-pai-section__text', 'skx-pai-main__failed', !aiText && 'is-alone']"
+                  role="alert"
+                >{{ aiError }} ·
+                  <button type="button" class="skx-retry" @click="retryAiSummary">다시 시도</button>
+                </p>
+              </template>
             </ClampedPanel>
-            <!-- 우측: 참고 논문 목록 -->
+            <!-- 우측: 참고 논문 목록 — 번호·제목(누르면 상세)·저자만. 원문 보기·DeepRead 는 요약 속 번호의 팝오버와 결과 카드에, 출처 인용은
+                 결과 카드에 있어 카드마다 달던 아이콘 버튼 셋은 뺐다(사용자 결정 2026-10-14) -->
             <div class="skx-pai-refs">
               <div class="skx-pai-refs__scroll">
                 <div v-for="ref in aiRefs" :key="ref.num" class="skx-pai-ref">
                   <div class="skx-pai-ref__num">{{ ref.num }}</div>
                   <div class="skx-pai-ref__body">
-                    <p
-                      class="skx-pai-ref__title skx-pai-ref__title--link"
-                      @click="navigateTo(paperDetailUrl(ref.book_id))"
-                    >
+                    <!-- 버튼 셋이 빠져 이 줄에서 키보드로 닿는 것은 제목뿐이라 링크로 둔다(전에는 클릭만 받는 <p>) -->
+                    <NuxtLink class="skx-pai-ref__title skx-pai-ref__title--link" :to="paperDetailUrl(ref.book_id)">
                       {{ ref.title }}
-                    </p>
+                    </NuxtLink>
                     <p class="skx-pai-ref__author">{{ ref.authors }}</p>
-                    <div class="skx-pai-ref__actions">
-                      <button
-                        type="button"
-                        class="skx-pai-ref__btn"
-                        aria-label="출처 인용"
-                        @click="openRefCitation(ref)"
-                      >
-                        <img src="/img/ico-paper-bookmark.svg" alt="" />
-                      </button>
-                      <button
-                        type="button"
-                        class="skx-pai-ref__btn skx-pai-ref__btn--ai"
-                        aria-label="DeepRead"
-                        @click="chatPaperId = ref.book_id"
-                      >
-                        <img src="/img/ico-chat.svg" alt="" />
-                      </button>
-                      <button
-                        type="button"
-                        class="skx-pai-ref__btn"
-                        aria-label="원문 보기"
-                        @click="
-                          pdfItem = aiRefPaperMap.get(ref.book_id) ?? null
-                        "
-                      >
-                        <img src="/img/ico-share.svg" alt="" />
-                      </button>
-                    </div>
                   </div>
                 </div>
                 <template v-if="aiLoading && !aiRefs.length">
@@ -182,108 +175,12 @@
           <section class="skx-paper-section" aria-label="논문 검색 결과 목록">
             <!-- 머리: 총 N 건 | 정렬 · 개수 -->
             <ResultListHead :count="filteredPapers.length">
-              <div
-                class="skx-paper-sorts"
-                role="group"
-                aria-label="정렬 기준"
-              >
-                <button
-                  type="button"
-                  :class="[
-                    'skx-paper-sort',
-                    sortBy === 'relevance' && 'is-active',
-                  ]"
-                  :aria-pressed="sortBy === 'relevance'"
-                  @click="setSortBy('relevance')"
-                >
-                  <img
-                    :src="
-                      sortBy === 'relevance'
-                        ? '/img/ico-sort-on.svg'
-                        : '/img/ico-sort-off.svg'
-                    "
-                    alt=""
-                  />
-                  관련도순
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'skx-paper-sort',
-                    sortBy === 'name' && 'is-active',
-                  ]"
-                  :aria-pressed="sortBy === 'name'"
-                  @click="setSortBy('name')"
-                >
-                  <img
-                    :src="
-                      sortBy === 'name'
-                        ? '/img/ico-sort-on.svg'
-                        : '/img/ico-sort-off.svg'
-                    "
-                    alt=""
-                  />
-                  이름순
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'skx-paper-sort',
-                    sortBy === 'date_desc' && 'is-active',
-                  ]"
-                  :aria-pressed="sortBy === 'date_desc'"
-                  @click="setSortBy('date_desc')"
-                >
-                  <img
-                    :src="
-                      sortBy === 'date_desc'
-                        ? '/img/ico-sort-on.svg'
-                        : '/img/ico-sort-off.svg'
-                    "
-                    alt=""
-                  />
-                  최신순
-                </button>
-              </div>
-              <div
-                class="skx-paper-perpage"
-                :class="perpageOpen && 'is-open'"
-                ref="perpageRef"
-              >
-                <button
-                  type="button"
-                  class="skx-paper-perpage__btn"
-                  aria-haspopup="listbox"
-                  :aria-expanded="perpageOpen"
-                  @click.stop="perpageOpen = !perpageOpen"
-                >
-                  <span class="skx-paper-perpage__label"
-                    >{{ pageSize }}개씩</span
-                  >
-                  <img
-                    src="/img/ico-arrow-down.svg"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                </button>
-                <ul class="skx-paper-perpage__menu" role="listbox">
-                  <li v-for="n in [10, 20, 30, 50]" :key="n">
-                    <button
-                      type="button"
-                      :class="[
-                        'skx-paper-perpage__opt',
-                        pageSize === n && 'is-selected',
-                      ]"
-                      role="option"
-                      :aria-selected="pageSize === n"
-                      @click="setPageSize(n)"
-                    >
-                      {{ n }}개씩
-                    </button>
-                  </li>
-                </ul>
-              </div>
-
+              <ResultSortControls
+                :sort-by="sortBy"
+                :page-size="pageSize"
+                @sort="setSortBy"
+                @size="setPageSize"
+              />
             </ResultListHead>
 
             <!-- 목록 없음 -->
@@ -312,68 +209,8 @@
               />
             </div>
 
-            <!-- 페이지네이션 -->
-            <div v-if="totalPages > 1" class="skx-pagination">
-              <nav class="skx-page" aria-label="페이지 탐색">
-                <div class="skx-page-nav">
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="처음 페이지"
-                    :disabled="currentPage === 1"
-                    @click="currentPage = 1"
-                  >
-                    <img src="/img/ico-page-first.svg" alt="" />
-                  </button>
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="이전 페이지"
-                    :disabled="currentPage === 1"
-                    @click="currentPage--"
-                  >
-                    <img src="/img/ico-page-prev.svg" alt="" />
-                  </button>
-                </div>
-                <div class="skx-page-nums">
-                  <template v-for="p in pageButtons" :key="p">
-                    <span v-if="p === '...'" class="skx-page-ellipsis">…</span>
-                    <button
-                      v-else
-                      type="button"
-                      :class="[
-                        'skx-page-num',
-                        p === currentPage && 'is-active',
-                      ]"
-                      :aria-current="p === currentPage ? 'page' : undefined"
-                      @click="currentPage = Number(p)"
-                    >
-                      {{ p }}
-                    </button>
-                  </template>
-                </div>
-                <div class="skx-page-nav">
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="다음 페이지"
-                    :disabled="currentPage === totalPages"
-                    @click="currentPage++"
-                  >
-                    <img src="/img/ico-page-next.svg" alt="" />
-                  </button>
-                  <button
-                    type="button"
-                    class="skx-page-nav-btn"
-                    aria-label="마지막 페이지"
-                    :disabled="currentPage === totalPages"
-                    @click="currentPage = totalPages"
-                  >
-                    <img src="/img/ico-page-last.svg" alt="" />
-                  </button>
-                </div>
-              </nav>
-            </div>
+            <!-- 쪽 이동 -->
+            <ResultPager :page="currentPage" :total="totalPages" @go="currentPage = $event" />
           </section>
         </template>
       </div>
@@ -416,6 +253,7 @@
           v-if="chatPaperId"
           :cnts-id="chatPaperId"
           :book-title="chatPaperTitle"
+          doc-kind="paper"
           @close="chatPaperId = null"
         />
       </div>
@@ -434,19 +272,32 @@ import { marked } from "marked";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
+import { usePageLeaving } from "~/composables/usePageLeaving";
+import { rememberListView, savedListView } from "~/composables/useListView";
 import { safeLocalStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH, SPINNER_SRC } from "~/utils/brand";
 import { detailUrl, resultAnchor, type ReturnSpot } from "~/utils/detailSource";
 import { detailScoreParams } from "~/utils/relevance";
 import { slimPaperResult } from "~/utils/historySnapshot";
 import { holdsReturnSpot, pageOfItem, spotOf } from "~/utils/restorePosition";
+import {
+  DEFAULT_SORT,
+  pageCount,
+  pageSlice,
+  restoredPage,
+  sortResults,
+  type PageSize,
+  type SortKey,
+} from "~/utils/resultPaging";
 import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
+import { citeYear, type SummaryRef } from "~/utils/summaryCite";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
+import { AI_SUMMARY_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
 
 const api = useApi();
 const route = useRoute();
@@ -482,6 +333,8 @@ const restore = useRestorePosition(
   { maxWaitMs: 0 },
 );
 const { leave } = useDetailLeave();
+// 결과를 그린 뒤 기록 저장을 기다리는 사이 상세로 떠나면 늦은 주소 바꾸기가 그 이동을 취소하지 않게(usePageLeaving)
+const { leaving, markLeaving } = usePageLeaving();
 
 // ── 인라인 채팅 ──────────────────────────────────────────────
 const chatPaperId = ref<string | null>(null);
@@ -494,6 +347,8 @@ const chatPaperTitle = computed(() =>
 // ── AI 요약 ──────────────────────────────────────────────────
 const aiText = ref("");
 const aiLoading = ref(false);
+// 요약을 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 AI_SUMMARY_FAILED) — 받은 글에 잇지 않고 따로 보인다
+const aiError = ref("");
 const aiExpanded = ref(false);
 const aiRefs = ref<
   { num: number; book_id: string; title: string; authors: string }[]
@@ -503,11 +358,9 @@ const renderedAiText = computed(() =>
 );
 
 // ── 정렬 / 페이지 ─────────────────────────────────────────────
-const sortBy = ref("relevance");
-const pageSize = ref(20);
+const sortBy = ref<SortKey>(DEFAULT_SORT);
+const pageSize = ref<PageSize>(20);
 const currentPage = ref(1);
-const perpageOpen = ref(false);
-const perpageRef = ref<HTMLElement | null>(null);
 
 // ── PDF 뷰어 ─────────────────────────────────────────────────
 const pdfItem = ref<BookChunkGroup | null>(null);
@@ -529,12 +382,27 @@ function showToast(msg: string) {
 // ── 계산 ─────────────────────────────────────────────────────
 const hasResults = computed(() => paperResult.value !== null || loading.value);
 
+// 고른 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 소장자료 결과와 같다. 상세에서 돌아오면 applyPaperEntry 가 읽는다
+rememberListView(sortBy, pageSize, currentPage, () => hasResults.value);
+
 // AI 답변 인용 논문: book_id → 인용 번호 (우측 참고 카드 번호와 동일)
 const aiRefNumMap = computed(() => {
   const m = new Map<string, number>();
   for (const r of aiRefs.value) m.set(r.book_id, r.num);
   return m;
 });
+
+// 요약 속 인용 번호가 가리키는 논문 — 오른쪽 참고 목록(aiRefs)의 번호·제목·저자와 그 논문의 발행 연도
+const summaryRefs = computed<SummaryRef[]>(() =>
+  aiRefs.value.map((r) => ({
+    num: r.num,
+    book_id: r.book_id,
+    title: r.title,
+    authors: r.authors,
+    year: citeYear(aiRefPaperMap.value.get(r.book_id)?.book_info?.pub_date),
+    grade: (aiRefPaperMap.value.get(r.book_id)?.book_info?.grade ?? "").trim(),
+  })),
+);
 
 const aiRefPaperMap = computed(() => {
   const map = new Map<string, BookChunkGroup>();
@@ -544,21 +412,9 @@ const aiRefPaperMap = computed(() => {
   return map;
 });
 
-const sortedPapers = computed(() => {
-  if (!paperResult.value) return [];
-  const books = [...paperResult.value.books];
-  if (sortBy.value === "relevance")
-    return books.sort((a, b) => b.best_score - a.best_score);
-  if (sortBy.value === "name")
-    return books.sort((a, b) =>
-      (a.book_info?.title ?? "").localeCompare(b.book_info?.title ?? ""),
-    );
-  if (sortBy.value === "date_desc")
-    return books.sort((a, b) =>
-      (b.book_info?.pub_date ?? "").localeCompare(a.book_info?.pub_date ?? ""),
-    );
-  return books;
-});
+const sortedPapers = computed(() =>
+  paperResult.value ? sortResults(paperResult.value.books, sortBy.value) : [],
+);
 
 const filteredPapers = computed(() => {
   const base = sortedPapers.value;
@@ -575,29 +431,9 @@ const filteredPapers = computed(() => {
   return [...cited, ...rest];
 });
 
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredPapers.value.length / pageSize.value)),
-);
+const totalPages = computed(() => pageCount(filteredPapers.value.length, pageSize.value));
 
-const pagedPapers = computed(() =>
-  filteredPapers.value.slice(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  ),
-);
-
-const pageButtons = computed(() => {
-  const total = totalPages.value;
-  const cur = currentPage.value;
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | string)[] = [1];
-  if (cur > 3) pages.push("...");
-  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++)
-    pages.push(i);
-  if (cur < total - 2) pages.push("...");
-  pages.push(total);
-  return pages;
-});
+const pagedPapers = computed(() => pageSlice(filteredPapers.value, currentPage.value, pageSize.value));
 
 // ── 유틸 ─────────────────────────────────────────────────────
 function monthStr(pubDate: string): string {
@@ -605,15 +441,14 @@ function monthStr(pubDate: string): string {
   return m ? `${parseInt(m)}월` : "";
 }
 
-function setSortBy(key: string) {
+function setSortBy(key: SortKey) {
   sortBy.value = key;
   currentPage.value = 1;
 }
 
-function setPageSize(n: number) {
+function setPageSize(n: PageSize) {
   pageSize.value = n;
   currentPage.value = 1;
-  perpageOpen.value = false;
 }
 
 function formatPubDate(pubDate: string): string {
@@ -625,13 +460,6 @@ function formatPubDate(pubDate: string): string {
 function openPaperCitation(paper: BookChunkGroup) {
   citeBookId.value = paper.book_id;
   citeRefs.value = paper.book_info?.references ?? [];
-  citeModalOpen.value = true;
-}
-
-function openRefCitation(ref: { book_id: string }) {
-  const paper = aiRefPaperMap.value.get(ref.book_id);
-  citeBookId.value = ref.book_id;
-  citeRefs.value = paper?.book_info?.references ?? [];
   citeModalOpen.value = true;
 }
 
@@ -653,6 +481,7 @@ function paperDetailUrl(bookId: string, spot?: ReturnSpot, extra: Record<string,
 function goToDetail(paper: BookChunkGroup, e: MouseEvent, extra: Record<string, string> = {}) {
   const card = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-anchor]")!;
   const spot = spotOf(card, resultAnchor(paper.book_id));
+  markLeaving();
   void leave(paperDetailUrl(paper.book_id, spot, extra), spot);
 }
 
@@ -673,9 +502,10 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
+  aiError.value = "";
   aiExpanded.value = false;
   currentPage.value = 1;
-  sortBy.value = "relevance";
+  sortBy.value = DEFAULT_SORT;
 
   try {
     const data = await api<BookSearchResponse>("/papers/search", {
@@ -684,7 +514,8 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
         query,
         mode: "book",
         top_k: 20,
-        use_rewrite: true,
+        // 논문 검색은 서버가 재작성하지 않는다(app/api/paper.py — 사용자 결정 2026-10-14) — 보내는 값도 그에 맞춘다
+        use_rewrite: false,
         use_rerank: true,
       },
       signal,
@@ -700,7 +531,7 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
       : await historyApi.add({ kind: "paper", title: query, params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query, h: entry.id } });
+    if (!leaving.value) router.replace({ query: { q: query, h: entry.id } });
     if (data.books?.length) streamAiSummary(entry.id, query, data.books, signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -726,6 +557,7 @@ function goLanding() {
   aiText.value = "";
   aiRefs.value = [];
   aiLoading.value = false;
+  aiError.value = "";
   // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
   pdfItem.value = null;
   citeModalOpen.value = false;
@@ -829,23 +661,31 @@ function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   aiText.value = entry.ai?.text ?? "";
   aiRefs.value = (entry.ai?.refs ?? []) as typeof aiRefs.value;
   aiLoading.value = false;
+  aiError.value = "";
   aiExpanded.value = true;
-  sortBy.value = "relevance";
-  // 정렬을 정한 뒤에 찾아야 화면 목록과 같은 순서다
-  currentPage.value = returnPage();
-  if (route.query.h !== entry.id || route.query.q !== entry.title) {
+  // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 고른 정렬·개수를 다시 연다(그 방문 기록의 state — 소장자료 결과와
+  // 같다). 새로 연 기록은 기본 정렬이고 개수는 지금 고른 대로 둔다
+  const saved = savedListView();
+  sortBy.value = saved?.sortBy ?? DEFAULT_SORT;
+  if (saved) pageSize.value = saved.pageSize;
+  // 정렬·개수를 정한 뒤에 찾아야 화면 목록과 같은 순서·쪽이다. 누른 카드가 있으면 그 카드가 있는 쪽이 먼저이고(카드 자리 복원),
+  // 없으면 남긴 쪽, 그것도 없으면 첫 쪽
+  const before = currentPage.value;
+  currentPage.value = restoredPage(returnPage(), saved, filteredPapers.value.length, pageSize.value);
+  if (currentPage.value !== before) skipPageScroll = true;
+  if (!leaving.value && (route.query.h !== entry.id || route.query.q !== entry.title)) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 요약이 끝나기 전에 떠난 기록은 요약이 비어 있다 — 복원할 때 한 번 더 만든다
   if (!entry.ai && snap.books.length) streamAiSummary(entry.id, entry.title, snap.books, signal);
 }
 
-// 상세에서 돌아왔으면 그 카드가 있는 쪽을 연다 — 기록은 화면이 쪽으로 나눠 보인 결과를 모두 담아(slimPaperResult)
-// 둘째 쪽 이후의 카드도 찾는다. 쪽 크기·정렬은 기록에 없어 기본값으로 찾는다
-function returnPage(): number {
+// 상세에서 돌아왔으면 그 카드가 있는 쪽 — 기록은 화면이 쪽으로 나눠 보인 결과를 모두 담아(slimPaperResult) 둘째 쪽 이후의
+// 카드도 찾는다. 정렬·쪽 크기는 호출하는 쪽이 먼저 정해 둔 것(남긴 보기 또는 기본값)으로 찾는다. 누른 카드가 없으면 null
+function returnPage(): number | null {
   const anchor = restore.pending.value ? restore.anchor : null;
-  if (anchor?.kind !== "result") return 1;
-  return pageOfItem(filteredPapers.value.map((p) => p.book_id), anchor.cnts, pageSize.value) ?? 1;
+  if (anchor?.kind !== "result") return null;
+  return pageOfItem(filteredPapers.value.map((p) => p.book_id), anchor.cnts, pageSize.value);
 }
 
 // ── AI 요약 SSE ───────────────────────────────────────────────
@@ -861,6 +701,7 @@ async function streamAiSummary(
   signal: AbortSignal,
 ) {
   aiLoading.value = true;
+  aiError.value = "";
   const papers = books.slice(0, 5).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
@@ -870,6 +711,7 @@ async function streamAiSummary(
   }));
   let text = "";
   let refs: typeof aiRefs.value = [];
+  let end: AiStreamEnd = { ok: false, error: null };
   try {
     const resp = await fetch(apiUrl("/papers/summary/stream"), {
       method: "POST",
@@ -877,49 +719,43 @@ async function streamAiSummary(
       body: JSON.stringify({ query, papers }),
       signal,
     });
-    if (!resp.ok || !resp.body) return;
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop()!;
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const raw = line.slice(6).trim();
-        if (raw === "[DONE]") return;
-        try {
-          const evt = JSON.parse(raw);
-          if (evt.text) {
-            text += evt.text;
-            aiText.value = text;
-          }
-          if (evt.sources) {
-            refs = evt.sources;
-            aiRefs.value = refs;
-          }
-        } catch {}
+    end = await readAiStream(resp, (evt) => {
+      if (typeof evt.text === "string" && evt.text) {
+        text += evt.text;
+        aiText.value = text;
       }
-    }
+      if (Array.isArray(evt.sources)) {
+        refs = evt.sources;
+        aiRefs.value = refs;
+      }
+    });
   } catch {
-    /* 중단·네트워크 오류 — 받은 데까지만 남긴다 */
-  } finally {
-    // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
-    if (!signal.aborted) {
-      aiLoading.value = false;
-      if (text) historyApi.patch(historyId, { ai: { text, refs } });
-    }
+    /* 중단·네트워크 오류 — 아래에서 가린다 */
+  }
+  // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
+  if (signal.aborted) return;
+  aiLoading.value = false;
+  // 끝까지 받은 요약만 기록에 저장한다. 실패({error}·끊김)면 받은 글은 보이되 오류 문구를 잇지 않고 따로 보이며,
+  // 기록에 남기지 않아 다시 열면(applyPaperEntry) 다시 만든다
+  if (end.ok) {
+    if (text) void historyApi.patch(historyId, { ai: { text, refs } });
+  } else {
+    aiError.value = failureText(end, AI_SUMMARY_FAILED);
   }
 }
 
-// ── 페이지당 개수 드롭다운 닫기 + 주소 기준 첫 복원 ─────────────
+// [다시 시도] — 지금 결과(기록·검색어·논문)로 AI 요약을 처음부터 다시 받는다
+function retryAiSummary() {
+  const books = paperResult.value?.books;
+  if (!currentHistoryId.value || !books?.length) return;
+  const signal = beginRun();
+  aiText.value = "";
+  aiRefs.value = [];
+  void streamAiSummary(currentHistoryId.value, resultQuery.value, books, signal);
+}
+
+// ── 주소 기준 첫 복원 ─────────────────────────────────────────
 onMounted(() => {
-  document.addEventListener("click", () => {
-    perpageOpen.value = false;
-  });
   // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
   restoreFromQuery();
 });
@@ -936,8 +772,14 @@ watch(
 // 페이지를 떠나면 요약 스트림도 끊는다 — 안 끊으면 GPU 생성이 끝까지 돈다
 onBeforeUnmount(() => runCtrl?.abort());
 
-// 돌아온 카드의 쪽을 여는 동안에는 맨 위로 올리지 않는다 — 그 카드 자리를 맞추는 중이다
+// 돌아온 카드의 쪽을 여는 동안에는 맨 위로 올리지 않는다 — 그 카드 자리를 맞추는 중이다.
+// 기록 복원(applyPaperEntry)이 쪽을 바꾼 것도 올리지 않는다 — 브라우저가 되돌린 스크롤을 덮지 않게
+let skipPageScroll = false;
 watch(currentPage, () => {
+  if (skipPageScroll) {
+    skipPageScroll = false;
+    return;
+  }
   if (!restore.pending.value) window.scrollTo({ top: 0, behavior: "smooth" });
 });
 </script>

@@ -8,7 +8,7 @@ import { citedPdfTarget } from "~/utils/pdfViewer";
 import { verdictLabel } from "~/utils/researchEvents";
 import { excludedPaperLine } from "~/utils/researchReport";
 
-// 서버 경계와 같은 값(app/services/research_work/shapes.py)
+// 서버 경계와 같은 값(app/services/research_work/shapes.py — tests/unit/readingList.test.ts 가 파일을 읽어 맞춰 본다)
 export const MIN_READING_FOR_OUTLINE = 5;
 export const READING_NOTE_MAX = 1000;
 export const GROUP_LABEL_MAX = 60;
@@ -51,13 +51,38 @@ function minRank(item: ReadingItem): number {
   return ranks.length ? Math.min(...ranks) : LAST;
 }
 
-// 서버 reading_views.reading_order 와 같은 순서 — 사용자 순서(position, 없으면 뒤) → 하위질문 안 최소 순위 → cnts_id.
+// 매칭 대목 점수 중 가장 높은 값(하위질문 전부) — 서버 reading_views._best_score 와 같은 값이다. 서버는 들어온 경로의
+// chunk_scores 를, 화면은 그 점수를 실은 대목(path 의 chunks — 스냅숏에 있는 대목만)을 읽는다. 점수가 붙는 대목은 모두
+// 스냅숏의 근거 대목에 들어 있어(Evidence.chunks 는 매칭된 적 있는 청크를 지우지 않는다) 두 쪽이 같은 값을 본다
+function bestScore(item: ReadingItem): number | null {
+  const scores = item.path.subqs
+    .flatMap((s) => s.chunks.map((c) => c.score))
+    .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  return scores.length ? Math.max(...scores) : null;
+}
+
+// 높은 점수가 앞, 점수가 없는 편은 뒤
+function byScore(a: ReadingItem, b: ReadingItem): number {
+  const sa = bestScore(a);
+  const sb = bestScore(b);
+  if (sa === sb) return 0;
+  if (sa === null) return 1;
+  if (sb === null) return -1;
+  return sb - sa;
+}
+
+// 서버 reading_views.reading_order 와 같은 순서 — 사용자 순서(position, 없으면 뒤) → 하위질문 안 최소 순위 → 대목 점수 중
+// 가장 높은 값이 큰 순(없으면 뒤, 사용자 결정 2026-10-14 — 같은 순위에서 id 가 작은 옛 논문이 먼저 오던 것) → cnts_id.
+// 이어가기의 미리 담기(서버 preselect)가 같은 키로 앞 여덟 편을 고르므로 미리 담은 행이 표의 맨 위에 온다([위로]·[아래로]로
+// position 을 매기기 전까지. 미리 담기와 이 키는 같은 배포로 나가 옛 키(순위 → cnts_id)로 미리 담은 연구는 없다 — 나중에 더해지는
+// 행(되살림·직접 담음)은 순위가 없어 뒤에 온다).
 // 담음·뺌으로 줄을 옮기지 않는다 — 체크하는 순간 행이 손 밑에서 움직이지 않게
 export function sortedItems(items: ReadingItem[]): ReadingItem[] {
   return [...items].sort(
     (a, b) =>
       (a.position ?? LAST) - (b.position ?? LAST) ||
       minRank(a) - minRank(b) ||
+      byScore(a, b) ||
       (a.cnts_id < b.cnts_id ? -1 : a.cnts_id > b.cnts_id ? 1 : 0),
   );
 }
@@ -125,12 +150,22 @@ export function pathLines(item: ReadingItem): PathLine[] {
     const note = revived.note.trim() ? ` — ${revived.note.trim()}` : "";
     lines.push({
       label: "되살림",
-      detail: `하위질문 ${revived.subq_idx + 1} 「${revived.subquestion}」${round}에서 critic 이 뺀 논문${note}`,
+      detail: `하위질문 ${revived.subq_idx + 1} 「${revived.subquestion}」${round}에서 자기점검이 뺀 논문${note}`,
     });
   }
   if (item.path.user) lines.push({ label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" });
   if (!lines.length) lines.push({ label: "들어온 경로", detail: "저장된 경로가 없습니다" });
   return lines;
+}
+
+// 오른쪽 딥리드 패널의 '들어온 경로' 첫 대목(spec §12-4 D24 — 접어 둔다). [경로](pathLines)와 같은 순서의 첫 매칭 대목이고,
+// 매칭 대목이 없으면(되살림·직접 담음만이거나 대목이 저장되지 않음) null
+export function firstPathChunk(item: ReadingItem): { label: string; chunk: PathChunk } | null {
+  for (const sq of item.path.subqs) {
+    const chunk = sq.chunks[0];
+    if (chunk) return { label: `하위질문 ${sq.idx + 1} · 대목 ${pageLabel(chunkPages(chunk))}`, chunk };
+  }
+  return null;
 }
 
 // 경로의 대목 하나로 원문을 연다 — 그 대목의 쪽에서(쪽 정보가 없으면 첫 쪽)
@@ -142,18 +177,45 @@ function pickedCount(view: ReadingView): number {
   return view.items.filter((i) => i.state === "in").length;
 }
 
-// [목차 만들기] 를 못 누르는 까닭 — 서버 POST .../outline 의 409 두 가지(주제 없음·담음 5편 미만)를 먼저 알린다
+// [보고서 만들기] 를 못 누르는 까닭 — 서버 POST .../outline 의 409 두 가지(주제 없음·담음 MIN_READING_FOR_OUTLINE 편 미만)를
+// 먼저 알린다. 미리 담은 여덟 편에서 빼다 보면 나오는 말이라 '…담으면'(0 에서 담아 올라가는 말)이 아니라 '…이상이면'으로 적는다
 export function outlineHint(view: ReadingView): string | null {
-  if (view.topic_id === null) return "주제를 먼저 고르세요 — 고른 주제로 목차를 만듭니다";
+  if (view.topic_id === null) return "주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다";
   const n = pickedCount(view);
   if (n < MIN_READING_FOR_OUTLINE) {
-    return `담은 논문이 ${n}편입니다 — ${MIN_READING_FOR_OUTLINE}편 이상 담으면 목차를 만들 수 있습니다`;
+    return `담은 논문이 ${n}편입니다 — ${MIN_READING_FOR_OUTLINE}편 이상이면 보고서를 만들 수 있습니다`;
   }
   return null;
 }
 
+const READING_DEEP_READ_LINE = "제목을 누르면 오른쪽에서 그 논문과 대화할 수 있습니다.";
+
+// 참고문헌 선택하기 머리 소개. 이어가기가 채택 근거 상위 편을 담음으로 미리 넣었으면(서버가 센 preselected — 뺀 행도 센다,
+// 후보가 서버 shapes.READING_PRESELECT(8)편보다 적으면 그 수) 승인 문구(사용자 결정 2026-10-13 — 글자 그대로)를 그 수로 채운다.
+// - 0(이 기능 전에 이어간 연구)이면 미리 담았다고 하면 거짓이라 옛 소개 그대로
+// - 읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 바로 아래 '예시 연구는 읽기 전용입니다'와 어긋난다
+// - 읽기 목록을 아직 못 불러왔으면(null) 수를 모른다 — 옛 소개를 보였다가 미리 담음 문장으로 바꾸지 않게 소개를 싣지 않는다
+// 끝의 DeepRead 안내(제목 → 오른쪽 대화)는 세 경우 모두 같다
+export function readingIntro(view: ReadingView | null, question: string, readOnly = false): string | null {
+  if (!view) return null;
+  const n = view.preselected ?? 0;
+  if (n <= 0) {
+    return `「${question}」 탐색의 채택 근거가 후보로 들어와 있습니다. 보고서에 쓸 논문을 담습니다. ${READING_DEEP_READ_LINE}`;
+  }
+  const lead = `보고서의 근거로 쓰인 논문 중 ${n}편을 미리 담아 두었습니다.`;
+  const ask = readOnly ? "" : " 필요 없는 건 빼고, 더 넣고 싶은 논문은 담아 주세요.";
+  return `${lead}${ask} ${READING_DEEP_READ_LINE}`;
+}
+
 export function canMakeOutline(view: ReadingView): boolean {
   return outlineHint(view) === null;
+}
+
+// 다음 단계 버튼(ReadingNextActions)의 aria-describedby — 보이는 까닭 줄들의 id 를 공백으로 잇는다. 없는 id(null)는 건너뛰고
+// 하나도 없으면 undefined(속성을 달지 않는다)
+export function describedByIds(...ids: (string | null)[]): string | undefined {
+  const present = ids.filter((id): id is string => !!id);
+  return present.length ? present.join(" ") : undefined;
 }
 
 // 'critic 이 뺀 논문' 서랍 — 하위질문 순으로 묶고 묶음 안은 뺀 회차 순(회차를 모르면 뒤)
@@ -179,7 +241,7 @@ export function candidateLine(c: ExcludedCandidate): string {
 
 // 논문별 제외 사유는 저장되지 않는다(spec §5-4) — 뺀 회차와 그 회차의 critic 메모를 함께 보인다
 export function candidateNote(c: ExcludedCandidate): string | null {
-  const parts = [c.round != null ? `${c.round}회차에 뺌` : "", c.note.trim() ? `critic 메모: ${c.note.trim()}` : ""];
+  const parts = [c.round != null ? `${c.round}회차에 뺌` : "", c.note.trim() ? `자기점검 메모: ${c.note.trim()}` : ""];
   const line = parts.filter(Boolean).join(" · ");
   return line || null;
 }

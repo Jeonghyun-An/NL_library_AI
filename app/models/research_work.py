@@ -20,6 +20,8 @@ JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 
   research_reading.origin_ref     evidence: {"subq_idx": [int], "rank": {"0": int}, "chunks": {"0": [chunk_id]},
                                              "chunk_scores": {"0": {chunk_id: float}}, "verdict": {"0": str},
                                              "first_round": {"0": int}}  (06a)
+                                            + "preselected": true  — 이어가기가 담음으로 미리 넣은 행만
+                                              (reading_views.preselect, 2026-10-13 — 그 전 연구엔 없음)
                                   revived:  {"subq_idx": int, "round": int|null, "note": str}
                                   user:     {}
   research_proposals.outline      Outline | {}
@@ -28,15 +30,24 @@ JSONB 칼럼의 모양(06b — 상수·키는 services/research_work/shapes.py, 
   Figure    = {"id": "F1", "label": str, "value": str}
   Card      = {"title": str, "question": str, "evidence": [cnts_id], "figure_sentence": str|null,
                "figures": [Figure], "latest_year": int|null, "edited": bool,
-               "checks": {"numbers": [str], "softened": int, "recovered": int}, "gen_id": int|null}
+               "keywords": [str],                               — 만들 때 넘긴 고른 키워드(06e — 옛 카드엔 없음)
+               "focus": [str],                                  — [이 키워드로 다시 만들기]가 더한·아직 제목에 없는 키워드(그때만 —
+                                                                  엄격한 검사가 하나 이상을 요구, 2026-10-14)
+               "checks": {"numbers": [str], "softened": int, "recovered": int,
+                          "missing_keywords": [str]},           — keywords 중 제목에 없는 것(06e)
+               "gen_id": int|null}
   Outline   = {"topic": {"id": int, "title": str, "question": str}, "basis": "concept"|"subq",
                "concepts": [str],                                    — 목차를 만들 때의 핵심 개념
                "groups": [{"key": "prior.g1", "name": str, "hint": str, "papers": [cnts_id]}],
                "questions": [str], "question": str|null, "method": str,
-               "state": "draft"|"approved", "gen_id": int|null, "approved_at": iso|null}
+               "background": str,                                    — 연구 배경 자유 글(06e — 키가 없으면 "")
+               "state": "draft"|"approved", "gen_id": int|null, "approved_at": iso|null,
+               "auto": bool}                                         — 06e 반영이 자동 승인한 목차만 true
+                                                                       (06b 목차엔 키 없음 — 화면 절 연쇄가 읽는다)
   Section   = {"key": str, "gen_id": int, "evidence": {"E1": cnts_id}, "figures": [Figure],
-               "basis": {"topic_id": int|null, "papers": [cnts_id]}, "note": str|null,
+               "basis": {"topic_id": int|null, "papers": [cnts_id], "question": str}, "note": str|null,
                "paragraphs": [Paragraph], "model": str|null, "updated_at": iso}
+                                                                     — basis.question 은 06e 부터(06b 절엔 없음)
   Paragraph = {"id": "p1", "text": str, "state": "proposed"|"accepted"|"edited"|"authored",
                "cites": [cnts_id], "checks": ParagraphChecks, "gen_id": int|null}
   ParagraphChecks = {"dropped": int, "dropped_f": int, "unmarked": int, "numbers": [str], "softened": int}

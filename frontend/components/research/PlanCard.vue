@@ -44,7 +44,8 @@
       <p v-if="problem" class="rs-plan__problem" role="alert">{{ problem }}</p>
       <div class="rs-card__actions">
         <button type="button" class="rs-btn" :disabled="busy || !!problem" @click="approve">승인하고 시작</button>
-        <button type="button" class="rs-btn rs-btn--ghost" :disabled="busy" @click="$emit('cancel')">취소</button>
+        <!-- 취소는 화면 안 한 번 확인('정말 취소' + [그대로 두기]) — 메인 입력창의 연구 줄과 같다 -->
+        <CancelConfirm :disabled="busy" @confirm="$emit('cancel')" />
       </div>
     </template>
   </section>
@@ -52,6 +53,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
+import CancelConfirm from "~/components/research/CancelConfirm.vue";
 import type { SubqView } from "~/types/research";
 import { subqStatusLabel, understoodLine } from "~/utils/researchEvents";
 import { PLAN_ITEM_MAX, planProblem } from "~/utils/researchInput";

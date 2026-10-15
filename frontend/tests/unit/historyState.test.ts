@@ -288,6 +288,27 @@ describe("createHistoryState", () => {
     expect(state.byKind("book").value.map((e) => e.id)).toEqual([ID1]);
   });
 
+  it("setResearchStatus 는 목록의 그 연구 줄 상태만 바꾸고 서버에는 보내지 않는다 — 같은 값·목록에 없는 잡은 그대로", async () => {
+    const { store, state } = setup();
+    store.rows.set(ID2, researchEntry(ID2, { research: { status: "planning", stage: "created", generating: false } }));
+    store.rows.set(ID3, researchEntry(ID3, { research: { status: "completed", stage: "synthesized" } }));
+    await state.refresh();
+    store.put.mockClear();
+    store.patch.mockClear();
+    const before = state.entries.value;
+    state.setResearchStatus(ID2, { status: "running", stage: "planned" });
+    const row = state.entries.value.find((e) => e.id === ID2);
+    expect(row).toMatchObject({ research: { status: "running", stage: "planned", generating: false } });
+    expect(state.entries.value).not.toBe(before);
+    expect(state.entries.value.find((e) => e.id === ID3)).toBe(before.find((e) => e.id === ID3));
+    const after = state.entries.value;
+    state.setResearchStatus(ID2, { status: "running", stage: "planned" });
+    state.setResearchStatus("없는-잡", { status: "running", stage: "planned" });
+    expect(state.entries.value).toBe(after);
+    expect(store.put).not.toHaveBeenCalled();
+    expect(store.patch).not.toHaveBeenCalled();
+  });
+
   it("upsertResearch 는 이미 목록에 있으면 서버에 묻지 않는다", async () => {
     const { store, state } = setup();
     store.rows.set(ID2, researchEntry(ID2));

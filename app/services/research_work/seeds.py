@@ -8,14 +8,17 @@
 card_seeds 와 같은 방식).
 
 고르는 규칙(pick_seeds): 절마다 후보 줄을 만들고(향후 과제 → 그 하위질문의 insufficient note 순), 절을
-한 바퀴씩 돌며 하나씩 고른다 — 서로 다른 절이 먼저 나온다. 같은 글(공백 접고 casefold)은 하나만,
-근거 후보가 MIN_TOPIC_EVIDENCE 편 미만인 씨앗은 버린다(카드가 근거 2개를 받칠 수 없다 — 정함 4).
+한 바퀴씩 돌며 하나씩 고른다 — 서로 다른 절이 먼저 나온다. 같은 글은 하나만 — 문장부호·공백을 빼고 casefold 한
+글이 NEAR_SAME_RATIO 이상 같으면 같은 글로 본다(종합이 절마다 한 낱말만 바꾼 향후 과제를 써서, 운영 d60a5dc1 은 '유형'·'형태'만
+다른 두 씨앗이 slot1·slot4 에 들어가 카드 제목이 똑같이 나왔다). 근거 후보가 MIN_TOPIC_EVIDENCE 편 미만인 씨앗은 버린다(카드가
+근거 2개를 받칠 수 없다 — 정함 4).
 근거 후보(seed_papers)는 씨앗에 묶인 근거(향후 과제의 evidence) → 그 절 논문 순으로 최대 TOPIC_PAPERS_MAX 편.
 
 DB·LLM·네트워크를 쓰지 않는다 — FastAPI(이어가기·다른 방향·주제 조회)와 1회성 재비교 도구가 함께 쓴다.
 """
 import re
 from collections.abc import Collection, Iterable
+from difflib import SequenceMatcher
 
 from services.research.citations import strip_markers
 from services.research_work.shapes import MIN_TOPIC_EVIDENCE, TOPIC_PAPERS_MAX
@@ -28,8 +31,29 @@ def _norm(text: object) -> str:
     return " ".join(str(text or "").split())
 
 
+# 비교 글이 이만큼 같으면 같은 씨앗이다 — 문단 [다시]의 '옮긴 글' 기준(paragraph.COPY_RATIO)과 같은 값. 운영 보고서 48개의
+# 씨앗 3,782쌍(2026-10-14)에서 0.9 이상 14쌍(글자까지 같은 4쌍 포함)은 모두 한두 낱말만 바꾼 같은 과제였다. 0.85~0.9 에도
+# 같은 과제를 달리 쓴 쌍이 몇 있지만 기준을 낮추지 않는다 — 대상만 다른 틀 문장('향후 연구에서는 … 필요가 있다')을 합치지 않게
+NEAR_SAME_RATIO = 0.9
+_PUNCT_AND_SPACE = re.compile(r"[\W_]+")
+
+
 def _same_text_key(text: str) -> str:
-    return _norm(text).casefold()
+    """씨앗 비교용 글 — [E#] 마커·문장부호·공백을 빼고 casefold."""
+    return _PUNCT_AND_SPACE.sub("", strip_markers(text)).casefold()
+
+
+def _near_same(key: str, others: list[str]) -> bool:
+    """key 가 others 가운데 하나와 같은 글인가(비율 NEAR_SAME_RATIO 이상). 빠른 상한 비율로 먼저 거른다."""
+    for other in others:
+        if key == other:
+            return True
+        # autojunk 를 끈다 — 200자 넘는 글에서 자주 나오는 글자를 버려 비율이 낮게 나온다
+        matcher = SequenceMatcher(None, key, other, autojunk=False)
+        if matcher.real_quick_ratio() >= NEAR_SAME_RATIO and matcher.quick_ratio() >= NEAR_SAME_RATIO \
+                and matcher.ratio() >= NEAR_SAME_RATIO:
+            return True
+    return False
 
 
 def _year(pub_date: object) -> int | None:
@@ -92,6 +116,34 @@ def seed_papers(report: dict, future_eids: list[str], section_idx: int | None) -
     return out
 
 
+def _future_text(fut: dict) -> str:
+    """향후 과제의 씨앗 글 — [E#] 마커를 걷어내고 공백을 하나로."""
+    return _norm(strip_markers(str(fut.get("text") or "")))
+
+
+_FUTURE_KEY = re.compile(r"future:(\d+):(\d+)")
+
+
+def seed_evidence(report: dict, seed: dict) -> list[str]:
+    """향후 과제 씨앗('future:i:j')에 보고서가 달았던 근거의 cnts_id — 그 과제의 evidence 순서로, 중복 없이. 연구 공백 절이
+    씨앗 줄에 그 근거의 [E#] 를 붙인다(section_input.gap_input). 씨앗 글에서는 마커를 걷어냈고(_queues) papers 는 그 절
+    논문까지 섞여 있어 key 로 보고서에서 다시 푼다 — DB 에 이미 있는 카드의 씨앗도 풀린다.
+    insufficient 씨앗·사용자 카드(씨앗 {})·key 가 가리키는 자리의 과제 글이 씨앗 글과 다르면 []."""
+    m = _FUTURE_KEY.fullmatch(str((seed or {}).get("key") or ""))
+    if not m or not isinstance(report, dict):
+        return []
+    s_idx, f_idx = int(m.group(1)), int(m.group(2))
+    sections = report.get("sections") or []
+    section = sections[s_idx] if s_idx < len(sections) and isinstance(sections[s_idx], dict) else {}
+    futures = section.get("future") or []
+    fut = futures[f_idx] if f_idx < len(futures) and isinstance(futures[f_idx], dict) else None
+    if fut is None or _future_text(fut) != seed.get("text"):
+        return []
+    evidence = _evidence(report)
+    cnts = [(evidence.get(e) or {}).get("cnts_id") for e in fut.get("evidence") or [] if isinstance(e, str)]
+    return list(dict.fromkeys(c for c in cnts if isinstance(c, str) and c))
+
+
 def _adopted(trail: list, t_idx: int | None) -> int | None:
     if t_idx is None:
         return None
@@ -117,7 +169,7 @@ def _queues(report: dict) -> list[list[dict]]:
         for f_idx, fut in enumerate(sec.get("future") or []):
             if not isinstance(fut, dict):
                 continue
-            text = _norm(strip_markers(str(fut.get("text") or "")))
+            text = _future_text(fut)
             if not text:
                 continue
             queue.append({
@@ -147,13 +199,14 @@ def _queues(report: dict) -> list[list[dict]]:
 def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()) -> list[dict]:
     """쓸 씨앗을 고른다(계약 §4 seed 모양). 절을 한 바퀴씩 돌며 하나씩 — 서로 다른 절이 먼저다.
     exclude(이미 카드로 쓴 seed.key)는 돌아가는 순서에서 제 차례를 차지한 채 건너뛴다 — [다른 방향] 이 이미 쓴
-    절 다음 절부터 고르게 된다. exclude 와 같은 글도 다시 고르지 않는다. limit 이 None 이면 남은 것 전부."""
+    절 다음 절부터 고르게 된다. 앞서 만난 씨앗이나 exclude 와 같은 글(거의 같은 글 포함 — _near_same)은 고르지 않는다.
+    limit 이 None 이면 남은 것 전부."""
     if not isinstance(report, dict) or (limit is not None and limit <= 0):
         return []
     skip = set(exclude)
     queues = [[s for s in q if len(s["papers"]) >= MIN_TOPIC_EVIDENCE] for q in _queues(report)]
-    used_text = {_same_text_key(s["text"]) for q in queues for s in q if s["key"] in skip}
-    seen: set[str] = set()
+    used_text = [_same_text_key(s["text"]) for q in queues for s in q if s["key"] in skip]
+    seen: list[str] = []
     out: list[dict] = []
     for depth in range(max((len(q) for q in queues), default=0)):
         for queue in queues:
@@ -161,10 +214,10 @@ def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()
                 continue
             seed = queue[depth]
             text = _same_text_key(seed["text"])
-            if text in seen:
+            if _near_same(text, seen):
                 continue
-            seen.add(text)
-            if seed["key"] in skip or text in used_text:
+            seen.append(text)
+            if seed["key"] in skip or _near_same(text, used_text):
                 continue
             out.append(seed)
             if limit is not None and len(out) >= limit:
@@ -172,9 +225,15 @@ def pick_seeds(report: dict, *, limit: int | None, exclude: Collection[str] = ()
     return out
 
 
-def topic_input(question: str, seed: dict, report: dict, topic_id: int) -> dict:
+def topic_input(question: str, seed: dict, report: dict, topic_id: int, keywords: list[str] | None = None,
+                focus: list[str] | None = None) -> dict:
     """주제 카드 생성 1건의 입력(계약 §3 topic_card input). 근거 후보는 E1 부터 차례로 번호를 붙인다 —
-    호출마다 붙이는 로컬 번호이고 카드에는 cnts_id 로 저장한다(spec §3 [E#])."""
+    호출마다 붙이는 로컬 번호이고 카드에는 cnts_id 로 저장한다(spec §3 [E#]). keywords 는 카드를 만들 때 고른
+    키워드(06e D23 — work.concepts)이고 제목 규칙·검사가 읽는다. 06e 전 행에는 이 키가 없다(읽는 쪽이 or []).
+    focus 는 [이 키워드로 다시 만들기]가 카드를 만들 때보다 더한 키워드와 앞서 더했는데 아직 제목에 없는 키워드
+    (keywords 의 일부 — api.research_topics._regenerate_focus)다 — 프롬프트가 한 줄 더
+    강조하고 엄격한 검사가 그 가운데 하나를 요구한다(운영 630e0d65). 처음 카드·[다른 방향]은 빈 목록이고, 이 키가
+    없는 옛 행은 읽는 쪽이 or [] 로 읽는다."""
     metas = _metas(report if isinstance(report, dict) else {})
     papers = []
     for n, cnts_id in enumerate(seed.get("papers") or [], start=1):
@@ -188,6 +247,8 @@ def topic_input(question: str, seed: dict, report: dict, topic_id: int) -> dict:
         "papers": papers,
         "adopted": seed.get("adopted"),
         "corpus": _corpus(report if isinstance(report, dict) else {}),
+        "keywords": list(keywords or []),
+        "focus": list(focus or []),
     }
 
 

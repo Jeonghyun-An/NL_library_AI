@@ -3,24 +3,38 @@
 // 진행 막대·요약 띠·범위 띠·온보딩의 문구도 여기서 만든다(.vue 는 그리기만 한다)
 import type { ResearchView } from "~/types/research";
 import type { Corpus, WorkPhase, WorkStep, WorkView } from "~/types/work";
+import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
 import { pubYear } from "~/utils/citations";
+import { MIN_READING_FOR_OUTLINE } from "~/utils/readingList";
 import type { QueryValue } from "~/utils/restorePosition";
 
 export const WORK_STEPS: readonly WorkStep[] = ["topics", "reading", "proposal"];
 
+// 마지막 단계(④)의 이름 — 사용자 답(Q2)이 없을 때의 기본 '보고서'(06e 정함 1). 조사가 붙지 않는 꼴(버튼·진행 막대 글줄·
+// 단계 이름)에만 이 상수를 쓴다. 조사가 붙는 문장은 글자 그대로 '보고서'를 쓴다 — `${FINAL_STEP_NAME}를` 은 이름이
+// 바뀌면 틀린다('연구 초안를')
+export const FINAL_STEP_NAME = "보고서";
+export const MAKE_REPORT = `${FINAL_STEP_NAME} 만들기`;
+// 연구 이어가기(제목 고르기 → 참고문헌 선택하기 → 보고서)는 베타 기능이다(사용자 결정 2026-10-15) — 이어가기 카드 제목과
+// 단계 막대 옆에 같은 글로 단다
+export const BETA_LABEL = "Beta";
+export const REMAKE_REPORT = `${FINAL_STEP_NAME} 다시 만들기`;
+
 // 진행 막대는 ① 탐색(딥리서치 — 이어갈 때 이미 끝나 있다)부터 센다
 type StepKey = "explore" | WorkStep;
 const STEP_KEYS: readonly StepKey[] = ["explore", ...WORK_STEPS];
-const STEP_LABEL: Record<StepKey, string> = {
+// 단계의 보이는 이름(spec §12-4 D23·D24 — 키·주소 ?s=·API 는 그대로). 진행 막대·이어가기 카드·온보딩이 쓰고 사이드바(06d)도
+// 이것을 읽는다 — 화면마다 이름을 다시 쓰지 않는다. 마지막 단계 이름은 FINAL_STEP_NAME 하나에서 온다(06e 정함 1)
+export const STEP_NAMES: Readonly<Record<"explore" | WorkStep, string>> = {
   explore: "탐색",
-  topics: "주제",
-  reading: "읽기 목록",
-  proposal: "계획서",
+  topics: "제목 고르기",
+  reading: "참고문헌 선택하기",
+  proposal: FINAL_STEP_NAME,
 };
 const PHASE_LINE: Record<WorkPhase, string> = {
-  topics: "2/4 단계 · 주제 고르는 중",
-  reading: "3/4 단계 · 읽기 목록 만드는 중",
-  proposal: "4/4 단계 · 계획서 쓰는 중",
+  topics: "2/4 단계 · 제목 고르는 중",
+  reading: "3/4 단계 · 참고문헌 고르는 중",
+  proposal: `4/4 단계 · ${FINAL_STEP_NAME} 쓰는 중`,
   done: "4/4 단계 · 완료",
 };
 
@@ -55,11 +69,15 @@ export function stepperItems(phase: WorkPhase, current: WorkStep | null): Steppe
   const viewing: StepKey = current ?? "explore";
   return STEP_KEYS.map((key, i) => {
     const state = i < reached ? "done" : i === reached ? "current" : "todo";
-    return { key, label: STEP_LABEL[key], state, clickable: state !== "todo" && key !== viewing };
+    return { key, label: STEP_NAMES[key], state, clickable: state !== "todo" && key !== viewing };
   });
 }
 
-export function stepLine(phase: WorkPhase): string {
+// 보고서 단계에서 절을 다 쓴 뒤(written — proposalView.proposalWritten) 줄. 서버 단계는 Word 를 받아야 done 이다
+const WRITTEN_LINE = `4/4 단계 · ${FINAL_STEP_NAME} 완성`;
+
+export function stepLine(phase: WorkPhase, written = false): string {
+  if (phase === "proposal" && written) return WRITTEN_LINE;
   return PHASE_LINE[phase] ?? PHASE_LINE.topics;
 }
 
@@ -112,21 +130,27 @@ export function scopeLine(corpus: Corpus | null | undefined): string | null {
 // [이 연구 이어가기] 를 이 브라우저에서 처음 누를 때 한 번 띄우는 안내(spec §4). 진행 막대의 [?] 로 다시 본다
 export const ONBOARDING_KEY = "skx_work_onboarded";
 
+// 안내 머리 한 줄 — 단계 이름 뒤에는 조사를 붙이지 않는다('3단계를 거쳐')
+export const ONBOARDING_LEAD = `${STEP_NAMES.topics} → ${STEP_NAMES.reading} → ${STEP_NAMES.proposal} 3단계를 거쳐 보고서 초안까지 갑니다.`;
+
 export const ONBOARDING_STEPS: readonly { title: string; body: string; decide: string }[] = [
   {
-    title: "주제",
-    body: "보고서의 향후 과제와 근거가 부족했던 하위질문에서 주제 카드를 만듭니다. 카드마다 연구 질문과 근거 논문이 붙습니다.",
-    decide: "카드 하나를 고릅니다. 카드를 고치거나 직접 쓸 수도 있습니다.",
+    title: STEP_NAMES.topics,
+    body: `${DEEP_RESEARCH} 보고서의 향후 과제와 근거가 부족했던 하위질문에서 제목 카드를 만듭니다. 고른 키워드가 카드 제목에 들어가고, 카드마다 연구 질문과 근거 논문이 붙습니다.`,
+    decide: "카드 하나를 고릅니다. 키워드를 바꿔 카드를 다시 만들거나, 카드를 고치거나 직접 쓸 수도 있습니다.",
   },
   {
-    title: "읽기 목록",
-    body: "탐색에서 채택한 논문이 후보로 들어와 있습니다. 논문마다 들어온 경로를 볼 수 있고, 자기점검이 뺀 논문도 되살릴 수 있습니다.",
-    decide: "읽을 논문을 담습니다. 5편 이상 담으면 목차를 만들 수 있습니다.",
+    title: STEP_NAMES.reading,
+    // 첫 두 문장은 승인 문구(사용자 결정 2026-10-13 — 글자 그대로). 편수를 적지 않는다 — 이 안내는 [단계 안내 다시 보기]로
+    // 이어간 모든 연구에서 열려(미리 담기 전에 이어간 연구·후보가 적은 연구·예시 연구 포함) 실제 수는 머리 소개(readingIntro)가 맡는다
+    body: `이어가기를 시작하면 근거로 쓰인 논문을 미리 담아 둡니다. 빼거나 더 담아서 참고문헌을 정해 보세요. 제목을 누르면 오른쪽에서 그 논문과 대화(${DEEP_READ})할 수 있고, 들어온 경로를 보거나 자기점검이 뺀 논문을 되살릴 수 있습니다.`,
+    // 미리 담은 채로 시작하니 '…담으면'(0 에서 담아 올라가는 말)이 아니라 담은 수가 기준에 닿는지로 적는다(outlineHint 와 같은 꼴)
+    decide: `보고서에 쓸 논문을 담습니다. 담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 [${MAKE_REPORT}]를 누를 수 있습니다.`,
   },
   {
-    title: "계획서",
-    body: "담은 논문으로 목차를 만들고 선행연구와 연구 공백 절을 근거 인용과 함께 씁니다. 결과·논의는 쓰지 않습니다.",
-    decide: "목차를 승인하고 문단을 수락하거나 고친 뒤 Word 로 내려받습니다.",
+    title: STEP_NAMES.proposal,
+    body: `[${MAKE_REPORT}] 한 번으로 목차가 서고 선행연구·연구 공백 절을 근거 인용과 함께 씁니다. 결과·논의는 쓰지 않습니다.`,
+    decide: "다 쓴 보고서를 읽고 필요하면 문단을 고치거나 수락한 뒤 Word 로 내려받습니다.",
   },
 ];
 
@@ -149,11 +173,12 @@ function continuePreview(phase: WorkPhase | null): ContinueCardView["preview"] {
   }));
 }
 
-export function continueCard(exists: boolean | null, work: WorkView | null): ContinueCardView {
+// written — 보고서 절을 다 썼다(proposalView.proposalWritten). 머리 단계 줄(WorkStepper)과 같은 말을 쓰게 함께 넘긴다
+export function continueCard(exists: boolean | null, work: WorkView | null, written = false): ContinueCardView {
   if (exists === true) {
     return {
       title: "이어간 연구",
-      body: work ? stepLine(work.phase) : "이어간 연구가 있습니다.",
+      body: work ? stepLine(work.phase, written) : "이어간 연구가 있습니다.",
       preview: continuePreview(work?.phase ?? null),
       label: "이어간 연구 열기",
       action: "open",
@@ -163,7 +188,7 @@ export function continueCard(exists: boolean | null, work: WorkView | null): Con
   }
   return {
     title: "이 연구 이어가기",
-    body: "탐색이 끝났습니다. 주제 → 읽기 목록 → 계획서를 거쳐 연구계획서 초안까지 이어 갈 수 있습니다.",
+    body: `탐색이 끝났습니다. ${STEP_NAMES.topics} → ${STEP_NAMES.reading} → ${STEP_NAMES.proposal} 3단계를 거쳐 보고서 초안까지 이어 갈 수 있습니다.`,
     preview: continuePreview(null),
     label: "이 연구 이어가기",
     action: "continue",

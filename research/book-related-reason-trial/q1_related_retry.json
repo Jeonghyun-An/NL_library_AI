@@ -1,0 +1,19 @@
+{
+ "body": {
+  "query": "조선후기 세태소설 연구",
+  "mode": "book",
+  "top_k": 6,
+  "use_rewrite": false,
+  "use_rerank": true
+ },
+ "results": [
+  [
+   "CNTS-00052063539",
+   1.0
+  ],
+  [
+   "CNTS-00052063978",
+   0.4656
+  ]
+ ]
+}

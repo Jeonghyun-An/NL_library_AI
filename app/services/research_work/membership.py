@@ -9,7 +9,9 @@
 - 묶음 수(group_count)와 배정(assign_groups)은 서버 코드가 정한다(LLM 은 이름만 붙인다): 각 논문의 1순위 키로
   수를 세어 많은 순(같으면 논문 순서에서 먼저 나온 키) k 개를 묶음으로 삼고, 그 밖의 논문은 고른 키 가운데
   친밀도가 가장 높은 묶음으로, 친밀도가 없는 논문은 첫 묶음으로 보낸다 — 임계값 보정 전에도 결정적이고 모든
-  논문이 꼭 한 묶음에 든다.
+  논문이 꼭 한 묶음에 든다. 묶음이 둘 이상이면 묶음마다 MIN_GROUP_PAPERS 편 이상이다 — 모자란 묶음은 여유 있는
+  묶음에서 아쉬움이 가장 작은 논문을 데려오고, 데려올 논문이 없으면 풀어서 남은 묶음에 합친다(1편짜리 선행연구 절은
+  한 논문으로 문장을 다 채우고 '선행연구들은' 이라 쓴다 — 운영 2026-10-14 E2E 두 번 모두 7:1).
 - 임계 MEMBER_THRESHOLD(제안값)는 배정에 쓰지 않는다. 임계 이상만 모은 {개념: [cnts_id]} 를
   research_works.concept_members 에 저장하는 데만 쓴다(06c 격자가 보정한다).
 """
@@ -17,7 +19,7 @@ import logging
 import math
 from collections import Counter
 
-from services.research_work.shapes import MAX_GROUPS, PAPERS_PER_GROUP, PRIOR_KEYS
+from services.research_work.shapes import MAX_GROUPS, MIN_GROUP_PAPERS, PAPERS_PER_GROUP, PRIOR_KEYS
 
 log = logging.getLogger(__name__)
 
@@ -98,6 +100,7 @@ def assign_groups(papers: list[str], affinity: dict[str, dict[str, float]], k: i
                   keys: list[str]) -> list[dict]:
     """묶음 배정(정함 7). keys 는 친밀도 키(개념 또는 하위질문 글)의 정해진 순서 — 한 논문의 1순위가 비기면
     keys 에서 앞선 키를 고르고, keys 밖의 키는 보지 않는다. 묶음 키는 PRIOR_KEYS 를 차례로, hint 는 고른 키.
+    묶음이 둘 이상이면 묶음마다 MIN_GROUP_PAPERS 편 이상이다(모자라면 데려오고, 못 데려오면 합친다 — 머리 주석).
     결과 [{"key": "prior.g1", "hint": str, "papers": [cnts_id]}] — 묶음 안 논문은 papers 순서 그대로."""
     order = {key: i for i, key in enumerate(keys)}
 
@@ -125,6 +128,31 @@ def assign_groups(papers: list[str], affinity: dict[str, dict[str, float]], k: i
     for p in papers:
         target = tops[p] if tops[p] in slot else best(scores_of(p), chosen)
         (slot[target] if target is not None else groups[0])["papers"].append(p)
+    pos = {p: i for i, p in enumerate(papers)}
+    while len(groups) > 1:
+        small = next((g for g in reversed(groups) if len(g["papers"]) < MIN_GROUP_PAPERS), None)
+        if small is None:
+            break
+        hint = small["hint"]
+        # 데려올 논문 — 여유 있는(MIN_GROUP_PAPERS 를 넘는) 묶음에서 이 묶음 키 친밀도가 있는 논문 가운데 자기 묶음
+        # 키보다 덜 뒤지는 것(아쉬움이 가장 작은 것), 같으면 이 묶음 키 친밀도가 높은 것, 그다음 논문 순서에서 앞선 것
+        moves = [(s[hint] - s.get(g["hint"], 0.0), s[hint], -pos[p], p, g)
+                 for g in groups if g is not small and len(g["papers"]) > MIN_GROUP_PAPERS
+                 for p in g["papers"] if hint in (s := scores_of(p))]
+        if moves:
+            *_, p, donor = max(moves, key=lambda m: m[:3])
+            donor["papers"].remove(p)
+            small["papers"].append(p)
+            continue
+        # 데려올 논문이 없으면 이 묶음을 푼다 — 논문은 남은 묶음 가운데 친밀도가 가장 높은 곳, 없으면 첫 묶음으로
+        groups.remove(small)
+        rest = {g["hint"]: g for g in groups}
+        for p in small["papers"]:
+            target = best(scores_of(p), list(rest))
+            (rest[target] if target is not None else groups[0])["papers"].append(p)
+    for i, g in enumerate(groups):          # 푼 묶음이 있으면 키를 앞에서부터 다시, 묶음 안은 papers 순서로
+        g["key"] = PRIOR_KEYS[i]
+        g["papers"].sort(key=pos.__getitem__)
     return groups
 
 

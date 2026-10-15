@@ -67,3 +67,20 @@ describe("카드는 늘 닫힌 채 시작한다", () => {
     }
   });
 });
+
+describe("소장자료 상세 관련 자료 — 관련 자료 전용 GET 으로 받는다", () => {
+  // 자기 제목으로 사용자 검색(POST /books/search)을 돌리면 긴 학위논문은 자기 청크가 후보 창을 다 채워 1권만 남고,
+  // 제목에 날짜 필터가 걸리며, 상세를 열 때마다 검색 기록이 쌓였다 — 백엔드 GET /books/{id}/related 가 자기 제외·하한을 맡는다
+  const fetchRelated = (read("pages/books/[cnts_id].vue").match(/async function fetchRelatedBooks\(\) \{[\s\S]*?\n\}/) ?? [""])[0];
+
+  it("요청은 GET /books/{id}/related 하나다(사용자 검색을 부르지 않는다)", () => {
+    expect(fetchRelated).toContain("api<any>(`/books/${encodeURIComponent(cnts_id)}/related`");
+    expect(fetchRelated).toContain("query: { top_k: RELATED_LIMIT }");
+    expect(fetchRelated).not.toContain("/books/search");
+    expect(fetchRelated).not.toContain('method: "POST"');
+  });
+
+  it("받은 책에서 자기 자신을 한 번 더 빼고 4칸까지만 쓴다", () => {
+    expect(fetchRelated).toMatch(/\.filter\(\(b\) => b\.book_id !== cnts_id\)\s*\.slice\(0, RELATED_LIMIT\)/);
+  });
+});

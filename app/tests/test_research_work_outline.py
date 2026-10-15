@@ -22,7 +22,7 @@ from services.research_work.apply import apply_result
 from services.research_work.executors import EXECUTORS
 from services.research_work.generate import run_generation
 from services.research_work.outline import (
-    EXECUTOR, FALLBACK_GROUP_NAME, PROMPT, clean_questions, outline_input,
+    EXECUTOR, FALLBACK_GROUP_NAME, PROMPT, auto_question, clean_questions, outline_input, question_choices,
 )
 from services.research_work.shapes import GROUP_LABEL_MAX, OUTLINE_QUESTION_MAX, OUTLINE_TARGET
 
@@ -203,6 +203,42 @@ class TestRegistry:
         assert EXECUTORS["outline"] is EXECUTOR
 
 
+class TestAutoQuestion:
+    def test_the_card_question_then_the_first_candidate_then_none(self):
+        # 연구 질문은 고른 카드의 질문이다 — 목차 후보는 '서로 다른 각도'로 묻게 해서 첫 후보가 카드와 다른 질문일 수 있다
+        # (운영 d60a5dc1: 카드 '…사회적 지지 유형이 노인의 우울에 미치는 영향은?', 첫 후보 '…지지 네트워크의 특징은?')
+        card = {"topic": {**TOPIC, "question": "  카드의   질문인가? "}}
+        assert auto_question({"questions": ["첫 후보인가?", "둘째 후보인가?"]}, card) == "카드의 질문인가?"
+        assert auto_question({"questions": []}, card) == "카드의 질문인가?"
+        assert auto_question({}, card) == "카드의 질문인가?"
+        # 카드 질문이 비면(공백만이거나 2자 미만 — 승인 PUT 의 하한 APPROVE_NEEDS_QUESTION 과 같다) 첫 후보
+        for blank in ("", "   ", "가", None):
+            no_card = {"topic": {**TOPIC, "question": blank}}
+            assert auto_question({"questions": ["첫 후보인가?", "둘째 후보인가?"]}, no_card) == "첫 후보인가?"
+            assert auto_question({"questions": ["   "]}, no_card) is None
+            assert auto_question({"questions": []}, no_card) is None
+        assert auto_question({}, {}) is None
+
+
+class TestQuestionChoices:
+    def test_the_card_question_first_then_the_candidates_without_repeats(self):
+        # [목차 고치기]의 연구 질문 선택지 — 카드 질문(공백 정리, 저장된 question 과 같은 글이라 그 칸이 체크된다) → LLM 후보.
+        # 공백·대소문자만 다른 후보는 한 번만
+        card = {"topic": {**TOPIC, "question": "  카드의   질문인가? "}}
+        output = {"questions": ["첫 후보인가?", "카드의 질문인가?", "둘째 후보인가?"]}
+        assert question_choices(output, card) == ["카드의 질문인가?", "첫 후보인가?", "둘째 후보인가?"]
+        assert question_choices(output, card)[0] == auto_question(output, card)
+
+    def test_no_card_question_leaves_the_candidates(self):
+        output = {"questions": ["첫 후보인가?", "둘째 후보인가?"]}
+        assert question_choices(output, {"topic": {**TOPIC, "question": " "}}) == ["첫 후보인가?", "둘째 후보인가?"]
+        assert question_choices({}, {}) == []
+
+    def test_the_fallback_outline_has_the_card_question_once(self):
+        # 빈 결과(_empty)는 카드 질문 하나를 후보로 채운다 — 겹쳐 두 번 나오지 않는다(화면의 isFallbackOutline 은 후보 2개 미만)
+        assert question_choices(EXECUTOR.empty(INPUT), INPUT) == [TOPIC["question"]]
+
+
 # ── 반영 ────────────────────────────────────────────────────────────
 
 
@@ -211,13 +247,13 @@ def engine():
     return make_engine()
 
 
-def _setup(engine, *, outline=None, version=1):
+def _setup(engine, *, outline=None, version=1, input=INPUT):
     jid = add_research_job(engine, status="completed", stage="synthesized")
     add_work(engine, jid, phase="proposal")
     for cnts_id in ("C1", "C2", "C3"):
         add_reading(engine, jid, cnts_id, state="in")
     add_proposal(engine, jid, version=version, outline=outline)
-    gid = add_generation(engine, jid, kind="outline", status="running", target=OUTLINE_TARGET, input=INPUT)
+    gid = add_generation(engine, jid, kind="outline", status="running", target=OUTLINE_TARGET, input=input)
     return jid, gid
 
 
@@ -245,14 +281,21 @@ def _proposal(engine, jid):
         return conn.execute(sa.select(table).where(table.c.work_id == jid)).mappings().one()
 
 
+NOW = "2026-10-17T01:02:03+00:00"
+CARD_QUESTION = TOPIC["question"]      # 자동 확정의 연구 질문 = 고른 카드의 질문(GOOD 의 첫 후보가 아니다)
+
+
 class TestApply:
-    def test_writes_a_draft_outline_and_bumps_the_version(self, engine):
+    def test_writes_an_approved_auto_outline_with_the_card_question(self, engine, monkeypatch):
+        # 06e(D20) — [보고서 만들기] 한 번으로 목차를 자동 확정한다: 연구 질문 = 고른 카드의 질문, 방법 빈칸, 승인·auto 표시.
+        # 선택지는 카드 질문 → LLM 후보
+        monkeypatch.setattr("services.research_work.outline._now", lambda: NOW)
         jid, gid = _setup(engine)
         output = EXECUTOR.bind(EXECUTOR.parse(GOOD), INPUT)
 
         payload, pending = _apply(engine, gid, output)
 
-        assert payload == {"fallback": False}
+        assert payload == {"fallback": False, "auto": True}
         assert pending == []                       # 반영은 커밋하지 않는다 — 위 커밋은 테스트가 했다
         row = _proposal(engine, jid)
         assert row["version"] == 2
@@ -261,30 +304,68 @@ class TestApply:
             "groups": [{"key": "prior.g1", "name": "노년기 우울의 요인", "hint": "노인의 우울",
                         "papers": ["C1", "C2"]},
                        {"key": "prior.g2", "name": "가족·사회 지지망", "hint": "사회적 지지", "papers": ["C3"]}],
-            "questions": output["questions"], "question": None, "method": "", "state": "draft",
-            "gen_id": gid, "approved_at": None,
+            "questions": [CARD_QUESTION, *output["questions"]], "question": CARD_QUESTION, "method": "",
+            "state": "approved",
+            "gen_id": gid, "approved_at": NOW, "auto": True,
         }
         with engine.connect() as conn:
             progress = conn.execute(sa.select(ResearchWork.__table__.c.progress)
                                     .where(ResearchWork.__table__.c.id == jid)).scalar_one()
         assert progress["reading"] == 3 and progress["sections_total"] == 6
 
-    def test_fallback_outline_is_flagged(self, engine):
+    def test_fallback_outline_is_flagged(self, engine, monkeypatch):
+        # 모델이 끝내 실패해도 빈 결과가 카드 질문 하나를 후보로 채운다 — 그 질문으로 자동 승인한다
+        monkeypatch.setattr("services.research_work.outline._now", lambda: NOW)
         jid, gid = _setup(engine)
 
         payload, _ = _apply(engine, gid, EXECUTOR.empty(INPUT))
 
-        assert payload == {"fallback": True}
+        assert payload == {"fallback": True, "auto": True}
         outline = _proposal(engine, jid)["outline"]
         assert [g["name"] for g in outline["groups"]] == ["노인의 우울", "사회적 지지"]
         assert outline["questions"] == [TOPIC["question"]]
+        assert (outline["question"], outline["state"], outline["approved_at"], outline["auto"]) == (
+            TOPIC["question"], "approved", NOW, True)
 
-    def test_a_new_outline_replaces_an_approved_one(self, engine):
-        approved = {"state": "approved", "groups": [], "question": "옛 질문?", "approved_at": "2026-10-10"}
+    def test_a_new_outline_replaces_an_approved_one(self, engine, monkeypatch):
+        # [보고서 다시 만들기]는 새 반영이다 — 옛 승인·질문·방법을 버리고 카드 질문으로 다시 자동 승인한다(auto 가 다시 붙는다)
+        monkeypatch.setattr("services.research_work.outline._now", lambda: NOW)
+        approved = {"state": "approved", "groups": [], "question": "옛 질문?", "method": "옛 방법",
+                    "approved_at": "2026-10-10"}
         jid, gid = _setup(engine, outline=approved, version=5)
 
         _apply(engine, gid, EXECUTOR.bind(EXECUTOR.parse(GOOD), INPUT))
 
         row = _proposal(engine, jid)
         assert row["version"] == 6
-        assert (row["outline"]["state"], row["outline"]["question"]) == ("draft", None)
+        out = row["outline"]
+        assert (out["state"], out["question"], out["method"], out["approved_at"], out["auto"]) == (
+            "approved", CARD_QUESTION, "", NOW, True)
+
+    def test_a_new_outline_keeps_the_research_background(self, engine, monkeypatch):
+        # 06e(§12-11 권고) — 연구 배경은 사용자가 쓰는 자유 글이다. [보고서 다시 만들기]가 목차를 통째로 바꿔도 이어 받는다.
+        # 적은 적이 없는(빈 글) 목차를 다시 만들면 키를 두지 않는다
+        monkeypatch.setattr("services.research_work.outline._now", lambda: NOW)
+        written = {"state": "approved", "groups": [], "question": "옛 질문?", "method": "옛 방법",
+                   "approved_at": "2026-10-10", "background": "농촌 독거노인의 고립이 깊어지고 있다."}
+        jid, gid = _setup(engine, outline=written, version=5)
+        blank_jid, blank_gid = _setup(engine, outline={**written, "background": ""}, version=5)
+
+        _apply(engine, gid, EXECUTOR.bind(EXECUTOR.parse(GOOD), INPUT))
+        _apply(engine, blank_gid, EXECUTOR.bind(EXECUTOR.parse(GOOD), INPUT))
+
+        out = _proposal(engine, jid)["outline"]
+        assert (out["background"], out["question"], out["method"]) == ("농촌 독거노인의 고립이 깊어지고 있다.", CARD_QUESTION, "")
+        assert "background" not in _proposal(engine, blank_jid)["outline"]
+
+    def test_no_question_at_all_stays_a_draft_without_auto(self, engine):
+        # 후보도 카드 질문도 없으면 06b 처럼 초안으로 둔다 — 빈 질문으로 승인하면 [목차 고치기]의 PUT 이 422 다(정함 3)
+        bare = {**INPUT, "topic": {**TOPIC, "question": ""}}
+        jid, gid = _setup(engine, input=bare)
+
+        payload, _ = _apply(engine, gid, EXECUTOR.empty(bare))
+
+        assert payload == {"fallback": True, "auto": False}
+        out = _proposal(engine, jid)["outline"]
+        assert (out["questions"], out["question"], out["state"], out["approved_at"], out["auto"]) == (
+            [], None, "draft", None, False)

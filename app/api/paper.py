@@ -75,11 +75,15 @@ async def search_papers(
     if not session_id or session_id == "null":
         session_id = str(uuid4())
 
+    # 논문 검색은 쿼리 재작성을 하지 않는다(요청의 use_rewrite 는 무시) — 재작성 프롬프트는 도서 추천용이라 논문 질문의
+    # 구체어를 버리고 없던 주제어를 덧붙였다. 켬 71% vs 끔 87%(파이프라인 측정, 독립 3세트 450문항 — 재작성 단계 −17.6%p),
+    # 배포본 실측 Recall@10 89%(2026-10-14, 합성 질문 기준) — research/brochure-search-eval/README.md, 사용자 결정
+    # 2026-10-14. 소장자료 검색(/api/books/search)은 그대로 재작성한다
     result = await search(
         req.query,
         mode=req.mode,
         top_k=req.top_k,
-        use_rewrite=req.use_rewrite,
+        use_rewrite=False,
         use_rerank=req.use_rerank,
         doc_scope="paper",
         db=db,
@@ -161,7 +165,7 @@ async def get_paper_citation(
 ):
     """논문 출처 인용 국문/영문 반환.
 
-    메타데이터(저자, 연도, 제목, 학술지, 권호, UCI)로 KCI 스타일 인용문을 구성한다.
+    메타데이터(저자, 연도, 제목, 학술지, 권호, 수록면, UCI)로 KCI 스타일 인용문을 구성한다.
     LLM 호출 없이 즉시 응답한다.
     """
     from services.search.paper_citation import build_citation

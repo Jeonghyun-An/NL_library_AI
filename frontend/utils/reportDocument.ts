@@ -11,7 +11,7 @@ import type {
   Verdict,
 } from "../types/research";
 import { DEEP_RESEARCH } from "./brand";
-import { citeChunks, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
+import { citeChunks, journalText, pdfPage, pubYear, splitAuthors, splitCitations } from "./citations";
 import type { DraftReport } from "./researchDraft";
 import { excludedLabel, verdictLabel } from "./researchEvents";
 import {
@@ -327,7 +327,8 @@ function referenceText(ev: ReportEvidence | undefined, secs: ReportSection[], ei
   const authors = splitAuthors(m.personal_author).join(", ");
   const year = pubYear(m.pub_date);
   const title = m.title?.trim() ?? "";
-  const journal = [m.series_title, m.vol_issue].map((s) => s?.trim() ?? "").filter(Boolean).join(", ");
+  // 학술지 자리(학술지, 권(호), 쪽) — 논문 상세 인용(build_citation)과 같은 규칙(journalText)
+  const journal = journalText(m);
   const parts: string[] = [];
   if (authors && year) parts.push(`${authors} (${year}).`);
   else if (authors) parts.push(sentence(authors));

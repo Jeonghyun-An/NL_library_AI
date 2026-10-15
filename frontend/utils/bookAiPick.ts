@@ -108,10 +108,11 @@ export function readSavedKeywords(ai: unknown, topBookId: string | null): string
 }
 
 /**
- * 추천 이유 SSE 를 읽어 text 조각마다 onText 를, 첫 이벤트 {keywords}(도서의 MARC 키워드)가 오면 onKeywords 를 부른다. 이벤트: {keywords}·{text}·{effect}·[DONE].
+ * 추천 이유 SSE 를 읽어 text 조각마다 onText 를, 첫 이벤트 {keywords}(도서의 MARC 키워드)가 오면 onKeywords 를 부른다. 이벤트: {keywords}·{text}·{effect}·{error}·[DONE].
  * 서버는 추천 이유(text) 뒤에 독후 효과(effect)를 이어 만든다 — 화면은 검색 응답의 read_effect 를 쓰므로 effect 가 오면
  * 이유는 끝난 것이고, 읽기를 취소해 연결을 끊는다(서버가 쓰지 않을 글을 더 만들지 않게).
- * 끝까지 받았으면 true, [DONE] 도 effect 도 없이 끊겼으면 false(저장하지 않는다). 읽기 중 abort 는 그대로 던진다
+ * 서버는 LLM 호출이 실패하면 [DONE] 앞에 {error} 를 보낸다(app/services/search/pipeline.py stream_book_reason) — 거기서 읽기를 그만둔다.
+ * 끝까지 받았으면 true, {error} 가 왔거나 [DONE] 도 effect 도 없이 끊겼으면 false(저장하지 않는다). 읽기 중 abort 는 그대로 던진다
  */
 export async function readReasonStream(
   body: ReadableStream<Uint8Array>,
@@ -139,6 +140,7 @@ export async function readReasonStream(
           continue;
         }
         if (typeof event !== "object" || event === null) continue;
+        if ("error" in event) return false;
         if ("effect" in event) return true;
         if (onKeywords && "keywords" in event) {
           const kw = cleanKeywords(event.keywords);

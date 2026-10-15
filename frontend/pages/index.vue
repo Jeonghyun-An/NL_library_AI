@@ -151,6 +151,8 @@
               <img src="/img/ico-arrow.svg" alt="" />
             </span>
           </div>
+          <!-- DeepResearch 모드일 때 예시 연구 카드(미리 돌린 실제 연구 — 읽기 전용). 예시가 없으면 그리지 않는다 -->
+          <ResearchExampleCards v-if="deepResearch" />
         </div>
 
         <!-- 신작도서 카운트업 -->
@@ -314,15 +316,32 @@
             질문과 딱 맞는 자료를 찾지 못했어요 — 아래 목록을 확인해 주세요.
           </p>
         </AiResultPanel>
-        <!-- 06d: [딥리서치로 더 깊게]·[담기] 는 이 패널 바로 아래(이 자리)에 들어간다 — 그때까지 DOM 을 만들지 않는다 -->
+        <!-- 이 결과에서 이어서 — [DeepResearch로 이어서 조사하기]는 메인 입력창에 이 검색어를 채우고 DeepResearch 모드를 켠다(시작은
+             하지 않는다 — 논문 결과의 같은 버튼과 같은 모양) -->
+        <div v-if="topBook && resultQuery" class="skx-deeper">
+          <button type="button" class="skx-deeper__btn" @click="continueAsDeepResearch">
+            <span aria-hidden="true">+</span> {{ DEEP_RESEARCH }}로 이어서 조사하기
+          </button>
+        </div>
 
-        <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건' -->
-        <section v-if="listBooks.length" class="skx-rlist" aria-label="소장자료 검색 결과 목록">
-          <ResultListHead :count="listBooks.length" :prefix="listExcludesPick ? '그 외 ' : ''" />
+        <!-- 도서 목록 — 추천 1권을 내세웠으면 그 책은 위 패널에 있으니 빼고 '그 외 총 N 건'. 정렬·개수·쪽은 이 나머지 목록에만 적용된다 -->
+        <section
+          v-if="listBooks.length"
+          ref="listRef"
+          class="skx-rlist"
+          aria-label="소장자료 검색 결과 목록"
+        >
+          <ResultListHead :count="listBooks.length" :prefix="listExcludesPick ? '그 외 ' : ''">
+            <ResultSortControls
+              :sort-by="sortBy"
+              :page-size="pageSize"
+              @sort="setSortBy"
+              @size="setPageSize"
+            />
+          </ResultListHead>
           <div class="skx-book-list">
             <ResultCard
-              v-for="(item, i) in listBooks"
-              v-show="i < visibleCount || bookListExpanded"
+              v-for="item in pagedBooks"
               :key="item.book_id"
               :item="item"
               kind="book"
@@ -332,23 +351,8 @@
             />
           </div>
 
-          <!-- 더보기 버튼 (처음 보이는 개수보다 결과가 많을 때만) -->
-          <button
-            v-if="listBooks.length > visibleCount"
-            type="button"
-            class="skx-book-expand"
-            :aria-expanded="bookListExpanded"
-            @click="bookListExpanded = !bookListExpanded"
-          >
-            <span class="skx-book-expand__label">{{
-              bookListExpanded ? "접기" : "더보기"
-            }}</span>
-            <img
-              class="skx-book-expand__arrow"
-              src="/img/ico-arrow-down.svg"
-              alt=""
-            />
-          </button>
+          <!-- 쪽 이동 -->
+          <ResultPager :page="currentPage" :total="totalPages" @go="goToPage" />
         </section>
       </div>
     </main>
@@ -373,6 +377,8 @@
 import { useBookmark } from "~/composables/useBookmark";
 import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
+import ResearchExampleCards from "~/components/research/ResearchExampleCards.vue";
+import { useResearchExamples } from "~/composables/useResearchWorks";
 import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { slimBookResult } from "~/utils/historySnapshot";
@@ -391,11 +397,25 @@ import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { detailUrl } from "~/utils/detailSource";
 import { DEFAULT_LANDING_TAB, LANDING_TABS, landingTabStep, type LandingTab } from "~/utils/landingTabs";
-import { queryWithoutStart, readStart } from "~/utils/landingStart";
+import { deepResearchStartRoute, queryWithoutStart, readStart, readStartDraft } from "~/utils/landingStart";
+import { usePageLeaving } from "~/composables/usePageLeaving";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
+import { detailScoreParams } from "~/utils/relevance";
+import {
+  DEFAULT_SORT,
+  clampPage,
+  pageCount,
+  pageSlice,
+  sortResults,
+  type ListView,
+  type PageSize,
+  type SortKey,
+} from "~/utils/resultPaging";
+import { rememberListView, savedListView } from "~/composables/useListView";
 import { SPINNER_SRC } from "~/utils/brand";
 
 // ── 상수 ──────────────────────────────────────────────────
@@ -421,6 +441,8 @@ const apiBase = config.public.apiBase as string;
 const api = useApi();
 const route = useRoute();
 const router = useRouter();
+// 결과를 그린 뒤 기록 저장을 기다리는 사이 상세로 떠나면 늦은 주소 바꾸기가 그 이동을 취소하지 않게
+const { leaving } = usePageLeaving();
 
 // ── 뷰 상태 ───────────────────────────────────────────────
 const view = ref<"landing" | "results" | "detail">("landing");
@@ -450,8 +472,7 @@ let reasonSignal: AbortSignal | null = null;
 const reasonText = computed(() => reasonRaw.value.trim());
 const reasonPending = computed(() => reasonStatus.value === "loading");
 
-// ── 결과 펼치기/접기 ──────────────────────────────────────
-const bookListExpanded = ref(false);
+// ── 추천 패널 펼치기/접기 ─────────────────────────────────
 const aiExpanded = ref(false);
 
 // ── 상세 ──────────────────────────────────────────────────
@@ -509,6 +530,10 @@ function onPlusMode(id: SearchModeId | null) {
   deepResearch.value = id === "deep-research";
 }
 
+// DeepResearch 모드의 예시 연구 카드 재료를 랜딩이 뜰 때 미리 읽어 둔다(앱에서 한 번 — useState). 모드를 켠 뒤에야 읽기 시작하면
+// 응답이 온 뒤에 카드가 서서, 세로 가운데 정렬인 랜딩의 입력창이 사용자가 막 쓰기 시작한 때 비동기로 밀린다(P5 리뷰)
+const { load: loadResearchExamples } = useResearchExamples();
+
 // Newbooks countup
 const newbooksCount = ref(0);
 const NEW_BOOKS_TARGET = 1245;
@@ -538,16 +563,26 @@ function showBookMode() {
 }
 
 // 사이드바 [+ 연구 시작하기](?start=deep-research) — 랜딩의 논문 패널에 딥리서치 모드를 켜고 입력창에 초점을 준다.
-// 결과 화면이었다면 랜딩으로 걷는다. 처리한 뒤 주소에서 start 만 지운다(남기면 새로고침마다 다시 켜진다).
+// 결과 화면이었다면 랜딩으로 걷는다. 처리한 뒤 주소에서 start·draft 를 지운다(남기면 새로고침마다 다시 켜진다).
 // 이미 '/' 에 있어도 쿼리가 바뀌므로 watch 가 같은 길로 받는다
 async function startFromQuery() {
   if (route.path !== "/" || !readStart(route.query)) return;
+  // 소장자료 결과의 [DeepResearch로 이어서 조사하기]가 실은 질문 초안 — 주소에서 지우기 전에 읽는다
+  const draft = readStartDraft(route.query);
   void router.replace({ query: queryWithoutStart(route.query) });
   if (view.value !== "landing") goLanding();
   mode.value = "paper";
-  // 논문 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창에는 초점이 가지 않는다
+  if (draft) currentQuery.value = draft;
+  // 논문 패널이 보인 뒤에 켠다 — 숨은 패널의 입력창에는 초점이 가지 않는다. 초안이 있으면 초점이 글 끝에 간다
   await nextTick();
   plusMenu.value?.activateMode("deep-research");
+}
+
+// 소장자료 결과의 [DeepResearch로 이어서 조사하기] — 결과의 검색어를 메인 입력창(논문 패널)에 채우고 DeepResearch 모드를 켠다.
+// 연구는 시작하지 않는다(고쳐 보내면 기존 흐름). 사이드바 [+ 연구 시작하기]와 같은 랜딩 주소(?start=)로 옮겨 뒤로 가기로 이 결과에
+// 돌아온다. 입력창이 아니라 화면 결과의 검색어(resultQuery)를 싣는다
+function continueAsDeepResearch() {
+  void router.push(deepResearchStartRoute(resultQuery.value));
 }
 
 // tablist 키보드: 좌우·Home·End 로 갈래를 옮기고(자동 선택) 초점도 그 갈래로 따라간다
@@ -566,6 +601,8 @@ onMounted(async () => {
   // 첫 복원을 setup 이 아니라 마운트 뒤에 한다 — 서버가 그린 랜딩과 하이드레이션이 어긋나지 않게
   restoreFromQuery();
   void startFromQuery();
+  // 목록 API 는 브라우저 ID 헤더가 있어야 해서 서버 렌더가 아니라 마운트 뒤에 읽는다
+  void loadResearchExamples();
 
   // Newbooks countup — 신작도서 블록이 숨겨져 있으면(SHOW_MOCKS=false) 보이지 않는 숫자를 돌리지 않는다
   if (SHOW_MOCKS) {
@@ -634,7 +671,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   books.value = [];
   papers.value = [];
   resetReason();
-  bookListExpanded.value = false;
+  resetListView();
   aiExpanded.value = false;
   view.value = "results";
 
@@ -644,6 +681,8 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       body: {
         query,
         mode: "book",
+        // 서버는 top_k 의 3 배를 후보로 훑어 도서가 모인 만큼을 돌려준다 — 10 이어도 16~30권이라 정렬·쪽 이동에 충분하다.
+        // 20(서버 상한)으로 올려도 23~37권뿐이고 응답이 약 1.4s → 2.1s, 본문 2 배라 속도를 우선해 10 으로 둔다(2026-10-13 운영 실측)
         top_k: 10,
         use_rewrite: true,
         use_rerank: true,
@@ -666,7 +705,8 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       : await historyApi.add({ kind: "book", title: query.trim(), params: {}, snapshot });
     if (signal.aborted) return;
     currentHistoryId.value = entry.id;
-    router.replace({ query: { q: query.trim(), h: entry.id } });
+    // 결과를 그린 뒤 저장을 기다리는 사이 상세로 떠났으면 주소를 건드리지 않는다 — 늦은 replace 가 그 이동을 취소한다(usePageLeaving)
+    if (!leaving.value) router.replace({ query: { q: query.trim(), h: entry.id } });
     void streamTopReason(entry.id, query.trim(), signal);
   } catch (e: any) {
     if (signal.aborted) return;
@@ -714,6 +754,7 @@ function goLanding() {
   books.value = [];
   papers.value = [];
   resetReason();
+  resetListView();
   selectedItem.value = null;
   pdfOpen.value = false;
 }
@@ -796,9 +837,10 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   books.value = snap.books as unknown as BookChunkGroup[];
   papers.value = [];
   resetReason();
-  bookListExpanded.value = false;
+  // 상세에서 뒤로 가기·새로고침으로 같은 기록에 돌아왔으면 그때 보던 정렬·개수·쪽을 다시 연다(그 방문 기록의 state). 새로 연 기록은 기본값
+  restoreListView(savedListView());
   aiExpanded.value = false;
-  if (route.query.h !== entry.id || route.query.q !== entry.title) {
+  if (!leaving.value && (route.query.h !== entry.id || route.query.q !== entry.title)) {
     router.replace({ query: { q: entry.title, h: entry.id } });
   }
   // 저장된 추천 이유가 있으면 그대로 보이고 다시 받지 않는다. 없으면(끝나기 전에 떠났거나 실패한 기록, 옛 AI 컬렉션
@@ -831,9 +873,8 @@ watch(
 );
 
 // ── 결과 목록 ─────────────────────────────────────────────
-// 도서는 검색이 준 순서 그대로다. 처음에는 3건만 보이고 나머지는 더보기로 연다.
-// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'
-const visibleCount = 3;
+// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'.
+// 정렬(관련도순·이름순·최신순)·한 쪽 개수·쪽 이동은 이 나머지 목록에만 적용한다 — 추천 1권은 늘 검색이 준 1위다(topBook)
 
 // ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
 const topBook = computed(() => pickTopBook(books.value));
@@ -842,6 +883,53 @@ const topRecommended = computed(() => isRecommendable(topBook.value));
 const topReadEffect = computed(() => readEffectOf(topBook.value));
 const listExcludesPick = computed(() => !!topBook.value && topRecommended.value);
 const listBooks = computed(() => listWithoutPick(books.value, topBook.value, topRecommended.value));
+
+// 기본 한 쪽 개수. 도서 후보는 수십 권이라 10 으로 두면 쪽 이동이 보인다(논문은 후보가 최대 60 편이라 20)
+const BOOK_PAGE_SIZE: PageSize = 10;
+const sortBy = ref<SortKey>(DEFAULT_SORT);
+const pageSize = ref<PageSize>(BOOK_PAGE_SIZE);
+const currentPage = ref(1);
+const listRef = ref<HTMLElement | null>(null);
+
+const sortedBooks = computed(() => sortResults(listBooks.value, sortBy.value));
+const totalPages = computed(() => pageCount(sortedBooks.value.length, pageSize.value));
+const pagedBooks = computed(() => pageSlice(sortedBooks.value, currentPage.value, pageSize.value));
+
+function setSortBy(key: SortKey) {
+  sortBy.value = key;
+  currentPage.value = 1;
+}
+
+function setPageSize(n: PageSize) {
+  pageSize.value = n;
+  currentPage.value = 1;
+}
+
+// 쪽 이동 버튼은 목록 아래에 있다 — 새 쪽은 목록 맨 앞부터 읽게 목록 머리로 올린다
+function goToPage(p: number) {
+  currentPage.value = clampPage(p, sortedBooks.value.length, pageSize.value);
+  void nextTick(() => listRef.value?.scrollIntoView({ block: "start", behavior: "smooth" }));
+}
+
+// 새 검색·랜딩으로 가면 정렬·쪽을 처음으로 돌린다. 한 쪽 개수는 사용자가 고른 대로 둔다(논문 결과와 같다)
+function resetListView() {
+  sortBy.value = DEFAULT_SORT;
+  currentPage.value = 1;
+}
+
+// 저장된 보기가 있으면 그대로, 없으면 기본값. 쪽은 지금 목록 길이 안으로 맞춘다
+function restoreListView(saved: ListView | null) {
+  if (!saved) {
+    resetListView();
+    return;
+  }
+  sortBy.value = saved.sortBy;
+  pageSize.value = saved.pageSize;
+  currentPage.value = clampPage(saved.page, listBooks.value.length, pageSize.value);
+}
+
+// 보던 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 주소에는 싣지 않는다(논문 결과도 그렇다). 결과가 떠 있을 때만
+rememberListView(sortBy, pageSize, currentPage, () => view.value === "results");
 
 function resetReason() {
   reasonRaw.value = "";
@@ -926,23 +1014,25 @@ function paperDetailUrl(bookId: string, extra: Record<string, string> = {}): str
   return detailUrl(bookId, { kind: "search", h: null, q: resultQuery.value }, undefined, extra);
 }
 
+// 소장자료 상세 주소의 쿼리 — q 는 입력창이 아니라 화면 결과의 검색어다(함께 넘기는 h 와 같은 검색을 가리키게). 상세에서도 사이드바가
+// 이 기록을 강조하고 뒤로가기가 재검색 없이 복원되게 h 도 싣는다. 점수(종합·제목·내용)는 논문 쪽과 같은 함수(detailScoreParams)로 싣는다 —
+// 종합 점수는 없어도 0 으로 늘 싣는다(관련도 알약이 보이게)
+function bookDetailParams(item: BookChunkGroup, extra: Record<string, string> = {}): URLSearchParams {
+  const scores = detailScoreParams(item);
+  const params = new URLSearchParams({ q: resultQuery.value, score: scores.score ?? "0" });
+  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
+  if (scores.title_score !== undefined) params.set("title_score", scores.title_score);
+  if (scores.content_score !== undefined) params.set("content_score", scores.content_score);
+  for (const [key, value] of Object.entries(extra)) params.set(key, value);
+  return params;
+}
+
 function openDetail(item: BookChunkGroup) {
   if (mode.value === "paper") {
     navigateTo(paperDetailUrl(item.book_id));
     return;
   }
-  // q 는 입력창이 아니라 화면 결과의 검색어다 — 함께 넘기는 h 와 같은 검색을 가리키게
-  const params = new URLSearchParams({
-    q: resultQuery.value,
-    score: String(item.best_score || 0),
-  });
-  // 상세에서도 사이드바가 이 기록을 강조하고, 뒤로가기가 재검색 없이 복원되게
-  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
-  if (item.title_score !== undefined)
-    params.set("title_score", String(item.title_score));
-  if (item.content_score !== undefined)
-    params.set("content_score", String(item.content_score));
-  navigateTo(`/books/${item.book_id}?${params}`);
+  navigateTo(`/books/${item.book_id}?${bookDetailParams(item)}`);
 }
 
 // 이 책과 대화하기 → detail + chat 자동 오픈
@@ -951,17 +1041,7 @@ function openDetailWithChat(item: BookChunkGroup) {
     navigateTo(paperDetailUrl(item.book_id, { chat: "1" }));
     return;
   }
-  const params = new URLSearchParams({
-    q: resultQuery.value,
-    score: String(item.best_score || 0),
-    chat: "1",
-  });
-  if (currentHistoryId.value) params.set("h", currentHistoryId.value);
-  if (item.title_score !== undefined)
-    params.set("title_score", String(item.title_score));
-  if (item.content_score !== undefined)
-    params.set("content_score", String(item.content_score));
-  navigateTo(`/books/${item.book_id}?${params}`);
+  navigateTo(`/books/${item.book_id}?${bookDetailParams(item, { chat: "1" })}`);
 }
 
 function openRelatedDetail(rel: any) {

@@ -65,6 +65,15 @@ class TestRevalidate:
         assert out["checks"]["numbers"] == ["300"]
         assert (out["id"], out["state"], out["gen_id"]) == ("p1", "edited", 41)
 
+    def test_user_text_keeps_figure_sentences_the_generation_check_drops(self):
+        # 수치 자리 밖 [F#] 문장 지우기(markers.drop_misplaced_figures)는 생성 글에만 건다 — 사용자가 쓴 글은 그대로 둔다
+        text = "연구는 [F1] 이다 [E1]. 논문 수는 [F1]건이다."
+
+        (out,) = revalidate(SECTION, [{**_p("p1", "", "edited"), "text": text}])
+
+        assert out["text"] == text
+        assert (out["checks"]["dropped_f"], out["checks"]["unmarked"]) == (0, 1)
+
     def test_paragraph_left_empty_is_removed(self):
         assert revalidate(SECTION, [_p("p1", "[E9]", "authored")]) == []
 
@@ -84,3 +93,14 @@ class TestRevalidate:
         assert out[1] == {**stored[1], "state": "accepted"}
         assert (out[2]["text"], out[2]["state"], out[2]["cites"]) == ("셋째 문단을 고쳤다 [E2].", "edited", ["KCI_B"])
         assert (out[2]["checks"]["dropped"], out[2]["checks"]["dropped_f"], out[2]["checks"]["softened"]) == (1, 0, 0)
+
+    def test_a_user_edited_gap_claim_is_softened_again(self):
+        """06e(06b 이월 §7-13) — 사용자가 고친 글도 생성 때와 같은 검사(check_paragraph)를 다시 탄다. 연구 공백 단정을
+        써 넣어도 공백 후보 투로 바뀌고 softened 로 센다(spec 의 'paragraph_edit.py:192-209' 는 지금 revalidate)."""
+        paragraphs = [{**_p("p1", "", "edited"), "text": "소장 코퍼스를 분석한 결과 관련 연구가 충분하지 않음을 확인했다 [E1]."}]
+
+        (out,) = revalidate(SECTION, paragraphs)
+
+        assert out["text"] == ("소장 코퍼스를 분석한 결과 관련 연구가 충분하지 않은 것으로 보인다"
+                               "(소장 코퍼스에서 확인하지 않은 공백 후보) [E1].")
+        assert (out["cites"], out["checks"]["softened"]) == (["KCI_A"], 1)

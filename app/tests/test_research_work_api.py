@@ -28,21 +28,23 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from history_sqlite import (
-    SID_A, SID_B, AsyncSessionOverSync, add_generation, add_research_job, add_work, make_engine,
+    SID_A, SID_B, AsyncSessionOverSync, add_book, add_generation, add_research_job, add_work, make_engine,
 )
 from models.history import HistoryItem
 from models.research import ResearchJob, ResearchStep
 from models.research_work import (
     WORK_PHASES, ResearchGeneration, ResearchReading, ResearchTopic, ResearchWork,
 )
+from services.research_work.reading_views import reading_view
 from services.research_work.seeds import topic_input
-from services.research_work.shapes import PHASE_ORDER
+from services.research_work.shapes import MIN_READING_FOR_OUTLINE, PHASE_ORDER, READING_PRESELECT
 
 A = {"x-session-id": str(SID_A)}
 B = {"x-session-id": str(SID_B)}
 POSITION = 3                     # 가짜 queue_info 가 늘 돌려주는 대기 순번
 ETA = 90                         # 가짜 queue_info 가 늘 돌려주는 예상 시간(초)
 PROGRESS0 = {"topics": 0, "reading": 0, "sections": 0, "sections_total": 6}   # 카드·담음·절이 없는 연구
+PROGRESS2 = {**PROGRESS0, "reading": 2}   # SNAPSHOT 으로 이어간 연구 — 채택 근거 두 편을 미리 담는다
 
 SNAPSHOT = {
     "question": "청소년 독서 격차", "params": {}, "corpus_range": None,
@@ -252,6 +254,12 @@ def _set(engine, model, key, **values) -> None:
         conn.execute(sa.update(table).where(pk == key).values(**values))
 
 
+def _set_reading(engine, jid: uuid.UUID, cnts_id: str, **values) -> None:
+    table = ResearchReading.__table__
+    with engine.begin() as conn:
+        conn.execute(sa.update(table).where(table.c.work_id == jid, table.c.cnts_id == cnts_id).values(**values))
+
+
 def _frames(body: str) -> list[dict]:
     return [json.loads(line[len("data: "):]) for line in body.splitlines()
             if line.startswith("data: ")]
@@ -263,7 +271,7 @@ def _frames(body: str) -> list[dict]:
 class TestContinue:
     def test_creates_the_work_its_candidates_and_one_concepts_generation(self, api, monkeypatch):
         monkeypatch.setattr(api.router, "concepts_input",
-                            lambda job: {"question": job.question, "marker": 1})
+                            lambda job, paper_keywords=None: {"question": job.question, "marker": 1})
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
 
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
@@ -272,34 +280,42 @@ class TestContinue:
         (gen,) = _rows(api.engine, ResearchGeneration)
         assert res.json() == {
             "id": str(jid), "phase": "topics", "concepts": [], "memo": None, "is_example": False,
-            "progress": PROGRESS0, "topic_id": None, "corpus": None,
+            "progress": PROGRESS2, "topic_id": None, "corpus": None,
             "generations": [{"id": gen["id"], "kind": "concepts", "target": None,
                              "status": "queued", "model": None, "error": None,
                              "position": POSITION, "eta_sec": ETA, "others_ahead": False}],
+            "concept_candidates": None,
         }
         (work,) = _rows(api.engine, ResearchWork)
         assert work["owner_sid"] == str(SID_A) and work["concept_members"] == {}
+        # 채택 근거가 READING_PRESELECT 편보다 적으면 모두 미리 담는다(사용자 결정 2026-10-13)
         assert [(r["cnts_id"], r["state"], r["origin"]) for r in _rows(api.engine, ResearchReading)] == [
-            ("C1", "candidate", "evidence"), ("C2", "candidate", "evidence"),
+            ("C1", "in", "evidence"), ("C2", "in", "evidence"),
         ]
-        assert _rows(api.engine, ResearchReading, cnts_id="C1")[0]["origin_ref"]["rank"] == {"0": 1}
+        ref = _rows(api.engine, ResearchReading, cnts_id="C1")[0]["origin_ref"]
+        assert ref["rank"] == {"0": 1} and ref["preselected"] is True
         assert (gen["work_id"], gen["kind"], gen["priority"], gen["status"]) == (
             jid, "concepts", 10, "queued")
         assert gen["input"] == {"question": "청소년 독서 격차", "marker": 1}
         assert api.dispatch.calls == 1
-        assert api.events == [(str(jid), "work", {"phase": "topics", "progress": PROGRESS0})]
+        assert api.events == [(str(jid), "work", {"phase": "topics", "progress": PROGRESS2})]
 
     def test_concepts_input_reads_the_job(self, api):
-        # 가짜 없이 — 핵심 개념 생성 입력이 잡 행(질문·계획·보고서)에서 만들어지는지
+        # 가짜 없이 — 키워드 생성 입력이 잡 행(질문·계획)과 채택 논문(C1·C2)의 소장 키워드에서 만들어지는지.
+        # 653 키워드(구분자로 이은 글)와 추출 키워드(extra.keywords)를 합쳐 논문 수로 센다 — 같은 수면 후보 순서(C1 먼저)
+        add_book(api.engine, "C1", keyword="독서 격차; 학교 도서관")
+        add_book(api.engine, "C2", extra={"keywords": ["학교 도서관", "가정 환경", "연구 동향"]})
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
 
         assert api.client.post(f"/api/research/{jid}/work/continue", headers=A).status_code == 200
 
         (gen,) = _rows(api.engine, ResearchGeneration)
+        paper = [{"text": "학교 도서관", "n": 2}, {"text": "독서 격차", "n": 1}, {"text": "가정 환경", "n": 1}]
         same_job = SimpleNamespace(id=jid, question="청소년 독서 격차", plan=["독서 격차의 원인"],
                                    report=REPORT, state_snapshot=SNAPSHOT, params={})
-        assert gen["input"] == json.loads(json.dumps(api.router.concepts_input(same_job)))
+        assert gen["input"] == json.loads(json.dumps(api.router.concepts_input(same_job, paper_keywords=paper)))
         assert gen["input"]["question"] == "청소년 독서 격차"
+        assert gen["input"]["paper_keywords"] == paper
 
     def test_second_continue_adds_nothing(self, api):
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
@@ -313,6 +329,18 @@ class TestContinue:
         assert len(_rows(api.engine, ResearchReading)) == 2
         assert len(_rows(api.engine, ResearchGeneration)) == 1
         assert api.dispatch.calls == 1 and len(api.events) == 1
+
+    def test_second_continue_keeps_what_the_user_changed(self, api):
+        # 이미 이어간 연구에는 다시 미리 담지 않는다 — 사용자가 뺀(out) 행·되돌린 후보는 그대로
+        jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT, plan=["독서 격차의 원인"])
+        api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+        _set_reading(api.engine, jid, "C1", state="out")
+        _set_reading(api.engine, jid, "C2", state="candidate")
+
+        assert api.client.post(f"/api/research/{jid}/work/continue", headers=A).status_code == 200
+
+        assert {r["cnts_id"]: r["state"] for r in _rows(api.engine, ResearchReading)} == {
+            "C1": "out", "C2": "candidate"}
 
     def test_without_a_browser_id_the_owner_stays_empty(self, api):
         jid = _job(api.engine, snapshot=SNAPSHOT, report=REPORT)
@@ -329,6 +357,41 @@ class TestContinue:
         assert _rows(api.engine, ResearchReading) == []
         assert len(_rows(api.engine, ResearchGeneration)) == 1
 
+    def test_top_eight_adopted_papers_are_picked_in_advance(self, api):
+        # 채택 근거 열 편 — 하위질문 0 에 P01~P06(순위 1~6), 하위질문 1 에 P07~P10(순위 1~4)과 P02(순위 5).
+        # 읽기 목록 순서(하위질문 안 가장 앞선 순위 → cnts_id)로 앞 여덟 편을 담음으로 넣는다
+        subqs = [
+            {"idx": 0, "text": "독서 격차의 원인", "evidence_ids": [f"E{n}" for n in range(1, 7)],
+             "verdict": "sufficient", "evidence_chunks": {}, "chunk_scores": {}, "rounds": []},
+            {"idx": 1, "text": "독서 격차의 영향", "evidence_ids": ["E7", "E8", "E9", "E10", "E2"],
+             "verdict": "sufficient", "evidence_chunks": {}, "chunk_scores": {}, "rounds": []},
+        ]
+        evidence = {f"E{n}": {"cnts_id": f"P{n:02d}", "meta": {"title": f"논문 {n}"}, "chunks": []}
+                    for n in range(1, 11)}
+        snapshot = {**SNAPSHOT, "subquestions": subqs, "evidence": evidence}
+        report = {**REPORT, "stats": {"papers_reviewed": 40, "evidence_adopted": 10}}
+        jid = _job(api.engine, snapshot=snapshot, report=report, plan=["독서 격차의 원인", "독서 격차의 영향"])
+
+        res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+
+        assert res.status_code == 200
+        rows = _rows(api.engine, ResearchReading)
+        picked = {"P01", "P07", "P02", "P08", "P03", "P09", "P04", "P10"}
+        assert {r["cnts_id"]: r["state"] for r in rows} == {
+            **{c: "in" for c in picked}, "P05": "candidate", "P06": "candidate"}
+        assert {r["cnts_id"] for r in rows if r["origin_ref"].get("preselected") is True} == picked
+        # 진행 요약·work 이벤트의 담음 수, 읽기 목록 깔때기 — 담음 여덟 편이면 [보고서 만들기](담음 5편 이상) 조건을 넘는다
+        progress = {**PROGRESS0, "reading": READING_PRESELECT}
+        assert res.json()["progress"] == progress and _rows(api.engine, ResearchWork)[0]["progress"] == progress
+        assert api.events == [(str(jid), "work", {"phase": "topics", "progress": progress})]
+        job = SimpleNamespace(plan=["독서 격차의 원인", "독서 격차의 영향"], state_snapshot=snapshot, report=report)
+        view = reading_view(SimpleNamespace(topic_id=None), job, [SimpleNamespace(**r) for r in rows], {})
+        assert view["funnel"] == {"reviewed": 40, "adopted": 10, "candidates": 10, "picked": READING_PRESELECT}
+        assert view["funnel"]["picked"] >= MIN_READING_FOR_OUTLINE
+        assert view["preselected"] == READING_PRESELECT
+        assert [i["cnts_id"] for i in view["items"] if i["state"] == "in"] == [
+            "P01", "P07", "P02", "P08", "P03", "P09", "P04", "P10"]
+
     @pytest.mark.parametrize("status", ["awaiting_approval", "queued", "running", "failed", "canceled"])
     def test_only_a_completed_job_can_be_continued(self, api, status):
         jid = _job(api.engine, status=status, snapshot=SNAPSHOT)
@@ -336,6 +399,8 @@ class TestContinue:
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
 
         assert res.status_code == 409
+        # 화면이 detail 을 그대로 보인다(researchErrorMessage 의 409) — 화면 표기 DeepResearch(round08 사용자 결정)
+        assert res.json()["detail"] == "완료된 DeepResearch만 이어갈 수 있습니다"
         assert _rows(api.engine, ResearchWork) == []
         assert api.dispatch.calls == 0
 
@@ -365,7 +430,9 @@ class TestContinue:
 
 
 class TestContinueSeeds:
-    def test_report_seeds_become_four_topics_each_with_one_card_generation(self, api):
+    def test_report_seeds_become_four_topics_without_card_generations_yet(self, api):
+        # 06e D23 '카드 시점' — 주제 행(씨앗 자리 slot 1~4)은 이어가기 때, 카드 생성은 키워드가 정해진 뒤 키워드 생성의
+        # 반영(apply_result)·취소(cancel)가 고른 키워드로 넣는다(topic_card.enqueue_seed_cards)
         jid = _seed_job(api.engine)
 
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
@@ -377,10 +444,7 @@ class TestContinueSeeds:
         assert all(t["corpus_snapshot"] == CORPUS and t["parent_id"] is None for t in topics)
         gens = _rows(api.engine, ResearchGeneration)
         assert [(g["kind"], g["target"], g["priority"], g["status"]) for g in gens] == [
-            ("concepts", None, 10, "queued"),
-            *[("topic_card", str(t["id"]), 10, "queued") for t in topics]]
-        for topic, gen in zip(topics, gens[1:]):
-            assert gen["input"] == topic_input("청소년 독서 격차", topic["seed"], SEED_REPORT, topic["id"])
+            ("concepts", None, 10, "queued")]
         (work,) = _rows(api.engine, ResearchWork)
         assert (work["corpus_snapshot"], work["progress"], work["topic_id"]) == (CORPUS, PROGRESS0, None)
         body = res.json()
@@ -398,7 +462,7 @@ class TestContinueSeeds:
 
         assert second.status_code == 200 and second.json() == first.json()
         assert len(_rows(api.engine, ResearchTopic)) == 4
-        assert len(_rows(api.engine, ResearchGeneration)) == 5
+        assert len(_rows(api.engine, ResearchGeneration)) == 1
         assert api.dispatch.calls == 1 and len(api.events) == 1
 
     def test_a_work_continued_before_06b_gets_no_seed_cards(self, api):
@@ -421,16 +485,19 @@ class TestContinueSeeds:
         assert [g["kind"] for g in _rows(api.engine, ResearchGeneration)] == ["concepts"]
         assert _rows(api.engine, ResearchWork)[0]["corpus_snapshot"] is None
 
-    def test_a_failure_while_adding_cards_leaves_nothing_behind(self, api, monkeypatch):
-        # 씨앗 카드까지 한 커밋이다 — 중간에 실패하면 연구 행도 남지 않아 다음 이어가기가 처음부터 만든다
-        def _broken(*args, **kwargs):
-            raise RuntimeError("카드 입력을 만들지 못했다")
+    def test_a_failure_while_adding_topics_leaves_nothing_behind(self, api):
+        # 주제 행까지 한 커밋이다 — 주제 행을 넣다 실패하면 연구 행·후보·키워드 생성도 남지 않아 다음 이어가기가 처음부터 만든다
+        def _broken(conn, cursor, statement, params, context, executemany):
+            if statement.startswith("INSERT INTO research_topics"):
+                raise RuntimeError("주제 행을 넣지 못했다")
 
-        monkeypatch.setattr(api.router, "topic_input", _broken)
         jid = _seed_job(api.engine)
-
-        with pytest.raises(RuntimeError):
-            api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+        sa.event.listen(api.engine, "before_cursor_execute", _broken)
+        try:
+            with pytest.raises(RuntimeError):
+                api.client.post(f"/api/research/{jid}/work/continue", headers=A)
+        finally:
+            sa.event.remove(api.engine, "before_cursor_execute", _broken)
 
         assert _rows(api.engine, ResearchWork) == []
         assert _rows(api.engine, ResearchTopic) == [] and _rows(api.engine, ResearchGeneration) == []
@@ -474,6 +541,33 @@ class TestGetWork:
         assert {g["id"]: (g["position"], g["eta_sec"], g["others_ahead"]) for g in body["generations"]} == {
             queued: (POSITION, ETA, False), done: (None, None, False)}
 
+    def test_carries_the_latest_done_concept_candidates(self, api):
+        # 끝난 생성은 최근 RECENT_FINISHED 건만 싣는다 — 키워드 후보는 그와 따로, 가장 새 done 키워드 생성에서 읽는다
+        jid = _work_job(api.engine, concepts=["독서 격차"])
+        old = [{"text": "옛 후보", "source": "llm", "n": 0}]
+        new = [{"text": "독서 격차", "source": "both", "n": 3}, {"text": "학교 도서관", "source": "paper", "n": 2}]
+        add_generation(api.engine, jid, status="done", output={"concepts": ["옛 후보"], "candidates": old})
+        add_generation(api.engine, jid, status="done", output={"concepts": ["독서 격차"], "candidates": new})
+        for _ in range(11):
+            add_generation(api.engine, jid, kind="topic_card", status="done", target="7")
+        add_generation(api.engine, jid, status="queued")             # 열린 키워드 생성(다시 부름)은 보지 않는다
+
+        body = api.client.get(f"/api/research/{jid}/work").json()
+
+        assert body["concept_candidates"] == new
+        # 최근 끝난 생성 10건을 카드 생성이 채워 키워드 생성은 목록에 없다 — 그래도 후보는 온다
+        assert [g["kind"] for g in body["generations"] if g["status"] == "done"] == ["topic_card"] * 10
+
+    def test_an_old_concepts_output_without_candidates_is_null(self, api):
+        # 06e 전 키워드(개념) 생성의 output 은 {"concepts": [...]} 뿐이다 — 화면은 concepts 를 고른 칩으로 그린다
+        jid = _work_job(api.engine, concepts=["독서 격차"])
+        add_generation(api.engine, jid, status="done", output={"concepts": ["독서 격차"], "attempts": []})
+        add_generation(api.engine, jid, status="failed")
+        no_gen = _work_job(api.engine)
+
+        assert api.client.get(f"/api/research/{jid}/work").json()["concept_candidates"] is None
+        assert api.client.get(f"/api/research/{no_gen}/work").json()["concept_candidates"] is None
+
 
 class TestPatchWork:
     def test_cleans_concepts_and_clears_membership_when_they_change(self, api):
@@ -507,7 +601,7 @@ class TestPatchWork:
         res = api.client.patch(f"/api/research/{jid}/work", json={"concepts": ["청소년"]})
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "핵심 개념을 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
+        assert res.json()["detail"] == "키워드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
         assert _rows(api.engine, ResearchWork)[0]["concepts"] == ["독서 격차"]
 
     def test_memo_and_same_concepts_pass_while_concepts_are_being_made(self, api):
@@ -769,6 +863,33 @@ class TestCancelGeneration:
         jid = _work_job(api.engine, is_example=True)
         gid = add_generation(api.engine, jid)
         assert api.client.post(f"/api/research/{jid}/generations/{gid}/cancel").status_code == 409
+
+    def test_canceling_concepts_queues_the_seed_cards_without_keywords(self, api):
+        # 06e D23 — 사용자가 키워드 생성을 취소하면 같은 트랜잭션에서 씨앗 카드를 키워드 없이 넣는다. 워커 반영과 달리
+        # 화면이 다시 읽을 계기(concepts done)가 없어 커밋 뒤 디스패치와 카드마다 queued 이벤트를 보낸다(06e 정함 25)
+        jid = _seed_job(api.engine)
+        assert api.client.post(f"/api/research/{jid}/work/continue", headers=A).status_code == 200
+        (concepts,) = _rows(api.engine, ResearchGeneration)
+        api.events.clear()
+        api.dispatch.calls = 0
+
+        res = api.client.post(f"/api/research/{jid}/generations/{concepts['id']}/cancel")
+
+        assert res.status_code == 200 and res.json() == {"gen_id": concepts["id"], "status": "canceled"}
+        topics = _rows(api.engine, ResearchTopic)
+        first, *cards = _rows(api.engine, ResearchGeneration)
+        assert first["status"] == "canceled"
+        assert [(c["kind"], c["target"], c["status"]) for c in cards] == [
+            ("topic_card", str(t["id"]), "queued") for t in topics]
+        for topic, card in zip(topics, cards):
+            assert card["input"] == topic_input("청소년 독서 격차", topic["seed"], SEED_REPORT, topic["id"], keywords=[])
+        assert api.dispatch.calls == 1
+        assert api.events == [
+            (str(jid), "generation", {"gen_id": concepts["id"], "gen_kind": "concepts", "target": None,
+                                      "status": "canceled", "model": None, "result": None}),
+            *[(str(jid), "generation", {"gen_id": c["id"], "gen_kind": "topic_card", "target": c["target"],
+                                        "status": "queued", "model": None, "result": None}) for c in cards],
+        ]
 
 
 class TestRetryGeneration:
@@ -1119,7 +1240,7 @@ class TestEndToEnd:
 
         gen_id, payload, closed = asyncio.run(_work_once())
 
-        assert closed and payload == {"concepts": ["독서 격차", "청소년"]}
+        assert closed and payload == {"concepts": ["독서 격차", "청소년"], "cards": []}
         assert len(models) == 1
         work = api.client.get(f"/api/research/{jid}/work").json()
         assert work["concepts"] == ["독서 격차", "청소년"]

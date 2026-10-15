@@ -2,6 +2,7 @@
 import type {
   AdoptedPaper,
   AdoptedPaperView,
+  CandidatesEvent,
   CountersPayload,
   CountersView,
   CritiqueEvent,
@@ -17,6 +18,7 @@ import type {
   ResearchStatus,
   ResearchStepRow,
   ResearchView,
+  ReviewingView,
   RoundSource,
   RoundView,
   SearchEvent,
@@ -68,10 +70,13 @@ const EMPTY_SYNTH: SynthView = {
 const SECTION_RANK: Record<SynthSectionStatus, number> = { running: 1, done: 2, failed: 2 };
 const SOURCE_ORDER: readonly RoundSource[] = ["rounds", "trail", "queries"];
 
+// 연구 화면 머리의 상태 — 사이드바 단계 글(sidebarResearch.statusStageLine)·큰 막대의 단계 칩·글줄(researchProgress)과 같은 말을
+// 쓴다: 단계 이름(계획·탐색·보고서 작성) + '중', 멈춰 기다리면 '승인 대기 중'·'순서 대기 중'(사용자 결정 2026-10-14 — 화면마다
+// '계획 수립 중'·'탐색 중'·'대기열'·'대기 중'·'확인 대기'로 달라 어지러웠다)
 const PHASE_LABEL: Record<ResearchPhase, string> = {
-  planning: "계획 수립 중",
-  awaiting: "승인 대기",
-  queued: "대기열",
+  planning: "계획 중",
+  awaiting: "승인 대기 중",
+  queued: "순서 대기 중",
   exploring: "탐색 중",
   synthesizing: "보고서 작성 중",
   completed: "완료",
@@ -101,10 +106,6 @@ function isWaiting(status: ResearchStatus): boolean {
 function queueFor(status: ResearchStatus, q: QueueInfo | null | undefined): QueueView | null {
   return q && isWaiting(status) ? { ahead: q.ahead, etaSec: q.eta_sec ?? null } : null;
 }
-
-// 대기 순번 문구는 utils/queueLine.ts 로 옮겼다(연구 어시스턴트의 생성 대기 문구와 한곳에) — 호출처·기존 테스트가
-// 그대로 쓰게 여기서 다시 내보낸다
-export { queueLine } from "~/utils/queueLine";
 
 // 승인·재시도 응답이 실은 순번(api/research.py approve·retry) — 첫 하트비트(15초)를 기다리지 않고 바로 보인다.
 // 응답보다 스트림이 먼저 대기를 벗어났으면(워커가 바로 집음 — applyApproval 이 status 를 되돌리지 않는 경우)
@@ -172,6 +173,22 @@ export function subqStatusLabel(sq: SubqView): string {
   }
 }
 
+// 회차 줄의 미세 상태 — 도는 하위질문의 마지막 회차에만 단다. 검색어가 있고 판정이 아직 없으면 자기점검(LLM)을
+// 기다리는 중이고, 판정이 다음 검색어를 냈으면 그 검색어로 다시 찾는 중이다(다음 회차의 검색이 오면 그 회차가 마지막이
+// 된다). 끝난 하위질문·앞 회차·재검색 없이 판정이 난 회차는 적지 않는다. 하위질문 줄의 상태(subqStatusLabel)는
+// PlanCard 도 읽으므로 그대로 두고 회차 줄에만 단다. 단계(phase)를 넘기면 탐색 중일 때만 단다 — 취소·실패 이벤트는
+// 잡 상태만 바꾸고 돌던 하위질문을 running 으로 두므로(stopPoint 가 '여기서 멈췄습니다'로 짚는 자리) 하위질문만 보면
+// 멈춘 잡에 '자기점검 중'·'재검색 중'이 남는다. 진행 패널의 강조 카드(phase === 'exploring')와 같은 규칙이다
+export function roundStatusLabel(sq: SubqView, r: RoundView, phase?: ResearchPhase): string | null {
+  if (phase !== undefined && phase !== "exploring") return null;
+  if (sq.status !== "running") return null;
+  const last = sq.rounds[sq.rounds.length - 1];
+  if (!last || last.round !== r.round) return null;
+  if (r.verdict === null && r.query) return "자기점검 중";
+  if (r.nextQuery) return "재검색 중";
+  return null;
+}
+
 export function synthProgress(view: ResearchView): { current: number; total: number } {
   const { total, sections, status } = view.synth;
   if (!total) return { current: 0, total: 0 };
@@ -213,9 +230,8 @@ export function sectionGapToRecover(view: ResearchView, recovered: string | null
 export function stopPoint(view: ResearchView): StopPoint | null {
   if (view.status !== "failed" && view.status !== "canceled") return null;
   if (view.synth.status !== null || view.stage === "explored") return { kind: "synth" };
-  const since = attemptStart(view.steps);
-  // 행 없이 라이브 search 이벤트로만 도는 하위질문(seq 없음)도 이번 시도의 것이다
-  const running = view.subqs.find((s) => s.status === "running" && (s.seq === null || s.seq >= since));
+  const since = exploreAttemptStart(view.subqs);
+  const running = view.subqs.find((s) => s.status === "running" && !fromEarlierAttempt(s, since));
   if (running) return { kind: "subq", idx: running.idx, started: true, error: null };
   const opened = view.subqs.filter((s): s is OpenedSubq => s.seq !== null && s.seq >= since);
   const last = opened.reduce<OpenedSubq | undefined>((a, s) => (a && a.seq > s.seq ? a : s), undefined);
@@ -231,9 +247,16 @@ export function stopPoint(view: ResearchView): StopPoint | null {
   return next ? { kind: "subq", idx: next.idx, started: false, error: null } : { kind: "synth" };
 }
 
-// 탐색은 시도마다 idx 0 부터 다시 돈다 — 하위질문 0 의 search 행 중 가장 늦은 것이 이번 시도의 시작이다
-function attemptStart(steps: ResearchStepRow[]): number {
-  return latestBySubq(steps, "search").get(0)?.seq ?? Number.NEGATIVE_INFINITY;
+// 탐색은 시도마다 idx 0 부터 다시 돈다 — 하위질문 0 의 seq(그 search 행 중 가장 늦은 것 — rebuild)가 이번 시도의
+// 시작이다. 멈춘 지점(stopPoint)과 진행 막대(researchProgress)가 같은 규칙으로 이번 시도의 행을 가른다
+export function exploreAttemptStart(subqs: readonly SubqView[]): number {
+  return subqs.find((s) => s.idx === 0)?.seq ?? Number.NEGATIVE_INFINITY;
+}
+
+// 이번 시도가 아직 닿지 않아 이전 시도의 행(done·failed 와 그 오류)이 남은 하위질문 — 그 행의 seq 는 이번 시도의 시작보다
+// 작다. 행 없이 라이브 search 이벤트로만 도는 하위질문(seq 없음)은 이번 시도의 것이다
+export function fromEarlierAttempt(sq: Pick<SubqView, "seq">, since: number): boolean {
+  return sq.seq !== null && sq.seq < since;
 }
 
 export function initialResearchView(job: ResearchJob): ResearchView {
@@ -274,7 +297,10 @@ export function refreshView(prev: ResearchView | null, job: ResearchJob): Resear
     ? fresh.counters
     : reconcileCounters(prev.counters, prev.steps, fresh.counters, fresh.steps);
   const highlight = merged.status === "running" ? (prev.highlight ?? latestHighlight(merged.subqs)) : null;
-  return { ...merged, counters, highlight };
+  // 끝난 잡은 스트림이 닫혀 점검이 더 오지 않는다 — 앞 화면이 잇던 '검토 중' 후보를 남기지 않는다(재연결 사이에 끝난
+  // 잡은 종료 이벤트도 snapshot 도 오지 않고 이 GET 으로만 맞춘다)
+  const settled = isTerminalStatus(merged.status) ? clearReviewing(merged) : merged;
+  return { ...settled, counters, highlight };
 }
 
 export function withPlan(view: ResearchView, plan: string[]): ResearchView {
@@ -313,16 +339,19 @@ export function applyResearchEvent(view: ResearchView, event: ResearchEvent): Re
       return applySearch(view, event);
     case "critique":
       return applyCritique(view, event);
+    case "candidates":
+      return applyCandidates(view, event);
     case "counters":
       return { ...view, counters: countersFromPayload(event) };
     case "synth":
       return { ...view, synth: applySynth(view.synth, event) };
+    // 끝난 잡은 스트림이 닫혀 점검이 더 오지 않는다 — '검토 중' 후보를 남기지 않는다
     case "done":
-      return { ...view, status: "completed", highlight: null, queue: null };
+      return { ...clearReviewing(view), status: "completed", highlight: null, queue: null };
     case "failed":
-      return { ...view, status: "failed", lastError: event.error ?? view.lastError, highlight: null, queue: null };
+      return { ...clearReviewing(view), status: "failed", lastError: event.error ?? view.lastError, highlight: null, queue: null };
     case "canceled":
-      return { ...view, status: "canceled", highlight: null, queue: null };
+      return { ...clearReviewing(view), status: "canceled", highlight: null, queue: null };
     case "queue":
       // 서버는 대기 중인 잡에만 보낸다 — 대기를 벗어난 화면에 늦게 온 순번은 싣지 않는다
       return isWaiting(view.status) ? { ...view, queue: { ahead: event.ahead, etaSec: event.eta_sec ?? null } } : view;
@@ -348,7 +377,9 @@ function applySnapshot(view: ResearchView, event: SnapshotEvent): ResearchView {
     }
   }
   if (!next.plan.length) next.plan = planFromSteps(next.steps);
-  const rebuilt = rebuild(next);
+  // 스냅숏은 재접속·상태가 바뀔 때 온다 — 탐색 후보는 저장되지 않아 다시 오지 않으므로 '검토 중'은 지우고 저장된 장부만
+  // 그린다. 지나간 후보는 점검의 채택·뺌으로 이미 보인다
+  const rebuilt = clearReviewing(rebuild(next));
   if (rebuilt.highlight || rebuilt.status !== "running") return rebuilt;
   return { ...rebuilt, highlight: latestHighlight(rebuilt.subqs) };
 }
@@ -404,8 +435,9 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
       flagged: event.flagged ?? null,
       adoptedPapers: (event.adopted_papers ?? []).map(toAdoptedPaperView),
     };
+    // 이 하위질문의 '검토 중' 후보는 이 점검으로 채택·뺌이 정해졌다 — 지운다
     return {
-      ...sq,
+      ...withoutReviewing(sq),
       rounds: upsertRound(sq.rounds, entry),
       verdict: event.verdict,
       note: event.note,
@@ -417,6 +449,20 @@ function applyCritique(view: ResearchView, event: CritiqueEvent): ResearchView {
     ? { subqIdx: event.subq_idx, round, note: event.note, nextQuery: event.next_query }
     : next.highlight;
   return { ...next, highlight };
+}
+
+// 워커의 탐색 후보(candidates) — 회차마다 검색 뒤·자기점검 전에 한 번 온다. 그 하위질문의 '검토 중' 후보를 세우고(앞 후보는
+// 갈음한다), 같은 하위질문의 점검·그 회차 판정이 실린 진행 저장·그 하위질문 단계의 닫힘(done·failed)·snapshot·잡 종료가
+// 지운다. 빈 후보(papers: [])는
+// 갈음 = 비움이다 — 점검을 놓친 채 다음 회차가 빈 후보로 와도 앞 회차의 '검토 중'이 남지 않는다. updateSubq 는 모르는
+// 번호에 빈 하위질문을 덧붙이므로 빈 후보는 그 하위질문에 검토 중이 있을 때만 고친다(유령 하위질문을 만들지 않는다)
+function applyCandidates(view: ResearchView, event: CandidatesEvent): ResearchView {
+  if (!event.papers.length) {
+    const sq = view.subqs.find((s) => s.idx === event.subq_idx);
+    return sq?.reviewing ? updateSubq(view, event.subq_idx, withoutReviewing) : view;
+  }
+  const reviewing: ReviewingView = { round: event.round ?? null, papers: event.papers.map(toExcludedPaperView) };
+  return updateSubq(view, event.subq_idx, (sq) => ({ ...sq, reviewing }));
 }
 
 // 다듬은 절·근거는 절이 끝날 때 synth 이벤트로 한 번만 온다 — 알리는 step 이벤트는 그것을 뺀
@@ -494,19 +540,27 @@ function buildSubq(
   if (source === "none" && rounds.length) source = "rounds";
 
   const fallbackStatus: StepStatus = trail ? (trail.failed ? "failed" : "done") : "pending";
+  const status: StepStatus = step?.status ?? carry?.status ?? fallbackStatus;
+  // 탐색 후보('검토 중')는 저장되지 않는 화면 상태라 단계 행이 다시 지어져도 잇는다. 다만 새 회차 기록에 그 회차의
+  // 판정이 실렸거나(점검 이벤트를 놓치고 진행 저장만 받았다) 그 하위질문 단계가 닫혔으면(done·failed — 점검 중 예외로 단계가
+  // failed 로 닫히면 점검 이벤트가 오지 않고 잡은 다음 하위질문으로 넘어간다) 잇지 않는다
+  const rv = carry?.reviewing;
+  const closed = status === "done" || status === "failed";
+  const reviewing = rv && !closed && !rounds.some((x) => x.round === rv.round && x.verdict !== null) ? rv : undefined;
   return {
     source,
     subq: {
       idx,
       title: title ?? step?.title ?? carry?.title ?? "",
       seq: step?.seq ?? carry?.seq ?? null,
-      status: step?.status ?? carry?.status ?? fallbackStatus,
+      status,
       rounds,
       verdict: r.verdict ?? carry?.verdict ?? trail?.verdict ?? null,
       note: r.note ?? carry?.note ?? trail?.note ?? "",
       adopted: r.adopted ?? carry?.adopted ?? trail?.evidence_count ?? null,
       parseFailed: r.parse_failed ?? carry?.parseFailed ?? trail?.parse_failed ?? false,
       error: r.error ?? null,
+      ...(reviewing ? { reviewing } : {}),
     },
   };
 }
@@ -697,6 +751,18 @@ function updateSubq(view: ResearchView, idx: number, fn: (sq: SubqView) => SubqV
   return { ...view, subqs: list.map((s) => (s.idx === idx ? fn(s) : s)) };
 }
 
+// '검토 중' 후보 키를 뺀 하위질문 — 없으면 같은 객체를 돌려준다. 키를 null 로 남기지 않는다(기존 모양 그대로)
+function withoutReviewing(sq: SubqView): SubqView {
+  if (!sq.reviewing) return sq;
+  const rest = { ...sq };
+  delete rest.reviewing;
+  return rest;
+}
+
+function clearReviewing(view: ResearchView): ResearchView {
+  return view.subqs.some((s) => s.reviewing) ? { ...view, subqs: view.subqs.map(withoutReviewing) } : view;
+}
+
 function emptySubq(idx: number, title: string): SubqView {
   return {
     idx, title, seq: null, status: "pending", rounds: [],
@@ -725,7 +791,8 @@ function planFromSteps(steps: ResearchStepRow[]): string[] {
 }
 
 // 계획 카드 머리 "이렇게 이해했어요" 한 줄의 재료(06c) — 계획 단계가 계획에 넘긴 넓힌 질문. 원 질문과 같으면(넓히기를
-// 껐거나 원 질문으로 물러난 잡) 보일 것이 없어 null 이다. 넓히기가 끝나면 도는(running) 계획 단계에도 실려 온다
+// 껐거나 원 질문으로 물러난 잡 — 끝 문장부호·따옴표·띄어쓰기만 다른 것도 같다, foldQuestion) 보일 것이 없어 null 이다.
+// 넓히기가 끝나면 도는(running) 계획 단계에도 실려 온다
 export function questionUsedFromSteps(steps: ResearchStepRow[], question: string): string | null {
   const used = latestOf(steps, "plan")?.result?.question_used;
   if (typeof used !== "string") return null;
@@ -738,8 +805,14 @@ export function understoodLine(questionUsed: string): string {
   return `이렇게 이해했어요: ${questionUsed}`;
 }
 
+// 같음 판단만 쓰는 접기 — NFKC(전각 ？！＂～ 를 반각으로) 뒤 공백을 모두 빼고, 끝의 문장부호(. ? ! 。 … 입말 물결 ~)·따옴표류와
+// 머리의 따옴표류를 지운다. 넓히기가 원 질문 끝에 마침표만 붙여 돌려주기도 한다(운영 2026-10-13: '…연구가 궁금해' →
+// '…연구가 궁금해.'). 끝이 아닌 문장부호와 낱말은 그대로 견준다
+const TRAILING_MARKS = /[.?!。…~"'“”‘’「」『』«»`]+$/u;
+const LEADING_QUOTES = /^["'“”‘’「」『』«»`]+/u;
+
 function foldQuestion(text: string): string {
-  return text.normalize("NFKC").replace(/\s+/g, " ").trim();
+  return text.normalize("NFKC").replace(/\s+/g, "").replace(TRAILING_MARKS, "").replace(LEADING_QUOTES, "");
 }
 
 function latestOf(steps: ResearchStepRow[], kind: StepKind): ResearchStepRow | undefined {

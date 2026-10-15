@@ -1,14 +1,30 @@
 // frontend/tests/unit/topicDeck.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { PaperMeta, TopicCard, TopicItem, TopicSeed, TopicsView, WorkGeneration } from "~/types/work";
+import type {
+  KeywordCandidate,
+  PaperMeta,
+  TopicCard,
+  TopicItem,
+  TopicSeed,
+  TopicsView,
+  WorkGeneration,
+} from "~/types/work";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { genQueueLine } from "~/utils/queueLine";
 import {
   addConcept,
+  aiCardsStale,
   canPick,
   cardArrived,
   cardNumbersLine,
   cardNote,
+  cardRemakingNote,
   cardStatus,
+  chipFocusAfterToggle,
+  chipLabel,
+  chipTooltip,
   cleanConcept,
   conceptsNote,
   conceptsRetryable,
@@ -16,11 +32,23 @@ import {
   deckOrder,
   deckQueueLine,
   evidenceChips,
+  keywordChips,
+  keywordSpans,
+  keywordWarning,
+  keywordsChanged,
   liveTopics,
+  MIN_PICKED_KEYWORDS,
   moreLine,
+  regenerateFocusMoves,
+  regenerateProblem,
   seedLine,
+  SHORT_TITLE_MAX,
+  toggleKeyword,
   topicProblem,
 } from "~/utils/topicDeck";
+import keywordMatch from "../fixtures/keyword_match.json";
+import termChecks from "../fixtures/term_checks.json";
+import { cssRules } from "./helpers/cssRules";
 
 const CARD: TopicCard = {
   title: "노인의 사회적 지지 유형별 우울 완화 효과",
@@ -121,6 +149,23 @@ describe("cardStatus", () => {
     expect(cardStatus(item({ generation: null }))).toBe("failed");
     expect(cardStatus(item({ card: { ...CARD, title: " " }, generation: { id: 41, status: "done" } }))).toBe("insufficient");
   });
+
+  it("생성 기록이 없는 빈 씨앗 자리는 키워드 생성이 있으면 waiting, 실패했으면 blocked 다(06e — 카드는 키워드가 정해진 뒤 들어간다)", () => {
+    const concepts = (status: WorkGeneration["status"]) => gen({ id: 40, kind: "concepts", target: null, status });
+    expect(cardStatus(item({ generation: null }), concepts("queued"))).toBe("waiting");
+    expect(cardStatus(item({ generation: null }), concepts("running"))).toBe("waiting");
+    // 씨앗 자리 카드 생성은 키워드 반영·취소와 같은 트랜잭션에 들어간다 — done·canceled 이벤트가 온 뒤 topics·work 를
+    // 다시 읽기 전까지는 그 생성이 목록에 없다. 그 사이도 기다리는 중이다('카드를 만들지 못했습니다'가 비치지 않게)
+    expect(cardStatus(item({ generation: null }), concepts("done"))).toBe("waiting");
+    expect(cardStatus(item({ generation: null }), concepts("canceled"))).toBe("waiting");
+    expect(cardStatus(item({ generation: null }), concepts("failed"))).toBe("blocked");
+    expect(cardNote("blocked")).toBe("키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다");
+    // 씨앗 자리가 아닌 빈 카드는 지금처럼 failed, 근거 부족은 그대로, 생성이 있으면 생성 상태가 먼저다
+    expect(cardStatus(item({ generation: null, slot: null, origin: "other" }), concepts("done"))).toBe("failed");
+    expect(cardStatus(item({ generation: null, slot: null, origin: "other" }), concepts("failed"))).toBe("failed");
+    expect(cardStatus(item({ state: "insufficient", generation: null }), concepts("running"))).toBe("insufficient");
+    expect(cardStatus(item({ generation: { id: 41, status: "running" } }), concepts("failed"))).toBe("making");
+  });
 });
 
 describe("cardArrived — 카드 뒤집기", () => {
@@ -149,9 +194,22 @@ describe("cardNote", () => {
 });
 
 describe("canPick", () => {
+  it("카드를 새 키워드로 다시 만드는 중이면(카드 생성이 열려 있으면) 고르지 않고 그 줄을 보인다(06e 정함 16)", () => {
+    for (const status of ["queued", "running"] as const) {
+      const remaking = item({ card: CARD, generation: { id: 52, status } });
+      expect(canPick(remaking)).toBe(false);
+      expect(cardRemakingNote(remaking)).toBe("새 키워드로 다시 만드는 중입니다");
+    }
+    expect(cardRemakingNote(item({ card: CARD, generation: { id: 52, status: "done" } }))).toBeNull();
+    expect(cardRemakingNote(item({ card: CARD, generation: null, origin: "user" }))).toBeNull();
+    // 카드가 없는 자리의 열린 생성은 대기 뼈대(cardStatus waiting·making)가 알린다
+    expect(cardRemakingNote(item({ generation: { id: 52, status: "running" } }))).toBeNull();
+  });
+
   it("카드가 있는 후보만 고를 수 있다", () => {
-    expect(canPick(item({ card: CARD }))).toBe(true);
-    expect(canPick(item({ card: CARD, state: "picked" }))).toBe(false);
+    expect(canPick(item({ card: CARD, generation: { id: 41, status: "done" } }))).toBe(true);
+    expect(canPick(item({ card: CARD, generation: null, origin: "user" }))).toBe(true);
+    expect(canPick(item({ card: CARD, state: "picked", generation: { id: 41, status: "done" } }))).toBe(false);
     expect(canPick(item({ state: "insufficient", generation: { id: 41, status: "done" } }))).toBe(false);
     expect(canPick(item({ generation: { id: 41, status: "running" } }))).toBe(false);
   });
@@ -164,11 +222,24 @@ describe("evidenceChips", () => {
     KCI_C: { title: "지지망 분석", personal_author: null, pub_date: null, series_title: null },
   };
 
-  it("보고서 인용칩과 같은 '저자 연도' 라벨과 전체 제목을 준다", () => {
+  it("제1저자 전체 이름과 연도를 라벨로, 서지 한 줄을 툴팁으로 — 저자가 없으면 제목 앞 18자와 연도", () => {
     expect(evidenceChips(CARD, PAPERS)).toEqual([
-      { cntsId: "KCI_A", label: "김 2015", title: "노인의 우울과 사회적 지지" },
-      { cntsId: "KCI_B", label: "가족 지지가 노인 우울…", title: "가족 지지가 노인 우울에 미치는 영향 연구" },
+      {
+        cntsId: "KCI_A",
+        label: "김철수 2015",
+        title: "노인의 우울과 사회적 지지 · 김철수, 이영희 · 노인복지연구 · 2015",
+      },
+      {
+        cntsId: "KCI_B",
+        label: "가족 지지가 노인 우울에 미치는… 2013",
+        title: "가족 지지가 노인 우울에 미치는 영향 연구 · 2013",
+      },
     ]);
+    // 18자까지는 자르지 않고, 넘으면 18자 뒤에 말줄임(자른 끝의 공백은 뗀다 — KCI_B 의 18번째 글자는 공백이다)
+    const untitled = (title: string): PaperMeta => ({ title, personal_author: null, pub_date: null, series_title: null });
+    expect(SHORT_TITLE_MAX).toBe(18);
+    expect(chipLabel(untitled("가".repeat(18)), "K")).toBe("가".repeat(18));
+    expect(chipLabel(untitled("가".repeat(19)), "K")).toBe(`${"가".repeat(18)}…`);
   });
 
   it("저자를 모르면 제목 앞부분(짧으면 그대로), 서지가 없으면 cnts_id 로 가른다", () => {
@@ -177,6 +248,52 @@ describe("evidenceChips", () => {
       { cntsId: "KCI_C", label: "지지망 분석", title: "지지망 분석" },
       { cntsId: "KCI_Z", label: "KCI_Z", title: "KCI_Z" },
     ]);
+  });
+
+  it("복성·외 n인·영문 이름·연도 없음", () => {
+    const meta = (personal_author: string | null, pub_date: string | null = "2018-05"): PaperMeta => ({
+      title: "사회적 지지 척도의 타당화",
+      personal_author,
+      pub_date,
+      series_title: null,
+    });
+    expect(chipLabel(meta("최성훈"), "K1")).toBe("최성훈 2018");
+    // 한글 이름은 공백만 빼고 전체 — 띄어 쓴 복성도 붙인다
+    expect(chipLabel(meta("남궁 민"), "K1")).toBe("남궁민 2018");
+    expect(chipLabel(meta("선우 현정 외 2인"), "K1")).toBe("선우현정 2018");
+    expect(chipLabel(meta("최성훈외3인"), "K1")).toBe("최성훈 2018");
+    // 여러 저자는 제1저자만(쉼표·세미콜론·세로줄·가운뎃점 — splitAuthors 와 같은 구분)
+    expect(chipLabel(meta("김철수, 이영희"), "K1")).toBe("김철수 2018");
+    expect(chipLabel(meta("Jane Doe | 박지원"), "K1")).toBe("Jane Doe 2018");
+    // 영문 '성, 이름' 은 적힌 그대로
+    expect(chipLabel(meta("Smith, John"), "K1")).toBe("Smith, John 2018");
+    // 연도를 모르면 이름만
+    expect(chipLabel(meta("이영희", null), "K1")).toBe("이영희");
+    expect(chipLabel(meta("이영희", "발행년 미상"), "K1")).toBe("이영희");
+    // 저자 칸이 공백뿐이면 저자가 없는 것 — 짧은 제목과 연도
+    expect(chipLabel(meta("  ", "2019"), "K1")).toBe("사회적 지지 척도의 타당화 2019");
+    // 저자도 제목도 없으면 연도가 있어도 cnts_id
+    expect(chipLabel({ title: " ", personal_author: null, pub_date: "2019", series_title: null }, "K2")).toBe("K2");
+    expect(chipLabel(undefined, "KCI_Z")).toBe("KCI_Z");
+  });
+
+  it("툴팁은 서지 한 줄", () => {
+    expect(
+      chipTooltip(
+        { title: " 노인의 우울과 사회적 지지 ", personal_author: "김철수; 이영희", pub_date: "2015-03", series_title: "노인복지연구" },
+        "KCI_A",
+      ),
+    ).toBe("노인의 우울과 사회적 지지 · 김철수, 이영희 · 노인복지연구 · 2015");
+    // 빈 칸(공백뿐인 칸 포함)은 건너뛴다
+    expect(chipTooltip({ title: "지지망 분석", personal_author: null, pub_date: null, series_title: " " }, "KCI_C")).toBe(
+      "지지망 분석",
+    );
+    expect(chipTooltip({ title: "", personal_author: "Smith, John", pub_date: "2020", series_title: null }, "KCI_D")).toBe(
+      "Smith, John · 2020",
+    );
+    // 서지가 없거나 모든 칸이 비면 cnts_id
+    expect(chipTooltip(undefined, "KCI_Z")).toBe("KCI_Z");
+    expect(chipTooltip({ title: " ", personal_author: null, pub_date: null, series_title: null }, "KCI_E")).toBe("KCI_E");
   });
 });
 
@@ -191,11 +308,12 @@ describe("cardNumbersLine — [F#] 밖 숫자", () => {
 
 describe("seedLine", () => {
   it("씨앗 종류와 절 소제목을 잇고, 씨앗이 없으면 null 이다", () => {
-    expect(seedLine(SEED)).toBe("보고서의 향후 과제 · 노인 우울과 사회적 지지의 관계");
+    // 제품 기능 이름은 화면 표기 상수(utils/brand — 사용자 결정 2026-10-12)다
+    expect(seedLine(SEED)).toBe(`${DEEP_RESEARCH} 보고서의 향후 과제 · 노인 우울과 사회적 지지의 관계`);
     expect(seedLine({ ...SEED, kind: "insufficient", key: "insufficient:3" })).toBe(
       "근거가 모자랐던 하위질문 · 노인 우울과 사회적 지지의 관계",
     );
-    expect(seedLine({ ...SEED, heading: "  " })).toBe("보고서의 향후 과제");
+    expect(seedLine({ ...SEED, heading: "  " })).toBe(`${DEEP_RESEARCH} 보고서의 향후 과제`);
     expect(seedLine(null)).toBeNull();
   });
 });
@@ -302,14 +420,223 @@ describe("핵심 개념 칩", () => {
 
   it("conceptsNote — 뽑는 중이면 대기 문구를 잇고, 비었으면 넣기·다시를 안내한다", () => {
     const running = gen({ kind: "concepts", target: null, status: "running" });
-    expect(conceptsNote([], running)).toBe(`핵심 개념을 뽑는 중입니다 · ${genQueueLine(running)}`);
+    expect(conceptsNote([], running)).toBe(`키워드를 뽑는 중입니다 · ${genQueueLine(running)}`);
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "failed" }))).toBe(
-      "핵심 개념을 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요",
+      "키워드를 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요",
     );
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "done" }))).toBe(
-      "뽑힌 핵심 개념이 없습니다 — 직접 넣거나 [다시] 를 누르세요",
+      "뽑힌 키워드가 없습니다 — 직접 넣거나 [다시] 를 누르세요",
     );
-    expect(conceptsNote([], null)).toBe("핵심 개념 넣기 — 원 질문의 핵심 개념을 칩으로 더하세요");
+    expect(conceptsNote([], null)).toBe("키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요");
     expect(conceptsNote(["노인 우울"], null)).toBeNull();
+  });
+});
+
+// ── 제목 고르기 — 키워드(06e D23) ──
+
+// 06e 만의 하이라이트 자리 — 일치(참·거짓)의 정본은 06c 의 term_checks.json 이다(사례는 그 contains 칸과 같은 text/word)
+interface KeywordMatchCase {
+  text: string;
+  word: string;
+  marked: string[];
+  note: string;
+}
+const MATCH_CASES: KeywordMatchCase[] = keywordMatch;
+
+describe("keywordSpans — keyword_match.json 의 하이라이트 자리", () => {
+  it("고정 예제가 맞음·안 맞음·공백 무시·전각·영문 사례를 다 갖고 있다", () => {
+    expect(MATCH_CASES.some((c) => c.marked.length === 0)).toBe(true);
+    expect(MATCH_CASES.some((c) => c.marked.length > 1)).toBe(true);
+    expect(MATCH_CASES.some((c) => c.marked.some((m) => /\s/.test(m)))).toBe(true);
+    expect(MATCH_CASES.some((c) => c.text !== c.text.normalize("NFKC"))).toBe(true);
+    expect(MATCH_CASES.some((c) => /[A-Za-z]/.test(c.text))).toBe(true);
+  });
+
+  it.each(MATCH_CASES)("$note", (c) => {
+    const parts = keywordSpans(c.text, [c.word]);
+    expect(parts.filter((p) => p.mark).map((p) => p.text)).toEqual(c.marked);
+    expect(parts.map((p) => p.text).join("")).toBe(c.text);
+  });
+
+  it("여러 키워드는 각자 처음 맞은 자리를, 겹치는 자리는 하나로 감싼다", () => {
+    expect(keywordSpans("독거노인의 사회적 지지와 우울", ["사회적 지지", "노인 우울", "지지"])).toEqual([
+      { text: "독거", mark: false },
+      { text: "노인", mark: true },
+      { text: "의 ", mark: false },
+      { text: "사회적 지지", mark: true },
+      { text: "와 ", mark: false },
+      { text: "우울", mark: true },
+    ]);
+    // 맞닿은 자리도 하나로 합친다
+    expect(keywordSpans("노인우울 연구", ["노인", "우울"])).toEqual([
+      { text: "노인우울", mark: true },
+      { text: " 연구", mark: false },
+    ]);
+    // 한 키워드가 여러 번 나와도 처음 맞은 자리만 감싼다
+    expect(keywordSpans("노인과 노인", ["노인"])).toEqual([
+      { text: "노인", mark: true },
+      { text: "과 노인", mark: false },
+    ]);
+    expect(keywordSpans("노인 우울", [])).toEqual([{ text: "노인 우울", mark: false }]);
+    expect(keywordSpans("", ["노인"])).toEqual([]);
+  });
+});
+
+describe("keywordsChanged·keywordWarning", () => {
+  const made: TopicCard = { ...CARD, keywords: ["노인 우울", "사회적 지지"] };
+
+  it("카드를 만든 키워드와 지금 고른 키워드가 다르면 바뀌었다 — 순서·띄어쓰기는 보지 않고, 06e 전 카드는 알리지 않는다", () => {
+    expect(keywordsChanged(made, ["사회적지지", "노인 우울"])).toBe(false);
+    expect(keywordsChanged(made, ["노인 우울"])).toBe(true);
+    expect(keywordsChanged(made, ["노인 우울", "가족 지지"])).toBe(true);
+    expect(keywordsChanged({ ...made, keywords: [] }, ["노인 우울"])).toBe(true);
+    expect(keywordsChanged(CARD, ["노인 우울"])).toBe(false);
+  });
+
+  it("제목에 고른 키워드가 하나도 없을 때만 경고하고, 사용자가 고친 카드는 알리지 않는다", () => {
+    const missed: TopicCard = { ...made, checks: { ...CARD.checks, missing_keywords: ["노인 우울", "사회적 지지"] } };
+    expect(keywordWarning(missed)).toBe("제목에 「노인 우울」·「사회적 지지」 없음");
+    expect(keywordWarning({ ...missed, checks: { ...CARD.checks, missing_keywords: ["노인 우울"] } })).toBeNull();
+    expect(keywordWarning({ ...missed, edited: true })).toBeNull();
+    expect(keywordWarning({ ...CARD, keywords: [] })).toBeNull();
+    expect(keywordWarning(CARD)).toBeNull();
+  });
+});
+
+describe("keywordChips·toggleKeyword·regenerateProblem", () => {
+  const CANDS: KeywordCandidate[] = [
+    { text: "노인 우울", source: "both", n: 4 },
+    { text: "사회적 지지", source: "llm", n: 0 },
+    { text: "독거노인", source: "paper", n: 3 },
+  ];
+
+  it("후보를 낸 순서대로, 고른 것은 눌린 칩·출처와 편수 배지, 후보에 없는 고른 말은 뒤에 '직접'", () => {
+    expect(keywordChips(CANDS, ["사회적지지", "가족 돌봄"])).toEqual([
+      { text: "노인 우울", pressed: false, badge: "AI · 논문 4편" },
+      { text: "사회적 지지", pressed: true, badge: "AI 후보" },
+      { text: "독거노인", pressed: false, badge: "논문 3편" },
+      { text: "가족 돌봄", pressed: true, badge: "직접" },
+    ]);
+  });
+
+  it("후보가 없는 연구(06e 전·예시)는 고른 키워드를 눌린 칩으로만 보인다", () => {
+    const want = [{ text: "노인 우울", pressed: true, badge: null }];
+    expect(keywordChips(null, ["노인 우울"])).toEqual(want);
+    expect(keywordChips(undefined, ["노인 우울"])).toEqual(want);
+    expect(keywordChips([], ["노인 우울"])).toEqual(want);
+  });
+
+  it("toggleKeyword — 고른 것은 빼고 아니면 뒤에 더하되 칩 상한(5)을 넘지 않는다, regenerateProblem — 둘 미만이면 까닭", () => {
+    expect(toggleKeyword(["노인 우울", "사회적 지지"], "노인우울")).toEqual(["사회적 지지"]);
+    expect(toggleKeyword(["노인 우울"], "독거노인")).toEqual(["노인 우울", "독거노인"]);
+    const full = ["가", "나", "다", "라", "마"];
+    expect(toggleKeyword(full, "바")).toEqual(full);
+    expect(MIN_PICKED_KEYWORDS).toBe(2);
+    expect(regenerateProblem(["노인 우울"])).toBe("키워드를 2개 이상 고르면 다시 만들 수 있습니다");
+    expect(regenerateProblem(["노인 우울", "독거노인"])).toBeNull();
+  });
+});
+
+// 누른 버튼이 v-if 로 사라지면 초점이 body 로 떨어진다(TopicCard [직접 고치기] 와 같은 문제 — 운영 확인 2026-10-08).
+// ConceptChips 는 이 판정으로 초점을 옮긴다(06e K8 quality 검토 반영)
+describe("chipFocusAfterToggle·regenerateFocusMoves — 사라지는 버튼의 초점", () => {
+  const CANDS: KeywordCandidate[] = [
+    { text: "노인 우울", source: "both", n: 4 },
+    { text: "사회적 지지", source: "llm", n: 0 },
+    { text: "독거노인", source: "paper", n: 3 },
+  ];
+  // 칩 하나를 누르기 전·뒤의 칩 목록 — 부품과 같은 길(keywordChips·toggleKeyword)로 만든다
+  const press = (cands: KeywordCandidate[] | null, picked: string[], text: string) =>
+    chipFocusAfterToggle(keywordChips(cands, picked), keywordChips(cands, toggleKeyword(picked, text)), text);
+
+  it("누른 칩이 남으면 그 칩이다 — 후보 칩은 빼도 눌리지 않은 칩으로, 더해도 눌린 칩으로 남는다", () => {
+    expect(press(CANDS, ["노인 우울", "사회적 지지"], "노인 우울")).toBe("노인 우울");
+    expect(press(CANDS, ["노인 우울"], "독거노인")).toBe("독거노인");
+  });
+
+  it("후보가 없는 연구의 칩을 빼면 사라진 칩 다음 칩, 마지막 칩이었으면 null(직접 더하기 칸으로)", () => {
+    const picked = ["노인 우울", "사회적 지지", "독거노인"];
+    expect(press(null, picked, "노인 우울")).toBe("사회적 지지");
+    expect(press(null, picked, "사회적 지지")).toBe("독거노인");
+    expect(press(null, picked, "독거노인")).toBeNull();
+    expect(press([], ["노인 우울"], "노인 우울")).toBeNull();
+  });
+
+  it("'직접' 칩을 빼면 그 뒤의 칩, 뒤에 칩이 없으면 null — 앞의 후보 칩으로 돌아가지 않는다", () => {
+    const picked = ["노인 우울", "가족 돌봄", "돌봄 부담"];
+    expect(press(CANDS, picked, "가족 돌봄")).toBe("돌봄 부담");
+    expect(press(CANDS, picked, "돌봄 부담")).toBeNull();
+  });
+
+  it("regenerateFocusMoves — 보이던 다시 만들기 줄이 사라질 때, 줄 안에 초점이 있었거나 그 버튼으로 부른 뒤에만 옮긴다", () => {
+    const gone = { wasShown: true, shown: false };
+    // 부르는 동안 버튼이 막혀 브라우저가 초점을 이미 놓았어도(줄 안에 초점 없음) 누른 것을 기억해 옮긴다
+    expect(regenerateFocusMoves({ ...gone, asked: true, focusInside: false })).toBe(true);
+    expect(regenerateFocusMoves({ ...gone, asked: false, focusInside: true })).toBe(true);
+    // 다른 곳(칩·[되돌리기])에서 줄이 사라지게 한 것 — 초점은 그 자리의 몫이다
+    expect(regenerateFocusMoves({ ...gone, asked: false, focusInside: false })).toBe(false);
+    // 줄이 그대로 남았거나(409 등으로 끝남) 처음부터 없던 때
+    expect(regenerateFocusMoves({ wasShown: true, shown: true, asked: true, focusInside: true })).toBe(false);
+    expect(regenerateFocusMoves({ wasShown: false, shown: false, asked: true, focusInside: true })).toBe(false);
+  });
+});
+
+describe("aiCardsStale — 다시 만들 AI 자리가 있다", () => {
+  const made: TopicCard = { ...CARD, keywords: ["노인 우울", "사회적 지지"] };
+  const now = ["노인 우울", "독거노인"];
+  const concepts = (status: WorkGeneration["status"]) => gen({ id: 40, kind: "concepts", target: null, status });
+
+  it("지금 키워드와 다른 키워드로 만든 AI 후보 카드가 있을 때 — 고른·고친·직접 쓴 카드와 다시 만드는 중인 카드는 세지 않는다", () => {
+    const done = { id: 41, status: "done" as const };
+    expect(aiCardsStale(deck([item({ card: made, generation: done })]), now)).toBe(true);
+    expect(aiCardsStale(deck([item({ card: made, generation: done })]), ["사회적 지지", "노인 우울"])).toBe(false);
+    // 픽스처 기본 생성(queued)이면 '다시 만드는 중'만으로 거짓이 된다 — 끝난 생성(사용자 카드는 생성 기록 없음)을 준다
+    expect(aiCardsStale(deck([item({ card: made, state: "picked", generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: { ...made, edited: true }, generation: done })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, origin: "user", seed: null, generation: null })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: null, state: "insufficient" })]), now)).toBe(false);
+    expect(aiCardsStale(deck([item({ card: made, generation: { id: 52, status: "running" } })]), now)).toBe(false);
+  });
+
+  it("키워드 생성이 실패해 카드가 들어가지 않은 빈 씨앗 자리(blocked)도 다시 만들 자리다 — 키워드를 직접 넣고 저장한 뒤의 길", () => {
+    const blocked = deck([item({ card: null, generation: null })]);
+    expect(aiCardsStale(blocked, now, concepts("failed"))).toBe(true);
+    // 키워드 생성이 끝난 직후(카드 생성을 다시 읽기 전)는 기다리는 중이라 세지 않는다
+    expect(aiCardsStale(blocked, now, concepts("done"))).toBe(false);
+    expect(aiCardsStale(blocked, now)).toBe(false);
+  });
+});
+
+// 06c 의 공용 고정 예제 — 서버 terms.contains(제목 키워드 검사)와 화면 keywordSpans(하이라이트)가 같은 참·거짓이어야 한다.
+// 어긋나면 keywordSpans 를 고친다 — term_checks.json 은 06c 가 지키는 정본이라 고치지 않는다(06e Task K9)
+interface TermCase {
+  text: string;
+  word: string;
+  expected: boolean;
+  note: string;
+}
+const TERM_CASES: TermCase[] = termChecks.contains;
+
+describe("keywordSpans 는 06c term_checks.json 의 contains 칸과 같은 참·거짓", () => {
+  it.each(TERM_CASES)("$note", (c) => {
+    expect(keywordSpans(c.text, [c.word]).some((p) => p.mark)).toBe(c.expected);
+  });
+});
+
+describe("'새 후보 N ↓' 알약 — 화면 아래에 뜬다(카드 제목을 덮지 않게)", () => {
+  // 덱 앞에 두고 위(top)에 붙였더니 내려 볼 때 둘째 카드 제목 위에 겹쳤다(2026-10-15 운영 확인). 아래 화살표의 뜻대로 덱 뒤에
+  // 두고 화면 아래에만 붙인다 — 연구 화면의 따라가기 알약(rs-follow-pill)과 같다
+  const read = (rel: string) => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
+
+  it("TopicsStep 은 알약을 덱(TopicDeck) 뒤에 둔다", () => {
+    const src = read("components/work/TopicsStep.vue");
+    expect(src.indexOf("wk-pill")).toBeGreaterThan(src.indexOf("<TopicDeck"));
+  });
+
+  it(".wk-pill 은 아래(bottom)에만 붙는다 — top 을 두지 않는다", () => {
+    const rule = cssRules(read("assets/css/work.css")).find((r) => r.selectors.includes(".wk-pill"))!;
+    expect(rule.decls.get("position")).toBe("sticky");
+    expect(rule.decls.has("bottom")).toBe(true);
+    expect(rule.decls.has("top")).toBe(false);
   });
 });

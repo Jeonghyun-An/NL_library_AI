@@ -136,7 +136,7 @@ class TestOwnership:
         assert raw_row(api.engine, item_id).deleted_at is None
 
     def test_other_browser_list_is_empty(self, api, item_id):
-        assert api.client.get("/api/history", headers=B).json() == {"items": [], "next_cursor": None}
+        assert api.client.get("/api/history", headers=B).json() == {"items": [], "next_cursor": None, "total": 0}
 
     def test_missing_item_is_same_404(self, api):
         assert api.client.get(f"/api/history/{uuid.uuid4()}", headers=A).status_code == 404
@@ -221,6 +221,24 @@ class TestList:
     def test_malformed_cursor_is_400(self, api):
         res = api.client.get("/api/history?before=garbage", headers=A)
         assert res.status_code == 400
+
+    def test_total_is_in_the_response_and_ignores_the_cursor(self, api):
+        items = [
+            {"legacy_id": f"172700000000{n}", "kind": "book", "title": f"검색 {n}",
+             "created_at": f"2026-09-0{n + 1}T09:00:00+00:00"}
+            for n in range(3)
+        ] + [{"legacy_id": "1727000000009", "kind": "paper", "title": "논문 검색",
+              "created_at": "2026-09-05T09:00:00+00:00"}]
+        api.client.post("/api/history/import", headers=A, json={"items": items})
+
+        first = api.client.get("/api/history?kind=book&limit=2", headers=A).json()
+        assert len(first["items"]) == 2 and first["total"] == 3
+        second = api.client.get("/api/history", headers=A,
+                                params={"kind": "book", "limit": 2, "before": first["next_cursor"]}).json()
+        assert len(second["items"]) == 1 and second["total"] == 3
+        # kind 를 주지 않으면 모든 kind, 남의 브라우저는 0
+        assert api.client.get("/api/history", headers=A).json()["total"] == 4
+        assert api.client.get("/api/history", headers=B).json()["total"] == 0
 
 
 def _sized(size: int) -> dict:

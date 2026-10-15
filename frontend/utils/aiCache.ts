@@ -2,8 +2,9 @@
 // 논문 상세의 AI 요약·연관 이유를 탭 안에서 다시 쓴다 — 상세를 오갈 때마다 같은 글을 GPU 로 다시 만들지 않게.
 // sessionStorage 라 탭을 닫으면 사라진다. 막힌 저장소·용량 초과는 캐시 없이 새로 만들 뿐이다
 const PREFIX = "skx:ai:";
-// 서버(services/search/paper_summary)는 생성 실패를 글로 보내고 스트림을 정상으로 닫는다 —
-// 담아 두면 탭을 닫을 때까지 실패 문구만 다시 보인다
+// 서버(services/search/paper_summary)는 생성 실패를 {error} 이벤트로 보내고 화면은 끝까지 받은 글만 담는다(utils/aiStream).
+// 옛 서버는 실패를 '…오류가 발생했습니다.' 글로 보내고 스트림을 정상으로 닫았다 — 화면이 서버보다 먼저 나가도 그 글이
+// 담겨 탭을 닫을 때까지 실패 문구만 다시 보이지 않게 이 거르기를 남겨 둔다
 const FAILED_TAIL = /오류가 발생했습니다\.?\s*$/;
 
 export function summaryCacheKey(paperId: string, question: string): string {

@@ -157,9 +157,26 @@
     transform: none;
   }
 }
+/* 검토 중 — 후보 이벤트(candidates)로 세운 이번 회차의 후보. 점선 카드의 테두리가 천천히 반짝이다 점검이 끝나면 채택(wk-drop)·
+   뺌(wk-sink)으로 옮긴다. 카드 전체를 opacity 로 흐리지 않는다 — 글자에도 걸려 가장 옅을 때 제목·메타가 3:1 아래로 떨어진다(상태는
+   점선·테두리 색으로만 보인다). 후보 목록은 채택 목록보다 낮게 둔다 — 아래 뺌 더미가 옆 칸 밖으로 밀려나지 않게 */
+.wk-ledger__list--reviewing {
+  max-height: 9rem;
+}
+.wk-ledger__paper.is-reviewing {
+  border-style: dashed;
+  border-color: var(--skx-border-c2);
+  animation: wk-review 1.6s ease-in-out infinite;
+}
+@keyframes wk-review {
+  50% {
+    border-color: var(--skx-border-c1);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .wk-ledger__paper.is-fresh,
-  .wk-ledger__list--dropped .wk-ledger__paper.is-fresh {
+  .wk-ledger__list--dropped .wk-ledger__paper.is-fresh,
+  .wk-ledger__paper.is-reviewing {
     animation: none;
   }
 }
@@ -236,6 +253,20 @@ button.wk-stepper__step {
   margin: 0;
   font-size: 0.6rem;
   color: var(--skx-gray-1);
+}
+/* 연구 이어가기는 베타 기능 — 이어가기 카드 제목·단계 막대 옆의 작은 알약(글은 workPhase.BETA_LABEL) */
+.wk-beta {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0 0.35rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  color: var(--skx-primary);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-pill);
 }
 
 /* ── 온보딩(OnboardingModal) ─────────────────────────────── */
@@ -376,6 +407,51 @@ button.wk-stepper__step {
   gap: 0.6rem;
   padding-top: 0.8rem;
   border-top: 1px solid var(--skx-border-c1);
+}
+/* 참고문헌 선택하기 머리 — 소개 문단 옆(같은 줄 오른쪽)에 다음 단계 버튼 묶음(표 아래 .wk-screen__next 와 같은 ReadingNextActions).
+   소개가 18rem 아래로 줄 만큼 본문 칸이 좁으면(오른쪽 DeepRead 패널을 연 2단 등) 버튼이 소개 아래로 감기고 오른쪽 끝에 선다.
+   비활성 까닭 줄(hint)은 버튼 위 한 줄을 다 쓰고 묶음 폭(18rem) 안에서 접힌다 — 소개 글을 밀어내지 않는다 */
+.wk-screen__lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem 1.2rem;
+}
+.wk-screen__intro {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+.wk-screen__lead-actions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem 0.6rem;
+  max-width: 18rem;
+  margin-left: auto;
+}
+.wk-screen__lead-actions > .rs-muted {
+  flex-basis: 100%;
+  text-align: right;
+}
+/* 좁은 화면(앱의 휴대폰 배치 기준 768px — utils/sidebarDrawer NARROW_QUERY)은 늘 소개 아래, 왼쪽에 붙여 손이 닿게 한다 */
+@media (max-width: 768px) {
+  .wk-screen__lead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wk-screen__intro {
+    flex-basis: auto;
+  }
+  .wk-screen__lead-actions {
+    max-width: none;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+  .wk-screen__lead-actions > .rs-muted {
+    text-align: left;
+  }
 }
 .wk-edit {
   display: flex;
@@ -610,12 +686,11 @@ button.wk-stepper__step {
   border: 1px dashed var(--skx-border-c2);
   border-radius: var(--skx-radius-lg);
 }
-/* 화면 밖에서 카드가 도착했을 때만 뜨는 알약 — 단계 화면이 보이는 동안 위·아래 어디서든 화면 안에 붙어 있다.
-   누를 때만 그 카드로 간다(자동 스크롤 없음) */
+/* 화면 밖에서 카드가 도착했을 때만 뜨는 알약 — 덱 뒤에 두고 화면 아래에만 붙인다(아래 화살표의 뜻, 연구 화면의 따라가기
+   알약과 같다). 위에도 붙였더니 내려 볼 때 카드 제목을 덮었다(2026-10-15). 누를 때만 그 카드로 간다(자동 스크롤 없음) */
 .wk-pill {
   position: sticky;
-  top: 0.5rem;
-  bottom: 0.5rem;
+  bottom: 1rem;
   z-index: 1;
   align-self: center;
   box-shadow: var(--skx-shadow-lnb);
@@ -725,10 +800,12 @@ button.wk-stepper__step {
   color: var(--skx-gray-1);
   overflow-wrap: anywhere;
 }
+/* 대목 글은 passageText 가 <br> 태그 글자를 줄바꿈으로 바꿔 둔다 — 그 줄을 나눠 보인다 */
 .wk-path__quote {
   flex-basis: 100%;
   padding: 0.3rem 0.6rem;
   color: var(--skx-ink-2);
+  white-space: pre-line;
   border-left: 2px solid var(--skx-border-c2);
   overflow-wrap: anywhere;
 }
@@ -1213,9 +1290,10 @@ button.wk-stepper__step {
   font-size: 0.7rem;
   color: var(--skx-ink);
 }
-/* 진행 패널 아래 근거 장부 — 옆 칸(rs-col-side)에는 간격 규칙이 없다. 감싸개는 늘 그려지므로(장부가 빈 때부터 떠 있어야
-   첫 회차가 떨어진다) 간격은 장부 카드가 있을 때만 — 06a 전 잡에 빈 간격이 남지 않게 */
-.wk-side-ledger .wk-ledger {
+/* 옆 칸 근거 장부 — 탐색 중에는 옆 칸에 혼자, 그 밖에는 진행 패널(탐색 경로) 아래(2026-10-14). 옆 칸(rs-col-side)에는 간격 규칙이
+   없다. 감싸개는 늘 그려지므로(장부가 빈 때부터 떠 있어야 첫 회차가 떨어진다) 간격은 진행 패널 뒤에 장부 카드가 있을 때만 —
+   06a 전 잡에 빈 간격이 남지 않게 */
+.rs-col-side .rs-progress + .wk-side-ledger .wk-ledger {
   margin-top: 1.2rem;
 }
 /* 화면을 그대로 인쇄(Ctrl+P)하면 research.css 의 @media print 가 머리·옆 칸·버튼을 뺀다. 보고서 끝 이어가기 카드와
@@ -1226,6 +1304,683 @@ button.wk-stepper__step {
   .rs-page .wk-stepper {
     display: none !important;
   }
+}
+
+/* ── 보고서 화면 — 큰 진행 막대·머리 목차·문서 자리(06e Task A5) ── */
+/* 큰 진행 막대(06e 정함 28 — 사용자 Q1 답 '현재 절 작성 중에 보이는 커다란 프로그레스바'를 자동 보고서에도). 두께는 06d
+   research.css 의 --rs-bar-thick 과 같은 값이지만 import 하지 않고 이 파일의 토큰으로 둔다(시각 디자인 담당이 고칠 자리).
+   절 자리가 아래로 쌓이며 흐르는 동안 화면 위에 붙어 있다(.wk-pill 과 같은 sticky) */
+.wk-rbar {
+  --wk-bar-thick: 1rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.4rem 0.8rem;
+  padding: 0.8rem 1rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.wk-rbar__line {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.wk-rbar__pct {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-primary);
+}
+.wk-rbar__track {
+  grid-column: 1 / -1;
+  height: var(--wk-bar-thick);
+  overflow: hidden;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+}
+.wk-rbar__fill {
+  height: 100%;
+  background: var(--skx-primary);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+/* 쓰는 절이 있는 동안 채움 위로 빛이 흐른다 — 퍼센트는 절이 끝날 때만 오르므로 멈춰 보이지 않게. 첫 절을 쓰는 동안(0%)도
+   조금은 보이게 최소 폭을 둔다 */
+.wk-rbar__fill.is-running {
+  min-width: calc(var(--wk-bar-thick) * 2);
+  background-image: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--skx-white) 35%, transparent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: wk-rbar-flow 1.6s linear infinite;
+}
+@keyframes wk-rbar-flow {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (max-width: 768px) {
+  .wk-rbar {
+    --wk-bar-thick: 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-rbar__fill {
+    transition: none;
+  }
+  .wk-rbar__fill.is-running {
+    animation: none;
+  }
+}
+@media print {
+  .rs-page .wk-rbar {
+    display: none !important;
+  }
+}
+/* 연쇄가 멈춘 줄 — 까닭과 [이어서 쓰기] */
+.wk-doc__resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.wk-doc__resume p {
+  margin: 0;
+}
+/* 머리 목차 — 문서 순서의 여섯 자리. 항목을 누르면 그 자리로 옮긴다 */
+.wk-doc__toc {
+  gap: 0.5rem;
+}
+.wk-doc__toc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.wk-doc__toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wk-doc__toc-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-size: 0.7rem;
+  text-align: left;
+  color: var(--skx-ink);
+  background: none;
+  border: 0;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.wk-doc__toc-item:hover {
+  background: var(--skx-border-c1);
+}
+.wk-doc__toc-item:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 1px;
+}
+.wk-doc__toc-no {
+  flex-shrink: 0;
+  min-width: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-gray-1);
+}
+.wk-doc__toc-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wk-doc__toc-status {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+}
+.wk-doc__toc-item.is-queued .wk-doc__toc-status,
+.wk-doc__toc-item.is-writing .wk-doc__toc-status {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+.wk-doc__toc-item.is-failed .wk-doc__toc-status,
+.wk-doc__toc-item.is-skipped .wk-doc__toc-status {
+  color: var(--skx-ink);
+}
+/* 문서 자리 — 1 주제·2 연구 배경·5 연구 질문·6 방법 제안(3·4 는 ProposalSection) */
+.wk-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.wk-doc__part {
+  gap: 0.4rem;
+}
+.wk-doc__part-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-doc__text {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.7;
+  white-space: pre-line;
+  color: var(--skx-ink);
+}
+/* 머리 목차로 옮겨 온 자리가 위에 붙은 진행 막대에 가리지 않게 */
+.wk-doc__part,
+.wk-doc .wk-psec {
+  scroll-margin-top: 6rem;
+}
+
+/* ── 보고서 문서의 사용자 칸(DocField — 2 연구 배경·6 방법, round06e) ── */
+.wk-docfield {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.wk-docfield__line {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.75;
+  color: var(--skx-ink);
+}
+.wk-docfield__text {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-sm);
+  resize: vertical;
+}
+.wk-docfield__count {
+  margin: 0;
+  font-size: 0.55rem;
+  color: var(--skx-gray-1);
+  text-align: right;
+}
+.wk-docfield__count.is-over {
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+
+/* ── 검토할 곳(보고서 머리 한 줄, round06e) — 문단의 '확인 필요' 표시(.wk-psec__check)와 같은 점선 ── */
+.wk-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.6rem;
+}
+.wk-review__jump {
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-ink);
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.wk-review__jump:hover {
+  background: var(--skx-border-c1);
+}
+.wk-review__jump:focus-visible,
+.wk-psec__item:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 2px;
+}
+
+/* ── 오른쪽 딥리드 패널(DeepReadPanel — 06e R4, spec §12-4 D24). 1200px 이상은 단계 본문 옆 2단(sticky, 폭 --wk-panel-w),
+   그 미만은 오른쪽 서랍, 768px 이하는 전체 폭. 흰 바탕·세로 칸·서랍 모양을 모두 이 묶음이 맡는다 — 전역 style_skovix.css 의
+   클래스(옛 .skx-chat-side)에 기대지 않는다 ── */
+.wk-split {
+  --wk-panel-w: 22rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+  min-width: 0;
+}
+.wk-split.is-panel-open {
+  grid-template-columns: minmax(0, 1fr) var(--wk-panel-w);
+}
+.wk-split__main {
+  min-width: 0;
+}
+.wk-panel {
+  position: sticky;
+  top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 2.4rem);
+  overflow: hidden;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+  box-shadow: var(--skx-shadow-lnb);
+}
+.wk-panel__head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--skx-border-c1);
+}
+.wk-panel__heading {
+  flex: 1;
+  min-width: 0;
+}
+.wk-panel__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink);
+  overflow-wrap: anywhere;
+}
+.wk-panel__title:focus {
+  outline: none;
+}
+.wk-panel__title:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 2px;
+}
+.wk-panel__byline {
+  margin: 0.15rem 0 0;
+  font-size: 0.6rem;
+  color: var(--skx-gray-1);
+  overflow-wrap: anywhere;
+}
+.wk-panel__detail,
+.wk-panel__detail:visited {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.9;
+  color: var(--skx-primary);
+  white-space: nowrap;
+}
+.wk-panel__detail:hover,
+.wk-panel__detail:focus-visible {
+  text-decoration: underline;
+}
+.wk-panel__close {
+  flex-shrink: 0;
+}
+.wk-panel__extra {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  max-height: 40%;
+  padding: 0.6rem 0.9rem;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--skx-border-c1);
+}
+.wk-panel__tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.3rem;
+  padding: 0.4rem 0.9rem 0;
+  border-bottom: 1px solid var(--skx-border-c1);
+}
+.wk-panel__tab {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+}
+.wk-panel__tab[aria-selected="true"] {
+  color: var(--skx-primary);
+  border-bottom-color: var(--skx-primary);
+}
+.wk-panel__tab:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: -2px;
+}
+.wk-panel__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.wk-panel__chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 0.9rem 0.9rem;
+}
+.wk-panel__sources {
+  flex: 1;
+  min-height: 0;
+  padding: 0.8rem 0.9rem;
+  overflow-y: auto;
+}
+/* BookChat 은 논문 상세 옆 칸(머리가 겹쳐 뜨는 모양)에 맞춘 여백이라 패널 안에서는 줄인다. 말풍선은 패널 폭을 따른다 */
+.wk-panel .skx-chat-messages {
+  margin-top: 0;
+  padding-top: 0.8rem;
+}
+.wk-panel .skx-chat-msg {
+  max-width: 90%;
+}
+.wk-panel .skx-chat-input-wrap {
+  margin-top: 0.8rem;
+}
+.wk-panel .skx-chat-source-open {
+  margin-top: 0.3rem;
+}
+.wk-panel-backdrop {
+  display: none;
+}
+/* 서랍(1200px 미만) — 오른쪽에 고정해 화면을 덮는다. z-index 200·배경 199 라 원문 뷰어(.pdf-overlay 1000)·온보딩(.wk-modal 1000)이
+   그 위에 뜬다. 그림자·배경은 새 색값 없이 --skx-ink 를 섞는다(.wk-modal 배경과 같은 꼴) */
+@media (max-width: 1199px) {
+  .wk-split.is-panel-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wk-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    width: min(var(--wk-panel-w), 100%);
+    height: auto;
+    border-width: 0 0 0 1px;
+    border-radius: 0;
+    box-shadow: -4px 0 20px color-mix(in srgb, var(--skx-ink) 15%, transparent);
+  }
+  .wk-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    display: block;
+    background: color-mix(in srgb, var(--skx-ink) 25%, transparent);
+  }
+}
+@media (max-width: 768px) {
+  .wk-panel {
+    width: 100%;
+    border-left-width: 0;
+  }
+}
+@media (max-width: 1199px) and (prefers-reduced-motion: no-preference) {
+  .wk-panel {
+    animation: wk-panel-in 0.2s ease-out;
+  }
+}
+@keyframes wk-panel-in {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+/* 화면을 그대로 인쇄(Ctrl+P)하면 미디어 쿼리 폭이 용지 폭(A4 @page rs-report — 약 670px)이라 위 서랍·전체 폭 규칙이 걸려
+   fixed 패널·배경이 쪽마다 다시 찍혀 본문을 덮는다. 화면 전용 부품이라 인쇄에서는 빼고 본문이 용지 폭을 다 쓰게 한다 —
+   패널을 열지 않은 인쇄물은 지금과 같다. [PDF로 저장](ReportPrint)은 앱 전체를 숨겨 영향이 없다 */
+@media print {
+  .rs-page .wk-panel,
+  .rs-page .wk-panel-backdrop {
+    display: none !important;
+  }
+  .rs-page .wk-split.is-panel-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── 참고문헌 선택하기 — 제목을 누르면 오른쪽 딥리드(06e R5). 제목은 링크 모양을 지킨 버튼, 상세는 서지 줄 끝의 작은 링크 ── */
+/* 버튼 기본 모양만 지운다 — 글자 크기·굵기는 같은 요소의 .wk-reading__title 이 맡는다. 브라우저 기본이 버튼의 자간을 normal 로
+   되돌려 링크였을 때(본문 자간 상속)와 달라지지 않게 자간만 물려받는다 */
+.wk-reading__open {
+  padding: 0;
+  text-align: left;
+  letter-spacing: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.wk-reading__open[aria-expanded="true"] {
+  color: var(--skx-primary);
+}
+.wk-reading__detail,
+.wk-reading__detail:visited {
+  font-weight: 700;
+  color: var(--skx-primary);
+  white-space: nowrap;
+}
+.wk-reading__detail:hover,
+.wk-reading__detail:focus-visible {
+  text-decoration: underline;
+}
+.wk-reading__row--active {
+  border-color: var(--skx-primary);
+  box-shadow: inset 0 0 0 1px var(--skx-primary);
+}
+.wk-panel__save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.6rem;
+}
+.wk-panel__path {
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+.wk-panel__path > summary {
+  font-weight: 700;
+  color: var(--skx-ink);
+  cursor: pointer;
+}
+.wk-panel__path[open] > summary {
+  margin-bottom: 0.4rem;
+}
+.wk-panel__path .wk-path__quote {
+  display: block;
+  margin: 0 0 0.4rem;
+}
+
+/* ── 보고서 인용 칩 → 오른쪽 인용 근거 탭(Task S4 — D24 A안) ── */
+/* 저장된 문단의 칩은 패널을 여는 버튼이다 — 모양은 .wk-psec__cite 그대로 두고 버튼 기본값만 지운다
+   (자간은 브라우저 기본이 normal 로 되돌려 링크였을 때와 글자 모양이 달라지지 않게 물려받는다 — R5 의 제목 버튼과 같다) */
+button.wk-psec__cite {
+  font-family: inherit;
+  letter-spacing: inherit;
+  vertical-align: baseline;
+  border: 0;
+  cursor: pointer;
+}
+button.wk-psec__cite:hover,
+button.wk-psec__cite[aria-expanded="true"] {
+  color: var(--skx-white);
+  background: var(--skx-primary);
+}
+button.wk-psec__cite:focus-visible {
+  outline: 2px solid var(--skx-border-c2);
+  outline-offset: 1px;
+}
+/* 누른 칩이 든 문장 — 형광펜처럼 글줄 아래쪽만 칠한다(근거 없는 문장의 점선 밑줄과 겹쳐도 둘 다 보인다) */
+.wk-psec__sent.is-cited {
+  background: linear-gradient(transparent 55%, var(--skx-border-c1) 55%);
+}
+.wk-cite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.wk-cite__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem 0.7rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-md);
+}
+.wk-cite__title {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-cite__byline {
+  margin: 0;
+  font-size: 0.55rem;
+}
+.wk-cite__quote {
+  margin: 0;
+  padding-left: 0.5rem;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+  border-left: 2px solid var(--skx-primary);
+}
+.wk-cite__excerpt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.wk-cite__heading {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink);
+}
+.wk-cite__text {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.75;
+  color: var(--skx-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* 대목 쪽 강조 — 인용한 문장과 글자가 가장 많이 겹치는 문장 */
+.wk-cite__mark {
+  padding: 0 0.1rem;
+  color: var(--skx-ink);
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: inset 0 -2px 0 var(--skx-primary);
+}
+.wk-cite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+/* 고대비 모드는 배경색을 지운다 — 강조한 문장·대목을 테두리로 남긴다 */
+@media (forced-colors: active) {
+  .wk-psec__sent.is-cited,
+  .wk-cite__mark {
+    outline: 1px solid CanvasText;
+  }
+}
+
+/* ── 키워드 칩·제목 하이라이트(06e Task K8 — 제목 고르기 D23) ── */
+/* 후보 토글 칩 — 고른 칩(aria-pressed)은 실선·주색, 고르지 않은 칩은 점선·회색. 배지는 출처·편수(AI 후보·논문 n편·직접) */
+.wk-kwchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.wk-kwchip[aria-pressed="true"] {
+  color: var(--skx-primary);
+  background: var(--skx-border-c1);
+  border-style: solid;
+  border-color: var(--skx-border-c2);
+}
+.wk-kwchip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.wk-kwchip:focus-visible {
+  outline: 2px solid var(--skx-primary);
+  outline-offset: 2px;
+}
+.wk-kwchip__badge {
+  font-size: 0.5rem;
+  font-weight: 400;
+  color: var(--skx-gray-1);
+}
+.wk-concepts__regen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* 카드 제목 속 고른 키워드 */
+.wk-kw {
+  padding: 0 0.1rem;
+  color: inherit;
+  background: var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+}
+.wk-topic__kwwarn {
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+.wk-topic__kwchanged {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--skx-gray-1);
+  border: 1px dashed var(--skx-line);
+  border-radius: var(--skx-radius-pill);
+}
+/* 키워드 생성이 실패해 카드가 아직 없는 씨앗 자리 — 근거 부족·실패 슬롯과 같은 점선 */
+.wk-topic--blocked {
+  border-style: dashed;
+  border-color: var(--skx-line);
 }
 
 /* ── 이어 붙이는 자리: 화면 task 는 이 줄 바로 위에 한 묶음씩 더한다(이 줄은 지우지 않는다) ── */

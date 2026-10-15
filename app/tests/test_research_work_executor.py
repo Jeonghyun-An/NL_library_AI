@@ -76,16 +76,18 @@ class TestExecutorFields:
     def test_new_fields_follow_the_06a_five_with_defaults(self):
         # frozen dataclass — 06a 의 다섯 필드만 위치 인자로 준 실행기가 그대로 06a 처럼 돈다
         assert [f.name for f in dataclasses.fields(Executor)] == [
-            "kind", "build", "parse", "check", "empty", "bind", "stream", "apply", "is_empty"]
+            "kind", "build", "parse", "check", "empty", "bind", "stream", "apply", "is_empty", "soft_check", "settle"]
         ex = _plain()
-        assert (ex.bind, ex.stream, ex.apply, ex.is_empty) == (None, False, None, None)
+        assert (ex.bind, ex.stream, ex.apply, ex.is_empty, ex.soft_check, ex.settle) == (
+            None, False, None, None, None, None)
 
     def test_concepts_marks_an_empty_done_as_retryable(self):
         # 06a api._retryable 의 concepts 특례(빈 개념 done 은 다시 부를 수 있다)를 실행기로 옮긴 것
         ex = concepts.EXECUTOR
         assert ex.is_empty({"concepts": []}) and ex.is_empty({}) and ex.is_empty(None)
         assert not ex.is_empty({"concepts": ["독서 격차", "청소년"]})
-        assert (ex.bind, ex.stream, ex.apply) == (None, False, None)
+        # 06e — 모델 후보와 채택 논문 키워드를 bind 가 합친다(concepts._bind). 반영은 apply_result 의 concepts 분기 그대로
+        assert ex.bind is concepts._bind and (ex.stream, ex.apply) == (False, None)
 
 
 class TestBind:
@@ -202,7 +204,7 @@ class TestApplyDelegation:
 
         payload = self._apply(engine, gid, {"concepts": ["노인 우울", "사회적 지지"]}, commit=True)
 
-        assert payload == {"concepts": ["노인 우울", "사회적 지지"]}
+        assert payload == {"concepts": ["노인 우울", "사회적 지지"], "cards": []}
         assert self._work(engine, work_id)["concepts"] == ["노인 우울", "사회적 지지"]
 
 

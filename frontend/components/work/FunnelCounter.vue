@@ -1,6 +1,6 @@
 <!-- frontend/components/work/FunnelCounter.vue -->
 <template>
-  <p class="wk-funnel"><span class="rs-sr-only">읽기 목록 깔때기: </span>{{ line }}</p>
+  <p class="wk-funnel"><span class="rs-sr-only">참고문헌 후보 깔때기: </span>{{ line }}</p>
 </template>
 
 <script setup lang="ts">
