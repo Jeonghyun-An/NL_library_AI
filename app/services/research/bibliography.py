@@ -16,6 +16,18 @@ import re
 # 찍힌다. 짧은 조각 갈래는 이 둘을 세지 않는다(_SHORT_SHAPES)
 _VOLUME_KO = re.compile(r"제\s*\d+\s*(?:권|호|집)")                                      # 제35권 제2호
 _VOLUME_EN = re.compile(r"\b(?:Vol|vol|VOL|No|no)\s*\.\s*\d")                            # Vol. 61
+# 학위논문 — 항목의 학위 종류는 늘 문장부호가 잇는다('석사학위논문.'·'(박사학위논문).'·'석사학위논문, 고려대학교 대학원'·
+# '석사학위논문, 2001.'). 본문의 '석사학위논문을 분석한'·사사 각주 '석사학위논문을 수정·보완한 것임'·'석사학위논문, 「제목」을'·
+# '박사학위논문, 연세대학교 대학원(2010)의 일부를'(대학 이름 뒤가 괄호 연도·조사)과 표지의 '석사학위논문'(줄 끝)은 꼴이 아니다.
+# OCR 이 낱자 사이를 띄우거나('석사학위논 문') 줄을 바꾼다('석사학위논\n\n문.'). 대학원 이름만으로는 꼴로 보지 않는다 — 첫 쪽
+# 저자 소속 '* 연세대학교 대학원, 문헌정보학과 석사과정' 과 같은 꼴이다
+_THESIS_KO = re.compile(
+    r"[석박]\s*사\s*학\s*위\s*(?:청\s*구\s*)?논\s*문\s*"
+    r"(?:[.)]|,\s*(?:[^,.\n]{0,20}?대\s*학\s*[교원](?!(?:[ \t]*[가-힣]*?대\s*학\s*원)?(?:[ \t]*\(|[의을를에]))"
+    r"|(?:19|20)\d{2}(?![\d년])))")
+# thesis, Hanyang University · Doctoral dissertation, University of Texas — 같은 줄에서 대학 이름이 이을 때만. 영문 사사
+# 각주 'Based on the first author's master's thesis.' 는 꼴이 아니다
+_THESIS_EN = re.compile(r"\b(?:[Tt]hesis|[Dd]issertation)[ \t]*[,.)]+[ \t]*[^,.;\n]{0,40}?\bUniv(?:ersity|\.)")
 # 참고문헌 항목에 흔하고 본문 문장에는 드문 서지 꼴
 _ENTRY_SHAPES = (
     re.compile(r"\bpp?\s*\.\s*\d"),                                                   # pp.402 · p. 12
@@ -32,15 +44,8 @@ _ENTRY_SHAPES = (
     re.compile(r"[“\"「『󰡔][^”\"」』󰡕]{6,160}[”\"」』󰡕]\s*[,.]"),                        # “제목”, · 「제목」.
     re.compile(r"\b[A-Z][a-zA-Z'\-]+,\s*[A-Z]\.(?:\s*[A-Z]\.)?\s*(?:,|&|and\b|\()"),  # Selig, J. P., &
     re.compile(r"\b[A-Z][a-z]+(?:-[A-Z][a-z]+)?\s[A-Z]{1,3},"),                       # Bruce ML, Seeman TE,
-    # 학위논문 — 항목의 학위 종류는 늘 문장부호가 잇는다('석사학위논문.'·'(박사학위논문).'·'석사학위논문, 고려대학교 대학원'·
-    # '석사학위논문, 2001.'). 본문의 '석사학위논문을 분석한'·사사 각주 '석사학위논문을 수정·보완한 것임'·'석사학위논문, 「제목」을'
-    # 과 표지의 '석사학위논문'(줄 끝)은 꼴이 아니다. OCR 이 낱자 사이를 띄우거나('석사학위논 문') 줄을 바꾼다('석사학위논\n\n문.').
-    # 대학원 이름만으로는 꼴로 보지 않는다 — 첫 쪽 저자 소속 '* 연세대학교 대학원, 문헌정보학과 석사과정' 과 같은 꼴이다
-    re.compile(r"[석박]\s*사\s*학\s*위\s*(?:청\s*구\s*)?논\s*문\s*"
-               r"(?:[.)]|,\s*(?:[^,.\n]{0,20}?대\s*학\s*[교원]|(?:19|20)\d{2}(?![\d년])))"),
-    # thesis, Hanyang University · Doctoral dissertation, University of Texas — 같은 줄에서 대학 이름이 이을 때만. 영문 사사
-    # 각주 'Based on the first author's master's thesis.' 는 꼴이 아니다
-    re.compile(r"\b(?:[Tt]hesis|[Dd]issertation)[ \t]*[,.)]+[ \t]*[^,.;\n]{0,40}?\bUniv(?:ersity|\.)"),
+    _THESIS_KO,
+    _THESIS_EN,
 )
 # 본문 문장 — 한국어 서술 종결, 영어 서술 동사. 종결과 마침표 사이의 괄호 인용 '…하였다(김철수, 2012: 45-67).'·
 # '…하였다[3].' 과 마침표 뒤에 바로 붙는 각주 번호 '…하였다.12)'·닫는 따옴표 '…하였다.”' 도 서술 종결로 센다
@@ -72,10 +77,13 @@ _SHAPE_KINDS_MIN = 2     # 서로 다른 서지 꼴 종류
 # 하나도 없고 서지 꼴이 떨어진 두 자리 이상에 있을 때만 본다. _SPOT_GAP 안에 붙은 꼴은 한 자리다 — 학술지 첫 쪽 머리
 # '2016, Vol. 32, No. 4, pp. 183～204.'·그림 출처 '자료: 정효채 등. (2013). p.74' 는 꼴 여럿이 한 항목에 몰려 있다.
 # 학술지 권호는 세지 않는다 — 문장이 잘린 본문 조각에서 쪽 머리글 '(제45권 제2호)' 와 직접 인용 '(김철수, 2010, p. 23)' 이
-# 떨어져 있으면 꼴 두 종류·두 자리가 된다. 운영 근거 881개의 판정은 권호를 빼도 같다
+# 떨어져 있으면 꼴 두 종류·두 자리가 된다. 운영 근거 881개의 판정은 권호를 빼도 같다. 자리는 학위논문 꼴을 빼고 센 수와
+# 넣고 센 수 가운데 큰 쪽이다 — 떨어진 두 꼴('20(1),'·'(2010).') 사이에 학위논문 꼴이 끼면 40자 안으로 이어져 한 자리로
+# 묶이므로, 꼴을 더해 이미 걸리던 조각을 놓치지 않게
 _SHORT_MAX = 300
 _SPOT_GAP = 40
 _SHORT_SHAPES = tuple(s for s in _ENTRY_SHAPES if s not in (_VOLUME_KO, _VOLUME_EN))
+_SHORT_SHAPES_NO_THESIS = tuple(s for s in _SHORT_SHAPES if s not in (_THESIS_KO, _THESIS_EN))
 # 참고문헌 꼬리 + 다음 쪽 영문 제목·초록 — 한국어 논문 끝 영문 초록 쪽이 참고문헌 마지막 쪽과 한 청크가 된 것. 앞 400자만
 # 생성에 들어가 초록 대신 서지가 요약된다. 제 줄에 혼자 있는 'Abstract' 앞이 서술 없는 서지이고, 첫 제목 줄('#') 앞에
 # 저자-연도 '(1996).' 가 있을 때만 본다 — 학술지 첫 쪽 머리의 'No. 3 (2017).' 는 저자 이니셜 뒤가 아니다. 첫 쪽 인용 안내
@@ -106,15 +114,20 @@ _TAIL_LOOK = 200
 _TRAILING_SEP = re.compile(r"(?:\s|<br\s*/?>)+\Z")
 
 
-def _entry_spots(text: str) -> int:
-    """짧은 조각 갈래의 서지 꼴(_SHORT_SHAPES)이 놓인 자리 수 — _SPOT_GAP 안에 붙은 꼴은 한 자리로 센다."""
-    spans = sorted(m.span() for shape in _SHORT_SHAPES for m in shape.finditer(text))
+def _spots(text: str, shapes: tuple[re.Pattern, ...]) -> int:
+    """서지 꼴(shapes)이 놓인 자리 수 — _SPOT_GAP 안에 붙은 꼴은 한 자리로 센다."""
+    spans = sorted(m.span() for shape in shapes for m in shape.finditer(text))
     spots, end = 0, float("-inf")
     for start, stop in spans:
         if start - end > _SPOT_GAP:
             spots += 1
         end = max(end, stop)
     return spots
+
+
+def _entry_spots(text: str) -> int:
+    """짧은 조각 갈래의 서지 꼴 자리 수 — 학위논문 꼴을 빼고 센 수와 넣고 센 수 가운데 큰 쪽."""
+    return max(_spots(text, _SHORT_SHAPES_NO_THESIS), _spots(text, _SHORT_SHAPES))
 
 
 def _no_prose(text: str) -> bool:

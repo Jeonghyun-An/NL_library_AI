@@ -212,14 +212,21 @@ EN_THESIS_ACK = (
     "Journal of the Korean Society for Library and Information Science, 44(2), pp. 101-120\n\n"
     "# Information Needs of Older Adults in Public Libraries\n\nGil-dong Hong*, Chul-soo Kim**\n\n"
     "* Based on the first author's master's thesis.\n** Dept. of Library and Information Science, Yonsei University")
+# 사사 각주의 '학위논문, ○○대학교 대학원(연도)의'·'학위논문, ○○대학교 대학원의' — 대학 이름 뒤가 괄호 연도·조사라 서지
+# 항목이 아니다(마침표로 끝나지 않는 각주는 서술 종결로도 세지 못한다)
+THESIS_ACK_UNIV_YEAR = _FIRST_PAGE_HEAD + "* 이 논문은 제1저자의 박사학위논문, 연세대학교 대학원(2010)의 일부를 수정한 것임"
+THESIS_ACK_UNIV_PARTICLE = (_FIRST_PAGE_HEAD + "* 이 논문은 제1저자의 석사학위논문, 이화여자대학교 대학원의 연구를 "
+                            "수정·보완한 것임\n** 연세대학교 문헌정보학과 교수")
 # 학위논문 표지 — '석사학위논문'·'○○대학교 대학원' 뒤에 문장부호가 없다
 THESIS_COVER = ("석사학위논문\n\n노인의 우울과 사회적 지지에 관한 연구\n\n지도교수 김철수\n\n"
                 "이 논문을 사회복지학 석사학위논문으로 제출함\n\n2010년 2월\n\n서울대학교 대학원\n사회복지학과\n홍길동")
 
 
 @pytest.mark.parametrize(
-    "text", [THESIS_STUDIES, THESIS_ACK_FOOTNOTE, THESIS_ACK_COMMA, EN_THESIS_ACK, THESIS_COVER],
-    ids=["thesis-studies", "thesis-ack-footnote", "thesis-ack-comma", "en-thesis-ack", "thesis-cover"])
+    "text", [THESIS_STUDIES, THESIS_ACK_FOOTNOTE, THESIS_ACK_COMMA, THESIS_ACK_UNIV_YEAR, THESIS_ACK_UNIV_PARTICLE,
+             EN_THESIS_ACK, THESIS_COVER],
+    ids=["thesis-studies", "thesis-ack-footnote", "thesis-ack-comma", "thesis-ack-univ-year", "thesis-ack-univ-particle",
+         "en-thesis-ack", "thesis-cover"])
 def test_body_mentioning_theses_is_kept(text):
     assert not looks_like_bibliography(text)
 
@@ -228,10 +235,15 @@ def test_body_mentioning_theses_is_kept(text):
 # 학위논문 꼴이 없으면 서로 다른 꼴이 하나다
 KO_THESIS_APA = ("홍길동 (2010). 노인의 우울과 사회적 지지에 관한 연구 (석사학위논문). 서울대학교 대학원, 서울.\n"
                  "김철수 (2012). 공공도서관 노인 서비스의 이용 행태 연구 (박사학위논문). 연세대학교 대학원, 서울.")
+# 학위논문 꼴이 떨어진 두 꼴('20(1),'·'(2010).') 사이에 끼어 40자 안으로 이으면 세 꼴이 한 자리로 묶인다 — 학위논문 꼴을
+# 더하기 전(c21ce10)에는 두 자리라 걸리던 105자 조각이다. 꼴을 더해 놓치는 조각이 생기면 안 된다
+THESIS_BETWEEN_ENTRIES = ("김철수. 노인 우울 연구. 한국노년학, 20(1), 1-15. 홍길동. 노인과 사회적 지지에 관한 연구. "
+                          "석사학위논문. 서울대학교 대학원. 이영희 (2010). 공공도서관 노인 서비스 연구")
 
 
-def test_short_thesis_entries_are_bibliography():
-    assert looks_like_bibliography(KO_THESIS_APA)
+@pytest.mark.parametrize("text", [KO_THESIS_APA, THESIS_BETWEEN_ENTRIES], ids=["ko-thesis-apa", "thesis-between-entries"])
+def test_short_thesis_entries_are_bibliography(text):
+    assert looks_like_bibliography(text)
 
 
 @pytest.mark.parametrize("head", ["참고문헌", "### 참고문헌", "References", "5. 참고문헌"])
