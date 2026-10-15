@@ -1152,7 +1152,8 @@ button.rs-synth__item:focus-visible,
 /* ── 무관 제외 ─────────────────────────────────────────── */
 /* 회차 줄의 "무관 N편 제외 ▾"와 보고서의 접힌 섹션 머리. 눌러 펼친다는 게 보이게 글자색·밑줄로 버튼임을 드러낸다 */
 .rs-round__toggle,
-.rs-excluded__toggle {
+.rs-excluded__toggle,
+.rs-refs__toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
@@ -1170,7 +1171,8 @@ button.rs-synth__item:focus-visible,
   text-underline-offset: 0.15em;
 }
 .rs-round__toggle:focus-visible,
-.rs-excluded__toggle:focus-visible {
+.rs-excluded__toggle:focus-visible,
+.rs-refs__toggle:focus-visible {
   outline: 2px solid var(--skx-border-c2);
   outline-offset: 2px;
 }
@@ -1219,7 +1221,8 @@ button.rs-synth__item:focus-visible,
   font-size: 0.75rem;
   font-weight: 700;
 }
-.rs-excluded__toggle {
+.rs-excluded__toggle,
+.rs-refs__toggle {
   font-weight: inherit;
   color: var(--skx-ink-2);
 }
@@ -1234,12 +1237,47 @@ button.rs-synth__item:focus-visible,
   font-size: 0.65rem;
   line-height: 1.7;
 }
+
+/* ── 참고문헌 ──────────────────────────────────────────── */
+/* 본문 인용칩 번호 순 목록(ReportView) — 제외 논문 섹션과 같은 접힌 머리, 실선(본문이 인용한 논문). 번호는 줄 앞에 내어 둔다 */
+.rs-refs {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--skx-line);
+  border-radius: var(--skx-radius-md);
+}
+.rs-refs__title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.rs-refs__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.65rem;
+  line-height: 1.7;
+  color: var(--skx-ink);
+  animation: rs-reveal 0.25s ease-out;
+}
+.rs-refs__item {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.2rem;
+}
+.rs-refs__n {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
 @media (prefers-reduced-motion: reduce) {
   .rs-caret {
     transition: none;
   }
   .rs-round__excluded,
-  .rs-excluded__body {
+  .rs-excluded__body,
+  .rs-refs__list {
     animation: none;
   }
 }

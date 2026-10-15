@@ -36,6 +36,7 @@
         :sec="row.sec"
         :section-idx="row.idx"
         :evidence="report.evidence"
+        :numbers="citeNumbers"
         @open-pdf="$emit('open-pdf', $event)"
       />
       <p v-else-if="draft?.state === 'interrupted'" class="rs-muted">작성을 마치지 못한 절입니다.</p>
@@ -99,6 +100,28 @@
       </div>
     </section>
 
+    <!-- 참고문헌 — 본문 인용칩의 번호 순. Word·PDF 의 참고문헌과 같은 함수(reportReferences)로 만든 같은 줄이다. 접어 둔다
+         (사용자 결정 2026-10-15 — 칩을 '성 연도' 대신 숫자로 바꾸며 번호로 찾아 읽을 목록을 단다) -->
+    <section v-if="references.length" class="rs-refs" aria-labelledby="rs-refs-title">
+      <h3 id="rs-refs-title" class="rs-refs__title">
+        <button
+          type="button"
+          class="rs-refs__toggle"
+          :aria-expanded="refsOpen"
+          aria-controls="rs-refs-body"
+          @click="refsOpen = !refsOpen"
+        >
+          {{ REFERENCES_TITLE }} ({{ references.length }})<span class="rs-caret" aria-hidden="true">▾</span>
+        </button>
+      </h3>
+      <ol v-show="refsOpen" id="rs-refs-body" class="rs-refs__list">
+        <li v-for="r in references" :key="r.eid" class="rs-refs__item">
+          <span class="rs-refs__n">[{{ r.n }}]</span>
+          <span>{{ r.text }}</span>
+        </li>
+      </ol>
+    </section>
+
     <!-- 보고서 끝 — 완료된 연구 화면이 [이 연구 이어가기] 카드를 단다 -->
     <slot name="footer" />
   </article>
@@ -109,11 +132,13 @@ import { computed, provide, ref, watch } from "vue";
 import { stampExcludedLink } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload, ReportSection, ResearchReport } from "~/types/research";
 import { REPORT_JOB, excludedAnchor, excludedDetailUrl } from "~/utils/detailSource";
+import { reportCiteNumbers, reportReferences } from "~/utils/reportDocument";
 import type { DraftSlot, DraftSlotStatus } from "~/utils/researchDraft";
 import {
   EXCLUDED_TITLE,
   EXCLUDED_WHY,
   NO_LIMITS,
+  REFERENCES_TITLE,
   draftBadge,
   draftIntro,
   excludedFromTrail,
@@ -173,6 +198,12 @@ const rows = computed<SectionRow[]>(() => {
     sec: slot.sectionIndex !== null ? (sections[slot.sectionIndex] ?? null) : null,
   }));
 });
+
+// 인용 번호·참고문헌 — 내려받은 문서와 같은 함수라 화면의 [3] 이 Word 의 [3] 과 같은 논문이다. 초안은 지금까지 쓴 절로 매긴다
+const citeNumbers = computed(() => reportCiteNumbers(props.report.sections));
+const references = computed(() => reportReferences(props.report.sections, props.report.evidence));
+// 초안이 같은 자리에서 최종본으로 바뀌어도 펼친 상태가 이어진다
+const refsOpen = ref(false);
 
 // 최종본은 보고서 trail 에서, 초안은 탐색 타임라인에서 만든 목록이다(초안에는 trail 이 없다)
 const excluded = computed<ExcludedGroup[]>(() =>
