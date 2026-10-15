@@ -1271,6 +1271,16 @@ button.rs-synth__item:focus-visible,
   font-weight: 700;
   color: var(--skx-primary);
 }
+/* 줄은 논문 상세(새 창)로 가는 링크 — 제외 논문 목록과 같은 모양(평소 본문 글색, 올리면 포인트 색 밑줄) */
+.rs-refs__item a {
+  color: var(--skx-ink);
+  text-decoration: none;
+}
+.rs-refs__item a:hover,
+.rs-refs__item a:focus-visible {
+  color: var(--skx-primary);
+  text-decoration: underline;
+}
 @media (prefers-reduced-motion: reduce) {
   .rs-caret {
     transition: none;

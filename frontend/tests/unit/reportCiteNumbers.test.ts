@@ -28,6 +28,15 @@ describe("보고서 인용칩은 숫자, 끝에 접힌 참고문헌", () => {
     expect(chip).toContain(":aria-label=\"`근거 ${label}: ${title}`\"");
   });
 
+  it("참고문헌 줄을 누르면 논문 상세가 새 창으로 열린다 — 제외 논문 목록과 같은 방식(누르는 순간의 높이를 실어 돌아올 자리로)", () => {
+    expect(view).toContain(':href="referenceDetailUrl(jobId, r.cnts, r.eid)"');
+    expect(view).toContain(':data-anchor="referenceAnchor(r.cnts)"');
+    expect(view).toMatch(/@click="stampReferenceLink\(\$event, jobId, r\.cnts, r\.eid\)"/);
+    // 돌아와 맞출 줄이 접힌 목록 안이면 펼친다(연구 화면이 reveal-references 를 넘긴다)
+    expect(view).toMatch(/\(\) => props\.revealReferences/);
+    expect(read("pages/research/[id].vue")).toContain(':reveal-references="revealReferences"');
+  });
+
   it("참고문헌은 제외한 논문 아래 접힌 섹션이고 제목은 문서와 같은 말이다", () => {
     expect(REFERENCES_TITLE).toBe("참고문헌");
     expect(view).toContain("{{ REFERENCES_TITLE }} ({{ references.length }})");

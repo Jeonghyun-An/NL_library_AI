@@ -154,6 +154,7 @@
                   :draft="draftMode"
                   :highlight-idx="linkedIdx"
                   :reveal-excluded="revealExcluded"
+                  :reveal-references="revealReferences"
                   @open-pdf="openPdf"
                   @copy-link="copyLink"
                 >
@@ -423,6 +424,9 @@ const restore = useRestorePosition(restoreReady, { topInset: progressInset });
 // 맞추는 동안만 알린다 — 다 맞춘 뒤 사용자가 접은 목록을 다시 펼치지 않게
 const revealExcluded = computed(() =>
   restore.pending.value && restore.anchor?.kind === "excluded" ? restore.anchor.cnts : null,
+);
+const revealReferences = computed(() =>
+  restore.pending.value && restore.anchor?.kind === "reference" ? restore.anchor.cnts : null,
 );
 
 // ── 배치 A·B ──────────────────────────────────────────────

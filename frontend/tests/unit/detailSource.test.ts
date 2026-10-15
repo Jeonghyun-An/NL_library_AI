@@ -15,6 +15,8 @@ import {
   readDetailSource,
   readReturnSpot,
   readingAnchor,
+  referenceAnchor,
+  referenceDetailUrl,
   relatedDetailUrl,
   resultAnchor,
   shouldGoBack,
@@ -255,6 +257,14 @@ describe("앵커", () => {
     expect(parseAnchor(citeAnchor(3, "E1"))).toEqual({ kind: "cite", section: 3, eid: "E1", n: 0 });
     expect(parseAnchor(excludedAnchor("C1"))).toEqual({ kind: "excluded", cnts: "C1" });
     expect(parseAnchor(resultAnchor("CNTS-1"))).toEqual({ kind: "result", cnts: "CNTS-1" });
+  });
+
+  it("보고서 끝 참고문헌 줄 앵커 — 상세로 갈 때 근거 번호(e)도 실어 상세 배너가 칩과 같은 번호를 말한다(2026-10-15)", () => {
+    expect(referenceAnchor("KCI_FI001484593")).toBe("f-KCI_FI001484593");
+    expect(parseAnchor(referenceAnchor("C1"))).toEqual({ kind: "reference", cnts: "C1" });
+    expect(referenceDetailUrl("job-1", "C1", "E3", 120)).toBe(
+      detailUrl("C1", { kind: "research", job: "job-1", e: "E3" }, { at: "f-C1", y: 120 }),
+    );
   });
 
   it("읽기 목록 행·계획서 문단 앵커를 만들고 다시 읽는다", () => {

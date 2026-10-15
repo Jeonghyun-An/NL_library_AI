@@ -25,6 +25,7 @@ export interface ReturnSpot {
 export type Anchor =
   | { kind: "cite"; section: number; eid: string; n: number }
   | { kind: "excluded"; cnts: string }
+  | { kind: "reference"; cnts: string }
   | { kind: "result"; cnts: string }
   | { kind: "reading"; cnts: string }
   | { kind: "para"; ref: string };
@@ -46,7 +47,7 @@ const EID = /^E\d+$/;
 const PIXELS = /^\d{1,6}$/;
 // 앵커는 [data-anchor="…"] 선택자에 그대로 들어간다 — 따옴표·괄호·공백이 낄 수 없는 모양만 받는다
 const CITE_ANCHOR = /^c-(0|[1-9]\d*)-(E\d+)(?:-([1-9]\d*))?$/;
-const ITEM_ANCHOR = /^([xprg])-([A-Za-z0-9_.-]{1,64})$/;
+const ITEM_ANCHOR = /^([xfprg])-([A-Za-z0-9_.-]{1,64})$/;
 // 주소 비교용 기준 — 경로와 쿼리만 본다
 const BASE = "http://local";
 
@@ -134,6 +135,12 @@ export function excludedDetailUrl(job: string, cnts: string, y: number | null = 
   return detailUrl(cnts, { kind: "research", job, e: null }, { at: excludedAnchor(cnts), y });
 }
 
+// 보고서 끝 참고문헌 줄 → 논문 상세(새 창). 근거 번호(e)를 실어 상세 배너가 본문 칩과 같은 'N번 근거로 인용됨'을 말하고,
+// 돌아올 자리는 그 참고문헌 줄이다(2026-10-15)
+export function referenceDetailUrl(job: string, cnts: string, eid: string, y: number | null = null): string {
+  return detailUrl(cnts, { kind: "research", job, e: eid }, { at: referenceAnchor(cnts), y });
+}
+
 export function backTarget(source: DetailSource, spot: ReturnSpot): { label: string; to: string } {
   const params = new URLSearchParams();
   switch (source.kind) {
@@ -171,6 +178,10 @@ export function excludedAnchor(cnts: string): string {
   return `x-${cnts}`;
 }
 
+export function referenceAnchor(cnts: string): string {
+  return `f-${cnts}`;
+}
+
 export function resultAnchor(cnts: string): string {
   return `p-${cnts}`;
 }
@@ -193,6 +204,8 @@ export function parseAnchor(at: string): Anchor | null {
   switch (item[1]) {
     case "x":
       return { kind: "excluded", cnts: value };
+    case "f":
+      return { kind: "reference", cnts: value };
     case "p":
       return { kind: "result", cnts: value };
     case "r":

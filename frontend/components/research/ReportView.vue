@@ -114,10 +114,24 @@
           {{ REFERENCES_TITLE }} ({{ references.length }})<span class="rs-caret" aria-hidden="true">▾</span>
         </button>
       </h3>
+      <!-- 줄을 누르면 논문 상세가 새 창으로 열린다 — 제외 논문 목록과 같은 방식(누르는 순간의 높이를 실어 돌아올 자리로).
+           근거 정보가 없는 줄(r.cnts 없음)은 글만 -->
       <ol v-show="refsOpen" id="rs-refs-body" class="rs-refs__list">
         <li v-for="r in references" :key="r.eid" class="rs-refs__item">
           <span class="rs-refs__n">[{{ r.n }}]</span>
-          <span>{{ r.text }}</span>
+          <a
+            v-if="r.cnts"
+            :href="referenceDetailUrl(jobId, r.cnts, r.eid)"
+            :data-anchor="referenceAnchor(r.cnts)"
+            target="_blank"
+            rel="noopener"
+            @click="stampReferenceLink($event, jobId, r.cnts, r.eid)"
+            @auxclick="stampReferenceLink($event, jobId, r.cnts, r.eid)"
+            @contextmenu="stampReferenceLink($event, jobId, r.cnts, r.eid)"
+          >
+            {{ r.text }}<span class="rs-sr-only"> (새 창)</span>
+          </a>
+          <span v-else>{{ r.text }}</span>
         </li>
       </ol>
     </section>
@@ -129,9 +143,15 @@
 
 <script setup lang="ts">
 import { computed, provide, ref, watch } from "vue";
-import { stampExcludedLink } from "~/composables/useRestorePosition";
+import { stampExcludedLink, stampReferenceLink } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload, ReportSection, ResearchReport } from "~/types/research";
-import { REPORT_JOB, excludedAnchor, excludedDetailUrl } from "~/utils/detailSource";
+import {
+  REPORT_JOB,
+  excludedAnchor,
+  excludedDetailUrl,
+  referenceAnchor,
+  referenceDetailUrl,
+} from "~/utils/detailSource";
 import { reportCiteNumbers, reportReferences } from "~/utils/reportDocument";
 import type { DraftSlot, DraftSlotStatus } from "~/utils/researchDraft";
 import {
@@ -166,8 +186,10 @@ const props = withDefaults(
     highlightIdx?: number | null;
     // 새 창으로 연 제외 논문에서 돌아와 맞출 논문 — 접힌 목록을 펼쳐 둬야 그 항목의 자리가 생긴다
     revealExcluded?: string | null;
+    // 참고문헌 줄에서 연 논문 상세에서 돌아와 맞출 논문 — 같은 까닭으로 접힌 참고문헌을 펼친다
+    revealReferences?: string | null;
   }>(),
-  { draft: null, highlightIdx: null, revealExcluded: null },
+  { draft: null, highlightIdx: null, revealExcluded: null, revealReferences: null },
 );
 defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; "copy-link": [] }>();
 
@@ -201,9 +223,22 @@ const rows = computed<SectionRow[]>(() => {
 
 // 인용 번호·참고문헌 — 내려받은 문서와 같은 함수라 화면의 [3] 이 Word 의 [3] 과 같은 논문이다. 초안은 지금까지 쓴 절로 매긴다
 const citeNumbers = computed(() => reportCiteNumbers(props.report.sections));
-const references = computed(() => reportReferences(props.report.sections, props.report.evidence));
+// 줄마다 상세로 갈 논문 id(cnts) — 근거 정보가 없으면 null(링크 없이 글만)
+const references = computed(() =>
+  reportReferences(props.report.sections, props.report.evidence).map((r) => ({
+    ...r,
+    cnts: props.report.evidence[r.eid]?.cnts_id ?? null,
+  })),
+);
 // 초안이 같은 자리에서 최종본으로 바뀌어도 펼친 상태가 이어진다
 const refsOpen = ref(false);
+watch(
+  [() => props.revealReferences, references],
+  ([cnts, refs]) => {
+    if (cnts && refs.some((r) => r.cnts === cnts)) refsOpen.value = true;
+  },
+  { immediate: true },
+);
 
 // 최종본은 보고서 trail 에서, 초안은 탐색 타임라인에서 만든 목록이다(초안에는 trail 이 없다)
 const excluded = computed<ExcludedGroup[]>(() =>
