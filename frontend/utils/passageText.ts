@@ -81,16 +81,22 @@ function decodeEntities(text: string): string {
   return text.replace(ENTITY, (m) => ENTITIES[m.toLowerCase()] ?? m).replace(AMP, "&");
 }
 
-// 표 칸 줄('|연도|기초연구|응용연구|')은 칸을 ' · ' 로 이어 한 줄 글로 편다. 세로선이 둘 이상인 줄만 — 글 속 '|' 하나는 그대로
+// 표 칸 줄('|연도|기초연구|응용연구|')은 칸을 ' · ' 로 이어 한 줄 글로 편다. 세로선이 둘 이상인 줄만 — 글 속 '|' 하나는 그대로.
+// 값 사이의 빈 칸은 '–' 로 남긴다 — 버리면 칸이 빈 행의 값이 한 칸씩 당겨져 머리 줄과 어긋나 읽혔다(2026-10-15 운영 확인,
+// E21 의 Model 1 칸). 앞뒤의 빈 칸(머리 행 모서리·합친 칸)은 버린다 — 운영 근거 903개에서 앞에 '– · – ·' 가 늘어서 지저분했다.
+// 칸이 모두 비면 빈 줄이다
+const EMPTY_CELL = "–";
+
 function flattenTableRow(line: string): string {
   if ((line.match(PIPE) ?? []).length < 2) return line;
-  return line
+  const cells = line
     .replace(/^[ \t]*\|/, "")
     .replace(/\|[ \t]*$/, "")
     .split("|")
-    .map((c) => c.trim())
-    .filter(Boolean)
-    .join(" · ");
+    .map((c) => c.trim());
+  while (cells.length && !cells[cells.length - 1]) cells.pop();
+  while (cells.length && !cells[0]) cells.shift();
+  return cells.map((c) => c || EMPTY_CELL).join(" · ");
 }
 
 // 통째로 표 행인 줄만 칸 속 <br> 을 띄어쓰기로 바꿔 편다. 표 밖 글·'[표]<br>|가|나|' 처럼 글과 이어진 행은 그대로 두고
@@ -143,6 +149,31 @@ function dropLeadingMasthead(text: string): string {
   return dropped && i < lines.length ? lines.slice(i).join("\n") : text;
 }
 
+// 첫 쪽 앞머리 — 머리말·DOI 를 걷은 첫 쪽 대목에 제목·저자·소속(국문·영문) 줄이 남고 '요 약 본 연구는…'이 그다음에 왔다
+// (2026-10-15 운영 확인, E2 첫 쪽). 머리말로 시작한 대목(firstPage)에서만, 짧은 줄 몇 개 뒤에 초록 머리가 오면 그 앞을 걷는다.
+// '요약하면'·'Abstract concepts' 처럼 낱말이 붙은 것은 머리가 아니다
+const ABSTRACT_HEAD = /^[ \t]*(?:요[ \t]*약|초[ \t]*록|국문[ \t]*초록|Abstract|ABSTRACT)(?=[ \t:.]|$)/;
+const FRONT_LINES = 10;
+const FRONT_LINE_MAX = 200;
+
+function dropFrontMatter(text: string): string {
+  const lines = text.split("\n");
+  let seen = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (!line.trim()) continue;
+    if (ABSTRACT_HEAD.test(line)) return i > 0 ? lines.slice(i).join("\n") : text;
+    seen++;
+    if (seen > FRONT_LINES || line.length > FRONT_LINE_MAX) return text;
+  }
+  return text;
+}
+
+function startsWithMasthead(text: string): boolean {
+  const first = text.split("\n").find((l) => l.trim());
+  return first !== undefined && MASTHEAD.some((re) => re.test(first));
+}
+
 // 참고문헌 머리부터 끝까지 자른다. 대목이 머리로 시작하면(본문이 없으면) 그대로
 function cutReferenceTail(text: string): string {
   const m = REF_TAIL.exec(text);
@@ -157,8 +188,12 @@ export interface PassageTextOptions {
   keepReferences?: boolean;
 }
 
+// 적재가 표 청크 맨 앞에 붙이는 표시('[표]\n' — services/ingestion/stages.py). 맨 앞의 이 꼴만 뗀다
+const TABLE_MARK = /^\[표\]\n/;
+
 export function passageText(text: string | null | undefined, options: PassageTextOptions = {}): string {
   const tidy = decodeEntities(text ?? "")
+    .replace(TABLE_MARK, "")
     .replace(ROW_BREAK, "|\n")
     .replace(TABLE_RULE, "")
     .split("\n")
@@ -170,6 +205,7 @@ export function passageText(text: string | null | undefined, options: PassageTex
     .join("\n")
     .replace(HEADING_MARK, "")
     .replace(INLINE_HEADING, "$1");
-  const body = dropLeadingMasthead(dropPageHeads(tidy).replace(BLANK_RUN, "\n\n"));
+  const cleaned = dropLeadingMasthead(dropPageHeads(tidy).replace(BLANK_RUN, "\n\n"));
+  const body = startsWithMasthead(tidy) ? dropFrontMatter(cleaned) : cleaned;
   return options.keepReferences ? body : cutReferenceTail(body);
 }
