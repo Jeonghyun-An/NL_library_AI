@@ -1,0 +1,101 @@
+{
+ "_about": "운영 GET /api/research/d60a5dc1-76a4-4506-88ec-dfbfa49f93f7/proposal 응답(2026-10-14 16:33 받음, 절 prior.g2 gen 102)에서 measure_g2.py 가 읽는 키만 남긴 사본이다 — outline.question·topic, sections['prior.g2'] 의 evidence·figures·basis (그리고 운영에서 [F3] 칩이 샌 저장 문단 paragraphs), papers 의 그 절 논문 서지(제목·발행·게재지).",
+ "outline": {
+  "question": "노인의 사회적 지지 네트워크의 특징은 무엇이며, 이는 우울과의 관계에 어떠한 영향을 미치는가?",
+  "topic": {
+   "id": 54,
+   "title": "노인의 다양한 사회적 지지 유형과 우울 간의 관계 분석",
+   "question": "가족, 친구, 지역사회 등 다양한 사회적 지지 유형이 노인의 우울에 미치는 영향은 어떠한가?"
+  }
+ },
+ "sections": {
+  "prior.g2": {
+   "key": "prior.g2",
+   "gen_id": 102,
+   "evidence": {
+    "E1": "KCI_FI002278740"
+   },
+   "figures": [
+    {
+     "id": "F1",
+     "label": "이 절에 준 논문 수",
+     "value": "1"
+    },
+    {
+     "id": "F2",
+     "label": "발행 연도 범위",
+     "value": "2017"
+    },
+    {
+     "id": "F3",
+     "label": "소장 KCI 적재분 논문 수",
+     "value": "198,518"
+    }
+   ],
+   "basis": {
+    "papers": [
+     "KCI_FI002278740"
+    ],
+    "question": "노인의 사회적 지지 네트워크의 특징은 무엇이며, 이는 우울과의 관계에 어떠한 영향을 미치는가?",
+    "topic_id": 54
+   },
+   "paragraphs": [
+    {
+     "id": "p1",
+     "text": "농촌 여성 노인의 우울에 대한 사회적 지지망의 영향은 직간접적으로 나타났으며, 물질적 지지는 직접적인 영향을 미치는 것으로 확인되었다 [E1]. 이는 사회적 지지망의 다양한 측면이 노인의 우울에 복합적인 방식으로 기여할 수 있음을 시사한다 [E1].",
+     "cites": [
+      "KCI_FI002278740"
+     ],
+     "state": "proposed",
+     "checks": {
+      "dropped": 0,
+      "numbers": [],
+      "softened": 0,
+      "unmarked": 0,
+      "dropped_f": 0
+     },
+     "gen_id": 102
+    },
+    {
+     "id": "p2",
+     "text": "본 연구는 농촌 여성 노인의 우울 감소를 위한 사회적 지지 시스템 구축의 기초 자료를 제공하고자 하였다 [E1]. 이는 사회적 지지 네트워크의 특징을 파악하고, 우울과의 관계에 미치는 영향을 분석하는 연구 질문과 관련하여, 사회적 지지망의 구체적인 형태와 그 효과를 탐색하는 데 중요한 정보를 제공한다 [E1].",
+     "cites": [
+      "KCI_FI002278740"
+     ],
+     "state": "proposed",
+     "checks": {
+      "dropped": 0,
+      "numbers": [],
+      "softened": 0,
+      "unmarked": 0,
+      "dropped_f": 0
+     },
+     "gen_id": 102
+    },
+    {
+     "id": "p3",
+     "text": "이 연구는 농촌 여성 노인이라는 특정 집단에 초점을 맞추었으며, [F1] 발행 연도는 [F2]년이다 [E1]. 또한, KCI 적재분 논문 수는 [F3]건에 달한다 [F3].",
+     "cites": [
+      "KCI_FI002278740"
+     ],
+     "state": "proposed",
+     "checks": {
+      "dropped": 0,
+      "numbers": [],
+      "softened": 0,
+      "unmarked": 1,
+      "dropped_f": 0
+     },
+     "gen_id": 102
+    }
+   ]
+  }
+ },
+ "papers": {
+  "KCI_FI002278740": {
+   "title": "농촌 여성노인의 사회적 지지망과 사회적지지가 우울에 미치는 융합적인 영향",
+   "pub_date": "2017.1",
+   "series_title": "한국융합학회논문지"
+  }
+ }
+}

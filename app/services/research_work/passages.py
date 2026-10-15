@@ -6,7 +6,9 @@
 후보는 딥리서치 스냅숏의 근거 청크(state_snapshot.evidence[eid].chunks)가 먼저다 — 탐색이 이미 원문 대목만
 골라 두었다. 스냅숏에 없는 논문(되살림·담기)은 Milvus 에서 그 논문 한 편의 청크를 읽는다. 어느 쪽이든 메타청크·
 보강 청크([초록]·[키워드]·[표 설명]·[그림 설명])·참고문헌 목록 조각은 탐색과 같은 규칙(explorer.is_source_passage)으로
-뺀다. 스냅숏 대목이 참고문헌 조각뿐인 논문은 후보가 비어 Milvus 쪽으로 넘어간다.
+뺀다. 스냅숏 대목이 참고문헌 조각뿐인 논문은 후보가 비어 Milvus 쪽으로 넘어간다. 본문 끝에 참고문헌 머리와 첫 항목이
+붙은 청크는 후보로 남기되 머리 뒤를 뗀다(bibliography.strip_reference_tail) — 리랭커가 서지 속 제목으로 점수를 매기지
+않고, 대목이 남의 논문 제목으로 끝나지 않는다.
 
 리랭커(compute_scores)·Milvus(ensure_collection)·검색 파이프라인(_RERANK_FAILURES)은 torch·FlagEmbedding·
 pymilvus 를 끌어오므로 함수 안에서 import 한다(함정 13). 실패는 실제로 나는 타입만 받는다(함정 19) — 리랭커는
@@ -18,6 +20,7 @@ import re
 import time
 from types import SimpleNamespace
 
+from services.research.bibliography import strip_reference_tail
 from services.research.explorer import is_source_passage
 from services.research_work.shapes import EXCERPT_CHARS
 
@@ -76,7 +79,7 @@ def _source(chunk_idx: int, page_start, text: str) -> bool:
 
 def _passage(chunk_id: str, text: str, page_start, page_end, score) -> dict:
     start = int(page_start or 0)
-    return {"chunk_id": chunk_id, "text": text, "page_start": start,
+    return {"chunk_id": chunk_id, "text": strip_reference_tail(text), "page_start": start,
             "page_end": int(page_end if page_end is not None else start),
             "score": None if score is None else float(score)}
 

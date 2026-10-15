@@ -7,7 +7,7 @@
 논문의 내용처럼 쓰며, 참고문헌 속 제목만 맞은 무관한 논문이 근거로 채택된다.
 
 그래서 글자만 보고 가른다. 운영 근거 청크 869개(딥리서치 보고서 48개, 짧은 조각·초록 머리 갈래는 630e0d65 근거를 더한
-881개)로 맞춘 규칙이고, 거기서 본문 오탐은 없었다.
+881개, 학위논문 꼴은 4차 배포 뒤 보고서·이어가기 절 근거까지 더한 903개)로 맞춘 규칙이고, 거기서 본문 오탐은 없었다.
 본문으로 남기는 쪽으로 기운다 — 놓친 참고문헌은 지금과 같지만 잘못 거른 본문은 근거를 잃는다.
 """
 import re
@@ -16,6 +16,18 @@ import re
 # 찍힌다. 짧은 조각 갈래는 이 둘을 세지 않는다(_SHORT_SHAPES)
 _VOLUME_KO = re.compile(r"제\s*\d+\s*(?:권|호|집)")                                      # 제35권 제2호
 _VOLUME_EN = re.compile(r"\b(?:Vol|vol|VOL|No|no)\s*\.\s*\d")                            # Vol. 61
+# 학위논문 — 항목의 학위 종류는 늘 문장부호가 잇는다('석사학위논문.'·'(박사학위논문).'·'석사학위논문, 고려대학교 대학원'·
+# '석사학위논문, 2001.'). 본문의 '석사학위논문을 분석한'·사사 각주 '석사학위논문을 수정·보완한 것임'·'석사학위논문, 「제목」을'·
+# '박사학위논문, 연세대학교 대학원(2010)의 일부를'(대학 이름 뒤가 괄호 연도·조사)과 표지의 '석사학위논문'(줄 끝)은 꼴이 아니다.
+# OCR 이 낱자 사이를 띄우거나('석사학위논 문') 줄을 바꾼다('석사학위논\n\n문.'). 대학원 이름만으로는 꼴로 보지 않는다 — 첫 쪽
+# 저자 소속 '* 연세대학교 대학원, 문헌정보학과 석사과정' 과 같은 꼴이다
+_THESIS_KO = re.compile(
+    r"[석박]\s*사\s*학\s*위\s*(?:청\s*구\s*)?논\s*문\s*"
+    r"(?:[.)]|,\s*(?:[^,.\n]{0,20}?대\s*학\s*[교원](?!(?:[ \t]*[가-힣]*?대\s*학\s*원)?(?:[ \t]*\(|[의을를에]))"
+    r"|(?:19|20)\d{2}(?![\d년])))")
+# thesis, Hanyang University · Doctoral dissertation, University of Texas — 같은 줄에서 대학 이름이 이을 때만. 영문 사사
+# 각주 'Based on the first author's master's thesis.' 는 꼴이 아니다
+_THESIS_EN = re.compile(r"\b(?:[Tt]hesis|[Dd]issertation)[ \t]*[,.)]+[ \t]*[^,.;\n]{0,40}?\bUniv(?:ersity|\.)")
 # 참고문헌 항목에 흔하고 본문 문장에는 드문 서지 꼴
 _ENTRY_SHAPES = (
     re.compile(r"\bpp?\s*\.\s*\d"),                                                   # pp.402 · p. 12
@@ -32,6 +44,8 @@ _ENTRY_SHAPES = (
     re.compile(r"[“\"「『󰡔][^”\"」』󰡕]{6,160}[”\"」』󰡕]\s*[,.]"),                        # “제목”, · 「제목」.
     re.compile(r"\b[A-Z][a-zA-Z'\-]+,\s*[A-Z]\.(?:\s*[A-Z]\.)?\s*(?:,|&|and\b|\()"),  # Selig, J. P., &
     re.compile(r"\b[A-Z][a-z]+(?:-[A-Z][a-z]+)?\s[A-Z]{1,3},"),                       # Bruce ML, Seeman TE,
+    _THESIS_KO,
+    _THESIS_EN,
 )
 # 본문 문장 — 한국어 서술 종결, 영어 서술 동사. 종결과 마침표 사이의 괄호 인용 '…하였다(김철수, 2012: 45-67).'·
 # '…하였다[3].' 과 마침표 뒤에 바로 붙는 각주 번호 '…하였다.12)'·닫는 따옴표 '…하였다.”' 도 서술 종결로 센다
@@ -63,10 +77,13 @@ _SHAPE_KINDS_MIN = 2     # 서로 다른 서지 꼴 종류
 # 하나도 없고 서지 꼴이 떨어진 두 자리 이상에 있을 때만 본다. _SPOT_GAP 안에 붙은 꼴은 한 자리다 — 학술지 첫 쪽 머리
 # '2016, Vol. 32, No. 4, pp. 183～204.'·그림 출처 '자료: 정효채 등. (2013). p.74' 는 꼴 여럿이 한 항목에 몰려 있다.
 # 학술지 권호는 세지 않는다 — 문장이 잘린 본문 조각에서 쪽 머리글 '(제45권 제2호)' 와 직접 인용 '(김철수, 2010, p. 23)' 이
-# 떨어져 있으면 꼴 두 종류·두 자리가 된다. 운영 근거 881개의 판정은 권호를 빼도 같다
+# 떨어져 있으면 꼴 두 종류·두 자리가 된다. 운영 근거 881개의 판정은 권호를 빼도 같다. 자리는 학위논문 꼴을 빼고 센 수와
+# 넣고 센 수 가운데 큰 쪽이다 — 떨어진 두 꼴('20(1),'·'(2010).') 사이에 학위논문 꼴이 끼면 40자 안으로 이어져 한 자리로
+# 묶이므로, 꼴을 더해 이미 걸리던 조각을 놓치지 않게
 _SHORT_MAX = 300
 _SPOT_GAP = 40
 _SHORT_SHAPES = tuple(s for s in _ENTRY_SHAPES if s not in (_VOLUME_KO, _VOLUME_EN))
+_SHORT_SHAPES_NO_THESIS = tuple(s for s in _SHORT_SHAPES if s not in (_THESIS_KO, _THESIS_EN))
 # 참고문헌 꼬리 + 다음 쪽 영문 제목·초록 — 한국어 논문 끝 영문 초록 쪽이 참고문헌 마지막 쪽과 한 청크가 된 것. 앞 400자만
 # 생성에 들어가 초록 대신 서지가 요약된다. 제 줄에 혼자 있는 'Abstract' 앞이 서술 없는 서지이고, 첫 제목 줄('#') 앞에
 # 저자-연도 '(1996).' 가 있을 때만 본다 — 학술지 첫 쪽 머리의 'No. 3 (2017).' 는 저자 이니셜 뒤가 아니다. 첫 쪽 인용 안내
@@ -79,17 +96,38 @@ _HEADING_LINE = re.compile(r"(?m)^#{1,6}[ \t]")
 _CITE_GUIDE_LINE = re.compile(
     r"(?im)^[ \t>*#-]*(?:citation\b|cite this\b|how to cite\b|to cite this\b|please cite\b|인용\s*[:：]|이 논문을 인용).*$")
 _TAIL_BEFORE_ABSTRACT_MIN = 40
+# 본문 끝 참고문헌 꼬리 — 맺음 문장 뒤(같은 줄의 '…필요를 느낀다. 참고문헌' 또는 제 줄의 '#### 참고문헌')에 머리와 첫 항목이
+# 붙은 청크. 본문이라 근거로 남지만(looks_like_bibliography 는 False) 모델에 넘기는 대목에서는 머리 뒤를 뗀다. 머리는 줄
+# 처음이나 문장 끝(마침표·닫는 따옴표·<br>) 바로 뒤에 있고, 머리 뒤에서 줄이 끝나야 한다(줄바꿈·<br>·글 끝). 같은 줄에 글이
+# 이으면 문장 속 낱말일 수 있다 — '참고문헌 120편을 분석한 김철수(2010: 45-67)의'·'References [3] and [4] used' 는 낱말
+# 검사를 지나고 뒤에 서지 꼴도 있어, 머리로 보면 그 뒤 본문을 모두 잃는다(운영 근거 903개에서 뗀 11개는 모두 머리 뒤가
+# 줄바꿈이다). 줄 처음의 절 번호('Ⅵ. 참고문헌'·'## 7. References')는 머리와 함께 뗀다 — 번호 뒤 마침표에서 자르면 대목
+# 끝에 'Ⅵ.' 이 매달린다. 쪽 배치가 뒤섞여 머리 뒤에 이 논문의 본문·그림 설명이 오는 청크가 있어(운영
+# KCI_FI002782062__0044·KCI_FI001202853__0021) 머리 뒤 _TAIL_LOOK 자가 서술 없이 서지 꼴을 품을 때만 뗀다. 머리 앞에 서술이
+# 없으면(목차·청크 맨 앞의 머리) 그대로 둔다
+_SEP = r"(?:[ \t]|<br\s*/?>)"
+_SECTION_NO = r"(?:#{1,6}[ \t]*)?(?:\d{1,2}|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]{1,2}|[IVX]{1,5})[ \t]*\.[ \t]*"
+_TAIL_HEAD = re.compile(
+    r"(?:^|(?<=[.。!?\"”’」』>]))" + _SEP + r"*((?:" + _SECTION_NO + r")?" + _HEAD_WORD + r")"
+    r"(?=[ \t]*(?:<br\s*/?>|\r?\n|$))", re.M)
+_TAIL_LOOK = 200
+_TRAILING_SEP = re.compile(r"(?:\s|<br\s*/?>)+\Z")
 
 
-def _entry_spots(text: str) -> int:
-    """짧은 조각 갈래의 서지 꼴(_SHORT_SHAPES)이 놓인 자리 수 — _SPOT_GAP 안에 붙은 꼴은 한 자리로 센다."""
-    spans = sorted(m.span() for shape in _SHORT_SHAPES for m in shape.finditer(text))
+def _spots(text: str, shapes: tuple[re.Pattern, ...]) -> int:
+    """서지 꼴(shapes)이 놓인 자리 수 — _SPOT_GAP 안에 붙은 꼴은 한 자리로 센다."""
+    spans = sorted(m.span() for shape in shapes for m in shape.finditer(text))
     spots, end = 0, float("-inf")
     for start, stop in spans:
         if start - end > _SPOT_GAP:
             spots += 1
         end = max(end, stop)
     return spots
+
+
+def _entry_spots(text: str) -> int:
+    """짧은 조각 갈래의 서지 꼴 자리 수 — 학위논문 꼴을 빼고 센 수와 넣고 센 수 가운데 큰 쪽."""
+    return max(_spots(text, _SHORT_SHAPES_NO_THESIS), _spots(text, _SHORT_SHAPES))
 
 
 def _no_prose(text: str) -> bool:
@@ -99,6 +137,23 @@ def _no_prose(text: str) -> bool:
 def has_prose(text: str) -> bool:
     """서술 문장(한국어 서술 종결 또는 영어 서술 동사)이 하나라도 있는가 — 종합이 절 생성에 넘길 대목을 고를 때 쓴다."""
     return not _no_prose(text)
+
+
+def strip_reference_tail(text: str) -> str:
+    """본문 끝에 붙은 참고문헌 꼬리(머리와 그 뒤)를 뗀 글. 꼬리가 없으면 그대로 돌려준다.
+
+    모델에 넘기는 대목(synthesizer._excerpt·research_work.passages)에 쓴다 — 400자 안의 짧은 대목이어도 맺음 문장 뒤의
+    '참고문헌 고문희(2008), “노인우울증과 …”, … 석사학위논문.' 이 그 논문 내용처럼 읽힌다(운영 c816c7b2 E4). 근거 청크
+    원문(인용칩 팝오버)은 바꾸지 않는다.
+    """
+    for m in _TAIL_HEAD.finditer(text):
+        before, look = text[:m.start(1)], text[m.end(1):m.end(1) + _TAIL_LOOK]
+        if not has_prose(before):
+            continue
+        if look.strip() and (has_prose(look) or not any(shape.search(look) for shape in _ENTRY_SHAPES)):
+            continue
+        return _TRAILING_SEP.sub("", before)
+    return text
 
 
 def _bibliography_before_abstract(text: str) -> bool:

@@ -1,0 +1,30 @@
+== 짝별(후보 기준 W/L/T)
+P01 630e concise  X=concise  Y=base     reader=W fact=W editor=W
+P02 85d2 focus    X=base     Y=focus    reader=W fact=W editor=W
+P03 d60a attrib   X=attrib   Y=base     reader=W fact=W editor=L
+P04 9ba1 focus    X=base     Y=focus    reader=W fact=W editor=W
+P05 85d2 concise  X=concise  Y=base     reader=W fact=W editor=W
+P06 9ba1 attrib   X=base     Y=attrib   reader=W fact=W editor=W
+P07 d60a focus    X=base     Y=focus    reader=W fact=T editor=W
+P08 d60a concise  X=base     Y=concise  reader=L fact=W editor=T
+P09 630e attrib   X=base     Y=attrib   reader=W fact=W editor=W
+P10 630e focus    X=base     Y=focus    reader=W fact=T editor=W
+P11 9ba1 concise  X=base     Y=concise  reader=W fact=W editor=W
+P12 85d2 attrib   X=base     Y=attrib   reader=T fact=W editor=L
+
+== 변형 × 판정자 (승-패-비김, 후보 vs base)
+focus    reader=4-0-0  fact=2-0-2  editor=4-0-0  합계=10-0-2
+attrib   reader=3-0-1  fact=4-0-0  editor=2-2-0  합계=9-2-1
+concise  reader=3-1-0  fact=4-0-0  editor=3-0-1  합계=10-1-1
+
+== 변형 × 보고서 (판정자 셋 합)
+focus    630e=2-0-1  d60a=2-0-1  85d2=3-0-0  9ba1=3-0-0
+attrib   630e=3-0-0  d60a=2-1-0  85d2=1-1-1  9ba1=3-0-0
+concise  630e=3-0-0  d60a=1-1-1  85d2=3-0-0  9ba1=3-0-0
+
+== base 쪽 기록(판정자 셋 합): 3-29-4
+
+== 판정 기준: 승 >= 2*패, 사실 검증자(fact)에게 패 > 승 아님
+focus    승10 패0 비2  fact 2-0-2  → 판정 기준 통과
+attrib   승9 패2 비1  fact 4-0-0  → 판정 기준 통과
+concise  승10 패1 비1  fact 4-0-0  → 판정 기준 통과

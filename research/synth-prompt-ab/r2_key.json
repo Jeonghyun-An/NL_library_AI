@@ -1,0 +1,90 @@
+{
+ "Q01": {
+  "tag": "85d2",
+  "job_id": "85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "run": 0,
+  "X": "focus",
+  "Y": "focus2",
+  "X_file": "gen_r2/focus_85d2_r0.json",
+  "Y_file": "gen_r2/focus2_85d2_r0.json",
+  "seed": "r2-judge-85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "focus_is_X_in_run": 0
+ },
+ "Q02": {
+  "tag": "d60a",
+  "job_id": "d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "run": 0,
+  "X": "focus2",
+  "Y": "focus",
+  "X_file": "gen_r2/focus2_d60a_r0.json",
+  "Y_file": "gen_r2/focus_d60a_r0.json",
+  "seed": "r2-judge-d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "focus_is_X_in_run": 1
+ },
+ "Q03": {
+  "tag": "85d2",
+  "job_id": "85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "run": 1,
+  "X": "focus2",
+  "Y": "focus",
+  "X_file": "gen_r2/focus2_85d2_r1.json",
+  "Y_file": "gen_r2/focus_85d2_r1.json",
+  "seed": "r2-judge-85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "focus_is_X_in_run": 0
+ },
+ "Q04": {
+  "tag": "9ba1",
+  "job_id": "9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "run": 0,
+  "X": "focus",
+  "Y": "focus2",
+  "X_file": "gen_r2/focus_9ba1_r0.json",
+  "Y_file": "gen_r2/focus2_9ba1_r0.json",
+  "seed": "r2-judge-9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "focus_is_X_in_run": 0
+ },
+ "Q05": {
+  "tag": "9ba1",
+  "job_id": "9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "run": 1,
+  "X": "focus2",
+  "Y": "focus",
+  "X_file": "gen_r2/focus2_9ba1_r1.json",
+  "Y_file": "gen_r2/focus_9ba1_r1.json",
+  "seed": "r2-judge-9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "focus_is_X_in_run": 0
+ },
+ "Q06": {
+  "tag": "d60a",
+  "job_id": "d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "run": 1,
+  "X": "focus",
+  "Y": "focus2",
+  "X_file": "gen_r2/focus_d60a_r1.json",
+  "Y_file": "gen_r2/focus2_d60a_r1.json",
+  "seed": "r2-judge-d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "focus_is_X_in_run": 1
+ },
+ "Q07": {
+  "tag": "630e",
+  "job_id": "630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "run": 1,
+  "X": "focus2",
+  "Y": "focus",
+  "X_file": "gen_r2/focus2_630e_r1.json",
+  "Y_file": "gen_r2/focus_630e_r1.json",
+  "seed": "r2-judge-630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "focus_is_X_in_run": 0
+ },
+ "Q08": {
+  "tag": "630e",
+  "job_id": "630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "run": 0,
+  "X": "focus",
+  "Y": "focus2",
+  "X_file": "gen_r2/focus_630e_r0.json",
+  "Y_file": "gen_r2/focus2_630e_r0.json",
+  "seed": "r2-judge-630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "focus_is_X_in_run": 0
+ }
+}
