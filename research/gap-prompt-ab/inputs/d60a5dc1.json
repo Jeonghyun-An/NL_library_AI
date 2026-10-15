@@ -1,0 +1,148 @@
+{
+ "job_id": "d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+ "gen_id": 103,
+ "same_papers": true,
+ "missing_title": [],
+ "stored_evidence": {
+  "E1": "KCI_FI002162833",
+  "E2": "KCI_FI002782062",
+  "E3": "KCI_FI001613573",
+  "E4": "KCI_FI001407641",
+  "E5": "KCI_FI002548462"
+ },
+ "input": {
+  "key": "gap",
+  "kind": "gap",
+  "question": "노인의 우울과 사회적 지지에 관한 연구 동향을 알려줘",
+  "topic": {
+   "id": 54,
+   "title": "노인의 다양한 사회적 지지 유형과 우울 간의 관계 분석"
+  },
+  "research_question": "노인의 사회적 지지 네트워크의 특징은 무엇이며, 이는 우울과의 관계에 어떠한 영향을 미치는가?",
+  "papers": [
+   {
+    "eid": "E1",
+    "cnts_id": "KCI_FI002162833",
+    "title": "지역사회 거주 노인의 우울에 미치는 융합적 영향요인",
+    "year": 2016,
+    "abstract": "The purpose of this research is to analyze the depression, happiness on aging, self-esteem, life satisfaction and disability of daily living activity level of the elderly people, and to analyze the variables to impact on their depression. The study data were analyzed descriptive analysis, t-test, ANOVA, Pearson’s Correlation Coefficient, and multiple regression analysis. The most influential variables on the elderly depression were self-esteem with 27.9% of explanatory power (β=-.318, p<.001), followed by life satisfaction with 5.5%(β=-.248, p<.001), happiness on aging 4.1%((β=-.200, p<.001),",
+    "excerpt": {
+     "chunk_id": "KCI_FI002162833__0032",
+     "page_start": 7,
+     "page_end": 8,
+     "text": "Lee, “Longitudinal changes in depression in older adults: Differences across age and risk factors”, Journal of Welfare for the Aged, Vol. 61, pp. 291-318, 2013. - [6] S. Lee, E. Kim, “The social support patterns and depression among the elderly living alone and their friends and neighbors”, Journal of Welfare for the Aged, Vol. 56, pp. 137-164, 2012. - [7] H. Song, \"A study on the Relationship among Depression, Walking and Quality of Life for the\n\n- between Work Participation and Life Satisfaction in the Korean Elderly”, The Journal of the Korean Association of Psychotherapy, Vol. 7, No. 1, pp. 57-68, 2015. - [17] D. Lee, H."
+    }
+   },
+   {
+    "eid": "E2",
+    "cnts_id": "KCI_FI002782062",
+    "title": "노인의 사회적 지지와 우울의 관계 연구에 대한 체계적 문헌고찰",
+    "year": 2021,
+    "abstract": "Objectives : Elderly people are becoming more socially isolated due to COVID-19 and long-term social isolation can lead to serious psychosocial problems. This study aimed to identify the relationship between social support and depression of the elderly, and research trends of recent studies through a systematic review.",
+    "excerpt": {
+     "chunk_id": "KCI_FI002782062__0044",
+     "page_start": 19,
+     "page_end": 19,
+     "text": "2000년 이후 국내 노인을 대상으로 사회적 지지와 우울간의 관계를 체계적으 로 고찰하여 어떤 사회적 지지가 우울을 감소시키는지 분석 하였고 연구방법론의 측면에서는 노인의 사회적 지지와 우 울의 측정도구를 리뷰 하였다는 점에서 의의가 있다.\n본 연구의 결과처럼 사회적 지지는 노인의 우울을 감소 시키고 가장 효과적 사회적 지지는 정서적 지지였으며, 사 회적 지지원은 가족 및 배우자로 파악되었다. 이어서 사회 적 지지의 하위 요인 중 구조적, 자존적, 평가적 지지가, 사 회적 지지원 중 친구와 중요한 타인의 지지 수준이 높을수 록 우울을 감소하는 것으로 나타났다. 본 연구는 사회적 지지의 하위 개념들을 파악하고 그 종 류에 따라 우울에 미치는 영향을 자세하게 고찰하였다. 이 러한 영향 변수들을 고려하여 노인의 사회적 지지를 높여 우울을 감소시켜서 궁극적으로 노인의 삶의 질을 향상시키 는 것에 기여할 수 있다는 점에서 의의가 있다. 본 연구의 제한점과 후속 연구를 위한 제언은 다음과 같다. 첫째, 본 연구는 국내외 학술지에 발표된 국내 논문을 활\n\n용하여 사회적 지지가 우울에 미치는 영향을 분석하였다. 그러나 국내 노인인구에 대한 연구로 한정되었다는 제한점 을 갖고 있다. 따라서 향후 외국 노인을 대상으로 한 국외 문헌까지 통합하여 체계적 고찰을 실시함으로써 사회적 지 지의 효과를 밝히는 연구가 필요하다. 둘째, 연구 결과를 바탕으로 정서적 지지를 강화하는 전 략 수립이 필요하다. 본 연구 결과에 의하면 사회적 지지 중 정서적 지지는 우울을 감소시키는 가장 효과적인 하위 개념으로 나타났다. 그러므로 노인의 정서적 지지를 높일 수 있는 다양한 정서 관련 프로그램을 개발 및 적용하여 노 인의 우울을 감소하기 위한 정책이 이루어져야 한다. 셋째, 본 연구는 사회적 지지가 우울에 미치는 영향에 대 한 구체적인 효과크기를 파악하지 못하였다는 한계가 있다. 따라서 추후 이에 대한 메타분석 연구를 제언한다. 결론 및 제언\n\n##### 참고문헌\n\n본 연구는 노인의 사회적 지지와 우울에 대한 연구를 체 계적으로 고찰 분석하여 연구의 연구결과와 연구동향을 파\n\n1."
+    }
+   },
+   {
+    "eid": "E3",
+    "cnts_id": "KCI_FI001613573",
+    "title": "노인의 우울과 자살생각의 관계에 대한 위기사건, 사회적 지지의 조절효과",
+    "year": 2011,
+    "abstract": "",
+    "excerpt": {
+     "chunk_id": "KCI_FI001613573__0041",
+     "page_start": 23,
+     "page_end": 23,
+     "text": "기백석(1996). 한국판 노인 우울척도 단축형의 표준화 예비 연구. 신경정신의학, 35(2), pp.298-307. 김기환, 전명희(2000). 청소년 자살의 특성과 유형에 관한 연구. 한국아동복지학, 9, pp.127-152. 김현순, 김병석(2007). 노인의 자살생각에 대한 경로분석. 한국심리학회지: 상담 및 심리 치료, 19(3), pp.801-818. 김효창, 손영미(2006). 노인 자살의 특성과 자살유형에 관한 연구. 한국심리학회지: 사회 문제, 12(2), pp.1-19. 박봉길(2008). 노인의 심리사회적 특성이 우울감과 자살생각에 미치는 조절효과에 관한 연구. 한국노년학, 28(4), pp.969-989. 배지연, 김원영, 윤경아(2005). 노인의 우울 및 사회적 지지의 완충효과. 한국노년학,\n\n25(3), pp.59-73. 보건복지부(2008)."
+    }
+   },
+   {
+    "eid": "E4",
+    "cnts_id": "KCI_FI001407641",
+    "title": "농촌노인의 우울에 대한 사회적 지지의 매개효과",
+    "year": 2009,
+    "abstract": "본 연구는 농촌노인의 스트레스원과 사회적 지지의 우울과의 인과관계를 다각적인 측면에서 규명하기 위한 것으로 스트레스원으로 인한 우울에 대하여 사회적 지지를 구조적 지지와 기능 적 지지로 분류하여 그 매개효과를 검증하고 있다. 조사대상은 전라북도 8개 군에 거주하는 65 세 이상 노인으로 구조화된 설문지를 이용하여 직접 면접형식으로 조사하였으며 228명의 자료\n\n- 가 분석에 이용되었다. 분석결과는 첫째, 스트레스 수준에 따른 우울의 증가 정도는 주관적 경 제상태, 주관적 건강상태, 일상생활활동능력 순으로 나타났다. 둘째, 사회적 지지의 총합과 구조 적 지지에서는 가족지지, 기능적 지지에서는 정서적 지지가 우울을 감소시키는 것으로 나타났\n- 다. 셋째, 사회적 지지의 총합과 구조적 지지에서는 가족지지가 주관적 경제상태가 우울에 미치 는 영향을 완화시키고 있으며, 기능적 지지에서는 정서적 지지가 일상생활활동능력에 대해 우울 을 완화시키는 매개효과가 있는 것으로 나타났다. 이러한 결과는 사회적 지지가 우울을 완화시 키는 직․간접적인 효과가 있음을 보여주는 것으로, 농촌노인의 삶의 질을 향상시키는데 사회적 지지는 중요한 문제해결 요소가 될 수 있음을 시사하고 있다.",
+    "excerpt": {
+     "chunk_id": "KCI_FI001407641__0040",
+     "page_start": 24,
+     "page_end": 25,
+     "text": "유수정․김현숙․한규량(2002), “지역사회 여성노인의 인지기능, 신체적 기능, 자아존중감 및 사회적 지지와 우울간의 관계”, 노인간호학회지, 제4권 제2호, 노인간호학회, pp. 163175. 유양경․고성희․김귀분․정승희(2004), “노인이 지각한 사회적 지지가 자존감에 미치는 영 향”, 성인간호학회지, 제16권 제1호, 대한성인간호학회, pp. 102-110. 유인영․임민경․유원섭(2002), “노인의 우울과 자가건강수준, 사회적 지지정도에 관한 연구”, 노인간호학회지, 제4권 제2호, 노인간호학회, pp. 153-162. 이길자․안혜경․김영선(1999), “노인의 정신건강과 가족지지에 관한 연구”, 노인간호학회지 , 제1권 제2호, 노인간호학회, pp. 181- 194. 이민숙(2005), “노인의 우울과 자살에 대한 사회적 지지의 영향”, 서울여자대학교 대학원 석사 학위논문. 이수애․이경미(2002), “농촌지역 노인의 우울증 결정요인에 관한 연구”, 한국노년학, 제22 권 제1호, 한국노년학회, pp. 209-226. 이천수(2002), “농촌노인에 대한 사회적 지지가 생활만족도에 미치는 영향에 관한 연구”, 동국\n\n대학교 대학원 석사학위논문. 장나라(2004), “일 농촌 노인의 사회적 지지와 우울과 일상생활능력이 삶의 질 수준에 미치는 영향”, 서울대학교 대학원 석사학위논문. 정영해(2004), “농촌노인 건강실태 ‘, 사회연구, 제5권 제1호, 한국사회조사연구소, pp. 149-167."
+    }
+   },
+   {
+    "eid": "E5",
+    "cnts_id": "KCI_FI002548462",
+    "title": "중･고령층의 사회적 관계와 우울의 종단적 상호인과관계: 자기회귀교차지연모형 검증과 연령집단별 분석",
+    "year": 2019,
+    "abstract": "",
+    "excerpt": {
+     "chunk_id": "KCI_FI002548462__0071",
+     "page_start": 33,
+     "page_end": 33,
+     "text": "The American Journal of Geriatric Psychiatry, 13(5), pp.402-408. Selig, J.\nP., & Little, T.\n(2012). Autoregressive and cross-lagged panel analysis for longitudinal data. In Laursen, B., Little, T. D., & Card, N. (Eds.), Handbook of developmental research methods (pp.289-316). New York: Guilford. Stordal, E., Mykletun, A., & Dahl, A. (2003). The association between age and depression in the general population: a multivariate examination. Acta Psychiatrica Scandinavica, 107(2), pp.132-141. Tiedt, A. (2010). The gender gap in depressive symptoms among Japanese elders: evaluating social support and health as mediating factors. Journal of Cross-cultural Gerontology, 25(3), pp.239-256. Tsai, Y."
+    }
+   }
+  ],
+  "figures": [
+   {
+    "id": "F1",
+    "label": "이 절에 준 논문 수",
+    "value": "5"
+   },
+   {
+    "id": "F2",
+    "label": "발행 연도 범위",
+    "value": "2009~2021"
+   }
+  ],
+  "group": null,
+  "seeds": [
+   {
+    "heading": "국내 학술 논문에서 노인의 우울과 사회적 지지 간의 관계를 측정하기 위해 사용된 방법 및 기법은 무엇인가?",
+    "text": "향후 연구에서는 다양한 사회적 지지 유형(가족, 친구, 지역사회 등)이 노인의 우울에 미치는 영향에 대한 심층적인 분석이 필요하다 [E1]."
+   }
+  ],
+  "basis": {
+   "topic_id": 54,
+   "papers": [
+    "KCI_FI002162833",
+    "KCI_FI002782062",
+    "KCI_FI001613573",
+    "KCI_FI001407641",
+    "KCI_FI002548462"
+   ],
+   "question": "노인의 사회적 지지 네트워크의 특징은 무엇이며, 이는 우울과의 관계에 어떠한 영향을 미치는가?"
+  }
+ },
+ "stored_paragraphs": [
+  "국내 학술 논문들을 소장 코퍼스에서 확인한 결과, 노인의 우울과 사회적 지지 간의 관계를 다루는 연구는 꾸준히 진행되어 왔으나, 구체적으로 어떤 방법 및 기법이 활용되었는지에 대한 상세한 설명은 미흡한 것으로 나타났다. [E1], [E2]에서 t-test, ANOVA, 회귀분석 등의 분석 방법이 언급되기는 하지만, 각 척도의 구체적인 구성 요소나 분석 기법의 세부적인 내용은 찾아보기 어렵다. 이는 연구 방법론에 대한 정보 부족으로 이어져, 후속 연구자들이 기존 연구를 참고하여 연구 설계를 개선하거나 발전시키는 데 어려움을 겪을 수 있다.",
+  "다수의 연구에서 사회적 지지의 하위 유형(가족, 친구, 지역사회 등)이 노인의 우울에 미치는 영향에 대한 분석이 필요함을 제시하고 있다. [E4]에서는 구조적 지지와 기능적 지지를 구분하여 그 매개효과를 검증하고 있으며, [E2]에서는 정서적 지지가 우울 감소에 가장 효과적인 하위 개념으로 나타났다. 하지만 이러한 결과들이 구체적으로 어떤 측정 도구를 사용하여 도출되었는지, 그리고 각 하위 유형별 효과의 크기는 어느 정도인지에 대한 정보는 충분히 제시되지 않고 있다.",
+  "소장 코퍼스에서 확인한 논문들은 노인의 우울과 사회적 지지 간의 관계를 분석하는 데 다양한 변수를 활용하고 있지만, 이러한 변수들이 측정된 구체적인 방법론적 측면은 더욱 심층적인 연구를 필요로 한다. [E3]에서는 노인의 우울 척도와 사회적 지지 척도를 언급하고 있지만, 각 척도의 신뢰도 및 타당도 검증 과정이나, 연구 대상자의 특성을 고려한 측정 방법 등에 대한 자세한 설명은 부족하다. 따라서 향후 연구에서는 다양한 사회적 지지 유형(가족, 친구, 지역사회 등)이 노인의 우울에 미치는 영향에 대한 심층적인 분석과 함께, 각 변수를 측정하기 위해 사용된 방법 및 기법에 대한 상세한 정보를 제공해야 할 것이다."
+ ],
+ "stored_checks": [
+  {
+   "dropped": 0,
+   "numbers": [],
+   "softened": 0,
+   "unmarked": 1,
+   "dropped_f": 0
+  },
+  {
+   "dropped": 0,
+   "numbers": [],
+   "softened": 0,
+   "unmarked": 1,
+   "dropped_f": 0
+  },
+  {
+   "dropped": 0,
+   "numbers": [],
+   "softened": 0,
+   "unmarked": 2,
+   "dropped_f": 0
+  }
+ ]
+}
