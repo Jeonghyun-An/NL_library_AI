@@ -190,6 +190,50 @@ def test_short_or_abstract_headed_body_is_kept(text):
     assert not looks_like_bibliography(text)
 
 
+# 아래는 학위논문 꼴('석사학위논문.'·'박사학위논문, ○○대학교 대학원'·'thesis, ○○ University')이 서지 꼴이 된 뒤에도 남아야 하는
+# 본문 — 학위논문을 다룬 서술 문장, 첫 쪽의 학위논문 사사 각주·저자 소속, 학위논문 표지
+
+# 서술 문장 속 학위논문 — '석사학위논문,'·'대학원,' 과 직접 인용 '2012: 45-67' 이 떨어져 있어도 서술 종결이 있다
+THESIS_STUDIES = (
+    "국내 문헌정보학 학위논문을 분석한 연구에서는 석사학위논문, 박사학위논문 순으로 이용자 연구가 많았다(김철수, 2012: "
+    "45-67). 이영희(2015)는 연세대학교 대학원, 이화여자대학교 대학원의 석사학위논문 120편을 분석하여 노인 이용자 연구가 "
+    "늘었다고 보고하였다.")
+
+# 서술 없는 첫 쪽 머리 — 사사 각주의 '석사학위논문을'(조사)·'석사학위논문, 「…」을'(쉼표 뒤가 대학이 아님)과 저자 소속
+# '연세대학교 대학원,' 은 서지가 아니다. 쪽 머리 'pp. 101-120' 과 40자 넘게 떨어져 있다
+_FIRST_PAGE_HEAD = ("한국문헌정보학회지 제44권 제2호 2010 pp. 101-120\n\n"
+                    "# 공공도서관 노인 이용자의 정보요구에 관한 연구\n\n홍길동*, 김철수**\n\n")
+THESIS_ACK_FOOTNOTE = (_FIRST_PAGE_HEAD + "* 이 논문은 제1저자의 석사학위논문을 수정·보완한 것임\n"
+                       "* 연세대학교 대학원, 문헌정보학과 석사과정\n** 연세대학교 문헌정보학과 교수")
+THESIS_ACK_COMMA = (_FIRST_PAGE_HEAD + "* 이 논문은 제1저자의 석사학위논문, 「공공도서관 노인 이용자의 정보요구」를 "
+                    "요약한 것임\n** 연세대학교 문헌정보학과 교수")
+# 영문 사사 각주 — 'thesis.' 뒤가 대학 이름이 아니다('44(2),'·'pp. 101' 은 한 자리에 몰려 있다)
+EN_THESIS_ACK = (
+    "Journal of the Korean Society for Library and Information Science, 44(2), pp. 101-120\n\n"
+    "# Information Needs of Older Adults in Public Libraries\n\nGil-dong Hong*, Chul-soo Kim**\n\n"
+    "* Based on the first author's master's thesis.\n** Dept. of Library and Information Science, Yonsei University")
+# 학위논문 표지 — '석사학위논문'·'○○대학교 대학원' 뒤에 문장부호가 없다
+THESIS_COVER = ("석사학위논문\n\n노인의 우울과 사회적 지지에 관한 연구\n\n지도교수 김철수\n\n"
+                "이 논문을 사회복지학 석사학위논문으로 제출함\n\n2010년 2월\n\n서울대학교 대학원\n사회복지학과\n홍길동")
+
+
+@pytest.mark.parametrize(
+    "text", [THESIS_STUDIES, THESIS_ACK_FOOTNOTE, THESIS_ACK_COMMA, EN_THESIS_ACK, THESIS_COVER],
+    ids=["thesis-studies", "thesis-ack-footnote", "thesis-ack-comma", "en-thesis-ack", "thesis-cover"])
+def test_body_mentioning_theses_is_kept(text):
+    assert not looks_like_bibliography(text)
+
+
+# 학위논문 항목만 둘인 짧은 조각 — 한국어 APA '(석사학위논문). ○○대학교 대학원' 은 저자-연도 '(2010).' 한 꼴만 되풀이돼
+# 학위논문 꼴이 없으면 서로 다른 꼴이 하나다
+KO_THESIS_APA = ("홍길동 (2010). 노인의 우울과 사회적 지지에 관한 연구 (석사학위논문). 서울대학교 대학원, 서울.\n"
+                 "김철수 (2012). 공공도서관 노인 서비스의 이용 행태 연구 (박사학위논문). 연세대학교 대학원, 서울.")
+
+
+def test_short_thesis_entries_are_bibliography():
+    assert looks_like_bibliography(KO_THESIS_APA)
+
+
 @pytest.mark.parametrize("head", ["참고문헌", "### 참고문헌", "References", "5. 참고문헌"])
 def test_head_at_chunk_start_followed_by_entries_is_bibliography(head):
     """머리 낱말 뒤에 바로 서지 항목(저자 이름 + 마침표·괄호)이 이으면 머리다 — 머리를 좁혀도 이 꼴은 잡는다."""
