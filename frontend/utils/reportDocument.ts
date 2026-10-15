@@ -116,22 +116,57 @@ export function reportFileName(question: string, date: Date, draft: boolean): st
   return `${DEEP_RESEARCH}_${fileHead(question) || "보고서"}_${kstYmd(date)}${draft ? "_초안" : ""}.docx`;
 }
 
-export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc {
-  const numbers = new Map<string, number>();
-  const citedIn = new Map<string, ReportSection[]>();
+// 한 절이 인용하는 근거 번호를 읽는 순서대로 — 도입 → 대표 논문 → 향후 과제(문서 블록을 만드는 순서와 같다).
+// 도입이 비면 도입은 건너뛴다(문서는 그 자리에 INTROLESS 를 싣고 인용하지 않는다)
+function sectionCiteIds(sec: ReportSection): string[] {
+  const ids: string[] = [];
+  const fromText = (text: string) => {
+    for (const p of splitCitations(text)) if (p.type === "cite") ids.push(p.eid);
+  };
+  if (sec.intro) fromText(sec.intro);
+  for (const p of sec.papers) ids.push(...p.evidence);
+  for (const f of sec.future) fromText(f.text);
+  return ids;
+}
 
-  // 번호는 문서에 처음 나온 순서다 — 블록을 위에서 아래로 만드는 순서가 곧 읽는 순서라 여기서 매긴다
-  function cite(eid: string, sec: ReportSection): DocRun {
-    const n = numbers.get(eid) ?? numbers.size + 1;
-    numbers.set(eid, n);
-    const secs = citedIn.get(eid) ?? [];
-    if (!secs.includes(sec)) secs.push(sec);
-    citedIn.set(eid, secs);
-    return { cite: n };
+// 인용 번호 — 보고서에 처음 나온 순서로 1 부터. Word·PDF(buildReportDocument)와 화면의 인용칩·접힌 참고문헌(ReportView)이
+// 같은 번호를 쓴다(사용자 결정 2026-10-15 — 화면 칩 '김 2012' 대신 숫자)
+export function reportCiteNumbers(sections: readonly ReportSection[]): Map<string, number> {
+  const numbers = new Map<string, number>();
+  for (const sec of sections) for (const eid of sectionCiteIds(sec)) if (!numbers.has(eid)) numbers.set(eid, numbers.size + 1);
+  return numbers;
+}
+
+// 참고문헌 줄 — 번호 순. 인용 쪽은 그 근거를 인용한 절들의 대목에서 모은다. 화면은 이 글 그대로, 문서는 XML 에 못 넣는 글자를 뺀 뒤 쓴다
+export function reportReferences(
+  sections: readonly ReportSection[],
+  evidence: Record<string, ReportEvidence>,
+): DocReference[] {
+  const citedIn = new Map<string, ReportSection[]>();
+  for (const sec of sections) {
+    for (const eid of sectionCiteIds(sec)) {
+      const secs = citedIn.get(eid) ?? [];
+      if (!secs.includes(sec)) secs.push(sec);
+      citedIn.set(eid, secs);
+    }
+  }
+  return [...reportCiteNumbers(sections)].map(([eid, n]) => ({
+    n,
+    eid,
+    text: referenceText(evidence[eid], citedIn.get(eid) ?? [], eid),
+  }));
+}
+
+export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc {
+  const numbers = reportCiteNumbers(input.sections);
+
+  // 번호는 reportCiteNumbers 가 문서에 처음 나온 순서로 매겨 두었다 — 블록을 위에서 아래로 만드는 순서와 같다
+  function cite(eid: string): DocRun {
+    return { cite: numbers.get(eid)! };
   }
 
-  function runs(text: string, sec: ReportSection): DocRun[] {
-    return splitCitations(text).map((p) => (p.type === "text" ? { text: p.text } : cite(p.eid, sec)));
+  function runs(text: string): DocRun[] {
+    return splitCitations(text).map((p) => (p.type === "text" ? { text: p.text } : cite(p.eid)));
   }
 
   const blocks: DocBlock[] = [{ type: "title", text: docTitle(input) }, ...metaBlocks(input, now)];
@@ -141,7 +176,7 @@ export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc
     blocks.push({ type: "heading", level: 1, text: `${si + 1}. ${sec.heading}` });
     blocks.push(
       sec.intro
-        ? { type: "para", runs: runs(sec.intro, sec) }
+        ? { type: "para", runs: runs(sec.intro) }
         : { type: "para", runs: [{ text: INTROLESS }], muted: true },
     );
     if (sec.papers.length) {
@@ -150,23 +185,19 @@ export function buildReportDocument(input: ReportDocInput, now: Date): ReportDoc
         type: "bullets",
         items: sec.papers.map((p) => [
           { text: paperLine(p, input.evidence) + (p.evidence.length ? " " : "") },
-          ...p.evidence.map((eid) => cite(eid, sec)),
+          ...p.evidence.map((eid) => cite(eid)),
         ]),
       });
     }
     if (sec.future.length) {
       blocks.push({ type: "heading", level: 2, text: "향후 과제" });
-      blocks.push({ type: "bullets", items: sec.future.map((f) => runs(f.text, sec)) });
+      blocks.push({ type: "bullets", items: sec.future.map((f) => runs(f.text)) });
     }
   });
 
   blocks.push(...limitBlocks(input), ...trailBlocks(input.trail), ...excludedBlocks(input.excluded));
 
-  const references = [...numbers].map(([eid, n]) => ({
-    n,
-    eid,
-    text: xmlSafe(referenceText(input.evidence[eid], citedIn.get(eid) ?? [], eid)),
-  }));
+  const references = reportReferences(input.sections, input.evidence).map((r) => ({ ...r, text: xmlSafe(r.text) }));
   // 화면은 보이지 않는 글자로 넘기지만 문서는 깨진다 — Word·인쇄가 같은 글을 쓰도록 모델에서 한 번에 뺀다
   return {
     fileName: reportFileName(input.question, now, input.draft !== null),
