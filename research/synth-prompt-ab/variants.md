@@ -3,7 +3,9 @@
 > 보관 메모(2026-10-15): A/B 전에 변형마다 630e 보고서로 형식을 확인하며 적은 설계 기록을 그대로 옮겼다. 명령은 이 폴더
 > 기준으로 고쳤다. 여기 나오는 생성 원문(`gen_*.json`)은 저장소에 넣지 않았다 — 파일마다 한 줄 요약은 `gen_index.tsv`.
 > 현행 프롬프트 3회 출력(`synth_impl/gen_new.json`)·`synth_impl/analyze.py`·`concise_stats.py`·`_concise_driver.sh`·
-> `synth_dup/ana.py` 도 넣지 않았다(설계 단계 형식 확인 도구다 — 숫자는 아래 본문에 남아 있다). 초안 yaml 은
+> `synth_dup/ana.py` 도 넣지 않았다(설계 단계 형식 확인 도구다 — 숫자는 아래 본문에 남아 있다). 그래서 아래 형식 확인·'참고 지표'
+> 수치는 저장소만으로 다시 셀 수 없다(생성도 temperature 0.3 이라 같은 값으로 다시 나오지 않는다). 변형을 다듬는 데만 썼고 채택
+> 관문에는 쓰지 않았다(README '넣지 않은 것'). 초안 yaml 은
 > `variant_focus_draft1.yaml`·`variant_concise_draft1.yaml`·`variant_concise_draft2.yaml` 만 남아 있다(focus draft2~4 는 파일이 없다).
 > focus2 의 초안 30벌(`focus2/draft1~11.yaml`·`x_*.yaml` 19벌)은 넣지 않았고 최종본 `variant_focus2.yaml` 만 넣었다.
 

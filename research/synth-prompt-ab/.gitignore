@@ -7,3 +7,10 @@ judge_pairs.json
 r2_pairs.json
 ab_metrics.json
 checks/figleak/measure_g2.json
+# 설계 단계 생성 원문(run_prompt.py 출력 — variants.md 의 gen_*.json)·focus2 초안 출력
+gen_*.json
+focus2/
+# --dump 덤프·대목 원문 덤프·실행 로그(ab_metrics.py·r2_metrics.py --dump 를 파일로 받을 때)
+dump*.txt
+excerpts*.txt
+*.log
