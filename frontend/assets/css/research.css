@@ -2075,3 +2075,344 @@ button.rs-synth__item:focus-visible,
     text-indent: -22pt;
   }
 }
+
+/* ── 탐색 중 본문 — 'AI가 지금 하는 일'(ResearchLive) ──────────────── */
+/* 탐색 중에는 과정을 보고서 자리에 크게 띄운다 — 지금 하는 일 한 줄(살아 있는 점) · 숫자 칸 · 하위질문마다 회차 단계가 내려앉는 줄.
+   보고서를 쓰기 시작하면 과정(탐색 경로)은 옆 칸으로 가고 이 화면은 절 자리(ReportSkeleton)·초안으로 바뀐다(사용자 결정 2026-10-14) */
+.rs-live {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.2rem;
+  background: var(--skx-white);
+  border: 1px solid var(--skx-frame-line);
+  border-radius: var(--skx-radius-md);
+}
+.rs-live__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rs-live__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+/* 살아 있는 점 — 포인트 색이 숨 쉬듯 번진다 */
+.rs-live__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--skx-primary);
+  animation: rs-live-breathe 1.6s ease-in-out infinite;
+}
+@keyframes rs-live-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--skx-border-c1);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 0.3rem var(--skx-border-c1);
+    opacity: 0.7;
+  }
+}
+/* 지금 하는 일 — 두 줄 높이를 늘 잡아 글이 바뀌어도 아래가 출렁이지 않는다 */
+.rs-live__now {
+  min-height: 2.6em;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--skx-ink);
+  word-break: keep-all;
+}
+.rs-live__counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+.rs-live__counter {
+  padding: 0.55rem 0.7rem;
+  background: var(--skx-frost-bg);
+  border-radius: var(--skx-radius-sm);
+}
+.rs-live__counter dt {
+  font-size: 0.55rem;
+  color: var(--skx-ink-2);
+}
+/* 수가 바뀌면 key 가 바뀌어 다시 그려지며 톡 튄다 */
+.rs-live__counter dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-ink);
+  animation: rs-live-bump 0.45s ease-out;
+}
+@keyframes rs-live-bump {
+  from {
+    transform: translateY(0.25rem);
+    opacity: 0.4;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.rs-live__subqs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-live__subq {
+  /* 따라가기(scrollIntoView)의 여백 — 고정 진행 막대 높이는 문서 스크롤 여백(html scroll-padding)이 이미 더한다(절과 같다) */
+  scroll-margin-top: 1.2rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--skx-frost-bg);
+  border-radius: var(--skx-radius-sm);
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.rs-live__subq.is-pending {
+  opacity: 0.6;
+}
+/* 지금 도는 하위질문 — 포인트 색 테두리로 짚는다 */
+.rs-live__subq.is-current {
+  box-shadow: inset 0 0 0 1px var(--skx-border-c2);
+}
+.rs-live__subq-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.rs-live__no {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: var(--skx-ink-2);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: 50%;
+}
+.rs-live__subq.is-current .rs-live__no {
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+.rs-live__subq.is-done .rs-live__no {
+  color: var(--skx-teal-ink);
+  border-color: var(--skx-teal-ink);
+}
+.rs-live__subq-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--skx-ink);
+}
+.rs-live__subq-state {
+  flex: none;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--skx-ink-2);
+  white-space: nowrap;
+}
+.rs-live__subq.is-current .rs-live__subq-state {
+  color: var(--skx-primary);
+}
+.rs-live__toggle {
+  flex: none;
+  padding: 0.1rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.55rem;
+  color: var(--skx-ink-2);
+  background: none;
+  border: 1px solid var(--skx-border-c1);
+  border-radius: var(--skx-radius-pill);
+  cursor: pointer;
+}
+.rs-live__toggle:hover {
+  background: var(--skx-frost-bg-hover);
+}
+.rs-live__toggle:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 1px;
+}
+.rs-live__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0 0.6rem;
+  padding-left: 1rem;
+  border-left: 1px dashed var(--skx-border-c1);
+}
+.rs-live__alert {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-glass-teal);
+  border-left: 3px solid var(--skx-primary);
+  border-radius: var(--skx-radius-sm);
+  animation: rs-live-in 0.35s ease-out;
+}
+.rs-live__alert strong {
+  color: var(--skx-primary);
+}
+.rs-live__alert-note {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.6rem;
+  color: var(--skx-ink-2);
+}
+.rs-live__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-live__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.rs-live__step-ico {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--skx-ink-2);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-border-c1);
+  border-radius: 50%;
+}
+.rs-live__step.is-ok .rs-live__step-ico {
+  color: var(--skx-teal-ink);
+  border-color: var(--skx-teal-ink);
+}
+.rs-live__step.is-warn .rs-live__step-ico {
+  color: var(--skx-primary);
+  border-color: var(--skx-primary);
+}
+/* 지금 하는 단계 — 동그라미가 숨 쉰다 */
+.rs-live__step.is-pending .rs-live__step-ico {
+  color: var(--skx-primary);
+  border-color: var(--skx-primary);
+  animation: rs-live-breathe 1.6s ease-in-out infinite;
+}
+.rs-live__step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.rs-live__step-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  word-break: keep-all;
+}
+.rs-live__step.is-ok .rs-live__step-title {
+  color: var(--skx-teal-ink);
+}
+.rs-live__step.is-warn .rs-live__step-title,
+.rs-live__step.is-pending .rs-live__step-title {
+  color: var(--skx-primary);
+}
+.rs-live__step-detail {
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink-2);
+  word-break: keep-all;
+}
+/* 단계가 새로 생기면 아래에서 떠오른다(TransitionGroup name rs-live-step) */
+.rs-live-step-enter-active {
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}
+.rs-live-step-enter-from {
+  opacity: 0;
+  transform: translateY(0.4rem);
+}
+@keyframes rs-live-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.3rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rs-live__reviewing {
+  padding: 0.5rem 0.7rem;
+  background: var(--skx-white);
+  border: 1px dashed var(--skx-border-c1);
+  border-radius: var(--skx-radius-sm);
+  animation: rs-live-in 0.35s ease-out;
+}
+.rs-live__reviewing-title {
+  margin: 0 0 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--skx-ink-2);
+}
+.rs-live__papers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rs-live__paper {
+  overflow: hidden;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.rs-live__paper.is-more {
+  color: var(--skx-ink-2);
+}
+.rs-live__error {
+  margin: 0;
+  font-size: 0.6rem;
+  color: var(--skx-danger);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-live__dot,
+  .rs-live__counter dd,
+  .rs-live__alert,
+  .rs-live__step.is-pending .rs-live__step-ico,
+  .rs-live__reviewing {
+    animation: none;
+  }
+  .rs-live-step-enter-active,
+  .rs-live__subq {
+    transition: none;
+  }
+}

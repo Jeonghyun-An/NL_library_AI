@@ -14,6 +14,11 @@
         @keydown="onKeydown"
         @focusout="onFocusout"
       >
+        <!-- 머리 — 인용 번호와 KCI 등재 구분(있을 때만). 번호는 이름표(aria-label)가 이미 읽으므로 눈으로만 본다(사용자 결정 2026-10-14) -->
+        <div class="skx-citepop__head">
+          <span class="skx-citepop__num" aria-hidden="true">{{ item.num }}</span>
+          <span v-if="item.grade" class="skx-citepop__grade">{{ item.grade }}</span>
+        </div>
         <button type="button" class="skx-citepop__title" @click="emit('detail')">{{ item.title }}</button>
         <p v-if="meta" class="skx-citepop__meta">{{ meta }}</p>
         <div class="skx-citepop__actions">
@@ -38,7 +43,7 @@ import { popoverPlacement } from "~/utils/relevance";
 const props = defineProps<{
   /** 눌린 번호 버튼 */
   anchor: HTMLElement;
-  item: { num: number; title: string; authors: string; year: string };
+  item: { num: number; title: string; authors: string; year: string; grade?: string };
 }>();
 const emit = defineEmits<{
   /** restoreFocus: 번호 버튼으로 초점을 돌려줄지(Esc·Tab 으로 나갈 때) */

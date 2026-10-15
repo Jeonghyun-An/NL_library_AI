@@ -6,7 +6,7 @@
       v-if="anchor && active"
       :key="seq"
       :anchor="anchor"
-      :item="{ num: active.num, title: active.title, authors: active.authors, year: active.year }"
+      :item="{ num: active.num, title: active.title, authors: active.authors, year: active.year, grade: active.grade }"
       @close="onClose"
       @detail="act('detail')"
       @pdf="act('pdf')"

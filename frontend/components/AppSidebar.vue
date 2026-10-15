@@ -38,6 +38,7 @@
         </button>
         <span v-if="railTip === 'open'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.open }}</span>
       </div>
+      <!-- [새 검색]은 숨긴다(사용자 결정 2026-10-14) — 첫 화면은 로고로 간다. 되살리려면 이 주석을 푼다
       <div class="skx-rail__item skx-rail__item--extra">
         <button
           type="button"
@@ -53,6 +54,7 @@
         </button>
         <span v-if="railTip === 'new'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.new }}</span>
       </div>
+      -->
       <div class="skx-rail__item skx-rail__item--extra">
         <button
           type="button"
@@ -75,7 +77,7 @@
 
     <!-- 로고 + 접기 버튼 -->
     <div class="skx-lnb__logo">
-      <a class="skx-logo" href="/" aria-label="SKOVIX 메인으로 이동">
+      <a ref="homeLink" class="skx-logo" href="/" aria-label="SKOVIX 메인으로 이동">
         <SkovixWordmark class="skx-logo__word" />
       </a>
       <button
@@ -89,13 +91,14 @@
       </button>
     </div>
 
-    <!-- 새 검색 — 랜딩 첫 화면으로 -->
+    <!-- 새 검색 — 랜딩 첫 화면으로. 숨긴다(사용자 결정 2026-10-14) — 첫 화면은 로고로 간다. 되살리려면 이 주석을 푼다
     <div class="skx-lnb__new">
       <button ref="newSearchBtn" type="button" class="skx-newchat" @click="newSearch">
         <span class="skx-newchat__icon"><img src="/img/ico-newchat.svg" alt="" /></span>
         <span class="skx-newchat__label">새 검색</span>
       </button>
     </div>
+    -->
 
     <!-- 메뉴 -->
     <nav v-if="SHOW_MOCKS" class="skx-lnb__menu" aria-label="주요 메뉴">
@@ -487,7 +490,9 @@ const { loaded, listFailed } = history;
 
 const researchExpanded = ref(false);
 const confirming = ref<ClearGroup | null>(null);
+// [새 검색]을 숨긴 동안(템플릿 주석) 이 ref 는 비어 있다 — 갈 곳이 없어진 초점은 로고(첫 화면 링크)로 보낸다
 const newSearchBtn = ref<HTMLButtonElement | null>(null);
+const homeLink = ref<HTMLAnchorElement | null>(null);
 const researchClearBtn = ref<HTMLButtonElement | null>(null);
 const recentClearBtn = ref<HTMLButtonElement | null>(null);
 const researchConfirmBtn = ref<HTMLButtonElement | null>(null);
@@ -548,7 +553,7 @@ async function clearGroup(group: ClearGroup) {
       : Promise.all([history.clear("book"), history.clear("paper")]);
   await nextTick();
   const opener = OPENER[group].value;
-  (opener?.isConnected ? opener : newSearchBtn.value)?.focus();
+  (opener?.isConnected ? opener : (newSearchBtn.value ?? homeLink.value))?.focus();
   await done;
 }
 
@@ -589,7 +594,7 @@ function removeRow(id: string, ev: Event) {
   const title = li?.closest("section")?.querySelector<HTMLElement>(".skx-history__title") ?? null;
   void history.remove(id);
   void nextTick(() => {
-    const target = nextRow?.isConnected ? nextRow : title?.isConnected ? title : newSearchBtn.value;
+    const target = nextRow?.isConnected ? nextRow : title?.isConnected ? title : (newSearchBtn.value ?? homeLink.value);
     target?.focus();
   });
 }

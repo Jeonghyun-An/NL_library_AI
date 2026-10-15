@@ -14,6 +14,8 @@ export interface SummaryRef extends CiteRef {
   book_id: string;
   authors: string;
   year: string;
+  /** KCI 등재 구분('KCI 등재'·'KCI 후보'·'우수등재') — 팝오버 머리의 번호 옆 알약. 없으면 빈 문자열 */
+  grade?: string;
 }
 
 /** 버튼 요소의 클래스 — 화면(SummaryText)이 이 이름으로 눌린 번호를 찾는다 */
