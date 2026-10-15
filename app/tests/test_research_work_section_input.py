@@ -212,6 +212,47 @@ class TestDropEmptyTableLines:
         assert passages.drop_empty_table_lines(text) is text
 
 
+TITLE = "공공도서관 서비스 고객만족도 평가체계에 관한 연구"
+
+
+def _cand(text: str, chunk_id: str = "KCI_C__0019") -> dict:
+    return {"chunk_id": chunk_id, "text": text, "page_start": 12, "page_end": 13, "score": 0.5}
+
+
+class TestDropRunningHeads:
+    def test_own_title_with_a_page_number_on_its_own_line_is_dropped(self):
+        """운영 911d9583 prior.g1 E1(KCI_FI001023392__0019) — 쪽 머리말이 대목 가운데 끼어 모델이 '…에 관한 연구 13에서는'
+        이라 썼다. 쪽수는 앞에 와도 되고, 앞뒤 '|'·공백은 본다."""
+        text = f"분류하였다. - 204 -\n\n{TITLE} 13\n\n도서관을 공부방으로 이용한다.\n| 205 {TITLE} |\n끝."
+        (p,) = passages.drop_running_heads([_cand(text)], TITLE)
+        assert p["text"] == "분류하였다. - 204 -\n\n도서관을 공부방으로 이용한다.\n끝."
+        assert p["chunk_id"] == "KCI_C__0019" and p["score"] == 0.5
+
+    def test_a_cut_long_title_is_a_running_head_from_its_first_part(self):
+        title = "지식정보자원 관리를 위한 국내 학술연구정보 평가와 활용방안 연구: 대학 연구소를 중심으로"
+        text = "앞 문장.\n\n지식정보자원 관리를 위한 국내 학술연구정보 평가와 활용방안 연구 323\n\n뒤 문장."
+        (p,) = passages.drop_running_heads([_cand(text)], title)
+        assert p["text"] == "앞 문장.\n\n뒤 문장."
+
+    @pytest.mark.parametrize("line", [
+        TITLE,                                   # 쪽수 없는 제목 줄(첫 쪽 제목·본문 속 제목)
+        f"# {TITLE}",
+        f"{TITLE}에서는 13개 항목을 썼다",          # 제목 뒤에 글이 이어지는 문장
+        "평가체계에 관한 연구 13",                  # 제목의 앞이 아닌 부분
+        "공공도서관 서비스 13",                     # 앞부분이 _HEAD_PREFIX_MIN 자 미만
+        "다른 논문 제목 연구 13",
+    ])
+    def test_other_lines_are_kept(self, line):
+        cand = _cand(f"앞 문장.\n{line}\n뒤 문장.")
+        assert passages.drop_running_heads([cand], TITLE) == [cand]
+
+    def test_a_passage_left_empty_is_dropped_and_unknown_title_keeps_all(self):
+        cands = [_cand(f"{TITLE} 13", "KCI_C__0001"), _cand("본문.", "KCI_C__0002")]
+        assert [p["chunk_id"] for p in passages.drop_running_heads(cands, TITLE)] == ["KCI_C__0002"]
+        assert passages.drop_running_heads(cands, None) is cands
+        assert passages.drop_running_heads(cands, " ") is cands
+
+
 def _snapshot_chunk(chunk_id: str, score: float) -> dict:
     c = bibliography_chunk(chunk_id)
     return {"chunk_id": chunk_id, "text": c["text"], "page_start": c["page_start"], "page_end": c["page_end"],
