@@ -1103,6 +1103,28 @@ class TestGenerateSection:
         assert "COMMIT" in order[:first_pick]
         assert order[first_pick:].index("INSERT") < order[first_pick:].index("COMMIT")
 
+    def test_the_running_head_of_each_paper_is_left_out_of_its_candidates(self, api, heavy, monkeypatch):
+        """대목 후보에서 그 논문 제목 + 쪽수 줄(쪽 머리말)을 뗀다 — 모델이 '…에 관한 연구 13에서는' 이라 쓰고 다른 논문에도
+        없는 숫자를 붙였다(운영 911d9583). 제목은 그 절의 서지(BookRepository)에서 읽는다."""
+        jid = _sec_work(api.engine)
+        with api.engine.begin() as conn:
+            conn.execute(sa.update(ResearchJob.__table__).where(ResearchJob.__table__.c.id == jid).values(
+                state_snapshot={"evidence": {"E3": {"cnts_id": "KCI_A", "meta": {}, "chunks": [
+                    {"chunk_id": "KCI_A__0004", "text": "앞 쪽 끝 문장이다.\n\n노인 우울과 가족 지지 13\n\n다음 쪽 첫 문장이다.",
+                     "page_start": 4, "page_end": 5, "score": 0.8}]}}}))
+        seen = {}
+
+        def _pick(query, passages):
+            seen.update({p["chunk_id"]: p["text"] for p in passages})
+            best = passages[0]
+            return {"chunk_id": best["chunk_id"], "page_start": best["page_start"], "page_end": best["page_end"],
+                    "text": best["text"]}
+
+        monkeypatch.setattr(api.router, "pick_excerpt", _pick)
+
+        assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 200
+        assert seen["KCI_A__0004"] == "앞 쪽 끝 문장이다.\n\n다음 쪽 첫 문장이다."
+
     def test_example_work_is_read_only(self, api, heavy):
         jid = _sec_work(api.engine, is_example=True)
         assert api.client.post(f"/api/research/{jid}/sections/prior.g1/generate").status_code == 409

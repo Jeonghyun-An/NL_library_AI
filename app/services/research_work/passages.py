@@ -38,6 +38,11 @@ _BR = re.compile(r"<br\s*/?>", re.I)
 # 빈 표 줄에서 떼고 나면 남는 것이 없는 글자 — 칸 '|'·구분 '---'·정렬 ':'·공백
 _TABLE_MARKUP = " \t\r\n|:-"
 _BLANK_RUN = re.compile(r"\n{3,}")
+# 쪽 머리말 — 그 논문 제목(공백·기호를 뺀 글)과 쪽수(1~4자리, 앞이나 뒤)만 있는 줄. 긴 제목은 머리말에서 잘리므로 앞부분
+# _HEAD_PREFIX_MIN 자 이상이 제목의 앞과 같아도 머리말로 본다
+_NON_WORD = re.compile(r"[\W_]+")
+_PAGE_NO = re.compile(r"^\d{1,4}\s+|\s+\d{1,4}$")
+_HEAD_PREFIX_MIN = 12
 # Milvus query 상한(초). 정수로 준다 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다
 # (아니면 75번 재시도로만 끊겨 UNAVAILABLE 이면 한 편에 약 3.5분, 응답이 없으면 gRPC 기한이 없어 무한정 기다린다).
 # [이 절 쓰기]는 스냅숏에 없는 논문(되살림·담기)마다 최대 6번 차례로 부르므로 한 편이 묶이면 게이트웨이
@@ -98,6 +103,35 @@ def drop_empty_table_lines(text: str) -> str:
     lines = text.splitlines(keepends=True)
     kept = [line for line in lines if not _empty_table_line(line)]
     return text if len(kept) == len(lines) else _BLANK_RUN.sub("\n\n", "".join(kept)).strip()
+
+
+def _running_head(line: str, title_key: str) -> bool:
+    """'공공도서관 서비스 고객만족도 평가체계에 관한 연구 13' 처럼 그 논문 제목(title_key — 공백·기호를 뗀 글)과 쪽수만
+    있는 줄인가. 쪽수가 없는 제목 줄(첫 쪽 '# 제목'·본문 속 제목)은 머리말로 보지 않는다."""
+    core, pages = _PAGE_NO.subn("", _BR.sub(" ", line).strip().strip("|#").strip())
+    core = _NON_WORD.sub("", core)
+    return bool(pages and core) and (
+        core == title_key or (len(core) >= _HEAD_PREFIX_MIN and title_key.startswith(core)))
+
+
+def drop_running_heads(passages: list[dict], title: str | None) -> list[dict]:
+    """대목 가운데의 그 논문 쪽 머리말 줄(_running_head)을 뗀 후보. 떼고 나서 빈 대목은 뺀다. 제목을 모르면 그대로다.
+
+    운영 911d9583 이어가기 prior.g1 E1 대목에 '공공도서관 서비스 고객만족도 평가체계에 관한 연구 13'(쪽 머리말)이 끼어
+    모델이 '…에 관한 연구 13에서는' 이라 쓰고, 다른 논문에도 '…의 역할 18에서는'·'…에 관한 연구 19에서는' 처럼
+    없는 숫자를 붙였다. 운영 근거 청크 953개 가운데 이런 줄이 든 청크는 11개, 모두 제 줄에 따로 있다."""
+    key = _NON_WORD.sub("", title or "")
+    if not key:
+        return passages
+    out = []
+    for p in passages:
+        lines = p["text"].splitlines(keepends=True)
+        kept = [line for line in lines if not _running_head(line, key)]
+        if len(kept) == len(lines):
+            out.append(p)
+        elif text := _BLANK_RUN.sub("\n\n", "".join(kept)).strip():
+            out.append({**p, "text": text})
+    return out
 
 
 def _passage(chunk_id: str, text: str, page_start, page_end, score) -> dict:

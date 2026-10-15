@@ -36,7 +36,7 @@ from services.research_work.membership import (
 from services.research_work.outline import outline_input
 from services.research_work.paragraph import paragraph_input
 from services.research_work.paragraph_edit import merge_paragraphs, revalidate
-from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
+from services.research_work.passages import drop_running_heads, milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
 from services.research_work.proposal_views import paper_ids, proposal_view, section_sources
 from services.research_work.reading_views import book_meta, preselected_count, subquestions_of
@@ -357,11 +357,14 @@ def _excerpt_query(*, group_name: str | None, research_question: str, seeds: lis
     return " ".join(p.strip() for p in parts if p and p.strip())
 
 
-def _excerpts(query: str, snapshot: dict | None, cnts_ids: list[str]) -> dict[str, dict | None]:
-    """논문마다 원문 대목 하나 — 스냅숏 청크가 먼저, 없으면 Milvus 한 편 청크(passages). 리랭커·Milvus 를 부르는
-    동기 함수라 run_in_threadpool 로 부른다(읽기 트랜잭션을 닫은 뒤 — 함정 18)."""
+def _excerpts(query: str, snapshot: dict | None, cnts_ids: list[str],
+              titles: dict[str, str | None]) -> dict[str, dict | None]:
+    """논문마다 원문 대목 하나 — 스냅숏 청크가 먼저, 없으면 Milvus 한 편 청크(passages). 그 논문 제목(titles)으로
+    쪽 머리말 줄을 뗀 뒤 고른다(drop_running_heads). 리랭커·Milvus 를 부르는 동기 함수라 run_in_threadpool 로
+    부른다(읽기 트랜잭션을 닫은 뒤 — 함정 18)."""
     return {
-        cnts: pick_excerpt(query, snapshot_passages(snapshot, cnts) or milvus_passages(cnts))
+        cnts: pick_excerpt(query, drop_running_heads(snapshot_passages(snapshot, cnts) or milvus_passages(cnts),
+                                                     titles.get(cnts)))
         for cnts in cnts_ids
     }
 
@@ -413,6 +416,7 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
         # 구조화한 detail(version_conflict 와 같은 꼴) — 화면 문구는 detailMessage 가 message 를 그대로 읽는다
         raise HTTPException(status_code=409, detail={"code": NO_SECTION_PAPERS_CODE, "message": NO_SECTION_PAPERS})
     books = await BookRepository(db).get_by_cnts_ids(cnts_ids)
+    titles = {cnts: getattr(books.get(cnts), "title", None) for cnts in cnts_ids}
     question = job.question
     snapshot = job.state_snapshot
     topic_of_outline = dict(outline.get("topic") or {})
@@ -421,7 +425,7 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
 
     query = _excerpt_query(group_name=(group or {}).get("name"), research_question=research_question,
                            seeds=seeds)
-    excerpts = await run_in_threadpool(_excerpts, query, snapshot, cnts_ids)
+    excerpts = await run_in_threadpool(_excerpts, query, snapshot, cnts_ids, titles)
     if group is not None:
         inp = prior_input(question=question, topic=topic_of_outline, research_question=research_question,
                           group=group, books=books, excerpts=excerpts)
