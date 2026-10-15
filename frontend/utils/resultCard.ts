@@ -26,14 +26,45 @@ export interface CardInfo {
  */
 export const CARD_KEYWORD_LIMIT = 3;
 
-/** `a, b; c | d` → ["a","b","c","d"] — 앞의 # 와 공백을 떼고 빈 것·중복(대소문자 무시)을 뺀다. 배열이면 항목마다 같은 정리만 한다 */
+// 한 항목에 여러 키워드가 붙어 온 것 — 적재가 원문 키워드 칸을 그대로 읽었다(2026-10-15 운영 논문 검색 300건에서 확인).
+// 칩 하나에 세 개가 붙어 보였다:
+//  - '키워드(영문) 키워드(영문) …' — 국문(영문 풀이) 짝이 띄어 이어진 것. 짝마다 나누고 영문 풀이는 뗀다(국문 키워드 하나에 영문 풀이 하나)
+//  - 'Elderly · Socioeconomic · Depression.' — 띄어 쓴 가운뎃점. 붙여 쓴 '아동·청소년'은 한 낱말이라 그대로
+//  - '서울시 Key words : Public Library'·'Radiological Science 중심 단어: 스마트폰' — 원문의 키워드 머리 글자
+//  - '이용자 만족도 University Library' — 국문 뒤에 영문 키워드(대문자로 시작하는 낱말)가 이어진 것. 'SNS 이용'·'CHI'처럼
+//    약어(대문자만)는 나누지 않는다
+const KEYWORD_LABEL = /\s*(?:\bkey\s?words?|중심\s?단어|주제어|핵심어)\s*[:：]\s*/gi;
+const SPACED_DOT = /\s+[·•ㆍ]\s+/;
+const GLOSSED_PAIRS = /^(?:\s*[^()]*[가-힣][^()]*\([^()]*[A-Za-z][^()]*\)){2,}\s*$/;
+const GLOSSED_PAIR = /[^()]*[가-힣][^()]*\([^()]*[A-Za-z][^()]*\)/g;
+const HANGUL_THEN_WORD = /(?<=[가-힣])\s+(?=[A-Z][a-z])/;
+// 떼는 것은 소문자가 든 영문 풀이만 — '인공지능(AI)'·'크리드(KREAD)' 같은 약어는 이름의 일부라 둔다
+const LATIN_GLOSS = /^(.*[가-힣][^()]*?)\s*\(\s*[A-Za-z][^()]*[a-z][^()]*\)$/;
+
+function splitKeywordItem(item: string): string[] {
+  return item
+    .split(KEYWORD_LABEL)
+    .flatMap((s) => s.split(SPACED_DOT))
+    .flatMap((s) => (GLOSSED_PAIRS.test(s) ? (s.match(GLOSSED_PAIR) ?? [s]) : [s]))
+    .flatMap((s) => s.split(HANGUL_THEN_WORD))
+    .map((s) =>
+      s
+        .trim()
+        .replace(/^#+\s*/, "")
+        .replace(/[.,;:]+$/, "")
+        .replace(LATIN_GLOSS, "$1")
+        .trim(),
+    );
+}
+
+/** `a, b; c | d` → ["a","b","c","d"] — 앞의 # 와 공백을 떼고 빈 것·중복(대소문자 무시)을 뺀다. 배열이면 항목마다 같은 정리만 한다.
+ *  어느 쪽이든 한 항목 안에 붙어 온 키워드는 splitKeywordItem 으로 나눈다 */
 function splitKeywords(raw: string | readonly string[] | null | undefined): string[] {
-  const parts = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[,;|\n]/) : [];
+  const items = Array.isArray(raw) ? raw : typeof raw === "string" ? raw.split(/[,;|\n]/) : [];
+  const parts = items.flatMap((p) => (typeof p === "string" ? splitKeywordItem(p) : []));
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const p of parts) {
-    if (typeof p !== "string") continue;
-    const kw = p.trim().replace(/^#+\s*/, "");
+  for (const kw of parts) {
     const key = kw.toLowerCase();
     if (!kw || seen.has(key)) continue;
     seen.add(key);
