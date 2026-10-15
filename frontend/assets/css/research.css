@@ -151,6 +151,13 @@ html:has(.rs-page.has-progressbar) {
   border: 1px solid var(--skx-border-c2);
   border-radius: var(--skx-radius-md);
 }
+/* 알림 글 뒤의 버튼([진행 중인 연구 보기]) — 글과 사이를 두고 세로 가운데. 좁으면 다음 줄로 */
+.rs-alert--action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+}
 .rs-spinner {
   width: 1.2rem;
   height: 1.2rem;

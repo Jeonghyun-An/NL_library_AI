@@ -50,11 +50,16 @@
           @go="goStep"
           @help="onboardingOpen = true"
         />
-        <p v-if="actionError || pageError" class="rs-alert" role="alert">
+        <!-- 막은 연구가 있으면 [진행 중인 연구 보기]를 글 뒤에 작은 테두리 버튼으로 — 글에 붙은 링크라 눈에 띄지 않았다(2026-10-15) -->
+        <p v-if="actionError || pageError" :class="['rs-alert', activeJobId && 'rs-alert--action']" role="alert">
           {{ actionError || pageError }}
-          <template v-if="activeJobId">
-            <NuxtLink :to="`/research/${encodeURIComponent(activeJobId)}`">진행 중인 연구 보기</NuxtLink>
-          </template>
+          <NuxtLink
+            v-if="activeJobId"
+            class="rs-btn rs-btn--ghost rs-btn--small"
+            :to="`/research/${encodeURIComponent(activeJobId)}`"
+          >
+            진행 중인 연구 보기
+          </NuxtLink>
         </p>
 
         <!-- 연구 어시스턴트 단계(?s=) — 보고서는 요약 띠로 접고 단계 화면을 그린다.
