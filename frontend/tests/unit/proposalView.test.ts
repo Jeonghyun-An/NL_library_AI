@@ -34,6 +34,7 @@ import {
   paragraphProblem,
   paragraphViews,
   proposalReread,
+  proposalWritten,
   putOnceMore,
   removeParagraph,
   reportBar,
@@ -191,6 +192,31 @@ describe("paragraphParts", () => {
       { type: "text", text: " 다 " },
       { type: "figure", fid: "F1" },
       { type: "text", text: "." },
+    ]);
+  });
+
+  it("앞 낱말에 붙여 쓴 [E#] 칩 앞에는 띄어쓰기를 하나 넣는다 — '하였다박 2007' 로 읽히지 않게(2026-10-15 운영 확인)", () => {
+    expect(paragraphParts("하였다[E1].", { E1: "KCI_A" })).toEqual([
+      { type: "text", text: "하였다 " },
+      { type: "cite", eid: "E1" },
+      { type: "text", text: "." },
+    ]);
+    // 이미 띄었거나 여는 괄호 뒤·칩끼리·수치 칩·번호 오류(취소선)는 그대로
+    expect(paragraphParts("가 [E1][E2] (그 [E1]) 평균은[F1]이다[E9].", { E1: "KCI_A", E2: "KCI_B" })).toEqual([
+      { type: "text", text: "가 " },
+      { type: "cite", eid: "E1" },
+      { type: "cite", eid: "E2" },
+      { type: "text", text: " (그 " },
+      { type: "cite", eid: "E1" },
+      { type: "text", text: ") 평균은" },
+      { type: "figure", fid: "F1" },
+      { type: "text", text: "이다" },
+      { type: "badcite", eid: "E9" },
+      { type: "text", text: "." },
+    ]);
+    expect(paragraphParts("([E1]) 「[E1]", { E1: "KCI_A" }).filter((p) => p.type === "text")).toEqual([
+      { type: "text", text: "(" },
+      { type: "text", text: ") 「" },
     ]);
   });
 
@@ -729,6 +755,37 @@ describe("docToc — 머리 목차", () => {
   it("목차가 없으면 빈 목록", () => {
     const p = autoProposal({ outline: null });
     expect(docToc(p, autoState(p), new Set())).toEqual([]);
+  });
+});
+
+describe("proposalWritten — 보고서를 다 썼는가(머리 단계 줄)", () => {
+  const all = () => ({
+    "prior.g1": section([para("p1", "proposed")]),
+    "prior.g2": section([para("p1", "proposed")], { key: "prior.g2", gen_id: 51 }),
+    gap: section([para("p1", "proposed")], { key: "gap", gen_id: 52 }),
+  });
+  const doneGens = [gen(50, "done"), gen(51, "done", "prior.g2"), gen(52, "done", "gap")];
+
+  it("문서 순서의 절을 다 썼고 쓰는·기다리는 절이 없으면 true — 서버 단계는 Word 를 받아야 done 이라 화면이 따로 본다", () => {
+    const p = autoProposal({ sections: all() });
+    expect(proposalWritten(autoState(p, doneGens))).toBe(true);
+    // 취소로 끝난 쓰기 전 절(생성 기록 있음)은 끝난 절이다
+    const { gap: _gap, ...two } = all();
+    const canceled = autoProposal({ sections: two, section_gens: { gap: { gen_id: 52, status: "canceled" } } });
+    expect(proposalWritten(autoState(canceled, [gen(50, "done"), gen(51, "done", "prior.g2"), gen(52, "canceled", "gap")]))).toBe(true);
+  });
+
+  it("쓰는 절·실패한 절·아직 손대지 않은 절이 있거나, 계획서·목차를 아직 못 읽었으면 false", () => {
+    const p = autoProposal({ sections: all() });
+    expect(proposalWritten(autoState(p, [...doneGens, gen(53, "running", "gap")]))).toBe(false);
+    const { gap: _gap, ...two } = all();
+    const failed = autoProposal({ sections: two, section_gens: { gap: { gen_id: 52, status: "failed" } } });
+    expect(proposalWritten(autoState(failed, [gen(50, "done"), gen(51, "done", "prior.g2"), gen(52, "failed", "gap")]))).toBe(false);
+    const untouched = autoProposal({ sections: two });
+    expect(proposalWritten(autoState(untouched, doneGens.slice(0, 2)))).toBe(false);
+    expect(proposalWritten({ ...autoState(p, doneGens), proposal: null })).toBe(false);
+    const noOutline = autoProposal({ outline: null, sections: all() });
+    expect(proposalWritten(autoState(noOutline, doneGens))).toBe(false);
   });
 });
 

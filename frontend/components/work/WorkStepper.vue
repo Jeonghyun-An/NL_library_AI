@@ -15,7 +15,7 @@
         </span>
       </li>
     </ol>
-    <p class="wk-stepper__line">{{ line }}</p>
+    <p class="wk-stepper__line">{{ line }} <span class="wk-beta">{{ BETA_LABEL }}</span></p>
     <button type="button" class="rs-icon-btn wk-stepper__help" aria-label="단계 안내 다시 보기" title="단계 안내" @click="$emit('help')">
       ?
     </button>
@@ -25,16 +25,16 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { WorkPhase, WorkStep } from "~/types/work";
-import { stepLine, stepperItems, type StepperItem } from "~/utils/workPhase";
+import { BETA_LABEL, stepLine, stepperItems, type StepperItem } from "~/utils/workPhase";
 
-// phase = 도달한 단계, current = 지금 보는 단계(?s=, null 이면 탐색·보고서)
-const props = defineProps<{ phase: WorkPhase; current: WorkStep | null }>();
+// phase = 도달한 단계, current = 지금 보는 단계(?s=, null 이면 탐색·보고서), written = 보고서 절을 다 썼다(Word 받기 전)
+const props = defineProps<{ phase: WorkPhase; current: WorkStep | null; written?: boolean }>();
 const emit = defineEmits<{ go: [step: WorkStep | null]; help: [] }>();
 
 const STATE_LABEL: Record<StepperItem["state"], string> = { done: "끝남", current: "지금 단계", todo: "아직" };
 
 const items = computed(() => stepperItems(props.phase, props.current));
-const line = computed(() => stepLine(props.phase));
+const line = computed(() => stepLine(props.phase, props.written));
 const viewing = computed(() => props.current ?? "explore");
 
 // ① 탐색은 보고서 화면(?s= 없음)이다

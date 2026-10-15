@@ -28,8 +28,12 @@ const MARKERS = /\[[EF]\p{Nd}+\]/gu;
 // 공백·문장부호·기호는 겹침으로 세지 않는다
 const NOISE = /[\s\p{P}\p{S}]/gu;
 
+// '넘긴 원문 대목' 패널은 참고문헌 꼬리를 남긴다(keepReferences — 모델이 받은 글 그대로라야 남의 참고문헌을 인용한 것이 드러난다).
+// 문장 나누기·강조(excerptSentences·excerptParts)가 같은 꼴을 써야 문장 번호가 맞는다
+const EVIDENCE_TEXT = { keepReferences: true } as const;
+
 export function excerptSentences(text: string): string[] {
-  return passageText(text)
+  return passageText(text, EVIDENCE_TEXT)
     .split(SENTENCE_SPLIT)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -153,7 +157,7 @@ export function excerptParts(excerpt: string, cited: string, eid?: string): { te
     else parts.push({ text, mark });
   };
   let index = 0;
-  for (const piece of passageText(excerpt).split(SENTENCE_SPLIT_KEEP)) {
+  for (const piece of passageText(excerpt, EVIDENCE_TEXT).split(SENTENCE_SPLIT_KEEP)) {
     if (!piece.trim()) {
       push(piece, false);
       continue;

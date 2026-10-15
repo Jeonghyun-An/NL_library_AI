@@ -37,6 +37,19 @@ export function splitMarkers(text: string): MarkerPart[] {
   return parts;
 }
 
+// 근거 칩 앞 띄어쓰기 — 서버 글은 '하였다[E1]' 처럼 마커를 앞 낱말에 붙여 쓴다. 칩은 '박 2007' 같은 저자·연도라 붙여 그리면
+// '하였다박 2007' 로 읽힌다(2026-10-15 운영 확인). 칩 바로 앞 글이 공백·여는 괄호로 끝나지 않으면 공백 하나를 붙인다.
+// 화면에 그릴 조각만 바꾼다 — 저장 글·문장 나누기(sentenceFlags)·숫자 검사는 원문 그대로다. 수치 칩([F#])은 문장 속 값이라 띄우지 않는다
+const OPENS_OR_SPACE = /[\s(\[{「『“‘<]$/;
+
+export function spaceBeforeCites<P extends { type: string }>(parts: readonly P[]): P[] {
+  return parts.map((p, i) => {
+    if (p.type !== "text" || parts[i + 1]?.type !== "cite") return p;
+    const text = (p as P & { text: string }).text;
+    return text && !OPENS_OR_SPACE.test(text) ? { ...p, text: `${text} ` } : p;
+  });
+}
+
 // 서버 markers.numbers_outside 와 같다 — 마커를 빈 글자로 지운 뒤, 영문자·숫자·점·하이픈에 붙지 않은 숫자(소수점·
 // 천 단위 쉼표는 한 숫자)를 등장 순으로. "COVID-19"·"B2B"·"5G" 의 숫자는 이름의 일부라 세지 않는다
 export function numbersOutside(text: string): string[] {

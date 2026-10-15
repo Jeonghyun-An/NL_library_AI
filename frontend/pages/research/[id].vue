@@ -46,6 +46,7 @@
           v-if="workView"
           :phase="workView.phase"
           :current="stepMode ? step : null"
+          :written="proposalWritten(work.state.value)"
           @go="goStep"
           @help="onboardingOpen = true"
         />
@@ -170,6 +171,7 @@
                     <ContinueResearchCard
                       :exists="work.exists.value"
                       :work="workView"
+                      :written="proposalWritten(work.state.value)"
                       :busy="continuing"
                       :error="continueError"
                       @continue="onContinue"
@@ -286,6 +288,7 @@ import { activeRoundKey, currentStageTag, maxRoundsOf, progressBarView, showsPro
 import { followBlocked, followTarget, userOpenedPopover, type PointerTrail } from "~/utils/researchFollow";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
+import { proposalWritten } from "~/utils/proposalView";
 import { ONBOARDING_KEY, parseWorkStep, stepForPhase, summaryBand, summaryLine, withStep } from "~/utils/workPhase";
 
 const route = useRoute();
@@ -351,6 +354,15 @@ const work = useResearchWork(() => String(route.params.id ?? ""), {
   enabled: computed(() => phase.value === "completed"),
 });
 const workView = computed(() => work.state.value.work);
+// 보고서 단계에 온 연구는 어느 화면에서 열든 계획서를 읽어 둔다 — 머리 단계 줄·이어가기 카드의 '보고서 완성'(proposalWritten)이
+// 계획서로 정해진다. 보고서 단계 화면(ProposalStep)에서만 읽으면 처음 연 화면에 따라 같은 연구의 줄이 달랐다
+watch(
+  () => workView.value?.phase,
+  (p) => {
+    if (p === "proposal") void work.ensure("proposal");
+  },
+  { immediate: true },
+);
 // 이어가지 않은 연구로 확인되면(exists false) ?s= 가 붙어 와도 지금의 탐색·보고서 화면을 그린다
 const stepMode = computed(() => step.value !== null && phase.value === "completed" && work.exists.value !== false);
 

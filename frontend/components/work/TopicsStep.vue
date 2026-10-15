@@ -36,15 +36,6 @@
     </div>
     <template v-else>
       <p v-if="queueNote" class="rs-muted" aria-live="polite">{{ queueNote }}</p>
-      <button
-        v-if="offscreen.length"
-        type="button"
-        class="rs-btn rs-btn--small wk-pill"
-        aria-live="polite"
-        @click="showArrived"
-      >
-        새 후보 {{ offscreen.length }} ↓
-      </button>
       <TopicDeck
         :topics="topics"
         :concepts="view?.concepts ?? []"
@@ -58,6 +49,16 @@
         @write="write"
         @arrived="onArrived"
       />
+      <!-- 화면 밖에 도착한 카드가 있으면 덱 뒤에서 화면 아래에 붙어 뜬다(.wk-pill — 위에 붙이면 카드 제목을 덮었다) -->
+      <button
+        v-if="offscreen.length"
+        type="button"
+        class="rs-btn rs-btn--small wk-pill"
+        aria-live="polite"
+        @click="showArrived"
+      >
+        새 후보 {{ offscreen.length }} ↓
+      </button>
       <div v-if="pickedTitle" class="wk-screen__next">
         <p class="wk-screen__picked">고른 주제 <strong>{{ pickedTitle }}</strong></p>
         <button type="button" class="rs-btn" @click="emit('go', 'reading')">참고문헌 선택하기로</button>

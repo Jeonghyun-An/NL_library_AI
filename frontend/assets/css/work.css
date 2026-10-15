@@ -254,6 +254,20 @@ button.wk-stepper__step {
   font-size: 0.6rem;
   color: var(--skx-gray-1);
 }
+/* 연구 이어가기는 베타 기능 — 이어가기 카드 제목·단계 막대 옆의 작은 알약(글은 workPhase.BETA_LABEL) */
+.wk-beta {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0 0.35rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  color: var(--skx-primary);
+  border: 1px solid var(--skx-border-c2);
+  border-radius: var(--skx-radius-pill);
+}
 
 /* ── 온보딩(OnboardingModal) ─────────────────────────────── */
 .wk-modal {
@@ -672,12 +686,11 @@ button.wk-stepper__step {
   border: 1px dashed var(--skx-border-c2);
   border-radius: var(--skx-radius-lg);
 }
-/* 화면 밖에서 카드가 도착했을 때만 뜨는 알약 — 단계 화면이 보이는 동안 위·아래 어디서든 화면 안에 붙어 있다.
-   누를 때만 그 카드로 간다(자동 스크롤 없음) */
+/* 화면 밖에서 카드가 도착했을 때만 뜨는 알약 — 덱 뒤에 두고 화면 아래에만 붙인다(아래 화살표의 뜻, 연구 화면의 따라가기
+   알약과 같다). 위에도 붙였더니 내려 볼 때 카드 제목을 덮었다(2026-10-15). 누를 때만 그 카드로 간다(자동 스크롤 없음) */
 .wk-pill {
   position: sticky;
-  top: 0.5rem;
-  bottom: 0.5rem;
+  bottom: 1rem;
   z-index: 1;
   align-self: center;
   box-shadow: var(--skx-shadow-lnb);
