@@ -6,6 +6,7 @@ import type { ResearchReport, ResearchView } from "~/types/research";
 import type { WorkView } from "~/types/work";
 import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
 import {
+  BETA_LABEL,
   FINAL_STEP_NAME,
   MAKE_REPORT,
   ONBOARDING_KEY,
@@ -94,6 +95,13 @@ describe("stepForPhase·stepLine", () => {
     expect(stepLine("reading")).toBe("3/4 단계 · 참고문헌 고르는 중");
     expect(stepLine("proposal")).toBe("4/4 단계 · 보고서 쓰는 중");
     expect(stepLine("done")).toBe("4/4 단계 · 완료");
+  });
+
+  it("보고서를 다 썼으면(Word 를 받기 전, 서버 단계는 아직 proposal) '보고서 완성' — 다른 단계는 그대로", () => {
+    expect(stepLine("proposal", true)).toBe("4/4 단계 · 보고서 완성");
+    expect(stepLine("proposal", false)).toBe("4/4 단계 · 보고서 쓰는 중");
+    expect(stepLine("reading", true)).toBe("3/4 단계 · 참고문헌 고르는 중");
+    expect(stepLine("done", true)).toBe("4/4 단계 · 완료");
   });
 });
 
@@ -250,6 +258,24 @@ describe("continueCard", () => {
     expect(continueCard(true, work({ is_example: true })).note).toBe(
       "예시 연구는 읽기 전용입니다 — 둘러볼 수 있고 바꿀 수는 없습니다.",
     );
+  });
+
+  it("보고서를 다 썼으면 머리 단계 줄(WorkStepper)과 같은 '보고서 완성' — 한 화면에서 위아래가 갈리지 않게", () => {
+    expect(continueCard(true, work({ phase: "proposal" }), true).body).toBe("4/4 단계 · 보고서 완성");
+    expect(continueCard(true, work({ phase: "proposal" })).body).toBe("4/4 단계 · 보고서 쓰는 중");
+  });
+});
+
+describe("연구 이어가기는 베타 기능이다(사용자 결정 2026-10-15)", () => {
+  const read = (rel: string) => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
+
+  it("이어가기 카드 제목·단계 막대 옆에 같은 'Beta' 표시를 단다", () => {
+    expect(BETA_LABEL).toBe("Beta");
+    for (const path of ["components/work/ContinueResearchCard.vue", "components/work/WorkStepper.vue"]) {
+      const src = read(path);
+      expect(src).toContain('class="wk-beta"');
+      expect(src).toContain("{{ BETA_LABEL }}");
+    }
   });
 });
 

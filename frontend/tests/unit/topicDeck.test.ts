@@ -1,4 +1,6 @@
 // frontend/tests/unit/topicDeck.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type {
   KeywordCandidate,
@@ -46,6 +48,7 @@ import {
 } from "~/utils/topicDeck";
 import keywordMatch from "../fixtures/keyword_match.json";
 import termChecks from "../fixtures/term_checks.json";
+import { cssRules } from "./helpers/cssRules";
 
 const CARD: TopicCard = {
   title: "노인의 사회적 지지 유형별 우울 완화 효과",
@@ -617,5 +620,23 @@ const TERM_CASES: TermCase[] = termChecks.contains;
 describe("keywordSpans 는 06c term_checks.json 의 contains 칸과 같은 참·거짓", () => {
   it.each(TERM_CASES)("$note", (c) => {
     expect(keywordSpans(c.text, [c.word]).some((p) => p.mark)).toBe(c.expected);
+  });
+});
+
+describe("'새 후보 N ↓' 알약 — 화면 아래에 뜬다(카드 제목을 덮지 않게)", () => {
+  // 덱 앞에 두고 위(top)에 붙였더니 내려 볼 때 둘째 카드 제목 위에 겹쳤다(2026-10-15 운영 확인). 아래 화살표의 뜻대로 덱 뒤에
+  // 두고 화면 아래에만 붙인다 — 연구 화면의 따라가기 알약(rs-follow-pill)과 같다
+  const read = (rel: string) => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
+
+  it("TopicsStep 은 알약을 덱(TopicDeck) 뒤에 둔다", () => {
+    const src = read("components/work/TopicsStep.vue");
+    expect(src.indexOf("wk-pill")).toBeGreaterThan(src.indexOf("<TopicDeck"));
+  });
+
+  it(".wk-pill 은 아래(bottom)에만 붙는다 — top 을 두지 않는다", () => {
+    const rule = cssRules(read("assets/css/work.css")).find((r) => r.selectors.includes(".wk-pill"))!;
+    expect(rule.decls.get("position")).toBe("sticky");
+    expect(rule.decls.has("bottom")).toBe(true);
+    expect(rule.decls.has("top")).toBe(false);
   });
 });

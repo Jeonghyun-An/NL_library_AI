@@ -150,7 +150,7 @@ export function pathLines(item: ReadingItem): PathLine[] {
     const note = revived.note.trim() ? ` — ${revived.note.trim()}` : "";
     lines.push({
       label: "되살림",
-      detail: `하위질문 ${revived.subq_idx + 1} 「${revived.subquestion}」${round}에서 critic 이 뺀 논문${note}`,
+      detail: `하위질문 ${revived.subq_idx + 1} 「${revived.subquestion}」${round}에서 자기점검이 뺀 논문${note}`,
     });
   }
   if (item.path.user) lines.push({ label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" });
@@ -241,7 +241,7 @@ export function candidateLine(c: ExcludedCandidate): string {
 
 // 논문별 제외 사유는 저장되지 않는다(spec §5-4) — 뺀 회차와 그 회차의 critic 메모를 함께 보인다
 export function candidateNote(c: ExcludedCandidate): string | null {
-  const parts = [c.round != null ? `${c.round}회차에 뺌` : "", c.note.trim() ? `critic 메모: ${c.note.trim()}` : ""];
+  const parts = [c.round != null ? `${c.round}회차에 뺌` : "", c.note.trim() ? `자기점검 메모: ${c.note.trim()}` : ""];
   const line = parts.filter(Boolean).join(" · ");
   return line || null;
 }

@@ -10,7 +10,7 @@ import type {
   WorkState,
   WorkView,
 } from "~/types/work";
-import { sentenceFlags, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
+import { sentenceFlags, spaceBeforeCites, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
 import { httpStatus, versionConflict } from "~/utils/researchErrors";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
 import { FINAL_STEP_NAME } from "~/utils/workPhase";
@@ -68,9 +68,12 @@ export function sectionStatus(key: string, state: WorkState): SectionStatus {
   return section && section.paragraphs.length ? "done" : "empty";
 }
 
-// 인용 표기를 칩으로 그릴 조각. 이 절의 근거 지도에 없는 번호는 badcite(취소선) — 저장할 때 서버가 버리는 번호다
+// 인용 표기를 칩으로 그릴 조각. 이 절의 근거 지도에 없는 번호는 badcite(취소선) — 저장할 때 서버가 버리는 번호다.
+// 앞 낱말에 붙은 칩 앞에는 띄어쓰기를 넣는다(spaceBeforeCites — 취소선 번호는 [E9] 글자 그대로라 띄우지 않는다)
 export function paragraphParts(text: string, evidence: Record<string, string>): ParaPart[] {
-  return splitMarkers(text).map((p): ParaPart => (p.type === "cite" && !evidence[p.eid] ? { type: "badcite", eid: p.eid } : p));
+  return spaceBeforeCites(
+    splitMarkers(text).map((p): ParaPart => (p.type === "cite" && !evidence[p.eid] ? { type: "badcite", eid: p.eid } : p)),
+  );
 }
 
 // 화면이 그리는 문단 — 문장(근거 표시 없는 문장·[F#] 밖 숫자)과 문장마다의 칩 조각, 검사 한 줄을 미리 나눠 둔다
@@ -317,6 +320,17 @@ function unappliedOutline(outline: Outline, work: WorkView): boolean {
 export function autoTargets(p: ProposalView): string[] {
   const gens = p.section_gens ?? {};
   return sectionKeysOf(p).filter((k) => !p.sections[k] && !gens[k]);
+}
+
+// 보고서를 다 썼는가 — 서버 단계(phase)는 Word 를 받아야 done 이 되어, 절을 다 쓴 뒤에도 머리 단계 줄이 '보고서 쓰는 중'으로
+// 남았다(2026-10-15 운영 확인). 문서 순서의 절이 모두 끝났고(다 씀, 또는 취소로 끝나 생성 기록만 있음) 쓰는·기다리는·실패한 절과
+// 아직 손대지 않은 절(autoTargets)이 없으며 다 쓴 절이 하나라도 있을 때 true. 계획서·목차를 아직 못 읽었으면 false(옛 줄 그대로)
+export function proposalWritten(state: WorkState): boolean {
+  const p = state.proposal;
+  if (!p?.outline) return false;
+  const statuses = sectionKeysOf(p).map((k) => sectionStatus(k, state));
+  if (statuses.some((s) => s === "writing" || s === "queued" || s === "failed")) return false;
+  return autoTargets(p).length === 0 && statuses.includes("done");
 }
 
 // 다음에 넣을 절 — skip(이 방문에서 이미 넣었거나 근거가 없어 건너뛴 키)을 뺀 첫 키, 없으면 null

@@ -224,7 +224,7 @@ import { DEEP_RESEARCH } from "~/utils/brand";
 import { citedQuote } from "~/utils/citationEvidence";
 import { citeLabel } from "~/utils/citations";
 import { paraAnchor } from "~/utils/detailSource";
-import { figureById, splitMarkers } from "~/utils/figureMarkers";
+import { figureById, spaceBeforeCites, splitMarkers } from "~/utils/figureMarkers";
 import {
   GAP_NOTE,
   MAX_PARAGRAPHS_PUT,
@@ -366,7 +366,7 @@ const liveBlocks = computed<ParaPart[][]>(() =>
     .split(/\n\s*\n/)
     .map((t) => t.trim())
     .filter(Boolean)
-    .map((t) => (liveEvidence.value ? paragraphParts(t, liveEvidence.value) : splitMarkers(t))),
+    .map((t) => (liveEvidence.value ? paragraphParts(t, liveEvidence.value) : spaceBeforeCites(splitMarkers(t)))),
 );
 
 function figureOf(figures: Figure[], fid: string): Figure | null {

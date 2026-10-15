@@ -15,6 +15,9 @@ export const WORK_STEPS: readonly WorkStep[] = ["topics", "reading", "proposal"]
 // 바뀌면 틀린다('연구 초안를')
 export const FINAL_STEP_NAME = "보고서";
 export const MAKE_REPORT = `${FINAL_STEP_NAME} 만들기`;
+// 연구 이어가기(제목 고르기 → 참고문헌 선택하기 → 보고서)는 베타 기능이다(사용자 결정 2026-10-15) — 이어가기 카드 제목과
+// 단계 막대 옆에 같은 글로 단다
+export const BETA_LABEL = "Beta";
 export const REMAKE_REPORT = `${FINAL_STEP_NAME} 다시 만들기`;
 
 // 진행 막대는 ① 탐색(딥리서치 — 이어갈 때 이미 끝나 있다)부터 센다
@@ -70,7 +73,11 @@ export function stepperItems(phase: WorkPhase, current: WorkStep | null): Steppe
   });
 }
 
-export function stepLine(phase: WorkPhase): string {
+// 보고서 단계에서 절을 다 쓴 뒤(written — proposalView.proposalWritten) 줄. 서버 단계는 Word 를 받아야 done 이다
+const WRITTEN_LINE = `4/4 단계 · ${FINAL_STEP_NAME} 완성`;
+
+export function stepLine(phase: WorkPhase, written = false): string {
+  if (phase === "proposal" && written) return WRITTEN_LINE;
   return PHASE_LINE[phase] ?? PHASE_LINE.topics;
 }
 
@@ -166,11 +173,12 @@ function continuePreview(phase: WorkPhase | null): ContinueCardView["preview"] {
   }));
 }
 
-export function continueCard(exists: boolean | null, work: WorkView | null): ContinueCardView {
+// written — 보고서 절을 다 썼다(proposalView.proposalWritten). 머리 단계 줄(WorkStepper)과 같은 말을 쓰게 함께 넘긴다
+export function continueCard(exists: boolean | null, work: WorkView | null, written = false): ContinueCardView {
   if (exists === true) {
     return {
       title: "이어간 연구",
-      body: work ? stepLine(work.phase) : "이어간 연구가 있습니다.",
+      body: work ? stepLine(work.phase, written) : "이어간 연구가 있습니다.",
       preview: continuePreview(work?.phase ?? null),
       label: "이어간 연구 열기",
       action: "open",
