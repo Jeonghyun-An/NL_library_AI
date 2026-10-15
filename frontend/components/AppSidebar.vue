@@ -38,7 +38,7 @@
         </button>
         <span v-if="railTip === 'open'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.open }}</span>
       </div>
-      <!-- [새 검색]은 숨긴다(사용자 결정 2026-10-14) — 첫 화면은 로고로 간다. 되살리려면 이 주석을 푼다
+      <!-- [새 검색] — 10-14 에 숨겼다가 DeepResearch 머리의 [연구 시작하기]가 작은 알약이 되어 겹침이 줄어 되살린다(사용자 결정 2026-10-15) -->
       <div class="skx-rail__item skx-rail__item--extra">
         <button
           type="button"
@@ -54,7 +54,6 @@
         </button>
         <span v-if="railTip === 'new'" class="skx-rail__tip" aria-hidden="true">{{ RAIL_TIPS.new }}</span>
       </div>
-      -->
       <div class="skx-rail__item skx-rail__item--extra">
         <button
           type="button"
@@ -91,14 +90,13 @@
       </button>
     </div>
 
-    <!-- 새 검색 — 랜딩 첫 화면으로. 숨긴다(사용자 결정 2026-10-14) — 첫 화면은 로고로 간다. 되살리려면 이 주석을 푼다
+    <!-- 새 검색 — 랜딩 첫 화면으로(10-14 숨김 → 10-15 되살림, 사용자 결정) -->
     <div class="skx-lnb__new">
       <button ref="newSearchBtn" type="button" class="skx-newchat" @click="newSearch">
         <span class="skx-newchat__icon"><img src="/img/ico-newchat.svg" alt="" /></span>
         <span class="skx-newchat__label">새 검색</span>
       </button>
     </div>
-    -->
 
     <!-- 메뉴 -->
     <nav v-if="SHOW_MOCKS" class="skx-lnb__menu" aria-label="주요 메뉴">
@@ -122,15 +120,25 @@
         <!-- 첫 로드가 끝나기 전의 빈 목록을 '기록 없음'으로 보이지 않게 loaded 를 기다린다 -->
         <ClientOnly>
           <template v-if="loaded">
-            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [+ 연구 시작하기]는 보인다.
-                 머리 줄은 왼쪽 'DeepResearch' + 진행 중 배지 · 오른쪽 '전체 삭제'(기록이 있을 때만)이고, [+ 연구 시작하기]는 머리 아래 줄의 전체 폭 버튼이다 —
-                 한 줄에 넷을 두면 배지와 알약이 겹쳤다 -->
+            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [연구 시작하기]는 보인다.
+                 머리 첫 줄은 'DeepResearch' · 오른쪽 [연구 시작하기 >] 작은 알약, 둘째 줄은 진행 중 배지 · 오른쪽 '전체 삭제'(기록이 있을 때만)다
+                 (피그마 sidebar 2283:13946, 2026-10-15 — 전에는 머리 아래 전체 폭 버튼이라 [새 검색]과 겹쳐 보였다) -->
             <section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
-                <div class="skx-history__head-main">
-                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
-                  <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
-                </div>
+                <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
+                <button type="button" class="skx-history__start" @click="startDeepResearch">
+                  연구 시작하기
+                  <svg class="skx-history__start-chev" viewBox="0 0 5 8" aria-hidden="true" focusable="false">
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M0.102681 0.132319C0.250461 -0.031888 0.503377 -0.0452041 0.667584 0.102576L4.66758 3.70243C4.75187 3.77828 4.8 3.88635 4.8 3.99974C4.80001 4.11314 4.75188 4.2212 4.6676 4.29706L0.667599 7.89731C0.5034 8.04509 0.250484 8.03179 0.102695 7.86759C-0.0450943 7.70339 -0.0317915 7.45048 0.132408 7.30269L3.80207 3.99977L0.132424 0.697222C-0.0317831 0.549442 -0.0450996 0.296526 0.102681 0.132319Z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div v-if="liveCount > 0 || researchRows.length" class="skx-history__subhead">
+                <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
                 <button
                   v-if="researchRows.length"
                   ref="researchClearBtn"
@@ -141,9 +149,6 @@
                   전체 삭제
                 </button>
               </div>
-              <button type="button" class="skx-history__start" @click="startDeepResearch">
-                <span aria-hidden="true">+</span> 연구 시작하기
-              </button>
 
               <div
                 v-if="confirming === 'research'"
@@ -246,7 +251,13 @@
               >
                 <span>{{ older.label }}</span>
                 <span v-if="older.count !== null" class="skx-history-chip" aria-hidden="true">{{ older.count }}</span>
-                <span class="skx-history__older-chev" aria-hidden="true">⌄</span>
+                <svg class="skx-history__older-chev" viewBox="0 0 8 5" aria-hidden="true" focusable="false">
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M7.86768 0.102681C8.03189 0.250461 8.0452 0.503377 7.89742 0.667584L4.29757 4.66758C4.22172 4.75187 4.11365 4.8 4.00026 4.8C3.88686 4.80001 3.7788 4.75188 3.70294 4.6676L0.102695 0.667599C-0.0450944 0.5034 -0.0317915 0.250484 0.132408 0.102695C0.296607 -0.0450943 0.549523 -0.0317915 0.697312 0.132408L4.00023 3.80207L7.30278 0.132424C7.45056 -0.0317831 7.70347 -0.0450996 7.86768 0.102681Z"
+                  />
+                </svg>
               </button>
             </section>
 
@@ -490,7 +501,7 @@ const { loaded, listFailed } = history;
 
 const researchExpanded = ref(false);
 const confirming = ref<ClearGroup | null>(null);
-// [새 검색]을 숨긴 동안(템플릿 주석) 이 ref 는 비어 있다 — 갈 곳이 없어진 초점은 로고(첫 화면 링크)로 보낸다
+// 갈 곳이 없어진 초점은 [새 검색]으로, 그 버튼이 없으면(숨겼던 10-14~15 처럼) 로고(첫 화면 링크)로 보낸다
 const newSearchBtn = ref<HTMLButtonElement | null>(null);
 const homeLink = ref<HTMLAnchorElement | null>(null);
 const researchClearBtn = ref<HTMLButtonElement | null>(null);
@@ -788,44 +799,50 @@ onBeforeUnmount(() => {
   gap: 0.2rem 0.3rem;
   min-height: 1.2rem;
 }
-/* [+ 연구 시작하기] — 머리 아래 줄의 옅은 전체 폭 버튼(새 검색 버튼보다 한 단계 작고 옅게, 산호 글·테두리). 눌러 랜딩에서 딥리서치를 시작한다 */
+/* [연구 시작하기 >] — 머리 첫 줄 오른쪽의 작은 알약(피그마 sidebar: 흰 10% 면·글 11px·오른쪽 화살표 5×8). 눌러 랜딩에서
+   딥리서치를 시작한다. 맨 위 [새 검색]과 겹쳐 보이지 않게 전체 폭 버튼에서 줄였다(2026-10-15) */
 .skx-history__start {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  flex: none;
   gap: 0.2rem;
-  width: 100%;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--skx-primary);
-  border-color: color-mix(in srgb, var(--skx-primary) 70%, transparent);
+  padding: 0.1rem 0.3rem;
+  border: none;
   border-radius: var(--skx-radius-sm);
-  background: none;
-  font-size: 0.65rem;
-  font-weight: 600;
+  background: var(--skx-frost-bg);
+  font-size: 0.55rem;
+  font-weight: 500;
   line-height: 1.4;
-  color: var(--skx-primary);
+  color: var(--skx-gray-1);
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s;
+  transition: color 0.15s;
+}
+.skx-history__start-chev {
+  width: 0.25rem;
+  height: 0.4rem;
+  fill: var(--skx-gray-1);
+  transition: fill 0.15s;
 }
 .skx-history__start:hover {
-  background: var(--skx-primary);
-  border-color: var(--skx-primary);
-  color: var(--skx-on-accent);
+  color: var(--skx-primary);
+}
+.skx-history__start:hover .skx-history__start-chev {
+  fill: var(--skx-primary);
 }
 .skx-history__start:focus-visible {
   outline: 2px solid var(--skx-accent);
   outline-offset: 2px;
 }
-.skx-history__head-main {
+/* 머리 둘째 줄 — 왼쪽 '진행 중 N', 오른쪽 '전체 삭제'(진행 중이 없으면 전체 삭제만 오른쪽에) */
+.skx-history__subhead {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.3rem;
-  min-width: 0;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+.skx-history__subhead .skx-history__clear {
+  margin-left: auto;
 }
 .skx-history__group .skx-history__title {
   color: var(--skx-teal-ink);
@@ -857,7 +874,7 @@ onBeforeUnmount(() => {
   background: var(--skx-frost-bg);
 }
 /* 이전 연구 [n] / 접기 — 묶음 맨 아래 구분선 아래의 한 줄(시안 C). 숫자는 최근 검색의 종류 칩(.skx-history-chip)과 같은 칩,
-   오른쪽 끝 ⌄ 는 펼치면 뒤집힌다 */
+   오른쪽 끝 아래 화살표(피그마 sidebar 의 8×5 아이콘)는 펼치면 뒤집힌다 */
 .skx-history__older {
   display: flex;
   align-items: center;
@@ -884,10 +901,17 @@ onBeforeUnmount(() => {
   outline-offset: 2px;
 }
 .skx-history__older-chev {
+  flex: none;
   margin-left: auto;
-  font-size: 0.7rem;
-  line-height: 1;
-  transition: transform 0.15s;
+  width: 0.4rem;
+  height: 0.25rem;
+  fill: var(--skx-teal-ink);
+  transition:
+    transform 0.15s,
+    fill 0.15s;
+}
+.skx-history__older:hover .skx-history__older-chev {
+  fill: var(--skx-primary);
 }
 .skx-history__older.is-expanded .skx-history__older-chev {
   transform: rotate(180deg);
