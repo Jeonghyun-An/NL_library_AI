@@ -92,11 +92,13 @@ describe("운영 대목 넷(노인 연구 c816c7b2, 2026-10-15) — 표 칸 속 
   it("E21 — 칸 속에 <br> 이 든 표 행은 칸 속 <br> 을 띄어쓰기로 바꿔 한 줄로 편다('|' 조각이 남지 않는다)", () => {
     const text = passageText(tails.E21.text);
     expect(text).not.toContain("|");
-    expect(text).toContain("변 수 · Model 1 B (S.E) β · Model 2 B (S.E.) β · Model 3 B (S.E.) β · Model 4 B (S.E.) β");
+    // 빈 칸은 '–' 로 남긴다 — 버리면 Model 1 칸이 빈 행의 값이 한 칸씩 당겨져 읽혔다(2026-10-15 운영 확인)
+    expect(text).toContain("변 수 · – · Model 1 B (S.E) β · Model 2 B (S.E.) β · Model 3 B (S.E.) β · Model 4 B (S.E.) β");
     expect(text).toContain("인구 학적 특성 · 성별 연령 · 5.761 (.767) .199*** .134 (.045) .079** · 3.615 (.815) .125*** .033 (.046) .019 · ");
-    expect(text).toContain("사회적 지지망 · 가족 관계 만족도 · -.610 (.056) -.305***");
-    // 표 앞 본문·[표] 머리는 그대로, 표 행은 행마다 한 줄
-    expect(text.startsWith("[표]\n적 지지에 대한 만족도가")).toBe(true);
+    expect(text).toContain("사회 경제적 특성 · 교육 소득 · – · -.307 (.069) -.131***");
+    expect(text).toContain("사회적 지지망 · 가족 관계 만족도 · – · – · – · -.610 (.056) -.305***");
+    // 적재가 표 청크 맨 앞에 붙인 '[표]' 표시는 떼고 표 앞 본문부터, 표 행은 행마다 한 줄
+    expect(text.startsWith("적 지지에 대한 만족도가")).toBe(true);
     expect(text.split("\n").filter((l) => l.includes(" · "))).toHaveLength(6);
   });
 
@@ -105,11 +107,33 @@ describe("운영 대목 넷(노인 연구 c816c7b2, 2026-10-15) — 표 칸 속 
     expect(passageText("[표]<br>|가|나|<br>본문")).toBe("[표]\n가 · 나\n본문");
   });
 
-  it("E2 — 대목 맨 앞의 학술지 머리말(❙ 쪽수)·DOI 줄은 걷어 내고 제목부터 보인다", () => {
+  it("표 칸 — 값 사이의 빈 칸은 '–', 앞뒤의 빈 칸은 버리고, 칸이 모두 비면 빈 줄", () => {
+    expect(passageText("| |값| |합계| | |")).toBe("값 · – · 합계");
+    expect(passageText("|성별| | |.017|")).toBe("성별 · – · – · .017");
+    expect(passageText("| | | |")).toBe("");
+    // '[표]' 표시는 적재가 맨 앞에 붙인 꼴('[표]\\n')만 뗀다 — 가운데·띄어 쓴 꼴은 그대로
+    expect(passageText("[표]\n|가|나|")).toBe("가 · 나");
+    expect(passageText("본문\n[표]\n|가|나|")).toBe("본문\n[표]\n가 · 나");
+  });
+
+  it("E2 — 대목 맨 앞의 학술지 머리말(❙ 쪽수)·DOI 줄과 첫 쪽의 제목·저자·소속 줄을 걷고 '요 약'부터 보인다", () => {
     const text = passageText(tails.E2.text);
-    expect(text.startsWith("노인의 우울과 건강증진행위와의 관계에서 대인관계와 사회적 지지의 조절효과\n\n이송흔")).toBe(true);
+    expect(text.startsWith("요 약 본 연구는 지역사회 노인의 우울과 건강증진행위와의 관계에서")).toBe(true);
     expect(text).not.toContain("❙");
     expect(text).not.toContain("doi.org");
+    expect(text).not.toContain("Chodang University");
+  });
+
+  it("첫 쪽 앞머리 — 머리말을 걷은 첫 쪽 대목에서만, 짧은 줄 몇 개 뒤에 초록 머리가 올 때만 그 앞을 걷는다", () => {
+    const first = "https://doi.org/10.1/x\n\n노인 우울 연구\n\n김철수\n\n○○대학교\n\n초 록 본 연구는 노인을 다룬다.";
+    expect(passageText(first)).toBe("초 록 본 연구는 노인을 다룬다.");
+    expect(passageText("Journal of X❙ 1\n\nTitle\n\nKim\n\nAbstract This study examines aging.")).toBe("Abstract This study examines aging.");
+    // 머리말이 없는(첫 쪽이 아닌) 대목·초록 머리 앞에 긴 본문 줄이 있는 대목은 그대로
+    expect(passageText("노인 우울 연구\n\n김철수\n\n요 약 본 연구는")).toBe("노인 우울 연구\n\n김철수\n\n요 약 본 연구는");
+    const long = `https://doi.org/10.1/x\n\n${"가".repeat(220)}\n\n요 약 본 연구는`;
+    expect(passageText(long)).toBe(`${"가".repeat(220)}\n\n요 약 본 연구는`);
+    // '요약하면'·'Abstract concepts' 처럼 낱말이 붙은 것은 머리가 아니다
+    expect(passageText("https://doi.org/10.1/x\n\n제목\n\n요약하면 이렇다.")).toBe("제목\n\n요약하면 이렇다.");
   });
 
   it("머리말 꼴 — 쪽수 ❙ 학술지·DOI·ISSN·Vol. No. 줄이 맨 앞에 이어지면 모두 걷는다. 가운데의 같은 꼴·본문만 남는 경우는 그대로", () => {
