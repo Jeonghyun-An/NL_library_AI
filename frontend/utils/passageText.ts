@@ -50,6 +50,14 @@ const MASTHEAD: readonly RegExp[] = [
   /^[^\n]{0,100}\bVol\.?[ \t]*\d+[^\n]{0,40}\bNo\.?[ \t]*\d+[^\n]{0,60}$/i,
 ];
 
+// 쪽이 바뀌는 자리의 머리말 — 대목 가운데에 '…<br><br>| |---|\n\n|(논문 제목)<br><br>Journal of Digital Convergence❙ 399<br><br>…'
+// 꼴로 끼어 있었다(2026-10-15 운영 확인, 홀수 쪽은 영문 제목·짝수 쪽은 국문 제목 + '404 ❙Journal of … 397-406'). 쪽수와 ❙ 가
+// 붙은 줄을 대목 어디서든 걷고, 그 바로 위(빈 줄 건너)의 '|'로 시작하는 머리 제목 줄과 그 위의 세로선만 남은 줄도 함께 걷는다.
+// 구분 기호는 ❙ 만 — 표 그림의 상자 선(│)·표 칸의 '|' 와 섞이지 않게
+const RUNNING_HEAD = /^\|?[ \t]*(?:\d{1,4}[ \t]*❙[^\n]{1,120}|[^\n]{1,120}?❙[ \t]*\d{1,4})[ \t]*$/;
+const HEAD_TITLE = /^[ \t]*\|[^|]*\S[^|]*$/;
+const PIPES_ONLY = /^[ \t]*\|[ \t|]*$/;
+
 // 본문 뒤에 붙은 참고문헌 목록 — '…필요를 느낀다. 참고문헌\n\n고문희(2008), …'(2026-10-15 운영 확인). 도서관학 논문 본문에
 // 흔한 '참고문헌 분석(2019)을'·'참고문헌 [1]에서'·'Reference service' 같은 말은 자르지 않는다. 그래서 셋을 다 따진다:
 //  - 머리 자리: 대목 맨 앞·줄 머리(절 번호 'Ⅵ.'·'6.'·'5.1' 이 앞서면 번호까지 자른다)·문장 끝(.!?) 뒤 띄어쓰기. 단수 'Reference' 는 아니다
@@ -92,6 +100,35 @@ function flattenCellBreaks(line: string): string {
   return flattenTableRow(line.replace(CELL_BREAK, " "));
 }
 
+// 쪽 머리말 줄을 대목 어디서든 걷는다(RUNNING_HEAD 와 그 위의 '|' 제목 줄·세로선 줄). 남는 빈 줄은 뒤의 BLANK_RUN 이 접는다.
+// 걷고 나니 글이 없으면 그대로, 맨 앞이 비면 첫 글 줄부터
+function dropPageHeads(text: string): string {
+  const lines = text.split("\n");
+  const drop = new Set<number>();
+  const above = (from: number): number => {
+    let j = from;
+    while (j >= 0 && (!lines[j]!.trim() || drop.has(j))) j--;
+    return j;
+  };
+  lines.forEach((line, i) => {
+    if (!RUNNING_HEAD.test(line)) return;
+    drop.add(i);
+    let j = above(i - 1);
+    if (j >= 0 && HEAD_TITLE.test(lines[j]!)) {
+      drop.add(j);
+      j = above(j - 1);
+    }
+    while (j >= 0 && PIPES_ONLY.test(lines[j]!)) {
+      drop.add(j);
+      j = above(j - 1);
+    }
+  });
+  if (!drop.size) return text;
+  const kept = lines.filter((_, i) => !drop.has(i));
+  const first = kept.findIndex((l) => l.trim());
+  return first < 0 ? text : kept.slice(first).join("\n");
+}
+
 // 맨 앞에 이어진 머리말 줄(사이의 빈 줄 포함)을 걷는다. 걷을 것이 없거나 머리말만 남는 대목은 그대로 — 빈 대목을 보이지 않게
 function dropLeadingMasthead(text: string): string {
   const lines = text.split("\n");
@@ -132,8 +169,7 @@ export function passageText(text: string | null | undefined, options: PassageTex
     .map(flattenTableRow)
     .join("\n")
     .replace(HEADING_MARK, "")
-    .replace(INLINE_HEADING, "$1")
-    .replace(BLANK_RUN, "\n\n");
-  const body = dropLeadingMasthead(tidy);
+    .replace(INLINE_HEADING, "$1");
+  const body = dropLeadingMasthead(dropPageHeads(tidy).replace(BLANK_RUN, "\n\n"));
   return options.keepReferences ? body : cutReferenceTail(body);
 }
