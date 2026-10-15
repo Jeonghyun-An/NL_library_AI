@@ -76,6 +76,13 @@ html:has(.rs-page.has-progressbar) {
 .rs-body--B .rs-block--report {
   order: 3;
 }
+/* 탐색 중에는 보고서 자리가 곧 과정('AI가 지금 하는 일')이고 옆 칸에는 근거 장부만 있다 — 과정을 먼저, 장부를 그 아래로 */
+.rs-body--B.is-exploring .rs-block--report {
+  order: 2;
+}
+.rs-body--B.is-exploring .rs-col-side {
+  order: 3;
+}
 
 /* ── 공통 부품 ───────────────────────────────────────────── */
 /* 카드는 불투명 면(--skx-white — 다크 테마에서 짙은 청록)이라 움직이는 배경 위에서도 글자가 읽힌다. 다크에서는 옅은 그림자가 거의
@@ -2156,14 +2163,13 @@ button.rs-synth__item:focus-visible,
   color: var(--skx-ink);
   animation: rs-live-bump 0.45s ease-out;
 }
+/* 등장 효과는 위치만 움직인다 — 투명도를 쓰면 화면 프레임이 멈춘 창(숨은 탭·미리보기)에서 첫 장면(투명)에 멈춰 글이 안 보였다 */
 @keyframes rs-live-bump {
   from {
     transform: translateY(0.25rem);
-    opacity: 0.4;
   }
   to {
     transform: none;
-    opacity: 1;
   }
 }
 .rs-live__subqs {
@@ -2180,10 +2186,12 @@ button.rs-synth__item:focus-visible,
   padding: 0.7rem 0.8rem;
   background: var(--skx-frost-bg);
   border-radius: var(--skx-radius-sm);
-  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
-.rs-live__subq.is-pending {
-  opacity: 0.6;
+/* 대기 중인 하위질문은 글을 흐리게(투명도 전환은 쓰지 않는다 — 멈춘 창에서 돌던 하위질문까지 흐린 채 남았다) */
+.rs-live__subq.is-pending .rs-live__subq-title,
+.rs-live__subq.is-pending .rs-live__subq-state {
+  color: var(--skx-ink-2);
 }
 /* 지금 도는 하위질문 — 포인트 색 테두리로 짚는다 */
 .rs-live__subq.is-current {
@@ -2348,21 +2356,16 @@ button.rs-synth__item:focus-visible,
   color: var(--skx-ink-2);
   word-break: keep-all;
 }
-/* 단계가 새로 생기면 아래에서 떠오른다(TransitionGroup name rs-live-step) */
-.rs-live-step-enter-active {
-  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
-}
-.rs-live-step-enter-from {
-  opacity: 0;
-  transform: translateY(0.4rem);
+/* 단계가 새로 생기면 아래에서 떠오른다 — 그려질 때 한 번 도는 CSS 애니메이션(이미 있는 단계는 다시 그려지지 않아 돌지 않는다).
+   Vue 전환(TransitionGroup)은 화면 프레임이 돌아야 끝나 숨은 탭에서 투명한 채로 남았다 */
+.rs-live__step {
+  animation: rs-live-in 0.35s ease-out;
 }
 @keyframes rs-live-in {
   from {
-    opacity: 0;
-    transform: translateY(0.3rem);
+    transform: translateY(0.35rem);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -2407,11 +2410,11 @@ button.rs-synth__item:focus-visible,
   .rs-live__dot,
   .rs-live__counter dd,
   .rs-live__alert,
+  .rs-live__step,
   .rs-live__step.is-pending .rs-live__step-ico,
   .rs-live__reviewing {
     animation: none;
   }
-  .rs-live-step-enter-active,
   .rs-live__subq {
     transition: none;
   }

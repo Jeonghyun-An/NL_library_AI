@@ -78,7 +78,7 @@
           <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
         </div>
 
-        <div v-else class="rs-body" :class="`rs-body--${layout}`">
+        <div v-else class="rs-body" :class="[`rs-body--${layout}`, { 'is-exploring': phase === 'exploring' }]">
           <div class="rs-col-main">
             <!-- 탐색 중에는 계획 블록을 그리지 않는다 — 하위질문 목록·상태는 본문의 절 자리(ReportSkeleton)가 보인다 -->
             <section v-if="phase !== 'completed' && phase !== 'exploring'" class="rs-block rs-block--plan">

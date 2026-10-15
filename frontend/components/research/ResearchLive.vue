@@ -62,7 +62,8 @@
             <strong>근거 부족</strong> → ‘{{ highlightFor(sq)!.nextQuery }}’(으)로 다시 찾습니다
             <span v-if="highlightFor(sq)!.note" class="rs-live__alert-note">{{ highlightFor(sq)!.note }}</span>
           </p>
-          <TransitionGroup tag="ol" name="rs-live-step" class="rs-live__steps">
+          <!-- 새 단계는 CSS 애니메이션으로 떠오른다(Vue 전환은 화면 프레임이 돌아야 끝나 숨은 탭에서 투명한 채로 남았다) -->
+          <ol class="rs-live__steps">
             <li
               v-for="step in stepsOf(sq)"
               :key="step.key"
@@ -75,7 +76,7 @@
                 <span v-if="step.detail" class="rs-live__step-detail">{{ step.detail }}</span>
               </span>
             </li>
-          </TransitionGroup>
+          </ol>
           <!-- 검토 중인 논문 — 후보 이벤트가 세운 이번 회차의 후보(점검이 끝나면 근거 장부로 떨어진다) -->
           <div v-if="running?.idx === sq.idx && sq.reviewing?.papers.length" class="rs-live__reviewing">
             <p class="rs-live__reviewing-title">검토 중인 논문 {{ sq.reviewing.papers.length }}편</p>
