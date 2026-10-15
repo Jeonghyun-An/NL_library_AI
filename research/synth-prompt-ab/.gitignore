@@ -12,5 +12,6 @@ gen_*.json
 focus2/
 # --dump 덤프·대목 원문 덤프·실행 로그(ab_metrics.py·r2_metrics.py --dump 를 파일로 받을 때)
 dump*.txt
+*_dump*
 excerpts*.txt
 *.log
