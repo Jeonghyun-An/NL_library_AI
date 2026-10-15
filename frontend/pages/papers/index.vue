@@ -400,6 +400,7 @@ const summaryRefs = computed<SummaryRef[]>(() =>
     title: r.title,
     authors: r.authors,
     year: citeYear(aiRefPaperMap.value.get(r.book_id)?.book_info?.pub_date),
+    grade: (aiRefPaperMap.value.get(r.book_id)?.book_info?.grade ?? "").trim(),
   })),
 );
 

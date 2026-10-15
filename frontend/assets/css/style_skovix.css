@@ -4918,6 +4918,35 @@ html.skx-scroll-lock {
   outline-offset: 2px;
   border-radius: var(--skx-radius-sm);
 }
+/* 팝오버 머리 — 인용 번호(둥근 네모)와 KCI 등재 구분(청록 알약, 사이드바 종류 칩과 같은 색) */
+.skx-citepop__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.skx-citepop__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--skx-ink);
+  background: var(--skx-frost-bg);
+  border-radius: var(--skx-radius-sm);
+}
+.skx-citepop__grade {
+  padding: 0.15rem 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--skx-teal-ink);
+  background: var(--skx-glass-teal);
+  border-radius: var(--skx-radius-pill);
+}
 .skx-citepop__meta {
   margin: 0;
   font-size: 0.75rem;
