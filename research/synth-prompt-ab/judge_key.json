@@ -1,0 +1,122 @@
+{
+ "P01": {
+  "tag": "630e",
+  "job_id": "630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "candidate": "concise",
+  "X": "concise",
+  "Y": "base",
+  "X_file": "gen_ab/concise_630e_r0.json",
+  "Y_file": "gen_ab/base_630e_r0.json",
+  "seed": "judge-630e0d65-bd09-4429-9eda-e00d85dbff6b"
+ },
+ "P02": {
+  "tag": "85d2",
+  "job_id": "85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "candidate": "focus",
+  "X": "base",
+  "Y": "focus",
+  "X_file": "gen_ab/base_85d2_r0.json",
+  "Y_file": "gen_ab/focus_85d2_r0.json",
+  "seed": "judge-85d2bc0e-541d-4d27-a98f-c0b8fe262701"
+ },
+ "P03": {
+  "tag": "d60a",
+  "job_id": "d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "candidate": "attrib",
+  "X": "attrib",
+  "Y": "base",
+  "X_file": "gen_ab/attrib_d60a_r0.json",
+  "Y_file": "gen_ab/base_d60a_r0.json",
+  "seed": "judge-d60a5dc1-76a4-4506-88ec-dfbfa49f93f7"
+ },
+ "P04": {
+  "tag": "9ba1",
+  "job_id": "9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "candidate": "focus",
+  "X": "base",
+  "Y": "focus",
+  "X_file": "gen_ab/base_9ba1_r0.json",
+  "Y_file": "gen_ab/focus_9ba1_r0.json",
+  "seed": "judge-9ba10849-36e2-417a-bc59-abec8e002c2c"
+ },
+ "P05": {
+  "tag": "85d2",
+  "job_id": "85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "candidate": "concise",
+  "X": "concise",
+  "Y": "base",
+  "X_file": "gen_ab/concise_85d2_r0.json",
+  "Y_file": "gen_ab/base_85d2_r0.json",
+  "seed": "judge-85d2bc0e-541d-4d27-a98f-c0b8fe262701"
+ },
+ "P06": {
+  "tag": "9ba1",
+  "job_id": "9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "candidate": "attrib",
+  "X": "base",
+  "Y": "attrib",
+  "X_file": "gen_ab/base_9ba1_r0.json",
+  "Y_file": "gen_ab/attrib_9ba1_r0.json",
+  "seed": "judge-9ba10849-36e2-417a-bc59-abec8e002c2c"
+ },
+ "P07": {
+  "tag": "d60a",
+  "job_id": "d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "candidate": "focus",
+  "X": "base",
+  "Y": "focus",
+  "X_file": "gen_ab/base_d60a_r0.json",
+  "Y_file": "gen_ab/focus_d60a_r0.json",
+  "seed": "judge-d60a5dc1-76a4-4506-88ec-dfbfa49f93f7"
+ },
+ "P08": {
+  "tag": "d60a",
+  "job_id": "d60a5dc1-76a4-4506-88ec-dfbfa49f93f7",
+  "candidate": "concise",
+  "X": "base",
+  "Y": "concise",
+  "X_file": "gen_ab/base_d60a_r0.json",
+  "Y_file": "gen_ab/concise_d60a_r0.json",
+  "seed": "judge-d60a5dc1-76a4-4506-88ec-dfbfa49f93f7"
+ },
+ "P09": {
+  "tag": "630e",
+  "job_id": "630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "candidate": "attrib",
+  "X": "base",
+  "Y": "attrib",
+  "X_file": "gen_ab/base_630e_r0.json",
+  "Y_file": "gen_ab/attrib_630e_r0.json",
+  "seed": "judge-630e0d65-bd09-4429-9eda-e00d85dbff6b"
+ },
+ "P10": {
+  "tag": "630e",
+  "job_id": "630e0d65-bd09-4429-9eda-e00d85dbff6b",
+  "candidate": "focus",
+  "X": "base",
+  "Y": "focus",
+  "X_file": "gen_ab/base_630e_r0.json",
+  "Y_file": "gen_ab/focus_630e_r0.json",
+  "seed": "judge-630e0d65-bd09-4429-9eda-e00d85dbff6b"
+ },
+ "P11": {
+  "tag": "9ba1",
+  "job_id": "9ba10849-36e2-417a-bc59-abec8e002c2c",
+  "candidate": "concise",
+  "X": "base",
+  "Y": "concise",
+  "X_file": "gen_ab/base_9ba1_r0.json",
+  "Y_file": "gen_ab/concise_9ba1_r0.json",
+  "seed": "judge-9ba10849-36e2-417a-bc59-abec8e002c2c"
+ },
+ "P12": {
+  "tag": "85d2",
+  "job_id": "85d2bc0e-541d-4d27-a98f-c0b8fe262701",
+  "candidate": "attrib",
+  "X": "base",
+  "Y": "attrib",
+  "X_file": "gen_ab/base_85d2_r0.json",
+  "Y_file": "gen_ab/attrib_85d2_r0.json",
+  "seed": "judge-85d2bc0e-541d-4d27-a98f-c0b8fe262701"
+ }
+}
