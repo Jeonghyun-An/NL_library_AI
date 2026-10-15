@@ -14,8 +14,8 @@
 - A/B 에서 드러난 결함 가운데 셋은 프롬프트 대신 코드로 막았다: 대목 속 남의 번호 인용 지우기(`73feb90` — 1차에서 드러남),
   요약 빠지면 재요청·도입 있는 응답 우선(`8511fca`·`24ac620`), 모델에 넘기는 대목을 400자 안 문장 끝에서 자르기
   (`4998487`·`a818aa1`·`4bd51b0`).
-- 이 모두가 dev `f06b814`(브랜치 `fix/round06-live-check`)에 머지됐고 **10-15 운영에 배포됐다**(사용자 확인 — 서버의 이미지
-  digest·확인 grep 출력은 아직 받지 않았다) — 아래 '반영'.
+- 이 모두가 dev `f06b814`(브랜치 `fix/round06-live-check`)에 머지됐고 **운영 배포됨(2026-10-15, 사용자 — 어느 컨테이너까지
+  했는지는 사용자 확인 전)**. 서버의 이미지 digest·확인 grep 출력도 아직 받지 않았다 — 아래 '반영'.
 
 수치의 범위: 자동 지표는 운영 보고서 4건(보고서마다 6절) × 2회(r0·r1)다. 판정은 1차가 r0 회차만(후보마다 4짝 × 판정자 3),
 2차가 4건 × 2회 = 8짝 × 판정자 3 이다. 생성 모델은 gemma-3-12b(temperature 0.3), 판정자는 사람이 아닌 LLM 에이전트 셋이다.
@@ -144,10 +144,11 @@ focus 대 base, 보고서 1건(6절)당 평균(4건 × 2회 — 보고서마다 
 
 | 차수 | dev 머지 | 내용 | 다시 만들 컨테이너 | 이미지 | 배포 |
 |---|---|---|---|---|---|
-| 3차 | `cb12bcb` | 이어가기 묶음 최소 2편·연구 공백 절 씨앗·한계 줄 짧게·짧은 참고문헌 조각 판정·카드 키워드 강조(무른 검사 settle)·절 생성 대목을 논문마다 서술 대목으로·절 사이 되풀이 지움(drop_repeats) | fastapi·celery-research·celery-research-plan | fastapi `sha256:99c360b2…` | 운영 배포됨(10-15, 사용자 확인) |
-| 4차 | `f06b814` | 이 실험: focus 프롬프트(`fd360d1`)·남의 번호 인용 지우기(`73feb90`)·요약 재요청(`8511fca`·`24ac620`)·대목 문장 끝 자르기(`4998487`·`a818aa1`·`4bd51b0`) | celery-research (3차를 안 올렸으면 위 셋) | fastapi `sha256:b8dd67fb…` | 운영 배포됨(10-15, 사용자 확인) |
+| 3차 | `cb12bcb` | 이어가기 묶음 최소 2편·연구 공백 절 씨앗·한계 줄 짧게·짧은 참고문헌 조각 판정·카드 키워드 강조(무른 검사 settle)·절 생성 대목을 논문마다 서술 대목으로·절 사이 되풀이 지움(drop_repeats) | fastapi·celery-research·celery-research-plan | fastapi `sha256:99c360b2…` | 운영 배포됨(2026-10-15, 사용자 — 어느 컨테이너까지 했는지는 사용자 확인 전) |
+| 4차 | `f06b814` | 이 실험: focus 프롬프트(`fd360d1`)·남의 번호 인용 지우기(`73feb90`)·요약 재요청(`8511fca`·`24ac620`)·대목 문장 끝 자르기(`4998487`·`a818aa1`·`4bd51b0`) | celery-research (3차를 안 올렸으면 위 셋) | fastapi `sha256:b8dd67fb…` | 운영 배포됨(2026-10-15, 사용자 — 어느 컨테이너까지 했는지는 사용자 확인 전) |
 
-배포는 사용자가 10-15 에 했다고 확인했다. 서버에서 낸 이미지 digest·확인 grep(`research_synthesize.yaml` 의 '하위질문에 대한 답',
+배포는 사용자가 2026-10-15 11:13 KST 에 '배포 했어'라고 답한 것이다 — 표의 '다시 만들 컨테이너' 가운데 어느 것까지
+다시 만들었는지는 사용자 확인 전이다. 서버에서 낸 이미지 digest·확인 grep(`research_synthesize.yaml` 의 '하위질문에 대한 답',
 `citations.py` 의 `strip_numbered_refs`) 출력은 아직 받지 않았다.
 
 yaml 은 볼륨이 아니라 이미지(`landsoftdocker/nl-lib-fastapi`)에 들어 있어 이미지를 다시 빌드해야 한다. 인덱싱이 도는 중에는
@@ -204,8 +205,8 @@ yaml 은 볼륨이 아니라 이미지(`landsoftdocker/nl-lib-fastapi`)에 들�
 | `gen_index.py`·`gen_index.tsv` | 넣지 않은 생성 원문 123개 회차의 목록(변형·보고서·회차·형식 문제·걸린 초·바이트) |
 | `jobs.sha256` | 10-14 에 받은 운영 보고서 JSON 4건의 sha256 |
 | `checks/` | 위 '1회성 확인' |
-| `.gitignore` | 재현하며 생기는 `jobs/`·`gen_ab/`·`gen_r2/`·설계 단계 `gen_*.json`·`focus2/`·`--dump` 덤프(`dump*.txt`)·원본 판정 묶음 등을 커밋하지 않게 한다 |
-| `.gitattributes` | `jobs.sha256` 을 늘 LF 로 받게 한다 — Windows(`core.autocrlf=true`)에서 CRLF 로 풀리면 재현 1 의 `sha256sum -c` 가 파일 이름 끝의 `\r` 때문에 4건 모두 실패한다 |
+| `.gitignore` | 재현하며 생기는 `jobs/`·`gen_ab/`·`gen_r2/`·설계 단계 `gen_*.json`·`focus2/`·`--dump` 덤프(`dump*.txt`·`*_dump*`)·원본 판정 묶음 등을 커밋하지 않게 한다 |
+| `.gitattributes` | `jobs.sha256` 을 늘 LF 로 받게 한다 — Windows(`core.autocrlf=true`)에서 CRLF 로 풀리면 `sha256sum -c` 가 파일 이름 끝의 `\r` 때문에 4건 모두 실패한다(재현 1 은 `tr -d '\r'` 로도 막는다) |
 
 표 머리의 `prompt_ab/` 는 당시 이 폴더의 이름이다(scratchpad).
 
@@ -219,14 +220,15 @@ yaml 은 볼륨이 아니라 이미지(`landsoftdocker/nl-lib-fastapi`)에 들�
 | `ab_metrics.json`(v1 잡별 상세) | 340KB | 재생성된다(재현 4) |
 | focus2 초안 yaml 30벌(`draft1~11`·`x_*`)과 그 스크립트, `ab_metrics_v1.py`·`run_ab_r1.py`(옛 사본), `concise_stats.py`·`_concise_driver.sh`, 덤프(`dump_*.txt`·`excerpts_all.txt`), 실행 로그(`run_*.log` — 잡마다 걸린 초·형식 문제는 `gen_index.tsv` 에 같은 값이 있다) | — | 설계 단계 도구·옛 사본·대목 원문 덤프·로그. 숫자는 `variants.md`·`result*.md` 에 남아 있다 |
 | figleak 의 `measure_g2.json`(생성 원문)·덤프·시제품 | 36KB 등 | 줄인 결과 `measure_g2_out.txt`(`summarize_g2.py`) |
-| 3차 확인(`groupsize/` — 묶음 최소 2편 `748b9f2`, `synth_impl/` 의 현행 출력 분석) | — | 운영 proposal·생성 원문이 대부분. 결과는 해당 커밋 메시지에만 있고 **저장소만으로는 다시 셀 수 없다** |
+| 3차 확인(`groupsize/` — 묶음 최소 2편 `MIN_GROUP_PAPERS` 의 근거 `748b9f2`, `synth_impl/` 의 현행 출력 분석) | — | 운영 proposal·생성 원문이 대부분. 결과는 해당 커밋 메시지에만 있고 **저장소만으로는 다시 셀 수 없다** |
 
 **설계 단계 수치는 저장소만으로 다시 셀 수 없다.** `variants.md` 의 형식 확인·'참고 지표'(첫 문장이 일반론인 절 15/18 → 2/12,
 concise 의 도입·과제 무표기 문장 9 → 1, focus draft3 의 1문장 요약 60편 중 47편, attrib 의 '저자(연도)' 표기 0 → 6 등)와
 `result_r2.md` 4절의 설계 단계 수치(focus2 반복 루프 절 2/44, 학술지명 출현 0→6)는 넣지 않은 스크립트(`synth_impl/analyze.py`·
 `concise_stats.py`, `focus2/` 의 `f2_metrics.py`·`firsts.py`·`sumdist.py`·`run_f2.py` 등)가 넣지 않은
 생성 원문(현행 3회 `synth_impl/gen_new.json`·설계 단계 `gen_*.json`·`focus2/gen/`)을 읽어 낸 값이다. 생성은 temperature 0.3 이라
-같은 값으로 다시 나오지 않는다. 이 수치들은 변형을 다듬는 데만 썼고, 채택 관문(판정·자동 지표 — 위 '결과')에는 쓰지 않았다.
+같은 값으로 다시 나오지 않는다. **이 수치들은 저장소만으로는 재현할 수 없다** — 설계 단계 탐색값이라 변형을 다듬는 데만 썼고,
+채택 판단은 위 '결과' 의 A/B 표(자동 지표 4건 × 2회, 판정 1차 r0 4짝·2차 8짝 × 판정자 3)로 했다.
 
 ## 재현
 
@@ -240,12 +242,14 @@ concise 의 도입·과제 무표기 문장 9 → 1, focus draft3 의 1문장 �
              85d2bc0e-541d-4d27-a98f-c0b8fe262701 9ba10849-36e2-417a-bc59-abec8e002c2c; do
      curl -s "http://192.168.12.57:92/api/research/$id" -o "jobs/job_$id.json"
    done
-   sha256sum -c jobs.sha256   # 다르면 그 뒤 보고서가 바뀐 것이다(다시 생성·재시도)
+   tr -d '\r' < jobs.sha256 | sha256sum -c   # 다르면 그 뒤 보고서가 바뀐 것이다(다시 생성·재시도)
    ```
 
-   다른 폴더에 두면 `SYNTH_AB_JOBS=<폴더>`.
+   다른 폴더에 두면 `SYNTH_AB_JOBS=<폴더>`. `tr -d '\r'` 은 `jobs.sha256` 이 CRLF 로 풀린 체크아웃(`.gitattributes` 가 들어오기
+   전에 Windows `core.autocrlf=true` 로 받은 것 등)에서도 파일 이름 끝의 `\r` 없이 읽게 한다.
 2. **코드** — `SYNTH_AB_APP` 이 없으면 이 저장소의 `app/` 를 쓴다. 측정 당시 코드로 돌리려면
-   `git archive 0262673 app | tar -x -C /tmp/ab-1` (1차) 또는 `3555e82` (2차) 로 푼 뒤 `SYNTH_AB_APP=/tmp/ab-1/app`.
+   `git archive 0262673 app | tar -x -C /tmp/ab-1` (1차) 또는 `3555e82` (2차 측정 코드 HEAD — 테스트 보강 커밋이고 번호 인용
+   지우기는 그 앞 `73feb90`) 로 푼 뒤 `SYNTH_AB_APP=/tmp/ab-1/app`.
    (`run_ab.py` 는 그 폴더의 git HEAD 를 `code_head` 로 남기는데, 푼 폴더에는 git 이 없어 `?` 로 남는다.)
 3. **생성** — LLM 주소는 `SYNTH_AB_LLM_URL`(기본 운영 vLLM `http://192.168.12.57:18080/v1/chat/completions`, 모델 `gemma-3-12b`).
    운영과 같은 vLLM 에 동시 4요청을 보내므로 사람이 확인하고 돌린다.
@@ -261,11 +265,12 @@ concise 의 도입·과제 무표기 문장 9 → 1, focus draft3 의 1문장 �
 7. **생성 원문 목록** — 생성 폴더에서 `python <이 폴더>/gen_index.py . gen_ab gen_r2 gen_*.json focus2/gen > gen_index.tsv`.
 8. **checks** — `python checks/excerpt-cut/compare.py jobs checks/excerpt-cut/compare.txt` ·
    `python checks/excerpt-cut/short.py jobs checks/excerpt-cut/short.txt`.
-   figleak 은 '뒤' 를 `65907eb` 의 app(= `b2aa84e`, 위 figleak 절)으로 못박는다. 운영 vLLM 에 16번 POST 하므로 사람이 확인하고 돌린다.
+   figleak 은 '뒤' 를 측정 때 코드인 `b2aa84e` 의 app(위 figleak 절)으로 못박는다 — 그 뒤 `da9e9cd` 등에서
+   `section_input.py`·`section.py` 가 또 바뀌었으므로 지금 `app/` 로 돌리지 않는다. 운영 vLLM 에 16번 POST 하므로 사람이 확인하고 돌린다.
 
    ```bash
    # 저장소 루트에서
-   mkdir -p /tmp/figleak-after && git archive 65907eb app | tar -x -C /tmp/figleak-after
+   mkdir -p /tmp/figleak-after && git archive b2aa84e app | tar -x -C /tmp/figleak-after
    cd /tmp/figleak-after/app
    PYTHONIOENCODING=utf-8 python <이 폴더>/checks/figleak/measure_g2.py \
      --base-url http://192.168.12.57:18080/v1 --model gemma-3-12b -n 8      # → checks/figleak/measure_g2.json
@@ -287,5 +292,6 @@ concise 의 도입·과제 무표기 문장 9 → 1, focus draft3 의 1문장 �
 - **설계에 쓴 보고서가 시험에도 들어 있다.** focus 의 형식 확인은 630e 로, focus2 다듬기는 630e·9ba1 로 했다.
 - **경계 결정이 둘이다.** concise·focus2 는 48호출 중 1건 차로 떨어졌다.
 - **생성 모델은 gemma-3-12b 하나다.** 실패 시 다른 모델로 넘어가는 경로는 보지 않았다.
-- **운영 효과는 아직 모른다.** 3·4차는 10-15 운영에 배포됐지만(사용자 확인) 배포 뒤 새 연구로 다시 잰 값이 아직 없다.
+- **운영 효과는 확인 중이다.** 3·4차는 배포됐고(2026-10-15, 사용자 — 어느 컨테이너까지 했는지는 사용자 확인 전) 운영 새 연구로
+  확인 중이다. 배포 뒤 새 연구로 다시 잰 값은 아직 없다.
 - **설계 단계 수치는 다시 셀 수 없다.** 위 '넣지 않은 것' 아래 문단.
