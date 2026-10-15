@@ -4,6 +4,7 @@ import json
 import httpx
 import pytest
 
+from bibliography_chunks import chunk as bibliography_chunk
 from services.prompts import get_prompt
 from services.research import synthesizer
 from services.research.llm_json import extract_json
@@ -1437,6 +1438,18 @@ class TestExcerptText:
         # 400자를 넘지 않으면 자르지 않는다 — 청크가 끝난 자리다
         text = _DONE * 3 + "끝나지 않은 조각"
         assert self._text(text) == text
+
+    def test_reference_tail_after_the_body_is_left_out(self):
+        # 운영 c816c7b2 E4 — 212자 대목이 맺음 한 문장 + '참고문헌 고문희(2008), “노인우울증과 …”, … 석사학위논 문.' 이라
+        # 400자 안이어도 그 학위논문 제목이 이 논문 내용처럼 모델에 갔다
+        text = bibliography_chunk("KCI_FI001407641__0037")["text"]
+        out = self._text(text)
+        assert out.endswith("실험연구를 수행할 필요를 느낀다.") and "고문희" not in out
+
+    def test_reference_tail_is_cut_before_the_sentence_window(self):
+        # 꼬리를 뗀 뒤 창을 정한다 — 서지의 '(2000).' 을 문장 끝으로 보고 창이 서지까지 가지 않는다
+        text = _DONE * 4 + "## 참 고 문 헌\n\n강희숙, 김근조 (2000). 노인의 우울에 관한 연구. 한국노년학, 20(1), 1-15. " * 3
+        assert self._text(text) == (_DONE * 4).rstrip()
 
     def test_period_at_the_window_edge_is_judged_by_the_next_char(self):
         # 400자째 마침표가 '3.14' 의 소수점이면 문장 끝이 아니다 — '평균은 3.' 에서 자르면 값이 바뀐다

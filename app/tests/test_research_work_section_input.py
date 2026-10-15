@@ -151,6 +151,14 @@ class TestSnapshotPassages:
             _snapshot_chunk("KCI_FI002548462__0071", 0.591), _snapshot_chunk("KCI_FI002548462__0003", 0.591)]}}}
         assert [p["chunk_id"] for p in snapshot_passages(snapshot, "KCI_FI002548462")] == ["KCI_FI002548462__0003"]
 
+    def test_reference_tail_after_the_body_is_left_out(self):
+        """본문 끝에 참고문헌 머리와 첫 항목이 붙은 청크는 본문이라 후보로 남되 머리 뒤를 뗀다 — 리랭커가 서지 속 제목으로
+        점수를 매기지 않고, 대목이 남의 학위논문 제목으로 끝나지 않는다(운영 c816c7b2 이어가기 gap E3)."""
+        snapshot = {"evidence": {"E4": {"cnts_id": "KCI_FI001407641", "meta": {}, "chunks": [
+            _snapshot_chunk("KCI_FI001407641__0037", 0.8)]}}}
+        (p,) = snapshot_passages(snapshot, "KCI_FI001407641")
+        assert p["text"].endswith("실험연구를 수행할 필요를 느낀다.") and "고문희" not in p["text"]
+
     def test_a_paper_with_only_bibliography_chunks_gives_nothing(self):
         """빈 목록이라 _excerpts 의 `or milvus_passages(cnts)` 가 그 논문의 Milvus 청크에서 본문 대목을 고른다."""
         snapshot = {"evidence": {"E3": {"cnts_id": "KCI_FI001613573", "meta": {}, "chunks": [
@@ -218,6 +226,14 @@ class TestMilvusPassages:
         ])
         monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
         assert [p["chunk_id"] for p in passages.milvus_passages("KCI_FI002548462")] == ["KCI_FI002548462__0003"]
+
+    def test_reference_tail_after_the_body_is_left_out(self, search, monkeypatch):
+        tail = bibliography_chunk("KCI_FI001061014__0022")
+        col = _Collection(rows=[{"chunk_id": "KCI_FI001061014__0022", "chunk_idx": 22, "text": tail["text"],
+                                 "page_start": 12, "page_end": 12}])
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
+        (p,) = passages.milvus_passages("KCI_FI001061014")
+        assert p["text"].endswith("연구의 필요성을 시사한다.") and "강희숙" not in p["text"]
 
     @pytest.mark.parametrize("error", [RuntimeError("스키마 불일치"), OSError("연결 끊김")])
     def test_known_failures_give_no_passages(self, search, monkeypatch, error):

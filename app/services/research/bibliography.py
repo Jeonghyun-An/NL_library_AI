@@ -88,6 +88,18 @@ _HEADING_LINE = re.compile(r"(?m)^#{1,6}[ \t]")
 _CITE_GUIDE_LINE = re.compile(
     r"(?im)^[ \t>*#-]*(?:citation\b|cite this\b|how to cite\b|to cite this\b|please cite\b|인용\s*[:：]|이 논문을 인용).*$")
 _TAIL_BEFORE_ABSTRACT_MIN = 40
+# 본문 끝 참고문헌 꼬리 — 맺음 문장 뒤(같은 줄의 '…필요를 느낀다. 참고문헌' 또는 제 줄의 '#### 참고문헌')에 머리와 첫 항목이
+# 붙은 청크. 본문이라 근거로 남지만(looks_like_bibliography 는 False) 모델에 넘기는 대목에서는 머리 뒤를 뗀다. 머리는 줄
+# 처음이나 문장 끝(마침표·닫는 따옴표·<br>) 바로 뒤에 있고, 그 줄이 끝나거나 서지 항목이 바로 이어야 한다(_HEAD_START 와
+# 같은 뒤 조건 — '참고문헌 분석에 관한'·'Bibliography instruction' 은 머리가 아니다). 쪽 배치가 뒤섞여 머리 뒤에 이 논문의
+# 본문·그림 설명이 오는 청크가 있어(운영 KCI_FI002782062__0044·KCI_FI001202853__0021) 머리 뒤 _TAIL_LOOK 자가 서술 없이
+# 서지 꼴을 품을 때만 뗀다. 머리 앞에 서술이 없으면(목차·청크 맨 앞의 머리) 그대로 둔다
+_SEP = r"(?:[ \t]|<br\s*/?>)"
+_TAIL_HEAD = re.compile(
+    r"(?:^|(?<=[.。!?\"”’」』>]))" + _SEP + r"*(" + _HEAD_WORD + r")"
+    r"(?=" + _SEP + r"*(?:\r?\n|$)|" + _SEP + r"+(?![ \t])(?![a-z])(?![가-힣]+[ \t]+[가-힣]))", re.M)
+_TAIL_LOOK = 200
+_TRAILING_SEP = re.compile(r"(?:\s|<br\s*/?>)+\Z")
 
 
 def _entry_spots(text: str) -> int:
@@ -108,6 +120,23 @@ def _no_prose(text: str) -> bool:
 def has_prose(text: str) -> bool:
     """서술 문장(한국어 서술 종결 또는 영어 서술 동사)이 하나라도 있는가 — 종합이 절 생성에 넘길 대목을 고를 때 쓴다."""
     return not _no_prose(text)
+
+
+def strip_reference_tail(text: str) -> str:
+    """본문 끝에 붙은 참고문헌 꼬리(머리와 그 뒤)를 뗀 글. 꼬리가 없으면 그대로 돌려준다.
+
+    모델에 넘기는 대목(synthesizer._excerpt·research_work.passages)에 쓴다 — 400자 안의 짧은 대목이어도 맺음 문장 뒤의
+    '참고문헌 고문희(2008), “노인우울증과 …”, … 석사학위논문.' 이 그 논문 내용처럼 읽힌다(운영 c816c7b2 E4). 근거 청크
+    원문(인용칩 팝오버)은 바꾸지 않는다.
+    """
+    for m in _TAIL_HEAD.finditer(text):
+        before, look = text[:m.start(1)], text[m.end(1):m.end(1) + _TAIL_LOOK]
+        if not has_prose(before):
+            continue
+        if look.strip() and (has_prose(look) or not any(shape.search(look) for shape in _ENTRY_SHAPES)):
+            continue
+        return _TRAILING_SEP.sub("", before)
+    return text
 
 
 def _bibliography_before_abstract(text: str) -> bool:

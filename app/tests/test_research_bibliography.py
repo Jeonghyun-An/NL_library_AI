@@ -6,8 +6,8 @@
 """
 import pytest
 
-from bibliography_chunks import CASES
-from services.research.bibliography import looks_like_bibliography
+from bibliography_chunks import CASES, chunk
+from services.research.bibliography import looks_like_bibliography, strip_reference_tail
 
 
 @pytest.mark.parametrize("case", CASES, ids=[c["chunk_id"] for c in CASES])
@@ -245,3 +245,58 @@ def test_head_at_chunk_start_followed_by_entries_is_bibliography(head):
 
 def test_empty_text_is_not_a_bibliography():
     assert not looks_like_bibliography("")
+
+
+# ── 본문 끝 참고문헌 꼬리 ──────────────────────────────────────────────
+# 본문 맺음 뒤에 참고문헌 머리와 첫 항목이 붙은 청크는 본문이라 근거로 남지만, 모델에 넘기는 대목에서는 머리 뒤를 뗀다 —
+# 운영 c816c7b2 E4 의 212자 대목은 맺음 한 문장 뒤가 '참고문헌 고문희(2008), “노인우울증과 …”, 전남대학교 대학원
+# 석사학위논문.' 이라 그 학위논문 제목이 이 논문 내용처럼 읽힌다
+
+
+@pytest.mark.parametrize("chunk_id, last", [
+    ("KCI_FI001407641__0037", "실험연구를 수행할 필요를 느낀다."),    # 맺음 문장과 같은 줄의 '참고문헌'
+    ("KCI_FI001061014__0022", "강점평가척도의 개발에 대한 연구의 필요성을 시사한다."),  # '#### 참고문헌'
+])
+def test_reference_tail_after_the_body_is_cut(chunk_id, last):
+    text = chunk(chunk_id)["text"]
+    out = strip_reference_tail(text)
+    assert out.endswith(last) and text.startswith(out)
+
+
+@pytest.mark.parametrize("head", ["참고문헌", "### 참 고 문 헌", "[참고문헌]", "&lt;참고문헌&gt;", "REFERENCES"])
+def test_head_on_its_own_line_after_the_body_is_cut(head):
+    body = "본 연구는 공공도서관 노인 이용자 359명을 조사하였다. 사회적 지지가 우울을 낮추었다."
+    text = f"{body}\n\n{head}\n\n김철수 (2010). 공공도서관 서비스 품질 연구. 한국문헌정보학회지, 44(2), 101-120."
+    assert strip_reference_tail(text) == body
+
+
+def test_english_references_after_br_are_cut():
+    # 표 셀처럼 줄바꿈이 <br> 로 남은 영문 청크(운영 KCI_FI002267397__0016)
+    body = "Community support systems for the isolated elderly should be established."
+    text = (f"{body}<br>REFERENCES<br><br>[1] Statistics Korea, \"Population census 2016\", Web site.<br>"
+            "[2] H. Oh, D. Kim, \"Research on the influential factors\", Health and Social Science, Vol. 3, 2013.")
+    assert strip_reference_tail(text) == body
+
+
+# 그대로 두는 것 — 머리 뒤가 서지가 아니거나(쪽 배치가 뒤섞여 머리 뒤에 본문·그림이 온 청크), 머리가 아니거나(본문 낱말·
+# 각주 안내·목차), 머리 앞에 서술이 없다(청크 맨 앞의 머리 — 그런 청크는 looks_like_bibliography 가 거른다)
+_BODY = "본 연구는 공공도서관 노인 이용자 359명을 조사하였다. "
+
+
+@pytest.mark.parametrize("text", [
+    # 운영 KCI_FI002782062__0044 — '##### 참고문헌' 뒤가 이 논문의 본문이다
+    _BODY + "결론 및 제언\n\n##### 참고문헌\n\n본 연구는 노인의 사회적 지지와 우울에 대한 연구를 체계적으로 고찰하였다. "
+    "그 결과 사회적 지지는 우울을 낮추는 요인으로 보고되었다(김철수, 2010: 45-67).",
+    # 운영 KCI_FI001202853__0021 — '### 참고문헌' 뒤가 그림 설명과 본문이다
+    _BODY + "### 참고문헌\n\n&lt;그림 12&gt;은 Small Job에서 퍼지로직 기반의 그리드 작업 스케줄링 모델이 Random 스케줄링 "
+    "모델보다 처리 시간이 짧음을 보여준다",
+    _BODY + "참고문헌 분석에 관한 선행연구는 인용 문헌의 유형을 세었다(김철수, 2012: 45-67).",
+    _BODY + "〈참고문헌은 각주로 대신함〉\n\n- 129 -",
+    "목 차\nⅠ. 서론\nⅡ. 이론적 배경\nⅤ. 결론\n참고문헌\n부록",
+    "참고문헌\n김철수 (2010). 공공도서관 서비스 품질 연구. 한국문헌정보학회지, 44(2), 101-120.",
+    _BODY + "Bibliography instruction (2010). was offered to students.",
+    _BODY + "사회적 지지가 우울을 낮추었다.",
+], ids=["body-after-head", "figure-after-head", "body-word", "footnote-notice", "table-of-contents",
+        "head-at-start", "bibliography-instruction", "no-head"])
+def test_text_without_a_reference_tail_is_kept_whole(text):
+    assert strip_reference_tail(text) == text

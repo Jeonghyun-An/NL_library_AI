@@ -25,7 +25,7 @@ import httpx
 
 from services.llm_client import chat
 from services.prompts import get_prompt
-from services.research.bibliography import has_prose
+from services.research.bibliography import has_prose, strip_reference_tail
 from services.research.citations import bind_markers, chunks_for, strip_markers, strip_numbered_refs
 from services.research.hangul import josa
 from services.research.llm_json import extract_json
@@ -651,8 +651,9 @@ def _sentence_ends(text: str) -> list[int]:
 
 def _excerpt(chunk: Chunk) -> tuple[str, str]:
     """(모델에 넘기는 창, 그 창의 완결 문장 부분). 둘 다 _sentence_ends 로 정한다 — 창을 자르는 문장 끝과 _narrative 의
-    '완결 문장' 이 같은 자리여야 한다. 창을 문장 끝에서 잘랐으면 둘은 같고, 아니면 완결 문장 부분은 창의 앞쪽이다."""
-    text = _BR.sub("\n", html.unescape(chunk.text))
+    '완결 문장' 이 같은 자리여야 한다. 창을 문장 끝에서 잘랐으면 둘은 같고, 아니면 완결 문장 부분은 창의 앞쪽이다.
+    본문 끝에 붙은 참고문헌 꼬리(머리와 그 뒤)는 창을 정하기 전에 뗀다(bibliography.strip_reference_tail)."""
+    text = strip_reference_tail(_BR.sub("\n", html.unescape(chunk.text)))
     ends = _sentence_ends(text)
     body = text[:ends[-1]] if ends else ""
     if len(text) <= EXCERPT_CHARS:
