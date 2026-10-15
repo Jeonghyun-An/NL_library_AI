@@ -6,6 +6,7 @@ import { bestExcerptSentence, excerptParts, excerptSentences } from "~/utils/cit
 import { sentenceFlags } from "~/utils/figureMarkers";
 import { passageText } from "~/utils/passageText";
 import live from "../fixtures/live_excerpt_br.json";
+import tails from "../fixtures/live_passage_tails.json";
 
 const RAW = live.source.excerpt.text;
 
@@ -83,6 +84,91 @@ describe("passageText — 원문 대목의 <br> 태그 글자를 줄바꿈으로
   });
 });
 
+describe("운영 대목 넷(노인 연구 c816c7b2, 2026-10-15) — 표 칸 속 <br>·첫 쪽 머리말·참고문헌 꼬리", () => {
+  it("자료는 운영 응답 그대로다(글자 수)", () => {
+    expect([tails.E2.text.length, tails.E4.text.length, tails.E20.text.length, tails.E21.text.length]).toEqual([1435, 212, 623, 1290]);
+  });
+
+  it("E21 — 칸 속에 <br> 이 든 표 행은 칸 속 <br> 을 띄어쓰기로 바꿔 한 줄로 편다('|' 조각이 남지 않는다)", () => {
+    const text = passageText(tails.E21.text);
+    expect(text).not.toContain("|");
+    expect(text).toContain("변 수 · Model 1 B (S.E) β · Model 2 B (S.E.) β · Model 3 B (S.E.) β · Model 4 B (S.E.) β");
+    expect(text).toContain("인구 학적 특성 · 성별 연령 · 5.761 (.767) .199*** .134 (.045) .079** · 3.615 (.815) .125*** .033 (.046) .019 · ");
+    expect(text).toContain("사회적 지지망 · 가족 관계 만족도 · -.610 (.056) -.305***");
+    // 표 앞 본문·[표] 머리는 그대로, 표 행은 행마다 한 줄
+    expect(text.startsWith("[표]\n적 지지에 대한 만족도가")).toBe(true);
+    expect(text.split("\n").filter((l) => l.includes(" · "))).toHaveLength(6);
+  });
+
+  it("칸 속 <br> 만 띄어쓰기다 — 행 사이 <br>·표 밖 <br> 은 전처럼 줄바꿈", () => {
+    expect(passageText("|구분|값<br>(%)|<br>|---|---|<br>|A|1<br>2|")).toBe("구분 · 값 (%)\n\nA · 1 2");
+    expect(passageText("[표]<br>|가|나|<br>본문")).toBe("[표]\n가 · 나\n본문");
+  });
+
+  it("E2 — 대목 맨 앞의 학술지 머리말(❙ 쪽수)·DOI 줄은 걷어 내고 제목부터 보인다", () => {
+    const text = passageText(tails.E2.text);
+    expect(text.startsWith("노인의 우울과 건강증진행위와의 관계에서 대인관계와 사회적 지지의 조절효과\n\n이송흔")).toBe(true);
+    expect(text).not.toContain("❙");
+    expect(text).not.toContain("doi.org");
+  });
+
+  it("머리말 꼴 — 쪽수 ❙ 학술지·DOI·ISSN·Vol. No. 줄이 맨 앞에 이어지면 모두 걷는다. 가운데의 같은 꼴·본문만 남는 경우는 그대로", () => {
+    expect(passageText("412 ❙ 한국콘텐츠학회논문지 '17 Vol. 17 No. 9\nhttp://dx.doi.org/10.5392/JKCA.2017.17.09.412\npISSN 1598-4877\n\n본문이다.")).toBe("본문이다.");
+    expect(passageText("Journal of the Korea Academia Vol. 18, No. 3 pp. 120-128, 2017\nDOI: 10.5762/KAIS.2017.18.3.120\n본문")).toBe("본문");
+    // 머리말이 맨 앞이 아니면 손대지 않는다
+    expect(passageText("본문이다.\nhttps://doi.org/10.1/x\n이어서")).toBe("본문이다.\nhttps://doi.org/10.1/x\n이어서");
+    // 머리말뿐이면 지우지 않는다(빈 대목을 보이지 않게)
+    expect(passageText("https://doi.org/10.14400/JDC.2017.15.9.397")).toBe("https://doi.org/10.14400/JDC.2017.15.9.397");
+  });
+
+  it("E4·E20 — 본문 뒤 '참고문헌' 머리에 서지 항목이 이으면 머리부터 잘라 본문만 보인다", () => {
+    expect(passageText(tails.E4.text)).toMatch(/실험연구를 수행할 필요를 느낀다\.$/);
+    expect(passageText(tails.E20.text)).toMatch(/연구의 필요성을 시사한다\.$/);
+  });
+
+  it("참고문헌 머리 꼴 — 이름(연도)·여러 저자 (연도)·영문 References·번호 [1], 머리 뒤 공백·줄바꿈 여럿", () => {
+    expect(passageText("결론이다. 참고문헌 김철수 외(2010). 제목.")).toBe("결론이다.");
+    expect(passageText("결론이다.\n\nReferences\n\nSmith, J. (2010). Title.")).toBe("결론이다.");
+    expect(passageText("결론이다. REFERENCES Kim, H. & Lee, S. (2019).")).toBe("결론이다.");
+    expect(passageText("결론이다.\n참 고 문 헌\n[1] 김철수, 「노인 우울」, 2010.")).toBe("결론이다.");
+    expect(passageText("결론이다. 참고문헌:\n\n\n  박미진(2007a). 제목.")).toBe("결론이다.");
+  });
+
+  it("번호 붙은 머리('Ⅵ. 참고문헌'·'6. References')는 번호까지 자른다 — 끝에 번호만 남지 않게", () => {
+    expect(passageText("결론이다.\n\nⅥ. 참고문헌\n\n김철수(2010). 제목.")).toBe("결론이다.");
+    expect(passageText("conclusion.\n\n6. References\n\nSmith, J. (2010). Title.")).toBe("conclusion.");
+    expect(passageText("결론이다.\n\n#### 5. 참고문헌\n\n김철수(2010). 제목.")).toBe("결론이다.");
+  });
+
+  it("본문 속 '참고문헌' 낱말은 자르지 않는다 — 머리 뒤가 서지 항목이 아니거나 대목이 머리로 시작하면 그대로", () => {
+    for (const s of [
+      "참고문헌 분석에 관한 연구(2010)는 인용 행태를 다뤘다.",
+      "본 연구는 학위논문의 참고문헌 인용 정확성을 분석하였다. 참고문헌 오류율은 12%였다.",
+      "이용자는 References 목록을 확인했다.",
+      "참고문헌\n\n고문희(2008), 「노인우울증」, 석사학위논문.",
+      // 검증에서 잘리던 본문(2026-10-15) — 머리는 줄 머리·문장 끝 뒤에만, 연도 괄호 뒤에는 서지 부호(.,:)가, '[1]' 은 줄을 바꾼 뒤에만
+      "본 연구는 시스템을 설계하였다. 참고문헌 [1]에서 제안한 방법을 따랐다.",
+      "We follow prior work. Reference [1] proposed a hybrid model.",
+      "학위논문의 구성 요소를 살펴본다.\n\n3.4 참고문헌\n\n이명희(2010)는 학위논문 참고문헌의 정확성을 분석하였다.",
+      "본 연구는 KCI 참고문헌 DB(2020)를 이용하여 분석하였다.",
+      "연구자들은 EndNote 와 Reference Manager (2012) 를 썼다.",
+      "이 연구는 학위논문의 참고문헌 분석(2019)을 바탕으로 인용 행태를 살폈다. 그 결과 오류가 많았다.",
+      "본 연구는 참고문헌 김철수(2010)의 틀을 따른다.",
+      "선행연구로는 참고문헌 분석(2010)과 인용 분석이 있다. 이들은 학위논문의 인용 행태를 다루었다.",
+      "이 도구는 References Manager (2010) 와 같은 기능을 제공한다.",
+    ]) {
+      expect(passageText(s)).toBe(s);
+    }
+  });
+
+  it("넷 모두 두 번 정리해도 같다", () => {
+    for (const t of [tails.E2.text, tails.E4.text, tails.E20.text, tails.E21.text]) {
+      const once = passageText(t);
+      expect(passageText(once)).toBe(once);
+    }
+  });
+});
+
 describe("인용 근거 하이라이트는 정리한 글로 잰다", () => {
   const cited = sentenceFlags(live.paragraph)[1]!.text;
 
@@ -97,6 +183,17 @@ describe("인용 근거 하이라이트는 정리한 글로 잰다", () => {
     const best = bestExcerptSentence(cited, RAW, live.eid);
     expect(best).not.toBeNull();
     expect(excerptSentences(RAW)[best!]).toMatch(/^노년기가 되면 사회적 상호작용이 줄고 관계망의 크기가 축소하여\n\n노인들의/);
+  });
+
+  it("'넘긴 원문 대목' 패널(excerptParts)은 참고문헌 꼬리를 자르지 않는다 — 모델이 받은 글 그대로 보여야 남의 참고문헌을 인용한 것이 드러난다", () => {
+    const sentence = "고문희(2008)는 노인우울증과 여가활동 및 음주습관의 관계를 분석하였다 [E1].";
+    const parts = excerptParts(tails.E4.text, sentence, "E1");
+    const joined = parts.map((p) => p.text).join("");
+    expect(joined).toBe(passageText(tails.E4.text, { keepReferences: true }));
+    expect(joined).toContain("참고문헌\n\n고문희(2008),");
+    expect(parts.find((p) => p.mark)?.text).toContain("고문희(2008)");
+    // 다른 자리(인용 팝오버 등)는 잘린다
+    expect(passageText(tails.E4.text)).not.toContain("고문희");
   });
 
   it("excerptParts — 조각을 이으면 정리한 글 그대로이고 강조 조각에도 태그 글자가 없다", () => {

@@ -46,6 +46,7 @@
           v-if="workView"
           :phase="workView.phase"
           :current="stepMode ? step : null"
+          :written="proposalWritten(work.state.value)"
           @go="goStep"
           @help="onboardingOpen = true"
         />
@@ -78,7 +79,7 @@
           <ProposalStep v-else :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
         </div>
 
-        <div v-else class="rs-body" :class="`rs-body--${layout}`">
+        <div v-else class="rs-body" :class="[`rs-body--${layout}`, { 'is-exploring': phase === 'exploring' }]">
           <div class="rs-col-main">
             <!-- 탐색 중에는 계획 블록을 그리지 않는다 — 하위질문 목록·상태는 본문의 절 자리(ReportSkeleton)가 보인다 -->
             <section v-if="phase !== 'completed' && phase !== 'exploring'" class="rs-block rs-block--plan">
@@ -170,6 +171,7 @@
                     <ContinueResearchCard
                       :exists="work.exists.value"
                       :work="workView"
+                      :written="proposalWritten(work.state.value)"
                       :busy="continuing"
                       :error="continueError"
                       @continue="onContinue"
@@ -178,6 +180,9 @@
                   </template>
                 </ReportView>
               </template>
+              <!-- 탐색 중에는 보고서 자리에 'AI가 지금 하는 일'(과정)을 크게 — 보고서를 쓰기 시작하면 절 자리·초안으로 바뀌고 과정은 옆 칸
+                   탐색 경로로 간다(사용자 결정 2026-10-14) -->
+              <ResearchLive v-else-if="phase === 'exploring'" :view="view" />
               <ReportSkeleton v-else-if="slotsShown" :slots="planSlotList" />
               <div v-else-if="reportState === 'failed'" class="rs-card rs-card--error">
                 <p class="rs-card__title">보고서를 불러오지 못했습니다</p>
@@ -194,13 +199,21 @@
           </div>
 
           <aside class="rs-col-side">
-            <!-- 근거 장부 — 옆 칸 맨 위. 회차마다 '검토 중' 후보가 섰다가 점검 뒤 채택 논문은 떨어져 쌓이고 critic 이 뺀 논문은
-                 '뺌'으로 내려간다 — 긴 탐색 타임라인 아래 화면 밖에서 일어나지 않게 진행 패널 위에 둔다. 바깥 v-if 없이 늘 그린다:
-                 장부가 빈 때부터 떠 있어야 첫 회차의 채택이 떨어진다. 06a 전 잡은 컴포넌트가 카드를 그리지 않는다 -->
+            <!-- 진행 패널(탐색 경로) — 탐색 중에는 과정이 본문(ResearchLive)에 크게 뜨므로 옆 칸에서 뺀다. 보고서를 쓰기 시작하면
+                 다시 옆 칸 맨 위로 오고 근거 장부는 그 아래로 내린다(사용자 결정 2026-10-14) -->
+            <ProgressPanel
+              v-if="phase !== 'exploring'"
+              :view="view"
+              :phase="phase"
+              :reveal-excluded="revealExcluded"
+              :queue-note="queueText"
+            />
+            <!-- 근거 장부 — 탐색 중에는 옆 칸에 혼자(본문의 과정 옆에서 채택 논문이 떨어져 쌓이고 critic 이 뺀 논문은 '뺌'으로 내려간다),
+                 그 밖에는 탐색 경로 아래. 바깥 v-if 없이 늘 그린다: 장부가 빈 때부터 떠 있어야 첫 회차의 채택이 떨어진다.
+                 06a 전 잡은 컴포넌트가 카드를 그리지 않는다 -->
             <div class="wk-side-ledger">
               <EvidenceLedger :subqs="view.subqs" :live="phase === 'exploring'" />
             </div>
-            <ProgressPanel :view="view" :phase="phase" :reveal-excluded="revealExcluded" :queue-note="queueText" />
           </aside>
         </div>
         <!-- 따라가기를 멈춘 동안만 뜬다 — 누르면 지금 쓰는(찾는) 곳으로 옮기고 다시 따라간다. 화면 아래 가운데에 붙는다 -->
@@ -227,6 +240,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import PdfViewer from "~/components/PdfViewer.vue";
 import PlanCard from "~/components/research/PlanCard.vue";
 import ProgressPanel from "~/components/research/ProgressPanel.vue";
+import ResearchLive from "~/components/research/ResearchLive.vue";
 import ReportDownloadMenu from "~/components/research/ReportDownloadMenu.vue";
 import ReportPrint from "~/components/research/ReportPrint.vue";
 import ReportSkeleton from "~/components/research/ReportSkeleton.vue";
@@ -274,6 +288,7 @@ import { activeRoundKey, currentStageTag, maxRoundsOf, progressBarView, showsPro
 import { followBlocked, followTarget, userOpenedPopover, type PointerTrail } from "~/utils/researchFollow";
 import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
+import { proposalWritten } from "~/utils/proposalView";
 import { ONBOARDING_KEY, parseWorkStep, stepForPhase, summaryBand, summaryLine, withStep } from "~/utils/workPhase";
 
 const route = useRoute();
@@ -339,6 +354,15 @@ const work = useResearchWork(() => String(route.params.id ?? ""), {
   enabled: computed(() => phase.value === "completed"),
 });
 const workView = computed(() => work.state.value.work);
+// 보고서 단계에 온 연구는 어느 화면에서 열든 계획서를 읽어 둔다 — 머리 단계 줄·이어가기 카드의 '보고서 완성'(proposalWritten)이
+// 계획서로 정해진다. 보고서 단계 화면(ProposalStep)에서만 읽으면 처음 연 화면에 따라 같은 연구의 줄이 달랐다
+watch(
+  () => workView.value?.phase,
+  (p) => {
+    if (p === "proposal") void work.ensure("proposal");
+  },
+  { immediate: true },
+);
 // 이어가지 않은 연구로 확인되면(exists false) ?s= 가 붙어 와도 지금의 탐색·보고서 화면을 그린다
 const stepMode = computed(() => step.value !== null && phase.value === "completed" && work.exists.value !== false);
 

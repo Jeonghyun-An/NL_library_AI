@@ -243,10 +243,10 @@ describe("pathLines", () => {
       path: { subqs: [], revived: { subq_idx: 1, subquestion: "사회적 지지 측정 도구", round: 2, note: "대상이 다르다" }, user: false },
     });
     expect(pathLines(revived)).toEqual([
-      { label: "되살림", detail: "하위질문 2 「사회적 지지 측정 도구」 2회차에서 critic 이 뺀 논문 — 대상이 다르다" },
+      { label: "되살림", detail: "하위질문 2 「사회적 지지 측정 도구」 2회차에서 자기점검이 뺀 논문 — 대상이 다르다" },
     ]);
     const quiet = row({ path: { subqs: [], revived: { subq_idx: 0, subquestion: "관계", round: null, note: " " }, user: false } });
-    expect(pathLines(quiet)[0]!.detail).toBe("하위질문 1 「관계」에서 critic 이 뺀 논문");
+    expect(pathLines(quiet)[0]!.detail).toBe("하위질문 1 「관계」에서 자기점검이 뺀 논문");
     expect(pathLines(row({ origin: "user", path: { subqs: [], revived: null, user: true } }))).toEqual([
       { label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" },
     ]);
@@ -412,8 +412,10 @@ describe("critic 이 뺀 논문 서랍", () => {
   it("candidateLine·candidateNote — 보고서 제외 목록과 같은 한 줄, 뺀 회차와 critic 메모", () => {
     expect(candidateLine(excluded())).toBe("박민수 외 (2019) 「경력단절여성의 진로적응성」");
     expect(candidateLine(excluded({ title: "", personal_author: null, pub_date: null }))).toBe("저자 미상");
-    expect(candidateNote(excluded())).toBe("2회차에 뺌 · critic 메모: 노인 대상이 아닌 연구가 섞였다");
-    expect(candidateNote(excluded({ round: null }))).toBe("critic 메모: 노인 대상이 아닌 연구가 섞였다");
+    expect(candidateNote(excluded())).toBe("2회차에 뺌 · 자기점검 메모: 노인 대상이 아닌 연구가 섞였다");
+    expect(candidateNote(excluded({ round: null }))).toBe("자기점검 메모: 노인 대상이 아닌 연구가 섞였다");
+    // 화면에 보이는 글에는 내부 용어 critic 을 쓰지 않는다(2026-10-15 운영 확인)
+    expect(candidateNote(excluded())).not.toMatch(/critic/i);
     expect(candidateNote(excluded({ round: null, note: "" }))).toBeNull();
   });
 });

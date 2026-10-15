@@ -41,6 +41,74 @@ describe("cardKeywords — 카드 키워드 칩", () => {
     ]);
   });
 
+  // 운영 논문 검색 결과 300건에서 모은 실제 항목(2026-10-15) — 원문 키워드 칸을 그대로 읽어 한 항목에 여러 키워드가 붙어 왔다
+  it("한 항목에 붙어 온 키워드를 나눈다 — 국문(영문) 짝이 띄어 이어진 것은 영문 풀이를 떼고 나눈다", () => {
+    expect(
+      cardKeywords(
+        {
+          extracted_keywords: [
+            "다문화가정유아(Children of Multicultural Families) 언어발달(Language Development) 언어환경(Language Environment)",
+          ],
+        },
+        [],
+        10,
+      ),
+    ).toEqual(["다문화가정유아", "언어발달", "언어환경"]);
+    expect(
+      cardKeywords(
+        {
+          extracted_keywords: [
+            "어휘력(vocabularies) 언어이해력(understanding of oral language) 언어표현력( language expression) 사회 인구학적 변인(demographic variables)",
+          ],
+        },
+        [],
+        10,
+      ),
+    ).toEqual(["어휘력", "언어이해력", "언어표현력", "사회 인구학적 변인"]);
+    // 짝이 하나뿐이어도 영문 풀이는 뗀다
+    expect(cardKeywords({ extracted_keywords: ["다문화가정유아(young children from multi-cultural families)"] })).toEqual(["다문화가정유아"]);
+  });
+
+  it("띄어 쓴 가운뎃점으로 이은 항목은 나누고 끝 마침표를 뗀다 — 붙여 쓴 '아동·청소년'은 한 낱말", () => {
+    expect(cardKeywords({ extracted_keywords: ["Elderly · Socioeconomic · Depression · Suicide Ideation."] }, [], 10)).toEqual([
+      "Elderly",
+      "Socioeconomic",
+      "Depression",
+      "Suicide Ideation",
+    ]);
+    expect(cardKeywords({ extracted_keywords: ["아동·청소년", "부모의 긍정적·부정적 양육태도", "한국아동ㆍ청소년패널조사 2010"] })).toEqual([
+      "아동·청소년",
+      "부모의 긍정적·부정적 양육태도",
+      "한국아동ㆍ청소년패널조사 2010",
+    ]);
+  });
+
+  it("'Key words :'·'Keyword :'·'중심 단어:' 머리에서 나누고, 국문 뒤에 붙은 영문 키워드도 나눈다", () => {
+    const one = (item: string) => cardKeywords({ extracted_keywords: [item] }, [], 10);
+    expect(one("서울시 Key words : Public Library")).toEqual(["서울시", "Public Library"]);
+    expect(one("적정성 Keywords : Library")).toEqual(["적정성", "Library"]);
+    expect(one("과의존. Keyword : family problem")).toEqual(["과의존", "family problem"]);
+    expect(one("Radiological Science 중심 단어: 스마트폰")).toEqual(["Radiological Science", "스마트폰"]);
+    expect(one("이용자 만족도 University Library")).toEqual(["이용자 만족도", "University Library"]);
+    expect(one("연구사서 Subject Specialized Manpower")).toEqual(["연구사서", "Subject Specialized Manpower"]);
+    expect(one("감축목표 Key Words : Energy Policy")).toEqual(["감축목표", "Energy Policy"]);
+    expect(one("다중사례분석 Keywords: Green New Deal")).toEqual(["다중사례분석", "Green New Deal"]);
+  });
+
+  it("약어 괄호('인공지능(AI)'·'크리드(KREAD)')는 이름의 일부라 떼지 않는다 — 소문자가 든 영문 풀이만 뗀다", () => {
+    expect(cardKeywords({ extracted_keywords: ["인공지능(AI)", "크리드(KREAD)", "불륜(extramarital relationship)"] })).toEqual([
+      "인공지능(AI)",
+      "크리드(KREAD)",
+      "불륜",
+    ]);
+  });
+
+  it("한 키워드인 것은 그대로 — 약어 뒤 국문·국문 괄호·영문 구·띄어 쓴 국문 낱말", () => {
+    for (const kw of ["SNS 이용", "CHI 서비스 개발방향 CHI", "SERVQUAL(서비스 품질) 모형", "The Mediated Moderation Effect", "사회적 지지", "COVID-19 대응"]) {
+      expect(cardKeywords({ extracted_keywords: [kw] })).toEqual([kw]);
+    }
+  });
+
   it("기관 보고서처럼 키워드가 모두 없으면 빈 배열이다(칩이 안 나온다)", () => {
     expect(cardKeywords({ keyword: null, extracted_keywords: [], themes: null, subject: null })).toEqual([]);
     expect(cardKeywords(null)).toEqual([]);
