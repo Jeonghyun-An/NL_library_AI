@@ -263,7 +263,10 @@ def test_reference_tail_after_the_body_is_cut(chunk_id, last):
     assert out.endswith(last) and text.startswith(out)
 
 
-@pytest.mark.parametrize("head", ["참고문헌", "### 참 고 문 헌", "[참고문헌]", "&lt;참고문헌&gt;", "REFERENCES"])
+# 절 번호가 붙은 머리('Ⅵ. 참고문헌'·'5. 참고문헌'·'VII. REFERENCES')는 번호까지 뗀다 — 번호 뒤 마침표에서 자르면 대목 끝에
+# 'Ⅵ.' 이 매달린다
+@pytest.mark.parametrize("head", ["참고문헌", "### 참 고 문 헌", "[참고문헌]", "&lt;참고문헌&gt;", "REFERENCES",
+                                  "Ⅵ. 참고문헌", "5. 참고문헌", "VII. REFERENCES", "## 7. References"])
 def test_head_on_its_own_line_after_the_body_is_cut(head):
     body = "본 연구는 공공도서관 노인 이용자 359명을 조사하였다. 사회적 지지가 우울을 낮추었다."
     text = f"{body}\n\n{head}\n\n김철수 (2010). 공공도서관 서비스 품질 연구. 한국문헌정보학회지, 44(2), 101-120."
@@ -296,7 +299,13 @@ _BODY = "본 연구는 공공도서관 노인 이용자 359명을 조사하였�
     "참고문헌\n김철수 (2010). 공공도서관 서비스 품질 연구. 한국문헌정보학회지, 44(2), 101-120.",
     _BODY + "Bibliography instruction (2010). was offered to students.",
     _BODY + "사회적 지지가 우울을 낮추었다.",
+    # 문장 속 '참고문헌'·'References' — 머리 낱말 뒤에 같은 줄의 글이 이으면 머리가 아니다. 숫자·번호 인용이 이어 낱말 검사를
+    # 지나고 뒤 200자에 서지 꼴('2010: 45-67'·'p. 45')이 있어도 그 뒤 본문을 잃으면 안 된다
+    _BODY + "참고문헌 120편(국내 80편, 국외 40편)을 분석한 김철수(2010: 45-67)의 연구에 따르면 사회적 지지와 우울의 관계는 "
+    "연령에 따라 달랐으며 이러한 경향은",
+    "The results were similar. References [3] and [4] used the same scale (Kim, 2012, p. 45). Both studies reported "
+    "higher scores among older adults.",
 ], ids=["body-after-head", "figure-after-head", "body-word", "footnote-notice", "table-of-contents",
-        "head-at-start", "bibliography-instruction", "no-head"])
+        "head-at-start", "bibliography-instruction", "no-head", "head-word-then-count", "references-then-cite-numbers"])
 def test_text_without_a_reference_tail_is_kept_whole(text):
     assert strip_reference_tail(text) == text
