@@ -1,13 +1,13 @@
 <template>
-  <div class="skx-app">
+  <div class="skx-app" :style="examplesOverflow ? { marginBottom: `${examplesOverflow}px` } : undefined">
     <AppSidebar
       @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
       @save="showToast('저장목록 기능은 준비 중입니다.')"
     />
 
     <!-- ===== LANDING VIEW ===== -->
-    <main v-if="view === 'landing'" class="skx-contents">
-      <div class="skx-contents__inner">
+    <main v-if="view === 'landing'" ref="contentsRef" class="skx-contents">
+      <div ref="contentsInnerRef" class="skx-contents__inner">
         <h1 class="skx-brand">
           <span class="skx-brand__line">넓게 찾고 깊게 확인하는, 도서관의 AI 탐색</span>
           <SkovixWordmark class="skx-brand__logo" />
@@ -151,8 +151,11 @@
               <img src="/img/ico-arrow.svg" alt="" />
             </span>
           </div>
-          <!-- DeepResearch 모드일 때 예시 연구 카드(미리 돌린 실제 연구 — 읽기 전용). 예시가 없으면 그리지 않는다 -->
-          <ResearchExampleCards v-if="deepResearch" />
+          <!-- DeepResearch 모드일 때 예시 연구 카드(미리 돌린 실제 연구 — 읽기 전용). 예시가 없으면 그리지 않는다.
+               패널 아래에 띄워(.skx-panel__float) 세로 가운데 정렬 계산에서 뺀다 — 모드를 켜고 꺼도 로고·전환·입력창이 제자리다 -->
+          <div v-if="deepResearch" ref="examplesRef" class="skx-panel__float">
+            <ResearchExampleCards />
+          </div>
         </div>
 
         <!-- 신작도서 카운트업 -->
@@ -530,6 +533,45 @@ function onPlusMode(id: SearchModeId | null) {
   deepResearch.value = id === "deep-research";
 }
 
+// DeepResearch 예시 연구 카드는 패널 아래에 띄워(.skx-panel__float) 세로 가운데 정렬 계산에서 뺀다 — 갈래 전환의 유령 링크처럼
+// 모드를 켜고 꺼도 로고·전환·입력창이 제자리다(사용자 요청 2026-10-16). 띄운 카드는 페이지를 늘리지 않으므로, 본문 아래 여백선을 넘는
+// 만큼을 재어 .skx-app 의 아래 바깥 여백으로 둔다 — 페이지가 그만큼 길어져 스크롤로 닿고 푸터와 겹치지 않는다. 바깥 여백은
+// .skx-app 높이(가운데 정렬의 기준)를 바꾸지 않아, 다시 재도 같은 값이다(되먹임 없음)
+const contentsRef = ref<HTMLElement | null>(null);
+const contentsInnerRef = ref<HTMLElement | null>(null);
+const examplesRef = ref<HTMLElement | null>(null);
+const examplesOverflow = ref(0);
+let examplesObserver: ResizeObserver | null = null;
+
+function measureExamplesOverflow() {
+  const box = examplesRef.value;
+  const main = contentsRef.value;
+  if (!box || !main) {
+    examplesOverflow.value = 0;
+    return;
+  }
+  const padBottom = parseFloat(getComputedStyle(main).paddingBottom) || 0;
+  const over = box.getBoundingClientRect().bottom + padBottom - main.getBoundingClientRect().bottom;
+  examplesOverflow.value = Math.max(0, Math.ceil(over));
+}
+
+// 카드가 서고 바뀔 때(목록 도착·폭에 따른 줄바꿈), 창 높이가 바뀔 때(본문), 입력창 쪽 높이가 바뀔 때(가운데 자리가 움직여 카드도 따라
+// 움직인다) 다시 잰다. 카드가 사라지면(모드 끔·화면 이동) 여백을 걷는다
+watch(
+  examplesRef,
+  (box) => {
+    examplesObserver?.disconnect();
+    examplesObserver = null;
+    if (!box || typeof ResizeObserver === "undefined") {
+      examplesOverflow.value = 0;
+      return;
+    }
+    examplesObserver = new ResizeObserver(measureExamplesOverflow);
+    for (const el of [box, contentsRef.value, contentsInnerRef.value]) if (el) examplesObserver.observe(el);
+  },
+  { flush: "post" },
+);
+
 // DeepResearch 모드의 예시 연구 카드 재료를 랜딩이 뜰 때 미리 읽어 둔다(앱에서 한 번 — useState). 모드를 켠 뒤에야 읽기 시작하면
 // 응답이 온 뒤에 카드가 서서, 세로 가운데 정렬인 랜딩의 입력창이 사용자가 막 쓰기 시작한 때 비동기로 밀린다(P5 리뷰)
 const { load: loadResearchExamples } = useResearchExamples();
@@ -623,6 +665,7 @@ onMounted(async () => {
 onUnmounted(() => {
   // 떠난 화면에 늦게 온 응답이 상태를 고치지 않게, 진행 중인 검색·추천 이유 스트림을 끊는다
   runCtrl?.abort();
+  examplesObserver?.disconnect();
 });
 
 // ── 유틸 ──────────────────────────────────────────────────

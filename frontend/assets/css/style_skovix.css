@@ -2114,9 +2114,19 @@ html.skx-scroll-lock {
   align-items: center;
   gap: 2rem;
   width: 100%;
+  position: relative;
 }
 .skx-panel[hidden] {
   display: none;
+}
+/* DeepResearch 예시 연구 — 패널 바로 아래(패널 안 간격과 같은 2rem)에 띄운다. 높이에 넣지 않아 랜딩의 세로 가운데 정렬이 예시 없는
+   높이로 정해진다(모드를 켜고 꺼도 로고·입력창이 제자리). 화면 아래를 넘는 만큼은 index.vue 가 재어 .skx-app 아래 여백으로 페이지를 늘린다 */
+.skx-panel__float {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2rem;
 }
 
 /* 메뉴는 다른 내용 위에 겹쳐 뜨므로 불투명 면(--skx-white)에 테두리. 이 드롭다운은 랜딩의 맨 아래 줄이라 아래에는
