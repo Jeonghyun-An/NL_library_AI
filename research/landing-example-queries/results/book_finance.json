@@ -1,0 +1,492 @@
+[
+ {
+  "query": "국가 재정 운용 계획에 관한 자료 찾아줘",
+  "rewritten_query": "국가 재정 정책, 예산 편성, 재정 지출, 재정 수입, 경제 정책, 거시 경제, 재정 안정화",
+  "n": 30,
+  "ms": 2268,
+  "top": [
+   {
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행 A Macroeconomic Perspective",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2006~2010년 국가재정운용계획",
+    "author": "대한민국정부",
+    "year": "2006",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "주요 재정개혁과제의 추진방향",
+    "author": "옥동석",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "경제백서 1999 외환위기 극복과 새천년 대비",
+    "author": "재정경제부",
+    "year": "1999",
+    "publisher": "재정경제부",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2003년도 예산개요 참고자료",
+    "author": "기획예산처",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "최근 경제동향과 2003년도 재정운영",
+    "author": "기획예산처",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "국가재정운용계획 보고서",
+  "rewritten_query": "국가 재정 운영, 예산 배분, 재정 정책, 경제 운영, 정부 정책 결정 과정",
+  "n": 30,
+  "ms": 2505,
+  "top": [
+   {
+    "title": "2006~2010년 국가재정운용계획",
+    "author": "대한민국정부",
+    "year": "2006",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "주요 재정개혁과제의 추진방향",
+    "author": "옥동석",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "(참여정부 100일)기획예산처의 역할과 성과",
+    "author": "기획예산처",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "개혁과 도약의 길 기획예산처 5년의 성과와 과제",
+    "author": "기획예산처",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "최근 경제동향과 2003년도 재정운영",
+    "author": "기획예산처",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행 A Macroeconomic Perspective",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "정부는 나라 살림을 어떻게 계획할까?",
+  "rewritten_query": "국가 재정 정책, 정부 예산 편성, 경제 정책 결정 과정, 재정 운영 계획",
+  "n": 27,
+  "ms": 2543,
+  "top": [
+   {
+    "title": "2006~2010년 국가재정운용계획",
+    "author": "대한민국정부",
+    "year": "2006",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "주요 재정개혁과제의 추진방향",
+    "author": "옥동석",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2005 나라살림",
+    "author": "기획예산처",
+    "year": "2005",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행 A Macroeconomic Perspective",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "(참여정부 100일)기획예산처의 역할과 성과",
+    "author": "기획예산처",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "개혁과 도약의 길 기획예산처 5년의 성과와 과제",
+    "author": "기획예산처",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "중기 재정 운용 계획과 예산 편성 자료가 있나요?",
+  "rewritten_query": "중소기업 재정 운용, 예산 편성, 재무 계획",
+  "n": 30,
+  "ms": 2918,
+  "top": [
+   {
+    "title": "2006~2010년 국가재정운용계획",
+    "author": "대한민국정부",
+    "year": "2006",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2002년도 공공기금운용계획서",
+    "author": "대한민국정부",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "주요 재정개혁과제의 추진방향",
+    "author": "옥동석",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "기금의 운용 및 조성규모",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "개혁과 도약의 길 기획예산처 5년의 성과와 과제",
+    "author": "기획예산처",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2005년도 세입세출예산안사항별설명서(산업자원·보건복지)",
+    "author": "대한민국정부",
+    "year": "----",
+    "publisher": "대한민국정부",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "주요국 중소기업 지원사례와 정책적 시사점",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2003년도 예산배정계획 및 자금계획",
+    "author": "대한민국정부",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2005 나라살림",
+    "author": "기획예산처",
+    "year": "2005",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "국가 재정 운용 계획은 어떻게 세워지나요?",
+  "rewritten_query": "국가 재정 수립 과정, 예산 편성 절차, 재정 정책 결정 요인, 재정 지출 우선순위 결정, 재정 건전성 확보 방안",
+  "n": 27,
+  "ms": 2561,
+  "top": [
+   {
+    "title": "2006~2010년 국가재정운용계획",
+    "author": "대한민국정부",
+    "year": "2006",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "주요 재정개혁과제의 추진방향",
+    "author": "옥동석",
+    "year": "2003",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2005 나라살림",
+    "author": "기획예산처",
+    "year": "2005",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행 A Macroeconomic Perspective",
+    "author": "기획예산처",
+    "year": "----",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "개혁과 도약의 길 기획예산처 5년의 성과와 과제",
+    "author": "기획예산처",
+    "year": "2002",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "2001년도 예산안편성지침 및 기준",
+    "author": "기획예산처",
+    "year": "2000",
+    "publisher": "기획예산처",
+    "kdc": "329",
+    "subject": null,
+    "abstract": ""
+   }
+  ]
+ }
+]
