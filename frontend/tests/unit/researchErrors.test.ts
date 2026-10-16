@@ -59,8 +59,8 @@ describe("researchErrorMessage", () => {
   });
 
   it("429·503 은 잠시 뒤 다시 안내한다", () => {
-    expect(researchErrorMessage(fetchError(429, "x"), "실패")).toBe("요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요");
-    expect(researchErrorMessage(fetchError(503, "작업 큐"), "실패")).toBe("요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요");
+    expect(researchErrorMessage(fetchError(429, "x"), "실패")).toBe("요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.");
+    expect(researchErrorMessage(fetchError(503, "작업 큐"), "실패")).toBe("요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.");
   });
 
   it("409 는 서버의 깨끗한 사유를, 사유가 없거나 개발자용(상태 값이 섞임)이면 대체 문구를 쓴다", () => {
@@ -86,7 +86,7 @@ describe("researchErrorMessage", () => {
       cause: Object.assign(new Error("[TimeoutError]: The operation was aborted due to timeout"), { name: "TimeoutError" }),
     });
     expect(researchErrorMessage(timedOut, "최신 상태를 불러오지 못했어요"))
-      .toBe("최신 상태를 불러오지 못했어요 — 응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요");
+      .toBe("최신 상태를 불러오지 못했어요 — 응답이 늦어 멈췄어요.\n잠시 뒤 다시 시도해 주세요.");
     // 응답과 상관없는 예외(코드 버그)는 연결 탓으로 돌리지 않는다
     expect(researchErrorMessage(new Error("Failed to fetch"), "실패")).toBe("실패");
     expect(researchErrorMessage(new TypeError("Cannot read properties of undefined (reading 'status')"), "실패")).toBe("실패");
@@ -115,7 +115,7 @@ describe("researchErrorMessage — 429 code", () => {
   });
 
   it("공유 큐(shared_queue)·code 가 없는 429 는 지금 문구 그대로다", () => {
-    const crowded = "요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요";
+    const crowded = "요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.";
     expect(researchErrorMessage(fetchError(429, { code: "shared_queue", message: "다른 딥리서치가 실행 중이다" }), "실패")).toBe(crowded);
     expect(researchErrorMessage(fetchError(429, "다른 딥리서치가 실행 중이다"), "실패")).toBe(crowded);
     expect(researchErrorMessage(fetchError(429), "실패")).toBe(crowded);
@@ -208,9 +208,9 @@ describe("pdfCheckProblem", () => {
   });
 
   it("서버 오류 등은 파일이 없다고 하지 않고 다시 시도하라고 알린다", () => {
-    expect(pdfCheckProblem(500)).toBe("원문을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요");
-    expect(pdfCheckProblem(502)).toBe("원문을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요");
-    expect(pdfCheckProblem(403)).toBe("원문을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요");
+    expect(pdfCheckProblem(500)).toBe("원문을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.");
+    expect(pdfCheckProblem(502)).toBe("원문을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.");
+    expect(pdfCheckProblem(403)).toBe("원문을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.");
   });
 
   it("확인 요청 자체가 실패하면 판단하지 않고 뷰어에 맡긴다", () => {

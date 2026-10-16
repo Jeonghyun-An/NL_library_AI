@@ -5135,7 +5135,10 @@ html.skx-scroll-lock {
   font-weight: 700;
   line-height: 1.4;
   color: var(--skx-ink-strong);
+  /* 줄이 넘치면 낱말 사이에서만 바꾸고('다시 / 시도'처럼 낱말을 가르지 않게), 두 줄이 되면 길이를 고르게 */
+  word-break: keep-all;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 .skx-state__msg {
   max-width: 27.2rem;
@@ -5144,9 +5147,12 @@ html.skx-scroll-lock {
   font-weight: 500;
   line-height: 1.15rem;
   color: var(--skx-gray-1);
-  /* 서버 사유의 줄바꿈을 살리고 긴 낱말이 칸을 넘지 않게 */
+  /* 문장마다 줄을 바꾼다 — 문구는 문장 사이를 '\n' 으로 잇는다(사용자 요청 2026-10-16). 넘치는 줄은 낱말 사이에서만 바꾸고,
+     한 낱말이 칸보다 길 때만 낱말 안에서 끊는다 */
   white-space: pre-line;
+  word-break: keep-all;
   overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 .skx-state__actions {
   display: flex;
@@ -5288,6 +5294,7 @@ html.skx-scroll-lock {
 .skx-inline-error__msg {
   min-width: 0;
   white-space: pre-line;
+  word-break: keep-all;
   overflow-wrap: anywhere;
 }
 .skx-inline-error__retry {
@@ -5438,6 +5445,8 @@ html.skx-scroll-lock {
 }
 .skx-conn__msg {
   min-width: 0;
+  white-space: pre-line;
+  word-break: keep-all;
   overflow-wrap: anywhere;
 }
 /* [다시 연결] — 줄 안내의 [다시 시도] 와 같은 글자 버튼. 누를 자리는 24px 이상(WCAG 2.5.8, 좁은 화면에서도 모자라지 않게 px) */

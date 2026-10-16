@@ -23,7 +23,7 @@ export function detailMessage(detail: unknown): string | null {
 export function pdfCheckProblem(status: number | null): string | null {
   if (status === null || (status >= 200 && status < 300)) return null;
   if (status === 404) return "원문 파일이 없어요";
-  return "원문을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요";
+  return "원문을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.";
 }
 
 // 같은 브라우저의 다른 딥리서치가 진행 중이라 승인·재시도가 막혔다(api/research.py _to_run_queue 의 429

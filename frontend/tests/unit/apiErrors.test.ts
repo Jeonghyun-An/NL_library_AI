@@ -326,12 +326,12 @@ describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES
 
   it("문구 표 — 해요체", () => {
     expect(CODE_MESSAGES).toEqual({
-      internal_error: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
-      search_unavailable: "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
-      storage_unavailable: "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
+      internal_error: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
+      search_unavailable: "검색 서버가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
+      storage_unavailable: "원문 저장소가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
       not_found: "자료를 찾을 수 없어요",
       empty_answer: "답을 만들지 못했어요",
-      retrieval_failed: "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요",
+      retrieval_failed: "자료 내용을 읽지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
     });
   });
 
@@ -379,12 +379,12 @@ describe("apiErrorMessage — (c) kind 별 이유", () => {
 
   it.each<[string, unknown, string]>([
     ["network", new TypeError("Failed to fetch"), `${FALLBACK} — 네트워크 연결을 확인해 주세요`],
-    ["timeout", noResponse(domError("TimeoutError")), `${FALLBACK} — 응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요`],
-    ["timeout(504)", fetchError(504), `${FALLBACK} — 응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요`],
-    ["busy(429)", fetchError(429), `${FALLBACK} — 요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요`],
-    ["busy(503)", fetchError(503), `${FALLBACK} — 요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요`],
-    ["server(500)", fetchError(500), `${FALLBACK} — 서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요`],
-    ["server(502 HTML 본문)", Object.assign(fetchError(502), { data: "<html>Bad Gateway</html>" }), `${FALLBACK} — 서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요`],
+    ["timeout", noResponse(domError("TimeoutError")), `${FALLBACK} — 응답이 늦어 멈췄어요.\n잠시 뒤 다시 시도해 주세요.`],
+    ["timeout(504)", fetchError(504), `${FALLBACK} — 응답이 늦어 멈췄어요.\n잠시 뒤 다시 시도해 주세요.`],
+    ["busy(429)", fetchError(429), `${FALLBACK} — 요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.`],
+    ["busy(503)", fetchError(503), `${FALLBACK} — 요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.`],
+    ["server(500)", fetchError(500), `${FALLBACK} — 서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.`],
+    ["server(502 HTML 본문)", Object.assign(fetchError(502), { data: "<html>Bad Gateway</html>" }), `${FALLBACK} — 서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.`],
     ["notFound", fetchError(404), FALLBACK],
     ["conflict", fetchError(409), FALLBACK],
     ["invalid(400)", fetchError(400), FALLBACK],
@@ -400,9 +400,9 @@ describe("apiErrorMessage — (c) kind 별 이유", () => {
   it("이유 문구는 ERROR_HINTS 한 곳에서 온다", () => {
     expect(ERROR_HINTS).toEqual({
       network: "네트워크 연결을 확인해 주세요",
-      timeout: "응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요",
-      busy: "요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요",
-      server: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
+      timeout: "응답이 늦어 멈췄어요.\n잠시 뒤 다시 시도해 주세요.",
+      busy: "요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.",
+      server: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
     });
     expect(VALIDATION_HINTS).toEqual({
       tooLong: "{n}자까지 입력할 수 있어요",

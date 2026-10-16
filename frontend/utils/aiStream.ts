@@ -63,6 +63,6 @@ export function failureText(end: AiStreamEnd, fallback: string): string {
 }
 
 // 서버 문구가 없을 때 화면이 보이는 실패 문구 — 서버 문구(paper_summary.py·pipeline.py)와 같은 말
-export const AI_SUMMARY_FAILED = "AI 요약을 만들지 못했습니다";
+export const AI_SUMMARY_FAILED = "AI 요약을 만들지 못했어요";
 export const RELATED_REASON_FAILED = "추천 사유를 만들지 못했습니다";
 export const BOOK_REASON_FAILED = "추천 이유를 만들지 못했습니다";

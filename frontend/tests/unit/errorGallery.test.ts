@@ -41,7 +41,7 @@ describe("SkxConnectionBanner — 실시간 연결 끊김 띠", () => {
   it("문구 — 다시 연결하는 중 / 연결하지 못함 + [다시 연결], 붙어 있으면 빈 글", () => {
     expect(CONNECTION_HINTS).toEqual({
       reconnecting: "연결이 끊겨 다시 연결하는 중이에요…",
-      lost: "연결하지 못했어요. 화면이 최신 상태가 아닐 수 있어요",
+      lost: "연결하지 못했어요.\n화면이 최신 상태가 아닐 수 있어요.",
     });
     expect(CONNECTION_RETRY_LABEL).toBe("다시 연결");
     expect(js).toContain('const message = computed(() => (props.state === "connected" ? "" : CONNECTION_HINTS[props.state]));');

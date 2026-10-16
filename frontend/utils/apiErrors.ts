@@ -19,9 +19,9 @@ import { DEEP_READ, DEEP_RESEARCH } from "./brand";
  */
 export const ERROR_HINTS = {
   network: "네트워크 연결을 확인해 주세요",
-  timeout: "응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요",
-  busy: "요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요",
-  server: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
+  timeout: "응답이 늦어 멈췄어요.\n잠시 뒤 다시 시도해 주세요.",
+  busy: "요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.",
+  server: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
 } as const;
 
 /**
@@ -31,12 +31,12 @@ export const ERROR_HINTS = {
  * (대체 문구 뒤 ' — '). not_found·empty_answer·retrieval_failed 는 DeepRead 스트림의 code 다
  */
 export const CODE_MESSAGES = {
-  internal_error: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
-  search_unavailable: "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
-  storage_unavailable: "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
+  internal_error: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
+  search_unavailable: "검색 서버가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
+  storage_unavailable: "원문 저장소가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
   not_found: "자료를 찾을 수 없어요",
   empty_answer: "답을 만들지 못했어요",
-  retrieval_failed: "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요",
+  retrieval_failed: "자료 내용을 읽지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
 } as const;
 export type ErrorCode = keyof typeof CODE_MESSAGES;
 
@@ -93,7 +93,7 @@ export const ERROR_PAGE_TEXT = {
  */
 export const CONNECTION_HINTS = {
   reconnecting: "연결이 끊겨 다시 연결하는 중이에요…",
-  lost: "연결하지 못했어요. 화면이 최신 상태가 아닐 수 있어요",
+  lost: "연결하지 못했어요.\n화면이 최신 상태가 아닐 수 있어요.",
 } as const;
 /** 연결 끊김 띠의 상태 — 'connected'(붙어 있음: 보이는 것 없이 빈 알림 영역만 그린다)와 위 두 문구의 상태 */
 export type ConnectionState = "connected" | keyof typeof CONNECTION_HINTS;
