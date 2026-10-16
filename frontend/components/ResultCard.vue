@@ -51,7 +51,15 @@
 
     <div class="skx-rc__actions" @click.stop>
       <div class="skx-rc__row">
-        <button type="button" class="skx-btn-pview" @click="emit('pdf', $event)">원문 보기</button>
+        <button
+          type="button"
+          class="skx-btn-pview"
+          :aria-busy="pdfBusy ? 'true' : undefined"
+          :aria-describedby="pdfProblem ? noteId : undefined"
+          @click="emit('pdf', $event)"
+        >
+          원문 보기
+        </button>
         <button
           v-if="showCite"
           type="button"
@@ -67,11 +75,22 @@
         DeepRead
       </button>
     </div>
+
+    <!-- 원문을 열지 못한 까닭(부모가 usePdfOpener 로 파일을 확인한 결과) — 카드 아래 한 줄. 누름이 카드(상세 이동)로 번지지 않게 막고,
+         논문이면 외부(KCI) 원문 페이지를 건넨다(논문 상세의 원문 보기와 같다) -->
+    <div v-if="pdfProblem" :id="noteId" class="skx-rc__note" @click.stop>
+      <SkxInlineError :message="pdfProblem">
+        <a v-if="kind === 'paper' && item.book_info?.url" class="skx-rc__note-link" :href="item.book_info.url" target="_blank" rel="noopener"
+          >{{ PAPER_STATE_TEXT.kciOriginal }}<span class="skx-sr-only"> (새 창)</span></a
+        >
+      </SkxInlineError>
+    </div>
   </article>
 </template>
 
 <script setup lang="ts">
 import { kdcChip } from "~/utils/kdc";
+import { PAPER_STATE_TEXT } from "~/utils/paperErrors";
 import { cardKeywords, cardMeta, type ResultKind } from "~/utils/resultCard";
 import type { BookChunkGroup } from "~/types/search";
 
@@ -94,8 +113,21 @@ const props = withDefaults(
     badge?: string;
     /** 좁은 칸(추천 패널 오른쪽)용 — 버튼 열이 아래로 내려온다 */
     compact?: boolean;
+    /** [원문 보기]가 원문을 열지 못한 까닭(usePdfOpener 의 결과 — '원문 파일이 없어요' 등). 있으면 카드 아래에 줄 안내로 보인다 */
+    pdfProblem?: string;
+    /** 원문 파일을 확인하는 중 — [원문 보기]에 aria-busy */
+    pdfBusy?: boolean;
   }>(),
-  { fallbackKeywords: () => [], aiCitedNum: null, anchor: undefined, showCite: false, badge: undefined, compact: false },
+  {
+    fallbackKeywords: () => [],
+    aiCitedNum: null,
+    anchor: undefined,
+    showCite: false,
+    badge: undefined,
+    compact: false,
+    pdfProblem: "",
+    pdfBusy: false,
+  },
 );
 const emit = defineEmits<{
   open: [e: MouseEvent];
@@ -117,4 +149,24 @@ const thumbSrc = computed(() =>
 function onThumbError() {
   thumbFailed.value = true;
 }
+
+// 원문을 열지 못한 까닭 줄 — [원문 보기]가 aria-describedby 로 가리킨다
+const noteId = `skx-rc-note-${useId()}`;
 </script>
+
+<style scoped>
+/* 원문을 열지 못한 까닭 — 카드의 세 칸(표지·글·버튼 열) 아래 한 줄 전체. 모양은 공통 줄 안내(SkxInlineError)가 맡고 여기서는 자리만 정한다 */
+.skx-rc__note {
+  grid-column: 1 / -1;
+  cursor: default;
+}
+.skx-rc__note-link {
+  color: var(--skx-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.skx-rc__note-link:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+</style>

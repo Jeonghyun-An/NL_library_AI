@@ -22,18 +22,29 @@
         <button type="button" class="skx-citepop__title" @click="emit('detail')">{{ item.title }}</button>
         <p v-if="meta" class="skx-citepop__meta">{{ meta }}</p>
         <div class="skx-citepop__actions">
-          <button type="button" class="skx-btn-pview" @click="emit('pdf')">원문 보기</button>
+          <button
+            type="button"
+            class="skx-btn-pview"
+            :aria-busy="checking ? 'true' : undefined"
+            :aria-describedby="pdfProblem ? noteId : undefined"
+            @click="openPdf"
+          >
+            원문 보기
+          </button>
           <button type="button" class="skx-btn-ptalk" @click="emit('chat')">
             <img src="/img/ico-chat.svg" alt="" />
             DeepRead
           </button>
         </div>
+        <!-- 원문을 열지 못한 까닭 — 카드를 닫지 않고 버튼 아래에 알린다(논문 상세·관련 카드 팝업의 원문 보기와 같다) -->
+        <SkxInlineError v-if="pdfProblem" :id="noteId" class="skx-citepop__note" :message="pdfProblem" />
       </div>
     </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
+import { usePdfOpener } from "~/composables/usePdfOpener";
 import { CITE_CLASS } from "~/utils/summaryCite";
 import { popoverPlacement } from "~/utils/relevance";
 
@@ -43,12 +54,14 @@ import { popoverPlacement } from "~/utils/relevance";
 const props = defineProps<{
   /** 눌린 번호 버튼 */
   anchor: HTMLElement;
-  item: { num: number; title: string; authors: string; year: string; grade?: string };
+  /** id: 그 논문의 cnts_id — [원문 보기]가 원문 파일을 먼저 확인한다 */
+  item: { num: number; id: string; title: string; authors: string; year: string; grade?: string };
 }>();
 const emit = defineEmits<{
   /** restoreFocus: 번호 버튼으로 초점을 돌려줄지(Esc·Tab 으로 나갈 때) */
   close: [restoreFocus: boolean];
   detail: [];
+  /** 원문 파일을 확인했다 — 부모는 바로 뷰어를 연다 */
   pdf: [];
   chat: [];
 }>();
@@ -58,6 +71,27 @@ const MARGIN = 8;
 
 const popRef = ref<HTMLElement | null>(null);
 const meta = computed(() => [props.item.authors, props.item.year].filter(Boolean).join(" · "));
+
+// [원문 보기] — 파일이 있는지 먼저 묻고(usePdfOpener — 없는 원문을 그대로 열면 pdf.js 의 오류 화면이 뜬다), 있으면 부모에 알려 뷰어를 연다.
+// 없으면 카드를 닫지 않고 버튼 아래에 까닭을 보인다. 확인하는 사이 카드가 닫혔으면(Esc·바깥 누름) 뷰어를 열지 않는다
+const { checking, openPdf: checkPdf } = usePdfOpener();
+const pdfProblem = ref("");
+const noteId = `skx-citepop-note-${useId()}`;
+let alive = true;
+
+async function openPdf() {
+  if (checking.value) return;
+  const problem = await checkPdf({ cntsId: props.item.id, title: props.item.title });
+  if (!alive) return;
+  pdfProblem.value = problem ?? "";
+  if (problem) {
+    // 카드가 길어졌다 — 화면 아래로 넘치지 않게 자리를 다시 잡는다
+    await nextTick();
+    schedulePlace();
+    return;
+  }
+  emit("pdf");
+}
 
 // 번호 아래 왼쪽 맞춤이 기본이고, 좌우로 넘으면 밀고, 아래가 모자라면 번호 위로 올린다(popoverPlacement — 관련도 팝오버와 같은 규칙).
 // 마지막으로 화면 안에 가둔다 — fixed 라 화면 밖에 놓이면 스크롤로도 닿지 못한다
@@ -145,6 +179,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  alive = false;
   if (frame) cancelAnimationFrame(frame);
   document.removeEventListener("keydown", onDocKeydown, true);
   document.removeEventListener("pointerdown", onDocPointerDown, true);
