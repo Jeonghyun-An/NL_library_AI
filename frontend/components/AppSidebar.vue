@@ -120,25 +120,17 @@
         <!-- 첫 로드가 끝나기 전의 빈 목록을 '기록 없음'으로 보이지 않게 loaded 를 기다린다 -->
         <ClientOnly>
           <template v-if="loaded">
-            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 기록이 하나도 없어도 묶음 머리와 [연구 시작하기]는 보인다.
-                 머리 첫 줄은 'DeepResearch' · 오른쪽 [연구 시작하기 >] 작은 알약, 둘째 줄은 진행 중 배지 · 오른쪽 '전체 삭제'(기록이 있을 때만)다
-                 (피그마 sidebar 2283:13946, 2026-10-15 — 전에는 머리 아래 전체 폭 버튼이라 [새 검색]과 겹쳐 보였다) -->
+            <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 머리는 'DeepResearch' · 오른쪽 '전체 삭제'(아래 '최근 검색' 머리와 같은 꼴).
+                 묶음은 기록이 없어도 늘 보이고, 연구 기록이 하나도 없을 때만 머리 아래에 [연구 시작하기 >]를 둔다 — 기록이 있으면
+                 버튼 없이 목록만(사용자 결정 2026-10-16) -->
             <section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
-                <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
-                <button type="button" class="skx-history__start" @click="startDeepResearch">
-                  연구 시작하기
-                  <svg class="skx-history__start-chev" viewBox="0 0 5 8" aria-hidden="true" focusable="false">
-                    <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M0.102681 0.132319C0.250461 -0.031888 0.503377 -0.0452041 0.667584 0.102576L4.66758 3.70243C4.75187 3.77828 4.8 3.88635 4.8 3.99974C4.80001 4.11314 4.75188 4.2212 4.6676 4.29706L0.667599 7.89731C0.5034 8.04509 0.250484 8.03179 0.102695 7.86759C-0.0450943 7.70339 -0.0317915 7.45048 0.132408 7.30269L3.80207 3.99977L0.132424 0.697222C-0.0317831 0.549442 -0.0450996 0.296526 0.102681 0.132319Z"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div v-if="liveCount > 0 || researchRows.length" class="skx-history__subhead">
-                <span v-if="liveCount > 0" class="skx-history__live">진행 중 {{ liveCount }}</span>
+                <div class="skx-history__head-main">
+                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
+                  <!-- '진행 중 N' 알약은 뺐다 — 진행 중인 줄의 '~ 중' 라벨이 산호 알약이라 같은 말이 겹쳤다(사용자 결정 2026-10-16).
+                       화면 읽기 프로그램에는 묶음 머리에서 바로 들리게 글로만 남긴다 -->
+                  <span v-if="liveCount > 0" class="skx-sr-only">진행 중 {{ liveCount }}</span>
+                </div>
                 <button
                   v-if="researchRows.length"
                   ref="researchClearBtn"
@@ -149,7 +141,16 @@
                   전체 삭제
                 </button>
               </div>
-
+              <button v-if="!researchRows.length" type="button" class="skx-history__start" @click="startDeepResearch">
+                연구 시작하기
+                <svg class="skx-history__start-chev" viewBox="0 0 5 8" aria-hidden="true" focusable="false">
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M0.102681 0.132319C0.250461 -0.031888 0.503377 -0.0452041 0.667584 0.102576L4.66758 3.70243C4.75187 3.77828 4.8 3.88635 4.8 3.99974C4.80001 4.11314 4.75188 4.2212 4.6676 4.29706L0.667599 7.89731C0.5034 8.04509 0.250484 8.03179 0.102695 7.86759C-0.0450943 7.70339 -0.0317915 7.45048 0.132408 7.30269L3.80207 3.99977L0.132424 0.697222C-0.0317831 0.549442 -0.0450996 0.296526 0.102681 0.132319Z"
+                  />
+                </svg>
+              </button>
               <div
                 v-if="confirming === 'research'"
                 class="skx-history__confirm"
@@ -383,8 +384,8 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
-import { DEEP_RESEARCH } from "~/utils/brand";
 import { deepResearchStartRoute } from "~/utils/landingStart";
+import { DEEP_RESEARCH } from "~/utils/brand";
 import { NARROW_QUERY, trapTabTarget } from "~/utils/sidebarDrawer";
 import {
   countLiveResearch,
@@ -659,7 +660,7 @@ function newSearch() {
   void router.push({ path: "/" });
 }
 
-// 딥리서치 묶음의 [+ 연구 시작하기] — 랜딩에서 논문 패널 + 딥리서치 모드를 켠다(pages/index.vue 가 ?start= 를 받는다).
+// 연구 기록이 없을 때 DeepResearch 패널의 [연구 시작하기] — 랜딩에서 논문 패널 + 딥리서치 모드를 켠다(pages/index.vue 가 ?start= 를 받는다).
 // '/' 에 이미 있어도 쿼리가 바뀌는 이동이라 같은 길로 받는다
 function startDeepResearch() {
   confirming.value = null;
@@ -799,66 +800,15 @@ onBeforeUnmount(() => {
   gap: 0.2rem 0.3rem;
   min-height: 1.2rem;
 }
-/* [연구 시작하기 >] — 머리 첫 줄 오른쪽의 작은 알약(피그마 sidebar: 흰 10% 면·글 11px·오른쪽 화살표 5×8). 눌러 랜딩에서
-   딥리서치를 시작한다. 맨 위 [새 검색]과 겹쳐 보이지 않게 전체 폭 버튼에서 줄였다(2026-10-15) */
-.skx-history__start {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-  gap: 0.2rem;
-  padding: 0.1rem 0.3rem;
-  border: none;
-  border-radius: var(--skx-radius-sm);
-  background: var(--skx-frost-bg);
-  font-size: 0.55rem;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--skx-gray-1);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-.skx-history__start-chev {
-  width: 0.25rem;
-  height: 0.4rem;
-  fill: var(--skx-gray-1);
-  transition: fill 0.15s;
-}
-.skx-history__start:hover {
-  color: var(--skx-primary);
-}
-.skx-history__start:hover .skx-history__start-chev {
-  fill: var(--skx-primary);
-}
-.skx-history__start:focus-visible {
-  outline: 2px solid var(--skx-accent);
-  outline-offset: 2px;
-}
-/* 머리 둘째 줄 — 왼쪽 '진행 중 N', 오른쪽 '전체 삭제'(진행 중이 없으면 전체 삭제만 오른쪽에) */
-.skx-history__subhead {
+.skx-history__head-main {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
-}
-.skx-history__subhead .skx-history__clear {
-  margin-left: auto;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.3rem;
+  min-width: 0;
 }
 .skx-history__group .skx-history__title {
   color: var(--skx-teal-ink);
-}
-/* 머리의 '진행 중 N' — 살아 있는 딥리서치가 있다는 표시. 사이드바에서 포인트 색은 움직이는 것(이 알약·진행 막대 채움)에만 쓴다 —
-   끝난 줄의 배지는 차분한 유리 알약(사용자 결정 2026-10-14). 라이트에서는 포인트 색이 검정이라 검정 알약이 된다.
-   연구 화면 단계 칩의 '진행 중' 꼬리표와 같은 산호 알약이라 둘이 한 벌로 보인다 — 피그마의 점 붙은 네모는 쓰지 않는다(사용자 결정 2026-10-15) */
-.skx-history__live {
-  flex: none;
-  padding: 0 0.4rem;
-  border-radius: var(--skx-radius-pill);
-  background: var(--skx-primary);
-  color: var(--skx-on-accent);
-  font-size: 0.6rem;
-  font-weight: 700;
-  line-height: 1.5;
 }
 .skx-history__clear {
   flex: none;
@@ -923,18 +873,23 @@ onBeforeUnmount(() => {
   }
 }
 /* 진행 중인 연구 줄의 단계 글 — 배지 자리의 글자(테두리·바탕 없음), 좁으면 말줄임 */
+/* 진행 중인 줄의 '~ 중' 라벨(탐색 중·보고서 작성 중 등)과 '승인 대기 중' 배지는 산호 알약(연구 화면 단계 칩의 꼬리표와 같은 색) — 끝난 줄의
+   유리 알약(완료·취소)과 한눈에 갈린다(사용자 결정 2026-10-16 — 전에는 바탕 없는 글이라 묻혔다). 라이트에서는 검정 알약 */
 .skx-history-item__stage {
   min-width: 0;
   overflow: hidden;
+  padding: 0 0.3rem;
+  border-radius: var(--skx-radius-pill);
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1.5;
-  color: var(--skx-ink-2);
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 포인트 색(다크 산호·라이트 검정 — 머리의
-   '진행 중 N' 알약과 같은 색). 지난 단계까지는 채우고, 지금 단계 구간은 옅게 깜빡인다 — 단계 안의 진행은 모르므로 한 값으로 칠하지
+/* 진행 막대 — 옅은 홈(선 색 — 라이트의 흰 유리 면은 분홍 사이드바에서 보이지 않는다) 위에 포인트 색(다크 산호·라이트 검정 — 위
+   '~ 중' 라벨과 같은 색). 지난 단계까지는 채우고, 지금 단계 구간은 옅게 깜빡인다 — 단계 안의 진행은 모르므로 한 값으로 칠하지
    않는다(연구 화면 막대의 값이 늘 이 구간 안이라 둘이 어긋나 보이지 않는다). 단계가 바뀌면 부드럽게 늘어난다 */
 .skx-history-item__progress {
   position: relative;
@@ -983,6 +938,41 @@ onBeforeUnmount(() => {
   font-size: 0.6rem;
   line-height: 1.6;
   color: var(--skx-gray-1);
+}
+/* 연구 기록이 없을 때 DeepResearch 패널 머리 아래의 [연구 시작하기 >] — 피그마 sidebar 알약 모양(흰 10% 면·오른쪽 화살표)을
+   한 단계 크게(글 13px·안쪽 여백 넓게) — 빈 패널의 유일한 할 일이라(사용자 요청 2026-10-16) */
+.skx-history__start {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  background: var(--skx-frost-bg);
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--skx-gray-1);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.skx-history__start-chev {
+  width: 0.3rem;
+  height: 0.48rem;
+  fill: var(--skx-gray-1);
+  transition: fill 0.15s;
+}
+.skx-history__start:hover {
+  color: var(--skx-primary);
+}
+.skx-history__start:hover .skx-history__start-chev {
+  fill: var(--skx-primary);
+}
+.skx-history__start:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
 }
 /* 휴지통은 줄 본체(제목·메타)의 세로 가운데에 선다 — 확인이 그 아래로 펼쳐져도 자리가 밀리지 않게 기준을 본체에 둔다 */
 .skx-history__row-main {
@@ -1066,7 +1056,8 @@ onBeforeUnmount(() => {
   color: var(--skx-ink-2);
 }
 .skx-history-badge.is-waiting {
-  color: var(--skx-ink);
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
 }
 .skx-history-badge.is-failed,
 .skx-history-badge.is-canceled,
