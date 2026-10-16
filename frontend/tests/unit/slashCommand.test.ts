@@ -55,7 +55,7 @@ describe("planSlashSubmit", () => {
       mode: "deep-research",
       question: "",
       stripped: "",
-      problem: "연구 질문을 2자 이상 입력하세요",
+      problem: "연구 질문을 2자 이상 입력해 주세요",
     });
   });
 

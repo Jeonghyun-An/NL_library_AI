@@ -258,10 +258,11 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
 
   it("딥리서치 화면도 같은 상수를 쓴다 — 모음과 실제 화면의 문구가 함께 바뀐다", () => {
     const researchVue = read("pages/research/[id].vue");
-    expect(researchVue).toContain("{{ RESEARCH_NOT_FOUND }}");
-    expect(researchVue).toContain("{{ RESEARCH_STATE_TEXT.notFoundMessage }}");
-    expect(researchVue).toContain("{{ RESEARCH_STATE_TEXT.failedTitle }}");
-    expect(researchVue).toContain("{{ RESEARCH_STATE_TEXT.canceledTitle }}");
+    // 딥리서치 화면도 같은 상태 블록(SkxErrorState)에 같은 상수를 넘긴다
+    expect(researchVue).toContain(':title="RESEARCH_NOT_FOUND" :message="RESEARCH_STATE_TEXT.notFoundMessage"');
+    expect(researchVue).toContain('{{ RESEARCH_STATE_TEXT.backToSearch }}');
+    expect(researchVue).toContain(':title="RESEARCH_STATE_TEXT.failedTitle"');
+    expect(researchVue).toContain(':title="RESEARCH_STATE_TEXT.canceledTitle"');
     expect(researchVue.match(/\{\{ RESEARCH_STATE_TEXT\.restart \}\}/g)).toHaveLength(2);
     expect(researchVue).toContain("researchRetryLabel(view.value?.stage)");
     expect(researchVue).not.toMatch(/연구가 도중에 멈췄습니다|취소된 연구입니다|찾을 수 없는 연구입니다/);

@@ -54,7 +54,18 @@
       :disabled="disabled || busy"
       @update:model-value="pickMode"
     />
-    <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
+    <!-- DeepResearch 모드인 동안 질문 글자 수 — 입력창에는 같은 한도의 maxlength 를 달고 aria-describedby 로 이것을 가리킨다
+         (syncFieldLimit — 입력창은 페이지의 요소라 마크업을 고치지 않는다). 랜딩 상자에서는 칩 줄 오른쪽 끝, 결과 검색바에서는 한도
+         가까이에서만 보인다(research.css .rs-plus__count) -->
+    <SkxCharCount
+      v-if="researchActive"
+      :id="countId"
+      class="rs-plus__count"
+      :length="modelValue.length"
+      :max="QUESTION_MAX"
+    />
+    <!-- 시작 전 질문 길이 오류·시작 요청 실패·입력창 줄의 [취소] 실패 — 입력 상자 아래 왼쪽의 줄 안내 -->
+    <SkxInlineError v-if="error" class="rs-plus__error" :message="error" />
     <!-- DeepResearch 모드일 때 이 브라우저에 끝나지 않은 연구가 있으면 한 줄(사용자 결정 2026-10-13 — 판단은 useResearchStarter·
          utils/researchStart). [보기]는 그 연구 화면, [취소]는 한 번 더 눌러('정말 취소') 기존 취소 API 로 멈춘다. 보내기는 막지
          않는다 — 서버의 승인 429 browser_active 가 마지막 안전망이다. 랜딩 입력 상자에서는 칩 줄 아래, 결과 검색바에서는 바 아래에 선다 -->
@@ -130,6 +141,7 @@ import { DEEP_RESEARCH } from "~/utils/brand";
 import { safeLocalStorage } from "~/utils/browserId";
 import { menuStep } from "~/utils/menuNav";
 import { researchErrorMessage } from "~/utils/researchErrors";
+import { QUESTION_MAX } from "~/utils/researchInput";
 import {
   DEFAULT_RESEARCH_MODE,
   modeParams,
@@ -140,6 +152,7 @@ import {
 import {
   NOTICE_CANCEL_CONFIRM_TEXT,
   NOTICE_CANCEL_DONE_TEXT,
+  describedByWith,
   noticeCancelBack,
   noticeCancelLabel,
   noticeCancelPress,
@@ -308,6 +321,34 @@ defineExpose({ activateMode, clearMode });
 // sync — 같은 틱에 메뉴가 unmount 되는 경로(딥리서치 모드가 켜진 채 자료 검색 기록을 열어 랜딩이 걷힘)에서도 알림이 가게,
 // 기본(pre) 플러시는 unmount 로 감시자가 멈추면 한 번도 돌지 못한다
 watch(active, (mode) => emit("update:mode", mode?.id ?? null), { flush: "sync" });
+
+// ── DeepResearch 질문 한도(maxlength + 글자 수) ─────────────
+// 서버 ResearchCreate.question 의 max_length(500)를 입력창에서 먼저 막는다 — 모드인 동안만 입력창에 maxlength 를 달고, 끄면 페이지가 둔
+// 값으로 되돌린다(논문 검색어의 한도는 페이지 몫이다). 글자 수(SkxCharCount)는 aria-describedby 로 잇는다 — 페이지가 단 다른 id 는 둔다
+const researchActive = computed(() => active.value?.id === "deep-research");
+const countId = useId();
+// 지금 입력창에 한도를 달아 두었는가, 달기 전에 페이지가 둔 maxlength(없으면 null)
+let limiting = false;
+let pageMaxLength: string | null = null;
+
+function syncFieldLimit(on: boolean): void {
+  if (!field || on === limiting) return;
+  limiting = on;
+  if (on) {
+    pageMaxLength = field.getAttribute("maxlength");
+    field.setAttribute("maxlength", String(QUESTION_MAX));
+  } else if (pageMaxLength === null) {
+    field.removeAttribute("maxlength");
+  } else {
+    field.setAttribute("maxlength", pageMaxLength);
+  }
+  const described = describedByWith(field.getAttribute("aria-describedby"), countId, on);
+  if (described) field.setAttribute("aria-describedby", described);
+  else field.removeAttribute("aria-describedby");
+}
+
+// 글자 수 요소가 DOM 에 생긴 뒤 가리키게 렌더 뒤에 맞춘다
+watch(researchActive, syncFieldLimit, { flush: "post" });
 
 // ── 끝나지 않은 연구 한 줄(DeepResearch 모드일 때만) ─────────
 // [취소]는 두 번 눌러야 멈춘다 — 첫 누름은 '정말 취소'로 바꾸기만 하고, 잠깐(NOTICE_CANCEL_ARM_MS) 안의 누름은 받지 않는다(더블클릭
@@ -554,6 +595,7 @@ onMounted(() => {
   basePlaceholder = field?.placeholder ?? "";
   researchMode.value = readResearchMode(safeLocalStorage());
   focused.value = !!field && document.activeElement === field;
+  syncFieldLimit(researchActive.value);
   field?.addEventListener("focus", onFieldFocus);
   field?.addEventListener("blur", onFieldBlur);
   host?.addEventListener("keydown", onHostKeydown, true);
@@ -565,6 +607,7 @@ onBeforeUnmount(() => {
   field?.removeEventListener("focus", onFieldFocus);
   field?.removeEventListener("blur", onFieldBlur);
   if (field) for (const name of FIELD_ARIA) field.removeAttribute(name);
+  syncFieldLimit(false);
   host?.removeEventListener("keydown", onHostKeydown, true);
   host?.removeEventListener("click", onHostClick, true);
   document.removeEventListener("click", onDocumentClick);

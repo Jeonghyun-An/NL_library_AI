@@ -2,13 +2,20 @@
 import { describe, expect, it } from "vitest";
 import { ERROR_HINTS, httpStatus } from "~/utils/apiErrors";
 import {
+  BROWSER_ACTIVE_MESSAGE,
+  LOST_AFTER_DROPS,
   RESEARCH_NOT_FOUND,
   RESEARCH_STATE_TEXT,
+  SUBQ_FAILED_TEXT,
   activeResearchId,
   detailMessage,
+  failureReason,
   pdfCheckProblem,
+  researchConnectionState,
   researchErrorMessage,
+  researchFailedMessage,
   researchRetryLabel,
+  subqFailureText,
   versionConflict,
   workErrorMessage,
 } from "~/utils/researchErrors";
@@ -104,14 +111,14 @@ const BROWSER_ACTIVE = {
 };
 
 describe("researchErrorMessage — 429 code", () => {
-  it("browser_active 면 서버 문구를, 문구가 비었으면 같은 기본 문구를 쓴다", () => {
-    expect(researchErrorMessage(fetchError(429, BROWSER_ACTIVE), "계획을 승인하지 못했어요"))
-      .toBe("진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요");
-    expect(researchErrorMessage(fetchError(429, { ...BROWSER_ACTIVE, message: " 다른 탭의 연구가 돌고 있습니다 " }), "실패"))
-      .toBe("다른 탭의 연구가 돌고 있습니다");
-    // 서버가 문구를 비워 보내면 화면의 해요체 기본 문구
-    expect(researchErrorMessage(fetchError(429, { code: "browser_active", message: "", job_id: ACTIVE_JOB }), "실패"))
-      .toBe("진행 중인 DeepResearch가 있어요 — 끝나거나 취소한 뒤 다시 시작해 주세요");
+  it("browser_active 면 서버 문구(운영 서버는 합쇼체)가 아니라 늘 화면의 해요체 문구를 쓴다", () => {
+    const front = "진행 중인 DeepResearch가 있어요 — 끝나거나 취소한 뒤 다시 시작해 주세요";
+    expect(BROWSER_ACTIVE_MESSAGE).toBe(front);
+    expect(researchErrorMessage(fetchError(429, BROWSER_ACTIVE), "계획을 승인하지 못했어요")).toBe(front);
+    expect(researchErrorMessage(fetchError(429, { ...BROWSER_ACTIVE, message: " 다른 탭의 연구가 돌고 있습니다 " }), "실패")).toBe(front);
+    expect(researchErrorMessage(fetchError(429, { code: "browser_active", message: "", job_id: ACTIVE_JOB }), "실패")).toBe(front);
+    // 대체 문구를 비워도(상태 블록의 설명 줄) 같은 문구
+    expect(researchErrorMessage(fetchError(429, BROWSER_ACTIVE), "")).toBe(front);
   });
 
   it("공유 큐(shared_queue)·code 가 없는 429 는 지금 문구 그대로다", () => {
@@ -222,13 +229,25 @@ describe("딥리서치 화면의 상태 문구(RESEARCH_STATE_TEXT) — 해요�
   it("멈춘·취소한·찾을 수 없는 연구", () => {
     expect(RESEARCH_NOT_FOUND).toBe("찾을 수 없는 연구예요");
     expect(researchErrorMessage(fetchError(404), "실패")).toBe(RESEARCH_NOT_FOUND);
-    expect(RESEARCH_STATE_TEXT).toEqual({
+    expect(RESEARCH_STATE_TEXT).toMatchObject({
       failedTitle: "연구가 도중에 멈췄어요",
       canceledTitle: "취소된 연구예요",
+      canceledMessage: "취소한 연구는 이어 갈 수 없어요.\n같은 질문으로 새 연구를 시작할 수 있어요.",
       notFoundMessage: "주소가 맞는지 다시 확인해 주세요.",
       restart: "같은 질문으로 다시 시작",
       backToSearch: "논문 검색으로 돌아가기",
     });
+  });
+
+  it("최종 보고서를 받지 못한 안내·409 뒤 맞춘 안내도 해요체(전에는 '…못했습니다. … 다시 시도합니다')", () => {
+    expect(RESEARCH_STATE_TEXT.reportFailedOverDraft).toBe(
+      "최종 보고서를 불러오지 못했어요.\n잠시 뒤 자동으로 다시 시도해요.\n아래는 작성 중에 받은 초안이에요.",
+    );
+    expect(RESEARCH_STATE_TEXT.reportFailedTitle).toBe("보고서를 불러오지 못했어요");
+    expect(RESEARCH_STATE_TEXT.stateChanged).toBe("그 사이 상태가 바뀌어 최신 상태로 맞췄어요");
+    for (const [key, text] of Object.entries(RESEARCH_STATE_TEXT)) {
+      expect(text, key).not.toMatch(/습니다|입니다|하세요|합니다/);
+    }
   });
 
   it("[다시 시도] 글 — 보고서 작성 단계(explored)에서 멈췄으면 보고서 작성부터, 그 밖은 다시 시도", () => {
@@ -236,5 +255,98 @@ describe("딥리서치 화면의 상태 문구(RESEARCH_STATE_TEXT) — 해요�
     expect(researchRetryLabel("exploring")).toBe("다시 시도");
     expect(researchRetryLabel(null)).toBe("다시 시도");
     expect(researchRetryLabel(undefined)).toBe("다시 시도");
+  });
+});
+
+// 멈춘 연구 카드의 설명 — 서버 last_error 원문을 붙이지 않고 멈춘 단계별 해요체로(api/research.py retry_research·workers/research_tasks.py)
+describe("researchFailedMessage — 멈춘 단계별 설명", () => {
+  it("계획이 없으면(서버가 재시도를 409 로 거절) 새 연구를 안내한다", () => {
+    expect(researchFailedMessage("created", false)).toBe(RESEARCH_STATE_TEXT.failedPlanning);
+    expect(RESEARCH_STATE_TEXT.failedPlanning).toBe("연구 계획을 세우다 멈췄어요.\n같은 질문으로 새 연구를 시작할 수 있어요.");
+  });
+
+  it("탐색을 마치지 못한 잡은 탐색부터 다시, 탐색을 마친 잡(explored)은 모은 근거가 남아 있다고 알린다", () => {
+    expect(researchFailedMessage("planned", true)).toBe("근거를 찾다 멈췄어요.\n다시 시도하면 승인한 계획으로 탐색부터 다시 해요.");
+    expect(researchFailedMessage("explored", true)).toBe("보고서를 쓰다 멈췄어요.\n탐색에서 모은 근거는 남아 있어요.");
+  });
+
+  it("서버 last_error 원문은 붙이지 않는다 — 깨끗한 한글(해라체)이어도, 예외 원문이어도", () => {
+    expect(researchFailedMessage("explored", true, "보고서의 어느 절도 서술을 받지 못했다")).toBe(RESEARCH_STATE_TEXT.failedWriting);
+    expect(researchFailedMessage("planned", true, "ConnectionError: [Errno 111] Connection refused")).toBe(RESEARCH_STATE_TEXT.failedExploring);
+    expect(researchFailedMessage("created", false, "계획에 하위질문이 없어 탐색하지 않았다 — 새 잡을 만든다")).toBe(RESEARCH_STATE_TEXT.failedPlanning);
+  });
+
+  it("알아보는 사유(시간 상한·회수기·전멸)는 해요체로 바꿔 둘째 줄에 넣는다", () => {
+    expect(researchFailedMessage("explored", true, "시간 상한 초과 — 워커를 회수했다")).toBe(
+      "보고서를 쓰다 멈췄어요.\n정해진 시간 안에 끝나지 않았어요.\n탐색에서 모은 근거는 남아 있어요.",
+    );
+    expect(researchFailedMessage("planned", true, "모든 하위질문 탐색이 오류로 실패했다")).toBe(
+      "근거를 찾다 멈췄어요.\n모든 하위질문의 탐색이 오류로 끝났어요.\n다시 시도하면 승인한 계획으로 탐색부터 다시 해요.",
+    );
+    expect(researchFailedMessage("created", false, "stale — 워커 응답 없음")).toBe(
+      "연구 계획을 세우다 멈췄어요.\n작업이 오래 응답하지 않았어요.\n같은 질문으로 새 연구를 시작할 수 있어요.",
+    );
+  });
+
+  it("[다시 시도] 글과 같은 갈래다 — 보고서 작성 단계면 '보고서 작성부터 다시 시도'", () => {
+    expect(researchRetryLabel("explored")).toBe("보고서 작성부터 다시 시도");
+    expect(researchFailedMessage("explored", true)).toContain("보고서를 쓰다");
+  });
+});
+
+describe("failureReason·subqFailureText — 하위질문 부분 실패의 이유", () => {
+  it("알아보는 사유만 해요체로, 그 밖(예외 원문·영문)은 null", () => {
+    expect(failureReason("시간 상한 초과 — 워커를 회수했다")).toBe("정해진 시간 안에 끝나지 않았어요.");
+    expect(failureReason("stale — 워커 응답 없음")).toBe("작업이 오래 응답하지 않았어요.");
+    expect(failureReason("ReadTimeout: timed out")).toBeNull();
+    expect(failureReason("임베딩 서버 응답 없음")).toBeNull();
+    expect(failureReason(" ")).toBeNull();
+    expect(failureReason(null)).toBeNull();
+    expect(failureReason(undefined)).toBeNull();
+  });
+
+  it("하위질문 오류 줄 — 서버 원문 대신 고정 문구, 알아보는 사유가 있으면 다음 줄에", () => {
+    expect(SUBQ_FAILED_TEXT).toBe("오류로 이 하위질문의 탐색을 마치지 못했어요.");
+    expect(subqFailureText("httpx.ConnectError: All connection attempts failed")).toBe(SUBQ_FAILED_TEXT);
+    expect(subqFailureText(null)).toBe(SUBQ_FAILED_TEXT);
+    expect(subqFailureText("시간 상한 초과 — 워커를 회수했다")).toBe(`${SUBQ_FAILED_TEXT}\n정해진 시간 안에 끝나지 않았어요.`);
+  });
+});
+
+describe("researchConnectionState — 실시간 연결 띠", () => {
+  it("스트림이 필요 없는 화면(읽는 중·끝난 잡)은 실패 수와 상관없이 connected", () => {
+    expect(researchConnectionState(false, 0)).toBe("connected");
+    expect(researchConnectionState(false, 9)).toBe("connected");
+  });
+
+  it("끊기면 다시 연결하는 중, 연달아 LOST_AFTER_DROPS 번 실패하면 연결하지 못함", () => {
+    expect(LOST_AFTER_DROPS).toBe(3);
+    expect(researchConnectionState(true, 0)).toBe("connected");
+    expect(researchConnectionState(true, 1)).toBe("reconnecting");
+    expect(researchConnectionState(true, LOST_AFTER_DROPS - 1)).toBe("reconnecting");
+    expect(researchConnectionState(true, LOST_AFTER_DROPS)).toBe("lost");
+    expect(researchConnectionState(true, LOST_AFTER_DROPS + 5)).toBe("lost");
+  });
+});
+
+describe("researchErrorMessage — 대체 문구를 비우면 이유만(상태 블록의 설명 줄)", () => {
+  it("연결 실패·시간 초과는 이유만, 이유가 없으면 빈 글 — ' — ' 로 시작하지 않는다", () => {
+    expect(researchErrorMessage(new TypeError("Failed to fetch"), "")).toBe(ERROR_HINTS.network);
+    expect(researchErrorMessage(fetchError(500), "")).toBe("");
+    expect(researchErrorMessage(new Error("boom"), "")).toBe("");
+    expect(researchErrorMessage(fetchError(409), "")).toBe("");
+    expect(researchErrorMessage(fetchError(503), "")).toBe(ERROR_HINTS.busy);
+  });
+
+  it("백엔드 code(500 internal_error 등)는 서버 detail 대신 화면 문구(CODE_MESSAGES)를 이유로 — code 가 없는 옛 서버는 그대로", () => {
+    const internal = Object.assign(new Error("HTTP 500"), {
+      status: 500,
+      data: { detail: "서버 내부 오류가 발생했어요", code: "internal_error" },
+    });
+    expect(researchErrorMessage(internal, "연구를 불러오지 못했어요")).toBe(
+      "연구를 불러오지 못했어요 — 서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
+    );
+    expect(researchErrorMessage(internal, "")).toBe("서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.");
+    expect(researchErrorMessage(fetchError(500, "Internal"), "실패")).toBe("실패");
   });
 });

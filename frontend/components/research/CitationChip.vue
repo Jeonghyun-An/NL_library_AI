@@ -45,7 +45,7 @@
           </span>
         </span>
       </template>
-      <span v-else class="rs-cite__quote rs-muted">이 절에서 매칭된 대목이 없습니다</span>
+      <span v-else class="rs-cite__quote rs-muted">이 절에서 매칭된 대목이 없어요</span>
       <span v-if="evidence" class="rs-cite__actions">
         <button type="button" class="rs-btn rs-btn--small" @click="openPdf">원문 보기</button>
         <!-- 누르는 순간의 칩 높이를 주소에 실어야 해서 NuxtLink 대신 직접 옮긴다 -->
@@ -102,7 +102,7 @@ const { leave } = useDetailLeave();
 
 // 칩 글 — 인용 번호. '김 2012'(성 연도)는 보기 어색하다는 의견으로 숫자로 바꿨다(사용자 결정 2026-10-15). 번호를 모르면 전처럼 성 연도
 const label = computed(() => (props.num ? String(props.num) : citeLabel(props.evidence?.meta, props.eid)));
-const title = computed(() => props.evidence?.meta.title || "근거 정보를 찾을 수 없습니다");
+const title = computed(() => props.evidence?.meta.title || "근거 정보를 찾을 수 없어요");
 const meta = computed(() => metaLine(props.evidence?.meta));
 const current = computed<ReportChunk | undefined>(() => props.chunks[index.value]);
 const canPrev = computed(() => stepChunk(index.value, -1, props.chunks.length) !== index.value);
