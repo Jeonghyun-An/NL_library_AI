@@ -283,7 +283,7 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
-import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import type { BookInfo } from "~/types/search";
 import { firstValue, shouldGoBack } from "~/utils/detailSource";
 import {
@@ -502,6 +502,8 @@ async function fetchRelatedBooks() {
     const data = await api<any>(`/books/${encodeURIComponent(cnts_id)}/related`, {
       query: { top_k: RELATED_LIMIT },
       signal: pageAbort.signal,
+      // 검색과 같은 임베딩·재정렬을 돌리는 GET 이라 읽기 기본 제한(30초) 대신 검색 제한을 쓴다 — 붐빌 때 30초를 넘겨 빈 칸이 되지 않게
+      timeout: API_SEARCH_TIMEOUT_MS,
     });
     if (data?.books) {
       relatedItems.value = (data.books as any[])

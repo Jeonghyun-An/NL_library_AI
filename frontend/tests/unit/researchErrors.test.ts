@@ -225,7 +225,7 @@ describe("딥리서치 화면의 상태 문구(RESEARCH_STATE_TEXT) — 해요�
     expect(RESEARCH_STATE_TEXT).toEqual({
       failedTitle: "연구가 도중에 멈췄어요",
       canceledTitle: "취소된 연구예요",
-      notFoundMessage: "주소가 잘못됐거나 지워진 연구예요.",
+      notFoundMessage: "주소가 맞는지 다시 확인해 주세요.",
       restart: "같은 질문으로 다시 시작",
       backToSearch: "논문 검색으로 돌아가기",
     });

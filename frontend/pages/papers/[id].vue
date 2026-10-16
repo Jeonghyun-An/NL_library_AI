@@ -305,7 +305,7 @@
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
-import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useResearchApi } from "~/composables/useResearch";
 import type { ReportChunk, ResearchJob } from "~/types/research";
@@ -551,6 +551,8 @@ async function fetchRelated() {
   try {
     const data = await api<any>(`/papers/${paperId}/related`, {
       signal: pageAbort.signal,
+      // 임베딩 검색을 돌리는 GET 이라 읽기 기본 제한(30초) 대신 검색 제한을 쓴다
+      timeout: API_SEARCH_TIMEOUT_MS,
     });
     relatedItems.value = data?.results || [];
   } catch {

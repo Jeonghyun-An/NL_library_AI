@@ -126,10 +126,10 @@
                   <span class="skx-search__glow" aria-hidden="true"></span>
                   <label class="skx-search__field">
                     <span class="skx-sr-only">본보기 검색어</span>
-                    <textarea v-model="shortQuery" class="skx-search__input"></textarea>
+                    <textarea v-model="sampleQuery" class="skx-search__input"></textarea>
                   </label>
                   <div class="skx-search__actions">
-                    <button type="button" class="skx-send" aria-label="검색(본보기 — 보내지 않습니다)" :aria-disabled="!shortQuery.trim()">
+                    <button type="button" class="skx-send" aria-label="검색(본보기 — 보내지 않습니다)" :aria-disabled="!sampleQuery.trim()">
                       <img src="/img/ico-send-up.svg" alt="" />
                     </button>
                   </div>
@@ -313,7 +313,7 @@ const START_RESEARCH_HREF = (() => {
 })();
 
 // 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 넣어 볼 본보기 오류 — 문구를 여기 적지 않고 규칙이 만든 글을 보인다.
-// network 는 응답 없이 끝난 요청(ofetch FetchError — 상태 없음), 나머지는 상태 코드만 든 응답, tooShort 는 FastAPI 422 검증 실패
+// network 는 응답 없이 끝난 요청(ofetch FetchError — 상태 없음), 나머지는 상태 코드만 든 응답, tooLong 은 FastAPI 422 검증 실패(검색어 500자 초과)
 const SAMPLE = {
   network: { name: "FetchError" },
   timeout: { status: 504 },
@@ -322,7 +322,7 @@ const SAMPLE = {
   notFound: { status: 404 },
   // 백엔드 오류 code — 서버 detail(옛 말투) 대신 CODE_MESSAGES 의 문구를 쓴다
   searchDown: { status: 503, data: { detail: "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요", code: "search_unavailable" } },
-  tooShort: { status: 422, data: { detail: [{ type: "string_too_short", ctx: { min_length: 2 } }] } },
+  tooLong: { status: 422, data: { detail: [{ type: "string_too_long", ctx: { max_length: 500 } }] } },
 } as const;
 
 /** 상태 블록의 설명 줄 — 제목이 이미 '무엇을 못 했는지'라 규칙이 붙이는 이유(ERROR_HINTS)만 둔다(대체 문구를 비워 넘긴다) */
@@ -424,7 +424,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "timeout",
     name: "시간 초과",
     kind: errorKind(SAMPLE.timeout),
-    title: "검색하지 못했어요",
+    title: "검색 기록을 불러오지 못했어요",
     message: reasonOf(SAMPLE.timeout),
     retry: true,
     uses: ["상세·목록 읽기 — GET 30초 제한(useApi)", "게이트웨이 504"],
@@ -452,7 +452,7 @@ const STATE_SAMPLES: StateSample[] = [
   }),
   stateSample({
     id: "searchDown",
-    name: "서버가 알린 장애(code)",
+    name: "서버가 알린 장애(code) — 백엔드 반영 뒤",
     kind: errorKind(SAMPLE.searchDown),
     title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.searchDown),
@@ -467,7 +467,7 @@ const STATE_SAMPLES: StateSample[] = [
     title: researchErrorMessage(SAMPLE.notFound, ""),
     message: RESEARCH_STATE_TEXT.notFoundMessage,
     action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
-    uses: ["딥리서치 — 없는 연구 주소", "논문 상세 — 없는 논문 주소", "지워진 연구"],
+    uses: ["딥리서치 — 없는 연구 주소", "논문 상세 — 없는 논문 주소"],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(슬롯 링크 — 버튼 줄의 첫 버튼이라 주 버튼 모양)"],
   }),
   stateSample({
@@ -549,11 +549,11 @@ const RESEARCH_SAMPLES: StateSample[] = [
     title: researchErrorMessage(SAMPLE.notFound, ""),
     message: RESEARCH_STATE_TEXT.notFoundMessage,
     action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
-    uses: ["딥리서치 — 없는 연구 주소(주소 오타·지워진 연구)"],
+    uses: ["딥리서치 — 없는 연구 주소(주소 오타)"],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]'],
     diff:
       "시안 제목 '연구를 불러오지 못했어요'는 불러오기 실패(네트워크·서버)와 헷갈려 실제 404 문구를 쓴다. '접근 권한이 없는 연구일 수 있어요'는 뺐다 — " +
-      "연구는 주소만 알면 누구나 연다(권한 검사가 없다). 원인은 주소가 잘못됐거나 지워진 연구다.",
+      "연구는 주소만 알면 누구나 연다(권한 검사가 없다). 원인은 주소가 잘못된 경우다(연구를 지우는 기능은 없다 — 사이드바 전체 삭제도 기록만 지운다).",
   }),
   stateSample({
     id: "researchEmpty",
@@ -596,17 +596,17 @@ const STATE_SECTIONS = [
 const AI_PARTIAL_TEXT =
   "검색된 논문들은 공공도서관 이용의 변화를 대출 기록과 이용자 설문으로 살핍니다. 대부분은 비대면 서비스가 늘면서 방문 이용이 줄었다고 보고하고, 일부 연구는 청소년 이용자의 열람실 이용이";
 
-const shortQuery = ref("가");
+const sampleQuery = ref("공공도서관 서비스 품질을 평가한 연구를 찾고 있어요. 이용자 만족도와 시설, 장서, 프로그램을 함께 본 연구면 좋겠어요… (500자를 넘는 긴 질문)");
 
 const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
   basic: {
     name: "기본 — 검색 입력 상자 바로 아래",
     uses: [
-      "입력 상자 바로 아래 — 서버가 글자 수로 거절한 입력(422)",
-      "딥리서치 질문 2자 미만은 화면이 먼저 막는다(researchInput 의 questionProblem) — 이 줄은 화면이 막지 못한 422 몫",
+      "입력 상자 바로 아래 — 서버가 글자 수로 거절한 입력(422, 검색어 500자 초과)",
+      "입력창에 글자 수 제한(maxlength)이 들어가면 화면이 먼저 막아 거의 생기지 않는다",
     ],
     hooks: [".skx-inline-error", ".skx-inline-error__msg", 'role="alert"'],
-    texts: [apiErrorMessage(SAMPLE.tooShort, "검색하지 못했어요")],
+    texts: [apiErrorMessage(SAMPLE.tooLong, "검색하지 못했어요")],
   },
   retry: {
     name: "다시 시도 있음 — AI 글 뒤에서 끊김",

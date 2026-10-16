@@ -38,7 +38,7 @@ export const RESEARCH_NOT_FOUND = "찾을 수 없는 연구예요";
 export const RESEARCH_STATE_TEXT = {
   failedTitle: "연구가 도중에 멈췄어요",
   canceledTitle: "취소된 연구예요",
-  notFoundMessage: "주소가 잘못됐거나 지워진 연구예요.",
+  notFoundMessage: "주소가 맞는지 다시 확인해 주세요.",
   // 원래 질문·탐색 방식으로 새 연구를 만든다 — 취소한 연구·계획 단계에서 멈춘 연구는 이어 갈 수 없어 이 버튼만 있다
   restart: "같은 질문으로 다시 시작",
   backToSearch: "논문 검색으로 돌아가기",
