@@ -136,9 +136,15 @@ describe("소장자료 상세 추천 이유 — pages/books/[cnts_id].vue", () =
 describe("DeepRead 대화 칸 — components/BookChat.vue", () => {
   const src = read("components/BookChat.vue");
 
-  it("답을 만들지 못한 질문은 대화와 따로 role=alert 로 보이고 [다시 시도]가 같은 질문을 다시 보낸다", () => {
-    expect(alertShows(src, "failure.message")).toBe(true);
-    expect(src).toMatch(/@click="retry"[^>]*>\s*다시 시도/);
+  // SkxInlineError 는 role=alert 줄 안내 — 부모가 onRetry 를 넘길 때만 [다시 시도]를 그린다. AI 말풍선(.skx-chat-msg--ai) 안에서는
+  // 공통 CSS 가 아이콘·버튼을 말풍선 글자색으로 바꾼다
+  it("답을 만들지 못한 질문은 대화와 따로 AI 말풍선 안의 SkxInlineError 로 보이고, 다시 보낼 만할 때만 [다시 시도]가 같은 질문을 다시 보낸다", () => {
+    expect(src).toMatch(
+      /<div class="skx-chat-msg skx-chat-msg--ai">\s*<div v-if="failure\.partial"[^>]*\/>\s*<SkxInlineError\s+class="skx-chat-msg__failed"\s+:message="failure\.message"\s+:on-retry="failure\.retryable \? retry : undefined"\s*\/>/,
+    );
+    // 옛 표시(빨간 글로 칠할 수 있던 자체 <p role=alert>·.skx-retry 글자 버튼)는 남지 않는다
+    expect(src).not.toContain("skx-retry");
+    expect(src).not.toContain('role="alert"');
   });
 
   // 다른 AI 글 화면(논문 검색·상세 요약·추천 이유·관련 카드 팝업)처럼 받던 글을 남기고 그 아래에 안내를 둔다 — 대화(messages·store)
@@ -150,5 +156,25 @@ describe("DeepRead 대화 칸 — components/BookChat.vue", () => {
 
   it("실패했을 때는 앞 답을 화면낭독기에 다시 읽히지 않는다", () => {
     expect(src).toMatch(/if \(!failure\.value && last\?\.role === "assistant"\)/);
+  });
+
+  // 서버 BookChatRequest.message 는 max_length=2000(422) — 입력 칸이 미리 막고 얼마나 썼는지 보인다
+  it("입력 칸은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 와 글자 수(SkxCharCount)를 aria-describedby 로 잇는다", () => {
+    expect(src).toMatch(
+      /<textarea[\s\S]*?:maxlength="CHAT_MAX_CHARS"[\s\S]*?:aria-describedby="countId"[\s\S]*?\/>\s*<SkxCharCount :id="countId" class="skx-chat-count" :length="inputText\.length" :max="CHAT_MAX_CHARS" \/>/,
+    );
+  });
+
+  it("답을 받지 못하면 보낸 질문을 입력 칸에 되살리고(보낼 때 비운 칸), [다시 시도]는 되살린 그 질문을 칸에서 비운다", () => {
+    expect(src).toContain("if (failure.value && !inputText.value.trim()) inputText.value = failure.value.question;");
+    expect(src).toMatch(/async function retry\(\)[\s\S]*?if \(inputText\.value\.trim\(\) === failure\.value\?\.question\) inputText\.value = "";/);
+  });
+
+  it("답을 받는 동안 보내기 단추가 [멈춤](stop)이 된다 — 더블클릭의 둘째 누름은 무시하고, Enter 로 보내 떨어진 초점은 그 단추로", () => {
+    expect(src).toMatch(/stop: stopChat,?\s*\}\s*=\s*useDeepReadChat\(/);
+    expect(src).toContain(':aria-label="isStreaming ? copy.stopLabel : copy.sendLabel"');
+    expect(src).toContain(':disabled="!isStreaming && !inputText.trim()"');
+    expect(src).toMatch(/function onSendButton\(e: MouseEvent\) \{\s*if \(!isStreaming\.value\) void send\(\);\s*else if \(e\.detail < 2\) stopChat\(\);/);
+    expect(src).toContain("if (isStreaming.value && (!active || active === document.body || active === inputEl.value)) sendEl.value?.focus();");
   });
 });

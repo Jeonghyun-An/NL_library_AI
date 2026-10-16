@@ -18,6 +18,11 @@ import {
 } from "~/utils/deepRead";
 
 describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
+  it("답을 받는 동안의 [멈춤] 단추 이름은 둘 다 '답 받기 멈추기'", () => {
+    expect(chatCopy("book").stopLabel).toBe("답 받기 멈추기");
+    expect(chatCopy("paper").stopLabel).toBe("답 받기 멈추기");
+  });
+
   it("책은 지금 문구 그대로, 논문은 '논문' 문구 — 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
     const book = chatCopy("book");
     expect(book.greeting("어린 왕자")).toBe("안녕하세요! 《어린 왕자》에 대해 궁금한 것을 자유롭게 물어보세요!");

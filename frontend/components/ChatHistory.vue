@@ -35,7 +35,7 @@
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
-      <p>검색 기록이 없습니다</p>
+      <p>검색 기록이 없어요</p>
     </div>
 
     <ul v-else class="ch-list scrollbar-zinc">

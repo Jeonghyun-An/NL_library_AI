@@ -3441,10 +3441,6 @@ html.skx-scroll-lock {
   background: var(--skx-chat-ai-bg);
   color: var(--skx-ink-on-light);
 }
-/* 답을 받지 못한 안내의 [다시 시도] — 밝은 말풍선 위라 강조색(어두운 테마에서는 밝아 묻힌다) 대신 말풍선 글자색 */
-.skx-chat-msg--ai .skx-retry {
-  color: inherit;
-}
 /* 실패 전까지 받던 글 — 대화에 남지 않는 끊긴 글이라 흐리게(새 색값 없이 투명도). 안내는 그 아래 한 줄 띄워 */
 .skx-chat-msg__partial {
   opacity: 0.6;
@@ -3537,6 +3533,20 @@ html.skx-scroll-lock {
   height: 1rem;
   display: block;
   filter: var(--skx-ico-on-accent-filter);
+}
+/* 답을 받는 동안의 [멈춤](.skx-chat-send--stop) — 보내기 아이콘 자리에 네모. 아이콘 파일 없이 그려 글자색(채움 위 글자색)을 따른다 */
+.skx-chat-send svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  display: block;
+  color: var(--skx-on-accent);
+}
+/* 글자 수(SkxCharCount) — 입력창 아래 여백 줄, 보내기 단추 왼쪽에 단추 가운데 높이로 */
+.skx-chat-count {
+  position: absolute;
+  left: 0.9rem;
+  right: 3rem;
+  bottom: 1.25rem;
 }
 /* 출처 칩 */
 .skx-chat-sources {
