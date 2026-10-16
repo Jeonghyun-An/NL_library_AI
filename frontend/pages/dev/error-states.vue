@@ -5,7 +5,7 @@
      style_skovix.css 의 '[S] 공통 오류·빈 상태' 구역을 고치면 이 페이지와 실제 화면이 함께 바뀐다.
      문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 본보기 오류를 넣어 만든 글과
      상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage)를 그대로 보여 문구가 바뀌면 같이 바뀐다.
-     화면마다 다른 대체 문구('검색하지 못했습니다' 등)만 본보기로 적는다.
+     화면마다 다른 대체 문구('검색하지 못했어요' 등)만 본보기로 적는다.
      [다시 시도]·[다시 연결] 은 누르면 잠깐 재시도 중 모양으로 바뀌었다 돌아온다(요청은 보내지 않는다).
      이 페이지 자체의 틀(.dev-*)은 아래 scoped 스타일이고 디자인 대상이 아니다 -->
 <template>
@@ -378,7 +378,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "error",
     name: "일반 실패 + 다시 시도",
     kind: "error",
-    title: "논문 정보를 불러오지 못했습니다",
+    title: "논문 정보를 불러오지 못했어요",
     retry: true,
     uses: ["논문 상세 — 정보 읽기 실패", "딥리서치 — 연구 불러오기 실패", "연구 작업대 — 이어간 연구 불러오기 실패"],
     hooks: [".skx-state", ".skx-state--error", '[data-tone="error"]', ".skx-state__title", ".skx-state__retry"],
@@ -387,7 +387,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "network",
     name: "네트워크 끊김",
     kind: errorKind(SAMPLE.network),
-    title: "검색하지 못했습니다",
+    title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.network),
     retry: true,
     uses: ["도서·논문 검색 결과", "논문 상세", "딥리서치 화면 불러오기"],
@@ -397,7 +397,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "timeout",
     name: "시간 초과",
     kind: errorKind(SAMPLE.timeout),
-    title: "검색하지 못했습니다",
+    title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.timeout),
     retry: true,
     uses: ["논문 검색(60초 제한)", "상세·목록 읽기(30초 제한)", "게이트웨이 504"],
@@ -407,7 +407,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "busy",
     name: "요청 몰림",
     kind: errorKind(SAMPLE.busy),
-    title: "검색하지 못했습니다",
+    title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.busy),
     retry: true,
     uses: ["검색·AI 요약(429·503)", "딥리서치 시작 — 공유 대기열이 찼을 때"],
@@ -417,7 +417,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "server",
     name: "서버 오류",
     kind: errorKind(SAMPLE.server),
-    title: "논문 정보를 불러오지 못했습니다",
+    title: "논문 정보를 불러오지 못했어요",
     message: reasonOf(SAMPLE.server),
     retry: true,
     uses: ["논문 상세", "검색 결과", "연구 작업대 저장"],
@@ -428,7 +428,7 @@ const STATE_SAMPLES: StateSample[] = [
     name: "찾을 수 없음 + 돌아가기",
     kind: errorKind(SAMPLE.notFound),
     title: researchErrorMessage(SAMPLE.notFound, ""),
-    message: "주소가 잘못됐거나 지워진 연구입니다.",
+    message: "주소가 잘못됐거나 지워진 연구예요.",
     back: { label: "논문 검색으로 돌아가기", href: "/papers" },
     uses: ["딥리서치 — 없는 연구 주소", "논문 상세 — 없는 논문 주소", "지워진 연구"],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(슬롯 링크)"],
@@ -437,8 +437,8 @@ const STATE_SAMPLES: StateSample[] = [
     id: "empty",
     name: "결과 없음",
     kind: "empty",
-    title: "검색 결과가 없습니다",
-    message: "다른 검색어를 시도해보세요.",
+    title: "검색 결과가 없어요",
+    message: "다른 검색어로 다시 검색해 주세요.",
     uses: ["논문 검색 결과 0건", "소장자료 검색 0건", "빈 읽기 목록"],
     hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"'],
   }),
@@ -446,7 +446,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "retrying",
     name: "재시도 중",
     kind: errorKind(SAMPLE.network),
-    title: "검색하지 못했습니다",
+    title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.network),
     retry: true,
     busy: true,
@@ -457,7 +457,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "compact",
     name: "좁은 칸 (compact)",
     kind: "error",
-    title: "원문 대목을 불러오지 못했습니다",
+    title: "원문 대목을 불러오지 못했어요",
     message: reasonOf(SAMPLE.network),
     compact: true,
     retry: true,
@@ -479,7 +479,7 @@ const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
     name: "기본 — 검색 입력 상자 바로 아래",
     uses: ["랜딩·결과 위 검색 입력(422 글자 수)", "딥리서치 질문 입력(2자 미만)"],
     hooks: [".skx-inline-error", ".skx-inline-error__msg", 'role="alert"'],
-    texts: [apiErrorMessage(SAMPLE.tooShort, "검색하지 못했습니다")],
+    texts: [apiErrorMessage(SAMPLE.tooShort, "검색하지 못했어요")],
   },
   retry: {
     name: "다시 시도 있음 — AI 글 뒤에서 끊김",
@@ -491,7 +491,7 @@ const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
     name: "재시도 중",
     uses: ["[다시 시도]를 누르고 응답을 기다리는 동안 — 모든 줄 안내"],
     hooks: ['.skx-inline-error__retry[aria-disabled="true"]', '[aria-busy="true"]'],
-    texts: [apiErrorMessage(SAMPLE.network, "목록을 불러오지 못했습니다"), RETRY_TEXT],
+    texts: [apiErrorMessage(SAMPLE.network, "목록을 불러오지 못했어요"), RETRY_TEXT],
   },
 };
 

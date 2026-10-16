@@ -4,10 +4,12 @@
 import { createFetch } from "ofetch";
 import { describe, expect, it } from "vitest";
 import {
+  CODE_MESSAGES,
   DEFAULT_ERROR_MESSAGE,
   ERROR_HINTS,
   VALIDATION_HINTS,
   apiErrorMessage,
+  codeMessage,
   errorKind,
   httpStatus,
   isAbortError,
@@ -160,35 +162,35 @@ describe("isAbortError", () => {
 describe("validationMessage — FastAPI 422 배열", () => {
   it("string_too_long 은 서버가 준 최대 글자 수로 안내한다", () => {
     expect(validationMessage([{ type: "string_too_long", loc: ["body", "question"], msg: "String should have at most 500 characters", ctx: { max_length: 500 } }]))
-      .toBe("500자까지 입력할 수 있습니다");
-    expect(validationMessage([{ type: "string_too_long", ctx: { max_length: 3000 } }])).toBe("3000자까지 입력할 수 있습니다");
+      .toBe("500자까지 입력할 수 있어요");
+    expect(validationMessage([{ type: "string_too_long", ctx: { max_length: 3000 } }])).toBe("3000자까지 입력할 수 있어요");
   });
 
   it("string_too_short 는 최소 글자 수가 2 이상이면 그 수로, 1 이하·없으면 내용을 입력하라고 한다", () => {
     expect(validationMessage([{ type: "string_too_short", ctx: { min_length: 2 }, msg: "String should have at least 2 characters" }]))
-      .toBe("2자 이상 입력하세요");
-    expect(validationMessage([{ type: "string_too_short", ctx: { min_length: 10 } }])).toBe("10자 이상 입력하세요");
+      .toBe("2자 이상 입력해 주세요");
+    expect(validationMessage([{ type: "string_too_short", ctx: { min_length: 10 } }])).toBe("10자 이상 입력해 주세요");
     expect(validationMessage([{ type: "string_too_short", ctx: { min_length: 1 } }])).toBe("내용을 입력해 주세요");
     expect(validationMessage([{ type: "string_too_short" }])).toBe("내용을 입력해 주세요");
     expect(validationMessage([{ type: "string_too_short", ctx: { min_length: "3" } }])).toBe("내용을 입력해 주세요");
   });
 
   it("missing(필드가 빠짐)은 화면이 요청을 잘못 만든 것이라 일반 문구", () => {
-    expect(validationMessage([{ type: "missing", loc: ["body", "query"], msg: "Field required" }])).toBe("입력값이 올바르지 않습니다");
+    expect(validationMessage([{ type: "missing", loc: ["body", "query"], msg: "Field required" }])).toBe("입력값이 올바르지 않아요");
   });
 
   it("그 밖의 항목·최대 글자 수가 없는 길이 초과·빈 배열은 일반 문구", () => {
-    expect(validationMessage([{ type: "int_parsing", msg: "Input should be a valid integer" }])).toBe("입력값이 올바르지 않습니다");
-    expect(validationMessage([{ type: "string_too_long" }])).toBe("입력값이 올바르지 않습니다");
-    expect(validationMessage([{ type: "string_too_long", ctx: { max_length: "500" } }])).toBe("입력값이 올바르지 않습니다");
-    expect(validationMessage([])).toBe("입력값이 올바르지 않습니다");
-    expect(validationMessage([null, "x"])).toBe("입력값이 올바르지 않습니다");
+    expect(validationMessage([{ type: "int_parsing", msg: "Input should be a valid integer" }])).toBe("입력값이 올바르지 않아요");
+    expect(validationMessage([{ type: "string_too_long" }])).toBe("입력값이 올바르지 않아요");
+    expect(validationMessage([{ type: "string_too_long", ctx: { max_length: "500" } }])).toBe("입력값이 올바르지 않아요");
+    expect(validationMessage([])).toBe("입력값이 올바르지 않아요");
+    expect(validationMessage([null, "x"])).toBe("입력값이 올바르지 않아요");
   });
 
   it("여러 항목이면 알아볼 수 있는 첫 항목을 쓴다(missing 은 건너뛴다)", () => {
     expect(validationMessage([{ type: "int_parsing" }, { type: "missing" }, { type: "string_too_short", ctx: { min_length: 1 } }]))
       .toBe("내용을 입력해 주세요");
-    expect(validationMessage([{ type: "missing" }, { type: "string_too_long", ctx: { max_length: 500 } }])).toBe("500자까지 입력할 수 있습니다");
+    expect(validationMessage([{ type: "missing" }, { type: "string_too_long", ctx: { max_length: 500 } }])).toBe("500자까지 입력할 수 있어요");
   });
 
   it("배열이 아니면 null", () => {
@@ -286,15 +288,59 @@ describe("apiErrorMessage — (a) 서버의 한글 사유", () => {
   });
 });
 
+describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES)", () => {
+  /** 서버 응답 본문 {detail, code} — 백엔드 core/errors 의 ApiError 모양 */
+  function codedError(status: number, code: unknown, detail: unknown = "서버에서 문제가 생겼습니다. 잠시 뒤 다시 시도하세요") {
+    return Object.assign(new Error(ENGLISH), { status, statusCode: status, data: { detail, code } });
+  }
+
+  it("문구 표 — 해요체", () => {
+    expect(CODE_MESSAGES).toEqual({
+      internal_error: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
+      search_unavailable: "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
+      storage_unavailable: "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
+      not_found: "자료를 찾을 수 없어요",
+      empty_answer: "답을 만들지 못했어요",
+      retrieval_failed: "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요",
+    });
+  });
+
+  it("code 가 표에 있으면 서버 detail 대신 그 문구를 이유로 — 대체 문구 뒤 ' — ', 대체 문구가 비면 문구만", () => {
+    const search = codedError(503, "search_unavailable", "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요");
+    expect(apiErrorMessage(search, "검색하지 못했어요")).toBe(`검색하지 못했어요 — ${CODE_MESSAGES.search_unavailable}`);
+    expect(apiErrorMessage(search, "")).toBe(CODE_MESSAGES.search_unavailable);
+    expect(apiErrorMessage(codedError(500, "internal_error"), "실패")).toBe(`실패 — ${CODE_MESSAGES.internal_error}`);
+    expect(apiErrorMessage(codedError(503, "storage_unavailable", "원문 저장소가 잠시 응답하지 않아요."), "원문을 불러오지 못했어요"))
+      .toBe(`원문을 불러오지 못했어요 — ${CODE_MESSAGES.storage_unavailable}`);
+    // 서버의 detail 이 무엇이든(영문·개발자용 포함) code 문구만 보인다
+    expect(apiErrorMessage(codedError(500, "internal_error", "Internal Server Error"), "")).toBe(CODE_MESSAGES.internal_error);
+  });
+
+  it("모르는 code·문자열이 아닌 code 는 지금 규칙 그대로", () => {
+    expect(apiErrorMessage(codedError(500, "ai_failed"), "실패")).toBe(`실패 — ${ERROR_HINTS.server}`);
+    expect(apiErrorMessage(codedError(503, 3, "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"), "실패"))
+      .toBe("작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요");
+    expect(apiErrorMessage(codedError(409, "toString", "목차를 만드는 중입니다"), "실패")).toBe("목차를 만드는 중입니다");
+  });
+
+  it("codeMessage — 자기 키만(상속 이름에 속지 않는다)", () => {
+    expect(codeMessage("not_found")).toBe("자료를 찾을 수 없어요");
+    expect(codeMessage("toString")).toBeNull();
+    expect(codeMessage("__proto__")).toBeNull();
+    expect(codeMessage(undefined)).toBeNull();
+    expect(codeMessage(404)).toBeNull();
+  });
+});
+
 describe("apiErrorMessage — (b) 422 검증 실패 배열", () => {
   it("validationMessage 로 바꾼다", () => {
     expect(apiErrorMessage(fetchError(422, [{ type: "string_too_long", ctx: { max_length: 200 }, msg: "too long" }]), "저장하지 못했습니다"))
-      .toBe("200자까지 입력할 수 있습니다");
+      .toBe("200자까지 입력할 수 있어요");
     expect(apiErrorMessage(fetchError(422, [{ type: "string_too_short", ctx: { min_length: 2 }, msg: "too short" }]), "실패"))
-      .toBe("2자 이상 입력하세요");
-    expect(apiErrorMessage(fetchError(422, [{ type: "missing", msg: "Field required" }]), "실패")).toBe("입력값이 올바르지 않습니다");
+      .toBe("2자 이상 입력해 주세요");
+    expect(apiErrorMessage(fetchError(422, [{ type: "missing", msg: "Field required" }]), "실패")).toBe("입력값이 올바르지 않아요");
     expect(apiErrorMessage(fetchError(422, [{ type: "uuid_parsing", msg: "Input should be a valid UUID" }]), "실패"))
-      .toBe("입력값이 올바르지 않습니다");
+      .toBe("입력값이 올바르지 않아요");
   });
 });
 
@@ -302,13 +348,13 @@ describe("apiErrorMessage — (c) kind 별 이유", () => {
   const FALLBACK = "결과를 불러오지 못했습니다";
 
   it.each<[string, unknown, string]>([
-    ["network", new TypeError("Failed to fetch"), `${FALLBACK} — 네트워크 연결을 확인하세요`],
-    ["timeout", noResponse(domError("TimeoutError")), `${FALLBACK} — 응답이 늦어 멈췄습니다. 잠시 뒤 다시 시도하세요`],
-    ["timeout(504)", fetchError(504), `${FALLBACK} — 응답이 늦어 멈췄습니다. 잠시 뒤 다시 시도하세요`],
-    ["busy(429)", fetchError(429), `${FALLBACK} — 요청이 몰려 있습니다. 잠시 뒤 다시 시도하세요`],
-    ["busy(503)", fetchError(503), `${FALLBACK} — 요청이 몰려 있습니다. 잠시 뒤 다시 시도하세요`],
-    ["server(500)", fetchError(500), `${FALLBACK} — 서버에 문제가 생겼습니다. 잠시 뒤 다시 시도하세요`],
-    ["server(502 HTML 본문)", Object.assign(fetchError(502), { data: "<html>Bad Gateway</html>" }), `${FALLBACK} — 서버에 문제가 생겼습니다. 잠시 뒤 다시 시도하세요`],
+    ["network", new TypeError("Failed to fetch"), `${FALLBACK} — 네트워크 연결을 확인해 주세요`],
+    ["timeout", noResponse(domError("TimeoutError")), `${FALLBACK} — 응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요`],
+    ["timeout(504)", fetchError(504), `${FALLBACK} — 응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요`],
+    ["busy(429)", fetchError(429), `${FALLBACK} — 요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요`],
+    ["busy(503)", fetchError(503), `${FALLBACK} — 요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요`],
+    ["server(500)", fetchError(500), `${FALLBACK} — 서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요`],
+    ["server(502 HTML 본문)", Object.assign(fetchError(502), { data: "<html>Bad Gateway</html>" }), `${FALLBACK} — 서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요`],
     ["notFound", fetchError(404), FALLBACK],
     ["conflict", fetchError(409), FALLBACK],
     ["invalid(400)", fetchError(400), FALLBACK],
@@ -323,18 +369,18 @@ describe("apiErrorMessage — (c) kind 별 이유", () => {
 
   it("이유 문구는 ERROR_HINTS 한 곳에서 온다", () => {
     expect(ERROR_HINTS).toEqual({
-      network: "네트워크 연결을 확인하세요",
-      timeout: "응답이 늦어 멈췄습니다. 잠시 뒤 다시 시도하세요",
-      busy: "요청이 몰려 있습니다. 잠시 뒤 다시 시도하세요",
-      server: "서버에 문제가 생겼습니다. 잠시 뒤 다시 시도하세요",
+      network: "네트워크 연결을 확인해 주세요",
+      timeout: "응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요",
+      busy: "요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요",
+      server: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
     });
     expect(VALIDATION_HINTS).toEqual({
-      tooLong: "{n}자까지 입력할 수 있습니다",
-      tooShort: "{n}자 이상 입력하세요",
+      tooLong: "{n}자까지 입력할 수 있어요",
+      tooShort: "{n}자 이상 입력해 주세요",
       required: "내용을 입력해 주세요",
-      invalid: "입력값이 올바르지 않습니다",
+      invalid: "입력값이 올바르지 않아요",
     });
-    expect(DEFAULT_ERROR_MESSAGE).toBe("요청을 처리하지 못했습니다");
+    expect(DEFAULT_ERROR_MESSAGE).toBe("요청을 처리하지 못했어요");
   });
 
   it("대체 문구가 비면 이유만, 이유도 없으면 일반 문구 — 빈 문자열은 돌려주지 않는다", () => {
@@ -355,7 +401,7 @@ describe("toUserError — 화면이 쓰기 편한 한 번에", () => {
       .toEqual({ kind: "timeout", message: `결과를 불러오지 못했습니다 — ${ERROR_HINTS.timeout}` });
     expect(toUserError(fetchError(404, "논문이 없습니다"), "실패")).toEqual({ kind: "notFound", message: "논문이 없습니다" });
     expect(toUserError(fetchError(422, [{ type: "string_too_long", ctx: { max_length: 500 } }]), "실패"))
-      .toEqual({ kind: "invalid", message: "500자까지 입력할 수 있습니다" });
+      .toEqual({ kind: "invalid", message: "500자까지 입력할 수 있어요" });
     expect(toUserError(new TypeError("Cannot read properties of null (reading 'books')"), "결과를 보이지 못했습니다"))
       .toEqual({ kind: "unknown", message: "결과를 보이지 못했습니다" });
     expect(toUserError(fetchError(418), "")).toEqual({ kind: "unknown", message: DEFAULT_ERROR_MESSAGE });

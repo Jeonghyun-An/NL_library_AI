@@ -150,7 +150,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       view.value = null;
       const status = httpStatus(e);
       if (status === 404 || status === 422) notFound.value = true;
-      else loadError.value = researchErrorMessage(e, "연구를 불러오지 못했습니다");
+      else loadError.value = researchErrorMessage(e, "연구를 불러오지 못했어요");
     } finally {
       if (gen === generation) loading.value = false;
     }
@@ -175,7 +175,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       return true;
     } catch (e) {
       if (gen !== generation || token !== syncToken) return false;
-      const message = researchErrorMessage(e, "최신 상태를 불러오지 못했습니다");
+      const message = researchErrorMessage(e, "최신 상태를 불러오지 못했어요");
       actionError.value = message;
       activeJobId.value = null;
       syncError = message;
@@ -326,7 +326,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
         view.value = applyQueue(applyApproval(view.value, res.status, res.plan), res.queue);
         connect();
       },
-      "계획을 승인하지 못했습니다",
+      "계획을 승인하지 못했어요",
     );
 
   const retry = () =>
@@ -340,7 +340,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
         );
         connect();
       },
-      "다시 시도하지 못했습니다",
+      "다시 시도하지 못했어요",
     );
 
   const cancel = () =>
@@ -352,7 +352,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
         // 스트림보다 응답이 먼저 오면 종료 이벤트를 받지 못한다 — 여기서도 종료를 마무리한다
         settle();
       },
-      "취소하지 못했습니다",
+      "취소하지 못했어요",
     );
 
   if (getCurrentInstance()) {

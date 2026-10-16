@@ -371,7 +371,7 @@ async function onNoticeCancel(): Promise<void> {
     await cancelResearch(target.jobId);
     noticeLive.value = NOTICE_CANCEL_DONE_TEXT;
   } catch (e) {
-    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 취소하지 못했습니다`);
+    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 취소하지 못했어요`);
   } finally {
     cancelStep.value = "idle";
     await restoreNoticeFocus();
@@ -512,7 +512,7 @@ async function submit(): Promise<void> {
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     // 입력은 지우지 않는다 — 사용자가 고쳐서 다시 보낼 수 있어야 한다
-    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 시작하지 못했습니다`);
+    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 시작하지 못했어요`);
   } finally {
     busy.value = false;
   }

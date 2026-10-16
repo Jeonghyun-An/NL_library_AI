@@ -40,8 +40,8 @@ describe("SkxConnectionBanner — 실시간 연결 끊김 띠", () => {
 
   it("문구 — 다시 연결하는 중 / 연결하지 못함 + [다시 연결]", () => {
     expect(CONNECTION_HINTS).toEqual({
-      reconnecting: "연결이 끊겨 다시 연결하는 중입니다…",
-      lost: "연결하지 못했습니다. 화면이 최신 상태가 아닐 수 있습니다",
+      reconnecting: "연결이 끊겨 다시 연결하는 중이에요…",
+      lost: "연결하지 못했어요. 화면이 최신 상태가 아닐 수 있어요",
     });
     expect(CONNECTION_RETRY_LABEL).toBe("다시 연결");
     expect(tpl).toContain('<span class="skx-conn__msg">{{ CONNECTION_HINTS[state] }}</span>');
@@ -87,10 +87,10 @@ describe("SkxCharCount — 글자 수", () => {
   });
 
   it("한도 안내는 서버 422(string_too_long)와 같은 말", () => {
-    expect(charLimitMessage(500)).toBe("500자까지 입력할 수 있습니다");
+    expect(charLimitMessage(500)).toBe("500자까지 입력할 수 있어요");
     expect(charLimitMessage(500)).toBe(VALIDATION_HINTS.tooLong.replace("{n}", "500"));
     expect(
-      apiErrorMessage({ status: 422, data: { detail: [{ type: "string_too_long", ctx: { max_length: 500 } }] } }, "검색하지 못했습니다"),
+      apiErrorMessage({ status: 422, data: { detail: [{ type: "string_too_long", ctx: { max_length: 500 } }] } }, "검색하지 못했어요"),
     ).toBe(charLimitMessage(500));
   });
 
@@ -201,7 +201,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js).toContain("AI_SUMMARY_FAILED");
     expect(js).toContain("CONNECTION_HINTS.reconnecting");
     expect(js).toContain("charLimitMessage(CHAR_MAX)");
-    for (const hint of ["네트워크 연결을 확인하세요", "응답이 늦어", "요청이 몰려", "서버에 문제가", "자까지 입력할 수 있습니다", "연결이 끊겨 다시 연결하는 중입니다", "화면이 최신 상태가 아닐 수"]) {
+    for (const hint of ["네트워크 연결을 확인해 주세요", "응답이 늦어", "요청이 몰려", "서버에 문제가", "자까지 입력할 수 있어요", "연결이 끊겨 다시 연결하는 중이에요", "화면이 최신 상태가 아닐 수"]) {
       expect(galleryVue, hint).not.toContain(hint);
     }
   });
@@ -212,7 +212,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     }
     expect(js).toMatch(/id: "retrying",[\s\S]*?busy: true,/);
     expect(js).toMatch(/id: "compact",[\s\S]*?compact: true,/);
-    for (const title of ["검색하지 못했습니다", "논문 정보를 불러오지 못했습니다", "검색 결과가 없습니다"]) {
+    for (const title of ["검색하지 못했어요", "논문 정보를 불러오지 못했어요", "검색 결과가 없어요"]) {
       expect(js, title).toContain(`title: "${title}"`);
     }
   });

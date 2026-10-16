@@ -518,7 +518,7 @@ async function onRestart(): Promise<void> {
     const jobId = await startResearch(view.value.question, restartParams(view.value.params));
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
-    pageError.value = researchErrorMessage(e, "새 연구를 시작하지 못했습니다");
+    pageError.value = researchErrorMessage(e, "새 연구를 시작하지 못했어요");
   } finally {
     restarting.value = false;
   }
@@ -608,7 +608,7 @@ async function onContinue(): Promise<void> {
     if (firstContinue()) onboardingOpen.value = true;
     await goStep("topics");
   } catch (e) {
-    continueError.value = researchErrorMessage(e, "연구를 이어가지 못했습니다");
+    continueError.value = researchErrorMessage(e, "연구를 이어가지 못했어요");
   } finally {
     continuing.value = false;
   }

@@ -6,30 +6,56 @@
 //  - apiErrorMessage(err, fallback): 화면에 보일 문구 하나. 영문 기술 메시지(err.message)는 어떤 경우에도 쓰지 않는다
 //  - toUserError(err, fallback): 위 셋을 한 번에 — 일부러 끊은 요청이면 null(아무것도 띄우지 않는다), 아니면 {kind, message}
 //  - charCountState(length, max, near?)·charLimitMessage(max): 글자 수 표시(SkxCharCount)의 상태와 한도 안내
+//  - codeMessage(code)   : 백엔드 오류 code 의 문구(CODE_MESSAGES)
 // 공통 오류 컴포넌트가 스스로 그리는 고정 문구(ERROR_PAGE_TEXT·CONNECTION_HINTS)도 여기 둔다 — 오류 화면 모음(/dev/error-states)이
-// 같은 상수를 읽어 문구 원문을 보이므로, 문구를 고치면 실제 화면과 모음이 함께 바뀐다
+// 같은 상수를 읽어 문구 원문을 보이므로, 문구를 고치면 실제 화면과 모음이 함께 바뀐다.
+// 문구는 해요체다(사용자 결정 2026-10-16 — 오류·실패·빈 상태는 '~했어요'·'~해 주세요'·'~예요'·'~없어요')
 
 /**
  * 대체 문구(fallback) 뒤에 ' — ' 로 붙이는 이유. 여기 없는 kind(notFound·conflict·invalid·forbidden·unknown)는 대체 문구만 보인다 —
  * 서버가 한글 사유를 주면 그것을 먼저 쓰고, 없으면 '무엇을 못 했는지'가 이미 대체 문구에 있어 덧붙일 이유가 없다.
- * 문구 검토는 이 상수와 아래 VALIDATION_HINTS·DEFAULT_ERROR_MESSAGE 만 보면 된다
+ * 문구 검토는 이 상수와 아래 CODE_MESSAGES·VALIDATION_HINTS·DEFAULT_ERROR_MESSAGE 만 보면 된다
  */
 export const ERROR_HINTS = {
-  network: "네트워크 연결을 확인하세요",
-  timeout: "응답이 늦어 멈췄습니다. 잠시 뒤 다시 시도하세요",
-  busy: "요청이 몰려 있습니다. 잠시 뒤 다시 시도하세요",
-  server: "서버에 문제가 생겼습니다. 잠시 뒤 다시 시도하세요",
+  network: "네트워크 연결을 확인해 주세요",
+  timeout: "응답이 늦어 멈췄어요. 잠시 뒤 다시 시도해 주세요",
+  busy: "요청이 몰려 있어요. 잠시 뒤 다시 시도해 주세요",
+  server: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
 } as const;
+
+/**
+ * 백엔드 오류 code 별 문구 — 응답 본문 {detail, code}(HTTP)·DeepRead 스트림 {error, code} 의 code 로 고른다.
+ * 서버 detail 은 쓰지 않는다 — 서버가 문구를 바꿔도 화면 말투(해요체)가 섞이지 않게 문구는 프런트가 가진다.
+ * apiErrorMessage 는 HTTP 의 code(internal_error·search_unavailable·storage_unavailable)를 ERROR_HINTS 처럼 이유 자리에 쓴다
+ * (대체 문구 뒤 ' — '). not_found·empty_answer·retrieval_failed 는 DeepRead 스트림의 code 다
+ */
+export const CODE_MESSAGES = {
+  internal_error: "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요",
+  search_unavailable: "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
+  storage_unavailable: "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
+  not_found: "자료를 찾을 수 없어요",
+  empty_answer: "답을 만들지 못했어요",
+  retrieval_failed: "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요",
+} as const;
+export type ErrorCode = keyof typeof CODE_MESSAGES;
+
+/** code 의 문구 — 모르는 code·문자열이 아닌 값이면 null(호출부가 제 규칙으로 고른다) */
+export function codeMessage(code: unknown): string | null {
+  // Object.hasOwn 은 사파리 15.4 전에 없어 hasOwnProperty 로 — 'toString' 같은 상속 이름에 속지 않게 자기 키만 본다
+  return typeof code === "string" && Object.prototype.hasOwnProperty.call(CODE_MESSAGES, code)
+    ? CODE_MESSAGES[code as ErrorCode]
+    : null;
+}
 
 /**
  * FastAPI 422(pydantic 검증 실패) 안내 — {n} 은 서버가 준 글자 수(tooLong 은 ctx.max_length, tooShort 는 ctx.min_length).
  * 1자 이상(=비면 안 됨)은 글자 수보다 '입력하라'가 자연스러워 required 를 쓴다
  */
 export const VALIDATION_HINTS = {
-  tooLong: "{n}자까지 입력할 수 있습니다",
-  tooShort: "{n}자 이상 입력하세요",
+  tooLong: "{n}자까지 입력할 수 있어요",
+  tooShort: "{n}자 이상 입력해 주세요",
   required: "내용을 입력해 주세요",
-  invalid: "입력값이 올바르지 않습니다",
+  invalid: "입력값이 올바르지 않아요",
 } as const;
 
 /** 글자 수 표시(SkxCharCount)의 상태 — 평소 / 한도 가까이 / 한도 */
@@ -45,18 +71,18 @@ export function charCountState(length: number, max: number, near?: number): Char
   return length >= nearAt ? "near" : "normal";
 }
 
-/** 글자 수 한도에 닿았을 때의 안내 — 서버 422(string_too_long) 안내와 같은 말('500자까지 입력할 수 있습니다') */
+/** 글자 수 한도에 닿았을 때의 안내 — 서버 422(string_too_long) 안내와 같은 말('500자까지 입력할 수 있어요') */
 export function charLimitMessage(max: number): string {
   return VALIDATION_HINTS.tooLong.replace("{n}", String(max));
 }
 
 /** 대체 문구도 이유도 없을 때 — apiErrorMessage 는 빈 문자열을 돌려주지 않는다(빈 오류 칸이 그려지지 않게) */
-export const DEFAULT_ERROR_MESSAGE = "요청을 처리하지 못했습니다";
+export const DEFAULT_ERROR_MESSAGE = "요청을 처리하지 못했어요";
 
 /** 전역 오류 화면(SkxErrorPage — error.vue 가 그린다)의 문구. 404 는 notFound, 그 밖(화면을 그리다 난 치명 오류)은 fatal */
 export const ERROR_PAGE_TEXT = {
-  notFound: { title: "페이지를 찾을 수 없습니다", message: "주소가 바뀌었거나 없는 페이지입니다." },
-  fatal: { title: "문제가 생겼습니다", message: "잠시 뒤 다시 시도하세요." },
+  notFound: { title: "페이지를 찾을 수 없어요", message: "주소가 바뀌었거나 없는 페이지예요." },
+  fatal: { title: "문제가 생겼어요", message: "잠시 뒤 다시 시도해 주세요." },
   home: "처음 화면으로",
 } as const;
 
@@ -65,14 +91,14 @@ export const ERROR_PAGE_TEXT = {
  * reconnecting: 끊겨 다시 붙는 중(백오프 재연결이 도는 동안) / lost: 다시 붙지 못함 — 받은 화면이 낡았을 수 있다
  */
 export const CONNECTION_HINTS = {
-  reconnecting: "연결이 끊겨 다시 연결하는 중입니다…",
-  lost: "연결하지 못했습니다. 화면이 최신 상태가 아닐 수 있습니다",
+  reconnecting: "연결이 끊겨 다시 연결하는 중이에요…",
+  lost: "연결하지 못했어요. 화면이 최신 상태가 아닐 수 있어요",
 } as const;
 export type ConnectionState = keyof typeof CONNECTION_HINTS;
 /** 연결 끊김 띠(lost)의 버튼 글 */
 export const CONNECTION_RETRY_LABEL = "다시 연결";
 
-/** 대체 문구와 이유 사이 — 기존 화면 문구('… — 네트워크 연결을 확인하세요')와 같은 줄표 */
+/** 대체 문구와 이유 사이 — 기존 화면 문구('… — 네트워크 연결을 확인해 주세요')와 같은 줄표 */
 const HINT_SEPARATOR = " — ";
 
 export type ErrorKind =
@@ -241,6 +267,13 @@ function errorDetail(err: unknown): unknown {
   return data && typeof data === "object" && "detail" in data ? (data as { detail: unknown }).detail : undefined;
 }
 
+/** 오류 응답 본문의 code({detail, code} — 서버가 경우를 갈라 붙인 기계용 이름). 없으면 undefined */
+function responseCode(err: unknown): unknown {
+  if (!err || typeof err !== "object") return undefined;
+  const data = (err as { data?: unknown }).data;
+  return data && typeof data === "object" ? (data as { code?: unknown }).code : undefined;
+}
+
 const HANGUL_RE = /[가-힣]/;
 /**
  * 개발자용 문구의 표시 — 라틴 문자(예외 원문·변수·필드·헤더 이름: 'PDF 없음: NoSuchKey…'·'x-session-id 헤더가 필요하다'),
@@ -273,6 +306,8 @@ function hasDetailCode(detail: unknown): boolean {
 
 /**
  * 화면에 보일 문구 하나를 고른다.
+ *  (0) 응답 본문의 code 가 CODE_MESSAGES 에 있으면 서버 detail 대신 그 문구를 이유로 — fallback 뒤 ' — '(fallback 이 비면 그 문구만).
+ *      서버 문구의 말투가 화면과 섞이지 않게 프런트의 문구를 쓴다
  *  (a) 서버의 깨끗한 한글 사유(serverMessage)면 그대로. 단 5xx 는 code 가 있는 구조화 detail 이거나 503(서버가 지은 '잠시 뒤' 안내)일 때만 —
  *      그 밖의 5xx 문구는 예외를 감싼 개발자용('잡 생성 실패: …')일 수 있어 (c) 로 간다
  *  (b) 422 검증 실패 배열이면 validationMessage
@@ -281,6 +316,9 @@ function hasDetailCode(detail: unknown): boolean {
  * err.message(영문 기술 메시지)는 어떤 경우에도 쓰지 않는다. 일부러 끊은 요청은 호출부가 isAbortError 로 먼저 거른다(toUserError)
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
+  const base = typeof fallback === "string" ? fallback.trim() : "";
+  const byCode = codeMessage(responseCode(err));
+  if (byCode) return withHint(base, byCode);
   const status = httpStatus(err);
   const detail = errorDetail(err);
   const reason = serverMessage(detail);
@@ -289,13 +327,17 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
   if (status === 422 && Array.isArray(detail)) return validationMessage(detail)!;
   const kind = errorKind(err);
   const hint = kind in ERROR_HINTS ? ERROR_HINTS[kind as keyof typeof ERROR_HINTS] : null;
-  const base = typeof fallback === "string" ? fallback.trim() : "";
   if (!hint) return base || DEFAULT_ERROR_MESSAGE;
+  return withHint(base, hint);
+}
+
+/** 무엇을 못 했는지(base) 뒤에 이유 — base 가 비면 이유만 */
+function withHint(base: string, hint: string): string {
   return base ? `${base}${HINT_SEPARATOR}${hint}` : hint;
 }
 
 /**
- * 화면이 쓰기 편한 한 번에 — catch 에서 `const shown = toUserError(e, '결과를 불러오지 못했습니다'); if (shown) …`.
+ * 화면이 쓰기 편한 한 번에 — catch 에서 `const shown = toUserError(e, '결과를 불러오지 못했어요'); if (shown) …`.
  * 일부러 끊은 요청(isAbortError)이면 null(화면은 아무것도 띄우지 않는다), 아니면 kind(SkxErrorState 의 kind)와 apiErrorMessage 의 문구
  */
 export function toUserError(err: unknown, fallback: string): UserFacingError | null {

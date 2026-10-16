@@ -22,13 +22,16 @@ export function detailMessage(detail: unknown): string | null {
 // status 가 null(확인 요청 자체가 실패)이면 판단하지 않고 뷰어가 직접 보여 주게 둔다.
 export function pdfCheckProblem(status: number | null): string | null {
   if (status === null || (status >= 200 && status < 300)) return null;
-  if (status === 404) return "원문 파일이 없습니다";
-  return "원문을 불러오지 못했습니다. 잠시 뒤 다시 시도하세요";
+  if (status === 404) return "원문 파일이 없어요";
+  return "원문을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요";
 }
 
 // 같은 브라우저의 다른 딥리서치가 진행 중이라 승인·재시도가 막혔다(api/research.py _to_run_queue 의 429
 // detail {code: "browser_active", message, job_id}). 서버가 문구를 비워 보내도 같은 안내를 쓴다
-const BROWSER_ACTIVE_MESSAGE = `진행 중인 ${DEEP_RESEARCH}가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요`;
+const BROWSER_ACTIVE_MESSAGE = `진행 중인 ${DEEP_RESEARCH}가 있어요 — 끝나거나 취소한 뒤 다시 시작해 주세요`;
+
+// 딥리서치 화면의 404 — 연구 주소가 잘못됐거나 지워졌다(링크만 알면 누구나 열 수 있어 권한 문제는 없다)
+export const RESEARCH_NOT_FOUND = "찾을 수 없는 연구예요";
 
 interface LimitDetail {
   code?: unknown;
@@ -67,9 +70,9 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
   if (limit?.code === "browser_active") {
     return (typeof limit.message === "string" && limit.message.trim()) || BROWSER_ACTIVE_MESSAGE;
   }
-  // 공유 큐 제한(shared_queue)·code 가 없는 429 와 503 은 지금 문구 그대로
-  if (status === 429 || status === 503) return "요청이 몰려 있습니다. 잠시 뒤 다시 시도하세요";
-  if (status === 404) return "찾을 수 없는 연구입니다";
+  // 공유 큐 제한(shared_queue)·code 가 없는 429 와 503 은 몰림 안내 하나로(apiErrors 의 busy 이유와 같은 말)
+  if (status === 429 || status === 503) return ERROR_HINTS.busy;
+  if (status === 404) return RESEARCH_NOT_FOUND;
   const data = (err as FetchLikeError | null)?.data;
   const detail = data && typeof data === "object" && "detail" in data
     ? detailMessage((data as { detail: unknown }).detail)
@@ -86,7 +89,7 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
 
 // 이어간 연구 단계 화면(주제·읽기 목록·계획서)의 쓰기 오류 문구. 404 는 서버 문구('주제가 없습니다'·'논문이
 // 없습니다'·'문단이 없습니다' 등)를 그대로 보인다 — researchErrorMessage 는 딥리서치 화면 그대로 모든 404 를
-// '찾을 수 없는 연구입니다' 로 바꾼다. 문구가 없는 404 와 그 밖의 상태는 researchErrorMessage 와 같다
+// RESEARCH_NOT_FOUND('찾을 수 없는 연구예요')로 바꾼다. 문구가 없는 404 와 그 밖의 상태는 researchErrorMessage 와 같다
 export function workErrorMessage(err: unknown, fallback: string): string {
   if (httpStatus(err) === 404) {
     const data = (err as FetchLikeError | null)?.data;

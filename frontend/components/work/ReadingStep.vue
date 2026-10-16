@@ -274,7 +274,7 @@ async function makeOutline(again: boolean): Promise<void> {
     props.work.afterAction();
     emit("go", "proposal");
   } catch (err) {
-    error.value = workErrorMessage(err, "보고서를 만들지 못했습니다");
+    error.value = workErrorMessage(err, "보고서를 만들지 못했어요");
     if (httpStatus(err) === 409) await reloadAll(["reading", "work"]);
   } finally {
     busy.value = false;

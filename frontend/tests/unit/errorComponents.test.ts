@@ -123,14 +123,14 @@ describe("error.vue — 전역 오류 화면(본문은 SkxErrorPage)", () => {
     expect(pageJs).toContain("props.status === 404");
     expect(pageTpl).toContain(':title="ERROR_PAGE_TEXT.notFound.title"');
     expect(pageTpl).toContain(':message="ERROR_PAGE_TEXT.notFound.message"');
-    expect(ERROR_PAGE_TEXT.notFound).toEqual({ title: "페이지를 찾을 수 없습니다", message: "주소가 바뀌었거나 없는 페이지입니다." });
+    expect(ERROR_PAGE_TEXT.notFound).toEqual({ title: "페이지를 찾을 수 없어요", message: "주소가 바뀌었거나 없는 페이지예요." });
     expect(pageJs).toContain('clearError({ redirect: "/" })');
   });
 
-  it("그 밖 — 문제가 생겼습니다 + [다시 시도](새로 불러오기) + [처음 화면으로]", () => {
+  it("그 밖 — 문제가 생겼어요 + [다시 시도](새로 불러오기) + [처음 화면으로]", () => {
     expect(pageTpl).toContain(':title="ERROR_PAGE_TEXT.fatal.title"');
     expect(pageTpl).toContain(':message="ERROR_PAGE_TEXT.fatal.message"');
-    expect(ERROR_PAGE_TEXT.fatal).toEqual({ title: "문제가 생겼습니다", message: "잠시 뒤 다시 시도하세요." });
+    expect(ERROR_PAGE_TEXT.fatal).toEqual({ title: "문제가 생겼어요", message: "잠시 뒤 다시 시도해 주세요." });
     expect(pageTpl).toContain('@retry="reload"');
     expect(pageJs).toContain("window.location.reload()");
     expect(pageTpl.match(/\{\{ ERROR_PAGE_TEXT\.home \}\}/g)).toHaveLength(2);
