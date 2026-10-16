@@ -489,7 +489,8 @@ describe("CSS — '[S] 공통 오류·빈 상태' 구역", () => {
   });
 
   it("재시도 중 모양은 aria-disabled 로 — 버튼을 disabled 로 막지 않는다", () => {
-    expect(code).toMatch(/\.skx-state__retry\[aria-disabled="true"\] \{/);
+    // 슬롯 버튼(.skx-state__action)이 일하는 중인 모양도 같은 규칙에
+    expect(code).toMatch(/\.skx-state__retry\[aria-disabled="true"\],\s*\.skx-state__action\[aria-disabled="true"\] \{/);
     expect(code).toMatch(/\.skx-inline-error__retry\[aria-disabled="true"\] \{/);
     expect(code).not.toMatch(/__retry:disabled/);
   });

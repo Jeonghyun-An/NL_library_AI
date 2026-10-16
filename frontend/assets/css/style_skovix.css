@@ -3071,7 +3071,8 @@ html.skx-scroll-lock {
 
 /* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로 */
 
-/* [다시 시도] — 안내 글 끝의 글자 버튼. 추천 1권 밖(논문 AI 요약·상세 AI 큐레이션·DeepRead 대화)의 실패 안내는 .skx-retry */
+/* [다시 시도] — 안내 글 끝의 글자 버튼(추천 1권은 .skx-pick__retry, 그 밖은 .skx-retry). 지금은 두 클래스를 쓰는 화면이 없다 —
+   추천 이유·논문 AI 요약·상세 AI 큐레이션·DeepRead 대화의 실패 안내는 모두 SkxInlineError(.skx-inline-error__retry)로 옮겼다 */
 .skx-pick__retry,
 .skx-retry {
   padding: 0;
@@ -5222,8 +5223,9 @@ html.skx-scroll-lock {
   background: var(--skx-accent-strong);
   border-color: var(--skx-accent-strong);
 }
-/* 재시도 중 — disabled 가 아니라 aria-disabled 로 알린다(초점 유지) */
-.skx-state__retry[aria-disabled="true"] {
+/* 재시도 중·슬롯 버튼이 일하는 중(딥리서치의 [같은 질문으로 다시 시작]) — disabled 가 아니라 aria-disabled 로 알린다(초점 유지) */
+.skx-state__retry[aria-disabled="true"],
+.skx-state__action[aria-disabled="true"] {
   opacity: 0.55;
   cursor: progress;
 }
@@ -5328,7 +5330,8 @@ html.skx-scroll-lock {
   opacity: 0.55;
   cursor: progress;
 }
-/* 밝은 AI 말풍선 위 — 위험색·포인트색이 묻히므로 아이콘·버튼도 말풍선 글자색을 따른다(.skx-chat-msg--ai .skx-retry 와 같은 까닭) */
+/* 밝은 AI 말풍선 위(DeepRead 대화 — 답을 받지 못한 말풍선) — 말풍선은 테마와 상관없이 옅은 면이라 위험색·포인트색(어두운 테마에서는
+   밝아진다)이 묻히므로 아이콘·버튼도 말풍선 글자색을 따른다 */
 .skx-chat-msg--ai .skx-inline-error,
 .skx-chat-msg--ai .skx-inline-error__icon,
 .skx-chat-msg--ai .skx-inline-error__retry {
