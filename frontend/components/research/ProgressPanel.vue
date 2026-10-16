@@ -54,8 +54,11 @@
             <span class="rs-badge" :class="`rs-badge--${sq.status}`">{{ subqStatusLabel(sq) }}</span>
           </div>
           <p v-if="stoppedSubq && stoppedSubq.idx === sq.idx" class="rs-subq__stopped">
-            {{ stoppedSubq.started ? "여기서 멈췄습니다" : "이 하위질문을 시작하기 전에 멈췄습니다" }}<span v-if="stoppedSubq.error"> — {{ stoppedSubq.error }}</span>
+            {{ stoppedSubq.started ? "여기서 멈췄어요" : "이 하위질문을 시작하기 전에 멈췄어요" }}
           </p>
+          <!-- 부분 실패의 이유 — 탐색 중에는 본문 과정(ResearchLive)이 보이고, 탐색이 끝난 뒤(작성 중·완료·다시 열기)·멈춘 연구에는
+               여기서 보인다. 단계 result.error 는 예외 원문이라 알아보는 사유만 해요체로 붙인다(subqFailureText) -->
+          <SkxInlineError v-if="sq.status === 'failed'" class="rs-subq__error" :message="subqFailureText(sq.error)" />
           <ol v-if="sq.rounds.length" class="rs-rounds">
             <li v-for="r in sq.rounds" :key="r.round" class="rs-round" :class="{ 'is-recheck': !!r.nextQuery }">
               <p class="rs-round__line">
@@ -118,8 +121,8 @@
           </ol>
         </li>
       </ol>
-      <p v-if="stop?.kind === 'synth'" class="rs-subq__stopped">보고서 작성 단계에서 멈췄습니다</p>
-      <p v-else-if="stop?.kind === 'before'" class="rs-subq__stopped">탐색을 시작하기 전에 멈췄습니다</p>
+      <p v-if="stop?.kind === 'synth'" class="rs-subq__stopped">보고서 작성 단계에서 멈췄어요</p>
+      <p v-else-if="stop?.kind === 'before'" class="rs-subq__stopped">탐색을 시작하기 전에 멈췄어요</p>
     </template>
   </section>
 </template>
@@ -140,6 +143,7 @@ import {
   verdictLabel,
   type ResearchPhase,
 } from "~/utils/researchEvents";
+import { subqFailureText } from "~/utils/researchErrors";
 import { EXCLUDED_WHY, excludedPaperLine } from "~/utils/researchReport";
 
 // revealExcluded: 새 창으로 연 제외 논문에서 돌아와 맞출 논문 — 그 논문을 뺀 회차를 펼쳐 둬야 자리가 생긴다

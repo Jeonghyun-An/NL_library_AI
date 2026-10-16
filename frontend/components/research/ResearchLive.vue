@@ -89,7 +89,8 @@
               </li>
             </ul>
           </div>
-          <p v-if="sq.status === 'failed' && sq.error" class="rs-live__error">{{ sq.error }}</p>
+          <!-- 부분 실패 — 단계 result.error 는 예외 원문이라 그대로 보이지 않고 해요체 한 줄(알아보는 사유만 덧붙인다) -->
+          <SkxInlineError v-if="sq.status === 'failed'" :message="subqFailureText(sq.error)" />
         </div>
       </li>
     </ol>
@@ -100,6 +101,7 @@
 import { computed, shallowRef } from "vue";
 import type { ResearchView, SubqView } from "~/types/research";
 import { slotElementId } from "~/utils/planSlots";
+import { subqFailureText } from "~/utils/researchErrors";
 import { showsExcludedCounter, subqStatusLabel } from "~/utils/researchEvents";
 import { doneSummary, liveNowLine, liveRunning, roundSteps, type LiveStep } from "~/utils/researchLive";
 
@@ -136,16 +138,17 @@ function highlightFor(sq: SubqView) {
   return h && h.subqIdx === sq.idx && running.value?.idx === sq.idx ? h : null;
 }
 
-// 지금 도는 하위질문은 늘 펼친다. 끝난·멈춘 하위질문은 회차가 있으면 눌러 펼친다(대기 중인 것은 펼칠 것이 없다)
+// 지금 도는 하위질문은 늘 펼친다. 끝난·멈춘 하위질문은 회차가 있으면 눌러 펼친다(대기 중인 것은 펼칠 것이 없다).
+// 오류로 끝난 하위질문은 그 안내가 보이게 늘 펼친다 — 접는 단추도 두지 않는다(접으면 오류 배지만 남아 이유가 보이지 않는다)
 const opened = shallowRef(new Set<number>());
 
 function collapsible(sq: SubqView): boolean {
-  return running.value?.idx !== sq.idx && sq.rounds.length > 0;
+  return running.value?.idx !== sq.idx && sq.status !== "failed" && sq.rounds.length > 0;
 }
 
 function isOpen(sq: SubqView): boolean {
   if (running.value?.idx === sq.idx) return true;
-  if (sq.status === "failed" && sq.error) return true;
+  if (sq.status === "failed") return true;
   return opened.value.has(sq.idx);
 }
 

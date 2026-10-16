@@ -8,15 +8,23 @@
     />
 
     <main class="rs-page" :class="{ 'has-progressbar': !!barView }">
-      <div v-if="notFound" class="rs-card rs-state">
-        <h1 class="rs-state__title">{{ RESEARCH_NOT_FOUND }}</h1>
-        <p class="rs-muted">{{ RESEARCH_STATE_TEXT.notFoundMessage }}</p>
-        <NuxtLink to="/papers" class="rs-btn">{{ RESEARCH_STATE_TEXT.backToSearch }}</NuxtLink>
+      <!-- 없는 연구(첫 로드 404·422, 보던 중 재동기화 404)·첫 로드 실패는 본문 전체 자리의 상태 블록 — 카드 면(rs-card) 위에 둔다 -->
+      <div v-if="notFound" class="rs-card">
+        <SkxErrorState kind="notFound" title-tag="h1" :title="RESEARCH_NOT_FOUND" :message="RESEARCH_STATE_TEXT.notFoundMessage">
+          <NuxtLink to="/papers" class="skx-state__action">{{ RESEARCH_STATE_TEXT.backToSearch }}</NuxtLink>
+        </SkxErrorState>
       </div>
 
-      <div v-else-if="loadError" class="rs-card rs-state">
-        <p>{{ loadError }}</p>
-        <button type="button" class="rs-btn" @click="load">다시 불러오기</button>
+      <div v-else-if="loadError" class="rs-card">
+        <SkxErrorState
+          :kind="loadError.kind"
+          title-tag="h1"
+          :title="RESEARCH_STATE_TEXT.loadFailedTitle"
+          :message="loadError.message"
+          :retry-label="RESEARCH_STATE_TEXT.reload"
+          :busy="loading"
+          @retry="load"
+        />
       </div>
 
       <div v-else-if="!view || !phase" class="rs-card rs-state">
@@ -41,6 +49,55 @@
         />
         <!-- 고정 진행 영역 — 끝나지 않은 잡에만 선다. 끝난 잡의 이어간 연구에 서는 아래 WorkStepper 와 함께 서지 않는다 -->
         <ResearchProgressBar v-if="barView" :view="barView" :tag="currentStageTag(phase)" />
+        <!-- 실시간 연결(스트림) 끊김 띠 — 늘 그려 두고 상태만 바꾼다(붙어 있으면 보이지 않는 알림 영역만). 거듭 실패하면 [다시 연결] -->
+        <SkxConnectionBanner :state="connState" @retry="reconnect" />
+        <!-- 멈춘·취소한 연구 — 진행 막대가 서던 자리(머리 바로 아래)에 상태 카드. 아래 멈춘 지점·근거 장부·멈춘 초안은 덮거나
+             흐리게 하지 않고 그대로 둔다. 버튼: 보고서 작성 단계 멈춤은 [보고서 작성부터 다시 시도], 탐색 중 멈춤은 [다시 시도],
+             계획 단계에서 멈췄거나(계획이 없으면 서버가 재시도를 409 로 거절) 취소했으면 [같은 질문으로 다시 시작] -->
+        <div v-if="phase === 'failed'" class="rs-card rs-stopped">
+          <SkxErrorState
+            compact
+            :title="RESEARCH_STATE_TEXT.failedTitle"
+            :message="failedMessage"
+            :retry-label="retryLabel"
+            :busy="busy"
+            :on-retry="canRetry ? retry : undefined"
+          >
+            <button
+              v-if="!canRetry"
+              type="button"
+              class="skx-state__action"
+              :aria-disabled="restarting ? 'true' : undefined"
+              :aria-busy="restarting ? 'true' : undefined"
+              @click="onRestart"
+            >
+              {{ RESEARCH_STATE_TEXT.restart }}
+            </button>
+          </SkxErrorState>
+        </div>
+        <div v-else-if="phase === 'canceled'" class="rs-card rs-stopped">
+          <SkxErrorState compact kind="canceled" :title="RESEARCH_STATE_TEXT.canceledTitle" :message="RESEARCH_STATE_TEXT.canceledMessage">
+            <button
+              type="button"
+              class="skx-state__action"
+              :aria-disabled="restarting ? 'true' : undefined"
+              :aria-busy="restarting ? 'true' : undefined"
+              @click="onRestart"
+            >
+              {{ RESEARCH_STATE_TEXT.restart }}
+            </button>
+          </SkxErrorState>
+        </div>
+        <!-- 취소한 연구의 종합 단계가 기다린 끝(약 1분 반)에도 닫히지 않았다 — 워커가 쓰던 절을 아직 마치지 않아 멈춘 초안이 다시 연
+             화면과 다를 수 있다. [다시 불러오기]가 한 번 더 읽고, 닫혔으면 이 줄은 스스로 걷힌다 -->
+        <div v-if="closeWaitEnded" class="rs-report-note">
+          <SkxInlineError
+            :message="RESEARCH_STATE_TEXT.closePending"
+            :retry-label="RESEARCH_STATE_TEXT.reload"
+            :busy="syncing"
+            @retry="resync"
+          />
+        </div>
         <!-- 이어간 연구에만 단다 — 이어가지 않은 딥리서치의 머리는 지금과 같다 -->
         <WorkStepper
           v-if="workView"
@@ -50,17 +107,19 @@
           @go="goStep"
           @help="onboardingOpen = true"
         />
-        <!-- 막은 연구가 있으면 [진행 중인 연구 보기]를 글 뒤에 작은 테두리 버튼으로 — 글에 붙은 링크라 눈에 띄지 않았다(2026-10-15) -->
-        <p v-if="actionError || pageError" :class="['rs-alert', activeJobId && 'rs-alert--action']" role="alert">
-          {{ actionError || pageError }}
-          <NuxtLink
-            v-if="activeJobId"
-            class="rs-btn rs-btn--ghost rs-btn--small"
-            :to="`/research/${encodeURIComponent(activeJobId)}`"
-          >
-            진행 중인 연구 보기
-          </NuxtLink>
-        </p>
+        <!-- 동작(승인·재시도·취소·다시 시작) 실패와 끝난 잡의 재동기화 실패 — 카드 면(rs-alert) 위의 줄 안내. 막은 연구가 있으면
+             [진행 중인 연구 보기]를 글 뒤에 작은 테두리 버튼으로 — 글에 붙은 링크라 눈에 띄지 않았다(2026-10-15) -->
+        <div v-if="actionError || pageError" class="rs-alert">
+          <SkxInlineError :message="actionError || pageError">
+            <NuxtLink
+              v-if="activeJobId"
+              class="rs-btn rs-btn--ghost rs-btn--small"
+              :to="`/research/${encodeURIComponent(activeJobId)}`"
+            >
+              진행 중인 연구 보기
+            </NuxtLink>
+          </SkxInlineError>
+        </div>
 
         <!-- 연구 어시스턴트 단계(?s=) — 보고서는 요약 띠로 접고 단계 화면을 그린다.
              ?s= 가 없거나 이어가지 않은 연구면 아래 탐색·보고서 화면을 그대로 그린다 -->
@@ -89,8 +148,9 @@
 
         <div v-else class="rs-body" :class="[`rs-body--${layout}`, { 'is-exploring': phase === 'exploring' }]">
           <div class="rs-col-main">
-            <!-- 탐색 중에는 계획 블록을 그리지 않는다 — 하위질문 목록·상태는 본문의 절 자리(ReportSkeleton)가 보인다 -->
-            <section v-if="phase !== 'completed' && phase !== 'exploring'" class="rs-block rs-block--plan">
+            <!-- 탐색 중에는 계획 블록을 그리지 않는다 — 하위질문 목록·상태는 본문의 절 자리(ReportSkeleton)가 보인다.
+                 멈춘·취소한 연구의 상태 카드는 머리 아래(진행 막대 자리)에 선다 -->
+            <section v-if="PLAN_BLOCK_PHASES.includes(phase)" class="rs-block rs-block--plan">
               <div v-if="phase === 'planning'" class="rs-card rs-card--wait" role="status">
                 <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
@@ -128,28 +188,18 @@
                   <ReportDownloadMenu label="초안 저장" :disabled="!draft" :busy="exporting" @select="saveDraft" />
                 </template>
               </SynthProgressCard>
-              <div v-else-if="phase === 'failed'" class="rs-card rs-card--error">
-                <p class="rs-card__title">{{ RESEARCH_STATE_TEXT.failedTitle }}</p>
-                <p v-if="view.lastError" class="rs-muted">{{ view.lastError }}</p>
-                <div class="rs-card__actions">
-                  <button v-if="canRetry" type="button" class="rs-btn" :disabled="busy" @click="retry">{{ retryLabel }}</button>
-                  <button v-else type="button" class="rs-btn" :disabled="restarting" @click="onRestart">{{ RESEARCH_STATE_TEXT.restart }}</button>
-                </div>
-              </div>
-              <div v-else-if="phase === 'canceled'" class="rs-card">
-                <p class="rs-card__title">{{ RESEARCH_STATE_TEXT.canceledTitle }}</p>
-                <div class="rs-card__actions">
-                  <button type="button" class="rs-btn" :disabled="restarting" @click="onRestart">{{ RESEARCH_STATE_TEXT.restart }}</button>
-                </div>
-              </div>
             </section>
 
             <section v-if="reportState || draft || slotsShown" class="rs-block rs-block--report">
               <template v-if="shownReport">
                 <!-- 완료 이벤트 뒤 최종본을 받는 동안·실패해 다시 시도하는 동안에도 읽던 초안을 치우지 않는다 -->
-                <div v-if="reportState === 'failed'" class="rs-report-note" role="alert">
-                  <p>최종 보고서를 불러오지 못했습니다. 잠시 뒤 자동으로 다시 시도합니다 — 아래는 작성 중에 받은 초안입니다.</p>
-                  <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" :disabled="syncing" @click="resync">다시 불러오기</button>
+                <div v-if="reportState === 'failed'" class="rs-report-note">
+                  <SkxInlineError
+                    :message="RESEARCH_STATE_TEXT.reportFailedOverDraft"
+                    :retry-label="RESEARCH_STATE_TEXT.reload"
+                    :busy="syncing"
+                    @retry="resync"
+                  />
                 </div>
                 <div v-else-if="reportState === 'loading'" class="rs-report-note" role="status">
                   <img :src="SPINNER_SRC" alt="" class="rs-spinner rs-spinner--small" />
@@ -205,12 +255,15 @@
                    탐색 경로로 간다(사용자 결정 2026-10-14) -->
               <ResearchLive v-else-if="phase === 'exploring'" :view="view" />
               <ReportSkeleton v-else-if="slotsShown" :slots="planSlotList" />
-              <div v-else-if="reportState === 'failed'" class="rs-card rs-card--error">
-                <p class="rs-card__title">보고서를 불러오지 못했습니다</p>
-                <p class="rs-muted">잠시 뒤 자동으로 다시 시도합니다</p>
-                <div class="rs-card__actions">
-                  <button type="button" class="rs-btn" :disabled="syncing" @click="resync">다시 불러오기</button>
-                </div>
+              <div v-else-if="reportState === 'failed'" class="rs-card">
+                <SkxErrorState
+                  compact
+                  :title="RESEARCH_STATE_TEXT.reportFailedTitle"
+                  :message="RESEARCH_STATE_TEXT.reportFailedMessage"
+                  :retry-label="RESEARCH_STATE_TEXT.reload"
+                  :busy="syncing"
+                  @retry="resync"
+                />
               </div>
               <div v-else class="rs-card rs-card--wait" role="status">
                 <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
@@ -291,8 +344,14 @@ import { safeLocalStorage } from "~/utils/browserId";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { queueLine } from "~/utils/queueLine";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
-import { questionUsedFromSteps, researchPhase, understoodLine } from "~/utils/researchEvents";
-import { RESEARCH_NOT_FOUND, RESEARCH_STATE_TEXT, researchErrorMessage, researchRetryLabel } from "~/utils/researchErrors";
+import { questionUsedFromSteps, researchPhase, understoodLine, type ResearchPhase } from "~/utils/researchEvents";
+import {
+  RESEARCH_NOT_FOUND,
+  RESEARCH_STATE_TEXT,
+  researchErrorMessage,
+  researchFailedMessage,
+  researchRetryLabel,
+} from "~/utils/researchErrors";
 import { researchModeLine, restartParams } from "~/utils/researchMode";
 import {
   buildReportDocument,
@@ -316,7 +375,8 @@ import { WORK_LOAD_FAILED, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
 const route = useRoute();
 const router = useRouter();
 const {
-  view, notFound, loadError, actionError, activeJobId, busy, syncFailed, syncing, load, resync, approve, retry, cancel,
+  view, loading, notFound, loadError, actionError, activeJobId, busy, connState, syncFailed, syncing, closeWaitEnded,
+  load, resync, reconnect, approve, retry, cancel,
 } = useResearchJob(() => String(route.params.id ?? ""));
 const { startResearch } = useResearchStarter();
 
@@ -341,6 +401,12 @@ const maxSubquestions = computed(() => Number(view.value?.params.max_subquestion
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다
 const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);
 const retryLabel = computed(() => researchRetryLabel(view.value?.stage));
+// 멈춘 연구 카드의 설명 — 멈춘 단계별 해요체(서버 last_error 원문은 붙이지 않고 알아보는 사유만 바꿔 말한다)
+const failedMessage = computed(() =>
+  view.value ? researchFailedMessage(view.value.stage, canRetry.value, view.value.lastError) : "",
+);
+// 본문 위 계획 블록(계획 중·승인 대기·대기열·작성 현황)을 그리는 단계 — 탐색 중·완료에는 없고, 멈춘·취소한 연구는 머리 아래 상태 카드
+const PLAN_BLOCK_PHASES: readonly ResearchPhase[] = ["planning", "awaiting", "queued", "synthesizing"];
 // 머리의 탐색 방식 — 두 칸이 다 0 이면 폭넓게, 두 칸이 없는 잡(06c 전)은 null(그리지 않는다)
 const modeLine = computed(() => (view.value ? researchModeLine(view.value.params) : null));
 
@@ -560,7 +626,7 @@ async function copyLink(): Promise<void> {
     showToast("링크를 복사했습니다");
   } catch {
     // 운영 게이트웨이가 http 라 clipboard API 가 없을 수 있다(보안 컨텍스트 전용)
-    window.prompt("아래 주소를 복사하세요", url);
+    window.prompt("아래 주소를 복사해 주세요", url);
   }
 }
 
