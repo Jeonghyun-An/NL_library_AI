@@ -22,8 +22,14 @@ export interface HistoryState {
   entries: Ref<HistoryEntry[]>;
   /** 전체(종류를 안 준) refresh 가 한 번이라도 끝났는가 — 첫 로드 전의 빈 목록과 진짜 빈 목록을 가른다 */
   loaded: Ref<boolean>;
-  /** 마지막으로 읽으려던 종류 중 목록을 못 읽은 것이 있는가(서버·캐시 모두 실패) */
+  /** 마지막으로 읽으려던 종류 중 목록을 못 읽은 것이 있는가(failedKinds 가 비지 않았는가) */
   listFailed: Ref<boolean>;
+  /**
+   * 마지막으로 읽을 때 목록을 못 읽은 종류(KINDS 순서). 서버가 거절했거나(4xx 등 저장소가 던짐), 서버에 닿지 못했는데 이 브라우저의
+   * 사본이 통째로 비어(새 브라우저·메모리 전용) 기록이 없는 것인지 알 수 없는 경우다 — 사이드바가 묶음마다 '기록 없음' 대신 실패를 보인다.
+   * 이 수명에 서버에서 한 번 읽은 종류는 사본이 비어도 실패로 보지 않는다(이 탭이 지워 비운 것일 수 있다)
+   */
+  failedKinds: Ref<HistoryKind[]>;
   byKind(kind: HistoryKind): ComputedRef<HistoryEntry[]>;
   refresh(kind?: HistoryKind): Promise<void>;
   add(input: HistoryEntryInput): Promise<HistoryEntry>;
@@ -52,7 +58,10 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
   const entries = ref<HistoryEntry[]>([]);
   const loaded = ref(false);
   const listFailed = ref(false);
-  const failedKinds = new Set<HistoryKind>();
+  const failedKinds = ref<HistoryKind[]>([]);
+  const failed = new Set<HistoryKind>();
+  // 이 수명 동안 서버 목록을 한 번이라도 받은 종류 — 그 뒤의 빈 사본은 '못 읽음'이 아니라 이 탭·다른 탭이 지운 결과다
+  const fromServer = new Set<HistoryKind>();
   const kindViews = new Map<HistoryKind, ComputedRef<HistoryEntry[]>>();
 
   function place(entry: HistoryEntry, toTop: boolean): void {
@@ -107,13 +116,16 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
         const since = deleteSeq;
         listing += 1;
         try {
-          const { items } = await store().list(k, { limit: HISTORY_PAGE_SIZE });
+          const { items, fromCache, cacheEmpty } = await store().list(k, { limit: HISTORY_PAGE_SIZE });
+          if (!fromCache) fromServer.add(k);
+          // 서버에 닿지 못했고 사본도 통째로 비었다 — '아직 기록이 없어요'로 보이면 기록이 사라진 것처럼 읽힌다
+          if (fromCache && cacheEmpty && !fromServer.has(k)) failed.add(k);
+          else failed.delete(k);
           if ((clearedAt.get(k) ?? 0) > since) return;
           const kept = items.filter((e) => (removedAt.get(e.id) ?? 0) <= since);
           entries.value = [...entries.value.filter((e) => e.kind !== k), ...kept.map(toListItem)];
-          failedKinds.delete(k);
         } catch (e) {
-          failedKinds.add(k);
+          failed.add(k);
           warn("목록을 읽지 못했다", e);
         } finally {
           listing -= 1;
@@ -121,7 +133,8 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
         }
       }),
     );
-    listFailed.value = failedKinds.size > 0;
+    failedKinds.value = KINDS.filter((k) => failed.has(k));
+    listFailed.value = failedKinds.value.length > 0;
     // 한 종류만 읽는 refresh(폴링·페이지의 부분 갱신)는 첫 로드가 끝났다는 뜻이 아니다. 실패해도 시도는 끝났다
     if (!kind) loaded.value = true;
   }
@@ -250,5 +263,19 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     entries.value = entries.value.map((e, i) => (i === idx ? updated : e));
   }
 
-  return { entries, loaded, listFailed, byKind, refresh, add, patch, remove, clear, get, upsertResearch, setResearchStatus };
+  return {
+    entries,
+    loaded,
+    listFailed,
+    failedKinds,
+    byKind,
+    refresh,
+    add,
+    patch,
+    remove,
+    clear,
+    get,
+    upsertResearch,
+    setResearchStatus,
+  };
 }

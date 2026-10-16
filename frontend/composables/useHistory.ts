@@ -88,6 +88,8 @@ export interface UseHistory {
   entries: Ref<HistoryEntry[]>;
   loaded: Ref<boolean>;
   listFailed: Ref<boolean>;
+  /** 목록을 못 읽은 종류 — 사이드바가 묶음마다 '기록 없음' 대신 실패 안내를 보인다(utils/historyState) */
+  failedKinds: Ref<HistoryKind[]>;
   byKind(kind: HistoryKind): ComputedRef<HistoryEntry[]>;
   load(): Promise<void>;
   migrated(): Promise<void>;
@@ -107,6 +109,7 @@ export function useHistory(): UseHistory {
     entries: s.entries,
     loaded: s.loaded,
     listFailed: s.listFailed,
+    failedKinds: s.failedKinds,
     byKind: s.byKind,
     load,
     migrated,
