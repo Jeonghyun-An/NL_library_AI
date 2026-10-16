@@ -8,7 +8,7 @@ paper_summary.py — 논문 검색 결과 핵심 요약 SSE 스트리밍
 summary 엔드포인트:
   - 입력: query + top-K 논문 book_id 목록 (검색 결과에서 전달)
   - 처리: 각 논문의 best chunk 로 컨텍스트 구성 → LLM 스트리밍
-  - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하면 sources 뒤에 error 이벤트)
+  - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하거나 빈 답으로 끝나면 sources 뒤에 error 이벤트)
 """
 import json
 import logging
@@ -29,7 +29,9 @@ _MAX_PAPERS = 5            # 요약에 사용할 최대 논문 수
 
 # 세 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas)로
 # 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면은 이것을 답 글에 잇지 않고 오류로 보이며
-# 캐시·검색 기록에 담지 않는다. 전에는 '…오류가 발생했습니다.' 를 보통 {text} 로 흘려 정상 답처럼 저장됐다
+# 캐시·검색 기록에 담지 않는다. 전에는 '…오류가 발생했습니다.' 를 보통 {text} 로 흘려 정상 답처럼 저장됐다.
+# LLM 이 글 조각 없이(공백뿐 포함) [DONE] 으로 끝난 빈 답도 같은 이벤트로 끝낸다 — 전에는 [DONE] 만 와 화면이 빈 글을
+# 끝까지 받은 답으로 읽었다(DeepRead 대화의 empty_answer 와 같은 판별, chat/book_chat.py)
 SUMMARY_STREAM_ERROR = "AI 요약을 만들지 못했습니다"          # 논문 검색 결과의 AI 요약(stream_paper_summary)
 RELATED_REASON_STREAM_ERROR = "추천 사유를 만들지 못했습니다"  # 논문 상세 관련 논문의 AI 추천 사유(stream_related_reason)
 PAPER_REASON_STREAM_ERROR = "AI 요약을 만들지 못했습니다"     # 논문 상세의 AI 요약(stream_paper_reason)
@@ -37,6 +39,11 @@ PAPER_REASON_STREAM_ERROR = "AI 요약을 만들지 못했습니다"     # 논�
 
 def _error_event(message: str) -> str:
     return f"data: {json.dumps({'error': message}, ensure_ascii=False)}\n\n"
+
+
+def _log_empty_answer(where: str, sent: int) -> None:
+    # 호출은 정상으로 끝났는데 글이 없다 — 연결·응답 실패(ERROR)와 갈라 경고로 남긴다. 보낸 글 길이로 빈 글인지 공백뿐인지 가린다
+    log.warning("[%s] LLM 이 빈 답으로 끝났다(보낸 글 %d자)", where, sent)
 
 
 def _truncate(text: str, max_chars: int) -> str:
@@ -94,7 +101,7 @@ async def stream_paper_summary(
     SSE 이벤트:
       data: {"text": "..."}       — 토큰 스트리밍
       data: {"sources": [...]}    — 최종 출처 목록
-      data: {"error": SUMMARY_STREAM_ERROR} — LLM 호출이 실패하면(받은 글·sources 뒤, [DONE] 바로 앞)
+      data: {"error": SUMMARY_STREAM_ERROR} — LLM 호출이 실패하거나 빈 답으로 끝나면(받은 글·sources 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     if not papers:
@@ -141,6 +148,7 @@ async def stream_paper_summary(
 
     # ── 텍스트 스트리밍 ───────────────────────────────────────
     sent = 0   # 이미 흘린 글 길이 — 실패 로그가 시작 전 실패인지 글 일부 뒤 실패인지 남긴다
+    shown = False   # 공백 아닌 글을 한 조각이라도 흘렸는가 — 빈 답 판별
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -152,6 +160,7 @@ async def stream_paper_summary(
                 resp.raise_for_status()
                 async for delta in sse_deltas(resp):
                     sent += len(delta)
+                    shown = shown or bool(delta.strip())
                     yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
         log.error("[paper_summary] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
@@ -162,6 +171,9 @@ async def stream_paper_summary(
 
     # ── 출처 목록 이벤트 ─────────────────────────────────────
     yield f"data: {json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
+    if not shown:
+        _log_empty_answer("paper_summary", sent)
+        yield _error_event(SUMMARY_STREAM_ERROR)
     yield "data: [DONE]\n\n"
 
 
@@ -175,7 +187,7 @@ async def stream_related_reason(
 
     SSE 이벤트:
       data: {"text": "..."}   — 토큰 스트리밍
-      data: {"error": RELATED_REASON_STREAM_ERROR} — LLM 호출이 실패하면(받은 글 뒤, [DONE] 바로 앞)
+      data: {"error": RELATED_REASON_STREAM_ERROR} — LLM 호출이 실패하거나 빈 답으로 끝나면(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     src_excerpt = _truncate(_clean_excerpt(source_abstract), 400) if source_abstract else "초록 없음"
@@ -204,6 +216,7 @@ async def stream_related_reason(
     }
 
     sent = 0
+    shown = False
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -215,10 +228,15 @@ async def stream_related_reason(
                 resp.raise_for_status()
                 async for delta in sse_deltas(resp):
                     sent += len(delta)
+                    shown = shown or bool(delta.strip())
                     yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
         log.error("[paper_related_reason] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
         yield _error_event(RELATED_REASON_STREAM_ERROR)
+    else:
+        if not shown:
+            _log_empty_answer("paper_related_reason", sent)
+            yield _error_event(RELATED_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"
 
@@ -237,7 +255,7 @@ async def stream_paper_reason(
     SSE 이벤트:
       data: {"keywords": [...]}   — 키워드 즉시 emit (있을 때)
       data: {"text": "..."}       — 토큰 스트리밍
-      data: {"error": PAPER_REASON_STREAM_ERROR} — LLM 호출이 실패하면(받은 글 뒤, [DONE] 바로 앞)
+      data: {"error": PAPER_REASON_STREAM_ERROR} — LLM 호출이 실패하거나 빈 답으로 끝나면(받은 글 뒤, [DONE] 바로 앞)
       data: [DONE]
     """
     # ── 키워드 즉시 emit ─────────────────────────────────────
@@ -300,6 +318,7 @@ async def stream_paper_reason(
 
     # ── LLM 스트리밍 ─────────────────────────────────────────
     sent = 0
+    shown = False
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -320,9 +339,14 @@ async def stream_paper_reason(
                 resp.raise_for_status()
                 async for delta in sse_deltas(resp):
                     sent += len(delta)
+                    shown = shown or bool(delta.strip())
                     yield f"data: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
     except Exception as e:
         log.error("[paper_reason] LLM 스트리밍 실패(보낸 글 %d자): %s: %s", sent, type(e).__name__, e)
         yield _error_event(PAPER_REASON_STREAM_ERROR)
+    else:
+        if not shown:
+            _log_empty_answer("paper_reason", sent)
+            yield _error_event(PAPER_REASON_STREAM_ERROR)
 
     yield "data: [DONE]\n\n"

@@ -2,7 +2,7 @@
 
 LLM 호출이 실패하면(httpx 연결·읽기 오류, 4xx·5xx 응답 등) [DONE] 앞에 {error} 이벤트를 먼저 보낸다. [DONE] 만 보내면 화면
 (frontend/utils/bookAiPick.ts readReasonStream)이 '끝까지 받음'으로 읽어 받다 만 이유를 완성본으로 기록에 저장한다.
-정상으로 끝난 스트림에는 {error} 가 없다.
+정상으로 끝난 스트림에는 {error} 가 없다. 추천 이유(text)가 글 조각 없이(공백뿐 포함) 끝난 빈 답도 같은 {error} 로 끝낸다.
 
 pipeline 은 reranker(torch)·indexer(pymilvus) 를 물고 오므로 공용 대역(pipeline_stub.py)의 pipeline 픽스처로
 import 한다 — 미설치 환경에서만 더미를 꽂고, 끝나면 import 전 그대로 되돌린다.
@@ -12,6 +12,7 @@ import json
 from types import SimpleNamespace
 
 import httpx
+import pytest
 
 from pipeline_stub import pipeline  # noqa: F401 — 픽스처(테스트 인자 이름으로 쓴다)
 
@@ -166,3 +167,57 @@ def test_the_failure_log_names_the_exception_type_and_the_text_already_sent(pipe
     assert len(messages) == 1
     assert "ReadTimeout" in messages[0]
     assert "받은 글 7자" in messages[0]
+
+
+# LLM 이 글 조각 없이(공백뿐 포함) [DONE] 으로 끝난 빈 답 — 호출은 성공했지만 [DONE] 만 보내면 화면이 빈 이유를 끝까지 받은
+# 답으로 읽는다. 같은 {error: REASON_STREAM_ERROR} 로 끝낸다(DeepRead 대화의 empty_answer 와 같은 판별). 화면이 보이는 것은
+# 추천 이유(text)뿐이라, 키워드 줄만 오거나 효과(effect)만 와도 빈 답이다
+def _book_with_marc_keywords():
+    return SimpleNamespace(title="노년", personal_author=None, corporate_author=None, pub_date=None, publisher=None,
+                           kdc=None, subject=None, keyword="우울; 노년", summary=None, plot=None)
+
+
+@pytest.mark.parametrize("lines", [
+    pytest.param(["data: [DONE]"], id="no-text"),
+    pytest.param([_delta(" "), _delta("\n\n"), "data: [DONE]"], id="whitespace-only"),
+])
+def test_an_empty_answer_ends_with_the_error_event(pipeline, monkeypatch, caplog, lines):
+    _fake_llm(monkeypatch, pipeline, lines)
+
+    with caplog.at_level("WARNING", logger=pipeline.log.name):
+        chunks = _run(pipeline)
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    events = _events(chunks)
+    assert [e for e in events if "text" not in e] == [{"error": pipeline.REASON_STREAM_ERROR}]
+    # 연결·응답 실패(ERROR)가 아니라 빈 답 경고로 남긴다
+    records = [r for r in caplog.records if r.name == pipeline.log.name]
+    assert [r.levelname for r in records] == ["WARNING"] and "빈 답" in records[0].getMessage()
+
+
+def test_a_keyword_line_without_a_reason_is_an_empty_answer(pipeline, monkeypatch):
+    _fake_llm(monkeypatch, pipeline, [_delta("#KW: 우울, 노년\n"), _delta("\n"), "data: [DONE]"])
+
+    events = _events(_run(pipeline))
+
+    assert [e for e in events if "text" not in e] == [{"keywords": ["우울", "노년"]},
+                                                       {"error": pipeline.REASON_STREAM_ERROR}]
+
+
+def test_marc_keywords_with_an_empty_answer_still_end_with_the_error(pipeline, monkeypatch):
+    _fake_llm(monkeypatch, pipeline, ["data: [DONE]"])
+
+    events = _events(_run(pipeline, book=_book_with_marc_keywords()))
+
+    assert events == [{"keywords": ["우울", "노년"]}, {"error": pipeline.REASON_STREAM_ERROR}]
+
+
+def test_an_effect_without_a_reason_is_an_empty_answer(pipeline, monkeypatch):
+    _fake_llm(monkeypatch, pipeline, [_delta("#KW: 우울\n"), _delta("###EFFECT###\n읽고 난 후입니다."), "data: [DONE]"])
+
+    events = _events(_run(pipeline))
+
+    assert {"effect": "읽고 난 후입니다."} in events
+    assert not any(e.get("text", "").strip() for e in events)
+    assert events[-1] == {"error": pipeline.REASON_STREAM_ERROR}
+    assert sum("error" in e for e in events) == 1
