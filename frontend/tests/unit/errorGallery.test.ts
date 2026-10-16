@@ -110,7 +110,7 @@ describe("SkxCharCount — 글자 수", () => {
   it("'{length}/{max}' 를 늘 보이고, 상태 클래스·data-state 를 단다", () => {
     expect(tpl).toContain('<span class="skx-charcount__num">{{ length }}/{{ max }}</span>');
     expect(tpl).toContain('class="skx-charcount"');
-    expect(tpl).toContain(":class=\"{ 'skx-charcount--near': state === 'near', 'skx-charcount--limit': state === 'limit' }\"");
+    expect(tpl).toContain(":class=\"{ 'skx-charcount--near': state === 'near', 'skx-charcount--limit': state === 'limit', 'skx-charcount--quiet': quiet }\"");
     expect(tpl).toContain(':data-state="state"');
   });
 

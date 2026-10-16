@@ -96,7 +96,7 @@ describe("SkxInlineError — 줄 단위 안내", () => {
 
   it("<div role=alert> 안에 경고 아이콘(aria-hidden)과 글 묶음(글·[다시 시도]·슬롯) — 슬롯에 블록 요소를 넣어도 HTML·수화가 깨지지 않게 <p> 를 쓰지 않는다", () => {
     expect(tpl).toMatch(
-      /<div class="skx-inline-error" role="alert">\s*<span class="skx-inline-error__icon" aria-hidden="true">\s*<svg[\s\S]*?stroke="currentColor"[\s\S]*?<\/svg>\s*<\/span>\s*<div class="skx-inline-error__body">\s*<span class="skx-inline-error__msg">\{\{ message \}\}<\/span>\s*<button[\s\S]*?class="skx-inline-error__retry"[\s\S]*?<\/button>\s*<slot \/>\s*<\/div>\s*<\/div>/,
+      /<div class="skx-inline-error" :role="role \?\? 'alert'">\s*<span class="skx-inline-error__icon" aria-hidden="true">\s*<svg[\s\S]*?stroke="currentColor"[\s\S]*?<\/svg>\s*<\/span>\s*<div class="skx-inline-error__body">\s*<span class="skx-inline-error__msg">\{\{ message \}\}<\/span>\s*<button[\s\S]*?class="skx-inline-error__retry"[\s\S]*?<\/button>\s*<slot \/>\s*<\/div>\s*<\/div>/,
     );
     expect(tpl).not.toMatch(/<p[\s>]/);
   });

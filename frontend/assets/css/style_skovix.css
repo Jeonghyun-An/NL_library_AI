@@ -5520,4 +5520,17 @@ html.skx-scroll-lock {
   font-weight: 700;
   color: var(--skx-primary);
 }
+/* quiet — 평소(normal)에는 화면에서만 숨긴다(검색창·질문 칸에 숫자가 늘 붙어 어수선하지 않게, 사용자 결정 2026-10-16).
+   display: none 이 아니라 화면 밖으로 접어 둬서 live 영역과 aria-describedby 가 그대로 살아 있다 — 한도에 닿으면 낭독기가 읽는다 */
+.skx-charcount--quiet[data-state="normal"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 /* [E] 공통 오류·빈 상태 */
