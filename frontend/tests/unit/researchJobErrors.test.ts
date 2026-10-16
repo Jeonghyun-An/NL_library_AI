@@ -253,6 +253,13 @@ describe("useResearch — 스트림 감시(소스)", () => {
     expect(src).toMatch(/es\.onmessage = \(msg: MessageEvent<string>\) => \{[\s\S]*?heard\(es\);[\s\S]*?JSON\.parse/);
   });
 
+  it("서버 하트비트(이름 붙은 'ping' 이벤트)는 조용함 감시 시계만 다시 건다 — 이벤트 없는 승인 대기·대기열에서 45초마다 다시 붙지 않는다", () => {
+    expect(src).toMatch(/es\.addEventListener\("ping", \(\) => \{\s*if \(source !== es\) return;\s*armQuietWatch\(es\);\s*\}\);/);
+    // 화면 상태(view)·연결 띠(drops)는 건드리지 않는다
+    const listener = src.match(/es\.addEventListener\("ping", \(\) => \{([\s\S]*?)\}\);/)?.[1] ?? "";
+    expect(listener).not.toMatch(/view\.value|drops\.value|heard\(/);
+  });
+
   it("읽지 못한 스트림 메시지를 버리지 않고 저장본으로 한 번 맞춘다", () => {
     expect(src).toMatch(/JSON\.parse\(msg\.data\) as ResearchEvent;\s*\} catch \{[\s\S]*?if \(!syncing\.value\) void refresh\(\);\s*return;/);
   });

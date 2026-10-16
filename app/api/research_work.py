@@ -36,7 +36,7 @@ from models.research_work import (
     GEN_OPEN_STATUSES, PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchTopic, ResearchWork,
 )
 from repositories.book import BookRepository
-from services.research.relay import publish_work, subscribe_work
+from services.research.relay import SSE_PING, publish_work, subscribe_work
 from services.research_work.concepts import MAX_CONCEPTS, clean_concepts, concepts_input
 from services.research_work.dispatch import queue_info
 from services.research_work.enqueue import lock_key, queued_event
@@ -416,7 +416,8 @@ async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(
 
 @router.get("/api/research/{job_id}/work/stream")
 async def stream_work(job_id: str, db: AsyncSession = Depends(get_db)):
-    """연구 SSE — 접속 직후 snapshot 한 번, 그 뒤 연구 채널 이벤트를 그대로, 조용하면 ': ping'.
+    """연구 SSE — 접속 직후 snapshot 한 번, 그 뒤 연구 채널 이벤트를 그대로, 조용하면 하트비트(relay.SSE_PING —
+    이름 붙은 ping 이벤트라 화면의 onmessage 에 닿지 않는다).
     이벤트를 받은 화면이 해당 GET 을 다시 읽는다(spec §6-4).
 
     하트비트마다 열린 생성(queued·running)의 (id, status) 집합을 짧은 세션으로 다시 읽어, 마지막으로 보낸
@@ -432,7 +433,7 @@ async def stream_work(job_id: str, db: AsyncSession = Depends(get_db)):
         last_open = _open_set(snapshot["work"])
         async for event in subscribe_work(str(jid)):
             if event is None:
-                yield ": ping\n\n"
+                yield SSE_PING
                 if await _open_generations(jid) == last_open:
                     continue
                 fresh = await _fresh_work_view(jid)

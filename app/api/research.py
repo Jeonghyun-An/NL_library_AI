@@ -42,7 +42,7 @@ from models.research import (
 )
 from services.research.planner import query_key
 from services.research.relay import (
-    TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
+    SSE_PING, TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
 )
 from services.research.run_queue import (
     eta_seconds, mark_waiting, median_seconds, members_ahead, unmark, waiting_ahead,
@@ -561,7 +561,7 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                 # 그 틈에 빠지기 쉽다. 상태만 되살리면 화면은 승인 대기로 가도 승인할
                 # 계획이 없어 막힌다 — 어긋나면 스냅샷을 통째로 다시 보낸다. 다시 읽는
                 # 조회는 어긋났을 때만 한다.
-                yield ": ping\n\n"
+                yield SSE_PING
                 current = await _job_status(jid)
                 if current is None:
                     continue

@@ -269,9 +269,19 @@ def api(monkeypatch):
     return _Api(TestClient(app), db, celery, published, research, events, line)
 
 
+PING_FRAME = "event: ping\ndata: {}\n\n"
+
+
 def _frames(body: str) -> list[dict]:
-    return [json.loads(line[len("data: "):]) for line in body.splitlines()
-            if line.startswith("data: ")]
+    """화면의 onmessage 에 닿는 이름 없는 data 이벤트만. 하트비트(relay.SSE_PING — 이름 붙은 ping 이벤트)는
+    EventSource 가 addEventListener('ping') 으로만 넘겨 화면 상태에 닿지 않으므로 뺀다."""
+    frames = []
+    for block in body.split("\n\n"):
+        lines = block.splitlines()
+        if "event: ping" in lines:
+            continue
+        frames += [json.loads(line[len("data: "):]) for line in lines if line.startswith("data: ")]
+    return frames
 
 
 class TestJobId:
@@ -758,9 +768,15 @@ class TestStream:
 
         monkeypatch.setattr(api.research, "subscribe", _subscribe)
         monkeypatch.setattr(api.research, "_job_status", _job_status)
-        frames = _frames(api.client.get(f"/api/research/{jid}/stream").text)
+        body = api.client.get(f"/api/research/{jid}/stream").text
+        frames = _frames(body)
 
         assert frames[-1] == {"kind": "canceled", "status": "canceled"}
+        # 하트비트는 이름 붙은 ping 이벤트 — 주석 줄(': ping')은 EventSource 가 알리지 않아 화면의 조용함 감시가
+        # 이벤트 없는 동안(승인 대기·대기열) 45초마다 끊고 다시 붙었다. data 가 있어야 EventSource 가 이벤트를 낸다
+        assert api.research.SSE_PING == PING_FRAME
+        assert body.count(PING_FRAME) == 1
+        assert not any(line.startswith(":") for line in body.splitlines())
 
 
 _PLAN = ["초등 독서 효과", "중등 독서 효과"]

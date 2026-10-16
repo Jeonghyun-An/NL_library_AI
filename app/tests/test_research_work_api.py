@@ -260,9 +260,19 @@ def _set_reading(engine, jid: uuid.UUID, cnts_id: str, **values) -> None:
         conn.execute(sa.update(table).where(table.c.work_id == jid, table.c.cnts_id == cnts_id).values(**values))
 
 
+PING_FRAME = "event: ping\ndata: {}\n\n"
+
+
 def _frames(body: str) -> list[dict]:
-    return [json.loads(line[len("data: "):]) for line in body.splitlines()
-            if line.startswith("data: ")]
+    """화면의 onmessage 에 닿는 이름 없는 data 이벤트만. 하트비트(relay.SSE_PING — 이름 붙은 ping 이벤트)는
+    EventSource 가 addEventListener('ping') 으로만 넘겨 화면 상태에 닿지 않으므로 뺀다."""
+    frames = []
+    for block in body.split("\n\n"):
+        lines = block.splitlines()
+        if "event: ping" in lines:
+            continue
+        frames += [json.loads(line[len("data: "):]) for line in lines if line.startswith("data: ")]
+    return frames
 
 
 # ── 이어가기 ─────────────────────────────────────────────────────────
@@ -1136,7 +1146,9 @@ class TestWorkStream:
         assert frames[0]["kind"] == "snapshot"
         assert frames[0]["work"] == api.client.get(f"/api/research/{jid}/work").json()
         assert frames[1:] == [event, {"kind": "work", "phase": "topics", "progress": {}}]
-        assert ": ping" in res.text
+        # 하트비트는 딥리서치 스트림과 같은 이름 붙은 ping 이벤트(relay.SSE_PING) — onmessage 에 닿지 않아 위 프레임에 끼지 않는다
+        assert res.text.count(PING_FRAME) == 1
+        assert not any(line.startswith(":") for line in res.text.splitlines())
         # 워커는 표준형 id 채널에 쓴다 — 대문자 경로로 붙어도 같은 채널을 구독해야 한다
         assert seen["work_id"] == str(jid)
 

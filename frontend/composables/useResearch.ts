@@ -40,8 +40,10 @@ const RECONNECT_MAX_MS = 30000;
 // 있어도 멈춘다 — 그때는 화면이 '아직 정리되지 않았어요' 한 줄과 [다시 불러오기]를 보인다(closeWaitEnded)
 const CLOSE_CHECKS_MAX = 6;
 // 스트림이 이만큼 아무것도 받지 못하면 조용히 죽은 연결(절전 복귀·NAT 만료 — onerror 가 오지 않는다)로 보고 닫은 뒤 다시 붙는다.
-// 서버는 15초마다 하트비트를 보내지만 주석 줄(': ping')이라 EventSource 가 알리지 않는다 — 그래서 승인 대기처럼 이벤트가 없는 동안에도
-// 이 간격으로 다시 붙고, 서버가 붙자마자 보내는 snapshot 이 화면을 맞추며 시계를 다시 건다. 다시 붙는 것만으로는 띠를 띄우지 않는다
+// 서버는 이벤트가 없어도 15초마다 하트비트(이름 붙은 'ping' 이벤트 — relay.SSE_PING)를 보내고 ping 리스너가 이 시계만 다시 건다 —
+// 승인 대기·대기열처럼 이벤트가 없는 동안에도 살아 있는 연결을 끊지 않는다(세 번 연달아 놓쳐야 끊는다). 하트비트가 주석 줄(': ping')인
+// 옛 서버에서는 EventSource 가 알리지 않아 이 간격으로 다시 붙고, 서버가 붙자마자 보내는 snapshot 이 화면을 맞추며 시계를 다시 건다.
+// 다시 붙는 것만으로는 띠를 띄우지 않는다
 const STREAM_QUIET_MS = 45_000;
 
 export function useResearchApi() {
@@ -300,6 +302,12 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       heard(es);
       attempts = 0;
     };
+    // 하트비트 — 연결이 살아 있다는 것만 알린다. 조용함 감시 시계만 다시 걸고 화면 상태(view)는 건드리지 않는다
+    // (이름 붙은 이벤트라 onmessage 에는 오지 않는다)
+    es.addEventListener("ping", () => {
+      if (source !== es) return;
+      armQuietWatch(es);
+    });
     es.onmessage = (msg: MessageEvent<string>) => {
       if (gen !== generation || !view.value || source !== es) return;
       heard(es);

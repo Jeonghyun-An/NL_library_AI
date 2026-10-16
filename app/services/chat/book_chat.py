@@ -39,8 +39,10 @@ def _error_event(message: str, code: str) -> str:
     return f"data: {json.dumps({'error': message, 'code': code}, ensure_ascii=False)}\n\n"
 
 
-# 보낼 이벤트 없이 CHAT_PING_INTERVAL 초가 지나면 그사이 SSE 주석 줄 CHAT_PING 을 보낸다 — 딥리서치 SSE(api/research.py·
-# research_work.py 가 relay 구독의 15초 유휴마다 ': ping')와 같은 관례. 화면(frontend/composables/useDeepReadChat)은 응답 머리도
+# 보낼 이벤트 없이 CHAT_PING_INTERVAL 초가 지나면 그사이 SSE 주석 줄 CHAT_PING 을 보낸다 — 간격은 딥리서치 SSE(api/research.py·
+# research_work.py 가 relay 구독의 15초 유휴마다)와 같다. 딥리서치 쪽은 화면이 EventSource 라 주석 줄을 알려 주지 않아 이름 붙은
+# ping 이벤트(relay.SSE_PING)를 보내지만, 이 스트림은 화면이 fetch 로 바이트를 읽어 주석 줄로도 시계가 다시 걸린다.
+# 화면(frontend/composables/useDeepReadChat)은 응답 머리도
 # 글 조각도 없이 60초가 지나면 스스로 끊는데, 서버는 첫 글 조각 전(질의 재구성 최대 20초 + 청크 검색 + LLM 첫 토큰 대기)에
 # 아무것도 보내지 않아 붐빌 때 결국 답했을 요청이 끊길 수 있었다. 화면 파서는 ':' 로 시작하는 줄을 버리고, 무엇이든 받으면
 # 60초를 다시 센다. 주석이라 이벤트(data:)의 순서·모양은 그대로다

@@ -329,6 +329,8 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       attempts = 0;
       if (source === es) streamEvent("open");
     };
+    // 서버의 15초 하트비트는 이름 붙은 'ping' 이벤트(relay.SSE_PING)라 onmessage 에 오지 않는다. 이 스트림은 조용함 감시를 두지 않고
+    // 끊김을 onerror 로만 보므로(연결 띠는 streamEvent) 하트비트를 받을 리스너가 없다
     es.onmessage = (msg: MessageEvent<string>) => {
       if (gen !== generation) return;
       let event: WorkEvent;
