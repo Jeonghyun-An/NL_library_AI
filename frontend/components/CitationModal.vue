@@ -304,9 +304,14 @@ onBeforeUnmount(() => clearTimeout(copiedTimer));
   background: var(--bg);
   border-radius: var(--radius-sm);
 }
-/* 인용 칸은 [다시 시도] 뒤 초점을 받는다(tabindex="-1") — 그 테두리는 그리지 않는다 */
+/* 인용 칸은 [다시 시도] 뒤 초점을 받는다(tabindex="-1") — 마우스로 누른 뒤에는 테두리를 그리지 않고, 키보드로 왔을 때만 그려
+   초점이 어디 있는지 보인다(연결 띠 .skx-conn 과 같은 규칙. 전에는 늘 지워 키보드 사용자가 초점을 잃었다) */
 .cm-block:focus {
   outline: none;
+}
+.cm-block:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
 }
 .cm-block-head {
   display: flex;

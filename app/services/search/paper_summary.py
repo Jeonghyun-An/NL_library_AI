@@ -31,7 +31,8 @@ _MAX_PAPERS = 5            # 요약에 사용할 최대 논문 수
 # 끝날 때 [DONE] 바로 앞에 보내는 {error} 이벤트의 문구 — 소장자료 추천 이유(pipeline.REASON_STREAM_ERROR)와 같은 꼴. 화면은 이것을 답 글에 잇지 않고 오류로 보이며
 # 캐시·검색 기록에 담지 않는다. 전에는 '…오류가 발생했습니다.' 를 보통 {text} 로 흘려 정상 답처럼 저장됐다.
 # LLM 이 글 조각 없이(공백뿐 포함) [DONE] 으로 끝난 빈 답도 같은 이벤트로 끝낸다 — 전에는 [DONE] 만 와 화면이 빈 글을
-# 끝까지 받은 답으로 읽었다(DeepRead 대화의 empty_answer 와 같은 판별, chat/book_chat.py)
+# 끝까지 받은 답으로 읽었다(DeepRead 대화의 empty_answer 와 같은 판별, chat/book_chat.py).
+# 논문 상세 AI 요약은 LLM 에 줄 논문 내용(초록·요약·해제)이 하나도 없을 때도 LLM 을 부르지 않고 같은 이벤트로 끝낸다
 SUMMARY_STREAM_ERROR = "AI 요약을 만들지 못했습니다"          # 논문 검색 결과의 AI 요약(stream_paper_summary)
 RELATED_REASON_STREAM_ERROR = "추천 사유를 만들지 못했습니다"  # 논문 상세 관련 논문의 AI 추천 사유(stream_related_reason)
 PAPER_REASON_STREAM_ERROR = "AI 요약을 만들지 못했습니다"     # 논문 상세의 AI 요약(stream_paper_reason)
@@ -255,7 +256,8 @@ async def stream_paper_reason(
     SSE 이벤트:
       data: {"keywords": [...]}   — 키워드 즉시 emit (있을 때)
       data: {"text": "..."}       — 토큰 스트리밍
-      data: {"error": PAPER_REASON_STREAM_ERROR} — LLM 호출이 실패하거나 빈 답으로 끝나면(받은 글 뒤, [DONE] 바로 앞)
+      data: {"error": PAPER_REASON_STREAM_ERROR} — LLM 호출이 실패하거나 빈 답으로 끝나면(받은 글 뒤, [DONE] 바로 앞),
+                                                   또는 LLM 에 줄 논문 내용(초록·요약·해제)이 없으면(키워드 뒤, 글 없이)
       data: [DONE]
     """
     # ── 키워드 즉시 emit ─────────────────────────────────────
@@ -302,7 +304,11 @@ async def stream_paper_reason(
     context_text = "\n\n".join(context_parts)
 
     if not context_text:
-        yield f"data: {json.dumps({'text': '논문 내용 정보가 부족하여 분석을 생성할 수 없습니다.'}, ensure_ascii=False)}\n\n"
+        # 초록·요약·해제가 모두 없어 LLM 에 줄 내용이 없다 — 요약을 만들지 못한 것이므로 이 스트림의 실패 이벤트로 끝낸다.
+        # 전에는 '논문 내용 정보가 부족하여 분석을 생성할 수 없습니다.' 를 보통 {text} + [DONE] 으로 보내 화면(논문 상세)이
+        # 정상 요약처럼 그리고 sessionStorage 캐시에 담았다. 화면은 {error} 를 실패로 읽어 자기 해요체 문구로 보이고 담지 않는다
+        log.warning("[paper_reason] 논문 내용 정보(초록·요약·해제)가 없어 AI 요약을 만들지 않았다")
+        yield _error_event(PAPER_REASON_STREAM_ERROR)
         yield "data: [DONE]\n\n"
         return
 

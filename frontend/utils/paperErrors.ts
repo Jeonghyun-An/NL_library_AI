@@ -2,14 +2,10 @@
 // 논문 검색·결과 목록·논문 상세·출처 인용 화면의 오류·빈 상태 문구와 고르는 규칙(순수 함수 — Vue 의존 없음).
 // 상태 블록(SkxErrorState)의 제목은 '무엇을 못 했는지·무엇이 없는지', 설명 줄은 오류 규칙(utils/apiErrors)이 고른 이유만이다 —
 // 오류 화면 모음(/dev/error-states)의 본보기('검색하지 못했어요'·'논문 정보를 불러오지 못했어요'·'검색 결과가 없어요')와 같은 말.
-// 문구는 해요체(사용자 결정 2026-10-16), 두 문장 이상이면 문장 사이를 '\n' 으로 잇고 줄마다 마침표로 끝낸다
+// 문구는 해요체(사용자 결정 2026-10-16), 두 문장 이상이면 문장 사이를 '\n' 으로 잇고 줄마다 마침표로 끝낸다.
+// 검색어 한도(SEARCH_QUERY_MAX)는 소장자료·논문이 함께 쓰는 utils/searchInput 에 있다 — 논문 입력창은 DeepResearch 질문도 받는데
+// 그 한도(app/api/research.py ResearchCreate.question)도 500 이라 같은 값 하나로 막는다
 import { DEFAULT_ERROR_MESSAGE, toUserError, type ErrorKind } from "./apiErrors";
-
-/**
- * 검색어 한도 — 서버 SearchRequest.query 의 max_length(app/schemas/book.py)와 같다. 논문 입력창은 DeepResearch 질문도 받는데
- * 그 한도(app/api/research.py ResearchCreate.question)도 500 이다. 입력창의 maxlength 와 글자 수(SkxCharCount)가 함께 쓴다
- */
-export const SEARCH_QUERY_MAX = 500;
 
 /** 논문 화면들의 상태 블록·줄 안내 문구 */
 export const PAPER_STATE_TEXT = {
@@ -22,9 +18,10 @@ export const PAPER_STATE_TEXT = {
   summaryEmpty: "AI 요약이 없어요",
   /** 논문 상세 읽기 실패(404 밖) */
   detailFailed: "논문 정보를 불러오지 못했어요",
-  /** 논문 상세 404 — 서버에 그 논문이 없다(주소 오타·옛 링크) */
+  /** 논문 상세 404 — 카탈로그에 그 논문이 없다. 보통 앱 안의 링크(검색 기록·보고서 인용·관련 자료)로 오므로 주소 확인을 시키지 않고
+   *  있는 그대로 말한다(목록에서 빠졌거나 아직 적재되지 않은 논문) */
   detailNotFound: "논문을 찾을 수 없어요",
-  detailNotFoundHint: "주소가 맞는지 다시 확인해 주세요.",
+  detailNotFoundHint: "목록에서 빠졌거나 아직 등록되지 않은 논문이에요.",
   /** 상세의 AI 큐레이션 탭이 하나도 없음(요약·소개글·초록 모두 없음) */
   curationEmpty: "AI 큐레이션 정보가 없어요",
   /** 상세의 관련 자료(/papers/{id}/related) 읽기 실패 */
@@ -41,8 +38,9 @@ export const PAPER_STATE_TEXT = {
   citationEmpty: "인용 정보가 없어요",
   /** 클립보드에 쓰지 못함 — 운영 게이트웨이가 http 라 Clipboard API 가 없을 수 있다(utils/clipboard) */
   copyFailed: "복사하지 못했어요.\n글을 직접 복사해 주세요.",
-  /** 주소의 검색 기록(h)이 없고 다시 찾을 검색어도 없음 — 토스트 */
-  missingHistory: "없는 기록이에요.\n목록을 새로 고쳤어요.",
+  /** 주소의 검색 기록(h)이 없고 다시 찾을 검색어도 없음 — 토스트. 토스트는 한 줄(white-space: nowrap)이라 '\n' 이 보이지 않아
+   *  한 문장으로 둔다(소장자료 랜딩의 같은 토스트와 같은 말) */
+  missingHistory: "없는 기록이라 목록을 새로 고쳤어요.",
   /** 원문 파일이 없을 때 건네는 외부(KCI) 원문 페이지 링크 */
   kciOriginal: "KCI에서 원문 페이지 열기",
 } as const;

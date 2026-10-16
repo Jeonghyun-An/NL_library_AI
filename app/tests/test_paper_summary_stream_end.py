@@ -185,6 +185,32 @@ def test_an_empty_answer_ends_with_the_error_event(monkeypatch, caplog, name, ru
     assert [r.levelname for r in records] == ["WARNING"] and "빈 답" in records[0].getMessage()
 
 
+def _paper_without_content():
+    # 초록·요약·해제가 모두 없다 — LLM 에 줄 내용이 없다
+    paper = _paper()
+    paper.abstract = None
+    paper.summary = None
+    paper.introduction = None
+    return paper
+
+
+def test_a_paper_without_content_ends_with_the_error_event_without_calling_the_llm(monkeypatch, caplog):
+    # 전에는 '논문 내용 정보가 부족하여 분석을 생성할 수 없습니다.' 를 {text} + [DONE] 으로 보내 논문 상세가 정상 요약처럼
+    # 그리고 sessionStorage 캐시에 담았다 — 이제 이 스트림의 실패 이벤트로 끝나 화면이 실패로 읽고 담지 않는다
+    payloads = fake_llm(monkeypatch, paper_summary, [delta("불리면 안 된다"), "data: [DONE]"])
+
+    with caplog.at_level("WARNING", logger=paper_summary.log.name):
+        chunks = _collect(paper_summary.stream_paper_reason("노인 우울", _paper_without_content()))
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert events(chunks) == [{"keywords": ["우울", "노년"]}, {"error": paper_summary.PAPER_REASON_STREAM_ERROR}]
+    # LLM 은 부르지 않는다
+    assert payloads == []
+    # 연결·응답 실패(ERROR)가 아니라 경고로 남긴다
+    records = [r for r in caplog.records if r.name == paper_summary.log.name]
+    assert [r.levelname for r in records] == ["WARNING"]
+
+
 @pytest.mark.parametrize("name, run, const, lead, tail", STREAMS, ids=IDS)
 def test_leading_whitespace_before_the_text_is_not_an_empty_answer(monkeypatch, name, run, const, lead, tail):
     fake_llm(monkeypatch, paper_summary, [delta("\n"), delta("두 논문은 노인 우울을 다룬다."), delta("\n"), "data: [DONE]"])
