@@ -47,6 +47,9 @@ _SECTION_ATTEMPTS = 2
 # (recurring-gotchas 15번) 이게 남은 문장은 서술이 아니라 지시문 원문이다.
 _PLACEHOLDER = "[E#]"
 _EID_KEY = re.compile(r"\s*\[?\s*[Ee]\s*(\d+)\s*\]?\s*")
+# 향후 과제 머리의 프롬프트 말 — 출력 형식 예시 '이 하위질문에 대해 남은 과제 한 문장 [E#].' 의 머리를 모델이 옮긴다(운영
+# 1af7403f·911d9583, 2026-10-15~16 — 최근 보고서 15건의 향후 과제 89줄 중 3줄). 머리에 있을 때만 뗀다
+_FUTURE_LEAD = re.compile(r"^\s*이\s*하위\s*질문에\s*대(?:해|하여|한)\s*[,，]?\s*")
 
 # 절 생성에 논문마다 넘기는 대목 길이 상한(앞에서 자른다). 그 안의 마지막 문장 끝에서 자르되, 그 자리가
 # _EXCERPT_MIN_CUT 자보다 앞이면 남는 글이 너무 적어 지금처럼 이 길이에서 자른다(excerpt_text)
@@ -507,7 +510,7 @@ def build_section(state: ResearchState, sq: SubQuestion, data: dict | None,
     future = raw.get("future")
     future_texts = []
     for f in future if isinstance(future, list) else []:
-        text = _text(f.get("text") if isinstance(f, dict) else f)
+        text = _FUTURE_LEAD.sub("", _text(f.get("text") if isinstance(f, dict) else f))
         if text:
             future_texts.append(text)
     eids = section_paper_ids(state, sq)
