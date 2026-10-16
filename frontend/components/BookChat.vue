@@ -44,17 +44,20 @@
       </div>
 
       <!-- 답을 받지 못한 질문 — 대화에는 남기지 않고(오류가 답처럼 굳거나 다음 질문의 history 로 가지 않게) 여기에만 보인다.
-           실패 전까지 받던 글은 흐리게 남기고(다른 AI 글 화면처럼 읽던 글이 사라지지 않게) 그 아래 안내만 알린다(role=alert —
-           받던 글까지 다시 읽지 않게). [다시 시도]는 같은 질문을 다시 보낸다 -->
+           실패 전까지 받던 글은 흐리게 남기고(다른 AI 글 화면처럼 읽던 글이 사라지지 않게) 그 아래 줄 안내(SkxInlineError — role=alert,
+           받던 글까지 다시 읽지 않게)만 알린다. [다시 시도]는 같은 질문을 다시 보낸다 — 다시 보내도 같은 실패인 경우(자료 없음·질문이
+           너무 김)는 숨긴다. 질문은 입력 칸에도 되살려 고쳐 보낼 수 있다(ask) -->
       <template v-if="failure">
         <div class="skx-chat-msg skx-chat-msg--user">
           <div v-html="formatText(failure.question)" />
         </div>
         <div class="skx-chat-msg skx-chat-msg--ai">
           <div v-if="failure.partial" class="skx-chat-msg__partial" v-html="formatText(failure.partial)" />
-          <p class="skx-chat-msg__failed" role="alert">{{ failure.message }} ·
-            <button type="button" class="skx-retry" @click="retry">다시 시도</button>
-          </p>
+          <SkxInlineError
+            class="skx-chat-msg__failed"
+            :message="failure.message"
+            :on-retry="failure.retryable ? retry : undefined"
+          />
         </div>
       </template>
 
@@ -74,25 +77,36 @@
     <div class="skx-sr-only" aria-live="polite" v-html="liveHtml" />
 
     <div class="skx-chat-input-wrap">
+      <!-- 질문은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 가 막고 글자 수(SkxCharCount)가 얼마나 썼는지 보인다 -->
       <textarea
         ref="inputEl"
         v-model="inputText"
         class="skx-chat-input"
         rows="2"
+        :maxlength="CHAT_MAX_CHARS"
         :placeholder="copy.placeholder"
         :aria-label="copy.inputLabel"
+        :aria-describedby="countId"
         :disabled="isStreaming"
         @keydown.enter.exact.prevent="send"
         @keydown.enter.shift.exact="() => {}"
       />
+      <SkxCharCount :id="countId" class="skx-chat-count" :length="inputText.length" :max="CHAT_MAX_CHARS" />
+      <!-- 보내기 — 답을 받는 동안은 같은 단추가 [멈춤]이다(한 요소라 누른 초점이 그대로 남는다) -->
       <button
+        ref="sendEl"
         type="button"
         class="skx-chat-send"
-        :aria-label="copy.sendLabel"
-        :disabled="!inputText.trim() || isStreaming"
-        @click="send"
+        :class="{ 'skx-chat-send--stop': isStreaming }"
+        :aria-label="isStreaming ? copy.stopLabel : copy.sendLabel"
+        :title="isStreaming ? copy.stopLabel : undefined"
+        :disabled="!isStreaming && !inputText.trim()"
+        @click="onSendButton"
       >
-        <img src="/img/ico-send.svg" alt="" />
+        <svg v-if="isStreaming" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <rect x="3" y="3" width="10" height="10" rx="2" fill="currentColor" />
+        </svg>
+        <img v-else src="/img/ico-send.svg" alt="" />
       </button>
     </div>
   </div>
@@ -100,11 +114,11 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, useId, watch } from "vue";
 import { useDeepReadChat } from "~/composables/useDeepReadChat";
 import type { OpenPdfPayload } from "~/types/research";
 import { type DocKind, chatCopy, sourceLabel, sourcePdfTarget } from "~/utils/deepRead";
-import type { DeepReadMessage, DeepReadSource } from "~/utils/deepReadSse";
+import { CHAT_MAX_CHARS, type DeepReadMessage, type DeepReadSource } from "~/utils/deepReadSse";
 import { passageText } from "~/utils/passageText";
 
 // 딥리드 대화 칸 — 논문 상세·논문 검색 결과 채팅·도서 상세·TopResult 와 연구 화면의 오른쪽 패널(06e)이 함께 쓴다.
@@ -125,7 +139,15 @@ const emit = defineEmits<{ close: []; "open-pdf": [payload: OpenPdfPayload] }>()
 
 const copy = computed(() => chatCopy(props.docKind));
 
-const { messages, streamingText, isStreaming, failure, send: sendChat, retry: retryChat } = useDeepReadChat({
+const {
+  messages,
+  streamingText,
+  isStreaming,
+  failure,
+  send: sendChat,
+  retry: retryChat,
+  stop: stopChat,
+} = useDeepReadChat({
   cntsId: () => props.cntsId,
   store: () => props.store,
 });
@@ -133,6 +155,9 @@ const inputText = ref("");
 const rootEl = ref<HTMLElement | null>(null);
 const messagesEl = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
+const sendEl = ref<HTMLButtonElement | null>(null);
+// 입력 칸이 aria-describedby 로 가리키는 글자 수 — 한 화면에 대화 칸이 여럿이어도 겹치지 않게
+const countId = `skx-chat-count-${useId()}`;
 // 화면낭독기가 읽을 끝난 답(HTML) — 방금 보낸 질문의 답만 싣는다(논문을 바꿔 다른 대화를 펼칠 때 옛 답을 다시 읽지 않게)
 const liveHtml = ref("");
 
@@ -158,18 +183,36 @@ async function send() {
   await ask(() => sendChat(text));
 }
 
-// [다시 시도] — 답을 받지 못한 질문을 그대로 다시 보낸다
+// 보내기 단추 — 답을 받는 동안은 [멈춤]. 보내기를 두 번 눌러(더블클릭) 둘째 누름이 방금 보낸 질문을 끊지 않게 연속 누름
+// (detail 2 이상)은 무시한다. 키보드로 누르면 detail 이 0 이다
+function onSendButton(e: MouseEvent) {
+  if (!isStreaming.value) void send();
+  else if (e.detail < 2) stopChat();
+}
+
+// [다시 시도] — 답을 받지 못한 질문을 그대로 다시 보낸다. 입력 칸에 되살려 둔 그 질문은 비운다(답을 받은 뒤 칸에 남지 않게) —
+// 고쳐 쓴 글은 둔다
 async function retry() {
   if (isStreaming.value) return;
+  if (inputText.value.trim() === failure.value?.question) inputText.value = "";
   await ask(retryChat);
 }
 
 async function ask(request: () => Promise<void>) {
   liveHtml.value = "";
   const sentFor = props.cntsId;
-  await request();
+  const answered = request();
+  // 보내는 동안 입력 칸이 막혀 초점이 떨어지면(Enter 로 보냄) 같은 자리의 [멈춤] 단추로 옮긴다 — 키보드로도 바로 멈출 수 있고
+  // 서랍 패널의 초점이 body 로 새지 않는다. 사용자가 그새 다른 곳을 눌렀으면 두지 않는다
+  nextTick(() => {
+    const active = document.activeElement;
+    if (isStreaming.value && (!active || active === document.body || active === inputEl.value)) sendEl.value?.focus();
+  });
+  await answered;
   // 답을 다 받았을 때만 읽고 입력 칸으로 돌아간다 — 논문을 바꿔 끊긴 경우 초점은 사용자가 누른 곳에 둔다
   if (props.cntsId !== sentFor) return;
+  // 답을 받지 못했으면 보낸 질문을 입력 칸에 되살린다 — 보낼 때 비운 칸이라 고쳐 다시 보낼 수 있게(그새 쓴 글이 있으면 두지 않는다)
+  if (failure.value && !inputText.value.trim()) inputText.value = failure.value.question;
   const last = messages.value.at(-1);
   // 답을 받지 못했으면 앞 답을 다시 읽히지 않는다 — 실패 안내는 role=alert 가 읽는다
   if (!failure.value && last?.role === "assistant") liveHtml.value = formatText(last.content);
