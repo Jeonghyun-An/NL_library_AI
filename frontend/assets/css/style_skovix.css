@@ -5068,8 +5068,10 @@ html.skx-scroll-lock {
 
 /* ── 도서 상세 표지 컬럼 (표지 + AI 코멘트) ── */
 
-/* [S] 공통 오류·빈 상태 — SkxErrorState(섹션·화면 단위)·SkxInlineError(줄 단위)·error.vue(전역 오류 화면).
+/* [S] 공통 오류·빈 상태 — SkxErrorState(섹션·화면 단위)·SkxInlineError(줄 단위)·SkxErrorPage(전역 오류 화면 — error.vue)·
+   SkxConnectionBanner(실시간 연결 끊김 띠)·SkxCharCount(글자 수).
    오류·빈 상태 디자인은 이 구역에만 입힌다 — 화면마다 따로 꾸미지 않아야 한 번 바꾸면 전체 오류 화면에 반영된다.
+   모든 표시를 한 페이지에서 보며 고치려면 개발용 오류 화면 모음 /dev/error-states(pages/dev/error-states.vue — 실제 컴포넌트만 쓴다).
    모양은 기존 표시(research.css 의 .rs-card·.rs-state·.rs-alert, detail.css 의 .dt-error·.dt-empty, 이 파일의 .skx-retry)에서 시작해
    기존 표시를 이 컴포넌트로 바꿔도 화면이 크게 달라지지 않게 했다. 색은 --skx-* 토큰만 쓴다(다크·핑크·밝은 읽는 면 모두 토큰으로 따라온다).
    갈래: [data-tone="error"] 실패(제목이 위험색) / [data-tone="neutral"] 빈 결과·찾을 수 없음(차분한 글색). kind 별로 꾸미려면 .skx-state--{kind} */
@@ -5145,6 +5147,12 @@ html.skx-scroll-lock {
 }
 .skx-state__action:hover {
   border-color: var(--skx-primary);
+}
+/* 링크(<a>·NuxtLink)로 써도 같은 글색 — 공통 리셋의 a:visited·a:hover(color: inherit, 특이도 0,1,1)가 한 클래스(0,1,0)를 이겨
+   지나간 링크·마우스를 올린 링크만 본문색으로 바뀌던 것을 같은 상태로 다시 적어 막는다 */
+.skx-state__action:visited,
+.skx-state__action:hover {
+  color: var(--skx-primary);
 }
 /* 재시도 중 — disabled 가 아니라 aria-disabled 로 알린다(초점 유지) */
 .skx-state__retry[aria-disabled="true"] {
@@ -5265,5 +5273,119 @@ html.skx-scroll-lock {
 }
 .skx-error-page .skx-state__actions {
   justify-content: center;
+}
+/* 오류 화면 모음의 액자 안(preview) — 화면 높이(100vh) 대신 액자 높이를 채운다. 홀로그램(position: fixed)을 가두는 transform·overflow 는 액자 쪽이 둔다 */
+.skx-error-page--preview {
+  min-height: 0;
+  height: 100%;
+}
+
+/* 실시간 연결 끊김 띠(SkxConnectionBanner) — 화면 위쪽에 얇게. 다시 연결하는 중은 차분한 띠(글 앞 점이 천천히 깜빡인다),
+   연결하지 못함은 위험색 띠. 바탕은 메뉴 면(거의 불투명)이라 홀로그램·본문 위에 떠도 글이 읽힌다. 자리(sticky 등)는 쓰는 화면이 정한다 */
+.skx-conn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  min-height: 1.6rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-shadow-banner);
+}
+.skx-conn__msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* 상태 점 — 다시 연결하는 중은 포인트색이 깜빡이고, 연결하지 못함은 위험색으로 멈춰 있다 */
+.skx-conn__msg::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--skx-accent);
+}
+.skx-conn--reconnecting .skx-conn__msg::before {
+  animation: skx-conn-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes skx-conn-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-conn--reconnecting .skx-conn__msg::before {
+    animation: none;
+  }
+}
+/* 연결하지 못함 — 메뉴 면 위에 위험색 옅은 층을 한 겹 더 깐다(위험색 옅은 면만 쓰면 다크에서 반투명이라 뒤가 비친다) */
+.skx-conn--lost {
+  color: var(--skx-danger);
+  background:
+    linear-gradient(var(--skx-danger-bg), var(--skx-danger-bg)),
+    var(--skx-frost-menu-bg);
+  border-color: var(--skx-danger);
+}
+.skx-conn--lost .skx-conn__msg::before {
+  background: var(--skx-danger);
+}
+/* [다시 연결] — 줄 안내의 [다시 시도] 와 같은 글자 버튼. 누를 자리는 24px 이상(WCAG 2.5.8, 좁은 화면에서도 모자라지 않게 px) */
+.skx-conn__retry {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--skx-primary);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.skx-conn__retry:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+
+/* 글자 수(SkxCharCount) — 입력창 아래 오른쪽 끝. 평소는 흐린 글, 한도 가까이(--near)는 포인트색, 한도(--limit)는 위험색 + 안내 글.
+   숫자가 바뀌어도 폭이 흔들리지 않게 고정폭 숫자. 안내 칸(__msg)은 비어 있어도 그려 둔다(live 영역 — display: none 으로 숨기면 낭독기가 놓친다) */
+.skx-charcount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.1rem 0.5rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+}
+.skx-charcount__num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.skx-charcount__msg {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.skx-charcount--near {
+  font-weight: 600;
+  color: var(--skx-primary);
+}
+.skx-charcount--limit {
+  font-weight: 600;
+  color: var(--skx-danger);
 }
 /* [E] 공통 오류·빈 상태 */

@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { createFetch } from "ofetch";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { API_READ_TIMEOUT_MS, API_SEARCH_TIMEOUT_MS, withReadTimeout } from "~/composables/useApi";
-import { errorKind, isAbortError } from "~/utils/apiErrors";
+import { ERROR_PAGE_TEXT, errorKind, isAbortError } from "~/utils/apiErrors";
 import { rawCss } from "./helpers/themeCss";
 
 const root = resolve(__dirname, "../..");
@@ -101,38 +101,51 @@ describe("SkxInlineError — 줄 단위 안내", () => {
   });
 });
 
-describe("error.vue — 전역 오류 화면", () => {
+describe("error.vue — 전역 오류 화면(본문은 SkxErrorPage)", () => {
   const tpl = template(errorVue);
   const js = script(errorVue);
+  const pageVue = read("components/SkxErrorPage.vue");
+  const pageTpl = template(pageVue);
+  const pageJs = script(pageVue);
+
+  it("error.vue 는 상태 코드만 넘겨 SkxErrorPage 를 그린다", () => {
+    expect(tpl.trim()).toBe('<SkxErrorPage :status="status" />');
+    expect(js).toContain("props.error?.status ?? props.error?.statusCode ?? 500");
+  });
 
   it("홀로그램 배경·워드마크·상태 블록을 둔다", () => {
-    expect(tpl).toMatch(/<div class="skx-holo" aria-hidden="true">[\s\S]*skx-holo__band--1[\s\S]*skx-holo__band--2[\s\S]*skx-holo__band--3/);
-    expect(tpl).toContain('<SkovixWordmark class="skx-error-page__logo" decorative />');
-    expect(tpl).toContain("<SkxErrorState");
+    expect(pageTpl).toMatch(/<div class="skx-holo" aria-hidden="true">[\s\S]*skx-holo__band--1[\s\S]*skx-holo__band--2[\s\S]*skx-holo__band--3/);
+    expect(pageTpl).toContain('<SkovixWordmark class="skx-error-page__logo" decorative />');
+    expect(pageTpl).toContain("<SkxErrorState");
   });
 
   it("404 — 페이지를 찾을 수 없음 + [처음 화면으로]", () => {
-    expect(js).toContain("(props.error?.status ?? props.error?.statusCode) === 404");
-    expect(tpl).toContain('title="페이지를 찾을 수 없습니다"');
-    expect(tpl).toContain('message="주소가 바뀌었거나 없는 페이지입니다."');
-    expect(js).toContain('clearError({ redirect: "/" })');
+    expect(pageJs).toContain("props.status === 404");
+    expect(pageTpl).toContain(':title="ERROR_PAGE_TEXT.notFound.title"');
+    expect(pageTpl).toContain(':message="ERROR_PAGE_TEXT.notFound.message"');
+    expect(ERROR_PAGE_TEXT.notFound).toEqual({ title: "페이지를 찾을 수 없습니다", message: "주소가 바뀌었거나 없는 페이지입니다." });
+    expect(pageJs).toContain('clearError({ redirect: "/" })');
   });
 
   it("그 밖 — 문제가 생겼습니다 + [다시 시도](새로 불러오기) + [처음 화면으로]", () => {
-    expect(tpl).toContain('title="문제가 생겼습니다"');
-    expect(tpl).toContain('message="잠시 뒤 다시 시도하세요."');
-    expect(tpl).toContain('@retry="reload"');
-    expect(js).toContain("window.location.reload()");
-    expect(tpl.match(/처음 화면으로/g)).toHaveLength(2);
+    expect(pageTpl).toContain(':title="ERROR_PAGE_TEXT.fatal.title"');
+    expect(pageTpl).toContain(':message="ERROR_PAGE_TEXT.fatal.message"');
+    expect(ERROR_PAGE_TEXT.fatal).toEqual({ title: "문제가 생겼습니다", message: "잠시 뒤 다시 시도하세요." });
+    expect(pageTpl).toContain('@retry="reload"');
+    expect(pageJs).toContain("window.location.reload()");
+    expect(pageTpl.match(/\{\{ ERROR_PAGE_TEXT\.home \}\}/g)).toHaveLength(2);
+    expect(ERROR_PAGE_TEXT.home).toBe("처음 화면으로");
   });
 
-  it("탭 제목은 SKOVIX", () => {
+  it("탭 제목은 SKOVIX — 모음의 액자가 탭 제목을 덮지 않게 error.vue 에만", () => {
     expect(js).toContain('useHead({ title: "SKOVIX" })');
+    expect(pageJs).not.toContain("useHead");
   });
 
   it("오류 객체의 영문 message·stack 을 화면에 내보내지 않는다", () => {
     expect(tpl).not.toMatch(/error\.(message|stack|statusMessage|statusText|data)/);
     expect(tpl).not.toMatch(/\{\{\s*error/);
+    expect(pageTpl).not.toMatch(/error\.(message|stack|statusMessage|statusText|data)/);
   });
 });
 

@@ -5,6 +5,9 @@
 //  - isAbortError(err)   : 우리가 일부러 끊은 요청(AbortController.abort)인가 — 그렇다면 오류를 보이지 않는다
 //  - apiErrorMessage(err, fallback): 화면에 보일 문구 하나. 영문 기술 메시지(err.message)는 어떤 경우에도 쓰지 않는다
 //  - toUserError(err, fallback): 위 셋을 한 번에 — 일부러 끊은 요청이면 null(아무것도 띄우지 않는다), 아니면 {kind, message}
+//  - charCountState(length, max, near?)·charLimitMessage(max): 글자 수 표시(SkxCharCount)의 상태와 한도 안내
+// 공통 오류 컴포넌트가 스스로 그리는 고정 문구(ERROR_PAGE_TEXT·CONNECTION_HINTS)도 여기 둔다 — 오류 화면 모음(/dev/error-states)이
+// 같은 상수를 읽어 문구 원문을 보이므로, 문구를 고치면 실제 화면과 모음이 함께 바뀐다
 
 /**
  * 대체 문구(fallback) 뒤에 ' — ' 로 붙이는 이유. 여기 없는 kind(notFound·conflict·invalid·forbidden·unknown)는 대체 문구만 보인다 —
@@ -29,8 +32,45 @@ export const VALIDATION_HINTS = {
   invalid: "입력값이 올바르지 않습니다",
 } as const;
 
+/** 글자 수 표시(SkxCharCount)의 상태 — 평소 / 한도 가까이 / 한도 */
+export type CharCountState = "normal" | "near" | "limit";
+
+/**
+ * 글자 수 상태. 한도에 닿으면(length >= max) 'limit', near 이상이면 'near'. near 를 주지 않으면 max 의 90%(소수점 아래 버림) —
+ * 0.9 곱셈은 부동소수 오차(510 * 0.9 = 459.00000000000006)가 생겨 정수로만 셈한다
+ */
+export function charCountState(length: number, max: number, near?: number): CharCountState {
+  if (length >= max) return "limit";
+  const nearAt = near ?? Math.floor((max * 9) / 10);
+  return length >= nearAt ? "near" : "normal";
+}
+
+/** 글자 수 한도에 닿았을 때의 안내 — 서버 422(string_too_long) 안내와 같은 말('500자까지 입력할 수 있습니다') */
+export function charLimitMessage(max: number): string {
+  return VALIDATION_HINTS.tooLong.replace("{n}", String(max));
+}
+
 /** 대체 문구도 이유도 없을 때 — apiErrorMessage 는 빈 문자열을 돌려주지 않는다(빈 오류 칸이 그려지지 않게) */
 export const DEFAULT_ERROR_MESSAGE = "요청을 처리하지 못했습니다";
+
+/** 전역 오류 화면(SkxErrorPage — error.vue 가 그린다)의 문구. 404 는 notFound, 그 밖(화면을 그리다 난 치명 오류)은 fatal */
+export const ERROR_PAGE_TEXT = {
+  notFound: { title: "페이지를 찾을 수 없습니다", message: "주소가 바뀌었거나 없는 페이지입니다." },
+  fatal: { title: "문제가 생겼습니다", message: "잠시 뒤 다시 시도하세요." },
+  home: "처음 화면으로",
+} as const;
+
+/**
+ * 실시간 연결(딥리서치 진행 화면·연구 작업대의 SSE) 끊김 띠(SkxConnectionBanner)의 문구.
+ * reconnecting: 끊겨 다시 붙는 중(백오프 재연결이 도는 동안) / lost: 다시 붙지 못함 — 받은 화면이 낡았을 수 있다
+ */
+export const CONNECTION_HINTS = {
+  reconnecting: "연결이 끊겨 다시 연결하는 중입니다…",
+  lost: "연결하지 못했습니다. 화면이 최신 상태가 아닐 수 있습니다",
+} as const;
+export type ConnectionState = keyof typeof CONNECTION_HINTS;
+/** 연결 끊김 띠(lost)의 버튼 글 */
+export const CONNECTION_RETRY_LABEL = "다시 연결";
 
 /** 대체 문구와 이유 사이 — 기존 화면 문구('… — 네트워크 연결을 확인하세요')와 같은 줄표 */
 const HINT_SEPARATOR = " — ";
