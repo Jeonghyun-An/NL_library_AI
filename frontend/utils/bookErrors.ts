@@ -2,10 +2,8 @@
 // 랜딩 소장자료 검색·SKOVIX 추천 1권·도서 상세·상황별 추천의 오류·빈 상태 — 화면이 SkxErrorState·SkxInlineError 에 넘길 문구와 판정
 // (순수 함수 — Vue 의존 없음). 문구는 해요체(사용자 결정 2026-10-16)이고, 두 문장이면 문장 사이를 '\n' 으로 잇는다.
 // 상태 블록의 제목은 '무엇을 못 했는지', 설명 줄은 이유(apiErrorMessage(err, '') — 영문 err.message·서버 영문 detail 은 쓰지 않는다)
+// 검색어 글자 수 한도(SEARCH_QUERY_MAX)는 논문 검색과 같은 값이라 utils/searchInput.ts 한 곳에 둔다
 import { apiErrorMessage, errorKind, isAbortError, type ErrorStateKind } from "./apiErrors";
-
-/** 검색어 글자 수 한도 — 서버 SearchRequest.query(max_length=500, app/schemas/book.py)와 같다. 랜딩 두 입력창·결과 검색바의 maxlength */
-export const SEARCH_QUERY_MAX = 500;
 
 /** 소장자료 검색(랜딩 → 결과 화면) */
 export const BOOK_SEARCH_TEXT = {
@@ -15,9 +13,10 @@ export const BOOK_SEARCH_TEXT = {
 } as const;
 
 /**
- * 추천 이유 스트림(/books/reason/stream — 결과의 SKOVIX 추천 1권·도서 상세의 [추천 이유] 탭)이 끝까지 오지 않았을 때.
- * 서버가 보낸 {error} 글(합쇼체)은 보이지 않는다 — 말투는 프런트가 가진다. 글 없이 실패(HTTP 오류·네트워크·{error})면 failed,
- * 글 일부를 받은 뒤 실패(연결 끊김·{error})면 partial. 둘 다 [다시 시도]가 처음부터 다시 받는다
+ * 추천 이유 스트림(/books/reason/stream — 결과의 SKOVIX 추천 1권·도서 상세의 [추천 이유] 탭·보존 화면)이 끝까지 오지 않았을 때.
+ * 서버가 보낸 {error} 글(합쇼체)은 보이지 않는다 — 말투는 프런트가 가진다. 글 없이 실패(HTTP 오류·네트워크·{error}, 또는 끝까지 왔는데
+ * 글이 없음 — 새 서버는 LLM 빈 답을 {error} 로 보내고 옛 서버는 빈 채로 [DONE] 을 보낸다)면 failed, 글 일부를 받은 뒤 실패(연결 끊김·{error})면
+ * partial. 둘 다 [다시 시도]가 처음부터 다시 받는다
  */
 export const BOOK_REASON_TEXT = {
   failed: "추천 이유를 불러오지 못했어요",
@@ -27,11 +26,12 @@ export const BOOK_REASON_TEXT = {
 /** 도서 상세(pages/books/[cnts_id].vue) */
 export const BOOK_DETAIL_TEXT = {
   notFoundTitle: "도서를 찾을 수 없어요",
-  notFoundMessage: "주소가 맞는지 다시 확인해 주세요.",
+  // 서버 404 는 서지 DB(GET /books/{id} — app/api/book.py get_book)에 그 자료의 행이 없을 때다. 이 화면은 거의 앱 안 링크(검색 결과·
+  // 관련 자료·상황별 추천)로 들어오므로 '주소를 확인하라'가 아니라 자료가 없다는 사실을 말한다
+  notFoundMessage: "목록에서 빠졌거나 아직 등록되지 않은 자료예요.",
   failedTitle: "도서 정보를 불러오지 못했어요",
   home: "홈으로",
   curationEmpty: "AI 큐레이션 정보가 없어요",
-  reasonEmpty: "추천 이유가 없어요",
   relatedFailedTitle: "관련 자료를 불러오지 못했어요",
   relatedEmptyTitle: "관련 자료가 없어요",
 } as const;

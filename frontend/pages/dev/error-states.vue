@@ -279,7 +279,7 @@ import {
   type ConnectionState,
   type ErrorStateKind,
 } from "~/utils/apiErrors";
-import { SEARCH_QUERY_MAX } from "~/utils/bookErrors";
+import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { deepResearchStartRoute } from "~/utils/landingStart";

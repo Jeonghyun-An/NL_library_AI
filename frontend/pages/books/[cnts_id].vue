@@ -15,7 +15,8 @@
         @submit="onSearch"
       />
 
-      <div class="dt-frame">
+      <!-- tabindex="-1" — 불러오기 실패의 [다시 시도]를 누르면 상태 블록이 버튼째 로딩 표시로 바뀌어, 초점을 이 틀로 옮긴다(retryPage) -->
+      <div ref="frameRef" class="dt-frame" tabindex="-1">
         <!-- 뒤로가기 -->
         <button type="button" class="dt-back" @click="$router.back()">
           <img src="/img/ico-arrow.svg" alt="" />
@@ -34,7 +35,7 @@
           :title="pageFailure.title"
           :message="pageFailure.message"
           title-tag="h1"
-          :on-retry="pageFailure.retry ? loadPage : undefined"
+          :on-retry="pageFailure.retry ? retryPage : undefined"
         >
           <button type="button" class="skx-state__action" @click="navigateTo('/')">{{ BOOK_DETAIL_TEXT.home }}</button>
         </SkxErrorState>
@@ -130,8 +131,8 @@
                     추천 이유를 생성하고 있습니다<span class="skx-stream-cursor" />
                   </p>
                   <div v-else-if="reasonText" class="dt-prose" v-html="renderedReason" />
-                  <SkxErrorState v-else-if="!reasonError" kind="empty" compact :title="BOOK_DETAIL_TEXT.reasonEmpty" />
-                  <!-- 추천 이유를 받지 못했다(서버의 {error}·HTTP 오류·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
+                  <!-- 추천 이유를 받지 못했다(서버의 {error}·HTTP 오류·끊김, 끝까지 왔는데 글이 없음) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로.
+                       다 받은 뒤 글이 없으면 늘 이 안내라(streamReason) '추천 이유가 없어요' 같은 빈 상태 갈래는 두지 않는다 -->
                   <SkxInlineError
                     v-if="reasonError && !reasonLoading"
                     ref="reasonFailRef"
@@ -146,8 +147,9 @@
             <SkxErrorState v-else kind="empty" compact :title="BOOK_DETAIL_TEXT.curationEmpty" />
           </section>
 
-          <!-- 관련 자료 추천 — 제목으로 찾은 다른 소장자료 최대 4권(연관도 하한 아래는 비운다). 카드를 누르면 그 자료 상세로, [자세히 보기]는 요약 전문과 버튼 -->
-          <section class="dt-section" aria-labelledby="bdetail-related-title">
+          <!-- 관련 자료 추천 — 제목으로 찾은 다른 소장자료 최대 4권(연관도 하한 아래는 비운다). 카드를 누르면 그 자료 상세로, [자세히 보기]는 요약 전문과 버튼.
+               tabindex="-1" — 실패의 [다시 시도]를 누르면 상태 블록이 버튼째 '불러오는 중'으로 바뀌어, 초점을 이 절로 옮긴다(retryRelated) -->
+          <section ref="relatedSectionRef" class="dt-section" aria-labelledby="bdetail-related-title" tabindex="-1">
             <h2 id="bdetail-related-title" class="dt-section__title">관련 자료 추천</h2>
             <p v-if="relatedLoading" class="dt-empty">불러오는 중...</p>
             <!-- 실패와 진짜 0건을 가른다 — 실패를 '없음'으로 보이지 않는다 -->
@@ -157,7 +159,7 @@
               :title="relatedFailure.title"
               :message="relatedFailure.message"
               compact
-              :on-retry="relatedFailure.retry ? fetchRelatedBooks : undefined"
+              :on-retry="relatedFailure.retry ? retryRelated : undefined"
             />
             <SkxErrorState v-else-if="!relatedItems.length" kind="empty" compact :title="BOOK_DETAIL_TEXT.relatedEmptyTitle" />
             <div v-else class="dt-related__grid">
@@ -309,7 +311,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>
@@ -330,6 +332,7 @@ import {
   bookMetaRows,
   detailSearchUrl,
   focusOwningPanel,
+  focusRegion,
   formatAuthors,
   queryScore,
   relatedMetaLine,
@@ -477,7 +480,7 @@ onMounted(() => {
   void loadPage();
 });
 
-// 도서를 불러오고, 불러왔으면 추천 이유·관련 자료를 받는다. 처음 열 때와 불러오기 실패의 [다시 시도]가 부른다
+// 도서를 불러오고, 불러왔으면 추천 이유·관련 자료를 받는다. 처음 열 때와 불러오기 실패의 [다시 시도](retryPage)가 부른다
 async function loadPage() {
   await fetchBook();
   if (!book.value) return;
@@ -485,6 +488,14 @@ async function loadPage() {
   if (route.query.chat === "1") chatPanelOpen.value = true;
   void streamReason();
   void fetchRelatedBooks();
+}
+
+// 불러오기 실패의 [다시 시도] — 상태 블록은 다시 불러오는 동안 버튼째 로딩 표시로 바뀌므로 초점을 상세 틀로 먼저 옮긴다(focusRegion)
+const frameRef = ref<HTMLElement | null>(null);
+function retryPage() {
+  if (pageLoading.value) return;
+  focusRegion(frameRef.value);
+  void loadPage();
 }
 
 // ── 도서 fetch ─────────────────────────────────────────────
@@ -539,8 +550,12 @@ async function streamReason() {
   }
   reasonLoading.value = false;
   reasonDone.value = true;
-  // 이 화면은 추천 이유를 저장하지 않는다 — 실패({error}·HTTP 오류·끊김)면 받은 글에 잇지 않고 안내를 따로 보인다
-  if (!end.ok && !pageAbort.signal.aborted) reasonError.value = reasonFailureText(reasonText.value);
+  if (pageAbort.signal.aborted) return;
+  // 이 화면은 추천 이유를 저장하지 않는다 — 실패({error}·HTTP 오류·끊김)면 받은 글에 잇지 않고 안내를 따로 보인다.
+  // 끝까지 왔는데 글이 없어도(공백뿐 포함) 실패다 — 새 서버는 LLM 빈 답을 {error} 로, 옛 서버는 빈 채로 [DONE] 을 보낸다. 결과 화면의
+  // 추천 1권과 같은 처리이고, 그래야 [추천 이유] 탭이 말없이 빠지지 않고 [다시 시도]와 함께 남는다(aiTabAvailable)
+  if (!reasonText.value.trim()) reasonText.value = "";
+  if (!end.ok || !reasonText.value) reasonError.value = reasonFailureText(reasonText.value);
 }
 
 // [다시 시도] — 추천 이유를 처음부터 다시 받는다. 버튼은 안내째 빠지므로 초점을 탭 본문으로 먼저 옮긴다
@@ -548,6 +563,14 @@ function retryReason() {
   if (reasonLoading.value) return;
   focusOwningPanel(reasonFailRef.value?.$el ?? null);
   void streamReason();
+}
+
+// 관련 자료 실패의 [다시 시도] — 상태 블록은 다시 받는 동안 버튼째 '불러오는 중'으로 바뀌므로 초점을 이 절로 먼저 옮긴다(focusRegion)
+const relatedSectionRef = ref<HTMLElement | null>(null);
+function retryRelated() {
+  if (relatedLoading.value) return;
+  focusRegion(relatedSectionRef.value);
+  void fetchRelatedBooks();
 }
 
 // ── 연관 도서 (관련 자료 전용 GET) ─────────────────────────

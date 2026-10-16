@@ -4,17 +4,18 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CODE_MESSAGES, DEFAULT_ERROR_MESSAGE, ERROR_HINTS, charLimitMessage } from "~/utils/apiErrors";
+import { CODE_MESSAGES, DEFAULT_ERROR_MESSAGE, ERROR_HINTS, apiErrorMessage, charLimitMessage } from "~/utils/apiErrors";
+import * as bookErrors from "~/utils/bookErrors";
 import {
   BOOK_DETAIL_TEXT,
   BOOK_REASON_TEXT,
   BOOK_SEARCH_TEXT,
   SCENARIO_TEXT,
-  SEARCH_QUERY_MAX,
   failureView,
   reasonFailureText,
   scenarioAiFailed,
 } from "~/utils/bookErrors";
+import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
 
 const root = resolve(__dirname, "../..");
 const read = (rel: string) => readFileSync(resolve(root, rel), "utf-8");
@@ -36,6 +37,16 @@ describe("검색어 글자 수 한도", () => {
     const schema = readFileSync(resolve(root, "../app/schemas/book.py"), "utf-8");
     const m = schema.match(/class SearchRequest\b[\s\S]*?query:\s*str\s*=\s*Field\([^)]*max_length=(\d+)/);
     expect(Number(m?.[1])).toBe(SEARCH_QUERY_MAX);
+  });
+
+  // 소장자료·논문 검색이 같은 값을 따로 export 하던 중복(통합 리뷰 2026-10-16) — 정의는 utils/searchInput.ts 한 곳이고 bookErrors 는 내보내지 않는다
+  it("정의는 utils/searchInput.ts 한 곳 — bookErrors 는 SEARCH_QUERY_MAX 를 내보내지 않는다", () => {
+    expect(read("utils/searchInput.ts")).toContain("export const SEARCH_QUERY_MAX = 500;");
+    expect(Object.keys(bookErrors)).not.toContain("SEARCH_QUERY_MAX");
+    expect(read("utils/bookErrors.ts")).not.toMatch(/export const SEARCH_QUERY_MAX/);
+    for (const page of ["pages/index.vue", "pages/dev/error-states.vue"]) {
+      expect(read(page), page).toMatch(/import \{[^}]*\bSEARCH_QUERY_MAX\b[^}]*\} from "~\/utils\/searchInput";/);
+    }
   });
 });
 
@@ -67,6 +78,12 @@ describe("failureView — 요청 실패를 상태 블록으로", () => {
       message: charLimitMessage(500),
       retry: false,
     });
+  });
+
+  // 404 는 서지 DB 에 그 자료의 행이 없을 때다(app/api/book.py get_book). 이 화면은 앱 안 링크로 들어오므로 '주소를 확인하라'가 아니라 사실을 말한다
+  it("도서 404 설명은 주소 탓이 아니라 자료가 없다는 사실이다", () => {
+    expect(BOOK_DETAIL_TEXT.notFoundMessage).toBe("목록에서 빠졌거나 아직 등록되지 않은 자료예요.");
+    expect(BOOK_DETAIL_TEXT.notFoundMessage).not.toMatch(/주소/);
   });
 
   it("notFound 를 주면 404·410 은 그 상태(다시 시도 없음) — 서버의 '도서 없음: {id}' 같은 원문은 쓰지 않는다", () => {
@@ -138,11 +155,24 @@ describe("랜딩·결과 — pages/index.vue", () => {
   it("랜딩 두 입력창과 결과 검색바 모두 maxlength=500 이고, 글자 수(SkxCharCount)를 aria-describedby 로 가리킨다", () => {
     expect(src.match(/:maxlength="SEARCH_QUERY_MAX"/g)).toHaveLength(3);
     for (const id of ["skx-count-book", "skx-count-paper", "skx-count-result"]) {
-      expect(src).toContain(`:aria-describedby="showCount ? '${id}' : undefined"`);
-      expect(src).toContain(`<SkxCharCount v-if="showCount" id="${id}" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />`);
+      // 늘 같은 id 를 가리킨다(바인딩이 아니라 고정 속성) — 바인딩을 바꾸면 + 메뉴가 덧붙인 DeepResearch 글자 수 id 를 지운다
+      expect(src).toContain(`aria-describedby="${id}"`);
+      expect(src).toMatch(new RegExp(`<SkxCharCount (?:v-if="!deepResearch" )?id="${id}" quiet :length="currentQuery\\.length" :max="SEARCH_QUERY_MAX" />`));
     }
-    // 랜딩 모양을 지키려 글자 수는 한도 가까이(90%)부터만 보인다
-    expect(src).toContain('const showCount = computed(() => charCountState(currentQuery.value.length, SEARCH_QUERY_MAX) !== "normal");');
+  });
+
+  // 사용자 결정(2026-10-16): 검색창 글자 수는 한도 가까이(90%)부터만. v-if 로 90%부터 붙이면 한도에 닿는 순간 새로 생긴 알림 영역을 낭독기가
+  // 놓친다(통합 리뷰) — 늘 그려 두고 quiet(평소엔 화면에서만 숨김)로 보인다
+  it("글자 수는 v-if 로 붙였다 떼지 않고 늘 그린 채 quiet — 한도 가까이부터만 보인다", () => {
+    expect(src).not.toMatch(/showCount|charCountState/);
+    expect(src.match(/<SkxCharCount\b[^>]*\bquiet\b[^>]*\/>/g)).toHaveLength(3);
+    expect(src).toContain('<SkxCharCount id="skx-count-book" quiet');
+    expect(src).toContain('<SkxCharCount id="skx-count-result" quiet');
+  });
+
+  it("DeepResearch 모드인 동안 논문 칸의 글자 수는 + 메뉴(SearchPlusMenu)의 것 하나만 — 이 화면의 것은 모드를 바꿀 때만 붙였다 뗀다", () => {
+    expect(src).toContain('<SkxCharCount v-if="!deepResearch" id="skx-count-paper" quiet');
+    expect(src).not.toMatch(/:aria-describedby=/);
   });
 
   it("랜딩 입력 상자의 보내기 줄은 글자 수와 보내기를 세로 가운데로 맞추고 띄운다(보내기만 있을 때 모양은 그대로)", () => {
@@ -161,7 +191,24 @@ describe("랜딩·결과 — pages/index.vue", () => {
 
   it("[다시 시도]는 실패한 그 검색어(와 같은 기록)로 다시 찾는다", () => {
     expect(src).toContain("lastSearch = { query, reuse };");
-    expect(src).toMatch(/function retrySearch\(\) \{\s*if \(lastSearch\) void handleSearch\(lastSearch\.query, lastSearch\.reuse\);/);
+    expect(src).toMatch(/function retrySearch\(\) \{[\s\S]*?void handleSearch\(lastSearch\.query, lastSearch\.reuse\);\s*\}/);
+  });
+
+  // 통합 리뷰(2026-10-16): [다시 시도]를 누르면 상태 블록이 버튼째 로딩 표시로 바뀌어 초점이 body 로 떨어졌다
+  it("검색 실패 [다시 시도]는 누르자마자 초점을 결과 화면(main, tabindex=-1)으로 옮긴 뒤 다시 찾는다", () => {
+    expect(src).toMatch(/<main v-else-if="view === 'results'" ref="resultMainRef" class="skx-result" tabindex="-1">/);
+    expect(src).toMatch(
+      /function retrySearch\(\) \{\s*if \(!lastSearch \|\| loading\.value\) return;\s*focusRegion\(resultMainRef\.value\);\s*void handleSearch\(/,
+    );
+  });
+
+  it("추천 이유 실패·끊김 [다시 시도]는 초점을 '왜 이 책인가' 칸(tabindex=-1)으로 옮긴 뒤 다시 받는다", () => {
+    expect(src).toMatch(/<section\s+ref="pickWhyRef"\s+class="skx-pick__block"\s+aria-labelledby="skx-pick-why"\s+:aria-busy="reasonPending"\s+tabindex="-1"\s*>/);
+    expect(src).toMatch(/function retryTopReason\(\) \{\s*focusRegion\(pickWhyRef\.value\);\s*const signal = beginRun\(\);/);
+  });
+
+  it("토스트는 낭독기에도 알린다(role=status, aria-live=polite)", () => {
+    expect(src).toContain('<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>');
   });
 
   it("0건(books 없음·0건 기록 복원)은 결과가 정해진 뒤에만 '검색 결과가 없어요' 빈 상태", () => {
@@ -201,7 +248,7 @@ describe("도서 상세 — pages/books/[cnts_id].vue", () => {
     expect(src).toMatch(
       /pageFailure\.value = failureView\(e, BOOK_DETAIL_TEXT\.failedTitle, \{\s*kind: "notFound",\s*title: BOOK_DETAIL_TEXT\.notFoundTitle,\s*message: BOOK_DETAIL_TEXT\.notFoundMessage,\s*\}\);/,
     );
-    expect(src).toMatch(/<SkxErrorState\s+v-else-if="pageFailure"[\s\S]*?title-tag="h1"\s+:on-retry="pageFailure\.retry \? loadPage : undefined"\s*>/);
+    expect(src).toMatch(/<SkxErrorState\s+v-else-if="pageFailure"[\s\S]*?title-tag="h1"\s+:on-retry="pageFailure\.retry \? retryPage : undefined"\s*>/);
     expect(src).toContain(`<button type="button" class="skx-state__action" @click="navigateTo('/')">{{ BOOK_DETAIL_TEXT.home }}</button>`);
     // 서버 detail('도서 없음: {id}')을 그대로 보이지 않는다
     expect(src).not.toMatch(/e\?\.data\?\.detail|class="dt-error"|도서 정보를 불러올 수 없습니다/);
@@ -209,17 +256,43 @@ describe("도서 상세 — pages/books/[cnts_id].vue", () => {
 
   it("관련 자료는 실패(compact + [다시 시도])와 0건(빈 상태)을 가른다 — 빈 catch 가 없다", () => {
     expect(src).toMatch(
-      /<SkxErrorState\s+v-else-if="relatedFailure"[\s\S]*?compact\s+:on-retry="relatedFailure\.retry \? fetchRelatedBooks : undefined"\s*\/>\s*<SkxErrorState v-else-if="!relatedItems\.length" kind="empty" compact :title="BOOK_DETAIL_TEXT\.relatedEmptyTitle" \/>/,
+      /<SkxErrorState\s+v-else-if="relatedFailure"[\s\S]*?compact\s+:on-retry="relatedFailure\.retry \? retryRelated : undefined"\s*\/>\s*<SkxErrorState v-else-if="!relatedItems\.length" kind="empty" compact :title="BOOK_DETAIL_TEXT\.relatedEmptyTitle" \/>/,
     );
     expect(src).toContain("relatedFailure.value = failureView(e, BOOK_DETAIL_TEXT.relatedFailedTitle)");
     expect(src).not.toMatch(/\/\* ignore \*\/|연관 추천 항목이 없습니다/);
   });
 
-  it("AI 큐레이션·추천 이유의 빈 상태도 공통 상태 블록(empty)이고, 빈 상태 문구는 해요체다", () => {
+  // 통합 리뷰(2026-10-16): [다시 시도]를 누르면 상태 블록이 버튼째 로딩 표시로 바뀌어 초점이 body 로 떨어졌다 — 추천 이유의 focusOwningPanel 처럼
+  // 누르자마자 다시 받는 동안에도 남는 감싸는 영역(tabindex=-1)으로 초점을 옮긴다
+  it("불러오기 실패·관련 자료 실패의 [다시 시도]는 초점을 상세 틀·관련 자료 절로 옮긴 뒤 다시 받는다", () => {
+    expect(src).toContain('<div ref="frameRef" class="dt-frame" tabindex="-1">');
+    expect(src).toMatch(/function retryPage\(\) \{\s*if \(pageLoading\.value\) return;\s*focusRegion\(frameRef\.value\);\s*void loadPage\(\);\s*\}/);
+    expect(src).toContain('<section ref="relatedSectionRef" class="dt-section" aria-labelledby="bdetail-related-title" tabindex="-1">');
+    expect(src).toMatch(
+      /function retryRelated\(\) \{\s*if \(relatedLoading\.value\) return;\s*focusRegion\(relatedSectionRef\.value\);\s*void fetchRelatedBooks\(\);\s*\}/,
+    );
+    // 추천 이유는 그대로 탭 본문으로(선례)
+    expect(src).toMatch(/function retryReason\(\) \{\s*if \(reasonLoading\.value\) return;\s*focusOwningPanel\(/);
+  });
+
+  it("AI 큐레이션의 빈 상태는 공통 상태 블록(empty)이고, 빈 상태 문구는 해요체다", () => {
     expect(src).toContain('<SkxErrorState v-else kind="empty" compact :title="BOOK_DETAIL_TEXT.curationEmpty" />');
-    expect(src).toContain('<SkxErrorState v-else-if="!reasonError" kind="empty" compact :title="BOOK_DETAIL_TEXT.reasonEmpty" />');
     expect(src).toContain('empty-text="요약 정보가 없어요."');
     expect(src).not.toMatch(/없습니다/);
+  });
+
+  // 통합 리뷰(2026-10-16): '추천 이유가 없어요' 빈 상태는 탭 조건(aiTabAvailable — 다 받았는데 글도 실패도 없으면 탭을 뺀다)과 맞지 않아 닿지 않는
+  // 갈래였다. 다 받았는데 글이 없는 경우를 실패 하나로 모은다 — 새 서버는 LLM 빈 답을 {error} 로 보내고 옛 서버는 빈 [DONE] 이다
+  it("[추천 이유] 탭에 닿지 않는 빈 상태 갈래가 없고, 끝까지 왔는데 글이 없으면 실패 안내([다시 시도])로 둔다", () => {
+    expect(src).not.toContain("reasonEmpty");
+    expect(Object.keys(BOOK_DETAIL_TEXT)).not.toContain("reasonEmpty");
+    expect(src).toMatch(
+      /if \(pageAbort\.signal\.aborted\) return;[\s\S]*?if \(!reasonText\.value\.trim\(\)\) reasonText\.value = "";\s*if \(!end\.ok \|\| !reasonText\.value\) reasonError\.value = reasonFailureText\(reasonText\.value\);/,
+    );
+  });
+
+  it("토스트는 낭독기에도 알린다(role=status, aria-live=polite)", () => {
+    expect(src).toContain('<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>');
   });
 
   it("?chat=1 로 왔어도 도서를 불러온 뒤에만 DeepRead 패널을 연다 — 못 불러오면 닫을 수 없는 빈 패널이 화면을 덮지 않는다", () => {
@@ -246,13 +319,25 @@ describe("상황별 추천 — pages/recommend/[id].vue", () => {
     expect(src).not.toContain("추천 도서를 불러오는 중 오류가 발생했습니다");
     expect(src).toContain("loadFailure.value = failureView(e, SCENARIO_TEXT.failedTitle, scenarioEmpty());");
     expect(src).toMatch(/if \(!recommendedBooks\.value\.length\) \{\s*loadFailure\.value = scenarioEmpty\(\);/);
-    expect(src).toMatch(/<SkxErrorState\s+v-if="loadFailure && !loading"[\s\S]*?:on-retry="loadFailure\.retry \? fetchRecommend : undefined"\s*>/);
+    expect(src).toMatch(/<SkxErrorState\s+v-if="loadFailure && !loading"[\s\S]*?:on-retry="loadFailure\.retry \? retryLoad : undefined"\s*>/);
     expect(src).toMatch(/<NuxtLink v-if="loadFailure\.kind === 'empty'" to="\/recommend" class="skx-state__action">/);
   });
 
   it("새 서버의 ai_failed 면 소개 자리에 '추천 이유를 만들지 못했어요' 한 줄 + [다시 시도](다시 받기), 옛 서버는 예전처럼 타이핑", () => {
     expect(src).toMatch(/if \(scenarioAiFailed\(data\)\) \{\s*aiFailed\.value = true;\s*return;\s*\}\s*\/\/[^\n]*\n\s*typeText\(data\?\.intro \|\| meta\.value\.aiLabel\);/);
-    expect(src).toMatch(/<SkxInlineError\s+v-if="aiFailed && !loading"\s+:message="SCENARIO_TEXT\.aiFailed"\s+@retry="fetchRecommend"\s*\/>/);
+    expect(src).toMatch(/<SkxInlineError\s+v-if="aiFailed && !loading"\s+:message="SCENARIO_TEXT\.aiFailed"\s+@retry="retryAi"\s*\/>/);
+  });
+
+  // 통합 리뷰(2026-10-16): [다시 시도]를 누르면 상태 블록·줄 안내가 버튼째 빠져 초점이 body 로 떨어졌다
+  it("[다시 시도]는 초점을 남는 칸(불러오기 실패면 결과 카드, ai_failed 면 AI 소개 칸 — tabindex=-1)으로 옮긴 뒤 다시 받는다", () => {
+    expect(src).toContain('<div ref="cardRef" class="skx-result-card" tabindex="-1">');
+    expect(src).toContain('<div ref="aiBoxRef" class="skx-rcd-ai" tabindex="-1">');
+    expect(src).toMatch(/function retryLoad\(\) \{\s*if \(loading\.value\) return;\s*focusRegion\(cardRef\.value\);\s*void fetchRecommend\(\);\s*\}/);
+    expect(src).toMatch(/function retryAi\(\) \{\s*if \(loading\.value\) return;\s*focusRegion\(aiBoxRef\.value\);\s*void fetchRecommend\(\);\s*\}/);
+  });
+
+  it("토스트는 낭독기에도 알린다(role=status, aria-live=polite)", () => {
+    expect(src).toContain('<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>');
   });
 
   it("추천 POST 는 검색 시간 제한·화면 이탈 끊기를 걸고, Esc 리스너는 떠날 때 뗀다", () => {
@@ -274,6 +359,37 @@ describe("장바구니·보존 화면 — 저장소가 막힌 브라우저", () 
     expect(page).toContain("sessionId.value = readOrCreateBrowserId(safeLocalStorage(), generateUUID);");
     expect(search).toContain("readOrCreateBrowserId(safeLocalStorage(), generateUUID)");
     for (const src of [page, search]) expect(src).not.toMatch(/localStorage\.(getItem|setItem)\("sid"/);
+  });
+});
+
+// 통합 리뷰(2026-10-16): 검색 실패가 영문 ofetch 메시지·서버 detail 원문을 빨간 글씨(#ef4444)로 보였다. 보존 화면이라 구조·모양은 두고 문구·색만
+describe("보존 화면 /search-classic — 검색 실패·빈 상태 문구", () => {
+  const page = read("pages/search-classic.vue");
+  const search = read("composables/useSearch.ts");
+
+  it("검색 실패 글은 공통 규칙(apiErrorMessage)의 '검색하지 못했어요 — 이유' — 영문·서버 detail 원문을 쓰지 않는다", () => {
+    expect(search).toContain("error.value = apiErrorMessage(e, BOOK_SEARCH_TEXT.failedTitle);");
+    expect(search).not.toMatch(/e\?\.data\?\.detail|e\?\.message|검색 중 오류가 발생했습니다/);
+    const offlineText = apiErrorMessage(offline, BOOK_SEARCH_TEXT.failedTitle);
+    expect(offlineText).toBe(`검색하지 못했어요 — ${ERROR_HINTS.network}`);
+    expect(apiErrorMessage(fetchError(502), BOOK_SEARCH_TEXT.failedTitle)).not.toMatch(/Fetch|Gateway|POST|api/);
+  });
+
+  it("실패 글은 빨갛게 칠하지 않고 이 화면의 본문색 — 이유가 두 문장이면 줄로 그린다(구조는 그대로)", () => {
+    const area = page.match(/\.error-area \{[^}]*\}/)?.[0] ?? "";
+    expect(area).toContain("color: var(--ink-2);");
+    expect(area).toContain("white-space: pre-line;");
+    expect(area).not.toMatch(/#ef4444|--skx-danger/);
+    expect(page).toMatch(/<div v-else-if="error" class="error-area">\s*<p>\{\{ error \}\}<\/p>\s*<button @click="handleSearch\(currentQuery\)">다시 검색<\/button>/);
+  });
+
+  it("빈 상태 문구는 해요체 — 두 문장은 줄을 나눈다", () => {
+    expect(page).not.toMatch(/없습니다|시도해보세요/);
+    expect(page).toContain("대출 신청한 도서가 없어요");
+    expect(page).toContain("const EMPTY_RESULT_TEXT = `${BOOK_SEARCH_TEXT.emptyTitle}.\\n${BOOK_SEARCH_TEXT.emptyMessage}`;");
+    expect(page).toContain('<div v-if="!bookResult.books.length" class="empty">{{ EMPTY_RESULT_TEXT }}</div>');
+    expect(page).toContain('<div v-if="!chunkResult.chunks.length" class="empty">{{ BOOK_SEARCH_TEXT.emptyTitle }}.</div>');
+    expect(page.match(/\.empty \{[^}]*\}/)?.[0]).toContain("white-space: pre-line;");
   });
 });
 
