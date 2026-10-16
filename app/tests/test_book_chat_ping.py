@@ -12,7 +12,6 @@
 test_book_chat_prompt.py 의 것을 그대로 쓴다.
 """
 import asyncio
-import time
 
 import pytest
 
@@ -95,10 +94,14 @@ def test_a_slow_query_rewrite_sends_pings_before_the_first_event(chat, monkeypat
     assert rest[-1] == DONE and rest.count(DONE) == 1 and events(rest) == ANSWER_EVENTS
 
 
-def test_a_slow_chunk_search_does_not_block_the_pings(chat, monkeypatch, hit):
-    # 임베딩·Milvus 는 동기다 — 스레드에서 돌아(asyncio.to_thread) 도는 동안에도 루프가 ping 을 낸다
+def test_the_chunk_search_stays_on_the_event_loop(chat, monkeypatch, hit):
+    # 임베딩·Milvus 는 동기지만 스레드로 옮기지 않는다 — 메인 검색과 같은 모델·토크나이저를 다른 스레드에서 동시에 쓰지 않게.
+    # 검색은 루프에서 끝까지 돌고, 그 뒤 이벤트 순서는 그대로다
+    import threading
+    loop_thread: list[str] = []
+
     def embed_texts(texts, is_query=False):
-        time.sleep(SLOW)
+        loop_thread.append(threading.current_thread().name)
         return [[0.0]], [{}]
 
     _fake_search(monkeypatch, chat, [hit])
@@ -107,15 +110,14 @@ def test_a_slow_chunk_search_does_not_block_the_pings(chat, monkeypatch, hit):
 
     chunks = _stream(chat)
 
-    assert chunks[0] == PING
+    assert loop_thread == [threading.main_thread().name]
     rest = _without_pings(chunks)
     assert rest[-1] == DONE and rest.count(DONE) == 1 and events(rest) == ANSWER_EVENTS
 
 
-def test_a_slow_failing_search_keeps_its_error_event_last(chat, monkeypatch):
-    # 실패 이벤트({error, code})도 그대로 [DONE] 바로 앞, 마지막 이벤트다 — ping 은 그 앞에만 낀다
+def test_a_failing_search_keeps_its_error_event_last(chat, monkeypatch):
+    # 실패 이벤트({error, code})도 그대로 [DONE] 바로 앞, 마지막 이벤트다
     def embed_texts(texts, is_query=False):
-        time.sleep(SLOW)
         raise ConnectionError("Milvus 연결 실패")
 
     monkeypatch.setattr(chat, "embed_texts", embed_texts)
@@ -123,7 +125,7 @@ def test_a_slow_failing_search_keeps_its_error_event_last(chat, monkeypatch):
 
     chunks = _stream(chat)
 
-    assert chunks[0] == PING and chunks[-1] == DONE and chunks.count(DONE) == 1 and chunks[-2] != PING
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1 and chunks[-2] != PING
     assert events(_without_pings(chunks)) ==[{"error": chat.CHAT_RETRIEVAL_ERROR, "code": "retrieval_failed"}]
     assert payloads == []   # LLM 은 부르지 않는다
 

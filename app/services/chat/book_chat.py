@@ -128,9 +128,10 @@ def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHi
 
 
 def _search_book_chunks(query: str, cnts_id: str) -> list[SearchHit]:
-    """질의를 임베딩해 이 자료(cnts_id)의 청크만 찾는다 — 동기(BGE-M3·Milvus)라 스트림은 asyncio.to_thread 로 부른다.
-    이벤트 루프에서 바로 부르면 도는 동안 루프가 막혀 ': ping' 도 다른 요청도 나가지 못한다(엔드포인트가 run_in_threadpool
-    로 부르는 research_work/membership.concept_affinity 처럼 스레드에서 임베딩한다)."""
+    """질의를 임베딩해 이 자료(cnts_id)의 청크만 찾는다 — 동기(BGE-M3·Milvus)지만 스레드로 옮기지 않고 루프에서 부른다.
+    메인 검색(pipeline.search)이 같은 BGE-M3 모델·빠른 토크나이저를 루프에서 바로 쓰는데, 다른 스레드에서 동시에 쓰면
+    토크나이저 동시 사용 오류('Already borrowed')로 메인 검색까지 깨질 수 있다(대회 주간에 새 동시 경로를 늘리지 않는다).
+    검색은 짧아(1초 안팎) 15초 ping 을 막을 만큼 루프를 오래 잡지 않는다 — 오래 기다리는 구간(질의 재구성·LLM 첫 조각)은 비동기다"""
     dense, sparse = embed_texts([query], is_query=True)
     return search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
 
@@ -228,7 +229,7 @@ async def _chat_events(
     hits = []
     if not ref_context_block:
         try:
-            hits = await asyncio.to_thread(_search_book_chunks, search_query, cnts_id)
+            hits = _search_book_chunks(search_query, cnts_id)
         except Exception as e:
             log.error("[%s] 채팅 청크 검색 실패 — 답하지 않고 끝낸다: %s: %s", cnts_id, type(e).__name__, e, exc_info=True)
             yield _error_event(CHAT_RETRIEVAL_ERROR, "retrieval_failed")
