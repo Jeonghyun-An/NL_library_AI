@@ -48,7 +48,8 @@ describe("논문 검색 AI 요약 — pages/papers/index.vue", () => {
   const src = read("pages/papers/index.vue");
 
   it("끝까지 받은 요약만 검색 기록(ai)에 저장하고, 실패는 오류 문구로 둔다", () => {
-    expect(src).toMatch(/if \(end\.ok\) \{\s*if \(text\) void historyApi\.patch\(historyId, \{ ai: \{ text, refs \} \}\)/);
+    // 기록 id 가 없으면(저장 전에 끊긴 검색을 [다시 시도]로 다시 받음) 보이기만 하고 저장하지 않는다
+    expect(src).toMatch(/if \(end\.ok\) \{\s*if \(text && historyId\) void historyApi\.patch\(historyId, \{ ai: \{ text, refs \} \}\)/);
     expect(src).toContain("aiError.value = failureText(end, AI_SUMMARY_FAILED)");
   });
 

@@ -6,3 +6,6 @@
 export function hasQuery(text: unknown): boolean {
   return typeof text === "string" && text.trim().length > 0;
 }
+
+// 검색어 글자 수 한도 — 서버 SearchRequest.query max_length 와 같다
+export const SEARCH_QUERY_MAX = 500;

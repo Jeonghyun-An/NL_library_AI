@@ -34,7 +34,7 @@
             <button
               type="button"
               class="dt-cite__btn"
-              :aria-busy="checkingPdf"
+              :aria-busy="pdfCheckingAt === 'banner' ? 'true' : undefined"
               :aria-describedby="bannerPdfProblem ? 'pdetail-cite-problem' : undefined"
               @click="openCitedPassages(cite.chunks)"
             >
@@ -91,7 +91,7 @@
                 <button
                   type="button"
                   class="dt-btn dt-btn--ghost"
-                  :aria-busy="checkingPdf"
+                  :aria-busy="pdfCheckingAt === 'original' ? 'true' : undefined"
                   :aria-describedby="pdfProblem ? 'pdetail-pdf-problem' : undefined"
                   @click="openOriginal"
                 >
@@ -239,7 +239,8 @@
                   <button
                     type="button"
                     class="dt-btn dt-btn--ghost"
-                    :aria-busy="checkingPdf"
+                    :aria-busy="pdfCheckingAt === `related:${rel.book_id}` ? 'true' : undefined"
+                    :aria-describedby="relatedPdfProblem?.id === rel.book_id ? relatedProblemId(rel.book_id) : undefined"
                     @click="openRelatedPdf(rel)"
                   >
                     원문 보기
@@ -254,7 +255,11 @@
                   </button>
                 </template>
                 <template #note>
-                  <SkxInlineError v-if="relatedPdfProblem?.id === rel.book_id" :message="relatedPdfProblem?.message ?? ''" />
+                  <SkxInlineError
+                    v-if="relatedPdfProblem?.id === rel.book_id"
+                    :id="relatedProblemId(rel.book_id)"
+                    :message="relatedPdfProblem?.message ?? ''"
+                  />
                 </template>
               </DetailRelatedCard>
             </div>
@@ -320,7 +325,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>
@@ -334,7 +339,7 @@ import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useResearchApi } from "~/composables/useResearch";
-import type { ReportChunk, ResearchJob } from "~/types/research";
+import type { OpenPdfPayload, ReportChunk, ResearchJob } from "~/types/research";
 import { readAiCache, relatedCacheKey, summaryCacheKey, writeAiCache } from "~/utils/aiCache";
 import {
   AI_SUMMARY_FAILED,
@@ -544,10 +549,27 @@ const bannerPdfProblem = ref("");
 // 연관 논문 카드 팝업의 [원문 보기]가 열지 못한 까닭 — 그 카드 팝업 안에 알린다
 const relatedPdfProblem = ref<{ id: string; message: string } | null>(null);
 
+// 지금 원문 파일을 확인하는 버튼('original' 머리 · 'banner' 인용 배너 · 'related:{id}' 관련 카드) — 그 버튼에만 aria-busy 를 단다
+// (확인은 한 번에 하나라 다른 버튼은 누름만 무시된다)
+const pdfCheckingAt = ref<string | null>(null);
+async function checkPdfAt(at: string, target: OpenPdfPayload): Promise<string | null> {
+  pdfCheckingAt.value = at;
+  try {
+    return await openPdf(target);
+  } finally {
+    pdfCheckingAt.value = null;
+  }
+}
+
+// 관련 카드의 원문을 열지 못한 까닭 줄 — 그 카드의 [원문 보기]가 aria-describedby 로 가리킨다
+function relatedProblemId(bookId: string): string {
+  return `pdetail-related-problem-${bookId}`;
+}
+
 // 확인 중에는 어느 쪽 버튼이든 무시한다 — openPdf 가 null 을 돌려줘 안내 문구가 지워지는 일이 없게. 원문이 열리면 두 문구를 함께 지운다
 async function openOriginal() {
   if (checkingPdf.value) return;
-  const problem = await openPdf({ cntsId: paperId, title: paper.value?.title ?? "" });
+  const problem = await checkPdfAt("original", { cntsId: paperId, title: paper.value?.title ?? "" });
   pdfProblem.value = problem ?? "";
   if (!problem) bannerPdfProblem.value = "";
 }
@@ -555,14 +577,14 @@ async function openOriginal() {
 // 첫 인용 쪽에서 열고 머리의 "인용 대목 n/N" 으로 대목을 넘겨 본다
 async function openCitedPassages(chunks: readonly ReportChunk[]) {
   if (checkingPdf.value) return;
-  const problem = await openPdf(citedPdfTarget(paperId, paper.value?.title ?? "", chunks));
+  const problem = await checkPdfAt("banner", citedPdfTarget(paperId, paper.value?.title ?? "", chunks));
   bannerPdfProblem.value = problem ?? "";
   if (!problem) pdfProblem.value = "";
 }
 
 async function openRelatedPdf(rel: any) {
   if (checkingPdf.value) return;
-  const problem = await openPdf({ cntsId: rel.book_id, title: rel.book_info?.title ?? "" });
+  const problem = await checkPdfAt(`related:${rel.book_id}`, { cntsId: rel.book_id, title: rel.book_info?.title ?? "" });
   relatedPdfProblem.value = problem ? { id: rel.book_id, message: problem } : null;
 }
 

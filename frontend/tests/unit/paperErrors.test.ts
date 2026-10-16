@@ -8,7 +8,9 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ERROR_HINTS, VALIDATION_HINTS } from "~/utils/apiErrors";
 import { copySelection, copyToClipboard } from "~/utils/clipboard";
-import { PAPER_STATE_TEXT, SEARCH_QUERY_MAX, isRetryableKind, shownError } from "~/utils/paperErrors";
+import * as paperErrors from "~/utils/paperErrors";
+import { PAPER_STATE_TEXT, isRetryableKind, shownError } from "~/utils/paperErrors";
+import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
 
 const root = resolve(__dirname, "../..");
 const read = (rel: string) => readFileSync(resolve(root, rel), "utf-8");
@@ -81,6 +83,16 @@ describe("문구 — 해요체, 두 문장 이상은 문장마다 줄을 바꾼�
     for (const line of text.split("\n")) expect(line).toMatch(/[.?!…]$/);
   });
 
+  it("토스트 문구(없는 기록)는 한 문장 — 토스트는 한 줄(nowrap)이라 '\\n' 이 보이지 않는다. 소장자료 랜딩의 같은 토스트와 같은 말", () => {
+    expect(PAPER_STATE_TEXT.missingHistory).toBe("없는 기록이라 목록을 새로 고쳤어요.");
+    expect(PAPER_STATE_TEXT.missingHistory).not.toContain("\n");
+  });
+
+  it("논문 404 설명은 주소 확인을 시키지 않고 사실만 — 앱 안 링크로 왔는데 카탈로그에 그 논문이 없다", () => {
+    expect(PAPER_STATE_TEXT.detailNotFoundHint).toBe("목록에서 빠졌거나 아직 등록되지 않은 논문이에요.");
+    expect(Object.values(PAPER_STATE_TEXT).join("\n")).not.toMatch(/주소가 맞는지/);
+  });
+
   it("오류 화면 모음의 본보기 제목과 같은 말(검색 실패·상세 실패·결과 없음)", () => {
     const gallery = read("pages/dev/error-states.vue");
     for (const title of [PAPER_STATE_TEXT.searchFailed, PAPER_STATE_TEXT.detailFailed, PAPER_STATE_TEXT.searchEmpty, PAPER_STATE_TEXT.searchEmptyHint]) {
@@ -90,6 +102,16 @@ describe("문구 — 해요체, 두 문장 이상은 문장마다 줄을 바꾼�
 });
 
 describe("SEARCH_QUERY_MAX — 서버 검색어 한도와 같다", () => {
+  it("한 곳(utils/searchInput)에만 둔다 — paperErrors 는 내보내지 않고, 논문 화면은 searchInput 에서 가져다 쓴다", () => {
+    expect("SEARCH_QUERY_MAX" in paperErrors).toBe(false);
+    expect(read("utils/searchInput.ts")).toMatch(
+      /\/\/ 검색어 글자 수 한도 — 서버 SearchRequest\.query max_length 와 같다\r?\nexport const SEARCH_QUERY_MAX = 500;/,
+    );
+    for (const file of ["pages/papers/index.vue", "components/detail/SearchBar.vue"]) {
+      expect(read(file), file).toMatch(/import \{ hasQuery, SEARCH_QUERY_MAX \} from "~\/utils\/searchInput";/);
+    }
+  });
+
   it("app/schemas/book.py SearchRequest.query 의 max_length·연구 질문 한도와 같은 500", () => {
     expect(SEARCH_QUERY_MAX).toBe(500);
     const schema = readFileSync(resolve(root, "../app/schemas/book.py"), "utf-8");
@@ -143,6 +165,24 @@ describe("copyToClipboard — Clipboard API, 없으면 글을 선택해 옛 방�
     expect(dom.ranges).toHaveLength(0);
   });
 
+  it("옛 방식으로 복사했으면 사용자가 그 전에 잡아 둔 선택을 되살린다(복제한 범위로)", async () => {
+    vi.stubGlobal("navigator", {});
+    const dom = fakeDom(true);
+    const userRange = { cloneRange: vi.fn(() => "사용자 선택(복제)") };
+    Object.assign(dom.selection, { rangeCount: 1, getRangeAt: vi.fn(() => userRange) });
+    await expect(copyToClipboard("인용문", source)).resolves.toBe(true);
+    expect(dom.execCommand).toHaveBeenCalledWith("copy");
+    expect(dom.ranges).toEqual(["사용자 선택(복제)"]);
+  });
+
+  it("옛 방식도 안 되면 원래 선택 대신 그 글을 선택해 둔다(직접 복사하게)", () => {
+    const dom = fakeDom(false);
+    const userRange = { cloneRange: vi.fn(() => "사용자 선택(복제)") };
+    Object.assign(dom.selection, { rangeCount: 1, getRangeAt: vi.fn(() => userRange) });
+    expect(copySelection(source)).toBe(false);
+    expect(dom.ranges).toEqual([dom.range]);
+  });
+
   it("Clipboard API 가 거절하면(권한) 옛 방식으로 한 번 더", async () => {
     vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("NotAllowedError")) } });
     const dom = fakeDom(true);
@@ -192,10 +232,58 @@ describe("논문 검색 — pages/papers/index.vue", () => {
     expect(src).toContain('<AiResultPanel v-if="paperResult?.books.length"');
   });
 
-  it("랜딩 입력 상자·결과 검색바는 500자까지 받고 글자 수를 aria-describedby 로 잇는다", () => {
+  it("랜딩 입력 상자·결과 검색바는 500자까지 받고 글자 수를 aria-describedby 로 잇는다 — 글자 수는 한도 가까이부터만(quiet)", () => {
     expect(src.match(/:maxlength="SEARCH_QUERY_MAX"/g)).toHaveLength(2);
-    expect(src).toMatch(/<textarea[\s\S]*?:aria-describedby="landingCountId"[\s\S]*?<SkxCharCount :id="landingCountId" :length="currentQuery\.length" :max="SEARCH_QUERY_MAX" \/>/);
-    expect(src).toMatch(/<input[\s\S]*?:aria-describedby="barCountId"[\s\S]*?\/>\s*<SkxCharCount :id="barCountId" :length="currentQuery\.length" :max="SEARCH_QUERY_MAX" \/>/);
+    expect(src).toMatch(/<textarea[\s\S]*?:aria-describedby="landingCountId"[\s\S]*?<SkxCharCount quiet :id="landingCountId" :length="currentQuery\.length" :max="SEARCH_QUERY_MAX" \/>/);
+    expect(src).toMatch(/<input[\s\S]*?:aria-describedby="barCountId"[\s\S]*?\/>\s*<SkxCharCount quiet :id="barCountId" :length="currentQuery\.length" :max="SEARCH_QUERY_MAX" \/>/);
+    // 한 입력에 글자 수 하나 — 늘 보이는 글자 수가 남지 않았다
+    expect(src.match(/<SkxCharCount\b/g)).toHaveLength(2);
+    expect(src).not.toMatch(/<SkxCharCount (?!quiet)/);
+  });
+
+  it("공통 규칙(.skx-search__actions — 가운데 맞춤·gap)과 겹치던 scoped 규칙은 없다", () => {
+    const style = src.slice(src.indexOf("<style scoped>"));
+    expect(style).not.toContain(".skx-search__actions");
+  });
+
+  it("검색이 끝나 결과가 있으면 기록 저장을 기다리기 전에 '분석 중'으로 둔다('AI 요약이 없어요'가 먼저 보이지 않게)", () => {
+    expect(src).toMatch(
+      /paperResult\.value = data;\s*loading\.value = false;[\s\S]*?if \(data\.books\?\.length\) aiLoading\.value = true;[\s\S]*?await historyApi\.add\(/,
+    );
+    // 실패하면 그 표시를 걷는다
+    expect(src).toMatch(/paperResult\.value = \{ mode: "book", query, books: \[\], elapsed_ms: 0 \};\s*aiLoading\.value = false;/);
+  });
+
+  it("[다시 시도](검색 실패·AI 요약 실패)는 버튼이 빠지기 전에 감싸는 자리로 초점을 옮긴다 — 키보드로 왔을 때만 테두리", () => {
+    expect(src).toContain('<div ref="frameRef" class="skx-rframe" tabindex="-1">');
+    expect(src).toMatch(/function retrySearch\(\) \{[\s\S]*?frameRef\.value\?\.focus\(\);\s*void handleSearch\(query, reuse\);/);
+    expect(src).toMatch(/<ClampedPanel\s+ref="aiMainRef"[^>]*class="skx-pai-main"\s+tabindex="-1"/);
+    expect(src).toMatch(/function retryAiSummary\(\) \{[\s\S]*?\(aiMainRef\.value\?\.\$el as HTMLElement \| undefined\)\?\.focus\(\);\s*const signal = beginRun\(\);/);
+    const style = src.slice(src.indexOf("<style scoped>"));
+    expect(style).toMatch(/\.skx-rframe:focus,\s*\.skx-pai-main:focus \{\s*outline: none;/);
+    expect(style).toMatch(/\.skx-rframe:focus-visible,\s*\.skx-pai-main:focus-visible \{\s*outline: 2px solid var\(--skx-accent\);/);
+  });
+
+  it("AI 요약이 글 없이 실패하면 참고 목록을 결과 카드의 'AI 답변 인용' 칩·위로 고정에 쓰지 않는다(오른쪽 참고 칸에는 그대로)", () => {
+    expect(src).toContain("const aiCited = computed(() => !aiError.value || !!aiText.value.trim());");
+    expect(src).toMatch(/const aiRefNumMap = computed\(\(\) => \{\s*const m = new Map<string, number>\(\);\s*if \(!aiCited\.value\) return m;/);
+    // 칩(aiCitedNum)·고정(filteredPapers) 모두 aiRefNumMap 하나로 정한다
+    expect(src).toContain(':ai-cited-num="aiRefNumMap.get(paper.book_id) ?? null"');
+    expect(src).toMatch(/const filteredPapers = computed\(\(\) => \{[\s\S]*?if \(!aiRefNumMap\.value\.size\) return base;/);
+    // 참고 목록은 끝난 뒤 실패 여부와 함께 한 번에 건다 — 두 이벤트 사이에 카드가 올라갔다 내려오지 않게
+    expect(src).toContain("if (Array.isArray(evt.sources)) refs = evt.sources;");
+    expect(src).toMatch(/if \(signal\.aborted\) return;\s*aiLoading\.value = false;\s*aiRefs\.value = refs;/);
+  });
+
+  it("없는 기록 토스트로 끝나는 복원은 끊긴 요약을 '분석 중'으로 남기지 않는다", () => {
+    expect(src).toMatch(/settleAiSummary\(\);\s*showToast\(PAPER_STATE_TEXT\.missingHistory\);/);
+    expect(src).toMatch(/function settleAiSummary\(\) \{\s*if \(!aiLoading\.value\) return;\s*aiLoading\.value = false;\s*aiError\.value = AI_SUMMARY_FAILED;/);
+  });
+
+  it("결과 카드의 [원문 보기]는 누른 카드에만 aria-busy", () => {
+    expect(src).toContain(':pdf-busy="checkingPdfId === paper.book_id"');
+    expect(src).not.toContain(':pdf-busy="checkingPdf"');
+    expect(src).toMatch(/checkingPdfId\.value = paper\.book_id;[\s\S]*?finally \{\s*checkingPdfId\.value = null;/);
   });
 
   it("결과 카드의 [원문 보기]는 파일을 확인한 뒤 열고, 없으면 그 카드에 알린다", () => {
@@ -218,10 +306,10 @@ describe("논문 검색 — pages/papers/index.vue", () => {
 describe("상세 검색바 — components/detail/SearchBar.vue", () => {
   const src = read("components/detail/SearchBar.vue");
 
-  it("500자까지 받고 글자 수를 보내기 왼쪽에, 입력창이 aria-describedby 로 가리킨다", () => {
+  it("500자까지 받고 글자 수를 보내기 왼쪽에(한도 가까이부터만 — quiet), 입력창이 aria-describedby 로 가리킨다", () => {
     expect(src).toContain(':maxlength="SEARCH_QUERY_MAX"');
     expect(src).toContain(':aria-describedby="countId"');
-    expect(src).toMatch(/<SkxCharCount :id="countId" :length="text\.length" :max="SEARCH_QUERY_MAX" \/>\s*<button type="submit" class="skx-send"/);
+    expect(src).toMatch(/<SkxCharCount quiet :id="countId" :length="text\.length" :max="SEARCH_QUERY_MAX" \/>\s*<button type="submit" class="skx-send"/);
   });
 });
 
@@ -246,9 +334,22 @@ describe("논문 상세 — pages/papers/[id].vue", () => {
   });
 
   it("원문을 열지 못한 까닭은 세 곳(머리·인용 배너·관련 카드 팝업) 모두 공통 줄 안내 — 빨간 .dt-note 는 없다", () => {
-    expect(src.match(/<SkxInlineError v-if="(pdfProblem|bannerPdfProblem|relatedPdfProblem\?\.id === rel\.book_id)"/g)).toHaveLength(3);
+    expect(src.match(/<SkxInlineError\s+v-if="(pdfProblem|bannerPdfProblem|relatedPdfProblem\?\.id === rel\.book_id)"/g)).toHaveLength(3);
     expect(src).not.toMatch(/dt-note|dt-error/);
     expect(src.match(/\{\{ PAPER_STATE_TEXT\.kciOriginal \}\}/g)).toHaveLength(2);
+  });
+
+  it("원문 파일을 확인하는 동안 누른 버튼에만 aria-busy(머리·인용 배너·관련 카드), 관련 카드의 [원문 보기]는 열지 못한 까닭을 가리킨다", () => {
+    expect(src).not.toContain(':aria-busy="checkingPdf"');
+    expect(src).toContain(":aria-busy=\"pdfCheckingAt === 'banner' ? 'true' : undefined\"");
+    expect(src).toContain(":aria-busy=\"pdfCheckingAt === 'original' ? 'true' : undefined\"");
+    expect(src).toContain(":aria-busy=\"pdfCheckingAt === `related:${rel.book_id}` ? 'true' : undefined\"");
+    expect(src).toMatch(/async function checkPdfAt\(at: string, target: OpenPdfPayload\)[\s\S]*?pdfCheckingAt\.value = at;[\s\S]*?finally \{\s*pdfCheckingAt\.value = null;/);
+    expect(src).toContain('await checkPdfAt("original", ');
+    expect(src).toContain('await checkPdfAt("banner", ');
+    expect(src).toContain("await checkPdfAt(`related:${rel.book_id}`, ");
+    expect(src).toContain(':aria-describedby="relatedPdfProblem?.id === rel.book_id ? relatedProblemId(rel.book_id) : undefined"');
+    expect(src).toMatch(/<SkxInlineError\s+v-if="relatedPdfProblem\?\.id === rel\.book_id"\s+:id="relatedProblemId\(rel\.book_id\)"/);
   });
 
   it("빈 상태(요약·큐레이션·참고문헌)도 공통 상태 블록이고 옛 합쇼체 문구가 남지 않았다", () => {
@@ -258,6 +359,13 @@ describe("논문 상세 — pages/papers/[id].vue", () => {
     for (const old of ["AI 분석 정보가 없습니다", "AI 큐레이션 정보가 없습니다", "참고문헌 정보가 없습니다", "관련 자료가 없습니다", "추천 사유 정보가 없습니다"]) {
       expect(src, old).not.toContain(old);
     }
+  });
+});
+
+describe("토스트 — 논문 검색·논문 상세", () => {
+  it.each(["pages/papers/index.vue", "pages/papers/[id].vue"])("%s: 화면 낭독기가 읽는다(role=status, aria-live=polite)", (file) => {
+    const toasts = [...read(file).matchAll(/<div v-if="toast" class="skx-toast"[^>]*>/g)].map((m) => m[0]);
+    expect(toasts).toEqual(['<div v-if="toast" class="skx-toast" role="status" aria-live="polite">']);
   });
 });
 
@@ -301,6 +409,11 @@ describe("출처 인용 창 — components/CitationModal.vue", () => {
     expect(src).not.toContain("navigator.clipboard");
     expect(src).toContain("await copyToClipboard(text, source)");
     expect(src.match(/<SkxInlineError v-if="copyFailed === '(refs|cite)'" :message="PAPER_STATE_TEXT\.copyFailed" \/>/g)).toHaveLength(2);
+  });
+
+  it("[다시 시도] 뒤 초점을 받는 인용 칸은 키보드로 왔을 때 초점 테두리가 보인다(늘 지우지 않는다)", () => {
+    expect(src).toContain('<div ref="citeBlockEl" class="cm-block" tabindex="-1">');
+    expect(src).toMatch(/\.cm-block:focus-visible \{\s*outline: 2px solid var\(--skx-accent\);/);
   });
 
   it("늦게 온 응답이 다시 연 창을 덮지 않는다(마지막 요청만)", () => {

@@ -27,8 +27,9 @@
               ></textarea>
             </label>
             <div class="skx-search__actions">
-              <!-- 글자 수 — 서버 한도(500자)를 넘는 검색어는 입력창이 먼저 막는다(넘으면 422 로 거절된다) -->
-              <SkxCharCount :id="landingCountId" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
+              <!-- 글자 수 — 서버 한도(500자)를 넘는 검색어는 입력창이 먼저 막는다(넘으면 422 로 거절된다). 한도 가까이부터만 보인다
+                   (quiet — 평소엔 화면에서만 숨는다, 사용자 결정 2026-10-16). DeepResearch 모드의 질문 한도도 500 이라 이 하나로 알린다 -->
+              <SkxCharCount quiet :id="landingCountId" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
               <button
                 type="button"
                 class="skx-send"
@@ -60,7 +61,7 @@
           :aria-describedby="barCountId"
           @keydown.enter.prevent="handleSearch(currentQuery)"
         />
-        <SkxCharCount :id="barCountId" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
+        <SkxCharCount quiet :id="barCountId" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
         <button
           type="button"
           class="skx-send"
@@ -72,7 +73,9 @@
         </button>
       </div>
 
-      <div class="skx-rframe">
+      <!-- 결과 자리 — 검색 실패의 [다시 시도]는 검색이 시작되면 상태 블록째 빠진다. 초점을 이 자리로 먼저 옮겨(tabindex="-1")
+           body 로 떨어지지 않게 하고, 스피너·결과가 그 안에 차례로 그려진다 -->
+      <div ref="frameRef" class="skx-rframe" tabindex="-1">
         <!-- 로딩 -->
         <div v-if="loading" style="padding: 40px; text-align: center">
           <img :src="SPINNER_SRC" alt="" style="width: 32px" />
@@ -92,9 +95,12 @@
           <!-- AI 검색 결과 — 틀(머리·DeepRead 안내·2:1 두 칸)은 소장자료 결과와 같은 AiResultPanel. 결과가 0건이면 요약할 논문이 없어 그리지 않는다 -->
           <AiResultPanel v-if="paperResult?.books.length" :loading="aiLoading" :hint="!!aiText && !aiLoading">
             <!-- 좌측: 요약 텍스트 -->
+            <!-- AI 요약 실패의 [다시 시도](#after 줄 안내)는 다시 받는 동안 빠진다 — 초점을 이 패널로 먼저 옮긴다(tabindex="-1") -->
             <ClampedPanel
+              ref="aiMainRef"
               v-model:expanded="aiExpanded"
               class="skx-pai-main"
+              tabindex="-1"
               :collapsed-rem="20"
               more-label="전체보기"
               scroll-anchor=".skx-aip"
@@ -214,7 +220,7 @@
                 :anchor="resultAnchor(paper.book_id)"
                 :ai-cited-num="aiRefNumMap.get(paper.book_id) ?? null"
                 :pdf-problem="resultPdfProblem?.id === paper.book_id ? resultPdfProblem.message : ''"
-                :pdf-busy="checkingPdf"
+                :pdf-busy="checkingPdfId === paper.book_id"
                 @open="goToDetail(paper, $event)"
                 @chat="goToDetail(paper, $event, { chat: '1' })"
                 @pdf="openResultPdf(paper)"
@@ -274,7 +280,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>
@@ -282,6 +288,7 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
+import type { ComponentPublicInstance } from "vue";
 import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
 import { usePdfOpener } from "~/composables/usePdfOpener";
@@ -310,9 +317,9 @@ import { citeYear, type SummaryRef } from "~/utils/summaryCite";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
-import { hasQuery } from "~/utils/searchInput";
+import { hasQuery, SEARCH_QUERY_MAX } from "~/utils/searchInput";
 import { AI_SUMMARY_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
-import { isRetryableKind, PAPER_STATE_TEXT, SEARCH_QUERY_MAX, shownError, type ShownError } from "~/utils/paperErrors";
+import { isRetryableKind, PAPER_STATE_TEXT, shownError, type ShownError } from "~/utils/paperErrors";
 
 const api = useApi();
 const route = useRoute();
@@ -339,6 +346,8 @@ const loading = ref(false);
 const searchError = ref<ShownError | null>(null);
 let failedSearch: { query: string; reuse?: PaperEntry } | null = null;
 const paperResult = ref<BookSearchResponse | null>(null);
+// 결과 자리(.skx-rframe) — 검색 실패의 [다시 시도]가 초점을 옮겨 둔다
+const frameRef = ref<HTMLElement | null>(null);
 
 // 글자 수(SkxCharCount) — 입력창이 aria-describedby 로 가리킨다. 랜딩 입력 상자와 결과 검색바는 함께 그려지지 않지만 id 는 따로 둔다
 const landingCountId = `papers-count-${useId()}`;
@@ -371,6 +380,8 @@ const aiLoading = ref(false);
 // 요약을 만들지 못했을 때 보일 문구(AI_SUMMARY_FAILED — 서버의 {error} 문구는 쓰지 않는다) — 받은 글에 잇지 않고 따로 보인다
 const aiError = ref("");
 const aiExpanded = ref(false);
+// 요약 패널(ClampedPanel 의 뿌리 — tabindex="-1") — AI 요약 실패의 [다시 시도]가 초점을 옮겨 둔다
+const aiMainRef = ref<ComponentPublicInstance | null>(null);
 const aiRefs = ref<
   { num: number; book_id: string; title: string; authors: string }[]
 >([]);
@@ -387,12 +398,20 @@ const currentPage = ref(1);
 // 원문 보기는 파일이 있는지 먼저 확인하고 연다(usePdfOpener — 논문 상세·딥리서치와 같다). 없으면 누른 결과 카드 아래에 알린다
 const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
 const resultPdfProblem = ref<{ id: string; message: string } | null>(null);
+// 지금 원문 파일을 확인하는 카드 — 그 카드의 [원문 보기]에만 aria-busy 를 단다(확인은 한 번에 하나라 다른 카드는 누름만 무시된다)
+const checkingPdfId = ref<string | null>(null);
 
 // 결과 카드의 [원문 보기] — 확인 중에 다른 카드를 눌러도 무시한다(openPdf 가 null 을 돌려줘 안내가 지워지지 않게).
 // 확인하는 사이 결과가 바뀌었으면(랜딩으로·다른 검색) 그 결과에 없는 논문의 뷰어·안내를 남기지 않는다
 async function openResultPdf(paper: BookChunkGroup) {
   if (checkingPdf.value) return;
-  const problem = await openPdf({ cntsId: paper.book_id, title: paper.book_info?.title ?? "" });
+  checkingPdfId.value = paper.book_id;
+  let problem: string | null;
+  try {
+    problem = await openPdf({ cntsId: paper.book_id, title: paper.book_info?.title ?? "" });
+  } finally {
+    checkingPdfId.value = null;
+  }
   if (!aiRefPaperMap.value.has(paper.book_id)) {
     if (!problem) closePdf();
     return;
@@ -426,9 +445,14 @@ const hasResults = computed(() => paperResult.value !== null || loading.value);
 // 고른 정렬·개수·쪽을 이 방문 기록(history.state)에 남긴다 — 소장자료 결과와 같다. 상세에서 돌아오면 applyPaperEntry 가 읽는다
 rememberListView(sortBy, pageSize, currentPage, () => hasResults.value);
 
-// AI 답변 인용 논문: book_id → 인용 번호 (우측 참고 카드 번호와 동일)
+// 인용한 답이 있는가 — 요약을 만들지 못했고(실패) 받은 글도 없으면 없다. 서버가 실패 앞에 보내는 참고 목록(sources — 넘겨준
+// 논문이라 맞다)은 오른쪽 참고 칸에만 쓰고, 결과 카드의 칩·고정에는 쓰지 않는다(전에는 요약 없이 'AI 답변 인용 N' 칩이 붙고 카드가 위로 올라갔다)
+const aiCited = computed(() => !aiError.value || !!aiText.value.trim());
+
+// AI 답변 인용 논문: book_id → 인용 번호 (우측 참고 카드 번호와 동일) — 결과 카드의 'AI 답변 인용 N' 칩과 위로 고정에 쓴다
 const aiRefNumMap = computed(() => {
   const m = new Map<string, number>();
+  if (!aiCited.value) return m;
   for (const r of aiRefs.value) m.set(r.book_id, r.num);
   return m;
 });
@@ -568,6 +592,9 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
     if (signal.aborted) return;
     paperResult.value = data;
     loading.value = false;
+    // 요약할 논문이 있으면 기록 저장을 기다리는 동안도 '분석 중'으로 둔다 — 요약 스트림은 저장 뒤에 시작해,
+    // 그 사이 'AI 요약이 없어요'(빈 상태)가 먼저 보였다가 바뀌었다
+    if (data.books?.length) aiLoading.value = true;
 
     // 기록 id 를 먼저 확정해 요약 스트림에 넘긴다 — 끝난 뒤 저장이 그 사이 바뀐 화면의 기록을 덮지 않게
     const snapshot = slimPaperResult(data) ?? undefined;
@@ -585,15 +612,18 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
     searchError.value = shownError(e) ?? { kind: "unknown", message: "" };
     failedSearch = { query, reuse };
     paperResult.value = { mode: "book", query, books: [], elapsed_ms: 0 };
+    aiLoading.value = false;
   } finally {
     if (!signal.aborted) loading.value = false;
   }
 }
 
-// 검색 실패의 [다시 시도] — 같은 검색어로(기록을 채우던 검색이면 그 기록까지) 다시 보낸다
+// 검색 실패의 [다시 시도] — 같은 검색어로(기록을 채우던 검색이면 그 기록까지) 다시 보낸다.
+// 누른 버튼(상태 블록)은 검색이 시작되면 빠진다 — 초점을 결과 자리로 먼저 옮겨 body 로 떨어지지 않게 한다
 function retrySearch() {
-  if (!failedSearch) return;
+  if (!failedSearch || loading.value) return;
   const { query, reuse } = failedSearch;
+  frameRef.value?.focus();
   void handleSearch(query, reuse);
 }
 
@@ -698,6 +728,8 @@ async function restoreFromQuery() {
     await handleSearch(retryQuery, paper ?? undefined);
     return;
   }
+  // 이 복원이 beginRun 으로 끊은 요약(스트림·기록 저장 대기)이 이어받을 화면 없이 끝나는 길 — '분석 중'으로 굳지 않게 매듭짓는다
+  settleAiSummary();
   showToast(PAPER_STATE_TEXT.missingHistory);
 }
 
@@ -753,7 +785,7 @@ type SummarySource = {
 };
 
 async function streamAiSummary(
-  historyId: string,
+  historyId: string | null,
   query: string,
   books: SummarySource[],
   signal: AbortSignal,
@@ -782,10 +814,9 @@ async function streamAiSummary(
         text += evt.text;
         aiText.value = text;
       }
-      if (Array.isArray(evt.sources)) {
-        refs = evt.sources;
-        aiRefs.value = refs;
-      }
+      // 참고 목록(sources)은 끝난 뒤 실패 여부와 함께 한 번에 건다 — 서버는 실패해도 {error} 바로 앞에 보내, 따로 걸면
+      // 두 이벤트가 다른 조각으로 오는 사이 결과 카드가 'AI 답변 인용' 칩과 함께 위로 올라갔다 내려왔다(aiRefNumMap)
+      if (Array.isArray(evt.sources)) refs = evt.sources;
     });
   } catch {
     /* 중단·네트워크 오류 — 아래에서 가린다 */
@@ -793,23 +824,34 @@ async function streamAiSummary(
   // 끊긴 묶음은 저장하지 않는다 — 화면과 기록은 이미 다음 묶음의 것이다
   if (signal.aborted) return;
   aiLoading.value = false;
+  aiRefs.value = refs;
   // 끝까지 받은 요약만 기록에 저장한다. 실패({error}·끊김)면 받은 글은 보이되 오류 문구를 잇지 않고 따로 보이며,
-  // 기록에 남기지 않아 다시 열면(applyPaperEntry) 다시 만든다
+  // 기록에 남기지 않아 다시 열면(applyPaperEntry) 다시 만든다. 기록 id 가 없으면(저장 전에 끊긴 검색의 [다시 시도]) 보이기만 한다
   if (end.ok) {
-    if (text) void historyApi.patch(historyId, { ai: { text, refs } });
+    if (text && historyId) void historyApi.patch(historyId, { ai: { text, refs } });
   } else {
     aiError.value = failureText(end, AI_SUMMARY_FAILED);
   }
 }
 
-// [다시 시도] — 지금 결과(기록·검색어·논문)로 AI 요약을 처음부터 다시 받는다
+// [다시 시도] — 지금 결과(기록·검색어·논문)로 AI 요약을 처음부터 다시 받는다.
+// 누른 버튼(줄 안내)은 다시 받는 동안 빠진다 — 초점을 요약 패널로 먼저 옮겨 body 로 떨어지지 않게 한다
 function retryAiSummary() {
   const books = paperResult.value?.books;
-  if (!currentHistoryId.value || !books?.length) return;
+  if (aiLoading.value || !books?.length) return;
+  (aiMainRef.value?.$el as HTMLElement | undefined)?.focus();
   const signal = beginRun();
   aiText.value = "";
   aiRefs.value = [];
   void streamAiSummary(currentHistoryId.value, resultQuery.value, books, signal);
+}
+
+// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록 토스트) 받는 중 표시가 남지 않게 매듭짓는다(소장자료 랜딩의 settleReason 과
+// 같은 자리). 끊긴 요약은 만들지 못한 것으로 두어 [다시 시도]로 다시 받게 한다 — 받던 글이 있으면 그 아래에 안내가 붙는다
+function settleAiSummary() {
+  if (!aiLoading.value) return;
+  aiLoading.value = false;
+  aiError.value = AI_SUMMARY_FAILED;
 }
 
 // ── 주소 기준 첫 복원 ─────────────────────────────────────────
@@ -843,9 +885,15 @@ watch(currentPage, () => {
 </script>
 
 <style scoped>
-/* 랜딩 입력 상자의 아래 줄 오른쪽 — 글자 수(SkxCharCount)와 보내기를 나란히(모양은 공통 구역의 .skx-charcount) */
-.skx-search__actions {
-  align-items: center;
-  gap: 0.6rem;
+/* [다시 시도] 뒤 초점을 받는 자리(결과 자리·요약 패널 — tabindex="-1"). 마우스로 누른 뒤에는 테두리를 그리지 않고,
+   키보드로 왔을 때만 그린다(연결 띠 .skx-conn 과 같은 규칙) */
+.skx-rframe:focus,
+.skx-pai-main:focus {
+  outline: none;
+}
+.skx-rframe:focus-visible,
+.skx-pai-main:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
 }
 </style>
