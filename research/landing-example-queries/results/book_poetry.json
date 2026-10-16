@@ -1,0 +1,483 @@
+[
+ {
+  "query": "한국 현대시를 연구한 자료 찾아줘",
+  "rewritten_query": "한국 현대시 연구, 한국시, 현대시, 시 연구, 시론, 시 해석, 시 감상, 시 비평, 한국 현대시 흐름, 한국 현대시 사조",
+  "n": 15,
+  "ms": 3046,
+  "top": [
+   {
+    "title": "韓國初期近代詩論硏究 1920年代를 中心으로",
+    "author": "김병택",
+    "year": "1986",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "한국초기근대시론연구 | KOREAN | CRITICISM | POETRY | 1920S",
+    "abstract": ""
+   },
+   {
+    "title": "柳致環 詩의 效用論的 硏究",
+    "author": "이혜선",
+    "year": "1996",
+    "publisher": "世宗大學校",
+    "kdc": "811.6",
+    "subject": "유치환 | 시 | 효용론 | PRAGMATIC | THEORY | YOU | CHIWHANS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代時에 나타난 道家思想 硏究 1930년대와 그 전.후기를 중심으로",
+    "author": "조완호",
+    "year": "1996",
+    "publisher": "中央大學校",
+    "kdc": "811.6",
+    "subject": "한국현대시 | 도가사상 | TAOIST | CONTEMPORARY | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "時調의 韻律構造 硏究",
+    "author": "이찬욱",
+    "year": "1996",
+    "publisher": "중앙대학교",
+    "kdc": "811.3",
+    "subject": "시조 | 운율구조",
+    "abstract": ""
+   },
+   {
+    "title": "19世紀 時調의 變貌樣相 趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "author": "이동연",
+    "year": "1995",
+    "publisher": "梨花女子大學校",
+    "kdc": "811.36",
+    "subject": "19세기 | 시조",
+    "abstract": ""
+   },
+   {
+    "title": "韓國基督敎 初期 讚頌詩歌의 硏究",
+    "author": "표성수",
+    "year": "1992",
+    "publisher": "崇實大學校",
+    "kdc": "811.609",
+    "subject": "한국기독교 | 초기 | 찬송시가 | HYMNS | EARLY | KOREAN | PROTESTANTISM",
+    "abstract": ""
+   },
+   {
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "author": "이종대",
+    "year": "1994",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "김수영 | 시 | 모더니즘 | MODERNISM | POEETRY",
+    "abstract": ""
+   },
+   {
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "author": "신달자 | 김소월 | 한용운",
+    "year": "1992",
+    "publisher": "淑明女子大學校",
+    "kdc": "811.6",
+    "subject": "소월 | 만해시 | 여성 | FEMALEORIENTED | POETICS | POETRY | SOWOL | & | MANHAE",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究 毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "author": "김복순",
+    "year": "1990",
+    "publisher": "서울여자대학교",
+    "kdc": "811.6",
+    "subject": "한국현대여류시 | 애정의식연구 | CONTEMPORARY | KOREAN | WOMAN | WRITERS | LOVE | CONSCIOUSNESS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 四時歌의 硏究",
+    "author": "김신중",
+    "year": "1992",
+    "publisher": "全南大學校",
+    "kdc": "811.2",
+    "subject": "한국 | 사시가 | SASIGA | KOREAN | LITERATURE",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "한국 현대시 연구",
+  "rewritten_query": "한국 현대시, 시적 특징, 주제 의식, 시대적 배경, 주요 시인, 작품 분석",
+  "n": 21,
+  "ms": 2262,
+  "top": [
+   {
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究 毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "author": "김복순",
+    "year": "1990",
+    "publisher": "서울여자대학교",
+    "kdc": "811.6",
+    "subject": "한국현대여류시 | 애정의식연구 | CONTEMPORARY | KOREAN | WOMAN | WRITERS | LOVE | CONSCIOUSNESS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代時에 나타난 道家思想 硏究 1930년대와 그 전.후기를 중심으로",
+    "author": "조완호",
+    "year": "1996",
+    "publisher": "中央大學校",
+    "kdc": "811.6",
+    "subject": "한국현대시 | 도가사상 | TAOIST | CONTEMPORARY | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "1930年代 韓國詩의 意識構造硏究 世界喪失과 그 變移過程을 中心으로",
+    "author": "이기서",
+    "year": "1983",
+    "publisher": "高麗大學校",
+    "kdc": "811.6",
+    "subject": "1930년대 | 한국시 | 의식구조연구 | CONSCIONSSTRUCTURE | KOREAN | LYRIC | POEMS | 1930S",
+    "abstract": ""
+   },
+   {
+    "title": "柳致環 詩의 效用論的 硏究",
+    "author": "이혜선",
+    "year": "1996",
+    "publisher": "世宗大學校",
+    "kdc": "811.6",
+    "subject": "유치환 | 시 | 효용론 | PRAGMATIC | THEORY | YOU | CHIWHANS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "author": "이종대",
+    "year": "1994",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "김수영 | 시 | 모더니즘 | MODERNISM | POEETRY",
+    "abstract": ""
+   },
+   {
+    "title": "蘆溪 朴仁老의 詩歌硏究",
+    "author": "구수영",
+    "year": "1986",
+    "publisher": "東國大學校",
+    "kdc": "811.35",
+    "subject": "노계 | 박인 | 시가연구 | VERSES | NOGYE | PARK | INRO",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 四時歌의 硏究",
+    "author": "김신중",
+    "year": "1992",
+    "publisher": "全南大學校",
+    "kdc": "811.2",
+    "subject": "한국 | 사시가 | SASIGA | KOREAN | LITERATURE",
+    "abstract": ""
+   },
+   {
+    "title": "白湖 林悌의 詩文學 硏究",
+    "author": "정병한",
+    "year": "1995",
+    "publisher": "世宗大學校",
+    "kdc": "811.9",
+    "subject": "백호 | 임제 | 시문학 | BAEK | HO | IM | JAES | POEMS",
+    "abstract": ""
+   },
+   {
+    "title": "韓國初期近代詩論硏究 1920年代를 中心으로",
+    "author": "김병택",
+    "year": "1986",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "한국초기근대시론연구 | KOREAN | CRITICISM | POETRY | 1920S",
+    "abstract": ""
+   },
+   {
+    "title": "辛夕汀 硏究",
+    "author": "허형석",
+    "year": "1988",
+    "publisher": "慶熙大學校",
+    "kdc": "811.6",
+    "subject": "신석정 | SHIN | SOK | JONGS | POEMS",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "1930년대 한국 현대시는 어떤 특징이 있었을까?",
+  "rewritten_query": "1930년대 한국 시, 모더니즘 시도, 사회 비판 의식, 역사적 배경, 암울한 시대정신, 실험적 형식, 새로운 언어, 지향점",
+  "n": 9,
+  "ms": 2521,
+  "top": [
+   {
+    "title": "1930年代 韓國 心理小說 硏究",
+    "author": "이종화",
+    "year": "1994",
+    "publisher": "全北大學校",
+    "kdc": "813.6",
+    "subject": "심리소설 | PSYCHOLOGICAL | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "author": "이종대",
+    "year": "1994",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "김수영 | 시 | 모더니즘 | MODERNISM | POEETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代時에 나타난 道家思想 硏究 1930년대와 그 전.후기를 중심으로",
+    "author": "조완호",
+    "year": "1996",
+    "publisher": "中央大學校",
+    "kdc": "811.6",
+    "subject": "한국현대시 | 도가사상 | TAOIST | CONTEMPORARY | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國初期近代詩論硏究 1920年代를 中心으로",
+    "author": "김병택",
+    "year": "1986",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "한국초기근대시론연구 | KOREAN | CRITICISM | POETRY | 1920S",
+    "abstract": ""
+   },
+   {
+    "title": "1930年代 韓國詩의 意識構造硏究 世界喪失과 그 變移過程을 中心으로",
+    "author": "이기서",
+    "year": "1983",
+    "publisher": "高麗大學校",
+    "kdc": "811.6",
+    "subject": "1930년대 | 한국시 | 의식구조연구 | CONSCIONSSTRUCTURE | KOREAN | LYRIC | POEMS | 1930S",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 女性文學 硏究 1920年代.30年代를 中心으로",
+    "author": "정영자",
+    "year": "1988",
+    "publisher": "東亞大學校",
+    "kdc": "810.906",
+    "subject": "한국 | 여성문학 | MODERN | KOREAN | FEMALE | LITERATURE",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究 毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "author": "김복순",
+    "year": "1990",
+    "publisher": "서울여자대학교",
+    "kdc": "811.6",
+    "subject": "한국현대여류시 | 애정의식연구 | CONTEMPORARY | KOREAN | WOMAN | WRITERS | LOVE | CONSCIOUSNESS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "柳致環 詩의 效用論的 硏究",
+    "author": "이혜선",
+    "year": "1996",
+    "publisher": "世宗大學校",
+    "kdc": "811.6",
+    "subject": "유치환 | 시 | 효용론 | PRAGMATIC | THEORY | YOU | CHIWHANS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "author": "배팔수",
+    "year": "1997",
+    "publisher": "계명대학교",
+    "kdc": "813.6",
+    "subject": "1950년 | 소설 | 작가 | 현실인식 | WRITERS | RECOGNIZATION | NATURAL | REALITY | KOREAN | NOVELS",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "한국 현대 시인을 다룬 학위논문 보여줘",
+  "rewritten_query": "한국 현대 시인, 연구 논문, 문학 연구, 시인론, 시학, 문학사",
+  "n": 30,
+  "ms": 10259,
+  "top": [
+   {
+    "title": "柳致環 詩의 效用論的 硏究",
+    "author": "이혜선",
+    "year": "1996",
+    "publisher": "世宗大學校",
+    "kdc": "811.6",
+    "subject": "유치환 | 시 | 효용론 | PRAGMATIC | THEORY | YOU | CHIWHANS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國初期近代詩論硏究 1920年代를 中心으로",
+    "author": "김병택",
+    "year": "1986",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "한국초기근대시론연구 | KOREAN | CRITICISM | POETRY | 1920S",
+    "abstract": ""
+   },
+   {
+    "title": "19世紀 時調의 變貌樣相 趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "author": "이동연",
+    "year": "1995",
+    "publisher": "梨花女子大學校",
+    "kdc": "811.36",
+    "subject": "19세기 | 시조",
+    "abstract": ""
+   },
+   {
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "author": "이종대",
+    "year": "1994",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "김수영 | 시 | 모더니즘 | MODERNISM | POEETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 近代小說論 硏究",
+    "author": "문성숙",
+    "year": "1992",
+    "publisher": "東國大學校",
+    "kdc": "813.6",
+    "subject": "한국 | 근대소설론 | KOREAN | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "author": "신달자 | 김소월 | 한용운",
+    "year": "1992",
+    "publisher": "淑明女子大學校",
+    "kdc": "811.6",
+    "subject": "소월 | 만해시 | 여성 | FEMALEORIENTED | POETICS | POETRY | SOWOL | & | MANHAE",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "author": "민찬",
+    "year": "1994",
+    "publisher": "서울大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+    "abstract": ""
+   },
+   {
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "author": "김교봉",
+    "year": "1986",
+    "publisher": "延世大學校",
+    "kdc": "813.6",
+    "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代時에 나타난 道家思想 硏究 1930년대와 그 전.후기를 중심으로",
+    "author": "조완호",
+    "year": "1996",
+    "publisher": "中央大學校",
+    "kdc": "811.6",
+    "subject": "한국현대시 | 도가사상 | TAOIST | CONTEMPORARY | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "author": "이정진",
+    "year": "1993",
+    "publisher": "圓光大學校",
+    "kdc": "813.5",
+    "subject": "전 | 서술양식 | 소설 | 변용 | NARRATIVE | MODES | JEAN | TRANSFORMATION | NOVEL",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "김소월과 한용운의 시를 연구한 자료",
+  "rewritten_query": "김소월, 한용운, 시 연구, 창작 배경, 문학사조, 민족의식, 구국 운동, 저항 시, 초기 창작, 시적 특징, 작품 분석",
+  "n": 20,
+  "ms": 2540,
+  "top": [
+   {
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "author": "신달자 | 김소월 | 한용운",
+    "year": "1992",
+    "publisher": "淑明女子大學校",
+    "kdc": "811.6",
+    "subject": "소월 | 만해시 | 여성 | FEMALEORIENTED | POETICS | POETRY | SOWOL | & | MANHAE",
+    "abstract": ""
+   },
+   {
+    "title": "韓國初期近代詩論硏究 1920年代를 中心으로",
+    "author": "김병택",
+    "year": "1986",
+    "publisher": "東國大學校",
+    "kdc": "811.6",
+    "subject": "한국초기근대시론연구 | KOREAN | CRITICISM | POETRY | 1920S",
+    "abstract": ""
+   },
+   {
+    "title": "時調의 韻律構造 硏究",
+    "author": "이찬욱",
+    "year": "1996",
+    "publisher": "중앙대학교",
+    "kdc": "811.3",
+    "subject": "시조 | 운율구조",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究 毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "author": "김복순",
+    "year": "1990",
+    "publisher": "서울여자대학교",
+    "kdc": "811.6",
+    "subject": "한국현대여류시 | 애정의식연구 | CONTEMPORARY | KOREAN | WOMAN | WRITERS | LOVE | CONSCIOUSNESS | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "1930年代 韓國詩의 意識構造硏究 世界喪失과 그 變移過程을 中心으로",
+    "author": "이기서",
+    "year": "1983",
+    "publisher": "高麗大學校",
+    "kdc": "811.6",
+    "subject": "1930년대 | 한국시 | 의식구조연구 | CONSCIONSSTRUCTURE | KOREAN | LYRIC | POEMS | 1930S",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 女性文學 硏究 1920年代.30年代를 中心으로",
+    "author": "정영자",
+    "year": "1988",
+    "publisher": "東亞大學校",
+    "kdc": "810.906",
+    "subject": "한국 | 여성문학 | MODERN | KOREAN | FEMALE | LITERATURE",
+    "abstract": ""
+   },
+   {
+    "title": "韓國現代時에 나타난 道家思想 硏究 1930년대와 그 전.후기를 중심으로",
+    "author": "조완호",
+    "year": "1996",
+    "publisher": "中央大學校",
+    "kdc": "811.6",
+    "subject": "한국현대시 | 도가사상 | TAOIST | CONTEMPORARY | POETRY",
+    "abstract": ""
+   },
+   {
+    "title": "韓國基督敎 初期 讚頌詩歌의 硏究",
+    "author": "표성수",
+    "year": "1992",
+    "publisher": "崇實大學校",
+    "kdc": "811.609",
+    "subject": "한국기독교 | 초기 | 찬송시가 | HYMNS | EARLY | KOREAN | PROTESTANTISM",
+    "abstract": ""
+   },
+   {
+    "title": "白湖 林悌의 詩文學 硏究",
+    "author": "정병한",
+    "year": "1995",
+    "publisher": "世宗大學校",
+    "kdc": "811.9",
+    "subject": "백호 | 임제 | 시문학 | BAEK | HO | IM | JAES | POEMS",
+    "abstract": ""
+   },
+   {
+    "title": "柳致環 詩의 效用論的 硏究",
+    "author": "이혜선",
+    "year": "1996",
+    "publisher": "世宗大學校",
+    "kdc": "811.6",
+    "subject": "유치환 | 시 | 효용론 | PRAGMATIC | THEORY | YOU | CHIWHANS | POETRY",
+    "abstract": ""
+   }
+  ]
+ }
+]

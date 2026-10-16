@@ -1,0 +1,492 @@
+[
+ {
+  "query": "조선시대 고전소설을 연구한 자료 찾아줘",
+  "rewritten_query": "조선시대 소설 연구, 고전 소설 비평, 문학사 연구, 작품 해석, 주제 분석, 등장인물 연구, 시대적 배경, 사회 문화 반영",
+  "n": 16,
+  "ms": 5657,
+  "top": [
+   {
+    "title": "조선후기 세태소설 연구",
+    "author": "우창호",
+    "year": "1997",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 세태소설 | NOVELS | MANNERS",
+    "abstract": ""
+   },
+   {
+    "title": "가정소설 작품세계의 시대적 변모",
+    "author": "이원수",
+    "year": "1992",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "가정소설 | 작품세계 | 시대적 | 변모 | CHRONICAL | CHANGE | WORLD | WORKS | DOMESTIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "author": "민찬",
+    "year": "1994",
+    "publisher": "서울大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+    "abstract": ""
+   },
+   {
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "author": "김근태",
+    "year": "1997",
+    "publisher": "崇實大學校",
+    "kdc": "813.5",
+    "subject": "조선 | 초기 | 소설 | 갈래 | 교섭 | 양상 | ASPECTS | GENRE | INTERMIXTURE | EARLY | PERIOD | NOVELS | CHOSUN",
+    "abstract": ""
+   },
+   {
+    "title": "조선조 가정소설 연구 계모형.쟁총형 소설을 중심으로",
+    "author": "박태상",
+    "year": "1989",
+    "publisher": "연세대학교",
+    "kdc": "813.5",
+    "subject": "조선조 | 가정소설 | NOVELS | DOMETSTIC | AFFAIRS",
+    "abstract": ""
+   },
+   {
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "author": "김교봉",
+    "year": "1986",
+    "publisher": "延世大學校",
+    "kdc": "813.6",
+    "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國古典小說의 文體論的 硏究",
+    "author": "이병원",
+    "year": "1989",
+    "publisher": "檀國大學校",
+    "kdc": "813.5",
+    "subject": "한국고전소설 | 문체론적 | STYLISTIC | KOREAN | CLASSIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "옥루몽 연구",
+    "author": "심치열",
+    "year": "1994",
+    "publisher": "성신여자대학교",
+    "kdc": "813.5",
+    "subject": "옥루몽 | NOVEL | OKRUMONG",
+    "abstract": ""
+   },
+   {
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "author": "이정진",
+    "year": "1993",
+    "publisher": "圓光大學校",
+    "kdc": "813.5",
+    "subject": "전 | 서술양식 | 소설 | 변용 | NARRATIVE | MODES | JEAN | TRANSFORMATION | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 漢文小說의 背景硏究 中國과의 關係를 中心으로",
+    "author": "임명덕",
+    "year": "1983",
+    "publisher": "서울大學校",
+    "kdc": "813",
+    "subject": "한국 | 한문소설 | 배경연구",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "조선시대 고전소설 연구",
+  "rewritten_query": "조선시대 소설, 문학 연구, 역사적 배경, 사회 문화, 작품 분석, 주제 의식, 등장인물, 서사 구조",
+  "n": 14,
+  "ms": 3625,
+  "top": [
+   {
+    "title": "가정소설 작품세계의 시대적 변모",
+    "author": "이원수",
+    "year": "1992",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "가정소설 | 작품세계 | 시대적 | 변모 | CHRONICAL | CHANGE | WORLD | WORKS | DOMESTIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 세태소설 연구",
+    "author": "우창호",
+    "year": "1997",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 세태소설 | NOVELS | MANNERS",
+    "abstract": ""
+   },
+   {
+    "title": "조선조 가정소설 연구 계모형.쟁총형 소설을 중심으로",
+    "author": "박태상",
+    "year": "1989",
+    "publisher": "연세대학교",
+    "kdc": "813.5",
+    "subject": "조선조 | 가정소설 | NOVELS | DOMETSTIC | AFFAIRS",
+    "abstract": ""
+   },
+   {
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "author": "김근태",
+    "year": "1997",
+    "publisher": "崇實大學校",
+    "kdc": "813.5",
+    "subject": "조선 | 초기 | 소설 | 갈래 | 교섭 | 양상 | ASPECTS | GENRE | INTERMIXTURE | EARLY | PERIOD | NOVELS | CHOSUN",
+    "abstract": ""
+   },
+   {
+    "title": "옥루몽 연구",
+    "author": "심치열",
+    "year": "1994",
+    "publisher": "성신여자대학교",
+    "kdc": "813.5",
+    "subject": "옥루몽 | NOVEL | OKRUMONG",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "author": "민찬",
+    "year": "1994",
+    "publisher": "서울大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+    "abstract": ""
+   },
+   {
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "author": "이정진",
+    "year": "1993",
+    "publisher": "圓光大學校",
+    "kdc": "813.5",
+    "subject": "전 | 서술양식 | 소설 | 변용 | NARRATIVE | MODES | JEAN | TRANSFORMATION | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "author": "김교봉",
+    "year": "1986",
+    "publisher": "延世大學校",
+    "kdc": "813.6",
+    "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 近代小說論 硏究",
+    "author": "문성숙",
+    "year": "1992",
+    "publisher": "東國大學校",
+    "kdc": "813.6",
+    "subject": "한국 | 근대소설론 | KOREAN | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "李泰俊文學硏究",
+    "author": "이명희",
+    "year": "1993",
+    "publisher": "淑明女子大學校",
+    "kdc": "813.6",
+    "subject": "이태준 | 문학연구 | LEE | TAEJUN | LITERATURE",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "조선시대 고전소설은 어떻게 연구되어 왔을까?",
+  "rewritten_query": "조선시대 고전소설 연구사, 문헌 연구 방법, 고전소설 해석, 시대별 연구 동향, 고전소설 비평, 소설사 연구",
+  "n": 13,
+  "ms": 5148,
+  "top": [
+   {
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "author": "김근태",
+    "year": "1997",
+    "publisher": "崇實大學校",
+    "kdc": "813.5",
+    "subject": "조선 | 초기 | 소설 | 갈래 | 교섭 | 양상 | ASPECTS | GENRE | INTERMIXTURE | EARLY | PERIOD | NOVELS | CHOSUN",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 세태소설 연구",
+    "author": "우창호",
+    "year": "1997",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 세태소설 | NOVELS | MANNERS",
+    "abstract": ""
+   },
+   {
+    "title": "韓國古典小說의 文體論的 硏究",
+    "author": "이병원",
+    "year": "1989",
+    "publisher": "檀國大學校",
+    "kdc": "813.5",
+    "subject": "한국고전소설 | 문체론적 | STYLISTIC | KOREAN | CLASSIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "가정소설 작품세계의 시대적 변모",
+    "author": "이원수",
+    "year": "1992",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "가정소설 | 작품세계 | 시대적 | 변모 | CHRONICAL | CHANGE | WORLD | WORKS | DOMESTIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "author": "민찬",
+    "year": "1994",
+    "publisher": "서울大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+    "abstract": ""
+   },
+   {
+    "title": "조선조 가정소설 연구 계모형.쟁총형 소설을 중심으로",
+    "author": "박태상",
+    "year": "1989",
+    "publisher": "연세대학교",
+    "kdc": "813.5",
+    "subject": "조선조 | 가정소설 | NOVELS | DOMETSTIC | AFFAIRS",
+    "abstract": ""
+   },
+   {
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "author": "이정진",
+    "year": "1993",
+    "publisher": "圓光大學校",
+    "kdc": "813.5",
+    "subject": "전 | 서술양식 | 소설 | 변용 | NARRATIVE | MODES | JEAN | TRANSFORMATION | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "author": "김교봉",
+    "year": "1986",
+    "publisher": "延世大學校",
+    "kdc": "813.6",
+    "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 近代小說論 硏究",
+    "author": "문성숙",
+    "year": "1992",
+    "publisher": "東國大學校",
+    "kdc": "813.6",
+    "subject": "한국 | 근대소설론 | KOREAN | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓.中.越 傳奇小說의 比較 硏究 '剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "author": "전혜경",
+    "year": "1995",
+    "publisher": "崇實大學校",
+    "kdc": "813.5",
+    "subject": "전기소설",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "조선 후기 한글소설을 다룬 학위논문 보여줘",
+  "rewritten_query": "조선 후기 한글소설 연구, 문헌 연구, 학술 논문, 문학사 연구",
+  "n": 20,
+  "ms": 3667,
+  "top": [
+   {
+    "title": "조선후기 세태소설 연구",
+    "author": "우창호",
+    "year": "1997",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 세태소설 | NOVELS | MANNERS",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 近代小說論 硏究",
+    "author": "문성숙",
+    "year": "1992",
+    "publisher": "東國大學校",
+    "kdc": "813.6",
+    "subject": "한국 | 근대소설론 | KOREAN | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "author": "민찬",
+    "year": "1994",
+    "publisher": "서울大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+    "abstract": ""
+   },
+   {
+    "title": "가정소설 작품세계의 시대적 변모",
+    "author": "이원수",
+    "year": "1992",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "가정소설 | 작품세계 | 시대적 | 변모 | CHRONICAL | CHANGE | WORLD | WORKS | DOMESTIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "韓國古典小說의 文體論的 硏究",
+    "author": "이병원",
+    "year": "1989",
+    "publisher": "檀國大學校",
+    "kdc": "813.5",
+    "subject": "한국고전소설 | 문체론적 | STYLISTIC | KOREAN | CLASSIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "author": "김근태",
+    "year": "1997",
+    "publisher": "崇實大學校",
+    "kdc": "813.5",
+    "subject": "조선 | 초기 | 소설 | 갈래 | 교섭 | 양상 | ASPECTS | GENRE | INTERMIXTURE | EARLY | PERIOD | NOVELS | CHOSUN",
+    "abstract": ""
+   },
+   {
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "author": "이정진",
+    "year": "1993",
+    "publisher": "圓光大學校",
+    "kdc": "813.5",
+    "subject": "전 | 서술양식 | 소설 | 변용 | NARRATIVE | MODES | JEAN | TRANSFORMATION | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "author": "김교봉",
+    "year": "1986",
+    "publisher": "延世大學校",
+    "kdc": "813.6",
+    "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 仙道說話 硏究",
+    "author": "박기용",
+    "year": "1997",
+    "publisher": "大邱大學校",
+    "kdc": "813.7",
+    "subject": "한국 | 선도설화 | KOREAN | SEONDO | FOLKTALES",
+    "abstract": ""
+   },
+   {
+    "title": "19世紀 時調의 變貌樣相 趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "author": "이동연",
+    "year": "1995",
+    "publisher": "梨花女子大學校",
+    "kdc": "811.36",
+    "subject": "19세기 | 시조",
+    "abstract": ""
+   }
+  ]
+ },
+ {
+  "query": "조선시대 고전소설 연구 자료가 있나요?",
+  "rewritten_query": "조선시대 소설, 문학 연구, 작품 분석, 역사적 배경, 사회 문화 반영",
+  "n": 17,
+  "ms": 3477,
+  "top": [
+   {
+    "title": "조선후기 세태소설 연구",
+    "author": "우창호",
+    "year": "1997",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 세태소설 | NOVELS | MANNERS",
+    "abstract": ""
+   },
+   {
+    "title": "가정소설 작품세계의 시대적 변모",
+    "author": "이원수",
+    "year": "1992",
+    "publisher": "慶北大學校",
+    "kdc": "813.5",
+    "subject": "가정소설 | 작품세계 | 시대적 | 변모 | CHRONICAL | CHANGE | WORLD | WORKS | DOMESTIC | NOVELS",
+    "abstract": ""
+   },
+   {
+    "title": "조선조 가정소설 연구 계모형.쟁총형 소설을 중심으로",
+    "author": "박태상",
+    "year": "1989",
+    "publisher": "연세대학교",
+    "kdc": "813.5",
+    "subject": "조선조 | 가정소설 | NOVELS | DOMETSTIC | AFFAIRS",
+    "abstract": ""
+   },
+   {
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "author": "민찬",
+    "year": "1994",
+    "publisher": "서울大學校",
+    "kdc": "813.5",
+    "subject": "조선후기 | 우화소설 | 의미구현 | MULTILAYERED | REALIZATION | MEANING | FABLE | NOVEL | LATE | CHOSON",
+    "abstract": ""
+   },
+   {
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "author": "김근태",
+    "year": "1997",
+    "publisher": "崇實大學校",
+    "kdc": "813.5",
+    "subject": "조선 | 초기 | 소설 | 갈래 | 교섭 | 양상 | ASPECTS | GENRE | INTERMIXTURE | EARLY | PERIOD | NOVELS | CHOSUN",
+    "abstract": ""
+   },
+   {
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "author": "김교봉",
+    "year": "1986",
+    "publisher": "延世大學校",
+    "kdc": "813.6",
+    "subject": "신소설 | 서사양식 | 주제의식 | EPIC | STYLE | THEMATIC | CONSCIOUSNESS | SINSOSEOLTHE | NEW | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 漢文小說의 背景硏究 中國과의 關係를 中心으로",
+    "author": "임명덕",
+    "year": "1983",
+    "publisher": "서울大學校",
+    "kdc": "813",
+    "subject": "한국 | 한문소설 | 배경연구",
+    "abstract": ""
+   },
+   {
+    "title": "韓國 近代小說論 硏究",
+    "author": "문성숙",
+    "year": "1992",
+    "publisher": "東國大學校",
+    "kdc": "813.6",
+    "subject": "한국 | 근대소설론 | KOREAN | NOVEL",
+    "abstract": ""
+   },
+   {
+    "title": "옥루몽 연구",
+    "author": "심치열",
+    "year": "1994",
+    "publisher": "성신여자대학교",
+    "kdc": "813.5",
+    "subject": "옥루몽 | NOVEL | OKRUMONG",
+    "abstract": ""
+   },
+   {
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "author": "이정진",
+    "year": "1993",
+    "publisher": "圓光大學校",
+    "kdc": "813.5",
+    "subject": "전 | 서술양식 | 소설 | 변용 | NARRATIVE | MODES | JEAN | TRANSFORMATION | NOVEL",
+    "abstract": ""
+   }
+  ]
+ }
+]

@@ -1,0 +1,2050 @@
+[
+ {
+  "job": "06123d9d",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 3,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 667
+ },
+ {
+  "job": "06123d9d",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 2,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001023392",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 825
+ },
+ {
+  "job": "06123d9d",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 3,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001023392",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 546
+ },
+ {
+  "job": "06123d9d",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 3,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 825
+ },
+ {
+  "job": "06123d9d",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 646
+ },
+ {
+  "job": "06123d9d",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 646
+ },
+ {
+  "job": "06123d9d",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 726
+ },
+ {
+  "job": "06123d9d",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 695
+ },
+ {
+  "job": "06123d9d",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI000965838",
+   "KCI_FI001311114",
+   "KCI_FI001508516",
+   "KCI_FI001728455"
+  ],
+  "chars": 650
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 512
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 463
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3",
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 627
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 543
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 663
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 633
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 753
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3",
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 591
+ },
+ {
+  "job": "20ddd3b9",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001378107",
+   "KCI_FI001403226",
+   "KCI_FI001488939",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 439
+ },
+ {
+  "job": "630e0d65",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 512
+ },
+ {
+  "job": "630e0d65",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 526
+ },
+ {
+  "job": "630e0d65",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 636
+ },
+ {
+  "job": "630e0d65",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 478
+ },
+ {
+  "job": "630e0d65",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 433
+ },
+ {
+  "job": "630e0d65",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 476
+ },
+ {
+  "job": "630e0d65",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 625
+ },
+ {
+  "job": "630e0d65",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 416
+ },
+ {
+  "job": "630e0d65",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001483164",
+   "KCI_FI001488939",
+   "KCI_FI001699159",
+   "KCI_FI002420083",
+   "KCI_FI002538124"
+  ],
+  "chars": 501
+ },
+ {
+  "job": "660ff17e",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 648
+ },
+ {
+  "job": "660ff17e",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 608
+ },
+ {
+  "job": "660ff17e",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 510
+ },
+ {
+  "job": "660ff17e",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 2,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 700
+ },
+ {
+  "job": "660ff17e",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 606
+ },
+ {
+  "job": "660ff17e",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 864
+ },
+ {
+  "job": "660ff17e",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 2,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 798
+ },
+ {
+  "job": "660ff17e",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 765
+ },
+ {
+  "job": "660ff17e",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001003146",
+   "KCI_FI001023392",
+   "KCI_FI001377640",
+   "KCI_FI001701466",
+   "KCI_FI002535440"
+  ],
+  "chars": 749
+ },
+ {
+  "job": "911d9583",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 8,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI001806400",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 1031
+ },
+ {
+  "job": "911d9583",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 6,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI001806400",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 912
+ },
+ {
+  "job": "911d9583",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 3,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 619
+ },
+ {
+  "job": "911d9583",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 4,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI001806400",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 922
+ },
+ {
+  "job": "911d9583",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 840
+ },
+ {
+  "job": "911d9583",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 4,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI001806400",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 1049
+ },
+ {
+  "job": "911d9583",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 4,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI001806400",
+   "KCI_FI002540260",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 980
+ },
+ {
+  "job": "911d9583",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 544
+ },
+ {
+  "job": "911d9583",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001023392",
+   "KCI_FI002540736",
+   "KCI_FI002662766"
+  ],
+  "chars": 621
+ },
+ {
+  "job": "9ba10849",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 2,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001594560",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 804
+ },
+ {
+  "job": "9ba10849",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001594560",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 571
+ },
+ {
+  "job": "9ba10849",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001594560",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 634
+ },
+ {
+  "job": "9ba10849",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001594560",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 1154
+ },
+ {
+  "job": "9ba10849",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 3,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 4,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001594560",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 880
+ },
+ {
+  "job": "9ba10849",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002267397",
+   "KCI_FI002782062"
+  ],
+  "chars": 653
+ },
+ {
+  "job": "9ba10849",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 4,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 698
+ },
+ {
+  "job": "9ba10849",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 4,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 689
+ },
+ {
+  "job": "9ba10849",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 4,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 741
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 907
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 5,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 931
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 1,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 736
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 881
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 1017
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 951
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 1086
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 1,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 977
+ },
+ {
+  "job": "c816c7b2",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 2,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001824092",
+   "KCI_FI002267397",
+   "KCI_FI002278740",
+   "KCI_FI002782062"
+  ],
+  "chars": 589
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 628
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E3",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001613573",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 736
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 640
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001613573",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 900
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 671
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI001613573",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 541
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002162833",
+   "KCI_FI002548462",
+   "KCI_FI002782062"
+  ],
+  "chars": 897
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002162833",
+   "KCI_FI002782062"
+  ],
+  "chars": 662
+ },
+ {
+  "job": "d60a5dc1",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001407641",
+   "KCI_FI002162833",
+   "KCI_FI002782062"
+  ],
+  "chars": 775
+ },
+ {
+  "job": "d8348de8",
+  "variant": "base",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 768
+ },
+ {
+  "job": "d8348de8",
+  "variant": "base",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 2,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120"
+  ],
+  "chars": 798
+ },
+ {
+  "job": "d8348de8",
+  "variant": "base",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 780
+ },
+ {
+  "job": "d8348de8",
+  "variant": "cite",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 4,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E3",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 700
+ },
+ {
+  "job": "d8348de8",
+  "variant": "cite",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 2,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 651
+ },
+ {
+  "job": "d8348de8",
+  "variant": "cite",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 1,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E3",
+   "E4"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 556
+ },
+ {
+  "job": "d8348de8",
+  "variant": "cite2",
+  "r": 0,
+  "attempts": 1,
+  "paragraphs": 1,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 616
+ },
+ {
+  "job": "d8348de8",
+  "variant": "cite2",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 3,
+  "unmarked": 3,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E1",
+   "E2",
+   "E3",
+   "E4",
+   "E5"
+  ],
+  "self_ref": 1,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 1020
+ },
+ {
+  "job": "d8348de8",
+  "variant": "cite2",
+  "r": 2,
+  "attempts": 1,
+  "paragraphs": 4,
+  "unmarked": 7,
+  "numbers": 0,
+  "dropped": 0,
+  "dropped_f": 0,
+  "softened": 0,
+  "titles": [
+   "E2",
+   "E4"
+  ],
+  "self_ref": 0,
+  "cited_papers": [
+   "KCI_FI001176183",
+   "KCI_FI001516854",
+   "KCI_FI001975013",
+   "KCI_FI002042120",
+   "KCI_FI002168615"
+  ],
+  "chars": 1081
+ }
+]

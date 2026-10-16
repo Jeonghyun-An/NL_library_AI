@@ -1,0 +1,1935 @@
+{
+  "summary": "Blind-judge top-10 search results of landing example query phrasings (6 topics x 5 phrasings x 3 judges)",
+  "agentCount": 18,
+  "logs": [],
+  "result": {
+    "results": [
+      {
+        "topic": "book_classic",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 (modern novel theory). 신소설 study rated partial — it covers the early-20th-century transitional genre, not Joseon classical novels."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 (modern), 韓國 仙道說話 硏究 (folktales, not novels), 19世紀 時調 變貌樣相 (poetry). 신소설 rated partial."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Nothing clearly off-topic; only the 신소설 study is partial (transitional genre after Joseon). Cleanest list."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 (modern). 신소설 rated partial. Includes a strong 금오신화 comparative item at rank 10."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 and 李泰俊文學硏究 (both modern literature). 신소설 rated partial."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  0,
+                  2,
+                  1
+                ],
+                "note": "Off-topic: 신소설 (early-20th-century 개화기 genre, not a classic novel) and 근대소설론. The '傳' to 소설 transformation study gets 1 because it is mainly about the 전 genre."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 근대소설론, 신소설, 선도설화 (folktales, not novels) and 19세기 시조 (poetry). The '傳' study gets 1, for the same reason as in R1."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  1,
+                  2
+                ],
+                "note": "Strongest list. Only 신소설 is off-topic, and the '傳' study gets 1."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: 신소설 and 근대소설론. The '傳' study gets 1. The Korea–China–Vietnam 전기소설 comparison is relevant because it centers on 금오신화."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 신소설, 근대소설론 and 이태준 (a modern author). The '傳' study gets 1."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 (modern novel theory, 813.6). Partial: 신소설의 서사양식과 주제의식 (개화기 신소설, which comes after the classical novel)."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Weakest list. Off-topic: 韓國 近代小說論 硏究 (modern novel), 韓國 仙道說話 硏究 (folktales, not novels) and 19世紀 時調의 變貌樣相 (poetry). Three of the last three slots miss. Partial: 신소설 연구."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Best list. Nothing off-topic. The only partial item is the 신소설 study (개화기, borderline period)."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 (modern novel). Partial: 신소설 연구. Includes a strong hit at #10: the 韓中越 傳奇小說 comparison that covers 금오신화."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 韓國 近代小說論 硏究 and 李泰俊文學硏究 (modern writer), both at the bottom. Partial: 신소설 연구."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "book_finance",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  0,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  1,
+                  2
+                ],
+                "note": "Off-topic: 공기업 경영혁신과제 이행점검(0), 그린스펀 증언(0). 일본 중기재정계획은 외국 사례라 1, 기획예산처 5년 성과는 기관 성과 전반이라 1."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: 주요국 중소기업 지원사례(0). 기금 조성규모(1), 기획예산처 5년 성과(1), 산업자원·보건복지 두 분야만 다루는 세입세출예산안 설명서(1)는 부분 관련."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: 그린스펀 증언(0), 공기업 경영혁신 점검(0). 일본 중기재정계획(1), 경제백서 1999(경제 전반, 1)는 부분 관련."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 공기업 경영혁신 점검(0), 그린스펀 증언(0). 일본 사례(1), 참여정부 100일(1), 기획예산처 5년 성과(1)는 기관 활동 전반이라 부분 관련."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  0,
+                  1,
+                  2,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: 공기업 경영혁신 점검(0), 그린스펀 증언(0). 일본 사례(1), 참여정부 100일(1), 기획예산처 5년 성과(1)는 부분 관련."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  1,
+                  2,
+                  1,
+                  0,
+                  2,
+                  1,
+                  2
+                ],
+                "note": "Off-topic: public-enterprise management innovation check (2002) and the Greenspan Senate testimony. Partial: the fiscal reform agenda, 'role and tasks of public finance', and the ministry's 5-year achievements."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  2,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: SME support cases in major countries. Partial: fiscal reform agenda, fund operation/size, ministry 5-year achievements, role of public finance. On-topic includes the public fund plan, budget explanatory statement and budget allocation plan."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  1,
+                  2,
+                  0,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: Greenspan testimony and public-enterprise management innovation check. Partial: 1999 economic white paper (general economy), fiscal reform agenda, role of public finance."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: public-enterprise management innovation check and Greenspan testimony, both in the bottom slots. Partial: fiscal reform agenda, role of public finance, and two ministry achievement reports (100 days, 5 years)."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  0,
+                  1,
+                  2,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: public-enterprise management innovation check and Greenspan testimony. Partial: fiscal reform agenda, role of public finance, ministry 100-day and 5-year achievement reports."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  1,
+                  2
+                ],
+                "note": "Off-topic: the 2002 public-enterprise management innovation check (#3) and the Greenspan Senate testimony (#7). The MPB 5-year performance review (#9) is only partly related."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  2,
+                  2,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: the SME support cases (#8). Partly related: fund operation and size (#4) and the MPB 5-year performance review (#5). Otherwise strong: plan, public fund plan, budget explanation, allocation plan."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: the Greenspan testimony (#6) and the public-enterprise innovation check (#8). The 1999 economic white paper (#7) is only partly related. It also includes the 2003 budget overview and the 2003 fiscal-operation items."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Top 6 are all on-topic. Tail: the MPB 100-day and 5-year performance items are partial. The public-enterprise innovation check and the Greenspan testimony are off-topic."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  0,
+                  1,
+                  2,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: the public-enterprise innovation check (#6) and the Greenspan testimony (#9). Partly related: the MPB 100-day (#5) and 5-year (#7) performance items."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "book_poetry",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "3 items are classical poetry rather than modern: 박인로 시가, 사시가, 백호 임제 시문학. The other 7 are modern poetry studies."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  0,
+                  2,
+                  0,
+                  0,
+                  2,
+                  0
+                ],
+                "note": "Half is off-topic: one study of 19th-century 시조 (classical), plus 4 novel studies — modern novel theory, late-Joseon fable novels, 신소설 and 傳의 소설 변용."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  0,
+                  2
+                ],
+                "note": "The 시조 운율구조 study and 임제 (classical) are off-topic. The 1920s-30s women's literature study and the early Christian hymn study are only partly related."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  1,
+                  2,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "3 items are classical: 시조 운율구조, 19세기 시조, 사시가. The early Christian hymn study is partly related. The other 6 are modern poetry studies."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "Only 9 items. Off-topic: 1930s psychological novels and 1950s novels, both fiction rather than poetry. The women's literature study is partly related. No classical poetry in this list."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: three Joseon-era classical poetry studies (박인로 시가, 사시가, 임제 시문학). These are pre-modern, not modern poetry."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  0,
+                  2,
+                  0,
+                  0,
+                  2,
+                  0
+                ],
+                "note": "Off-topic: 19세기 시조 (classical poetry) and four novel or prose studies (근대소설론, 조선후기 우화소설, 신소설, 전 서술양식)."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: 시조 운율구조 and 임제 (both classical). Partial: 1920-30년대 여성문학 covers modern literature in general, not poetry specifically. Early Christian hymn verse (찬송시가) is only adjacent to modern poetry."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  1,
+                  2,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "Off-topic: two 시조 studies and 사시가 (classical). Partial: early Christian hymn verse."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "9 items. Off-topic: 1930년대 심리소설 and 1950년대 소설 (novels). Partial: 1920-30년대 여성문학 (general literature)."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Seven of 10 are modern-poetry studies: women poets, Taoist thought, 1930s poetry, Yu Chi-hwan, Kim Su-young, early modern poetics and Shin Seok-jeong. Three are off-topic because they cover pre-modern Joseon verse: Park In-ro's gasa, sasiga and Im Je. I rated pre-modern poetry 0 throughout because the need asks for poetry after the enlightenment period."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  0,
+                  2,
+                  0,
+                  0,
+                  2,
+                  0
+                ],
+                "note": "Only 5 of 10 match: Yu Chi-hwan, early modern poetics, Kim Su-young, Sowol and Manhae, and Taoist thought. Five are off-topic: 19th-century sijo, which is pre-modern, plus four prose studies (modern novel theory, Joseon fable novels, sinsoseol and jeon narrative). This is the weakest list."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  0,
+                  2
+                ],
+                "note": "Seven of 10 are clear hits. Two are partial: the 1920s-30s women's literature study (general literature, not poetry only) and the early Christian hymn verse (enlightenment-era verse, on the edge of poetry history). Two are off-topic because they are pre-modern: sijo metrical structure and Im Je."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  1,
+                  2,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "Six of 10 are clear hits. The early Christian hymn verse is partial. Three are off-topic because they are pre-modern: sijo metrical structure, 19th-century sijo and sasiga."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "This list has only 9 items. Six are clear hits and the 1920s-30s women's literature study is partial. Two are off-topic prose studies: the 1930s psychological novel (ranked first) and 1950s fiction. It has no pre-modern poetry, but the first result is a novel study."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "paper_elder",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Nearly all on-topic. Only the item where depression and social support predict cognitive function is partial (1)."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1
+                ],
+                "note": "The relational support/strain study covers all ages from 20s to 60+, not the elderly, so it is partial. The study of past retirement preparation on life satisfaction is also partial, because its outcome is life satisfaction and depression is only a mediator."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "All on-topic except the cognitive-function study (1), where depression and social support are both predictors of a different outcome."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Every item is about elderly depression and social support. The bereaved-spouse moderation study is also on-topic."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2
+                ],
+                "note": "All on-topic except the cognitive-function study (1)."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Nothing is fully off-topic. Two items are only partly relevant: #3 uses social support as a moderator of depression's effect on health-promoting behavior, not as an influence on depression, and #6's outcome is cognitive function."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "Three items are only partly relevant: #8 is the depression-to-health-behavior moderator study; #9 samples ages 20 to 60+ rather than older adults; #10's outcome is life satisfaction, with social support and depression only as mediators."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  1,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1
+                ],
+                "note": "Three items are only partly relevant: #1 is the depression-to-health-behavior moderator study; #3's outcome is cognitive function; #10 uses social support as a moderator of the depression-to-suicidal-ideation link, not as an influence on depression."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "The strongest list. Only #3, the depression-to-health-behavior moderator study, is partial. #10 (widowhood stress and depression, with social support as moderator, in older adults) is on target."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  2
+                ],
+                "note": "Three items are only partly relevant: #3 is the depression-to-health-behavior moderator study; #8's outcome is cognitive function; #9 uses social support as a moderator of the depression-to-suicidal-ideation link."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "No off-topic items. Item 6 (cognitive function in elders) gets 1 because depression and social support are only predictors there, with cognition as the outcome."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1
+                ],
+                "note": "No fully off-topic items. Item 9 (relational support/strain across ages 20s-60s+) gets 1 because it is not specific to older adults. Item 10 (old-age preparation and life satisfaction) gets 1 because depression and social support are only mediators there."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "No off-topic items. Item 3 (cognitive function outcome) gets 1 because it is partly related."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "All 10 items are clear hits on older adults, depression and social support. This is the cleanest list."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  2,
+                  2
+                ],
+                "note": "No off-topic items. Item 8 (cognitive function outcome) gets 1 because it is partly related."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "paper_multicultural",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2
+                ],
+                "note": "9위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'은 언어가 아니라 문제행동을 다뤄 주제에서 벗어남. 나머지 9건은 모두 다문화가정 아동의 언어 발달을 직접 다룸."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "7위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'만 주제에서 벗어남(언어가 아닌 행동 문제). 나머지는 모두 언어 발달 연구."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "벗어난 항목 없음. 10건 모두 다문화가정 아동의 언어 발달·언어 능력 연구."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "2위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'은 주제에서 벗어남(그것도 상위에 올라옴). 이 목록에만 요인(사회인구학적 변인)·지원(언어교육지원 체계)·지연(언어발달지연 학생의 문해력) 연구가 들어 있어 주제의 여러 면을 고르게 담음."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "벗어난 항목 없음. 10건 모두 다문화가정 아동의 언어 발달 연구이지만, 대부분 발달 특성·실태 연구에 몰려 있고 지원·요인을 다룬 연구는 없음."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2
+                ],
+                "note": "Off-topic: item 9, 다문화가정 아동의 문제행동에 영향을 미치는 요인 (behaviour problems, not language). The other nine are squarely about language development."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: item 7, the same behaviour-problems paper (문제행동 요인). The rest are on target."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Nothing off-topic. All ten are about the language development, ability or assessment of children from multicultural families."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: item 2, the behaviour-problems paper (문제행동 요인). This list also covers factors (사회인구학적 변인), support (언어교육지원 체계 모형) and delay (언어발달지연 학생 문해력), so it fits the intent's sub-aspects best."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Nothing off-topic. All ten are on the language development of children from multicultural families."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2
+                ],
+                "note": "9위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'은 언어가 아닌 문제행동 연구라 주제에서 벗어남. 나머지는 모두 다문화가정 아동의 언어 발달·능력·문식성을 다룸."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "7위 '문제행동에 영향을 미치는 요인'만 주제에서 벗어남(언어 아닌 행동). 나머지는 모두 정확한 결과."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "벗어난 결과 없음. 10건 모두 다문화가정 아동의 언어 발달·능력을 다룸(연령별 발달, 진단, 문식성, 연구 동향)."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "2위 '문제행동에 영향을 미치는 요인'이 주제에서 벗어남(상단에 있어 눈에 띔). 그 밖에 어휘·이해·표현력의 사회인구학적 요인, 언어교육 지원 모형, 언어발달지연과 문해력 같은 요인·지원·지연 측면을 다룬 연구가 고르게 들어와 있음."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "벗어난 결과 없음. 10건 모두 다문화가정 아동·영유아의 언어 발달 연구임."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "paper_library",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  1,
+                  1,
+                  2,
+                  0,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1
+                ],
+                "note": "대통령기록관 웹 기록정보서비스 평가(기록관이지 도서관이 아님)는 주제 밖이다. 전문도서관·대학도서관 품질평가(SERVQUAL, LibQUAL+, 인적 서비스)는 방법은 같지만 공공도서관이 아니어서 1점을 줬다. 시니어 관계품질 논문은 일부만 관련된다."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  2,
+                  0
+                ],
+                "note": "대통령기록관 평가모델은 주제 밖이다. 공공도서관에 맞는 논문이 위쪽에 많다(고객만족도 평가체계, 평가지표, 성과평가 체계, 문화프로그램 LCSI 만족도). 대학도서관·전문도서관 품질평가는 1점이다."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  0,
+                  1,
+                  1,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "1위가 주제 밖인 대통령기록관 평가다. 도서관 특성화 사례 연구도 주제 밖이다. 공공도서관에 바로 맞는 논문은 2편뿐이다(고객만족도 평가체계, CEM 이용자 경험). 나머지는 대학·전문도서관이거나 일반 도서관 품질 논문이다."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "주제 밖 결과가 없다. 공공도서관 평가 논문 4편(고객만족도 평가체계, 고객만족 평가지표, 성과평가 체계, 서울시 성과관리)이 들어 있다. 나머지는 대학·전문도서관 또는 일반 도서관 품질평가 논문이다(품질인증, 장애인 서비스 지표)."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  1,
+                  0,
+                  2,
+                  1,
+                  0,
+                  2,
+                  0,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "가장 약한 목록이다. 품질 평가가 아니라 '만족' 단어에 끌려온 결과가 많다. 학교도서관 사서교사 이미지, 미국 공공도서관 정보이용능력 교육, 한국인의 도서관 의미, 장서개발은 주제 밖이다. 핵심인 평가모형·지표 논문(고객만족도 평가체계, 평가지표, 성과평가)은 하나도 없다."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  1,
+                  1,
+                  2,
+                  0,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1
+                ],
+                "note": "Fully relevant: public library customer-satisfaction evaluation framework, public library evaluation indicators for customer satisfaction, and the CEM public library user-satisfaction study. Partly relevant: service-quality evaluations of special and academic libraries (SERVQUAL, LibQUAL+, staff services), the general review of library service-quality evaluation, and the senior relational-quality study. Off-topic: the Presidential Archives web-service evaluation."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  2,
+                  0
+                ],
+                "note": "Fully relevant: the public library satisfaction framework, the satisfaction-oriented public library evaluation indicators, and the comparison of public library performance-evaluation systems. Partly relevant: the cultural-program quality comparison with art centers (programs only), academic and special library SERVQUAL studies, the general review, and the senior relational-quality study. Off-topic: the Presidential Archives web-service evaluation."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  0,
+                  1,
+                  1,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "Ranked first: the off-topic Presidential Archives evaluation. Only two items are fully relevant: the public library satisfaction framework and the CEM user-satisfaction study. Also off-topic: library specialization case analysis. The rest are only partly relevant: other library types, quality certification in general, and senior relational quality."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "Strongest list. The top 3 are all squarely on public library evaluation: the satisfaction framework, the evaluation indicators, and the performance-evaluation systems. The rest are partly relevant: academic, special or general library quality studies, Seoul public library outcome management, quality certification, and evaluation indicators for disabled services in academic libraries. Nothing is fully off-topic."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  1,
+                  0,
+                  2,
+                  1,
+                  0,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "Weakest list. It drifts to loosely related public library user studies. Off-topic: the school librarian image study, public library internet-service information-literacy instruction, the meaning of libraries in Korean daily life, and collection development. Only the CEM satisfaction study is fully on topic. The rest touch satisfaction for only one service or context: the complex cultural space IPA, the digital information center, quality of life, and the Daegu status indicators."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  1,
+                  2,
+                  2,
+                  0,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1
+                ],
+                "note": "Presidential Archives web-service evaluation (DigiQUAL) is not about libraries, so it is off-topic. Special-library and academic-library service quality papers (SERVQUAL, staff services, SEM/LibQUAL+) are only partial matches because they are not about public libraries. The senior relationship-quality paper is relationship marketing, not service evaluation, so it is partial."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  0
+                ],
+                "note": "Presidential Archives evaluation model is off-topic. Strongest list for public libraries: customer satisfaction framework, evaluation index, performance evaluation system, and LCSI program quality and satisfaction. Special and academic library quality papers and the senior relationship paper are partial."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  0,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "Rank 1 is the Presidential Archives web-service evaluation, which looks like a miss on screen. Library specialization case analysis (rank 10) is off-topic. The quality certification paper (ISO/TQM) and the special, academic and senior-relationship papers are partial."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "No off-topic items. The top 4 are clean public-library or general library evaluation hits, and Seoul public library outcome management indicators is also on target. Academic-library quality, academic-library disability-service indicators, quality certification and special-library SERVQUAL are partial because they are not public-library service quality evaluation."
+              },
+              {
+                "label": "R5",
+                "ratings": [
+                  1,
+                  1,
+                  2,
+                  1,
+                  0,
+                  2,
+                  0,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "Weakest list: it drifts to general public-library or user topics. Off-topic: internet-service information literacy instruction, the meaning of libraries in Koreans' daily life, and collection development by use behavior. Partial: senior relationship quality, teacher-librarian image (school library), complex cultural space IPA, library and quality of life, and Daegu status and policy. Only CEM user experience and the Hanbat digital center satisfaction study are clear hits. It lacks the core service quality evaluation papers that the other lists have."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Judge"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "judge1:book_classic",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ae3492716ef2b36af",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839850,
+      "queuedAt": 1792125839832,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_classic.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125865167,
+      "tokens": 72024,
+      "toolCalls": 2,
+      "durationMs": 25316,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,1,2,0,2,2],\"note\":\"Off-topic: 韓國 近代小說論 硏究 (modern novel theory). 신소설 study rated partial — it covers the early-20th-century transitional genre, not Joseon classical novels.\"},{\"label\":\"R2\",\"ratings\":[2,0,2,2,2,2,2,1,0,0],\"note\":\"Off-topic: 韓國 近代小說論 硏究 (modern), 韓國 仙道說話 硏究 (folktales, not novels), 19世紀 時調 變貌樣相 (poetry). 신소설 rated partial.\"},{\"label\":\"R3\"…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "judge2:book_classic",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a767265a49b026181",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839850,
+      "queuedAt": 1792125839832,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_classic.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125864602,
+      "tokens": 72022,
+      "toolCalls": 2,
+      "durationMs": 23084,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,0,2,0,2,1],\"note\":\"Off-topic: 신소설 (early-20th-century 개화기 genre, not a classic novel) and 근대소설론. The '傳' to 소설 transformation study gets 1 because it is mainly about the 전 genre.\"},{\"label\":\"R2\",\"ratings\":[2,0,2,2,2,2,1,0,0,0],\"note\":\"Off-topic: 근대소설론, 신소설, 선도설화 (folktales, not novels) and 19세기 시조 (poetry). The '傳' study gets 1, for the same reason as i…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "judge3:book_classic",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a98183c7deb297fdf",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839850,
+      "queuedAt": 1792125839832,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_classic.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125865596,
+      "tokens": 72025,
+      "toolCalls": 2,
+      "durationMs": 24077,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,1,2,0,2,2],\"note\":\"Off-topic: 韓國 近代小說論 硏究 (modern novel theory, 813.6). Partial: 신소설의 서사양식과 주제의식 (개화기 신소설, which comes after the classical novel).\"},{\"label\":\"R2\",\"ratings\":[2,0,2,2,2,2,2,1,0,0],\"note\":\"Weakest list. Off-topic: 韓國 近代小說論 硏究 (modern novel), 韓國 仙道說話 硏究 (folktales, not novels) and 19世紀 時調의 變貌樣相 (poetry). Three of the last three slots miss. …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "judge1:book_finance",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aafc6bf2a0f6a5e63",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839884,
+      "queuedAt": 1792125839878,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_finance.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125866398,
+      "tokens": 69760,
+      "toolCalls": 2,
+      "durationMs": 24879,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,0,2,2,2,0,2,1,2],\"note\":\"Off-topic: 공기업 경영혁신과제 이행점검(0), 그린스펀 증언(0). 일본 중기재정계획은 외국 사례라 1, 기획예산처 5년 성과는 기관 성과 전반이라 1.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,1,1,2,1,0,2,2],\"note\":\"Off-topic: 주요국 중소기업 지원사례(0). 기금 조성규모(1), 기획예산처 5년 성과(1), 산업자원·보건복지 두 분야만 다루는 세입세출예산안 설명서(1)는 부분 관련.\"},{\"label\":\"R3\",\"ratings\":[2,2,2,2,1,0,1,0,2,2],\"note\":\"Off-topic: 그린스펀 증언(0), 공기업 경영혁신 점…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "judge2:book_finance",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a6e4fe3224c543aad",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839884,
+      "queuedAt": 1792125839878,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_finance.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125868379,
+      "tokens": 69759,
+      "toolCalls": 2,
+      "durationMs": 26860,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,0,1,2,1,0,2,1,2],\"note\":\"Off-topic: public-enterprise management innovation check (2002) and the Greenspan Senate testimony. Partial: the fiscal reform agenda, 'role and tasks of public finance', and the ministry's 5-year achievements.\"},{\"label\":\"R2\",\"ratings\":[2,2,1,1,1,1,2,0,2,2],\"note\":\"Off-topic: SME support cases in major countries. Partial: fiscal refo…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "judge3:book_finance",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a11ad89f3888ede29",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839884,
+      "queuedAt": 1792125839878,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_finance.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125866283,
+      "tokens": 69759,
+      "toolCalls": 2,
+      "durationMs": 24763,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,0,2,2,2,0,2,1,2],\"note\":\"Off-topic: the 2002 public-enterprise management innovation check (#3) and the Greenspan Senate testimony (#7). The MPB 5-year performance review (#9) is only partly related.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,1,1,2,2,0,2,2],\"note\":\"Off-topic: the SME support cases (#8). Partly related: fund operation and size (#4) and the MPB 5-year pe…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "judge1:book_poetry",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aa716f65d481e0c10",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839889,
+      "queuedAt": 1792125839884,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_poetry.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125865884,
+      "tokens": 71950,
+      "toolCalls": 2,
+      "durationMs": 24364,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,0,0,0,2,2],\"note\":\"3 items are classical poetry rather than modern: 박인로 시가, 사시가, 백호 임제 시문학. The other 7 are modern poetry studies.\"},{\"label\":\"R2\",\"ratings\":[2,2,0,2,0,2,0,0,2,0],\"note\":\"Half is off-topic: one study of 19th-century 시조 (classical), plus 4 novel studies — modern novel theory, late-Joseon fable novels, 신소설 and 傳의 소설 변용.\"},{\"label\":\"R3\",\"ra…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "judge2:book_poetry",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a058d66ea6f14e9af",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839889,
+      "queuedAt": 1792125839884,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_poetry.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125866438,
+      "tokens": 71948,
+      "toolCalls": 2,
+      "durationMs": 24918,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,0,0,0,2,2],\"note\":\"Off-topic: three Joseon-era classical poetry studies (박인로 시가, 사시가, 임제 시문학). These are pre-modern, not modern poetry.\"},{\"label\":\"R2\",\"ratings\":[2,2,0,2,0,2,0,0,2,0],\"note\":\"Off-topic: 19세기 시조 (classical poetry) and four novel or prose studies (근대소설론, 조선후기 우화소설, 신소설, 전 서술양식).\"},{\"label\":\"R3\",\"ratings\":[2,2,0,2,2,1,2,1,0,2],\"note\":\"Off-…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "judge3:book_poetry",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a47b78e6a5c54462d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839889,
+      "queuedAt": 1792125839884,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_poetry.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125869593,
+      "tokens": 71947,
+      "toolCalls": 2,
+      "durationMs": 28073,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,0,0,0,2,2],\"note\":\"Seven of 10 are modern-poetry studies: women poets, Taoist thought, 1930s poetry, Yu Chi-hwan, Kim Su-young, early modern poetics and Shin Seok-jeong. Three are off-topic because they cover pre-modern Joseon verse: Park In-ro's gasa, sasiga and Im Je. I rated pre-modern poetry 0 throughout because the need asks for poetry after the en…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "judge1:paper_elder",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a608cf7b2df0d7890",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839894,
+      "queuedAt": 1792125839889,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_elder.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125866324,
+      "tokens": 84823,
+      "toolCalls": 2,
+      "durationMs": 24803,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,1,2,2,2,2],\"note\":\"Nearly all on-topic. Only the item where depression and social support predict cognitive function is partial (1).\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,2,2,2,2,1,1],\"note\":\"The relational support/strain study covers all ages from 20s to 60+, not the elderly, so it is partial. The study of past retirement preparation on life satisfaction …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 11,
+      "label": "judge2:paper_elder",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "af4b34f42107c7180",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839894,
+      "queuedAt": 1792125839889,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_elder.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125865115,
+      "tokens": 84825,
+      "toolCalls": 2,
+      "durationMs": 23594,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,1,2,2,1,2,2,2,2],\"note\":\"Nothing is fully off-topic. Two items are only partly relevant: #3 uses social support as a moderator of depression's effect on health-promoting behavior, not as an influence on depression, and #6's outcome is cognitive function.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,2,2,2,1,1,1],\"note\":\"Three items are only partly relevant: #8 is the de…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 12,
+      "label": "judge3:paper_elder",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a51fd9b9d447712e7",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839894,
+      "queuedAt": 1792125839889,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_elder.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125864857,
+      "tokens": 84823,
+      "toolCalls": 2,
+      "durationMs": 23336,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,1,2,2,2,2],\"note\":\"No off-topic items. Item 6 (cognitive function in elders) gets 1 because depression and social support are only predictors there, with cognition as the outcome.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,2,2,2,2,1,1],\"note\":\"No fully off-topic items. Item 9 (relational support/strain across ages 20s-60s+) gets 1 because it is not specific to …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 13,
+      "label": "judge1:paper_multicultural",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a0b27368013ef8140",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839898,
+      "queuedAt": 1792125839894,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_multicultural.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125864491,
+      "tokens": 83077,
+      "toolCalls": 2,
+      "durationMs": 22970,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,2,2,2,0,2],\"note\":\"9위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'은 언어가 아니라 문제행동을 다뤄 주제에서 벗어남. 나머지 9건은 모두 다문화가정 아동의 언어 발달을 직접 다룸.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,2,2,0,2,2,2],\"note\":\"7위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'만 주제에서 벗어남(언어가 아닌 행동 문제). 나머지는 모두 언어 발달 연구.\"},{\"label\":\"R3\",\"ratings\":[2,2,2,2,2,2,2,2,2,2],\"note\":\"벗어난 항목 없음. 10건 모두 다문화가정 아동의 언어 발달·언어 능력 연구.\"},{\"label\"…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 14,
+      "label": "judge2:paper_multicultural",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ab6b676e61ddfbd42",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839898,
+      "queuedAt": 1792125839894,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_multicultural.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125864807,
+      "tokens": 83078,
+      "toolCalls": 2,
+      "durationMs": 23284,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,2,2,2,0,2],\"note\":\"Off-topic: item 9, 다문화가정 아동의 문제행동에 영향을 미치는 요인 (behaviour problems, not language). The other nine are squarely about language development.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,2,2,0,2,2,2],\"note\":\"Off-topic: item 7, the same behaviour-problems paper (문제행동 요인). The rest are on target.\"},{\"label\":\"R3\",\"ratings\":[2,2,2,2,2,2,2,2,2,2],\"note\"…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 15,
+      "label": "judge3:paper_multicultural",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ae41b2e11b6ca7c1b",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839898,
+      "queuedAt": 1792125839894,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_multicultural.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean …",
+      "promptFramed": true,
+      "lastProgressAt": 1792125864263,
+      "tokens": 83074,
+      "toolCalls": 2,
+      "durationMs": 22740,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,2,2,2,2,2,0,2],\"note\":\"9위 '다문화가정 아동의 문제행동에 영향을 미치는 요인'은 언어가 아닌 문제행동 연구라 주제에서 벗어남. 나머지는 모두 다문화가정 아동의 언어 발달·능력·문식성을 다룸.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,2,2,0,2,2,2],\"note\":\"7위 '문제행동에 영향을 미치는 요인'만 주제에서 벗어남(언어 아닌 행동). 나머지는 모두 정확한 결과.\"},{\"label\":\"R3\",\"ratings\":[2,2,2,2,2,2,2,2,2,2],\"note\":\"벗어난 결과 없음. 10건 모두 다문화가정 아동의 언어 발달·능력을 다룸(연령별 발달, 진단, 문식성, 연구 동향).\"},{\"…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 16,
+      "label": "judge1:paper_library",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ae61b9d53619b59e3",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125839900,
+      "queuedAt": 1792125839898,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_library.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journa…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125880603,
+      "tokens": 89335,
+      "toolCalls": 2,
+      "durationMs": 39081,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[1,1,2,0,2,1,1,1,2,1],\"note\":\"대통령기록관 웹 기록정보서비스 평가(기록관이지 도서관이 아님)는 주제 밖이다. 전문도서관·대학도서관 품질평가(SERVQUAL, LibQUAL+, 인적 서비스)는 방법은 같지만 공공도서관이 아니어서 1점을 줬다. 시니어 관계품질 논문은 일부만 관련된다.\"},{\"label\":\"R2\",\"ratings\":[2,1,2,2,1,1,1,1,2,0],\"note\":\"대통령기록관 평가모델은 주제 밖이다. 공공도서관에 맞는 논문이 위쪽에 많다(고객만족도 평가체계, 평가지표, 성과평가 체계, 문화프로그램 LCSI 만족도). 대학도서관·전문도서관 품질평가는 1점이다.\"},{\"label\":\"R3\",\"ratings\":[0…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 17,
+      "label": "judge2:paper_library",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aef892764c341082a",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125865301,
+      "queuedAt": 1792125839899,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_library.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journa…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125898666,
+      "tokens": 89332,
+      "toolCalls": 2,
+      "durationMs": 33365,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[1,1,2,0,2,1,1,1,2,1],\"note\":\"Fully relevant: public library customer-satisfaction evaluation framework, public library evaluation indicators for customer satisfaction, and the CEM public library user-satisfaction study. Partly relevant: service-quality evaluations of special and academic libraries (SERVQUAL, LibQUAL+, staff services), the general review of librar…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 18,
+      "label": "judge3:paper_library",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a6806e812468b46be",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792125865442,
+      "queuedAt": 1792125839899,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/paper_library.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journa…",
+      "promptFramed": true,
+      "lastProgressAt": 1792125904149,
+      "tokens": 89328,
+      "toolCalls": 2,
+      "durationMs": 36734,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[1,2,2,0,2,1,1,1,2,1],\"note\":\"Presidential Archives web-service evaluation (DigiQUAL) is not about libraries, so it is off-topic. Special-library and academic-library service quality papers (SERVQUAL, staff services, SEM/LibQUAL+) are only partial matches because they are not about public libraries. The senior relationship-quality paper is relationship marketing, …"
+    }
+  ],
+  "totalTokens": 1412889,
+  "totalToolCalls": 36
+}
