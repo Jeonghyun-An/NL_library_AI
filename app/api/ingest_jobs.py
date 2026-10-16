@@ -8,9 +8,13 @@ POST   /api/admin/ingest-jobs/{id}/start|pause|resume|cancel
 GET    /api/admin/ingest-jobs/{id}/items 아이템 목록 (status/stage/error_group 필터)
 GET    /api/admin/ingest-jobs/{id}/failures   error_group별 집계
 POST   /api/admin/ingest-jobs/{id}/retry      실패 아이템 재시도
+
+{id} 는 uuid 로 받는다 — uuid 가 아닌 값은 FastAPI 가 422 로 돌려준다. 전에는 str 그대로 Postgres 의 uuid 칼럼 비교에
+넘겨 'invalid input syntax for type uuid' 로 500 이 났다. 없는 잡은 404 '잡 없음'.
 """
 import datetime as _dt
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.concurrency import run_in_threadpool
@@ -128,7 +132,7 @@ def _permanently_failed(job_id: str, max_attempts: int) -> Select:
 
 
 @router.get("/{job_id}")
-async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
+async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     job = (await db.execute(select(IngestJob).where(IngestJob.id == job_id))).scalar_one_or_none()
     if not job:
         raise HTTPException(404, "잡 없음")
@@ -192,7 +196,7 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
 
 
 # ── 상태 제어 ─────────────────────────────────────────────────
-async def _set_status(db: AsyncSession, job_id: str, new_status: str, **extra) -> dict:
+async def _set_status(db: AsyncSession, job_id: uuid.UUID, new_status: str, **extra) -> dict:
     job = (await db.execute(select(IngestJob).where(IngestJob.id == job_id))).scalar_one_or_none()
     if not job:
         raise HTTPException(404, "잡 없음")
@@ -200,11 +204,11 @@ async def _set_status(db: AsyncSession, job_id: str, new_status: str, **extra) -
     for k, v in extra.items():
         setattr(job, k, v)
     await db.commit()
-    return {"id": job_id, "status": new_status}
+    return {"id": str(job_id), "status": new_status}
 
 
 @router.post("/{job_id}/start")
-async def start_job(job_id: str, db: AsyncSession = Depends(get_db)):
+async def start_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """디스패처가 픽업하도록 running 전환. ready/paused/completed* 에서 호출 가능."""
     return await _set_status(
         db, job_id, "running",
@@ -214,18 +218,18 @@ async def start_job(job_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{job_id}/pause")
-async def pause_job(job_id: str, db: AsyncSession = Depends(get_db)):
+async def pause_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """신규 디스패치만 중단 (진행 중 아이템은 완료까지 진행)."""
     return await _set_status(db, job_id, "paused")
 
 
 @router.post("/{job_id}/resume")
-async def resume_job(job_id: str, db: AsyncSession = Depends(get_db)):
+async def resume_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     return await _set_status(db, job_id, "running")
 
 
 @router.post("/{job_id}/cancel")
-async def cancel_job(job_id: str, db: AsyncSession = Depends(get_db)):
+async def cancel_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """잡 취소 + pending/failed 아이템을 canceled 로 (진행 중 건은 자연 종료)."""
     job = (await db.execute(select(IngestJob).where(IngestJob.id == job_id))).scalar_one_or_none()
     if not job:
@@ -241,13 +245,13 @@ async def cancel_job(job_id: str, db: AsyncSession = Depends(get_db)):
         .values(status="canceled")
     )
     await db.commit()
-    return {"id": job_id, "status": "canceled"}
+    return {"id": str(job_id), "status": "canceled"}
 
 
 # ── 아이템 목록 ───────────────────────────────────────────────
 @router.get("/{job_id}/items")
 async def list_items(
-    job_id: str,
+    job_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     status: str | None = None,
     stage: str | None = None,
@@ -313,7 +317,7 @@ def _failure_groups(job_id: str) -> Select:
 
 
 @router.get("/{job_id}/failures")
-async def list_failures(job_id: str, db: AsyncSession = Depends(get_db)):
+async def list_failures(job_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(_failure_groups(job_id))).all()
     return {
         "groups": [
@@ -325,8 +329,13 @@ async def list_failures(job_id: str, db: AsyncSession = Depends(get_db)):
 
 # ── 재시도 ────────────────────────────────────────────────────
 @router.post("/{job_id}/retry")
-async def retry_job(job_id: str, body: RetryBody):
+async def retry_job(job_id: uuid.UUID, body: RetryBody, db: AsyncSession = Depends(get_db)):
     from services.ingestion.job_manager import retry_items
+
+    # 없는 잡이면 retry_items 가 0건을 고치고 200 {retried: 0} 이었다 — 잘못 친 id 가 '재시도할 것 없음'으로 보였다
+    job = (await db.execute(select(IngestJob.id).where(IngestJob.id == job_id))).scalar_one_or_none()
+    if not job:
+        raise HTTPException(404, "잡 없음")
 
     count = await run_in_threadpool(
         retry_items, job_id,
@@ -336,4 +345,4 @@ async def retry_job(job_id: str, body: RetryBody):
         force_all=body.force_all,
         reset_stage=body.reset_stage,
     )
-    return {"id": job_id, "retried": count}
+    return {"id": str(job_id), "retried": count}

@@ -1,6 +1,7 @@
 """
 book_chat.py — 특정 도서와의 심층 대화 (RAG + SSE 스트리밍)
 """
+import asyncio
 import json
 import logging
 import re
@@ -23,6 +24,28 @@ cfg = get_settings()
 # 답 글에 잇지 않고 오류로 보이며 대화에 남기지 않는다. 전에는 '응답 생성 중 오류가 발생했습니다.' 를 보통 {text} 로 흘려
 # 정상 답처럼 대화에 남고 다음 질문의 history 로 모델에게까지 갔다
 CHAT_STREAM_ERROR = "답을 만들지 못했습니다"
+
+# 그 밖의 실패도 같은 {error} 이벤트로 끝낸다 — error 는 화면에 보일 문구(문자열), code 는 화면이 갈래를 고르는 기계 값이다.
+# 옛 화면은 code 를 몰라도 error 만으로 오류를 보인다
+#   not_found        — 대화할 자료(cnts_id)가 서지에 없다. 전에는 '도서를 찾을 수 없습니다.' 를 보통 {text} 로 흘려 답처럼 남았다
+#   empty_answer     — LLM 이 글 조각 하나 없이 [DONE] 으로 끝났다. 전에는 빈 답이 정상 답으로 대화에 남았다
+#   retrieval_failed — 청크 검색(임베딩·Milvus)이 실패했다. 전에는 로그만 남기고 근거 없이 질문만 보내 답을 지어냈다
+CHAT_NOT_FOUND_ERROR = "자료를 찾을 수 없어요"
+CHAT_EMPTY_ANSWER_ERROR = "답을 만들지 못했어요"
+CHAT_RETRIEVAL_ERROR = "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요"
+
+
+def _error_event(message: str, code: str) -> str:
+    return f"data: {json.dumps({'error': message, 'code': code}, ensure_ascii=False)}\n\n"
+
+
+# 보낼 이벤트 없이 CHAT_PING_INTERVAL 초가 지나면 그사이 SSE 주석 줄 CHAT_PING 을 보낸다 — 딥리서치 SSE(api/research.py·
+# research_work.py 가 relay 구독의 15초 유휴마다 ': ping')와 같은 관례. 화면(frontend/composables/useDeepReadChat)은 응답 머리도
+# 글 조각도 없이 60초가 지나면 스스로 끊는데, 서버는 첫 글 조각 전(질의 재구성 최대 20초 + 청크 검색 + LLM 첫 토큰 대기)에
+# 아무것도 보내지 않아 붐빌 때 결국 답했을 요청이 끊길 수 있었다. 화면 파서는 ':' 로 시작하는 줄을 버리고, 무엇이든 받으면
+# 60초를 다시 센다. 주석이라 이벤트(data:)의 순서·모양은 그대로다
+CHAT_PING = ": ping\n\n"
+CHAT_PING_INTERVAL = 15.0
 
 _REF_INTENT_KEYWORDS = frozenset({
     "참고문헌", "참고 문헌", "인용", "reference", "cited", "출처", "bibliography",
@@ -104,7 +127,65 @@ def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHi
     return cited
 
 
-async def stream_book_chat(
+def _search_book_chunks(query: str, cnts_id: str) -> list[SearchHit]:
+    """질의를 임베딩해 이 자료(cnts_id)의 청크만 찾는다 — 동기(BGE-M3·Milvus)지만 스레드로 옮기지 않고 루프에서 부른다.
+    메인 검색(pipeline.search)이 같은 BGE-M3 모델·빠른 토크나이저를 루프에서 바로 쓰는데, 다른 스레드에서 동시에 쓰면
+    토크나이저 동시 사용 오류('Already borrowed')로 메인 검색까지 깨질 수 있다(대회 주간에 새 동시 경로를 늘리지 않는다).
+    검색은 짧아(1초 안팎) 15초 ping 을 막을 만큼 루프를 오래 잡지 않는다 — 오래 기다리는 구간(질의 재구성·LLM 첫 조각)은 비동기다"""
+    dense, sparse = embed_texts([query], is_query=True)
+    return search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
+
+
+async def _next_event(events: AsyncGenerator[str, None]) -> str | None:
+    """events 의 다음 이벤트, 끝났으면 None — task 로 돌리려고 StopAsyncIteration 을 값으로 바꾼다."""
+    try:
+        return await events.__anext__()
+    except StopAsyncIteration:
+        return None
+
+
+async def _with_pings(events: AsyncGenerator[str, None], interval: float) -> AsyncGenerator[str, None]:
+    """events 를 그대로 내보내되, 다음 이벤트를 interval 초 넘게 기다리면 그사이 CHAT_PING 을 끼운다.
+
+    다음 이벤트 기다리기(events 의 한 걸음 — 첫 걸음은 질의 재구성·청크 검색·LLM 첫 조각까지, 그 뒤는 다음 글 조각)를
+    백그라운드 task 로 돌리고 asyncio.wait 로 interval 마다 깨어 ping 을 낸다. 이벤트는 손대지 않아 순서·{error, code}·
+    sources·[DONE] 이 그대로다. 화면이 끊어 이 제너레이터가 닫히거나(aclose — ping 을 내고 멈춰 있던 때) 취소되면
+    (CancelledError — 기다리던 때) 기다리던 task 를 취소하고 events 를 닫는다 — LLM 스트림·질의 재구성 호출이 남아 돌지
+    않게. 취소된 걸음은 events 안에서 CancelledError 로 풀린다(except Exception 이 잡지 않는다)."""
+    pending: asyncio.Task | None = None
+    try:
+        while True:
+            if pending is None:
+                pending = asyncio.create_task(_next_event(events))
+            done, _ = await asyncio.wait({pending}, timeout=interval)
+            if not done:
+                yield CHAT_PING
+                continue
+            step, pending = pending, None
+            event = step.result()
+            if event is None:
+                return
+            yield event
+    finally:
+        if pending is not None and not pending.done():
+            pending.cancel()
+            await asyncio.wait({pending})
+        await events.aclose()
+
+
+def stream_book_chat(
+    cnts_id: str,
+    message: str,
+    history: list[dict],
+    *,
+    book=None,
+) -> AsyncGenerator[str, None]:
+    """DeepRead 대화 SSE(라우트 api/book.py chat_with_book 이 StreamingResponse 로 내보낸다). 이벤트는 _chat_events 가
+    만들고, 그 사이 보낼 것 없이 CHAT_PING_INTERVAL 초가 지나면 ': ping' 을 끼운다(_with_pings)."""
+    return _with_pings(_chat_events(cnts_id, message, history, book=book), CHAT_PING_INTERVAL)
+
+
+async def _chat_events(
     cnts_id: str,
     message: str,
     history: list[dict],
@@ -113,7 +194,7 @@ async def stream_book_chat(
 ) -> AsyncGenerator[str, None]:
     # book 객체는 엔드포인트에서 미리 조회해 넘긴다 (db 세션 누수 방지).
     if not book:
-        yield f"data: {json.dumps({'text': '도서를 찾을 수 없습니다.'}, ensure_ascii=False)}\n\n"
+        yield _error_event(CHAT_NOT_FOUND_ERROR, "not_found")
         yield "data: [DONE]\n\n"
         return
 
@@ -142,13 +223,18 @@ async def stream_book_chat(
 
     # ── 2b. 청크 검색 (참고문헌 목록을 넣을 때만 건너뜀) ─────
     #    참고문헌 의도여도 목록이 없으면(책·참고문헌을 뽑지 못한 논문) 청크로 돌아간다 — 근거 없이 질문만 보내지 않는다.
+    #    검색이 실패하면 근거 없이 답하지 않는다 — LLM 을 부르지 않고 retrieval_failed 로 끝낸다. 스트림 안이라 어떤 예외든
+    #    이벤트로 알려야 한다(응답 머리가 이미 나가 500 으로 바꿀 수 없다). 검색은 됐는데 청크가 0개인 것(본문 미적재)은
+    #    실패가 아니다 — 지금처럼 서지·요약만으로 답한다
     hits = []
     if not ref_context_block:
         try:
-            dense, sparse = embed_texts([search_query], is_query=True)
-            hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
+            hits = _search_book_chunks(search_query, cnts_id)
         except Exception as e:
-            log.warning(f"[{cnts_id}] 채팅 청크 검색 실패: {e}")
+            log.error("[%s] 채팅 청크 검색 실패 — 답하지 않고 끝낸다: %s: %s", cnts_id, type(e).__name__, e, exc_info=True)
+            yield _error_event(CHAT_RETRIEVAL_ERROR, "retrieval_failed")
+            yield "data: [DONE]\n\n"
+            return
 
     # ── 3. 시스템 프롬프트 + 메시지 빌드 ────────────────────
     author = book.personal_author or book.corporate_author or "저자 미상"
@@ -206,6 +292,13 @@ async def stream_book_chat(
         log.error("[%s] 채팅 스트리밍 실패(보낸 글 %d자): %s: %s", cnts_id, len(full_response), type(e).__name__, e)
         # 실패한 답에는 출처 칩을 붙이지 않는다 — 오류가 [DONE] 바로 앞, 마지막 이벤트다
         yield f"data: {json.dumps({'error': CHAT_STREAM_ERROR}, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    # 글 조각 없이 끝난 빈 답(공백뿐 포함) — 정상 답으로 남기지 않는다. 출처 칩도 붙이지 않는다
+    if not full_response.strip():
+        log.warning("[%s] 채팅 LLM 이 빈 답으로 끝났다(받은 글 %d자)", cnts_id, len(full_response))
+        yield _error_event(CHAT_EMPTY_ANSWER_ERROR, "empty_answer")
         yield "data: [DONE]\n\n"
         return
 

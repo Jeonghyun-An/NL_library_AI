@@ -207,7 +207,7 @@ async def _announce(jid: uuid.UUID, status: str, stage: str) -> None:
 
 
 def _broker_unavailable() -> HTTPException:
-    return HTTPException(status_code=503, detail="작업 큐에 연결하지 못했습니다 — 잠시 후 다시 시도하세요")
+    return HTTPException(status_code=503, detail="작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요")
 
 
 def _validated_plan(plan: list[str], *, limit: int) -> list[str]:

@@ -413,7 +413,7 @@ async def stream_book_reason(
     이벤트: {keywords}·{text}·{effect}(sse_helpers.process_reason_deltas) 뒤에 늘 [DONE]. LLM 호출이 실패하면
     (httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas) [DONE] 앞에
     {error: REASON_STREAM_ERROR} 를 먼저 보낸다 — 화면은 이것을
-    보면 끝까지 받지 못한 것으로 읽는다.
+    보면 끝까지 받지 못한 것으로 읽는다. 추천 이유(text)가 글 조각 없이(공백뿐 포함) 끝난 빈 답도 같은 {error} 로 끝낸다.
     """
 
     # ── 도서 서지 정보 블록 ──────────────────────────────
@@ -484,6 +484,7 @@ async def stream_book_reason(
     )
 
     received = 0   # LLM 에서 받은 글 길이 — 실패 로그가 시작 전 실패인지 글 일부 뒤 실패인지 남긴다
+    shown = False  # 추천 이유(text)에 공백 아닌 글이 한 조각이라도 나갔는가 — 빈 답 판별
     try:
         async with httpx.AsyncClient() as client:
             async with client.stream(
@@ -511,12 +512,20 @@ async def stream_book_reason(
                         yield delta
 
                 async for event in process_reason_deltas(_delta_gen(), marc_keywords):
+                    text = event.get("text")
+                    shown = shown or (isinstance(text, str) and bool(text.strip()))
                     yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
     except Exception as e:
         # 받은 글 — 키워드 줄(#KW:)·효과 구분자를 process_reason_deltas 가 걸러 내므로 화면에 간 글과 길이가 다를 수 있다
         log.error("[%s] 추천 이유 스트리밍 실패(받은 글 %d자): %s: %s", book_id, received, type(e).__name__, e)
         yield f"data: {json.dumps({'error': REASON_STREAM_ERROR}, ensure_ascii=False)}\n\n"
+    else:
+        # 글 조각 없이(공백뿐 포함) 끝난 빈 답 — 키워드 줄만 오고 이유가 없어도 같다. 화면(소장자료 상세·랜딩 1위 도서)이
+        # 보이는 것은 이유(text)뿐이라 효과(effect)는 세지 않는다. 전에는 [DONE] 만 와 화면이 빈 이유를 끝까지 받은 답으로 읽었다
+        if not shown:
+            log.warning("[%s] 추천 이유 LLM 이 빈 답으로 끝났다(받은 글 %d자)", book_id, received)
+            yield f"data: {json.dumps({'error': REASON_STREAM_ERROR}, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"
 

@@ -8,6 +8,7 @@ from sqlalchemy import select, func, delete as sa_delete, text as sa_text
 
 from core.config import get_settings
 from core.deps import get_db
+from core.errors import broker_outage_as_503
 from models.book import Book
 from models.section import BookSection
 
@@ -92,7 +93,8 @@ async def backfill_plot(
     )).scalar() or 0
 
     from workers.tasks import backfill_plot as backfill_plot_task
-    task = backfill_plot_task.delay(limit=limit, force=force)
+    with broker_outage_as_503("줄거리 백필"):
+        task = backfill_plot_task.delay(limit=limit, force=force)
     return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
 
 
@@ -116,7 +118,8 @@ async def backfill_read_effect_api(
     )).scalar() or 0
 
     from workers.tasks import backfill_read_effect as backfill_read_effect_task
-    task = backfill_read_effect_task.delay(limit=limit, force=force)
+    with broker_outage_as_503("독후 효과 백필"):
+        task = backfill_read_effect_task.delay(limit=limit, force=force)
     return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
 
 
@@ -144,7 +147,8 @@ async def backfill_summary_api(
     target = (await db.execute(stmt)).scalar() or 0
 
     from workers.tasks import backfill_summary as backfill_summary_task
-    task = backfill_summary_task.delay(limit=limit, force=force, doc_types=doc_types)
+    with broker_outage_as_503("요약 백필"):
+        task = backfill_summary_task.delay(limit=limit, force=force, doc_types=doc_types)
     return {
         "task_id": task.id, "limit": limit, "force": force,
         "doc_types": doc_types, "candidates": target,
@@ -438,26 +442,11 @@ def _delete_embedding(cnts_id: str, db_sync) -> dict:
     return {"cnts_id": cnts_id, "milvus_deleted": milvus_deleted}
 
 
-@router.delete("/embedding/{cnts_id}")
-async def delete_embedding(cnts_id: str):
-    """단일 도서 임베딩 삭제.
-
-    Milvus 청크 + BookSection + library_catalog 임베딩 상태 리셋.
-    메타데이터(제목/저자 등)는 유지됨.
-    """
-    from db.postgres import SyncSessionLocal
-
-    db = SyncSessionLocal()
-    try:
-        result = _delete_embedding(cnts_id, db)
-    finally:
-        db.close()
-    return result
-
-
+# /embedding/all 을 /embedding/{cnts_id} 보다 먼저 선언한다 — 뒤에 두면 'all' 이 cnts_id 로 잡혀 전체 삭제 대신
+# 'all' 이라는 도서 한 권의 임베딩 삭제가 돌았다(confirm 검사도 거치지 않는다)
 @router.delete("/embedding/all")
 async def delete_all_embeddings(confirm: str):
-    """전체 임베딩 삭제. Milvus 컬렉션 전체 flush + PostgreSQL 상태 리셋.
+    """전체 임베딩 삭제. Milvus 컬렉션을 지우고(drop) 같은 스키마의 빈 컬렉션으로 다시 만든다 + PostgreSQL 상태 리셋.
 
     ?confirm=yes 필수.
     """
@@ -466,6 +455,7 @@ async def delete_all_embeddings(confirm: str):
 
     from pymilvus import connections, Collection, utility
     from db.postgres import SyncSessionLocal
+    from services.ingestion import indexer
 
     # Milvus 전체 삭제 (drop & recreate)
     milvus_count = 0
@@ -478,7 +468,25 @@ async def delete_all_embeddings(confirm: str):
             utility.drop_collection(cfg.MILVUS_COLLECTION)
             log.info(f"Milvus 컬렉션 '{cfg.MILVUS_COLLECTION}' 삭제 완료 ({milvus_count}개)")
     except Exception as e:
-        raise HTTPException(500, f"Milvus 삭제 실패: {e}")
+        # 예외 글(영문)은 화면에 내지 않는다 — 로그에만
+        log.error("Milvus 컬렉션 삭제 실패: %s: %s", type(e).__name__, e, exc_info=True)
+        raise HTTPException(500, "Milvus 컬렉션을 지우지 못했습니다. 서버 로그를 확인하세요")
+    finally:
+        # 지운(또는 지우다 만) 컬렉션의 핸들을 버린다 — 남기면 ensure_collection() 이 그것을 그대로 돌려줘 이 프로세스의
+        # 검색·적재가 없는 컬렉션을 물고 계속 실패한다
+        indexer.forget_collection()
+
+    # 같은 이름의 빈 컬렉션(스키마·인덱스·load)을 곧바로 다시 만든다. 적재 워커(Celery)처럼 다른 프로세스가 쥔 핸들 캐시는
+    # 이 요청으로 버릴 수 없지만, 그쪽 호출도 컬렉션을 이름으로 물으므로 다시 만든 컬렉션에 닿는다. 실패해도 Milvus 는 이미
+    # 비었으니 아래 PostgreSQL 리셋은 그대로 한다 — 이 프로세스(API)는 캐시를 버렸으므로 다음 검색의 ensure_collection() 이
+    # 다시 만들어 본다. 적재 워커는 캐시한(지운) 핸들을 그대로 돌려받아 스스로 다시 만들지 않는다 — 그 전에 검색이 다시
+    # 만들어 두지 않으면 워커를 재시작해야 적재가 다시 만든다
+    recreated = True
+    try:
+        indexer.ensure_collection()
+    except Exception as e:
+        recreated = False
+        log.error("Milvus 컬렉션 재생성 실패: %s: %s", type(e).__name__, e, exc_info=True)
 
     # PostgreSQL — BookSection + 임베딩 상태 리셋
     db = SyncSessionLocal()
@@ -495,7 +503,26 @@ async def delete_all_embeddings(confirm: str):
     finally:
         db.close()
 
+    if not recreated:
+        raise HTTPException(500, "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색 때 다시 만듭니다(적재 워커는 재시작 뒤)")
     return {"milvus_deleted": milvus_count, "status": "ok"}
+
+
+@router.delete("/embedding/{cnts_id}")
+async def delete_embedding(cnts_id: str):
+    """단일 도서 임베딩 삭제.
+
+    Milvus 청크 + BookSection + library_catalog 임베딩 상태 리셋.
+    메타데이터(제목/저자 등)는 유지됨.
+    """
+    from db.postgres import SyncSessionLocal
+
+    db = SyncSessionLocal()
+    try:
+        result = _delete_embedding(cnts_id, db)
+    finally:
+        db.close()
+    return result
 
 
 # ── 전체 재인덱싱 ────────────────────────────────────────
@@ -542,7 +569,9 @@ async def reindex_all():
             skipped.append(key)
             continue
 
-        task = process_from_minio.delay(book_id, key)
+        # 중간에 끊기면 앞서 보낸 것은 이미 큐에 있다 — 가드가 몇 건 보냈는지 로그에 남긴다
+        with broker_outage_as_503(f"전체 재인덱싱 {book_id}(앞서 {len(dispatched)}건 보냄)"):
+            task = process_from_minio.delay(book_id, key)
         dispatched.append({"book_id": book_id, "minio_key": key, "task_id": task.id})
         log.info(f"재인덱싱 디스패치: {book_id} ({key})")
 
