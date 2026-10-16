@@ -442,23 +442,8 @@ def _delete_embedding(cnts_id: str, db_sync) -> dict:
     return {"cnts_id": cnts_id, "milvus_deleted": milvus_deleted}
 
 
-@router.delete("/embedding/{cnts_id}")
-async def delete_embedding(cnts_id: str):
-    """단일 도서 임베딩 삭제.
-
-    Milvus 청크 + BookSection + library_catalog 임베딩 상태 리셋.
-    메타데이터(제목/저자 등)는 유지됨.
-    """
-    from db.postgres import SyncSessionLocal
-
-    db = SyncSessionLocal()
-    try:
-        result = _delete_embedding(cnts_id, db)
-    finally:
-        db.close()
-    return result
-
-
+# /embedding/all 을 /embedding/{cnts_id} 보다 먼저 선언한다 — 뒤에 두면 'all' 이 cnts_id 로 잡혀 전체 삭제 대신
+# 'all' 이라는 도서 한 권의 임베딩 삭제가 돌았다(confirm 검사도 거치지 않는다)
 @router.delete("/embedding/all")
 async def delete_all_embeddings(confirm: str):
     """전체 임베딩 삭제. Milvus 컬렉션 전체 flush + PostgreSQL 상태 리셋.
@@ -500,6 +485,23 @@ async def delete_all_embeddings(confirm: str):
         db.close()
 
     return {"milvus_deleted": milvus_count, "status": "ok"}
+
+
+@router.delete("/embedding/{cnts_id}")
+async def delete_embedding(cnts_id: str):
+    """단일 도서 임베딩 삭제.
+
+    Milvus 청크 + BookSection + library_catalog 임베딩 상태 리셋.
+    메타데이터(제목/저자 등)는 유지됨.
+    """
+    from db.postgres import SyncSessionLocal
+
+    db = SyncSessionLocal()
+    try:
+        result = _delete_embedding(cnts_id, db)
+    finally:
+        db.close()
+    return result
 
 
 # ── 전체 재인덱싱 ────────────────────────────────────────
