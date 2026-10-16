@@ -1,9 +1,9 @@
 // frontend/tests/unit/researchErrors.test.ts
 import { describe, expect, it } from "vitest";
+import { ERROR_HINTS, httpStatus } from "~/utils/apiErrors";
 import {
   activeResearchId,
   detailMessage,
-  httpStatus,
   pdfCheckProblem,
   researchErrorMessage,
   versionConflict,
@@ -14,7 +14,7 @@ function fetchError(status: number, detail?: unknown) {
   return Object.assign(new Error(`HTTP ${status}`), { status, statusCode: status, data: detail === undefined ? undefined : { detail } });
 }
 
-describe("httpStatus", () => {
+describe("httpStatus(apiErrors 에 정의 — 연구 화면도 그것을 쓴다)", () => {
   it("$fetch 오류의 status·statusCode·response.status 를 읽는다", () => {
     expect(httpStatus({ status: 409 })).toBe(409);
     expect(httpStatus({ statusCode: 503 })).toBe(503);
@@ -25,19 +25,34 @@ describe("httpStatus", () => {
 });
 
 describe("detailMessage", () => {
-  it("문자열 detail 은 그대로, 배열 detail 은 msg 를 모아 쓴다", () => {
+  it("깨끗한 한글 문자열 detail 은 그대로, 배열 detail 은 pydantic 의 영문 msg 대신 사람 말(validationMessage)", () => {
     expect(detailMessage("하위질문은 6개까지다")).toBe("하위질문은 6개까지다");
-    expect(detailMessage([{ loc: ["body", "question"], msg: "String should have at least 2 characters", type: "string_too_short" }]))
-      .toBe("입력값이 올바르지 않습니다: String should have at least 2 characters");
+    expect(detailMessage([{ loc: ["body", "question"], msg: "String should have at least 2 characters", type: "string_too_short", ctx: { min_length: 2 } }]))
+      .toBe("2자 이상 입력하세요");
+    expect(detailMessage([{ loc: ["body", "question"], msg: "String should have at most 500 characters", type: "string_too_long", ctx: { max_length: 500 } }]))
+      .toBe("500자까지 입력할 수 있습니다");
+    expect(detailMessage([{ msg: "Field required", type: "missing" }])).toBe("입력값이 올바르지 않습니다");
+    expect(detailMessage([])).toBe("입력값이 올바르지 않습니다");
     expect(detailMessage({ unexpected: true })).toBeNull();
-    expect(detailMessage([])).toBeNull();
+  });
+
+  it("예외 원문·변수 값이 섞인 개발자용 문구는 null(문자열·{message} 둘 다)", () => {
+    expect(detailMessage("승인할 수 없는 상태다: running")).toBeNull();
+    expect(detailMessage("PDF 없음: NoSuchKey")).toBeNull();
+    expect(detailMessage("파라미터 max_rounds 는 int 여야 한다: 'x'")).toBeNull();
+    expect(detailMessage({ code: "x", message: "x-session-id 헤더가 필요하다" })).toBeNull();
+    expect(detailMessage("Not Found")).toBeNull();
   });
 });
 
 describe("researchErrorMessage", () => {
-  it("422 는 두 모양의 detail 을 모두 보여 준다", () => {
+  it("422 는 두 모양의 detail 을 모두 사람 말로 보여 준다", () => {
     expect(researchErrorMessage(fetchError(422, "중복된 하위질문이다: 가"), "실패")).toBe("중복된 하위질문이다: 가");
-    expect(researchErrorMessage(fetchError(422, [{ msg: "too long" }]), "실패")).toBe("입력값이 올바르지 않습니다: too long");
+    expect(researchErrorMessage(fetchError(422, [{ msg: "too long" }]), "실패")).toBe("입력값이 올바르지 않습니다");
+    expect(researchErrorMessage(fetchError(422, [{ msg: "String should have at most 500 characters", type: "string_too_long", ctx: { max_length: 500 } }]), "실패"))
+      .toBe("500자까지 입력할 수 있습니다");
+    // 개발자용 문구(필드 이름·repr 값)는 대체 문구로
+    expect(researchErrorMessage(fetchError(422, "파라미터 max_rounds 는 int 여야 한다: 'x'"), "실패")).toBe("실패");
   });
 
   it("429·503 은 잠시 뒤 다시 안내한다", () => {
@@ -45,14 +60,31 @@ describe("researchErrorMessage", () => {
     expect(researchErrorMessage(fetchError(503, "작업 큐"), "실패")).toBe("요청이 몰려 있습니다. 잠시 뒤 다시 시도하세요");
   });
 
-  it("409 는 서버 사유를, 사유가 없으면 대체 문구를 쓴다", () => {
-    expect(researchErrorMessage(fetchError(409, "승인할 수 없는 상태다: running"), "실패")).toBe("승인할 수 없는 상태다: running");
+  it("409 는 서버의 깨끗한 사유를, 사유가 없거나 개발자용(상태 값이 섞임)이면 대체 문구를 쓴다", () => {
+    expect(researchErrorMessage(fetchError(409, "취소할 수 없는 상태입니다"), "실패")).toBe("취소할 수 없는 상태입니다");
+    expect(researchErrorMessage(fetchError(409, "승인할 수 없는 상태다: running"), "실패")).toBe("실패");
     expect(researchErrorMessage(fetchError(409), "실패")).toBe("실패");
   });
 
-  it("상태가 없으면 네트워크 문제로, 그 밖의 상태는 대체 문구로 둔다", () => {
-    expect(researchErrorMessage(new Error("Failed to fetch"), "DeepResearch를 시작하지 못했습니다"))
-      .toBe("DeepResearch를 시작하지 못했습니다 — 네트워크 연결을 확인하세요");
+  it("응답이 없으면 연결 실패와 시간 초과를 나눠 알리고, 그 밖의 상태는 대체 문구로 둔다", () => {
+    // ofetch 가 응답 없이 실패한 요청(FetchError, cause = 연결 실패)
+    const refused = Object.assign(new Error("[GET] \"/api/research/x\": <no response> Failed to fetch"), {
+      name: "FetchError",
+      cause: new TypeError("Failed to fetch"),
+    });
+    expect(researchErrorMessage(refused, "DeepResearch를 시작하지 못했습니다"))
+      .toBe(`DeepResearch를 시작하지 못했습니다 — ${ERROR_HINTS.network}`);
+    expect(researchErrorMessage(new TypeError("Failed to fetch"), "실패")).toBe("실패 — 네트워크 연결을 확인하세요");
+    // 읽기 요청의 30초 제한에 걸린 폴링 GET — 네트워크 탓이 아니라 시간 초과로 알린다
+    const timedOut = Object.assign(new Error("[GET] \"/api/research/x\": <no response> [TimeoutError]: The operation was aborted due to timeout"), {
+      name: "FetchError",
+      cause: Object.assign(new Error("[TimeoutError]: The operation was aborted due to timeout"), { name: "TimeoutError" }),
+    });
+    expect(researchErrorMessage(timedOut, "최신 상태를 불러오지 못했습니다"))
+      .toBe("최신 상태를 불러오지 못했습니다 — 응답이 늦어 멈췄습니다. 잠시 뒤 다시 시도하세요");
+    // 응답과 상관없는 예외(코드 버그)는 연결 탓으로 돌리지 않는다
+    expect(researchErrorMessage(new Error("Failed to fetch"), "실패")).toBe("실패");
+    expect(researchErrorMessage(new TypeError("Cannot read properties of undefined (reading 'status')"), "실패")).toBe("실패");
     expect(researchErrorMessage(fetchError(500, "Internal"), "실패")).toBe("실패");
   });
 });
@@ -118,6 +150,7 @@ describe("detailMessage·researchErrorMessage — 객체 detail", () => {
       .toBe("다른 곳에서 계획서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요");
     expect(researchErrorMessage(fetchError(422, { message: "묶음 키가 다릅니다" }), "실패")).toBe("묶음 키가 다릅니다");
     expect(researchErrorMessage(fetchError(409, { code: "x" }), "실패")).toBe("실패");
+    expect(researchErrorMessage(fetchError(409, { code: "x", message: "잡 상태가 running 이다" }), "실패")).toBe("실패");
   });
 });
 
@@ -142,6 +175,8 @@ describe("workErrorMessage", () => {
   it("404 는 서버 문구(주제·논문·문단이 없음)를 그대로 보이고, 문구가 없으면 연구 화면과 같은 문구", () => {
     expect(workErrorMessage(fetchError(404, "문단이 없습니다"), "실패")).toBe("문단이 없습니다");
     expect(workErrorMessage(fetchError(404), "실패")).toBe("찾을 수 없는 연구입니다");
+    // 개발자용 404 문구(예외 원문이 섞임)는 문구가 없는 404 와 같다
+    expect(workErrorMessage(fetchError(404, "PDF 없음: NoSuchKey"), "실패")).toBe("찾을 수 없는 연구입니다");
   });
 
   it("404 밖은 researchErrorMessage 와 같다", () => {

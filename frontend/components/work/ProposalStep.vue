@@ -278,7 +278,8 @@ import {
 import { genQueueLine } from "~/utils/queueLine";
 import { MIN_READING_FOR_OUTLINE } from "~/utils/readingList";
 import type { ReportExportFormat } from "~/utils/reportDocument";
-import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { openGeneration } from "~/utils/workEvents";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";

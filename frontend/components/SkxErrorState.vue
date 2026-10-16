@@ -17,7 +17,8 @@
        empty     — 실패가 아닌 빈 결과(검색 결과 없음·기록 없음)
      data-tone: 'neutral'(empty·notFound — 사용자가 잘못한 것도 고장도 아니다) / 'error'(그 밖) — 열한 가지 kind 를 두 갈래로 꾸밀 때 쓴다.
      role: empty 는 status(조용히 알림), 나머지는 alert(바로 읽어 줌).
-     재시도: 부모가 @retry 를 달면 onRetry prop 으로 들어와 그때만 [다시 시도] 버튼을 그린다. busy 면 버튼을 잠그고 aria-busy.
+     재시도: 부모가 @retry 를 달면 onRetry prop 으로 들어와 그때만 [다시 시도] 버튼을 그린다. busy 면 aria-disabled·aria-busy 로 알리고 클릭만 무시한다
+       (disabled 로 막으면 누른 버튼이 초점을 잃어 키보드·화면 낭독기 사용자가 제자리를 잃는다).
      기본 슬롯은 버튼 줄의 덧붙일 자리([처음 화면으로] 같은 링크) — 같은 모양을 쓰려면 class="skx-state__action" 을 단다 -->
 <template>
   <div
@@ -35,9 +36,9 @@
         v-if="onRetry"
         type="button"
         class="skx-state__retry"
-        :disabled="busy"
+        :aria-disabled="busy ? 'true' : undefined"
         :aria-busy="busy ? 'true' : undefined"
-        @click="onRetry()"
+        @click="retry"
       >
         {{ retryLabel }}
       </button>
@@ -59,7 +60,7 @@ const props = withDefaults(
     message?: string;
     /** 재시도 버튼 글 */
     retryLabel?: string;
-    /** 재시도 중 — 버튼을 잠그고 aria-busy */
+    /** 재시도 중 — aria-disabled·aria-busy 로 알리고 클릭을 무시한다(초점은 버튼에 남는다) */
     busy?: boolean;
     /** 카드 상자 없이 좁게(이미 틀 안에 있는 칸·옆 칸용) */
     compact?: boolean;
@@ -73,4 +74,9 @@ const props = withDefaults(
 
 // 사용자가 잘못한 것도 고장도 아닌 상태는 차분한 갈래로 — 나머지는 실패 갈래
 const tone = computed(() => (props.kind === "empty" || props.kind === "notFound" ? "neutral" : "error"));
+
+// 재시도 중에는 누름을 무시한다 — disabled 대신이라 버튼은 초점을 잃지 않는다
+function retry() {
+  if (!props.busy) props.onRetry?.();
+}
 </script>

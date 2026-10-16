@@ -5146,7 +5146,8 @@ html.skx-scroll-lock {
 .skx-state__action:hover {
   border-color: var(--skx-primary);
 }
-.skx-state__retry:disabled {
+/* 재시도 중 — disabled 가 아니라 aria-disabled 로 알린다(초점 유지) */
+.skx-state__retry[aria-disabled="true"] {
   opacity: 0.55;
   cursor: progress;
 }
@@ -5219,7 +5220,7 @@ html.skx-scroll-lock {
   border-radius: var(--skx-radius-sm);
   cursor: pointer;
 }
-.skx-inline-error__retry:disabled {
+.skx-inline-error__retry[aria-disabled="true"] {
   opacity: 0.55;
   cursor: progress;
 }

@@ -1,33 +1,20 @@
 // frontend/utils/researchErrors.ts
+// 연구 화면(DeepResearch·이어간 연구)의 오류 문구. 상태 읽기·서버 사유 고르기·422 문구는 utils/apiErrors 의 규칙을 그대로 쓴다 —
+// httpStatus 는 apiErrors 에만 정의한다(여기서 다시 내보내면 Nuxt 자동 import 가 같은 이름을 두 번 만나 경고한다)
 import { DEEP_RESEARCH } from "./brand";
+import { ERROR_HINTS, errorKind, httpStatus, serverMessage, validationMessage } from "./apiErrors";
 
 interface FetchLikeError {
-  status?: number;
-  statusCode?: number;
-  response?: { status?: number };
   data?: unknown;
 }
 
-export function httpStatus(err: unknown): number | undefined {
-  if (!err || typeof err !== "object") return undefined;
-  const e = err as FetchLikeError;
-  return e.status ?? e.statusCode ?? e.response?.status;
-}
-
-// FastAPI 는 HTTPException 이면 detail 을 문자열로, pydantic 검증 실패면
-// [{loc, msg, type}] 배열로 준다. 한 모양만 읽으면 다른 쪽은 "[object Object]" 가 된다.
-// 구조화한 detail({code, message, …} — 429 browser_active·409 version_conflict)은 message 를 읽는다
+// FastAPI 는 HTTPException 이면 detail 을 문자열로, pydantic 검증 실패면 [{loc, msg, type, ctx}] 배열로 준다.
+// 한 모양만 읽으면 다른 쪽은 "[object Object]" 가 된다. 구조화한 detail({code, message, …} — 429 browser_active·409 version_conflict)은
+// message 를 읽는다. 문자열·message 는 한글만 있는 깨끗한 문장일 때만 쓰고(apiErrors.serverMessage — 'PDF 없음: {e}'·'상태다: running'
+// 처럼 예외 원문·변수 값이 섞인 개발자용 문구는 null), 배열은 pydantic 의 영문 msg 대신 validationMessage 의 사람 말로 바꾼다
 export function detailMessage(detail: unknown): string | null {
-  if (typeof detail === "string") return detail.trim() || null;
-  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
-    const message = (detail as { message?: unknown }).message;
-    return typeof message === "string" ? message.trim() || null : null;
-  }
-  if (!Array.isArray(detail)) return null;
-  const msgs = detail
-    .map((d) => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : ""))
-    .filter(Boolean);
-  return msgs.length ? `입력값이 올바르지 않습니다: ${msgs.join(", ")}` : null;
+  if (Array.isArray(detail)) return validationMessage(detail);
+  return serverMessage(detail);
 }
 
 // 원문 보기 전 확인 요청의 결과로 알릴 문구. null 이면 뷰어를 연다. 서버는 파일이 없을 때만
@@ -88,7 +75,12 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
     ? detailMessage((data as { detail: unknown }).detail)
     : null;
   if (status === 409 || status === 422) return detail ?? fallback;
-  if (status === undefined) return `${fallback} — 네트워크 연결을 확인하세요`;
+  // 응답이 없으면 시간 초과(읽기 요청의 30초 제한 — 폴링 GET 이 여기에 걸린다)와 연결 실패를 나눠 알린다.
+  // 응답 없이 끝난 요청이 아닌 것(코드 버그 등 — errorKind 'unknown')은 연결 탓으로 돌리지 않고 대체 문구만
+  if (!status) {
+    const kind = errorKind(err);
+    return kind === "timeout" || kind === "network" ? `${fallback} — ${ERROR_HINTS[kind]}` : fallback;
+  }
   return fallback;
 }
 

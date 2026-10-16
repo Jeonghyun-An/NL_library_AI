@@ -75,7 +75,8 @@ import TopicDeck from "~/components/work/TopicDeck.vue";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
 import type { TopicCreate, TopicPatch, WorkResource, WorkStep } from "~/types/work";
 import { DEEP_RESEARCH } from "~/utils/brand";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 import { aiCardsStale, deckQueueLine, liveTopics } from "~/utils/topicDeck";
 import { latestGeneration } from "~/utils/workEvents";
 

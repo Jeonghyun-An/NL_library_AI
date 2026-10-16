@@ -1,16 +1,15 @@
 // frontend/utils/apiErrors.ts
 // API 오류를 화면 문구로 바꾸는 공통 규칙(순수 함수 — Vue 의존 없음). 모든 화면이 같은 규칙으로 오류를 말하게 한다.
+//  - httpStatus(err)     : $fetch 오류의 HTTP 상태. 정의는 여기 한 곳 — researchErrors 도 여기서 가져간다
 //  - errorKind(err)      : 오류의 종류(네트워크·시간 초과·몰림·서버·없음·입력·충돌·권한·그 밖) — 화면 상태(SkxErrorState 의 kind)에 그대로 넘긴다
 //  - isAbortError(err)   : 우리가 일부러 끊은 요청(AbortController.abort)인가 — 그렇다면 오류를 보이지 않는다
 //  - apiErrorMessage(err, fallback): 화면에 보일 문구 하나. 영문 기술 메시지(err.message)는 어떤 경우에도 쓰지 않는다
-// httpStatus 는 researchErrors 의 것을 그대로 쓴다(중복 정의 금지). researchErrors 가 이 파일을 가져가면 순환이 되니,
-// 연구 화면 문구를 이 규칙으로 옮길 때는 researchErrors 의 httpStatus 를 이 파일로 옮기는 쪽이 낫다
-import { httpStatus } from "./researchErrors";
+//  - toUserError(err, fallback): 위 셋을 한 번에 — 일부러 끊은 요청이면 null(아무것도 띄우지 않는다), 아니면 {kind, message}
 
 /**
  * 대체 문구(fallback) 뒤에 ' — ' 로 붙이는 이유. 여기 없는 kind(notFound·conflict·invalid·forbidden·unknown)는 대체 문구만 보인다 —
  * 서버가 한글 사유를 주면 그것을 먼저 쓰고, 없으면 '무엇을 못 했는지'가 이미 대체 문구에 있어 덧붙일 이유가 없다.
- * 문구 검토는 이 상수와 아래 VALIDATION_HINTS 두 곳만 보면 된다
+ * 문구 검토는 이 상수와 아래 VALIDATION_HINTS·DEFAULT_ERROR_MESSAGE 만 보면 된다
  */
 export const ERROR_HINTS = {
   network: "네트워크 연결을 확인하세요",
@@ -19,12 +18,19 @@ export const ERROR_HINTS = {
   server: "서버에 문제가 생겼습니다. 잠시 뒤 다시 시도하세요",
 } as const;
 
-/** FastAPI 422(pydantic 검증 실패) 안내 — tooLong 의 {n} 은 서버가 준 최대 글자 수(ctx.max_length) */
+/**
+ * FastAPI 422(pydantic 검증 실패) 안내 — {n} 은 서버가 준 글자 수(tooLong 은 ctx.max_length, tooShort 는 ctx.min_length).
+ * 1자 이상(=비면 안 됨)은 글자 수보다 '입력하라'가 자연스러워 required 를 쓴다
+ */
 export const VALIDATION_HINTS = {
   tooLong: "{n}자까지 입력할 수 있습니다",
+  tooShort: "{n}자 이상 입력하세요",
   required: "내용을 입력해 주세요",
   invalid: "입력값이 올바르지 않습니다",
 } as const;
+
+/** 대체 문구도 이유도 없을 때 — apiErrorMessage 는 빈 문자열을 돌려주지 않는다(빈 오류 칸이 그려지지 않게) */
+export const DEFAULT_ERROR_MESSAGE = "요청을 처리하지 못했습니다";
 
 /** 대체 문구와 이유 사이 — 기존 화면 문구('… — 네트워크 연결을 확인하세요')와 같은 줄표 */
 const HINT_SEPARATOR = " — ";
@@ -47,6 +53,25 @@ export type ErrorKind =
  */
 export type ErrorStateKind = ErrorKind | "error" | "empty";
 
+/** toUserError 의 결과 — 화면은 kind 를 SkxErrorState 에, message 를 글로 쓴다 */
+export interface UserFacingError {
+  kind: ErrorKind;
+  message: string;
+}
+
+interface FetchLikeError {
+  status?: number;
+  statusCode?: number;
+  response?: { status?: number };
+}
+
+/** $fetch 오류의 HTTP 상태 — ofetch FetchError 는 status·statusCode, 직접 만든 오류는 response.status 에 둔다. 응답이 없으면 undefined */
+export function httpStatus(err: unknown): number | undefined {
+  if (!err || typeof err !== "object") return undefined;
+  const e = err as FetchLikeError;
+  return e.status ?? e.statusCode ?? e.response?.status;
+}
+
 interface ErrorLike {
   name?: unknown;
   message?: unknown;
@@ -61,29 +86,55 @@ function causeOf(err: unknown): unknown {
   return err && typeof err === "object" ? (err as ErrorLike).cause : undefined;
 }
 
-const TIMEOUT_RE = /timeout|timed out/i;
-
 function messageOf(err: unknown): string {
   if (typeof err === "string") return err;
   const message = err && typeof err === "object" ? (err as ErrorLike).message : undefined;
   return typeof message === "string" ? message : "";
 }
 
+/** ofetch FetchError 가 든 요청 옵션의 signal 이 끊긴 이유(signal.reason) — 없으면 undefined */
+function signalReason(err: unknown): unknown {
+  if (!err || typeof err !== "object") return undefined;
+  const options = (err as { options?: unknown }).options;
+  const signal = options && typeof options === "object" ? (options as { signal?: unknown }).signal : undefined;
+  return signal && typeof signal === "object" ? (signal as { reason?: unknown }).reason : undefined;
+}
+
+const TIMEOUT_RE = /timeout|timed out/i;
+
 /**
  * 응답 없이 시간 초과로 끊겼는가. ofetch 1.5.1 은 options.timeout 이 지나면 name 'TimeoutError' 인 Error 로 끊고(FetchError.cause),
- * AbortSignal.timeout 은 DOMException 'TimeoutError' 로 끊는다(native fetch 면 그 자체가, $fetch 면 cause 가 된다).
- * 둘 다 아니어도 메시지에 timeout 이 있으면 시간 초과로 본다 — cause 가 있으면 cause 의 메시지만 본다
+ * AbortSignal.timeout·useApi 의 대체 타이머는 이유를 'TimeoutError' 로 끊는다(native fetch 면 그 자체가, $fetch 면 cause 가 된다).
+ * 오래된 엔진은 signal 을 그 이유로 끊어도 fetch 가 AbortError 로 실패한다 — 그래서 FetchError 가 든 options.signal 의 이유도 본다.
+ * 셋 다 아니어도 메시지에 timeout 이 있으면 시간 초과로 본다 — cause 가 있으면 cause 의 메시지만 본다
  * (FetchError 메시지에는 요청 주소가 들어 있어 주소의 낱말에 속지 않게)
  */
 function isTimeoutError(err: unknown): boolean {
   const cause = causeOf(err);
   if (errorName(err) === "TimeoutError" || errorName(cause) === "TimeoutError") return true;
+  if (errorName(signalReason(err)) === "TimeoutError") return true;
   return TIMEOUT_RE.test(messageOf(cause !== undefined ? cause : err));
+}
+
+/** native fetch 가 서버에 닿지 못했을 때의 TypeError 문구 — 크롬·파이어폭스·사파리·Node(undici) */
+const FETCH_FAILURE_RE = /failed to fetch|fetch failed|networkerror|load failed|network request failed|network connection was lost/i;
+
+/**
+ * 응답 없이 끝난 요청의 실패인가 — 이것만 네트워크·시간 초과로 본다. 응답을 가공하다 난 코드 버그(TypeError·SyntaxError 등)를
+ * 네트워크 문제로 알리면 사용자는 고장이 아닌 연결만 살피게 된다.
+ *  - ofetch 의 FetchError(상태 없음): 연결 실패·시간 초과·끊김을 cause 로 든다
+ *  - native fetch: 연결 실패는 TypeError('Failed to fetch' 류), signal 로 끊기면 DOMException(TimeoutError·AbortError)
+ */
+function isRequestFailure(err: unknown): boolean {
+  const name = errorName(err);
+  if (name === "FetchError" || name === "TimeoutError" || name === "AbortError") return true;
+  return name === "TypeError" && FETCH_FAILURE_RE.test(messageOf(err));
 }
 
 /**
  * 우리가 일부러 끊은 요청인가(AbortController.abort — 화면을 떠남·새 검색이 이전 검색을 끊음). 시간 초과는 아니다.
- * 호출부는 이것이 true 면 오류 표시를 건너뛴다. native fetch 는 DOMException 'AbortError' 를, $fetch 는 그것을 cause 로 든 FetchError 를 던진다
+ * 호출부는 이것이 true 면 오류 표시를 건너뛴다(toUserError 는 null). native fetch 는 DOMException 'AbortError' 를,
+ * $fetch 는 그것을 cause 로 든 FetchError 를 던진다
  */
 export function isAbortError(err: unknown): boolean {
   if (isTimeoutError(err)) return false;
@@ -91,12 +142,15 @@ export function isAbortError(err: unknown): boolean {
 }
 
 /**
- * 오류의 종류. 상태 코드가 없으면(요청이 서버에 닿지 못함) 시간 초과 아니면 네트워크다 — 일부러 끊은 요청도 'network' 로 나오니
- * 호출부는 isAbortError 를 먼저 본다. 상태 0(불투명 응답)도 상태 없음으로 본다
+ * 오류의 종류. 상태 코드가 없으면(상태 0 — 불투명 응답 — 도 같다) 응답 없이 끝난 요청의 실패일 때만 시간 초과·네트워크이고,
+ * 그 밖(코드 버그·이상한 값)은 'unknown' 이다. 일부러 끊은 요청도 'network' 로 나오니 호출부는 isAbortError 를 먼저 본다
  */
 export function errorKind(err: unknown): ErrorKind {
   const status = httpStatus(err);
-  if (!status) return isTimeoutError(err) ? "timeout" : "network";
+  if (!status) {
+    if (!isRequestFailure(err)) return "unknown";
+    return isTimeoutError(err) ? "timeout" : "network";
+  }
   if (status === 408 || status === 504) return "timeout";
   if (status === 429 || status === 503) return "busy";
   if (status >= 500 && status <= 599) return "server";
@@ -109,26 +163,33 @@ export function errorKind(err: unknown): ErrorKind {
 
 interface ValidationItem {
   type?: unknown;
-  ctx?: { max_length?: unknown } | null;
+  ctx?: { max_length?: unknown; min_length?: unknown } | null;
+}
+
+function positiveInt(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
 }
 
 /**
  * FastAPI 422 의 detail 배열([{type, loc, msg, ctx}])을 사람 말로. pydantic 의 영문 msg 는 쓰지 않는다.
- * 여러 항목이면 알아볼 수 있는 첫 항목(길이 초과·비어 있음)을 쓰고, 없으면 일반 문구. 배열이 아니면 null
+ * 여러 항목이면 알아볼 수 있는 첫 항목(길이 초과·길이 미달)을 쓰고, 없으면 일반 문구. 배열이 아니면 null.
+ * missing(필드가 아예 빠짐)은 사용자가 아니라 화면이 요청을 잘못 만든 것이라 알아볼 항목으로 치지 않는다 — 일반 문구
  */
 export function validationMessage(detail: unknown): string | null {
   if (!Array.isArray(detail)) return null;
   for (const item of detail) {
     if (!item || typeof item !== "object") continue;
     const { type, ctx } = item as ValidationItem;
+    const limits = ctx && typeof ctx === "object" ? ctx : {};
+    // 서버 문구('3000자를 넘습니다')처럼 쉼표 없이 쓴다
     if (type === "string_too_long") {
-      const max = ctx && typeof ctx === "object" ? ctx.max_length : undefined;
-      // 서버 문구('3000자를 넘습니다')처럼 쉼표 없이 쓴다
-      if (typeof max === "number" && Number.isInteger(max) && max > 0) {
-        return VALIDATION_HINTS.tooLong.replace("{n}", String(max));
-      }
+      const max = positiveInt(limits.max_length);
+      if (max) return VALIDATION_HINTS.tooLong.replace("{n}", String(max));
     }
-    if (type === "string_too_short" || type === "missing") return VALIDATION_HINTS.required;
+    if (type === "string_too_short") {
+      const min = positiveInt(limits.min_length);
+      return min && min >= 2 ? VALIDATION_HINTS.tooShort.replace("{n}", String(min)) : VALIDATION_HINTS.required;
+    }
   }
   return VALIDATION_HINTS.invalid;
 }
@@ -141,31 +202,63 @@ function errorDetail(err: unknown): unknown {
 }
 
 const HANGUL_RE = /[가-힣]/;
+/**
+ * 개발자용 문구의 표시 — 라틴 문자(예외 원문·변수·필드·헤더 이름: 'PDF 없음: NoSuchKey…'·'x-session-id 헤더가 필요하다'),
+ * 중괄호(f-string·dict 를 그대로 찍음), 따옴표(repr 로 찍힌 값: "int 여야 한다: 'x'")
+ */
+const DEV_TEXT_RE = /[A-Za-z{}'"`]/;
 
-/** 서버가 사람에게 보이라고 준 한글 사유 — 문자열 detail 또는 구조화 detail 의 message. 영문(프레임워크 기본 문구)은 null */
-function serverReason(detail: unknown): string | null {
+/**
+ * 서버가 사람에게 보이라고 지은 사유 — 문자열 detail 또는 구조화 detail({code, message, …})의 message.
+ * 한글이 있고 개발자용 표시가 없는 깨끗한 문장일 때만 돌려준다(앞뒤 공백은 걷는다). 영문(프레임워크 기본 문구)·한영이 섞인
+ * 개발자용 문구·배열(422 검증 실패 — validationMessage 몫)은 null
+ */
+export function serverMessage(detail: unknown): string | null {
   let text: unknown = detail;
-  if (detail && typeof detail === "object" && !Array.isArray(detail)) text = (detail as { message?: unknown }).message;
+  if (detail && typeof detail === "object") {
+    if (Array.isArray(detail)) return null;
+    text = (detail as { message?: unknown }).message;
+  }
   if (typeof text !== "string") return null;
   const trimmed = text.trim();
-  return trimmed && HANGUL_RE.test(trimmed) ? trimmed : null;
+  return trimmed && HANGUL_RE.test(trimmed) && !DEV_TEXT_RE.test(trimmed) ? trimmed : null;
+}
+
+/** 구조화 detail 에 code 가 있는가 — 서버가 경우를 갈라 일부러 지은 응답이라는 표시 */
+function hasDetailCode(detail: unknown): boolean {
+  if (!detail || typeof detail !== "object" || Array.isArray(detail)) return false;
+  const code = (detail as { code?: unknown }).code;
+  return typeof code === "string" && code.trim() !== "";
 }
 
 /**
  * 화면에 보일 문구 하나를 고른다.
- *  (a) 서버가 한글 사유를 주면 그대로(HTTPException 문구·구조화 detail {message})
+ *  (a) 서버의 깨끗한 한글 사유(serverMessage)면 그대로. 단 5xx 는 code 가 있는 구조화 detail 이거나 503(서버가 지은 '잠시 뒤' 안내)일 때만 —
+ *      그 밖의 5xx 문구는 예외를 감싼 개발자용('잡 생성 실패: …')일 수 있어 (c) 로 간다
  *  (b) 422 검증 실패 배열이면 validationMessage
- *  (c) 그 밖에는 fallback(무엇을 못 했는지) 뒤에 kind 별 이유(ERROR_HINTS)를 붙인다 — 이유가 없는 kind 는 fallback 만
- * err.message(영문 기술 메시지)는 어떤 경우에도 쓰지 않는다. 일부러 끊은 요청은 호출부가 isAbortError 로 먼저 거른다
+ *  (c) 그 밖에는 fallback(무엇을 못 했는지) 뒤에 kind 별 이유(ERROR_HINTS)를 붙인다 — 이유가 없는 kind 는 fallback 만,
+ *      fallback 도 비면 DEFAULT_ERROR_MESSAGE(빈 문자열은 돌려주지 않는다)
+ * err.message(영문 기술 메시지)는 어떤 경우에도 쓰지 않는다. 일부러 끊은 요청은 호출부가 isAbortError 로 먼저 거른다(toUserError)
  */
 export function apiErrorMessage(err: unknown, fallback: string): string {
+  const status = httpStatus(err);
   const detail = errorDetail(err);
-  const reason = serverReason(detail);
-  if (reason) return reason;
-  if (httpStatus(err) === 422 && Array.isArray(detail)) return validationMessage(detail)!;
+  const reason = serverMessage(detail);
+  const isServerError = !!status && status >= 500 && status <= 599;
+  if (reason && (!isServerError || status === 503 || hasDetailCode(detail))) return reason;
+  if (status === 422 && Array.isArray(detail)) return validationMessage(detail)!;
   const kind = errorKind(err);
   const hint = kind in ERROR_HINTS ? ERROR_HINTS[kind as keyof typeof ERROR_HINTS] : null;
-  const base = fallback.trim();
-  if (!hint) return base;
+  const base = typeof fallback === "string" ? fallback.trim() : "";
+  if (!hint) return base || DEFAULT_ERROR_MESSAGE;
   return base ? `${base}${HINT_SEPARATOR}${hint}` : hint;
+}
+
+/**
+ * 화면이 쓰기 편한 한 번에 — catch 에서 `const shown = toUserError(e, '결과를 불러오지 못했습니다'); if (shown) …`.
+ * 일부러 끊은 요청(isAbortError)이면 null(화면은 아무것도 띄우지 않는다), 아니면 kind(SkxErrorState 의 kind)와 apiErrorMessage 의 문구
+ */
+export function toUserError(err: unknown, fallback: string): UserFacingError | null {
+  if (isAbortError(err)) return null;
+  return { kind: errorKind(err), message: apiErrorMessage(err, fallback) };
 }

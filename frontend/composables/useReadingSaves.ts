@@ -1,7 +1,8 @@
 // frontend/composables/useReadingSaves.ts
 import { type Ref, readonly, ref } from "vue";
 import type { ReadingPut, WorkResource } from "~/types/work";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 
 export interface ReadingSavesDeps {
   put: (cnts: string, body: ReadingPut) => Promise<unknown>;

@@ -34,7 +34,8 @@ import type {
   WorkState,
   WorkView,
 } from "~/types/work";
-import { httpStatus, researchErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { researchErrorMessage } from "~/utils/researchErrors";
 import { applyWorkEvent, initialWorkState, withResource, withWork } from "~/utils/workEvents";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";

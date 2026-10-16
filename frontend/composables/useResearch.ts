@@ -21,7 +21,8 @@ import {
   sectionGapToRecover,
   synthClosePending,
 } from "~/utils/researchEvents";
-import { activeResearchId, httpStatus, researchErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { activeResearchId, researchErrorMessage } from "~/utils/researchErrors";
 import { researchStartState, startNotice } from "~/utils/researchStart";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";

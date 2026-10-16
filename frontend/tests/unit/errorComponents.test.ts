@@ -4,8 +4,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createFetch } from "ofetch";
-import { describe, expect, it } from "vitest";
-import { API_READ_TIMEOUT_MS, withReadTimeout } from "~/composables/useApi";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { API_READ_TIMEOUT_MS, API_SEARCH_TIMEOUT_MS, withReadTimeout } from "~/composables/useApi";
 import { errorKind, isAbortError } from "~/utils/apiErrors";
 import { rawCss } from "./helpers/themeCss";
 
@@ -59,10 +59,15 @@ describe("SkxErrorState — 섹션·화면 단위 상태 블록", () => {
     expect(js).toContain('import type { ErrorStateKind } from "~/utils/apiErrors"');
   });
 
-  it("부모의 @retry 는 onRetry prop 으로 받아, 있을 때만 [다시 시도] 를 그린다 — 재시도 중이면 잠그고 aria-busy", () => {
+  it("부모의 @retry 는 onRetry prop 으로 받아, 있을 때만 [다시 시도] 를 그린다 — 재시도 중이면 aria-disabled·aria-busy 로 알리고 클릭만 무시한다", () => {
     expect(js).toMatch(/onRetry\?: \(\) => void;/);
     expect(tpl).toContain('v-if="onRetry || $slots.default"');
-    expect(tpl).toMatch(/<button\s+v-if="onRetry"\s+type="button"\s+class="skx-state__retry"\s+:disabled="busy"\s+:aria-busy="busy \? 'true' : undefined"\s+@click="onRetry\(\)"/);
+    expect(tpl).toMatch(
+      /<button\s+v-if="onRetry"\s+type="button"\s+class="skx-state__retry"\s+:aria-disabled="busy \? 'true' : undefined"\s+:aria-busy="busy \? 'true' : undefined"\s+@click="retry"/,
+    );
+    // disabled 로 막으면 누른 버튼이 초점을 잃는다
+    expect(tpl).not.toMatch(/:disabled=/);
+    expect(js).toMatch(/function retry\(\) \{\s*if \(!props\.busy\) props\.onRetry\?\.\(\);\s*\}/);
     expect(tpl).toContain("{{ retryLabel }}");
   });
 
@@ -79,17 +84,20 @@ describe("SkxInlineError — 줄 단위 안내", () => {
   const tpl = template(inlineVue);
   const js = script(inlineVue);
 
-  it("<p role=alert> 안에 글·[다시 시도]·슬롯", () => {
+  it("<div role=alert> 안에 글·[다시 시도]·슬롯 — 슬롯에 블록 요소를 넣어도 HTML·수화가 깨지지 않게 뿌리는 <p> 가 아니다", () => {
     expect(tpl).toMatch(
-      /<p class="skx-inline-error" role="alert">\s*<span class="skx-inline-error__msg">\{\{ message \}\}<\/span>\s*<button[\s\S]*?class="skx-inline-error__retry"[\s\S]*?<\/button>\s*<slot \/>\s*<\/p>/,
+      /<div class="skx-inline-error" role="alert">\s*<span class="skx-inline-error__msg">\{\{ message \}\}<\/span>\s*<button[\s\S]*?class="skx-inline-error__retry"[\s\S]*?<\/button>\s*<slot \/>\s*<\/div>/,
     );
+    expect(tpl).not.toMatch(/<p[\s>]/);
   });
 
-  it("onRetry prop 이 있을 때만 버튼, 재시도 중이면 잠그고 aria-busy", () => {
+  it("onRetry prop 이 있을 때만 버튼, 재시도 중이면 aria-disabled·aria-busy 로 알리고 클릭만 무시한다(초점 유지)", () => {
     expect(js).toMatch(/message: string;/);
     expect(js).toMatch(/onRetry\?: \(\) => void;/);
     expect(js).toContain('retryLabel: "다시 시도"');
-    expect(tpl).toMatch(/v-if="onRetry"[\s\S]*?:disabled="busy"[\s\S]*?:aria-busy="busy \? 'true' : undefined"[\s\S]*?@click="onRetry\(\)"/);
+    expect(tpl).toMatch(/v-if="onRetry"[\s\S]*?:aria-disabled="busy \? 'true' : undefined"[\s\S]*?:aria-busy="busy \? 'true' : undefined"[\s\S]*?@click="retry"/);
+    expect(tpl).not.toMatch(/:disabled=/);
+    expect(js).toMatch(/function retry\(\) \{\s*if \(!props\.busy\) props\.onRetry\?\.\(\);\s*\}/);
   });
 });
 
@@ -128,9 +136,39 @@ describe("error.vue — 전역 오류 화면", () => {
   });
 });
 
+/** signal 이 끊기면 그 이유로 실패하고, 아니면 끝없이 기다리는 fetch */
+const hangingFetch = ((_: unknown, init?: RequestInit) =>
+  new Promise((_resolve, reject) => {
+    const signal = init?.signal;
+    if (signal?.aborted) return reject(signal.reason);
+    signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+  })) as unknown as typeof fetch;
+
+/** AbortSignal.any 가 없는 브라우저를 흉내 낸다 — 끝나면 되돌린다 */
+function withoutSignalAny<T>(run: () => T): T {
+  const original = AbortSignal.any;
+  Object.defineProperty(AbortSignal, "any", { value: undefined, configurable: true, writable: true });
+  const restore = () => Object.defineProperty(AbortSignal, "any", { value: original, configurable: true, writable: true });
+  try {
+    const result = run();
+    if (result instanceof Promise) return result.finally(restore) as T;
+    restore();
+    return result;
+  } catch (e) {
+    restore();
+    throw e;
+  }
+}
+
 describe("useApi — 읽기 요청의 기본 시간 제한", () => {
-  it("30초", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("30초, 읽기 성격 POST 는 60초", () => {
     expect(API_READ_TIMEOUT_MS).toBe(30_000);
+    expect(API_SEARCH_TIMEOUT_MS).toBe(60_000);
+    expect(useApiTs).toMatch(/읽기 성격 POST 호출부가\s*\n?\s*\*?\s*timeout 으로 직접 넘긴다/);
   });
 
   it("onRequest 에서 건다(ofetch 의 timeout 처리가 onRequest 뒤라서)", () => {
@@ -219,18 +257,122 @@ describe("useApi — 읽기 요청의 기본 시간 제한", () => {
     expect((opts.signal!.reason as DOMException).name).toBe("AbortError");
   });
 
-  it("AbortSignal.any 가 없는 브라우저면 호출부 signal 을 그대로 둔다", () => {
-    const original = AbortSignal.any;
-    try {
-      Object.defineProperty(AbortSignal, "any", { value: undefined, configurable: true, writable: true });
-      const caller = new AbortController();
-      const opts: { timeout?: number; signal?: AbortSignal | null } = { signal: caller.signal };
-      withReadTimeout(opts);
-      expect(opts.signal).toBe(caller.signal);
-      expect(opts.timeout).toBeUndefined();
-    } finally {
-      Object.defineProperty(AbortSignal, "any", { value: original, configurable: true, writable: true });
-    }
+  it("읽기 성격 POST — 호출부가 timeout 과 signal 을 함께 주면(ofetch 는 timeout 을 건너뛴다) signal 에 합치고 timeout 은 지운다", () => {
+    const caller = new AbortController();
+    const opts: { method?: string; timeout?: number; signal?: AbortSignal | null } = {
+      method: "POST",
+      timeout: API_SEARCH_TIMEOUT_MS,
+      signal: caller.signal,
+    };
+    withReadTimeout(opts);
+    expect(opts.signal).not.toBe(caller.signal);
+    expect("timeout" in opts).toBe(false);
+    caller.abort();
+    expect(opts.signal!.aborted).toBe(true);
+    expect((opts.signal!.reason as DOMException).name).toBe("AbortError");
+    // signal 이 없으면 ofetch 의 timeout 그대로
+    const bare: { method?: string; timeout?: number } = { method: "POST", timeout: API_SEARCH_TIMEOUT_MS };
+    withReadTimeout(bare);
+    expect(bare.timeout).toBe(API_SEARCH_TIMEOUT_MS);
+  });
+
+  it("이미 합친 signal(ofetch 가 다시 보낸 요청)은 또 합치지 않는다", () => {
+    const opts: { timeout?: number; signal?: AbortSignal | null } = { signal: new AbortController().signal };
+    withReadTimeout(opts);
+    const combined = opts.signal;
+    withReadTimeout(opts);
+    expect(opts.signal).toBe(combined);
+    expect(opts.timeout).toBeUndefined();
+  });
+
+  it("실제 ofetch — 읽기 성격 POST 를 signal 과 함께 보내도 시간 제한에 걸리고, 끊으면 끊김으로 끝난다", async () => {
+    const $f = createFetch({ fetch: hangingFetch, defaults: { onRequest: ({ options }) => withReadTimeout(options) } });
+    const timedOut = await $f("/api/search", { method: "POST", body: { query: "가" }, signal: new AbortController().signal, timeout: 10 })
+      .then(() => null, (e: unknown) => e);
+    expect(errorKind(timedOut)).toBe("timeout");
+    expect(isAbortError(timedOut)).toBe(false);
+    const caller = new AbortController();
+    const pending = $f("/api/search", { method: "POST", body: { query: "가" }, signal: caller.signal, timeout: 60_000 })
+      .then(() => null, (e: unknown) => e);
+    caller.abort();
+    expect(isAbortError(await pending)).toBe(true);
+  });
+
+  describe("AbortSignal.any 가 없는 브라우저 — 대체 경로로 시간 제한을 지킨다", () => {
+    it("호출부 signal 과 합친 새 signal — 호출부가 끊으면 그 이유로 끊기고 타이머를 지운다", () => {
+      vi.useFakeTimers();
+      withoutSignalAny(() => {
+        const caller = new AbortController();
+        const opts: { timeout?: number; signal?: AbortSignal | null } = { signal: caller.signal };
+        withReadTimeout(opts);
+        expect(opts.signal).not.toBe(caller.signal);
+        expect(opts.timeout).toBeUndefined();
+        expect(vi.getTimerCount()).toBe(1);
+        caller.abort();
+        expect(opts.signal!.aborted).toBe(true);
+        expect((opts.signal!.reason as DOMException).name).toBe("AbortError");
+        expect(vi.getTimerCount()).toBe(0);
+      });
+    });
+
+    it("시간이 지나면 TimeoutError 로 끊긴다 — 그 뒤 호출부가 끊어도 바뀌지 않는다", () => {
+      vi.useFakeTimers();
+      withoutSignalAny(() => {
+        const caller = new AbortController();
+        const opts: { timeout?: number; signal?: AbortSignal | null } = { signal: caller.signal };
+        withReadTimeout(opts);
+        vi.advanceTimersByTime(API_READ_TIMEOUT_MS - 1);
+        expect(opts.signal!.aborted).toBe(false);
+        vi.advanceTimersByTime(1);
+        expect(opts.signal!.aborted).toBe(true);
+        expect((opts.signal!.reason as Error).name).toBe("TimeoutError");
+        caller.abort();
+        expect((opts.signal!.reason as Error).name).toBe("TimeoutError");
+      });
+    });
+
+    it("이미 끊긴 호출부 signal 이면 바로 끊긴 signal(타이머 없음)", () => {
+      vi.useFakeTimers();
+      withoutSignalAny(() => {
+        const caller = new AbortController();
+        caller.abort();
+        const opts: { timeout?: number; signal?: AbortSignal | null } = { signal: caller.signal };
+        withReadTimeout(opts);
+        expect(opts.signal!.aborted).toBe(true);
+        expect(vi.getTimerCount()).toBe(0);
+      });
+    });
+
+    it("실제 ofetch — 시간 초과는 timeout, 호출부가 끊으면 끊김", async () => {
+      await withoutSignalAny(async () => {
+        const $f = createFetch({ fetch: hangingFetch, defaults: { onRequest: ({ options }) => withReadTimeout(options) } });
+        const timedOut = await $f("/api/x", { signal: new AbortController().signal, timeout: 10 }).then(() => null, (e: unknown) => e);
+        expect(errorKind(timedOut)).toBe("timeout");
+        expect(isAbortError(timedOut)).toBe(false);
+        const caller = new AbortController();
+        const pending = $f("/api/x", { signal: caller.signal }).then(() => null, (e: unknown) => e);
+        caller.abort();
+        expect(isAbortError(await pending)).toBe(true);
+      });
+    });
+  });
+
+  it("오래된 엔진(이유와 상관없이 fetch 가 AbortError 로 실패) — 시간 초과를 끊김으로 오인하지 않는다", async () => {
+    const oldEngineFetch = ((_: unknown, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        const fail = () => reject(new DOMException("The operation was aborted.", "AbortError"));
+        const signal = init?.signal;
+        if (signal?.aborted) return fail();
+        signal?.addEventListener("abort", fail, { once: true });
+      })) as unknown as typeof fetch;
+    const $f = createFetch({ fetch: oldEngineFetch, defaults: { onRequest: ({ options }) => withReadTimeout(options) } });
+    const timedOut = await $f("/api/x", { signal: new AbortController().signal, timeout: 10 }).then(() => null, (e: unknown) => e);
+    expect(isAbortError(timedOut)).toBe(false);
+    expect(errorKind(timedOut)).toBe("timeout");
+    const caller = new AbortController();
+    const pending = $f("/api/x", { signal: caller.signal }).then(() => null, (e: unknown) => e);
+    caller.abort();
+    expect(isAbortError(await pending)).toBe(true);
   });
 });
 
@@ -273,5 +415,11 @@ describe("CSS — '[S] 공통 오류·빈 상태' 구역", () => {
     expect(code).toMatch(/\.skx-state__retry:focus-visible,\s*\.skx-state__action:focus-visible,\s*\.skx-inline-error__retry:focus-visible\s*\{\s*outline: 2px solid var\(--skx-accent\);/);
     expect(code).toMatch(/@media \(pointer: coarse\) \{\s*\.skx-state__retry,\s*\.skx-state__action \{\s*min-height: 44px;/);
     expect(code).toMatch(/\.skx-inline-error__retry \{[^}]*min-height: 24px;/);
+  });
+
+  it("재시도 중 모양은 aria-disabled 로 — 버튼을 disabled 로 막지 않는다", () => {
+    expect(code).toMatch(/\.skx-state__retry\[aria-disabled="true"\] \{/);
+    expect(code).toMatch(/\.skx-inline-error__retry\[aria-disabled="true"\] \{/);
+    expect(code).not.toMatch(/__retry:disabled/);
   });
 });
