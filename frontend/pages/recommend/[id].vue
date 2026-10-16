@@ -7,7 +7,8 @@
 
     <main class="skx-result">
       <h1 class="skx-sr-only">추천 도서 큐레이션 상세</h1>
-      <div class="skx-result-card">
+      <!-- tabindex="-1" — 불러오기 실패의 [다시 시도]를 누르면 상태 블록이 버튼째 빠지고 로딩 칸이 그 자리를 잇는다 — 초점을 이 카드로 옮긴다(retryLoad) -->
+      <div ref="cardRef" class="skx-result-card" tabindex="-1">
         <!-- 뒤로가기 -->
         <button type="button" class="skx-detail-back" @click="$router.back()">
           <img class="skx-detail-back__icon" src="/img/ico-arrow.svg" alt="" />
@@ -60,7 +61,7 @@
           :kind="loadFailure.kind"
           :title="loadFailure.title"
           :message="loadFailure.message"
-          :on-retry="loadFailure.retry ? fetchRecommend : undefined"
+          :on-retry="loadFailure.retry ? retryLoad : undefined"
         >
           <NuxtLink v-if="loadFailure.kind === 'empty'" to="/recommend" class="skx-state__action">
             {{ SCENARIO_TEXT.pickAnother }}
@@ -68,8 +69,8 @@
         </SkxErrorState>
 
         <template v-else>
-          <!-- AI 텍스트 (타이핑 애니메이션) -->
-          <div class="skx-rcd-ai">
+          <!-- AI 텍스트 (타이핑 애니메이션). tabindex="-1" — ai_failed 줄 안내의 [다시 시도]를 누르면 안내가 버튼째 빠져 초점을 이 칸으로 옮긴다(retryAi) -->
+          <div ref="aiBoxRef" class="skx-rcd-ai" tabindex="-1">
             <div class="skx-rcd-ai__top">
               <span class="skx-ai-dot skx-rcd-ai__logo" aria-hidden="true"></span>
               <span class="skx-rcd-ai__label">{{ meta.aiLabel }}</span>
@@ -88,7 +89,7 @@
                 <SkxInlineError
                   v-if="aiFailed && !loading"
                   :message="SCENARIO_TEXT.aiFailed"
-                  @retry="fetchRecommend"
+                  @retry="retryAi"
                 />
                 <p v-else class="skx-ai-answer__text">
                   {{ typedText
@@ -284,7 +285,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>
@@ -295,6 +296,7 @@ import { API_SEARCH_TIMEOUT_MS, useApi } from "~/composables/useApi";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { SPINNER_SRC } from "~/utils/brand";
 import { SCENARIO_TEXT, failureView, scenarioAiFailed, type StateView } from "~/utils/bookErrors";
+import { focusRegion } from "~/utils/detailView";
 
 const route = useRoute();
 const api = useApi();
@@ -451,6 +453,21 @@ async function fetchRecommend() {
   } finally {
     loading.value = false;
   }
+}
+
+// [다시 시도] — 추천을 처음부터 다시 받는다. 누른 버튼(상태 블록·줄 안내)은 받는 동안 빠지므로 초점을 남는 칸으로 먼저 옮긴다(focusRegion) —
+// 불러오기 실패면 결과 카드, ai_failed 면 AI 소개 칸(다시 받은 소개가 이 칸에 타이핑된다)
+const cardRef = ref<HTMLElement | null>(null);
+const aiBoxRef = ref<HTMLElement | null>(null);
+function retryLoad() {
+  if (loading.value) return;
+  focusRegion(cardRef.value);
+  void fetchRecommend();
+}
+function retryAi() {
+  if (loading.value) return;
+  focusRegion(aiBoxRef.value);
+  void fetchRecommend();
 }
 
 // 추천할 도서가 없다 — 서버 404(검색 0건)·빈 목록. 고장이 아니라 빈 결과라 [다시 시도] 대신 [다른 상황 고르기]

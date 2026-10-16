@@ -58,14 +58,15 @@
                   v-model="currentQuery"
                   placeholder="찾고싶은 도서를 문장으로 검색해보세요!"
                   :maxlength="SEARCH_QUERY_MAX"
-                  :aria-describedby="showCount ? 'skx-count-book' : undefined"
+                  aria-describedby="skx-count-book"
                   :disabled="loading"
                   @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
-                <!-- 글자 수는 한도 가까이(90%)부터만 보인다 — 랜딩 입력 상자 모양은 그대로 두고(후배 시안 작업 중) 넘기 전에만 알린다 -->
-                <SkxCharCount v-if="showCount" id="skx-count-book" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
+                <!-- 글자 수는 한도 가까이(90%)부터만 보인다(quiet — 사용자 결정 2026-10-16). 늘 그려 두고 평소엔 화면에서만 숨겨,
+                     한도에 닿을 때 이미 있던 알림 영역에 글이 들어가 낭독기가 읽는다(v-if 로 붙이면 새로 생긴 영역을 놓친다) -->
+                <SkxCharCount id="skx-count-book" quiet :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
                 <button
                   type="button"
                   class="skx-send"
@@ -122,13 +123,16 @@
                   v-model="currentQuery"
                   placeholder="찾고싶은 논문을 문장으로 검색해보세요!"
                   :maxlength="SEARCH_QUERY_MAX"
-                  :aria-describedby="showCount ? 'skx-count-paper' : undefined"
+                  aria-describedby="skx-count-paper"
                   :disabled="loading"
                   @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
-                <SkxCharCount v-if="showCount" id="skx-count-paper" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
+                <!-- DeepResearch 모드인 동안은 + 메뉴(SearchPlusMenu)가 질문 글자 수를 따로 달고 aria-describedby 에 잇는다 — 한 입력에
+                     글자 수 하나만 두려고 이 칸은 뺀다(입력창이 가리키는 id 는 그대로 두어도 없는 요소라 읽히지 않는다. 바인딩으로 바꾸면
+                     + 메뉴가 덧붙인 id 를 지운다). 모드를 바꿀 때만 붙였다 떼므로 한도 알림 영역은 입력 중에 새로 생기지 않는다 -->
+                <SkxCharCount v-if="!deepResearch" id="skx-count-paper" quiet :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
                 <button
                   type="button"
                   class="skx-send"
@@ -201,7 +205,8 @@
     </main>
 
     <!-- ===== RESULTS VIEW ===== -->
-    <main v-else-if="view === 'results'" class="skx-result">
+    <!-- tabindex="-1" — 검색 실패의 [다시 시도]를 누르면 상태 블록이 버튼째 로딩 표시로 바뀌어, 초점을 이 결과 화면으로 옮긴다(retrySearch) -->
+    <main v-else-if="view === 'results'" ref="resultMainRef" class="skx-result" tabindex="-1">
       <div class="skx-rsearch">
         <!-- 검색 중에는 잠근다 — 검색 중 엔터는 무시되므로 고친 검색어가 조용히 버려지지 않게 -->
         <input
@@ -210,11 +215,11 @@
           v-model="currentQuery"
           aria-label="검색어 입력"
           :maxlength="SEARCH_QUERY_MAX"
-          :aria-describedby="showCount ? 'skx-count-result' : undefined"
+          aria-describedby="skx-count-result"
           :disabled="loading"
           @keydown.enter="onSearchEnter"
         />
-        <SkxCharCount v-if="showCount" id="skx-count-result" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
+        <SkxCharCount id="skx-count-result" quiet :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
         <button
           type="button"
           class="skx-send"
@@ -262,10 +267,13 @@
               scroll-anchor=".skx-aip"
             >
               <div class="skx-pick__body">
+                <!-- tabindex="-1" — 추천 이유 실패·끊김의 [다시 시도]를 누르면 줄 안내가 버튼째 빠져, 초점을 이 칸으로 옮긴다(retryTopReason) -->
                 <section
+                  ref="pickWhyRef"
                   class="skx-pick__block"
                   aria-labelledby="skx-pick-why"
                   :aria-busy="reasonPending"
+                  tabindex="-1"
                 >
                   <h3 id="skx-pick-why" class="skx-pick__heading">
                     <span class="skx-ai-dot" aria-hidden="true"></span>
@@ -388,7 +396,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>
@@ -425,8 +433,10 @@ import { DEEP_RESEARCH } from "~/utils/brand";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookChunkGroup } from "~/types/search";
 import type { BookEntry, BookSnapshot } from "~/types/history";
-import { hasQuery } from "~/utils/searchInput";
+// 세 입력창(랜딩 두 칸·결과 검색바)이 같은 값(currentQuery)을 쓴다. 한도(SEARCH_QUERY_MAX)는 maxlength 가 막고, 글자 수는 한도 가까이부터만 보인다
+import { SEARCH_QUERY_MAX, hasQuery } from "~/utils/searchInput";
 import { detailScoreParams } from "~/utils/relevance";
+import { focusRegion } from "~/utils/detailView";
 import {
   DEFAULT_SORT,
   clampPage,
@@ -439,14 +449,7 @@ import {
 } from "~/utils/resultPaging";
 import { rememberListView, savedListView } from "~/composables/useListView";
 import { SPINNER_SRC } from "~/utils/brand";
-import { charCountState } from "~/utils/apiErrors";
-import {
-  BOOK_REASON_TEXT,
-  BOOK_SEARCH_TEXT,
-  SEARCH_QUERY_MAX,
-  failureView,
-  type StateView,
-} from "~/utils/bookErrors";
+import { BOOK_REASON_TEXT, BOOK_SEARCH_TEXT, failureView, type StateView } from "~/utils/bookErrors";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).
@@ -524,10 +527,6 @@ const refsOpen = ref(true);
 // 파일이 있는지 먼저 묻고 연다(usePdfOpener) — 없는 원문을 그대로 열면 pdf.js 의 영문 오류 화면이 뜬다. 열지 못한 까닭은 누른 카드 바로 아래에
 const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
 const pdfProblem = ref<{ id: string; message: string } | null>(null);
-
-// ── 글자 수 ────────────────────────────────────────────────
-// 세 입력창(랜딩 두 칸·결과 검색바)이 같은 값(currentQuery)을 쓴다. 한도(SEARCH_QUERY_MAX)는 maxlength 가 막고, 글자 수는 한도 가까이부터만 보인다
-const showCount = computed(() => charCountState(currentQuery.value.length, SEARCH_QUERY_MAX) !== "normal");
 
 const detailTabs = computed(() =>
   mode.value === "paper"
@@ -810,9 +809,13 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   }
 }
 
-// 검색 실패의 [다시 시도] — 실패한 그 검색어로(입력창을 고쳤어도). 결과만 비어 있던 기록을 채우던 검색이면 같은 기록을 채운다
+// 검색 실패의 [다시 시도] — 실패한 그 검색어로(입력창을 고쳤어도). 결과만 비어 있던 기록을 채우던 검색이면 같은 기록을 채운다.
+// 상태 블록은 버튼째 로딩 표시로 바뀌므로 초점을 결과 화면(main)으로 먼저 옮긴다 — 그대로 두면 body 로 떨어진다
+const resultMainRef = ref<HTMLElement | null>(null);
 function retrySearch() {
-  if (lastSearch) void handleSearch(lastSearch.query, lastSearch.reuse);
+  if (!lastSearch || loading.value) return;
+  focusRegion(resultMainRef.value);
+  void handleSearch(lastSearch.query, lastSearch.reuse);
 }
 
 // 입력창의 엔터는 검색이다. 한글 조합 중의 엔터는 글자 확정용이라 검색하지 않는다(SearchPlusMenu 와 같은 관례) —
@@ -1046,8 +1049,11 @@ function settleReason() {
   reasonStatus.value = reasonText.value ? "interrupted" : "error";
 }
 
-// [다시 시도] — 지금 결과의 1위 도서로 추천 이유를 처음부터 다시 받는다
+// [다시 시도] — 지금 결과의 1위 도서로 추천 이유를 처음부터 다시 받는다. 줄 안내는 받는 동안 버튼째 빠지므로 초점을
+// '왜 이 책인가' 칸으로 먼저 옮긴다(끊김 안내는 접히는 칸 밖에 있지만 다시 받는 글은 이 칸에 찬다)
+const pickWhyRef = ref<HTMLElement | null>(null);
 function retryTopReason() {
+  focusRegion(pickWhyRef.value);
   const signal = beginRun();
   void streamTopReason(currentHistoryId.value, resultQuery.value, signal);
 }

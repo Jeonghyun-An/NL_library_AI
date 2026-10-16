@@ -7,6 +7,7 @@ import {
   bookMetaRows,
   detailSearchUrl,
   focusOwningPanel,
+  focusRegion,
   formatAuthors,
   kdcLabel,
   paperMetaRows,
@@ -236,6 +237,20 @@ describe("focusOwningPanel — 누르면 사라지는 버튼의 초점을 그 �
     expect(() => focusOwningPanel({ closest: () => null } as unknown as EventTarget)).not.toThrow();
     expect(() => focusOwningPanel(null)).not.toThrow();
     expect(() => focusOwningPanel({} as EventTarget)).not.toThrow();
+  });
+});
+
+describe("focusRegion — 누르면 사라지는 [다시 시도]의 초점을 남는 감싸는 영역으로", () => {
+  it("영역에 초점을 주되 스크롤하지 않는다(누른 자리가 이미 보이고, 큰 영역이면 화면이 머리로 뛴다)", () => {
+    const calls: unknown[] = [];
+    focusRegion({ focus: (options?: FocusOptions) => calls.push(options) });
+    expect(calls).toEqual([{ preventScroll: true }]);
+  });
+
+  it("영역이 아직 없거나(그려지기 전) focus 가 없으면 아무것도 하지 않는다", () => {
+    expect(() => focusRegion(null)).not.toThrow();
+    expect(() => focusRegion(undefined)).not.toThrow();
+    expect(() => focusRegion({})).not.toThrow();
   });
 });
 

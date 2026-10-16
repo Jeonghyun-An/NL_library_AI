@@ -98,7 +98,7 @@
                   </button>
                 </li>
                 <li v-if="!cart.length" class="cart-empty">
-                  대출 신청한 도서가 없습니다
+                  대출 신청한 도서가 없어요
                 </li>
               </ul>
             </div>
@@ -197,9 +197,7 @@
             </div>
 
             <template v-if="bookResult">
-              <div v-if="!bookResult.books.length" class="empty">
-                검색 결과가 없습니다. 다른 검색어를 시도해보세요.
-              </div>
+              <div v-if="!bookResult.books.length" class="empty">{{ EMPTY_RESULT_TEXT }}</div>
               <template v-else>
                 <TopResult
                   v-if="topBook"
@@ -281,9 +279,7 @@
                 <div class="answer-label">AI 답변</div>
                 <div v-html="chunkResult.answer.replace(/\n/g, '<br>')" />
               </div>
-              <div v-if="!chunkResult.chunks.length" class="empty">
-                검색 결과가 없습니다.
-              </div>
+              <div v-if="!chunkResult.chunks.length" class="empty">{{ BOOK_SEARCH_TEXT.emptyTitle }}.</div>
               <div v-else class="chunk-list">
                 <div
                   v-for="chunk in chunkResult.chunks"
@@ -355,7 +351,10 @@ import type {
 import type { HistoryEntry } from "~/types/history";
 import { readOrCreateBrowserId, safeLocalStorage } from "~/utils/browserId";
 import { readReasonStream } from "~/utils/bookAiPick";
-import { reasonFailureText } from "~/utils/bookErrors";
+import { BOOK_SEARCH_TEXT, reasonFailureText } from "~/utils/bookErrors";
+
+// 결과 0건 안내 — 메인 결과 화면과 같은 문구(해요체), 두 문장이라 줄을 나눈다(.empty white-space: pre-line)
+const EMPTY_RESULT_TEXT = `${BOOK_SEARCH_TEXT.emptyTitle}.\n${BOOK_SEARCH_TEXT.emptyMessage}`;
 
 const { history, setHistory, clearHistory } = useSearchHistory();
 const { cart, removeFromCart } = useCart();
@@ -1144,10 +1143,12 @@ function restoreHistory(entry: HistoryEntry) {
   }
 }
 
+/* 검색 실패 글은 빨갛게 칠하지 않는다(사용자 결정 2026-10-16) — 이 화면의 본문 글자색. 이유가 두 문장이면 줄을 나눈다('\n') */
 .error-area {
   text-align: center;
   padding: 48px 0;
-  color: #ef4444;
+  color: var(--ink-2);
+  white-space: pre-line;
 }
 
 .error-area button {
@@ -1164,6 +1165,7 @@ function restoreHistory(entry: HistoryEntry) {
   padding: 48px 0;
   color: #94a3b8;
   font-size: 15px;
+  white-space: pre-line;
 }
 
 .ch-placeholder {

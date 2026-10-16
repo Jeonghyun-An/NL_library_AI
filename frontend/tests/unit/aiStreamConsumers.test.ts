@@ -24,6 +24,9 @@ function sourceFiles(dir: string): string[] {
 }
 
 const ALL = ["pages", "components", "composables", "utils"].flatMap(sourceFiles).filter((f) => !UNTOUCHED.has(f));
+// 파일 글은 모을 때 한 번만 읽는다 — 테스트 안에서 파일마다(스트림 주소마다) 다시 읽으면 전체 실행(파일 병렬)에서 5초 제한을 넘곤 했다
+const SOURCES = new Map(ALL.map((f) => [f, read(f)] as const));
+const source = (f: string) => SOURCES.get(f) ?? read(f);
 
 // {{ name }} 를 그리는 요소의 여는 태그에 role="alert" 가 있다
 function alertShows(src: string, name: string): boolean {
@@ -32,15 +35,15 @@ function alertShows(src: string, name: string): boolean {
 
 describe("SSE 를 직접 읽는 곳", () => {
   it("세 읽기 도구뿐이다 — 화면마다 따로 읽다가 {error} 를 모르는 곳이 생기지 않게", () => {
-    const readers = ALL.filter((f) => read(f).includes("getReader("));
+    const readers = ALL.filter((f) => source(f).includes("getReader("));
     expect(readers.sort()).toEqual(["composables/useDeepReadChat.ts", "utils/aiStream.ts", "utils/bookAiPick.ts"]);
   });
 
   it("AI 글 스트림 주소를 부르는 화면은 모두 {error} 를 아는 읽기(readAiStream·readReasonStream)로 읽는다", () => {
     const STREAMS = ["/papers/summary/stream", "/papers/reason/stream", "/papers/related-reason/stream", "/books/reason/stream"];
-    const callers = ALL.filter((f) => STREAMS.some((s) => read(f).includes(`"${s}"`)));
+    const callers = ALL.filter((f) => STREAMS.some((s) => source(f).includes(`"${s}"`)));
     expect(callers.sort()).toEqual(["pages/books/[cnts_id].vue", "pages/index.vue", "pages/papers/[id].vue", "pages/papers/index.vue"]);
-    for (const f of callers) expect(read(f), f).toMatch(/\b(readAiStream|readReasonStream)\(/);
+    for (const f of callers) expect(source(f), f).toMatch(/\b(readAiStream|readReasonStream)\(/);
   });
 });
 
