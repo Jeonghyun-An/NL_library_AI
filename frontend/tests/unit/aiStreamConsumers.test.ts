@@ -118,10 +118,12 @@ describe("관련 자료 카드 — components/detail/RelatedCard.vue", () => {
 describe("소장자료 상세 추천 이유 — pages/books/[cnts_id].vue", () => {
   const src = read("pages/books/[cnts_id].vue");
 
-  it("실패는 role=alert 오류로 보이고 [다시 시도]가 있으며, 글 없이 실패해도 [추천 이유] 탭이 남는다", () => {
-    expect(src).toContain("reasonError.value = failureText(end, BOOK_REASON_FAILED)");
-    expect(alertShows(src, "reasonError")).toBe(true);
-    expect(src).toMatch(/@click="retryReason\(\$event\)"[^>]*>\s*다시 시도/);
+  // 서버의 {error} 글(합쇼체)은 쓰지 않고 프런트 문구(해요체 — utils/bookErrors reasonFailureText)를 쓴다. 안내는 공통 줄 안내
+  // (SkxInlineError — role=alert, [다시 시도])로 보인다
+  it("실패는 공통 줄 안내(SkxInlineError)로 보이고 [다시 시도]가 있으며, 글 없이 실패해도 [추천 이유] 탭이 남는다", () => {
+    expect(src).toContain("reasonError.value = reasonFailureText(reasonText.value)");
+    expect(src).not.toContain("failureText(end, BOOK_REASON_FAILED)");
+    expect(src).toMatch(/<SkxInlineError\s+v-if="reasonError && !reasonLoading"\s+ref="reasonFailRef"\s+:message="reasonError"\s+@retry="retryReason"\s*\/>/);
     expect(src).toMatch(/key: "reason", label: "추천 이유", available: [^\n]*reasonError\.value/);
   });
 
@@ -129,7 +131,7 @@ describe("소장자료 상세 추천 이유 — pages/books/[cnts_id].vue", () =
     expect(src).toContain(
       "available: !!searchQuery && aiTabAvailable({ loading: reasonLoading.value, done: reasonDone.value, text: reasonText.value, error: reasonError.value })",
     );
-    expect(src).toMatch(/function retryReason\(event\?: Event\)[\s\S]*?focusOwningPanel\(event\?\.currentTarget \?\? null\)[\s\S]*?streamReason\(\)/);
+    expect(src).toMatch(/function retryReason\(\)[\s\S]*?focusOwningPanel\(reasonFailRef\.value\?\.\$el \?\? null\)[\s\S]*?streamReason\(\)/);
   });
 });
 

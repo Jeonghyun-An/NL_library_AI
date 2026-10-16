@@ -1,4 +1,5 @@
 import type { SearchRequest, SearchResponse } from "~/types/search";
+import { readOrCreateBrowserId, safeLocalStorage } from "~/utils/browserId";
 
 export function useSearch() {
   const config = useRuntimeConfig();
@@ -20,17 +21,11 @@ export function useSearch() {
     });
   }
 
-  const sessionId = useState<string | null>("sessionId", () => {
-    if (process.client) {
-      let sid = localStorage.getItem("sid");
-      if (!sid) {
-        sid = generateUUID();
-        localStorage.setItem("sid", sid);
-      }
-      return sid;
-    }
-    return null;
-  });
+  // 저장소가 막힌 브라우저(사생활 보호 창·쿠키 차단)에서는 localStorage 가 던진다 — 여기서 던지면 /search-classic 이 통째로 그려지지 않는다.
+  // 읽지 못하면 새 ID 를 만들고, 저장하지 못하면 이 페이지에 있는 동안만 쓴다(utils/browserId)
+  const sessionId = useState<string | null>("sessionId", () =>
+    process.client ? readOrCreateBrowserId(safeLocalStorage(), generateUUID) : null,
+  );
 
   async function search(
     query: string,

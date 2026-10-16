@@ -1737,6 +1737,9 @@ html.skx-scroll-lock {
   grid-area: send;
   display: flex;
   justify-content: flex-end;
+  /* 한도 가까이에서 보내기 왼쪽에 서는 글자 수(SkxCharCount)를 보내기와 세로 가운데로 맞추고 띄운다 — 보내기만 있을 때 모양은 그대로 */
+  align-items: center;
+  gap: 0.5rem;
 }
 /* 보내기 — 시안 크기(40 → 2rem)의 원. 색은 지금 포인트색 그대로 */
 .skx-send {
