@@ -264,8 +264,11 @@ describe("CSS — 새 표시도 '[S] 공통 오류·빈 상태' 구역 안에", 
 
   it("색은 토큰만 — 구역 전체에 색 리터럴이 없다", () => {
     expect(colorLiterals(section)).toEqual([]);
-    expect(code).toMatch(/\.skx-conn--lost \{[^}]*color: var\(--skx-danger\);/);
-    expect(code).toMatch(/\.skx-charcount--limit \{[^}]*color: var\(--skx-danger\);/);
+    // 연결하지 못함은 아이콘만 위험색(글자는 본문색), 글자 수 한도는 위험색이 아니라 포인트색
+    expect(code).toMatch(/\.skx-conn--lost \.skx-conn__icon \{\s*color: var\(--skx-danger\);/);
+    expect(code).not.toMatch(/\.skx-conn--lost \{/);
+    expect(code).toMatch(/\.skx-conn \{[^}]*color: var\(--skx-ink\);/);
+    expect(code).toMatch(/\.skx-charcount--limit \{[^}]*color: var\(--skx-primary\);/);
   });
 
   it("[다시 연결] 은 :focus-visible 테두리와 24px 누를 자리", () => {
@@ -274,8 +277,8 @@ describe("CSS — 새 표시도 '[S] 공통 오류·빈 상태' 구역 안에", 
   });
 
   it("다시 연결하는 중의 깜빡임은 움직임 줄이기 설정에서 멈춘다", () => {
-    expect(code).toMatch(/\.skx-conn--reconnecting \.skx-conn__msg::before \{\s*animation: skx-conn-pulse/);
-    expect(code).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.skx-conn--reconnecting \.skx-conn__msg::before \{\s*animation: none;/);
+    expect(code).toMatch(/\.skx-conn--reconnecting \.skx-conn__icon::before \{[^}]*animation: skx-conn-pulse/);
+    expect(code).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.skx-conn--reconnecting \.skx-conn__icon::before \{\s*animation: none;/);
   });
 
   it("글자 수 안내 칸(live 영역)을 display: none 으로 숨기지 않는다", () => {
@@ -286,7 +289,10 @@ describe("CSS — 새 표시도 '[S] 공통 오류·빈 상태' 구역 안에", 
     expect(code).toMatch(/\.skx-error-page--preview \{\s*min-height: 0;\s*height: 100%;/);
   });
 
-  it("슬롯 링크(.skx-state__action)는 지나간·마우스 올린 링크도 같은 색 — 공통 리셋 a:hover 를 이긴다", () => {
-    expect(code).toMatch(/\.skx-state__action:visited,\s*\.skx-state__action:hover \{\s*color: var\(--skx-primary\);/);
+  it("슬롯 링크(.skx-state__action)는 지나간·마우스 올린 링크도 같은 색 — 공통 리셋 a:hover 를 이긴다(보조·주 버튼 둘 다)", () => {
+    expect(code).toMatch(/\.skx-state__action:visited,\s*\.skx-state__action:hover \{\s*color: var\(--skx-ink\);/);
+    expect(code).toMatch(
+      /\.skx-state__actions > \.skx-state__action:first-child:visited,\s*\.skx-state__actions > \.skx-state__action:first-child:hover \{\s*color: var\(--skx-on-accent\);/,
+    );
   });
 });

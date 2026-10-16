@@ -113,11 +113,12 @@ export type ErrorKind =
   | "unknown";
 
 /**
- * 상태 블록(SkxErrorState)의 kind — ErrorKind 에 두 가지를 더한다.
+ * 상태 블록(SkxErrorState)의 kind — ErrorKind 에 세 가지를 더한다.
  *  'error': 이유를 가리지 않는 일반 실패(컴포넌트 기본값). errorKind(err) 를 넘기면 더 구체적인 모양을 쓸 수 있다
  *  'empty': 실패가 아닌 빈 결과(검색 결과 없음·기록 없음 등)
+ *  'canceled': 사용자가 멈춘 작업(취소한 딥리서치 등) — 실패도 빈 결과도 아니다
  */
-export type ErrorStateKind = ErrorKind | "error" | "empty";
+export type ErrorStateKind = ErrorKind | "error" | "empty" | "canceled";
 
 /** toUserError 의 결과 — 화면은 kind 를 SkxErrorState 에, message 를 글로 쓴다 */
 export interface UserFacingError {
