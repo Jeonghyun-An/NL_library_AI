@@ -4,8 +4,16 @@
     <div class="wk-concepts__head">
       <!-- tabindex="-1" — 다시 만들기 줄처럼 초점이 있던 버튼이 사라지면 이 제목으로 옮긴다 -->
       <h3 id="wk-concepts-title" ref="titleEl" class="wk-concepts__title" tabindex="-1">키워드</h3>
-      <p v-if="note" class="rs-muted" aria-live="polite">{{ note }}</p>
+      <p v-if="note && !failed" class="rs-muted" aria-live="polite">{{ note }}</p>
     </div>
+    <!-- 키워드 생성 실패 — 공통 줄 안내로, [다시] 는 그 안에(예시 연구는 누를 수 없어 글만) -->
+    <SkxInlineError
+      v-if="failed && note"
+      :message="note"
+      retry-label="다시"
+      :busy="busy"
+      :on-retry="retryable ? retry : undefined"
+    />
     <p v-if="editable && chips.length" id="wk-concepts-help" class="rs-muted">
       카드 제목에 넣을 키워드를 고르세요 — 고른 키워드가 하나 이상 들어간 제목으로 카드를 만듭니다.
     </p>
@@ -71,7 +79,7 @@
       </button>
       <p v-if="problem" id="wk-concepts-problem" class="rs-muted">{{ problem }}</p>
     </div>
-    <div v-if="retryable" class="rs-card__actions">
+    <div v-if="retryable && !failed" class="rs-card__actions">
       <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="retry">다시</button>
     </div>
   </section>
@@ -116,6 +124,8 @@ const note = computed(() => conceptsNote(props.concepts, props.generation));
 // 생성이 열려 있으면 서버 PATCH 가 409(만드는 중) — 그동안은 칩을 고치지 않는다
 const editable = computed(() => !props.readOnly && status.value !== "making");
 const retryable = computed(() => !props.readOnly && conceptsRetryable(props.concepts, props.generation));
+// 키워드를 뽑지 못했다(생성 실패·취소) — 안내를 공통 줄 안내(SkxInlineError)로 보이고 [다시] 를 그 안에 둔다
+const failed = computed(() => status.value === "failed");
 const chips = computed(() => keywordChips(props.candidates, draft.value));
 const full = computed(() => draft.value.length >= CONCEPTS_MAX);
 const dirty = computed(() => !sameList(draft.value, props.concepts));
@@ -173,6 +183,15 @@ watch([showRegen, () => props.busy], ([shown, busy], [wasShown]) => {
     });
   }
   if (!shown || !busy) regenAsked = false;
+});
+
+// 실패 안내의 [다시] 를 누르면 생성이 다시 열려 안내가 버튼째 사라진다 — 그린 뒤 초점을 잃었을 때만 키워드 제목으로
+watch(failed, (now, was) => {
+  if (now || !was) return;
+  void nextTick(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body) titleEl.value?.focus();
+  });
 });
 
 function add(): void {

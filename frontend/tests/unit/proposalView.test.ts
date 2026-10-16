@@ -323,9 +323,9 @@ describe("checkLine · paragraphProblem", () => {
   });
 
   it("빈 문단·상한을 넘는 문단은 저장 전에 막는다", () => {
-    expect(paragraphProblem("  ")).toBe("빈 문단은 저장할 수 없습니다 — 지우려면 [지우기]를 누르세요");
+    expect(paragraphProblem("  ")).toBe("빈 문단은 저장할 수 없어요 — 지우려면 [지우기]를 눌러 주세요");
     expect(paragraphProblem("가".repeat(MAX_PARAGRAPH_CHARS))).toBeNull();
-    expect(paragraphProblem("가".repeat(MAX_PARAGRAPH_CHARS + 1))).toBe(`문단은 ${MAX_PARAGRAPH_CHARS}자까지입니다`);
+    expect(paragraphProblem("가".repeat(MAX_PARAGRAPH_CHARS + 1))).toBe(`문단은 ${MAX_PARAGRAPH_CHARS}자까지 쓸 수 있어요`);
   });
 });
 

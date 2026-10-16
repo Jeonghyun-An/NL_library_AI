@@ -39,7 +39,7 @@
         :numbers="citeNumbers"
         @open-pdf="$emit('open-pdf', $event)"
       />
-      <p v-else-if="draft?.state === 'interrupted'" class="rs-muted">작성을 마치지 못한 절입니다.</p>
+      <p v-else-if="draft?.state === 'interrupted'" class="rs-muted">작성을 마치지 못한 절이에요.</p>
       <p v-else-if="draft?.state === 'finishing'" class="rs-muted">이 절은 완성본에 실립니다.</p>
       <template v-else-if="row.state === 'running'">
         <p class="rs-muted">이 절을 쓰는 중입니다</p>
@@ -49,7 +49,7 @@
           <span class="rs-skeleton__line" />
         </div>
       </template>
-      <p v-else-if="row.state === 'failed'" class="rs-muted">이 절은 서술을 받지 못했습니다.</p>
+      <p v-else-if="row.state === 'failed'" class="rs-muted">이 절은 서술을 받지 못했어요.</p>
       <p v-else class="rs-muted">작성 대기</p>
     </section>
 

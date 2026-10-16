@@ -19,7 +19,7 @@
         <span class="wk-edit__label">연구 질문</span>
         <textarea v-model="draftQuestion" class="wk-edit__input" rows="3" :maxlength="TOPIC_QUESTION_MAX" />
       </label>
-      <p v-if="problem" class="wk-edit__problem" role="alert">{{ problem }}</p>
+      <SkxInlineError v-if="problem" :message="problem" />
       <div class="rs-card__actions">
         <button type="submit" class="rs-btn rs-btn--small" :disabled="busy">저장</button>
         <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="editing = false">
@@ -132,6 +132,8 @@ const props = defineProps<{
   busy: boolean;
   concepts: string[];
   conceptsGen: WorkGeneration | null;
+  // [직접 고치기] 쓰기 응답을 받았다는 알림(TopicsStep 이 이 카드의 쓰기마다 올린다) — 0 이면 없음
+  savedSeq?: number;
 }>();
 const emit = defineEmits<{ pick: []; edit: [body: TopicPatch]; retry: [genId: number]; arrived: [el: HTMLElement] }>();
 
@@ -239,6 +241,15 @@ watch(
   () => `${props.item.card?.title ?? ""}\u0000${props.item.card?.question ?? ""}`,
   () => {
     editing.value = false;
+  },
+);
+
+// 쓰기 응답을 받았다 — 뒤의 다시 읽기가 실패해 카드 글이 그대로여도 칸을 닫는다(열린 채 '저장 중'처럼 남지 않게).
+// 화면의 카드는 다시 읽을 때까지 옛 글이다 — 그 사실은 단계 위 한 줄(저장은 됐지만 화면을 새로 고치지 못했어요)이 알린다
+watch(
+  () => props.savedSeq ?? 0,
+  (seq) => {
+    if (seq) editing.value = false;
   },
 );
 

@@ -19,12 +19,18 @@
       </header>
 
       <CorpusScopeNote :corpus="corpus" />
-      <p v-if="error" class="rs-alert" role="alert">{{ error }}</p>
+      <!-- 쓰기 실패 · 다시 읽기 실패(이미 읽어 둔 목록이 옛 값일 수 있다 — [다시 시도]) · 쓰기가 오래 걸림 -->
+      <SkxInlineError v-if="error" :message="error" />
+      <SkxInlineError v-if="staleLine" :message="staleLine" :busy="staleRetrying" @retry="retryStale" />
+      <SkxInlineError v-if="slow" :message="WORK_SLOW_MESSAGE" />
 
-      <div v-if="!reading && loadError" class="rs-card rs-state">
-        <p>{{ loadError }}</p>
-        <button type="button" class="rs-btn" @click="reloadAll(['reading'])">다시 불러오기</button>
-      </div>
+      <SkxErrorState
+        v-if="!reading && loadFailure"
+        :kind="loadFailure.kind"
+        title="참고문헌 후보를 불러오지 못했어요"
+        :message="loadFailure.reason"
+        @retry="reloadAll(['reading'])"
+      />
       <div v-else-if="!reading" class="rs-card rs-card--wait">
         <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
         <p>참고문헌 후보를 불러오는 중입니다</p>
@@ -36,6 +42,7 @@
           :read-only="readOnly"
           :busy="busy"
           :reordering="saves.reordering.value"
+          :pending="saves.pending.value"
           :job-id="jobId"
           :active-id="panelPaper?.cntsId ?? null"
           :panel-id="PANEL_ID"
@@ -100,7 +107,7 @@ import FunnelCounter from "~/components/work/FunnelCounter.vue";
 import ReadingNextActions from "~/components/work/ReadingNextActions.vue";
 import ReadingTable from "~/components/work/ReadingTable.vue";
 import { useReadingSaves } from "~/composables/useReadingSaves";
-import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
+import { type ResearchWorkHandle, useSlowWrite, useWorkApi, useWorkStale } from "~/composables/useResearchWork";
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
@@ -112,6 +119,7 @@ import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, readingIntr
 import { httpStatus } from "~/utils/apiErrors";
 import { workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
+import { WORK_SAVED_STALE, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
 import { REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
@@ -134,7 +142,14 @@ const view = computed(() => state.value.work);
 const reading = computed(() => state.value.reading);
 const readOnly = computed(() => view.value?.is_example ?? true);
 // 읽기 목록 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
-const loadError = computed(() => props.work.errorOf("reading"));
+const loadFailure = computed(() => props.work.failureOf("reading"));
+// 목록을 읽어 둔 뒤의 다시 읽기 실패(이 단계에 들어올 때마다 다시 읽는다)와 연구 요약·고른 주제의 실패는 위 한 줄로
+const {
+  line: staleLine,
+  retrying: staleRetrying,
+  retry: retryStale,
+  markSaved,
+} = useWorkStale(props.work, ["reading", "work", "topics"], "reading");
 const hint = computed(() => (reading.value ? outlineHint(reading.value) : null));
 // 머리 소개 — 이어가기가 미리 담은 수에 따라 승인 문구(사용자 결정 2026-10-13) 또는 옛 소개, 읽기 전용이면 첫 문장만
 const intro = computed(() => readingIntro(reading.value, props.question, readOnly.value));
@@ -167,8 +182,10 @@ onMounted(() => {
   void props.work.ensure("topics");
 });
 
-async function reloadAll(kinds: WorkResource[]): Promise<void> {
-  await Promise.allSettled(kinds.map((kind) => props.work.reload(kind)));
+// 모두 다시 읽었으면 true — 하나라도 실패하면 false(그 실패는 위 한 줄이 알린다)
+async function reloadAll(kinds: WorkResource[]): Promise<boolean> {
+  const results = await Promise.all(kinds.map((kind) => props.work.reload(kind)));
+  return results.every(Boolean);
 }
 
 // 행 고침(담음·뺌·메모·묶음·순서·되살리기)은 차례로 보내고, 사슬이 빌 때 한 번만 다시 읽어 표를 서버 값으로 맞춘다
@@ -178,7 +195,10 @@ const saves = useReadingSaves({
   reload: reloadAll,
   afterAction: () => props.work.afterAction(),
   error,
+  unrefreshed: () => markSaved(WORK_SAVED_STALE.saved),
 });
+// 쓰기([보고서 만들기]·행 저장 사슬)가 오래 걸리면(응답 없음) 안내만 — 잠금은 그대로
+const slow = useSlowWrite(() => busy.value || saves.pending.value > 0);
 
 function update(cnts: string, body: ReadingPut): void {
   if (readOnly.value) return;

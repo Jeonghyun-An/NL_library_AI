@@ -35,6 +35,16 @@ export const MIN_PICKED_KEYWORDS = 2;
 const OPEN: readonly GenStatus[] = ["queued", "running"];
 // 근거 칩 — 저자를 모르는 논문은 제목 앞 이만큼(코드포인트)과 연도로 가른다(spec §12-4 D27)
 export const SHORT_TITLE_MAX = 18;
+
+// [직접 고치기]·[카드 더하기] 쓰기가 끝났다는 알림 — TopicsStep 이 쓰기 응답을 받으면 seq 를 올려 덱·카드에 내려 준다.
+// 화면은 다시 읽은 목록으로 성공을 알았는데(카드 글이 바뀜·새 카드 id), 쓰기 뒤 다시 읽기가 실패하면 칸이 열린 채 남아
+// [카드 더하기]를 다시 누르면 같은 카드가 한 번 더 만들어졌다(서버는 중복을 거르지 않는다) — 이 알림으로도 칸을 닫는다
+export interface DeckSaved {
+  kind: "edit" | "write";
+  // 고친 카드의 주제 id(write 는 null)
+  tid: number | null;
+  seq: number;
+}
 // 한글 이름(띄어 쓴 복성 '남궁 민' 포함)은 공백만 빼고 전체를 쓴다. 영문 이름('Smith, John')은 적힌 그대로
 const HANGUL_NAME = /^[가-힣\s]+$/;
 // '최성훈 외 2인' 의 꼬리 — citations.firstAuthorSurname 과 같은 규칙
@@ -100,9 +110,9 @@ export function cardNote(status: CardStatus): string | null {
     case "making":
       return "카드를 쓰는 중입니다";
     case "insufficient":
-      return `근거 부족 — 이 씨앗을 직접 받치는 논문을 ${MIN_TOPIC_EVIDENCE}편 이상 찾지 못했습니다`;
+      return `근거 부족 — 이 씨앗을 직접 받치는 논문을 ${MIN_TOPIC_EVIDENCE}편 이상 찾지 못했어요`;
     case "failed":
-      return "카드를 만들지 못했습니다";
+      return "카드를 만들지 못했어요";
     case "blocked":
       return "키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다";
     case "ready":
@@ -220,18 +230,18 @@ export function deckQueueLine(generations: readonly WorkGeneration[]): string | 
 
 // [다른 방향] 옆 안내 — 쓰지 않은 보고서 씨앗으로 한 번에 최대 2장
 export function moreLine(seedsLeft: number): string {
-  if (seedsLeft <= 0) return "더 쓸 씨앗이 없습니다 — [직접 쓰기] 로 주제를 더할 수 있습니다";
+  if (seedsLeft <= 0) return "더 쓸 씨앗이 없어요 — [직접 쓰기] 로 주제를 더할 수 있어요";
   return `남은 씨앗 ${seedsLeft}개 · 누르면 ${Math.min(OTHER_DIRECTION_CARDS, seedsLeft)}장을 더 받습니다`;
 }
 
 // [직접 쓰기]·[직접 고치기] 입력 검사 — 서버 TopicCreate·TopicPatch 와 같은 경계(앞뒤 공백을 뺀 코드포인트)
 export function topicProblem(body: TopicCreate): string | null {
   const title = codepoints(body.title.trim());
-  if (title < TOPIC_TITLE_MIN) return `제목을 ${TOPIC_TITLE_MIN}자 이상 쓰세요`;
-  if (title > TOPIC_TITLE_MAX) return `제목은 ${TOPIC_TITLE_MAX}자까지입니다`;
+  if (title < TOPIC_TITLE_MIN) return `제목을 ${TOPIC_TITLE_MIN}자 이상 써 주세요`;
+  if (title > TOPIC_TITLE_MAX) return `제목은 ${TOPIC_TITLE_MAX}자까지 쓸 수 있어요`;
   const question = codepoints(body.question.trim());
-  if (question < TOPIC_QUESTION_MIN) return `연구 질문을 ${TOPIC_QUESTION_MIN}자 이상 쓰세요`;
-  if (question > TOPIC_QUESTION_MAX) return `연구 질문은 ${TOPIC_QUESTION_MAX}자까지입니다`;
+  if (question < TOPIC_QUESTION_MIN) return `연구 질문을 ${TOPIC_QUESTION_MIN}자 이상 써 주세요`;
+  if (question > TOPIC_QUESTION_MAX) return `연구 질문은 ${TOPIC_QUESTION_MAX}자까지 쓸 수 있어요`;
   return null;
 }
 
@@ -277,10 +287,10 @@ export function conceptsNote(concepts: string[], generation: WorkGeneration | nu
       return line ? `키워드를 뽑는 중입니다 · ${line}` : "키워드를 뽑는 중입니다";
     }
     case "failed":
-      return "키워드를 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요";
+      return "키워드를 뽑지 못했어요 — 직접 넣거나 [다시] 를 눌러 주세요";
     case "empty":
       return generation
-        ? "뽑힌 키워드가 없습니다 — 직접 넣거나 [다시] 를 누르세요"
+        ? "뽑힌 키워드가 없어요 — 직접 넣거나 [다시] 를 눌러 주세요"
         : "키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요";
     case "ready":
       return null;

@@ -162,8 +162,8 @@ export function checkLine(checks: ParagraphChecks): string | null {
 
 export function paragraphProblem(text: string): string | null {
   const n = Array.from(text.trim()).length;
-  if (!n) return "빈 문단은 저장할 수 없습니다 — 지우려면 [지우기]를 누르세요";
-  if (n > MAX_PARAGRAPH_CHARS) return `문단은 ${MAX_PARAGRAPH_CHARS}자까지입니다`;
+  if (!n) return "빈 문단은 저장할 수 없어요 — 지우려면 [지우기]를 눌러 주세요";
+  if (n > MAX_PARAGRAPH_CHARS) return `문단은 ${MAX_PARAGRAPH_CHARS}자까지 쓸 수 있어요`;
   return null;
 }
 

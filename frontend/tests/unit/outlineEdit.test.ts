@@ -87,7 +87,7 @@ describe("movePaper", () => {
     d = movePaper(d, "KCI_D", "prior.g1");
     d = movePaper(d, "KCI_E", "prior.g1");
     expect(d.groups[1]!.papers).toEqual([]);
-    expect(outlineProblems(d, false)).toEqual(["「사회적 지지」 묶음이 비었습니다 — 논문을 하나 이상 옮겨 두세요"]);
+    expect(outlineProblems(d, false)).toEqual(["「사회적 지지」 묶음이 비었어요 — 논문을 하나 이상 옮겨 주세요"]);
   });
 });
 
@@ -128,7 +128,7 @@ describe("outlineProblems", () => {
     d = renameGroup(d, "prior.g2", "가".repeat(GROUP_LABEL_MAX + 1));
     expect(outlineProblems(d, false)).toEqual([
       "1번째 묶음의 이름을 적어 주세요",
-      `2번째 묶음 이름은 ${GROUP_LABEL_MAX}자까지입니다`,
+      `2번째 묶음 이름은 ${GROUP_LABEL_MAX}자까지 쓸 수 있어요`,
     ]);
     expect(outlineProblems(renameGroup(draft(), "prior.g2", "가".repeat(GROUP_LABEL_MAX)), false)).toEqual([]);
   });
@@ -142,10 +142,10 @@ describe("outlineProblems", () => {
   it("질문·방법의 글자 수는 코드 포인트로 센다(서버의 파이썬 len 과 같다)", () => {
     expect(outlineProblems(draft({ question: "😀".repeat(OUTLINE_QUESTION_MAX) }), true)).toEqual([]);
     expect(outlineProblems(draft({ question: "가".repeat(OUTLINE_QUESTION_MAX + 1) }), false)).toEqual([
-      `연구 질문은 ${OUTLINE_QUESTION_MAX}자까지입니다`,
+      `연구 질문은 ${OUTLINE_QUESTION_MAX}자까지 쓸 수 있어요`,
     ]);
     expect(outlineProblems(draft({ method: "가".repeat(OUTLINE_METHOD_MAX + 1) }), false)).toEqual([
-      `방법은 ${OUTLINE_METHOD_MAX}자까지입니다`,
+      `방법은 ${OUTLINE_METHOD_MAX}자까지 쓸 수 있어요`,
     ]);
   });
 });

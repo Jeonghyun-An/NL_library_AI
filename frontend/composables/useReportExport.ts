@@ -1,7 +1,27 @@
 // frontend/composables/useReportExport.ts
 import { nextTick, ref, shallowRef } from "vue";
-import type { ReportDoc } from "~/utils/reportDocument";
+import type { ReportDoc, ReportExportFormat } from "~/utils/reportDocument";
 import { downloadBlob, toDocxBlob } from "~/utils/reportDocx";
+
+/**
+ * 내보내기 실패 안내(딥리서치 보고서의 토스트·작업대 보고서의 줄 안내가 함께 쓴다). Word 는 배포 뒤 옛 화면에서 누르면 docx 조각
+ * 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다. 해요체·문장마다 줄바꿈(줄을 그리지 않는 토스트에서는 공백 하나)
+ */
+export const REPORT_EXPORT_FAILED: Record<ReportExportFormat, string> = {
+  docx: "Word 문서를 만들지 못했어요.\n새로고침한 뒤 다시 시도해 주세요.",
+  pdf: "인쇄 창을 열지 못했어요.\n다시 시도해 주세요.",
+};
+
+/**
+ * print() 가 돌아온 뒤 인쇄가 시작됐다는 신호(beforeprint)를 기다리는 시간 — 이 안에 오지 않으면 인쇄 창이 열리지 않은 것
+ * (정책으로 인쇄를 막음·인앱 브라우저)으로 보고 바로 되돌린다
+ */
+export const PRINT_START_GRACE_MS = 1000;
+/**
+ * 인쇄가 시작된 뒤 끝났다는 신호(afterprint)를 기다리는 가장 긴 시간 — 오지 않아도 이만큼 지나면 되돌린다(버튼이 '만드는 중…'에
+ * 영영 멈추지 않게). 인쇄 창을 이보다 오래 열어 두는 드문 경우에는 그 뒤에 찍으면 화면이 찍힐 수 있다
+ */
+export const PRINT_END_FALLBACK_MS = 120_000;
 
 export function useReportExport() {
   const exporting = ref(false);
@@ -18,25 +38,65 @@ export function useReportExport() {
     }
   }
 
+  // 인쇄 전용 문서(ReportPrint)를 붙여 인쇄 창을 열고, 인쇄가 끝나면(afterprint) 떼고 문서 제목을 되돌린다.
+  // Chrome·Firefox 데스크톱은 print() 가 인쇄 창이 닫힐 때까지 막혀 있다가 돌아오지만(그 안에서 afterprint 가 온다), 사파리·
+  // 모바일처럼 print() 가 곧바로 돌아오고 인쇄 창은 나중에 뜨는 브라우저에서 돌아오자마자 떼면 보고서 대신 앱 화면이 찍혔다.
+  // 그래서 afterprint 로 뗀다. 정책으로 인쇄를 막았거나 인앱 브라우저처럼 창 없이 돌아오는 곳은 afterprint 도 오지 않으므로
+  // beforeprint(인쇄 시작)가 PRINT_START_GRACE_MS 안에 오지 않으면 바로, 왔는데 afterprint 가 없으면 PRINT_END_FALLBACK_MS 뒤에
+  // 되돌린다. 돌려주는 약속은 되돌린 뒤에 풀린다 — 부르는 쪽은 그 뒤에 완료 처리를 한다
   async function printPdf(doc: ReportDoc): Promise<void> {
     if (exporting.value) return;
     exporting.value = true;
     const previousTitle = document.title;
+    let started = false;
+    let done = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let finish: () => void = () => {};
+    const finished = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+
+    function onBefore(): void {
+      started = true;
+    }
+
+    function restore(): void {
+      if (done) return;
+      done = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      window.removeEventListener?.("beforeprint", onBefore);
+      window.removeEventListener?.("afterprint", restore);
+      document.title = previousTitle;
+      printDoc.value = null;
+      exporting.value = false;
+      finish();
+    }
+
     try {
       printDoc.value = doc;
       // 인쇄 전용 문서가 DOM 에 그려진 뒤에 인쇄 창을 연다
       await nextTick();
       // 인쇄 창의 "PDF로 저장"은 문서 제목을 기본 파일 이름으로 쓴다
       document.title = doc.fileName.replace(/\.docx$/i, "");
+      window.addEventListener?.("beforeprint", onBefore);
+      window.addEventListener?.("afterprint", restore);
       window.print();
-    } finally {
-      // Chrome·Firefox 데스크톱은 print() 가 인쇄 창이 닫힐 때까지 막혀 있다가 돌아온다는 전제로, 돌아오면 되돌린다.
-      // afterprint 는 기다리지 않는다 — 정책으로 인쇄를 막았거나 인앱 브라우저처럼 창 없이 곧바로 돌아오는 곳은 이 이벤트를
-      // 쏘지 않아 버튼이 '만드는 중…'에 멈춘다. 막히지 않고 인쇄할 모양을 나중에 뜨는 브라우저라면 화면이 찍힌다
-      document.title = previousTitle;
-      printDoc.value = null;
-      exporting.value = false;
+    } catch (e) {
+      restore();
+      throw e;
     }
+    if (!done) {
+      // 막혀 있다 돌아오는 브라우저는 이미 afterprint 로 되돌렸다. 곧바로 돌아왔으면 인쇄가 시작됐는지 보고 기다린다
+      timer = setTimeout(() => {
+        if (!started) {
+          restore();
+          return;
+        }
+        timer = setTimeout(restore, PRINT_END_FALLBACK_MS);
+      }, PRINT_START_GRACE_MS);
+    }
+    await finished;
   }
 
   return { exporting, printDoc, exportDocx, printPdf };

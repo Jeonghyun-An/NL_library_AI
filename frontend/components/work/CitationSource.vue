@@ -10,7 +10,14 @@
     </section>
 
     <p v-if="loading" class="rs-muted" role="status">원문 대목을 불러오는 중입니다</p>
-    <p v-else-if="error" class="rs-alert" role="alert">{{ error }}</p>
+    <SkxErrorState
+      v-else-if="error"
+      compact
+      :kind="error.kind"
+      :title="SOURCES_FAILED"
+      :message="error.reason"
+      @retry="emit('retry')"
+    />
     <section v-else-if="source?.excerpt" class="wk-cite__excerpt" aria-label="모델에 넘긴 원문 대목">
       <p class="wk-cite__heading">
         이 문장을 쓸 때 넘긴 원문 대목<span v-if="pageText" class="rs-muted"> · {{ pageText }}</span>
@@ -22,14 +29,20 @@
         </template>
       </p>
       <p v-if="!marked" class="rs-muted">
-        인용한 문장과 겹치는 대목 문장을 찾지 못했습니다 — 대목 전체를 그대로 보입니다.
+        인용한 문장과 겹치는 대목 문장을 찾지 못했어요 — 대목 전체를 그대로 보여 드려요.
       </p>
     </section>
     <section v-else-if="source" class="wk-cite__excerpt" aria-label="초록">
-      <p class="wk-cite__heading">원문 대목을 읽지 못해 초록을 보입니다</p>
-      <p class="wk-cite__text">{{ passageText(source.abstract) || "초록이 없습니다." }}</p>
+      <p class="wk-cite__heading">원문 대목을 읽지 못해 초록을 보여 드려요</p>
+      <p class="wk-cite__text">{{ passageText(source.abstract) || "초록이 없어요." }}</p>
     </section>
-    <p v-else class="rs-muted">이 인용의 근거 기록을 찾지 못했습니다 — [원문 보기]로 논문을 직접 확인하세요.</p>
+    <SkxErrorState
+      v-else
+      kind="notFound"
+      compact
+      title="이 인용의 근거 기록을 찾지 못했어요"
+      message="[원문 보기]로 논문을 직접 확인해 주세요."
+    />
 
     <div class="wk-cite__actions">
       <button type="button" class="rs-btn rs-btn--small" @click="emit('open-pdf', pdfTarget)">원문 보기</button>
@@ -45,15 +58,19 @@ import type { CitePick, PaperMeta, SectionSource } from "~/types/work";
 import { citationPdfTarget, citedQuote, excerptParts } from "~/utils/citationEvidence";
 import { panelHead } from "~/utils/deepRead";
 import { passageText } from "~/utils/passageText";
+import { WORK_SOURCES_FAILED, type WorkFailure } from "~/utils/workErrors";
 
+// error — 원문 대목 조회(GET …/sources)의 실패. [다시 시도] 는 retry 로 올리고 ProposalStep 이 같은 인용을 다시 읽는다
 const props = defineProps<{
   pick: CitePick;
   meta: PaperMeta | null;
   source: SectionSource | null;
   loading: boolean;
-  error: string | null;
+  error: WorkFailure | null;
 }>();
-const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; chat: [] }>();
+const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload]; chat: []; retry: [] }>();
+
+const SOURCES_FAILED = WORK_SOURCES_FAILED;
 
 const head = computed(() =>
   props.meta ? panelHead({ cntsId: props.pick.cntsId, meta: props.meta }) : { title: props.pick.cntsId, byline: "" },

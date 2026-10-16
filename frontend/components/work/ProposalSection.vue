@@ -59,18 +59,13 @@
         </div>
       </template>
     </div>
-    <div v-else-if="status === 'failed'" class="wk-psec__failed" role="alert">
-      <p class="rs-muted">{{ failedText }}</p>
-      <button
-        v-if="failedGen && !readOnly"
-        type="button"
-        class="rs-btn rs-btn--small rs-btn--ghost"
-        :disabled="locked"
-        @click="onRetry(failedGen.id)"
-      >
-        다시 시도
-      </button>
-    </div>
+    <!-- 실패한 절 — 공통 줄 안내와 [다시 시도](예시 연구·생성 기록이 없으면 글만). 잠긴 동안은 누름을 무시한다 -->
+    <SkxInlineError
+      v-else-if="status === 'failed'"
+      :message="failedText"
+      :busy="locked"
+      :on-retry="failedGen && !readOnly ? retryFailed : undefined"
+    />
 
     <ol v-if="section && status !== 'writing'" class="wk-psec__paras">
       <li
@@ -126,9 +121,7 @@
             </template>
           </p>
           <p v-if="check" class="rs-muted">{{ check }}</p>
-          <p v-if="failedParas.has(p.id)" class="rs-muted" role="status">
-            이 문단을 다시 쓰지 못했습니다 — 앞의 글을 그대로 두었습니다.
-          </p>
+          <SkxInlineError v-if="failedParas.has(p.id)" message="이 문단을 다시 쓰지 못했어요 — 앞의 글을 그대로 두었어요." />
           <p v-if="paragraphGens.has(p.id)" class="rs-muted" role="status">
             이 문단을 다시 쓰는 중입니다{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
           </p>
@@ -202,8 +195,9 @@
     </div>
     <!-- 근거 없음 409 는 사실상 연구 공백 절에서만 난다 — 그 논문은 담은 논문·묶음이 아니라 고른 주제의 씨앗에서 온다 -->
     <p v-if="skippedNow" class="rs-muted" role="status">
-      근거가 없어 쓰지 않았습니다 — 이 절은 고른 주제의 씨앗({{ DEEP_RESEARCH }} 보고서의 향후 과제·근거가 부족했던
-      하위질문)에 이은 논문으로 쓰는데, 이은 논문이 없습니다. 다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞추세요.
+      근거가 없어 쓰지 않았어요 — 이 절은 고른 주제의 씨앗({{ DEEP_RESEARCH }} 보고서의 향후 과제·근거가 부족했던
+      하위질문)에 이은 논문으로 쓰는데, 이은 논문이 없어요.<br />
+      다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞춰 주세요.
     </p>
     <!-- '자동으로 씁니다'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
     <p v-else-if="!section && status === 'empty' && autoNext" class="rs-muted">
@@ -260,6 +254,9 @@ const props = defineProps<{
   skipped?: boolean;
   // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 씁니다'
   autoNext?: boolean;
+  // 이 절의 저장(PUT) 응답을 받을 때마다 오르는 수(ProposalStep) — 뒤의 다시 읽기가 실패해 절이 그대로여도 저장은 된 것이라
+  // 열어 둔 고치기·직접 쓰기 칸을 닫는다(열린 채 다시 누르면 옛 version 이라 409 가 난다)
+  savedSeq?: number;
 }>();
 const emit = defineEmits<{
   write: [];
@@ -310,14 +307,18 @@ const failedGen = computed(() =>
 const failedText = computed(() => {
   const head =
     failedGen.value?.status === "done"
-      ? "근거 표시가 있는 문단을 얻지 못했습니다"
+      ? "근거 표시가 있는 문단을 얻지 못했어요"
       : section.value
-        ? "이 절을 다시 쓰지 못했습니다"
-        : "이 절을 쓰지 못했습니다";
+        ? "이 절을 다시 쓰지 못했어요"
+        : "이 절을 쓰지 못했어요";
   return section.value?.paragraphs.length
-    ? `${head} — 앞서 쓴 문단은 그대로 두었습니다.`
-    : `${head}. 다시 시도하거나 잠시 뒤 다시 쓰세요.`;
+    ? `${head} — 앞서 쓴 문단은 그대로 두었어요.`
+    : `${head}.\n다시 시도하거나 잠시 뒤 다시 써 주세요.`;
 });
+
+function retryFailed(): void {
+  if (failedGen.value) onRetry(failedGen.value.id);
+}
 
 // 절 글이 흐르는 동안 조각(section_delta)마다 state 는 새 객체가 되어 모든 절이 다시 그려진다. 그때 문단을 다시
 // 나누거나 생성 목록을 다시 훑지 않게, 무거운 계산은 그것이 기대는 값에만 묶는다 — 문단 조각은 절(계획서를 다시 읽을
@@ -450,7 +451,8 @@ const adding = ref(false);
 const addText = ref("");
 const addProblem = computed(() => paragraphProblem(addText.value));
 // 저장을 보낸 뒤 결과가 화면에 올 때까지 고치던 글을 쥐고 있다 — 실패(버전 충돌 등)하면 그대로 남아 다시 보낼 수 있다
-type Pending = { kind: "edit"; id: string; before: string } | { kind: "add"; count: number };
+// seq — 보낼 때의 savedSeq. 결과가 왔을 때 이보다 올랐으면 저장 응답을 받은 것이다(다시 읽기가 실패했어도)
+type Pending = { kind: "edit"; id: string; before: string; seq: number } | { kind: "add"; count: number; seq: number };
 let pending: Pending | null = null;
 
 // 절을 새 생성으로 다시 쓰면 서버가 문단 id 를 p1 부터 다시 매기고 근거 지도도 바뀔 수 있다 — 열어 둔 칸을
@@ -495,14 +497,14 @@ function saveEdit(pid: string): void {
     editingId.value = null;
     return;
   }
-  pending = { kind: "edit", id: pid, before };
+  pending = { kind: "edit", id: pid, before, seq: props.savedSeq ?? 0 };
   emit("save", editParagraph(sec, pid, text));
 }
 
 function saveAdd(): void {
   const sec = section.value;
   if (!sec) return;
-  pending = { kind: "add", count: sec.paragraphs.length };
+  pending = { kind: "add", count: sec.paragraphs.length, seq: props.savedSeq ?? 0 };
   emit("save", addParagraph(sec, addText.value.trim()));
 }
 
@@ -513,9 +515,10 @@ watch(
     if (!was || now || !p) return;
     pending = null;
     const paragraphs = section.value?.paragraphs ?? [];
+    const wrote = (props.savedSeq ?? 0) !== p.seq;
     if (p.kind === "edit") {
-      if (paragraphs.find((x) => x.id === p.id)?.text !== p.before) editingId.value = null;
-    } else if (paragraphs.length > p.count) {
+      if (wrote || paragraphs.find((x) => x.id === p.id)?.text !== p.before) editingId.value = null;
+    } else if (wrote || paragraphs.length > p.count) {
       adding.value = false;
       addText.value = "";
     }

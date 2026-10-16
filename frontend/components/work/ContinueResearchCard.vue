@@ -14,7 +14,7 @@
       </li>
     </ol>
     <p v-if="view.note" class="rs-muted">{{ view.note }}</p>
-    <p v-if="error" class="rs-alert" role="alert">{{ error }}</p>
+    <SkxInlineError v-if="error" :message="error" />
     <div class="rs-card__actions">
       <button type="button" class="rs-btn" :disabled="busy" :aria-busy="busy" @click="act">
         {{ view.label }}
