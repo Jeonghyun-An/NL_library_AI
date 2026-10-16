@@ -1,6 +1,7 @@
 """
 book_chat.py — 특정 도서와의 심층 대화 (RAG + SSE 스트리밍)
 """
+import asyncio
 import json
 import logging
 import re
@@ -36,6 +37,15 @@ CHAT_RETRIEVAL_ERROR = "자료 내용을 읽지 못했어요. 잠시 뒤 다시 
 
 def _error_event(message: str, code: str) -> str:
     return f"data: {json.dumps({'error': message, 'code': code}, ensure_ascii=False)}\n\n"
+
+
+# 보낼 이벤트 없이 CHAT_PING_INTERVAL 초가 지나면 그사이 SSE 주석 줄 CHAT_PING 을 보낸다 — 딥리서치 SSE(api/research.py·
+# research_work.py 가 relay 구독의 15초 유휴마다 ': ping')와 같은 관례. 화면(frontend/composables/useDeepReadChat)은 응답 머리도
+# 글 조각도 없이 60초가 지나면 스스로 끊는데, 서버는 첫 글 조각 전(질의 재구성 최대 20초 + 청크 검색 + LLM 첫 토큰 대기)에
+# 아무것도 보내지 않아 붐빌 때 결국 답했을 요청이 끊길 수 있었다. 화면 파서는 ':' 로 시작하는 줄을 버리고, 무엇이든 받으면
+# 60초를 다시 센다. 주석이라 이벤트(data:)의 순서·모양은 그대로다
+CHAT_PING = ": ping\n\n"
+CHAT_PING_INTERVAL = 15.0
 
 _REF_INTENT_KEYWORDS = frozenset({
     "참고문헌", "참고 문헌", "인용", "reference", "cited", "출처", "bibliography",
@@ -117,7 +127,64 @@ def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHi
     return cited
 
 
-async def stream_book_chat(
+def _search_book_chunks(query: str, cnts_id: str) -> list[SearchHit]:
+    """질의를 임베딩해 이 자료(cnts_id)의 청크만 찾는다 — 동기(BGE-M3·Milvus)라 스트림은 asyncio.to_thread 로 부른다.
+    이벤트 루프에서 바로 부르면 도는 동안 루프가 막혀 ': ping' 도 다른 요청도 나가지 못한다(엔드포인트가 run_in_threadpool
+    로 부르는 research_work/membership.concept_affinity 처럼 스레드에서 임베딩한다)."""
+    dense, sparse = embed_texts([query], is_query=True)
+    return search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
+
+
+async def _next_event(events: AsyncGenerator[str, None]) -> str | None:
+    """events 의 다음 이벤트, 끝났으면 None — task 로 돌리려고 StopAsyncIteration 을 값으로 바꾼다."""
+    try:
+        return await events.__anext__()
+    except StopAsyncIteration:
+        return None
+
+
+async def _with_pings(events: AsyncGenerator[str, None], interval: float) -> AsyncGenerator[str, None]:
+    """events 를 그대로 내보내되, 다음 이벤트를 interval 초 넘게 기다리면 그사이 CHAT_PING 을 끼운다.
+
+    다음 이벤트 기다리기(events 의 한 걸음 — 첫 걸음은 질의 재구성·청크 검색·LLM 첫 조각까지, 그 뒤는 다음 글 조각)를
+    백그라운드 task 로 돌리고 asyncio.wait 로 interval 마다 깨어 ping 을 낸다. 이벤트는 손대지 않아 순서·{error, code}·
+    sources·[DONE] 이 그대로다. 화면이 끊어 이 제너레이터가 닫히거나(aclose — ping 을 내고 멈춰 있던 때) 취소되면
+    (CancelledError — 기다리던 때) 기다리던 task 를 취소하고 events 를 닫는다 — LLM 스트림·질의 재구성 호출이 남아 돌지
+    않게. 취소된 걸음은 events 안에서 CancelledError 로 풀린다(except Exception 이 잡지 않는다)."""
+    pending: asyncio.Task | None = None
+    try:
+        while True:
+            if pending is None:
+                pending = asyncio.create_task(_next_event(events))
+            done, _ = await asyncio.wait({pending}, timeout=interval)
+            if not done:
+                yield CHAT_PING
+                continue
+            step, pending = pending, None
+            event = step.result()
+            if event is None:
+                return
+            yield event
+    finally:
+        if pending is not None and not pending.done():
+            pending.cancel()
+            await asyncio.wait({pending})
+        await events.aclose()
+
+
+def stream_book_chat(
+    cnts_id: str,
+    message: str,
+    history: list[dict],
+    *,
+    book=None,
+) -> AsyncGenerator[str, None]:
+    """DeepRead 대화 SSE(라우트 api/book.py chat_with_book 이 StreamingResponse 로 내보낸다). 이벤트는 _chat_events 가
+    만들고, 그 사이 보낼 것 없이 CHAT_PING_INTERVAL 초가 지나면 ': ping' 을 끼운다(_with_pings)."""
+    return _with_pings(_chat_events(cnts_id, message, history, book=book), CHAT_PING_INTERVAL)
+
+
+async def _chat_events(
     cnts_id: str,
     message: str,
     history: list[dict],
@@ -161,8 +228,7 @@ async def stream_book_chat(
     hits = []
     if not ref_context_block:
         try:
-            dense, sparse = embed_texts([search_query], is_query=True)
-            hits = search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
+            hits = await asyncio.to_thread(_search_book_chunks, search_query, cnts_id)
         except Exception as e:
             log.error("[%s] 채팅 청크 검색 실패 — 답하지 않고 끝낸다: %s: %s", cnts_id, type(e).__name__, e, exc_info=True)
             yield _error_event(CHAT_RETRIEVAL_ERROR, "retrieval_failed")
