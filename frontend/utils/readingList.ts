@@ -154,7 +154,7 @@ export function pathLines(item: ReadingItem): PathLine[] {
     });
   }
   if (item.path.user) lines.push({ label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" });
-  if (!lines.length) lines.push({ label: "들어온 경로", detail: "저장된 경로가 없습니다" });
+  if (!lines.length) lines.push({ label: "들어온 경로", detail: "저장된 경로가 없어요" });
   return lines;
 }
 

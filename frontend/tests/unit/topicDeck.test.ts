@@ -155,7 +155,7 @@ describe("cardStatus", () => {
     expect(cardStatus(item({ generation: null }), concepts("queued"))).toBe("waiting");
     expect(cardStatus(item({ generation: null }), concepts("running"))).toBe("waiting");
     // 씨앗 자리 카드 생성은 키워드 반영·취소와 같은 트랜잭션에 들어간다 — done·canceled 이벤트가 온 뒤 topics·work 를
-    // 다시 읽기 전까지는 그 생성이 목록에 없다. 그 사이도 기다리는 중이다('카드를 만들지 못했습니다'가 비치지 않게)
+    // 다시 읽기 전까지는 그 생성이 목록에 없다. 그 사이도 기다리는 중이다('카드를 만들지 못했어요'가 비치지 않게)
     expect(cardStatus(item({ generation: null }), concepts("done"))).toBe("waiting");
     expect(cardStatus(item({ generation: null }), concepts("canceled"))).toBe("waiting");
     expect(cardStatus(item({ generation: null }), concepts("failed"))).toBe("blocked");
@@ -187,8 +187,8 @@ describe("cardNote", () => {
   it("빈 슬롯마다 정직한 문구를, 카드가 있으면 null 을 준다", () => {
     expect(cardNote("waiting")).toBe("차례를 기다리는 중입니다");
     expect(cardNote("making")).toBe("카드를 쓰는 중입니다");
-    expect(cardNote("insufficient")).toBe("근거 부족 — 이 씨앗을 직접 받치는 논문을 2편 이상 찾지 못했습니다");
-    expect(cardNote("failed")).toBe("카드를 만들지 못했습니다");
+    expect(cardNote("insufficient")).toBe("근거 부족 — 이 씨앗을 직접 받치는 논문을 2편 이상 찾지 못했어요");
+    expect(cardNote("failed")).toBe("카드를 만들지 못했어요");
     expect(cardNote("ready")).toBeNull();
   });
 });
@@ -367,17 +367,17 @@ describe("moreLine", () => {
   it("남은 씨앗과 한 번에 받는 장수(최대 2)를, 다 쓰면 직접 쓰기를 안내한다", () => {
     expect(moreLine(5)).toBe("남은 씨앗 5개 · 누르면 2장을 더 받습니다");
     expect(moreLine(1)).toBe("남은 씨앗 1개 · 누르면 1장을 더 받습니다");
-    expect(moreLine(0)).toBe("더 쓸 씨앗이 없습니다 — [직접 쓰기] 로 주제를 더할 수 있습니다");
+    expect(moreLine(0)).toBe("더 쓸 씨앗이 없어요 — [직접 쓰기] 로 주제를 더할 수 있어요");
   });
 });
 
 describe("topicProblem", () => {
   it("앞뒤 공백을 뺀 제목 2~120자·연구 질문 2~300자만 받는다", () => {
     expect(topicProblem({ title: "노인 우울", question: "무엇이 우울을 낮추는가?" })).toBeNull();
-    expect(topicProblem({ title: " 가 ", question: "무엇이 우울을 낮추는가?" })).toBe("제목을 2자 이상 쓰세요");
-    expect(topicProblem({ title: "가".repeat(121), question: "질문" })).toBe("제목은 120자까지입니다");
-    expect(topicProblem({ title: "노인 우울", question: "?" })).toBe("연구 질문을 2자 이상 쓰세요");
-    expect(topicProblem({ title: "노인 우울", question: "가".repeat(301) })).toBe("연구 질문은 300자까지입니다");
+    expect(topicProblem({ title: " 가 ", question: "무엇이 우울을 낮추는가?" })).toBe("제목을 2자 이상 써 주세요");
+    expect(topicProblem({ title: "가".repeat(121), question: "질문" })).toBe("제목은 120자까지 쓸 수 있어요");
+    expect(topicProblem({ title: "노인 우울", question: "?" })).toBe("연구 질문을 2자 이상 써 주세요");
+    expect(topicProblem({ title: "노인 우울", question: "가".repeat(301) })).toBe("연구 질문은 300자까지 쓸 수 있어요");
   });
 });
 
@@ -422,10 +422,10 @@ describe("핵심 개념 칩", () => {
     const running = gen({ kind: "concepts", target: null, status: "running" });
     expect(conceptsNote([], running)).toBe(`키워드를 뽑는 중입니다 · ${genQueueLine(running)}`);
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "failed" }))).toBe(
-      "키워드를 뽑지 못했습니다 — 직접 넣거나 [다시] 를 누르세요",
+      "키워드를 뽑지 못했어요 — 직접 넣거나 [다시] 를 눌러 주세요",
     );
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "done" }))).toBe(
-      "뽑힌 키워드가 없습니다 — 직접 넣거나 [다시] 를 누르세요",
+      "뽑힌 키워드가 없어요 — 직접 넣거나 [다시] 를 눌러 주세요",
     );
     expect(conceptsNote([], null)).toBe("키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요");
     expect(conceptsNote(["노인 우울"], null)).toBeNull();

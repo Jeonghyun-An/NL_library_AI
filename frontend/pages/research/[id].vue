@@ -65,16 +65,19 @@
         <!-- 연구 어시스턴트 단계(?s=) — 보고서는 요약 띠로 접고 단계 화면을 그린다.
              ?s= 가 없거나 이어가지 않은 연구면 아래 탐색·보고서 화면을 그대로 그린다 -->
         <div v-if="stepMode" class="wk-body">
+          <!-- 연구 스트림 끊김 띠 — 늘 그려 두고 상태만 바꾼다(처음부터 있는 알림 영역이라야 낭독기가 읽는다) -->
+          <SkxConnectionBanner class="wk-conn" :state="work.connection.value" @retry="work.reconnect()" />
           <div class="rs-card wk-summary">
             <p class="wk-summary__line">{{ band ? summaryLine(band) : view.question }}</p>
             <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">{{ DEEP_RESEARCH }} 보고서 보기</button>
           </div>
-          <div v-if="!workView && work.errorOf('load')" class="rs-card rs-card--error">
-            <p>{{ work.errorOf("load") }}</p>
-            <div class="rs-card__actions">
-              <button type="button" class="rs-btn" @click="work.load()">다시 불러오기</button>
-            </div>
-          </div>
+          <SkxErrorState
+            v-if="!workView && workLoadFailure"
+            :kind="workLoadFailure.kind"
+            :title="WORK_LOAD_FAILED"
+            :message="workLoadFailure.reason"
+            @retry="work.load()"
+          />
           <div v-else-if="!workView" class="rs-card rs-card--wait" role="status">
             <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
             <p>이어간 연구를 불러오는 중입니다</p>
@@ -174,12 +177,24 @@
                     />
                   </template>
                   <template v-if="reportState === 'ready'" #footer>
+                    <!-- 이어간 연구 조회(GET work)가 404·422 가 아닌 이유로 실패했으면 이어갔는지 모른다 — 카드를 '이 연구 이어가기'로
+                         잘못 보이지 않고 그 자리에 안내와 [다시 시도]. 다시 읽는 동안에도 이 자리를 지킨다(카드가 잠깐 비치지 않게) -->
+                    <SkxErrorState
+                      v-if="work.exists.value === null && (workLoadFailure || workLoadRetrying)"
+                      compact
+                      :kind="workLoadFailure?.kind ?? 'error'"
+                      title="이어간 연구가 있는지 확인하지 못했어요"
+                      :message="workLoadFailure?.reason ?? ''"
+                      :busy="workLoadRetrying"
+                      @retry="retryWorkLoad"
+                    />
                     <ContinueResearchCard
+                      v-else
                       :exists="work.exists.value"
                       :work="workView"
                       :written="proposalWritten(work.state.value)"
                       :busy="continuing"
-                      :error="continueError"
+                      :error="continueError ?? (continueSlow ? WORK_SLOW_MESSAGE : null)"
                       @continue="onContinue"
                       @open="openWork"
                     />
@@ -263,11 +278,11 @@ import TopicsStep from "~/components/work/TopicsStep.vue";
 import WorkStepper from "~/components/work/WorkStepper.vue";
 import { useNow } from "~/composables/useNow";
 import { usePdfOpener } from "~/composables/usePdfOpener";
-import { useReportExport } from "~/composables/useReportExport";
+import { REPORT_EXPORT_FAILED, useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { useHistory } from "~/composables/useHistory";
 import { sidebarStatusOf } from "~/utils/sidebarResearch";
-import { useResearchWork, useWorkApi } from "~/composables/useResearchWork";
+import { useResearchWork, useSlowWrite, useWorkApi } from "~/composables/useResearchWork";
 import { useRestorePosition } from "~/composables/useRestorePosition";
 import { useSectionFollow } from "~/composables/useSectionFollow";
 import type { OpenPdfPayload } from "~/types/research";
@@ -296,6 +311,7 @@ import { holdsReturnSpot } from "~/utils/restorePosition";
 import { NO_SLOT_HOVER, linkedSlot, nextSlotHover, type SlotHover } from "~/utils/synthCard";
 import { proposalWritten } from "~/utils/proposalView";
 import { ONBOARDING_KEY, parseWorkStep, stepForPhase, summaryBand, summaryLine, withStep } from "~/utils/workPhase";
+import { WORK_LOAD_FAILED, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
 
 const route = useRoute();
 const router = useRouter();
@@ -360,6 +376,19 @@ const work = useResearchWork(() => String(route.params.id ?? ""), {
   enabled: computed(() => phase.value === "completed"),
 });
 const workView = computed(() => work.state.value.work);
+// 이어간 연구의 첫 조회(GET work)가 404·422 가 아닌 이유로 실패했다 — 단계 화면은 본문 자리, 보고서 화면은 이어가기 카드 자리에 알린다
+const workLoadFailure = computed(() => work.failureOf("load"));
+// 보고서 화면의 [다시 시도] — 다시 읽는 동안(오류 칸이 잠시 빈다) 이어가기 카드가 '이 연구 이어가기'로 비치지 않게 자리를 지킨다
+const workLoadRetrying = ref(false);
+async function retryWorkLoad(): Promise<void> {
+  if (workLoadRetrying.value) return;
+  workLoadRetrying.value = true;
+  try {
+    await work.load();
+  } finally {
+    workLoadRetrying.value = false;
+  }
+}
 // 보고서 단계에 온 연구는 어느 화면에서 열든 계획서를 읽어 둔다 — 머리 단계 줄·이어가기 카드의 '보고서 완성'(proposalWritten)이
 // 계획서로 정해진다. 보고서 단계 화면(ProposalStep)에서만 읽으면 처음 연 화면에 따라 같은 연구의 줄이 달랐다
 watch(
@@ -539,6 +568,8 @@ async function copyLink(): Promise<void> {
 const workApi = useWorkApi();
 const continuing = ref(false);
 const continueError = ref<string | null>(null);
+// [이 연구 이어가기] 응답이 오래 걸리면(응답 없음) 카드 안에 안내만 — 잠금은 그대로(쓰기는 끊으면 서버에서 두 번 돌 수 있다)
+const continueSlow = useSlowWrite(continuing);
 const onboardingOpen = ref(false);
 
 async function goStep(s: WorkStep | null): Promise<void> {
@@ -722,11 +753,7 @@ async function runExport(doc: ReportDoc, format: ReportExportFormat): Promise<vo
   } catch (e) {
     console.warn("[research] 내보내기 실패", e);
     // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
-    showToast(
-      format === "docx"
-        ? "Word 문서를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요."
-        : "인쇄 창을 열지 못했습니다. 다시 시도해 주세요.",
-    );
+    showToast(REPORT_EXPORT_FAILED[format]);
   }
 }
 

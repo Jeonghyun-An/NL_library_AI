@@ -123,7 +123,7 @@
       />
     </li>
   </ol>
-  <p v-else class="rs-muted">후보 논문이 없습니다.</p>
+  <SkxErrorState v-else kind="empty" compact title="후보 논문이 없어요" />
 </template>
 
 <script setup lang="ts">
@@ -155,6 +155,8 @@ const props = defineProps<{
   readOnly: boolean;
   busy: boolean;
   reordering: boolean;
+  // 아직 끝나지 않은 행 저장 수(useReadingSaves.pending) — 0 이 되면 저장 중 표시를 걷는다
+  pending?: number;
   jobId: string;
   activeId?: string | null;
   panelId?: string;
@@ -205,6 +207,15 @@ watch(
   () => props.reordering,
   (on) => {
     if (!on) moved.value = [];
+  },
+);
+
+// 저장 사슬이 비었다 — 끝의 다시 읽기가 실패해 목록이 새로 오지 않아도 저장 중 표시(aria-busy·기다림 커서)를 걷는다.
+// 체크 상자는 서버 값(옛 목록)으로 남고, 다시 읽기 실패는 단계 위 한 줄이 알린다
+watch(
+  () => props.pending ?? 0,
+  (n) => {
+    if (n === 0 && saving.value.size) saving.value = new Set();
   },
 );
 

@@ -12,7 +12,7 @@
       :aria-controls="open ? menuId : undefined"
       :aria-disabled="inactive"
       :aria-busy="busy"
-      :title="disabled ? '아직 내려받을 내용이 없습니다' : undefined"
+      :title="disabled ? '아직 내려받을 내용이 없어요' : undefined"
       @click="toggle"
       @keydown="onTriggerKeydown"
     >

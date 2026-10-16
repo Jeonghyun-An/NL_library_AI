@@ -11,8 +11,8 @@
       다시 나누려면 목차를 다시 만드세요.
     </p>
     <p v-if="fallback" class="rs-muted">
-      모델이 목차 초안을 만들지 못해 묶음 이름은 묶음의 키워드로, 연구 질문 후보는 고른 주제의 질문으로 채웠습니다.
-      직접 고쳐 승인하거나 목차를 다시 만드세요.
+      모델이 목차 초안을 만들지 못해 묶음 이름은 묶음의 키워드로, 연구 질문 후보는 고른 주제의 질문으로 채웠어요.<br />
+      직접 고쳐 승인하거나 목차를 다시 만들어 주세요.
     </p>
 
     <ol class="wk-outline__rows">
@@ -82,7 +82,7 @@
                 </span>
               </li>
             </ul>
-            <p v-if="!g.papers.length" class="rs-muted">빈 묶음 — 논문을 끌어 오거나 [옮기기]로 넣으세요</p>
+            <p v-if="!g.papers.length" class="rs-muted">빈 묶음이에요 — 논문을 끌어 오거나 [옮기기]로 넣어 주세요</p>
           </div>
         </div>
         <p class="rs-sr-only" role="status">{{ moveNote }}</p>
@@ -112,7 +112,7 @@
             <textarea :value="draft.question" rows="2" :disabled="busy" @input="onQuestionInput" />
           </label>
         </template>
-        <p v-else class="wk-outline__text">{{ outline.question || "아직 고르지 않았습니다" }}</p>
+        <p v-else class="wk-outline__text">{{ outline.question || "아직 고르지 않았어요" }}</p>
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">6. {{ LABELS.method }}</h4>
@@ -120,7 +120,7 @@
           <span class="rs-muted">연구 방법을 직접 적으세요 — 이 단계에는 고를 선택지가 없습니다</span>
           <textarea :value="draft.method" rows="3" :disabled="busy" @input="onMethodInput" />
         </label>
-        <p v-else class="wk-outline__text">{{ outline.method || "아직 적지 않았습니다" }}</p>
+        <p v-else class="wk-outline__text">{{ outline.method || "아직 적지 않았어요" }}</p>
       </li>
     </ol>
     <p class="rs-muted">결과·논의 — 연구 후 직접 씁니다.</p>

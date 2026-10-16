@@ -53,7 +53,7 @@ describe("ProposalSection — 근거가 없어 건너뛴 절(skippedNow)의 안�
     expect(notes).toHaveLength(1);
     const text = flatText(notes[0]!);
     expect(text).toContain("고른 주제의 씨앗({{DEEP_RESEARCH}} 보고서의 향후 과제·근거가 부족했던 하위질문)에 이은 논문으로 쓰는데");
-    expect(text).toContain("[{{REMAKE_REPORT}}]로 맞추세요");
+    expect(text).toContain("[{{REMAKE_REPORT}}]로 맞춰 주세요");
     expect(text).not.toContain("딥리서치");
     // import 줄은 이름만 본다 — 같은 줄에 다른 이름이 더해지거나 줄바꿈·따옴표 꼴이 바뀌어도 깨지지 않게
     expect(descriptor.scriptSetup?.content).toMatch(/import\s*\{[^}]*\bDEEP_RESEARCH\b[^}]*\}\s*from\s*["']~\/utils\/brand["']/);
