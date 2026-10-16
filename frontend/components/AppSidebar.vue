@@ -121,13 +121,9 @@
         <ClientOnly>
           <template v-if="loaded">
             <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 머리는 'DeepResearch' · 오른쪽 '전체 삭제'(아래 '최근 검색' 머리와 같은 꼴).
-                 [연구 시작하기] 버튼은 뺐다 — 연구는 맨 위 [새 검색]·랜딩의 + 메뉴에서 시작한다(사용자 결정 2026-10-16). 버튼이 없어
-                 기록이 없으면 제목만 남으므로 그때는 묶음을 그리지 않는다(둘 다 없으면 아래 '아직 검색 기록이 없어요') -->
-            <section
-              v-if="researchRows.length"
-              class="skx-history__group skx-history__group--research"
-              aria-labelledby="skx-history-research"
-            >
+                 묶음은 기록이 없어도 늘 보이고, 연구 기록이 하나도 없을 때만 머리 아래에 [연구 시작하기 >]를 둔다 — 기록이 있으면
+                 버튼 없이 목록만(사용자 결정 2026-10-16) -->
+            <section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
                 <div class="skx-history__head-main">
                   <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
@@ -145,6 +141,16 @@
                   전체 삭제
                 </button>
               </div>
+              <button v-if="!researchRows.length" type="button" class="skx-history__start" @click="startDeepResearch">
+                연구 시작하기
+                <svg class="skx-history__start-chev" viewBox="0 0 5 8" aria-hidden="true" focusable="false">
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M0.102681 0.132319C0.250461 -0.031888 0.503377 -0.0452041 0.667584 0.102576L4.66758 3.70243C4.75187 3.77828 4.8 3.88635 4.8 3.99974C4.80001 4.11314 4.75188 4.2212 4.6676 4.29706L0.667599 7.89731C0.5034 8.04509 0.250484 8.03179 0.102695 7.86759C-0.0450943 7.70339 -0.0317915 7.45048 0.132408 7.30269L3.80207 3.99977L0.132424 0.697222C-0.0317831 0.549442 -0.0450996 0.296526 0.102681 0.132319Z"
+                  />
+                </svg>
+              </button>
               <div
                 v-if="confirming === 'research'"
                 class="skx-history__confirm"
@@ -256,22 +262,9 @@
               </button>
             </section>
 
-            <!-- 기록이 하나도 없을 때만 안내 아래에 [연구 시작하기 >] — 기록이 생기면 DeepResearch 묶음이 대신 선다(사용자 결정 2026-10-16) -->
-            <div v-if="!researchRows.length && !recentRows.length" class="skx-history__empty-box">
-              <p class="skx-history__empty" role="status">
-                {{ listFailed ? "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : "아직 검색 기록이 없어요." }}
-              </p>
-              <button type="button" class="skx-history__start" @click="startDeepResearch">
-                연구 시작하기
-                <svg class="skx-history__start-chev" viewBox="0 0 5 8" aria-hidden="true" focusable="false">
-                  <path
-                    fill-rule="evenodd"
-                    clip-rule="evenodd"
-                    d="M0.102681 0.132319C0.250461 -0.031888 0.503377 -0.0452041 0.667584 0.102576L4.66758 3.70243C4.75187 3.77828 4.8 3.88635 4.8 3.99974C4.80001 4.11314 4.75188 4.2212 4.6676 4.29706L0.667599 7.89731C0.5034 8.04509 0.250484 8.03179 0.102695 7.86759C-0.0450943 7.70339 -0.0317915 7.45048 0.132408 7.30269L3.80207 3.99977L0.132424 0.697222C-0.0317831 0.549442 -0.0450996 0.296526 0.102681 0.132319Z"
-                  />
-                </svg>
-              </button>
-            </div>
+            <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
+              {{ listFailed ? "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : "아직 검색 기록이 없어요." }}
+            </p>
 
             <!-- 최근 검색: 소장자료·논문 -->
             <section v-if="recentRows.length" class="skx-history__group" aria-labelledby="skx-history-recent">
@@ -667,7 +660,7 @@ function newSearch() {
   void router.push({ path: "/" });
 }
 
-// 빈 상태의 [연구 시작하기] — 랜딩에서 논문 패널 + 딥리서치 모드를 켠다(pages/index.vue 가 ?start= 를 받는다).
+// 연구 기록이 없을 때 DeepResearch 패널의 [연구 시작하기] — 랜딩에서 논문 패널 + 딥리서치 모드를 켠다(pages/index.vue 가 ?start= 를 받는다).
 // '/' 에 이미 있어도 쿼리가 바뀌는 이동이라 같은 길로 받는다
 function startDeepResearch() {
   confirming.value = null;
@@ -946,17 +939,10 @@ onBeforeUnmount(() => {
   line-height: 1.6;
   color: var(--skx-gray-1);
 }
-/* 빈 상태 — 안내 아래 [연구 시작하기 >] 작은 알약(피그마 sidebar 의 알약 모양: 흰 10% 면·글 11px·오른쪽 화살표 5×8) */
-.skx-history__empty-box {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.skx-history__empty-box .skx-history__start {
-  margin: 0 0.4rem;
-}
-/* 빈 상태의 유일한 할 일이라 피그마 알약(11px)보다 한 단계 크게 — 글 13px·안쪽 여백 넓게(사용자 요청 2026-10-16) */
+/* 연구 기록이 없을 때 DeepResearch 패널 머리 아래의 [연구 시작하기 >] — 피그마 sidebar 알약 모양(흰 10% 면·오른쪽 화살표)을
+   한 단계 크게(글 13px·안쪽 여백 넓게) — 빈 패널의 유일한 할 일이라(사용자 요청 2026-10-16) */
 .skx-history__start {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
