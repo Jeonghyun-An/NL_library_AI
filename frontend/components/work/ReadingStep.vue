@@ -109,7 +109,8 @@ import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, readingAnchor } from "~/utils/detailSource";
 import { passageText } from "~/utils/passageText";
 import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, readingIntro } from "~/utils/readingList";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
 import { REMAKE_REPORT } from "~/utils/workPhase";
 
@@ -273,7 +274,7 @@ async function makeOutline(again: boolean): Promise<void> {
     props.work.afterAction();
     emit("go", "proposal");
   } catch (err) {
-    error.value = workErrorMessage(err, "보고서를 만들지 못했습니다");
+    error.value = workErrorMessage(err, "보고서를 만들지 못했어요");
     if (httpStatus(err) === 409) await reloadAll(["reading", "work"]);
   } finally {
     busy.value = false;

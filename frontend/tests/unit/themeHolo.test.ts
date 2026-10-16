@@ -162,6 +162,9 @@ describe.each(THEMES)("홀로그램 배경 — 가독성 [%s]", (theme: ThemeNam
       true,
     ],
     ["결과 큰 틀(--skx-frame-bg)", FRAME_FACE, ["--skx-ink", "--skx-gray-1"], false],
+    // 전역 오류 화면(SkxErrorPage) — 홀로그램 위 상태 블록 뒤의 유리 면(.skx-error-page .skx-state). 제목·설명·보조 버튼 글
+    ["전역 오류 화면 상태 카드(--skx-frame-bg)", FRAME_FACE, ["--skx-ink-strong", "--skx-gray-1"], false],
+    ["전역 오류 화면 보조 버튼(--skx-frost-bg-soft)", [...FRAME_FACE, "--skx-frost-bg-soft"], ["--skx-ink"], false],
     // DeepRead 채팅 패널: 머리 글은 패널 위에 바로, AI 말풍선은 옅은 면 + 짙은 글, 사용자 말풍선·입력창은 밑칠 + 막 + 글
     ["DeepRead 패널(--skx-chat-bg)", ["--skx-chat-bg"], ["--skx-ink-strong"], false],
     ["DeepRead AI 말풍선(--skx-chat-ai-bg)", ["--skx-chat-bg", "--skx-chat-ai-bg"], ["--skx-ink-on-light"], false],

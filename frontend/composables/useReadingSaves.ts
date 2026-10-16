@@ -1,7 +1,8 @@
 // frontend/composables/useReadingSaves.ts
 import { type Ref, readonly, ref } from "vue";
 import type { ReadingPut, WorkResource } from "~/types/work";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 
 export interface ReadingSavesDeps {
   put: (cnts: string, body: ReadingPut) => Promise<unknown>;
@@ -50,7 +51,7 @@ export function useReadingSaves(deps: ReadingSavesDeps) {
       current.saved = true;
       if (body.state !== undefined) current.kinds.add("work");
     } catch (err) {
-      deps.error.value = workErrorMessage(err, "참고문헌 목록을 고치지 못했습니다");
+      deps.error.value = workErrorMessage(err, "참고문헌 목록을 고치지 못했어요");
       if (httpStatus(err) === 409) current.kinds.add("work");
     }
     try {

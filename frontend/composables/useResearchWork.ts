@@ -34,7 +34,8 @@ import type {
   WorkState,
   WorkView,
 } from "~/types/work";
-import { httpStatus, researchErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { researchErrorMessage } from "~/utils/researchErrors";
 import { applyWorkEvent, initialWorkState, withResource, withWork } from "~/utils/workEvents";
 import { apiUrl, useApi } from "./useApi";
 import { useHistory } from "./useHistory";
@@ -213,7 +214,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       const status = httpStatus(e);
       // 404 = 이어가지 않은 딥리서치(D15 — 화면은 지금 그대로). 스트림을 열지 않는다
       if (status === 404 || status === 422) exists.value = false;
-      else setError("load", researchErrorMessage(e, "이어간 연구를 불러오지 못했습니다"));
+      else setError("load", researchErrorMessage(e, "이어간 연구를 불러오지 못했어요"));
     } finally {
       if (gen === generation) loading.value = false;
     }
@@ -233,7 +234,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       clearErrorOf(kind);
     } catch (e) {
       if (gen !== generation || token !== tokens[kind]) return;
-      setError(kind, researchErrorMessage(e, "최신 상태를 불러오지 못했습니다"));
+      setError(kind, researchErrorMessage(e, "최신 상태를 불러오지 못했어요"));
     }
   }
 

@@ -75,7 +75,8 @@ import TopicDeck from "~/components/work/TopicDeck.vue";
 import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
 import type { TopicCreate, TopicPatch, WorkResource, WorkStep } from "~/types/work";
 import { DEEP_RESEARCH } from "~/utils/brand";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 import { aiCardsStale, deckQueueLine, liveTopics } from "~/utils/topicDeck";
 import { latestGeneration } from "~/utils/workEvents";
 
@@ -160,12 +161,12 @@ function saveConcepts(concepts: string[]): void {
   void act(
     async () => props.work.setWork(await api.patchWork(props.jobId, { concepts })),
     [],
-    "키워드를 저장하지 못했습니다",
+    "키워드를 저장하지 못했어요",
   );
 }
 
 function retryConcepts(genId: number): void {
-  void act(() => api.retryGeneration(props.jobId, genId), ["work"], "키워드를 다시 부르지 못했습니다");
+  void act(() => api.retryGeneration(props.jobId, genId), ["work"], "키워드를 다시 부르지 못했어요");
 }
 
 // [이 키워드로 다시 만들기] — 고른 칩이 저장된 것과 다르면 먼저 저장(PATCH work)하고 그 키워드로 AI 카드를 다시 만든다
@@ -180,27 +181,27 @@ function regenerate(concepts: string[]): void {
       await api.regenerateTopics(props.jobId);
     },
     ["topics", "work"],
-    "카드를 다시 만들지 못했습니다",
+    "카드를 다시 만들지 못했어요",
   );
 }
 
 function retryCard(genId: number): void {
-  void act(() => api.retryGeneration(props.jobId, genId), ["topics", "work"], "카드를 다시 부르지 못했습니다");
+  void act(() => api.retryGeneration(props.jobId, genId), ["topics", "work"], "카드를 다시 부르지 못했어요");
 }
 
 function pick(tid: number): void {
-  void act(() => api.pickTopic(props.jobId, tid), ["topics", "work"], "주제를 고르지 못했습니다");
+  void act(() => api.pickTopic(props.jobId, tid), ["topics", "work"], "주제를 고르지 못했어요");
 }
 
 function edit(tid: number, body: TopicPatch): void {
-  void act(() => api.editTopic(props.jobId, tid, body), ["topics", "work"], "주제 카드를 고치지 못했습니다");
+  void act(() => api.editTopic(props.jobId, tid, body), ["topics", "work"], "주제 카드를 고치지 못했어요");
 }
 
 function more(): void {
-  void act(() => api.generateTopics(props.jobId), ["topics", "work"], "다른 방향 카드를 받지 못했습니다");
+  void act(() => api.generateTopics(props.jobId), ["topics", "work"], "다른 방향 카드를 받지 못했어요");
 }
 
 function write(body: TopicCreate): void {
-  void act(() => api.createTopic(props.jobId, body), ["topics", "work"], "주제 카드를 더하지 못했습니다");
+  void act(() => api.createTopic(props.jobId, body), ["topics", "work"], "주제 카드를 더하지 못했어요");
 }
 </script>

@@ -11,7 +11,8 @@ import type {
   WorkView,
 } from "~/types/work";
 import { sentenceFlags, spaceBeforeCites, splitMarkers, type MarkerPart, type SentenceFlag } from "~/utils/figureMarkers";
-import { httpStatus, versionConflict } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { versionConflict } from "~/utils/researchErrors";
 import { latestGeneration, openGeneration } from "~/utils/workEvents";
 import { FINAL_STEP_NAME } from "~/utils/workPhase";
 

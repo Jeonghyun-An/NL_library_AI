@@ -278,7 +278,8 @@ import {
 import { genQueueLine } from "~/utils/queueLine";
 import { MIN_READING_FOR_OUTLINE } from "~/utils/readingList";
 import type { ReportExportFormat } from "~/utils/reportDocument";
-import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { openGeneration } from "~/utils/workEvents";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
@@ -474,7 +475,7 @@ function makeOutline(): void {
     await api.createOutline(props.jobId);
     // 대기 순번은 이벤트를 기다리지 않고 바로 그린다. 계획서 행이 없던 연구는 이 요청이 만든다
     await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "보고서를 만들지 못했습니다");
+  }, "보고서를 만들지 못했어요");
 }
 
 function saveOutline(body: OutlinePut): void {
@@ -487,7 +488,7 @@ function saveOutline(body: OutlinePut): void {
     await api.putOutline(props.jobId, p.version, body);
     await props.work.reload("proposal");
     say(body.approve ? "목차를 승인했습니다 — 이제 절을 쓸 수 있습니다" : "목차를 저장했습니다");
-  }, "목차를 저장하지 못했습니다");
+  }, "목차를 저장하지 못했어요");
 }
 
 // 문서의 연구 배경(2절)·방법(6절) 칸 — 승인 상태를 지킨 채(fieldPut) PUT /outline. 보고서를 자동으로 쓰는 동안에는 절이
@@ -511,7 +512,7 @@ function saveField(field: "background" | "method", text: string): void {
       await props.work.reload("proposal");
       say(field === "background" ? "연구 배경을 저장했습니다" : "방법을 저장했습니다");
     },
-    field === "background" ? "연구 배경을 저장하지 못했습니다" : "방법을 저장하지 못했습니다",
+    field === "background" ? "연구 배경을 저장하지 못했어요" : "방법을 저장하지 못했어요",
   );
 }
 
@@ -520,7 +521,7 @@ function write(key: string): void {
     await api.generateSection(props.jobId, key);
     // 스트리밍 글의 칩을 그릴 근거 지도(drafts)는 열린 생성에서 만들어진다 — 생성을 넣은 뒤 계획서를 다시 읽어야 생긴다
     await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "이 절을 쓰기 시작하지 못했습니다");
+  }, "이 절을 쓰기 시작하지 못했어요");
 }
 
 function saveSection(key: string, body: SectionPut): void {
@@ -529,21 +530,21 @@ function saveSection(key: string, body: SectionPut): void {
   void act(async () => {
     await api.putSection(props.jobId, key, p.version, body);
     await props.work.reload("proposal");
-  }, "문단을 저장하지 못했습니다");
+  }, "문단을 저장하지 못했어요");
 }
 
 function regenerate(key: string, pid: string): void {
   void act(async () => {
     await api.regenerateParagraph(props.jobId, key, pid);
     await props.work.reload("work");
-  }, "문단을 다시 쓰지 못했습니다");
+  }, "문단을 다시 쓰지 못했어요");
 }
 
 function retry(genId: number): void {
   void act(async () => {
     await api.retryGeneration(props.jobId, genId);
     await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "다시 시도하지 못했습니다");
+  }, "다시 시도하지 못했어요");
 }
 
 // ── 내려받기(Word·PDF) ────────────────────────────────────
@@ -701,7 +702,7 @@ async function loadSources(pick: CitePick): Promise<void> {
     sourceCache.set(cacheKey, got);
     if (seq === sourcesSeq) sources.value = got;
   } catch (e) {
-    if (seq === sourcesSeq) sourcesError.value = workErrorMessage(e, "원문 대목을 불러오지 못했습니다");
+    if (seq === sourcesSeq) sourcesError.value = workErrorMessage(e, "원문 대목을 불러오지 못했어요");
   } finally {
     if (seq === sourcesSeq) sourcesLoading.value = false;
   }

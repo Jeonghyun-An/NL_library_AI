@@ -19,8 +19,8 @@ const READING: ReadingView = {
   items: [],
   excluded: [],
 };
-const LOAD_FAILED = "이어간 연구를 불러오지 못했습니다";
-const RELOAD_FAILED = "최신 상태를 불러오지 못했습니다";
+const LOAD_FAILED = "이어간 연구를 불러오지 못했어요";
+const RELOAD_FAILED = "최신 상태를 불러오지 못했어요";
 
 function work(over: Partial<WorkView> = {}): WorkView {
   return {

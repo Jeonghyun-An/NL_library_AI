@@ -28,7 +28,7 @@ export interface AutoReportHandle {
   resume: () => void;
 }
 
-const STOP_FALLBACK = "보고서를 이어 쓰지 못했습니다";
+const STOP_FALLBACK = "보고서를 이어 쓰지 못했어요";
 
 export function useAutoReport(deps: AutoReportDeps): AutoReportHandle {
   const running = ref(false);
