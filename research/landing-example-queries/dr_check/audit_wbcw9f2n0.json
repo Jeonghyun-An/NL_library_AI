@@ -1,0 +1,1753 @@
+{
+ "byJob": {
+  "cfdb3b77": {
+   "sentences": 88,
+   "S": 70,
+   "W": 3,
+   "M": 11,
+   "U_ok": 0,
+   "U_claim": 4,
+   "F": 0,
+   "refuted": 2,
+   "high": 1,
+   "medium": 25,
+   "low": 35
+  },
+  "0adb07a7": {
+   "sentences": 75,
+   "S": 55,
+   "W": 2,
+   "M": 18,
+   "U_ok": 0,
+   "U_claim": 0,
+   "F": 0,
+   "refuted": 2,
+   "high": 6,
+   "medium": 26,
+   "low": 24
+  }
+ },
+ "perPacket": [
+  {
+   "packet": "cfdb3b77_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "U_claim",
+      "reason": "No [E#] mark in the answer paragraph. The content closely follows E1's background passage (physical decline, role loss, death of spouse or peers), but the reader sees no citation."
+     },
+     {
+      "n": 2,
+      "verdict": "U_claim",
+      "reason": "No mark. The content (instability, lethargy, sadness, loss of self-esteem, sleep problems, lower quality of life) comes from E1 but is not cited."
+     },
+     {
+      "n": 3,
+      "verdict": "U_claim",
+      "reason": "No mark. The GDS-5 (Hoyl et al.) content comes from E5 but is not cited."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E1 cites this as prior literature (ref [3]) in its background. The sentence says '연구는 … 확인했다', which turns a cited background fact into E1's own finding."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "M",
+      "reason": "E2 reports two separate results: emotional support was the most effective type, and spouses and family were the most positive source. The sentence merges them into one result, '배우자와 가족으로부터 받는 정서적 지지가 가장 효과적', which E2 does not state. This is a mild distortion."
+     },
+     {
+      "n": 15,
+      "verdict": "U_claim",
+      "reason": "An uncited future-research recommendation. It is consistent with E8's statement that the mechanism by which social support affects depression is not well known, but it is not marked."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Off-heading content: the heading is '노인의 우울 개념 및 정의', but the section never defines depression. It gives causes, consequences and a screening tool, and the E7, E8 and E2 summaries (n9-14) are about social support reducing or buffering depression. That material belongs to another section of the overall question."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The whole answer paragraph (n1-3) has no [E#] marks, so every intro sentence will show as unsupported (dotted). It was in fact lifted from E1 and E5."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "Duplication: intro n1 and n2 are near-verbatim restatements of E1 summary n5 and n6, and intro n3 repeats E5 summary n7. A reader sees the same claims twice in one section."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "The E1 summary (n4-6) never says what E1 actually studied: health-promoting behavior and the moderating role of interpersonal relations and social support. It only repeats E1's literature-review background, and n4 presents a cited prior result as E1's own finding."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "The E8 summary (n11-12) restates background citations from E8's literature review (이영자·김태현 1999; Ozbay et al. 2007), not E8's own result on moderation by social support and resilience. n12 even says '…는 연구 결과도 있다', which reads like a literature note rather than a summary of this paper."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "Awkward and circular Korean: '스트레스에 대한 탄력성을 높여주는 회복탄력성과 연결되어 있다' defines resilience by resilience. The intended meaning is that social support is linked to resilience because it raises tolerance of stress."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "Two summaries (n4, n9) open with a bare '연구는' with no '이/본'. This reads abruptly and leaves it unclear which study is meant."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E7 summary covers only the paper's closing recommendation. It omits the paper's actual subject (depression trajectories and predictors among older cancer survivors, KLoSA panel), and the niche population sits oddly under a concept/definition heading."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E5 summary describes only the measurement instrument (GDS-5). It does not mention E5's topic (social support networks of rural older women), so the summary is about method only."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The E1 title in the evidence is missing a space ('관계에서대인관계와'). This is visible if the title is shown in the reference list."
+     },
+     {
+      "n": 15,
+      "severity": "low",
+      "issue": "The future-research line is generic ('다양한 사회적 지지 기제와 그 효과를 심층적으로 규명') and does not tie back to the heading about concept and definition."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "This intro sentence has no [E#] mark. It makes a substantive claim (physical decline, role loss, death of a spouse or peers, and so on) that closely matches E1's background passage, which E1 itself cites as [4]. The reader sees no citation."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No mark. The content (instability, lethargy, sadness, loss of self-esteem, sleep problems, much lower quality of life) matches E1's background ([5],[8]), but the sentence is an uncited substantive claim."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No mark. The claim that Hoyl et al.'s GDS-5 is used to screen for depression comes from E5's measurement section but is not cited."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E1, '연령이 높을수록, 소득이 낮을수록, 여성 노인에게 우울증상이 있는 비율이 높았다' is cited prior literature ([3]) in the introduction. The available chunks contain none of E1's own results. Writing '연구는 … 확인했다' turns a cited background fact into E1's own finding."
+     },
+     {
+      "n": 14,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 reports two separate results: 'The most effective social support was emotional support' (type) and 'social support was identified as the most positive factor from spouses and families' (source). The conclusion lists them side by side as 'emotional support and support from family and spouse'. E2 never says that emotional support from spouses and family in particular was the most effective. Merging the two creates a combined finding the paper does not state, which is a mild distortion."
+     },
+     {
+      "n": 15,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "This future-research line has no citation and makes a recommendation. It agrees with E8's statement that the mechanism by which social support affects depression is not well known and needs empirical study, but it is not marked."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "cfdb3b77_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S"
+     },
+     {
+      "n": 2,
+      "verdict": "W",
+      "reason": "Cited to E4, but E4 never defines structural or functional elements. The list of four functions (정서적·정보적·물질적·평가적 지지) comes from E5's limitations passage. The definition of the structural element (관계망의 규모·구성원·특성) appears in none of the evidence."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E4 says emotional support (일체감·공감대) protects against psychological isolation; '해소' is a slight stretch of '방지'."
+     },
+     {
+      "n": 4,
+      "verdict": "W",
+      "reason": "The first clause about the 통합적이고 예방적인 사회복지적 대안 and 기초 자료 comes word for word from E3, not from E7 or E5. It also distorts E3: in E3 the study provides basic data, not social support itself. The second clause, on cancer patients lacking a support system, matches E7."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Mostly faithful. '경제적 지지 외에' softens E4's point: E4 says economic support can cause feelings of uselessness, so it centers the concept on emotional support instead."
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "E4's evidence never says the study seeks measures for building social networks that provide emotional support. That recommendation is added."
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "The evidence holds only the axis labels of E11's moderation figure and a table where dependence predicts depression overall. No passage says the effect is stronger in the low-support group, so the specific direction is not stated in the evidence."
+     },
+     {
+      "n": 13,
+      "verdict": "M",
+      "reason": "Overclaims. E7's measured predictor was living alone (독거 여부). Social support appears only as a speculative interpretation in the discussion ('…영향을 주었을 것이라 사료된다'), not as an effect the study confirmed ('확인했다')."
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "S"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "The sentence is illogical and off-heading. It says '사회적 지지는 … 사회복지적 대안 마련에 기초 자료를 제공하며' (social support itself 'provides basic data'), then splices in an unrelated cancer-patient finding. Neither part addresses the concept or definition of social support."
+     },
+     {
+      "n": 14,
+      "severity": "medium",
+      "issue": "Visible typo: '사회적 지자원' should be '사회적 지지 자원'."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading asks for the concept and definition of social support. Only sentences 1–3 address it. The summaries mostly report effects of support on depression, and E7 (elderly cancer survivors' depression trajectories) and E11 (care by daughters-in-law versus daughters) are off-topic for a definition section."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "The E5 summary nearly repeats the paper title ('사회적 지지망과 사회적지지가 우울에 미치는 융합적인 영향'). Sentence 6 then restates the same point."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E3 summary largely restates the title ('우울에 대한 사회적 지지의 매개효과') without saying what mediates what."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "Sentence 8 repeats the '삶의 질 향상을 위한 사회복지적 대안 마련 기초 자료' content already in intro sentence 4."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The point that emotional support relieves psychological isolation appears three times, in sentences 3, 9 and 10."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "Subjectless fragment '…방안을 모색한다.' reads awkwardly as a standalone summary sentence."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "The E11 summary restates the title ('며느리와 딸로부터 수발받는 노인의 우울수준 및 우울관련요인')."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "E4 never splits social support into structural and functional elements. It defines social support only as emotional support (일체감·배려·격려·공감대). The list of four functions (정서적·정보적·물질적·평가적 지지) appears word for word in E5's limitations passage. The structural definition (규모·구성원·특성) appears in no evidence; E5 says only '사회적지지망의 구조 및 특성'. The main content therefore comes from a different paper."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "The first clause (삶의 질 향상을 위한 통합적이고 예방적인 차원의 사회복지적 대안 마련에 기초자료) copies E3, which is not cited. It is also distorted: in E3 the study provides the basic data, not social support itself. Neither E5 nor E7 says this. Only the second clause, on cancer patients lacking a support system, matches E7, and there it is speculative ('사료된다')."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4 argues in its background section that social participation can create members who give emotional support, and that social others can provide emotional support. It never says the study looks for ways to build such networks; the evidence frames it as a mediation analysis. The phrase about seeking measures for building networks is closer to E7's policy recommendation. As a summary of E4, this is an added aim."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "From E11 the evidence holds only the moderation figure's title and axis and legend labels, with no plotted values or text. Table 7 concerns instrumental support (도구적 지지), not emotional support, and shows only an overall effect of dependence. No passage says that higher dependence raises depression specifically in the low-emotional-support group. The direction the sentence reports is not in the evidence."
+     },
+     {
+      "n": 13,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7's confirmed predictor was living alone (독거 여부). It mentions the absence of a family and social support system only as speculation in the discussion ('영향을 주었을 것이라 사료된다'). Saying the study confirmed social support's effect on depression overstates the finding."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "cfdb3b77_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E6 says family support has a highly significant effect on depression (family-relationship satisfaction β=-.305***). Generalising that to social support overall is a modest summary."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "Both clauses appear in E6. The first is a prior-research statement that E6 quotes, not E6's own result."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Nearly a word-for-word copy of E8's background sentence, which E8 attributes to Lee & Kim (1999)."
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "E4 says economic support causes feelings of 'uselessness' and 'helplessness', and that emotional support guards against isolation and loneliness. The sentence says 'resolve' where E4 says 'prevent', which is minor."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Supported by E1's background passage, but the sentence is about demographic risk factors, not about social support."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Matches E2's publication counts and its conclusion that studies are still somewhat scarce."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "Both claims are in E8, but they are E8's citations of earlier work (Lee & Kim 1999; Ozbay et al. 2007), not E8's own findings."
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S",
+      "reason": "Content is supported, but the text starts with a truncated word ('적 지지' instead of '사회적 지지') copied from where the chunk was cut."
+     },
+     {
+      "n": 14,
+      "verdict": "S",
+      "reason": "Close to E4's reasoning. E4 actually defines its own concept of social support around emotional support; the sentence turns that into a general 'should be discussed', and 'in addition to economic support' slightly misstates the paper, which moves away from economic support."
+     },
+     {
+      "n": 15,
+      "verdict": "S"
+     },
+     {
+      "n": 16,
+      "verdict": "S",
+      "reason": "Supported by E2, but it repeats sentences 6 and 7."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 13,
+      "severity": "high",
+      "issue": "The E6 summary begins with a broken, truncated word: '선행연구 결과, 적 지지에 대한 만족도가…' ('사회적' was cut off at the chunk boundary). Judges will see garbled text that looks copy-pasted."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Heavy repetition. Intro sentences 2, 3 and 5 return almost word for word as summaries 12/13, 8 and 10. Summaries 6 and 7 are then repeated again in future line 16. About half the section says the same five things twice."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E2 summary is a systematic review of 30 studies, but it leaves out the review's main result: 28 of 30 studies found social support reduces depression, with emotional support and spouse/family support the most effective. It gives publication counts instead, so the most relevant paper's finding is missing from the section."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The numbers lack context. '2001년~2017년까지 25편, 2018년 이후 5편' does not say these are studies included in a systematic review. Read beside '연구가 증가하고 있으나', 25 then 5 looks like a decline."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "Sentence 5 and both E1 summary lines (10, 11) cover demographic risk factors and the effects of depression on quality of life. None of them addresses the heading, the relationship between depression and social support. E1's own passage has directly relevant content (buffering effect, satisfaction with support linked to lower depression) that was not used."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The summaries report each paper's literature review or background, not its own results. E8 cites Lee & Kim 1999 and Ozbay; E6 says '선행연구 결과'; E4 only gives its concept definition; E1 only gives background. E8's moderation and resilience findings, E4's mediation result and E1's moderation result never appear."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "Awkward run-on sentence: '…경험한다 [E6], 그리고 가족 안에서의…', a comma splice with the same citation repeated in one sentence."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "The opening general claim cites E6, a 2011 paper on differences in health levels that measures only family-relationship satisfaction. E2, the systematic review that directly answers the heading, is not cited in the intro at all."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "The '하지만' contrast leading into economic support is abrupt. It reads as if economic support were a finding against the depression-reducing effect, when E4 only explains why it defines social support around emotional support."
+     }
+    ]
+   },
+   "verify": {
+    "checks": []
+   }
+  },
+  {
+   "packet": "cfdb3b77_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E2: 28 of 30 studies show social support reduces depression (Korean is broken, see presentation)"
+     },
+     {
+      "n": 2,
+      "verdict": "W",
+      "reason": "The moderation effect of social support between stress and depression is E8's topic, not E2's. E2 says only that emotional support is most effective; the first clause belongs to the other paper."
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "The E8 evidence has only the study aim and prior-literature buffering claims; no results are shown. Stating 'moderation found, resilience mediates' as findings goes beyond the evidence."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Faithful but only restates the E6 title"
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "Both findings are prior studies cited in E6's discussion (one is 윤현숙 외 2009), presented as 'this study's results'. The source also says support from children (자녀), which the sentence changed to family (가족)."
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S",
+      "reason": "Faithful paraphrase of the literature definition E14 cites [12]. It is a definition, not a finding (see presentation)."
+     },
+     {
+      "n": 13,
+      "verdict": "S",
+      "reason": "Only restates the E15 title"
+     },
+     {
+      "n": 14,
+      "verdict": "M",
+      "reason": "The rising trend and the health/economic/loneliness/self-esteem factors are introduction background citing [5]. They are presented as '연구 결과'. The study's actual variables (늙어감에 대한 행복감, 생활만족도, 사회참여, ADL) and results are absent."
+     },
+     {
+      "n": 15,
+      "verdict": "M",
+      "reason": "E2's own recommendations are international literature, programs to strengthen emotional support, and a meta-analysis of effect sizes. Subdividing support types is something E2 says it already did, so attributing this line to E2 goes beyond the paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "The section's lead sentence is ungrammatical. '노인의 우울에 대한 사회적 지지는 감소시키는 영향을 가진다' has no object for 감소시키는 and should read like '사회적 지지는 노인의 우울을 감소시킨다'. It is the first line judges read."
+     },
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "The moderation-effect claim is cited to E2 while the E8 summary right below says the same thing. A reader who checks E2 will not find it, which is a visible misattribution."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The intro and summaries repeat each other almost word for word. n1-n3 restate the E2 summary n7-n8 (reduces depression, emotional support most effective, family and spouse), and n4 restates n10 (E6, family support)."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E6 summary presents prior studies cited in the paper (윤현숙 외 2009 and others) as the paper's own results. E6's actual model (family relationship satisfaction β=-.305) is not mentioned."
+     },
+     {
+      "n": 14,
+      "severity": "medium",
+      "issue": "The E15 summary gives introduction background as '연구 결과' and says nothing about social support, so it is off-topic for the heading ('사회적 지지의 영향'). The paper's own social-support/family-support line from its literature review is not used either."
+     },
+     {
+      "n": 12,
+      "severity": "medium",
+      "issue": "The second sentence of the E14 summary is a textbook definition of social support, not a finding. E14's summary has no result at all about intergenerational support exchange or self-efficacy and depression."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E6 summary's first sentence only restates the paper title ('건강 수준 차이의 요인을 분석하였다'). The paper's main focus (health-level differences) is also tangential to the heading."
+     },
+     {
+      "n": 13,
+      "severity": "low",
+      "issue": "The E15 summary's first sentence only restates the title, including the jargon '융합적 영향요인'."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "The E14 summary's first sentence is a near-copy of the title."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "The E8 'results' (moderation and mediation found) are not in the shown evidence. They read like the study aim turned into findings."
+     },
+     {
+      "n": 15,
+      "severity": "low",
+      "issue": "The future-research line is a generic 'subdivide by type' suggestion attributed to E2. It does not match E2's actual recommendations (meta-analysis for effect size, foreign literature, emotional-support programs)."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "The E2 evidence never mentions stress or a moderation effect between stress and depression. That framing comes from E8: it is E8's title and aim, and E8 cites prior work (이영자·김태현 1999) on a buffering effect. Only the clause saying emotional support is the most effective comes from E2."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The E8 chunks contain only the study aim (초록 목적) and prior-literature claims: a buffering effect reported by 이영자·김태현, and Ozbay saying social support raises resilience. No results are shown. Presenting 'moderation found, resilience mediates' as the study's 연구 결과 goes beyond the evidence."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "Both clauses paraphrase prior studies cited in E6's discussion. The first is an unnamed earlier study ('…만족도가 높은 노인일수록 낮은 수준의 우울을 경험한다고 하였고'). The second is 윤현숙 외(2009), and it was about support from children (자녀), which the sentence changed to family. E6's own measure is only 가족 관계 만족도 (β -.305***). It did not measure emotional, instrumental or financial support types, so presenting these as E6's 연구 결과 distorts the paper."
+     },
+     {
+      "n": 14,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The rising trend and the factors (건강약화, 경제력저하, 소외감, 고독감, 자아존중감 저하) come from E15's introduction, which cites [5] and says only that such depression is 가능성이 많다. They are not findings of the study. E15's own variables are 늙어감에 대한 행복감, 생활만족도, 사회참여 and 일상생활 활동장애, and no results for them appear in the evidence. Labeling this as 연구 결과 misattributes the source."
+     },
+     {
+      "n": 15,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 makes three recommendations: integrate international literature, develop programs that strengthen emotional support, and run a meta-analysis of effect sizes. E2 also says it already examined support subtypes in detail (하위 개념들을 파악하고 그 종류에 따라…자세하게 고찰). A recommendation to further subdivide support types is not in E2, so citing [E2] for it goes beyond the paper."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "cfdb3b77_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S"
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Faithful to the E8 chunk, but both claims are prior studies E8 cites in its background (이영자·김태현 1999; Ozbay 2007), not E8's own results"
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Matches E1's background passage on what depression does, but says nothing about social support"
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Supported overall. The first clause is a prior study E6 cites, worded as if it were E6's finding. The family-support effect is E6's own result (가족 관계 만족도 β=-.305***)"
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "Paraphrases E14's background definition of social support; it is not a finding"
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "Invents a cause. E14 says the support network shrinks and, separately, that generational relationships matter more because longer lifespans extend the parent-child relationship. The sentence says generational relationships matter more because the support network shrinks"
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "Close paraphrase of E8's stated need (citing Marroquin 2011). E8 used this to motivate its own 2016 study, though"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "The E2 summary repeats intro sentences 1-3 almost word for word (28 of 30 studies, emotional support most effective, spouse and family the most positive source). The reader gets the same three facts twice in a row."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E1 summary is about what depression does (unstable emotions, lower quality of life), not how social support affects depression, so it misses the heading. It also leaves out E1's own topic (interpersonal relations and social support moderating the link between depression and health-promotion behavior), even though the E1 chunk has relevant buffering content."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "E14 gets two summary sentences, and both come from its background: a textbook definition of social support and a remark about generational relationships. Neither covers the effect on depression or E14's own study (intergenerational support exchange and self-efficacy among older women, and their effect on depression). They read as filler under this heading."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The definition sentence is stilted: '사회적 지지는 … 제공하는 대인관계의 교환범위이다' is an awkward way to write a definition."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "The E8 summary describes prior work E8 cites in its literature review, not E8's own results (the moderating effect of social support and the moderated mediation through resilience)."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E6 summary's first clause is a prior study E6 cites, presented as E6's finding. E6's title (factors behind differences in health levels among older adults) is also broader than the heading."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The future-research line repeats the research need E8 gave in 2016 to motivate its own study. Presenting it as an open gap ignores that E8 went on to study it."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The intro paragraph rests entirely on E2. It does not draw on E1, E6 or E8, which also bear on the heading, so the section reads as one paper's abstract plus loosely attached background quotes."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The E1 title in the evidence list is missing a space ('관계에서대인관계'), which looks sloppy if the title is shown."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 9,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "E14 says both things in one sentence: '노년기에는 사회적 지원망이 일반적으로 축소되고, 평균수명의 연장으로 … 관계수명이 증가함에 따라 … 세대관계가 차지하는 비중이 높아지고 있다'. The shrinking network is joined to the rising weight of generational relationships, and the next lines say most older adults rely on family support. So the paper treats the shrinking network as one reason generational relationships take a larger share (비중) of an older person's life. The summary keeps that reason and leaves out the second one, longer lifespans. That is an omission and a modest summary, not an invented cause, and it does not distort the paper's point."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "cfdb3b77_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E6 reports family support significantly lowers depression and cites prior studies on social support satisfaction. The general claim fits E2 (28 of 30 studies) better, but E6 still supports it."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "E5's chunks contain only the study's purpose and title ('영향력을 융합적으로 분석하여'), with no results. The sentence turns that aim into a confirmed finding ('확인되었다')."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Both clauses appear in E6. The second is E6 citing a prior study."
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "E3's background says the support network encourages continuing treatment and helps maintain health. The point is about health, not depression."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Matches E2's inclusion criteria. It is method, not outcome."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Only restates E5's title."
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "The 33.1% figure and the female-over-male rate appear in E5's introduction, cited from 통계청. These are background statistics, not E5's own result."
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S",
+      "reason": "Roughly supported, but the relationship is inverted. In E6, the paper's own result supports the prior studies, not results presented 'through prior studies'."
+     },
+     {
+      "n": 13,
+      "verdict": "S",
+      "reason": "Only restates E17's title."
+     },
+     {
+      "n": 14,
+      "verdict": "M",
+      "reason": "E17's chunk says only that the paper set out to test whether crisis events increase the effect of depression on suicidal ideation ('검증하고자 하였다'). The sentence presents that hypothesis as the paper's claim, and the evidence has no result."
+     },
+     {
+      "n": 15,
+      "verdict": "S",
+      "reason": "Only restates E3's title."
+     },
+     {
+      "n": 16,
+      "verdict": "S",
+      "reason": "E3 attributes this to other studies ('연구들에서는 ... 보고 있다'). The summary credits the paper with 'emphasizing' it, which is acceptable as modest summarizing."
+     },
+     {
+      "n": 17,
+      "verdict": "M",
+      "reason": "E6's evidence contains no call for further research on types of social support. The recommendation is the model's own."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "E2, the systematic review and the strongest source, is presented only through its method: databases, inclusion criteria (n6, n7, n8). Its actual results are missing from the whole section: 28 of 30 studies found social support reduced depression; emotional support was most effective; support from spouse and family was the key source. This is a heading about '연구 성과', so a judge would notice."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "An answer-paragraph sentence reports search and inclusion criteria ('국내 데이터베이스 검색 결과 ... 연구들이 포함되었다') without naming the review. It reads like methods text pasted out of context and nearly duplicates summary n8."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Heavy repetition between the intro and the summaries: n2 and n9 (E5's 융합적 영향), n3 and n11 (가족 안에서의 지지 유의미), n5 and n14 (사회적 지지 as a protective factor), n6 and n8 (inclusion criteria), n1 and n12."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Several summary sentences only restate the paper title plus '분석하였다' or '검증하고자 하였다': n9 (E5), n13 (E17), n15 (E3). n11 also opens by recasting E6's title as a method ('건강 수준 차이의 요인 분석을 통해')."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "'융합적인 영향' is journal-title jargon and means nothing to a reader. It is also stated as a confirmed finding although no result is given."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "n4 and n16 cover health maintenance and social integration, not depression, so they are weakly tied to the heading. E3's chunk does say social support suppresses or prevents depression (우울증 억압효과), but that point was not used."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The 33.1% and female-over-male figures are national statistics (통계청) quoted in E5's background. They appear with no year or source and read as if E5 found them."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "Garbled logic: '선행연구를 통해 ... 뒷받침하는 결과를 제시하였다' inverts the relationship. E6's own result supports the prior studies."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "Subject and predicate do not match: '연구들은 ... 것으로 나타났다' (should read like '연구들에서 ... 나타났다'). The broad claim also cites E6, a paper about health-level differences, rather than E2."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "E6 ('노인 집단에서 나타나는 건강 수준 차이의 요인 분석') is only partly on-topic. Its depression-related content is one regression variable (가족 관계 만족도), yet it is cited three times, including the opening sentence and the future line."
+     },
+     {
+      "n": 17,
+      "severity": "low",
+      "issue": "The future-research line is generic and attributed to E6, which does not say this."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The sources date from 2009 to 2021 (only E2 is after 2017). Nothing recent appears, even though newer material is being indexed."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E5's chunks contain only the background, the study aim ('영향력을 융합적으로 분석하여 ... 기초자료를 제공하고자 시도되었다') and a closing call for multidisciplinary effort. There are no results. The title describes what was analysed and does not report a finding. '확인되었다' presents the aim as a confirmed result."
+     },
+     {
+      "n": 14,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "The social-support clause closely paraphrases E17: '보호요인이 존재할 수 있으며 사회적 지지가 그 대표적인 예이다'. The crisis-event clause matches the paper's theoretical framing, where depression is the vulnerability factor and the crisis event is the precipitating factor that increases its effect. The sentence keeps the hedge ('작용할 수 있음을 주장하였다') and does not claim a confirmed result such as '확인하였다'. It reports the paper's argued position, which is a modest summary rather than a distortion. Sentence #13 also states that the paper set out to test this ('검증하고자 하였다')."
+     },
+     {
+      "n": 17,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E6's only chunk is a regression table plus the discussion line that family support significantly affects older adults' depression. It mentions types of support (정서적·도구적·재정적) only when citing prior work. It never calls for further research on types of social support or their effects, so this recommendation goes beyond what the cited paper says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "0adb07a7_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E1은 Troper의 '다문화' 정의를 소개하고 아동의 다문화 언어환경을 말할 뿐, 언어 발달 개념을 '다문화가정의 정의와 관련하여' 이해한다는 틀은 E1에 없다. 근거 없이 짜 맞춘 연결 문장이다."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E15 근거는 이주여성의 한국어능력과 자녀 한국어능력의 상관을 '밝혀보고자 하였다'는 연구 목적뿐이고 결과가 없다. 그런데 문장은 '관련이 있다'고 확정된 발견처럼 말한다."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "E10 근거에는 후속 연구가 필요하다는 말이 없다. 오히려 이중언어가 국어능력·정서발달에 미치는 긍정적 효과를 이미 보고하고 있다. 연구 제언을 E10에 붙인 것은 근거를 넘는다."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "제목은 '언어 발달 개념 및 정의'인데 '언어 발달' 자체의 개념이나 정의는 끝내 나오지 않는다. 다문화가정 정의(2), 이중언어 유형(6), 통계(8), 상관 변인(4·9), 언어치료사 역할(10)만 나열된다. E1 두 번째 대목에 쓸 만한 내용(만 5세경 기본 언어발달 성취, 연령에 따른 차이 축소)이 있는데도 쓰지 않았다."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "요약 대부분이 각 논문의 연구 내용이나 결과가 아니라 서론 배경 문장을 옮긴 것이다. E1(5세 전후 집단 비교)은 Troper의 다문화 정의, E14(어휘발달지연아동의 담화 구문)는 초등학생 비율 통계, E15는 연구 목적, E10은 이중언어 유형 정의만 담았다. 심사위원이 '그 논문이 무엇을 밝혔나'를 알 수 없다."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "E3 요약은 연구의 어려움과 언어치료사가 관여해야 한다는 당위를 말한다. '개념 및 정의'라는 제목과 맞지 않고, 본문 단락에서 E3를 인용하지도 않는다. E3가 실제로 한 일(어머니·지원자 설문)도 빠졌다."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "E10은 '청소년'의 이중언어능력과 학교생활적응을 다룬 논문인데, 아동 언어 발달의 개념 절에서 정의 출처로 두 번 요약되고(6·7) 미래 연구(11)에도 인용된다. 논문 주제(자아존중감·자아탄력성 매개효과)는 요약에 전혀 드러나지 않는다."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "개념·정의 절의 본문이 갑자기 '이주여성 한국어능력과 관련이 있다'는 영향 요인 이야기로 넘어간다. 제목과 다른 질문에 답하는 것이고, 9번 요약과 내용이 겹친다."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "3번 본문 문장과 7번 요약이 같은 내용(어머니 모국어 노출로 이중언어 습득 환경)을 되풀이한다. 또 7번은 어머니들의 '우려'만 전하고 E10의 결론(이중언어는 권장될 필요가 있다, 긍정적 효과)은 빼서 논문의 입장이 거꾸로 읽힐 수 있다."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "E14는 다문화가정 아동 대부분이 이중언어보다 한국어 단일언어로 습득하는 경향이 있다고 한다. 그런데 이 절은 E10에 기대 이중언어 환경만 강조하고, 같은 파일 안의 상반된 근거를 언급하지 않는다."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "E1 요약은 Troper(1999)의 정의를 논문 자신의 정의처럼 '연구는 … 제시하며'라고 썼다. 원문의 세 요건(인구학적 다양성, 사회적 이념, 정부정책·프로그램)도 한 덩어리로 뭉개졌다. E1이 우리나라가 이 세 조건을 다 충족하지 않는다고 덧붙인 점도 빠졌다."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "3.43%는 통계청 2019 자료의 2018년 수치이고, 비교 기준인 2007년 0.32%가 빠져 '급증'이라는 맥락 없이 숫자만 남았다. 또 개념·정의 절에 넣기에는 어색한 통계다."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "첫 문장이 '…정의와 관련하여 이해될 수 있다'는 내용 없는 순환적 도입문이라 정작 개념을 설명하지 않는다."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "'이중언어 습득 과정과 언어 발달에 미치는 영향'은 무엇이 무엇에 미치는 영향인지 주어가 불분명한 어색한 문장이다."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "E1 starts with Troper's definition of 다문화 and the kinds of multicultural families in Korea, then says these children draw interest for their language development because of the multicultural environment they live in ('다문화가정 아동들이 언어발달에 관심 대상이 되는 것은 그들이 처한 다문화환경으로 인한 것'). It also says any discussion of their language development must first address the language environment. The sentence is a loose framing line that follows E1's own order, from definition to language development. It adds no new fact, so it counts as a modest summary rather than a distortion."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E15's evidence gives only the study's aim ('상관관계를 밝혀보고자 하였다'). It describes the mother's Korean ability only as something that 'may influence' the child's Korean ability ('영향을 미칠 수 있는'). No results are in the evidence. The sentence states the relationship as an established finding ('관련이 있다'), which goes beyond what E15 shows."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E10's chunk explains early bilingualism, the mothers' worries, and positive effects of bilingualism on cognition, Korean-language ability and emotional development. It never says that more in-depth research is needed on how bilingual acquisition affects language development. E10 is also about adolescents and school adjustment. Attaching this research recommendation to E10 goes beyond its evidence."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "0adb07a7_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E5 only reports its own two tests (기초학습기능검사, KISE-BAAT) and says nothing about the field using diverse methods. The variety of tools appears in E16's table, so the general claim goes beyond what E5 says."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "In E16, one professor and two doctoral students built an analysis framework from the literature and 김영태(2002) to analyze the diagnosis and assessment methods that other papers used. The sentence says they '활용하였다' (used) those methods, which wrongly makes E16 sound like a measurement study. It also starts with '연구에서는' without naming which study."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "E16's evidence calls diagnosis and assessment methods the SECOND research question and says an analysis framework was built for it. The sentence turns this into 'the research question was to build the framework', which misreads the research question and drops the first one (language development characteristics)."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "황상심(2009) appears only in E23's reference list. Nothing in the evidence says E23 analyzed the language development characteristics of multicultural children, let alone by drawing on 황상심(2009). The sentence was built from a bibliography entry, and E23 is about whether test tools are appropriate."
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "M",
+      "reason": "In the source, the KISE-BAAT reading and writing tests gave results that differed from EACH OTHER. The sentence drops the two subtests and adds a contrast with '~으나', so it reads as if KISE-BAAT contradicted the 기초학습기능검사 result. The source does not say that, and the actual finding is lost."
+     },
+     {
+      "n": 16,
+      "verdict": "S"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 11,
+      "severity": "high",
+      "issue": "The second sentence of E23's summary comes from a reference-list entry (황상심, 2009). It claims E23 analyzed language development characteristics, which the paper does not do. A judge who opens E23's evidence will find only a bibliography there. E23's whole summary (n10–11) has no findings: n10 just restates the title and the abstract's purpose."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E16 summary (n6–7) only says who built the analysis framework and what the research question was, taken from the validity and reliability passage. It leaves out what E16 actually found, which is exactly what this heading asks: the table of formal tools (REVT, PRES, PPVT, SELSI, K-BNT-C and others) and informal measures (TTR, NDW, curriculum-based assessment). As a result, the section on measurement methods never names a single standardized language test."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The intro largely copies the summaries: n2 and n3 match n14, n4 matches n6, and n5 matches n12 almost word for word. The reader sees the same procedures twice, and the intro never synthesizes across papers. For example, it never cites E19's main point that tools normed on monolingual children may not suit multicultural children."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "Intro sentences n4 and n5 describe procedures from different papers in the past tense with no named subject ('연구에서는…', '과정도 거쳤다'). The paragraph reads like one study's methods section rather than a survey of methods. n4 is also logically garbled: it says the authors built a framework and then 'used' the diagnosis methods."
+     },
+     {
+      "n": 12,
+      "severity": "medium",
+      "issue": "The E25 summary (n12–13) covers only the pilot study procedure and the pilot sample (20 children, 20 mothers). It never says how language was measured or that the paper models language, cognitive and socio-emotional development together with aggression. The paper's link to language measurement is left unclear, and the pilot sample size is a trivial detail presented without context."
+     },
+     {
+      "n": 15,
+      "severity": "medium",
+      "issue": "'KISE-BAAT 검사에서는 서로 다른 결과가 나타났다' is vague because '서로' has no referent once the 읽기/쓰기 subtests are dropped. The reader cannot tell what differed, or whether multicultural children did worse."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "Test names use ASCII angle brackets: <기초학습기능검사>, <읽기>, <쓰기>. The source evidence stores these as &lt;/&gt; entities. If the frontend renders these sentences as HTML, the bracketed names could be swallowed as unknown tags. Korean 〈〉 brackets would be safer."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "The opening sentence is a generic restatement of the heading ('다양한 방법과 기법이 활용된다'), and its citation goes to E5, which used only two tests."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "n7 adds almost nothing beyond n6, since both describe E16's analysis framework, so the E16 summary repeats itself."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E5 reports only its own two-round testing (기초학습기능검사, KISE-BAAT 읽기/쓰기). Neither E5 chunk says that the field uses diverse methods. The second chunk is about small samples in prior studies, not about methods. Citing E5 for a general claim about the field goes beyond what E5 says. The variety of tools appears in E16's table."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E16 says one professor and two doctoral students built an analysis framework from the literature and 김영태(2002). They then analyzed the diagnosis and assessment methods that other papers had used (표 Ⅳ-2). The sentence says the team '활용하였다' (used) those methods. That changes a literature review into a measurement study. The framework part is accurate, but the verb distorts what the paper did."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The source names diagnosis and assessment methods as the SECOND research question, and the experts built an analysis framework for it. Building the framework is a method step under the validity and reliability section, not the research question. The sentence presents 'building the framework' as the study's research question and drops the first question on language development characteristics (named in the title). That misreads the source."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "황상심(2009) appears only as a reference-list entry in E23. E23's abstract describes presenting problems and improvements for language development test tools used with multicultural learners. Nothing in the evidence says E23 analyzed the language development characteristics of multicultural children, or did so by drawing on 황상심(2009). The sentence was built from a bibliography line."
+     },
+     {
+      "n": 15,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "The sentence almost copies the source: 기초학습기능검사 showed no lower ability than general-family children, and 'KISE-BAAT의 <읽기>와 <쓰기> 검사에서는 서로 다른 결과가 나왔다' becomes 'KISE-BAAT 검사에서는 서로 다른 결과가 나타났다'. The previous summary sentence (n14) already names the KISE-BAAT 읽기 and 쓰기 subtests, so the reader has the context. The '~으나' contrast (a clear 'not lower' versus mixed KISE-BAAT results) fits the source's juxtaposition. Dropping the subtest names makes '서로' slightly ambiguous, but no finding is reversed or added, so this is a wording issue, not a distortion."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "0adb07a7_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E5 is a single study of grades 1-3, and it says the opposite about the field: most research on multicultural children's language covers preschool children aged 5 or under, and research on school-age children is very limited. The sentence turns the paper's subtitle into a claim about the whole field."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "The 135-to-493 counts are kindergarten enrollment figures for Gyeongbuk province, taken from the provincial education office's 2010 report and quoted as background in E7. They are not a finding of E7 or a trend in research. The sentence drops the region and the source and frames the counts as what 'research on language development characteristics' shows."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "The concern about language ability belongs to Jang Mi-young (2009), whom E5 cites. The list of language sub-components (receptive, expressive, phonology and so on) is E5's way of sorting earlier studies, not research E5 carries out. E5's own study was a reading and writing test (Basic Learning Skills Test) of 232 children."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "E7 only notes that mothers' Korean ability varies and directly affects their children. It does not call for in-depth study of that relationship; its stated need is large-scale research on language development characteristics. The recommendation goes beyond the paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "The opening answer sentence says research on this topic centres on grades 1-3. The cited paper, E5, says the reverse: most studies are of preschoolers and school-age research is scarce. The sentence also contradicts n3 and n4 in the same paragraph. An expert judge would spot this right away."
+     },
+     {
+      "n": 3,
+      "severity": "high",
+      "issue": "The numbers are out of context. '2007년 135명에서 2010년 493명' are kindergarten enrollment counts for one province, but the sentence reads as if research, or the number of study subjects, grew. The region and data source are missing, and 15-year-old figures are given in the present tense ('보여준다')."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section does not answer its heading, '연구 적용 분야' (application areas). The intro lists study populations, age groups and program-effect topics. It never mentions the application areas the evidence actually contains, such as screening-test development (E18) and the role of speech-language therapists in assessment and intervention (E3)."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Content is repeated between the intro and the summaries. n1 and n5 both give 'grades 1-3'. n2 and n6 are nearly word for word the same. n4 and n9 repeat the age groups and participant counts."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The future-research line is awkward and redundant Korean: '언어 발달에 미치는 어머니의 한국어 능력과 아동의 언어 발달 간의 관계' uses '언어 발달' twice and leaves '미치는' dangling."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E18 summary gives only the paper's aims (prevent language problems, aid social integration). It never says what the study is: a focus-group interview of mothers to develop an infant language screening test."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "Awkward repetition: '대상으로 하며 … 대상으로 한다'. It also describes the 197 children as having 'participated', when in E3 only the mothers and support workers responded, about those children."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "The summary is padded with the paper's subtitle ('초등학교 1, 2, 3학년을 대상으로'). '…에 해당하는 연구를 진행한다' is an unclear way to describe a literature classification."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The summary uses '현재 우리나라' from a 2010 paper, so a reader takes it as describing today."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Every summary opens the same way with '연구는', which reads as monotonous, templated text."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The sentence repeats E5's subtitle but states it as a general claim about the field. E5 says the opposite: most studies of multicultural children's language look at preschool children aged 5 or under, and studies of school-age children are very limited. E5 itself is one study of 232 children in grades 1-3."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7 has the 135/236/360/493 counts, but they are kindergarten enrollment numbers for Gyeongbuk, taken from the provincial education office's 2010 report and given as background. They are not about research on language development characteristics. The sentence drops the region and the source and presents the counts as a finding of that research."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The concern about language ability belongs to Jang Mi-young (2009), whom E5 cites. The list of sub-components (receptive, expressive, phonology and so on) is E5's way of sorting earlier studies. E5's own study was a reading and writing test (Basic Learning Skills Test) of 232 children in grades 1-3, so saying E5 carries out sub-component research is wrong. Only the grades 1-3 detail is supported."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7 only says that mothers' Korean ability varies and directly affects their children. The need E7 states is for large-scale research on preschool children's language development characteristics. It never calls for in-depth study of the mother-child language relationship, so this recommendation goes beyond the paper."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "0adb07a7_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "W",
+      "reason": "The first clause, '언어 발달 특성 및 진단·평가에 대한 문헌 고찰이 이루어졌으며', is E16's title and topic, but the sentence cites only E11. The '이는 …을 보여준다' link wrongly presents E16's review as the source of E11's topic-count finding. Only the second half (현황·실태 and 발달·구사 특성 studies were the most frequent) is supported by E11."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "W",
+      "reason": "E3 never mentions developing assessment tools. Its passage only says speech therapists should give language-cultural guidelines and that basic language-cultural surveys are lacking. The recommendation for assessment that reflects multicultural background comes from E16's abstract ('need of assessment based on multicultural environment'). '표준화된 평가 도구 개발' (developing a standardized assessment tool) appears in neither paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "The heading asks about research achievements and evaluation (연구 성과 및 평가), but the section reports almost no findings. The intro is mostly sample sizes, age ranges and research difficulties. The real findings in the evidence are left out: E16 found that language and reading ability is lower than in non-multicultural children, that mother-related variables have large effects, and that research spread from vocabulary to syntax, articulation, phonology and reading. A judge would see a section on language development that never says what was found about language development."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Three intro sentences are repeated almost word for word in the paper summaries below: n1/n7 (E11 topic counts), n2/n6 (E7's 765 children aged 2–6) and n3/n8 (E1's 47 children aged 2y11m–7). Half of this 10-sentence section is duplicated."
+     },
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "'연구 대상은 2~6세 다문화가정 아동 765명…평균 연령은 47.35개월이었다' starts abruptly without saying which study it means. It reads like a methods section pasted into the answer paragraph, and the mean age of 47.35 months and the boy/girl counts mean nothing without a result to go with them."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "The opening sentence awkwardly joins two different papers with '이는 … 보여준다', so it reads as though one literature review proved the findings of a different trend study."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "The E16 summary mostly restates the paper's title (언어발달 특성 / 진단·평가 / 문헌 고찰) and gives none of its conclusions. '국내 과학 논문' is a literal translation of 'domestic scientific treatises'; '국내 학술 논문' would be natural Korean."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E3 summary gives the paper's background rationale (a lack of basic surveys) instead of what the study did, which was a survey of mothers and developmental-support workers on children's language environment and level. '발달지원체계종사자들' is source jargon that has not been explained."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "The E7 summary describes only the sample (age and sex breakdown) and no language-development result. The paper title promises '언어발달 특성' (language development characteristics), but none are stated."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Every source except E11 (2019) dates from 2009–2012, so a section titled research achievements looks dated. Newer papers now being indexed may need to be retrieved here."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "The first clause, '언어 발달 특성 및 진단·평가에 대한 문헌 고찰', is the title and topic of E16. E11 is a trend and content analysis of 113 studies and says nothing about diagnosis or assessment. Only the second half matches E11: 현황·실태 and 발달·구사 특성 studies were the most frequent (57편, 50.4%). The '이는 …을 보여준다' link presents E16's review as the source of E11's finding, so the sentence mixes in content from a different paper under the E11 citation."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "E3's only passage says speech therapists should provide 언어문화적 가이드라인 and that 언어문화적 기초조사가 미흡. It never mentions assessment that reflects cultural background, or developing assessment tools. The recommendation for multicultural-environment-based assessment comes from E16's abstract ('need of assessment based on multicultural environment'). '표준화된 평가 도구 개발' appears in neither paper. The core recommendation is therefore E16's content under an E3 citation, with an added detail on top."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "0adb07a7_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E11은 자기 동향 분석의 한계(키워드 없는 논문은 분석에서 뺐고 학술대회 논문집 일부가 빠짐)를 적었다. 문장은 이를 '다문화가정 아동의 언어 관련 학술연구' 분야 전체의 한계처럼 써서 범위를 바꿨다."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "주제어 빈도만 분석했다는 것은 E11 자기 분석 방법의 한계다. n1의 주어(분야 전체의 학술연구)를 이어받아 분야 전체가 빈도 분석에만 의존하는 것처럼 일반화했다."
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "E7은 어머니의 한국어 능력이 다양하고 자녀에게 직접 영향을 준다고만 했다. 아동들이 언어 발달에 '어려움을 겪고 있다'는 결론은 근거에 없다."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "S"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "절의 첫 두 문장(n1·n2)이 동향 분석 논문 한 편(E11)의 자기 한계를 분야 전체의 한계처럼 쓴다. 그래서 '다문화가정 아동 언어 학술연구는 키워드 없는 논문이 분석에서 제외되어 자료가 제한적', '주제어 빈도 분석에만 의존'처럼 뜻이 통하지 않는 주장이 됐다. 분야를 아는 심사위원이라면 바로 알아챌 오류다."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "답변 단락이 아래 요약을 거의 그대로 되풀이한다. E11 내용이 n1·n2와 n5·n6, E16이 n3과 n13, E4가 n4·n14·n15로 세 번 나온다. 그래서 n4와 n14는 거의 같은 문장이고, 향후 과제 줄(n15)도 같은 내용을 '과제'로만 바꿔 말한다."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "E30(다문화가정 연구개관, 2009)은 다문화가정 연구 전반을 다룬다. 요약(n10·n11)도 그 개관 글이 스스로 밝힌 서술 방식의 약점일 뿐이라, 언어 발달 연구의 한계라는 절 제목과도 질문과도 거리가 멀다."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "E7 요약(n7~n9)은 배경 설명과 통계여서 '연구 한계 및 과제'라는 절 제목에 답하지 않는다. 연구 한계와 관련된 대목(소수 대상 연구만 있고 대규모 연구는 미비)은 근거에 있는데도 요약이 쓰지 않았다."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "숫자에 맥락이 빠졌다. '유치원생의 경우 2007년부터 2010년까지 현저히 증가'에는 무엇이 늘었는지(다문화가정 유치원생 수)와 출처 범위(경상북도 교육청 보고)가 없다. 앞 문장의 '현재 우리나라'와 이어져 전국 추세로 읽힌다."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "2010년 논문의 '현재'를 그대로 썼다. n7 '현재 우리나라 다문화가정 아동들은…'과 n8의 현재형 '증가하는 추세이며 … 지원이 이루어지고 있다'가 2007~2010년 상황을 지금 이야기처럼 보이게 한다. 근거 다섯 편 중 넷이 2009~2012년 자료여서 '한계 및 과제' 절이 오래된 논의로 채워졌다."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "n3은 주어도 대상도 없는 명사 나열('정보 활용 및 … 관련 내용 포함이 필요하다')이라 무엇을 위한 평가기준인지 알 수 없다. 내용도 교사 교육에 대한 실천 제언이어서 연구의 한계·과제와는 어긋난다."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "'연구 주제가 다양해지고 지원 방향도 다각화되어야 한다'는 연구 주제도 다양해져야 한다는 당위로 읽힐 수 있다. 원문은 연구 주제가 다양해지고 있으니 지원도 다각화해야 한다는 뜻이다."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "요약 문장이 n6·n10처럼 '연구는 …'으로 시작해 어느 연구인지 지시가 어색하다(내부 요약 말투)."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11 chunk 2 states this as its own limitation ('본 연구는 ... 키워드를 기재하지 않은 논문은 분석에서 제외하였다'; some conference proceedings were left out). The sentence's subject is the field ('다문화가정 아동의 언어 관련 학술연구'), which is the E11 title without '동향 및 내용 분석', so the one study's data limitation reads as a limitation of the whole field. The facts are right but the scope is wrong."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11 says '본 연구는 주제어의 빈도만 분석하여' the research trend was identified, so topic links and networks were not grasped. That is the meta-analysis's own method limitation. The sentence carries over n1's field-level subject and says research in the area relies only on keyword-frequency analysis. That is a misattribution of scope, and as a claim about the field it is not supported."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7 says only that the mothers' Korean ability varies widely and directly affects their children, and that policy centers on language development with interventions under way. It never says the children are struggling with language development, and it never says the mothers' Korean ability causes such struggles. The sentence adds a causal finding of deficit that the evidence does not contain."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "0adb07a7_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "'최근' 경향이라 했지만 E11의 이 내용은 권희연 등(2010)이 2004년부터 나온 32편을 분석한 결과를 옮긴 것이다. E11 자신의 2010~2018년 113편 분석에서는 실태·현황 연구가 50.4%로 가장 많았다. 오래된 결과를 최신 동향으로 바꿔 말했다."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "E18 본문과 맞다. 다만 E18은 이를 Lee et al.(2008)·Oh et al.(2009)의 선행연구로 인용한다."
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "E9 본문에 있다. 다만 E9는 이를 김화수·이은경(2010)의 결과로 인용하며, 765명 표본으로 보아 이 섹션의 E7과 같은 연구다. 바로 앞 문장(E7 표본)과 결과가 다른 논문으로 갈라졌다."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "근거에서는 권희연 등(2010)이 보고한 내용이다. 주어가 빠져 E11 자신의 결과처럼 읽힐 수 있다."
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "E18 요약인데 E18이 서론에서 인용한 선행연구(Lee et al. 2008, Oh et al. 2009)의 결과를 E18의 결과처럼 '나타났다'고 썼다. E18 자신의 연구(다문화가정 어머니 포커스 그룹 인터뷰)는 빠졌다."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "E18 배경의 행정안전부 통계다. 원문은 '가구원' 963,801명인데 '다문화가구는 963,801명'으로 적었고, 논문의 결과도 아니다."
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "E9가 선행연구로 인용한 김화수·이은경(2010)의 결과(사실상 이 섹션의 E7, 765명)를 E9 자신의 결과처럼 요약했다."
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "E9가 인용한 최현욱·황보명(2009)이 밝힌 변인을 E9의 결과처럼 요약했다. E9 자신의 연구(어머니의 언어 사용 환경과 자녀 언어능력)는 나오지 않는다."
+     },
+     {
+      "n": 13,
+      "verdict": "M",
+      "reason": "E9는 한 선행연구(김화수·이은경 2010)에 대해서만 영역별 분석이 없어 아쉽다고 했다. 이를 다문화가정 아동 언어 발달 연구 전반이 부족하다는 말과 '세분화된 연구 필요'라는 제언으로 넓혔다. 음운·어휘·형태론 등 영역별 분석이 많았다는 n1·n5와도 어긋난다."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "제목은 '최신 동향'인데 이 섹션은 동향에 답하지 않는다. 근거 논문은 2010~2019년이다. 답 문단은 2010년 리뷰 결과(n1), 언어 수행 결과(n2), 한 연구의 표본 설명(n3), 발달 추이(n4)로 이루어져 있다. 정작 E11이 제시한 2010~2018년 113편의 유형별 동향(실태·현황 50.4%, 프로그램 효과 15.0%, 관련 변인 15.0%, 프로그램 개발 13.3%, 동향 분석 7.1%)은 빠졌다."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "답 문단 한가운데에 지칭 대상 없이 '연구 대상은 2~6세 다문화가정 아동 765명으로…'라는 한 연구의 방법 설명이 들어갔다. 동향에 대한 답이 아니고 문맥상 어색하다."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "답 문단 네 문장이 모두 아래 요약을 거의 그대로 반복한다: n1≈n5, n2≈n7(거의 같은 문장), n3≈n9·n10, n4≈n11."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "같은 연구가 둘로 갈라졌다. E7(김화수·이은경 2010, 765명)의 요약에는 표본 설명만 있고(n9·n10), 그 연구의 핵심 결과는 E9의 요약과 인용으로 옮겨 가 있다(n4·n11)."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "E11·E9·E18 요약이 각 논문 자체가 아니라 논문이 인용한 선행연구나 배경만 담는다. E11은 권희연 등(2010), E9는 김화수·이은경(2010)과 최현욱·황보명(2009), E18은 Lee et al./Oh et al.과 행정안전부 통계다. 각 논문의 실제 연구(E11의 113편 분석, E9의 어머니 언어 사용 환경 조사, E18의 어머니 포커스 그룹 인터뷰)는 요약에 나오지 않는다."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "언어 발달과 관계없는 2017년 다문화가구 통계가 맥락 없이 요약에 들어갔다. '다문화가구는 963,801명'은 가구를 명으로 센 어색한 표현이다(원문은 가구원 수)."
+     },
+     {
+      "n": 13,
+      "severity": "medium",
+      "issue": "향후 과제 줄('언어 영역별 분석 부족')이 같은 섹션의 n1·n5(음운·어휘·형태론 분석이 많음), n2·n7(음운·의미·문법·읽기 영역별 결과)과 서로 어긋난다."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "n10이 n9의 '2~6세'를 다시 말한다. 같은 요약 안의 반복이다."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "'특히 …를 보고하였다'에 주어가 없어 E11의 결과인지 권희연 등(2010)의 결과인지 알 수 없다."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11 reports the phonology, vocabulary and morphology focus only as the finding of Kwon et al. (2010), which covered 32 studies starting in 2004. E11's own analysis of 113 papers from 2010 to 2018 finds that studies of awareness, conditions and current status were the largest group (57 papers, 50.4%). Calling the older pattern the 'recent' trend misstates the cited paper."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The wording matches E18's chunk, but E18 is summarizing prior studies there (Lee et al., 2008; Oh, Kim, & Kim, 2009). This summary of E18 drops that attribution and says the result '나타났다', so it reads as E18's own finding. E18's own study, a focus group interview of multicultural-family mothers, is not mentioned. Sentence #5 shows the right approach: it keeps the attribution with '권희연 등의 연구에 따르면'."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E9 this result belongs to the prior study it cites, Kim & Lee (2010), which studied 765 children and is E7 in this file. The E9 summary presents it as E9's own result. W does not apply, because E7's own chunks here contain only the description of the participants and not this finding. The mistake is presenting a cited study's result as the paper's own, so M."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E9 states that the variables (the mother's Korean ability, parents' education level, monthly family income, the child's age and family type) were identified by Choi & Hwangbo (2009). The E9 summary says '확인되었다' with no attribution, so the earlier study's result reads as E9's own. E9's actual focus, the mother's language-use environment, does not appear."
+     },
+     {
+      "n": 13,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E9 regrets the lack of a domain-by-domain analysis for one prior study only, Kim & Lee (2010). The sentence turns this into a shortage across all research on the topic and adds a recommendation for more fine-grained studies. It also conflicts with E11 (sentences #1 and #5), which says many studies analyzed phonology, vocabulary and morphology. This overgeneralizes the cited paper and goes beyond what it says."
+     }
+    ]
+   }
+  }
+ ]
+}

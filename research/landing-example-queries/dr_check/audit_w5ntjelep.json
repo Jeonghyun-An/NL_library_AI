@@ -1,0 +1,2551 @@
+{
+ "byJob": {
+  "5ec95258": {
+   "sentences": 83,
+   "S": 67,
+   "W": 1,
+   "M": 15,
+   "U_ok": 0,
+   "U_claim": 0,
+   "F": 0,
+   "refuted": 3,
+   "high": 3,
+   "medium": 29,
+   "low": 22
+  },
+  "d2e5344e": {
+   "sentences": 72,
+   "S": 53,
+   "W": 2,
+   "M": 16,
+   "U_ok": 1,
+   "U_claim": 0,
+   "F": 0,
+   "refuted": 1,
+   "high": 6,
+   "medium": 28,
+   "low": 21
+  },
+  "051bf3cf": {
+   "sentences": 75,
+   "S": 49,
+   "W": 2,
+   "M": 23,
+   "U_ok": 1,
+   "U_claim": 0,
+   "F": 0,
+   "refuted": 0,
+   "high": 5,
+   "medium": 22,
+   "low": 36
+  }
+ },
+ "perPacket": [
+  {
+   "packet": "5ec95258_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E2: MSPSS는 가족·친구·의미 있는 주위 사람의 지지에 대한 주관적 인지를 측정한다. 다만 도구가 재는 범위를 사회적 지지 개념 자체의 정의처럼 일반화했다."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E10은 이 경로를 가설로 제시한다('~할 수 있다', '매개경로의 성립 가능성을 지지'). 심리적 안정감과 우울 방지의 연결은 E10이 인용한 선행연구[8][11]의 내용이다. 그런데 문장은 이를 단정된 사실처럼 써서 E10의 발견으로 돌렸다."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "MSPSS의 세 하위척도는 근거와 맞는다. 다만 E2는 기존 도구(Zimet 외 1988)를 사용했을 뿐인데 '측정하는 방법을 제시한다'는 그 방법을 E2가 제안한 것처럼 읽힌다."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "'주장한다'는 E10의 이론적 논증과 대체로 맞다. 다만 사회적 지지를 주는 것은 노후준비가 아니라 사회참여 활동에서 생긴 구성원이라 경로가 조금 압축됐다."
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "E2에는 측정 도구의 신뢰도·타당도를 높여야 한다는 말이 없다. 오히려 Cronbach's α가 .85/.89/.91로 높게 보고되어, 이 제언은 근거와 맞지 않는 권고다."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "제목은 '사회적 지지 개념 및 측정 방법'인데, 이 문장은 과거 노후준비→사회참여→사회적 지지→우울 방지 경로를 말한다. 제목이 아니라 전체 질문(우울에 미치는 영향)에 답하는 내용이라 이 절에서 벗어난다. 요약 7(E10)도 같은 이유로 이 절과 맞지 않는다."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "요약 5·6·7이 도입 문단 1~4를 거의 그대로 되풀이한다(MSPSS 세 하위척도 / 구조·기능영역과 개수·접촉빈도 / 노후준비 경로). 요약의 앞부분도 논문 제목을 다시 쓴 것에 가깝다."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "'사회적 관계망'이 '사회적 지지'와 어떤 관계인지 설명 없이 나온다. 또 구조영역만 정의하고, 사회적 지지에 가장 가까운 기능영역(지원의 정도·만족도, 위기 시 자원 가용성)은 근거에 있는데도 설명하지 않는다."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "'특별 지지'가 무엇인지(의사·간호사·종교인 등 전문가) 설명이 없다. 문장 1의 '의미 있는 주변 사람'과 같은 것인지도 연결되지 않아 독자가 헷갈린다. MSPSS 약어도 풀어 쓰지 않았고, 'MSPSS 도구'는 'Scale'과 '도구'가 겹치는 중복 표현이다."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "'주변 사람으로부터 받는 주관적인 인지'는 어색하다. 인지를 '받는' 것이 아니므로 '받는 지지에 대한 주관적 인지'로 써야 한다. 또 측정 방법이 MSPSS 하나뿐이라 제목의 '측정 방법'에 비해 답이 얇다."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "E2 요약에서 분석 변수를 '영적안녕, 생활만족도 및 우울'로만 적어 제목에 있는 사회적 지지가 빠졌다. '분석하여, …활용하여'처럼 '-하여'가 이어져 문장이 늘어진다. 요약 6의 '구분하는 방법을 제시한다'도 선행연구의 구분을 따른 것일 뿐인데, 그 논문이 새로 제안한 것처럼 표현했다."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "향후 과제 줄이 근거 논문에서 이미 신뢰도가 높게 나온 도구(α=.91)의 신뢰도·타당도를 높이자고 해서, 어느 절에나 붙을 법한 상투적인 문장으로 보인다."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "Every link in the chain appears in E10's chunk: 노후준비, then 사회참여, then 지지 구성원 생성, then 안정감·의욕, then 우울 방지. So this is not a wrong-paper or invented-fact case, and attributing the [8][11] part to E10 is acceptable because E10 states it. However, E10 hedges the first half ('사회참여 활동을 시도할 수 있다', '구성원들을 생성하게 할 수 있다'). It calls the whole pathway only a plausible hypothesis ('매개경로의 성립 가능성을 지지한다'), and the chunks contain no empirical result. The sentence states the full causal chain as established fact ('우울을 방지하는 역할을 한다'). That overstates E10's claim. It is a mild M on certainty, not on content."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2's chunks only report the MSPSS structure and its reliability (α .85 at development, .89 in Shin & Lee, .91 in this study). E2 never says that reliability or validity needs improving, and it raises no limitation or future work about the measure. The high α values point the other way. The line cites E2 for a recommendation that E2 does not make."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "5ec95258_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "Borderline. E15 describes only one instrument, the GDS-5 shortened from the 15-item GDS. It never says that 'various tools' are used, so the evidence does not back the claim that the sentence cites to E15."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E13 reports this only as earlier studies it cites (윤현숙 외 2009), not as its own result. The source also says '자녀로부터 받는' support, and the sentence widens this to '가족으로부터'."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "M",
+      "reason": "E15 only reports that it used a translated GDS-5. It never calls for further research on cultural fit, reliability or validity, so this recommendation goes beyond the cited paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading asks about both the concept and the measurement of depression in older adults, but no sentence defines or explains what depression in older adults is. Only the measurement half of the heading gets an answer."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Much of the section is off-topic for a heading about depression measurement. The E11 summary (n5-6), the E14 summary (n7-8) and the E13 content (n4, n11-12) describe how social support affects depression, not how depression is defined or measured. E11's evidence even says it reviewed the measurement tools for depression, but the summary ignores that."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "n3, n13 and n14 describe MSPSS, which measures social support, not depression, under a heading about measuring depression. E2's own depression instrument (CES-D, Korean version by Shin et al. 1991) is in the evidence but is never mentioned."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "The intro jumps with '또한' from describing measurement tools to a finding about social support and depression. This answers the overall question, not this heading."
+     },
+     {
+      "n": 12,
+      "severity": "medium",
+      "issue": "E13 content is repeated three times: support satisfaction leading to lower depression, and family support affecting depression, appear in n4, n11 and n12."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The GDS-5 rationale (shortened because of memory decline and poor concentration) appears in both n2 and n10. MSPSS appears in both n3 and n13-14. The intro and the summaries largely duplicate each other."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "'본 연구에서는 ... 사용하였다' copies the paper's own voice. In a report, a reader may take '본 연구' to mean this research report rather than the E15 paper."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "'기초 자료를 제공하고자 한다' copies the paper's statement of purpose in its own voice. The E14 summary (n7-8) gives only aims and design, with no findings."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "'노인의 우울 개념 측정에는' is awkward Korean, since one does not 'measure a concept'. The opening sentence is also too generic to say anything."
+     },
+     {
+      "n": 14,
+      "severity": "low",
+      "issue": "The item numbers for each subscale (문항번호 3, 4, 8, 11, and so on) are too detailed for a research report, and they belong to a social support scale that is off-topic here."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "E15 calls the 15-item GDS '가장 보편적으로 사용되는 도구'. Calling one tool the most common implies that other tools exist, and E15 itself names two versions, GDS-15 and the shortened GDS-5. So 'various tools are used' is a modest summary of E15, not an added finding. It is a generic opening line that only restates the heading's topic."
+     },
+     {
+      "n": 4,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "Both clauses appear in E13's own text. E13 reports that seniors more satisfied with social support show lower depression, and that emotional, instrumental and financial support from children affects depression (윤현숙 외 2009). E13's own result is that support within the family has a highly significant effect on depression: family-relationship satisfaction, beta -.305***. The sentence says '나타났다' and does not claim these as E13's own new data. Widening children to family is a modest generalization, since children are family, and E13's own finding is about family support. Nothing is reversed or invented. At most this is a loose secondary citation, not a distortion."
+     },
+     {
+      "n": 15,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E15 only says it used a translated (번안) GDS-5, shortened from GDS-15, and describes how it is scored. It says nothing about cultural fit, reliability or validity of depression tools needing more study. The recommendation goes beyond what E15 says, yet the sentence cites E15 for it."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "5ec95258_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E11 gives 25 studies in 2001-2017 and 5 since 2018, and says research is increasing. The paraphrase holds, but the sentence leaves out E11's conclusion that research is still insufficient."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E12 supports both clauses: the causes of depression, and that women have a higher rate. The explicit comparison with men is worded closer to E15 (38.1% vs 26.1%), but E12's claim covers it."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Supported, but this is E16's background motivation, which it cites from Marroquin 2011. It is not E16's own finding."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "Only E16's intro and purpose are in the evidence, and they support that the size, contact frequency and satisfaction of the support network matter for depression. The sentence is essentially the title restated as a finding."
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "E15 quotes these as national statistics (33.1%; women 38.1% vs men 26.1%). They are background figures, not E15's result."
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 5,
+      "severity": "high",
+      "issue": "The numbers look like a contradiction. The summary reads 2001-2017 25 papers, then 5 since 2018, then 'research is increasing'. It never says the periods are 17 years vs about 3 years, so a reader sees 25 drop to 5 described as an increase. Sentence 1 repeats this as '2018년 이후 연구가 더욱 증가하는 추세'."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section misses the most direct answer in its own evidence. E11 reports that 28 of 30 studies found social support reduces depression, that emotional support works best, and that support from spouse and family matters most. None of this appears. Instead the intro opens with publication counts (sentence 1), which answers how much research exists, not what the relationship is."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Content repeats across intro and summaries. Sentences 2 and 6 give the same buffering effect almost word for word. Sentences 4 and 12 give the same retirement claim almost word for word. Sentences 1 and 5 give the same publication trend. 'Women have higher depression rates' appears three times (sentences 3, 9 and 10)."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Several summaries are off the heading. Sentence 9 is prevalence statistics, 10 is demographic risk factors, 11 is consequences of depression and 13 is satisfaction with life after retirement. None of them is about the link between social support and depression."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E12, E15, E16 and E17 summaries are built from each paper's background or literature review, not its own results. E12's two lines never mention social support or its moderating effect, although that is the paper's topic. The E16 summary leaves out resilience (회복탄력성), which is in its title. The E17 summary drops that the study is about male retirees and leaves out its mediators (social contact, use of electronic devices)."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "This summary only restates E15's title as a finding. '융합적인 영향을 미친다' is vague jargon carried over from the title and tells the reader nothing concrete."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The figure 33.1% is given with no year or source. The paper cites it from Statistics Korea (통계청) data, but the summary reads as if it were E15's own finding."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "'실제로' (meaning 'in fact') comes straight after a sentence about publication counts, so the transition does not follow. The wording is copied from E16's source text."
+     },
+     {
+      "n": 14,
+      "severity": "low",
+      "issue": "The future-research line repeats E11's generic recommendation (longitudinal and qualitative studies). It is not drawn from gaps across the papers in this section."
+     }
+    ]
+   },
+   "verify": {
+    "checks": []
+   }
+  },
+  {
+   "packet": "5ec95258_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S"
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E15 evidence is only the introduction and study aim; it reports no result, so '확인되었다' claims a finding the evidence does not show. The background point that a small support network raises depression risk is cited from prior work [7]."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "Labelled '연구 결과', but both points are literature-review citations inside E16 (Wang et al. 2014; Saito et al. 2005), not E16's own findings."
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "Labelled '연구 결과', but the poverty, isolation and loneliness list and the female-versus-male depression rates are introduction background cited from [2] and Statistics Korea [3], not E15's findings."
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "W",
+      "reason": "'사회적 지지에 대한 만족도가 높은 노인일수록 낮은 수준의 우울을 경험' is wording from the E13 chunk (itself a prior-study citation). E2's evidence never states it; E2 only speculates that support networks lower depression."
+     },
+     {
+      "n": 15,
+      "verdict": "S"
+     },
+     {
+      "n": 16,
+      "verdict": "M",
+      "reason": "Reverses attribution. In E13 the family-support effect on depression (가족관계 만족도 β=-.305) is E13's own result that supports prior studies. The sentence assigns that finding to '선행연구' and calls E13 merely consistent with it."
+     },
+     {
+      "n": 17,
+      "verdict": "M",
+      "reason": "E11's proposed follow-ups are to include foreign studies, build emotional-support programmes and run a meta-analysis of effect sizes. It never calls for identifying mechanisms. The unknown mechanism (기제) is raised in E16, not E11."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The intro (n1-n3) and the E11 summary (n5-n7) say nearly the same thing: social support reduces depression, emotional support is most effective, and spouse and family matter. n2 and n6 are almost identical sentences."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "n9, n11 and n16 begin with '연구 결과'/'선행연구 결과' but summarise a paper's literature review or introduction background, not its findings. A judge comparing them with the source would see background statistics presented as results."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "'우울에 긍정적인 영향을 미치는' (n4, and the same idea in n12) is ambiguous Korean. Read literally, a positive effect on depression means more depression; '우울을 낮추는' would be clearer."
+     },
+     {
+      "n": 16,
+      "severity": "medium",
+      "issue": "'이는 본 연구 결과와 일치한다' copies the source paper's self-reference. In a multi-paper report, '본 연구' is ambiguous: it could mean the report itself or E13."
+     },
+     {
+      "n": 15,
+      "severity": "medium",
+      "issue": "The E13 summary's first sentence only restates the title (a study of health-level differences among older adults). E13's topic is health disparities, only marginally related to the heading, and the summary never states E13's own social-support finding."
+     },
+     {
+      "n": 13,
+      "severity": "low",
+      "issue": "The E2 summary's first sentence only restates the paper title."
+     },
+     {
+      "n": 14,
+      "severity": "low",
+      "issue": "n14 (E2 summary) reuses the support-satisfaction finding that appears in E13's text, so E2's and E13's summaries overlap and E2's own point is lost."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "n12 repeats n4: the E15 support network has a positive role on depression."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "n11 (economic poverty, loneliness, gender difference in depression rates) does not address the heading about the positive aspect of social support."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E15's evidence covers only the introduction and the study aim. The aim calls support-network size, contact frequency and satisfaction important factors, and [7] links a small network to higher depression risk, but no E15 result appears. '확인되었다' therefore claims a finding the evidence does not show."
+     },
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "Both points do appear in E16's chunk, but only as literature-review citations: (Wang, Cai, Qian, & Peng, 2014) and (Saito, Sagawa, & Kanagawa, 2005). E16 states its own aim (whether resilience and support buffer stress→depression) but reports no result. Labelling these citations '연구 결과' presents them as E16's findings."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The poverty, isolation, depression and loneliness list is background cited to [2]. The female 38.1% vs male 26.1% depression rates come from Statistics Korea [3] in E15's introduction. Neither is E15's result, so '연구 결과' misattributes them."
+     },
+     {
+      "n": 14,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "'…에 대한 만족도가 높은 노인일수록 낮은 수준의 우울을 경험' appears verbatim in E13's chunk, where it is a prior-study citation. E2's evidence only speculates that building support networks lowers depression ('…것으로 생각된다') and reports no support-satisfaction vs depression result. The distinctive content comes from E13."
+     },
+     {
+      "n": 16,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "E13 cites prior work, including 윤현숙 외(2009): children's (family) emotional, instrumental and financial support affects depression. E13 says its own result supports this, with a significant family-support effect (가족관계 만족도 β=-.305). The sentence says prior research found a significant family-support effect and this study's result agrees. That conveys the same mutual agreement and still tells the reader E13 found the effect. The phrasing is reordered, but the attribution is not reversed and nothing is false."
+     },
+     {
+      "n": 17,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11's suggested follow-ups are to include foreign studies, build emotional-support programmes, and run a meta-analysis because effect sizes were not established ('구체적인 효과크기'). E11 never asks to identify mechanisms. The mechanism ('기제') gap is raised in E16, so W is arguable. However, the sentence blends E11's forms and sub-factors framing with a generic mechanism call, so M (a recommendation beyond the cited paper) fits best."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "5ec95258_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E28 shows social support acting as a buffer: it softens the effect of low health literacy on depression. E28 never says social support has a negative side, so this framing turns the finding around."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "This closely paraphrases E17's background review, which cites Carstensen et al. It drops '사회의 중심에서', so '주변으로 이동' has nothing to anchor it."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Mild broadening. E11 is a systematic review of social support and depression, not of 'research trends on elderly depression' in general."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Taken from E11's introduction background, not from its findings."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "In E12, the limitation ('cannot reflect physical, mental, social and spiritual health') belongs to prior studies (Park et al.) that only measured health behaviour practice. The sentence instead attaches it to socially supported elderly or to social support, which distorts the meaning. It also presents a cited prior study's result as E12's own finding."
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "M",
+      "reason": "E28's evidence contains no call for research on the mechanism of social support's negative effect. This recommendation, cited to E28, goes beyond what E28 says."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "The section never shows a negative side of social support. Every piece of evidence shows social support protects against depression: E11 reports that 28 of 30 studies found it reduces depression, and E28 shows a buffering effect. The opening claim that a 'negative aspect exists' is followed only by evidence that low or missing support makes things worse. That mismatch between heading and claim is visible right at the start of the section."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section answers a different question than its heading. It covers the harm of low or reduced social support (E28, E17) instead of a negative effect of social support itself."
+     },
+     {
+      "n": 14,
+      "severity": "medium",
+      "issue": "The E28 summary repeats intro sentence 2 almost word for word (low-support group: lower health literacy, more depression)."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E17 summary repeats the intro (sentences 3–4): retirement reduces status and social contact, which worsens depression or life satisfaction. Sentences 3–4 also cite E17's literature review (Carstensen) as if it were the paper's own finding."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "The E2 summary covers spiritual well-being levels and how they differ by demographics. This is off-topic for both the heading and the question; nothing about social support or depression is summarized."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E11 summary gives only background (symptoms of depression, research activity since 2000). It leaves out E11's actual result, that social support reduced depression in 28 of 30 studies. That result is also the main counter-evidence to the section's 'negative aspect' framing."
+     },
+     {
+      "n": 12,
+      "severity": "medium",
+      "issue": "The logic is broken: '사회적 지지가 높은 노인은 건강생활을 잘 실천하지만, …반영하기에 한계가 있다' reads as if social support or the elderly have a limitation. In the source, the limitation belongs to prior studies' measurement."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Summaries 5, 7, 9, 11 and 13 restate the paper title as '본 연구는 …를 분석하였다/검증하였다'. They add little beyond the title."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "This is a long run-on sentence. '오히려 주변으로 이동하게 되어' is unclear because '사회의 중심에서' was dropped. Sentence 4 has a spacing error: '영위하는데' should be '영위하는 데'."
+     },
+     {
+      "n": 15,
+      "severity": "low",
+      "issue": "The future-research line is vague and awkwardly built: '사회적 지지가 낮은 노인의 우울에 대한 부정적 영향' leaves unclear what has the negative effect on what."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E28 reports only a buffering effect: low health literacy raises depression less when social support is high. Its chunk names no negative side of social support's effect on depression. Calling it a 'negative aspect' of social support turns the finding around."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E12, the finding that elderly with high social support practise healthy living is Park et al.'s (ref 18). The limitation ('cannot reflect physical, mental, social and spiritual health') is E12's criticism of those prior studies for measuring only behaviour practice. The summary presents the prior finding as E12's own result. It also pins the limitation on the elderly or on social support, which distorts it."
+     },
+     {
+      "n": 15,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E28's evidence covers the moderation result and the opening of its conclusion section, but it gives no recommendation for future research on any mechanism. Citing this future-research line to E28 goes beyond what the evidence says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "5ec95258_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "Mostly restates the heading, but it cites E31. E31 lists factors that affect depression itself, such as age, self-esteem and social participation. It says nothing about factors that change the relationship between social support and depression."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "The numbers are reversed. E11 says 28 out of 30 studies; the sentence says '28개의 연구 중 30개에서', which is impossible. The emotional-support part is supported."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E38's chunk gives 2.2배 and 2.4배. E38 is quoting an earlier study, Oh et al. (2021), but the sentence presents these as E38's own results. The sentence also does not mention social support."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "The finding is distorted. In E40's stepwise regression, social support alone explained the most (R2=.539). The stress-by-support interaction added only .080 and came second. The sentence says the interaction had the largest effect."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Supported by E37: crisis events strengthen depression's effect on suicidal ideation, and social support acts as a protective factor (the depression × family support interaction is significant). Note that the outcome here is suicidal ideation, not depression."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "The baseline is reversed. In E31, 29.2% is the 2011 survey figure, and E31's newer figure is 3.9% higher than that. The sentence says 29.2% is itself 3.9% higher than before. This is also background from another source, not E31's own finding."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "Matches E31's background passage, which E31 cites from earlier work; it is not E31's own result."
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "The numbers are in E38, but they come from Oh et al. (2021), which E38 cites. The summary implies they are E38's own findings."
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S",
+      "reason": "A near-verbatim method sentence from E40. The source's list of predictors is cut off, so it reads as if only two interaction terms were compared."
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "M",
+      "reason": "E11 makes no such recommendation; it recommends programs and policies that provide social support. E11 already reports which support works best: emotional support, and support from spouse and family. 'Community' (지역사회) does not appear in E11."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 2,
+      "severity": "high",
+      "issue": "'28개의 연구 중 30개에서' is impossible: more studies found the effect than were reviewed. Summary n6 has the correct '30개의 연구 중 28개', so the two lines contradict each other in plain view."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "Intro n4 says the stress-by-support interaction had the largest effect on depression. Summary n11, from the same paper, says social support alone had the largest effect. The section contradicts itself."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "The number is out of context and its baseline is reversed. '이전보다 3.9% 증가' leaves 'before' undefined and treats 29.2% as the increased figure. The section never gives E31's own newer figure, and it is unclear whether 3.9% is a percent or percentage points."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Heavy repetition. n5 and n13 are word-for-word identical. n3 and n9 are nearly identical. n2/n6 and n4/n11 repeat the same papers' content. The intro adds almost nothing beyond the summaries."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Much of the section misses the heading, which asks what changes the relationship between social support and depression. E38 (COVID-era depression risk) and E31 (prevalence and age trend) do not address that relationship. E37's outcome is suicidal ideation, not depression. Only E40's bereavement-stress interaction and E37's crisis events act as factors that change a relationship."
+     },
+     {
+      "n": 12,
+      "severity": "medium",
+      "issue": "The summary is a method sentence copied almost verbatim from a truncated chunk. It keeps the '*' interaction notation and a cut-off predictor list ('사별 스트레스*사회적 지지, 사별스트레스*대처행동 중에서'), with inconsistent spacing. It reads as raw source text, not a summary."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The 2.2배/2.4배 figures are E38 quoting Oh et al. (2021), but n3 and n9 present them as E38's findings. E38's own subject, the different changes in single-elder and elderly-couple households, is never mentioned."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "E31's two summaries describe only its literature-review background (prevalence, age, losses). They say nothing about E31's own results, for example that general characteristics showed no significant difference in depression."
+     },
+     {
+      "n": 14,
+      "severity": "low",
+      "issue": "The future-research line, comparing effects by type of support, cites E11, which already reports exactly this. E37's table also compares family and friend support. So the suggested gap is already partly covered by the section's own sources."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E31 lists factors that affect depression directly, such as age, spouse, education, income, self-esteem, social and family support, and social participation. It never discusses factors that moderate or change the support-depression relationship. Because the sentence cites E31, it is not U_ok, and what it attributes to E31 is not in the evidence."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11 says 28 out of 30 studies. The sentence says '28개의 연구 중 30개에서', which reverses the numbers and is impossible. The emotional-support clause is supported, but the core figure is distorted."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E40 Table 7 and its text say social support had the highest explanatory power (R2=.539). The bereavement stress x social support term came second (change .080), then health status (.033). The sentence wrongly says the interaction had the largest effect, a reversed finding."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E31 says its result is 3.9% higher than the 29.2% found in the 2011 survey, so 29.2% is the baseline. The summary turns this around and says 29.2% is itself a 3.9% rise from an earlier figure. The baseline is reversed."
+     },
+     {
+      "n": 14,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11 recommends developing programs and policies that provide social support. It already reports that emotional support works best and that support from spouse and family is the most positive factor. It does not call for research comparing support types, and '지역사회' does not appear in E11. This recommendation goes beyond the cited paper."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "d2e5344e_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S"
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "The sentence presents the grade 1–3 study (E2) as small-scale. E2 actually says that earlier studies, mostly with fewer than 20 participants, are hard to generalize, while its own survey covered 232 grade 1–3 children. A limitation of earlier work is shown as a limitation of E2."
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "E1 finds lower language development than in general-family children across the reviewed studies, which span infants to school age. The '학령기' (school-age) restriction is added. E1's table even lists school-age studies with no difference, for example 최연실 (grades 1–3, story comprehension)."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "E4 does not analyze how a bilingual environment affects language development. It only notes that this question has no consistent conclusion yet. The delay claim is a view E4 attributes to other scholars, not E4's own finding."
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "This sentence is about a methodological limitation (small samples, hard to generalize), not a characteristic of language development, so it does not answer the heading. It also misdescribes E2: E2 surveyed 232 children, and a judge who opens the paper would see the contradiction. Because it sits between two E1 sentences, the following '또한,' (n3) reads oddly."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The same content repeats. The mother's Korean ability and length of residence appear in n1 and n6, and 'lower level than general-family children' appears in n3 and n6. The E4 point about infant delay and communication difficulty appears in n4, n10 and n11. The small-sample, hard-to-generalize point appears in n2 and n8. The summaries mostly echo the answer paragraph."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "The E3 summary covers only the paper's background: 행정안전부 statistics on the rising number of marriage migrants, 설동훈(2008)'s projection, and family conflict. It says nothing about E3's actual study, which compares generative naming between school-age multicultural and general-family children by grade. That study is the most directly relevant to 'how they differ from peers', yet E3 is never cited in the answer, and the summary does not answer the heading. The citation '설동훈(2008)' inside the summary is also an awkward leftover."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E4 summaries (n10, n11) describe only E4's literature background. They never mention the paper's actual subject, which its title gives as an art-based study of the language and social skills of children from multicultural families. Readers are told E4 'analyzed' the effect of bilingual environments, which it did not."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section presents the difference as uniformly 'lower/delayed'. The evidence it cites (E1's review table) shows mixed results: similar to peers at about age 3, no difference in story comprehension for grades 1–3, no difference in MLU, and no difference in most SELSI age bands. That nuance answers the overall question ('how do they differ from peers') directly, and it is lost."
+     },
+     {
+      "n": 14,
+      "severity": "low",
+      "issue": "The future-research line has no subject. It reads as if the report itself collected children's utterances and used only some syntactic and semantic analyses. It is really E5's own stated limitation, copied over, and it is a narrow, paper-specific point rather than a research direction for the question."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E2 summary largely restates the paper's title ('…언어능력 연구 - 초등학교 1, 2, 3학년을 중심으로'). It gives no finding about the grade 1–3 children's language ability."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "The first E1 summary sentence mostly restates the title (연구 문헌 분석 / 언어발달). Its content is then repeated in n6."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 says earlier studies were mostly small groups of under 20, which makes them hard to generalize. It does not say those studies were of grades 1-3. Its own survey covered 232 children in grades 1-3. Calling the grade 1-3 research small-scale turns a limitation of earlier work into a limitation of E2's own study, so the sentence distorts E2."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1 concludes that children from multicultural families have lower language development than children from general families, with no age restriction. Most reviewed studies are preschool. For school age the evidence is mixed: 성두원 (grades 1-6) found lower vocabulary, but 최연실 (grades 1-3) found no difference. Adding the '학령기' restriction narrows E1's finding to a population E1 does not single out, and its own table partly contradicts the narrowed claim."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4 does not analyze how a bilingual environment affects language development. It states only that no consistent conclusion exists yet. E4 does mention the infant-age delay, but as a view held by many scholars, cited as background. Saying E4 analyzed this effect overstates what the paper did. The second half is a loose but tolerable paraphrase; the first half is not supported."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "d2e5344e_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E16 only says 'this study' divides stages 1-3 and will examine the sound inventory and frequency per stage. The sentence turns that study design into a general fact about how child language development is divided, and adds a finding the chunk does not report ('목록과 빈도가 달라진다')."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "Faithful to E26, but it is about peer social interaction of 2-year-olds, not language development (see presentation issues)."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Matches E27's method passage (5 min x 4 sessions, 20 min, 80 observations, Cohen's kappa). It describes only the method, and the paper is off-topic."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "E28: after Santa asked for wishes, D shouted '용감하게 해 주세요' and the other children imitated D's words. The summary says the children imitated friends' behaviour because Santa appeared, which changes both what was imitated and why."
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Modest paraphrase of E26. Turning '놀이에 참여하는 중요한 계기' into '또래 관계에 긍정적인 영향' is a slight generalization but acceptable."
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "Supported. The first clause just restates the E18 title."
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "Cites E18, but E18 only calls its results groundwork for a model of Korean sound-acquisition stages. It says nothing about studying the factors that affect each stage."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "The section reads '또래' as peer interaction instead of typically developing peers' language. Three of five papers (E26 toddler request/response behaviour, E27 peer interaction and teacher beliefs, E28 drama-based peer-relationship programme) are about social interaction, not language development. So an answer to '또래 아동의 언어 발달의 특징' talks about jumping, kappa coefficients and Santa Claus."
+     },
+     {
+      "n": 4,
+      "severity": "high",
+      "issue": "An intro sentence about children 'laughing or jumping up and down' when accepting requests sits right after the phonological development stages. It is off-topic for language development, and it has no subject (whose requests? which children, what age), so it reads like a non sequitur."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "The E27 summary gives only observation logistics ('5분 관찰을 4회기 반복하여 총 20분 간 80회', Cohen's kappa) with no finding. The numbers are meaningless without context, and the paper does not answer the heading."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "The E28 summary includes an odd anecdotal detail ('산타 할아버지의 등장에 따라 친구들의 행동을 모방'), garbled from the source. It is confusing and out of place in a section on language development."
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "'응알이기' is a misspelling of '옹알이기', carried over from the source text. It appears in both n1 and n6."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The summaries largely repeat the intro: n6 and n7 restate n1 and n2 (E16), n10 restates n3 (E18), and n9 restates n4 (E26)."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The relevant content covers only speech-sound and phonological stages (E16, E18). Vocabulary, syntax and pragmatic language, the areas usually compared for multicultural children, are missing, and the section never links back to the comparison in the overall question."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "Two different stage schemes (E16: 6-23 months; E18: late age 2 to 6) are placed side by side without being connected. The ages from 24 months to late age 2 fall between them, and E18's own '말소리 생성기 (1-2세 초반)' is left out."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E16 paper is about vowel acquisition ('국어 모음 습득의 첫 단계'), but neither summary sentence mentions vowels. The summary is generic and partly restates the intro."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The first half of the E18 summary simply restates the paper title."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "The future-research line is generic ('더욱 세분화', '심층적으로 연구할 필요') and has no tie to the multicultural comparison."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E16 says only that 'this study' will divide stages 1-3 and examine the sound inventory and frequency per stage (살펴보도록 하겠다). The sentence turns that design into a general fact about child language development. It also asserts a result, that inventory and frequency differ by stage (달라진다), which the chunk never reports."
+     },
+     {
+      "n": 8,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "E28 supports every element of the sentence. Children talked to peers first (먼저 말을 거는 경우가 많아졌다) and proposed play (모양 찍기 경주 하자). In session 8, after Santa appeared and asked for wishes, D spoke loudly and the other children imitated D. Calling D's words a peer's behaviour (친구들의 행동) is a generalization, not a contradiction. Tying it to Santa's appearance is a loose compression of the same episode, not an invented cause. The paper title also frames this as improved interaction, so this is a modest summary, not a distortion."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E18 only says its results are groundwork for a model of Korean sound-acquisition stages and that the untested ages 1 to early 2 are important. It does not call for studying the factors that affect each stage. Citing E18 for that recommendation goes beyond what the paper says. 'Further subdivision' is at most loosely implied."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "d2e5344e_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E3 says most researchers claim a difference; '나타났다' slightly hardens a literature-review claim but is within modest summarizing."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Supported, but drawn from E3's literature review, not E3's own study."
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "E3 says Korean-norm-relative performance does not improve with age (오소정 외). The summary drops 'relative' and says performance does not improve at all with age, which distorts the claim and conflicts with n4."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Matches E33's text (citing 박기관 and Hudley & Graham), but the content is about behavior problems, not language development."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Wording matches E38, but it leaves out E38's statement that the sex difference was not statistically significant."
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "Faithful, but it describes only how E29 is organized and gives none of its findings."
+     },
+     {
+      "n": 11,
+      "verdict": "S",
+      "reason": "Matches E30's passage, which cites 문무경·조혜주 2008, a prior study rather than E30's own result. The source lists 언어영역 as both lower and higher, and the summary silently drops the second one."
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "E38's future-work suggestions are finer analysis by language area (음운·구문·의미·형태·화용) and checking the 6-year-old trend at ages 7 and up. It says nothing about intervention plans to close the gap."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The summaries repeat the intro almost word for word: n1≈n5, n2≈n6, n3≈n8. The E3 and E38 content appears twice in one short section."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "The E33 summary is about behavior problems and peer or teacher relations, not language development. It is off-topic for the heading. E33's evidence does link poor maternal Korean input to children's language, and that part would have fit the heading, but the summary leaves it out."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E29 summary only describes how the paper divides its analysis (취학 전: 이해·표현·음운인식·조음 / 학령기: 읽기·국어사용) and reports no findings. E29's evidence has the most concrete comparisons in the file (5-year-olds delayed 12+ months in both comprehension and expression, lower phonological awareness, more articulation errors). The intro uses none of them."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The intro never says concretely how the language of multicultural children differs (which areas, how large the gap is). It stays at 'differs / slower early / gap may widen', although E29 has specific contrasts by area. The heading asks what the differences are, and this answer is vague."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "n6 says performance does not improve with age, and n4 says expressive language develops with age, so the section seems to contradict itself. The source meant relative-to-norm performance. The sentence is also awkward: '초기에는 느리지만 따라잡거나, …향상되지 않는다는 주장이 있다' runs two opposing views into one clause."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Several summaries (E3 n5-6, E33 n7, E30 n11) report background literature that the paper cites as if it were the paper's own finding. E3's own study, generative naming in school-age children by grade, is never mentioned."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "The sex-difference detail ('6세 집단을 제외하고는 여아가 남아보다 약간 빠른') compares groups within multicultural children, not multicultural children with peers, so it is off the heading. It also omits that the difference was not statistically significant."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "After n3 ('그러나 격차가 커질 수 있다'), n4 states only that expressive language develops with age. That is trivial and says nothing about differences from peers, so the flow is awkward."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "The source passage is self-contradictory: 언어영역 appears as both lower and higher. The summary quietly drops one of them and mixes 유아 and 영유아 in one sentence."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "The future-research line is a generic call for interventions and does not reflect E38's actual suggestions (finer analysis by language area, follow-up at school age)."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E3 cites 오소정 외(2009) as claiming that, as age increases, the children's performance relative to Korean-child norms ('한국아동 규준과 비교한 ... 상대적인 수행') does not improve. The summary drops both the norm comparison and 'relative', so it says that performance itself does not improve with age. That is a different claim, and E38 directly contradicts it: E38 found expressive language develops in order with age. This qualifier changes the meaning, so it is more than modest summarizing."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E38 proposes two follow-ups: check whether the 6-year-old boys-ahead-of-girls trend continues at ages 7 and up, and analyze language by area (phonology, syntax, semantics, morphology, pragmatics). Neither its future-work passage nor any other chunk calls for concrete intervention plans to narrow the gap. That recommendation is beyond what the paper says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "d2e5344e_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "The sentence copies E7's hypothesis 1 word for word ('PRES 검사 결과 ... 느릴 것이다') and presents it as the answer without saying it is a hypothesis. E7's reported results do not compare the children with peers. They show 70% in the normal range and 30% with slight delay, mostly in expressive language."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "It says the hypothesis was 'confirmed' by PRES. E7's evidence gives only within-group PRES results (70% normal, 30% slight delay) and no reported peer comparison that confirms slower expressive development. This turns a hypothesis into a finding."
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "It presents hypothesis 1 as a result ('연구 결과 ... 느린 것으로 나타났다'). The actual result is that 70% of the 20 children were in the normal range and 30% were slightly delayed, with delays more often in expressive than receptive language. It overgeneralizes to all multicultural children being slower than peers."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "E7's evidence has no future-research recommendation. This generic recommendation is attributed to E7 with an [E7] mark."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "The answer paragraph opens with the paper's hypothesis copied verbatim in the predictive '~느릴 것이다' form. The next sentence then says '확인되었다'. A guess followed by a claim of confirmation reads as self-contradictory and machine-made."
+     },
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "E7's concrete finding never appears anywhere in the section: 70% of the 20 children were in the normal range, 30% were slightly delayed, and delays were mostly in expressive rather than receptive language. Instead the section repeats the hypothesis as if it were the result. That answers the heading 'what were the comparison results' wrongly."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "There is heavy repetition. Intro sentences 1-4 and summary sentences 5-7 say the same three things: expressive language is slower, the PRES test was used, and the mother's language environment may influence development. The section adds almost nothing beyond restating it twice."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The whole section rests on one small 2018 study of 20 children with no peer group actually tested. That is thin support for a comparison heading, and neither the sample size nor this limitation is stated."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "Sentence 3 has no subject ('주 양육자인 어머니의 언어 사용 환경과 밀접한 관계가 있을 수 있다'), so it is unclear what is closely related. It is a fragment of E7's conditional clause ('차이를 보인다면, 이는 ...') with the condition cut off."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "Sentence 4 uses '따라서' to draw a conclusion from a speculative sentence 3. The step from hedge to conclusion is circular and does not report any finding on research question 2."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The future-research line is generic boilerplate ('다양한 요인들을 추가적으로 조사할 필요') carrying an [E7] mark the paper does not support."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The sentence repeats E7's 가설1 word for word but leaves out that it is a hypothesis, and it sits in the answer paragraph for a question about comparison results. E7's evidence gives no peer-comparison result. It reports 70% in the normal range and 30% slightly delayed, with expressive delays more common. The data back only part of the claim, so presenting it as the paper's group-level answer goes beyond the evidence."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7's PRES table gives within-group judgements: 14 of 20 normal and 6 slightly delayed, mostly in expressive ability. It reports no peer-group statistic showing that multicultural children develop expressive language more slowly. Saying the hypothesis was 'confirmed' (확인되었다) turns a partly supported hypothesis into an established finding."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7's reported result is that 70% of the children were in the normal range and 30% were slightly delayed, with expressive delays more frequent than receptive ones. The summary states a group-level finding that multicultural children develop expressive language more slowly than peers. That restates hypothesis 1 as a result and overgeneralizes the 30% subgroup to the whole group."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7's chunks contain research questions, hypotheses, method and PRES results, but no future-research recommendation. This generic recommendation to study other factors is attributed to E7 with an [E7] mark, so it is a recommendation beyond what the paper says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "d2e5344e_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S"
+     },
+     {
+      "n": 2,
+      "verdict": "W",
+      "reason": "The wording ('연령이 증가해도 한국아동 규준과 비교한 다문화가정 아동들의 언어검사상 수행은 향상되지 않는다는 주장') is E3's account of 오소정 외(2009), copied almost word for word. E1 has no such passage. Its nearest content is 정순연 and 송요현, which say the gap widens with age."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E29 cites 안혜령·이순형 for this, so it is supported. But '더 큰 영향' has nothing to compare against, because the sentence dropped '지능·학습 환경보다'. It is also about academic delay (학업지체), not language development."
+     },
+     {
+      "n": 4,
+      "verdict": "W",
+      "reason": "The first clause ('부모의 언어적 입력', '아동과 어머니의 언어적 상호작용이 중요') is E29's Pearson(2007) and Paul(2007) content. Only the second clause, on 양육태도 and 생활환경, comes from the cited E5."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "E1 reports this from 송요현(2009), and 정순연 says the same. The sentence states it as a general trend, though E1 also has 성두원, whose gap narrows in higher grades, and studies that found no difference."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "In E3, '대상자의 대부분이 학령 전기 아동' and '표준화된 검사' describe the earlier studies E3 reviewed. As a summary of E3 it reads as E3's own sample and method. E3's own study is on school-age children (학령기), and its task is a 생성이름대기 comparison by grade."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "M",
+      "reason": "E29's evidence never calls for deeper analysis of the factors or for studies of how they interact. This recommendation goes beyond the cited paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "One-sided answer to '또래와 차이가 있는가'. The intro (n2, n5) and n12 say the gap persists or widens with age. The evidence also has the opposite: E7's expressive-language gap narrows at age 5 ('5세에서는 점차 격차가 줄어들어'), E1's 성두원 gap shrinks in higher grades, E3 reports a '따라잡는다' view, and E1 lists studies with no difference (최연실, 박지윤 MLU, 이정순). n6 mentions the catch-up view, but the intro states widening as a general trend, so the section contradicts itself."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "Parenting attitude (양육태도) is presented as an established factor (n4, n11). E1's evidence reports 임진숙 (no significant correlation) and 배소영 외 (no direct relationship). The disputed factor is shown as settled."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The intro just repeats the summaries: n1 = n6, n3 = n8, n4 second half = n11, and n5 = n12 (n2 adds the same idea again). The age-gap point appears four times (n2, n5, n6, n12)."
+     },
+     {
+      "n": 13,
+      "severity": "medium",
+      "issue": "E7 is the only direct empirical comparison with peers, and it answers the heading most directly. Its summary is vague: '언어 점수에 차이가 나타났다' gives no direction (lower), no size (4세 18.4점·20.4점 gap) and no expressive vs receptive contrast. The intro never cites E7."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Several summaries describe each paper's literature review instead of its own study. E3's summary (n6, n7) covers prior research, not its 생성이름대기 study by grade. E5's summary (n10, n11) repeats its cited background and leaves out its main finding (듣기 reaches peers with age, but 말하기 is slow at all ages). E5's finding is directly relevant to the heading."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "'더 큰 영향을 미치는 것으로 나타났다' is a comparison with nothing to compare against, and the topic is academic delay (학업지체), not language development. It reads as a non sequitur in a language-development answer."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The factor list (성별, 사회경제적 지위, 가족 수 …) comes from a general statement about all children's language development (Bialystok). In the summary it reads as specific to multicultural families."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "Clumsy repetition of '차이' ('차이가 심해져 언어발달 차이가 좁혀지지 않고'). '나타났다' also presents one cited study's (송요현) result as E1's own finding."
+     },
+     {
+      "n": 14,
+      "severity": "low",
+      "issue": "The future-research line is a generic boilerplate recommendation that could fit any topic."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "The wording '연령이 증가해도 한국아동 규준과 비교한 다문화가정 아동들의 언어검사상 수행은 향상되지 않는다는 주장' and the framing '학령 전기 아동의 경우…언어특징이 일반아동과 차이' are E3's account of 오소정 외(2009). E1's nearest content is different: 정순연 says the gap between age and language age widens, and 송요현 says the gap with typical children widens and persists. That only loosely matches the idea, and the actual sentence is lifted from E3."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "'부모의 언어적 입력' (Pearson 2007) and '아동과 어머니의 언어적 상호작용이 중요' (Paul 2007) appear almost word for word in E29. E5 does partly overlap: it says more interaction with parents goes with higher language ability, and that the parents' language ability matters. But E5 never mentions 언어적 입력, and the first clause's wording comes from E29. Only the 양육태도·생활환경 clause comes from E5 (the overlap makes this borderline, but the wording points to E29)."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E3, '대상자의 대부분이 학령 전기 아동' and '표준화된 검사' describe the earlier studies E3 reviewed. E3 raises this as a limitation, because school-age language skills differ. E3's own study is on school-age (학령기) children: a comparison of 생성이름대기 by grade. A summary of E3 that presents this as its own sample and method distorts the paper."
+     },
+     {
+      "n": 14,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E29's chunk only lists factors (안혜령·이순형, Bialystok, Pearson, Paul) and notes that research has grown. It does not call for deeper analysis of the factors or for studies of how they interact. This recommendation goes beyond the cited paper."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "d2e5344e_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E44 mentions the connectionist model only in its literature review, to say word frequency is a main factor in vocabulary acquisition. It never says this model explains how multicultural children's language development relates to their peers'. The paper's own framework is the language-deprived environment."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Supported by E51. E51 is restating Kim & Oh (2013), which is E44, so this is not independent support."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "U_ok",
+      "reason": "Empty sentence containing only the mark '[E7]'. It makes no claim; this is leftover markup, not content."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Mostly faithful. The word-frequency point comes from the paper's literature review, not its own results, so saying the paper 'emphasizes' it is a slight overstatement. The paper's actual finding (multicultural children scored lower than general-family children on vocabulary) is left out."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "The content is in E44, but as a summary of earlier studies in the literature review. The sentence presents it as something this paper reports."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "The first half (receptive vocabulary similar to general children) is in E5, though as a cited prior study (우현경 외, 2009). The second half (understanding sentences from a few words or experience rather than syntax) is E5's description of typical children aged about 16–18 months to 3 years. It is not a finding about 4–6-year-old multicultural children, so the sentence misattributes it."
+     },
+     {
+      "n": 12,
+      "verdict": "S",
+      "reason": "The content is in E51's background section, where it cites Kim & Oh 2013 (E44). Writing '분석하여 … 강조한다' makes it sound like a result of E51's trend analysis."
+     },
+     {
+      "n": 13,
+      "verdict": "M",
+      "reason": "E44 only mentions internal factors (intelligence) and external factors (education, home environment) in its introduction. It does not call for research on how environmental and individual factors interact, so this recommendation goes beyond the cited paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 5,
+      "severity": "high",
+      "issue": "A whole intro sentence is just the bare mark '[E7]', with no text. It will show up on screen as broken output."
+     },
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "The direct answer to the heading ('the connectionist model explains it') rests on one background sentence in E44 about word frequency. A reader with domain knowledge will see this as a made-up theoretical answer. No source presents a theoretical model of the relationship."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section does not answer its heading (a theoretical model). It mostly lists causes of delay: lack of language input and the mother's limited Korean. The heading is also odd in itself: it asks about the 'relationship' between two groups' development when the question is about differences."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The intro repeats the summaries almost word for word: n2≈n6 (word frequency, lack of language input), n3≈n12 (parent language ability, bilingual homes), n4≈n10 (being raised by a mother who speaks poor Korean)."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E44 summary leaves out the paper's own result, which bears most directly on the question: multicultural children (n=22) scored significantly lower than general-family children on receptive and expressive vocabulary. Instead it summarizes the literature review (word frequency, SES)."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "The E5 summary presents a description of typical children aged about 16 months to 3 years as a trait of 4–6-year-old multicultural children. Its grammar is also broken: '연구는 … 조사한 결과, … 경향을 보인다' makes the study the thing that 'shows a tendency'. Its finding that receptive vocabulary is similar to general children's conflicts with E44's lower-vocabulary result, and the section does not reconcile the two."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The E7 summary gives only the study design and aim ('확인하고자 한다'), with no results. It reads like a plan, not a finding."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The point that the SES effect grows over time is off-topic for the heading. It is also E44 citing other studies, but the sentence presents it as E44's own report."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "'이중 언어를 사용하는 경우 언어 습득 및 발달에 영향을 미치며' is vague because it gives no direction for the effect. The sentence also counts E51 as separate support when E51 is restating E44 (김영태·오소정 2013)."
+     },
+     {
+      "n": 13,
+      "severity": "low",
+      "issue": "This is a generic future-research line, and the paper it cites does not support it."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E44 cites the connectionist model (MacDonald & Christiansen, 2002) once, in its literature review, only to say that word frequency is a main factor in vocabulary acquisition and task performance. Nowhere does it say the model explains how multicultural children's language development relates to their peers'. The paper frames its comparison as a language-deprived environment. The sentence turns a passing literature mention into the paper's theoretical model."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The receptive-vocabulary claim appears in E5 only as a cited prior study (우현경 외, 2009), yet the summary presents it as this paper's survey result. The second half, about understanding sentences from a few words or experience rather than syntax, is E5's general description of typical children aged about 16-18 months to 3 years. E5 then says children after age 3 understand sentences grammatically. The sentence turns that description into a finding about 4-6-year-old multicultural children, which distorts the source."
+     },
+     {
+      "n": 13,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E44's introduction lists internal factors (intelligence, thinking ability) and external factors (education, home environment), and notes that studies now analyze detailed links between socioeconomic status and language. It never calls for research on how environmental and individual factors interact. The future-research recommendation goes beyond what the cited evidence says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "051bf3cf_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E1 [그림 5] lists 서비스 제공력, 이용의 편리성, 컨텐츠, 정보접근시스템, plus two more. The '등' covers the rest. It does present one study's customer-satisfaction model as the general definition."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "Matches E5. Small actor shift: E5 attributes the strategy and model to SLIC (스코틀랜드 도서관 정보위원회), not to 'Scottish public libraries'."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Paraphrases E2. Small subject slip: E2 says service QUALITY (not its evaluation) splits into content and context."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E4 only says customer needs and expectations are the library's reason for existing (존립근거). The evidence never says evaluation is carried out on that basis. The sentence turns a premise into a method."
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "States the index 'consists of' four indicators with no '등'. E1 lists six; it leaves out 기술/시설의 구비성 and 공간/환경의 쾌적성, so the list reads as complete when it is not."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Content comes from E5. Grammar wrongly makes the model the subject that set the vision; in E5 the strategy did that (see presentation issues)."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Faithful to E3's history (1970s start, 1980s indicators, 1990s new methods, shift in who evaluates). '필요하다' recasts E3's past '요구되었다' as present, which is minor."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "Faithful to E2. '기술' shortens '기술봉사업무' (technical services), which shifts the meaning slightly."
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "First clause matches E4's abstract. The second clause, that the indicators assess quality by reflecting those needs and expectations, comes from the title. E4's evidence never describes its indicators."
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "E3 only records that indicators needed renewing after the 1990s environment change. It recommends no continuous updating, and E3 is about libraries in general, not public libraries specifically. The recommendation goes beyond the source."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading asks for '개념 및 정의', yet no sentence defines service quality or a service-quality evaluation indicator. The section lists one model's indicators, a Scottish strategy, a history and a customer-needs premise. E3's actual definitions go unused: SERVQUAL's '서비스의 우수성과 관련한 전반적인 판단이나 태도' and Garvin's five approaches."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Every intro sentence is repeated in a summary: n1≈n5 (same four indicators, almost word for word), n2≈n6 (Scottish strategy), n3≈n8 (content/context), n4≈n9 (needs and expectations). The summaries add little beyond the intro."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "Broken Korean. In '…모델을 수립하였으며, 이는 스코틀랜드가 기회의 나라로 발전하는데 … 비전으로 설정하고 그에 따른 전략계획을 수립하였다', '이는' points to the model, but the strategy set the vision. The subject and predicate do not match, and '수립하였다' appears twice."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "E5 is a comparative analysis of performance-evaluation systems, but its summary (and n2) covers only Scotland's vision and strategy. It leaves out E5's five Quality Indicators (정보접근, 독자 경험, 학습 문화, 지역사회 참여, 조직 비전), which are the part most relevant to evaluation indicators."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "The intro jumps around without links: E1's indicator list, then a Scottish strategy title in English, then general evaluation history and concepts, then a customer-needs premise. The Scottish example is a specific case, not a concept or definition, so it reads as off-heading here."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "E2 is a university-library SERVQUAL/SERVPERF study, used here for a public-library question without saying so. Its summary never says what the study did. '기술' for 기술봉사업무 is misleading, and '업무부분' sounds odd."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E4 summary mostly restates the paper's title (고객 만족을 위한 공공도서관 평가지표) plus the first sentence of its abstract. Nothing about the paper's content or findings."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "Awkward and slightly wrong wording: '평가는 과거 정량적 평가뿐만 아니라 … 포함하며, 서비스의 내용과 상황으로 양분될 수 있다'. Here the evaluation, not the quality, is what gets split."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "Generic boilerplate future line ('시대 변화에 따라 지속적으로 업데이트'). It adds nothing specific to the section."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "Non-standard spelling '컨텐츠' (standard: 콘텐츠), copied from the source; it also appears in n5."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4's only relevant text is the abstract line saying that customer needs and expectations are the public library's reason for existing (존립근거). The second chunk covers the 행정서비스헌장제 and a prior gap-theory study, and neither says that evaluation is based on those needs. The sentence turns a premise about why libraries exist into a claim about how they are evaluated."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1 describes six indicators: 서비스 제공력, 이용의 편리성, 컨텐츠, 정보접근시스템, 기술/시설의 구비성 and 공간/환경의 쾌적성. The summary says the index consists of (구성되며) only the first four, with no 등, so it misstates the paper's index as complete. The description of each of the four matches E1, but the composition claim is wrong."
+     },
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The first clause matches E4's abstract. Nothing in E4's evidence describes its indicators or says they assess service quality by reflecting customer needs and expectations; that idea is only implied by the title. The chunk about 행정서비스헌장제 and the gap-theory study does not support it either."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E3 records a historical point: when the library service environment changed in the 1990s, new methods and indicators were needed and the evaluator shifted toward users. It makes no general recommendation that indicators be updated continuously as times change. Its scope is library service quality in general (largely academic libraries), not public library indicators specifically. The future line turns a past observation into a prescription the source does not make."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "051bf3cf_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E2 describes the history of library service quality evaluation in general (the paper studies university libraries), not public libraries. The sentence adds the public-library setting ('공공도서관 서비스 품질 평가')."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "Mild. The sentence says the study ran a GIS suitability analysis and through it ('수행하여') presented the indicator set. In E10 those indicators are the existing national public library evaluation indicators (표2), reviewed as background. The GIS analysis did not produce them."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "E11's evidence only lists the problems (commercial view of service quality, users' importance ignored, managers lacking the concept). '개선 방안을 제시하였다' is an added finding not found in the evidence."
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "E10 only says criteria and methods for facility efficiency and adequacy are lacking. '이용자 요구를 충족' comes from E8 (statistics indicators), and the sentence cites it to E10. It also frames this as service-quality indicator development, which goes beyond E10."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section does not answer its heading ('측정 방법'). It gives the history of evaluation (S1, S4, S6, S7) and a list of indicator domains (S2, S5) but never names a measurement method. Usable methods are in the evidence: SERVQUAL/SERVPERF in E2's title, and in the E3 chunk Nitecki's SERVQUAL test, Hernon & Altman's framework, and Bertot & McClure's model."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Every intro sentence is repeated almost verbatim in a summary: S1 = S6 (E2), S2+S3 = S5 (E10), S4 ≈ S7 (E3). The section reads as the same four points said twice."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E2 summary only restates one background sentence about the 1980s/1990s history. It says nothing about what the paper actually did: comparing SERVQUAL and SERVPERF in a university library."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Several papers do not fit the public-library question. E2 is about a university library and E11 about special libraries. E10 is a GIS facility-placement study of Gunsan, and E8 is about library statistics indicators. Only parts of each relate to measuring public library service quality."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E11 summary covers how special-library managers misunderstand service quality. It does not address measurement methods, and its setting is special libraries, not public libraries."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "In E8, '품질' means the quality of the statistics (timeliness, accuracy, consistency), not library service quality. Under this heading a reader may take these as service-quality criteria."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "Awkward Korean. In '1970년대부터 시작된 ... 연구가 ... 요구됨에 따라, ... 강조하였다' the subject does not match the predicate, and '~에 따라' appears twice in a row."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "The sentence is copied verbatim from E3 and makes no sense out of context ('평가방法은 ... 인식의 전환이 요구되었다'). It never says the shift was from manager-centered to user-centered evaluation, and its grammar is awkward."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The dates do not agree. S1/S6 (E2) say evaluation started in the 1980s as a management decision tool, while S7 (E3) says research started in the 1970s. The two summaries sit next to each other and nothing reconciles them."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "In '그러나 주로 실태조사단계에 그치고 있으며' it is unclear what stays at the survey stage. The subject is left implicit."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "The summary implies the Gunsan GIS analysis produced the national indicator set. A reader may think this study developed the indicators."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2's passage covers library service quality evaluation in general: it started in the 1980s as a decision tool and became user-centred in the 1990s. The paper itself studies university libraries. Nothing in E2 restricts this to public libraries, so naming the public-library setting ('공공도서관 서비스 품질 평가') adds a setting the evidence does not give. The rest of the sentence is a faithful paraphrase."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "Some parts hold up. Table 2 in E10 does list the five areas, splits them into 정량 800 and 정성 200, and E10 notes that facility efficiency and adequacy criteria are lacking. The problem is the causal phrasing. Saying the study ran a GIS adequacy analysis and through it ('수행하여') presented the indicator set is wrong. Table 2 is the existing national public library evaluation indicators, reviewed as background. The GIS analysis did not produce them. The flag holds as a mild misstatement of what the paper contributed."
+     },
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E11's chunk lists the three problems (commercial view of service quality, users' importance overlooked, managers lacking the concept). It offers no improvement measures. The only other text praises some work for quantifying special-library functions with statistics packages and web-based analysis, and that is not an improvement plan. '개선 방안을 제시하였다' is an added finding."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E10 supports only the gap: criteria and methods for facility efficiency and adequacy are lacking. It says nothing about meeting user needs ('이용자 요구 충족'). That wording comes from E8 (statistics indicators), yet the sentence cites E10. Most of the sentence still rests on E10, so this is added content rather than a wholly wrong paper. That makes it M, not W."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "051bf3cf_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E1 only reports that Seoul's citizen satisfaction survey was meant to turn its findings into improvement indicators ('개선지표로 삼겠다는 취지'). The sentence turns that one city's stated intention into a general fact: that public library quality indicators are used as survey-derived improvement indicators."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "The E4 passage describes a study that 'tried to put into practice' (실용화하려는 연구를 하였다) a priority-improvement analysis. It appears to be a prior study reviewed at the end of E4's review section, just before section III. The sentence presents this intention as an established use of the indicators (실용화된다)."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E6 supports indicator development from the late 1990s and a widening range of application. The subject '연구 동향은 … 적용되고 있다' is ungrammatical, and '다양한' is a slight embellishment."
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "E12 supports applying library service quality research to web record information services because their activity and mission are similar. Note that E12's source is the digital-library DigiQUAL model, not public library indicators."
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "The Seoul citizen satisfaction survey is something E1 reviews and cites (footnote 15, 서울특별시), not a survey E1 ran. The summary presents it as E1's own survey and aim (실시하여 … 제공하고자 한다). E1's actual contribution, a critique of existing models plus its own indicator set, is missing."
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "The 24 indicators in 4 areas belong to the Seoul survey that E1 reviews. As a summary of E1, the sentence makes it read like E1's own evaluation system. E1's own indicators (서비스 제공력, 이용의 편리성, 컨텐츠, 정보접근시스템, 기술/시설의 구비성, 공간/환경의 쾌적성) are different."
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "This repeats the E4 passage that appears to describe a prior study, past tense '연구를 하였다' at the end of the review section, and presents it as E4's own aim. E4's own work is an analysis of evaluation indicators: the administrative service charter, public library indicators, and indicators found in the literature. The source also says 'gap theory' (캡이론), not '서비스 퀄리티 모델'."
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "The sentence fuses two unrelated fragments: the section heading '행정서비스현장제' (OCR for 헌장제, the administrative service charter) and a mid-sentence tail '의 행태에 까지 확장하고' from the prior-study description. The source does not say E4 referenced the charter system to extend research to behavior."
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "E6 says 1990–2005 domestic research expanded beyond quality and satisfaction to customer behavior models and outcome variables (loyalty, word of mouth). 'Mostly satisfaction–quality correlation' is how E6 describes 2005–2010. The sentence narrows the earlier period to 'focused on' that relationship and drops '국내'."
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S",
+      "reason": "Supported by E12's DigiQUAL table. Calling the dimensions '평가 내용' is slightly loose."
+     },
+     {
+      "n": 15,
+      "verdict": "M",
+      "reason": "E6 mentions only as history that rapid environmental change created a demand for new methods and indicators (요구되었다). It makes no forward-looking recommendation. Turning this into 'continued research is needed' goes beyond the paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section does not really answer the heading, '적용 분야' (where the indicators are applied). n1–n3 describe uses and history, and only n4 names a concrete field (web record services). E6's evidence contains the actual answer, unused: indicator research spread across library types (university 20, public 8, special 2, school 1, and 3 digital-library theses in KERIS)."
+     },
+     {
+      "n": 8,
+      "severity": "high",
+      "issue": "The Korean is broken and the sentence is meaningless. '행정 서비스 현장 제도' is an OCR error for 행정서비스헌장제 (administrative service charter), and '행태까지 확장하는 연구' has no object. Library-science judges would notice both the wrong term and the nonsense."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "The E1 summary (n5–n6) describes the Seoul city survey that E1 only reviews, not E1's own proposed evaluation system. A reader comparing it with the paper would see the misattribution."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "There is no subject, and '총 24개의 지표' appears without saying whose indicators they are (the Seoul citizen satisfaction survey). The number is out of context."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "n7 nearly repeats n2 word for word ('서비스 우선 개선 요인 … 서비스 질 평가 및 개선에 실용화')."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "The E3 summary (n9–n10), the E6 summary (n11–n12) and intro n3 repeat the same history: research started in the 1970s, then new indicators came in the 1990s. E6's passage itself cites E3 (홍현진), so two summaries restate one source."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "E6 is a university-library paper on human service quality, which is off-topic for a public library question. Its summary covers only its literature-review background, not its own findings."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E3 summary is pure research history, unrelated to 'application fields', and E3 is never cited in the intro."
+     },
+     {
+      "n": 13,
+      "severity": "low",
+      "issue": "E12 is about the Presidential Archives' web record service and is tangential to public libraries. Its summary n13 repeats intro n4."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "The sentence repeats itself ('적용될 수 있으며, 이는 … 적용 가능함을 시사한다') and has no explicit subject."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "The subject and predicate do not match: '연구 동향은 … 도서관 현장에 적용되고 있다' says a research trend is being applied."
+     },
+     {
+      "n": 15,
+      "severity": "low",
+      "issue": "The future-research line is generic (new methods and indicators) and does not address application fields."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1 describes only Seoul's citizen satisfaction survey, cited from 서울특별시 in its review. That survey has the stated purpose (취지) of turning its findings into improvement indicators. The sentence drops Seoul and the 'intended' framing, and states as a general fact that public library quality indicators are used as survey-derived improvement indicators. Nothing else in E1 supports that general claim."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4's text says '...실용화하려는 연구를 하였다', a study that aimed to put a gap-theory priority-improvement analysis into practice. It sits at the end of the section just before III and reads as a review of an earlier study. The sentence turns that aim into an established use of the indicators (실용화된다). E4 never says the indicators are actually used this way."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The Seoul citizen satisfaction survey is something E1 reviews, with footnote 15 citing 서울특별시. It sits between a footnote to 홍현진 and the Martensen & Gronholdt and Chen cases. E1's conclusion says it reviewed existing models and pointed out their limits, and [그림 5] gives its own indicators. The summary wrongly presents the survey and its aims as E1's own study (실시하여 … 제공하고자 한다)."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The 24 indicators in 4 areas (자료 및 설비, 제공서비스, 운영 및 관리, 부대시설 및 환경) are the contents of the Seoul survey that E1 reviews. As a summary of E1, the sentence makes them read as E1's own evaluation system. E1's own indicators in [그림 5] are different: 서비스 제공력, 이용의 편리성, 컨텐츠, 정보접근시스템, 기술/시설의 구비성 and 공간/환경의 쾌적성."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The source passage says '…캡이론을 응용하여 서비스 우선 개선 요인의 분석기법을 마련함으로 … 실용화하려는 연구를 하였다'. It is in the past tense, comes right before section III and reads as a description of an earlier study. E4's table of contents shows its own work is an analysis of indicators: 행정서비스헌장, 공공도서관 평가지표 and indicators found in the literature. The summary presents the earlier study's aim as E4's own goal (하고자 한다), and turns 'gap theory' into a vaguer 'service quality model'."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The sentence joins two unrelated pieces of E4. One is a sentence tail ('의 행태에 까지 확장하고') from the earlier-study description. The other is the section heading '행정서비스현장제' (OCR for 헌장제). E4 does not say it drew on the administrative service charter to extend research to behavior. The causal link and the claimed study are invented."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E6's later remark about 2005–2010 ('연구에서도 … 대부분이다') suggests the satisfaction–quality link was also common earlier. But for 1990–2005, E6's point is that domestic research was expanding (확장되고 있었다) to customer-behavior models and outcome variables such as loyalty and word of mouth. Saying that period 'focused on' (집중되었다) the quality–satisfaction relationship reverses that emphasis. It also drops 국내."
+     },
+     {
+      "n": 15,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E6 only recounts history: as the information environment changed rapidly, new methods and indicators were required (요구되었다). It then notes that LibQUAL studies followed in the 2000s. E6 makes no forward-looking call for continued research on new methods and indicators, so the future line is a recommendation that goes beyond the cited paper."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "051bf3cf_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E10 lists 도서관 경영·인적자원·시설환경·정보자원·도서관 서비스 as the indicators of 공공도서관 운영 평가. The sentence relabels them as 서비스 품질 평가 지표, a small reframing."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "E5 has the matching passage: '이용자가 인식하는 실제적인 변화나 혜택의 관점에서 측정하는 체계'. The passive '제안되었다' fits, because E5 is describing a system it reviewed."
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "E4's abstract says the library exists because of customer needs and expectations. Saying the indicators 'aim to reflect' those needs is a mild inference from the abstract and the title."
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "In E5, '…과(성과)의 관점에서 … 혜택에 주안점을 둔 평가지표를 제안했다' describes one of the systems E5 reviews, not E5's own proposal. Its review also covers Scotland's SLIC, so it is not only domestic. The summary presents E5 as proposing user-benefit indicators itself."
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "Generalizes one reviewed system's viewpoint, a passage cut off mid-sentence, into 'public library performance evaluation emphasizes building a system'. E5 does not state that emphasis or call for building such a system."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "Implies a false cause and effect: E10 does not derive indicators from its GIS adequacy analysis. Its Table 2 shows the existing ministry evaluation indicators as background. The study is about where to place libraries."
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S",
+      "reason": "Taken from the title and the first line of the abstract. According to its table of contents, E4 actually analyzes the indicators (Ⅲ. 공공도서관 서비스 평가지표 분석), so 'raises the need' understates what it does."
+     },
+     {
+      "n": 13,
+      "verdict": "S",
+      "reason": "Broadly matches E17's recommendations (separate items for public and private small libraries, add qualitative satisfaction items, local government does the assessment) but turns them into a generic line about methodology."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section does not answer its heading, '성과 및 효과'. No sentence reports any result or effect of using these indicators or of library services. The intro and summaries only list what indicators exist, which is the parent question again. The heading itself reads like a template: '성과 및 효과' tacked onto the question ('…평가 지표 성과 및 효과')."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Every intro sentence is repeated in a summary below: n1/n9 (E10 indicator areas), n3/n11 (E1's four indicators, almost word for word), n4/n12 (E4 '존립 근거 … 고객의 요구와 기대'), and n2/n5/n6 (E5 user-benefit viewpoint, said three times). The section says little beyond these repeats."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "E10 is a GIS study of library placement in Gunsan, off-topic for service quality indicators. It only reproduces the ministry evaluation table as background, and its summary makes it look like an indicator paper."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "The E5 summary credits the paper with proposing the user-benefit indicators, but that viewpoint belongs to a system E5 reviews. It also skips E5's directly relevant content: Scotland's SLIC five quality indicators."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "The E4 summary mostly restates the title plus the first line of the abstract, and adds nothing beyond n4."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "E17 is about small libraries, not public libraries in general. The future line (n13) is also about small libraries only, so it is narrow for the heading and the overall question."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "Awkward Korean: the topic and the predicate do not match ('도서관 성과 평가는 … 측정하는 체계가 제안되었다'). n6 has the same problem ('공공도서관 성과 평가는 … 체계 구축을 강조한다' makes the evaluation the one doing the emphasizing)."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "'컨텐츠' is the non-standard spelling (standard: 콘텐츠). It is copied from the 2006 source and repeated in n11."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The intro is four unrelated statements with no synthesis. Two of its sources are from 2004 and 2006 and are presented as current with no date shown."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E5's evidence (title 'comparative analysis'; its Table 1 lists the ministry, BSC and Gyeonggi systems; the second chunk covers Scotland's SLIC) supports the first half: E5 compares evaluation areas and viewpoints. The passage '…과의 관점에서 … 혜택에 주안점을 둔 평가지표를 제안했다 … 측정하는 체계이다' sits just before Table 1. It describes one of the reviewed systems, most likely Gyeonggi's enjoyment indicators with their 'benefit' component. It is not E5's own proposal. Nothing in E5's evidence shows E5 proposing user-benefit indicators. Calling the review only domestic also leaves out the Scottish system it covers."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The only support is a cut-off clause, '평가의 관점을 시민들의 구체적 삶의 영역에서 공공도서관이 … 제공하는', which describes the viewpoint of one reviewed system. E5's evidence never says public library performance evaluation in general 'emphasizes' building such a system. It also never recommends building one. The sentence turns one reviewed system's viewpoint into a general emphasis, which goes beyond the evidence."
+     },
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The title supports the GIS adequacy analysis of Gunsan. E10's chunk introduces '공공도서관 운영 평가에 사용되는 지표(표 2)' as the existing indicators already in use, in background before section 2.2. It then criticizes them as weak on facility efficiency and adequacy. The '수행하여 … 지표를 제시' construction makes these indicators look like an output of the GIS analysis. That misrepresents background as a finding. The study's actual subject is library placement and adequacy."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "051bf3cf_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E1 names this pro/con (broadly applicable, but not a specialized system) for generic customer-satisfaction models such as NCSI and SERVQUAL. The sentence pins it on '공공도서관 서비스 품질 평가 지표', so library indicators end up described as 'not specialized for libraries'. The subject is shifted."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Faithful to E17's first two recommendations. The opening '평가지표의 유효성을 평가할 때' wrongly makes them about validating indicators; the paper is about how small libraries should be evaluated. Minor framing slip."
+     },
+     {
+      "n": 4,
+      "verdict": "U_ok",
+      "reason": "The sentence is only the bare marker '[E3]'. There is nothing to check; it is leftover markup."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "The E4 passage that says '서비스 질 평가의 캡이론을 응용하여 ... 실용화하려는 연구를 하였다' comes from the literature-review part (page 5, just before 'Ⅲ. 공공도서관 서비스 평가지표 분석') and starts mid-sentence ('...의 행태에 까지 확장하고'). It most likely describes an earlier study, not E4's own aim. Going by its title and table of contents, E4 reviews public-library evaluation indicators (행정서비스헌장제, existing indicators, indicators found in the literature)."
+     },
+     {
+      "n": 11,
+      "verdict": "S",
+      "reason": "Loosely backed by E17's call for systematic indicators centred on service quality. '검증 연구' is a modest extension the paper does not state."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 4,
+      "severity": "high",
+      "issue": "The intro paragraph has a 'sentence' that is only the bare marker '[E3]'. This is visible leftover markup in the answer text."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "The E17 summary (n8) repeats intro sentence n3 word for word. The intro sentences n1 and n2 are also near-copies of the E1 summary (n5, n6). The intro adds nothing beyond the summaries."
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "The sentence contradicts itself: it says public library service-quality indicators 'are not evaluation systems specialized to library characteristics'. In E1 this limitation belongs to generic models (NCSI, SERVQUAL)."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "The E2 summary describes only the survey method of a university-library SERVQUAL/SERVPERF study. It says nothing about limitations or improvement tasks, and it is about university libraries, not public libraries. It is off-topic for this heading."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The E4 summary describes a method/aim, not a limitation or improvement task, and is probably attributed to the wrong study. The heading is not answered by this summary."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E3 summary is a historical overview (1970s–1990s). It only loosely touches limitations of current indicators and says nothing about the user-centred shift that the passage does support."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "The '개선 과제' half of the heading is answered thinly. Supported points from the evidence are missing: E1's third limitation (does not reflect individual library traits or user behaviour, calls for a new model), and E17's recommendations to separate public and private small libraries, have local governments run evaluations, and add qualitative user-satisfaction items."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "The phrase '작은도서관 평가지표의 유효성을 평가할 때' blends the paper title into the finding and reads awkwardly."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "The only future-research line is about small libraries, which is narrower than the public-library indicators the question and heading ask about."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E1's '기존 평가모형의 한계점', the pro/con (broadly applicable but not a specialized system) is said about generic customer-satisfaction models: '기존의 NCSI나 SERVQUAL은 일반적인 평가모델로 범용성이 크다는 장점이 있다... 특화된 평가시스템이 아니라는 단점'. The sentence instead makes '공공도서관 서비스 품질 평가 지표' the subject, so library indicators are called not specialized for libraries. That also clashes with E1's third point, which says library-specific models such as LibQual+ do reflect library traits, and with E1 proposing its own public-library indicators. The subject is shifted, so the finding is distorted."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The only gap-theory passage in E4 (page 5) starts mid-sentence ('...의 행태에 까지 확장하고, 서비스 질 평가의 캡이론을 응용하여 ... 실용화하려는 연구를 하였다'). It sits at the end of the review section, just before 'Ⅲ. 공공도서관 서비스 평가지표 분석'. The past-tense '연구를 하였다' with no '본 연구' subject is how a literature review describes an earlier study, not how a paper states its own aim. E4's title ('...평가지표에 관한 고찰') and table of contents (행정서비스헌장제, public-library indicators, indicators found in the literature) show it reviews evaluation indicators and builds no gap-theory method. The earlier study is not another paper in this file, so the verdict is M, not W. The evidence does not support stating this as E4's aim."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "051bf3cf_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "W",
+      "reason": "The claim that full-scale indicators only arrived in the late 1990s comes from E6, not E3. E3 says the 1970s start was followed by various indicators in the 1980s, which conflicts with 'only from the late 1990s'. The '공공도서관' framing is also added: both sources describe library service-quality research in general, and E6 is about university libraries."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Simplified. E6 says research from 1990 to 2005 also extended to outcome variables such as loyalty and word-of-mouth, and it describes the satisfaction–quality correlation as 'most' studies only for 2005–2010. Still close enough to count as support."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "W",
+      "reason": "E6 supports only the 1970s start. The 1980s statement ('실제 적용과 비판적 고찰을 통해 다양한 평가지표가 개발') is E3's wording and content, and is repeated almost word for word in n14. E6 itself puts full-scale indicators in the late 1990s."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "The wording ('1990년대 ... 서비스 환경 변화 ... 새로운 방법과 평가지표가 요구') follows E3. E6 states the same thing (rapid change in the information environment called for new methods and indicators, then LibQUAL in the 2000s), so the citation still holds."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "The summary says E1 itself surveyed 308 university and research libraries. In E1 that 2003 survey is the LibQual+ project, which E1 only cites. E1 is a public-library customer-satisfaction study and did not run this survey."
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "S"
+     },
+     {
+      "n": 16,
+      "verdict": "M",
+      "reason": "E9 (2002, information management systems applied to libraries) does not recommend future research on public-library indicators for the digital environment or on new service types. Its own finding is that indicators skew toward traditional libraries and have no improvement ('action') stage. The recommendation and the public-library setting go beyond E9."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 12,
+      "severity": "high",
+      "issue": "Contradiction between title and summary: the summary of a paper titled '공공도서관 서비스 고객만족도 평가체계에 관한 연구' says it surveyed 308 university and research libraries. A judge reading the title will notice this at once."
+     },
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "The same history is told three times. The 1970s start and 1980s development of indicators appear in intro n1, in the E6 summary (n6) and in the E3 summary (n14). n6 and n14 are almost word-for-word copies under two different papers, and n7 repeats the 1990s and 2000s part again."
+     },
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "The section does not answer its heading. The heading is about public-library indicator development, but nearly all the content is about university libraries (E2, E6, LibQual+) or digital and information-management indicators (E9). E1's actual public-library indicators (서비스 제공력, 이용의 편리성, 컨텐츠, 정보접근시스템, 기술/시설의 구비성, 공간/환경의 쾌적성) are in the evidence but never appear in the section."
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "The intro contradicts itself and the summaries. n1 says full-scale indicators only came in the late 1990s, while n6 and n14 say various indicators were developed in the 1980s. n1 also presents general library history as public-library history."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "Numbers without context. The '5개 차원/41개 항목 → 3개 차원/22개 항목' figures are given without naming LibQual+, so the reader cannot tell which instrument shrank. It is also a university-library fact placed in the intro of a public-library section."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "Awkward Korean: the paper is made the subject of a historical fact ('…에 관한 연구는 1970년대부터 … 연구가 시작되었으며'). n14 has the same problem ('…고찰은 1970년대부터 … 시작되었으며')."
+     },
+     {
+      "n": 13,
+      "severity": "low",
+      "issue": "One sentence joins two unrelated facts: where LibQual+ came from, and Seoul's citizen-satisfaction survey of administrative services."
+     },
+     {
+      "n": 15,
+      "severity": "low",
+      "issue": "Too vague. '평가주체에 대한 인식의 전환' does not say that the shift was from administrator-centred to user-centred evaluation, so it reads as empty."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The E2 summary (n10–n11) covers only the content/context split of service quality. It says nothing about the paper's SERVQUAL vs SERVPERF comparison and contributes nothing to the 'indicator development trend' heading."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Inconsistent naming of the same models: '서브퀄' and 'SERVQUAL', '라이브퀄' and 'LibQual+' are used interchangeably across sentences."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "A section about trends rests only on sources from 2002–2010 and says nothing after 2010. The future line (n16) is generic and cites an off-topic 2002 information-management paper."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "The E9 digital-library content (EQUINOX, 지식정보자원관리평가) appears in intro n4 and is repeated in summaries n8–n9."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "E3 says research began in the 1970s, various indicators were developed in the 1980s, and new methods were needed in the 1990s. The wording '본격적인 평가 지표가 개발된 것은 1990년대 후반부터' matches E6 almost exactly and does not appear in E3. The 공공도서관 framing is also added: neither source limits itself to public libraries."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "The E6 chunk supports only the 1970s start. It says full-scale indicators came in the late 1990s and says nothing about the 1980s. The 1980s clause ('실제 적용과 비판적 고찰을 통해 다양한 평가지표가 개발') is E3's wording, nearly verbatim, and is repeated in n14. E6 only cites 홍현진 (E3) in a footnote without restating this content."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In the E1 chunk, the 2003 survey of 308 university and research libraries (3 dimensions, 22 items) is the LibQual+ study, which E1 describes as prior work. E1 is a public-library customer-satisfaction study and did not run this survey. The summary wrongly makes E1 the author of the survey."
+     },
+     {
+      "n": 16,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E9 only observes that most indicators center on traditional libraries, that EQUINOX and 지식정보자원관리평가 offer digital-library indicators, and that library indicators have no action (improvement) stage. It does not recommend ongoing review of public-library indicators for the digital environment or evaluating new service types. The public-library setting and the recommendation both go beyond what E9 says."
+     }
+    ]
+   }
+  }
+ ]
+}
